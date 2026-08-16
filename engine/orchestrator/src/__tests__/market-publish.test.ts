@@ -46,7 +46,8 @@ function makeMeta(overrides: Partial<CapabilityMetadata> = {}): CapabilityMetada
   };
 }
 
-describe('market-publish 能力发布', () => {
+// v1.3.5 阶段五：全量并行 IO 争用偶发超时——文件级 timeout 20s
+describe('market-publish 能力发布', { timeout: 20000 }, () => {
   let testDir: string;
   let skillDir: string;
 

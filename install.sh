@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-# sofagent install.sh · 企业设备安装器 · v1.3.4
+# sofagent install.sh · 企业设备安装器 · v1.3.5
 # ============================================================
 # 将 sofagent 约束层部署到企业跑 AI 节点的设备上，让 Agent 获得监控约束。
 #
@@ -8,7 +8,7 @@
 #    默认模式 = 全套（底座 + Agent Skill）——事前约束 + 事后拦截完整闭环。
 #    --base-only 模式 = 仅装约束层（审计·回溯·daemon），不装 Agent Skill。
 #
-# 📦 安装包边界（v1.3.4）：
+# 📦 安装包边界（v1.3.5）：
 #    ┌─────────────────────────┬──────────────┬──────────────────────┐
 #    │ 脚本                    │ 装在哪       │ 装什么               │
 #    ├─────────────────────────┼──────────────┼──────────────────────┤
@@ -47,7 +47,7 @@
 # ============================================================
 
 set -euo pipefail
-VERSION="1.3.4"
+VERSION="1.3.5"
 
 # ── 颜色输出（合并两套）──
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; BLUE='\033[0;34m'
@@ -170,7 +170,7 @@ bash "${SCRIPT_DIR}/engine/scripts/audit.sh" --operation "install" --target "开
 # ════════════════════════════════════════
 # Step 1: 确定平台和目标路径
 # ════════════════════════════════════════
-info "Step 1/8 · 确定安装平台..."
+info "Step 1 · 确定安装平台..."
 parse_args "$@"
 auto_detect_platform
 resolve_data_dir
@@ -296,7 +296,7 @@ fi
 # ════════════════════════════════════════
 # Step 2: 检查环境（Node.js + npm）
 # ════════════════════════════════════════
-info "Step 2/8 · 检查运行环境..."
+info "Step 2 · 检查运行环境..."
 if command -v node &>/dev/null; then
   NODE_VER=$(node --version); ok "Node.js 已安装: $NODE_VER"; _log "node=$NODE_VER"
   # v1.2.6: Node 版本下限检查——Node < 18 时 err 并退出（不是 warn）
@@ -324,7 +324,7 @@ else warn "npm 未安装"; fi
 # ════════════════════════════════════════
 # Step 3: 审计引擎（@sofagent/audit）
 # ════════════════════════════════════════
-info "Step 3/8 · 审计引擎: @sofagent/audit（约束层审计能力）"
+info "Step 3 · 审计引擎: @sofagent/audit（约束层审计能力）"
 # 优先使用仓库本地的 engine/audit/dist/（避免 npm @latest 版本漂移）
 # 仓库本地版本与用户 clone 的版本一致，npm registry 可能滞后
 LOCAL_AUDIT_DIST="$PROJECT_ROOT/engine/audit/dist/index.js"
@@ -935,19 +935,36 @@ if [ "${BASE_ONLY:-0}" = "0" ]; then
   # ── 验证安装 ──
   echo ""
   echo -e "${BOLD}[FDE] 验证安装...${NC}"
-  # 平台无关重构：未显式指定平台时不传 --platform（避免触发 verify.sh 自身的平台探测日志）；
-  # || true 防止 verify 失败项在 set -e + pipefail 下中断安装
+  # v1.3.5 #19: 假绿修复——此前 `| tail -3 || true` 双保险吞掉 verify 退出码：
+  #   管道后 $? 是 tail 的退出码（恒 0），|| true 再兜一层，verify 失败仍打成功标语。
+  #   现在把 verify 输出落临时文件（tail 只负责截屏显示），退出码单独捕获；
+  #   verify 失败 → 成功标语不输出，改为修复指引，install 以非零退出。
+  # 平台无关：未显式指定平台时不传 --platform（避免触发 verify.sh 自身的平台探测日志）
+  VERIFY_LOG="$(mktemp /tmp/sofagent-install-verify.XXXXXX)"
+  VERIFY_RC=0
+  # `cmd || VERIFY_RC=$?` 防 set -e 在 verify 失败时直接中断（否则下方裁决块无机会输出）
   if [ -n "$PLATFORM" ]; then
-    bash "${SCRIPT_DIR}/engine/scripts/verify.sh" --quick --platform "$PLATFORM" 2>&1 | tail -3 || true
+    bash "${SCRIPT_DIR}/engine/scripts/verify.sh" --quick --platform "$PLATFORM" > "$VERIFY_LOG" 2>&1 || VERIFY_RC=$?
   else
-    bash "${SCRIPT_DIR}/engine/scripts/verify.sh" --quick --quiet 2>&1 | tail -3 || true
+    bash "${SCRIPT_DIR}/engine/scripts/verify.sh" --quick --quiet > "$VERIFY_LOG" 2>&1 || VERIFY_RC=$?
   fi
+  # 显示末尾摘要（结果行 + 总结），完整日志留在临时文件
+  tail -5 "$VERIFY_LOG"
   echo ""
 
   # ── 设置 data 目录权限 ──
   if [ -d "$HOME/.sofagent/data" ]; then
     chmod 700 "$HOME/.sofagent/data" 2>/dev/null || true
   fi
+
+  # ── v1.3.5 #19: verify 结果裁决——成功标语只在校验通过时输出（诚实收尾） ──
+  if [ "$VERIFY_RC" -ne 0 ]; then
+    echo -e "${RED}⚠️ 验证有失败项——安装未完全成功，成功标语不出现。${NC}"
+    echo -e "  完整清单：cat $VERIFY_LOG"
+    echo -e "  或运行：bash ${SCRIPT_DIR}/engine/scripts/verify.sh"
+    exit 1
+  fi
+  rm -f "$VERIFY_LOG"
 
   # ── FDE 完成输出 ──
   echo -e "${BOLD}${GREEN}═══════════════════════════════════════════════════════════${NC}"

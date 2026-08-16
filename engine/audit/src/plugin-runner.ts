@@ -1,6 +1,6 @@
 // ============================================================
 // plugin-runner.ts · 插件类型规则执行器
-// v1.3.4 (⑧-2)：规则市场——type=plugin 委托给外部 npm 包执行
+// v1.3.5 (⑧-2)：规则市场——type=plugin 委托给外部 npm 包执行
 //
 // 插件协议：
 //   type SofagentPlugin = (ctx: PluginContext) => PluginResult[]

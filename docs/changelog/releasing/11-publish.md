@@ -190,7 +190,7 @@ gh release create vX.Y.Z --title "vX.Y.Z — {emoji 主题短语}" --notes "$(ca
 | release-gate | verdict=PASS ✅ |
 | fresh-eyes | {N} 轮独立审查 ✅ |
 
-📖 [详细开发日志](./docs/changelog/v{major}.{minor}/vX.Y.Z.md)
+📖 [详细开发日志](./docs/changelog/v{major}.{minor}/vX.Y.Z.md)  <!-- 链接相对仓库根（发布后 GitHub 上可达），在本文档内直接点击不可达 -->
 EOF
 )"
 ```
@@ -241,6 +241,8 @@ EOF
 ## 步骤 6：npm 手动 publish 其余 10 包
 
 > `npm publish --workspaces` 不支持 workspace 全局发布。release.yml 只 auto-publish audit + mcp（Release 触发），其余 10 包手动 publish。
+>
+> ⚠️ **v1.3.5 #30 勘误：`@sofagent/load-chain`（`engine/hooks/sofagent-load-chain/`）是第 13 个 workspace 包，不在下方循环里**——它不叫 `engine/<pkg>` 布局（在 `engine/hooks/` 下），历次发版都被「12 包」口径漏掉，npm 已落后（1.3.1 vs workspace 1.3.4）。v1.3.5 发版时必须补 publish，并把它加进下方两个循环与验证清单（此后按 13 包口径）。
 
 ```bash
 # 等 release.yml 完成（通常 3-5 分钟），确认 audit + mcp 已到 npm
@@ -253,11 +255,15 @@ for pkg in core daemon eval harness ontology orchestrator rules skillopt think a
   cd "engine/$pkg" && npm publish --access public && cd ../..
 done
 
-# 验证全部 12 包
+# @sofagent/load-chain（布局在 engine/hooks/ 下，不进上面的循环——v1.3.5 #30 补）
+cd "engine/hooks/sofagent-load-chain" && npm publish --access public && cd ../../..
+
+# 验证全部 13 包（含 load-chain）
 for pkg in audit core daemon eval harness ontology orchestrator rules skillopt think ab-test mcp; do
   V=$(npm view @sofagent/$pkg version 2>/dev/null || echo "❌ 未发布")
   echo "  @sofagent/$pkg: $V"
 done
+npm view @sofagent/load-chain version  # 同样应等于当前版本号
 # 期望：全部 = 当前版本号（npm 缓存可能延迟 15 秒，未到则等一下重查）
 ```
 

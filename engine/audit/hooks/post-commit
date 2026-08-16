@@ -1,5 +1,5 @@
 #!/bin/bash
-# sofagent post-commit hook v1.3.4
+# sofagent post-commit hook v1.3.5
 # --no-verify 跳过 commit-msg，但不跳过 post-commit
 # 安装：sofagent-audit --init（v1.0.6 起 --init 同时安装 commit-msg + post-commit）
 #
@@ -38,45 +38,51 @@ PARENT_SHA=$(git rev-parse HEAD^ 2>/dev/null)
 # 路径动态获取用户级 data 目录（与 data-paths.ts 的 SOFAGENT_HOME 解析链对齐）
 HISTORY_FILE="${SOFAGENT_HOME:-$HOME/.sofagent}/data/audit/history.jsonl"
 if [ -f "$HISTORY_FILE" ]; then
-  # 先检查 SHA 精确匹配（commitSha 或 pre-commit 记录的 parentSha）
-  # 注意：BRE 模式下 `|` 是字面量不会误匹配；两分支独立 grep 语义更清晰
-  if grep -q "\"$CURRENT_SHA\"" "$HISTORY_FILE" 2>/dev/null; then
-    exit 0  # commitSha 找到，commit 已审计
-  fi
-  if [ -n "$PARENT_SHA" ] && grep -q "\"commitPhase\":\"pre-commit\"" "$HISTORY_FILE" 2>/dev/null; then
-    if grep -q "\"parentSha\":\"$PARENT_SHA\"" "$HISTORY_FILE" 2>/dev/null; then
-      exit 0  # parentSha 找到（pre-commit 记录），commit 已审计
-    fi
-  fi
-  # SHA 未找到，回退检测：新逻辑按 commitPhase 字段判定 + 旧记录时间窗口（300 秒）
-  node -e "
-const fs = require('fs');
-const lines = fs.readFileSync('$HISTORY_FILE', 'utf-8').trim().split('\n').filter(Boolean);
+  # v1.3.5 #2: 假阳性回声修复——对账命中 pre-commit 记录时校验审计结果。
+  # 旧逻辑（grep -q parentSha）会命中**被拦截**的审计记录（exit 2）：
+  # 带 token commit 被 commit-msg 拦 → 拦截记录写入 history（含 parentSha）→
+  # 同内容 --no-verify 强推 → post-commit 命中失败记录 → 假绿。
+  # 改为 node 解析：只有 commitSha 匹配、或 pre-commit 记录 parentSha 匹配
+  # **且 exitCode === 0** 才静默退出（真回声）；命中失败记录输出疑似绕过提示。
+  # post-commit 永远 exit 0（不阻断任何操作）。
+  COMMIT_SHA="$CURRENT_SHA" PARENT_SHA="$PARENT_SHA" HISTORY_FILE="$HISTORY_FILE" node -e '
+const fs = require("fs");
+const COMMIT_SHA = process.env.COMMIT_SHA;
+const PARENT_SHA = process.env.PARENT_SHA;
+const HISTORY_FILE = process.env.HISTORY_FILE;
+if (!HISTORY_FILE) process.exit(0);
+let lines;
+try {
+  lines = fs.readFileSync(HISTORY_FILE, "utf-8").trim().split("\n").filter(Boolean);
+} catch { process.exit(0); }
 if (lines.length === 0) process.exit(0);
 try {
-  const last = JSON.parse(lines[lines.length - 1]);
-  // 新格式记录（commit-msg hook v1.2.9+）：pre-commit 阶段记录带 parentSha
-  if (last.commitPhase === 'pre-commit') {
-    if (last.parentSha === '$CURRENT_SHA') process.exit(0);
-    // 最近一条 pre-commit 记录的 parentSha 不是当前 commit 的父提交——
-    // 说明本次 commit 未经过 commit-msg 审计（--no-verify 绕过或 hook 失效）
-    console.log('');
-    console.log('  sofagent: 当前 commit 未找到审计记录（parentSha 不匹配）。');
-    console.log('  可能使用了 --no-verify 绕过审计 hook。');
-    console.log('  运行 sofagent-audit --verify-commit $CURRENT_SHA 确认。');
-    process.exit(0);
+  // 反向查找（最新记录在末尾）
+  for (let i = lines.length - 1; i >= 0; i--) {
+    const entry = JSON.parse(lines[i]);
+    const entryCommit = entry.commitSha || "";
+    if (entryCommit === COMMIT_SHA) {
+      process.exit(0);  // commitSha 找到，commit 已审计
+    }
+    if (entry.commitPhase === "pre-commit" && entry.parentSha === PARENT_SHA) {
+      // v1.3.5 #2: 校验该次审计的结果——exitCode === 0 才算已审计（真回声），
+      // 非 0 且 commit 仍存在 = --no-verify 绕过命中拦截记录，输出疑似绕过提示
+      if (entry.exitCode === 0) {
+        console.log("  ✓ [sofagent] 审计通过");
+        process.exit(0);  // parentSha 找到（pre-commit 记录，审计通过）
+      }
+      console.log("");
+      console.log("  ℹ️ [sofagent] 父提交存在审计拦截记录（exit " + entry.exitCode + "）但本次 commit 未走审计——疑似 --no-verify 绕过。");
+      console.log("  可运行 sofagent-audit --verify-commit " + COMMIT_SHA + " 复核。");
+      process.exit(0);  // post-commit 永不阻断
+    }
   }
-  // 旧格式记录（无 commitPhase 字段）：保留 300s 时间窗口检测（向后兼容）
-  if (!last.timestamp) process.exit(0);
-  const age = Date.now() - new Date(last.timestamp).getTime();
-  if (age > 300000) {
-    console.log('');
-    console.log('  sofagent: 最近一次审计记录在 ' + Math.round(age/1000) + ' 秒前，当前 commit 可能未经过审计。');
-    console.log('  可能使用了 --no-verify 绕过审计 hook。');
-    console.log('  运行 sofagent-audit --doctor 查看详情。');
-  }
+  // 未找到任何匹配——降级为 INFO 提示（避免狼来了）。真绕过仍由 --verify-commit 复核。
+  console.log("");
+  console.log("  ℹ️ [sofagent] 未确认审计记录（post-commit 对账未命中）。");
+  console.log("  如未使用 --no-verify 可忽略；如需确认运行 sofagent-audit --verify-commit " + COMMIT_SHA);
 } catch { process.exit(0); }
-" 2>/dev/null
+' 2>/dev/null
 fi
 
 exit 0

@@ -1,8 +1,9 @@
 // ============================================================
-// team-state.ts · TeamState CRDT 类型 + 同步通道抽象（v1.3.4 交付 T02）
+// team-state.ts · TeamState CRDT 类型 + 同步通道抽象（v1.3.5 交付 T02）
 //
 // 团队共享态的 CRDT 文档结构 + 跨设备同步通道接口。
-// 复用 automerge@1.0.1-preview.7（严禁升 2.x，API 不兼容）。
+// v1.3.5 交付 4b：automerge 1.0.1-preview.7 → @automerge/automerge 3.4.1
+// （旧包名废弃，新包 Rust WASM 稳定核心；API 迁移对照见 v1.3.5 dev-prompt）
 //
 // ⚠️ 依赖方向铁律：
 //   orchestrator 定义 TeamSyncChannel 接口（纯类型），提供 LocalTeamSyncChannel
@@ -10,7 +11,14 @@
 //   orchestrator 绝不 import daemon——依赖注入模式。
 // ============================================================
 
-import * as Automerge from 'automerge';
+import {
+  init,
+  change,
+  save,
+  load,
+  merge,
+} from '@automerge/automerge';
+import type { Doc } from '@automerge/automerge';
 
 // ────────────────────────────────────────────────────────────
 // TeamState CRDT 文档结构（协议设计 §1.2）
@@ -89,9 +97,9 @@ export interface TeamStateDoc {
  * @param name 团队名称
  * @returns 初始化后的 Automerge 文档
  */
-export function initTeamState(teamId: string, name: string): Automerge.Doc<TeamStateDoc> {
-  let doc = Automerge.init<TeamStateDoc>();
-  doc = Automerge.change(doc, (d) => {
+export function initTeamState(teamId: string, name: string): Doc<TeamStateDoc> {
+  let doc = init<TeamStateDoc>();
+  doc = change(doc, (d) => {
     d.meta = { teamId, name, createdAt: new Date().toISOString() };
     d.members = {};
     d.tasks = {};
@@ -109,10 +117,10 @@ export function initTeamState(teamId: string, name: string): Automerge.Doc<TeamS
  * @returns 更新后的文档（不可变——Automerge.change 返回新文档）
  */
 export function addMember(
-  doc: Automerge.Doc<TeamStateDoc>,
+  doc: Doc<TeamStateDoc>,
   member: MemberState,
-): Automerge.Doc<TeamStateDoc> {
-  return Automerge.change(doc, (d) => {
+): Doc<TeamStateDoc> {
+  return change(doc, (d) => {
     d.members[member.agentId] = member;
   });
 }
@@ -121,11 +129,11 @@ export function addMember(
  * 更新成员状态（status / currentTask / heartbeat）。
  */
 export function updateMemberStatus(
-  doc: Automerge.Doc<TeamStateDoc>,
+  doc: Doc<TeamStateDoc>,
   agentId: string,
   update: Partial<Pick<MemberState, 'status' | 'currentTask' | 'lastHeartbeat'>>,
-): Automerge.Doc<TeamStateDoc> {
-  return Automerge.change(doc, (d) => {
+): Doc<TeamStateDoc> {
+  return change(doc, (d) => {
     const member = d.members[agentId];
     if (member) {
       if (update.status !== undefined) member.status = update.status;
@@ -139,10 +147,10 @@ export function updateMemberStatus(
  * 添加任务到团队共享态。
  */
 export function addTask(
-  doc: Automerge.Doc<TeamStateDoc>,
+  doc: Doc<TeamStateDoc>,
   task: TaskState,
-): Automerge.Doc<TeamStateDoc> {
-  return Automerge.change(doc, (d) => {
+): Doc<TeamStateDoc> {
+  return change(doc, (d) => {
     d.tasks[task.taskId] = task;
   });
 }
@@ -156,11 +164,11 @@ export function addTask(
  * @returns 更新后的文档
  */
 export function setFileLock(
-  doc: Automerge.Doc<TeamStateDoc>,
+  doc: Doc<TeamStateDoc>,
   filePath: string,
   holder: string | null,
-): Automerge.Doc<TeamStateDoc> {
-  return Automerge.change(doc, (d) => {
+): Doc<TeamStateDoc> {
+  return change(doc, (d) => {
     if (holder === null) {
       delete d.fileLocks[filePath];
     } else {
@@ -173,10 +181,10 @@ export function setFileLock(
  * 追加反馈条目（反馈放大机制写入）。
  */
 export function appendFeedback(
-  doc: Automerge.Doc<TeamStateDoc>,
+  doc: Doc<TeamStateDoc>,
   entry: FeedbackEntry,
-): Automerge.Doc<TeamStateDoc> {
-  return Automerge.change(doc, (d) => {
+): Doc<TeamStateDoc> {
+  return change(doc, (d) => {
     d.feedback.push(entry);
   });
 }
@@ -184,19 +192,18 @@ export function appendFeedback(
 /**
  * 序列化 CRDT 文档为二进制（用于持久化 / 跨设备传输）。
  */
-export function saveTeamState(doc: Automerge.Doc<TeamStateDoc>): Uint8Array {
-  return Automerge.save(doc);
+export function saveTeamState(doc: Doc<TeamStateDoc>): Uint8Array {
+  return save(doc);
 }
 
 /**
  * 从二进制反序列化 CRDT 文档。
  *
- * automerge@1.0.1-preview.7 的 load 接受 BinaryDocument 类型
- * （Uint8Array & { __binaryDocument: true }）。运行时就是普通 Uint8Array，
- * 这里做类型断言绕过品牌类型检查（与 core/federation.ts 同模式）。
+ * v1.3.5 交付 4b：@automerge/automerge 3.x 的 load 直接接受 Uint8Array，
+ * 旧 1.x 的 BinaryDocument 品牌类型断言已移除。
  */
-export function loadTeamState(binary: Uint8Array): Automerge.Doc<TeamStateDoc> {
-  return Automerge.load<TeamStateDoc>(binary as Automerge.BinaryDocument);
+export function loadTeamState(binary: Uint8Array): Doc<TeamStateDoc> {
+  return load<TeamStateDoc>(binary);
 }
 
 /**
@@ -205,10 +212,10 @@ export function loadTeamState(binary: Uint8Array): Automerge.Doc<TeamStateDoc> {
  * CRDT 保证合并后状态不丢——会话重启时 load 持久化二进制 + merge 远端增量即可恢复。
  */
 export function mergeTeamState(
-  local: Automerge.Doc<TeamStateDoc>,
-  remote: Automerge.Doc<TeamStateDoc>,
-): Automerge.Doc<TeamStateDoc> {
-  return Automerge.merge(local, remote);
+  local: Doc<TeamStateDoc>,
+  remote: Doc<TeamStateDoc>,
+): Doc<TeamStateDoc> {
+  return merge(local, remote);
 }
 
 // ────────────────────────────────────────────────────────────

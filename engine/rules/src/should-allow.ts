@@ -1,5 +1,5 @@
 // ============================================================
-// should-allow.ts · tool-gate 便捷 API（v1.3.4 交付 2）
+// should-allow.ts · tool-gate 便捷 API（v1.3.5 交付 2）
 //
 // shouldAllow()——编排层/运行时 wrapper 判定「本次工具调用是否放行」。
 // 聚合 RulesEngine.check + aggregate，并额外暴露 requireApproval：

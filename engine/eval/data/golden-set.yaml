@@ -837,7 +837,8 @@
     rules_triggered:
     - A5
     - A19
-    severity: P0
+    severity: P1  # v1.3.5 run-07 维度56 勘误：A5 对 wip 是 WARN 触发（非 FAIL），WARN 封顶 P1；旧值 P0 是映射器只看 ruleClass 时代的历史输出
+
 - id: E1-pass-01
   description: E1 正常用例：修改 lib/ 下文件不触发 E1（仅检测 src/）
   tags:
@@ -1059,7 +1060,7 @@
     result: WARN
     rules_triggered:
     - A11
-    severity: P0
+    severity: P1  # v1.3.5 run-07 维度56 勘误：WARN result 配 P0 自相矛盾（P0 属真拦截 FAIL），修正为 P1
 - id: E4-pass-01
   description: E4 正常用例：少量代码行不触发 E4
   tags:

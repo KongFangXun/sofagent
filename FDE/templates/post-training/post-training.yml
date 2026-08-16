@@ -88,5 +88,5 @@ nodes:
     hitl_config:
       interrupt_before: true
       prompt: "请确认模型上线：权重挂载到哪个 workflow 节点？灰度比例多少？"
-    capability_ref: "v1.4.4 C13 本地权重部署 + 产物→注册自动衔接"
+    capability_ref: "v1.4.4 企业专属模型本地权重部署 + 产物→注册自动衔接"
 

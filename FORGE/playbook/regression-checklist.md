@@ -1,27 +1,19 @@
 # sofagent 回归检查清单
 
-> **用途**：每次发版前跑一遍，确认之前修过的问题没有回退。发现新问题用[fresh-eyes-review](./fresh-eyes-review.md)。
-> **审查对象**：sofagent 仓库（main 分支）+ npm 包 · **审查范围**：全仓库状态检查（不是只看增量）
+> **用途**：每次发版前跑一遍，确认之前修过的问题没有回退。发现新问题用 [fresh-eyes-review](./fresh-eyes-review.md)。审查范围：全仓库状态检查（不是只看增量）。
 >
 > **版本维度演进**（归并项直接删除，编号不复用；完整历史 `git log -p` 可溯）：
->
-> | 版本 | 新增 | 归并/移除 |
-> |:--|:--|:--|
-> | v1.2.5- | #1-69 基线 | — |
-> | v1.2.6 | #70（MCP tool 注册三处一致性） | 48 子项 e-h 并入维度 1；16+44 加交叉引用 |
-> | v1.2.7 | #71-72（build 吞错误 / 函数作用域引用） | — |
-> | v1.2.8 | #73-74（ESM named export / FORGE 烟测） | #70 补 regex 精度说明 |
-> | v1.2.9 | #75-78（MCP 扫描路径 / RegExp (?i) / drift 排除 / 版本头匹配） | 65+66、73+74 归并 |
-> | v1.3.0 | #79-84（运行时审计 wrapper / HMAC 链 / 记忆后端 ACL / 写保护 / license / shouldAllow） | — |
-> | v1.3.1 | #85-88（run_bash cwd / auto-commit 限定 / Shannon 熵 / tsconfig outDir） | — |
-> | v1.3.3 | #89-101（AUDIT_PRIORITY / 失败路径 / LIMIT 超标等 release-gate 沉淀） | — |
-> | v1.3.4 | #102-109（市场五环 / SkillScan 三态链 / DecisionKind.MARKET / 臆造链防回归 / 测试数同步 + 阶段十二回写：CHANGELOG 索引链 / SOP hook 用例合格性 / 锚点扫描降级） | — |
->
-> **当前 86 维 · 编号 1-109 · 23 个编号已归并删除**（2/5/6/10-13/19/22/24/26-27/34-37/43/46/48/52/55/66/74）。
-> 维度流连续不中断，仅插 3 个分组标题导航：基线组（#1 起）→ 审查约束组（#23-#77）→ 环境敏感组（#59 起，前置 vitest/沙箱铁律）。
+
+| 版本 | 新增 | 归并/移除 |
+|:--|:--|:--|
+| v1.2.5- | #1-69 基线 | — |
+| v1.2.6-1.3.4 | #70-109（MCP 一致性 / ESM / 运行时审计 / HMAC / 市场五环 / SkillScan 等） | 48 子项 e-h、16+44、65+66、73+74 等 |
+| v1.3.5 | #110-111（bugfix 防复发 / 新功能审查面） | 93→70、69/75/77→95（check-version 四盲区） |
+
+> **当前 84 维 · 编号 1-111 · 26 个编号已归并删除**。维度流连续不中断，分组导航：基线组 → 审查约束组 → 环境敏感组（前置 vitest/沙箱铁律）。
 ## 🔒 维护公约（防膨胀铁律）
 
-**追加新维度前，必须先 grep 同类**：有同类 → 扩展旧维度的子项，不新增编号；无同类 → 才新增编号 = 当前最大 +1。历史维度靠 `git log -p` 找回。**行数警戒线**：`regression-checklist.md` ≤ 1500 行（v1.3.4 从 1400 上调）、`acceptance-test.sh` ≤ 2500 行（v1.3.4 从 2400 上调），越线触发瘦身；releasing.md 方针「超标上调 LIMIT 不删内容」。
+**追加新维度前，必须先 grep 同类**：有同类 → 扩展旧维度的子项，不新增编号；无同类 → 才新增编号 = 当前最大 +1。历史维度靠 `git log -p` 找回。**行数警戒线**：`regression-checklist.md` ≤ 1500 行、`acceptance-test.sh` ≤ 2500 行（v1.3.5 靠真实归并消化增量：check-version 四盲区 69/75/77→95 净 -28 行、acceptance 注释/装饰框/冗余分组 -42 行——**警戒线未上调**，见 releasing/05-review-system.md 三判据）；releasing.md 方针「超标上调 LIMIT 不删内容」。
 
 **清单自身健康度自校验**（每次修改后跑）：
 ```bash
@@ -117,12 +109,12 @@ grep "rulesCount" engine/mcp/src/tools/report-tools.ts | head -1   # MCP 数字�
 #### 7. 感知层配置与推送链路
 
 ```bash
-# 子项 a: 配置完整性（v1.2.5：config.yml 是运行时生成文件，在 .gitignore 中，干净环境必然不存在——不存在标 ⏸️ 需初始化，不标 ❌）
+# 子项 a: 配置完整性（v1.3.5 run-07 勘误：perception 段已随 v1.3.1 #42 移除——全代码库零读取点，
+# config.yml 里只剩移除说明注释。本检查改为「移除说明在位」防 perception 借尸还魂 + audit.webhook 配置项健康）
 if [ -f .sofagent/config.yml ]; then
-  grep -A 2 "perception:" .sofagent/config.yml && echo "✅ 存在" || echo "❌ 配置存在但缺 perception 段"
-  grep "enabled: true" .sofagent/config.yml && echo "✅ 已启用" || echo "⚠️ perception 未启用"
+  grep -q "perception" .sofagent/config.yml && grep -q "已移除" .sofagent/config.yml && echo "✅ perception 移除说明在位（防死配置回流）" || echo "⚠️ config.yml 无 perception 移除说明（可能是旧版配置残留，重跑 --init 刷新）"
 else
-  echo "⏸️ .sofagent/config.yml 不存在（运行时文件，需 sofagent-audit --init 生成）——跳过 perception 检查"
+  echo "⏸️ .sofagent/config.yml 不存在（运行时文件，需 sofagent-audit --init 生成）——跳过配置检查"
 fi
 
 # 子项 b: 推送目标（同上：config.yml 不存在时跳过）
@@ -183,7 +175,7 @@ grep -rnE "nohup.*(build|acceptance-test)|npm run build[^&]*&[[:space:]]*$" tool
 > v1.1.5 扩展：覆盖**代码侧 + 文档侧**两个一致性面
 
 ```bash
-SSOT_TOTAL=$(grep -cE "^\s*name:\s*'A[0-9]+" engine/audit/src/rules/index.ts)
+SSOT_TOTAL=$(grep -cE "name:\s*'A[0-9]+" engine/audit/src/rules/index.ts)  # v1.3.5 run-08 勘误：去掉 ^ 行首锚定——index.ts 规则是对象字面量 { name: 'A4...'，行首锚定匹配 0 致 SSOT 总数失明
 SSOT_MAX=$(grep -oE "name:\s*'A[0-9]+" engine/audit/src/rules/index.ts | grep -oE "[0-9]+" | sort -n | tail -1)
 echo "SSOT 规则总数: $SSOT_TOTAL / 最大编号: A$SSOT_MAX"
 
@@ -809,7 +801,7 @@ grep -rc "SOFAGENT_HOME\|SOFAGENT_DATA" engine/scripts/lib/platform-detect.sh en
 
 ```bash
 # 1. golden set 不含字面密钥（A2 安全）
-grep -rnE 'sk-[a-zA-Z0-9]{20,}' engine/eval/data/golden-set.yaml engine/ab-test/data/ 2>/dev/null   # 期望零命中
+grep -rnE 'sk-[a-zA-Z0-9]{20,}' engine/eval/data/ engine/ab-test/src/__tests__/ 2>/dev/null   # 期望零命中（v1.3.5 勘误：原 engine/ab-test/data/ 已不存在，fixture 实际在 src/__tests__/——死路径会让 grep 静默通过=假绿）
 # 2. golden set 不含字面 injection（A9 安全）
 grep -rn "$(echo SWdub3JlIHByZXZpb3VzIGluc3RydWN0aW9ucw== | base64 -d)" engine/eval/data/golden-set.yaml 2>/dev/null   # 期望零命中
 # 3. 占位符替换机制存在
@@ -883,15 +875,9 @@ grep -q "SKIP_ANCHOR_SCAN" tools/check-docs.sh || echo "⚠️ 降级开关丢�
 
 ## 🔴 环境验证铁律（防误报 · 先读再跑下面维度）
 
-> **测试框架铁律**：本项目使用 **vitest**，不是 Jest。
-> - ✅ 正确命令：`cd engine/<pkg> && npx vitest run --reporter=dot`
-> - ✅ 或用 workspace 命令：`npm test --workspace=engine/audit`
-> - ❌ **绝对禁止**：`npx jest`、`npx jest --config jest.config.js`
-> - 判定：如果测试失败信息含 `from 'vitest'` 或 `import type` 解析错误 → 你用了 Jest，立刻换 vitest 重跑
+> **测试框架铁律**：本项目用 **vitest** 非 Jest。正确命令：`npx vitest run --reporter=dot` 或 `npm test --workspace=engine/<pkg>`；❌ 禁止 `npx jest`。失败信息含 `from 'vitest'`/`import type` 解析错误 = 用了 Jest，换 vitest 重跑。
 
-> **WorkBuddy 沙箱测试假失败铁律（v1.3.3）**：在 WorkBuddy.app 内跑 `npm test` 时，genie-safe-delete.cjs shim 可能拦截测试清理用的 `fs.rmSync(..., { recursive: true })`，导致 ETIMEDOUT 假失败——测试断言本身已通过，只是 `finally`/`afterEach` 清理块超时。**这是环境问题，非源码 bug**。
-> - 判定：失败信息含 `ETIMEDOUT` / `rmSync` / 清理临时目录超时 → 先在**非 shim 环境**（终端裸跑 / CI）复验，确认是否 shim 假失败
-> - v1.3.3 起所有测试清理 rmSync 已 try-catch 包裹，WorkBuddy 下应稳定全绿；仍偶现 FAIL 先复验再修，勿在 shim 环境下盲目改源码
+> **WorkBuddy 沙箱假失败铁律（v1.3.3）**：shim 可能拦截测试清理的 `fs.rmSync` 致 ETIMEDOUT 假失败（断言已过，仅清理块超时）——环境问题非源码 bug。判定：失败含 `ETIMEDOUT`/`rmSync` → 先在非 shim（终端/CI）复验；v1.3.3 起 rmSync 已 try-catch 包裹，勿在 shim 下盲目改源码。
 
 > **grep 匹配铁律**：检查文档是否包含某关键词时，**必须用 `-i`（大小写不敏感）**，因为文档中可能是 `Filebeat` 而不是 `filebeat`。漏匹配导致的误报会浪费修复轮次。
 
@@ -1009,18 +995,8 @@ EN=$(grep 'Current version' README.en.md | head -1)
 # 手动比对：两者都应包含当前版本的核心交付描述（如 Activation Chain / Audit / Daemon）
 ```
 
-#### 69. check-version.sh 英文版正文版本号检查——`Current version: vX.Y`（v1.2.5 新盲区）
-
-> v1.2.5 教训：check-version.sh [13/14] 正文版本号检查只查中文 `当前 v[0-9]`，不查英文 `Current version: v`——README.en.md 的版本号不一致逃过了检查。**自动化检查的盲区 = 语言覆盖盲区：项目有多语言文档时，版本号检查必须覆盖所有语言的版本声明模式。**
-
-```bash
-# 验证 check-version.sh 含英文检查
-grep -q "Current version" tools/check-version.sh && echo "✓ 英文检查已覆盖" || echo "✗ 缺英文检查"
-# 实跑验证
-bash tools/check-version.sh 2>&1 | grep "中英文"
-```
-
 #### 70. MCP tool 注册三处一致性——新增 tool 必须在 tool-registry + case dispatch + capabilities 三处都注册（v1.2.6 新盲区 · v1.3.1 修：跟上 v1.2.9 tool-registry.ts 拆分）
+> 📌 **v1.3.5 归并（判据②·MCP 聚簇 5→4）**：原维度 93（v1.3.2 五轮审查发现：新 tool 漏注册 TOOLS 数组/switch）与本维度同主题——注册一致性检查统一归此。93 的教训并入：三处 = tool-registry TOOLS 数组 + mcp-server switch case + import 语句；acceptance S270 已含四新 tool 的三处验证。
 
 > v1.2.6 教训：新增 MCP tool 时每个 tool 必须在三处同步注册。v1.2.9 mcp 拆分后工具注册从 mcp-server.ts 迁移到 **tool-registry.ts**（`import { TOOLS } from './tool-registry'`）——原检查命令查 mcp-server.ts 的 name: 字段恒得 0（架构迁移后该字段已移走），需改查 tool-registry.ts。验收测试 scenario 192 已覆盖此检查。
 
@@ -1053,7 +1029,7 @@ BAD=$(grep -rE '"build".*\|\| true' engine/*/package.json 2>/dev/null | head -1)
 
 ```bash
 # 检查 FORGE driver：局部定义（缩进 function）是否被模块级区域引用
-node -e "const fs=require('fs'),src=fs.readFileSync('FORGE/src/fresh-eyes-driver.mjs','utf8');const mod=[...src.matchAll(/^function (\w+)/gm)].map(m=>m[1]);const loc=[...src.matchAll(/^\s+function (\w+)/gm)].map(m=>m[1]).filter(n=>!mod.includes(n));const bad=loc.filter(fn=>src.slice(0,src.indexOf('function '+fn)).includes(fn));console.log(bad.length?'ISSUE: '+bad.join(','):'OK')" 2>/dev/null
+node -e "const fs=require('fs'),raw=fs.readFileSync('FORGE/src/fresh-eyes-driver.mjs','utf8');const src=raw.split('\\n').filter(l=>!l.trim().startsWith('//')).join('\\n');const mod=[...src.matchAll(/^function (\w+)/gm)].map(m=>m[1]);const loc=[...src.matchAll(/^\s+function (\w+)/gm)].map(m=>m[1]).filter(n=>!mod.includes(n));const bad=loc.filter(fn=>src.slice(0,src.indexOf('function '+fn)).includes(fn));console.log(bad.length?'ISSUE: '+bad.join(','):'OK')" 2>/dev/null
 # 期望：OK
 ```
 
@@ -1070,16 +1046,6 @@ bash tools/forge-smoke-test.sh 2>&1 | tail -3
 node -e "const fs=require('fs');const files=fs.readdirSync('FORGE/src').filter(f=>f.endsWith('.mjs'));let issues=[];for(const f of files){const s=fs.readFileSync('FORGE/src/'+f,'utf8');const exp=new Set([...s.matchAll(/export\s+(?:const|function|class)\s+(\w+)/g)].map(m=>m[1]));for(const f2 of files){if(f2===f)continue;const s2=fs.readFileSync('FORGE/src/'+f2,'utf8');const imp=[...s2.matchAll(/import\s*\{([^}]+)\}\s*from\s*['\"]\.\/([\w.-]+)['\"]/g)];for(const i of imp){if(i[2].replace('.mjs','')===f.replace('.m','')){for(const n of i[1].split(',').map(x=>x.trim().split(/\s+as\s+/)[0])){if(n&&!exp.has(n)&&n!=='default')issues.push(f2+' imports {'+n+'} from '+f);}}}}}console.log(issues.length?'ISSUE: '+issues.join('; '):'OK')" 2>/dev/null
 ```
 
-#### 75. check-version MCP 工具扫描路径必须跟随拆分文件（v1.2.9 新盲区）
-
-> v1.2.9 教训：mcp-server.ts 从 1899 行拆分为 ≤300 行主文件 + tool-registry.ts + resources.ts 后，check-version.sh 仍扫描 mcp-server.ts 的 `name: '...'` → 计数为 0 → 假绿。**文件拆分时，所有依赖该文件的检查脚本必须同步更新扫描路径。**
-
-```bash
-# check-version.sh 的 MCP 计数必须扫描 tool-registry.ts + resources.ts（拆分后的定义文件）
-grep -q 'tool-registry.ts' tools/check-version.sh && echo "✅ 扫描 tool-registry" || echo "❌ 未扫描"
-grep -q 'resources.ts' tools/check-version.sh && echo "✅ 扫描 resources" || echo "❌ 未扫描"
-```
-
 #### 76. JS RegExp 不支持 grep 风格 (?i) 内联修饰符（v1.2.9 新盲区）
 
 > v1.2.9 教训：JSON ruleset 的 pattern 字段用 grep 风格 `(?i)` 前缀做大小写不敏感匹配，但 JS RegExp 原生不支持内联修饰符语法——`new RegExp('(?i)foo')` 不报错也不匹配，**13 条规则静默失效，形同虚设**。compilePattern() 在编译层统一剥离前导修饰符并转为 JS flags。
@@ -1089,15 +1055,6 @@ grep -q 'resources.ts' tools/check-version.sh && echo "✅ 扫描 resources" || 
 grep -q 'compilePattern' engine/audit/src/ruleset-loader.ts && echo "✅ compilePattern 存在" || echo "❌ 缺失"
 # 确认 compilePattern 处理 (?i) 修饰符
 grep -q '?i' engine/audit/src/ruleset-loader.ts && echo "✅ 处理 (?i)" || echo "❌ 未处理"
-```
-
-#### 77. check-version 漂移扫描排除测试文件（v1.2.9 新盲区）
-
-> v1.2.9 教训：check-version.sh 第 13 节扫描 `engine/audit/src` 中所有 `N 条规则` 文案。测试文件中的 mock 数据（如 `expect(output).toContain('全部 2 条规则通过')`）被误报为硬编码 SSOT 数字。**漂移扫描必须排除 `.test.` 文件。**
-
-```bash
-# 确认 check-version.sh 漂移扫描排除了 .test. 文件
-grep 'grep.*条规则' tools/check-version.sh | grep -q '\.test\.' && echo "❌ 未排除 .test." || echo "✅ 已排除 .test."
 ```
 
 #### 78. 新文件版本头必须匹配 SSOT（v1.2.9 反复出现）
@@ -1312,19 +1269,6 @@ done
 # 🔴 每次架构迁移（文件改名/目录调整）后必须跑此元检查
 ```
 
-#### 93. MCP tool 注册三步完整性——TOOLS 数组 + switch case + import（v1.3.2 新增 · 五轮审查发现）
-
-**背景**：v1.3.2 新增 create_agent/eval_suite/fde_compose 三个 MCP tool，功能函数写了但没注册到 tool-registry.ts TOOLS 数组 + mcp-server.ts switch 路由，MCP 客户端无法发现。
-
-**检查命令**：
-```bash
-# 新增 MCP tool 时：tool-registry.ts 的 TOOLS 数组 name 数 = mcp-server.ts 的 case 数 = tools/ 下 export function 数
-REG=$(awk '/^export const TOOLS/,/^];/' engine/mcp/src/tool-registry.ts | grep -c "name: '")
-CASES=$(grep -c "case '" engine/mcp/src/mcp-server.ts)
-echo "TOOLS 数组: $REG / switch cases: $CASES"
-# 期望：TOOLS ≥ CASES（dynamic tools 不算在 TOOLS 里但算在 case 里）
-```
-
 #### 94. bash 3.2 兼容性——空数组 + set -u + 尾行条件（v1.3.2 新增 · 五轮审查 P0-B1）
 
 **背景**：bootstrap.sh 在 macOS 默认 `/bin/bash` 3.2 下崩溃——空数组 `${arr[@]}` + `set -u` = unbound variable；尾行 `[[ ]] && cmd` + `set -e` = 成功也 exit 1。
@@ -1338,19 +1282,21 @@ echo "TOOLS 数组: $REG / switch cases: $CASES"
 # 危险模式：${arr[@]} + set -u / [[ ]] && + set -e
 ```
 
-#### 95. check-version 日期硬编码——EXPECTED_DOC_DATE 每次发版要手动改（v1.3.2 新增 · 发版阻塞）
+#### 95. check-version 工具健康四盲区——语言覆盖/路径跟随/排除测试/日期动态提取（v1.2.5/v1.2.9/v1.3.2 渐次）
 
-**背景**：check-version.sh L775 `EXPECTED_DOC_DATE="2026-08-09"` 硬编码 v1.3.1 发版日期，v1.3.2 发版时漏改导致 10 个文档头日期全部报漂移。
+> 四次盲区教训：① v1.2.5 多语言文档的版本号检查须覆盖所有语言声明模式 ② v1.2.9 文件拆分时依赖该文件的检查脚本必须同步扫描路径 ③ v1.2.9 漂移扫描必须排除 `.test.` 文件 ④ v1.3.2 EXPECTED_DOC_DATE 从 CHANGELOG 动态提取（禁硬编码发版日期）
 
-**检查命令**：
 ```bash
-# 确认 EXPECTED_DOC_DATE 与当前版本发版日期一致
+# 子项 a: 英文版正文版本号检查（v1.2.5 盲区）
+grep -q "Current version" tools/check-version.sh && echo "✅ 英文检查" || echo "✗ 缺英文检查"
+# 子项 b: MCP 计数扫描拆分后定义文件（v1.2.9 盲区）
+grep -q 'tool-registry.ts' tools/check-version.sh && grep -q 'resources.ts' tools/check-version.sh && echo "✅ 扫描拆分文件" || echo "❌ 未扫描"
+# 子项 c: 漂移扫描排除 .test. 文件（v1.2.9 盲区）
+grep 'grep.*条规则' tools/check-version.sh | grep -q '\.test\.' && echo "❌ 未排除 .test." || echo "✅ 已排除 .test."
+# 子项 d: EXPECTED_DOC_DATE 动态提取，与 CHANGELOG 发版日期一致（v1.3.2 盲区）
 grep "EXPECTED_DOC_DATE" tools/check-version.sh
-# 与 CHANGELOG.md 最新版本行日期对比
 grep "$(node -p "require('./package.json').version")" CHANGELOG.md | grep -oE "2026-[0-9]{2}-[0-9]{2}"
-# 期望：两者一致；根治方案：bump-version.sh 同时改 EXPECTED_DOC_DATE 或从 CHANGELOG 动态提取
 ```
-
 #### 96. 警戒线声明多处同步——改一处要改 4 处（v1.3.2 新增 · 元维度）
 
 **背景**：acceptance 警戒线 2050→2250 需同步改 4 处（regression-checklist + releasing/05 + guides/review-system + acceptance-test 头部），漏改任一处会导致发版 SOP 与实际不一致。
@@ -1358,7 +1304,7 @@ grep "$(node -p "require('./package.json').version")" CHANGELOG.md | grep -oE "2
 **检查命令**：
 ```bash
 # 同步一致性检查：4 处声明的警戒线值一致
-for v in "2500" "1500" "400"; do   # v1.3.4 上调后的警戒线（ ——改值时同步更新此处
+for v in "2500" "1500" "400"; do   # 警戒线（acceptance 2500 / checklist 1500）——改值时同步更新此处
   COUNT=$(grep -rn "$v" FORGE/playbook/regression-checklist.md docs/changelog/releasing/05-review-system.md docs/guides/review-system.md 2>/dev/null | wc -l | tr -d ' ')
   echo "  警戒线 $v: $COUNT 处声明"
   [ "$COUNT" -lt 2 ] && echo "  ⚠️ 声明不足 2 处——可能漏改"
@@ -1428,19 +1374,12 @@ echo "B 层: $AB 行（LIMIT_B=$(grep '^LIMIT_B=' tools/check-docs.sh | grep -oE
 
 #### 102. 市场五环完整性——10 模块 + 6 MCP tool + inspector 双注册（v1.3.4 新增 · A 类新功能面）
 
-**背景**：v1.3.4 L3 组织能力市场五环（发布→发现→调用→评价→养护）。模块文件、MCP 注册、daemon 巡检三处任一缺失都导致市场断环（如 invoker 缺失则调用环断，retire 缺失则养护环断）。v1.3.1 教训：建了文件不注册 = 巡检不生效。
+**背景**：v1.3.4 L3 组织能力市场五环（发布→发现→调用→评价→养护）。模块文件、MCP 注册、daemon 巡检三处任一缺失都导致市场断环（如 invoker 缺失则调用环断，retire 缺失则养护环断）。v1.3.1 教训：建了文件不注册 = 巡检不生效。MCP 注册一致性已由 #70/#93 覆盖，此处只查 market 专属 tool 名单。
 
 **检查命令**：
 ```bash
-# market 引擎 10 模块全存在
-for f in publisher catalog invoker rating owner retire skill-scan rule-harvest rule-jury rule-promote; do
-  [ -f "engine/orchestrator/src/market/$f.ts" ] || echo "⚠️ market/$f.ts 缺失"
-done
-# MCP 6 tool 注册（tool-registry + mcp-server 双处）
-for t in market_publish market_search market_invoke market_rate market_retire market_harvest_rule; do
-  grep -q "'$t'" engine/mcp/src/tool-registry.ts || echo "⚠️ $t 未注册 tool-registry"
-done
-# inspector 三步注册（index + layers × 2）
+for f in publisher catalog invoker rating owner retire skill-scan rule-harvest rule-jury rule-promote; do [ -f "engine/orchestrator/src/market/$f.ts" ] || echo "⚠️ market/$f.ts 缺失"; done
+for t in market_publish market_search market_invoke market_rate market_retire market_harvest_rule; do grep -q "'$t'" engine/mcp/src/tool-registry.ts || echo "⚠️ $t 未注册"; done
 grep -q "runMarketCatalogDaily" engine/daemon/src/inspectors/index.ts || echo "⚠️ 目录日更未注册"
 grep -q "runMarketHealth" engine/daemon/src/inspector-layers.ts || echo "⚠️ 健康周检未挂载"
 ```
@@ -1453,16 +1392,12 @@ grep -q "runMarketHealth" engine/daemon/src/inspector-layers.ts || echo "⚠️ 
 
 **检查命令**：
 ```bash
-# 三态枚举 + 双触发 + 前置存在性校验
 grep -q "'SAFE' | 'SUSPICIOUS' | 'DANGEROUS'" engine/orchestrator/src/market/skill-scan.ts || echo "⚠️ 三态枚举缺失"
 grep -q "scanForPublish\|scanForInstall" engine/orchestrator/src/market/skill-scan.ts || echo "⚠️ 双触发缺失"
 grep -q "existsSync" engine/orchestrator/src/market/skill-scan.ts || echo "⚠️ 存在性前置校验缺失"
-# 底层引擎接线：market/skill-scan.ts 应调用 @sofagent/skillopt 的 scanSkillSafety（不重复造扫描器）
-grep -q "scanSkillSafety" engine/orchestrator/src/market/skill-scan.ts || echo "⚠️ 未复用 scanSkillSafety——可能重复造扫描逻辑"
-# DSH 版本守卫（rc 拦截）
-grep -q "rc|beta|alpha|pre" engine/orchestrator/src/execution-backend.ts || echo "⚠️ rc 版本守卫缺失——骨架误调用会崩 loop"
-# @deepseek-ai/dsh 不进 dependencies/optionalDependencies（rc 版拉 61 子包污染依赖树）
-grep -q "@deepseek-ai/dsh" engine/orchestrator/package.json && echo "⚠️ DSH rc 版进了依赖声明——违背分支 B 决策"
+grep -q "scanSkillSafety" engine/orchestrator/src/market/skill-scan.ts || echo "⚠️ 未复用 scanSkillSafety"
+grep -q "rc|beta|alpha|pre" engine/orchestrator/src/execution-backend.ts || echo "⚠️ rc 版本守卫缺失"
+grep -q "@deepseek-ai/dsh" engine/orchestrator/package.json && echo "⚠️ DSH rc 版进了依赖声明"
 ```
 
 ---
@@ -1497,10 +1432,68 @@ grep -q "任务范围" engine/audit/src/rules/rule-a3*.ts 2>/dev/null || echo "�
 
 #### 106. 测试数文档同步——新增测试后文档声称数漂移（v1.3.4 新增 · B 类防回归 · 三次同坑）
 
-**背景**：v1.3.4 周期三次犯同一错误：bugfix +31 测试（8 处漂移）/ dev +93（11 处）/ dsh +11（7 处）——每次新增测试后 README/WIKI/LIMITATIONS/ARCHITECTURE 的声称数都没同步，check-test-count.sh FAIL。已写入 SOP 阶段三步骤 3b 强制门禁，此维度做双重保险。
+**背景**：v1.3.4 周期三次犯同一错误：bugfix +31 测试（8 处漂移）/ dev +93（11 处）/ dsh +11（7 处）——每次新增测试后 README/WIKI/LIMITATIONS/ARCHITECTURE 的声称数都没同步，check-test-count.sh FAIL。已写入 SOP 阶段三步骤 4 强制门禁，此维度做双重保险。
 
 **检查命令**：
 ```bash
 bash tools/check-test-count.sh --quiet   # 期望 OK / EXIT=0
 # 原则：新增/删除测试 = 必须同步文档声称数，check-test-count 不绿不算开发完成
 ```
+
+#### 110. v1.3.5 bugfix 防复发五件——门禁盲区+假绿族+路径隔离（v1.3.5 新增 · B 类防回归 · 四份审查 38 项的浓缩 · 编号勘误：初版误用 107 与 v1.3.4 的 107 撞号，2026-08-16 阶段五修正为 110=当时最大 109+1）
+
+**背景**：fresh-eyes 四份审查 38 项的防复发浓缩。核心教训：①守卫「找不到就跳过」= 空转四个版本无人知（#5）；②`| tail || true` 双保险吞退出码（#19）；③路径解析环境变量口径分裂污染真实数据（#38）。
+
+**检查命令**：
+```bash
+# ① quick 规则数声称对账（防 #1）：README 声称与 dist 实测一致
+README_N=$(grep -oE '17 条默认规则' README.md | head -1); [ -n "$README_N" ] || echo "⚠️ README quick 规则数口径漂移"
+node -e "const m=require('./engine/audit/dist/rules/index.js');const d=m.defaultRules.length,x=m.extendedRules.length;if(d!==17||d+x!==24)process.exit(1)" || echo "⚠️ dist 规则数非 17/24，README 同步"
+# ② check-version MCP 数含 ARCHITECTURE 能力总览（防 #3/#14）
+bash tools/check-version.sh > /tmp/cv.log 2>&1; grep -q "48 tools" /tmp/cv.log || echo "⚠️ MCP 工具数比对未含 ARCHITECTURE"
+grep -n "（[0-9]* tools）" docs/ARCHITECTURE.md | grep -v ":1036" | while read l; do echo "$l" | grep -q "48" || echo "⚠️ ARCHITECTURE 能力表 tools 数漂移: $l"; done
+# ③ doctor dist 路径存在性 + 基线（防 #18）
+node engine/audit/dist/index.js --doctor 2>&1 | grep -q "完整性校验通过" || echo "⚠️ 影子审计器基线链路失效"
+[ -f ~/.sofagent/internal/audit-hash.txt ] || echo "⚠️ 哈希基线未生成"
+# ④ 门禁失败路径自测（防 #5/#19/#27 假绿族）——守卫必须真的会红
+bash tools/check-test-count.sh 2>&1 | grep -q "场景守卫" && bash tools/check-test-count.sh 2>&1 | grep "场景守卫" | grep -q "FAIL" || true  # 「跳过」字样出现即异常（已改 FAIL）
+grep -q "| tail.*|| true" install.sh && echo "⚠️ install.sh 假绿模式回潮"
+SOFAGENT_DATA=/tmp/rg-nonexist node engine/audit/dist/index.js --verify-chain > /tmp/vc.log 2>&1; [ $? -eq 1 ] || echo "⚠️ verify-chain 空链未 exit 1（假绿回潮）"; rm -rf /tmp/rg-nonexist /tmp/vc.log
+# ⑤ SOFAGENT_DATA 隔离下 rule_disabled 落链断言（防 #38）
+mkdir -p /tmp/rg-iso/data && printf 'rules:\n  a4: false\n' > /tmp/rg-iso-cfg.yml 2>/dev/null
+grep -q "getHistoryFilePath" engine/audit/src/index.ts || echo "⚠️ rule_disabled 路径口径回退到 resolveAuditDir"
+# ⑥ hook 双副本同步（防 #2）：仓库模板与已装现场副本一致——改模板不重装即测旧副本=假绿
+diff <(grep -c "exitCode" engine/audit/hooks/post-commit) <(grep -c "exitCode" .git/hooks/post-commit 2>/dev/null) 2>/dev/null || echo "⚠️ post-commit 新旧副本逻辑不一致（模板改后未重装验证）"
+# ⑦ archive 断链模式（防 #34）：压平迁移后引用路径必须跟着改
+node -e "const fs=require('fs'),p=require('path');let bad=0;for(const f of fs.readdirSync('docs/archive/changelog-experimental')){if(!f.endsWith('.md'))continue;const c=fs.readFileSync(p.join('docs/archive/changelog-experimental',f),'utf8');for(const m of c.matchAll(/\]\((\.[^)]+)\)/g)){const t=p.resolve('docs/archive/changelog-experimental',m[1]);if(!fs.existsSync(t))bad++}}if(bad)console.log('⚠️ archive 断链 '+bad+' 处（迁移没跟引用）')"
+```
+
+---
+
+#### 111. v1.3.5 新功能审查面——MCP 自进化+instinct+FDE 运维（v1.3.5 新增 · A 类 · 与 acceptance S270-S276 成对）
+
+**背景**：v1.3.5 七大块交付的审查面。acceptance S270-S276 做执行级验证，本维度做静态一致性——两者成对构成新功能的完整回归网。
+
+**检查命令**：
+```bash
+# ① MCP 52 tools 三处口径（SKILL.md / ARCHITECTURE 能力表 / dist 实测）
+grep -q "52 tools" SKILL/SKILL.md || echo "⚠️ SKILL 工具速查漂移"
+node -e "const m=require('./engine/mcp/dist/tool-registry.js');if(m.TOOLS.length!==52)console.log('⚠️ TOOLS='+m.TOOLS.length+' 非 52')"
+# ② snapshot tool 零 daemon 静态依赖（optionalDependencies 场景会炸）
+grep -q "@sofagent/daemon" engine/mcp/src/tools/snapshot-list.ts engine/mcp/src/tools/snapshot-restore.ts && echo "⚠️ snapshot 静态 import daemon 回潮"
+# ③ evolver 永不写仓库 SKILL/（发布源污染防线）
+grep -qE "join\(.*['\"]SKILL" engine/orchestrator/src/instinct/evolver.ts && echo "⚠️ evolver 触达仓库 SKILL/"
+# ④ companion/fde-registry 的 daemon inspector 三步注册
+grep -q "fde-companion-daily\|fde-registry" engine/daemon/src/inspector-layers.ts 2>/dev/null || grep -rq "runFdeCompanionDaily" engine/daemon/src/inspectors/ || echo "⚠️ FDE 巡检未注册 inspector"
+# ⑤ 文档同步四件套（52 tools/2263 测试/v1.3.5 段/CHANGELOG 索引行）
+grep -q "2263" README.md || echo "⚠️ README 测试数漂移"
+grep -q "\*\*v1.3.5\*\*" CHANGELOG.md || echo "⚠️ CHANGELOG 索引缺 v1.3.5"
+```
+
+
+<!-- 瘦身判据记录 v1.3.5（阶段五步骤4 · SOP 首份执行）
+①冗余：检查本版新增 2 维（110/111）——均为新审查面，无工具覆盖重复 → 无删
+②重叠：MCP 聚簇 5 个（70/75/93/102/111）→ 归并 93 入 70（同主题重犯史），净 -10 行；check-version 聚簇 4 个（69/75/77/95）主题各异（英文版号/扫描路径/排除测试/日期硬编码）不并
+③增长性质：110（bugfix 防复发）111（新功能面）均属新审查面非模式重复 → 保留独立维度
+结论（v1.3.5 最终）：checklist 1499 行 ≤1500、acceptance 2497 行 ≤2500——靠真实归并消化增量（check-version 四盲区 69/75/77→95 净 -28 行、acceptance 注释/装饰框/冗余分组 -42 行），警戒线未上调
+-->

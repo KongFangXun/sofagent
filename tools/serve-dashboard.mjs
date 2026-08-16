@@ -8,7 +8,7 @@
  *   SOFAGENT_HOME=/path node tools/serve-dashboard.mjs   # 指定数据目录
  *
  * 提供三类接口：
- *   1. /              → dashboard.html（docs/demo/）
+ *   1. /              → dashboard.html（tools/）
  *   2. /data/*        → ~/.sofagent/data/*（原始数据文件，JSONL 截断最近 500 条）
  *   3. /api/summary   → 复用 bash dashboard 的 jq 聚合口径，返回 JSON 统计
  *                       （PASS/WARN/FAIL、本周 TOP3 违规、主权聚合）
@@ -28,7 +28,7 @@ import net from 'node:net';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const PORT = process.env.DASHBOARD_PORT || 3780;
-// dashboard.html 在 docs/demo/（docs/assets/ 存放静态资源，仓库根为 static root）
+// dashboard.html 在 tools/（与其服务器同目录）（docs/assets/ 存放静态资源，仓库根为 static root）
 const DOCS_DIR = join(__dirname, '..');
 const SOFAGENT_DATA = process.env.SOFAGENT_HOME
   ? join(process.env.SOFAGENT_HOME, 'data')
@@ -503,9 +503,9 @@ const server = createServer(async (req, res) => {
     return;
   }
 
-  // Default route → dashboard.html（docs/demo/）
+  // Default route → dashboard.html（tools/）
   if (urlPath === '/' || urlPath === '') {
-    urlPath = '/docs/demo/dashboard.html';
+    urlPath = '/tools/dashboard.html';
   }
 
   const filePath = join(DOCS_DIR, normalize(urlPath));

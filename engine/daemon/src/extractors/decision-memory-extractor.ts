@@ -1,5 +1,5 @@
 // ============================================================
-// extractors/decision-memory-extractor.ts · 决策记忆回灌（v1.3.4 交付 10 MA5 + MA7）
+// extractors/decision-memory-extractor.ts · 决策记忆回灌（v1.3.5 交付 10 MA5 + MA7）
 //
 // MA5：@daily 扫描 decision-log.jsonl，提取高频决策模式（kind+tags ≥3 次）
 //       写入 Memory namespace 'forge/decisions'。

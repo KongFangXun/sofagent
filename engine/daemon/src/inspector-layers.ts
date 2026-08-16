@@ -1,5 +1,5 @@
 // ============================================================
-// inspector-layers.ts · L1/L2/L3 分层巡检调度器（v1.3.4 · P0）
+// inspector-layers.ts · L1/L2/L3 分层巡检调度器（v1.3.5 · P0）
 // ============================================================
 //
 // 将扁平的 inspector 执行改为三级分层调度：
@@ -37,6 +37,10 @@ import { runTaskStats } from './inspectors/task-stats';
 import { runMarketCatalogDaily } from './inspectors/market-catalog-daily';
 // v1.3.4 交付 3：市场健康周检（@weekly）
 import { runMarketHealth } from './inspectors/market-health';
+// v1.3.5 交付 5：FDE 陪跑期日巡检（@daily——部署后前 2 周每日 Refine）
+import { runFdeCompanionDaily } from './inspectors/fde-companion-daily';
+// v1.3.5 交付 5：FDE 节点注册表巡检（@daily——fde-registry.yaml cadence 调度）
+import { runFdeRegistryDaily } from './inspectors/fde-registry-daily';
 
 /** 巡检层级 */
 export type InspectorLayer = 'L1' | 'L2' | 'L3';
@@ -67,6 +71,10 @@ const LAYER_INSPECTORS: Record<InspectorLayer, { name: string; fn: InspectorFn }
     { name: 'task-stats', fn: runTaskStats },
     // v1.3.4 交付 1：能力目录日更生成（@daily）
     { name: 'market-catalog-daily', fn: runMarketCatalogDaily },
+    // v1.3.5 交付 5：FDE 陪跑期日巡检（@daily——部署后前 2 周每日 Refine 巡检）
+    { name: 'fde-companion-daily', fn: runFdeCompanionDaily },
+    // v1.3.5 交付 5：FDE 节点注册表巡检（@daily——fde-registry.yaml cadence 调度）
+    { name: 'fde-registry-daily', fn: runFdeRegistryDaily },
   ],
   L2: [
     { name: 'conflict-check', fn: checkConflict },

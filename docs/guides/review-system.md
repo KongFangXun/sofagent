@@ -73,8 +73,8 @@
 
 | 文档 | 上限 | 超标怎么办 |
 |------|:----:|-----------|
-| regression-checklist.md | 1500 行 | **超标上调不删内容**（v1.3.4 从 1400 上调）——更新 check-docs.sh 的 LIMIT 值 |
-| acceptance-test.sh | 2500 行 | 同上（v1.3.4 从 2400 上调） |
+| regression-checklist.md | 1500 行 | **超标靠归并不删内容**（v1.3.5 check-version 四盲区归并消化） |
+| acceptance-test.sh | 2500 行 | 同上（v1.3.5 注释/装饰框/冗余分组瘦身消化） |
 | fresh-eyes-review.md | 400 行 | 同上（v1.3.3 从 370 上调） |
 
 ### 瘦身三步

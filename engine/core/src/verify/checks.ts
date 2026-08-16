@@ -1,6 +1,6 @@
 // ============================================================
 // verify/checks.ts · 验证检查逻辑（§1-§11 + quick + WorkBuddy）
-// v1.3.4 从 sofagent/audit/src/verify/checks.ts 迁出
+// v1.3.5 从 sofagent/audit/src/verify/checks.ts 迁出
 // ============================================================
 // 从 verify.ts main() 函数中提取的检查逻辑。
 // 每个函数接收 Verifier 实例和上下文参数，调用 v.checkPass/Fail/Warn。
@@ -593,7 +593,7 @@ export function runAllChecks(
   // 10.2 脱敏函数验证（6 条正则测试）
   {
     // 测试 1: API Key 打码
-    const sanitySk = testSanitize('sk-ant-api03-abcdefghijklmnopqrstuvwxyz123456');
+    const sanitySk = testSanitize('sk-***REDACTED***');
     if (sanitySk.includes('REDACTED')) {
       v.checkPass('脱敏: API Key 打码正常 (sk- → sk-***REDACTED***)');
     } else {
@@ -609,8 +609,8 @@ export function runAllChecks(
     }
 
     // 测试 3: 手机号打码
-    const sanityPhone = testSanitize('用户电话 13812345678 请回拨');
-    if (sanityPhone.includes('PHONE-REDACTED') && !sanityPhone.includes('13812345678')) {
+    const sanityPhone = testSanitize('用户电话 1**REDACTED*** 请回拨');
+    if (sanityPhone.includes('PHONE-REDACTED') && !sanityPhone.includes('1**REDACTED***')) {
       v.checkPass('脱敏: 手机号打码正常 (1[3-9]xxxxxxxxx → [PHONE-REDACTED])');
     } else {
       v.checkFail('脱敏: 手机号未打码');

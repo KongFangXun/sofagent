@@ -35,3 +35,22 @@
 
 铁律：不干涉 driver、不改代码、不探索源码——只启动 + 持续轮询监控 + 最终汇报。
 ```
+
+---
+
+## 版本类 finding 处理规则（2026-08-16 · run-07 教训）
+
+fresh-eyes 在**发版前**跑（阶段四时序先于打 tag/publish），此时版本一致性天然处于中间态——以下 finding 属预期噪音，**默认标 SKIP 不修**，留到阶段十一（publish）自然消解：
+
+| finding 模式 | 为何是中间态 |
+|------|------|
+| npm registry 版本落后本地 | publish 前注册表必然是旧版 |
+| git tag 缺当前版本 | tag 在阶段十一打 |
+| README/bootstrap URL 指向未发布 tag | 打完 tag 即生效的死链 |
+| workspace 依赖锁旧版 | bump-version.sh [2c] 发版时统一对齐 |
+
+> 判别口径：**该不一致是否会在「git push + tag + npm publish」三动作后自动消失**——会 = SKIP，不会 = 真 finding。run-07 的 R1-02/R2-P1-01/R2-P1-02/R3-3 均属前者。
+
+## 中止 run 的归档纪律（2026-08-16 · run-07 教训）
+
+driver 异常中止（进程死亡/环境冲突）的 run **也必须留 LEDGER 行**（状态 aborted-*，注明死因与已有产出）——run-07 的归档行是事后人工补的，此处 SOP 化：中止 = 当场补行，不等下轮。

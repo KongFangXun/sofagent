@@ -1,6 +1,6 @@
 // ============================================================
 // tool-registry.ts · MCP tools/list schema definitions
-// v1.3.4: 从 mcp-server.ts 提取
+// v1.3.5: 从 mcp-server.ts 提取
 // ============================================================
 
 import { VERSION } from '@sofagent/audit';
@@ -19,7 +19,7 @@ export interface ToolDef {
 }
 
 /**
- * 完整工具清单——48 个 tool（v1.3.4：market_publish/search/invoke/rate/retire/harvest_rule 新增；不含 4 个 resource shortcut）
+ * 完整工具清单——52 个 tool（v1.3.5：run_ab_test/promote_ab/snapshot_list/snapshot_restore 新增；v1.3.4：market_publish/search/invoke/rate/retire/harvest_rule；不含 4 个 resource shortcut）
  */
 export const TOOLS: ToolDef[] = [
   {
@@ -588,6 +588,64 @@ export const TOOLS: ToolDef[] = [
         action: { type: 'string', enum: ['harvest', 'full'], description: '操作：harvest=仅提炼候选 / full=三步全跑（提炼→评审→晋升）', default: 'harvest' },
         case_texts: { type: 'array', items: { type: 'string' }, description: '可选：注入的案例文本（FDE delivery-report 格式）' },
       },
+    },
+  },
+  {
+    // v1.3.5 (交付 1)：A/B 实验发起
+    name: 'run_ab_test',
+    description: 'MCP 自进化闭环（v1.3.5）——发起 A/B 对比实验：current vs candidate 两版 Agent 定义在 golden-set 上并行评测，返回双方分数（exact/semantic/rule 三维 + overall）、胜出方、分差、连续胜出次数与晋升建议。结果持久化到 data/ab-test/latest.json。实验通过后调 promote_ab（需人工确认）完成晋升。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        current: { type: 'string', description: '当前版本 Agent 定义（Skill 文件）路径' },
+        candidate: { type: 'string', description: '候选版本 Agent 定义路径' },
+        eval_set: { type: 'string', description: 'golden-set 路径（可选——缺省用 @sofagent/eval 内置 golden-set.yaml）' },
+        promote_threshold: { type: 'number', description: '晋升阈值：candidate 连续胜出 N 次后可晋升（默认 2）', default: 2 },
+        previous_wins: { type: 'number', description: '历史连续胜出次数（接续上一次实验计数，默认 0）', default: 0 },
+      },
+      required: ['current', 'candidate'],
+    },
+  },
+  {
+    // v1.3.5 (交付 1)：A/B 晋升（强制人审）
+    name: 'promote_ab',
+    description: 'MCP 自进化闭环（v1.3.5）——晋升 candidate 为 current（覆写 Agent 定义文件）。🔴 破坏性操作强制人审：human_confirmed ≠ true 时挂起不执行，只返回决策依据（最近实验数据 + 晋升建议）；human_confirmed=true 才执行晋升并写 decision-log 审计留痕（kind=EVOLUTION）。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        current: { type: 'string', description: '当前版本 Agent 定义路径（晋升目标——被覆写方）' },
+        candidate: { type: 'string', description: '候选版本 Agent 定义路径（晋升来源）' },
+        human_confirmed: { type: 'boolean', description: '🔴 人工确认：false/缺省=挂起等人审（默认）；true=执行晋升。破坏性操作不允许自动执行', default: false },
+        comment: { type: 'string', description: '决策备注（写入 decision-log，如审批人/理由）' },
+      },
+      required: ['current', 'candidate'],
+    },
+  },
+  {
+    // v1.3.5 (交付 2)：快照时间线（只读）
+    name: 'snapshot_list',
+    description: 'MCP 运维闭环（v1.3.5）——列出审计快照时间线（SHA + 时间 + 文件数，最新在前）。只读查询，无副作用。恢复到指定快照用 snapshot_restore（需人工确认）。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        project_dir: { type: 'string', description: '项目根目录（可选——默认当前工作目录）' },
+        limit: { type: 'number', description: '返回最近 N 条（默认 10，0 = 全量）', default: 10 },
+      },
+    },
+  },
+  {
+    // v1.3.5 (交付 2)：快照恢复（强制人审）
+    name: 'snapshot_restore',
+    description: 'MCP 运维闭环（v1.3.5）——恢复工作区到指定审计快照。🔴 破坏性操作强制人审：human_confirmed ≠ true 时挂起不执行，只返回目标快照时间线上下文；human_confirmed=true 才执行恢复并写 decision-log 审计留痕（kind=CONFIG_CHANGE）。恢复后建议跑 build + test 验证。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        sha: { type: 'string', description: '目标快照 SHA（完整或 ≥4 位短前缀——用 snapshot_list 查时间线）' },
+        project_dir: { type: 'string', description: '项目根目录（可选——默认当前工作目录）' },
+        human_confirmed: { type: 'boolean', description: '🔴 人工确认：false/缺省=挂起等人审（默认）；true=执行恢复。破坏性操作不允许自动执行', default: false },
+        comment: { type: 'string', description: '决策备注（写入 decision-log）' },
+      },
+      required: ['sha'],
     },
   },
 ];

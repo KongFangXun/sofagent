@@ -1,5 +1,5 @@
 // ============================================================
-// market-retire.ts · MCP tool: market_retire（v1.3.4 交付 3）
+// market-retire.ts · MCP tool: market_retire（v1.3.5 交付 3）
 //
 // 能力退役 / 恢复——强制 owner 确认（confirmed=true 才执行）。
 // 退役只标记（可恢复），不物理删除（保留审计轨迹）。
@@ -7,7 +7,6 @@
 // 复用 @sofagent/orchestrator 的 market/retire.ts：
 //   markRetired / restoreCapability / scanRetireCandidates
 // ============================================================
-
 // ============================================================
 // 类型定义
 // ============================================================

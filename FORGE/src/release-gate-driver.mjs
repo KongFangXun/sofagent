@@ -555,16 +555,25 @@ function recordUsage(runDir, step, role, model, result, latencyMs, target) {
  * @returns {string|null} 相对路径（/ 分隔），未找到返回 null
  */
 function resolveChangelogPath(target) {
-  const topLevel = `docs/changelog/${target}.md`;
+  // run-01 修复：target 归一化带 v 前缀——--target 1.3.5（无 v）时子目录文件名拼成
+  // v1.3/1.3.5.md（缺 v）导致 precheck 提取为空、coverage 人工补救。归一化后两种传法等价。
+  const norm = target.startsWith('v') ? target : `v${target}`;
+  const topLevel = `docs/changelog/${norm}.md`;
   if (existsSync(join(REPO_ROOT, topLevel))) {
     return topLevel;
   }
-  // 递归扫 docs/changelog/ 下的 v1.x 等子目录，找 TARGET.md
+  // 递归扫 docs/changelog/ 下的 v1.x 等子目录，找 TARGET.md（按 major.minor 猜目录再全扫兜底）
   const changelogDir = join(REPO_ROOT, 'docs/changelog');
   if (existsSync(changelogDir)) {
+    // 猜测目录：v1.3.5 → v1.3/（major.minor）
+    const mm = norm.match(/^v(\d+\.\d+)\.\d+/);
+    if (mm) {
+      const guess = `docs/changelog/v${mm[1]}/${norm}.md`;
+      if (existsSync(join(REPO_ROOT, guess))) return guess;
+    }
     for (const sub of readdirSync(changelogDir, { withFileTypes: true })) {
       if (!sub.isDirectory() || !sub.name.startsWith('v')) continue;
-      const candidate = `docs/changelog/${sub.name}/${target}.md`;
+      const candidate = `docs/changelog/${sub.name}/${norm}.md`;
       if (existsSync(join(REPO_ROOT, candidate))) {
         return candidate;
       }
@@ -2330,6 +2339,8 @@ async function main() {
   // ═══════════════════════════════════════════════════════════
   const MAX_FIX_ROUNDS = 3;
   const F_STEPS = ['f-diagnose', 'f-fix', 'f-audit'];
+  // run-01 假 PASS 修复：f-audit 真实结果跨迭代传递（保守判定，见下方收敛逻辑）
+  let lastAuditGateResult = null;
   // v1.2.8 功能⑦：resume 模式从断点恢复已完成 F 轮数，从 fixRoundsRun+1 继续
   let fixRoundsRun = resumeFixRoundsRun;
 
@@ -2351,6 +2362,10 @@ async function main() {
           console.log(`     → driver 步骤（role:null），执行 ${stepDef.driverFn}`);
           const auditResult = await base.runAuditGate(runDir, fStep, round);
           console.log(`     audit gate: passed=${auditResult.passed} exitCode=${auditResult.exitCode}`);
+          // run-01 假 PASS 修复：把 f-audit 的真实 passed 传出循环外供收敛判定用。
+          // 原 bug：返回值只打日志被扔掉，外层用「audit-result.md 不含 VIOLATIONS」
+          // 文本判定（COMMIT FAILED 时不含 VIOLATIONS → 乐观 true → verdict 被强改 PASS）。
+          lastAuditGateResult = auditResult;
           completedSteps++;
         } else {
           // LLM 步骤：spawn worker
@@ -2370,13 +2385,25 @@ async function main() {
     // 但重跑 verdict 意味着再 spawn 一个 V worker——这里走轻量路径：
     // 如果 f-audit passed=true，认为本轮修复有效，跳出 F 链。
     // 如果 f-audit passed=false（有违规），继续下一轮 F 链。
+    //
+    // run-01 假 PASS 修复：判定源从「audit-result.md 文本不含 VIOLATIONS」（乐观默认 true，
+    // COMMIT FAILED / EXECUTION FAILED 时不含 VIOLATIONS → 假收敛）改为
+    // 「runAuditGate 真实返回 passed + 产物存在性」双重信号：
+    //   - lastAuditGateResult.passed === true 且 audit-result.md 无 FAIL 标记 → 收敛
+    //   - f-audit 从未执行（异常跳过）→ 不收敛，进下一轮
     const auditResultPath = join(runDir, 'audit-result.md');
-    let auditPassed = true; // 默认乐观
-    if (existsSync(auditResultPath)) {
+    let auditPassed = false; // 保守默认（run-01 教训：乐观默认 = 假 PASS 温床）
+    if (lastAuditGateResult) {
+      auditPassed = lastAuditGateResult.passed === true;
+    }
+    if (auditPassed && existsSync(auditResultPath)) {
       const auditText = readFileSync(auditResultPath, 'utf-8');
-      if (auditText.includes('VIOLATIONS')) {
+      if (auditText.includes('COMMIT FAILED') || auditText.includes('EXECUTION FAILED') || auditText.includes('❌ VIOLATIONS')) {
         auditPassed = false;
       }
+    }
+    if (!lastAuditGateResult) {
+      console.warn(`  ⚠️  [F/${round}] f-audit 无执行结果（异常跳过），不判收敛——继续下一轮`);
     }
 
     if (auditPassed) {

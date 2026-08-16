@@ -1,5 +1,5 @@
 // ============================================================
-// protocol.ts · L2 团队协作协议核心（v1.3.4 交付 T02）
+// protocol.ts · L2 团队协作协议核心（v1.3.5 交付 T02）
 //
 // 五大机制的协议核心实现：
 //   1. 共享态（SharedState）—— team-state.ts（CRDT 文档）
@@ -14,7 +14,7 @@
 import { randomUUID } from 'crypto';
 import type { TeamStateDoc, FeedbackEntry, MemberState } from './team-state';
 import { appendFeedback } from './team-state';
-import * as Automerge from 'automerge';
+import type { Doc } from '@automerge/automerge';
 
 // ────────────────────────────────────────────────────────────
 // 冲突消解（协议设计 §3）
@@ -116,7 +116,7 @@ export function resolveConflict(parties: TeamConflictParty[]): ConflictResolutio
  * @returns 持有锁的成员（冲突方），无冲突返回 null
  */
 export function detectFileLockConflict(
-  doc: Automerge.Doc<TeamStateDoc>,
+  doc: Doc<TeamStateDoc>,
   filePath: string,
   writerAgentId: string,
 ): MemberState | null {
@@ -159,9 +159,9 @@ export interface AmplifyFeedbackInput {
  * @returns 更新后的文档（feedback[] 已追加）
  */
 export function amplifyFeedback(
-  doc: Automerge.Doc<TeamStateDoc>,
+  doc: Doc<TeamStateDoc>,
   input: AmplifyFeedbackInput,
-): Automerge.Doc<TeamStateDoc> {
+): Doc<TeamStateDoc> {
   const entry: FeedbackEntry = {
     id: randomUUID(),
     agentId: input.agentId,
@@ -179,7 +179,7 @@ export function amplifyFeedback(
 /**
  * 获取团队全部反馈条目（按时间升序）。
  */
-export function getFeedback(doc: Automerge.Doc<TeamStateDoc>): FeedbackEntry[] {
+export function getFeedback(doc: Doc<TeamStateDoc>): FeedbackEntry[] {
   return [...doc.feedback].sort((a, b) => a.ts.localeCompare(b.ts));
 }
 
@@ -187,7 +187,7 @@ export function getFeedback(doc: Automerge.Doc<TeamStateDoc>): FeedbackEntry[] {
  * 获取指定类型的反馈条目（如 quality_rule 用于 Refine Agent 质量规则集）。
  */
 export function getFeedbackByType(
-  doc: Automerge.Doc<TeamStateDoc>,
+  doc: Doc<TeamStateDoc>,
   type: FeedbackType,
 ): FeedbackEntry[] {
   return doc.feedback.filter((f) => f.type === type).sort((a, b) => a.ts.localeCompare(b.ts));

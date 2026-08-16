@@ -1,6 +1,6 @@
 # sofagent 行业印证与生态定位 · Validation
 
-> v1.3.4 · 2026-08-14 · 孔放勋
+> v1.3.5 · 2026-08-16 · 孔放勋
 
 > **本文档从四个维度回答一个问题：行业有没有独立验证 sofagent 的直觉？**
 >
@@ -11,7 +11,7 @@
 >
 > 四个维度共同指向同一结论：**不管你的 Agent 怎么搭、在哪跑，它需要一个独立的约束层。**
 >
-> v1.3.4 · 2026-08-14（UTC）· 孔放勋
+> v1.3.5 · 2026-08-16（UTC）· 孔放勋
 
 ---
 
@@ -130,6 +130,25 @@ Harness 的另一价值点是**「不依赖 AI 也能守门」**。当 LLM 不�
 
 > 📖 来源：DeerFlow 2.0 README（github.com/bytedance/deer-flow），2026-02-28 登顶 GitHub Trending #1
 
+### DeepSeek Harness：模型厂商验证「Harness 独立于模型」
+
+DeepSeek 2026-08-13 开源 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)（`Agent = Model + Harness` 公式的开源运行时，100.5k stars · MIT · developer preview）：[Cordis](https://github.com/cordiverse/cordis) 微内核只管插件加载/卸载/依赖解析，模型适配器、工具注册表、会话日志、Agent 循环本身全是插件——**厂商级验证了「Harness 独立于模型、可整体组合替换」的品类判断**。
+
+与 DeerFlow 同为运行时（河），sofagent 同为约束层（堤），但 DSH 的特殊价值在于它是**模型厂商**做的开源运行时，且其机制与 sofagent 深度同构：
+
+| 维度 | DeepSeek Harness | sofagent |
+|------|-----------------|----------|
+| 本质 | Agent 运行时（一切皆插件） | 约束层（Harness） |
+| 谁做的 | DeepSeek（模型厂商） | 开源社区 |
+| 可逆性 | 可撤销效应：每次修改记录逆操作，卸载逆序恢复 | git snapshot 回滚 + 审计日志记录「做了什么+如何撤销」 |
+| 事件留痕 | append-only Trajectory（恢复/分叉/回放共享事件流） | 审计日志 + decision-log |
+| 权限模型 | 两旋钮正交：沙箱（文件效果边界）× 审批（决策通道，fail-closed） | v1.3.7 场景驱动权限（设计轴对齐） |
+| 审计入口 | `tools/result` 观察不可变权威结果 | git diff 24 条规则（提交时） |
+
+**给我们的背书**：① 模型厂商把「模型之外的能力全拆成插件」——Harness 与模型解耦不是创业公司的一厢情愿，是头部模型厂商的路线判断；② Cordis 论文（[时空可组合性](https://github.com/cordiverse/paper)）「自进化的难点是修改后的可恢复与可协调，不是生成能力」与 sofagent「进化必须以可撤销为前置条件」同构；③ DSH 任务面板缺验收标准、修改流程缺回归声明（生态级 Eval 缺口）——sofagent 审计引擎正是补这个缺口的插件候选（v1.4.0 `@sofagent/cordis-plugin`）。
+
+> 📖 来源：[deepseek-ai/deepseek-harness](https://github.com/deepseek-ai/deepseek-harness) 官方仓库 docs/（architecture + cordis-tutorial，2026-08-15 核验），MIT
+
 ### Omnigent：meta-harness 把策略强制在基础设施层
 
 [Omnigent](https://github.com/omnigent-ai/omnigent)（Databricks 系团队开源，Apache-2.0，alpha，31 天 7091 star）自称 **meta-harness**——坐在 Claude Code / Codex / Pi 等 harness 之上的一层。它把我们的「Harness 中间件」判断又往前推了一步，给了两个可引用的硬证据：
@@ -198,6 +217,8 @@ Harness 的另一价值点是**「不依赖 AI 也能守门」**。当 LLM 不�
 ## 二、生态位：Agent 三层模型与 sofagent 的位置
 
 > 要理解 sofagent 在整个 Agent 生态中的位置，先看清这个生态的三层结构。sofagent 不是开发者框架的竞争者，也不是大厂 Agent 平台的替代品——它占据的是一个被三层夹击后依然空出来的生态位：**约束基础设施**。
+>
+> ⚠️ **「几层」术语导航**（三处「层」各自独立，勿混淆）：本节「三层」= Agent **生态位**三层（大厂平台/开发者框架/约束基础设施）；[ARCHITECTURE 心智模型](./ARCHITECTURE.md#心智模型先读这个) 的「双层」= sofagent **产品组织**（约束层 × 生命周期）；[ARCHITECTURE 四层运行形态](./ARCHITECTURE.md#四层运行形态企业-ai-从梳理到专属模型2026-08-16-定稿) 的「四层」= 企业 AI **运行形态**（梳理→编排→插件→模型）。三者是「生态怎么看 / 产品怎么组织 / 客户看到什么」三个维度。
 
 ### 三层架构——从终端用户到开发者到约束层
 
@@ -547,3 +568,9 @@ SMB 断层解释了"为什么需要中间件"，产品化四条回答"中间件�
 - **中国资本市场视角**：中信证券研报《OpenAI 与 Anthropic 加速布局企业级 AI 市场》从券商研究视角研判 FDE 驱动的企业 AI 布局，是前文美国 VC 视角之外新增的「中国机构级分析」角度。印证方向：中国一/二级市场机构已开始用 FDE 框架重估企业 AI 价值，与 sofagent「企业级 AI 治理控制平面」定位的本土资本共识正在形成。
 
 > 📖 来源：[《2026中国FDE人才白皮书》解读](https://zhuanlan.zhihu.com/p/2045876225479123453)（zhuanlan.zhihu.com，2026）· [中信证券：OpenAI 与 Anthropic 加速布局企业级 AI 市场](https://finance.sina.com.cn/stock/t/2026-05-15/doc-inhxxspq8174672.shtml)（finance.sina.com.cn，2026）
+
+### FDE 是「全环节 AI 化」的入口（软印证）
+
+DeepSeek Harness（DSH）开源后，一线从业者的通行判断是「垂直 Agent 的门槛大幅下降，FDE 应该扎进细分赛道，把全环节 AI 化」。这对 sofagent 的方向是一个**软印证**（个人观察转述，非权威机构数据，故不列为核心印证）：全环节 AI 化的前提是**先把环节梳理出来**——这正是 FDE 的第①层（梳理）价值。sofagent 与「直接在 DSH 运行时上做垂直产品」的玩家的差异也在这里：他们从③（插件）开始造，我们从①（梳理）开始——梳理过的企业，插件才装得进去。
+
+> 📖 来源：得到大脑《DeepSeek Harness 深度拆解》视频笔记（2026-08-16）——转述性质，仅作方向性软印证，不作硬证据。

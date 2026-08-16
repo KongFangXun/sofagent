@@ -167,3 +167,22 @@ export {
   moveOutboxToFailed,
   cleanupFailedOutbox,
 } from './push-target';
+
+// v1.3.5 交付 5 #1：FDE 陪跑期（部署后前 2 周每日 Refine 巡检）
+export {
+  runCompanionDaily,
+  getCompanionState,
+  COMPANION_DAYS,
+} from './companion';
+export type { CompanionState, CompanionRunResult } from './companion';
+
+// v1.3.5 交付 5 #4：FDE 节点注册表巡检（fde-registry.yaml cadence 调度）
+export { runFdeCompanionDaily } from './inspectors/fde-companion-daily';
+export { runFdeRegistryDaily } from './inspectors/fde-registry-daily';
+export { loadFDERegistry, highRiskNodes } from './fde-registry-loader';
+export type {
+  FDECadence,
+  FDERisk,
+  FDERegistryNode,
+  FDERegistryParseResult,
+} from './fde-registry-types';

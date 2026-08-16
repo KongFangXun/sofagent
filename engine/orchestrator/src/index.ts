@@ -602,3 +602,61 @@ export type {
   ExecutionTask,
   ExecutionResult,
 } from './execution-backend';
+
+// v1.3.5 交付 3：instinct→skill 自动进化（提取/评分/聚合/错题本）
+export {
+  extractInstincts,
+  parseThinkSections,
+  normalizePattern,
+  patternId,
+} from './instinct/extractor';
+export type { InstinctItem, ExtractOptions } from './instinct/extractor';
+export {
+  scoreInstinct,
+  scoreInstincts,
+  selectForInjection,
+  renderInjectionBlock,
+  DEFAULT_CONFIDENCE_THRESHOLD,
+  OCCURRENCE_SATURATION,
+} from './instinct/scorer';
+export type { ScoredInstinct } from './instinct/scorer';
+export {
+  evolveInstincts,
+  resolveCustomSkillDir,
+} from './instinct/evolver';
+export type { EvolveOptions, EvolveResult, EvolvedSkill } from './instinct/evolver';
+export {
+  appendFailure,
+  readFailureLog,
+  aggregateFailurePatterns,
+  failureLogPath,
+} from './instinct/failure-log';
+export type { FailureLogEntry } from './instinct/failure-log';
+
+// v1.3.5 交付 5 #2：FDE 进场记忆工程化（session-stop 捕获 + session-start 恢复）
+export {
+  captureFDESession,
+  restoreFDESession,
+  listFDESessions,
+  renderContextMd,
+  parseContextMd,
+  fdeSessionsDir,
+  fdeSessionDir,
+  fdeContextPath,
+  fdeCurrentSessionPath,
+} from './fde-session';
+export type { FDESessionContext, FDESessionMeta } from './fde-session';
+
+// v1.3.5 交付 5 #4：FDE 节点注册表（yaml schema 解析——daemon 消费方经本出口 import）
+export {
+  parseFDERegistry,
+  loadFDERegistry,
+  filterByCadence,
+  highRiskNodes,
+} from './fde-registry';
+export type {
+  FDECadence,
+  FDERisk,
+  FDERegistryNode,
+  FDERegistryParseResult,
+} from './fde-registry';

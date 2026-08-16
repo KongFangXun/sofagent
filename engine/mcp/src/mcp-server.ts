@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 // ============================================================
 // mcp-server.ts · MCP Server (Model Context Protocol)
-// v1.3.4: 拆分为 ≤300 行主文件 + tools/ 子目录按功能分组
-// v1.3.4: 从 @sofagent/audit 拆分为独立包 @sofagent/mcp
+// v1.3.5: 拆分为 ≤300 行主文件 + tools/ 子目录按功能分组
+// v1.3.5: 从 @sofagent/audit 拆分为独立包 @sofagent/mcp
 //
 // 协议：https://spec.modelcontextprotocol.io/
 // 传输：stdio（stdin/stdout，每行一个 JSON-RPC 消息）
@@ -66,6 +66,11 @@ import { marketInvoke } from './tools/market-invoke';
 import { marketRate } from './tools/market-rate';
 import { marketRetire } from './tools/market-retire';
 import { marketHarvestRule } from './tools/market-harvest-rule';
+// v1.3.5 交付 1+2：MCP 自进化闭环（ab-test ×2）+ 运维闭环（snapshot ×2）
+import { runAbTest } from './tools/run-ab-test';
+import { promoteAb } from './tools/promote-ab';
+import { snapshotList } from './tools/snapshot-list';
+import { snapshotRestore } from './tools/snapshot-restore';
 
 // ============================================================
 // 常量
@@ -242,6 +247,11 @@ class McpServer {
         case 'market_rate': { if (!args.capability_id || !args.rater_id || !args.owner_agent_id || typeof args.score !== 'number') { this.sendError(id, -32602, 'Missing required arguments: capability_id, rater_id, score, owner_agent_id'); break; } const mrr = await marketRate({ capability_id: args.capability_id as string, rater_id: args.rater_id as string, score: args.score as number, owner_agent_id: args.owner_agent_id as string, ...(typeof args.comment === 'string' ? { comment: args.comment } : {}) }); this.sendTool(id, mrr, mrr.isError); break; }
         case 'market_retire': { if (!args.capability_id || !args.action) { this.sendError(id, -32602, 'Missing required arguments: capability_id and action'); break; } const mtr = await marketRetire({ capability_id: args.capability_id as string, action: args.action as 'retire' | 'restore' | 'scan', ...(args.reason ? { reason: args.reason as 'owner_request' | 'low_invoke' | 'low_rating' | 'manual' } : {}), ...(args.confirmed !== undefined ? { confirmed: args.confirmed as boolean } : {}) }); this.sendTool(id, mtr, mtr.isError); break; }
         case 'market_harvest_rule': { const mhr = await marketHarvestRule({ ...(args.action ? { action: args.action as 'harvest' | 'full' } : {}), ...(args.case_texts ? { case_texts: args.case_texts as string[] } : {}) }); this.sendTool(id, mhr, mhr.isError); break; }
+        // v1.3.5 交付 1+2：MCP 自进化闭环 + 运维闭环
+        case 'run_ab_test': { if (!args.current || !args.candidate) { this.sendError(id, -32602, 'Missing required arguments: current and candidate'); break; } const abr = await runAbTest({ current: args.current as string, candidate: args.candidate as string, ...(typeof args.eval_set === 'string' ? { eval_set: args.eval_set } : {}), ...(typeof args.promote_threshold === 'number' ? { promote_threshold: args.promote_threshold } : {}), ...(typeof args.previous_wins === 'number' ? { previous_wins: args.previous_wins } : {}) }); this.sendTool(id, abr, abr.data.isError); break; }
+        case 'promote_ab': { if (!args.current || !args.candidate) { this.sendError(id, -32602, 'Missing required arguments: current and candidate'); break; } const pbr = await promoteAb({ current: args.current as string, candidate: args.candidate as string, ...(args.human_confirmed !== undefined ? { human_confirmed: args.human_confirmed === true } : {}), ...(typeof args.comment === 'string' ? { comment: args.comment } : {}) }); this.sendTool(id, pbr, pbr.data.isError); break; }
+        case 'snapshot_list': { const slr = snapshotList({ ...(typeof args.project_dir === 'string' ? { project_dir: args.project_dir } : {}), ...(typeof args.limit === 'number' ? { limit: args.limit } : {}) }); this.sendTool(id, slr, slr.data.isError); break; }
+        case 'snapshot_restore': { if (!args.sha) { this.sendError(id, -32602, 'Missing required argument: sha'); break; } const srr = await snapshotRestore({ sha: args.sha as string, ...(typeof args.project_dir === 'string' ? { project_dir: args.project_dir } : {}), ...(args.human_confirmed !== undefined ? { human_confirmed: args.human_confirmed === true } : {}), ...(typeof args.comment === 'string' ? { comment: args.comment } : {}) }); this.sendTool(id, srr, srr.data.isError); break; }
         default: this.sendError(id, -32602, `Unknown tool: ${toolName}`);
       }
     } catch (err) {

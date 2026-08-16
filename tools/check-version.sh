@@ -603,7 +603,7 @@ done < <(grep -rn "Current version: v[0-9]" --include="*.md" . 2>/dev/null | gre
 
 # v1.2.5 阶段八① 补：dashboard.html 当前版本活引用（logo 徽章 + 页脚署名）。
 # 只校验两处"当前版本"锚点；激活链里程碑标记（v1.2.5+ / ✅）属历史叙述，不校验。
-dash_html="${PROJECT_ROOT}/docs/demo/dashboard.html"
+dash_html="${PROJECT_ROOT}/tools/dashboard.html"
 if [[ -f "$dash_html" ]]; then
   for anchor in "logo-version\">v" "孔放勋 · v"; do
     found_ver=$(grep -F "$anchor" "$dash_html" | grep -oE "v[0-9]+\.[0-9]+(\.[0-9]+)?" | head -1 | sed 's/^v//')
@@ -909,6 +909,25 @@ if [[ -d "${MCP_SRC_DIR}" ]] && [[ -f "${SKILL_FILE}" ]]; then
   elif [[ -n "$SKILL_CLAIMED" ]]; then
     echo -e "  ${GREEN}✓${NC} MCP 工具数一致：${REGISTERED_COUNT} tools"
     CHECKS=$((CHECKS + 1))
+  fi
+  # v1.3.5 bugfix #3：ARCHITECTURE 能力总览表纳入扫描（此前只比对 SKILL.md，
+  #   :149 的「38 tools」漂移因此漏检）。⚠️ 只扫「能力与状态总览」到「对外核心能力」
+  #   之间的包结构表——:1036 附近的「四阶段×版本」历史对照表里的 27/390/696 是
+  #   v1.2.5 时点快照，属合法历史数据，不扫不改。
+  ARCH_FILE="${PROJECT_ROOT}/docs/ARCHITECTURE.md"
+  if [[ -f "${ARCH_FILE}" ]]; then
+    # 提取能力总览段（## 能力与状态总览 → ### 对外核心能力）中的「（N tools）」声称
+    ARCH_CLAIMED=$(sed -n '/^## 能力与状态总览/,/^### 对外核心能力/p' "${ARCH_FILE}" 2>/dev/null \
+      | grep -oE '（[0-9]+ tools）' | grep -oE '[0-9]+' | head -1)
+    if [[ -n "${ARCH_CLAIMED}" ]] && [[ "${ARCH_CLAIMED}" != "${REGISTERED_COUNT}" ]]; then
+      echo "  ❌ ARCHITECTURE 能力总览表声称 ${ARCH_CLAIMED} tools，mcp/src/ 注册 ${REGISTERED_COUNT} 个"
+      ERRORS=$((ERRORS + 1))
+    elif [[ -n "${ARCH_CLAIMED}" ]]; then
+      echo -e "  ${GREEN}✓${NC} ARCHITECTURE 能力总览工具数一致：${ARCH_CLAIMED} tools"
+      CHECKS=$((CHECKS + 1))
+    else
+      echo "  ⚠ ARCHITECTURE 能力总览表未找到「（N tools）」声称，跳过比对"
+    fi
   fi
 fi
 echo ""

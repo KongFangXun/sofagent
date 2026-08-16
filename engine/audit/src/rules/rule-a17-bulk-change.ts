@@ -2,7 +2,7 @@
 // A17 异常批量变更（安全层 · 工程规范）
 // 检测短时间内大量文件变更（Agent 失控/注入攻击信号）
 // evidenceMode: filesystem
-// v1.3.4 新增
+// v1.3.5 新增
 // ============================================================
 
 import type { AuditContext, RuleCheck } from './types';

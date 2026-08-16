@@ -6,16 +6,19 @@
 
 | 文件 | 用途 | 谁消费 |
 |------|------|--------|
-| `sofagent.png` | 项目 Logo（200px），README.md 头部引用 | GitHub README、npm 包页面 |
-| `favicon.png` | 网站图标 | HTML Dashboard（`<link rel="icon">`） |
+| `sofagent.png` | 项目 Logo（200px），README.md 头部引用 | GitHub README、npm 包页面、tools/dashboard.html:291 |
+| `banner.png` | README 头部横幅 | README.md:2 |
+| `dashboard.png` | Dashboard 驾驶舱截图 | README.md:130 |
+| `audit-terminal.png` | sofagent-audit 拦截 .env commit 的终端演示图 | README.md:122、README.en.md:122 |
+| ~~`favicon.png`~~ | ~~网站图标~~ | ~~HTML Dashboard（`<link rel="icon">`）~~ **已删除（2026-08-16）：声称被 dashboard `<link rel="icon">` 消费，实测 dashboard.html 无此标签，零真实引用** |
 | ~~`fde-training.html`~~ | FDE 训练材料页面（早期内部培训用，v1.3.2 已归档到 `docs/archive/fde-training-2026-07.html`） | 历史参考 |
 
 ## 与 dashboard.html 的关系
 
-`dashboard.html`（位于 `docs/demo/`，不在本目录）是 HTML Dashboard 主页面，
+`dashboard.html`（位于 `tools/`，不在本目录）是 HTML Dashboard 主页面，
 由 `tools/serve-dashboard.mjs` 提供服务。
 
-- `docs/demo/dashboard.html` → 开发者审计面板（localhost:3780）
+- `tools/dashboard.html` → 开发者审计面板（localhost:3780）
 
 ## 维护说明
 

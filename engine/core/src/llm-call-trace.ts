@@ -1,5 +1,5 @@
 // ============================================================
-// llm-call-trace.ts · LLM 调用级 Trace（v1.3.4 交付 11）
+// llm-call-trace.ts · LLM 调用级 Trace（v1.3.5 交付 11）
 //
 // 每次 LLM 请求写一条调用记录到 data/audit/runtime/llm-calls.jsonl
 // （append-only，HMAC 防篡改链）。

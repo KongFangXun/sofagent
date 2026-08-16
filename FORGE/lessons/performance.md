@@ -97,6 +97,24 @@ FORGE_MAX_CONCURRENCY=1 node FORGE/src/fresh-eyes-driver.mjs --target v1.2.9
 
 **铁律**：在内存受限环境启动 driver 前，先算并发上限。公式：`并发 ≤ floor((RAM - 3GB) / worker_heap_limit)`。
 
+### worker heap 降半 + 默认并发 4→2（2026-08-16 run-07 优化）
+
+> **来源**（run-07，2026-08-16）：并发 1 下整轮 ~60-75 分钟，瓶颈实测不在工具（run_bash 全部 0.0s 级）而在 LLM 生成——24 worker 串行 + 每 worker 多轮 ReAct 流式生成。提速靠并发，而并发的天花板被 worker heap 挡住。
+
+**洞察**：run-09 定的 2048MB heap 是「零窗口模式 a-check+b-check 并行 + generateReportWithoutTools 裸 LLM 调用」场景的保守值。但 run-07 实测 worker 主负载是 grep/read 型轻内存操作，1024MB 足够——**上限≠占用，降上限不改变实际用量，只改变 OOM 保险丝的位置**。
+
+**改动**（fresh-eyes-driver.mjs，2026-08-16）：
+| 项 | 旧 | 新 | 理由 |
+|----|----|----|------|
+| worker `--max-old-space-size` | 2048 | **1024** | 实测负载轻；降半后并发 2 总 heap ≤2GB |
+| `MAX_CONCURRENCY` 默认 | 4 | **2** | 8GB 新均衡点：2×1GB + driver 1GB + 系统 2GB ≈ 5GB，余量 3GB |
+
+**新的并发公式参数**（heap=1GB）：8GB 机器安全并发 = floor((8-3)/1) = 5 → **保守取 2**（留 GLM API 并发余量）；16GB+ 机器可 `FORGE_MAX_CONCURRENCY=4`。
+
+**回退条件**：若再遇 worker OOM（stderr 含 heap out of memory / SIGKILL 静默死亡），heap 回调 2048 并回退并发 1——说明轻负载假设在该场景不成立。
+
+**不影响在跑的 run**：driver 主进程启动时代码已加载进内存，改磁盘 .mjs 对运行中进程零影响（本条改动在 run-07 运行中完成并验证）。
+
 ### 流式输出：stream 替代 invoke
 
 `agent.stream(streamMode: 'updates')` 实时打印工具调用进度。`invoke()` 阻塞 5-8 分钟用户盯空白，stream 体感提升 ×2-3。

@@ -1,5 +1,5 @@
 // ============================================================
-// contracts.ts · Ontology 内核契约四类（v1.3.4 交付 1）
+// contracts.ts · Ontology 内核契约四类（v1.3.5 交付 1）
 //
 // 设计来源：Palantir §3.5 启发——四类不可省的建模骨架：
 //   CORE-OBJ  对象契约：entity/concept 是什么（name/type/properties/required）

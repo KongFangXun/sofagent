@@ -544,7 +544,7 @@ fi
 # ① logo-version 徽章 ② 页脚署名行。激活链里程碑标记（v1.2.5+ / ✅ 历史）不 bump。
 # 🔴 用 node 而非 bash ${//} 参数替换：bash 3.2 对 109KB 大字符串做 ${//} 时
 #    内存暴涨被 macOS jetsam 杀死（exit 137）——阶段八实测锁定。node 处理稳定。
-dash_html="$PROJECT_ROOT/docs/demo/dashboard.html"
+dash_html="$PROJECT_ROOT/tools/dashboard.html"
 if [[ -f "$dash_html" ]]; then
   export SOFAGENT_BUMP_DASH_WRITE="0"
   if ! $DRY_RUN; then SOFAGENT_BUMP_DASH_WRITE="1"; fi

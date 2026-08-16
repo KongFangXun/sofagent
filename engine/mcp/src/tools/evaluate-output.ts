@@ -1,5 +1,5 @@
 // ============================================================
-// evaluate-output.ts · MCP tool：用 golden set 评估 Agent 产出（v1.3.4 S2 新增）
+// evaluate-output.ts · MCP tool：用 golden set 评估 Agent 产出（v1.3.5 S2 新增）
 // ============================================================
 //
 // 复用 @sofagent/eval 的 runEval()

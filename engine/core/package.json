@@ -1,6 +1,6 @@
 {
   "name": "@sofagent/core",
-  "version": "1.3.4",
+  "version": "1.3.5",
   "description": "sofagent 核心运行时 — doctor / 配置解析 / 通用类型（不含审计逻辑）",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -19,7 +19,8 @@
     "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
     "build": "npm run clean && tsc",
     "test": "vitest run",
-    "check": "tsc --noEmit"
+    "check": "tsc --noEmit",
+    "postbuild": "node -e \"const fs=require('fs');for(const b of ['dist/cli.js']){try{fs.chmodSync(require('path').join(__dirname,b),0o755)}catch(e){}}\""
   },
   "keywords": [
     "sofagent",
@@ -37,10 +38,10 @@
     "url": "https://github.com/KongFangXun/sofagent/issues"
   },
   "homepage": "https://github.com/KongFangXun/sofagent#readme",
-  "//": "automerge 精确锁版 1.0.1-preview.7：稳定版（2.x）API 不兼容本项目 CRDT 同步用法；preview 版是唯一可用版本，升级需验证 multi-device-sync 测试全绿后再放开",
+  "//": "v1.3.5 交付 4b：automerge 已切 @automerge/automerge ^3.4.1（与 orchestrator 同步切换，旧包名废弃）；federation.ts 迁移点 init/change/clone/merge，联邦合并测试验证收敛语义",
   "dependencies": {
-    "automerge": "1.0.1-preview.7",
-    "js-yaml": "^5.2.0"
+    "@automerge/automerge": "^3.4.1",
+    "js-yaml": "^5.3.0"
   },
   "files": [
     "dist/",

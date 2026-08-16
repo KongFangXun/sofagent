@@ -15,6 +15,22 @@ import * as path from 'path';
 import * as os from 'os';
 import { commitSnapshot, listSnapshots } from '../filesystem/isomorphic-git';
 
+// v2 存储格式适配（2026-08-16 磁盘治理）：snapshots.json 现为 { version:2, blobs, snapshots[fileIndex] }
+// 旧断言直接读磁盘期望 v1 形状（files: path→content）——此 helper 透明还原，断言意图不变。
+function hydrateLatest(data: { version?: number; blobs?: Record<string, string>; snapshots: Array<{ sha: string; timestamp: string; fileIndex?: Record<string, string>; files?: Record<string, string> }> }) {
+  const latest = data.snapshots[data.snapshots.length - 1];
+  if (!latest) return undefined;
+  if (data.version === 2 && latest.fileIndex) {
+    const files: Record<string, string> = {};
+    for (const [p, h] of Object.entries(latest.fileIndex)) {
+      files[p] = data.blobs?.[h] ?? '';
+    }
+    return { ...latest, files };
+  }
+  return latest;
+}
+
+
 describe('isomorphic-git 快照密钥脱敏（交付 1 · P0）', () => {
   let tmpDir: string;
 
@@ -40,7 +56,7 @@ describe('isomorphic-git 快照密钥脱敏（交付 1 · P0）', () => {
     // 读取 snapshots.json，验证密钥已被脱敏
     const snapshotsPath = path.join(tmpDir, '.sofagent', '.git-shadow', 'snapshots.json');
     const data = JSON.parse(fs.readFileSync(snapshotsPath, 'utf-8'));
-    const latest = data.snapshots[data.snapshots.length - 1];
+    const latest = hydrateLatest(data);
     const content = latest.files['config.txt'];
 
     // 原始 AKIA 密钥不应出现在快照中
@@ -57,7 +73,7 @@ describe('isomorphic-git 快照密钥脱敏（交付 1 · P0）', () => {
 
     const snapshotsPath = path.join(tmpDir, '.sofagent', '.git-shadow', 'snapshots.json');
     const data = JSON.parse(fs.readFileSync(snapshotsPath, 'utf-8'));
-    const latest = data.snapshots[data.snapshots.length - 1];
+    const latest = hydrateLatest(data);
     const content = latest.files['secrets.env'];
 
     expect(content).not.toContain(ghToken);
@@ -72,7 +88,7 @@ describe('isomorphic-git 快照密钥脱敏（交付 1 · P0）', () => {
 
     const snapshotsPath = path.join(tmpDir, '.sofagent', '.git-shadow', 'snapshots.json');
     const data = JSON.parse(fs.readFileSync(snapshotsPath, 'utf-8'));
-    const latest = data.snapshots[data.snapshots.length - 1];
+    const latest = hydrateLatest(data);
     const content = latest.files['app.ts'];
 
     expect(content).not.toContain(apiKey);
@@ -110,7 +126,7 @@ describe('isomorphic-git 快照密钥脱敏（交付 1 · P0）', () => {
 
     const snapshotsPath = path.join(tmpDir, '.sofagent', '.git-shadow', 'snapshots.json');
     const data = JSON.parse(fs.readFileSync(snapshotsPath, 'utf-8'));
-    const latest = data.snapshots[data.snapshots.length - 1];
+    const latest = hydrateLatest(data);
 
     // fixtures/ 目录下的文件不应出现在快照中
     expect(latest.files).not.toHaveProperty(path.join('fixtures', 'leak-sample.txt'));
@@ -129,7 +145,7 @@ describe('isomorphic-git 快照密钥脱敏（交付 1 · P0）', () => {
 
     const snapshotsPath = path.join(tmpDir, '.sofagent', '.git-shadow', 'snapshots.json');
     const data = JSON.parse(fs.readFileSync(snapshotsPath, 'utf-8'));
-    const latest = data.snapshots[data.snapshots.length - 1];
+    const latest = hydrateLatest(data);
 
     expect(latest.files).not.toHaveProperty('.env.example');
     expect(latest.files).toHaveProperty('index.ts');
@@ -146,7 +162,7 @@ describe('isomorphic-git 快照密钥脱敏（交付 1 · P0）', () => {
 
     const snapshotsPath = path.join(tmpDir, '.sofagent', '.git-shadow', 'snapshots.json');
     const data = JSON.parse(fs.readFileSync(snapshotsPath, 'utf-8'));
-    const latest = data.snapshots[data.snapshots.length - 1];
+    const latest = hydrateLatest(data);
 
     expect(latest.files).not.toHaveProperty('rules.test.ts');
     expect(latest.files).toHaveProperty('main.ts');

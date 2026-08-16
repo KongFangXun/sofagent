@@ -1,7 +1,7 @@
 // ============================================================
 // audit-history.ts · audit history chain integrity (sunk to core)
 //
-// v1.3.4: Sunk from @sofagent/audit/audit-history.ts to eliminate
+// v1.3.5: Sunk from @sofagent/audit/audit-history.ts to eliminate
 // core's reverse dependency on audit (core → audit is forbidden;
 // core is the zero-upper-layer-dependency base package).
 //

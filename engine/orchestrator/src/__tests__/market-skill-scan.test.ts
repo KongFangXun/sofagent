@@ -26,7 +26,8 @@ function tmpDir(): string {
   return dir;
 }
 
-describe('market-skill-scan SkillScan 安全门', () => {
+// v1.3.5 阶段五：全量并行 IO 争用偶发超时——文件级 timeout 20s
+describe('market-skill-scan SkillScan 安全门', { timeout: 20000 }, () => {
   let testDir: string;
 
   beforeEach(() => {

@@ -39,7 +39,8 @@ function makeMeta(overrides: Partial<CapabilityMetadata> = {}): CapabilityMetada
   };
 }
 
-describe('market-invoke 能力调用闭环', () => {
+// v1.3.5 阶段五：全量并行跑时本文件偶发 IO 争用超时（单跑稳定绿）——文件级 timeout 提至 20s
+describe('market-invoke 能力调用闭环', { timeout: 20000 }, () => {
   let testDir: string;
   let skillDir: string;
 

@@ -104,6 +104,7 @@ sofagent（https://github.com/KongFangXun/sofagent）。不管当前处于什么
 ---
 
 ### 🔍 视角五 [5]：开源审查员
+> 📌 **v1.3.5 校准（run-07 教训）**：审查 worker 自己的测试 fixture（假密钥/空目录/测试 commit）可能污染被审仓库——发现「根目录可疑文件」时先辨别是不是上轮审查残留（作者 t@t.com / AWS 示例 key AKIAIOSFODNN7EXAMPLE 是典型指纹）。worker 残留不是仓库的 bug，是审查工具的债（v1.3.6 worktree 隔离根治）。
 
 你在 GitHub 上 review 过 500+ 个开源项目。你有一套快速判断方法：先看目录结构和 git log，几分钟内形成第一印象。
 
@@ -154,6 +155,9 @@ sofagent（https://github.com/KongFangXun/sofagent）。不管当前处于什么
 ---
 
 ### 🤖 视角八 [8]：数字侦探
+
+> 📌 **v1.3.5 校准（run-07 教训）**：发版前跑审查时版本一致性天然处于中间态——registry 落后本地 / tag 未打 / URL 指向未来 tag 这类 finding 在「push+tag+publish」后自动消失，**默认 SKIP 不报**（判别口径见 releasing/04-quality-loop.md）。把中间态当发现 = 给修复者制造噪音。
+
 
 前面几轮都靠直觉和经验。这一轮换一种脑子：**你只看数字。** 文档里的每一个数字声称，跟代码里的实际数字——对得上吗？
 
@@ -294,6 +298,8 @@ sofagent（https://github.com/KongFangXun/sofagent）。不管当前处于什么
 ---
 
 ### 🏛️ 视角十六 [16]：资深架构师
+
+> 📌 **v1.3.5 校准（run-07 教训）**：driver 的 a-consolidate 可能 stall 降级（fallback 拼接代替完整合并）——降级轮的 finding 清单不完整是工具降级不是仓库干净，终判要回原始 per-perspective 报告核对，别把「合并报告说无发现」当成「无发现」。
 
 你是有 15 年经验的架构师，评审过几十个系统的设计文档。你不是来挑错别字的——你在评估**架构决策的合理性和论证质量**。
 

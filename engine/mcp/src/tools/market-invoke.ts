@@ -1,5 +1,5 @@
 // ============================================================
-// market-invoke.ts · MCP tool: market_invoke（v1.3.4 交付 2）
+// market-invoke.ts · MCP tool: market_invoke（v1.3.5 交付 2）
 //
 // 能力调用——发现能力 → 挂载调用 → 结果回流。
 // 挂载前强制 SkillScan（DANGEROUS 拦截 / SUSPICIOUS 走 HITL）。
@@ -7,7 +7,6 @@
 // 复用 @sofagent/orchestrator 的 market/invoker.ts。
 // executor 注入——MCP 层默认返回 dry-run 结果（真实执行由 Agent runtime 接入）。
 // ============================================================
-
 // 测试注入：MCP 单测不调真实被测能力——经 setInvokeTestExecutor 注入 fake executor
 let _testExecutor: ((input: { capabilityId: string; sourcePath: string; input: unknown }) => Promise<unknown>) | null = null;
 

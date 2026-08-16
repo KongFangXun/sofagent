@@ -1,4 +1,4 @@
-<!-- role-orchestrate.md · 编排岗位规范 · v1.3.4 -->
+<!-- role-orchestrate.md · 编排岗位规范 · v1.3.5 -->
 <!-- 按需加载：task type = orchestrate 时注入 -->
 
 # ⛓️ 编排岗位规范（role-orchestrate）
@@ -24,7 +24,7 @@
 - **工具隔离**：每个节点独立 gate 实例，节点间不共享 gate
 - **数据流三层**：实时数据走 State / 知识数据走 entity / 状态标记双写
 
-## Session Goals（v1.2.7 新增）
+## Session Goals
 
 设置 goal 后，每轮结束后用轻量模型评估是否满足完成条件：
 - `PASS` → stopReason='goal-met'

@@ -1,5 +1,5 @@
 // ============================================================
-// team-manager.ts · 团队生命周期管理（v1.3.4 交付 T02）
+// team-manager.ts · 团队生命周期管理（v1.3.5 交付 T02）
 //
 // 职责：
 //   1. 建队——从 team.yml 解析成员 → 初始化 CRDT 文档
@@ -16,7 +16,8 @@ import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { randomUUID } from 'crypto';
 import * as yaml from 'js-yaml';
-import * as Automerge from 'automerge';
+import { change } from '@automerge/automerge';
+import type { Doc } from '@automerge/automerge';
 import { loadEnvConfig } from '@sofagent/core';
 
 import type { TeamStateDoc, MemberState, TeamSyncChannel, TaskState } from './team-state';
@@ -170,7 +171,7 @@ export interface TeamManagerOptions {
  * 持久化路径：`<dataDir>/teams/<teamId>/team-state.automerge`
  */
 export class TeamManager {
-  private doc: Automerge.Doc<TeamStateDoc>;
+  private doc: Doc<TeamStateDoc>;
   private readonly teamId: string;
   private readonly dataDir: string;
   private readonly syncChannel: TeamSyncChannel;
@@ -199,7 +200,7 @@ export class TeamManager {
   }
 
   /** 获取当前 CRDT 文档（只读——外部不应直接修改） */
-  getState(): Automerge.Doc<TeamStateDoc> {
+  getState(): Doc<TeamStateDoc> {
     return this.doc;
   }
 
@@ -323,7 +324,7 @@ export class TeamManager {
    * @param success 是否成功（false → status='failed'）
    */
   collectResult(taskId: string, result: string, success: boolean): void {
-    this.doc = Automerge.change(this.doc, (d) => {
+    this.doc = change(this.doc, (d) => {
       const task = d.tasks[taskId];
       if (task) {
         task.status = success ? 'done' : 'failed';
@@ -453,7 +454,7 @@ export class TeamManager {
   }
 
   /** 从磁盘恢复或初始化 CRDT 文档 */
-  private loadOrInit(teamYaml: TeamYaml): Automerge.Doc<TeamStateDoc> {
+  private loadOrInit(teamYaml: TeamYaml): Doc<TeamStateDoc> {
     if (existsSync(this.stateFilePath)) {
       try {
         const binary = new Uint8Array(readFileSync(this.stateFilePath));

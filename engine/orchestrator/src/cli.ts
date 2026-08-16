@@ -1,7 +1,7 @@
 #!/usr/bin/env node
-// orchestrator CLI · v1.3.4
+// orchestrator CLI · v1.3.5
 //
-// loop 子命令 v1.3.4 升级：默认走 LangGraph StateGraph 节点级流转
+// loop 子命令 v1.3.5 升级：默认走 LangGraph StateGraph 节点级流转
 // （engineer→audit→reviewer→human_confirm），支持 --resume 从 checkpoint
 // 恢复。旧版串行路径通过 --legacy 保留兼容。
 
@@ -34,6 +34,10 @@ async function main() {
     console.log('                                   --node-filter 只激活指定节点');
     console.log('  run-enterprise [--workflow <path>]');
     console.log('                                   v1.2.8: 从 workflow.yml 构建图 + 逐节点执行企业 Agent');
+    console.log('  evolve [--data-dir <dir>] [--skill-dir <dir>] [--threshold <n>]');
+    console.log('                                   v1.3.5: /evolve 聚合器——从 think.md + decision-log + 错题本');
+    console.log('                                   提取 instinct，置信度达标聚合成 skill 写入运行时目录');
+    console.log('                                   （缺省 ~/.sofagent/skill/custom/）');
     process.exit(0);
   }
 
@@ -353,9 +357,61 @@ async function main() {
         process.exit(1);
       }
     }
+    case 'evolve': {
+      // v1.3.5 交付 3：/evolve 聚合器 CLI 挂载点
+      // extractInstincts（think.md + decision-log + 错题本）→ evolveInstincts
+      // （置信度达标聚合成 skill 写入运行时 skill 目录）。
+      // 🔴 skillDir 必须显式可控——测试/冒烟指向 tmpdir，绝不污染真实
+      // ~/.sofagent/skill/custom/（evolver.ts 铁律：只写运行时目录）。
+      const evolveDataDirIdx = args.indexOf('--data-dir');
+      const evolveSkillDirIdx = args.indexOf('--skill-dir');
+      const evolveThresholdIdx = args.indexOf('--threshold');
+      const { loadEnvConfig } = await import('@sofagent/core');
+      const evolveDataDir = evolveDataDirIdx !== -1 && args[evolveDataDirIdx + 1]
+        ? args[evolveDataDirIdx + 1]!
+        : loadEnvConfig().dataDir;
+      const evolveSkillDir = evolveSkillDirIdx !== -1 ? args[evolveSkillDirIdx + 1] : undefined;
+      const evolveThreshold = evolveThresholdIdx !== -1 ? parseFloat(args[evolveThresholdIdx + 1]!) : undefined;
+      if (evolveThresholdIdx !== -1 && Number.isNaN(evolveThreshold)) {
+        console.error('❌ evolve --threshold 需要数值（如 0.7）');
+        process.exit(1);
+      }
+
+      const { extractInstincts } = await import('./instinct/extractor');
+      const { evolveInstincts } = await import('./instinct/evolver');
+
+      const instincts = extractInstincts({ dataDir: evolveDataDir });
+      console.log(`🌱 提取到 ${instincts.length} 条 instinct（来源：think.md + decision-log + 错题本）`);
+
+      if (instincts.length === 0) {
+        console.log('ℹ️ 提取到 0 条 instinct，未产生进化产物');
+        break;
+      }
+
+      const result = evolveInstincts(instincts, {
+        skillDir: evolveSkillDir,
+        threshold: evolveThreshold,
+      });
+
+      if (result.skills.length > 0) {
+        console.log('');
+        console.log(`✅ 聚合出 ${result.skills.length} 个进化 skill（写入 ${result.skillDir}）：`);
+        for (const skill of result.skills) {
+          console.log(`  - ${skill.name}（${skill.instinctCount} 条 instinct）`);
+          console.log(`    SKILL.md: ${skill.skillMdPath}`);
+          console.log(`    overrides: ${skill.overridesPath}`);
+        }
+      } else {
+        console.log('ℹ️ 无 instinct 达到聚合门槛，未产生进化产物');
+      }
+      if (result.leftover.length > 0) {
+        console.log(`   散-instinct（达标未成组，留给下轮）: ${result.leftover.length} 条`);
+      }
+      break;
+    }
     default:
       console.error(`❌ sofagent 提示：不支持的子命令 "${subcommand}"`);
-      console.error('   可用子命令: compose | subagent | loop | compare | activate | run-enterprise');
+      console.error('   可用子命令: compose | subagent | loop | compare | activate | run-enterprise | evolve');
       process.exit(1);
   }
 }

@@ -1,11 +1,11 @@
 // ============================================================
-// task-stats.ts · @daily 任务成功率统计（v1.3.4 · P1b）
+// task-stats.ts · @daily 任务成功率统计（v1.3.5 · P1b）
 // ============================================================
 //
 // @daily：读 history.jsonl → 聚合任务成功率（按 commitSha 或 task 文本聚合）
 //
 // 数据源：{data}/audit/history.jsonl
-// 产出：{data}/dashboard/task-stats-YYYY-MM-DD.json
+// 产出：{data}/dashboard/task-***REDACTED***.json
 //
 // schema：
 //   {date, totalTasks, passRate, warnRate, failRate, failedTasks}
@@ -146,7 +146,7 @@ export function runTaskStats(_projectDir: string): InspectorResult {
     topViolationRules,
   };
 
-  // 写入 task-stats-YYYY-MM-DD.json
+  // 写入 task-***REDACTED***.json
   const reportPath = join(dashboardDir, `task-stats-${today}.json`);
   try {
     const dir = dirname(reportPath);

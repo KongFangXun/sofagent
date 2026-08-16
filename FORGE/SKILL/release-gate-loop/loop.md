@@ -7,7 +7,7 @@
 
 1. **V 只验证不修复**：V 的 5 步全部纯只读（铁律）。V 只验证 + 生成报告，不做修复。工具集只有只读工具。
 2. **F 只修复 V 指出的问题**：F 读 V 的 verdict 报告 → 定位根因 → 改代码（最小改动）。改完 driver 自动跑 audit。
-3. **验-改循环（v1.2.8）**：verdict FAIL 时触发 F 步骤链 → f-diagnose → f-fix → f-audit → 新一轮 V 全量重验。最大 3 轮。
+3. **验-改循环**：verdict FAIL 时触发 F 步骤链 → f-diagnose → f-fix → f-audit → 新一轮 V 全量重验。最大 3 轮。
 4. **确定性优先**：跑的是确定性清单（acceptance-test.sh + regression-checklist），不是直觉审查。双盲审查是 fresh-eyes-loop 的专利。
 5. **步骤崩溃不中断**：某步子进程崩溃，继续执行后续步骤，verdict 基于不完整数据判 FAIL。
 
@@ -16,10 +16,10 @@
 | 角色 | 身份 | 动作 | 产物 |
 |------|------|------|------|
 | **V** | 验证者 | 5 步串行验证 | `acceptance.md` → `regression.md` → `coverage.md` → `stage6-report.md` → `verdict.md` |
-| **F** | 修复者 (v1.2.8) | verdict FAIL 后修复代码 | `fix-plan.md` → `fix-summary.md` → `audit-result.md` |
+| **F** | 修复者 | verdict FAIL 后修复代码 | `fix-plan.md` → `fix-summary.md` → `audit-result.md` |
 | **driver** | 当前会话 | 中转文件、建 `runs/`、复制报告到桌面、写 `LEDGER.md` | `runs/` 目录 + LEDGER 行 |
 
-## 目录约定（v1.2.8 新增 round 层级）
+## 目录约定（round 层级）
 
 ```
 ~/.sofagent/data/forge-runs/release-gate-loop/YYYY-MM-DD/run-NN/
@@ -50,7 +50,7 @@
 ⑤ verdict     → PASS/FAIL 裁决                               → 产物 verdict.md
 ```
 
-### F 修复阶段（verdict FAIL 时触发，v1.2.8 新增）
+### F 修复阶段（verdict FAIL 时触发）
 
 ```
 ⑥ f-diagnose  → F 读 verdict.md → 定位根因 → 写 fix-plan.md

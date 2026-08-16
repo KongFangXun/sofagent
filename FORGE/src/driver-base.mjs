@@ -580,8 +580,14 @@ export function createForgeDriverBase(config = {}) {
       const filesToAdd = [...changedFiles, ...untrackedFiles];
       if (filesToAdd.length > 0) {
         execSync(`git add ${filesToAdd.map(quotePath).join(' ')}`, { cwd: repoRoot, encoding: 'utf-8', timeout: 30_000 });
+        // 🔴 v1.3.5 修复：裸 `git commit -m` 会提交暂存区里所有已 staged 内容——
+        // 会把队友并行编辑时先 `git add` 进暂存区的文件（如 docs/ 规划文档）一起卷进
+        // auto-commit（2026-08-16 三次「卷走」事故根因）。改为 `git commit -- <files>`
+        // 只提交本轮 filesToAdd 清单内的文件，暂存区里队友的文件保持 staged 原状。
+        execSync(`git commit -m "${commitMsg}" -- ${filesToAdd.map(quotePath).join(' ')}`, { cwd: repoRoot, encoding: 'utf-8', timeout: 30_000 });
       }
-      execSync(`git commit -m "${commitMsg}"`, { cwd: repoRoot, encoding: 'utf-8', timeout: 30_000 });
+      // 无代码领域改动时：不执行任何 commit——裸 commit 在 filesToAdd 为空时仍会
+      // 提交暂存区里队友已 staged 的文件，必须显式跳过。
     } catch (err) {
       // commit 可能因为 "nothing to commit" 而失败——这是正常的（B/F 可能没改任何东西）
       const msg = String(err.message || '');

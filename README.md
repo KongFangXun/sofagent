@@ -5,24 +5,22 @@
 <p align="center">
   <a href="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml"><img src="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml/badge.svg" alt="Verify" /></a>
   <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-brightgreen" alt="License: MIT" /></a>
-  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.3.4-16B8F3" alt="Version" /></a>
+  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.3.5-16B8F3" alt="Version" /></a>
 </p>
 
 <p align="center">
   <a href="README.en.md">English</a> · <a href="#这是什么">这是什么</a> · <a href="#快速开始">快速开始</a> · <a href="#fde-方法论">FDE 方法论</a> · <a href="#三个入口从-30-秒到全套部署">三个入口</a> · <a href="#为什么选-sofagent">为什么选</a> · <a href="#文档">文档</a> · <a href="https://github.com/KongFangXun/sofagent">⭐ Star</a>
 </p>
 
-> v1.3.4 · 2026-08-14 · 孔放勋
+> v1.3.5 · 2026-08-16 · 孔放勋
 
 ---
 
 ## 这是什么
 
-**sofagent 是一个开源 FDE Agent**（MIT）——进场帮你梳理业务工作流，把能自动化的环节变成 AI 节点；交付完成后 FDE 离场，AI 节点继续 7×24 自动执行任务，每次干活受审计、越界能拦截、出事能回滚。
+**sofagent 是一个开源 FDE Agent**（MIT）——进场帮你梳理业务工作流，把能自动化的环节变成 AI 节点；交付完成后 FDE 离场，AI 节点继续 7×24 自动执行任务，每次干活受审计、越界能拦截、出事能回滚。它以 [FDE Skill](https://clawhub.ai) 形态在 ClawHub 分发（帮 FDE 做 FDE 的方法论 Skill），装到企业设备后以**约束层引擎**长期运行（审计 + 回溯 + 注入 + daemon 监控）。
 
 > 📊 **为什么是现在**：MIT NANDA 实验室《生成式人工智能的鸿沟》报告指出，全球企业过去三年在生成式 AI 上烧了三四百亿美元，**95% 的项目没能产生能写进财务报表的价值**；与此同时，一个叫「前线部署工程师」（Forward Deployed Engineer，FDE）的岗位发布量一年涨了 **729%**（Indeed 2025 数据）。模型不稀缺了，能把模型塞进客户真实业务里的人，才稀缺——sofagent 就是把这件事工程化的开源底座。（数据核验与多机构口径对照见 [VALIDATION §一·治理缺口的代价](./docs/VALIDATION.md#治理缺口的代价三项联网核验证据)，FDE 经济账见 [VALIDATION §四](./docs/VALIDATION.md#四市场印证行业判断被市场买单)。）
-
-> 📌 sofagent 在 [ClawHub](https://clawhub.ai) 上以 **FDE Skill** 分发（帮 FDE 做 FDE 的方法论 Skill），装到企业设备后以**约束层引擎**长期运行（审计 + 回溯 + 注入 + daemon 监控）。
 
 ```mermaid
 graph LR
@@ -59,7 +57,7 @@ graph LR
 
 **治理保障**
 
-- 🔍 **零配置审计**——`npx -y -p @sofagent/audit sofagent-audit`，任何 git 仓库 3 秒审计最近一次 commit
+- 🔍 **零配置审计**——`npx -y -p @sofagent/audit sofagent-audit`，任何 git 仓库秒级审计最近一次 commit（首次 npx 下载约 30 秒）
 - 🧱 **24 条审计规则**（17 默认启用 + 7 扩展可选）——密钥泄漏、越界编辑、注入防御、权限红线，git diff 硬证据判定，违规当场拦截
 - 🛡️ **自动快照回溯**——每次审计后自动存档，出事一键回到任意快照
 
@@ -73,7 +71,7 @@ npx -y -p @sofagent/audit sofagent-audit
 
 > 💡 `sofagent-audit` 是 quick 只读审计（审计最近一次 commit，默认安全无副作用）；`sofagent-audit-full` 是完整审计，需显式指定操作（如 `--diff <range>` / `--init` 等）。
 >
-> ⚠️ **quick 模式范围**：quick 是零配置快速审计，跑 **22/24 条规则**（不扫 A9 commit msg 注入 + A3 任务越界，这两项依赖 commit message / 任务描述输入，quick 模式无此输入）。完整 24 条防护（commit msg 注入拦截 + 越界检查 + hook 自动审计）需 `--init` 安装 git hook 走完整引擎。详见 [LIMITATIONS §三](./docs/LIMITATIONS.md#三安全与信任模型局限)。
+> ⚠️ **quick 模式范围**：quick 是零配置快速审计，跑 **17 条默认规则**（A3 任务越界 / A9 commit msg 注入无输入跳过，需日志的规则走降级判定；**7 条扩展规则默认不加载**——完整 24 条 = 17 默认 + 7 扩展）。完整防护（commit msg 注入拦截 + 越界检查 + hook 自动审计）需 `--init` 安装 git hook 走完整引擎。详见 [LIMITATIONS §三](./docs/LIMITATIONS.md#三安全与信任模型局限)。
 
 拦截特定格式密钥泄漏时是这样的（真实输出）：
 
@@ -86,7 +84,7 @@ npx -y -p @sofagent/audit sofagent-audit
 **完整安装**（Node.js ≥ 18，先下载审查再执行）——**装在企业跑 AI 节点的设备上**：
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/KongFangXun/sofagent/main/bootstrap.sh -o bootstrap.sh
+curl -fsSL https://raw.githubusercontent.com/KongFangXun/sofagent/refs/tags/v1.3.4/bootstrap.sh -o bootstrap.sh
 less bootstrap.sh          # 先看一眼脚本内容，确认安全
 bash bootstrap.sh && rm bootstrap.sh
 sofagent-audit --init      # 装 git hook，之后每次 commit 自动审计
@@ -95,7 +93,7 @@ sofagent-audit --doctor    # 验证环境（可选）
 
 > 💡 所有安装脚本只写入 `~/.sofagent/`，不修改系统文件。`--no-verify` 可绕过本地 hook——sofagent 防的是诚实 Agent 的疏忽，不是恶意绕过；高安全场景请在 CI 侧加 `sofagent-audit --diff` 兜底。详见 [LIMITATIONS](./docs/LIMITATIONS.md)。
 >
-> 📌 **install.sh 是企业设备安装器**——装在跑 AI 节点的服务器/电脑上，给 Agent 当监控约束层（审计 + 回溯 + 注入 + daemon 巡检 + 单机 dashboard）。FDE 自己的电脑不需要跑 install.sh，FDE 的工具是 [FDE Skill](https://clawhub.ai)（方法论）+ 未来 商业模型层 模型。详见 [部署架构](./docs/ARCHITECTURE.md#安装包边界与部署架构v132-定位校准)。
+> 📌 **install.sh 是企业设备安装器**——装在跑 AI 节点的服务器/电脑上，给 Agent 当监控约束层（审计 + 回溯 + 注入 + daemon 巡检 + 单机 dashboard）。FDE 自己的电脑不需要跑 install.sh，FDE 的工具是 [FDE Skill](https://clawhub.ai)（方法论）。详见 [部署架构](./docs/ARCHITECTURE.md#安装包边界与部署架构v132-定位校准)。
 >
 > 📌 **bootstrap.sh 和 install.sh 的关系**：bootstrap.sh 是 install.sh 的一行下载包装器——`curl bootstrap.sh | bash` 等价于"下载 install.sh + 运行 install.sh"。两个脚本装的东西完全一样，bootstrap 只是省去手动 clone/下载的步骤。
 
@@ -157,7 +155,7 @@ graph LR
 
 | 入口 | 做什么 | 装在哪 | 花多久 |
 |------|--------|--------|:----:|
-| **`npx -y -p @sofagent/audit sofagent-audit`** | 零配置审计最近一次 commit，3 秒出结果 | 任意 git 仓库（临时） | 30 秒 |
+| **`npx -y -p @sofagent/audit sofagent-audit`** | 零配置审计最近一次 commit，秒级出结果（首次 npx 约 30 秒） | 任意 git 仓库（临时） | 30 秒 |
 | **`--ruleset` 规则市场** | 加载安全等规则集，或自定义 JSON 规则 | 同上 | 1 分钟 |
 | **GitHub Action** | 每次 PR 自动审计，违规标注在 diff 行上 | CI/CD | 配置一次 |
 | **install.sh 全套** | 审计 + 回溯 + 注入 + daemon 巡检 + dashboard——Agent 的完整监控约束层 | **企业设备**（跑 AI 节点的服务器/电脑） | FDE 驻场安装 |
@@ -178,6 +176,17 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # 加载安全规�
 - **方法论路径**（零依赖）：读 [FDE/GUIDE.md](./FDE/GUIDE.md)，按手册手动梳理工作流，Excel + 人脑也能跑
 - **工具路径**（Node.js ≥ 18）：FDE 在企业设备上跑 install.sh 装好约束层后，用自己的 AI 工具说"帮我做 FDE 诊断"，Agent 从进场开始引导
 
+## v1.3.5 新能力
+
+> 🧠 **v1.3.5 新能力**（按主题分组）：
+> - **MCP 自进化+运维闭环**：🧬 4 个新 MCP tool（run_ab_test 发起 A/B 实验 / promote_ab 晋升·强制人审 / snapshot_list 快照时间线 / snapshot_restore 恢复·强制人审）· 52 tools 全景
+> - **instinct→skill 自动进化**：🌱 think.md + decision-log + 错题本三源提取判断模式 → 置信度评分（≥0.7 注入）→ /evolve 聚合成 skill 自动写入运行时目录 · 进化产物带 DSH 插件形态预留
+> - **FDE 运维五件**：🤝 陪跑期（部署后两周每日 Refine 巡检）/ 进场记忆工程化 / 错题本 / FDE 节点注册表（daemon 按表巡检）/ 审计问卷脚本化（7 行业模板）
+> - **依赖安全升级**：🔒 npm audit 全清零（vitest critical CVSS 9.8 漏洞链修复 →4.1.10）· automerge 1.x→3.x 稳定版（Rust WASM 核心，包名切换）
+> - **DSH MCP 互通**：🔌 sofagent 可作为 MCP server 被 DSH（DeepSeek Harness）等任何 MCP 宿主调用——52 tools 经 stdio 即挂即用，破坏性操作人审语义不降级（详见 HANDBOOK）
+> - **四份独立审查加固**：🛡️ fresh-eyes 四份 16 视角审查发现 38 项问题全部修复——影子审计器防线激活（doctor 哈希基线 + --reset-baseline）/ 门禁假绿清零（场景守卫复活 + install 退出码诚实）/ 泄漏清理 / post-commit 绕过检测
+> 详见 [v1.3.5 开发日志](./docs/changelog/v1.3/v1.3.5.md)。更早版本见 [CHANGELOG](./CHANGELOG.md)。
+
 ## 为什么选 sofagent
 
 | 维度 | 通用 Agent 框架 | sofagent |
@@ -192,15 +201,7 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # 加载安全规�
 
 > 🔬 **外部独立实验证据**（非官方自测）：Joel Niklaus 的 harness-optimization 研究（[研究代码仓库](https://github.com/JoelNiklaus/harness-optimization)，数据见仓库内实验）显示，同一模型不改权重、仅优化外层 Harness，法律 Agent 基准从 **63.4% → 80.1%（+16.7pp）**。详见 [THANKS.md](./docs/THANKS.md)。
 
-> 🧪 **工程可信度**：2235 测试 / 12 包（全绿，实测见 `tools/test-count.sh`）· 24 条审计规则 · fresh-eyes 独立审查持续运行（审查工具见 [FORGE/playbook/fresh-eyes-review.md](./FORGE/playbook/fresh-eyes-review.md)）。
-
-> 🧠 **v1.3.4 新能力**（按主题分组）：
-> - **L3 组织能力市场**：🏪 五环闭环（发布→发现→调用→评价→养护）· 6 个 market MCP tool（publish / search / invoke / rate / retire / harvest_rule）· 评分公式 trust × 评分 × log(调用量+1)
-> - **SkillScan 安全门**：🛡️ 发布/安装双触发静态扫描 · 三态判定（SAFE / SUSPICIOUS / DANGEROUS）· 复用 skillopt 扫描引擎不重复建设
-> - **评估体系三步**：📊 真实案例长规则（rule-harvest）→ Benchmark 评委（rule-jury）→ 晋升规则（rule-promote，evidence 三件套）
-> - **编排层与执行层分离**：🔌 ExecutionBackend 接口 + DSH 执行后端接入（rc 版本守卫拦截，自动 fallback LangGraph）· FORGE 两 driver 迁移
-> - **市场审计留痕**：📜 DecisionKind 加 MARKET（市场动作专用审计分型）· daemon 双巡检（目录日更 L1 + 健康周检 L2）
-> 详见 [v1.3.4 开发日志](./docs/changelog/v1.3/v1.3.4.md)。更早版本见 [CHANGELOG](./CHANGELOG.md)。
+> 🧪 **工程可信度**：2283 测试 / 12 包（全绿，实测见 `tools/test-count.sh`）· 24 条审计规则 · fresh-eyes 独立审查持续运行（审查工具见 [FORGE/playbook/fresh-eyes-review.md](./FORGE/playbook/fresh-eyes-review.md)）。
 
 ## 文档
 

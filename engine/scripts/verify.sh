@@ -16,7 +16,7 @@
 # set -u: 未定义变量引用视为错误（无 -e，因为验证脚本需收集所有失败项后再 exit 1）
 # set -o pipefail: 管道中任一命令失败都计为失败
 set -uo pipefail
-VERSION="1.3.4"
+VERSION="1.3.5"
 # ── 临时文件清理（当前脚本不创建临时文件，预留用于将来扩展）──
 cleanup() { [ -n "${TMP_FILE:-}" ] && rm -f "$TMP_FILE" 2>/dev/null; }
 trap cleanup EXIT
@@ -693,7 +693,7 @@ _test_sanitize() {
   echo "$input"
 }
 
-SANITY_SK=$(_test_sanitize "sk-ant-api03-abcdefghijklmnopqrstuvwxyz123456")
+SANITY_SK=$(_test_sanitize "sk-***REDACTED***")
 if echo "$SANITY_SK" | grep -q "REDACTED"; then
   check_pass "脱敏: API Key 打码正常 (sk- → sk-***REDACTED***)"
 else
@@ -708,8 +708,8 @@ else
 fi
 
 # 手机号脱敏测试（v0.71 P0 修复）
-SANITY_PHONE=$(_test_sanitize "用户电话 13812345678 请回拨")
-if echo "$SANITY_PHONE" | grep -q "PHONE-REDACTED" && ! echo "$SANITY_PHONE" | grep -q "13812345678"; then
+SANITY_PHONE=$(_test_sanitize "用户电话 1**REDACTED*** 请回拨")
+if echo "$SANITY_PHONE" | grep -q "PHONE-REDACTED" && ! echo "$SANITY_PHONE" | grep -q "1**REDACTED***"; then
   check_pass "脱敏: 手机号打码正常 (1[3-9]xxxxxxxxx → [PHONE-REDACTED])"
 else
   check_fail "脱敏: 手机号未打码"

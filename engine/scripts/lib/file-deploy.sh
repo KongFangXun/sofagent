@@ -3,7 +3,7 @@
 # 导出：deploy_constitution / deploy_skill_files / deploy_scripts
 
 deploy_constitution() {
-  info "Step 4/7 · 部署宪法文件 → $TARGET"; mkdir -p "$TARGET"
+  info "Step 4 · 部署宪法文件 → $TARGET"; mkdir -p "$TARGET"
   # OpenClaw: fde.md → skills/sofagent/（~/.openclaw/fde.md 留给用户自定义）；其他平台 → $TARGET/
   if [ "$PLATFORM" = "openclaw" ]; then
     local RULES_DST_DIR="${TARGET}/skills/sofagent"; mkdir -p "$RULES_DST_DIR"
@@ -35,7 +35,7 @@ deploy_constitution() {
   fi
 }
 deploy_skill_files() {
-  info "Step 5/7 · 部署 Skill 文件 → $TARGET/skills/sofagent"
+  info "Step 5 · 部署 Skill 文件 → $TARGET/skills/sofagent"
   local SKILL_SRC="${SCRIPT_DIR}/SKILL/harness"
   local SKILL_MAIN="${SCRIPT_DIR}/SKILL/SKILL.md"
   local SKILL_DST="${TARGET}/skills/sofagent"; mkdir -p "$SKILL_DST"; local copied=0 f src dst
@@ -229,7 +229,7 @@ _merge_custom_dir() {
 deploy_scripts() {
   # P0-2/P0-3 修复：配套脚本和 .sofagent/ 对所有平台均执行
   [ "${LITE_MODE:-0}" = "1" ] && { info "Lite 模式：跳过配套脚本 + 数据目录"; return 0; }
-  info "Step 5b/7 · 部署配套脚本 + 数据目录 → $TARGET"
+  info "Step 5b · 部署配套脚本 + 数据目录 → $TARGET"
   local SCRIPTS_DST="${TARGET}/scripts"; mkdir -p "$SCRIPTS_DST"; local script src dst
   for script in task-record.sh cleanup.sh audit.sh; do
     src="${SCRIPT_DIR}/engine/scripts/${script}"; dst="${SCRIPTS_DST}/${script}"

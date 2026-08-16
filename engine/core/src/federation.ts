@@ -1,6 +1,6 @@
 // ============================================================
 // federation.ts · 联邦/巡检共用实现(下沉）
-// v1.3.4 从 @sofagent/daemon 下沉——audit 此前用变量名 + any 动态 import
+// v1.3.5 从 @sofagent/daemon 下沉——audit 此前用变量名 + any 动态 import
 //   daemon 的 checkConflict/mergeFederationResults，失去类型安全、运行时才报错。
 //   现在实现位于 core（零上层依赖底座），audit 静态 import 获得编译期类型。
 //   daemon 侧保留 re-export shim（federation/merge.ts、inspectors/*）保证兼容。
@@ -8,7 +8,7 @@
 
 import { readdirSync, readFileSync, existsSync } from 'fs';
 import { join, relative } from 'path';
-import * as Automerge from 'automerge';
+import { init, change, clone, merge } from '@automerge/automerge';
 import { TRUST_ORDER, type Trust } from './memory-contract';
 
 // ────────────────────────────────────────────────────────────
@@ -128,8 +128,8 @@ export function mergeFederationResults(
   }
 
   // 2. 本地文档（基础文档）
-  let doc = Automerge.init<MergeDoc>();
-  doc = Automerge.change(doc, (d) => {
+  let doc = init<MergeDoc>();
+  doc = change(doc, (d) => {
     d.entries = {};
     for (const item of local) {
       d.entries[item.id] = winners.get(item.id) ?? item;
@@ -139,13 +139,13 @@ export function mergeFederationResults(
   // 3. 每个 peer 从当前合并文档分叉（clone）写入自身条目后 merge 回来——
   //    共享版本史的 CRDT 合并才能完整收敛
   for (const fedResult of remote) {
-    let peerDoc = Automerge.clone(doc);
-    peerDoc = Automerge.change(peerDoc, (d) => {
+    let peerDoc = clone(doc);
+    peerDoc = change(peerDoc, (d) => {
       for (const item of fedResult.results) {
         d.entries[item.id] = winners.get(item.id) ?? item;
       }
     });
-    doc = Automerge.merge(doc, peerDoc);
+    doc = merge(doc, peerDoc);
   }
 
   // 4. 展开为数组 + source 标注 + 排序（trust 降 → mtime 降）

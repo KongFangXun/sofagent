@@ -1,10 +1,10 @@
 // ============================================================
-// verify.ts · v1.3.4 新增：审计证据链验证命令
+// verify.ts · v1.3.5 新增：审计证据链验证命令
 // --verify-chain: 校验 HMAC hash chain 完整性 + 报告断链位置
 // --verify-commit <hash>: 检查某个 commit 是否有对应审计记录
 // ============================================================
 
-import { loadHistory, checkHistoryChainDetailed } from '../audit-history';
+import { loadHistory, checkHistoryChainDetailed, getHistoryFilePath } from '../audit-history';
 import { resolveDataDir } from '@sofagent/core';
 
 /**
@@ -14,9 +14,13 @@ export function runVerifyChain(): void {
   const history = loadHistory();
 
   if (history.length === 0) {
-    console.log('无审计历史记录。');
-    console.log('运行 sofagent-audit --diff <range> 后会自动记录审计历史。');
-    process.exit(0);
+    // v1.3.5 #27: 空历史不再 exit 0——「校验通过」的语义陷阱：
+    // 删光 history.jsonl 的攻击者跑校验会得到绿灯。对齐 runVerifyCommit 的 exit 1。
+    // 两种空态（文件不存在 / 文件存在但 0 行）loadHistory 均返回 []，此处统一处理。
+    console.log('  ⚠️ 审计历史为空——若你曾有审计记录，历史可能被清空，请核查。');
+    console.log('  （全新安装且从未运行过审计时为正常状态）');
+    console.log('  路径：' + getHistoryFilePath());
+    process.exit(1);
   }
 
   console.log(`\n  审计历史共 ${history.length} 条记录\n`);

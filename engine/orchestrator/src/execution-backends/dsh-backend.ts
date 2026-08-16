@@ -1,4 +1,4 @@
-// dsh-backend.ts · v1.3.4 增量 · DSH Cordis 运行时适配器
+// dsh-backend.ts · v1.3.5 增量 · DSH Cordis 运行时适配器
 //
 // 接入门禁结论（2026-08-14 核实更新）：
 // DSH（DeepSeek Harness）已于 2026-08-13 上架 npm：@deepseek-ai/dsh@0.1.0-rc.6（PR #2519 合并）。

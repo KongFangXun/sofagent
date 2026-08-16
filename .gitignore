@@ -65,3 +65,26 @@ sofagent-audit-*.tgz
 # pnpm 误生成防护（本项目用 npm）
 pnpm-lock.yaml
 pnpm-workspace.yaml
+npm-p4-test/
+p4npx/
+stranger-audit-test/
+t/
+c.txt
+
+# fresh-eyes worker 测试 fixture（run-07 教训：红队 worker 会创建这些文件测规则拦截）
+config.js
+config.local
+f.txt
+
+# 测试残留物防护（2026-08-16 根目录垃圾事件 + FORGE 教训）
+sofagent-npm-test/
+npm-p4-test/
+p4npx/
+t/
+stranger-audit-test/
+b.ts
+c.txt
+
+# TypeScript 增量编译缓存
+tsconfig.tsbuildinfo
+*.tsbuildinfo

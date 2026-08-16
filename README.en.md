@@ -5,7 +5,7 @@
 <p align="center">
   <a href="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml"><img src="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml/badge.svg" alt="Verify" /></a>
   <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-brightgreen" alt="License: MIT" /></a>
-  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.3.4-16B8F3" alt="Version" /></a>
+  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.3.5-16B8F3" alt="Version" /></a>
 </p>
 
 <p align="center">
@@ -16,9 +16,7 @@
 
 ## What is this
 
-**sofagent is an open-source FDE Agent** (Forward Deployed Engineer Agent) — it comes in and maps your business workflows, turning the automatable steps into AI nodes. Once delivery is complete, the FDE departs while the AI nodes keep running 7×24 on their own — every action is audited, out-of-bounds moves are blocked, and anything that breaks can be rolled back.
-
-> 📌 sofagent ships on [ClawHub](https://clawhub.ai) as an **FDE Skill** (a methodology skill that helps FDEs do FDE work), and once installed on enterprise devices it runs long-term as a **constraint-layer engine** (auditing + rollback + injection + daemon monitoring).
+**sofagent is an open-source FDE Agent** (Forward Deployed Engineer Agent) — it comes in and maps your business workflows, turning the automatable steps into AI nodes. Once delivery is complete, the FDE departs while the AI nodes keep running 7×24 on their own — every action is audited, out-of-bounds moves are blocked, and anything that breaks can be rolled back. It ships on [ClawHub](https://clawhub.ai) as an **FDE Skill** (a methodology skill that helps FDEs do FDE work), and once installed on enterprise devices it runs long-term as a **constraint-layer engine** (auditing + rollback + injection + daemon monitoring).
 
 > 📊 **Why now**: MIT NANDA Lab's *The GenAI Divide* report shows that over the past three years, global enterprises burned $30–40 billion on generative AI, yet **95% of projects failed to produce value worth putting on a financial statement**. Meanwhile, job postings for a role called "Forward Deployed Engineer" (FDE) surged **729%** year-over-year (Indeed 2025 data). Models are no longer scarce — the scarce thing is people who can embed models into real customer operations. sofagent is the open-source substrate that engineers this. (Data verification and cross-agency calibration: see [VALIDATION §1 · Cost of governance gaps](./docs/VALIDATION.md#治理缺口的代价三项联网核验证据); FDE economics: see [VALIDATION §4](./docs/VALIDATION.md#四市场印证行业判断被市场买单).)
 
@@ -35,10 +33,17 @@ graph LR
 
 | Dimension | Bare Agent (ChatGPT / Copilot) | sofagent |
 |:-----|:------|:------|
-| Change auditing | None | 24 rules on git diff, hard-evidence verdicts |
-| Out-of-bounds blocking | Relies on prompt self-discipline | Violations blocked on the spot + audit trail |
+| Change auditing | None (roll your own pre-commit + gitleaks) | 24 rules on git diff, hard-evidence verdicts |
+| Out-of-bounds blocking | Assemble the hooks yourself | Violations blocked on the spot + audit trail |
 | Rollback after breakage | Manually dig through commits | One-click snapshot restore to any point |
 | Experience accumulation | Starts from zero every time | Auto-captured into knowledge base, evolution capabilities under continuous iteration |
+
+> 📝 **Name cheatsheet** (five names, one sentence each):
+> - **sofagent** = the project name / repo name
+> - **FDE Agent** = the outward-facing product identity (entry → deployment → departure)
+> - **Constraint layer (Harness)** = the inward-facing technical identity (one layer, four capabilities: injection · audit · rollback · evolution)
+> - **FORGE** = internal development toolchain (for the project's own self-iteration; not public, never released standalone)
+> - **FDE Skill** = the Skill package distributed on ClawHub (methodology constraint files your AI tools load)
 
 ## Key Features
 
@@ -50,9 +55,47 @@ graph LR
 
 **Governance guarantees**
 
-- 🔍 **Zero-setup audit** — `npx -y -p @sofagent/audit sofagent-audit`, audits your last commit in any git repo in 3 seconds
-- 🧱 **24 audit rules** — secret leaks, out-of-scope edits, injection defense, privilege red lines — judged on hard git diff evidence, violations blocked on the spot
+- 🔍 **Zero-setup audit** — `npx -y -p @sofagent/audit sofagent-audit`, audits your last commit in any git repo in seconds (first npx download takes ~30s)
+- 🧱 **24 audit rules** (17 enabled by default + 7 optional extensions) — secret leaks, out-of-scope edits, injection defense, privilege red lines — judged on hard git diff evidence, violations blocked on the spot
 - 🛡️ **Automatic snapshot & rollback** — auto-archived after every audit, one-click restore to any snapshot
+
+## Quick Start
+
+**30 seconds, zero setup** — run an audit in any git repo:
+
+```bash
+npx -y -p @sofagent/audit sofagent-audit
+```
+
+> 💡 `sofagent-audit` is the quick read-only audit (audits the last commit, safe and side-effect-free by default); `sofagent-audit-full` is the full audit and requires an explicit operation (e.g. `--diff <range>` / `--init`).
+>
+> ⚠️ **Scope of quick mode**: quick is a zero-setup fast audit running the **17 default rules** (A3 task-scope / A9 commit-msg injection have no input and are skipped; rules needing logs fall back to degraded verdicts; **the 7 extension rules are not loaded by default** — the full 24 = 17 default + 7 extension). For full protection (commit-msg injection blocking + scope checks + hook auto-audit) run `--init` to install the git hooks and enter the full engine. See [LIMITATIONS](./docs/LIMITATIONS.md).
+
+Here's what it looks like when a known-format secret leak is blocked (real output):
+
+> ℹ️ Rule A2 detects known formats: AWS AKIA, OpenAI sk-*, GitHub ghp_, PEM private keys, etc.; generic secret shapes (bare `password=`, `secret` values) are intentionally out of scope — conservative design to avoid false positives. See [LIMITATIONS A2](./docs/LIMITATIONS.md#a2-密钥检测局限编码与格式绕过v125-披露).
+
+<p align="center">
+  <img src="docs/assets/audit-terminal.png" alt="sofagent-audit blocks a .env commit" width="860" />
+</p>
+
+**Full install** (Node.js ≥ 18, download and review before running):
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/KongFangXun/sofagent/refs/tags/v1.3.4/bootstrap.sh -o bootstrap.sh
+less bootstrap.sh          # review the script first, confirm it's safe
+bash bootstrap.sh && rm bootstrap.sh
+sofagent-audit --init      # install the git hook — every commit is audited from now on
+sofagent-audit --doctor    # verify the environment (optional)
+```
+
+> 💡 All install scripts only write to `~/.sofagent/` and never touch system files. `--no-verify` can bypass the local hook — sofagent guards against honest Agents' carelessness, not deliberate bypass; for high-security scenarios add `sofagent-audit --diff` on the CI side as a backstop. See [LIMITATIONS](./docs/LIMITATIONS.md).
+>
+> 📌 **install.sh is the enterprise device installer** — install it on the server/computer running the AI nodes, where it acts as the Agent's monitoring constraint layer (audit + rollback + injection + daemon inspection + single-machine dashboard). FDEs do not need to run install.sh on their own machines — the FDE's tools are [FDE Skill](https://clawhub.ai) (the methodology). See [deployment architecture](./docs/ARCHITECTURE.md#安装包边界与部署架构v132-定位校准).
+>
+> 📌 **How bootstrap.sh and install.sh relate**: bootstrap.sh is a one-line download wrapper around install.sh — `curl bootstrap.sh | bash` is equivalent to "download install.sh + run install.sh". Both scripts install exactly the same thing; bootstrap just saves you the manual clone/download step.
+
+More install options (clone install / full npx install / minimal install / enterprise deployment) in [HANDBOOK](./docs/HANDBOOK.md). Enterprise users who just want the FDE methodology for mapping workflows, see [FDE/README.md](./FDE/README.md) (zero dependencies, no Node.js needed).
 
 ## FDE Methodology
 
@@ -85,39 +128,17 @@ Deploying AI nodes is only step one — above we covered **how to map and where 
   <img src="docs/assets/dashboard.png" alt="sofagent Dashboard cockpit" width="100%" />
 </p>
 
-<p align="center"><sub>Dashboard cockpit: rule pass rate, audit tasks, violation trends — see at a glance what the AI is doing. After install, run <code>sofagent-dashboard --full</code> to launch</sub></p>
+<p align="center"><sub>Dashboard cockpit: rule pass rate, audit tasks, violation trends — see at a glance what the AI is doing.</sub></p>
 
-## Quick Start
-
-**30 seconds, zero setup** — run an audit in any git repo:
-
-```bash
-npx -y -p @sofagent/audit sofagent-audit
-```
-
-> 💡 `sofagent-audit` is the quick read-only audit (audits the last commit, safe and side-effect-free by default); `sofagent-audit-full` is the full audit and requires an explicit operation (e.g. `--diff <range>` / `--init`).
-
-Here's what it looks like when a known-format secret leak is blocked (real output):
-
-> ℹ️ Rule A2 detects known formats: AWS AKIA, OpenAI sk-*, GitHub ghp_, PEM private keys, etc.; generic secret shapes (bare `password=`, `secret` values) are intentionally out of scope — conservative design to avoid false positives. See [LIMITATIONS A2](./docs/LIMITATIONS.md#a2-密钥检测局限编码与格式绕过v125-披露).
-
-<p align="center">
-  <img src="docs/assets/audit-terminal.png" alt="sofagent-audit blocks a .env commit" width="860" />
-</p>
-
-**Full install** (Node.js ≥ 18, download and review before running):
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/KongFangXun/sofagent/main/bootstrap.sh -o bootstrap.sh
-less bootstrap.sh          # review the script first, confirm it's safe
-bash bootstrap.sh && rm bootstrap.sh
-sofagent-audit --init      # install the git hook — every commit is audited from now on
-sofagent-audit --doctor    # verify the environment (optional)
-```
-
-> 💡 All install scripts only write to `~/.sofagent/` and never touch system files. `--no-verify` can bypass the local hook — sofagent guards against honest Agents' carelessness, not deliberate bypass; for high-security scenarios add `sofagent-audit --diff` on the CI side as a backstop. See [LIMITATIONS](./docs/LIMITATIONS.md).
-
-More install options (clone install / full npx install / minimal install / enterprise deployment) in [HANDBOOK](./docs/HANDBOOK.md). Enterprise users who just want the FDE methodology for mapping workflows, see [FDE/README.md](./FDE/README.md) (zero dependencies, no Node.js needed).
+> 📊 **The Dashboard has three entries, each in its place**:
+>
+> | Entry | Command | Form | Who it's for |
+> |------|------|------|--------|
+> | **Terminal** | `sofagent-dashboard --full` | Terminal ASCII three-pane (zero frontend dependencies) | Developers / FDE quick check |
+> | **Web** | `node tools/serve-dashboard.mjs` | Browser visualization (localhost:3780) | Boss / IT visual review |
+> | **macOS double-click** | Double-click `start-dashboard.command` | macOS shortcut to the Web version (macOS double-click entry only) | macOS users |
+>
+> ⚠️ **The Dashboard is an ops panel for existing users, not a first-time experience entry.** Its data source is the audit records under `~/.sofagent/data/` — without having run `sofagent-audit` there is no data (the Web version falls back to sample data). First time here? Run `npx -y -p @sofagent/audit sofagent-audit` in your project first — the Dashboard only shows real data after that.
 
 ## Three Entries, from 30 Seconds to Full Deployment
 
@@ -131,7 +152,7 @@ graph LR
 
 | Entry | What it does | Time needed |
 |------|--------|:----:|
-| **`npx -y -p @sofagent/audit sofagent-audit`** | Zero-setup audit of the last commit, results in 3 seconds | 30 sec |
+| **`npx -y -p @sofagent/audit sofagent-audit`** | Zero-setup audit of the last commit, results in seconds (first npx ~30s) | 30 sec |
 | **`--ruleset` rule marketplace** | Load rulesets like security, or use custom JSON rules | 1 min |
 | **GitHub Action** | Auto-audit every PR, violations annotated on the diff lines | Set up once |
 | **FDE Agent** | Map workflows on-site → deploy AI nodes → 7×24 self-running | FDE residency |
@@ -150,6 +171,17 @@ Community rulesets are published as `sofagent-ruleset-*` npm packages and auto-d
 - **Methodology path** (zero dependencies): read [FDE/GUIDE.md](./FDE/GUIDE.md) and map workflows manually following the handbook — Excel + your own brain is enough
 - **Tooling path** (Node.js ≥ 18): after installing, tell your AI tool "run an FDE diagnosis for me" and the Agent guides you from the entry phase
 
+## New in v1.3.5
+
+> 🧠 **v1.3.5 new capabilities** (grouped by theme):
+> - **MCP self-evolution + ops loop**: 🧬 4 new MCP tools (run_ab_test A/B experiments / promote_ab promotion with mandatory human review / snapshot_list timeline / snapshot_restore recovery with mandatory human review) · 52 tools in total
+> - **instinct→skill auto-evolution**: 🌱 extracts recurring judgment patterns from think.md + decision-log + failure log → confidence scoring (≥0.7 gets injected) → /evolve aggregates into skills written to the runtime directory · evolution output carries a DSH plugin-shape reservation
+> - **FDE ops five-piece set**: 🤝 companionship period (daily Refine inspection for two weeks post-deploy) / onboarding memory engineering / failure log / FDE node registry (daemon inspects on schedule) / scripted audit questionnaire (7 industry templates)
+> - **Dependency security upgrades**: 🔋 npm audit fully clean (vitest critical CVSS 9.8 chain fixed →4.1.10) · automerge 1.x→3.x stable (Rust WASM core, package rename)
+> - **DSH MCP interop**: 🔌 sofagent works as an MCP server callable from DSH (DeepSeek Harness) or any MCP host — 52 tools over stdio, human-review semantics for destructive ops never degrade (see HANDBOOK)
+> - **Four independent review hardening**: 🛡️ All 38 issues found by four fresh-eyes 16-perspective reviews fixed — shadow-auditor defense activated (doctor hash baseline + --reset-baseline), gate false-greens eliminated (scenario guard revived + honest install exit codes), leak cleanup, post-commit bypass detection
+> See [v1.3.5 devlog](./docs/changelog/v1.3/v1.3.5.md). Earlier versions in [CHANGELOG](./CHANGELOG.md).
+
 ## Why sofagent
 
 | Dimension | Generic Agent frameworks | sofagent |
@@ -164,15 +196,7 @@ Community rulesets are published as `sofagent-ruleset-*` npm packages and auto-d
 
 > 🔬 **Independent external evidence** (not an official self-test): Joel Niklaus' harness-optimization research ([research code repository](https://github.com/JoelNiklaus/harness-optimization), data in the repo experiments) shows that with the same model and unchanged weights, optimizing only the outer harness lifted a legal-Agent benchmark from **63.4% → 80.1% (+16.7pp)**. See [THANKS.md](./docs/THANKS.md).
 
-> 🧪 **Engineering credibility**: 2235 tests / 12 packages (all green, verified via `tools/test-count.sh`) · 24 audit rules · fresh-eyes independent review continuously running (review tooling at [FORGE/playbook/fresh-eyes-review.md](./FORGE/playbook/fresh-eyes-review.md)).
-
-> 🧠 **v1.3.4 new capabilities** (grouped by theme):
-> - **L3 Organizational Capability Market**: 🏪 Five-ring loop (publish → discover → invoke → rate → maintain) · 6 market MCP tools (publish / search / invoke / rate / retire / harvest_rule) · ranking formula trust × rating × log(invocations+1)
-> - **SkillScan Security Gate**: 🛡️ Static scan on both publish & install sides · three-state verdict (SAFE / SUSPICIOUS / DANGEROUS) · reuses skillopt scan engine, no duplication
-> - **Three-Step Evaluation System**: 📊 Harvest rules from real cases (rule-harvest) → Benchmark as judge (rule-jury) → promote rules (rule-promote, evidence triple)
-> - **Orchestration/Execution Separation**: 🔌 ExecutionBackend interface + DSH execution backend (rc version guard, auto-fallback to LangGraph) · FORGE drivers migrated
-> - **Market Audit Trace**: 📜 DecisionKind adds MARKET (dedicated audit type for market actions) · daemon dual inspection (daily catalog L1 + weekly health L2)
-> See [v1.3.4 devlog](./docs/changelog/v1.3/v1.3.4.md). Earlier versions in [CHANGELOG](./CHANGELOG.md).
+> 🧪 **Engineering credibility**: 2283 tests / 12 packages (all green, verified via `tools/test-count.sh`) · 24 audit rules · fresh-eyes independent review continuously running (review tooling at [FORGE/playbook/fresh-eyes-review.md](./FORGE/playbook/fresh-eyes-review.md)).
 
 ## Docs
 

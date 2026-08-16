@@ -535,3 +535,22 @@ node FORGE/src/fresh-eyes-driver.mjs --target v1.2.9 2>&1
 **修复方向**（待实现）：F 修复链收敛条件应该是"重跑 V 阶段 verdict 从 FAIL 变 PASS"，而非"f-audit 无 VIOLATIONS"。当前逻辑把 audit（代码违规检测）和 verdict（验收阻塞裁决）混为一谈。
 
 **临时缓解**：人工核实——driver 报 PASS 但 status.json results 含 FAIL 时，必须读 verdict.md 确认 V 阶段裁决的真实状态，不信任 F 修复链的 FAIL→PASS 翻转。
+
+## 2026-08-16 git 灾难三连（仓库级 P0）
+
+**事件**：并行会话在主仓目录误操作三连——① 01:38 `git init`（c.txt "test" 为痕迹）重建 `.git`，本地全部提交历史丢失（无 remote 的 commit SHA 不可恢复）；② 23:45 前后 `git add -A` 把 765 个文件（含 node_modules 邻接测试目录）卷入暂存区；③ 主会话恢复时 `cp -R 远程快照 .` 又把工作区最新内容覆盖。
+
+**根因**：
+1. **git init 无害错觉**——在已有仓库目录跑 `git init` 不是"重新初始化"而是**重建 .git**（旧对象目录整体丢失），测试 git 行为必须在 /tmp 临时目录
+2. **git add -A 在 monorepo 是核弹**——必须逐文件 add；765 文件进暂存区后审计钩子被规则源码的检测样本触发海量误报，阻断一切 commit
+3. **恢复操作本身是最大风险源**——`cp -R A/. B/` 会静默覆盖 B 的新内容；恢复前必须先确认"哪个是超集"再单向恢复
+
+**救援立功者**：sofagent 自己的回溯引擎 `.sofagent/.git-shadow/snapshots.json`（1370 文件全文快照，commit 钩子自动打点）——1365 文件完整恢复，**审计引擎在审计轨迹本身被毁时救了全场**。Cordis「可撤销效应」的同款价值实证。
+
+**预防**（下次开发 sub-agent 必须遵守）：
+- sub-agent 的 git 写操作白名单化：只允许 `add <显式路径>` / `commit -- <显式路径>`，**禁止 `init` / `add -A` / 裸 `commit -m`（不带文件清单）/ `reset --hard` / `stash`**（在主仓）
+- 任何 git 实验测试（测 hook/测 init 行为）强制在 `/tmp/test-<随机>/` 进行
+- 恢复流程铁律：先 `diff -rq` 双向对账确认超集方向 → 快照（`cp -r` 到 /tmp）→ 再单向恢复
+- push 频率即安全边际：本地未推 commit 数 = 风险敞口，重要落盘当天推
+
+**补充教训（2026-08-16 同日，driver 裸 commit 卷走队友暂存）**：`git add -A` 是明面的核弹，**裸 `git commit -m`（不带文件清单）是暗面的核弹**——它会提交暂存区里**所有已 staged 内容**，把队友并行编辑时先 `git add` 进暂存区的文件（如 docs/ 规划文档）一起卷进 auto-commit。修复：`git commit -m "..." -- <filesToAdd 清单>`，只提交本轮改动文件，队友 staged 的文件保持原状；且 filesToAdd 为空时**完全跳过 commit**（不执行任何裸 commit）。已在 `driver-base.mjs runAuditGate` 修复（fresh-eyes + release-gate 两 driver 共用，一处生效两处）。

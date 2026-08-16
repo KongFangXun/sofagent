@@ -1,6 +1,6 @@
 // ============================================================
 // support-bundle.ts · 一键生成 issue 摘要 + 证据 zip
-// v1.3.4 新建 · 功能 ⑦
+// v1.3.5 新建 · 功能 ⑦
 //
 // 用法：sofagent-audit --support-bundle
 // 输出：data/support-bundles/<timestamp>-support-bundle.zip
@@ -150,7 +150,9 @@ function collectInstallInfo(): string {
  * @returns 生成的 zip 文件路径
  */
 export async function generateSupportBundle(outputDir?: string): Promise<string> {
-  const archiver = (await import('archiver')).default;
+  // v1.3.5 交付 4a：archiver 8 breaking——默认导出工厂函数 archiver('zip', opts)
+  // 改为命名导出类；zip 格式用 ZipArchive（构造参数只有 options，format 已内置）
+  const { ZipArchive } = await import('archiver');
   const { createWriteStream } = await import('fs');
 
   const bundleDir = outputDir ?? join(DATA_DIR, 'support-bundles');
@@ -169,7 +171,7 @@ export async function generateSupportBundle(outputDir?: string): Promise<string>
   // 打包 zip
   return new Promise<string>((resolve, reject) => {
     const output = createWriteStream(zipPath);
-    const archive = archiver('zip', { zlib: { level: 9 } });
+    const archive = new ZipArchive({ zlib: { level: 9 } });
 
     output.on('close', () => {
       // 检查 zip 大小

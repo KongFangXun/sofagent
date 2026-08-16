@@ -3,28 +3,26 @@ name: release-gate-loop
 description: 发版前自动验证闸门——V 验证 + F 修复循环（verdict FAIL → F 改代码 → 跑 audit → V 重验），最大 3 轮直到 PASS。纯只读验证 + 最小修复。
 emoji: 🚪
 color: "#F59E0B"
-version: 1.3.4
+version: 1.3.5
 ---
 
 # release-gate-loop · 发版闸门循环定义
 
-> **v1.2.8 升级：V 验证 FAIL 后触发 F 修复循环——F 读 verdict → 改代码 → 跑 audit → V 重验，最大 3 轮。**
->
-> v1.2.7 是线性 5 步跑完即出 PASS/FAIL。v1.2.8 在 FAIL 后自动修复，形成验-改闭环。
+> **V 验证 FAIL 后触发 F 修复循环——F 读 verdict → 改代码 → 跑 audit → V 重验，最大 3 轮。**
 
 ## 这是什么
 
 一套可复用的发版前自动验证闸门 + 自动修复。它描述：谁来做（V = 验证者 + F = 修复者）、怎么走（V 5 步验证 + F 3 步修复循环）、产物放哪（`runs/release-gate-loop/YYYY-MM-DD/run-NN/round-N/`）。
 
 - **V** = 验证者：跑 acceptance-test.sh、跑 regression-checklist、做覆盖率交叉检查、合并报告、出裁决。
-- **F** = 修复者（v1.2.8 新增）：V 裁决 FAIL 后，F 读 verdict 报告 → 定位根因 → 改代码 → driver 自动跑 audit → 回到 V 重验。
+- **F** = 修复者：V 裁决 FAIL 后，F 读 verdict 报告 → 定位根因 → 改代码 → driver 自动跑 audit → 回到 V 重验。
 - **driver（"我"，当前会话）**：在步骤间中转、维护 `runs/` 文件、复制报告到桌面。driver 不是 agent，只是编排层。
 
 ## 怎么用
 
 1. 读 `loop.md` 拿到完整 SOP（角色 / 步骤协议 / 产物 schema）。
 2. 5 步的行为指令在 `prompts/`（acceptance / regression / coverage / consolidate / verdict）。
-3. v1.2.8 新增 F 步骤指令在 `prompts/`（f-diagnose / f-fix）+ driver 自动执行 f-audit。
+3. F 步骤指令在 `prompts/`（f-diagnose / f-fix）+ driver 自动执行 f-audit。
 4. 跨 run 的永久索引在 `FORGE/LEDGER.md`（被 git 跟踪）；每次产物在 `runs/`（不进 git）。
 
 ## 实现载体
@@ -34,6 +32,10 @@ V 由 **Node driver**（`FORGE/src/release-gate-driver.mjs`）驱动——每个
 ## Session 监控协议（CRITICAL）
 
 **启动 driver 后，session 不是傻等，而是进入 sleep 轮询模式**——保持 working 状态，让用户感知"后台在干活"。
+
+### 🔴 启动前独占窗口检查
+
+**启动 driver 前，必须确认本仓库当前没有其他写操作会话在跑**——release-gate 的 worker 与主仓共享工作目录，git 基线被并发改写（restore / 回补 / 批量 commit）会直接杀死进程树。检查项与 fresh-eyes-loop SKILL 同款：问用户有无并发写会话 + `git status --porcelain` 抽查。git worktree 隔离（v1.3.6 交付 8）落地后本检查降级为提醒项。
 
 ### 执行方式
 
@@ -46,7 +48,7 @@ V 由 **Node driver**（`FORGE/src/release-gate-driver.mjs`）驱动——每个
    export SOFAGENT_LLM_V="${SOFAGENT_LLM_A}"
    export SOFAGENT_LLM_F="${SOFAGENT_LLM_B}"
 
-   # 8GB 机器必须限并发（每个 worker --max-old-space-size=2048，3+ 并发即 OOM）：
+   # 8GB 机器必须限并发（worker 各带 heap 上限，3+ 并发即 OOM）：
    FORGE_MAX_CONCURRENCY=1 node FORGE/src/release-gate-driver.mjs --target <版本号>
 
    # sandbox 环境（acceptance-test.sh 预跑会被 kill 时）：
@@ -81,17 +83,19 @@ V 由 **Node driver**（`FORGE/src/release-gate-driver.mjs`）驱动——每个
 
 ### 🔴 Heartbeat 死亡检测
 
-**背景**：driver 被 SIGKILL（sandbox 回收 / OOM）时，所有 Node handler 都来不及
-执行，status.json 停在上一次状态，监控端无法区分"在跑"和"已死"。
+driver 被 SIGKILL（sandbox 回收 / OOM / 环境冲突）时，所有 Node handler 都来不及执行，status.json 停在上一次状态，监控端无法区分"在跑"和"已死"。
 
-**解法**：driver 每 15s 更新 status.json 的 `heartbeat` 字段。监控端发现 heartbeat
-超过 90s 未更新 → 大概率 driver 已死，需用 `pgrep` 确认：
+**解法**：driver 每 15s 更新 status.json 的 `heartbeat` 字段。监控端发现 heartbeat 超过 90s 未更新 → 大概率 driver 已死，用 `pgrep` 确认：
 
 ```
 pgrep -f "release-gate-driver"  # 有输出=活着，无输出=已死
 ```
 
-如果确认已死，读 latest.json 的 stopReason 判断死亡类型，汇报后退出监控。
+如果确认已死：读 `latest.json` 的 stopReason（若有），汇报后退出监控。
+
+### 🔴 中止 run 的 LEDGER 归档铁律
+
+**任何原因中止的 run（进程死亡 / 人工 kill / 环境冲突）也必须在 LEDGER 留一行**——「没有终态记录」的 run 是审计黑洞。监控端在确认 driver 死亡后人工补行（格式与 fresh-eyes-loop SKILL 同款：`日期 | runId | release-gate | 轮数* | 计数 | aborted-<死因> | runDir`）。
 
 ### 汇报规则
 

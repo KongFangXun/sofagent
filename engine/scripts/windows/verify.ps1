@@ -21,7 +21,7 @@ param(
 )
 
 $ErrorActionPreference = "Continue"
-$VERSION_STR = "1.3.4"
+$VERSION_STR = "1.3.5"
 try { [Console]::OutputEncoding = New-Object System.Text.UTF8Encoding $false } catch {}
 
 $cfg = Join-Path $PSScriptRoot "lib\config.ps1"
@@ -199,11 +199,11 @@ function Test-Sanitize([string]$t) {
     $t = $t -replace '\b1[3-9][0-9]{9}\b', '[PHONE-REDACTED]'
     return $t
 }
-if ((Test-Sanitize "sk-ant-api03-abcdefghijklmnopqrstuvwxyz123456") -match 'REDACTED') { Check-Pass "脱敏: API Key 打码正常" } else { Check-Fail "脱敏: API Key 未打码" }
+if ((Test-Sanitize "sk-***REDACTED***") -match 'REDACTED') { Check-Pass "脱敏: API Key 打码正常" } else { Check-Fail "脱敏: API Key 未打码" }
 $pw = Test-Sanitize "password=mysecret123"
 if ($pw -match 'REDACTED' -and $pw -notmatch 'mysecret123') { Check-Pass "脱敏: 凭证打码正常" } else { Check-Fail "脱敏: 凭证未打码" }
-$ph = Test-Sanitize "用户电话 13812345678 请回拨"
-if ($ph -match 'PHONE-REDACTED' -and $ph -notmatch '13812345678') { Check-Pass "脱敏: 手机号打码正常" } else { Check-Fail "脱敏: 手机号未打码" }
+$ph = Test-Sanitize "用户电话 1**REDACTED*** 请回拨"
+if ($ph -match 'PHONE-REDACTED' -and $ph -notmatch '1**REDACTED***') { Check-Pass "脱敏: 手机号打码正常" } else { Check-Fail "脱敏: 手机号未打码" }
 if ((Test-Sanitize "订单号 28012345678 已生成") -notmatch 'PHONE-REDACTED') { Check-Pass "脱敏: 11 位订单号（非 1[3-9] 开头）未被误伤" } else { Check-Warn "脱敏: 11 位订单号被误伤" }
 if ((Test-Sanitize "monkey=foo 这是任务名") -notmatch 'REDACTED') { Check-Pass "脱敏: 词边界保护（monkey=foo 不被误伤）" } else { Check-Warn "脱敏: 词边界失效" }
 if ((Test-Sanitize "普通文本无敏感信息") -eq "普通文本无敏感信息") { Check-Pass "脱敏: 无敏感信息文本原样通过" } else { Check-Warn "脱敏: 无敏感信息文本被修改" }

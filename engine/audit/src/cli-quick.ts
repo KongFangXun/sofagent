@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 // ============================================================
 // cli-quick.ts · npx sofagent-audit 零配置 CLI 入口
-// v1.3.4 (⑧-1)：30 秒 aha moment——任何 git repo 都能跑
+// v1.3.5 (⑧-1)：30 秒 aha moment——任何 git repo 都能跑
 //
-// 依赖说明（v1.3.4 P0-R13）：
+// 依赖说明（v1.3.5 P0-R13）：
 //   本文件 import @sofagent/core（见 package.json dependencies）。
 //   git clone 后直接跑 dist/cli-quick.js 会报 MODULE_NOT_FOUND——
 //   需先 `npm install`（根目录安装会 link workspace 依赖）或
@@ -88,19 +88,28 @@ export function formatQuickResult(rule: RuleCheck): string[] {
  *
  * v1.3.4 P1-8：PASS 时输出汇总回声（让用户感知到 sofagent 在工作，而非只感受 FAIL）。
  * v1.3.4 P2-15：commitSha 为 null 时输出显著警告（非 git 仓库）。
+ * v1.3.5 #6（补漏）：1728da6d 在函数体引入 isRangeMode/range 但漏改签名，
+ *   generateQuickOutput 直接 ReferenceError（3 个 cli-quick 测试红）——此处补上参数。
  *
  * @param result 审计结果
  * @param commitSha 最近一次 commit 的短 SHA（null = 无法获取）
+ * @param diffRange diff 范围（v1.3.5 #6：非默认范围时标题/回声按 range 呈现）
  * @returns 完整输出字符串
  */
 export function generateQuickOutput(
   result: AuditResult,
-  commitSha: string | null
+  commitSha: string | null,
+  diffRange: string = 'HEAD~1..HEAD'
 ): string {
   const parts: string[] = [];
+  const isRangeMode = diffRange !== 'HEAD~1..HEAD';
+  const range = diffRange;
 
   // 标题行
-  if (commitSha) {
+  if (commitSha && isRangeMode) {
+    // v1.3.5 #6: range 模式标题与实际审计范围一致，不再误称「最近一次 commit」
+    parts.push(`🔍 审计指定范围（${diffRange}）`);
+  } else if (commitSha) {
     parts.push(`🔍 审计最近一次 commit（${commitSha}）`);
   } else {
     // v1.3.4 P2-15: SHA 为 null 时输出显著警告
@@ -130,9 +139,15 @@ export function generateQuickOutput(
     // v1.3.4 P1-8: PASS 时输出可感知回声——让用户明确知道「sofagent 在工作且通过了」
     // v1.3.2 P2-17: 解释 17 条默认 vs 24 条总量，消除「少装了什么」的认知落差
     parts.push(`✅ 全部 ${passCount} 条规则通过（默认规则 · 共 24 条，扩展规则用 --ruleset 加载）${skipCount > 0 ? `（${skipCount} 条跳过）` : ''}`);
+    // v1.3.5 #7: 跳过计数解释——让用户知道「跳过」是 quick 模式缺输入而非漏检
+    if (skipCount > 0) {
+      parts.push(`ⓘ 跳过 = 需任务描述/commit msg/Agent 日志输入的规则（quick 模式无此输入）——\`--init\` 装 hook 走完整引擎`);
+    }
     // v1.3.4 P1-8: 显著回声行——用户用了三周可能不知道 sofagent 在工作，此行解决可感知性
-    if (commitSha) {
+    if (commitSha && !isRangeMode) {
       parts.push(`✓ [sofagent] ${passCount} 条规则全通过（commit ${commitSha}）`);
+    } else if (commitSha && isRangeMode) {
+      parts.push(`✓ [sofagent] ${passCount} 条规则全通过（range ${range}）`);
     }
   } else {
     const summaryParts: string[] = [];
@@ -141,6 +156,10 @@ export function generateQuickOutput(
     if (passCount > 0) summaryParts.push(`${passCount} 条通过`);
     if (skipCount > 0) summaryParts.push(`${skipCount} 条跳过`);
     parts.push(`📊 ${summaryParts.join(' · ')}`);
+    // v1.3.5 #7: 跳过计数解释（同上，非 PASS 分支也需要）
+    if (skipCount > 0) {
+      parts.push(`ⓘ 跳过 = 需任务描述/commit msg/Agent 日志输入的规则（quick 模式无此输入）——\`--init\` 装 hook 走完整引擎`);
+    }
   }
 
   // 产品签名
@@ -182,7 +201,9 @@ export function runCliQuick(argv: string[]): number {
       } catch {
         console.log('⚠️  此命令需要完整安装：');
         console.log('   npm install -g @sofagent/audit');
-        console.log('   或使用 sofagent-audit-full ' + arg);
+        // v1.3.5 #12: 补 monorepo 路径——clone 本仓库直接跑 dist 的用户遇到的是
+        //   MODULE_NOT_FOUND（见本文件头部依赖说明），需要本地装依赖+构建而非全局装包
+        console.log('   或本仓库内：npm install && npm run build，然后用 sofagent-audit-full ' + arg);
         return 1;
       }
     }
@@ -274,8 +295,13 @@ export function runCliQuick(argv: string[]): number {
   }
 
   if (diffFiles.length === 0) {
-    const shaLabel = commitSha || '⚠️ 无 SHA';
-    console.log(`🔍 审计最近一次 commit（${shaLabel}）`);
+    // v1.3.5 #6: range 模式下标题与范围一致，不再误称「最近一次 commit」
+    if (diffRange !== 'HEAD~1..HEAD') {
+      console.log(`🔍 审计指定范围（${diffRange}）`);
+    } else {
+      const shaLabel = commitSha || '⚠️ 无 SHA';
+      console.log(`🔍 审计最近一次 commit（${shaLabel}）`);
+    }
     console.log('');
     console.log('✅ 无文件变更——没有需要审计的内容。');
     return 0;
@@ -286,8 +312,8 @@ export function runCliQuick(argv: string[]): number {
   // task='quick-audit' 与任何文件都不匹配，必然 100% 误报越界 WARN。
   const result = runRules(diffFiles, [], 'quick-audit', false, true, undefined, undefined, undefined, false, true);
 
-  // 7. 格式化输出
-  const output = generateQuickOutput(result, commitSha);
+  // 7. 格式化输出（v1.3.5 #6: 传入 diffRange 供 range 模式标题感知）
+  const output = generateQuickOutput(result, commitSha, diffRange);
   console.log(output);
 
   // 8. 返回退出码

@@ -2,7 +2,7 @@
 
 > sofagent 站在巨人肩膀上。以下每一个项目、文章和作者，都在某个设计决策里留下了痕迹。
 
-> v1.3.4 · 2026-08-14 · 孔放勋
+> v1.3.5 · 2026-08-16 · 孔放勋
 
 <img src="assets/sofagent.png" alt="sofagent" width="160" />
 
@@ -52,7 +52,8 @@
 
 - **[Managed Agents](https://www.anthropic.com/engineering/managed-agents)** · Anthropic — 四层编排架构，验证 OpenClaw（连接+行动）与 DeepAgents（深度思考）分工
 - **[Deep Agents](https://github.com/langchain-ai/deepagentsjs)** · LangChain — LangGraph 状态底座 + Harness 范式 + HITL，验证 v1.x 技术选型（v1.2.0 已迁移至 LangGraph createReactAgent）
-- **[DeepSeek Harness (DSH)](https://github.com/deepseek-ai/DeepSeek-Harness)** · DeepSeek — 「一切皆插件」Cordis 运行时，启发 v1.3.4 编排层与执行层分离（ExecutionBackend 接口，DSH 作为可选执行后端）
+- **[DeepSeek Harness (DSH)](https://github.com/deepseek-ai/deepseek-harness)** · DeepSeek — 「一切皆插件」开源 Agent 运行时（Cordis 微内核：模型/工具/沙箱/UI 全是插件，无特权内核），启发 v1.3.4 编排层与执行层分离（ExecutionBackend 接口，DSH 作为可选执行后端）；其事件即扩展点（会话/Agent/能力三事件域）与可撤销效应是 v1.4.0 反向插件 `@sofagent/cordis-plugin` 的协议基础
+- **[Cordis](https://github.com/cordiverse/cordis)** + **[时空可组合性论文](https://github.com/cordiverse/paper)** · cordiverse — DSH 底层框架：时间可组合性（每次修改记录逆操作，卸载逆序恢复）+ 空间可组合性（依赖声明自动重协调）+ 事务式热重载——「自进化的难点是修改后的可恢复与可协调」为进化引擎补上运行时视角
 - **[Claude Code Agent Loop](https://docs.anthropic.com/en/docs/claude-code/how-claude-code-works)** · Anthropic — 三阶段循环 + 三档工具权限，与 sofagent HITL 🟢🟡🔴 同构
 - **[Palantir AIP Ontology](https://www.palantir.com/platforms/aip/)** · Palantir — 数据+逻辑+动作+安全四合一的数字孪生层，Harness 定义与 sofagent 一致
 - **The Path to Recursively Self-Improving Harnesses** · 翁荔（Lilian Weng）— 六层 Harness 优化框架（原 lilianweng.github.io/posts/2026-07-04-harness-rsl/ 链接已 404，保留文字引用不链死链）

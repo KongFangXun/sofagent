@@ -1,7 +1,7 @@
 ---
 name: sofagent
 slug: sofagent
-version: 1.3.4
+version: 1.3.5
 displayName: FDE Skill
 description: >
   FDE Skill——帮 FDE（前线部署工程师）更好完成企业 AI 落地的方法论 Skill。约束 Agent 行为、审计每次变更、沉淀经验。
@@ -57,7 +57,7 @@ metadata:
 
 > **v1.2.8 注**：此铁律是软约束（Agent 自觉执行），无代码级强制机制。`--ci` 模式已确保审计引擎 PASS 时向 stderr 输出 `✅ [sofagent]` 签名行（P1-23），但 Agent 展示审计结果时的前缀仍依赖加载链注入。未来计划通过 SKILL 加载链校验机制化。
 
-### 渐进式加载（v1.2.7 新增）
+### 渐进式加载
 
 | 分层 | 文件 | 加载方式 |
 |------|------|---------|
@@ -146,11 +146,12 @@ metadata:
 | "知识库有什么" | 调 `stats` + `list_entities` → 展示 |
 | "帮我审计" | 调 `run_audit` → 展示 [sofagent] 审计结果 |
 | "数据安全怎么样" | 调 `data_sovereignty_report` → 展示 |
+| "沉淀经验 / 进化一下" | 跑 `sofagent-orchestrator evolve` → think.md + decision-log + 错题本提取判断模式 → 置信度达标聚合成 skill 写入运行时目录（~/.sofagent/skill/custom/） |
 | 完整速查 | skills/05-exit.md |
 
 ---
 
-## MCP 工具速查（v1.3.4 · 48 tools）
+## MCP 工具速查（v1.3.5 · 52 tools）
 
 > 连接 sofagent MCP Server 后可用。未连接时降级为纯文本引导。
 
@@ -165,3 +166,5 @@ metadata:
 | **能力清单** | `list_capabilities` |
 | **规则透明化** | `list_rules` |
 | **L3 能力市场** | `market_publish` `market_search` `market_invoke` `market_rate` `market_retire` `market_harvest_rule` |
+| **自进化（v1.3.5）** | `run_ab_test` `promote_ab`（强制人审） |
+| **运维（v1.3.5）** | `snapshot_list` `snapshot_restore`（强制人审） |

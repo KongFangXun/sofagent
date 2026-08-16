@@ -1,6 +1,6 @@
 // ============================================================
 // diff-parser.ts · git diff 解析器
-// v1.3.4: 添加 isomorphic-git fallback（当系统 git 不可用时）
+// v1.3.5: 添加 isomorphic-git fallback（当系统 git 不可用时）
 // ============================================================
 
 import { execFileSync } from 'child_process';
@@ -101,9 +101,13 @@ export function parseDiff(range: string, cwd?: string): DiffFile[] {
           stdio: ['pipe', 'pipe', 'pipe'],
         });
       } catch (err) {
-        // v1.3.1 #11: 不打印整个 err 对象（首跑会输出完整 stack trace），
-        // 只输出 message——首跑（空 HEAD）是正常场景，不应打原生 Node 堆栈。
-        console.error('[diff-parser] 验证 git ref 失败:', err instanceof Error ? err.message : String(err));
+        // v1.3.1 #11: 不打印整个 err 对象（首跑会输出完整 stack trace）。
+        // v1.3.5 #28: console.error 降级为 debug 开关——首跑（空 HEAD）是正常场景，
+        // 开发者向的 [diff-parser] 内部报错不应泄漏到用户 stderr；上层已有
+        // 人话提示（下方 console.log），SOFAGENT_DEBUG=1 时才输出技术细节。
+        if (process.env.SOFAGENT_DEBUG === '1') {
+          console.error('[diff-parser] 验证 git ref 失败:', err instanceof Error ? err.message : String(err));
+        }
         console.log('首次提交，无需审计（没有前一个版本可对比）。审计引擎已就绪，下次提交生效。');
         return files;
       }

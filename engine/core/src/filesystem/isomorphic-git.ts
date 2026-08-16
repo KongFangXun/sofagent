@@ -1,6 +1,6 @@
 // ============================================================
 // isomorphic-git.ts · 同构 Git 引擎（自研）
-// v1.3.4 新增：纯 JS 实现的 git diff / shadow repo
+// v1.3.5 新增：纯 JS 实现的 git diff / shadow repo
 //
 // 用途：
 //   - 在非 git 目录中创建 shadow repo，实现文件快照和差异追踪
@@ -12,7 +12,7 @@
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync, readdirSync, statSync } from 'fs';
 import { join, dirname, relative } from 'path';
-import { randomBytes } from 'crypto';
+import { createHash } from 'crypto';
 import { REDACTION_PATTERNS } from '../shared/secret-patterns';
 
 /** 被追踪的文件信息 */
@@ -34,6 +34,28 @@ export interface SnapshotEntry {
   sha: string;
   timestamp: string;
   files: Record<string, string>; // path → content
+}
+
+/**
+ * v2 存储格式（2026-08-16 磁盘治理）：内容寻址去重。
+ *
+ * v1 问题：每份快照全文存所有文件（path → content 直存），13 份快照 = 141MB，
+ * 50 份上限将膨胀到 545MB——而快照间 99% 文件内容相同，纯冗余。
+ *
+ * v2 结构：
+ *   {
+ *     version: 2,
+ *     blobs: { [contentHash]: fileContent },   // 内容池——跨快照共享，同内容只存一份
+ *     snapshots: [{ sha, timestamp, fileIndex: { [path]: contentHash } }]  // 快照只存索引
+ *   }
+ *
+ * loadSnapshots() 透明还原为 v1 形状（files: path → content），所有消费方零改动。
+ * 兼容：读 v1（无 version 字段）自动按旧格式解析。
+ */
+interface ShadowStore {
+  version?: number;
+  blobs?: Record<string, string>;
+  snapshots?: Array<{ sha: string; timestamp: string; fileIndex?: Record<string, string>; files?: Record<string, string> }>;
 }
 
 /**
@@ -94,6 +116,9 @@ export function createShadowRepo(dir: string): string {
 
 /**
  * 读取 shadow repo 的快照索引
+ *
+ * v2 格式透明还原：fileIndex + blobs → files（path → content），消费方零感知。
+ * v1 格式（无 version 字段）直接按旧结构解析。
  */
 function loadSnapshots(shadowDir: string): SnapshotEntry[] {
   const snapshotsPath = join(shadowDir, 'snapshots.json');
@@ -101,8 +126,21 @@ function loadSnapshots(shadowDir: string): SnapshotEntry[] {
     return [];
   }
   try {
-    const data = JSON.parse(readFileSync(snapshotsPath, 'utf-8'));
-    return Array.isArray(data.snapshots) ? data.snapshots : [];
+    const data = JSON.parse(readFileSync(snapshotsPath, 'utf-8')) as ShadowStore;
+    if (!Array.isArray(data.snapshots)) return [];
+    // v2：内容寻址还原
+    if (data.version === 2 && data.blobs) {
+      return data.snapshots.map((s) => {
+        if (!s.fileIndex) return { sha: s.sha, timestamp: s.timestamp, files: s.files ?? {} };
+        const files: Record<string, string> = {};
+        for (const [p, h] of Object.entries(s.fileIndex)) {
+          files[p] = data.blobs![h] ?? ''; // blob 丢失时降级为空串（不 crash 恢复流程）
+        }
+        return { sha: s.sha, timestamp: s.timestamp, files };
+      });
+    }
+    // v1：旧格式直读
+    return data.snapshots.map((s) => ({ sha: s.sha, timestamp: s.timestamp, files: s.files ?? {} }));
   } catch {
     return [];
   }
@@ -111,16 +149,41 @@ function loadSnapshots(shadowDir: string): SnapshotEntry[] {
 /**
  * 保存快照索引到 shadow repo
  *
- * v1.3.4 交付 1（P0）：保存前做滚动裁剪——超过 MAX_SNAPSHOTS（50）时移除最旧的，
- * 避免 snapshots.json 无限增长（主仓曾达 317MB）。
+ * v1.3.4：滚动裁剪——超过 MAX_SNAPSHOTS（50）时移除最旧。
+ * v2（2026-08-16）：内容寻址去重——文件内容进 blobs 池（同内容只存一份），
+ * 快照条目只存 path → hash 索引；裁剪后孤儿 blob（无快照引用）一并回收。
+ * 实测效果：13 份全量快照 141MB → 去重后约 11MB（只存真实变化 + 单份基线）。
  */
 function saveSnapshots(shadowDir: string, snapshots: SnapshotEntry[]): void {
   // 滚动覆盖——超限时移除最旧的（数组首部）
   const toSave = snapshots.length > MAX_SNAPSHOTS
     ? snapshots.slice(snapshots.length - MAX_SNAPSHOTS)
     : snapshots;
+
+  // 内容寻址去重：构建 blobs 池 + 每快照的 path → hash 索引
+  const blobs: Record<string, string> = {};
+  const indexed = toSave.map((s) => {
+    const fileIndex: Record<string, string> = {};
+    for (const [p, content] of Object.entries(s.files)) {
+      const h = computeHash(`blob:${content}`);
+      if (!blobs[h]) blobs[h] = content; // 同内容只存一份
+      fileIndex[p] = h;
+    }
+    return { sha: s.sha, timestamp: s.timestamp, fileIndex };
+  });
+
+  // 回收孤儿 blob：只保留被引用的（裁剪掉的快照其独有 blob 一并释放）
+  const referenced = new Set<string>();
+  for (const s of indexed) {
+    for (const h of Object.values(s.fileIndex)) referenced.add(h);
+  }
+  const prunedBlobs: Record<string, string> = {};
+  for (const [h, content] of Object.entries(blobs)) {
+    if (referenced.has(h)) prunedBlobs[h] = content;
+  }
+
   const snapshotsPath = join(shadowDir, 'snapshots.json');
-  writeFileSync(snapshotsPath, JSON.stringify({ snapshots: toSave }, null, 2), 'utf-8');
+  writeFileSync(snapshotsPath, JSON.stringify({ version: 2, blobs: prunedBlobs, snapshots: indexed }, null, 2), 'utf-8');
 }
 
 /**
@@ -188,19 +251,17 @@ function scanFiles(dir: string): TrackedFile[] {
 }
 
 /**
- * 生成 SHA-like 标识符（使用文件内容的简化哈希）
+ * 生成 SHA-like 标识符（内容哈希）
+ *
+ * v2 修正（2026-08-16）：
+ *   1. 去掉随机后缀——原实现 `${hash}-${randomBytes(4)}` 导致同一内容每次哈希不同，
+ *      是快照去重与「无变化跳过」失效的根因（生产 13 份快照中 2 份内容全同仍被追加）。
+ *   2. FNV-1a 32 位 → sha256 截断 16 hex（64 位）——32 位在 ~50 份快照的短内容场景
+ *      即可碰撞（实测 content-0..content-51 序列出现同哈希），64 位碰撞概率可忽略。
+ * 快照 SHA 唯一性由内容保证：内容不同哈希必不同；同 SHA = 同内容 = 可安全去重。
  */
 function computeHash(content: string): string {
-  // 简单的 FNV-1a 哈希 + 随机后缀，用于本地快照去重
-  let hash = 2166136261;
-  for (let i = 0; i < content.length; i++) {
-    hash ^= content.charCodeAt(i);
-    hash += (hash << 1) + (hash << 4) + (hash << 7) + (hash << 8) + (hash << 24);
-    hash = hash >>> 0;
-  }
-  // 附加时间戳 + 随机后缀确保唯一性
-  const suffix = randomBytes(4).toString('hex');
-  return `${hash.toString(16).padStart(8, '0')}-${suffix}`;
+  return createHash('sha256').update(content, 'utf-8').digest('hex').slice(0, 16);
 }
 
 /**
@@ -290,11 +351,19 @@ export function commitSnapshot(dir: string): string {
   }
 
   // 生成 SHA（基于所有文件内容的哈希）
+  // v2 修正（2026-08-16）：原实现用 `${path}:${content.length}` 做哈希输入——
+  // 等长不同内容（如 version-1/version-2）会产出相同 SHA，被「无变化跳过」误判。
+  // 改为内容哈希参与：内容变 SHA 必变，SHA 同内容必同。
   const contentForHash = Object.entries(files)
     .sort(([a], [b]) => a.localeCompare(b))
-    .map(([p, c]) => `${p}:${c.length}`)
+    .map(([p, c]) => `${p}:${computeHash(c)}`)
     .join('\n');
   const sha = computeHash(contentForHash);
+
+  // v2：无变化跳过——工作区与最近快照相同时不追加重复条目（省磁盘 + 恢复点列表干净）
+  if (isUnchangedSnapshot(snapshots, sha)) {
+    return sha;
+  }
 
   const entry: SnapshotEntry = {
     sha,
@@ -306,6 +375,19 @@ export function commitSnapshot(dir: string): string {
   saveSnapshots(shadowDir, snapshots);
 
   return sha;
+}
+
+/**
+ * v2（2026-08-16 磁盘治理）：检查快照是否需要落盘。
+ *
+ * 去重跳过——工作区无变化（SHA 与最近快照相同）时不追加新条目。
+ * 实测主仓 13 份快照中 2 份是重复 SHA（连续 commit 无变化），
+ * 纯浪费磁盘与列表噪音（listSnapshots/rollback 恢复点选择）。
+ * 返回 false = 无变化已跳过，commitSnapshot 直接返回现有 SHA。
+ */
+function isUnchangedSnapshot(snapshots: SnapshotEntry[], sha: string): boolean {
+  if (snapshots.length === 0) return false;
+  return snapshots[snapshots.length - 1]!.sha === sha;
 }
 
 /**

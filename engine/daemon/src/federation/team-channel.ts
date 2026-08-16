@@ -1,5 +1,5 @@
 // ============================================================
-// team-channel.ts · FederatedTeamSyncChannel（v1.3.4 交付 T02）
+// team-channel.ts · FederatedTeamSyncChannel（v1.3.5 交付 T02）
 //
 // daemon 实现 orchestrator 定义的 TeamSyncChannel 接口。
 // 复用 v1.1.8 的 FederationChannel（AES-256-GCM 加密链路）传输

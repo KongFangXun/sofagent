@@ -50,16 +50,16 @@ check_npm() {
 echo ""
 echo "🟢 通用工具库"
 echo "─────────────────────────────────────────────────────────────"
-check_npm "js-yaml" "5.2.0"
+check_npm "js-yaml" "5.3.0"
 check_npm "zod" "4.4.3"
-check_npm "archiver" "7.0.0"
+check_npm "archiver" "8.0.0"
 
 echo ""
 echo "🟡 核心框架（LangGraph 三件套）"
 echo "─────────────────────────────────────────────────────────────"
-check_npm "@langchain/langgraph" "1.4.7"
-check_npm "@langchain/core" "1.2.3"
-check_npm "@langchain/openai" "1.5.5"
+check_npm "@langchain/langgraph" "1.4.10"
+check_npm "@langchain/core" "1.2.8"
+check_npm "@langchain/openai" "1.5.8"
 
 echo ""
 echo "🔴 automerge（v1.3.5 排期升级）"
@@ -88,7 +88,7 @@ echo "   v1.3.4 接入方式：运行时动态 import + 版本守卫拦截 rc（
 echo ""
 echo "════════════════════════════════════════════════════════════"
 if [ "$HAS_OUTDATED" = "1" ]; then
-  echo "⚠️  有依赖落后于最新版本——按 SOP 步骤 3c 决策规则评估（automerge v1.3.5 前禁升）"
+  echo "⚠️  有依赖落后于最新版本——按 SOP 步骤 5 决策规则评估（automerge v1.3.5 前禁升）"
   exit 1
 else
   echo "✅ 所有可升级依赖均为最新"

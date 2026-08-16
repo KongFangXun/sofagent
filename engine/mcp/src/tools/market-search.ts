@@ -1,5 +1,5 @@
 // ============================================================
-// market-search.ts · MCP tool: market_search（v1.3.4 交付 1）
+// market-search.ts · MCP tool: market_search（v1.3.5 交付 1）
 //
 // 能力检索 tool——按标签/关键词搜索市场能力目录。
 // 延迟导入 @sofagent/orchestrator 的 searchCatalog / searchByTag。

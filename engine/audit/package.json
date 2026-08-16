@@ -1,6 +1,6 @@
 {
   "name": "@sofagent/audit",
-  "version": "1.3.4",
+  "version": "1.3.5",
   "description": "sofagent 提交时审计——扫描 git diff，检查 Agent 是否遵守工作纪律",
   "main": "dist/index.js",
   "types": "dist/public-api.d.ts",
@@ -17,6 +17,7 @@
   "scripts": {
     "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
     "build": "npm run clean && tsc && npm run copy-assets",
+    "postbuild": "node -e \"const fs=require('fs');for(const b of ['dist/cli-quick.js','dist/index.js']){try{fs.chmodSync(require('path').join(__dirname,b),0o755)}catch(e){}}\"",
     "copy-assets": "cp -r src/rulesets dist/rulesets 2>/dev/null || true",
     "prepublishOnly": "npm run build && find dist -name '*.js.map' -delete && find dist -name '*.d.ts.map' -delete",
     "start": "node dist/index.js",
@@ -45,9 +46,9 @@
   "devDependencies": {
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^20.0.0",
-    "@types/archiver": "^6.0.0",
+    "@types/archiver": "^8.0.0",
     "typescript": "^5.4.0",
-    "vitest": "^1.6.0"
+    "vitest": "^4.1.10"
   },
   "engines": {
     "node": ">=18"
@@ -61,9 +62,9 @@
     "README.md"
   ],
   "dependencies": {
-    "js-yaml": "^5.2.0",
-    "@sofagent/ontology": "1.3.4",
-    "@sofagent/core": "1.3.4",
-    "archiver": "^7.0.0"
+    "js-yaml": "^5.3.0",
+    "@sofagent/ontology": "1.3.5",
+    "@sofagent/core": "1.3.5",
+    "archiver": "^8.0.0"
   }
 }

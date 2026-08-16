@@ -1,20 +1,20 @@
 #!/usr/bin/env node
 // doctor.ts · sofagent 健康检查
-// v1.3.4 新增：从 sofagent-audit --doctor 迁移至 @sofagent/core
-// v1.3.4 维护：新增 post-commit hook 存在性检查
-// v1.3.4 新增：每项 fail/warn 附修复命令 + --repair 自动修复模式
+// v1.3.5 新增：从 sofagent-audit --doctor 迁移至 @sofagent/core
+// v1.3.5 维护：新增 post-commit hook 存在性检查
+// v1.3.5 新增：每项 fail/warn 附修复命令 + --repair 自动修复模式
 //
 // 检查项：
 //   1. 环境检查（Node / git / npm / disk / bash）
 //   2. 配置检查（.sofagent/config.yml 是否存在且有效）
-//   3. 数据目录结构（v1.3.4：data/ 用户可见数据 + .sofagent/ 引擎内部状态）
+//   3. 数据目录结构（v1.3.5：data/ 用户可见数据 + .sofagent/ 引擎内部状态）
 //   4. Hook 状态（commit-msg 是否安装含 sofagent 标识 + post-commit 是否存在）
 //   5. 包完整性（node_modules 依赖）
 //
 // 注意：post-commit 仅检查存在性——不检查内容是否引用 sofagent
 
 import { existsSync, readFileSync, readdirSync, statSync, mkdirSync, writeFileSync } from 'fs';
-import { join } from 'path';
+import { join, dirname } from 'path';
 import { execFileSync } from 'child_process';
 import { createHash } from 'crypto';
 import { homedir } from 'os';
@@ -69,9 +69,12 @@ export interface DoctorReport {
 /**
  * 运行 doctor 健康检查
  * @param projectDir 项目根目录
+ * @param options v1.3.5：resetBaseline——为 true 时无条件重算当前 dist SHA-256
+ *   并覆写 ~/.sofagent/internal/audit-hash.txt（rebuild dist 后一键重置基线，
+ *   bugfix #18 执行遗留）。覆写后继续正常比对输出 ✅。
  * @returns DoctorReport
  */
-export function runDoctor(projectDir: string = process.cwd()): DoctorReport {
+export function runDoctor(projectDir: string = process.cwd(), options: { resetBaseline?: boolean } = {}): DoctorReport {
   // v1.2.9: — 每次调用重置计数器
   _warnCount = 0;
   _failCount = 0;
@@ -96,7 +99,9 @@ export function runDoctor(projectDir: string = process.cwd()): DoctorReport {
   }
 
   // v1.2.9 版本一致性检查（~/.sofagent/VERSION vs 当前引擎版本）
-  console.log('\n── 版本一致性 ──');
+  // v1.3.5 #4: 段标题加 [全局] 标注——该检查读全局 SOFAGENT_HOME，与被检查仓库无关；
+  //   多仓库用户会把全局安装状态误读为「本仓库健康」，来源必须显式
+  console.log('\n── 版本一致性 [全局安装，非当前仓库] ──');
   try {
     const homeVersionFile = join(process.env.SOFAGENT_HOME || join(process.env.HOME || '~', '.sofagent'), 'VERSION');
     if (existsSync(homeVersionFile)) {
@@ -178,7 +183,9 @@ export function runDoctor(projectDir: string = process.cwd()): DoctorReport {
   //   .sofagent/（引擎内部状态）：
   //   - .git-shadow/（v1.0.8 文件系统审计的 isomorphic-git 隐藏仓库）
   //   - ontology/（本体缓存，v1.1.0+）
-  console.log('\n── 数据目录结构 ──');
+  // v1.3.5 #4: 段标题加 [全局] 标注——数据目录读全局 SOFAGENT_HOME，多仓库场景下
+  //   这些 ✅ 不代表当前仓库（历史教训：企业 IT 把「本机装过」误读为「本仓库健康」）
+  console.log('\n── 数据目录结构 [全局 ~/.sofagent/，非当前仓库] ──');
   const dataDir = DATA_DIR;
   // [根目录, 该根下期望的子目录]
   const expectedRoots: Array<[string, string[]]> = [
@@ -302,13 +309,42 @@ export function runDoctor(projectDir: string = process.cwd()): DoctorReport {
   // 计算 dist/index.js 的 SHA-256，与安装时记录的哈希比对（存 ~/.sofagent/internal/audit-hash.txt）
   console.log('\n── dist 完整性检查 ──');
   let distIntegrityOk = true;
-  const auditDistPath = join(__dirname, '..', 'audit', 'dist', 'index.js');
+  // v1.3.5 #18: 路径修复——此前 `join(__dirname, '..', 'audit', ...)` 从 core/dist 解析到
+  //   engine/core/audit/dist/index.js（不存在）→ existsSync 恒 false → 既不校验也不写基线，
+  //   影子审计器防御永久失效（SECURITY.md:329 声称与事实矛盾）。
+  // 修复后的解析顺序（覆盖 monorepo / npm 全局安装两种布局）：
+  //   ① monorepo：core/dist → core → engine/ → engine/audit/dist/index.js（../../audit/dist）
+  //   ② 发布安装：require.resolve('@sofagent/audit') 反推 audit 包根，再拼 dist/index.js
+  //   ③ 两者均不存在 → 显式 warn（不再静默跳过——「检查不到」不等于「通过」）
+  let auditDistPath = join(__dirname, '..', '..', 'audit', 'dist', 'index.js');
+  if (!existsSync(auditDistPath)) {
+    try {
+      // CJS 环境下 require 全局可用（与上方依赖检查同一先例）；
+      // 从 core 包位置出发解析 audit 包，兼容任意 node_modules 嵌套深度。
+      auditDistPath = join(dirname(require.resolve('@sofagent/audit')), 'dist', 'index.js');
+    } catch {
+      // @sofagent/audit 不可解析（未安装/独立安装 core）——留给下方显式 warn
+    }
+  }
   if (existsSync(auditDistPath)) {
     try {
       const distContent = readFileSync(auditDistPath);
       const currentHash = createHash('sha256').update(distContent).digest('hex');
       const hashRecordPath = join(process.env.SOFAGENT_HOME || join(homedir(), '.sofagent'), 'internal', 'audit-hash.txt');
-      if (existsSync(hashRecordPath)) {
+
+      // v1.3.5 --reset-baseline：无条件重算并覆写基线（rebuild dist 后一键重置）
+      // 覆写后按「基线 = 当前值」输出校验通过——不产生假 mismatch 告警。
+      if (options.resetBaseline === true) {
+        try {
+          const hashDir = join(hashRecordPath, '..');
+          if (!existsSync(hashDir)) mkdirSync(hashDir, { recursive: true, mode: 0o700 });
+          writeFileSync(hashRecordPath, currentHash + '\n', { mode: 0o600 });
+          ok(`✅ 基准哈希已重置（SHA-256: ${currentHash.slice(0, 8)}…）`);
+        } catch (err) {
+          fail(`基准哈希重置失败: ${err instanceof Error ? err.message : String(err)}`);
+          distIntegrityOk = false;
+        }
+      } else if (existsSync(hashRecordPath)) {
         const recordedHash = readFileSync(hashRecordPath, 'utf-8').trim();
         if (currentHash === recordedHash) {
           ok(`audit dist/index.js 完整性校验通过（SHA-256: ${currentHash.slice(0, 12)}...）`);
@@ -333,7 +369,11 @@ export function runDoctor(projectDir: string = process.cwd()): DoctorReport {
       warn(`dist 完整性检查异常（已跳过）: ${err instanceof Error ? err.message : String(err)}`);
     }
   } else {
-    // 非 monorepo 开发环境可能没有 audit/dist，跳过
+    // v1.3.5 #18: dist 不存在 → 显式告警（非 monorepo 且未安装 @sofagent/audit 的场景）。
+    // 此前静默跳过 =「检查不到」被当成「通过」，与失败路径不可区分。
+    warn('audit dist/index.js 未找到——dist 完整性检查（影子审计器劫持防护）不可用');
+    repairHint('npm run build --workspace=engine/audit（monorepo）或安装 @sofagent/audit');
+    distIntegrityOk = false;
   }
 
   // 7. 审计日志完整性（HMAC 密钥强度 + 链完整性，v1.1.8 / v1.2.0）
@@ -427,9 +467,10 @@ export function runDoctor(projectDir: string = process.cwd()): DoctorReport {
  *
  * @param projectDir 项目根目录
  * @param repair 是否自动修复
+ * @param options v1.3.5：resetBaseline 透传给 runDoctor（--reset-baseline flag）
  * @returns DoctorReport
  */
-export function runDoctorWithRepair(projectDir: string = process.cwd(), repair: boolean = false): DoctorReport {
+export function runDoctorWithRepair(projectDir: string = process.cwd(), repair: boolean = false, options: { resetBaseline?: boolean } = {}): DoctorReport {
   if (repair) {
     console.log('\n  sofagent doctor --repair v' + VERSION + '\n');
     console.log('  检查目录: ' + projectDir + '\n');
@@ -480,11 +521,15 @@ export function runDoctorWithRepair(projectDir: string = process.cwd(), repair: 
   }
 
   // 运行完整检查（无论是否 repair）
-  return runDoctor(projectDir);
+  return runDoctor(projectDir, options);
 }
 
 // 直接运行时执行
 if (process.argv[1]?.includes('doctor')) {
-  const report = runDoctor();
+  const report = runDoctor(process.cwd(), {
+    // v1.3.5：--reset-baseline 单独跑（不带 --doctor）经 audit CLI 路由到
+    // 本文件执行时，flag 原样透传（resetBaseline 路径与正常 doctor 一致）
+    resetBaseline: process.argv.includes('--reset-baseline'),
+  });
   process.exit(report.allOk ? 0 : 1);
 }

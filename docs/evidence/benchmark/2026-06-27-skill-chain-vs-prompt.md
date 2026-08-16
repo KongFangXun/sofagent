@@ -54,7 +54,7 @@ v0.94 要补上这个缺口：**同一任务、同一模型，在三种条件下
 | 陷阱 | 4 个（`dateFormatter`/`newOrder`/`userId`/`orderId`/`adminId`/`newEmail`） |
 | 测试套件源码 | [github.com/cedric123123](https://github.com/cedric123123)，baseline `56160e1` |
 
-完整定义见 [2026-06-23-sofagent-test-suite.md](../../archive/evidence/2026-06-23-sofagent-test-suite.md#task-1--camelcase--snake_case)。
+完整定义见 [2026-06-23-sofagent-test-suite.md](../../archive/evidence/2026-06-23-sofagent-test-suite.md#task-***REDACTED***)。
 
 ### 2.3 模型与样本
 

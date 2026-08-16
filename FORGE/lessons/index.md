@@ -4,7 +4,7 @@
 >
 > 这不是"踩坑参考"，是**开发参照**——下次开发新的 loop 或 sub-agent 时，必须逐条对照本文档执行。每条标准都来自真实 debug 会话（附 commit hash + 根因），不是理论推演。
 >
-> v1.3.4 · 2026-08-14（UTC）· 孔放勋
+> v1.3.5 · 2026-08-16（UTC）· 孔放勋
 >
 > v1.2.9 run-12 更新（2026-08-08）：跨闭包变量引用、nohup 后台死亡、8GB 并发 OOM 三项新坑位
 >
@@ -110,7 +110,8 @@
 - [ ] **沙箱环境加 --max-old-space-size=1536**（v1.2.5 run-07 教训：768 在长循环 OOM）（[四·V8 heap](./driver.md#v8-heap-限制--max-old-space-size反直觉优化)）
 - [ ] **跨闭包变量提到 agent 定义前**（stateModifier 和 invokeAgent 是平行闭包，不可见对方局部变量）（[四·跨闭包变量](./driver.md#跨闭包变量引用js-作用域陷阱v129-run-07)）
 - [ ] **后台启动用 Bash 工具 run_in_background，禁用 nohup+disown**（WorkBuddy 清理脱离进程）（[四·nohup 不安全](./driver.md#nohupdisown-在-workbuddy-中不安全v129-run-0711)）
-- [ ] **启动前算并发上限**（并发 ≤ floor((RAM - 3GB) / worker_heap_limit)）（[三·并发内存](./performance.md#并发-worker-总内存计算v129-run-0809)）
+- [ ] **启动前算并发上限**（并发 ≤ floor((RAM - 3GB) / worker_heap_limit)；heap=1024 时 8GB 默认 2、16GB+ 可 4）（[三·并发内存](./performance.md#并发-worker-总内存计算v129-run-0809)）
+- [ ] **worker heap 按真实负载定，不按最坏场景定**（grep/read 型负载 1024 够；上限≠占用，降上限只挪 OOM 保险丝位置——遇 OOM 再回退）（[三·heap 降半](./performance.md#worker-heap-降半--默认并发-422026-08-16-run-07-优化)）
 
 ### 🔴 stream 迁移（如做 invoke→stream 改造时必查）
 
@@ -215,6 +216,7 @@
 | 31 | ANSI 颜色码插入文本导致正则匹配失败 | 四·确定性判定优先（剥离 \x1b[...m） |
 | 32 | F 链收敛状态未回写 verdict.md → 文件与 status 矛盾 | 四·F 链收敛回写权威产物 |
 | 33 | 长循环跑到一半环境崩溃——缺跑前自检（preflight-check 六项检查） | 四·preflight-check |
+| 34 | 并发 1 下整轮 60-75 分钟太慢——瓶颈在 LLM 生成非工具；降 worker heap 1024 + 默认并发 2 换 ~2 倍吞吐 | 三·worker heap 降半 + 默认并发 2 |
 
 ### 关键设计决策速查
 
@@ -223,9 +225,9 @@
 | Agent 框架 | createReactAgent | createDeepAgent 硬编码 FilesystemMiddleware |
 | 进程模型 | spawn 子进程 | 零上下文继承，步骤间文件传递 |
 | 沙箱执行 | --step 单步模式 + 外层编排 | 每步全新进程退出，内存归零 |
-| 沙箱内存 | --max-old-space-size=1536 | v1.2.5 起 768→1536（长循环 OOM 教训）；v1.2.9 run-09 再调至 2048 |
+| 沙箱内存 | --max-old-space-size=1024 | v1.2.5 起 768→1536；v1.2.9 run-09 调至 2048；2026-08-16 run-07 实测负载轻降半至 1024（OOM 即回退 2048） |
 | 后台启动 | Bash 工具 run_in_background | nohup+disown 被 WorkBuddy 清理（run-07~11 教训） |
-| 并发上限 | floor((RAM - 3GB) / 2GB) | 8GB 机器并发=1，16GB+ 机器并发=6（run-08~09 OOM 教训） |
+| 并发上限 | floor((RAM - 3GB) / 1GB)，默认 2 | 2026-08-16 run-07：heap 降 1024 后 8GB 默认 2（旧公式 heap 2GB 时 8GB 取 1）；16GB+ 可开 4（run-08~09 OOM 教训 + run-07 优化） |
 | 上下文注入 | stateModifier（非 prompt） | 互斥约束 + 可同时做裁剪 |
 | 上下文物理裁剪 | preModelHook | stateModifier 只裁 prompt，preModelHook 物理替换 messages |
 | 执行模式 | stream（非 invoke） | 实时进度打印 |

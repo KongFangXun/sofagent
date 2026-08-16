@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // ============================================================
 // eval/cli.ts · eval CLI 入口（sofagent-eval run）
-// v1.3.4 新增
+// v1.3.5 新增
 //
 // 组装 audit runner 适配器 → runEval → 持久化 → 报告
 // CLI 层耦合 @sofagent/audit，eval 核心模块保持引擎中立
@@ -85,10 +85,17 @@ export function convertAuditResult(auditResult: {
   }
 
   // 取最高优先级 severity
+  // v1.3.5 run-07 维度56 修复：severity 必须叠加触发状态——WARN 级触发（未拦截）封顶 P1，
+  // P0 只属于 FAIL 真拦截。原实现只看 ruleClass：A4(业务底线) WARN 触发也标 P0，
+  // 与 golden set 语义冲突（A4-fail-01 期望 WARN+P1、A5-fail-01 期望 FAIL+P0——
+  // 同为业务底线，差异在拦截与否）。trust-but-verify 匹配率由此回到 100%。
   let severity = '';
   for (const rule of auditResult.rules) {
     if (rule.status !== 'PASS' && rule.status !== 'SKIPPED' && rule.ruleClass) {
-      const mapped = RULE_CLASS_TO_SEVERITY[rule.ruleClass] ?? '';
+      let mapped = RULE_CLASS_TO_SEVERITY[rule.ruleClass] ?? '';
+      // WARN（警告未拦截）只把 P0 降为 P1——P0 属于真拦截（FAIL）；
+      // P1/P2 的 WARN 触发保持原级（golden 全集语义：A3/A4/A18/E1 的 WARN 用例均期望 P1）
+      if (rule.status === 'WARN' && mapped === 'P0') mapped = 'P1';
       const mappedPriority = SEVERITY_PRIORITY[mapped] ?? 99;
       const currentPriority = SEVERITY_PRIORITY[severity] ?? 99;
       if (mapped && mappedPriority < currentPriority) {

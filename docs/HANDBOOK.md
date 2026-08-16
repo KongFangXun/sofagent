@@ -2,7 +2,7 @@
 
 > **sofagent 是一个 FDE Agent——进场梳理你的工作流、部署 AI 节点、离场后 7×24 自己跑。** 装完之后，你在自己的 Agent（WorkBuddy / Codex / Claude Code）里说一句话，它就帮你干活——审计每次变更、沉淀每次经验、越用越好。下面从装到用到查问题，全流程走一遍。
 >
-> v1.3.4 · 2026-08-14（UTC）· 孔放勋
+> v1.3.5 · 2026-08-16（UTC）· 孔放勋
 
 <img src="assets/sofagent.png" alt="sofagent" width="160" />
 
@@ -30,7 +30,7 @@
 | 想改规矩 | 排查与自定义（改写 fde.md） |
 | FDE 部署 / 持续优化 | 落地 → 常驻（完整方法论见 [FDE/GUIDE.md](../FDE/GUIDE.md)） |
 | 想理解内部机制 | [开发文档](./DEVELOPMENT.md) |
-| 想理解设计哲学 | [设计文档](./ARCHITECTURE.md) |
+| 想理解设计哲学 | [架构文档](./ARCHITECTURE.md) |
 | 想理解为什么这么做 | [设计哲学](./PHILOSOPHY.md)（**强烈推荐，读 5 分钟**） |
 
 > 📁 **项目文件导航**：根目录 6 个 .md 文件各司其职——[README.md](../README.md)（项目概览）、[README.en.md](../README.en.md)（英文概览）、[CHANGELOG.md](../CHANGELOG.md)（版本索引）、[SECURITY.md](../SECURITY.md)（安全策略）、[CONTRIBUTING.md](../CONTRIBUTING.md)（贡献指南）、[CODE_OF_CONDUCT.md](../CODE_OF_CONDUCT.md)（行为准则）。[ROADMAP.md](./ROADMAP.md)（路线图）和 [LIMITATIONS.md](./LIMITATIONS.md)（已知局限）在 `docs/` 下。
@@ -54,9 +54,9 @@
 
 ## FDE Agent 能替你干什么
 
-> 这一节先讲「价值」，再讲「怎么用」。sofagent 不是一个工具包，而是一个**能进场、能部署、能离场常驻的 Agent**——它替企业把大模型变成 7×24 自动执行的 AI 节点。完整能力矩阵见 [ARCHITECTURE · 能力与状态总览](./ARCHITECTURE.md#能力与状态总览v133)。
+> 这一节先讲「价值」，再讲「怎么用」。sofagent 不是一个工具包，而是一个**能进场、能部署、能离场常驻的 Agent**——它替企业把大模型变成 7×24 自动执行的 AI 节点。完整能力矩阵见 [ARCHITECTURE · 能力与状态总览](./ARCHITECTURE.md#能力与状态总览)。
 
-**已经能替你干的事（v1.3.4 已交付）**：
+**已经能替你干的事（v1.3.5 已交付）**：
 
 - **进场梳理 → 部署 AI 节点 → 离场常驻**：FDE 帮你盘清工作流、识别可自动化环节、把重复业务变成自动跑的 Agent，离场后 7×24 自己巡检、自己优化。
 - **每次变更都被管住**：24 条规则硬证据审计，密钥泄漏 / 越界编辑 / 注入攻击 / 盲改当场拦截；出事一键回滚到任意安全状态。
@@ -65,7 +65,8 @@
 - **能带走、能协同**：USB 一键烧录（插上即用、拔掉零残留）；多设备加密联邦互查；内置 `@sofagent-fde` + `@sofagent-audit` 双 Agent。
 - **🔗 激活链（v1.2.5+ 已实现 Phase 1-4）**：FDE 诊断交付后，ontology + workflow.yml + skills/ 不再是一堆静态文件躺在磁盘上——激活链自动读交付物 → 注册企业 SubAgent → 编排成 LangGraph 工作流 → 带人工审批（HITL）和审计地自动跑。从"交给企业一堆文档"变成"交给企业一个会自己跑的系统"。Phase 4（SUSTAIN）已于 v1.3.0 交付。详见 [激活链设计文档](./guides/fde-activation-chain.md)。
 - **🧠 v1.3.1 新增**：Ontology 运行时层（执行前校验）· 并行编排（波次并发 + MergeQueue）· Agent 身份码（Ed25519）· Benchmark 评测 · 工具审批四模式 · LLM 调用级 Trace · Durable Execution（checkpoint 续跑）· 国标对齐 GB/T 48000.3-2026。详见 [v1.3.1 开发日志](./changelog/v1.3/v1.3.1.md)。
-- **🏪 v1.3.4 新增**：组织能力市场——Skill/Agent/流程可发布、可搜索、可调用、可评分、可退役（能力像内部应用商店一样流转）；第三方 Skill 发布/安装前过 SkillScan 安全扫描（危险拦截/可疑警告/安全放行）。详见 [v1.3.4 开发日志](./changelog/v1.3/v1.3.4.md)。
+- **🏪 v1.3.4**：组织能力市场——Skill/Agent/流程可发布、可搜索、可调用、可评分、可退役；SkillScan 安全扫描双触发。
+- **🧬 v1.3.5 新增**：自进化与运维闭环 MCP 化——A/B 实验（`run_ab_test`）与晋升决策（`promote_ab`，强制人审）、审计快照查询与恢复（`snapshot_list` / `snapshot_restore`，恢复强制人审）全部可从任意 MCP 宿主调用（52 tools）；instinct→skill 自动进化（经验自动聚合成可复用 skill）；FDE 运维五件（陪跑期/进场记忆/节点注册表/审计问卷 7 行业）；DSH MCP 互通；四份独立审查 38 项加固。详见 [v1.3.5 开发日志](./changelog/v1.3/v1.3.5.md)。
 
 **现在还干不了的事（已排期，暂无代码）**：SubAgent 生产级沙箱、本地推理小模型——路线见 [ROADMAP](./ROADMAP.md)。
 
@@ -391,7 +392,7 @@ jobs:
 
 ## 进化：知识自动沉淀
 
-> 这一幕讲「长本事」——常驻 Agent 怎么把每次任务变成企业资产，越用越懂你的业务。以下功能 daemon 自动运行，装完即生效，你不需要做任何配置。完整能力矩阵见 [ARCHITECTURE · 能力与状态总览](./ARCHITECTURE.md#能力与状态总览v133)；下表只列「装完即自动生效」的新能力。
+> 这一幕讲「长本事」——常驻 Agent 怎么把每次任务变成企业资产，越用越懂你的业务。以下功能 daemon 自动运行，装完即生效，你不需要做任何配置。完整能力矩阵见 [ARCHITECTURE · 能力与状态总览](./ARCHITECTURE.md#能力与状态总览)；下表只列「装完即自动生效」的新能力。
 
 ### 近期版本新功能速览
 
@@ -418,6 +419,51 @@ jobs:
 进化引擎 = eval（三维评分：精确匹配 / 语义相似 / 规则合规）+ ab-test（current vs candidate 并行对比，连续胜出 + 非退化守卫才晋升）+ skillopt（复用审计规则做安全审查与集成优化）+ think（基于 diff + 审计结果自动生成反思条目，append-only）。
 
 > 📖 **多设备同步**：v1.1.0 起支持轻量多设备——经验共享（knowledge/ + think.md）跨设备同步。4 种方案（iCloud / NAS / Dropbox / git submodule）见 [多设备同步指南](./guides/multi-device-sync.md)。
+
+### 在 DSH 中使用 sofagent（v1.3.5 · MCP 互通）
+
+sofagent 本身就是一个 MCP server（stdio 传输，bin `sofagent-mcp`，v1.3.5 起 52 个 tool）。DSH（DeepSeek Harness）用户不需要等 v1.4.0 的 cordis-plugin——用官方 `@deepseek-ai/dsh-mcp-client` 桥接插件挂上 `sofagent-mcp`，**今天就能在 DSH 会话里调用 sofagent 的全部能力**：审计查询、知识库检索、A/B 实验（`run_ab_test`）、快照时间线（`snapshot_list`）等。
+
+#### 配置方法
+
+在 DSH 的 `cordis.yml`（插件挂载配置，通常在 `~/.dsh/` 或 profile 目录下）加一条 mcp-client 条目，stdio 传输直连 sofagent-mcp：
+
+```yaml
+- id: mcp-sofagent
+  name: '@deepseek-ai/dsh-mcp-client'
+  config:
+    serverName: sofagent
+    transport: stdio
+    command: npx
+    args: ['-y', '@sofagent/mcp']
+    env: {}                      # 可选：注入 SOFAGENT_HOME 等环境变量
+    toolCallTimeoutMs: 120000    # 可选：run_ab_test 等长任务建议放宽（默认 60000）
+```
+
+> 字段名以 `@deepseek-ai/dsh-mcp-client@0.1.0-rc.6`（2026-08-15 npm 实测拉包核对 `lib/types/index.d.ts` 的 `StdioConfig`）为准——`transport` / `serverName` / `command` / `args` / `env` / `cwd` / `toolCallTimeoutMs` / `failOnStartupError` / `reconnect`。DSH 尚处 developer preview（rc），后续版本字段可能变化，以 [DSH 官方仓库](https://github.com/deepseek-ai/deepseek-harness) config 文档为最终依据。
+
+挂载后 DSH 侧的模型看到的 tool 名形如 `mcp__sofagent__snapshot_list`（`mcp__<serverName>__<原始名>` 命名契约——与 Claude Code / Codex 同款），52 个 tool 全部可见，与 DSH 原生 tool 走完全相同的执行管道（权限策略、timeout、compaction 行为一致）。
+
+**两种 command 写法按部署形态选**：
+
+| 部署形态 | command / args | 说明 |
+|---------|---------------|------|
+| npm 安装（v1.3.5 发版后） | `npx -y @sofagent/mcp` | 最简——首次会拉包，需能访问 npm registry；`@sofagent/mcp@^1.3.5` 起 bin 为 `sofagent-mcp` |
+| monorepo 本地 / 内网 | `node /path/to/sofagent/engine/mcp/dist/mcp-server.js` | 开发/内网环境——dist 需先 `npm run build`（workspace 根目录执行）；也可 `npm i -g /path/to/engine/mcp` 后 command 直接写 `sofagent-mcp` |
+
+> ⚠️ **command 必须是 `node`，`.js` 路径放 args**——本地 dist 直用场景若把 command 写成 `.js` 文件路径，部分客户端（如 MCP Inspector）会 `spawn EACCES`（dist 文件无 +x 位；npm 安装的 bin 由 npm 自动加执行位，无此问题）。冒烟实测：`command: node` + `args: [<dist路径>]` 稳定通过。
+
+#### 安全边界（🔴 必读）
+
+互通只是新通道，不是新权限模型——sofagent 的安全语义在 DSH 通道下**完全不降级**：
+
+- **破坏性 tool 强制人审**：`promote_ab`（A/B 晋升）和 `snapshot_restore`（快照恢复）要求显式 `human_confirmed: true` 参数——不确认就只返回决策依据挂起，绝不执行。DSH 的模型无法绕过这道门（语义在 sofagent 服务端实现，与调用方无关）
+- **只读 tool 即开即用**：`snapshot_list` / `run_audit` / `search_knowledge` 等查询类无副作用
+- **进程控制不开放**：daemon start/stop 类操作不暴露为 MCP tool（changelog 安全边界第 2 条）
+
+#### 验证状态
+
+> ⚠️ **本节配置示例的验证口径**：字段结构已对照 `@deepseek-ai/dsh-mcp-client@0.1.0-rc.6` 的类型定义与官方 README 核对（2026-08-15），但**尚未经 DSH 真实连接端到端验证**——DSH 本体处于 developer preview（rc），安装面与 profile 结构仍在变动。v1.3.5 发布前将以 MCP Inspector（`npx @modelcontextprotocol/inspector`）做 stdio 通道等价冒烟（52 tools 可见 + 只读 tool 调用 + 破坏性 tool 未确认时挂起）；DSH 直连验证待 DSH 正式版后补做。若你基于本节配置实操遇到字段不匹配，请以 DSH 报错信息与官方文档为准并[提 issue](https://github.com/KongFangXun/sofagent/issues)反馈。
 
 ---
 

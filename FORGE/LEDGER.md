@@ -143,3 +143,15 @@ release-gate-loop 与 fresh-eyes-loop 共享本文件，通过"循环"列区分�
 2026-08-14     | 20260814-01    | release-gate | 19   | PASS       | SKIP       | FAIL❗修正 | FAIL❗修正 | /Users/kongfangxun/.sofagent/data/forge-runs/release-gate-loop/2026-08-14/run-01
 
 2026-08-14     | 20260814-04    | release-gate | 16   | PASS       | SKIP       | PASS     | PASS❗补跑 | /Users/kongfangxun/.sofagent/data/forge-runs/release-gate-loop/2026-08-14/run-04（regression 首跑瞬时 LLM 故障，补跑 FAIL=0，verdict IS_PASS:YES 真通过——尾列 ERROR 是 stopReason 残留标记，人工修正）
+
+2026-08-15     | 20260815-05    | fresh-eyes  | 3    | 0   | 0   | 1   | consecutive-degraded-error | /Users/kongfangxun/.sofagent/data/forge-runs/fresh-eyes-loop/2026-08-15/run-05
+
+2026-08-15     | 20260815-06    | fresh-eyes  | 3    | 0   | 0   | 1   | consecutive-degraded-error | /Users/kongfangxun/.sofagent/data/forge-runs/fresh-eyes-loop/2026-08-15/run-06
+
+2026-08-16     | 20260815-07    | fresh-eyes  | 4*   | 0   | 9(R1)   | 10(R1) | aborted-env-conflict（R1 完整且修复有效；R2-R4 报告在档但合并两度降级 + 两次进程死亡：仓库基线 restore 重建与红队 worker git 测试竞态；详见 run-07/progress.jsonl） | /Users/kongfangxun/.sofagent/data/forge-runs/fresh-eyes-loop/2026-08-15/run-07
+
+2026-08-16     | 20260816-01    | release-gate | 20   | PASS       | FAIL❗修正 | PASS     | FAIL❗修正 | /Users/kongfangxun/.sofagent/data/forge-runs/release-gate-loop/2026-08-16/run-01（❌ 假 PASS 事故：status.json 写 PASS/regression=SKIP 与 verdict.md 的 FAIL 矛盾——verdict 为权威。真实 FAIL=维度 17 bin 权限 + 维度 78 版本头；维度 72 是检查命令注释误报已修正。F 修复循环 commit 失败未闭环。两 FAIL 已于当日修复，见 run-02 重跑）
+
+2026-08-16     | 20260816-07    | release-gate | 17   | PASS       | FAIL       | FAIL     | ERROR   | /Users/kongfangxun/.sofagent/data/forge-runs/release-gate-loop/2026-08-16/run-07
+
+2026-08-16     | 20260816-10    | release-gate | 0    | PASS       | SKIP       | SKIP     | ERROR   | /Users/kongfangxun/.sofagent/data/forge-runs/release-gate-loop/2026-08-16/run-10

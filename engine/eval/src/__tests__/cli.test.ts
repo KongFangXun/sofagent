@@ -106,6 +106,33 @@ describe('createAuditRunner', () => {
 });
 
 describe('convertAuditResult', () => {
+  // ── v1.3.5 run-07 维度56 回归锁：severity 必须叠加触发状态 ──
+
+  it('WARN 触发的业务底线规则 → severity 封顶 P1（非 P0）', () => {
+    // A4 删配置 WARN 场景（golden A4-fail-01）：业务底线 WARN 不给 P0——P0 只属真拦截
+    const result = convertAuditResult({
+      rules: [{ name: 'A4 不删配置', status: 'WARN', ruleClass: '业务底线' } as never],
+      exitCode: 1,
+    });
+    expect(result['severity']).toBe('P1');
+  });
+
+  it('FAIL 触发的业务底线规则 → severity 保持 P0', () => {
+    const result = convertAuditResult({
+      rules: [{ name: 'A1 不碰敏感', status: 'FAIL', ruleClass: '业务底线' } as never],
+      exitCode: 2,
+    });
+    expect(result['severity']).toBe('P0');
+  });
+
+  it('WARN 触发的能力拐杖规则 → severity 保持 P1（不降 P2）', () => {
+    // golden A3-fail-01：A3 WARN 期望 P1（golden:100 注释「随 priority 降 warning→P1」）
+    const result = convertAuditResult({
+      rules: [{ name: 'A3 不改越界', status: 'WARN', ruleClass: '能力拐杖' } as never],
+      exitCode: 1,
+    });
+    expect(result['severity']).toBe('P1');
+  });
   it('exitCode 0 → PASS', () => {
     const result = convertAuditResult({ rules: [], exitCode: 0 });
     expect(result['result']).toBe('PASS');

@@ -4,8 +4,8 @@
 //   1. 生成 .sofagent/config.yml 配置模板
 //   2. 安装 git commit-msg hook
 //   3. 冒烟测试——验证审计引擎可用
-// v1.3.4: 新增仓库状态分类器（gstack 首次运行引导）
-// v1.3.4 daemon 注册改为「确认后注册」——默认不装、非 TTY 不挂起、
+// v1.3.5: 新增仓库状态分类器（gstack 首次运行引导）
+// v1.3.5 daemon 注册改为「确认后注册」——默认不装、非 TTY 不挂起、
 //   已有 plist 询问不静默覆盖、npx 场景如实报错（不生成坏 plist、不打印假成功）、
 //   修正 plist 路径前缀 sofagent/daemon/ → engine/daemon/。
 // v1.2.5 --init 自动生成 HMAC 密钥（~/.sofagent-key，权限 600），
@@ -589,9 +589,19 @@ try {
       process.exit(0);  // 找到匹配——审计已运行
     }
     if (entry.commitPhase === "pre-commit" && entry.parentSha === PARENT_SHA) {
-      // v1.3.4 P1-8: pre-commit 记录对账命中——审计已运行
-      console.log("  ✓ [sofagent] 审计通过");
-      process.exit(0);  // pre-commit 记录按父提交 SHA 对账命中——审计已运行
+      // v1.3.5 #2: 假阳性回声修复——命中 pre-commit 记录时必须校验该次审计的结果。
+      // 此前无脑输出「✓ 审计通过」：带 token 提交被 commit-msg 拦截（exit 2，
+      // 拦截记录带 parentSha）→ 同内容 --no-verify 强推 → post-commit 命中那条
+      // **失败**记录 → 输出假绿。现在按 exitCode 分流：
+      //   0 = 审计真通过 → 回声；非 0 = 疑似绕过 → 不输出 ✓，提示复核。
+      if (entry.exitCode === 0) {
+        console.log("  ✓ [sofagent] 审计通过");
+        process.exit(0);  // pre-commit 记录按父提交 SHA 对账命中且审计通过
+      }
+      console.log("");
+      console.log("  ℹ️ [sofagent] 父提交存在审计拦截记录（exit " + entry.exitCode + "）但本次 commit 未走审计——疑似 --no-verify 绕过。");
+      console.log("  可运行 sofagent-audit --verify-commit " + COMMIT_SHA + " 复核。");
+      process.exit(0);  // post-commit 永不阻断 commit（只提示）
     }
   }
   // 未找到匹配——降级为 INFO 提示（避免狼来了）。真绕过仍由 --verify-commit 复核。

@@ -1,5 +1,5 @@
 // ============================================================
-// loop-agent/ontology-comparator.ts · L2 Ontology 对比器（v1.3.4 交付 1）
+// loop-agent/ontology-comparator.ts · L2 Ontology 对比器（v1.3.5 交付 1）
 // ============================================================
 //
 // 节点实际输出（结构化提取后）→ 与 Ontology 预期输出对比 → DiffReport。

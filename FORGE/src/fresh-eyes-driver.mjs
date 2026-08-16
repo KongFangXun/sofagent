@@ -245,7 +245,9 @@ const STEPS = {
  * （v1.3.1 P1-2：从 6 降到 4——run-01 实测并发 6 + 熔断重试触发 429）。
  * 24 worker / 4 并发 = 6 批，每批约 2-3 分钟，总计 ~15 分钟。
  */
-const MAX_CONCURRENCY = parseInt(process.env.FORGE_MAX_CONCURRENCY || '4', 10);
+const MAX_CONCURRENCY = parseInt(process.env.FORGE_MAX_CONCURRENCY || '2', 10);
+// 8GB 机器约束下的均衡点——worker heap 已降 1024（见 spawn 处），并发 2 = ≤2GB heap
+// 上限，安全余量充足。16GB+ 机器可 FORGE_MAX_CONCURRENCY=4 恢复吞吐。
 
 // ═══════════════════════════════════════════════════════════
 //  CLI 参数解析
@@ -674,6 +676,25 @@ async function runWorker(step, roundDir, target) {
 
   // 从环境变量读取轮次号（由 spawnWorker 通过 FORGE_ROUND 注入）
   const round = parseInt(process.env.FORGE_ROUND || '0', 10);
+
+  // worker-alive 戳：每 30s 写时间戳到 roundDir，事后可区分「driver 死（戳还在跳）
+  // vs「整树死（戳同停）」——SIGKILL 下 driver/worker 都来不及写终态，这是唯一的
+  // 尸检证据。finally 清理定时器，戳文件本身保留供取证。
+  const workerAlivePath = join(roundDir, 'worker-alive.json');
+  const workerAliveTimer = setInterval(() => {
+    try {
+      writeFileSync(workerAlivePath, JSON.stringify({
+        step, pid: process.pid, ts: new Date().toISOString(),
+      }) + '\n');
+    } catch { /* 戳写失败不中断 worker 主流程 */ }
+  }, 30_000);
+  // 首跑立即写一次（否则最早 30s 内无戳）
+  try {
+    writeFileSync(workerAlivePath, JSON.stringify({
+      step, pid: process.pid, ts: new Date().toISOString(),
+    }) + '\n');
+  } catch { /* 同上 */ }
+
 
   // 1. 构建 systemPrompt
   const systemPrompt = buildSystemPrompt(cfg.agentSkillPath);
@@ -1887,7 +1908,7 @@ function spawnWorker(step, roundDir, target, round, options = {}) {
       // Capture stderr to detect StallError marker from worker process
       let stderrBuf = '';
       const child = spawn(process.execPath, [
-        '--max-old-space-size=2048',   // run-09 教训：1536MB 在零窗口模式下 a-check+b-check 并行 + generateReportWithoutTools 裸 LLM 调用仍会 OOM
+        '--max-old-space-size=1024',   // worker 实际负载是 grep/read 型轻内存（工具调用 0.0s 级），1024 够用；降半后在 8GB 机器上并发 2 也只占 ≤2GB heap 上限。若再遇 worker OOM（stderr 含 heap out of memory），回调 2048 并回退并发 1。
         __filename,
         '--worker',
         '--step', step,
@@ -2980,6 +3001,7 @@ async function main() {
       // audit middleware 监听器），事件循环不清空 → 进程永不退出 → driver 的
       // spawnWorkerStep await 永久挂起（run-23 round-5 b-fix 第 3 批实测 hang 18 分钟）。
       // process.exit 无视残留句柄，强制回收 worker 进程。
+      // （workerAliveTimer 同属残留句柄，由 process.exit 一并回收，无需显式清理）
       process.exit(0);
     } catch (err) {
       console.error(`[worker:${args.step}] 失败: ${err.message}`);

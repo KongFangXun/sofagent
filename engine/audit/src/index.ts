@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // ============================================================
 // sofagent-audit · 提交时审计 CLI 入口
-// v1.3.4 · 审计闭环六步（检测+分类+根因+改进+回归+上线）
+// v1.3.5 · 审计闭环六步（检测+分类+根因+改进+回归+上线）
 // v1.0.8 精简（历史）：compose→orchestrator, subagent→orchestrator,
 //          skillopt-run→skillopt, ab-test→ab-test,
 //          daemon→daemon, doctor/verify→core (deprecation shim)
@@ -46,7 +46,7 @@ import { loadHistory, appendHistory, type AuditHistoryEntry } from './audit-hist
 // require('@sofagent/audit') 使用 checkHistoryChainIntegrity
 export { checkHistoryChainIntegrity } from './audit-history';
 
-// Re-export core 审计原语——daemon/mcp/orchestrator 通过 @sofagent/audit 消费（v1.3.9）
+// Re-export core 审计原语——daemon/mcp/orchestrator 通过 @sofagent/audit 消费（v1.2.9）
 export { runRules, productSignature } from './reporter';
 export type { AuditResult } from './reporter';
 export { loadHistory, appendHistory } from './audit-history';
@@ -54,7 +54,7 @@ export type { AuditHistoryEntry } from './audit-history';
 // Re-export core diff/log/config 原语（mcp-server.ts 从 audit 消费 parseDiff/checkLogs/loadConfig/VERSION）
 export { parseDiff, checkLogs, loadConfig, VERSION } from '@sofagent/core';
 
-// v1.3.4: re-export P0 数据主权 + skill 安全审查，供 daemon/mcp/orchestrator/skillopt 消费
+// v1.3.5: re-export P0 数据主权 + skill 安全审查，供 daemon/mcp/orchestrator/skillopt 消费
 export { DataSovereigntyLogger, resolveSovereigntyLogPath, resolveDateArg, sanitizeRecord } from './data-sovereignty';
 export type { DataSovereigntyRecord, SovereigntyLogEntry } from './data-sovereignty';
 export { generateDailyReport, generateWeeklyReport, generateMonthlyReport, generateReport, aggregateStats } from './report-generator';
@@ -69,6 +69,7 @@ import { runVerifyChain, runVerifyCommit } from './commands/verify';
 import { formatSuggestions } from './config-suggestion';
 import { runRegression, type DiffSnapshot } from './audit-regression';
 import { defaultRules, extendedRules } from './rules';
+import { scanWorkspace, formatWorkspaceScan } from './workspace-scan';
 import type { RuleCheck } from './rules/types';
 import { pushAuditResult, type WebhookPlatform } from './webhook';
 import { getFixSuggestion } from './fix-suggestions';
@@ -90,9 +91,9 @@ interface Args {
   installHook: boolean;
   json: boolean;
   rootCause: boolean;
-  /** v1.3.9: --verify-chain 校验 HMAC hash chain 完整性 */
+  /** v1.2.9: --verify-chain 校验 HMAC hash chain 完整性 */
   verifyChain: boolean;
-  /** v1.3.9: --verify-commit <hash> 检查 commit 是否有审计记录 */
+  /** v1.2.9: --verify-commit <hash> 检查 commit 是否有审计记录 */
   verifyCommit?: string;
   /** v1.3.1 交付 2：--gb48000 国标对齐维度（opt-in 默认 false，不影响默认审计行为） */
   gb48000: boolean;
@@ -112,23 +113,23 @@ interface Args {
   timelineJson?: boolean;
   /** v1.0.9: ontology 子命令 */
   ontologyCommand?: string;
-  /** v1.3.5 P2: conflict-check 子命令 */
+  /** v1.2.5 P2: conflict-check 子命令 */
   conflictCheckCommand?: boolean;
-  /** v1.3.5 P2: federation-distill 子命令 */
+  /** v1.2.5 P2: federation-distill 子命令 */
   federationDistillCommand?: boolean;
-  /** v1.3.9: support-bundle 子命令 */
+  /** v1.2.9: support-bundle 子命令 */
   supportBundle: boolean;
   /** v1.3.1: 审计 session 产物（默认开启，--no-session 关闭） */
   noSession: boolean;
   /** v1.3.1: --commit-msg 完整 commit message（hook 场景传完整 body 供 A9 扫描） */
   commitMsgArg?: string;
-  /** v1.3.9 (⑧-3): --format github 输出为 GitHub Annotations 格式 */
+  /** v1.2.9 (⑧-3): --format github 输出为 GitHub Annotations 格式 */
   format?: string;
-  /** v1.3.9 (⑧-2): --ruleset 指定规则集名称（如 sofagent / security） */
+  /** v1.2.9 (⑧-2): --ruleset 指定规则集名称（如 sofagent / security） */
   ruleset?: string;
-  /** v1.3.9 (⑧-2): --ruleset-path 指定本地规则集目录 */
+  /** v1.2.9 (⑧-2): --ruleset-path 指定本地规则集目录 */
   rulesetPath?: string;
-  /** v1.3.9 (⑧-2): --list-rulesets 列出可用规则集 */
+  /** v1.2.9 (⑧-2): --list-rulesets 列出可用规则集 */
   listRulesets?: boolean;
   /** v1.3.1 #15: --warn-as-error 让 WARN 返回 exit 2（安全优先，CI 阻断） */
   warnAsError: boolean;
@@ -251,10 +252,10 @@ function parseArgs(argv: string[]): Args {
       i++;
       args.ontologyCommand = argv[i] as string;
     } else if (argv[i] === 'conflict-check') {
-      // v1.3.5 P2: conflict-check 子命令
+      // v1.2.5 P2: conflict-check 子命令
       args.conflictCheckCommand = true;
     } else if (argv[i] === 'federation-distill') {
-      // v1.3.5 P2: federation-distill 子命令
+      // v1.2.5 P2: federation-distill 子命令
       args.federationDistillCommand = true;
     } else if (argv[i] === '--help' || argv[i] === '-h') {
       const verbose = argv.includes('--verbose');
@@ -307,6 +308,7 @@ function parseArgs(argv: string[]): Args {
         console.log('  --regression <dir> 回归验证');
         console.log('  --init             一键初始化');
         console.log('  --doctor           环境健康检查（内置完整诊断）');
+        console.log('  --reset-baseline   重置 dist 基准哈希（rebuild 后一键重置，自动路由 doctor）');
         console.log('  --sign-config      对 config.yml 签名（消除防篡改警告）');
         console.log('  --no-session      不写入 session 报告文件');
         console.log('  --webhook <p>      webhook 推送（dingtalk/feishu/wecom）');
@@ -349,7 +351,7 @@ function parseArgs(argv: string[]): Args {
  * 从 cwd 往上查找 .git 目录，将 hooks/commit-msg 与 hooks/post-commit 模板复制到 .git/hooks/
  * 迁移：如果 .git/hooks/pre-commit 含 sofagent 标识，自动移除旧 hook
  *
- * v1.3.4 P0-RC3: hook 安装清单与 --init 对齐——installHook() 也安装 post-commit。
+ * v1.3.5 P0-RC3: hook 安装清单与 --init 对齐——installHook() 也安装 post-commit。
  * 老用户 `sofagent-audit --install-hook` 升级时不再 miss post-commit（--no-verify 绕过的唯一防线）。
  */
 function installHook(): void {
@@ -407,10 +409,10 @@ function installHook(): void {
   }
 
   // 安装单个 hook：备份旧文件 → 写入模板 → chmod 755
-  // v1.3.4 P0-RC3: commit-msg 与 post-commit 共用此逻辑，保证两个入口（--init / --install-hook）安装清单一致
+  // v1.3.5 P0-RC3: commit-msg 与 post-commit 共用此逻辑，保证两个入口（--init / --install-hook）安装清单一致
   function installOneHook(hookName: string, templatePath: string, destName: string): void {
     const destPath = join(hooksDir, destName);
-    // v1.3.9: 覆盖前备份已有 hook（如果有）
+    // v1.2.9: 覆盖前备份已有 hook（如果有）
     if (existsSync(destPath)) {
       const backupPath = join(hooksDir, `${destName}.bak`);
       try {
@@ -429,7 +431,7 @@ function installHook(): void {
   }
 
   installOneHook('commit-msg', commitMsgTemplate, 'commit-msg');
-  // v1.3.4 P0-RC3: 补装 post-commit（--no-verify 绕过检测）
+  // v1.3.5 P0-RC3: 补装 post-commit（--no-verify 绕过检测）
   installOneHook('post-commit', postCommitTemplate, 'post-commit');
   console.log('   每次 git commit 时会自动运行 sofagent-audit 检查；post-commit 在提交后对账 --no-verify 绕过。');
   exit(0);
@@ -591,7 +593,7 @@ function confirm(question: string): Promise<boolean> {
 }
 
 /**
- * v1.3.4 (DP-1) 版本一致性自检——检测陈旧全局安装。
+ * v1.3.5 (DP-1) 版本一致性自检——检测陈旧全局安装。
  *
  * 原理：运行中的产物有自己的 package.json（与 dist/index.js 同级上层目录），
  * 读取其实际 version，与编译进代码的 VERSION 常量（来自 @sofagent/core/constants.ts）比对。
@@ -640,10 +642,14 @@ async function main(): Promise<void> {
   // doctor → @sofagent/core 内置健康检查(移除对 core CLI 的 doctor 错误推荐——
   // core CLI 只支持子命令形式，flag 形式不合法；且 audit --doctor 已直接调用 core 的
   // runDoctor，本就是完整诊断，无需再引导到别的命令）
-  if (rawArgs.includes('--doctor')) {
+  // v1.3.5：--reset-baseline 自动路由到 doctor（不带 --doctor 也不报未知参数——
+  // rebuild dist 后一键重置基准哈希，bugfix #18 执行遗留）
+  if (rawArgs.includes('--doctor') || rawArgs.includes('--reset-baseline')) {
     try {
       const { runDoctor } = await import('@sofagent/core');
-      const report = runDoctor(process.cwd());
+      const report = runDoctor(process.cwd(), {
+        resetBaseline: rawArgs.includes('--reset-baseline'),
+      });
       // v1.3.1 (F-23): doctor 仅在 error 时返回非零，warning 时返回 0——
       // 对 cron/CI 脚本友好（仅警告不应被解释为失败）。人类如需 warning 也失败，用 --doctor --strict。
       if (rawArgs.includes('--strict')) {
@@ -733,7 +739,7 @@ async function main(): Promise<void> {
     }
   }
 
-  // v1.3.9: --support-bundle 模式——一键生成 issue 摘要 + 证据 zip
+  // v1.2.9: --support-bundle 模式——一键生成 issue 摘要 + 证据 zip
   if (args.supportBundle) {
     const { generateSupportBundle } = await import('./support-bundle');
     try {
@@ -763,7 +769,7 @@ async function main(): Promise<void> {
     }
   }
 
-  // v1.3.5 P2：conflict-check 子命令（知识矛盾检测 CLI）
+  // v1.2.5 P2：conflict-check 子命令（知识矛盾检测 CLI）
   if (args.conflictCheckCommand) {
     const { runConflictCheckCli, parseConflictCheckArgs } = await import('./cli/conflict-check');
     const cliArgs = parseConflictCheckArgs(rawArgs);
@@ -778,7 +784,7 @@ async function main(): Promise<void> {
     }
   }
 
-  // v1.3.5 P2：federation-distill 子命令（联邦蒸馏 CLI）
+  // v1.2.5 P2：federation-distill 子命令（联邦蒸馏 CLI）
   if (args.federationDistillCommand) {
     const { runFederationDistillCli, parseFederationDistillArgs } = await import('./cli/federation-distill');
     const cliArgs = parseFederationDistillArgs(rawArgs);
@@ -805,13 +811,13 @@ async function main(): Promise<void> {
     return;
   }
 
-  // --verify-chain 模式（v1.3.9 新增）
+  // --verify-chain 模式（v1.2.9 新增）
   if (args.verifyChain) {
     runVerifyChain();
     return;
   }
 
-  // --verify-commit <hash> 模式（v1.3.9 新增）
+  // --verify-commit <hash> 模式（v1.2.9 新增）
   if (args.verifyCommit) {
     runVerifyCommit(args.verifyCommit);
     return;
@@ -829,7 +835,7 @@ async function main(): Promise<void> {
     return;
   }
 
-  // v1.3.9 (⑧-2): --list-rulesets → 列出可用规则集后退出
+  // v1.2.9 (⑧-2): --list-rulesets → 列出可用规则集后退出
   if (args.listRulesets) {
     const { listAvailableRulesets, formatRulesetList } = require('./ruleset-loader');
     const infos = listAvailableRulesets(args.rulesetPath);
@@ -892,7 +898,7 @@ async function main(): Promise<void> {
   try {
     diffFiles = args.cached ? parseStagedDiff() : parseDiff(args.diffRange);
   } catch {
-    // v1.3.9: diff 解析本身报错（如无效 range）——git fatal 不能当"无变更"处理
+    // v1.2.9: diff 解析本身报错（如无效 range）——git fatal 不能当"无变更"处理
     if (args.json) {
       console.log(JSON.stringify({ exitCode: 2, rules: [], error: 'DIFF_PARSE_FAILED' }, null, 2));
     } else {
@@ -902,7 +908,7 @@ async function main(): Promise<void> {
     exit(2);
   }
 
-  // v1.3.9: diff 为空时二次验证——如果 --diff range 无效（git 报 fatal），parseDiff 可能返回空数组
+  // v1.2.9: diff 为空时二次验证——如果 --diff range 无效（git 报 fatal），parseDiff 可能返回空数组
   if (!args.cached && diffFiles.length === 0 && args.diffRange) {
     try {
       execFileSync('git', ['diff', '--exit-code', args.diffRange], { stdio: 'pipe' });
@@ -994,10 +1000,10 @@ async function main(): Promise<void> {
   }
 
   // 4.3 配置完整性检查：检测 config.yml 中是否关闭了规则（防篡改）
-  // v1.3.9: 阈值从 >3 改为 >0——关闭任意条规则即输出显眼告警（不阻断，保持灵活性但确保可追溯）
+  // v1.2.9: 阈值从 >3 改为 >0——关闭任意条规则即输出显眼告警（不阻断，保持灵活性但确保可追溯）
   let configDisabledTooMany = false;
   if (config?.rules) {
-    // v1.3.5: 追加 a20-a23（A20-A23 新增安全红线规则）
+    // v1.2.5: 追加 a20-a23（A20-A23 新增安全红线规则）
     const ALL_RULE_KEYS = ['a1','a2','a3','a4','a5','a6','a7','a8','a9','a10','a11','a14','a15','a16','a17','a18','a19','a20','a21','a22','a23','e1','e2','e4'];
     // 基线规则集合与 core 共享常量统一（单一事实源）
     const BASELINE_KEYS = new Set<string>(BASELINE_RULE_KEYS);
@@ -1006,19 +1012,24 @@ async function main(): Promise<void> {
     const disabledCount = disabledEntries.length;
     const totalActive = ALL_RULE_KEYS.length;
 
-    // v1.3.9: 关闭任意条规则即告警（不再等 >3），并记录到 history.jsonl 留下痕迹
+    // v1.2.9: 关闭任意条规则即告警（不再等 >3），并记录到 history.jsonl 留下痕迹
     if (disabledCount > 0) {
       const disabledList = disabledEntries.map(([key]) => key).join(', ');
       console.warn(`\u26a0\ufe0f  当前有 ${disabledCount} 条规则被关闭（${disabledList}）。如果这不是你主动配置的，config.yml 可能已被篡改。`);
       // 关闭规则时在 history.jsonl 记录一条 audit log（rule_disabled 事件）
+      // v1.3.5 #38: 路径解析与主审计历史统一——此前用 resolveAuditDir()（只感知
+      //   SOFAGENT_HOME），隔离环境（SOFAGENT_DATA=/tmp/x）下事件写进默认链
+      //   ~/.sofagent/data/audit/history.jsonl，污染真实数据目录。
+      //   改用 getHistoryFilePath()（显式 dataDir > SOFAGENT_DATA > 默认链），
+      //   与 loadHistory/appendHistory 同一套解析口径。
       try {
-        const { resolveAuditDir } = await import('@sofagent/core');
-        const { appendFileSync, existsSync: dirExists } = await import('fs');
-        const auditDir = resolveAuditDir();
-        const historyFile = join(auditDir, 'history.jsonl');
-        if (!dirExists(auditDir)) {
-          const { mkdirSync } = await import('fs');
-          mkdirSync(auditDir, { recursive: true });
+        const { getHistoryFilePath } = await import('@sofagent/core');
+        const { appendFileSync, mkdirSync, existsSync: dirExists } = await import('fs');
+        const { dirname: pathDirname } = await import('path');
+        const historyFile = getHistoryFilePath();
+        const historyDir = pathDirname(historyFile);
+        if (!dirExists(historyDir)) {
+          mkdirSync(historyDir, { recursive: true });
         }
         const record = JSON.stringify({
           timestamp: new Date().toISOString(),
@@ -1051,7 +1062,7 @@ async function main(): Promise<void> {
   // 5. 运行规则
   const results = runRules(diffFiles, logEntries, args.task, args.strict, args.silent, commitMsg || undefined, config, undefined, args.gb48000);
 
-  // v1.3.9 (⑧-2): --ruleset / --ruleset-path → 运行 JSON 规则集（叠加在内置规则之上）
+  // v1.2.9 (⑧-2): --ruleset / --ruleset-path → 运行 JSON 规则集（叠加在内置规则之上）
   if (args.ruleset || args.rulesetPath) {
     try {
       const { loadRuleset, loadRulesetFromPath, runRulesetRules, computeExitCode } = require('./ruleset-loader');
@@ -1122,7 +1133,7 @@ async function main(): Promise<void> {
     results.exitCode = 2;
   }
 
-  // v1.3.9 (⑧-3): --format github → 输出 GitHub Annotations 格式
+  // v1.2.9 (⑧-3): --format github → 输出 GitHub Annotations 格式
   if (args.format === 'github') {
     const { generateGithubOutput } = require('./formatters/github-formatter');
     const ruleCount = results.rules.length;
@@ -1133,6 +1144,14 @@ async function main(): Promise<void> {
 
   printResults(results, diffFiles, args.json, args.ci, args.silent);
 
+  // v1.3.5: 工作区垃圾残留扫描（WARN 不阻断——附带的巡检能力，防「实验残留」积压）
+  if (!args.json) {
+    const wsScan = scanWorkspace();
+    for (const line of formatWorkspaceScan(wsScan)) {
+      console.log(line);
+    }
+  }
+
   // 7. webhook 推送（fire-and-forget，配置了 webhook 时 PASS/WARN/FAIL 三态都推送）
   // v1.3.1: 优先 CLI --webhook/--webhook-url，回退 config.yml audit.webhook.{platform,url}，
   //         再回退环境变量 SOFAGENT_WEBHOOK_URL（已在 parseArgs 初始化 webhookUrl）。
@@ -1141,7 +1160,7 @@ async function main(): Promise<void> {
   const webhookUrlFinal = args.webhookUrl || config.webhook?.url;
   if (webhookPlatform && webhookUrlFinal) {
     try {
-      // v1.3.9 编译自定义脱敏正则
+      // v1.2.9 编译自定义脱敏正则
       const customSanitizePatterns = config.sanitizePatterns
         ? config.sanitizePatterns
             .map((p) => {
@@ -1187,7 +1206,7 @@ async function main(): Promise<void> {
       console.warn('[sofagent] 提示：首次提交（unborn HEAD），对比空树进行审计');
     }
 
-    // v1.3.9 commit-msg hook 场景下（--commit-msg 由 hook 传入），审计运行在
+    // v1.2.9 commit-msg hook 场景下（--commit-msg 由 hook 传入），审计运行在
     // commit 对象生成之前——此刻 git rev-parse HEAD 得到的是新提交的**父提交** SHA，
     // 而非正在创建的提交。若直接记入 commitSha，追溯链整体错位一个 commit，
     // --verify-commit 按 SHA 匹配必然张冠李戴（100% 误报）。
@@ -1225,7 +1244,7 @@ async function main(): Promise<void> {
       diffFileCount: diffFiles.length,
       commitMsg: commitMsg || undefined,
       commitSha,
-      // v1.3.9 pre-commit 阶段记录父提交 SHA（= 审计时 HEAD），
+      // v1.2.9 pre-commit 阶段记录父提交 SHA（= 审计时 HEAD），
       // --verify-commit / post-commit 对账按此 fallback 匹配。旧记录无此字段。
       parentSha,
       commitPhase: isPreCommitPhase ? 'pre-commit' : undefined,
@@ -1250,7 +1269,7 @@ async function main(): Promise<void> {
     process.stderr.write('[sofagent-audit] 警告: 审计历史写入失败，跳过（不影响审计结果）\n');
   }
 
-  // 8.5 session 产物（P0：审计结果 session 可见性）——v1.3.4
+  // 8.5 session 产物（P0：审计结果 session 可见性）——v1.3.5
   if (!args.noSession) {
     try {
       const report = buildSessionReport(results, diffFiles, { task: args.task, commitSha });
@@ -1401,7 +1420,7 @@ export function printResults(results: AuditResult, diffFiles: DiffFile[], json: 
 
     const problems = results.rules.filter((r) => r.status !== 'PASS' && r.status !== 'SKIPPED');
     if (problems.length === 0) {
-      // v1.3.9: — PASS 时即使 --ci 也输出极简签名到 stderr（防遗忘装了 sofagent）
+      // v1.2.9: — PASS 时即使 --ci 也输出极简签名到 stderr（防遗忘装了 sofagent）
       const totalRules = results.rules.length;
       process.stderr.write(`✅ [sofagent] 审计通过 · ${totalRules} 条规则\n`);
       return;
@@ -1483,7 +1502,7 @@ export function printResults(results: AuditResult, diffFiles: DiffFile[], json: 
 
   // 扩展规则状态
   if (!results.rules.some((r) => r.number > 11)) {
-    // v1.3.4 P2-23: E3 已并入 A11（不滥资源），不再单独列出，避免用户误以为存在 E3 规则
+    // v1.3.5 P2-23: E3 已并入 A11（不滥资源），不再单独列出，避免用户误以为存在 E3 规则
     console.log('  扩展规则   未启用（E1 E2 E4 + A14-A17，config 中开启）');
   }
 

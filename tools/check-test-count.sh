@@ -338,11 +338,17 @@ done
 # ── acceptance-test.sh 场景数守卫（F-01/F-02）──
 # SSOT = acceptance-test.sh 头部「NNN 个场景」声明。三处文档
 # （DEVELOPMENT.md / LIMITATIONS.md / changelog v1.2.3.md）必须与之一致。
-# 绝不允许静默跳过：头部声明缺失 → 黄色 WARN（不骗绿）；
-# 文档数字与 SSOT 不一致 → exit 1 并列出文件+行号。
-ACCEPTANCE_ACTUAL=$(head -10 FORGE/playbook/acceptance-test.sh 2>/dev/null | grep -oE '[0-9]+ 个场景' | head -1 | grep -oE '[0-9]+' || echo "")
+# v1.3.5 #5 元教训（四份审查独立命中「守卫之死」）：凡是「未找到 X 则跳过」的守卫，
+#   跳过本身必须算 FAIL——否则守卫的存在感为零（守卫空转比没有守卫更危险）。
+#   本脚本此前 head -10 读不到第 11 行的 SSOT 声明（v1.3.1 加 LANG export 挤行所致），
+#   WARN 每次出现但从未有人在意，场景守卫长期失效。现改为：
+#   ① head -10 → head -20（声明行挪动几行不再失明）
+#   ② 头部声明缺失 → 直接 FAIL（exit 1），不再 WARN 跳过
+ACCEPTANCE_ACTUAL=$(head -20 FORGE/playbook/acceptance-test.sh 2>/dev/null | grep -oE '[0-9]+ 个场景' | head -1 | grep -oE '[0-9]+' || echo "")
 if [ -z "$ACCEPTANCE_ACTUAL" ]; then
-  echo -e "  ${YELLOW}⚠ acceptance-test.sh 头部未找到「NNN 个场景」声明，场景守卫跳过（请在脚本头部补 SSOT 声明）${NC}"
+  echo -e "  ${RED}✗ acceptance-test.sh 头部（前 20 行）未找到「NNN 个场景」声明——场景守卫 FAIL（不再静默跳过）${NC}"
+  echo -e "    守卫空转比没有守卫更危险：请在脚本头部补 SSOT 声明「# 场景数：NNN 个场景」"
+  ((FAIL++)) || true
 else
   if [ "$QUIET" = false ]; then
     echo -e "  场景数 SSOT：acceptance-test.sh 头部声明 ${ACCEPTANCE_ACTUAL} 个场景"

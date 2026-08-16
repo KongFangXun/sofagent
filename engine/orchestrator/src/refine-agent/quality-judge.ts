@@ -1,5 +1,5 @@
 // ============================================================
-// refine-agent/quality-judge.ts · L2 质量判定器（v1.3.4 交付 T04）
+// refine-agent/quality-judge.ts · L2 质量判定器（v1.3.5 交付 T04）
 // ============================================================
 //
 // Refine Agent 的 L2 判定器——接口对齐 loop-agent/diff-report.ts 的 DiffReport，

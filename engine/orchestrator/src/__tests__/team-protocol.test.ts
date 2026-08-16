@@ -14,7 +14,7 @@ import { existsSync, rmSync, mkdirSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
 import { randomBytes } from 'crypto';
-import * as Automerge from 'automerge';
+import * as Automerge from '@automerge/automerge';
 
 import {
   initTeamState,

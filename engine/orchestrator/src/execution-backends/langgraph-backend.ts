@@ -1,4 +1,4 @@
-// langgraph-backend.ts · v1.3.4 增量 · LangGraph createReactAgent fallback 后端
+// langgraph-backend.ts · v1.3.5 增量 · LangGraph createReactAgent fallback 后端
 //
 // 职责：封装 createReactAgent 的创建/调用/结果提取，对 ExecutionBackend 接口
 // 暴露的只是 execute(task)→result。

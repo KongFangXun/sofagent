@@ -73,7 +73,8 @@ function tmpDir(): string {
   return dir;
 }
 
-describe('market-five-ring 端到端五环集成测试', () => {
+// v1.3.5 阶段五：全量并行 IO 争用偶发超时——文件级 timeout 20s
+describe('market-five-ring 端到端五环集成测试', { timeout: 20000 }, () => {
   let testDir: string;
   let skillDir: string;
   let stubbedEnv: string;

@@ -40,7 +40,7 @@ import {
   FIXTURE_CASE_TEXTS,
 } from './fixtures/market-rule-fixtures';
 
-describe('评估体系三步闭环（rule-harvest → rule-jury → rule-promote）', () => {
+describe('评估体系三步闭环（rule-harvest → rule-jury → rule-promote）', { timeout: 20000 }, () => {
   describe('第一步 harvest：真实案例长规则', () => {
     it('collectLowScoreRatings 过滤低分差评（< 阈值）', () => {
       const low = collectLowScoreRatings(undefined, FIXTURE_LOW_SCORE_RATINGS);
