@@ -2469,7 +2469,7 @@ scenario 279 "v1.3.5 交付 2：daemon 快照双 tool 后端——snapshot_list/
 S279_OK=true
 grep -q "@sofagent/core" "$PROJECT_ROOT/engine/mcp/src/tools/snapshot-list.ts" || S279_OK=false
 grep -q "@sofagent/core" "$PROJECT_ROOT/engine/mcp/src/tools/snapshot-restore.ts" || S279_OK=false
-grep -q "snapshot" "$PROJECT_ROOT/engine/core/src/snapshot-manager.ts" 2>/dev/null || ls "$PROJECT_ROOT/engine/core/src/" | grep -q snapshot || S279_OK=false
+grep -q "snapshot" "$PROJECT_ROOT/engine/core/src/snapshot-helpers.ts" 2>/dev/null || S279_OK=false
 $S279_OK && pass "快照数据链（MCP tool→core 管理器，daemon 只做巡检）" || fail "快照 tool 数据源断链"
 
 scenario 280 "v1.3.5 收编：workspace-scan 工作区卫生扫描接线 + 4 单测"

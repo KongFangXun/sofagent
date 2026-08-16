@@ -708,8 +708,8 @@ else
 fi
 
 # 手机号脱敏测试（v0.71 P0 修复）
-SANITY_PHONE=$(_test_sanitize "用户电话 1**REDACTED*** 请回拨")
-if echo "$SANITY_PHONE" | grep -q "PHONE-REDACTED" && ! echo "$SANITY_PHONE" | grep -q "1**REDACTED***"; then
+SANITY_PHONE=$(_test_sanitize "用户电话 13812345678 请回拨")
+if echo "$SANITY_PHONE" | grep -q "PHONE-REDACTED" && ! echo "$SANITY_PHONE" | grep -q "13812345678"; then
   check_pass "脱敏: 手机号打码正常 (1[3-9]xxxxxxxxx → [PHONE-REDACTED])"
 else
   check_fail "脱敏: 手机号未打码"
