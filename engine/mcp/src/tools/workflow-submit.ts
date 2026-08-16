@@ -13,8 +13,6 @@
 //   - 非法 workflow 返回结构化错误清单（issues），绝不 crash
 // ============================================================
 
-import type { ToolResult } from './audit-tools';
-
 export interface WorkflowSubmitArgs {
   /** workflow 文本（YAML 或 JSON） */
   workflow: string;
@@ -25,15 +23,43 @@ export interface WorkflowSubmitArgs {
 }
 
 /**
+ * 结构化结果（对齐 snapshot_restore 模式——data 带具体类型，
+ * mcp-server 可读 data.isError 判定 isError）。
+ */
+export interface WorkflowSubmitResult {
+  /** 首行必须 [sofagent] 前缀 */
+  text: string;
+  data: {
+    isError: boolean;
+    /** schema + 语义校验是否通过 */
+    validated: boolean;
+    /** 是否已执行（mode=run 且校验通过时 true） */
+    executed: boolean;
+    /** workflow 名（校验通过时） */
+    name?: string;
+    /** 节点数（校验通过时） */
+    nodeCount?: number;
+    /** merge_criteria 审阅条件（校验通过时） */
+    mergeCriteria?: Array<Record<string, unknown>>;
+    /** approver 审阅批准者（校验通过时，缺省 null = 默认强制人审） */
+    approver?: Record<string, unknown> | null;
+    /** 校验未通过时的结构化错误清单（机器可读） */
+    issues?: string[];
+    /** run 模式执行结果（executed=true 时） */
+    result?: unknown;
+  };
+}
+
+/**
  * workflow_submit——外部提交 workflow 进约束层。
  */
-export async function workflowSubmit(args: WorkflowSubmitArgs): Promise<ToolResult> {
+export async function workflowSubmit(args: WorkflowSubmitArgs): Promise<WorkflowSubmitResult> {
   const { workflow, mode = 'validate', task = '' } = args;
 
   if (typeof workflow !== 'string' || workflow.trim() === '') {
     return {
       text: '[sofagent] workflow_submit 失败：workflow 内容为空',
-      data: { isError: true, issues: ['workflow 内容为空'] },
+      data: { isError: true, validated: false, executed: false, issues: ['workflow 内容为空'] },
     };
   }
 
@@ -62,8 +88,8 @@ export async function workflowSubmit(args: WorkflowSubmitArgs): Promise<ToolResu
           executed: false,
           name: parsed.name,
           nodeCount: parsed.nodes.length,
-          mergeCriteria: parsed.mergeCriteria ?? [],
-          approver: parsed.approver ?? null,
+          mergeCriteria: (parsed.mergeCriteria ?? []).map((c) => ({ ...c })),
+          approver: parsed.approver ? { ...parsed.approver } : null,
         },
       };
     }

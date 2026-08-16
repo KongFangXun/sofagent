@@ -36,6 +36,45 @@ export type { WorkflowSubmitInput, WorkflowContainerHandle } from './workflow/co
 export { createDshSeamConverter, DSH_SEAM_FIELD_MAPPINGS } from './workflow/dsh-seam';
 export type { DshSeamConverter, DshSeamFieldMapping } from './workflow/dsh-seam';
 
+// Ontology 运行时层（v1.3.6 交付 ②——Action 注册表 / Schema 校验 / 注入管线）
+export {
+  ActionRegistry,
+  globalActionRegistry,
+  validateToolCall,
+  createOntologyValidator,
+  ENTITY_SCHEMA,
+  CONCEPT_SCHEMA,
+  RELATIONS_SCHEMA,
+  validateAgainstSchema,
+  CORE_CONTRACTS,
+  validateOntologyPayload,
+  importOntology,
+  RELATION_KEYS,
+  ONTOLOGY_IMPORT_DSH_MAPPING,
+} from './ontology';
+export type {
+  ActionRegistration,
+  OntologyVerdict,
+  OntologyVerdictStatus,
+  OntologyValidatorOptions,
+  OntologyValidator,
+  JsonSchema,
+  SchemaValidationResult,
+  CoreContract,
+  ContractMeta,
+  RelationDirection,
+  RelationCardinality,
+  StateMachineContract,
+  EntityImport,
+  ConceptImport,
+  RelationImport,
+  OntologyImportPayload,
+  OntologyValidationResult,
+  OntologyImportResult,
+  OntologyImportOptions,
+  RelationKey,
+} from './ontology';
+
 // Route（入口路由 · v1.3.3 新增）
 export { routeRequest } from './route/route-request';
 export type {

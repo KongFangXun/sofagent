@@ -19,7 +19,7 @@ export interface ToolDef {
 }
 
 /**
- * 完整工具清单——53 个 tool（v1.3.6：workflow_submit 新增；v1.3.5：run_ab_test/promote_ab/snapshot_list/snapshot_restore；v1.3.4：commons_publish/search/invoke/rate/retire/harvest_rule；不含 4 个 resource shortcut）
+ * 完整工具清单——54 个 tool（v1.3.6：workflow_submit/ontology_import 新增；v1.3.5：run_ab_test/promote_ab/snapshot_list/snapshot_restore；v1.3.4：commons_publish/search/invoke/rate/retire/harvest_rule；不含 4 个 resource shortcut）
  */
 export const TOOLS: ToolDef[] = [
   {
@@ -660,6 +660,20 @@ export const TOOLS: ToolDef[] = [
         task: { type: 'string', description: 'run 模式下的任务描述（供编排主 Agent 组装上下文）' },
       },
       required: ['workflow'],
+    },
+  },
+  {
+    // v1.3.6 (交付 ②)：Ontology 标准注入通道——模型层生成的 ontology 从 MCP 进约束层
+    name: 'ontology_import',
+    description: 'Ontology 标准注入通道（v1.3.6）——外部提交 entity/concept/relations（JSON），经 v1.3.1 schema 校验（单一事实源）+ D1-D5 数据审计后注册进 entity-store 并写 knowledge 页，每次注入 decision-log 留痕（谁注入的/注入什么/校验结果）。全量校验先行——任何一项非法返回结构化错误清单且零写入；注入失败自动回滚已写文件（历史级回溯走 git snapshot 兜底）。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        payload: { type: 'string', description: 'ontology JSON 文本：{ entities?: [{name, domain, description?, relations?}], concepts?: [{name, description?}], relations?: [{source, target, relation}] }' },
+        agent_id: { type: 'string', description: '注入者标识（decision-log 留痕——谁注入的；缺省 external-model-layer）' },
+        comment: { type: 'string', description: '注入备注（写入 decision-log why）' },
+      },
+      required: ['payload'],
     },
   },
 ];

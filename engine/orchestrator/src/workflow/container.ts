@@ -134,38 +134,28 @@ export function submitWorkflow(input: WorkflowSubmitInput): WorkflowContainerHan
     throw new WorkflowSubmitError('workflow 提交内容为空');
   }
 
-  // 1. schema 校验（单一事实源）——先于 parser 的结构校验，
-  //    让外部提交方拿到 JSON Schema 路径级错误（机器可机读）
-  const schemaIssues: string[] = [];
-  try {
-    const parsedForSchema = parseWorkflowYaml(input.workflow);
-    const schemaDoc = parsedToSchemaDoc(parsedForSchema);
-    const schemaResult = validateAgainstSchema(schemaDoc, WORKFLOW_SCHEMA);
-    schemaIssues.push(...schemaResult.errors);
-  } catch (err) {
-    if (err instanceof WorkflowParseError) {
-      throw new WorkflowSubmitError(`workflow 结构非法：${err.message}`, [err.message]);
-    }
-    throw new WorkflowSubmitError(
-      `workflow 解析失败：${err instanceof Error ? err.message : String(err)}`,
-    );
-  }
-
-  // 2. parser 解析（含审阅协议字段提取）
+  // 1. parser 解析（含审阅协议字段提取）——结构非法在此抛 WorkflowParseError
   let parsed: ParsedWorkflow;
   try {
     parsed = parseWorkflowYaml(input.workflow);
   } catch (err) {
-    throw new WorkflowSubmitError(
-      `workflow 解析失败：${err instanceof Error ? err.message : String(err)}`,
-    );
+    const msg = err instanceof Error ? err.message : String(err);
+    if (err instanceof WorkflowParseError) {
+      throw new WorkflowSubmitError(`workflow 结构非法：${msg}`, [msg]);
+    }
+    throw new WorkflowSubmitError(`workflow 解析失败：${msg}`);
   }
 
-  // 3. 审阅协议语义校验（merge_criteria / approver）
+  // 2. schema 校验（单一事实源 workflow.schema.json）——把解析结果还原为
+  //    schema 可校验形态，让外部提交方拿到 JSON Schema 路径级错误
+  const schemaDoc = parsedToSchemaDoc(parsed);
+  const schemaResult = validateAgainstSchema(schemaDoc, WORKFLOW_SCHEMA);
+
+  // 3. 审阅协议语义校验（merge_criteria / approver——schema 只校结构）
   const criteriaIssues = validateMergeCriteria(parsed.mergeCriteria);
   const approverIssues = validateApprover(parsed.approver);
 
-  const allIssues = [...schemaIssues, ...criteriaIssues, ...approverIssues];
+  const allIssues = [...schemaResult.errors, ...criteriaIssues, ...approverIssues];
   if (allIssues.length > 0) {
     throw new WorkflowSubmitError(
       `workflow 校验未通过（${allIssues.length} 项）：${allIssues[0]}`,

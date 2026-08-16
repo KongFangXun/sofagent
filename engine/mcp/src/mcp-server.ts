@@ -72,6 +72,7 @@ import { promoteAb } from './tools/promote-ab';
 import { snapshotList } from './tools/snapshot-list';
 import { snapshotRestore } from './tools/snapshot-restore';
 import { workflowSubmit } from './tools/workflow-submit';
+import { ontologyImport } from './tools/ontology-import';
 
 // ============================================================
 // 常量
@@ -254,6 +255,7 @@ class McpServer {
         case 'snapshot_list': { const slr = snapshotList({ ...(typeof args.project_dir === 'string' ? { project_dir: args.project_dir } : {}), ...(typeof args.limit === 'number' ? { limit: args.limit } : {}) }); this.sendTool(id, slr, slr.data.isError); break; }
         case 'snapshot_restore': { if (!args.sha) { this.sendError(id, -32602, 'Missing required argument: sha'); break; } const srr = await snapshotRestore({ sha: args.sha as string, ...(typeof args.project_dir === 'string' ? { project_dir: args.project_dir } : {}), ...(args.human_confirmed !== undefined ? { human_confirmed: args.human_confirmed === true } : {}), ...(typeof args.comment === 'string' ? { comment: args.comment } : {}) }); this.sendTool(id, srr, srr.data.isError); break; }
         case 'workflow_submit': { if (!args.workflow) { this.sendError(id, -32602, 'Missing required argument: workflow'); break; } const wsr = await workflowSubmit({ workflow: args.workflow as string, ...(args.mode === 'run' ? { mode: 'run' as const } : {}), ...(typeof args.task === 'string' ? { task: args.task } : {}) }); this.sendTool(id, wsr, wsr.data.isError); break; }
+        case 'ontology_import': { if (!args.payload) { this.sendError(id, -32602, 'Missing required argument: payload'); break; } const oir = await ontologyImport({ payload: args.payload as string, ...(typeof args.agent_id === 'string' ? { agent_id: args.agent_id } : {}), ...(typeof args.comment === 'string' ? { comment: args.comment } : {}) }); this.sendTool(id, oir, oir.data.isError); break; }
         default: this.sendError(id, -32602, `Unknown tool: ${toolName}`);
       }
     } catch (err) {

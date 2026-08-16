@@ -21,6 +21,24 @@ export {
 } from './schema';
 export type { JsonSchema, SchemaValidationResult } from './schema';
 
+// 标准注入管线（v1.3.6 交付 ②——外部 ontology 进约束层的唯一通道）
+export {
+  validateOntologyPayload,
+  importOntology,
+  RELATION_KEYS,
+  ONTOLOGY_IMPORT_DSH_MAPPING,
+} from './import-pipeline';
+export type {
+  EntityImport,
+  ConceptImport,
+  RelationImport,
+  OntologyImportPayload,
+  OntologyValidationResult,
+  OntologyImportResult,
+  OntologyImportOptions,
+  RelationKey,
+} from './import-pipeline';
+
 export {
   CORE_CONTRACTS,
   registerStateMachine,
