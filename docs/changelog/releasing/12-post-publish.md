@@ -74,8 +74,9 @@ bash tools/check-version.sh        # 期望全绿
 1. 读 `ROADMAP.md` 的「未来去哪」节，提取下一版本规划方向
 2. 读 `CHANGELOG.md` 确认下一版本号与索引条目
 3. 读 `docs/changelog/v<major>.<minor>/vX.Y.md`（下一版本开发日志，若存在）—— 这是开发 prompt 的主体来源
-4. 综合上述，生成开发 prompt 落盘 `~/Desktop/vX.Y-dev-prompt.md`（结构：问题描述 → 修复方案 → 验证方式 → 发布检查清单）
-5. 跑步骤 7 校验循环
+4. 🔴 **完整读开发日志全文，禁止只看章节标题列表**（v1.3.6 教训：`head`/`tail` 截断会漏掉中间章节——训练协议/预算两个完整章节恰好被截断，prompt 漏了 4 项交付。开发日志 400+ 行必须整读，交付清单以「## 章节标题」全量提取为准）
+5. 综合上述，生成开发 prompt 落盘 `~/Desktop/vX.Y-dev-prompt.md`（结构：问题描述 → 修复方案 → 验证方式 → 发布检查清单）
+6. 跑步骤 7 校验循环
 
 **若下一版本 changelog 尚未创建**：
 1. 先写新版本需求，产出 `docs/changelog/v<major>.<minor>/vX.Y.md`
