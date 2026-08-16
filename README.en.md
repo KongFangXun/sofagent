@@ -38,13 +38,6 @@ graph LR
 | Rollback after breakage | Manually dig through commits | One-click snapshot restore to any point |
 | Experience accumulation | Starts from zero every time | Auto-captured into knowledge base, evolution capabilities under continuous iteration |
 
-> 📝 **Name cheatsheet** (five names, one sentence each):
-> - **sofagent** = the project name / repo name
-> - **FDE Agent** = the outward-facing product identity (entry → deployment → departure)
-> - **Constraint layer (Harness)** = the inward-facing technical identity (one layer, four capabilities: injection · audit · rollback · evolution)
-> - **FORGE** = internal development toolchain (for the project's own self-iteration; not public, never released standalone)
-> - **FDE Skill** = the Skill package distributed on ClawHub (methodology constraint files your AI tools load)
-
 ## Key Features
 
 **FDE Agent delivery**
