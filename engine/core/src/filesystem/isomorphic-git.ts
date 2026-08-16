@@ -187,6 +187,24 @@ function saveSnapshots(shadowDir: string, snapshots: SnapshotEntry[]): void {
 }
 
 /**
+ * 判断文件是否为二进制（v1.3.6 新增 · 2026-08-16 图片损坏事故）
+ *
+ * 检测规则：前 8000 字节内出现 NUL 字节（0x00）即判为二进制。
+ * 文本文件（源码 / Markdown / YAML / JSON）不含 NUL；二进制格式（PNG/JPG/PDF/zip 等）
+ * 几乎必然在前 8KB 内出现 NUL。这是 git 官方 is_binary 的同款启发式。
+ *
+ * 背景：原实现用 readFileSync(path, 'utf-8') 读二进制文件，Node 会把无效 UTF-8
+ * 字节静默替换成 U+FFFD 而不抛异常——损坏内容被存进快照，恢复时图片永久损毁。
+ */
+function isBinaryBuffer(buf: Buffer): boolean {
+  const sampleLen = Math.min(buf.length, 8000);
+  for (let i = 0; i < sampleLen; i++) {
+    if (buf[i] === 0) return true;
+  }
+  return false;
+}
+
+/**
  * 扫描目录中所有文件（排除 .sofagent/ 和 node_modules/ 等）
  *
  * v1.3.4 交付 1（P0）扩展排除规则：
@@ -234,13 +252,22 @@ function scanFiles(dir: string): TrackedFile[] {
         if (excludeFileSuffixes.some((sfx) => entry.endsWith(sfx))) continue;
 
         try {
-          const rawContent = readFileSync(fullPath, 'utf-8');
+          // 🔴 v1.3.6 修复（2026-08-16 图片损坏事故）：先读 Buffer 判二进制——
+          // 原实现直接 readFileSync(fullPath, 'utf-8')，二进制文件（PNG 等）的无效
+          // UTF-8 字节（如 0x89）会被 Node 静默替换成 U+FFFD 而不抛异常，损坏的
+          // 字符串被存进快照，恢复时图片永久损毁（README 6 张图裂图事故根因）。
+          // 二进制文件不进文本快照——它无法被 sanitize 脱敏，也无需文本级回溯。
+          const buf = readFileSync(fullPath);
+          if (isBinaryBuffer(buf)) {
+            continue; // 二进制文件跳过，不进快照
+          }
+          const rawContent = buf.toString('utf-8');
           // v1.3.4 交付 1（P0）：写入快照前做脱敏——密钥明文打码
           const content = sanitizeSnapshotContent(rawContent);
           const relativePath = relative(dir, fullPath);
           files.push({ path: relativePath, content });
         } catch {
-          // 二进制文件或读取失败，跳过
+          // 读取失败，跳过
         }
       }
     }

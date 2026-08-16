@@ -139,3 +139,47 @@ describe('.git-shadow v2 内容寻址去重（2026-08-16 磁盘治理）', () =>
     expect(size).toBeLessThan(100_000 * 1.5 + 20_000);
   });
 });
+
+// ============================================================
+// v1.3.6 二进制文件跳过测试（2026-08-16 图片损坏事故防再犯）
+// ============================================================
+describe('.git-shadow 二进制文件跳过（图片损坏事故防再犯）', () => {
+  let tmpDir: string;
+  beforeEach(() => {
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'sofagent-shadow-bin-'));
+  });
+  afterEach(() => {
+    try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch { /* shim 环境清理失败可接受 */ }
+  });
+
+  it('二进制 PNG 不进快照（含 NUL 字节被跳过）', () => {
+    // 模拟 PNG：魔数 + NUL 字节
+    const pngBuf = Buffer.concat([
+      Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+      Buffer.from([0x00, 0x00, 0x00, 0x0d]), // 含 NUL
+      Buffer.from('some-binary-data'),
+    ]);
+    fs.writeFileSync(path.join(tmpDir, 'image.png'), pngBuf);
+    fs.writeFileSync(path.join(tmpDir, 'readme.md'), '# normal text');
+
+    commitSnapshot(tmpDir);
+    const snaps = listSnapshots(tmpDir);
+    const files = snaps[0]!.files;
+    expect(files['readme.md']).toBeDefined();
+    expect(files['image.png']).toBeUndefined(); // 二进制文件被跳过
+  });
+
+  it('纯文本文件仍正常进快照', () => {
+    fs.writeFileSync(path.join(tmpDir, 'a.txt'), 'hello world 无 NUL');
+    commitSnapshot(tmpDir);
+    const snaps = listSnapshots(tmpDir);
+    expect(snaps[0]!.files['a.txt']).toBe('hello world 无 NUL');
+  });
+
+  it('UTF-8 中文文本不进 NUL 判定（不误伤）', () => {
+    fs.writeFileSync(path.join(tmpDir, '中文.md'), '这是一段中文测试内容');
+    commitSnapshot(tmpDir);
+    const snaps = listSnapshots(tmpDir);
+    expect(snaps[0]!.files['中文.md']).toContain('中文');
+  });
+});

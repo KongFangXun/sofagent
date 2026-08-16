@@ -40,13 +40,6 @@ graph LR
 | 出事回滚 | 手动翻 commit | 一键快照回到任意节点 |
 | 经验积累 | 每次从零开始 | 自动沉淀进知识库（think.md + Dream Cycle + skillopt，v1.3.x 持续增强） |
 
-> 📝 **术语速查**（5 个名字，一句话各归各位）：
-> - **sofagent** = 项目名/仓库名
-> - **FDE Agent** = 对外的产品身份（进场 → 部署 → 离场）
-> - **约束层（Harness）** = 对内的技术身份（一个层四种能力：注入·审计·回溯·进化）
-> - **FORGE** = 内部开发工具（项目自迭代用，不对外、不独立发布）
-> - **FDE Skill** = 在 ClawHub 分发的 Skill 包（给 AI 工具加载的方法论约束文件）
-
 ## 核心特性
 
 **FDE 交付（进场 → 部署 → 离场 → 自运转）**
@@ -201,7 +194,7 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # 加载安全规�
 
 > 🔬 **外部独立实验证据**（非官方自测）：Joel Niklaus 的 harness-optimization 研究（[研究代码仓库](https://github.com/JoelNiklaus/harness-optimization)，数据见仓库内实验）显示，同一模型不改权重、仅优化外层 Harness，法律 Agent 基准从 **63.4% → 80.1%（+16.7pp）**。详见 [THANKS.md](./docs/THANKS.md)。
 
-> 🧪 **工程可信度**：2283 测试 / 12 包（全绿，实测见 `tools/test-count.sh`）· 24 条审计规则 · fresh-eyes 独立审查持续运行（审查工具见 [FORGE/playbook/fresh-eyes-review.md](./FORGE/playbook/fresh-eyes-review.md)）。
+> 🧪 **工程可信度**：2286 测试 / 12 包（全绿，实测见 `tools/test-count.sh`）· 24 条审计规则 · fresh-eyes 独立审查持续运行（审查工具见 [FORGE/playbook/fresh-eyes-review.md](./FORGE/playbook/fresh-eyes-review.md)）。
 
 ## 文档
 
