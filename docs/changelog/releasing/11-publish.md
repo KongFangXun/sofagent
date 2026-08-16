@@ -158,6 +158,31 @@ fi
 
 ---
 
+## 步骤 4b：安装入口随版同步（v1.3.6 新增 · fresh-eyes B1 根因）
+
+> 🔴 历史教训：v1.3.5 发布后 README/bootstrap 安装 URL 仍指 v1.3.4，用户按 README 完整安装装到旧版。根因是 SOP 没有这一步——tag 打了、npm 发了，安装入口没人管。**每版必做，curl 验证后才能进步骤 5。**
+
+```bash
+# ── 三处安装入口 tag 对账 ──
+grep -rn "refs/tags/v" README.md README.en.md bootstrap.sh
+# 期望：三处均为 refs/tags/vX.Y.Z（本版 tag），无一残留上一版
+
+# ── 不一致则同步修改三处后，逐条 curl 验证 HTTP 200 ──
+#   README.md / README.en.md 安装段的 bootstrap.sh URL
+#   bootstrap.sh 的 INSTALL_URL + 文件头用法注释
+for f in README.md README.en.md bootstrap.sh; do
+  URL=$(grep -oE "https://raw\.githubusercontent\.com/KongFangXun/sofagent/refs/tags/v[0-9]+\.[0-9]+\.[0-9]+/[a-z.]+" "$f" | sort -u)
+  for u in $URL; do
+    code=$(curl -sI -o /dev/null -w "%{http_code}" "$u")
+    [ "$code" = "200" ] && echo "✅ $u" || { echo "🔴 $u → HTTP $code"; exit 1; }
+  done
+done
+```
+
+> 注意：check-version.sh（v1.3.6 起）含安装入口 tag 对账检查项，`bash tools/check-version.sh` 会给出三方 tag 一致性结论；此处 curl 是最后一道实测防线（URL 真实可达性）。
+
+---
+
 ## 步骤 5：gh release（触发 release.yml 自动 publish audit + mcp）
 
 > GitHub Release published 后，`.github/workflows/release.yml` 自动触发，publish `@sofagent/audit` 和 `@sofagent/mcp` 两个包到 npm。其余 10 包在步骤 6 手动 publish。

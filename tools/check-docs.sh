@@ -4,6 +4,17 @@ set -uo pipefail
 shopt -s nullglob
 
 cd "$(dirname "$0")/.." || exit 1
+
+# v1.3.6 B11: 并发防护——mkdir 原子锁（macOS/Linux 兼容）。已有实例运行时第二个实例
+# 报错退出，防止双实例互相覆盖日志（审查期间曾实测发现双残留实例）。
+LOCK_DIR="/tmp/check-docs.lock"
+if mkdir "${LOCK_DIR}" 2>/dev/null; then
+  trap 'rmdir "${LOCK_DIR}" 2>/dev/null || true' EXIT
+else
+  echo "[ERROR] check-docs.sh already running (lock ${LOCK_DIR}) - wait for previous instance"
+  exit 2
+fi
+
 ERRORS=0
 
 echo "=== 1. 死链检查 ==="
@@ -36,44 +47,62 @@ echo "=== 1b. 全仓相对路径死链扫描（维度 306）==="
 DEAD_LINKS=0
 DEAD_DETAIL=""
 EXCLUDE=(-not -path "*/node_modules/*" -not -path "*/.workbuddy/*" -not -path "*/.sofagent/*" -not -path "*/docs/changelog/*" -not -path "*/SKILL/harness/*" -not -path "*/docs/archive/*" -not -path "*/FORGE/archive/*" -not -path "*/commercial/*")
-while IFS= read -r -d '' mdfile; do
-  in_fence=0
-  while IFS= read -r line; do
-    # 围栏代码块（``` 或 ~~~）内不检查链接
-    if [[ "$line" =~ ^[[:space:]]*\`\`\` ]] || [[ "$line" =~ ^[[:space:]]*~~~ ]]; then
-      in_fence=$((1 - in_fence)); continue
-    fi
-    if [ "$in_fence" -eq 1 ]; then continue; fi
-    # 提取本行所有 markdown 链接目标（](target) 形式）
-    targets=$(printf '%s\n' "$line" | grep -oE '\]\(([^)]+)\)' | sed -E 's/^\]\(//; s/\)$//' || true)
-    for target in $targets; do
-      # 跳过：空、纯锚点、外部协议、mailto
-      case "$target" in
-        ''|'#'*|'http://'*|'https://'*|'mailto:'*) continue ;;
-      esac
-      path_part="${target%%#*}"            # 去掉锚点
-      [ -z "$path_part" ] && continue
-      case "$path_part" in
-        *'://'*) continue ;;               # 非 http 的其他协议
-        # v1.1.5 起豁免：SOP 文档里的模板占位符 vX.Y / vX.Y.Z 不是真实链接
-        *'/vX.Y'*|*'vX.Y.Z'*|*'vX.Y.md'*) continue ;;
-        /*) resolved=".${path_part}" ;;    # 仓库根绝对路径（去前导 /）
-        *)  resolved="$(dirname "$mdfile")/$path_part" ;;
-      esac
-      resolved="${resolved%/}"             # 去尾斜杠（目录链接）
-      # 规范化到绝对路径（路径逃逸仓库时回退原值）
-      resolved="$(cd "$(dirname "$resolved")" >/dev/null 2>&1 && echo "$(pwd)/$(basename "$resolved")" || echo "$resolved")"
-      if [ ! -e "$resolved" ]; then
-        DEAD_LINKS=$((DEAD_LINKS + 1))
-        DEAD_DETAIL="${DEAD_DETAIL}  ${mdfile}: ${target}\n"
-      fi
-    done
-  done < "$mdfile"
-done < <(find . -name "*.md" "${EXCLUDE[@]}" -print0)
+# v1.3.6 B11 性能迁移：逐行 bash 循环 + 每链接 fork subshell（cd+pwd）是全脚本第二瓶颈。
+# 改 node 一次性完成主仓 + 归档区两遍扫描（判定语义与原实现一致：围栏跳过、
+# 协议/占位符豁免、路径归一化后 existsSync）。输出死链清单，计数回填 bash 变量。
+DEAD_SCAN=$(node -e '
+const fs = require("fs");
+const path = require("path");
+const EXCLUDE = [/node_modules/, /(^|[\/\\])\.workbuddy[\/\\]/, /(^|[\/\\])\.sofagent[\/\\]/, /(^|[\/\\])docs[\/\\]changelog[\/\\]/, /(^|[\/\\])SKILL[\/\\]harness[\/\\]/, /(^|[\/\\])docs[\/\\]archive[\/\\]/, /(^|[\/\\])FORGE[\/\\]archive[\/\\]/, /(^|[\/\\])commercial[\/\\]/];
+function walk(dir, out, excludes) {
+  for (const f of fs.readdirSync(dir)) {
+    const p = path.join(dir, f);
+    if (fs.statSync(p).isDirectory()) {
+      if (!excludes.some(re => re.test(p + "/"))) walk(p, out, excludes);
+    } else if (f.endsWith(".md")) out.push(p);
+  }
+}
+function scan(files) {
+  const dead = [];
+  for (const mdfile of files) {
+    let inFence = false;
+    const lines = fs.readFileSync(mdfile, "utf-8").split("\n");
+    for (const line of lines) {
+      if (/^\s*```|^\s*~~~/.test(line)) { inFence = !inFence; continue; }
+      if (inFence) continue;
+      const matches = line.match(/\]\(([^)]+)\)/g) || [];
+      for (const m of matches) {
+        const target = m.slice(2, -1);
+        if (target === "" || target.startsWith("#") || target.startsWith("http://") || target.startsWith("https://") || target.startsWith("mailto:")) continue;
+        const pathPart = target.split("#")[0];
+        if (!pathPart) continue;
+        if (/:\/\//.test(pathPart) || /\/vX\.Y/.test(pathPart) || /vX\.Y\.Z/.test(pathPart) || /vX\.Y\.md/.test(pathPart)) continue;
+        const resolved0 = pathPart.startsWith("/") ? "." + pathPart : path.join(path.dirname(mdfile), pathPart);
+        const resolved = path.resolve(resolved0.replace(/\/+$/, ""));
+        if (!fs.existsSync(resolved)) dead.push("  " + mdfile + ": " + target);
+      }
+    }
+  }
+  return dead;
+}
+const mainFiles = [];
+walk(".", mainFiles, EXCLUDE);
+const mainDead = scan(mainFiles);
+// 归档区扫描用去掉了 archive 排除项的规则集——否则 walk 起点 docs/archive 自身会被排除
+const ARCHIVE_EXCLUDE = EXCLUDE.filter(re => !re.source.includes("archive"));
+const archiveFiles = [];
+for (const d of ["docs/archive", "FORGE/archive"]) { if (fs.existsSync(d)) walk(d, archiveFiles, ARCHIVE_EXCLUDE); }
+const archiveDead = scan(archiveFiles);
+process.stdout.write(JSON.stringify({ mainDead, archiveDead }));
+' 2>/dev/null || echo '{"mainDead":[],"archiveDead":[]}')
+DEAD_LINKS=$(node -e "const d=JSON.parse(process.argv[1]);console.log(d.mainDead.length)" "$DEAD_SCAN" 2>/dev/null || echo 0)
+ARCHIVE_DEAD=$(node -e "const d=JSON.parse(process.argv[1]);console.log(d.archiveDead.length)" "$DEAD_SCAN" 2>/dev/null || echo 0)
+DEAD_DETAIL=$(node -e "const d=JSON.parse(process.argv[1]);console.log(d.mainDead.join('\n'))" "$DEAD_SCAN" 2>/dev/null)
 
-if [ "$DEAD_LINKS" -gt 0 ]; then
+if [ "${DEAD_LINKS:-0}" -gt 0 ]; then
   echo "  全仓相对路径死链: ${DEAD_LINKS} 处"
   printf "%b" "$DEAD_DETAIL"
+  printf "\n"
   ERRORS=$((ERRORS + 1))
 else
   echo "  全仓相对路径死链: 0"
@@ -82,32 +111,7 @@ fi
 # 归档区告警扫描（非阻断）——docs/archive + FORGE/archive 是冻结历史，链接腐烂不阻断发版，
 # 但必须可见。v1.2.5 教训：archive 排除 = 死链盲区（planning 文件指向已删的 ROADMAP 锚点
 # CI 永远抓不到）。此处只告警不计 ERRORS，保持归档冻结性的同时消除盲区。
-ARCHIVE_DEAD=0
-ARCHIVE_DETAIL=""
-while IFS= read -r -d '' mdfile; do
-  in_fence=0
-  while IFS= read -r line; do
-    if [[ "$line" =~ ^[[:space:]]*\`\`\` ]] || [[ "$line" =~ ^[[:space:]]*~~~ ]]; then
-      in_fence=$((1 - in_fence)); continue
-    fi
-    [ "$in_fence" -eq 1 ] && continue
-    targets=$(printf '%s\n' "$line" | grep -oE '\]\(([^)]+)\)' | sed -E 's/^\]\(//; s/\)$//' || true)
-    for target in $targets; do
-      case "$target" in ''|'#'*|'http://'*|'https://'*|'mailto:'*) continue ;; esac
-      path_part="${target%%#*}"
-      [ -z "$path_part" ] && continue
-      case "$path_part" in *'://'*|*'/vX.Y'*|*'vX.Y.Z'*|*'vX.Y.md'*) continue ;;
-        /*) resolved=".${path_part}" ;; *) resolved="$(dirname "$mdfile")/$path_part" ;; esac
-      resolved="${resolved%/}"
-      resolved="$(cd "$(dirname "$resolved")" >/dev/null 2>&1 && echo "$(pwd)/$(basename "$resolved")" || echo "$resolved")"
-      if [ ! -e "$resolved" ]; then
-        ARCHIVE_DEAD=$((ARCHIVE_DEAD + 1))
-        ARCHIVE_DETAIL="${ARCHIVE_DETAIL}  ${mdfile}: ${target}\n"
-      fi
-    done
-  done < "$mdfile"
-done < <(find docs/archive FORGE/archive -name "*.md" -print0 2>/dev/null)
-if [ "$ARCHIVE_DEAD" -gt 0 ]; then
+if [ "${ARCHIVE_DEAD:-0}" -gt 0 ]; then
   echo "  ⚠ 归档区死链: ${ARCHIVE_DEAD} 处（冻结历史，不阻断发版，仅供参考）"
 else
   echo "  归档区死链: 0"
@@ -430,76 +434,21 @@ fi
 
 echo ""
 echo "=== 11. 跨文档 #锚点 死链扫描（F-20 · P0-13 起纳入 ERRORS）==="
-# 扫描 .md 中的跨文档锚点引用 [text](path.md#anchor)，检查目标文件和锚点是否存在
-# P0-13: 锚点告警不再只是 echo——纳入 ERRORS 计数（假绿根因之一：告警不阻断）。
-# 算法按 GitHub sanitize_anchor_name 修正（此前 [-\s]+ 折叠连字符 + 保留 emoji 导致
-# 11 条 100% 误报）：\p{Word}=字母/数字/下划线；保留空格/连字符；其余删除（含 emoji）；
-# 空格转连字符（不折叠已有连字符）。
-# v1.3.4：WorkBuddy 环境降级——shim 拦截嵌套 read 循环导致本项超时（维度 101 同款环境问题）。
-#   锚点死链检查由 tools/check-anchors.mjs（node 版，pre-push 第 4 步独立跑）全覆盖——
-#   本项是 bash 逐行重复实现。CI（非 shim 环境）跑完整版；本地设 SKIP_ANCHOR_SCAN=1 跳过。
+# v1.3.6 B11: bash 逐行实现迁移到 node 版 check-anchors.mjs——此前本项是全脚本性能瓶颈
+#（实测 26m42s，bash 每行 fork node 归一化标题；node 版几秒完成同等工作）。
+# 判定语义不变：锚点过时计入 ERRORS 阻断（文件断链由第 1/1b 节死链检查负责，本项只看锚点）。
 if [ "${SKIP_ANCHOR_SCAN:-0}" = "1" ]; then
   echo "  ⏭️ 跳过（SKIP_ANCHOR_SCAN=1）——锚点检查由 check-anchors.mjs 覆盖（pre-push 第 4 步）"
 else
-ANCHOR_WARN=0
-while IFS= read -r -d '' mdfile; do
-  in_fence=0
-  while IFS= read -r line; do
-    if [[ "$line" =~ ^[[:space:]]*\`\`\` ]] || [[ "$line" =~ ^[[:space:]]*~~~ ]]; then
-      in_fence=$((1 - in_fence)); continue
-    fi
-    [ "$in_fence" -eq 1 ] && continue
-    # 提取含 #锚点 的 markdown 链接
-    targets=$(printf '%s\n' "$line" | grep -oE '\]\([^)]+\.md#[^)]+\)' | sed -E 's/^\]\(//; s/\)$//' || true)
-    for target in $targets; do
-      file_part="${target%%#*}"
-      anchor_part="${target#*#}"
-      [ -z "$file_part" ] && continue
-      # 解析相对路径
-      resolved="$(dirname "$mdfile")/$file_part"
-      resolved="$(cd "$(dirname "$resolved")" >/dev/null 2>&1 && echo "$(pwd)/$(basename "$resolved")" || echo "$resolved")"
-      if [ ! -f "$resolved" ]; then
-        echo "  ❌ ${mdfile}: 目标文件不存在 → ${target}"
-        ANCHOR_WARN=$((ANCHOR_WARN + 1))
-        continue
-      fi
-      # 用同一算法归一化链接锚点与标题锚点后比对（GitHub sanitize_anchor_name 语义）
-      anchor_norm=$(printf '%s' "$anchor_part" | node -e '
-let s = require("fs").readFileSync(0, "utf8").replace(/\n$/, "").trim().toLowerCase();
-s = s.replace(/[^\p{L}\p{N}_\s-]/gu, "");
-s = s.trim();
-s = s.replace(/\t/g, " ");
-s = s.replace(/ /g, "-");
-console.log(s);')
-      found_match=false
-      while IFS= read -r heading; do
-        norm=$(printf '%s' "$heading" | node -e '
-let h = require("fs").readFileSync(0, "utf8").replace(/\n$/, "");
-let a = h.replace(/^#{1,6}\s+/, "").trim().toLowerCase();
-a = a.replace(/[^\p{L}\p{N}_\s-]/gu, "");
-a = a.trim();
-a = a.replace(/\t/g, " ");
-a = a.replace(/ /g, "-");
-console.log(a);')
-        if [ "$norm" = "$anchor_norm" ]; then
-          found_match=true
-          break
-        fi
-      done < <(grep -E '^#{1,6} ' "$resolved" 2>/dev/null)
-      if ! $found_match; then
-        echo "  ⚠ ${mdfile}: 锚点失效 → ${target}"
-        ANCHOR_WARN=$((ANCHOR_WARN + 1))
-      fi
-    done
-  done < "$mdfile"
-done < <(find . -name "*.md" "${EXCLUDE[@]}" -print0)
-if [ "$ANCHOR_WARN" -eq 0 ]; then
-  echo "  ✓ 跨文档锚点无死链"
-else
-  echo "  共 ${ANCHOR_WARN} 处锚点死链（已计入 ERRORS）"
-  ERRORS=$((ERRORS + ANCHOR_WARN))
+  ANCHOR_OUTPUT=$(node tools/check-anchors.mjs 2>&1); ANCHOR_RC=$?
+  if [ "$ANCHOR_RC" -eq 0 ]; then
+    echo "  ✓ 跨文档锚点无死链"
+  else
+    echo "  锚点过时（已计入 ERRORS）："
+    printf '%s\n' "$ANCHOR_OUTPUT" | grep -E '✗|锚点过时' | head -12
+    ERRORS=$((ERRORS + 1))
+  fi
 fi
-fi  # SKIP_ANCHOR_SCAN 降级块结束
 
 echo ""
 if [ "$ERRORS" -gt 0 ]; then

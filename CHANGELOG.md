@@ -10,7 +10,7 @@
 > 未来版本规划见 [ROADMAP.md](./docs/ROADMAP.md)。
 > 未来版本的规划文件在 `docs/changelog/v1.3/` 下（标注"尚未实现"），不纳入本索引。
 
-- **v1.3.5** — 🧬 MCP 自进化+运维闭环（run_ab_test / promote_ab 人审晋升 / snapshot_list / snapshot_restore 人审恢复 · 48→52 tools）+ 🌱 instinct→skill 自动进化（三源提取 + 置信度评分 + /evolve 聚合 + 错题本）+ 🤝 FDE 运维五件（陪跑期/进场记忆/节点注册表/审计问卷 7 行业）+ 🔒 依赖安全升级（vitest critical 清零 + automerge 3.x + LangGraph/js-yaml/archiver）+ 🔌 DSH MCP 互通 + fresh-eyes 四份审查 bugfix 38 项 · 2026-08-16 · [开发日志](./docs/changelog/v1.3/v1.3.5.md)
+- **v1.3.5** — 🧬 MCP 自进化+运维闭环（run_ab_test / promote_ab 人审晋升 / snapshot_list / snapshot_restore 人审恢复 · 48→52 tools）+ 🌱 instinct→skill 自动进化（三源提取 + 置信度评分 + /evolve 聚合 + 错题本）+ 🤝 FDE 运维五件（陪跑期/进场记忆/节点注册表/审计问卷 7 行业）+ 🔒 依赖安全升级（vitest critical 清零 + automerge 3.x + LangGraph/js-yaml/archiver）+ 🔌 DSH MCP 互通 + 🛡️ 独立审查加固 38 项（影子审计器防线 / 门禁假绿清零 / 泄漏清理 / post-commit 绕过检测）· 2026-08-16 · [开发日志](./docs/changelog/v1.3/v1.3.5.md)
 - **v1.3.4** — 🏪 L3 组织能力市场（五环：发布→发现→调用→评价→养护 + 6 market MCP tool）+ 🛡️ SkillScan 安全门（三态判定 + 发布/安装双触发）+ 📊 评估体系三步（harvest→jury→promote）+ 🔌 编排层与执行层分离（ExecutionBackend + DSH 执行后端接入）+ 📜 DecisionKind.MARKET + daemon 市场双巡检 · 2026-08-14 · [开发日志](./docs/changelog/v1.3/v1.3.4.md)
 - **v1.3.3** — 🤝 L2 团队协作协议（五大机制）+ ✨ Refine Agent 完整版 + 🧭 主 agent 编排 + 🚪 入口路由 + 📈 进化闭环升级 + 📜 evidence 字段 · 2026-08-12 · [开发日志](./docs/changelog/v1.3/v1.3.3.md)
 - **v1.3.2** — 🔄 Onboard Agent 完整版（L2-L5）· 2026-08-11 · [开发日志](./docs/changelog/v1.3/v1.3.2.md)

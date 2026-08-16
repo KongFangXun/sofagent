@@ -592,11 +592,18 @@ try {
       // v1.3.5 #2: 假阳性回声修复——命中 pre-commit 记录时必须校验该次审计的结果。
       // 此前无脑输出「✓ 审计通过」：带 token 提交被 commit-msg 拦截（exit 2，
       // 拦截记录带 parentSha）→ 同内容 --no-verify 强推 → post-commit 命中那条
-      // **失败**记录 → 输出假绿。现在按 exitCode 分流：
-      //   0 = 审计真通过 → 回声；非 0 = 疑似绕过 → 不输出 ✓，提示复核。
+      // **失败**记录 → 输出假绿。现在按 exitCode 三档分流：
+      //   0 = 审计真通过 → 回声；
+      //   1 = WARN 放行——commit-msg 只对 exit 2 阻断，exit 1 时 commit 合法走过审计
+      //       （v1.3.6 B8 修复：此前 exit 1 被误判为拦截记录，正常 WARN 提交被报「疑似绕过」）；
+      //   2 = FAIL 拦截后仍出现同父新 commit → 疑似 --no-verify 绕过（保留警示）。
       if (entry.exitCode === 0) {
         console.log("  ✓ [sofagent] 审计通过");
         process.exit(0);  // pre-commit 记录按父提交 SHA 对账命中且审计通过
+      }
+      if (entry.exitCode === 1) {
+        console.log("  ✓ [sofagent] 审计通过（含警告，WARN 放行）");
+        process.exit(0);  // WARN 放行 = 合法走过审计，不是绕过
       }
       console.log("");
       console.log("  ℹ️ [sofagent] 父提交存在审计拦截记录（exit " + entry.exitCode + "）但本次 commit 未走审计——疑似 --no-verify 绕过。");
@@ -773,7 +780,7 @@ exit 0
   console.log('║  git commit 审计已就绪                   ║');
   console.log('╚══════════════════════════════════════════╝');
   console.log('');
-  console.log('  💡 首次使用？先 cd 到你的项目目录跑 `sofagent-audit --init` 初始化审计。');
+  console.log('  💡 审计已就绪——改个文件试试 git commit，你会看到审计引擎在提交前自动扫描。');
   console.log('  下一步：');
   console.log('    1. 改个文件，试试 git commit——你会看到审计引擎在提交前自动扫描');
   console.log('    2. 想测试拦截？echo "API_KEY=test" > .env && git add -f .env && git commit -m "test"');

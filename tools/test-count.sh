@@ -94,6 +94,29 @@ while IFS= read -r pkg_dir; do
   FAILED=$(echo "$line" | grep -oE '[0-9]+\s+failed' | grep -oE '[0-9]+' || echo "0")
   TOTAL=$(echo "$line" | grep -oE '\([0-9]+\)' | grep -oE '[0-9]+' || echo "0")
 
+  # v1.3.6 B14: flaky 候选自动复跑——全量串行逐包时 IO 争用偶发超时（orchestrator 实测
+  # 745/746 单跑全绿）。复跑过 = 记录 WARN「flaky 候选」不静默（假绿温床），复跑仍败才判 FAIL。
+  # 教训：假红与假绿同罪——门禁结果不可预测会消解一切门禁权威性。
+  if [ "$FAILED" -gt 0 ]; then
+    FAILED_ORIG=$FAILED
+    retry_out=$(cd "$pkg_dir" && npm test 2>&1) || true
+    retry_line=$(echo "$retry_out" | sed $'s/\033\[[0-9;]*m//g' | grep -E '^\s*Tests\s+' | tail -1)
+    RETRY_PASSED=$(echo "$retry_line" | grep -oE '[0-9]+\s+passed' | grep -oE '[0-9]+' || echo "0")
+    RETRY_FAILED=$(echo "$retry_line" | grep -oE '[0-9]+\s+failed' | grep -oE '[0-9]+' || echo "0")
+    RETRY_TOTAL=$(echo "$retry_line" | grep -oE '\([0-9]+\)' | grep -oE '[0-9]+' || echo "0")
+    if [ -n "$retry_line" ] && [ "$RETRY_FAILED" = "0" ]; then
+      # 复跑全绿 → flaky 候选：采用复跑结果（PASSED/TOTAL 取复跑值），WARN 记录
+      PASSED=$RETRY_PASSED
+      FAILED=0
+      TOTAL=$RETRY_TOTAL
+      [ "$QUIET" = false ] && echo -e "  ${YELLOW}⚠${NC} ${pkg_name}: 首跑 ${FAILED_ORIG} 失败，复跑全绿 → ${GREEN}flaky 候选${NC}（已采用复跑结果，待定位根因，勿习惯性忽略）"
+      # 复跑过的包记录到 flaky 名单（供 human 追因）
+      FLAKY_PKGS="${FLAKY_PKGS}${pkg_name} "
+    else
+      [ "$QUIET" = false ] && echo -e "  ${RED}✗${NC} ${pkg_name}: 复跑仍 ${RETRY_FAILED:-?} failed（真失败，非 flaky）"
+    fi
+  fi
+
   TOTAL_TESTS=$((TOTAL_TESTS + TOTAL))
   TOTAL_PASSED=$((TOTAL_PASSED + PASSED))
   TOTAL_FAILED=$((TOTAL_FAILED + FAILED))
@@ -121,6 +144,8 @@ fi
 
 # 机器可读行（供 regression-checklist / 其他脚本 grep）
 echo "TOTAL_TESTS=$TOTAL_TESTS PASSED=$TOTAL_PASSED FAILED=$TOTAL_FAILED PKGS=$PKG_COUNT"
+# v1.3.6 B14: flaky 名单机器可读行（空 = 无复跑；非空 = 有包首跑失败复跑全绿，待追因）
+echo "FLAKY_PKGS=${FLAKY_PKGS:-}"
 
 if [ "$TOTAL_FAILED" -gt 0 ]; then
   exit 1

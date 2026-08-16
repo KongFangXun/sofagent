@@ -999,6 +999,31 @@ if $DOC_PLACEHOLDER_OK; then
 fi
 echo ""
 
+# ── 20. 安装入口 tag 对账（v1.3.6 B3 · fresh-eyes B1 防复发）──────────────────
+# README.md / README.en.md / bootstrap.sh 三处 refs/tags/vX.Y.Z 必须互相一致；
+# 与 package.json version 不一致时 WARN（发版后需 bump 属预期中间态，不阻断）；
+# 三方自身不一致时 ERROR 阻断（安装入口互相打架 = 用户装到不同版本）。
+echo "=== 20. 安装入口 tag 对账（README × bootstrap） ==="
+TAG_README_CN=$(grep -oE 'refs/tags/v[0-9]+\.[0-9]+\.[0-9]+' "${PROJECT_ROOT}/README.md" 2>/dev/null | head -1 || true)
+TAG_README_EN=$(grep -oE 'refs/tags/v[0-9]+\.[0-9]+\.[0-9]+' "${PROJECT_ROOT}/README.en.md" 2>/dev/null | head -1 || true)
+TAG_BOOTSTRAP=$(grep -oE 'refs/tags/v[0-9]+\.[0-9]+\.[0-9]+' "${PROJECT_ROOT}/bootstrap.sh" 2>/dev/null | head -1 || true)
+if [[ -z "$TAG_README_CN" ]] || [[ -z "$TAG_README_EN" ]] || [[ -z "$TAG_BOOTSTRAP" ]]; then
+  echo -e "  ${RED}✗${NC} 安装入口 tag 缺失：README.md=${TAG_README_CN:-无} README.en.md=${TAG_README_EN:-无} bootstrap.sh=${TAG_BOOTSTRAP:-无}"
+  ERRORS=$((ERRORS + 1))
+else
+  if [[ "$TAG_README_CN" != "$TAG_README_EN" ]] || [[ "$TAG_README_CN" != "$TAG_BOOTSTRAP" ]]; then
+    echo -e "  ${RED}✗${NC} 安装入口 tag 三方不一致：README.md=$TAG_README_CN README.en.md=$TAG_README_EN bootstrap.sh=$TAG_BOOTSTRAP"
+    ERRORS=$((ERRORS + 1))
+  elif [[ "$TAG_README_CN" != "refs/tags/v${SSOT_VERSION}" ]]; then
+    echo -e "  ${YELLOW}⚠${NC} 安装入口 tag=$TAG_README_CN 落后于当前版本 v${SSOT_VERSION}——发版后需 bump（B1 教训：tag 打完后安装入口三处随版同步，见 releasing/11-publish.md 步骤 4b）"
+    WARNINGS=$((WARNINGS + 1))
+  else
+    echo -e "  ${GREEN}✓${NC} 安装入口 tag 三方一致且与当前版本对齐：${TAG_README_CN}"
+    CHECKS=$((CHECKS + 1))
+  fi
+fi
+echo ""
+
 # ── 汇总 ──────────────────────────────────────────────────────
 echo -e "${BOLD}${CYAN}═══════════════════════════════════════════════════════════${NC}"
 if [[ ${ERRORS} -eq 0 ]]; then

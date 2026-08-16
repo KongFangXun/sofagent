@@ -37,6 +37,9 @@ import { resolveDiffEndpoint } from './diff-ref';
 import { checkLogs } from '@sofagent/core';
 import { createShadowRepo, commitSnapshot, hasShadowRepo } from '@sofagent/core';
 import { runRules, productSignature, type AuditResult } from './reporter';
+// v1.3.6 B22: installHook 路径复用 init 的 gitignore 保障——此前 --install-hook 不写 .gitignore，
+// shadow 快照数据可被 git add . 卷入用户仓库（LIMITATIONS 声称与行为不符）。
+import { ensureGitignore } from './commands/init';
 // v1.3.1 交付 2：国标对齐 GB/T 48000.3-2026（条款映射清单 + 覆盖度评估）
 export { GB48000_CLAUSE_MAP, assessGb48000Coverage, buildGb48000RuleCheck } from './gb48000';
 export type { Gb48000ClauseMapping, Gb48000Status, Gb48000Coverage } from './gb48000';
@@ -275,9 +278,9 @@ function parseArgs(argv: string[]): Args {
       console.log('  sofagent-audit --verify-commit <hash>           检查 commit 审计记录');
       console.log('  sofagent-audit --regression <dir>               回归验证');
       console.log('  sofagent-audit --install-hook                   安装 commit-msg + post-commit hook');
-      console.log('  sofagent-audit --revert <snapshot-sha>              恢复到指定快照');
-      console.log('  sofagent-audit --timeline [N]                      查看快照时间线');
-      console.log('  sofagent-audit ontology view                        本体人类可读视图');
+      console.log('  sofagent-audit --revert <snapshot-sha>           恢复到指定快照');
+      console.log('  sofagent-audit --timeline [N]                   查看快照时间线');
+      console.log('  sofagent-audit ontology view                    本体人类可读视图');
       console.log('');
       if (verbose) {
         console.log('v1.0.8 已弃用的子命令（将在 v1.3.1 移除，请尽快迁移）:');
@@ -293,6 +296,10 @@ function parseArgs(argv: string[]): Args {
       console.log('  --silent    只跑 git-diff 规则          exit 0/1/2');
       console.log('  --strict    任何警告都 exit 2            exit 0/2');
       console.log('  --ci        = --silent（CI 友好输出，无交互提示）     exit 0/1/2');
+      console.log('');
+      console.log('双入口对照:');
+      console.log('  sofagent-audit      quick 只读审计（17 条默认规则，秒级）');
+      console.log('  sofagent-audit-full 完整引擎（--init / --diff <range> / 24 条规则）——详见 README「快速开始」');
       if (verbose) {
         console.log('\n完整参数列表:');
         console.log('  --diff <range>     git diff 范围（默认 HEAD~1..HEAD）');
@@ -376,6 +383,14 @@ function installHook(): void {
   if (!gitDir) {
     console.error('❌ sofagent 提示：当前目录不是 git 仓库。请在 git 仓库内运行此命令，或先 git init。');
     exit(1);
+  }
+
+  // v1.3.6 B22: 与 --init 路径对齐——装 hook 前确保 .sofagent/ 被 .gitignore 排除，
+  // 防止 .sofagent/.git-shadow/ 快照数据被 git add . 卷入用户仓库（幂等，已有条目则跳过）。
+  try {
+    ensureGitignore(dirname(gitDir));
+  } catch (e) {
+    console.warn('[sofagent] 警告：更新 .gitignore 失败，请手动添加 .sofagent/', e instanceof Error ? e.message : String(e));
   }
 
   // 定位 hook 模板（dist/index.js 编译后，模板在 ../../hooks/ 相对于 dist/）
@@ -1221,13 +1236,24 @@ async function main(): Promise<void> {
 
     // A4 研读落地：Action Governance 审计 5 字段 schema + 决策溯源组
     // 发起方 = git 提交作者；非 git 环境 / 文件系统审计下退化为 unknown（不伪造）
+    // v1.3.6 B9 修复：git log -1 在 unborn HEAD（首次 commit，hook 运行于 commit 对象生成前）
+    // 时失败 → 配置齐全也报「作者获取失败」。改用配置来源（不依赖 commit 历史）：
+    //   1. git var GIT_AUTHOR_IDENT（配置链解析出的完整身份，含 name + email）
+    //   2. git config user.name（兜底）
     let actor = 'unknown';
     try {
-      const author = execFileSync('git', ['log', '-1', '--format=%an'], { encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'] }).trim();
-      if (author) actor = author;
+      const ident = execFileSync('git', ['var', 'GIT_AUTHOR_IDENT'], { encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'] }).trim();
+      // 格式："Name <email> timestamp tz"——取 < 之前的 name 部分
+      const name = ident.split('<')[0]?.trim();
+      if (name) actor = name;
     } catch {
-      // git log 失败（unborn HEAD / 非 git 环境）：审计正常运行，仅 actor 退化为 unknown
-      console.warn('[sofagent] 警告：git 作者获取失败，actor 标记为 unknown');
+      try {
+        const name = execFileSync('git', ['config', 'user.name'], { encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'] }).trim();
+        if (name) actor = name;
+      } catch {
+        // git 不可用 / 未配置身份：审计正常运行，仅 actor 退化为 unknown
+        console.warn('[sofagent] 警告：git 作者获取失败，actor 标记为 unknown');
+      }
     }
     const govTimestamp = new Date().toISOString();
     // 目标实体 = 本次变更涉及的文件路径（最多取前 20 个，避免记录超长）

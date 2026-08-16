@@ -7,6 +7,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { existsSync, readFileSync, writeFileSync, mkdirSync, rmSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
+import { execFileSync } from 'child_process';
 import { ensureGitignore } from './init';
 
 // ==============================
@@ -113,5 +114,90 @@ describe('post-commit hook version detection (P0-1)', () => {
     // 但这个判断逻辑是：major<1 || (major===1 && minor===0 && patch<7)
     // v1.10.0: major=1, minor=10 → major===1 && minor===0 → false（minor 是 10 不是 0）
     expect(shouldOverwriteHook('#!/bin/bash\n# sofagent post-commit hook v1.10.0')).toBe(false);
+  });
+});
+
+// ==============================
+// B8: post-commit 对账 exitCode 三档分流测试
+// v1.3.6 B8 修复：exit 1（WARN 放行）不再被误判为「疑似 --no-verify 绕过」。
+// 三档语义：0 = 真通过（回声）/ 1 = WARN 放行（回声含警告，不报绕过）/ 2 = 拦截后强推（报疑似绕过）。
+// 直接执行静态 hook 模板 engine/audit/hooks/post-commit，用真实 git 仓库 + history fixture 验证。
+// ==============================
+describe('post-commit 对账 exitCode 三档分流 (B8)', () => {
+  let repoDir: string;
+  let sofagentHome: string;
+  const hookPath = join(__dirname, '..', '..', 'hooks', 'post-commit');
+
+  // 生成一条 pre-commit 历史记录
+  const preCommitEntry = (parentSha: string, exitCode: number) =>
+    JSON.stringify({
+      timestamp: new Date().toISOString(),
+      commitPhase: 'pre-commit',
+      parentSha,
+      exitCode,
+      commitSha: '',
+    });
+
+  function runHook(historyContent: string): string {
+    writeFileSync(join(sofagentHome, 'data/audit/history.jsonl'), historyContent);
+    try {
+      return execFileSync('bash', [hookPath], {
+        cwd: repoDir,
+        env: { ...process.env, SOFAGENT_HOME: sofagentHome },
+        encoding: 'utf-8',
+      });
+    } catch {
+      return ''; // hook 永不阻断（exit 0）；异常时返回空便于断言失败暴露
+    }
+  }
+
+  beforeEach(() => {
+    repoDir = join(tmpdir(), `sofagent-b8-test-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+    sofagentHome = join(tmpdir(), `sofagent-b8-home-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+    mkdirSync(repoDir, { recursive: true });
+    mkdirSync(join(sofagentHome, 'data/audit'), { recursive: true });
+    // 真实 git 仓库 + 一个初始 commit（post-commit 依赖 git rev-parse HEAD / HEAD^）
+    execFileSync('git', ['init', '-q'], { cwd: repoDir });
+    execFileSync('git', ['config', 'user.email', 't@t.com'], { cwd: repoDir });
+    execFileSync('git', ['config', 'user.name', 'tester'], { cwd: repoDir });
+    writeFileSync(join(repoDir, 'a.txt'), 'a');
+    execFileSync('git', ['add', '.'], { cwd: repoDir });
+    execFileSync('git', ['commit', '-qm', 'init'], { cwd: repoDir });
+    // 第二个 commit——保证 HEAD^ 存在（post-commit 对账取父 SHA）
+    writeFileSync(join(repoDir, 'a.txt'), 'a\nb');
+    execFileSync('git', ['add', '.'], { cwd: repoDir });
+    execFileSync('git', ['commit', '-qm', 'second'], { cwd: repoDir });
+  });
+
+  afterEach(() => {
+    try { rmSync(repoDir, { recursive: true, force: true }); } catch { /* cleanup */ }
+    try { rmSync(sofagentHome, { recursive: true, force: true }); } catch { /* cleanup */ }
+  });
+
+  it('exit 0（审计真通过）→ 回声「审计通过」，不报绕过', () => {
+    const parentSha = execFileSync('git', ['rev-parse', 'HEAD^'], { cwd: repoDir, encoding: 'utf-8' }).trim();
+    const out = runHook(preCommitEntry(parentSha, 0) + '\n');
+    expect(out).toContain('审计通过');
+    expect(out).not.toContain('绕过');
+  });
+
+  it('exit 1（WARN 放行）→ 回声「含警告」，不报绕过（B8 修复点）', () => {
+    const parentSha = execFileSync('git', ['rev-parse', 'HEAD^'], { cwd: repoDir, encoding: 'utf-8' }).trim();
+    const out = runHook(preCommitEntry(parentSha, 1) + '\n');
+    expect(out).toContain('审计通过（含警告');
+    expect(out).not.toContain('疑似 --no-verify 绕过');
+  });
+
+  it('exit 2（拦截后强推）→ 报「疑似 --no-verify 绕过」', () => {
+    const parentSha = execFileSync('git', ['rev-parse', 'HEAD^'], { cwd: repoDir, encoding: 'utf-8' }).trim();
+    const out = runHook(preCommitEntry(parentSha, 2) + '\n');
+    expect(out).toContain('疑似 --no-verify 绕过');
+    expect(out).not.toContain('审计通过');
+  });
+
+  it('history 无匹配记录 → 降级 INFO 提示（不报绕过也不假回声）', () => {
+    const out = runHook('{"timestamp":"2026-01-01T00:00:00Z","commitSha":"deadbeef","exitCode":0}\n');
+    expect(out).toContain('未确认审计记录');
+    expect(out).not.toContain('疑似 --no-verify 绕过');
   });
 });

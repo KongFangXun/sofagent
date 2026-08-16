@@ -65,11 +65,18 @@ try {
       process.exit(0);  // commitSha 找到，commit 已审计
     }
     if (entry.commitPhase === "pre-commit" && entry.parentSha === PARENT_SHA) {
-      // v1.3.5 #2: 校验该次审计的结果——exitCode === 0 才算已审计（真回声），
-      // 非 0 且 commit 仍存在 = --no-verify 绕过命中拦截记录，输出疑似绕过提示
+      // v1.3.5 #2: 校验该次审计的结果——exitCode 三档分流（v1.3.6 B8 修正）：
+      //   0 = 审计真通过 → 真回声；
+      //   1 = WARN 放行——commit-msg 只对 exit 2 阻断，exit 1 时 commit 合法走过审计，
+      //       不是绕过（v1.3.6 B8 修复：此前 exit 1 被误判为拦截记录）；
+      //   2 = FAIL 拦截后仍出现同父新 commit = --no-verify 绕过，输出疑似绕过提示。
       if (entry.exitCode === 0) {
         console.log("  ✓ [sofagent] 审计通过");
         process.exit(0);  // parentSha 找到（pre-commit 记录，审计通过）
+      }
+      if (entry.exitCode === 1) {
+        console.log("  ✓ [sofagent] 审计通过（含警告，WARN 放行）");
+        process.exit(0);  // WARN 放行 = 合法走过审计，不是绕过
       }
       console.log("");
       console.log("  ℹ️ [sofagent] 父提交存在审计拦截记录（exit " + entry.exitCode + "）但本次 commit 未走审计——疑似 --no-verify 绕过。");

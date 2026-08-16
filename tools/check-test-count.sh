@@ -87,6 +87,10 @@ fi
 PKG_COUNT=$(echo "$TC_OUT" | sed $'s/\033\[[0-9;]*m//g' | grep -oE 'PKGS=[0-9]+' | grep -oE '[0-9]+' | head -1 || echo "0")
 [ -z "$PKG_COUNT" ] && PKG_COUNT=0
 
+# B13: workspace 总包数（package.json workspaces 数组条目数，README 声称「13 包」对账用）
+WORKSPACE_COUNT=$(grep -cE '^\s*"engine/' package.json || echo "0")
+[ -z "$WORKSPACE_COUNT" ] && WORKSPACE_COUNT=0
+
 # audit 包单独数（从 test-count.sh 全量输出的逐包明细行提取，格式「✓ audit: 498 passed (498 tests)」）。
 # v1.2.3 修复：不再单独跑 engine/audit && npm test —— 该路径的 vitest 输出同样带 ANSI 码，
 # 在 CI 非 TTY 下 grep '^\s*Tests\s+' 恒失败。复用 TC_OUT 的明细行，strip ANSI 后提取。
@@ -139,6 +143,13 @@ if [ -f "$DEVLOG_FILE" ]; then
   if grep -q '尚未实现' "$DEVLOG_FILE" 2>/dev/null; then
     if [ "$QUIET" = false ]; then
       echo -e "  ${YELLOW}⚠ ${DEVLOG_FILE}：占位文件（尚未实现），跳过测试数校验${NC}"
+    fi
+  # v1.3.6 修复：已发布版本的历史 devlog（含「✅ 已开发」状态行）冻结——
+  # 其测试数是发版时快照，不随后续版本新增测试漂移（v1.3.5 发布后 v1.3.6 bugfix
+  # 新增 6 测试致 2286→2292，历史 devlog 被误报 FAIL——已发布文档不回头改）。
+  elif grep -q '✅ 已开发' "$DEVLOG_FILE" 2>/dev/null; then
+    if [ "$QUIET" = false ]; then
+      echo -e "  ${YELLOW}⚠ ${DEVLOG_FILE}：已发布版本（历史冻结），测试数不与当前 SSOT 比对${NC}"
     fi
   else
   # 优先「开发完成快照」行的单元数（1650 单元），回退 "NNN tests across"
@@ -278,11 +289,12 @@ else
   ((FAIL++)) || true
 fi
 
-# README.md — "NNN 测试 / NN 包" 格式（P0-13: grep 未命中 → FAIL）
+# README.md — "NNN 测试 / NN 包（NN 个含测试）" 格式（P0-13: grep 未命中 → FAIL；B13: 包数拆双口径——总数对 WORKSPACE_COUNT、含测试数对 PKG_COUNT）
 README_PKG_LINE=$(grep -nE '[0-9]+ 测试 / [0-9]+ 包' README.md 2>/dev/null | head -1)
 if [ -n "$README_PKG_LINE" ]; then
   README_CLAIMED=$(echo "$README_PKG_LINE" | grep -oE '[0-9]+ 测试' | grep -oE '[0-9]+')
   README_PKGS=$(echo "$README_PKG_LINE" | grep -oE '[0-9]+ 包' | grep -oE '[0-9]+')
+  README_PKGS_TESTED=$(echo "$README_PKG_LINE" | grep -oE '[0-9]+ 个含测试' | grep -oE '[0-9]+')
   README_LINENO=$(echo "$README_PKG_LINE" | cut -d: -f1)
   if [ "$QUIET" = false ]; then
     echo -e "  校验 README.md（行 ${README_LINENO}）..."
@@ -292,13 +304,17 @@ if [ -n "$README_PKG_LINE" ]; then
     echo -e "  ${RED}✗ README.md（行 ${README_LINENO}）：声称 ${README_CLAIMED} 测试，实际 ${TOTAL_TESTS}${NC}"
     local_fail=1
   fi
-  if [ -n "$README_PKGS" ] && [ "$README_PKGS" != "$PKG_COUNT" ]; then
-    echo -e "  ${RED}✗ README.md（行 ${README_LINENO}）：声称 ${README_PKGS} 包，实际 ${PKG_COUNT} 包${NC}"
+  if [ -n "$README_PKGS" ] && [ "$README_PKGS" != "$WORKSPACE_COUNT" ]; then
+    echo -e "  ${RED}✗ README.md（行 ${README_LINENO}）：声称 ${README_PKGS} 包（workspace 总数），实际 ${WORKSPACE_COUNT} 包${NC}"
+    local_fail=1
+  fi
+  if [ -n "$README_PKGS_TESTED" ] && [ "$README_PKGS_TESTED" != "$PKG_COUNT" ]; then
+    echo -e "  ${RED}✗ README.md（行 ${README_LINENO}）：声称 ${README_PKGS_TESTED} 个含测试，实际 ${PKG_COUNT} 包${NC}"
     local_fail=1
   fi
   if [ "$local_fail" = "0" ]; then
     if [ "$QUIET" = false ]; then
-      echo -e "  ${GREEN}✓ README.md：${README_CLAIMED} 测试 / ${README_PKGS} 包${NC}"
+      echo -e "  ${GREEN}✓ README.md：${README_CLAIMED} 测试 / ${README_PKGS} 包（${README_PKGS_TESTED} 个含测试）${NC}"
     fi
     ((PASS++)) || true
   else
@@ -306,6 +322,43 @@ if [ -n "$README_PKG_LINE" ]; then
   fi
 else
   echo -e "  ${RED}✗ README.md 未找到「N 测试 / N 包」声明（grep 未命中 → FAIL，禁止静默跳过）${NC}"
+  ((FAIL++)) || true
+fi
+
+# README.en.md — "NNN tests / NNN packages (NN with tests)" 格式（P1 B2b: 英文版曾二次漂移 2283，
+# 根因是门禁只校验中文 README。补齐英文校验，grep 未命中 → FAIL，与中文版 P0-13 语义一致；B13: 包数拆双口径）
+README_EN_LINE=$(grep -nE '[0-9]+ tests? / [0-9]+ packages?' README.en.md 2>/dev/null | head -1)
+if [ -n "$README_EN_LINE" ]; then
+  README_EN_CLAIMED=$(echo "$README_EN_LINE" | grep -oE '[0-9]+ tests?' | grep -oE '[0-9]+')
+  README_EN_PKGS=$(echo "$README_EN_LINE" | grep -oE '[0-9]+ packages?' | grep -oE '[0-9]+')
+  README_EN_PKGS_TESTED=$(echo "$README_EN_LINE" | grep -oE '[0-9]+ with tests' | grep -oE '[0-9]+')
+  README_EN_LINENO=$(echo "$README_EN_LINE" | cut -d: -f1)
+  if [ "$QUIET" = false ]; then
+    echo -e "  校验 README.en.md（行 ${README_EN_LINENO}）..."
+  fi
+  local_fail=0
+  if [ "$README_EN_CLAIMED" != "$TOTAL_TESTS" ]; then
+    echo -e "  ${RED}✗ README.en.md（行 ${README_EN_LINENO}）：声称 ${README_EN_CLAIMED} tests，实际 ${TOTAL_TESTS}${NC}"
+    local_fail=1
+  fi
+  if [ -n "$README_EN_PKGS" ] && [ "$README_EN_PKGS" != "$WORKSPACE_COUNT" ]; then
+    echo -e "  ${RED}✗ README.en.md（行 ${README_EN_LINENO}）：声称 ${README_EN_PKGS} packages（workspace 总数），实际 ${WORKSPACE_COUNT} 包${NC}"
+    local_fail=1
+  fi
+  if [ -n "$README_EN_PKGS_TESTED" ] && [ "$README_EN_PKGS_TESTED" != "$PKG_COUNT" ]; then
+    echo -e "  ${RED}✗ README.en.md（行 ${README_EN_LINENO}）：声称 ${README_EN_PKGS_TESTED} with tests，实际 ${PKG_COUNT} 包${NC}"
+    local_fail=1
+  fi
+  if [ "$local_fail" = "0" ]; then
+    if [ "$QUIET" = false ]; then
+      echo -e "  ${GREEN}✓ README.en.md：${README_EN_CLAIMED} tests / ${README_EN_PKGS} packages (${README_EN_PKGS_TESTED} with tests)${NC}"
+    fi
+    ((PASS++)) || true
+  else
+    ((FAIL++)) || true
+  fi
+else
+  echo -e "  ${RED}✗ README.en.md 未找到「N tests / N packages」声明（grep 未命中 → FAIL，禁止静默跳过）${NC}"
   ((FAIL++)) || true
 fi
 

@@ -58,6 +58,19 @@ if [ -f "engine/audit/dist/index.js" ]; then
   fi
 fi
 
+# 2.5 v1.3.6 B22: .sofagent/ ignore 兜底——防御 --install-hook 后用户手工删 .gitignore、
+#     或旧版本安装未写入的间隙。若 .gitignore 未含 .sofagent/，自动补写（幂等），
+#     防止 .sofagent/.git-shadow/ 快照数据被本次 commit 卷入仓库。
+if [ -f ".gitignore" ] && ! grep -q '^\.sofagent/$' ".gitignore" 2>/dev/null && ! grep -q '^\.sofagent/' ".gitignore" 2>/dev/null; then
+  printf '\n# sofagent 审计数据（本地配置 + 知识库 + 审计历史）\n.sofagent/\n' >> ".gitignore"
+  echo "ℹ️ [sofagent] 已自动补充 .gitignore（排除 .sofagent/）"
+elif [ ! -f ".gitignore" ]; then
+  printf '# sofagent 审计数据（本地配置 + 知识库 + 审计历史）\n.sofagent/\n' > ".gitignore"
+  echo "ℹ️ [sofagent] 已自动创建 .gitignore（排除 .sofagent/）"
+fi
+# 已暂存的 .sofagent/ 路径移出暂存区（.sofagent/ 永不入库；git reset 单路径只影响本目录，不动其他暂存）
+git reset -q -- .sofagent/ 2>/dev/null || true
+
 # 3. 审计范围固定为「暂存区（staged）= 即将提交的变更」
 #    无论是否首次提交都用 --cached：
 #    - commit-msg 钩子运行时提交尚未生成，staged 即本次提交的真实内容；

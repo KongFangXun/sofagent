@@ -118,3 +118,14 @@ describe('A21 不植后门', () => {
     expect(result.status).toBe('FAIL');
   });
 });
+
+  // v1.3.6 B15 补漏：审查清单文档（教人 grep 检查 plist）不应被误判后门
+  it('FORGE/playbook/ 审查清单文档含 plist 路径 → PASS（文档豁免）', () => {
+    const ctx = makeCtx([
+      makeDiffFile('FORGE/playbook/regression-checklist.md', [
+        '+grep -F "$REPO" ~/Library/LaunchAgents/com.sofagent.daemon.plist   # WorkingDirectory',
+      ]),
+    ]);
+    const result = checkRuleA21(ctx);
+    expect(result.status).toBe('PASS');
+  });

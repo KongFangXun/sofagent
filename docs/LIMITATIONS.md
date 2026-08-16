@@ -16,7 +16,7 @@
 - [四、成熟度与测试局限](#四成熟度与测试局限)
 - [五、审计与工程局限](#五审计与工程局限)
 - [六、文件系统审计局限（v1.0.9 起）](#六文件系统审计局限v109-起)
-- [七、定时触发与 Windows 局限（v1.0.5 起）](#七定时触发与-windows-局限v105-起)
+- [七、历史遗留与迁移说明（v1.0.5 起）](#七历史遗留与迁移说明v105-起)
 - [八、包依赖与编排局限（v1.1.3 起）](#八包依赖与编排局限v113-起)
 - [九、v1.1.7-v1.1.9 新功能局限](#九v117-v119-新功能局限)
 - [十、行业研报印证的新增局限（2026-07）](#十行业研报印证的新增局限2026-07)
@@ -118,9 +118,9 @@ v1.0.1 新增 daemon Ingest（自动知识提取）+ loop-evaluate Lint（自动
 
 ## 二、平台与兼容性局限
 
-### ⏰ 定时触发做不到
+### ⏰ ~~定时触发做不到~~（v1.2.8 已解决，v1.3.5 扩展 cron 触发）
 
-目前只有「每次对话启动」这一种触发方式。OpenClaw 不支持 cron 级定时任务。短期替代：Agent 自查 task/logs，上次执行超阈值时主动提醒用户——但不是真正的定时循环。
+早期版本只有「每次对话启动」这一种触发方式（OpenClaw 当时不支持 cron 级定时任务）。**现状**：v1.2.8 起 daemon 内置定时任务管理（`engine/daemon/src/scheduler.ts`），v1.3.5 起支持 `@weekly` / `@daily` / `@hourly` cron 表达式触发 Sub Agent 巡检（`engine/daemon/src/cron.ts`），定时循环已是交付能力。Windows 平台差异见本页 §二「🪟 Windows 支持是实验性的」。
 
 ---
 
@@ -214,7 +214,7 @@ sofagent 跑在单个 Agent 里——没有 agent-to-agent 通信，没有多实
 
 > ⚠️ **知识库同样全局共享**：`~/.sofagent/data/knowledge/` 单目录遍历、无租户/项目维度隔离——多项目、多 Agent 的知识沉淀（entities/concepts/comparisons/summaries）混合存储，查询时全局命中。财务与人事等不同域 Agent 的数据会串。按项目/Agent 隔离计划在 v1.3.x 落地。**临时方案**：使用 `SOFAGENT_HOME` 环境变量为不同项目/Agent 隔离数据目录（见 [企业部署指南](./guides/enterprise-deploy.md#多项目数据隔离v128)）。
 
-> ⚠️ **`.sofagent/.git-shadow/` 在被审计仓库内创建**：sofagent 审计时会在被审计的 git 仓库根目录创建 `.sofagent/.git-shadow/` 目录存放审计快照——设计意图是按 git 仓库隔离快照（不同仓库的快照不能串，否则回溯到错误仓库）。快照内容**已 sanitize 脱敏**（API key / 密码 / 手机号打码，v1.3.4 起），位于仓库内便于 git worktree 隔离。该目录已默认加入 `.gitignore`，不进 git 提交，但用户 `ls -a` 可见。可安全删除（重新审计会重建）。改存储位置是 v1.4 架构决策，当前版本只披露。
+> ⚠️ **`.sofagent/.git-shadow/` 在被审计仓库内创建**：sofagent 审计时会在被审计的 git 仓库根目录创建 `.sofagent/.git-shadow/` 目录存放审计快照——设计意图是按 git 仓库隔离快照（不同仓库的快照不能串，否则回溯到错误仓库）。快照内容**已 sanitize 脱敏**（API key / 密码 / 手机号打码，v1.3.4 起），位于仓库内便于 git worktree 隔离。经 `--init` 或 `--install-hook` 安装时，自动写入 .gitignore（v1.3.6 起两路径行为一致；commit-msg hook 首次运行还会兜底补写），该目录不进 git 提交，但用户 `ls -a` 可见。可安全删除（重新审计会重建）。改存储位置是 v1.4 架构决策，当前版本只披露。
 
 task/logs 和 think.md 以明文 Markdown 存储，可能含代码片段、API 响应、用户对话摘要。LLM 提炼反思时可能无意写入敏感信息。age 加密已排 v1.3.8（见 [ROADMAP](./ROADMAP.md) 和 [SECURITY](../SECURITY.md)）。
 - history.jsonl 存审计判定详情，A2/A9 已脱敏，其他规则 details 可能含代码片段或文件路径，敏感场景请配合外部加密卷
@@ -236,8 +236,8 @@ task/logs 和 think.md 以明文 Markdown 存储，可能含代码片段、API �
 
 ### A2 密钥检测局限——编码与格式绕过（v1.2.5 披露）
 
-> ⚠️ **A2 仅检测明文常见 API key 格式**（AWS AKIA、OpenAI/Anthropic/DeepSeek sk-*、GitHub token、私钥块等）。v1.2.5 起已补 base64/hex 编码检测（新增行先解码再跑正则）与 `.gitattributes -diff` 绕过检测（WARN）。但仍不在检测范围：
-> - 短密钥（<32 位）、非标准格式
+> ⚠️ **A2 仅检测明文常见 API key 格式**（AWS AKIA、OpenAI/Anthropic/DeepSeek sk-*、GitHub token、私钥块等；**v1.3.6 起含 Stripe `sk_live_`/`sk_test_` 下划线前缀格式**）。v1.2.5 起已补 base64/hex 编码检测（新增行先解码再跑正则）与 `.gitattributes -diff` 绕过检测（WARN）。但仍不在检测范围：
+> - 短密钥（<32 位）、非标准格式、其他厂商下划线前缀（保守设计防误报，等真实泄漏案例驱动，不逐格式打地鼠——v1.3.6 决策，Stripe 因前缀在生产代码无合法用途而纳入）
 > - 其他编码（URL-safe base64、rot13、自定义混淆）与压缩/加密后的密钥
 > - 历史提交中的密钥（A2 只扫当前 diff 新增行，不扫全量历史）
 >
@@ -330,7 +330,7 @@ sofagent-audit 实现了完整的六步审计闭环流程（设计文档见 [ARC
 
 ### 测试覆盖范围
 
-当前审计核心 744 个、全 workspace 2286 个测试（全绿，实测见 `tools/test-count.sh`，与 pre-push-check 一致），但覆盖范围集中在审计规则和核心逻辑（diff-parser、reporter、config-loader、rules/*.ts）。以下模块没有独立测试：
+当前审计核心 751 个、全 workspace 2293 个测试（全绿，实测见 `tools/test-count.sh`，与 pre-push-check 一致），但覆盖范围集中在审计规则和核心逻辑（diff-parser、reporter、config-loader、rules/*.ts）。以下模块没有独立测试：
 
 | 模块 | 测试状态 | 风险 |
 |------|:--:|------|
@@ -407,9 +407,9 @@ FDE 完整四阶段十二步部署流程（[FDE/GUIDE.md](../FDE/GUIDE.md)）已
 
 ### 端到端验收测试覆盖
 
-v1.0 新增 `FORGE/playbook/acceptance-test.sh`（场景数持续扩展，当前 202 个，SSOT 见脚本头部声明）：
+v1.0 新增 `FORGE/playbook/acceptance-test.sh`（场景数持续扩展，当前 214 个，SSOT 见脚本头部声明）：
 
-- **CI 已覆盖**：单元测试审计核心 744 个、全 workspace 2286 个测试（全绿，详见上方「测试覆盖范围」节，实测见 `tools/test-count.sh`，与 pre-push-check 一致）、sofagent-core verify 约 44-48 项（动态）
+- **CI 已覆盖**：单元测试审计核心 751 个、全 workspace 2293 个测试（全绿，详见上方「测试覆盖范围」节，实测见 `tools/test-count.sh`，与 pre-push-check 一致）、sofagent-core verify 约 44-48 项（动态）
 - **发版前手动覆盖**：acceptance-test.sh 214 场景（含子断言，CLI 端到端，步骤 2.3）、OpenClaw 验收 63 场景（Agent 端到端，步骤 2.5）
 - **CI 未覆盖**：daemon → MCP → webhook → 编排四组件串联行为（仍依赖手动验证）
 - **CI 未覆盖**：多平台兼容性（macOS only verified，Linux/Windows 未验证）
@@ -454,7 +454,9 @@ A16 的 `evidenceMode: git-diff` 依赖 git diff 获取变更文件列表；daem
 ---
 
 
-## 七、定时触发与 Windows 局限（v1.0.5 起）
+## 七、历史遗留与迁移说明（v1.0.5 起）
+
+> 定时触发局限已解决（v1.2.8 起 daemon 内置定时任务，v1.3.5 扩展 cron 表达式），本节省略；Windows 平台差异见 §二「🪟 Windows 支持是实验性的」。
 
 ### Ontology 合并准确性依赖 frontmatter 质量
 

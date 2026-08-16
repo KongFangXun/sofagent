@@ -6,10 +6,10 @@
 
 | 文件 | 用途 | 谁消费 |
 |------|------|--------|
-| `sofagent.png` | 项目 Logo（200px），README.md 头部引用 | GitHub README、npm 包页面、tools/dashboard.html:291 |
-| `banner.png` | README 头部横幅 | README.md:2 |
-| `dashboard.png` | Dashboard 驾驶舱截图 | README.md:130 |
-| `audit-terminal.png` | sofagent-audit 拦截 .env commit 的终端演示图 | README.md:122、README.en.md:122 |
+| `sofagent.png` | 项目 Logo（200px），README 头部引用 | GitHub README、npm 包页面、tools/dashboard.html |
+| `banner.png` | README 头部横幅 | README 中英版头部 |
+| `dashboard.png` | Dashboard 驾驶舱截图 | README 中英版「产品一瞥」段 |
+| `audit-terminal.png` | sofagent-audit 拦截 .env commit 的终端演示图 | README 中英版「快速开始」段 |
 | ~~`favicon.png`~~ | ~~网站图标~~ | ~~HTML Dashboard（`<link rel="icon">`）~~ **已删除（2026-08-16）：声称被 dashboard `<link rel="icon">` 消费，实测 dashboard.html 无此标签，零真实引用** |
 | ~~`fde-training.html`~~ | FDE 训练材料页面（早期内部培训用，v1.3.2 已归档到 `docs/archive/fde-training-2026-07.html`） | 历史参考 |
 

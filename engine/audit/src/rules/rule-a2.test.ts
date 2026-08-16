@@ -55,6 +55,21 @@ describe('A2 不泄密钥', () => {
     expect(result.status).toBe('FAIL');
   });
 
+  // v1.3.6 B24: Stripe 下划线前缀——fixture 运行时拼接（铁律：测试不字面写真实格式密钥）
+  it('新增行含 Stripe sk_live_ 下划线 key → FAIL', () => {
+    const stripeKey = 'sk_live_' + 'a'.repeat(24);
+    const ctx = makeCtx([makeDiffFile('src/pay.ts', [`+const stripeKey = "${stripeKey}"`])]);
+    const result = checkRuleA2(ctx);
+    expect(result.status).toBe('FAIL');
+  });
+
+  it('新增行含 Stripe sk_test_ 下划线 key → FAIL', () => {
+    const stripeKey = 'sk_test_' + 'a'.repeat(24);
+    const ctx = makeCtx([makeDiffFile('src/pay.ts', [`+const stripeKey = "${stripeKey}"`])]);
+    const result = checkRuleA2(ctx);
+    expect(result.status).toBe('FAIL');
+  });
+
   it('无密钥 → PASS', () => {
     const ctx = makeCtx([makeDiffFile('src/index.ts', ['+const x = 1;'])]);
     const result = checkRuleA2(ctx);

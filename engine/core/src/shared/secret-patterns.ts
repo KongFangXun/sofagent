@@ -20,6 +20,11 @@ export const SECRET_PATTERNS: { pattern: RegExp; label: string }[] = [
   // v1.3.2 #46: 扩展支持连字符/下划线（部分厂商 key 含分隔符），首字符仍限字母数字。
   { pattern: /sk-[a-zA-Z0-9][a-zA-Z0-9_\-]{31,}/, label: 'Possible API Key (OpenAI/DeepSeek)' },
   { pattern: /gh[ps]_[A-Za-z0-9]{36}/, label: 'GitHub Token' },
+  // v1.3.6 B24: Stripe 下划线前缀（sk_live_/sk_test_）——与现有 sk- 连字符族不同源，
+  // 无论长短均不匹配旧模式（fresh-eyes 报告四实测 sk-live-abc123456789 放行暴露此洞）。
+  // Stripe 真实 key ≥24 位；误报面评估：生产代码中 sk_live_/sk_test_ 前缀几乎无合法用途
+  //（测试文档需用占位符，与 v1.3.5 脱敏教训一致）——可控，纳入覆盖。
+  { pattern: /sk_(live|test)_[a-zA-Z0-9]{24,}/, label: 'Stripe Secret Key' },
 ];
 
 /**
@@ -29,6 +34,8 @@ export const SECRET_PATTERNS: { pattern: RegExp; label: string }[] = [
  */
 export const REDACTION_PATTERNS: { pattern: RegExp; replacement: string }[] = [
   { pattern: /sk-[a-zA-Z0-9_\-]{16,}/g, replacement: 'sk-***REDACTED***' },
+  // v1.3.6 B24: Stripe 下划线格式同步脱敏（与检测模式同源，防检测到但脱敏不到的不对称）
+  { pattern: /sk_(live|test)_[a-zA-Z0-9]{16,}/g, replacement: 'sk_***REDACTED***' },
   { pattern: /AKIA[0-9A-Z]{16}/g, replacement: 'AKIA***REDACTED***' },
   { pattern: /\b1[3-9]\d{9}\b/g, replacement: '1**REDACTED***' },
   { pattern: /gh[ps]_[a-zA-Z0-9]{36,}/g, replacement: 'gh***REDACTED***' },

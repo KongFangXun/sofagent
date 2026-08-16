@@ -138,7 +138,7 @@ export function generateQuickOutput(
   if (violationCount === 0 && warnCount === 0) {
     // v1.3.4 P1-8: PASS 时输出可感知回声——让用户明确知道「sofagent 在工作且通过了」
     // v1.3.2 P2-17: 解释 17 条默认 vs 24 条总量，消除「少装了什么」的认知落差
-    parts.push(`✅ 全部 ${passCount} 条规则通过（默认规则 · 共 24 条，扩展规则用 --ruleset 加载）${skipCount > 0 ? `（${skipCount} 条跳过）` : ''}`);
+    parts.push(`✅ 全部 ${passCount} 条规则通过（默认 17 条 · 完整 24 条含扩展，扩展规则经 config 启用，规则集用 --ruleset 加载）${skipCount > 0 ? `（${skipCount} 条跳过）` : ''}`);
     // v1.3.5 #7: 跳过计数解释——让用户知道「跳过」是 quick 模式缺输入而非漏检
     if (skipCount > 0) {
       parts.push(`ⓘ 跳过 = 需任务描述/commit msg/Agent 日志输入的规则（quick 模式无此输入）——\`--init\` 装 hook 走完整引擎`);

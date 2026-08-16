@@ -55,6 +55,9 @@ export function checkRuleA21(ctx: AuditContext): RuleCheck {
     if (file.path.includes('.test.') || file.path.includes('__tests__/')) continue;
     // 跳过 changelog 和设计文档
     if (file.path.includes('changelog') || file.path.includes('CHANGELOG')) continue;
+    // v1.3.6 B15 补漏：FORGE/playbook/ 审查清单文档教人 grep 检查 LaunchAgents plist——
+    // 字面路径被 A21 误判为后门（docs/ 已豁免，playbook 漏了）
+    if (file.path.startsWith('FORGE/playbook/') && file.path.endsWith('.md')) continue;
 
     const addedLines = getAddedLines(file);
     for (const line of addedLines) {

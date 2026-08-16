@@ -77,6 +77,7 @@
 - [ ] SSOT 版本号，N+ 文件同步
 - [ ] 文档头日期统一
 - [ ] ROADMAP 版本头更新
+- [ ] 🔴 发版状态三件套核对（v1.3.6 新增 · fresh-eyes B19 根因）：`docs/WIKI.md` 状态表「当前版本/下一版」+ 尾部维护规则行、`docs/ROADMAP.md`「现在在哪」节、`docs/HANDBOOK.md`「近期版本新功能速览」节——三处版本号与 SSOT 一致，无旧版残留（历史叙述除外）。v1.3.5 教训：发版只更新了 WIKI 头部，状态表和尾注漏更，同文档三处版本打架
 
 ## Release Notes · vX.Y.Z
 

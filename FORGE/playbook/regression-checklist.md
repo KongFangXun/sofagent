@@ -283,7 +283,9 @@ grep "A18" engine/audit/src/rules/runner.ts   # extended 优先级 A18 排在 A1
 ```bash
 # 子项 a: plist 内容正确（原维度 20）
 grep "sofagent-daemon" ~/Library/LaunchAgents/com.sofagent.daemon.plist   # ProgramArguments
-grep "Workbuddy/sofagent" ~/Library/LaunchAgents/com.sofagent.daemon.plist   # WorkingDirectory
+# WorkingDirectory 指向本仓库（路径无关，任何克隆位置可跑——v1.3.6 B15 修复硬编码路径换机静默失效）
+REPO=$(git rev-parse --show-toplevel)
+grep -F "$REPO" ~/Library/LaunchAgents/com.sofagent.daemon.plist   # WorkingDirectory
 test -f .sofagent/watch.yml && grep "paths:" .sofagent/watch.yml   # --init 生成
 ! grep -q "不支持的参数.*--daemon" ~/.sofagent/daemon.log   # 无废弃参数
 tail -20 ~/.sofagent/daemon.log | grep "监控目录"   # 监控目录正确
