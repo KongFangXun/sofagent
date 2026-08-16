@@ -1,5 +1,5 @@
 // ============================================================
-// market-invoke.ts · MCP tool: market_invoke（v1.3.5 交付 2）
+// market-invoke.ts · MCP tool: market_invoke（v1.3.6 交付 2）
 //
 // 能力调用——发现能力 → 挂载调用 → 结果回流。
 // 挂载前强制 SkillScan（DANGEROUS 拦截 / SUSPICIOUS 走 HITL）。

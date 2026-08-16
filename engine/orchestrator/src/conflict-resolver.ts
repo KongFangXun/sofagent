@@ -1,5 +1,5 @@
 // ============================================================
-// conflict-resolver.ts · worktree 合并冲突仲裁（v1.3.5 · 交付一）
+// conflict-resolver.ts · worktree 合并冲突仲裁（v1.3.6 · 交付一）
 //
 // git merge 文本冲突（不是 audit FAIL）的仲裁器。
 // 仲裁不修改 SubAgent 的原始 diff——只决定用谁的结果。

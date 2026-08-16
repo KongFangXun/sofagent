@@ -1,6 +1,6 @@
 import { defineConfig } from 'vitest/config';
 
-// v1.3.5 阶段五新增：本包测试含大量 tmpdir IO（market 五环 / instinct / 激活链 / checkpoint），
+// v1.3.6 阶段五新增：本包测试含大量 tmpdir IO（market 五环 / instinct / 激活链 / checkpoint），
 // 全量并行跑时与其他 11 包争用 IO 会偶发超时（单跑稳定绿——非代码回归，资源竞争型）。
 // 包级 testTimeout 20s + 并发 worker 限 2（8GB 机器均衡点，FORGE run-07 同款结论）。
 // v1.3.6 B14: ① retry 1——test 级只重试失败用例（IO 争用超时自动重跑一次，通过用例零影响；

@@ -1,11 +1,11 @@
 # 路线图 · Roadmap
 
 > 已经做了什么、未来要去哪、哪些地方需要你的帮助。
-> v1.3.5 · 2026-08-16（UTC）· 🧬 自进化与运维闭环（MCP 52 tools + instinct→skill + FDE 运维五件 + 依赖安全升级）
+> v1.3.6 · 2026-08-16（UTC）· 🧬 自进化与运维闭环（MCP 52 tools + instinct→skill + FDE 运维五件 + 依赖安全升级）
 
 产品定位详见 [设计哲学](./PHILOSOPHY.md) 和 [README](../README.md)。
 
-## 现在在哪：v1.3.6（下一个 · v1.3.5 已交付）
+## 现在在哪：v1.3.6（下一个 · v1.3.6 已交付）
 
 > **v1.3.5 已于 2026-08-16 交付**——自进化与运维闭环：MCP 48→52 tools（A/B 实验 + 快照恢复，破坏性操作强制人审）+ instinct→skill 自动进化 + FDE 运维五件 + 依赖安全升级（npm audit 清零）+ DSH MCP 互通 + 四份审查 bugfix 38 项。详见 [v1.3.5 开发日志](./changelog/v1.3/v1.3.5.md)。
 >

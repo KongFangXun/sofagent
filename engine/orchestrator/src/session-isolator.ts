@@ -1,5 +1,5 @@
 // ============================================================
-// session-isolator.ts · Onboard/Refine Session 级隔离（v1.3.5 交付 9）
+// session-isolator.ts · Onboard/Refine Session 级隔离（v1.3.6 交付 9）
 // ============================================================
 //
 // Builder（FDE 建 Agent）vs Optimizer（Onboard/Refine 跑循环）分离。

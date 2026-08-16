@@ -1,5 +1,5 @@
 // ============================================================
-// onboard/agent-creator.ts · agent-creation 需求推导（v1.3.5 交付 5）
+// onboard/agent-creator.ts · agent-creation 需求推导（v1.3.6 交付 5）
 // ============================================================
 //
 // 一句话需求 → 自动推导 Role + 域规则 → 写 think.md → 装 knowledge。

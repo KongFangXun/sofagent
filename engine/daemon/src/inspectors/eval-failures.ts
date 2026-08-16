@@ -1,5 +1,5 @@
 // ============================================================
-// eval-failures.ts · L1 eval 失败检测 → think-generator（v1.3.5 · P0b）
+// eval-failures.ts · L1 eval 失败检测 → think-generator（v1.3.6 · P0b）
 // ============================================================
 //
 // @daily：检测 data/eval/latest.json 的 mtime 是否更新，

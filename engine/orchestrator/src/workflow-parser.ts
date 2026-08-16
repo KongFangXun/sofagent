@@ -1,6 +1,6 @@
 // ============================================================
 // workflow-parser.ts · workflow YAML → SubAgent 映射
-// v1.3.5 新增
+// v1.3.6 新增
 // ============================================================
 //
 // 把 compose 产出的 workflow YAML 解析为 SubAgent 配置：
@@ -52,11 +52,66 @@ export interface WorkflowNode {
   hitl?: boolean;
 }
 
+// ────────────────────────────────────────────────────────────
+// 审阅协议字段（v1.3.6 新增 · GitHub 式协作底座）
+// ────────────────────────────────────────────────────────────
+
+/**
+ * merge_criteria 单条验收条件——机器可判定（复用 ⑨ define_acceptance
+ * 的 Benchmark 判定引擎结构）。三类可叠加「组织宪法」：
+ *   技术验收：test_pass / build_success / grep_absent / schema_valid
+ *   业务审批规则：business_approval（如「财务节点产出必须 CFO 批准」）
+ *   数据合规规则：data_compliance（如「涉及用户数据必须 DPO 签字」）
+ *
+ * 语义来源：workflow 从「步骤列表」升级为「变更提案的审阅协议」——
+ * 每个 AI 节点 = 一根待审阅的枝条，审计引擎（git diff 硬证据）
+ * 就是 merge_criteria 的执行器，无需新增审计逻辑。
+ */
+export interface MergeCriterion {
+  /** 验收条件类型 */
+  kind:
+    | 'test_pass'
+    | 'build_success'
+    | 'grep_absent'
+    | 'schema_valid'
+    | 'business_approval'
+    | 'data_compliance';
+  /** 人类可读描述（可选） */
+  detail?: string;
+  /** test_pass/build_success：执行命令 */
+  command?: string;
+  /** grep_absent：不得出现的模式 */
+  pattern?: string;
+  /** schema_valid：校验目标 Schema 引用 */
+  schema_ref?: string;
+  /** business_approval/data_compliance：必需审批角色（如 CFO / DPO） */
+  approver_role?: string;
+}
+
+/**
+ * approver 审阅批准者（对齐 v1.3.5 promote_ab 强制人审语义）。
+ * 缺省视为强制人审——破坏性变更必须人审。
+ */
+export interface WorkflowApprover {
+  /** 审阅批准者标识（agentId / 角色名 / 用户 ID） */
+  id: string;
+  /** 审阅者类型（缺省 human） */
+  kind?: 'human' | 'role' | 'agent';
+  /** 是否强制审阅（缺省 true） */
+  required?: boolean;
+  /** 审阅说明（可选） */
+  note?: string;
+}
+
 /** 解析后的 workflow（结构化） */
 export interface ParsedWorkflow {
   name: string;
   description: string;
   nodes: WorkflowNode[];
+  /** 审阅协议：merge_criteria（可组合验收条件，v1.3.6 新增） */
+  mergeCriteria?: MergeCriterion[];
+  /** 审阅协议：approver（审阅批准者，v1.3.6 新增） */
+  approver?: WorkflowApprover;
 }
 
 /** SubAgent 配置（供 dag-runner 封装为 task tool） */
@@ -324,10 +379,23 @@ export function parseWorkflowYaml(workflowYaml: string): ParsedWorkflow {
   // 环检测（DFS 三色标记）
   assertAcyclic(nodes);
 
+  // ── 审阅协议字段提取（v1.3.6 新增 · GitHub 式协作底座）──
+  // merge_criteria / approver 原样透传（schema 结构校验在 container.ts，
+  // 语义校验 validateMergeCriteria / validateApprover 同在 container 收口）。
+  const mergeCriteria = Array.isArray(wfObj['merge_criteria'])
+    ? (wfObj['merge_criteria'] as MergeCriterion[])
+    : undefined;
+  const approver =
+    typeof wfObj['approver'] === 'object' && wfObj['approver'] !== null
+      ? (wfObj['approver'] as WorkflowApprover)
+      : undefined;
+
   return {
     name: typeof wfObj.name === 'string' ? wfObj.name : 'unnamed-workflow',
     description: typeof wfObj.description === 'string' ? wfObj.description : '',
     nodes,
+    ...(mergeCriteria !== undefined ? { mergeCriteria } : {}),
+    ...(approver !== undefined ? { approver } : {}),
   };
 }
 

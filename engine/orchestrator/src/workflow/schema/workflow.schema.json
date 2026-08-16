@@ -1,0 +1,141 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "sofagent://workflow/schema/workflow.schema.json",
+  "title": "Workflow 标准格式（v1.3.6 引擎接口外化 · 机器可读定义）",
+  "description": "workflow 的公开标准格式——id/agent/task/depends_on 机器可读定义 + 审阅协议字段（merge_criteria/approver，GitHub 式协作底座）。单一事实源：container 校验与 workflow-parser 均走本 Schema。agent 字段支持任意节点类型（registry 查找 + agent-creation 兜底，对接 v1.3.2 动态解析链）。",
+  "type": "object",
+  "required": ["workflow"],
+  "properties": {
+    "workflow": {
+      "type": "object",
+      "required": ["nodes"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "workflow 名称（可选，缺省 unnamed-workflow）"
+        },
+        "description": {
+          "type": "string",
+          "description": "workflow 描述（可选）"
+        },
+        "nodes": {
+          "type": "array",
+          "description": "节点列表（至少 1 个，上限由 parser 控制）",
+          "items": { "$ref": "#/definitions/workflowNode" }
+        },
+        "merge_criteria": {
+          "$ref": "#/definitions/mergeCriteria",
+          "description": "审阅协议：什么证据算通过——机器可判定验收条件（复用 ⑨ define_acceptance 的 Benchmark 判定引擎结构）。三类可叠加：技术验收 / 业务审批规则 / 数据合规规则。审计引擎（git diff 硬证据）即执行器"
+        },
+        "approver": {
+          "$ref": "#/definitions/approver",
+          "description": "审阅协议：谁能审阅批准（对齐 v1.3.5 promote_ab 强制人审语义）"
+        }
+      }
+    }
+  },
+  "definitions": {
+    "workflowNode": {
+      "type": "object",
+      "required": ["id", "agent", "task"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "节点唯一标识（workflow 内不得重复）"
+        },
+        "agent": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Agent 类型——支持任意节点类型：内置 4 类（developer/qa-engineer/researcher/technical-writer）→ registry 查找 → agent-creation 兜底"
+        },
+        "task": {
+          "type": "string",
+          "minLength": 1,
+          "description": "节点任务描述"
+        },
+        "depends_on": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "依赖的上游节点 id（必须无环、无悬空引用、无自依赖）"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["loop", "auto", "manual"],
+          "description": "节点类型（缺省 auto）：loop=循环引擎 / auto=一次性产出 / manual=人工节点（隐含 HITL）"
+        },
+        "hitl": {
+          "type": "boolean",
+          "description": "是否需要人工确认（type=manual 时隐含 true）"
+        }
+      }
+    },
+    "mergeCriteria": {
+      "type": "array",
+      "description": "可组合的「组织宪法」——三类可叠加验收条件",
+      "items": { "$ref": "#/definitions/mergeCriterion" }
+    },
+    "mergeCriterion": {
+      "type": "object",
+      "required": ["kind"],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "test_pass",
+            "build_success",
+            "grep_absent",
+            "schema_valid",
+            "business_approval",
+            "data_compliance"
+          ],
+          "description": "验收条件类型：前 4 类=技术验收（Benchmark 判定引擎结构）；business_approval=业务审批规则（如「财务节点产出必须 CFO 批准」）；data_compliance=数据合规规则（如「涉及用户数据必须 DPO 签字」）"
+        },
+        "detail": {
+          "type": "string",
+          "description": "验收条件的人类可读描述"
+        },
+        "command": {
+          "type": "string",
+          "description": "test_pass/build_success：执行命令（如 npm test / npm run build）"
+        },
+        "pattern": {
+          "type": "string",
+          "description": "grep_absent：不得出现的模式（grep 无 X）"
+        },
+        "schema_ref": {
+          "type": "string",
+          "description": "schema_valid：校验目标 Schema 引用（$id 或文件路径）"
+        },
+        "approver_role": {
+          "type": "string",
+          "description": "business_approval/data_compliance：必需审批角色（如 CFO / DPO）"
+        }
+      }
+    },
+    "approver": {
+      "type": "object",
+      "required": ["id"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "审阅批准者标识（agentId / 角色名 / 用户 ID）"
+        },
+        "kind": {
+          "type": "string",
+          "enum": ["human", "role", "agent"],
+          "description": "审阅者类型（缺省 human——保守默认对齐 promote_ab 强制人审语义）"
+        },
+        "required": {
+          "type": "boolean",
+          "description": "是否强制审阅（缺省 true——破坏性变更必须人审）"
+        },
+        "note": {
+          "type": "string",
+          "description": "审阅说明（可选）"
+        }
+      }
+    }
+  }
+}

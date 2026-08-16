@@ -1,6 +1,6 @@
 // ============================================================
 // knowledge-tools.ts · MCP tools: search_knowledge / read_entity / read_concept / list_entities / stats
-// v1.3.5: 从 mcp-server.ts 提取
+// v1.3.6: 从 mcp-server.ts 提取
 // ============================================================
 
 import { existsSync, readFileSync, readdirSync, statSync } from 'fs';

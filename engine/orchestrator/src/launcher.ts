@@ -1,9 +1,9 @@
 // ============================================================
 // launcher.ts · Sub Agent 启动器
-// v1.3.5 新增：动态 import @langchain/langgraph，启动/关闭 Agent 实例
-// v1.3.5 新增：runtime.json 状态管理（name/status/startedAt/lastActive/pid）
-// v1.3.5 新增：buildConstrainedSystemPrompt() 四层约束加载链
-// v1.3.5：迁移至 @sofagent/orchestrator，buildConstrainedSystemPrompt → @sofagent/harness
+// v1.3.6 新增：动态 import @langchain/langgraph，启动/关闭 Agent 实例
+// v1.3.6 新增：runtime.json 状态管理（name/status/startedAt/lastActive/pid）
+// v1.3.6 新增：buildConstrainedSystemPrompt() 四层约束加载链
+// v1.3.6：迁移至 @sofagent/orchestrator，buildConstrainedSystemPrompt → @sofagent/harness
 // ============================================================
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync, renameSync, copyFileSync, unlinkSync, readdirSync, statSync } from 'fs';

@@ -1,5 +1,5 @@
 // ============================================================
-// validator.ts · Ontology 执行前校验（v1.3.5 交付 1）
+// validator.ts · Ontology 执行前校验（v1.3.6 交付 1）
 //
 // 「LLM 工具调用必须经 Ontology 层」的落地点：
 // 工具执行前查 ActionRegistry——

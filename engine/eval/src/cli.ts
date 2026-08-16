@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // ============================================================
 // eval/cli.ts · eval CLI 入口（sofagent-eval run）
-// v1.3.5 新增
+// v1.3.6 新增
 //
 // 组装 audit runner 适配器 → runEval → 持久化 → 报告
 // CLI 层耦合 @sofagent/audit，eval 核心模块保持引擎中立

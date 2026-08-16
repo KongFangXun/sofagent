@@ -1,5 +1,5 @@
 // ============================================================
-// fde-registry-loader.ts · orchestrator FDE 注册表出口的本地薄封装（v1.3.5 交付 5 #4）
+// fde-registry-loader.ts · orchestrator FDE 注册表出口的本地薄封装（v1.3.6 交付 5 #4）
 // ============================================================
 //
 // 依赖方向（dev-prompt 交付 5 #4）：fde-registry 的读取方是 daemon，

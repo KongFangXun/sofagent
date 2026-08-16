@@ -1,6 +1,6 @@
 // ============================================================
 // dream-cycle/synthesize-concepts.ts · Stage 4 — 模式合成概念写 knowledge/entities/
-// v1.3.5 新增
+// v1.3.6 新增
 //
 // 输入：Pattern[] + Atom[]
 // 输出：Concept[]（写入 knowledge/entities/<slug>.md）

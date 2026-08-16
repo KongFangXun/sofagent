@@ -1,7 +1,7 @@
 // ============================================================
 // memory-contract.ts · think.md 记忆契约（Ledger-Views-Policy 模型）
-// v1.3.5: 将 think.md 的不变量从"文档约定"提升为代码级单一事实来源
-// v1.3.5 新增: knowledge entry 的 sensitivity 分级契约（safe-by-default）
+// v1.3.6: 将 think.md 的不变量从"文档约定"提升为代码级单一事实来源
+// v1.3.6 新增: knowledge entry 的 sensitivity 分级契约（safe-by-default）
 // ============================================================
 //
 // sofagent 记忆三层模型（Ledger-Views-Policy）中，think.md 的契约定义。

@@ -1,5 +1,5 @@
 // ============================================================
-// market-rule-fixtures.ts · 评估体系三步单测 fixture（v1.3.5 对齐）  // v1.3.5
+// market-rule-fixtures.ts · 评估体系三步单测 fixture（v1.3.6 对齐）  // v1.3.6
 //
 // Mock 数据——单测读 fixture 不读真实 data/。
 // 构造：
@@ -7,7 +7,6 @@
 //   - 2 条 Refine 反复触发 case（failCount ≥ 阈值）
 //   - golden set 样本（用于 jury 的 Benchmark 对比）
 // ============================================================
-
 /** 3 条低分差评（comment 含 FDE delivery-report 格式规则声明） */
 export const FIXTURE_LOW_SCORE_RATINGS = [
   {

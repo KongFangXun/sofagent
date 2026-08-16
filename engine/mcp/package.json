@@ -1,6 +1,6 @@
 {
   "name": "@sofagent/mcp",
-  "version": "1.3.5",
+  "version": "1.3.6",
   "description": "sofagent MCP Server — 暴露审计能力给 MCP Client（JSON-RPC 2.0 over stdio）",
   "main": "dist/mcp-server.js",
   "types": "dist/mcp-server.d.ts",
@@ -38,18 +38,18 @@
   },
   "homepage": "https://github.com/KongFangXun/sofagent#readme",
   "dependencies": {
-    "@sofagent/audit": "1.3.5",
-    "@sofagent/ab-test": "1.3.5",
-    "@sofagent/core": "1.3.5",
-    "@sofagent/orchestrator": "1.3.5",
-    "@sofagent/think": "1.3.5",
-    "@sofagent/ontology": "1.3.5",
-    "@sofagent/eval": "1.3.5",
-    "@sofagent/skillopt": "1.3.5",
-    "@sofagent/rules": "1.3.5"
+    "@sofagent/audit": "1.3.6",
+    "@sofagent/ab-test": "1.3.6",
+    "@sofagent/core": "1.3.6",
+    "@sofagent/orchestrator": "1.3.6",
+    "@sofagent/think": "1.3.6",
+    "@sofagent/ontology": "1.3.6",
+    "@sofagent/eval": "1.3.6",
+    "@sofagent/skillopt": "1.3.6",
+    "@sofagent/rules": "1.3.6"
   },
   "optionalDependencies": {
-    "@sofagent/daemon": "1.3.5"
+    "@sofagent/daemon": "1.3.6"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

@@ -1,5 +1,5 @@
 // ============================================================
-// stop-reason.ts · LLM 调用终止原因六值分类（v1.3.5 交付 12）
+// stop-reason.ts · LLM 调用终止原因六值分类（v1.3.6 交付 12）
 //
 // 设计来源：PenguinHarness Agent Loop 六值 stop_reason + 自动重连。
 //

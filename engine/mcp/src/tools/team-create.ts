@@ -1,5 +1,5 @@
 // ============================================================
-// team-create.ts · MCP tool: team_create（v1.3.5 新增）
+// team-create.ts · MCP tool: team_create（v1.3.6 新增）
 //
 // 建队 tool——创建团队，写入 data/teams/<team-id>/team.yml。
 // 解析 team.yml 格式（dev prompt L77-95）后持久化。

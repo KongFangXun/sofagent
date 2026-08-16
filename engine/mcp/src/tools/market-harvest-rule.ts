@@ -1,5 +1,5 @@
 // ============================================================
-// market-harvest-rule.ts · MCP tool: market_harvest_rule（v1.3.5 交付 5）
+// market-harvest-rule.ts · MCP tool: market_harvest_rule（v1.3.6 交付 5）
 //
 // 评估体系三步编排——触发第一步提炼（harvest），可选连跑第二步（jury）+ 第三步（promote）。
 //

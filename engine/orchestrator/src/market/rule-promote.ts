@@ -1,5 +1,5 @@
 // ============================================================
-// rule-promote.ts · 评估体系第三步：晋升到 builtin（v1.3.5 交付 5）
+// rule-promote.ts · 评估体系第三步：晋升到 builtin（v1.3.6 交付 5）
 //
 // 业务方批准的规则晋升到 builtinQualityRules，source 从 team_feedback → builtin。
 // 下次 Refine Agent 循环自动加载新规则——质量规则从生产中长出来，又回到生产。

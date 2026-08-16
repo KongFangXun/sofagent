@@ -1,8 +1,8 @@
 // ============================================================
 // composer.ts · 任务编排
-// v1.3.5 新增：用 createReactAgent() 做任务拆解，输出 YAML 工作流
-// v1.3.5：迁移至 @sofagent/orchestrator
-// v1.3.5 新增：ComposeResult 结构化返回（yaml + subagents）+
+// v1.3.6 新增：用 createReactAgent() 做任务拆解，输出 YAML 工作流
+// v1.3.6：迁移至 @sofagent/orchestrator
+// v1.3.6 新增：ComposeResult 结构化返回（yaml + subagents）+
 //   enterpriseWorkflowYaml 企业 workflow 参考 + variant 拆解策略（A/B/C/D）
 // ============================================================
 

@@ -1,6 +1,6 @@
 // ============================================================
 // slash-registry.ts · Slash 命令注册公共机制
-// v1.3.5 新建 · 功能 ①②
+// v1.3.6 新建 · 功能 ①②
 //
 // 提供 SlashCommand 接口 + SlashCommandRegistry 全局注册表：
 //   - register(cmd): 注册命令（名不含 /）

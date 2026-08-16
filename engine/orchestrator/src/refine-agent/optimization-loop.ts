@@ -1,5 +1,5 @@
 // ============================================================
-// refine-agent/optimization-loop.ts · 进化闭环（v1.3.5 交付 T05）
+// refine-agent/optimization-loop.ts · 进化闭环（v1.3.6 交付 T05）
 // ============================================================
 //
 // Benchmark 驱动 Dream Cycle——「定量判据」（Benchmark 分数提升没有）。

@@ -1,8 +1,8 @@
 #!/usr/bin/env node
-// daemon CLI · v1.3.5
+// daemon CLI · v1.3.6
 const args = process.argv.slice(2);
 const subcommand = args[0];
-const VERSION = '1.3.5';
+const VERSION = '1.3.6';
 
 async function main() {
   if (!subcommand || subcommand === '--help') {

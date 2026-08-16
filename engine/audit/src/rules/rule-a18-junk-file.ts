@@ -2,7 +2,7 @@
 // A18 垃圾文件（安全层 · 能力拐杖）
 // 检测临时文件名模式的垃圾文件——如 a.txt / test1.js / new-name.txt
 // evidenceMode: git-diff
-// v1.3.5 新增 · v1.2.0 审查修正（不区分 status，modified 也告警）
+// v1.3.6 新增 · v1.2.0 审查修正（不区分 status，modified 也告警）
 // ============================================================
 
 import { basename } from 'path';

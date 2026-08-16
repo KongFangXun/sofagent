@@ -1,11 +1,11 @@
 // ============================================================
-// approval-mode.ts · 工具审批四模式（v1.3.5 交付 10）
+// approval-mode.ts · 工具审批四模式（v1.3.6 交付 10）
 //
 // 设计来源：PenguinHarness CLI --approve 四模式
 //（allow-all / deny-all / read-only / always-ask）。
 //
 // 四种模式行为：
-//   allow-with-audit  全部放行 + 写审计日志（默认模式 = v1.3.5 行为，不破坏既有）
+//   allow-with-audit  全部放行 + 写审计日志（默认模式 = v1.3.6 行为，不破坏既有）
 //   deny-all          全部拦截（调试/安全演练）
 //   read-only         只读工具（permission='r'）自动放行，读写需人工确认（Benchmark 评测）
 //   always-ask        每次工具调用都问人（危险操作密集场景）
