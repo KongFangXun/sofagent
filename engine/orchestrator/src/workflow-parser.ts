@@ -23,6 +23,7 @@ import {
 import type { SubAgentDefinition } from './registry';
 import { listAgents } from './registry';
 import { deriveAgentFromRequirement } from './onboard/agent-creator';
+import { getGraphBuilder } from './harness-sdk/builder-registry';
 
 // ────────────────────────────────────────────────────────────
 // 类型定义
@@ -126,6 +127,13 @@ export interface SubAgentConfig {
    * 内部子 Agent 继承 ENGINEER_TOOLS 默认工具集。
    */
   tools: string[];
+  /**
+   * Graph 构建器名（v1.3.6 交付 ③ 托管 SDK registry 集成）。
+   * 有值时 dag-runner 经 getGraphBuilder(name).build() 按需实例化执行，
+   * 不走内置 createReactAgent 封装——registry 存「怎么构建」，
+   * dag-runner 管「什么时候构建」。
+   */
+  graphBuilderName?: string;
 }
 
 /** workflow 解析错误（带原因，供 CLI 展示） */
@@ -210,6 +218,25 @@ export function resolveAgent(
   // ① 内置 agent 走 AGENT_MAP
   const hit = AGENT_MAP[node.agent];
   if (hit) return { definition: hit, fallback: false };
+
+  // ①.5 Graph 构建器查找（v1.3.6 交付 ③ 托管 SDK——harness.wrap 产物）
+  //     registry 存「怎么构建」，dag-runner 管「什么时候构建」：
+  //     命中构建器 → 返回带 graphBuilderName 的代理 definition（按需实例化）
+  const builderHit = getGraphBuilder(node.agent) ?? getGraphBuilder(node.id);
+  if (builderHit) {
+    return {
+      definition: {
+        name: builderHit.name,
+        type: 'harness-wrapped',
+        description: `托管 SDK agent（graph 构建器按需实例化）`,
+        tools: [],
+        systemPrompt: '',
+        modelName: null,
+        graphBuilderName: builderHit.name,
+      },
+      fallback: false,
+    };
+  }
 
   // ② registry 动态查找（已注册的 sub-agent 直接复用）
   if (dataDir) {
@@ -451,6 +478,8 @@ export function toSubAgentConfigs(
       description,
       systemPrompt: definition.systemPrompt,
       tools: definition.tools,
+      // v1.3.6 交付 ③：托管 SDK graph 构建器透传（dag-runner 按需实例化）
+      ...(definition.graphBuilderName ? { graphBuilderName: definition.graphBuilderName } : {}),
     };
   });
 }

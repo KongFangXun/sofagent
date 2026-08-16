@@ -75,6 +75,28 @@ export type {
   RelationKey,
 } from './ontology';
 
+// Harness SDK（SubAgent 托管 SDK · v1.3.6 交付 ③）
+export {
+  harness,
+  wrap,
+  wrapTools,
+  registerGraphBuilder,
+  getGraphBuilder,
+  listGraphBuilders,
+  clearGraphBuilders,
+  isSideEffectTool,
+  SIDE_EFFECT_TOOL_PATTERNS,
+} from './harness-sdk';
+export type {
+  GraphBuilder,
+  ApprovalMode,
+  HarnessWrapOptions,
+  HarnessToolCallEvent,
+  HarnessApprovalEvent,
+  WrappableAgent,
+  WrappedAgent,
+} from './harness-sdk';
+
 // Route（入口路由 · v1.3.3 新增）
 export { routeRequest } from './route/route-request';
 export type {

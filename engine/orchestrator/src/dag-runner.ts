@@ -33,6 +33,7 @@ import { z } from 'zod';
 import { parseWorkflowYaml, toSubAgentConfigs, type ParsedWorkflow } from './workflow-parser';
 import { convertToLangGraphTools, ENGINEER_TOOLS } from './tools';
 import { resolveLLMModel } from './loop/nodes';
+import { getGraphBuilder } from './harness-sdk/builder-registry';
 
 // ────────────────────────────────────────────────────────────
 // 类型定义
@@ -251,7 +252,22 @@ export async function runDAG(
 
     return tool(
       async (input: { task_description: string }) => {
-        // 内部创建子 createReactAgent
+        // v1.3.6 交付 ③：graph 构建器命中 → 按需实例化托管 agent
+        //（registry 存「怎么构建」，dag-runner 管「什么时候构建」）
+        if (c.graphBuilderName) {
+          const builder = getGraphBuilder(c.graphBuilderName);
+          if (!builder) {
+            return `⛔ graph 构建器「${c.graphBuilderName}」未注册——请确认 harness.wrap 已执行`;
+          }
+          const hostedAgent = builder.build();
+          const result = await hostedAgent.invoke(
+            { messages: [{ role: 'user', content: input.task_description }] },
+            { recursionLimit: 50 },
+          );
+          return extractAgentText(result);
+        }
+
+        // 内置路径：内部创建子 createReactAgent
         const subAgent = await createReactAgent({
           llm: model,
           tools: convertToLangGraphTools(ENGINEER_TOOLS),

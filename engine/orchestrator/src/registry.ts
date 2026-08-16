@@ -34,6 +34,12 @@ export interface SubAgentDefinition {
   hitlConfig?: { trigger: string; description?: string };
   /** v1.2.6: 知识域（用于约束 Agent 的知识访问范围） */
   knowledgeDomain?: string;
+  /**
+   * v1.3.6 交付 ③：Graph 构建器名（运行时字段——不持久化到 YML）。
+   * harness.wrap 产物注册进 builder-registry 后，resolveAgent 命中时回填此字段；
+   * dag-runner 经 getGraphBuilder(name).build() 按需实例化执行。
+   */
+  graphBuilderName?: string;
 }
 
 /**
