@@ -181,6 +181,7 @@ Community rulesets are published as `sofagent-ruleset-*` npm packages and auto-d
 |------|----------------|----------|
 | Core question | How to build an Agent | **Where AI should go** (map first, then deploy) |
 | Safety guarantee | Relies on prompt constraints | git diff hard-evidence audit + runtime interception + one-click rollback |
+| Review model | Manual human review (bottleneck) | **Machine review** — 24 rules auto-audit + git diff hard evidence; even fully autonomous AI nodes get reviewed |
 | Knowledge accumulation | Starts from zero | Experience auto-captured into knowledge base, continuously optimized |
 | Data sovereignty | Cloud-hosted | Local by default, optional federated queries |
 | Deployment | Learn a new platform | Runs inside your existing AI tools (Claude Code / Cursor / WorkBuddy…) |

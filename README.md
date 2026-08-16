@@ -186,6 +186,7 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # 加载安全规�
 |------|----------------|----------|
 | 核心问题 | 怎么造 Agent | **AI 该放在哪**（先梳理再部署） |
 | 安全保障 | 框架层无（需自行接 pre-commit / trufflehog） | git diff 硬证据审计 + 运行时拦截 + 一键回滚 |
+| 审阅方式 | 靠人手动 review（人力瓶颈） | **机器审阅**——24 条规则自动审 + git diff 硬证据，纯 AI 节点也能被审 |
 | 知识积累 | 从零开始 | 经验自动沉淀进 knowledge 知识库（think.md + Dream Cycle，v1.3.x 持续增强） |
 | 数据主权 | 云端托管 | 缺省全量本地，可选联邦查询 |
 | 部署方式 | 学新平台 | 装进你已有的 AI 工具（Claude Code / Cursor / WorkBuddy…） |
