@@ -75,7 +75,7 @@ Here's what it looks like when a known-format secret leak is blocked (real outpu
 **Full install** (Node.js ≥ 18, download and review before running):
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/KongFangXun/sofagent/refs/tags/v1.3.4/bootstrap.sh -o bootstrap.sh
+curl -fsSL https://raw.githubusercontent.com/KongFangXun/sofagent/refs/tags/v1.3.5/bootstrap.sh -o bootstrap.sh
 less bootstrap.sh          # review the script first, confirm it's safe
 bash bootstrap.sh && rm bootstrap.sh
 sofagent-audit --init      # install the git hook — every commit is audited from now on
