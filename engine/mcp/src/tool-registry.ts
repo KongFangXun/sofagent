@@ -19,7 +19,7 @@ export interface ToolDef {
 }
 
 /**
- * 完整工具清单——54 个 tool（v1.3.6：workflow_submit/ontology_import 新增；v1.3.5：run_ab_test/promote_ab/snapshot_list/snapshot_restore；v1.3.4：commons_publish/search/invoke/rate/retire/harvest_rule；不含 4 个 resource shortcut）
+ * 完整工具清单——57 个 tool（v1.3.6：workflow_submit/ontology_import/model_register/model_switch/model_unregister 新增；v1.3.5：run_ab_test/promote_ab/snapshot_list/snapshot_restore；v1.3.4：commons_publish/search/invoke/rate/retire/harvest_rule；不含 4 个 resource shortcut）
  */
 export const TOOLS: ToolDef[] = [
   {
@@ -674,6 +674,55 @@ export const TOOLS: ToolDef[] = [
         comment: { type: 'string', description: '注入备注（写入 decision-log why）' },
       },
       required: ['payload'],
+    },
+  },
+  {
+    // v1.3.6 (交付 ④)：模型注册——评测→注册→灰度→晋升→退役闭环第一站
+    name: 'model_register',
+    description: '模型注册（v1.3.6）——注册后训练模型 endpoint（client_type + 模型名 + 元信息），原子写 model-registry.json + register 事件留痕。endpoint 可以是第三方 router（LiteLLM/OpenRouter）地址——sofagent 只管上线状态，路由由第三方决定。source=local-path 为 v1.4.1 本地权重部署扩展位预留（可注册，本版不可切换为活动模型）。注册后用 model_switch 灰度。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        name: { type: 'string', description: '注册名（唯一标识——model_switch 按此切换）' },
+        endpoint: { type: 'string', description: '服务地址（endpoint 型必填；local-path 型为权重目录占位）' },
+        model: { type: 'string', description: '模型名（传给服务的 model 字段）' },
+        client_type: { type: 'string', enum: ['ollama', 'openai-compatible'], description: '客户端协议（缺省 ollama；openai-compatible = vLLM/第三方 router）', default: 'ollama' },
+        source: { type: 'string', enum: ['endpoint', 'local-path'], description: '来源类型（缺省 endpoint；local-path = v1.4.1 扩展位预留）', default: 'endpoint' },
+        eval_score: { type: 'number', description: '评测分数（评测→注册流程的证据位，v1.3.1 Benchmark 产出）' },
+        comment: { type: 'string', description: '备注' },
+      },
+      required: ['name', 'endpoint', 'model'],
+    },
+  },
+  {
+    // v1.3.6 (交付 ④)：模型灰度切换/晋升/回滚——晋升强制人审（对齐 promote_ab）
+    name: 'model_switch',
+    description: '模型灰度切换（v1.3.6）——按档位（executor/pipeline）切换活动模型。percent<100 → canary 灰度（可逆运维操作直接生效）；percent=100/缺省 → 晋升全量 🔴 强制人审（human_confirmed≠true 挂起，对齐 v1.3.5 promote_ab）；action=rollback → 一键回滚到上一活动模型（止损不要求人审）。每次操作事件留痕。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        name: { type: 'string', description: '目标模型名（action=rollback 时可省略）' },
+        lane: { type: 'string', enum: ['executor', 'pipeline'], description: '档位（缺省 executor）', default: 'executor' },
+        percent: { type: 'number', description: '灰度比例 1-99；100/缺省 = 晋升全量（强制人审）' },
+        action: { type: 'string', enum: ['switch', 'rollback'], description: '动作：switch（默认）/ rollback', default: 'switch' },
+        human_confirmed: { type: 'boolean', description: '🔴 人工确认（晋升 percent=100 时必填 true——false/缺省挂起等人审）', default: false },
+        comment: { type: 'string', description: '备注（灰度依据 / 回滚原因，写入事件留痕）' },
+      },
+    },
+  },
+  {
+    // v1.3.6 (交付 ④)：模型退役/恢复——强制人审，对齐 v1.3.4 养护环 + v1.3.5 promote_ab
+    name: 'model_unregister',
+    description: '模型退役（v1.3.6）——下线模型走退役标记（可恢复），对齐 v1.3.4 L3 养护环「失效退役」：无人调用/评测走低 → 标记退役 → 不再参与路由。🔴 强制人审（human_confirmed≠true 挂起）。action=restore 恢复退役模型（同样强制人审）。退役的活动模型自动从档位摘除。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        name: { type: 'string', description: '目标模型名' },
+        action: { type: 'string', enum: ['retire', 'restore'], description: '动作：retire（默认退役）/ restore（恢复退役模型）', default: 'retire' },
+        human_confirmed: { type: 'boolean', description: '🔴 人工确认（false/缺省 → 挂起等人审）', default: false },
+        comment: { type: 'string', description: '备注（退役原因 / 恢复理由）' },
+      },
+      required: ['name'],
     },
   },
 ];

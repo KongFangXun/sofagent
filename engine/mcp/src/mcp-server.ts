@@ -73,6 +73,9 @@ import { snapshotList } from './tools/snapshot-list';
 import { snapshotRestore } from './tools/snapshot-restore';
 import { workflowSubmit } from './tools/workflow-submit';
 import { ontologyImport } from './tools/ontology-import';
+import { modelRegister } from './tools/model-register';
+import { modelSwitch } from './tools/model-switch';
+import { modelUnregister } from './tools/model-unregister';
 
 // ============================================================
 // 常量
@@ -256,6 +259,9 @@ class McpServer {
         case 'snapshot_restore': { if (!args.sha) { this.sendError(id, -32602, 'Missing required argument: sha'); break; } const srr = await snapshotRestore({ sha: args.sha as string, ...(typeof args.project_dir === 'string' ? { project_dir: args.project_dir } : {}), ...(args.human_confirmed !== undefined ? { human_confirmed: args.human_confirmed === true } : {}), ...(typeof args.comment === 'string' ? { comment: args.comment } : {}) }); this.sendTool(id, srr, srr.data.isError); break; }
         case 'workflow_submit': { if (!args.workflow) { this.sendError(id, -32602, 'Missing required argument: workflow'); break; } const wsr = await workflowSubmit({ workflow: args.workflow as string, ...(args.mode === 'run' ? { mode: 'run' as const } : {}), ...(typeof args.task === 'string' ? { task: args.task } : {}) }); this.sendTool(id, wsr, wsr.data.isError); break; }
         case 'ontology_import': { if (!args.payload) { this.sendError(id, -32602, 'Missing required argument: payload'); break; } const oir = await ontologyImport({ payload: args.payload as string, ...(typeof args.agent_id === 'string' ? { agent_id: args.agent_id } : {}), ...(typeof args.comment === 'string' ? { comment: args.comment } : {}) }); this.sendTool(id, oir, oir.data.isError); break; }
+        case 'model_register': { if (!args.name) { this.sendError(id, -32602, 'Missing required argument: name'); break; } const mrr = await modelRegister({ name: args.name as string, endpoint: (args.endpoint as string) ?? '', model: (args.model as string) ?? '', ...(args.client_type === 'openai-compatible' || args.client_type === 'ollama' ? { client_type: args.client_type } : {}), ...(args.source === 'endpoint' || args.source === 'local-path' ? { source: args.source } : {}), ...(typeof args.eval_score === 'number' ? { eval_score: args.eval_score } : {}), ...(typeof args.comment === 'string' ? { comment: args.comment } : {}) }); this.sendTool(id, mrr, mrr.data.isError); break; }
+        case 'model_switch': { const msr = await modelSwitch({ ...(typeof args.name === 'string' ? { name: args.name } : {}), lane: args.lane === 'pipeline' ? 'pipeline' : 'executor', ...(typeof args.percent === 'number' ? { percent: args.percent } : {}), action: args.action === 'rollback' ? 'rollback' : 'switch', ...(args.human_confirmed !== undefined ? { human_confirmed: args.human_confirmed === true } : {}), ...(typeof args.comment === 'string' ? { comment: args.comment } : {}) }); this.sendTool(id, msr, msr.data.isError); break; }
+        case 'model_unregister': { if (!args.name) { this.sendError(id, -32602, 'Missing required argument: name'); break; } const mur = await modelUnregister({ name: args.name as string, action: args.action === 'restore' ? 'restore' : 'retire', ...(args.human_confirmed !== undefined ? { human_confirmed: args.human_confirmed === true } : {}), ...(typeof args.comment === 'string' ? { comment: args.comment } : {}) }); this.sendTool(id, mur, mur.data.isError); break; }
         default: this.sendError(id, -32602, `Unknown tool: ${toolName}`);
       }
     } catch (err) {

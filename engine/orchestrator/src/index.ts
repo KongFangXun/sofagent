@@ -565,8 +565,32 @@ export type { EnterpriseAgentConfig, ActivateResult, ActivateOptions } from './a
 // ModelRouter（v1.2.2 · P1 混合模型路由层）
 export { ModelRouter, createDefaultRouter, LOCAL_UNAVAILABLE_MSG } from './model-router';
 export type { ModelRoute, TaskContext, TaskComplexity, Sensitivity, RouteTarget, RouteReason, ModelRouterDeps } from './model-router';
-export { loadModelRouterConfig, resolveRouterConfigPath, DEFAULT_ROUTER_CONFIG, ModelRouterConfigError, ModelRouterConfigSchema } from './model-router-config';
+export { loadModelRouterConfig, resolveRouterConfigPath, DEFAULT_ROUTER_CONFIG, ModelRouterConfigError, ModelRouterConfigSchema, applyRegistryOverrides } from './model-router-config';
 export type { ModelRouterConfig, FallbackPolicy } from './model-router-config';
+
+// Model Registry（v1.3.6 交付 ④ · 评测→注册→灰度→晋升→退役闭环）
+export {
+  registerModel,
+  switchModel,
+  rollbackModel,
+  retireModel,
+  restoreModel,
+  loadRegistry,
+  saveRegistry,
+  resolveModelRegistryPath,
+  readActiveEndpoints,
+  ModelRegistryError,
+} from './model-registry';
+export type {
+  ModelRegistryEntry,
+  ModelRegistryEvent,
+  ModelRegistryFile,
+  ModelRegistryOpOptions,
+  ModelRegistryOpResult,
+  RegisterModelInput,
+  ModelSource,
+  ModelStatus,
+} from './model-registry';
 
 // Loop State Extractor（checkpoint → ControlGraphState 翻译 · v1.1.8 新增）
 export {

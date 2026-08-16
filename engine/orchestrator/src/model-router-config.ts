@@ -15,6 +15,7 @@
 import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
 import { z } from 'zod';
+import { readActiveEndpoints, type ModelRegistryEntry } from './model-registry';
 
 // ============================================================
 // Schema 定义
@@ -168,4 +169,53 @@ export class ModelRouterConfigError extends Error {
     super(message);
     this.name = 'ModelRouterConfigError';
   }
+}
+
+// ============================================================
+// 注册表覆盖（v1.3.6 交付 ④——活动模型从 model-registry 读取）
+// ============================================================
+
+/**
+ * 用模型注册表的活动 endpoint 覆盖路由配置的 local 档位。
+ *
+ * 语义：model_register/model_switch 注册的活跃模型成为各档位的实际指向——
+ * 替代「手改 model-router.json」。注册表无活动模型时保持原配置（降级不破坏）。
+ *
+ * 安全铁律不变：只覆盖 local.executor / local.pipeline 的连接信息，
+ * policy（restricted/confidential block-and-alert）原样保留——
+ * 数据主权路由不因注册表覆盖逃逸。
+ *
+ * @param config 基础路由配置（loadModelRouterConfig 产物）
+ * @param dataDir 数据根目录（model-registry.json 所在）
+ * @returns 覆盖后的配置（无活动模型时返回原对象引用）
+ */
+export function applyRegistryOverrides(config: ModelRouterConfig, dataDir: string): ModelRouterConfig {
+  let active: { executor?: ModelRegistryEntry; pipeline?: ModelRegistryEntry };
+  try {
+    active = readActiveEndpoints(dataDir);
+  } catch {
+    return config; // 注册表损坏 → 降级用基础配置（绝不因注册表问题阻塞路由）
+  }
+
+  const toLocalModel = (entry: ModelRegistryEntry): ModelRouterConfig['local']['executor'] => ({
+    provider: entry.clientType === 'openai-compatible' ? 'openai-compatible' : 'ollama',
+    model: entry.model,
+    endpoint: entry.endpoint,
+    client_type: entry.clientType,
+  });
+
+  const next: ModelRouterConfig = {
+    ...config,
+    local: { ...config.local },
+  };
+  let changed = false;
+  if (active.executor) {
+    next.local.executor = toLocalModel(active.executor);
+    changed = true;
+  }
+  if (active.pipeline) {
+    next.local.pipeline = toLocalModel(active.pipeline);
+    changed = true;
+  }
+  return changed ? next : config;
 }
