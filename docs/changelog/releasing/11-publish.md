@@ -350,3 +350,26 @@ gh api repos/KongFangXun/sofagent/git/tags -X POST \
 gh api repos/KongFangXun/sofagent/git/refs -X POST \
   -f ref="refs/tags/vX.Y.Z" -f sha="$(git rev-parse HEAD)"
 ```
+
+
+### main push 完全走 Git Data API（git push 死代理时 · v1.3.5 实战）
+
+git push 彻底走不了（代理端口 127.0.0.1:53957 连不上）时，用 Git Data API 把本地 commit 内容推上去。核心 = 以远端 HEAD 为 parent 建「压平 commit」（blobs→tree→commit→ref，fast-forward 非 force）：
+
+```bash
+# 1. 对比本地 HEAD vs 远端 HEAD，算出需上传的 blob（path→本地 git blob sha）
+#    注意：用 git ls-tree -r HEAD 拿本地 blob sha，不用工作区文件（见三坑②）
+# 2. 逐文件上传 blob（⚠️ 三坑，见下）
+gh api repos/O/R/git/blobs -X POST --input - -f /dev/stdin  # content 走 stdin
+# 3. 建 tree：base_tree=远端HEAD的tree + 变更项（sha=新blob；删除项 sha=null）
+gh api repos/O/R/git/trees -X POST --input tree.json
+# 4. 建 commit：parent=远端HEAD，message 传完整正文（只传 subject 会致 SHA 不符）
+gh api repos/O/R/git/commits -X POST --input commit.json
+# 5. 更新 ref（fast-forward，parent 已=远端 HEAD 无需 force）
+gh api repos/O/R/git/refs/heads/main -X PATCH -f sha=<新commit>
+```
+
+**🔴 三坑（v1.3.5 血泪，务必按此做）**：
+1. **base64 内容禁用 `-f content=` 传参**——大文件 base64 超 ARG_MAX 报 `Argument list too long`。必须 `--input -` 从 stdin 传 JSON body（`{"content":"<base64>","encoding":"base64"}`）
+2. **`.gitattributes` 的 eol 转换**——`*.ps1 text eol=crlf` 会让 git 存 LF 规范化 blob，工作区是 CRLF。上传必须用 `git cat-file blob <本地git sha>` 拿规范内容，不能读工作区文件（否则 sha 不一致）。**验证铁证：建 tree 后远端 tree sha == 本地 `git rev-parse HEAD^{tree}` = 逐字节一致**
+3. **cat-file 必须用本地 git blob sha**——不能用「上传后 GitHub 返回的 sha」去 cat-file（本地无此对象 → 输出空 → 上传空 blob，sha 变 e69de29b）。修正时用 `git ls-tree` 重新拿本地 sha

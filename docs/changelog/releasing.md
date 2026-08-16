@@ -10,17 +10,17 @@
 
 > 每次新 session 或新阶段开始时，先读这 12 行确认进度。打勾的 = 已完成，第一个未打勾的 = 当前要做。
 
-- [ ] 一 · 审查上版本（fresh-eyes-loop 自动化审查循环 · 新 session）→ [01-review.md](./releasing/01-review.md) · **v1.3.4：4 轮独立审查（3 单人 + 1 团队 16 视角）+ bugfix prompt 整合 48 项问题**
-- [ ] 二 · 开发 → [02-dev.md](./releasing/02-dev.md) · **v1.3.4：bugfix 34 commit + dev 10 commit + dsh 2 commit（L3 市场 + SkillScan + 评估三步 + 编排层分离）**
-- [ ] 三 · 基础自测 → [03-selftest.md](./releasing/03-selftest.md) · **v1.3.4：bump 1.3.3→1.3.4 + changelog 转正 + build EXIT=0 + test 2235/2235 + check-version 71/71 + check-test-count 14/14 + check-anchors 88/88**
-- [ ] 四 · fresh-eyes-loop 质量循环 + 代码审核 + 验收测试（新 session）→ [04-quality-loop.md](./releasing/04-quality-loop.md) · **v1.3.4：run-01（臆造回滚+13 finding 终局判定）+ run-02（新防护 driver，20 finding 全实测证据，P0 vitest 排 v1.3.5）+ acceptance S263-S269 新增（195→202 场景，279 断言）**
-- [ ] 五 · 审查体系合并更新 → [05-review-system.md](./releasing/05-review-system.md) · **v1.3.4：维度 102-106（A 类市场/SkillScan/MARKET + B 类臆造链/测试数同步）+ 覆盖率 18 关键词零遗漏 + README 新能力段换版**
-- [ ] 六 · release-gate-loop 发版闸门（新 session · 必须 PASS 才继续）→ [06-release-gate.md](./releasing/06-release-gate.md) · **v1.3.4：run-01 FAIL（3 真 + 5 误报甄别修复，commit 56a08d0c）→ run-04 PASS（83 维 0 FAIL / acceptance 279 / coverage 0 高风险）**
-- [ ] 七 · 审查体系最终确认 → [07-final-confirm.md](./releasing/07-final-confirm.md) · **v1.3.4：三文档闭环核对（83 维 ↔ 202 场景 ↔ 5 方向）+ 维度 56 补 v1.3.4 教训**
-- [ ] 八 · 开发日志定稿 + 文档收尾 → [08-doc-finalize.md](./releasing/08-doc-finalize.md) · **v1.3.4：定稿（速览表+39 项打勾+Release Notes）+ ROADMAP 五步 + 日期 14 文件 + HANDBOOK 能力表**
-- [ ] 九 · 工具脚本健康检查 → [09-tool-health.md](./releasing/09-tool-health.md) · **v1.3.4：7 文件类型排查 + bump dry-run 纯只读 + dist v1.3.4 + hook 三测全过（拦密钥/放合格/短 message 拦）**
-- [ ] 十 · 确认关口 → [10-confirm.md](./releasing/10-confirm.md) · **v1.3.4：469 文件 71 commit 全量复核 + 发布清单 39/39 勾 + 五门禁终验全绿**
-- [ ] 十一 · 发布（项目负责人或授权 AI）→ [11-publish.md](./releasing/11-publish.md) · **v1.3.4：push（71 commit）→ CI 8/8 全绿 → tag 零游离 → GitHub Release（质量表 7 项）→ npm 12/12 包 1.3.4 → ClawHub + SkillHub 双分发**
+- [ ] 一 · 审查上版本（fresh-eyes-loop 自动化审查循环 · 新 session）→ [01-review.md](./releasing/01-review.md) · **v1.3.5：四份 16 视角独立审查 38 项 bugfix（影子审计器/门禁假绿/泄漏清理）**
+- [ ] 二 · 开发 → [02-dev.md](./releasing/02-dev.md) · **v1.3.5：10 大块（MCP 四 tool 自进化运维闭环 + instinct→skill + FDE 五件 + DSH 互通 + vitest/automerge 依赖升级）**
+- [ ] 三 · 基础自测 → [03-selftest.md](./releasing/03-selftest.md) · **v1.3.5：bump 1.3.4→1.3.5 + test 2286/2286 + CV 72/72 + CTC 双口径 + postbuild 三包权限根治**
+- [ ] 四 · fresh-eyes-loop 质量循环 + 代码审核 + 验收测试（新 session）→ [04-quality-loop.md](./releasing/04-quality-loop.md) · **v1.3.5：run-07（R1 完整闭环 + P0=0 + 四份审查收敛）+ acceptance S270-S281（209→214 场景，291 断言）**
+- [ ] 五 · 审查体系合并更新 → [05-review-system.md](./releasing/05-review-system.md) · **v1.3.5：维度 110/111 + 93→70 归并 + check-version 四盲区 69/75/77→95 + checklist 瘦身回 1500**
+- [ ] 六 · release-gate-loop 发版闸门（新 session · 必须 PASS 才继续）→ [06-release-gate.md](./releasing/06-release-gate.md) · **v1.3.5：run-01 假 PASS 根治（driver 收敛判定改保守）→ run-07 四失败项 → run-08 手工裁决 PASS（86 维 0 FAIL）**
+- [ ] 七 · 审查体系最终确认 → [07-final-confirm.md](./releasing/07-final-confirm.md) · **v1.3.5：三文档闭环核对（86 维 ↔ 214 场景 ↔ 5 方向）+ acceptance 线上调撤销改瘦身回 2500**
+- [ ] 八 · 开发日志定稿 + 文档收尾 → [08-doc-finalize.md](./releasing/08-doc-finalize.md) · **v1.3.5：定稿（速览表 10 项 + Release Notes 三段式含破坏性变更 4 条）+ ROADMAP 五步 + 日期 15 文件**
+- [ ] 九 · 工具脚本健康检查 → [09-tool-health.md](./releasing/09-tool-health.md) · **v1.3.5：新增文件排查 + bump dry-run 纯只读 + 死路径修正（维度57 ab-test/data）+ hook 端到端实测**
+- [ ] 十 · 确认关口 → [10-confirm.md](./releasing/10-confirm.md) · **v1.3.5：481 文件 31 commit 复核 + 发布清单 22 勾 2 留 rc + 门禁全绿**
+- [ ] 十一 · 发布（项目负责人或授权 AI）→ [11-publish.md](./releasing/11-publish.md) · **v1.3.5：Git Data API 绕行 push（死代理）→ CI 全绿 → tag → Release（三段式标准化）→ npm 13/13 包（load-chain 补 4 版）→ Skill 双分发**
 - [ ] 十二 · 发布后（验证 + 三文档回写 + SOP 自迭代 + 下版 prompt）→ [12-post-publish.md](./releasing/12-post-publish.md)
 
 > **铁律**：阶段六 verdict=PASS 前，不进阶段七~八。FAIL 回阶段五修复后重跑。
@@ -29,15 +29,15 @@
 
 ---
 
-## Release Note 三层分工速查（v1.3.4 发版定稿 · 2026-08-15）
+## Release Note 三层分工速查（v1.3.5 发版定稿 · 2026-08-16）
 
 > 完整规则见 [08 铁律 N1-N7](./releasing/08-doc-finalize.md) + [11 Title/Body 规范](./releasing/11-publish.md)。本节是速查——写 note 前先看这页。
 
-| 层 | 形态 | v1.3.4 示例 |
+| 层 | 形态 | v1.3.5 示例 |
 |:--|:--|:--|
-| **Release title** | `vX.Y.Z — {名词化主题短语带 emoji}`（≤3 个，不逐项罗列交付名） | v1.3.4 — 🏪 组织能力市场（L3 五环）+ 🛡️ SkillScan 安全门 |
-| **Body 首行定位句** | `{emoji 主题短语呼应 title}——{一句人话价值}`；禁止旧 title 清单复读 | 🏪 协作成果像内部应用商店一样流转——Skill/Agent/流程可发布、可评分、可退役，第三方 Skill 先过安全门。 |
-| **changelog H1** | `vX.Y.Z 开发日志 — {动词化故事句}`（主语+变化/动作+括号内涵，无 emoji） | v1.3.4 开发日志 — 协作成果可流转（组织能力市场 + 安全门） |
+| **Release title** | `vX.Y.Z — {名词化主题短语带 emoji}`（≤3 个，不逐项罗列交付名） | v1.3.5 — 🧬 自进化与运维闭环触手可及 |
+| **Body 首行定位句** | `{emoji 主题短语呼应 title}——{一句人话价值}`；禁止旧 title 清单复读 | 🧬 自进化与运维闭环触手可及——Agent 摸得到进化的方向盘和回退的安全绳，四条 MCP 工具补上最后一块。 |
+| **changelog H1** | `vX.Y.Z 开发日志 — {动词化故事句}`（主语+变化/动作+括号内涵，无 emoji） | v1.3.5 开发日志 — 自进化与运维闭环触手可及（MCP 四 tool + 依赖安全升级 + 38 项加固） |
 
 **三层刻意不同**：title 点主题 / 定位句说人话 / H1 讲故事。交付名逐项罗列只出现在 note 新功能段。历史教训：v1.3.1-1.3.3 的 body 首行挂旧 title 清单（title 改了 body 没跟）——改 title 必须连带检查 body 首行。
 

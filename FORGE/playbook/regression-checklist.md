@@ -10,7 +10,7 @@
 | v1.2.6-1.3.4 | #70-109（MCP 一致性 / ESM / 运行时审计 / HMAC / 市场五环 / SkillScan 等） | 48 子项 e-h、16+44、65+66、73+74 等 |
 | v1.3.5 | #110-111（bugfix 防复发 / 新功能审查面） | 93→70、69/75/77→95（check-version 四盲区） |
 
-> **当前 84 维 · 编号 1-111 · 26 个编号已归并删除**。维度流连续不中断，分组导航：基线组 → 审查约束组 → 环境敏感组（前置 vitest/沙箱铁律）。
+> **当前 86 维 · 编号 1-113 · 27 个编号已归并删除**。维度流连续不中断，分组导航：基线组 → 审查约束组 → 环境敏感组（前置 vitest/沙箱铁律）。
 ## 🔒 维护公约（防膨胀铁律）
 
 **追加新维度前，必须先 grep 同类**：有同类 → 扩展旧维度的子项，不新增编号；无同类 → 才新增编号 = 当前最大 +1。历史维度靠 `git log -p` 找回。**行数警戒线**：`regression-checklist.md` ≤ 1500 行、`acceptance-test.sh` ≤ 2500 行（v1.3.5 靠真实归并消化增量：check-version 四盲区 69/75/77→95 净 -28 行、acceptance 注释/装饰框/冗余分组 -42 行——**警戒线未上调**，见 releasing/05-review-system.md 三判据）；releasing.md 方针「超标上调 LIMIT 不删内容」。
@@ -831,7 +831,6 @@ grep -A10 'convertAuditResult' engine/eval/src/cli.ts | grep -E 'PASS|WARN|FAIL|
 
 **背景**：v1.3.4 bump 后 CHANGELOG.md 未及时补索引条目，check-version 的 EXPECTED_DOC_DATE 动态提取（从 CHANGELOG 当前版本行取日期）返回空——release-gate regression 维度 95 FAIL 才暴露。索引条目是日期链的上游，漏了整条链断。
 
-**检查命令**：
 ```bash
 CUR_VER=$(node -p "require('./package.json').version")
 grep -q "\*\*v${CUR_VER}\*\* —" CHANGELOG.md || echo "⚠️ CHANGELOG 缺 v${CUR_VER} 索引条目（维度 95 日期链会断）"
@@ -844,7 +843,6 @@ grep -m1 "v${CUR_VER}.*—" CHANGELOG.md | grep -oE "[0-9]{4}-[0-9]{2}-[0-9]{2}"
 
 **背景**：09-tool-health.md 的 hook 测试用例 message 用 `test`/`add app`（太短），被 A5+A19 正确拦截——**测试用例自己不合格导致假失败**，误判为 hook 坏了。且 `.env` 被 init 自带 .gitignore 挡住时不 `-f` 强加，hook 层 A1/A2 根本测不到（只测到 git 层双保险）。SOP 已修，本维度防 SOP 再漂移。
 
-**检查命令**：
 ```bash
 # SOP 用例 message 必须合格（≥8 有效字符，Conventional Commits）
 grep -A2 "拦截验证" docs/changelog/releasing/09-tool-health.md | grep -oE 'commit -m "[^"]+"' | while read -r c; do
@@ -852,6 +850,8 @@ grep -A2 "拦截验证" docs/changelog/releasing/09-tool-health.md | grep -oE 'c
 done
 # -f 说明存在
 grep -q "git add -f .env" docs/changelog/releasing/09-tool-health.md || echo "⚠️ 缺 git add -f 说明（hook 层测不到）"
+# v1.3.5 子项 c：verify.sh 脱敏测试输入不被全局脱敏误伤（测试输入须真实手机号，非 1**REDACTED***）
+grep -q "13812345678" engine/scripts/verify.sh || echo "⚠️ verify.sh 脱敏测试输入被误打码（脱敏误伤测试用例）"
 ```
 
 ---
@@ -860,7 +860,6 @@ grep -q "git add -f .env" docs/changelog/releasing/09-tool-health.md || echo "�
 
 **背景**：check-docs.sh 第 11 项（bash 逐行嵌套循环锚点扫描）在 WorkBuddy 环境被 shim 拖慢必然超时，pre-push 因此失败——但它与 tools/check-anchors.mjs（node 版，pre-push 第 4 步独立跑）功能重复。已加 SKIP_ANCHOR_SCAN=1 降级。本维度守护降级开关不被误删 + CI 仍跑完整版。
 
-**检查命令**：
 ```bash
 grep -q "SKIP_ANCHOR_SCAN" tools/check-docs.sh || echo "⚠️ 降级开关丢失——WorkBuddy 下 pre-push 必失败"
 # 本地 WorkBuddy 环境跑 pre-push 应带降级变量
@@ -1171,7 +1170,6 @@ grep -c "rev-parse\|repo.*hash\|resolveRuntimeAuditPath" FORGE/src/audit-middlew
 
 **背景**：worker 模型自己写 `cd /Users/<拼错用户名>/...`，bash 大面积 No such file or directory → 24 worker 硬熔断降级，审查结论不可信。
 
-**检查命令**：
 ```bash
 # run_bash 包装层强制 cwd=REPO_ROOT + 剥离 cd 前缀
 grep -c "cwd: REPO_ROOT" FORGE/src/fresh-eyes-driver.mjs   # ≥1
@@ -1182,7 +1180,6 @@ grep -c "stripped.*replace.*cd" FORGE/src/fresh-eyes-driver.mjs   # ≥1
 
 **背景**：driver 用 `git add -A` 把队友并行编辑的规划文档（docs/changelog/v1.4/*.md）一起卷进 auto-commit；修复改为只 add 代码领域（engine/FORGE/src/tools/SKILL）。
 
-**检查命令**：
 ```bash
 # driver-base runAuditGate 不含 git add -A
 grep -c "git add -A" FORGE/src/driver-base.mjs   # 0（仅注释引用）
@@ -1194,7 +1191,6 @@ grep -c "git diff --name-only HEAD -- engine/" FORGE/src/driver-base.mjs   # ≥
 
 **背景**：原 validateHmacKey 用"唯一字符占比"判断强度，但 openssl rand -hex 32 的 hex 字符集天然 16 种 → 官方推荐生成方式永远误报"弱密钥"（重复度 75%）。改用 Shannon 熵检测。
 
-**检查命令**：
 ```bash
 # audit-history.ts 用 Shannon 熵（非重复度占比）
 grep -c "shannonEntropy" engine/core/src/audit-history.ts   # ≥1
@@ -1206,7 +1202,6 @@ grep -c "shannonEntropy < 3" engine/core/src/audit-history.ts   # ≥1
 
 **背景**：根 tsconfig.json 未设 outDir，若从根目录跑 tsc（而非各包 npm run build），产物输出到 src 旁（910 个文件）。v1.3.1 已用 .gitignore 防御（engine/*/src/**/*.js 等），但根因（根 tsconfig 加 outDir）待后续版本修。
 
-**检查命令**：
 ```bash
 # 根 tsconfig 有 outDir（v1.3.1 暂用 .gitignore 兜底，根因待修）
 grep -c '"outDir"' tsconfig.json   # v1.3.1 期望 0（待修），修后期望 ≥1
@@ -1220,7 +1215,6 @@ grep -c "engine/\*/src/\*\*/\*.js" .gitignore   # ≥1
 
 **背景**：A3 ruleClass 在 index.ts（注册中心）/ rule-a3-*.ts（规则实现）/ README（文档）三处声明，版本演进时容易只改一处忘记其他——run-13 捕获 A3 在 index.ts 标"能力拐杖"、rule-a3-*.ts 标"业务底线"的不一致。
 
-**检查命令**：
 ```bash
 # 每条规则的 ruleClass 在 index.ts 和 rule-*.ts 必须一致
 for n in $(grep -oE "ruleClass: '[^']+'" engine/audit/src/rules/index.ts | sort -u); do
@@ -1235,7 +1229,6 @@ done
 
 **背景**：release-gate sandbox 默认 LANG=C，acceptance-test.sh 中文输出 ANSI 乱码 + 日志末尾截断，driver 无法解析结果。本地（LANG=en_US.UTF-8）无法复现——只在 CI/sandbox 暴露。
 
-**检查命令**：
 ```bash
 # 含中文输出的 shell 脚本必须头部 export LANG/LC_ALL
 for f in FORGE/playbook/acceptance-test.sh tools/check-version.sh tools/check-docs.sh; do
@@ -1248,7 +1241,6 @@ done
 
 **背景**：acceptance-test.sh 汇总行 `验收测试结果：${GREEN}...${NC}` 带 ANSI 色码，driver 用 `grep '验收测试结果：N 通过'` 匹配失败（色码夹在中间）。修复：补一行 ANSI-stripped 纯文本 SUMMARY 供机器解析。
 
-**检查命令**：
 ```bash
 # 被自动化解析的脚本必须有 ANSI-stripped 纯文本汇总行
 grep -q "^SUMMARY:" FORGE/playbook/acceptance-test.sh && echo "✓ 有纯文本 SUMMARY" || echo "⚠️ 缺机器可解析汇总行"
@@ -1259,7 +1251,6 @@ grep -q "^SUMMARY:" FORGE/playbook/acceptance-test.sh && echo "✓ 有纯文本 
 
 **背景**：维度 70 检查 MCP tool 注册查 mcp-server.ts，但 v1.2.9 架构迁移后工具注册移到 tool-registry.ts——检查命令得 tools_array=0 误报。这是"审查文档自身的检查命令也会过期"的元模式。
 
-**检查命令**：
 ```bash
 # 元检查：regression-checklist 中引用的 engine/ 路径是否都还存在
 grep -oE 'engine/[a-zA-Z_/]+\.ts' FORGE/playbook/regression-checklist.md | sort -u | while read f; do
@@ -1273,7 +1264,6 @@ done
 
 **背景**：bootstrap.sh 在 macOS 默认 `/bin/bash` 3.2 下崩溃——空数组 `${arr[@]}` + `set -u` = unbound variable；尾行 `[[ ]] && cmd` + `set -e` = 成功也 exit 1。
 
-**检查命令**：
 ```bash
 # 新增 shell 脚本在 macOS 默认 bash 3.2 下测过
 /bin/bash --version | head -1  # 确认 3.2
@@ -1301,7 +1291,6 @@ grep "$(node -p "require('./package.json').version")" CHANGELOG.md | grep -oE "2
 
 **背景**：acceptance 警戒线 2050→2250 需同步改 4 处（regression-checklist + releasing/05 + guides/review-system + acceptance-test 头部），漏改任一处会导致发版 SOP 与实际不一致。
 
-**检查命令**：
 ```bash
 # 同步一致性检查：4 处声明的警戒线值一致
 for v in "2500" "1500" "400"; do   # 警戒线（acceptance 2500 / checklist 1500）——改值时同步更新此处
@@ -1315,7 +1304,6 @@ done
 
 **背景**：release.yml 只 auto-publish @sofagent/audit + @sofagent/mcp（Release 触发）；其余 10 包需手动 `cd engine/<pkg> && npm publish`。`npm publish --workspaces` 不支持 workspace 全局发布。
 
-**检查命令**：
 ```bash
 # 发版后验证 12 包全部到 npm
 for pkg in audit core daemon eval harness ontology orchestrator rules skillopt think ab-test mcp; do
@@ -1329,7 +1317,6 @@ done
 
 **背景**：v1.3.3 阶段三发现 post-commit hook 假阳性——每次正常 commit 都警告"可能使用了 --no-verify 绕过"。根因：commit-msg 记录的 `parentSha` = 新 commit 的**父**提交，post-commit 的 `$COMMIT_SHA` = 新 commit **自己**——父子 SHA 永远不等。
 
-**检查命令**：
 ```bash
 # v1.3.3 修复：post-commit 取 HEAD^ 作为 PARENT_SHA 对账
 grep -q "PARENT_SHA\|HEAD\^" "$PROJECT_ROOT/engine/audit/src/commands/init.ts" || echo "⚠️ post-commit 未用 PARENT_SHA 对账"
@@ -1341,7 +1328,6 @@ grep -q "4b825dc642cb6eb9a060e54bf8d69288fbee4904" "$PROJECT_ROOT/engine/audit/s
 
 **背景**：v1.3.3 #11 把规则 priority 字段并入 index.ts 规则定义，runner.ts 删除独立 AUDIT_PRIORITY 常量。但 acceptance-test.sh S186 / 外部脚本仍依赖 `require('runner.js').AUDIT_PRIORITY.critical.includes('A20')` 形态查询。单源化 refactor 必须保留派生导出。
 
-**检查命令**：
 ```bash
 node -e "const m=require('$PROJECT_ROOT/engine/audit/dist/rules/runner.js');const c=m.AUDIT_PRIORITY?.critical;if(!c||!c.includes('A20')){console.log('FAIL: AUDIT_PRIORITY 派生导出缺失');process.exit(1);}console.log('OK');" || echo "⚠️ AUDIT_PRIORITY 向后兼容导出缺失"
 ```
@@ -1350,7 +1336,6 @@ node -e "const m=require('$PROJECT_ROOT/engine/audit/dist/rules/runner.js');cons
 
 **背景**：v1.3.3 发现 check-test-count.sh L62 在 set -uo pipefail 下，命令替换 exit N 时 `$?` 赋值被判 unbound，脚本中途崩溃，CI 永远判绿。
 
-**检查命令**：
 ```bash
 # 强制触发失败路径（test-count.sh 不存在），验证 check-test-count.sh 能报红
 sed 's|bash tools/test-count.sh|bash /nonexistent/test-count.sh|' tools/check-test-count.sh > /tmp/cct-test.sh
@@ -1362,7 +1347,6 @@ rm -f /tmp/cct-test.sh
 
 **背景**：v1.3.3 阶段八内容增强（FDE 方法论/职业道德/评估体系）导致 B 层（开发者参考）行数从 8302→8437，超 LIMIT_B=8400，CI pr-check 失败。发版过程中才发现——本地 check-docs.sh 在 WorkBuddy 环境下超时跑不完，CI 上才暴露。
 
-**检查命令**：
 ```bash
 # CI 模拟：只跑 B 层行数检查（不跑锚点段避免超时）
 AB=$(cat docs/ARCHITECTURE.md docs/DEVELOPMENT.md docs/HANDBOOK.md docs/PHILOSOPHY.md docs/WIKI.md SECURITY.md docs/VALIDATION.md docs/THANKS.md docs/ROADMAP.md docs/LIMITATIONS.md FDE/GUIDE.md FDE/README.md 2>/dev/null | wc -l)
@@ -1376,7 +1360,6 @@ echo "B 层: $AB 行（LIMIT_B=$(grep '^LIMIT_B=' tools/check-docs.sh | grep -oE
 
 **背景**：v1.3.4 L3 组织能力市场五环（发布→发现→调用→评价→养护）。模块文件、MCP 注册、daemon 巡检三处任一缺失都导致市场断环（如 invoker 缺失则调用环断，retire 缺失则养护环断）。v1.3.1 教训：建了文件不注册 = 巡检不生效。MCP 注册一致性已由 #70/#93 覆盖，此处只查 market 专属 tool 名单。
 
-**检查命令**：
 ```bash
 for f in publisher catalog invoker rating owner retire skill-scan rule-harvest rule-jury rule-promote; do [ -f "engine/orchestrator/src/market/$f.ts" ] || echo "⚠️ market/$f.ts 缺失"; done
 for t in market_publish market_search market_invoke market_rate market_retire market_harvest_rule; do grep -q "'$t'" engine/mcp/src/tool-registry.ts || echo "⚠️ $t 未注册"; done
@@ -1390,7 +1373,6 @@ grep -q "runMarketHealth" engine/daemon/src/inspector-layers.ts || echo "⚠️ 
 
 **背景**：v1.3.4 SkillScan 安全门。两个高危点：① 文件不存在时必须判 DANGEROUS 不能默认 SAFE（扫描不到 ≠ 安全）；② DSH 候选包 rc 版本（rc/beta/alpha/pre）必须被守卫拦截——否则骨架 runCordisAgent 被调用直接 throw，FORGE loop 崩溃。
 
-**检查命令**：
 ```bash
 grep -q "'SAFE' | 'SUSPICIOUS' | 'DANGEROUS'" engine/orchestrator/src/market/skill-scan.ts || echo "⚠️ 三态枚举缺失"
 grep -q "scanForPublish\|scanForInstall" engine/orchestrator/src/market/skill-scan.ts || echo "⚠️ 双触发缺失"
@@ -1406,7 +1388,6 @@ grep -q "@deepseek-ai/dsh" engine/orchestrator/package.json && echo "⚠️ DSH 
 
 **背景**：v1.3.4 铁律「市场调用走审计」。若市场事件塞进 ORCHESTRATION/EVOLUTION，`decision-log --kind MARKET` 查不到任何东西——审计语义分型失效。例外：退役走 EVOLUTION（生命周期事件非市场动作）是刻意设计。
 
-**检查命令**：
 ```bash
 grep -q "'MARKET'" engine/audit/src/decision-schema.ts || echo "⚠️ DecisionKind.MARKET 缺失"
 grep -q "MARKET" engine/audit/src/decision-log.ts || echo "⚠️ decision-log 未支持 MARKET"
@@ -1419,7 +1400,6 @@ grep -q "EVOLUTION" engine/orchestrator/src/market/retire.ts || echo "⚠️ 退
 
 **背景**：v1.3.4 run-01 的 b-fix worker 严重越界：臆造升级计划（automerge 排期）、新建 CI 配置（dependabot.yml）、改未来版本 changelog（v1.3.5/v1.4.x）。根因：工具预算 15/20 摸不完 2870 文件 → 撞硬熔断 → 碎片上下文编报告。be131c9e 三重防护（预算 40/50 + 证据门槛 + 反臆造铁律）已修，此维度守护防护不回归。
 
-**检查命令**：
 ```bash
 # 三重防护在位（driver 常量 + prompt 模板）
 grep -q "PERSPECTIVE_TOOL_SOFT = 40" FORGE/src/fresh-eyes-driver.mjs || echo "⚠️ 预算回退到旧值"
@@ -1434,7 +1414,6 @@ grep -q "任务范围" engine/audit/src/rules/rule-a3*.ts 2>/dev/null || echo "�
 
 **背景**：v1.3.4 周期三次犯同一错误：bugfix +31 测试（8 处漂移）/ dev +93（11 处）/ dsh +11（7 处）——每次新增测试后 README/WIKI/LIMITATIONS/ARCHITECTURE 的声称数都没同步，check-test-count.sh FAIL。已写入 SOP 阶段三步骤 4 强制门禁，此维度做双重保险。
 
-**检查命令**：
 ```bash
 bash tools/check-test-count.sh --quiet   # 期望 OK / EXIT=0
 # 原则：新增/删除测试 = 必须同步文档声称数，check-test-count 不绿不算开发完成
@@ -1444,7 +1423,6 @@ bash tools/check-test-count.sh --quiet   # 期望 OK / EXIT=0
 
 **背景**：fresh-eyes 四份审查 38 项的防复发浓缩。核心教训：①守卫「找不到就跳过」= 空转四个版本无人知（#5）；②`| tail || true` 双保险吞退出码（#19）；③路径解析环境变量口径分裂污染真实数据（#38）。
 
-**检查命令**：
 ```bash
 # ① quick 规则数声称对账（防 #1）：README 声称与 dist 实测一致
 README_N=$(grep -oE '17 条默认规则' README.md | head -1); [ -n "$README_N" ] || echo "⚠️ README quick 规则数口径漂移"
@@ -1474,7 +1452,6 @@ node -e "const fs=require('fs'),p=require('path');let bad=0;for(const f of fs.re
 
 **背景**：v1.3.5 七大块交付的审查面。acceptance S270-S276 做执行级验证，本维度做静态一致性——两者成对构成新功能的完整回归网。
 
-**检查命令**：
 ```bash
 # ① MCP 52 tools 三处口径（SKILL.md / ARCHITECTURE 能力表 / dist 实测）
 grep -q "52 tools" SKILL/SKILL.md || echo "⚠️ SKILL 工具速查漂移"
@@ -1485,8 +1462,8 @@ grep -q "@sofagent/daemon" engine/mcp/src/tools/snapshot-list.ts engine/mcp/src/
 grep -qE "join\(.*['\"]SKILL" engine/orchestrator/src/instinct/evolver.ts && echo "⚠️ evolver 触达仓库 SKILL/"
 # ④ companion/fde-registry 的 daemon inspector 三步注册
 grep -q "fde-companion-daily\|fde-registry" engine/daemon/src/inspector-layers.ts 2>/dev/null || grep -rq "runFdeCompanionDaily" engine/daemon/src/inspectors/ || echo "⚠️ FDE 巡检未注册 inspector"
-# ⑤ 文档同步四件套（52 tools/2263 测试/v1.3.5 段/CHANGELOG 索引行）
-grep -q "2263" README.md || echo "⚠️ README 测试数漂移"
+# ⑤ 文档同步四件套（52 tools/2286 测试/v1.3.5 段/CHANGELOG 索引行）
+grep -q "2286" README.md || echo "⚠️ README 测试数漂移"
 grep -q "\*\*v1.3.5\*\*" CHANGELOG.md || echo "⚠️ CHANGELOG 索引缺 v1.3.5"
 ```
 
@@ -1497,3 +1474,12 @@ grep -q "\*\*v1.3.5\*\*" CHANGELOG.md || echo "⚠️ CHANGELOG 索引缺 v1.3.5
 ③增长性质：110（bugfix 防复发）111（新功能面）均属新审查面非模式重复 → 保留独立维度
 结论（v1.3.5 最终）：checklist 1499 行 ≤1500、acceptance 2497 行 ≤2500——靠真实归并消化增量（check-version 四盲区 69/75/77→95 净 -28 行、acceptance 注释/装饰框/冗余分组 -42 行），警戒线未上调
 -->
+
+#### 112. shadow 快照二进制安全——isBinaryBuffer 跳过二进制（v1.3.5 发布后 hotfix）
+
+> 裂图事故：shadow 快照 `readFileSync(utf-8)` 读二进制 PNG，0x89 被静默替换 U+FFFD 致 6 图永久损毁——二进制必须跳过不进文本快照。
+
+```bash
+grep -q "isBinaryBuffer" engine/core/src/filesystem/isomorphic-git.ts && echo "✅ 跳过二进制" || echo "❌ 缺 isBinaryBuffer"
+grep -qi "png" engine/core/src/__tests__/isomorphic-git-v2.test.ts && echo "✅ PNG 测试" || echo "❌ 缺 PNG 测试"
+```
