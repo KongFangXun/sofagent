@@ -221,6 +221,7 @@ export async function promoteAb(args: PromoteAbArgs): Promise<PromoteAbResult> {
         specRef?: string;
         artifactRef?: string;
         evidence?: string[];
+        category?: string;
       }) => unknown;
     };
     audit.emitDecision({
@@ -228,6 +229,7 @@ export async function promoteAb(args: PromoteAbArgs): Promise<PromoteAbResult> {
       sessionId: `promote-ab-${Date.now()}`,
       kind: 'EVOLUTION',
       moment: 'EVOLVE',
+      category: 'select',
       why: `A/B 晋升已执行（人工确认）: ${decision.reason}${args.comment ? ` · 备注: ${args.comment}` : ''}`,
       artifactRef: args.current,
       evidence: [

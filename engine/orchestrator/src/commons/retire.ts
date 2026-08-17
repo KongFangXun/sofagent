@@ -234,6 +234,8 @@ export function markRetired(
       sessionId: `commons-retire-${capabilityId}`,
       kind: 'EVOLUTION',
       moment: 'EVOLVE',
+      // v1.3.6 交付⑮：退役 = 决定不再使用（判断时刻分类 skip）
+      category: 'skip',
       why: {
         text: `能力「${entry.name}」(${capabilityId}) 被退役（${reason}）`,
         tags: ['commons', 'retire', reason],
@@ -292,6 +294,8 @@ export function restoreCapability(
       sessionId: `commons-restore-${capabilityId}`,
       kind: 'EVOLUTION',
       moment: 'EVOLVE',
+      // v1.3.6 交付⑮：从退役恢复 = 回到可用状态（判断时刻分类 retry）
+      category: 'retry',
       why: {
         text: `能力「${entry.name}」(${capabilityId}) 从退役恢复为 active`,
         tags: ['commons', 'restore'],

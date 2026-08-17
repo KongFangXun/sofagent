@@ -38,6 +38,26 @@ export type DecisionKind =
   | 'TEAM'              // 团队协作动作（冲突消解 / 意图广播 / 反馈放大 / 自动入队）
   | 'COMMONS';           // 公地能力动作（能力发布 / 调用 / 评分 / 退役 / SkillScan）
 
+/**
+ * 判断时刻分类（v1.3.6 交付⑮ · decisions.jsonl 完整版 · OpenFDE 启发）。
+ *
+ * 与 DecisionKind 正交的两个维度：
+ *   - kind（DecisionKind）= 可问责决策类型（这是哪一类决策——改规格/触发规则/进化…）
+ *   - category（DecisionCategory）= 判断时刻分类（这次选择动作属于哪种——路由/选方案/跳过/重试/升级）
+ *
+ * v1.3.0 的 emitDecision 只在关键节点（HITL / 审计 FAIL）触发；完整版把意图审计
+ * 扩展到「记全部判断时刻」——Agent 每次做选择（走哪条路 / 选哪个方案 / 为什么跳过
+ * 某步）都落 category 标注，让决策日志可按判断行为回溯。
+ *
+ * 可选字段，老日志无此字段不影响查询（向后兼容）。
+ */
+export type DecisionCategory =
+  | 'route'     // 路由决策——走哪条路（入口路由命中节点 / 模型切换）
+  | 'select'    // 方案选择——选哪个候选（A/B 晋升 / 能力调用 / 人审续跑）
+  | 'skip'      // 跳过决策——为什么不做（能力退役 / 扫描拒绝安装）
+  | 'retry'     // 重试决策——回到某个点重来（快照恢复 / checkpoint 续跑）
+  | 'escalate'; // 升级人工——交给人判断（超预算等人审 / 可疑安装需确认）
+
 /** 决策发生时刻（7 阶段）——对齐 FORGE loop / 激活链生命周期 */
 export type LoopPhase =
   | 'OBSERVE'      // 观察（读上下文）
@@ -95,6 +115,12 @@ export interface DecisionLogEntry {
   sessionId: string;
   /** 决策种类 */
   kind: DecisionKind;
+  /**
+   * 判断时刻分类（v1.3.6 交付⑮ 新增——可选字段，不破坏向后兼容）。
+   * 与 kind 正交：kind 记「哪类决策」，category 记「哪种选择动作」。
+   * 老日志无此字段，查询接口按 undefined 处理（不参与 category 过滤）。
+   */
+  category?: DecisionCategory;
   /** 决策发生时刻 */
   moment: LoopPhase;
   /** 决策理由（已脱敏） */

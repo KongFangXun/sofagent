@@ -159,7 +159,8 @@ async function buildRouteReason(
   }
 }
 
-/** decision-log 留痕（非致命）——v1.3.6 交付⑧：why 支持结构化 routeReason */
+/** decision-log 留痕（非致命）——v1.3.6 交付⑧：why 支持结构化 routeReason；
+ * v1.3.6 交付⑮：category 判断时刻分类（换模型 = 'route'） */
 async function emitSwitchDecision(
   whyText: string,
   lane: string,
@@ -174,6 +175,7 @@ async function emitSwitchDecision(
       sessionId: `model-switch-${Date.now()}`,
       kind: 'CONFIG_CHANGE',
       moment: 'ACT',
+      category: 'route',
       why: {
         text: whyText,
         ...(routeReason ? { routeReason } : {}),

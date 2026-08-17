@@ -162,6 +162,8 @@ export function scanForInstall(
       sessionId: `commons-install-${capabilityId ?? 'unknown'}`,
       kind: 'COMMONS',
       moment: 'ACT',
+      // v1.3.6 交付⑮：判断时刻分类——DANGEROUS 拒绝安装=skip，SUSPICIOUS 需人审=escalate，SAFE 放行=select
+      category: mapped.verdict === 'DANGEROUS' ? 'skip' : needHITL ? 'escalate' : 'select',
       why: {
         text: `安装侧 SkillScan: ${target} → ${mapped.verdict}${needHITL ? '（需人工确认）' : ''}`,
         tags: ['commons', 'install', 'skillscan', mapped.verdict.toLowerCase()],

@@ -14,10 +14,13 @@
 import { existsSync, readFileSync } from 'fs';
 import { getDecisionLogPath } from '@sofagent/core';
 import { loadHistory, type AuditHistoryEntry } from './audit-history';
-import type { DecisionKind, DecisionLogEntry } from './decision-schema';
+import type { DecisionCategory, DecisionKind, DecisionLogEntry, LoopPhase } from './decision-schema';
 
-/** 从决策日志加载全部条目（按写入顺序，时间升序） */
-function loadDecisionLog(dataDir?: string): DecisionLogEntry[] {
+/** 从决策日志加载全部条目（按写入顺序，时间升序）。
+ *
+ * v1.3.6 交付⑮：导出供新增查询接口复用（同文件内共享，也供测试直接消费）。
+ */
+export function loadDecisionLog(dataDir?: string): DecisionLogEntry[] {
   const filePath = getDecisionLogPath(dataDir);
   if (!existsSync(filePath)) return [];
 
@@ -54,6 +57,91 @@ export function queryByKind(kind: DecisionKind, opts: QueryOptions = {}, dataDir
   const limit = opts.limit ?? 100;
   return loadDecisionLog(dataDir)
     .filter((e) => e.kind === kind)
+    .filter((e) => (opts.since ? e.ts >= opts.since : true))
+    .filter((e) => (opts.until ? e.ts <= opts.until : true))
+    .slice(0, limit);
+}
+
+/**
+ * 按决策发生时刻查询决策日志（v1.3.6 交付⑮ · 时间升序）。
+ * @param moment 决策时刻（LoopPhase 七阶段）
+ * @param opts 查询选项
+ * @param dataDir 可选的数据目录覆盖（用于测试）
+ */
+export function queryByMoment(moment: LoopPhase, opts: QueryOptions = {}, dataDir?: string): DecisionLogEntry[] {
+  const limit = opts.limit ?? 100;
+  return loadDecisionLog(dataDir)
+    .filter((e) => e.moment === moment)
+    .filter((e) => (opts.since ? e.ts >= opts.since : true))
+    .filter((e) => (opts.until ? e.ts <= opts.until : true))
+    .slice(0, limit);
+}
+
+/**
+ * 按 Agent 标识查询决策日志（v1.3.6 交付⑮ · 时间升序）。
+ * @param agentId Agent 标识（精确匹配）
+ * @param opts 查询选项
+ * @param dataDir 可选的数据目录覆盖（用于测试）
+ */
+export function queryByAgent(agentId: string, opts: QueryOptions = {}, dataDir?: string): DecisionLogEntry[] {
+  const limit = opts.limit ?? 100;
+  return loadDecisionLog(dataDir)
+    .filter((e) => e.agentId === agentId)
+    .filter((e) => (opts.since ? e.ts >= opts.since : true))
+    .filter((e) => (opts.until ? e.ts <= opts.until : true))
+    .slice(0, limit);
+}
+
+/**
+ * 按判断时刻分类查询决策日志（v1.3.6 交付⑮ · 时间升序）。
+ *
+ * 只返回带 category 标注的条目（老日志无此字段不参与过滤）。
+ * @param category 判断时刻分类（route/select/skip/retry/escalate）
+ * @param opts 查询选项
+ * @param dataDir 可选的数据目录覆盖（用于测试）
+ */
+export function queryByCategory(category: DecisionCategory, opts: QueryOptions = {}, dataDir?: string): DecisionLogEntry[] {
+  const limit = opts.limit ?? 100;
+  return loadDecisionLog(dataDir)
+    .filter((e) => e.category === category)
+    .filter((e) => (opts.since ? e.ts >= opts.since : true))
+    .filter((e) => (opts.until ? e.ts <= opts.until : true))
+    .slice(0, limit);
+}
+
+/** 组合查询过滤器（v1.3.6 交付⑮——多维度交叉回溯） */
+export interface DecisionFilter {
+  /** 按决策种类过滤 */
+  kind?: DecisionKind;
+  /** 按决策时刻过滤 */
+  moment?: LoopPhase;
+  /** 按 Agent 标识过滤 */
+  agentId?: string;
+  /** 按判断时刻分类过滤（只匹配带 category 标注的条目） */
+  category?: DecisionCategory;
+  /** 按会话标识过滤 */
+  sessionId?: string;
+}
+
+/**
+ * 组合查询决策日志（v1.3.6 交付⑮——kind/moment/agentId/category 任意交叉，时间升序）。
+ *
+ * 验收标准「可按 kind / moment / agentId 查询」的统一入口：
+ * 单维度用 queryByKind / queryByMoment / queryByAgent 更直白，
+ * 多维度交叉（如「某 Agent 的所有路由决策」）用本接口。
+ *
+ * @param filter 过滤器（全部可选，空对象 = 不过滤）
+ * @param opts 查询选项
+ * @param dataDir 可选的数据目录覆盖（用于测试）
+ */
+export function queryDecisions(filter: DecisionFilter, opts: QueryOptions = {}, dataDir?: string): DecisionLogEntry[] {
+  const limit = opts.limit ?? 100;
+  return loadDecisionLog(dataDir)
+    .filter((e) => (filter.kind !== undefined ? e.kind === filter.kind : true))
+    .filter((e) => (filter.moment !== undefined ? e.moment === filter.moment : true))
+    .filter((e) => (filter.agentId !== undefined ? e.agentId === filter.agentId : true))
+    .filter((e) => (filter.category !== undefined ? e.category === filter.category : true))
+    .filter((e) => (filter.sessionId !== undefined ? e.sessionId === filter.sessionId : true))
     .filter((e) => (opts.since ? e.ts >= opts.since : true))
     .filter((e) => (opts.until ? e.ts <= opts.until : true))
     .slice(0, limit);

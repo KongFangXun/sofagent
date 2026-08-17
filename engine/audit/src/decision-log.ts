@@ -17,7 +17,7 @@ import { dirname } from 'path';
 import { createHash, createHmac } from 'crypto';
 import { getDecisionLogPath, getEnvFingerprint, getHmacKey, stableStringify } from '@sofagent/core';
 import { atomicAppendSync } from '@sofagent/core';
-import { sanitizeWhy, type DecisionKind, type DecisionLogEntry, type DecisionWhy, type LoopPhase } from './decision-schema';
+import { sanitizeWhy, type DecisionKind, type DecisionCategory, type DecisionLogEntry, type DecisionWhy, type LoopPhase } from './decision-schema';
 
 // Re-export schema 类型——public-api 从 decision-log 统一导出（与 appendHistory 模式一致）
 export type { DecisionLogEntry, DecisionWhy, RouteReason } from './decision-schema';
@@ -32,6 +32,12 @@ export interface EmitDecisionInput {
   kind: DecisionKind;
   moment: LoopPhase;
   why: DecisionWhy | string;
+  /**
+   * 判断时刻分类（v1.3.6 交付⑮ · 可选）。
+   * route/select/skip/retry/escalate——与 kind 正交的「选择动作」维度。
+   * 不传则老语义（只记关键决策类型，无判断时刻分类）。
+   */
+  category?: DecisionCategory;
   specRef?: string;
   artifactRef?: string;
   /** 决策引擎标识（缺省 'sofagent-audit'） */
@@ -73,6 +79,11 @@ const VALID_MOMENTS: readonly string[] = [
   'OBSERVE', 'ELICIT', 'INDUC', 'ACT', 'EVOLVE', 'DEPLOY', 'ATTRIBUTION',
 ];
 
+/** 合法 DecisionCategory 集合（v1.3.6 交付⑮ · 判断时刻五分类） */
+const VALID_CATEGORIES: readonly string[] = [
+  'route', 'select', 'skip', 'retry', 'escalate',
+];
+
 /**
  * 归一化 why 为 DecisionWhy——纯 string → { text }
  */
@@ -105,6 +116,10 @@ export function emitDecision(input: EmitDecisionInput, dataDir?: string): Decisi
   }
   if (!VALID_MOMENTS.includes(input.moment)) {
     throw new DecisionSchemaError(`非法 moment "${String(input.moment)}"——必须在 LoopPhase 枚举内`);
+  }
+  // v1.3.6 交付⑮：category 可选——传了则必须在五分类内（不传不校验，向后兼容）
+  if (input.category !== undefined && !VALID_CATEGORIES.includes(input.category)) {
+    throw new DecisionSchemaError(`非法 category "${String(input.category)}"——必须在 DecisionCategory 枚举内（route/select/skip/retry/escalate）`);
   }
   if (typeof input.agentId !== 'string' || input.agentId.trim() === '') {
     throw new DecisionSchemaError('agentId 必填且不能为空');
@@ -164,6 +179,8 @@ export function emitDecision(input: EmitDecisionInput, dataDir?: string): Decisi
     agentId: input.agentId,
     sessionId: input.sessionId,
     kind: input.kind,
+    // v1.3.6 交付⑮：category 可选——传了才落盘（老语义不传 = 无此字段）
+    ...(input.category !== undefined ? { category: input.category } : {}),
     moment: input.moment,
     why: sanitizeWhy(normalizeWhy(input.why)),
     ...(input.specRef ? { specRef: input.specRef } : {}),

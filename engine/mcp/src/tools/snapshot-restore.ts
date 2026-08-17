@@ -155,6 +155,7 @@ export async function snapshotRestore(args: SnapshotRestoreArgs): Promise<Snapsh
         specRef?: string;
         artifactRef?: string;
         evidence?: string[];
+        category?: string;
       }) => unknown;
     };
     audit.emitDecision({
@@ -162,6 +163,8 @@ export async function snapshotRestore(args: SnapshotRestoreArgs): Promise<Snapsh
       sessionId: `snapshot-restore-${Date.now()}`,
       kind: 'CONFIG_CHANGE',
       moment: 'ACT',
+      // v1.3.6 交付⑮：快照恢复 = 回到某点重来（判断时刻分类 retry）
+      category: 'retry',
       why: `快照恢复已执行（人工确认）: 恢复 ${restored.length} 个文件到 ${target.shortSha}${args.comment ? ` · 备注: ${args.comment}` : ''}`,
       artifactRef: projectDir,
       evidence: [

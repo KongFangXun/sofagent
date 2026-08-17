@@ -305,6 +305,8 @@ export async function emitBudgetExceededAudit(pause: BudgetPause, dataDir?: stri
         sessionId: `train-budget-${pause.jobId}`,
         kind: 'CONFIG_CHANGE',
         moment: 'ACT',
+        // v1.3.6 交付⑮：超预算暂停等人审 = 升级人工（判断时刻分类 escalate）
+        category: 'escalate',
         why: `train_budget_exceeded：训练任务 ${pause.jobId} 超预算暂停（${pause.violation.dimension}：实际 ${pause.violation.actual} / 上限 ${pause.violation.limit}），等待人审续跑/终止`,
         evidence: [
           `dimension=${pause.violation.dimension}`,

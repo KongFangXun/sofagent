@@ -75,6 +75,8 @@ export async function defineAcceptance(args: DefineAcceptanceArgs): Promise<Defi
         sessionId: `define-acceptance-${task_id}`,
         kind: 'SPEC_CHANGE',
         moment: 'INDUC',
+        // v1.3.6 交付⑮：选定这些条件作为验收标准 = 方案选择（判断时刻分类 select）
+        category: 'select',
         why: `定义验收条件：任务 ${task_id} 附 ${def.criteria.length} 条机器可判定条件（${def.criteria.map((c) => c.type).join(', ')}）`,
         evidence: [`task=${task_id}`, `criteria=${def.criteria.length}`],
       });

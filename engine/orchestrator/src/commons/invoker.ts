@@ -290,6 +290,8 @@ function logAndAudit(
       sessionId: `commons-invoke-${result.capabilityId}`,
       kind: 'COMMONS',
       moment: 'ACT',
+      // v1.3.6 交付⑮：选择调用哪个能力 = 方案选择（判断时刻分类 select）
+      category: 'select',
       why: {
         text: `调用能力「${result.capabilityName}」(${result.capabilityId}) → ${result.outcome}`,
         tags: ['commons', 'invoke', result.outcome],

@@ -93,6 +93,7 @@ export function routeWorkflowTool(args: RouteWorkflowArgs): RouteWorkflowToolRes
       sessionId: 'route-workflow',
       kind: 'ORCHESTRATION',
       moment: 'ACT',
+      category: 'route',
       why: `入口路由异常：${errMsg}`,
     });
     return {
@@ -111,6 +112,7 @@ export function routeWorkflowTool(args: RouteWorkflowArgs): RouteWorkflowToolRes
       sessionId: 'route-workflow',
       kind: 'ORCHESTRATION',
       moment: 'ACT',
+      category: 'route',
       why: `入口路由命中 workflow 节点「${result.node.id}」（得分 ${result.score}）`,
       tags: ['route', 'workflow', result.node.id],
       routeReason: {
@@ -140,6 +142,7 @@ export function routeWorkflowTool(args: RouteWorkflowArgs): RouteWorkflowToolRes
     sessionId: 'route-workflow',
     kind: 'ORCHESTRATION',
     moment: 'ACT',
+    category: 'route',
     why: `入口路由 fallback：${result.reason}`,
     tags: ['route', 'fallback'],
     routeReason: { policy: 'default' },
@@ -172,6 +175,8 @@ function safeEmitDecision(input: {
   tags?: string[];
   /** v1.3.6 交付⑧：路由决策结构化理由链（Artifacts 增强） */
   routeReason?: RouteReason;
+  /** v1.3.6 交付⑮：判断时刻分类（路由决策固定 'route'） */
+  category?: 'route';
 }): void {
   try {
     // tags + routeReason 放入 why 对象（EmitDecisionInput 的 why: DecisionWhy 均接受）
@@ -180,6 +185,8 @@ function safeEmitDecision(input: {
       sessionId: input.sessionId,
       kind: input.kind,
       moment: input.moment,
+      // v1.3.6 交付⑮：category 落盘（decisions.jsonl 完整版——判断时刻分类）
+      ...(input.category !== undefined ? { category: input.category } : {}),
       why: {
         text: input.why,
         ...(input.tags ? { tags: input.tags } : {}),

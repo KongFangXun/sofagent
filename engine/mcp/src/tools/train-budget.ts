@@ -139,6 +139,8 @@ export async function trainBudget(args: TrainBudgetArgs): Promise<TrainBudgetToo
         sessionId: `train-budget-${job_id}`,
         kind: 'CONFIG_CHANGE',
         moment: 'ACT',
+        // v1.3.6 交付⑮：人审续跑/终止 = 方案选择（判断时刻分类 select）
+        category: 'select',
         why: `训练预算人审：任务 ${job_id} 超预算暂停后人工决策 ${decision}（${decision === 'resume' ? '从 checkpoint 续跑' : '终止训练'}）`,
         evidence: [`job=${job_id} decision=${decision}`],
       });
