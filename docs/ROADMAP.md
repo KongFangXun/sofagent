@@ -133,10 +133,12 @@ sofagent 的定位正卡在这个转折点上：审计引擎（治理侧）+ Ont
 | **FDE 进场记忆目录工程化（fdeops-arch 启发）** | 每客户一个 `data/fde-sessions/<client-id>/` 目录 + 10 文件各司其职 + session-stop 自动捕获——方法论已在 FDE/GUIDE §5.8b 落盘，工程化（自动捕获 hook + 跨 session 恢复）与 v1.3.5 instinct 自动进化合并评估 |
 | **Memory Vault 跨工具交接（ECC 启发）** | 企业多 AI 工具场景的 FDE 过程记忆跨工具交接——`memory handoff --from workbuddy --target claude` 式的跨 harness 交接能力 |
 | **多 Agent 协作阵型库（ccteam 启发）** | 把协作模式抽象为可配置阵型（commander&crews / driver&advisor / cross-review / bake-off / research-triangulation / cost-pyramid 六种）——等 v1.3.6 SubAgent 托管 SDK 落地后评估是否做阵型配置层 |
-| **失败记忆显式化（MateBot 启发）** | 独立"错题本"机制（区别于 think.md 反思 + knowledge/ 正向经验）——与 v1.3.5 instinct→skill 自动进化合并评估，不另起炉灶 |
+| **L4 工具层自进化（self-evolution 五层谱系 · 2026-08-17）** | Agent 自写工具→SkillScan 安全门→人审→注册进工具箱——五层中唯一空白层（L1 记忆/L3 技能已交付，L5 训练引擎 v1.4.1 排期中）；安全语义基建现成（SkillScan + promote 人审模式复用），谱系定位见 PHILOSOPHY §五 |
+| **进化曲线可观测指标（self-evolution 启发 · 2026-08-17）** | 「做 1000 次任务后是否比第一次更强」产品化为 dashboard 曲线。**✅ 已毕业落 v1.3.9 工作明细节「进化曲线聚合」（2026-08-17）**：四维趋势（审计 PASS 率 / 错题复发率 / AB 胜负 / 首次通过率），Web 曲线归 v1.4.0 |
+| **失败记忆显式化（MateBot 启发）** | ~~独立"错题本"机制~~ **✅ v1.3.5 已交付**（instinct/failure-log.ts + 三源提取消费），条目留档待清 |
 | **凭证隔离 Vault（OMA 启发）** | 沙箱发 HTTP 请求时动态注入凭证、Agent 代码碰不到 token——执行层安全基础设施，v1.3.7 虚拟 key 凭证边界已部分覆盖，完整 Vault 属 v2.x+ 方向 |
-| **FDE 节点注册表（loop-engineering 启发）** | 为 FDE 模板建 `fde-registry.yaml`（机器可读：id/cadence/risk/skills/human_gates），audit 引擎直接读取——从手动排查到机器可读 |
-| **执行层隔离 Worktree 模式（loop-engineering 启发）** | 每个 code-change 跑在隔离 git worktree——短期推荐实践 → 中期编排引擎内置 `worktree create` → 远期 L2+ 硬性要求 |
+| **FDE 节点注册表（loop-engineering 启发）** | ~~`fde-registry.yaml` 机器可读 + 巡检~~ **✅ v1.3.5 已交付**（fde-registry-loader/types + daemon @daily 巡检），条目留档待清 |
+| **执行层隔离 Worktree 模式（loop-engineering 启发）** | 审查层 **✅ v1.3.6 已交付**（FORGE worktree 隔离根治 run-07）；剩余：编排引擎内置 `worktree create`（中期）→ L2+ 硬性要求（远期） |
 | **理解债务应对（loop-engineering 启发）** | Comprehension Debt Spiral（S2 级故障）——审计已覆盖「发生了什么」，需补「为什么这么做」（auto-PR 要求 Agent 解释决策）+「本周摘要」（daemon 周报）|
 | **DSH 正向执行后端接入（DeepSeek Harness 启发）** | 定义 `ExecutionBackend` 接口，DSH Cordis 运行时成为可选执行后端（fallback LangGraph createReactAgent）——编排层（图结构+审计卡关）与执行层显式分离。**v1.3.4 已交付**：接口骨架 + 版本守卫（rc 拦截）+ launcher + FORGE 两 driver 迁移。**v1.3.6 补全**：runCordisAgent 对照正式版 API 重写 + 剩余调用点（dag-runner/composer/loop/node-executor）迁移 |
 | **DSH 反向插件适配（DeepSeek Harness 启发）** | 把 sofagent @public API 包装成 Cordis **plugin 家族**（audit/rollback/inject/ontology/gate 五个独立插件，2026-08-16 单点改家族），反向暴露给 DSH 生态——依赖链：v1.3.6 ExecutionBackend 接口 → v1.3.9 API 分级 @public → **v1.4.0 插件包装**（2026-08-14 明确）。**v1.3.5 已先行 MCP 互通**（DSH mcp-client 挂 sofagent-mcp 即调 52 tools——插件婚姻前的先牵手，2026-08-15） |
@@ -145,7 +147,7 @@ sofagent 的定位正卡在这个转折点上：审计引擎（治理侧）+ Ont
 | **DSH Ontology + FDE 方法论 plugin（2026-08-16 新增）** | DSH 生态**语义层真空**：ontology（entity/concept/relations + entity-store/merge-engine）注册成 tools（`ontology_define/query/validate`）给多 Agent 协作共享语义底座（SHACL 形状约束=协同治理层，见 ARCHITECTURE §七锚点）；FDE 方法论（五要素访谈/三问判定/量化四字段）包装成 `fde_interview/classify/quantify` tools。**workflow 不做 plugin**（ctx.workflowEngine 是生态主人地盘）——走 v1.3.6 已预留的格式互转。量化只带口述时薪框架，薪酬基准属 商业模型层 不进开源。**✅ 已排 v1.4.0**（ontology 并入 `cordis-plugin-ontology`，FDE 方法论并入 `cordis-plugin-fde`，2026-08-16 落位） |
 | **DSH 训练控制面 plugin（2026-08-16 新增 · 深水区终局）** | v1.4.x 训练引擎的控制面 tools（`train_submit/status/budget_check`）天然 plugin 形态（DSH jobs 托管长任务互补）；执行面/GPU/商业模型层 训练资产**绝不进 plugin**（§3.6 归属拍板）。终局拼图：Trajectory 采集（v1.3.6）+ 训练引擎（v1.4.x）+ plugin 包装 = **DSH Agent 用自己的执行轨迹训练自己**（Cordis 论文指向但 DSH 未交付的自进化 Harness）。**远期方向：v1.4.x 尾段或 v2.x，引擎本体稳定后再评估** |
 | **ACS YAML 策略引擎（Microsoft AGT 启发）** | 现有 ruleset 是 JSON，AGT 的 ACS 用 YAML + OPA Rego + Cedar 三引擎——策略更人类可读，需评估兼容性 |
-| **Shadow AI Discovery（Microsoft AGT 启发）** | 扫描进程/配置/仓库发现未注册「影子 agent」——审计盲区，与 v1.3.7 行为监控互补 |
+| **Shadow AI Discovery（Microsoft AGT 启发）** | 扫进程/配置/仓库发现未注册「影子 agent」——审计盲区，与 v1.3.7 行为监控互补。**✅ 已毕业落 v1.3.7 AgentShield 第五节（2026-08-17）** |
 | **RL 训练治理（Microsoft AGT Agent Lightning 启发）** | 训练期间策略违规惩罚——与 v1.4.1 训练引擎预算控制同向 |
 | **OWASP Agentic Top 10 全覆盖路线（Microsoft AGT 启发）** | v1.3.7 补 ASI08+ASI10，v1.3.9 补 ASI01+ASI04，远期 10/10 全覆盖对齐 AGT |
 | **能力缺口地图（GitHub 式协作底座启发 · 2026-08-16 新增）** | 从「能力地图」（ontology 有什么能力）进化到「能力缺口地图」（哪里需要 PR）——人+AI 想给别人的树提 PR，先得知道「哪棵树需要什么、哪里有空缺」，issue 化的贡献机会。依赖 worklog（v1.3.9）+ 能力地图（ontology lifecycle v1.3.7）成熟后才有土壤，暂占概念位 |
