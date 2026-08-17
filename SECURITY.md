@@ -508,8 +508,9 @@ grep -i "api_key\|apikey\|sk-" runs/*/usage.jsonl   # 应无结果
 如发现安全漏洞，请通过以下方式**私下**报告（不要在公开 Issue 中披露）：
 
 1. **GitHub Security Advisory**（推荐主通道）：[提交私有报告](https://github.com/KongFangXun/sofagent/security/advisories/new)
-2. **邮箱**（备选）：kongfangxun@users.noreply.github.com
-3. **响应时间**：我们承诺在 72 小时内确认收到报告，7 天内提供初步评估。
+2. **响应时间**：我们承诺在 72 小时内确认收到报告，7 天内提供初步评估。
+
+> 📌 漏洞报告仅走 GitHub Security Advisory 单通道（v1.3.6 fresh-eyes 修正：此前列出的 noreply 邮箱无法收信，不能作为安全渠道）。
 
 ## 响应承诺
 

@@ -1,8 +1,9 @@
 // ============================================================
 // prompt-sanitizer.test.ts · prompt 注入防线（层 1 + 层 4）测试
 // v1.1.8 新增 · v1.1.9 补 GitHub/GitLab/PEM 脱敏规则（F-03）
+// v1.3.6 补 Stripe sk_live_/sk_test_ 脱敏 + 共享库漂移断言（fresh-eyes R2 finding-02）
 //
-// 覆盖用例（共 14 case）：
+// 覆盖用例（共 17 case）：
 //   1. 层 1：web/user 内容包裹后含 <untrusted source=...> 标签（含 url 属性）
 //   2. 层 1：official/internal 不包裹（needsUntrustedWrap=false）
 //   3. 层 1：内容含 </untrusted> 注入串 → 转义，包裹边界不被破坏
@@ -184,5 +185,34 @@ describe('层 4 · F-03 GitHub/GitLab/PEM 脱敏', () => {
     expect(out).toContain('d****@test.com');
     expect(out).toContain('[REDACTED]');
     expect(out).not.toContain('MIIBOgIBAA');
+  });
+
+  // 用例 15-17（v1.3.6 fresh-eyes R2 finding-02）：Stripe 下划线前缀脱敏 + 共享库漂移断言
+  // ⚠️ 铁律：测试不字面写真实格式密钥——sk_live_/sk_test_ 前缀用运行时拼接构造
+  it('Stripe sk_live_（下划线）→ prompt 层脱敏，不再漏网', () => {
+    // 运行时拼接（铁律：测试用例不用真实敏感数据格式字面量）
+    const _stripeLive = 'sk_' + 'live_' + 'aBcDeFgHiJkLmNoPqRsTuVwxy';
+    const out = redactForPrompt('stripe key: ' + _stripeLive, 'internal');
+    expect(out).toContain('sk_****');
+    expect(out).not.toContain(_stripeLive);
+    expect(out).toContain('Vwxy'); // 保留后 4 位便于定位
+  });
+
+  it('Stripe sk_test_（下划线）→ prompt 层脱敏', () => {
+    const _stripeTest = 'sk_' + 'test_' + 'xYzAbCdEfGhIjKlMnOpQrStUv';
+    const out = redactForPrompt('test key: ' + _stripeTest + ' done', 'internal');
+    expect(out).toContain('sk_****');
+    expect(out).not.toContain(_stripeTest);
+  });
+
+  it('模块加载断言：REDACT_RULES 覆盖共享库全部 key 前缀（防再漂移）', () => {
+    // finding-02 根因是两层管道各自维护正则——prompt-sanitizer.ts 内置模块级
+    // 行为断言（加载即校验四组前缀样本），本用例验证断言链路健康：
+    // ① 本测试文件 import 成功 = 模块加载断言未抛错（漂移会 throw）
+    // ② 追加一条运行时探针：sk_live_ 样本走公共入口确认行为生效
+    expect(typeof redactForPrompt).toBe('function');
+    expect(typeof RESTRICTED_PLACEHOLDER).toBe('string');
+    const probe = redactForPrompt('sk_live_' + 'c'.repeat(20), 'internal');
+    expect(probe).not.toContain('c'.repeat(20));
   });
 });

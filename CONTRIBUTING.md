@@ -194,4 +194,4 @@ sofagent 当前 bus factor = 1（唯一维护者）。如果你以下条件满�
 - 熟悉 bash 兼容性 / OpenClaw hook / 安全审计 / 英文文档 中至少一个领域
 - 能独立 review 他人的 PR
 
-联系方式：开 [Discussion](https://github.com/KongFangXun/sofagent/discussions) 或邮件 kongfangxun@users.noreply.github.com
+联系方式：开 [Discussion](https://github.com/KongFangXun/sofagent/discussions)

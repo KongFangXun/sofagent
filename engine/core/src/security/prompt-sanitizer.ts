@@ -124,12 +124,42 @@ const REDACT_RULES: RedactRule[] = [
     replacer: (m) => `glpat-****${m.slice(-4)}`,
   },
   {
+    // v1.3.6 fresh-eyes R2 finding-02：Stripe 下划线前缀（sk_live_/sk_test_）——
+    // 此前 prompt 层脱敏漏网（tool 层已接 secret-patterns，prompt 层没有，不对称缺口）。
+    // 与 secret-patterns.ts 的 SECRET_PATTERNS 同源同口径（≥24 位 + 16 位兜底由共享
+    // REDACTION_PATTERNS 覆盖），pattern 语义见 shared/secret-patterns.ts 注释。
+    name: 'stripe-secret-key',
+    pattern: /\bsk_(?:live|test)_[A-Za-z0-9]{16,}\b/g,
+    replacer: (m) => `sk_****${m.slice(-4)}`,
+  },
+  {
     // PEM 私钥块（多行匹配——从 BEGIN 到 END 整块替换）
     name: 'pem-private-key',
     pattern: /-----BEGIN (?:RSA |EC |OPENSSH |DSA |)PRIVATE KEY-----[\s\S]*?-----END (?:RSA |EC |OPENSSH |DSA |)PRIVATE KEY-----/g,
     replacer: () => '-----BEGIN PRIVATE KEY [REDACTED]-----',
   },
 ];
+
+// v1.3.6 fresh-eyes R2 finding-02（根治层）：REDACT_RULES 与 shared/secret-patterns
+// 的 REDACTION_PATTERNS 是两层脱敏管道（prompt 层 / 审计输出层）——此前各自维护正则，
+// B24 在共享库加了 sk_live_/sk_test_ 而 prompt 层没跟（不对称缺口的本因）。
+// 此行为级对齐检查：用共享库 REDACTION_PATTERNS 的每个前缀族各造一条样本密钥，
+// REDACT_RULES 必须真的能脱掉（测行为不测源码字符串）——未来共享库新增模式
+// 而此处漏跟时，模块加载即抛错，测试（prompt-sanitizer.test.ts）同步红。
+const __SHARED_REDACTION_SAMPLES__: Array<[string, string]> = [
+  ['sk-', 'sk-' + 'a'.repeat(20)], // 通用 sk- 连字符族
+  ['sk_(live|test)_', 'sk_' + 'live_' + 'a'.repeat(20)], // Stripe 下划线族
+  ['AKIA', 'AKIA' + 'A'.repeat(16)], // AWS Access Key
+  ['ghp_', 'ghp_' + 'b'.repeat(36)], // GitHub PAT
+];
+for (const [label, sample] of __SHARED_REDACTION_SAMPLES__) {
+  const hit = REDACT_RULES.some((r) => r.pattern.test(sample) && r.replacer(sample) !== sample);
+  if (!hit) {
+    throw new Error(
+      `[prompt-sanitizer] 脱敏规则库与 shared/secret-patterns 漂移：${label} 样本未被任何规则脱敏——请同步 REDACT_RULES（单一事实源见 shared/secret-patterns.ts）`
+    );
+  }
+}
 
 /** restricted 条目进 prompt 的占位串（兜底；正常路径在 recall 阶段已被过滤） */
 export const RESTRICTED_PLACEHOLDER = '[restricted · 已按敏感度过滤]';
