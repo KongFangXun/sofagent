@@ -154,3 +154,14 @@ describe('路径 C · 预制 federation.json（HMAC 验签）', () => {
       .rejects.toThrow(/JSON/);
   });
 });
+
+// v1.3.6 hotfix 防复发锁（发版后 pr-check 抓获）：私钥 32 字节定长契约
+// getPrivateKey() 剥前导零 → 首字节 0（1/256 概率）时 31 字节——CI 概率性红。
+// 2000 次采样把首字节 0 的场景覆盖进来（期望概率 ~7.8 次命中）。
+it('私钥恒为 32 字节定长（前导零补齐——2000 次采样）', () => {
+  for (let i = 0; i < 2000; i++) {
+    const kp = generateKeyPair();
+    expect(kp.privateKey.length).toBe(32);
+    expect(kp.publicKey.length).toBe(33);
+  }
+});

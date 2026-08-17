@@ -38,7 +38,13 @@ export function generateKeyPair(): EcdhKeyPair {
   ecdh.generateKeys();
   return {
     publicKey: ecdh.getPublicKey(null, 'compressed'),
-    privateKey: ecdh.getPrivateKey(),
+    // v1.3.6 hotfix（发版后 pr-check 抓获）：getPrivateKey() 默认剥离定长整数的前导零——
+    // secp256k1 私钥首字节为 0（概率 1/256）时返回 31 字节，破坏 32 字节定长契约
+    // （CI 概率性失败、消费方按长度切片的会错位）。显式补零到 32 字节。
+    privateKey: Buffer.concat([
+      Buffer.alloc(32 - ecdh.getPrivateKey().length),
+      ecdh.getPrivateKey(),
+    ]),
   };
 }
 
