@@ -2330,40 +2330,41 @@ grep -q "EVOLUTION\|TEAM" "$PROJECT_ROOT/engine/audit/src/decision-log.ts" || S2
 $S262_OK && pass "evidence 字段 + DecisionKind 加 EVOLUTION/TEAM" || fail "审计留痕字段缺失"
 
 # ─── v1.3.4 新增场景 S263-S269（L3 组织能力市场 + SkillScan + MARKET 审计 + DSH 编排分离）───
+# 注：v1.3.6 更名 market_*→commons_*（能力公地），断言路径已同步
 
-scenario 263 "v1.3.4 交付 1+2：market 引擎 10 模块 + MCP 6 tool 注册（48）"
+scenario 263 "v1.3.4 交付 1+2：能力公地引擎 10 模块 + MCP 6 tool 注册（v1.3.6 更名 market_*→commons_*）"
 S263_OK=true
 for f in publisher catalog invoker rating owner retire skill-scan rule-harvest rule-jury rule-promote; do
-  [ -f "$PROJECT_ROOT/engine/orchestrator/src/market/$f.ts" ] || S263_OK=false
+  [ -f "$PROJECT_ROOT/engine/orchestrator/src/commons/$f.ts" ] || S263_OK=false
 done
-grep -q "market_publish" "$PROJECT_ROOT/engine/mcp/src/tool-registry.ts" || S263_OK=false
-grep -q "market_search" "$PROJECT_ROOT/engine/mcp/src/tool-registry.ts" || S263_OK=false
-grep -q "market_invoke" "$PROJECT_ROOT/engine/mcp/src/tool-registry.ts" || S263_OK=false
-grep -q "market_rate" "$PROJECT_ROOT/engine/mcp/src/tool-registry.ts" || S263_OK=false
-grep -q "market_retire" "$PROJECT_ROOT/engine/mcp/src/tool-registry.ts" || S263_OK=false
-grep -q "market_harvest_rule" "$PROJECT_ROOT/engine/mcp/src/tool-registry.ts" || S263_OK=false
-$S263_OK && pass "market 10 模块 + 6 MCP tool 注册" || fail "market 引擎或 MCP 注册缺失"
+grep -q "commons_publish" "$PROJECT_ROOT/engine/mcp/src/tool-registry.ts" || S263_OK=false
+grep -q "commons_search" "$PROJECT_ROOT/engine/mcp/src/tool-registry.ts" || S263_OK=false
+grep -q "commons_invoke" "$PROJECT_ROOT/engine/mcp/src/tool-registry.ts" || S263_OK=false
+grep -q "commons_rate" "$PROJECT_ROOT/engine/mcp/src/tool-registry.ts" || S263_OK=false
+grep -q "commons_retire" "$PROJECT_ROOT/engine/mcp/src/tool-registry.ts" || S263_OK=false
+grep -q "commons_harvest_rule" "$PROJECT_ROOT/engine/mcp/src/tool-registry.ts" || S263_OK=false
+$S263_OK && pass "commons 10 模块 + 6 MCP tool 注册" || fail "commons 引擎或 MCP 注册缺失"
 
 scenario 264 "v1.3.4 交付 1：评分公式 trust×评分×log(量+1) + 防刷（同 rater 覆盖）"
 S264_OK=true
-grep -q "Math.log" "$PROJECT_ROOT/engine/orchestrator/src/market/rating.ts" || S264_OK=false
-grep -q "getTrustForRating\|getTrustStub" "$PROJECT_ROOT/engine/orchestrator/src/market/rating.ts" || S264_OK=false
-grep -qE "raterId|同 rater|覆盖" "$PROJECT_ROOT/engine/orchestrator/src/market/rating.ts" || S264_OK=false
+grep -q "Math.log" "$PROJECT_ROOT/engine/orchestrator/src/commons/rating.ts" || S264_OK=false
+grep -q "getTrustForRating\|getTrustStub" "$PROJECT_ROOT/engine/orchestrator/src/commons/rating.ts" || S264_OK=false
+grep -qE "raterId|同 rater|覆盖" "$PROJECT_ROOT/engine/orchestrator/src/commons/rating.ts" || S264_OK=false
 $S264_OK && pass "评分公式 + trust 接线 + 防刷覆盖" || fail "评分/防刷逻辑缺失"
 
 scenario 265 "v1.3.4 交付 3：owner trust 三态阈值（0.5/0.6/0.4）"
 S265_OK=true
-grep -q "TRUST_INITIAL = 0.5" "$PROJECT_ROOT/engine/orchestrator/src/market/owner.ts" || S265_OK=false
-grep -q "TRUST_GOOD_THRESHOLD = 0.6" "$PROJECT_ROOT/engine/orchestrator/src/market/owner.ts" || S265_OK=false
-grep -q "TRUST_BAD_THRESHOLD = 0.4" "$PROJECT_ROOT/engine/orchestrator/src/market/owner.ts" || S265_OK=false
+grep -q "TRUST_INITIAL = 0.5" "$PROJECT_ROOT/engine/orchestrator/src/commons/owner.ts" || S265_OK=false
+grep -q "TRUST_GOOD_THRESHOLD = 0.6" "$PROJECT_ROOT/engine/orchestrator/src/commons/owner.ts" || S265_OK=false
+grep -q "TRUST_BAD_THRESHOLD = 0.4" "$PROJECT_ROOT/engine/orchestrator/src/commons/owner.ts" || S265_OK=false
 $S265_OK && pass "trust 三态阈值 0.5/0.6/0.4" || fail "trust 阈值缺失"
 
 scenario 266 "v1.3.4 交付 4：SkillScan 三态判定 + 发布/安装双触发"
 S266_OK=true
-grep -q "'SAFE' | 'SUSPICIOUS' | 'DANGEROUS'" "$PROJECT_ROOT/engine/orchestrator/src/market/skill-scan.ts" || S266_OK=false
-grep -q "scanForPublish" "$PROJECT_ROOT/engine/orchestrator/src/market/skill-scan.ts" || S266_OK=false
-grep -q "scanForInstall" "$PROJECT_ROOT/engine/orchestrator/src/market/skill-scan.ts" || S266_OK=false
-grep -q "existsSync" "$PROJECT_ROOT/engine/orchestrator/src/market/skill-scan.ts" || S266_OK=false
+grep -q "'SAFE' | 'SUSPICIOUS' | 'DANGEROUS'" "$PROJECT_ROOT/engine/orchestrator/src/commons/skill-scan.ts" || S266_OK=false
+grep -q "scanForPublish" "$PROJECT_ROOT/engine/orchestrator/src/commons/skill-scan.ts" || S266_OK=false
+grep -q "scanForInstall" "$PROJECT_ROOT/engine/orchestrator/src/commons/skill-scan.ts" || S266_OK=false
+grep -q "existsSync" "$PROJECT_ROOT/engine/orchestrator/src/commons/skill-scan.ts" || S266_OK=false
 $S266_OK && pass "SkillScan 三态 + 双触发 + 前置存在性校验" || fail "SkillScan 判定链缺失"
 
 scenario 267 "v1.3.4 dsh 增量：编排/执行层分离（ExecutionBackend 接口 + 工厂 + rc 守卫 + FORGE 迁移）"
@@ -2378,31 +2379,31 @@ grep -q "createExecutionBackend" "$PROJECT_ROOT/FORGE/src/fresh-eyes-driver.mjs"
 grep -q "createExecutionBackend" "$PROJECT_ROOT/FORGE/src/release-gate-driver.mjs" || S267_OK=false
 $S267_OK && pass "ExecutionBackend 接口 + 工厂 + rc 守卫 + FORGE 两 driver 迁移" || fail "编排/执行分离缺失"
 
-scenario 268 "v1.3.4 交付 2：DecisionKind.MARKET 审计留痕（市场动作专用 kind）"
+scenario 268 "v1.3.4 交付 2：DecisionKind.COMMONS 审计留痕（公地动作专用 kind · v1.3.6 更名自 MARKET）"
 S268_OK=true
-grep -q "'MARKET'" "$PROJECT_ROOT/engine/audit/src/decision-schema.ts" || S268_OK=false
-grep -q "MARKET" "$PROJECT_ROOT/engine/audit/src/decision-log.ts" || S268_OK=false
-grep -q "EVOLUTION" "$PROJECT_ROOT/engine/orchestrator/src/market/retire.ts" || S268_OK=false
-$S268_OK && pass "DecisionKind.MARKET + 退役走 EVOLUTION" || fail "市场审计 kind 缺失"
+grep -q "'COMMONS'" "$PROJECT_ROOT/engine/audit/src/decision-schema.ts" || S268_OK=false
+grep -q "COMMONS" "$PROJECT_ROOT/engine/audit/src/decision-log.ts" || S268_OK=false
+grep -q "EVOLUTION" "$PROJECT_ROOT/engine/orchestrator/src/commons/retire.ts" || S268_OK=false
+$S268_OK && pass "DecisionKind.COMMONS + 退役走 EVOLUTION" || fail "公地审计 kind 缺失"
 
-scenario 269 "v1.3.4 交付 1：daemon 市场巡检双注册（L1 目录日更 + L2 健康周检）"
+scenario 269 "v1.3.4 交付 1：daemon 公地巡检双注册（L1 目录日更 + L2 健康周检 · v1.3.6 更名自 market）"
 S269_OK=true
-grep -q "market-catalog-daily" "$PROJECT_ROOT/engine/daemon/src/inspector-layers.ts" || S269_OK=false
-grep -q "market-health" "$PROJECT_ROOT/engine/daemon/src/inspector-layers.ts" || S269_OK=false
-grep -q "runMarketCatalogDaily" "$PROJECT_ROOT/engine/daemon/src/inspectors/index.ts" || S269_OK=false
-grep -q "runMarketHealth" "$PROJECT_ROOT/engine/daemon/src/inspectors/index.ts" || S269_OK=false
-$S269_OK && pass "市场巡检 inspector 三步注册（L1+L2）" || fail "inspector 注册缺失"
+grep -q "commons-catalog-daily" "$PROJECT_ROOT/engine/daemon/src/inspector-layers.ts" || S269_OK=false
+grep -q "commons-health" "$PROJECT_ROOT/engine/daemon/src/inspector-layers.ts" || S269_OK=false
+grep -q "runCommonsCatalogDaily" "$PROJECT_ROOT/engine/daemon/src/inspectors/index.ts" || S269_OK=false
+grep -q "runCommonsHealth" "$PROJECT_ROOT/engine/daemon/src/inspectors/index.ts" || S269_OK=false
+$S269_OK && pass "公地巡检 inspector 三步注册（L1+L2）" || fail "inspector 注册缺失"
 
 # ─── v1.3.5 新增场景 S270-S276（MCP 自进化+运维闭环 + instinct + FDE 运维五件 + DSH 互通）───
 
-scenario 270 "v1.3.5 交付 1+2：MCP 四 tool 注册（TOOLS=52）+ 三步注册齐"
+scenario 270 "v1.3.5 交付 1+2：MCP 四 tool 注册（TOOLS=60 · v1.3.6 起）+ 三步注册齐"
 S270_OK=true
 for t in run_ab_test promote_ab snapshot_list snapshot_restore; do
   grep -q "'$t'" "$PROJECT_ROOT/engine/mcp/src/tool-registry.ts" || S270_OK=false
   grep -q "'$t'" "$PROJECT_ROOT/engine/mcp/src/mcp-server.ts" || S270_OK=false
 done
-node -e "const m=require('$PROJECT_ROOT/engine/mcp/dist/tool-registry.js');process.exit(m.TOOLS.length===52?0:1)" || S270_OK=false
-$S270_OK && pass "四 tool 注册 + TOOLS=52" || fail "MCP 四 tool 注册缺失"
+node -e "const m=require('$PROJECT_ROOT/engine/mcp/dist/tool-registry.js');process.exit(m.TOOLS.length===60?0:1)" || S270_OK=false
+$S270_OK && pass "四 tool 注册 + TOOLS=60" || fail "MCP 四 tool 注册缺失"
 
 scenario 271 "v1.3.5 交付 1+2：破坏性 tool 人审语义（human_confirmed 门控）"
 S271_OK=true
