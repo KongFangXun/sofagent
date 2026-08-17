@@ -186,7 +186,7 @@ if [ "$MINIMAL" = false ] && [ "$QUICK" = false ]; then
   if [ "$TEST_RC" -eq 0 ]; then
     check_pass "test-count.sh（workspace 全量，0 失败）"
   else
-    check_fail "test-count.sh 有失败（RC=$TEST_RC，见上方 ✗ 明细）"
+    check_fail "test-count.sh 有失败（RC=${TEST_RC}，见上方 ✗ 明细）"
   fi
 
   # 4b. 文档声称测试数 vs 实际值一致性（P1-3 根治 · v1.1.7 起）
