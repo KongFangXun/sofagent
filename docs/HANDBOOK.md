@@ -2,7 +2,7 @@
 
 > **sofagent 是一个 FDE Agent——进场梳理你的工作流、部署 AI 节点、离场后 7×24 自己跑。** 装完之后，你在自己的 Agent（WorkBuddy / Codex / Claude Code）里说一句话，它就帮你干活——审计每次变更、沉淀每次经验、越用越好。下面从装到用到查问题，全流程走一遍。
 >
-> v1.3.6 · 2026-08-16（UTC）· 孔放勋
+> v1.3.6 · 2026-08-17（UTC）· 孔放勋
 
 <img src="assets/sofagent.png" alt="sofagent" width="160" />
 
@@ -56,7 +56,7 @@
 
 > 这一节先讲「价值」，再讲「怎么用」。sofagent 不是一个工具包，而是一个**能进场、能部署、能离场常驻的 Agent**——它替企业把大模型变成 7×24 自动执行的 AI 节点。完整能力矩阵见 [ARCHITECTURE · 能力与状态总览](./ARCHITECTURE.md#能力与状态总览)。
 
-**已经能替你干的事（v1.3.5 已交付）**：
+**已经能替你干的事（v1.3.6 已交付）**：
 
 - **进场梳理 → 部署 AI 节点 → 离场常驻**：FDE 帮你盘清工作流、识别可自动化环节、把重复业务变成自动跑的 Agent，离场后 7×24 自己巡检、自己优化。
 - **每次变更都被管住**：24 条规则硬证据审计，密钥泄漏 / 越界编辑 / 注入攻击 / 盲改当场拦截；出事一键回滚到任意安全状态。
@@ -66,7 +66,8 @@
 - **🔗 激活链（v1.2.5+ 已实现 Phase 1-4）**：FDE 诊断交付后，ontology + workflow.yml + skills/ 不再是一堆静态文件躺在磁盘上——激活链自动读交付物 → 注册企业 SubAgent → 编排成 LangGraph 工作流 → 带人工审批（HITL）和审计地自动跑。从"交给企业一堆文档"变成"交给企业一个会自己跑的系统"。Phase 4（SUSTAIN）已于 v1.3.0 交付。详见 [激活链设计文档](./guides/fde-activation-chain.md)。
 - **🧠 v1.3.1 新增**：Ontology 运行时层（执行前校验）· 并行编排（波次并发 + MergeQueue）· Agent 身份码（Ed25519）· Benchmark 评测 · 工具审批四模式 · LLM 调用级 Trace · Durable Execution（checkpoint 续跑）· 国标对齐 GB/T 48000.3-2026。详见 [v1.3.1 开发日志](./changelog/v1.3/v1.3.1.md)。
 - **🏪 v1.3.4**：组织能力市场——Skill/Agent/流程可发布、可搜索、可调用、可评分、可退役；SkillScan 安全扫描双触发。
-- **🧬 v1.3.5 新增**：自进化与运维闭环 MCP 化——A/B 实验（`run_ab_test`）与晋升决策（`promote_ab`，强制人审）、审计快照查询与恢复（`snapshot_list` / `snapshot_restore`，恢复强制人审）全部可从任意 MCP 宿主调用（52 tools）；instinct→skill 自动进化（经验自动聚合成可复用 skill）；FDE 运维五件（陪跑期/进场记忆/节点注册表/审计问卷 7 行业）；DSH MCP 互通；四份独立审查 38 项加固。详见 [v1.3.5 开发日志](./changelog/v1.3/v1.3.5.md)。
+- **🧬 v1.3.5 新增**：自进化与运维闭环 MCP 化——A/B 实验（`run_ab_test`）与晋升决策（`promote_ab`，强制人审）、审计快照查询与恢复（`snapshot_list` / `snapshot_restore`，恢复强制人审）全部可从任意 MCP 宿主调用（当年 48→52 tools）；instinct→skill 自动进化（经验自动聚合成可复用 skill）；FDE 运维五件（陪跑期/进场记忆/节点注册表/审计问卷 7 行业）；DSH MCP 互通；四份独立审查 38 项加固。详见 [v1.3.5 开发日志](./changelog/v1.3/v1.3.5.md)。
+- **🔌 v1.3.6 新增**：引擎接口外化完整版（模型层接入前置）——模型生成的 workflow / ontology 可经标准接口进入约束层：`workflow_submit`（含 merge_criteria/approver 审阅协议字段）/ `ontology_import` / `model_register`+`model_switch`+`model_unregister`（模型灰度全流程审计）/ `harness.wrap` 托管 SDK / `train_budget` 训练预算控制 / `define_acceptance`+`check_acceptance` 机器可判定验收（52→60 tools）；可靠性五件：FORGE worktree 隔离、双闸验证（postToolCall 副作用复查）、Agent 疲劳度检测、分级降级梯队、decisions.jsonl 完整版。详见 [v1.3.6 开发日志](./changelog/v1.3/v1.3.6.md)。
 
 **现在还干不了的事（已排期，暂无代码）**：SubAgent 生产级沙箱、本地推理小模型——路线见 [ROADMAP](./ROADMAP.md)。
 

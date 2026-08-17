@@ -164,16 +164,19 @@ Community rulesets are published as `sofagent-ruleset-*` npm packages and auto-d
 - **Methodology path** (zero dependencies): read [FDE/GUIDE.md](./FDE/GUIDE.md) and map workflows manually following the handbook — Excel + your own brain is enough
 - **Tooling path** (Node.js ≥ 18): after installing, tell your AI tool "run an FDE diagnosis for me" and the Agent guides you from the entry phase
 
-## New in v1.3.5
+## New in v1.3.6
 
-> 🧠 **v1.3.5 new capabilities** (grouped by theme):
-> - **MCP self-evolution + ops loop**: 🧬 4 new MCP tools (run_ab_test A/B experiments / promote_ab promotion with mandatory human review / snapshot_list timeline / snapshot_restore recovery with mandatory human review) · 60 tools in total
-> - **instinct→skill auto-evolution**: 🌱 extracts recurring judgment patterns from think.md + decision-log + failure log → confidence scoring (≥0.7 gets injected) → /evolve aggregates into skills written to the runtime directory · evolution output carries a DSH plugin-shape reservation
-> - **FDE ops five-piece set**: 🤝 companionship period (daily Refine inspection for two weeks post-deploy) / onboarding memory engineering / failure log / FDE node registry (daemon inspects on schedule) / scripted audit questionnaire (7 industry templates)
-> - **Dependency security upgrades**: 🔋 npm audit fully clean (vitest critical CVSS 9.8 chain fixed →4.1.10) · automerge 1.x→3.x stable (Rust WASM core, package rename)
-> - **DSH MCP interop**: 🔌 sofagent works as an MCP server callable from DSH (DeepSeek Harness) or any MCP host — 60 tools over stdio, human-review semantics for destructive ops never degrade (see HANDBOOK)
-> - **Four independent review hardening**: 🛡️ All 38 issues found by four fresh-eyes 16-perspective reviews fixed — shadow-auditor defense activated (doctor hash baseline + --reset-baseline), gate false-greens eliminated (scenario guard revived + honest install exit codes), leak cleanup, post-commit bypass detection
-> See [v1.3.5 devlog](./docs/changelog/v1.3/v1.3.5.md). Earlier versions in [CHANGELOG](./CHANGELOG.md).
+> 🧠 **v1.3.6 new capabilities** (engine interface externalization — full edition, the prerequisite for model-layer integration), grouped by theme:
+> - **Three data interfaces (inbound)**: 📥 Workflow standard format + runtime container (JSON Schema as single source of truth + `workflow_submit`, with merge_criteria/approver review-protocol fields — workflows become change proposals) / Ontology standard Schema registration (`ontology_import`: validate → register → D1-D5 audit trail, rollback on failure) / Model registration + canary switching (`model_register` / `model_switch` / `model_unregister` — evaluate → register → canary → promote, fully audited with mandatory human review)
+> - **One code interface**: 🧩 SubAgent hosting SDK — `harness.wrap()` wraps a LangGraph Agent with audit / approval / identity / Trace out of the box (compatible with both createReactAgent and bare StateGraph)
+> - **Training protocol front-loaded**: 🏋️ three conventions (job.json single-file launch / stdout JSON-line reporting / SIGINT graceful shutdown) + budget control (`train_budget` — auto-pause on breach, human review to resume/abort)
+> - **Closing the convergence gap**: ✅ machine-decidable acceptance — `define_acceptance` attaches verifiable acceptance criteria at task creation (tests pass / build succeeds / grep finds no X / schema validates), `check_acceptance` runs them after changes and returns structured results (reusing the Benchmark verdict engine)
+> - **Decision explainability**: 🧭 EndpointProfile capability profiles + route-policy.yml preference policy + structured routeReason chain (policy / matched endpoint / rejected endpoints / decision score) — routing decisions become questionable instead of black-box
+> - **Reliability five-piece set**: 🛡️ FORGE worktree isolation (review workers physically separated from the main repo — root fix for the run-07 concurrency incident) / dual-gate verification (postToolCall side-effect review: file scope + git impact + outbound network) / Agent fatigue detection (3 signals, weighted score → compact/restart recommendation) / tiered degradation ladder (full→rules-only→minimal→safe-stop, every degradation audited) / decisions.jsonl full edition (route/select/skip/retry/escalate five categories + multi-dimensional queries)
+> - **Narrative upgrade**: 🌳 FDE docs grow from "a single capability tree" to "a repository forest" — GitHub-style protocols as the collaboration substrate, horizontal flow (cross-repo PRs) + the sixth question "does the output enter the trunk?"
+>
+> **8 new MCP tools (52 → 60)**: `workflow_submit` · `ontology_import` · `model_register` · `model_switch` · `model_unregister` · `train_budget` · `define_acceptance` · `check_acceptance`
+> See [v1.3.6 devlog](./docs/changelog/v1.3/v1.3.6.md). Earlier versions in [CHANGELOG](./CHANGELOG.md).
 
 ## Why sofagent
 

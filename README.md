@@ -12,7 +12,7 @@
   <a href="README.en.md">English</a> · <a href="#这是什么">这是什么</a> · <a href="#快速开始">快速开始</a> · <a href="#fde-方法论">FDE 方法论</a> · <a href="#三个入口从-30-秒到全套部署">三个入口</a> · <a href="#为什么选-sofagent">为什么选</a> · <a href="#文档">文档</a> · <a href="https://github.com/KongFangXun/sofagent">⭐ Star</a>
 </p>
 
-> v1.3.6 · 2026-08-16 · 孔放勋
+> v1.3.6 · 2026-08-17 · 孔放勋
 
 ---
 
@@ -169,16 +169,19 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # 加载安全规�
 - **方法论路径**（零依赖）：读 [FDE/GUIDE.md](./FDE/GUIDE.md)，按手册手动梳理工作流，Excel + 人脑也能跑
 - **工具路径**（Node.js ≥ 18）：FDE 在企业设备上跑 install.sh 装好约束层后，用自己的 AI 工具说"帮我做 FDE 诊断"，Agent 从进场开始引导
 
-## v1.3.5 新能力
+## v1.3.6 新能力
 
-> 🧠 **v1.3.5 新能力**（按主题分组）：
-> - **MCP 自进化+运维闭环**：🧬 4 个新 MCP tool（run_ab_test 发起 A/B 实验 / promote_ab 晋升·强制人审 / snapshot_list 快照时间线 / snapshot_restore 恢复·强制人审）· 60 tools 全景
-> - **instinct→skill 自动进化**：🌱 think.md + decision-log + 错题本三源提取判断模式 → 置信度评分（≥0.7 注入）→ /evolve 聚合成 skill 自动写入运行时目录 · 进化产物带 DSH 插件形态预留
-> - **FDE 运维五件**：🤝 陪跑期（部署后两周每日 Refine 巡检）/ 进场记忆工程化 / 错题本 / FDE 节点注册表（daemon 按表巡检）/ 审计问卷脚本化（7 行业模板）
-> - **依赖安全升级**：🔒 npm audit 全清零（vitest critical CVSS 9.8 漏洞链修复 →4.1.10）· automerge 1.x→3.x 稳定版（Rust WASM 核心，包名切换）
-> - **DSH MCP 互通**：🔌 sofagent 可作为 MCP server 被 DSH（DeepSeek Harness）等任何 MCP 宿主调用——60 tools 经 stdio 即挂即用，破坏性操作人审语义不降级（详见 HANDBOOK）
-> - **四份独立审查加固**：🛡️ fresh-eyes 四份 16 视角审查发现 38 项问题全部修复——影子审计器防线激活（doctor 哈希基线 + --reset-baseline）/ 门禁假绿清零（场景守卫复活 + install 退出码诚实）/ 泄漏清理 / post-commit 绕过检测
-> 详见 [v1.3.5 开发日志](./docs/changelog/v1.3/v1.3.5.md)。更早版本见 [CHANGELOG](./CHANGELOG.md)。
+> 🧠 **v1.3.6 新能力**（引擎接口外化完整版——模型层接入前置，按主题分组）：
+> - **三个数据接口（进）**：📥 Workflow 标准格式 + 运行容器（JSON Schema 单一事实源 + `workflow_submit`，含 merge_criteria/approver 审阅协议字段——workflow 升级为变更提案）/ Ontology 标准 Schema 注册（`ontology_import`，校验→注册→D1-D5 留痕，失败可回滚）/ 模型注册 + 灰度切换（`model_register` / `model_switch` / `model_unregister`，评测→注册→灰度→晋升全流程审计 + 强制人审）
+> - **一个代码接口**：🧩 SubAgent 托管 SDK——`harness.wrap()` 包装 LangGraph Agent 自动获得审计/审批/身份/Trace（createReactAgent 与纯 StateGraph 双形态兼容）
+> - **训练协议前移**：🏋️ 三约定（job.json 单文件启动 / stdout JSON 行回报 / SIGINT 优雅退出）+ 预算控制（`train_budget`，超限自动暂停 + 人审续跑/终止）
+> - **收敛鸿沟的直接解**：✅ 机器可判定验收——`define_acceptance` 任务创建时附验收条件（测试通过/build 成功/grep 无 X/schema 校验）+ `check_acceptance` 修改后跑验收返回结构化结果（复用 Benchmark 判定引擎）
+> - **决策可解释性**：🧭 EndpointProfile 能力画像 + route-policy.yml 偏好策略 + routeReason 结构化理由链（policy/匹配端点/拒绝端点/决策分），路由决策从黑盒变可追问
+> - **可靠性五件**：🛡️ FORGE worktree 隔离（审查 worker 与主仓物理分离，run-07 并发事故根治）/ 双闸验证（postToolCall 副作用复查：文件范围 + git 影响 + 网络外联）/ Agent 疲劳度检测（3 信号加权评分 → compact/重启建议）/ 分级降级梯队（full→rules-only→minimal→safe-stop，每次降级留痕）/ decisions.jsonl 完整版（route/select/skip/retry/escalate 五分类 + 多维查询）
+> - **叙事升级**：🌳 FDE 文档从「单棵能力树」升级为「仓库森林」——GitHub 式协议当协作底座，横向流动（跨树 PR）+ 第六问「产出进不进树干」
+>
+> **8 个新 MCP tool（52 → 60）**：`workflow_submit` · `ontology_import` · `model_register` · `model_switch` · `model_unregister` · `train_budget` · `define_acceptance` · `check_acceptance`
+> 详见 [v1.3.6 开发日志](./docs/changelog/v1.3/v1.3.6.md)。更早版本见 [CHANGELOG](./CHANGELOG.md)。
 
 ## 为什么选 sofagent
 
