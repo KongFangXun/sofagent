@@ -148,6 +148,7 @@ sofagent 的定位正卡在这个转折点上：审计引擎（治理侧）+ Ont
 | **OWASP Agentic Top 10 全覆盖路线（Microsoft AGT 启发）** | v1.3.7 补 ASI08+ASI10，v1.3.9 补 ASI01+ASI04，远期 10/10 全覆盖对齐 AGT |
 | **能力缺口地图（GitHub 式协作底座启发 · 2026-08-16 新增）** | 从「能力地图」（ontology 有什么能力）进化到「能力缺口地图」（哪里需要 PR）——人+AI 想给别人的树提 PR，先得知道「哪棵树需要什么、哪里有空缺」，issue 化的贡献机会。依赖 worklog（v1.3.9）+ 能力地图（ontology lifecycle v1.3.7）成熟后才有土壤，暂占概念位 |
 | **fork 语义（GitHub 式协作底座启发 · 2026-08-16 新增）** | GitHub 的 fork 在企业语境 = 部门复制别人的能力改造成自己的版本（复制 + 改造 + 独立演进），比「复用」更激进。当前能力公地是「调用」（复用），无「fork」（分叉演进）。依赖能力公地（v1.3.4）成熟后评估，暂占概念位 |
+| **商业平台 平台接口预留（2026-08-17 新增 · 商业产品层前置）** | 商业平台（商业 SaaS 产品层，`商业仓库/商业平台/商业平台.md`）需要 sofagent 预留的平台接口，提前定义、随版本逐步排期：**G1 workflow 模板导出/导入 + 血缘追踪**（MCP `workflow_export`/`workflow_import`，支持跨企业 fork 的模板元数据 + 血缘回流字段）· **G2 能力缺口查询**（MCP `workflow_gaps`——读 workflow 状态找「缺人/缺能力的节点」，悬赏式 PR 的发现接口）· **G3 计量数据暴露**（MCP `usage_query`——按 workflow/时间聚合 token 消耗，credit 成本轨数据源，复用 v1.3.9 worklog + LLM Trace）· **G4 绩效数据导出**（MCP `contribution_query`——读审计 + decision-log 算每人/每 workflow 贡献度，DKP 价值轨数据源）· **G5 MCP 连接器注册/发现**（`connector_list` + 第三方连接器注册——企业存量系统 OA/CRM/ERP 经 MCP 接入编排）· **G6 节点级可见性元数据**（workflow schema 加 `visibility` 字段 open/private/result-only——任务面/数据面分离，审阅门按此执行）· **G7 多租户抽象层**（引擎层数据路径 `data/<tenant>/` 命名空间 + 审计/日志按租户隔离，v2.x 评估） |
 
 > 📖 DeerFlow / OpenFDE 方法论印证见 [VALIDATION](./VALIDATION.md)。
 
