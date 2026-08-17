@@ -836,3 +836,20 @@ export type {
   TrainBudgetReport,
   TrainJobState,
 } from './train/train-budget';
+
+// ============================================================
+// v1.3.6 交付⑨：验收条件定义与执行（机器可判定验收 · 软约束先行）
+// ============================================================
+export {
+  AcceptanceCriterionSchema,
+  validateAcceptanceDefinition,
+  saveAcceptanceDefinition,
+  loadAcceptanceDefinition,
+  checkAcceptance,
+} from './acceptance/acceptance';
+export type {
+  AcceptanceCriterion,
+  AcceptanceDefinition,
+  CriterionResult,
+  AcceptanceCheckResult,
+} from './acceptance/acceptance';

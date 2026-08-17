@@ -19,7 +19,7 @@ export interface ToolDef {
 }
 
 /**
- * 完整工具清单——58 个 tool（v1.3.6：workflow_submit/ontology_import/model_register/model_switch/model_unregister/train_budget 新增；v1.3.5：run_ab_test/promote_ab/snapshot_list/snapshot_restore；v1.3.4：commons_publish/search/invoke/rate/retire/harvest_rule；不含 4 个 resource shortcut）
+ * 完整工具清单——60 个 tool（v1.3.6：workflow_submit/ontology_import/model_register/model_switch/model_unregister/train_budget/define_acceptance/check_acceptance 新增；v1.3.5：run_ab_test/promote_ab/snapshot_list/snapshot_restore；v1.3.4：commons_publish/search/invoke/rate/retire/harvest_rule；不含 4 个 resource shortcut）
  */
 export const TOOLS: ToolDef[] = [
   {
@@ -748,6 +748,49 @@ export const TOOLS: ToolDef[] = [
         decision: { type: 'string', enum: ['resume', 'terminate'], description: 'resolve 时的人审决策：resume 续跑 / terminate 终止' },
       },
       required: ['action', 'job_id'],
+    },
+  },
+  {
+    // v1.3.6 (交付 ⑨)：验收条件定义——任务创建时附机器可判定验收条件
+    name: 'define_acceptance',
+    description: '验收条件定义（v1.3.6）——任务创建时附机器可判定的验收条件，复用 Benchmark 判定引擎结构。四类条件：test（测试通过）/ build（build 成功）/ grep-absent（指定 pattern 零命中）/ schema（JSON 必需字段校验）。同一 task_id 重复定义 = 覆盖更新。软约束版验收（Agent 主动调用）；v1.4.0 cordis-plugin 升级为硬门禁。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        task_id: { type: 'string', description: '任务标识（同一 task_id 重复定义 = 覆盖更新）' },
+        criteria: {
+          type: 'array',
+          description: '验收条件列表（至少一条，机器可判定）',
+          items: {
+            type: 'object',
+            properties: {
+              type: { type: 'string', enum: ['test', 'build', 'grep-absent', 'schema'], description: '条件类型' },
+              command: { type: 'string', description: 'test/build 的执行命令（缺省 npm test / npm run build）' },
+              pattern: { type: 'string', description: 'grep-absent 的搜索模式（零命中才通过）' },
+              path: { type: 'string', description: 'grep-absent 的搜索路径（缺省项目根）' },
+              file: { type: 'string', description: 'schema 的待校验 JSON 文件路径' },
+              requiredFields: { type: 'array', items: { type: 'string' }, description: 'schema 的必需字段列表' },
+              description: { type: 'string', description: '条件说明（人读）' },
+            },
+            required: ['type'],
+          },
+        },
+        notes: { type: 'string', description: '备注（验收意图说明，审计可读）' },
+      },
+      required: ['task_id', 'criteria'],
+    },
+  },
+  {
+    // v1.3.6 (交付 ⑨)：验收执行——修改后跑验收返回结构化结果
+    name: 'check_acceptance',
+    description: '验收执行（v1.3.6）——修改后跑验收返回结构化结果。逐条执行 define_acceptance 登记的条件，全部通过 = 验收通过。未定义的 task_id 返回 notDefined=true（区别于定义了但失败）。通用 MCP tool，任何宿主（含 DSH 经 v1.3.5 互通）可调。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        task_id: { type: 'string', description: '任务标识' },
+        project_root: { type: 'string', description: '项目根（验收命令执行工作目录；缺省 cwd）' },
+      },
+      required: ['task_id'],
     },
   },
 ];

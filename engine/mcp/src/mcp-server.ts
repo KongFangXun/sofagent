@@ -77,6 +77,7 @@ import { modelRegister, type ModelRegisterArgs } from './tools/model-register';
 import { modelSwitch } from './tools/model-switch';
 import { modelUnregister } from './tools/model-unregister';
 import { trainBudget } from './tools/train-budget';
+import { defineAcceptance, checkAcceptance } from './tools/acceptance';
 
 // ============================================================
 // 常量
@@ -264,6 +265,8 @@ class McpServer {
         case 'model_switch': { const msr = await modelSwitch({ ...(typeof args.name === 'string' ? { name: args.name } : {}), lane: args.lane === 'pipeline' ? 'pipeline' : 'executor', ...(typeof args.percent === 'number' ? { percent: args.percent } : {}), action: args.action === 'rollback' ? 'rollback' : 'switch', ...(args.human_confirmed !== undefined ? { human_confirmed: args.human_confirmed === true } : {}), ...(typeof args.comment === 'string' ? { comment: args.comment } : {}) }); this.sendTool(id, msr, msr.data.isError); break; }
         case 'model_unregister': { if (!args.name) { this.sendError(id, -32602, 'Missing required argument: name'); break; } const mur = await modelUnregister({ name: args.name as string, action: args.action === 'restore' ? 'restore' : 'retire', ...(args.human_confirmed !== undefined ? { human_confirmed: args.human_confirmed === true } : {}), ...(typeof args.comment === 'string' ? { comment: args.comment } : {}) }); this.sendTool(id, mur, mur.data.isError); break; }
         case 'train_budget': { if (!args.action) { this.sendError(id, -32602, 'Missing required argument: action'); break; } if (!args.job_id) { this.sendError(id, -32602, 'Missing required argument: job_id'); break; } const tbr = await trainBudget({ action: args.action as 'status' | 'resolve', job_id: args.job_id as string, ...(args.decision === 'resume' || args.decision === 'terminate' ? { decision: args.decision } : {}) }); this.sendTool(id, tbr, tbr.data.isError); break; }
+        case 'define_acceptance': { if (!args.task_id) { this.sendError(id, -32602, 'Missing required argument: task_id'); break; } if (!Array.isArray(args.criteria) || (args.criteria as unknown[]).length === 0) { this.sendError(id, -32602, 'Missing or empty required argument: criteria'); break; } const dar = await defineAcceptance({ task_id: args.task_id as string, criteria: args.criteria as Array<Record<string, unknown>>, ...(typeof args.notes === 'string' ? { notes: args.notes } : {}) }); this.sendTool(id, dar, dar.data.isError); break; }
+        case 'check_acceptance': { if (!args.task_id) { this.sendError(id, -32602, 'Missing required argument: task_id'); break; } const car = await checkAcceptance({ task_id: args.task_id as string, ...(typeof args.project_root === 'string' ? { project_root: args.project_root } : {}) }); this.sendTool(id, car, car.data.isError); break; }
         default: this.sendError(id, -32602, `Unknown tool: ${toolName}`);
       }
     } catch (err) {
