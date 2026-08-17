@@ -96,7 +96,7 @@ graph TB
         G -.双图谱并行产出.-> O
     end
     subgraph L2["② 编排与执行 · ORCHESTRATE"]
-        C["编译器：workflow + ontology<br/>→ 受约束图（AI 可运行节点）"]
+        C["编译器：Workflow Graph + Ontology Graph<br/>→ 受约束图（AI 可运行节点）"]
         C --> ORCH["编排层：LangGraph StateGraph<br/>（确定性 · 永不替换）"]
         ORCH --> BE["执行层：ExecutionBackend 接口<br/>DSH 默认 / createReactAgent fallback / 三平台可选"]
     end
@@ -1056,10 +1056,10 @@ sofagent 的三层治理与 Karpathy LLM Wiki 的 `raw materials → Wiki entrie
 | 决策 | 含义 | 反模式（不做） |
 |------|------|---------------|
 | **双图谱并行产出** | Workflow Graph（流转）+ Ontology Graph（语义）从同一次 FDE 访谈并行产出，SHACL 互相校验 | 不做「Workflow Graph → Ontology Graph」单向转换——转换丢访谈中的隐性知识，本体沦为工作流的副产品 |
-
-> 📖 **双图谱术语定义（2026-08-17 定）**：FDE 交付的两张图谱统一称 **Workflow Graph** 与 **Ontology Graph**。「Graph」在这里是可视化/可理解形态的统称，不与行业概念 Graph Engineering 挂钩——**Workflow Graph** = FDE 梳理好 workflow 后多个 workflow 组成的流程图谱（动态，Agent 按它执行）；**Ontology Graph** = ontology 的图谱化形态（ontology 本身是哲学定义，加 Graph 才让人知道它是可被理解、可视化的东西；静态，Agent 按它检索语义，人按它看组织资产）。不同读者读不同图谱：Agent 执行读 Workflow Graph，Agent 检索与人看资产读 Ontology Graph，FDE 进场两种都读。商业平台层 商业平台（原 模板市场）托管的就是这双图谱。
 | **执行层可换（编排层不换）** | 编排层 LangGraph StateGraph 永不替换；执行层走 ExecutionBackend 接口——DSH 默认 / createReactAgent fallback / 三平台可选，双后端镜像验证 | 不做「只修一处的堤」——企业命脉不押单一运行时，DSH rc 阶段 breaking change 风险不传导给客户 |
 | **治理是事件域横切面** | plugin 挂 tools/result、turn-stopping、approval seam 等全局事件域，装一次全域生效 | 不做「逐节点插桩」——治理不是节点附件，是横切所有节点的约束层 |
+
+> 📖 **双图谱术语定义（2026-08-17 定）**：FDE 的最终输出统一表述为——**梳理 workflow、定义 ontology，交付 Workflow Graph + Ontology Graph 双图谱**。「Graph」是可视化/可理解形态的统称：**Workflow Graph** = FDE 梳理好 workflow 后多个 workflow 组成的流程图谱（动态，Agent 按它执行）；**Ontology Graph** = ontology 的图谱化形态（ontology 本身是哲学定义，加 Graph 才让人知道它是可被理解、可视化的东西；静态，Agent 按它检索语义，人按它看组织资产）。不同读者读不同图谱：Agent 执行读 Workflow Graph，Agent 检索与人看资产读 Ontology Graph，FDE 进场两种都读。**与 Graph Engineering 的关系**：双图谱正是企业级 Graph Engineering 的前提——有了 Workflow Graph 和 Ontology Graph，Agent 才能针对它们做 graph engineering（编排、审阅、进化都作用在这两张图上）；sofagent 不自创概念，只负责帮企业把这两张图搭建出来。商业平台层 商业平台（原 模板市场）托管的就是这双图谱。
 
 ## 五、激活链架构（v1.2.5+ Phase 1-4 已交付）
 
