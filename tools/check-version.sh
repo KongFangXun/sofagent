@@ -783,7 +783,8 @@ if [ -n "$CUR_VER" ]; then
   EXPECTED_DOC_DATE=$(grep -m1 "v${CUR_VER}.*—" "${PROJECT_ROOT}/CHANGELOG.md" 2>/dev/null | grep -oE "[0-9]{4}-[0-9]{2}-[0-9]{2}" || echo "")
 fi
 # 兜底：CHANGELOG 还没当前版本段（开发中）时退回最后已知日期
-LAST_KNOWN_DATE="2026-08-12"
+# v1.3.6 开发中：文档头统一沿用上一版发版日期 2026-08-16，发版时随 CHANGELOG 段更新
+LAST_KNOWN_DATE="2026-08-16"
 if [ -z "$EXPECTED_DOC_DATE" ]; then
   echo "  ⚠ CHANGELOG 未找到 v${CUR_VER} 发版日期，退回 LAST_KNOWN_DATE=${LAST_KNOWN_DATE}（开发中版本可能如此）"
   EXPECTED_DOC_DATE="$LAST_KNOWN_DATE"
