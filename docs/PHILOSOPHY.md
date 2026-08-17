@@ -527,7 +527,7 @@ sofagent 的版本演进不是拍脑袋排的——它遵循 Agent 工程的生�
 | think.md 强制 gate | 强制会导致 Agent 用垃圾内容填模板 |
 | 记忆压缩自动化 | 每个 Agent 有自己的记忆 |
 | Connector | sofagent 是约束层 + 审计能力，不是自动化流水线 |
-| **graph → ontology 单向转换** | 转换丢访谈中的隐性知识，本体沦为工作流的副产品——workflow（流转）与 ontology（语义）必须从同一次 FDE 访谈**并行产出**、SHACL 互相校验 |
+| **Workflow Graph → Ontology Graph 单向转换** | 转换丢访谈中的隐性知识，本体沦为工作流的副产品——workflow（流转）与 ontology（语义）必须从同一次 FDE 访谈**并行产出**、SHACL 互相校验 |
 | **把 DSH 当唯一执行层** | 企业命脉不押单一运行时——编排层 LangGraph 永不换，执行层走 ExecutionBackend 接口（DSH 默认 / createReactAgent fallback / 三平台可选），DSH 只是可选后端之一（「堤修在哪条河上都行」） |
 | **治理逐节点插桩** | 治理是事件域横切面，不是节点附件——挂 tools/result、turn-stopping、approval seam 一次即全域生效，逐节点插桩是把约束层降格为工具配件 |
 
