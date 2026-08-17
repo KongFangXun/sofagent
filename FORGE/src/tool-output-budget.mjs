@@ -37,7 +37,11 @@ export const STEP_BUDGETS = {
   'a-verify':      50,
   // release-gate V 步骤
   'acceptance':    200,
-  'regression':    200,
+  // v1.3.6（2026-08-18/run-01 假盲区修复）：regression-precheck.json 是 87 维
+  // 全量结果（~530 行 JSON），200 行预算只够读到第 32 维——后面 55 维 worker
+  // 看不见，被误报成「63% 盲区数据截断」（verdict 假 FAIL 主因）。提到 800
+  // 覆盖全量维度 + 输出文本余量。
+  'regression':    800,
   'coverage':      200,
   'consolidate':   500,
   'verdict':       100,

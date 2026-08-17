@@ -25,7 +25,7 @@
 //   - V 用 REVIEWER_TOOLS（只读），F 用 ENGINEER_TOOLS（可写）
 // ============================================================
 
-import { spawn } from 'child_process';
+import { spawn, execSync } from 'child_process';
 import { createRequire } from 'module';
 import {
   readFileSync, writeFileSync, mkdirSync, existsSync,
@@ -256,6 +256,9 @@ const DIM_TIMEOUT_OVERRIDE = {
   // 60s 上限必超时误报 ERR——放宽到 150s。根因是维度脚本跑全量测试太重，
   // v1.3.7 可改为只跑 --quiet 快速路径（SSOT 校验 <1s），届时回收此 override。
   106: 150_000,
+  // v1.3.6（2026-08-18/run-01）：110 含全量 check-version.sh（70 项跨包扫描
+  // ~60-90s）+ check-test-count，60s 必超时误报 ERR——放宽到 150s（与 106 同类）。
+  110: 150_000,
 };
 
 // ═══════════════════════════════════════════════════════════
@@ -2559,6 +2562,22 @@ async function main() {
     // 「runAuditGate 真实返回 passed + 产物存在性」双重信号：
     //   - lastAuditGateResult.passed === true 且 audit-result.md 无 FAIL 标记 → 收敛
     //   - f-audit 从未执行（异常跳过）→ 不收敛，进下一轮
+    //
+    // 🔴 v1.3.6 第三重校验（run-08 + 2026-08-18/run-01 两轮假 PASS 根治）：
+    //   f-audit 审的是 worktree 分支 HEAD~1..HEAD 的 diff——f-fix 若零 commit，
+    //   diff 为空，audit 对空 diff 必然全绿 → 「修复收敛」是假的。判定收敛前必须
+    //   校验 F 分支自基线起有真实新 commit：零 commit = f-fix 没干活 = 修复失败，
+    //   禁止判收敛（继续下一轮 F 或耗尽轮数报 FAIL）。
+    const fBranchCommitCount = (() => {
+      try {
+        if (!globalWorktree || !globalWorktree.branch || !globalWorktree.baseSha) return -1; // 无 worktree 信息，无法校验（老路径兼容：不做拦截）
+        const out = execSync(
+          `git rev-list --count ${globalWorktree.baseSha}..${globalWorktree.branch}`,
+          { cwd: REPO_ROOT, encoding: 'utf-8', timeout: 15_000 },
+        ).toString().trim();
+        return parseInt(out, 10);
+      } catch { return -1; } // git 失败不阻塞（保守放行到下重信号）
+    })();
     const auditResultPath = join(runDir, 'audit-result.md');
     let auditPassed = false; // 保守默认（run-01 教训：乐观默认 = 假 PASS 温床）
     if (lastAuditGateResult) {
@@ -2569,6 +2588,10 @@ async function main() {
       if (auditText.includes('COMMIT FAILED') || auditText.includes('EXECUTION FAILED') || auditText.includes('❌ VIOLATIONS')) {
         auditPassed = false;
       }
+    }
+    if (auditPassed && fBranchCommitCount === 0) {
+      auditPassed = false;
+      console.warn(`  🔴 [F/${round}] 零 commit 校验拦截：F 分支自基线无任何新 commit——f-fix 未产生代码改动，audit 全绿是对空 diff 的假绿。不判收敛（run-08 + 2026-08-18/run-01 两轮假 PASS 根因）`);
     }
     if (!lastAuditGateResult) {
       console.warn(`  ⚠️  [F/${round}] f-audit 无执行结果（异常跳过），不判收敛——继续下一轮`);

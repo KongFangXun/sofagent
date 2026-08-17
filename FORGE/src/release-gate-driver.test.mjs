@@ -612,3 +612,25 @@ describe('execRegressionDim · exit 语义归一化（run-08/09 教训）', () =
     expect(injected.startsWith('export PROJECT_ROOT=')).toBe(true);
   });
 });
+
+// ─── v1.3.6（run-08 + 2026-08-18/run-01 两轮假 PASS）：F 链零 commit 校验 ───
+// f-fix 零 commit 时 f-audit 对空 diff 必全绿 → 「修复收敛 FAIL→PASS」假绿。
+// 修复 = 收敛判定加第三重校验：F 分支自基线零 commit = 修复失败，禁止判收敛。
+describe('F 链零 commit 校验（两轮假 PASS 根治）', () => {
+  it('收敛判定源码含 git rev-list --count 零 commit 校验 + 拦截日志', () => {
+    expect(SOURCE_CODE).toContain('git rev-list --count');
+    expect(SOURCE_CODE).toContain('零 commit 校验拦截');
+    expect(SOURCE_CODE).toContain('fBranchCommitCount === 0');
+    // 校验必须在 auditPassed 判定之后、收敛 break 之前
+    const guardIdx = SOURCE_CODE.indexOf('if (auditPassed && fBranchCommitCount === 0)');
+    const convergeIdx = SOURCE_CODE.indexOf("audit gate 通过（无违规），F 修复链收敛");
+    expect(guardIdx).toBeGreaterThan(-1);
+    expect(convergeIdx).toBeGreaterThan(guardIdx);
+  });
+
+  it('DIM_TIMEOUT_OVERRIDE 覆盖 #49/#106/#110（超时误报 ERR 防复发）', () => {
+    expect(SOURCE_CODE).toContain('49: 120_000');
+    expect(SOURCE_CODE).toContain('106: 150_000');
+    expect(SOURCE_CODE).toContain('110: 150_000');
+  });
+});

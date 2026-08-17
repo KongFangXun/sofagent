@@ -575,3 +575,37 @@ node FORGE/src/fresh-eyes-driver.mjs --target v1.2.9 2>&1
 - push 频率即安全边际：本地未推 commit 数 = 风险敞口，重要落盘当天推
 
 **补充教训（2026-08-16 同日，driver 裸 commit 卷走队友暂存）**：`git add -A` 是明面的核弹，**裸 `git commit -m`（不带文件清单）是暗面的核弹**——它会提交暂存区里**所有已 staged 内容**，把队友并行编辑时先 `git add` 进暂存区的文件（如 docs/ 规划文档）一起卷进 auto-commit。修复：`git commit -m "..." -- <filesToAdd 清单>`，只提交本轮改动文件，队友 staged 的文件保持原状；且 filesToAdd 为空时**完全跳过 commit**（不执行任何裸 commit）。已在 `driver-base.mjs runAuditGate` 修复（fresh-eyes + release-gate 两 driver 共用，一处生效两处）。
+
+## 2026-08-17/18 release-gate 三连：并发 OOM + 两轮同款假 PASS + 假盲区（run-05/08 + 08-18/run-01）
+
+**三起事故、一条主线**：发版闸门自身在这两天暴露了三个层级的缺陷——执行层（并发失控 OOM）、判定层（假 PASS 两轮同款）、感知层（worker 视野截断制造假盲区）。核心教训：**闸门工具的每个判定信号，都必须能用 git/文件系统硬证据独立复验；不能复验的信号一律按最坏情况处理。**
+
+### ① acceptance 分片并发无视 FORGE_MAX_CONCURRENCY（run-05 OOM SIGKILL）
+
+**场景**：8GB 机器 `FORGE_MAX_CONCURRENCY=1` 启动 release-gate，acceptance 阶段日志却打「并发批次 1/2 启动 6 个 shard worker」——分片批次走独立变量 `FORGE_ACCEPTANCE_CONCURRENCY`（默认 6），完全没吃全局并发上限。6 worker × 2GB heap 压垮物理内存，整树被 jetsam SIGKILL（无 fatal 事件、无 latest.json）。
+
+**根因**：并发控制做了两套——worker 池吃 `FORGE_MAX_CONCURRENCY`，acceptance 分片批次吃 `FORGE_ACCEPTANCE_CONCURRENCY`，后者没 clamp 到前者。**教训：全局资源上限必须对所有并发路径一致生效，任何「独立配置」都是绕过全局上限的后门。**
+
+**修复**：实际并发 = `min(FORGE_ACCEPTANCE_CONCURRENCY, FORGE_MAX_CONCURRENCY)` + worker spawn 补 `--max-old-space-size=1024`（此前裸 spawn，默认 heap 可膨胀至 ~4GB）。
+
+### ② F 链零 commit 假 PASS（run-08 + 08-18/run-01 两轮同款）
+
+**场景**：verdict.md 主体 FAIL → F 链启动 → f-diagnose/f-fix 双双撞 50 次工具硬熔断走裸 LLM 降级 → **f-fix 一行代码没改（F 分支自基线零 commit）** → f-audit 对**空 diff** 审计必然全绿 → driver 判「修复收敛 FAIL→PASS」+ LEDGER 写 PASS。第二轮更荒诞：f-fix 报告自己写着「修复验证❌未通过，三项 P0 无修复落地」，driver 仍然只看 audit 全绿就翻转裁决。
+
+**根因**：收敛判定的信号源是「audit 通过」，但 f-audit 审的是 `HEAD~1..HEAD` 的 diff——零 commit 时 diff 为空，audit 对空集必真。**这是 v1.3.1 run-10 教训（audit≠verdict）的变体：audit 全绿的必要条件都没验证（有无东西可审），直接当充分条件用。**
+
+**修复**（收敛判定第三重校验）：`git rev-list --count <baseSha>..<F分支>` = 0 → 拦截收敛，日志明示「audit 全绿是对空 diff 的假绿」。**监控端铁律同步**：driver 自报 PASS 一律复验三件套——verdict.md 主体判定行 + F 分支 commit 数 + f-fix 报告自述结论；三方不一致按 FAIL 处理。
+
+### ③ worker 视野截断制造「63% 盲区」假 FAIL（08-18/run-01 verdict 误判）
+
+**场景**：regression-precheck.json 完整含 87 维结果（82 exit=0），但 worker 的 `sf_read` 被 `truncateToolOutput` 200 行预算截断——只读到第 32 维，把没看见的 55 维报成「precheck 中段截断、63% 盲区、数据完整性不足」，verdict 据此一票否决。**数据是完整的，瞎的是 worker 的眼睛。**
+
+**根因**：步骤输出预算（200 行）按「摘要够用」设定，但 regression 步骤的输入是 531 行全量 JSON——预算与输入形态不匹配。另有两个伴生问题：超时一刀切 60s（#106/#110 跑全量测试/全量 check-version 必超时误报 ERR）；维度脚本 45/87 的尾命令是「grep 无命中=1」语义（健康态返回非零），exitCode 原样上抛必误判。
+
+**修复**：regression 步骤预算 200→800 + 超时按维度分级（#49=120s / #106/#110=150s，跑全量测试的维度单独放宽）+ 执行层 exit 语义归一化（非零退出 + 输出零失败标记 → 重写为 0 并注明）。
+
+### 横向教训（三起事故共性）
+
+1. **「全绿」和「无数据」在弱判定逻辑下不可区分**——audit 对空 diff 全绿、worker 对截断输入报盲区、归一化前对语义退出码报 FAIL：全部是把「没证据」当「证据」。每个判定信号先问「这个信号的产生路径在当前条件下还能产生反例吗」，不能 = 信号失效。
+2. **监控端不能只看自报**——两次假 PASS 都是我人工读 verdict 主体 + 数 F 分支 commit 抓出来的。driver 的自报裁决（status.json / LEDGER / 尾部追加段）与权威产物（verdict.md 主体）分层：前者是流程尾巴，后者才是裁决。SOP 已固化「verdict 以 verdict.md 主体 IS_PASS 行为准」。
+3. **修复必须带防复发锁**——本次四件修复全部配了源码级断言测试（clamp 表达式存在性 + 零 commit 校验存在性 + DIM_TIMEOUT_OVERRIDE 覆盖表），撞过的坑要变成 grep 得到的守卫。
