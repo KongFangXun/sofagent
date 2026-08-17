@@ -89,6 +89,32 @@ const base = createForgeDriverBase({
   modelPricing: MODEL_PRICING,
 });
 
+// ─── v1.3.6 交付⑩：FORGE 隔离加固（run-07 事故根因修复，镜像 fresh-eyes）───
+// driver 启动时在 runDir 内建 worktree 副本，worker 的文件写入/git 操作全落副本分支；
+// run 结束（正常/异常/中止）teardown 清理，主仓 git status 全程干净。
+// worker 子进程通过 FORGE_WORKTREE_ROOT 环境变量继承隔离副本路径（spawn 时注入）。
+// 🔴 镜像漂移铁律：fresh-eyes 修过的隔离逻辑，release-gate 必须有对应实现。
+let globalWorktree = process.env.FORGE_WORKTREE_ROOT
+  ? { worktreeDir: process.env.FORGE_WORKTREE_ROOT }
+  : null;
+// driver 模式下 runDir 创建后赋值；worker 子进程不赋值（teardown 守卫——
+// worktree 生命周期归 driver 进程所有，worker 退出不得清理）。
+let globalRunDir = null;
+
+// 安全 teardown——所有退出路径（正常/catch/uncaughtException）共用。
+// 绝不抛错：teardown 自身失败只打日志，不掩盖原始退出原因。
+function safeTeardownWorktree() {
+  if (!globalWorktree || !globalRunDir) return;
+  try {
+    const r = base.teardownWorktree(globalRunDir);
+    if (r.removed) console.log(`   worktree 清理 = 已移除（分支 ${r.branch ?? ''} 保留待人工 cherry-pick 回流）`);
+  } catch (err) {
+    console.warn(`   worktree 清理失败（不阻塞退出）: ${err.message}`);
+  } finally {
+    globalWorktree = null;
+  }
+}
+
 // ─── 步骤定义（prompt / output / inputs / maxTokens）─────────────────────
 // v1.2.8 功能⑤：从单角色 V 升级为 V + F 双角色 + audit gate
 // V 步骤补加 role: 'V' 显式化（v1.2.7 无此字段）
@@ -419,8 +445,35 @@ function loadTools(role, progressMw = null) {
     const wrappedTool = tool(
       async (input) => {
         // v1.2.5：工具输出截断——超过 200 行的输出只保留头尾，防止上下文膨胀
+        // v1.3.6 交付⑩：worktree 隔离（镜像 fresh-eyes）——globalWorktree 存在时
+        // run_bash cwd 切到副本，f-fix 的 git 写入（含模拟 commit）全部落隔离分支，
+        // 主仓工作区与主分支历史零污染（run-07 事故根因修复）。
         const execFn = async () => {
-          const raw = await rawTool.func(input);
+          let raw;
+          if (rawTool.name === 'run_bash') {
+            const cmd = String((input && input.command) ?? '');
+            // 剥离开头 `cd <路径>` 或 `cd <路径> && ...` 前缀（模型常拼错用户名路径）
+            const stripped = cmd.replace(/^cd\s+("([^"]*)"|'([^']*)'|\S+)(\s*(?:&&|\|\||;|\|)\s*)?/, '');
+            const { execSync } = await import('child_process');
+            try {
+              const stdout = execSync(stripped, {
+                encoding: 'utf-8',
+                maxBuffer: 16 * 1024 * 1024,
+                timeout: 60_000,
+                cwd: (globalWorktree && globalWorktree.worktreeDir) || REPO_ROOT,
+              });
+              raw = stdout || '(命令执行完成，无 stdout 输出)';
+            } catch (err) {
+              const e = err || {};
+              const stderr = e.stderr ? (typeof e.stderr === 'string' ? e.stderr : e.stderr.toString()) : '';
+              raw = `命令执行失败（exit ${e.status ?? '?'}）：${e.message ?? ''}\n${stderr}`;
+            }
+            if (cmd !== stripped) {
+              raw = `[已自动剥离 cd 前缀，在项目根目录执行]\n${raw}`;
+            }
+          } else {
+            raw = await rawTool.func(input);
+          }
           return truncateToolOutput(raw);
         };
         if (progressMw) {
@@ -595,6 +648,21 @@ async function runWorker(step, runDir, target) {
   const role = stepDef.role;
   const cfg  = MODEL_CONFIGS[role];
 
+  // worker-alive 戳（v1.3.6 交付⑩：镜像 fresh-eyes-driver——修 A 忘 B 是必然的）：
+  // 每 30s 写时间戳到 runDir，事后可区分「driver 死（戳还在跳）」vs「整树死（戳同停）」。
+  // SIGKILL 下 driver/worker 都来不及写终态，这是唯一的尸检证据。
+  // 戳文件本身保留供取证（worker 进程退出时定时器随进程回收，无需显式清理）。
+  const workerAlivePath = join(runDir, 'worker-alive.json');
+  const writeAliveStamp = () => {
+    try {
+      writeFileSync(workerAlivePath, JSON.stringify({
+        step, pid: process.pid, ts: new Date().toISOString(),
+      }) + '\n');
+    } catch { /* 戳写失败不中断 worker 主流程 */ }
+  };
+  setInterval(writeAliveStamp, 30_000);
+  writeAliveStamp(); // 首跑立即写一次（否则最早 30s 内无戳）
+
   // 1. 构建 systemPrompt
   const systemPrompt = buildSystemPrompt(cfg.agentSkillPath);
 
@@ -611,12 +679,17 @@ async function runWorker(step, runDir, target) {
   // 修复：先试顶层，不存在则扫 v1.x 等子目录匹配。
   const changelogPath = resolveChangelogPath(target);
 
+  // v1.3.6 交付⑩：项目根目录指向 worktree 隔离副本（worker 通过
+  // FORGE_WORKTREE_ROOT env 继承；env 缺失时回退主仓——降级不阻塞）。
+  // f-fix 的代码修改全部落副本分支，主仓工作区与主分支历史零污染。
+  const workerProjectRoot = (globalWorktree && globalWorktree.worktreeDir) || REPO_ROOT;
+
   const userMessage = [
     promptTemplate.trim(),
     '',
     '--- driver 注入 ---',
     `本次验证对象 = sofagent ${target} 完整交付物`,
-    `项目根目录 = ${REPO_ROOT}`,
+    `项目根目录 = ${workerProjectRoot}`,
     // v1.3.0 修复：acceptance shard 动态注入实际场景范围（覆盖模板写死的旧范围文字）
     stepDef.shard ? `你负责的实际场景范围 = S${stepDef.shard.start} 到 S${stepDef.shard.end}（以本注入为准，忽略 prompt 模板中写死的范围数字）` : '',
     inputPaths ? `输入文件（已由 driver 中转）：\n${inputPaths}` : '',
@@ -1167,6 +1240,12 @@ function discoverLatestRunDir() {
  */
 function spawnWorker(step, runDir, target) {
   return new Promise((resolveP, rejectP) => {
+    // v1.3.6 交付⑩：worktree 隔离透传——worker 读 FORGE_WORKTREE_ROOT 后把
+    // run_bash cwd / 项目根目录全部切到副本（f-fix 改代码零污染主仓）。
+    const env = { ...process.env };
+    if (globalWorktree && globalWorktree.worktreeDir) {
+      env.FORGE_WORKTREE_ROOT = globalWorktree.worktreeDir;
+    }
     const child = spawn(process.execPath, [
       __filename,
       '--worker',
@@ -1176,7 +1255,7 @@ function spawnWorker(step, runDir, target) {
     ], {
       cwd: REPO_ROOT,
       stdio: ['pipe', 'inherit', 'inherit'],
-      env: { ...process.env },
+      env,
     });
 
     child.on('close', (code) => {
@@ -1931,6 +2010,10 @@ async function main() {
     }
     try {
       await runWorker(args.step, args.runDir, args.target);
+      // v1.3.6 交付⑩：worker 写完产物后强制退出（镜像 fresh-eyes run-23 修复）。
+      // workerAliveTimer 是残留句柄——不清理会阻止事件循环排空 → worker 进程永不退出
+      // → driver 的 spawn await 永久挂起。process.exit 无视残留句柄，强制回收。
+      process.exit(0);
     } catch (err) {
       console.error(`[worker:${args.step}] 失败: ${err.message}`);
       if (err.errors) {
@@ -2096,7 +2179,11 @@ async function main() {
       const stepDef = STEPS[args.step];
       if (stepDef.role === null) {
         console.log(`[driver] ${args.step} = driver 步骤（role:null），直接执行 ${stepDef.driverFn}`);
-        const result = await base.runAuditGate(stepRunDir, args.step, 1);
+        // v1.3.6 交付⑩：FORGE_WORKTREE_ROOT 继承时 git 操作在副本上（隔离）；
+        // 未设 env 时 gitRoot=undefined → 回退主仓（单步调试向后兼容）。
+        const result = await base.runAuditGate(stepRunDir, args.step, 1, {
+          gitRoot: (globalWorktree && globalWorktree.worktreeDir) || undefined,
+        });
         console.log(`[driver] audit gate: passed=${result.passed} exitCode=${result.exitCode}`);
       } else {
         await runWorker(args.step, stepRunDir, args.target);
@@ -2113,6 +2200,22 @@ async function main() {
   const { runDir, runId, dateStr } = resumeRunDir
     ? resolveRunDirInfo(resumeRunDir)
     : resolveRunDir();
+  globalRunDir = runDir; // v1.3.6 交付⑩：teardown 守卫（崩溃处理器需要 runDir）
+
+  // ─── v1.3.6 交付⑩：worktree 隔离（run-07 事故根因修复，镜像 fresh-eyes）───
+  // f-fix worker 的代码修改全部落副本分支，主仓工作区与主分支历史零污染。
+  // 失败降级（不隔离直跑），绝不因隔离基建故障阻塞发版闸门主流程。
+  // 磁盘预算：副本不含 node_modules（~50MB/run），测试类验证回主仓跑。
+  // dry-run 跳过（不真跑 worker，无需隔离）。
+  if (!args.dryRun) {
+    try {
+      globalWorktree = base.setupWorktree(runDir, { runId });
+      console.log(`   隔离模式   = worktree ${globalWorktree.reused ? '复用' : '新建'}（分支 ${globalWorktree.branch}，基线 ${globalWorktree.baseSha.slice(0, 8)}）`);
+    } catch (wtErr) {
+      console.warn(`   ⚠️ worktree 隔离创建失败（降级为共享主仓模式）: ${wtErr.message}`);
+      globalWorktree = null;
+    }
+  }
 
   // ─── v1.2.8 功能⑦：断点写入闭包 ───
   // 铁律：dry-run 永远不写断点；断点只存状态摘要不存大体积数据；
@@ -2360,7 +2463,11 @@ async function main() {
         if (stepDef.role === null) {
           // driver 步骤：直接执行 runAuditGate（不 spawn worker）
           console.log(`     → driver 步骤（role:null），执行 ${stepDef.driverFn}`);
-          const auditResult = await base.runAuditGate(runDir, fStep, round);
+          // v1.3.6 交付⑩：worktree 隔离时 f-fix 的 commit 落副本分支，
+          // auto-commit / diff 在副本上跑（审计二进制仍从主仓加载）。
+          const auditResult = await base.runAuditGate(runDir, fStep, round, {
+            gitRoot: (globalWorktree && globalWorktree.worktreeDir) || undefined,
+          });
           console.log(`     audit gate: passed=${auditResult.passed} exitCode=${auditResult.exitCode}`);
           // run-01 假 PASS 修复：把 f-audit 的真实 passed 传出循环外供收敛判定用。
           // 原 bug：返回值只打日志被扔掉，外层用「audit-result.md 不含 VIOLATIONS」
@@ -2483,8 +2590,27 @@ async function main() {
     stepErrors: stepErrors.map(e => e.step),
   });
 
+  // v1.3.6 交付⑩：正常结束清理 worktree（LEDGER 已在上方留行）
+  safeTeardownWorktree();
+
   console.log(`\n${verdict === 'PASS' ? '✅' : '❌'} release-gate-loop 完成 — 裁决: ${verdict}\n`);
 }
+
+// ─── v1.3.6 交付⑩：全局异常兜底（镜像 fresh-eyes）───
+// 进程被 OS 直接杀死（OOM SIGKILL）时 main().catch() 不执行。
+// uncaughtException / unhandledRejection handler 确保崩溃路径也清理 worktree。
+process.on('uncaughtException', (err) => {
+  console.error(`\n💥 uncaughtException: ${err.message}`);
+  console.error(err.stack);
+  safeTeardownWorktree(); // 崩溃路径也清理 worktree
+  process.exit(1);
+});
+process.on('unhandledRejection', (reason) => {
+  console.error(`\n💥 unhandledRejection: ${reason instanceof Error ? reason.message : String(reason)}`);
+  if (reason instanceof Error) console.error(reason.stack);
+  safeTeardownWorktree(); // 崩溃路径也清理 worktree
+  process.exit(1);
+});
 
 main().catch(err => {
   console.error(`\n💥 致命错误: ${err.message}`);
@@ -2499,5 +2625,7 @@ main().catch(err => {
       stopReason: 'fatal-error',
     });
   }
+  // v1.3.6 交付⑩：fatal-error 路径也清理 worktree（异常退出同样清理——铁律）
+  safeTeardownWorktree();
   process.exit(1);
 });

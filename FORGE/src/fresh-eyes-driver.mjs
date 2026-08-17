@@ -55,6 +55,27 @@ let preservedFinalCounts   = { p0: 0, p1: 0, p2: 0 };
 let preservedRunDir       = null;
 let preservedStopReason   = null;
 let preservedTotalRounds  = 0;
+// v1.3.6 交付⑩：FORGE 隔离加固——worktree 隔离状态（run-07 事故根因修复）。
+// driver 启动时在 runDir 内建 worktree 副本，worker 的 git 写入全落副本分支；
+// run 结束（正常/异常/中止）teardown 清理，主仓 git status 全程干净。
+// worker 子进程通过 FORGE_WORKTREE_ROOT 环境变量继承隔离副本路径（spawn 时注入）。
+let globalWorktree = process.env.FORGE_WORKTREE_ROOT
+  ? { worktreeDir: process.env.FORGE_WORKTREE_ROOT }
+  : null;
+
+// 安全 teardown——所有退出路径（正常/catch/uncaughtException）共用。
+// 绝不抛错：teardown 自身失败只打日志，不掩盖原始退出原因。
+function safeTeardownWorktree() {
+  if (!globalWorktree || !preservedRunDir) return;
+  try {
+    const r = base.teardownWorktree(preservedRunDir);
+    if (r.removed) console.log(`   worktree 清理 = 已移除（分支 ${r.branch ?? ''} 保留待人工回流）`);
+  } catch (err) {
+    console.warn(`   worktree 清理失败（不阻塞退出）: ${err.message}`);
+  } finally {
+    globalWorktree = null;
+  }
+}
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname  = dirname(__filename);
@@ -488,6 +509,8 @@ function loadTools(role, progressMw = null, auditMw = null) {
         // v1.3.1 P0-1 修复：run_bash 强制在 REPO_ROOT 执行——worker 模型经常
         // 自己写 `cd /Users/<拼错用户名>/...` 导致 cwd 错误、bash 大面积失效。
         // 修复：① 剥离命令开头错误的 cd 前缀 ② 用 execSync 注入 cwd=REPO_ROOT。
+        // v1.3.6 交付⑩：worktree 隔离——globalWorktree 存在时 cwd 切到副本，
+        // worker 的 git 写入（含红队模拟恶意 commit）全部落在隔离分支上，主仓零污染。
         const execFn = async () => {
           let raw;
           if (rawTool.name === 'run_bash') {
@@ -501,7 +524,7 @@ function loadTools(role, progressMw = null, auditMw = null) {
                 encoding: 'utf-8',
                 maxBuffer: 16 * 1024 * 1024,
                 timeout: 60_000,
-                cwd: REPO_ROOT,
+                cwd: (globalWorktree && globalWorktree.worktreeDir) || REPO_ROOT,
               });
               raw = stdout || '(命令执行完成，无 stdout 输出)';
             } catch (err) {
@@ -734,7 +757,9 @@ async function runWorker(step, roundDir, target) {
     '',
     '--- driver 注入 ---',
     `本次审查对象 = sofagent ${target} 完整交付物`,
-    `项目根目录 = ${REPO_ROOT}`,
+    // v1.3.6 交付⑩：worktree 隔离——worker 看到的项目根是隔离副本，
+    // 所有读/grep/git 操作都落在副本上，主仓不受影响。产物仍写 roundDir（runDir 内，副本外）。
+    `项目根目录 = ${(globalWorktree && globalWorktree.worktreeDir) || REPO_ROOT}`,
     inputPaths ? `输入文件（已由 driver 中转）：\n${inputPaths}` : '',
     multiOutputHint
       ? `产物输出（本步骤产出多个文件，必须用 ===FILE: <文件名>=== 分隔各产物，driver 会按此切片写入）：\n${outputPaths}\n\n格式约定：\n${multiOutputHint}`
@@ -1870,6 +1895,12 @@ function spawnWorker(step, roundDir, target, round, options = {}) {
     return new Promise((resolveP, rejectP) => {
       const env = { ...process.env, FORGE_ROUND: String(round) };
 
+      // v1.3.6 交付⑩：worktree 隔离透传——worker 读 FORGE_WORKTREE_ROOT 后把
+      // run_bash cwd / 项目根目录全部切到副本（红队模拟 commit 零污染主仓）。
+      if (globalWorktree && globalWorktree.worktreeDir) {
+        env.FORGE_WORKTREE_ROOT = globalWorktree.worktreeDir;
+      }
+
       // v1.3.0 (交付 10 MA4)：worker 启动前检索历史经验（仅 FORGE_MEMORY_BACKEND 启用时）。
       // 检索结果注入 FORGE_MEMORY_CONTEXT 环境变量，worker 读取后拼入 system prompt。
       // 缺省 unset / 不可达 → 不注入（与 v1.2.9 完全一致）。
@@ -2924,7 +2955,11 @@ async function runRound(roundNum, runDir, target, dryRun, opts = {}) {
   // parseStopCondition 独立判定，audit 违规记入 audit-result.md 供后续 review。
   console.log('\n  [步骤 ④½] b-audit — dogfooding 审计 b-fix 改动...');
   try {
-    const auditResult = await base.runAuditGate(roundDir, 'b-fix', roundNum);
+    // v1.3.6 交付⑩：worktree 隔离时 git 操作在副本上（b-fix 的 commit 落副本分支），
+    // 审计二进制仍从主仓绝对路径加载（副本无 node_modules）。
+    const auditResult = await base.runAuditGate(roundDir, 'b-fix', roundNum, {
+      gitRoot: (globalWorktree && globalWorktree.worktreeDir) || undefined,
+    });
     if (auditResult.passed) {
       console.log(`     ✅ audit gate 通过（exitCode=${auditResult.exitCode}）`);
     } else {
@@ -3115,6 +3150,7 @@ async function main() {
     if (preservedRunDir) {
       try { updateLatestPointer(preservedRunDir, { round: preservedActualRounds, totalRounds: preservedTotalRounds, stopReason: 'fatal-crash', counts: preservedFinalCounts }); } catch {}
     }
+    safeTeardownWorktree(); // v1.3.6 交付⑩：崩溃路径也清理 worktree
     process.exit(1);
   });
   process.on('unhandledRejection', (reason) => {
@@ -3123,6 +3159,7 @@ async function main() {
     if (preservedRunDir) {
       try { updateLatestPointer(preservedRunDir, { round: preservedActualRounds, totalRounds: preservedTotalRounds, stopReason: 'fatal-crash', counts: preservedFinalCounts }); } catch {}
     }
+    safeTeardownWorktree(); // v1.3.6 交付⑩：崩溃路径也清理 worktree
     process.exit(1);
   });
 
@@ -3173,6 +3210,21 @@ async function main() {
   const { runDir, runId, dateStr } = resumeRunDir
     ? resolveRunDirInfo(resumeRunDir)
     : resolveRunDir();
+
+  // ─── v1.3.6 交付⑩：worktree 隔离（run-07 事故根因修复）───
+  // 审查 worker 与主仓共享工作目录导致两次进程死亡 + 红队残留污染主仓。
+  // driver 在 runDir 内建 worktree 副本，worker 的 git 写入全落副本分支；
+  // 主仓 git status 全程干净，主仓历史零污染。失败降级（不隔离直跑），
+  // 绝不因隔离基建故障阻塞审查主流程。dry-run 跳过（不真跑 worker）。
+  if (!args.dryRun) {
+    try {
+      globalWorktree = base.setupWorktree(runDir, { runId });
+      console.log(`   隔离模式   = worktree ${globalWorktree.reused ? '复用' : '新建'}（分支 ${globalWorktree.branch}，基线 ${globalWorktree.baseSha.slice(0, 8)}）`);
+    } catch (wtErr) {
+      console.warn(`   ⚠️ worktree 隔离创建失败（降级为共享主仓模式）: ${wtErr.message}`);
+      globalWorktree = null;
+    }
+  }
 
   // ─── 可见性：启动时探测可用适配器并初始化 ───
   const reporters = await detectReporters();
@@ -3424,6 +3476,9 @@ async function main() {
     counts: finalCounts,
   });
 
+  // v1.3.6 交付⑩：正常结束清理 worktree（run 结束 worktree 清理 + LEDGER 留行）
+  safeTeardownWorktree();
+
   console.log('\n✅ fresh-eyes-loop 完成\n');
 }
 
@@ -3458,6 +3513,9 @@ main().catch(err => {
       counts: preservedFinalCounts,
     });
   }
+
+  // v1.3.6 交付⑩：fatal-error 路径也清理 worktree（异常退出同样清理——铁律）
+  safeTeardownWorktree();
 
   process.exit(1);
 });

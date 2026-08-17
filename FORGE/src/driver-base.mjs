@@ -29,12 +29,12 @@
 // stopCondition），公共逻辑全部在 base 中实现。
 // ============================================================
 
-import { spawn } from 'child_process';
+import { spawn, execSync } from 'child_process';
 import { createRequire } from 'module';
 import {
   readFileSync, writeFileSync, mkdirSync, existsSync,
   appendFileSync, readdirSync, renameSync,
-  statSync as statSyncReal, fstatSync as fstatSyncReal, unlinkSync,
+  statSync as statSyncReal, fstatSync as fstatSyncReal, unlinkSync, rmSync,
 } from 'fs';
 // preflight 磁盘检查：fs.statfs（Node 18.15+ 的异步版本）——低版本 Node 该导出
 // 为 undefined，runPreflight 内部检测到 undefined 自动跳过磁盘检查（降级不阻塞）。
@@ -552,10 +552,16 @@ export function createForgeDriverBase(config = {}) {
    * @param {string} runDir - 当前 run 目录
    * @param {string} stepName - 当前步骤名（如 'b-fix', 'f-fix'）
    * @param {number} round - 当前轮次
+   * @param {Object} [opts] - 可选参数
+   * @param {string} [opts.gitRoot] - git 操作根目录（v1.3.6 交付⑩：worktree 隔离时传副本目录；
+   *   缺省 repoRoot = 主仓）。auto-commit / diff 在 gitRoot 上跑，审计二进制仍从主仓加载
+   *   （副本不含 node_modules）。
    * @returns {Promise<{passed: boolean, exitCode: number, output: string}>}
    */
-  async function runAuditGate(runDir, stepName = 'unknown', round = 1) {
+  async function runAuditGate(runDir, stepName = 'unknown', round = 1, opts = {}) {
     const auditResultPath = join(runDir, 'audit-result.md');
+    // git 操作根：worktree 副本（隔离）或主仓（缺省）
+    const gitRoot = opts.gitRoot || repoRoot;
 
     // 1. auto-commit B/F 的改动
     // 🔴 v1.3.1 P0-2 修复：禁止 `git add -A`——会把队友并行编辑的未提交
@@ -570,21 +576,21 @@ export function createForgeDriverBase(config = {}) {
       // 只检测代码领域的改动文件（排除规划文档 + AI 工作记忆 + FORGE 产物目录）
       const changedFiles = execSync(
         'git diff --name-only HEAD -- engine/ FORGE/src/ FORGE/LEDGER.md FORGE/lessons/ tools/ SKILL/ install.sh bootstrap.sh 2>/dev/null',
-        { cwd: repoRoot, encoding: 'utf-8', timeout: 30_000 },
+        { cwd: gitRoot, encoding: 'utf-8', timeout: 30_000 },
       ).toString().split('\n').map((s) => s.trim()).filter(Boolean);
       // 未跟踪新文件：只纳入代码领域 + FORGE 产物
       const untrackedFiles = execSync(
         'git ls-files --others --exclude-standard -- engine/ FORGE/src/ FORGE/LEDGER.md FORGE/lessons/ tools/ SKILL/',
-        { cwd: repoRoot, encoding: 'utf-8', timeout: 30_000 },
+        { cwd: gitRoot, encoding: 'utf-8', timeout: 30_000 },
       ).toString().split('\n').map((s) => s.trim()).filter(Boolean);
       const filesToAdd = [...changedFiles, ...untrackedFiles];
       if (filesToAdd.length > 0) {
-        execSync(`git add ${filesToAdd.map(quotePath).join(' ')}`, { cwd: repoRoot, encoding: 'utf-8', timeout: 30_000 });
+        execSync(`git add ${filesToAdd.map(quotePath).join(' ')}`, { cwd: gitRoot, encoding: 'utf-8', timeout: 30_000 });
         // 🔴 v1.3.5 修复：裸 `git commit -m` 会提交暂存区里所有已 staged 内容——
         // 会把队友并行编辑时先 `git add` 进暂存区的文件（如 docs/ 规划文档）一起卷进
         // auto-commit（2026-08-16 三次「卷走」事故根因）。改为 `git commit -- <files>`
         // 只提交本轮 filesToAdd 清单内的文件，暂存区里队友的文件保持 staged 原状。
-        execSync(`git commit -m "${commitMsg}" -- ${filesToAdd.map(quotePath).join(' ')}`, { cwd: repoRoot, encoding: 'utf-8', timeout: 30_000 });
+        execSync(`git commit -m "${commitMsg}" -- ${filesToAdd.map(quotePath).join(' ')}`, { cwd: gitRoot, encoding: 'utf-8', timeout: 30_000 });
       }
       // 无代码领域改动时：不执行任何 commit——裸 commit 在 filesToAdd 为空时仍会
       // 提交暂存区里队友已 staged 的文件，必须显式跳过。
@@ -600,6 +606,8 @@ export function createForgeDriverBase(config = {}) {
     }
 
     // 2. 跑 sofagent-audit
+    // v1.3.6 交付⑩：cwd=gitRoot（worktree 隔离时审副本的 auto-commit；审计二进制
+    // 仍从主仓绝对路径加载——副本不含 node_modules，但 node_modules 不影响 audit 独立运行）
     try {
       const { execSync } = await import('child_process');
       const auditCmd = `node ${join(repoRoot, 'engine', 'audit', 'dist', 'index.js')} --diff HEAD~1..HEAD --silent --task "FORGE audit gate: ${stepName} round-${round}"`;
@@ -607,7 +615,7 @@ export function createForgeDriverBase(config = {}) {
       let exitCode = 0;
       try {
         auditOutput = execSync(auditCmd, {
-          cwd: repoRoot,
+          cwd: gitRoot,
           encoding: 'utf-8',
           timeout: 120_000,
           stdio: ['pipe', 'pipe', 'pipe'],
@@ -735,6 +743,126 @@ export function createForgeDriverBase(config = {}) {
     return parsed;
   }
 
+  // ── 19. setupWorktree / teardownWorktree（v1.3.6 交付⑩：FORGE 隔离加固）──
+  //
+  // 背景（run-07 死因）：审查 worker 与主仓共享工作目录——红队 worker 在主仓做
+  // 模拟恶意 commit（残留 config.js/f.txt），主仓被其他会话重建 git 基线时审查
+  // 进程树被环境冲突带走。修复：driver 启动时在 runDir 内 git worktree add 隔离
+  // 副本，worker 全在副本上跑——git 怎么折腾不碰主仓。
+  //
+  // 生命周期挂 driver-base（fresh-eyes + release-gate 双 driver 共享——v1.2.7
+  // 镜像漂移教训：修 A 忘 B 是必然的）。
+
+  /**
+   * 在 runDir 内创建 git worktree 隔离副本，worker 的 git 写入全部落在该副本的
+   * 专属分支上——主仓工作区与主分支历史全程不受影响（run-07 事故根因修复）。
+   *
+   * 分支模型（支撑 b-fix 回流走 cherry-pick + 人审）：
+   *   worktree 检出在分支 `forge/<driverName>/<runId>` 上（非 detached）。
+   *   b-fix / 红队 worker 的 commit 全部落在这条分支，teardown 移除 worktree 目录
+   *   后分支仍保留在主仓（可达），供人工 cherry-pick / 审阅后合并；主分支不受影响。
+   *
+   * 幂等：worktree-meta.json 记录已建分支 → resume 直接复用，不重建。
+   *
+   * @param {string} runDir - run 目录（worktree 挂在 runDir/worktree）
+   * @param {Object} [opts] - 可选参数
+   * @param {string} [opts.runId] - run 标识（分支名一部分；缺省用时间戳）
+   * @param {string} [opts.ref] - 起始 ref（缺省 HEAD = 当前主仓 HEAD）
+   * @returns {{ worktreeDir: string, branch: string, baseSha: string, reused: boolean }}
+   */
+  function setupWorktree(runDir, opts = {}) {
+    const worktreeDir = join(runDir, 'worktree');
+    const ref = opts.ref || 'HEAD';
+    const runId = opts.runId || `${Date.now()}`;
+    const branch = `forge/${driverName}/${runId}`;
+
+    // 幂等复用：元数据已记录且目录有效 → 直接返回（resume 场景，不重置分支）
+    const metaPath = join(runDir, 'worktree-meta.json');
+    if (existsSync(metaPath) && existsSync(worktreeDir)) {
+      try {
+        const meta = JSON.parse(readFileSync(metaPath, 'utf-8'));
+        execSync('git rev-parse --git-dir', { cwd: worktreeDir, encoding: 'utf-8', timeout: 30_000 });
+        return { worktreeDir, branch: meta.branch || branch, baseSha: meta.baseSha || '', reused: true };
+      } catch { /* 元数据/目录损坏 → 走清理重建 */ }
+    }
+
+    // 清理残留（损坏的旧 worktree / 目录）
+    try { execSync(`git worktree remove --force ${quotePath(worktreeDir)}`, { cwd: repoRoot, encoding: 'utf-8', timeout: 60_000 }); } catch { /* 可能本就不存在 */ }
+    try { rmSync(worktreeDir, { recursive: true, force: true }); } catch { /* ignore */ }
+
+    // 解析起始 ref 为完整 commit SHA（分支基线记录稳定 SHA，主仓后续 commit 不影响副本）
+    let baseSha;
+    try {
+      baseSha = execSync(`git rev-parse ${quotePath(ref)}`, {
+        cwd: repoRoot, encoding: 'utf-8', timeout: 30_000,
+      }).toString().trim();
+    } catch (err) {
+      throw new Error(`setupWorktree：解析起始 ref "${ref}" 失败：${err.message}`);
+    }
+
+    // -b 新建分支；若分支已存在（异常残留）用 -B 重置到 baseSha 复用
+    const branchExists = (() => {
+      try { execSync(`git rev-parse --verify ${quotePath(branch)}`, { cwd: repoRoot, encoding: 'utf-8', timeout: 30_000 }); return true; } catch { return false; }
+    })();
+    const branchFlag = branchExists ? '-B' : '-b';
+    try {
+      execSync(`git worktree add ${branchFlag} ${quotePath(branch)} ${quotePath(worktreeDir)} ${quotePath(baseSha)}`, {
+        cwd: repoRoot, encoding: 'utf-8', timeout: 120_000,
+      });
+    } catch (err) {
+      throw new Error(`setupWorktree：worktree add 失败：${err.message}`);
+    }
+
+    // 磁盘预算：worktree 是 git checkout，天然不含 node_modules（~50MB/run）。
+    // 记录元数据供 teardown / resume / 回流审计取证。
+    try {
+      writeFileSync(metaPath, JSON.stringify({
+        worktreeDir, branch, baseSha, createdAt: new Date().toISOString(), driver: driverName,
+      }, null, 2), 'utf-8');
+    } catch { /* 元数据写失败不阻塞 */ }
+
+    return { worktreeDir, branch, baseSha, reused: false };
+  }
+
+  /**
+   * 清理 worktree 目录（run 结束——正常/异常/中止都调，放 finally）。
+   *
+   * 语义：只移除 worktree 工作目录，保留分支 `forge/<driver>/<runId>`——
+   * 分支上的 b-fix/红队 commit 留待人工 cherry-pick + 审阅后合并（零信任回流闸门），
+   * 不自动并进主分支（主仓历史全程干净）。
+   *
+   * 幂等 + 容错：任何一步失败都继续，绝不抛错阻塞收尾。
+   *
+   * @param {string} runDir - run 目录
+   * @returns {{ removed: boolean, branch: string|null, detail: string }}
+   */
+  function teardownWorktree(runDir) {
+    const worktreeDir = join(runDir, 'worktree');
+    const metaPath = join(runDir, 'worktree-meta.json');
+    let branch = null;
+    try { branch = JSON.parse(readFileSync(metaPath, 'utf-8')).branch || null; } catch { /* 元数据缺失 */ }
+
+    if (!existsSync(worktreeDir)) {
+      return { removed: false, branch, detail: 'worktree 目录不存在（未创建或已清理）' };
+    }
+
+    let detail = '';
+    // 1. 从主仓移除 worktree 注册（--force 容忍工作区内未提交残留）
+    try {
+      execSync(`git worktree remove --force ${quotePath(worktreeDir)}`, {
+        cwd: repoRoot, encoding: 'utf-8', timeout: 60_000,
+      });
+      detail += 'worktree remove 成功; ';
+    } catch (err) {
+      detail += `worktree remove 失败: ${err.message}; 兜底 prune+rm; `;
+      try { execSync('git worktree prune', { cwd: repoRoot, encoding: 'utf-8', timeout: 60_000 }); } catch { /* ignore */ }
+      try { rmSync(worktreeDir, { recursive: true, force: true }); } catch { /* ignore */ }
+    }
+
+    // 2. 元数据保留（供回流审计：分支名 + 基线 SHA 取证用），不删除
+    return { removed: true, branch, detail: detail.trim() };
+  }
+
   return {
     // 公共工具函数
     parseDriverArgs,
@@ -754,6 +882,8 @@ export function createForgeDriverBase(config = {}) {
     runAuditGate,  // v1.2.8 功能⑥
     saveResumePoint,   // v1.2.8 功能⑦
     loadResumePoint,   // v1.2.8 功能⑦
+    setupWorktree,     // v1.3.6 交付⑩：FORGE 隔离加固
+    teardownWorktree,  // v1.3.6 交付⑩：FORGE 隔离加固
     // 辅助函数
     extractUsage,
     extractAgentText,

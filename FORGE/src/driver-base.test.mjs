@@ -6,6 +6,7 @@ import { createForgeDriverBase } from './driver-base.mjs';
 import { join } from 'path';
 import { mkdtempSync, rmSync, existsSync, readFileSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
+import { execSync } from 'child_process';
 
 describe('createForgeDriverBase', () => {
   const base = createForgeDriverBase({
@@ -334,5 +335,135 @@ describe('createForgeDriverBase', () => {
       const args = resumeBase.parseDriverArgs(['--target', 'v1.2.8']);
       expect(args.resume).toBe(false);
     });
+  });
+});
+
+// ─── v1.3.6 交付⑩：setupWorktree / teardownWorktree ───
+// run-07 事故根因修复——审查 worker 与主仓共享工作目录。
+// 测试在临时 git repo 上跑（不碰 sofagent 主仓），验证完整生命周期：
+// 建副本 → 幂等复用 → 副本 commit 不进主仓历史 → teardown 删目录保分支 → 主仓干净。
+describe('worktree 隔离（v1.3.6 交付⑩）', () => {
+  let gitRepoDir;  // 临时 git repo（模拟主仓）
+  let runsDir;     // run 目录所在区（模拟 ~/.sofagent/data/forge-runs——repo 之外）
+  let wtBase;      // driver-base 实例（repoRoot 指向临时 repo）
+
+  // 辅助：在指定目录跑 git 命令
+  const git = (cmd, cwd) => execSync(cmd, { cwd, encoding: 'utf-8', timeout: 30_000 }).toString().trim();
+
+  beforeEach(() => {
+    // 建临时 git repo + 初始 commit（worktree 需要至少一个 commit 才能 add）
+    gitRepoDir = mkdtempSync(join(tmpdir(), 'forge-wt-test-'));
+    git('git init -q', gitRepoDir);
+    git('git config user.email test@example.com', gitRepoDir);
+    git('git config user.name test', gitRepoDir);
+    writeFileSync(join(gitRepoDir, 'hello.txt'), 'v1\n', 'utf-8');
+    git('git add hello.txt', gitRepoDir);
+    git('git commit -q -m init', gitRepoDir);
+
+    // run 目录在 repo 外（与生产一致：runDir 在 ~/.sofagent/data/forge-runs，
+    // 不污染主仓 git status）
+    runsDir = mkdtempSync(join(tmpdir(), 'forge-wt-runs-'));
+
+    wtBase = createForgeDriverBase({
+      driverName: 'wt-test',
+      loopDir: '/tmp/loop',
+      repoRoot: gitRepoDir,
+      modelConfigs: {},
+      modelPricing: {},
+    });
+  });
+
+  afterEach(() => {
+    // 清理：先移 worktree 注册再删目录（teardown 已测过，这里兜底防泄漏）
+    try { git('git worktree prune', gitRepoDir); } catch { /* ignore */ }
+    rmSync(gitRepoDir, { recursive: true, force: true });
+    rmSync(runsDir, { recursive: true, force: true });
+  });
+
+  it('setupWorktree 创建副本目录 + forge 分支', () => {
+    const runDir = join(runsDir, 'run-01');
+    const r = wtBase.setupWorktree(runDir, { runId: 'r1' });
+    expect(existsSync(r.worktreeDir)).toBe(true);
+    expect(r.branch).toBe('forge/wt-test/r1');
+    expect(r.reused).toBe(false);
+    // 分支可在主仓解析（worktree 注册成功）
+    expect(git('git branch --list forge/wt-test/r1', gitRepoDir)).toContain('forge/wt-test/r1');
+    // 元数据落盘
+    const meta = JSON.parse(readFileSync(join(runDir, 'worktree-meta.json'), 'utf-8'));
+    expect(meta.branch).toBe('forge/wt-test/r1');
+    expect(meta.baseSha).toHaveLength(40);
+  });
+
+  it('setupWorktree 幂等复用——同 runDir 二次调用不重建', () => {
+    const runDir = join(runsDir, 'run-01');
+    const first = wtBase.setupWorktree(runDir, { runId: 'r1' });
+    const second = wtBase.setupWorktree(runDir, { runId: 'r1' });
+    expect(second.reused).toBe(true);
+    expect(second.worktreeDir).toBe(first.worktreeDir);
+    expect(second.branch).toBe(first.branch);
+  });
+
+  it('副本 commit 不进主仓历史——主仓 HEAD 与 git status 全程干净', () => {
+    const runDir = join(runsDir, 'run-01');
+    const headBefore = git('git rev-parse HEAD', gitRepoDir);
+    const r = wtBase.setupWorktree(runDir, { runId: 'r1' });
+
+    // 红队模拟：在副本里写文件 + commit（run-07 事故场景）
+    writeFileSync(join(r.worktreeDir, 'evil.txt'), 'pwned\n', 'utf-8');
+    git('git add evil.txt', r.worktreeDir);
+    git('git commit -q -m "红队模拟恶意 commit"', r.worktreeDir);
+
+    // 主仓 HEAD 不动、工作区干净、历史无 evil commit
+    expect(git('git rev-parse HEAD', gitRepoDir)).toBe(headBefore);
+    expect(git('git status --porcelain', gitRepoDir)).toBe('');
+    expect(git('git log --oneline', gitRepoDir)).not.toContain('红队模拟');
+    // commit 落在副本分支上（teardown 后仍可 cherry-pick 审计）
+    expect(git('git log --oneline forge/wt-test/r1', gitRepoDir)).toContain('红队模拟');
+  });
+
+  it('teardownWorktree 删目录但保留分支（供人工 cherry-pick 回流）', () => {
+    const runDir = join(runsDir, 'run-01');
+    const r = wtBase.setupWorktree(runDir, { runId: 'r1' });
+    writeFileSync(join(r.worktreeDir, 'fix.txt'), 'fix\n', 'utf-8');
+    git('git add fix.txt', r.worktreeDir);
+    git('git commit -q -m "b-fix 修复"', r.worktreeDir);
+
+    const t = wtBase.teardownWorktree(runDir);
+    expect(t.removed).toBe(true);
+    expect(t.branch).toBe('forge/wt-test/r1');
+    // 目录已删、分支仍在（零信任回流闸门：commit 留分支等人审）
+    expect(existsSync(r.worktreeDir)).toBe(false);
+    expect(git('git branch --list forge/wt-test/r1', gitRepoDir)).toContain('forge/wt-test/r1');
+    expect(git('git log --oneline forge/wt-test/r1', gitRepoDir)).toContain('b-fix 修复');
+    // 元数据保留（回流审计取证）
+    expect(existsSync(join(runDir, 'worktree-meta.json'))).toBe(true);
+    // 主仓干净
+    expect(git('git status --porcelain', gitRepoDir)).toBe('');
+  });
+
+  it('teardownWorktree 幂等——未创建时调用不抛错', () => {
+    const runDir = join(runsDir, 'run-empty');
+    const t = wtBase.teardownWorktree(runDir);
+    expect(t.removed).toBe(false);
+  });
+
+  it('并发冲突回归——审查运行期间主仓做普通 commit 互不影响', () => {
+    const runDir = join(runsDir, 'run-01');
+    const r = wtBase.setupWorktree(runDir, { runId: 'r1' });
+
+    // 主仓：其他会话正常开发 commit（run-07 事故场景）
+    writeFileSync(join(gitRepoDir, 'main-dev.txt'), 'main work\n', 'utf-8');
+    git('git add main-dev.txt', gitRepoDir);
+    git('git commit -q -m "主仓并行开发 commit"', gitRepoDir);
+
+    // 副本：审查 worker 同时 commit——两者基线独立，互不干扰
+    writeFileSync(join(r.worktreeDir, 'audit-work.txt'), 'audit\n', 'utf-8');
+    git('git add audit-work.txt', r.worktreeDir);
+    git('git commit -q -m "审查 commit"', r.worktreeDir);
+
+    expect(git('git log --oneline', gitRepoDir)).toContain('主仓并行开发');
+    expect(git('git log --oneline', gitRepoDir)).not.toContain('审查 commit');
+    expect(git('git log --oneline forge/wt-test/r1', gitRepoDir)).toContain('审查 commit');
+    expect(git('git status --porcelain', gitRepoDir)).toBe('');
   });
 });
