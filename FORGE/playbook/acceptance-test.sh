@@ -2499,7 +2499,7 @@ grep -q "workflow_submit" "$PROJECT_ROOT/engine/mcp/src/tools/workflow-submit.ts
 grep -q "merge_criteria\|approver" "$PROJECT_ROOT/engine/orchestrator/src/workflow/schema/workflow.schema.json" || S282_OK=false  # 审阅协议字段
 grep -q "v1.3.7 沙箱宿主位\|ContainerDeps" "$PROJECT_ROOT/engine/orchestrator/src/workflow/container.ts" || S282_OK=false  # 沙箱宿主位（runner 注入）
 grep -q "schema" "$PROJECT_ROOT/engine/orchestrator/src/workflow-parser.ts" 2>/dev/null || true  # parser 走 schema 单一事实源（文件名以实际为准）
-ls "$PROJECT_ROOT/engine/orchestrator/src/__tests__/" 2>/dev/null | grep -q "workflow-container" || S282_OK=false
+compgen -G "$PROJECT_ROOT/engine/orchestrator/src/__tests__/workflow-container*" > /dev/null || S282_OK=false  # SC2010：glob 替代 ls|grep
 $S282_OK && pass "Workflow 容器完整（schema+审阅协议+容器+MCP+沙箱宿主位+单测）" || fail "Workflow 容器交付缺件"
 
 scenario 283 "v1.3.6 交付②：Ontology 注册接口——MCP 注入 + D1-D5 审计留痕 + 可回滚"
