@@ -615,6 +615,8 @@ grep -c "dag-runner\|detectFileConflicts\|compose.*DAG" FORGE/playbook/acceptanc
 
 #### 44. USB 完整运行时——HMAC 签名 + AES-256 加密 + fail-closed 验签（v1.1.9 新增 · 交付一）
 
+> v1.3.6 发版后 hotfix 补丁（2026-08-18 pr-check 抓获）：`ecdh.getPrivateKey()` 剥定长整数前导零——私钥首字节 0（概率 1/256）时 31 字节，CI 概率性红。已修 `ecdh.ts` 显式 pad 32 + 2000 次采样防复发锁（pairing.test.ts）。
+
 > 通用安全 fail-closed 基线见维度 16。
 
 > 全量文件 HMAC 签名 + 验签 fail-closed + knowledge/ AES-256 密文落盘。

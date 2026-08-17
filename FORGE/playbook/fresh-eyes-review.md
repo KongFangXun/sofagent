@@ -389,11 +389,11 @@ sofagent（https://github.com/KongFangXun/sofagent）。不管当前处于什么
 - **降级报告与正常报告不可区分**——run-01 的臆造报告格式与真报告完全一样，无任何降级标记，人工以为质量相同。run-02 加证据门槛后 20 条 finding 全部可验证。**教训：对比「报告声称的证据密度」——正常审查的 finding 每条都能定位到文件行号，臆造报告的"证据"经不起 grep 复验**
 
 
-**v1.3.6 新增经验（release-gate run-08）**：
-- **审查工具的 FAIL 与 PASS 都要零信任**——7 个 FAIL 中 5 个是维度脚本自身缺陷（更名漏网/CLI 签名过时/exit 语义歧义）；driver 自报 PASS 也是假的（f-fix 降级零 commit，f-audit 对空 diff 全绿误判收敛）。**教训：FAIL 清单逐维复跑分辨「仓库问题 vs 检查器问题」（退出码语义与写死签名是误报两大源）；verdict 以 verdict.md 主体为准，stepErrors 非空即作废**
+**v1.3.6 发版后（hotfix）· 概率性 CI 红与双 SHA 历史**——ECDH 私钥首字节 0（1/256）触发 31≠32（本地全绿掩盖）：随机密钥断言须 ≥2000 次采样锁定长契约，CI-only 失败先疑概率路径；Git Data API 推送造成远端/本地同 tree 双 SHA——push 前先 merge-base 检查，分叉则 rebase --onto 接回；tag 必须在安装入口 bump 之后打
 
-**v1.3.6 新增经验（fresh-eyes run-03）**：
-- **worker 旧报告误标 + b-fix 越界修复**——worker 拿 v1.3.5 bugfix 前旧清单把已修 3 条标「未修」；b-fix 在 tag 未打时「修」安装 URL（回流即 404）。**教训：「上轮遗留」类 finding 先 grep 当前仓库复验；b-fix prompt 必须内嵌 04-quality-loop.md 的发版中间态 SKIP 清单原文**
+**v1.3.6（release-gate run-08）· 审查工具 FAIL 与 PASS 都要零信任**——7 FAIL 中 5 个是维度脚本自身缺陷（更名漏网/签名过时/exit 语义歧义）；driver 自报 PASS 也是假的（f-fix 零 commit，f-audit 对空 diff 全绿）。**教训：FAIL 逐维复跑分辨「仓库 vs 检查器」；verdict 以 verdict.md 主体为准 + stepErrors 非空作废**
+
+**v1.3.6（fresh-eyes run-03）· worker 旧报告误标 + b-fix 越界修复**——旧清单把已修 3 条标「未修」；b-fix 在 tag 未打时「修」安装 URL。**教训：「上轮遗留」先 grep 当前仓库复验；b-fix prompt 内嵌发版中间态 SKIP 清单原文**
 
 - **v1.3.5（裂图+脱敏误伤）· 二进制 UTF-8 读 → 静默 U+FFFD 损坏**（shadow 快照读 PNG 永久裂图，教训：读前判 isBinaryBuffer，二进制跳过文本快照）；**脱敏误伤测试用例**（verify.sh 输入 13812345678 被当泄漏打码，教训：测试敏感数据用占位符/运行时拼接，不字面写真实格式）**
 

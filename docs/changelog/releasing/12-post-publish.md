@@ -46,6 +46,10 @@ bash tools/check-version.sh        # 期望全绿
 
 ---
 
+## 发版后 hotfix 流程（v1.3.6 实战补 · 步骤 1-2 之间可能发生）
+
+> v1.3.6 发布后 pr-check 抓到概率性失败（ECDH 私钥前导零，1/256）：CI-only 红 = 先怀疑概率路径（随机密钥定长契约用 ≥2000 次采样锁），修复 → 补防复发锁 → 测试数文档同步 commit **必须与 hotfix 同 push**（分两次 push 会让中间 commit 的 CI 红——check-test-count 在 CI 也跑）。
+
 ## 开发 Prompt 校验循环（步骤 7）
 
 ```

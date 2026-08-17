@@ -158,6 +158,18 @@ fi
 
 ---
 
+## 步骤 0：push 前置检查（v1.3.6 实战补 · 双 SHA 历史坑）
+
+> v1.3.5 Git Data API 推送会造成远端/本地「同 tree 双 SHA」——直接 push 会被 rejected (fetch first)。本地代理死时用 `git -c http.proxy= -c https.proxy= push` 直连。
+
+```bash
+# ① 检查远端头是否在本地历史（双 SHA 分叉探测）
+REMOTE_SHA=$(gh api repos/KongFangXun/sofagent/branches/main --jq '.commit.sha')
+git merge-base --is-ancestor "$REMOTE_SHA" HEAD && echo "✓ 快进可推" || \
+  git rebase --onto "$REMOTE_SHA" <本地等价旧commit> main   # tree 相同时干净接回
+# ② tag 顺序铁律：先 4b 安装入口 bump commit，后打 tag（tag 内容就该指本版）
+```
+
 ## 步骤 4b：安装入口随版同步（v1.3.6 新增 · fresh-eyes B1 根因）
 
 > 🔴 历史教训：v1.3.5 发布后 README/bootstrap 安装 URL 仍指 v1.3.4，用户按 README 完整安装装到旧版。根因是 SOP 没有这一步——tag 打了、npm 发了，安装入口没人管。**每版必做，curl 验证后才能进步骤 5。**
