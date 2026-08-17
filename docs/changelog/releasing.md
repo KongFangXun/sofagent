@@ -15,8 +15,8 @@
 - [x] 三 · 基础自测 → [03-selftest.md](./releasing/03-selftest.md) · **v1.3.5：bump 1.3.4→1.3.5 + test 2286/2286 + CV 72/72 + CTC 双口径 + postbuild 三包权限根治**
 - [x] 四 · fresh-eyes-loop 质量循环 + 代码审核 + 验收测试（新 session）→ [04-quality-loop.md](./releasing/04-quality-loop.md) · **v1.3.5：run-07（R1 完整闭环 + P0=0 + 四份审查收敛）+ acceptance S270-S281（209→214 场景，291 断言）**
 - [x] 五 · 审查体系合并更新 → [05-review-system.md](./releasing/05-review-system.md) · **v1.3.5：维度 110/111 + 93→70 归并 + check-version 四盲区 69/75/77→95 + checklist 瘦身回 1500**
-- [ ] 六 · release-gate-loop 发版闸门（新 session · 必须 PASS 才继续）→ [06-release-gate.md](./releasing/06-release-gate.md) · **v1.3.5：run-01 假 PASS 根治（driver 收敛判定改保守）→ run-07 四失败项 → run-08 手工裁决 PASS（86 维 0 FAIL）**
-- [ ] 七 · 审查体系最终确认 → [07-final-confirm.md](./releasing/07-final-confirm.md) · **v1.3.5：三文档闭环核对（86 维 ↔ 214 场景 ↔ 5 方向）+ acceptance 线上调撤销改瘦身回 2500**
+- [x] 六 · release-gate-loop 发版闸门（新 session · 必须 PASS 才继续）→ [06-release-gate.md](./releasing/06-release-gate.md) · **v1.3.5：run-01 假 PASS 根治（driver 收敛判定改保守）→ run-07 四失败项 → run-08 手工裁决 PASS（86 维 0 FAIL）**
+- [x] 七 · 审查体系最终确认 → [07-final-confirm.md](./releasing/07-final-confirm.md) · **v1.3.5：三文档闭环核对（86 维 ↔ 214 场景 ↔ 5 方向）+ acceptance 线上调撤销改瘦身回 2500**
 - [ ] 八 · 开发日志定稿 + 文档收尾 → [08-doc-finalize.md](./releasing/08-doc-finalize.md) · **v1.3.5：定稿（速览表 10 项 + Release Notes 三段式含破坏性变更 4 条）+ ROADMAP 五步 + 日期 15 文件**
 - [ ] 九 · 工具脚本健康检查 → [09-tool-health.md](./releasing/09-tool-health.md) · **v1.3.5：新增文件排查 + bump dry-run 纯只读 + 死路径修正（维度57 ab-test/data）+ hook 端到端实测**
 - [ ] 十 · 确认关口 → [10-confirm.md](./releasing/10-confirm.md) · **v1.3.5：481 文件 31 commit 复核 + 发布清单 22 勾 2 留 rc + 门禁全绿**
