@@ -39,7 +39,31 @@
 
 | 结果 | 下一步 |
 |------|--------|
-| **verdict = PASS**（acceptance + regression + coverage 全 PASS） | 进阶段七 |
+| **verdict = PASS**（acceptance + regression + coverage 全 PASS） | 过「零信任复验三件套」（见下）→ 全过才进阶段七 |
 | **verdict = FAIL** | 根据报告定位问题 → **回阶段五** → 修复后重跑本阶段 |
 
 > driver 的 regression 步骤会自动处理「⏰ 待发版」标注的检查项（git tag / npm registry / 全局二进制版本）——这些在检查阶段必然不满足，标 ⏳ 不标 FAIL。
+
+## 🔴 PASS 零信任复验三件套（v1.3.6 教训 · driver 自报 PASS 不可直接信）
+
+> v1.3.6 发版时 release-gate 连续两轮自报 PASS 均为假（f-fix 撞熔断降级零 commit，f-audit 对空 diff 审计必全绿，driver 误判「FAIL→PASS 收敛」）——全靠人工复验抓住。第三重校验（`git rev-list --count` 零 commit 拦截）已在 v1.3.6 代码层根治，但判定防线不依赖单点：
+
+```bash
+# ① verdict.md 主体裁决（不信 status.json，不信 driver 汇报——看产物文件）
+grep -m1 "判定" <runDir>/verdict.md          # 期望含「PASS ✅」
+# ② stepErrors 为空
+node -e "const s=require('<runDir>/status.json');console.log(JSON.stringify(s.stepErrors||[]))"
+# ③ 若该 run 走过 F 修复链（runDir 有 f-* 产物）：F 分支必须有新 commit
+ls <runDir>/f-* 2>/dev/null && git -C <主仓> rev-list --count <基线SHA>..<F分支>   # 期望 >0
+```
+
+**任一不过 → 按 FAIL 处理**（回阶段五）。F 链从未触发（无 f-* 产物）时 ③ 跳过——「没进修复链」与「修复链零产出」是两回事，后者才是假 PASS 特征。
+
+## 监控 session 与主 session 的分工协议（v1.3.6 实战模式 SOP 化）
+
+| 角色 | 职责 | 禁止 |
+|------|------|------|
+| 监控 session（新开） | 启动 driver / 轮询 status / 最终 3-5 行汇报 | 不干涉 driver、不改代码、不探索源码 |
+| 主 session | 收到汇报后**零信任复验**：FAIL 清单逐维真跑分辨「仓库问题 vs 检查器问题」（退出码语义与写死签名是检查器误报两大源）；PASS 过三件套 | 不直接采信 run 汇报结论 |
+
+> v1.3.6 三轮循环实证：run-08 的 7 个 FAIL 中 5 个是维度脚本自身缺陷、run-09 的 6 项全是检查基建问题——**逐维复跑这一步发现了全部真问题，跳过它会把检查器 bug 当仓库 bug 修**。
