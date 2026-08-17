@@ -4,7 +4,7 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
 import { createForgeDriverBase } from './driver-base.mjs';
 import { join } from 'path';
-import { mkdtempSync, rmSync, existsSync, readFileSync, writeFileSync } from 'fs';
+import { mkdtempSync, rmSync, existsSync, readFileSync, writeFileSync, renameSync, mkdirSync } from 'fs';
 import { tmpdir } from 'os';
 import { execSync } from 'child_process';
 
@@ -465,5 +465,87 @@ describe('worktree 隔离（v1.3.6 交付⑩）', () => {
     expect(git('git log --oneline', gitRepoDir)).not.toContain('审查 commit');
     expect(git('git log --oneline forge/wt-test/r1', gitRepoDir)).toContain('审查 commit');
     expect(git('git status --porcelain', gitRepoDir)).toBe('');
+  });
+
+  // ─── v1.3.6 worktree 留存根治：registerSignalCleanup / cleanupStaleWorktrees ───
+  // run-03 事故（2026-08-17）：人工 pkill（SIGTERM）终止 driver 时 teardown 不执行，
+  // worktree 永久留存。两个新函数补齐：信号路径清理 + 启动时陈旧兜底扫描。
+
+  it('registerSignalCleanup——SIGTERM 触发 cleanup 且幂等（只执行一次）', async () => {
+    let calls = 0;
+    const cleanup = () => { calls++; };
+    wtBase.registerSignalCleanup({ cleanup, stopReason: 'aborted-signal', exitFn: () => {} });
+
+    process.kill(process.pid, 'SIGTERM');
+    // SIGTERM 异步派发：等 handler 执行（真 driver 场景 pkill→退出有天然时间差）
+    await new Promise(r => setTimeout(r, 120));
+    expect(calls).toBe(1);
+
+    // 幂等锁：二次信号不重复执行（SIGTERM 后可能再收 SIGINT）
+    process.kill(process.pid, 'SIGINT');
+    await new Promise(r => setTimeout(r, 120));
+    expect(calls).toBe(1);
+  });
+
+  it('registerSignalCleanup——disarm 后信号不再触发 cleanup', async () => {
+    let calls = 0;
+    const disarm = wtBase.registerSignalCleanup({ cleanup: () => { calls++; }, stopReason: 'aborted-signal', exitFn: () => {} });
+    disarm();
+    process.kill(process.pid, 'SIGTERM');
+    await new Promise(r => setTimeout(r, 120));
+    expect(calls).toBe(0);
+  });
+
+  it('cleanupStaleWorktrees——超龄 worktree 被收走、分支保留、新 run 不动', () => {
+    // run-01：创建后把元数据 createdAt 篡改为 8 天前（模拟陈旧）
+    const staleRunDir = join(runsDir, 'run-stale');
+    wtBase.setupWorktree(staleRunDir, { runId: 'stale1' });
+    const metaPath = join(staleRunDir, 'worktree-meta.json');
+    const meta = JSON.parse(readFileSync(metaPath, 'utf-8'));
+    meta.createdAt = new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString();
+    writeFileSync(metaPath, JSON.stringify(meta, null, 2), 'utf-8');
+
+    // run-02：新 worktree（不过期）
+    const freshRunDir = join(runsDir, 'run-fresh');
+    wtBase.setupWorktree(freshRunDir, { runId: 'fresh1' });
+
+    // runsDir 伪装成日期目录结构：forge-runs-root/YYYY-MM-DD/run-XX
+    const dateRoot = mkdtempSync(join(tmpdir(), 'forge-wt-dates-'));
+    const dayDir = join(dateRoot, '2026-08-17');
+    // 直接在日期结构下重建：把 runsDir 整体挪进日期目录
+    mkdirSync(dayDir, { recursive: true });
+    renameSync(staleRunDir, join(dayDir, 'run-stale'));
+    renameSync(freshRunDir, join(dayDir, 'run-fresh'));
+
+    const r = wtBase.cleanupStaleWorktrees({ runsRoot: dateRoot, excludeRunDir: join(dayDir, 'run-none') });
+    expect(r.scanned).toBe(2);
+    expect(r.cleaned).toBe(1);
+    // 陈旧目录已移除、分支保留
+    expect(existsSync(join(dayDir, 'run-stale', 'worktree'))).toBe(false);
+    expect(git('git branch --list forge/wt-test/stale1', gitRepoDir)).toContain('stale1');
+    // 新 worktree 原样保留
+    expect(existsSync(join(dayDir, 'run-fresh', 'worktree'))).toBe(true);
+    rmSync(dateRoot, { recursive: true, force: true });
+  });
+
+  it('cleanupStaleWorktrees——excludeRunDir 跳过本次 run（防误删自己）', () => {
+    const dateRoot = mkdtempSync(join(tmpdir(), 'forge-wt-dates-'));
+    const dayDir = join(dateRoot, '2026-08-17');
+    mkdirSync(dayDir, { recursive: true });
+
+    const oldRunDir = join(runsDir, 'run-old');
+    wtBase.setupWorktree(oldRunDir, { runId: 'old1' });
+    const metaPath = join(oldRunDir, 'worktree-meta.json');
+    const meta = JSON.parse(readFileSync(metaPath, 'utf-8'));
+    meta.createdAt = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString();
+    writeFileSync(metaPath, JSON.stringify(meta, null, 2), 'utf-8');
+    renameSync(oldRunDir, join(dayDir, 'run-old'));
+
+    // excludeRunDir 指向 run-old 自身 → 即便超龄也跳过
+    const r = wtBase.cleanupStaleWorktrees({ runsRoot: dateRoot, excludeRunDir: join(dayDir, 'run-old') });
+    expect(r.scanned).toBe(1);
+    expect(r.cleaned).toBe(0);
+    expect(existsSync(join(dayDir, 'run-old', 'worktree'))).toBe(true);
+    rmSync(dateRoot, { recursive: true, force: true });
   });
 });

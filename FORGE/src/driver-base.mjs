@@ -863,6 +863,93 @@ export function createForgeDriverBase(config = {}) {
     return { removed: true, branch, detail: detail.trim() };
   }
 
+  // ── 20. registerSignalCleanup（v1.3.6 worktree 留存根治：pkill/SIGTERM 路径清理）──
+  //
+  // 背景（run-03 2026-08-17 事故）：teardownWorktree 只挂在 main() 正常返回 /
+  // main().catch() / uncaughtException 路径——人工 pkill（SIGTERM）/ Ctrl-C
+  // （SIGINT）杀 driver 时这些路径全部不执行，worktree 目录 + git 注册永久留存
+  // （~80MB/run，git worktree list 膨胀）。
+  //
+  // 修复：注册 SIGTERM/SIGINT handler，收到终止信号时先跑 cleanup 再 exit。
+  // 注意：execSync 在收到信号时可能被打断——cleanup 内部已层层 try-catch，
+  // 且 git worktree remove 失败有 prune + rmSync 兜底，最坏情况留目录但下次
+  // driver 启动时的陈旧扫描（cleanupStaleWorktrees）会收走。
+  //
+  // 双 driver 共享（镜像漂移教训：修 A 忘 B 是必然的）。
+
+  /**
+   * 注册 SIGTERM/SIGINT 信号清理。
+   *
+   * @param {Object} opts
+   * @param {() => void} opts.cleanup - 终止时执行的清理（如 safeTeardownWorktree + latest.json 更新）
+   * @param {string} opts.stopReason - 写入 latest.json 的停止原因（如 'aborted-signal'）
+   * @param {(code: number) => void} [opts.exitFn] - 退出函数（默认 process.exit；测试注入 noop 防真退出）
+   */
+  function registerSignalCleanup({ cleanup, stopReason = 'aborted-signal', exitFn = (c) => process.exit(c) }) {
+    let fired = false; // 幂等锁：handler 只执行一次（SIGTERM 后可能再收 SIGINT）
+    const handler = (sig) => {
+      if (fired) return;
+      fired = true;
+      console.error(`\n⚠️ 收到 ${sig}——执行清理后退出（${stopReason}）`);
+      try { cleanup(); } catch (err) { console.error(`   清理失败（不阻塞退出）: ${err.message}`); }
+      exitFn(1);
+    };
+    process.on('SIGTERM', () => handler('SIGTERM'));
+    process.on('SIGINT', () => handler('SIGINT'));
+    return () => { fired = true; }; // 正常结束时解除信号清理（避免重复 teardown）
+  }
+
+  // ── 21. cleanupStaleWorktrees（v1.3.6 worktree 留存根治：陈旧兜底扫描）──
+  //
+  // 兜底逻辑：信号清理也可能失败（SIGKILL 无法捕获 / cleanup 中途再被打断），
+  // driver 启动时扫描 runs 根目录下的陈旧 worktree（超过 maxAgeMs 且心跳停更）
+  // 自动收走。判定陈旧的唯一依据 = worktree-meta.json 的 createdAt——元数据与
+  // 目录一起由 setupWorktree 创建，比猜 mtime 可靠。
+  //
+  // 清理动作与 teardownWorktree 相同：移除目录 + git 注册，保留分支（回流闸门）。
+
+  /**
+   * 扫描并清理陈旧 worktree。driver 启动时调用（preflight 之后、setupWorktree 之前）。
+   *
+   * @param {Object} opts
+   * @param {string} opts.runsRoot - runs 根目录（如 ~/.sofagent/data/forge-runs/fresh-eyes-loop）
+   * @param {string} [opts.excludeRunDir] - 本次 run 目录（跳过，防误删自己）
+   * @param {number} [opts.maxAgeMs] - 陈旧阈值，默认 7 天
+   * @returns {{ scanned: number, cleaned: number, detail: string[] }}
+   */
+  function cleanupStaleWorktrees({ runsRoot, excludeRunDir, maxAgeMs = 7 * 24 * 60 * 60 * 1000 }) {
+    const detail = [];
+    let scanned = 0;
+    let cleaned = 0;
+    if (!existsSync(runsRoot)) return { scanned, cleaned, detail };
+    const cutoff = Date.now() - maxAgeMs;
+    // 日期目录 YYYY-MM-DD → 内层 run-NN；worktree-meta.json 位于 runDir/worktree 旁
+    const dateDirs = readdirSync(runsRoot, { withFileTypes: true })
+      .filter(d => d.isDirectory() && /^\d{4}-\d{2}-\d{2}$/.test(d.name));
+    for (const d of dateDirs) {
+      const runDirs = [];
+      try {
+        runDirs.push(...readdirSync(join(runsRoot, d.name), { withFileTypes: true })
+          .filter(x => x.isDirectory() && x.name.startsWith('run-'))
+          .map(x => join(runsRoot, d.name, x.name)));
+      } catch { /* ignore */ }
+      for (const runDir of runDirs) {
+        const worktreeDir = join(runDir, 'worktree');
+        if (!existsSync(worktreeDir)) continue; // 已清理 / 从未创建
+        scanned++; // 候选计数（含被 exclude 跳过的——scanned 语义 = 扫到的 worktree 总数）
+        if (excludeRunDir && resolve(runDir) === resolve(excludeRunDir)) continue;
+        const metaPath = join(runDir, 'worktree-meta.json');
+        let createdAt = 0;
+        try { createdAt = Date.parse(JSON.parse(readFileSync(metaPath, 'utf-8')).createdAt) || 0; } catch { /* 元数据缺失按 0 处理 */ }
+        if (createdAt > cutoff) continue; // 未过期
+        const r = teardownWorktree(runDir);
+        cleaned++;
+        detail.push(`${relativeRunDir ? relativeRunDir(runDir) : runDir}: ${r.detail || '已清理'}（分支 ${r.branch ?? '未知'} 保留）`);
+      }
+    }
+    return { scanned, cleaned, detail };
+  }
+
   return {
     // 公共工具函数
     parseDriverArgs,
@@ -884,6 +971,8 @@ export function createForgeDriverBase(config = {}) {
     loadResumePoint,   // v1.2.8 功能⑦
     setupWorktree,     // v1.3.6 交付⑩：FORGE 隔离加固
     teardownWorktree,  // v1.3.6 交付⑩：FORGE 隔离加固
+    registerSignalCleanup,     // v1.3.6 worktree 留存根治：SIGTERM/SIGINT 清理
+    cleanupStaleWorktrees,     // v1.3.6 worktree 留存根治：陈旧兜底扫描
     // 辅助函数
     extractUsage,
     extractAgentText,

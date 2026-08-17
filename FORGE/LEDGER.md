@@ -155,3 +155,4 @@ release-gate-loop 与 fresh-eyes-loop 共享本文件，通过"循环"列区分�
 2026-08-16     | 20260816-07    | release-gate | 17   | PASS       | FAIL       | FAIL     | ERROR   | /Users/kongfangxun/.sofagent/data/forge-runs/release-gate-loop/2026-08-16/run-07
 
 2026-08-16     | 20260816-10    | release-gate | 0    | PASS       | SKIP       | SKIP     | ERROR   | /Users/kongfangxun/.sofagent/data/forge-runs/release-gate-loop/2026-08-16/run-10
+2026-08-17     | 20260817-03    | fresh-eyes  | 2.5* | 0   | 4(R2)   | 3(R2) | aborted-user-stop（R1 a-consolidate 降级误判 clean；R2 正常合并 P1×4/P2×3 并 b-fix 修复 finding-01 安装 URL v1.3.5→v1.3.6（worktree commit 727104b + README/README.en/.gitignore 未提交）；R3 起步 2 worker 后用户终止——单轮 ~95min 串行太慢阻塞后续工作；降速根因与 v1.3.7 自适应并发方案见 v1.3.7.md §一点五） | /Users/kongfangxun/.sofagent/data/forge-runs/fresh-eyes-loop/2026-08-17/run-03

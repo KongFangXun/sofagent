@@ -2202,6 +2202,17 @@ async function main() {
     : resolveRunDir();
   globalRunDir = runDir; // v1.3.6 交付⑩：teardown 守卫（崩溃处理器需要 runDir）
 
+  // ─── v1.3.6 worktree 留存根治：启动时陈旧兜底扫描（镜像 fresh-eyes）───
+  try {
+    const stale = base.cleanupStaleWorktrees({ runsRoot: join(RUNS_DIR, 'release-gate-loop'), excludeRunDir: runDir });
+    if (stale.cleaned > 0) {
+      console.log(`   陈旧清理   = 收走 ${stale.cleaned} 个超 7 天的遗留 worktree（分支保留待回流）`);
+      for (const line of stale.detail) console.log(`     · ${line}`);
+    }
+  } catch (staleErr) {
+    console.warn(`   ⚠️ 陈旧 worktree 扫描失败（不阻塞）: ${staleErr.message}`);
+  }
+
   // ─── v1.3.6 交付⑩：worktree 隔离（run-07 事故根因修复，镜像 fresh-eyes）───
   // f-fix worker 的代码修改全部落副本分支，主仓工作区与主分支历史零污染。
   // 失败降级（不隔离直跑），绝不因隔离基建故障阻塞发版闸门主流程。
@@ -2216,6 +2227,22 @@ async function main() {
       globalWorktree = null;
     }
   }
+
+  // ─── v1.3.6 worktree 留存根治：SIGTERM/SIGINT 信号清理（镜像 fresh-eyes）───
+  // 人工 pkill / Ctrl-C 终止时也执行 teardown，worktree 不再留存。
+  const disarmSignalCleanup = base.registerSignalCleanup({
+    cleanup: () => {
+      safeTeardownWorktree();
+      try {
+        base.updateLatestPointer(runDir, {
+          round: 0,
+          totalRounds: 0,
+          stopReason: 'aborted-signal',
+        });
+      } catch { /* latest.json 更新失败不阻塞退出 */ }
+    },
+    stopReason: 'aborted-signal',
+  });
 
   // ─── v1.2.8 功能⑦：断点写入闭包 ───
   // 铁律：dry-run 永远不写断点；断点只存状态摘要不存大体积数据；
@@ -2590,6 +2617,8 @@ async function main() {
     stepErrors: stepErrors.map(e => e.step),
   });
 
+  // v1.3.6 worktree 留存根治：正常结束解除信号清理（后续 safeTeardownWorktree 兜底）
+  disarmSignalCleanup();
   // v1.3.6 交付⑩：正常结束清理 worktree（LEDGER 已在上方留行）
   safeTeardownWorktree();
 

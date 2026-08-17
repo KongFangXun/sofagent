@@ -3211,6 +3211,20 @@ async function main() {
     ? resolveRunDirInfo(resumeRunDir)
     : resolveRunDir();
 
+  // ─── v1.3.6 worktree 留存根治：启动时陈旧兜底扫描 ───
+  // 信号清理（下方 registerSignalCleanup）也可能失败——SIGKILL 无法捕获、
+  // cleanup 中途再被打断。这里扫描 runs 根目录下超 7 天的陈旧 worktree 收走
+  // （跳过本次 run 目录）。分支照旧保留（回流闸门），只清目录与 git 注册。
+  try {
+    const stale = base.cleanupStaleWorktrees({ runsRoot: RUNS_DIR, excludeRunDir: runDir });
+    if (stale.cleaned > 0) {
+      console.log(`   陈旧清理   = 收走 ${stale.cleaned} 个超 7 天的遗留 worktree（分支保留待回流）`);
+      for (const line of stale.detail) console.log(`     · ${line}`);
+    }
+  } catch (staleErr) {
+    console.warn(`   ⚠️ 陈旧 worktree 扫描失败（不阻塞）: ${staleErr.message}`);
+  }
+
   // ─── v1.3.6 交付⑩：worktree 隔离（run-07 事故根因修复）───
   // 审查 worker 与主仓共享工作目录导致两次进程死亡 + 红队残留污染主仓。
   // driver 在 runDir 内建 worktree 副本，worker 的 git 写入全落副本分支；
@@ -3225,6 +3239,25 @@ async function main() {
       globalWorktree = null;
     }
   }
+
+  // ─── v1.3.6 worktree 留存根治：SIGTERM/SIGINT 信号清理 ───
+  // 背景（run-03 2026-08-17）：人工 pkill 终止 driver 时 teardown 不执行，
+  // worktree（~80MB）+ git 注册永久留存。此 handler 确保任何终止信号都先清
+  // 理再退出；正常结束路径解除（disarm）避免重复 teardown。
+  const disarmSignalCleanup = base.registerSignalCleanup({
+    cleanup: () => {
+      safeTeardownWorktree();
+      try {
+        updateLatestPointer(runDir, {
+          round: preservedActualRounds,
+          totalRounds: args.maxRounds,
+          stopReason: 'aborted-signal',
+          counts: preservedFinalCounts,
+        });
+      } catch { /* latest.json 更新失败不阻塞退出 */ }
+    },
+    stopReason: 'aborted-signal',
+  });
 
   // ─── 可见性：启动时探测可用适配器并初始化 ───
   const reporters = await detectReporters();
@@ -3475,6 +3508,9 @@ async function main() {
     stopReason,
     counts: finalCounts,
   });
+
+  // v1.3.6 worktree 留存根治：正常结束解除信号清理（后续 safeTeardownWorktree 兜底）
+  disarmSignalCleanup();
 
   // v1.3.6 交付⑩：正常结束清理 worktree（run 结束 worktree 清理 + LEDGER 留行）
   safeTeardownWorktree();
