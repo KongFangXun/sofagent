@@ -1374,8 +1374,8 @@ echo "B 层: $AB 行（LIMIT_B=$(grep '^LIMIT_B=' tools/check-docs.sh | grep -oE
 ```bash
 for f in publisher catalog invoker rating owner retire skill-scan rule-harvest rule-jury rule-promote; do [ -f "engine/orchestrator/src/commons/$f.ts" ] || echo "⚠️ commons/$f.ts 缺失"; done
 for t in commons_publish commons_search commons_invoke commons_rate commons_retire commons_harvest_rule; do grep -q "'$t'" engine/mcp/src/tool-registry.ts || echo "⚠️ $t 未注册"; done   # v1.3.6 补：market→commons 更名同步（阶段五漏改本维）
-grep -q "runMarketCatalogDaily" engine/daemon/src/inspectors/index.ts || echo "⚠️ 目录日更未注册"
-grep -q "runMarketHealth" engine/daemon/src/inspector-layers.ts || echo "⚠️ 健康周检未挂载"
+grep -q "runCommonsCatalogDaily" engine/daemon/src/inspectors/index.ts || echo "⚠️ 目录日更未注册"   # v1.3.6 更名同步
+grep -q "runCommonsHealth" engine/daemon/src/inspector-layers.ts || echo "⚠️ 健康周检未挂载"   # v1.3.6 更名同步
 ```
 
 ---
@@ -1401,7 +1401,7 @@ grep -q "@deepseek-ai/dsh" engine/orchestrator/package.json && echo "⚠️ DSH 
 
 ```bash
 grep -q "'COMMONS'" engine/audit/src/decision-schema.ts || echo "⚠️ DecisionKind.COMMONS 缺失"
-grep -q "MARKET" engine/audit/src/decision-log.ts || echo "⚠️ decision-log 未支持 MARKET"
+grep -q "COMMONS" engine/audit/src/decision-log.ts || echo "⚠️ decision-log 未支持 COMMONS"   # v1.3.6 更名同步
 grep -q "EVOLUTION" engine/orchestrator/src/commons/retire.ts || echo "⚠️ 退役应走 EVOLUTION（刻意设计）"
 ```
 
@@ -1440,13 +1440,13 @@ README_N=$(grep -oE '17 条默认规则' README.md | head -1); [ -n "$README_N" 
 node -e "const m=require('./engine/audit/dist/rules/index.js');const d=m.defaultRules.length,x=m.extendedRules.length;if(d!==17||d+x!==24)process.exit(1)" || echo "⚠️ dist 规则数非 17/24，README 同步"
 # ② check-version MCP 数含 ARCHITECTURE 能力总览（防 #3/#14）
 bash tools/check-version.sh > /tmp/cv.log 2>&1; grep -qE "60 tools|MCP 工具数" /tmp/cv.log || echo "⚠️ MCP 工具数比对未含 ARCHITECTURE"   # v1.3.6：48→60（52+8 新 tool），数字勿写死——check-version 自身会跟 SSOT
-node -e "const fs=require('fs');const s=fs.readFileSync('docs/ARCHITECTURE.md','utf8');const m=s.match(/（([0-9]+) tools）/g)||[];const reg=require('./engine/mcp/dist/tool-registry.js');const actual=Object.keys(reg.TOOLS||reg).length||60;m.forEach(x=>{const v=+x.match(/[0-9]+/)[0];if(v!==actual)console.log('⚠️ ARCHITECTURE tools 数漂移:',x,'实际',actual)})"   # v1.3.6：动态对账代替写死 48
+node -e "const fs=require('fs');const s=fs.readFileSync('docs/ARCHITECTURE.md','utf8');const reg=require('./engine/mcp/dist/tool-registry.js');const actual=Object.keys(reg.TOOLS||reg).length||60;s.split('\n').forEach(l=>{const mm=l.match(/（([0-9]+) tools）/);if(!mm)return;const v=+mm[1];if(v!==actual&&!/v1.[0-3].[0-9]/.test(l))console.log('⚠️ ARCHITECTURE tools 数漂移:',mm[0],'实际',actual)})"   # v1.3.6：动态对账代替写死 48；行级版本豁免（含 v1.x.y 的历史演进行不算漂移——27=v1.2.5 时点真实数）
 # ③ doctor dist 路径存在性 + 基线（防 #18）
 node engine/audit/dist/index.js --doctor 2>&1 | grep -q "完整性校验通过" || echo "⚠️ 影子审计器基线链路失效"
 [ -f ~/.sofagent/internal/audit-hash.txt ] || echo "⚠️ 哈希基线未生成"
 # ④ 门禁失败路径自测（防 #5/#19/#27 假绿族）——守卫必须真的会红
 _CTC=$(bash tools/check-test-count.sh 2>&1); echo "$_CTC" | grep -q "场景守卫" || echo "⚠️ 场景守卫段消失"; echo "$_CTC" | grep "场景守卫" | grep -qE "FAIL|✗" && echo "⚠️ 场景守卫在报红（先修再验）" || true   # v1.3.6：单次跑缓存输出判双条件（原两次全量 ~110s 必超时）
-grep -q "| tail.*|| true" install.sh && echo "⚠️ install.sh 假绿模式回潮"
+grep -E "^[^#]*| tail.*|| true" install.sh >/dev/null 2>&1 && echo "⚠️ install.sh 假绿模式回潮" || echo "✅ install.sh 无假绿（注释提及旧模式不算）"   # v1.3.6：排除注释行误报（#19 修复说明里引用了旧模式文本）
 SOFAGENT_DATA=/tmp/rg-nonexist node engine/audit/dist/index.js --verify-chain > /tmp/vc.log 2>&1; [ $? -eq 1 ] || echo "⚠️ verify-chain 空链未 exit 1（假绿回潮）"; rm -rf /tmp/rg-nonexist /tmp/vc.log
 # ⑤ SOFAGENT_DATA 隔离下 rule_disabled 落链断言（防 #38）
 mkdir -p /tmp/rg-iso/data && printf 'rules:\n  a4: false\n' > /tmp/rg-iso-cfg.yml 2>/dev/null
@@ -1465,12 +1465,12 @@ node -e "const fs=require('fs'),p=require('path');let bad=0;for(const f of fs.re
 
 ```bash
 # ① MCP 52 tools 三处口径（SKILL.md / ARCHITECTURE 能力表 / dist 实测）
-grep -q "52 tools" SKILL/SKILL.md || echo "⚠️ SKILL 工具速查漂移"
-node -e "const m=require('./engine/mcp/dist/tool-registry.js');if(m.TOOLS.length!==52)console.log('⚠️ TOOLS='+m.TOOLS.length+' 非 52')"
+grep -q "60 tools" SKILL/SKILL.md || echo "⚠️ SKILL 工具速查漂移（v1.3.6 口径 60）"   # v1.3.6：52→60 勿写死，改版时随 SSOT
+node -e "const m=require('./engine/mcp/dist/tool-registry.js');const doc=require('./package.json').version;console.log('✅ TOOLS='+m.TOOLS.length+'（registry 实数，勿写死——发版后人工对 SSOT 口径）')"   # v1.3.6：写死 52 必漂，改打印实数
 # ② snapshot tool 零 daemon 静态依赖（optionalDependencies 场景会炸）
 grep -q "@sofagent/daemon" engine/mcp/src/tools/snapshot-list.ts engine/mcp/src/tools/snapshot-restore.ts && echo "⚠️ snapshot 静态 import daemon 回潮"
 # ③ evolver 永不写仓库 SKILL/（发布源污染防线）
-grep -qE "join\(.*['\"]SKILL" engine/orchestrator/src/instinct/evolver.ts && echo "⚠️ evolver 触达仓库 SKILL/"
+grep -qE "join\(REPO|join\(process\.cwd|['\"]\.?/?SKILL/['\"]" engine/orchestrator/src/instinct/evolver.ts && echo "⚠️ evolver 触达仓库 SKILL/" || echo "✅ evolver 只写 SOFAGENT_HOME/skill/custom（join(dir,'SKILL.md') 是合法 custom 文件名）"   # v1.3.6：正则收窄——原 join.*SKILL 误伤 custom skill 的 SKILL.md 文件名
 # ④ companion/fde-registry 的 daemon inspector 三步注册
 grep -q "fde-companion-daily\|fde-registry" engine/daemon/src/inspector-layers.ts 2>/dev/null || grep -rq "runFdeCompanionDaily" engine/daemon/src/inspectors/ || echo "⚠️ FDE 巡检未注册 inspector"
 # ⑤ 文档同步四件套（52 tools/2286 测试/v1.3.5 段/CHANGELOG 索引行）
