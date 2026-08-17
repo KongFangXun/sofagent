@@ -167,11 +167,11 @@ Community rulesets are published as `sofagent-ruleset-*` npm packages and auto-d
 ## New in v1.3.5
 
 > 🧠 **v1.3.5 new capabilities** (grouped by theme):
-> - **MCP self-evolution + ops loop**: 🧬 4 new MCP tools (run_ab_test A/B experiments / promote_ab promotion with mandatory human review / snapshot_list timeline / snapshot_restore recovery with mandatory human review) · 52 tools in total
+> - **MCP self-evolution + ops loop**: 🧬 4 new MCP tools (run_ab_test A/B experiments / promote_ab promotion with mandatory human review / snapshot_list timeline / snapshot_restore recovery with mandatory human review) · 60 tools in total
 > - **instinct→skill auto-evolution**: 🌱 extracts recurring judgment patterns from think.md + decision-log + failure log → confidence scoring (≥0.7 gets injected) → /evolve aggregates into skills written to the runtime directory · evolution output carries a DSH plugin-shape reservation
 > - **FDE ops five-piece set**: 🤝 companionship period (daily Refine inspection for two weeks post-deploy) / onboarding memory engineering / failure log / FDE node registry (daemon inspects on schedule) / scripted audit questionnaire (7 industry templates)
 > - **Dependency security upgrades**: 🔋 npm audit fully clean (vitest critical CVSS 9.8 chain fixed →4.1.10) · automerge 1.x→3.x stable (Rust WASM core, package rename)
-> - **DSH MCP interop**: 🔌 sofagent works as an MCP server callable from DSH (DeepSeek Harness) or any MCP host — 52 tools over stdio, human-review semantics for destructive ops never degrade (see HANDBOOK)
+> - **DSH MCP interop**: 🔌 sofagent works as an MCP server callable from DSH (DeepSeek Harness) or any MCP host — 60 tools over stdio, human-review semantics for destructive ops never degrade (see HANDBOOK)
 > - **Four independent review hardening**: 🛡️ All 38 issues found by four fresh-eyes 16-perspective reviews fixed — shadow-auditor defense activated (doctor hash baseline + --reset-baseline), gate false-greens eliminated (scenario guard revived + honest install exit codes), leak cleanup, post-commit bypass detection
 > See [v1.3.5 devlog](./docs/changelog/v1.3/v1.3.5.md). Earlier versions in [CHANGELOG](./CHANGELOG.md).
 

@@ -172,11 +172,11 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # 加载安全规�
 ## v1.3.5 新能力
 
 > 🧠 **v1.3.5 新能力**（按主题分组）：
-> - **MCP 自进化+运维闭环**：🧬 4 个新 MCP tool（run_ab_test 发起 A/B 实验 / promote_ab 晋升·强制人审 / snapshot_list 快照时间线 / snapshot_restore 恢复·强制人审）· 52 tools 全景
+> - **MCP 自进化+运维闭环**：🧬 4 个新 MCP tool（run_ab_test 发起 A/B 实验 / promote_ab 晋升·强制人审 / snapshot_list 快照时间线 / snapshot_restore 恢复·强制人审）· 60 tools 全景
 > - **instinct→skill 自动进化**：🌱 think.md + decision-log + 错题本三源提取判断模式 → 置信度评分（≥0.7 注入）→ /evolve 聚合成 skill 自动写入运行时目录 · 进化产物带 DSH 插件形态预留
 > - **FDE 运维五件**：🤝 陪跑期（部署后两周每日 Refine 巡检）/ 进场记忆工程化 / 错题本 / FDE 节点注册表（daemon 按表巡检）/ 审计问卷脚本化（7 行业模板）
 > - **依赖安全升级**：🔒 npm audit 全清零（vitest critical CVSS 9.8 漏洞链修复 →4.1.10）· automerge 1.x→3.x 稳定版（Rust WASM 核心，包名切换）
-> - **DSH MCP 互通**：🔌 sofagent 可作为 MCP server 被 DSH（DeepSeek Harness）等任何 MCP 宿主调用——52 tools 经 stdio 即挂即用，破坏性操作人审语义不降级（详见 HANDBOOK）
+> - **DSH MCP 互通**：🔌 sofagent 可作为 MCP server 被 DSH（DeepSeek Harness）等任何 MCP 宿主调用——60 tools 经 stdio 即挂即用，破坏性操作人审语义不降级（详见 HANDBOOK）
 > - **四份独立审查加固**：🛡️ fresh-eyes 四份 16 视角审查发现 38 项问题全部修复——影子审计器防线激活（doctor 哈希基线 + --reset-baseline）/ 门禁假绿清零（场景守卫复活 + install 退出码诚实）/ 泄漏清理 / post-commit 绕过检测
 > 详见 [v1.3.5 开发日志](./docs/changelog/v1.3/v1.3.5.md)。更早版本见 [CHANGELOG](./CHANGELOG.md)。
 

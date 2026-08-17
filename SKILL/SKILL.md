@@ -151,7 +151,7 @@ metadata:
 
 ---
 
-## MCP 工具速查（v1.3.5 · 52 tools）
+## MCP 工具速查（v1.3.6 · 60 tools）
 
 > 连接 sofagent MCP Server 后可用。未连接时降级为纯文本引导。
 
@@ -160,11 +160,15 @@ metadata:
 | **审计** | `run_audit` `audit_file` `audit_data_change` |
 | **反思** | `get_think` `write_think` `read_think_md` |
 | **知识库** | `search_knowledge` `read_entity` `read_concept` `list_entities` `read_lessons` `stats` |
-| **本体** | `create_entity` `create_concept` `validate_ontology` |
+| **本体** | `create_entity` `create_concept` `validate_ontology` `ontology_import`（v1.3.6） |
 | **评估优化** | `evaluate_output` `optimize_skill` `health_check` |
 | **数据/编排** | `data_sovereignty_report` `sofagent_compose` `notify_session` |
 | **能力清单** | `list_capabilities` |
 | **规则透明化** | `list_rules` |
-| **L3 能力市场** | `market_publish` `market_search` `market_invoke` `market_rate` `market_retire` `market_harvest_rule` |
+| **L3 能力公地** | `commons_publish` `commons_search` `commons_invoke` `commons_rate` `commons_retire` `commons_harvest_rule` |
 | **自进化（v1.3.5）** | `run_ab_test` `promote_ab`（强制人审） |
 | **运维（v1.3.5）** | `snapshot_list` `snapshot_restore`（强制人审） |
+| **Workflow（v1.3.6）** | `workflow_submit`（外部提交 → schema 校验 → 执行） |
+| **模型注册（v1.3.6）** | `model_register` `model_switch` `model_unregister`（评测→注册→灰度→晋升全程审计 + 强制人审） |
+| **训练（v1.3.6）** | `train_budget`（预算控制——超预算自动暂停等人审） |
+| **验收（v1.3.6）** | `define_acceptance` `check_acceptance`（机器可判定验收条件） |

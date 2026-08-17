@@ -422,7 +422,7 @@ jobs:
 
 ### 在 DSH 中使用 sofagent（v1.3.5 · MCP 互通）
 
-sofagent 本身就是一个 MCP server（stdio 传输，bin `sofagent-mcp`，v1.3.5 起 52 个 tool）。DSH（DeepSeek Harness）用户不需要等 v1.4.0 的 cordis-plugin——用官方 `@deepseek-ai/dsh-mcp-client` 桥接插件挂上 `sofagent-mcp`，**今天就能在 DSH 会话里调用 sofagent 的全部能力**：审计查询、知识库检索、A/B 实验（`run_ab_test`）、快照时间线（`snapshot_list`）等。
+sofagent 本身就是一个 MCP server（stdio 传输，bin `sofagent-mcp`，v1.3.6 起 60 个 tool）。DSH（DeepSeek Harness）用户不需要等 v1.4.0 的 cordis-plugin——用官方 `@deepseek-ai/dsh-mcp-client` 桥接插件挂上 `sofagent-mcp`，**今天就能在 DSH 会话里调用 sofagent 的全部能力**：审计查询、知识库检索、A/B 实验（`run_ab_test`）、快照时间线（`snapshot_list`）等。
 
 #### 配置方法
 
@@ -442,7 +442,7 @@ sofagent 本身就是一个 MCP server（stdio 传输，bin `sofagent-mcp`，v1.
 
 > 字段名以 `@deepseek-ai/dsh-mcp-client@0.1.0-rc.6`（2026-08-15 npm 实测拉包核对 `lib/types/index.d.ts` 的 `StdioConfig`）为准——`transport` / `serverName` / `command` / `args` / `env` / `cwd` / `toolCallTimeoutMs` / `failOnStartupError` / `reconnect`。DSH 尚处 developer preview（rc），后续版本字段可能变化，以 [DSH 官方仓库](https://github.com/deepseek-ai/deepseek-harness) config 文档为最终依据。
 
-挂载后 DSH 侧的模型看到的 tool 名形如 `mcp__sofagent__snapshot_list`（`mcp__<serverName>__<原始名>` 命名契约——与 Claude Code / Codex 同款），52 个 tool 全部可见，与 DSH 原生 tool 走完全相同的执行管道（权限策略、timeout、compaction 行为一致）。
+挂载后 DSH 侧的模型看到的 tool 名形如 `mcp__sofagent__snapshot_list`（`mcp__<serverName>__<原始名>` 命名契约——与 Claude Code / Codex 同款），60 个 tool 全部可见，与 DSH 原生 tool 走完全相同的执行管道（权限策略、timeout、compaction 行为一致）。
 
 **两种 command 写法按部署形态选**：
 
@@ -463,7 +463,7 @@ sofagent 本身就是一个 MCP server（stdio 传输，bin `sofagent-mcp`，v1.
 
 #### 验证状态
 
-> ⚠️ **本节配置示例的验证口径**：字段结构已对照 `@deepseek-ai/dsh-mcp-client@0.1.0-rc.6` 的类型定义与官方 README 核对（2026-08-15），但**尚未经 DSH 真实连接端到端验证**——DSH 本体处于 developer preview（rc），安装面与 profile 结构仍在变动。v1.3.5 发布前将以 MCP Inspector（`npx @modelcontextprotocol/inspector`）做 stdio 通道等价冒烟（52 tools 可见 + 只读 tool 调用 + 破坏性 tool 未确认时挂起）；DSH 直连验证待 DSH 正式版后补做。若你基于本节配置实操遇到字段不匹配，请以 DSH 报错信息与官方文档为准并[提 issue](https://github.com/KongFangXun/sofagent/issues)反馈。
+> ⚠️ **本节配置示例的验证口径**：字段结构已对照 `@deepseek-ai/dsh-mcp-client@0.1.0-rc.6` 的类型定义与官方 README 核对（2026-08-15），但**尚未经 DSH 真实连接端到端验证**——DSH 本体处于 developer preview（rc），安装面与 profile 结构仍在变动。v1.3.5 发布前将以 MCP Inspector（`npx @modelcontextprotocol/inspector`）做 stdio 通道等价冒烟（60 tools 可见 + 只读 tool 调用 + 破坏性 tool 未确认时挂起）；DSH 直连验证待 DSH 正式版后补做。若你基于本节配置实操遇到字段不匹配，请以 DSH 报错信息与官方文档为准并[提 issue](https://github.com/KongFangXun/sofagent/issues)反馈。
 
 ---
 
