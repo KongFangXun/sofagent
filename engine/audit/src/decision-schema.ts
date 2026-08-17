@@ -58,6 +58,31 @@ export interface DecisionWhy {
   confidence?: 'high' | 'med' | 'low';
   /** 触发该决策的规则名（TOOL_GATE / RULE_TOGGLE 时通常有值） */
   triggeredRule?: string;
+  /**
+   * 路由决策理由链（v1.3.6 交付⑧ 新增——可选字段，不破坏向后兼容）。
+   *
+   * 路由决策的可解释性不能外包——"为什么这个任务派给了模型 A 而不是 B"
+   * 是审计需求，必须留在约束层。sofagent 只在 model_switch（换模型）和
+   * route_workflow（入口路由）两个决策点记结构化理由链（借鉴 role-model
+   * Artifacts 构件；实际路由仍由第三方 router 做，此处只记理由）。
+   */
+  routeReason?: RouteReason;
+}
+
+/**
+ * 路由决策理由链 schema（v1.3.6 交付⑧）。
+ * policy = 命中哪类策略；matchedEndpoint = 命中谁（Profiles 对应）；
+ * rejectedEndpoints = 被硬性拒绝的（Policy 对应）；decisionScore = 决胜分。
+ */
+export interface RouteReason {
+  /** 命中的路由策略类别 */
+  policy: 'data-sovereignty' | 'cost' | 'latency' | 'capability' | 'preference' | 'default';
+  /** 命中的 endpoint（Profiles 对应） */
+  matchedEndpoint?: string;
+  /** 被规则拒绝的 endpoint（Policy 硬性拒绝对应） */
+  rejectedEndpoints?: string[];
+  /** 决胜分（Policy 决胜规则对应） */
+  decisionScore?: number;
 }
 
 /** 决策日志完整条目 schema */
@@ -131,9 +156,36 @@ export function sanitizeWhy(why: DecisionWhy): DecisionWhy {
     return safe;
   });
 
+  // routeReason 内的 endpoint 字符串同样逐项脱敏（endpoint 可能拼在 URL 里带 token）
+  let routeReason = why.routeReason;
+  if (routeReason) {
+    const sanitized: RouteReason = { policy: routeReason.policy };
+    if (routeReason.matchedEndpoint !== undefined) {
+      let safe = routeReason.matchedEndpoint;
+      for (const { pattern, replacement } of REDACTION_PATTERNS) {
+        safe = safe.replace(pattern, replacement);
+      }
+      sanitized.matchedEndpoint = safe;
+    }
+    if (routeReason.rejectedEndpoints !== undefined) {
+      sanitized.rejectedEndpoints = routeReason.rejectedEndpoints.map((ep) => {
+        let safe = ep;
+        for (const { pattern, replacement } of REDACTION_PATTERNS) {
+          safe = safe.replace(pattern, replacement);
+        }
+        return safe;
+      });
+    }
+    if (routeReason.decisionScore !== undefined) {
+      sanitized.decisionScore = routeReason.decisionScore;
+    }
+    routeReason = sanitized;
+  }
+
   return {
     ...why,
     text,
     ...(tags ? { tags } : {}),
+    ...(routeReason ? { routeReason } : {}),
   };
 }

@@ -28,6 +28,24 @@ import { atomicWriteSync } from '@sofagent/core';
 /** 模型来源类型 */
 export type ModelSource = 'endpoint' | 'local-path';
 
+/**
+ * 端点能力画像（v1.3.6 交付⑧ · Profiles 构件）——role-model 启发。
+ * model_register 注册时可选填；注册表存储，查询时可按能力筛选。
+ * ⚠️ 只记画像不做路由——实际路由仍由第三方 router 做。
+ */
+export interface EndpointProfile {
+  /** 擅长能力标签（如 ['code', 'long-context']） */
+  strengths?: string[];
+  /** 支持模态（如 ['text', 'image']） */
+  modalities?: string[];
+  /** 最大上下文 token 数 */
+  maxContext?: number;
+  /** 每千 token 成本（成本优先策略的决胜依据） */
+  costPerKToken?: number;
+  /** 延迟 P50（ms，延迟优先策略的决胜依据） */
+  latencyP50?: number;
+}
+
 /** 模型状态机 */
 export type ModelStatus = 'registered' | 'canary' | 'active' | 'retired';
 
@@ -45,6 +63,8 @@ export interface ModelRegistryEntry {
   source: ModelSource;
   /** 元信息（评测分数 / 备注——评测→注册流程的证据位） */
   meta?: { evalScore?: number; notes?: string };
+  /** 端点能力画像（v1.3.6 交付⑧——可选填，不填向后兼容） */
+  profile?: EndpointProfile;
   /** 当前状态 */
   status: ModelStatus;
   /** 注册时间（ISO 8601） */
@@ -178,6 +198,8 @@ export interface RegisterModelInput {
   /** 来源类型（缺省 endpoint；local-path = v1.4.1 扩展位） */
   source?: ModelSource;
   meta?: { evalScore?: number; notes?: string };
+  /** 端点能力画像（v1.3.6 交付⑧——可选填，不填向后兼容） */
+  profile?: EndpointProfile;
 }
 
 /**
@@ -201,6 +223,8 @@ export function registerModel(input: RegisterModelInput, options: ModelRegistryO
     model: input.model,
     source: input.source ?? 'endpoint',
     meta: input.meta,
+    // v1.3.6 交付⑧：能力画像可选填；未填时保留已有画像（重复注册不擦除）
+    profile: input.profile ?? existing?.profile,
     // 重复注册保留原状态（active 模型更新 endpoint 不降级）
     status: existing?.status ?? 'registered',
     registeredAt: existing?.registeredAt ?? now,

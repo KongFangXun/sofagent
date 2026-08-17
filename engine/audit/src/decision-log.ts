@@ -20,7 +20,7 @@ import { atomicAppendSync } from '@sofagent/core';
 import { sanitizeWhy, type DecisionKind, type DecisionLogEntry, type DecisionWhy, type LoopPhase } from './decision-schema';
 
 // Re-export schema 类型——public-api 从 decision-log 统一导出（与 appendHistory 模式一致）
-export type { DecisionLogEntry, DecisionWhy } from './decision-schema';
+export type { DecisionLogEntry, DecisionWhy, RouteReason } from './decision-schema';
 
 /**
  * 决策写入入参——schema 未含的运行时输入定义在此并导出。

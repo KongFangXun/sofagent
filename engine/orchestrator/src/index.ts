@@ -590,7 +590,20 @@ export type {
   RegisterModelInput,
   ModelSource,
   ModelStatus,
+  EndpointProfile,
 } from './model-registry';
+
+// Route Policy（v1.3.6 交付 ⑧ · 路由决策可解释性 Policy 构件）
+export {
+  loadRoutePolicy,
+  isEndpointDenied,
+  DEFAULT_ROUTE_POLICY,
+} from './route-policy';
+export type {
+  RoutePolicy,
+  RoutePreference,
+  RoutePolicyResolution,
+} from './route-policy';
 
 // Loop State Extractor（checkpoint → ControlGraphState 翻译 · v1.1.8 新增）
 export {

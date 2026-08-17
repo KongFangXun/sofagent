@@ -15,6 +15,8 @@ import { routeRequest } from '@sofagent/orchestrator';
 import type { RouteResult, ParsedWorkflow } from '@sofagent/orchestrator';
 // 审计写入（emitDecision 是函数，运行时需要）
 import { emitDecision } from '@sofagent/audit';
+// 类型导入（RouteReason 是类型，仅编译期——v1.3.6 交付⑧）
+import type { RouteReason } from '@sofagent/audit';
 
 // ============================================================
 // 类型定义
@@ -102,6 +104,8 @@ export function routeWorkflowTool(args: RouteWorkflowArgs): RouteWorkflowToolRes
 
   // ── 匹配判定记审计（kind=ORCHESTRATION）──
   if (result.route === 'workflow') {
+    // v1.3.6 交付⑧：routeReason 结构化理由链——入口路由命中哪个节点、得分多少
+    // policy='preference'（按节点 task 描述偏好匹配），matchedEndpoint=节点 id
     safeEmitDecision({
       agentId: 'mcp-router',
       sessionId: 'route-workflow',
@@ -109,6 +113,11 @@ export function routeWorkflowTool(args: RouteWorkflowArgs): RouteWorkflowToolRes
       moment: 'ACT',
       why: `入口路由命中 workflow 节点「${result.node.id}」（得分 ${result.score}）`,
       tags: ['route', 'workflow', result.node.id],
+      routeReason: {
+        policy: 'preference',
+        matchedEndpoint: result.node.id,
+        decisionScore: result.score,
+      },
     });
     return {
       text: `[sofagent] 路由命中 workflow 节点「${result.node.id}」（agent: ${result.node.agent}，得分: ${result.score}）`,
@@ -125,7 +134,7 @@ export function routeWorkflowTool(args: RouteWorkflowArgs): RouteWorkflowToolRes
     };
   }
 
-  // fallback
+  // fallback —— v1.3.6 交付⑧：routeReason 记 policy='default'（无匹配节点，走默认直答）
   safeEmitDecision({
     agentId: 'mcp-router',
     sessionId: 'route-workflow',
@@ -133,6 +142,7 @@ export function routeWorkflowTool(args: RouteWorkflowArgs): RouteWorkflowToolRes
     moment: 'ACT',
     why: `入口路由 fallback：${result.reason}`,
     tags: ['route', 'fallback'],
+    routeReason: { policy: 'default' },
   });
   return {
     text: `[sofagent] 路由 fallback：${result.reason}`,
@@ -160,15 +170,21 @@ function safeEmitDecision(input: {
   moment: 'ACT';
   why: string;
   tags?: string[];
+  /** v1.3.6 交付⑧：路由决策结构化理由链（Artifacts 增强） */
+  routeReason?: RouteReason;
 }): void {
   try {
-    // tags 放入 why 对象（EmitDecisionInput 的 why: DecisionWhy 接受 tags）
+    // tags + routeReason 放入 why 对象（EmitDecisionInput 的 why: DecisionWhy 均接受）
     emitDecision({
       agentId: input.agentId,
       sessionId: input.sessionId,
       kind: input.kind,
       moment: input.moment,
-      why: { text: input.why, ...(input.tags ? { tags: input.tags } : {}) },
+      why: {
+        text: input.why,
+        ...(input.tags ? { tags: input.tags } : {}),
+        ...(input.routeReason ? { routeReason: input.routeReason } : {}),
+      },
     });
   } catch (err) {
     process.stderr.write(

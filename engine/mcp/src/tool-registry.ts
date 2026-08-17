@@ -690,6 +690,17 @@ export const TOOLS: ToolDef[] = [
         source: { type: 'string', enum: ['endpoint', 'local-path'], description: '来源类型（缺省 endpoint；local-path = v1.4.1 扩展位预留）', default: 'endpoint' },
         eval_score: { type: 'number', description: '评测分数（评测→注册流程的证据位，v1.3.1 Benchmark 产出）' },
         comment: { type: 'string', description: '备注' },
+        profile: {
+          type: 'object',
+          description: '端点能力画像（v1.3.6 交付⑧，可选填，不填向后兼容）——strengths 擅长能力 / modalities 模态 / maxContext 最大上下文 / costPerKToken 每千 token 成本 / latencyP50 延迟 P50',
+          properties: {
+            strengths: { type: 'array', items: { type: 'string' }, description: '擅长能力标签（如 ["code","long-context"]）' },
+            modalities: { type: 'array', items: { type: 'string' }, description: '支持模态（如 ["text","image"]）' },
+            maxContext: { type: 'number', description: '最大上下文 token 数' },
+            costPerKToken: { type: 'number', description: '每千 token 成本' },
+            latencyP50: { type: 'number', description: '延迟 P50（ms）' },
+          },
+        },
       },
       required: ['name', 'endpoint', 'model'],
     },
