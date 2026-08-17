@@ -78,3 +78,15 @@ export type { DecisionKind, LoopPhase, DecisionWhy, RouteReason } from './decisi
 // ── 决策审计查询（v1.3.0 交付 6 T04）──
 export { queryByKind, getKindSummary, traceBack, traceFromBehavior, getHighFrequencyPatterns } from './decision-query';
 export type { QueryOptions, KindSummary, TraceResult, HighFrequencyPattern } from './decision-query';
+
+// ── 分级降级梯队（v1.3.6 交付⑭ · 韧性设计）──
+export {
+  DegradationManager,
+  getCapability,
+  filterRulesForLevel,
+  isLlmUnavailable,
+  isAuditTimeout,
+  isDaemonCrash,
+  LEVEL_ORDER,
+} from './degradation';
+export type { DegradationLevel, DegradationTrigger, DegradationRecord, LevelCapability, DegradationManagerOptions } from './degradation';

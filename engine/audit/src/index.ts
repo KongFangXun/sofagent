@@ -67,6 +67,17 @@ export type { SafetyResult, SafetyRule } from './rules/skill-safety-rules';
 // Re-export webhook 推送（mcp-server.ts 从 audit 消费 pushAuditResult）
 export { pushAuditResult } from './webhook';
 export type { WebhookPlatform } from './webhook';
+// v1.3.6 交付⑭：分级降级梯队（韧性设计——workflow never stops）
+export {
+  DegradationManager,
+  getCapability,
+  filterRulesForLevel,
+  isLlmUnavailable,
+  isAuditTimeout,
+  isDaemonCrash,
+  LEVEL_ORDER,
+} from './degradation';
+export type { DegradationLevel, DegradationTrigger, DegradationRecord, LevelCapability, DegradationManagerOptions } from './degradation';
 import { analyzeRootCause } from './audit-root-cause';
 import { runVerifyChain, runVerifyCommit } from './commands/verify';
 import { formatSuggestions } from './config-suggestion';
