@@ -9,11 +9,12 @@
 | v1.2.5- | #1-69 基线 | — |
 | v1.2.6-1.3.4 | #70-109（MCP 一致性 / ESM / 运行时审计 / HMAC / 市场五环 / SkillScan 等） | 48 子项 e-h、16+44、65+66、73+74 等 |
 | v1.3.5 | #110-111（bugfix 防复发 / 新功能审查面） | 93→70、69/75/77→95（check-version 四盲区） |
+| v1.3.6 | #113-114（八交付锚点一维收口 / run-03 修复防复发） | —（v1.3.5 发布后 hotfix 112 编入） |
 
-> **当前 86 维 · 编号 1-113 · 27 个编号已归并删除**。维度流连续不中断，分组导航：基线组 → 审查约束组 → 环境敏感组（前置 vitest/沙箱铁律）。
+> **当前 87 维 · 编号 1-114 · 27 个编号已归并删除（v1.3.6 勘误：上版头部声称 86 实为 85——112 hotfix 追加时未同步维度数，本次一并修正）**。维度流连续不中断，分组导航：基线组 → 审查约束组 → 环境敏感组（前置 vitest/沙箱铁律）。
 ## 🔒 维护公约（防膨胀铁律）
 
-**追加新维度前，必须先 grep 同类**：有同类 → 扩展旧维度的子项，不新增编号；无同类 → 才新增编号 = 当前最大 +1。历史维度靠 `git log -p` 找回。**行数警戒线**：`regression-checklist.md` ≤ 1500 行、`acceptance-test.sh` ≤ 2500 行（v1.3.5 靠真实归并消化增量：check-version 四盲区 69/75/77→95 净 -28 行、acceptance 注释/装饰框/冗余分组 -42 行——**警戒线未上调**，见 releasing/05-review-system.md 三判据）；releasing.md 方针「超标上调 LIMIT 不删内容」。
+**追加新维度前，必须先 grep 同类**：有同类 → 扩展旧维度的子项，不新增编号；无同类 → 才新增编号 = 当前最大 +1。历史维度靠 `git log -p` 找回。**行数警戒线**：`regression-checklist.md` ≤ 1530 行、`acceptance-test.sh` ≤ 2600 行（v1.3.6 首次上调：新增 2 维+S282-S289 全属新审查面，三判据全否后按「超标上调 LIMIT 不删内容」方针 1500→1530/2500→2600，判据记录见尾部）；releasing.md 方针「超标上调 LIMIT 不删内容」。
 
 **清单自身健康度自校验**（每次修改后跑）：
 ```bash
@@ -23,14 +24,14 @@ ACTUAL=$(grep -c "^#### " FORGE/playbook/regression-checklist.md)
 
 # 行数警戒线自检（越线提醒瘦身，非失败；与 releasing.md 阶段五警戒线一致）
 WC_CHK=$(wc -l < FORGE/playbook/regression-checklist.md); WC_ACC=$(wc -l < FORGE/playbook/acceptance-test.sh)
-[ "$WC_CHK" -le 1500 ] && echo "✅ checklist $WC_CHK (≤1500)" || echo "⚠️ checklist $WC_CHK 超 1500"
-[ "$WC_ACC" -le 2500 ] && echo "✅ acceptance $WC_ACC (≤2500)" || echo "⚠️ acceptance $WC_ACC 超 2500"
+[ "$WC_CHK" -le 1530 ] && echo "✅ checklist $WC_CHK (≤1530)" || echo "⚠️ checklist $WC_CHK 超 1530"
+[ "$WC_ACC" -le 2600 ] && echo "✅ acceptance $WC_ACC (≤2600)" || echo "⚠️ acceptance $WC_ACC 超 2600"
 ```
 ## 你的身份
 
 你是**回归测试工程师**——确认已知的修复没有回退，不是发现新问题。逐项核对，全 PASS 即通过。⏰ 时序：回归检查在阶段六跑，git tag/npm registry 未到位的项标 ⏳。🔍 维度 7f/17a-b/20 依赖真实环境（npm/git/OpenClaw），AI 审查标 `⏸️ 需人工环境`。
 
-## 审查维度（86 维 · 编号 1-109 · 版本演进见头部表格）
+## 审查维度（87 维 · 版本演进见头部表格）
 
 ### 审查维度正文（#1-106 · 按版本演进排列 · 分组小节为历史分类，维度流连续不中断）
 
@@ -1485,3 +1486,43 @@ grep -q "\*\*v1.3.5\*\*" CHANGELOG.md || echo "⚠️ CHANGELOG 索引缺 v1.3.5
 grep -q "isBinaryBuffer" engine/core/src/filesystem/isomorphic-git.ts && echo "✅ 跳过二进制" || echo "❌ 缺 isBinaryBuffer"
 grep -qi "png" engine/core/src/__tests__/isomorphic-git-v2.test.ts && echo "✅ PNG 测试" || echo "❌ 缺 PNG 测试"
 ```
+
+#### 113. v1.3.6 新功能审查面——八交付锚点一维收口（阶段五来源提取 A 类）
+
+> v1.3.6 十六项交付的核心面收口为一维（acceptance S282-S289 已有端到端断言，此处是快速 grep 版——审查 session 分钟级可跑）。检查命令全部指向**实际实现路径**（changelog 的涉及文件表是开发前预估，ontology 管线实际在 `import-pipeline.ts` 非 `writer.ts`——S283 初版就错在这）。
+
+```bash
+# 引擎接口外化四件
+test -f engine/orchestrator/src/workflow/container.ts && grep -q "ContainerDeps" engine/orchestrator/src/workflow/container.ts && echo "✅ ①容器+沙箱宿主位" || echo "❌ ①缺"
+test -f engine/orchestrator/src/ontology/import-pipeline.ts && grep -q "D1-D5" engine/orchestrator/src/ontology/import-pipeline.ts && echo "✅ ②注入管线" || echo "❌ ②缺"
+grep -q "allow-with-audit" engine/orchestrator/src/harness-sdk/wrap.ts && test -f engine/orchestrator/src/harness-sdk/builder-registry.ts && echo "✅ ③托管SDK" || echo "❌ ③缺"
+test -f engine/orchestrator/src/model-registry.ts && grep -q "routeReason" engine/audit/src/decision-schema.ts && echo "✅ ④模型注册+路由可解释" || echo "❌ ④缺"
+# 训练与验收
+grep -q "SIGINT" engine/orchestrator/src/train/train-protocol.ts && grep -q "train_budget_exceeded" engine/orchestrator/src/train/train-budget.ts && echo "✅ ⑥⑦训练契约+预算" || echo "❌ ⑥⑦缺"
+grep -q "define_acceptance" engine/mcp/src/tools/acceptance.ts && echo "✅ ⑨验收tool" || echo "❌ ⑨缺"
+# 可靠性件
+grep -q "postToolCall" engine/orchestrator/src/middleware/dual-gate-mw.ts && test -f engine/daemon/src/fatigue.ts && grep -q "safe-stop" engine/audit/src/degradation.ts && echo "✅ ⑫⑬⑭双闸+疲劳+降级" || echo "❌ 可靠性缺"
+grep -q "DecisionCategory" engine/audit/src/decision-schema.ts && echo "✅ ⑮decisions五分类" || echo "❌ ⑮缺"
+```
+
+#### 114. v1.3.6 run-03 修复防复发——脱敏两层同源 + 安全渠道 + worktree 信号清理
+
+> fresh-eyes run-03 的 3 条 P1 修复锚点（finding-01 安装 URL 属发版中间态不在此列——阶段十一 4b 消解）。
+
+```bash
+# finding-02：prompt 层与 tool 层脱敏同源（模块加载级行为断言在 prompt-sanitizer.ts 内）
+grep -q "sk_live_\|sk_(live|test)" engine/core/src/security/prompt-sanitizer.ts && echo "✅ prompt 层 Stripe 覆盖" || echo "❌ 脱敏不对称回退"
+grep -q "SHARED_REDACTION_SAMPLES" engine/core/src/security/prompt-sanitizer.ts && echo "✅ 两层漂移断言在位" || echo "❌ 防漂移断言丢失"
+# finding-03：noreply 邮箱不得复列为联系渠道（commit 邮箱无妨）
+grep -q "Security Advisory" SECURITY.md && ! grep -q "noreply.*备选" SECURITY.md && echo "✅ 漏洞渠道单通道" || echo "❌ 摆设渠道回潮"
+# worktree 留存根治（双 driver 均接线）
+grep -q "registerSignalCleanup" FORGE/src/driver-base.mjs && grep -q "registerSignalCleanup\|cleanupStaleWorktrees" FORGE/src/fresh-eyes-driver.mjs && grep -q "registerSignalCleanup\|cleanupStaleWorktrees" FORGE/src/release-gate-driver.mjs && echo "✅ 信号清理双 driver" || echo "❌ 镜像漂移回退"
+```
+
+<!-- 瘦身判据记录 v1.3.6（阶段五步骤4）
+①冗余：检查本版新增 2 维（113/114）——均为新审查面（v1.3.6 交付 + run-03 修复），check-version/check-docs/check-test-count 均未覆盖 → 无删
+②重叠：113 与 acceptance S282-S289 是同一交付面的两种粒度（grep 快查 vs 端到端断言），刻意分层非重复（审查 session 分钟级跑 113，acceptance 发版跑）；114 与维度 110 主题相邻但对象不同（110 是四报告 38 项、114 是 run-03 3 项）→ 不并
+③增长性质：113/114 均属新审查面非模式重复 → 保留独立维度
+结论（v1.3.6）：checklist 1526 行 > 1500 警戒线——三判据全否，按 releasing.md「超标上调 LIMIT 不删内容」方针上调 1500→1530（v1.3.5 未上调，无连续两版禁令）；acceptance 2580 行 > 2500——同批上调 2500→2600（S282-S289 +80 行全属新审查面）
+勘误随记：本版发现上版头部声称「86 维」实际 85（112 hotfix 追加时未同步维度数）——已修正为真实 87（85+113+114）
+-->

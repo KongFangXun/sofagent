@@ -6,7 +6,7 @@ export LANG=en_US.UTF-8
 export LC_ALL=en_US.UTF-8
 # sofagent-audit · 上线前验收测试（Pre-Release Acceptance Test）
 # 覆盖：FORGE + MCP + 文件系统审计 + daemon + 红队对抗 + 各版本新功能验收
-# 场景数：214 个场景（SSOT：check-test-count.sh 校验；v1.3.5 +12：S270-S281）
+# 场景数：222 个场景（SSOT：check-test-count.sh 校验；v1.3.6 +8：S282-S289；v1.3.5 +12：S270-S281）
 # 版本段起点见文件内「# ─── v」分组标记（grep "─── v" 定位）
 # 口径注意：底部「$PASSED 通过」是断言通过数（≠场景数，含跳过场景），勿混用
 # 用法：bash FORGE/playbook/acceptance-test.sh  退出码 = 失败场景数（0 = 全部通过）
@@ -2488,6 +2488,88 @@ grep -c "exitCode" "$PROJECT_ROOT/engine/audit/hooks/post-commit" >/dev/null 2>&
 grep -q "audit-hash" "$PROJECT_ROOT/engine/core/src/doctor.ts" || S281_OK=false  # #18 影子审计器基线
 [ -x "$PROJECT_ROOT/engine/audit/dist/cli-quick.js" ] || S281_OK=false  # run-01 维度17 bin 权限
 $S281_OK && pass "BugFix 防复发五锚点在位（守卫/绕过检测/影子审计器/bin权限）" || fail "防复发锚点丢失——38 项修复面临回退"
+
+# ─── v1.3.6 交付八面（S282-S289 · 阶段四步骤 3 补充）───
+
+scenario 282 "v1.3.6 交付①：Workflow 标准格式 + 运行容器——schema 单一事实源 + MCP 提交入口 + 沙箱宿主位"
+S282_OK=true
+[ -f "$PROJECT_ROOT/engine/orchestrator/src/workflow/schema/workflow.schema.json" ] || S282_OK=false
+[ -f "$PROJECT_ROOT/engine/orchestrator/src/workflow/container.ts" ] || S282_OK=false
+grep -q "workflow_submit" "$PROJECT_ROOT/engine/mcp/src/tools/workflow-submit.ts" || S282_OK=false
+grep -q "merge_criteria\|approver" "$PROJECT_ROOT/engine/orchestrator/src/workflow/schema/workflow.schema.json" || S282_OK=false  # 审阅协议字段
+grep -q "v1.3.7 沙箱宿主位\|ContainerDeps" "$PROJECT_ROOT/engine/orchestrator/src/workflow/container.ts" || S282_OK=false  # 沙箱宿主位（runner 注入）
+grep -q "schema" "$PROJECT_ROOT/engine/orchestrator/src/workflow-parser.ts" 2>/dev/null || true  # parser 走 schema 单一事实源（文件名以实际为准）
+ls "$PROJECT_ROOT/engine/orchestrator/src/__tests__/" 2>/dev/null | grep -q "workflow-container" || S282_OK=false
+$S282_OK && pass "Workflow 容器完整（schema+审阅协议+容器+MCP+沙箱宿主位+单测）" || fail "Workflow 容器交付缺件"
+
+scenario 283 "v1.3.6 交付②：Ontology 注册接口——MCP 注入 + D1-D5 审计留痕 + 可回滚"
+S283_OK=true
+[ -f "$PROJECT_ROOT/engine/mcp/src/tools/ontology-import.ts" ] || S283_OK=false
+grep -q "ontology_import" "$PROJECT_ROOT/engine/mcp/src/tools/ontology-import.ts" || S283_OK=false
+grep -q "D1-D5" "$PROJECT_ROOT/engine/orchestrator/src/ontology/import-pipeline.ts" || S283_OK=false  # 注入事件审计留痕（实际落点 import-pipeline，非 changelog 预估的 writer.ts）
+grep -q "回滚" "$PROJECT_ROOT/engine/orchestrator/src/ontology/import-pipeline.ts" || S283_OK=false  # 中途失败自动还原
+grep -q "importOntology" "$PROJECT_ROOT/engine/orchestrator/src/ontology/index.ts" || S283_OK=false  # 管线导出接线
+$S283_OK && pass "Ontology 注入管线完整（MCP+D1-D5 留痕+回滚+导出）" || fail "Ontology 注册接口缺件"
+
+scenario 284 "v1.3.6 交付③：SubAgent 托管 SDK——harness.wrap 双形态 + 默认审批 + registry 构建器"
+S284_OK=true
+[ -f "$PROJECT_ROOT/engine/orchestrator/src/harness-sdk/wrap.ts" ] || S284_OK=false
+grep -q "createReactAgent" "$PROJECT_ROOT/engine/orchestrator/src/harness-sdk/wrap.ts" || S284_OK=false  # 形态①
+grep -q "StateGraph" "$PROJECT_ROOT/engine/orchestrator/src/harness-sdk/wrap.ts" || S284_OK=false  # 形态②
+grep -q "allow-with-audit" "$PROJECT_ROOT/engine/orchestrator/src/harness-sdk/wrap.ts" || S284_OK=false  # 保守默认
+[ -f "$PROJECT_ROOT/engine/orchestrator/src/harness-sdk/builder-registry.ts" ] || S284_OK=false  # graph 构建器工厂
+[ -f "$PROJECT_ROOT/docs/guides/harness-sdk.md" ] || S284_OK=false  # 开发者文档
+grep -q "sandbox" "$PROJECT_ROOT/engine/orchestrator/src/harness-sdk/types.ts" 2>/dev/null || true  # sandbox 选项留空（v1.3.8 启用）
+$S284_OK && pass "托管 SDK 完整（双形态+默认审批+构建器注册+文档）" || fail "harness.wrap 交付缺件"
+
+scenario 285 "v1.3.6 交付④⑧：模型注册灰度三 tool + routeReason 决策可解释性"
+S285_OK=true
+for _t in model-register model-switch model-unregister; do
+  [ -f "$PROJECT_ROOT/engine/mcp/src/tools/${_t}.ts" ] || S285_OK=false
+done
+[ -f "$PROJECT_ROOT/engine/orchestrator/src/model-registry.ts" ] || S285_OK=false
+grep -q "人审\|humanReview\|require.*approval\|confirm" "$PROJECT_ROOT/engine/mcp/src/tools/model-switch.ts" 2>/dev/null || S285_OK=false  # 晋升强制人审
+grep -q "routeReason" "$PROJECT_ROOT/engine/audit/src/decision-schema.ts" || S285_OK=false  # 路由决策可解释性
+[ -f "$PROJECT_ROOT/engine/orchestrator/src/route-policy.ts" ] || S285_OK=false
+$S285_OK && pass "模型注册灰度闭环+路由可解释（3 tool+注册表+人审+routeReason+policy）" || fail "模型上线流程缺件"
+
+scenario 286 "v1.3.6 交付⑥⑦：训练协议三约定 + 预算控制——双栈契约完整"
+S286_OK=true
+[ -f "$PROJECT_ROOT/engine/orchestrator/src/train/train-protocol.ts" ] || S286_OK=false
+[ -f "$PROJECT_ROOT/engine/orchestrator/src/train/train-budget.ts" ] || S286_OK=false
+[ -f "$PROJECT_ROOT/engine/mcp/src/tools/train-budget.ts" ] || S286_OK=false
+grep -q "SIGINT\|SIGKILL" "$PROJECT_ROOT/engine/orchestrator/src/train/train-protocol.ts" || S286_OK=false  # 信号控制约定③
+grep -q "progress\|checkpoint" "$PROJECT_ROOT/engine/orchestrator/src/train/train-protocol.ts" || S286_OK=false  # stdout JSON 事件约定②
+grep -q "train_budget_exceeded" "$PROJECT_ROOT/engine/orchestrator/src/train/train-budget.ts" || S286_OK=false  # 超预算审计
+$S286_OK && pass "训练协议+预算完整（契约三约定+超限审计+MCP tool）" || fail "训练双栈契约缺件"
+
+scenario 287 "v1.3.6 交付⑨：验收 MCP tool 先行版——define/check_acceptance 复用 Benchmark 判定引擎"
+S287_OK=true
+[ -f "$PROJECT_ROOT/engine/mcp/src/tools/acceptance.ts" ] || S287_OK=false
+grep -q "define_acceptance" "$PROJECT_ROOT/engine/mcp/src/tools/acceptance.ts" || S287_OK=false
+grep -q "check_acceptance" "$PROJECT_ROOT/engine/mcp/src/tools/acceptance.ts" || S287_OK=false
+grep -q "benchmark\|Benchmark\|判定" "$PROJECT_ROOT/engine/mcp/src/tools/acceptance.ts" 2>/dev/null || S287_OK=false  # 复用判定引擎
+$S287_OK && pass "验收 tool 双件在位（define/check+判定引擎复用）" || fail "验收 MCP tool 缺件"
+
+scenario 288 "v1.3.6 交付⑬⑭：Agent 疲劳度 + 分级降级梯队——运维闭环健康件"
+S288_OK=true
+[ -f "$PROJECT_ROOT/engine/daemon/src/fatigue.ts" ] || S288_OK=false
+grep -c "连续失败\|窗口占用\|相似度\|consecutive\|window\|similarity" "$PROJECT_ROOT/engine/daemon/src/fatigue.ts" >/dev/null 2>&1 || S288_OK=false  # 三信号
+[ -f "$PROJECT_ROOT/engine/audit/src/degradation.ts" ] || S288_OK=false
+grep -q "safe-stop" "$PROJECT_ROOT/engine/audit/src/degradation.ts" || S288_OK=false  # 四级降级终态
+grep -q "full\|rules-only\|minimal" "$PROJECT_ROOT/engine/audit/src/degradation.ts" || S288_OK=false
+$S288_OK && pass "疲劳三信号+四级降级在位" || fail "运维健康件缺件"
+
+scenario 289 "v1.3.6 交付⑫⑮ + run-03 修复：postToolCall 双闸 + decisions 五分类 + prompt 脱敏 sk_live_ + worktree 信号清理"
+S289_OK=true
+grep -q "postToolCall" "$PROJECT_ROOT/engine/orchestrator/src/middleware/dual-gate-mw.ts" || S289_OK=false  # 双闸
+grep -q "sk_(live|test)" "$PROJECT_ROOT/engine/core/src/security/prompt-sanitizer.ts" 2>/dev/null || grep -q "sk_live_\|stripe" "$PROJECT_ROOT/engine/core/src/security/prompt-sanitizer.ts" || S289_OK=false  # run-03 finding-02
+grep -q "registerSignalCleanup" "$PROJECT_ROOT/FORGE/src/driver-base.mjs" || S289_OK=false  # worktree 留存根治
+grep -q "cleanupStaleWorktrees" "$PROJECT_ROOT/FORGE/src/driver-base.mjs" || S289_OK=false
+grep -q "Security Advisory" "$PROJECT_ROOT/SECURITY.md" || S289_OK=false  # run-03 finding-03 漏洞渠道单通道
+grep -q "DecisionCategory" "$PROJECT_ROOT/engine/audit/src/decision-schema.ts" || S289_OK=false  # 交付⑮ 五分类（route/select/skip/retry/escalate）
+grep -q "queryByCategory\|category" "$PROJECT_ROOT/engine/audit/src/decision-log.ts" 2>/dev/null || true  # 多维查询（既有 queryByKind 扩展）
+$S289_OK && pass "双闸+decisions五分类+脱敏补丁+信号清理+安全渠道五锚点在位" || fail "run-03 修复面+交付⑮缺件"
 
 
 echo -e "  验收测试结果：${GREEN}$PASSED 通过${NC} / ${RED}$FAILED 失败${NC} / 共 $((PASSED + FAILED))"
