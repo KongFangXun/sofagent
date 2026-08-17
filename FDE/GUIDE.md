@@ -849,6 +849,21 @@ AI 节点跑起来后，自动生成这些文件：
 
 离场前还确认：私有化评估体系（eval.md 有初始基线 ≥5 条评分、Skill 迭代历史可见、知识库演变可追溯）。
 
+### 5.8c 行业 overlay 标注（进场时 · v1.3.7 起）
+
+> 进场梳理时在 `context.md` 标注行业 → 约束层自动发现并加载对应行业规则包（overlay）。完整机制见 v1.3.7 开发日志「行业 overlay 规则包」节。
+
+| 行业 | 标注值 | 自动加载 |
+|------|--------|---------|
+| 金融 | `industry: fintech` | `sofagent-ruleset-fintech`（反洗钱留痕 + 交易审计双通道 + 监管报送） |
+| 医疗 | `industry: medical` | `sofagent-ruleset-medical`（患者数据保护 + 诊断必须人工复核） |
+| 政务 | `industry: government` | `sofagent-ruleset-government`（数据不出专网 + 国密 + 等保三级） |
+| AI 行业 | `industry: ai` | `sofagent-ruleset-ai`（模型选型审计 + agent 安全治理） |
+
+- 标注放在 context.md 顶部 frontmatter（`industry:` 字段），部署时约束层读它决定加载哪个 overlay
+- 未标注行业 = 只跑 24 条默认规则，不加载任何 overlay（保守默认）
+- overlay 复用 `--ruleset` 机制（v1.2.9），与规则市场同一加载通道
+
 ### 5.9 离场：五大能力
 
 离场前确认企业方具备五大能力：
