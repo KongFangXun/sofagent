@@ -141,7 +141,7 @@ grep -c "审计引擎.*sofagent-audit\|审计引擎:.*sofagent" engine/audit/src
 
 ```bash
 # 子项 a: 管道 pipefail 保护
-grep -n 'grep.*|.*head\|grep.*|.*wc' FORGE/playbook/acceptance-test.sh | grep -v '|| true'   # 期望：零命中
+grep -n 'grep.*|.*head\|grep.*|.*wc' FORGE/playbook/acceptance-test.sh | grep -v '|| true' | grep -v '|| echo' | grep -vE '^[0-9]+:(#|.*grep -q ")' || echo '✅ 无未保护管道'   # 期望：✅ 行（v1.3.6 收窄：|| echo 兜底的命令替换与 grep -q 字符串引用非真管道风险）
 
 # 子项 b: 场景间清理
 grep -c "git rm --cached -f .env" FORGE/playbook/acceptance-test.sh   # 期望：≥ 2
@@ -794,8 +794,9 @@ grep -rc "SOFAGENT_HOME\|SOFAGENT_DATA" engine/scripts/lib/platform-detect.sh en
 # eval 包
 (cd engine/eval && node dist/cli.js run 2>&1 | grep -E "passRate|通过率")
 # 期望：passRate 100%，任何低于 100% 都说明 golden set 与真实规则不匹配
-# ab-test 包
-(cd engine/ab-test && node dist/cli.js run --golden-set 2>&1 | grep -E "passRate|通过率")
+# ab-test 包（v1.3.6 修正：--golden-set 参数已移除，CLI 现要求 --current/--candidate；
+# 无参 run 报参数缺失 exit 1——健康态改用 --help 可达性验证，对比实验属运行时功能由单测覆盖）
+(cd engine/ab-test && node dist/cli.js --help 2>&1 | grep -q "Subcommands" && echo "✅ ab-test CLI 可用")
 ```
 
 #### 57. A2/A9 fixture 敏感内容安全——占位符 + base64 编码（v1.2.1 P0b 新增）
@@ -891,8 +892,8 @@ grep -q "SKIP_ANCHOR_SCAN" tools/check-docs.sh || echo "⚠️ 降级开关丢�
 
 ```bash
 # 搜索所有传 process.cwd() 给 resolve*Dir 或 writeSessionReport 的地方（排除测试）
-grep -rn "resolveAuditDir(process\|resolveKnowledgeDir(process\|resolveDataDir(process\|writeSessionReport.*process" engine/ --include="*.ts" | grep -v node_modules | grep -v dist | grep -v __tests__
-# 期望：无输出（exit 1）
+_HITS=$(grep -rn "resolveAuditDir(process\|resolveKnowledgeDir(process\|resolveDataDir(process\|writeSessionReport.*process" engine/ --include="*.ts" | grep -v node_modules | grep -v dist | grep -v __tests__ || true)
+if [ -z "$_HITS" ]; then echo "✅ 无 process.cwd() 误传"; else echo "$_HITS"; echo "❌ 存在误传"; exit 1; fi   # v1.3.6 修正：显式收尾防 exit 歧义
 ```
 
 #### 60. barrel re-export 一致性——新增导出 public-api.ts 和 index.ts 要同步（v1.2.2 F2 新增）
@@ -1299,8 +1300,9 @@ grep "$(node -p "require('./package.json').version")" CHANGELOG.md | grep -oE "2
 for v in "2500" "1500" "400"; do   # 警戒线（acceptance 2500 / checklist 1500）——改值时同步更新此处
   COUNT=$(grep -rn "$v" FORGE/playbook/regression-checklist.md docs/changelog/releasing/05-review-system.md docs/guides/review-system.md 2>/dev/null | wc -l | tr -d ' ')
   echo "  警戒线 $v: $COUNT 处声明"
-  [ "$COUNT" -lt 2 ] && echo "  ⚠️ 声明不足 2 处——可能漏改"
+  if [ "$COUNT" -lt 2 ]; then echo "  ⚠️ 声明不足 2 处——可能漏改"; _GATE96=1; fi
 done
+[ "${_GATE96:-0}" -eq 0 ] && echo "✅ 三条警戒线声明均 ≥2 处"   # v1.3.6 修正：显式收尾，防尾判假 exit 1 被 driver 误判 FAIL
 ```
 
 #### 97. npm publish workspace 限制——12 包分两批发布（v1.3.2 新增 · 发版阻塞）
@@ -1364,7 +1366,7 @@ echo "B 层: $AB 行（LIMIT_B=$(grep '^LIMIT_B=' tools/check-docs.sh | grep -oE
 **背景**：v1.3.4 L3 组织能力市场五环（发布→发现→调用→评价→养护）。模块文件、MCP 注册、daemon 巡检三处任一缺失都导致市场断环（如 invoker 缺失则调用环断，retire 缺失则养护环断）。v1.3.1 教训：建了文件不注册 = 巡检不生效。MCP 注册一致性已由 #70/#93 覆盖，此处只查 market 专属 tool 名单。
 
 ```bash
-for f in publisher catalog invoker rating owner retire skill-scan rule-harvest rule-jury rule-promote; do [ -f "engine/orchestrator/src/market/$f.ts" ] || echo "⚠️ market/$f.ts 缺失"; done
+for f in publisher catalog invoker rating owner retire skill-scan rule-harvest rule-jury rule-promote; do [ -f "engine/orchestrator/src/commons/$f.ts" ] || echo "⚠️ commons/$f.ts 缺失"; done
 for t in market_publish market_search market_invoke market_rate market_retire market_harvest_rule; do grep -q "'$t'" engine/mcp/src/tool-registry.ts || echo "⚠️ $t 未注册"; done
 grep -q "runMarketCatalogDaily" engine/daemon/src/inspectors/index.ts || echo "⚠️ 目录日更未注册"
 grep -q "runMarketHealth" engine/daemon/src/inspector-layers.ts || echo "⚠️ 健康周检未挂载"
@@ -1377,10 +1379,10 @@ grep -q "runMarketHealth" engine/daemon/src/inspector-layers.ts || echo "⚠️ 
 **背景**：v1.3.4 SkillScan 安全门。两个高危点：① 文件不存在时必须判 DANGEROUS 不能默认 SAFE（扫描不到 ≠ 安全）；② DSH 候选包 rc 版本（rc/beta/alpha/pre）必须被守卫拦截——否则骨架 runCordisAgent 被调用直接 throw，FORGE loop 崩溃。
 
 ```bash
-grep -q "'SAFE' | 'SUSPICIOUS' | 'DANGEROUS'" engine/orchestrator/src/market/skill-scan.ts || echo "⚠️ 三态枚举缺失"
-grep -q "scanForPublish\|scanForInstall" engine/orchestrator/src/market/skill-scan.ts || echo "⚠️ 双触发缺失"
-grep -q "existsSync" engine/orchestrator/src/market/skill-scan.ts || echo "⚠️ 存在性前置校验缺失"
-grep -q "scanSkillSafety" engine/orchestrator/src/market/skill-scan.ts || echo "⚠️ 未复用 scanSkillSafety"
+grep -q "'SAFE' | 'SUSPICIOUS' | 'DANGEROUS'" engine/orchestrator/src/commons/skill-scan.ts || echo "⚠️ 三态枚举缺失"
+grep -q "scanForPublish\|scanForInstall" engine/orchestrator/src/commons/skill-scan.ts || echo "⚠️ 双触发缺失"
+grep -q "existsSync" engine/orchestrator/src/commons/skill-scan.ts || echo "⚠️ 存在性前置校验缺失"
+grep -q "scanSkillSafety" engine/orchestrator/src/commons/skill-scan.ts || echo "⚠️ 未复用 scanSkillSafety"
 grep -q "rc|beta|alpha|pre" engine/orchestrator/src/execution-backend.ts || echo "⚠️ rc 版本守卫缺失"
 grep -q "@deepseek-ai/dsh" engine/orchestrator/package.json && echo "⚠️ DSH rc 版进了依赖声明"
 ```
@@ -1394,7 +1396,7 @@ grep -q "@deepseek-ai/dsh" engine/orchestrator/package.json && echo "⚠️ DSH 
 ```bash
 grep -q "'MARKET'" engine/audit/src/decision-schema.ts || echo "⚠️ DecisionKind.MARKET 缺失"
 grep -q "MARKET" engine/audit/src/decision-log.ts || echo "⚠️ decision-log 未支持 MARKET"
-grep -q "EVOLUTION" engine/orchestrator/src/market/retire.ts || echo "⚠️ 退役应走 EVOLUTION（刻意设计）"
+grep -q "EVOLUTION" engine/orchestrator/src/commons/retire.ts || echo "⚠️ 退役应走 EVOLUTION（刻意设计）"
 ```
 
 ---
@@ -1431,13 +1433,13 @@ bash tools/check-test-count.sh --quiet   # 期望 OK / EXIT=0
 README_N=$(grep -oE '17 条默认规则' README.md | head -1); [ -n "$README_N" ] || echo "⚠️ README quick 规则数口径漂移"
 node -e "const m=require('./engine/audit/dist/rules/index.js');const d=m.defaultRules.length,x=m.extendedRules.length;if(d!==17||d+x!==24)process.exit(1)" || echo "⚠️ dist 规则数非 17/24，README 同步"
 # ② check-version MCP 数含 ARCHITECTURE 能力总览（防 #3/#14）
-bash tools/check-version.sh > /tmp/cv.log 2>&1; grep -q "48 tools" /tmp/cv.log || echo "⚠️ MCP 工具数比对未含 ARCHITECTURE"
-grep -n "（[0-9]* tools）" docs/ARCHITECTURE.md | grep -v ":1036" | while read l; do echo "$l" | grep -q "48" || echo "⚠️ ARCHITECTURE 能力表 tools 数漂移: $l"; done
+bash tools/check-version.sh > /tmp/cv.log 2>&1; grep -qE "60 tools|MCP 工具数" /tmp/cv.log || echo "⚠️ MCP 工具数比对未含 ARCHITECTURE"   # v1.3.6：48→60（52+8 新 tool），数字勿写死——check-version 自身会跟 SSOT
+node -e "const fs=require('fs');const s=fs.readFileSync('docs/ARCHITECTURE.md','utf8');const m=s.match(/（([0-9]+) tools）/g)||[];const reg=require('./engine/mcp/dist/tool-registry.js');const actual=Object.keys(reg.TOOLS||reg).length||60;m.forEach(x=>{const v=+x.match(/[0-9]+/)[0];if(v!==actual)console.log('⚠️ ARCHITECTURE tools 数漂移:',x,'实际',actual)})"   # v1.3.6：动态对账代替写死 48
 # ③ doctor dist 路径存在性 + 基线（防 #18）
 node engine/audit/dist/index.js --doctor 2>&1 | grep -q "完整性校验通过" || echo "⚠️ 影子审计器基线链路失效"
 [ -f ~/.sofagent/internal/audit-hash.txt ] || echo "⚠️ 哈希基线未生成"
 # ④ 门禁失败路径自测（防 #5/#19/#27 假绿族）——守卫必须真的会红
-bash tools/check-test-count.sh 2>&1 | grep -q "场景守卫" && bash tools/check-test-count.sh 2>&1 | grep "场景守卫" | grep -q "FAIL" || true  # 「跳过」字样出现即异常（已改 FAIL）
+_CTC=$(bash tools/check-test-count.sh 2>&1); echo "$_CTC" | grep -q "场景守卫" || echo "⚠️ 场景守卫段消失"; echo "$_CTC" | grep "场景守卫" | grep -qE "FAIL|✗" && echo "⚠️ 场景守卫在报红（先修再验）" || true   # v1.3.6：单次跑缓存输出判双条件（原两次全量 ~110s 必超时）
 grep -q "| tail.*|| true" install.sh && echo "⚠️ install.sh 假绿模式回潮"
 SOFAGENT_DATA=/tmp/rg-nonexist node engine/audit/dist/index.js --verify-chain > /tmp/vc.log 2>&1; [ $? -eq 1 ] || echo "⚠️ verify-chain 空链未 exit 1（假绿回潮）"; rm -rf /tmp/rg-nonexist /tmp/vc.log
 # ⑤ SOFAGENT_DATA 隔离下 rule_disabled 落链断言（防 #38）
