@@ -296,7 +296,7 @@ export class DualGateMiddleware {
   /**
    * postToolCall 钩子——每次工具执行后触发，逐条跑规则集。
    * 首条 WARN 即返回（fail-fast——一次只报一个最优先的问题）。
-   * 规则自身抛错 → 跳过该规则（复查不能反噬主流程）。
+   * 规则自身抛错 → 该规则本次不产出结论（复查组件故障不影响工具结果）。
    */
   postToolCall(call: ToolCallRecord, resultText: string): SideEffectCheckResult {
     for (const rule of this.rules) {
