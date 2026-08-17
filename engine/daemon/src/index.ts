@@ -168,6 +168,20 @@ export {
   cleanupFailedOutbox,
 } from './push-target';
 
+// v1.3.6 交付⑬：Agent 疲劳度检测（3 信号采集 → 评分 → daemon-health.json）
+export {
+  FatigueTracker,
+  computeFatigueScore,
+  recommendAction,
+  outputSimilarity,
+  writeFatigueReport,
+  readFatigueReport,
+  FAILURE_SATURATION,
+  COMPACT_THRESHOLD,
+  RESTART_THRESHOLD,
+} from './fatigue';
+export type { FatigueSignals, FatigueReport, FatigueAction } from './fatigue';
+
 // v1.3.5 交付 5 #1：FDE 陪跑期（部署后前 2 周每日 Refine 巡检）
 export {
   runCompanionDaily,

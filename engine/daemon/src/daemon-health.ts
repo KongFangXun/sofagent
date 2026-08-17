@@ -11,6 +11,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { DATA_DIR } from '@sofagent/core';
+import type { FatigueReport } from './fatigue';
 
 /** daemon 健康自检文件结构 */
 export interface DaemonHealthFile {
@@ -30,6 +31,8 @@ export interface DaemonHealthFile {
   lastError: string | null;
   /** daemon uptime（毫秒，从 startTime 计算） */
   uptimeMs: number;
+  /** v1.3.6 交付⑬：Agent 疲劳度报告（每小时采集，fatigue.ts 独立写入） */
+  fatigue?: FatigueReport;
 }
 
 /** 健康自检文件路径 */
@@ -59,13 +62,19 @@ export function writeHealthFile(
   let startTime = now;
   let existingLastPush: string | null = null;
   let existingLastError: string | null = null;
+  // v1.3.6 交付⑬：心跳重写不擦除疲劳度报告（fatigue 由 fatigue.ts 独立维护）
+  let existingFatigue: FatigueReport | undefined;
 
   if (event !== 'start' && fs.existsSync(healthPath)) {
     try {
-      const raw = JSON.parse(fs.readFileSync(healthPath, 'utf-8')) as Partial<DaemonHealthFile>;
+      const raw = JSON.parse(fs.readFileSync(healthPath, 'utf-8')) as Partial<DaemonHealthFile> & { fatigue?: unknown };
       if (raw.startTime) startTime = raw.startTime;
       existingLastPush = raw.lastPush ?? null;
       existingLastError = raw.lastError ?? null;
+      // 类型守卫：只透传合法对象（防损坏文件把 null/字符串塞进 fatigue）
+      if (raw.fatigue !== null && typeof raw.fatigue === 'object') {
+        existingFatigue = raw.fatigue as FatigueReport;
+      }
     } catch {
       // 文件损坏——继续
     }
@@ -100,6 +109,8 @@ export function writeHealthFile(
     lastPush: extra?.lastPush ?? existingLastPush,
     lastError: extra?.lastError ?? existingLastError,
     uptimeMs,
+    // v1.3.6 交付⑬：透传已有疲劳度报告（fatigue.ts 独立写入，心跳不擦除）
+    ...(existingFatigue !== undefined ? { fatigue: existingFatigue } : {}),
   };
 
   try {
