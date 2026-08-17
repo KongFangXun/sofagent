@@ -165,3 +165,5 @@ release-gate-loop 与 fresh-eyes-loop 共享本文件，通过"循环"列区分�
 
 2026-08-18     | 20260818-01    | release-gate | 20   | PASS       | FAIL       | PASS     | PASS    | /Users/kongfangxun/.sofagent/data/forge-runs/release-gate-loop/2026-08-18/run-01
 2026-08-18     | 20260818-01❗   | release-gate | 20   | PASS❗复验FAIL | FAIL       | PASS     | PASS→FAIL | 复验修正（run-08 同款假 PASS 第二次）：verdict.md 主体=FAIL（regression 一票否决：55/87 维 precheck 中段截断 63% 盲区 + #102/103/104 市场簇同簇缺失疑 market→commons 更名检查未同步 + #98/99 路径缺 PROJECT_ROOT + #106 超时 + #94/101 脚本自身缺陷 + #1 glob 缺失）；F 链 f-fix 报告自述「修复验证❌未通过」但 driver 仅凭空 diff 的 f-audit 全绿判「修复收敛 FAIL→PASS」（F 分支零 commit 三方证据：verdict 主体 FAIL + f-fix 自述未通过 + git 零 commit）。driver 债确认：f-audit 无「分支有无新 commit」前置校验，必修后才能再跑。真实裁决=FAIL 交回阶段五 | /Users/kongfangxun/.sofagent/data/forge-runs/release-gate-loop/2026-08-18/run-01
+
+2026-08-18     | 20260818-08    | release-gate | 17   | PASS       | PASS       | PASS     | PASS    | /Users/kongfangxun/.sofagent/data/forge-runs/release-gate-loop/2026-08-18/run-08

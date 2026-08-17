@@ -1,7 +1,7 @@
 # 路线图 · Roadmap
 
 > 已经做了什么、未来要去哪、哪些地方需要你的帮助。
-> v1.3.6 · 2026-08-17（UTC）· 🔌 引擎接口外化完整版（Workflow 容器 / Ontology 注册 / 托管 SDK / 模型灰度 / 训练协议 / 机器验收 · 52→60 MCP tools）
+> v1.3.6 · 2026-08-18（UTC）· 🔌 引擎接口外化完整版（Workflow 容器 / Ontology 注册 / 托管 SDK / 模型灰度 / 训练协议 / 机器验收 · 52→60 MCP tools）
 
 产品定位详见 [设计哲学](./PHILOSOPHY.md) 和 [README](../README.md)。
 
