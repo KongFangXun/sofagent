@@ -12,10 +12,15 @@
 //   不是执行后端的事，是编排层在 execute 前后做的。执行后端只管「给我任务，
 //   给我结果」。但 toolBudget 软熔断和工具 wrapper 透传是所有后端的强制义务。
 //
-// 接入门禁结论（2026-08-14 核实更新）：@deepseek-ai/cordis@4.0.1 + @deepseek-ai/dsh@0.1.0-rc.6
-// 均已 public（PR #2519 合并）。候选列表优先试 cordis（2 依赖轻量），再试 dsh（61 依赖兜底）。
-// 当前仍走 fallback LangGraph——因为 rc 版本被版本守卫拦截 + runCordisAgent 是骨架。
-// rc 转正式版 + 骨架补全（v1.3.6）后自动切换，无需改代码。
+// 接入门禁结论（v1.3.6 交付⑤ 更新）：@deepseek-ai/cordis@4.0.1（stable）+
+// @deepseek-ai/dsh@0.1.0-rc.6（rc）。cordis 真实入口是 new Context()（解包核实，
+// 无 createCordisRuntime 导出）；agent 循环在 DSH agent-loop 插件里，不在 cordis 框架包里。
+// 守卫策略（两层）：
+// - 层 1（本文件模块守卫）：cordis 可 import 且导出 Context 构造器 + dsh 非 rc——
+//   任一不满足即 fallback LangGraph。
+// - 层 2（dsh-backend 能力守卫）：execute 时探测 ctx 的 agent 驱动服务面，
+//   缺失抛 DshCapabilityMissingError → execute 消费方降级。rc 期 dsh 守卫拦截，
+//   正式版发布后自动通过，无需改代码。
 
 /**
  * 执行后端契约——编排层通过这个接口调用执行层。
@@ -169,40 +174,47 @@ export async function createExecutionBackend(): Promise<ExecutionBackend> {
 /**
  * 尝试加载 DSH/Cordis 执行后端（动态 import + try-catch）。
  *
- * 2026-08-14 核实：@deepseek-ai/cordis@4.0.1（2 依赖，239KB）+ @deepseek-ai/dsh@0.1.0-rc.6
- * 均已 public。sofagent 需要的是 Cordis 运行时（createCordisRuntime），不是 dsh CLI 壳。
- * 候选顺序：cordis 优先（轻量 2 依赖）→ dsh 兜底（61 依赖但含 cordis re-export）。
+ * 2026-08 核实：@deepseek-ai/cordis@4.0.1（stable，2 依赖）+ @deepseek-ai/dsh@0.1.0-rc.6（rc）。
+ * cordis 真实导出 { Context }（new Context() 入口，解包核实，无 createCordisRuntime）；
+ * agent 循环在 DSH agent-loop 插件里，不在 cordis 框架包里。
  *
- * 版本守卫：rc/beta/alpha/pre 版本不加载——骨架未补全，加载了会 throw。
- * 等 DSH/Cordis 正式版发布后自动通过守卫。
+ * 层 1 模块守卫（v1.3.6 交付⑤）：
+ * 1. cordis 可 import 且 Context 是构造器（真实入口）。
+ * 2. 配套 @deepseek-ai/dsh 非 rc/beta/alpha/pre——rc 期拦截（骨架虽已补全，
+ *    但 rc 版 API 不做生产承诺），正式版发布后自动通过。
  */
 async function tryLoadDshBackend(): Promise<ExecutionBackend | null> {
-  // Cordis 运行时候选包名（按优先级排序）。
-  // cordis = 轻量框架包（2 依赖）；dsh = CLI 壳（61 依赖，re-export cordis）。
-  const candidates = [
-    '@deepseek-ai/cordis',  // ✅ 首选：轻量 Cordis 框架（4.0.1，2 依赖，239KB）
-    '@deepseek-ai/dsh',     // 备选：DSH CLI 壳（0.1.0-rc.6，61 依赖，re-export cordis）
-  ];
-  for (const pkg of candidates) {
-    try {
-      // @ts-ignore — Cordis/DSH 类型未安装（不进 dependencies，运行时动态 import）
-      const mod = await import(pkg);
-      if (mod && typeof mod.createCordisRuntime === 'function') {
-        // 版本守卫：rc / beta / alpha / pre 版本不加载——骨架未补全，加载了会 throw。
-        // 等 Cordis/DSH 正式版发布（无 prerelease tag）后自动通过。
-        const version = mod.version ?? mod.VERSION ?? '';
-        if (/rc|beta|alpha|pre/i.test(version)) {
-          // rc 版本 API 不稳定，跳过，继续试下一个候选或 fallback
-          continue;
-        }
-        const { createDshBackend } = await import('./execution-backends/dsh-backend.js');
-        return createDshBackend(mod);
-      }
-    } catch {
-      // 候选包名未安装或导出不匹配，试下一个
+  try {
+    // @ts-ignore — Cordis 类型未安装（不进 dependencies，运行时动态 import）
+    const cordisMod = await import('@deepseek-ai/cordis');
+    if (!cordisMod || typeof cordisMod.Context !== 'function') {
+      // cordis 包存在但导出面不符（框架大版本变化）——fallback
+      return null;
     }
+
+    // 配套 DSH 包版本守卫：rc/beta/alpha/pre 拦截（正式版自动放开）
+    // @ts-ignore — dsh 类型未安装
+    const dshMod = (await import('@deepseek-ai/dsh').catch(() => null)) as {
+      version?: string;
+      VERSION?: string;
+      plugin?: (ctx: unknown) => unknown;
+    } | null;
+    const dshVersion = dshMod?.version ?? dshMod?.VERSION ?? 'rc';
+    if (/(rc|beta|alpha|pre)/i.test(dshVersion)) {
+      return null; // rc 期守卫拦截——DSH 正式版发布后此处自动通过
+    }
+
+    const dshBackendMod = await import('./execution-backends/dsh-backend.js');
+    // dshMod.plugin（若有）转成 CordisPlugin 形状传入；无 plugin 导出时传 undefined
+    // （层 2 能力守卫会在 execute 时探测宿主服务面）
+    const agentPlugin = (
+      typeof dshMod?.plugin === 'function' ? { plugin: dshMod.plugin } : undefined
+    ) as Parameters<typeof dshBackendMod.createDshBackend>[1];
+    return dshBackendMod.createDshBackend(cordisMod, agentPlugin);
+  } catch {
+    // cordis 包未安装或 import 失败——fallback LangGraph
+    return null;
   }
-  return null;
 }
 
 /**

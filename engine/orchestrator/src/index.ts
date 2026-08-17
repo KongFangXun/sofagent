@@ -758,3 +758,26 @@ export type {
   FDERegistryNode,
   FDERegistryParseResult,
 } from './fde-registry';
+
+// v1.3.6 交付⑤：DSH 后端补全 + 调用点统一工厂 + Trajectory 采集 PoC
+export { resolveAgentFactory, resetAgentFactoryCache } from './agent-factory';
+export type { ResolvedAgentFactory, AgentFactory, InvocableAgent } from './agent-factory';
+export {
+  createDshBackend,
+  convertTools,
+  createBudgetGuard,
+  createBudgetPlugin,
+  ToolBudgetExhaustedError,
+  DshCapabilityMissingError,
+} from './execution-backends/dsh-backend';
+export type {
+  CordisPlugin,
+  CordisRuntime,
+  CordisModule,
+  CordisToolDefinition,
+  BudgetGuard,
+  BudgetVerdict,
+  RunCordisAgentOptions,
+} from './execution-backends/dsh-backend';
+export { createTrajectoryCollector } from './execution-backends/trajectory';
+export type { TrajectoryRecord, TrajectoryCollector } from './execution-backends/trajectory';

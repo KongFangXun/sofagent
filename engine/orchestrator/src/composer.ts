@@ -20,14 +20,15 @@ interface ComposeAgent {
 type ReactAgentFactory = (config: { llm: unknown; prompt: string; tools: unknown[] }) => Promise<ComposeAgent>;
 
 /**
- * 动态加载 @langchain/langgraph createReactAgent
+ * 动态加载 agent 工厂
+ * v1.3.6 交付⑤：调用点迁移到 ExecutionBackend——经 resolveAgentFactory 解析
+ * （LangGraph 直连优先零行为变化；LangGraph 不可用时 DSH 后端 invoke 兼容代理）。
  */
 async function loadReactAgentCreate(): Promise<ReactAgentFactory | null> {
   try {
-    // @ts-ignore — @langchain/langgraph/prebuilt 子路径导出在 moduleResolution: node 下无法解析类型，
-    // 但运行时 Node.js 支持（package.json exports 字段已声明）
-    const { createReactAgent } = await import('@langchain/langgraph/prebuilt');
-    return createReactAgent as unknown as ReactAgentFactory;
+    const { resolveAgentFactory } = await import('./agent-factory.js');
+    const resolved = await resolveAgentFactory();
+    return (resolved.factory as unknown as ReactAgentFactory) ?? null;
   } catch {
     return null;
   }

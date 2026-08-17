@@ -150,9 +150,11 @@ export async function executeNode(
   let createReactAgent = deps?.createReactAgent;
   if (!createReactAgent) {
     try {
-      // @ts-ignore — @langchain/langgraph/prebuilt 子路径导出
-      const mod = (await import('@langchain/langgraph/prebuilt')) as { createReactAgent?: unknown };
-      createReactAgent = mod.createReactAgent as typeof createReactAgent;
+      // v1.3.6 交付⑤：调用点迁移到 ExecutionBackend——经 resolveAgentFactory
+      // 解析（LangGraph 直连优先零行为变化；不可用时 DSH 后端 invoke 兼容代理）
+      const { resolveAgentFactory } = await import('./agent-factory.js');
+      const resolved = await resolveAgentFactory();
+      createReactAgent = resolved.factory as unknown as NonNullable<typeof deps>['createReactAgent'];
     } catch {
       // 模块不可用——降级为模拟执行
     }

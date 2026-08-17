@@ -462,15 +462,18 @@ async function defaultRunEngineer(task: string, feedback: string): Promise<strin
     const resolved = await resolveLLMModelFor('engineer');
     if (!resolved || !resolved.model) throw new Error('SOFAGENT_LLM 未设置，无法确定模型 provider');
 
-    // @ts-ignore — @langchain/langgraph/prebuilt 子路径导出在 moduleResolution: node 下无法解析类型
-    const { createReactAgent } = await import('@langchain/langgraph/prebuilt');
+    // v1.3.6 交付⑤：调用点迁移到 ExecutionBackend——经 resolveAgentFactory 解析
+    // （LangGraph 直连优先零行为变化；不可用时 DSH 后端 invoke 兼容代理）
+    const { resolveAgentFactory } = await import('../agent-factory.js');
+    const agentFactory = await resolveAgentFactory();
+    if (!agentFactory.factory) throw new Error('agent 工厂不可用（LangGraph 与 DSH 均未就绪）');
     const constrainedPrompt = buildConstrainedSystemPrompt(process.cwd());
     const systemPrompt = `${constrainedPrompt}\n\n${ENGINEER_AGENT.systemPrompt}\n\n${routeSummary}${decideSummary ? `\n\n${decideSummary}` : ''}`;
     // v1.2.0: ToolGate 事前拦截——每个 tool call 前过 @sofagent/rules 检查
     const gate = createToolGate({ agentName: 'engineer', taskDesc: task.slice(0, 500) });
     const gatedTools = wrapToolsWithGate(ENGINEER_TOOLS, gate);
     const langGraphTools = convertToLangGraphTools(gatedTools);
-    const agent = (createReactAgent as unknown as (params: {
+    const agent = (agentFactory.factory as unknown as (params: {
       llm: unknown;
       tools: unknown[];
       prompt: string;
@@ -632,15 +635,18 @@ async function defaultRunReviewer(artifacts: LoopArtifacts): Promise<string> {
     const resolved = await resolveLLMModelFor('reviewer');
     if (!resolved || !resolved.model) throw new Error('SOFAGENT_LLM 未设置，无法确定模型 provider');
 
-    // @ts-ignore — @langchain/langgraph/prebuilt 子路径导出在 moduleResolution: node 下无法解析类型
-    const { createReactAgent } = await import('@langchain/langgraph/prebuilt');
+    // v1.3.6 交付⑤：调用点迁移到 ExecutionBackend——经 resolveAgentFactory 解析
+    // （LangGraph 直连优先零行为变化；不可用时 DSH 后端 invoke 兼容代理）
+    const { resolveAgentFactory } = await import('../agent-factory.js');
+    const agentFactory = await resolveAgentFactory();
+    if (!agentFactory.factory) throw new Error('agent 工厂不可用（LangGraph 与 DSH 均未就绪）');
     const constrainedPrompt = buildConstrainedSystemPrompt(process.cwd());
     const systemPrompt = `${constrainedPrompt}\n\n${REVIEWER_AGENT.systemPrompt}\n\n${routeSummary}`;
     // v1.2.0: ToolGate 事前拦截——reviewer 工具也过 gate（只读工具通常 PASS，但保持一致性）
     const gate = createToolGate({ agentName: 'reviewer', taskDesc: 'code review'.slice(0, 500) });
     const gatedTools = wrapToolsWithGate(REVIEWER_TOOLS, gate);
     const langGraphTools = convertToLangGraphTools(gatedTools);
-    const agent = (createReactAgent as unknown as (params: {
+    const agent = (agentFactory.factory as unknown as (params: {
       llm: unknown;
       tools: unknown[];
       prompt: string;

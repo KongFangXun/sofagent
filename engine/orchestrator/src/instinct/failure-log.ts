@@ -19,8 +19,8 @@ import { dirname, join } from 'path';
 export interface FailureLogEntry {
   /** 失败模式归一化文本 */
   pattern: string;
-  /** 失败来源 */
-  source: 'audit' | 'refine' | 'think';
+  /** 失败来源（v1.3.6 新增 trajectory——DSH Trajectory 采集消费失败轨迹） */
+  source: 'audit' | 'refine' | 'think' | 'trajectory';
   /** 具体上下文（任务/规则号等，供人类审读） */
   context: string;
   /** 发生时间（ISO） */

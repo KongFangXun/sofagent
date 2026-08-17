@@ -152,10 +152,13 @@ export function detectFileConflicts(parsed: ParsedWorkflow): string[] {
 // ────────────────────────────────────────────────────────────
 
 async function loadCreateReactAgent(): Promise<CreateReactAgentFn | null> {
+  // v1.3.6 交付⑤：调用点迁移到 ExecutionBackend——统一经 resolveAgentFactory
+  // 解析工厂（LangGraph 直连优先零行为变化；LangGraph 不可用时 DSH 后端
+  // 产出 invoke 兼容代理）。dag-runner 的调用/消费姿势完全不变。
   try {
-    // @ts-ignore — @langchain/langgraph/prebuilt 子路径导出在 moduleResolution: node 下无法解析类型
-    const mod = (await import('@langchain/langgraph/prebuilt')) as { createReactAgent?: unknown };
-    return (mod.createReactAgent ?? null) as CreateReactAgentFn | null;
+    const { resolveAgentFactory } = await import('./agent-factory.js');
+    const resolved = await resolveAgentFactory();
+    return (resolved.factory as unknown as CreateReactAgentFn) ?? null;
   } catch {
     return null;
   }
