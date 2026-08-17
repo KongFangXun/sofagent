@@ -31,5 +31,8 @@
     "!dist/**/*.js.map",
     "!dist/**/*.d.ts.map",
     "!dist/**/*.test.*"
-  ]
+  ],
+  "devDependencies": {
+    "@types/node": "^24.0.0"
+  }
 }

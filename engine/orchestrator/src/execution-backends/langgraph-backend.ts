@@ -65,10 +65,12 @@ export async function createLangGraphBackend(): Promise<ExecutionBackend> {
       }
 
       // 3. 创建 agent（行为对齐现有 createReactAgent 调用）
+      // TS7：prebuilt 子路径导出的参数类型收严，unknown 需经 as any 桥接
+      // （llm/tools/stateModifier 的真实类型由 FORGE driver 与 resolveLLMModel 保证）
       const agent = createReactAgent({
-        llm,
-        tools: task.tools,
-        stateModifier,
+        llm: llm as any,
+        tools: task.tools as any,
+        stateModifier: stateModifier as any,
         // preModelHook：task.modelConfig?.preModelHook（FORGE 的 token 硬阈值裁剪）
         // 如果提供就传入，否则不传
         ...(task.modelConfig?.preModelHook

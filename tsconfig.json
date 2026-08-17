@@ -2,7 +2,9 @@
   "compilerOptions": {
     "target": "ES2022",
     "module": "commonjs",
-    "lib": ["ES2022"],
+    "lib": [
+      "ES2022"
+    ],
     "strict": true,
     "noUncheckedIndexedAccess": true,
     "esModuleInterop": true,
@@ -12,24 +14,53 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "baseUrl": ".",
     "paths": {
-      "@sofagent/harness": ["engine/harness/src"],
-      "@sofagent/ontology": ["engine/ontology/src"],
-      "@sofagent/eval": ["engine/eval/src"],
-      "@sofagent/core": ["engine/core/src"],
-      "@sofagent/audit": ["engine/audit/src/public-api"],
-      "@sofagent/mcp": ["engine/mcp/src"],
-      "@sofagent/orchestrator": ["engine/orchestrator/src"],
-      "@sofagent/daemon": ["engine/daemon/src"],
-      "@sofagent/ab-test": ["engine/ab-test/src"],
-      "@sofagent/think": ["engine/think/src"],
-      "@sofagent/skillopt": ["engine/skillopt/src"],
-      "@sofagent/rules": ["engine/rules/src"]
-    }
+      "@sofagent/harness": [
+        "engine/harness/src"
+      ],
+      "@sofagent/ontology": [
+        "engine/ontology/src"
+      ],
+      "@sofagent/eval": [
+        "engine/eval/src"
+      ],
+      "@sofagent/core": [
+        "engine/core/src"
+      ],
+      "@sofagent/audit": [
+        "engine/audit/src/public-api"
+      ],
+      "@sofagent/mcp": [
+        "engine/mcp/src"
+      ],
+      "@sofagent/orchestrator": [
+        "engine/orchestrator/src"
+      ],
+      "@sofagent/daemon": [
+        "engine/daemon/src"
+      ],
+      "@sofagent/ab-test": [
+        "engine/ab-test/src"
+      ],
+      "@sofagent/think": [
+        "engine/think/src"
+      ],
+      "@sofagent/skillopt": [
+        "engine/skillopt/src"
+      ],
+      "@sofagent/rules": [
+        "engine/rules/src"
+      ]
+    },
+    "types": [
+      "node"
+    ]
   },
-  "include": ["engine/*/src/**/*.ts"],
+  "include": [
+    "engine/*/src/**/*.ts"
+  ],
   "exclude": [
     "node_modules",
     "dist",
