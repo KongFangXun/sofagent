@@ -14,7 +14,7 @@
 > **当前 87 维 · 编号 1-114 · 27 个编号已归并删除（v1.3.6 勘误：上版头部声称 86 实为 85——112 hotfix 追加时未同步维度数，本次一并修正）**。维度流连续不中断，分组导航：基线组 → 审查约束组 → 环境敏感组（前置 vitest/沙箱铁律）。
 ## 🔒 维护公约（防膨胀铁律）
 
-**追加新维度前，必须先 grep 同类**：有同类 → 扩展旧维度的子项，不新增编号；无同类 → 才新增编号 = 当前最大 +1。历史维度靠 `git log -p` 找回。**行数警戒线**：`regression-checklist.md` ≤ 1530 行、`acceptance-test.sh` ≤ 2600 行（v1.3.6 首次上调：新增 2 维+S282-S289 全属新审查面，三判据全否后按「超标上调 LIMIT 不删内容」方针 1500→1530/2500→2600，判据记录见尾部）；releasing.md 方针「超标上调 LIMIT 不删内容」。
+**追加新维度前，必须先 grep 同类**：有同类 → 扩展旧维度的子项，不新增编号；无同类 → 才新增编号 = 当前最大 +1。历史维度靠 `git log -p` 找回。**行数警戒线**：`regression-checklist.md` ≤ 1540 行、`acceptance-test.sh` ≤ 2600 行（v1.3.6 累计上调 1500→1540：+30 新审查面 2 维 / +6 人工复核断言修正注释——三判据记录见尾部；v1.3.7 须真实归并）；releasing.md 方针「超标上调 LIMIT 不删内容」。
 
 **维度脚本编写三铁律**（v1.3.6 release-gate run-08 教训——7 个 FAIL 维度中 5 个是脚本自身缺陷而非仓库问题，driver 白跑一轮）：
 
@@ -30,7 +30,7 @@ ACTUAL=$(grep -c "^#### " FORGE/playbook/regression-checklist.md)
 
 # 行数警戒线自检（越线提醒瘦身，非失败；与 releasing.md 阶段五警戒线一致）
 WC_CHK=$(wc -l < FORGE/playbook/regression-checklist.md); WC_ACC=$(wc -l < FORGE/playbook/acceptance-test.sh)
-[ "$WC_CHK" -le 1530 ] && echo "✅ checklist $WC_CHK (≤1530)" || echo "⚠️ checklist $WC_CHK 超 1530"
+[ "$WC_CHK" -le 1540 ] && echo "✅ checklist $WC_CHK (≤1540)" || echo "⚠️ checklist $WC_CHK 超 1540"
 [ "$WC_ACC" -le 2600 ] && echo "✅ acceptance $WC_ACC (≤2600)" || echo "⚠️ acceptance $WC_ACC 超 2600"
 ```
 ## 你的身份
