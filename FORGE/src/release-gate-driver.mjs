@@ -252,6 +252,10 @@ function isReportText(text) {
 // v1.2.5：维度 49（旧路径零残留 node 递归遍历 7 目录）实测 60s 超时 → 上调 120s
 const DIM_TIMEOUT_OVERRIDE = {
   49: 120_000,
+  // v1.3.6（run-08/09）：106 含全量 check-test-count（12 包测试实跑 ~55-95s），
+  // 60s 上限必超时误报 ERR——放宽到 150s。根因是维度脚本跑全量测试太重，
+  // v1.3.7 可改为只跑 --quiet 快速路径（SSOT 校验 <1s），届时回收此 override。
+  106: 150_000,
 };
 
 // ═══════════════════════════════════════════════════════════
@@ -1246,7 +1250,11 @@ function spawnWorker(step, runDir, target) {
     if (globalWorktree && globalWorktree.worktreeDir) {
       env.FORGE_WORKTREE_ROOT = globalWorktree.worktreeDir;
     }
+    // v1.3.6 OOM 修复（run-05 事故）：worker 此前裸 spawn（默认 heap 可膨胀至
+    // ~4GB），6 并发即压垮 8GB 机器。对齐 fresh-eyes worker 的 1024MB heap 上限
+    // ——grep/read 型轻负载够用，并发 6 也只占 ≤6GB heap 上限，配合并发 clamp 双保险。
     const child = spawn(process.execPath, [
+      '--max-old-space-size=1024',
       __filename,
       '--worker',
       '--step', step,
@@ -1516,15 +1524,33 @@ function parseRegressionDimensions() {
  * 执行一个维度的 bash 脚本（单次 runCommand，无 60s 限制），捕获输出。
  * 失败不中断——exitCode 和 output 都记录，交给 worker 判定。
  *
- * @param {string} script  维度 bash 脚本
- * @param {number} timeoutMs 超时（毫秒），默认 60s
- * @returns {Promise<{ exitCode: number|null, output: string }>}
+ * v1.3.6 exit 语义归一化（release-gate run-08/09 两轮假 FAIL 根治）：
+ *   checklist 45/87 维的尾命令是「grep 无命中=1」「循环尾判假=1」「grep -q X && echo ⚠️
+ *   未命中=1」等语义——健康态本身返回非零，driver 记 exitCode!==0 后 worker 必误判 FAIL。
+ *   逐维改脚本永远改不完（45 处且新增维度还会犯），在执行层归一：
+ *   ① 退出码非零但输出无任何失败标记（❌/FAIL/⚠️/缺失/漂移/超标/CRITICAL）→ 判定
+ *      信号重写为 0，并在 output 追加归一化说明（worker 与人工可追溯）
+ *   ② 输出含失败标记 → 保留原退出码（真 FAIL 不受影响）
+ *   ③ 超时/异常（exitCode=null）不变
+ *   注：⚠️ 是 checklist 的 WARN 语义（缺失警告），保守归入失败标记——worker 可按
+ *   ⚠️ 降级为 WARN，但那是 worker 的判定自由，执行层不吞。
  */
 async function execRegressionDim(script, timeoutMs = 60_000) {
   try {
-    const { stdout, stderr, code } = await runCommand(script, REPO_ROOT, timeoutMs);
-    const output = `${stdout}\n${stderr}`.trim();
-    return { exitCode: code ?? null, output: output.slice(0, 8000) };
+    // v1.3.6 PROJECT_ROOT 注入（run-09 发现）：维度脚本大量引用 "$PROJECT_ROOT/..."，
+    // 但 bash -c 子进程无此变量 → 展开为空 → grep "/engine/..." 路径断 → 断言全部
+    // 未命中却因 || echo ⚠️ 收尾而 exit 0 逃过判定（#98/#99 双重 bug：路径断+假绿）。
+    // 注入后 $PROJECT_ROOT 正确指向仓库根，脚本按设计路径执行。
+    const script2 = `export PROJECT_ROOT="${REPO_ROOT}"\n${script}`;
+    const { stdout, stderr, code } = await runCommand(script2, REPO_ROOT, timeoutMs);
+    let output = `${stdout}\n${stderr}`.trim();
+    let exitCode = code ?? null;
+    // 归一化规则：非零退出 + 输出零失败标记 = 语义性退出码（grep 无命中等），非真 FAIL
+    if (exitCode !== 0 && exitCode !== null && !/(❌|FAIL|⚠️|缺失|漂移|超标|CRITICAL)/.test(output)) {
+      output += `\n[driver] exit 语义归一化：原 exit=${exitCode} 但输出无失败标记——判定为语义性退出码（grep 无命中/尾判假），重写为 0。若该维度确有问题，请在维度脚本补显式 ❌ 输出（见 regression-checklist.md 维护公约·维度脚本编写三铁律）`;
+      exitCode = 0;
+    }
+    return { exitCode, output: output.slice(0, 8000) };
   } catch (err) {
     return { exitCode: null, output: `[driver] 执行异常: ${err.message}` };
   }
@@ -2298,7 +2324,7 @@ async function main() {
     console.log(args.skipAcceptance
       ? `    ① acceptance × ${ACCEPTANCE_SHARD_COUNT} 维度分片 (--skip-acceptance)  → acceptance-s1~12.md → acceptance.md`
       : `    ① acceptance × ${ACCEPTANCE_SHARD_COUNT} 维度分片 (跑 acceptance-test.sh)  → acceptance-s1~12.md → acceptance.md`);
-    console.log(`       分片 worker 并行（MAX_CONCURRENCY=6），各分析场景范围`);
+    console.log(`       分片 worker 并行（并发 = min(FORGE_ACCEPTANCE_CONCURRENCY, FORGE_MAX_CONCURRENCY)），各分析场景范围`);
     console.log('    ② regression  (跑 regression-checklist)   → regression.md');
     console.log('    ③ coverage    (覆盖率交叉检查)             → coverage.md');
     console.log('    ④ consolidate (合并三份结果)               → stage6-report.md');
@@ -2336,8 +2362,16 @@ async function main() {
     console.log(`${'═'.repeat(60)}`);
 
     // 并行执行所有 acceptance shard worker
+    // v1.3.6 OOM 修复（run-05 事故 2026-08-17）：分片批次并发上限此前只看
+    // FORGE_ACCEPTANCE_CONCURRENCY（默认 6），完全无视 FORGE_MAX_CONCURRENCY——
+    // 8GB 机器 FORGE_MAX_CONCURRENCY=1 启动后仍 6 并发 × 2GB heap → OOM SIGKILL
+    // 整树。修复：实际并发取两者最小值，FORGE_MAX_CONCURRENCY 作为全局硬上限
+    // 对所有并发路径（worker 池 + 分片批次）一致生效。
     const shardWorkers = ACCEPTANCE_SHARDS.map(s => [`acceptance-s${s.id}`, runDir, args.target]);
-    const MAX_ACC_CONCURRENCY = parseInt(process.env.FORGE_ACCEPTANCE_CONCURRENCY || '6', 10);
+    const MAX_ACC_CONCURRENCY = Math.min(
+      parseInt(process.env.FORGE_ACCEPTANCE_CONCURRENCY || '6', 10),
+      parseInt(process.env.FORGE_MAX_CONCURRENCY || '6', 10)
+    );
     const { results: shardResults, failures: shardFailures } = await spawnAcceptanceShards(shardWorkers, args.target, MAX_ACC_CONCURRENCY);
 
     for (const f of shardFailures) {

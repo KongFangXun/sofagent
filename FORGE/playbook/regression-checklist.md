@@ -1373,7 +1373,7 @@ echo "B 层: $AB 行（LIMIT_B=$(grep '^LIMIT_B=' tools/check-docs.sh | grep -oE
 
 ```bash
 for f in publisher catalog invoker rating owner retire skill-scan rule-harvest rule-jury rule-promote; do [ -f "engine/orchestrator/src/commons/$f.ts" ] || echo "⚠️ commons/$f.ts 缺失"; done
-for t in market_publish market_search market_invoke market_rate market_retire market_harvest_rule; do grep -q "'$t'" engine/mcp/src/tool-registry.ts || echo "⚠️ $t 未注册"; done
+for t in commons_publish commons_search commons_invoke commons_rate commons_retire commons_harvest_rule; do grep -q "'$t'" engine/mcp/src/tool-registry.ts || echo "⚠️ $t 未注册"; done   # v1.3.6 补：market→commons 更名同步（阶段五漏改本维）
 grep -q "runMarketCatalogDaily" engine/daemon/src/inspectors/index.ts || echo "⚠️ 目录日更未注册"
 grep -q "runMarketHealth" engine/daemon/src/inspector-layers.ts || echo "⚠️ 健康周检未挂载"
 ```
@@ -1395,12 +1395,12 @@ grep -q "@deepseek-ai/dsh" engine/orchestrator/package.json && echo "⚠️ DSH 
 
 ---
 
-#### 104. DecisionKind.MARKET 语义分型——市场动作不与 ORCHESTRATION/EVOLUTION 混用（v1.3.4 新增 · A 类新功能面）
+#### 104. DecisionKind.COMMONS 语义分型——市场动作不与 ORCHESTRATION/EVOLUTION 混用（v1.3.4 新增 · A 类新功能面）
 
 **背景**：v1.3.4 铁律「市场调用走审计」。若市场事件塞进 ORCHESTRATION/EVOLUTION，`decision-log --kind MARKET` 查不到任何东西——审计语义分型失效。例外：退役走 EVOLUTION（生命周期事件非市场动作）是刻意设计。
 
 ```bash
-grep -q "'MARKET'" engine/audit/src/decision-schema.ts || echo "⚠️ DecisionKind.MARKET 缺失"
+grep -q "'COMMONS'" engine/audit/src/decision-schema.ts || echo "⚠️ DecisionKind.COMMONS 缺失"
 grep -q "MARKET" engine/audit/src/decision-log.ts || echo "⚠️ decision-log 未支持 MARKET"
 grep -q "EVOLUTION" engine/orchestrator/src/commons/retire.ts || echo "⚠️ 退役应走 EVOLUTION（刻意设计）"
 ```

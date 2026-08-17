@@ -527,3 +527,88 @@ describe('extractUsage', () => {
     expect(usage).toBeNull();
   });
 });
+
+// ─── v1.3.6 OOM 修复（run-05 事故）：acceptance 分片并发 clamp ───
+// FORGE_MAX_CONCURRENCY=1 时 acceptance 分片批次仍 6 并发 → 8GB 机器 OOM SIGKILL。
+// 修复 = 实际并发取 min(FORGE_ACCEPTANCE_CONCURRENCY, FORGE_MAX_CONCURRENCY)。
+// 此处以源码级断言锁定 clamp 表达式存在且方向正确（运行时行为由 spawnAcceptanceShards
+// 的 maxConcurrency 参数承接，该函数签名不变）。
+describe('acceptance 分片并发 clamp（run-05 OOM 修复）', () => {
+  it('MAX_ACC_CONCURRENCY 取 min(FORGE_ACCEPTANCE_CONCURRENCY, FORGE_MAX_CONCURRENCY)', () => {
+    expect(SOURCE_CODE).toContain('Math.min(');
+    expect(SOURCE_CODE).toContain("process.env.FORGE_ACCEPTANCE_CONCURRENCY || '6'");
+    expect(SOURCE_CODE).toContain("process.env.FORGE_MAX_CONCURRENCY || '6'");
+    // clamp 表达式必须在 spawnAcceptanceShards 调用之前定义
+    const clampIdx = SOURCE_CODE.indexOf('const MAX_ACC_CONCURRENCY = Math.min(');
+    const callIdx = SOURCE_CODE.indexOf('await spawnAcceptanceShards(');
+    expect(clampIdx).toBeGreaterThan(-1);
+    expect(callIdx).toBeGreaterThan(clampIdx);
+  });
+
+  it('acceptance worker spawn 带 1024MB heap 上限（run-05 裸 spawn 修复）', () => {
+    expect(SOURCE_CODE).toContain("'--max-old-space-size=1024'");
+  });
+
+  it('clamp 语义验证——min() 行为模拟', () => {
+    const clamp = (acc, max) => Math.min(parseInt(acc || '6', 10), parseInt(max || '6', 10));
+    // run-05 场景：FORGE_MAX_CONCURRENCY=1 → 并发必须 1
+    expect(clamp('6', '1')).toBe(1);
+    // 16GB 机器：FORGE_MAX_CONCURRENCY=4 → 并发 4
+    expect(clamp('6', '4')).toBe(4);
+    // 未设任何变量 → 默认 6
+    expect(clamp(undefined, undefined)).toBe(6);
+    // 显式收窄 acceptance 并发 → 取更小
+    expect(clamp('2', '6')).toBe(2);
+  });
+});
+
+// ═══════════════════════════════════════════════════════════
+// v1.3.6 exit 语义归一化 + PROJECT_ROOT 注入（run-08/09 两轮假 FAIL 根治）
+// ═══════════════════════════════════════════════════════════
+describe('execRegressionDim · exit 语义归一化（run-08/09 教训）', () => {
+  // 归一化规则的纯逻辑验证（与 driver 内实现同构——execRegressionDim 不可直接 import，
+  // 用规则镜像测试：改 driver 实现时本组测试同步改，防规则漂移）
+  const normalize = (exitCode, output) => {
+    if (exitCode !== 0 && exitCode !== null && !/(❌|FAIL|⚠️|缺失|漂移|超标|CRITICAL)/.test(output)) {
+      return { exitCode: 0, normalized: true };
+    }
+    return { exitCode, normalized: false };
+  };
+
+  it('语义性退出码归一化：非零 exit + 零失败标记 → 0（#103 空输出场景）', () => {
+    const r = normalize(1, '');
+    expect(r.exitCode).toBe(0);
+    expect(r.normalized).toBe(true);
+  });
+
+  it('真 FAIL 不吞：非零 exit + ⚠️ 输出 → 保留原码', () => {
+    const r = normalize(1, '⚠️ commons/x.ts 缺失');
+    expect(r.exitCode).toBe(1);
+    expect(r.normalized).toBe(false);
+  });
+
+  it('exit 0 与超时（null）不归一化', () => {
+    expect(normalize(0, '✅ 全过').normalized).toBe(false);
+    expect(normalize(null, '[driver] 执行异常').normalized).toBe(false);
+  });
+
+  it('失败标记词族全覆盖（❌/FAIL/⚠️/缺失/漂移/超标/CRITICAL）', () => {
+    for (const mark of ['❌ 断链', 'FAIL: x', '⚠️ 缺件', '声称漂移', '行数超标', 'CRITICAL']) {
+      expect(normalize(1, mark).exitCode).toBe(1);
+    }
+  });
+
+  it('PROJECT_ROOT 注入：维度脚本引用 $PROJECT_ROOT 不再展开为空（#98/99 双重 bug）', async () => {
+    // 镜像 execRegressionDim 的注入逻辑：脚本前缀 export PROJECT_ROOT
+    const REPO_ROOT = '/tmp/fake-root';
+    const dimScript = 'test -f "$PROJECT_ROOT/engine/audit/package.json" && echo FOUND';
+    const injected = `export PROJECT_ROOT="${REPO_ROOT}"\n${dimScript}`;
+    const { execSync } = await import('child_process');
+    // 真实注入后路径可解析（用真实仓库根验证一次）
+    const real = `export PROJECT_ROOT="${process.cwd()}"\necho "$PROJECT_ROOT" | grep -q sofagent && echo OK`;
+    const out = execSync(`bash -c '${real}'`).toString().trim();
+    expect(out).toBe('OK');
+    // 注入串包含 export 前缀（防注入逻辑被误删）
+    expect(injected.startsWith('export PROJECT_ROOT=')).toBe(true);
+  });
+});
