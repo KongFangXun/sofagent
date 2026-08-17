@@ -76,6 +76,7 @@ import { ontologyImport } from './tools/ontology-import';
 import { modelRegister } from './tools/model-register';
 import { modelSwitch } from './tools/model-switch';
 import { modelUnregister } from './tools/model-unregister';
+import { trainBudget } from './tools/train-budget';
 
 // ============================================================
 // 常量
@@ -262,6 +263,7 @@ class McpServer {
         case 'model_register': { if (!args.name) { this.sendError(id, -32602, 'Missing required argument: name'); break; } const mrr = await modelRegister({ name: args.name as string, endpoint: (args.endpoint as string) ?? '', model: (args.model as string) ?? '', ...(args.client_type === 'openai-compatible' || args.client_type === 'ollama' ? { client_type: args.client_type } : {}), ...(args.source === 'endpoint' || args.source === 'local-path' ? { source: args.source } : {}), ...(typeof args.eval_score === 'number' ? { eval_score: args.eval_score } : {}), ...(typeof args.comment === 'string' ? { comment: args.comment } : {}) }); this.sendTool(id, mrr, mrr.data.isError); break; }
         case 'model_switch': { const msr = await modelSwitch({ ...(typeof args.name === 'string' ? { name: args.name } : {}), lane: args.lane === 'pipeline' ? 'pipeline' : 'executor', ...(typeof args.percent === 'number' ? { percent: args.percent } : {}), action: args.action === 'rollback' ? 'rollback' : 'switch', ...(args.human_confirmed !== undefined ? { human_confirmed: args.human_confirmed === true } : {}), ...(typeof args.comment === 'string' ? { comment: args.comment } : {}) }); this.sendTool(id, msr, msr.data.isError); break; }
         case 'model_unregister': { if (!args.name) { this.sendError(id, -32602, 'Missing required argument: name'); break; } const mur = await modelUnregister({ name: args.name as string, action: args.action === 'restore' ? 'restore' : 'retire', ...(args.human_confirmed !== undefined ? { human_confirmed: args.human_confirmed === true } : {}), ...(typeof args.comment === 'string' ? { comment: args.comment } : {}) }); this.sendTool(id, mur, mur.data.isError); break; }
+        case 'train_budget': { if (!args.action) { this.sendError(id, -32602, 'Missing required argument: action'); break; } if (!args.job_id) { this.sendError(id, -32602, 'Missing required argument: job_id'); break; } const tbr = await trainBudget({ action: args.action as 'status' | 'resolve', job_id: args.job_id as string, ...(args.decision === 'resume' || args.decision === 'terminate' ? { decision: args.decision } : {}) }); this.sendTool(id, tbr, tbr.data.isError); break; }
         default: this.sendError(id, -32602, `Unknown tool: ${toolName}`);
       }
     } catch (err) {

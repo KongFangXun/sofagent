@@ -781,3 +781,45 @@ export type {
 } from './execution-backends/dsh-backend';
 export { createTrajectoryCollector } from './execution-backends/trajectory';
 export type { TrajectoryRecord, TrajectoryCollector } from './execution-backends/trajectory';
+
+// v1.3.6 交付⑥⑦：训练协议三约定 + 训练预算控制
+export {
+  TrainBudgetSchema,
+  TrainJobSchema,
+  validateTrainJob,
+  buildTrainSpawnArgs,
+  parseTrainEvent,
+  parseTrainEventStream,
+  createSignalController,
+} from './train/train-protocol';
+export type {
+  TrainBudget,
+  TrainJob,
+  TrainJobValidation,
+  TrainEvent,
+  TrainEventParseResult,
+  SignalAction,
+  SignalController,
+  SignalControllerOptions,
+} from './train/train-protocol';
+export {
+  checkBudget,
+  createTrainBudgetMonitor,
+  buildBudgetReport,
+  trainJobsPath,
+  loadTrainJobs,
+  saveTrainJobs,
+  upsertTrainJob,
+  findTrainJob,
+  emitBudgetExceededAudit,
+} from './train/train-budget';
+export type {
+  TrainUsage,
+  BudgetViolation,
+  BudgetCheckResult,
+  BudgetPause,
+  BudgetHumanDecision,
+  TrainBudgetMonitor,
+  TrainBudgetReport,
+  TrainJobState,
+} from './train/train-budget';

@@ -19,7 +19,7 @@ export interface ToolDef {
 }
 
 /**
- * 完整工具清单——57 个 tool（v1.3.6：workflow_submit/ontology_import/model_register/model_switch/model_unregister 新增；v1.3.5：run_ab_test/promote_ab/snapshot_list/snapshot_restore；v1.3.4：commons_publish/search/invoke/rate/retire/harvest_rule；不含 4 个 resource shortcut）
+ * 完整工具清单——58 个 tool（v1.3.6：workflow_submit/ontology_import/model_register/model_switch/model_unregister/train_budget 新增；v1.3.5：run_ab_test/promote_ab/snapshot_list/snapshot_restore；v1.3.4：commons_publish/search/invoke/rate/retire/harvest_rule；不含 4 个 resource shortcut）
  */
 export const TOOLS: ToolDef[] = [
   {
@@ -723,6 +723,20 @@ export const TOOLS: ToolDef[] = [
         comment: { type: 'string', description: '备注（退役原因 / 恢复理由）' },
       },
       required: ['name'],
+    },
+  },
+  {
+    // v1.3.6 (交付 ⑦)：训练预算控制——查预算 / 超预算人审续跑或终止
+    name: 'train_budget',
+    description: '训练预算控制（v1.3.6）——train-job 横切能力，成本透明。action=status 查任务预算状态（实际消耗/是否超预算暂停）；action=resolve 人审决策落地（decision=resume 从 checkpoint 续跑 / terminate 终止）。超预算自动 SIGINT 存 checkpoint 暂停（协议③）+ 记 train_budget_exceeded 审计，挂起等 resolve。预算字段写入 job.json（协议①），事件进 stdout 流（协议②）。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        action: { type: 'string', enum: ['status', 'resolve'], description: '操作：status 查预算 / resolve 人审续跑或终止' },
+        job_id: { type: 'string', description: '训练任务标识（job.json 的 jobId）' },
+        decision: { type: 'string', enum: ['resume', 'terminate'], description: 'resolve 时的人审决策：resume 续跑 / terminate 终止' },
+      },
+      required: ['action', 'job_id'],
     },
   },
 ];
