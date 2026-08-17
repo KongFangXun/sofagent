@@ -16,6 +16,12 @@
 
 **追加新维度前，必须先 grep 同类**：有同类 → 扩展旧维度的子项，不新增编号；无同类 → 才新增编号 = 当前最大 +1。历史维度靠 `git log -p` 找回。**行数警戒线**：`regression-checklist.md` ≤ 1530 行、`acceptance-test.sh` ≤ 2600 行（v1.3.6 首次上调：新增 2 维+S282-S289 全属新审查面，三判据全否后按「超标上调 LIMIT 不删内容」方针 1500→1530/2500→2600，判据记录见尾部）；releasing.md 方针「超标上调 LIMIT 不删内容」。
 
+**维度脚本编写三铁律**（v1.3.6 release-gate run-08 教训——7 个 FAIL 维度中 5 个是脚本自身缺陷而非仓库问题，driver 白跑一轮）：
+
+1. **显式收尾**：每个维度的检查命令必须以 `echo "✅ ..."`（通过）或 `echo "❌ ..."; exit 1`（失败）收尾——**禁用「期望：无输出」「期望：exit 1」这类依赖退出码语义的写法**。driver 判定只看 exitCode，`grep 无命中返回 1` / `for 循环尾条件判假返回 1` 都会被误判 FAIL（#59/#96 实证——输出全 ✅ 仍记 FAIL）。
+2. **禁写死 CLI 参数签名与数字**：检查命令引用 CLI（`node dist/cli.js <参数>`）或计数（N tools / N 规则）时，版本演进必漂——#56 的 `--golden-set` 参数被移除后老命令报参数缺失、#110 的 `48 tools` 在 52→60 后必然 FAIL。写**动态对账**（读 tool-registry 实数比文档）或**可达性验证**（`--help` 含子命令名），不锚定具体签名/数字。
+3. **修改 checklist 的 commit 前最后跑一次 check-docs**：B 层预算会被修复净增顶破（v1.3.6 一天内两次：8880→8885→8895）——commit 后才发现 CD 红等于多一个 fix commit。
+
 **清单自身健康度自校验**（每次修改后跑）：
 ```bash
 HEAD_VAL=$(grep -oE '当前 [0-9]+ 维' FORGE/playbook/regression-checklist.md | grep -oE '[0-9]+' | head -1)
