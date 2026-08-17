@@ -356,6 +356,27 @@ child.on('close', (code, signal) => {
 
 #### 3. 禁用 `| head -N` 管道（shell 脚本侧）
 
+### 🔴 信号处理与信号类测试两坑（worktree 留存根治）
+
+> **来源**（worktree 根治三件套开发过程）：teardown 只挂正常/异常 catch/uncaughtException 三条路径，`pkill` 的 SIGTERM 不走任何一条——worktree 直接遗留（实测 79MB/次）。
+
+**信号清理接线**：driver 必须挂 SIGTERM/SIGINT handler（收到终止信号先清 worktree + 写 latest.json 终态再退出，幂等锁防重复，正常结束时 disarm）；另配启动时陈旧扫描兜底（>7 天自动收走，兜住 SIGKILL 这种无法捕获的死法）。实现见 `driver-base.mjs` 的 `registerSignalCleanup` / `cleanupStaleWorktrees`。
+
+**信号类测试两坑**：
+
+1. **SIGTERM 是异步派发的**——`process.kill(pid, 'SIGTERM')` 返回时 handler 还没执行。测试发信号后必须**等一拍再断言**（`await new Promise(r => setTimeout(r, 50))` 之类），同步断言必假阴性。
+2. **vitest 捕获 process.exit**——vitest 环境下 `process.exit` 被测试框架接管，信号 handler 里的 `process.exit(code)` 不会真退出。信号类测试必须**注入 noop exitFn**（`registerSignalCleanup({ exitFn: () => {} })`——参数化设计的原因之一）。
+
+### 附：FORGE 测试的正确入口
+
+FORGE/ 不在 npm workspaces 内，`npm test` 不覆盖 FORGE/src/*.test.mjs；`node --test` 跑 vitest 风格文件直接炸（`validateTags` undefined）。正确入口：
+
+```bash
+bash tools/forge-smoke-test.sh              # 全量（可加载性 + 测试，12 项）
+bash tools/forge-smoke-test.sh --load-only  # 只验证模块可加载
+npx vitest run FORGE/src/driver-base.test.mjs   # 单文件（调试用）
+```
+
 `set -euo pipefail` 下 `cmd | head -N` → head 关闭管道 → SIGPIPE → `set -e` 退出。
 
 | 场景 | ❌ 危险 | ✅ 安全 |
