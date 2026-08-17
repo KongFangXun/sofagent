@@ -91,9 +91,9 @@ graph TD
 ```mermaid
 graph TB
     subgraph L1["① 梳理与转换 · ACTIVATE"]
-        G["企业 graph<br/>（多个 workflow 组成，给人看）"] 
-        O["ontology 本体<br/>（entity/concept/relations，给机器看）"]
-        G -.双视图并行产出.-> O
+        G["Workflow Graph<br/>（多个 workflow 组成的流程图谱）"] 
+        O["Ontology Graph<br/>（ontology 的可理解形态：entity/concept/relations）"]
+        G -.双图谱并行产出.-> O
     end
     subgraph L2["② 编排与执行 · ORCHESTRATE"]
         C["编译器：workflow + ontology<br/>→ 受约束图（AI 可运行节点）"]
@@ -112,7 +112,7 @@ graph TB
 ```
 
 > 这张图的三处关键精化（2026-08-16 明确）：
-> - **L1 是「双视图并行产出」不是单向转换**——workflow 管流转、ontology 管语义，两者从同一次 FDE 访谈并行产出、互相校验（SHACL），不是「graph 画完再转 ontology」（转换会丢访谈里的隐性知识）。
+> - **L1 是「双图谱并行产出」不是单向转换**——Workflow Graph 管流转（Agent 按它执行）、Ontology Graph 管语义（Agent 按它检索、人按它看组织资产），两者从同一次 FDE 访谈并行产出、互相校验（SHACL），不是「Workflow Graph 画完再转 Ontology Graph」（转换会丢访谈里的隐性知识）。**双图谱术语**：ontology 本身是哲学定义，加 Graph 让它成为可被理解、可视化的东西——FDE 交付的两张图谱即 Workflow Graph（多个 workflow 组成）与 Ontology Graph（本体结构的图谱化形态）。
 > - **L2 是「编排层永不换 + 执行层可换」两层分离**——编排层 LangGraph StateGraph 永不替换（确定性审计依赖显式图结构），执行层走 ExecutionBackend 接口：DSH 默认 / createReactAgent fallback / 三平台可选。DSH 是最大的一条河，但「堤修在哪条河上都行」，不把企业命脉押在 developer preview 上。
 > - **L3 挂的是「事件域」不是节点**——plugin 装一次即在 tools/result、turn-stopping、approval seam 上全域生效，无需逐节点插桩；独立模式（OpenClaw/WorkBuddy + git diff 审计）永远保留，不依赖 DSH 才成立。
 
@@ -207,7 +207,7 @@ graph TB
 |---|---|
 | @sofagent/audit + git hook | 事后拦截——Agent commit 时扫 24 条规则 |
 | daemon | 7×24 巡检（数据主权 / 知识健康 / 失败模式） |
-| dashboard | **单机监控面板**——企业 IT 看本设备 Agent 运行状态（多设备聚合走未来 模板市场） |
+| dashboard | **单机监控面板**——企业 IT 看本设备 Agent 运行状态（多设备聚合走商业侧 商业平台，不在开源范围） |
 | SKILL.md + fde.md + core-rules.md + role-*.md | **事前约束**——Agent 启动时读铁律，知道规则才能遵守 |
 | 4 个 Agent Skill（fde/audit/engineer/reviewer）| SubAgent 岗位定义 |
 | HMAC key | 审计记录防篡改 |
@@ -224,7 +224,7 @@ graph TB
 
 > ⚠️ **FDE 不该在自己电脑跑 install.sh**——install.sh 是企业设备安装器，不是 FDE 工具。FDE 的工具是 Skill（ClawHub 装）+ 未来 商业模型层 模型。
 >
-> ⚠️ **dashboard 是单机监控面板**——每台装了 sofagent 的设备一个 dashboard，盯本机 Agent。多设备聚合是企业级需求，走 模板市场（未来 SaaS）。
+> ⚠️ **dashboard 是单机监控面板**——每台装了 sofagent 的设备一个 dashboard，盯本机 Agent。多设备聚合是企业级需求，走商业侧 商业平台（不在开源范围）。
 
 > 最小可用：只装 `@sofagent/audit` 就有纯审计（24 条规则，17 默认启用 + 7 扩展 opt-in + 快照 + 回滚）；五包全装才是完整约束层（Harness）。
 
@@ -1055,7 +1055,9 @@ sofagent 的三层治理与 Karpathy LLM Wiki 的 `raw materials → Wiki entrie
 
 | 决策 | 含义 | 反模式（不做） |
 |------|------|---------------|
-| **双视图并行产出** | workflow（流转）+ ontology（语义）从同一次 FDE 访谈并行产出，SHACL 互相校验 | 不做「graph → ontology」单向转换——转换丢访谈中的隐性知识，本体沦为工作流的副产品 |
+| **双图谱并行产出** | Workflow Graph（流转）+ Ontology Graph（语义）从同一次 FDE 访谈并行产出，SHACL 互相校验 | 不做「Workflow Graph → Ontology Graph」单向转换——转换丢访谈中的隐性知识，本体沦为工作流的副产品 |
+
+> 📖 **双图谱术语定义（2026-08-17 定）**：FDE 交付的两张图谱统一称 **Workflow Graph** 与 **Ontology Graph**。「Graph」在这里是可视化/可理解形态的统称，不与行业概念 Graph Engineering 挂钩——**Workflow Graph** = FDE 梳理好 workflow 后多个 workflow 组成的流程图谱（动态，Agent 按它执行）；**Ontology Graph** = ontology 的图谱化形态（ontology 本身是哲学定义，加 Graph 才让人知道它是可被理解、可视化的东西；静态，Agent 按它检索语义，人按它看组织资产）。不同读者读不同图谱：Agent 执行读 Workflow Graph，Agent 检索与人看资产读 Ontology Graph，FDE 进场两种都读。商业平台层 商业平台（原 模板市场）托管的就是这双图谱。
 | **执行层可换（编排层不换）** | 编排层 LangGraph StateGraph 永不替换；执行层走 ExecutionBackend 接口——DSH 默认 / createReactAgent fallback / 三平台可选，双后端镜像验证 | 不做「只修一处的堤」——企业命脉不押单一运行时，DSH rc 阶段 breaking change 风险不传导给客户 |
 | **治理是事件域横切面** | plugin 挂 tools/result、turn-stopping、approval seam 等全局事件域，装一次全域生效 | 不做「逐节点插桩」——治理不是节点附件，是横切所有节点的约束层 |
 
