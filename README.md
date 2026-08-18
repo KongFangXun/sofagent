@@ -18,7 +18,7 @@
 
 ## 这是什么
 
-**sofagent 是一个开源 FDE Agent**（MIT）——进场帮你梳理业务工作流，把能自动化的环节变成 AI 节点；交付完成后 FDE 离场，AI 节点继续 7×24 自动执行任务，每次干活受审计、越界能拦截、出事能回滚。它以 [FDE Skill](https://clawhub.ai) 形态在 ClawHub 分发（帮 FDE 做 FDE 的方法论 Skill），装到企业设备后以**约束层引擎**长期运行（审计 + 回溯 + 注入 + daemon 监控）。
+**sofagent 是一个开源 FDE Agent**（MIT）——进场帮你梳理业务工作流，把能自动化的环节变成 AI 节点；交付完成后 FDE 离场，AI 节点继续 7×24 自动执行任务，每次干活受审计、越界能拦截、出事能回滚。它以 [FDE Skill](https://clawhub.ai/kongfangxun/skills/sofagent) 形态在 ClawHub 分发（帮 FDE 做 FDE 的方法论 Skill），装到企业设备后以**约束层引擎**长期运行（审计 + 回溯 + 注入 + daemon 监控）。
 
 > 📊 **为什么是现在**：MIT NANDA 实验室《生成式人工智能的鸿沟》报告指出，全球企业过去三年在生成式 AI 上烧了三四百亿美元，**95% 的项目没能产生能写进财务报表的价值**；与此同时，一个叫「前线部署工程师」（Forward Deployed Engineer，FDE）的岗位发布量一年涨了 **729%**（Indeed 2025 数据）。模型不稀缺了，能把模型塞进客户真实业务里的人，才稀缺——sofagent 就是把这件事工程化的开源底座。（数据核验与多机构口径对照见 [VALIDATION §一·治理缺口的代价](./docs/VALIDATION.md#治理缺口的代价三项联网核验证据)，FDE 经济账见 [VALIDATION §四](./docs/VALIDATION.md#四市场印证行业判断被市场买单)。）
 
@@ -86,7 +86,7 @@ sofagent-audit --doctor    # 验证环境（可选）
 
 > 💡 所有安装脚本只写入 `~/.sofagent/`，不修改系统文件。`--no-verify` 可绕过本地 hook——sofagent 防的是诚实 Agent 的疏忽，不是恶意绕过；高安全场景请在 CI 侧加 `sofagent-audit --diff` 兜底。详见 [LIMITATIONS](./docs/LIMITATIONS.md)。
 >
-> 📌 **install.sh 是企业设备安装器**——装在跑 AI 节点的服务器/电脑上，给 Agent 当监控约束层（审计 + 回溯 + 注入 + daemon 巡检 + 单机 dashboard）。FDE 自己的电脑不需要跑 install.sh，FDE 的工具是 [FDE Skill](https://clawhub.ai)（方法论）。详见 [部署架构](./docs/ARCHITECTURE.md#安装包边界与部署架构v132-定位校准)。
+> 📌 **install.sh 是企业设备安装器**——装在跑 AI 节点的服务器/电脑上，给 Agent 当监控约束层（审计 + 回溯 + 注入 + daemon 巡检 + 单机 dashboard）。FDE 自己的电脑不需要跑 install.sh，FDE 的工具是 [FDE Skill](https://clawhub.ai/kongfangxun/skills/sofagent)（方法论）。详见 [部署架构](./docs/ARCHITECTURE.md#安装包边界与部署架构v132-定位校准)。
 >
 > 📌 **bootstrap.sh 和 install.sh 的关系**：bootstrap.sh 是 install.sh 的一行下载包装器——`curl bootstrap.sh | bash` 等价于"下载 install.sh + 运行 install.sh"。两个脚本装的东西完全一样，bootstrap 只是省去手动 clone/下载的步骤。
 
@@ -198,7 +198,7 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # 加载安全规�
 
 > 🔬 **外部独立实验证据**（非官方自测）：Joel Niklaus 的 harness-optimization 研究（[研究代码仓库](https://github.com/JoelNiklaus/harness-optimization)，数据见仓库内实验）显示，同一模型不改权重、仅优化外层 Harness，法律 Agent 基准从 **63.4% → 80.1%（+16.7pp）**。详见 [THANKS.md](./docs/THANKS.md)。
 
-> 🧪 **工程可信度**：2515 测试 / 13 包（12 个含测试）（全绿，实测见 `tools/test-count.sh`）· 24 条审计规则 · fresh-eyes 独立审查持续运行（审查工具见 [FORGE/playbook/fresh-eyes-review.md](./FORGE/playbook/fresh-eyes-review.md)）。
+> 🧪 **工程可信度**：2515 测试 / 13 包（12 个含测试）（实测见 `tools/test-count.sh`，flaky 重跑机制内置，以脚本判定为准）· 24 条审计规则 · fresh-eyes 独立审查持续运行（审查工具见 [FORGE/playbook/fresh-eyes-review.md](./FORGE/playbook/fresh-eyes-review.md)）。
 
 ## 文档
 

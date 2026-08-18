@@ -26,7 +26,7 @@
 | 概念 | 一句话 | 详情 |
 |------|--------|------|
 | **FDE Agent** | 对外的产品身份：「Forward Deployed Engineer」——进场→部署→离场，留一套能持续维护的 AI 化资产 | [PHILOSOPHY §一](./PHILOSOPHY.md) |
-| **约束层（Harness）** | 对内的技术身份：约束 Agent 行为的「缰绳」——一个层四种能力（注入·审计·回溯·进化），编排（FORGE）为内部工具不对外宣称 | [ARCHITECTURE §二](./ARCHITECTURE.md) |
+| **约束层（Harness）** | 对内的技术身份：约束 Agent 行为的「缰绳」——一个层四种能力（注入·审计·回溯·进化），编排（FORGE）为内部工具 | [ARCHITECTURE §二](./ARCHITECTURE.md) |
 | **约束层七维度** | Agent = 模型 + 上下文 + 工具 + 状态 + 执行控制 + 权限 + 可观测性——四种能力各自覆盖其中哪些维度 | [ARCHITECTURE §一·心智模型](./ARCHITECTURE.md) |
 | **约束层构成（企业视角）** | 黄仁勋定义：企业专属约束层 = 知识 + 记忆 + 工作流 + 权限 + 安全机制 + 运行环境——模型是起点，围绕模型积累的这套专属系统才是核心资产 | [PHILOSOPHY §一·理论锚点](./PHILOSOPHY.md#智能与控制分离sofagent-的理论锚点) |
 | **审计引擎** | git diff 驱动，24 条规则（17 默认 + 7 扩展），A1→A23 为活跃规则（A12/A13 已在 v0.99.4 合并入 A11，编号不再使用；v1.2.5 新增 A20-A23），每次 commit 自动跑 | [ARCHITECTURE §三](./ARCHITECTURE.md) |
@@ -166,7 +166,7 @@
 |----|-----|
 | 当前版本 | **v1.3.6**（2026-08-18） |
 | 下一版 | v1.3.7（规划中，参见 docs/ROADMAP.md） |
-| 测试覆盖 | 2515 测试 / 12 包（测试统计标准：有 test script 的 workspace 包；workspace 总数 13 个均发布到 npm，见 check-test-count.sh） |
+| 测试覆盖 | 2515 测试 / 12 包（测试统计标准：有 test script 的 workspace 包；workspace 总数 13 个均发布到 npm，实测见 `tools/test-count.sh`、声称数同步校验见 `tools/check-test-count.sh`） |
 | 审计规则 | 24 条（17 默认 + 7 扩展），活跃编号 A1-A11 + A14-A23 + E1-E2/E4，每次 commit 自动跑 |
 | FORGE | fresh-eyes-loop + release-gate-loop 运行中 |
 | 数据目录 | **data/**（v1.2.1+ SSOT 运行时数据目录） |

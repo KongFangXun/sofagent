@@ -8,7 +8,7 @@
 
 ```bash
 # 确认 sofagent 底座已装
-sofagent-audit --version   # 应输出 v1.2.8 或更高
+sofagent-audit --version   # 应输出 v1.3.6 或更高
 
 # 没用？装一下
 bash install.sh

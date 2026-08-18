@@ -16,7 +16,7 @@
 
 ## What is this
 
-**sofagent is an open-source FDE Agent** (Forward Deployed Engineer Agent) — it comes in and maps your business workflows, turning the automatable steps into AI nodes. Once delivery is complete, the FDE departs while the AI nodes keep running 7×24 on their own — every action is audited, out-of-bounds moves are blocked, and anything that breaks can be rolled back. It ships on [ClawHub](https://clawhub.ai) as an **FDE Skill** (a methodology skill that helps FDEs do FDE work), and once installed on enterprise devices it runs long-term as a **constraint-layer engine** (auditing + rollback + injection + daemon monitoring).
+**sofagent is an open-source FDE Agent** (Forward Deployed Engineer Agent) — it comes in and maps your business workflows, turning the automatable steps into AI nodes. Once delivery is complete, the FDE departs while the AI nodes keep running 7×24 on their own — every action is audited, out-of-bounds moves are blocked, and anything that breaks can be rolled back. It ships on [ClawHub](https://clawhub.ai/kongfangxun/skills/sofagent) as an **FDE Skill** (a methodology skill that helps FDEs do FDE work), and once installed on enterprise devices it runs long-term as a **constraint-layer engine** (auditing + rollback + injection + daemon monitoring).
 
 > 📊 **Why now**: MIT NANDA Lab's *The GenAI Divide* report shows that over the past three years, global enterprises burned $30–40 billion on generative AI, yet **95% of projects failed to produce value worth putting on a financial statement**. Meanwhile, job postings for a role called "Forward Deployed Engineer" (FDE) surged **729%** year-over-year (Indeed 2025 data). Models are no longer scarce — the scarce thing is people who can embed models into real customer operations. sofagent is the open-source substrate that engineers this. (Data verification and cross-agency calibration: see [VALIDATION §1 · Cost of governance gaps](./docs/VALIDATION.md#治理缺口的代价三项联网核验证据); FDE economics: see [VALIDATION §4](./docs/VALIDATION.md#四市场印证行业判断被市场买单).)
 
@@ -84,7 +84,7 @@ sofagent-audit --doctor    # verify the environment (optional)
 
 > 💡 All install scripts only write to `~/.sofagent/` and never touch system files. `--no-verify` can bypass the local hook — sofagent guards against honest Agents' carelessness, not deliberate bypass; for high-security scenarios add `sofagent-audit --diff` on the CI side as a backstop. See [LIMITATIONS](./docs/LIMITATIONS.md).
 >
-> 📌 **install.sh is the enterprise device installer** — install it on the server/computer running the AI nodes, where it acts as the Agent's monitoring constraint layer (audit + rollback + injection + daemon inspection + single-machine dashboard). FDEs do not need to run install.sh on their own machines — the FDE's tools are [FDE Skill](https://clawhub.ai) (the methodology). See [deployment architecture](./docs/ARCHITECTURE.md#安装包边界与部署架构v132-定位校准).
+> 📌 **install.sh is the enterprise device installer** — install it on the server/computer running the AI nodes, where it acts as the Agent's monitoring constraint layer (audit + rollback + injection + daemon inspection + single-machine dashboard). FDEs do not need to run install.sh on their own machines — the FDE's tools are [FDE Skill](https://clawhub.ai/kongfangxun/skills/sofagent) (the methodology). See [deployment architecture](./docs/ARCHITECTURE.md#安装包边界与部署架构v132-定位校准).
 >
 > 📌 **How bootstrap.sh and install.sh relate**: bootstrap.sh is a one-line download wrapper around install.sh — `curl bootstrap.sh | bash` is equivalent to "download install.sh + run install.sh". Both scripts install exactly the same thing; bootstrap just saves you the manual clone/download step.
 
@@ -193,7 +193,7 @@ Community rulesets are published as `sofagent-ruleset-*` npm packages and auto-d
 
 > 🔬 **Independent external evidence** (not an official self-test): Joel Niklaus' harness-optimization research ([research code repository](https://github.com/JoelNiklaus/harness-optimization), data in the repo experiments) shows that with the same model and unchanged weights, optimizing only the outer harness lifted a legal-Agent benchmark from **63.4% → 80.1% (+16.7pp)**. See [THANKS.md](./docs/THANKS.md).
 
-> 🧪 **Engineering credibility**: 2515 tests / 13 packages (12 with tests) (all green, verified via `tools/test-count.sh`) · 24 audit rules · fresh-eyes independent review continuously running (review tooling at [FORGE/playbook/fresh-eyes-review.md](./FORGE/playbook/fresh-eyes-review.md)).
+> 🧪 **Engineering credibility**: 2515 tests / 13 packages (12 with tests) (verified via `tools/test-count.sh`; built-in flaky retry, script verdict is authoritative) · 24 audit rules · fresh-eyes independent review continuously running (review tooling at [FORGE/playbook/fresh-eyes-review.md](./FORGE/playbook/fresh-eyes-review.md)).
 
 ## Docs
 

@@ -39,7 +39,7 @@ graph LR
         C1[🔍 审计<br/>每次变更硬证据]
         C2[🔄 回溯<br/>快照·回滚]
         C3[🧬 进化<br/>反思·知识·优化]
-        C0 ──▶ C1 ──▶ C2 ──▶ C3
+        C0 --> C1 --> C2 --> C3
     end
     D4 -.->|每步审计| C1
     D5 -.->|think.md 回写| C3
@@ -56,7 +56,7 @@ graph LR
 ```mermaid
 graph TD
     H[约束层 · 工作环境<br/>约束注入链 + 审计能力 + 回溯能力<br/>daemon + SKILL 约束注入链 + data/ 状态持久<br/>——决定模型「能做什么」]
-    H --> G[Graph 层 · 流程拓扑<br/>FORGE 内部工具（LOOP 流水线）<br/>LangGraph StateGraph<br/>——项目自迭代用·不对外宣称]
+    H --> G[Graph 层 · 流程拓扑<br/>FORGE 内部工具（LOOP 流水线）<br/>LangGraph StateGraph<br/>——项目自迭代内部使用]
     G --> L[Loop 层 · 反馈改进<br/>FORGE fresh-eyes-loop + release-gate-loop<br/>进化能力 sustain · eval 反馈闭环<br/>——决定「怎么越做越好」]
     L -.->|审计趋势回流| H
 ```
