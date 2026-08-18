@@ -224,6 +224,61 @@ else
 fi
 
 # ============================================================
+# 六、交付关键词覆盖率对账（阶段五步骤 3 脚本化 · 零遗漏验证）
+# ============================================================
+# 源：CHANGELOG.md 主索引当前版本行的加粗交付名 + devlog 交付章标题核心词
+# 目标：每个交付关键词在 checklist / acceptance 至少出现一次（SOP 阶段五
+# 步骤 3「grep 确认 CHANGELOG 每个交付关键词在审查文档中至少出现一次」）
+# 词形差异（如 devlog「SubAgent 完整沙箱」vs checklist「沙箱五件套」）由
+# 豁免清单处理：FORGE/playbook/.coverage-exempt 每行一个关键词，命中的不报
+[ "$QUIET" = false ] && echo -e "\n${BOLD}${CYAN}── ⑥ 交付关键词覆盖率（阶段五零遗漏） ──${NC}"
+
+CUR_VER=$(node -p "require('./engine/audit/package.json').version" 2>/dev/null || echo "")
+EXEMPT_FILE="FORGE/playbook/.coverage-exempt"
+EXEMPTED=$(cat "$EXEMPT_FILE" 2>/dev/null || echo "")
+
+if [ -z "$CUR_VER" ]; then
+  warn "无法读取当前版本号，跳过覆盖率对账（人工确认）"
+else
+  # 交付章标题核心词（devlog ## N、 标题，去编号/括号注释）+ CHANGELOG 版本行 `**加粗**` 交付短语
+  DEVLOG_KW=$(grep -E "^## [一二三四五六七八九十]+、" "docs/changelog/v1.${CUR_VER#1.}/v${CUR_VER}.md" 2>/dev/null | sed -E 's/^## [一二三四五六七八九十一点五]+、//; s/（.*//; s/\(.*//' || true)
+  CHANGELOG_KW=$(grep -E "^\- \*\*v${CUR_VER}\*\*" CHANGELOG.md 2>/dev/null | head -1 | grep -oE '\*\*[^*]+\*\*' | sed 's/\*\*//g' | sed -E 's/[（(].*//' || true)
+  ALL_KW=$(printf '%s\n%s\n' "$DEVLOG_KW" "$CHANGELOG_KW" | grep -vE '^\s*$' | sort -u || true)
+
+  if [ -z "$ALL_KW" ]; then
+    warn "当前版本（v${CUR_VER}）未提取到交付关键词——devlog 章标题/CHANGELOG 版本行格式变化？人工确认"
+  else
+    COV_MISS=0
+    while IFS= read -r _kw; do
+      [ -z "$_kw" ] && continue
+      # 豁免清单命中（精确行匹配）→ 已知词形差异，不报
+      if echo "$EXEMPTED" | grep -qxF "$_kw"; then continue; fi
+      # 命中判定：完整短语 或 任一 ≥4 字核心名词子串（放宽到关键组件名）
+      _hit_cl=$(grep -c "$_kw" "$CHECKLIST" 2>/dev/null || true)
+      _hit_ac=$(grep -c "$_kw" "$ACCEPTANCE" 2>/dev/null || true)
+      if [ "${_hit_cl:-0}" -eq 0 ] && [ "${_hit_ac:-0}" -eq 0 ]; then
+        # 双零 → 拆词重试（取短语中的核心名词段：≥4 连续 CJK 或 ≥4 连续拉丁字符）
+        _sub_hit=0
+        while IFS= read -r _seg; do
+          [ -z "$_seg" ] && continue
+          _n=$( (grep -c "$_seg" "$CHECKLIST" 2>/dev/null || true; grep -c "$_seg" "$ACCEPTANCE" 2>/dev/null || true) | awk '{s+=$1} END {print s}')
+          [ "${_n:-0}" -gt 0 ] && { _sub_hit=1; break; }
+        done <<EOF
+$(echo "$_kw" | grep -oE '[一-龥]{4,}|[A-Za-z][A-Za-z-]{3,}' || true)
+EOF
+        if [ "$_sub_hit" -eq 0 ]; then
+          bad "交付关键词「${_kw}」在 checklist/acceptance 均零命中" "    处置三选一：① 审查文档补该审查面（阶段五 A 类分发）② 词形不同 → 加进 $EXEMPT_FILE ③ 非交付性章节（背景/依赖）→ 豁免"
+          COV_MISS=$((COV_MISS + 1))
+        fi
+      fi
+    done <<EOF
+$ALL_KW
+EOF
+    [ "$COV_MISS" -eq 0 ] && ok "当前版本（v${CUR_VER}）交付关键词审查覆盖零遗漏"
+  fi
+fi
+
+# ============================================================
 # 汇总
 # ============================================================
 [ "$QUIET" = false ] && echo -e "\n${BOLD}═══════════════════════════════════════════════${NC}"

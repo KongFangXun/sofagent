@@ -12,7 +12,7 @@
 |:--:|------|------|
 | 1 | **来源提取**：过 5 个来源（fresh-eyes 报告 / BugFix 清单 / 新功能清单 / 复审报告 / CHANGELOG），产出 A/B/C 三类清单 + 问题模式清单。关键：新功能审查面零遗漏 + 每个真实发现都有模式归类 | A/B/C 清单 |
 | 2 | **四份文档分发**：A+B 类 → regression-checklist + acceptance-test + check-version.sh（加法）；C 类 → fresh-eyes-review（校准非加法） | 四份文档更新 |
-| 3 | **覆盖率确认**：grep 确认 CHANGELOG 每个交付关键词在审查文档中至少出现一次 | 零遗漏 |
+| 3 | **覆盖率确认**：`bash tools/check-review-system.sh` 自动执行——脚本⑥段提取当前版本交付关键词（devlog 交付章标题 + CHANGELOG 版本行加粗短语），对 checklist/acceptance 双文档对账，零命中报 FAIL。词形差异（devlog「SubAgent 完整沙箱」vs checklist「沙箱五件套」类）加进豁免清单 `FORGE/playbook/.coverage-exempt`（每行一个关键词）。与阶段七共用同一脚本（阶段五在分发后跑=确认更新零遗漏；阶段七在终验跑=确认没回退） | 脚本⑥段全绿 + 豁免清单维护 |
 | 4 | **防膨胀瘦身（三判据硬门槛）**：上调警戒线前必须依次过三判据，全否才允许上调。行数警戒线：checklist≤1500（v1.3.5 靠归并未上调）/ acceptance≤2500（v1.3.5 靠瘦身未上调）/ fresh-eyes≤400 | 三判据记录 + 自校验全 PASS |
 | 5 | **fresh-eyes-review 校准**：C 类走决策树（新视角 / 校准视角 / 历史教训），不往留白式审查里加精确检查项 | 校准完成 + 风格守护自检全 PASS |
 | 6 | **README 新能力段人工语义交叉核对**：逐项对照 README.md/README.en.md「vX.Y 新能力」段与 CHANGELOG/changelog/vX.Y/vX.Y.Z.md 的交付清单——确保新能力段列出的每项都是**本版本真实交付**（不是上版本内容残留），且本版本所有核心交付**均已出现在新能力段**。check-version.sh 只校验版本号字面一致，无法检测语义错配（如 v1.3.2 段写了 v1.3.1 内容）。此项必须人工执行。 | README 新能力段与 changelog 逐项对齐 |
