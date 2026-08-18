@@ -123,7 +123,7 @@ Harness 的另一价值点是**「不依赖 AI 也能守门」**。当 LLM 不�
 | 本质 | Super Agent 运行时框架 | 约束层（Harness） |
 | 语言/栈 | Python (FastAPI + LangGraph + uv) | TypeScript/Node |
 | 安全在哪 | 运行时（沙箱 + fail-closed + 中间件链 26 步）| 提交时（git diff 24 条规则）+ 运行时约束（SKILL.md）|
-| 部署重量 | Nginx + Gateway + Postgres，起步 8C16G | `bash install.sh`，零依赖 |
+| 部署重量 | Nginx + Gateway + Postgres，起步 8C16G | `bash install.sh`，仅需 Node.js ≥ 18（无外部基础设施依赖） |
 | 约束方式 | 需 Agent 跑在它的框架里 | 看 git diff，Agent 在哪跑都行 |
 
 **给我们的背书**：① Harness 品类被字节用真金白银验证；② LangGraph createReactAgent 是编排事实标准（双方都选）；③ 控制平面打法（runtime 内嵌 gateway = 控制平面）是行业共识。**给我们的启发**（进 ROADMAP 与开发日志）：中间件链设计、Skill 质量门禁 + content-hash、Session Goals、ToolOutputBudget、多 worker 租约安全语义——详见 [ROADMAP · 行业印证](./ROADMAP.md#行业印证)。

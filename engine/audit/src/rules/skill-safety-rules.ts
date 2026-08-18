@@ -49,7 +49,10 @@ export interface SafetyResult {
 
 const RULES: SafetyRule[] = [
   // === 恶意命令 (DANGEROUS) ===
-  { pattern: /(^|[^a-zA-Z0-9_])rm\s+-rf\s+\//, category: '恶意命令', severity: 'DANGEROUS', description: 'rm -rf / 危险删除' },
+  // v1.3.7 fresh-eyes finding-03 修复：豁免口径与 agent-shield.ts:79 统一——
+  // rm -rf /tmp 与 rm -rf /home/user/. 属常见测试清理，两处扫描器此前口径不一致
+  // （本处一律 DANGEROUS，shield 侧豁免），统一为豁免版防误报。
+  { pattern: /(^|[^a-zA-Z0-9_])rm\s+-rf\s+\/(?!tmp|home\/\w+\/\.)/, category: '恶意命令', severity: 'DANGEROUS', description: 'rm -rf / 危险删除（豁免 /tmp 与用户家目录清理）' },
   { pattern: /curl.*\|.*bash/, category: '恶意命令', severity: 'DANGEROUS', description: 'curl 管道执行 bash' },
   { pattern: /curl.*\|.*\bsh\b/, category: '恶意命令', severity: 'DANGEROUS', description: 'curl 管道执行 sh' },
   { pattern: /wget.*\|.*sh/, category: '恶意命令', severity: 'DANGEROUS', description: 'wget 管道执行 sh' },
