@@ -1566,14 +1566,14 @@ grep -q "审计通过" engine/core/src/config-template.ts && echo "✅ 成功回
 # 红队四项：追加伪造判篡改 + A2 二进制 WARN
 grep -q "tampered" engine/audit/src/commands/verify.ts && echo "✅ 追加伪造拦截" || echo "❌ legacy 容忍回退"
 grep -qE "\.bin|Binary files" engine/audit/src/rules/rule-a2-secret-leak.ts && echo "✅ 二进制边界 WARN" || echo "❌ blob 绕过回开"
-# rm -rf 正则口径统一（fresh-eyes run-28 finding-03）：两扫描器豁免必须同源
+# rm -rf 正则口径统一：两扫描器豁免必须同源
 grep -q '(?!tmp|home' engine/audit/src/rules/skill-safety-rules.ts && grep -q '(?!tmp|home' engine/audit/src/agent-shield.ts && echo "✅ rm-rf 豁免同源" || echo "❌ 口径漂移回退"
-# FORGE driver LLM 超时（run-27/28 死因）：四文件实例化点缺一即挂死风险回植
+# FORGE driver LLM 超时：四文件实例化点缺一即挂死风险回植
 # （BSD 注意：grep -c 多文件输出逐行 filename:N，用 awk 数非零行——嵌套 grep -c 会拿到换行计数炸 [）
 [ "$(grep -c 'timeout: 600_000' FORGE/src/driver-base.mjs FORGE/src/fresh-eyes-driver.mjs FORGE/src/release-gate-driver.mjs FORGE/src/tool-output-budget.mjs 2>/dev/null | awk -F: '\$NF>0{n++} END{print n+0}')" -ge 4 ] && echo "✅ LLM 超时四文件全覆盖" || echo "❌ 超时保护缺失"
-# FORGE resume 越轮泄漏（run-29 实录）：completedWorkers 只许喂被续跑轮
+# FORGE resume 越轮泄漏：completedWorkers 只许喂被续跑轮
 grep -q 'round === resumeState?.round' FORGE/src/fresh-eyes-driver.mjs && echo "✅ resume 轮次守卫在位" || echo "❌ 越轮泄漏回植"
-# acceptance S146 cwd 漂移（v1.3.7 深夜两连挂根因）：scenario() cd TMP_REPO 后子 shell 须显式 cd 回主仓
+# acceptance S146 cwd 漂移：scenario() cd TMP_REPO 后子 shell 须显式 cd 回主仓
 grep -q 'cd "\$PROJECT_ROOT" && NODE_OPTIONS' FORGE/playbook/acceptance-test.sh && echo "✅ S146 cwd 回位" || echo "❌ 漂移挂起回植"
 ```
 <!-- 瘦身判据（v1.3.6 详录见 git 历史；v1.3.7：①②③全否——116 子项 3 条+S293 均三死实录新审查面；checklist 触 1585>1580 且本版已上调一次触发冻结 → 压缩 v1.3.6 注释 13→3 行真实归并达标未再上调；acceptance 2633<2640 ✓ / fresh-eyes 400=400 ✓）
