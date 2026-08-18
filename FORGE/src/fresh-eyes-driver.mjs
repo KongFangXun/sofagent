@@ -396,6 +396,10 @@ async function createModel(role, maxTokensOverride) {
     configuration: { baseURL: cfg.baseURL },
     apiKey: apiKey,           // @langchain/openai >=1.x 主参数名
     openAIApiKey: apiKey,     // 旧版 alias（向后兼容）
+    // v1.3.7 run-28 修复：LLM 超时保护（同 driver-base createModelFromConfig）——
+    // 网络抖断时 fetch 无限挂死，driver 失联被回收（run-27/28 连续两死）
+    timeout: 600_000,
+    maxRetries: 2,
   };
 
   // GLM-5.2 参数：temperature（推荐 1.0）

@@ -198,6 +198,9 @@ export async function summarizeToolOutput(text, taskContext, options = {}) {
       apiKey: process.env[glmConfig.apiKeyEnv],
       temperature: 0,
       maxTokens: 800,
+      // v1.3.7 run-28 修复：LLM 超时保护（同 driver-base/fresh-eyes/release-gate）
+      timeout: 600_000,
+      maxRetries: 2,
     });
 
     const prompt = [

@@ -375,6 +375,9 @@ async function createModel(role, maxTokensOverride) {
     configuration: { baseURL: cfg.baseURL },
     apiKey: apiKey,
     openAIApiKey: apiKey,
+    // v1.3.7 run-28 修复：LLM 超时保护（同 driver-base/fresh-eyes）
+    timeout: 600_000,
+    maxRetries: 2,
   };
 
   // 限制输出 token（防止 thinking 模式无限消耗）

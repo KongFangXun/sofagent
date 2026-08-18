@@ -162,11 +162,17 @@ export function createForgeDriverBase(config = {}) {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       const { ChatOpenAI } = require('@langchain/openai');
       const maxTokens = maxTokensOverride ?? cfg.maxTokens ?? 16000;
+      // v1.3.7 run-28 修复：LLM 调用超时保护——网络抖断时 fetch 无限挂死，
+      // driver 主进程失联后被外部回收（SIGKILL 无栈无痕迹，run-27/28 连续两死）。
+      // timeout 为单次请求上限（thinking= max 时一次调用可到分钟级，10 分钟足够）；
+      // maxRetries 覆盖瞬时网络抖动（LangChain 内置指数退避）。
       return new ChatOpenAI({
         modelName: cfg.model,
         configuration: { baseURL: cfg.baseURL },
         openAIApiKey: apiKey,
         maxTokens,
+        timeout: 600_000,
+        maxRetries: 2,
       });
     } catch {
       return null;
