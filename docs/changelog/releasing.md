@@ -10,8 +10,8 @@
 
 > 每次新 session 或新阶段开始时，先读这 12 行确认进度。打勾的 = 已完成，第一个未打勾的 = 当前要做。
 
-- [ ] 一 · 审查上版本（fresh-eyes-loop 自动化审查循环 · 新 session）→ [01-review.md](./releasing/01-review.md) · **v1.3.5：四份 16 视角独立审查 38 项 bugfix（影子审计器/门禁假绿/泄漏清理）**
-- [ ] 二 · 开发 → [02-dev.md](./releasing/02-dev.md) · **v1.3.5：10 大块（MCP 四 tool 自进化运维闭环 + instinct→skill + FDE 五件 + DSH 互通 + vitest/automerge 依赖升级）**
+- [x] 一 · 审查上版本（fresh-eyes-loop 自动化审查循环 · 新 session）→ [01-review.md](./releasing/01-review.md) · **v1.3.5：四份 16 视角独立审查 38 项 bugfix（影子审计器/门禁假绿/泄漏清理）** · **v1.3.7：四轮 16 视角独立审查（3 轮手动 + 1 轮团队协作）→ 26 项 bugfix prompt v3 全数修复（4 P0：verify-commit 洗白链/verify.sh 安装断链/daemon 路径断链/test-count 三态薛定谔；另根治红队四项：verify-chain 追加伪造判篡改 + A2 二进制 WARN + A9 伪造签名 + 验签 fail-closed）+ 复检 PASS + 遗留 3 项闭环**
+- [x] 二 · 开发 → [02-dev.md](./releasing/02-dev.md) · **v1.3.5：10 大块（MCP 四 tool 自进化运维闭环 + instinct→skill + FDE 五件 + DSH 互通 + vitest/automerge 依赖升级）** · **v1.3.7：9 项交付（⑦自适应并发/①沙箱五件套/②场景权限/③AgentShield/④行业 overlay/⑤断路器/⑥ontology lifecycle+OKF/⑨memory-sync 通用化 完成 + ⑧TDAI 触发器按设计零动作）· 49 项验收全 [x] · 测试 2535→2655 · 复检 PASS**
 - [ ] 三 · 基础自测 → [03-selftest.md](./releasing/03-selftest.md) · **v1.3.5：bump 1.3.4→1.3.5 + test 2286/2286 + CV 72/72 + CTC 双口径 + postbuild 三包权限根治**
 - [ ] 四 · fresh-eyes-loop 质量循环 + 代码审核 + 验收测试（新 session）→ [04-quality-loop.md](./releasing/04-quality-loop.md) · **v1.3.5：run-07（R1 完整闭环 + P0=0 + 四份审查收敛）+ acceptance S270-S281（209→214 场景，291 断言）**
 - [ ] 五 · 审查体系合并更新 → [05-review-system.md](./releasing/05-review-system.md) · **v1.3.5：维度 110/111 + 93→70 归并 + check-version 四盲区 69/75/77→95 + checklist 瘦身回 1500**
