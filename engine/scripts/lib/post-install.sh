@@ -90,7 +90,7 @@ print_completion_summary() {  # 安装完成 · 使用说明（按平台）
   echo "  1. 验证安装：bash engine/scripts/verify.sh"
   echo "  2. 在你的 git 项目初始化审计：sofagent-audit --init"
   echo "  3. 体验效果：cd 你的 git 项目 && git commit（hook 自动触发）"
-  echo "  4. 5 分钟入门：cat HANDBOOK.md"
+  echo "  4. 5 分钟入门：cat docs/HANDBOOK.md"
   echo ""
   echo "  如需卸载：删除 ~/.sofagent/、~/.sofagent-key 及 .git/hooks/commit-msg 中的 sofagent hook 即可（保留你的项目数据）"
   echo "  历史拦截：全新安装，审计历史将从第一次提交开始记录。"

@@ -23,7 +23,10 @@ deploy_hook() {  # Step 6: 部署加载链 Hook（仅显式 --platform openclaw�
     warn "找不到 hook 源文件（$HOOK_SRC_DIR/HOOK.md），跳过部署"
     warn "  仓库结构异常？请从 https://github.com/KongFangXun/sofagent 重新拉取"; return 0; fi
   # 确保 handler.ts 已构建（开发模式下可能未 build）
-  if [ ! -f "${HOOK_SRC_DIR}/handler.ts" ]; then
+  # 权威源关系：src/handler.ts 是权威源，根目录 handler.ts 是其部署副本
+  # （OpenClaw 声明式系统读根副本）。缺失或与 src 不一致时以 src 为准覆盖，
+  # 防两副本漂移（diff -q 判断，避免无谓重写破坏 mtime）。
+  if [ ! -f "${HOOK_SRC_DIR}/handler.ts" ] || ! diff -q "${HOOK_SRC_DIR}/src/handler.ts" "${HOOK_SRC_DIR}/handler.ts" >/dev/null 2>&1; then
     if [ -f "${HOOK_SRC_DIR}/src/handler.ts" ]; then
       cp "${HOOK_SRC_DIR}/src/handler.ts" "${HOOK_SRC_DIR}/handler.ts"
     else
@@ -116,7 +119,10 @@ N
 install_daemon() {  # Step 6b: daemon 可选安装
   local OS_TYPE
   OS_TYPE="$(uname -s)"
-  local DAEMON_INSTALL_SCRIPT="${SCRIPT_DIR}/daemon-install.sh"
+  # v1.3.7 F-17 修复：本文件由仓库根 install.sh source（install.sh:61 SCRIPT_DIR=仓库根），
+  # 故本地路径须拼 engine/scripts/ 前缀（与下行 REMOTE_MODE 的拼法一致）。
+  # 原拼 ${SCRIPT_DIR}/daemon-install.sh 探测仓库根（不存在）→ daemon 安装永远静默跳过。
+  local DAEMON_INSTALL_SCRIPT="${SCRIPT_DIR}/engine/scripts/daemon-install.sh"
   [ "${REMOTE_MODE:-0}" = "1" ] && DAEMON_INSTALL_SCRIPT="${REMOTE_TMP}/engine/scripts/daemon-install.sh"
   if [ -f "$DAEMON_INSTALL_SCRIPT" ] && [ -x "$DAEMON_INSTALL_SCRIPT" ]; then
     case "$OS_TYPE" in
