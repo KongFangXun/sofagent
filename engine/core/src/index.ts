@@ -102,6 +102,7 @@ export {
   ENV_DEFAULTS,
   ConfigLoadError,
   ConfigParseError,
+  ConfigSignatureError,
   signConfig,
   warnUnknownConfigKeys,
 } from './config-loader';

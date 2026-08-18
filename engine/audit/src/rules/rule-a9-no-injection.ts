@@ -315,6 +315,27 @@ export function checkRuleA9(ctx: AuditContext): RuleCheck {
     }
   }
 
+  // 伪造审计签名检测（WARN）——commit message 中自称审计通过（如
+  // "✅ [sofagent] 审计通过" / "审计通过 PASS"）是不可信的自证声明：
+  // 审计结果只由 hook 的真实输出产生，commit message 谁都能写。
+  // 攻击场景：--no-verify 绕过后在 message 里伪造审计标记，误导人审。
+  const forgedAuditMsgs: string[] = [];
+  if (ctx.commitMsg) {
+    const msg = ctx.commitMsg;
+    const hasAuditEcho = msg.includes('✅ [sofagent]') || /审计通过/.test(msg);
+    const hasPassClaim = /\bPASS\b/.test(msg);
+    // 组合模式：「✅ [sofagent]」标记 或 「审计通过」+「PASS」组合
+    if (msg.includes('✅ [sofagent]') || (hasAuditEcho && hasPassClaim)) {
+      forgedAuditMsgs.push(msg.trim().split('\n')[0]?.slice(0, 60) ?? '');
+    }
+  }
+  if (forgedAuditMsgs.length > 0) {
+    if (rule.status === 'PASS') rule.status = 'WARN';
+    rule.details.push(
+      `检测到 commit message 含伪造审计签名模式（"${forgedAuditMsgs[0]}"）：commit message 不可自证审计结果，以 hook 输出为准。`
+    );
+  }
+
   // v1.0.5: score-based 分级判定
   const failHits = hits.filter((h) => h.score >= 0.8);
   const warnHits = hits.filter((h) => h.score >= 0.3 && h.score < 0.8);

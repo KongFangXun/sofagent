@@ -193,6 +193,8 @@ export function checkHistoryChainDetailed(dataDir?: string, maxEntries?: number)
 
   const entries: ChainEntry[] = [];
   const lines = content.split('\n');
+  /** 非标准 schema 行的原始内容（截断展示，结构异常检测用） */
+  const malformedLines: string[] = [];
 
   for (const line of lines) {
     const trimmed = line.trim();
@@ -201,9 +203,28 @@ export function checkHistoryChainDetailed(dataDir?: string, maxEntries?: number)
     try {
       const parsed = JSON.parse(trimmed) as ChainEntry;
       entries.push(parsed);
+      // 结构异常检测：JSON 合法但字段不符合审计记录 schema——
+      // 伪造/篡改者手工追加的行（如 {"tampered":true,"hmacSig":"fake"}）能通过
+      // JSON 解析，但缺审计记录必有字段（timestamp/exitCode），属篡改痕迹而非
+      // legacy 漂移（legacy 条目仍有 timestamp/exitCode，只是无链字段）。
+      // 带 event 字段的行是合法事件记录（如 rule_disabled），schema 天然不同，豁免。
+      const rec = parsed as Record<string, unknown>;
+      if (rec.event === undefined && (typeof rec.timestamp !== 'string' || typeof rec.exitCode !== 'number')) {
+        malformedLines.push(trimmed.slice(0, 60));
+      }
     } catch (err) {
       console.error('[audit-history] 解析审计条目 JSON 失败:', err);
+      malformedLines.push(trimmed.slice(0, 60));
     }
+  }
+
+  // 非标准 schema 行 = 结构异常 = 篡改（红）。区别于 legacy 漂移（黄）：
+  // 格式合法但 HMAC 不可复验（旧算法/密钥轮换）仍是 unverifiable。
+  if (malformedLines.length > 0) {
+    return {
+      status: 'tampered',
+      detail: `检测到 ${malformedLines.length} 行非标准 schema 记录（如: ${malformedLines[0]}），疑似伪造/篡改`,
+    };
   }
 
   // v1.3.1 #14: 大量历史记录时全量校验性能开销大——支持 maxEntries 限制，

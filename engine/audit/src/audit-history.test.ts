@@ -416,5 +416,66 @@ describe('audit-history', () => {
       const result = checkHistoryChainDetailed(testDir);
       expect(result.status).toBe('ok');
     });
+
+    describe('结构异常检测：非标准 schema 行 = 篡改（红）', () => {
+      it('追加伪造行（{"tampered":true,"hmacSig":"fake"}）→ tampered 而非 unverifiable', () => {
+        // 攻击链：伪造/篡改者向 history.jsonl 追加非标准 schema 行。
+        // 此前该类行因无 prevHash 被归为 unverifiable（黄，exit 1）——
+        // 语义轻描淡写。非标准 schema = 结构异常 = tampered（红，exit 2）。
+        writeFileSync(KEY_PATH, 'test-hmac-key-1234567890', { mode: 0o600 });
+        appendHistory(makeEntry('2026-06-01T00:00:00Z', 0), testDir);
+        appendHistory(makeEntry('2026-06-02T00:00:00Z', 0), testDir);
+        // 篡改前干净链必须是 ok
+        expect(checkHistoryChainDetailed(testDir).status).toBe('ok');
+
+        const histPath = getHistoryFilePath(testDir);
+        const lines = readFileSync(histPath, 'utf-8').trim().split('\n');
+        writeFileSync(histPath, [...lines, '{"tampered":true,"hmacSig":"fake"}'].join('\n') + '\n');
+
+        const result = checkHistoryChainDetailed(testDir);
+        expect(result.status).toBe('tampered');
+        expect(result.detail).toContain('非标准 schema');
+      });
+
+      it('非 JSON 行（损坏/手写）→ tampered（结构异常）', () => {
+        appendHistory(makeEntry('2026-06-03T00:00:00Z', 0), testDir);
+        appendHistory(makeEntry('2026-06-04T00:00:00Z', 0), testDir);
+        const histPath = getHistoryFilePath(testDir);
+        const lines = readFileSync(histPath, 'utf-8').trim().split('\n');
+        writeFileSync(histPath, [...lines, 'not-a-json-line'].join('\n') + '\n');
+        expect(checkHistoryChainDetailed(testDir).status).toBe('tampered');
+      });
+
+      it('合法事件行（rule_disabled，无 exitCode 但有 event 字段）不误报', () => {
+        // index.ts 的规则关闭事件行 schema 与审计记录不同（无 exitCode），
+        // 带 event 字段 → 合法事件记录，豁免结构检测，不判篡改。
+        appendHistory(makeEntry('2026-06-05T00:00:00Z', 0), testDir);
+        appendHistory(makeEntry('2026-06-06T00:00:00Z', 0), testDir);
+        const histPath = getHistoryFilePath(testDir);
+        const lines = readFileSync(histPath, 'utf-8').trim().split('\n');
+        const eventLine = JSON.stringify({
+          timestamp: new Date().toISOString(),
+          event: 'rule_disabled',
+          disabledRules: 'a10, a11',
+          count: 2,
+        });
+        writeFileSync(histPath, [...lines, eventLine].join('\n') + '\n');
+        // 事件行不构成链断裂（不判 ok——事件行无链字段归 unverifiable 段；但绝不判 tampered）
+        const result = checkHistoryChainDetailed(testDir);
+        expect(result.status).not.toBe('tampered');
+      });
+
+      it('legacy 条目（有 timestamp/exitCode，无链字段）不误报为结构异常', () => {
+        // legacy 漂移（黄）与结构异常（红）的边界：legacy 条目仍具备审计记录
+        // 必有字段，只是无 prevHash/hmacSig 链字段——归 unverifiable，不判 tampered。
+        mkdirSync(join(testDir, 'audit'), { recursive: true });
+        const histPath = getHistoryFilePath(testDir);
+        const legacy1 = { timestamp: '2026-07-01T00:00:00Z', diffRange: 'HEAD~1..HEAD', exitCode: 0, ruleResults: [], diffFileCount: 1 };
+        const legacy2 = { timestamp: '2026-07-02T00:00:00Z', diffRange: 'HEAD~2..HEAD~1', exitCode: 1, ruleResults: [], diffFileCount: 1 };
+        writeFileSync(histPath, JSON.stringify(legacy1) + '\n' + JSON.stringify(legacy2) + '\n');
+        const result = checkHistoryChainDetailed(testDir);
+        expect(result.status).not.toBe('tampered');
+      });
+    });
   });
 });

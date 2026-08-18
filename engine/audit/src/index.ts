@@ -28,7 +28,7 @@ import { existsSync, readFileSync, writeFileSync, mkdirSync, chmodSync, readdirS
 import { join, dirname } from 'path';
 import { createInterface } from 'readline';
 import { parseDiff, parseStagedDiff, isInGitRepo, type DiffFile } from '@sofagent/core';
-import { loadConfig, ConfigLoadError, ConfigParseError } from '@sofagent/core';
+import { loadConfig, ConfigLoadError, ConfigParseError, ConfigSignatureError } from '@sofagent/core';
 import { VERSION } from '@sofagent/core';
 import { BASELINE_RULE_KEYS } from '@sofagent/core';
 import { checkConflict, mergeFederationResults } from '@sofagent/core';
@@ -1012,6 +1012,16 @@ async function main(): Promise<void> {
   try {
     config = loadConfig(undefined, args.strict);
   } catch (err) {
+    if (err instanceof ConfigSignatureError) {
+      // 验签失败 = fail-closed：无论何种模式都阻断（exit 2），唯一行动指引已在错误消息内
+      const msg = `config.yml 签名校验失败: ${err.message}`;
+      if (args.json) {
+        console.log(JSON.stringify({ exitCode: 2, rules: [], error: 'CONFIG_SIGNATURE_ERROR', detail: msg }, null, 2));
+      } else {
+        console.error(`❌ ${msg}`);
+      }
+      exit(2);
+    }
     if (err instanceof ConfigLoadError || err instanceof ConfigParseError) {
       const msg = `config.yml 解析错误: ${err.message}`;
       if (args.json) {

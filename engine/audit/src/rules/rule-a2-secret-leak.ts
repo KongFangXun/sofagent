@@ -114,6 +114,37 @@ function detectGitattributesDiffHidden(ctx: AuditContext): string[] {
   return hits;
 }
 
+/**
+ * 二进制文件扩展名——新增即 WARN（内容不扫，人工确认盲区）。
+ * 含 NUL 字节的文件 git 也输出 "Binary files differ"，与扩展名检测互补。
+ */
+const BINARY_EXTENSIONS = /\.(bin|exe|dll|so|dylib|a|lib|o|class|jar|war|pyc|wasm|img|iso|dmg)(\.|$)/i;
+
+/**
+ * 检测新增的二进制文件（WARN 级——内容扫描盲区）。
+ * 红队实测：5KB 随机字节夹带密钥的 blob 可绕过内容扫描（git 对二进制
+ * 只输出 "Binary files ... differ"，无内容行可扫）。两条判定路径：
+ *   ① 新增文件 + 二进制扩展名（.bin/.exe/.dll/.so/.dylib 等）；
+ *   ② 新增文件 + diff 输出含 "Binary files ... differ" 标记（无二进制扩展名
+ *      但内容含 NUL 字节的文件，git 自动按二进制处理——正是夹带密钥的
+ *      blob 形态）。
+ */
+function detectNewBinaryFiles(ctx: AuditContext): string[] {
+  const hits: string[] = [];
+  for (const file of ctx.diffFiles) {
+    if (file.status !== 'added') continue;
+    if (BINARY_EXTENSIONS.test(file.path)) {
+      hits.push(file.path);
+      continue;
+    }
+    // git 对含 NUL 字节的文件输出 "Binary files a/x and b/x differ"
+    if (file.lines.some((l) => l.startsWith('Binary files ') && l.includes('differ'))) {
+      hits.push(file.path);
+    }
+  }
+  return hits;
+}
+
 export function checkRuleA2(ctx: AuditContext): RuleCheck {
   const rule: RuleCheck = {
     name: 'A2 不泄密钥',
@@ -182,6 +213,15 @@ export function checkRuleA2(ctx: AuditContext): RuleCheck {
     if (rule.status === 'PASS') rule.status = 'WARN';
     rule.details.push(
       `检测到 .gitattributes 将以下文件标记为 -diff（内容不会出现在 git diff 中，A2 无法扫描）: ${attrHiddenTargets.join(', ')}。请确认这些文件不包含密钥，或改用真实二进制审计方案。`
+    );
+  }
+
+  // 新增二进制文件 WARN（内容扫描盲区——git 不输出二进制内容行，密钥可藏身）
+  const binaryFiles = detectNewBinaryFiles(ctx);
+  if (binaryFiles.length > 0) {
+    if (rule.status === 'PASS') rule.status = 'WARN';
+    rule.details.push(
+      `检测到 ${binaryFiles.length} 个新增二进制文件（${binaryFiles.slice(0, 5).join(', ')}${binaryFiles.length > 5 ? ' 等' : ''}）：二进制文件不扫内容，请人工确认无密钥夹带。`
     );
   }
 

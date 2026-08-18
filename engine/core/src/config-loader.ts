@@ -162,6 +162,22 @@ export class ConfigParseError extends Error {
 }
 
 /**
+ * 配置签名校验失败——fail-closed 语义专用错误类型。
+ * 验签失败（签名不匹配 / 有签名但无密钥）属「配置完整性被破坏」场景，
+ * 必须无条件阻断启动（strict 与否不影响），不能走 ConfigParseError 的
+ * 「非 strict 回退默认配置」降级路径——否则 fail-closed 意图被静默瓦解，
+ * 且「拒绝启动」与「已回退默认配置」两条矛盾消息同次出现。
+ */
+export class ConfigSignatureError extends Error {
+  filePath: string;
+  constructor(message: string, filePath: string) {
+    super(message);
+    this.name = 'ConfigSignatureError';
+    this.filePath = filePath;
+  }
+}
+
+/**
  * 加载审计配置（三级 fallback）
  * YAML 语法错误时：
  *   - strict 模式 / audit.strict=true：抛出 ConfigParseError（由 CLI 入口 exit 2）
@@ -222,11 +238,16 @@ export function loadConfig(cwd?: string, strict?: boolean): AuditConfig {
     return { ...DEFAULT_CONFIG };
   } catch (err) {
     // v1.1.3: 统一处理 ConfigParseError 和旧版 ConfigLoadError
+    if (err instanceof ConfigSignatureError) {
+      // 验签失败 = fail-closed：无论 strict 与否都拒绝启动（不降级回退默认——
+      // 回退等于用「默认配置」继续跑被篡改的环境，防护形同虚设）
+      throw err;
+    }
     if (err instanceof ConfigParseError || err instanceof ConfigLoadError) {
       if (strict) {
         throw err; // CLI --strict 模式：向上抛，由 CLI 入口 exit 2
       }
-      // 非 strict 模式：WARN + 回退到安全默认值
+      // 非 strict 模式：WARN + 回退到安全默认值（降级场景只说回退）
       console.warn(`⚠️ ${err.message}`);
       console.warn('⚠️ config.yml 格式错误，已回退默认配置。运行 sofagent-core doctor 诊断');
       return safeDefaults();
@@ -392,6 +413,11 @@ function tryLoadYaml(filePath: string): Partial<AuditConfig> | null {
     }
     return null;
   } catch (err) {
+    // 签名校验失败（ConfigSignatureError）无条件透传——fail-closed 场景，
+    // 不允许被误包装成 ConfigParseError 后走「非 strict 回退默认」降级路径
+    if (err instanceof ConfigSignatureError) {
+      throw err;
+    }
     // YAML 语法错误——抛出 ConfigParseError（含 cause 链）
     if (err instanceof YAMLException) {
       const line = err.mark?.line != null ? err.mark.line + 1 : '?';
@@ -465,7 +491,7 @@ function verifyConfigSignature(parsed: Record<string, unknown> | null, filePath:
     // v1.2.6: fail-closed——配置文件有 signature 但无密钥时拒绝启动（而非静默跳过）。
     // 原为 console.warn 后继续（等于没有防护），现与签名不匹配时的处理一致。
     console.error(`❌ config.yml 含 signature 字段但无 ~/.sofagent-key，无法验签——拒绝启动: ${filePath}`);
-    throw new Error(`配置文件签名校验失败（缺少 HMAC 密钥），拒绝启动。请创建 ~/.sofagent-key 或删除 config.yml 中的 signature 字段: ${filePath}`);
+    throw new ConfigSignatureError(`配置文件签名校验失败（缺少 HMAC 密钥），拒绝启动。请创建 ~/.sofagent-key 或删除 config.yml 中的 signature 字段: ${filePath}`, filePath);
   }
   const canonical = stableStringify(parsed);
   const expected = createHmac('sha256', key).update(canonical).digest('hex');
@@ -478,7 +504,7 @@ function verifyConfigSignature(parsed: Record<string, unknown> | null, filePath:
     //   原为 console.warn 后继续（等于没有防护），现抛 Error 拒绝启动。
     //   降级方案：删除下方 throw 并恢复 console.warn 即可回到 fail-open。
     console.error(`❌ config.yml signature 不匹配——内容可能被篡改或密钥不匹配。拒绝启动: ${filePath}`);
-    throw new Error(`配置文件签名校验失败，拒绝启动。请检查 config.yml 完整性: ${filePath}`);
+    throw new ConfigSignatureError(`配置文件签名校验失败，拒绝启动。请检查 config.yml 完整性: ${filePath}`, filePath);
   }
 }
 

@@ -81,4 +81,47 @@ describe('A2 不泄密钥', () => {
     const result = checkRuleA2(ctx);
     expect(result.evidenceMode).toBe('git-diff');
   });
+
+  // 二进制文件盲区 WARN（红队实测：二进制 blob 无内容行可扫，密钥可藏身）
+  describe('新增二进制文件 WARN', () => {
+    it('新增 .bin 文件 → WARN（二进制不扫内容）', () => {
+      const ctx = makeCtx([makeDiffFile('assets/blob.bin', ['diff --git a/assets/blob.bin b/assets/blob.bin', 'Binary files /dev/null and b/assets/blob.bin differ'], 'added')]);
+      const result = checkRuleA2(ctx);
+      expect(result.status).toBe('WARN');
+      expect(result.details.join(' ')).toContain('二进制文件不扫内容');
+    });
+
+    it('新增 .exe/.dll/.so/.dylib 文件 → WARN', () => {
+      for (const p of ['dist/tool.exe', 'lib/native.dll', 'lib/plugin.so', 'lib/mac.dylib']) {
+        const ctx = makeCtx([makeDiffFile(p, [], 'added')]);
+        const result = checkRuleA2(ctx);
+        expect(result.status, p).toBe('WARN');
+      }
+    });
+
+    it('无二进制扩展名但 diff 标记 Binary files differ（内容含 NUL 字节）→ WARN', () => {
+      // git 对含 NUL 字节的文件（如伪装 .txt 的 blob）自动按二进制处理
+      const ctx = makeCtx([makeDiffFile('data/payload.txt', ['diff --git a/data/payload.txt b/data/payload.txt', 'index 0000000..abc1234', 'Binary files /dev/null and b/data/payload.txt differ'], 'added')]);
+      const result = checkRuleA2(ctx);
+      expect(result.status).toBe('WARN');
+      expect(result.details.join(' ')).toContain('人工确认');
+    });
+
+    it('修改既有二进制文件（非新增）→ 不告警（只审新增盲区）', () => {
+      const ctx = makeCtx([makeDiffFile('assets/blob.bin', ['Binary files a/assets/blob.bin and b/assets/blob.bin differ'], 'modified')]);
+      const result = checkRuleA2(ctx);
+      expect(result.status).toBe('PASS');
+    });
+
+    it('新增二进制文件不拦截——可与密钥 FAIL 共存且 FAIL 优先', () => {
+      const key = 'sk-' + 'a'.repeat(40);
+      const ctx = makeCtx([
+        makeDiffFile('assets/lib.so', [], 'added'),
+        makeDiffFile('src/cfg.ts', [`+const k = "${key}"`]),
+      ]);
+      const result = checkRuleA2(ctx);
+      expect(result.status).toBe('FAIL');
+      expect(result.details.join(' ')).toContain('二进制文件不扫内容');
+    });
+  });
 });
