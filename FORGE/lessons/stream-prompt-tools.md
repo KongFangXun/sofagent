@@ -106,3 +106,9 @@ dist/tools.js 是手写 `ExecutableTool` 格式，LangGraph ToolNode 需要 `too
 darwin 平台 `caffeinate -dimsu -w <pid>` 绑定自身 pid，防 App Nap 冻结定时器。
 
 > **坑源**（run-03）：macOS App Nap 挂起后台 node 进程，driver 零感知冻结 2h44m。
+
+## BSD 三坑补录（2026-08-19 check-review-system ⑦段开发实录）
+
+1. **BSD awk 多字节范围字符类失真**：`[一-龥]` 在多字节 locale 下把 em-dash「—」(U+2014) 判为 CJK——「——」把两侧词粘连成超长串。CJK 判定一律用 `perl -CSD + \p{Han}`（精确 Unicode 汉字类）。
+2. **LC_ALL=C 下 perl -CSD 直接 fatal**（Malformed UTF-8）：多字节工具链必须内联 `LC_ALL=en_US.UTF-8` 守卫，且空输出要防假阴性（标题非空而结果空 → WARN 不是 OK）。
+3. **BSD sed 字符类含多字节符号行为不稳**（·+≠= 一组里 ≠ 被字节切开）：多字节符号清洗用 perl -CSD 或显式列出，别依赖 sed 字符类跨多字节字符。
