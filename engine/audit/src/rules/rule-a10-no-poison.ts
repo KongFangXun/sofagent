@@ -3,7 +3,7 @@
 // 检测依赖文件变更中是否新增非官方源依赖
 // 检测文件：package.json / requirements.txt / Cargo.toml
 // 非官方源：github raw URL / git+http / 个人服务器 URL
-// v1.3.6: 增强 typosquatting 检测 + postinstall 脚本注入检测
+// v1.3.7: 增强 typosquatting 检测 + postinstall 脚本注入检测
 // evidenceMode: git-diff
 // ============================================================
 

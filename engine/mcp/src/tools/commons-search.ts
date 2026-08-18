@@ -1,5 +1,5 @@
 // ============================================================
-// commons-search.ts · MCP tool: commons_search（v1.3.6 交付 1）
+// commons-search.ts · MCP tool: commons_search（v1.3.7 交付 1）
 //
 // 能力检索 tool——按标签/关键词搜索公地能力目录。
 // 延迟导入 @sofagent/orchestrator 的 searchCatalog / searchByTag。

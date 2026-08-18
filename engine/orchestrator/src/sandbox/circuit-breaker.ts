@@ -1,6 +1,6 @@
 // ============================================================
 // circuit-breaker.ts · SubAgent 断路器 + 行为监控（竞品吸收③）
-// v1.3.6 · v1.3.7 开发⑤ 新增
+// v1.3.7 · v1.3.7 开发⑤ 新增
 //
 // 来源：Microsoft Agent Governance Toolkit——Agent SRE（熔断开关）+
 //   Agent Hypervisor（行为监控）。覆盖 OWASP ASI08（级联故障）+ ASI10（失控 agent）。

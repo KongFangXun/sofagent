@@ -1,11 +1,11 @@
 # 路线图 · Roadmap
 
 > 已经做了什么、未来要去哪、哪些地方需要你的帮助。
-> v1.3.6 · 2026-08-18（UTC）· 🔌 引擎接口外化完整版（Workflow 容器 / Ontology 注册 / 托管 SDK / 模型灰度 / 训练协议 / 机器验收 · 52→60 MCP tools）
+> v1.3.7 · 2026-08-18（UTC）· 🔌 引擎接口外化完整版（Workflow 容器 / Ontology 注册 / 托管 SDK / 模型灰度 / 训练协议 / 机器验收 · 52→60 MCP tools）
 
 产品定位详见 [设计哲学](./PHILOSOPHY.md) 和 [README](../README.md)。
 
-## 现在在哪：v1.3.6（已交付）
+## 现在在哪：v1.3.7（已交付）
 
 > **v1.3.6 已于 2026-08-18 交付**——引擎接口外化完整版（模型层接入前置）：三个数据接口（Workflow 标准格式 + 运行容器 + 审阅协议字段 / Ontology 标准 Schema 注册 / 模型注册 + 灰度切换）+ 一个代码接口（SubAgent 托管 SDK `harness.wrap`）+ 训练协议三约定 + 预算控制 + 路由决策可解释性 + 机器可判定验收 tool + 可靠性五件（FORGE worktree 隔离 / 双闸验证 / 疲劳度检测 / 分级降级 / decisions.jsonl 完整版）· MCP 52→60 tools。详见 [v1.3.6 开发日志](./changelog/v1.3/v1.3.6.md)。
 >

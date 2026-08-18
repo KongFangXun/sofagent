@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// core CLI · v1.3.6
+// core CLI · v1.3.7
 
 const args = process.argv.slice(2);
 const subcommand = args[0];

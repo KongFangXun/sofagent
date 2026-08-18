@@ -1,4 +1,4 @@
-// train-protocol.ts · v1.3.6 交付⑥ · 训练协议三约定（双栈契约）
+// train-protocol.ts · v1.3.7 交付⑥ · 训练协议三约定（双栈契约）
 //
 // 背景：主流生产后训练框架（verl / TRL / NeMo RL / Oumi / open-instruct）2026 年
 // 全部是 Python（PyTorch + CUDA 生态决定）。决策：双栈不可避免——

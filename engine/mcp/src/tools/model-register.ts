@@ -1,5 +1,5 @@
 // ============================================================
-// model-register.ts · MCP tool：model_register（v1.3.6 交付 ④）
+// model-register.ts · MCP tool：model_register（v1.3.7 交付 ④）
 // ============================================================
 //
 // 模型注册入口——评测（v1.3.1 Benchmark）通过后注册模型 endpoint。

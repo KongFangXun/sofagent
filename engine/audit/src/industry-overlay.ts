@@ -1,6 +1,6 @@
 // ============================================================
 // industry-overlay.ts · 行业 overlay 自动发现（竞品吸收②）
-// v1.3.6 · v1.3.7 开发④ 新增
+// v1.3.7 · v1.3.7 开发④ 新增
 //
 // 机制：FDE 进场在 context.md 顶部 frontmatter 标注 industry: fintech 等
 //   → 约束层读取时自动发现并加载对应 overlay（复用 --ruleset 通道）。

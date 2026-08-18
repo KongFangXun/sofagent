@@ -1,4 +1,4 @@
-// route-policy.ts · v1.3.6 交付⑧ · 路由策略配置（Policy 构件）
+// route-policy.ts · v1.3.7 交付⑧ · 路由策略配置（Policy 构件）
 //
 // 读 `.sofagent/route-policy.yml`——企业可配偏好规则 + 决胜规则 + 硬性拒绝扩展。
 // role-model 启发补的 Policy「半个」：数据主权路由（restricted→强制本地）是
@@ -7,7 +7,6 @@
 // ⚠️ 边界重申：本文件是「决策可解释性的策略面」，不是路由器——
 // 实际路由仍由第三方 model router（LiteLLM/OpenRouter）做。
 // 不配 route-policy.yml → 全走 default 策略（向后兼容）。
-
 import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
 import { load as yamlLoad } from 'js-yaml';

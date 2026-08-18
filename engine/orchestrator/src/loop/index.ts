@@ -1,6 +1,6 @@
 // ============================================================
 // FORGE 引擎 barrel export
-// v1.3.6：StateGraph 单任务 FORGE + Workflow 消费引擎
+// v1.3.7：StateGraph 单任务 FORGE + Workflow 消费引擎
 //
 // 编排智能来自外部平台（WorkBuddy 等），sofagent FORGE 负责执行层。
 // checkpoint 保留在 graph/ 下（被 daemon 和 FORGE 共用）。

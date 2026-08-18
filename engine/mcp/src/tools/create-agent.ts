@@ -1,5 +1,5 @@
 // ============================================================
-// create-agent.ts · MCP tool：agent-creation 一句话建节点（v1.3.6 交付 5）
+// create-agent.ts · MCP tool：agent-creation 一句话建节点（v1.3.7 交付 5）
 // ============================================================
 //
 // create_agent({ requirement })

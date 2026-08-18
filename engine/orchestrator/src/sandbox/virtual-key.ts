@@ -1,6 +1,6 @@
 // ============================================================
 // sandbox/virtual-key.ts · SubAgent 虚拟 key 凭证边界
-// v1.3.6 · v1.3.7 开发① 新增
+// v1.3.7 · v1.3.7 开发① 新增
 //
 // 设计（changelog §一 + 攻击面声明第 3 条）：
 //   SubAgent 拿到的 API key 是虚拟 key——限速（token bucket）+ 限定 scope，

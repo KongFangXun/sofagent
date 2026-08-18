@@ -1,5 +1,5 @@
 // ============================================================
-// model-switch.ts · MCP tool：model_switch（v1.3.6 交付 ④）
+// model-switch.ts · MCP tool：model_switch（v1.3.7 交付 ④）
 // ============================================================
 //
 // 灰度切换 / 晋升 / 回滚入口。委托 @sofagent/orchestrator：
@@ -7,7 +7,6 @@
 //   - percent = 100 / 缺省 → 晋升全量 🔴 强制人审（对齐 v1.3.5 promote_ab）
 //   - action='rollback' → 一键回滚到上一活动模型（止损不要求人审）
 // ============================================================
-
 import { join } from 'path';
 
 function getSofagentDataDir(): string {

@@ -1,5 +1,5 @@
 // ============================================================
-// skill-scan.ts · SkillScan 安全门集成层（v1.3.6 交付 4）
+// skill-scan.ts · SkillScan 安全门集成层（v1.3.7 交付 4）
 //
 // L3 组织能力公地的安全门——第三方 Skill 发布/安装前静态扫描。
 // 复用 @sofagent/skillopt 的 scanSkillSafety()（核心引擎在 @sofagent/audit

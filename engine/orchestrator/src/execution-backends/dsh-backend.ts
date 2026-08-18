@@ -1,4 +1,4 @@
-// dsh-backend.ts · v1.3.6 交付⑤ · DSH Cordis 运行时适配器（对照真实 API 重写）
+// dsh-backend.ts · v1.3.7 交付⑤ · DSH Cordis 运行时适配器（对照真实 API 重写）
 //
 // 契约依据（2026-08 核实，不再猜测 API）：
 // 1. @deepseek-ai/cordis@4.0.1 解包核实：真实入口是 `new Context()`——

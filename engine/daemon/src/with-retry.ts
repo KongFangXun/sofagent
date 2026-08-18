@@ -1,5 +1,5 @@
 // ============================================================
-// with-retry.ts · 统一推送重试策略（v1.3.6 §8.2.1）
+// with-retry.ts · 统一推送重试策略（v1.3.7 §8.2.1）
 //
 // 提供带指数退避 + jitter 的重试包装器。
 // 推送函数（pushToTarget / pushWebhook / pushOpenClawIM）包裹 withRetry，

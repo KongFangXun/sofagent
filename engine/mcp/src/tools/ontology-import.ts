@@ -1,5 +1,5 @@
 // ============================================================
-// ontology-import.ts · MCP tool：ontology_import（v1.3.6 交付 ②）
+// ontology-import.ts · MCP tool：ontology_import（v1.3.7 交付 ②）
 // ============================================================
 //
 // Ontology 标准注入入口——外部提交 entity/concept/relations（JSON 文本），

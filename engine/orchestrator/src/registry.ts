@@ -1,7 +1,7 @@
 // ============================================================
 // registry.ts · Sub Agent 注册机制
-// v1.3.6 新增：从 YML 文件加载 Sub Agent 定义
-// v1.3.6：迁移至 @sofagent/orchestrator
+// v1.3.7 新增：从 YML 文件加载 Sub Agent 定义
+// v1.3.7：迁移至 @sofagent/orchestrator
 // ============================================================
 
 import { existsSync, readFileSync, readdirSync } from 'fs';

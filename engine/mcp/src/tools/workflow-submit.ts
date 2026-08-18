@@ -1,5 +1,5 @@
 // ============================================================
-// workflow-submit.ts · MCP tool：workflow_submit（v1.3.6 交付 ①）
+// workflow-submit.ts · MCP tool：workflow_submit（v1.3.7 交付 ①）
 // ============================================================
 //
 // Workflow 外部提交入口——模型层生成的 workflow 从 MCP 进入约束层。

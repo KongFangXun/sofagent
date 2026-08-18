@@ -1,7 +1,7 @@
 // ============================================================
 // think-generator.ts · 基于 git diff 自动生成 think.md 条目
 // v0.98 方案 A：审计引擎基于 diff 硬证据自动生成反思记录
-// v1.3.6 迁移到 @sofagent/think
+// v1.3.7 迁移到 @sofagent/think
 // ============================================================
 
 import { existsSync, readFileSync, mkdirSync } from 'fs';

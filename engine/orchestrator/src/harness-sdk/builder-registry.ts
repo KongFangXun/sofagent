@@ -1,5 +1,5 @@
 // ============================================================
-// harness-sdk/builder-registry.ts · Graph 构建器注册表（v1.3.6 交付 ③）
+// harness-sdk/builder-registry.ts · Graph 构建器注册表（v1.3.7 交付 ③）
 // ============================================================
 //
 // registry 执行链衔接方案（changelog 三、registry 执行链补充）：

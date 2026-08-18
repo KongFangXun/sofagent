@@ -1,6 +1,6 @@
 // ============================================================
 // report-tools.ts · MCP tool: list_capabilities
-// v1.3.6: 从 mcp-server.ts 提取
+// v1.3.7: 从 mcp-server.ts 提取
 // ============================================================
 
 import type { ToolResult } from './audit-tools';

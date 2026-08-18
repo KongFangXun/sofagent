@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 // ============================================================
 // mcp-server.ts · MCP Server (Model Context Protocol)
-// v1.3.6: 拆分为 ≤300 行主文件 + tools/ 子目录按功能分组
-// v1.3.6: 从 @sofagent/audit 拆分为独立包 @sofagent/mcp
+// v1.3.7: 拆分为 ≤300 行主文件 + tools/ 子目录按功能分组
+// v1.3.7: 从 @sofagent/audit 拆分为独立包 @sofagent/mcp
 //
 // 协议：https://spec.modelcontextprotocol.io/
 // 传输：stdio（stdin/stdout，每行一个 JSON-RPC 消息）

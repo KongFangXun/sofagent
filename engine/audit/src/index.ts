@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // ============================================================
 // sofagent-audit · 提交时审计 CLI 入口
-// v1.3.6 · 审计闭环六步（检测+分类+根因+改进+回归+上线）
+// v1.3.7 · 审计闭环六步（检测+分类+根因+改进+回归+上线）
 // v1.0.8 精简（历史）：compose→orchestrator, subagent→orchestrator,
 //          skillopt-run→skillopt, ab-test→ab-test,
 //          daemon→daemon, doctor/verify→core (deprecation shim)
@@ -37,7 +37,7 @@ import { resolveDiffEndpoint } from './diff-ref';
 import { checkLogs } from '@sofagent/core';
 import { createShadowRepo, commitSnapshot, hasShadowRepo } from '@sofagent/core';
 import { runRules, productSignature, type AuditResult } from './reporter';
-// v1.3.6 B22: installHook 路径复用 init 的 gitignore 保障——此前 --install-hook 不写 .gitignore，
+// v1.3.7 B22: installHook 路径复用 init 的 gitignore 保障——此前 --install-hook 不写 .gitignore，
 // shadow 快照数据可被 git add . 卷入用户仓库（LIMITATIONS 声称与行为不符）。
 import { ensureGitignore } from './commands/init';
 // v1.3.1 交付 2：国标对齐 GB/T 48000.3-2026（条款映射清单 + 覆盖度评估）
@@ -57,7 +57,7 @@ export type { AuditHistoryEntry } from './audit-history';
 // Re-export core diff/log/config 原语（mcp-server.ts 从 audit 消费 parseDiff/checkLogs/loadConfig/VERSION）
 export { parseDiff, checkLogs, loadConfig, VERSION } from '@sofagent/core';
 
-// v1.3.6: re-export P0 数据主权 + skill 安全审查，供 daemon/mcp/orchestrator/skillopt 消费
+// v1.3.7: re-export P0 数据主权 + skill 安全审查，供 daemon/mcp/orchestrator/skillopt 消费
 export { DataSovereigntyLogger, resolveSovereigntyLogPath, resolveDateArg, sanitizeRecord } from './data-sovereignty';
 export type { DataSovereigntyRecord, SovereigntyLogEntry } from './data-sovereignty';
 export { generateDailyReport, generateWeeklyReport, generateMonthlyReport, generateReport, aggregateStats } from './report-generator';
@@ -67,7 +67,7 @@ export type { SafetyResult, SafetyRule } from './rules/skill-safety-rules';
 // Re-export webhook 推送（mcp-server.ts 从 audit 消费 pushAuditResult）
 export { pushAuditResult } from './webhook';
 export type { WebhookPlatform } from './webhook';
-// v1.3.6 交付⑭：分级降级梯队（韧性设计——workflow never stops）
+// v1.3.7 交付⑭：分级降级梯队（韧性设计——workflow never stops）
 export {
   DegradationManager,
   getCapability,
@@ -369,7 +369,7 @@ function parseArgs(argv: string[]): Args {
  * 从 cwd 往上查找 .git 目录，将 hooks/commit-msg 与 hooks/post-commit 模板复制到 .git/hooks/
  * 迁移：如果 .git/hooks/pre-commit 含 sofagent 标识，自动移除旧 hook
  *
- * v1.3.6 P0-RC3: hook 安装清单与 --init 对齐——installHook() 也安装 post-commit。
+ * v1.3.7 P0-RC3: hook 安装清单与 --init 对齐——installHook() 也安装 post-commit。
  * 老用户 `sofagent-audit --install-hook` 升级时不再 miss post-commit（--no-verify 绕过的唯一防线）。
  */
 function installHook(): void {
@@ -396,7 +396,7 @@ function installHook(): void {
     exit(1);
   }
 
-  // v1.3.6 B22: 与 --init 路径对齐——装 hook 前确保 .sofagent/ 被 .gitignore 排除，
+  // v1.3.7 B22: 与 --init 路径对齐——装 hook 前确保 .sofagent/ 被 .gitignore 排除，
   // 防止 .sofagent/.git-shadow/ 快照数据被 git add . 卷入用户仓库（幂等，已有条目则跳过）。
   try {
     ensureGitignore(dirname(gitDir));
@@ -435,7 +435,7 @@ function installHook(): void {
   }
 
   // 安装单个 hook：备份旧文件 → 写入模板 → chmod 755
-  // v1.3.6 P0-RC3: commit-msg 与 post-commit 共用此逻辑，保证两个入口（--init / --install-hook）安装清单一致
+  // v1.3.7 P0-RC3: commit-msg 与 post-commit 共用此逻辑，保证两个入口（--init / --install-hook）安装清单一致
   function installOneHook(hookName: string, templatePath: string, destName: string): void {
     const destPath = join(hooksDir, destName);
     // v1.2.9: 覆盖前备份已有 hook（如果有）
@@ -457,7 +457,7 @@ function installHook(): void {
   }
 
   installOneHook('commit-msg', commitMsgTemplate, 'commit-msg');
-  // v1.3.6 P0-RC3: 补装 post-commit（--no-verify 绕过检测）
+  // v1.3.7 P0-RC3: 补装 post-commit（--no-verify 绕过检测）
   installOneHook('post-commit', postCommitTemplate, 'post-commit');
   console.log('   每次 git commit 时会自动运行 sofagent-audit 检查；post-commit 在提交后对账 --no-verify 绕过。');
   exit(0);
@@ -619,7 +619,7 @@ function confirm(question: string): Promise<boolean> {
 }
 
 /**
- * v1.3.6 (DP-1) 版本一致性自检——检测陈旧全局安装。
+ * v1.3.7 (DP-1) 版本一致性自检——检测陈旧全局安装。
  *
  * 原理：运行中的产物有自己的 package.json（与 dist/index.js 同级上层目录），
  * 读取其实际 version，与编译进代码的 VERSION 常量（来自 @sofagent/core/constants.ts）比对。
@@ -668,7 +668,7 @@ async function main(): Promise<void> {
   // doctor → @sofagent/core 内置健康检查(移除对 core CLI 的 doctor 错误推荐——
   // core CLI 只支持子命令形式，flag 形式不合法；且 audit --doctor 已直接调用 core 的
   // runDoctor，本就是完整诊断，无需再引导到别的命令）
-  // v1.3.6：--reset-baseline 自动路由到 doctor（不带 --doctor 也不报未知参数——
+  // v1.3.7：--reset-baseline 自动路由到 doctor（不带 --doctor 也不报未知参数——
   // rebuild dist 后一键重置基准哈希，bugfix #18 执行遗留）
   if (rawArgs.includes('--doctor') || rawArgs.includes('--reset-baseline')) {
     try {
@@ -1053,7 +1053,7 @@ async function main(): Promise<void> {
       const disabledList = disabledEntries.map(([key]) => key).join(', ');
       console.warn(`\u26a0\ufe0f  当前有 ${disabledCount} 条规则被关闭（${disabledList}）。如果这不是你主动配置的，config.yml 可能已被篡改。`);
       // 关闭规则时在 history.jsonl 记录一条 audit log（rule_disabled 事件）
-      // v1.3.6 #38: 路径解析与主审计历史统一——此前用 resolveAuditDir()（只感知
+      // v1.3.7 #38: 路径解析与主审计历史统一——此前用 resolveAuditDir()（只感知
       //   SOFAGENT_HOME），隔离环境（SOFAGENT_DATA=/tmp/x）下事件写进默认链
       //   ~/.sofagent/data/audit/history.jsonl，污染真实数据目录。
       //   改用 getHistoryFilePath()（显式 dataDir > SOFAGENT_DATA > 默认链），
@@ -1180,7 +1180,7 @@ async function main(): Promise<void> {
 
   printResults(results, diffFiles, args.json, args.ci, args.silent);
 
-  // v1.3.6: 工作区垃圾残留扫描（WARN 不阻断——附带的巡检能力，防「实验残留」积压）
+  // v1.3.7: 工作区垃圾残留扫描（WARN 不阻断——附带的巡检能力，防「实验残留」积压）
   if (!args.json) {
     const wsScan = scanWorkspace();
     for (const line of formatWorkspaceScan(wsScan)) {
@@ -1257,7 +1257,7 @@ async function main(): Promise<void> {
 
     // A4 研读落地：Action Governance 审计 5 字段 schema + 决策溯源组
     // 发起方 = git 提交作者；非 git 环境 / 文件系统审计下退化为 unknown（不伪造）
-    // v1.3.6 B9 修复：git log -1 在 unborn HEAD（首次 commit，hook 运行于 commit 对象生成前）
+    // v1.3.7 B9 修复：git log -1 在 unborn HEAD（首次 commit，hook 运行于 commit 对象生成前）
     // 时失败 → 配置齐全也报「作者获取失败」。改用配置来源（不依赖 commit 历史）：
     //   1. git var GIT_AUTHOR_IDENT（配置链解析出的完整身份，含 name + email）
     //   2. git config user.name（兜底）
@@ -1316,7 +1316,7 @@ async function main(): Promise<void> {
     process.stderr.write('[sofagent-audit] 警告: 审计历史写入失败，跳过（不影响审计结果）\n');
   }
 
-  // 8.5 session 产物（P0：审计结果 session 可见性）——v1.3.6
+  // 8.5 session 产物（P0：审计结果 session 可见性）——v1.3.7
   if (!args.noSession) {
     try {
       const report = buildSessionReport(results, diffFiles, { task: args.task, commitSha });
@@ -1549,7 +1549,7 @@ export function printResults(results: AuditResult, diffFiles: DiffFile[], json: 
 
   // 扩展规则状态
   if (!results.rules.some((r) => r.number > 11)) {
-    // v1.3.6 P2-23: E3 已并入 A11（不滥资源），不再单独列出，避免用户误以为存在 E3 规则
+    // v1.3.7 P2-23: E3 已并入 A11（不滥资源），不再单独列出，避免用户误以为存在 E3 规则
     console.log('  扩展规则   未启用（E1 E2 E4 + A14-A17，config 中开启）');
   }
 

@@ -2,7 +2,7 @@
 
 > 诚实坦白：已知局限。列出 sofagent 当前做不到什么、为什么做不到、等什么才能做到。
 >
-> v1.3.6 · 2026-08-18（UTC）· 孔放勋
+> v1.3.7 · 2026-08-18（UTC）· 孔放勋
 
 > 🧭 **阅读引导**：本文档按严重度分节——**安全/合规局限**（一、二节）面向强合规选型，**能力边界**（三节起）是设计取舍而非缺陷。通读一遍即可建立心智模型：**大多数局限有明确版本路线（v1.3.x），不是"永远做不到"**。首次阅读建议先看目录 + 每节第一段，无需逐条读完。
 
@@ -41,7 +41,7 @@
 > - ~~audit ↔ daemon 循环依赖~~（v1.2.3 消除：snapshot helpers 迁移至 `@sofagent/core`，依赖图恢复单向 `daemon → audit → core`，详见 §八）
 > - ~~FDE 交付物激活断裂带~~（v1.2.5-v1.3.0 消除：激活链 Phase 1-4 全部交付，详见 §十二）
 
-> ⚠️ **企业高安全场景**：`config.yml` 可被 Agent 篡改以绕过审计规则（如关闭规则、放宽阈值）。config.yml 有两个有效位置——项目级 `${cwd}/.sofagent/config.yml` 和全局级 `~/.sofagent/config.yml`（config-loader.ts 三级 fallback，项目级优先）。建议：① CI 侧独立校验 config 完整性（`sofagent-audit --diff` 兜底，hook 可绕 CI 不可绕）；② 文件权限锁（`chmod 600 ~/.sofagent/config.yml` 和 `chmod 600 .sofagent/config.yml`，仅受信用户可写）。与已有 `--no-verify` CI 兜底建议呼应。**规划中（v1.3.7 目标），当前 v1.3.6 未实现**：SubAgent 侧 config 篡改将被沙箱虚拟 FS 拦截（写入走虚拟层审批）；主 Agent 侧仍靠 CI 兜底 + 文件权限（主 Agent 不进沙箱，留 v1.3.9 meta-harness）。
+> ⚠️ **企业高安全场景**：`config.yml` 可被 Agent 篡改以绕过审计规则（如关闭规则、放宽阈值）。config.yml 有两个有效位置——项目级 `${cwd}/.sofagent/config.yml` 和全局级 `~/.sofagent/config.yml`（config-loader.ts 三级 fallback，项目级优先）。建议：① CI 侧独立校验 config 完整性（`sofagent-audit --diff` 兜底，hook 可绕 CI 不可绕）；② 文件权限锁（`chmod 600 ~/.sofagent/config.yml` 和 `chmod 600 .sofagent/config.yml`，仅受信用户可写）。与已有 `--no-verify` CI 兜底建议呼应。**规划中（v1.3.9 目标），当前 v1.3.7 部分实现（SubAgent 沙箱已落地）**：SubAgent 侧 config 篡改将被沙箱虚拟 FS 拦截（写入走虚拟层审批）；主 Agent 侧仍靠 CI 兜底 + 文件权限（主 Agent 不进沙箱，留 v1.3.9 meta-harness）。
 >
 > **建议缓解措施**（按有效性排序）：
 > 1. **CI 侧兜底（最有效）**：在 CI pipeline 中加入 `sofagent-audit --diff HEAD~1..HEAD`，

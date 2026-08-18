@@ -1,5 +1,5 @@
 // ============================================================
-// harness-sdk/types.ts · SubAgent 托管 SDK 类型定义（v1.3.6 交付 ③）
+// harness-sdk/types.ts · SubAgent 托管 SDK 类型定义（v1.3.7 交付 ③）
 // ============================================================
 //
 // 一行包装，获得约束层全部能力：
@@ -7,7 +7,6 @@
 //
 // 双形态兼容：① createReactAgent（middleware 链路）② 纯 StateGraph（tools 节点注入）
 // ============================================================
-
 import type { AgentIdentity } from '@sofagent/core';
 
 /**

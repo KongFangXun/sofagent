@@ -1,5 +1,5 @@
 // ============================================================
-// acceptance.ts · MCP tool：define_acceptance / check_acceptance（v1.3.6 交付⑨）
+// acceptance.ts · MCP tool：define_acceptance / check_acceptance（v1.3.7 交付⑨）
 // ============================================================
 //
 // 验收 MCP tool 先行版——收敛鸿沟的直接解。任务创建时附机器可判定

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// env-check.ts · FDE 环境验证 CLI — v1.3.6
+// env-check.ts · FDE 环境验证 CLI — v1.3.7
 // 用法: sofagent-env-check [--json]
 
 import { execFileSync } from 'child_process';

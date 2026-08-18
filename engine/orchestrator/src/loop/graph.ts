@@ -1,9 +1,9 @@
 // ============================================================
 // graph/loop-graph.ts · LOOP StateGraph 组装与运行入口
-// v1.3.6 新增：编排控制从 compose（一次性生成 YAML）
+// v1.3.7 新增：编排控制从 compose（一次性生成 YAML）
 // 上提为 sofagent 直接掌握的 LangGraph StateGraph 节点级流转
 //
-// 流转图（v1.3.6 P4：新增 plan 节点 + 降级路由链）：
+// 流转图（v1.3.7 P4：新增 plan 节点 + 降级路由链）：
 //   START → plan(AI) → engineer(AI) → audit(CLI) → reviewer(AI) → human_confirm(HITL) → END
 //                                      ↓ FAIL
 //                        降级链：第1次 retry engineer → 第2次 降级范围(L1) →

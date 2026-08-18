@@ -1,5 +1,5 @@
 // ============================================================
-// commons-invoke.ts · MCP tool: commons_invoke（v1.3.6 交付 2）
+// commons-invoke.ts · MCP tool: commons_invoke（v1.3.7 交付 2）
 //
 // 能力调用——发现能力 → 挂载调用 → 结果回流。
 // 挂载前强制 SkillScan（DANGEROUS 拦截 / SUSPICIOUS 走 HITL）。

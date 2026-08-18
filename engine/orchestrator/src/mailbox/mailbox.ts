@@ -1,11 +1,11 @@
 // ============================================================
 // mailbox/mailbox.ts · SubAgent 间异步消息邮箱
-// v1.3.6 新建 · 功能 ⑨
+// v1.3.7 新建 · 功能 ⑨
 //
 // 邮箱目录：data/agent-mailbox/<agent-name>/inbox/*.json
 // 文件名：<timestamp>-<uuid>.json
 //
-// 消息保留策略：v1.3.6 不自动清理（只标记 read），手动清理留 v1.3.6
+// 消息保留策略：v1.3.7 不自动清理（只标记 read），手动清理留 v1.3.7
 // ============================================================
 import { existsSync, readFileSync, writeFileSync, mkdirSync, readdirSync } from 'fs';
 import { join } from 'path';

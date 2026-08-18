@@ -1,5 +1,5 @@
 // ============================================================
-// model-unregister.ts · MCP tool：model_unregister（v1.3.6 交付 ④）
+// model-unregister.ts · MCP tool：model_unregister（v1.3.7 交付 ④）
 // ============================================================
 //
 // 模型退役 / 恢复入口。委托 @sofagent/orchestrator：
@@ -7,7 +7,6 @@
 //   - action='restore' → 🔴 强制人审，恢复退役模型
 // 对齐 v1.3.4 L3 养护环「失效退役」+ v1.3.5 promote_ab 人审语义。
 // ============================================================
-
 import { join } from 'path';
 
 function getSofagentDataDir(): string {

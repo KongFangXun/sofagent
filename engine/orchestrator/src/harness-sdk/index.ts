@@ -1,5 +1,5 @@
 // ============================================================
-// harness-sdk/index.ts · SubAgent 托管 SDK 公共门面（v1.3.6 交付 ③）
+// harness-sdk/index.ts · SubAgent 托管 SDK 公共门面（v1.3.7 交付 ③）
 // ============================================================
 //
 // 开发者视角的单一入口：
@@ -7,7 +7,6 @@
 //   const agent = harness.wrap(myAgent, { approval: 'allow-with-audit', trace: true });
 //   const tools = harness.wrapTools(myTools, options);  // 工具层（双形态共享）
 // ============================================================
-
 import { wrap, wrapTools } from './wrap';
 import {
   registerGraphBuilder,

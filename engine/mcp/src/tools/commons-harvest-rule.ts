@@ -1,5 +1,5 @@
 // ============================================================
-// commons-harvest-rule.ts · MCP tool: commons_harvest_rule（v1.3.6 交付 5）
+// commons-harvest-rule.ts · MCP tool: commons_harvest_rule（v1.3.7 交付 5）
 //
 // 评估体系三步编排——触发第一步提炼（harvest），可选连跑第二步（jury）+ 第三步（promote）。
 //

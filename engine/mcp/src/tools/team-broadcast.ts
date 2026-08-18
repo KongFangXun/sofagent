@@ -1,5 +1,5 @@
 // ============================================================
-// team-broadcast.ts · MCP tool: team_broadcast（v1.3.6 新增）
+// team-broadcast.ts · MCP tool: team_broadcast（v1.3.7 新增）
 //
 // 意图广播 tool——Agent 通过 MCP 广播意图到团队意图总线。
 // 匹配的订阅者触发反应（§2 触发反应机制）。

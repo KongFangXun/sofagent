@@ -1,5 +1,5 @@
 // ============================================================
-// ontology/import-pipeline.ts · Ontology 标准注入管线（v1.3.6 交付 ②）
+// ontology/import-pipeline.ts · Ontology 标准注入管线（v1.3.7 交付 ②）
 // ============================================================
 //
 // 外部提交通道——模型层生成的 ontology（entity/concept/relations JSON）

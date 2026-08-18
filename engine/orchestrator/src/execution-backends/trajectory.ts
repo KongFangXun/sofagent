@@ -1,4 +1,4 @@
-// trajectory.ts · v1.3.6 交付⑤ · Trajectory 训练信号采集 PoC
+// trajectory.ts · v1.3.7 交付⑤ · Trajectory 训练信号采集 PoC
 //
 // 使命：订阅 DSH Cordis 事件流（turn / step / tool / fs 全链），落 JSONL——
 // 格式可直接进 reward 样本（商业模型层 B' 路径起点）；failure-log（错题本）同步

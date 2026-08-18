@@ -1,5 +1,5 @@
 // ============================================================
-// commons-publish.ts · MCP tool: commons_publish（v1.3.6 交付 1）
+// commons-publish.ts · MCP tool: commons_publish（v1.3.7 交付 1）
 //
 // 能力发布 tool——校验元数据完整性 + SkillScan 安全门 + 写入公地清单 + 审计。
 // 延迟导入 @sofagent/orchestrator 的 publishCapability（与 team-create 同模式）。

@@ -1,4 +1,4 @@
-// agent-factory.ts · v1.3.6 交付⑤ · 调用点统一 agent 工厂（ExecutionBackend 迁移缝）
+// agent-factory.ts · v1.3.7 交付⑤ · 调用点统一 agent 工厂（ExecutionBackend 迁移缝）
 //
 // 使命：dag-runner / composer / loop/nodes / node-executor 四个调用点的
 // createReactAgent 调用迁移到 ExecutionBackend 接口——但不是直接改调用方式
