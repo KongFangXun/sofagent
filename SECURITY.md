@@ -310,13 +310,17 @@ chmod 600 ~/.sofagent/data/audit/history.jsonl.bak-*
 
 ### 已知绕过路径
 
+> **二级防御总述**：commit hook 是第一道防线（事前拦截），daemon 巡检 + `--doctor` 定期体检是第二道防线（事后发现），CI 侧 `--diff` 审计是兜底防线（hook 可绕 CI 不可绕）。当前 fail-closed 边界：仅 config 解析失败时走 safeDefaults（全规则启用）；config 被定向篡改不触发 fail-closed，需 CI 兜底。
+
 | 绕过方式 | 检测手段 | 缓解 |
 |----------|---------|------|
-| `git commit --no-verify` | ❌ 无自动检测 | 定期 `--doctor` 检查未审计的 commit（`git log --grep` 匹配审计签名） |
-| 删除 commit-msg hook 文件 | ⚠️ `--doctor` 可检测 | daemon 监控 .git/hooks/ 目录变化（v1.x 计划） |
+| `git commit --no-verify` | ❌ 无自动检测 | 定期 `--doctor` 检查未审计的 commit（`git log --grep` 匹配审计签名）；CI 侧 `sofagent-audit --diff HEAD~1..HEAD` 兜底 |
+| 删除 commit-msg hook 文件 | ⚠️ `--doctor` 可检测 | daemon 文件监控（fs-watch，v1.3.6 起）可配置监控 .git/hooks/ 目录变化（watch.yml 自定义路径）；hooks 目录监控未内置为默认巡检项（规划中） |
 | 伪造 Agent 日志（task/logs） | ❌ 无自动检测 | 人工抽查 + 交叉验证 git log 时间戳 |
-| 绕过 --init 直接手动修改 config.yml | ❌ 无自动检测 | config hash 校验（见 fail-closed 改进） |
+| 绕过 --init 直接手动修改 config.yml | ❌ 无自动检测 | config hash 校验（`--sign-config` 签名 + 验签，篡改时 CLI 拒绝启动 exit 2） |
 | `SOFAGENT_CONFIG` 环境变量指向恶意 config（v1.2.9 起最高优先级配置入口） | ⚠️ `--doctor` 可检测环境变量 | 启动入口用 `env -i` 或显式白名单透传环境变量（见共享服务器缓解建议）；CI 侧用受控 config |
+| `--verify-chain` 场景：追加伪造审计记录（history.jsonl 末尾追加格式合法的假 PASS 行） | ⚠️ 结构异常可检出（缺 timestamp/exitCode 必有字段或非 JSON 行 → 判 tampered，exit 2）；格式完整但 HMAC 不可复验的 legacy 记录仅 ⚠️ 容忍 | 审计后立即备份 history.jsonl（`--verify-chain` 定期校验）；HMAC 密钥妥善保管（密钥在手可伪造任意合法签名） |
+| 密钥藏进二进制文件（blob 夹带，非文本 diff） | ⚠️ A2 对新增二进制扩展（.bin/.exe/.dll/.so/.dylib 等）或 Binary files differ 标记输出 WARN「不扫内容请人工确认」（v1.3.7 起） | 二进制 WARN 人工确认；强合规场景对二进制提交走独立密钥扫描（gitleaks --binary 类工具） |
 
 > ⚠️ 以上绕过路径均依赖 Agent 的"自觉"——这是 sofagent 架构级别的信任模型选择：审计引擎是**协助**人类监督，不是**替代**人类监督。已知绕过路径详见 LIMITATIONS 已有信任模型描述。
 

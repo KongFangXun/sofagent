@@ -5,13 +5,15 @@
 > **读者**：人类开发者 & AI Agent 均可阅读。本文档是项目全局索引入口。
 > 如果你是 AI Agent 且需要查找具体实现路径，请直接跳转到"## 代码地图"段。
 
-> ⚠️ **术语声明（AI Agent 与人类读者必读）**：sofagent 现行架构术语以 [ARCHITECTURE.md](./ARCHITECTURE.md) 与 [PHILOSOPHY.md](./PHILOSOPHY.md) 为准——**约束层（Harness）**（一个层四种能力：注入·审计·回溯·进化，FORGE 为内部工具）+ **双层架构**（约束层 × 生命周期）。`docs/archive/` 与 `docs/changelog/v1.0/`、`docs/changelog/v1.1/` 为**历史版本快照**（实际目录为 v1.0/ 与 v1.1/ 分开，非合并的 v1.0-v1.1/），其中"四引擎""认知底座"等旧术语反映当时版本，**不代表现行设计**，请勿据此推断当前架构。
+> ⚠️ **术语声明（AI Agent 与人类读者必读）**：sofagent 现行架构术语以 [ARCHITECTURE.md](./ARCHITECTURE.md) 与 [PHILOSOPHY.md](./PHILOSOPHY.md) 为准——**约束层（Harness）**（一个层四种能力：注入·审计·回溯·进化，FORGE 为内部工具）+ **双层架构**（约束层 × 生命周期）。`docs/archive/` 与 `docs/changelog/v1.0/`、`docs/changelog/v1.1/` 为**历史版本快照**，其中"四引擎""认知底座"等旧术语反映当时版本，**不代表现行设计**，请勿据此推断当前架构。
 
 > **3 分钟建立全景理解**：核心文档太长？先看这 4 句：
 > - **[ARCHITECTURE.md](./ARCHITECTURE.md)**：双层架构设计（约束层 × 生命周期）+ 约束层工程三层嵌套（约束层 → Graph → Loop），关键技术决策记录。**3 秒版**：约束层管"做对"（注入·审计·回溯·进化）· 激活链四阶段管"跑起来" · Graph 控制图分波次 · Loop 自迭代闭环。
 > - **[VALIDATION.md](./VALIDATION.md)**：行业印证与生态定位——sofagent 直觉如何被行业验证 + Agent 三层模型 + 架构框架映射。
 > - **[PHILOSOPHY.md](./PHILOSOPHY.md)**：设计哲学与产品方法论（§一~§九）。"不替代 Agent，做 Agent 的控制面"。
 > - **[ROADMAP.md](./ROADMAP.md)**：版本路线图 + 迭代历程。当前 v1.3.6。
+
+> **30 分钟深度路径**（想动手或评估选型时）：① [ARCHITECTURE](./ARCHITECTURE.md) §一~§二（双层架构 + 约束层四能力，~10 分钟）→ ② [PHILOSOPHY](./PHILOSOPHY.md) §一（为什么不替代 Agent，~5 分钟）→ ③ [SECURITY](../SECURITY.md)「已知风险」+ [LIMITATIONS](./LIMITATIONS.md) 目录（诚实边界，~10 分钟）→ ④ 按角色进 [guides/](./guides/)：企业 IT 读 enterprise-deploy · 开发者读 harness-sdk · 想看审查体系读 review-system
 
 ---
 
@@ -49,12 +51,11 @@
 │  + agents/ + custom/  │  release-gate-loop       │
 ├─────────────────────────────────────────────────┤
 │              约束层（Harness）              │
-│  ┌──────────┬──────────┬──────────┐            │
-│  │  审计能力  │ 回溯能力  │ 进化能力  │  ← 四种能力   │
-│  │ git diff  │ HMAC 链  │知识蒸馏  │ （对外叙事） │
-│  │ 24条规则  │ 防篡改   │sustain   │            │
-│  └──────────┴──────────┴──────────┘            │
-│  + 注入能力（约束注入链）                         │
+│  ┌─────────┬─────────┬─────────┬─────────┐ │
+│  │ 注入能力 │ 审计能力 │ 回溯能力 │ 进化能力 │ │
+│  │约束注入链│ git diff │ HMAC 链 │知识蒸馏 │←四种能力│
+│  │SKILL加载│ 24条规则 │ 防篡改  │sustain  │（对外叙事）│
+│  └─────────┴─────────┴─────────┴─────────┘ │
 │  内部：编排引擎 @sofagent/orchestrator            │
 │        （LangGraph ReactAgent，非对外产品引擎）   │
 ├─────────────────────────────────────────────────┤

@@ -48,7 +48,7 @@ graph LR
 
 **Governance guarantees**
 
-- 🔍 **Zero-setup audit** — `npx -y -p @sofagent/audit sofagent-audit`, audits your last commit in any git repo in seconds (first npx download takes ~30s)
+- 🔍 **Zero-setup audit** — `npx -y -p @sofagent/audit sofagent-audit`, audits your last commit in any git repo in seconds (measured: ~1.1s per quick run, ~6.1s for a 50k-line diff on Apple Silicon; first npx download takes ~30s)
 - 🧱 **24 audit rules** (17 enabled by default + 7 optional extensions) — secret leaks, out-of-scope edits, injection defense, privilege red lines — judged on hard git diff evidence, violations blocked on the spot
 - 🛡️ **Automatic snapshot & rollback** — auto-archived after every audit, one-click restore to any snapshot
 
@@ -172,7 +172,7 @@ Community rulesets are published as `sofagent-ruleset-*` npm packages and auto-d
 > - **Training protocol front-loaded**: 🏋️ three conventions (job.json single-file launch / stdout JSON-line reporting / SIGINT graceful shutdown) + budget control (`train_budget` — auto-pause on breach, human review to resume/abort)
 > - **Closing the convergence gap**: ✅ machine-decidable acceptance — `define_acceptance` attaches verifiable acceptance criteria at task creation (tests pass / build succeeds / grep finds no X / schema validates), `check_acceptance` runs them after changes and returns structured results (reusing the Benchmark verdict engine)
 > - **Decision explainability**: 🧭 EndpointProfile capability profiles + route-policy.yml preference policy + structured routeReason chain (policy / matched endpoint / rejected endpoints / decision score) — routing decisions become questionable instead of black-box
-> - **Reliability five-piece set**: 🛡️ FORGE worktree isolation (review workers physically separated from the main repo — root fix for the run-07 concurrency incident) / dual-gate verification (postToolCall side-effect review: file scope + git impact + outbound network) / Agent fatigue detection (3 signals, weighted score → compact/restart recommendation) / tiered degradation ladder (full→rules-only→minimal→safe-stop, every degradation audited) / decisions.jsonl full edition (route/select/skip/retry/escalate five categories + multi-dimensional queries)
+> - **Reliability five-piece set**: 🛡️ Review-loop worktree isolation (review workers physically separated from the main repo — root fix for concurrent-write incidents) / dual-gate verification (postToolCall side-effect review: file scope + git impact + outbound network) / Agent fatigue detection (3 signals, weighted score → compact/restart recommendation) / tiered degradation ladder (full→rules-only→minimal→safe-stop, every degradation audited) / decisions.jsonl full edition (route/select/skip/retry/escalate five categories + multi-dimensional queries)
 > - **Narrative upgrade**: 🌳 FDE docs grow from "a single capability tree" to "a repository forest" — GitHub-style protocols as the collaboration substrate, horizontal flow (cross-repo PRs) + the sixth question "does the output enter the trunk?"
 >
 > **8 new MCP tools (52 → 60)**: `workflow_submit` · `ontology_import` · `model_register` · `model_switch` · `model_unregister` · `train_budget` · `define_acceptance` · `check_acceptance`
@@ -193,7 +193,7 @@ Community rulesets are published as `sofagent-ruleset-*` npm packages and auto-d
 
 > 🔬 **Independent external evidence** (not an official self-test): Joel Niklaus' harness-optimization research ([research code repository](https://github.com/JoelNiklaus/harness-optimization), data in the repo experiments) shows that with the same model and unchanged weights, optimizing only the outer harness lifted a legal-Agent benchmark from **63.4% → 80.1% (+16.7pp)**. See [THANKS.md](./docs/THANKS.md).
 
-> 🧪 **Engineering credibility**: 2535 tests / 13 packages (12 with tests) (verified via `tools/test-count.sh`; built-in flaky retry, script verdict is authoritative) · 24 audit rules · fresh-eyes independent review continuously running (review tooling at [FORGE/playbook/fresh-eyes-review.md](./FORGE/playbook/fresh-eyes-review.md)).
+> 🧪 **Engineering credibility**: 2535 tests / 13 packages (12 with tests) (verified via `tools/test-count.sh`; built-in flaky retry, script verdict is authoritative) · 24 audit rules · fresh-eyes independent review continuously running (see [docs/guides/review-system.md](./docs/guides/review-system.md) for how the review system works).
 
 ## Docs
 

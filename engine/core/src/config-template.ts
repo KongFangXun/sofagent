@@ -192,5 +192,10 @@ if [ $EXIT_CODE -eq 1 ]; then
   echo "⚠️  sofagent 发现警告（不阻止 commit）。"
 fi
 
+# 成功回声（可感知性）：一行轻提示让用户知道审计在保护——与 FAIL 横幅/WARN 提示对齐
+if [ $EXIT_CODE -eq 0 ]; then
+  echo "✓ [sofagent] 审计通过"
+fi
+
 exit 0
 `;

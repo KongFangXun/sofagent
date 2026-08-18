@@ -97,18 +97,18 @@ FORGE 有两个内环，共用第二步配置的环境变量，各自有独立�
 driver（`FORGE/src/fresh-eyes-driver.mjs`）会自动 spawn 独立子进程跑每个 step——每个 step 都是全新的 Node 进程，**真零上下文**（不是同一 session 内换 prompt，而是彻底重启进程）。
 
 ```bash
-# 一键启动（driver 自动起 A/B 子进程）
-node FORGE/src/fresh-eyes-driver.mjs --target v1.2.8 --max-rounds 10
+# 一键启动（driver 自动起 A/B 子进程）——target 传当前开发版本号
+node FORGE/src/fresh-eyes-driver.mjs --target v1.3.7 --max-rounds 10
 
 # 先 dry-run 看流程（不实际调用 LLM，只打印 step 序列）
-node FORGE/src/fresh-eyes-driver.mjs --target v1.2.8 --dry-run
+node FORGE/src/fresh-eyes-driver.mjs --target v1.3.7 --dry-run
 ```
 
 **driver 参数**：
 
 | 参数 | 说明 | 默认值 |
 |------|------|------|
-| `--target` | 目标版本号（如 `v1.2.8`），用于 run 目录命名 | 必填 |
+| `--target` | 目标版本号（当前开发版本，如 `v1.3.7`），用于 run 目录命名 | 必填 |
 | `--max-rounds` | 最大循环轮次 | `10` |
 | `--dry-run` | 只打印 step 序列，不调用 LLM | `false` |
 
@@ -131,23 +131,23 @@ driver（`FORGE/src/release-gate-driver.mjs`）驱动单角色（V = 验证者�
 
 ```bash
 # 一键启动
-node FORGE/src/release-gate-driver.mjs --target v1.2.8
+node FORGE/src/release-gate-driver.mjs --target v1.3.7
 
 # 先 dry-run 看流程
-node FORGE/src/release-gate-driver.mjs --target v1.2.8 --dry-run
+node FORGE/src/release-gate-driver.mjs --target v1.3.7 --dry-run
 
 # sandbox 环境（acceptance-test.sh 预跑会被 kill 时）：
 # 先手动预跑，再 --skip-acceptance 启动
 bash FORGE/playbook/acceptance-test.sh > /tmp/acceptance-raw.log 2>&1
-node FORGE/src/release-gate-driver.mjs --target v1.2.8 --skip-acceptance
+node FORGE/src/release-gate-driver.mjs --target v1.3.7 --skip-acceptance
 
 # 沙箱 OOM 环境（driver + worker 内存叠加触发 OOM 时）：
 # 用 --step 单步模式，逐步调用，每步全新进程退出
-node FORGE/src/release-gate-driver.mjs --step acceptance --target v1.2.8 --run-dir <runDir>
-node FORGE/src/release-gate-driver.mjs --step regression  --target v1.2.8 --run-dir <runDir>
-node FORGE/src/release-gate-driver.mjs --step coverage     --target v1.2.8 --run-dir <runDir>
-node FORGE/src/release-gate-driver.mjs --step consolidate  --target v1.2.8 --run-dir <runDir>
-node FORGE/src/release-gate-driver.mjs --step verdict       --target v1.2.8 --run-dir <runDir>
+node FORGE/src/release-gate-driver.mjs --step acceptance --target v1.3.7 --run-dir <runDir>
+node FORGE/src/release-gate-driver.mjs --step regression  --target v1.3.7 --run-dir <runDir>
+node FORGE/src/release-gate-driver.mjs --step coverage     --target v1.3.7 --run-dir <runDir>
+node FORGE/src/release-gate-driver.mjs --step consolidate  --target v1.3.7 --run-dir <runDir>
+node FORGE/src/release-gate-driver.mjs --step verdict       --target v1.3.7 --run-dir <runDir>
 ```
 
 **driver 参数**：
@@ -179,7 +179,7 @@ verdict     → V 出最终裁决（PASS / FAIL），写入 verdict.md
 ```json
 {
   "ts": "2026-08-01T12:34:56.789Z",
-  "target": "v1.2.8",
+  "target": "v1.3.7",
   "round": 1,
   "step": "a-check",
   "role": "A",

@@ -228,6 +228,8 @@ task/logs 和 think.md 以明文 Markdown 存储，可能含代码片段、API �
 
 > ⚠️ **A9 commit msg 检测仅 full 模式生效（v1.3.3）**：A9 扫描 commit message 中的注入指令，需要 commit message 作为输入。quick 模式（`npx sofagent-audit`，零配置审计最近一次 commit）**不读 commit message**，A9 在 quick 模式完全不生效。同理 A3（不改越界）依赖任务描述，quick 模式无此输入 → v1.3.3 起 quick 模式跳过 A3（避免占位 task 'quick-audit' 100% 误报越界）。完整防护（A9 commit msg 注入拦截 + A3 越界检查）需 `--init` 安装 git hook 走完整引擎，或手动 `sofagent-audit --diff <range> --commit-msg <msg>`。
 
+> ⚠️ **边界：空 commit 不审计消息**——empty commit（无文件变更）时审计直接跳过，commit message 中的注入载荷不会被 A9 扫描（A9 的证据面是 diff + 显式传入的 `--commit-msg`）。带文件变更的 commit 消息正常扫描。纯消息攻击需 `--commit-msg` 显式送检。
+
 > ⚠️ **commit msg 注入伪造审计标记——A9 检测为 WARN 不阻断**：commit message 中如伪造 `[sofagent-audit PASS]` 等审计通过标记，A9 会检测到该注入并报 **WARN（exit 1），但不阻断 commit**——commit 仍然成功提交。人工 review 时需注意：commit message 中的审计标记可能是伪造的，**真实审计结果以 `~/.sofagent/data/audit/` 下的审计记录为准**，不要信任 commit message 自带的审计声明。
 
 > ⚠️ **quick 模式二进制/超大 diff 盲区（v1.3.5 披露）**：quick 模式**没有**完整引擎对超大 diff 的 5MB 阈值兜底（完整引擎：普通文件 WARN exit 1 / 敏感文件名 FAIL exit 2）。git diff 对二进制文件只输出 `Binary files differ`（无内容行），规则无内容可扫——大体积二进制/超大 diff 在 quick 模式下会全绿通过。这是 git diff 的设计而非 sofagent bug，但对应用户意味着：quick 模式不能替代二进制敏感文件（如密钥库、私有数据集）的防泄漏审查；强合规场景请用完整引擎（`--init` 装 hook）兜底。

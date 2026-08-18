@@ -30,7 +30,8 @@ export const GB48000_RULE_NAME = 'GB48000';
  *   - 17 条默认规则（normal run，config.yml extendedRulesEnabled=false）
  *   - 24 条全量规则（config fallback 到 safeDefaults 时 extendedRulesEnabled=true，
  *     fail-closed 保护——宁可多查不漏查）
- *   - 23 个 .ts 文件（rules/ 目录，含 index.ts 注册表 = 23 规则文件 + 1 index）
+ *   - 24 个规则源文件（rules/ 目录 rule-*.ts 与 24 条规则一一对应，不含 *.test.ts）
+ *   - 目录另有 6 个支撑文件（index.ts 注册表 / types.ts / runner.ts / skill-safety 三件套之 engine+reporter+rules）——非规则文件不计入口径
  *   - 9 条基线规则（不可禁用）
  *
  * 注：A12/A13 已在 v0.99.4 合并入 A11，不再独立存在(统一：以 v1.1.4 changelog 为准，

@@ -50,7 +50,7 @@ graph LR
 
 **治理保障**
 
-- 🔍 **零配置审计**——`npx -y -p @sofagent/audit sofagent-audit`，任何 git 仓库秒级审计最近一次 commit（首次 npx 下载约 30 秒）
+- 🔍 **零配置审计**——`npx -y -p @sofagent/audit sofagent-audit`，任何 git 仓库秒级审计最近一次 commit（实测 quick 单次约 1.1s、5 万行 diff 约 6.1s，M 系列 Mac；首次 npx 下载约 30 秒）
 - 🧱 **24 条审计规则**（17 默认启用 + 7 扩展可选）——密钥泄漏、越界编辑、注入防御、权限红线，git diff 硬证据判定，违规当场拦截
 - 🛡️ **自动快照回溯**——每次审计后自动存档，出事一键回到任意快照
 
@@ -90,7 +90,7 @@ sofagent-audit --doctor    # 验证环境（可选）
 >
 > 📌 **bootstrap.sh 和 install.sh 的关系**：bootstrap.sh 是 install.sh 的一行下载包装器——`curl bootstrap.sh | bash` 等价于"下载 install.sh + 运行 install.sh"。两个脚本装的东西完全一样，bootstrap 只是省去手动 clone/下载的步骤。
 
-更多安装方式（clone 安装 / npx 完整安装 / 最小安装 / 企业部署）见 [HANDBOOK](./docs/HANDBOOK.md)。企业用户想直接用 FDE 方法论梳理工作流，看 [FDE/README.md](./FDE/README.md)（零依赖，不需要 Node.js）。
+更多安装方式（clone 安装 / npx 完整安装 / 最小安装 / 企业部署）见 [HANDBOOK](./docs/HANDBOOK.md)。企业用户想直接用 FDE 方法论梳理工作流，看 [FDE/README.md](./FDE/README.md)（零依赖，不需要 Node.js；15 分钟最短路径见其「15 分钟最短路径」小节）。
 
 ## FDE 方法论
 
@@ -177,7 +177,7 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # 加载安全规�
 > - **训练协议前移**：🏋️ 三约定（job.json 单文件启动 / stdout JSON 行回报 / SIGINT 优雅退出）+ 预算控制（`train_budget`，超限自动暂停 + 人审续跑/终止）
 > - **收敛鸿沟的直接解**：✅ 机器可判定验收——`define_acceptance` 任务创建时附验收条件（测试通过/build 成功/grep 无 X/schema 校验）+ `check_acceptance` 修改后跑验收返回结构化结果（复用 Benchmark 判定引擎）
 > - **决策可解释性**：🧭 EndpointProfile 能力画像 + route-policy.yml 偏好策略 + routeReason 结构化理由链（policy/匹配端点/拒绝端点/决策分），路由决策从黑盒变可追问
-> - **可靠性五件**：🛡️ FORGE worktree 隔离（审查 worker 与主仓物理分离，run-07 并发事故根治）/ 双闸验证（postToolCall 副作用复查：文件范围 + git 影响 + 网络外联）/ Agent 疲劳度检测（3 信号加权评分 → compact/重启建议）/ 分级降级梯队（full→rules-only→minimal→safe-stop，每次降级留痕）/ decisions.jsonl 完整版（route/select/skip/retry/escalate 五分类 + 多维查询）
+> - **可靠性五件**：🛡️ 审查循环 worktree 隔离（审查 worker 与主仓物理分离，根治并发互写事故）/ 双闸验证（postToolCall 副作用复查：文件范围 + git 影响 + 网络外联）/ Agent 疲劳度检测（3 信号加权评分 → compact/重启建议）/ 分级降级梯队（full→rules-only→minimal→safe-stop，每次降级留痕）/ decisions.jsonl 完整版（route/select/skip/retry/escalate 五分类 + 多维查询）
 > - **叙事升级**：🌳 FDE 文档从「单棵能力树」升级为「仓库森林」——GitHub 式协议当协作底座，横向流动（跨树 PR）+ 第六问「产出进不进树干」
 >
 > **8 个新 MCP tool（52 → 60）**：`workflow_submit` · `ontology_import` · `model_register` · `model_switch` · `model_unregister` · `train_budget` · `define_acceptance` · `check_acceptance`
@@ -198,7 +198,7 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # 加载安全规�
 
 > 🔬 **外部独立实验证据**（非官方自测）：Joel Niklaus 的 harness-optimization 研究（[研究代码仓库](https://github.com/JoelNiklaus/harness-optimization)，数据见仓库内实验）显示，同一模型不改权重、仅优化外层 Harness，法律 Agent 基准从 **63.4% → 80.1%（+16.7pp）**。详见 [THANKS.md](./docs/THANKS.md)。
 
-> 🧪 **工程可信度**：2535 测试 / 13 包（12 个含测试）（实测见 `tools/test-count.sh`，flaky 重跑机制内置，以脚本判定为准）· 24 条审计规则 · fresh-eyes 独立审查持续运行（审查工具见 [FORGE/playbook/fresh-eyes-review.md](./FORGE/playbook/fresh-eyes-review.md)）。
+> 🧪 **工程可信度**：2535 测试 / 13 包（12 个含测试）（实测见 `tools/test-count.sh`，flaky 重跑机制内置，以脚本判定为准）· 24 条审计规则 · fresh-eyes 独立审查持续运行（审查体系运作见 [docs/guides/review-system.md](./docs/guides/review-system.md)）。
 
 ## 文档
 

@@ -37,6 +37,15 @@ GitHub 式组织就是管这件事的：它像一棵不断长大的树。**树�
 
 FDE 支持两种使用方式——根据你的需求选择：
 
+### 15 分钟最短路径（FDE Skill 独立入口，不装主包）
+
+1. **装 Skill**：在你的 AI 工具里安装 FDE Skill——[ClawHub 页面](https://clawhub.ai/kongfangxun/skills/sofagent)一条命令安装（或 SkillHub 搜 `sofagent`）
+2. **开口**：对 AI 说「帮我做 FDE 诊断」——Agent 按 SKILL.md 阶段路由从进场开始引导（梳理 → 深挖 → 量化 → 交付）
+3. **首个产出物**：一份企业画像（岗位 × 五要素表）+ 候选 AI 节点清单（🔄 自动执行 / ⚡ 强化岗位 / 👤 暂不动，含年节省估算）
+4. **不需要 Node.js**：FDE Skill 是纯方法论 Skill，零依赖；之后要审计/回滚/daemon 常驻再装主包（[install.sh](../install.sh)，装在企业设备）
+
+> 💡 完整方法论（四阶段十二步）见 [GUIDE.md](./GUIDE.md)——最短路径走的是 §1-§2 的浓缩版。
+
 ### 路径 A · 方法论路径（零依赖，不需要 Node.js）
 
 如果你只想了解 FDE 方法论、手动梳理工作流：
