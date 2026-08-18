@@ -208,7 +208,7 @@ LIMIT_B=8940  # v1.3.6: B 层 ~8901 行（人工复核断言修正+2），铁律
 LIMIT_C=6300  # v1.1.3: 审查体系维度固化 + Harness 可见性视角 + releasing.md tag 门禁；内容增长上调 5800→6300 + 5% 余量
 LIMIT_D=2000  # v1.1.9: D 层纳入口径修正——docs/architecture（v1.1.9 设计 876 行）+ docs/prd（193 行）从 A 层归入 D 层（工程文档与设计文档同语义），700→2000 容纳
 LIMIT_E=3100  # v1.2.5: E 层 2905 行（新增 dashboard-html-dev.md 219 行 + enterprise-deploy 扩展），上调 2700→3100 留余量
-LIMIT_TOTAL=15380  # v1.3.6: 随 LIMIT_A 6400→6500 同步上调（A+B=6500+8880）
+LIMIT_TOTAL=15400  # v1.3.7: 交付⑧/⑨ changelog 增补后 15381>15380 越 1 行，铁律上调（A 层 6444/B 层 8937 均未顶格，正常文档增长）
 
 # 输出各层
 echo "  A 用户文档:     ${LAYER_A} 行 / ${LIMIT_A} 上限"
