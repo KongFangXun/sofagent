@@ -45,6 +45,13 @@ async function main() {
       break;
     }
     case 'start': {
+      // --help/-h 在子命令后也打印帮助退出，不误触发真启动（2026-08-18 修复：
+      // `start --help` 原先被当未知 flag 忽略直接拉起守护进程）
+      if (args.includes('--help') || args.includes('-h')) {
+        console.log('sofagent-daemon start — 启动守护进程（cron + 文件监听）');
+        console.log('Usage: sofagent-daemon start [--usb-root <path>]');
+        process.exit(0);
+      }
       const projectDir = process.cwd();
 
       // v1.1.8 新增：--usb-root <path> → U 盘便携运行时（验签 → 内存解密 → 便携化 env）
