@@ -1272,3 +1272,146 @@ export function formatPreflightReport(result) {
   }
   return lines.join('\n');
 }
+
+// ============================================================
+// resolveMaxConcurrency · v1.3.7 ⑦ 自适应并发（模块级导出）
+//
+// 三级来源解析（优先级从高到低，后写者胜）：
+//   1. 显式设置——--max-concurrency CLI 参数 与 env FORGE_MAX_CONCURRENCY
+//      （CLI 后判定，后写者胜——用户显式意志，直接用不覆盖）
+//   2. 自适应探测——未显式设置时 driver 启动读 os.totalmem()，按预算表取值
+//   3. 兜底——探测失败 → 1（最保守）
+//
+// 自适应预算表（按每 worker --max-old-space-size=1024 的 1GB heap 上限 +
+// 运行时峰值余量推导，为 OS + 系统进程留 ≥4GB 余量；heap 上限已由 v1.3.5
+// 从 2048 降至 1024，若回调 2048 需重推本表）：
+//   < 12GB（含 8GB）  → 1   （1GB×1 + 4GB 余量 = 5GB ≤ 8GB；并发 2 峰值叠加
+//                             仍有 OOM 风险（run-12 死法），保守取 1）
+//   12-23GB           → 2   （1GB×2 + 4GB = 6GB，12GB 机器留足峰值余量）
+//   24-47GB           → 4   （1GB×4 + 4GB = 8GB，24GB 机器安全）
+//   ≥ 48GB            → 6   （上限 6——更高并发撞 GLM API 速率限制，瓶颈从
+//                             内存转移到 API 配额，单点等待抵消并行收益）
+// ============================================================
+
+/** 自适应预算表（单位 GB → 推荐并发）。导出供单测直接对表。 */
+export const CONCURRENCY_BUDGET_TABLE = [
+  { minMemGb: 0,  maxMemGb: 12, concurrency: 1 },  // <12GB（含 8GB）
+  { minMemGb: 12, maxMemGb: 24, concurrency: 2 },  // 12-23GB
+  { minMemGb: 24, maxMemGb: 48, concurrency: 4 },  // 24-47GB
+  { minMemGb: 48, maxMemGb: Infinity, concurrency: 6 }, // ≥48GB
+];
+
+/**
+ * 按物理内存查预算表取推荐并发。
+ * @param {number} totalMemBytes - os.totalmem() 返回的字节数
+ * @returns {number} 推荐并发数
+ */
+export function concurrencyFromMemory(totalMemBytes) {
+  const gb = totalMemBytes / (1024 ** 3);
+  for (const row of CONCURRENCY_BUDGET_TABLE) {
+    if (gb >= row.minMemGb && gb < row.maxMemGb) return row.concurrency;
+  }
+  return 1; // 不可达防御（表已覆盖 0..∞），兜底最保守
+}
+
+/**
+ * 解析 FORGE driver 的 worker 并发上限（三级来源）。
+ *
+ * @param {Object} [options]
+ * @param {string} [options.cliFlag] - --max-concurrency CLI 参数值（已由 driver 解析）
+ * @param {number} [options.defaultConcurrency] - 显式缺省且探测失败时的兜底值（默认 1）
+ * @param {Function} [options.totalmem] - 注入的内存探测函数（默认 os.totalmem，单测可 mock）
+ * @param {boolean} [options.quiet] - 不打印推导日志（默认 false）
+ * @returns {{ concurrency: number, source: 'cli'|'env'|'adaptive'|'fallback', memGb: number|null }}
+ */
+export function resolveMaxConcurrency(options = {}) {
+  const { cliFlag, defaultConcurrency = 1, totalmem = () => os.totalmem(), quiet = false } = options;
+
+  // 1️⃣ 显式 CLI 参数（后写者胜——在 env 之后判定，CLI 优先于 env）
+  if (cliFlag !== undefined && cliFlag !== null && String(cliFlag).trim() !== '') {
+    const n = parseInt(String(cliFlag), 10);
+    if (Number.isFinite(n) && n >= 1) {
+      if (!quiet) console.log(`[并发] 显式 CLI --max-concurrency=${n}（用户指定，直接生效）`);
+      return { concurrency: n, source: 'cli', memGb: null };
+    }
+    if (!quiet) console.warn(`[并发] ⚠️ --max-concurrency="${cliFlag}" 不是合法正整数，忽略`);
+  }
+
+  // 2️⃣ 显式环境变量
+  const envRaw = process.env.FORGE_MAX_CONCURRENCY;
+  if (envRaw !== undefined && envRaw !== null && envRaw.trim() !== '') {
+    const n = parseInt(envRaw, 10);
+    if (Number.isFinite(n) && n >= 1) {
+      if (!quiet) console.log(`[并发] 显式 FORGE_MAX_CONCURRENCY=${n}（用户指定，直接生效）`);
+      return { concurrency: n, source: 'env', memGb: null };
+    }
+    if (!quiet) console.warn(`[并发] ⚠️ FORGE_MAX_CONCURRENCY="${envRaw}" 不是合法正整数，忽略`);
+  }
+
+  // 3️⃣ 自适应探测（os.totalmem → 预算表）
+  try {
+    const totalBytes = totalmem();
+    if (Number.isFinite(totalBytes) && totalBytes > 0) {
+      const gb = totalBytes / (1024 ** 3);
+      const n = concurrencyFromMemory(totalBytes);
+      if (!quiet) console.log(`[并发] 自适应: 物理内存 ${gb.toFixed(0)} GB → ${n}`);
+      return { concurrency: n, source: 'adaptive', memGb: gb };
+    }
+    throw new Error(`totalmem() 返回非法值: ${totalBytes}`);
+  } catch (err) {
+    // 4️⃣ 探测失败 → 兜底最保守
+    if (!quiet) console.warn(`[并发] ⚠️ 内存探测失败（${err.message}），回退并发=${defaultConcurrency}`);
+    return { concurrency: defaultConcurrency, source: 'fallback', memGb: null };
+  }
+}
+
+/**
+ * OOM 熔断降级器 · v1.3.7 ⑦ 运行时保险丝。
+ *
+ * driver 捕获 worker 非正常退出（signal=SIGKILL 且 code=null，OOM 典型特征）后
+ * 调用本降级器决定后续批次的并发策略：
+ *   - 首次降级：该批次剩余 worker 改串行（并发=1），记 degraded-concurrency 事件
+ *   - 连续 2 个批次触发降级：并发持续 1 并继续（不中止 run，只降速）——「宁可慢，不猝死」
+ *
+ * @param {number} [initialConcurrency] - 初始并发
+ * @returns {Object} { onBatchResult, getState, report }
+ */
+export function createConcurrencyDegrader(initialConcurrency = 2) {
+  let current = Math.max(1, initialConcurrency);
+  let degradedBatches = 0;      // 连续降级批次数（健康批次清零）
+  let lastBatchDegraded = false;
+  const events = [];            // degraded-concurrency 事件留痕
+
+  function onBatchResult(batchHadSigkill) {
+    if (batchHadSigkill) {
+      degradedBatches += 1;
+      lastBatchDegraded = true;
+      const prev = current;
+      current = 1; // 无论首次还是连续，降级后并发都是 1（串行）
+      const event = {
+        type: 'degraded-concurrency',
+        ts: new Date().toISOString(),
+        consecutiveDegradedBatches: degradedBatches,
+        from: prev,
+        to: current,
+        reason: 'worker SIGKILL (code=null) — OOM 典型特征',
+        permanent: degradedBatches >= 2,
+      };
+      events.push(event);
+      return event;
+    }
+    // 批次全部健康 → 连续计数清零（非连续不算「连续 2 批次」）
+    degradedBatches = 0;
+    lastBatchDegraded = false;
+    return null;
+  }
+
+  return {
+    onBatchResult,
+    getState: () => ({ concurrency: current, degradedBatches, lastBatchDegraded, events: [...events] }),
+    /** 生成 degraded-concurrency 事件留痕行（driver 写入 LEDGER / run 日志） */
+    report: () => events.map(e =>
+      `degraded-concurrency | ${e.ts} | 连续第 ${e.consecutiveDegradedBatches} 批 | 并发 ${e.from}→${e.to} | ${e.reason}${e.permanent ? ' | 已持续回退 1' : ' | 本批次串行'}`
+    ),
+  };
+}

@@ -48,14 +48,17 @@ V 由 **Node driver**（`FORGE/src/release-gate-driver.mjs`）驱动——每个
    export SOFAGENT_LLM_V="${SOFAGENT_LLM_A}"
    export SOFAGENT_LLM_F="${SOFAGENT_LLM_B}"
 
-   # 8GB 机器必须限并发（worker 各带 heap 上限，3+ 并发即 OOM）：
-   FORGE_MAX_CONCURRENCY=1 node FORGE/src/release-gate-driver.mjs --target <版本号>
+   # 并发自适应（v1.3.7 ⑦）：未显式设置时 driver 自动探测物理内存取并发
+   # （<12GB→1 / 12-23GB→2 / 24-47GB→4 / ≥48GB→6）——8GB 机器自动取 1，无需手动设。
+   # 运行中 worker OOM（SIGKILL）自动熔断降级（本批剩余串行，连续 2 批回退 1）。
+   # 需强制指定时才设 FORGE_MAX_CONCURRENCY：
+   node FORGE/src/release-gate-driver.mjs --target <版本号>
 
    # sandbox 环境（acceptance-test.sh 预跑会被 kill 时）：
    # 先手动预跑到 /tmp（driver 启动时自动复制到 runDir）：
    bash FORGE/playbook/acceptance-test.sh > /tmp/acceptance-raw.log 2>&1
    # 再加 --skip-acceptance 启动：
-   FORGE_MAX_CONCURRENCY=1 node FORGE/src/release-gate-driver.mjs --target <版本号> --skip-acceptance
+   node FORGE/src/release-gate-driver.mjs --target <版本号> --skip-acceptance
 
    # 沙箱 OOM 环境（driver 主进程 + worker 内存叠加触发 OOM 时）：
    # 用 --step 单步模式，外层脚本逐步调用，每步全新进程退出：

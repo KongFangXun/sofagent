@@ -549,3 +549,115 @@ describe('worktree 隔离（v1.3.6 交付⑩）', () => {
     rmSync(dateRoot, { recursive: true, force: true });
   });
 });
+
+// ============================================================
+// v1.3.7 ⑦ 自适应并发——resolveMaxConcurrency / createConcurrencyDegrader
+// 三级来源解析（CLI > env > totalmem 预算表 > 兜底）+ OOM 熔断降级
+// ============================================================
+import { resolveMaxConcurrency, concurrencyFromMemory, createConcurrencyDegrader, CONCURRENCY_BUDGET_TABLE } from './driver-base.mjs';
+
+describe('resolveMaxConcurrency · v1.3.7 自适应并发', () => {
+  const GB = 1024 ** 3;
+
+  describe('预算表边界值（8/12/16/24/48 GB 五边界）', () => {
+    it('8GB（<12GB 段）→ 1', () => {
+      expect(concurrencyFromMemory(8 * GB)).toBe(1);
+    });
+    it('12GB（12-23GB 段下界）→ 2', () => {
+      expect(concurrencyFromMemory(12 * GB)).toBe(2);
+    });
+    it('16GB（12-23GB 段中值）→ 2', () => {
+      expect(concurrencyFromMemory(16 * GB)).toBe(2);
+    });
+    it('24GB（24-47GB 段下界）→ 4', () => {
+      expect(concurrencyFromMemory(24 * GB)).toBe(4);
+    });
+    it('48GB（≥48GB 段下界，上限）→ 6', () => {
+      expect(concurrencyFromMemory(48 * GB)).toBe(6);
+    });
+    it('预算表覆盖 0..∞ 无空洞（防加行漏段）', () => {
+      // 逐 GB 扫描 0-64：每个值都必须能从表取到数
+      for (let gb = 0; gb <= 64; gb++) {
+        const n = concurrencyFromMemory(gb * GB);
+        expect(Number.isInteger(n) && n >= 1).toBe(true);
+      }
+    });
+  });
+
+  describe('三级优先级（CLI > env > 自适应 > 兜底，后写者胜）', () => {
+    const origEnv = process.env.FORGE_MAX_CONCURRENCY;
+    afterEach(() => {
+      if (origEnv === undefined) delete process.env.FORGE_MAX_CONCURRENCY;
+      else process.env.FORGE_MAX_CONCURRENCY = origEnv;
+    });
+
+    it('显式 CLI --max-concurrency 优先于 env 与自适应', () => {
+      process.env.FORGE_MAX_CONCURRENCY = '3';
+      const r = resolveMaxConcurrency({ cliFlag: '5', totalmem: () => 64 * GB, quiet: true });
+      expect(r.concurrency).toBe(5);
+      expect(r.source).toBe('cli');
+    });
+    it('无 CLI 时 env FORGE_MAX_CONCURRENCY 优先于自适应', () => {
+      process.env.FORGE_MAX_CONCURRENCY = '3';
+      const r = resolveMaxConcurrency({ totalmem: () => 64 * GB, quiet: true });
+      expect(r.concurrency).toBe(3);
+      expect(r.source).toBe('env');
+    });
+    it('两级显式都缺省 → totalmem 自适应（8GB 机器取 1）', () => {
+      delete process.env.FORGE_MAX_CONCURRENCY;
+      const r = resolveMaxConcurrency({ totalmem: () => 8 * GB, quiet: true });
+      expect(r.concurrency).toBe(1);
+      expect(r.source).toBe('adaptive');
+      expect(r.memGb).toBeCloseTo(8, 0);
+    });
+    it('探测抛异常 → 兜底 defaultConcurrency（默认 1）', () => {
+      delete process.env.FORGE_MAX_CONCURRENCY;
+      const r = resolveMaxConcurrency({ totalmem: () => { throw new Error('mock'); }, quiet: true });
+      expect(r.concurrency).toBe(1);
+      expect(r.source).toBe('fallback');
+    });
+    it('totalmem 返回非法值（0/负/NaN）→ 兜底 1', () => {
+      delete process.env.FORGE_MAX_CONCURRENCY;
+      for (const bad of [0, -1, NaN]) {
+        const r = resolveMaxConcurrency({ totalmem: () => bad, quiet: true });
+        expect(r.source).toBe('fallback');
+        expect(r.concurrency).toBe(1);
+      }
+    });
+    it('非法 env 值（非数字/0/负）→ 忽略并落到自适应', () => {
+      process.env.FORGE_MAX_CONCURRENCY = 'abc';
+      const r = resolveMaxConcurrency({ totalmem: () => 16 * GB, quiet: true });
+      expect(r.source).toBe('adaptive');
+      expect(r.concurrency).toBe(2);
+    });
+  });
+});
+
+describe('createConcurrencyDegrader · v1.3.7 OOM 熔断降级', () => {
+  it('批次含 SIGKILL → 并发立即降 1 + 记 degraded-concurrency 事件', () => {
+    const d = createConcurrencyDegrader(4);
+    const evt = d.onBatchResult(true);
+    expect(evt.type).toBe('degraded-concurrency');
+    expect(d.getState().concurrency).toBe(1);
+    expect(d.report().length).toBe(1);
+    expect(d.report()[0]).toContain('degraded-concurrency');
+  });
+  it('健康批次 → 连续计数清零（非连续不算「连续 2 批」）', () => {
+    const d = createConcurrencyDegrader(4);
+    d.onBatchResult(true);
+    d.onBatchResult(false);
+    expect(d.getState().degradedBatches).toBe(0);
+  });
+  it('连续 2 批 SIGKILL → permanent 标记（持续并发 1，不中止 run）', () => {
+    const d = createConcurrencyDegrader(4);
+    d.onBatchResult(true);
+    const evt2 = d.onBatchResult(true);
+    expect(evt2.consecutiveDegradedBatches).toBe(2);
+    expect(evt2.permanent).toBe(true);
+    expect(d.getState().concurrency).toBe(1);
+  });
+  it('初始并发下限保护（0/负输入钳到 1）', () => {
+    expect(createConcurrencyDegrader(0).getState().concurrency).toBe(1);
+    expect(createConcurrencyDegrader(-3).getState().concurrency).toBe(1);
+  });
+});

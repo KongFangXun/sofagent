@@ -53,6 +53,11 @@ A/B 由 **Node driver**（`FORGE/src/fresh-eyes-driver.mjs`）驱动——每个
 1. Bash（⚠️ 必须加 run_in_background: true + dangerouslyDisableSandbox: true，否则三层进程嵌套会被 sandbox SIGKILL）:
    node FORGE/src/fresh-eyes-driver.mjs --target <版本号> --max-rounds 10
 
+   并发自适应（v1.3.7 ⑦）：未显式设置 FORGE_MAX_CONCURRENCY 时 driver 自动
+   探测物理内存取并发（<12GB→1 / 12-23GB→2 / 24-47GB→4 / ≥48GB→6）——
+   8GB 机器自动取 1（防 OOM），无需手动设。运行中 worker OOM（SIGKILL）
+   自动熔断降级（本批剩余串行，连续 2 批回退 1，不中止 run）。
+
    🔴 铁律一：必须 dangerouslyDisableSandbox。
    原因：driver(spawn) → worker(spawn) → run_bash(execSync) = 三层子进程嵌套。
    sandbox 对进程嵌套层数有限制，第 4 层进程返回时整棵进程树被 SIGKILL。

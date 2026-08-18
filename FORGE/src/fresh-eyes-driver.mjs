@@ -29,7 +29,7 @@ import { fileURLToPath } from 'url';
 import os from 'os';
 
 // v1.2.7 功能⑤：继承 driver-base 公共编排层
-import { createForgeDriverBase, runPreflight, formatPreflightReport } from './driver-base.mjs';
+import { createForgeDriverBase, runPreflight, formatPreflightReport, resolveMaxConcurrency, createConcurrencyDegrader } from './driver-base.mjs';
 
 // 可见性：核心层 + 适配器（agent 无关 + 渐进适配）
 import { createVisibility, EVENTS } from './visibility.mjs';
@@ -262,13 +262,17 @@ const STEPS = {
 /**
  * v1.2.9 功能①：spawnParallel 并发限制。
  * 24 个 perspective worker 同时启动会触发 API rate limit（GLM Coding Plan
- * 并发上限）。MAX_CONCURRENCY=4 分批执行：4 个一批，全部完成后启动下一批
- * （v1.3.1 P1-2：从 6 降到 4——run-01 实测并发 6 + 熔断重试触发 429）。
- * 24 worker / 4 并发 = 6 批，每批约 2-3 分钟，总计 ~15 分钟。
+ * 并发上限）。分批执行：N 个一批，全部完成后启动下一批。
+ *
+ * v1.3.7 ⑦ 自适应并发：不再写死 2——resolveMaxConcurrency() 三级来源解析
+ * （显式 CLI/env > os.totalmem() 预算表自适应 > 兜底 1）。8GB 机器自动取 1
+ * （防 OOM），16GB+ 机器按预算表提升吞吐。运行中 worker SIGKILL（OOM）时
+ * 经 createConcurrencyDegrader 熔断降级（本批剩余串行，连续 2 批回退 1）。
  */
-const MAX_CONCURRENCY = parseInt(process.env.FORGE_MAX_CONCURRENCY || '2', 10);
-// 8GB 机器约束下的均衡点——worker heap 已降 1024（见 spawn 处），并发 2 = ≤2GB heap
-// 上限，安全余量充足。16GB+ 机器可 FORGE_MAX_CONCURRENCY=4 恢复吞吐。
+const CONCURRENCY_RESOLVED = resolveMaxConcurrency({ defaultConcurrency: 1 });
+const MAX_CONCURRENCY = CONCURRENCY_RESOLVED.concurrency;
+// v1.3.7 ⑦ OOM 保险丝：批次内 worker 被信号杀死 → 降级器接管后续批次并发
+const concurrencyDegrader = createConcurrencyDegrader(MAX_CONCURRENCY);
 
 // ═══════════════════════════════════════════════════════════
 //  CLI 参数解析
@@ -2030,21 +2034,32 @@ function spawnParallel(workers, round) {
   // 返回 { results, failures } 让调用方做降级判定。
   return (async () => {
     // v1.2.9 功能①：MAX_CONCURRENCY 分批执行。
-    // 24 个 perspective worker 分批：MAX_CONCURRENCY 个一批，批内并行，
+    // 24 个 perspective worker 分批：并发数个一批，批内并行，
     // 批间串行。避免 API rate limit。
-    const concurrency = Math.max(1, Math.min(MAX_CONCURRENCY, workers.length));
+    //
+    // v1.3.7 ⑦ OOM 熔断降级：批次内 worker 被 SIGKILL（code=null，OOM 典型
+    // 特征）→ 降级器接管——本批记录事件，后续批次并发降为 1（串行）；连续
+    // 2 批次触发 → 持续并发 1 继续跑（不中止 run，只降速）——「宁可慢，不猝死」。
     const results = [];
     const failures = [];
 
-    for (let batchStart = 0; batchStart < workers.length; batchStart += concurrency) {
+    for (let batchStart = 0; batchStart < workers.length; ) {
+      const concurrency = Math.max(1, Math.min(concurrencyDegrader.getState().concurrency, workers.length - batchStart));
       const batch = workers.slice(batchStart, batchStart + concurrency);
       const batchNum = Math.floor(batchStart / concurrency) + 1;
-      const totalBatches = Math.ceil(workers.length / concurrency);
-      console.log(`  [并发批次 ${batchNum}/${totalBatches}] 启动 ${batch.length} 个 worker（并发=${concurrency}）`);
+      console.log(`  [并发批次 ${batchNum}] 启动 ${batch.length} 个 worker（并发=${concurrency}）`);
 
       const settled = await Promise.allSettled(
         batch.map(([step, roundDir, target]) => spawnWorker(step, roundDir, target, round))
       );
+      // v1.3.7 ⑦：检测本批次是否有 OOM SIGKILL（isSignalKill 由 spawnWorker 标记）
+      const batchHadSigkill = settled.some(s => s.status === 'rejected' && s.reason?.isSignalKill);
+      if (batchHadSigkill) {
+        const evt = concurrencyDegrader.onBatchResult(true);
+        console.warn(`  ⚡ [OOM 降级] 本批次检测到 worker 被信号杀死——后续批次并发 → ${concurrencyDegrader.getState().concurrency}（事件：degraded-concurrency × ${evt.consecutiveDegradedBatches}）`);
+      } else {
+        concurrencyDegrader.onBatchResult(false);
+      }
       settled.forEach((s, i) => {
         const globalIndex = batchStart + i;
         const [step] = workers[globalIndex];
@@ -2055,6 +2070,7 @@ function spawnParallel(workers, round) {
           failures.push({ step, reason: s.reason });
         }
       });
+      batchStart += concurrency;
     }
     return { results, failures };
   })();
@@ -2850,10 +2866,10 @@ async function runRound(roundNum, runDir, target, dryRun, opts = {}) {
     return { roundDir, counts, isClean: true };
   }
 
-  // v1.2.9 功能①：步骤 ①② 双盲独立审查——24 个 perspective worker 并行（分批 MAX_CONCURRENCY=6）
+  // v1.2.9 功能①：步骤 ①② 双盲独立审查——24 个 perspective worker 并行分批
   // 每个 perspective worker 是独立的子进程（零上下文），单视角工具预算 12/15 次，recursionLimit=30。
-  // A/B 各 12 个 worker 合计 24 个，按 6 并发分 4 批执行。
-  console.log('\n  [步骤 ①②] A/B 双盲独立审查（24 perspective worker，分批并发=' + MAX_CONCURRENCY + '）...');
+  // A/B 各 12 个 worker 合计 24 个，按 resolveMaxConcurrency 解析的并发分批执行。
+  console.log('\n  [步骤 ①②] A/B 双盲独立审查（24 perspective worker，并发=' + MAX_CONCURRENCY + '，来源=' + CONCURRENCY_RESOLVED.source + '）...');
 
   // v1.2.9 功能②：worker 级断点——跳过已完成的 perspective worker（resume 模式）
   const resumeCompletedWorkers = resumeStateForRound?.completedWorkers || [];

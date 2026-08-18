@@ -36,7 +36,7 @@ import { fileURLToPath } from 'url';
 import os from 'os';
 
 // v1.2.7 功能⑤：继承 driver-base 公共编排层
-import { createForgeDriverBase, runPreflight, formatPreflightReport } from './driver-base.mjs';
+import { createForgeDriverBase, runPreflight, formatPreflightReport, resolveMaxConcurrency } from './driver-base.mjs';
 
 // 可见性：核心层 + 适配器（agent 无关 + 渐进适配）
 import { createVisibility, EVENTS } from './visibility.mjs';
@@ -2370,10 +2370,16 @@ async function main() {
     // 8GB 机器 FORGE_MAX_CONCURRENCY=1 启动后仍 6 并发 × 2GB heap → OOM SIGKILL
     // 整树。修复：实际并发取两者最小值，FORGE_MAX_CONCURRENCY 作为全局硬上限
     // 对所有并发路径（worker 池 + 分片批次）一致生效。
+    //
+    // v1.3.7 ⑦ 自适应并发：FORGE_MAX_CONCURRENCY 的解析从写死 env 改为
+    // resolveMaxConcurrency()（显式 CLI/env > totalmem 预算表 > 兜底 1）——
+    // 未显式设置时 8GB 机器自动取 1，无需用户手工设 env。与 fresh-eyes driver
+    // 共用 driver-base 实现（镜像漂移零容忍）。
+    const GATE_CONCURRENCY_RESOLVED = resolveMaxConcurrency({ defaultConcurrency: 1 });
     const shardWorkers = ACCEPTANCE_SHARDS.map(s => [`acceptance-s${s.id}`, runDir, args.target]);
     const MAX_ACC_CONCURRENCY = Math.min(
       parseInt(process.env.FORGE_ACCEPTANCE_CONCURRENCY || '6', 10),
-      parseInt(process.env.FORGE_MAX_CONCURRENCY || '6', 10)
+      GATE_CONCURRENCY_RESOLVED.concurrency
     );
     const { results: shardResults, failures: shardFailures } = await spawnAcceptanceShards(shardWorkers, args.target, MAX_ACC_CONCURRENCY);
 
