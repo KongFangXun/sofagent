@@ -121,16 +121,17 @@ fi
 
 # 1e. checklist 自校验段的警戒线数字与头部声明同步（v1.3.7 实案：
 #     头部上调 1580/2640 但自校验段残留 1540/2600——同一文档两套线）
-SELF_CHK=$(grep -oE 'WC_CHK -le [0-9]+' "$CHECKLIST" | head -1 | grep -oE '[0-9]+' || echo "")
-SELF_ACC=$(grep -oE 'WC_ACC -le [0-9]+' "$CHECKLIST" | head -1 | grep -oE '[0-9]+' || echo "")
-if [ -n "$SELF_CHK" ] && [ -n "$LIMIT_CHK" ]; then
+# 提取正则兼容带引号比较形态："$WC_CHK" -le 1540（grep 未命中 = FAIL，禁止静默跳过）
+SELF_CHK=$(grep -oE 'WC_CHK"? -le [0-9]+' "$CHECKLIST" | head -1 | grep -oE '[0-9]+' || echo "")
+SELF_ACC=$(grep -oE 'WC_ACC"? -le [0-9]+' "$CHECKLIST" | head -1 | grep -oE '[0-9]+' || echo "")
+if [ -z "$SELF_CHK" ] || [ -z "$SELF_ACC" ]; then
+  bad "checklist 自校验段未找到警戒线比较行（提取正则失配 → FAIL，禁止静默跳过）" "    确认自校验段存在 WC_CHK/WC_ACC -le 比较；若格式已改，同步更新本提取正则"
+else
   if [ "$SELF_CHK" = "$LIMIT_CHK" ]; then
     ok "checklist 自校验段警戒线与头部一致（${SELF_CHK}）"
   else
     bad "checklist 内部两套警戒线：头部 $LIMIT_CHK ≠ 自校验段 $SELF_CHK" "    修复：自校验段命令同步头部当前值（遗漏即旧线假绿/误报）"
   fi
-fi
-if [ -n "$SELF_ACC" ] && [ -n "$LIMIT_ACC" ]; then
   if [ "$SELF_ACC" = "$LIMIT_ACC" ]; then
     ok "acceptance 自校验段警戒线与头部一致（${SELF_ACC}）"
   else
