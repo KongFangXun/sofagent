@@ -65,6 +65,10 @@ assert_grep() { grep -q "$1" "$2" 2>/dev/null && return 0 || { fail "grep 零命
 exit_of() { set +e; "$@" >/dev/null 2>&1; local rc=$?; set -e; echo "$rc"; }
 write_config() { printf 'audit:\n  rules: {}\n' > "$TMP_REPO/.sofagent/config.yml"; }
 wh_config() { printf 'audit:\n  rules: {}\n  webhook:\n    url: "%s"\n    platform: "feishu"\n' "$WEBHOOK_URL" > "$TMP_REPO/.sofagent/config.yml"; }
+# v1.3.7 修复：--init 自动签名 config（P1-A10，密钥来自 init_isolated 的临时 HOME K1），
+# 后续场景用真实 HOME 密钥 K2 验签 → 必然不匹配 → d1882231 fail-closed 正确拒启。
+# 场景 3 后调用 write_config 重置为无签名版（fail-open 常态），消除 K1/K2 错配。
+reset_config_unsigned() { printf 'audit:\n  rules: {}\n' > "$TMP_REPO/.sofagent/config.yml"; }
 check_dist_export() {
   local dist_rel="$1" export_name="$2" prefix="$3"
   require_dist "$dist_rel" || { eval "${prefix}_OK=false"; return 1; }
@@ -94,6 +98,8 @@ scenario 3 "--doctor 健康诊断"
 DOCTOR_OUTPUT=$($CLI --doctor 2>&1 || true)
 CHECK_COUNT=$(echo "$DOCTOR_OUTPUT" | grep -c '✅\|❌\|⚠️' || true)
 [ "$CHECK_COUNT" -ge 9 ] && pass || fail "诊断项不足：$CHECK_COUNT/9"
+# v1.3.7：重置为无签名 config——init 的 K1 签名对后续场景（真实 HOME K2）必然不匹配
+reset_config_unsigned
 scenario 4 "正常 commit（单文件修复）"
 echo "# Test Project" > README.md; git add README.md
 GIT_EDITOR=true git commit --quiet -m "init: project setup" 2>&1 || true
@@ -2570,6 +2576,44 @@ grep -q "Security Advisory" "$PROJECT_ROOT/SECURITY.md" || S289_OK=false  # run-
 grep -q "DecisionCategory" "$PROJECT_ROOT/engine/audit/src/decision-schema.ts" || S289_OK=false  # 交付⑮ 五分类（route/select/skip/retry/escalate）
 grep -q "queryByCategory\|category" "$PROJECT_ROOT/engine/audit/src/decision-log.ts" 2>/dev/null || true  # 多维查询（既有 queryByKind 扩展）
 $S289_OK && pass "双闸+decisions五分类+脱敏补丁+信号清理+安全渠道五锚点在位" || fail "run-03 修复面+交付⑮缺件"
+
+
+scenario 290 "v1.3.7 交付①②：SubAgent 沙箱五件套 + 场景驱动权限——fail-closed 三道防线"
+S290_OK=true
+[ -f "$PROJECT_ROOT/engine/orchestrator/src/sandbox/filesystem-backend.ts" ] || S290_OK=false
+[ -f "$PROJECT_ROOT/engine/orchestrator/src/sandbox/network-gateway.ts" ] || S290_OK=false
+[ -f "$PROJECT_ROOT/engine/orchestrator/src/sandbox/tool-gate.ts" ] || S290_OK=false
+[ -f "$PROJECT_ROOT/engine/orchestrator/src/sandbox/virtual-key.ts" ] || S290_OK=false
+[ -f "$PROJECT_ROOT/engine/orchestrator/src/sandbox/async-subagent.ts" ] || S290_OK=false
+grep -q "dns.lookup\|dns\.resolve" "$PROJECT_ROOT/engine/orchestrator/src/sandbox/network-gateway.ts" || S290_OK=false  # DNS 隧道拦截
+grep -q "未注册" "$PROJECT_ROOT/engine/orchestrator/src/sandbox/tool-gate.ts" || S290_OK=false  # fail-closed
+grep -q "mask\|脱敏" "$PROJECT_ROOT/engine/orchestrator/src/sandbox/virtual-key.ts" || S290_OK=false  # key 脱敏
+grep -q "tmp.*rename\|原子" "$PROJECT_ROOT/engine/orchestrator/src/sandbox/filesystem-backend.ts" || S290_OK=false  # 原子合并
+[ -f "$PROJECT_ROOT/engine/orchestrator/src/sandbox/ATTACK-SURFACE.md" ] || S290_OK=false  # 攻击面声明
+grep -q "fail-closed\|身份\|场景" "$PROJECT_ROOT/engine/orchestrator/src/permission/scenario-router.ts" || S290_OK=false  # ②三道防线
+$S290_OK && pass "沙箱五件套+攻击面声明+场景权限路由在位" || fail "v1.3.7 沙箱/权限交付缺件"
+
+scenario 291 "v1.3.7 交付③④⑤：AgentShield 五类扫描 + 行业 overlay 四套 + 断路器行为监控"
+S291_OK=true
+[ -f "$PROJECT_ROOT/engine/audit/src/agent-shield.ts" ] || S291_OK=false
+grep -q "Shadow" "$PROJECT_ROOT/engine/audit/src/agent-shield.ts" || S291_OK=false  # Shadow AI 三源
+[ -f "$PROJECT_ROOT/engine/audit/src/industry-overlay.ts" ] || S291_OK=false
+grep -q "fintech" "$PROJECT_ROOT/engine/audit/src/industry-overlay.ts" || S291_OK=false
+grep -q "medical" "$PROJECT_ROOT/engine/audit/src/industry-overlay.ts" || S291_OK=false
+[ -f "$PROJECT_ROOT/engine/orchestrator/src/sandbox/circuit-breaker.ts" ] || S291_OK=false
+grep -q "half-open\|冷却" "$PROJECT_ROOT/engine/orchestrator/src/sandbox/circuit-breaker.ts" || S291_OK=false  # ASI08 恢复路径
+grep -q "canAcceptTask" "$PROJECT_ROOT/engine/orchestrator/src/sandbox/circuit-breaker.ts" || S291_OK=false  # ASI10 隔离与沙箱联动
+$S291_OK && pass "Shield 五类+overlay 四套+断路器双指标在位" || fail "v1.3.7 Shield/overlay/断路器缺件"
+
+scenario 292 "v1.3.7 交付⑥⑨：ontology lifecycle+OKF 三件套 + memory-sync 三级来源通用化"
+S292_OK=true
+grep -q "migrateToTrunk" "$PROJECT_ROOT/engine/ontology/src/merge-engine.ts" || S292_OK=false  # branch→trunk 审阅门
+grep -q "stale_after" "$PROJECT_ROOT/engine/ontology/src/merge-engine.ts" || S292_OK=false  # OKF② 时效字段（spec 名非 valid_after）
+grep -q "okfViolation\|missing-required-field" "$PROJECT_ROOT/engine/mcp/src/tools/create-entity.ts" 2>/dev/null || grep -rq "okfViolation" "$PROJECT_ROOT/engine/mcp/src/tools/" || S292_OK=false  # OKF① type 必填拒绝
+grep -q "resolvePersonaSources" "$PROJECT_ROOT/engine/core/src/filesystem/memory-sync.ts" || S292_OK=false  # ⑨三级来源
+grep -q "SOFAGENT_PERSONA_SOURCE" "$PROJECT_ROOT/engine/core/src/filesystem/memory-sync.ts" || S292_OK=false  # env 最高优先
+grep -q "resolveMaxConcurrency" "$PROJECT_ROOT/FORGE/src/driver-base.mjs" || S292_OK=false  # ⑦自适应并发（顺带锚点）
+$S292_OK && pass "lifecycle 审阅门+OKF 三件套+memory-sync 通用化+自适应并发在位" || fail "v1.3.7 ontology/OKF/memory-sync 缺件"
 
 
 echo -e "  验收测试结果：${GREEN}$PASSED 通过${NC} / ${RED}$FAILED 失败${NC} / 共 $((PASSED + FAILED))"

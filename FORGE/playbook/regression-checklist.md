@@ -11,10 +11,10 @@
 | v1.3.5 | #110-111（bugfix 防复发 / 新功能审查面） | 93→70、69/75/77→95（check-version 四盲区） |
 | v1.3.6 | #113-114（八交付锚点一维收口 / run-03 修复防复发） | —（v1.3.5 发布后 hotfix 112 编入） |
 
-> **当前 87 维 · 编号 1-114 · 27 个编号已归并删除（v1.3.6 勘误：上版头部声称 86 实为 85——112 hotfix 追加时未同步维度数，本次一并修正）**。维度流连续不中断，分组导航：基线组 → 审查约束组 → 环境敏感组（前置 vitest/沙箱铁律）。
+> **当前 89 维 · 编号 1-116 · 27 个编号已归并删除（v1.3.7 阶段四 +2：115 新功能审查面 / 116 bugfix 批防复发——acceptance 同批 S290-S292）**。维度流连续不中断，分组导航：基线组 → 审查约束组 → 环境敏感组（前置 vitest/沙箱铁律）。
 ## 🔒 维护公约（防膨胀铁律）
 
-**追加新维度前，必须先 grep 同类**：有同类 → 扩展旧维度的子项，不新增编号；无同类 → 才新增编号 = 当前最大 +1。历史维度靠 `git log -p` 找回。**行数警戒线**：`regression-checklist.md` ≤ 1540 行、`acceptance-test.sh` ≤ 2600 行（v1.3.6 累计上调 1500→1540：+30 新审查面 2 维 / +6 人工复核断言修正注释——三判据记录见尾部；v1.3.7 须真实归并）；releasing.md 方针「超标上调 LIMIT 不删内容」。
+**追加新维度前，必须先 grep 同类**：有同类 → 扩展旧维度的子项，不新增编号；无同类 → 才新增编号 = 当前最大 +1。历史维度靠 `git log -p` 找回。**行数警戒线**：`regression-checklist.md` ≤ 1580 行、`acceptance-test.sh` ≤ 2640 行（v1.3.7 阶段四上调 1540→1580 / 2600→2640：+39 维 115/116 新审查面 / +38 S290-S292——三判据同 v1.3.6 全否即新面不删；v1.3.8 须真实归并）；releasing.md 方针「超标上调 LIMIT 不删内容」。
 
 **维度脚本编写三铁律**（v1.3.6 release-gate run-08 教训——7 个 FAIL 维度中 5 个是脚本自身缺陷而非仓库问题，driver 白跑一轮）：
 
@@ -1527,6 +1527,47 @@ grep -q "SHARED_REDACTION_SAMPLES" engine/core/src/security/prompt-sanitizer.ts 
 grep -q "Security Advisory" SECURITY.md && ! grep -q "noreply.*备选" SECURITY.md && echo "✅ 漏洞渠道单通道" || echo "❌ 摆设渠道回潮"
 # worktree 留存根治（双 driver 均接线）
 grep -q "registerSignalCleanup" FORGE/src/driver-base.mjs && grep -q "registerSignalCleanup\|cleanupStaleWorktrees" FORGE/src/fresh-eyes-driver.mjs && grep -q "registerSignalCleanup\|cleanupStaleWorktrees" FORGE/src/release-gate-driver.mjs && echo "✅ 信号清理双 driver" || echo "❌ 镜像漂移回退"
+
+#### 115. v1.3.7 新功能审查面——沙箱五件套/权限三防线/并发三级来源/OKF 三件套（阶段四来源提取 A 类）
+
+> v1.3.7 八项硬交付的核心锚点一维收口（acceptance S290-S292 同面端到端，分层同 113/282 先例）。⑧ TDAI 触发器型零动作不设锚点（条件未到）。
+
+```bash
+# ① 沙箱五件套：DNS+raw socket 全拦 / fail-closed / key 脱敏 / 原子合并 / 攻击面声明
+grep -q "dns.lookup\|dns\.resolve" engine/orchestrator/src/sandbox/network-gateway.ts && echo "✅ DNS 隧道拦截" || echo "❌ 网关漏 DNS"
+grep -q "未注册" engine/orchestrator/src/sandbox/tool-gate.ts && echo "✅ 工具门 fail-closed" || echo "❌ 未注册放行"
+grep -q "mask" engine/orchestrator/src/sandbox/virtual-key.ts && echo "✅ 虚拟 key 脱敏" || echo "❌ key 明文泄露面"
+[ -f engine/orchestrator/src/sandbox/ATTACK-SURFACE.md ] && echo "✅ 攻击面声明在位" || echo "❌ 声明缺失"
+# ② 场景权限三道防线 + ③④⑤ Shield/overlay/断路器
+grep -q "fail-closed" engine/orchestrator/src/permission/scenario-router.ts && echo "✅ 权限 fail-closed" || echo "❌ 权限开放默认"
+grep -q "Shadow" engine/audit/src/agent-shield.ts && echo "✅ Shadow AI 三源" || echo "❌ 影子 agent 盲区"
+grep -q "canAcceptTask" engine/orchestrator/src/sandbox/circuit-breaker.ts && echo "✅ ASI10 隔离联动" || echo "❌ 断路器孤立"
+# ⑥ lifecycle 审阅门 + OKF（spec 字段名 stale_after 非 valid_after）
+grep -q "migrateToTrunk" engine/ontology/src/merge-engine.ts && echo "✅ trunk 审阅门" || echo "❌ 直通 trunk"
+grep -q "stale_after" engine/ontology/src/merge-engine.ts && echo "✅ OKF 时效字段" || echo "❌ 字段名漂移"
+grep -rn "okfViolation" engine/mcp/src/tools/create-entity.ts > /dev/null && echo "✅ type 必填拒绝" || echo "❌ OKF① 缺失"
+# ⑦ 并发三级来源（CLI>env>adaptive>fallback 后写者胜）+ ⑨ persona 三级
+grep -q "resolveMaxConcurrency" FORGE/src/driver-base.mjs && echo "✅ 自适应并发" || echo "❌ ⑦ 未接线"
+grep -q "SOFAGENT_PERSONA_SOURCE" engine/core/src/filesystem/memory-sync.ts && echo "✅ persona env 优先" || echo "❌ ⑨ 路径写死回退"
+```
+
+#### 116. v1.3.7 bugfix 批防复发——verify-commit 路径②收紧 + test-count 双层防御 + hook 成功回声
+
+> 阶段一 26 项 bugfix 的 P0 级锚点（其余文档类由 check-version/check-docs 覆盖）。
+
+```bash
+# P0-1：路径②（selfMatched）必须 ⚠️ EXIT=1 不放绿灯
+grep -q "selfMatched" engine/audit/src/commands/verify.ts && grep -q "process.exit(1)" engine/audit/src/commands/verify.ts && echo "✅ 洗白链已堵" || echo "❌ 归因歧义回退"
+# P0-3：FLAKY_PKGS 头部初始化 + Test Files 漏收集拒采
+grep -q 'FLAKY_PKGS=""' tools/test-count.sh && echo "✅ set -u 初始化" || echo "❌ unbound 炸弹回植"
+grep -q "漏收集" tools/test-count.sh && echo "✅ 漏收集防御" || echo "❌ 静默变小回退"
+# P1：HOOK_TEMPLATE 成功回声（可感知性）
+grep -q "审计通过" engine/core/src/config-template.ts && echo "✅ 成功回声在位" || echo "❌ 静默保护回退"
+# 红队四项：追加伪造判篡改 + A2 二进制 WARN
+grep -q "tampered" engine/audit/src/commands/verify.ts && echo "✅ 追加伪造拦截" || echo "❌ legacy 容忍回退"
+grep -qE "\.bin|Binary files" engine/audit/src/rules/rule-a2-secret-leak.ts && echo "✅ 二进制边界 WARN" || echo "❌ blob 绕过回开"
+```
+
 ```
 
 <!-- 瘦身判据记录 v1.3.6（阶段五步骤4）
