@@ -279,6 +279,55 @@ EOF
 fi
 
 # ============================================================
+# 七、同主题维度聚簇提示（阶段五三判据②重叠判据的脚本化）
+# ============================================================
+# 原理：维度标题先清洗（去编号/去括号注释/去分隔符）→ 抽「≥2 字 CJK 连续段」+
+# 「≥4 字符拉丁词（排除版本号）」作主题词 → 同一主题词命中 ≥3 个维度 = 强归并候选
+# （三判据②原文语义）。只报不判——归并决策是人。
+# 精度依据（v1.3.7 实测 89 维）：清洗前噪声 8 组全是垃圾（「·」×292/「新增」×41——
+# 括号注释里的版本标记）；清洗后真聚簇仅 5 组（tool×5/FORGE×5/完整性×3/vs×3/hook×3），
+# 无一真归并候选——干净时低信号正是本检查该有的行为。
+# 实现注意：CJK 切分必须 awk 逐字符（LC_ALL=C 下 grep 字符类按字节切会出乱码字对）。
+[ "$QUIET" = false ] && echo -e "\n${BOLD}${CYAN}── ⑦ 同主题维度聚簇（归并候选提示） ──${NC}"
+
+CLUSTER_MIN=3   # 三判据②：≥3 个同类 = 强归并候选
+CLUSTER_COUNT=0
+# 清洗：去编号、去（括号注释——版本标记/归并记录都在里面）、去 · + ≠ 等符号
+DIM_TITLES_CLEAN=$(grep -E "^#### " "$CHECKLIST" | sed 's/^#### [0-9]*\. //; s/（[^）]*）//g; s/[·+≠=]/ /g')
+# 主题词提取（perl \p{Han} 精确汉字类）+ 计数排序，全程单管道落临时文件——
+# 不经 shell 变量中转（调试实录：命令替换捕获值偶发含上游残留，机制未定位，
+# 数据流单向化根治）。展示循环只读文件，变量全部独立前缀。
+CLUSTER_TMP=$(mktemp /tmp/crs-cluster-XXXX)
+printf '%s\n' "$DIM_TITLES_CLEAN" | LC_ALL="${LC_ALL_UTF8:-en_US.UTF-8}" perl -CSD -ne 'while (/([\p{Han}]{2,}|[A-Za-z]{4,})/g) { my $w = $1; next if $w =~ /^[vV]\d/; print "$w\n" }' 2>/dev/null | sort | uniq -c | sort -rn | awk -v min="$CLUSTER_MIN" '$1 >= min {print $1, $2}' > "$CLUSTER_TMP" || true
+
+if [ -s "$CLUSTER_TMP" ]; then
+  while IFS= read -r c7_line; do
+    [ -z "$c7_line" ] && continue
+    c7_n=$(echo "$c7_line" | awk '{print $1}')
+    c7_gram=$(echo "$c7_line" | cut -d' ' -f2-)
+    [ -z "$c7_gram" ] && continue
+    # 数学闸：一个词至多命中全部维度各一次——计数 > 维度总数 = 注入异常行，跳过
+    [ "$c7_n" -gt "${ACTUAL_DIM:-999}" ] && continue
+    c7_dims=$(grep -E "^#### " "$CHECKLIST" | grep -F "$c7_gram" | grep -oE '^#### [0-9]+' | grep -oE '[0-9]+' | sort -n | tr '\n' ' ')
+    echo -e "  ${YELLOW}ℹ️${NC} 「${c7_gram}」×${c7_n} → 维度 ${c7_dims}（人工裁决是否归并）"
+    CLUSTER_COUNT=$((CLUSTER_COUNT + 1))
+    [ "$CLUSTER_COUNT" -ge 8 ] && { [ "$QUIET" = false ] && echo "  …（更多聚簇组省略）"; break; }
+  done < "$CLUSTER_TMP"
+  # 数学闸：维度总数 ACTUAL_DIM 已在①段求得——任何主题词计数 > 维度总数即异常行，滤除
+  if [ "$CLUSTER_COUNT" -gt 0 ]; then
+    [ "$QUIET" = false ] && echo -e "  ↳ 提示非 FAIL：聚簇=归并候选（三判据②），归并/保留人工裁决；「tool/完整性」类通用词多为假信号"
+  fi
+else
+  if [ -n "$DIM_TITLES_CLEAN" ]; then
+    # 标题非空但聚簇结果空 = perl 提取失败（如 C locale 退化），不误报"干净"
+    warn "聚簇提取结果为空但维度标题非空——perl 提取可能失败（locale？），人工确认"
+  else
+    ok "无 ≥${CLUSTER_MIN} 维同主题聚簇（暂无归并候选）"
+  fi
+fi
+rm -f "$CLUSTER_TMP"
+
+# ============================================================
 # 汇总
 # ============================================================
 [ "$QUIET" = false ] && echo -e "\n${BOLD}═══════════════════════════════════════════════${NC}"
