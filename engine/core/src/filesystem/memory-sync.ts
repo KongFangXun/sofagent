@@ -1,27 +1,62 @@
 // ============================================================
-// memory-sync.ts · TencentDB Agent Memory 同步
+// memory-sync.ts · Agent Memory persona 同步（路径通用化）
 // v1.3.6 新增：检测 ~/.openclaw/memory-tdai/persona.md 变更
+// v1.3.7 ⑨ 路径通用化：三级优先解析（2026-08-18 用户决策）
+//   ① env SOFAGENT_PERSONA_SOURCE（单路径，最高优先）
+//   ② config.yml memory_sync.persona_sources[]（数组）
+//   ③ 内置默认表（原 3 路径降级为 fallback）
+//   与 memory-backend.ts 通用适配器哲学对齐——TencentDB 开箱即用但非唯一。
 //
 // 用途：
-//   - 监控 TencentDB Agent 的 persona 记忆文件变化
+//   - 监控 agent memory 的 persona 记忆文件变化
 //   - 自动同步到 .sofagent/knowledge/entities/persona.md
 //   - launcher.ts 构建 system prompt 时注入（前 500 字符）
 //
 // 安全边界：
 //   - 只读源文件，写入目标文件
 //   - persona.md 不存在或质量差时：记录警告 + 跳过，绝不崩溃
+//   - 全部来源都不存在时 synced:false + reason（不 crash 不外联）
 // ============================================================
 
 import { existsSync, readFileSync, writeFileSync, mkdirSync, statSync } from 'fs';
 import { join } from 'path';
 import { homedir } from 'os';
 
-/** persona.md 同步源路径 */
+/** 同步源解析选项（v1.3.7 ⑨——签名向后兼容：不传时行为与 v1.3.6 一致） */
+export interface PersonaSourceOptions {
+  /** config.yml memory_sync.persona_sources[] 的值（调用方从 loadConfig 取） */
+  configSources?: string[];
+  /** 额外 env 覆盖（默认读 process.env.SOFAGENT_PERSONA_SOURCE——单测可注入） */
+  envSource?: string | null;
+}
+
+/** persona.md 内置默认源路径（三级解析的 fallback） */
 const PERSONA_SOURCE_PATHS = [
   join(homedir(), '.openclaw', 'memory-tdai', 'persona.md'),
   join(homedir(), '.workbuddy', 'memory-tdai', 'persona.md'),
   join(homedir(), '.openclaw', 'memory', 'persona.md'),
 ];
+
+/**
+ * 三级优先解析 persona 源路径列表。
+ *
+ * 优先级：env SOFAGENT_PERSONA_SOURCE（单值）> config 数组 > 内置默认表。
+ * 任一级缺省时优雅落到下一级。
+ *
+ * @param opts 解析选项（env 注入 + config 数组）
+ * @returns 按优先级排序的候选路径数组
+ */
+export function resolvePersonaSources(opts: PersonaSourceOptions = {}): string[] {
+  const envVal = opts.envSource !== undefined ? opts.envSource : process.env.SOFAGENT_PERSONA_SOURCE;
+  if (envVal && envVal.trim() !== '') {
+    return [envVal.trim()];
+  }
+  const cfg = (opts.configSources || []).filter((p): p is string => typeof p === 'string' && p.trim() !== '');
+  if (cfg.length > 0) {
+    return cfg.map(p => p.trim());
+  }
+  return [...PERSONA_SOURCE_PATHS];
+}
 
 /** 同步目标基础路径 */
 function getTargetPath(dataDir?: string): string {
@@ -35,12 +70,13 @@ const MAX_PERSONA_LENGTH = 50000; // 最多 50KB（防止异常大文件）
 
 /**
  * 查找 persona.md 源文件
- * 遍历多个可能的路径，返回第一个存在的
+ * 按三级优先解析出的候选路径遍历，返回第一个存在的
  *
+ * @param opts 解析选项（v1.3.7 ⑨ 三级优先：env > config > 默认表）
  * @returns 源文件路径，或 null
  */
-function findPersonaSource(): string | null {
-  for (const path of PERSONA_SOURCE_PATHS) {
+function findPersonaSource(opts: PersonaSourceOptions = {}): string | null {
+  for (const path of resolvePersonaSources(opts)) {
     if (existsSync(path)) {
       return path;
     }
@@ -91,18 +127,19 @@ function checkPersonaQuality(content: string): { valid: boolean; reason?: string
  * 同步 persona.md
  *
  * 流程：
- *   1. 查找源文件（~/.openclaw/memory-tdai/persona.md）
+ *   1. 查找源文件（三级优先：env SOFAGENT_PERSONA_SOURCE > config persona_sources > 内置默认）
  *   2. 检查内容质量
  *   3. 写入 .sofagent/knowledge/entities/persona.md
  *
  * @param dataDir .sofagent 数据目录（默认 cwd/.sofagent）
+ * @param opts v1.3.7 ⑨ 源解析选项（不传 = 与 v1.3.6 行为完全一致的内置默认表）
  * @returns 同步结果
  */
-export function syncPersona(dataDir?: string): { synced: boolean; sourcePath?: string; reason?: string } {
+export function syncPersona(dataDir?: string, opts: PersonaSourceOptions = {}): { synced: boolean; sourcePath?: string; reason?: string } {
   try {
-    const sourcePath = findPersonaSource();
+    const sourcePath = findPersonaSource(opts);
     if (!sourcePath) {
-      return { synced: false, reason: '未找到 persona.md 源文件（~/.openclaw/memory-tdai/persona.md 等）' };
+      return { synced: false, reason: '未找到 persona.md 源文件（三级解析：env SOFAGENT_PERSONA_SOURCE > config memory_sync.persona_sources > 内置默认路径）' };
     }
 
     let content: string;

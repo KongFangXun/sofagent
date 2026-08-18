@@ -86,6 +86,11 @@ export interface AuditConfig {
   sanitizePatterns?: { pattern: string; replacement: string }[];
   /** v1.3.0 (交付 10 MA1): 外部记忆后端配置——缺省 undefined = 不加载 */
   memory_backends?: MemoryBackend[];
+  /** v1.3.7 ⑨: persona 同步源配置——三级优先解析第二级（env 最高、内置默认兜底） */
+  memory_sync?: {
+    /** persona.md 候选源路径（按序取第一个存在者） */
+    persona_sources?: string[];
+  };
 }
 
 /**
@@ -270,7 +275,7 @@ export function warnUnknownConfigKeys(auditObj: Record<string, unknown>, filePat
   const knownKeys = new Set<string>([
     'lowRiskPatterns', 'testPatterns', 'carefulModifyThreshold',
     'extendedRulesEnabled', 'rules', 'loopCheckMaxRounds', 'strict', 'A16', 'A17',
-    'loop', 'webhook', 'toolGate', 'sanitizePatterns', 'memory_backends',
+    'loop', 'webhook', 'toolGate', 'sanitizePatterns', 'memory_backends', 'memory_sync',
   ]);
 
   for (const key of Object.keys(auditObj)) {
@@ -401,7 +406,7 @@ function tryLoadYaml(filePath: string): Partial<AuditConfig> | null {
       const topLevelAuditKeys: (keyof AuditConfig)[] = [
         'lowRiskPatterns', 'testPatterns', 'carefulModifyThreshold',
         'extendedRulesEnabled', 'rules', 'loopCheckMaxRounds', 'strict', 'A16', 'A17',
-        'loop', 'webhook', 'sanitizePatterns', 'memory_backends',
+        'loop', 'webhook', 'sanitizePatterns', 'memory_backends', 'memory_sync',
       ];
       const hasAny = topLevelAuditKeys.some(k => k in parsed);
       if (hasAny) {
@@ -591,6 +596,8 @@ function mergeWithDefaults(partial: Partial<AuditConfig>): AuditConfig {
     sanitizePatterns: partial.sanitizePatterns,
     // v1.3.0 (交付 10 MA1): 外部记忆后端配置透传——缺省 undefined = 不加载
     memory_backends: partial.memory_backends,
+    // v1.3.7 ⑨: persona 同步源配置透传（三级优先解析第二级）
+    memory_sync: partial.memory_sync,
   };
 
   // 校验 rules key——未知规则名输出警告

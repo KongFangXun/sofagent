@@ -206,6 +206,22 @@ export function createEntity(args: CreateEntityArgs): CreateEntityResult {
     };
   }
 
+  // v1.3.7 ⑥ OKF ①：type 必填校验（OKF 唯一强制字段——缺 type 拒绝写入返回结构化错误）
+  // 存量条目读取容忍缺 type（宽容性原则——不拒绝消费）；写入侧强制。
+  const fmCheck = parseFrontmatter(content);
+  if (!fmCheck || typeof fmCheck['type'] !== 'string' || (fmCheck['type'] as string).trim() === '') {
+    return {
+      text: '[sofagent] OKF 校验失败：entity frontmatter 缺少必填字段 `type`（OKF v0.2 唯一强制字段）。\n  示例：---\ntype: agent\nname: ' + name + '\n---',
+      data: {
+        action: 'created',
+        path: '',
+        auditVerdict: 'FAIL',
+        isError: true,
+        okfViolation: 'missing-required-field:type',
+      } as unknown as CreateEntityResult['data'],
+    };
+  }
+
   const entitiesDir = join(getKnowledgeDir(), 'entities');
   const filePath = join(entitiesDir, `${name}.md`);
 

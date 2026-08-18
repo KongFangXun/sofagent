@@ -10,7 +10,8 @@ export type {
   MergedOntology,
 } from './types';
 
-export { mergeOntology, checkOntologyStatus } from './merge-engine';
+export { mergeOntology, checkOntologyStatus, migrateToTrunk, LIFECYCLE_TO_MARKET_RING } from './merge-engine';
+export type { LifecycleMigrationRequest, LifecycleMigrationResult } from './merge-engine';
 export { mergeSharedOntology } from './shared-merge';
 export { generateOntologyView } from './ontology-view';
 

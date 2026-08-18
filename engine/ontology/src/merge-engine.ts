@@ -95,6 +95,22 @@ function scanEntityFrontmatter(knowledgeDir: string): OntologyObject[] {
       const type = (fm['type'] || 'entity') as string;
       const relations = (fm['relations'] || {}) as OntologyObject['relations'];
 
+      // v1.3.7 ⑥：生命周期 + OKF ② 信任/时效字段（缺省 branch——新实体默认试验态）
+      const lifecycleRaw = fm['lifecycle'];
+      const lifecycle: OntologyObject['lifecycle'] =
+        lifecycleRaw === 'trunk' || lifecycleRaw === 'branch' ? lifecycleRaw : 'branch';
+      const statusRaw = fm['status'];
+      const status: OntologyObject['status'] =
+        statusRaw === 'draft' || statusRaw === 'stable' || statusRaw === 'deprecated' ? statusRaw : undefined;
+      const staleAfter = typeof fm['stale_after'] === 'string' ? fm['stale_after'] : undefined;
+      const verifiedRaw = fm['verified'];
+      const verified = Array.isArray(verifiedRaw)
+        ? verifiedRaw.filter(
+            (v): v is { by: string; at: string } =>
+              typeof v === 'object' && v !== null && typeof (v as { by?: unknown }).by === 'string' && typeof (v as { at?: unknown }).at === 'string',
+          )
+        : undefined;
+
       objects.push({
         name,
         type,
@@ -106,6 +122,10 @@ function scanEntityFrontmatter(knowledgeDir: string): OntologyObject[] {
           consumes: Array.isArray(relations.consumes) ? relations.consumes : undefined,
         },
         source: filePath,
+        lifecycle,
+        status,
+        stale_after: staleAfter,
+        verified,
       });
     } catch {
       // 跳过无法读取的文件
@@ -291,6 +311,11 @@ export function mergeOntology(configDir: string): MergedOntology {
       type: o.type,
       relations: o.relations,
       source: o.source,
+      // v1.3.7 ⑥：lifecycle + OKF 字段随合并输出（trunk/branch 区分基线/试验资产）
+      lifecycle: o.lifecycle ?? 'branch',
+      status: o.status,
+      stale_after: o.stale_after,
+      verified: o.verified,
     }) as unknown as Record<string, unknown>))
   );
 
@@ -387,3 +412,120 @@ export function checkOntologyStatus(configDir: string): { exists: boolean; fresh
 
   return { exists, fresh, objectCount, actionCount, constraintCount };
 }
+
+// ============================================================
+// v1.3.7 ⑥：lifecycle 状态迁移（branch → trunk 审阅门）
+// ============================================================
+
+/** 迁移请求 */
+export interface LifecycleMigrationRequest {
+  /** 实体名（entities/<name>.md 的 name） */
+  entityName: string;
+  /** 审阅人（对齐 v1.3.6 approver 语义——Ed25519 身份码或人名） */
+  approver: string;
+  /** 审阅意见（留痕） */
+  reviewNote?: string;
+}
+
+/** 迁移结果 */
+export interface LifecycleMigrationResult {
+  ok: boolean;
+  reason?: string;
+  /** 迁移前后的 lifecycle */
+  from?: string;
+  to?: string;
+}
+
+/**
+ * branch → trunk 状态迁移（审阅门）。
+ *
+ * 审阅门语义（对齐 v1.3.6 workflow approver + 审计引擎硬证据）：
+ *   - approver 必填（空审阅人 = 非法迁移）
+ *   - 仅 branch 态可迁移（trunk → trunk 幂等拒绝；未知实体拒绝）
+ *   - 迁移在 frontmatter 写入 lifecycle: trunk + verified 追加记录
+ *     （OKF 三级信任：审阅人审核 = process 级验证留痕）
+ *   - trunk 回退走 git snapshot（不在本函数——回滚是物理动作）
+ *
+ * @param knowledgeDir knowledge/ 目录（entities/ 所在）
+ * @param req 迁移请求
+ */
+export function migrateToTrunk(knowledgeDir: string, req: LifecycleMigrationRequest): LifecycleMigrationResult {
+  const { entityName, approver, reviewNote } = req;
+  if (!approver || approver.trim() === '') {
+    return { ok: false, reason: '非法迁移：审阅人（approver）必填——对齐 v1.3.6 审阅协议' };
+  }
+  const entityPath = join(knowledgeDir, 'entities', `${entityName}.md`);
+  if (!existsSync(entityPath)) {
+    return { ok: false, reason: `实体不存在: ${entityPath}` };
+  }
+
+  let content: string;
+  try {
+    content = readFileSync(entityPath, 'utf-8');
+  } catch (err) {
+    return { ok: false, reason: `读取实体失败: ${(err as Error).message}` };
+  }
+
+  const fm = parseFrontmatter(content);
+  if (!fm) {
+    return { ok: false, reason: '实体无 frontmatter——无法判定 lifecycle' };
+  }
+  const current = fm['lifecycle'];
+  const from = current === 'trunk' || current === 'branch' ? current : 'branch';
+  if (from === 'trunk') {
+    return { ok: false, from, to: 'trunk', reason: '实体已是 trunk（幂等拒绝——trunk 回退走 git snapshot）' };
+  }
+
+  // 迁移：frontmatter 更新 lifecycle + 追加 verified 记录（OKF §5.2）
+  const now = new Date().toISOString();
+  const verifiedEntry = { by: `process:${approver}`, at: now };
+  const existingVerified = Array.isArray(fm['verified']) ? (fm['verified'] as unknown[]) : [];
+  const newVerified = [...existingVerified, verifiedEntry];
+
+  // 重写 frontmatter（保留原字段 + 更新目标字段）
+  const normalized = content.replace(/^\uFEFF/, '').replace(/\r\n/g, '\n');
+  const fmMatch = normalized.match(/^---\n([\s\S]*?)\n---/);
+  if (!fmMatch) {
+    return { ok: false, reason: 'frontmatter 结构异常' };
+  }
+  let fmText = fmMatch[1]!;
+  // 更新/插入 lifecycle
+  if (/^lifecycle:/m.test(fmText)) {
+    fmText = fmText.replace(/^lifecycle:.*$/m, 'lifecycle: trunk');
+  } else {
+    fmText += `\nlifecycle: trunk`;
+  }
+  // 追加 verified
+  const verifiedYaml = newVerified
+    .map((v) => `  - by: "${(v as { by?: string }).by ?? ''}"\n    at: "${(v as { at?: string }).at ?? ''}"`)
+    .join('\n');
+  if (/^verified:/m.test(fmText)) {
+    fmText = fmText.replace(/^verified:[\s\S]*?(?=^\S|\n\S)/m, `verified:\n${verifiedYaml}`);
+  } else {
+    fmText += `\nverified:\n${verifiedYaml}`;
+  }
+  // 审阅意见留痕（注释行）
+  if (reviewNote) {
+    fmText += `\n# review-note: ${reviewNote.replace(/\n/g, ' ')} (${now})`;
+  }
+
+  const newContent = `---\n${fmText}\n---${normalized.slice(fmMatch[0].length)}`;
+  try {
+    atomicWriteSync(entityPath, newContent);
+  } catch (err) {
+    return { ok: false, reason: `写入失败: ${(err as Error).message}` };
+  }
+
+  return { ok: true, from: 'branch', to: 'trunk' };
+}
+
+/**
+ * 与 v1.3.4 能力市场五环状态对齐（验收 4——避免两套状态并存）。
+ *
+ * 映射：trunk ↔ 已发布+养护中（published/maintained）· branch ↔ 待发布/评价中
+ * （pending-review/reviewing）。市场侧消费 lifecycle 时用本表换算。
+ */
+export const LIFECYCLE_TO_MARKET_RING: Record<string, string> = {
+  trunk: 'published+maintained',
+  branch: 'pending-review',
+};

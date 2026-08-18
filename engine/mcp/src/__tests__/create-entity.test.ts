@@ -42,7 +42,7 @@ describe('create_entity', () => {
     const result = createEntity({
       name: '客户管理',
       domain: '财务',
-      content: '---\nname: 客户管理\ndomain: 财务\n---\n\n客户管理实体',
+      content: '---\ntype: entity\nname: 客户管理\ndomain: 财务\n---\n\n客户管理实体',
     });
 
     expect(result.data.action).toBe('created');
@@ -69,7 +69,7 @@ describe('create_entity', () => {
     const result = createEntity({
       name: '已有实体',
       domain: '财务',
-      content: '---\nname: 已有实体\ndomain: 财务\n---\n\n新内容',
+      content: '---\ntype: entity\nname: 已有实体\ndomain: 财务\n---\n\n新内容',
     });
 
     expect(result.data.action).toBe('updated');
@@ -93,7 +93,7 @@ describe('create_entity', () => {
     const result = createEntity({
       name: '测试实体',
       domain: '',
-      content: '---\nname: 测试实体\ndomain: ""\n---\n\n新内容',
+      content: '---\ntype: entity\nname: 测试实体\ndomain: ""\n---\n\n新内容',
     });
 
     expect(result.data.isError).toBe(true);
@@ -113,7 +113,7 @@ describe('create_entity', () => {
     const result = createEntity({
       name: '含密钥实体',
       domain: '财务',
-      content: `---\nname: 含密钥实体\ndomain: 财务\n---\n\n我的密钥是 ${apiKey}`,
+      content: `---\ntype: entity\nname: 含密钥实体\ndomain: 财务\n---\n\n我的密钥是 ${apiKey}`,
     });
 
     expect(result.data.isError).toBe(true);

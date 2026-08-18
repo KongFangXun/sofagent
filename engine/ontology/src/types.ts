@@ -21,6 +21,14 @@ export interface OntologyObject {
   };
   /** 来源文件路径 */
   source: string;
+  /** v1.3.7 ⑥：资产生命周期——trunk（已审阅合并进组织基线，稳定可复用）/ branch（试验中，待审阅）。缺省 branch（新实体默认试验态，不默认可复用） */
+  lifecycle?: 'trunk' | 'branch';
+  /** v1.3.7 ⑥ OKF ②：信任状态（OKF §5.4——draft/stable/deprecated） */
+  status?: 'draft' | 'stable' | 'deprecated';
+  /** v1.3.7 ⑥ OKF ②：时效——绝对日期，today ≥ stale_after 即过期（注意：spec 原文是 stale_after，不是 valid_after） */
+  stale_after?: string;
+  /** v1.3.7 ⑥ OKF ②：验证记录（OKF §5.2 三级信任 human > process > unverified；actor 复用 Ed25519 身份码三态 human:/process:/agent） */
+  verified?: Array<{ by: string; at: string }>;
 }
 
 /**

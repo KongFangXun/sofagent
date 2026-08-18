@@ -3,8 +3,9 @@
 // v1.3.6: 从 mcp-server.ts 提取
 // ============================================================
 
-import { existsSync, readFileSync, readdirSync, statSync } from 'fs';
+import { existsSync, readFileSync, readdirSync, statSync, writeFileSync } from 'fs';
 import { join } from 'path';
+import { load as yamlLoad } from 'js-yaml';
 import { sortByTrust, prepareForPrompt } from '@sofagent/core';
 import type { Trust, Sensitivity } from '@sofagent/core';
 import type { ToolResult } from './audit-tools';
@@ -31,7 +32,7 @@ export function searchKnowledge(args: Record<string, unknown>): ToolResult | { e
     return { error: 'Missing required argument: query' };
   }
   const kbDir = getKnowledgeDir();
-  const matches: Array<{ path: string; kind: string; firstLine: string }> = [];
+  const matches: Array<{ path: string; kind: string; firstLine: string; stale?: boolean; trustTier?: string }> = [];
   if (existsSync(kbDir)) {
     for (const kind of ['entities', 'concepts', 'comparisons', 'summaries'] as const) {
       const subDir = join(kbDir, kind);
@@ -53,19 +54,61 @@ export function searchKnowledge(args: Record<string, unknown>): ToolResult | { e
         const name = f.replace(/\.md$/, '');
         if (name.toLowerCase().includes(query) || content.toLowerCase().includes(query)) {
           const firstLine = content.split('\n').find((l) => l.trim() && !l.startsWith('---')) || '';
-          matches.push({ path: `${kind}/${f}`, kind, firstLine: firstLine.slice(0, 100) });
+          // v1.3.7 ⑥ OKF ②：过期条目标注 + 信任分层推导（人审>机审>未审）
+          const okf = parseOkfFields(content);
+          matches.push({
+            path: `${kind}/${f}`, kind, firstLine: firstLine.slice(0, 100),
+            stale: okf.stale,
+            trustTier: okf.trustTier,
+          });
         }
       }
     }
   }
+  // OKF ②：过期条目降权（排到末尾——检索时可见但标注，不静默丢弃）
+  matches.sort((a, b) => Number(a.stale ?? false) - Number(b.stale ?? false));
   const text = matches.length
-    ? `[sofagent] 找到 ${matches.length} 个匹配:\n` + matches.map((m) => `- ${m.path}: ${m.firstLine}`).join('\n')
+    ? `[sofagent] 找到 ${matches.length} 个匹配:\n` + matches.map((m) => {
+        const staleTag = m.stale ? ' ⚠️[已过期]' : '';
+        const trustTag = m.trustTier ? ` [${m.trustTier}]` : '';
+        return `- ${m.path}${staleTag}${trustTag}: ${m.firstLine}`;
+      }).join('\n')
     : `[sofagent] 未找到匹配 "${query}" 的知识页`;
 
   return {
     text,
     data: { query, count: matches.length, matches },
   };
+}
+
+/**
+ * v1.3.7 ⑥ OKF ②：从 frontmatter 解析信任/时效字段。
+ * - stale_after：today ≥ stale_after → stale=true（检索标注/降权）
+ * - verified：最新一条 by 前缀推导信任层（human: > process: > 其他/unverified）
+ */
+export function parseOkfFields(content: string): { stale: boolean; staleAfter?: string; trustTier?: string; status?: string } {
+  const fmMatch = content.replace(/^\uFEFF/, '').replace(/\r\n/g, '\n').match(/^---\n([\s\S]*?)\n---/);
+  if (!fmMatch) return { stale: false };
+  let fm: Record<string, unknown>;
+  try {
+    fm = yamlLoad(fmMatch[1]!) as Record<string, unknown>;
+  } catch {
+    return { stale: false };
+  }
+  const staleAfter = typeof fm['stale_after'] === 'string' ? (fm['stale_after'] as string) : undefined;
+  const stale = staleAfter ? new Date(staleAfter) <= new Date() : false;
+  // 信任分层（OKF §5.2 三级：human > process > unverified）
+  let trustTier: string | undefined;
+  const verified = fm['verified'];
+  if (Array.isArray(verified) && verified.length > 0) {
+    const latest = verified[verified.length - 1] as { by?: string } | undefined;
+    const by = typeof latest?.by === 'string' ? latest.by : '';
+    if (by.startsWith('human:')) trustTier = 'human-verified';
+    else if (by.startsWith('process:') || by.startsWith('agent:')) trustTier = 'process-verified';
+    else trustTier = 'verified';
+  }
+  const status = typeof fm['status'] === 'string' ? (fm['status'] as string) : undefined;
+  return { stale, staleAfter, trustTier, status };
 }
 
 /**
@@ -260,4 +303,73 @@ export function stats(): ToolResult {
     text: `[sofagent] knowledge 统计: entities=${statsData.entities} concepts=${statsData.concepts} comparisons=${statsData.comparisons} summaries=${statsData.summaries} lastUpdate=${statsData.lastUpdate || 'N/A'}`,
     data: statsData,
   };
+}
+
+// ============================================================
+// v1.3.7 ⑥ OKF ③：index.md 链接化（渐进披露）
+// ============================================================
+
+/**
+ * 生成/刷新 knowledge/index.md——从纯权限表格升级为链接列表（保留权限列语义）。
+ *
+ * 渐进披露语义：agent 先读目录（本文件）判断相关性，再按链接读正文——
+ * 省上下文窗口。每行含相对链接 + kind + 信任层 + 过期标记。
+ *
+ * @param kbDir knowledge/ 目录（缺省 getKnowledgeDir()）
+ * @returns 写入的 index.md 路径（无条目时返回 null）
+ */
+export function refreshKnowledgeIndex(kbDir?: string): string | null {
+  const dir = kbDir || getKnowledgeDir();
+  const rows: Array<{ link: string; kind: string; trust: string; stale: boolean; firstLine: string }> = [];
+
+  for (const kind of ['entities', 'concepts', 'comparisons', 'summaries'] as const) {
+    const subDir = join(dir, kind);
+    if (!existsSync(subDir)) continue;
+    let files: string[] = [];
+    try {
+      files = readdirSync(subDir).filter((f) => f.endsWith('.md'));
+    } catch {
+      continue;
+    }
+    for (const f of files.sort()) {
+      const rel = `${kind}/${f}`;
+      let content = '';
+      try {
+        content = readFileSync(join(subDir, f), 'utf-8');
+      } catch {
+        continue;
+      }
+      const okf = parseOkfFields(content);
+      const firstLine = content.split('\n').find((l) => l.trim() && !l.startsWith('---'))?.slice(0, 60) || '';
+      rows.push({
+        link: `[${f.replace(/\.md$/, '')}](./${kind}/${f})`,
+        kind,
+        trust: okf.trustTier || 'unverified',
+        stale: okf.stale,
+        firstLine,
+      });
+    }
+  }
+
+  if (rows.length === 0) return null;
+
+  const lines: string[] = [];
+  lines.push('# Knowledge Index');
+  lines.push('');
+  lines.push(`> 自动生成（${new Date().toISOString()}）· v1.3.7 OKF ③ 渐进披露：先读本目录判断相关性，再按链接读正文。`);
+  lines.push('');
+  lines.push('| 条目 | 类型 | 信任 | 时效 | 摘要 |');
+  lines.push('|------|------|------|------|------|');
+  for (const r of rows) {
+    lines.push(`| ${r.link} | ${r.kind} | ${r.trust} | ${r.stale ? '⚠️ 过期' : '有效'} | ${r.firstLine.replace(/\|/g, '\\|')} |`);
+  }
+  lines.push('');
+
+  const indexPath = join(dir, 'index.md');
+  try {
+    writeFileSync(indexPath, lines.join('\n'), 'utf-8');
+    return indexPath;
+  } catch {
+    return null;
+  }
 }
