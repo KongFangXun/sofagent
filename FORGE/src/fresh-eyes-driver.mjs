@@ -3377,8 +3377,13 @@ async function main() {
     let runRoundResult;
     try {
       // v1.2.9 功能②：传入 resume 断点（含 completedWorkers），让 runRound 跳过已完成的 perspective worker
+      // v1.3.7 run-29 修复：completedWorkers 只对「被续跑的那一轮」生效——
+      // 此前 resumeState 原样传入每一轮，Round N+1 作为全新轮也被迫跳过 24 个
+      // worker，但其 round-N+1/ 目录是空的 → consolidate INPUT-MISSING 降级 ×3
+      // → consecutive-degraded-error 优雅退出（run-29 实录）。
+      const isResumedRound = round === resumeState?.round;
       runRoundResult = await runRound(round, runDir, args.target, args.dryRun, {
-        resumeState: resumeState,
+        resumeState: isResumedRound ? resumeState : null,
         maxRounds: args.maxRounds,
       });
     } finally {
