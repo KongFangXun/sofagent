@@ -1,0 +1,39 @@
+{
+  "name": "ai",
+  "version": "1.0.0",
+  "description": "AI 行业 overlay——模型选型审计 + agent 安全治理（v1.3.7 交付④）",
+  "author": "sofagent",
+  "homepage": "https://github.com/KongFangXun/sofagent",
+  "rules": [
+    {
+      "id": "ai-model-registration",
+      "name": "模型选型审计",
+      "description": "模型调用端点/供应商变更必须走 model_register 注册（不留野模型）",
+      "severity": "WARN",
+      "type": "pattern",
+      "pattern": "(?i)(baseURL|base_url|api_base)\\s*[:=]\\s*['\"]https?://(?!localhost|127\\.0\\.0\\.1)",
+      "message": "检测到直连模型端点——AI 行业最佳实践：模型接入走 model_register 注册+灰度（审计可追溯）",
+      "files": "\\.(ts|js|py|json|yml)$"
+    },
+    {
+      "id": "ai-agent-permission-hardcode",
+      "name": "agent 权限硬编码检测",
+      "description": "agent 权限配置不得绕过场景权限体系硬编码 allow",
+      "severity": "FAIL",
+      "type": "pattern",
+      "pattern": "(?i)(permissions?|tools?)\\s*:\\s*\\[?\\s*['\"]?\\*['\"]?",
+      "message": "检测到通配权限（tools: * / permissions: *）——agent 治理红线：必须显式最小权限集",
+      "files": "\\.(json|yml|yaml)$"
+    },
+    {
+      "id": "ai-prompt-leak",
+      "name": "系统提示词泄漏防护",
+      "description": "系统提示词不得写入日志或返回给终端用户",
+      "severity": "WARN",
+      "type": "pattern",
+      "pattern": "(?i)(console\\.(log|info)|logger\\.(info|debug))\\s*\\(\\s*['\"]?\\$?\\{?(systemPrompt|SYSTEM_PROMPT)",
+      "message": "检测到系统提示词进日志——agent 安全治理：prompt 是攻击面，不落日志",
+      "files": "\\.(ts|js|py)$"
+    }
+  ]
+}

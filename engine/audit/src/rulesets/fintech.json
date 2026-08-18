@@ -1,0 +1,39 @@
+{
+  "name": "fintech",
+  "version": "1.0.0",
+  "description": "金融行业 overlay——反洗钱留痕 + 交易审计双通道 + 监管报送（v1.3.7 交付④）",
+  "author": "sofagent",
+  "homepage": "https://github.com/KongFangXun/sofagent",
+  "rules": [
+    {
+      "id": "fin-aml-trail",
+      "name": "反洗钱留痕",
+      "description": "涉及交易/账户/客户资金的代码变更必须包含审计留痕调用",
+      "severity": "FAIL",
+      "type": "pattern",
+      "pattern": "(?i)(transaction|transfer|payment|withdrawal)\\s*[=:].*(?!audit_log)",
+      "message": "金融变更疑似缺少审计留痕：交易相关逻辑必须接入 audit_log 双通道",
+      "files": "\\.(ts|js|py|java)$"
+    },
+    {
+      "id": "fin-dual-channel",
+      "name": "交易审计双通道",
+      "description": "交易逻辑变更必须同时走本地审计 + 监管报送通道（双写）",
+      "severity": "WARN",
+      "type": "pattern",
+      "pattern": "(?i)regulator(y)?_report\\s*=\\s*false|skipRegulatoryReport",
+      "message": "检测到监管报送通道被关闭——金融场景必须双通道并行",
+      "files": "\\.(ts|js|yml|yaml|json)$"
+    },
+    {
+      "id": "fin-customer-data-mask",
+      "name": "客户身份信息脱敏",
+      "description": "身份证号/银行卡号不得明文出现在日志或测试 fixture",
+      "severity": "FAIL",
+      "type": "pattern",
+      "pattern": "(?i)(id_card|idcard|bank_card|card_no)\\s*[:=]\\s*['\"][0-9Xx]{15,19}['\"]",
+      "message": "检测到明文证件号/卡号——金融场景必须脱敏（运行时拼接或占位符）",
+      "files": "\\.(ts|js|py|java|json|yml)$"
+    }
+  ]
+}

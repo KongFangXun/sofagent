@@ -1,0 +1,39 @@
+{
+  "name": "medical",
+  "version": "1.0.0",
+  "description": "医疗行业 overlay——患者数据保护 + 诊断必须人工复核（v1.3.7 交付④）",
+  "author": "sofagent",
+  "homepage": "https://github.com/KongFangXun/sofagent",
+  "rules": [
+    {
+      "id": "med-phi-plain",
+      "name": "患者隐私数据明文检测",
+      "description": "PHI（病历/诊断/检验结果）不得明文写入非加密存储或日志",
+      "severity": "FAIL",
+      "type": "pattern",
+      "pattern": "(?i)(diagnosis|medical_record|patient_history)\\s*[:=]\\s*['\"][^'\"]{10,}['\"]",
+      "message": "检测到疑似明文 PHI 数据——医疗场景必须加密或脱敏后存储",
+      "files": "\\.(ts|js|py|json|yml)$"
+    },
+    {
+      "id": "med-auto-diagnosis",
+      "name": "诊断必须人工复核",
+      "description": "AI 自动诊断结论不得绕过人工复核直接下发给患者",
+      "severity": "FAIL",
+      "type": "pattern",
+      "pattern": "(?i)(auto_approve|bypass_review|skip_doctor)\\s*[:=]\\s*true|sendDiagnosis\\(.*withoutReview",
+      "message": "检测到诊断结论绕过人工复核——医疗红线：AI 只可辅助，下诊断必须医生签字",
+      "files": "\\.(ts|js|py|java)$"
+    },
+    {
+      "id": "med-external-share",
+      "name": "患者数据外传限制",
+      "description": "患者数据不得推送到外部第三方端点（科研豁免需显式声明）",
+      "severity": "FAIL",
+      "type": "pattern",
+      "pattern": "(?i)(patient|phi|ehr).*(https?://(?!localhost|127\\.0\\.0\\.1|internal\\.))",
+      "message": "检测到患者数据关联外部端点——医疗数据不出院（科研豁免需登记）",
+      "files": "\\.(ts|js|py|yml|json)$"
+    }
+  ]
+}

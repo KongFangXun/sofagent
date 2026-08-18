@@ -1,0 +1,39 @@
+{
+  "name": "government",
+  "version": "1.0.0",
+  "description": "政务行业 overlay——数据不出专网 + 国密算法 + 等保三级（v1.3.7 交付④）",
+  "author": "sofagent",
+  "homepage": "https://github.com/KongFangXun/sofagent",
+  "rules": [
+    {
+      "id": "gov-data-egress",
+      "name": "数据不出专网",
+      "description": "政务数据操作不得指向专网（*.gov.cn 内网）之外的端点",
+      "severity": "FAIL",
+      "type": "pattern",
+      "pattern": "(?i)(citizen|gov_data|政务服务).*(https?://(?!localhost|127\\.0\\.0\\.1|\\.gov\\.cn|10\\.|192\\.168\\.))",
+      "message": "检测到政务数据关联外部端点——政务数据不出专网（等保三级红线）",
+      "files": "\\.(ts|js|py|java|yml|json)$"
+    },
+    {
+      "id": "gov-crypto-sm",
+      "name": "国密算法约束",
+      "description": "新增加密调用应使用国密（SM2/SM3/SM4）——非国密算法用于政务数据需豁免登记",
+      "severity": "WARN",
+      "type": "pattern",
+      "pattern": "(?i)createCipher(iv)?\\(['\"](aes|des|rc4)",
+      "message": "检测到非国密加密算法用于新代码——政务场景优先 SM2/SM3/SM4（豁免需登记）",
+      "files": "\\.(ts|js|py|java)$"
+    },
+    {
+      "id": "gov-audit-log-l3",
+      "name": "等保三级审计留痕",
+      "description": "涉及行政审批流的变更必须保留六级审计要素（时间/主体/客体/动作/结果/溯源）",
+      "severity": "WARN",
+      "type": "pattern",
+      "pattern": "(?i)(approval|审批)\\s*flow.*(?!audit)",
+      "message": "审批流变更请确认审计留痕含等保三级六要素",
+      "files": "\\.(ts|js|java)$"
+    }
+  ]
+}
