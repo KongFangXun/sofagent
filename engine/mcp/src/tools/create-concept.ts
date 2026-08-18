@@ -149,7 +149,7 @@ export function createConcept(args: CreateConceptArgs): CreateConceptResult {
     };
   }
 
-  // v1.3.7 ⑥ OKF ①：type 必填校验（OKF 唯一强制字段——缺 type 拒绝写入返回结构化错误）
+  // v1.3.6 · v1.3.7 开发⑥ OKF ①：type 必填校验（OKF 唯一强制字段——缺 type 拒绝写入返回结构化错误）
   // 存量条目读取容忍缺 type（宽容性原则）；写入侧强制。
   const fmCheck = parseFrontmatter(content);
   if (!fmCheck || typeof fmCheck['type'] !== 'string' || (fmCheck['type'] as string).trim() === '') {

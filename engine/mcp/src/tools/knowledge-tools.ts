@@ -54,7 +54,7 @@ export function searchKnowledge(args: Record<string, unknown>): ToolResult | { e
         const name = f.replace(/\.md$/, '');
         if (name.toLowerCase().includes(query) || content.toLowerCase().includes(query)) {
           const firstLine = content.split('\n').find((l) => l.trim() && !l.startsWith('---')) || '';
-          // v1.3.7 ⑥ OKF ②：过期条目标注 + 信任分层推导（人审>机审>未审）
+          // v1.3.6 · v1.3.7 开发⑥ OKF ②：过期条目标注 + 信任分层推导（人审>机审>未审）
           const okf = parseOkfFields(content);
           matches.push({
             path: `${kind}/${f}`, kind, firstLine: firstLine.slice(0, 100),
@@ -82,7 +82,7 @@ export function searchKnowledge(args: Record<string, unknown>): ToolResult | { e
 }
 
 /**
- * v1.3.7 ⑥ OKF ②：从 frontmatter 解析信任/时效字段。
+ * v1.3.6 · v1.3.7 开发⑥ OKF ②：从 frontmatter 解析信任/时效字段。
  * - stale_after：today ≥ stale_after → stale=true（检索标注/降权）
  * - verified：最新一条 by 前缀推导信任层（human: > process: > 其他/unverified）
  */
@@ -306,7 +306,7 @@ export function stats(): ToolResult {
 }
 
 // ============================================================
-// v1.3.7 ⑥ OKF ③：index.md 链接化（渐进披露）
+// v1.3.6 · v1.3.7 开发⑥ OKF ③：index.md 链接化（渐进披露）
 // ============================================================
 
 /**

@@ -95,7 +95,7 @@ function scanEntityFrontmatter(knowledgeDir: string): OntologyObject[] {
       const type = (fm['type'] || 'entity') as string;
       const relations = (fm['relations'] || {}) as OntologyObject['relations'];
 
-      // v1.3.7 ⑥：生命周期 + OKF ② 信任/时效字段（缺省 branch——新实体默认试验态）
+      // v1.3.6 · v1.3.7 开发⑥：生命周期 + OKF ② 信任/时效字段（缺省 branch——新实体默认试验态）
       const lifecycleRaw = fm['lifecycle'];
       const lifecycle: OntologyObject['lifecycle'] =
         lifecycleRaw === 'trunk' || lifecycleRaw === 'branch' ? lifecycleRaw : 'branch';
@@ -311,7 +311,7 @@ export function mergeOntology(configDir: string): MergedOntology {
       type: o.type,
       relations: o.relations,
       source: o.source,
-      // v1.3.7 ⑥：lifecycle + OKF 字段随合并输出（trunk/branch 区分基线/试验资产）
+      // v1.3.6 · v1.3.7 开发⑥：lifecycle + OKF 字段随合并输出（trunk/branch 区分基线/试验资产）
       lifecycle: o.lifecycle ?? 'branch',
       status: o.status,
       stale_after: o.stale_after,
@@ -414,7 +414,7 @@ export function checkOntologyStatus(configDir: string): { exists: boolean; fresh
 }
 
 // ============================================================
-// v1.3.7 ⑥：lifecycle 状态迁移（branch → trunk 审阅门）
+// v1.3.6 · v1.3.7 开发⑥：lifecycle 状态迁移（branch → trunk 审阅门）
 // ============================================================
 
 /** 迁移请求 */

@@ -24,9 +24,9 @@ interface OntologyObjectEntry {
   description?: string;
   relations?: Record<string, string[]>;
   source?: string;
-  /** v1.3.7 ⑥：生命周期（trunk=基线资产 / branch=试验资产） */
+  /** v1.3.6 · v1.3.7 开发⑥：生命周期（trunk=基线资产 / branch=试验资产） */
   lifecycle?: string;
-  /** v1.3.7 ⑥ OKF ②：信任/时效字段 */
+  /** v1.3.6 · v1.3.7 开发⑥ OKF ②：信任/时效字段 */
   status?: string;
   stale_after?: string;
   verified?: Array<{ by?: string; at?: string }>;
@@ -118,7 +118,7 @@ export function generateOntologyView(projectDir: string): string {
   lines.push(`| 动作 (actions) | ${actions.length} |`);
   lines.push(`| 约束 (constraints) | ${constraints.length} |`);
 
-  // v1.3.7 ⑥：lifecycle 统计——基线/试验资产分层（能力地图可辨）
+  // v1.3.6 · v1.3.7 开发⑥：lifecycle 统计——基线/试验资产分层（能力地图可辨）
   const trunkCount = objects.filter((o) => (o?.lifecycle ?? 'branch') === 'trunk').length;
   const branchCount = objects.length - trunkCount;
   lines.push(`| 🌳 基线资产 (trunk) | ${trunkCount} |`);
@@ -127,7 +127,7 @@ export function generateOntologyView(projectDir: string): string {
 
   // ── 实体 ──
   if (objects.length > 0) {
-    // v1.3.7 ⑥：trunk 在前（基线资产一眼可辨），branch 在后（试验资产不误导复用）
+    // v1.3.6 · v1.3.7 开发⑥：trunk 在前（基线资产一眼可辨），branch 在后（试验资产不误导复用）
     const sorted = [...objects].sort((a, b) => {
       const la = a?.lifecycle ?? 'branch';
       const lb = b?.lifecycle ?? 'branch';
@@ -148,7 +148,7 @@ export function generateOntologyView(projectDir: string): string {
       if (obj.type) lines.push(`- **类型**: \`${obj.type}\``);
       if (obj.description) lines.push(`- **描述**: ${obj.description}`);
       if (obj.source) lines.push(`- **来源**: \`${obj.source}\``);
-      // v1.3.7 ⑥ OKF ②：信任/时效展示
+      // v1.3.6 · v1.3.7 开发⑥ OKF ②：信任/时效展示
       if (obj.status) lines.push(`- **状态**: \`${obj.status}\``);
       if (obj.stale_after) {
         const stale = new Date(obj.stale_after) <= new Date();

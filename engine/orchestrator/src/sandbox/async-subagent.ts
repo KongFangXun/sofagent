@@ -1,6 +1,6 @@
 // ============================================================
 // sandbox/async-subagent.ts · AsyncSubAgent 独立进程执行（Agent Protocol）
-// v1.3.7 交付① 新增
+// v1.3.6 · v1.3.7 开发① 新增
 //
 // 设计（changelog §一 + 开工决议 4）：
 //   SubAgent 可在独立进程运行——本版只做「独立进程」（Agent Protocol 服务端
