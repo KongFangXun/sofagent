@@ -164,19 +164,19 @@ Community rulesets are published as `sofagent-ruleset-*` npm packages and auto-d
 - **Methodology path** (zero dependencies): read [FDE/GUIDE.md](./FDE/GUIDE.md) and map workflows manually following the handbook — Excel + your own brain is enough
 - **Tooling path** (Node.js ≥ 18): after installing, tell your AI tool "run an FDE diagnosis for me" and the Agent guides you from the entry phase
 
-## New in v1.3.6
+## New in v1.3.7
 
-> 🧠 **v1.3.6 new capabilities** (engine interface externalization — full edition, the prerequisite for model-layer integration), grouped by theme:
-> - **Three data interfaces (inbound)**: 📥 Workflow standard format + runtime container (JSON Schema as single source of truth + `workflow_submit`, with merge_criteria/approver review-protocol fields — workflows become change proposals) / Ontology standard Schema registration (`ontology_import`: validate → register → D1-D5 audit trail, rollback on failure) / Model registration + canary switching (`model_register` / `model_switch` / `model_unregister` — evaluate → register → canary → promote, fully audited with mandatory human review)
-> - **One code interface**: 🧩 SubAgent hosting SDK — `harness.wrap()` wraps a LangGraph Agent with audit / approval / identity / Trace out of the box (compatible with both createReactAgent and bare StateGraph)
-> - **Training protocol front-loaded**: 🏋️ three conventions (job.json single-file launch / stdout JSON-line reporting / SIGINT graceful shutdown) + budget control (`train_budget` — auto-pause on breach, human review to resume/abort)
-> - **Closing the convergence gap**: ✅ machine-decidable acceptance — `define_acceptance` attaches verifiable acceptance criteria at task creation (tests pass / build succeeds / grep finds no X / schema validates), `check_acceptance` runs them after changes and returns structured results (reusing the Benchmark verdict engine)
-> - **Decision explainability**: 🧭 EndpointProfile capability profiles + route-policy.yml preference policy + structured routeReason chain (policy / matched endpoint / rejected endpoints / decision score) — routing decisions become questionable instead of black-box
-> - **Reliability five-piece set**: 🛡️ Review-loop worktree isolation (review workers physically separated from the main repo — root fix for concurrent-write incidents) / dual-gate verification (postToolCall side-effect review: file scope + git impact + outbound network) / Agent fatigue detection (3 signals, weighted score → compact/restart recommendation) / tiered degradation ladder (full→rules-only→minimal→safe-stop, every degradation audited) / decisions.jsonl full edition (route/select/skip/retry/escalate five categories + multi-dimensional queries)
-> - **Narrative upgrade**: 🌳 FDE docs grow from "a single capability tree" to "a repository forest" — GitHub-style protocols as the collaboration substrate, horizontal flow (cross-repo PRs) + the sixth question "does the output enter the trunk?"
+> 🏰 **v1.3.7 new capabilities** (SubAgent full sandbox + scenario-driven permissions + AgentShield + industry overlays + circuit breaker + ontology lifecycle):
+> - **SubAgent full sandbox**: 🏰 virtual filesystem (writes land in a virtual layer first, atomically merged after approval + HMAC-chained evidence stream) / network egress whitelist (DNS tunneling + raw sockets all intercepted; domain-suffix + CIDR) / tool-call mediation (Symbol unique-ID verdicts, unregistered = fail-closed) / virtual keys (vk- prefix + scope data-flow contract + token-bucket rate limit + log masking) / AsyncSubAgent standalone process (stdout JSON lines + SIGINT graceful shutdown) / true real-time A/B dual-run (parallel in isolation + line-level diff) — the full prerequisite for v1.3.8 `sandbox:true`
+> - **Scenario-driven permissions**: 🔐 identity → scenario match → risk level → allow/deny/human approval, every step logged to decision-log; three DSH hard constraints (fail-closed / guard before event dispatch / least privilege); sensitive domains auto-escalate (audit-data writes/deletes always critical)
+> - **AgentShield five scans**: 🛡️ MCP config risk profiling / hook injection analysis / agent config review (negative-lookahead assertions exclude "do-not-ignore" phrasing) / enhanced secret detection / **Shadow AI discovery** (scans processes/configs/repos for unregistered "shadow agents") — static & deterministic, zero LLM self-assessment
+> - **Four industry overlays**: 🏥 fintech (AML trails) / medical (PHI protection) / government (grade-keeping) / ai (model registration) — auto-loaded from context.md `industry:`; conservative default when untagged
+> - **Circuit breaker + behavior monitoring**: ⚡ consecutive-failure tripping with cooldown half-open probing (ASI08) / three-metric sliding window isolating runaway agents back to human control (ASI10, sandbox-linked: isolated agents take no new tasks)
+> - **Ontology lifecycle**: 🌳 branch/trunk lifecycle + review gate `migrateToTrunk` (approver required) + OKF trio (mandatory type / stale_after trust freshness / verified human>process tiering)
+> - **Adaptive review-loop concurrency**: ⚙️ concurrency from a physical-memory budget table (8GB→1 … ≥48GB→6) + OOM tripping degradation; all LLM calls timeout+retry protected
+> - **26 independent-review bugfixes**: 🛡️ all four 16-perspective review rounds fixed (verify-commit whitewash chain / installer-chain broken links / gate three-state — 4 P0s rooted out + four red-team defense upgrades)
 >
-> **8 new MCP tools (52 → 60)**: `workflow_submit` · `ontology_import` · `model_register` · `model_switch` · `model_unregister` · `train_budget` · `define_acceptance` · `check_acceptance`
-> See [v1.3.6 devlog](./docs/changelog/v1.3/v1.3.6.md). Earlier versions in [CHANGELOG](./CHANGELOG.md).
+> See [v1.3.7 devlog](./docs/changelog/v1.3/v1.3.7.md). Earlier versions in [CHANGELOG](./CHANGELOG.md).
 
 ## Why sofagent
 

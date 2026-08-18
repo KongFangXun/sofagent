@@ -169,19 +169,19 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # 加载安全规�
 - **方法论路径**（零依赖）：读 [FDE/GUIDE.md](./FDE/GUIDE.md)，按手册手动梳理工作流，Excel + 人脑也能跑
 - **工具路径**（Node.js ≥ 18）：FDE 在企业设备上跑 install.sh 装好约束层后，用自己的 AI 工具说"帮我做 FDE 诊断"，Agent 从进场开始引导
 
-## v1.3.6 新能力
+## v1.3.7 新能力
 
-> 🧠 **v1.3.6 新能力**（引擎接口外化完整版——模型层接入前置，按主题分组）：
-> - **三个数据接口（进）**：📥 Workflow 标准格式 + 运行容器（JSON Schema 单一事实源 + `workflow_submit`，含 merge_criteria/approver 审阅协议字段——workflow 升级为变更提案）/ Ontology 标准 Schema 注册（`ontology_import`，校验→注册→D1-D5 留痕，失败可回滚）/ 模型注册 + 灰度切换（`model_register` / `model_switch` / `model_unregister`，评测→注册→灰度→晋升全流程审计 + 强制人审）
-> - **一个代码接口**：🧩 SubAgent 托管 SDK——`harness.wrap()` 包装 LangGraph Agent 自动获得审计/审批/身份/Trace（createReactAgent 与纯 StateGraph 双形态兼容）
-> - **训练协议前移**：🏋️ 三约定（job.json 单文件启动 / stdout JSON 行回报 / SIGINT 优雅退出）+ 预算控制（`train_budget`，超限自动暂停 + 人审续跑/终止）
-> - **收敛鸿沟的直接解**：✅ 机器可判定验收——`define_acceptance` 任务创建时附验收条件（测试通过/build 成功/grep 无 X/schema 校验）+ `check_acceptance` 修改后跑验收返回结构化结果（复用 Benchmark 判定引擎）
-> - **决策可解释性**：🧭 EndpointProfile 能力画像 + route-policy.yml 偏好策略 + routeReason 结构化理由链（policy/匹配端点/拒绝端点/决策分），路由决策从黑盒变可追问
-> - **可靠性五件**：🛡️ 审查循环 worktree 隔离（审查 worker 与主仓物理分离，根治并发互写事故）/ 双闸验证（postToolCall 副作用复查：文件范围 + git 影响 + 网络外联）/ Agent 疲劳度检测（3 信号加权评分 → compact/重启建议）/ 分级降级梯队（full→rules-only→minimal→safe-stop，每次降级留痕）/ decisions.jsonl 完整版（route/select/skip/retry/escalate 五分类 + 多维查询）
-> - **叙事升级**：🌳 FDE 文档从「单棵能力树」升级为「仓库森林」——GitHub 式协议当协作底座，横向流动（跨树 PR）+ 第六问「产出进不进树干」
+> 🏰 **v1.3.7 新能力**（SubAgent 完整沙箱 + 场景驱动权限 + AgentShield + 行业 overlay + 断路器 + ontology 生命周期）：
+> - **SubAgent 完整沙箱**：🏰 虚拟文件系统（写入先进虚拟层，审批后原子落盘 + 证据流 HMAC 链）/ 网络出站白名单（DNS 隧道 + raw socket 全拦，域名后缀 + CIDR）/ 工具调用中介（Symbol 唯一 ID 判定，未注册 fail-closed）/ 虚拟 key（vk- 前缀 + scope 数据流契约 + token bucket 限速 + 日志脱敏）/ AsyncSubAgent 独立进程（stdout JSON 行 + SIGINT 优雅退出）/ 真·实时 A/B 双跑（隔离环境并行 + 行级 diff）——v1.3.8 `sandbox:true` 的完整前置
+> - **场景驱动权限**：🔐 身份→场景匹配→风险等级→放行/deny/人工批准，每步 decision-log 留痕；DSH 三硬约束（fail-closed / 守卫先于事件分发 / 最小权限面）；敏感域自动提级（审计数据写删一律 critical）
+> - **AgentShield 五类扫描**：🛡️ MCP 配置风险画像 / Hook 注入分析 / Agent 配置审查（否定后行断言排除反向表述）/ 密钥检测增强 / **Shadow AI 发现**（扫进程/配置/仓库，揪出未注册的「影子 agent」）——静态确定性，零 LLM 自评
+> - **行业 overlay 四套**：🏥 fintech（反洗钱留痕）/ medical（PHI 保护）/ government（等保留痕）/ ai（模型注册）——context.md `industry:` 自动加载，未标注保守默认
+> - **断路器 + 行为监控**：⚡ 连败熔断 + 冷却 half-open 探测自动恢复（ASI08）/ 三指标滑窗超阈值隔离切人工（ASI10，与沙箱联动：隔离态不接新任务）
+> - **ontology 生命周期**：🌳 lifecycle branch/trunk + 审阅门 `migrateToTrunk`（approver 必填）+ OKF 三件套（type 必填 / stale_after 信任时效 / verified 人审>机审分层）
+> - **审查循环自适应并发**：⚙️ 按物理内存预算表自动取并发（8GB→1 ... ≥48GB→6）+ OOM 熔断降级；LLM 调用全程 timeout+retry
+> - **26 项独立审查 bugfix**：🛡️ 四轮 16 视角审查全数修复（verify-commit 洗白链 / 安装链断链 / 门禁三态等 4 P0 根治 + 红队四项防御增强）
 >
-> **8 个新 MCP tool（52 → 60）**：`workflow_submit` · `ontology_import` · `model_register` · `model_switch` · `model_unregister` · `train_budget` · `define_acceptance` · `check_acceptance`
-> 详见 [v1.3.6 开发日志](./docs/changelog/v1.3/v1.3.6.md)。更早版本见 [CHANGELOG](./CHANGELOG.md)。
+> 详见 [v1.3.7 开发日志](./docs/changelog/v1.3/v1.3.7.md)。更早版本见 [CHANGELOG](./CHANGELOG.md)。
 
 ## 为什么选 sofagent
 

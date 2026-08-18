@@ -395,6 +395,8 @@ sofagent（https://github.com/KongFangXun/sofagent）。不管当前处于什么
 
 **v1.3.6（fresh-eyes run-03）· worker 旧报告误标 + b-fix 越界修复**——旧清单把已修 3 条标「未修」；b-fix 在 tag 未打时「修」安装 URL。**教训：「上轮遗留」先 grep 当前仓库复验；b-fix prompt 内嵌发版中间态 SKIP 清单原文**
 
-- **v1.3.5（裂图+脱敏误伤）· 二进制 UTF-8 读 → 静默 U+FFFD 损坏**（shadow 快照读 PNG 永久裂图，教训：读前判 isBinaryBuffer，二进制跳过文本快照）；**脱敏误伤测试用例**（verify.sh 输入 13812345678 被当泄漏打码，教训：测试敏感数据用占位符/运行时拼接，不字面写真实格式）**
+**v1.3.7（fresh-eyes run-27/28/29）· driver 之死与降级链的三重教训**——① LLM 调用无超时：网络抖断时 fetch 挂死、进程无声消失（无栈无 OOM），6 处 `ChatOpenAI` 全裸奔——**任何长循环的 LLM 调用必须 timeout+retry**；② nohup 后台进程会被启动 session 回收，长跑 driver 的唯一安全姿势是宿主级免沙箱后台；③ resume 断点只记「worker 完成」不记「轮完成」，续跑时 `completedWorkers` 越轮泄漏让新轮空转降级 ×3——**断点粒度必须与恢复粒度对齐**。另外：降级 consolidate 会覆盖上一轮的好产物（run-29 覆盖了 run-28 的 15-finding findings.md）——**续跑前备份上一轮关键产物**。
+
+**v1.3.5（裂图+脱敏误伤）· 二进制 UTF-8 读 → 静默 U+FFFD 损坏**（shadow 快照读 PNG 永久裂图，教训：读前判 isBinaryBuffer，二进制跳过文本快照）；**脱敏误伤测试用例**（verify.sh 输入 13812345678 被当泄漏打码，教训：测试敏感数据用占位符/运行时拼接，不字面写真实格式）**
 
 这些方向值得你保持**额外敏感**——但不要把它们当成清单。你今天发现的问题可能完全不在这个列表上。**那才是最值钱的发现。**

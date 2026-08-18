@@ -1201,7 +1201,10 @@ if $S145_OK; then
 fi
 S146_OK=true; # 清理可能存在的残留
 rm -rf "$PROJECT_ROOT/data/" 2>/dev/null
-( trap 'exit 0' HUP; set +e; NODE_OPTIONS="--max-old-space-size=4096" npx vitest run engine/audit/src/__tests__/session-report.test.ts >/dev/null 2>&1 ) 2>/dev/null || true
+# v1.3.7：heap 4096→2048——8GB 机器在常驻服务（openclaw/MemoryKnowledge/WorkBuddy）挤压下
+# 4096 上限必触发系统级 OOM kill（acceptance 整体 137 三连实录，死点全在此）；2048 与
+# 全仓 vitest 默认一致，session-report 单文件测试足够
+( trap 'exit 0' HUP; set +e; NODE_OPTIONS="--max-old-space-size=2048" npx vitest run engine/audit/src/__tests__/session-report.test.ts >/dev/null 2>&1 ) 2>/dev/null || true
 if [ -d "$PROJECT_ROOT/data/" ]; then fail "data/ 泄露到项目目录——F-39 修复无效"; S146_OK=false; else pass "data/ 未泄露——session-report 正确写入 ~/.sofagent/data/audit/"; fi
 S147_OK=true; DASH="$PROJECT_ROOT/tools/sofagent-dashboard.sh"
 [ -f "$DASH" ] || { fail "sofagent-dashboard.sh 不存在"; S147_OK=false; }
@@ -2614,6 +2617,17 @@ grep -q "resolvePersonaSources" "$PROJECT_ROOT/engine/core/src/filesystem/memory
 grep -q "SOFAGENT_PERSONA_SOURCE" "$PROJECT_ROOT/engine/core/src/filesystem/memory-sync.ts" || S292_OK=false  # env 最高优先
 grep -q "resolveMaxConcurrency" "$PROJECT_ROOT/FORGE/src/driver-base.mjs" || S292_OK=false  # ⑦自适应并发（顺带锚点）
 $S292_OK && pass "lifecycle 审阅门+OKF 三件套+memory-sync 通用化+自适应并发在位" || fail "v1.3.7 ontology/OKF/memory-sync 缺件"
+
+scenario 293 "v1.3.7 阶段四基建加固——FORGE driver LLM 超时 + resume 轮次守卫 + rm-rf 口径同源（run-27/28/29 三死教训）"
+S293_OK=true
+# LLM 超时四文件（BSD grep -c 多文件输出逐行 filename:N——awk 数非零行，勿嵌套 grep -c）
+S293_FILES=$(grep -c 'timeout: 600_000' "$PROJECT_ROOT/FORGE/src/driver-base.mjs" "$PROJECT_ROOT/FORGE/src/fresh-eyes-driver.mjs" "$PROJECT_ROOT/FORGE/src/release-gate-driver.mjs" "$PROJECT_ROOT/FORGE/src/tool-output-budget.mjs" 2>/dev/null | awk -F: '$NF>0{n++} END{print n+0}')
+[ "$S293_FILES" -ge 4 ] || S293_OK=false  # LLM 超时四文件
+grep -q 'round === resumeState?.round' "$PROJECT_ROOT/FORGE/src/fresh-eyes-driver.mjs" || S293_OK=false  # resume 越轮守卫
+grep -q '(?!tmp|home' "$PROJECT_ROOT/engine/audit/src/rules/skill-safety-rules.ts" || S293_OK=false  # rm-rf 豁免（skill-safety 侧）
+grep -q '(?!tmp|home' "$PROJECT_ROOT/engine/audit/src/agent-shield.ts" || S293_OK=false  # rm-rf 豁免（shield 侧）
+grep -q "仅需 Node.js" "$PROJECT_ROOT/docs/VALIDATION.md" || S293_OK=false  # finding-04 措辞修复
+$S293_OK && pass "driver 超时+resume 守卫+rm-rf 同源+VALIDATION 措辞在位" || fail "阶段四基建加固缺件"
 
 
 echo -e "  验收测试结果：${GREEN}$PASSED 通过${NC} / ${RED}$FAILED 失败${NC} / 共 $((PASSED + FAILED))"
