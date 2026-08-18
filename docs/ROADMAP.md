@@ -156,6 +156,10 @@ sofagent 的定位正卡在这个转折点上：审计引擎（治理侧）+ Ont
 | **goal 级持久状态内核（Loop Engineering 控制面启发 · 2026-08-19 新增）** | 长程目标的状态收拢——goal/todo/gate/quota/evidence 聚为一个持久状态层，看板只是投影，状态层才是事实源。与我们现状的差距：workflow 是流程，ontology 是资产，还缺「目标生命周期」这个维度（目标变化/证据过期/agent 交接时状态怎么续）。与 v1.3.9 worklog 数据层呼应，暂占概念位 |
 | **成本控制前移：quota 事前门禁（Loop Engineering 控制面启发 · 2026-08-19 新增）** | 每轮执行前先问配额、验证过的回写才记 spend——成本从「事后记账」前移为「事前问路」，与 v1.3.7「守卫先于事件分发」哲学同向。v1.4.0 成本审计 WARN only 为起点，事前门禁为演进方向 |
 | **证据强度分级标注（Loop Engineering 控制面启发 · 2026-08-19 新增）** | 对外展示的案例/证据按来源强度分级（公开可查 / 用户自报 / 自测自报），只维护最强少数案例——防止把自测当实证。当前 VALIDATION/THANKS 有来源纪律但无强度分级，发版 SOP 可吸收 |
+| **运行时 should-run 判定链（Loop Engineering 控制面启发 · 2026-08-19 新增）** | 每轮开工前统一问一遍的判定链：健康 → 人审 gate → 证据等待 → 专注等待 → 配额，全部通过才执行——断路器（v1.3.7）两态的丰富形态，等运行时数据积累后评估演化 |
+| **任务租约两层机制（Loop Engineering 控制面启发 · 2026-08-19 新增）** | 软租约（claimed_by 可见性标注）+ 硬租约（owner/TTL/幂等/转移，竞争单元 per-todo 非 per-goal）——L2 协作与 MergeQueue 的未来演化形态，当前 leader 编排够用，换租约是大架构决策 |
+| **通知冷却窗口（Loop Engineering 控制面启发 · 2026-08-19 新增）** | 人审 gate 重复通知抑制 + 冷却窗口——企业 webhook 推送会通知轰炸的解法，待网关/推送场景积累痛点数据后评估 |
+| **依赖方向架构测试（Loop Engineering 控制面启发 · 2026-08-19 新增）** | CI 强制包依赖方向（控制面不得依赖展示/CLI 层）——审查视角有但 CI 无强制，低成本高价值，需先定包边界清单 |
 | **商业平台 平台接口预留（2026-08-17 新增 · 商业产品层前置）** | 商业平台（商业 SaaS 产品层，规划文档独立于本 MIT 仓库维护）需要 sofagent 预留的平台接口，提前定义、**逐条对应 v1.4.x 实际排期**：**G1 workflow 模板导出/导入 + 血缘追踪**（MCP `workflow_export`/`workflow_import`，挂靠 v1.4.4 模型注册器同类机制扩展——workflow 模板同样可注册，模板元数据加血缘字段）· **G2 能力缺口查询**（MCP `workflow_gaps`——读 workflow 状态找「缺人/缺能力的节点」，悬赏式 PR 的发现接口，**v1.4.7 承载**：依赖 worklog v1.3.9 + ontology lifecycle v1.3.7）· **G3 计量数据暴露**（**✅ v1.4.0 `cost_query` 已覆盖**——成本审计数据口，商业平台 credit 成本轨直接消费，无需新增）· **G4 绩效数据导出**（MCP `contribution_query`——读审计 + decision-log 算每人/每 workflow 贡献度，DKP 价值轨数据源，**v1.4.7 承载**：对齐 v1.4.5 量化四字段）· **G5 MCP 连接器注册/发现**（挂靠 v1.4.2「DB/API 数据源」扩展——企业存量系统 OA/CRM/ERP 经 MCP 接入，先打通「接入」，连接器注册/发现随 SaaS 需要再补）· **G6 节点级可见性元数据**（workflow schema 加 `visibility` 字段 open/private/result-only——任务面/数据面分离，审阅门按此执行，**v1.4.7 承载**）· **G7 多租户抽象层**（引擎层数据路径 `data/<tenant>/` 命名空间 + 审计/日志按租户隔离，**v1.4.7 v0**：数据路径抽象，隔离策略 v2.x 细化） |
 
 > 📖 DeerFlow / OpenFDE 方法论印证见 [VALIDATION](./VALIDATION.md)。
