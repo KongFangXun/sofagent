@@ -14,6 +14,7 @@
 | 4 | **🔴 `npm run build` 重建 dist 产物**（源码改了 dist 没改 = CLI 版本号不对） | `node engine/audit/dist/index.js --help` 显示正确版本 |
 | 5 | **跨文档锚点校验** | `node tools/check-anchors.mjs` 全绿 |
 | 6 | **🔴 hook 端到端实测**（见下方脚本） | 拦截 exit 2 + 放行 exit 0 |
+| 7 | **shell 变量定界守卫**：`tools/*.sh` 中 `$VAR` 后紧跟全角标点（`，`）`）`：`等 CJK 标点）= bash 把标点拼进变量名 → `set -u` 下 unbound 崩溃。v1.3.6 实案：pre-push-check.sh `$TEST_RC，` 潜伏一个月，仅在失败分支触发（08-18 commit 3ec97569 修复）。规则：变量后接 CJK 标点必须写成 `${VAR}` 显式定界 | `bash tools/check-cjk-var.sh` 全绿 |
 
 ---
 

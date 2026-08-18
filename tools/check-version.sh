@@ -745,7 +745,7 @@ while IFS= read -r line; do
   # 提取行中的数字 + 单位模式
   num_rules=$(echo "$line" | grep -oE "[0-9]+ (rules|条规则)" | grep -oE "^[0-9]+" | head -1)
   if [ -n "$num_rules" ] && [ "$num_rules" != "$TOTAL_RULES_COUNT" ]; then
-    echo "  ❌ $line （规则数 $num_rules ≠ SSOT $TOTAL_RULES_COUNT）"
+    echo "  ❌ ${line} （规则数 ${num_rules} ≠ SSOT ${TOTAL_RULES_COUNT}）"
     TABLE_DRIFT_OK=false
     ERRORS=$((ERRORS + 1))
   fi
@@ -755,7 +755,7 @@ NPM_PKG_COUNT=$(node -e "const p=require('./package.json'); console.log(p.worksp
 while IFS= read -r line; do
   num_npm=$(echo "$line" | grep -oE "[0-9]+ 个发布到 npm" | grep -oE "^[0-9]+" | head -1)
   if [ -n "$num_npm" ] && [ "$num_npm" != "$NPM_PKG_COUNT" ]; then
-    echo "  ❌ $line （npm 包数 $num_npm ≠ SSOT $NPM_PKG_COUNT）"
+    echo "  ❌ ${line} （npm 包数 ${num_npm} ≠ SSOT ${NPM_PKG_COUNT}）"
     TABLE_DRIFT_OK=false
     ERRORS=$((ERRORS + 1))
   fi

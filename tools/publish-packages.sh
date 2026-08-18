@@ -134,7 +134,7 @@ echo "$LAYERS" | while IFS=: read -r _ num pkgs_str; do
     fi
 
     if [ ! -d "$dir" ]; then
-      echo "  ❌ 目录不存在: $dir（包 $pkg）"
+      echo "  ❌ 目录不存在: ${dir}（包 ${pkg}）"
       echo "1" > "$PUBLISH_FAIL"
       continue
     fi
@@ -148,7 +148,7 @@ echo "$LAYERS" | while IFS=: read -r _ num pkgs_str; do
     if [ $publish_rc -eq 0 ]; then
       echo "$publish_output" | tail -1
     else
-      echo "  ❌ 发布失败: $pkg（exit $publish_rc）"
+      echo "  ❌ 发布失败: ${pkg}（exit ${publish_rc}）"
       echo "$publish_output" | tail -3
       echo "1" > "$PUBLISH_FAIL"
     fi
@@ -166,7 +166,7 @@ echo "$LAYERS" | while IFS=: read -r _ num pkgs_str; do
     if [ "$ver" = "$VERSION" ]; then
       echo "  ✓ $pkg@$ver"
     else
-      echo "  ❌ $pkg@$ver（期望 $VERSION）"
+      echo "  ❌ ${pkg}@${ver}（期望 ${VERSION}）"
       echo "1" > "$VERSION_FAIL"
     fi
   done

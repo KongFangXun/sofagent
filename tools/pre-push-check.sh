@@ -435,6 +435,20 @@ else
 fi
 
 # ════════════════════════════════════════
+echo -e "\n${BOLD}── 12. shell 变量定界守卫（CJK 标点）──${NC}"
+# v1.3.6 后新增：$VAR 后紧跟全角标点 = bash 把标点拼进变量名，set -u 下崩溃。
+# 实案：pre-push-check.sh $TEST_RC， 潜伏一个月（仅失败分支触发），08-18 修复
+if [ -f tools/check-cjk-var.sh ]; then
+  if bash tools/check-cjk-var.sh; then
+    check_pass "check-cjk-var.sh（\${VAR} 定界）"
+  else
+    check_fail "check-cjk-var.sh 发现变量定界违规（修法：花括号显式定界）"
+  fi
+else
+  check_warn "tools/check-cjk-var.sh 不存在（守卫缺失）"
+fi
+
+# ════════════════════════════════════════
 # 总结
 # ════════════════════════════════════════
 TOTAL=$((PASS + FAIL + WARN))
