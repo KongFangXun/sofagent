@@ -21,6 +21,8 @@
 # ============================================================
 
 set -uo pipefail
+# set -u 下必须预初始化：flaky 复跑分支首次追加前若未赋值会崩 unbound variable
+FLAKY_PKGS=""
 
 cd "$(dirname "$0")/.." || exit 1
 
