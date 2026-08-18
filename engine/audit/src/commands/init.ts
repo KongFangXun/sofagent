@@ -563,12 +563,19 @@ if [ -z "\$PARENT_SHA" ]; then
   PARENT_SHA='4b825dc642cb6eb9a060e54bf8d69288fbee4904'
 fi
 
+# 当前 commit 的 message 主题行——parentSha 匹配后叠加主题消歧，防跨 commit 误认领：
+# commit N 的 SHA 天然是 commit N+1 审计记录的 parentSha，--no-verify 绕过提交 B 后
+# 紧跟的正常提交 C 会让 B 的对账命中 C 的审计记录。记录的 task 字段（hook 写入时
+# 来自 commit message 主题行）须与本 commit 主题一致才认领。
+COMMIT_SUBJECT=$(git log -1 --pretty=%s HEAD 2>/dev/null)
+
 # v1.3.3 #17E: SHA / 路径通过 process.env 传入 node -e，不再字符串拼接（命令注入加固）
 # commit hash 对账：检查当前 commit 是否在审计记录中有对应条目
-COMMIT_SHA="$COMMIT_SHA" PARENT_SHA="$PARENT_SHA" HISTORY_FILE="$HISTORY_FILE" node -e '
+COMMIT_SHA="$COMMIT_SHA" PARENT_SHA="$PARENT_SHA" COMMIT_SUBJECT="$COMMIT_SUBJECT" HISTORY_FILE="$HISTORY_FILE" node -e '
 const fs = require("fs");
 const COMMIT_SHA = process.env.COMMIT_SHA;
 const PARENT_SHA = process.env.PARENT_SHA;
+const COMMIT_SUBJECT = (process.env.COMMIT_SUBJECT || "").trim();
 const HISTORY_FILE = process.env.HISTORY_FILE;
 if (!HISTORY_FILE) process.exit(0);
 const lines = fs.readFileSync(HISTORY_FILE, "utf-8").trim().split("\\n").filter(Boolean);
@@ -578,7 +585,10 @@ try {
   // 匹配规则（v1.3.3 #13 修正）：
   //   1. commitSha 精确匹配（手动 --diff 场景记录，HEAD 已存在）
   //   2. commitPhase=pre-commit 记录：parentSha = 审计时 HEAD = 新提交的父提交，
-  //      post-commit 用 HEAD^（当前提交的父）与之对账——父子关系正确匹配。
+  //      post-commit 用 HEAD^（当前提交的父）与之对账——父子关系正确匹配；
+  //      SHA 命中后叠加主题行消歧（记录 task vs 本 commit subject），防相邻
+  //      commit 的审计记录被误认领（--no-verify 绕过场景）。旧记录无 task/
+  //      commitMsg 可回退时退化为准 SHA 匹配（向后兼容）。
   //   旧记录无 parentSha/commitPhase 字段时规则 2 不生效，行为与旧版一致。
   for (let i = lines.length - 1; i >= 0; i--) {
     const entry = JSON.parse(lines[i]);
@@ -589,6 +599,15 @@ try {
       process.exit(0);  // 找到匹配——审计已运行
     }
     if (entry.commitPhase === "pre-commit" && entry.parentSha === PARENT_SHA) {
+      // 主题消歧：记录的 task（hook 写入时来自 commit message 主题行）与本 commit
+      // 主题不一致 → 这是相邻 commit 的审计记录，不认领，继续找。
+      const recordSubject = (typeof entry.task === "string" && entry.task.trim() !== ""
+        ? entry.task
+        : (typeof entry.commitMsg === "string" ? (entry.commitMsg.split("\\n")[0] || "") : "")
+      ).trim();
+      if (COMMIT_SUBJECT && recordSubject && recordSubject !== COMMIT_SUBJECT) {
+        continue;
+      }
       // v1.3.5 #2: 假阳性回声修复——命中 pre-commit 记录时必须校验该次审计的结果。
       // 此前无脑输出「✓ 审计通过」：带 token 提交被 commit-msg 拦截（exit 2，
       // 拦截记录带 parentSha）→ 同内容 --no-verify 强推 → post-commit 命中那条
@@ -636,6 +655,9 @@ exit 0
         // v1.3.3 #13: 旧版 post-commit 用 $COMMIT_SHA 对账 parentSha（永远不匹配，假阳性），
         // v1.3.3 改为 HEAD^ + process.env.PARENT_SHA。检测旧逻辑标记以强制覆盖 v1.2.9–v1.3.2。
         const hasNewPARENT_SHALogic = pcContent.includes('PARENT_SHA');
+        // 主题消歧标记——parentSha 命中后须比对记录 task 与本 commit 主题，
+        // 防相邻 commit 的审计记录被误认领（--no-verify 绕过场景）。缺此逻辑的旧 hook 强制覆盖。
+        const hasSubjectDisambig = pcContent.includes('COMMIT_SUBJECT');
         const versionMatch = pcContent.match(/v(\d+)\.(\d+)\.(\d+)/);
         if (versionMatch) {
           const major = parseInt(versionMatch[1]!, 10);
@@ -650,6 +672,8 @@ exit 0
             hasPostCommitHook = false;  // 版本达标但无审计对账逻辑 → 占坑 hook，覆盖
           } else if (!hasNewPARENT_SHALogic) {
             hasPostCommitHook = false;  // 版本达标但仍是旧 $COMMIT_SHA 对账逻辑 → 覆盖为 HEAD^ 修复版
+          } else if (!hasSubjectDisambig) {
+            hasPostCommitHook = false;  // 版本达标但无主题消歧逻辑 → 覆盖（防跨 commit 误认领）
           } else {
             hasPostCommitHook = true;   // 当前版本或更新 → 保留
           }

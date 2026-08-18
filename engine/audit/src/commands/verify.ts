@@ -106,6 +106,12 @@ export function runVerifyCommit(commitHash: string): void {
   //   ① 解析 X 的父提交（git rev-parse X^），对 pre-commit 记录按 parentSha 匹配；
   //   ② 兼容直接传父提交 SHA 的场景——parentSha 也尝试与 X 本身比对。
   // 向后兼容：旧记录无 parentSha/commitPhase 字段时 fallback 不生效，行为不变。
+  //
+  // parentSha 匹配后叠加 commit 主题消歧，防跨 commit 误认领：
+  // commit N 的 SHA 天然是 commit N+1 审计记录的 parentSha——绕过提交 B
+  // 之后紧跟的正常提交 C 会让 B 的 verify-commit 命中 C 的审计记录。
+  // 消歧规则：记录的 task 字段（hook 写入时来自 commit message 主题行）须与
+  // 被验证 commit 的 message 主题行一致才认领；不一致不认领（视为无直接记录）。
   let queriedParentSha = '';
   try {
     const { execFileSync } = require('child_process');
@@ -117,20 +123,42 @@ export function runVerifyCommit(commitHash: string): void {
     queriedParentSha = '';
   }
 
+  // 被验证 commit 的 message 主题行（取不到时为空串，消歧退化为仅按 parentSha）
+  let queriedSubject = '';
+  try {
+    const { execFileSync } = require('child_process');
+    queriedSubject = execFileSync('git', ['log', '-1', '--pretty=%s', commitHash], {
+      encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'],
+    }).trim();
+  } catch {
+    queriedSubject = '';
+  }
+
   const parentMatched = history.filter((entry) => {
     if (entry.commitPhase !== 'pre-commit') return false;
     const entryParent = (entry.parentSha || '').toLowerCase();
     if (!entryParent) return false;
+    let shaMatch = false;
     // ① parentSha === parentOf(X)（commit-msg 场景的正常匹配路径）
     if (queriedParentSha && (entryParent === queriedParentSha || queriedParentSha.startsWith(entryParent) || entryParent.startsWith(queriedParentSha))) {
-      return true;
+      shaMatch = true;
     }
     // ② parentSha === X（用户直接传父提交 SHA 的兼容路径）
-    return entryParent === normalizedHash || entryParent.startsWith(normalizedHash);
+    if (!shaMatch && (entryParent === normalizedHash || entryParent.startsWith(normalizedHash))) {
+      shaMatch = true;
+    }
+    if (!shaMatch) return false;
+    // SHA 命中后叠加主题行二次校验消歧（双方主题均可得时才强制；旧记录
+    // 无 task/commitMsg 或 git 取不到 subject 时不因此拒绝，保持向后兼容）
+    if (queriedSubject && queriedSubject !== '') {
+      const recordSubject = recordSubjectOf(entry);
+      if (recordSubject !== '') return recordSubject === queriedSubject;
+    }
+    return true;
   });
 
   if (parentMatched.length > 0) {
-    console.log(`  ✅ commit ${commitHash} 有 ${parentMatched.length} 条审计记录（pre-commit 阶段记录，按父提交 SHA 匹配）:`);
+    console.log(`  ✅ commit ${commitHash} 有 ${parentMatched.length} 条审计记录（pre-commit 阶段记录，按父提交 SHA + 主题行匹配）:`);
     for (const entry of parentMatched) {
       const status = entry.exitCode === 0 ? 'PASS' : entry.exitCode === 1 ? 'WARN' : 'FAIL';
       console.log(`    ${entry.timestamp} · ${status} · ${entry.ruleResults?.length ?? 0} 条规则检查`);
@@ -140,7 +168,9 @@ export function runVerifyCommit(commitHash: string): void {
     process.exit(0);
   }
 
-  console.log(`  ❌ commit ${commitHash} 未找到审计记录`);
+  // parentSha 有候选但主题行均不匹配 → 大概率是 --no-verify 绕过（相邻 commit
+  // 的审计记录被 SHA 前缀撞上，但内容对不上），与非命中场景区分提示。
+  console.log(`  ❌ commit ${commitHash} 未找到该 commit 的直接审计记录（可能 --no-verify 绕过）`);
   console.log('\n  可能原因:');
   console.log('    1. 此 commit 使用了 --no-verify 绕过审计');
   console.log('    2. 此 commit 在审计安装之前产生');

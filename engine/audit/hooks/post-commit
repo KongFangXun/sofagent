@@ -34,6 +34,12 @@ fi
 # 父提交 SHA（首次提交时 HEAD^ 不存在，留空）
 PARENT_SHA=$(git rev-parse HEAD^ 2>/dev/null)
 
+# 当前 commit 的 message 主题行——parentSha 匹配后叠加主题消歧，防跨 commit 误认领：
+# commit N 的 SHA 天然是 commit N+1 审计记录的 parentSha，--no-verify 绕过提交 B 后
+# 紧跟的正常提交 C 会让 B 的对账命中 C 的审计记录。记录的 task 字段（hook 写入时
+# 来自 commit message 主题行）须与本 commit 主题一致才认领。
+COMMIT_SUBJECT=$(git log -1 --pretty=%s HEAD 2>/dev/null)
+
 # 检查 history.jsonl：SHA 精确匹配 + parentSha 匹配
 # 路径动态获取用户级 data 目录（与 data-paths.ts 的 SOFAGENT_HOME 解析链对齐）
 HISTORY_FILE="${SOFAGENT_HOME:-$HOME/.sofagent}/data/audit/history.jsonl"
@@ -45,10 +51,11 @@ if [ -f "$HISTORY_FILE" ]; then
   # 改为 node 解析：只有 commitSha 匹配、或 pre-commit 记录 parentSha 匹配
   # **且 exitCode === 0** 才静默退出（真回声）；命中失败记录输出疑似绕过提示。
   # post-commit 永远 exit 0（不阻断任何操作）。
-  COMMIT_SHA="$CURRENT_SHA" PARENT_SHA="$PARENT_SHA" HISTORY_FILE="$HISTORY_FILE" node -e '
+  COMMIT_SHA="$CURRENT_SHA" PARENT_SHA="$PARENT_SHA" COMMIT_SUBJECT="$COMMIT_SUBJECT" HISTORY_FILE="$HISTORY_FILE" node -e '
 const fs = require("fs");
 const COMMIT_SHA = process.env.COMMIT_SHA;
 const PARENT_SHA = process.env.PARENT_SHA;
+const COMMIT_SUBJECT = (process.env.COMMIT_SUBJECT || "").trim();
 const HISTORY_FILE = process.env.HISTORY_FILE;
 if (!HISTORY_FILE) process.exit(0);
 let lines;
@@ -65,6 +72,15 @@ try {
       process.exit(0);  // commitSha 找到，commit 已审计
     }
     if (entry.commitPhase === "pre-commit" && entry.parentSha === PARENT_SHA) {
+      // 主题消歧：记录的 task（hook 写入时来自 commit message 主题行）与本 commit
+      // 主题不一致 → 这是相邻 commit 的审计记录，不认领，继续找。
+      const recordSubject = (typeof entry.task === "string" && entry.task.trim() !== ""
+        ? entry.task
+        : (typeof entry.commitMsg === "string" ? (entry.commitMsg.split("\n")[0] || "") : "")
+      ).trim();
+      if (COMMIT_SUBJECT && recordSubject && recordSubject !== COMMIT_SUBJECT) {
+        continue;
+      }
       // v1.3.5 #2: 校验该次审计的结果——exitCode 三档分流（v1.3.6 B8 修正）：
       //   0 = 审计真通过 → 真回声；
       //   1 = WARN 放行——commit-msg 只对 exit 2 阻断，exit 1 时 commit 合法走过审计，
