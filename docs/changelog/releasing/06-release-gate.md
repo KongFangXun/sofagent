@@ -23,14 +23,15 @@
 
 先读 `FORGE/SKILL/release-gate-loop/SKILL.md` 拿到完整的「Session 监控协议」，然后按协议执行：
 
-1. 直连预跑 acceptance（约 90 秒）：bash FORGE/playbook/acceptance-test.sh > /tmp/acceptance-raw.log 2>&1，确认 exit 0
+1. 直连预跑 acceptance（约 3-5 分钟）：bash FORGE/playbook/acceptance-test.sh > /tmp/acceptance-raw.log 2>&1，确认 exit 0
+   ⚠️ 历史坑位（v1.3.7 深夜两连挂实录，已修）：S146 曾因 scenario() 把 cwd 带进 /tmp e2e 仓库 → npx vitest 走 registry 拉远端版本挂起。修复锚点=子 shell 显式 cd "$PROJECT_ROOT"（checklist 116 有防复发项）。若预跑仍异常：单跑死点命令对比诊断（单命令健康+全量挂=上下文差异），不要改脚本，如实汇报死点等主 session 决策
 2. 后台启动 driver——必须用 Bash 工具 run_in_background:true + dangerouslyDisableSandbox:true：
    export SOFAGENT_LLM_V="${SOFAGENT_LLM_A}" && export SOFAGENT_LLM_F="${SOFAGENT_LLM_B}" && FORGE_MAX_CONCURRENCY=1 node FORGE/src/release-gate-driver.mjs --target {实际版本号} --skip-acceptance
    ⚠️ V/F 角色环境变量须手动导出（driver 的 resolveConfigs 自动生成 SOFAGENT_LLM_V/F 但 models/ 未覆盖 specEnv）
 3. 记住 runDir，每 120 秒轮询 status.json + heartbeat（同 fresh-eyes-loop 协议）
 4. phase=completed/error 时读 verdict.md，3-5 行汇报：裁决结果 / 各步骤通过数 / 失败项 / 建议
 
-铁律：不干涉 driver、不改代码、不探索源码。
+铁律：不干涉 driver、不改代码、不探索源码；FAIL 项真伪由主 session 零信任复验（run-09 教训：维度脚本自身缺陷会误报 FAIL）。
 ```
 
 ---

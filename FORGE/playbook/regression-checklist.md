@@ -1573,8 +1573,8 @@ grep -q '(?!tmp|home' engine/audit/src/rules/skill-safety-rules.ts && grep -q '(
 [ "$(grep -c 'timeout: 600_000' FORGE/src/driver-base.mjs FORGE/src/fresh-eyes-driver.mjs FORGE/src/release-gate-driver.mjs FORGE/src/tool-output-budget.mjs 2>/dev/null | awk -F: '\$NF>0{n++} END{print n+0}')" -ge 4 ] && echo "✅ LLM 超时四文件全覆盖" || echo "❌ 超时保护缺失"
 # FORGE resume 越轮泄漏（run-29 实录）：completedWorkers 只许喂被续跑轮
 grep -q 'round === resumeState?.round' FORGE/src/fresh-eyes-driver.mjs && echo "✅ resume 轮次守卫在位" || echo "❌ 越轮泄漏回植"
+# acceptance S146 cwd 漂移（v1.3.7 深夜两连挂根因）：scenario() cd TMP_REPO 后子 shell 须显式 cd 回主仓
+grep -q 'cd "\$PROJECT_ROOT" && NODE_OPTIONS' FORGE/playbook/acceptance-test.sh && echo "✅ S146 cwd 回位" || echo "❌ 漂移挂起回植"
 ```
-
-<!-- 瘦身判据（v1.3.6 详录见 git 历史；v1.3.7：①②③全否——116 子项 3 条+S293 均三死实录新审查面；checklist 触 1585>1580 且本版已上调一次触发冻结 → 压缩 v1.3.6 注释 13→3 行真实归并达标，未再上调；acceptance 2633<2640 ✓ / fresh-eyes 400=400 ✓）
+<!-- 瘦身判据（v1.3.6 详录见 git 历史；v1.3.7：①②③全否——116 子项 3 条+S293 均三死实录新审查面；checklist 触 1585>1580 且本版已上调一次触发冻结 → 压缩 v1.3.6 注释 13→3 行真实归并达标未再上调；acceptance 2633<2640 ✓ / fresh-eyes 400=400 ✓）
 -->
-
