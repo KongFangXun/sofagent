@@ -175,9 +175,13 @@ if [ "$QUICK_MODE" = true ]; then
   [ "$JSON_MODE" = false ] && [ "$QUIET_MODE" = false ] && echo "  ⚡ 快速模式 — 4 项核心检查"
   [ "$JSON_MODE" = false ] && _hr
 
-  # 1. SKILL.md 存在且含 4 底线 + 7 则铁律关键词
+  # 1. SKILL.md 存在且含宪法关键词（存在性校验，勿写死数字——防 SKILL.md 措辞再变时又漂移）
+  # 搜索列表以 ${SOFAGENT_HOME:-$HOME/.sofagent}/skill/ 为首——平台无关安装的实际写入路径
+  # （单一真相源，与 config.sh:37 的 SOFAGENT_HOME 解析口径一致），
+  # 各平台目录（~/.openclaw 等）只是指向它的 symlink 或按需部署副本
   SKILL_QUICK=""
   for _sk in \
+    "${SOFAGENT_HOME:-$HOME/.sofagent}/skill/SKILL.md" \
     "${OPENCLAW_DIR:-}/skills/sofagent/SKILL.md" \
     "$HOME/.openclaw/skills/sofagent/SKILL.md" \
     "$HOME/.workbuddy/skills/sofagent/SKILL.md" \
@@ -186,8 +190,8 @@ if [ "$QUICK_MODE" = true ]; then
     "$HOME/.hermes/SKILL.md"; do
     [ -f "$_sk" ] && { SKILL_QUICK="$_sk"; break; }
   done
-  if [ -n "$SKILL_QUICK" ] && grep -q "4.*底线\|6.*铁律" "$SKILL_QUICK" 2>/dev/null; then
-    check_pass "SKILL.md 存在且含宪法（4底线+6则铁律）"
+  if [ -n "$SKILL_QUICK" ] && grep -qE "[0-9]+ 底线" "$SKILL_QUICK" 2>/dev/null && grep -qE "[0-9]+ 则铁律" "$SKILL_QUICK" 2>/dev/null; then
+    check_pass "SKILL.md 存在且含宪法（底线+铁律关键词）"
   else
     check_fail "SKILL.md 缺失或宪法关键词不全"
   fi
@@ -207,9 +211,10 @@ if [ "$QUICK_MODE" = true ]; then
     fi
   done
 
-  # 4. fde.md 可读
+  # 4. fde.md 可读（~/.sofagent/skill/ 为平台无关安装的单一真相源路径）
   RULES_QUICK=""
   for c in \
+    "$HOME/.sofagent/skill/fde.md" \
     "${OPENCLAW_DIR:-$HOME/.openclaw}/skills/sofagent/fde.md" \
     "${HOME}/.workbuddy/skills/sofagent/fde.md" \
     "${HOME}/.openclaw/fde.md"; do
@@ -256,8 +261,8 @@ if [ "$PLATFORM" = "workbuddy" ]; then
 
   # WorkBuddy 专属检查（v0.62：宪法内联在 SKILL.md，检查 SKILL.md 而非 sofagent.md）
   if [ -f "$HOME/.workbuddy/skills/sofagent/SKILL.md" ] && [ -s "$HOME/.workbuddy/skills/sofagent/SKILL.md" ]; then
-    if grep -q "4 底线\|7 则铁律" "$HOME/.workbuddy/skills/sofagent/SKILL.md" 2>/dev/null; then
-      check_pass "SKILL.md 已部署且含宪法（4底线+6则铁律内联）"
+    if grep -qE "[0-9]+ 底线" "$HOME/.workbuddy/skills/sofagent/SKILL.md" 2>/dev/null && grep -qE "[0-9]+ 则铁律" "$HOME/.workbuddy/skills/sofagent/SKILL.md" 2>/dev/null; then
+      check_pass "SKILL.md 已部署且含宪法（底线+铁律关键词内联）"
     else
       check_warn "SKILL.md 已部署但宪法内容缺失"
     fi
@@ -608,11 +613,14 @@ if [ "$PLATFORM" != "workbuddy" ]; then
 fi
 
 # 9.1 加载链内容完整性——检查 SKILL.md 是否含宪法关键词（v0.62：宪法内联）
+# 存在性校验（勿写死数字）；${SOFAGENT_HOME:-$HOME/.sofagent}/skill/ 优先——
+# 平台无关安装的单一真相源路径（与 quick 段搜索列表、config.sh 解析口径一致）
 [ "$JSON_MODE" = false ] && echo -n "  约束注入验证: "
 SKILL_FILE="${OPENCLAW_DIR:-$HOME/.openclaw}/skills/sofagent/SKILL.md"
+[ -f "$SKILL_FILE" ] || SKILL_FILE="${SOFAGENT_HOME:-$HOME/.sofagent}/skill/SKILL.md"
 if [ -f "$SKILL_FILE" ]; then
-  if grep -q "4.*底线\|6.*铁律" "$SKILL_FILE" 2>/dev/null; then
-    check_pass "契约层关键词完整（4底线+6则铁律内联在 SKILL.md）"
+  if grep -qE "[0-9]+ 底线" "$SKILL_FILE" 2>/dev/null && grep -qE "[0-9]+ 则铁律" "$SKILL_FILE" 2>/dev/null; then
+    check_pass "契约层关键词完整（底线+铁律关键词内联在 SKILL.md）"
   else
     check_fail "SKILL.md 内容异常——宪法关键词缺失"
   fi
@@ -792,6 +800,7 @@ fi
 # 兼容 fallback：工作目录（开发态）/ 旧部署路径（老安装）
 RULES_FILE=""
 for candidate in \
+  "$HOME/.sofagent/skill/fde.md" \
   "${PWD}/SKILL/harness/data/fde.md" \
   "$HOME/.openclaw/skills/sofagent/fde.md" \
   "$HOME/.workbuddy/skills/sofagent/fde.md" \
