@@ -84,6 +84,7 @@ if [ -z "$PLATFORM" ]; then
   elif [ -d "$HOME/.claude" ]; then      PLATFORM="claude"
   elif [ -d "$HOME/.codex" ]; then       PLATFORM="codex"
   elif [ -d "$HOME/.hermes" ]; then      PLATFORM="hermes"
+  elif [ -d "${SOFAGENT_HOME:-$HOME/.sofagent}/skill" ]; then PLATFORM="agnostic"  # 平台无关安装（install.sh 默认）——无平台目录，skill 直接从单一真相源加载
   else                                   PLATFORM="openclaw"
   fi
 fi
@@ -95,6 +96,7 @@ case "$PLATFORM" in
   claude)   TARGET="$HOME/.claude" ;;
   codex)    TARGET="$HOME/.codex" ;;
   hermes)   TARGET="$HOME/.hermes" ;;
+  agnostic) TARGET="${SOFAGENT_HOME:-$HOME/.sofagent}" ;;  # 平台无关安装——单一真相源目录
   *)        TARGET="${OPENCLAW_STATE_DIR:-$HOME/.openclaw}" ;;
 esac
 
@@ -328,7 +330,11 @@ _section "宪法文件（v0.62：宪法内联在 SKILL.md，此处只检查 fde.
 
 f="fde.md"
 # v0.73: fde.md 部署到 skills/sofagent/fde.md（扁平化）
-path="${OPENCLAW_DIR}/skills/sofagent/${f}"
+# 平台无关安装的单一真相源 ~/.sofagent/skill/ 优先（与 quick 段搜索列表口径一致）
+path="${SOFAGENT_HOME:-$HOME/.sofagent}/skill/${f}"
+if [ ! -f "$path" ]; then
+  path="${OPENCLAW_DIR}/skills/sofagent/${f}"
+fi
 if [ ! -f "$path" ]; then
   path="${OPENCLAW_DIR}/${f}"  # 兼容旧版安装路径
 fi
@@ -352,7 +358,14 @@ fi
 _hr
 _section "Skill 文件"
 
-SKILLS_DIR="${OPENCLAW_DIR}/skills"
+# 平台无关安装的单一真相源 ~/.sofagent/skill/ 优先；平台目录为部署副本
+if [ -d "${SOFAGENT_HOME:-$HOME/.sofagent}/skill" ]; then
+  SKILLS_DIR="${SOFAGENT_HOME:-$HOME/.sofagent}/skill"
+elif [ -d "${OPENCLAW_DIR}/skills" ]; then
+  SKILLS_DIR="${OPENCLAW_DIR}/skills"
+else
+  SKILLS_DIR="${OPENCLAW_DIR}/skills"  # 保持原路径以便报错信息指位
+fi
 if [ -d "$SKILLS_DIR" ]; then
   skill_count=$(find "$SKILLS_DIR" -maxdepth 1 -name '*.md' 2>/dev/null | wc -l | tr -d ' ')
   check_pass "Skills 目录存在: ${skill_count} 个 .md 文件"

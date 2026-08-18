@@ -1,10 +1,10 @@
 // ============================================================
-// verify-commit.test.ts · --verify-commit 归因消歧测试
-// parentSha 匹配后叠加 commit 主题行二次校验，防跨 commit 误认领：
-// commit N 的 SHA 天然是 commit N+1 审计记录的 parentSha——绕过提交 B 后
-// 紧跟的正常提交 C 会让 B 的 verify-commit 命中 C 的审计记录（假 PASS）。
-// 消歧规则：记录 task（hook 写入时来自 commit message 主题行）与被验证
-// commit 的 message 主题行一致才认领；不一致不认领，报未审计非 0 退出。
+// verify-commit.test.ts · --verify-commit 归因歧义收紧测试（F-15）
+// 路径②（parentSha === 用户传入的 X）存在取证洗白歧义：commit N 的 SHA
+// 天然是 commit N+1 审计记录的 parentSha——绕过提交 B 后紧跟的正常提交 C
+// 会让 verify-commit B 命中 C 的审计记录（B 从未被审计却拿到绿灯）。
+// 收紧规则：路径②命中输出 ⚠️ 警示性中性结果 + EXIT=1，不再放绿灯。
+// 路径 0（commitSha 精确匹配）与路径①（parentSha === parentOf(X)）不受影响。
 // ============================================================
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
@@ -35,7 +35,7 @@ function commitFile(name: string, content: string, msg: string, noVerify = false
   return git(['rev-parse', 'HEAD']);
 }
 
-// 写一条 pre-commit 审计记录（模拟 commit-msg hook 写入：task = commit 主题行，
+// 写一条 pre-commit 审计记录（模拟 commit-msg hook 写入：
 // parentSha = 审计时 HEAD = 新提交的父提交）
 function preCommitEntry(parentSha: string, task: string, exitCode: number): string {
   return JSON.stringify({
@@ -51,7 +51,7 @@ function preCommitEntry(parentSha: string, task: string, exitCode: number): stri
   });
 }
 
-describe('--verify-commit 归因消歧', () => {
+describe('--verify-commit 归因歧义收紧（F-15）', () => {
   let exitSpy: ReturnType<typeof vi.spyOn>;
   let logSpy: ReturnType<typeof vi.spyOn>;
 
@@ -109,49 +109,59 @@ describe('--verify-commit 归因消歧', () => {
     return { code, out: captured.join('\n') };
   }
 
-  it('绕过场景：相邻 commit 的审计记录（task 主题不匹配）不被认领，报未审计非 0 退出', async () => {
+  it('攻击链：--no-verify 绕过 B 后正常提交 C → verify-commit B 走路径②输出 ⚠️ 且 EXIT=1（不再洗白）', async () => {
     // commit B（绕过）——工作区写敏感内容，--no-verify 提交，无审计记录
     const bypassSha = commitFile('leak.txt', 'sk-placeholder-12345', 'feat: 绕过提交', true);
-    const parentOfBypass = git(['rev-parse', 'HEAD^'], { allowFail: true });
 
     // commit C（正常）——审计记录的 parentSha = B 的 SHA（攻击链核心：SHA 撞上）
-    // 审计记录 task = C 的主题行
     const cSha = commitFile('c.txt', 'normal', 'feat: 正常功能提交');
 
     // history 只有 C 的审计记录（parentSha = bypassSha）
     writeFileSync(join(dataDir, 'audit/history.jsonl'), preCommitEntry(bypassSha, 'feat: 正常功能提交', 0) + '\n');
 
-    const { code, out } = await runVerifyCommit(bypassSha.slice(0, 10));
-    expect(code).toBe(1);
-    expect(out).toContain('--no-verify 绕过');
-    expect(out).not.toContain('✅ commit');
-    // C 自身验证仍应通过（回归保护）
-    const c = await runVerifyCommit(cSha.slice(0, 10));
-    expect(c.code).toBe(0);
-    expect(c.out).toContain('✅');
-    void parentOfBypass;
+    // 攻击者主题行混淆变体（B 与 C 同 subject）也不应洗白——路径②与主题无关恒警示
+    const r = await runVerifyCommit(bypassSha.slice(0, 10));
+    expect(r.code).toBe(1);
+    expect(r.out).toContain('⚠️');
+    expect(r.out).not.toContain('✅ commit');
+    void cSha;
   });
 
-  it('正常提交：task 与 commit 主题一致 → verify-commit 仍 PASS（exit 0）', async () => {
-    const baseSha = git(['rev-parse', 'HEAD']);
-    // 模拟：在 base 之上审计通过后正常提交（审计记录 task = commit 主题）
-    const sha = commitFile('ok.txt', 'ok', 'feat: 消歧正常路径');
-    writeFileSync(join(dataDir, 'audit/history.jsonl'), preCommitEntry(baseSha, 'feat: 消歧正常路径', 0) + '\n');
+  it('攻击链变体：B 与 C 使用相同 subject → 路径②仍输出 ⚠️ 且 EXIT=1（主题行相同也放不了绿灯）', async () => {
+    const subject = 'fix: same subject bypass';
+    // 密钥格式运行时拼接（占位符分段），不字面写完整密钥串——避免被 A2 误伤且不污染仓库
+    const fakeSecret = ['AKIA', 'IOSFODNN7EXAMPLE'].join('');
+    const bypassSha = commitFile('leak2.txt', fakeSecret, subject, true);
+    commitFile('c2.txt', 'normal', subject);
 
-    const { code, out } = await runVerifyCommit(sha.slice(0, 10));
-    expect(code).toBe(0);
-    expect(out).toContain('✅');
-    expect(out).toContain('主题行匹配');
+    writeFileSync(join(dataDir, 'audit/history.jsonl'), preCommitEntry(bypassSha, subject, 0) + '\n');
+
+    const r = await runVerifyCommit(bypassSha.slice(0, 10));
+    expect(r.code).toBe(1);
+    expect(r.out).toContain('⚠️');
+    expect(r.out).not.toContain('✅ commit');
   });
 
-  it('WARN 放行提交：匹配记录 exitCode=1 → 状态显示 WARN，exit 0 语义保留（0=通过/1=WARN/2=FAIL 分流不受消歧影响）', async () => {
-    const baseSha = git(['rev-parse', 'HEAD']);
-    const sha = commitFile('warn.txt', 'warn-content', 'chore: warn 放行提交');
-    // 审计 WARN 放行（exitCode=1）——commit 合法走过审计
-    writeFileSync(join(dataDir, 'audit/history.jsonl'), preCommitEntry(baseSha, 'chore: warn 放行提交', 1) + '\n');
+  it('回归：正常提交 C 自身 verify-commit 走路径①（parentSha === parentOf(C) = B）仍 ✅ EXIT=0', async () => {
+    const bypassSha = commitFile('leak.txt', 'sk-placeholder-12345', 'feat: 绕过提交', true);
+    const cSha = commitFile('c.txt', 'normal', 'feat: 正常功能提交');
 
-    const { code, out } = await runVerifyCommit(sha.slice(0, 10));
-    expect(code).toBe(0);
-    expect(out).toContain('WARN');
+    writeFileSync(join(dataDir, 'audit/history.jsonl'), preCommitEntry(bypassSha, 'feat: 正常功能提交', 0) + '\n');
+
+    const r = await runVerifyCommit(cSha.slice(0, 10));
+    expect(r.code).toBe(0);
+    expect(r.out).toContain('✅');
+    expect(r.out).toContain('按父提交 SHA 匹配');
+  });
+
+  it('回归：无审计记录的陌生 commit 仍 ❌ EXIT=1（原未命中路径不变）', async () => {
+    // history 放一条 parentSha 与本仓库任何父子关系都无关的记录（避免路径①误撞）
+    const unrelatedParent = '5'.repeat(40);
+    writeFileSync(join(dataDir, 'audit/history.jsonl'), preCommitEntry(unrelatedParent, 'chore: unrelated', 0) + '\n');
+    const strangerSha = commitFile('stranger.txt', 'x', 'chore: stranger');
+    const r = await runVerifyCommit(strangerSha.slice(0, 10));
+    expect(r.code).toBe(1);
+    expect(r.out).toContain('❌');
+    expect(r.out).toContain('未找到审计记录');
   });
 });

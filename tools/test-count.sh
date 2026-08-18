@@ -92,6 +92,22 @@ while IFS= read -r pkg_dir; do
     [ "$QUIET" = false ] && echo -e "  ${YELLOW}⚠${NC} ${pkg_name}: 无 Tests 输出（跳过）"
     continue
   fi
+  # P0 修复（F-11 第二层）：漏收集防御——vitest 并发干扰下测试文件可能被漏收集
+  # （orchestrator 实测 898→733 静默变少）。vitest v4 输出（实测）：
+  #   Test Files  63 passed (63)     ← 前一个数是 done，括号内是 total
+  # done < total 且全 passed = 漏收集 = 本轮结果不可信，WARN 拒绝采纳（宁缺毋假）。
+  # 兜底：任一解析失败（格式变化/无该行/带 failed|skipped 段）只跳过校验不判死
+  # （防御失效优于门禁误杀；带 failed 的真失败走下方 flaky 复跑/FAIL 分支，不在此拦截）。
+  # 用例级漂移（文件数同步缩水）由 check-test-count.sh 的 SSOT 对账兜底，两层互补。
+  files_line=$(echo "$out" | sed $'s/\033\[[0-9;]*m//g' | grep -E '^\s*Test Files\s+' | tail -1)
+  files_done=$(echo "$files_line" | grep -oE '[0-9]+ passed' | grep -oE '[0-9]+' || echo "")
+  files_total=$(echo "$files_line" | grep -oE '\([0-9]+\)' | tr -d '()' || echo "")
+  if [ -n "$files_done" ] && [ -n "$files_total" ] && echo "$files_line" | grep -qE '^\s*Test Files\s+[0-9]+ passed \([0-9]+\)\s*$'; then
+    if [ "$files_done" -lt "$files_total" ]; then
+      echo "  ⚠ ${pkg_name}: Test Files ${files_done}/${files_total} 漏收集——本轮计数不可信，需复跑"
+      continue
+    fi
+  fi
   PASSED=$(echo "$line" | grep -oE '[0-9]+\s+passed' | grep -oE '[0-9]+' || echo "0")
   FAILED=$(echo "$line" | grep -oE '[0-9]+\s+failed' | grep -oE '[0-9]+' || echo "0")
   TOTAL=$(echo "$line" | grep -oE '\([0-9]+\)' | grep -oE '[0-9]+' || echo "0")
