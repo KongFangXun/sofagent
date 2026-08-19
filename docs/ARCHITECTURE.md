@@ -830,7 +830,7 @@ Workflow 的混合架构（外层 `workflow.yml` Graph 骨架锁步骤 + 内层 
 
 River 的载体是 Agent 平台（OpenClaw / WorkBuddy 等）+ sofagent + Channel 集成。sofagent 不做 River 本身（河是大厂造的——LLM 是水，Agent 平台是河床），而是做河的约束层（约束 + 安全 + 编排 + 执行），确保 River 里的每一个 Sub Agent 都有纪律、可追溯、会反思。
 
-> 🏞️ **River 比喻完整映射**见 [README（项目概览）](../README.md)——sofagent 做堤坝 + 自来水厂 + 管网 + 水龙头，不做河本身。
+> 🏞️ **River 比喻完整映射**见 [README · 这是什么](../README.md#这是什么)——sofagent 做堤坝 + 自来水厂 + 管网 + 水龙头，不做河本身。
 
 > **Workflow 的混合架构**：每条 Workflow 采用「外层 Graph 骨架 + 内层 ReAct 节点」——`workflow.yml` 的 `nextNodes` 锁定全链路步骤、保证可追溯（对应 Graph 实现全局流程骨架），单个节点的 `prompt` 保留模型自主规划能力（对应内层 ReAct Agent）。这一设计兼顾全局稳定性与局部灵活性：低容错业务靠 Graph 锁死流程，复杂节点靠 ReAct 保灵活。
 
