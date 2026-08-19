@@ -10,7 +10,7 @@
 // 自研同构 Git 引擎（命名借鉴 isomorphic-git 风格，非 npm 包依赖）
 // ============================================================
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync, readdirSync, statSync } from 'fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync, readdirSync, statSync, renameSync, rmSync } from 'fs';
 import { join, dirname, relative } from 'path';
 import { createHash } from 'crypto';
 import { REDACTION_PATTERNS } from '../shared/secret-patterns';
@@ -183,7 +183,14 @@ function saveSnapshots(shadowDir: string, snapshots: SnapshotEntry[]): void {
   }
 
   const snapshotsPath = join(shadowDir, 'snapshots.json');
-  writeFileSync(snapshotsPath, JSON.stringify({ version: 2, blobs: prunedBlobs, snapshots: indexed }, null, 2), 'utf-8');
+  // v1.3.8 交付九：并发竞态加固——临时文件 + rename 原子替换。
+  // 原实现 writeFileSync 直写 snapshots.json：daemon fs-watch 批量事件与
+  // 手动 rollback 并发时，两方同时直写会让读者拿到半截 JSON（loadSnapshots
+  // JSON.parse 失败静默返回 []，快照全丢）。写 .tmp 再 rename——同一文件系统
+  // 内 rename 原子，读者要么看到旧版要么看到新版。
+  const tmpPath = `${snapshotsPath}.tmp`;
+  writeFileSync(tmpPath, JSON.stringify({ version: 2, blobs: prunedBlobs, snapshots: indexed }, null, 2), 'utf-8');
+  renameSync(tmpPath, snapshotsPath);
 }
 
 /**
@@ -418,10 +425,27 @@ function isUnchangedSnapshot(snapshots: SnapshotEntry[], sha: string): boolean {
 }
 
 /**
- * 恢复到指定快照
+ * 恢复到指定快照（v1.3.8 交付九：两阶段原子恢复）
  *
  * 只读恢复——将快照中的文件内容写回工作目录。
  * 不自动 push，不自动 revert。
+ *
+ * 🔴 v1.3.8 加固（原实现的事故隐患）：
+ *   原实现逐文件 writeFileSync 直写工作目录——恢复进行到一半时进程崩溃
+ *   （OOM / SIGKILL / 磁盘满），工作区一半是旧内容一半是新内容，且无任何
+ *   回滚手段（快照未动，但工作区已被污染成不可用的中间态）。
+ *
+ *   两阶段协议：
+ *     阶段一（staging）：所有目标文件先写入 .sofagent/.revert-staging/ 下的
+ *       镜像目录树。任何一个文件写失败 → 立即抛错，工作目录保持完整原状。
+ *     阶段二（commit）：staging 全部落盘成功后，逐文件 rename 原子替换到
+ *       工作目录。rename 同文件系统原子——任意时刻读者看到的文件要么是
+ *       完整旧版要么是完整新版。
+ *
+ *   注意：rename 阶段理论上仍可能在中途被打断（SIGKILL 无 handler 可拦截），
+ *   但此时 staging 目录留存于 runDir 内，可据此人工续做/回退；且每单个文件
+ *   都是原子替换（不存在半截文件），损害面从「任意文件可能截断」收敛为
+ *   「部分文件已换新、部分未换」——配合 staging 留痕可完整续做。
  *
  * @param dir 工作目录
  * @param sha 快照 SHA
@@ -439,20 +463,67 @@ export function revertToSnapshot(dir: string, sha: string): string[] {
     throw new Error(`快照 ${sha} 未找到。可用快照: ${snapshots.map((s) => s.sha.slice(0, 8)).join(', ')}`);
   }
 
-  const restored: string[] = [];
-  for (const [relativePath, content] of Object.entries(target.files)) {
-    const fullPath = join(dir, relativePath);
+  // ── 阶段一：全量写入 .sofagent/.revert-staging/（不触碰工作目录）──
+  // staging 根 = <dir>/.sofagent/.revert-staging——与工作目录同文件系统，
+  // 保证阶段二 rename 的原子性；.sofagent 本身在 scanFiles 排除清单内，
+  // staging 内容不会被下一次快照收进来。
+  const stagingRoot = join(dir, '.sofagent', '.revert-staging');
+  // 残留清理：上次恢复中断可能留下旧 staging 中的部分文件。
+  // 逐项清空 staging 根内部（readdir + rmSync）——不整体 rm staging 根本身，
+  // 避免两次系统调用（rm + mkdir）之间的窗口；清理失败不阻断（后续写入
+  // 会立刻暴露同一问题并走 staging 失败路径，工作目录仍零污染）。
+  if (existsSync(stagingRoot)) {
     try {
-      // 确保父目录存在
-      const parentDir = dirname(fullPath);
-      if (!existsSync(parentDir)) {
-        mkdirSync(parentDir, { recursive: true, mode: 0o700 });
+      for (const entry of readdirSync(stagingRoot)) {
+        rmSync(join(stagingRoot, entry), { recursive: true, force: true });
       }
-      writeFileSync(fullPath, content, 'utf-8');
+    } catch { /* 清理失败会在下方写入时暴露 */ }
+  } else {
+    mkdirSync(stagingRoot, { recursive: true, mode: 0o700 });
+  }
+
+  const stagedFiles: Array<{ stagingPath: string; finalPath: string; relativePath: string }> = [];
+  for (const [relativePath, content] of Object.entries(target.files)) {
+    const finalPath = join(dir, relativePath);
+    const stagingPath = join(stagingRoot, relativePath);
+    const stagingParent = dirname(stagingPath);
+    try {
+      if (!existsSync(stagingParent)) {
+        mkdirSync(stagingParent, { recursive: true, mode: 0o700 });
+      }
+      writeFileSync(stagingPath, content, 'utf-8');
+      stagedFiles.push({ stagingPath, finalPath, relativePath });
+    } catch (err) {
+      // 阶段一失败：工作目录一个字节都没动，原状完整。
+      // staging 留在原地（尸检证据）——不删，让调用方/人工可以看到失败现场。
+      throw new Error(
+        `恢复中止（staging 阶段写入失败，工作目录未被修改）: ${stagingPath}: ${(err as Error).message}`
+      );
+    }
+  }
+
+  // ── 阶段二：校验通过后逐文件 rename 原子切换 ──
+  // 单文件失败：记录错误继续切换其余文件（rename 失败通常是权限/句柄问题，
+  // 中止也无济于事——已切换的文件保持新内容，错误如实上报由调用方决策）。
+  const restored: string[] = [];
+  const commitErrors: string[] = [];
+  for (const { stagingPath, finalPath, relativePath } of stagedFiles) {
+    try {
+      const finalParent = dirname(finalPath);
+      if (!existsSync(finalParent)) {
+        mkdirSync(finalParent, { recursive: true, mode: 0o700 });
+      }
+      renameSync(stagingPath, finalPath);
       restored.push(relativePath);
     } catch (err) {
-      console.error(`sofagent 恢复文件时遇到问题: ${fullPath}`, (err as Error).message);
+      commitErrors.push(`${relativePath}: ${(err as Error).message}`);
+      console.error(`sofagent 恢复文件时遇到问题: ${finalPath}`, (err as Error).message);
     }
+  }
+
+  // 全部切换成功 → staging 目录已空壳，清掉；有失败 → 留存（含未切换的残留文件）
+  if (commitErrors.length === 0) {
+    try { rmSync(stagingRoot, { recursive: true, force: true }); } catch { /* 空目录清理失败无害 */ }
   }
 
   return restored;
