@@ -170,7 +170,7 @@ grep -nE "expectedDefaultRules\s*=\s*[0-9]+|expectedDefault\s*=\s*[0-9]+" engine
 grep -c "defaultRules\.length\|defaultRules\[.length\]" engine/audit/src/commands/init.ts   # 期望：≥ 1
 
 # 子项 g: acceptance-test.sh 绝不能与 npm run build 并发执行（v1.2.3 血泪教训）
-# 教训：build 首步 rm -rf dist 清空产物，acceptance-test 此刻读 dist/*.js 会误报 6-7 个「文件不存在」假失败。
+# 注意：build 首步 rm -rf dist 清空产物，acceptance-test 此刻读 dist/*.js 会误报 6-7 个「文件不存在」假失败。
 # 本项主体是人工巡检铁律（无法用单条 grep 干净断言「并发」——2>&1 / & 等会误报）：
 #   自测流程必须串行——先 build 完成、dist 稳定，再单独跑 acceptance-test.sh。
 # 辅助自动检查：确认没有脚本把两者用 nohup/后台符号显式并发拉起
@@ -243,7 +243,7 @@ grep -n "overallImprovement\|decidePromotion" engine/ab-test/src/*.ts 2>/dev/nul
 # 人工检查：decidePromotion() 必须有 overallImprovement > 0 守卫
 
 # 子项 d: core 包 mkdirSync 权限加固——所有数据目录创建必须带 mode: 0o700（v1.2.3 新增）
-# 教训：fresh-eyes P0「数据明文存储」过渡防线——目录默认 755 时同机其他用户可读审计数据
+# 注意：fresh-eyes P0「数据明文存储」过渡防线——目录默认 755 时同机其他用户可读审计数据
 # 注意：grep 须排除 import 行（import { mkdirSync } 也含关键词但非调用）
 grep -rn "mkdirSync(" engine/core/src/ --include="*.ts" | grep -v "__tests__" | grep -v "mode:"   # 期望：零命中（所有 mkdirSync( 调用都带 mode）
 grep -rc "mkdirSync(.*mode: 0o700" engine/core/src/ --include="*.ts" | grep -v ":0"               # 期望：≥ 5 处
@@ -1434,7 +1434,7 @@ bash tools/check-test-count.sh --quiet   # 期望 OK / EXIT=0
 
 #### 110. v1.3.5 bugfix 防复发五件——门禁盲区+假绿族+路径隔离（v1.3.5 新增 · B 类防回归 · 四份审查 38 项的浓缩 · 编号勘误：初版误用 107 与 v1.3.4 的 107 撞号，2026-08-16 阶段五修正为 110=当时最大 109+1）
 
-**背景**：fresh-eyes 四份审查 38 项的防复发浓缩。核心教训：①守卫「找不到就跳过」= 空转四个版本无人知（#5）；②`| tail || true` 双保险吞退出码（#19）；③路径解析环境变量口径分裂污染真实数据（#38）。
+**背景**：fresh-eyes 四份审查 38 项的防复发浓缩。三条核心防线：①守卫「找不到就跳过」= 空转四个版本无人知（#5）；②`| tail || true` 双保险吞退出码（#19）；③路径解析环境变量口径分裂污染真实数据（#38）。
 
 ```bash
 # ① quick 规则数声称对账（防 #1）：README 声称与 dist 实测一致
@@ -1569,7 +1569,7 @@ grep -qE "\.bin|Binary files" engine/audit/src/rules/rule-a2-secret-leak.ts && e
 # rm -rf 正则口径统一：两扫描器豁免必须同源
 grep -q '(?!tmp|home' engine/audit/src/rules/skill-safety-rules.ts && grep -q '(?!tmp|home' engine/audit/src/agent-shield.ts && echo "✅ rm-rf 豁免同源" || echo "❌ 口径漂移回退"
 # FORGE driver LLM 超时：四文件实例化点缺一即挂死风险回植
-# （run-04 教训：awk 管道在 driver bash -c 注入场景 \$ 转义炸——改用逐文件 grep -q 链，无转义依赖）
+# （注意：不用 awk 管道——driver bash -c 注入场景 \$ 转义会炸，改用逐文件 grep -q 链，无转义依赖）
 grep -q 'timeout: 600_000' FORGE/src/driver-base.mjs && grep -q 'timeout: 600_000' FORGE/src/fresh-eyes-driver.mjs && grep -q 'timeout: 600_000' FORGE/src/release-gate-driver.mjs && grep -q 'timeout: 600_000' FORGE/src/tool-output-budget.mjs && echo "✅ LLM 超时四文件全覆盖" || echo "❌ 超时保护缺失"
 # FORGE resume 越轮泄漏：completedWorkers 只许喂被续跑轮
 grep -q 'round === resumeState?.round' FORGE/src/fresh-eyes-driver.mjs && echo "✅ resume 轮次守卫在位" || echo "❌ 越轮泄漏回植"

@@ -2620,7 +2620,7 @@ $S292_OK && pass "lifecycle 审阅门+OKF 三件套+memory-sync 通用化+自适
 
 scenario 293 "v1.3.7 阶段四基建加固——FORGE driver LLM 超时 + resume 轮次守卫 + rm-rf 口径同源（run-27/28/29 三死教训）"
 S293_OK=true
-# LLM 超时四文件（run-04 教训：awk 管道在 driver bash -c 场景 \$ 转义炸——逐文件 grep -q 链无转义依赖）
+# LLM 超时四文件（注意：不用 awk 管道——driver bash -c 注入场景 \$ 转义会炸，用逐文件 grep -q 链无转义依赖）
 grep -q 'timeout: 600_000' "$PROJECT_ROOT/FORGE/src/driver-base.mjs" || S293_OK=false
 grep -q 'timeout: 600_000' "$PROJECT_ROOT/FORGE/src/fresh-eyes-driver.mjs" || S293_OK=false
 grep -q 'timeout: 600_000' "$PROJECT_ROOT/FORGE/src/release-gate-driver.mjs" || S293_OK=false
