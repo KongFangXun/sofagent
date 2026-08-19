@@ -27,6 +27,8 @@ graph LR
     C -.->|experience captured · keeps improving| C
 ```
 
+> 💾 **Don't rush off after deployment**: once a single node's workflow (the Agent's capability) is defined with LangGraph, burn it straight onto a USB drive via DSH (DeepSeek Harness execution backend) — the USB drive becomes a node, a key: plug it into any machine and it just runs (unplug for zero residue). See [HANDBOOK · USB one-click burn](./docs/HANDBOOK.md#近期版本新功能速览).
+
 > 🏞️ Big vendors hand you "water" (the LLM) and a "riverbed" (the Agent platform), but the water is raw — you wouldn't dare drink it straight. sofagent is the engineering that makes the river water usable across a whole city: the dam stops floods, the treatment plant turns raw water into drinking water, and the pipe network delivers it to every faucet. The model provides 90% of the intelligence; sofagent adds the 10% of reliable execution.
 
 ### How is this different from a bare Agent
