@@ -59,7 +59,7 @@ graph LR
 
 ## 快速开始
 
-**30 秒，零配置**——在任何 git 仓库跑一次审计（开发/测试场景；强合规场景见 [SECURITY](./SECURITY.md)）：
+**30 秒，零配置**——在任何 git 仓库跑一次审计（开发/测试场景；强合规场景先读 [LIMITATIONS §三](./docs/LIMITATIONS.md#三安全与信任模型局限)——明文存储与多租户隔离是已披露的当前边界）：
 
 ```bash
 npx -y -p @sofagent/audit sofagent-audit
