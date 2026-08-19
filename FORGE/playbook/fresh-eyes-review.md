@@ -33,7 +33,7 @@ sofagent（https://github.com/KongFangXun/sofagent）。不管当前处于什么
 | 层 | 视角 | 什么时候用 |
 |----|------|-----------|
 | **常规发版（1-12）** | 陌生人 / 企业 IT / 竞品维护者 / npm 用户 / 开源审查员 / 用户旅程 / 红队 / 数字侦探 / 感知层 / 文档一致性 / 代码审读者 / 文件结构陌生人 | 每次发版的 fresh-eyes-loop 标准配置（a-check/b-check 按这 12 个跑，工具预算 36 次） |
-| **文档治理（13-14）** | 技术编辑 / 竞品分析师 | 大规模文档重构、跨文档迁移、来源标注清理等非发版场景手动使用 |
+| **文档治理（13-14）** | 技术编辑 / 对外形象分析师 | 大规模文档重构、跨文档迁移、来源标注清理等非发版场景手动使用 |
 | **全文档通读（15-16）** | 外部开发者通读 / 资深架构师 | 不设焦点、从头读到尾，抓"整体读完后的不对劲"——适合任何需要全局视角的场景 |
 
 ---
@@ -104,7 +104,7 @@ sofagent（https://github.com/KongFangXun/sofagent）。不管当前处于什么
 ---
 
 ### 🔍 视角五 [5]：开源审查员
-> 📌 **v1.3.5 校准（run-07 教训）**：审查 worker 自己的测试 fixture（假密钥/空目录/测试 commit）可能污染被审仓库——发现「根目录可疑文件」时先辨别是不是上轮审查残留（作者 t@t.com / AWS 示例 key AKIAIOSFODNN7EXAMPLE 是典型指纹）。worker 残留不是仓库的 bug，是审查工具的债（v1.3.6 worktree 隔离根治）。
+> 📌 **校准**：审查 worker 自己的测试 fixture（假密钥/空目录/测试 commit）可能污染被审仓库——发现「根目录可疑文件」时先辨别是不是上轮审查残留（作者 t@t.com / AWS 官方示例 key——`AKIA` 开头 + `EXAMPLE` 结尾的文档示例串是典型指纹）。worker 残留不是仓库的 bug，是审查工具的债（worktree 隔离根治）。
 
 你在 GitHub 上 review 过 500+ 个开源项目。你有一套快速判断方法：先看目录结构和 git log，几分钟内形成第一印象。
 
@@ -156,7 +156,8 @@ sofagent（https://github.com/KongFangXun/sofagent）。不管当前处于什么
 
 ### 🤖 视角八 [8]：数字侦探
 
-> 📌 **v1.3.5 校准（run-07 教训）**：发版前跑审查时版本一致性天然处于中间态——registry 落后本地 / tag 未打 / URL 指向未来 tag 这类 finding 在「push+tag+publish」后自动消失，**默认 SKIP 不报**（判别口径见 releasing/04-quality-loop.md）。把中间态当发现 = 给修复者制造噪音。
+> 📌 **校准**：发版前跑审查时版本一致性天然处于中间态——registry 落后本地 / tag 未打 / URL 指向未来 tag 这类 finding 在「push+tag+publish」后自动消失，**默认 SKIP 不报**（判别口径见 releasing/04-quality-loop.md）。把中间态当发现 = 给修复者制造噪音。
+> ⚠️ **但中间态豁免只限 registry / 远端 tag / URL 指向**——文档与脚本内的**字面版本 tag 残留**（如安装用法示例里写死的旧版本号）不是中间态，是实打实的 bug，必须报。
 
 
 前面几轮都靠直觉和经验。这一轮换一种脑子：**你只看数字。** 文档里的每一个数字声称，跟代码里的实际数字——对得上吗？
@@ -196,7 +197,7 @@ sofagent（https://github.com/KongFangXun/sofagent）。不管当前处于什么
 
 你可能会关注的方向（举例，不是清单）：
 - 产品身份的两层叙事——对外"FDE Agent"、底层"sofagent 引擎"——一致吗？有没有该说 A 却说了 B？
-- 🔴 **对外声称的精确性**——"审计日志按 git 仓库隔离"这种话，读者会以为所有审计日志都隔离了，但实际只有 runtime-audit 隔离、history.jsonl 仍全局。声称需要精确限定范围（v1.3.1 教训："审计日志" → "运行时审计日志"）
+- 🔴 **对外声称的精确性**——"审计日志按 git 仓库隔离"这种话，读者会以为所有审计日志都隔离了，但实际只有 runtime-audit 隔离、history.jsonl 仍全局。声称需要精确限定范围（v1.3.1 起口径："审计日志" → "运行时审计日志"）
 - 同一个概念在多文档里描述一致吗？有没有矛盾？
 - 术语统一吗？（比如同类对象用了多个不同的称呼）
 - 文档里有编码损坏吗？（乱码、U+FFFD、null byte、mojibake）
@@ -239,11 +240,6 @@ sofagent（https://github.com/KongFangXun/sofagent）。不管当前处于什么
 - install 脚本引用的路径——真的存在吗？
 - 根目录干净吗？有没有碍眼的文件？
 - 如果我是新贡献者，能从结构推断出"新文件该放哪"吗？
-
----
-
-> **视角 1-12 是常规发版审查的标准配置**（FORGE fresh-eyes-loop 的 a-check/b-check 按这 12 个跑，工具预算 36 次）。
-> **视角 13-14 是文档治理专用**——在大规模文档重构、跨文档迁移、来源标注清理等场景下手动使用，不纳入常规发版循环。
 
 ---
 
@@ -299,7 +295,7 @@ sofagent（https://github.com/KongFangXun/sofagent）。不管当前处于什么
 
 ### 🏛️ 视角十六 [16]：资深架构师
 
-> 📌 **v1.3.5 校准（run-07 教训）**：driver 的 a-consolidate 可能 stall 降级（fallback 拼接代替完整合并）——降级轮的 finding 清单不完整是工具降级不是仓库干净，终判要回原始 per-perspective 报告核对，别把「合并报告说无发现」当成「无发现」。
+> 📌 **校准**：driver 的 a-consolidate 可能 stall 降级（fallback 拼接代替完整合并）——降级轮的 finding 清单不完整是工具降级不是仓库干净，终判要回原始 per-perspective 报告核对，别把「合并报告说无发现」当成「无发现」。
 
 你是有 15 年经验的架构师，评审过几十个系统的设计文档。你不是来挑错别字的——你在评估**架构决策的合理性和论证质量**。
 
@@ -346,53 +342,34 @@ sofagent（https://github.com/KongFangXun/sofagent）。不管当前处于什么
 - **静默失效**——空 catch 吞错、写入/读取不对称、功能做了但用户感知不到——问题发生了但无人知晓
 - **假绿与假阳性**——exit code 测量取到的是管道末端的退出码而非脚本的；自动化裁决把 PASS 读成 FAIL——"全绿"本身就是最值得怀疑的信号
 
-**v1.2.7 新增经验（release-gate-driver 修复过程中暴露）**：
-- **镜像 driver 漂移**——`fresh-eyes-driver.mjs` 和 `release-gate-driver.mjs` 共享相同的熔断架构（createReactAgent + 零窗口 + 降级报告），但各自独立维护。一个 driver 修了 4 轮熔断逻辑（零窗口、generateReportWithoutTools、isReportText 作用域、model 实例传递），另一个 driver 忘了同步 → 撞硬上限直接 throw。**教训：两个 driver 有公共逻辑应该提取到 driver-base，否则修 A 忘 B 是必然的**
-- **碎片文本伪装成报告**——GLM 在工具调用循环中，最后一条 AI message 可能是一句中间思考碎片（如"现在我已经有了所需的所有数据。让我阅读日志的中间部分..."）。这段文字非空，会被 `extractAgentText` 直接当成报告写入产物文件。**教训：提取报告文本必须过质量门控（≥300 字符或含 `##` 标题行），不达标的碎片返回空 → 触发 generateReportWithoutTools 降级**
+### 审查校准规则（报告可信度判别）
 
-**v1.2.8-v1.2.9 新增经验（文档治理过程中暴露）**：
-- **来源标注残留**——删除"得到大脑""温故知新""行业参考 blog"等不可追溯来源后，`📖 [行业笔记]` 空壳行被留下（只删了内容没删标注符号），形成"空指针"。**教训：来源清理不能只删内容，要 grep 确认标注符号本身也删干净**
-- **跨文档迁移后忘记更新引用**——VALIDATION 章节从 §十~十三 改为 §一~四后，ROADMAP/ARCHITECTURE/changelog 里的 `§十三` 引用全部变成断链。**教训：改章节编号后必须全局 grep 旧编号**
-- **内部措辞泄漏**——"不对用户宣传""负责人拍板""口径统一"这类开发期内部代号写进了对外公开文档。**教训：文档定稿前专门扫一遍内部代号 / 人名 / 私有路径**
-- **Mermaid 图跟正文不一致**——正文说"一底座·三引擎"（4 节点），Mermaid 图画了 5 个节点（审计引擎重复了一次）。**教训：改了正文概念要回头检查 Mermaid 图是否对应**
-- **迁移注释当结构**——VALIDATION 开头写"§十~十一 原属 PHILOSOPHY，§十二 原 ARCHITECTURE §七"——读者打开就知道这是拼盘。**教训：文档迁移后要建立自己的主线叙事，不能留迁移注释当结构骨架**
+- **碎片不是报告**——LLM 最后一条消息可能是思考碎片（非空但无结构），报告提取必须过质量门控（≥300 字符或含 `##` 标题行），不达标按降级处理
+- **「空 findings」≠「干净」**——停止条件必须校验每轮 worker 是否正常退出；findings 全丢了也会显示为空
+- **降级轮的 finding 不可信**——worker 降级只读部分文件，降级标记的 finding 须人工核实后再定级
+- **臆造报告靠证据密度判别**——正常 finding 每条都能定位到文件行号、grep 可复验；经不起复验的"证据"是碎片上下文编的
+- **确定性判定的不让 LLM 解读**——grep 退出码、编号连续性、WARN 分级这类能正则判定的，LLM 解读必出错；解析 shell 日志先剥 ANSI + 理解格式约定
+- **「上轮遗留」先 grep 当前仓库复验**——旧报告清单可能把已修项标未修
 
-**v1.3.0 新增经验（fresh-eyes run-21 过程中暴露）**：
+### 工程防线规则（driver / 管道 / 门禁脚本）
 
-- **假阳性 clean——a-consolidate 硬熔断后 findings 丢失**——run-21 报 `2-rounds-clean`，但实际 a-consolidate 3 轮全撞工具预算硬上限，findings 被丢弃后输出空列表。driver 停止逻辑看到"空 findings"判定 clean，不知道是"真 clean"还是"全丢了"。**教训：停止条件必须校验每轮 agent 是否正常退出，否则"全丢了"会被误判为"干净了"**
-- **开源元数据盲区**——审查视角没覆盖 `package.json license` 缺失和 `action.yml` 版本锁定。无 license = 默认"保留所有权利"，未锁定版本 = GitHub Action 拉到不兼容版本。**教训："开源审查员"和"npm 用户"视角应保持对 license 和依赖版本锁定的敏感**
+- **镜像 driver 漂移**——fresh-eyes-driver 与 release-gate-driver 共享熔断架构，公共逻辑必须提 driver-base，否则修 A 忘 B 是必然
+- **管道死亡四模式各有防御**——SIGPIPE（输出重定向）/ cwd 拼错（路径强制）/ 修复链漏洞（收敛重跑）/ 标题 grep 失败（标题锚点）
+- **长 LLM 调用必须 timeout+retry**——无超时的 fetch 网络抖断即挂死；长跑 driver 唯一安全姿势是宿主级免沙箱后台
+- **resume 断点粒度与恢复粒度对齐**——断点记「worker 完成」但恢复按「轮」走，会让新轮空转；续跑前备份上轮关键产物
+- **verdict 以主体 IS_PASS 为准**——尾部追加的「修复收敛」必须与 f-fix 的 git diff 对账，没改代码的收敛必是假的；stepErrors 非空 = 本轮作废，不存在带伤 PASS
+- **FAIL 与 PASS 都要零信任**——FAIL 逐维复跑分辨「仓库问题 vs 检查器问题」；PASS 过独立复验三件套
+- **门禁脚本必须测失败路径**——强制触发 FAIL 看它真报红，只跑正常路径是假绿温床
+- **脚本环境三坑**——bash 3.2 空数组 + `set -u` 崩溃；测试 finally 的 rmSync 必须 try-catch（shim 环境会拦截致假失败，先非 shim 复验）；随机断言须大量采样锁契约（概率性 CI 红）
+- **二进制读前判 isBinaryBuffer**——文本快照读二进制会静默产生 U+FFFD 损坏；测试敏感数据用占位符/运行时拼接，不字面写真实格式
 
-**v1.3.0 新增经验（release-gate run-21 过程中暴露）**：
+### 文档治理规则（技术编辑 / 对外形象视角的常驻敏感）
 
-- **LLM 解读日志的三种误判 + ANSI + 状态不一致**——run-21 把真实 PASS 误判 FAIL：① grep exit code 幻觉（日志内嵌打印 ≠ 真实退出码）② 不懂非连续编号（跳号是设计模式）③ WARN 当 FAIL ④ ANSI 颜色码致正则失配 ⑤ verdict.md vs status.json 状态矛盾。**教训：能用确定性正则判定的不让 LLM 解读；解析 shell 日志前剥离 ANSI + 理解格式约定；driver 状态变化必须同步回写权威产物文件**
-
-**v1.3.1 新增经验（fresh-eyes run-01/03 + release-gate run-10/13）**：
-- **driver 工程管道的四种死亡**——SIGPIPE / cwd 拼错 / F 修复链漏洞 / 标题 grep 失败。**教训：每种死亡模式都要有防御（输出重定向 / cwd 强制 / F 收敛重跑 verdict / 标题加 [N] 锚点）**
-- **降级轮 finding 不可信**——worker 降级时只读部分文件，finding 大量误报。**教训：isDegraded=true 必须人工核实**
-
-**v1.3.2 新增经验（fresh-eyes 五轮 + run-11）**：
-- **假阳性 clean + MCP 注册遗漏 + bash 3.2 兼容 + 文档头日期漂移**——四种新模式：① splitFindings 格式不匹配→误判 clean（需 fallback+sanity check）② 功能函数没注册到 TOOLS+switch（三步必查）③ macOS bash 3.2 空数组+set -u 崩溃（须 3.2 下测）④ bump 版本后文档头日期没跟改（应动态提取）
-
-**v1.3.3 新增经验（fresh-eyes 四轮手动 + release-gate run-01）**：
-- **post-commit hook 父子 SHA 假阳性**——commit-msg 记录的 parentSha 是新 commit 的**父**，post-commit 取的 COMMIT_SHA 是新 commit **自己**，父子 SHA 永远不等→每次正常 commit 都警告"可能绕过审计"。**教训：对账逻辑必须父对父或子对子，且首次 commit（unborn HEAD）用空树常量兜底。审查视角六必须真跑 git commit 验证 post-commit 闭环**
-- **单源化 refactor 删导出致 acceptance 炸**——#11 把 AUDIT_PRIORITY 并入规则 priority 字段，删了独立常量，但 S186 测试还在查旧导出→acceptance FAIL。**教训：refactor 删 export 前必须 grep 全仓引用（含测试 + acceptance-test.sh），删了要加向后兼容派生导出**
-- **门禁失败路径假绿——set -u + $? 赋值 unbound**——check-test-count.sh 在 set -uo pipefail 下，命令替换 exit N 时 $? 被判 unbound，脚本崩溃退出码被管道掩盖成 0，CI 永远判绿。**教训：审查门禁脚本必须测失败路径（强制触发 FAIL 看是否真报红），只跑正常路径是假绿温床**
-- **driver verdict 误判 PASS + changelogPath 路径偏差**——release-gate-loop driver 把"loop 无错误跑完"误判为 verdict=PASS（实际三项 results 全 FAIL）；resolveChangelogPath 指向不存在的 `docs/changelog/1.3.3.md`（实际在 `v1.3/v1.3.3.md`）。**教训：driver verdict 以 verdict.md 为准不看 status.json；changelogPath 路径要适配 `v{major}.{minor}/vX.Y.Z.md` 两级结构**
-- **WorkBuddy shim 环境假失败**——genie-safe-delete.cjs 拦截测试 finally 块的 rmSync→ETIMEDOUT，测试断言本身已 PASS 但清理超时报 FAIL。**教训：测试 finally rmSync 必须 try-catch 包裹；WorkBuddy 下测试 FAIL 先在非 shim 环境复验**
-
-**v1.3.4 新增经验（release-gate run-01 verdict 事故）**：
-- **driver 尾部追加覆盖主体判定**——release-gate run-01 的 verdict.md 主体写 `IS_PASS: NO`（regression 3 FAIL），但 driver 在文件尾部追加「F 修复链收敛：FAIL → PASS」——f-fix 实际报错一行没改、f-audit 实际 COMMIT FAILED。判定文件自相矛盾时，**后续追加段不可信（它是流程尾巴写的，不复核主体）**。教训：读 verdict 先看主体 IS_PASS 行，尾部追加段要与 f-fix 的 git diff 对账——没改代码的「修复收敛」必是假的
-- **修复链报错被静默吞掉**——f-fix 的 node -e 脚本把 dict 当数组遍历（dims is not iterable），stepErrors 记了但流程继续走完。教训：stepErrors 非空 = 本轮结果作废，不存在「带伤 PASS」
-
-**v1.3.4 新增经验（fresh-eyes run-01 臆造事故 + run-02 防护验证）**：
-- **worker 碎片上下文臆造**——工具预算 15/20 摸不完 2870 文件 monorepo，24 个 worker 全部撞硬熔断后走裸 LLM 兜底，拿碎片上下文编报告：13 条 finding 里 9 条误报（把 .gitignore 已覆盖的 .DS_Store 说成"被提交"、把 npx 调用说成"文件缺失"）。b-fix 更臆造升级计划、新建 CI 配置、改未来版本 changelog。**教训：审查报告质量 = worker 证据充分性的函数。预算必须让 worker 摸得完仓库结构（已调 40/50），finding 必须带实测证据（CVE 编号/文件行号/命令输出），b-fix 改动范围必须被 A3 审计拦截**
-- **降级报告与正常报告不可区分**——run-01 的臆造报告格式与真报告完全一样，无任何降级标记，人工以为质量相同。run-02 加证据门槛后 20 条 finding 全部可验证。**教训：对比「报告声称的证据密度」——正常审查的 finding 每条都能定位到文件行号，臆造报告的"证据"经不起 grep 复验**
-
-
-**v1.3.6 发版后（hotfix）· 概率性 CI 红与双 SHA 历史**——ECDH 私钥首字节 0（1/256）触发 31≠32（本地全绿掩盖）：随机密钥断言须 ≥2000 次采样锁定长契约，CI-only 失败先疑概率路径；Git Data API 推送造成远端/本地同 tree 双 SHA——push 前先 merge-base 检查，分叉则 rebase --onto 接回；tag 必须在安装入口 bump 之后打
-**v1.3.6（release-gate run-08）· 审查工具 FAIL 与 PASS 都要零信任**——7 FAIL 中 5 个是维度脚本自身缺陷（更名漏网/签名过时/exit 语义歧义）；driver 自报 PASS 也是假的（f-fix 零 commit，f-audit 对空 diff 全绿）。**教训：FAIL 逐维复跑分辨「仓库 vs 检查器」；verdict 以 verdict.md 主体为准 + stepErrors 非空作废**
-**v1.3.6（fresh-eyes run-03）· worker 旧报告误标 + b-fix 越界修复**——旧清单把已修 3 条标「未修」；b-fix 在 tag 未打时「修」安装 URL。**教训：「上轮遗留」先 grep 当前仓库复验；b-fix prompt 内嵌发版中间态 SKIP 清单原文**
-**v1.3.7（fresh-eyes run-27/28/29）· driver 之死与降级链的三重教训**——① 长循环的 LLM 调用必须 timeout+retry（网络抖断时无超时的 fetch 挂死、进程无声消失——无栈无 OOM，6 处 `ChatOpenAI` 全裸奔的实录）；② nohup 后台进程会被启动 session 回收——长跑 driver 的唯一安全姿势是宿主级免沙箱后台；③ resume 断点粒度必须与恢复粒度对齐（断点只记「worker 完成」不记「轮完成」→ 续跑时 completedWorkers 越轮泄漏让新轮空转降级）；④ 续跑前备份上一轮关键产物（降级 consolidate 会覆盖好产物）。
-**v1.3.5（裂图+脱敏误伤）· 二进制 UTF-8 读 → 静默 U+FFFD 损坏**（shadow 快照读 PNG 永久裂图，教训：读前判 isBinaryBuffer，二进制跳过文本快照）；**脱敏误伤测试用例**（verify.sh 输入 13812345678 被当泄漏打码，教训：测试敏感数据用占位符/运行时拼接，不字面写真实格式）**
+- **来源删除要连标注符号删干净**——只删内容会留「📖 [行业笔记]」空壳行
+- **改章节编号/文件名后全局 grep 旧值**——跨文档引用断链是必然，除非 grep
+- **内部措辞定稿前专扫**——内部代号/人名/私有路径不能写进对外文档
+- **Mermaid 图与正文同步**——改概念要回头查图节点数是否对应
+- **迁移不留「原属 XX」注释当骨架**——迁移后建立自己的主线叙事
+- **文档头日期随版本 bump 动态跟**——改了版本没改日期是漂移
 
 这些方向值得你保持**额外敏感**——但不要把它们当成清单。你今天发现的问题可能完全不在这个列表上。**那才是最值钱的发现。**
