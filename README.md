@@ -175,7 +175,7 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # 加载安全规�
 ## v1.3.7 新能力
 
 > 🏰 **v1.3.7 新能力**（SubAgent 完整沙箱 + 场景驱动权限 + AgentShield + 行业 overlay + 断路器 + ontology 生命周期）：
-> - **SubAgent 完整沙箱**：🏰 虚拟文件系统（写入先进虚拟层，审批后原子落盘 + 证据流 HMAC 链）/ 网络出站白名单（DNS 隧道 + raw socket 全拦，域名后缀 + CIDR）/ 工具调用中介（Symbol 唯一 ID 判定，未注册 fail-closed）/ 虚拟 key（vk- 前缀 + scope 数据流契约 + token bucket 限速 + 日志脱敏）/ AsyncSubAgent 独立进程（stdout JSON 行 + SIGINT 优雅退出）/ 真·实时 A/B 双跑（隔离环境并行 + 行级 diff）——v1.3.8 `sandbox:true` 的完整前置
+> - **SubAgent 完整沙箱**：🏰 虚拟文件系统（写入先进虚拟层，审批后原子落盘 + 证据流 HMAC 链）/ 网络出站白名单（DNS 隧道 + raw socket 全拦，域名后缀 + CIDR）/ 工具调用中介（Symbol 唯一 ID 判定，未注册 fail-closed）/ 虚拟 key（vk- 前缀 + scope 数据流契约 + token bucket 限速 + 日志脱敏）/ AsyncSubAgent 独立进程（stdout JSON 行 + SIGINT 优雅退出）/ 真·实时 A/B 双跑（隔离环境并行 + 行级 diff）——v1.3.8 `sandbox:true` 的完整前置（**v1.3.8 交付⑥ 已接线启用：`harness.wrap(agent, { sandbox: true })` 一行启用——工具调用经 tool-gate 前置判定（未注册 fail-closed）、文件写落虚拟层（未审批不落盘）、网络出站走白名单，与 `approval: 'require-approval'` 可组合（沙箱内副作用工具仍挂人审）**）
 > - **场景驱动权限**：🔐 身份→场景匹配→风险等级→放行/deny/人工批准，每步 decision-log 留痕；三硬约束（fail-closed / 守卫先于事件分发 / 最小权限面）；敏感域自动提级（审计数据写删一律 critical）
 > - **AgentShield 五类扫描**：🛡️ MCP 配置风险画像 / Hook 注入分析 / Agent 配置审查（否定后行断言排除反向表述）/ 密钥检测增强 / **Shadow AI 发现**（扫进程/配置/仓库，揪出未注册的「影子 agent」）——静态确定性，零 LLM 自评
 > - **行业 overlay 四套**：🏥 fintech（反洗钱留痕）/ medical（PHI 保护）/ government（等保留痕）/ ai（模型注册）——context.md `industry:` 自动加载，未标注保守默认
