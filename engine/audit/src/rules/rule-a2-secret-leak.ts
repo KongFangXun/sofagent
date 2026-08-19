@@ -214,12 +214,16 @@ export function checkRuleA2(ctx: AuditContext): RuleCheck {
     );
   }
 
-  // .gitattributes -diff 绕过检测（WARN 级——该模式可能让密钥对 git diff 隐身）
+  // .gitattributes -diff 绕过检测（v1.3.8 P1-A2 升级为 FAIL）
+  // 红队实测两步隐身：第一步提交 .gitattributes 标记 secrets.js -diff（此处仅 WARN 放行），
+  // 第二步提交密钥文件——git diff 不输出内容行，A2 无内容可扫静默全绿。
+  // -diff 标记对审计引擎是「结构性隐藏证据」，合法场景（真正的二进制产物如 .png/.lock）
+  // 极少需要 -diff；按 fail-closed 原则升级 FAIL，用户确属误报可用 --ruleset 自定义豁免。
   const attrHiddenTargets = detectGitattributesDiffHidden(ctx);
   if (attrHiddenTargets.length > 0) {
-    if (rule.status === 'PASS') rule.status = 'WARN';
+    rule.status = 'FAIL';
     rule.details.push(
-      `检测到 .gitattributes 将以下文件标记为 -diff（内容不会出现在 git diff 中，A2 无法扫描）: ${attrHiddenTargets.join(', ')}。请确认这些文件不包含密钥，或改用真实二进制审计方案。`
+      `检测到 .gitattributes 将以下文件标记为 -diff（内容不会出现在 git diff 中，A2 无法扫描——两步隐身路径：先标记 -diff 再提交密钥文件即静默绕过）: ${attrHiddenTargets.join(', ')}。如属真实二进制产物请改用审计友好的标记方式（如 .gitattributes 注释说明），密钥文件必须移除 -diff 标记。`
     );
   }
 
