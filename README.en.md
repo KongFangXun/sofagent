@@ -161,7 +161,7 @@ npx -y -p @sofagent/audit sofagent-audit --list-rulesets      # see available ru
 npx -y -p @sofagent/audit sofagent-audit --ruleset security   # load the security ruleset
 ```
 
-Community rulesets are published as `sofagent-ruleset-*` npm packages and auto-discovered once installed; `--ruleset-path` can also point to your own JSON rules.
+Community rulesets are published as `sofagent-ruleset-*` npm packages and loaded manually via `--ruleset-path` (auto-discovery of installed npm packages is not supported yet); `--ruleset-path` can also point to your own JSON rules.
 
 **FDE Agent** — on-site mapping + deployment + residency, pick either of two paths:
 
