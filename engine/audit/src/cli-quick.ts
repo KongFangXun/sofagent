@@ -38,6 +38,9 @@ import { runRules, type AuditResult, type RuleCheck } from './reporter';
  *
  * v1.3.4 P2-15：git rev-parse 失败时返回 null（而非 'unknown'），
  * 调用方在 SHA 为 null 时输出显著警告——避免 'unknown' 悄悄进审计记录导致后续对账 mismatch。
+ * v1.3.8 P1-B5：非零退出时 git 的 raw stderr（如 fatal: Needed a single revision）
+ * 不再透传到用户终端——execFileSync 默认把 stderr 印到父进程 stderr，此处
+ * stdio 全 pipe 后静默失败，由调用方输出产品化提示。
  *
  * @returns commit 短 SHA，或 null（非 git 仓库 / 无 commit）
  */
@@ -45,8 +48,44 @@ function getLatestCommitSha(): string | null {
   try {
     const sha = execFileSync('git', ['rev-parse', '--short', 'HEAD'], {
       encoding: 'utf-8',
+      stdio: ['pipe', 'pipe', 'pipe'],
     }).trim();
     return sha;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * v1.3.8 P1-B1：检测 HEAD 是否存在父提交（HEAD~1 可解析）。
+ * 首个 commit 场景：commitSha 有值但 HEAD~1 不存在 → parseDiff 返回空，
+ * 此前被误报为「审计最近一次 commit + 无文件变更」（与 parseDiff 打印的
+ * 「首次提交，无需审计」互相矛盾）。此探测用于区分「无基线」与「真无变更」。
+ */
+function hasParentCommit(): boolean {
+  try {
+    execFileSync('git', ['rev-parse', '--verify', 'HEAD~1'], {
+      encoding: 'utf-8',
+      stdio: ['pipe', 'pipe', 'pipe'],
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * v1.3.8 P1-B2：获取最近一次 commit 的完整 message（供 A9 注入检测）。
+ * quick 模式此前 runRules 第 6 参 commitMsg=undefined——A9 无输入假绿。
+ * 失败时返回 null（不打 raw git stderr，同 P1-B5 原则）。
+ */
+function getLatestCommitMsg(): string | null {
+  try {
+    const msg = execFileSync('git', ['log', '-1', '--pretty=%B'], {
+      encoding: 'utf-8',
+      stdio: ['pipe', 'pipe', 'pipe'],
+    });
+    return msg.trim() || null;
   } catch {
     return null;
   }
@@ -161,6 +200,10 @@ export function generateQuickOutput(
       parts.push(`ⓘ 跳过 = 需任务描述/commit msg/Agent 日志输入的规则（quick 模式无此输入）——\`--init\` 装 hook 走完整引擎`);
     }
   }
+
+  // v1.3.8 P1-B2: 扩展规则默认关闭披露——此前只写「完整 24 条含扩展」但未明示
+  // 扩展 7 条默认关闭，用户误以为 quick 已经全跑；显式披露规则覆盖面。
+  parts.push('ⓘ 扩展 7 条规则默认关闭（默认只跑 17 条）——config 启用扩展规则，规则集用 --ruleset 加载');
 
   // 产品签名
   parts.push('');
@@ -277,12 +320,13 @@ export function runCliQuick(argv: string[]): number {
     ? argv[2]
     : 'HEAD~1..HEAD';
 
-  // 3. 取 commit SHA
+  // 3. 取 commit SHA（v1.3.8 P1-B5：失败时已静默 raw stderr，此处输出产品化提示）
   const commitSha = getLatestCommitSha();
 
   // v1.3.4 P2-15: SHA 为 null 时输出显著警告（而非静默用 'unknown' 填充）
+  // v1.3.8 P1-B5: 提示语产品化——不透传 git 原始报错（fatal: Needed a single revision）
   if (commitSha === null) {
-    console.log('⚠️ [sofagent] 无法获取 commit SHA（当前目录可能不是 git 仓库或无 commit），审计记录将不含 commit 关联。');
+    console.log('⚠️ [sofagent] 无法获取 commit SHA（仓库可能尚无提交记录），审计记录将不含 commit 关联。');
   }
 
   // 4. 解析 diff——parseDiff 接收 git refspec（如 HEAD~1..HEAD），内部执行 git diff
@@ -295,22 +339,42 @@ export function runCliQuick(argv: string[]): number {
   }
 
   if (diffFiles.length === 0) {
-    // v1.3.5 #6: range 模式下标题与范围一致，不再误称「最近一次 commit」
+    // v1.3.8 P1-B1：首次 commit 输出矛盾修复——此前三行并存：
+    //   ①「首次提交，无需审计」（parseDiff 内打印）②「审计最近一次 commit（SHA）」
+    //   ③「无文件变更」——「无需审计」与「正在审计」互相打架。
+    // 规则：无 SHA 或无父提交（= 无 diff 基线）时明说「首个 commit 无基线不审计」；
+    //   有基线但 diff 为空才称「无文件变更」。
+    const hasBaseline = commitSha !== null && hasParentCommit();
     if (diffRange !== 'HEAD~1..HEAD') {
       console.log(`🔍 审计指定范围（${diffRange}）`);
+      console.log('');
+      console.log('✅ 无文件变更——没有需要审计的内容。');
+    } else if (!hasBaseline) {
+      console.log('ℹ️ [sofagent] 首个 commit 无基线不审计——没有前一个版本可对比，下次提交起自动生效。');
     } else {
-      const shaLabel = commitSha || '⚠️ 无 SHA';
-      console.log(`🔍 审计最近一次 commit（${shaLabel}）`);
+      console.log(`🔍 审计最近一次 commit（${commitSha}）`);
+      console.log('');
+      console.log('✅ 无文件变更——没有需要审计的内容。');
     }
-    console.log('');
-    console.log('✅ 无文件变更——没有需要审计的内容。');
     return 0;
   }
 
   // 6. 运行审计规则（quick 模式：silent=true，零日志依赖）
   // v1.3.3 #8: quickMode=true 标记——A3（不改越界）见到跳过：quick 模式无真实任务描述，
   // task='quick-audit' 与任何文件都不匹配，必然 100% 误报越界 WARN。
-  const result = runRules(diffFiles, [], 'quick-audit', false, true, undefined, undefined, undefined, false, true);
+  // v1.3.8 P1-B2: 传入真实 commitMsg（git log -1 取）——此前第 6 参恒 undefined，
+  // A9（prompt 注入检测）在 quick 模式无输入假绿；commitMsg 取不到时 A9 由引擎按
+  // 无输入处理（输出标「跳过」），不再假绿。
+  // v1.3.8 P1-B4: 改用对象参数签名（十位置参数四布尔陷阱重构）。
+  const commitMsg = getLatestCommitMsg() ?? undefined;
+  const result = runRules({
+    diffFiles,
+    logEntries: [],
+    task: 'quick-audit',
+    silent: true,
+    commitMsg,
+    quickMode: true,
+  });
 
   // 7. 格式化输出（v1.3.5 #6: 传入 diffRange 供 range 模式标题感知）
   const output = generateQuickOutput(result, commitSha, diffRange);

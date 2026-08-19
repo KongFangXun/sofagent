@@ -235,10 +235,11 @@ export function loadConfig(cwd?: string, strict?: boolean): AuditConfig {
     // 3. 使用默认配置
     const projectExists = existsSync(join(baseDir, '.sofagent', 'config.yml'));
     const homeExists = existsSync(join(homedir(), '.sofagent', 'config.yml'));
+    // v1.3.8 P1-B3：WARN 统一 [sofagent] 前缀（console.warn 走 stderr）
     if (projectExists || homeExists) {
-      console.warn('⚠️ 配置文件存在但缺少 audit 段，使用默认配置。运行 sofagent-core doctor 诊断。');
+      console.warn('[sofagent] ⚠️ 配置文件存在但缺少 audit 段，使用默认配置。运行 sofagent-core doctor 诊断。');
     } else {
-      console.warn('⚠️ 未找到 .sofagent/config.yml，使用默认配置。运行 sofagent-audit --init 生成配置。');
+      console.warn('[sofagent] ⚠️ 未找到 .sofagent/config.yml，使用默认配置。运行 sofagent-audit --init 生成配置。');
     }
     return { ...DEFAULT_CONFIG };
   } catch (err) {
@@ -253,8 +254,9 @@ export function loadConfig(cwd?: string, strict?: boolean): AuditConfig {
         throw err; // CLI --strict 模式：向上抛，由 CLI 入口 exit 2
       }
       // 非 strict 模式：WARN + 回退到安全默认值（降级场景只说回退）
-      console.warn(`⚠️ ${err.message}`);
-      console.warn('⚠️ config.yml 格式错误，已回退默认配置。运行 sofagent-core doctor 诊断');
+      // v1.3.8 P1-B3：补 [sofagent] 前缀——解析失败必须显式可见，不静默
+      console.warn(`[sofagent] ⚠️ ${err.message}`);
+      console.warn('[sofagent] ⚠️ config.yml 格式错误，已回退默认配置。运行 sofagent-core doctor 诊断');
       return safeDefaults();
     }
     throw err;
@@ -282,6 +284,8 @@ export function warnUnknownConfigKeys(auditObj: Record<string, unknown>, filePat
     if (knownKeys.has(key)) continue;
 
     // 拼写建议——找编辑距离最近的已知键
+    // v1.3.8 P1-B3：console.warn 本身输出到 stderr（与 console.error 同通道），
+    // 此处保留 warn 语义 + [sofagent] 产品前缀（既有测试 spy console.warn）
     const suggestion = findClosestKey(key, knownKeys);
     if (suggestion) {
       console.warn(
@@ -413,7 +417,8 @@ function tryLoadYaml(filePath: string): Partial<AuditConfig> | null {
         return parsed as Partial<AuditConfig>;
       }
       // 既无 audit 段也无任何已知字段——确实不是有效配置
-      console.warn('⚠️ 配置文件缺少 audit 段，使用默认配置');
+      // v1.3.8 P1-B3：[sofagent] 前缀（console.warn 走 stderr）
+      console.warn('[sofagent] ⚠️ 配置文件缺少 audit 段，使用默认配置');
       return null;
     }
     return null;
@@ -622,7 +627,9 @@ function mergeWithDefaults(partial: Partial<AuditConfig>): AuditConfig {
     ]);
     for (const key of Object.keys(merged.rules)) {
       if (!knownKeys.has(key.toLowerCase())) {
-        console.warn(`⚠️ config.yml: 未知规则名 "${key}" → 已忽略（已知: a1-a11, a14-a23, e1-e4）`);
+        // v1.3.8 P1-B3：未知规则名 WARN 补 [sofagent] 产品前缀（console.warn 走 stderr）——
+        // 此前无产品前缀；用户误配 a99 全绿零感知。
+        console.warn(`[sofagent] ⚠️ config.yml: 未知规则名 "${key}" → 已忽略（已知: a1-a11, a14-a23, e1-e4）——请检查拼写，误配将静默失效`);
       }
     }
   }

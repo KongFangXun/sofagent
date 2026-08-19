@@ -50,23 +50,44 @@ export function productSignature(exitCode: number, ruleCount: number): string {
 }
 
 /**
+ * v1.3.8 P1-B4: runRules 选项对象——十位置参数（四布尔陷阱）重构为对象参数。
+ * 布尔位置参数调用处极易错位（如 quick 模式第 6 参 commitMsg 与第 7 参 config
+ * 混传即静默假绿）。新调用方一律用 options 对象。
+ */
+export interface RunRulesOptions {
+  /** git diff 解析出的文件变更列表 */
+  diffFiles: DiffFile[];
+  /** 任务日志条目 */
+  logEntries: LogEntry[];
+  /** 任务描述（--task 参数） */
+  task?: string;
+  /** 严格模式 */
+  strict?: boolean;
+  /** 沉默模式（跳过日志依赖规则，走 diff 启发式） */
+  silent?: boolean;
+  /** commit message（用于 E2/A5 规则及 #10 回退） */
+  commitMsg?: string;
+  /** 审计配置（.sofagent/config.yml 加载，三级 fallback） */
+  config?: AuditConfig;
+  /** 历史审计记录（可选；不传则 runner 自动从文件加载） */
+  history?: AuditHistoryEntry[];
+  /** v1.3.1 交付 2：国标对齐 GB/T 48000.3-2026 维度（opt-in 默认 false） */
+  gb48000?: boolean;
+  /** v1.3.3 #8：quick 模式标记（cli-quick 零配置审计），A3 见到跳过越界检查 */
+  quickMode?: boolean;
+}
+
+/**
  * 运行全部审计规则（fast-fail 模式，v1.0.7）
  * 委托到 rules/runner.ts 的 runRules，内部按 AUDIT_PRIORITY 分组执行。
  *
- * @param diffFiles git diff 解析出的文件变更列表
- * @param logEntries 任务日志条目
- * @param task 任务描述（--task 参数）
- * @param strict 严格模式
- * @param silent 沉默模式（跳过日志依赖规则，走 diff 启发式）
- * @param commitMsg commit message（用于 E2/A5 规则及 #10 回退）
- * @param config 审计配置（.sofagent/config.yml 加载，三级 fallback）
- * @param history 历史审计记录（可选；不传则 runner 自动从文件加载）
- * @param gb48000 v1.3.1 交付 2：国标对齐 GB/T 48000.3-2026 维度（opt-in 默认 false）
- * @param quickMode v1.3.3 #8：quick 模式标记（cli-quick 零配置审计），A3 见到跳过越界检查
+ * v1.3.8 P1-B4：新增对象参数签名（推荐）——`runRules({ diffFiles, silent: true, ... })`。
+ * 旧的位置参数签名保留兼容（既有调用方/测试较多，全量迁移另行排期），
+ * 两个签名最终都汇入同一实现，行为完全一致。
  */
 export function runRules(
-  diffFiles: DiffFile[],
-  logEntries: LogEntry[],
+  diffFilesOrOptions: DiffFile[] | RunRulesOptions,
+  logEntries?: LogEntry[],
   task?: string,
   strict?: boolean,
   silent?: boolean,
@@ -76,7 +97,23 @@ export function runRules(
   gb48000?: boolean,
   quickMode?: boolean,
 ): AuditResult {
-  return runRulesWithFastFail(diffFiles, logEntries, task, strict, silent, commitMsg, config, history, gb48000, quickMode);
+  // 对象签名：解包后走同一实现（调用方不可能两套都传）
+  if (Array.isArray(diffFilesOrOptions)) {
+    return runRulesWithFastFail(diffFilesOrOptions, logEntries ?? [], task, strict, silent, commitMsg, config, history, gb48000, quickMode);
+  }
+  const opts = diffFilesOrOptions;
+  return runRulesWithFastFail(
+    opts.diffFiles,
+    opts.logEntries ?? [],
+    opts.task,
+    opts.strict,
+    opts.silent,
+    opts.commitMsg,
+    opts.config,
+    opts.history,
+    opts.gb48000,
+    opts.quickMode,
+  );
 }
 
 // ============================================================
