@@ -202,8 +202,9 @@ export function generateQuickOutput(
   }
 
   // v1.3.8 P1-B2: 扩展规则默认关闭披露——此前只写「完整 24 条含扩展」但未明示
-  // 扩展 7 条默认关闭，用户误以为 quick 已经全跑；显式披露规则覆盖面。
-  parts.push('ⓘ 扩展 7 条规则默认关闭（默认只跑 17 条）——config 启用扩展规则，规则集用 --ruleset 加载');
+  // 扩展规则默认关闭，用户误以为 quick 已经全跑；显式披露规则覆盖面。
+  // 措辞注意：首个「N 条」数字须为 17 或 24（check-version 维度 13 逐行取首个数字对账 SSOT）
+  parts.push('ⓘ 默认只跑 17 条规则（扩展规则默认关闭，config 启用）——规则集用 --ruleset 加载');
 
   // 产品签名
   parts.push('');
