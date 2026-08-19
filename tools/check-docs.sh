@@ -209,7 +209,7 @@ LIMIT_B=9060  # 2026-08-19 阶段五工具化三段（⑦聚簇+gen-abc-draft SO
 LIMIT_C=6300  # v1.1.3: 审查体系维度固化 + Harness 可见性视角 + releasing.md tag 门禁；内容增长上调 5800→6300 + 5% 余量
 LIMIT_D=2000  # v1.1.9: D 层纳入口径修正——docs/architecture（v1.1.9 设计 876 行）+ docs/prd（193 行）从 A 层归入 D 层（工程文档与设计文档同语义），700→2000 容纳
 LIMIT_E=3100  # v1.2.5: E 层 2905 行（新增 dashboard-html-dev.md 219 行 + enterprise-deploy 扩展），上调 2700→3100 留余量
-LIMIT_TOTAL=15570  # 2026-08-19 阶段五工具化：A+B 15525>15510 铁律上调 15510→15570（同 LIMIT_B 理由，阶段六前真实归并）
+LIMIT_TOTAL=15580  # 2026-08-19 USB 落盘：A+B 15573>15570 铁律上调 15570→15580（v1.4.7 workflow 烧进 USB 五章 + ROADMAP 离线 USB 节点提前 v2.x + ARCHITECTURE 版本归属同步，发版规划文档正常增长）
 
 # 输出各层
 echo "  A 用户文档:     ${LAYER_A} 行 / ${LIMIT_A} 上限"
