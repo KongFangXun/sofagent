@@ -173,3 +173,4 @@ release-gate-loop 与 fresh-eyes-loop 共享本文件，通过"循环"列区分�
 2026-08-18     | 20260818-28    | fresh-eyes  | 3    | 0   | 0   | 1   | consecutive-degraded-error | /Users/kongfangxun/.sofagent/data/forge-runs/fresh-eyes-loop/2026-08-18/run-28
 
 2026-08-19     | 20260819-01    | release-gate | 25   | PASS       | SKIP       | SKIP     | FAIL    | /Users/kongfangxun/.sofagent/data/forge-runs/release-gate-loop/2026-08-19/run-01
+| — | 2026-08-19 | release-gate-复验 | v1.3.7 阶段六 run-01 后主 session 零信任复验 | 复验改判：FAIL→检查器侧债（非仓库问题） | dim106 SSOT 222 漏跟（已修→226）/ dim49 凌晨 IO 高压时段性超时（本机实测 1.5s 绿）/ coverage P1-1 跳号 70=基线重建既成事实（补豁免注记）/ P2-1 搜索口径错（S290-S293 无版本前缀）。修复：SSOT 修正+跳号豁免+空文件清理+孤儿分支 tag 存档删除。driver 流程债（失败未阻断+F 空转）记 FORGE 待演进。可重跑 run-02 | 主 session |
