@@ -96,6 +96,15 @@ Harness 的另一价值点是**「不依赖 AI 也能守门」**。当 LLM 不�
 | 9 | 法则6 考核 Evals | 审计 A1-A11、A14-A23 + E1-E2/E4（共 24 条）= Reality Anchor + Dream Cycle eval 驱动 | 已具备（底座）+ 缺口 | v1.3.1+ 产品化 | 企业专属 eval 套件缺口 |
 | 10 | 法则7 万亿转型服务 | FDE = Services-as-Software + 市场信号互证 | 已具备（核心背书） | 印证 + 规模化缺口 | a16z 最重磅外部背书；规模化交付进未来迭代 |
 
+### 红杉 Neo-Lab / Sovereign AI 四层主权
+
+> 📐 来源：红杉美国合伙人 Sonya Huang 创始人闭门分享（2026-08-18 流传视频转写）——「Every AI application company will become a neo-lab」+ Sovereign AI 四层主权框架。
+
+- **「主权是光谱不是开关」**——红杉说绝大多数公司该待在中间档（开源基座微调 + 核心场景自有模型 + 长尾外调），别一上来就搞最重的全量训练。这与 sofagent 的「通用模型路由不自研——企业挂第三方 model router，只保留数据主权路由 + 注册/灰度/退役」（v1.3.6 已定）完全同构。
+- **「先建评测集，再谈微调」**——红杉的落地顺序与 sofagent 的 Benchmark 先行 + `define_acceptance` 机器可判定验收一致：没有业务评测的微调全是瞎调。
+
+**四层主权 → sofagent 落点**（商业模型层 / 商业平台 商业侧定位详见 [v1.4.0](./changelog/v1.4/v1.4.0.md) / [v1.4.7](./changelog/v1.4/v1.4.7.md)）：数据主权 = ontology + 审计（已具备）；模型适配 = 训练引擎 v1.4.x；评测迭代 = Benchmark + MLflow；部署 = 本地权重 + 灰度切换 + 审计 + 回滚——「权重 ≠ 主权」，「能跑模型」不等于「能管住模型」。
+
 ### 硅基员工论：Org Graph 与 Ontology Runtime
 
 - **Org Graph = 进组织架构的硅基员工**：研报把「长期存活、固定领域、保留上下文与工具权限」的 Agent 称为 Org Graph 节点，与 sofagent 核心定位字面对应——AI 不是效率工具，是进组织编制、有独立账号、接受绩效考核的硅基员工；FDE 交付的「常驻 Agent」正是 Org Graph 的企业落地形态。
