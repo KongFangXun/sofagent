@@ -82,6 +82,52 @@ describe('A2 不泄密钥', () => {
     expect(result.evidenceMode).toBe('git-diff');
   });
 
+  // v1.3.8 P0-2 回归：FFFD 短路绕过——攻击者把密钥后拼非法 UTF-8 字节再 base64/hex，
+  // 解码产生 \uFFFD。旧逻辑「含 FFFD 即整体放弃解码」会让密钥候选逃逸（实测复现：
+  // base64(AWS 密钥 + 0xd4 0x90 0x8b) 旧逻辑返回 null）。
+  // 修复：解码后剥离 \uFFFD 再跑密钥正则（密钥本体是 ASCII，FFFD 是干扰尾巴）。
+  // 场景：encoded.txt 内容即裸 base64（printf '<密钥>' | base64 > encoded.txt）。
+  describe('FFFD 短路绕过（非法 UTF-8 尾字节）', () => {
+    // 运行时拼接密钥形态（铁律：测试不字面写真实格式密钥，与文件上方用例的拆分手法一致）
+    const awsLike = ['AK', 'IAIOSFODNN7EXAMPLE'].join('');
+
+    it('base64 密钥 + 非法 UTF-8 尾字节 → 剥离 FFFD 后仍 FAIL（不再整体放弃）', () => {
+      // payload 运行时拼接：密钥 + 非法 UTF-8 序列（0xd4 0x90 0x8b）→ 解码产生 \uFFFD
+      const payload = Buffer.concat([
+        Buffer.from(awsLike),
+        Buffer.from([0xd4, 0x90, 0x8b]),
+      ]).toString('base64');
+      const ctx = makeCtx([makeDiffFile('encoded.txt', [`+${payload}`])]);
+      const result = checkRuleA2(ctx);
+      expect(result.status).toBe('FAIL');
+    });
+
+    it('hex 密钥 + 非法 UTF-8 尾字节 → 剥离 FFFD 后仍 FAIL', () => {
+      const payload = Buffer.concat([
+        Buffer.from(awsLike),
+        Buffer.from([0xd4, 0x90, 0x8b]),
+      ]).toString('hex');
+      const ctx = makeCtx([makeDiffFile('encoded.hex', [`+${payload}`])]);
+      const result = checkRuleA2(ctx);
+      expect(result.status).toBe('FAIL');
+    });
+
+    it('合法 base64 密钥（无 FFFD 污染）→ 仍 FAIL（无回归）', () => {
+      const payload = Buffer.from(awsLike).toString('base64');
+      const ctx = makeCtx([makeDiffFile('plain-b64.txt', [`+${payload}`])]);
+      const result = checkRuleA2(ctx);
+      expect(result.status).toBe('FAIL');
+    });
+
+    it('纯随机二进制 base64（剥离 FFFD 后无密钥特征）→ 不误报 PASS', () => {
+      // 全随机字节解码后既无可打印密钥也无中文 → 清洗后仍为空候选 → 不告警
+      const payload = Buffer.from([0xd4, 0x90, 0x8b, 0xff, 0xfe, 0x81, 0xa2, 0xb3]).toString('base64');
+      const ctx = makeCtx([makeDiffFile('noise.txt', [`+${payload}`])]);
+      const result = checkRuleA2(ctx);
+      expect(result.status).toBe('PASS');
+    });
+  });
+
   // 二进制文件盲区 WARN（红队实测：二进制 blob 无内容行可扫，密钥可藏身）
   describe('新增二进制文件 WARN', () => {
     it('新增 .bin 文件 → WARN（二进制不扫内容）', () => {

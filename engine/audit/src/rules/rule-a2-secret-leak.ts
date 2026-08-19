@@ -40,8 +40,13 @@ function tryDecodeBase64(s: string): string | null {
   }
   try {
     const decoded = Buffer.from(s.replace(/\s+/g, ''), 'base64').toString('utf-8');
-    if (decoded && /[\x20-\x7E\u4e00-\u9fff]/.test(decoded) && !decoded.includes('\uFFFD')) {
-      return decoded;
+    // v1.3.8 P0-2（FFFD 短路绕过修复）：解码产生 \uFFFD（非法 UTF-8 字节）时不再整体放弃——
+    // 攻击者可在 AKIA 密钥后拼非法 UTF-8 尾字节（如 0xd4 0x90 0x8b）再 base64，
+    // 此前「含 FFFD 即 return null」会让密钥候选整体逃逸。密钥本体是 ASCII，
+    // FFFD 只是干扰尾巴——剥离后再做可打印性判定与后续密钥正则检测。
+    const cleaned = decoded.replace(/\uFFFD/g, '');
+    if (cleaned && /[\x20-\x7E\u4e00-\u9fff]/.test(cleaned)) {
+      return cleaned;
     }
   } catch { /* 解码失败忽略 */ }
   return null;
@@ -54,8 +59,10 @@ function tryDecodeHex(s: string): string | null {
   }
   try {
     const decoded = Buffer.from(hexStr, 'hex').toString('utf-8');
-    if (decoded && /[\x20-\x7E\u4e00-\u9fff]/.test(decoded) && !decoded.includes('\uFFFD')) {
-      return decoded;
+    // v1.3.8 P0-2：同 base64 路径——剥离 \uFFFD 再检测（同款 FFFD 短路绕过防御）
+    const cleaned = decoded.replace(/\uFFFD/g, '');
+    if (cleaned && /[\x20-\x7E\u4e00-\u9fff]/.test(cleaned)) {
+      return cleaned;
     }
   } catch { /* 解码失败忽略 */ }
   return null;
