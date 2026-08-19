@@ -1571,10 +1571,10 @@ grep -q '(?!tmp|home' engine/audit/src/rules/skill-safety-rules.ts && grep -q '(
 # FORGE driver LLM 超时：四文件实例化点缺一即挂死风险回植
 # （注意：不用 awk 管道——driver bash -c 注入场景 \$ 转义会炸，改用逐文件 grep -q 链，无转义依赖）
 grep -q 'timeout: 600_000' FORGE/src/driver-base.mjs && grep -q 'timeout: 600_000' FORGE/src/fresh-eyes-driver.mjs && grep -q 'timeout: 600_000' FORGE/src/release-gate-driver.mjs && grep -q 'timeout: 600_000' FORGE/src/tool-output-budget.mjs && echo "✅ LLM 超时四文件全覆盖" || echo "❌ 超时保护缺失"
-# FORGE resume 越轮泄漏：completedWorkers 只许喂被续跑轮
-grep -q 'round === resumeState?.round' FORGE/src/fresh-eyes-driver.mjs && echo "✅ resume 轮次守卫在位" || echo "❌ 越轮泄漏回植"
-# acceptance S146 cwd 漂移：scenario() cd TMP_REPO 后子 shell 须显式 cd 回主仓
-grep -q 'cd "\$PROJECT_ROOT" && NODE_OPTIONS' FORGE/playbook/acceptance-test.sh && echo "✅ S146 cwd 回位" || echo "❌ 漂移挂起回植"
+# FORGE resume 越轮泄漏 + S146 cwd 漂移 + check-version 溯源豁免（v1.3.7 三实录防复发）
+grep -q 'round === resumeState?.round' FORGE/src/fresh-eyes-driver.mjs && echo "✅ resume 守卫" || echo "❌ 越轮泄漏回植"
+grep -q 'cd "\$PROJECT_ROOT" && NODE_OPTIONS' FORGE/playbook/acceptance-test.sh && echo "✅ S146 cwd 回位" || echo "❌ 漂移回植"
+grep -q 'ver == SSOT' tools/check-version.sh && grep -q '新增|增强' tools/bump-version.sh && echo "✅ 溯源豁免" || echo "❌ 溯源误报回植"
 ```
 <!-- 瘦身判据（v1.3.6 详录见 git 历史；v1.3.7：①②③全否——116 子项 3 条+S293 均三死实录新审查面；checklist 触 1585>1580 且本版已上调一次触发冻结 → 压缩 v1.3.6 注释 13→3 行真实归并达标未再上调；acceptance 2633<2640 ✓ / fresh-eyes 400=400 ✓）
 -->

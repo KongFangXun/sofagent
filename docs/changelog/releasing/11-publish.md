@@ -398,6 +398,20 @@ bash tools/check-version.sh   # 全绿
 
 ## 网络降级策略
 
+### 直连 push 与 HTTP/1.1（v1.3.7 实战补 · 本版三次断连实录）
+
+> 本版（v1.3.7）push 三连失败实录：①git config 死代理（53957 端口）→ ②直连 443「Recv failure: Operation timed out」/「HTTP2 framing layer」→ ③HTTP/1.1 + 速度限制后成功。**经验：curl 能通 ≠ git 能通**（git 走 HTTP/2 + 慢连接更脆弱），git 侧强制 HTTP/1.1 + 慢速兜底最稳。
+
+```bash
+# 全配置一键直连（git config 代理 + 环境变量代理全剥）：
+env -u http_proxy -u https_proxy -u HTTP_PROXY -u HTTPS_PROXY -u ALL_PROXY -u all_proxy \
+  git -c http.proxy= -c https.proxy= -c http.version=HTTP/1.1 \
+  -c http.lowSpeedLimit=1000 -c http.lowSpeedTime=300 \
+  push origin main
+```
+
+> curl 探测代理端口存活：`curl -s -o /dev/null -w "%{http_code}" -x http://127.0.0.1:<端口> https://github.com`——200 = 端口可用（但 git 仍可能因 HTTP/2 失败，直接上 HTTP/1.1）。
+
 git push 超时时，gh CLI / clawhub / skillhub 走独立 API 通道不受影响：
 
 ```bash
