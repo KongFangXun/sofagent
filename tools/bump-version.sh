@@ -306,11 +306,17 @@ while IFS= read -r ts; do
   [[ "$ts" == *.test.ts ]] && continue
   [[ "$ts" == */dist/* ]] && continue
   # 只处理文件头前 10 行的注释（文件头版本号声明区域）
+  # v1.3.7 修复：豁免功能溯源标记行（「vX.Y.Z 新增/增强/基础版/补上/交付/升级」是
+  # 功能引入版本的历史叙述，不是当前版本锚点——历史误伤的根源，check-version [12/14] 已同步豁免）
   ts_head=$(head -10 "$ts")
   ts_rest=$(tail -n +11 "$ts")
-  ts_head_new=$(echo "$ts_head" | sed \
-    -e "s/v${OLD_3SEG}/v${NEW_3SEG}/g" \
-    -e "s/v${OLD_2SEG}\([^0-9.]\)/v${NEW_2SEG}\1/g")
+  ts_head_new=$(echo "$ts_head" | awk -v OLD3="$OLD_3SEG" -v NEW3="$NEW_3SEG" -v OLD2="$OLD_2SEG" -v NEW2="$NEW_2SEG" '
+    {
+      if ($0 ~ /新增|增强|基础版|补上|交付|升级|引入|首次/) { print; next }
+      gsub(OLD3, NEW3)
+      gsub(OLD2 "([^0-9.]|$)", NEW2 "\\1")
+      print
+    }')
   if [[ "$ts_head_new" != "$ts_head" ]]; then
     echo -e "  ${GREEN}✓${NC} 文件头注释: v$OLD_3SEG → v$NEW_3SEG"
     echo -e "    ${CYAN}$ts${NC}"

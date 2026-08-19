@@ -520,9 +520,21 @@ while IFS= read -r ts; do
   [[ "${ts}" == *.test.ts ]] && continue
   [[ "${ts}" == */dist/* ]] && continue
   # 只检查文件头前 10 行的注释（与 tools/bump-version.sh [4/13] 对齐）
-  match=$(head -10 "${ts}" | grep -m2 -nE '// .*v[0-9]+\.[0-9]+\.[0-9]+' | head -1)
-  [[ -z "${match}" ]] && continue
-  found_ver=$(echo "${match}" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+  # v1.3.7 修复：文件头 `//` 注释里的版本号是「功能溯源标记」（记录该文件/功能最后一次
+  # 变更的版本），不是「当前版本锚点」——历史 check 把两者混为一谈，导致溯源标记
+  # （如 `v1.1.9 新增`）被误判为「漏 bump」。判据改为「找到 = SSOT 的版本号即通过」：
+  # 有当前版本锚点（如 `v1.3.7 交付④`）→ 校验通过；纯溯源老文件（如 `v1.1.9 新增`）→ 跳过。
+  found_ver=$(head -10 "${ts}" | awk -v SSOT="${SSOT_VERSION}" '
+    /^\/\// {
+      s = $0
+      while (match(s, /v[0-9]+\.[0-9]+\.[0-9]+/)) {
+        ver = substr(s, RSTART+1, RLENGTH-1)
+        if (ver == SSOT) { print ver; exit }
+        s = substr(s, RSTART+RLENGTH)
+      }
+    }
+  ')
+  [[ -z "${found_ver}" ]] && continue
   if [[ "${found_ver}" != "${SSOT_VERSION}" ]]; then
     report_error "${ts}" "v${found_ver}" "v${SSOT_VERSION}"
     ts_header_errors=$((ts_header_errors + 1))
