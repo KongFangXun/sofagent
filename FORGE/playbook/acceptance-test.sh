@@ -6,7 +6,9 @@ export LANG=en_US.UTF-8
 export LC_ALL=en_US.UTF-8
 # sofagent-audit · 上线前验收测试（Pre-Release Acceptance Test）
 # 覆盖：FORGE + MCP + 文件系统审计 + daemon + 红队对抗 + 各版本新功能验收
-# 场景数：222 个场景（SSOT：check-test-count.sh 校验；v1.3.6 +8：S282-S289；v1.3.5 +12：S270-S281）
+# 场景数：226 个场景（SSOT：check-test-count.sh 校验；v1.3.7 +4：S290-S293；v1.3.6 +8：S282-S289）
+# 编号跳号豁免：S1~S293 间有 70 个空洞号（全在 S36-S202 历史段）——v1.2.x 瘦身删场景
+# 与基线重建（restore 6e542467）的既成事实，非丢失；新场景编号=当前最大+1 顺延，禁止回填空洞
 # 版本段起点见文件内「# ─── v」分组标记（grep "─── v" 定位）
 # 口径注意：底部「$PASSED 通过」是断言通过数（≠场景数，含跳过场景），勿混用
 # 用法：bash FORGE/playbook/acceptance-test.sh  退出码 = 失败场景数（0 = 全部通过）

@@ -171,3 +171,5 @@ release-gate-loop 与 fresh-eyes-loop 共享本文件，通过"循环"列区分�
 | run-28 | 2026-08-18 | fresh-eyes | v1.3.7 阶段四 | aborted-session-reclaim | 24 视角+合并 15 finding（0P0/4P1/11P2）全部落盘后，a-verify 分片 1/3 裸 LLM 降级调用中进程静默消失（无栈无 OOM 无退出标记，日志冻结于 22:23:30/心跳止于 22:25:55）——run-27 nohup 死法后又一同款：driver 随启动 session 被回收。finding 资产可复用，主 session 已接手零信任复验 | /Users/kongfangxun/.sofagent/data/forge-runs/fresh-eyes-loop/2026-08-18/run-28 |
 
 2026-08-18     | 20260818-28    | fresh-eyes  | 3    | 0   | 0   | 1   | consecutive-degraded-error | /Users/kongfangxun/.sofagent/data/forge-runs/fresh-eyes-loop/2026-08-18/run-28
+
+2026-08-19     | 20260819-01    | release-gate | 25   | PASS       | SKIP       | SKIP     | FAIL    | /Users/kongfangxun/.sofagent/data/forge-runs/release-gate-loop/2026-08-19/run-01
