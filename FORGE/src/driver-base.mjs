@@ -1020,6 +1020,82 @@ export function createForgeDriverBase(config = {}) {
 //   - dry-run 跳过：dry-run 不真跑 worker，环境检查无意义且会打破
 //     forge-smoke-test.sh 的 dry-run RC=0 契约
 
+// ════════════════════════════════════════════════════════════
+// v1.3.8 交付五 · liveness 探针（模块级导出，两 driver 共用）
+// ════════════════════════════════════════════════════════════
+//
+// 背景：driver 的 LLM 长窗口（单 worker 5-30 分钟）期间 stdout 日志长时间
+// 无新行是正常现象——用「日志是否滚动」判活会把活着的长任务误杀。唯一可信
+// 的存活信号是 driver 主循环每 15s 刷写的 status.json heartbeat 字段。
+//
+// 判定协议（只认心跳不认日志）：
+//   - status.json 存在且 heartbeat（或 lastUpdate）距今 < 90s → alive（RC=0）
+//   - 超 90s / status.json 不存在 / runDir 不存在 → dead（RC=1，附最后事件）
+//
+// @param {string} runDir  run 根目录（含 status.json）
+// @param {Object} [opts]
+// @param {number} [opts.thresholdMs=90000]  心跳新鲜度阈值（毫秒）
+// @param {Function} [opts.now=Date.now]     时间源（测试可注入）
+// @param {Function} [opts.readJson]         读 JSON 文件实现（测试可注入）
+// @returns {{ alive: boolean, rc: 0|1, report: string,
+//            heartbeatAgeMs: number|null, lastEvent: string|null, phase: string|null }}
+export function checkDriverLiveness(runDir, opts = {}) {
+  const {
+    thresholdMs = 90_000,
+    now = () => Date.now(),
+    existsImpl = (p) => existsSync(p),
+    readJsonImpl = (p) => JSON.parse(readFileSync(p, 'utf-8')),
+  } = opts;
+
+  const mk = (alive, lastEvent, phase, heartbeatAgeMs, detail) => ({
+    alive,
+    rc: alive ? 0 : 1,
+    heartbeatAgeMs: heartbeatAgeMs ?? null,
+    lastEvent: lastEvent ?? null,
+    phase: phase ?? null,
+    report: detail,
+  });
+
+  if (!runDir || !existsImpl(runDir)) {
+    return mk(false, null, null, null,
+      `dead\n  runDir 不存在: ${runDir || '(空)'}`);
+  }
+
+  const statusPath = join(runDir, 'status.json');
+  if (!existsImpl(statusPath)) {
+    // status.json 还没生成——driver 可能刚启动（run-start 之前）也可能已死。
+    // 保守判 dead：刚启动的 driver 秒级内就会 emit RUN_START 写出 status.json，
+    // 监控端下轮重查即可；误报窗口 < 5s，远小于误杀长任务的风险。
+    return mk(false, null, null, null,
+      `dead\n  status.json 不存在（driver 从未启动或 runDir 非法）: ${statusPath}`);
+  }
+
+  let status;
+  try {
+    status = readJsonImpl(statusPath);
+  } catch (err) {
+    return mk(false, null, null, null,
+      `dead\n  status.json 解析失败: ${err.message}`);
+  }
+
+  // 心跳时间戳：heartbeat 优先，lastUpdate 兜底（emit 时两者同值）
+  const tsRaw = status.heartbeat || status.lastUpdate;
+  const ts = tsRaw ? Date.parse(tsRaw) : NaN;
+  if (!Number.isFinite(ts)) {
+    return mk(false, status.event ?? null, status.phase ?? null, null,
+      `dead\n  status.json 无有效心跳字段（heartbeat/lastUpdate 均缺失或非法）`);
+  }
+
+  const ageMs = now() - ts;
+  if (ageMs < thresholdMs) {
+    return mk(true, status.event ?? null, status.phase ?? null, ageMs,
+      `alive\n  heartbeat ${Math.round(ageMs / 1000)}s 前（阈值 ${Math.round(thresholdMs / 1000)}s）  phase=${status.phase ?? '?'}  event=${status.event ?? '?'}`);
+  }
+  return mk(false, status.event ?? null, status.phase ?? null, ageMs,
+    `dead\n  heartbeat ${Math.round(ageMs / 1000)}s 未更新（阈值 ${Math.round(thresholdMs / 1000)}s）  最后 event=${status.event ?? '?'}  phase=${status.phase ?? '?'}`);
+}
+
+
 /** 磁盘空间最低阈值（200MB——一轮 run 产物 < 10MB，留足余量即可） */
 export const PREFLIGHT_MIN_DISK_MB = 200;
 

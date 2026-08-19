@@ -9,11 +9,13 @@
 #   ./tools/forge-pm2-start.sh logs <driver>
 #   ./tools/forge-pm2-start.sh status
 #   ./tools/forge-pm2-start.sh restart <driver> <target> [options]
+#   ./tools/forge-pm2-start.sh alive <driver> [runDir]
 #
 # 参数:
 #   <driver>   fresh-eyes | release-gate | all
 #   <target>   目标版本号（如 v1.2.9），start/restart 必填
 #   [options]  额外参数透传给 driver（如 --max-rounds 5）
+#   [runDir]   alive 命令的 run 目录（缺省自动发现最新 run）
 #
 # 示例:
 #   ./tools/forge-pm2-start.sh start fresh-eyes v1.2.9 --max-rounds 5
@@ -21,10 +23,12 @@
 #   ./tools/forge-pm2-start.sh stop all
 #   ./tools/forge-pm2-start.sh logs fresh-eyes
 #   ./tools/forge-pm2-start.sh status
+#   ./tools/forge-pm2-start.sh alive fresh-eyes          # liveness 探针（只认心跳）
+#   ./tools/forge-pm2-start.sh alive release-gate <runDir>
 #
 # 退出码:
-#   0 = 成功
-#   1 = 失败（参数错误、PM2 未安装、driver 不存在等）
+#   0 = 成功（alive 命令下 0 = driver 存活）
+#   1 = 失败（参数错误、PM2 未安装、driver 不存在、alive 探针判 dead）
 # ============================================================
 
 set -uo pipefail
@@ -59,6 +63,7 @@ FORGE PM2 守护进程管理
   forge-pm2-start.sh logs <driver>
   forge-pm2-start.sh status
   forge-pm2-start.sh restart <driver> <target> [options]
+  forge-pm2-start.sh alive <driver> [runDir]
 
 driver:
   fresh-eyes    fresh-eyes-driver（A/B 双盲独立审查循环）
@@ -71,12 +76,17 @@ target:
 options:
   额外参数透传给 driver（如 --max-rounds 5、--skip-acceptance）
 
+alive（v1.3.8 交付五 · liveness 探针）:
+  只认 status.json 心跳不认日志——LLM 长窗口日志冻结 ≠ 死亡。
+  心跳新鲜（<90s）→ RC=0 输出 alive；超时 → RC=1 输出 dead + 最后 event/phase。
+  runDir 缺省时自动发现最新 run 目录（SOFAGENT_HOME/data/forge-runs/<loop>/）。
+
 示例:
   forge-pm2-start.sh start fresh-eyes v1.2.9 --max-rounds 5
   forge-pm2-start.sh start release-gate v1.2.9 --skip-acceptance
   forge-pm2-start.sh stop all
   forge-pm2-start.sh logs fresh-eyes
-  forge-pm2-start.sh status
+  forge-pm2-start.sh alive fresh-eyes
 EOF
 }
 
@@ -171,7 +181,54 @@ do_restart() {
   do_start "$drv" "$target" "$extra_args"
 }
 
+# ─── alive 命令（v1.3.8 交付五：liveness 探针）───
+# 只认 status.json 心跳不认日志。透传 --check-alive <runDir> 给 driver，
+# RC=0 = alive / RC=1 = dead。runDir 缺省时自动发现最新 run 目录。
+do_alive() {
+  local drv="$1"
+  validate_driver "$drv"
+  [ "$drv" = "all" ] && {
+    echo -e "${RED}✗ alive 需要单个 driver（fresh-eyes | release-gate），不支持 all${NC}"
+    exit 1
+  }
+
+  local loop_dir="$drv-loop"
+  local home="${SOFAGENT_HOME:-$HOME/.sofagent}"
+  local runs_root="$home/data/forge-runs/$loop_dir"
+  local run_dir="${2:-}"
+
+  # 自动发现最新 run 目录（日期倒序 → 最大 run-NN）
+  if [ -z "$run_dir" ]; then
+    local latest_date
+    latest_date=$(ls -1 "$runs_root" 2>/dev/null | grep -E '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' | sort -r | head -1)
+    if [ -n "$latest_date" ]; then
+      local latest_run
+      latest_run=$(ls -1 "$runs_root/$latest_date" 2>/dev/null | grep -E '^run-[0-9]+$' | sort -r | head -1)
+      if [ -n "$latest_run" ]; then
+        run_dir="$runs_root/$latest_date/$latest_run"
+      fi
+    fi
+  fi
+
+  if [ -z "$run_dir" ]; then
+    echo -e "${RED}dead${NC}"
+    echo -e "  未找到任何 run 目录（$runs_root）"
+    exit 1
+  fi
+
+  local drv_script="FORGE/src/${drv}-driver.mjs"
+  node "$drv_script" --check-alive "$run_dir"
+  return $?
+}
+
 # ─── 主入口 ───
+
+# alive 是纯只读探针（不起 PM2 进程），不需要 PM2 安装——跳过 check_pm2
+if [ "${1:-}" = "alive" ]; then
+  shift || true
+  do_alive "$@"
+  exit $?
+fi
 
 check_pm2
 
@@ -184,6 +241,7 @@ case "$COMMAND" in
   logs)    do_logs "$@" ;;
   status)  do_status ;;
   restart) do_restart "$@" ;;
+  alive)   do_alive "$@" ;;
   help|-h|--help) print_help ;;
   "")
     echo -e "${RED}✗ 缺少命令${NC}"

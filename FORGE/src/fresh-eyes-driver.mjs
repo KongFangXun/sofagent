@@ -29,7 +29,7 @@ import { fileURLToPath } from 'url';
 import os from 'os';
 
 // v1.2.7 功能⑤：继承 driver-base 公共编排层
-import { createForgeDriverBase, runPreflight, formatPreflightReport, resolveMaxConcurrency, createConcurrencyDegrader } from './driver-base.mjs';
+import { createForgeDriverBase, runPreflight, formatPreflightReport, resolveMaxConcurrency, createConcurrencyDegrader, checkDriverLiveness } from './driver-base.mjs';
 
 // 可见性：核心层 + 适配器（agent 无关 + 渐进适配）
 import { createVisibility, EVENTS } from './visibility.mjs';
@@ -280,7 +280,7 @@ const concurrencyDegrader = createConcurrencyDegrader(MAX_CONCURRENCY);
 function parseArgs(argv) {
   const args = { target: null, maxRounds: 10, dryRun: false,
                  worker: false, step: null, roundDir: null,
-                 resume: false };
+                 resume: false, checkAlive: null };
   for (let i = 2; i < argv.length; i++) {
     const a = argv[i];
     if (a === '--target')           args.target    = argv[++i];
@@ -291,6 +291,8 @@ function parseArgs(argv) {
     else if (a === '--round-dir')   args.roundDir  = argv[++i];
     // v1.2.8 功能⑦：断点续跑（参数名与 driver-base.parseDriverArgs / release-gate 保持一致）
     else if (a === '--resume')      args.resume    = true;
+    // v1.3.8 交付五：liveness 探针——只认 status.json 心跳不认日志
+    else if (a === '--check-alive') args.checkAlive = argv[++i];
   }
   return args;
 }
@@ -3043,6 +3045,16 @@ async function detectReporters() {
 async function main() {
   const args = parseArgs(process.argv);
 
+  // ─── v1.3.8 交付五：liveness 探针（--check-alive <runDir>）───
+  // 只认 status.json 心跳不认日志——LLM 长窗口期间日志冻结≠死亡。
+  // alive → RC=0 输出 alive；超 90s / 无心跳 → RC=1 输出 dead + 最后 event/phase。
+  if (args.checkAlive !== null) {
+    const result = checkDriverLiveness(args.checkAlive);
+    console.log(`[check-alive] ${args.checkAlive}`);
+    console.log(result.report);
+    process.exit(result.rc);
+  }
+
   // ─── Worker 模式 ───
   if (args.worker) {
     if (!args.step || !args.roundDir || !args.target) {
@@ -3088,6 +3100,34 @@ async function main() {
   let resumeState = null;       // loadResumePoint 的结果（null = 无断点）
   let resumeRunDir = null;      // resume 复用的已有 run 目录
   let resumeFromRound = 0;      // 下一轮从这里开始（= 最后完成轮号，循环从 +1 起）
+
+  // ─── v1.3.8 交付五：resume 自动检测 ───
+  // 启动时（未显式传 --resume）扫描最近 run 目录的 resume-point.json——
+  // 存在未完成断点则打印续跑提示并自动启用 --resume（等价于显式传参）。
+  // 🔴 不改 resume 语义：run-29 修复（completedWorkers 只对被续跑轮生效，
+  // commit 40d63fb7）在下方 resumeState 消费处保留，此处只做「入口自动接线」。
+  // 断点显示 completed 且已达 maxRounds 时 loadResumePoint 的消费逻辑会自然
+  // 判「循环已完成」，不会无意义续跑。
+  if (!args.resume && !args.dryRun && !args.worker) {
+    try {
+      const candidate = discoverLatestRunDir();
+      if (candidate) {
+        const candidateState = base.loadResumePoint(candidate);
+        if (candidateState) {
+          resumeRunDir = candidate;
+          args.resume = true;
+          console.log(`🔄 检测到未消费断点（自动进入 resume 模式）:`);
+          console.log(`   runDir = ${candidate}`);
+          console.log(`   断点   = round ${candidateState.round}` +
+            `${Array.isArray(candidateState.completedWorkers) ? `（${candidateState.completedWorkers.length} 个 worker 已完成）` : ''}`);
+          console.log(`   提示   = 如需全新 run，请删除该目录或显式换 SOFAGENT_HOME`);
+        }
+      }
+    } catch (probeErr) {
+      // 断点探测失败降级为普通启动——探针是优化层不是正确性层
+      console.warn(`   ⚠️ resume 断点探测失败（降级为全新启动）: ${probeErr.message}`);
+    }
+  }
 
   if (args.resume && !args.dryRun) {
     resumeRunDir = discoverLatestRunDir();

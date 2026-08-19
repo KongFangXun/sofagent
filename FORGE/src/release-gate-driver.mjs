@@ -36,7 +36,7 @@ import { fileURLToPath } from 'url';
 import os from 'os';
 
 // v1.2.7 功能⑤：继承 driver-base 公共编排层
-import { createForgeDriverBase, runPreflight, formatPreflightReport, resolveMaxConcurrency } from './driver-base.mjs';
+import { createForgeDriverBase, runPreflight, formatPreflightReport, resolveMaxConcurrency, checkDriverLiveness } from './driver-base.mjs';
 
 // 可见性：核心层 + 适配器（agent 无关 + 渐进适配）
 import { createVisibility, EVENTS } from './visibility.mjs';
@@ -268,7 +268,8 @@ function parseArgs(argv) {
   const args = { target: null, dryRun: false,
                  worker: false, step: null, runDir: null,
                  skipAcceptance: false, help: false,
-                 resume: false };
+                 resume: false, checkAlive: null,
+                 judgmentOnly: false, acceptanceRange: null, autoFix: false };
   for (let i = 2; i < argv.length; i++) {
     const a = argv[i];
     if (a === '--help' || a === '-h') args.help             = true;
@@ -280,6 +281,13 @@ function parseArgs(argv) {
     else if (a === '--skip-acceptance') args.skipAcceptance = true;
     // v1.2.8 功能⑦：断点续跑（参数名与 driver-base.parseDriverArgs / fresh-eyes 保持一致）
     else if (a === '--resume')      args.resume         = true;
+    // v1.3.8 交付五：liveness 探针——只认 status.json 心跳不认日志
+    else if (a === '--check-alive') args.checkAlive     = argv[++i];
+    // v1.3.8 交付七：判断层瘦身——一次启动直达四步，跳过 acceptance 分片
+    else if (a === '--judgment-only')    args.judgmentOnly    = true;
+    else if (a === '--acceptance-range') args.acceptanceRange = argv[++i];
+    // v1.3.8 交付七：F 修复链默认关闭，显式开关才进
+    else if (a === '--auto-fix')    args.autoFix        = true;
   }
   return args;
 }
@@ -2034,6 +2042,16 @@ async function main() {
     return;
   }
 
+  // ─── v1.3.8 交付五：liveness 探针（--check-alive <runDir>）───
+  // 只认 status.json 心跳不认日志——LLM 长窗口期间日志冻结≠死亡。
+  // alive → RC=0 输出 alive；超 90s / 无心跳 → RC=1 输出 dead + 最后 event/phase。
+  if (args.checkAlive !== null) {
+    const result = checkDriverLiveness(args.checkAlive);
+    console.log(`[check-alive] ${args.checkAlive}`);
+    console.log(result.report);
+    process.exit(result.rc);
+  }
+
   // ─── Worker 模式 ───
   if (args.worker) {
     if (!args.step || !args.runDir || !args.target) {
@@ -2081,6 +2099,34 @@ async function main() {
   let resumeReason = 'resume：复用断点记录的 verdict';
   let resumeFixRoundsRun = 0;    // F 链已完成轮数
   let resumeCompletedSteps = 0;  // 已完成步数（V:5 + F:每轮 3 步）
+
+  // ─── v1.3.8 交付五：resume 自动检测 ───
+  // 启动时（未显式传 --resume）扫描最近 run 目录的 resume-point.json——
+  // 存在可续跑断点（verdict-done FAIL / f-round-done 未收敛）则自动进入
+  // resume 模式（等价显式传参）；断点显示已收敛 PASS 由下方消费逻辑直接退出。
+  // 🔴 只做入口接线，不改 resume 语义。
+  if (!args.resume && !args.dryRun && !args.worker && !args.step) {
+    try {
+      const candidate = discoverLatestRunDir();
+      if (candidate) {
+        const candidateState = base.loadResumePoint(candidate);
+        if (candidateState && candidateState.phase === 'verdict-done' && candidateState.verdict === 'FAIL') {
+          resumeRunDir = candidate;
+          args.resume = true;
+          console.log(`🔄 检测到未消费断点（自动进入 resume 模式，从 F 修复链续跑）:`);
+          console.log(`   runDir = ${candidate}`);
+          console.log(`   断点   = phase=${candidateState.phase} verdict=${candidateState.verdict}`);
+        } else if (candidateState && candidateState.phase === 'f-round-done' && candidateState.verdict !== 'PASS') {
+          resumeRunDir = candidate;
+          args.resume = true;
+          console.log(`🔄 检测到未消费断点（自动进入 resume 模式，F 链已完成 ${candidateState.fixRoundsRun ?? 0} 轮）:`);
+          console.log(`   runDir = ${candidate}`);
+        }
+      }
+    } catch (probeErr) {
+      console.warn(`   ⚠️ resume 断点探测失败（降级为全新启动）: ${probeErr.message}`);
+    }
+  }
 
   if (args.resume && !args.dryRun) {
     const discovered = discoverLatestRunDir();
