@@ -855,3 +855,36 @@ export type {
   CriterionResult,
   AcceptanceCheckResult,
 } from './acceptance/acceptance';
+
+// ============================================================
+// v1.3.8 交付一：代理网关硬边界（SubAgent 外部请求唯一出入口）
+// ============================================================
+export {
+  createProxyGateway,
+  classifyRequestRisk,
+  sanitizeForAudit,
+  GATEWAY_AUDIT_REL,
+  GATEWAY_PENDING_DIR_REL,
+} from './gateway/proxy-gateway';
+export type {
+  ProxyRequest,
+  ProxyResult,
+  ProxyDecision,
+  ProxyAction,
+  ProxyRisk,
+  GatewayHITLDecision,
+  GatewayPendingCheckpoint,
+  GatewayWalHook,
+  RateLimitConfig,
+  ProxyGatewayOptions,
+  ProxyGateway,
+} from './gateway/proxy-gateway';
+export {
+  createPermissionCeiling,
+  DEFAULT_VIOLATION_THRESHOLD,
+} from './gateway/permission-ceiling';
+export type {
+  PermissionCeilingOptions,
+  PermissionCeiling,
+  CeilingCheckResult,
+} from './gateway/permission-ceiling';
