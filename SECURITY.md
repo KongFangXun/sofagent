@@ -20,7 +20,7 @@
 
 ## 已知风险（明文存储）
 
-sofagent 是一个 FDE Agent——底层引擎是纯本地 Harness 中间件（约束中间层），**数据不出本机**——但以下数据以**明文 Markdown** 存储，请评估风险：
+sofagent 是一个 FDE Agent——底层引擎是纯本地 Harness 中间件（约束中间层），**数据不出本机**（除安装时 npm 拉包外运行时不联网；例外：用户主动配置云同步时数据会离开本机，见 [多设备同步指南](./docs/guides/multi-device-sync.md)——该配置等于将 knowledge/ 与 think.md 托管给云盘服务商，属用户自主取舍，与本地数据主权承诺互斥）——但以下数据以**明文 Markdown** 存储，请评估风险：
 
 **安装后数据目录结构**（`~/.sofagent/`）：
 ```
@@ -70,7 +70,9 @@ sofagent 是一个 FDE Agent——底层引擎是纯本地 Harness 中间件（�
 | 1 | MCP server 只绑 localhost | sofagent | 无法从网络直接访问 MCP | 先攻破本机 |
 | 2 | OpenClaw channel 路由 | OpenClaw | 无法接入联邦 channel | OpenClaw device token |
 | 3 | AES-256-GCM 加密 payload（`core/src/crypto/aes-gcm.ts`） | sofagent | channel 被窃听但内容不可读 | 256-bit 密钥（2^256 暴力不可行） |
-| 4 | sensitivity frontmatter 过滤（peer 端 + 本地端双重校验） | sofagent | `restricted` entity 不可读 | 伪造设备 identity + 突破加密 |
+| 4 | sensitivity frontmatter 过滤（**联邦链路**：peer 端 + 本地端双重校验） | sofagent | 联邦查询中 `restricted` entity 不可读 | 伪造设备 identity + 突破加密 |
+
+> ⚠️ **sensitivity 的作用域边界**：上表第 4 层的 sensitivity 过滤只作用于**联邦链路**。**本地注入链当前无 sensitivity 门禁**——sensitivity 是可见性分级（`knowledge status` 聚合时 restricted 只计数不返回内容），不是访问门禁；Agent 直接读 `knowledge/` 文件时无 sensitivity 拦截（同机多 Agent 数据隔离见 LIMITATIONS「知识库同样全局共享」段）。
 
 > 🔴 **OpenClaw channel 审计结论（v1.1.8 开发前置核实）**：OpenClaw 本地回环 ws:// 明文传输、无 TLS——**第 3 层 sofagent 应用加密是唯一保密防线**。因此 federation channel 只搬运密文帧（iv‖tag‖ciphertext），绝不触碰明文 payload；即使 channel 被中间人劫持，内容仍不可读（纵深防御原则，不依赖 channel 自身安全性）。
 
@@ -221,6 +223,8 @@ sofagent 是一个 FDE Agent——底层引擎是纯本地 Harness 中间件（�
 ### HMAC 签名（v1.1.8+ 已落地）
 
 `history.jsonl` 自 v1.1.8 起支持 HMAC-SHA256 签名（密钥来自 `~/.sofagent-key`）。有密钥时每条记录签名，Agent 无法在无密钥情况下伪造签名；无密钥时降级为 SHA-256 hash chain（Agent 可重算整链，仅事后可追溯非强防篡改）。`--doctor`（v1.2.0 起）会实际调用 `checkHistoryChainIntegrity()` 校验链完整性。建议高安全场景配置 `~/.sofagent-key` 启用强校验。
+
+> ⚠️ **HMAC 威胁模型边界**：HMAC 防的是「**无密钥方**伪造/篡改签名」。同机同用户场景下，密钥文件 `~/.sofagent-key`（权限 0600）可被同用户进程读取——与用户同身份运行的 Agent 可读取密钥后重签整条链，HMAC 无法阻止（同 LIMITATIONS「文件权限不防同用户进程」的既有披露）。因此 HMAC 的实际防御面是**异地/跨用户**攻击；对同用户重签，防线只剩事后 `--doctor` 体检 + CI 侧独立审计（CI 凭据与开发机隔离，不可被开发机进程重签）。
 
 ### 审计引擎安全性（sofagent-audit）
 
