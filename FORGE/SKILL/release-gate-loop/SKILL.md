@@ -68,6 +68,18 @@ V 由 **Node driver**（`FORGE/src/release-gate-driver.mjs`）驱动——每个
    node FORGE/src/release-gate-driver.mjs --step consolidate  --target <版本号> --run-dir <runDir>
    node FORGE/src/release-gate-driver.mjs --step verdict       --target <版本号> --run-dir <runDir>
 
+   # 🔥 判断层瘦身模式（阶段六 SOP 默认，2026-08-19 run-04 实测后启用）：
+   # 脚本层（acceptance-test.sh + check-version/check-docs/锚点/check-review-system/check-tool-health）
+   # 由 session 直跑（零 LLM），全绿后 driver 只跑判断层四步——跳过 acceptance 步：
+   node FORGE/src/release-gate-driver.mjs --step regression   --target <版本号> --run-dir <runDir>
+   node FORGE/src/release-gate-driver.mjs --step coverage     --target <版本号> --run-dir <runDir>
+   node FORGE/src/release-gate-driver.mjs --step consolidate  --target <版本号> --run-dir <runDir>
+   node FORGE/src/release-gate-driver.mjs --step verdict      --target <版本号> --run-dir <runDir>
+   # 依据：全流程实测 30.7 万 token 中 61% 花在 acceptance 12 分片 LLM 复核（复核脚本
+   # exit 0 的确定性结果，增值≈0）；判断层四步约 9 万 token / 20 分钟，盲审独立性保留在
+   # 有判断空间的 regression 语义审查 + 终裁。consolidate 缺 acceptance 产物时报错交主
+   # session 决策回退（回退=全流程 --skip-acceptance 模式）。
+
    🔴 铁律：必须 dangerouslyDisableSandbox。
    原因：driver(spawn) → worker(spawn) → run_bash(execSync) = 三层子进程嵌套。
    sandbox 对进程嵌套层数有限制，第 4 层进程返回时整棵进程树被 SIGKILL。
