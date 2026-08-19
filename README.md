@@ -163,7 +163,7 @@ npx -y -p @sofagent/audit sofagent-audit --list-rulesets      # 看有哪些规�
 npx -y -p @sofagent/audit sofagent-audit --ruleset security   # 加载安全规则集
 ```
 
-社区规则集以 `sofagent-ruleset-*` npm 包发布，装上自动发现；也支持 `--ruleset-path` 指向你自己的 JSON 规则。
+社区规则集以 `sofagent-ruleset-*` npm 包发布，通过 `--ruleset-path` 手动加载（当前不支持 npm 包自动发现）；也支持 `--ruleset-path` 指向你自己的 JSON 规则。
 
 **FDE 进场部署**——两条路径任选：
 

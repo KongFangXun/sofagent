@@ -204,7 +204,7 @@ sofagent 是一个 FDE Agent——底层引擎是纯本地 Harness 中间件（�
 
 ## 四、审计与存储安全
 
-> 🔒 **运行时审计日志按 git 仓库隔离（v1.3.0 已交付）**：运行时审计日志（`runtime-audit.jsonl`）按 git 仓库隔离存储于 `data/audit/runtime/<repo-hash>/`（`git rev-parse --show-toplevel` hash；非 git 回退 `nogit-<cwd-hash>`）。注意：commit 级审计历史 `history.jsonl` 仍为全局存储，多项目场景下记录混合。
+> 🔒 **运行时审计日志按 git 仓库隔离（规划中，当前为全局单文件）**：规划形态为运行时审计日志（`runtime-audit.jsonl`）按 git 仓库隔离存储于 `data/audit/runtime/<repo-hash>/`（`git rev-parse --show-toplevel` hash；非 git 回退 `nogit-<cwd-hash>`）。**当前实现尚未落地该隔离——运行时审计日志为全局单文件存储，与 commit 级审计历史 `history.jsonl`（全局）一致，多项目场景下记录混合。**
 
 ```
 ~/.sofagent/
@@ -500,7 +500,7 @@ grep -i "api_key\|apikey\|sk-" runs/*/usage.jsonl   # 应无结果
 本节聚焦与安全策略直接相关的三条：
 
 1. **数据的主权属于客户**——在客户现场看到的数据，一个字节都不应该出现在不该出现的地方：不进 AI 训练数据（除非合同明确授权）、不进案例素材（除非客户书面同意）。sofagent 工程呼应：数据不出本机（§已知风险）+ 联邦查询可选（§一传输安全）+ sensitivity 分级（§二知识安全）+ 最小权限原则。
-2. **诚实报告结果，包括坏消息**——按结果收费的模式里最大的道德风险是粉饰结果。sofagent 工程呼应：审计引擎 git diff 硬证据（24 条规则零 token 纯静态判定，不靠模型「自评」）+ HMAC 链防篡改（§四审计与存储安全）+ 运行时审计日志按 git 仓库隔离（commit 级 history.jsonl 仍全局存储，见 §四）。
+2. **诚实报告结果，包括坏消息**——按结果收费的模式里最大的道德风险是粉饰结果。sofagent 工程呼应：审计引擎 git diff 硬证据（24 条规则零 token 纯静态判定，不靠模型「自评」）+ HMAC 链防篡改（§四审计与存储安全）+ 运行时审计日志按 git 仓库隔离（规划中，当前为全局单文件；commit 级 history.jsonl 全局存储，见 §四）。
 3. **不制造依赖，不贩卖恐惧**——不故意把系统做成黑箱让客户永远离不开你；不夸大「不用 AI 就会死」的恐慌促成交易。sofagent 工程呼应：MIT 开源（客户可自主审计代码）+ 交付物（ontology/workflow/skills）客户可自主维护 + FDE 离场机制（§五工程安全 install.sh 行为说明：只写入 `~/.sofagent/`，不锁死客户环境）。
 
 > 其余三条（把被替代的人当回事 / 对不该做的事说不 / 记住你代表技术本身）属 FDE 个人职业操守范畴，非安全工程范畴，详见 FDE/GUIDE.md。
