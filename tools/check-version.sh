@@ -885,11 +885,12 @@ if [[ -f "${WIKI_FILE}" ]]; then
     found_vers=$(echo "$line_content" | grep -oE 'v[0-9]+\.[0-9]+(\.[0-9]+)?' | head -1)
     [[ -z "$found_vers" ]] && continue
     found_ver=$(echo "$found_vers" | sed 's/^v//')
-    found_2seg=$(echo "$found_ver" | cut -d. -f1-2)
     # 跳过旧版本历史叙述（如"v1.2.5 引入了..."）
     # 只检查状态表行（含"当前"或含"状态"或含"版本"关键字的行）
     if echo "$line_content" | grep -qE '当前|状态|版本'; then
-      if [[ "$found_2seg" != "$SSOT_2SEG" ]]; then
+      # v1.3.8 P1-C：完整三段比较（此前只比前两段——v1.3.7 vs v1.3.8 同为 1.3，
+      # 补丁号漂移漏检；SSOT 是三段全格式，直接全量比对）
+      if [[ "$found_ver" != "$SSOT_VERSION" ]]; then
         echo "  ❌ WIKI.md:${line_num} 版本 ${found_ver} ≠ SSOT ${SSOT_VERSION}"
         WIKI_DRIFT_OK=false
         ERRORS=$((ERRORS + 1))
