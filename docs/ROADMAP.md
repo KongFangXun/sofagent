@@ -7,9 +7,9 @@
 
 ## 现在在哪：v1.3.7（已交付）
 
-> **v1.3.6 已于 2026-08-18 交付**——引擎接口外化完整版（模型层接入前置）：三个数据接口（Workflow 标准格式 + 运行容器 + 审阅协议字段 / Ontology 标准 Schema 注册 / 模型注册 + 灰度切换）+ 一个代码接口（SubAgent 托管 SDK `harness.wrap`）+ 训练协议三约定 + 预算控制 + 路由决策可解释性 + 机器可判定验收 tool + 可靠性五件（FORGE worktree 隔离 / 双闸验证 / 疲劳度检测 / 分级降级 / decisions.jsonl 完整版）· MCP 52→60 tools。详见 [v1.3.6 开发日志](./changelog/v1.3/v1.3.6.md)。
+> **v1.3.7 已于 2026-08-18 交付**——SubAgent 完整沙箱 + 场景驱动权限 + AgentShield 五类扫描 + 行业 overlay 四套 + 断路器行为监控 + ontology 生命周期 + 审查循环自适应并发 + memory-sync 路径通用化 + 26 项独立审查 bugfix。详见 [v1.3.7 开发日志](./changelog/v1.3/v1.3.7.md)。
 >
-> **v1.3.5 已于 2026-08-16 交付**——自进化与运维闭环：MCP 48→52 tools（A/B 实验 + 快照恢复，破坏性操作强制人审）+ instinct→skill 自动进化 + FDE 运维五件 + 依赖安全升级（npm audit 清零）+ DSH MCP 互通 + 四份审查 bugfix 38 项。详见 [v1.3.5 开发日志](./changelog/v1.3/v1.3.5.md)。
+> **v1.3.6 已于 2026-08-18 交付**——引擎接口外化完整版（模型层接入前置）：三个数据接口（Workflow 标准格式 + 运行容器 + 审阅协议字段 / Ontology 标准 Schema 注册 / 模型注册 + 灰度切换）+ 一个代码接口（SubAgent 托管 SDK `harness.wrap`）+ 训练协议三约定 + 预算控制 + 路由决策可解释性 + 机器可判定验收 tool + 可靠性五件（FORGE worktree 隔离 / 双闸验证 / 疲劳度检测 / 分级降级 / decisions.jsonl 完整版）· MCP 52→60 tools。详见 [v1.3.6 开发日志](./changelog/v1.3/v1.3.6.md)。
 
 > ✅ **企业采购阻塞项 · Webhook 推送已于 v1.2.1 交付**：v1.1.6 接通 webhook **PASS/WARN/FAIL 三态推送**，v1.2.1 补齐企业协同平台（飞书/钉钉/企微）完整 Webhook 推送能力（见 SECURITY.md「审计结果推送」）。采购阻塞项已解除。
 

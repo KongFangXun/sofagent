@@ -205,6 +205,7 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # 加载安全规�
 
 | 你想了解 | 看哪里 |
 |:---------|:--------|
+| **全局索引**（所有文档一个入口） | [WIKI](./docs/WIKI.md) |
 | 怎么装、怎么用、常见问题 | [HANDBOOK](./docs/HANDBOOK.md) |
 | 架构设计（约束层「对内的技术名字」 · 注入链 · 进化机制 · 24 条规则） | [ARCHITECTURE](./docs/ARCHITECTURE.md) |
 | 设计哲学 | [PHILOSOPHY](./docs/PHILOSOPHY.md) |
