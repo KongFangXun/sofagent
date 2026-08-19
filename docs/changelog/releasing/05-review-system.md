@@ -4,7 +4,7 @@
 >
 > 审查体系运作原理（A/B/C 清单 / 模式提取 / 防膨胀 / 校准逻辑）见 [审查体系指南](../../guides/review-system.md)。
 >
-> **与阶段四分工**：阶段四步骤 3 只管「增量」（新功能对应的新场景/新维度随开发实时加）；本阶段管「体系」（A/B/C 分类 → 四份文档归并/压缩/校准）。两阶段先后动同一批文件，边界以此为准——阶段四不加体系性改动，阶段五不重复增量补齐。
+> **与阶段四分工**：阶段四步骤三 只管「增量」（新功能对应的新场景/新维度随开发实时加）；本阶段管「体系」（A/B/C 分类 → 四份文档归并/压缩/校准）。两阶段先后动同一批文件，边界以此为准——阶段四不加体系性改动，阶段五不重复增量补齐。
 
 ---
 
@@ -12,18 +12,18 @@
 
 | # | 步骤 | 产物 |
 |:--:|------|------|
-| 1 | **来源提取（A/B/C 草稿自动生成）**：`source FORGE/env.local && node tools/gen-abc-draft.mjs --fresh-eyes <报告> --bugfix <清单> --features <devlog> [--recheck <复审>]`——单次 GLM 调用（无工具无循环，~4 分钟）产出三类清单草稿（每条带来源定位 + 「无法归类」兜底段），人工只做审核修正而非从零写。降级路径：无 key / API 失败 → 退出码 2 + prompt 落盘 `<out>.prompt.md`，粘给任意 AI session 执行。关键纪律：新功能审查面零遗漏 + 每个真实发现都有模式归类 | A/B/C 草稿（`abc-draft-vX.Y.Z.md`）→ 人工审核定稿 |
-| 2 | **四份文档分发**：A+B 类 → regression-checklist + acceptance-test + check-version.sh（加法）；C 类 → fresh-eyes-review（校准非加法） | 四份文档更新 |
-| 3 | **覆盖率确认**：`bash tools/check-review-system.sh` 自动执行——脚本⑥段提取当前版本交付关键词（devlog 交付章标题 + CHANGELOG 版本行加粗短语），对 checklist/acceptance 双文档对账，零命中报 FAIL。词形差异（devlog「SubAgent 完整沙箱」vs checklist「沙箱五件套」类）加进豁免清单 `FORGE/playbook/.coverage-exempt`（每行一个关键词）。与阶段七共用同一脚本（阶段五在分发后跑=确认更新零遗漏；阶段七在终验跑=确认没回退） | 脚本⑥段全绿 + 豁免清单维护 |
-| 4 | **防膨胀瘦身（三判据硬门槛）**：上调警戒线前必须依次过三判据，全否才允许上调。行数警戒线：checklist≤1500（v1.3.5 靠归并未上调）/ acceptance≤2500（v1.3.5 靠瘦身未上调）/ fresh-eyes≤400 | 三判据记录 + 自校验全 PASS |
-| 5 | **fresh-eyes-review 校准**：C 类走决策树（新视角 / 校准视角 / 历史教训），不往留白式审查里加精确检查项 | 校准完成 + 风格守护自检全 PASS |
-| 6 | **README 新能力段人工语义交叉核对**：逐项对照 README.md/README.en.md「vX.Y 新能力」段与 CHANGELOG/changelog/vX.Y/vX.Y.Z.md 的交付清单——确保新能力段列出的每项都是**本版本真实交付**（不是上版本内容残留），且本版本所有核心交付**均已出现在新能力段**。check-version.sh 只校验版本号字面一致，无法检测语义错配（如 v1.3.2 段写了 v1.3.1 内容）。此项必须人工执行。 | README 新能力段与 changelog 逐项对齐 |
+| 一 | **来源提取（A/B/C 草稿自动生成）**：`source FORGE/env.local && node tools/gen-abc-draft.mjs --fresh-eyes <报告> --bugfix <清单> --features <devlog> [--recheck <复审>]`——单次 GLM 调用（无工具无循环，~4 分钟）产出三类清单草稿（每条带来源定位 + 「无法归类」兜底段），人工只做审核修正而非从零写。降级路径：无 key / API 失败 → 退出码 2 + prompt 落盘 `<out>.prompt.md`，粘给任意 AI session 执行。关键纪律：新功能审查面零遗漏 + 每个真实发现都有模式归类 | A/B/C 草稿（`abc-draft-vX.Y.Z.md`）→ 人工审核定稿 |
+| 二 | **四份文档分发**：A+B 类 → regression-checklist + acceptance-test + check-version.sh（加法）；C 类 → fresh-eyes-review（校准非加法） | 四份文档更新 |
+| 三 | **覆盖率确认**：`bash tools/check-review-system.sh` 自动执行——脚本⑥段提取当前版本交付关键词（devlog 交付章标题 + CHANGELOG 版本行加粗短语），对 checklist/acceptance 双文档对账，零命中报 FAIL。词形差异（devlog「SubAgent 完整沙箱」vs checklist「沙箱五件套」类）加进豁免清单 `FORGE/playbook/.coverage-exempt`（每行一个关键词）。与阶段七共用同一脚本（阶段五在分发后跑=确认更新零遗漏；阶段七在终验跑=确认没回退） | 脚本⑥段全绿 + 豁免清单维护 |
+| 四 | **防膨胀瘦身（三判据硬门槛）**：上调警戒线前必须依次过三判据，全否才允许上调。行数警戒线：checklist≤1500（v1.3.5 靠归并未上调）/ acceptance≤2500（v1.3.5 靠瘦身未上调）/ fresh-eyes≤400 | 三判据记录 + 自校验全 PASS |
+| 五 | **fresh-eyes-review 校准**：C 类走决策树（新视角 / 校准视角 / 历史教训），不往留白式审查里加精确检查项 | 校准完成 + 风格守护自检全 PASS |
+| 六 | **README 新能力段人工语义交叉核对**：逐项对照 README.md/README.en.md「vX.Y 新能力」段与 CHANGELOG/changelog/vX.Y/vX.Y.Z.md 的交付清单——确保新能力段列出的每项都是**本版本真实交付**（不是上版本内容残留），且本版本所有核心交付**均已出现在新能力段**。check-version.sh 只校验版本号字面一致，无法检测语义错配（如 v1.3.2 段写了 v1.3.1 内容）。此项必须人工执行。 | README 新能力段与 changelog 逐项对齐 |
 
 
 
 ---
 
-## 步骤 4 细则：瘦身三判据（2026-08-16 硬化 · v1.3.4/v1.3.5 连续上调教训）
+## 步骤四 细则：瘦身三判据（2026-08-16 硬化 · v1.3.4/v1.3.5 连续上调教训）
 
 > **病根**：「先瘦身再上调」写了两版，实际执行率接近零——上调成了默认动作，警戒线橡皮图章化（v1.3.4 审查原话："上调线和新增量同版发生"）。本细则把瘦身从口号变成可测量的硬门槛。
 
@@ -43,7 +43,7 @@
 
 **维度脚本编写三铁律（2026-08-17 release-gate run-08 补——7 FAIL 中 5 个是脚本缺陷，driver 白跑）**：① 显式收尾（`echo ✅/❌`，禁「期望无输出/exit 1」退出码语义——driver 只看 exitCode，grep 无命中与循环尾判假都返回 1 必误判）② 禁写死 CLI 参数签名与计数数字（版本演进必漂——动态对账或可达性验证）③ 改 checklist 的 commit 前最后跑 check-docs（B 层预算会被净增顶破）。完整版见 regression-checklist.md 头部「维护公约」。
 
-**执行模板（每版阶段五填一次，附在步骤 4 产物后）**：
+**执行模板（每版阶段五填一次，附在步骤四 产物后）**：
 
 ```
 [瘦身判据记录 vX.Y.Z]
@@ -55,7 +55,7 @@
 
 ---
 
-## fresh-eyes-review 风格守护自检（步骤 5 必跑）
+## fresh-eyes-review 风格守护自检（步骤五 必跑）
 
 ```bash
 # 1. 行数守护：不超过 400 行

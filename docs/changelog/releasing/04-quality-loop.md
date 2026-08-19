@@ -8,9 +8,9 @@
 
 | # | 步骤 | 产物 |
 |:--:|------|------|
-| 1 | **新 session 跑 fresh-eyes-loop**：`node FORGE/src/fresh-eyes-driver.mjs --target <本版本号> --max-rounds 10`。按 `FORGE/SKILL/fresh-eyes-loop/SKILL.md` 监控协议轮询 `status.json`。loop 修复即本版本代码质量加固 | loop 修复 + changelog 汇总打勾 |
-| 2 | 代码审核（当前 session）：逐项核对发布检查清单，PASS 或 FAIL→修复 | 检查清单打勾 |
-| 3 | **验收测试随功能开发先行新增（增量）**：本版本新功能对应的 acceptance 新场景（S 编号顺延）+ checklist 新维度，随功能开发实时加——本步骤只做「增量补齐」。**归并/压缩/校准/A/B/C 分类是阶段五的职责**，这里不动体系 | 验收测试更新（增量） |
+| 一 | **新 session 跑 fresh-eyes-loop**：`node FORGE/src/fresh-eyes-driver.mjs --target <本版本号> --max-rounds 10`。按 `FORGE/SKILL/fresh-eyes-loop/SKILL.md` 监控协议轮询 `status.json`。loop 修复即本版本代码质量加固 | loop 修复 + changelog 汇总打勾 |
+| 二 | 代码审核（当前 session）：逐项核对发布检查清单，PASS 或 FAIL→修复 | 检查清单打勾 |
+| 三 | **验收测试随功能开发先行新增（增量）**：本版本新功能对应的 acceptance 新场景（S 编号顺延）+ checklist 新维度，随功能开发实时加——本步骤只做「增量补齐」。**归并/压缩/校准/A/B/C 分类是阶段五的职责**，这里不动体系 | 验收测试更新（增量） |
 
 ---
 

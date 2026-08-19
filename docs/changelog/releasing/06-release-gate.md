@@ -8,10 +8,10 @@
 
 | # | 步骤 |
 |:--:|------|
-| 1 | **脚本层直跑（零 LLM）**：acceptance-test.sh + check-version + check-docs + 锚点 + check-review-system + check-tool-health 依次跑，**全绿才进下一步** |
-| 2 | 开新 session 跑**判断层**：driver `--step` 单步模式四步（regression → coverage → consolidate → verdict），**跳过 acceptance 分片 LLM 复核** |
-| 3 | verdict=PASS → 过「零信任复验三件套」→ 进阶段七 |
-| 4 | verdict=FAIL → 回阶段五（优化 regression-checklist + fresh-eyes-review）→ 修复后重跑。最多循环 2 轮 |
+| 一 | **脚本层直跑（零 LLM）**：acceptance-test.sh + check-version + check-docs + 锚点 + check-review-system + check-tool-health 依次跑，**全绿才进下一步** |
+| 二 | 开新 session 跑**判断层**：driver `--step` 单步模式四步（regression → coverage → consolidate → verdict），**跳过 acceptance 分片 LLM 复核** |
+| 三 | verdict=PASS → 过「零信任复验三件套」→ 进阶段七 |
+| 四 | verdict=FAIL → 回阶段五（优化 regression-checklist + fresh-eyes-review）→ 修复后重跑。最多循环 2 轮 |
 
 > **为什么分层（run-04 实测 2026-08-19）**：driver 全流程实测 30.7 万 token / 58 分钟，其中 **61%（18.7 万）花在 acceptance 12 分片 LLM 复核**——复核的是脚本 `exit 0 + 303/303 SUMMARY` 的确定性结果，没有主观判断空间，盲审增值≈0。脚本层零 token 直跑拿到同样保证；driver 只保留有判断空间的 regression 语义审查 + coverage 交叉 + 终裁（约 9 万 token / 20 分钟）。**独立性不伤**：盲审保留在真正需要判断的环节。
 

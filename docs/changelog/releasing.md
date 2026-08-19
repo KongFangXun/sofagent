@@ -20,12 +20,12 @@
 - [x] 八 · 开发日志定稿 + 文档收尾 → [08-doc-finalize.md](./releasing/08-doc-finalize.md) · **v1.3.5：定稿（速览表 10 项 + Release Notes 三段式含破坏性变更 4 条）+ ROADMAP 五步 + 日期 15 文件** · **v1.3.7：发布检查清单段补全（fresh-eyes 三连/手工裁决如实记录）+ ROADMAP 三处 + WIKI 状态表 + HANDBOOK 三处 + A 层预算 6510→6530**
 - [x] 九 · 工具脚本健康检查 → [09-tool-health.md](./releasing/09-tool-health.md) · **v1.3.5：新增文件排查 + bump dry-run 纯只读 + 死路径修正（维度57 ab-test/data）+ hook 端到端实测** · **v1.3.7：CTH 6 项全过 + bump dry-run 零改动 + build dist v1.3.7 + hook 双测（拦截+放行）+ CJK 15 脚本绿**
 - [ ] 十 · 确认关口 → [10-confirm.md](./releasing/10-confirm.md) · **v1.3.5：481 文件 31 commit 复核 + 发布清单 22 勾 2 留 rc + 门禁全绿**
-- [x] 十一 · 发布（项目负责人或授权 AI）→ [11-publish.md](./releasing/11-publish.md) · **v1.3.5：Git Data API 绕行 push（死代理）→ CI 全绿 → tag → Release（三段式标准化）→ npm 13/13 包（load-chain 补 4 版）→ Skill 双分发** · **v1.3.6：新增步骤 4b 安装入口随版同步（bootstrap.sh INSTALL_URL + README 双语安装段三处 bump + curl 实测 200，根治 v1.3.5 tag 漂移断链）** · **v1.3.7：剥代理直连 push（Git Data API 绕行更简解）+ CI 7/7 轮询全绿（shellcheck runner apt stall 取消重跑一次）+ Release Note 三道工序（自检脚本+与 v1.3.6 骨架同构）+ 13/13 包 npm 全 1.3.7 + ClawHub/SkillHub 双分发；坑位：先 4b 后 tag 的铁律本次执行顺序反了（先 tag 后 4b）→ forced update tag + release 重建修正**
+- [x] 十一 · 发布（项目负责人或授权 AI）→ [11-publish.md](./releasing/11-publish.md) · **v1.3.5：Git Data API 绕行 push（死代理）→ CI 全绿 → tag → Release（三段式标准化）→ npm 13/13 包（load-chain 补 4 版）→ Skill 双分发** · **v1.3.6：新增「安装入口随版同步」步骤（现步骤五）（bootstrap.sh INSTALL_URL + README 双语安装段三处 bump + curl 实测 200，根治 v1.3.5 tag 漂移断链）** · **v1.3.7：剥代理直连 push（Git Data API 绕行更简解）+ CI 7/7 轮询全绿（shellcheck runner apt stall 取消重跑一次）+ Release Note 三道工序（自检脚本+与 v1.3.6 骨架同构）+ 13/13 包 npm 全 1.3.7 + ClawHub/SkillHub 双分发；坑位：「安装入口先于 tag」的铁律本次执行顺序反了（先 tag 后安装入口）→ forced update tag + release 重建修正**
 - [ ] 十二 · 发布后（验证 + 三文档回写 + SOP 自迭代 + 下版 prompt）→ [12-post-publish.md](./releasing/12-post-publish.md)
 
 > **铁律**：阶段六 verdict=PASS 前，不进阶段七~八。FAIL 回阶段五修复后重跑。
 >
-> **自迭代**：阶段十二步骤 10 是 releasing.md 的「Dream Cycle」——每次发版后用实际执行体验审查 SOP 自己（顺序一致/引用断裂/缺口吸收/冗余清理），持续进化。这是活文档的自我维护机制，不是一次性动作。
+> **自迭代**：阶段十二「步骤十」是 releasing.md 的「Dream Cycle」——每次发版后用实际执行体验审查 SOP 自己（顺序一致/引用断裂/缺口吸收/冗余清理），持续进化。这是活文档的自我维护机制，不是一次性动作。
 
 ---
 
@@ -43,7 +43,7 @@
 
 ## 配套文档
 
-- [ROADMAP 同步规则](./releasing/08-roadmap-sync.md)——阶段八步骤 5 配套：本版移出规划表 / 探索方向清理 / 迭代表瘦身 / 发版后体检清单
+- [ROADMAP 同步规则](./releasing/08-roadmap-sync.md)——阶段八「步骤五」配套：本版移出规划表 / 探索方向清理 / 迭代表瘦身 / 发版后体检清单
 - [审查体系指南](../guides/review-system.md)——A/B/C 清单 / 模式提取 / 防膨胀 / 校准逻辑
 - [FORGE/playbook/version-bump.md](../../FORGE/playbook/version-bump.md)——bump 详细指南（13 类位置 + package-lock 同步）
 - [FORGE/playbook/doc-sync.md](../../FORGE/playbook/doc-sync.md)——文档同步详细指南（LIMITATIONS 覆盖 + D6 闭环）

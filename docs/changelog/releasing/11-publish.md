@@ -20,7 +20,7 @@ grep -rn '"@sofagent/' engine/*/package.json | grep -v "$(node -p "require('./pa
 
 ---
 
-## 步骤 1：本地安装（狗粮）
+## 步骤一：本地安装（狗粮）
 
 > 全部验证通过、准备发布时，先把最新版装到本机——全局 npm 和本地 Skill 同步。这是发布前的最后一块狗粮。
 
@@ -44,7 +44,7 @@ sofagent-audit --doctor
 
 ---
 
-## 步骤 2：发布前检查
+## 步骤二：发布前检查
 
 > push 前不模拟 CI 跑的检查 = 每次都 push→红叉→修→push 循环。以下检查**本地先跑一遍全绿再 push**。
 
@@ -102,11 +102,23 @@ echo "npm 包洁净度 + 类型检查完成"
 
 ---
 
-## 步骤 3：push main + 等 CI 全绿
+## 步骤三：push 前置检查（v1.3.6 实战补 · 双 SHA 历史坑）
+
+> v1.3.5 Git Data API 推送会造成远端/本地「同 tree 双 SHA」——直接 push 会被 rejected (fetch first)。本地代理死时用 `git -c http.proxy= -c https.proxy= push` 直连。
+
+```bash
+# ① 检查远端头是否在本地历史（双 SHA 分叉探测）
+REMOTE_SHA=$(gh api repos/KongFangXun/sofagent/branches/main --jq '.commit.sha')
+git merge-base --is-ancestor "$REMOTE_SHA" HEAD && echo "✓ 快进可推" || \
+  git rebase --onto "$REMOTE_SHA" <本地等价旧commit> main   # tree 相同时干净接回
+# ② tag 顺序铁律：先安装入口 bump commit（步骤五），后打 tag（tag 内容就该指本版）
+```
+
+## 步骤四：push main + 等 CI 全绿
 
 > **tag 先行策略**（v1.3.2 起统一）：先 push main → 等 CI 全绿验证 → 才打 tag。tag 一定指向 CI 验证过的 commit，不会 tag 了之后才发现 CI 红。
 >
-> 🔴 **CI 全绿是打 tag 的硬前置（2026-08-19 用户拍板强化）**：push 之后必须**轮询等到全绿**（不是看一眼就走）——`exit 0` 之前禁止进入步骤 4。历史教训：CI 红着打 tag 会让用户装到坏版本（tag 是安装入口的锚点），回滚成本远高于等待 2-5 分钟。轮询脚本如下（循环跑直到 exit 0，每次间隔 60s）：
+> 🔴 **CI 全绿是打 tag 的硬前置（2026-08-19 用户拍板强化）**：push 之后必须**轮询等到全绿**（不是看一眼就走）——`exit 0` 之前禁止进入步骤六。历史教训：CI 红着打 tag 会让用户装到坏版本（tag 是安装入口的锚点），回滚成本远高于等待 2-5 分钟。轮询脚本如下（循环跑直到 exit 0，每次间隔 60s）：
 
 ```bash
 # ── push main ──
@@ -139,49 +151,9 @@ done
 
 ---
 
-## 步骤 4：git tag + push tag
+## 步骤五：安装入口随版同步（v1.3.6 新增 · fresh-eyes B1 根因）
 
-```bash
-# ── tag 前确认 ──
-LAST_TAG=$(git describe --tags --abbrev=0 HEAD~1 2>/dev/null || echo "")
-[ -n "$LAST_TAG" ] && echo "上一 tag: $LAST_TAG" && git log --oneline ${LAST_TAG}..HEAD | head -20
-# 🔴 CI 全绿确认（步骤 3 的 exit 0 是进入本步骤的前提，不可跳过）
-# 确认 check-version + check-test-count 全绿（tag 不得在代码/文档未就绪时打）
-bash tools/check-version.sh && bash tools/check-test-count.sh --quiet
-
-# ── 打 tag + push ──
-git tag -a vX.Y.Z -m "vX.Y.Z · {一句话版本摘要}"
-git push origin vX.Y.Z
-
-# ── tag 后零 commit 校验 ──
-TAG_SHA=$(git rev-parse vX.Y.Z^{commit})
-HEAD_SHA=$(git rev-parse HEAD)
-if [ "$TAG_SHA" = "$HEAD_SHA" ]; then
-  echo "✅ tag 指向 HEAD（零游离 commit）"
-else
-  echo "🔴 tag ($TAG_SHA) ≠ HEAD ($HEAD_SHA)——tag 后有游离 commit"
-  git log --oneline vX.Y.Z..HEAD
-  echo "⚠️ 如果游离 commit 属于本版本，需要重新打 tag"
-fi
-```
-
----
-
-## 步骤 0：push 前置检查（v1.3.6 实战补 · 双 SHA 历史坑）
-
-> v1.3.5 Git Data API 推送会造成远端/本地「同 tree 双 SHA」——直接 push 会被 rejected (fetch first)。本地代理死时用 `git -c http.proxy= -c https.proxy= push` 直连。
-
-```bash
-# ① 检查远端头是否在本地历史（双 SHA 分叉探测）
-REMOTE_SHA=$(gh api repos/KongFangXun/sofagent/branches/main --jq '.commit.sha')
-git merge-base --is-ancestor "$REMOTE_SHA" HEAD && echo "✓ 快进可推" || \
-  git rebase --onto "$REMOTE_SHA" <本地等价旧commit> main   # tree 相同时干净接回
-# ② tag 顺序铁律：先 4b 安装入口 bump commit，后打 tag（tag 内容就该指本版）
-```
-
-## 步骤 4b：安装入口随版同步（v1.3.6 新增 · fresh-eyes B1 根因）
-
-> 🔴 历史教训：v1.3.5 发布后 README/bootstrap 安装 URL 仍指 v1.3.4，用户按 README 完整安装装到旧版。根因是 SOP 没有这一步——tag 打了、npm 发了，安装入口没人管。**每版必做，curl 验证后才能进步骤 5。**
+> 🔴 历史教训：v1.3.5 发布后 README/bootstrap 安装 URL 仍指 v1.3.4，用户按 README 完整安装装到旧版。根因是 SOP 没有这一步——tag 打了、npm 发了，安装入口没人管。**每版必做，curl 验证后才能进步骤七。**
 
 ```bash
 # ── 三处安装入口 tag 对账 ──
@@ -204,9 +176,37 @@ done
 
 ---
 
-## 步骤 5：gh release（触发 release.yml 自动 publish audit + mcp）
+## 步骤六：git tag + push tag
 
-> GitHub Release published 后，`.github/workflows/release.yml` 自动触发，publish `@sofagent/audit` 和 `@sofagent/mcp` 两个包到 npm。其余 10 包在步骤 6 手动 publish。
+```bash
+# ── tag 前确认 ──
+LAST_TAG=$(git describe --tags --abbrev=0 HEAD~1 2>/dev/null || echo "")
+[ -n "$LAST_TAG" ] && echo "上一 tag: $LAST_TAG" && git log --oneline ${LAST_TAG}..HEAD | head -20
+# 🔴 CI 全绿确认（步骤四的 exit 0 是进入本步骤的前提，不可跳过）
+# 确认 check-version + check-test-count 全绿（tag 不得在代码/文档未就绪时打）
+bash tools/check-version.sh && bash tools/check-test-count.sh --quiet
+
+# ── 打 tag + push ──
+git tag -a vX.Y.Z -m "vX.Y.Z · {一句话版本摘要}"
+git push origin vX.Y.Z
+
+# ── tag 后零 commit 校验 ──
+TAG_SHA=$(git rev-parse vX.Y.Z^{commit})
+HEAD_SHA=$(git rev-parse HEAD)
+if [ "$TAG_SHA" = "$HEAD_SHA" ]; then
+  echo "✅ tag 指向 HEAD（零游离 commit）"
+else
+  echo "🔴 tag ($TAG_SHA) ≠ HEAD ($HEAD_SHA)——tag 后有游离 commit"
+  git log --oneline vX.Y.Z..HEAD
+  echo "⚠️ 如果游离 commit 属于本版本，需要重新打 tag"
+fi
+```
+
+---
+
+## 步骤七：gh release（触发 release.yml 自动 publish audit + mcp）
+
+> GitHub Release published 后，`.github/workflows/release.yml` 自动触发，publish `@sofagent/audit` 和 `@sofagent/mcp` 两个包到 npm。其余 10 包在步骤八手动 publish。
 
 ### 5.0 Release Note 生成 → 自检 → 上一版结构对照（2026-08-19 用户拍板强化的三道工序）
 
@@ -313,7 +313,7 @@ EOF
 
 ---
 
-## 步骤 6：npm 手动 publish 其余 10 包
+## 步骤八：npm 手动 publish 其余 10 包
 
 > `npm publish --workspaces` 不支持 workspace 全局发布。release.yml 只 auto-publish audit + mcp（Release 触发），其余 10 包手动 publish。
 >
@@ -344,7 +344,7 @@ npm view @sofagent/load-chain version  # 同样应等于当前版本号
 
 ---
 
-## 步骤 7：Skill 分发
+## 步骤九：Skill 分发
 
 ```bash
 # 发布前确认 slug（SSOT）
@@ -373,7 +373,7 @@ skillhub publish "$tmpdir/SKILL" --version <版本号> --changelog "vX.Y.Z: 简�
 
 ---
 
-## 步骤 8：设备端安装
+## 步骤十：设备端安装
 
 ```bash
 # 1. 全局包更新（audit + core）
