@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
 # bootstrap.sh · sofagent 一行安装入口（装在企业跑 AI 节点的设备上）
 # 纯新增独立入口——install.sh（~980 行）不动，零回归面。
-# 用法：curl -fsSL https://raw.githubusercontent.com/KongFangXun/sofagent/refs/tags/v1.3.6/bootstrap.sh -o bootstrap.sh && bash bootstrap.sh
+# 用法：curl -fsSL https://raw.githubusercontent.com/KongFangXun/sofagent/refs/tags/v1.3.7/bootstrap.sh -o bootstrap.sh && bash bootstrap.sh
 # 离线：./bootstrap.sh --local /path/to/install.sh
 # 透传：curl ... | bash -s -- --base-only
 set -euo pipefail
 # ERR trap 品牌兜底：崩溃时用户看到产品信息而非裸 bash 报错（v1.3.2 P0-B1/P2-37）
 trap 'echo "❌ sofagent bootstrap 失败（exit $?）——请截图此信息到 GitHub Issues（github.com/KongFangXun/sofagent/issues）"' ERR
-# v1.3.5 #31: 锁定已发布 tag（refs/tags/v1.3.6）——main 浮动导致装到的版本不可复现；
+# v1.3.5 #31: 锁定已发布 tag（refs/tags/v1.3.7）——main 浮动导致装到的版本不可复现；
 #   升级时改此 tag 与 README 安装段同步。
-INSTALL_URL="https://raw.githubusercontent.com/KongFangXun/sofagent/refs/tags/v1.3.6/install.sh"
+INSTALL_URL="https://raw.githubusercontent.com/KongFangXun/sofagent/refs/tags/v1.3.7/install.sh"
 LOCAL_PATH=""; PASSTHROUGH=()
 while [[ $# -gt 0 ]]; do
   case "$1" in
