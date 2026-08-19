@@ -8,8 +8,27 @@
 
 | # | 步骤 | 产物 |
 |:--:|------|------|
-| 一 | 全新 session 启动 fresh-eyes-loop 审查上一版本：`node FORGE/src/fresh-eyes-driver.mjs --target <上一版本号> --max-rounds 10`。按 `FORGE/SKILL/fresh-eyes-loop/SKILL.md` 监控协议轮询。loop 产出的 P0/P1/P2 修复即本版本 BugFix 批次主体；修复只 commit 不 push | 审查报告 + loop 修复 → BugFix 批次 |
-| 二 | （可选）人工补充：以 `fresh-eyes-review.md` 方法论人肉复核 loop 报告，直觉盲区发现并入清单 | 补充发现 |
+| 一 | **单次草稿优先**（v1.3.8 交付八）：`node tools/gen-fresh-eyes-draft.mjs --diff <patch 文件> --changelog <changelog>`——单次 LLM 调用生成 16 视角审查草稿（省 24 worker 探查循环） | 16 视角审查草稿 |
+| 二 | **driver 兜底**：草稿中「待取证」项 / 高风险变更才启动 fresh-eyes-loop 全流程：`node FORGE/src/fresh-eyes-driver.mjs --target <上一版本号> --max-rounds 10`。按 `FORGE/SKILL/fresh-eyes-loop/SKILL.md` 监控协议轮询。loop 产出的 P0/P1/P2 修复即本版本 BugFix 批次主体；修复只 commit 不 push | 审查报告 + loop 修复 → BugFix 批次 |
+| 三 | （可选）人工补充：以 `fresh-eyes-review.md` 方法论人肉复核 loop 报告，直觉盲区发现并入清单 | 补充发现 |
+
+---
+
+## 审查分层（v1.3.8 交付八 · 单次草稿优先、driver 兜底）
+
+> **为什么分层**：fresh-eyes-loop 全流程 = 24 perspective worker × 多轮，单轮 6-10 万 token；
+> 而大部分变更的审查价值集中在「理解 diff + 按视角找茬」——理解型任务单次 LLM 调用即可完成，
+> 只有需要定点取证（跑命令 / 读全文件交叉验证）的项才需要 worker 的探查循环。
+
+| 层 | 工具 | 成本 | 何时用 |
+|----|------|------|--------|
+| 第一层：单次草稿 | `tools/gen-fresh-eyes-draft.mjs` | 单次调用，约 1-3 万 token | 默认起点——16 视角草稿一次成型，标注「待取证」项 |
+| 第二层：driver 兜底 | `FORGE/src/fresh-eyes-driver.mjs` | 24 worker 多轮，单轮 6-10 万 token | 草稿「待取证」项多 / 大版本变更 / 草稿结论存疑时全量跑 |
+| 第三层：人工直觉 | `FORGE/playbook/fresh-eyes-review.md` 方法论 | 人力 | 任意层后补充——直觉盲区是 LLM 覆盖不到的 |
+
+降级路径：无 GLM_API_KEY / API 失败时草稿工具退出码 2 并把完整 prompt 落盘 `.prompt.md`——粘贴给任意 AI session 执行，SOP 不因断网卡死。
+
+B 侧复核模式（v1.3.8 起 driver 内置）：全量跑 driver 时，B 侧 12 worker 不再全量重审，改为独立复核 A 的 P0/P1 发现（确认/推翻+依据，可补 A 漏报）——B 侧 token 约省一半，视角独立性保留（B 仍可推翻 A）。
 
 ---
 
