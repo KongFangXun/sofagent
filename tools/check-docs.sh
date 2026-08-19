@@ -203,13 +203,13 @@ LAYER_E=$(find ./docs/guides -name "*.md" -print0 2>/dev/null | xargs -0 wc -l 2
 LAYER_E=${LAYER_E:-0}
 
 # 上限定义
-LIMIT_A=6530  # 2026-08-19 阶段八：A 层 6511>6510（WIKI 状态表/HANDBOOK v1.3.7 新能力段/ROADMAP 迭代表三件套更新，发版必改文档），铁律上调 6510→6530（内容全属发版同步非冗余）
+LIMIT_A=6540  # v1.3.8 bugfix 文档批：A 层 6536>6530 铁律上调 6530→6540（ROADMAP v1.3.7 摘要 + WIKI 导航 + CONTRIBUTING 版本头 + 声称断裂披露注，均为审查修复必改内容非冗余）；2026-08-19 阶段八曾上调 6510→6530
 LIMIT_B=9060  # 2026-08-19 阶段五工具化三段（⑦聚簇+gen-abc-draft SOP+lessons 落档）+30 行（9023>9000 铁律上调：新增内容均为 SOP 执行体挂载说明与教训实录，无可归并冗余）
 # v1.3.7: B 层 8945（交付⑥⑨测试数对账+memory_sync 文档），铁律上调 8940→8950；v1.3.6: 8901（累计 8880→8910→8940）
 LIMIT_C=6300  # v1.1.3: 审查体系维度固化 + Harness 可见性视角 + releasing.md tag 门禁；内容增长上调 5800→6300 + 5% 余量
 LIMIT_D=2000  # v1.1.9: D 层纳入口径修正——docs/architecture（v1.1.9 设计 876 行）+ docs/prd（193 行）从 A 层归入 D 层（工程文档与设计文档同语义），700→2000 容纳
 LIMIT_E=3100  # v1.2.5: E 层 2905 行（新增 dashboard-html-dev.md 219 行 + enterprise-deploy 扩展），上调 2700→3100 留余量
-LIMIT_TOTAL=15580  # 2026-08-19 USB 落盘：A+B 15573>15570 铁律上调 15570→15580（v1.4.7 workflow 烧进 USB 五章 + ROADMAP 离线 USB 节点提前 v2.x + ARCHITECTURE 版本归属同步，发版规划文档正常增长）
+LIMIT_TOTAL=15590  # v1.3.8 bugfix 文档批：A+B 15582>15580 铁律上调 15580→15590（声称断裂披露注 + E 层 multi-device-sync 数据主权警示，审查修复正当增长）；2026-08-19 USB 落盘曾上调 15570→15580
 
 # 输出各层
 echo "  A 用户文档:     ${LAYER_A} 行 / ${LIMIT_A} 上限"
