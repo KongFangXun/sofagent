@@ -8,6 +8,35 @@
 export { startCron } from './cron';
 export type { CronJob } from './cron';
 
+// Scheduler（定时任务 · v1.3.8 交付四：cron 三档糖 @daily/@weekly/@monthly）
+export { createScheduler, nextCronTime, expandCronSugar } from './scheduler';
+export type { ScheduleType, ScheduledTask, TaskRun, CronSugar } from './scheduler';
+
+// Long Tasks（异步长任务自治 · v1.3.8 交付四：依赖图 + WAL 续跑钩子 + 注册表 + 死循环检测 + backoff）
+export {
+  createLongTaskScheduler,
+  expandScheduleMacro,
+  isCronMacro,
+  loadLongTaskRegistry,
+  saveLongTaskRegistry,
+  longTasksRegistryPath,
+  readUnfinishedWalEntries,
+  trackNoProgress,
+  appendLongTaskWarning,
+  DEFAULT_MAX_NO_CHANGE_RUNS,
+} from './long-tasks';
+export type {
+  CronMacro,
+  LongTaskRunStatus,
+  LongTaskRun,
+  LongTaskSpec,
+  LongTaskRegistry,
+  CrashRecoveryEvent,
+  LongTaskWarning,
+  LongTaskRunner,
+  CrashRecoveryCallback,
+} from './long-tasks';
+
 // File Watcher
 export { startWatching } from './fs-watch';
 export type { ChangeCallback, FileWatcher } from './fs-watch';
