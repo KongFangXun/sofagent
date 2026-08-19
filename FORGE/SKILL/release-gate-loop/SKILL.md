@@ -70,15 +70,19 @@ V 由 **Node driver**（`FORGE/src/release-gate-driver.mjs`）驱动——每个
 
    # 🔥 判断层瘦身模式（阶段六 SOP 默认，2026-08-19 run-04 实测后启用）：
    # 脚本层（acceptance-test.sh + check-version/check-docs/锚点/check-review-system/check-tool-health）
-   # 由 session 直跑（零 LLM），全绿后 driver 只跑判断层四步——跳过 acceptance 步：
-   node FORGE/src/release-gate-driver.mjs --step regression   --target <版本号> --run-dir <runDir>
-   node FORGE/src/release-gate-driver.mjs --step coverage     --target <版本号> --run-dir <runDir>
-   node FORGE/src/release-gate-driver.mjs --step consolidate  --target <版本号> --run-dir <runDir>
-   node FORGE/src/release-gate-driver.mjs --step verdict      --target <版本号> --run-dir <runDir>
+   # 由 session 直跑（零 LLM），全绿后 driver 只跑判断层四步——一次启动直达：
+   node FORGE/src/release-gate-driver.mjs --judgment-only --target <版本号>
    # 依据：全流程实测 30.7 万 token 中 61% 花在 acceptance 12 分片 LLM 复核（复核脚本
    # exit 0 的确定性结果，增值≈0）；判断层四步约 9 万 token / 20 分钟，盲审独立性保留在
-   # 有判断空间的 regression 语义审查 + 终裁。consolidate 缺 acceptance 产物时报错交主
-   # session 决策回退（回退=全流程 --skip-acceptance 模式）。
+   # 有判断空间的 regression 语义审查 + 终裁。
+   # v1.3.8 交付七：--judgment-only 替代原「--step 四步手工编排」——一次进程串行四步，
+   # 无需外层脚本逐步调用。旧 --step 单步模式仍可用于单步调试。
+   # verdict=FAIL 时循环即停（v1.3.8 起 F 修复链默认关闭，无 f-* 产物）；
+   # 修复责任回阶段五主 session。显式 --auto-fix 才进修复链（最多 3 轮）。
+
+   # 全流程模式的 acceptance 抽查化（v1.3.8 交付七）——只审本版新增场景区间：
+   node FORGE/src/release-gate-driver.mjs --target <版本号> --acceptance-range S294-S310
+   # 分片范围从全量 12 片均分收敛为指定区间（本版新增场景），跳过历史场景的重复复核。
 
    🔴 铁律：必须 dangerouslyDisableSandbox。
    原因：driver(spawn) → worker(spawn) → run_bash(execSync) = 三层子进程嵌套。

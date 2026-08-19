@@ -2011,6 +2011,7 @@ release-gate-driver.mjs - FORGE release-gate-loop Driver
 
 用法:
   node FORGE/src/release-gate-driver.mjs --target <version> [options]
+  node FORGE/src/release-gate-driver.mjs --judgment-only --target <version>
   node FORGE/src/release-gate-driver.mjs --step <step> --target <version> [options]
   node FORGE/src/release-gate-driver.mjs --worker --step <step> --run-dir <dir> --target <version>
 
@@ -2020,12 +2021,27 @@ release-gate-driver.mjs - FORGE release-gate-loop Driver
                             stepName: acceptance | regression | coverage | consolidate | verdict
   --run-dir <dir>           指定 run 目录绝对路径 (单步模式下用于多步共享同一目录)
   --skip-acceptance         跳过 acceptance 预跑 (复用手动预跑的 acceptance-raw.log)
+  --judgment-only           [v1.3.8 交付七] 判断层瘦身模式——一次启动直达判断层四步
+                            (regression → coverage → consolidate → verdict)，跳过
+                            acceptance 分片。脚本层已直跑保证 acceptance，LLM 只审
+                            有判断空间的环节（run-04 实测省 61% token）
+  --acceptance-range <S-S>  [v1.3.8 交付七] acceptance 分片抽查化——全流程模式下只跑
+                            指定场景区间（如 --acceptance-range S294-S310，本版新增
+                            场景），不跑全量 12 分片。与 --judgment-only 互斥使用
+  --auto-fix                [v1.3.8 交付七] 显式开启 F 修复链。默认关闭——verdict
+                            FAIL 即 loop-end，无 f-diagnose/f-fix/f-audit 产物，
+                            修复责任交回主 session（阶段五）
+  --check-alive <runDir>    [v1.3.8 交付五] liveness 探针——只认 status.json 心跳
+                            不认日志（LLM 长窗口日志冻结 ≠ 死亡）。心跳 <90s →
+                            RC=0 输出 alive；超时 → RC=1 输出 dead + 最后 event/phase
   --dry-run                 只打印将执行的步骤，不实际运行
   --worker                  内部 worker 模式 (由 driver spawn，一般不手动使用)
   --help, -h                显示此帮助信息
 
 模式说明:
-  全量模式 (默认):  串行执行全部 5 步，每步 spawn 独立 worker 子进程
+  全量模式 (默认):      串行执行全部 5 步，每步 spawn 独立 worker 子进程
+  判断层模式 (--judgment-only): 跳过 acceptance 分片，直达判断层四步——
+                        阶段六 SOP 默认（脚本层直跑 + 判断层 LLM）
   单步模式 (--step): 只执行指定步骤，执行完后进程退出 (exit 0)
                     stdout 打印: [driver] STEP_DONE: <stepName> EXIT_CODE=0
                     与全量模式使用相同的 run 目录逻辑，确保产物写到正确位置
@@ -2373,18 +2389,31 @@ async function main() {
   if (args.dryRun) {
     console.log(`\n  [dry-run] 将执行以下步骤：`);
     console.log(`  ── V 阶段（验证）──`);
-    console.log(args.skipAcceptance
-      ? `    ① acceptance × ${ACCEPTANCE_SHARD_COUNT} 维度分片 (--skip-acceptance)  → acceptance-s1~12.md → acceptance.md`
-      : `    ① acceptance × ${ACCEPTANCE_SHARD_COUNT} 维度分片 (跑 acceptance-test.sh)  → acceptance-s1~12.md → acceptance.md`);
-    console.log(`       分片 worker 并行（并发 = min(FORGE_ACCEPTANCE_CONCURRENCY, FORGE_MAX_CONCURRENCY)），各分析场景范围`);
+    if (args.judgmentOnly) {
+      // v1.3.8 交付七：判断层瘦身模式——跳过 acceptance 分片，直达判断层四步
+      console.log(`    ① acceptance   [跳过——--judgment-only 判断层模式]`);
+      console.log(`       依据：acceptance 脚本结果由脚本层直跑保证（exit 0 + SUMMARY 全过），`);
+      console.log(`       LLM 复核确定性结果增值≈0（run-04 实测 61% token 花在此）`);
+    } else {
+      console.log(args.skipAcceptance
+        ? `    ① acceptance × ${ACCEPTANCE_SHARD_COUNT} 维度分片 (--skip-acceptance)  → acceptance-s1~12.md → acceptance.md`
+        : `    ① acceptance × ${ACCEPTANCE_SHARD_COUNT} 维度分片 (跑 acceptance-test.sh)  → acceptance-s1~12.md → acceptance.md`);
+      console.log(`       分片范围 = ${args.acceptanceRange ? `抽查区间 ${args.acceptanceRange}（--acceptance-range）` : '全量均分（v1.3.8 起默认抽查化可选）'}`);
+      console.log(`       分片 worker 并行（并发 = min(FORGE_ACCEPTANCE_CONCURRENCY, FORGE_MAX_CONCURRENCY)），各分析场景范围`);
+    }
     console.log('    ② regression  (跑 regression-checklist)   → regression.md');
     console.log('    ③ coverage    (覆盖率交叉检查)             → coverage.md');
     console.log('    ④ consolidate (合并三份结果)               → stage6-report.md');
     console.log('    ⑤ verdict     (PASS/FAIL 裁决)             → verdict.md');
-    console.log(`  ── F 阶段（修复，仅 verdict=FAIL 时触发，最多 3 轮）── [v1.2.8]`);
-    console.log('    f-diagnose  (F 诊断)                        → fix-plan.md');
-    console.log('    f-fix       (F 修复)                        → fix-summary.md');
-    console.log('    f-audit     (driver: runAuditGate)          → audit-result.md');
+    if (args.autoFix) {
+      console.log(`  ── F 阶段（修复，verdict=FAIL 时触发，最多 3 轮）-- --auto-fix 显式开启 [v1.3.8]`);
+      console.log('    f-diagnose  (F 诊断)                        → fix-plan.md');
+      console.log('    f-fix       (F 修复)                        → fix-summary.md');
+      console.log('    f-audit     (driver: runAuditGate)          → audit-result.md');
+    } else {
+      console.log(`  ── F 阶段（修复）── 默认关闭：verdict FAIL 即停（loop-end），无 f-* 产物 [v1.3.8]`);
+      console.log('     显式传 --auto-fix 才进修复链（f-diagnose → f-fix → f-audit，最多 3 轮）');
+    }
     console.log('\n  ✅ dry-run 完成（未实际执行）\n');
 
     visibility.emit(EVENTS.LOOP_END, {
@@ -2406,11 +2435,44 @@ async function main() {
 
   // v1.2.9 功能①：acceptance shard 步骤并行执行——在循环外先处理。
   // 预跑 acceptance-test.sh（所有 shard 共享同一份日志）
-  if (!skipVPhase) {
+  // v1.3.8 交付七：--judgment-only 判断层模式跳过整个 acceptance 分片——
+  // 脚本层（acceptance-test.sh）已由 session 直跑拿到确定性保证，driver 只
+  // 跑有判断空间的 regression → coverage → consolidate → verdict 四步。
+  if (!skipVPhase && !args.judgmentOnly) {
+    // v1.3.8 交付七：--acceptance-range S294-S310 抽查化——分片范围从
+    // 全量 12 片均分改为只覆盖指定区间（本版新增场景），shard 数量按区间
+    // 场景数收敛（区间不足一片时合并为一片）。
+    let shardsToRun = ACCEPTANCE_SHARDS;
+    if (args.acceptanceRange) {
+      const m = String(args.acceptanceRange).match(/^S(\d+)\s*-\s*S(\d+)$/i);
+      if (!m) {
+        console.error(`❌ --acceptance-range 格式非法: ${args.acceptanceRange}（应为 S294-S310 形式）`);
+        process.exit(1);
+      }
+      const rangeStart = parseInt(m[1], 10);
+      const rangeEnd = parseInt(m[2], 10);
+      if (rangeStart > rangeEnd || rangeEnd > ACCEPTANCE_TOTAL_SCENARIOS) {
+        console.error(`❌ --acceptance-range 区间非法: ${args.acceptanceRange}（上限 S${ACCEPTANCE_TOTAL_SCENARIOS}）`);
+        process.exit(1);
+      }
+      // 按区间重新分片：沿用均分策略但只覆盖 [rangeStart, rangeEnd]
+      const rangeCount = rangeEnd - rangeStart + 1;
+      const shardCount = Math.min(ACCEPTANCE_SHARD_COUNT, Math.ceil(rangeCount / Math.ceil(rangeCount / 12)));
+      const perShard = Math.ceil(rangeCount / shardCount);
+      shardsToRun = [];
+      for (let i = 0; i < shardCount; i++) {
+        const start = rangeStart + i * perShard;
+        const end = Math.min(rangeStart + (i + 1) * perShard - 1, rangeEnd);
+        if (start > rangeEnd) break;
+        shardsToRun.push({ id: i + 1, start, end });
+      }
+      console.log(`\n  [交付七] acceptance 抽查化：区间 S${rangeStart}-S${rangeEnd}（${rangeCount} 场景 → ${shardsToRun.length} 片，跳过全量 ${ACCEPTANCE_SHARD_COUNT} 片）`);
+    }
+
     await ensureAcceptancePreRun(args, runDir);
 
     console.log(`\n${'═'.repeat(60)}`);
-    console.log(`  V 步骤 — acceptance × ${ACCEPTANCE_SHARD_COUNT} 维度分片（并行）`);
+    console.log(`  V 步骤 — acceptance × ${shardsToRun.length} 维度分片（并行${args.acceptanceRange ? ' · 抽查区间' : ''}）`);
     console.log(`${'═'.repeat(60)}`);
 
     // 并行执行所有 acceptance shard worker
@@ -2425,7 +2487,7 @@ async function main() {
     // 未显式设置时 8GB 机器自动取 1，无需用户手工设 env。与 fresh-eyes driver
     // 共用 driver-base 实现（镜像漂移零容忍）。
     const GATE_CONCURRENCY_RESOLVED = resolveMaxConcurrency({ defaultConcurrency: 1 });
-    const shardWorkers = ACCEPTANCE_SHARDS.map(s => [`acceptance-s${s.id}`, runDir, args.target]);
+    const shardWorkers = shardsToRun.map(s => [`acceptance-s${s.id}`, runDir, args.target]);
     const MAX_ACC_CONCURRENCY = Math.min(
       parseInt(process.env.FORGE_ACCEPTANCE_CONCURRENCY || '6', 10),
       GATE_CONCURRENCY_RESOLVED.concurrency
@@ -2451,11 +2513,11 @@ async function main() {
       if (r.value !== null) completedSteps++;
     }
 
-    console.log(`  ✅ acceptance 分片完成（${shardResults.filter(r => r.value !== null).length}/${ACCEPTANCE_SHARDS.length} 成功）`);
+    console.log(`  ✅ acceptance 分片完成（${shardResults.filter(r => r.value !== null).length}/${shardsToRun.length} 成功）`);
 
     // acceptance-consolidate：合并分片报告（串行执行，用标准 spawnWorker）
     console.log(`\n${'═'.repeat(60)}`);
-    console.log(`  V 步骤 — acceptance-consolidate（合并 ${ACCEPTANCE_SHARDS.length} 份分片报告）`);
+    console.log(`  V 步骤 — acceptance-consolidate（合并 ${shardsToRun.length} 份分片报告）`);
     console.log(`${'═'.repeat(60)}`);
     try {
       await spawnWorker('acceptance-consolidate', runDir, args.target);
@@ -2466,7 +2528,7 @@ async function main() {
       console.warn(`     降级：直接拼接分片报告作为 acceptance.md`);
       // 降级：直接拼接所有分片
       const parts = ['# Acceptance Test 结果（降级——分片拼接）', ''];
-      for (const s of ACCEPTANCE_SHARDS) {
+      for (const s of shardsToRun) {
         const sPath = join(runDir, `acceptance-s${s.id}.md`);
         if (existsSync(sPath)) {
           parts.push(readFileSync(sPath, 'utf-8'), '');
@@ -2566,7 +2628,18 @@ async function main() {
   // v1.2.8 功能⑦：resume 模式从断点恢复已完成 F 轮数，从 fixRoundsRun+1 继续
   let fixRoundsRun = resumeFixRoundsRun;
 
-  while (verdict === 'FAIL' && fixRoundsRun < MAX_FIX_ROUNDS) {
+  // ─── v1.3.8 交付七：F 循环 FAIL 即停 ───
+  // verdict FAIL 且未显式传 --auto-fix → 直接 loop-end，不进修复链、
+  // 无任何 f-* 产物。修复责任交回主 session（阶段五）——driver 盲审的
+  // 独立性与修复者的上下文不该混在同一 run 里。
+  if (verdict === 'FAIL' && !args.autoFix) {
+    console.log(`\n  ❌ verdict=FAIL — 循环终止（--auto-fix 未开启，不进 F 修复链）`);
+    console.log(`     产物：verdict.md + stage6-report.md；无 f-diagnose/f-fix/f-audit 产物`);
+    console.log(`     下一步：回阶段五人工修复（docs/changelog/releasing/06-release-gate.md）`);
+    stopReason = 'verdict-fail-stop';
+  }
+
+  while (verdict === 'FAIL' && fixRoundsRun < MAX_FIX_ROUNDS && args.autoFix) {
     fixRoundsRun++;
     const round = fixRoundsRun;
     console.log(`\n${'═'.repeat(60)}`);
