@@ -170,7 +170,7 @@ graph TB
 
 | 包 | 职责 | 状态 |
 |---|---|---|
-| audit | 提交时审计，24 条规则（17 默认 + 7 扩展，详见 WIKI.md）硬证据扫描 + 快照/回滚/webhook + 国标对齐维度（`--gb48000` opt-in） | ✅ 已实现（829 测试） |
+| audit | 提交时审计，24 条规则（17 默认 + 7 扩展，[完整清单见 SECURITY](../SECURITY.md#24-条审计规则完整清单文档级-ssot)）硬证据扫描 + 快照/回滚/webhook + 国标对齐维度（`--gb48000` opt-in） | ✅ 已实现（829 测试） |
 | core | 核心运行时：git diff 解析、shadow-repo 快照、AES-256-GCM/ECDH、think.md 契约、doctor、LLM 调用 Trace、stop_reason 分类、身份码 Ed25519 | ✅ 已实现（340 测试） |
 | harness | 四层约束加载链 `buildConstrainedSystemPrompt()` + L4 渐进加载（热点全文 + 索引） | ✅ 已实现 |
 | rules | 规则引擎纯函数包（零 fs/git 依赖），编排层 tool-call 事前拦截 + 审批四模式 | ✅ 已实现 |
@@ -383,7 +383,7 @@ graph LR
 
 **行业印证**：Palantir AIP 靠 Ontology 实现 Agent 可靠性——「根本接触不到 > 被告知不能说」与 sofagent 的 A15 约束验证 + 审计外置遵循同一原则（不依赖 Agent 自我报告，只看 git diff 硬证据）。Palantir OAG 的「确定性与概率性分离」与 sofagent 审计完全同构——sofagent 的 19/24 条规则为纯 git-diff（不依赖 Agent 配合）正是这一原则的工程实现。完整的行业对标分析（Palantir OAG 五层映射、Ledger-Views-Policy 对照、DeerFlow/Omnigent/DataFlow 等）见 [PHILOSOPHY §五·世界模型](./PHILOSOPHY.md#为什么世界模型优先于语言模型) 和 [VALIDATION](./VALIDATION.md)。
 
-> 💡 **规则编号说明**：A1–A11 + A18–A23 为默认规则（17 条），A14–A17 + E1/E2/E4 为扩展规则（7 条，需 opt-in），全量 24 条（17 默认 + 7 扩展，详见 WIKI.md）。A12/A13 已在 v0.99.4 合并入 A11，E3 已在 v1.2.5 并入 A11，编号不再使用。
+> 💡 **规则编号说明**：A1–A11 + A18–A23 为默认规则（17 条），A14–A17 + E1/E2/E4 为扩展规则（7 条，需 opt-in），全量 24 条（17 默认 + 7 扩展）。**24 条规则完整清单（文档级 SSOT）见 [SECURITY.md → 24 条审计规则完整清单](../SECURITY.md#24-条审计规则完整清单文档级-ssot)**，逐条行为表见 `engine/audit/README.md`。A12/A13 已在 v0.99.4 合并入 A11，E3 已在 v1.2.5 并入 A11，编号不再使用。
 
 **审计的双重定位**：
 

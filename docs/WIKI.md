@@ -32,7 +32,7 @@
 | **约束层（Harness）** | 对内的技术身份：约束 Agent 行为的「缰绳」——一个层四种能力（注入·审计·回溯·进化），编排（FORGE）为内部工具 | [ARCHITECTURE §二](./ARCHITECTURE.md) |
 | **约束层七维度** | Agent = 模型 + 上下文 + 工具 + 状态 + 执行控制 + 权限 + 可观测性——四种能力各自覆盖其中哪些维度 | [PHILOSOPHY §一 · 四件事的分工](./PHILOSOPHY.md#四件事的分工mcp--skills--ontology--harness)（维度构成以本行为准，ARCHITECTURE 暂无独立小节） |
 | **约束层构成（企业视角）** | 黄仁勋定义：企业专属约束层 = 知识 + 记忆 + 工作流 + 权限 + 安全机制 + 运行环境——模型是起点，围绕模型积累的这套专属系统才是核心资产 | [PHILOSOPHY §一·理论锚点](./PHILOSOPHY.md#智能与控制分离sofagent-的理论锚点) |
-| **审计引擎** | git diff 驱动，24 条规则（17 默认 + 7 扩展），A1→A23 为活跃规则（A12/A13 已在 v0.99.4 合并入 A11，编号不再使用；v1.2.5 新增 A20-A23），每次 commit 自动跑 | [ARCHITECTURE §三](./ARCHITECTURE.md) |
+| **审计引擎** | git diff 驱动，24 条规则（17 默认 + 7 扩展），A1→A23 为活跃规则（A12/A13 已在 v0.99.4 合并入 A11，编号不再使用；v1.2.5 新增 A20-A23），每次 commit 自动跑 | [24 条完整清单（SECURITY SSOT）](../SECURITY.md#24-条审计规则完整清单文档级-ssot) |
 | **三层治理** | Ledger（原始数据）→ Views（派生视图）→ Policy（约束规则），单向派生、不可逆写 | [PHILOSOPHY §五](./PHILOSOPHY.md) |
 | **FORGE** | 自迭代引擎（内部工具，外部用户可忽略）——通过 Workflow 驱动 Agent 审查/修复/验证自己的代码，核心是 fresh-eyes-loop | [FORGE/README.md](../FORGE/README.md) |
 | **SKILL** | Agent 的行为约束文件系统——三层：SKILL.md（主入口）/ harness/（约束底座）/ agents/（Sub Agent） | [SKILL/SKILL.md](../SKILL/SKILL.md) |

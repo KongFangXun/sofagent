@@ -238,6 +238,44 @@ sofagent-audit（v0.92+）是 TypeScript CLI，执行 `execFileSync('git', ...)`
 
 > ⚠️ **A14/A15 是 commit 时审计，不是运行时阻断。** Agent 在 commit 前仍可能访问受限数据——审计只能事后发现。这不是运行时沙箱。
 
+### 24 条审计规则完整清单（文档级 SSOT）
+
+> 本表是全部 24 条规则的文档级单一事实源（v1.3.7 口径；代码注册表 `engine/audit/src/rules/index.ts`，逐条行为表见 `engine/audit/README.md`，`tools/check-docs.sh` 第 7/8 节做三方对账）。A12/A13 已于 v0.99.4 合并入 A11、E3 已于 v1.2.5 并入 A11，编号不再使用。
+
+**默认规则 17 条（始终生效；A18 自 v1.1.5 提升、A20-A23 自 v1.2.5 新增）**：
+
+| 编号 | 名称 | 检测什么 | 判定 |
+|------|------|---------|:--:|
+| A1 | 不碰敏感 | `.env` / `*.pem` / `id_rsa` 等敏感文件被修改 | FAIL |
+| A2 | 不泄密钥 | API Key（AWS/OpenAI/Anthropic/DeepSeek/GitHub/Stripe）/ Token / 私钥模式泄漏 | FAIL |
+| A3 | 不改越界 | 修改文件路径与任务描述不匹配 | WARN |
+| A4 | 不删配置 | 配置文件被删除 | FAIL |
+| A5 | 不瞒真相 | commit message 为空或纯占位符 | WARN |
+| A6 | 不坏构建 | 构建配置文件异常改动 | WARN |
+| A7 | 不存盲改 | 被修改文件无读取记录（依赖 task/logs） | FAIL/WARN |
+| A8 | 不逃验证 | 构建文件变更后无测试记录 | FAIL/WARN |
+| A9 | 不纳注入 | 忽略指令/prompt 注入风险模式 | FAIL |
+| A10 | 不引毒源 | 依赖包黑名单 + typosquatting + postinstall 注入 | WARN |
+| A11 | 不滥资源 | 资源滥用（超大文件、大行数删除等） | WARN |
+| A18 | 垃圾文件 | 临时文件名模式的垃圾文件 | WARN |
+| A19 | msg 质量 | commit message 命中黑名单词或过短 | FAIL |
+| A20 | 不泄外联 | 数据外传（curl/wget POST、WebSocket、DNS 隧道） | FAIL |
+| A21 | 不植后门 | 持久化后门（LaunchAgent/systemd/crontab/注册表自启） | FAIL |
+| A22 | 不越权限 | 权限提升（全权限 chmod、sudoers、setuid） | FAIL |
+| A23 | 不逃路径 | 路径穿越 / symlink 逃逸 | FAIL |
+
+**扩展规则 7 条（默认关闭，`extendedRulesEnabled: true` 启用）**：
+
+| 编号 | 名称 | 检测什么 | 判定 |
+|------|------|---------|:--:|
+| A14 | 知识库越权 | 访问超出工作流声明范围的知识库页面（事后审计） | WARN |
+| A15 | 不盲动 | workflow 节点未声明 actions | FAIL |
+| A16 | 非授权文件变更 | 非声明范围文件被修改（行为级） | FAIL |
+| A17 | 异常批量变更 | 单次提交变更文件数超阈值（filesystem 模式） | WARN |
+| E1 | 不落测试 | 测试文件被提交到生产目录 | WARN |
+| E2 | TODO 未声明 | 新增 TODO 未在任务中声明 | WARN |
+| E4 | 低注释率 | 新增 >200 行且注释率 <5% | WARN |
+
 ### history.jsonl 访问控制（v1.1.3+）
 
 history.jsonl 存储审计拦截记录（含被拦截的 diff 摘要）。以下为当前访问模型：
