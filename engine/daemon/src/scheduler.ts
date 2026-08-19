@@ -1,8 +1,12 @@
 // ============================================================
-// scheduler.ts · 定时任务调度器（v1.3.7 功能②）
+// scheduler.ts · 定时任务调度器（v1.3.7 功能② · v1.3.8 交付四扩展）
 //
 // ScheduledTask CRUD + pause/resume/trigger/history
 // 支持 cron（周期）和 once（一次性）两种类型
+//
+// v1.3.8 交付四扩展：cron 三档糖（@daily/@weekly/@monthly 宏）——
+// nextCronTime 入口先经 expandCronSugar 展开，5 段解析逻辑不变
+// （宏只做展开层，与 long-tasks.ts 的 CRON_MACRO_EXPANSION 同一张表）。
 //
 // 存储：
 //   data/scheduler/tasks.json         全量索引
@@ -24,6 +28,24 @@ import { randomUUID } from 'crypto';
 // ────────────────────────────────────────────────────────────
 
 export type ScheduleType = 'cron' | 'once';
+
+/** cron 三档糖宏（v1.3.8 交付四——展开层，底层仍走 5 段解析） */
+export type CronSugar = '@daily' | '@weekly' | '@monthly';
+
+/** 宏 → 5 段 cron 表达式（UTC 口径——与 nextCronTime 的 UTC 搜索对齐） */
+const CRON_SUGAR_EXPANSION: Record<CronSugar, string> = {
+  '@daily': '0 0 * * *', // 每天 00:00
+  '@weekly': '0 0 * * 0', // 每周日 00:00
+  '@monthly': '0 0 1 * *', // 每月 1 日 00:00
+};
+
+/**
+ * 展开 cron 三档糖宏（@daily/@weekly/@monthly → 5 段表达式）。
+ * 非宏字符串原样返回（已是 5 段表达式——解析不变）。
+ */
+export function expandCronSugar(schedule: string): string {
+  return schedule in CRON_SUGAR_EXPANSION ? CRON_SUGAR_EXPANSION[schedule as CronSugar] : schedule;
+}
 
 export interface ScheduledTask {
   /** UUID */
@@ -140,13 +162,14 @@ function appendHistory(taskId: string, run: TaskRun, dataBase?: string): void {
  *
  * 支持基本格式：`分 时 日 月 周`
  * 每段支持：数字 / `*` / `,` / `-` / `/` 步进
+ * v1.3.8 交付四：入口先经 expandCronSugar 展开（@daily/@weekly/@monthly 宏可用）
  *
- * @param cronExpr cron 表达式
+ * @param cronExpr cron 表达式（或三档糖宏）
  * @param from 从哪个时间开始计算（默认 now）
  * @returns ISO 8601 datetime 字符串
  */
 export function nextCronTime(cronExpr: string, from?: Date): string {
-  const parts = cronExpr.trim().split(/\s+/);
+  const parts = expandCronSugar(cronExpr).trim().split(/\s+/);
   if (parts.length !== 5) {
     throw new Error(`cron 表达式格式错误（需要 5 段：分 时 日 月 周）: ${cronExpr}`);
   }
@@ -229,17 +252,21 @@ export function createScheduler(dataBase?: string) {
   return {
     /**
      * 创建新任务。
+     * v1.3.8 交付四：schedule 支持 @daily/@weekly/@monthly 宏（落盘前展开为 5 段）。
      * @returns 创建的 ScheduledTask（含分配的 id + nextRun）
      */
     create(input: Omit<ScheduledTask, 'id' | 'status' | 'createdAt' | 'nextRun'>): ScheduledTask {
+      // 宏展开落盘（schedule 字段持久化为 5 段表达式——读侧零改动）
+      const schedule = input.type === 'cron' ? expandCronSugar(input.schedule) : input.schedule;
       const task: ScheduledTask = {
         ...input,
+        schedule,
         id: randomUUID(),
         status: 'active',
         createdAt: new Date().toISOString(),
         nextRun: input.type === 'cron'
-          ? nextCronTime(input.schedule)
-          : input.schedule,
+          ? nextCronTime(schedule)
+          : schedule,
       };
       const tasks = loadTasks(dataBase);
       tasks.push(task);
@@ -257,12 +284,16 @@ export function createScheduler(dataBase?: string) {
       return loadTasks(dataBase).find((t) => t.id === taskId) ?? null;
     },
 
-    /** 更新任务 */
+    /** 更新任务（v1.3.8 交付四：schedule 宏在重算 nextRun 前展开） */
     update(taskId: string, patch: Partial<Omit<ScheduledTask, 'id' | 'createdAt'>>): ScheduledTask | null {
       const tasks = loadTasks(dataBase);
       const idx = tasks.findIndex((t) => t.id === taskId);
       if (idx === -1) return null;
       tasks[idx] = { ...tasks[idx]!, ...patch };
+      // schedule 宏展开落盘（type=cron 时）
+      if (tasks[idx]!.type === 'cron') {
+        tasks[idx]!.schedule = expandCronSugar(tasks[idx]!.schedule);
+      }
       // 重新计算 nextRun
       if (patch.schedule || patch.type) {
         tasks[idx]!.nextRun = tasks[idx]!.type === 'cron'

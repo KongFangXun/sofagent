@@ -7,7 +7,7 @@ import { mkdirSync, rmSync, existsSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
 import { randomBytes } from 'crypto';
-import { createScheduler, nextCronTime } from '../scheduler';
+import { createScheduler, nextCronTime, expandCronSugar } from '../scheduler';
 
 function tmpDir(): string {
   const dir = join(tmpdir(), `sofagent-sched-test-${Date.now()}-${randomBytes(4).toString('hex')}`);
@@ -242,5 +242,73 @@ describe('nextCronTime', () => {
 
   it('无效表达式抛异常', () => {
     expect(() => nextCronTime('invalid')).toThrow();
+  });
+});
+
+// ============================================================
+// v1.3.8 交付四：cron 三档糖（@daily/@weekly/@monthly 宏展开层）
+// ============================================================
+
+describe('expandCronSugar · cron 三档糖（v1.3.8 交付四）', () => {
+  it('@daily → 0 0 * * *', () => {
+    expect(expandCronSugar('@daily')).toBe('0 0 * * *');
+  });
+
+  it('@weekly → 0 0 * * 0', () => {
+    expect(expandCronSugar('@weekly')).toBe('0 0 * * 0');
+  });
+
+  it('@monthly → 0 0 1 * *', () => {
+    expect(expandCronSugar('@monthly')).toBe('0 0 1 * *');
+  });
+
+  it('非宏字符串原样返回（5 段表达式不受影响）', () => {
+    expect(expandCronSugar('*/15 * * * *')).toBe('*/15 * * * *');
+    expect(expandCronSugar('0 9 * * 1-5')).toBe('0 9 * * 1-5');
+  });
+
+  it('nextCronTime 直接吃宏（展开层在入口）', () => {
+    const from = new Date('2026-08-19T10:00:00Z');
+    // @daily → 次日 00:00 UTC
+    expect(nextCronTime('@daily', from)).toBe('2026-08-20T00:00:00.000Z');
+    // @weekly → 下周日 00:00（2026-08-19 是周三 → 8/23 周日）
+    expect(nextCronTime('@weekly', from)).toBe('2026-08-23T00:00:00.000Z');
+    // @monthly → 下月 1 日 00:00
+    expect(nextCronTime('@monthly', from)).toBe('2026-09-01T00:00:00.000Z');
+  });
+});
+
+// 宏 × scheduler 实例（需要 describe('scheduler') 的 testDir 作用域——并入该 describe）
+describe('scheduler · cron 三档糖集成（v1.3.8 交付四）', () => {
+  let testDir: string;
+
+  beforeEach(() => {
+    testDir = tmpDir();
+  });
+
+  afterEach(() => {
+    try { rmSync(testDir, { recursive: true, force: true }); } catch { /* #9 shim 加固 */ }
+  });
+
+  it('create 落盘前展开宏（tasks.json 存 5 段表达式）', () => {
+    const sched = createScheduler(testDir);
+    const task = sched.create({
+      name: '宏任务',
+      type: 'cron',
+      schedule: '@daily',
+      prompt: '每日巡检',
+    });
+    expect(task.schedule).toBe('0 0 * * *');
+    // nextRun 是明天 00:00 UTC
+    const next = new Date(task.nextRun!);
+    expect(next.getUTCHours()).toBe(0);
+    expect(next.getUTCMinutes()).toBe(0);
+  });
+
+  it('update 改 schedule 时宏同样展开', () => {
+    const sched = createScheduler(testDir);
+    const task = sched.create({ name: 't', type: 'cron', schedule: '@daily', prompt: 'p' });
+    const updated = sched.update(task.id, { schedule: '@weekly' });
+    expect(updated!.schedule).toBe('0 0 * * 0');
   });
 });
