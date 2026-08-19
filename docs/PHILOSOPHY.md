@@ -33,7 +33,7 @@ Agent 越聪明，企业越不敢让它碰真活——真出事了，谁负责�
 
 **② sofagent 的答案：一个常驻你企业的 FDE Agent，帮你把工作流梳理成 AI 节点，部署完它自己跑。**
 
-sofagent 不替代大厂 Agent，而是建在它们之上——做河的约束层，不做河本身（River 比喻详见 [README（项目概览）](../README.md)）。FDE 进场四阶段：梳理→挖掘→交付→离场。离场后 AI 节点自己跑。
+sofagent 不替代大厂 Agent，而是建在它们之上——做河的约束层，不做河本身（River 比喻详见 [README · 这是什么](../README.md#这是什么)）。FDE 进场四阶段：梳理→挖掘→交付→离场。离场后 AI 节点自己跑。
 
 > **🔗 激活链——从"交付"到"自运转"**：FDE 交付了 ontology + workflow.yml + skills/ 等静态文件后，交付物和"企业工作流自动运行"之间曾有一道**大断裂带**——企业 IT 拿到一堆 .md 和 .yml 不知道怎么跑起来。v1.2.5 起的**激活链**（ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN，已交付）解决这个问题：读交付物 → 注册企业 SubAgent → 构建 LangGraph StateGraph → DAG 运行 + HITL + 审计 → 持续优化自运转。详见 [激活链设计文档](./guides/fde-activation-chain.md)。
 
@@ -73,7 +73,7 @@ WorkBuddy / OpenClaw 等大厂 Agent 平台管路由调度——「会不会做�
 
 两个维度交叉印证同一结论：**sofagent 必须做平台/中间件，不能做外包/服务。**
 
-**一条河的比喻**：大厂造河，我们做河的约束层——不做河，做河的堤坝 + 自来水厂 + 管网 + 水龙头（详见 [README（项目概览）](../README.md)）。这把「做平台/中间件、不做外包/服务」具象化。
+**一条河的比喻**：大厂造河，我们做河的约束层——不做河，做河的堤坝 + 自来水厂 + 管网 + 水龙头（详见 [README · 这是什么](../README.md#这是什么)）。这把「做平台/中间件、不做外包/服务」具象化。
 
 **模型层**：强模型时代，人工工作流的边际收益从 30 分降到 5 分——甚至负收益（人工结构 = 设计者认知上限，限制模型找最优解）。历史规律反复验证：RAG 流水线被长上下文吃掉 → Prompt Chain 被 agentic 模型取代 → MoT Agent 编排被 sub-agent/plan 覆盖。但三件事的价值**反升**：上下文工程、可追踪验收标准、安全护栏（Harness）。转折点：从告诉 AI "怎么做"(How) → 定义 "做什么 + 做完的判定"(What + Done)。**通用模型越强，Harness 越值钱——这是 90%/10% 价值分层（知行合一框架见 [VALIDATION](./VALIDATION.md)）的外部验证。**
 
@@ -219,7 +219,7 @@ sofagent：说一句话 → MCP 调用 → 返回结果
 | 铁律 | 说明 |
 |------|------|
 | 语言入口 | Agent 第一次连上 MCP server 时，`list_capabilities` 主动推送所有能力 |
-| 零 GUI | 不建网页、面板、仪表盘。需要可视化时推送 Markdown 报告到 IM |
+| 零交互 GUI | 语言是主界面，不建交互式网页/面板；dashboard 是只读视图（见 §六），需要可视化呈现时推送 Markdown 报告到 IM |
 | 输出有家 | 每个工作流节点的输出有明确的 push target（飞书/钉钉/企微 Webhook、daemon 通知、联邦 knowledge/） |
 | 降级优雅 | MCP 不可用时退到 CLI；IM 不可用时退到 daemon 通知 |
 
