@@ -1,5 +1,5 @@
 // ============================================================
-// harness-sdk/types.ts · SubAgent 托管 SDK 类型定义（v1.3.7 交付 ③）
+// harness-sdk/types.ts · SubAgent 托管 SDK 类型定义（v1.3.7 交付 ③ · v1.3.8 交付⑥ 沙箱启用）
 // ============================================================
 //
 // 一行包装，获得约束层全部能力：
@@ -8,6 +8,9 @@
 // 双形态兼容：① createReactAgent（middleware 链路）② 纯 StateGraph（tools 节点注入）
 // ============================================================
 import type { AgentIdentity } from '@sofagent/core';
+import type { ToolGate, ToolId, ToolRisk } from '../sandbox/tool-gate';
+import type { FilesystemBackend } from '../sandbox/filesystem-backend';
+import type { NetworkGateway } from '../sandbox/network-gateway';
 
 /**
  * 审批模式——v1.3.1 审批语义的 SDK 暴露面。
@@ -36,10 +39,23 @@ export interface HarnessWrapOptions {
    */
   identity?: string | AgentIdentity;
   /**
-   * 沙箱开关（v1.3.7 组件 · 本版留空）。
-   * 🔴 版本边界：传 true 抛明确错误「v1.3.8 启用」，false/缺省正常。
+   * 沙箱开关（v1.3.7 组件 · v1.3.8 交付⑥ 已启用）。
+   * true 时接入沙箱三层（v1.3.7 组件，wrap 侧挂载）：
+   *   ① 工具调用经 tool-gate 前置判定（按唯一 ID，未注册 fail-closed deny）
+   *   ② 文件写经 filesystem-backend 虚拟层（未审批不落盘）
+   *   ③ 网络出站经 network-gateway 白名单（invoke 期间 monkey-patch net/dns）
+   * 与 approval 组合可用（sandbox:true + require-approval——沙箱内副作用工具仍挂人审）。
    */
   sandbox?: boolean;
+  /**
+   * 外部签发的沙箱会话句柄（可选——不传时 sandbox:true 自动创建）。
+   * 宿主先 createSandboxHandle() 预注册高危工具/白名单再传入，wrap 与 wrapTools 共享。
+   */
+  sandboxHandle?: SandboxHandle;
+  /** 沙箱网络白名单域名（sandbox:true 生效；缺省 ['.sofagent.local', 'localhost']） */
+  sandboxAllowHosts?: string[];
+  /** 沙箱工具门风险策略覆盖（risk → allow/deny/human-approval；缺省 high→human-approval） */
+  sandboxRiskPolicy?: Partial<Record<ToolRisk, 'allow' | 'deny' | 'human-approval'>>;
   /**
    * LLM 调用级 Trace 开关（v1.3.1 trace 体系）。
    * 缺省 true——wrap 的默认价值主张就是全链可观测。
@@ -114,10 +130,41 @@ export interface WrappedAgent {
   approval: ApprovalMode;
   /** trace 开关 */
   trace: boolean;
+  /** 沙箱是否启用（v1.3.8 交付⑥——options.sandbox === true 时为 true） */
+  sandbox: boolean;
   /** 治理统计（运行时累计） */
   stats: { toolCalls: number; intercepted: number; approvals: number };
   /** registry 注册句柄（被托管 agent 可被 dag-runner 发现） */
   registryName: string;
+  /** 沙箱会话句柄（sandbox:true 时存在——审批合并/工具放行/统计从这里操作） */
+  sandboxHandle?: SandboxHandle;
+}
+
+/**
+ * 沙箱会话句柄（v1.3.8 交付⑥）——wrap/wrapTools 共享的沙箱操作面。
+ * 三层组件（gate/vfs/net）来自 v1.3.7 sandbox/ 目录；句柄补 wrap 侧注册表与人审入口。
+ */
+export interface SandboxHandle {
+  /** 工具门（v1.3.7 tool-gate——前置 allow/deny/human-approval 判定） */
+  gate: ToolGate;
+  /** 虚拟文件系统（v1.3.7 filesystem-backend——写入先进虚拟层，审批后落盘） */
+  vfs: FilesystemBackend;
+  /** 网络网关（v1.3.7 network-gateway——出站白名单判定） */
+  net: NetworkGateway;
+  /** 注册工具进 gate（返回唯一 ID——wrapTools 自动调用；宿主可预注册高危工具） */
+  registerTool(name: string, risk: ToolRisk): ToolId;
+  /** 查工具 ID（未注册返回 undefined） */
+  getToolId(name: string): ToolId | undefined;
+  /** 人审通过——该工具下一次调用放行一次（tool-gate 一次性审批） */
+  approveTool(name: string): void;
+  /** 人审通过——虚拟写入原子合并到物理磁盘 */
+  approveWrite(targetPath: string): { ok: boolean; reason?: string };
+  /** 安装进程级网络守卫（net/dns monkey-patch）——返回卸载函数（invoke 代理自动装卸） */
+  installNetGuard(): () => void;
+  /** 拆除——pending 写入全 deny + 清空工具注册（SubAgent 会话结束） */
+  teardown(): void;
+  /** 沙箱判定统计（denied / virtualWrites / netDenied） */
+  stats(): { denied: number; virtualWrites: number; netDenied: number };
 }
 
 /** 副作用类工具名前缀/全名——require-approval/deny 模式的拦截判据 */
