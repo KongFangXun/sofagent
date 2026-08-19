@@ -40,6 +40,7 @@
 > ✅ **已解决的历史问题**（v1.3.2 移出 Key Limitations，不再计入当前边界）：
 > - ~~audit ↔ daemon 循环依赖~~（v1.2.3 消除：snapshot helpers 迁移至 `@sofagent/core`，依赖图恢复单向 `daemon → audit → core`，详见 §八）
 > - ~~FDE 交付物激活断裂带~~（v1.2.5-v1.3.0 消除：激活链 Phase 1-4 全部交付，详见 §十二）
+> - ~~定时触发做不到~~（v1.2.8 消除：daemon 内置 scheduler，v1.3.5 扩展 cron 表达式，详见 §二）
 
 > ⚠️ **企业高安全场景**：`config.yml` 可被 Agent 篡改以绕过审计规则（如关闭规则、放宽阈值）。config.yml 有两个有效位置——项目级 `${cwd}/.sofagent/config.yml` 和全局级 `~/.sofagent/config.yml`（config-loader.ts 三级 fallback，项目级优先）。建议：① CI 侧独立校验 config 完整性（`sofagent-audit --diff` 兜底，hook 可绕 CI 不可绕）；② 文件权限锁（`chmod 600 ~/.sofagent/config.yml` 和 `chmod 600 .sofagent/config.yml`，仅受信用户可写）。与已有 `--no-verify` CI 兜底建议呼应。**规划中（v1.3.9 目标），当前 v1.3.7 部分实现（SubAgent 沙箱已落地）**：SubAgent 侧 config 篡改将被沙箱虚拟 FS 拦截（写入走虚拟层审批）；主 Agent 侧仍靠 CI 兜底 + 文件权限（主 Agent 不进沙箱，留 v1.3.9 meta-harness）。
 >
@@ -117,12 +118,6 @@ v1.0.1 新增 daemon Ingest（自动知识提取）+ loop-evaluate Lint（自动
 ---
 
 ## 二、平台与兼容性局限
-
-### ⏰ ~~定时触发做不到~~（v1.2.8 已解决，v1.3.5 扩展 cron 触发）
-
-早期版本只有「每次对话启动」这一种触发方式（OpenClaw 当时不支持 cron 级定时任务）。**现状**：v1.2.8 起 daemon 内置定时任务管理（`engine/daemon/src/scheduler.ts`），v1.3.5 起支持 `@weekly` / `@daily` / `@hourly` cron 表达式触发 Sub Agent 巡检（`engine/daemon/src/cron.ts`），定时循环已是交付能力。Windows 平台差异见本页 §二「🪟 Windows 支持是实验性的」。
-
----
 
 ### 🐚 B1 数据初始化依赖 bash
 
@@ -460,7 +455,7 @@ A16 的 `evidenceMode: git-diff` 依赖 git diff 获取变更文件列表；daem
 
 ## 七、历史遗留与迁移说明（v1.0.5 起）
 
-> 定时触发局限已解决（v1.2.8 起 daemon 内置定时任务，v1.3.5 扩展 cron 表达式），本节省略；Windows 平台差异见 §二「🪟 Windows 支持是实验性的」。
+> 定时触发已解决（见「✅ 已解决的历史问题」区）；Windows 平台差异见 §二「🪟 Windows 支持是实验性的」。
 
 ### Ontology 合并准确性依赖 frontmatter 质量
 
