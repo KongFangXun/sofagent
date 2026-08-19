@@ -762,6 +762,38 @@ async function runWorker(step, roundDir, target) {
     ? stepDef.outputs.map(f => `===FILE: ${f}===\n<${f} 正文>`).join('\n\n')
     : '';
 
+  // v1.3.8 交付八：B 侧复核模式——b-check-p* worker 收到 FORGE_B_REVIEW_MODE
+  // 时，prompt 追加「独立复核 A 的 P0/P1 发现」指令段（替代全量重审）。
+  // A 侧同视角报告路径注入：check-a-pN.md（同 roundDir）。
+  // 视角独立性保留：B 仍以自己的身份评判——可推翻 A、也可补 A 漏报。
+  let bReviewModeHint = '';
+  if (process.env.FORGE_B_REVIEW_MODE === 'recheck-a-findings' && step.startsWith('b-check-p')) {
+    const perspectiveNum = step.match(/p(\d+)/)?.[1] || '?';
+    const aReportPath = join(roundDir, `check-a-p${perspectiveNum}.md`);
+    const aReportExists = existsSync(aReportPath);
+    bReviewModeHint = [
+      '',
+      '--- B 侧复核模式（v1.3.8 交付八 · 成本重构）---',
+      '',
+      '你的任务从「全量重审本视角」收窄为「独立复核 A 的 P0/P1 发现」。',
+      aReportExists
+        ? `A 的同视角审查报告：${aReportPath}（先读它，提取其中全部 P0/P1 finding）`
+        : `⚠️ A 的同视角报告（check-a-p${perspectiveNum}.md）不存在——A 侧 worker 崩溃或被跳过。此时你回退为全量审查本视角。`,
+      '',
+      '复核纪律：',
+      '1. 逐条复核 A 报的 P0/P1：读对应文件/跑对应命令，独立给出「确认（附证据）/ 推翻（附反证）/ 存疑（说明缺什么证据）」',
+      '2. P2 与你的视角强相关的也可复核，但不强制',
+      '3. **兜底补充**：复核过程中发现 A 漏报的明显问题（本视角内），照样报——复核不是只挑错，是提高发现质量',
+      '4. 禁止盲从 A：A 说有问题但证据不成立 → 推翻；A 说没问题但你发现新问题 → 补充',
+      '',
+      '输出格式：复核结论表 + 兜底发现（如有）：',
+      '| A-finding | 复核结论 | 依据（文件/命令输出） |',
+      '|-----------|---------|----------------------|',
+      '',
+      '复核表 + 兜底发现都写入你的产物文件（driver 切片逻辑不变）。',
+    ].join('\n');
+  }
+
   const userMessage = [
     promptTemplate.trim(),
     '',
@@ -774,6 +806,7 @@ async function runWorker(step, roundDir, target) {
     multiOutputHint
       ? `产物输出（本步骤产出多个文件，必须用 ===FILE: <文件名>=== 分隔各产物，driver 会按此切片写入）：\n${outputPaths}\n\n格式约定：\n${multiOutputHint}`
       : `产物输出路径（把你的输出写到这个文件）：\n${outputPaths}`,
+    bReviewModeHint,
   ].filter(Boolean).join('\n');
 
   // 4. 创建 model + tools + agent
@@ -2875,7 +2908,15 @@ async function runRound(roundNum, runDir, target, dryRun, opts = {}) {
   // v1.2.9 功能①：步骤 ①② 双盲独立审查——24 个 perspective worker 并行分批
   // 每个 perspective worker 是独立的子进程（零上下文），单视角工具预算 12/15 次，recursionLimit=30。
   // A/B 各 12 个 worker 合计 24 个，按 resolveMaxConcurrency 解析的并发分批执行。
-  console.log('\n  [步骤 ①②] A/B 双盲独立审查（24 perspective worker，并发=' + MAX_CONCURRENCY + '，来源=' + CONCURRENCY_RESOLVED.source + '）...');
+  //
+  // v1.3.8 交付八：B 侧复核模式（成本重构）——两段式执行替代全量双盲：
+  //   第一段：A 侧 12 个 perspective worker 全量审查（不变）。
+  //   第二段：B 侧 12 个 worker 不再全量重审，改为「独立复核 A 的 P0/P1 发现」
+  //   （确认/推翻+依据）——B 拿到同视角 A 报告后只做定点验证，探索面收窄，
+  //   省 B 侧约一半 token。视角独立性保留：B 仍以自己的视角身份评判，
+  //   A 报错的地方 B 可推翻，A 漏报的地方 B 兜底补充（prompt 明示）。
+  //   复核指令经 FORGE_B_REVIEW_MODE 环境变量注入 worker（prompt 构造处拼接）。
+  console.log('\n  [步骤 ①②] A 全量审查 + B 复核模式（24 perspective worker，并发=' + MAX_CONCURRENCY + '，来源=' + CONCURRENCY_RESOLVED.source + '）...');
 
   // v1.2.9 功能②：worker 级断点——跳过已完成的 perspective worker（resume 模式）
   const resumeCompletedWorkers = resumeStateForRound?.completedWorkers || [];
@@ -2892,11 +2933,18 @@ async function runRound(roundNum, runDir, target, dryRun, opts = {}) {
     console.log(`  [resume] 跳过 ${skippedCount} 个已完成的 perspective worker`);
   }
 
+  // v1.3.8 交付八：两段式拆分——A 批先跑（B 复核依赖 A 产物，不能与 A 并行）
+  const pendingAWorkers = pendingWorkers.filter(([step]) => step.startsWith('a-check'));
+  const pendingBWorkers = pendingWorkers.filter(([step]) => step.startsWith('b-check'));
+
   // 跟踪本轮已完成的 worker（用于 worker 级断点）
   const roundCompletedWorkers = [...resumeCompletedWorkers];
 
-  if (pendingWorkers.length > 0) {
-    const { results: checkResults, failures: checkFailures } = await spawnParallel(pendingWorkers, roundNum);
+  // 批执行闭包：spawn + 断点更新 + 崩溃降级占位（v1.3.8 交付八从原内联逻辑提取，
+  // A 批/B 批两段复用，行为与原单批完全一致）
+  const runCheckBatch = async (batchWorkers) => {
+    if (batchWorkers.length === 0) return { results: [], failures: [] };
+    const { results: checkResults, failures: checkFailures } = await spawnParallel(batchWorkers, roundNum);
 
     // 记录成功完成的 worker（用于 worker 级断点）
     for (const r of checkResults) {
@@ -2938,6 +2986,25 @@ async function runRound(roundNum, runDir, target, dryRun, opts = {}) {
       } else {
         console.warn(`     产物 ${outFile} 已存在（stream 抢救成功），保留不覆盖`);
       }
+    }
+    return { results: checkResults, failures: checkFailures };
+  };
+
+  if (pendingWorkers.length > 0) {
+    // 第一段：A 侧全量审查（B 复核的对象）
+    console.log(`\n  [批次 A] ${pendingAWorkers.length} 个 A perspective worker（全量审查）...`);
+    await runCheckBatch(pendingAWorkers);
+
+    // 第二段：B 侧复核模式——FORGE_B_REVIEW_MODE 注入，spawnWorker 按 step
+    // 前缀（b-check-p*）透传给 worker 子进程，runWorker 的 prompt 构造读取。
+    console.log(`\n  [批次 B] ${pendingBWorkers.length} 个 B perspective worker（复核 A 的 P0/P1 发现）...`);
+    const prevReviewMode = process.env.FORGE_B_REVIEW_MODE;
+    process.env.FORGE_B_REVIEW_MODE = 'recheck-a-findings';
+    try {
+      await runCheckBatch(pendingBWorkers);
+    } finally {
+      if (prevReviewMode === undefined) delete process.env.FORGE_B_REVIEW_MODE;
+      else process.env.FORGE_B_REVIEW_MODE = prevReviewMode;
     }
   }
 
