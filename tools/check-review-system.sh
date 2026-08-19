@@ -146,7 +146,9 @@ fi
 
 # 2a. 头部声称场景数 vs 实际 scenario N " 计数
 HEAD_SCN=$(grep -m1 -oE '场景数：[0-9]+ 个场景' "$ACCEPTANCE" | grep -oE '[0-9]+' || echo "")
-ACTUAL_SCN=$(grep -cE 'scenario [0-9]+ "' "$ACCEPTANCE" || true)
+# v1.3.7：字母后缀场景（34b/34c/167a/167b）是真实场景——pattern 须与 check-test-count 对齐
+# （裸 [0-9]+ " 会把带后缀场景漏数 4 个，与 check-test-count 口径分裂）
+ACTUAL_SCN=$(grep -cE 'scenario [0-9]+[a-z]? "' "$ACCEPTANCE" || true)
 if [ -z "$HEAD_SCN" ]; then
   warn "acceptance 头部未找到「场景数：N 个场景」声称（人工确认）"
 elif [ "$HEAD_SCN" = "$ACTUAL_SCN" ]; then

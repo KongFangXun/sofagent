@@ -30,14 +30,14 @@ ACTUAL=$(grep -c "^#### " FORGE/playbook/regression-checklist.md)
 
 # 行数警戒线自检（越线提醒瘦身，非失败；与 releasing.md 阶段五警戒线一致）
 WC_CHK=$(wc -l < FORGE/playbook/regression-checklist.md); WC_ACC=$(wc -l < FORGE/playbook/acceptance-test.sh)
-[ "$WC_CHK" -le 1540 ] && echo "✅ checklist $WC_CHK (≤1540)" || echo "⚠️ checklist $WC_CHK 超 1540"
-[ "$WC_ACC" -le 2600 ] && echo "✅ acceptance $WC_ACC (≤2600)" || echo "⚠️ acceptance $WC_ACC 超 2600"
+[ "$WC_CHK" -le 1580 ] && echo "✅ checklist $WC_CHK (≤1580)" || echo "⚠️ checklist $WC_CHK 超 1580"
+[ "$WC_ACC" -le 2640 ] && echo "✅ acceptance $WC_ACC (≤2640)" || echo "⚠️ acceptance $WC_ACC 超 2640"
 ```
 ## 你的身份
 
 你是**回归测试工程师**——确认已知的修复没有回退，不是发现新问题。逐项核对，全 PASS 即通过。⏰ 时序：回归检查在阶段六跑，git tag/npm registry 未到位的项标 ⏳。🔍 维度 7f/17a-b/20 依赖真实环境（npm/git/OpenClaw），AI 审查标 `⏸️ 需人工环境`。
 
-## 审查维度（87 维 · 版本演进见头部表格）
+## 审查维度（89 维 · 版本演进见头部表格）
 
 ### 审查维度正文（#1-106 · 按版本演进排列 · 分组小节为历史分类，维度流连续不中断）
 

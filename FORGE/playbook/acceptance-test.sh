@@ -1203,8 +1203,7 @@ if $S145_OK; then
 fi
 S146_OK=true; # 清理可能存在的残留
 rm -rf "$PROJECT_ROOT/data/" 2>/dev/null
-# 必须在主仓 cwd 下跑（scenario() 会把 cwd 带进 /tmp e2e 仓库，脱离主仓后 npx 走
-# registry 拉远端 vitest 且易挂起）；heap 2048 防 8GB 常驻挤压 OOM
+# 必须在主仓 cwd 下跑（scenario() 会把 cwd 带进 /tmp e2e 仓库致 npx 走 registry 拉远端 vitest 挂起）；heap 2048 防 8GB 常驻挤压 OOM
 ( trap 'exit 0' HUP; set +e; cd "$PROJECT_ROOT" && NODE_OPTIONS="--max-old-space-size=2048" npx vitest run engine/audit/src/__tests__/session-report.test.ts >/dev/null 2>&1 ) 2>/dev/null || true
 if [ -d "$PROJECT_ROOT/data/" ]; then fail "data/ 泄露到项目目录——F-39 修复无效"; S146_OK=false; else pass "data/ 未泄露——session-report 正确写入 ~/.sofagent/data/audit/"; fi
 S147_OK=true; DASH="$PROJECT_ROOT/tools/sofagent-dashboard.sh"
