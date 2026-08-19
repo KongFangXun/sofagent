@@ -170,7 +170,7 @@ function writeNewKey(sofagentHome: string): KeyOperationResult {
 /** 写初始化标记（首启引导完成后调用——此后不再重复引导） */
 export function writeInitializedMarker(sofagentHome: string): void {
   const marker = initializedMarkerPath(sofagentHome);
-  mkdirSync(keysDirPath(sofagentHome), { recursive: true });
+  mkdirSync(keysDirPath(sofagentHome), { recursive: true, mode: 0o700 }); // 0700 与 keyManagerEnsureDir 对齐（S153：密钥目录权限一致性）
   writeFileSync(marker, new Date().toISOString() + '\n', 'utf-8');
 }
 
