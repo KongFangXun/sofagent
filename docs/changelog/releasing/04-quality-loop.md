@@ -6,13 +6,13 @@
 
 ## 步骤
 
-| # | 步骤 | 产物 |
-|:--:|------|------|
-| 一 | **单次草稿优先**（v1.3.8 交付八）：`node tools/gen-fresh-eyes-draft.mjs --diff <patch 文件> --changelog <changelog>`——16 视角草稿一次成型；「待取证」项少且变更小 → 草稿 + 人工复核即收口 | 审查草稿 |
-| 二 | **driver 兜底**（草稿待取证多 / 大版本）：**新 session 跑 fresh-eyes-loop**：`node FORGE/src/fresh-eyes-driver.mjs --target <本版本号> --max-rounds 10`。按 `FORGE/SKILL/fresh-eyes-loop/SKILL.md` 监控协议轮询 `status.json`（或用 `--check-alive <runDir>` liveness 探针）。loop 修复即本版本代码质量加固 | loop 修复 + changelog 汇总打勾 |
-| 三 | 代码审核（当前 session）：逐项核对发布检查清单，PASS 或 FAIL→修复 | 检查清单打勾 |
-| 四 | **验收测试随功能开发先行新增（增量）**：本版本新功能对应的 acceptance 新场景（S 编号顺延）+ checklist 新维度，随功能开发实时加——本步骤只做「增量补齐」。**归并/压缩/校准/A/B/C 分类是阶段五的职责**，这里不动体系 | 验收测试更新（增量） |
-| 五 | **阶段汇报（v1.3.8 补 · 对话形式）**：全部步骤完成后，执行 session 按下方「阶段汇报模板」以**对话消息**形式发回主 session（不落盘文件）——主 session 依此打勾推进，不再要求主 session 重新考古 | 汇报消息（见模板） |
+| # | 步骤 | 产物 | 完成判据 |
+|:--:|------|------|------|
+| 一 | **单次草稿优先**（v1.3.8 交付八）：`node tools/gen-fresh-eyes-draft.mjs --diff <patch 文件> --changelog <changelog>`——16 视角草稿一次成型；「待取证」项少且变更小 → 草稿 + 人工复核即收口 | 审查草稿 | 见下方「步骤完成判据」表 |
+| 二 | **driver 兜底**（草稿待取证多 / 大版本）：**新 session 跑 fresh-eyes-loop**：`node FORGE/src/fresh-eyes-driver.mjs --target <本版本号> --max-rounds 10`。按 `FORGE/SKILL/fresh-eyes-loop/SKILL.md` 监控协议轮询 `status.json`（或用 `--check-alive <runDir>` liveness 探针）。loop 修复即本版本代码质量加固 | loop 修复 + changelog 汇总打勾 | 见下方「步骤完成判据」表 |
+| 三 | 代码审核（当前 session）：逐项核对发布检查清单（清单位置见判据表），PASS 或 FAIL→修复 | 检查清单打勾 | 见下方「步骤完成判据」表 |
+| 四 | **验收测试随功能开发先行新增（增量）**：本版本新功能对应的 acceptance 新场景（S 编号顺延）+ checklist 新维度，随功能开发实时加——本步骤只做「增量补齐」。**归并/压缩/校准/A/B/C 分类是阶段五的职责**，这里不动体系 | 验收测试更新（增量） | 见下方「步骤完成判据」表 |
+| 五 | **阶段汇报（v1.3.8 补 · 对话形式）**：全部步骤完成后，执行 session 按下方「阶段汇报模板」以**对话消息**形式发回主 session（不落盘文件）——主 session 依此打勾推进，不再要求主 session 重新考古 | 汇报消息（见模板） | 模板五件套齐全（含步骤完成状态声明） |
 
 > **审查分层说明**（v1.3.8 交付八，与 [01-review.md](./01-review.md) 同款）：
 > 单次草稿（`gen-fresh-eyes-draft.mjs`，约 1-3 万 token）优先——理解型审查一次成型；
@@ -28,20 +28,26 @@
 执行 session 完成全部步骤后，按此结构汇报：
 
 ```
-【v1.3.8 阶段四汇报】
+【vX.Y.Z 阶段四汇报】
 
-一、审查结论
-- 草稿 finding 三分类统计：机械可查已修 N / 待取证交 driver N（跑了的话 verdict=PASS|FAIL|未跑）/ 中间态 SKIP N（每项一句话）
+一、步骤完成状态（先行声明——哪个步骤没做、为什么，写在这里）
+- 步骤一 草稿：已完成 / 未做+原因 / 走降级（.prompt.md 粘贴执行）
+- 步骤二 driver：已跑 verdict=X / 未跑+理由（待取证 N≤3）
+- 步骤三 审核：已完成
+- 步骤四 场景：已完成
+
+二、审查结论
+- 草稿 finding 三分类统计：机械可查已修 N / 待取证 N / 中间态 SKIP N（每项一句话）
 - 修复清单：文件+一句话原因（commit hash 列表）
 
-二、验收测试
-- 新场景：S294-S302 共 N 个，全量 acceptance N/N EXIT=0
+三、验收测试
+- 新场景：S<N> 起 X 个（编号区间写实际值），全量 acceptance N/N EXIT=0
 - 场景数 SSOT：旧→新（三处同步：脚本头部/DEVELOPMENT/LIMITATIONS）
 
-三、门禁输出关键行
+四、门禁输出关键行
 - build：0 错 / npm test：N/N / CV：N/N / CD：绿（如有红：根因+处置）
 
-四、未决项（需主 session 定夺）
+五、未决项（需主 session 定夺）
 - 每项：现象/建议/是否阻塞下一阶段
 ```
 
@@ -59,8 +65,8 @@
 |---|---|
 | 一 草稿 | `docs/changelog/fresh-eyes-draft-vX.Y.Z.md` 存在 **且** 含全部 16 个视角节（`grep -c "^## 视角" = 16`）。若走了降级：产物为 `.prompt.md` 时 = **未完成**，必须粘贴执行出正式草稿后才算 |
 | 二 driver（若应跑） | runDir 内有 `verdict`/`findings` 产物**文件**——仅 status.json 不算（dry-run 空转也是 completed 状态）。未应跑时：汇报须显式写「步骤二未跑，理由：待取证 N≤3」 |
-| 三 审核 | 发布检查清单逐项打勾记录（在 changelog 开发日志或汇报中可见） |
-| 四 场景 | 新场景 `grep -c "^scenario 29[4-9]\|^scenario 3[0-9][0-9]"` 与汇报数一致；全量 acceptance EXIT=0 |
+| 三 审核 | 发布检查清单逐项打勾记录（在 changelog 开发日志或汇报中可见）。⚠️ 清单位置：`docs/changelog/vX.Y/vX.Y.Z.md` 的「发布检查清单（汇总）」节（参照 v1.3.7.md:455 体例）——**若本版 devlog 尚无该节，先建清单再核对**（清单项=从九交付验收标准逐条转勾） |
+| 四 场景 | 新场景编号与汇报区间一致（判据命令按实际区间构造，如 `grep -c "^scenario 29[4-9]\|^scenario 30[0-9]"`——**编号每版不同，勿照抄本表示例**）；全量 acceptance EXIT=0 |
 
 **执行 session 纪律（写进给它的 prompt）**：
 - 每个步骤要么完成、要么**显式声明「未做+原因」**——禁止静默跳过（汇报模板第一件补「三分类统计」时必须含「未跑步骤声明」）
