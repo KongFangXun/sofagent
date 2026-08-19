@@ -33,12 +33,14 @@ graph LR
 
 ### How is this different from a bare Agent
 
-| Dimension | Bare Agent (ChatGPT / Copilot) | sofagent |
+| Dimension | Bare Agent (ChatGPT / Copilot etc.) | sofagent |
 |:-----|:------|:------|
-| Change auditing | None (roll your own pre-commit + gitleaks) | 24 rules on git diff, hard-evidence verdicts |
+| Change auditing | Roll your own pre-commit + gitleaks/detect-secrets toolchain (general-purpose scanners, broad coverage) | 24 rules on git diff, hard-evidence verdicts aimed at Agent behavior, works out of the box |
 | Out-of-bounds blocking | Assemble the hooks yourself | Violations blocked on the spot + audit trail |
 | Rollback after breakage | Manually dig through commits | One-click snapshot restore to any point |
 | Experience accumulation | Starts from zero every time | Auto-captured into knowledge base, evolution capabilities under continuous iteration |
+
+> ℹ️ **Honest boundary**: general-purpose secret scanners (gitleaks / detect-secrets) do **full-history scans** with broader pattern libraries (100+ patterns); sofagent auditing focuses on **hard evidence from the current diff + Agent behavior auditing** (out-of-scope/injection/privilege dimensions scanners don't cover). They complement rather than replace each other — for strict secret-compliance scenarios, use both.
 
 ## Key Features
 
@@ -50,7 +52,7 @@ graph LR
 
 **Governance guarantees**
 
-- 🔍 **Zero-setup audit** — `npx -y -p @sofagent/audit sofagent-audit`, audits your last commit in any git repo in seconds (measured: ~1.1s per quick run, ~6.1s for a 50k-line diff on Apple Silicon; first npx download takes ~30s)
+- 🔍 **Zero-setup audit** — `npx -y -p @sofagent/audit sofagent-audit`, audits your last commit in any git repo in seconds (measured on: Apple Silicon macOS, warm cache — ~1.1s per quick run, ~6.1s for a 50k-line diff; single-machine reference figures, not benchmarks; first npx download takes ~30s)
 - 🧱 **24 audit rules** (17 enabled by default + 7 optional extensions) — secret leaks, out-of-scope edits, injection defense, privilege red lines — judged on hard git diff evidence, violations blocked on the spot
 - 🛡️ **Automatic snapshot & rollback** — auto-archived after every audit, one-click restore to any snapshot
 
@@ -170,13 +172,13 @@ Community rulesets are published as `sofagent-ruleset-*` npm packages and auto-d
 
 > 🏰 **v1.3.7 new capabilities** (SubAgent full sandbox + scenario-driven permissions + AgentShield + industry overlays + circuit breaker + ontology lifecycle):
 > - **SubAgent full sandbox**: 🏰 virtual filesystem (writes land in a virtual layer first, atomically merged after approval + HMAC-chained evidence stream) / network egress whitelist (DNS tunneling + raw sockets all intercepted; domain-suffix + CIDR) / tool-call mediation (Symbol unique-ID verdicts, unregistered = fail-closed) / virtual keys (vk- prefix + scope data-flow contract + token-bucket rate limit + log masking) / AsyncSubAgent standalone process (stdout JSON lines + SIGINT graceful shutdown) / true real-time A/B dual-run (parallel in isolation + line-level diff) — the full prerequisite for v1.3.8 `sandbox:true`
-> - **Scenario-driven permissions**: 🔐 identity → scenario match → risk level → allow/deny/human approval, every step logged to decision-log; three DSH hard constraints (fail-closed / guard before event dispatch / least privilege); sensitive domains auto-escalate (audit-data writes/deletes always critical)
+> - **Scenario-driven permissions**: 🔐 identity → scenario match → risk level → allow/deny/human approval, every step logged to decision-log; three hard constraints (fail-closed / guard before event dispatch / least privilege); sensitive domains auto-escalate (audit-data writes/deletes always critical)
 > - **AgentShield five scans**: 🛡️ MCP config risk profiling / hook injection analysis / agent config review (negative-lookahead assertions exclude "do-not-ignore" phrasing) / enhanced secret detection / **Shadow AI discovery** (scans processes/configs/repos for unregistered "shadow agents") — static & deterministic, zero LLM self-assessment
 > - **Four industry overlays**: 🏥 fintech (AML trails) / medical (PHI protection) / government (grade-keeping) / ai (model registration) — auto-loaded from context.md `industry:`; conservative default when untagged
 > - **Circuit breaker + behavior monitoring**: ⚡ consecutive-failure tripping with cooldown half-open probing (ASI08) / three-metric sliding window isolating runaway agents back to human control (ASI10, sandbox-linked: isolated agents take no new tasks)
 > - **Ontology lifecycle**: 🌳 branch/trunk lifecycle + review gate `migrateToTrunk` (approver required) + OKF trio (mandatory type / stale_after trust freshness / verified human>process tiering)
 > - **Adaptive review-loop concurrency**: ⚙️ concurrency from a physical-memory budget table (8GB→1 … ≥48GB→6) + OOM tripping degradation; all LLM calls timeout+retry protected
-> - **26 independent-review bugfixes**: 🛡️ all four 16-perspective review rounds fixed (verify-commit whitewash chain / installer-chain broken links / gate three-state — 4 P0s rooted out + four red-team defense upgrades)
+> - **26 independent-review fixes**: 🛡️ all 26 issues found by four rounds of independent security review (16 review perspectives in total) fixed — including 4 critical installer/gate defects rooted out and multiple red-team bypass defenses hardened
 >
 > See [v1.3.7 devlog](./docs/changelog/v1.3/v1.3.7.md). Earlier versions in [CHANGELOG](./CHANGELOG.md).
 
@@ -185,10 +187,10 @@ Community rulesets are published as `sofagent-ruleset-*` npm packages and auto-d
 | Dimension | Generic Agent frameworks | sofagent |
 |------|----------------|----------|
 | Core question | How to build an Agent | **Where AI should go** (map first, then deploy) |
-| Safety guarantee | Relies on prompt constraints | git diff hard-evidence audit + runtime interception + one-click rollback |
+| Safety guarantee | Integrate scanning/gate tools yourself (pre-commit / trufflehog / gitleaks etc.) | git diff hard-evidence audit + runtime interception + one-click rollback out of the box (see the "honest boundary" note above on scanner coverage) |
 | Review model | Manual human review (bottleneck) | **Machine review** — 24 rules auto-audit + git diff hard evidence; even fully autonomous AI nodes get reviewed |
 | Knowledge accumulation | Starts from zero | Experience auto-captured into knowledge base, continuously optimized |
-| Data sovereignty | Cloud-hosted | Local by default, optional federated queries |
+| Data sovereignty | Cloud-hosted | Local by default, optional federated queries (user-configured cloud sync = data leaves the machine, see SECURITY) |
 | Deployment | Learn a new platform | Runs inside your existing AI tools (Claude Code / Cursor / WorkBuddy…) |
 
 ## Evidence & Credibility

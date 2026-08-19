@@ -34,12 +34,14 @@ graph LR
 
 ### 和裸 Agent 有什么不同
 
-| 维度 | 裸 Agent（ChatGPT / Copilot） | sofagent |
+| 维度 | 裸 Agent（ChatGPT / Copilot 等） | sofagent |
 |:-----|:------|:------|
-| 变更审计 | 无（需自行配 pre-commit + gitleaks） | git diff 24 条规则，硬证据判定 |
-| 越界拦截 | 需自行拼装 hooks | 违规当场阻断 + 审计留证 |
+| 变更审计 | 可自行配 pre-commit + gitleaks/detect-secrets 等工具链（通用扫描器，覆盖面广） | git diff 24 条规则面向 Agent 行为的硬证据判定，装好即用 |
+| 越界拦截 | 需自行拼装 hooks / 规则 | 违规当场阻断 + 审计留证 |
 | 出事回滚 | 手动翻 commit | 一键快照回到任意节点 |
 | 经验积累 | 每次从零开始 | 自动沉淀进知识库（think.md + Dream Cycle + skillopt，v1.3.x 持续增强） |
+
+> ℹ️ **诚实边界**：通用密钥扫描器（gitleaks / detect-secrets）做**全量历史扫描**、模式库更广（100+ 模式）；sofagent 审计专注**当前 diff 的硬证据 + Agent 行为审计**（越界/注入/权限维度是扫描器不做的）。两者互补，不互替——强密钥合规场景建议并用。
 
 ## 核心特性
 
@@ -51,7 +53,7 @@ graph LR
 
 **治理保障**
 
-- 🔍 **零配置审计**——`npx -y -p @sofagent/audit sofagent-audit`，任何 git 仓库秒级审计最近一次 commit（实测 quick 单次约 1.1s、5 万行 diff 约 6.1s，M 系列 Mac；首次 npx 下载约 30 秒）
+- 🔍 **零配置审计**——`npx -y -p @sofagent/audit sofagent-audit`，任何 git 仓库秒级审计最近一次 commit（实测环境：Apple Silicon（M 系列）macOS、常温缓存、quick 模式单次约 1.1s、5 万行 diff 约 6.1s；数值为单机实测参考值，非基准承诺，不同机器/盘速会有差异。首次 npx 下载约 30 秒）
 - 🧱 **24 条审计规则**（17 默认启用 + 7 扩展可选）——密钥泄漏、越界编辑、注入防御、权限红线，git diff 硬证据判定，违规当场拦截
 - 🛡️ **自动快照回溯**——每次审计后自动存档，出事一键回到任意快照
 
@@ -174,13 +176,13 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # 加载安全规�
 
 > 🏰 **v1.3.7 新能力**（SubAgent 完整沙箱 + 场景驱动权限 + AgentShield + 行业 overlay + 断路器 + ontology 生命周期）：
 > - **SubAgent 完整沙箱**：🏰 虚拟文件系统（写入先进虚拟层，审批后原子落盘 + 证据流 HMAC 链）/ 网络出站白名单（DNS 隧道 + raw socket 全拦，域名后缀 + CIDR）/ 工具调用中介（Symbol 唯一 ID 判定，未注册 fail-closed）/ 虚拟 key（vk- 前缀 + scope 数据流契约 + token bucket 限速 + 日志脱敏）/ AsyncSubAgent 独立进程（stdout JSON 行 + SIGINT 优雅退出）/ 真·实时 A/B 双跑（隔离环境并行 + 行级 diff）——v1.3.8 `sandbox:true` 的完整前置
-> - **场景驱动权限**：🔐 身份→场景匹配→风险等级→放行/deny/人工批准，每步 decision-log 留痕；DSH 三硬约束（fail-closed / 守卫先于事件分发 / 最小权限面）；敏感域自动提级（审计数据写删一律 critical）
+> - **场景驱动权限**：🔐 身份→场景匹配→风险等级→放行/deny/人工批准，每步 decision-log 留痕；三硬约束（fail-closed / 守卫先于事件分发 / 最小权限面）；敏感域自动提级（审计数据写删一律 critical）
 > - **AgentShield 五类扫描**：🛡️ MCP 配置风险画像 / Hook 注入分析 / Agent 配置审查（否定后行断言排除反向表述）/ 密钥检测增强 / **Shadow AI 发现**（扫进程/配置/仓库，揪出未注册的「影子 agent」）——静态确定性，零 LLM 自评
 > - **行业 overlay 四套**：🏥 fintech（反洗钱留痕）/ medical（PHI 保护）/ government（等保留痕）/ ai（模型注册）——context.md `industry:` 自动加载，未标注保守默认
 > - **断路器 + 行为监控**：⚡ 连败熔断 + 冷却 half-open 探测自动恢复（ASI08）/ 三指标滑窗超阈值隔离切人工（ASI10，与沙箱联动：隔离态不接新任务）
 > - **ontology 生命周期**：🌳 lifecycle branch/trunk + 审阅门 `migrateToTrunk`（approver 必填）+ OKF 三件套（type 必填 / stale_after 信任时效 / verified 人审>机审分层）
 > - **审查循环自适应并发**：⚙️ 按物理内存预算表自动取并发（8GB→1 ... ≥48GB→6）+ OOM 熔断降级；LLM 调用全程 timeout+retry
-> - **26 项独立审查 bugfix**：🛡️ 四轮 16 视角审查全数修复（verify-commit 洗白链 / 安装链断链 / 门禁三态等 4 P0 根治 + 红队四项防御增强）
+> - **26 项独立审查修复**：🛡️ 经四轮独立安全审查（累计 16 个审查视角）发现的 26 项问题全部修复——含 4 项安装链/门禁关键缺陷根治与多项红队实测绕过的防御增强
 >
 > 详见 [v1.3.7 开发日志](./docs/changelog/v1.3/v1.3.7.md)。更早版本见 [CHANGELOG](./CHANGELOG.md)。
 
@@ -189,10 +191,10 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # 加载安全规�
 | 维度 | 通用 Agent 框架 | sofagent |
 |------|----------------|----------|
 | 核心问题 | 怎么造 Agent | **AI 该放在哪**（先梳理再部署） |
-| 安全保障 | 框架层无（需自行接 pre-commit / trufflehog） | git diff 硬证据审计 + 运行时拦截 + 一键回滚 |
+| 安全保障 | 需自行集成扫描/门禁工具（pre-commit / trufflehog / gitleaks 等） | git diff 硬证据审计 + 运行时拦截 + 一键回滚，开箱即用（扫描器覆盖面对照见上方「诚实边界」注） |
 | 审阅方式 | 靠人手动 review（人力瓶颈） | **机器审阅**——24 条规则自动审 + git diff 硬证据，纯 AI 节点也能被审 |
 | 知识积累 | 从零开始 | 经验自动沉淀进 knowledge 知识库（think.md + Dream Cycle，v1.3.x 持续增强） |
-| 数据主权 | 云端托管 | 缺省全量本地，可选联邦查询 |
+| 数据主权 | 云端托管 | 缺省全量本地，可选联邦查询（用户自主配置云同步=数据出本机，见 SECURITY） |
 | 部署方式 | 学新平台 | 装进你已有的 AI 工具（Claude Code / Cursor / WorkBuddy…） |
 
 ## 证据与可信度
