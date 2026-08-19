@@ -176,3 +176,4 @@ release-gate-loop 与 fresh-eyes-loop 共享本文件，通过"循环"列区分�
 | — | 2026-08-19 | release-gate-复验 | v1.3.7 阶段六 run-01 后主 session 零信任复验 | 复验改判：FAIL→检查器侧债（非仓库问题） | dim106 SSOT 222 漏跟（已修→226）/ dim49 凌晨 IO 高压时段性超时（本机实测 1.5s 绿）/ coverage P1-1 跳号 70=基线重建既成事实（补豁免注记）/ P2-1 搜索口径错（S290-S293 无版本前缀）。修复：SSOT 修正+跳号豁免+空文件清理+孤儿分支 tag 存档删除。driver 流程债（失败未阻断+F 空转）记 FORGE 待演进。可重跑 run-02 | 主 session |
 
 2026-08-19     | 20260819-04    | release-gate | 25   | PASS       | FAIL       | SKIP     | FAIL    | /Users/kongfangxun/.sofagent/data/forge-runs/release-gate-loop/2026-08-19/run-04
+| — | 2026-08-19 | release-gate-复验 | v1.3.7 阶段六 run-04 后主 session 零信任复验 | 复验改判：两阻塞项一修一验 | dim116 超时锚点 awk 转义炸（driver bash -c 注入场景 \$ 原样进 awk——本机直跑正常预检炸的双环境差异型检查器 bug）已换 grep 链双文档同步修复；coverage worker 退出 1 无产物=driver 侧偶发（precheck 完整/30min 存活/无栈），判定重跑验证；F 循环二次产空文件 v1.3.7 已清（根因待修）。可重跑 run-05 | 主 session |
