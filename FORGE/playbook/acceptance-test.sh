@@ -6,7 +6,7 @@ export LANG=en_US.UTF-8
 export LC_ALL=en_US.UTF-8
 # sofagent-audit · 上线前验收测试（Pre-Release Acceptance Test）
 # 覆盖：FORGE + MCP + 文件系统审计 + daemon + 红队对抗 + 各版本新功能验收
-# 场景数：226 个场景（SSOT：check-test-count.sh 校验；v1.3.7 +4：S290-S293；v1.3.6 +8：S282-S289）
+# 场景数：235 个场景（SSOT：check-test-count.sh 校验；v1.3.7 +4：S290-S293；v1.3.6 +8：S282-S289；v1.3.8 +9：S294-S302）
 # 编号跳号豁免：S1~S293 间有 70 个空洞号（全在 S36-S202 历史段）——v1.2.x 瘦身删场景
 # 与基线重建（restore 6e542467）的既成事实，非丢失；新场景编号=当前最大+1 顺延，禁止回填空洞
 # 版本段起点见文件内「# ─── v」分组标记（grep "─── v" 定位）
@@ -1653,7 +1653,9 @@ scenario 206 "v1.2.7 ⑧ One-Line Agent Setup — bootstrap.sh 存在 + 轻量�
 S206_OK=true
 [ -f "$PROJECT_ROOT/bootstrap.sh" ] || { fail "bootstrap.sh 不存在"; S206_OK=false; }
 BOOTSTRAP_LINES=$(wc -l < "$PROJECT_ROOT/bootstrap.sh" 2>/dev/null || echo 999)
-[ "$BOOTSTRAP_LINES" -lt 50 ] || { fail "bootstrap.sh 超过 50 行（$BOOTSTRAP_LINES 行）"; S206_OK=false; }
+[ "$BOOTSTRAP_LINES" -lt 90 ] || { fail "bootstrap.sh 超过 90 行（$BOOTSTRAP_LINES 行）"; S206_OK=false; }
+# 阈值 50→90（v1.3.8 P0-1）：安装链修复后 bootstrap 同时下载 lib 六文件（+21 行安全兜底）——
+# 「轻量入口」的语义是「一行安装」而非行数本身，90 仍远小于下载完整仓库方案
 assert_grep "curl\|bash\|install" "$PROJECT_ROOT/bootstrap.sh" || S206_OK=false
 $S206_OK && pass "One-Line Agent Setup（bootstrap.sh 存在 + ${BOOTSTRAP_LINES} 行 + curl|bash 入口）"
 
@@ -2630,6 +2632,89 @@ grep -q '(?!tmp|home' "$PROJECT_ROOT/engine/audit/src/rules/skill-safety-rules.t
 grep -q '(?!tmp|home' "$PROJECT_ROOT/engine/audit/src/agent-shield.ts" || S293_OK=false  # rm-rf 豁免（shield 侧）
 grep -q "仅需 Node.js" "$PROJECT_ROOT/docs/VALIDATION.md" || S293_OK=false  # finding-04 措辞修复
 $S293_OK && pass "driver 超时+resume 守卫+rm-rf 同源+VALIDATION 措辞在位" || fail "阶段四基建加固缺件"
+
+scenario 294 "v1.3.8 交付①：ProxyGateway + 权限上界单调守卫（只减不增）——fail-closed 越界 deny"
+S294_OK=true
+[ -f "$PROJECT_ROOT/engine/orchestrator/src/gateway/permission-ceiling.ts" ] || S294_OK=false
+[ -f "$PROJECT_ROOT/engine/orchestrator/src/gateway/proxy-gateway.ts" ] || S294_OK=false
+grep -q "只减不增" "$PROJECT_ROOT/engine/orchestrator/src/gateway/permission-ceiling.ts" || S294_OK=false  # 单调守卫（只减不增）
+grep -q "越界" "$PROJECT_ROOT/engine/orchestrator/src/gateway/permission-ceiling.ts" || S294_OK=false       # 越界检测
+grep -q "deny" "$PROJECT_ROOT/engine/orchestrator/src/gateway/permission-ceiling.ts" || S294_OK=false       # 越界 deny
+grep -q "createPermissionCeiling" "$PROJECT_ROOT/engine/orchestrator/src/gateway/proxy-gateway.ts" || S294_OK=false  # 网关接入上界
+$S294_OK && pass "权限上界单调守卫+网关接入在位" || fail "v1.3.8 交付①缺件"
+
+scenario 295 "v1.3.8 交付②：age 静态加密（纯 TS · AES-256-GCM）——encryptWithAge/decryptWithAge 往返 + 明文兼容"
+S295_OK=true
+[ -f "$PROJECT_ROOT/engine/core/src/crypto/age-wrapper.ts" ] || S295_OK=false
+grep -q "AES-256-GCM" "$PROJECT_ROOT/engine/core/src/crypto/age-wrapper.ts" || S295_OK=false       # 纯 TS 内建 AES-256-GCM
+grep -q "encryptWithAge" "$PROJECT_ROOT/engine/core/src/crypto/age-wrapper.ts" || S295_OK=false    # 加密入口
+grep -q "decryptWithAge" "$PROJECT_ROOT/engine/core/src/crypto/age-wrapper.ts" || S295_OK=false    # 解密入口
+grep -q "明文旧格式解析\|明文兼容" "$PROJECT_ROOT/engine/core/src/crypto/age-wrapper.ts" || S295_OK=false  # 明文兼容回退
+$S295_OK && pass "age 纯 TS AES-256-GCM 加密+明文兼容在位" || fail "v1.3.8 交付②缺件"
+
+scenario 296 "v1.3.8 交付③：Durable L3 WAL——recoverWAL 三态（committed/aborted/incomplete）+ undo 回滚"
+S296_OK=true
+[ -f "$PROJECT_ROOT/engine/orchestrator/src/durable/wal-recovery.ts" ] || S296_OK=false
+grep -q "WalTrxState" "$PROJECT_ROOT/engine/orchestrator/src/durable/wal-recovery.ts" || S296_OK=false       # 三态枚举
+grep -q "committed" "$PROJECT_ROOT/engine/orchestrator/src/durable/wal-recovery.ts" || S296_OK=false
+grep -q "aborted" "$PROJECT_ROOT/engine/orchestrator/src/durable/wal-recovery.ts" || S296_OK=false
+grep -q "recoverWAL" "$PROJECT_ROOT/engine/orchestrator/src/durable/wal-recovery.ts" || S296_OK=false       # 恢复入口
+grep -q "undoRegistry\|rolled-back" "$PROJECT_ROOT/engine/orchestrator/src/durable/wal-recovery.ts" || S296_OK=false  # undo 回滚
+$S296_OK && pass "WAL 三态恢复+undo 回滚在位" || fail "v1.3.8 交付③缺件"
+
+scenario 297 "v1.3.8 交付④：异步长任务防死循环——trackNoProgress + 阈值 6 次无变化触发 replan（sha256 指纹）"
+S297_OK=true
+[ -f "$PROJECT_ROOT/engine/daemon/src/long-tasks.ts" ] || S297_OK=false
+grep -q "DEFAULT_MAX_NO_CHANGE_RUNS = 6" "$PROJECT_ROOT/engine/daemon/src/long-tasks.ts" || S297_OK=false  # 阈值=6
+grep -q "trackNoProgress" "$PROJECT_ROOT/engine/daemon/src/long-tasks.ts" || S297_OK=false  # 无变化跟踪
+grep -q "action: 'replan'" "$PROJECT_ROOT/engine/daemon/src/long-tasks.ts" || S297_OK=false  # 触发 replan
+grep -q "sha256" "$PROJECT_ROOT/engine/daemon/src/long-tasks.ts" || S297_OK=false            # 指定 sha256 指纹
+$S297_OK && pass "长任务阈值6次无变化触发replan+sha256指纹在位" || fail "v1.3.8 交付④缺件"
+
+scenario 298 "v1.3.8 交付⑤：保活三件套——pm2 托管 + --check-alive 探针 + resume 断点自动续跑（双 driver）"
+S298_OK=true
+[ -f "$PROJECT_ROOT/tools/forge-pm2-start.sh" ] || S298_OK=false
+grep -q "pm2 start" "$PROJECT_ROOT/tools/forge-pm2-start.sh" || S298_OK=false  # pm2 托管
+[ -f "$PROJECT_ROOT/FORGE/ecosystem.config.mjs" ] || S298_OK=false
+grep -q "fresh-eyes\|release-gate" "$PROJECT_ROOT/FORGE/ecosystem.config.mjs" || S298_OK=false  # pm2 app 配置
+grep -q "交付五\|--check-alive" "$PROJECT_ROOT/FORGE/src/release-gate-driver.mjs" || S298_OK=false  # 探针（release-gate）
+grep -q "交付五\|--check-alive" "$PROJECT_ROOT/FORGE/src/fresh-eyes-driver.mjs" || S298_OK=false    # 探针（fresh-eyes）
+grep -q "resume" "$PROJECT_ROOT/FORGE/src/release-gate-driver.mjs" || S298_OK=false                # 断点续跑
+grep -q "resume" "$PROJECT_ROOT/FORGE/src/fresh-eyes-driver.mjs" || S298_OK=false
+$S298_OK && pass "pm2托管+双driver探针+resume续跑在位" || fail "v1.3.8 交付⑤缺件"
+
+scenario 299 "v1.3.8 交付⑥：SDK 沙箱 wiring——sandbox:true 启用 + 未注册工具 fail-closed deny"
+S299_OK=true
+[ -f "$PROJECT_ROOT/engine/orchestrator/src/harness-sdk/wrap.ts" ] || S299_OK=false
+grep -q "sandbox: true" "$PROJECT_ROOT/engine/orchestrator/src/harness-sdk/wrap.ts" || S299_OK=false  # 沙箱启用
+grep -q "未注册" "$PROJECT_ROOT/engine/orchestrator/src/harness-sdk/wrap.ts" || S299_OK=false        # 未注册路径
+grep -q "fail-closed\|denied" "$PROJECT_ROOT/engine/orchestrator/src/harness-sdk/wrap.ts" || S299_OK=false  # fail-closed deny
+$S299_OK && pass "SDK sandbox:true+未注册fail-closed deny在位" || fail "v1.3.8 交付⑥缺件"
+
+scenario 300 "v1.3.8 交付⑦：release-gate --judgment-only 瘦身——判断层直达跳过 acceptance 分片"
+S300_OK=true
+[ -f "$PROJECT_ROOT/FORGE/src/release-gate-driver.mjs" ] || S300_OK=false
+grep -q "judgmentOnly" "$PROJECT_ROOT/FORGE/src/release-gate-driver.mjs" || S300_OK=false  # 标志位
+grep -q "\-\-judgment-only" "$PROJECT_ROOT/FORGE/src/release-gate-driver.mjs" || S300_OK=false  # CLI 入口
+grep -q "交付七" "$PROJECT_ROOT/FORGE/src/release-gate-driver.mjs" || S300_OK=false          # 交付锚点
+grep -q "跳过 acceptance\|判断层四步" "$PROJECT_ROOT/FORGE/src/release-gate-driver.mjs" || S300_OK=false  # 跳过 acceptance 分片
+$S300_OK && pass "release-gate --judgment-only 判断层瘦身在位" || fail "v1.3.8 交付⑦缺件"
+
+scenario 301 "v1.3.8 交付⑧：fresh-eyes usage.jsonl 计量——recordUsage 落盘 + _summary 全量摘要"
+S301_OK=true
+[ -f "$PROJECT_ROOT/FORGE/src/fresh-eyes-driver.mjs" ] || S301_OK=false
+grep -q "usage.jsonl" "$PROJECT_ROOT/FORGE/src/fresh-eyes-driver.mjs" || S301_OK=false   # 计量文件
+grep -q "recordUsage" "$PROJECT_ROOT/FORGE/src/fresh-eyes-driver.mjs" || S301_OK=false    # 落盘函数
+grep -q "_summary" "$PROJECT_ROOT/FORGE/src/fresh-eyes-driver.mjs" || S301_OK=false       # 全量摘要
+$S301_OK && pass "fresh-eyes usage.jsonl 计量+_summary 摘要在位" || fail "v1.3.8 交付⑧缺件"
+
+scenario 302 "v1.3.8 交付⑨：快照加固——atomicWriteSync 原子写入 + rollbackToSnapshot 回滚 + verifyVersionMonotonic 版本单调"
+S302_OK=true
+[ -f "$PROJECT_ROOT/engine/orchestrator/src/refine-agent/snapshot-manager.ts" ] || S302_OK=false
+grep -q "atomicWriteSync" "$PROJECT_ROOT/engine/orchestrator/src/refine-agent/snapshot-manager.ts" || S302_OK=false  # 原子写入
+grep -q "rollbackToSnapshot" "$PROJECT_ROOT/engine/orchestrator/src/refine-agent/snapshot-manager.ts" || S302_OK=false  # 回滚
+grep -q "verifyVersionMonotonic" "$PROJECT_ROOT/engine/orchestrator/src/refine-agent/snapshot-manager.ts" || S302_OK=false  # 版本单调校验
+$S302_OK && pass "快照原子写入+回滚+版本单调校验在位" || fail "v1.3.8 交付⑨缺件"
 
 
 echo -e "  验收测试结果：${GREEN}$PASSED 通过${NC} / ${RED}$FAILED 失败${NC} / 共 $((PASSED + FAILED))"
