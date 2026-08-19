@@ -58,7 +58,7 @@ graph LR
 
 ## Quick Start
 
-**30 seconds, zero setup** — run an audit in any git repo:
+**30 seconds, zero setup** — run an audit in any git repo (dev/testing scenarios; for strong-compliance scenarios read [LIMITATIONS §3](./docs/LIMITATIONS.md) first — plaintext storage and multi-tenant isolation are known limitations):
 
 ```bash
 npx -y -p @sofagent/audit sofagent-audit

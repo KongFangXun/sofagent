@@ -257,10 +257,10 @@ export function runCliQuick(argv: string[]): number {
   if (argv.includes('--help') || argv.includes('-h')) {
     console.log('sofagent-audit — AI Agent 行为审计\n');
     console.log('用法（quick 只读审计，零安装）：');
-    console.log('  npx sofagent-audit              审计最近一次 commit');
-    console.log('  npx sofagent-audit HEAD~3..HEAD 审计指定范围（路由到完整引擎）');
-    console.log('  npx sofagent-audit -v, --version 显示版本号');
-    console.log('  npx sofagent-audit -h, --help    显示此帮助\n');
+    console.log('  npx -y -p @sofagent/audit sofagent-audit              审计最近一次 commit（官方入口，始终最新）');
+    console.log('  npx sofagent-audit HEAD~3..HEAD                        审计指定范围（路由到完整引擎；简写名是 proxy 包，可能落后主版本）');
+    console.log('  npx -y -p @sofagent/audit sofagent-audit -v, --version 显示版本号');
+    console.log('  npx -y -p @sofagent/audit sofagent-audit -h, --help    显示此帮助\n');
     console.log('以下 flag 需完整引擎（sofagent-audit-full 或全局安装），quick 模式会自动路由或提示安装：');
     console.log('  --init              安装 git hook（每次 commit 自动审计）');
     console.log('  --doctor            健康诊断 + 完整性校验');
