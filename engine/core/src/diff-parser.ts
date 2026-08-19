@@ -108,17 +108,24 @@ export function parseDiff(range: string, cwd?: string): DiffFile[] {
         if (process.env.SOFAGENT_DEBUG === '1') {
           console.error('[diff-parser] 验证 git ref 失败:', err instanceof Error ? err.message : String(err));
         }
-        console.log('首次提交，无需审计（没有前一个版本可对比）。审计引擎已就绪，下次提交生效。');
+        // v1.3.8 P1-B1：此前的「首次提交，无需审计」提示改为 stderr + [sofagent] 前缀——
+        // 它是状态说明而非审计结果，混在 stdout 会让 quick 模式的输出顺序错乱
+        // （parseDiff 先打「无需审计」→ cli-quick 又打「审计最近一次 commit」，互相矛盾）。
+        // 调用方（cli-quick）已自带产品化的「首个 commit 无基线不审计」输出。
+        console.error('[sofagent] ⚠️ 无 diff 基线（首次提交或空仓库）——没有前一个版本可对比，本次返回空 diff。');
         return files;
       }
     }
 
     // 获取变更文件列表——execFileSync 不 spawn shell，参数作为数组传递，避免命令注入
     // v1.0.5: 加 --find-renames 避免重命名+修改文件漏检
+    // v1.3.8 P1-B5：stdio pipe stderr——非法 refspec 时 git 的 raw stderr
+    // （fatal: ambiguous argument ...）不再直接透传到用户终端，由 catch 统一产品化提示
     const output = execFileSync('git', ['-c', 'core.quotePath=false', 'diff', '--find-renames', '--name-status', range], {
       encoding: 'utf-8',
       cwd,
       maxBuffer: 10 * 1024 * 1024,
+      stdio: ['pipe', 'pipe', 'pipe'],
     });
 
     // 检测 git 帮助文本：当 range 无效时，git diff 可能输出帮助文本而非 diff
@@ -197,7 +204,12 @@ export function parseDiff(range: string, cwd?: string): DiffFile[] {
     }
   } catch (err) {
     // git diff 失败——非 git 仓库或无提交记录
-    console.error('无法执行 git diff:', (err as Error).message);
+    // v1.3.8 P1-B5：产品化提示（[sofagent] 前缀）替代 raw git stderr 透传；
+    // 技术细节只在 SOFAGENT_DEBUG=1 时输出
+    if (process.env.SOFAGENT_DEBUG === '1') {
+      console.error('[diff-parser] git diff 失败:', (err as Error).message);
+    }
+    console.error(`[sofagent] ⚠️ 无法解析 diff 范围 "${range}"——请检查 ref 是否存在（如 HEAD~1..HEAD），或仓库是否尚无提交。`);
   }
 
   return files;
