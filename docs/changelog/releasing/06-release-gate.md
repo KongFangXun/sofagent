@@ -9,9 +9,9 @@
 | # | 步骤 |
 |:--:|------|
 | 一 | **脚本层直跑（零 LLM）**：acceptance-test.sh + check-version + check-docs + 锚点 + check-review-system + check-tool-health 依次跑，**全绿才进下一步** |
-| 二 | 开新 session 跑**判断层**：driver `--step` 单步模式四步（regression → coverage → consolidate → verdict），**跳过 acceptance 分片 LLM 复核** |
+| 二 | 开新 session 跑**判断层**：driver `--judgment-only` 一次启动四步（regression → coverage → consolidate → verdict），**跳过 acceptance 分片 LLM 复核**（v1.3.8 交付七起不再 --step 四步手工编排） |
 | 三 | verdict=PASS → 过「零信任复验三件套」→ 进阶段七 |
-| 四 | verdict=FAIL → 回阶段五（优化 regression-checklist + fresh-eyes-review）→ 修复后重跑。最多循环 2 轮 |
+| 四 | verdict=FAIL → **循环即停**（v1.3.8 交付七起 F 修复链默认关闭，无 f-* 产物）→ 回阶段五修复后重跑。显式 `--auto-fix` 才进修复链（最多 3 轮） |
 
 > **为什么分层（run-04 实测 2026-08-19）**：driver 全流程实测 30.7 万 token / 58 分钟，其中 **61%（18.7 万）花在 acceptance 12 分片 LLM 复核**——复核的是脚本 `exit 0 + 303/303 SUMMARY` 的确定性结果，没有主观判断空间，盲审增值≈0。脚本层零 token 直跑拿到同样保证；driver 只保留有判断空间的 regression 语义审查 + coverage 交叉 + 终裁（约 9 万 token / 20 分钟）。**独立性不伤**：盲审保留在真正需要判断的环节。
 
@@ -31,15 +31,17 @@
    依次跑：tools/check-version.sh → tools/check-docs.sh → tools/check-anchors.mjs → tools/check-review-system.sh → tools/check-tool-health.sh
    ⚠️ 脚本层有红即停：如实汇报红项与日志尾部，等主 session 决策（脚本层是确定性检查，不需要 driver）
    ⚠️ acceptance 预跑异常处置：先单跑死点命令对比（单命令健康+全量挂=上下文差异如 cwd/env，非环境问题），不要改脚本，如实汇报死点等主 session 决策
-2. 判断层（driver --step 单步模式四步，跳过 acceptance 分片 LLM 复核，约 20 分钟）：
-   每步都用 Bash 工具 run_in_background:true + dangerouslyDisableSandbox:true，前置 export SOFAGENT_LLM_V="${SOFAGENT_LLM_A}" && export SOFAGENT_LLM_F="${SOFAGENT_LLM_B}"：
-   node FORGE/src/release-gate-driver.mjs --step regression  --target {实际版本号} --run-dir <runDir>
-   node FORGE/src/release-gate-driver.mjs --step coverage   --target {实际版本号} --run-dir <runDir>
-   node FORGE/src/release-gate-driver.mjs --step consolidate --target {实际版本号} --run-dir <runDir>
-   node FORGE/src/release-gate-driver.mjs --step verdict    --target {实际版本号} --run-dir <runDir>
-   ⚠️ runDir 由首步调用打印，后续三步复用同一个 runDir；每步完成后进入下一步
-   ⚠️ 若 consolidate 报「缺 acceptance 产物」（--step 跳步衔接问题）：如实汇报报错原文，等主 session 决策回退方案（回退=恢复 driver 全流程 --skip-acceptance 模式），不要自行补跑 acceptance 步
-3. 每步运行中每 120 秒轮询 status.json + heartbeat（同 fresh-eyes-loop 协议）
+2. 判断层（driver --judgment-only 一次启动四步，跳过 acceptance 分片 LLM 复核，约 20 分钟）：
+   Bash 工具 run_in_background:true + dangerouslyDisableSandbox:true，前置 export SOFAGENT_LLM_V="${SOFAGENT_LLM_A}" && export SOFAGENT_LLM_F="${SOFAGENT_LLM_B}"：
+   node FORGE/src/release-gate-driver.mjs --judgment-only --target {实际版本号}
+   ⚠️ v1.3.8 交付七：--judgment-only 一次进程串行四步（regression → coverage → consolidate → verdict），
+   替代原 --step 四步手工编排（每步一进程）。runDir 由 driver 启动日志打印，全程复用。
+   ⚠️ verdict=FAIL 时循环即停（F 修复链默认关闭，无 f-* 产物），如实汇报后等主 session 决策。
+   旧 --step 单步模式保留用于单步调试（consolidate 缺 acceptance 产物属预期——judgment-only 模式下
+   coverage/consolidate 从 acceptance-raw.log 与脚本层汇报取数）。
+3. 每步运行中每 120 秒轮询 status.json + heartbeat（同 fresh-eyes-loop 协议）；
+   也可用 liveness 探针：node FORGE/src/release-gate-driver.mjs --check-alive <runDir>
+   （只认心跳不认日志——LLM 长窗口日志冻结 ≠ 死亡；alive=RC0 / dead=RC1）
 4. 四步完成后读 <runDir>/verdict.md，3-5 行汇报：裁决结果 / 三步骤通过数 / 失败项 / 建议
 
 铁律：不干涉 driver、不改代码、不探索源码；FAIL 项真伪由主 session 零信任复验（维度脚本自身缺陷会误报 FAIL，逐维复跑分辨「仓库 vs 检查器」）。
@@ -52,7 +54,8 @@
 | 结果 | 下一步 |
 |------|--------|
 | **verdict = PASS**（regression + coverage 全 PASS，acceptance 已由脚本层保证） | 过「零信任复验三件套」（见下）→ 全过才进阶段七 |
-| **verdict = FAIL** | 根据报告定位问题 → **回阶段五** → 修复后重跑本阶段 |
+| **verdict = FAIL** | 循环即停（v1.3.8 起 F 链默认关闭，无 f-* 产物）→ 根据报告定位问题 → **回阶段五** → 修复后重跑本阶段 |
+| **需要 driver 内自动修复** | 显式加 `--auto-fix` 启动（f-diagnose → f-fix → f-audit，最多 3 轮）——默认不开，盲审独立性与修复上下文不混跑 |
 | **driver 反复 FAIL 且复验全为检查器债** | 走「手工裁决路径」（见下）——v1.3.7 实操 run-01/04 两轮 FAIL 均改判检查器债已修，主 session 手工裁决 PASS |
 
 > driver 的 regression 步骤会自动处理「⏰ 待发版」标注的检查项（git tag / npm registry / 全局二进制版本）——这些在检查阶段必然不满足，标 ⏳ 不标 FAIL。
