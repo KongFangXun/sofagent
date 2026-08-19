@@ -1569,8 +1569,8 @@ grep -qE "\.bin|Binary files" engine/audit/src/rules/rule-a2-secret-leak.ts && e
 # rm -rf 正则口径统一：两扫描器豁免必须同源
 grep -q '(?!tmp|home' engine/audit/src/rules/skill-safety-rules.ts && grep -q '(?!tmp|home' engine/audit/src/agent-shield.ts && echo "✅ rm-rf 豁免同源" || echo "❌ 口径漂移回退"
 # FORGE driver LLM 超时：四文件实例化点缺一即挂死风险回植
-# （BSD 注意：grep -c 多文件输出逐行 filename:N，用 awk 数非零行——嵌套 grep -c 会拿到换行计数炸 [）
-[ "$(grep -c 'timeout: 600_000' FORGE/src/driver-base.mjs FORGE/src/fresh-eyes-driver.mjs FORGE/src/release-gate-driver.mjs FORGE/src/tool-output-budget.mjs 2>/dev/null | awk -F: '\$NF>0{n++} END{print n+0}')" -ge 4 ] && echo "✅ LLM 超时四文件全覆盖" || echo "❌ 超时保护缺失"
+# （run-04 教训：awk 管道在 driver bash -c 注入场景 \$ 转义炸——改用逐文件 grep -q 链，无转义依赖）
+grep -q 'timeout: 600_000' FORGE/src/driver-base.mjs && grep -q 'timeout: 600_000' FORGE/src/fresh-eyes-driver.mjs && grep -q 'timeout: 600_000' FORGE/src/release-gate-driver.mjs && grep -q 'timeout: 600_000' FORGE/src/tool-output-budget.mjs && echo "✅ LLM 超时四文件全覆盖" || echo "❌ 超时保护缺失"
 # FORGE resume 越轮泄漏：completedWorkers 只许喂被续跑轮
 grep -q 'round === resumeState?.round' FORGE/src/fresh-eyes-driver.mjs && echo "✅ resume 轮次守卫在位" || echo "❌ 越轮泄漏回植"
 # acceptance S146 cwd 漂移：scenario() cd TMP_REPO 后子 shell 须显式 cd 回主仓

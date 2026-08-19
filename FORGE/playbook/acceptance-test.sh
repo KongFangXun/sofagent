@@ -2621,9 +2621,11 @@ $S292_OK && pass "lifecycle 审阅门+OKF 三件套+memory-sync 通用化+自适
 
 scenario 293 "v1.3.7 阶段四基建加固——FORGE driver LLM 超时 + resume 轮次守卫 + rm-rf 口径同源（run-27/28/29 三死教训）"
 S293_OK=true
-# LLM 超时四文件（BSD grep -c 多文件输出逐行 filename:N——awk 数非零行，勿嵌套 grep -c）
-S293_FILES=$(grep -c 'timeout: 600_000' "$PROJECT_ROOT/FORGE/src/driver-base.mjs" "$PROJECT_ROOT/FORGE/src/fresh-eyes-driver.mjs" "$PROJECT_ROOT/FORGE/src/release-gate-driver.mjs" "$PROJECT_ROOT/FORGE/src/tool-output-budget.mjs" 2>/dev/null | awk -F: '$NF>0{n++} END{print n+0}')
-[ "$S293_FILES" -ge 4 ] || S293_OK=false  # LLM 超时四文件
+# LLM 超时四文件（run-04 教训：awk 管道在 driver bash -c 场景 \$ 转义炸——逐文件 grep -q 链无转义依赖）
+grep -q 'timeout: 600_000' "$PROJECT_ROOT/FORGE/src/driver-base.mjs" || S293_OK=false
+grep -q 'timeout: 600_000' "$PROJECT_ROOT/FORGE/src/fresh-eyes-driver.mjs" || S293_OK=false
+grep -q 'timeout: 600_000' "$PROJECT_ROOT/FORGE/src/release-gate-driver.mjs" || S293_OK=false
+grep -q 'timeout: 600_000' "$PROJECT_ROOT/FORGE/src/tool-output-budget.mjs" || S293_OK=false
 grep -q 'round === resumeState?.round' "$PROJECT_ROOT/FORGE/src/fresh-eyes-driver.mjs" || S293_OK=false  # resume 越轮守卫
 grep -q '(?!tmp|home' "$PROJECT_ROOT/engine/audit/src/rules/skill-safety-rules.ts" || S293_OK=false  # rm-rf 豁免（skill-safety 侧）
 grep -q '(?!tmp|home' "$PROJECT_ROOT/engine/audit/src/agent-shield.ts" || S293_OK=false  # rm-rf 豁免（shield 侧）
