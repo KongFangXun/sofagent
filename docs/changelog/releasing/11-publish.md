@@ -69,12 +69,14 @@ npm run build
 
 # daemon CI 模拟（fake HOME 跑 foreground daemon 验证 daemon.json 生成）
 # CI runner 无 fde.md、无 ~/.sofagent/data → config.sh 可能静默崩溃（set -e）
-mkdir -p /tmp/daemon-ci-test
-SOFAGENT_HOME=/tmp/daemon-ci-test SOFAGENT_DATA=/tmp/daemon-ci-test/data \
-  timeout 10 node engine/daemon/dist/index.js --foreground 2>&1 | tail -5
+# CI 同款姿势（v1.3.7 修正：SOFAGENT_HOME=/tmp 会触发 data-paths 越界守卫回退——
+# 与 daemon-macos-ci.yml 对齐：仓库内 .sofagent + daemon.sh + sleep 35）
+rm -rf .sofagent && mkdir -p .sofagent
+SOFAGENT_DATA="${PWD}/.sofagent" engine/scripts/daemon.sh --foreground > .sofagent/daemon-stdout.log 2>&1 &
+DAEMON_PID=$!; sleep 35; kill $DAEMON_PID 2>/dev/null
 # 验证 daemon.json 能正常生成
-[ -f /tmp/daemon-ci-test/data/daemon.json ] && echo "✅ daemon CI 模拟通过" || echo "❌ daemon.json 未生成"
-rm -rf /tmp/daemon-ci-test
+[ -f .sofagent/daemon.json ] && echo "✅ daemon CI 模拟通过" || { echo "❌ daemon.json 未生成"; tail -6 .sofagent/daemon-stdout.log; }
+rm -rf .sofagent
 
 # npm 包洁净度 + 类型检查（逐包：.js.map 泄露 + README 非空 + tsc --noEmit）
 for pkg in engine/*/; do
