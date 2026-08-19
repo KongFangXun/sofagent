@@ -10,6 +10,7 @@ import type { AuditContext, RuleCheck } from './types';
 /** 敏感文件匹配模式（匹配 basename） */
 const SENSITIVE_PATTERNS = [
   /^\.env[\w.-]*$/i,            // .env, .env.local, .env.production, .env_backup, .env-backup, .env2, .envrc 等
+  /\.env$/i,                     // v1.3.8 P0-3：settings.env / production.env / config.env / 财务.env 等后缀式（原 ^\.env 锚定漏检）
   /\.pem$/i,                     // *.pem
   /\.key$/i,                     // *.key
   /(^|\/)id_rsa$/,               // id_rsa
