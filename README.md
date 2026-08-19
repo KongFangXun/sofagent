@@ -85,7 +85,7 @@ sofagent-audit --init      # 装 git hook，之后每次 commit 自动审计
 sofagent-audit --doctor    # 验证环境（可选）
 ```
 
-> 💡 所有安装脚本只写入 `~/.sofagent/`，不修改系统文件。`--no-verify` 可绕过本地 hook——sofagent 防的是诚实 Agent 的疏忽，不是恶意绕过；高安全场景请在 CI 侧加 `sofagent-audit --diff` 兜底。详见 [LIMITATIONS](./docs/LIMITATIONS.md)。
+> 💡 所有安装脚本只写入 `~/.sofagent/`，不修改系统文件。`--no-verify` 可以跳过 commit-msg 审计——它防的是诚实 Agent 的疏忽，不是恶意绕过；被跳过的 commit 会由 post-commit hook 事后对账留痕（命中拦截记录会提示「疑似绕过」，可用 `--verify-commit <SHA>` 复核），但**不阻断**。个人开发者的兜底就三件事：跑 CI 侧 `sofagent-audit --diff`、定期 `--doctor`、翻看审计记录。详见 [LIMITATIONS](./docs/LIMITATIONS.md)。
 >
 > 📌 **install.sh 是企业设备安装器**——装在跑 AI 节点的服务器/电脑上，给 Agent 当约束层引擎（注入·审计·回溯·进化四能力 + daemon 常驻巡检 + 单机 dashboard）。FDE 自己的电脑不需要跑 install.sh，FDE 的工具是 [FDE Skill](https://clawhub.ai/kongfangxun/skills/sofagent)（方法论）。详见 [部署架构](./docs/ARCHITECTURE.md#安装包边界与部署架构v132-定位校准)。
 >
