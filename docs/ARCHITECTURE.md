@@ -509,7 +509,7 @@ sofagent-audit --timeline     # 快照时间线
 sofagent-audit --revert SHA   # 回滚到任意快照
 ```
 
-daemon 自动清理 30 天前旧快照。Webhook 配置在 `.sofagent/config.yml`。
+快照上限 50 份（MAX_SNAPSHOTS 滚动裁剪，超出移除最旧 + 回收孤儿 blob——v1.3.4/v2 实现，2026-08-19 修正此前「30 天」的过时口径）。Webhook 配置在 `.sofagent/config.yml`。
 
 > 📐 **设计决策记录：`.git-shadow/` 为何在仓库内**：审计快照存放在被审计仓库根目录的 `.sofagent/.git-shadow/`（而非全局 `~/.sofagent/`），设计意图是**按 git 仓库隔离快照**——不同仓库的快照不能串，否则回溯到错误仓库的状态。代价是用户仓库内会多一个隐藏目录（已 sanitize 脱敏 + 默认 `.gitignore` 覆盖，不进 git 提交，但 `ls -a` 可见）。v1.3.4 bugfix 已为快照内容加 sanitize 管道（API key / 密码 / 手机号打码），防止快照自身成为泄漏点。改存储位置是 v1.4 架构决策，当前版本只披露。
 
