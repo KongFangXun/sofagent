@@ -224,6 +224,8 @@ sofagent 是一个 FDE Agent——底层引擎是纯本地 Harness 中间件（�
 
 `history.jsonl` 自 v1.1.8 起支持 HMAC-SHA256 签名（密钥来自 `~/.sofagent-key`）。有密钥时每条记录签名，Agent 无法在无密钥情况下伪造签名；无密钥时降级为 SHA-256 hash chain（Agent 可重算整链，仅事后可追溯非强防篡改）。`--doctor`（v1.2.0 起）会实际调用 `checkHistoryChainIntegrity()` 校验链完整性。建议高安全场景配置 `~/.sofagent-key` 启用强校验。
 
+> ⚠️ **无密钥时篡改检测是「弱校验」**：npm 直装等未配置 `~/.sofagent-key` 的路径，篡改检测退化为 hash chain——手改 `history.jsonl` 后重算整链即可让校验通过（FAIL 抹成 PASS 在结构上可能）。**企业 SOP 应强制配置 HMAC 密钥并周期性 `--doctor` 体检**，不要依赖无密钥路径的篡改检测结论。
+
 > ⚠️ **HMAC 威胁模型边界**：HMAC 防的是「**无密钥方**伪造/篡改签名」。同机同用户场景下，密钥文件 `~/.sofagent-key`（权限 0600）可被同用户进程读取——与用户同身份运行的 Agent 可读取密钥后重签整条链，HMAC 无法阻止（同 LIMITATIONS「文件权限不防同用户进程」的既有披露）。因此 HMAC 的实际防御面是**异地/跨用户**攻击；对同用户重签，防线只剩事后 `--doctor` 体检 + CI 侧独立审计（CI 凭据与开发机隔离，不可被开发机进程重签）。
 
 ### 审计引擎安全性（sofagent-audit）
@@ -318,7 +320,7 @@ chmod 600 ~/.sofagent/data/audit/history.jsonl.bak-*
 
 | 绕过方式 | 检测手段 | 缓解 |
 |----------|---------|------|
-| `git commit --no-verify` | ❌ 无自动检测 | 定期 `--doctor` 检查未审计的 commit（`git log --grep` 匹配审计签名）；CI 侧 `sofagent-audit --diff HEAD~1..HEAD` 兜底 |
+| `git commit --no-verify` | ⚠️ post-commit hook 事后对账留痕（不阻断） | `--init` 同时装 commit-msg + post-commit：绕过 commit-msg 的 commit 会被 post-commit 对账——命中拦截记录时输出「疑似绕过」提示并留痕 history.jsonl；未命中输出 INFO 提示可用 `--verify-commit <SHA>` 复核。定期 `--doctor` 检查未审计的 commit（`git log --grep` 匹配审计签名）；CI 侧 `sofagent-audit --diff HEAD~1..HEAD` 兜底 |
 | 删除 commit-msg hook 文件 | ⚠️ `--doctor` 可检测 | daemon 文件监控（fs-watch，v1.3.6 起）可配置监控 .git/hooks/ 目录变化（watch.yml 自定义路径）；hooks 目录监控未内置为默认巡检项（规划中） |
 | 伪造 Agent 日志（task/logs） | ❌ 无自动检测 | 人工抽查 + 交叉验证 git log 时间戳 |
 | 绕过 --init 直接手动修改 config.yml | ❌ 无自动检测 | config hash 校验（`--sign-config` 签名 + 验签，篡改时 CLI 拒绝启动 exit 2） |
@@ -345,6 +347,8 @@ chmod 600 ~/.sofagent/data/audit/history.jsonl.bak-*
    但能防止意外修改。
 3. **完整性校验**：使用 `tools/sign-config.mjs` 对 config.yml 签名，
    定期运行 `sofagent-audit --doctor` 检查配置完整性。
+
+> ⚠️ **`--doctor` 退出码语义（CI 场景注意）**：doctor 默认只在 **error** 时返回非零，**warning（如 hook 缺失）仍 exit 0**——CI 只看 exit code 会漏掉 warning 级问题。CI 场景请用 `sofagent-audit --doctor --strict`（warning 也返回非零），人工日常体检用默认模式即可。
 
 > 💡 更多本地开发缓解措施详见 [LIMITATIONS.md → 本地开发紧急缓解措施](./docs/LIMITATIONS.md#本地开发紧急缓解措施)（chmod 400、git hooksPath、定期 doctor）。
 
