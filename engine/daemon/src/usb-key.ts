@@ -1,6 +1,6 @@
 // ============================================================
 // usb-key.ts · create-usb-key —— U 盘完整运行时写入器
-// v1.3.7 新增
+// v1.1.9 新增
 // ============================================================
 //
 // 交付一（USB 完整运行时）的写入侧：
@@ -209,7 +209,7 @@ export async function createUsbKey(opts: CreateUsbKeyOpts): Promise<UsbKeyResult
 
 /** 推断 sofagent monorepo 产物根（含 daemon/orchestrator/core 子目录） */
 function inferSofagentSourceDir(): string {
-  // 本文件编译后位于 <repo>/sofagent/daemon/dist/，向上两级 = sofagent/
+  // 本文件编译后位于 <repo>/engine/daemon/dist/，向上两级 = engine/（三包子目录 daemon/orchestrator/core）
   return path.resolve(__dirname, '..', '..');
 }
 
