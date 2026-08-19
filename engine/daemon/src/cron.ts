@@ -1,7 +1,7 @@
 // ============================================================
 // daemon/cron.ts — 定时任务调度
-// v1.3.7: 支持 @weekly / @daily / @hourly 触发 Sub Agent 巡检
-// v1.3.7：迁移至 @sofagent/daemon
+// v1.3.8: 支持 @weekly / @daily / @hourly 触发 Sub Agent 巡检
+// v1.3.8：迁移至 @sofagent/daemon
 //
 // 从 .sofagent/watch.yml 读取 cron 配置段，按周期调度 Sub Agent。
 // 默认运行 fde Agent 的 sustain 模式，产出周度巡检报告。

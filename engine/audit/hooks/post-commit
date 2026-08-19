@@ -1,5 +1,5 @@
 #!/bin/bash
-# sofagent post-commit hook v1.3.7
+# sofagent post-commit hook v1.3.8
 # --no-verify 跳过 commit-msg，但不跳过 post-commit
 # 安装：sofagent-audit --init（v1.0.6 起 --init 同时安装 commit-msg + post-commit）
 #

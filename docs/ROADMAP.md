@@ -1,11 +1,11 @@
 # 路线图 · Roadmap
 
 > 已经做了什么、未来要去哪、哪些地方需要你的帮助。
-> v1.3.7 · 2026-08-18（UTC）· 🏰 SubAgent 完整沙箱 + 🔐 场景驱动权限 + 🛡️ AgentShield 五类扫描 + 🏥 行业 overlay 四套 + ⚡ 断路器行为监控 + 🌳 ontology 生命周期 + 26 项独立审查 bugfix
+> v1.3.8 · 2026-08-20（UTC）· 🏰 SubAgent 完整沙箱 + 🔐 场景驱动权限 + 🛡️ AgentShield 五类扫描 + 🏥 行业 overlay 四套 + ⚡ 断路器行为监控 + 🌳 ontology 生命周期 + 26 项独立审查 bugfix
 
 产品定位详见 [设计哲学](./PHILOSOPHY.md) 和 [README](../README.md)。
 
-## 现在在哪：v1.3.7（已交付）
+## 现在在哪：v1.3.8（已交付）
 
 > **v1.3.7 已于 2026-08-18 交付**——SubAgent 完整沙箱 + 场景驱动权限 + AgentShield 五类扫描 + 行业 overlay 四套 + 断路器行为监控 + ontology 生命周期 + 审查循环自适应并发 + memory-sync 路径通用化 + 26 项独立审查 bugfix。详见 [v1.3.7 开发日志](./changelog/v1.3/v1.3.7.md)。
 >

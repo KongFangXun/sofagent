@@ -3,7 +3,7 @@ name: fresh-eyes-loop
 description: 发布后独立质量循环——A/B 双盲 12 视角 fresh-eyes 审查 + 修复 + 验证，每轮新 session 保证零上下文，连续 2 轮无 P0/P1 即停。
 emoji: 🔍
 color: "#16B8F3"
-version: 1.3.7
+version: 1.3.8
 ---
 
 # fresh-eyes-loop · 质量循环定义

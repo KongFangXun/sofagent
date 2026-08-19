@@ -3,7 +3,7 @@
  * 生成 Sub Agent 启动时的 context prompt：SKILL.md → fde.md → think.md → knowledge/
  * v1.2.0 从 sofagent/audit/src/subagents/launcher.ts 迁出
  *
- * ⚠️ 职责分工（v1.3.7 P0-R11）：
+ * ⚠️ 职责分工（v1.3.8 P0-R11）：
  *   本文件是 **npm API 形态**的加载链实现（createReactAgent 构建 system prompt 时
  *   调用 buildConstrainedSystemPrompt）。
  *   OpenClaw 平台 hook 部署形态由 engine/hooks/sofagent-load-chain/src/handler.ts
