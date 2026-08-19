@@ -494,7 +494,7 @@ graph LR
 
 > ✅ **已在 v1.3.0 交付**——双规则系统统一为单一规则引擎（`ruleType: 'tool' | 'diff'`）。v1.3.0 的运行时审计 middleware 升级是统一规则引擎的天然时机（tool-gate 规则从硬编码升级为 middleware 拦截时，顺便统一 `ruleType` 字段）。两套规则触发时机不同（tool-level 在调用前拦截、audit 在 commit 后审计），统一后保留两种触发模式但共用一套规则定义。详见 [ROADMAP v1.3.0](./ROADMAP.md)。
 
-### 🔄 回溯能力（本质：git snapshot + revert 包装）
+### 🔄 回溯能力（自研同构 Git 引擎 · 对外叙事「一键回滚」）
 
 行车记录仪，不是安检——事后快照，不依赖任何平台：
 
@@ -513,9 +513,11 @@ daemon 自动清理 30 天前旧快照。Webhook 配置在 `.sofagent/config.yml
 
 > 📐 **设计决策记录：`.git-shadow/` 为何在仓库内**：审计快照存放在被审计仓库根目录的 `.sofagent/.git-shadow/`（而非全局 `~/.sofagent/`），设计意图是**按 git 仓库隔离快照**——不同仓库的快照不能串，否则回溯到错误仓库的状态。代价是用户仓库内会多一个隐藏目录（已 sanitize 脱敏 + 默认 `.gitignore` 覆盖，不进 git 提交，但 `ls -a` 可见）。v1.3.4 bugfix 已为快照内容加 sanitize 管道（API key / 密码 / 手机号打码），防止快照自身成为泄漏点。改存储位置是 v1.4 架构决策，当前版本只披露。
 
+**实现说明（v1.3.7 起）**：底层是**自研纯 JS 同构 Git 引擎**（`engine/core/src/filesystem/isomorphic-git.ts`）——不调用系统 git 二进制、不依赖 npm isomorphic-git 包，但复用 Git 核心思想：SHA-256 内容寻址 + shadow repo + v2 内容池去重（blobs 跨快照共享，14 份快照约 12MB vs v1 直存 141MB）。选自研而非系统 git 的动机：①非 git 目录也能快照（企业 workflow 目录往往不是 git 仓库）②零环境依赖（装 sofagent 即用）③快照内容 sanitize 脱敏。**局限（如实标注）**：文件级快照、非事务级——revert 逐文件写回，中途失败会留下部分恢复状态（`restored` 数组报告已恢复文件）；与 v1.3.8 Durable L3 WAL（工具调用级 undo + 崩溃恢复）是互补关系。**对外叙事**：只讲「一键回滚到任意安全状态」，自研引擎是内部机制不作为卖点（用户置信度锚点应是 Git 语义的可靠回滚，不是自研实现）。
+
 **工程参照：LangGraph checkpoint**。[LangGraph](https://github.com/langchain-ai/langgraph) 把 checkpoint 持久化状态做成一等公民——任意步可回放、可分叉重跑，这正是「回溯」的工程前提：**先有可寻址的状态快照，才谈得上回溯到某次变更之前**。其 human-in-the-loop 中断点对位约束底座的人类终裁闸门，执行轨迹对位审计的 trace 输入。
 
-需要说清分工：业界已把「有状态 + 可回溯 + 可人审」确立为生产级 Agent 编排的**默认要求**，而非 sofagent 独创。差异在 LangGraph 提供机制（checkpoint / interrupt 原语），sofagent 提供策略（什么该拦、拦了怎么判、经验怎么回流）。sofagent 的回溯实现是自有的 FileCheckpointer（详见下方 [Checkpoint 持久化](#checkpoint-持久化) 五条并发安全规矩）+ git snapshot + revert 包装——与 LangGraph checkpoint 是同一思路的两种载体。
+需要说清分工：业界已把「有状态 + 可回溯 + 可人审」确立为生产级 Agent 编排的**默认要求**，而非 sofagent 独创。差异在 LangGraph 提供机制（checkpoint / interrupt 原语），sofagent 提供策略（什么该拦、拦了怎么判、经验怎么回流）。sofagent 的回溯实现是自有的 FileCheckpointer（详见下方 [Checkpoint 持久化](#checkpoint-持久化) 五条并发安全规矩）+ 自研同构 Git 引擎——与 LangGraph checkpoint 是同一思路的两种载体。
 
 > 📖 来源：[langchain-ai/langgraph](https://github.com/langchain-ai/langgraph)（github.com，2026-08 核实）
 
