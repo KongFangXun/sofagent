@@ -206,9 +206,9 @@ done
 
 > GitHub Release published 后，`.github/workflows/release.yml` 自动触发，publish `@sofagent/audit` 和 `@sofagent/mcp` 两个包到 npm。其余 10 包在步骤 6 手动 publish。
 
-### 5.0 Release Note 生成 → 自检 → 人工确认（2026-08-19 用户拍板强化的三道工序）
+### 5.0 Release Note 生成 → 自检 → 上一版结构对照（2026-08-19 用户拍板强化的三道工序）
 
-> 🔴 **历史痛点**：v1.3.0~v1.3.6 每次 release note 发布后都发现问题再改（title 漂移/质量表缺项/骨架不同构）——「改了再发」的成本是 npm 用户看到的第一个版本就是错的。从 v1.3.7 起：**release note 必须先过自检 + 人工确认，才允许 gh release create**。三道工序缺一不可：
+> 🔴 **历史痛点**：v1.3.0~v1.3.6 每次 release note 发布后都发现问题再改（title 漂移/质量表缺项/骨架不同构）——「改了再发」的成本是 npm 用户看到的第一个版本就是错的。从 v1.3.7 起：**release note 必须先过自检 + 上一版结构对照，才允许 gh release create**。三道工序缺一不可：
 
 **工序 1 · 按规范生成**：严格按下方「Release Notes 格式规范」生成 body（title 主题短语 / 首行定位句 / 核心变更功能领域式 / 质量验证固定 7 项 / 尾链）。
 
@@ -231,7 +231,7 @@ done
 echo "$BODY" | grep -qE '\[详细开发日志\]\(\./docs/changelog/' && echo "✅ 尾链" || echo "🔴 缺尾链"
 ```
 
-**工序 3 · 人工确认（human check）**：自检全过后，**把 title + body 完整贴给用户过目**——用户说「可以」才执行 `gh release create`。用户提修改意见 → 改 → 重新贴 → 直到确认。这条禁止跳过（哪怕前 2 道全绿）。
+**工序 3 · 上一版结构对照（2026-08-19 用户拍板：取代人工过目）**：自检全过后，与上一版 release body 做**结构级并排对照**——title 形式（`vX.Y.Z — emoji 短语`）/ 定位句有无 / H2 骨架 / 质量表 7 项顺序 / 尾链位置，五要素逐一比对上一版，**结构不一致即重写，直到同构**。机制标准 = 上一版 release note（当前参考 v1.3.6）。对照命令：`gh release view v1.3.6 --json body,title -q '{title, body}'`。
 
 ```bash
 > 🔴 **发布前必做（v1.3.6 教训）**：生成 body 后先与上一版并排对照——`gh release view v上一版 --json body -q '.body' | grep -E "^## "`——两版 H2 骨架必须同构（首行定位句/核心变更/破坏性变更/质量验证/尾链五要素）。**changelog 内嵌的 Release Notes 段 ≠ GitHub Release body**：前者归 08 的 N1-N7 管（✨ 新功能 bullet 式），后者归本规范管（### 功能领域子标题式）——分别核对，禁止把 changelog 段直接复制当 body。
