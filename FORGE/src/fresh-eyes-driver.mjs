@@ -3232,6 +3232,8 @@ async function main() {
     } else {
       console.error('用法: node FORGE/src/fresh-eyes-driver.mjs --target vX.Y.Z [--max-rounds N] [--dry-run] [--resume]');
       console.error('      --resume 模式也需 --target，除非断点中已保存 target');
+      console.error('      --check-alive <runDir>  [v1.3.8 交付五] liveness 探针——只认 status.json 心跳不认日志；');
+      console.error('                              心跳 <90s → RC=0 alive；超时 → RC=1 dead + 最后 event/phase');
       process.exit(1);
     }
   }
