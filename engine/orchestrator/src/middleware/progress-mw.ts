@@ -1,5 +1,5 @@
 // ============================================================
-// progress-mw.ts · SubAgent 进度遥测 middleware（v1.3.7 · P2b）
+// progress-mw.ts · SubAgent 进度遥测 middleware（v1.3.8 · P2b）
 // ============================================================
 //
 // 背景：v1.3.7 ROADMAP 声称 ProgressMiddleware 已交付，实际代码不存在

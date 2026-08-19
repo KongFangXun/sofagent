@@ -1,11 +1,11 @@
 // sofagent load-chain hook · OpenClaw 2026.6.x
 // 注入三层加载链到 agent:bootstrap：
-//   L1 core-rules.md（核心铁律 ~30 行，始终注入）+ 按 task type 追加岗位规范（v1.3.7 渐进式加载）
+//   L1 core-rules.md（核心铁律 ~30 行，始终注入）+ 按 task type 追加岗位规范（v1.3.8 渐进式加载）
 //   L2 think.md（反思区）
 //   L3 fde.md（用户规则）
 // 由 DeepSeek V4 Pro 和 GLM-5.2 配合生成。
 //
-// ⚠️ 职责分工（v1.3.7 P0-R11）：
+// ⚠️ 职责分工（v1.3.8 P0-R11）：
 //   本文件服务 **OpenClaw 平台 hook 部署形态**（.openclaw/hooks/sofagent-load-chain/handler.ts），
 //   由 OpenClaw 的 agent:bootstrap 事件触发注入 prompt。
 //   npm API 场景（createReactAgent 构建 system prompt）用 @sofagent/harness 的

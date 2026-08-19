@@ -18,7 +18,7 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-$VERSION_STR = "1.3.7"
+$VERSION_STR = "1.3.8"
 try { [Console]::OutputEncoding = New-Object System.Text.UTF8Encoding $false } catch {}
 if ($Purge) { $Force = $true }
 
