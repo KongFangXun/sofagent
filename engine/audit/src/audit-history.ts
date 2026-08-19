@@ -41,6 +41,16 @@ import { execSync } from 'child_process';
 import { loadEnvConfig } from '@sofagent/core';
 import { atomicAppendSync, atomicWriteSync } from '@sofagent/core';
 import { REDACTION_PATTERNS } from '@sofagent/core';
+// v1.3.8 交付二：数据静态加密（age 纯 TS + 密钥管理，均来自 @sofagent/core）
+import {
+  encryptWithAge,
+  decryptWithAge,
+  isAgePayload,
+  loadDataKey,
+  isInitialized,
+  keysDirPath,
+  DATA_KEY_RECOVERY_HINT,
+} from '@sofagent/core';
 import type { RuleCheck, ActionGovernance } from './rules/types';
 
 // v1.2.0: checkHistoryChainIntegrity + helpers sunk to core;
@@ -146,6 +156,46 @@ export function isHmacKeyConfigured(): boolean {
   return getHmacKey() !== null;
 }
 
+// ────────────────────────────────────────────
+// v1.3.8 交付二：静态加密挂点（age 纯 TS）
+//
+// 语义：密钥存在且初始化完成 → 落盘前整行加密；读侧按前缀识别解密，
+// 明文旧行（无 SOFAGENT-AGE-V1 前缀）按原逻辑解析（向后兼容）。
+// 无密钥（未初始化）→ 完全走旧明文路径（现有行为零破坏）。
+//
+// 加密范围（本版）：data/audit/ 主链（本文件）。
+// 后续接线点（暂不挂——避免一次改四个包爆回归面）：
+//   · data/forge-runs/（FORGE 审查运行数据）
+//   · data/checkpoint/（graph checkpoint——见 orchestrator durable/checkpoint-manager.ts）
+//   · data/model-registry/（模型注册表——含内部 endpoint 地址，见 orchestrator model-registry.ts）
+// ────────────────────────────────────────────
+
+/** 解析 SOFAGENT_HOME（与 data-paths 同语义：env 覆盖 > ~/.sofagent） */
+function resolveSofagentHome(): string {
+  return process.env.SOFAGENT_HOME || join(homedir(), '.sofagent');
+}
+
+/**
+ * 数据加密是否激活：密钥存在 + initialized 标记存在。
+ * 任一缺失都按「未启用」处理（明文路径）——半初始化状态不加密，
+ * 防止「密钥丢失但标记还在」导致写入全部失败的死局。
+ */
+function isDataEncryptionActive(): boolean {
+  const home = resolveSofagentHome();
+  // 半初始化状态不加密——防止「密钥丢失但标记还在」导致写入全部失败的死局
+  if (!isInitialized(home)) return false;
+  return loadDataKey(home) !== null;
+}
+
+/** 取激活态密钥（isDataEncryptionActive() === true 时调用必有值） */
+function getActiveDataKey(): Buffer {
+  const key = loadDataKey(resolveSofagentHome());
+  if (key === null) {
+    throw new Error(`数据加密密钥读取失败：${keysDirPath(resolveSofagentHome())}/data.key`);
+  }
+  return key;
+}
+
 /**
  * 追加一条审计记录到历史文件
  * 文件不存在时自动创建目录和文件
@@ -172,7 +222,12 @@ export function appendHistory(entry: AuditHistoryEntry, dataDir?: string): void 
     if (lines.length > 0) {
       const lastLine = lines[lines.length - 1]!;
       try {
-        const lastEntry = JSON.parse(lastLine);
+        // v1.3.8 交付二：上一行可能是 age 加密行——先按前缀解密再参与链计算
+        //（链基于明文记录内容，加密不改变链语义；解密失败走 JSON 解析失败同路径 prevHash='unknown'）
+        const lastPlain = isAgePayload(lastLine)
+          ? decryptWithAge(lastLine, getActiveDataKey())
+          : lastLine;
+        const lastEntry = JSON.parse(lastPlain);
         const lastRecordForHash = { ...lastEntry, prevHash: undefined, hashVersion: undefined };
         prevHash = createHash('sha256')
           .update(JSON.stringify(lastRecordForHash) + '|' + fingerprint)
@@ -234,7 +289,12 @@ export function appendHistory(entry: AuditHistoryEntry, dataDir?: string): void 
   // v1.0.5: 使用原子追加（先读+追加+原子写），避免并发写入导致的行交错
   // v1.2.5 atomicAppendSync 已内置文件锁互斥（O_EXCL + 过期回收），
   //   读-改-写跨进程串行化——不再需要 busy-wait 重试循环（原 189-206 行已移除）。
-  const jsonLine = JSON.stringify(sanitizedEntry);
+  // v1.3.8 交付二：静态加密挂点——密钥激活时整行加密后 append（落盘无明文）；
+  // 无密钥按旧明文路径（现有行为零破坏）。prevHash 链计算在内存中完成
+  //（基于上一行解密后的内容），链语义与加密前完全一致。
+  const jsonLine = isDataEncryptionActive()
+    ? encryptWithAge(JSON.stringify(sanitizedEntry), getActiveDataKey())
+    : JSON.stringify(sanitizedEntry);
   atomicAppendSync(filePath, jsonLine);
   // 单次读回校验（best-effort——锁已保证互斥，最后一行必然完整；校验失败仅告警）
   try {
@@ -283,15 +343,40 @@ export function loadHistory(limit?: number, dataDir?: string): AuditHistoryEntry
   const entries: AuditHistoryEntry[] = [];
   const lines = content.split('\n');
 
+  // v1.3.8 交付二：读侧透明解密。
+  //  - SOFAGENT-AGE-V1 前缀行 → decryptWithAge（密钥激活时）
+  //  - 无前缀行 → 明文旧格式，按原逻辑解析（向后兼容）
+  //  - 密钥丢失但存在加密行 → 明确抛错（含恢复指引），不静默跳过
+  //    （静默跳过会让用户误以为历史被清空，掩盖密钥事故）
+  let sawAgeLine = false;
+  // undefined = 未探测；探测后必非 null（null 分支直接 throw——密钥丢失报错在先）
+  let keyCache: Buffer | undefined;
+
   for (const line of lines) {
     const trimmed = line.trim();
     if (trimmed === '') continue;
 
+    let plainLine = trimmed;
+    if (isAgePayload(trimmed)) {
+      sawAgeLine = true;
+      if (keyCache === undefined) {
+        const key = loadDataKey(resolveSofagentHome());
+        if (key === null) {
+          throw new Error(
+            `检测到加密审计记录但数据加密密钥不可用（${keysDirPath(resolveSofagentHome())}/data.key 缺失或非法）。` +
+            `解密不可继续。${DATA_KEY_RECOVERY_HINT}`,
+          );
+        }
+        keyCache = key;
+      }
+      plainLine = decryptWithAge(trimmed, keyCache); // 上方已保证非 null（null 分支已 throw）
+    }
+
     try {
-      const parsed = JSON.parse(trimmed) as AuditHistoryEntry;
+      const parsed = JSON.parse(plainLine) as AuditHistoryEntry;
       entries.push(parsed);
     } catch (e) {
-      console.error(`[sofagent] 审计历史行解析失败（跳过）: ${e instanceof Error ? e.message : String(e)}`);
+      console.error(`[sofagent] 审计历史行解析失败（跳过${sawAgeLine ? '，前置加密行已解密' : ''}）: ${e instanceof Error ? e.message : String(e)}`);
     }
   }
 

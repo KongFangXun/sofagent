@@ -285,6 +285,29 @@ export {
 } from './crypto/pairing';
 export type { PairedPeer, PairingSession } from './crypto/pairing';
 
+// v1.3.8 交付二：数据静态加密（age 纯 TS 实现 + 密钥管理）
+export {
+  encryptWithAge,
+  decryptWithAge,
+  isAgePayload,
+  AGE_MAGIC_PREFIX,
+} from './crypto/age-wrapper';
+export {
+  generateDataKey,
+  loadDataKey,
+  rotateDataKey,
+  keyFingerprint,
+  writeInitializedMarker,
+  isInitialized,
+  keysDirPath,
+  dataKeyPath,
+  initializedMarkerPath,
+  listArchivedKeys,
+  DATA_KEY_BYTES,
+  DATA_KEY_RECOVERY_HINT,
+} from './crypto/key-manager';
+export type { KeyOperationResult, KeyOperationOptions } from './crypto/key-manager';
+
 // ── 审计结果类型 ──
 export type { AuditResult, RuleCheck } from './reporter';
 
