@@ -49,6 +49,10 @@
 set -euo pipefail
 VERSION="1.3.7"
 
+# ERR trap 品牌兜底（v1.3.8 P0-1）：对齐 bootstrap.sh——此前 install.sh 全文无 trap，
+# 任何未处理失败都是裸 bash 报错 exit 1；现在统一输出产品化指路信息。
+trap 'echo "❌ sofagent install 失败（exit $?，行 ${LINENO:-?}）——请截图此信息到 GitHub Issues（github.com/KongFangXun/sofagent/issues）"' ERR
+
 # ── 颜色输出（合并两套）──
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; BLUE='\033[0;34m'
 CYAN='\033[0;36m'; BOLD='\033[1m'; NC='\033[0m'
@@ -61,6 +65,83 @@ err()   { echo -e "${RED}[✗]${NC} $1"; }
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # v1.2.0: install.sh 提升到根目录，lib/ 仍在 engine/scripts/lib/
 LIB_DIR="${SCRIPT_DIR}/engine/scripts/lib"
+
+# ── 帮助（v1.3.8 P0-1 前移：--help 不依赖 lib/仓库完整性，任何场景直接可答）──
+show_help() {
+  cat <<EOF
+sofagent install.sh v${VERSION} — 企业设备安装器（平台无关）
+
+用法:
+  bash install.sh                       默认模式：平台无关安装（只写 ~/.sofagent/）+ FDE Skill
+  bash install.sh --base-only           仅装约束层（审计·回溯·daemon·dashboard，不装 Agent Skill）
+  bash install.sh --platform <name>     显式平台集成（opt-in）：openclaw / workbuddy / claude / codex / hermes
+  bash install.sh --quick               完整安装（静默模式，跳过交互确认）⚠️ 非预览，会写入文件
+  bash install.sh --remote              远程安装模式（git clone）
+  bash install.sh --force               升级时强制覆盖 custom/ 用户层（确认+备份）
+  bash install.sh --merge               升级时三路合并 custom/ 用户层
+  bash install.sh --yes, -y             配合 --force 跳过交互确认（CI 场景）
+  bash install.sh --help, -h            显示此帮助
+
+平台: 默认平台无关安装（不探测、不修改任何第三方平台配置，只写 ~/.sofagent/）；
+     显式 --platform 时才做平台集成：openclaw（完整）/ workbuddy / claude / codex / hermes
+EOF
+}
+
+# ── --help / -h 前置处理（v1.3.8 P0-1：必须在仓库完整性自检与 source 之前）──
+case "${1:-}" in
+  --help|-h) show_help; exit 0 ;;
+esac
+
+# ── v1.3.8 P0-1 仓库完整性自检（必须在下方 source 之前执行）──
+# 根因：bootstrap.sh「单文件下载」与 install.sh「依赖同目录 engine/scripts/lib/」结构性失配——
+# 孤立 install.sh（如 /tmp 下载）source 立即失败且 --help/--remote 自救都在 source 之后够不着。
+# 自检策略：lib 缺失时按序自救——① 复用 --remote 的 clone 逻辑拉完整仓库后 exec 重入；
+# ② clone 不可用（无 git/无网络）时打印明确指路并以非零退出（fail-closed，不裸报错）。
+# 注：--help/-h 已前置到本块之前处理，不依赖 lib 与仓库完整性。
+ensure_repo_integrity() {
+  # 必需 lib 模块（source 依赖）+ 关键仓库文件（fde-template.md 缺失时主路径必失败，
+  # 一并纳入自检让 clone 自救在最早时机触发，而非走到 Step 1 之后才报错）
+  local required_libs
+  required_libs="platform-detect.sh file-deploy.sh daemon-register.sh post-install.sh"
+  local missing=0
+  local lib_name
+  for lib_name in $required_libs; do
+    [ -f "${LIB_DIR}/${lib_name}" ] || missing=1
+  done
+  [ -f "${SCRIPT_DIR}/SKILL/harness/fde-template.md" ] || missing=1
+  [ "$missing" = "0" ] && return 0
+
+  warn "检测到运行时依赖缺失（${LIB_DIR}）——当前是孤立 install.sh 场景（如 curl 单文件下载）"
+  info "正在自救：git clone 完整仓库后重新进入安装..."
+  if command -v git &>/dev/null; then
+    local rescue_tmp
+    rescue_tmp="$(mktemp -d /tmp/sofagent-rescue-XXXXXX)"
+    # URL 硬编码官方仓库（与 --remote 分支一致，不接受外部输入）
+    if git clone --depth 1 https://github.com/KongFangXun/sofagent.git "$rescue_tmp" 2>/dev/null; then
+      ok "完整仓库已克隆到: $rescue_tmp"
+      # 重入完整仓库的 install.sh（透传除 --remote 外的参数——仓库已新鲜克隆，无需二次 clone；
+      # 克隆内 lib 完整，不会再触发本自检。bash 3.2 兼容：空数组先判长度再展开，避免传空串参数）
+      local pass_args=()
+      local a
+      for a in "$@"; do [ "$a" = "--remote" ] && continue; pass_args+=("$a"); done
+      if [ ${#pass_args[@]} -gt 0 ]; then
+        exec bash "$rescue_tmp/install.sh" "${pass_args[@]}"
+      else
+        exec bash "$rescue_tmp/install.sh"
+      fi
+    fi
+    rm -rf "$rescue_tmp" 2>/dev/null || true
+    err "git clone 失败（网络/代理问题）——孤立 install.sh 无法自救"
+  else
+    err "git 不可用——孤立 install.sh 无法自救"
+  fi
+  err "请用以下任一完整安装方式重试："
+  err "  1. git clone https://github.com/KongFangXun/sofagent.git && cd sofagent && bash install.sh"
+  err "  2. bash install.sh --remote    （自动 clone 完整仓库再安装）"
+  exit 1
+}
+ensure_repo_integrity "$@"
+
 # 项目根目录（install.sh 位于仓库根，SCRIPT_DIR 即根）。
 # 供 Step 3 本地 dist 优先优化等引用（如 $PROJECT_ROOT/engine/audit/dist/index.js）。
 export PROJECT_ROOT="${SCRIPT_DIR}"
@@ -89,32 +170,6 @@ source "${LIB_DIR}/file-deploy.sh"
 source "${LIB_DIR}/daemon-register.sh"
 # shellcheck disable=SC1091
 source "${LIB_DIR}/post-install.sh"
-
-# ── 帮助 ──
-show_help() {
-  cat <<EOF
-sofagent install.sh v${VERSION} — 企业设备安装器（平台无关）
-
-用法:
-  bash install.sh                       默认模式：平台无关安装（只写 ~/.sofagent/）+ FDE Skill
-  bash install.sh --base-only           仅装约束层（审计·回溯·daemon·dashboard，不装 Agent Skill）
-  bash install.sh --platform <name>     显式平台集成（opt-in）：openclaw / workbuddy / claude / codex / hermes
-  bash install.sh --quick               完整安装（静默模式，跳过交互确认）⚠️ 非预览，会写入文件
-  bash install.sh --remote              远程安装模式（git clone）
-  bash install.sh --force               升级时强制覆盖 custom/ 用户层（确认+备份）
-  bash install.sh --merge               升级时三路合并 custom/ 用户层
-  bash install.sh --yes, -y             配合 --force 跳过交互确认（CI 场景）
-  bash install.sh --help, -h            显示此帮助
-
-平台: 默认平台无关安装（不探测、不修改任何第三方平台配置，只写 ~/.sofagent/）；
-     显式 --platform 时才做平台集成：openclaw（完整）/ workbuddy / claude / codex / hermes
-EOF
-}
-
-# ── --help / -h 前置处理 ──
-case "${1:-}" in
-  --help|-h) show_help; exit 0 ;;
-esac
 
 # ── 环境检测 ──
 RUNTIME_ENV=$(detect_env)
