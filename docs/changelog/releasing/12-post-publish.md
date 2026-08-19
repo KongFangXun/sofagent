@@ -8,17 +8,17 @@
 
 | # | 完成 | 步骤 | 产物 |
 |:--:|:--:|------|------|
-| 一 | [ ] | **发布后验证**（见下方脚本） | 全绿 |
-| 二 | [ ] | CI 全绿检查 | CI 全绿 |
-| 三 | [ ] | **审查三文档回写**：发版过程（阶段六~十一）暴露的新问题回写到 regression-checklist（新维度）/ fresh-eyes-review（新教训）/ acceptance-test（新场景）。与阶段五分工：阶段五管代码质量（发版前可见），本步骤管发版流程（发版中才暴露——如 CI 失败模式、publish 限制、日期硬编码等） | 三文档更新 |
-| 四 | [ ] | SOP 漏洞吸收：本次迭代暴露的 releasing.md 流程问题直接吸收进对应阶段 | SOP 更新 |
-| 五 | [ ] | SOP 数字核对：维度数、检查项数等是否过期 | 数字一致 |
+| 一 | [x] | **发布后验证**（见下方脚本） | 全绿 |
+| 二 | [x] | CI 全绿检查 | CI 全绿 |
+| 三 | [x] | **审查三文档回写**：发版过程（阶段六~十一）暴露的新问题回写到 regression-checklist（新维度）/ fresh-eyes-review（新教训）/ acceptance-test（新场景）。与阶段五分工：阶段五管代码质量（发版前可见），本步骤管发版流程（发版中才暴露——如 CI 失败模式、publish 限制、日期硬编码等） | 三文档更新 |
+| 四 | [x] | SOP 漏洞吸收：本次迭代暴露的 releasing.md 流程问题直接吸收进对应阶段 | SOP 更新 |
+| 五 | [x] | SOP 数字核对：维度数、检查项数等是否过期 | 数字一致 |
 | 六 | [ ] | 生成「下一版本开发 Prompt」到桌面：综合 ROADMAP + CHANGELOG + 下一版本 changelog | `~/Desktop/vX.Y-dev-prompt.md` |
 | 七 | [ ] | **开发 Prompt 校验循环**（详见下方——脚本 + checklist 五条自查两步都要过） | prompt 定稿 |
 | 八 | [ ] | **下版本内容对话讲解**（详见下方——三问讲完 + 负责人确认优先级，缺任一不算完） | 项目负责人理解下版本方向 |
-| 九 | [ ] | **进度追踪清零**：把 `releasing.md` 进度追踪的 12 个 `[x]` 全部改回 `[ ]`，为下一版本新周期做准备 | 进度追踪重置 |
-| 十 | [ ] | **releasing 自迭代**（sop 审查自己）：对照本次发版的实际执行体验，检查 12 个阶段文件是否有过时/缺漏/顺序不合理的地方，直接修正。这是 releasing.md 的「Dream Cycle」——每次发版后用它自己的经验喂养它自己 | releasing.md 更新 |
-| 十一 | [ ] | **本机 daemon 重载（dogfooding 保活 · 2026-08-18 新增）**：发版后本机守护进程要吃上新代码。launchd 配置 `~/Library/LaunchAgents/local.sofagent-daemon.plist` 指向仓库 dist（非全局 npm 包），一条命令重载：`launchctl kickstart -k gui/$(id -u)/local.sofagent-daemon`，随后 `tail -3 ~/.sofagent/data/daemon-launchd.log` 确认版本号 = 刚发的版本。开机自启已由 plist 的 RunAtLoad+KeepAlive 保证，无需每次处理 | daemon 跑新版 |
+| 九 | [x] | **进度追踪清零**：把 `releasing.md` 进度追踪的 12 个 `[x]` 全部改回 `[ ]`，为下一版本新周期做准备 | 进度追踪重置 |
+| 十 | [x] | **releasing 自迭代**（sop 审查自己）：对照本次发版的实际执行体验，检查 12 个阶段文件是否有过时/缺漏/顺序不合理的地方，直接修正。这是 releasing.md 的「Dream Cycle」——每次发版后用它自己的经验喂养它自己 | releasing.md 更新 |
+| 十一 | [x] | **本机 daemon 重载（dogfooding 保活 · 2026-08-18 新增）**：发版后本机守护进程要吃上新代码。launchd 配置 `~/Library/LaunchAgents/local.sofagent-daemon.plist` 指向仓库 dist（非全局 npm 包），一条命令重载：`launchctl kickstart -k gui/$(id -u)/local.sofagent-daemon`，随后 `tail -3 ~/.sofagent/data/daemon-launchd.log` 确认版本号 = 刚发的版本。开机自启已由 plist 的 RunAtLoad+KeepAlive 保证，无需每次处理 | daemon 跑新版 |
 
 ---
 
@@ -172,3 +172,13 @@ sed -i '' 's/- \[x\]/- [ ]/g' docs/changelog/releasing.md
 - **阶段十一 Git Data API 收尾通道实战**：发布完成后网络彻底断（github.com 443 不通），最后的打勾 commit 走 blobs→trees→commits→refs PATCH 完成。新增后续动作：**网络恢复后必须 `git pull --rebase` 对齐本地远端 SHA**（API commit 与本地 commit 同内容不同 SHA，git 会识别 cherry-pick 重复自动消化）
 - **阶段十二 stash 清理纳入发版收尾**：本轮发版过程发现 4 个历史 stash 残留——逐段甄别后 3 段有价值内容恢复进对应 changelog、其余确认覆盖后清理。原则：stash 是隐形技术债，发版收尾时顺手清（stash list 非空即处理）
 - **阶段三 + 阶段十一加 check-test-count 门禁**：v1.3.4 周期内 bugfix（+31 测试 → 8 处漂移）+ dev（+93 → 11 处）+ dsh（+11 → 7 处）**三次犯同类错误**——新增测试后文档声称数（README/WIKI/LIMITATIONS/ARCHITECTURE）未同步。根因：check-test-count.sh 只在 tag 前（阶段十一步骤四）跑一次，开发过程中没人跑。修复：① 阶段三（自测）加步骤四——`check-test-count.sh --quiet` 作为开发完成后的强制门禁；② 阶段十一（发布）步骤二 显式列 check-test-count 与 check-docs.sh 并列。**原则：新增/删除测试 = 必须同步文档声称数，check-test-count 不绿不算开发完成**
+
+**v1.3.7 发版后的自迭代记录**：
+
+- **步骤编号铁律（用户拍板）**：所有步骤编号一律中文序号（一、二、三……），禁止阿拉伯数字、小数点、字母后缀——「4b」类编号是反面案例。已全量清理 12 个阶段文件（38 处引用 + 12 个表格行号），并写入项目铁律
+- **release note 三道工序**：v1.3.0~1.3.6 每次发布后都发现问题再改——本次新增「生成→自检（质量表恰 7 项/H2 骨架同构/七项逐字/尾链）→上一版结构对照」工序，v1.3.7 一次到位零修改
+- **CI 全绿硬前置**：push 后轮询到全绿（60s 循环）才允许打 tag——原 sleep 30 单次查看可被跳过。实测 shellcheck runner apt stall（16 分钟挂 Install ShellCheck）→ `gh run rerun` 解决；空 commit 不触发 paths 过滤的 workflow，重触发用 rerun 而非空 commit
+- **check-version TS 文件头溯源标记误报（CI 红实录）**：文件头注释版本号是功能溯源标记（`v1.1.9 新增`）非当前版本锚点，历史 check 误判为「漏 bump」。判据改为「找 = SSOT 版本号」：有锚点通过、纯溯源跳过；bump 同步豁免（防误伤）。已回写 checklist 维度 116
+- **push 连接三连失败实录**：git config 死代理 → 直连 443 超时/HTTP2 framing → HTTP/1.1 + 慢速兜底解决。经验：curl 能通 ≠ git 能通。已写入 11-publish 网络降级策略
+- **daemon CI 模拟姿势对齐**：SOFAGENT_HOME=/tmp 会触发 data-paths 越界守卫回退——模拟脚本与 daemon-macos-ci.yml 对齐（仓库内 .sofagent + daemon.sh + sleep 35）
+- **v1.3.7 发版耗时**：开发完成（08-18 14:00 前后）→ 发布（08-19 13:40）约 24h（含隔夜）；release-gate 2 轮 FAIL 均检查器侧债（dim106 SSOT/dim116 awk 转义），手工裁决 PASS
