@@ -12,11 +12,40 @@
 | 二 | **driver 兜底**（草稿待取证多 / 大版本）：**新 session 跑 fresh-eyes-loop**：`node FORGE/src/fresh-eyes-driver.mjs --target <本版本号> --max-rounds 10`。按 `FORGE/SKILL/fresh-eyes-loop/SKILL.md` 监控协议轮询 `status.json`（或用 `--check-alive <runDir>` liveness 探针）。loop 修复即本版本代码质量加固 | loop 修复 + changelog 汇总打勾 |
 | 三 | 代码审核（当前 session）：逐项核对发布检查清单，PASS 或 FAIL→修复 | 检查清单打勾 |
 | 四 | **验收测试随功能开发先行新增（增量）**：本版本新功能对应的 acceptance 新场景（S 编号顺延）+ checklist 新维度，随功能开发实时加——本步骤只做「增量补齐」。**归并/压缩/校准/A/B/C 分类是阶段五的职责**，这里不动体系 | 验收测试更新（增量） |
+| 五 | **阶段汇报（v1.3.8 补 · 对话形式）**：全部步骤完成后，执行 session 按下方「阶段汇报模板」以**对话消息**形式发回主 session（不落盘文件）——主 session 依此打勾推进，不再要求主 session 重新考古 | 汇报消息（见模板） |
 
 > **审查分层说明**（v1.3.8 交付八，与 [01-review.md](./01-review.md) 同款）：
 > 单次草稿（`gen-fresh-eyes-draft.mjs`，约 1-3 万 token）优先——理解型审查一次成型；
 > driver 兜底（24 worker，单轮 6-10 万 token）只用于「待取证」项多或大版本变更。
 > driver 内 B 侧已改复核模式（独立复核 A 的 P0/P1，可推翻可补充），B 侧 token 约省一半。
+
+---
+
+## 阶段汇报模板（步骤五用 · 2026-08-20 用户拍板）
+
+> **为什么**：阶段四产物此前只写「审查草稿/loop 修复/验收更新」，汇报形态未定义——执行 session 汇报质量全靠自觉（v1.3.8 实录：汇报良好但无格式约束，换个 session 可能只回三行）。本模板把汇报固化为四件套，**对话消息直接发主 session**（不生成文件——发版期桌面已有大量产物文件，汇报属过程性信息，对话即阅即用）。
+
+执行 session 完成全部步骤后，按此结构汇报：
+
+```
+【v1.3.8 阶段四汇报】
+
+一、审查结论
+- 草稿 finding 三分类统计：机械可查已修 N / 待取证交 driver N（跑了的话 verdict=PASS|FAIL|未跑）/ 中间态 SKIP N（每项一句话）
+- 修复清单：文件+一句话原因（commit hash 列表）
+
+二、验收测试
+- 新场景：S294-S302 共 N 个，全量 acceptance N/N EXIT=0
+- 场景数 SSOT：旧→新（三处同步：脚本头部/DEVELOPMENT/LIMITATIONS）
+
+三、门禁输出关键行
+- build：0 错 / npm test：N/N / CV：N/N / CD：绿（如有红：根因+处置）
+
+四、未决项（需主 session 定夺）
+- 每项：现象/建议/是否阻塞下一阶段
+```
+
+**主 session 收到后**：零信任抽验汇报关键声称（新场景 grep 实存、门禁复跑、acceptance 数字），确认后 releasing.md 打勾推进阶段五。
 
 ---
 
