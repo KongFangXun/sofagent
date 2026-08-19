@@ -469,6 +469,36 @@ if command -v sofagent-audit >/dev/null 2>&1 && git rev-parse --git-dir >/dev/nu
   fi
 fi
 
+# Step 6.6: v1.3.8 P1-A3 审计引擎哈希基准首装生成（堵首次部署窗口）
+# 此前基准哈希仅 --doctor 首次运行时记录——install.sh 首装后到用户跑 doctor 之前是空窗：
+# 攻击者可植入冒牌 engine/audit/dist，hook 的 if [ -f audit-hash.txt ] 跳过校验。
+# 首装即写基准（本地 dist 优先，全局安装 fallback），后续 hook 每次比对。
+if command -v node >/dev/null 2>&1; then
+  HASH_BASE_DIR="${SOFAGENT_HOME}/internal"
+  HASH_RECORD="${HASH_BASE_DIR}/audit-hash.txt"
+  HASH_SOURCE=""
+  if [ -f "${SCRIPT_DIR}/engine/audit/dist/index.js" ]; then
+    HASH_SOURCE="${SCRIPT_DIR}/engine/audit/dist/index.js"
+  elif command -v sofagent-audit >/dev/null 2>&1; then
+    # 全局安装场景：解析 sofagent-audit wrapper 指向的真实 dist
+    HASH_SOURCE=$(node -e "try{const p=require('path');const idx=require.resolve('sofagent-audit');const d=p.dirname(p.dirname(idx));process.stdout.write(p.join(d,'dist','index.js'))}catch{process.stdout.write('')}" 2>/dev/null || echo "")
+  fi
+  if [ -n "$HASH_SOURCE" ] && [ -f "$HASH_SOURCE" ]; then
+    if [ ! -f "$HASH_RECORD" ]; then
+      mkdir -p "$HASH_BASE_DIR"
+      if node -e "const c=require('crypto'),f=require('fs');process.stdout.write(c.createHash('sha256').update(f.readFileSync(process.argv[1])).digest('hex'))" "$HASH_SOURCE" > "$HASH_RECORD" 2>/dev/null; then
+        chmod 600 "$HASH_RECORD" 2>/dev/null || true
+        ok "  审计引擎哈希基准已生成（$(basename "$HASH_SOURCE")，供 hook 完整性校验）"
+      else
+        rm -f "$HASH_RECORD"
+        warn "  审计引擎哈希基准生成失败（可运行 sofagent-audit --doctor 补生成）"
+      fi
+    fi
+  else
+    warn "  审计引擎 dist 未找到——哈希基准未生成（安装 @sofagent/audit 后运行 sofagent-audit --doctor 补生成）"
+  fi
+fi
+
 inject_loopdetect      # Step 7: 注入断路器配置（仅 OpenClaw）
 
 # ════════════════════════════════════════

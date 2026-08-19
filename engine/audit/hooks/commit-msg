@@ -39,12 +39,26 @@ fi
 
 # 2.1 P1-A2: dist 完整性校验——防止本地覆写 dist 致审计失效
 #     比对 engine/audit/dist/index.js 的 SHA-256 与安装时记录的基准哈希。
-#     基准哈希存储在 ~/.sofagent/internal/audit-hash.txt（--doctor 首次运行时记录）。
-#     哈希不匹配 = dist 被替换（影子审计器劫持）→ 阻止提交并告警。
+#     基准哈希存储在 ~/.sofagent/internal/audit-hash.txt（install.sh 首装或 --doctor 首次运行时记录）。
+#     v1.3.8 P1-A3：基准缺失时 FAIL 而非跳过——此前 if [ -f ] 缺基准即静默放行，
+#     首次部署窗口内可植入冒牌引擎（基准仅 --doctor 生成而首装不生成，空窗被利用）。
 if [ -f "engine/audit/dist/index.js" ]; then
   SOFAGENT_HOME="${SOFAGENT_HOME:-$HOME/.sofagent}"
   HASH_RECORD="$SOFAGENT_HOME/internal/audit-hash.txt"
-  if [ -f "$HASH_RECORD" ]; then
+  if [ ! -f "$HASH_RECORD" ]; then
+    # 基准缺失 = 完整性校验形同虚设 → fail-closed：先补生成基准再放行本次，
+    # 让后续每次 commit 都有可比对的锚点（与 install.sh 首装生成策略闭环）
+    echo "⚠️ [sofagent] 审计引擎哈希基准缺失——正在补生成..."
+    mkdir -p "$SOFAGENT_HOME/internal"
+    if node -e "const c=require('crypto'),f=require('fs');process.stdout.write(c.createHash('sha256').update(f.readFileSync('engine/audit/dist/index.js')).digest('hex'))" > "$HASH_RECORD" 2>/dev/null && [ -s "$HASH_RECORD" ]; then
+      chmod 600 "$HASH_RECORD" 2>/dev/null || true
+      echo "ℹ️ [sofagent] 基准哈希已记录（后续 commit 将比对完整性）"
+    else
+      echo "🔴 [sofagent] 基准哈希生成失败——无法保证审计引擎未被替换，本次提交终止"
+      echo "   请运行: sofagent-audit --doctor（自动记录基准）后重试"
+      exit 1
+    fi
+  else
     CURRENT_HASH=$(node -e "const c=require('crypto'),f=require('fs');process.stdout.write(c.createHash('sha256').update(f.readFileSync('engine/audit/dist/index.js')).digest('hex'))" 2>/dev/null)
     RECORDED_HASH=$(cat "$HASH_RECORD" 2>/dev/null | tr -d '[:space:]')
     if [ -n "$CURRENT_HASH" ] && [ -n "$RECORDED_HASH" ] && [ "$CURRENT_HASH" != "$RECORDED_HASH" ]; then

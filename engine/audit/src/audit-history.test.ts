@@ -89,6 +89,40 @@ describe('audit-history', () => {
     expect(lines.length).toBe(3);
   });
 
+  // v1.3.8 P1-A1 回归：commitMsg/task 自由文本脱敏——此前 sanitize 只映射 ruleResults，
+  // message 里密钥全文落盘 history.jsonl（审计工具自身成为第二泄漏点）。
+  // 密钥运行时拼接（铁律：测试不字面写真实格式密钥）。
+  it('appendHistory 对 commitMsg/task 中的密钥脱敏（自由文本不全文落盘）', () => {
+    const leakKey = ['sk-', 'a'.repeat(40)].join('');
+    const awsKey = ['AK', 'IAIOSFODNN7EXAMPLE'].join('');
+    const entry = makeEntry('2026-01-01T00:00:00.000Z', 0);
+    entry.commitMsg = `add key ${leakKey} to config`;
+    entry.task = `同步 AWS 密钥 ${awsKey}`;
+    appendHistory(entry, testDir);
+
+    const content = readFileSync(getHistoryFilePath(testDir), 'utf-8');
+    // 密钥原文不得出现在落盘内容里
+    expect(content).not.toContain(leakKey);
+    expect(content).not.toContain(awsKey);
+    // 脱敏占位符存在（证明走了 REDACTION_PATTERNS 管道）
+    expect(content).toContain('sk-***REDACTED***');
+    expect(content).toContain('AKIA***REDACTED***');
+    // 非密钥文本保留
+    expect(content).toContain('to config');
+    expect(content).toContain('同步 AWS 密钥');
+  });
+
+  it('appendHistory 无密钥的 commitMsg/task 原样保留（不误伤）', () => {
+    const entry = makeEntry('2026-01-01T00:00:00.000Z', 0);
+    entry.commitMsg = 'fix: 修复登录超时问题';
+    entry.task = '正常的任务描述，无敏感信息';
+    appendHistory(entry, testDir);
+    const content = readFileSync(getHistoryFilePath(testDir), 'utf-8');
+    expect(content).toContain('fix: 修复登录超时问题');
+    expect(content).toContain('正常的任务描述，无敏感信息');
+    expect(content).not.toContain('REDACTED');
+  });
+
   it('loadHistory 返回按时间倒序的数组', () => {
     // 验证：加载历史，最新（时间戳最大）的排前面
     appendHistory(makeEntry('2026-01-01T00:00:00.000Z', 0), testDir);

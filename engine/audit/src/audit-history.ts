@@ -40,6 +40,7 @@ import { hostname, userInfo, homedir } from 'os';
 import { execSync } from 'child_process';
 import { loadEnvConfig } from '@sofagent/core';
 import { atomicAppendSync, atomicWriteSync } from '@sofagent/core';
+import { REDACTION_PATTERNS } from '@sofagent/core';
 import type { RuleCheck, ActionGovernance } from './rules/types';
 
 // v1.2.0: checkHistoryChainIntegrity + helpers sunk to core;
@@ -70,6 +71,21 @@ function sanitizeRuleResult(rule: RuleCheck): RuleCheck {
     };
   }
   return rule;
+}
+
+/**
+ * v1.3.8 P1-A1：对自由文本字段（commitMsg/task）做脱敏——
+ * 此前 sanitize 只覆盖 ruleResults，message 里密钥全文落盘 history.jsonl，
+ * 审计工具自身成为第二泄漏点。用 @sofagent/core 的 REDACTION_PATTERNS
+ * （与 A9 sanitizeDetailLine 同一套脱敏正则，单一事实源）。
+ */
+function sanitizeFreeText(text: string | undefined): string | undefined {
+  if (!text) return text;
+  let cleaned = text;
+  for (const { pattern, replacement } of REDACTION_PATTERNS) {
+    cleaned = cleaned.replace(pattern, replacement);
+  }
+  return cleaned;
 }
 
 /**
@@ -195,6 +211,11 @@ export function appendHistory(entry: AuditHistoryEntry, dataDir?: string): void 
     // 「旧条目 key 顺序不可复现（HMAC 不匹配不判篡改）」与「新条目被篡改（判链断裂）」。
     hmacAlgo: hmacKey ? 'stable' : undefined,
     ruleResults: entry.ruleResults.map(sanitizeRuleResult),
+    // v1.3.8 P1-A1：commitMsg/task 为自由文本（用户输入），密钥可能混入——
+    // 与 ruleResults 同等对待，写盘前用 REDACTION_PATTERNS 脱敏（在签名之前，
+    // 与「先脱敏再签名」既有原则一致——读侧验签的就是脱敏后文本）。
+    commitMsg: sanitizeFreeText(entry.commitMsg),
+    task: sanitizeFreeText(entry.task),
   };
 
   // 签名输入排除 prevHash/hashVersion/hmacSig/hmacAlgo（与读侧 recordForSig 一致）；

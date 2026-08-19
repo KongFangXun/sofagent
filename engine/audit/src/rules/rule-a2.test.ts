@@ -170,4 +170,34 @@ describe('A2 不泄密钥', () => {
       expect(result.details.join(' ')).toContain('二进制文件不扫内容');
     });
   });
+
+  // v1.3.8 P1-A2 回归：.gitattributes -diff 两步隐身——原仅 WARN 放行：
+  // 第一步提交 .gitattributes 标记 secrets.js -diff（WARN 不拦截），
+  // 第二步提交密钥文件，git diff 无内容行 → A2 静默全绿。升级为 FAIL。
+  describe('.gitattributes -diff 隐身（升级 FAIL）', () => {
+    it('第一步：提交 .gitattributes 标记 -diff → FAIL（不再 WARN 放行）', () => {
+      const ctx = makeCtx([makeDiffFile('.gitattributes', ['+secrets.js -diff'])]);
+      const result = checkRuleA2(ctx);
+      expect(result.status).toBe('FAIL');
+      expect(result.details.join(' ')).toContain('-diff');
+    });
+
+    it('通配符标记 *.env -diff → FAIL', () => {
+      const ctx = makeCtx([makeDiffFile('.gitattributes', ['+*.env -diff'])]);
+      const result = checkRuleA2(ctx);
+      expect(result.status).toBe('FAIL');
+    });
+
+    it('带附加属性 key.bin -diff merge=keep → FAIL', () => {
+      const ctx = makeCtx([makeDiffFile('.gitattributes', ['+key.bin -diff merge=keep'])]);
+      const result = checkRuleA2(ctx);
+      expect(result.status).toBe('FAIL');
+    });
+
+    it('普通 .gitattributes 行（非 -diff）→ PASS（不误伤）', () => {
+      const ctx = makeCtx([makeDiffFile('.gitattributes', ['+*.png binary'])]);
+      const result = checkRuleA2(ctx);
+      expect(result.status).toBe('PASS');
+    });
+  });
 });
