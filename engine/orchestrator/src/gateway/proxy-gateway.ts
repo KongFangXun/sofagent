@@ -97,10 +97,10 @@ export interface GatewayPendingCheckpoint {
   request: ProxyRequest;
 }
 
-/** WAL 接线点（交付三实现——网关 begin→执行→commit/abort） */
+/** WAL 接线点（交付三：WalWriter 满足此接口——begin→执行→commit/abort） */
 export interface GatewayWalHook {
-  begin(taskId: string, tool: string, params: Record<string, unknown>): void;
-  commit(taskId: string): void;
+  begin(taskId: string, tool: string, params: Record<string, unknown>, expectedSideEffects?: import('../durable/wal-writer').SideEffectSpec[]): string;
+  commit(taskId: string, actualSideEffects?: import('../durable/wal-writer').SideEffectSpec[]): void;
   abort(taskId: string, reason: string): void;
 }
 
@@ -129,6 +129,11 @@ export interface ProxyGatewayOptions {
   networkGateway?: NetworkGateway;
   /** WAL 钩子（交付三接线；不注入时 execute 不写 WAL） */
   wal?: GatewayWalHook;
+  /**
+   * WAL 事务标识生成器（默认随机——同 agent 多次调用互不覆盖）。
+   * 返回值即 begin/commit/abort 用的 taskId。
+   */
+  walTaskId?: () => string;
 }
 
 /** 审计条目（append-only JSONL 每行一条） */
@@ -437,13 +442,16 @@ export function createProxyGateway(options: ProxyGatewayOptions): ProxyGateway {
         return verdict as ProxyResult & { result?: T }; // deny / hitl-pending 不执行（守卫先于执行）——result 天然缺省
       }
       const wal = options.wal;
-      if (wal) wal.begin(req.agentId, req.tool, req.params);
+      // WAL 事务 ID：默认随机（同 agent 并发调用各自独立事务），
+      // 可注入确定性生成器（测试/编排层复用 taskId）
+      const taskId = options.walTaskId ? options.walTaskId() : `gw-${req.agentId}-${Date.now().toString(36)}-${randomBytes(4).toString('hex')}`;
+      if (wal) wal.begin(taskId, req.tool, req.params);
       try {
         const result = await executor();
-        if (wal) wal.commit(req.agentId);
+        if (wal) wal.commit(taskId);
         return { ...verdict, result };
       } catch (err) {
-        if (wal) wal.abort(req.agentId, err instanceof Error ? err.message : String(err));
+        if (wal) wal.abort(taskId, err instanceof Error ? err.message : String(err));
         throw err; // 不吞错误——调用方决定重试/上报
       }
     },

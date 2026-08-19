@@ -307,6 +307,26 @@ export type {
   ResumeLoopsSummary,
 } from './durable/resume';
 
+// v1.3.8 交付三：Durable Execution L3（WAL 事务级恢复——write-ahead log）
+export { WalWriter, newTaskId, WAL_REL_PATH } from './durable/wal-writer';
+export type { WalRecord, WalRecordType, SideEffectSpec } from './durable/wal-writer';
+export {
+  UndoRegistry,
+  createUndoRegistry,
+  gitRestore,
+  deleteWrittenFile,
+} from './durable/undo-registry';
+export type { UndoTier, UndoResult, UndoFn, WarnHook } from './durable/undo-registry';
+export { scanWAL, recoverWAL } from './durable/wal-recovery';
+export type {
+  WalTrx,
+  WalTrxState,
+  WalScanResult,
+  WalRecoveryResult,
+  ReExecuteFn,
+  RecoverWarnFn,
+} from './durable/wal-recovery';
+
 // v1.3.1 交付 8：Onboard Agent L1（循环驱动 + L1 判定器）
 export { runOnboardLoop, defaultDagRunner, defaultTraceFixer, appendLoopDebugRecord, readLoopDebugRecords, resolveLoopDebugLogPath } from './loop-agent/driver';
 export type {
