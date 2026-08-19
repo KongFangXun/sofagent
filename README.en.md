@@ -197,7 +197,7 @@ Community rulesets are published as `sofagent-ruleset-*` npm packages and loaded
 
 > 🔬 **Independent external evidence** (not an official self-test): Joel Niklaus' harness-optimization research ([research code repository](https://github.com/JoelNiklaus/harness-optimization), data in the repo experiments) shows that with the same model and unchanged weights, optimizing only the outer harness lifted a legal-Agent benchmark from **63.4% → 80.1% (+16.7pp)**. See [THANKS.md](./docs/THANKS.md).
 
-> 🧪 **Engineering credibility**: 2672 tests / 13 packages (12 with tests) (verified via `tools/test-count.sh`; built-in flaky retry, script verdict is authoritative) · 24 audit rules · fresh-eyes independent review continuously running (see [docs/guides/review-system.md](./docs/guides/review-system.md) for how the review system works).
+> 🧪 **Engineering credibility**: 2782 tests / 13 packages (12 with tests) (verified via `tools/test-count.sh`; built-in flaky retry, script verdict is authoritative) · 24 audit rules · fresh-eyes independent review continuously running (see [docs/guides/review-system.md](./docs/guides/review-system.md) for how the review system works).
 
 ## Docs
 
