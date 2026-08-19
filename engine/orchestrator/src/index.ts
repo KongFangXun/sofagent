@@ -75,11 +75,12 @@ export type {
   RelationKey,
 } from './ontology';
 
-// Harness SDK（SubAgent 托管 SDK · v1.3.6 交付 ③）
+// Harness SDK（SubAgent 托管 SDK · v1.3.6 交付 ③ · v1.3.8 交付⑥ sandbox:true 启用）
 export {
   harness,
   wrap,
   wrapTools,
+  createSandboxHandle,
   registerGraphBuilder,
   getGraphBuilder,
   listGraphBuilders,
@@ -95,6 +96,7 @@ export type {
   HarnessApprovalEvent,
   WrappableAgent,
   WrappedAgent,
+  SandboxHandle,
 } from './harness-sdk';
 
 // Route（入口路由 · v1.3.3 新增）
