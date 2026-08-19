@@ -53,8 +53,24 @@
 |------|--------|
 | **verdict = PASS**（regression + coverage 全 PASS，acceptance 已由脚本层保证） | 过「零信任复验三件套」（见下）→ 全过才进阶段七 |
 | **verdict = FAIL** | 根据报告定位问题 → **回阶段五** → 修复后重跑本阶段 |
+| **driver 反复 FAIL 且复验全为检查器债** | 走「手工裁决路径」（见下）——v1.3.7 实操 run-01/04 两轮 FAIL 均改判检查器债已修，主 session 手工裁决 PASS |
 
 > driver 的 regression 步骤会自动处理「⏰ 待发版」标注的检查项（git tag / npm registry / 全局二进制版本）——这些在检查阶段必然不满足，标 ⏳ 不标 FAIL。
+
+## 🔴 手工裁决路径（driver 反复 FAIL 于检查器债时的兜底）
+
+**触发条件**：driver 至少 2 轮 FAIL，且主 session 零信任复验确认 FAIL 项**全部**是检查器侧债（非仓库问题）。三条前置**缺一不可**：
+
+1. **逐项改判记录在案**——每个 FAIL 项复验结论（仓库问题 vs 检查器债）+ 复验方式，如实写入进度追踪或 changelog，不许一句「检查器问题」带过
+2. **检查器修复 commit 在列**——每个检查器债的修复动作可追溯
+3. **独立复核对冲突**——手工裁决是**有上下文裁决**（主 session 知道自己修了什么），独立性弱于 driver 盲审，必须交给**无上下文 session**（如监控 session）复查关键判定后才生效
+
+**手工裁决内容**（三者全过才算 PASS）：
+- regression 89 维「driver 同款语义亲跑」全绿（不是只跑脚本——按维度判定逻辑逐维过）
+- coverage 关键词矩阵全命中
+- acceptance 303/303 EXIT=0
+
+**记录纪律**：进度追踪必须写「手工裁决 PASS（driver N 轮 FAIL + 复验改判记录）」，**禁止写成「loop PASS」**——手工裁决与 driver 盲审是两个不同的保证等级，混淆即造假。
 
 ## 🔴 PASS 零信任复验三件套（v1.3.6 教训 · driver 自报 PASS 不可直接信）
 

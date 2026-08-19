@@ -103,14 +103,16 @@ echo "npm 包洁净度 + 类型检查完成"
 ## 步骤 3：push main + 等 CI 全绿
 
 > **tag 先行策略**（v1.3.2 起统一）：先 push main → 等 CI 全绿验证 → 才打 tag。tag 一定指向 CI 验证过的 commit，不会 tag 了之后才发现 CI 红。
+>
+> 🔴 **CI 全绿是打 tag 的硬前置（2026-08-19 用户拍板强化）**：push 之后必须**轮询等到全绿**（不是看一眼就走）——`exit 0` 之前禁止进入步骤 4。历史教训：CI 红着打 tag 会让用户装到坏版本（tag 是安装入口的锚点），回滚成本远高于等待 2-5 分钟。轮询脚本如下（循环跑直到 exit 0，每次间隔 60s）：
 
 ```bash
 # ── push main ──
 git push origin main
 
-# ── 等 CI 全绿（通常 2-5 分钟）──
-sleep 30
-gh run list -b main -L 8 --json status,conclusion,name | node -e '
+# ── 轮询 CI 直到全绿（循环执行本段，exit 0 才继续）──
+while true; do
+  gh run list -b main -L 8 --json status,conclusion,name | node -e '
 const runs = JSON.parse(require("fs").readFileSync("/dev/stdin","utf8"));
 let pending = 0, failed = 0;
 for (const r of runs) {
@@ -121,12 +123,16 @@ for (const r of runs) {
   if (status === "in_progress" || status === "queued") pending++;
   if (conclusion === "failure" || conclusion === "cancelled") failed++;
 }
-if (pending > 0) { console.log(`\n⏳ ${pending} 个 CI 运行中，继续等待`); process.exit(2); }
-if (failed > 0) { console.log(`\n🔴 ${failed} 个 CI 失败，先修`); process.exit(1); }
+if (pending > 0) { console.log(`\n⏳ ${pending} 个 CI 运行中，60s 后重查`); process.exit(2); }
+if (failed > 0) { console.log(`\n🔴 ${failed} 个 CI 失败，必须修复后重新 push`); process.exit(1); }
 console.log("\n✅ CI 全绿，可以打 tag");
 '
-# exit 2 = 还在跑（循环重跑本步骤） / exit 1 = 有失败（gh run view --log-failed 定位 → 修 → push → 重等） / exit 0 = 全绿
-# 任一 failure → gh run view --log-failed 定位 → 修复 → push → 重新等待
+  RC=$?
+  [ "$RC" -eq 0 ] && break
+  [ "$RC" -eq 1 ] && { echo "🔴 CI 失败：gh run view --log-failed 定位 → 修 → push → 重等"; exit 1; }
+  sleep 60
+done
+# exit 2 = 还在跑（循环重查） / exit 1 = 有失败（定位 → 修 → push → 重等，禁止打 tag） / exit 0 = 全绿
 ```
 
 ---
@@ -137,6 +143,7 @@ console.log("\n✅ CI 全绿，可以打 tag");
 # ── tag 前确认 ──
 LAST_TAG=$(git describe --tags --abbrev=0 HEAD~1 2>/dev/null || echo "")
 [ -n "$LAST_TAG" ] && echo "上一 tag: $LAST_TAG" && git log --oneline ${LAST_TAG}..HEAD | head -20
+# 🔴 CI 全绿确认（步骤 3 的 exit 0 是进入本步骤的前提，不可跳过）
 # 确认 check-version + check-test-count 全绿（tag 不得在代码/文档未就绪时打）
 bash tools/check-version.sh && bash tools/check-test-count.sh --quiet
 
@@ -198,6 +205,33 @@ done
 ## 步骤 5：gh release（触发 release.yml 自动 publish audit + mcp）
 
 > GitHub Release published 后，`.github/workflows/release.yml` 自动触发，publish `@sofagent/audit` 和 `@sofagent/mcp` 两个包到 npm。其余 10 包在步骤 6 手动 publish。
+
+### 5.0 Release Note 生成 → 自检 → 人工确认（2026-08-19 用户拍板强化的三道工序）
+
+> 🔴 **历史痛点**：v1.3.0~v1.3.6 每次 release note 发布后都发现问题再改（title 漂移/质量表缺项/骨架不同构）——「改了再发」的成本是 npm 用户看到的第一个版本就是错的。从 v1.3.7 起：**release note 必须先过自检 + 人工确认，才允许 gh release create**。三道工序缺一不可：
+
+**工序 1 · 按规范生成**：严格按下方「Release Notes 格式规范」生成 body（title 主题短语 / 首行定位句 / 核心变更功能领域式 / 质量验证固定 7 项 / 尾链）。
+
+**工序 2 · 生成后自检（跑脚本，不看感觉）**：
+
+```bash
+# 2a. 质量验证表必须恰好 7 项（不可增减——v1.3.0/1.3.1 缺 release-gate/fresh-eyes 的教训）
+echo "$BODY" | grep -c "^| "   # 期望 7 个表行（表头 2 行不算，从「npm test」数到「fresh-eyes」）
+
+# 2b. H2 骨架与上一版同构（五要素：定位句/核心变更/质量验证/尾链）
+echo "$BODY" | grep -E "^## "          # 期望输出 ## 🔨 核心变更 与 ## ✅ 质量验证
+gh release view v上一版 --json body -q '.body' | grep -E "^## "
+
+# 2c. 固定 7 项逐字核对（每项必须在质量表中出现一次）
+for item in "npm test" "acceptance-test" "shellcheck" "check-version" "回归检查" "release-gate" "fresh-eyes"; do
+  echo "$BODY" | grep -q "$item" && echo "✅ $item" || echo "🔴 缺 $item"
+done
+
+# 2d. 尾链存在且为 markdown 链接语法
+echo "$BODY" | grep -qE '\[详细开发日志\]\(\./docs/changelog/' && echo "✅ 尾链" || echo "🔴 缺尾链"
+```
+
+**工序 3 · 人工确认（human check）**：自检全过后，**把 title + body 完整贴给用户过目**——用户说「可以」才执行 `gh release create`。用户提修改意见 → 改 → 重新贴 → 直到确认。这条禁止跳过（哪怕前 2 道全绿）。
 
 ```bash
 > 🔴 **发布前必做（v1.3.6 教训）**：生成 body 后先与上一版并排对照——`gh release view v上一版 --json body -q '.body' | grep -E "^## "`——两版 H2 骨架必须同构（首行定位句/核心变更/破坏性变更/质量验证/尾链五要素）。**changelog 内嵌的 Release Notes 段 ≠ GitHub Release body**：前者归 08 的 N1-N7 管（✨ 新功能 bullet 式），后者归本规范管（### 功能领域子标题式）——分别核对，禁止把 changelog 段直接复制当 body。
