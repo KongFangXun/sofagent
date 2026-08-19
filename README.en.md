@@ -201,6 +201,7 @@ Community rulesets are published as `sofagent-ruleset-*` npm packages and auto-d
 
 | You want to know | Where |
 |:---------|:--------|
+| **Global index** (one entry to all docs, in Chinese) | [WIKI](./docs/WIKI.md) |
 | How to install, use, FAQ | [HANDBOOK](./docs/HANDBOOK.md) |
 | Architecture (constraint layer · injection chain · evolution · 24 rules) | [ARCHITECTURE](./docs/ARCHITECTURE.md) |
 | Design philosophy | [PHILOSOPHY](./docs/PHILOSOPHY.md) |

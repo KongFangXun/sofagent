@@ -2,7 +2,7 @@
 
 > **版本**：v1.3.3 · **架构师**：Bob · **状态**：设计稿
 > **协议设计文档**：`docs/guides/team-collaboration-protocol.md`（已产出，review 通过后进入实现）
-> **工作目录**：`/Users/kongfangxun/Workbuddy/sofagent` · **分支**：main
+> **工作目录**：sofagent 仓库根目录 · **分支**：main
 
 ---
 

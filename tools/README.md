@@ -9,4 +9,4 @@
 | `sign-config.mjs` | 配置文件签名 | 安装后 |
 | `sofagent-dashboard.sh` | 审计仪表盘 | 日常监控 |
 
-其他运维脚本位于 `engine/scripts/`，仅供内部使用。
+> **边界说明**：`engine/scripts/` 是 install.sh 组装调用的**用户安装链**（install / verify / daemon 等随安装流程到达用户）；`tools/` 面向维护者发版 SOP 与仓库健康检查，不随安装分发。
