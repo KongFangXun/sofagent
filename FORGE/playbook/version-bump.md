@@ -8,10 +8,10 @@
 
 ```bash
 # 先 dry-run 看会影响哪些文件
-./tools/bump-version.sh <旧版本> <新版本> --dry-run
+./tools/release/bump-version.sh <旧版本> <新版本> --dry-run
 
 # 确认后实际替换
-./tools/bump-version.sh <旧版本> <新版本>
+./tools/release/bump-version.sh <旧版本> <新版本>
 ```
 
 **脚本覆盖 13 类位置**（全自动扫描，新增 .ts/.sh/.ps1 文件自动发现）：
@@ -34,7 +34,7 @@
 #### Step 2: 一致性校验
 
 ```bash
-./tools/check-version.sh
+./tools/check/check-version.sh
 ```
 
 从 `package.json` 读 SSOT 版本号，逐项比对全项目 13 类位置。任何不一致 → 红字报错 + exit 1。
@@ -97,6 +97,6 @@ grep -rn "v1\.0\.[0-9]" --include="*.md" . | grep -v "docs/changelog/" | grep -v
 
 ```bash
 # 验证所有 SKILL.md 被 check-version 覆盖
-bash tools/check-version.sh 2>&1 | grep 'SKILL.md'
+bash tools/check/check-version.sh 2>&1 | grep 'SKILL.md'
 # 期望：所有 SKILL.md 文件都出现在列表中
 ```

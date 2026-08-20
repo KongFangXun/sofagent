@@ -2,7 +2,7 @@
 # ============================================================
 # check-version.sh · 检查全项目版本号一致性
 # ============================================================
-# 用法: ./tools/check-version.sh
+# 用法: ./tools/check/check-version.sh
 #
 # 功能: 从 package.json 读 version（SSOT），检查全项目"结构性"位置
 #       的版本号是否一致，不一致则报错 exit 1。
@@ -62,7 +62,7 @@ BOLD='\033[1m'
 NC='\033[0m'
 
 # ── 项目根目录 ────────────────────────────────────────────────
-PROJECT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+PROJECT_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 
 ERRORS=0
 CHECKS=0
@@ -519,7 +519,7 @@ while IFS= read -r ts; do
   [[ "${ts}" == */FORGE/archive/* ]] && continue
   [[ "${ts}" == *.test.ts ]] && continue
   [[ "${ts}" == */dist/* ]] && continue
-  # 只检查文件头前 10 行的注释（与 tools/bump-version.sh [4/13] 对齐）
+  # 只检查文件头前 10 行的注释（与 tools/release/bump-version.sh [4/13] 对齐）
   # v1.3.7 修复：文件头 `//` 注释里的版本号是「功能溯源标记」（记录该文件/功能最后一次
   # 变更的版本），不是「当前版本锚点」——历史 check 把两者混为一谈，导致溯源标记
   # （如 `v1.1.9 新增`）被误判为「漏 bump」。判据改为「找到 = SSOT 的版本号即通过」：
@@ -615,7 +615,7 @@ done < <(grep -rn "Current version: v[0-9]" --include="*.md" . 2>/dev/null | gre
 
 # v1.2.5 阶段八① 补：dashboard.html 当前版本活引用（logo 徽章 + 页脚署名）。
 # 只校验两处"当前版本"锚点；激活链里程碑标记（v1.2.5+ / ✅）属历史叙述，不校验。
-dash_html="${PROJECT_ROOT}/tools/dashboard.html"
+dash_html="${PROJECT_ROOT}/tools/dashboard/dashboard.html"
 if [[ -f "$dash_html" ]]; then
   for anchor in "logo-version\">v" "孔放勋 · v"; do
     found_ver=$(grep -F "$anchor" "$dash_html" | grep -oE "v[0-9]+\.[0-9]+(\.[0-9]+)?" | head -1 | sed 's/^v//')
@@ -1073,7 +1073,7 @@ if [[ ${ERRORS} -eq 0 ]]; then
 else
   echo -e "${RED}${BOLD}  ✗ 发现 ${ERRORS} 处不一致！${NC}"
   echo -e "  期望版本: ${SSOT_VERSION} (SSOT: ${SSOT_VERSION})"
-  echo -e "  修复: ./tools/bump-version.sh <旧版本> ${SSOT_VERSION}"
+  echo -e "  修复: ./tools/release/bump-version.sh <旧版本> ${SSOT_VERSION}"
   echo -e "${BOLD}${CYAN}═══════════════════════════════════════════════════════════${NC}"
   exit 1
 fi

@@ -19,7 +19,7 @@
 # ============================================================
 
 set -uo pipefail
-cd "$(dirname "$0")/.." || exit 2
+cd "$(dirname "$0")/../.." || exit 2
 
 QUIET=false
 for _arg in "$@"; do
@@ -97,8 +97,8 @@ done
 # ============================================================
 [ "$QUIET" = false ] && echo -e "\n${BOLD}${CYAN}── ③ bump ↔ check 结构对照 ──${NC}"
 
-BUMP="tools/bump-version.sh"
-CHECKV="tools/check-version.sh"
+BUMP="tools/release/bump-version.sh"
+CHECKV="tools/check/check-version.sh"
 for _f in "$BUMP" "$CHECKV"; do
   [ -f "$_f" ] || { echo "❌ 脚本缺失: $_f" >&2; exit 2; }
 done
@@ -203,13 +203,13 @@ else
 fi
 
 # ============================================================
-# ⑥ tools/*.sh set -u 新变量初始化守卫
+# ⑥ tools/ 全部 .sh（含子目录——v1.3.9 分目录后 tools/*.sh 只剩 pre-push-check）set -u 新变量初始化守卫
 # ============================================================
 [ "$QUIET" = false ] && echo -e "\n${BOLD}${CYAN}── ⑥ set -u 新变量初始化守卫 ──${NC}"
 
 GUARD_VIOL=0
 GUARD_LIST=""
-for _sh in tools/*.sh; do
+for _sh in $(find tools -name '*.sh' -type f | sort); do
   [ -f "$_sh" ] || continue
   grep -qE '^\s*set\s+-.*u' "$_sh" || continue   # 只检查声明了 set -u 的脚本
   # 找「自引用赋值」：VAR="${VAR}..."（变量名与引用名相同才算自引用——拼接其它

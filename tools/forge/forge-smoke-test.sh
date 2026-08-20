@@ -23,7 +23,7 @@
 
 set -uo pipefail
 
-cd "$(dirname "$0")/.." || exit 1
+cd "$(dirname "$0")/../.." || exit 1
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'

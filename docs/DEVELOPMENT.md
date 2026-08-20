@@ -10,7 +10,7 @@
 
 > 💡 **行业背景**：sofagent 是一个 FDE Agent——进场梳理工作流、部署 AI 节点、离场后 7×24 自己跑。底层引擎（Harness 中间件）**约束层 × 生命周期**双层架构：约束层 = 约束层四种能力（注入·审计·回溯·进化），生命周期 = 激活链四阶段（诊断→激活→编排→执行→进化，v1.2.5+）。不管企业用 OpenClaw / WorkBuddy / 扣子还是其他 Agent 平台，sofagent 是独立的底线守卫层。详见 [FDE/GUIDE.md](../FDE/GUIDE.md)。
 
-> 💬 **开发铁律**：sofagent 不建编辑器类交互界面。只读 Dashboard 面板（如 `tools/dashboard.html`）例外——它是状态可视化，不做双向编辑。核心能力通过 MCP 协议暴露。Agent 首次连接时主动推送 `list_capabilities`。开发任何新功能前，先回答三个问题：（1）用户怎么通过对话发现这个能力？（2）结果推到哪？（3）用户怎么知道这个结果是 sofagent 做的，不是模型做的？——任何面向用户的输出必须带 `[sofagent]` 签名标注来源。详见 [设计哲学](./PHILOSOPHY.md)。
+> 💬 **开发铁律**：sofagent 不建编辑器类交互界面。只读 Dashboard 面板（如 `tools/dashboard/dashboard.html`）例外——它是状态可视化，不做双向编辑。核心能力通过 MCP 协议暴露。Agent 首次连接时主动推送 `list_capabilities`。开发任何新功能前，先回答三个问题：（1）用户怎么通过对话发现这个能力？（2）结果推到哪？（3）用户怎么知道这个结果是 sofagent 做的，不是模型做的？——任何面向用户的输出必须带 `[sofagent]` 签名标注来源。详见 [设计哲学](./PHILOSOPHY.md)。
 
 ---
 
@@ -519,7 +519,7 @@ v1.0.7 预装了两个内置 Agent，v1.0.8 将它们升级为**基础设施 Age
 | | | **生产者**：daemon Ingest（task/logs → 知识提取）、knowledge-maintain Skill（session 结束时的结构化总结）| |
 | | | **消费者**：加载链第 4 层（上下文注入）、Agent 决策前自主检索 | |
 | | | **Lint**：loop-evaluate（每周扫描：矛盾/过期/孤立页面）| |
-| `dashboard/` | **daemon 产出（v1.2.3）** | 终端 Dashboard 数据：`daemon-health.json`（工作状态）+ 4 维审计日志聚合（数据主权/规则审计）+ 趋势快照（周对比/月趋势）。消费方：`tools/sofagent-dashboard.sh`（bash + jq 渲染，无 Node 依赖）| 按需读 |
+| `dashboard/` | **daemon 产出（v1.2.3）** | 终端 Dashboard 数据：`daemon-health.json`（工作状态）+ 4 维审计日志聚合（数据主权/规则审计）+ 趋势快照（周对比/月趋势）。消费方：`tools/dashboard/sofagent-dashboard.sh`（bash + jq 渲染，无 Node 依赖）| 按需读 |
 
 ### 数据流向总结
 
@@ -533,12 +533,12 @@ v1.0.7 预装了两个内置 Agent，v1.0.8 将它们升级为**基础设施 Age
 
 在 CHANGELOG 写版本条目之前，跑以下 6 步：
 
-1. `./tools/check-version.sh`——把输出的「N 项」数字抄进 CHANGELOG，确认无 FAIL
+1. `./tools/check/check-version.sh`——把输出的「N 项」数字抄进 CHANGELOG，确认无 FAIL
 2. `bash engine/scripts/verify.sh --quiet`——确认输出数字与文档中引用一致
 3. `cd engine/audit && npm test 2>&1 | grep "Tests"`——确认通过数
 4. `wc -m SKILL/SKILL.md SKILL/harness/fde-template.md`——确认 Skill 字数旁注准确
 5. 全文件类型术语扫描：`grep -rn "纪律层\|纪律底座\|工具箱\|FDE 工程师\|部署底座\|AI 控制节点" --include="*.md" --include="*.sh" --include="*.ps1" . | grep -v docs/changelog/ | grep -v docs/evidence/`（其中"FDE 工程师"是禁用词——FDE 的 E 已经是 Engineer，不叠叫）
-6. `./tools/check-version.sh > /dev/null 2>&1; echo $?`——必须为 0
+6. `./tools/check/check-version.sh > /dev/null 2>&1; echo $?`——必须为 0
 
 **铁律**：不是跑完看绿色就过。把实际输出数字逐字抄进 CHANGELOG。
 

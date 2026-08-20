@@ -16,7 +16,7 @@
 #   + npm run build         → 审计引擎构建
 #
 # 用法:
-#   ./tools/pre-push-check.sh           # 全量检查
+#   ./tools/pre-push-check.sh           # 全量检查（留根：四门禁聚合入口）
 #   ./tools/pre-push-check.sh --quick   # 跳过 npm test/build（快）
 #   ./tools/pre-push-check.sh --minimal      # 结构性快检（跳过版本号/文档/构建/测试门禁）
 #
@@ -131,11 +131,11 @@ fi
 # ════════════════════════════════════════
 if [ "$MINIMAL" = false ]; then
   echo -e "\n${BOLD}── 2. 版本号一致性 ──${NC}"
-  if bash tools/check-version.sh >/dev/null 2>&1; then
+  if bash tools/check/check-version.sh >/dev/null 2>&1; then
     check_pass "check-version.sh 全部通过"
   else
     check_fail "check-version.sh 有不一致"
-    bash tools/check-version.sh 2>&1 | grep "❌" | head -10
+    bash tools/check/check-version.sh 2>&1 | grep "❌" | head -10
   fi
 fi
 
@@ -144,11 +144,11 @@ fi
 # ════════════════════════════════════════
 if [ "$MINIMAL" = false ]; then
   echo -e "\n${BOLD}── 3. 文档检查 ──${NC}"
-  if bash tools/check-docs.sh >/dev/null 2>&1; then
+  if bash tools/check/check-docs.sh >/dev/null 2>&1; then
     check_pass "check-docs.sh 全部通过"
   else
     check_fail "check-docs.sh 有问题"
-    bash tools/check-docs.sh 2>&1 | grep "❌\|⚠️" | head -10
+    bash tools/check/check-docs.sh 2>&1 | grep "❌\|⚠️" | head -10
   fi
 fi
 
@@ -157,12 +157,12 @@ fi
 # ════════════════════════════════════════
 if [ "$MINIMAL" = false ]; then
   echo -e "\n${BOLD}── 4. 跨文档锚点校验 ──${NC}"
-  if node tools/check-anchors.mjs >/dev/null 2>&1; then
+  if node tools/check/check-anchors.mjs >/dev/null 2>&1; then
     check_pass "check-anchors.mjs 全部通过（跨文件锚点引用有效）"
   else
     check_fail "check-anchors.mjs 发现锚点过时"
-    node tools/check-anchors.mjs 2>&1 | grep "✗" | head -10
-    echo "  提示：node tools/check-anchors.mjs --fix 可自动修复"
+    node tools/check/check-anchors.mjs 2>&1 | grep "✗" | head -10
+    echo "  提示：node tools/check/check-anchors.mjs --fix 可自动修复"
   fi
 fi
 
@@ -179,7 +179,7 @@ if [ "$MINIMAL" = false ] && [ "$QUICK" = false ]; then
   fi
 
   echo "  测试+汇总中（test-count.sh，任一包失败即拦截）..."
-  TEST_OUT=$(bash tools/test-count.sh 2>&1)
+  TEST_OUT=$(bash tools/check/test-count.sh 2>&1)
   TEST_RC=$?
   # 输出 test-count.sh 的人读明细（每包 ✓/✗）
   echo "$TEST_OUT" | grep -E '✓|✗|⚠|TOTAL_TESTS' | sed 's/^/  /'
@@ -191,11 +191,11 @@ if [ "$MINIMAL" = false ] && [ "$QUICK" = false ]; then
 
   # 4b. 文档声称测试数 vs 实际值一致性（P1-3 根治 · v1.1.7 起）
   echo -e "\n  ${BOLD}文档测试数一致性（check-test-count.sh）...${NC}"
-  if bash tools/check-test-count.sh --quiet 2>/dev/null | grep -q "^OK$"; then
+  if bash tools/check/check-test-count.sh --quiet 2>/dev/null | grep -q "^OK$"; then
     check_pass "check-test-count.sh（文档声称数 = 实际值）"
   else
     check_fail "check-test-count.sh 检测到文档测试数漂移"
-    bash tools/check-test-count.sh 2>&1 | grep "✗" | head -5 | sed 's/^/    /'
+    bash tools/check/check-test-count.sh 2>&1 | grep "✗" | head -5 | sed 's/^/    /'
   fi
 fi
 
@@ -207,7 +207,7 @@ fi
 # 此步在推前自动验证：模块可加载 + dry-run 不崩 + 测试文件可运行。
 if [ "$MINIMAL" = false ] && [ "$QUICK" = false ]; then
   echo -e "\n${BOLD}── 6. FORGE driver 冒烟测试 ──${NC}"
-  FORGE_OUT=$(bash tools/forge-smoke-test.sh 2>&1)
+  FORGE_OUT=$(bash tools/forge/forge-smoke-test.sh 2>&1)
   FORGE_RC=$?
   echo "$FORGE_OUT" | grep -E "通过|失败|✗|⚠" | sed 's/^/  /'
   if [ "$FORGE_RC" -eq 0 ]; then
@@ -438,14 +438,14 @@ fi
 echo -e "\n${BOLD}── 12. shell 变量定界守卫（CJK 标点）──${NC}"
 # v1.3.6 后新增：$VAR 后紧跟全角标点 = bash 把标点拼进变量名，set -u 下崩溃。
 # 实案：pre-push-check.sh $TEST_RC， 潜伏一个月（仅失败分支触发），08-18 修复
-if [ -f tools/check-cjk-var.sh ]; then
-  if bash tools/check-cjk-var.sh; then
+if [ -f tools/check/check-cjk-var.sh ]; then
+  if bash tools/check/check-cjk-var.sh; then
     check_pass "check-cjk-var.sh（\${VAR} 定界）"
   else
     check_fail "check-cjk-var.sh 发现变量定界违规（修法：花括号显式定界）"
   fi
 else
-  check_warn "tools/check-cjk-var.sh 不存在（守卫缺失）"
+  check_warn "tools/check/check-cjk-var.sh 不存在（守卫缺失）"
 fi
 
 # ════════════════════════════════════════

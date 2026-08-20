@@ -3,7 +3,7 @@
 set -uo pipefail
 shopt -s nullglob
 
-cd "$(dirname "$0")/.." || exit 1
+cd "$(dirname "$0")/../.." || exit 1
 
 # v1.3.6 B11: 并发防护——mkdir 原子锁（macOS/Linux 兼容）。已有实例运行时第二个实例
 # 报错退出，防止双实例互相覆盖日志（审查期间曾实测发现双残留实例）。
@@ -441,7 +441,7 @@ echo "=== 11. 跨文档 #锚点 死链扫描（F-20 · P0-13 起纳入 ERRORS）
 if [ "${SKIP_ANCHOR_SCAN:-0}" = "1" ]; then
   echo "  ⏭️ 跳过（SKIP_ANCHOR_SCAN=1）——锚点检查由 check-anchors.mjs 覆盖（pre-push 第 4 步）"
 else
-  ANCHOR_OUTPUT=$(node tools/check-anchors.mjs 2>&1); ANCHOR_RC=$?
+  ANCHOR_OUTPUT=$(node tools/check/check-anchors.mjs 2>&1); ANCHOR_RC=$?
   if [ "$ANCHOR_RC" -eq 0 ]; then
     echo "  ✓ 跨文档锚点无死链"
   else

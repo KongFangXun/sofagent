@@ -33,7 +33,7 @@
    ⚠️ 🔴 日志必须落盘到仓库根 `acceptance-raw.log`（或 export SOFAGENT_ACCEPTANCE_LOG=/path/to/log）——
    driver 的 --judgment-only 启动时自动注入该日志为 runDir/acceptance.md 供 consolidate/verdict 读取；
    落错路径（如 /tmp/）→ driver 找不到 → 注入占位符 → verdict fail-closed 判 FAIL（v1.3.8 run-10 实锤）
-   依次跑：tools/check-version.sh → tools/check-docs.sh → tools/check-anchors.mjs → tools/check-review-system.sh → tools/check-tool-health.sh
+   依次跑：tools/check/check-version.sh → tools/check/check-docs.sh → tools/check/check-anchors.mjs → tools/check/check-review-system.sh → tools/check/check-tool-health.sh
    ⚠️ 脚本层有红即停：如实汇报红项与日志尾部，等主 session 决策（脚本层是确定性检查，不需要 driver）
    ⚠️ acceptance 预跑异常处置：先单跑死点命令对比（单命令健康+全量挂=上下文差异如 cwd/env，非环境问题），不要改脚本，如实汇报死点等主 session 决策
 2. 判断层（driver --judgment-only 一次启动四步，跳过 acceptance 分片 LLM 复核，约 20 分钟）：

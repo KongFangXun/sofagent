@@ -355,7 +355,7 @@ cd engine/audit
 
 npm ci           # 安装依赖
 npm run build    # 编译 TypeScript
-npm test         # 运行测试（测试数量以 tools/test-count.sh 实测为准）
+npm test         # 运行测试（测试数量以 tools/check/test-count.sh 实测为准）
 npm run check    # 类型检查（tsc --noEmit）
 ```
 

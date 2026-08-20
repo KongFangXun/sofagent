@@ -2,14 +2,14 @@
 # ============================================================
 # bump-version.sh · 一键升级全项目版本号
 # ============================================================
-# 用法: ./tools/bump-version.sh <旧版本> <新版本> [--dry-run]
-#   ./tools/bump-version.sh 0.94 0.95          # 实际替换
-#   ./tools/bump-version.sh 0.94 0.95 --dry-run # 只打印，不修改
+# 用法: ./tools/release/bump-version.sh <旧版本> <新版本> [--dry-run]
+#   ./tools/release/bump-version.sh 0.94 0.95          # 实际替换
+#   ./tools/release/bump-version.sh 0.94 0.95 --dry-run # 只打印，不修改
 #
 # 版本号格式: 2 段（如 0.94），package.json 自动补 3 段（0.94.0）
 #
 # ✅ 支持 2 段（如 0.99 → 1.0）和 3 段版本号（如 1.2.5 → 1.2.6）。
-#    用法示例：./tools/bump-version.sh 1.2.5 1.2.6
+#    用法示例：./tools/release/bump-version.sh 1.2.5 1.2.6
 #
 # 替换范围（结构性位置，不碰历史引用）:
 #   1. .ts 文件:  const VERSION = 'OLD'
@@ -79,7 +79,7 @@ else
 fi
 
 # ── 项目根目录（脚本在 tools/ 下，根在上一级）────────
-PROJECT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+PROJECT_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 
 # 从实际 SSOT 读取 3 段版本号（audit/package.json），而非 .0 补零
 PJ_SSOT="${PROJECT_ROOT}/engine/audit/package.json"
@@ -550,7 +550,7 @@ fi
 # ① logo-version 徽章 ② 页脚署名行。激活链里程碑标记（v1.2.5+ / ✅ 历史）不 bump。
 # 🔴 用 node 而非 bash ${//} 参数替换：bash 3.2 对 109KB 大字符串做 ${//} 时
 #    内存暴涨被 macOS jetsam 杀死（exit 137）——阶段八实测锁定。node 处理稳定。
-dash_html="$PROJECT_ROOT/tools/dashboard.html"
+dash_html="$PROJECT_ROOT/tools/dashboard/dashboard.html"
 if [[ -f "$dash_html" ]]; then
   export SOFAGENT_BUMP_DASH_WRITE="0"
   if ! $DRY_RUN; then SOFAGENT_BUMP_DASH_WRITE="1"; fi
@@ -710,7 +710,7 @@ else
     echo -e "${YELLOW}  无文件需要修改（版本号可能已经是 ${NEW_2SEG}）${NC}"
   else
     echo -e "${GREEN}  ✓ 完成: 共修改 $TOTAL_CHANGED 处${NC}"
-    echo -e "  建议运行 ${CYAN}./tools/check-version.sh${NC} 确认一致性"
+    echo -e "  建议运行 ${CYAN}./tools/check/check-version.sh${NC} 确认一致性"
   fi
 fi
 echo -e "${BOLD}${CYAN}═══════════════════════════════════════════════════════════${NC}"

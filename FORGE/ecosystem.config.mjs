@@ -6,7 +6,7 @@
 //   - fresh-eyes：fresh-eyes-driver.mjs（A/B 双盲独立审查循环）
 //   - release-gate：release-gate-driver.mjs（发版闸门验证循环）
 //
-// 用法（通过 tools/forge-pm2-start.sh 调用）：
+// 用法（通过 tools/forge/forge-pm2-start.sh 调用）：
 //   pm2 start FORGE/ecosystem.config.mjs --only fresh-eyes -- --target v1.2.9
 //   pm2 start FORGE/ecosystem.config.mjs --only release-gate -- --target v1.2.9
 //   pm2 stop fresh-eyes

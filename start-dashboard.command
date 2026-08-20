@@ -1,7 +1,7 @@
 #!/bin/bash
 # ─────────────────────────────────────────────
 # sofagent Dashboard 一键启动（双击本文件）
-# 等价命令：node tools/serve-dashboard.mjs
+# 等价命令：node tools/dashboard/serve-dashboard.mjs
 # 启动后自动打开浏览器 → http://localhost:3780
 # 关闭本窗口 = 关闭服务器
 # ─────────────────────────────────────────────
@@ -17,7 +17,7 @@ fi
 
 echo "🚀 启动 sofagent Dashboard..."
 echo ""
-node tools/serve-dashboard.mjs
+node tools/dashboard/serve-dashboard.mjs
 
 echo ""
 echo "服务器已停止。按回车关闭窗口..."

@@ -33,7 +33,7 @@ LIMITATIONS.md 必须覆盖本版本引入的核心新功能带来的已知局�
 - [ ] 🔴 **evidence 文件存在且测试数一致**（v1.1.9 fresh-eyes 教训）：证据文件路径是 `docs/evidence/evidence.md`（单文件，非按版本拆分），测试数由 `check-test-count.sh` 自动校验。检查方式：
   ```bash
   test -f docs/evidence/evidence.md && echo "✅ evidence 文件存在" || echo "❌ evidence 文件缺失"
-  bash tools/check-test-count.sh   # 期望：全绿（CHANGELOG/ROADMAP/LIMITATIONS/evidence.md 声称数 vs 实际值）
+  bash tools/check/check-test-count.sh   # 期望：全绿（CHANGELOG/ROADMAP/LIMITATIONS/evidence.md 声称数 vs 实际值）
   ```
 
 ### 文档同步闭环（v1.1.9 D6 闸门 · 详见 releasing.md 索引段）

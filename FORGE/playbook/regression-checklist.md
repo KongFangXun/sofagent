@@ -159,7 +159,7 @@ grep -nE "期望.*[0-9]+\s*项\|期望.*[0-9]+\s*条\|expected.*[0-9]+" FORGE/pl
 
 # 子项 d: check-version 文案扫描 baseline（v1.1.6 教训——工具自身 SSOT 标签误导）
 EXPECTED_DEFAULT=$(awk '/export const defaultRules/{f=1; next} f && /^[[:space:]]*\{.*name:/{c++} f && /^[[:space:]]*\];/{exit} END{print c+0}' engine/audit/src/rules/index.ts)
-REPORTED_DEFAULT=$(bash tools/check-version.sh 2>&1 | grep -oE "defaultRules.length=[0-9]+" | grep -oE "[0-9]+")
+REPORTED_DEFAULT=$(bash tools/check/check-version.sh 2>&1 | grep -oE "defaultRules.length=[0-9]+" | grep -oE "[0-9]+")
 echo "期望=$EXPECTED_DEFAULT 报告=$REPORTED_DEFAULT"   # 期望：两者相等
 
 # 子项 e: acceptance-test.sh JSON 输出不被 stderr 污染（v1.1.5 教训）
@@ -724,7 +724,7 @@ grep -n "sofagent-lite\|'scripts/\*\*" .github/workflows/shellcheck.yml   # 期�
 grep -c "'install.sh'" .github/workflows/shellcheck.yml   # 期望：2
 
 # 子项 h: bump-version.sh 同版本号优雅退出
-bash tools/bump-version.sh 1.2.0 1.2.0 --dry-run 2>&1 | tail -3   # 期望：无 unbound variable
+bash tools/release/bump-version.sh 1.2.0 1.2.0 --dry-run 2>&1 | tail -3   # 期望：无 unbound variable
 
 # 子项 i: install.sh 部署路径 vs handler.ts/checks.ts 读取路径对齐（v1.2.0 P0①）
 INSTALL_FDE=$(grep -oE 'skills/[a-z]+/fde\.md' install.sh | sort -u); HANDLER_FDE=$(grep -oE '"skills", "[a-z]+"' engine/hooks/sofagent-load-chain/src/handler.ts | head -2 | tr '\n' ' '); echo "install: $INSTALL_FDE / handler: $HANDLER_FDE"   # 人工核对路径一致
@@ -872,10 +872,10 @@ grep -q "13812345678" engine/scripts/verify.sh || echo "⚠️ verify.sh 脱敏�
 
 #### 109. check-docs 锚点扫描环境降级——WorkBuddy shim 超时（v1.3.4 发版流程 · 阶段十一暴露）
 
-**背景**：check-docs.sh 第 11 项（bash 逐行嵌套循环锚点扫描）在 WorkBuddy 环境被 shim 拖慢必然超时，pre-push 因此失败——但它与 tools/check-anchors.mjs（node 版，pre-push 第 4 步独立跑）功能重复。已加 SKIP_ANCHOR_SCAN=1 降级。本维度守护降级开关不被误删 + CI 仍跑完整版。
+**背景**：check-docs.sh 第 11 项（bash 逐行嵌套循环锚点扫描）在 WorkBuddy 环境被 shim 拖慢必然超时，pre-push 因此失败——但它与 tools/check/check-anchors.mjs（node 版，pre-push 第 4 步独立跑）功能重复。已加 SKIP_ANCHOR_SCAN=1 降级。本维度守护降级开关不被误删 + CI 仍跑完整版。
 
 ```bash
-grep -q "SKIP_ANCHOR_SCAN" tools/check-docs.sh || echo "⚠️ 降级开关丢失——WorkBuddy 下 pre-push 必失败"
+grep -q "SKIP_ANCHOR_SCAN" tools/check/check-docs.sh || echo "⚠️ 降级开关丢失——WorkBuddy 下 pre-push 必失败"
 # 本地 WorkBuddy 环境跑 pre-push 应带降级变量
 ```
 
@@ -1048,13 +1048,13 @@ node -e "const fs=require('fs'),raw=fs.readFileSync('FORGE/src/fresh-eyes-driver
 
 #### 73. ESM named export 完整性 + FORGE 模块加载烟测（v1.2.8 新盲区 · v1.3.1 归并 73+74）
 
-> v1.2.9 教训（归并原 73+74）：FORGE/ 不在 npm workspaces → `npm test` 从不执行 FORGE/ 下的 `.test.mjs`。曾出过 `DEFAULT_BUDGET` 缺 `export` 关键字导致 3 个 driver 启动即崩溃的 P0 bug。补建 `tools/forge-smoke-test.sh` 做 6 模块加载 + 3 测试文件烟测，集成到 pre-push-check.sh。
+> v1.2.9 教训（归并原 73+74）：FORGE/ 不在 npm workspaces → `npm test` 从不执行 FORGE/ 下的 `.test.mjs`。曾出过 `DEFAULT_BUDGET` 缺 `export` 关键字导致 3 个 driver 启动即崩溃的 P0 bug。补建 `tools/forge/forge-smoke-test.sh` 做 6 模块加载 + 3 测试文件烟测，集成到 pre-push-check.sh。
 
 ```bash
 # 确认 forge-smoke-test.sh 存在且集成到 pre-push
-test -f tools/forge-smoke-test.sh && echo "✅ smoke test 存在" || echo "❌ 缺失"
+test -f tools/forge/forge-smoke-test.sh && echo "✅ smoke test 存在" || echo "❌ 缺失"
 grep -q "forge-smoke-test" tools/pre-push-check.sh && echo "✅ 已集成" || echo "❌ 未集成"
-bash tools/forge-smoke-test.sh 2>&1 | tail -3
+bash tools/forge/forge-smoke-test.sh 2>&1 | tail -3
 # ESM named export 检查（被 import 引用的符号须有 export 声明）
 node -e "const fs=require('fs');const files=fs.readdirSync('FORGE/src').filter(f=>f.endsWith('.mjs'));let issues=[];for(const f of files){const s=fs.readFileSync('FORGE/src/'+f,'utf8');const exp=new Set([...s.matchAll(/export\s+(?:const|function|class)\s+(\w+)/g)].map(m=>m[1]));for(const f2 of files){if(f2===f)continue;const s2=fs.readFileSync('FORGE/src/'+f2,'utf8');const imp=[...s2.matchAll(/import\s*\{([^}]+)\}\s*from\s*['\"]\.\/([\w.-]+)['\"]/g)];for(const i of imp){if(i[2].replace('.mjs','')===f.replace('.m','')){for(const n of i[1].split(',').map(x=>x.trim().split(/\s+as\s+/)[0])){if(n&&!exp.has(n)&&n!=='default')issues.push(f2+' imports {'+n+'} from '+f);}}}}}console.log(issues.length?'ISSUE: '+issues.join('; '):'OK')" 2>/dev/null
 ```
@@ -1076,7 +1076,7 @@ grep -q '?i' engine/audit/src/ruleset-loader.ts && echo "✅ 处理 (?i)" || ech
 
 ```bash
 # 跑 check-version.sh 确认 TS 文件头版本号与 SSOT 一致（零不一致）
-bash tools/check-version.sh 2>&1 | grep "TS 文件头" | grep -q "✓" && echo "✅ 版本头一致" || echo "❌ 有不一致"
+bash tools/check/check-version.sh 2>&1 | grep "TS 文件头" | grep -q "✓" && echo "✅ 版本头一致" || echo "❌ 有不一致"
 ```
 
 #### 79. 运行时审计 tool wrapper——gate 拦截优先于 progress 埋点（v1.3.0 新增 · 交付 1）
@@ -1245,7 +1245,7 @@ done
 
 ```bash
 # 含中文输出的 shell 脚本必须头部 export LANG/LC_ALL
-for f in FORGE/playbook/acceptance-test.sh tools/check-version.sh tools/check-docs.sh; do
+for f in FORGE/playbook/acceptance-test.sh tools/check/check-version.sh tools/check/check-docs.sh; do
   head -10 "$f" | grep -q "LANG=en_US.UTF-8\|LC_ALL=en_US.UTF-8" || echo "⚠️ $f 缺 locale export"
 done
 # 期望：无 ⚠️ 输出
@@ -1294,13 +1294,13 @@ done
 
 ```bash
 # 子项 a: 英文版正文版本号检查（v1.2.5 盲区）
-grep -q "Current version" tools/check-version.sh && echo "✅ 英文检查" || echo "✗ 缺英文检查"
+grep -q "Current version" tools/check/check-version.sh && echo "✅ 英文检查" || echo "✗ 缺英文检查"
 # 子项 b: MCP 计数扫描拆分后定义文件（v1.2.9 盲区）
-grep -q 'tool-registry.ts' tools/check-version.sh && grep -q 'resources.ts' tools/check-version.sh && echo "✅ 扫描拆分文件" || echo "❌ 未扫描"
+grep -q 'tool-registry.ts' tools/check/check-version.sh && grep -q 'resources.ts' tools/check/check-version.sh && echo "✅ 扫描拆分文件" || echo "❌ 未扫描"
 # 子项 c: 漂移扫描排除 .test. 文件（v1.2.9 盲区）
-grep 'grep.*条规则' tools/check-version.sh | grep -q '\.test\.' && echo "❌ 未排除 .test." || echo "✅ 已排除 .test."
+grep 'grep.*条规则' tools/check/check-version.sh | grep -q '\.test\.' && echo "❌ 未排除 .test." || echo "✅ 已排除 .test."
 # 子项 d: EXPECTED_DOC_DATE 动态提取，与 CHANGELOG 发版日期一致（v1.3.2 盲区）
-grep "EXPECTED_DOC_DATE" tools/check-version.sh
+grep "EXPECTED_DOC_DATE" tools/check/check-version.sh
 grep "$(node -p "require('./package.json').version")" CHANGELOG.md | grep -oE "2026-[0-9]{2}-[0-9]{2}"
 ```
 #### 96. 警戒线声明多处同步——改一处要改 4 处（v1.3.2 新增 · 元维度）
@@ -1355,7 +1355,7 @@ node -e "const m=require('$PROJECT_ROOT/engine/audit/dist/rules/runner.js');cons
 
 ```bash
 # 强制触发失败路径（test-count.sh 不存在），验证 check-test-count.sh 能报红
-sed 's|bash tools/test-count.sh|bash /nonexistent/test-count.sh|' tools/check-test-count.sh > /tmp/cct-test.sh
+sed 's|bash tools/check/test-count.sh|bash /nonexistent/test-count.sh|' tools/check/check-test-count.sh > /tmp/cct-test.sh
 bash /tmp/cct-test.sh > /dev/null 2>&1; [ $? -eq 1 ] && echo "✅ 失败路径正确报红" || echo "⚠️ 失败路径崩溃或假绿"
 rm -f /tmp/cct-test.sh
 ```
@@ -1369,7 +1369,7 @@ rm -f /tmp/cct-test.sh
 # v1.3.8 修复：LIMIT_B 解析只抓「等号后第一个数字」——原 $(grep '^LIMIT_B=' | grep -oE '[0-9]+')
 # 会把注释里的版本号/行数全部抓出（v1.3.8/26/24…）→ 多片段含换行 → [ "$AB" -le "$LIMIT_VAL" ]
 # 报 integer expression expected（run-06 实测误报）。head -1 不管用（按行不按片段）。
-LIMIT_VAL=$(grep -oE '^LIMIT_B=[0-9]+' tools/check-docs.sh | head -1 | cut -d= -f2 || true)
+LIMIT_VAL=$(grep -oE '^LIMIT_B=[0-9]+' tools/check/check-docs.sh | head -1 | cut -d= -f2 || true)
 LIMIT_VAL=${LIMIT_VAL:-0}
 AB=$(cat docs/ARCHITECTURE.md docs/DEVELOPMENT.md docs/HANDBOOK.md docs/PHILOSOPHY.md docs/WIKI.md SECURITY.md docs/VALIDATION.md docs/THANKS.md docs/ROADMAP.md docs/LIMITATIONS.md FDE/GUIDE.md FDE/README.md 2>/dev/null | wc -l)
 echo "B 层: $AB 行（LIMIT_B=$LIMIT_VAL）"
@@ -1437,7 +1437,7 @@ grep -q "任务范围" engine/audit/src/rules/rule-a3*.ts 2>/dev/null || echo "�
 **背景**：v1.3.4 周期三次犯同一错误：bugfix +31 测试（8 处漂移）/ dev +93（11 处）/ dsh +11（7 处）——每次新增测试后 README/WIKI/LIMITATIONS/ARCHITECTURE 的声称数都没同步，check-test-count.sh FAIL。已写入 SOP 阶段三步骤 4 强制门禁，此维度做双重保险。
 
 ```bash
-bash tools/check-test-count.sh --quiet   # 期望 OK / EXIT=0
+bash tools/check/check-test-count.sh --quiet   # 期望 OK / EXIT=0
 # 原则：新增/删除测试 = 必须同步文档声称数，check-test-count 不绿不算开发完成
 ```
 
@@ -1450,13 +1450,13 @@ bash tools/check-test-count.sh --quiet   # 期望 OK / EXIT=0
 README_N=$(grep -oE '17 条默认规则' README.md | head -1); [ -n "$README_N" ] || echo "⚠️ README quick 规则数口径漂移"
 node -e "const m=require('./engine/audit/dist/rules/index.js');const d=m.defaultRules.length,x=m.extendedRules.length;if(d!==17||d+x!==24)process.exit(1)" || echo "⚠️ dist 规则数非 17/24，README 同步"
 # ② check-version MCP 数含 ARCHITECTURE 能力总览（防 #3/#14）
-bash tools/check-version.sh > /tmp/cv.log 2>&1; grep -qE "60 tools|MCP 工具数" /tmp/cv.log || echo "⚠️ MCP 工具数比对未含 ARCHITECTURE"   # v1.3.6：48→60（52+8 新 tool），数字勿写死——check-version 自身会跟 SSOT
+bash tools/check/check-version.sh > /tmp/cv.log 2>&1; grep -qE "60 tools|MCP 工具数" /tmp/cv.log || echo "⚠️ MCP 工具数比对未含 ARCHITECTURE"   # v1.3.6：48→60（52+8 新 tool），数字勿写死——check-version 自身会跟 SSOT
 node -e "const fs=require('fs');const s=fs.readFileSync('docs/ARCHITECTURE.md','utf8');const reg=require('./engine/mcp/dist/tool-registry.js');const actual=Object.keys(reg.TOOLS||reg).length||60;s.split('\n').forEach(l=>{const mm=l.match(/（([0-9]+) tools）/);if(!mm)return;const v=+mm[1];if(v!==actual&&!/v1.[0-3].[0-9]/.test(l))console.log('⚠️ ARCHITECTURE tools 数漂移:',mm[0],'实际',actual)})"   # v1.3.6：动态对账代替写死 48；行级版本豁免（含 v1.x.y 的历史演进行不算漂移——27=v1.2.5 时点真实数）
 # ③ doctor dist 路径存在性 + 基线（防 #18）
 node engine/audit/dist/index.js --doctor 2>&1 | grep -q "完整性校验通过" || echo "⚠️ 影子审计器基线链路失效"
 [ -f ~/.sofagent/internal/audit-hash.txt ] || echo "⚠️ 哈希基线未生成"
 # ④ 门禁失败路径自测（防 #5/#19/#27 假绿族）——守卫必须真的会红
-_CTC=$(bash tools/check-test-count.sh 2>&1); echo "$_CTC" | grep -q "场景守卫" || echo "⚠️ 场景守卫段消失"; echo "$_CTC" | grep "场景守卫" | grep -qE "FAIL|✗" && echo "⚠️ 场景守卫在报红（先修再验）" || true   # v1.3.6：单次跑缓存输出判双条件（原两次全量 ~110s 必超时）
+_CTC=$(bash tools/check/check-test-count.sh 2>&1); echo "$_CTC" | grep -q "场景守卫" || echo "⚠️ 场景守卫段消失"; echo "$_CTC" | grep "场景守卫" | grep -qE "FAIL|✗" && echo "⚠️ 场景守卫在报红（先修再验）" || true   # v1.3.6：单次跑缓存输出判双条件（原两次全量 ~110s 必超时）
 grep -E "^[^#]*| tail.*|| true" install.sh >/dev/null 2>&1 && echo "⚠️ install.sh 假绿模式回潮" || echo "✅ install.sh 无假绿（注释提及旧模式不算）"   # v1.3.6：排除注释行误报（#19 修复说明里引用了旧模式文本）
 SOFAGENT_DATA=/tmp/rg-nonexist node engine/audit/dist/index.js --verify-chain > /tmp/vc.log 2>&1; [ $? -eq 1 ] || echo "⚠️ verify-chain 空链未 exit 1（假绿回潮）"; rm -rf /tmp/rg-nonexist /tmp/vc.log
 # ⑤ SOFAGENT_DATA 隔离下 rule_disabled 落链断言（防 #38）
@@ -1568,8 +1568,8 @@ grep -q "SOFAGENT_PERSONA_SOURCE" engine/core/src/filesystem/memory-sync.ts && e
 # P0-1：路径②（selfMatched）必须 ⚠️ EXIT=1 不放绿灯
 grep -q "selfMatched" engine/audit/src/commands/verify.ts && grep -q "process.exit(1)" engine/audit/src/commands/verify.ts && echo "✅ 洗白链已堵" || echo "❌ 归因歧义回退"
 # P0-3：FLAKY_PKGS 头部初始化 + Test Files 漏收集拒采
-grep -q 'FLAKY_PKGS=""' tools/test-count.sh && echo "✅ set -u 初始化" || echo "❌ unbound 炸弹回植"
-grep -q "漏收集" tools/test-count.sh && echo "✅ 漏收集防御" || echo "❌ 静默变小回退"
+grep -q 'FLAKY_PKGS=""' tools/check/test-count.sh && echo "✅ set -u 初始化" || echo "❌ unbound 炸弹回植"
+grep -q "漏收集" tools/check/test-count.sh && echo "✅ 漏收集防御" || echo "❌ 静默变小回退"
 # P1：HOOK_TEMPLATE 成功回声（可感知性）
 grep -q "审计通过" engine/core/src/config-template.ts && echo "✅ 成功回声在位" || echo "❌ 静默保护回退"
 # 红队四项：追加伪造判篡改 + A2 二进制 WARN
@@ -1583,7 +1583,7 @@ grep -q 'timeout: 600_000' FORGE/src/driver-base.mjs && grep -q 'timeout: 600_00
 # FORGE resume 越轮泄漏 + S146 cwd 漂移 + check-version 溯源豁免（v1.3.7 三实录防复发）
 grep -q 'round === resumeState?.round' FORGE/src/fresh-eyes-driver.mjs && echo "✅ resume 守卫" || echo "❌ 越轮泄漏回植"
 grep -q 'cd "\$PROJECT_ROOT" && NODE_OPTIONS' FORGE/playbook/acceptance-test.sh && echo "✅ S146 cwd 回位" || echo "❌ 漂移回植"
-grep -q 'ver == SSOT' tools/check-version.sh && grep -q '新增|增强' tools/bump-version.sh && echo "✅ 溯源豁免" || echo "❌ 溯源误报回植"
+grep -q 'ver == SSOT' tools/check/check-version.sh && grep -q '新增|增强' tools/release/bump-version.sh && echo "✅ 溯源豁免" || echo "❌ 溯源误报回植"
 ```
 
 #### 117. v1.3.8 新功能审查面——代理网关攻击面四项核对（阶段五来源提取 A 类）

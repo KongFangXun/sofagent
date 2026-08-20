@@ -11,7 +11,7 @@
 # 用法：bash tools/check-cjk-var.sh  →  输出违规清单，exit 0=全绿 / 1=有违规
 
 set -uo pipefail
-cd "$(dirname "$0")/.." || exit 1
+cd "$(dirname "$0")/../.." || exit 1
 
 # 全角标点集：，）。（：；！？、「」『』
 # 注意：用 perl 而非 grep -P（BSD grep 无 -P）；排除注释行与双引号内误报优先级低——

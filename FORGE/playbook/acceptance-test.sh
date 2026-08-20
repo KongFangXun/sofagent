@@ -1007,7 +1007,8 @@ S124_OK=true; # v1.2.1 路径调整：releasing.md → docs/changelog/，bump-ve
 for f in acceptance-test.sh regression-checklist.md fresh-eyes-review.md; do
   [ -f "$PROJECT_ROOT/FORGE/playbook/$f" ] || { fail "FORGE/playbook/$f 不存在"; S124_OK=false; }
 done
-for f in pre-push-check.sh check-version.sh check-docs.sh check-test-count.sh test-count.sh bump-version.sh; do
+# v1.3.9（九）：tools/ 物理分子目录——check/ gen/ dashboard/ release/ forge/ audit/
+for f in pre-push-check.sh check/check-version.sh check/check-docs.sh check/check-test-count.sh check/test-count.sh release/bump-version.sh; do
   [ -f "$PROJECT_ROOT/tools/$f" ] || { fail "tools/$f 不存在"; S124_OK=false; }
 done
 [ -f "$PROJECT_ROOT/docs/changelog/releasing.md" ] || { fail "docs/changelog/releasing.md 不存在"; S124_OK=false; }
@@ -1033,11 +1034,11 @@ S128_OK=true; assert_grep "checkVersionConsistency" "$PROJECT_ROOT/engine/audit/
 AUDIT_INDEX="$PROJECT_ROOT/engine/audit/dist/index.js"
 [ -f "$AUDIT_INDEX" ] && assert_grep "checkVersionConsistency" "$AUDIT_INDEX" || { fail "audit/dist/index.js 不存在或无 checkVersionConsistency"; S128_OK=false; }
 $S128_OK && pass
-S129_OK=true; [ -f "$PROJECT_ROOT/tools/sign-config.mjs" ] || { fail "tools/sign-config.mjs 不存在"; S129_OK=false; }
-assert_grep "signConfig" "$PROJECT_ROOT/tools/sign-config.mjs" || S129_OK=false
+S129_OK=true; [ -f "$PROJECT_ROOT/tools/release/sign-config.mjs" ] || { fail "tools/release/sign-config.mjs 不存在"; S129_OK=false; }
+assert_grep "signConfig" "$PROJECT_ROOT/tools/release/sign-config.mjs" || S129_OK=false
 CORE_DIST="$PROJECT_ROOT/engine/core/dist/index.js"
 [ -f "$CORE_DIST" ] && assert_grep "signConfig" "$CORE_DIST" || { fail "core/dist/index.js 不存在或无 signConfig 导出"; S129_OK=false; }
-node "$PROJECT_ROOT/tools/sign-config.mjs" --help 2>&1 | grep -q "用法" || { fail "sign-config.mjs --help 无输出"; S129_OK=false; }
+node "$PROJECT_ROOT/tools/release/sign-config.mjs" --help 2>&1 | grep -q "用法" || { fail "sign-config.mjs --help 无输出"; S129_OK=false; }
 $S129_OK && pass
 S130_OK=true; # 源码验证：core 导出 ChainCheckStatus 三态类型
 assert_grep "ok.*tampered.*unverifiable" "$PROJECT_ROOT/engine/core/src/audit-history.ts" || S130_OK=false
@@ -1119,7 +1120,7 @@ else
 fi
 _S139_SKILL="$PROJECT_ROOT/SKILL/SKILL.md"
 _S139_DEPLOY=""
-for _f in "$PROJECT_ROOT/install.sh" "$PROJECT_ROOT/tools/file-deploy.sh"; do
+for _f in "$PROJECT_ROOT/install.sh" "$PROJECT_ROOT/engine/scripts/lib/file-deploy.sh"; do
   [ -f "$_f" ] && _S139_DEPLOY="$_f" && break
 done
 if [ ! -f "$_S139_SKILL" ] || [ -z "$_S139_DEPLOY" ]; then
@@ -1206,7 +1207,7 @@ rm -rf "$PROJECT_ROOT/data/" 2>/dev/null
 # 必须在主仓 cwd 下跑（scenario() 会把 cwd 带进 /tmp e2e 仓库致 npx 走 registry 拉远端 vitest 挂起）；heap 2048 防 8GB 常驻挤压 OOM
 ( trap 'exit 0' HUP; set +e; cd "$PROJECT_ROOT" && NODE_OPTIONS="--max-old-space-size=2048" npx vitest run engine/audit/src/__tests__/session-report.test.ts >/dev/null 2>&1 ) 2>/dev/null || true
 if [ -d "$PROJECT_ROOT/data/" ]; then fail "data/ 泄露到项目目录——F-39 修复无效"; S146_OK=false; else pass "data/ 未泄露——session-report 正确写入 ~/.sofagent/data/audit/"; fi
-S147_OK=true; DASH="$PROJECT_ROOT/tools/sofagent-dashboard.sh"
+S147_OK=true; DASH="$PROJECT_ROOT/tools/dashboard/sofagent-dashboard.sh"
 [ -f "$DASH" ] || { fail "sofagent-dashboard.sh 不存在"; S147_OK=false; }
 if $S147_OK; then
   DASH_OUT=$(bash "$DASH" 2>&1) || true
@@ -1265,7 +1266,7 @@ S153_SECURE=$({ grep -rn "mkdirSync(.*mode: 0o700" "$PROJECT_ROOT/engine/core/sr
 [ "$S153_SECURE" -ge 5 ] 2>/dev/null || { fail "core 包 mode:0o700 加固仅 $S153_SECURE 处（期望 ≥5）"; S153_OK=false; }
 $S153_OK && pass "core 包数据目录创建全部加固为 0o700（$S153_SECURE 处，0 处遗漏）"
 scenario 154 "v1.2.3 Dashboard 波次拓扑可视化——graph-state.json 写入 → --full 控制图渲染"
-S154_OK=true; DASH154="$PROJECT_ROOT/tools/sofagent-dashboard.sh"
+S154_OK=true; DASH154="$PROJECT_ROOT/tools/dashboard/sofagent-dashboard.sh"
 [ -f "$DASH154" ] || { fail "sofagent-dashboard.sh 不存在"; S154_OK=false; }
 if $S154_OK; then
   # 构造临时 SOFAGENT_HOME，注入 v2 格式 graph-state.json（nodes/wave/degradationLevel/updatedAt）
@@ -1298,7 +1299,7 @@ S156_OUT=$(node "$SCRIPT_DIR/acceptance-node-probes.js" s156 2>&1) || true
 echo "$S156_OUT" | grep -q "^OK" || { fail "审计合并卡关失败: $S156_OUT"; S156_OK=false; }
 $S156_OK && pass "审计合并卡关双向（PASS→merge 主分支可见 + FAIL→reject 不泄漏）"
 scenario 157 "v1.2.3 Fresh-Eyes Dashboard 集成——latest.json + sub-progress → --full FORGE 审查区块"
-S157_OK=true; DASH157="$PROJECT_ROOT/tools/sofagent-dashboard.sh"
+S157_OK=true; DASH157="$PROJECT_ROOT/tools/dashboard/sofagent-dashboard.sh"
 [ -f "$DASH157" ] || { fail "sofagent-dashboard.sh 不存在"; S157_OK=false; }
 if $S157_OK; then
   S157_HOME=$(mktemp -d /tmp/sofagent-acc-dash157-XXXX)
@@ -1315,7 +1316,7 @@ EOF157
   $S157_OK && pass "Fresh-Eyes Dashboard 集成端到端（latest.json→--full FORGE 审查区块：标题+轮次）"
 fi
 scenario 158 "v1.2.3 Workspace 变更摘要——workspace-changes.jsonl → --full 最近变更区块"
-S158_OK=true; DASH158="$PROJECT_ROOT/tools/sofagent-dashboard.sh"
+S158_OK=true; DASH158="$PROJECT_ROOT/tools/dashboard/sofagent-dashboard.sh"
 [ -f "$DASH158" ] || { fail "sofagent-dashboard.sh 不存在"; S158_OK=false; }
 if $S158_OK; then
   S158_HOME=$(mktemp -d /tmp/sofagent-acc-dash158-XXXX)
@@ -1330,7 +1331,7 @@ if $S158_OK; then
   $S158_OK && pass "Workspace 变更摘要端到端（jsonl→--full 最近变更：新建+修改计数）"
 fi
 scenario 159 "v1.2.3 Dashboard 用户可读性——humanize_status 中文映射 + --technical 切回英文"
-S159_OK=true; DASH159="$PROJECT_ROOT/tools/sofagent-dashboard.sh"
+S159_OK=true; DASH159="$PROJECT_ROOT/tools/dashboard/sofagent-dashboard.sh"
 [ -f "$DASH159" ] || { fail "sofagent-dashboard.sh 不存在"; S159_OK=false; }
 if $S159_OK; then
   S159_HOME=$(mktemp -d /tmp/sofagent-acc-dash159-XXXX)
@@ -1354,7 +1355,7 @@ grep -q "ln -sf" "$PROJECT_ROOT/install.sh" || { fail "install.sh 缺少 ln -sf 
 grep -q "dashboard_link" "$PROJECT_ROOT/install.sh" || { fail "install.sh 缺少 dashboard_link 变量"; S160_OK=false; }
 $S160_OK && pass "install.sh Dashboard 软链（sofagent-dashboard + ln -sf + dashboard_link）"
 scenario 161 "v1.2.3 规则名可读性——render_rules TOP3 中文名（非旧 A3 A3 双编码格式）"
-S161_OK=true; DASH161="$PROJECT_ROOT/tools/sofagent-dashboard.sh"
+S161_OK=true; DASH161="$PROJECT_ROOT/tools/dashboard/sofagent-dashboard.sh"
 [ -f "$DASH161" ] || { fail "sofagent-dashboard.sh 不存在"; S161_OK=false; }
 if $S161_OK; then
   S161_HOME=$(mktemp -d /tmp/sofagent-acc-dash161-XXXX)
@@ -1389,8 +1390,8 @@ $S164_OK && pass "文档链接可达性（代码路径存在 + 跨文件链接�
 scenario 165 "关键数字跨文档一致性——测试数 / 规则数 24 / acceptance 158"
 S165_OK=true
 TEST_COUNT=""
-if [ -f "$PROJECT_ROOT/tools/test-count.sh" ]; then
-  TEST_COUNT=$(bash "$PROJECT_ROOT/tools/test-count.sh" 2>/dev/null | grep -oE '[0-9]+' | head -1 || echo "")
+if [ -f "$PROJECT_ROOT/tools/check/test-count.sh" ]; then
+  TEST_COUNT=$(bash "$PROJECT_ROOT/tools/check/test-count.sh" 2>/dev/null | grep -oE '[0-9]+' | head -1 || echo "")
 fi
 if [ -n "$TEST_COUNT" ] && [ "$TEST_COUNT" -gt 0 ] 2>/dev/null; then
   for f in README.md docs/WIKI.md; do grep -q "$TEST_COUNT" "$PROJECT_ROOT/$f" || { fail "$f 缺少测试数 $TEST_COUNT（数字漂移）"; S165_OK=false; }; done
@@ -1424,7 +1425,7 @@ $S168_OK && pass "skillopt optimize() + failure-ledger API 完整（optimize/rec
 
 scenario 169 "v1.2.4 P1b Dashboard --trend 模式——参数解析 + trend 渲染函数"
 S169_OK=true
-DASH169="$PROJECT_ROOT/tools/sofagent-dashboard.sh"
+DASH169="$PROJECT_ROOT/tools/dashboard/sofagent-dashboard.sh"
 grep -q '\-\-trend' "$DASH169" || { fail "sofagent-dashboard.sh 缺少 --trend 参数"; S169_OK=false; }
 grep -q 'render_trend' "$DASH169" || { fail "sofagent-dashboard.sh 缺少 render_trend 函数"; S169_OK=false; }
 # 验证 --trend 模式可执行（临时 HOME + 空数据不报错）
@@ -1825,7 +1826,7 @@ scenario 217 "v1.2.9 ③ PM2守护 — ecosystem.config.mjs + forge-pm2-start.sh
 S217_OK=true
 ECO="$PROJECT_ROOT/FORGE/ecosystem.config.mjs"
 [ -f "$ECO" ] || { fail "ecosystem.config.mjs 不存在"; S217_OK=false; }
-[ -f "$PROJECT_ROOT/tools/forge-pm2-start.sh" ] || { fail "tools/forge-pm2-start.sh 不存在"; S217_OK=false; }
+[ -f "$PROJECT_ROOT/tools/forge/forge-pm2-start.sh" ] || { fail "tools/forge/forge-pm2-start.sh 不存在"; S217_OK=false; }
 if $S217_OK; then
   # PM2 进程定义：fresh-eyes + release-gate（两个 driver 守护）
   assert_grep "fresh-eyes" "$ECO" || S217_OK=false
@@ -1879,8 +1880,8 @@ if $S220_OK; then
   # driver-base.mjs 不含 REPO_ROOT（大写，已修复为小写 repoRoot / PROJECT_ROOT）
   ! grep -q "REPO_ROOT" "$DB" || { fail "driver-base.mjs 仍含 REPO_ROOT（bug 未修复）"; S220_OK=false; }
   # check-version.sh 已更新扫描路径指向拆分后的模块
-  assert_grep "tool-registry.ts" "$PROJECT_ROOT/tools/check-version.sh" || S220_OK=false
-  assert_grep "resources.ts" "$PROJECT_ROOT/tools/check-version.sh" || S220_OK=false
+  assert_grep "tool-registry.ts" "$PROJECT_ROOT/tools/check/check-version.sh" || S220_OK=false
+  assert_grep "resources.ts" "$PROJECT_ROOT/tools/check/check-version.sh" || S220_OK=false
   $S220_OK && pass "BugFix（driver-base.mjs 无 REPO_ROOT + check-version.sh 扫描 tool-registry/resources 路径）"
 fi
 
@@ -2408,14 +2409,14 @@ $S269_OK && pass "公地巡检 inspector 三步注册（L1+L2）" || fail "inspe
 
 # ─── v1.3.5 新增场景 S270-S276（MCP 自进化+运维闭环 + instinct + FDE 运维五件 + DSH 互通）───
 
-scenario 270 "v1.3.5 交付 1+2：MCP 四 tool 注册（TOOLS=60 · v1.3.6 起）+ 三步注册齐"
+scenario 270 "v1.3.5 交付 1+2：MCP 四 tool 注册（TOOLS=61 · v1.3.9 起 worklog_query 新增）+ 三步注册齐"
 S270_OK=true
 for t in run_ab_test promote_ab snapshot_list snapshot_restore; do
   grep -q "'$t'" "$PROJECT_ROOT/engine/mcp/src/tool-registry.ts" || S270_OK=false
   grep -q "'$t'" "$PROJECT_ROOT/engine/mcp/src/mcp-server.ts" || S270_OK=false
 done
-node -e "const m=require('$PROJECT_ROOT/engine/mcp/dist/tool-registry.js');process.exit(m.TOOLS.length===60?0:1)" || S270_OK=false
-$S270_OK && pass "四 tool 注册 + TOOLS=60" || fail "MCP 四 tool 注册缺失"
+node -e "const m=require('$PROJECT_ROOT/engine/mcp/dist/tool-registry.js');process.exit(m.TOOLS.length===61?0:1)" || S270_OK=false
+$S270_OK && pass "四 tool 注册 + TOOLS=61" || fail "MCP 四 tool 注册缺失"
 
 scenario 271 "v1.3.5 交付 1+2：破坏性 tool 人审语义（human_confirmed 门控）"
 S271_OK=true
@@ -2437,9 +2438,9 @@ S273_OK=true
 [ -f "$PROJECT_ROOT/engine/daemon/src/companion.ts" ] || S273_OK=false
 [ -d "$PROJECT_ROOT/engine/orchestrator/src/fde-session" ] || S273_OK=false
 [ -f "$PROJECT_ROOT/engine/orchestrator/src/fde-registry.ts" ] || S273_OK=false
-[ -f "$PROJECT_ROOT/tools/client-audit.mjs" ] || S273_OK=false
-[ "$(ls "$PROJECT_ROOT/tools/audit-questionnaires/" 2>/dev/null | wc -l | tr -d ' ')" = "7" ] || S273_OK=false
-node "$PROJECT_ROOT/tools/client-audit.mjs" --industry 通用 2>/dev/null | grep -q "审计问卷" || S273_OK=false
+[ -f "$PROJECT_ROOT/tools/audit/client-audit.mjs" ] || S273_OK=false
+[ "$(ls "$PROJECT_ROOT/tools/audit/audit-questionnaires/" 2>/dev/null | wc -l | tr -d ' ')" = "7" ] || S273_OK=false
+node "$PROJECT_ROOT/tools/audit/client-audit.mjs" --industry 通用 2>/dev/null | grep -q "审计问卷" || S273_OK=false
 $S273_OK && pass "FDE 五件齐 + 问卷 7 行业可执行" || fail "FDE 运维件缺失"
 
 scenario 274 "v1.3.5 交付 2 附带：doctor --reset-baseline 双形态路由"
@@ -2495,7 +2496,7 @@ $S280_OK && pass "workspace-scan 收编完整（模块+接线+测试+版本头�
 
 scenario 281 "v1.3.5 BugFix 38 项防复发锚点——门禁假绿族守卫"
 S281_OK=true
-grep -q "head -15\|head -20" "$PROJECT_ROOT/tools/check-test-count.sh" || S281_OK=false  # #5 守卫复活（SSOT 扫描窗口已扩）
+grep -q "head -15\|head -20" "$PROJECT_ROOT/tools/check/check-test-count.sh" || S281_OK=false  # #5 守卫复活（SSOT 扫描窗口已扩）
 grep -c "exitCode" "$PROJECT_ROOT/engine/audit/hooks/post-commit" >/dev/null 2>&1 || S281_OK=false  # #2 绕过检测逻辑
 grep -q "audit-hash" "$PROJECT_ROOT/engine/core/src/doctor.ts" || S281_OK=false  # #18 影子审计器基线
 [ -x "$PROJECT_ROOT/engine/audit/dist/cli-quick.js" ] || S281_OK=false  # run-01 维度17 bin 权限
@@ -2674,8 +2675,8 @@ $S297_OK && pass "长任务阈值6次无变化触发replan+sha256指纹在位" |
 
 scenario 298 "v1.3.8 交付⑤：保活三件套——pm2 托管 + --check-alive 探针 + resume 断点自动续跑（双 driver）"
 S298_OK=true
-[ -f "$PROJECT_ROOT/tools/forge-pm2-start.sh" ] || S298_OK=false
-grep -q "pm2 start" "$PROJECT_ROOT/tools/forge-pm2-start.sh" || S298_OK=false  # pm2 托管
+[ -f "$PROJECT_ROOT/tools/forge/forge-pm2-start.sh" ] || S298_OK=false
+grep -q "pm2 start" "$PROJECT_ROOT/tools/forge/forge-pm2-start.sh" || S298_OK=false  # pm2 托管
 [ -f "$PROJECT_ROOT/FORGE/ecosystem.config.mjs" ] || S298_OK=false
 grep -q "fresh-eyes\|release-gate" "$PROJECT_ROOT/FORGE/ecosystem.config.mjs" || S298_OK=false  # pm2 app 配置
 grep -q "交付五\|--check-alive" "$PROJECT_ROOT/FORGE/src/release-gate-driver.mjs" || S298_OK=false  # 探针（release-gate）

@@ -327,7 +327,7 @@ sofagent-audit 实现了完整的六步审计闭环流程（设计文档见 [ARC
 
 ### 测试覆盖范围
 
-当前审计核心 852 个、全 workspace 2787 个测试（v1.3.9 bugfix 批次 2782→2787 +5；实测见 `tools/test-count.sh`，flaky 复跑机制内置，以脚本判定为准，与 pre-push-check 一致），但覆盖范围集中在审计规则和核心逻辑（diff-parser、reporter、config-loader、rules/*.ts）。以下模块没有独立测试：
+当前审计核心 857 个、全 workspace 2892 个测试（v1.3.9 开发批次 2787→2892 +105；实测见 `tools/check/test-count.sh`，flaky 复跑机制内置，以脚本判定为准，与 pre-push-check 一致），但覆盖范围集中在审计规则和核心逻辑（diff-parser、reporter、config-loader、rules/*.ts）。以下模块没有独立测试：
 
 | 模块 | 测试状态 | 风险 |
 |------|:--:|------|
@@ -406,7 +406,7 @@ FDE 完整四阶段十二步部署流程（[FDE/GUIDE.md](../FDE/GUIDE.md)）已
 
 v1.0 新增 `FORGE/playbook/acceptance-test.sh`（场景数持续扩展，当前 226 个，SSOT 见脚本头部声明）：
 
-- **CI 已覆盖**：单元测试审计核心 852 个、全 workspace 2787 个测试（v1.3.9 bugfix 批次 2782→2787 +5；全绿，详见上方「测试覆盖范围」节，实测见 `tools/test-count.sh`，与 pre-push-check 一致）、sofagent-core verify 约 44-48 项（动态）
+- **CI 已覆盖**：单元测试审计核心 857 个、全 workspace 2892 个测试（v1.3.9 开发批次 2787→2892 +105；全绿，详见上方「测试覆盖范围」节，实测见 `tools/check/test-count.sh`，与 pre-push-check 一致）、sofagent-core verify 约 44-48 项（动态）
 - **发版前手动覆盖**：acceptance-test.sh 237 场景（含子断言，CLI 端到端，步骤 2.3）、OpenClaw 验收 63 场景（Agent 端到端，步骤 2.5）
 - **CI 未覆盖**：daemon → MCP → webhook → 编排四组件串联行为（仍依赖手动验证）
 - **CI 未覆盖**：多平台兼容性（macOS only verified，Linux/Windows 未验证）
@@ -425,7 +425,7 @@ v1.0 新增 `FORGE/playbook/acceptance-test.sh`（场景数持续扩展，当前
 
 - **影响包**：engine/audit（config-loader 2 + audit-history 7 + session-report 1 + usb-detect 3）
 - **原因**：WorkBuddy.app 内嵌的 genie-safe-delete.cjs shim 拦截 fs.rmSync 调用，测试清理临时文件被误判为大规模删除，导致 ETIMEDOUT。**非源码 bug**——CI / 本地开发机（无 shim）无此问题。
-- **v1.3.3 缓解**：所有测试清理 `rmSync(..., { recursive: true })` 已用 `try-catch` 包裹，断言通过后清理失败不再让测试 FAIL。WorkBuddy 沙箱下连续跑 `bash tools/test-count.sh` 应稳定全绿（FAILED=0）。
+- **v1.3.3 缓解**：所有测试清理 `rmSync(..., { recursive: true })` 已用 `try-catch` 包裹，断言通过后清理失败不再让测试 FAIL。WorkBuddy 沙箱下连续跑 `bash tools/check/test-count.sh` 应稳定全绿（FAILED=0）。
 - **残余**：极少数在测试**函数体**内（非清理块）调用 rmSync 的用例仍未包裹——那是测试逻辑的一部分，包裹会掩盖真实失败，维持原样。
 - **环境判据**：在 WorkBuddy 下遇到测试 FAIL，先在非 shim 环境（终端裸跑 / CI）复验，确认是否为 shim 环境假失败。
 

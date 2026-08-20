@@ -44,7 +44,7 @@
 
 以下是这个视角**最高效的起点**——从这里开始能最快形成判断。这不是限制：你的直觉如果把你带到别处，跟直觉走。
 
-> 起点建议：tools/dashboard.html / engine/daemon/ CLI 输出 / tools/*.sh 的用户可见输出
+> 起点建议：tools/dashboard/dashboard.html / engine/daemon/ CLI 输出 / tools/*.sh 的用户可见输出
 
 ## 🔴 铁律：完整报告必须进最终回复（否则发现永久丢失）
 

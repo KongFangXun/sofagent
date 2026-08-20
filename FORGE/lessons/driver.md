@@ -17,7 +17,7 @@
 | ⑤ | runDir 可写 | HALT | 无法创建/写入 → 产物写不出去 |
 | ⑥ | 磁盘空间 ≥ 200MB | WARN | 磁盘快满 → 产物写一半断 |
 
-**🔴 关键设计修正：② stdout 管道定为 WARN 而非 HALT。** 原因：`tools/forge-smoke-test.sh` 用 `$(node driver --dry-run)` 命令替换调用 driver，命令替换的 stdout 天然是管道——若管道判 HALT 会打破冒烟测试的 exit 0 契约，也会误杀一切合法的 `> log` 重定向场景。因此管道只 WARN 提醒"别用 `| head`"，不阻塞。
+**🔴 关键设计修正：② stdout 管道定为 WARN 而非 HALT。** 原因：`tools/forge/forge-smoke-test.sh` 用 `$(node driver --dry-run)` 命令替换调用 driver，命令替换的 stdout 天然是管道——若管道判 HALT 会打破冒烟测试的 exit 0 契约，也会误杀一切合法的 `> log` 重定向场景。因此管道只 WARN 提醒"别用 `| head`"，不阻塞。
 
 **四条铁律**：
 1. **不自动修复危险项**：只报问题 + 给可复制的修复命令（`mkdir -p ...`、`curl ...`），人来执行；唯一允许自动做的是幂等 `mkdir runDir`（目录非危险项）
@@ -372,8 +372,8 @@ child.on('close', (code, signal) => {
 FORGE/ 不在 npm workspaces 内，`npm test` 不覆盖 FORGE/src/*.test.mjs；`node --test` 跑 vitest 风格文件直接炸（`validateTags` undefined）。正确入口：
 
 ```bash
-bash tools/forge-smoke-test.sh              # 全量（可加载性 + 测试，12 项）
-bash tools/forge-smoke-test.sh --load-only  # 只验证模块可加载
+bash tools/forge/forge-smoke-test.sh              # 全量（可加载性 + 测试，12 项）
+bash tools/forge/forge-smoke-test.sh --load-only  # 只验证模块可加载
 npx vitest run FORGE/src/driver-base.test.mjs   # 单文件（调试用）
 ```
 

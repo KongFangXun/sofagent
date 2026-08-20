@@ -272,7 +272,7 @@ sofagent-audit（v0.92+）是 TypeScript CLI，执行 `execFileSync('git', ...)`
 
 ### 24 条审计规则完整清单（文档级 SSOT）
 
-> 本表是全部 24 条规则的文档级单一事实源（v1.3.8 口径，复核规则未变；代码注册表 `engine/audit/src/rules/index.ts`，逐条行为表见 `engine/audit/README.md`，`tools/check-docs.sh` 第 7/8 节做三方对账）。A12/A13 已于 v0.99.4 合并入 A11、E3 已于 v1.2.5 并入 A11，编号不再使用。
+> 本表是全部 24 条规则的文档级单一事实源（v1.3.8 口径，复核规则未变；代码注册表 `engine/audit/src/rules/index.ts`，逐条行为表见 `engine/audit/README.md`，`tools/check/check-docs.sh` 第 7/8 节做三方对账）。A12/A13 已于 v0.99.4 合并入 A11、E3 已于 v1.2.5 并入 A11，编号不再使用。
 
 **默认规则 17 条（始终生效；A18 自 v1.1.5 提升、A20-A23 自 v1.2.5 新增）**：
 
@@ -419,7 +419,7 @@ chmod 600 ~/.sofagent/data/audit/history.jsonl.bak-*
 2. **文件权限加固**：`chmod 444 .sofagent/config.yml` 将配置设为只读。
    注意：此方法不能防止 Agent 以 root/同用户身份强制写入，
    但能防止意外修改。
-3. **完整性校验**：使用 `tools/sign-config.mjs` 对 config.yml 签名，
+3. **完整性校验**：使用 `tools/release/sign-config.mjs` 对 config.yml 签名，
    定期运行 `sofagent-audit --doctor` 检查配置完整性。
 
 > ⚠️ **`--doctor` 退出码语义（CI 场景注意）**：doctor 默认只在 **error** 时返回非零，**warning（如 hook 缺失）仍 exit 0**——CI 只看 exit code 会漏掉 warning 级问题。CI 场景请用 `sofagent-audit --doctor --strict`（warning 也返回非零），人工日常体检用默认模式即可。

@@ -36,7 +36,7 @@
 import fs from 'fs';
 import path from 'path';
 
-const PROJECT_ROOT = path.resolve(import.meta.dirname, '..');
+const PROJECT_ROOT = path.resolve(import.meta.dirname, '../..');
 const FIX_MODE = process.argv.includes('--fix');
 
 // 排除的目录（非文档产出 / 历史冻结）

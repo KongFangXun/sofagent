@@ -18,7 +18,7 @@ import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname  = dirname(__filename);
-const REPO_ROOT  = join(__dirname, '..');
+const REPO_ROOT  = join(__dirname, '../..');
 
 const PROMPTS_DIR = join(REPO_ROOT, 'FORGE/SKILL/fresh-eyes-loop/prompts');
 const PLAYBOOK_PATH = join(REPO_ROOT, 'FORGE/playbook/fresh-eyes-review.md');

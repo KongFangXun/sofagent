@@ -20,7 +20,7 @@
 # ============================================================
 
 set -uo pipefail
-cd "$(dirname "$0")/.." || exit 2
+cd "$(dirname "$0")/../.." || exit 2
 
 QUIET=false
 for _arg in "$@"; do

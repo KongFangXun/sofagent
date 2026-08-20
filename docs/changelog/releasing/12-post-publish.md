@@ -44,7 +44,7 @@ sofagent-audit --doctor            # 期望与当前版本 doctor 项数一致
 sofagent-core --doctor             # 期望全部通过
 
 # 最终版本号一致性验证
-bash tools/check-version.sh        # 期望全绿
+bash tools/check/check-version.sh        # 期望全绿
 ```
 
 ---
@@ -65,7 +65,7 @@ bash tools/check-version.sh        # 期望全绿
 ## 开发 Prompt 校验循环（步骤七）
 
 ```
-① 跑 ./tools/check-dev-prompt.sh ~/Desktop/vX.Y-dev-prompt.md（查"引用的东西存不存在"）
+① 跑 ./tools/check/check-dev-prompt.sh ~/Desktop/vX.Y-dev-prompt.md（查"引用的东西存不存在"）
 ② 脚本输出零 ❌ 后，再过一遍 FORGE/playbook/dev-prompt-checklist.md 的 5 条自查
    （查"写法对不对/全不全/新不新"——函数签名准确性、注册点/数组归属、改造代码保留声明、已完成区剥离、强动词名副其实）
 ③ 两项都过 → prompt 定稿
@@ -193,5 +193,5 @@ sed -i '' 's/- \[x\]/- [ ]/g' docs/changelog/releasing.md
 - **阶段十一·Git Data API 四坑（更新）**：原三坑（base64/eol/cat-file）补第四坑——tree 条目 mode 硬编码 100644 丢全部 .sh 执行位（verify CI 失败），恢复靠「blob 内容寻址引用既有 blob 建新 tree」；另 create-tree 无法表达删除/rename 残留，须 Contents API 补删。验收唯一标准：远端 tree sha == 本地 HEAD tree
 - **阶段八·Release Notes 锚点对照（更新）**：SOP 08 曾误写「简洁三段式」但 v1.3.0/1.3.1/1.3.7 实际发布均为「分节式 + 质量验证表」——v1.3.8 两次被作者退回（漏质量验证表 + 漏标题主题短语）。SOP 08 重写为 v1.3.7 锚点 + 铁律 N1-N8 + SOP 11 工序 3 机制标准 = v1.3.7 实际发布物；10-confirm 补防漂移铁律（发布 prompt 的 gh release 段必须逐字引用 SOP 11 模板）
 - **步骤编号铁律复查**：11-publish.md「### 5.0」标题 + 工序 1/2/3 + 代码块 2a-2d 三处残留修复为中文序号/①②③④；全仓复查零残留
-- **check-dev-prompt.sh 三缺陷修复（工具）**：① bash/node 命令前缀未剥离 → `bash tools/check-version.sh` 误报 ❌ ② is_runtime 定义未接线 → worklog.json 误报 ❌ ③ planned 只看同行关键词 → tools/ 分目录目标路径误报 ❌。修复后 v1.3.9 prompt 校验 0 错误
+- **check-dev-prompt.sh 三缺陷修复（工具）**：① bash/node 命令前缀未剥离 → `bash tools/check/check-version.sh` 误报 ❌ ② is_runtime 定义未接线 → worklog.json 误报 ❌ ③ planned 只看同行关键词 → tools/ 分目录目标路径误报 ❌。修复后 v1.3.9 prompt 校验 0 错误
 - **v1.3.8 发版耗时**：约 6h（08-20 10:00 开发完成 → 16:00 发布）；release-gate 4 轮（3 轮 driver 管线问题 + 1 轮环境，driver 修复后 run-13 单轮直过）
