@@ -148,15 +148,32 @@ export function rotateDataKey(sofagentHome: string, options: Partial<KeyOperatio
   return { ...result, archivedAs: archiveName };
 }
 
+/**
+ * 确保密钥目录存在且权限恒 0700。
+ *
+ * v1.3.9 四十六：mkdirSync 仅在「创建时」设 mode——目录已存在且被外部改松权限
+ * （如 chmod 755 / 恢复备份）时不会重设。显式 chmod 收紧到 0700（纵深防御，
+ * 防同机其他用户读密钥）。chmod 失败不阻断密钥生成（密钥文件自身 0600 是最后防线）。
+ */
+function ensureKeysDir(sofagentHome: string): void {
+  const dir = keysDirPath(sofagentHome);
+  mkdirSync(dir, { recursive: true, mode: 0o700 });
+  try {
+    chmodSync(dir, 0o700);
+  } catch (e) {
+    console.warn(`[key-manager] 密钥目录权限收紧失败（${dir}）: ${e instanceof Error ? e.message : String(e)}`);
+  }
+}
+
 /** 写入新密钥（生成/轮换共用——32 字节随机 + 0600 + 指纹） */
 function writeNewKey(sofagentHome: string): KeyOperationResult {
   const key = randomBytes(DATA_KEY_BYTES);
-  const dir = keysDirPath(sofagentHome);
-  mkdirSync(dir, { recursive: true, mode: 0o700 });
+  ensureKeysDir(sofagentHome);
   const kp = dataKeyPath(sofagentHome);
-  // tmp+rename 原子写防半写密钥；mode 0600 仅当前用户可读
-  const tmp = `${kp}.tmp.${process.pid}`;
-  writeFileSync(tmp, key.toString('base64') + '\n', { encoding: 'utf-8', mode: 0o600 });
+  // tmp+rename 原子写防半写密钥；mode 0600 仅当前用户可读。
+  // v1.3.9 四十六：tmp 名加随机后缀 + 'wx'（O_EXCL）防可预测名竞态/预创建。
+  const tmp = `${kp}.tmp.${process.pid}.${randomBytes(6).toString('hex')}`;
+  writeFileSync(tmp, key.toString('base64') + '\n', { encoding: 'utf-8', mode: 0o600, flag: 'wx' });
   const { renameSync } = require('fs') as typeof import('fs');
   renameSync(tmp, kp);
   try {
@@ -170,7 +187,7 @@ function writeNewKey(sofagentHome: string): KeyOperationResult {
 /** 写初始化标记（首启引导完成后调用——此后不再重复引导） */
 export function writeInitializedMarker(sofagentHome: string): void {
   const marker = initializedMarkerPath(sofagentHome);
-  mkdirSync(keysDirPath(sofagentHome), { recursive: true, mode: 0o700 }); // 0700 与 keyManagerEnsureDir 对齐（S153：密钥目录权限一致性）
+  ensureKeysDir(sofagentHome); // 0700 与 keyManagerEnsureDir 对齐（S153：密钥目录权限一致性；v1.3.9 目录已存在也收紧）
   writeFileSync(marker, new Date().toISOString() + '\n', 'utf-8');
 }
 

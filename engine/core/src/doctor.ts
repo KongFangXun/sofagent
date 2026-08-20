@@ -109,6 +109,10 @@ export function runDoctor(projectDir: string = process.cwd(), options: { resetBa
       if (installedVersion !== VERSION) {
         warn(`~/.sofagent/VERSION 写的是 ${installedVersion}，当前引擎 ${VERSION}——可能发版后未同步`);
         repairHint(`重新安装以同步版本：bash install.sh（或手动更新 ${homeVersionFile}）`);
+        // v1.3.9 补充升级安全性：消除企业 IT 对「升级覆盖数据」的顾虑——
+        // 升级保留用户数据与已装 hooks（不覆盖 ~/.sofagent/data/ 与已装 hooks），
+        // 破坏性变更见 CHANGELOG 对应版本条目。
+        info('升级保留 ~/.sofagent/data/ 与已装 hooks（不覆盖用户数据）；破坏性变更见 CHANGELOG 对应版本条目');
       } else {
         ok(`~/.sofagent/VERSION (${installedVersion}) 与引擎版本一致`);
       }

@@ -34,11 +34,9 @@
 // ============================================================
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync, chmodSync } from 'fs';
-import { join, dirname } from 'path';
+import { dirname } from 'path';
 import { createHash, createHmac } from 'crypto';
-import { hostname, userInfo, homedir } from 'os';
-import { execSync } from 'child_process';
-import { loadEnvConfig } from '@sofagent/core';
+import { loadEnvConfig, resolveHomeDir } from '@sofagent/core';
 import { atomicAppendSync, atomicWriteSync } from '@sofagent/core';
 import { REDACTION_PATTERNS } from '@sofagent/core';
 // v1.3.8 交付二：数据静态加密（age 纯 TS + 密钥管理，均来自 @sofagent/core）
@@ -170,9 +168,9 @@ export function isHmacKeyConfigured(): boolean {
 //   · data/model-registry/（模型注册表——含内部 endpoint 地址，见 orchestrator model-registry.ts）
 // ────────────────────────────────────────────
 
-/** 解析 SOFAGENT_HOME（与 data-paths 同语义：env 覆盖 > ~/.sofagent） */
+/** 解析 SOFAGENT_HOME（收敛到 core resolveHomeDir——单一事实源；v1.3.9 十四消灭 ~/.sofagent 字面直拼） */
 function resolveSofagentHome(): string {
-  return process.env.SOFAGENT_HOME || join(homedir(), '.sofagent');
+  return resolveHomeDir();
 }
 
 /**
@@ -297,11 +295,18 @@ export function appendHistory(entry: AuditHistoryEntry, dataDir?: string): void 
     : JSON.stringify(sanitizedEntry);
   atomicAppendSync(filePath, jsonLine);
   // 单次读回校验（best-effort——锁已保证互斥，最后一行必然完整；校验失败仅告警）
+  // v1.3.9 修复：加密激活态最后一行是 SOFAGENT-AGE-V1 密文，直接 JSON.parse 必抛异常
+  // → 每次写入都假警「读回校验失败」，且校验对象是密文而非明文（校验失效）。
+  // 现检测前缀 → 复用同文件 decryptWithAge 先解密再 JSON.parse，读回校验真实校验明文。
   try {
     const content = readFileSync(filePath, 'utf-8');
     const lines = content.trim().split('\n').filter(Boolean);
     if (lines.length > 0) {
-      JSON.parse(lines[lines.length - 1]!);
+      const lastLine = lines[lines.length - 1]!;
+      const lastPlain = isAgePayload(lastLine)
+        ? decryptWithAge(lastLine, getActiveDataKey())
+        : lastLine;
+      JSON.parse(lastPlain);
     }
   } catch {
     console.warn('[sofagent] 审计历史最后一行读回校验失败（请检查 history.jsonl 完整性）');

@@ -42,6 +42,11 @@ import { randomBytes } from 'crypto';
 
 import { createNetworkGateway, type NetworkGateway } from '../sandbox/network-gateway';
 import { createPermissionCeiling, type PermissionCeiling } from './permission-ceiling';
+// v1.3.9 十三：审计 JSONL 写入 + 脱敏抽出到 gateway-audit.ts（单一职责拆分，
+// 依赖方向单向 gateway → audit）。sanitizeForAudit / GATEWAY_AUDIT_REL 原样 re-export
+// 保持 index.ts 对外接口不变。
+import { appendAuditLine, resolveAuditFilePath, type AuditEntry } from './gateway-audit';
+export { sanitizeForAudit, GATEWAY_AUDIT_REL } from './gateway-audit';
 
 // ────────────────────────────────
 // 类型定义
@@ -136,18 +141,7 @@ export interface ProxyGatewayOptions {
   walTaskId?: () => string;
 }
 
-/** 审计条目（append-only JSONL 每行一条） */
-interface AuditEntry {
-  ts: string;
-  event: 'request' | 'hitl-resolve';
-  agentId: string;
-  decision?: ProxyDecision;
-  reason?: string;
-  risk?: ProxyRisk;
-  /** hitl-resolve 事件关联的 checkpoint ID */
-  checkpointId?: string;
-  request?: ProxyRequest;
-}
+/** 审计条目（append-only JSONL 每行一条）——v1.3.9 抽出至 gateway-audit.ts（见 import） */
 
 // ────────────────────────────────
 // 风险分级
@@ -192,39 +186,11 @@ export function classifyRequestRisk(req: Pick<ProxyRequest, 'tool' | 'action'>):
 }
 
 // ────────────────────────────────
-// 审计脱敏（防日志注入 + 密钥打码）
-// ────────────────────────────────
-
-/** 密钥打码正则（简单 regex——sk-* / AKIA* / password= 三族，覆盖常见泄漏面）
- *  ⚠️ 值字符类排除 " 与 \——打码作用于 JSON 序列化后的整行，吞掉结尾引号
- *     会破坏单行 JSON 结构（脱敏不能自己制造注入面——sanitize 的自反性要求）。 */
-const SECRET_REDACT_PATTERNS: { pattern: RegExp; replacement: string }[] = [
-  { pattern: /sk-[a-zA-Z0-9_\-]{8,}/g, replacement: 'sk-***REDACTED***' },
-  { pattern: /AKIA[0-9A-Z]{16}/g, replacement: 'AKIA***REDACTED***' },
-  { pattern: /(password|passwd|pwd|secret|token)\s*[=:]\s*[^"\\\s,;]+/gi, replacement: '$1=***REDACTED***' },
-];
-
-/**
- * 审计安全序列化——防日志注入 + 密钥脱敏。
- *
- * 1. 先 JSON.stringify 成单行（天然转义 \n \r——注入的换行伪造不出新审计行）
- * 2. 再对整行做密钥打码（regex 替换）——打码发生在字符串层，
- *    序列化后的转义形态（如 \u0041）不逃逸打码
- */
-export function sanitizeForAudit(value: unknown): string {
-  let line = JSON.stringify(value) ?? 'null';
-  for (const { pattern, replacement } of SECRET_REDACT_PATTERNS) {
-    line = line.replace(pattern, replacement);
-  }
-  return line;
-}
-
-// ────────────────────────────────
 // 网关实现
 // ────────────────────────────────
 
-/** 审计文件相对路径：{dataDir}/gateway/audit.jsonl */
-export const GATEWAY_AUDIT_REL = 'gateway/audit.jsonl';
+// v1.3.9 十三：审计脱敏（SECRET_REDACT_PATTERNS + sanitizeForAudit）与
+// GATEWAY_AUDIT_REL 已抽出至 gateway-audit.ts（见顶部 import/re-export）。
 /** HITL 挂起目录：{dataDir}/gateway/pending/ */
 export const GATEWAY_PENDING_DIR_REL = 'gateway/pending';
 
@@ -249,7 +215,7 @@ export interface ProxyGateway {
  */
 export function createProxyGateway(options: ProxyGatewayOptions): ProxyGateway {
   const dataDir = options.dataDir;
-  const auditFilePath = join(dataDir, GATEWAY_AUDIT_REL);
+  const auditFilePath = resolveAuditFilePath(dataDir);
   const pendingDirPath = join(dataDir, GATEWAY_PENDING_DIR_REL);
 
   const denyAboveRisk: ProxyRisk = options.denyAboveRisk ?? 'high';
@@ -275,10 +241,8 @@ export function createProxyGateway(options: ProxyGatewayOptions): ProxyGateway {
 
   // ── 审计写入（append-only + sanitize）──
   function appendAudit(entry: AuditEntry): void {
-    const line = sanitizeForAudit(entry);
     try {
-      mkdirSync(dirname(auditFilePath), { recursive: true });
-      appendFileSync(auditFilePath, line + '\n', 'utf-8');
+      appendAuditLine(auditFilePath, entry);
     } catch (err) {
       // 审计写失败 = 网关自身完整性受损——拒绝服务（fail-closed），
       // 由 integrityCheck 在下次请求时兜底（auditWritable 标记翻红）

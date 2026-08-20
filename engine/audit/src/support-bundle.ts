@@ -20,8 +20,7 @@ import {
   existsSync, readFileSync, writeFileSync, mkdirSync, readdirSync, statSync,
 } from 'fs';
 import { join } from 'path';
-import { homedir } from 'os';
-import { VERSION } from '@sofagent/core';
+import { VERSION, resolveHomeDir } from '@sofagent/core';
 import { AUDIT_HISTORY, DATA_DIR, getConfigFile } from '@sofagent/core';
 
 /** zip 大小上限（10MB） */
@@ -125,8 +124,8 @@ function collectInstallInfo(): string {
     lines.push(`git branch: ${gitBranch}`);
   } catch { /* */ }
 
-  // 安装目录
-  const sofagentHome = process.env.SOFAGENT_HOME || join(homedir(), '.sofagent');
+  // 安装目录（收敛到 core resolveHomeDir——单一事实源；v1.3.9 十四）
+  const sofagentHome = resolveHomeDir();
   lines.push(`install dir: ${sofagentHome}`);
   lines.push(`install dir exists: ${existsSync(sofagentHome)}`);
 
