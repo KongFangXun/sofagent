@@ -88,3 +88,6 @@ c.txt
 # TypeScript 增量编译缓存
 tsconfig.tsbuildinfo
 *.tsbuildinfo
+
+# driver 主动实测产物（judgment-only 注入源，不入库）
+acceptance-raw.log
