@@ -1,3 +1,9 @@
+// ── API 分级契约（v1.3.9 四）────────────────────────────
+// `/* @public */`：公开 API——semver 锁定，变更必须 bump 版本 + CHANGELOG 记录
+//                 （外部依赖方与跨平台适配器只许 import 这一层）
+// `/* @internal */`：内部 API——不承诺稳定性，破坏性变更无需 bump
+// 未标记的导出视为 @public（保守默认：宁可多承诺不可漏承诺）
+// ────────────────────────────────────────────────────────
 /**
  * @sofagent/core — 基础设施层
  * v1.2.0 从 sofagent/audit/src/ 迁出
@@ -8,18 +14,18 @@
  */
 
 // ── 常量 ──
-export { VERSION } from './shared/constants';
+/* @public */ export { VERSION } from './shared/constants';
 
 // ── 基线规则常量（单一事实源）──
-export { BASELINE_RULE_KEYS, BASELINE_RULE_NUMBERS } from './shared/rule-constants';
-export type { BaselineRuleKey } from './shared/rule-constants';
+/* @public */ export { BASELINE_RULE_KEYS, BASELINE_RULE_NUMBERS } from './shared/rule-constants';
+/* @public */ export type { BaselineRuleKey } from './shared/rule-constants';
 
 // ── 密钥检测正则单一事实源（A2 + ToolGate 共用）──
 // v1.2.5: 扩展为全规则共享库——新增 REDACTION_PATTERNS / DOMAIN_WHITELIST / DANGEROUS_SCRIPT_CMDS
-export { SECRET_PATTERNS, REDACTION_PATTERNS, DOMAIN_WHITELIST, DANGEROUS_SCRIPT_CMDS } from './shared/secret-patterns';
+/* @public */ export { SECRET_PATTERNS, REDACTION_PATTERNS, DOMAIN_WHITELIST, DANGEROUS_SCRIPT_CMDS } from './shared/secret-patterns';
 
 // ── v1.2.5 §3.1: Agent 身份码轻量版 → v1.3.1 交付 6 Ed25519 完整版 ──
-export {
+/* @public */ export {
   generateAgentIdentity,
   computeFingerprint,
   computeShortCode,
@@ -29,47 +35,47 @@ export {
   signIdentityPayload,
   verifyAgentIdentity,
 } from './agent-identity';
-export type { AgentIdentity, Ed25519KeyPair } from './agent-identity';
+/* @public */ export type { AgentIdentity, Ed25519KeyPair } from './agent-identity';
 
 // ── v1.3.1 交付 6: Agent 身份注册表 ──
-export {
+/* @public */ export {
   registerIdentity,
   getIdentity,
   listIdentities,
   revokeIdentity,
   getIdentityStorePath,
 } from './identity-store';
-export type { IdentityRecord, ListIdentitiesOptions } from './identity-store';
+/* @public */ export type { IdentityRecord, ListIdentitiesOptions } from './identity-store';
 
 // ── v1.3.1 交付 12: stop_reason 六值分类 + 指数退避 ──
-export {
+/* @public */ export {
   classifyError,
   isRetryableStopReason,
   backoffDelayMs,
   BACKOFF_SCHEDULE_MS,
   MAX_RETRY_COUNT,
 } from './stop-reason';
-export type { StopReason } from './stop-reason';
+/* @public */ export type { StopReason } from './stop-reason';
 
 // ── v1.3.1 交付 11: LLM 调用级 Trace ──
-export {
+/* @public */ export {
   appendLlmCallRecord,
   readLlmCallTrace,
   verifyLlmCallChain,
   getLlmCallTracePath,
 } from './llm-call-trace';
-export type { LlmCallTraceInput, LlmCallRecord, LlmCallTraceFilter } from './llm-call-trace';
+/* @public */ export type { LlmCallTraceInput, LlmCallRecord, LlmCallTraceFilter } from './llm-call-trace';
 
 // ── 环境变量统一读取（SOFAGENT_* 主名 + 旧名别名兜底）──
-export { resolveEnvVar, resolveEnvBool, resolveEnvNumber } from './shared/env';
+/* @public */ export { resolveEnvVar, resolveEnvBool, resolveEnvNumber } from './shared/env';
 
 // ── 联邦/巡检共用实现（从 daemon 下沉，audit 静态 import）──
-export {
+/* @public */ export {
   checkConflict,
   mergeFederationResults,
   pickWinner,
 } from './federation';
-export type {
+/* @public */ export type {
   InspectorConfig,
   InspectorResult,
   KnowledgeQueryResult,
@@ -78,10 +84,10 @@ export type {
 } from './federation';
 
 // ── 原子写入 ──
-export { atomicWriteSync, atomicAppendSync, atomicWriteWithMergeSync, mergeAppendMissing } from './shared/atomic-write';
+/* @public */ export { atomicWriteSync, atomicAppendSync, atomicWriteWithMergeSync, mergeAppendMissing } from './shared/atomic-write';
 
 // ── Git Diff 解析 ──
-export {
+/* @public */ export {
   isInGitRepo,
   parseDiff,
   parseStagedDiff,
@@ -90,10 +96,10 @@ export {
   parseNumstat,
   parseDiffWithIsomorphicGit,
 } from './diff-parser';
-export type { DiffFile, NumstatEntry } from './diff-parser';
+/* @public */ export type { DiffFile, NumstatEntry } from './diff-parser';
 
 // ── 配置加载 ──
-export {
+/* @public */ export {
   loadConfig,
   loadEnvConfig,
   writeConfig,
@@ -106,10 +112,10 @@ export {
   signConfig,
   warnUnknownConfigKeys,
 } from './config-loader';
-export type { AuditConfig, SofaEnvConfig, MemoryBackend } from './config-loader';
+/* @public */ export type { AuditConfig, SofaEnvConfig, MemoryBackend } from './config-loader';
 
 // ── 数据目录路径（v1.2.1 安装路径分离：SOFAGENT_HOME 优先） ──
-export {
+/* @public */ export {
   HOME_DIR,
   DATA_DIR,
   AUDIT_DIR,
@@ -148,38 +154,38 @@ export {
 } from './data-paths';
 
 // ── 配置模板 ──
-export { CONFIG_TEMPLATE, HOOK_TEMPLATE } from './config-template';
+/* @public */ export { CONFIG_TEMPLATE, HOOK_TEMPLATE } from './config-template';
 
 // ── 监控配置 ──
-export {
+/* @public */ export {
   loadWatchConfig,
   generateWatchTemplate,
   DEFAULT_WATCH_CONFIG,
 } from './config/watch-config';
-export type { WatchConfig, CronJob } from './config/watch-config';
+/* @public */ export type { WatchConfig, CronJob } from './config/watch-config';
 
 // ── 模型客户端（v1.3.1：stop_reason 分类 + 退避重连 + 错误收敛） ──
-export { callModelAPI, convergeToolError, ModelCallError } from './model-client';
-export type { ModelCallOptions, ModelMessage, ConvergedToolError } from './model-client';
+/* @public */ export { callModelAPI, convergeToolError, ModelCallError } from './model-client';
+/* @public */ export type { ModelCallOptions, ModelMessage, ConvergedToolError } from './model-client';
 
 // ── 日志读取 ──
-export {
+/* @public */ export {
   MarkdownLogReader,
   JSONLLogReader,
   pickLogReader,
 } from './log-reader';
-export type { LogReader } from './log-reader';
+/* @public */ export type { LogReader } from './log-reader';
 
 // ── 日志检查 ──
-export {
+/* @public */ export {
   checkLogs,
   getReadAccessMap,
   hasTestOrBuildExecution,
 } from './log-checker';
-export type { LogEntry } from './log-checker';
+/* @public */ export type { LogEntry } from './log-checker';
 
 // ── 环境探测 ──
-export {
+/* @public */ export {
   probeEnvironment,
   detectRuntimeEnv,
   collectEnvVars,
@@ -187,34 +193,34 @@ export {
   collectPaths,
   getSystemInfo,
 } from './run-envs';
-export type { EnvReport } from './run-envs';
+/* @public */ export type { EnvReport } from './run-envs';
 
 // ── 环境检查 ──
-export { checkEnv } from './env-check';
-export type { EnvResult } from './env-check';
+/* @public */ export { checkEnv } from './env-check';
+/* @public */ export type { EnvResult } from './env-check';
 
 // ── 成本基线 ──
-export {
+/* @public */ export {
   calculateBaseline,
   isAnomaly,
   isColdStart,
 } from './cost-baseline';
-export type { Baseline, TaskLogEntry } from './cost-baseline';
+/* @public */ export type { Baseline, TaskLogEntry } from './cost-baseline';
 
 // ── 内存压缩 ──
-export {
+/* @public */ export {
   archiveOldEntries,
   rotateBackups,
   extractSummary,
 } from './compress-memory';
 
 // ── 事实级记忆存储（v1.2.9 功能①）──
-export { createMemoryStore } from './memory-store';
-export type { MemoryFact } from './memory-store';
+/* @public */ export { createMemoryStore } from './memory-store';
+/* @public */ export type { MemoryFact } from './memory-store';
 
 // ── 记忆契约（think.md · Ledger-Views-Policy）──
 // think.md 路径 / 层级归属 / 只追加写入点的单一事实来源
-export {
+/* @public */ export {
   THINK_MD_FILENAME,
   THINK_MD_LAYER,
   KNOWLEDGE_DIR_LAYER,
@@ -227,42 +233,42 @@ export {
   TRUST_ORDER,
   resolveTrust,
 } from './memory-contract';
-export type { MemoryLayer, Sensitivity, Trust } from './memory-contract';
+/* @public */ export type { MemoryLayer, Sensitivity, Trust } from './memory-contract';
 
 // ── prompt 注入防线（层 1 包裹 + 层 4 脱敏 + 层 5 可信分级 · v1.1.8 新增）──
-export {
+/* @public */ export {
   wrapUntrusted,
   needsUntrustedWrap,
   redactForPrompt,
   RESTRICTED_PLACEHOLDER,
   UNTRUSTED_PROMPT_DECLARATION,
 } from './security/prompt-sanitizer';
-export type { UntrustedSource, UntrustedMeta } from './security/prompt-sanitizer';
-export {
+/* @public */ export type { UntrustedSource, UntrustedMeta } from './security/prompt-sanitizer';
+/* @public */ export {
   isTrustEntryUsable,
   sortByTrust,
   prepareForPrompt,
 } from './security/trust-grading';
-export type { TrustTagged } from './security/trust-grading';
+/* @public */ export type { TrustTagged } from './security/trust-grading';
 
 // ── 联邦加密（AES-256-GCM / ECDH / 密钥轮换 / 配对 · v1.1.8 新增）──
-export {
+/* @public */ export {
   encryptPayload,
   decryptPayload,
   GCM_IV_BYTES,
   GCM_TAG_BYTES,
   AES_KEY_BYTES,
 } from './crypto/aes-gcm';
-export type { EncryptedPayload } from './crypto/aes-gcm';
-export {
+/* @public */ export type { EncryptedPayload } from './crypto/aes-gcm';
+/* @public */ export {
   generateKeyPair,
   deriveSharedKey,
   publicKeyFingerprint,
   ECDH_CURVE,
   DERIVED_KEY_BYTES,
 } from './crypto/ecdh';
-export type { EcdhKeyPair } from './crypto/ecdh';
-export {
+/* @public */ export type { EcdhKeyPair } from './crypto/ecdh';
+/* @public */ export {
   createKeySlot,
   rotateKey,
   getEncryptionKey,
@@ -271,8 +277,8 @@ export {
   shouldRotate,
   ROTATION_GRACE_MS,
 } from './crypto/key-rotation';
-export type { KeySlot } from './crypto/key-rotation';
-export {
+/* @public */ export type { KeySlot } from './crypto/key-rotation';
+/* @public */ export {
   generatePairingCode,
   createPairingSession,
   pairByCode,
@@ -283,16 +289,16 @@ export {
   PAIRING_CODE_LENGTH,
   MIN_TOKEN_LENGTH,
 } from './crypto/pairing';
-export type { PairedPeer, PairingSession } from './crypto/pairing';
+/* @public */ export type { PairedPeer, PairingSession } from './crypto/pairing';
 
 // v1.3.8 交付二：数据静态加密（age 纯 TS 实现 + 密钥管理）
-export {
+/* @public */ export {
   encryptWithAge,
   decryptWithAge,
   isAgePayload,
   AGE_MAGIC_PREFIX,
 } from './crypto/age-wrapper';
-export {
+/* @public */ export {
   generateDataKey,
   loadDataKey,
   rotateDataKey,
@@ -306,26 +312,26 @@ export {
   DATA_KEY_BYTES,
   DATA_KEY_RECOVERY_HINT,
 } from './crypto/key-manager';
-export type { KeyOperationResult, KeyOperationOptions } from './crypto/key-manager';
+/* @public */ export type { KeyOperationResult, KeyOperationOptions } from './crypto/key-manager';
 
 // ── 审计结果类型 ──
-export type { AuditResult, RuleCheck } from './reporter';
+/* @public */ export type { AuditResult, RuleCheck } from './reporter';
 
 // ── 健康检查（doctor） ──
-export { runDoctor } from './doctor';
-export type { DoctorReport } from './doctor';
+/* @public */ export { runDoctor } from './doctor';
+/* @public */ export type { DoctorReport } from './doctor';
 
 // ── 审计历史链校验（v1.2.0 从 @sofagent/audit 下沉，消除 core 反向依赖） ──
-export { getHistoryFilePath, getDecisionLogPath, getEnvFingerprint, getHmacKey, checkHistoryChainIntegrity, checkHistoryChainDetailed, stableStringify, validateHmacKey } from './audit-history';
+/* @public */ export { getHistoryFilePath, getDecisionLogPath, getEnvFingerprint, getHmacKey, checkHistoryChainIntegrity, checkHistoryChainDetailed, stableStringify, validateHmacKey } from './audit-history';
 
 // ── 装后验证 ──
-export { verifyEvidence } from './verify-evidence';
-export { Verifier } from './verify/verifier';
-export { runQuickChecks, runWorkBuddyChecks, runAllChecks } from './verify/checks';
-export { HOME, resolveSofagentData } from './verify/utils';
+/* @public */ export { verifyEvidence } from './verify-evidence';
+/* @public */ export { Verifier } from './verify/verifier';
+/* @public */ export { runQuickChecks, runWorkBuddyChecks, runAllChecks } from './verify/checks';
+/* @public */ export { HOME, resolveSofagentData } from './verify/utils';
 
 // ── 验证模块类型 ──
-export type {
+/* @public */ export type {
   CheckStatus,
   CheckItem,
   VerifyResult,
@@ -333,7 +339,7 @@ export type {
 } from './verify/types';
 
 // ── 数据变更审计（D1-D5 规则引擎 · v1.2.4 S4 新增）──
-export {
+/* @public */ export {
   type DataChange,
   type DataViolation,
   type DataAuditResult,
@@ -342,34 +348,34 @@ export {
 } from './data-diff';
 
 // ── 文件系统 / 记忆层 ──
-export { getPersonaContent } from './filesystem/memory-sync';
+/* @public */ export { getPersonaContent } from './filesystem/memory-sync';
 
 // ── 文件系统 / Shadow Repo（同构 Git 快照） ──
-export {
+/* @public */ export {
   createShadowRepo,
   commitSnapshot,
   revertToSnapshot,
   listSnapshots,
   hasShadowRepo,
 } from './filesystem/isomorphic-git';
-export type { SnapshotEntry, IsoDiff } from './filesystem/isomorphic-git';
+/* @public */ export type { SnapshotEntry, IsoDiff } from './filesystem/isomorphic-git';
 
 // ── 快照辅助函数（人类可读封装 · v1.1.3 从 daemon 迁入） ──
-export {
+/* @public */ export {
   createPostAuditSnapshot,
   listAllSnapshots,
   restoreSnapshot,
 } from './snapshot-helpers';
-export type { SnapshotInfo } from './snapshot-helpers';
+/* @public */ export type { SnapshotInfo } from './snapshot-helpers';
 
 // ── Slash 命令注册（v1.2.7 新增 · 功能 ①②）──
-export { SlashCommandRegistry, globalSlashRegistry } from './slash-registry';
-export type { SlashCommand, SlashCommandContext } from './slash-registry';
-export { CompactCommand } from './slash-commands/compact';
-export {
+/* @public */ export { SlashCommandRegistry, globalSlashRegistry } from './slash-registry';
+/* @public */ export type { SlashCommand, SlashCommandContext } from './slash-registry';
+/* @public */ export { CompactCommand } from './slash-commands/compact';
+/* @public */ export {
   GoalCommand,
   loadSessionGoal,
   evaluateGoal,
   incrementContinuations,
 } from './slash-commands/goal';
-export type { SessionGoal, LoopSpecGoalExtension } from './slash-commands/goal';
+/* @public */ export type { SessionGoal, LoopSpecGoalExtension } from './slash-commands/goal';

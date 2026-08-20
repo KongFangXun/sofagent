@@ -207,6 +207,14 @@ DeepSeek 2026-08-13 开源 [DeepSeek Harness](https://github.com/deepseek-ai/dee
 
 > 📖 来源：[The OpenAI Deployment Company](https://openai.com/business/the-openai-deployment-company/)（openai.com，2026）
 
+### OpenAI Agents SDK v0.22.0：运行时加固实证四因子乘积模型
+
+[OpenAI Agents SDK v0.22.0 官方 release notes](https://github.com/openai/openai-agents-python/releases/tag/v0.22.0)（2026-08-19 发布）官方定性 "substantial runtime hardening"。三处实证：① 被 output guardrail 拒绝的工具输出从可重放/持久化状态**脱敏**（guardrail 拦截 + 审计留痕）；② 非流式 Responses 终态 failed/incomplete 显式抛 `ModelBehaviorError`（失败不静默）；③ 显式 client 与 provider 配置冲突直接拒绝（配置可信）。
+
+**对我们的意义**：模型能力 × 运行时可靠性 × 数据可信度 × 权限与审计——四因子乘积模型被官方一手源实证：后三因子正是约束层的活（审计拦截 + 失败显式化 + 配置硬校验），模型给 90% 智力、约束层补 10% 可靠执行（与本节 90/10 价值分层同构）。
+
+> 📖 来源：[openai/openai-agents-python v0.22.0 release notes](https://github.com/openai/openai-agents-python/releases/tag/v0.22.0)（2026-08-19 · 官方 changelog · A 级源）
+
 ### 记忆要笨：应用层记忆的死亡测试
 
 清华唐杰团队联合新国大、玻色 AI 的综述《Memory for Large Language Models》把记忆从「算力副产品」正式升格为「模型架构的第一性维度」——并给出两条与我们直觉直接对位的结论。

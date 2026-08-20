@@ -80,6 +80,8 @@ export class AstRuleEngine {
   private tsApiFailed = false;
   private syntaxKind: Record<string, number> = {};
   private tmpRoot: string | null = null;
+  /** extractExports 临时文件序号（每次调用唯一路径——TS7 snapshot 同路径缓存规避） */
+  private extractSeq = 0;
 
   constructor(options: AstEngineOptions = {}) {
     const all = builtinAstRules;
@@ -227,6 +229,82 @@ export class AstRuleEngine {
   /** SyntaxKind 名字→数字（供规则判型；未加载成功时返回 -1 恒不匹配） */
   kindOf(name: string): number {
     return this.syntaxKind[name] ?? -1;
+  }
+
+  /**
+   * 提取 TS 源文件的 export 符号清单（v1.3.9 四：API 语义解析复用）。
+   * 覆盖形态：export {} 块 / export 声明（const·function·class·type·interface）/
+   * export default / export *。
+   *
+   * @returns 符号名 + 语句所在行（1-based）——供 @public/@internal 分级标记对齐
+   */
+  extractExports(path: string, content: string): Array<{ name: string; line: number }> {
+    const out: Array<{ name: string; line: number }> = [];
+    const api = this.getTsApi();
+    if (!api) return out; // TS 不可用——调用方自行降级（公共 API 检查用正则兜底）
+    this.ensureTmpRoot();
+    // 🔴 每次调用用唯一临时路径：TS7 snapshot 对同路径已打开文件缓存首次内容，
+    // 复用路径会读到上一个调用者的内容（fileChanges 才能改内容——直接换路径最稳）
+    const seq = ++this.extractSeq;
+    const tmpPath = this.makeTmpPath(seq, `${seq}-${path}`);
+    writeFileSync(tmpPath, content, 'utf-8');
+    const snapshot = api.updateSnapshot({ openFiles: [tmpPath] });
+    const project = snapshot.getDefaultProjectForFile(tmpPath);
+    const sf = project?.program.getSourceFile(tmpPath) as
+      | (AstNodeHost & {
+          text: string;
+          statements?: readonly AstNodeHost[];
+          getLineAndCharacterOfPosition(pos: number): { line: number };
+        })
+      | undefined;
+    if (!sf) return out;
+
+    const kindIs = (n: AstNodeHost | undefined, k: string) => !!n && n.kind === this.kindOf(k);
+    const lineOf = (n: AstNodeHost) => sf.getLineAndCharacterOfPosition(n.getStart()).line + 1;
+
+    for (const stmt of sf.statements ?? []) {
+      // 形态一：export { a, b } from './x' / export { a, b }
+      if (kindIs(stmt, 'ExportDeclaration')) {
+        const named = (stmt as AstNodeHost & { exportClause?: AstNodeHost }).exportClause;
+        if (kindIs(named, 'NamedExports')) {
+          const elements = (named as AstNodeHost & { elements?: readonly AstNodeHost[] }).elements ?? [];
+          for (const el of elements) {
+            // ExportSpecifier：name 是对外导出名（importer 可见），propertyName 是本地名
+            // （export { local as exported } → 取 exported；无 as 时 name 即导出名）
+            const exported = (el as AstNodeHost & { name?: AstNodeHost; propertyName?: AstNodeHost });
+            const name = exported.name?.text ?? exported.propertyName?.text;
+            if (name) out.push({ name, line: lineOf(stmt) });
+          }
+        } else {
+          out.push({ name: '*', line: lineOf(stmt) }); // export * from
+        }
+        continue;
+      }
+      // 形态二：export default
+      if (kindIs(stmt, 'ExportAssignment')) {
+        out.push({ name: 'default', line: lineOf(stmt) });
+        continue;
+      }
+      // 形态三：export const/let（VariableStatement 带 export 修饰符）
+      if (kindIs(stmt, 'VariableStatement')) {
+        const declList = (stmt as AstNodeHost & { declarationList?: AstNodeHost }).declarationList;
+        const decls = (declList as AstNodeHost & { declarations?: readonly AstNodeHost[] })?.declarations ?? [];
+        for (const d of decls) {
+          const name = (d as AstNodeHost & { name?: AstNodeHost }).name?.text;
+          if (name) out.push({ name, line: lineOf(stmt) });
+        }
+        continue;
+      }
+      // 形态四：export function/class/type/interface/enum —— 有 name 的声明
+      const name = (stmt as AstNodeHost & { name?: AstNodeHost }).name?.text;
+      if (name && [
+        'FunctionDeclaration', 'ClassDeclaration', 'TypeAliasDeclaration',
+        'InterfaceDeclaration', 'EnumDeclaration', 'ModuleDeclaration',
+      ].some((k) => kindIs(stmt, k))) {
+        out.push({ name, line: lineOf(stmt) });
+      }
+    }
+    return out;
   }
 
   private ensureTmpRoot(): void {

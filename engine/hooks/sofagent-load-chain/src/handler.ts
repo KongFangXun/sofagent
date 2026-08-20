@@ -1,3 +1,10 @@
+// ── API 分级契约（v1.3.9 四）────────────────────────────
+// `/* @public */`：公开 API——semver 锁定，变更必须 bump 版本 + CHANGELOG 记录
+//                 （外部依赖方与跨平台适配器只许 import 这一层）
+// `/* @internal */`：内部 API——不承诺稳定性，破坏性变更无需 bump
+// 未标记的导出视为 @public（保守默认：宁可多承诺不可漏承诺）
+// ────────────────────────────────────────────────────────
+
 // sofagent load-chain hook · OpenClaw 2026.6.x
 // 注入三层加载链到 agent:bootstrap：
 //   L1 core-rules.md（核心铁律 ~30 行，始终注入）+ 按 task type 追加岗位规范（v1.3.8 渐进式加载）
@@ -28,7 +35,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 
-export interface LoadChainEvent {
+/* @public */ export interface LoadChainEvent {
   type?: string;
   action?: string;
   workspaceRoot: string;
@@ -202,4 +209,4 @@ const handler = async (event: LoadChainEvent) => {
   }
 };
 
-export default handler;
+/* @public */ export default handler;
