@@ -214,7 +214,8 @@ export function degradeImageToText(imagePath: string): string {
   // 颜色统计：字节级直方图（RGB 三通道合并采样，16 桶）
   const buckets = new Array<number>(16).fill(0);
   for (let i = 0; i < buf.length; i += 97) { // 大图采样步长
-    buckets[Math.floor((buf[i] ?? 0) / 16)] += 1;
+    const bucketIdx = Math.floor((buf[i] ?? 0) / 16);
+    buckets[bucketIdx] = (buckets[bucketIdx] ?? 0) + 1;
   }
   const total = buckets.reduce((a, b) => a + b, 0) || 1;
   const histogram = buckets
