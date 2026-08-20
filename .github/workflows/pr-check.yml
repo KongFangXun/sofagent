@@ -15,9 +15,9 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - name: check-version.sh
-        run: bash tools/check-version.sh
+        run: bash tools/check/check-version.sh
       - name: check-docs.sh
-        run: bash tools/check-docs.sh
+        run: bash tools/check/check-docs.sh
 
   # v1.3.9（四）：public API 变更检测——@public 符号集变化必须 semver bump + CHANGELOG。
   # 不装依赖直接跑（AST 引擎不可用时自动回退正则解析，门禁语义不变）。

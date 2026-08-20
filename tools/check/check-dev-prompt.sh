@@ -31,7 +31,7 @@
 
 set -o pipefail
 
-cd "$(dirname "$0")/.." || exit 1
+cd "$(dirname "$0")/../.." || exit 1
 
 FILE="${1:-}"
 if [ -z "$FILE" ]; then

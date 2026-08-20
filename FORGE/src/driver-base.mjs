@@ -1004,7 +1004,7 @@ export function createForgeDriverBase(config = {}) {
 // 六项检查（HALT = 阻塞退出；WARN = 警告继续）：
 //   ① cwd 路径存在性     [HALT] 目录不存在/不可读 = git 命令全部崩
 //   ② stdout 管道 SIGPIPE [WARN] ⚠️ 设计修正：原 spec 定 HALT，但
-//      tools/forge-smoke-test.sh 用 $(node driver --dry-run) 命令替换调用
+//      tools/forge/forge-smoke-test.sh 用 $(node driver --dry-run) 命令替换调用
 //      driver，其 stdout 天然是管道——HALT 会打破冒烟测试的 RC=0 契约。
 //      故降级 WARN：只提醒"别用 | head"，不阻塞合法管道调用。
 //   ③ 模型 API 可达      [HALT] fetch baseURL/models，3s 超时，最多一次

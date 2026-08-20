@@ -22,8 +22,8 @@
     "engine/hooks/sofagent-load-chain"
   ],
   "scripts": {
-    "test": "npm test --workspaces --if-present && bash tools/sofagent-dashboard.test.sh",
-    "test:count": "bash tools/check-test-count.sh",
+    "test": "npm test --workspaces --if-present && bash tools/dashboard/sofagent-dashboard.test.sh",
+    "test:count": "bash tools/check/check-test-count.sh",
     "build": "npm run build --workspace=engine/harness && npm run build --workspace=engine/ontology && npm run build --workspace=engine/core && npm run build --workspace=engine/rules && npm run build --workspace=engine/think && npm run build --workspace=engine/audit && npm run build --workspace=engine/eval && npm run build --workspace=engine/skillopt && npm run build --workspace=engine/orchestrator && npm run build --workspace=engine/daemon && npm run build --workspace=engine/ab-test && npm run build --workspace=engine/mcp && npm run build --workspace=engine/hooks/sofagent-load-chain",
     "postinstall": "npm run build",
     "postbuild": "node -e \"const fs=require('fs');const dirs=['engine/ab-test','engine/audit','engine/core','engine/daemon','engine/eval','engine/mcp','engine/ontology','engine/orchestrator','engine/skillopt','engine/think'];for(const d of dirs){const p=require('path').join(d,'dist');if(fs.existsSync(p)){fs.readdirSync(p).forEach(f=>{if(f.endsWith('.js')){try{fs.chmodSync(require('path').join(p,f),0o755)}catch(e){}}})}}\""

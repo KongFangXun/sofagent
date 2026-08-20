@@ -170,7 +170,7 @@
 |----|-----|
 | 当前版本 | **v1.3.8**（2026-08-20） |
 | 下一版 | v1.3.9（规划中，参见 docs/ROADMAP.md） |
-| 测试覆盖 | 2787 测试 / 12 包（测试统计标准：有 test script 的 workspace 包；workspace 总数 13 个均发布到 npm，实测见 `tools/test-count.sh`、声称数同步校验见 `tools/check-test-count.sh`） |
+| 测试覆盖 | 2892 测试 / 12 包（测试统计标准：有 test script 的 workspace 包；workspace 总数 13 个均发布到 npm，实测见 `tools/check/test-count.sh`、声称数同步校验见 `tools/check/check-test-count.sh`） |
 | 审计规则 | 24 条（17 默认 + 7 扩展），活跃编号 A1-A11 + A14-A23 + E1/E2/E4，每次 commit 自动跑 |
 | FORGE | fresh-eyes-loop + release-gate-loop 运行中 |
 | 数据目录 | **data/**（v1.2.1+ SSOT 运行时数据目录） |
@@ -232,7 +232,7 @@
 | 运行测试 / 验证效果 | [guides/testing.md](./guides/testing.md) |
 | 添加新审计规则 | `engine/audit/src/rules/` → 对照现有规则模式（defaultRules / extendedRules） |
 | 新建 Sub Agent | `SKILL/agents/` → 参照 `agents/engineer/SKILL.md` |
-| 运行测试 | `npm test`（根目录）；全量统计以 `tools/test-count.sh` 为准，`npm test` 直跑遇 mcp 超时属 flaky，重跑即可 |
+| 运行测试 | `npm test`（根目录）；全量统计以 `tools/check/test-count.sh` 为准，`npm test` 直跑遇 mcp 超时属 flaky，重跑即可 |
 
 ### 贡献 / 审查 / 发版（内部工程）
 

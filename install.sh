@@ -632,9 +632,9 @@ esac
 CLIEOF
   chmod +x "$bin_dir/sofagent"
 
-  # Dashboard 入口软链（v1.2.2 真实实现 tools/sofagent-dashboard.sh，零前端依赖 bash+jq）
+  # Dashboard 入口软链（v1.2.2 真实实现 tools/dashboard/sofagent-dashboard.sh，零前端依赖 bash+jq）
   # wrapper dashboard 分支检查 -x "$SOFAGENT_HOME/bin/sofagent-dashboard"，故软链目标不带 .sh 后缀
-  local dashboard_src="${SCRIPT_DIR}/tools/sofagent-dashboard.sh"
+  local dashboard_src="${SCRIPT_DIR}/tools/dashboard/sofagent-dashboard.sh"
   local dashboard_link="$bin_dir/sofagent-dashboard"
   if [ -f "$dashboard_src" ]; then
     ln -sf "$dashboard_src" "$dashboard_link" 2>/dev/null || true

@@ -12,8 +12,8 @@
 # 现改为逐包遍历（包名已知），彻底规避解析歧义。
 #
 # 用法:
-#   ./tools/test-count.sh           # 跑全量，汇总 + 退出码
-#   ./tools/test-count.sh --quiet   # 只输出机器可读的 TOTAL_TESTS= 行（供检查脚本 grep）
+#   ./tools/check/test-count.sh           # 跑全量，汇总 + 退出码
+#   ./tools/check/test-count.sh --quiet   # 只输出机器可读的 TOTAL_TESTS= 行（供检查脚本 grep）
 #
 # 退出码:
 #   0 = 全部通过（部分包无测试视为正常）
@@ -26,7 +26,7 @@ FLAKY_PKGS=""
 # v1.3.9 四十九：flaky 复跑次数计数（首跑失败→复跑全绿的包数，供 human 追因与采信上限）
 FLAKY_COUNT=0
 
-cd "$(dirname "$0")/.." || exit 1
+cd "$(dirname "$0")/../.." || exit 1
 
 # ── 参数 ──
 QUIET=false

@@ -83,7 +83,8 @@ interface SpillReadResult {
  */
 function spillDiffToLines(gitArgs: string[], cwd: string | undefined, filePath: string): SpillReadResult {
   const spillDir = resolveSpillDir();
-  mkdirSync(spillDir, { recursive: true });
+  // mode 0o700：spill 目录可能落密钥类 diff 内容——v1.2.3 权限加固纪律（场景 153）
+  mkdirSync(spillDir, { recursive: true, mode: 0o700 });
   const hash = createHash('sha256').update(`${filePath}:${gitArgs.join(' ')}`).digest('hex').slice(0, 16);
   const spillFile = join(spillDir, `diff-${hash}.diff`);
 

@@ -80,7 +80,7 @@ A17:
 # ── 配置防篡改签名（可选）──
 # 如需防止 Agent 篡改本配置文件，可对 config.yml 签名：
 #   1. 创建密钥（仅一次）：openssl rand -hex 32 > ~/.sofagent-key && chmod 600 ~/.sofagent-key
-#   2. 颁发签名：node tools/sign-config.mjs .sofagent/config.yml
+#   2. 颁发签名：node tools/release/sign-config.mjs .sofagent/config.yml
 # 签名后 config.yml 顶层会多出 signature: <hex> 字段。
 # 加载时若签名不匹配会告警（不阻断启动）。
 # 修改配置后需重新签名。

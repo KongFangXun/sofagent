@@ -101,7 +101,7 @@ prompt 是**快照**，代码在动。写 prompt 时某个 bug 还没修，等�
 
 | 工具 | 职责 | 何时用 |
 |------|------|--------|
-| `tools/check-dev-prompt.sh` | 自动查引用存在性（硬证据闸门） | A0 循环体第 ① 步 |
+| `tools/check/check-dev-prompt.sh` | 自动查引用存在性（硬证据闸门） | A0 循环体第 ① 步 |
 | **本清单** | 人工查"对不对 / 全不全 / 新不新" | A0 循环体第 ② 步（脚本零 ❌ 后） |
 | `FORGE/playbook/fresh-eyes-review.md` | 留白式直觉审查（12 视角） | 阶段一 / 阶段十二步骤 42 |
 

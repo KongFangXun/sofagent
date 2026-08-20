@@ -33,10 +33,10 @@
 
 | 文件 | 职责 |
 |------|------|
-| `tools/dashboard.html` | 单文件零依赖 SPA，6 页导航：驾驶舱 / FDE引导 / AI节点 / 本体结构 / 知识库 / 工具箱 |
-| `start-dashboard.command`（仓库根目录） | macOS 一键启动快捷指令（双击即开，关窗口即停；本质是 `node tools/serve-dashboard.mjs` 包装；仅 macOS 双击入口） |
-| `tools/serve-dashboard.mjs` | 本地 HTTP 服务器：页面 + `/data/*` 原始数据 + 4 个聚合 API |
-| `tools/gen-weekly-report.mjs` | 手动生成持续优化周报（daily + weekly） |
+| `tools/dashboard/dashboard.html` | 单文件零依赖 SPA，6 页导航：驾驶舱 / FDE引导 / AI节点 / 本体结构 / 知识库 / 工具箱 |
+| `start-dashboard.command`（仓库根目录） | macOS 一键启动快捷指令（双击即开，关窗口即停；本质是 `node tools/dashboard/serve-dashboard.mjs` 包装；仅 macOS 双击入口） |
+| `tools/dashboard/serve-dashboard.mjs` | 本地 HTTP 服务器：页面 + `/data/*` 原始数据 + 4 个聚合 API |
+| `tools/gen/gen-weekly-report.mjs` | 手动生成持续优化周报（daily + weekly） |
 | `docs/assets/` | logo/favicon 等静态资源（dashboard 用 `docs/assets/` 相对路径引用，不建软链） |
 
 > ⚠️ **dashboard.html 位于 `tools/`**——Web Dashboard（与服务器 serve-dashboard.mjs 同目录），双形态之一（终端形态为 sofagent-dashboard.sh）。历史迁移：最初放 docs/ 根「藏身」用户找不到 → V6.5 移到仓库根 → v1.3.3 移到 docs/demo/（当时误定位为「开发预览版」）→ **v1.3.5 归位 tools/**（demo 名不副实——README 三入口表早已将 Web 版列为产品入口，与服务器同目录才是它的家）。
@@ -53,7 +53,7 @@
       → /data/*               ← 映射 ~/.sofagent/data/*（history.jsonl 截断最近 500 条防卡死）
 ```
 
-- **/api/summary 复用 bash 口径**（V6.1 核心设计）：执行与 `tools/sofagent-dashboard.sh` 完全相同的 jq 聚合（`dataFlow.destination=="cloud-api"` / `direction=="outbound"` 判定）——HTML 与终端看到的是同一份数据
+- **/api/summary 复用 bash 口径**（V6.1 核心设计）：执行与 `tools/dashboard/sofagent-dashboard.sh` 完全相同的 jq 聚合（`dataFlow.destination=="cloud-api"` / `direction=="outbound"` 判定）——HTML 与终端看到的是同一份数据
 - **测试记录过滤**（V10）：fixture 泛化任务名（"add code" 重复 476 次等）会被统计成几百条"违规"污染趋势。服务器用 `TEST_TASK_RE` 正则过滤后聚合，`/api/summary` 返回 `totalRecords/filteredTestRecords/auditTotal` 三个计数保持透明。⚠️ **只用任务名过滤，不用 `envFingerprint` 字段**——那是审计引擎给所有记录（含真实记录）打的常规字段，不是测试标记（详见 §4.12）
 - **/api/export-history**（V10）：审计记录卡右上角「全量历史」按钮直接下载原始全量（5000+ 行不截断）。决策：原始数据本就在 `~/.sofagent/data/audit/history.jsonl`，**不在 data/ 目录重复存一份**，下载原始全量最诚实
 - **File System Access API**：Chrome/Edge 用户可直接点「连接数据目录」选 `~/.sofagent/data` 免服务器（Safari 不支持，按钮自动隐藏）
@@ -174,7 +174,7 @@ jq 程序 `"\(.x)"` 里的 `\(` 在 JS 普通字符串中丢反斜杠（未知�
 ### 4.3 sustain "持续优化"诚实呈现（V8.3-V8.4）
 第 10 步"持续优化"最初只是模板展示，无真实数据。查证：`trend-aggregator.ts` / `daily-snapshot.ts` 两个生成器 v1.2.5 已写好且注册，**只是从未被触发**（daemon 没跑）。方案：
 1. 先诚实显示"🟡 能力就绪"（不假装有数据）
-2. 写 `tools/gen-weekly-report.mjs` 手动触发：从 `audit/history.jsonl`（5186 条真实记录）回填 daily + 生成 weekly 周报
+2. 写 `tools/gen/gen-weekly-report.mjs` 手动触发：从 `audit/history.jsonl`（5186 条真实记录）回填 daily + 生成 weekly 周报
 3. `/api/ai-nodes` 的 sustain 字段读 weekly-*.json，有数据自动 `active:true`
 
 > **原则**：页面显示"待巡检/未建立"不是失败，是诚实。用户会质疑"是不是吹牛"，数据驱动胜过话术。
@@ -221,10 +221,10 @@ AI 节点页不能塞 FDE workflow 模板（那是项目内置方法论），否
 ```bash
 # 启动
 ./start-dashboard.command             # macOS 一键启动（根目录，双击即开；关窗口即停）
-node tools/serve-dashboard.mjs        # 命令行启动 → http://localhost:3780（自动开浏览器）
+node tools/dashboard/serve-dashboard.mjs        # 命令行启动 → http://localhost:3780（自动开浏览器）
 
 # 生成持续优化周报（手动触发）
-node tools/gen-weekly-report.mjs      # 从 audit/history.jsonl 生成 daily + weekly
+node tools/gen/gen-weekly-report.mjs      # 从 audit/history.jsonl 生成 daily + weekly
 
 # 手机预览
 # 手机浏览器开 http://<局域网IP>:3780，或本地 localhost 后 DevTools 模拟

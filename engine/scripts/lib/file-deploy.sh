@@ -110,7 +110,7 @@ T
     else ok "think.md 已存在，跳过"; fi
   fi
 
-  # v1.2.x: releaser Skill 已移除（发版 SOP 迁 docs/changelog/releasing.md，版本号脚本迁 tools/bump-version.sh）
+  # v1.2.x: releaser Skill 已移除（发版 SOP 迁 docs/changelog/releasing.md，版本号脚本迁 tools/release/bump-version.sh）
 
   # v1.2.1: custom/ 用户自定义层部署（P2 设计闭环——安装创建 + 升级三策略保护）
   deploy_custom_dir

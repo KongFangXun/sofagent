@@ -39,10 +39,10 @@ FORGE 的自迭代不是单一循环，而是**外环 + 内环**的双层结构�
 
 | 节点 | 证据工具 | 有 ❌ 的后果 |
 |------|---------|------------|
-| A0（编写 dev prompt） | ① `tools/check-dev-prompt.sh`（查存在性）+ ② `FORGE/playbook/dev-prompt-checklist.md`（查签名/注册点/已完成区等软错误） | 两层都过才许进开发 |
+| A0（编写 dev prompt） | ① `tools/check/check-dev-prompt.sh`（查存在性）+ ② `FORGE/playbook/dev-prompt-checklist.md`（查签名/注册点/已完成区等软错误） | 两层都过才许进开发 |
 | A5-d3（D3 闸门） | `FORGE/playbook/acceptance-test.sh` | 零覆盖 = 不许进下一阶段 |
 | A6（release-gate-loop） | `FORGE/src/release-gate-driver.mjs` | verdict = FAIL = 回阶段五 |
-| VERSION-check | `tools/check-version.sh` | 版本号不一致 = 阻断发布 |
+| VERSION-check | `tools/check/check-version.sh` | 版本号不一致 = 阻断发布 |
 
 > **通向自转的路径**：外环每转一圈，就有新的证据闸门补上。当前这一轮补上的是 A0 的 `check-dev-prompt.sh`（v1.2.2 教训：dev prompt 引用了不存在的文件路径）。下一轮可能补的是 A8 文档收尾的自动化检查。当所有关键节点都有证据闸门、所有内环都能 driver 自转时，外环就能从"半自动"走向"人只在确认关口介入"。
 

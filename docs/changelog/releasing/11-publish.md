@@ -53,11 +53,11 @@ sofagent-audit --doctor
 bash tools/pre-push-check.sh
 
 # 文档预算 + 死链 + Skill 行数（pre-push-check 内含，但发布前必须单独显式跑一次确认）
-bash tools/check-docs.sh
+bash tools/check/check-docs.sh
 
 # 测试数文档同步门禁（v1.3.4 教训：bugfix/dev/dsh 三阶段均漏此步，每次新增测试后文档声称数漂移）
 # 必须在发布前显式跑——check-test-count.sh 校验 README/WIKI/LIMITATIONS/ARCHITECTURE 的测试数与 test-count.sh SSOT 一致
-bash tools/check-test-count.sh --quiet
+bash tools/check/check-test-count.sh --quiet
 # 期望输出 OK / EXIT=0。FAIL = 有文档测试数漂移，必须修后再 push
 
 # CI shellcheck workflow 单独跑（pre-push-check 内含，但 CI 扫描范围可能不同）
@@ -172,7 +172,7 @@ for f in README.md README.en.md bootstrap.sh; do
 done
 ```
 
-> 注意：check-version.sh（v1.3.6 起）含安装入口 tag 对账检查项，`bash tools/check-version.sh` 会给出三方 tag 一致性结论；此处 curl 是最后一道实测防线（URL 真实可达性）。
+> 注意：check-version.sh（v1.3.6 起）含安装入口 tag 对账检查项，`bash tools/check/check-version.sh` 会给出三方 tag 一致性结论；此处 curl 是最后一道实测防线（URL 真实可达性）。
 
 ---
 
@@ -184,7 +184,7 @@ LAST_TAG=$(git describe --tags --abbrev=0 HEAD~1 2>/dev/null || echo "")
 [ -n "$LAST_TAG" ] && echo "上一 tag: $LAST_TAG" && git log --oneline ${LAST_TAG}..HEAD | head -20
 # 🔴 CI 全绿确认（步骤四的 exit 0 是进入本步骤的前提，不可跳过）
 # 确认 check-version + check-test-count 全绿（tag 不得在代码/文档未就绪时打）
-bash tools/check-version.sh && bash tools/check-test-count.sh --quiet
+bash tools/check/check-version.sh && bash tools/check/check-test-count.sh --quiet
 
 # ── 打 tag + push ──
 git tag -a vX.Y.Z -m "vX.Y.Z · {一句话版本摘要}"
@@ -391,7 +391,7 @@ cp -r SKILL/agents/fde/ ~/.workbuddy/skills/sofagent-fde/ 2>/dev/null || echo "F
 cp -r SKILL/agents/fde/ ~/.openclaw/skills/sofagent-fde/ 2>/dev/null || true
 
 # 3. 最终验证
-bash tools/check-version.sh   # 全绿
+bash tools/check/check-version.sh   # 全绿
 ```
 
 ---

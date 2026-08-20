@@ -269,7 +269,7 @@ flowchart TD
 | 6 | `docs/changelog/releasing.md` | 发版 SOP |
 | 7 | `README.md` | 项目首屏 |
 | 8 | `FORGE/playbook/acceptance-test.sh` | 验收测试脚本（每版本补场景） |
-| 9 | `tools/bump-version.sh` | 版本号管理（13 类位置同步） |
+| 9 | `tools/release/bump-version.sh` | 版本号管理（13 类位置同步） |
 
 ### L2 版本跟随（有相关改动时更新）
 
@@ -304,7 +304,7 @@ releasing 流程依赖以下核心测试资产，每个版本迭代都会更新�
 | **回归清单** | `FORGE/playbook/regression-checklist.md` | 每次发版前逐项核对，确认已修问题无回退 | 加法更新（发现新问题追加维度） |
 | **验收测试脚本** | `FORGE/playbook/acceptance-test.sh` | 端到端全场景自动化验收 | 每版本补场景（只增不改编号） |
 | **审查体系** | `FORGE/playbook/fresh-eyes-review.md` | 留白式直觉审查，凭直觉发现新问题 | 校准更新（不是加法） |
-| **版本号脚本** | `tools/bump-version.sh` | 13 类位置版本号同步替换 | 自动化脚本，禁止手动 grep/sed |
+| **版本号脚本** | `tools/release/bump-version.sh` | 13 类位置版本号同步替换 | 自动化脚本，禁止手动 grep/sed |
 
 > **防膨胀机制**：回归清单 ≤ 1000 行、验收脚本 ≤ 1500 行。每版本发版做一轮瘦身，防止验证文件膨胀失控。
 

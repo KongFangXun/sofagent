@@ -29,7 +29,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const PORT = process.env.DASHBOARD_PORT || 3780;
 // dashboard.html 在 tools/（与其服务器同目录）（docs/assets/ 存放静态资源，仓库根为 static root）
-const DOCS_DIR = join(__dirname, '..');
+const DOCS_DIR = join(__dirname, '../..');
 const SOFAGENT_DATA = process.env.SOFAGENT_HOME
   ? join(process.env.SOFAGENT_HOME, 'data')
   : join(homedir(), '.sofagent', 'data');
@@ -503,9 +503,9 @@ const server = createServer(async (req, res) => {
     return;
   }
 
-  // Default route → dashboard.html（tools/）
+  // Default route → dashboard.html（tools/dashboard/，v1.3.9 分目录）
   if (urlPath === '/' || urlPath === '') {
-    urlPath = '/tools/dashboard.html';
+    urlPath = '/tools/dashboard/dashboard.html';
   }
 
   const filePath = join(DOCS_DIR, normalize(urlPath));

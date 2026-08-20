@@ -167,8 +167,8 @@
 |:--:|------|------|
 | 一 | **开发日志定稿**：按上方骨架归位，发布检查清单全部打勾 | 结构完整 + 清单打勾 |
 | 二 | **CHANGELOG 索引**：根 CHANGELOG.md 新增本版本索引条目（目录非详情） | 索引条目存在 |
-| 三 | **发版日期同步**（详见下方脚本） | `bash tools/check-version.sh` 全绿 |
-| 四 | **测试数一致性**：`bash tools/check-test-count.sh --quiet` 确认声称数与实际一致。**禁止手动报数——必须跑脚本** | 全绿 |
+| 三 | **发版日期同步**（详见下方脚本） | `bash tools/check/check-version.sh` 全绿 |
+| 四 | **测试数一致性**：`bash tools/check/check-test-count.sh --quiet` 确认声称数与实际一致。**禁止手动报数——必须跑脚本** | 全绿 |
 | 五 | **ROADMAP 同步**（详见 [08-roadmap-sync.md](./08-roadmap-sync.md)）：本版移出规划表→进迭代表；探索方向表清理已交付/已排期条目；版本号+日期更新；迭代表瘦身（老版本合并）。⚠️ **每次发版后还要做 ROADMAP 体检**（重复表/散落章节/死链/模糊版本号）——详见子文档「体检清单」 | ROADMAP 更新 |
 | 六 | **全项目版本号扫描**：所有 package.json + 文档头版本号一致 | check-version.sh 全绿 |
 | 七 | **文档同步闭环**：changelog 每个功能点 → 对应项目文档有覆盖（详见下方按需文档表） | D6 清单零遗漏 |
@@ -186,7 +186,7 @@ OLD_DATE=$(git log --format="%ci" -1 --diff-filter=A -- package.json | grep -oE 
 # 如果找不到，手动指定：OLD_DATE="2026-08-09"
 
 # 2. check-version.sh 的 EXPECTED_DOC_DATE 改为今天
-sed -i '' "s/EXPECTED_DOC_DATE=\"[0-9-]*\"/EXPECTED_DOC_DATE=\"$TODAY\"/" tools/check-version.sh
+sed -i '' "s/EXPECTED_DOC_DATE=\"[0-9-]*\"/EXPECTED_DOC_DATE=\"$TODAY\"/" tools/check/check-version.sh
 
 # 3. 批量更新文档头日期（旧日期 → 今天，只改 > vX.Y 开头的文档头行）
 grep -rl "^> v[0-9].*· ${OLD_DATE}" --include="*.md" . \
@@ -195,7 +195,7 @@ grep -rl "^> v[0-9].*· ${OLD_DATE}" --include="*.md" . \
   | xargs sed -i '' "s/· ${OLD_DATE}/· ${TODAY}/g" 2>/dev/null || true
 
 # 4. 验证
-bash tools/check-version.sh   # 期望：日期一致项全绿
+bash tools/check/check-version.sh   # 期望：日期一致项全绿
 ```
 
 > bump 详细指南（13 类位置 + package-lock 同步 + npm 铁律）见 [FORGE/playbook/version-bump.md](../../../FORGE/playbook/version-bump.md)。
@@ -222,7 +222,7 @@ bash tools/check-version.sh   # 期望：日期一致项全绿
 | 规则 | 触发时机 |
 |------|---------|
 | **新增前置 grep** | 新增检查项/生成器/脚本/文档前，先 `grep -rn <功能关键词> tools/ engine/scripts/ docs/` 确认无同类实现；有则增量扩展，不新建 |
-| **同类即抽** | 同类文件 ≥3 个时必须抽公共库（现状：tools/gen-* 系列 → `tools/gen-draft-lib.mjs` 已抽） |
+| **同类即抽** | 同类文件 ≥3 个时必须抽公共库（现状：tools/gen-* 系列 → `tools/gen/gen-draft-lib.mjs` 已抽） |
 
 ---
 

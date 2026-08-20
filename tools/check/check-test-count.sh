@@ -8,8 +8,8 @@
 # 各文档当前版本声称的数字，不匹配就 exit 1。
 #
 # 用法:
-#   ./tools/check-test-count.sh           # 人读输出
-#   ./tools/check-test-count.sh --quiet   # 只输出 OK/FAIL
+#   ./tools/check/check-test-count.sh           # 人读输出
+#   ./tools/check/check-test-count.sh --quiet   # 只输出 OK/FAIL
 #
 # 退出码:
 #   0 = 文档声称数全部与实际一致
@@ -18,7 +18,7 @@
 
 set -uo pipefail
 
-cd "$(dirname "$0")/.." || exit 1
+cd "$(dirname "$0")/../.." || exit 1
 
 QUIET=false
 for arg in "$@"; do
@@ -53,7 +53,7 @@ fi
 # TOTAL_TESTS=NNN（该行不受 ANSI/quiet 守卫影响，恒输出），再回退到 quiet 模式与「总计」行。
 # v1.3.3 #10: 提前初始化 TC_RC + 显式 || TC_RC=$? 兜底，避免 set -u 下失败路径崩溃。
 TC_RC=0
-TC_OUT=$(bash tools/test-count.sh 2>/dev/null) || TC_RC=$?
+TC_OUT=$(bash tools/check/test-count.sh 2>/dev/null) || TC_RC=$?
 # v1.3.2 P0-R8 (P1-15): 修复门禁假绿——test-count.sh 的退出码此前被 $() 吞掉。
 # 若任一包测试失败，test-count.sh 退出 1 但其输出仍含 TOTAL_TESTS=NNN（总数不变），
 # 旧脚本只看 TOTAL_TESTS 与文档比对 → 文档匹配就返回 OK/EXIT=0，测试实际失败仍被放行。
@@ -61,7 +61,7 @@ TC_OUT=$(bash tools/test-count.sh 2>/dev/null) || TC_RC=$?
 if [ "$TC_RC" -ne 0 ]; then
   if [ "$QUIET" = false ]; then
     echo -e "  ${RED}✗ test-count.sh 失败（RC=${TC_RC}）——有包测试失败或脚本错误，门禁红${NC}"
-    echo -e "  ${YELLOW}修法：跑 bash tools/test-count.sh 看哪个包失败，修复测试后再跑本脚本${NC}"
+    echo -e "  ${YELLOW}修法：跑 bash tools/check/test-count.sh 看哪个包失败，修复测试后再跑本脚本${NC}"
   else
     echo "FAIL"
   fi
@@ -71,7 +71,7 @@ fi
 TOTAL_TESTS=$(echo "$TC_OUT" | sed $'s/\033\[[0-9;]*m//g' | grep -oE 'TOTAL_TESTS=[0-9]+' | grep -oE '[0-9]+' || echo "0")
 # 回退 1：quiet 模式（同样有机器可读行）
 if [ -z "$TOTAL_TESTS" ] || [ "$TOTAL_TESTS" = "0" ]; then
-  TOTAL_TESTS=$(bash tools/test-count.sh --quiet 2>/dev/null | sed $'s/\033\[[0-9;]*m//g' | grep -oE 'TOTAL_TESTS=[0-9]+' | grep -oE '[0-9]+' || echo "0")
+  TOTAL_TESTS=$(bash tools/check/test-count.sh --quiet 2>/dev/null | sed $'s/\033\[[0-9;]*m//g' | grep -oE 'TOTAL_TESTS=[0-9]+' | grep -oE '[0-9]+' || echo "0")
 fi
 # 回退 2：非 quiet 的「总计: NNN tests」人读行（strip ANSI 后再匹配）
 if [ -z "$TOTAL_TESTS" ] || [ "$TOTAL_TESTS" = "0" ]; then
