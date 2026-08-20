@@ -17,7 +17,7 @@
 
 ## 这是什么
 
-**sofagent 是一个开源 FDE Agent**（MIT）——进场帮你梳理业务工作流，把能自动化的环节变成 AI 节点；交付完成后 FDE 离场，AI 节点继续 7×24 自动执行任务，每次干活受审计、越界能拦截、出事能回滚。它以 [FDE Skill](https://clawhub.ai/kongfangxun/skills/sofagent) 形态在 ClawHub 分发（帮 SMB · OPC 的每个人成为自己业务的 FDE 的方法论 Skill），装到企业设备后以**约束层引擎**长期运行（注入·审计·回溯·进化四种能力，daemon 为其常驻载体）。
+**sofagent 是一个开源 FDE Agent**（MIT）——进场梳理工作流、部署 AI 节点、7×24 审计每次变更，越界能拦、出事能回滚。它以 [FDE Skill](https://clawhub.ai/kongfangxun/skills/sofagent) 形态在 ClawHub 分发（帮 SMB · OPC 的每个人成为自己业务的 FDE 的方法论 Skill），装到企业设备后以**约束层（Harness）引擎**长期运行（注入·审计·回溯·进化四种能力，daemon 为其常驻载体）。
 
 > 📊 **为什么是现在**：MIT NANDA 实验室《生成式人工智能的鸿沟》报告指出，全球企业过去三年在生成式 AI 上烧了三四百亿美元，**95% 的项目没能产生能写进财务报表的价值**；与此同时，一个叫「前线部署工程师」（Forward Deployed Engineer，FDE）的岗位发布量一年涨了 **729%**（Indeed 2025 数据）。模型不稀缺了，能把模型塞进客户真实业务里的人，才稀缺——sofagent 就是把这件事工程化的开源底座。（数据核验与多机构口径对照见 [VALIDATION §一·治理缺口的代价](./docs/VALIDATION.md#治理缺口的代价三项联网核验证据)，FDE 经济账见 [VALIDATION §四](./docs/VALIDATION.md#四市场印证行业判断被市场买单)。）
 
@@ -28,7 +28,7 @@ graph LR
     C -.->|经验沉淀·持续优化| C
 ```
 
-> 💾 **部署完别急着走**：单个节点的 workflow（Agent 的能力）用 LangGraph 定义好后，经 DSH（DeepSeek Harness 执行后端）直接「烧」进 U 盘——U 盘就变成一个节点、一把 key，插到哪台机器哪台就能跑（拔掉零残留）。详见 [HANDBOOK · USB 一键烧录](./docs/HANDBOOK.md#近期版本新功能速览)。
+> 💾 **部署完别急着走**：单个节点的 workflow（Agent 的能力）用 LangGraph 定义好后，经 DSH（DeepSeek Harness 执行后端，商业侧可选组件，非开源仓库内交付）直接「烧」进 U 盘——U 盘就变成一个节点、一把 key，插到哪台机器哪台就能跑（拔掉零残留）。详见 [HANDBOOK · USB 一键烧录](./docs/HANDBOOK.md#近期版本新功能速览)。
 
 > 🏞️ 大厂给你"水"（大模型）和"河床"（Agent 平台），但水是原水，你不敢直接喝。sofagent 是帮你把河里的水让整个城市用起来的工程——堤坝不让水泛滥、自来水厂把原水变直饮水、管网把水送到每家每户的水龙头。模型给 90% 的智力，sofagent 补 10% 的可靠执行。
 
@@ -39,9 +39,13 @@ graph LR
 | 变更审计 | 可自行配 pre-commit + gitleaks/detect-secrets 等工具链（通用扫描器，覆盖面广） | git diff 24 条规则面向 Agent 行为的硬证据判定，装好即用 |
 | 越界拦截 | 需自行拼装 hooks / 规则 | 违规当场阻断 + 审计留证 |
 | 出事回滚 | 手动翻 commit | 一键快照回到任意节点 |
-| 经验积累 | 每次从零开始 | 自动沉淀进知识库（think.md + Dream Cycle + skillopt，v1.3.x 持续增强） |
+| 经验积累 | 每次从零开始 | 设计上自动沉淀进知识库（think.md + Dream Cycle + skillopt，v1.3.x 持续增强），效果随使用积累 |
+
+> ℹ️ 对比维度基于能力差异，不针对特定产品；通用扫描器/框架（pre-commit / gitleaks / detect-secrets 等）与 sofagent 互补而非对立。
 
 > ℹ️ **诚实边界**：通用密钥扫描器（gitleaks / detect-secrets）做**全量历史扫描**、模式库更广（100+ 模式）；sofagent 审计专注**当前 diff 的硬证据 + Agent 行为审计**（越界/注入/权限维度是扫描器不做的）。两者互补，不互替——强密钥合规场景建议并用。
+>
+> ⚠️ **诚实边界**：当前为**单机单用户**设计，多 Agent 共享同一知识库/审计历史——多人/多部门共用需等租户隔离（ROADMAP v1.4.7 G7）。任务日志（task/logs）明文落盘，含任务摘要/代码片段/API 响应摘要/对话摘要——静态加密当前覆盖审计历史主链，task/logs 未覆盖；企业部署前读 [SECURITY](./SECURITY.md)。
 
 ## 核心特性
 
@@ -54,7 +58,7 @@ graph LR
 **治理保障**
 
 - 🔍 **零配置审计**——`npx -y -p @sofagent/audit sofagent-audit`，任何 git 仓库秒级审计最近一次 commit（实测环境：Apple Silicon（M 系列）macOS、预热缓存（非冷启动）、quick 模式单次约 1.1s、5 万行 diff 约 6.1s；数值为单机实测参考值，非基准承诺，不同机器/盘速会有差异。首次 npx 下载约 30 秒）
-- 🧱 **24 条审计规则**（17 默认启用 + 7 扩展可选）——密钥泄漏、越界编辑、注入防御、权限红线，git diff 硬证据判定，违规当场拦截
+- 🧱 **24 条审计规则**（quick 零配置默认跑 17 条；完整 24 条 = 17 默认 + 7 扩展经 config 启用，需 `--init` 装 hook 走完整引擎）——密钥泄漏、越界编辑、注入防御、权限红线，git diff 硬证据判定，违规当场拦截
 - 🛡️ **自动快照回溯**——每次审计后自动存档，出事一键回到任意快照
 
 ## 快速开始
@@ -67,7 +71,7 @@ npx -y -p @sofagent/audit sofagent-audit
 
 > 💡 `sofagent-audit` 是 quick 只读审计（审计最近一次 commit，默认安全无副作用）；`sofagent-audit-full` 是完整审计，需显式指定操作（如 `--diff <range>` / `--init` 等）。
 >
-> ⚠️ **quick 模式范围**：quick 是零配置快速审计，跑 **17 条默认规则**（A3 任务越界 / A9 commit msg 注入无输入跳过，需日志的规则走降级判定；**7 条扩展规则默认不加载**——完整 24 条 = 17 默认 + 7 扩展）。完整防护（commit msg 注入拦截 + 越界检查 + hook 自动审计）需 `--init` 安装 git hook 走完整引擎。详见 [LIMITATIONS §三](./docs/LIMITATIONS.md#三安全与信任模型局限)。
+> ⚠️ **quick 模式范围**：quick 是零配置快速审计，跑 **17 条默认规则**（A3 任务越界 / A9 commit msg 注入检测生效——quick 模式自动读取最近一次 commit 的 message，commit msg 取不到时 A9 由引擎按无输入处理（标跳过）；需日志的规则走降级判定；**7 条扩展规则默认不加载**——完整 24 条 = 17 默认 + 7 扩展）。完整防护（commit msg 注入拦截 + 越界检查 + hook 自动审计）需 `--init` 安装 git hook 走完整引擎。详见 [LIMITATIONS §三](./docs/LIMITATIONS.md#三安全与信任模型局限)。
 
 拦截特定格式密钥泄漏时是这样的（真实输出）：
 
@@ -76,6 +80,8 @@ npx -y -p @sofagent/audit sofagent-audit
 <p align="center">
   <img src="docs/assets/audit-terminal.png" alt="sofagent-audit 拦截 .env 提交" width="860" />
 </p>
+
+<p align="center"><sub>v1.3.x 示例输出</sub></p>
 
 **完整安装**（Node.js ≥ 18，先下载审查再执行）——**装在企业跑 AI 节点的设备上**：
 
@@ -126,7 +132,7 @@ sofagent-audit --doctor    # 验证环境（可选）
   <img src="docs/assets/dashboard.png" alt="sofagent Dashboard 驾驶舱" width="100%" />
 </p>
 
-<p align="center"><sub>Dashboard 驾驶舱：规则通过率、审计任务、违规趋势——AI 在干什么，一眼看清。</sub></p>
+<p align="center"><sub>Dashboard 驾驶舱（单文件 HTML）：规则通过率、审计任务、违规趋势——AI 在干什么，一眼看清。</sub></p>
 
 > 📊 **Dashboard 有三个入口，各归各位**：
 >
@@ -137,6 +143,8 @@ sofagent-audit --doctor    # 验证环境（可选）
 > | **macOS 双击** | 双击 `start-dashboard.command` | Web 版的 macOS 快捷方式（仅 macOS 双击入口） | macOS 用户 |
 >
 > ⚠️ **Dashboard 是已用用户的运维面板，不是首次体验入口。** 数据源是 `~/.sofagent/data/` 下的审计记录——没跑过 `sofagent-audit` 就没数据（Web 版降级显示示例数据）。第一次用？先在你的项目里跑 `npx -y -p @sofagent/audit sofagent-audit`，跑完 Dashboard 才有真实数据。
+
+> 👁️ **Agent 视角：审计结果怎么呈现**——Agent 装完 hook 后，每次 commit 都会触发审计：PASS 时静默放行（自动快照存档），违规/拦截时把结果直接打到 Agent 的终端输出里（上方「拦截特定格式密钥泄漏」的终端截图即真实拦截输出），并按 [fde.md 配置](./docs/HANDBOOK.md)推送 Webhook / IM。Agent 侧无独立图形界面，审计结果以终端/IM 推送呈现（详见 [PHILOSOPHY §二 用户感知到的能力](./docs/PHILOSOPHY.md#用户感知到的能力)）。
 
 ## 三个入口，从 30 秒到全套部署
 
@@ -194,15 +202,17 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # 加载安全规�
 | 核心问题 | 怎么造 Agent | **AI 该放在哪**（先梳理再部署） |
 | 安全保障 | 需自行集成扫描/门禁工具（pre-commit / trufflehog / gitleaks 等） | git diff 硬证据审计 + 运行时拦截 + 一键回滚，开箱即用（扫描器覆盖面对照见上方「诚实边界」注） |
 | 审阅方式 | 靠人手动 review（人力瓶颈） | **机器审阅**——24 条规则自动审 + git diff 硬证据，纯 AI 节点也能被审 |
-| 知识积累 | 从零开始 | 经验自动沉淀进 knowledge 知识库（think.md + Dream Cycle，v1.3.x 持续增强） |
+| 知识积累 | 从零开始 | 设计上自动沉淀进 knowledge 知识库（think.md + Dream Cycle，v1.3.x 持续增强），效果随使用积累 |
 | 数据主权 | 云端托管 | 缺省全量本地，可选联邦查询（用户自主配置云同步=数据出本机，见 SECURITY） |
 | 部署方式 | 学新平台 | 装进你已有的 AI 工具（Claude Code / Cursor / WorkBuddy…） |
+
+> ℹ️ **平台无关的边界**：核心引擎（审计/约束层）平台无关；hook 自动注入当前仅 OpenClaw 生效，其他平台手动注入约束 + 审计照常。
 
 ## 证据与可信度
 
 > 🔬 **外部独立实验证据**（非官方自测）：Joel Niklaus 的 harness-optimization 研究（[研究代码仓库](https://github.com/JoelNiklaus/harness-optimization)，数据见仓库内实验）显示，同一模型不改权重、仅优化外层 Harness，法律 Agent 基准从 **63.4% → 80.1%（+16.7pp）**。详见 [THANKS.md](./docs/THANKS.md)。
 
-> 🧪 **工程可信度**：2782 测试 / 13 包（12 个含测试）（实测见 `tools/test-count.sh`，flaky 重跑机制内置，以脚本判定为准）· 24 条审计规则 · fresh-eyes 独立审查持续运行（审查体系运作见 [docs/guides/review-system.md](./docs/guides/review-system.md)）。
+> 🧪 **工程可信度**：2787 测试 / 13 包（12 个含测试）（测试数以 `tools/test-count.sh` 判定为准（内置 flaky 重跑机制）；`npm test` 直跑在低内存机器可能出现 mcp 包超时闪红，单独重跑即绿，属环境并发问题非产品缺陷）· 24 条审计规则 · fresh-eyes 独立审查持续运行（审查体系运作见 [docs/guides/review-system.md](./docs/guides/review-system.md)）。性能数据为单机参考值，跨工具横评排期 v1.4.x 与 Benchmark 集成。
 
 ## 文档
 

@@ -12,9 +12,11 @@
 > - **[VALIDATION.md](./VALIDATION.md)**：行业印证与生态定位——sofagent 直觉如何被行业验证 + Agent 三层模型 + 架构框架映射。
 > - **[PHILOSOPHY.md](./PHILOSOPHY.md)**：设计哲学与产品方法论（§一~§九）。"不替代 Agent，做 Agent 的控制面"。
 > - **[ROADMAP.md](./ROADMAP.md)**：版本路线图 + 迭代历程。当前 v1.3.8。
-> - **行业坐标**（2026-08-19 红杉 Neo-Lab 分享吸收）：sofagent = 企业 Neo-Lab 的**智能主权基础设施**——Sovereign AI 四层主权（数据/模型适配/评测迭代/部署）各有落点：ontology+审计=数据主权（已具备）、训练协议接口=模型适配（开源只留接口，引擎实现走商业侧）、Benchmark+MLflow=评测迭代、本地权重+灰度=部署。企业自己掌控智能（Neo-Lab 的活），sofagent 管住这些智能（约束层的活）。
+> - **行业坐标**（2026-08-19 红杉 Neo-Lab 分享吸收）：sofagent = 企业 Neo-Lab 的**智能主权基础设施**——Sovereign AI 四层主权（数据/模型适配/评测迭代/部署）各有落点：ontology+审计=数据主权（已具备）、训练协议接口=模型适配（开源仓库保留完整可自建路径——接口 + 参考实现；商业侧为可选托管增强，非闭源锁定）、Benchmark+MLflow=评测迭代、本地权重+灰度=部署。企业自己掌控智能（Neo-Lab 的活），sofagent 管住这些智能（约束层的活）。
 
 > **30 分钟深度路径**（想动手或评估选型时）：① [ARCHITECTURE](./ARCHITECTURE.md) §一~§二（双层架构 + 约束层四能力，~10 分钟）→ ② [PHILOSOPHY](./PHILOSOPHY.md) §一（为什么不替代 Agent，~5 分钟）→ ③ [SECURITY](../SECURITY.md)「已知风险」+ [LIMITATIONS](./LIMITATIONS.md) 目录（诚实边界，~10 分钟）→ ④ 按角色进 [guides/](./guides/)：企业 IT 读 enterprise-deploy · 开发者读 harness-sdk · 想看审查体系读 review-system
+>
+> **评估选型对照框架**：对照 [README · 为什么选 sofagent](../README.md#为什么选-sofagent) 对比表 + [VALIDATION](./VALIDATION.md) 生态定位，建议按四维评估——**审计方式 / 部署方式 / 数据主权 / 知识积累**——逐一对照自身现状做选型决策。
 
 ---
 
@@ -32,7 +34,7 @@
 | **约束层（Harness）** | 对内的技术身份：约束 Agent 行为的「缰绳」——一个层四种能力（注入·审计·回溯·进化），编排（FORGE）为内部工具 | [ARCHITECTURE §二](./ARCHITECTURE.md) |
 | **约束层七维度** | Agent = 模型 + 上下文 + 工具 + 状态 + 执行控制 + 权限 + 可观测性——四种能力各自覆盖其中哪些维度 | [PHILOSOPHY §一 · 四件事的分工](./PHILOSOPHY.md#四件事的分工mcp--skills--ontology--harness)（维度构成以本行为准，ARCHITECTURE 暂无独立小节） |
 | **约束层构成（企业视角）** | 黄仁勋定义：企业专属约束层 = 知识 + 记忆 + 工作流 + 权限 + 安全机制 + 运行环境——模型是起点，围绕模型积累的这套专属系统才是核心资产 | [PHILOSOPHY §一·理论锚点](./PHILOSOPHY.md#智能与控制分离sofagent-的理论锚点) |
-| **审计引擎** | git diff 驱动，24 条规则（17 默认 + 7 扩展），A1→A23 为活跃规则（A12/A13 已在 v0.99.4 合并入 A11，编号不再使用；v1.2.5 新增 A20-A23），每次 commit 自动跑 | [24 条完整清单（SECURITY SSOT）](../SECURITY.md#24-条审计规则完整清单文档级-ssot) |
+| **审计引擎** | git diff 驱动，24 条规则（17 默认 + 7 扩展），活跃编号 A1-A11 + A14-A23 + E1/E2/E4（A12/A13 已并入 A11，编号不再使用），每次 commit 自动跑 | [24 条完整清单（SECURITY SSOT）](../SECURITY.md#24-条审计规则完整清单文档级-ssot) |
 | **三层治理** | Ledger（原始数据）→ Views（派生视图）→ Policy（约束规则），单向派生、不可逆写 | [PHILOSOPHY §五](./PHILOSOPHY.md) |
 | **FORGE** | 自迭代引擎（内部工具，外部用户可忽略）——通过 Workflow 驱动 Agent 审查/修复/验证自己的代码，核心是 fresh-eyes-loop | [FORGE/README.md](../FORGE/README.md) |
 | **SKILL** | Agent 的行为约束文件系统——三层：SKILL.md（主入口）/ harness/（约束底座）/ agents/（Sub Agent） | [SKILL/SKILL.md](../SKILL/SKILL.md) |
@@ -55,7 +57,7 @@
 │  ┌─────────┬─────────┬─────────┬─────────┐ │
 │  │ 注入能力 │ 审计能力 │ 回溯能力 │ 进化能力 │ │
 │  │约束注入链│ git diff │ HMAC 链 │知识蒸馏 │←四种能力│
-│  │SKILL加载│ 24条规则 │ 防篡改  │sustain  │（对外叙事）│
+│  │SKILL加载│ 24条规则 │ 防篡改  │sustain  │（面向用户的能力）│
 │  └─────────┴─────────┴─────────┴─────────┘ │
 │  内部：编排引擎 @sofagent/orchestrator            │
 │        （LangGraph ReactAgent，非对外产品引擎）   │
@@ -137,7 +139,7 @@
 | `docs/archive/` | 历史归档：实验版 changelog、早期证据、设计文档 |
 | `docs/guides/` | 专题指南：部署、测试、Dashboard 开发、Loop 开发等 |
 
-### engine/（12 个 npm 发布包，workspace 含内部 hook 包共 13 个）
+### engine/（13 个 npm 发布包，12 个含测试）
 
 | 包 | 职责 |
 |----|------|
@@ -148,9 +150,9 @@
 | `engine/harness/` | @sofagent/harness — SKILL 加载链（上下文注入） |
 | `engine/mcp/` | @sofagent/mcp — MCP Server（知识库 CRUD tool） |
 | `engine/hooks/sofagent-load-chain/` | @sofagent/load-chain — SKILL 加载链 git hook（v1.2.x 新增，第 13 个 workspace） |
-| `engine/scripts/` | 运维脚本集（9 个 .sh + lib/ 模块 + windows/ .ps1 安装与卸载脚本）——安装（install.sh 调用）、卸载、验证（verify.sh）、daemon 管理、审计日志记录等 |
+| `engine/scripts/` | 运维脚本集（9 个 .sh + lib/ 模块 + windows/ .ps1 安装与卸载脚本）——安装（install.sh 调用）、卸载、验证（verify.sh）、daemon 管理、运行时审计日志记录等 |
 | `~/.sofagent/bin/sofagent` | CLI 入口（安装时生成，不在仓库内）— `sofagent status/where/version/data/help` |
-| 其余 5 包（eval/ab-test/skillopt/rules/ontology） | 详见 `docs/DEVELOPMENT.md §包结构`（README 口径：13 个 workspace 包、12 个含测试；含 hooks 内部包） |
+| 其余 6 包（eval/ab-test/skillopt/rules/ontology/think） | 详见 `docs/DEVELOPMENT.md §包结构`（README 口径：13 个 workspace 包、12 个含测试；含 @sofagent/load-chain hook 包，无独立测试） |
 
 ### 关键数据路径（`data/`）
 
@@ -168,8 +170,8 @@
 |----|-----|
 | 当前版本 | **v1.3.8**（2026-08-20） |
 | 下一版 | v1.3.9（规划中，参见 docs/ROADMAP.md） |
-| 测试覆盖 | 2782 测试 / 12 包（测试统计标准：有 test script 的 workspace 包；workspace 总数 13 个均发布到 npm，实测见 `tools/test-count.sh`、声称数同步校验见 `tools/check-test-count.sh`） |
-| 审计规则 | 24 条（17 默认 + 7 扩展），活跃编号 A1-A11 + A14-A23 + E1-E2/E4，每次 commit 自动跑 |
+| 测试覆盖 | 2787 测试 / 12 包（测试统计标准：有 test script 的 workspace 包；workspace 总数 13 个均发布到 npm，实测见 `tools/test-count.sh`、声称数同步校验见 `tools/check-test-count.sh`） |
+| 审计规则 | 24 条（17 默认 + 7 扩展），活跃编号 A1-A11 + A14-A23 + E1/E2/E4，每次 commit 自动跑 |
 | FORGE | fresh-eyes-loop + release-gate-loop 运行中 |
 | 数据目录 | **data/**（v1.2.1+ SSOT 运行时数据目录） |
 
@@ -177,10 +179,16 @@
 
 ## 六、术语表
 
+> **术语标准表述（SSOT）**：对外中文「约束层」、英文「Harness」；「Constraint Layer」「约束底座」为同义归并，统一写作「约束层（Harness）」，不再单列。
+
 | 术语 | 简释 | 精确定义 |
 |------|------|---------|
 | FDE | Forward Deployed Engineer——进场部署 AI 节点的工程师 | [PHILOSOPHY §一](./PHILOSOPHY.md) |
 | Harness | Agent 行为约束中间件——"缰绳"，非"马" | [ARCHITECTURE §二](./ARCHITECTURE.md) |
+| 双层架构 | 约束层 × 生命周期——约束层保证"每次做对"，生命周期保证"从诊断到自运转怎么走" | [ARCHITECTURE §二·双层架构](./ARCHITECTURE.md#双层架构约束层与生命周期主框架) |
+| 三层嵌套 | Harness → Graph → Loop——环境、流程、反馈三层嵌套，决定"能做什么 / 下一步去哪 / 怎么越做越好" | [WIKI §三·三层嵌套](#三层嵌套harness--graph--loop) |
+| 激活链四阶段 | ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN——交付物从静态文件到自运转 | [guides/fde-activation-chain.md](./guides/fde-activation-chain.md) |
+| 数据流铁律 | 生产者只写不读自己的输出，消费者只读不写——单向派生，不可逆 | [WIKI §三·运行时数据流](#运行时数据流) |
 | Ledger | 原始数据层（think.md + history.jsonl），append-only | [PHILOSOPHY §五](./PHILOSOPHY.md) |
 | Views | 派生视图层（knowledge/ 四子目录），Ledger 单向派生 | [PHILOSOPHY §五](./PHILOSOPHY.md) |
 | Policy | 约束规则层（SKILL + fde.md），Agent 启动时注入 | [PHILOSOPHY §五](./PHILOSOPHY.md) |
@@ -224,7 +232,7 @@
 | 运行测试 / 验证效果 | [guides/testing.md](./guides/testing.md) |
 | 添加新审计规则 | `engine/audit/src/rules/` → 对照现有规则模式（defaultRules / extendedRules） |
 | 新建 Sub Agent | `SKILL/agents/` → 参照 `agents/engineer/SKILL.md` |
-| 运行测试 | `npm test`（根目录） |
+| 运行测试 | `npm test`（根目录）；全量统计以 `tools/test-count.sh` 为准，`npm test` 直跑遇 mcp 超时属 flaky，重跑即可 |
 
 ### 贡献 / 审查 / 发版（内部工程）
 

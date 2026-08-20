@@ -64,7 +64,7 @@
 - **平台无关、即挂即用**：骑在你自选的大厂 Agent（Claude Code / Codex / WorkBuddy / 扣子 / OpenClaw）之上，不替代模型，只补「可靠执行」。（Cursor 社区验证中）
 - **能带走、能协同**：USB 一键烧录（插上即用、拔掉零残留）；多设备加密联邦互查；内置 `@sofagent-fde` + `@sofagent-audit` 双 Agent。
 - **🔗 激活链（v1.2.5+ 已实现 Phase 1-4）**：FDE 诊断交付后，ontology + workflow.yml + skills/ 不再是一堆静态文件躺在磁盘上——激活链自动读交付物 → 注册企业 SubAgent → 编排成 LangGraph 工作流 → 带人工审批（HITL）和审计地自动跑。从"交给企业一堆文档"变成"交给企业一个会自己跑的系统"。Phase 4（SUSTAIN）已于 v1.3.0 交付。详见 [激活链设计文档](./guides/fde-activation-chain.md)。
-- **🧠 v1.3.1 新增**：Ontology 运行时层（执行前校验）· 并行编排（波次并发 + MergeQueue）· Agent 身份码（Ed25519）· Benchmark 评测 · 工具审批四模式 · LLM 调用级 Trace · Durable Execution（checkpoint 续跑）· 国标对齐 GB/T 48000.3-2026。详见 [v1.3.1 开发日志](./changelog/v1.3/v1.3.1.md)。
+- **🧠 v1.3.1 新增**：Ontology 运行时层（执行前校验）· 并行编排（波次并发 + MergeQueue）· Agent 身份码（Ed25519）· Benchmark 评测 · 工具审批四模式 · LLM 调用级 Trace · Durable Execution（checkpoint 续跑）· 本体建模要求对齐 GB/T 48000.3-2026（ontology 合规参考基线，非审计国标）。详见 [v1.3.1 开发日志](./changelog/v1.3/v1.3.1.md)。
 - **🏪 v1.3.4**：组织能力市场——Skill/Agent/流程可发布、可搜索、可调用、可评分、可退役；SkillScan 安全扫描双触发。
 - **🧬 v1.3.5 新增**：自进化与运维闭环 MCP 化——A/B 实验（`run_ab_test`）与晋升决策（`promote_ab`，强制人审）、审计快照查询与恢复（`snapshot_list` / `snapshot_restore`，恢复强制人审）全部可从任意 MCP 宿主调用（当年 48→52 tools）；instinct→skill 自动进化（经验自动聚合成可复用 skill）；FDE 运维五件（陪跑期/进场记忆/节点注册表/审计问卷 7 行业）；DSH MCP 互通；四份独立审查 38 项加固。详见 [v1.3.5 开发日志](./changelog/v1.3/v1.3.5.md)。
 - **🔌 v1.3.6 新增**：引擎接口外化完整版（模型层接入前置）——模型生成的 workflow / ontology 可经标准接口进入约束层：`workflow_submit`（含 merge_criteria/approver 审阅协议字段）/ `ontology_import` / `model_register`+`model_switch`+`model_unregister`（模型灰度全流程审计）/ `harness.wrap` 托管 SDK / `train_budget` 训练预算控制 / `define_acceptance`+`check_acceptance` 机器可判定验收（52→60 tools）；可靠性五件：FORGE worktree 隔离、双闸验证（postToolCall 副作用复查）、Agent 疲劳度检测、分级降级梯队、decisions.jsonl 完整版。详见 [v1.3.6 开发日志](./changelog/v1.3/v1.3.6.md)。
@@ -338,7 +338,7 @@ sofagent-audit --history              # 查看审计快照
 sofagent-audit --revert <sha>         # 回滚到某次审计前
 ```
 
-Webhook 在 `.sofagent/config.yml` 配置，不配也能用。详见 [ARCHITECTURE 回溯引擎](./ARCHITECTURE.md#回溯能力自研同构-git-引擎--对外叙事一键回滚)。
+Webhook 在 `.sofagent/config.yml` 配置，不配也能用。详见 [ARCHITECTURE 回溯引擎](./ARCHITECTURE.md#回溯能力自研同构-git-引擎--一键回滚)。
 
 ### 终端 Dashboard：一眼看清 AI 在干什么
 
@@ -408,6 +408,13 @@ jobs:
 | Prompt 注入防护 | v1.1.8 | 8 层纵深防御——外部内容包裹 + 脱敏 + 知识可信分级 | [SECURITY.md](../SECURITY.md) |
 | USB 一键烧录 | v1.1.8 | workflow 烧进 U 盘 → 发给员工 → 插上即用，拔掉零残留 | [常驻：长期自跑与持续优化](#常驻长期自跑与持续优化) |
 | A/B 自动调度 | v1.1.9 | daemon 后台跑探索-利用——当前方案攒数据 → 自动切候选方案对比 → 赢家自动 promote | [ARCHITECTURE 编排引擎](./ARCHITECTURE.md) |
+| 激活链 | v1.2.5-v1.3.0 | FDE 交付物 → 注册 SubAgent → 编排 → HITL+审计自动跑，交付物从静态文件变自运转系统 | [激活链设计](./guides/fde-activation-chain.md) |
+| 运行时审计 | v1.3.0 | wrapToolCall middleware + tool-gate 动态拦截 + 运行时审计日志 | [v1.3.0 开发日志](./changelog/v1.3/v1.3.0.md) |
+| 并行编排 | v1.3.1 | 波次并发 + MergeQueue，多 Agent 并行执行 | [v1.3.1 开发日志](./changelog/v1.3/v1.3.1.md) |
+| 沙箱 | v1.3.7 | SubAgent 完整沙箱（虚拟 FS / 网络白名单 / 工具中介 / 独立进程） | [v1.3.7 开发日志](./changelog/v1.3/v1.3.7.md) |
+| Durable L3 | v1.3.8 | 可恢复事务（writer/recovery/undo 三档可逆）+ 网关集成 + 真 git 回滚 | [v1.3.8 开发日志](./changelog/v1.3/v1.3.8.md) |
+| 代理网关 | v1.3.8 | SubAgent 外部请求唯一出入口（域名/路径白名单 + 四档风险分级 + 权限上界单调守卫 + HITL） | [v1.3.8 开发日志](./changelog/v1.3/v1.3.8.md) |
+| 静态加密 | v1.3.8 | 纯 TS AES-256-GCM（SOFAGENT-AGE-V1 透明读写）+ 密钥指纹备份 + 四目录加密 | [v1.3.8 开发日志](./changelog/v1.3/v1.3.8.md) |
 
 ### 知识怎么长出来
 
