@@ -212,7 +212,7 @@ do_alive() {
 
   if [ -z "$run_dir" ]; then
     echo -e "${RED}dead${NC}"
-    echo -e "  未找到任何 run 目录（$runs_root）"
+    echo -e "  未找到任何 run 目录（${runs_root}）"
     exit 1
   fi
 
