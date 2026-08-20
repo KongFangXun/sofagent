@@ -29,7 +29,10 @@
 先读 `FORGE/SKILL/release-gate-loop/SKILL.md` 拿到完整的「Session 监控协议」，然后按协议执行：
 
 1. 脚本层直跑（零 LLM，约 15 分钟，全绿才进判断层）：
-   bash FORGE/playbook/acceptance-test.sh > /tmp/acceptance-raw.log 2>&1，确认 exit 0 且 SUMMARY 全过
+   bash FORGE/playbook/acceptance-test.sh > acceptance-raw.log 2>&1，确认 exit 0 且 SUMMARY 全过
+   ⚠️ 🔴 日志必须落盘到仓库根 `acceptance-raw.log`（或 export SOFAGENT_ACCEPTANCE_LOG=/path/to/log）——
+   driver 的 --judgment-only 启动时自动注入该日志为 runDir/acceptance.md 供 consolidate/verdict 读取；
+   落错路径（如 /tmp/）→ driver 找不到 → 注入占位符 → verdict fail-closed 判 FAIL（v1.3.8 run-10 实锤）
    依次跑：tools/check-version.sh → tools/check-docs.sh → tools/check-anchors.mjs → tools/check-review-system.sh → tools/check-tool-health.sh
    ⚠️ 脚本层有红即停：如实汇报红项与日志尾部，等主 session 决策（脚本层是确定性检查，不需要 driver）
    ⚠️ acceptance 预跑异常处置：先单跑死点命令对比（单命令健康+全量挂=上下文差异如 cwd/env，非环境问题），不要改脚本，如实汇报死点等主 session 决策
@@ -39,13 +42,25 @@
    ⚠️ v1.3.8 交付七：--judgment-only 一次进程串行四步（regression → coverage → consolidate → verdict），
    替代原 --step 四步手工编排（每步一进程）。runDir 由 driver 启动日志打印，全程复用。
    ⚠️ verdict=FAIL 时循环即停（F 修复链默认关闭，无 f-* 产物），如实汇报后等主 session 决策。
-   旧 --step 单步模式保留用于单步调试（consolidate 缺 acceptance 产物属预期——judgment-only 模式下
-   coverage/consolidate 从 acceptance-raw.log 与脚本层汇报取数）。
+   旧 --step 单步模式保留用于单步调试。v1.3.8 起 --judgment-only 启动时自动注入脚本层 acceptance
+   日志（仓库根 acceptance-raw.log / SOFAGENT_ACCEPTANCE_LOG）为 runDir/acceptance.md——consolidate/verdict
+   有据可依；无日志时 driver 主动执行 acceptance-test.sh 实测兜底（不再写占位符）。
 3. **持续轮询（必做，非可选——session 可见性的来源）**：每 120 秒一轮，读 `<runDir>/status.json`，输出一行状态（如「[第 N 轮] step=regression · heartbeat 距今 Xs」）——**让 session 一直活跃，用户界面持续可见「在跑」**。心跳冻结检测顺带完成：heartbeat 距今 >90s 则用 liveness 探针判定——`node FORGE/src/release-gate-driver.mjs --check-alive <runDir>`（只认心跳不认日志——LLM 长窗口日志冻结 ≠ 死亡；alive=RC0 / dead=RC1）。dead → 立即报告主 session，不要无限等。
 4. 四步完成后读 <runDir>/verdict.md，3-5 行汇报：裁决结果 / 三步骤通过数 / 失败项 / 建议
 
 铁律：不干涉 driver、不改代码、不探索源码；FAIL 项真伪由主 session 零信任复验（维度脚本自身缺陷会误报 FAIL，逐维复跑分辨「仓库 vs 检查器」）。
 ```
+
+---
+
+## 🔴 运行期间仓库冻结纪律（v1.3.8 run-03 教训 · 2026-08-20 拍板）
+
+**判断层运行期间（含脚本层直跑），仓库必须冻结**——所有 session 暂停对 sofagent 仓库的任何写入（commit / push / 文档改动 / 收编动作）。
+
+- **事故实证**：run-03 运行窗口（31.5 分钟）内 HEAD 被改了 **8 次**（主 session 5 次提交 + 并发优化 session 3 次）——driver 运行中仓库持续被写，coverage/consolidate/verdict 三个 worker 全部崩溃（exit 1 + 一度 137 OOM），31.5 分钟白跑，verdict 未产出
+- **机制**：driver 的 worker 在运行中读工作区文件 + 可能做 git 操作，工作树/HEAD 变化会撞上文件读写竞态；多 worker 并发 + 系统内存压力叠加 → OOM
+- **执行方式**：启动判断层前，主 session 向所有并发 session 声明「仓库冻结 N 分钟」；运行期间只允许读（grep/读文件/gh api），不允许写；verdict 出来后解除冻结
+- **判 FAIL 分诊**：driver 崩了先查「运行窗口内 HEAD 是否被动过」——`git log --since="<启动时间>" --until="<结束时间>"`，改动 >0 即环境问题优先（重跑），0 才排查代码
 
 ---
 
