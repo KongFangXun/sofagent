@@ -180,3 +180,5 @@ release-gate-loop 与 fresh-eyes-loop 共享本文件，通过"循环"列区分�
 2026-08-19     | 20260819-04    | release-gate | 25   | PASS       | FAIL       | SKIP     | FAIL    | /Users/kongfangxun/.sofagent/data/forge-runs/release-gate-loop/2026-08-19/run-04
 | — | 2026-08-19 | release-gate-复验 | v1.3.7 阶段六 run-04 后主 session 零信任复验 | 复验改判：两阻塞项一修一验 | dim116 超时锚点 awk 转义炸（driver bash -c 注入场景 \$ 原样进 awk——本机直跑正常预检炸的双环境差异型检查器 bug）已换 grep 链双文档同步修复；coverage worker 退出 1 无产物=driver 侧偶发（precheck 完整/30min 存活/无栈），判定重跑验证；F 循环二次产空文件 v1.3.7 已清（根因待修）。可重跑 run-05 | 主 session |
 | — | 2026-08-19 | release-gate-手工裁决 | v1.3.7 阶段六（run-01/04 两轮 loop FAIL 均复验为检查器侧债后） | 手工裁决 PASS | regression 89/89 全绿（主 session 复刻 driver runCommand 逐字同款 spawn bash -c 亲跑，两轮 loop 的 dim106/dim116 检查器 bug 已修）+ coverage 12 交付关键词×审查文档矩阵全命中 + acceptance 303/303 EXIT=0。run-04 的 coverage worker 偶发退出判定 driver 侧（precheck 完整），手工矩阵等价覆盖。依据：SOP 判定与循环「verdict=PASS→进阶段七」+ v1.3.5 run-08 手工裁决先例 | 主 session |
+
+2026-08-20     | 20260820-03    | release-gate | 1    | SKIP       | SKIP       | SKIP     | ERROR   | /Users/kongfangxun/.sofagent/data/forge-runs/release-gate-loop/2026-08-20/run-03
