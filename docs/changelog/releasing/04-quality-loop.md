@@ -8,10 +8,10 @@
 
 | # | 步骤 | 产物 | 完成判据 |
 |:--:|------|------|------|
-| 一 | **单次草稿优先**（v1.3.8 交付八）：`node tools/gen-fresh-eyes-draft.mjs --diff <patch 文件> --changelog <changelog>`——16 视角草稿一次成型；「待取证」项少且变更小 → 草稿 + 人工复核即收口 | 审查草稿 | 见下方「步骤完成判据」表 |
+| 一 | **单次草稿优先**（v1.3.8 交付八）：`node tools/gen-fresh-eyes-draft.mjs --diff <patch 文件> --changelog <changelog> --out ~/Desktop/fresh-eyes-draft-vX.Y.Z.md`——16 视角草稿一次成型；「待取证」项少且变更小 → 草稿 + 人工复核即收口 | 审查草稿 | 见下方「步骤完成判据」表 |
 | 二 | **driver 兜底**（草稿待取证多 / 大版本）：**新 session 跑 fresh-eyes-loop**：`node FORGE/src/fresh-eyes-driver.mjs --target <本版本号> --max-rounds 10`。按 `FORGE/SKILL/fresh-eyes-loop/SKILL.md` 监控协议轮询 `status.json`（或用 `--check-alive <runDir>` liveness 探针）。loop 修复即本版本代码质量加固 | loop 修复 + changelog 汇总打勾 | 见下方「步骤完成判据」表 |
 | 三 | 代码审核（当前 session）：逐项核对发布检查清单（清单位置见判据表），PASS 或 FAIL→修复 | 检查清单打勾 | 见下方「步骤完成判据」表 |
-| 四 | **验收测试随功能开发先行新增（增量）**：本版本新功能对应的 acceptance 新场景（S 编号顺延）+ checklist 新维度，随功能开发实时加——本步骤只做「增量补齐」。**归并/压缩/校准/A/B/C 分类是阶段五的职责**，这里不动体系 | 验收测试更新（增量） | 见下方「步骤完成判据」表 |
+| 四 | **验收测试随功能开发先行新增（增量）**：本版本新功能对应的 acceptance 新场景（S 编号顺延）+ checklist 新维度，随功能开发实时加——本步骤只做「增量补齐」。**归并/压缩/校准/A/B/C 分类是阶段五的职责**（见 [05-review-system.md](./05-review-system.md)），这里不动体系 | 验收测试更新（增量） | 见下方「步骤完成判据」表 |
 | 五 | **阶段汇报（v1.3.8 补 · 对话形式）**：全部步骤完成后，执行 session 按下方「阶段汇报模板」以**对话消息**形式发回主 session（不落盘文件）——主 session 依此打勾推进，不再要求主 session 重新考古 | 汇报消息（见模板） | 模板五件套齐全（含步骤完成状态声明） |
 
 > **审查分层说明**（v1.3.8 交付八，与 [01-review.md](./01-review.md) 同款）：
@@ -63,7 +63,7 @@
 
 | 步骤 | 完成判据（全满足才可打勾） |
 |---|---|
-| 一 草稿 | `docs/changelog/fresh-eyes-draft-vX.Y.Z.md` 存在 **且** 含全部 16 个视角节（`grep -c "^## 视角" = 16`）。若走了降级：产物为 `.prompt.md` 时 = **未完成**，必须粘贴执行出正式草稿后才算 |
+| 一 草稿 | `~/Desktop/fresh-eyes-draft-vX.Y.Z.md` 存在 **且** 含全部 16 个视角节（`grep -c "^## 视角" = 16`）。若走了降级：产物为 `.prompt.md` 时 = **未完成**，必须粘贴执行出正式草稿后才算 |
 | 二 driver（若应跑） | runDir 内有 `verdict`/`findings` 产物**文件**——仅 status.json 不算（dry-run 空转也是 completed 状态）。未应跑时：汇报须显式写「步骤二未跑，理由：待取证 N≤3」 |
 | 三 审核 | 发布检查清单逐项打勾记录（在 changelog 开发日志或汇报中可见）。⚠️ 清单位置：`docs/changelog/vX.Y/vX.Y.Z.md` 的「发布检查清单（汇总）」节（参照 v1.3.7.md:455 体例）——**若本版 devlog 尚无该节，先建清单再核对**（清单项=从九交付验收标准逐条转勾） |
 | 四 场景 | 新场景编号与汇报区间一致（判据命令按实际区间构造，如 `grep -c "^scenario 29[4-9]\|^scenario 30[0-9]"`——**编号每版不同，勿照抄本表示例**）；全量 acceptance EXIT=0 |

@@ -11,7 +11,7 @@
 // 输入（两项，缺哪个跳过哪个并在产物头部标注）：
 //   --diff      <path>   git diff 输出（如 git log -p --since=... 的产物）
 //   --changelog <path>   changelog 交付清单（docs/changelog/v1.3/v1.3.8.md 或 CHANGELOG.md）
-//   --out       <path>   产物路径（默认 docs/changelog/fresh-eyes-draft-<ver>.md）
+//   --out       <path>   产物路径（默认 ~/Desktop/fresh-eyes-draft-<ver>.md）
 //
 // LLM 配置（与 gen-abc-draft.mjs 同源）：
 //   1. 环境变量 GLM_API_KEY（含 source FORGE/env.local 后）
@@ -28,6 +28,7 @@
 // ============================================================
 
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { homedir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
@@ -58,7 +59,7 @@ for (let i = 0; i < args.length; i++) {
   --changelog <path>  changelog 交付清单（缺省自动读 ./CHANGELOG.md 当前版本行）
 
 其他：
-  --out      <path>   产物路径（默认 docs/changelog/fresh-eyes-draft-<ver>.md）
+  --out      <path>   产物路径（默认 ~/Desktop/fresh-eyes-draft-<ver>.md）
   --api-key  <key>    显式传 key（缺省读 GLM_API_KEY 环境变量）
 
 分层说明（v1.3.8 交付八）：
@@ -171,7 +172,7 @@ ${sections.join('\n\n---\n\n')}
 请按系统指令输出 16 视角审查草稿。`;
 
 // ── 产物路径 ────────────────────────────────────────────────
-const OUT = opts.out || join(REPO_ROOT, 'docs', 'changelog', `fresh-eyes-draft-v${CUR_VER}.md`);
+const OUT = opts.out || join(homedir(), 'Desktop', `fresh-eyes-draft-v${CUR_VER}.md`);
 
 // ── key 解析（env → 参数，与 gen-abc-draft.mjs 一致）─────────
 const apiKey = process.env.GLM_API_KEY || opts['api-key'] || '';

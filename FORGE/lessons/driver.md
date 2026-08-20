@@ -650,7 +650,7 @@ node FORGE/src/fresh-eyes-driver.mjs --target v1.2.9 2>&1
 - 补跑草稿审查（工具 API 两次失败 → 降级路径主 session 代跑闭环——降级设计首次实战验证有效）
 - 04-quality-loop.md 补步骤五「阶段汇报模板」四件套（用户拍板）——其中第四件「未决项」+ 第一件「三分类统计（含未跑步骤显式声明）」直接堵根因 2
 - **主 session 打勾纪律（新）**：打勾前必须核对 SOP 该阶段**全部产物存在性**（ls/grep 实物），不只信汇报文本——「汇报说什么做了」和「产物真的在」是两个独立断言
-- **判据固化**：本阶段产物存在判据 = ①`docs/changelog/fresh-eyes-draft-vX.Y.Z.md` 存在且含 16 视角节 ②（若跑了 driver）runDir 含 verdict/findings 产物文件而非仅 status.json
+- **判据固化**：本阶段产物存在判据 = ①`~/Desktop/fresh-eyes-draft-vX.Y.Z.md` 存在且含 16 视角节 ②（若跑了 driver）runDir 含 verdict/findings 产物文件而非仅 status.json
 
 **教训（通用）**：
 

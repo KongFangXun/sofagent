@@ -12,7 +12,7 @@
 
 | # | 步骤 | 产物 |
 |:--:|------|------|
-| 一 | **来源提取（A/B/C 草稿自动生成）**：`source FORGE/env.local && node tools/gen-abc-draft.mjs --fresh-eyes <报告> --bugfix <清单> --features <devlog> [--recheck <复审>]`——单次 GLM 调用（无工具无循环，~4 分钟）产出三类清单草稿（每条带来源定位 + 「无法归类」兜底段），人工只做审核修正而非从零写。降级路径：无 key / API 失败 → 退出码 2 + prompt 落盘 `<out>.prompt.md`，粘给任意 AI session 执行。关键纪律：新功能审查面零遗漏 + 每个真实发现都有模式归类 | A/B/C 草稿（`abc-draft-vX.Y.Z.md`）→ 人工审核定稿 |
+| 一 | **来源提取（A/B/C 草稿自动生成）**：`source FORGE/env.local && node tools/gen-abc-draft.mjs --fresh-eyes <报告> --bugfix <清单> --features <devlog> [--recheck <复审>] --out ~/Desktop/abc-draft-vX.Y.Z.md`——单次 GLM 调用（无工具无循环，~4 分钟）产出三类清单草稿（每条带来源定位 + 「无法归类」兜底段），人工只做审核修正而非从零写。降级路径：无 key / API 失败 → 退出码 2 + prompt 落盘 `<out>.prompt.md`，粘给任意 AI session 执行。关键纪律：新功能审查面零遗漏 + 每个真实发现都有模式归类 | A/B/C 草稿（`abc-draft-vX.Y.Z.md`）→ 人工审核定稿 |
 | 二 | **四份文档分发**：A+B 类 → regression-checklist + acceptance-test + check-version.sh（加法）；C 类 → fresh-eyes-review（校准非加法） | 四份文档更新 |
 | 三 | **覆盖率确认**：`bash tools/check-review-system.sh` 自动执行——脚本⑥段提取当前版本交付关键词（devlog 交付章标题 + CHANGELOG 版本行加粗短语），对 checklist/acceptance 双文档对账，零命中报 FAIL。词形差异（devlog「SubAgent 完整沙箱」vs checklist「沙箱五件套」类）加进豁免清单 `FORGE/playbook/.coverage-exempt`（每行一个关键词）。与阶段七共用同一脚本（阶段五在分发后跑=确认更新零遗漏；阶段七在终验跑=确认没回退） | 脚本⑥段全绿 + 豁免清单维护 |
 | 四 | **防膨胀瘦身（三判据硬门槛）**：上调警戒线前必须依次过三判据，全否才允许上调。行数警戒线：checklist≤1500（v1.3.5 靠归并未上调）/ acceptance≤2500（v1.3.5 靠瘦身未上调）/ fresh-eyes≤400 | 三判据记录 + 自校验全 PASS |
