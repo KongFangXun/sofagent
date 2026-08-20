@@ -21,10 +21,16 @@ jobs:
 
   # v1.3.9（四）：public API 变更检测——@public 符号集变化必须 semver bump + CHANGELOG。
   # 不装依赖直接跑（AST 引擎不可用时自动回退正则解析，门禁语义不变）。
+  # v1.3.9 阶段四修复（fresh-eyes 视角11）：补 setup-node 固定 Node 22——此前吃 ubuntu 镜像
+  # 预装 Node（版本漂移），且 `typescript/unstable/sync` 的可用性依赖 Node 版本；与
+  # build-and-test job 及 verify.yml 的 Node 22 口径对齐（v1.2.5 crypto 教训同源）。
   public-api:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
       - name: public API change detection
         run: node tools/check/public-api.mjs
 
