@@ -908,3 +908,32 @@ export type {
   PermissionCeiling,
   CeilingCheckResult,
 } from './gateway/permission-ceiling';
+
+// ============================================================
+// v1.3.9（二）：meta-harness 多 harness 统一编排
+// ============================================================
+export {
+  MetaHarness,
+  PolicyLayer,
+  AuditAggregator,
+  fileLockPolicy,
+  concurrencyCapPolicy,
+  profileAllowlistPolicy,
+  sensitiveToolPolicy,
+} from './meta-harness';
+export type {
+  HarnessDescriptor,
+  MetaTask,
+  MetaTaskResult,
+  TaskExecutor,
+  DeliveryListener,
+  ProfileBundle,
+  DescriptorRegistration,
+  MetaAction,
+  MetaPolicy,
+  PolicyVerdict,
+  MetaStateView,
+  AggregateAuditEntry,
+  AuditQuery,
+  L2EventInput,
+} from './meta-harness';
