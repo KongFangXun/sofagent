@@ -23,6 +23,8 @@
 set -uo pipefail
 # set -u 下必须预初始化：flaky 复跑分支首次追加前若未赋值会崩 unbound variable
 FLAKY_PKGS=""
+# v1.3.9 四十九：flaky 复跑次数计数（首跑失败→复跑全绿的包数，供 human 追因与采信上限）
+FLAKY_COUNT=0
 
 cd "$(dirname "$0")/.." || exit 1
 
@@ -82,13 +84,39 @@ fi
 while IFS= read -r pkg_dir; do
   [ -z "$pkg_dir" ] && continue
   pkg_name=$(basename "$pkg_dir")
-  # 在包目录内跑该包的 test script（通常与 npm test --workspaces 同源）
-  out=$(cd "$pkg_dir" && npm test 2>&1) || true
+  # 在包目录内跑该包的 test script（通常与 npm test --workspaces 同源）。
+  # v1.3.9 四十九（吞码修复）：命令替换 + `|| true` 会吞掉 npm test 退出码——
+  # 编译失败/进程崩溃时无 Tests 汇总行，此前被误判「无测试」静默跳过 = 假绿。
+  # 改为先重定向到临时文件，再 echo $? 取真实退出码（BSD/macOS 兼容写法）。
+  tmp_out="/tmp/sofagent-test-count-${pkg_name}-$$.log"
+  (cd "$pkg_dir" && npm test > "$tmp_out" 2>&1)
+  test_code=$?
+  out=$(cat "$tmp_out" 2>/dev/null) || true
+  rm -f "$tmp_out"
   # 取该包最后的 Tests 汇总行（vitest 每包仅一行 Tests 汇总，无跨包 grand-total）
   # v1.2.3 修复：CI 环境（GitHub Actions）vitest 即使在非 TTY 下也输出 ANSI 颜色码，
   # 行首 \033[2m 导致 ^\s*Tests 永远不匹配。先 strip ANSI 再 grep。
-  line=$(echo "$out" | sed $'s/\033\[[0-9;]*m//g' | grep -E '^\s*Tests\s+' | tail -1)
+  line=$(echo "$out" | sed $'s/\033\[[0-9;]*m//g' | grep -E '^\s*Tests\s+' | tail -1) || true
   if [ -z "$line" ]; then
+    # 无 Tests 汇总行：区分「真无测试（退出码 0 = 正常跳过）」与「崩溃/编译失败
+    # （退出码非 0 = 真失败）」。后者复跑一次排除 flaky；复跑仍非零 → 报红。
+    if [ "$test_code" -ne 0 ]; then
+      tmp_retry="/tmp/sofagent-test-count-${pkg_name}-$$.log"
+      (cd "$pkg_dir" && npm test > "$tmp_retry" 2>&1)
+      retry_code=$?
+      rm -f "$tmp_retry"
+      if [ "$retry_code" -eq 0 ]; then
+        [ "$QUIET" = false ] && echo -e "  ${YELLOW}⚠${NC} ${pkg_name}: 首跑退出码 ${test_code}（无 Tests 汇总），复跑通过 → ${GREEN}flaky 候选${NC}"
+        FLAKY_PKGS="${FLAKY_PKGS}${pkg_name} "
+        FLAKY_COUNT=$((FLAKY_COUNT + 1))
+      else
+        [ "$QUIET" = false ] && echo -e "  ${RED}✗${NC} ${pkg_name}: 无 Tests 汇总且退出码非 0（首跑 ${test_code} / 复跑 ${retry_code}，真失败）"
+        TOTAL_FAILED=$((TOTAL_FAILED + 1))
+        FAILED_PKGS=$((FAILED_PKGS + 1))
+      fi
+      PKG_COUNT=$((PKG_COUNT + 1))
+      continue
+    fi
     [ "$QUIET" = false ] && echo -e "  ${YELLOW}⚠${NC} ${pkg_name}: 无 Tests 输出（跳过）"
     continue
   fi
@@ -117,21 +145,29 @@ while IFS= read -r pkg_dir; do
   # 教训：假红与假绿同罪——门禁结果不可预测会消解一切门禁权威性。
   if [ "$FAILED" -gt 0 ]; then
     FAILED_ORIG=$FAILED
-    retry_out=$(cd "$pkg_dir" && npm test 2>&1) || true
-    retry_line=$(echo "$retry_out" | sed $'s/\033\[[0-9;]*m//g' | grep -E '^\s*Tests\s+' | tail -1)
+    # v1.3.9 四十九：复跑同样捕获退出码（tmp 文件 + $?，BSD 兼容）
+    tmp_retry="/tmp/sofagent-test-count-${pkg_name}-$$.log"
+    (cd "$pkg_dir" && npm test > "$tmp_retry" 2>&1)
+    retry_code=$?
+    retry_out=$(cat "$tmp_retry" 2>/dev/null) || true
+    rm -f "$tmp_retry"
+    retry_line=$(echo "$retry_out" | sed $'s/\033\[[0-9;]*m//g' | grep -E '^\s*Tests\s+' | tail -1) || true
     RETRY_PASSED=$(echo "$retry_line" | grep -oE '[0-9]+\s+passed' | grep -oE '[0-9]+' || echo "0")
     RETRY_FAILED=$(echo "$retry_line" | grep -oE '[0-9]+\s+failed' | grep -oE '[0-9]+' || echo "0")
     RETRY_TOTAL=$(echo "$retry_line" | grep -oE '\([0-9]+\)' | grep -oE '[0-9]+' || echo "0")
     if [ -n "$retry_line" ] && [ "$RETRY_FAILED" = "0" ]; then
-      # 复跑全绿 → flaky 候选：采用复跑结果（PASSED/TOTAL 取复跑值），WARN 记录
+      # 复跑全绿 → flaky 候选：采用复跑结果（PASSED/TOTAL 取复跑值），WARN 记录 + 计数
       PASSED=$RETRY_PASSED
       FAILED=0
       TOTAL=$RETRY_TOTAL
       [ "$QUIET" = false ] && echo -e "  ${YELLOW}⚠${NC} ${pkg_name}: 首跑 ${FAILED_ORIG} 失败，复跑全绿 → ${GREEN}flaky 候选${NC}（已采用复跑结果，待定位根因，勿习惯性忽略）"
-      # 复跑过的包记录到 flaky 名单（供 human 追因）
+      # 复跑过的包记录到 flaky 名单（供 human 追因）+ 计数
       FLAKY_PKGS="${FLAKY_PKGS}${pkg_name} "
+      FLAKY_COUNT=$((FLAKY_COUNT + 1))
     else
+      # 复跑仍失败（或无 Tests 汇总 = 复跑崩溃）→ 真失败：FAILED 保持首跑值，如实报红
       [ "$QUIET" = false ] && echo -e "  ${RED}✗${NC} ${pkg_name}: 复跑仍 ${RETRY_FAILED:-?} failed（真失败，非 flaky）"
+      FAILED=$FAILED_ORIG
     fi
   fi
 
@@ -155,6 +191,9 @@ if [ "$QUIET" = false ]; then
   if [ "$TOTAL_FAILED" -gt 0 ]; then
     echo -e "  失败: ${RED}${TOTAL_FAILED}${NC}  失败包数: ${RED}${FAILED_PKGS}${NC}"
   fi
+  if [ "$FLAKY_COUNT" -gt 0 ]; then
+    echo -e "  flaky 复跑: ${YELLOW}${FLAKY_COUNT}${NC} 包（首跑失败复跑全绿，待追因）"
+  fi
   echo ""
   echo -e "  CHANGELOG 写法: ${GREEN}${TOTAL_TESTS} tests across ${PKG_COUNT} packages（workspace 汇总口径）${NC}"
   echo ""
@@ -164,6 +203,8 @@ fi
 echo "TOTAL_TESTS=$TOTAL_TESTS PASSED=$TOTAL_PASSED FAILED=$TOTAL_FAILED PKGS=$PKG_COUNT"
 # v1.3.6 B14: flaky 名单机器可读行（空 = 无复跑；非空 = 有包首跑失败复跑全绿，待追因）
 echo "FLAKY_PKGS=${FLAKY_PKGS:-}"
+# v1.3.9 四十九：flaky 复跑次数（机器可读，供采信上限/追因对账）
+echo "FLAKY_COUNT=${FLAKY_COUNT}"
 
 if [ "$TOTAL_FAILED" -gt 0 ]; then
   exit 1
