@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC2086  #  在 pm2 -- 后需词分割展开（参数透传，故意不加引号）
+# shellcheck disable=SC2010  # ls|grep 日期/run 正则过滤（glob 无法表达，2026-08-20 阶段十确认）
 # ============================================================
 # tools/forge-pm2-start.sh · FORGE PM2 守护进程管理脚本
 # v1.2.9 功能③：PM2 守护进程
@@ -37,7 +39,6 @@ cd "$(dirname "$0")/.." || exit 1
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
-YELLOW='\033[0;33m'
 CYAN='\033[0;36m'
 NC='\033[0m'
 
