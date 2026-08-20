@@ -81,6 +81,10 @@ function isPlannedGlobally(path) {
 
 function lineCtx(line) {
   if (/修改|升级|更新|改动/.test(line)) return "modify";
+  // v1.3.9 补：相对路径描述——行内含「相对/同目录/import ./」等语境词时，
+  // 引用是描述「同目录内相对引用」（如 tools 分目录后 gen/ 内部 import ./gen-draft-lib.mjs），
+  // 不是漏写前缀——bash 侧对 relative 上下文跳过「缺前缀」警告
+  if (/相对|同目录|import \.\/|\.\.\//.test(line)) return "relative";
   return "plain";
 }
 
@@ -192,7 +196,10 @@ while IFS='|' read -r tag ref c || [ -n "$tag" ]; do
     printf '  ✅ %s\n' "$ref"
   else
     pfx=$(check_prefix "$clean")
-    if [ -n "$pfx" ]; then
+    if [ -n "$pfx" ] && [ "$c" = "relative" ]; then
+      # v1.3.9 补：相对路径描述（行含「相对/同目录」语境）——同目录内相对引用，非漏前缀，跳过
+      printf '  ℹ️  %s (相对路径描述，跳过)\n' "$ref"
+    elif [ -n "$pfx" ]; then
       printf '  ⚠️  %s -> %s%s (缺前缀 %s)\n' "$ref" "$pfx" "$clean" "$pfx"
       WARNINGS=$((WARNINGS + 1))
     elif [ "$c" = "planned" ]; then
