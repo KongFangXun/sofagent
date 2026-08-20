@@ -233,7 +233,7 @@ done
 echo "$BODY" | grep -qE '\[详细开发日志\]\(\./docs/changelog/' && echo "✅ 尾链" || echo "🔴 缺尾链"
 ```
 
-**工序 3 · 上一版结构对照（2026-08-19 用户拍板：取代人工过目）**：自检全过后，与上一版 release body 做**结构级并排对照**——title 形式（`vX.Y.Z — emoji 短语`）/ 定位句有无 / H2 骨架 / 质量表 7 项顺序 / 尾链位置，五要素逐一比对上一版，**结构不一致即重写，直到同构**。机制标准 = 上一版 release note（当前参考 v1.3.6）。对照命令：`gh release view v1.3.6 --json body,title -q '{title, body}'`。
+**工序 3 · 上一版结构对照（2026-08-19 用户拍板：取代人工过目）**：自检全过后，与上一版 release body 做**结构级并排对照**——title 形式（`vX.Y.Z — emoji 短语`）/ 定位句有无 / H2 骨架 / 质量表 7 项顺序 / 尾链位置，五要素逐一比对上一版，**结构不一致即重写，直到同构**。机制标准 = **v1.3.7 实际发布物（2026-08-20 用户拍板的标准锚点，见 08-doc-finalize.md Release Notes 段）**——若上一版漂移（v1.3.8 曾两次漂移被作者退回），以 v1.3.7 为准重写，不追随上一版。对照命令：`gh release view v1.3.7 --json name,body -q '{name, body}'`（锚点）+ `gh release view 上一版 --json name,body`（漂移检测）。
 
 ```bash
 > 🔴 **发布前必做（v1.3.6 教训）**：生成 body 后先与上一版并排对照——`gh release view v上一版 --json body -q '.body' | grep -E "^## "`——两版 H2 骨架必须同构（首行定位句/核心变更/破坏性变更/质量验证/尾链五要素）。**changelog 内嵌的 Release Notes 段 ≠ GitHub Release body**：前者归 08 的 N1-N7 管（✨ 新功能 bullet 式），后者归本规范管（### 功能领域子标题式）——分别核对，禁止把 changelog 段直接复制当 body。
