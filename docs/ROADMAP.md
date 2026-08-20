@@ -149,6 +149,7 @@ sofagent 的定位正卡在这个转折点上：审计引擎（治理侧）+ Ont
 | **依赖方向架构测试（Loop Engineering 控制面启发 · 2026-08-19 新增）** | CI 强制包依赖方向（控制面不得依赖展示/CLI 层）——审查视角有但 CI 无强制，低成本高价值，需先定包边界清单 |
 | **审计存储 SQLite 迁移（DeepSeek Harness RC.8 启发 · 2026-08-20 新增）** | history.jsonl 明文存储（LIMITATIONS 已披露）→ SQLite 迁移评估——DSH RC.8 实测 SQLite 后端读写/分叉性能提升 + 存储体积下降（数据结构不兼容），sofagent 审计历史若迁 SQLite 可获得查询能力（按 agent/时间/规则过滤）+ 体积收益；大工程（数据迁移 + 兼容层 + 既有 reader 改造），等 worklog 聚合（v1.3.9）消费模式跑稳后评估。**候选版本：v1.4.7**（与 G7 多租户数据路径同批动引擎内核，G7 v0 先做路径抽象、SQLite 引擎替换随后评估） |
 | **UI 层审计（多模态截图证据 · 2026-08-20 新增）** | 审计从代码 diff 扩展到 UI 行为——Agentic Browser（v1.3.9）截图经多模态分析产出 UI 层审计证据（「表单提交是否正确」不再只靠断言），截图作为审计证据入 history；**纯文本模型可用工具层视觉降级消费截图**（OCR+结构化，DSH 社区 dsh-vision 启发）；依赖 v1.3.9 多模态链路跑通 + 审计证据模型扩展，暂占概念位。**候选版本：v2.x**（证据模型扩展是远期，v1.4.x 专注训练引擎与 商业平台 接口） |
+| **Agent 级模型偏好绑定（MateClaw AgentProviderPreference 启发 · 2026-08-20 新增）** | workflow 每个节点可绑定特定 Provider/模型（默认 DeepSeek 省钱、复杂节点切旗舰）——「workflow 共享执行层」的模型路由维度：与 v1.3.6 模型注册/灰度切换衔接，补「节点级偏好绑定」；**不自研路由**（v1.3.6 已明确企业挂第三方 router），只定义「workflow 执行层模型路由接口」让第三方/企业网关（含 MateClaw 类平台）接入。MateClaw（mateaix/mateclaw，企业数字员工平台，ProviderRouter 多模型网关 + Agent 级绑定）已验证该形态，技术栈 Java/Spring 只借鉴设计。**候选版本：v1.4.7**（与 G7 多租户抽象层同批评估——企业级共享执行层的两个引擎侧基础） |
 
 > 📖 DeerFlow / OpenFDE 方法论印证见 [VALIDATION](./VALIDATION.md)。
 

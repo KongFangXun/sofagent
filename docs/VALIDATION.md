@@ -272,6 +272,7 @@ sofagent 是**跨层约束**——不管企业用 WorkBuddy（L1）还是 LangGr
 | AI Agent 平台（OpenClaw 等）| 让 AI「会做事」 | 让 AI「每次都做对、出事能负责」 |
 | 企业 AI 咨询服务 | 一次性交付，人走茶凉 | 工具 + 常驻，可复用、可维护 |
 | 代码检查工具（pre-commit 等）| 查「代码写得好不好」 | 查「AI 行为对不对」（越界/泄密/盲改）|
+| 企业共享 Agent 平台（MateClaw 等 · 2026-08-20）| 企业内共享模型网关 + 数字员工平台（多模型路由 `ProviderRouter` / 审批 / 审计 / 多渠道，单 JAR 自部署，Apache-2.0）| 共享执行层的**信任底座**——平台管「能不能共享」，sofagent 管「共享得安不安全」（审计每次共享调用、约束每个节点）。**同频印证**：MateClaw 的「企业级共享模型执行」（多模型网关 + Agent 级模型绑定 `AgentProviderPreference`）验证了「DeepSeek 作为 workflow 执行层、全员共享调用」是真实企业需求；sofagent 的 DSH ExecutionBackend（v1.3.6/v1.3.9）正是同一路线的引擎侧实现。技术栈不同（Java/Spring vs Node/TS），只借鉴设计不抄代码 |
 
 一句话：**现有工具查代码，sofagent 查 AI 的行为**——密钥泄漏、越界改文件、盲目修改，这些是 AI 特有的闯祸方式，通用工具不管。
 
