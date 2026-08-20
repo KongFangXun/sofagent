@@ -6,7 +6,7 @@ export LANG=en_US.UTF-8
 export LC_ALL=en_US.UTF-8
 # sofagent-audit · 上线前验收测试（Pre-Release Acceptance Test）
 # 覆盖：FORGE + MCP + 文件系统审计 + daemon + 红队对抗 + 各版本新功能验收
-# 场景数：235 个场景（SSOT：check-test-count.sh 校验；v1.3.7 +4：S290-S293；v1.3.6 +8：S282-S289；v1.3.8 +9：S294-S302）
+# 场景数：237 个场景（SSOT：check-test-count.sh 校验；v1.3.7 +4：S290-S293；v1.3.6 +8：S282-S289；v1.3.8 +11：S294-S304（含 bugfix 防回归 S303/S304））
 # 编号跳号豁免：S1~S293 间有 70 个空洞号（全在 S36-S202 历史段）——v1.2.x 瘦身删场景
 # 与基线重建（restore 6e542467）的既成事实，非丢失；新场景编号=当前最大+1 顺延，禁止回填空洞
 # 版本段起点见文件内「# ─── v」分组标记（grep "─── v" 定位）
@@ -2715,6 +2715,47 @@ grep -q "atomicWriteSync" "$PROJECT_ROOT/engine/orchestrator/src/refine-agent/sn
 grep -q "rollbackToSnapshot" "$PROJECT_ROOT/engine/orchestrator/src/refine-agent/snapshot-manager.ts" || S302_OK=false  # 回滚
 grep -q "verifyVersionMonotonic" "$PROJECT_ROOT/engine/orchestrator/src/refine-agent/snapshot-manager.ts" || S302_OK=false  # 版本单调校验
 $S302_OK && pass "快照原子写入+回滚+版本单调校验在位" || fail "v1.3.8 交付⑨缺件"
+
+# ── v1.3.8 bugfix 批防回归（阶段五来源提取 B 类 · 四 P0 安全修复的端到端防复发）──
+
+scenario 303 "v1.3.8 bugfix P0-1：A1 敏感文件后缀绕过防回归——settings.env 等后缀式 .env 必须被拦截"
+S303_OK=true
+A1_RULE="$PROJECT_ROOT/engine/audit/src/rules/rule-a1-sensitive-files.ts"
+[ -f "$A1_RULE" ] || S303_OK=false
+# 模式必须同时含前缀锚定与后缀匹配——v1.3.8 P0-3 修复形态，缺后缀即回归（grep -F 固定串，零转义歧义）
+grep -qF '/^\.env' "$A1_RULE" || { fail "A1 模式缺前缀锚定"; S303_OK=false; }
+grep -qF '\.env$' "$A1_RULE" || { fail "A1 模式缺后缀匹配（后缀绕过回归）"; S303_OK=false; }
+# 端到端实测：从规则源码提取全部 .env 相关正则，用真实模式验证 10 个文件名判定
+node -e '
+const fs = require("fs");
+const src = fs.readFileSync(process.argv[1], "utf8");
+const regexes = [...src.matchAll(/\/(\^?\\\.env[^/\n]*?)\/([a-z]*)/g)].map(m => new RegExp(m[1], m[2] || "i"));
+if (regexes.length < 2) { console.log("FAIL: 未同时提取到前缀+后缀两个 .env 正则"); process.exit(1); }
+const mustBlock = [".env", ".env.local", ".env.production", "settings.env", "production.env", "config.env", "财务.env", ".envrc"];
+const mustPass = ["README.md", "environment.ts"];
+let bad = [];
+for (const f of mustBlock) if (!regexes.some(r => r.test(f))) bad.push("未拦截:" + f);
+for (const f of mustPass) if (regexes.some(r => r.test(f))) bad.push("误拦:" + f);
+if (bad.length) { console.log("FAIL:", bad.join(",")); process.exit(1); }
+console.log("OK: 10 文件名全数正确判定");
+' "$A1_RULE" || S303_OK=false
+$S303_OK && pass "A1 后缀绕过防回归在位（10 文件名实测全对）" || fail "A1 后缀式 .env 防回归缺件"
+
+scenario 304 "v1.3.8 bugfix P0-2：A2 FFFD 短路绕过防回归——非法 UTF-8 污染的 base64 密钥必须被检测"
+S304_OK=true
+A2_RULE="$PROJECT_ROOT/engine/audit/src/rules/rule-a2-secret-leak.ts"
+[ -f "$A2_RULE" ] || S304_OK=false
+node -e '
+const fs = require("fs");
+const src = fs.readFileSync(process.argv[1], "utf8").replace(/\\uFFFD/g, "FFFD").replace(/\uFFFD/g, "FFFD");
+// 修复核心：FFFD 守卫不得是「含 FFFD 即整体放弃候选」的短路形态（v1.3.8 P0-2 修复：剥离污染继续检测核心 ASCII 模式）
+if (!src.includes("FFFD")) { console.log("FAIL: A2 无 FFFD 守卫逻辑（可能被误删）"); process.exit(1); }
+const shortCircuit = /includes\([^)]*FFFD[^)]*\)[^;{]{0,10};?\s*(\|\|\s*[^;{]{0,20})?\{?\s*(return\s+null|return false|continue)/.test(src);
+const strips = /replace\([^)]*FFFD[^)]*\)|FFFD[^;\n]{0,60}replace/.test(src);
+if (shortCircuit && !strips) { console.log("FAIL: FFFD 短路守卫回归（含 FFFD 整体放弃候选）"); process.exit(1); }
+console.log("OK: FFFD 处理为剥离/降权形态，非整体短路");
+' "$A2_RULE" || S304_OK=false
+$S304_OK && pass "A2 FFFD 短路绕过防回归在位" || fail "A2 FFFD 处理形态回归"
 
 
 echo -e "  验收测试结果：${GREEN}$PASSED 通过${NC} / ${RED}$FAILED 失败${NC} / 共 $((PASSED + FAILED))"
