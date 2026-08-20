@@ -99,4 +99,25 @@ describe('交付二 · key-manager（~/.sofagent/keys/data.key）', () => {
     expect(DATA_KEY_RECOVERY_HINT).toContain('data.key');
     expect(DATA_KEY_RECOVERY_HINT.length).toBeGreaterThan(20);
   });
+
+  // v1.3.9 四十六：目录已存在且权限被改松 → 生成时收紧回 0700（非仅创建时）
+  it('目录已存在且权限不对 → 修正为 0700（非仅创建时）', () => {
+    const dir = keysDirPath(home);
+    fs.mkdirSync(dir, { recursive: true, mode: 0o755 });
+    fs.chmodSync(dir, 0o755); // 模拟外部改松（如恢复备份 / 手动 chmod）
+    expect(fs.statSync(dir).mode & 0o777).toBe(0o755);
+
+    // 目录已存在（无 data.key）→ generateDataKey 走 ensureKeysDir 的 chmod 收紧分支
+    generateDataKey(home, { confirmBackup: true });
+
+    expect(fs.statSync(dir).mode & 0o777).toBe(0o700);
+  });
+
+  // v1.3.9 四十六：tmp 名加随机后缀 + 'wx'（O_EXCL）——写后不留 .tmp 残留
+  it('tmp 原子写不留残留（随机名 + O_EXCL rename 后清理）', () => {
+    generateDataKey(home, { confirmBackup: true });
+    const files = fs.readdirSync(keysDirPath(home));
+    expect(files.some((f) => f.includes('.tmp.'))).toBe(false);
+    expect(fs.existsSync(dataKeyPath(home))).toBe(true);
+  });
 });

@@ -12,7 +12,7 @@
 // - 无密钥（未初始化）→ 按旧明文逻辑写（向后兼容，不破坏现有行为）
 // ============================================================
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { existsSync, readFileSync, writeFileSync, mkdirSync, rmSync } from 'fs';
 import { join } from 'path';
 import { tmpdir, homedir } from 'os';
@@ -177,5 +177,32 @@ describe('v1.3.8 交付二 · audit-history 加密挂点', () => {
     expect(isAgePayload(raw)).toBe(false);
     const parsed = JSON.parse(raw) as AuditHistoryEntry;
     expect(parsed.task).toBe('加密挂点测试任务');
+  });
+
+  // v1.3.9 三十七：加密态读回校验——此前最后一行是密文，直接 JSON.parse 必抛异常，
+  // 每次写入都假警「读回校验失败」，且校验对象是密文（失效）。修复后读回校验先
+  // 解密再 parse（真实校验明文），无假警。
+  it('加密态写回校验：读回校验先解密再 parse（无「读回校验失败」假警）', () => {
+    generateDataKey(keyHome, { confirmBackup: true });
+    writeInitializedMarker(keyHome);
+
+    const warns: string[] = [];
+    const spy = vi.spyOn(console, 'warn').mockImplementation((...args: unknown[]) => {
+      warns.push(args.map(String).join(' '));
+    });
+
+    try {
+      appendHistory(makeEntry('2026-08-20T10:00:00Z'));
+    } finally {
+      spy.mockRestore();
+    }
+
+    // 修复前：最后一行密文直接 JSON.parse 抛异常 → 每次写入都假警「读回校验失败」
+    expect(warns.filter((w) => w.includes('读回校验失败'))).toHaveLength(0);
+
+    // 读回校验真实校验的是解密后的明文（loadHistory 能正确读回 = 校验对象是明文非密文）
+    const loaded = loadHistory(10, testDir);
+    expect(loaded.length).toBe(1);
+    expect(loaded[0]!.task).toBe('加密挂点测试任务');
   });
 });

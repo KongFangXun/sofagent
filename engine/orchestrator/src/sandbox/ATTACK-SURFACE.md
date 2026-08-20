@@ -1,7 +1,7 @@
-# SubAgent 沙箱攻击面声明（v1.3.6 · v1.3.8 开发①）
+# SubAgent 沙箱攻击面声明（v1.3.7+）
 
 > 组件：`engine/orchestrator/src/sandbox/`（filesystem-backend / network-gateway / tool-gate / virtual-key / async-subagent）
-> 版本：v1.3.6（当前 SSOT；本组件随 v1.3.7 发布）
+> 版本：v1.3.7+（本组件随 v1.3.7 交付①发布；v1.3.8 未改动本组件——仅头部版本号 bump）
 > 依据：docs/changelog/v1.3/v1.3.7.md §一「沙箱完整性自检与攻击面声明」
 
 ## 一、五类攻击面 × 防御措施

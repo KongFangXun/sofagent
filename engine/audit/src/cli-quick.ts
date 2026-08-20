@@ -180,7 +180,7 @@ export function generateQuickOutput(
     parts.push(`✅ 全部 ${passCount} 条规则通过（默认 17 条 · 完整 24 条含扩展，扩展规则经 config 启用，规则集用 --ruleset 加载）${skipCount > 0 ? `（${skipCount} 条跳过）` : ''}`);
     // v1.3.5 #7: 跳过计数解释——让用户知道「跳过」是 quick 模式缺输入而非漏检
     if (skipCount > 0) {
-      parts.push(`ⓘ 跳过 = 需任务描述/commit msg/Agent 日志输入的规则（quick 模式无此输入）——\`--init\` 装 hook 走完整引擎`);
+      parts.push(`ⓘ 跳过 = 需任务描述/Agent 日志输入的规则（quick 模式无此输入）——\`--init\` 装 hook 走完整引擎`);
     }
     // v1.3.4 P1-8: 显著回声行——用户用了三周可能不知道 sofagent 在工作，此行解决可感知性
     if (commitSha && !isRangeMode) {
@@ -197,7 +197,7 @@ export function generateQuickOutput(
     parts.push(`📊 ${summaryParts.join(' · ')}`);
     // v1.3.5 #7: 跳过计数解释（同上，非 PASS 分支也需要）
     if (skipCount > 0) {
-      parts.push(`ⓘ 跳过 = 需任务描述/commit msg/Agent 日志输入的规则（quick 模式无此输入）——\`--init\` 装 hook 走完整引擎`);
+      parts.push(`ⓘ 跳过 = 需任务描述/Agent 日志输入的规则（quick 模式无此输入）——\`--init\` 装 hook 走完整引擎`);
     }
   }
 
@@ -261,6 +261,12 @@ export function runCliQuick(argv: string[]): number {
     console.log('  npx -y -p @sofagent/audit sofagent-audit HEAD~3..HEAD   审计指定范围（路由到完整引擎）');
     console.log('  npx -y -p @sofagent/audit sofagent-audit -v, --version 显示版本号');
     console.log('  npx -y -p @sofagent/audit sofagent-audit -h, --help    显示此帮助\n');
+    // v1.3.9 四十四：双模式边界一次性讲清——此前用户敲 --init/--doctor 撞二次安装门槛
+    // 却无处查边界，这里显式并列 quick flag 集 vs 完整引擎 flag 集 + 升级命令。
+    console.log('双模式边界：');
+    console.log('  quick 模式（本入口，零安装只读审计）仅支持：[diff 范围参数] + -h/--help + -v/--version；');
+    console.log('  完整引擎（--init/--doctor/--diff/--cached/--ruleset/--task/--commit-msg 等）需 --init 装 hook 或全局安装；');
+    console.log('  从 quick 升级到完整：npm install -g @sofagent/audit（或 npx -y -p @sofagent/audit sofagent-audit-full）\n');
     console.log('以下 flag 需完整引擎（sofagent-audit-full 或全局安装），quick 模式会自动路由或提示安装：');
     console.log('  --init              安装 git hook（每次 commit 自动审计）');
     console.log('  --doctor            健康诊断 + 完整性校验');

@@ -12,6 +12,9 @@
 // ============================================================
 
 import type { DataSovereigntyRecord } from './data-sovereignty';
+// v1.3.9：审计报告签名版本号改为运行时取包版本（复用 @sofagent/core 既有 VERSION 常量），
+// 禁止硬编码——此前硬编码 v1.2.3 与当前 1.3.8 差 6 个版本（用户可见版本漂移）。
+import { VERSION } from '@sofagent/core';
 
 // ============================================================
 // 统计结构（report-generator.ts 聚合后传入）
@@ -87,7 +90,7 @@ export function renderReport(
 
   lines.push('---');
   lines.push('');
-  lines.push('*本报告由 sofagent 数据主权审计引擎自动生成（v1.2.3 · P0）。*');
+  lines.push(`*本报告由 sofagent 数据主权审计引擎自动生成（v${VERSION} · P0）。*`);
   return lines.join('\n');
 }
 
