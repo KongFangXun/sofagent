@@ -29,7 +29,7 @@
 # v1.2.0: install.sh 吸收 FDE/fde-install.sh，成为企业设备安装器
 #
 # 平台无关重构：默认安装不探测/不枚举任何平台，只写 sofagent 自己的目录 ~/.sofagent/；
-# 平台集成改为显式 opt-in：--platform openclaw（完整）/ workbuddy / claude / codex / hermes
+# 平台集成改为显式 opt-in：--platform openclaw（完整）/ workbuddy / claude / codex / hermes / cursor / gemini（v1.3.9）
 # 约束层四种能力：注入 / 审计 / 回溯 / 进化（FORGE 是内部开发工具，非交付引擎）。
 # 编排引擎为独立可选包 @sofagent/orchestrator，需单独安装（npm install -g @sofagent/orchestrator）。
 #
@@ -74,7 +74,7 @@ sofagent install.sh v${VERSION} — 企业设备安装器（平台无关）
 用法:
   bash install.sh                       默认模式：平台无关安装（只写 ~/.sofagent/）+ FDE Skill
   bash install.sh --base-only           仅装约束层（审计·回溯·daemon·dashboard，不装 Agent Skill）
-  bash install.sh --platform <name>     显式平台集成（opt-in）：openclaw / workbuddy / claude / codex / hermes
+  bash install.sh --platform <name>     显式平台集成（opt-in）：openclaw / workbuddy / claude / codex / hermes / cursor / gemini
   bash install.sh --quick               完整安装（静默模式，跳过交互确认）⚠️ 非预览，会写入文件
   bash install.sh --remote              远程安装模式（git clone）
   bash install.sh --force               升级时强制覆盖 custom/ 用户层（确认+备份）
@@ -83,7 +83,7 @@ sofagent install.sh v${VERSION} — 企业设备安装器（平台无关）
   bash install.sh --help, -h            显示此帮助
 
 平台: 默认平台无关安装（不探测、不修改任何第三方平台配置，只写 ~/.sofagent/）；
-     显式 --platform 时才做平台集成：openclaw（完整）/ workbuddy / claude / codex / hermes
+     显式 --platform 时才做平台集成：openclaw（完整）/ workbuddy / claude / codex / hermes / cursor / gemini（v1.3.9 薄挂载）
 EOF
 }
 
@@ -687,6 +687,26 @@ install_skill_unified() {
         fi
         ok "  Skill 统一路径已建立：${SOFAGENT_HOME}/skill/ → ${psd}（显式平台集成）"
         ;;
+      # v1.3.9（八）：跨平台适配器扩展——Cursor / Gemini CLI 薄挂载
+      # （Skill 走平台技能目录 symlink；规则文件 sofagent.mdc / GEMINI.md 复制到平台目录）
+      cursor)
+        local cur_rules="${HOME}/.cursor/rules"
+        local cur_skills="${HOME}/.cursor/skills/sofagent"
+        mkdir -p "$cur_rules" 2>/dev/null || true
+        ln -sfn "$SOFAGENT_HOME/skill" "$cur_skills" 2>/dev/null || true
+        if [ -f "${SCRIPT_DIR}/.cursor/rules/sofagent.mdc" ]; then
+          cp "${SCRIPT_DIR}/.cursor/rules/sofagent.mdc" "${cur_rules}/sofagent.mdc"
+        fi
+        ok "  Cursor 薄挂载：${cur_rules}/sofagent.mdc + Skill symlink ${cur_skills}"
+        ;;
+      gemini)
+        local gem_skills="${HOME}/.gemini/skills/sofagent"
+        ln -sfn "$SOFAGENT_HOME/skill" "$gem_skills" 2>/dev/null || true
+        if [ -f "${SCRIPT_DIR}/GEMINI.md" ]; then
+          cp "${SCRIPT_DIR}/GEMINI.md" "${HOME}/.gemini/GEMINI.md"
+        fi
+        ok "  Gemini CLI 薄挂载：${HOME}/.gemini/GEMINI.md + Skill symlink ${gem_skills}"
+        ;;
       *)
         ok "  Skill 已安装到统一路径：$SOFAGENT_HOME/skill/（平台无关安装，未修改任何平台目录）"
         ;;
@@ -976,6 +996,9 @@ if [ "${BASE_ONLY:-0}" = "0" ]; then
     claude) FDE_MD_TARGET="$HOME/.claude/fde.md" ;;
     codex) FDE_MD_TARGET="$HOME/.codex/fde.md" ;;
     hermes) FDE_MD_TARGET="$HOME/.hermes/fde.md" ;;
+    # v1.3.9（八）：Cursor / Gemini CLI——fde.md 走平台技能目录（与 Skill symlink 同位）
+    cursor) FDE_MD_TARGET="$HOME/.cursor/skills/sofagent/fde.md" ;;
+    gemini) FDE_MD_TARGET="$HOME/.gemini/skills/sofagent/fde.md" ;;
     *) FDE_MD_TARGET="$SOFAGENT_HOME/skills/sofagent/fde.md" ;;  # 平台无关：默认写入自己的目录
   esac
 
