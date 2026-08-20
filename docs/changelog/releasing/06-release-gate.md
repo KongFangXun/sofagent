@@ -15,7 +15,9 @@
 
 > **为什么分层（run-04 实测 2026-08-19）**：driver 全流程实测 30.7 万 token / 58 分钟，其中 **61%（18.7 万）花在 acceptance 12 分片 LLM 复核**——复核的是脚本 `exit 0 + 303/303 SUMMARY` 的确定性结果，没有主观判断空间，盲审增值≈0。脚本层零 token 直跑拿到同样保证；driver 只保留有判断空间的 regression 语义审查 + coverage 交叉 + 终裁（约 9 万 token / 20 分钟）。**独立性不伤**：盲审保留在真正需要判断的环节。
 
-> **为什么开新 session**：阶段三~五在开发 session 做完后，上下文已经很长。判断层需要 15-20 分钟，期间只需执行命令 + 轮询日志 + 汇报——不需要开发 session 的上下文。开一个干净的 session，上下文短、不互相干扰。
+> **为什么开新 session**：阶段三~五在开发 session 做完后，上下文已经很长。判断层需要 15-20 分钟，期间只需执行命令 + 心跳守护 + 汇报——不需要开发 session 的上下文。开一个干净的 session，上下文短、不互相干扰。
+>
+> **为什么「等通知」而非「定时轮询」（2026-08-20 修正）**：v1.3.8 初版 prompt 写「每 120 秒轮询」，执行 session 合理选择了「run_in_background 自动通知后处理」——轮询的**真实目的**是发现挂起（心跳冻结 >90s），不是等完成。定期轮询既浪费 token 又让 session 误解为「必须轮询」。正确语义：**正常等通知，心跳冻结才主动探活**。判断层（20 分钟）与 fresh-eyes-loop（小时级）都适用此语义。
 
 ---
 
@@ -39,9 +41,7 @@
    ⚠️ verdict=FAIL 时循环即停（F 修复链默认关闭，无 f-* 产物），如实汇报后等主 session 决策。
    旧 --step 单步模式保留用于单步调试（consolidate 缺 acceptance 产物属预期——judgment-only 模式下
    coverage/consolidate 从 acceptance-raw.log 与脚本层汇报取数）。
-3. 每步运行中每 120 秒轮询 status.json + heartbeat（同 fresh-eyes-loop 协议）；
-   也可用 liveness 探针：node FORGE/src/release-gate-driver.mjs --check-alive <runDir>
-   （只认心跳不认日志——LLM 长窗口日志冻结 ≠ 死亡；alive=RC0 / dead=RC1）
+3. **运行期间的心跳守护（强制触发，非例行轮询）**：`run_in_background:true` 启动的 driver 会在进程结束时自动通知——**正常等待通知即可，无需定时轮询**。唯一必须主动检查的场景是**心跳冻结**：若驱动开始后超过 90 秒未收到通知，用 liveness 探针判定死活——`node FORGE/src/release-gate-driver.mjs --check-alive <runDir>`（只认心跳不认日志——LLM 长窗口日志冻结 ≠ 死亡；alive=RC0 / dead=RC1）。dead → 立即报告主 session，不要无限等通知。
 4. 四步完成后读 <runDir>/verdict.md，3-5 行汇报：裁决结果 / 三步骤通过数 / 失败项 / 建议
 
 铁律：不干涉 driver、不改代码、不探索源码；FAIL 项真伪由主 session 零信任复验（维度脚本自身缺陷会误报 FAIL，逐维复跑分辨「仓库 vs 检查器」）。
@@ -94,7 +94,7 @@ ls <runDir>/f-* 2>/dev/null && git -C <主仓> rev-list --count <基线SHA>..<F�
 
 | 角色 | 职责 | 禁止 |
 |------|------|------|
-| 监控 session（新开） | 启动 driver / 轮询 status / 最终 3-5 行汇报 | 不干涉 driver、不改代码、不探索源码 |
+| 监控 session（新开） | 启动 driver / 心跳守护（冻结才探活，非例行轮询）/ 最终 3-5 行汇报 | 不干涉 driver、不改代码、不探索源码 |
 | 主 session | 收到汇报后**零信任复验**：FAIL 清单逐维真跑分辨「仓库问题 vs 检查器问题」（退出码语义与写死签名是检查器误报两大源）；PASS 过三件套 | 不直接采信 run 汇报结论 |
 
 > v1.3.6 三轮循环实证：run-08 的 7 个 FAIL 中 5 个是维度脚本自身缺陷、run-09 的 6 项全是检查基建问题——**逐维复跑这一步发现了全部真问题，跳过它会把检查器 bug 当仓库 bug 修**。
