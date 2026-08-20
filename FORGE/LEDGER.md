@@ -182,3 +182,7 @@ release-gate-loop 与 fresh-eyes-loop 共享本文件，通过"循环"列区分�
 | — | 2026-08-19 | release-gate-手工裁决 | v1.3.7 阶段六（run-01/04 两轮 loop FAIL 均复验为检查器侧债后） | 手工裁决 PASS | regression 89/89 全绿（主 session 复刻 driver runCommand 逐字同款 spawn bash -c 亲跑，两轮 loop 的 dim106/dim116 检查器 bug 已修）+ coverage 12 交付关键词×审查文档矩阵全命中 + acceptance 303/303 EXIT=0。run-04 的 coverage worker 偶发退出判定 driver 侧（precheck 完整），手工矩阵等价覆盖。依据：SOP 判定与循环「verdict=PASS→进阶段七」+ v1.3.5 run-08 手工裁决先例 | 主 session |
 
 2026-08-20     | 20260820-03    | release-gate | 1    | SKIP       | SKIP       | SKIP     | ERROR   | /Users/kongfangxun/.sofagent/data/forge-runs/release-gate-loop/2026-08-20/run-03
+
+2026-08-20     | 20260820-06    | release-gate | 4    | SKIP       | PASS       | PASS     | FAIL    | /Users/kongfangxun/.sofagent/data/forge-runs/release-gate-loop/2026-08-20/run-06
+
+2026-08-20     | 20260820-10    | release-gate | 4    | SKIP       | FAIL       | PASS     | FAIL    | /Users/kongfangxun/.sofagent/data/forge-runs/release-gate-loop/2026-08-20/run-10
