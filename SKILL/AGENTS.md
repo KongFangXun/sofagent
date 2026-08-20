@@ -68,16 +68,13 @@ FORGE engineer commit ──→ 自动调用 @sofagent-audit  → 验证变更�
 
 预装 Agent 分两类格式，目录结构不同：
 
-**类型 A — Skill 格式（第三方平台调用入口）**：`SKILL/` 与 `SKILL/agents/audit/`，每个目录下有**两个文件**，分工明确：
+**类型 A — Skill 格式（第三方平台调用入口）**：`SKILL/` 与 `SKILL/agents/audit/`，每个目录下的 `SKILL.md` 同时承载**调用指令 + 角色定义**（frontmatter 定义触发条件，正文定义角色/使命/规则/交付物）：
 
 | 文件 | 格式 | 作用 | 谁读 |
 |------|------|------|------|
-| `SKILL.md` | Skill 格式（frontmatter + 调用指令） | **调用入口**——告诉第三方 Agent 用 Bash 跑 `sofagent-orchestrator subagent run <name>` | 第三方 Agent 平台（WorkBuddy/Codex） |
-| `{role}.md` | Agency Agents 格式（frontmatter + 结构化章节） | **角色定义**——Agent 的完整行为规范、工作流、原则 | DeepAgents 编排引擎 + 人类参考 |
+| `SKILL.md` | Skill 格式（frontmatter + 调用指令 + 角色定义） | **调用入口 + 角色定义**——frontmatter 告诉第三方 Agent 何时触发、用 Bash 跑 `sofagent-orchestrator subagent run <name>`；正文是 Agent 的完整行为规范 | 第三方 Agent 平台（WorkBuddy/Codex）+ DeepAgents 编排引擎 |
 
-**两者不是替代关系——是调用层和定义层分离。**
-- SKILL.md = "怎么调这个 Agent"（一句话：跑 CLI 命令）
-- {role}.md = "这个 Agent 是什么"（完整的角色说明书，100+ 行）
+> 注：早期设计曾计划「SKILL.md（调用）+ {role}.md（定义）」双文件分离，当前实现为单文件承载两者（frontmatter = 调用层，正文 = 定义层）。岗位级注入约束见 [`rules/`](./rules/)（core-rules.md + role-*.md，由加载链按 task type 注入主 Agent，与 Sub Agent 定义是两套机制）。
 
 **类型 B — 内层角色（Skill 格式，第三方平台亦可用）**：`SKILL/agents/engineer/SKILL.md`（`@sofagent-engineer`）、`SKILL/agents/reviewer/SKILL.md`（`@sofagent-reviewer`）除作调用入口外，其角色定义由 FORGE 内层循环调度，亦可供第三方 Agent 平台调用。
 

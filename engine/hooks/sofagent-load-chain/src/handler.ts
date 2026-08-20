@@ -7,10 +7,13 @@
 //
 // ⚠️ 职责分工（v1.3.8 P0-R11）：
 //   本文件服务 **OpenClaw 平台 hook 部署形态**（.openclaw/hooks/sofagent-load-chain/handler.ts），
-//   由 OpenClaw 的 agent:bootstrap 事件触发注入 prompt。
+//   由 OpenClaw 的 agent:bootstrap 事件触发注入 prompt——**仅 OpenClaw 生效**（平台边界见 HOOK.md）。
+//   WorkBuddy/Codex/Claude 无此事件，靠 SKILL.md 自觉加载（软约束）。
 //   npm API 场景（createReactAgent 构建 system prompt）用 @sofagent/harness 的
 //   buildConstrainedSystemPrompt（engine/harness/src/index.ts）——两份实现职责不同、
 //   服务不同部署形态，**不要合并**。改动加载链逻辑时需两处同步评估。
+//   未来：DSH（DeepSeek Harness）tools/pre-execute 等 8 个生命周期 hook 是
+//   约束注入从「bootstrap 一次」升级为「每次工具调用」的接入点（见 HOOK.md 前瞻节）。
 //
 // v1.3.2 渐进式加载改造：
 //   L1 从"注入完整 SKILL.md（149 行）"改为"注入 core-rules.md（~30 行核心铁律）"
@@ -93,7 +96,9 @@ const handler = async (event: LoadChainEvent) => {
 
     // ── 第 1 层：核心铁律（core-rules.md ~30 行，始终注入）+ 按需岗位规范 ──
     // v1.2.7: 从"注入完整 SKILL.md（149 行）"改为"注入 core-rules.md（~30 行核心铁律）"
-    const coreRulesFile = path.join(sofagentSkillDir, "core-rules.md");
+    // v1.3.8: 注入文件收敛到 sofagentSkillDir/rules/ 子目录（core-rules.md + role-*.md）
+    const rulesDir = path.join(sofagentSkillDir, "rules");
+    const coreRulesFile = path.join(rulesDir, "core-rules.md");
     if (fs.existsSync(coreRulesFile)) {
       const content = fs.readFileSync(coreRulesFile, "utf-8");
       event.context.bootstrapFiles.push({
@@ -101,7 +106,7 @@ const handler = async (event: LoadChainEvent) => {
         path: coreRulesFile,
         content: `<!-- ===== sofagent 第 1 层：核心铁律（core-rules.md）===== -->\n${content}`,
       });
-      pushed.push("core-rules.md");
+      pushed.push("rules/core-rules.md");
     } else {
       // 兼容旧安装：core-rules.md 不存在时 fallback 到 SKILL.md 全文
       const skillMdFile = path.join(sofagentSkillDir, "SKILL.md");
@@ -120,7 +125,7 @@ const handler = async (event: LoadChainEvent) => {
     const taskType = detectTaskType(event);
     const roleFile = resolveRoleFile(taskType);
     if (roleFile) {
-      const rolePath = path.join(sofagentSkillDir, roleFile);
+      const rolePath = path.join(rulesDir, roleFile);
       if (fs.existsSync(rolePath)) {
         const roleContent = fs.readFileSync(rolePath, "utf-8");
         event.context.bootstrapFiles.push({
@@ -128,7 +133,7 @@ const handler = async (event: LoadChainEvent) => {
           path: rolePath,
           content: `<!-- ===== sofagent 第 1 层（按需）：${roleFile}（task type=${taskType}）===== -->\n${roleContent}`,
         });
-        pushed.push(roleFile);
+        pushed.push(`rules/${roleFile}`);
       }
     }
 

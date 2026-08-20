@@ -211,7 +211,7 @@ graph TB
 | @sofagent/audit + git hook | 事后拦截——Agent commit 时扫 24 条规则 |
 | daemon | 7×24 巡检（数据主权 / 知识健康 / 失败模式） |
 | dashboard | **单机监控面板**——企业 IT 看本设备 Agent 运行状态（多设备聚合走商业侧 商业平台，不在开源范围） |
-| SKILL.md + fde.md + core-rules.md + role-*.md | **事前约束**——Agent 启动时读铁律，知道规则才能遵守 |
+| SKILL.md + fde.md + rules/core-rules.md + rules/role-*.md | **事前约束**——Agent 启动时读铁律，知道规则才能遵守 |
 | 4 个 Agent Skill（fde/audit/engineer/reviewer）| SubAgent 岗位定义 |
 | HMAC key | 审计记录防篡改 |
 
