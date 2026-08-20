@@ -24,7 +24,7 @@ import {
   REPO_ROOT, loadModelConfig, parseArgs, resolveVersion,
   resolveApiKey, writeDegraded, loadSources, readChangelogLine,
   callLLM, writeOutput, defaultOut,
-} from './lib/gen-draft-lib.mjs';
+} from './gen-draft-lib.mjs';
 
 // 分类任务要稳定不要发散（审查草稿 0.5 / 创意 0.8）
 const MODEL_CFG = loadModelConfig({ temperature: 0.3 });
