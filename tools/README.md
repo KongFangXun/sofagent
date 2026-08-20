@@ -11,7 +11,7 @@
 | `check-test-count.sh` | 测试数对账（README/文档声称 vs 实测，双口径） | 发版 SOP |
 | `check-review-system.sh` | 审查体系一致性（维度数/警戒线/S 编号闭环对账） | 发版 SOP 阶段七 |
 | `check-tool-health.sh` | 工具脚本健康（路径活性/孤儿配置/set -u 守卫） | 发版 SOP 阶段九 |
-| `check-anchors.mjs` | 跨文档 Markdown 锚点校验（`](path/to/doc.md#anchor)` 引用活性） | 发版 SOP |
+| `check-anchors.mjs` | 跨文档 Markdown 锚点校验（扫描 `](文档.md#锚点)` 引用活性） | 发版 SOP |
 | `check-cjk-var.sh` | shell 变量定界守卫（`$VAR` + CJK 全角标点误吞检测） | 改 shell 脚本后 |
 | `check-deps.sh` | 关键依赖版本检查（npm 包版本对齐） | 发版前 / 定期 |
 | `check-dev-prompt.sh` | 开发日志/Dev Prompt 代码引用一致性校验 | 发版 SOP |
