@@ -1038,6 +1038,24 @@ else
 fi
 echo ""
 
+# ── 末尾独立断言：env.local 保险（不参与编号段）────────────────
+# FORGE/env.local 含真实 GLM API Key，正常靠 FORGE/.gitignore 挡住。
+# 本断言防两道万一：gitignore 被误改 / git add -f 误提交。
+# 注意：env.local.template 是模板（不含真实 key），必须排除——
+# 精确匹配「以 env.local 结尾且非 template」的已跟踪文件。
+echo "=== 断言. env.local 未入库（真实 key 防误提交）==="
+ENV_LOCAL_TRACKED=$(git ls-files 2>/dev/null | grep -E "(^|/)env\.local$" | grep -v "template" || true)
+if [ -n "${ENV_LOCAL_TRACKED}" ]; then
+  echo -e "  ${RED}✗${NC} 检测到真实 key 文件被 git 跟踪："
+  echo "${ENV_LOCAL_TRACKED}" | sed 's/^/    /'
+  echo -e "  ${RED}立即处理：git rm --cached <file> 并确认 FORGE/.gitignore 覆盖${NC}"
+  ERRORS=$((ERRORS + 1))
+else
+  echo -e "  ${GREEN}✓${NC} env.local 未入库（template 模板除外，属预期）"
+  CHECKS=$((CHECKS + 1))
+fi
+echo ""
+
 # ── 汇总 ──────────────────────────────────────────────────────
 echo -e "${BOLD}${CYAN}═══════════════════════════════════════════════════════════${NC}"
 if [[ ${ERRORS} -eq 0 ]]; then
