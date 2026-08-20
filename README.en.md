@@ -168,19 +168,20 @@ Community rulesets are published as `sofagent-ruleset-*` npm packages and loaded
 - **Methodology path** (zero dependencies): read [FDE/GUIDE.md](./FDE/GUIDE.md) and map workflows manually following the handbook — Excel + your own brain is enough
 - **Tooling path** (Node.js ≥ 18): after installing, tell your AI tool "run an FDE diagnosis for me" and the Agent guides you from the entry phase
 
-## New in v1.3.7
+## New in v1.3.8
 
-> 🏰 **v1.3.7 new capabilities** (SubAgent full sandbox + scenario-driven permissions + AgentShield + industry overlays + circuit breaker + ontology lifecycle):
-> - **SubAgent full sandbox**: 🏰 virtual filesystem (writes land in a virtual layer first, atomically merged after approval + HMAC-chained evidence stream) / network egress whitelist (DNS tunneling + raw sockets all intercepted; domain-suffix + CIDR) / tool-call mediation (Symbol unique-ID verdicts, unregistered = fail-closed) / virtual keys (vk- prefix + scope data-flow contract + token-bucket rate limit + log masking) / AsyncSubAgent standalone process (stdout JSON lines + SIGINT graceful shutdown) / true real-time A/B dual-run (parallel in isolation + line-level diff) — the full prerequisite for v1.3.8 `sandbox:true`
-> - **Scenario-driven permissions**: 🔐 identity → scenario match → risk level → allow/deny/human approval, every step logged to decision-log; three hard constraints (fail-closed / guard before event dispatch / least privilege); sensitive domains auto-escalate (audit-data writes/deletes always critical)
-> - **AgentShield five scans**: 🛡️ MCP config risk profiling / hook injection analysis / agent config review (negative-lookahead assertions exclude "do-not-ignore" phrasing) / enhanced secret detection / **Shadow AI discovery** (scans processes/configs/repos for unregistered "shadow agents") — static & deterministic, zero LLM self-assessment
-> - **Four industry overlays**: 🏥 fintech (AML trails) / medical (PHI protection) / government (grade-keeping) / ai (model registration) — auto-loaded from context.md `industry:`; conservative default when untagged
-> - **Circuit breaker + behavior monitoring**: ⚡ consecutive-failure tripping with cooldown half-open probing (ASI08) / three-metric sliding window isolating runaway agents back to human control (ASI10, sandbox-linked: isolated agents take no new tasks)
-> - **Ontology lifecycle**: 🌳 branch/trunk lifecycle + review gate `migrateToTrunk` (approver required) + OKF trio (mandatory type / stale_after trust freshness / verified human>process tiering)
-> - **Adaptive review-loop concurrency**: ⚙️ concurrency from a physical-memory budget table (8GB→1 … ≥48GB→6) + OOM tripping degradation; all LLM calls timeout+retry protected
-> - **26 independent-review fixes**: 🛡️ all 26 issues found by four rounds of independent security review (16 review perspectives in total) fixed — including 4 critical installer/gate defects rooted out and multiple red-team bypass defenses hardened
+> 🛡️ **v1.3.8 new capabilities** (proxy gateway hard boundary + data static encryption + Durable Execution L3 + async long-task autonomy + FORGE driver resilience trio + SDK sandbox + release-gate slimming + fresh-eyes cost refactor + snapshot write-path hardening):
+> - **Proxy gateway hard boundary**: 🛡️ the sole egress for SubAgent external requests — domain/path allowlist (allow/deny) + four-tier risk grading + permission-ceiling monotonic guard (first request locks the ceiling, only-shrink-never-grow, out-of-bounds = deny + audit) + highest-risk requests queued to HITL approval (first real activation of the v1.3.0 no-op loop, verified end-to-end)
+> - **Data static encryption**: 🔐 pure-TS AES-256-GCM (`SOFAGENT-AGE-V1` transparent read/write, zero spawn dependency) + mandatory key-fingerprint backup + four-directory encryption scope
+> - **Durable Execution L3**: recoverable transactions (writer / recovery / undo three-tier reversibility) + gateway-layer integration + real git-rollback verified — crash-recoverable, side-effects replayable
+> - **Async long-task autonomy**: cron three-tier sugar + dependency graph (predecessor PASS before trigger) + dead-loop replan alert after N no-change iterations + WAL resume hook
+> - **FORGE driver resilience trio**: process-manager supervised + resume auto-detection (skip completed workers) + `--check-alive` heartbeat probe (trusts heartbeat not logs, no false-negative on long LLM windows)
+> - **SDK `sandbox: true` enabled**: three-layer wiring (tool-gate verdict / virtual FS / gateway egress) + `approval` combinable — `harness.wrap(agent, { sandbox: true })` one line to enable
+> - **release-gate slimming**: `--judgment-only` direct judgment-layer launch (usage ≤120k tokens, baseline 307k) + F-loop stops on FAIL + shard sampling
+> - **fresh-eyes cost refactor**: `usage.jsonl` metering + B-side review mode + single-shot draft tool, 16 perspectives intact
+> - **Snapshot write-path hardening**: `revert` atomic two-stage + atomic replace — interrupted injection leaves no half-state, CLI/daemon concurrent writes never clobber
 >
-> See [v1.3.7 devlog](./docs/changelog/v1.3/v1.3.7.md). Earlier versions in [CHANGELOG](./CHANGELOG.md).
+> See [v1.3.8 devlog](./docs/changelog/v1.3/v1.3.8.md). Earlier versions in [CHANGELOG](./CHANGELOG.md).
 
 ## Why sofagent
 
