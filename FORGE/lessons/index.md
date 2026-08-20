@@ -6,6 +6,8 @@
 >
 > v1.3.8 · 2026-08-20（UTC）· 孔放勋
 >
+> v1.3.9 更新（2026-08-21）：引擎/工具开发通用坑位 7 项（TS7 API 剧变 / TS7 snapshot 缓存污染 / new Promise(resolve) 立即解析 / fs.readSync 返回数字 / ESM require 桥接 / DSH rc 守卫降级 / tools 分子目录根解析断裂）——见文末「v1.3.9 开发批次工程坑位」节
+>
 > v1.2.9 run-12 更新（2026-08-08）：跨闭包变量引用、nohup 后台死亡、8GB 并发 OOM 三项新坑位
 >
 > v1.3.0 run-21 更新（2026-08-09）：**产物完整性校验（防"假成功"）**、并行工具调用硬熔断超发、步骤级工具预算、LEDGER 假阳性污染四项新坑位
@@ -244,3 +246,19 @@
 | worker 退出 | 写完全部产物后强制 process.exit(0) + spawn 30min 超时 SIGKILL | 残留句柄让事件循环不清空→进程不退出→driver 永久 await（run-23） |
 | 结果判定 | 确定性规则优先（日志总结行正则 + ANSI 剥离），LLM 解读仅兜底 | LLM 解读日志误判（grep exit code 幻觉/WARN 当 FAIL）致 F 链空跑（run-21） |
 | 状态一致性 | driver 状态变化必须回写权威产物（F 收敛同步 verdict.md） | 文件与 status 矛盾，监控端拿到互相冲突的结论（run-21） |
+
+---
+
+## v1.3.9 开发批次工程坑位（2026-08-21 · 引擎/工具开发通用经验）
+
+> **来源**：v1.3.9 十二项交付开发实录（commit 3292e1eb~0b07bf4d）。与上文 driver 编排规范不同，本节是**引擎/工具层开发**的通用坑位——不限于 FORGE loop 开发，适用于任何 TS/Node 模块开发。每条附根因，开发前对照。
+
+| # | 坑位 | 根因 | 修复/铁律 | 涉及模块 |
+|---|------|------|----------|---------|
+| 1 | **TS7 编译器 API 剧变**——`createSourceFile` 同步解析 API 移除 | typescript@7.0.2 是 Go 原生移植，移除 5.x 同步解析 API | 走 `typescript/unstable/sync` 的 `API` 类；但仅能解析**真实磁盘文件**（虚拟 FS 回调对 `openFiles` 路径不生效）→「扫描内容→写临时文件→TS server 解析」模式 | AST 引擎 / public-api 门禁 |
+| 2 | **TS7 snapshot 缓存污染**——同一路径多次解析读到的全是首次内容 | TS7 snapshot 对已打开文件缓存首次内容 | 每次调用分配**唯一临时路径**（`${seq}-${path}`，seq 自增） | extractExports / AST 引擎 |
+| 3 | **`new Promise(entry.resolve)` 立即解析**——resolve 函数被当值 | JS Promise 构造器把 executor 视为 `(resolve, reject) => {}`，`entry.resolve` 传进去立即 fulfilled | pending 直接持有 `deliveryPromise` 本体（`new Promise(res => { release = res })`），等待方 `await entry.deliveryPromise`——多消费者共享同一 promise | meta-harness waitForDelivery |
+| 4 | **`fs.readSync` 返回数字**——不是 `{ bytesRead }` 对象 | readSync 同名易与流式 API（read 返回对象）混淆 | 解构 `{ bytesRead }` 得 undefined → 死循环 OOM；必须接数字返回值 | diff-parser spill 读回 |
+| 5 | **ESM 中 `require` 不可用**——ReferenceError | ESM 文件无 require 全局 | `createRequire(import.meta.url)` 桥接 | execution-backend / gate-tools |
+| 6 | **DSH rc 守卫拦截**——preferred=dsh 降级到 LangGraph | DSH npm 仅 rc 版（@deepseek-ai/dsh@0.1.0-rc.8），v1.3.6 守卫按设计拦截 | 如实记录降级（A/B 实测产物一致），DSH 正式版发布后自动切换无需改代码 | execution-backend |
+| 7 | **tools 物理分子目录后根解析断裂**——`dirname $0/..` 全断 | 脚本移动后相对路径层级变深 | 批量改 `../..`（16 处）；glob 工具脚本改 `find` 递归；serve-dashboard 默认路由同步 | tools/ 分子目录 |
