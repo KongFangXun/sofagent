@@ -989,18 +989,25 @@ if [ "${BASE_ONLY:-0}" = "0" ]; then
     # v1.2.0: Skill 收敛到 /SKILL/（agents/SKILL/ → SKILL/agents/）
     # v1.2.2: 四 Agent 全装（fde / audit / engineer / reviewer）
     # v1.2.7: 渐进式加载分层文件同步（core-rules.md + role-*.md）
+    # v1.3.8: 注入文件收敛到 SKILL/rules/ 子目录，同步到 handler 读取的 sofagentSkillDir/rules
     SKILL_SRC="${SCRIPT_DIR}/SKILL"
     SKILL_DIR="$(dirname "$FDE_MD_TARGET")"
     if [ -f "$SKILL_SRC/SKILL.md" ]; then
       cp "$SKILL_SRC/SKILL.md" "$SKILL_DIR/sofagent-fde/SKILL.md" 2>/dev/null || cp "$SKILL_SRC/SKILL.md" "$SKILL_DIR/SKILL.md"
       echo -e "${GREEN}✅ FDE Skill 已安装（@sofagent-fde 可用）${NC}"
-      # v1.2.7: 补充分层文件到 sofagent-fde 目录（handler.ts L1 渐进式加载依赖）
-      for layer_file in core-rules.md role-audit.md role-fde.md role-orchestrate.md; do
-        if [ -f "$SKILL_SRC/$layer_file" ]; then
-          cp "$SKILL_SRC/$layer_file" "$SKILL_DIR/sofagent-fde/$layer_file" 2>/dev/null || cp "$SKILL_SRC/$layer_file" "$SKILL_DIR/$layer_file"
-        fi
-      done
-      echo -e "  ${CYAN}分层文件已同步（core-rules.md + role-*.md）${NC}"
+      # v1.2.7: 补充分层文件（handler.ts L1 渐进式加载依赖）
+      # v1.3.8: 源与目标均收敛到 rules/ 子目录——目标 = SKILL_DIR/rules（handler 读 sofagentSkillDir/rules）
+      RULES_SRC="$SKILL_SRC/rules"
+      RULES_DST="$SKILL_DIR/rules"
+      if [ -d "$RULES_SRC" ]; then
+        mkdir -p "$RULES_DST"
+        for layer_file in core-rules.md role-audit.md role-fde.md role-orchestrate.md; do
+          if [ -f "$RULES_SRC/$layer_file" ]; then
+            cp "$RULES_SRC/$layer_file" "$RULES_DST/$layer_file"
+          fi
+        done
+        echo -e "  ${CYAN}分层文件已同步（rules/: core-rules.md + role-*.md）${NC}"
+      fi
     fi
     # 安装 agents/ 下所有 Sub Agent（audit / engineer / reviewer / fde）
     if [ -d "$SKILL_SRC/agents" ]; then

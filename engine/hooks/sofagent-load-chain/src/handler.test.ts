@@ -67,6 +67,35 @@ describe('sofagent-load-chain handler', () => {
     expect(skill?.content).toContain('sofagent 第 1 层');
   });
 
+  it('v1.3.8 rules/ 收敛 → rules/core-rules.md 优先注入，SKILL.md 仅作 legacy fallback', async () => {
+    // 构造 rules/ 子目录（v1.3.8 权威路径）
+    const skillsDir = path.join(process.env.OPENCLAW_STATE_DIR as string, 'skills', 'sofagent');
+    const rulesDir = path.join(skillsDir, 'rules');
+    fs.mkdirSync(rulesDir, { recursive: true });
+    fs.writeFileSync(path.join(rulesDir, 'core-rules.md'), '# 核心铁律\n4 底线 + 7 铁律\n');
+    const event = makeEvent(dir);
+    await handler(event as LoadChainEvent);
+    const pushed = event.context.bootstrapFiles.map((f) => f.name);
+    // rules/core-rules.md 注入为第 1 层（优先于 SKILL.md legacy 路径）
+    expect(pushed.some((n) => n === 'sofagent-core-rules.md')).toBe(true);
+    // 有 rules/ 时不再 fallback 到 SKILL.md 全文（避免双份注入）
+    expect(pushed.some((n) => n === 'sofagent-SKILL.md')).toBe(false);
+    const core = event.context.bootstrapFiles.find((f) => f.name === 'sofagent-core-rules.md');
+    expect(core?.content).toContain('sofagent 第 1 层');
+    expect(core?.content).toContain('4 底线 + 7 铁律');
+  });
+
+  it('v1.3.8 老安装升级 → 无 rules/ 时 fallback SKILL.md 全文（升级连续性）', async () => {
+    // 老安装形态：只有扁平 SKILL.md（v1.3.7 前部署），无 rules/ 子目录
+    // （beforeEach 已构造该形态——skills/sofagent/ 下仅 SKILL.md + fde.md）
+    const event = makeEvent(dir);
+    await handler(event as LoadChainEvent);
+    const pushed = event.context.bootstrapFiles.map((f) => f.name);
+    expect(pushed.some((n) => n === 'sofagent-SKILL.md')).toBe(true);
+    const legacy = event.context.bootstrapFiles.find((f) => f.name === 'sofagent-SKILL.md');
+    expect(legacy?.content).toContain('兼容旧安装');
+  });
+
   it('非 bootstrap 事件 → 不注入，bootstrapFiles 保持为空', async () => {
     const event = makeEvent(dir);
     event.type = 'agent';

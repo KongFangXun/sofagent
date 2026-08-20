@@ -1611,14 +1611,14 @@ assert_grep "CompactCommand\|name:.*['\"]compact" "$PROJECT_ROOT/engine/core/src
 assert_grep "compact\|CompactCommand" "$PROJECT_ROOT/engine/core/src/slash-registry.ts" || S199_OK=false
 $S199_OK && pass "手动上下文压缩（/compact 命令注册）"
 
-scenario 200 "v1.2.7 ③ Skill 渐进式加载 — core-rules.md + role-*.md 分层"
+scenario 200 "v1.2.7 ③ + v1.3.8 Skill 渐进式加载 — rules/ 下 core-rules.md + role-*.md 分层"
 S200_OK=true
-[ -f "$PROJECT_ROOT/SKILL/core-rules.md" ] || { fail "core-rules.md 不存在"; S200_OK=false; }
-[ -f "$PROJECT_ROOT/SKILL/role-audit.md" ] || { fail "role-audit.md 不存在"; S200_OK=false; }
-[ -f "$PROJECT_ROOT/SKILL/role-fde.md" ] || { fail "role-fde.md 不存在"; S200_OK=false; }
-[ -f "$PROJECT_ROOT/SKILL/role-orchestrate.md" ] || { fail "role-orchestrate.md 不存在"; S200_OK=false; }
+[ -f "$PROJECT_ROOT/SKILL/rules/core-rules.md" ] || { fail "rules/core-rules.md 不存在"; S200_OK=false; }
+[ -f "$PROJECT_ROOT/SKILL/rules/role-audit.md" ] || { fail "rules/role-audit.md 不存在"; S200_OK=false; }
+[ -f "$PROJECT_ROOT/SKILL/rules/role-fde.md" ] || { fail "rules/role-fde.md 不存在"; S200_OK=false; }
+[ -f "$PROJECT_ROOT/SKILL/rules/role-orchestrate.md" ] || { fail "rules/role-orchestrate.md 不存在"; S200_OK=false; }
 assert_grep "core-rules\|role-audit\|role-fde\|role-orchestrate" "$PROJECT_ROOT/engine/hooks/sofagent-load-chain/src/handler.ts" || S200_OK=false
-$S200_OK && pass "Skill 渐进式加载（core-rules + role-*.md 四文件 + handler 映射）"
+$S200_OK && pass "Skill 渐进式加载（rules/ 下 core-rules + role-*.md 四文件 + handler 映射）"
 
 scenario 201 "v1.2.7 ④ --doctor 修复提示 + --repair 模式（合并 201+202）"
 S201_OK=true
