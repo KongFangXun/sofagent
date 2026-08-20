@@ -31,7 +31,7 @@ V 由 **Node driver**（`FORGE/src/release-gate-driver.mjs`）驱动——每个
 
 ## Session 监控协议（CRITICAL）
 
-**启动 driver 后，session 不是傻等，而是进入 sleep 轮询模式**——保持 working 状态，让用户感知"后台在干活"。
+**启动 driver 后，session 不是傻等，而是进入 sleep 轮询模式**——保持 working 状态，让用户感知"后台在干活"（**每 120 秒一轮，读 status.json 输出一行状态**——session 一直活跃 = 用户界面持续可见「在跑」，这是硬要求非可选）。
 
 ### 🔴 启动前独占窗口检查
 
