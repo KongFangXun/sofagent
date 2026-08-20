@@ -262,3 +262,10 @@
 | 5 | **ESM 中 `require` 不可用**——ReferenceError | ESM 文件无 require 全局 | `createRequire(import.meta.url)` 桥接 | execution-backend / gate-tools |
 | 6 | **DSH rc 守卫拦截**——preferred=dsh 降级到 LangGraph | DSH npm 仅 rc 版（@deepseek-ai/dsh@0.1.0-rc.8），v1.3.6 守卫按设计拦截 | 如实记录降级（A/B 实测产物一致），DSH 正式版发布后自动切换无需改代码 | execution-backend |
 | 7 | **tools 物理分子目录后根解析断裂**——`dirname $0/..` 全断 | 脚本移动后相对路径层级变深 | 批量改 `../..`（16 处）；glob 工具脚本改 `find` 递归；serve-dashboard 默认路由同步 | tools/ 分子目录 |
+
+### 阶段四补充（2026-08-21 · 草稿工具适配）
+
+| # | 坑位 | 根因 | 修复 | 涉及 |
+|---|------|------|------|------|
+| 8 | **草稿工具模型配置漂移**——gen-draft-lib 硬编码 GLM-5.2，FORGE 切 deepseek 后仍调 GLM | 模型配置未与 FORGE/models/profile.mjs 同源 | loadModelConfig 同步解析 profile.mjs A 角色（纯文本正则，零异步——同步函数不能用动态 import） | gen-draft-lib.mjs |
+| 9 | **16 视角完整性校验格式不兼容**——deepseek 输出「视角N：名称」带冒号/全角引号，校验查「视角N 名称」 | 校验硬编码 GLM 输出风格 | 归一化剥离引号 + 正则 `视角N[：:\s]名称` 兼容三种风格 | gen-fresh-eyes-draft.mjs |

@@ -114,13 +114,20 @@ ${sections.join('\n\n---\n\n')}
 
 // ── 主流程：key → LLM（含 16 视角完整性校验）→ 产物；失败降级 2 ──
 const OUT = opts.out || defaultOut('fresh-eyes', CUR_VER);
-const apiKey = resolveApiKey({ ...opts, __out: OUT, __prompts: { system: SYSTEM_PROMPT, user: USER_PROMPT } });
+const apiKey = resolveApiKey({ ...opts, __out: OUT, __modelCfg: MODEL_CFG, __prompts: { system: SYSTEM_PROMPT, user: USER_PROMPT } });
 
 console.log(`→ 来源 ${loaded.length} 个（${loaded.join('、')}），调用 ${MODEL_CFG.model} 生成 16 视角草稿 …`);
 try {
   const content = await callLLM(MODEL_CFG, apiKey, SYSTEM_PROMPT, USER_PROMPT);
   // 16 视角完整性校验——缺节即拒收（草稿残缺比没有草稿更危险）
-  const missing = PERSPECTIVES_16.filter(p => !content.includes(`视角${p}`));
+  // v1.3.9 修复：兼容三种模型输出风格——GLM「视角N 名称」/ deepseek「视角N：名称」/ 全角引号包裹。
+  // 归一化：剥离引号 + 视角后允许 空格/冒号（半角全角）分隔 + 空白折叠。
+  const normalized = content.replace(/[「」『』]/g, '').replace(/\s+/g, ' ');
+  const missing = PERSPECTIVES_16.filter(p => {
+    // p 形如 '1 陌生人' → 匹配 '视角1 陌生人' / '视角1：陌生人' / '视角1: 陌生人'
+    const [num, name] = p.split(' ');
+    return !new RegExp(`视角${num}[：:\\s]${name}`).test(normalized);
+  });
   if (missing.length > 0) {
     throw new Error(`草稿缺 ${missing.length} 个视角节（${missing.join('、')}）——完整性校验不过`);
   }
