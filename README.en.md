@@ -16,7 +16,7 @@
 
 ## What is this
 
-**sofagent is an open-source FDE Agent** (Forward Deployed Engineer Agent) — it comes in and maps your business workflows, turning the automatable steps into AI nodes. Once delivery is complete, the FDE departs while the AI nodes keep running 7×24 on their own — every action is audited, out-of-bounds moves are blocked, and anything that breaks can be rolled back. It ships on [ClawHub](https://clawhub.ai/kongfangxun/skills/sofagent) as an **FDE Skill** (a methodology skill that helps everyone at SMBs and OPCs become the FDE of their own business), and once installed on enterprise devices it runs long-term as a **constraint-layer engine** (injection · audit · rollback · evolution, with the daemon as its resident carrier).
+**sofagent is an open-source FDE Agent** (Forward Deployed Engineer Agent) — map workflows, deploy AI nodes, and audit every change 7×24, blocking out-of-bounds moves and rolling back breakage. It ships on [ClawHub](https://clawhub.ai/kongfangxun/skills/sofagent) as an **FDE Skill** (a methodology skill that helps everyone at SMBs and OPCs become the FDE of their own business), and once installed on enterprise devices it runs long-term as a **constraint-layer (Harness) engine** (injection · audit · rollback · evolution, with the daemon as its resident carrier).
 
 > 📊 **Why now**: MIT NANDA Lab's *The GenAI Divide* report shows that over the past three years, global enterprises burned $30–40 billion on generative AI, yet **95% of projects failed to produce value worth putting on a financial statement**. Meanwhile, job postings for a role called "Forward Deployed Engineer" (FDE) surged **729%** year-over-year (Indeed 2025 data). Models are no longer scarce — the scarce thing is people who can embed models into real customer operations. sofagent is the open-source substrate that engineers this. (Data verification and cross-agency calibration: see [VALIDATION §1 · Cost of governance gaps](./docs/VALIDATION.md#治理缺口的代价三项联网核验证据); FDE economics: see [VALIDATION §4](./docs/VALIDATION.md#四市场印证行业判断被市场买单).)
 
@@ -27,7 +27,7 @@ graph LR
     C -.->|experience captured · keeps improving| C
 ```
 
-> 💾 **Don't rush off after deployment**: once a single node's workflow (the Agent's capability) is defined with LangGraph, burn it straight onto a USB drive via DSH (DeepSeek Harness execution backend) — the USB drive becomes a node, a key: plug it into any machine and it just runs (unplug for zero residue). See [HANDBOOK · USB one-click burn](./docs/HANDBOOK.md#近期版本新功能速览).
+> 💾 **Don't rush off after deployment**: once a single node's workflow (the Agent's capability) is defined with LangGraph, burn it straight onto a USB drive via DSH (DeepSeek Harness execution backend — an optional commercial-side component, not delivered in this open-source repo) — the USB drive becomes a node, a key: plug it into any machine and it just runs (unplug for zero residue). See [HANDBOOK · USB one-click burn](./docs/HANDBOOK.md#近期版本新功能速览).
 
 > 🏞️ Big vendors hand you "water" (the LLM) and a "riverbed" (the Agent platform), but the water is raw — you wouldn't dare drink it straight. sofagent is the engineering that makes the river water usable across a whole city: the dam stops floods, the treatment plant turns raw water into drinking water, and the pipe network delivers it to every faucet. The model provides 90% of the intelligence; sofagent adds the 10% of reliable execution.
 
@@ -38,9 +38,13 @@ graph LR
 | Change auditing | Roll your own pre-commit + gitleaks/detect-secrets toolchain (general-purpose scanners, broad coverage) | 24 rules on git diff, hard-evidence verdicts aimed at Agent behavior, works out of the box |
 | Out-of-bounds blocking | Assemble the hooks yourself | Violations blocked on the spot + audit trail |
 | Rollback after breakage | Manually dig through commits | One-click snapshot restore to any point |
-| Experience accumulation | Starts from zero every time | Auto-captured into knowledge base, evolution capabilities under continuous iteration |
+| Experience accumulation | Starts from zero every time | Auto-captured by design (effect grows with use), evolution capabilities under continuous iteration |
+
+> ℹ️ The comparison dimensions are based on capability differences, not aimed at any specific product; general-purpose scanners/frameworks (pre-commit / gitleaks / detect-secrets, etc.) complement sofagent rather than oppose it.
 
 > ℹ️ **Honest boundary**: general-purpose secret scanners (gitleaks / detect-secrets) do **full-history scans** with broader pattern libraries (100+ patterns); sofagent auditing focuses on **hard evidence from the current diff + Agent behavior auditing** (out-of-scope/injection/privilege dimensions scanners don't cover). They complement rather than replace each other — for strict secret-compliance scenarios, use both.
+>
+> ⚠️ **Honest boundary**: currently a single-machine, single-user design — multiple Agents share one knowledge base / audit history; multi-person / multi-department sharing requires tenant isolation (ROADMAP v1.4.7 G7). Task logs (task/logs) are written in plaintext, containing task summaries / code snippets / API response summaries / conversation summaries — static encryption currently covers the audit history main chain, not task/logs; read [SECURITY](./SECURITY.md) before enterprise deployment.
 
 ## Key Features
 
@@ -53,7 +57,7 @@ graph LR
 **Governance guarantees**
 
 - 🔍 **Zero-setup audit** — `npx -y -p @sofagent/audit sofagent-audit`, audits your last commit in any git repo in seconds (measured on: Apple Silicon macOS, warm cache — ~1.1s per quick run, ~6.1s for a 50k-line diff; single-machine reference figures, not benchmarks; first npx download takes ~30s)
-- 🧱 **24 audit rules** (17 enabled by default + 7 optional extensions) — secret leaks, out-of-scope edits, injection defense, privilege red lines — judged on hard git diff evidence, violations blocked on the spot
+- 🧱 **24 audit rules** (quick runs 17 by default out of the box; the full 24 = 17 default + 7 extensions enabled via config, requiring `--init` to install hooks and enter the full engine) — secret leaks, out-of-scope edits, injection defense, privilege red lines — judged on hard git diff evidence, violations blocked on the spot
 - 🛡️ **Automatic snapshot & rollback** — auto-archived after every audit, one-click restore to any snapshot
 
 ## Quick Start
@@ -66,7 +70,7 @@ npx -y -p @sofagent/audit sofagent-audit
 
 > 💡 `sofagent-audit` is the quick read-only audit (audits the last commit, safe and side-effect-free by default); `sofagent-audit-full` is the full audit and requires an explicit operation (e.g. `--diff <range>` / `--init`).
 >
-> ⚠️ **Scope of quick mode**: quick is a zero-setup fast audit running the **17 default rules** (A3 task-scope / A9 commit-msg injection have no input and are skipped; rules needing logs fall back to degraded verdicts; **the 7 extension rules are not loaded by default** — the full 24 = 17 default + 7 extension). For full protection (commit-msg injection blocking + scope checks + hook auto-audit) run `--init` to install the git hooks and enter the full engine. See [LIMITATIONS](./docs/LIMITATIONS.md).
+> ⚠️ **Scope of quick mode**: quick is a zero-setup fast audit running the **17 default rules** (A3 task-scope / A9 commit-msg injection detection is active — quick mode auto-reads the latest commit message; when no commit message is available, A9 is handled by the engine as no-input (marked skipped); rules needing logs fall back to degraded verdicts; **the 7 extension rules are not loaded by default** — the full 24 = 17 default + 7 extension). For full protection (commit-msg injection blocking + scope checks + hook auto-audit) run `--init` to install the git hooks and enter the full engine. See [LIMITATIONS](./docs/LIMITATIONS.md).
 
 Here's what it looks like when a known-format secret leak is blocked (real output):
 
@@ -75,6 +79,8 @@ Here's what it looks like when a known-format secret leak is blocked (real outpu
 <p align="center">
   <img src="docs/assets/audit-terminal.png" alt="sofagent-audit blocks a .env commit" width="860" />
 </p>
+
+<p align="center"><sub>v1.3.x example output</sub></p>
 
 **Full install** (Node.js ≥ 18, download and review before running):
 
@@ -125,7 +131,7 @@ Deploying AI nodes is only step one — above we covered **how to map and where 
   <img src="docs/assets/dashboard.png" alt="sofagent Dashboard cockpit" width="100%" />
 </p>
 
-<p align="center"><sub>Dashboard cockpit: rule pass rate, audit tasks, violation trends — see at a glance what the AI is doing.</sub></p>
+<p align="center"><sub>Dashboard cockpit (single-file HTML): rule pass rate, audit tasks, violation trends — see at a glance what the AI is doing.</sub></p>
 
 > 📊 **The Dashboard has three entries, each in its place**:
 >
@@ -136,6 +142,8 @@ Deploying AI nodes is only step one — above we covered **how to map and where 
 > | **macOS double-click** | Double-click `start-dashboard.command` | macOS shortcut to the Web version (macOS double-click entry only) | macOS users |
 >
 > ⚠️ **The Dashboard is an ops panel for existing users, not a first-time experience entry.** Its data source is the audit records under `~/.sofagent/data/` — without having run `sofagent-audit` there is no data (the Web version falls back to sample data). First time here? Run `npx -y -p @sofagent/audit sofagent-audit` in your project first — the Dashboard only shows real data after that.
+
+> 👁️ **Agent's view: how audit results appear** — once hooks are installed, every commit triggers an audit: PASS is silent (auto-snapshot archived), while violations/blocks print the result directly in the Agent's terminal output (the "blocks a .env commit" terminal screenshot above is real blocking output), plus Webhook / IM push per the [fde.md config](./docs/HANDBOOK.md). There is no separate GUI on the Agent side — audit results are presented via terminal / IM push (see [PHILOSOPHY §2 · Capabilities users perceive](./docs/PHILOSOPHY.md#用户感知到的能力)).
 
 ## Three Entries, from 30 Seconds to Full Deployment
 
@@ -193,15 +201,17 @@ Community rulesets are published as `sofagent-ruleset-*` npm packages and loaded
 | Core question | How to build an Agent | **Where AI should go** (map first, then deploy) |
 | Safety guarantee | Integrate scanning/gate tools yourself (pre-commit / trufflehog / gitleaks etc.) | git diff hard-evidence audit + runtime interception + one-click rollback out of the box (see the "honest boundary" note above on scanner coverage) |
 | Review model | Manual human review (bottleneck) | **Machine review** — 24 rules auto-audit + git diff hard evidence; even fully autonomous AI nodes get reviewed |
-| Knowledge accumulation | Starts from zero | Experience auto-captured into knowledge base, continuously optimized |
+| Knowledge accumulation | Starts from zero | Experience auto-captured by design (effect grows with use), continuously optimized |
 | Data sovereignty | Cloud-hosted | Local by default, optional federated queries (user-configured cloud sync = data leaves the machine, see SECURITY) |
 | Deployment | Learn a new platform | Runs inside your existing AI tools (Claude Code / Cursor / WorkBuddy…) |
+
+> ℹ️ **Platform-agnostic boundary**: the core engine (audit / constraint layer) is platform-agnostic; automatic hook injection currently works only on OpenClaw — on other platforms, inject constraints manually and auditing works as usual.
 
 ## Evidence & Credibility
 
 > 🔬 **Independent external evidence** (not an official self-test): Joel Niklaus' harness-optimization research ([research code repository](https://github.com/JoelNiklaus/harness-optimization), data in the repo experiments) shows that with the same model and unchanged weights, optimizing only the outer harness lifted a legal-Agent benchmark from **63.4% → 80.1% (+16.7pp)**. See [THANKS.md](./docs/THANKS.md).
 
-> 🧪 **Engineering credibility**: 2782 tests / 13 packages (12 with tests) (verified via `tools/test-count.sh`; built-in flaky retry, script verdict is authoritative) · 24 audit rules · fresh-eyes independent review continuously running (see [docs/guides/review-system.md](./docs/guides/review-system.md) for how the review system works).
+> 🧪 **Engineering credibility**: 2787 tests / 13 packages (12 with tests) (test counts are determined by `tools/test-count.sh` (with a built-in flaky retry mechanism); running `npm test` directly may show mcp package timeouts (red) on low-memory machines — re-running that package alone passes, an environment concurrency issue, not a product defect) · 24 audit rules · fresh-eyes independent review continuously running (see [docs/guides/review-system.md](./docs/guides/review-system.md) for how the review system works). Performance figures are single-machine reference values; cross-tool benchmarking is scheduled for v1.4.x together with Benchmark integration.
 
 ## Docs
 
