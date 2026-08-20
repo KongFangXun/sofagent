@@ -22,8 +22,8 @@ import { createRequire } from 'node:module';
 const require = createRequire(import.meta.url);
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-/** 仓库根（本库位于 tools/lib/ → 上两级） */
-export const REPO_ROOT = join(__dirname, '..', '..');
+/** 仓库根（本库位于 tools/ → 上两级） */
+export const REPO_ROOT = join(__dirname, '..');
 
 /**
  * GLM-5.2 Coding Plan 配置（与 FORGE/models/glm-5.2.mjs 同源）。
