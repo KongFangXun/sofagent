@@ -43,6 +43,7 @@ import { auditDataChange } from './tools/audit-data-change';
 import { notifySession } from './tools/notify-session';
 import { activateWorkflowTool } from './tools/activate-workflow';
 import { daemonStatus } from './tools/daemon-status';
+import { worklogQuery } from './tools/worklog-query';
 import { listAgentsTool } from './tools/list-agents';
 import { listConcepts } from './tools/list-concepts';
 import { hitlResolve } from './tools/hitl-resolve';
@@ -227,6 +228,7 @@ class McpServer {
         case 'notify_session': { if (!args.audit_type || !args.verdict || !args.summary) { this.sendError(id, -32602, 'Missing required arguments: audit_type, verdict, and summary are required'); break; } this.sendTool(id, notifySession({ audit_type: args.audit_type as 'code' | 'data' | 'file', verdict: args.verdict as 'PASS' | 'WARN' | 'FAIL', summary: args.summary as string, ...(args.details ? { details: args.details as string[] } : {}), ...(args.think_ref !== undefined ? { think_ref: args.think_ref as boolean } : {}) })); break; }
         case 'activate_workflow': { this.sendTool(id, await activateWorkflowTool({ ...(args.dry_run !== undefined ? { dry_run: args.dry_run as boolean } : {}), ...(args.node_filter !== undefined ? { node_filter: args.node_filter as string[] } : {}) })); break; }
         case 'daemon_status': { this.sendTool(id, await daemonStatus()); break; }
+        case 'worklog_query': { this.sendTool(id, await worklogQuery({ ...(args.agentId ? { agentId: args.agentId as string } : {}), ...(args.workflowId ? { workflowId: args.workflowId as string } : {}), ...(args.weeklyTrend !== undefined ? { weeklyTrend: args.weeklyTrend as boolean } : {}), ...(args.evolution !== undefined ? { evolution: args.evolution as boolean } : {}) })); break; }
         case 'list_agents': { this.sendTool(id, await listAgentsTool()); break; }
         case 'list_concepts': { this.sendTool(id, listConcepts()); break; }
         case 'hitl_resolve': { this.sendTool(id, await hitlResolve({ checkpoint_id: args.checkpoint_id as string, decision: args.decision as 'approve' | 'reject' | 'aborted', ...(args.comment ? { comment: args.comment as string } : {}) })); break; }

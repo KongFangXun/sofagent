@@ -937,3 +937,16 @@ export type {
   AuditQuery,
   L2EventInput,
 } from './meta-harness';
+
+// ============================================================
+// v1.3.9（三）：AI 工作明细数据层（worklog）
+// ============================================================
+export { WorklogAggregator, isoWeekKey } from './worklog';
+export type {
+  WorklogOptions,
+  AgentWorklog,
+  TaskWorklogEntry,
+  WorkflowWorklog,
+  WeekTrend,
+  EvolutionTrends,
+} from './worklog';
