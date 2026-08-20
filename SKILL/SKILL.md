@@ -153,7 +153,7 @@ metadata:
 
 ---
 
-## MCP 工具速查（v1.3.8 · 60 tools）
+## MCP 工具速查（v1.3.9 · 61 tools）
 
 > 连接 sofagent MCP Server 后可用。未连接时降级为纯文本引导。
 
@@ -174,3 +174,4 @@ metadata:
 | **模型注册（v1.3.6）** | `model_register` `model_switch` `model_unregister`（评测→注册→灰度→晋升全程审计 + 强制人审） |
 | **训练（v1.3.6）** | `train_budget`（预算控制——超预算自动暂停等人审） |
 | **验收（v1.3.6）** | `define_acceptance` `check_acceptance`（机器可判定验收条件） |
+| **工作明细（v1.3.9）** | `worklog_query`（按 Agent/Workflow/周趋势查 AI 干了什么 + 进化四维趋势） |

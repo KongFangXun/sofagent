@@ -19,9 +19,23 @@ export interface ToolDef {
 }
 
 /**
- * 完整工具清单——60 个 tool（v1.3.6：workflow_submit/ontology_import/model_register/model_switch/model_unregister/train_budget/define_acceptance/check_acceptance 新增；v1.3.5：run_ab_test/promote_ab/snapshot_list/snapshot_restore；v1.3.4：commons_publish/search/invoke/rate/retire/harvest_rule；不含 4 个 resource shortcut）
+ * 完整工具清单——61 个 tool（v1.3.9：worklog_query 新增；v1.3.6：workflow_submit/ontology_import/model_register/model_switch/model_unregister/train_budget/define_acceptance/check_acceptance；v1.3.5：run_ab_test/promote_ab/snapshot_list/snapshot_restore；v1.3.4：commons_publish/search/invoke/rate/retire/harvest_rule；不含 4 个 resource shortcut）
  */
 export const TOOLS: ToolDef[] = [
+  {
+    // v1.3.9（三）：AI 工作明细查询——三源聚合（审计+决策+LLM Trace）零新数据
+    name: 'worklog_query',
+    description: 'AI 工作明细查询（v1.3.9）——按 Agent / Workflow / 周趋势查「AI 节点干了什么」（任务/token/耗时/成本/人工介入），可附带进化四维趋势（审计 PASS 率/错题复发率/AB 胜负/首次通过率）。数据零新增：聚合既有审计日志三源。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        agentId: { type: 'string', description: '按 Agent 过滤（缺省全量）' },
+        workflowId: { type: 'string', description: '按 Workflow 过滤（缺省全量）' },
+        weeklyTrend: { type: 'boolean', description: '附带周趋势（活跃度/成功率/成本）', default: false },
+        evolution: { type: 'boolean', description: '附带进化四维趋势', default: false },
+      },
+    },
+  },
   {
     name: 'run_audit',
     description: '对 git diff 运行全量审计规则（sofagent 审计引擎 · 24 条审计规则，静态规则扫描为主，复杂项可走 LLM 辅助）。返回结构化审计报告。',
