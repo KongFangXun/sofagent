@@ -1,0 +1,25 @@
+{
+  "_comment": "离线样例漏洞清单（fixture）——OWASP ASI04 供应链 SBOM 检测的数据源。仅含少量公开 CVE 样例用于规则验证，不是漏洞库全量数据；CI 不联网拉取外部漏洞数据库（发版 prompt 明确约束）。ranges 为空格分隔的 AND 条件，每条形如 <x / <=x / >x / >=x / =x。",
+  "npm": {
+    "lodash": [
+      { "ranges": ["<4.17.21"], "id": "CVE-2021-23337", "summary": "命令注入（模板编译）" }
+    ],
+    "minimist": [
+      { "ranges": ["<1.2.6"], "id": "CVE-2021-44906", "summary": "原型污染" }
+    ],
+    "node-fetch": [
+      { "ranges": ["<2.6.7", ">=3.0.0 <3.2.10"], "id": "CVE-2022-0235", "summary": "凭据泄漏（重定向跟随）" }
+    ],
+    "axios": [
+      { "ranges": [">=1.3.0 <1.6.0"], "id": "CVE-2023-45857", "summary": "SSRF / 凭据泄漏" }
+    ],
+    "ws": [
+      { "ranges": [">=7.0.0 <7.4.6"], "id": "CVE-2021-32640", "summary": "DoS（畸形 HTTP 头）" }
+    ]
+  },
+  "go": {
+    "github.com/gorilla/websocket": [
+      { "ranges": ["<1.4.1"], "id": "GO-2020-0035", "summary": "DoS（超大帧）" }
+    ]
+  }
+}

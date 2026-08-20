@@ -1,0 +1,129 @@
+{
+  "name": "ast",
+  "version": "1.0.0",
+  "description": "sofagent 官方 AST 规则引擎示范规则集（sofagent-ruleset-ast）——语义级规则 + OWASP ASI01/ASI04，社区照此写自己的引擎",
+  "author": "sofagent",
+  "homepage": "https://github.com/KongFangXun/sofagent",
+  "rules": [
+    {
+      "id": "no-eval",
+      "name": "禁止动态代码执行",
+      "severity": "FAIL",
+      "type": "plugin",
+      "plugin": "@sofagent/rules/ast",
+      "options": {
+        "ruleIds": [
+          "no-eval"
+        ]
+      }
+    },
+    {
+      "id": "no-hardcoded-secret",
+      "name": "禁止硬编码密钥（AST 语义级）",
+      "severity": "FAIL",
+      "type": "plugin",
+      "plugin": "@sofagent/rules/ast",
+      "options": {
+        "ruleIds": [
+          "no-hardcoded-secret"
+        ]
+      }
+    },
+    {
+      "id": "no-dynamic-require",
+      "name": "禁止动态 require",
+      "severity": "FAIL",
+      "type": "plugin",
+      "plugin": "@sofagent/rules/ast",
+      "options": {
+        "ruleIds": [
+          "no-dynamic-require"
+        ]
+      }
+    },
+    {
+      "id": "no-debugger",
+      "name": "禁止 debugger 语句",
+      "severity": "FAIL",
+      "type": "plugin",
+      "plugin": "@sofagent/rules/ast",
+      "options": {
+        "ruleIds": [
+          "no-debugger"
+        ]
+      }
+    },
+    {
+      "id": "no-child-process-shell",
+      "name": "child_process shell 执行管控",
+      "severity": "WARN",
+      "type": "plugin",
+      "plugin": "@sofagent/rules/ast",
+      "options": {
+        "ruleIds": [
+          "no-child-process-shell"
+        ]
+      }
+    },
+    {
+      "id": "no-sql-string-concat",
+      "name": "禁止 SQL 字符串拼接",
+      "severity": "WARN",
+      "type": "plugin",
+      "plugin": "@sofagent/rules/ast",
+      "options": {
+        "ruleIds": [
+          "no-sql-string-concat"
+        ]
+      }
+    },
+    {
+      "id": "no-insecure-url",
+      "name": "禁止 http:// 明文端点",
+      "severity": "WARN",
+      "type": "plugin",
+      "plugin": "@sofagent/rules/ast",
+      "options": {
+        "ruleIds": [
+          "no-insecure-url"
+        ]
+      }
+    },
+    {
+      "id": "no-empty-catch",
+      "name": "禁止空 catch 块",
+      "severity": "WARN",
+      "type": "plugin",
+      "plugin": "@sofagent/rules/ast",
+      "options": {
+        "ruleIds": [
+          "no-empty-catch"
+        ]
+      }
+    },
+    {
+      "id": "asi01-prompt-injection",
+      "name": "OWASP ASI01 目标劫持检测",
+      "severity": "FAIL",
+      "type": "plugin",
+      "plugin": "@sofagent/rules/ast",
+      "options": {
+        "ruleIds": [
+          "asi01-prompt-injection"
+        ]
+      }
+    },
+    {
+      "id": "asi04-sbom",
+      "name": "OWASP ASI04 供应链 SBOM 检测",
+      "severity": "FAIL",
+      "type": "plugin",
+      "plugin": "@sofagent/rules/ast",
+      "options": {
+        "ruleIds": [
+          "asi04-sbom"
+        ]
+      }
+    }
+  ]
+}
