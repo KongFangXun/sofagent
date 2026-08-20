@@ -12,3 +12,10 @@ export type { ShouldAllowResult } from './should-allow';
 // v1.3.2 (交付 10)：工具审批四模式
 export { shouldApprove } from './approval-mode';
 export type { ApprovalMode, ApprovalResult } from './approval-mode';
+// v1.3.9（一）：官方 AST 规则引擎（sofagent-ruleset-ast）——@public 公开面
+export { AstRuleEngine } from './ast/engine';
+export type { AstEngineOptions } from './ast/engine';
+export { builtinAstRules, astRuleById } from './ast/rules';
+export { buildSbom } from './ast/rules/asi04-sbom';
+export type { SbomEntry } from './ast/rules/asi04-sbom';
+export type { AstRule, AstFinding, AstScanInput } from './ast/types';
