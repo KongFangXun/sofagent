@@ -37,6 +37,7 @@ import os from 'os';
 
 // v1.2.7 功能⑤：继承 driver-base 公共编排层
 import { createForgeDriverBase, runPreflight, formatPreflightReport, resolveMaxConcurrency, checkDriverLiveness } from './driver-base.mjs';
+import { createGateTools } from './gate-tools.mjs';
 
 // 可见性：核心层 + 适配器（agent 无关 + 渐进适配）
 import { createVisibility, EVENTS } from './visibility.mjs';
@@ -424,6 +425,9 @@ import { truncateToolOutput, DEFAULT_BUDGET as TOOL_OUTPUT_MAX_LINES } from './t
 /**
  * 从 dist 导入工具集（REVIEWER_TOOLS）。
  * 转换 ExecutableTool → DynamicStructuredTool（与 fresh-eyes-driver 同逻辑）。
+ * v1.3.9（五）：V 角色 worker 追加门禁内部 tool（check_version / check_docs /
+ * check_review_system）——worker 从 run_bash 执行 shell 升级为调内部 tool，
+ * DSH 后端启用时同一工具经 DSH tool 注册机制暴露（见 gate-tools.mjs）。
  */
 function loadTools(role, progressMw = null) {
   const cfg = MODEL_CONFIGS[role];
@@ -436,7 +440,10 @@ function loadTools(role, progressMw = null) {
   const { tool } = require('@langchain/core/tools');
   const { z } = require('zod');
 
-  return rawTools.map((rawTool) => {
+  // v1.3.9（五）：门禁脚本工具化（首期三个）——V 角色（验证 worker）追加
+  const gateTools = role === 'V' ? createGateTools() : [];
+
+  return [...rawTools.map((rawTool) => {
     if (rawTool.lc_namespace) return rawTool;
 
     const properties = rawTool.schema?.properties || {};
@@ -509,7 +516,7 @@ function loadTools(role, progressMw = null) {
     );
 
     return wrappedTool;
-  });
+  }), ...gateTools];
 }
 
 /**
@@ -973,8 +980,12 @@ async function runWorker(step, runDir, target) {
 
   const invokeAgent = async () => {
     // v1.3.4 增量：通过 ExecutionBackend 调用 agent
+    // v1.3.9（五）：执行层切 DSH 默认（fallback 保留作降级——DSH rc 期守卫
+    // 拦截自动降级 LangGraph，DSH 正式版发布后无需改代码自动切换）
     const { createExecutionBackend } = await import('../../engine/orchestrator/dist/execution-backend.js');
-    const backend = await createExecutionBackend();
+    const backendPref = process.env.FORGE_BACKEND === 'langgraph' ? 'langgraph' : 'dsh';
+    const backend = await createExecutionBackend({ preferred: backendPref });
+    console.log(`[worker] 执行后端：preferred=${backendPref} → actual=${backend.name}`);
     const execResult = await backend.execute({
       systemPrompt,
       task: userMessage,

@@ -457,6 +457,20 @@ async function createModel(role, maxTokensOverride) {
 // v1.2.8：truncateToolOutput 从 tool-output-budget.mjs 统一导入，
 // 不再在此文件内联定义。删除旧实现 L317-349。
 import { truncateToolOutput, createToolOutputBudget, DEFAULT_BUDGET as TOOL_OUTPUT_MAX_LINES } from './tool-output-budget.mjs';
+import { createGateTools } from './gate-tools.mjs';
+
+/**
+ * v1.3.9（五）：fresh-eyes 按场景（step）切执行后端——同 driver 两后端并存：
+ *   审查类（check/consolidate/verify = SOP 阶段一「审上版本」场景）→ langgraph
+ *   执行类（b-fix 修复 = SOP 阶段四「审本版本」执行场景）→ dsh（rc 期守卫自动降级）
+ * 环境变量覆盖链：FORGE_FRESH_EYES_BACKEND（整体）> SOFAGENT_EXECUTION_BACKEND > 按场景默认
+ */
+function resolveFreshEyesBackend(step) {
+  const envOverride = process.env.FORGE_FRESH_EYES_BACKEND || process.env.SOFAGENT_EXECUTION_BACKEND;
+  if (envOverride === 'langgraph' || envOverride === 'dsh') return envOverride;
+  // 执行类 step（修复）走 DSH；审查类保留 createReactAgent
+  return step === 'b-fix' ? 'dsh' : 'langgraph';
+}
 
 function loadTools(role, progressMw = null, auditMw = null) {
   const cfg = MODEL_CONFIGS[role];
@@ -1139,7 +1153,14 @@ async function runWorker(step, roundDir, target) {
     };
 
     const { createExecutionBackend } = await import('../../engine/orchestrator/dist/execution-backend.js');
-    const backend = await createExecutionBackend();
+    // v1.3.9（五）：按场景切后端——同 driver 两后端并存，后端选择显式：
+    //   审查类 step（a-check/b-check/a-consolidate/a-verify，对应 SOP 阶段一「审上版本」
+    //   的审查场景）→ createReactAgent 保留；
+    //   执行类 step（b-fix 修复执行，对应阶段四「审本版本」的执行场景）→ DSH；
+    //   FORGE_FRESH_EYES_BACKEND / SOFAGENT_EXECUTION_BACKEND 环境变量可整体覆盖。
+    const stepBackend = resolveFreshEyesBackend(step);
+    const backend = await createExecutionBackend({ preferred: stepBackend });
+    console.log(`[worker:${step}] 执行后端：preferred=${stepBackend} → actual=${backend.name}`);
     const execResult = await backend.execute({
       systemPrompt,
       task: userMessage,
