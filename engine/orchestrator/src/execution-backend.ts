@@ -148,9 +148,30 @@ export interface ExecutionResult {
  * 接入门禁结论（2026-08-14）：DSH 候选包名全部 404，
  * 当前 DSH 后端加载必失败，自动降级 LangGraph。
  * DSH 上架后无需改代码——dsh-backend 的动态 import 会成功。
+ *
+ * v1.3.9（五）：显式后端选择——FORGE driver 按 场景/阶段 切后端：
+ *   preferred: 'dsh'       → DSH 默认（不可用时自动降级 LangGraph——fallback 保留）
+ *   preferred: 'langgraph' → 跳过 DSH 探测直接 LangGraph（阶段一审查类场景）
+ * 缺省读 SOFAGENT_EXECUTION_BACKEND 环境变量，再缺省 'dsh'（DSH-first 不变）。
  */
-export async function createExecutionBackend(): Promise<ExecutionBackend> {
-  // 1. 优先尝试 DSH Cordis 运行时
+export async function createExecutionBackend(options: {
+  preferred?: 'dsh' | 'langgraph';
+} = {}): Promise<ExecutionBackend> {
+  const preferred = options.preferred
+    ?? (process.env.SOFAGENT_EXECUTION_BACKEND === 'langgraph' ? 'langgraph' : undefined)
+    ?? 'dsh';
+
+  // 0. 显式指定 langgraph → 跳过 DSH 探测（fresh-eyes 阶段一「审上版本」场景）
+  if (preferred !== 'dsh') {
+    const langgraphDirect = await tryLoadLangGraphBackend();
+    if (langgraphDirect) {
+      console.log('[sofagent] 执行后端：LangGraph createReactAgent（显式指定）');
+      return langgraphDirect;
+    }
+    throw new Error('[sofagent] 指定 langgraph 后端但 @langchain/langgraph 未安装');
+  }
+
+  // 1. DSH 默认：优先尝试 DSH Cordis 运行时（失败自动降级——fallback 保留作降级）
   const dsh = await tryLoadDshBackend();
   if (dsh) {
     console.log('[sofagent] 执行后端：DSH Cordis 运行时');
@@ -160,7 +181,7 @@ export async function createExecutionBackend(): Promise<ExecutionBackend> {
   // 2. Fallback：LangGraph createReactAgent
   const langgraph = await tryLoadLangGraphBackend();
   if (langgraph) {
-    console.log('[sofagent] 执行后端：LangGraph createReactAgent（fallback）');
+    console.log('[sofagent] 执行后端：LangGraph createReactAgent（DSH 不可用降级）');
     return langgraph;
   }
 
