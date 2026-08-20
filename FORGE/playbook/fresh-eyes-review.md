@@ -362,6 +362,8 @@ sofagent（https://github.com/KongFangXun/sofagent）。不管当前处于什么
 - **门禁脚本必须测失败路径**——强制触发 FAIL 看它真报红，只跑正常路径是假绿温床
 - **脚本环境三坑**——bash 3.2 空数组 + `set -u` 崩溃；测试 finally 的 rmSync 必须 try-catch（shim 环境会拦截致假失败，先非 shim 复验）；随机断言须大量采样锁契约（概率性 CI 红）
 - **二进制读前判 isBinaryBuffer**——文本快照读二进制会静默产生 U+FFFD 损坏；测试敏感数据用占位符/运行时拼接，不字面写真实格式
+- **Git Data API 绕行推送必须验 tree 一致性**——git push 死代理时的唯一通道（v1.3.8 82 commits 全量实证）：三坑——tree 条目 mode 硬编码 100644 丢全部 .sh 执行位（verify CI 失败根因，恢复靠「blob 内容寻址——引用既有 blob 建新 tree」）；rename R100 在 diff 取新路径；create-tree 无法表达删除条目（rename/删除残留旧文件，须 Contents API 逐个补删）。**验收唯一标准：远端 tree sha == 本地 `git rev-parse HEAD^{tree}`，逐字节一致才算成功**
+- **发布物与锚点结构对照**——release note（title `vX.Y.Z — emoji 主题短语` + body 五要素：定位句/核心变更/破坏性变更/质量验证 7 项表/尾链）生成后必须与上一版/锚点实际发布物并排对照，**不是对照 SOP 文字**（SOP 文字曾漂移——v1.3.8 两次被作者退回：漏质量验证表 + 漏标题主题）。发布物本身是检验标准
 
 ### 文档治理规则（技术编辑 / 对外形象视角的常驻敏感）
 

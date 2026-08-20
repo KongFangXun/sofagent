@@ -60,6 +60,7 @@ bash tools/check-version.sh        # 期望全绿
 | 版本 | 开发完成→发布 | release-gate 轮次 | 主因 |
 |------|--------------|------------------|------|
 | v1.3.6 | ~9h | 3（2 假 FAIL + 1 真 PASS） | 检查器缺陷：exit 语义 / PROJECT_ROOT / 视野预算 / 零 commit 假 PASS |
+| v1.3.8 | ~6h（10:00 开发完成 → 16:00 发布） | 4（run-03 环境崩溃 / run-06 缺输入 / run-10 截断+占位 / run-13 PASS） | driver 管线问题 3 轮（judgment-only 缺 acceptance 输入 / precheck 截断 / 占位无实证）+ 环境 1 轮（运行窗口 HEAD 漂移 8 次致 OOM）；driver 修复后 run-13 单轮直过 |
 
 ## 开发 Prompt 校验循环（步骤七）
 
@@ -182,3 +183,15 @@ sed -i '' 's/- \[x\]/- [ ]/g' docs/changelog/releasing.md
 - **push 连接三连失败实录**：git config 死代理 → 直连 443 超时/HTTP2 framing → HTTP/1.1 + 慢速兜底解决。经验：curl 能通 ≠ git 能通。已写入 11-publish 网络降级策略
 - **daemon CI 模拟姿势对齐**：SOFAGENT_HOME=/tmp 会触发 data-paths 越界守卫回退——模拟脚本与 daemon-macos-ci.yml 对齐（仓库内 .sofagent + daemon.sh + sleep 35）
 - **v1.3.7 发版耗时**：开发完成（08-18 14:00 前后）→ 发布（08-19 13:40）约 24h（含隔夜）；release-gate 2 轮 FAIL 均检查器侧债（dim106 SSOT/dim116 awk 转义），手工裁决 PASS
+
+**v1.3.8 发版后的自迭代记录**：
+
+- **阶段六·仓库冻结纪律（新增）**：run-03 运行窗口（31.5 分钟）HEAD 被改 8 次 → 三 worker 崩溃/OOM。判断层运行期间仓库必须冻结（含脚本层直跑）——已写入 06-release-gate.md「运行期间仓库冻结纪律」小节 + 判 FAIL 分诊方法（先查运行窗口 HEAD 变动）
+- **阶段六·judgment-only 注入机制（更新）**：run-06（缺 acceptance 输入 FAIL）+ run-10（占位无实证）两次踩坑 → driver 修复为「启动时注入脚本层预跑日志（仓库根 acceptance-raw.log / SOFAGENT_ACCEPTANCE_LOG）+ 无日志主动实测」。**SOP 侧根因：prompt 模板写 /tmp/acceptance-raw.log 但 driver 找仓库根——路径不一致**。已修 06 prompt 模板 + 更新旧描述
+- **阶段六·precheck 紧凑格式（更新）**：run-10 的 59/91 维截断根因是 indent=2 JSON 格式化结构开销 637 行 + sf_read 引擎层 500 行上限（v1.3.6 修 FORGE 预算表 800 是修错层）——driver 已改紧凑格式单行写盘。认知：sf_read 是行数限制非字符限制，单行大文件整行返回
+- **阶段九·bump dry-run 先 commit（新增）**：v1.3.8 阶段九误把未提交的阶段八改动当 dry-run 污染，git checkout -- . 整批误撤。已写入 09-tool-health.md 步骤三：先 commit 再跑 dry-run
+- **阶段十一·Git Data API 四坑（更新）**：原三坑（base64/eol/cat-file）补第四坑——tree 条目 mode 硬编码 100644 丢全部 .sh 执行位（verify CI 失败），恢复靠「blob 内容寻址引用既有 blob 建新 tree」；另 create-tree 无法表达删除/rename 残留，须 Contents API 补删。验收唯一标准：远端 tree sha == 本地 HEAD tree
+- **阶段八·Release Notes 锚点对照（更新）**：SOP 08 曾误写「简洁三段式」但 v1.3.0/1.3.1/1.3.7 实际发布均为「分节式 + 质量验证表」——v1.3.8 两次被作者退回（漏质量验证表 + 漏标题主题短语）。SOP 08 重写为 v1.3.7 锚点 + 铁律 N1-N8 + SOP 11 工序 3 机制标准 = v1.3.7 实际发布物；10-confirm 补防漂移铁律（发布 prompt 的 gh release 段必须逐字引用 SOP 11 模板）
+- **步骤编号铁律复查**：11-publish.md「### 5.0」标题 + 工序 1/2/3 + 代码块 2a-2d 三处残留修复为中文序号/①②③④；全仓复查零残留
+- **check-dev-prompt.sh 三缺陷修复（工具）**：① bash/node 命令前缀未剥离 → `bash tools/check-version.sh` 误报 ❌ ② is_runtime 定义未接线 → worklog.json 误报 ❌ ③ planned 只看同行关键词 → tools/ 分目录目标路径误报 ❌。修复后 v1.3.9 prompt 校验 0 错误
+- **v1.3.8 发版耗时**：约 6h（08-20 10:00 开发完成 → 16:00 发布）；release-gate 4 轮（3 轮 driver 管线问题 + 1 轮环境，driver 修复后 run-13 单轮直过）
