@@ -88,7 +88,7 @@
    FORGE_MAX_CONCURRENCY=1 node FORGE/src/fresh-eyes-driver.mjs --target {实际版本号} --max-rounds 10
    ⚠️ 8GB 机器必须 FORGE_MAX_CONCURRENCY=1（并发 worker 各占 2GB heap，3+ 并发即 OOM）
 2. 记住 runDir（启动日志第一行打印的路径）
-3. **持续轮询（必做，非可选——session 可见性的来源）**：每 60 秒一轮，读 `<runDir>/status.json`，输出一行状态（round 变化时一句话汇报）——**让 session 一直活跃，用户界面持续可见「在跑」**。心跳冻结检测顺带完成：heartbeat 距今 >90 秒则 pgrep 确认进程是否存活，无输出 = 已死，汇报并退出。
+3. **持续轮询（必做，非可选——session 可见性的来源）**：每 120 秒一轮，读 `<runDir>/status.json`，输出一行状态（round 变化时一句话汇报）——**让 session 一直活跃，用户界面持续可见「在跑」**。心跳冻结检测顺带完成：heartbeat 距今 >90 秒则 pgrep 确认进程是否存活，无输出 = 已死，汇报并退出。
 4. round 变成 completed 或 error 时，读报告，用 3-5 行汇报
 
 铁律：不干涉 driver、不改代码、不探索源码——只启动 + 持续轮询监控 + 最终汇报。
