@@ -9,7 +9,7 @@
 | # | 步骤 | 产物 | 完成判据 |
 |:--:|------|------|------|
 | 一 | **单次草稿优先**（v1.3.8 交付八）：`node tools/gen/gen-fresh-eyes-draft.mjs --diff <patch 文件> --changelog <changelog> --out ~/Desktop/fresh-eyes-draft-vX.Y.Z.md`——16 视角草稿一次成型；「待取证」项少且变更小 → 草稿 + 人工复核即收口 | 审查草稿 | 见下方「步骤完成判据」表 |
-| 二 | **driver 兜底**（草稿待取证多 / 大版本）：**新 session 跑 fresh-eyes-loop**：`node FORGE/src/fresh-eyes-driver.mjs --target <本版本号> --max-rounds 10`。按 `FORGE/SKILL/fresh-eyes-loop/SKILL.md` 监控协议**持续轮询** `status.json`（每 120 秒一轮，session 保持活跃可见；或用 `--check-alive <runDir>` liveness 探针）。loop 修复即本版本代码质量加固 | loop 修复 + changelog 汇总打勾 | 见下方「步骤完成判据」表 |
+| 二 | **driver 兜底**（草稿待取证多 / 大版本）：**新 session 跑 fresh-eyes-loop**。启动姿势（v1.3.9 阶段四事故教训补 2026-08-21）：① Bash 工具**后台启动**：`run_in_background:true` + `dangerouslyDisableSandbox:true`；② 输出**必须重定向到文件**：`node FORGE/src/fresh-eyes-driver.mjs --target <本版本号> --max-rounds 10 > /tmp/fresh-eyes-<ver>-driver.log 2>&1`——**禁止管道包装**（`\| head` 触发 SIGPIPE 杀 driver，preflight 已警告仍踩过）；③ 启动后等 8 秒**先验证 `status.json` 有 `round-start` 事件**（event=round-start / phase=round-1-running）再轮询，否则 driver 没真跑需重启。然后按 `FORGE/SKILL/fresh-eyes-loop/SKILL.md` 监控协议**持续轮询** `status.json`（每 120 秒一轮，session 保持活跃可见；或用 `--check-alive <runDir>` liveness 探针）。loop 修复即本版本代码质量加固 | loop 修复 + changelog 汇总打勾 | 见下方「步骤完成判据」表 |
 | 三 | 代码审核（当前 session）：逐项核对发布检查清单（清单位置见判据表），PASS 或 FAIL→修复 | 检查清单打勾 | 见下方「步骤完成判据」表 |
 | 四 | **验收测试随功能开发先行新增（增量）**：本版本新功能对应的 acceptance 新场景（S 编号顺延）+ checklist 新维度，随功能开发实时加——本步骤只做「增量补齐」。**归并/压缩/校准/A/B/C 分类是阶段五的职责**（见 [05-review-system.md](./05-review-system.md)），这里不动体系 | 验收测试更新（增量） | 见下方「步骤完成判据」表 |
 | 五 | **阶段汇报（v1.3.8 补 · 对话形式）**：全部步骤完成后，执行 session 按下方「阶段汇报模板」以**对话消息**形式发回主 session（不落盘文件）——主 session 依此打勾推进，不再要求主 session 重新考古 | 汇报消息（见模板） | 模板五件套齐全（含步骤完成状态声明） |

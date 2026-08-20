@@ -494,7 +494,10 @@ disown
 
 # ✅ 安全——Bash 工具管理后台进程
 # 在 Bash 工具调用中设：run_in_background: true, dangerouslyDisableSandbox: true
-node FORGE/src/fresh-eyes-driver.mjs --target v1.2.9 2>&1
+# 🔴 必须重定向到文件（> log 2>&1），禁止裸 2>&1——Bash 工具后台模式会把 stdout
+#    包成管道，driver 长跑输出触发 SIGPIPE 被杀（v1.3.9 阶段四实测：| head 9 秒被杀，
+#    preflight 警告过仍踩——教训补 2026-08-21）
+node FORGE/src/fresh-eyes-driver.mjs --target v1.2.9 > /tmp/fresh-eyes-v1.2.9.log 2>&1
 ```
 
 **注意**：`dangerouslyDisableSandbox: true` 仍然是必须的——driver(spawn) → worker(spawn) → execSync(child_process) 三层进程嵌套，sandbox 对嵌套层数有限制，第 4 层返回时整棵进程树被 SIGKILL（run-01~03 教训）。
