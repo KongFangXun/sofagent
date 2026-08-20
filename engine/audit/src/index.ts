@@ -1144,8 +1144,10 @@ async function main(): Promise<void> {
   if (oversizedPaths.length > 0 && !args.json) {
     console.log('');
     // 安全敏感文件 → FAIL 级别告警（堵住「故意构造超大 diff 藏密钥」攻击路径）
+    // v1.3.9（十二）：spill 落盘后内容已扫描至 64MB 读回上限——oversized 现在表示
+    // 「超上限截断」而非「跳过扫描」；全量内容经 spillFile locator 可按需取回
     if (oversizedSensitivePaths.length > 0) {
-      console.log(`  🔴 [sofagent] 审计盲区（FAIL）：以下 ${oversizedSensitivePaths.length} 个安全敏感文件的 diff 超过 5MB，已跳过内容审计且阻止提交`);
+      console.log(`  🔴 [sofagent] 审计盲区（FAIL）：以下 ${oversizedSensitivePaths.length} 个安全敏感文件的 diff 超过 64MB 读回上限，已截断扫描且阻止提交（全量内容经 spill 落盘可取回）`);
       for (const p of oversizedSensitivePaths) {
         console.log(`       - ${p}（文件名匹配密钥模式）`);
       }
@@ -1153,7 +1155,7 @@ async function main(): Promise<void> {
     }
     // 普通文件 → WARN（保持 F-22 有意设计）
     if (oversizedNormalPaths.length > 0) {
-      console.log(`  ⚠️  [sofagent] 审计盲区（WARN）：以下 ${oversizedNormalPaths.length} 个文件的 diff 超过 5MB，已跳过内容审计`);
+      console.log(`  ⚠️  [sofagent] 审计盲区（WARN）：以下 ${oversizedNormalPaths.length} 个文件的 diff 超过 64MB 读回上限，已截断扫描（spill 落盘 locator 可按需取回全量内容）`);
       for (const p of oversizedNormalPaths) {
         console.log(`       - ${p}`);
       }
