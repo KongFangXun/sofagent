@@ -15,8 +15,8 @@
 //   node FORGE/src/release-gate-driver.mjs --worker --step <step> --run-dir <abs> --target <ver>
 //
 // 模型配置（V + F 双角色，v1.2.8）：
-//   V（验证者）= GLM-5.2  reviewer skill + REVIEWER_TOOLS（只读）
-//   F（修复者）= GLM-5.2  engineer skill + ENGINEER_TOOLS（可写代码）
+//   V（验证者）= deepseek-v4-flash  reviewer skill + REVIEWER_TOOLS（只读）
+//   F（修复者）= deepseek-v4-flash  engineer skill + ENGINEER_TOOLS（可写代码）
 //   f-audit = driver 步骤（role:null，不调 LLM，driver 直接跑 sofagent-audit）
 //
 // 与 fresh-eyes-driver 的差异：
@@ -65,16 +65,15 @@ const LEDGER_PATH = join(REPO_ROOT, 'FORGE/LEDGER.md');
 const AGENTS_DIR  = join(REPO_ROOT, 'SKILL/agents');
 
 // ─── 单角色模型配置（V = 验证者，从 FORGE/models/ 加载）──────
-// V 用 GLM-5.2：智谱 Coding Plan 订阅制（OpenAI 兼容接口）。
+// V 用 deepseek-v4-flash：DeepSeek API 按量计费（OpenAI 兼容接口）。
 // 换模型改 FORGE/models/profile.mjs 即可，不需要改 driver 代码。
 import { resolveConfigs, resolvePricing } from '../models/index.mjs';
 const MODEL_CONFIGS = resolveConfigs(AGENTS_DIR);
 
 // ─── 模型定价（从 FORGE/models/ 加载）─────────────────────
 // 单位：CNY per 1M tokens（百万 token 计价）
-// V 用 GLM-5.2 = 智谱 Coding Plan 订阅制 → 不按 token 计价。
-// 订阅制按周期固定付费，与 token 消耗无关，MODEL_PRICING 的成本估算对
-// 订阅账号意义有限，仅供参考（recordUsage 的 subscription 分支输出 cost_cny = null）。
+// V 用 deepseek-v4-flash = DeepSeek API 按量计费（pay-as-you-go）。
+// MODEL_PRICING 按 V4 Flash pricing 字段估算成本，recordUsage 输出真实 cost_cny（非 null）。
 const MODEL_PRICING = resolvePricing();
 
 // ─── driver-base 公共编排层实例 ──────────────────────────
@@ -359,12 +358,12 @@ function buildSystemPrompt(skillPath) {
  * 为角色 V 创建 LLM 模型实例。
  *
  * 模型配置从 FORGE/models/ 加载（profile.mjs 定义角色→模型映射）。
- * 当前配置：V = GLM-5.2（智谱 Coding Plan，OpenAI 兼容接口，coding 专用端点）。
+ * 当前配置：V = deepseek-v4-flash（DeepSeek API 按量计费，OpenAI 兼容接口）。
  * 换模型只改 FORGE/models/profile.mjs，不需要改 driver 代码。
  *
- * GLM-5.2 支持 thinking + reasoning_effort 参数：MODEL_CONFIGS.V 定义了
- * thinking={type:'enabled'} + reasoningEffort='max' + temperature=1.0，
- * 下方条件注入分支自动带上这些参数。
+ * deepseek-v4-flash 支持 reasoning_effort 参数（无 thinking 字段）：MODEL_CONFIGS.V 定义了
+ * reasoningEffort='max' + temperature=1.0，
+ * 下方条件注入分支（cfg.reasoningEffort）自动带上，cfg.thinking 因模型无此字段不触发。
  *
  * @param {string} role 角色名（本 driver 固定为 'V'）
  * @param {number} [maxTokensOverride] 步骤级输出 token 上限覆盖，优先于 cfg.maxTokens

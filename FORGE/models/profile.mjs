@@ -18,15 +18,16 @@
 //   'reviewer'  → reviewer/SKILL.md + REVIEWER_TOOLS
 //   'engineer'  → engineer/SKILL.md + ENGINEER_TOOLS
 
-import glm from './glm-5.2.mjs';
+import deepseekV4Flash from './deepseek-v4-flash.mjs';
 
 export default {
-  // A/B/V 统一 GLM-5.2（智谱 Coding Plan 订阅制）。
-  // 双盲审查独立性通过 A/B 不同 prompt 视角保证（a-check.md ≠ b-check.md），
-  // 不依赖不同模型。Qwen3.8-max 在 run-07 验证中无法被 stateModifier 约束
-  // （thinking-only 模型在工具循环中停不下来），改回 GLM-5.2。
-  A: { model: glm, role: 'reviewer' },  // 审查者：GLM-5.2 → GLM_API_KEY
-  B: { model: glm, role: 'engineer' },  // 工程师：GLM-5.2 → GLM_API_KEY
-  V: { model: glm, role: 'reviewer' },  // 验证者：GLM-5.2 → GLM_API_KEY（与 B 共用，key 跟模型走自动一致）
-  F: { model: glm, role: 'engineer' },  // v1.2.8 修复者：GLM-5.2 → GLM_API_KEY（与 B 共用 ENGINEER_TOOLS）
+  // v1.3.9 起：A/B/V/F 统一切到 deepseek-v4-flash（DeepSeek API，按量计费，低成本档）。
+  // 双盲审查独立性仍通过 A/B 不同 prompt 视角保证（a-check.md ≠ b-check.md），不依赖不同模型。
+  // 历史注记（勿删）：run-07 验证 Qwen3.8-max 在工具循环里无法被 stateModifier 约束
+  // （thinking-only 模型在工具循环中停不下来）→ 改回 GLM-5.2；GLM-5.2 在审查步骤调 60+ 次工具不收敛、靠软熔断兜底。
+  // 现切 V4 Flash 需重点观察：重型循环（16 视角 × 多轮）收敛性、以及按量计费下的成本。
+  A: { model: deepseekV4Flash, role: 'reviewer' },  // 审查者：deepseek-v4-flash → DEEPSEEK_API_KEY
+  B: { model: deepseekV4Flash, role: 'engineer' },  // 工程师：deepseek-v4-flash → DEEPSEEK_API_KEY
+  V: { model: deepseekV4Flash, role: 'reviewer' },  // 验证者：deepseek-v4-flash → DEEPSEEK_API_KEY（与 B 共用，key 跟模型走自动一致）
+  F: { model: deepseekV4Flash, role: 'engineer' },  // v1.2.8 修复者：deepseek-v4-flash → DEEPSEEK_API_KEY（与 B 共用 ENGINEER_TOOLS）
 };

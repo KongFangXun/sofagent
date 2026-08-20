@@ -12,7 +12,7 @@
 //   node FORGE/src/fresh-eyes-driver.mjs --worker --step <step> --round-dir <abs> --target <ver>
 //
 // 模型配置抽取到 FORGE/models/（换模型只改 profile.mjs 一行）：
-//   A/B/V 统一 GLM-5.2            智谱 Coding Plan 订阅制
+//   A/B 统一 deepseek-v4-flash   DeepSeek API 按量计费（注意：fresh-eyes 无 V 角色）
 //   双盲审查通过 A/B 不同 prompt 视角保证（a-check.md ≠ b-check.md），不依赖不同模型。
 //   Qwen3.8-max（thinking-only）在工具循环中无法被约束，已弃用（run-07 验证）。
 //   切换模型：编辑 FORGE/models/profile.mjs，改 import 和映射即可，不需要改本文件。
@@ -94,7 +94,7 @@ const RUNS_DIR    = join(SOFAGENT_HOME, 'data', 'forge-runs');
 const LEDGER_PATH = join(REPO_ROOT, 'FORGE/LEDGER.md');
 const AGENTS_DIR  = join(REPO_ROOT, 'SKILL/agents');
 
-// A/B/V 统一 GLM-5.2 Coding Plan，共用 GLM_API_KEY。
+// A/B 统一 deepseek-v4-flash（按量计费），共用 DEEPSEEK_API_KEY。
 // 双盲审查通过 A/B 不同 prompt 视角保证，不依赖不同模型。
 // key 跟模型走——模型文件标注 apiKeyEnv，profile.mjs 引用时自动继承。
 // ─── 模型配置（从 FORGE/models/ 加载，换模型改 profile.mjs 即可）─────────────
@@ -368,16 +368,12 @@ function buildSystemPrompt(skillPath) {
  * 为指定角色创建 LLM 模型实例。
  *
  * 模型配置从 FORGE/models/ 加载（profile.mjs 定义角色→模型映射）。
- * 当前配置：A = Qwen3.8-max（阿里百炼 Token Plan），B = GLM-5.2（智谱 Coding Plan）。
+ * 当前配置：A = B = deepseek-v4-flash（DeepSeek API，按量计费）。
  * 换模型只改 FORGE/models/profile.mjs，不需要改 driver 代码。
  *
- * Qwen3.8-max 是 thinking-only 模型——始终思考、无法关闭，
- * 不需要传 thinking/reasoningEffort 参数：MODEL_CONFIGS.A 未定义这两个字段，
- * 下方条件注入分支（cfg.thinking / cfg.reasoningEffort）天然不会触发。
- *
- * GLM-5.2 支持 thinking + reasoning_effort 参数：MODEL_CONFIGS.B 定义了
- * thinking={type:'enabled'} + reasoningEffort='max' + temperature=1.0，
- * 下方条件注入分支会自动带上这些参数。
+ * deepseek-v4-flash 是低成本按量计费模型——支持 reasoningEffort 参数（无 thinking 字段）：
+ * MODEL_CONFIGS.A/B 定义了 reasoningEffort='max' + temperature=1.0，
+ * 下方条件注入分支（cfg.reasoningEffort）自动带上，cfg.thinking 因模型无此字段天然不触发。
  *
  * @param {string} role              角色 'A' / 'B'
  * @param {number} [maxTokensOverride]  步骤级输出 token 上限覆盖（如 a-consolidate
