@@ -66,6 +66,13 @@ var lines = c.split("\n");
 
 // 文件级上下文：如果某个路径在文件中任何一行与"新建"同时出现，标 planned
 function isPlannedGlobally(path) {
+  // v1.3.9 补：结构上下文——全文声明「分目录/物理分子/目标结构」时，tools/ 下不存在的路径视为待新建
+  // （tools/ 物理分子目录交付前，目标路径如 tools/check/check-version.sh 尚不存在，但属本版规划产物）
+  if (path.indexOf("tools/") === 0) {
+    for (var i = 0; i < lines.length; i++) {
+      if (/分目录|物理分子|目标结构/.test(lines[i])) return true;
+    }
+  }
   for (var i = 0; i < lines.length; i++) {
     if (lines[i].indexOf(path) >= 0 && /新建|新文件|\*\*新建\*\*/.test(lines[i])) return true;
   }
@@ -84,8 +91,10 @@ lines.forEach(function(line) {
   var c = lineCtx(line);
   [...line.matchAll(/`([^`]*\.(?:ts|sh|mjs|json|yml))`/g)].forEach(function(m) {
     var p = m[1];
+    // v1.3.9 补：剥离命令前缀——`bash tools/check-version.sh` 提取出纯路径（原实现把 bash/node 并进路径误报 ❌）
+    p = p.replace(/^(?:bash|node|npx|sudo|npm) /, "");
     if (p.includes("/") && !p.includes("$") && !p.includes("{") &&
-        !p.includes("*") && !p.startsWith("~") && !p.match(/vX\.Y/)) {
+        !p.includes("*") && !p.includes("(") && !p.startsWith("~") && !p.match(/vX\.Y/)) {
       var k = "P|" + p;
       if (!seen[k]) {
         seen[k] = 1;
@@ -118,7 +127,7 @@ lines.forEach(function(line) {
   [...line.matchAll(/`([^`]*\/)`/g)].forEach(function(m) {
     var d = m[1];
     if (d.includes("/") && !d.includes("$") && !d.includes("{") &&
-        !d.includes("*") && !d.startsWith("~") && !d.match(/vX\.Y/)) {
+        !d.includes("*") && !d.includes("(") && !d.startsWith("~") && !d.match(/vX\.Y/)) {
       var k = "D|" + d;
       if (!seen[k]) {
         seen[k] = 1;
@@ -152,7 +161,7 @@ check_prefix() {
 
 is_runtime() {
   case "$1" in
-    data/audit/*|data/dashboard/*|data/forge-runs/*|data/reports/*|dashboard/*|data/*|.sofagent/*|knowledge/*)
+    data/audit/*|data/dashboard/*|data/forge-runs/*|data/reports/*|dashboard/*|data/*|.sofagent/*|knowledge/*|dream-sandbox/*)
       return 0 ;;
     *)
       return 1 ;;
@@ -171,6 +180,13 @@ while IFS='|' read -r tag ref c || [ -n "$tag" ]; do
   case "$clean" in
     node_modules/*|dist/*|docs/changelog/*) continue ;;
   esac
+
+  # v1.3.9 补：is_runtime 接线——data/dashboard/、dream-sandbox/ 等运行时/产物路径标 🔄 跳过
+  # （原实现定义了 is_runtime 但主循环未调用，导致 worklog.json 等运行时产物误报 ❌）
+  if is_runtime "$clean"; then
+    printf '  🔄 %s (运行时)\n' "$ref"
+    continue
+  fi
 
   if [ -e "$clean" ]; then
     printf '  ✅ %s\n' "$ref"
