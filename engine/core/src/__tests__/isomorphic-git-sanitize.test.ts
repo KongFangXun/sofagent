@@ -14,6 +14,8 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 import { commitSnapshot, listSnapshots } from '../filesystem/isomorphic-git';
+// v1.3.9 四十五：直接导入共享常量做检测/脱敏对齐断言（9 检测 → 9 脱敏）
+import { SECRET_PATTERNS, REDACTION_PATTERNS } from '../shared/secret-patterns';
 
 // v2 存储格式适配（2026-08-16 磁盘治理）：snapshots.json 现为 { version:2, blobs, snapshots[fileIndex] }
 // 旧断言直接读磁盘期望 v1 形状（files: path→content）——此 helper 透明还原，断言意图不变。
@@ -166,5 +168,47 @@ describe('isomorphic-git 快照密钥脱敏（交付 1 · P0）', () => {
 
     expect(latest.files).not.toHaveProperty('rules.test.ts');
     expect(latest.files).toHaveProperty('main.ts');
+  });
+
+  // v1.3.9 四十五：REDACTION_PATTERNS 与 SECRET_PATTERNS 对齐（9 检测 → 9 脱敏）——
+  // 检测命中的每种 secret pattern 落盘前均被脱敏（PEM 私钥块此前检出但原样落盘 = 不对称洞）。
+  it('检测命中的每种 secret pattern 落盘前均被脱敏（9 检测 → 9 脱敏对齐）', () => {
+    // 每族检测各造一条样本（运行时拼接，非真实密钥——铁律：测试不字面写真实格式密钥）
+    // A2 自指误报规避：PEM 样例的 BEGIN/END 头尾也走拼接，不写完整字面量。
+    const pemSample = [
+      '-----BEGIN ',
+      ['PRIVATE ', 'KEY'].join(''),
+      '-----\n',
+      'x'.repeat(40),
+      '\n-----END ',
+      ['PRIVATE ', 'KEY'].join(''),
+      '-----',
+    ].join('');
+    const samples: Array<[string, string]> = [
+      ['AWS Access Key', 'AKIA' + 'A'.repeat(16)],
+      ['Private Key', pemSample],
+      ['Anthropic API Key', 'sk-ant-api03-' + 'a'.repeat(40)],
+      ['OpenAI Project Key', 'sk-proj-' + 'a'.repeat(40)],
+      ['OpenAI Service Account Key', 'sk-svcacct-' + 'a'.repeat(40)],
+      ['OpenAI Admin Key', 'sk-admin-' + 'a'.repeat(40)],
+      ['Possible API Key (OpenAI/DeepSeek)', 'sk-' + 'a'.repeat(32)],
+      ['GitHub Token', 'ghp_' + 'b'.repeat(36)],
+      ['Stripe Secret Key', 'sk_live_' + 'c'.repeat(24)],
+    ];
+
+    for (const [label, sample] of samples) {
+      // 1. 检测命中（SECRET_PATTERNS 至少一条能检出该样本）
+      const detected = SECRET_PATTERNS.some(({ pattern }) => pattern.test(sample));
+      expect(detected, `${label} 应被 SECRET_PATTERNS 检测`).toBe(true);
+
+      // 2. 落盘前脱敏（REDACTION_PATTERNS 循环后原样密钥不再出现）
+      let redacted = sample;
+      for (const { pattern, replacement } of REDACTION_PATTERNS) {
+        pattern.lastIndex = 0;
+        redacted = redacted.replace(pattern, replacement);
+      }
+      expect(redacted, `${label} 应含脱敏标记`).toContain('REDACTED');
+      expect(redacted, `${label} 原样密钥不应再落盘`).not.toContain(sample);
+    }
   });
 });
