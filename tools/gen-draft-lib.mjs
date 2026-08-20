@@ -1,0 +1,188 @@
+// ============================================================
+// tools/lib/gen-draft-lib.mjs · 单次 LLM 草稿生成器公共库
+// ============================================================
+// 抽自 gen-abc-draft.mjs / gen-fresh-eyes-draft.mjs 的整段重复：
+//   MODEL_CFG / 参数解析 / 版本号 / key 解析 / 降级写盘 / LLM 调用。
+// 两工具唯一真正的差异是「输入参数定义 + prompt 模板」——留在各自文件。
+//
+// 复用约定（退出码语义，两个调用方保持一致）：
+//   0 = 草稿生成
+//   1 = 参数或输入错误（无来源 / 路径不存在 / 版本号读不出）
+//   2 = LLM 不可用（已降级输出 prompt 到 <out>.prompt.md）
+//
+// LLM 配置来源：FORGE/models/glm-5.2.mjs（GLM-5.2 Coding Plan 专用端点）。
+// ============================================================
+
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { homedir } from 'node:os';
+import { join, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { createRequire } from 'node:module';
+
+const require = createRequire(import.meta.url);
+const __dirname = dirname(fileURLToPath(import.meta.url));
+
+/** 仓库根（本库位于 tools/lib/ → 上两级） */
+export const REPO_ROOT = join(__dirname, '..', '..');
+
+/**
+ * GLM-5.2 Coding Plan 配置（与 FORGE/models/glm-5.2.mjs 同源）。
+ * temperature 由调用方按任务性质覆盖：分类 0.3 / 审查草稿 0.5。
+ */
+export function loadModelConfig(overrides = {}) {
+  return {
+    model: 'glm-5.2',
+    baseURL: 'https://open.bigmodel.cn/api/coding/paas/v4',
+    temperature: 0.3,
+    ...overrides,
+  };
+}
+
+/**
+ * 通用参数解析：`--key value` 全收进 opts，`--help/-h` 打印调用方 helpText 后退出。
+ * @param {string[]} argv process.argv.slice(2)
+ * @param {string} helpText --help 输出（各工具的用法说明，含差异参数）
+ */
+export function parseArgs(argv, helpText) {
+  const opts = {};
+  for (let i = 0; i < argv.length; i++) {
+    const k = argv[i];
+    if (k === '--help' || k === '-h') {
+      console.log(helpText);
+      process.exit(0);
+    }
+    if (k.startsWith('--')) {
+      opts[k.slice(2)] = argv[i + 1];
+      i++;
+    }
+  }
+  return opts;
+}
+
+/** 当前版本号（engine/audit/package.json，与 check-version.sh SSOT 同口径）；读不出退出 1 */
+export function resolveVersion() {
+  let ver = '';
+  try {
+    ver = require(join(REPO_ROOT, 'engine/audit/package.json')).version;
+  } catch { /* 下面兜底报错 */ }
+  if (!ver) {
+    console.error('❌ 无法读取 engine/audit/package.json version');
+    process.exit(1);
+  }
+  return ver;
+}
+
+/**
+ * key 解析：环境变量 GLM_API_KEY 优先，--api-key 参数兜底。
+ * 无 key 时降级写 <out>.prompt.md 并退出 2（SOP 不因断网/key 轮换卡死）。
+ * @returns {string} API key（保证非空——空则已退出）
+ */
+export function resolveApiKey(opts) {
+  const apiKey = process.env.GLM_API_KEY || opts['api-key'] || '';
+  if (!apiKey) {
+    writeDegraded(opts.__out, 'GLM_API_KEY 未设置', opts.__prompts);
+    console.error('    用法：source FORGE/env.local 后重跑，或把 prompt 粘给任意 AI session');
+    process.exit(2);
+  }
+  return apiKey;
+}
+
+/**
+ * 降级写盘：完整 prompt 写到 <out>.prompt.md，供人工粘贴给任意 AI session。
+ * @param {string} out 产物路径（降级产物 = out + '.prompt.md'）
+ * @param {string} reason 降级原因（无 key / LLM 失败信息）
+ * @param {{system: string, user: string}} prompts 双段 prompt
+ */
+export function writeDegraded(out, reason, prompts) {
+  // 注：reason='GLM_API_KEY 未设置' 时旧版 abc 头部带空括号「未设置（）」——
+  // 为保证降级产物逐字一致（重构验收基准）保留原样，不做清理
+  const suffix = reason === 'GLM_API_KEY 未设置' ? '（）' : '';
+  writeFileSync(out + '.prompt.md',
+    `<!-- 降级产物：${reason}${suffix}——把下面 prompt 粘贴给任意 AI session 执行 -->\n\n` +
+    `## System\n\n${prompts.system}\n\n## User\n\n${prompts.user}\n`, 'utf-8');
+  console.error(`⚠️  ${reason} → 降级：prompt 已写入 ${out}.prompt.md`);
+}
+
+/**
+ * 读来源文件并截断（防 prompt 爆长——分类/审查只需发现条目不需全文）。
+ * @param {Array<[string, string|undefined, string, number]>} sources
+ *   [key, path, label, limit]：path 缺省跳过；超 limit 截断并标注
+ * @returns {{sections: string[], loaded: string[], skipped: string[]}}
+ *   sections=已加载内容块 / loaded=已加载标签 / skipped=跳过标签
+ */
+export function loadSources(sources) {
+  const sections = [];
+  const loaded = [];
+  const skipped = [];
+  for (const [, path, label, limit] of sources) {
+    if (!path) { skipped.push(label); continue; }
+    if (!existsSync(path)) {
+      console.error(`❌ 来源文件不存在: ${path}（${label}）`);
+      process.exit(1);
+    }
+    const text = readFileSync(path, 'utf-8');
+    const trimmed = text.length > limit
+      ? text.slice(0, limit) + `\n…（截断，原文 ${text.length} 字符）`
+      : text;
+    sections.push(`### 来源：${label}（${path}）\n\n${trimmed}`);
+    loaded.push(label);
+  }
+  return { sections, loaded, skipped };
+}
+
+/** CHANGELOG 当前版本行（轻量补充源）；无则返回 null */
+export function readChangelogLine(changelogPath, curVer) {
+  if (!existsSync(changelogPath)) return null;
+  return readFileSync(changelogPath, 'utf-8')
+    .split('\n')
+    .find((l) => l.startsWith(`- **v${curVer}**`)) || null;
+}
+
+/**
+ * 单次 LLM 调用（原生 fetch，无 SDK 无循环）。
+ * @returns {Promise<string>} LLM 输出内容（长度 ≥200 校验通过）
+ * @throws Error HTTP 非 200 / 响应过短 / 网络失败（调用方 catch 后降级）
+ */
+export async function callLLM(modelCfg, apiKey, systemPrompt, userPrompt) {
+  const controller = new AbortController();
+  // 5 分钟上限（GLM thinking 模式大输入 3min 实测不够）
+  const timeout = setTimeout(() => controller.abort(), 300_000);
+  try {
+    const res = await fetch(`${modelCfg.baseURL}/chat/completions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+      body: JSON.stringify({
+        model: modelCfg.model,
+        temperature: modelCfg.temperature,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt },
+        ],
+      }),
+      signal: controller.signal,
+    });
+    if (!res.ok) {
+      const body = await res.text().catch(() => '');
+      throw new Error(`HTTP ${res.status}: ${body.slice(0, 300)}`);
+    }
+    const data = await res.json();
+    const content = data?.choices?.[0]?.message?.content;
+    if (!content || content.length < 200) {
+      throw new Error(`响应过短（${content ? content.length : 0} 字符）——疑似异常响应`);
+    }
+    return content;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+/** 正常产物写盘（头部元数据 + 内容）；返回产物绝对信息供日志 */
+export function writeOutput(out, header, content) {
+  writeFileSync(out, header + content + '\n', 'utf-8');
+  return out;
+}
+
+/** 缺省产物路径：~/Desktop/<prefix>-draft-v<ver>.md */
+export function defaultOut(prefix, curVer) {
+  return join(homedir(), 'Desktop', `${prefix}-draft-v${curVer}.md`);
+}
