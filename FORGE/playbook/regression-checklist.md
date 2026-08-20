@@ -14,7 +14,7 @@
 > **当前 91 维 · 编号 1-118 · 27 个编号已归并删除（v1.3.7 阶段四 +2：115 新功能审查面 / 116 bugfix 批防复发——acceptance 同批 S290-S293，S293 为阶段四基建加固场景：LLM 超时四文件/resume 越轮守卫/rm-rf 口径同源；v1.3.8 阶段五 +2：117 网关攻击面四项核对 / 118 原子写与单writer 加固（B1+B2+B3 归并）——acceptance 同批 S294-S302 已覆盖功能面，本批为防御性回归标记）**。维度流连续不中断，分组导航：基线组 → 审查约束组 → 环境敏感组（前置 vitest/沙箱铁律）。
 ## 🔒 维护公约（防膨胀铁律）
 
-**追加新维度前，必须先 grep 同类**：有同类 → 扩展旧维度的子项，不新增编号；无同类 → 才新增编号 = 当前最大 +1。历史维度靠 `git log -p` 找回。**行数警戒线**：`regression-checklist.md` ≤ 1620 行、`acceptance-test.sh` ≤ 2730 行（v1.3.7 阶段四上调 1540→1580 / 2600→2640：+39 维 115/116 新审查面 / +38 S290-S292；v1.3.8 阶段四 +9 场景 S294-S302 真实归并否、上调记录 2640→2730；v1.3.8 阶段五 +2 维 #117-#118 真实归并否、上调记录 1580→1620——三判据①②③全否、本版 checklist 首调非连续两版非同版二次冻结）；releasing.md 方针「超标上调 LIMIT 不删内容」。
+**追加新维度前，必须先 grep 同类**：有同类 → 扩展旧维度的子项，不新增编号；无同类 → 才新增编号 = 当前最大 +1。历史维度靠 `git log -p` 找回。**行数警戒线**：`regression-checklist.md` ≤ 1620 行、`acceptance-test.sh` ≤ 2770 行（v1.3.7 阶段四上调 1540→1580 / 2600→2640：+39 维 115/116 新审查面 / +38 S290-S292；v1.3.8 阶段四 +9 场景 S294-S302 真实归并否、上调记录 2640→2730；v1.3.8 阶段五 +2 维 #117-#118 真实归并否、上调记录 1580→1620——三判据①②③全否、本版 checklist 首调非连续两版非同版二次冻结；v1.3.8 阶段五补充 bugfix 防回归 S303-S304（A1 后缀绕过+A2 FFFD 短路端到端，B 类零场景缺口）上调 2730→2770——三判据全否：单测在而端到端缺/非同主题聚簇/真实安全回归风险，非既有场景覆盖）；releasing.md 方针「超标上调 LIMIT 不删内容」。
 
 **维度脚本编写三铁律**（v1.3.6 release-gate run-08 教训——7 个 FAIL 维度中 5 个是脚本自身缺陷而非仓库问题，driver 白跑一轮）：
 
@@ -31,7 +31,7 @@ ACTUAL=$(grep -c "^#### " FORGE/playbook/regression-checklist.md)
 # 行数警戒线自检（越线提醒瘦身，非失败；与 releasing.md 阶段五警戒线一致）
 WC_CHK=$(wc -l < FORGE/playbook/regression-checklist.md); WC_ACC=$(wc -l < FORGE/playbook/acceptance-test.sh)
 [ "$WC_CHK" -le 1620 ] && echo "✅ checklist $WC_CHK (≤1620)" || echo "⚠️ checklist $WC_CHK 超 1620"
-[ "$WC_ACC" -le 2730 ] && echo "✅ acceptance $WC_ACC (≤2730)" || echo "⚠️ acceptance $WC_ACC 超 2730"
+[ "$WC_ACC" -le 2770 ] && echo "✅ acceptance $WC_ACC (≤2770)" || echo "⚠️ acceptance $WC_ACC 超 2770"
 ```
 ## 你的身份
 
