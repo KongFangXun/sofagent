@@ -162,6 +162,8 @@ sofagent 的定位正卡在这个转折点上：审计引擎（治理侧）+ Ont
 | **通知冷却窗口（Loop Engineering 控制面启发 · 2026-08-19 新增）** | 人审 gate 重复通知抑制 + 冷却窗口——企业 webhook 推送会通知轰炸的解法，待网关/推送场景积累痛点数据后评估 |
 | **依赖方向架构测试（Loop Engineering 控制面启发 · 2026-08-19 新增）** | CI 强制包依赖方向（控制面不得依赖展示/CLI 层）——审查视角有但 CI 无强制，低成本高价值，需先定包边界清单 |
 | **商业平台 平台接口预留（2026-08-17 新增 · 商业产品层前置）** | 商业平台（商业 SaaS 产品层，规划文档独立于本 MIT 仓库维护）需要 sofagent 预留的平台接口，提前定义、**逐条对应 v1.4.x 实际排期**：**G1 workflow 模板导出/导入 + 血缘追踪**（MCP `workflow_export`/`workflow_import`，挂靠 v1.4.4 模型注册器同类机制扩展——workflow 模板同样可注册，模板元数据加血缘字段）· **G2 能力缺口查询**（MCP `workflow_gaps`——读 workflow 状态找「缺人/缺能力的节点」，悬赏式 PR 的发现接口，**v1.4.7 承载**：依赖 worklog v1.3.9 + ontology lifecycle v1.3.7）· **G3 计量数据暴露**（**✅ v1.4.0 `cost_query` 已覆盖**——成本审计数据口，商业平台 credit 成本轨直接消费，无需新增）· **G4 绩效数据导出**（MCP `contribution_query`——读审计 + decision-log 算每人/每 workflow 贡献度，DKP 价值轨数据源，**v1.4.7 承载**：对齐 v1.4.5 量化四字段）· **G5 MCP 连接器注册/发现**（挂靠 v1.4.2「DB/API 数据源」扩展——企业存量系统 OA/CRM/ERP 经 MCP 接入，先打通「接入」，连接器注册/发现随 SaaS 需要再补）· **G6 节点级可见性元数据**（workflow schema 加 `visibility` 字段 open/private/result-only——任务面/数据面分离，审阅门按此执行，**v1.4.7 承载**）· **G7 多租户抽象层**（引擎层数据路径 `data/<tenant>/` 命名空间 + 审计/日志按租户隔离，**v1.4.7 v0**：数据路径抽象，隔离策略 v2.x 细化） |
+| **审计存储 SQLite 迁移（DeepSeek Harness RC.8 启发 · 2026-08-20 新增）** | history.jsonl 明文存储（LIMITATIONS 已披露）→ SQLite 迁移评估——DSH RC.8 实测 SQLite 后端读写/分叉性能提升 + 存储体积下降（数据结构不兼容），sofagent 审计历史若迁 SQLite 可获得查询能力（按 agent/时间/规则过滤）+ 体积收益；大工程（数据迁移 + 兼容层 + 既有 reader 改造），等 worklog 聚合（v1.3.9）消费模式跑稳后评估 |
+| **UI 层审计（多模态截图证据 · 2026-08-20 新增）** | 审计从代码 diff 扩展到 UI 行为——Agentic Browser（v1.3.9）截图经多模态分析产出 UI 层审计证据（「表单提交是否正确」不再只靠断言），截图作为审计证据入 history；依赖 v1.3.9 多模态链路跑通 + 审计证据模型扩展，暂占概念位 |
 
 > 📖 DeerFlow / OpenFDE 方法论印证见 [VALIDATION](./VALIDATION.md)。
 
