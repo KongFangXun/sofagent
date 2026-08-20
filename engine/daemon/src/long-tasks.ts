@@ -348,7 +348,7 @@ interface LongTaskRuntimeState {
  *
  * 用法（daemon 启动序列）：
  *   const lt = createLongTaskScheduler({ projectDir, dataBase });
- *   lt.onCrashRecovery((e) => durableResume(e.entry));  // 宿主接线 WAL 续跑
+ *   lt.onCrashRecovery((e) => durableResume(e.entry));  // 示意名：宿主自定义的 WAL 续跑函数（接口注入，非本库实现）
  *   lt.runDueTasks(myRunner);                           // 每轮巡检调用
  *
  * @param options 调度器配置
