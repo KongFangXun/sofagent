@@ -11,7 +11,7 @@
 //   --features  <path>    新功能交付清单（devlog）
 //   --recheck   <path>    复审报告
 //   --changelog <path>    CHANGELOG.md（自动取当前版本行）
-//   --out       <path>    产物路径（默认 docs/changelog/abc-draft-<ver>.md）
+//   --out       <path>    产物路径（默认 ~/Desktop/abc-draft-<ver>.md）
 //
 // LLM 配置（三层来源，先到先得）：
 //   1. 环境变量 GLM_API_KEY（含 source FORGE/env.local 后）
@@ -26,6 +26,7 @@
 
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
+import { homedir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
 
@@ -59,7 +60,7 @@ for (let i = 0; i < args.length; i++) {
   --changelog <path>   CHANGELOG（缺省自动读 ./CHANGELOG.md 当前版本行）
 
 其他：
-  --out   <path>       产物路径（默认 docs/changelog/abc-draft-<ver>.md）
+  --out   <path>       产物路径（默认 ~/Desktop/abc-draft-<ver>.md）
   --api-key <key>      显式传 key（缺省读 GLM_API_KEY 环境变量）
 
 退出码：0=成功 / 1=输入错误 / 2=LLM 不可用（降级输出 prompt 到 <out>.prompt.md）`);
@@ -163,7 +164,7 @@ ${sections.join('\n\n---\n\n')}
 请按系统指令输出 A/B/C 三类清单草稿。`;
 
 // ── 产物路径 ────────────────────────────────────────────────
-const OUT = opts.out || join(REPO_ROOT, 'docs', 'changelog', `abc-draft-v${CUR_VER}.md`);
+const OUT = opts.out || join(homedir(), 'Desktop', `abc-draft-v${CUR_VER}.md`);
 
 // ── key 解析（env → 参数）───────────────────────────────────
 const apiKey = process.env.GLM_API_KEY || opts['api-key'] || '';
