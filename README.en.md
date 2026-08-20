@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <a href="README.md">中文</a> · <a href="#what-is-this">What is this</a> · <a href="#fde-methodology">FDE Methodology</a> · <a href="#quick-start">Quick Start</a> · <a href="#three-entries-from-30-seconds-to-full-deployment">Three Entries</a> · <a href="#why-sofagent">Why</a> · <a href="#docs">Docs</a> · <a href="https://github.com/KongFangXun/sofagent">⭐ Star</a>
+  <a href="README.md">中文</a> · <a href="#what-is-this">What is this</a> · <a href="#quick-start">Quick Start</a> · <a href="#fde-methodology">FDE Methodology</a> · <a href="#three-entries-from-30-seconds-to-full-deployment">Three Entries</a> · <a href="#why-sofagent">Why</a> · <a href="#docs">Docs</a> · <a href="https://github.com/KongFangXun/sofagent">⭐ Star</a>
 </p>
 
 ---
@@ -86,13 +86,13 @@ sofagent-audit --init      # install the git hook — every commit is audited fr
 sofagent-audit --doctor    # verify the environment (optional)
 ```
 
-> 💡 All install scripts only write to `~/.sofagent/` and never touch system files. `--no-verify` can bypass the local hook — sofagent guards against honest Agents' carelessness, not deliberate bypass; for high-security scenarios add `sofagent-audit --diff` on the CI side as a backstop. See [LIMITATIONS](./docs/LIMITATIONS.md).
+> 💡 All install scripts only write to `~/.sofagent/` and never touch system files. `--no-verify` can bypass the commit-msg audit — it guards against honest Agents' carelessness, not malicious bypass; skipped commits are reconciled afterwards by the post-commit hook (when the audit trail matches, it flags "suspected bypass", re-checkable via `--verify-commit <SHA>`), but does **not block**. Personal developers have three fallbacks: run `sofagent-audit --diff` on the CI side, run `--doctor` periodically, and review the audit records. See [LIMITATIONS](./docs/LIMITATIONS.md).
 >
 > 📌 **install.sh is the enterprise device installer** — install it on the server/computer running the AI nodes, where it acts as the Agent's monitoring constraint layer (audit + rollback + injection + daemon inspection + single-machine dashboard). FDEs do not need to run install.sh on their own machines — the FDE's tools are [FDE Skill](https://clawhub.ai/kongfangxun/skills/sofagent) (the methodology). See [deployment architecture](./docs/ARCHITECTURE.md#安装包边界与部署架构v132-定位校准).
 >
 > 📌 **How bootstrap.sh and install.sh relate**: bootstrap.sh is a one-line download wrapper around install.sh — `curl bootstrap.sh | bash` is equivalent to "download install.sh + run install.sh". Both scripts install exactly the same thing; bootstrap just saves you the manual clone/download step.
 
-More install options (clone install / full npx install / minimal install / enterprise deployment) in [HANDBOOK](./docs/HANDBOOK.md). Enterprise users who just want the FDE methodology for mapping workflows, see [FDE/README.md](./FDE/README.md) (zero dependencies, no Node.js needed).
+More install options (clone install / full npx install / minimal install / enterprise deployment) in [HANDBOOK](./docs/HANDBOOK.md). Enterprise users who just want the FDE methodology for mapping workflows, see [FDE/README.md](./FDE/README.md) (zero dependencies, no Node.js needed; for the 15-minute shortest path see its "15-minute shortest path" section).
 
 ## FDE Methodology
 
@@ -144,15 +144,18 @@ No need to commit to the full package up front — start with a 30-second trial,
 ```mermaid
 graph LR
     A["Individual<br/>npx -y -p @sofagent/audit sofagent-audit<br/>30-second zero-setup audit"] --> B["Team<br/>Rule marketplace + GitHub Action<br/>PR auto-audit"]
-    B --> C["Enterprise<br/>FDE Agent<br/>full deployment · 7×24 self-running"]
+    B --> C["Enterprise<br/>install.sh full suite<br/>installed on enterprise devices · 7×24 monitoring"]
+    C -.->|after FDE departs| D["Self-running<br/>Agents work · sofagent watches<br/>audit · rollback · inspection"]
 ```
 
-| Entry | What it does | Time needed |
-|------|--------|:----:|
-| **`npx -y -p @sofagent/audit sofagent-audit`** | Zero-setup audit of the last commit, results in seconds (first npx ~30s) | 30 sec |
-| **`--ruleset` rule marketplace** | Load rulesets like security, or use custom JSON rules | 1 min |
-| **GitHub Action** | Auto-audit every PR, violations annotated on the diff lines | Set up once |
-| **FDE Agent** | Map workflows on-site → deploy AI nodes → 7×24 self-running | FDE residency |
+| Entry | What it does | Where installed | Time needed |
+|------|--------|--------|:----:|
+| **`npx -y -p @sofagent/audit sofagent-audit`** | Zero-setup audit of the last commit, results in seconds (first npx ~30s) | Any git repo (temporary) | 30 sec |
+| **`--ruleset` rule marketplace** | Load rulesets like security, or use custom JSON rules | Same as above | 1 min |
+| **GitHub Action** | Auto-audit every PR, violations annotated on the diff lines | CI/CD | Set up once |
+| **install.sh full suite** | injection · audit · rollback · evolution + daemon inspection + dashboard — the Agent's complete constraint layer | **Enterprise device** (server/computer running the AI nodes) | FDE residency |
+
+sofagent supports composable rulesets (**rule marketplace**) — a built-in security ruleset plus community-published ruleset packages. With 24 audit rules built in (quick runs 17 by default, the 7 extensions enabled via config), loading extra rulesets extends audit coverage:
 
 **Rule marketplace**:
 
