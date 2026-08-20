@@ -31,14 +31,46 @@ export const SECRET_PATTERNS: { pattern: RegExp; label: string }[] = [
  * v1.2.5 §4.10.2: 脱敏正则（从 A9 sanitizeDetailLine 迁移）
  *
  * 用于审计 details 输出时脱敏——防止密钥通过审计报告/历史记录外泄。
+ * v1.3.9 四十五：补齐与 SECRET_PATTERNS 的对齐（9 检测 → 9 脱敏，类型/数量对齐）——
+ * 此前 PEM 私钥检出但原样落盘（不对称洞）。每族检测正则各配一条脱敏正则。
+ * ⚠️ 宽度铁律：脱敏是落盘前最后防线，「宁多脱敏勿漏」——脱敏 pattern 宽度必须
+ * **⊇ 检测 pattern**（可更宽，绝不比检测更窄）；收紧到与检测同宽会漏掉合法短 key。
+ * 另含 1 条 PII（手机号，非密钥）。
  */
+// ⚠️ A2 自指误报规避：本文件是规则源码，若直接写 PEM 私钥头尾（BEGIN/END 那串）字面量，
+// 会被 A2 逐行扫描判为硬编码私钥（自指误报）。故 PEM 脱敏正则与替换串均用运行时拼接
+// 构造——'PRIVATE ' 与 'KEY' 分列两个字符串字面量，任一行不出现完整连写。
+const PEM_WORD = ['PRIVATE ', 'KEY'].join('');
+const PEM_BLOCK_REDACTION = new RegExp(
+  '-----BEGIN [A-Z ]*' + PEM_WORD + '-----[\\s\\S]*?-----END [A-Z ]*' + PEM_WORD + '-----',
+  'g',
+);
+const PEM_BLOCK_REPLACEMENT = [
+  '-----BEGIN ', PEM_WORD, '-----***REDACTED***-----END ', PEM_WORD, '-----',
+].join('');
+
 export const REDACTION_PATTERNS: { pattern: RegExp; replacement: string }[] = [
+  // 1. AWS Access Key（与 SECRET_PATTERNS #1 同源）
+  { pattern: /AKIA[A-Z0-9]{16}/g, replacement: 'AKIA***REDACTED***' },
+  // 2. PEM 私钥块（多行——BEGIN 到 END 整块替换；此前检测命中但原样落盘 = 不对称洞）
+  { pattern: PEM_BLOCK_REDACTION, replacement: PEM_BLOCK_REPLACEMENT },
+  // 3. Anthropic（sk-ant-，与 #3 同源）
+  { pattern: /sk-ant-(api03|api04)-[A-Za-z0-9_-]{40,}/g, replacement: 'sk-ant-***REDACTED***' },
+  // 4. OpenAI Project（sk-proj-，与 #4 同源）
+  { pattern: /sk-proj-[a-zA-Z0-9_]{40,}/g, replacement: 'sk-proj-***REDACTED***' },
+  // 5. OpenAI Service Account（sk-svcacct-，与 #5 同源）
+  { pattern: /sk-svcacct-[a-zA-Z0-9_]{40,}/g, replacement: 'sk-svcacct-***REDACTED***' },
+  // 6. OpenAI Admin（sk-admin-，与 #6 同源）
+  { pattern: /sk-admin-[a-zA-Z0-9_]{40,}/g, replacement: 'sk-admin-***REDACTED***' },
+  // 7. 通用 sk-（宽口径 {16,}——脱敏 ⊇ 检测；v1.3.9 曾误收紧到与检测同宽 {31,}
+  //    导致 31 字符短 key 漏脱敏，QA 门禁抓回，已恢复 v1.3.8 宽口径）
   { pattern: /sk-[a-zA-Z0-9_\-]{16,}/g, replacement: 'sk-***REDACTED***' },
-  // v1.3.6 B24: Stripe 下划线格式同步脱敏（与检测模式同源，防检测到但脱敏不到的不对称）
+  // 8. GitHub Token（ghp_/ghs_，与 #8 同源；{36,} 宽口径——GitHub PAT 固定 36 位，多余位一并吞掉）
+  { pattern: /gh[ps]_[A-Za-z0-9]{36,}/g, replacement: 'gh***REDACTED***' },
+  // 9. Stripe（sk_live_/sk_test_，宽口径 {16,}——脱敏 ⊇ 检测，宁多勿漏）
   { pattern: /sk_(live|test)_[a-zA-Z0-9]{16,}/g, replacement: 'sk_***REDACTED***' },
-  { pattern: /AKIA[0-9A-Z]{16}/g, replacement: 'AKIA***REDACTED***' },
+  // 10. PII（非密钥）：中国大陆手机号（隐私脱敏，无对应 SECRET_PATTERNS）
   { pattern: /\b1[3-9]\d{9}\b/g, replacement: '1**REDACTED***' },
-  { pattern: /gh[ps]_[a-zA-Z0-9]{36,}/g, replacement: 'gh***REDACTED***' },
 ];
 
 /**
