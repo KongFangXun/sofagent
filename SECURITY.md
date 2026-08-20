@@ -43,12 +43,12 @@ sofagent 是一个 FDE Agent——底层引擎是纯本地 Harness 中间件（�
 - ✅ 脱敏：sanitize() 管道扫描 API Key / 密码 / 手机号，写入前自动打码
 - ✅ 数据保留：cleanup.sh 支持 --purge --before 定时清理 + tar.gz 归档
 - ✅ 审计日志：task-record.sh 独立审计日志 + task/logs 追溯双通道
-- ⚠️ 明文存储：`data/` 下文件仍为 Markdown 明文，未做加密
-- ⚠️ **当前限制**：数据明文存储 + LLM 自评无外部基准。GDPR / 等保 / SOC2 场景需额外加密措施。age 加密**已排 v1.3.8（与沙箱/权限/网关同批安全加固）落地**。合规审查员请注意：**当前版本（v1.3.x）仍不适合直接用于强合规场景**，需配合外部加密卷（gpg / disk encryption）。
+- ✅ 静态加密（v1.3.8 交付）：审计历史落盘前透明加密（纯 TS AES-256-GCM，`SOFAGENT-AGE-V1` 格式，密钥存 `~/.sofagent/keys/` 0600 + 指纹强制备份）——详见 [§ 数据静态加密](#数据静态加密v138-交付)
+- ⚠️ **当前限制**：LLM 自评无外部基准。GDPR / 等保 / SOC2 场景仍需额外措施（age 加密已覆盖审计历史主链，但 forge-runs/checkpoint/model-registry 三目录的加密接线排 v1.3.9+）。合规审查员请注意：**当前版本（v1.3.x）强合规场景仍建议配合外部加密卷（gpg / disk encryption）**。
 
-### 临时缓解措施（age 加密 v1.3.8 交付前）
+### 纵深防御（静态加密之外的额外措施，持续建议）
 
-在 age 加密（目标 v1.3.8）交付之前，建议：
+在静态加密（v1.3.8 已交付，覆盖审计历史主链）之外，仍建议：
 1. **设置 `~/.sofagent/data/` 目录权限为 700**：`chmod 700 ~/.sofagent/data/`（用户可见运行时数据；`~/.sofagent/internal/` 引擎内部状态同样 700）
 2. **将 `~/.sofagent/` 父目录放在加密文件系统上**（如 macOS APFS 加密卷）
 3. **定期轮换 `~/.sofagent/data/` 中的历史审计数据**
