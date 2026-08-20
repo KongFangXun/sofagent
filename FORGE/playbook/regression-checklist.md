@@ -11,10 +11,10 @@
 | v1.3.5 | #110-111（bugfix 防复发 / 新功能审查面） | 93→70、69/75/77→95（check-version 四盲区） |
 | v1.3.6 | #113-114（八交付锚点一维收口 / run-03 修复防复发） | —（v1.3.5 发布后 hotfix 112 编入） |
 
-> **当前 89 维 · 编号 1-116 · 27 个编号已归并删除（v1.3.7 阶段四 +2：115 新功能审查面 / 116 bugfix 批防复发——acceptance 同批 S290-S293，S293 为阶段四基建加固场景：LLM 超时四文件/resume 越轮守卫/rm-rf 口径同源）**。维度流连续不中断，分组导航：基线组 → 审查约束组 → 环境敏感组（前置 vitest/沙箱铁律）。
+> **当前 91 维 · 编号 1-118 · 27 个编号已归并删除（v1.3.7 阶段四 +2：115 新功能审查面 / 116 bugfix 批防复发——acceptance 同批 S290-S293，S293 为阶段四基建加固场景：LLM 超时四文件/resume 越轮守卫/rm-rf 口径同源；v1.3.8 阶段五 +2：117 网关攻击面四项核对 / 118 原子写与单writer 加固（B1+B2+B3 归并）——acceptance 同批 S294-S302 已覆盖功能面，本批为防御性回归标记）**。维度流连续不中断，分组导航：基线组 → 审查约束组 → 环境敏感组（前置 vitest/沙箱铁律）。
 ## 🔒 维护公约（防膨胀铁律）
 
-**追加新维度前，必须先 grep 同类**：有同类 → 扩展旧维度的子项，不新增编号；无同类 → 才新增编号 = 当前最大 +1。历史维度靠 `git log -p` 找回。**行数警戒线**：`regression-checklist.md` ≤ 1580 行、`acceptance-test.sh` ≤ 2730 行（v1.3.7 阶段四上调 1540→1580 / 2600→2640：+39 维 115/116 新审查面 / +38 S290-S292；v1.3.8 阶段四 +9 场景 S294-S302 真实归并否、上调记录 2640→2730）；releasing.md 方针「超标上调 LIMIT 不删内容」。
+**追加新维度前，必须先 grep 同类**：有同类 → 扩展旧维度的子项，不新增编号；无同类 → 才新增编号 = 当前最大 +1。历史维度靠 `git log -p` 找回。**行数警戒线**：`regression-checklist.md` ≤ 1620 行、`acceptance-test.sh` ≤ 2730 行（v1.3.7 阶段四上调 1540→1580 / 2600→2640：+39 维 115/116 新审查面 / +38 S290-S292；v1.3.8 阶段四 +9 场景 S294-S302 真实归并否、上调记录 2640→2730；v1.3.8 阶段五 +2 维 #117-#118 真实归并否、上调记录 1580→1620——三判据①②③全否、本版 checklist 首调非连续两版非同版二次冻结）；releasing.md 方针「超标上调 LIMIT 不删内容」。
 
 **维度脚本编写三铁律**（v1.3.6 release-gate run-08 教训——7 个 FAIL 维度中 5 个是脚本自身缺陷而非仓库问题，driver 白跑一轮）：
 
@@ -30,14 +30,14 @@ ACTUAL=$(grep -c "^#### " FORGE/playbook/regression-checklist.md)
 
 # 行数警戒线自检（越线提醒瘦身，非失败；与 releasing.md 阶段五警戒线一致）
 WC_CHK=$(wc -l < FORGE/playbook/regression-checklist.md); WC_ACC=$(wc -l < FORGE/playbook/acceptance-test.sh)
-[ "$WC_CHK" -le 1580 ] && echo "✅ checklist $WC_CHK (≤1580)" || echo "⚠️ checklist $WC_CHK 超 1580"
+[ "$WC_CHK" -le 1620 ] && echo "✅ checklist $WC_CHK (≤1620)" || echo "⚠️ checklist $WC_CHK 超 1620"
 [ "$WC_ACC" -le 2730 ] && echo "✅ acceptance $WC_ACC (≤2730)" || echo "⚠️ acceptance $WC_ACC 超 2730"
 ```
 ## 你的身份
 
 你是**回归测试工程师**——确认已知的修复没有回退，不是发现新问题。逐项核对，全 PASS 即通过。⏰ 时序：回归检查在阶段六跑，git tag/npm registry 未到位的项标 ⏳。🔍 维度 7f/17a-b/20 依赖真实环境（npm/git/OpenClaw），AI 审查标 `⏸️ 需人工环境`。
 
-## 审查维度（89 维 · 版本演进见头部表格）
+## 审查维度（91 维 · 版本演进见头部表格）
 
 ### 审查维度正文（#1-106 · 按版本演进排列 · 分组小节为历史分类，维度流连续不中断）
 
@@ -1576,5 +1576,31 @@ grep -q 'round === resumeState?.round' FORGE/src/fresh-eyes-driver.mjs && echo "
 grep -q 'cd "\$PROJECT_ROOT" && NODE_OPTIONS' FORGE/playbook/acceptance-test.sh && echo "✅ S146 cwd 回位" || echo "❌ 漂移回植"
 grep -q 'ver == SSOT' tools/check-version.sh && grep -q '新增|增强' tools/bump-version.sh && echo "✅ 溯源豁免" || echo "❌ 溯源误报回植"
 ```
-<!-- 瘦身判据（v1.3.6 详录见 git 历史；v1.3.7：①②③全否——116 子项 3 条+S293 均三死实录新审查面；checklist 触 1585>1580 且本版已上调一次触发冻结 → 压缩 v1.3.6 注释 13→3 行真实归并达标未再上调；acceptance 2633<2640 ✓ / fresh-eyes 400=400 ✓）
+
+#### 117. v1.3.8 新功能审查面——代理网关攻击面四项核对（阶段五来源提取 A 类）
+
+> 交付①代理网关硬边界：唯一出入口须同时守住四项攻击面，缺一项即留绕过口。
+
+```bash
+GATE=engine/orchestrator/src/gateway/proxy-gateway.ts
+[ -f "$GATE" ] || { echo "❌ proxy-gateway.ts 缺失"; exit 1; }
+grep -qE '白名单|allow|deny' "$GATE" && echo "✅ 绕过防护（强制路由+白名单）" || echo "❌ 绕过防护回退"
+grep -qE '限速|rateLimit|rate' "$GATE" && echo "✅ DDoS 限速" || echo "❌ 限速回退"
+grep -qE '身份|agentId|identity|sign' "$GATE" && echo "✅ 请求伪造校验" || echo "❌ 身份校验回退"
+grep -qE 'sanitize|append-only|append' "$GATE" && echo "✅ 日志注入防护" || echo "❌ 日志防护回退"
+```
+
+#### 118. v1.3.8 bugfix 批防复发——原子写与单 writer 加固（阶段五来源提取 B 类 · B1+B2+B3 归并）
+
+> 交付⑨快照写路径加固 + 审计并发写入：原子写（rename 切换）/ 跨进程串行写两道，缺一则留半恢复或行交错。
+
+```bash
+SNAP=engine/orchestrator/src/refine-agent/snapshot-manager.ts
+[ -f "$SNAP" ] || { echo "❌ snapshot-manager.ts 缺失"; exit 1; }
+grep -qE 'atomicWriteSync' "$SNAP" && echo "✅ 快照/回滚原子写" || echo "❌ 原子写回退"
+AU=engine/audit/src/audit-history.ts
+[ -f "$AU" ] || { echo "❌ audit-history.ts 缺失"; exit 1; }
+grep -qE '串行|serialize' "$AU" && echo "✅ 审计历史跨进程串行写" || echo "❌ 串行写回退"
+```
+<!-- 瘦身判据（v1.3.6 详录见 git 历史；v1.3.7：①②③全否——116 子项 3 条+S293 均三死实录新审查面；checklist 触 1585>1580 且本版已上调一次触发冻结 → 压缩 v1.3.6 注释 13→3 行真实归并达标未再上调；acceptance 2633<2640 ✓ / fresh-eyes 400=400 ✓；v1.3.8 阶段五：①②③全否——#117 网关攻击面四项（绕过/DDoS/伪造/日志注入，S294 未覆盖的防御面）/ #118 原子写与单writer 加固（B1 审计串行写+B2/B3 快照原子写，归并自 3 条 bugfix 防回归）均三死实录新审查面；净增 2 维 / +约 24 行，本版 checklist 首调 1580→1620（非连续两版、非同版二次冻结——acceptance 2640→2730 已在阶段四用掉一次，checklist 本版首次）
 -->

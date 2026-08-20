@@ -172,19 +172,20 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # 加载安全规�
 - **方法论路径**（零依赖）：读 [FDE/GUIDE.md](./FDE/GUIDE.md)，按手册手动梳理工作流，Excel + 人脑也能跑
 - **工具路径**（Node.js ≥ 18）：FDE 在企业设备上跑 install.sh 装好约束层后，用自己的 AI 工具说"帮我做 FDE 诊断"，Agent 从进场开始引导
 
-## v1.3.7 新能力
+## v1.3.8 新能力
 
-> 🏰 **v1.3.7 新能力**（SubAgent 完整沙箱 + 场景驱动权限 + AgentShield + 行业 overlay + 断路器 + ontology 生命周期）：
-> - **SubAgent 完整沙箱**：🏰 虚拟文件系统（写入先进虚拟层，审批后原子落盘 + 证据流 HMAC 链）/ 网络出站白名单（DNS 隧道 + raw socket 全拦，域名后缀 + CIDR）/ 工具调用中介（Symbol 唯一 ID 判定，未注册 fail-closed）/ 虚拟 key（vk- 前缀 + scope 数据流契约 + token bucket 限速 + 日志脱敏）/ AsyncSubAgent 独立进程（stdout JSON 行 + SIGINT 优雅退出）/ 真·实时 A/B 双跑（隔离环境并行 + 行级 diff）——v1.3.8 `sandbox:true` 的完整前置（**v1.3.8 交付⑥ 已接线启用：`harness.wrap(agent, { sandbox: true })` 一行启用——工具调用经 tool-gate 前置判定（未注册 fail-closed）、文件写落虚拟层（未审批不落盘）、网络出站走白名单，与 `approval: 'require-approval'` 可组合（沙箱内副作用工具仍挂人审）**）
-> - **场景驱动权限**：🔐 身份→场景匹配→风险等级→放行/deny/人工批准，每步 decision-log 留痕；三硬约束（fail-closed / 守卫先于事件分发 / 最小权限面）；敏感域自动提级（审计数据写删一律 critical）
-> - **AgentShield 五类扫描**：🛡️ MCP 配置风险画像 / Hook 注入分析 / Agent 配置审查（否定后行断言排除反向表述）/ 密钥检测增强 / **Shadow AI 发现**（扫进程/配置/仓库，揪出未注册的「影子 agent」）——静态确定性，零 LLM 自评
-> - **行业 overlay 四套**：🏥 fintech（反洗钱留痕）/ medical（PHI 保护）/ government（等保留痕）/ ai（模型注册）——context.md `industry:` 自动加载，未标注保守默认
-> - **断路器 + 行为监控**：⚡ 连败熔断 + 冷却 half-open 探测自动恢复（ASI08）/ 三指标滑窗超阈值隔离切人工（ASI10，与沙箱联动：隔离态不接新任务）
-> - **ontology 生命周期**：🌳 lifecycle branch/trunk + 审阅门 `migrateToTrunk`（approver 必填）+ OKF 三件套（type 必填 / stale_after 信任时效 / verified 人审>机审分层）
-> - **审查循环自适应并发**：⚙️ 按物理内存预算表自动取并发（8GB→1 ... ≥48GB→6）+ OOM 熔断降级；LLM 调用全程 timeout+retry
-> - **26 项独立审查修复**：🛡️ 经四轮独立安全审查（累计 16 个审查视角）发现的 26 项问题全部修复——含 4 项安装链/门禁关键缺陷根治与多项红队实测绕过的防御增强
+> 🛡️ **v1.3.8 新能力**（代理网关硬边界 + 数据静态加密 + Durable Execution L3 + 异步长任务自治 + FORGE 保活三件套 + SDK sandbox + release-gate 瘦身 + fresh-eyes 成本重构 + 快照写路径加固）：
+> - **代理网关硬边界**：🛡️ SubAgent 外部请求唯一出入口——域名/路径白名单（allow/deny）+ 四档风险分级 + 权限上界单调守卫（首请求锁定只减不增，越界 deny+审计）+ 极高风险挂 HITL 审批队列（v1.3.0 空转闭环首场景实测）
+> - **数据静态加密**：🔐 纯 TS AES-256-GCM（`SOFAGENT-AGE-V1` 透明读写，零 spawn 依赖）+ 密钥指纹强制备份 + 四目录加密范围
+> - **Durable Execution L3**：⏸️ 可恢复事务（writer/recovery/undo 三档可逆）+ 网关层集成 + 真 git 回滚实测——崩溃可恢复、副作用可回放
+> - **异步长任务自治**：⏰ cron 三档糖 + 依赖图前序 PASS 才触发 + 死循环 N 次无变化触发 replan 告警 + WAL 续跑钩子
+> - **FORGE driver 保活三件套**：🔧 pm2 托管 + resume 自动检测断点续跑 + `--check-alive` 心跳探针（只认心跳不认日志，长 LLM 窗口不误判）
+> - **SDK `sandbox: true` 启用**：🧩 三层接线（tool-gate 判定 / 虚拟 FS / 网关出站）+ `approval` 组合——`harness.wrap(agent, { sandbox: true })` 一行启用
+> - **release-gate 瘦身**：✂️ `--judgment-only` 判断层直启（usage ≤12 万 token，基线 30.7 万）+ F 循环 FAIL 即停 + 分片抽查化
+> - **fresh-eyes 成本重构**：📊 `usage.jsonl` 计量 + B 侧复核模式 + 单次草稿工具，16 视角零删减
+> - **快照写路径加固**：🩹 `revert` 原子化两阶段 + 原子替换——注入中断无半恢复、CLI/daemon 并发写不互覆
 >
-> 详见 [v1.3.7 开发日志](./docs/changelog/v1.3/v1.3.7.md)。更早版本见 [CHANGELOG](./CHANGELOG.md)。
+> 详见 [v1.3.8 开发日志](./docs/changelog/v1.3/v1.3.8.md)。更早版本见 [CHANGELOG](./CHANGELOG.md)。
 
 ## 为什么选 sofagent
 
