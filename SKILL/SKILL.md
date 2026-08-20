@@ -55,6 +55,8 @@ metadata:
 
 所有向用户展示的审计结果，必须保留 `[sofagent]` 前缀。如果你执行了审计但不展示结果，等于没审计。展示格式见 `skills/04-deliver.md`。
 
+> FORGE 运行时审计 middleware 的拦截 / HITL / 拒绝三类输出统一带 `[sofagent 审计]` 签名前缀（代码级强制，非 Agent 自觉）——与 Agent 侧展示审计结果的前缀铁律同守同一品牌口径。
+
 > **v1.2.8 注**：此铁律是软约束（Agent 自觉执行），无代码级强制机制。`--ci` 模式已确保审计引擎 PASS 时向 stderr 输出 `✅ [sofagent]` 签名行（P1-23），但 Agent 展示审计结果时的前缀仍依赖加载链注入。未来计划通过 SKILL 加载链校验机制化。
 
 ### 渐进式加载
@@ -151,7 +153,7 @@ metadata:
 
 ---
 
-## MCP 工具速查（v1.3.6 · 60 tools）
+## MCP 工具速查（v1.3.8 · 60 tools）
 
 > 连接 sofagent MCP Server 后可用。未连接时降级为纯文本引导。
 

@@ -84,8 +84,8 @@ test('deny-all：全部拦截 + 合成中止消息（r 和 rw 都拒）', async 
 
     const r1 = await wrappedR({ path: 'a.md' });
     const r2 = await wrappedRw({ path: 'b.md', content: 'x' });
-    assert.equal(r1, '工具调用被拒绝（模式：deny-all）');
-    assert.equal(r2, '工具调用被拒绝（模式：deny-all）');
+    assert.equal(r1, '⛔ [sofagent 审计] 拒绝：工具调用被拒绝（模式：deny-all）');
+    assert.equal(r2, '⛔ [sofagent 审计] 拒绝：工具调用被拒绝（模式：deny-all）');
     assert.equal(executed, 0); // 原 func 均未执行——不崩溃，返回合成消息
 
     // 拒绝写 APPROVAL_DENIED
@@ -115,7 +115,7 @@ test('read-only：r 工具放行 / rw 工具拒绝', async () => {
     let wrote = false;
     const wrappedRw = mw.wrapTool(async () => { wrote = true; return 'ok'; }, 'sf_write', 'rw');
     const result = await wrappedRw({ path: 'artifact.md', content: 'x' });
-    assert.equal(result, '工具调用被拒绝（模式：read-only）');
+    assert.equal(result, '⛔ [sofagent 审计] 拒绝：工具调用被拒绝（模式：read-only）');
     assert.equal(wrote, false);
   } finally {
     if (savedHome === undefined) delete process.env.SOFAGENT_HOME;
@@ -136,7 +136,7 @@ test('保守默认拒绝铁律：always-ask 无回调 → 拒绝一切（不是�
     const wrapped = mw.wrapTool(async () => { executed++; return 'ok'; }, 'sf_read', 'r');
     // 连只读工具也要人工确认——无回调即拒绝
     const result = await wrapped({ path: 'README.md' });
-    assert.equal(result, '工具调用被拒绝（模式：always-ask）');
+    assert.equal(result, '⛔ [sofagent 审计] 拒绝：工具调用被拒绝（模式：always-ask）');
     assert.equal(executed, 0);
 
     const lines = readLogLines(dir);
@@ -174,7 +174,7 @@ test('always-ask 有回调：await approvalCallback 拿人工决定（放行与�
     // 人工拒绝
     let wrote = false;
     const wrappedRw = mw.wrapTool(async () => { wrote = true; return 'ok'; }, 'sf_write', 'rw');
-    assert.equal(await wrappedRw({ path: 'b.md' }), '工具调用被拒绝（模式：always-ask）');
+    assert.equal(await wrappedRw({ path: 'b.md' }), '⛔ [sofagent 审计] 拒绝：工具调用被拒绝（模式：always-ask）');
     assert.equal(wrote, false);
 
     // 回调收到 toolName + permission
@@ -208,7 +208,7 @@ test('审批继承：setDefaultApprovalMode 后子 middleware 缺省继承父模
     let executed = 0;
     const wrapped = childMw.wrapTool(async () => { executed++; return 'ok'; }, 'sf_read', 'r');
     const result = await wrapped({ path: 'a.md' });
-    assert.equal(result, '工具调用被拒绝（模式：deny-all）');
+    assert.equal(result, '⛔ [sofagent 审计] 拒绝：工具调用被拒绝（模式：deny-all）');
     assert.equal(executed, 0);
 
     // 显式传 approvalMode 优先于模块默认值
@@ -237,7 +237,7 @@ test('规则引擎 FAIL 优先于审批模式（FAIL 拦截不受 approvalMode �
     // 写 .env 被规则引擎 FAIL 拦截——即使 allow-with-audit 也不执行
     const wrapped = mw.wrapTool(async () => 'ok', 'sf_write', 'rw');
     const result = await wrapped({ path: '.env', content: 'SECRET=1' });
-    assert.ok(String(result).includes('Audit 拦截'), `应被规则引擎拦截: ${result}`);
+    assert.ok(String(result).includes('[sofagent 审计] 拦截'), `应被规则引擎拦截: ${result}`);
   } finally {
     if (savedHome === undefined) delete process.env.SOFAGENT_HOME;
     else process.env.SOFAGENT_HOME = savedHome;

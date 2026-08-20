@@ -510,7 +510,8 @@ function loadTools(role, progressMw = null, auditMw = null) {
         if (auditMw) {
           const verdict = auditMw.check(rawTool.name, input ?? {});
           if (verdict?.blocked) {
-            return `⛔ [Audit 拦截] ${rawTool.name} 被拒绝执行：${verdict.reason}`;
+            // v1.3.9 六十一：worker 工具拦截消息加 [sofagent 审计] 签名前缀（与 audit-middleware.mjs 同口径）
+            return `⛔ [sofagent 审计] 拦截：${rawTool.name} 被拒绝执行：${verdict.reason}`;
           }
         }
 
