@@ -19,6 +19,15 @@ jobs:
       - name: check-docs.sh
         run: bash tools/check-docs.sh
 
+  # v1.3.9（四）：public API 变更检测——@public 符号集变化必须 semver bump + CHANGELOG。
+  # 不装依赖直接跑（AST 引擎不可用时自动回退正则解析，门禁语义不变）。
+  public-api:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: public API change detection
+        run: node tools/check/public-api.mjs
+
   build-and-test:
     runs-on: ubuntu-latest
     steps:
