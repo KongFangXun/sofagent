@@ -203,13 +203,13 @@ LAYER_E=$(find ./docs/guides -name "*.md" -print0 2>/dev/null | xargs -0 wc -l 2
 LAYER_E=${LAYER_E:-0}
 
 # 上限定义
-LIMIT_A=6600  # v1.3.8 bugfix 文档批：A 层 6582>6540 铁律上调 6540→6600（SECURITY 24 规则 SSOT 完整清单表 +42 行，审查修复「文档级 SSOT 缺失」项的正当交付）；此前 2026-08-19 阶段八曾上调 6510→6530
+LIMIT_A=6650  # v1.3.8 轮询语义修正：06/04 SOP 说明段 +41 行（A 层 6642>6600 正当上调——「等通知+心跳冻结探活」根因说明是发版 SOP 可复用知识，非冗余）；此前 v1.3.8 bugfix 文档批 6582>6540 上调 6540→6600
 LIMIT_B=9190  # v1.3.8 rules/ 收敛重构：HOOK.md hook 事件全表+平台边界 +26 行 / SKILL.md+AGENTS.md 路径同步（正当结构性文档，非删内容）；此前 阶段五审查体系 +24→9140
 # v1.3.7: B 层 8945（交付⑥⑨测试数对账+memory_sync 文档），铁律上调 8940→8950；v1.3.6: 8901（累计 8880→8910→8940）
 LIMIT_C=6300  # v1.1.3: 审查体系维度固化 + Harness 可见性视角 + releasing.md tag 门禁；内容增长上调 5800→6300 + 5% 余量
 LIMIT_D=2000  # v1.1.9: D 层纳入口径修正——docs/architecture（v1.1.9 设计 876 行）+ docs/prd（193 行）从 A 层归入 D 层（工程文档与设计文档同语义），700→2000 容纳
 LIMIT_E=3100  # v1.2.5: E 层 2905 行（新增 dashboard-html-dev.md 219 行 + enterprise-deploy 扩展），上调 2700→3100 留余量
-LIMIT_TOTAL=15780  # v1.3.8 rules/ 收敛重构连带（HOOK.md 事件表 +26）；此前 阶段五审查体系 +24→15730
+LIMIT_TOTAL=15830  # v1.3.8 轮询语义修正连带（A 层 +41）；此前 rules/ 收敛重构 +26→15780
 
 # 输出各层
 echo "  A 用户文档:     ${LAYER_A} 行 / ${LIMIT_A} 上限"
