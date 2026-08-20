@@ -1606,17 +1606,36 @@ async function runRegressionPrecheck(runDir) {
   for (const dim of dims) {
     const timeout = DIM_TIMEOUT_OVERRIDE[dim.num] ?? 60_000;
     const { exitCode, output } = await execRegressionDim(dim.script, timeout);
+    // v1.3.8 run-10 修复：output 按行截断（保留前 12 行 + 截断标记）。
+    // 91 维 × 平均 567 字符 ≈ 51KB JSON → 555 行，worker 的 sf_read 上限 500 行
+    // 读不全 → 末尾维度数据缺失（run-10：59/91 维不可判定）。按行截断后总量
+    // 可控（≤ 91×(12+2) ≈ 1274 行 × JSON 转义 ≈ 仍可能超——故配合按字符截断，
+    // 两者取先到者，实测单维 ≤12 行 + ≤400 字符后 JSON 总行数 < 500）。
+    const MAX_DIM_LINES = 12;
+    const MAX_DIM_CHARS = 400;
+    let truncatedOutput = output;
+    const outLines = output.split('\n');
+    if (outLines.length > MAX_DIM_LINES) {
+      truncatedOutput = `${outLines.slice(0, MAX_DIM_LINES).join('\n')}\n…[${outLines.length - MAX_DIM_LINES} 行截断——完整输出见维度脚本实跑]`;
+    }
+    if (truncatedOutput.length > MAX_DIM_CHARS) {
+      truncatedOutput = `${truncatedOutput.slice(0, MAX_DIM_CHARS)}\n…[${truncatedOutput.length - MAX_DIM_CHARS} 字符截断]`;
+    }
     payload.dims[String(dim.num)] = {
       num: dim.num,
       title: dim.title,
       exitCode,
-      output,
+      output: truncatedOutput,
+      truncated: outLines.length > MAX_DIM_LINES || output.length > MAX_DIM_CHARS,
     };
-    console.log(`  [precheck] 维度 ${dim.num} ${dim.title.slice(0, 24)}... exit=${exitCode ?? 'ERR'} (${output.length}B)`);
+    console.log(`  [precheck] 维度 ${dim.num} ${dim.title.slice(0, 24)}... exit=${exitCode ?? 'ERR'} (${output.length}B${outLines.length > MAX_DIM_LINES ? `→${outLines.length} 行截断` : ''})`);
   }
 
   const outPath = join(runDir, 'regression-precheck.json');
-  writeFileSync(outPath, JSON.stringify(payload, null, 2), 'utf-8');
+  // v1.3.8 run-10 修复：紧凑格式写盘（单行 JSON）——sf_read 是「行数」限制非字符限制，
+  // indent=2 格式化的 637 行结构开销（91 维 × 7 行）白白撞 500 行上限（run-10：59/91 维
+  // 数据缺失实锤）。单行格式下 totalLines≈1 ≤ 500 → sf_read 整行全量返回，彻底绕过上限。
+  writeFileSync(outPath, JSON.stringify(payload), 'utf-8');
   console.log(`[driver] regression-precheck.json 已写入 ${outPath}（${dims.length} 维度，耗时 ${((Date.now() - t0) / 1000).toFixed(1)}s）`);
   return outPath;
 }
@@ -2539,31 +2558,45 @@ async function main() {
     }
   }
 
-  // ── v1.3.8 交付七修复（run-06 实测）：--judgment-only 模式注入 acceptance 占位产物 ──
+  // ── v1.3.8 交付七修复（run-06/run-10 实测迭代）：--judgment-only 模式注入 acceptance 真实结果 ──
   // 判断层跳过 acceptance 分片（脚本层直跑保证），但 consolidate/verdict 的 inputs
-  // 声明了 acceptance.md——缺文件会让 fail-closed 误判 FAIL（run-06 三证据实证）。
-  // 修复：把脚本层预跑结果（acceptance-raw.log，若存在）注入为 acceptance.md；
-  // 无预跑日志时写入显式占位（标注「judgment-only 模式由脚本层保证，未走 LLM 分片」），
-  // 让 consolidate/verdict 有据可依而非因缺输入 FAIL。
+  // 声明了 acceptance.md——缺文件会让 fail-closed 误判 FAIL。
+  // 修复演进：
+  //   run-06：注入占位符 → run-10 发现占位被 verdict 拒绝（fail-closed 正确，占位无实证）；
+  //   本版（run-10 修复）：找不到脚本层日志时**主动跑一次 acceptance-test.sh 拿真数据**，
+  //   而不是写占位——保证注入的永远是实证。SOP 已规定脚本层预跑日志落盘 acceptance-raw.log
+  //   （SOFAGENT_ACCEPTANCE_LOG 可覆盖路径），driver 兜底主动执行。
   if (!skipVPhase && args.judgmentOnly) {
-    const accRawPath = process.env.SOFAGENT_ACCEPTANCE_LOG || join(REPO_ROOT, 'acceptance-raw.log');
     const accOutPath = join(runDir, 'acceptance.md');
-    let accContent;
-    if (existsSync(accRawPath)) {
-      const raw = readFileSync(accRawPath, 'utf-8');
-      accContent =
-        `# acceptance-test 结果（--judgment-only 模式 · 由脚本层预跑注入，非 LLM 分片复核）\n\n` +
-        `> 来源：脚本层直跑 ${accRawPath}\n\n` +
-        `\`\`\`\n${raw.slice(0, 4000)}\n\`\`\`\n`;
-    } else {
-      accContent =
-        `# acceptance-test 结果（--judgment-only 模式 · 占位）\n\n` +
-        `> ⚠️ 未找到脚本层预跑日志（SOFAGENT_ACCEPTANCE_LOG / acceptance-raw.log）。\n` +
-        `> 依据设计，--judgment-only 由脚本层直跑保证 acceptance（exit 0 + SUMMARY 全过），\n` +
-        `> 本占位供 consolidate/verdict 有据可依；若脚本层实际未跑，请在阶段六步骤一补跑。\n`;
+    let accRawPath = process.env.SOFAGENT_ACCEPTANCE_LOG || join(REPO_ROOT, 'acceptance-raw.log');
+    if (!existsSync(accRawPath)) {
+      // 脚本层未预跑：driver 主动执行 acceptance（一次性，结果落盘 acceptance-raw.log 供复用）
+      console.log('[driver] --judgment-only：未找到脚本层预跑日志，主动执行 acceptance-test.sh（一次性）...');
+      const { execSync } = await import('node:child_process');
+      try {
+        const raw = execSync('bash FORGE/playbook/acceptance-test.sh', {
+          cwd: REPO_ROOT,
+          encoding: 'utf-8',
+          timeout: 600_000, // 10 分钟上限（314 场景实测约 1.5 分钟）
+          maxBuffer: 10 * 1024 * 1024,
+        });
+        writeFileSync(accRawPath, raw, 'utf-8');
+        console.log(`[driver] --judgment-only：acceptance 实测完成，日志已落盘 ${accRawPath}`);
+      } catch (execErr) {
+        // execSync 失败时 stdout 在 .stdout 字段（非零退出仍返回 Buffer）
+        const partial = execErr.stdout?.toString() || execErr.message || '';
+        writeFileSync(accRawPath, partial, 'utf-8');
+        console.error(`[driver] --judgment-only：acceptance 执行异常（exit=${execErr.status ?? 'unknown'}），日志已尽力落盘——若 SUMMARY 非全过，consolidate 会据此判 FAIL（这是真数据，不是占位）`);
+      }
     }
+    const raw = readFileSync(accRawPath, 'utf-8');
+    const accContent =
+      `# acceptance-test 结果（--judgment-only 模式 · 脚本层实测注入）\n\n` +
+      `> 来源：${accRawPath}\n\n` +
+      `\`\`\`\n${raw.slice(0, 4000)}\n\`\`\`\n`;
     writeFileSync(accOutPath, accContent, 'utf-8');
-    console.log(`[driver] --judgment-only：acceptance 结果已注入 ${accOutPath}（${existsSync(accRawPath) ? '脚本层日志' : '占位符'}）`);
+    const summaryLine = raw.split('\n').filter(l => l.includes('SUMMARY')).slice(-1)[0] || '（未找到 SUMMARY 行）';
+    console.log(`[driver] --judgment-only：acceptance 实证已注入 ${accOutPath}（${summaryLine}）`);
   }
 
   // 非 acceptance shard 步骤串行执行（跳过已处理的 acceptance shard 步骤）
