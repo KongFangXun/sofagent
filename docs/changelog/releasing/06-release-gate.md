@@ -17,7 +17,7 @@
 
 > **为什么开新 session**：阶段三~五在开发 session 做完后，上下文已经很长。判断层需要 15-20 分钟，期间只需执行命令 + 持续轮询 + 汇报——不需要开发 session 的上下文。开一个干净的 session，上下文短、不互相干扰。
 >
-> **为什么必须「持续轮询」而非「等后台通知」（2026-08-20 用户拍板修正）**：v1.3.8 曾一度改为「run_in_background 等自动通知」——但等通知时 session 处于空闲态，**用户在界面上看不到任何进展反馈**，会误以为卡死。**持续轮询的首要目的是 session 可见性**（界面一直显示「在跑」），其次才是顺带发现挂起（心跳冻结 >90s 探活）。token 成本是次要考量——20 分钟约 20 轮轻量 status.json 读取，成本可忽略。判断层与 fresh-eyes-loop 均适用此语义。
+> **为什么必须「持续轮询」而非「等后台通知」（2026-08-20 用户拍板修正）**：v1.3.8 曾一度改为「run_in_background 等自动通知」——但等通知时 session 处于空闲态，**用户在界面上看不到任何进展反馈**，会误以为卡死。**持续轮询的首要目的是 session 可见性**（界面一直显示「在跑」），其次才是顺带发现挂起（心跳冻结 >90s 探活）。token 成本是次要考量——20 分钟约 10 轮轻量 status.json 读取，成本可忽略。判断层与 fresh-eyes-loop 均适用此语义。
 
 ---
 
@@ -41,7 +41,7 @@
    ⚠️ verdict=FAIL 时循环即停（F 修复链默认关闭，无 f-* 产物），如实汇报后等主 session 决策。
    旧 --step 单步模式保留用于单步调试（consolidate 缺 acceptance 产物属预期——judgment-only 模式下
    coverage/consolidate 从 acceptance-raw.log 与脚本层汇报取数）。
-3. **持续轮询（必做，非可选——session 可见性的来源）**：每 60 秒一轮，读 `<runDir>/status.json`，输出一行状态（如「[第 N 轮] step=regression · heartbeat 距今 Xs」）——**让 session 一直活跃，用户界面持续可见「在跑」**。心跳冻结检测顺带完成：heartbeat 距今 >90s 则用 liveness 探针判定——`node FORGE/src/release-gate-driver.mjs --check-alive <runDir>`（只认心跳不认日志——LLM 长窗口日志冻结 ≠ 死亡；alive=RC0 / dead=RC1）。dead → 立即报告主 session，不要无限等。
+3. **持续轮询（必做，非可选——session 可见性的来源）**：每 120 秒一轮，读 `<runDir>/status.json`，输出一行状态（如「[第 N 轮] step=regression · heartbeat 距今 Xs」）——**让 session 一直活跃，用户界面持续可见「在跑」**。心跳冻结检测顺带完成：heartbeat 距今 >90s 则用 liveness 探针判定——`node FORGE/src/release-gate-driver.mjs --check-alive <runDir>`（只认心跳不认日志——LLM 长窗口日志冻结 ≠ 死亡；alive=RC0 / dead=RC1）。dead → 立即报告主 session，不要无限等。
 4. 四步完成后读 <runDir>/verdict.md，3-5 行汇报：裁决结果 / 三步骤通过数 / 失败项 / 建议
 
 铁律：不干涉 driver、不改代码、不探索源码；FAIL 项真伪由主 session 零信任复验（维度脚本自身缺陷会误报 FAIL，逐维复跑分辨「仓库 vs 检查器」）。
