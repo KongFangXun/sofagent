@@ -114,6 +114,9 @@ resolve_data_dir() {
     claude) TARGET="$HOME/.claude" ;;
     codex)  TARGET="$HOME/.codex" ;;
     hermes) TARGET="$HOME/.hermes" ;;
+    # v1.3.9（八）：跨平台适配器扩展——Cursor / Gemini CLI（薄挂载，SKILL/ 单一真相源）
+    cursor) TARGET="$HOME/.cursor" ;;
+    gemini) TARGET="$HOME/.gemini" ;;
     *)      TARGET="$SOFAGENT_HOME" ;;  # 通用安装路径——只写自己的目录
   esac
   if [ -n "$PLATFORM" ]; then
