@@ -109,7 +109,7 @@ ${sections.join('\n\n---\n\n')}
 
 // ── 主流程：key → LLM → 产物；任何 LLM 侧失败降级退出 2 ──────
 const OUT = opts.out || defaultOut('abc', CUR_VER);
-const apiKey = resolveApiKey({ ...opts, __out: OUT, __prompts: { system: SYSTEM_PROMPT, user: USER_PROMPT } });
+const apiKey = resolveApiKey({ ...opts, __out: OUT, __modelCfg: MODEL_CFG, __prompts: { system: SYSTEM_PROMPT, user: USER_PROMPT } });
 
 console.log(`→ 来源 ${loaded.length} 个（${loaded.join('、')}），调用 ${MODEL_CFG.model} …`);
 try {

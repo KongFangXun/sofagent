@@ -26,13 +26,46 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 export const REPO_ROOT = join(__dirname, '../..');
 
 /**
- * GLM-5.2 Coding Plan 配置（与 FORGE/models/glm-5.2.mjs 同源）。
+ * 模型配置：读 FORGE/models/profile.mjs 的 A 角色（与 driver 同源——换模型只改 profile 一处）。
+ * v1.3.9 修复（2026-08-21）：此前硬编码 GLM-5.2，FORGE 模型切换（GLM→deepseek-v4-flash）后
+ * 草稿工具仍调 GLM——GLM API 限额（429 7 天上限）即挂。现同步解析 profile.mjs 的 A 角色
+ * 模型文件（纯文本解析，零异步——loadModelConfig 为同步函数，不能用动态 import）。
+ * GLM 恢复后切回 profile.mjs 即自动跟随，无需改本文件。
  * temperature 由调用方按任务性质覆盖：分类 0.3 / 审查草稿 0.5。
  */
 export function loadModelConfig(overrides = {}) {
+  try {
+    const profilePath = join(REPO_ROOT, 'FORGE/models/profile.mjs');
+    if (existsSync(profilePath)) {
+      const profileSrc = readFileSync(profilePath, 'utf-8');
+      // ① 变量名 → 模型文件：`import deepseekV4Flash from './deepseek-v4-flash.mjs';`
+      const importMap = {};
+      for (const m of profileSrc.matchAll(/import\s+(\w+)\s+from\s+['"]\.\/([\w.-]+\.mjs)['"]/g)) {
+        importMap[m[1]] = m[2];
+      }
+      // ② A 角色引用的变量：`A: { model: deepseekV4Flash,`
+      const aVar = profileSrc.match(/A:\s*\{\s*model:\s*(\w+)/)?.[1];
+      if (aVar && importMap[aVar]) {
+        const modelSrc = readFileSync(join(REPO_ROOT, 'FORGE/models', importMap[aVar]), 'utf-8');
+        const model = modelSrc.match(/model:\s*['"]([^'"]+)['"]/)?.[1];
+        const baseURL = modelSrc.match(/baseURL:\s*['"]([^'"]+)['"]/)?.[1];
+        const apiKeyEnv = modelSrc.match(/apiKeyEnv:\s*['"]([^'"]+)['"]/)?.[1];
+        if (model && baseURL) {
+          return {
+            model,
+            baseURL,
+            apiKeyEnv: apiKeyEnv || 'GLM_API_KEY',
+            temperature: 0.3,
+            ...overrides,
+          };
+        }
+      }
+    }
+  } catch { /* 解析失败时回退 GLM（下） */ }
   return {
     model: 'glm-5.2',
     baseURL: 'https://open.bigmodel.cn/api/coding/paas/v4',
+    apiKeyEnv: 'GLM_API_KEY',
     temperature: 0.3,
     ...overrides,
   };
@@ -78,10 +111,12 @@ export function resolveVersion() {
  * @returns {string} API key（保证非空——空则已退出）
  */
 export function resolveApiKey(opts) {
-  const apiKey = process.env.GLM_API_KEY || opts['api-key'] || '';
+  // v1.3.9：key 环境变量跟随模型配置（apiKeyEnv）——GLM 用 GLM_API_KEY、deepseek 用 DEEPSEEK_API_KEY
+  const keyEnv = opts.__modelCfg?.apiKeyEnv || 'GLM_API_KEY';
+  const apiKey = process.env[keyEnv] || opts['api-key'] || '';
   if (!apiKey) {
-    writeDegraded(opts.__out, 'GLM_API_KEY 未设置', opts.__prompts);
-    console.error('    用法：source FORGE/env.local 后重跑，或把 prompt 粘给任意 AI session');
+    writeDegraded(opts.__out, `${keyEnv} 未设置`, opts.__prompts);
+    console.error(`    用法：source FORGE/env.local 后重跑，或把 prompt 粘给任意 AI session`);
     process.exit(2);
   }
   return apiKey;
