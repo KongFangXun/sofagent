@@ -7,6 +7,8 @@
 
 ## 现在在哪：v1.3.8（已交付）
 
+> **v1.3.8 已于 2026-08-20 交付**——代理网关硬边界（唯一出入口 + 风险分级 + 权限单调守卫 + HITL 审批队列激活）+ 数据静态加密（纯 TS AES-256-GCM 透明加解密 + 密钥指纹强制备份）+ Durable Execution L3（WAL 三态恢复 + undo 三档回滚）+ 异步长任务自治（cron 三档糖 + 依赖图 + 死循环检测）+ FORGE driver 保活三件套（pm2 托管 / resume 断点续跑 / liveness 探针）+ SDK sandbox:true 启用（工具/文件/网络三层沙箱）+ release-gate 瘦身（--judgment-only 判断层直启 + F 循环 FAIL 即停）+ fresh-eyes 成本重构（usage.jsonl 计量 + B 侧复核模式）+ 快照写路径加固（revert 两阶段原子化）· 另含 bugfix 批次（四 P0 安全修复 + 防屎山四项）。详见 [v1.3.8 开发日志](./changelog/v1.3/v1.3.8.md)。
+>
 > **v1.3.7 已于 2026-08-18 交付**——SubAgent 完整沙箱 + 场景驱动权限 + AgentShield 五类扫描 + 行业 overlay 四套 + 断路器行为监控 + ontology 生命周期 + 审查循环自适应并发 + memory-sync 路径通用化 + 26 项独立审查 bugfix。详见 [v1.3.7 开发日志](./changelog/v1.3/v1.3.7.md)。
 >
 > **v1.3.6 已于 2026-08-18 交付**——引擎接口外化完整版（模型层接入前置）：三个数据接口（Workflow 标准格式 + 运行容器 + 审阅协议字段 / Ontology 标准 Schema 注册 / 模型注册 + 灰度切换）+ 一个代码接口（SubAgent 托管 SDK `harness.wrap`）+ 训练协议三约定 + 预算控制 + 路由决策可解释性 + 机器可判定验收 tool + 可靠性五件（FORGE worktree 隔离 / 双闸验证 / 疲劳度检测 / 分级降级 / decisions.jsonl 完整版）· MCP 52→60 tools。详见 [v1.3.6 开发日志](./changelog/v1.3/v1.3.6.md)。
@@ -21,6 +23,7 @@
 
 | 版本 | 核心交付 |
 |------|------|
+| **v1.3.8** | 🛡️ 代理网关硬边界（唯一出入口 + 风险分级 + 权限单调守卫 + HITL 审批队列激活）+ 🔐 数据静态加密（纯 TS AES-256-GCM + 密钥指纹强制备份）+ ⏸️ Durable Execution L3（WAL 三态恢复 + undo 三档）+ 🤖 异步长任务自治（cron 三档糖 + 依赖图 + 死循环检测）+ ⚙️ FORGE driver 保活三件套（pm2 / resume / liveness）+ 🧩 SDK sandbox:true 启用（三层沙箱）+ 🔻 release-gate 瘦身（--judgment-only + F 循环 FAIL 即停）+ 📊 fresh-eyes 成本重构（usage.jsonl + B 侧复核）+ 📸 快照写路径加固（revert 原子化）· bugfix 四 P0（A1 后缀绕过 / A2 FFFD / 安装链 / 声称断裂） |
 | **v1.3.7** | 🏰 SubAgent 完整沙箱（虚拟 FS / 网络白名单 / 工具中介 / 虚拟 key / 独立进程 / A-B 双跑）+ 🔐 场景驱动权限（身份→场景→风险→放行，fail-closed）+ 🛡️ AgentShield 五类扫描（MCP 画像 / Hook 注入 / 配置审查 / 密钥增强 / Shadow AI 发现）+ 🏥 行业 overlay 四套（fintech/medical/government/ai）+ ⚡ 断路器行为监控（ASI08 熔断 + ASI10 隔离）+ 🌳 ontology 生命周期（branch/trunk + migrateToTrunk 审阅门 + OKF 三件套）+ ⚙️ FORGE 审查循环自适应并发 + 🔌 memory-sync 路径通用化 + 26 项独立审查 bugfix |
 | **v1.3.6** | 🔌 引擎接口外化完整版（模型层接入前置）：📥 三个数据接口（Workflow 标准格式 + 运行容器 + merge_criteria/approver 审阅协议字段 / Ontology 标准 Schema 注册 D1-D5 留痕 / 模型注册 + 灰度切换全流程审计 + 强制人审）+ 🧩 SubAgent 托管 SDK（harness.wrap 双形态兼容）+ 🏋️ 训练协议三约定 + 预算控制（自 v1.4.1 前移）+ 🧭 路由决策可解释性（EndpointProfile + route-policy + routeReason 结构化理由链）+ ✅ 机器可判定验收（define_acceptance / check_acceptance，复用 Benchmark 判定引擎）+ 🛡️ 可靠性五件（FORGE worktree 隔离根治 run-07 / 双闸验证 postToolCall 副作用复查 / Agent 疲劳度检测 / 分级降级梯队 / decisions.jsonl 五分类完整版）+ 🌳 仓库森林叙事升级 · MCP 52→60 tools（8 个新 tool 全登记） |
 | **v1.3.5** | 🧬 MCP 自进化+运维闭环（run_ab_test / promote_ab 人审晋升 / snapshot_list / snapshot_restore 人审恢复 · 48→52 tools）+ 🌱 instinct→skill 自动进化（三源提取 + 置信度评分 + /evolve 聚合 + 错题本，DSH 插件形态预留）+ 🤝 FDE 运维五件（陪跑期/进场记忆/错题本/节点注册表/审计问卷 7 行业脚本）+ 🔒 依赖安全升级（vitest→4.1.10 critical 清零 + automerge 1.x→3.x 包名切换 + LangGraph/js-yaml/archiver）+ 🔌 DSH MCP 互通（52 tools stdio 即挂 + 人审语义不降级）· bugfix 38 项前置 |
@@ -94,6 +97,8 @@ sofagent 的定位正卡在这个转折点上：审计引擎（治理侧）+ Ont
 
 > 🔗 **版本重排说明**（2026-08-09）：原 v1.4.0（沙箱/权限/网关/加密/WAL）→ v1.3.7/v1.3.8；原 v1.5.0（meta-harness）→ v1.3.9；原 v2.0（引擎接口外化）→ v1.3.6。依赖链在 v1.3.x 内已满足，模型层接入需要接口尽早就绪。v1.4.0 版本号重新启用（承载 Web 工作明细页 + 成本审计）；v1.5.0 / v2.0 版本号留空，未来按需重新规划。各版本详细重排原因见对应 [开发日志](./changelog/)。
 
+> 🔒 **开源/商业边界（2026-08-20 明确）**：本 MIT 仓库只做**信任层**（审计/回溯/注入/进化/沙箱/网关/审批/规则引擎）+ **商业侧接口预留**（训练引擎只留 `train_submit` 类协议接口与审计、商业平台 只留 `workflow_export/gaps/contribution_query` 类 MCP 接口与多租户路径抽象）。**商业模型层 训练引擎与 商业平台 平台的实现全部在商业侧**（独立仓库），不进开源排期——v1.4.x 的「训练引擎」标题均指接口与协议交付，非引擎实现；开源门面（README/SKILL）不宣传商业产品。
+
 ---
 
 ## 行业印证
@@ -129,39 +134,21 @@ sofagent 的定位正卡在这个转折点上：审计引擎（治理侧）+ Ont
 | **trimMessagesSafe 作用域审计（v1.3.4 release-gate 遗留）** | FORGE 消息裁剪的作用域边界确认（跨闭包引用同款风险家族） |
 | **评估反哺闭环端到端场景（v1.3.4 verdict 遗留）** | harvest→jury→promote 全链路 acceptance 场景（当前只有 3 处单点覆盖） |
 | **MCP 暴露 audit 数据对外（DataFlow 启发）** | v1.3.6 已排期 ontology/workflow 暴露面；audit 数据对外暴露（读 history.jsonl/decision-log 的 MCP 接口）作为 meta-harness（v1.3.9）的延伸能力评估 |
-| **GEPA / MemEx / RLM 评估（Omnigent 路线图参考 · v2.x）** | Omnigent 路线图四项（GEPA 自动优化 / MemEx 持久记忆 / RLM 强化学习 / Server MCP）方向在 v2.x 评估框架时参考——跟踪其落地后再对齐，不抢跑 |
 | **spec-first 硬禁令（OpenFDE 启发 · 设计约束）** | 单一事实源——transcript 永不直驱代码，spec 才是唯一驱动 |
 | **FDE 进场记忆目录工程化（fdeops-arch 启发）** | 每客户一个 `data/fde-sessions/<client-id>/` 目录 + 10 文件各司其职 + session-stop 自动捕获——方法论已在 FDE/GUIDE §5.8b 落盘，工程化（自动捕获 hook + 跨 session 恢复）与 v1.3.5 instinct 自动进化合并评估 |
-| **Memory Vault 跨工具交接（ECC 启发）** | 企业多 AI 工具场景的 FDE 过程记忆跨工具交接——`memory handoff --from workbuddy --target claude` 式的跨 harness 交接能力 |
 | **多 Agent 协作阵型库（ccteam 启发）** | 把协作模式抽象为可配置阵型（commander&crews / driver&advisor / cross-review / bake-off / research-triangulation / cost-pyramid 六种）——等 v1.3.6 SubAgent 托管 SDK 落地后评估是否做阵型配置层 |
 | **L4 工具层自进化（self-evolution 五层谱系 · 2026-08-17）** | Agent 自写工具→SkillScan 安全门→人审→注册进工具箱——五层中唯一空白层（L1 记忆/L3 技能已交付，L5 训练引擎 v1.4.1 排期中）；安全语义基建现成（SkillScan + promote 人审模式复用），谱系定位见 PHILOSOPHY §五 |
-| **进化曲线可观测指标（self-evolution 启发 · 2026-08-17）** | 「做 1000 次任务后是否比第一次更强」产品化为 dashboard 曲线。**✅ 已毕业落 v1.3.9 工作明细节「进化曲线聚合」（2026-08-17）**：四维趋势（审计 PASS 率 / 错题复发率 / AB 胜负 / 首次通过率），Web 曲线归 v1.4.0 |
-| **失败记忆显式化（MateBot 启发）** | ~~独立"错题本"机制~~ **✅ v1.3.5 已交付**（instinct/failure-log.ts + 三源提取消费），条目留档待清 |
 | **凭证隔离 Vault（OMA 启发）** | 沙箱发 HTTP 请求时动态注入凭证、Agent 代码碰不到 token——执行层安全基础设施，v1.3.7 虚拟 key 凭证边界已部分覆盖，完整 Vault 属 v2.x+ 方向 |
-| **FDE 节点注册表（loop-engineering 启发）** | ~~`fde-registry.yaml` 机器可读 + 巡检~~ **✅ v1.3.5 已交付**（fde-registry-loader/types + daemon @daily 巡检），条目留档待清 |
-| **执行层隔离 Worktree 模式（loop-engineering 启发）** | 审查层 **✅ v1.3.6 已交付**（FORGE worktree 隔离根治 run-07）；剩余：编排引擎内置 `worktree create`（中期）→ L2+ 硬性要求（远期） |
 | **理解债务应对（loop-engineering 启发）** | Comprehension Debt Spiral（S2 级故障）——审计已覆盖「发生了什么」，需补「为什么这么做」（auto-PR 要求 Agent 解释决策）+「本周摘要」（daemon 周报）|
-| **DSH 正向执行后端接入（DeepSeek Harness 启发）** | 定义 `ExecutionBackend` 接口，DSH Cordis 运行时成为可选执行后端（fallback LangGraph createReactAgent）——编排层（图结构+审计卡关）与执行层显式分离。**v1.3.4 已交付**：接口骨架 + 版本守卫（rc 拦截）+ launcher + FORGE 两 driver 迁移。**v1.3.6 补全**：runCordisAgent 对照正式版 API 重写 + 剩余调用点（dag-runner/composer/loop/node-executor）迁移 |
-| **DSH 反向插件适配（DeepSeek Harness 启发）** | 把 sofagent @public API 包装成 Cordis **plugin 家族**（audit/rollback/inject/ontology/gate 五个独立插件，2026-08-16 单点改家族），反向暴露给 DSH 生态——依赖链：v1.3.6 ExecutionBackend 接口 → v1.3.9 API 分级 @public → **v1.4.0 插件包装**（2026-08-14 明确）。**v1.3.5 已先行 MCP 互通**（DSH mcp-client 挂 sofagent-mcp 即调 52 tools——插件婚姻前的先牵手，2026-08-15） |
-| **DSH 可靠调度插件（daemon 差异化插槽 · 2026-08-15 新增）** | DSH schedule 三硬局限（无 cron / session 必须 live / 错过不补）= sofagent daemon 的生态位——把 daemon inspector 巡检能力以 DSH 插件形态提供（可靠调度 + 补偿执行 + 离线运行）+ **jobs 互操作（2026-08-16 补充）：daemon 巡检注册为 DSH job（长任务托管/进度/终止统一），反方向 DSH job 完成通知走 sofagent 审批队列——两边任务生命周期互相可见**。**✅ 已并入 `cordis-plugin-daemon`（v1.4.0，2026-08-16 落位）** |
-| **DSH 反馈信号消费（2026-08-16 新增）** | DSH 消息级赞/踩 sidecar（版本化写入、仅认 append-origin 非空 assistant 消息）→ sofagent v1.3.4 评估三步（harvest→jury→promote）的 jury 环节直接把用户赞/踩当裁决信号——**用户的拇指就是评估者**。**✅ 已并入 `cordis-plugin-evolve`（v1.4.0，2026-08-16 落位：赞/踩 = 进化信号源之一）** |
-| **DSH Ontology + FDE 方法论 plugin（2026-08-16 新增）** | DSH 生态**语义层真空**：ontology（entity/concept/relations + entity-store/merge-engine）注册成 tools（`ontology_define/query/validate`）给多 Agent 协作共享语义底座（SHACL 形状约束=协同治理层，见 ARCHITECTURE §七锚点）；FDE 方法论（五要素访谈/三问判定/量化四字段）包装成 `fde_interview/classify/quantify` tools。**workflow 不做 plugin**（ctx.workflowEngine 是生态主人地盘）——走 v1.3.6 已预留的格式互转。量化只带年薪问询框架（年节省 = 岗位真实市场年薪 × AI 接管工时占比），薪酬基准属 商业模型层 不进开源。**✅ 已排 v1.4.0**（ontology 并入 `cordis-plugin-ontology`，FDE 方法论并入 `cordis-plugin-fde`，2026-08-16 落位） |
 | **DSH 训练控制面 plugin（2026-08-16 新增 · 深水区终局）** | v1.4.x 训练引擎的控制面 tools（`train_submit/status/budget_check`）天然 plugin 形态（DSH jobs 托管长任务互补）；执行面/GPU/商业模型层 训练资产**绝不进 plugin**（§3.6 归属决策：训练资产属商业层）。终局拼图：Trajectory 采集（v1.3.6）+ 训练引擎（v1.4.x）+ plugin 包装 = **DSH Agent 用自己的执行轨迹训练自己**（Cordis 论文指向但 DSH 未交付的自进化 Harness）。**远期方向：v1.4.x 尾段或 v2.x，引擎本体稳定后再评估** |
 | **ACS YAML 策略引擎（Microsoft AGT 启发）** | 现有 ruleset 是 JSON，AGT 的 ACS 用 YAML + OPA Rego + Cedar 三引擎——策略更人类可读，需评估兼容性 |
-| **Shadow AI Discovery（Microsoft AGT 启发）** | 扫进程/配置/仓库发现未注册「影子 agent」——审计盲区，与 v1.3.7 行为监控互补。**✅ 已毕业落 v1.3.7 AgentShield 第五节（2026-08-17）** |
 | **RL 训练治理（Microsoft AGT Agent Lightning 启发）** | 训练期间策略违规惩罚——与 v1.4.1 训练引擎预算控制同向 |
 | **OWASP Agentic Top 10 全覆盖路线（Microsoft AGT 启发）** | v1.3.7 补 ASI08+ASI10，v1.3.9 补 ASI01+ASI04，远期 10/10 全覆盖对齐 AGT |
 | **评测结论证据树（HarnessEval 启发）** | 评测结论须挂可验证证据树——每个结论可回溯到原始执行证据，与审计引擎「先留证据再给结论」同源。可借鉴 Plan→Route→Decompose→Verify 四阶段范式升级 release-gate-loop 的裁决链。当前单源（15 机构联合评测主张），待独立来源累计后评估排期 |
-| **能力缺口地图（GitHub 式协作底座启发 · 2026-08-16 新增）** | 从「能力地图」（ontology 有什么能力）进化到「能力缺口地图」（哪里需要 PR）——人+AI 想给别人的树提 PR，先得知道「哪棵树需要什么、哪里有空缺」，issue 化的贡献机会。依赖 worklog（v1.3.9）+ 能力地图（ontology lifecycle v1.3.7）成熟后才有土壤，暂占概念位 |
-| **fork 语义（GitHub 式协作底座启发 · 2026-08-16 新增）** | GitHub 的 fork 在企业语境 = 部门复制别人的能力改造成自己的版本（复制 + 改造 + 独立演进），比「复用」更激进。当前能力公地是「调用」（复用），无「fork」（分叉演进）。依赖能力公地（v1.3.4）成熟后评估，暂占概念位 |
-| **goal 级持久状态内核（Loop Engineering 控制面启发 · 2026-08-19 新增）** | 长程目标的状态收拢——goal/todo/gate/quota/evidence 聚为一个持久状态层，看板只是投影，状态层才是事实源。与我们现状的差距：workflow 是流程，ontology 是资产，还缺「目标生命周期」这个维度（目标变化/证据过期/agent 交接时状态怎么续）。与 v1.3.9 worklog 数据层呼应，暂占概念位 |
 | **成本控制前移：quota 事前门禁（Loop Engineering 控制面启发 · 2026-08-19 新增）** | 每轮执行前先问配额、验证过的回写才记 spend——成本从「事后记账」前移为「事前问路」，与 v1.3.7「守卫先于事件分发」哲学同向。v1.4.0 成本审计 WARN only 为起点，事前门禁为演进方向 |
 | **证据强度分级标注（Loop Engineering 控制面启发 · 2026-08-19 新增）** | 对外展示的案例/证据按来源强度分级（公开可查 / 用户自报 / 自测自报），只维护最强少数案例——防止把自测当实证。当前 VALIDATION/THANKS 有来源纪律但无强度分级，发版 SOP 可吸收 |
 | **运行时 should-run 判定链（Loop Engineering 控制面启发 · 2026-08-19 新增）** | 每轮开工前统一问一遍的判定链：健康 → 人审 gate → 证据等待 → 专注等待 → 配额，全部通过才执行——断路器（v1.3.7）两态的丰富形态，等运行时数据积累后评估演化 |
-| **任务租约两层机制（Loop Engineering 控制面启发 · 2026-08-19 新增）** | 软租约（claimed_by 可见性标注）+ 硬租约（owner/TTL/幂等/转移，竞争单元 per-todo 非 per-goal）——L2 协作与 MergeQueue 的未来演化形态，当前 leader 编排够用，换租约是大架构决策 |
-| **通知冷却窗口（Loop Engineering 控制面启发 · 2026-08-19 新增）** | 人审 gate 重复通知抑制 + 冷却窗口——企业 webhook 推送会通知轰炸的解法，待网关/推送场景积累痛点数据后评估 |
 | **依赖方向架构测试（Loop Engineering 控制面启发 · 2026-08-19 新增）** | CI 强制包依赖方向（控制面不得依赖展示/CLI 层）——审查视角有但 CI 无强制，低成本高价值，需先定包边界清单 |
-| **商业平台 平台接口预留（2026-08-17 新增 · 商业产品层前置）** | 商业平台（商业 SaaS 产品层，规划文档独立于本 MIT 仓库维护）需要 sofagent 预留的平台接口，提前定义、**逐条对应 v1.4.x 实际排期**：**G1 workflow 模板导出/导入 + 血缘追踪**（MCP `workflow_export`/`workflow_import`，挂靠 v1.4.4 模型注册器同类机制扩展——workflow 模板同样可注册，模板元数据加血缘字段）· **G2 能力缺口查询**（MCP `workflow_gaps`——读 workflow 状态找「缺人/缺能力的节点」，悬赏式 PR 的发现接口，**v1.4.7 承载**：依赖 worklog v1.3.9 + ontology lifecycle v1.3.7）· **G3 计量数据暴露**（**✅ v1.4.0 `cost_query` 已覆盖**——成本审计数据口，商业平台 credit 成本轨直接消费，无需新增）· **G4 绩效数据导出**（MCP `contribution_query`——读审计 + decision-log 算每人/每 workflow 贡献度，DKP 价值轨数据源，**v1.4.7 承载**：对齐 v1.4.5 量化四字段）· **G5 MCP 连接器注册/发现**（挂靠 v1.4.2「DB/API 数据源」扩展——企业存量系统 OA/CRM/ERP 经 MCP 接入，先打通「接入」，连接器注册/发现随 SaaS 需要再补）· **G6 节点级可见性元数据**（workflow schema 加 `visibility` 字段 open/private/result-only——任务面/数据面分离，审阅门按此执行，**v1.4.7 承载**）· **G7 多租户抽象层**（引擎层数据路径 `data/<tenant>/` 命名空间 + 审计/日志按租户隔离，**v1.4.7 v0**：数据路径抽象，隔离策略 v2.x 细化） |
 | **审计存储 SQLite 迁移（DeepSeek Harness RC.8 启发 · 2026-08-20 新增）** | history.jsonl 明文存储（LIMITATIONS 已披露）→ SQLite 迁移评估——DSH RC.8 实测 SQLite 后端读写/分叉性能提升 + 存储体积下降（数据结构不兼容），sofagent 审计历史若迁 SQLite 可获得查询能力（按 agent/时间/规则过滤）+ 体积收益；大工程（数据迁移 + 兼容层 + 既有 reader 改造），等 worklog 聚合（v1.3.9）消费模式跑稳后评估。**候选版本：v1.4.7**（与 G7 多租户数据路径同批动引擎内核，G7 v0 先做路径抽象、SQLite 引擎替换随后评估） |
 | **UI 层审计（多模态截图证据 · 2026-08-20 新增）** | 审计从代码 diff 扩展到 UI 行为——Agentic Browser（v1.3.9）截图经多模态分析产出 UI 层审计证据（「表单提交是否正确」不再只靠断言），截图作为审计证据入 history；依赖 v1.3.9 多模态链路跑通 + 审计证据模型扩展，暂占概念位。**候选版本：v2.x**（证据模型扩展是远期，v1.4.x 专注训练引擎与 商业平台 接口） |
 
