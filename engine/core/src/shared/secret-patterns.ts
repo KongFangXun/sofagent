@@ -77,6 +77,16 @@ export const REDACTION_PATTERNS: { pattern: RegExp; replacement: string }[] = [
  * v1.2.5 §4.10.2: 域名白名单（A20 不泄外联用）
  *
  * 白名单域名不触发外联告警——registry/CDN/文档仓库等合法外联目标。
+ *
+ * ⚠️ v1.3.9 bugfix 四十七（fresh-eyes H-12）：通用域白名单的隐蔽外联风险评估——显式权衡记录：
+ *   - github.com / raw.githubusercontent.com / codeload.github.com：**保留**。CI 场景（npm
+ *     install 拉 GitHub 依赖、action 拉 raw 文件）是合法高频外联，拦截会导致 CI 全线误报；
+ *     代价是恶意 Agent 可借 gist/raw 隐蔽外传——已通过 A20 的审计留痕（外联动作落日志）+ 人工
+ *     复核提示兜底，属「可审计的已知缺口」，非静默放行。若未来需要更强边界，改为「gist 仅 GET、
+ *     raw 高敏感」分级（排期随 A20 规则演进评估）。
+ *   - googleapis.com / cloudflare.com：**保留**。Google Cloud / Cloudflare 是主流云服务
+ *     SDK 默认端点（存储/函数/边缘），拦截会误伤正常云集成；隐蔽外传风险同上，靠审计留痕兜底。
+ *   - 综合：白名单域「全动作放行」是当前形态，未做 GET/写 分级——已知缺口，登记不静默。
  */
 export const DOMAIN_WHITELIST: string[] = [
   'localhost', '127.0.0.1', '0.0.0.0', '::1',
