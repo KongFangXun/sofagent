@@ -208,32 +208,32 @@ fi
 
 > GitHub Release published 后，`.github/workflows/release.yml` 自动触发，publish `@sofagent/audit` 和 `@sofagent/mcp` 两个包到 npm。其余 10 包在步骤八手动 publish。
 
-### 5.0 Release Note 生成 → 自检 → 上一版结构对照（2026-08-19 用户拍板强化的三道工序）
+### Release Note 生成 → 自检 → 上一版结构对照（2026-08-19 用户拍板强化的三道工序 · 步骤七必做）
 
 > 🔴 **历史痛点**：v1.3.0~v1.3.6 每次 release note 发布后都发现问题再改（title 漂移/质量表缺项/骨架不同构）——「改了再发」的成本是 npm 用户看到的第一个版本就是错的。从 v1.3.7 起：**release note 必须先过自检 + 上一版结构对照，才允许 gh release create**。三道工序缺一不可：
 
-**工序 1 · 按规范生成**：严格按下方「Release Notes 格式规范」生成 body（title 主题短语 / 首行定位句 / 核心变更功能领域式 / 质量验证固定 7 项 / 尾链）。
+**工序一 · 按规范生成**：严格按下方「Release Notes 格式规范」生成 body（title 主题短语 / 首行定位句 / 核心变更功能领域式 / 质量验证固定 7 项 / 尾链）。
 
-**工序 2 · 生成后自检（跑脚本，不看感觉）**：
+**工序二 · 生成后自检（跑脚本，不看感觉）**：
 
 ```bash
-# 2a. 质量验证表必须恰好 7 项（不可增减——v1.3.0/1.3.1 缺 release-gate/fresh-eyes 的教训）
+# ① 质量验证表必须恰好 7 项（不可增减——v1.3.0/1.3.1 缺 release-gate/fresh-eyes 的教训）
 echo "$BODY" | grep -c "^| "   # 期望 7 个表行（表头 2 行不算，从「npm test」数到「fresh-eyes」）
 
-# 2b. H2 骨架与上一版同构（五要素：定位句/核心变更/质量验证/尾链）
+# ② H2 骨架与上一版同构（五要素：定位句/核心变更/质量验证/尾链）
 echo "$BODY" | grep -E "^## "          # 期望输出 ## 🔨 核心变更 与 ## ✅ 质量验证
 gh release view v上一版 --json body -q '.body' | grep -E "^## "
 
-# 2c. 固定 7 项逐字核对（每项必须在质量表中出现一次）
+# ③ 固定 7 项逐字核对（每项必须在质量表中出现一次）
 for item in "npm test" "acceptance-test" "shellcheck" "check-version" "回归检查" "release-gate" "fresh-eyes"; do
   echo "$BODY" | grep -q "$item" && echo "✅ $item" || echo "🔴 缺 $item"
 done
 
-# 2d. 尾链存在且为 markdown 链接语法
+# ④ 尾链存在且为 markdown 链接语法
 echo "$BODY" | grep -qE '\[详细开发日志\]\(\./docs/changelog/' && echo "✅ 尾链" || echo "🔴 缺尾链"
 ```
 
-**工序 3 · 上一版结构对照（2026-08-19 用户拍板：取代人工过目）**：自检全过后，与上一版 release body 做**结构级并排对照**——title 形式（`vX.Y.Z — emoji 短语`）/ 定位句有无 / H2 骨架 / 质量表 7 项顺序 / 尾链位置，五要素逐一比对上一版，**结构不一致即重写，直到同构**。机制标准 = 上一版 release note（当前参考 v1.3.6）。对照命令：`gh release view v1.3.6 --json body,title -q '{title, body}'`。
+**工序三 · 上一版结构对照（2026-08-19 用户拍板：取代人工过目）**：自检全过后，与上一版 release body 做**结构级并排对照**——title 形式（`vX.Y.Z — emoji 短语`）/ 定位句有无 / H2 骨架 / 质量表 7 项顺序 / 尾链位置，五要素逐一比对上一版，**结构不一致即重写，直到同构**。机制标准 = **v1.3.7 实际发布物（2026-08-20 用户拍板的标准锚点，见 08-doc-finalize.md Release Notes 段）**——若上一版漂移（v1.3.8 曾两次漂移被作者退回），以 v1.3.7 为准重写，不追随上一版。对照命令：`gh release view v1.3.7 --json name,body -q '{name, body}'`（锚点）+ `gh release view 上一版 --json name,body`（漂移检测）。
 
 ```bash
 > 🔴 **发布前必做（v1.3.6 教训）**：生成 body 后先与上一版并排对照——`gh release view v上一版 --json body -q '.body' | grep -E "^## "`——两版 H2 骨架必须同构（首行定位句/核心变更/破坏性变更/质量验证/尾链五要素）。**changelog 内嵌的 Release Notes 段 ≠ GitHub Release body**：前者归 08 的 N1-N7 管（✨ 新功能 bullet 式），后者归本规范管（### 功能领域子标题式）——分别核对，禁止把 changelog 段直接复制当 body。
@@ -462,3 +462,6 @@ gh api repos/O/R/git/refs/heads/main -X PATCH -f sha=<新commit>
 1. **base64 内容禁用 `-f content=` 传参**——大文件 base64 超 ARG_MAX 报 `Argument list too long`。必须 `--input -` 从 stdin 传 JSON body（`{"content":"<base64>","encoding":"base64"}`）
 2. **`.gitattributes` 的 eol 转换**——`*.ps1 text eol=crlf` 会让 git 存 LF 规范化 blob，工作区是 CRLF。上传必须用 `git cat-file blob <本地git sha>` 拿规范内容，不能读工作区文件（否则 sha 不一致）。**验证铁证：建 tree 后远端 tree sha == 本地 `git rev-parse HEAD^{tree}` = 逐字节一致**
 3. **cat-file 必须用本地 git blob sha**——不能用「上传后 GitHub 返回的 sha」去 cat-file（本地无此对象 → 输出空 → 上传空 blob，sha 变 e69de29b）。修正时用 `git ls-tree` 重新拿本地 sha
+
+**🔴 四坑（v1.3.8 补 · verify CI 失败根因）——tree 条目 mode 必须用本地真实值**：tree 每一项带 mode（`100644` 普通 / `100755` 可执行），**硬编码 `100644` 会让所有 .sh/.mjs 丢失执行位**——推送前 `git ls-tree -r HEAD | grep "^100755"` 列出全部可执行文件，tree 条目逐项用本地 mode。丢失后 verify CI 报「cleanup.sh 缺失或不可执行」（find 找到文件但 `-x` 检查失败）。**恢复只需一次操作**：blob SHA 只依赖内容，同一文件的 755 与 644 版本 blob SHA 相同——建一个只含 N 个 100755 条目的新 tree（base_tree=当前远端 tree，sha 引用已存在 blob）→ 建 commit → 更新 ref，无需重传内容。**推送完成必验**：远端 tree sha == 本地 `git rev-parse HEAD^{tree}`。
+> 另：Git Data API 的 create-tree **无法表达删除条目**——rename（R100）在 diff 里是「新路径新增」，旧路径永远留在 base_tree；含删除/rename 的 commit 推送后必须用 Contents API（`gh api repos/O/R/contents/<path> -X DELETE -f sha=<file sha>`）逐个补删，最后同样以 tree sha 一致性收尾（v1.3.8 实测：82 commits 推送后补删 6 个残留 + 恢复 34 个执行位，最终 1162 blobs 零差异）。
