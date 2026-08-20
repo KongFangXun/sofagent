@@ -4,8 +4,9 @@
 // 覆盖：
 //   - createAuditMiddleware 三态判定（PASS/WARN/FAIL）
 //   - FAIL 拦截优先于 progress（wrapTool 返回拒绝消息，不执行原 func）
-//   - 运行时审计日志写入 data/audit/runtime/<repo-hash>/runtime-audit.jsonl
-//   - 交付 8：仓库隔离（git 目录 → repo-hash；非 git → nogit-<cwd-hash>）
+//   - 运行时审计日志写入 data/audit/runtime/<repo-hash>/runtime-audit.jsonl（FORGE 内部）
+//   - 交付 8：FORGE 内部仓库隔离（git 目录 → repo-hash；非 git → nogit-<cwd-hash>）；
+//     引擎产品主链（history.jsonl）仍全局单文件，隔离排期 v1.3.9
 //   - args 摘要脱敏（content/command 等字段不落原文）
 //   - emitDecision 决策日志联动（TOOL_GATE）
 //   - 交付 3：requireApproval → HITL 待批准消息 + recordHitlAudit 决策归档
@@ -86,7 +87,8 @@ test('wrapTool: FAIL 拦截返回拒绝消息且不执行原 func', async () => 
   let executed = false;
   const wrapped = mw.wrapTool(async () => { executed = true; return 'ok'; }, 'sf_write');
   const result = await wrapped({ path: '.env', content: 'x' });
-  assert.ok(result.includes('Audit 拦截'));
+  // v1.3.9 六十一：拦截输出加 [sofagent 审计] 签名前缀（品牌铁律）
+  assert.ok(result.includes('[sofagent 审计] 拦截'));
   assert.equal(executed, false); // 原 func 未执行
 
   // PASS 工具正常执行

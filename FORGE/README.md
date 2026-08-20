@@ -97,6 +97,8 @@ FORGE 的 sub-agent 定义在 `SKILL/agents/` 下：
 
 fresh-eyes-loop 的 A/B 即基于 reviewer + engineer 构建（同底座，不同行为指令——见 `prompts/`）。
 
+> **⚠️ `FORGE/SKILL/` 与顶层 `SKILL/` 的关系**：两者同名但职责不同——`FORGE/SKILL/` 是 FORGE **内部 loop skill**（fresh-eyes-loop / release-gate-loop 的编排定义，仅 FORGE 自迭代用，不对外分发）；顶层 `SKILL/`（`SKILL/SKILL.md`）是**产品分发物**（FDE Agent 的运行时 skill，随 sofagent 安装部署到平台 skill 目录）。勿混用——改 FORGE 内部 loop 行为改 `FORGE/SKILL/`，改产品交付物改顶层 `SKILL/`。
+
 ## 目录
 
 ```
@@ -126,5 +128,9 @@ FORGE/
     progress-middleware.mjs      ← 进度上报中间件
     visibility.mjs / disk-backend.mjs / reporters/
 ```
+
+### 技术债登记 · 拆分排期
+
+- **`FORGE/src/fresh-eyes-driver.mjs`（3691 行，仓内最大脚本）**：`driver-base.mjs` 已抽 1499 行公共层（preflight / 信号清理 / 镜像漂移防御），但单文件体量仍是贡献者认知税。**拆分排期：下次新增 driver 能力时按模块拆分**——触发条件 = 新增 driver 能力或触及 fresh-eyes-driver 长文件维护；本轮不拆代码（无近期触发因素，强行拆属高风险重构）。
 
 > **演进历程**：FORGE 从硬编码串行工具包（engineer→audit→reviewer 单循环 + loop-install.sh 独立安装）→ workflow 驱动（`FORGE/SKILL/<loop>/` + driver 自动编排）→ 双层循环架构（外环 releasing.md loop body + 内环 fresh-eyes/release-gate）。旧 `loop-workflow.sh`、`FORGE/SKILL.md`、`FORGE/loop-install.sh`、`FORGE/releaser/` 已删除。当前两个内环已可 driver 自转；外环的关键节点正逐步从"手动审批"升级为"证据闸门"——最近一轮补上的是 A0 的 `check-dev-prompt.sh`。

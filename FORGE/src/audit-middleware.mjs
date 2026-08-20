@@ -1,6 +1,9 @@
 // ============================================================
 // audit-middleware.mjs · 运行时审计 tool wrapper（v1.3.0 交付 1）
-// + 交付 8：运行时审计日志按 git 仓库隔离存储
+// + 交付 8（确权 2026-08）：FORGE 内部运行时审计已按 repo-hash 隔离
+//   （data/audit/runtime/<repo-hash>/runtime-audit.jsonl）；引擎产品主链
+//   （audit-history.ts 的 history.jsonl + data-sovereignty 按日期）仍为
+//   全局单文件，隔离排期 v1.3.9。
 // + v1.3.1 交付 10：工具审批四模式（allow-with-audit / deny-all /
 //   read-only / always-ask）——规则引擎判定通过后增加审批模式判定分支，
 //   每次审批决定（放行与拒绝都记）写 approval_decision 审计事件；
@@ -63,7 +66,8 @@ function orchestrator() {
 }
 
 /**
- * 计算 git 仓库标识 hash——用于运行时审计日志按仓库隔离（交付 8）。
+ * 计算 git 仓库标识 hash——用于 FORGE 内部运行时审计日志按仓库隔离（交付 8）。
+ *（仅 FORGE 内部 runtime 审计；引擎产品主链 history.jsonl 仍全局单文件，隔离排期 v1.3.9）
  *
  * 优先 `git rev-parse --show-toplevel`（仓库根路径），sha256 前 12 位；
  * 非 git 目录回退 `'nogit-' + hash(process.cwd())`——避免所有非 git 运行
@@ -84,7 +88,10 @@ export function computeRepoHash(cwd = process.cwd()) {
       return createHash('sha256').update(root).digest('hex').slice(0, 12);
     }
   } catch {
-    // git 不可用 / 非 git 目录——fallback
+    // 有意静默：非 git 目录 / git 不可用是**正常 fallback**（非错误）——
+    // 每次审计日志写入都会走到这里，warn 会刷屏（每工具调用一条）。
+    // 真异常（git 已装但 rev-parse 报错）由上层 appendRuntimeAuditLog 的
+    // 写入失败 warn 兜底，此处不重复告警。
   }
   return 'nogit-' + createHash('sha256').update(cwd).digest('hex').slice(0, 12);
 }
@@ -128,7 +135,11 @@ export function appendRuntimeAuditLog(record, cwd = process.cwd()) {
     try {
       const { chmodSync } = require('fs');
       chmodSync(filePath, 0o600);
-    } catch { /* 权限设置失败不阻断 */ }
+    } catch (err) {
+      // v1.3.9：chmod 失败是异常（权限收紧失效，审计日志可能暴露给同机其他用户）——
+      // 补 warn 让运维感知降级，与 appendRuntimeAuditLog 的 warn 风格一致；不阻断工具执行。
+      console.warn(`[audit-middleware] 运行时审计日志 chmod 0600 失败（不影响工具执行）: ${err instanceof Error ? err.message : String(err)}`);
+    }
   } catch (err) {
     console.warn(`[audit-middleware] 运行时审计日志写入失败（不影响工具执行）: ${err instanceof Error ? err.message : String(err)}`);
   }
@@ -421,10 +432,10 @@ export function createAuditMiddleware(rulesEngine, opts = {}) {
       if (verdict.hitlPending) {
         // 交付 3：HITL 待批准消息——不真正阻塞（LangGraph tool func 同步返回限制），
         // 返回明确消息让 Agent 暂停该动作，等人工通过 hitl_resolve 决策后重试。
-        return `⛔ [HITL 待批准] ${toolName} 需要人工批准：${verdict.reason}。请等待人工通过 hitl_resolve 决策后再重试。`;
+        return `⛔ [sofagent 审计] HITL 待批准：${toolName} 需要人工批准：${verdict.reason}。请等待人工通过 hitl_resolve 决策后再重试。`;
       }
       if (verdict.blocked) {
-        return `⛔ [Audit 拦截] ${toolName} 被拒绝执行：${verdict.reason}`;
+        return `⛔ [sofagent 审计] 拦截：${toolName} 被拒绝执行：${verdict.reason}`;
       }
 
       // ── v1.3.1 交付 10：审批模式判定分支（规则引擎通过后） ──
@@ -447,7 +458,7 @@ export function createAuditMiddleware(rulesEngine, opts = {}) {
               toolName, agentName, mode: approvalMode, permission,
               allowed: false, reason: `人工确认拒绝：${approval.reason}`, sessionId, cwd,
             });
-            return `工具调用被拒绝（模式：${approvalMode}）`;
+            return `⛔ [sofagent 审计] 拒绝：工具调用被拒绝（模式：${approvalMode}）`;
           }
           // 人工放行 → 写 APPROVAL_ALLOWED 审计事件后执行
           appendApprovalDecision({
@@ -464,7 +475,7 @@ export function createAuditMiddleware(rulesEngine, opts = {}) {
           toolName, agentName, mode: approvalMode, permission,
           allowed: false, reason: `${approval.reason}；未提供审批回调，保守默认拒绝`, sessionId, cwd,
         });
-        return `工具调用被拒绝（模式：${approvalMode}）`;
+        return `⛔ [sofagent 审计] 拒绝：工具调用被拒绝（模式：${approvalMode}）`;
       }
 
       // 放行（allow-with-audit / read-only 只读）——放行也记 approval_decision

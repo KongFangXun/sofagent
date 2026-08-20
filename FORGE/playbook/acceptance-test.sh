@@ -1948,8 +1948,8 @@ if $S225_OK; then
   # createAuditMiddleware + wrapTool + check 导出
   assert_grep "createAuditMiddleware" "$AMW" || S225_OK=false
   assert_grep "wrapTool" "$AMW" || S225_OK=false
-  # FAIL 拦截逻辑（.env 敏感文件 → 拦截消息）
-  assert_grep "Audit 拦截" "$AMW" || S225_OK=false
+  # FAIL 拦截逻辑（.env 敏感文件 → 拦截消息，v1.3.9 六十一加 [sofagent 审计] 签名前缀）
+  assert_grep "sofagent 审计" "$AMW" || S225_OK=false
   # fresh-eyes-driver 已接线 loadTools auditMw
   assert_grep "auditMw" "$PROJECT_ROOT/FORGE/src/fresh-eyes-driver.mjs" || S225_OK=false
   $S225_OK && pass "tool wrapper（audit-middleware.mjs + fresh-eyes-driver 接线 + FAIL 拦截消息）"
@@ -2008,15 +2008,16 @@ grep -q "reason" "$PROJECT_ROOT/engine/rules/src/should-allow.ts" || S229_OK=fal
 grep -q "requireApproval" "$PROJECT_ROOT/engine/rules/src/should-allow.ts" || S229_OK=false
 $S229_OK && pass "shouldAllow API（函数存在 + InterceptVerdict 三字段）"
 
-scenario 230 "v1.3.0 交付 8 运行时审计日志仓库隔离（repo-hash）"
+scenario 230 "运行时审计日志仓库隔离（repo-hash 行为验证 · FORGE 内部）"
 S230_OK=true
-# audit-middleware 含 repo-hash 隔离路径
-grep -q "data/audit/runtime" "$PROJECT_ROOT/FORGE/src/audit-middleware.mjs" || S230_OK=false
-# resolveRuntimeAuditPath 函数存在
-grep -q "resolveRuntimeAuditPath" "$PROJECT_ROOT/FORGE/src/audit-middleware.mjs" || S230_OK=false
-# repo-hash 基于 git rev-parse（非硬编码）
-grep -q "rev-parse\|repo.*hash" "$PROJECT_ROOT/FORGE/src/audit-middleware.mjs" || S230_OK=false
-$S230_OK && pass "运行时审计仓库隔离（repo-hash 路径 + rev-parse + resolveRuntimeAuditPath）"
+# 行为验证（非字符串 grep——字符串 grep 只证明注释/代码里出现过字样，属假绿机制）：
+# ① 在 git 仓库内 computeRepoHash 返回 12 位 hex（sha256 前 12 位）
+REPO_HASH=$(cd "$PROJECT_ROOT" && node --input-type=module -e 'import { computeRepoHash } from "./FORGE/src/audit-middleware.mjs"; process.stdout.write(computeRepoHash(process.cwd()));' 2>/dev/null) || true
+echo "$REPO_HASH" | grep -qE '^[0-9a-f]{12}$' || { fail "computeRepoHash 未返回 12 位 hex（实际：${REPO_HASH}）"; S230_OK=false; }
+# ② 实际写入路径组装为 data/audit/runtime/<repo-hash>/runtime-audit.jsonl（含 repo-hash 目录）
+PATH_RUN=$(cd "$PROJECT_ROOT" && node --input-type=module -e 'import { resolveRuntimeAuditPath } from "./FORGE/src/audit-middleware.mjs"; process.stdout.write(resolveRuntimeAuditPath(process.cwd()));' 2>/dev/null) || true
+echo "$PATH_RUN" | grep -qE "audit/runtime/${REPO_HASH}/runtime-audit\.jsonl$" || { fail "写入路径未含 repo-hash 目录（实际：${PATH_RUN}）"; S230_OK=false; }
+$S230_OK && pass "运行时审计仓库隔离（repo-hash 行为验证：computeRepoHash 12 位 hex + resolveRuntimeAuditPath 含 hash 目录）"
 
 scenario 231 "v1.3.1 交付 1 Ontology Action 校验（validator 三态 + 注册表）"
 S231_OK=true

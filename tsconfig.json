@@ -59,6 +59,10 @@
       "node"
     ]
   },
+  // v1.3.9 五十五：type-check 覆盖说明——本 tsconfig 只覆盖 engine/*/src 的 TS 产品代码。
+  //   · FDE/ 为纯 Markdown 方法论文档（无 TS/JS 代码），无需 type-check；
+  //   · FORGE/ 是内部自迭代工具链（.mjs ESM + 1 个 .ts 测试），不在 npm workspaces 内，
+  //     走自身 vitest 入口（tools/forge-smoke-test.sh），root tsconfig 有意不覆盖。
   "include": [
     "engine/*/src/**/*.ts"
   ],
