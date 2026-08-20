@@ -696,6 +696,8 @@ grep -c "FDE Agent\|审计引擎零 token\|assertSubAgentsNoEmptyTools\|MAX_NODE
 
 #### 49. v1.2.0 物理结构大重构——旧路径零残留 + 新结构就位（v1.2.0 新增 · fresh-eyes 三轮审查）
 
+> ⚠️ 本维度 10 个子项（a–j）为 node 全树扫描，单机实测累计 **<1 秒**（v1.3.8 run-06 验证）。若 worker 报「命令超时 120s exitCode=null」→ 是 worker 运行环境负载问题（大上下文加载/系统繁忙），**非检查本身慢**——人工复跑本维度命令即可确认。
+
 ```bash
 # 子项 a: /sofagent/ 目录残留（node 扫描绕开 BSD grep 中文误判）
 # v1.2.5 豁免：archive/changelog 为历史文档目录；`.sofagent/skill/`（含 ~/.sofagent/skill/）是用户 HOME 部署路径，非仓库旧路径
@@ -1276,10 +1278,12 @@ done
 
 **背景**：bootstrap.sh 在 macOS 默认 `/bin/bash` 3.2 下崩溃——空数组 `${arr[@]}` + `set -u` = unbound variable；尾行 `[[ ]] && cmd` + `set -e` = 成功也 exit 1。
 
+> ⚠️ 本维度是**人工核对项**（验证新增脚本的 bash 3.2 兼容性），非自动执行检查——以下为人工操作指引，`<script.sh>` 是占位符示例，**不要作为命令直接执行**。
+
 ```bash
-# 新增 shell 脚本在 macOS 默认 bash 3.2 下测过
+# 新增 shell 脚本在 macOS 默认 bash 3.2 下测过（人工操作指引，<script.sh> 换成实际文件名）
 /bin/bash --version | head -1  # 确认 3.2
-/bin/bash <script.sh> --help 2>&1; echo "EXIT=$?"
+/bin/bash <script.sh> --help 2>&1; echo "EXIT=$?"   # 占位示例——实际文件名替换
 # 期望：EXIT=0
 # 危险模式：${arr[@]} + set -u / [[ ]] && + set -e
 ```
@@ -1362,9 +1366,14 @@ rm -f /tmp/cct-test.sh
 
 ```bash
 # CI 模拟：只跑 B 层行数检查（不跑锚点段避免超时）
+# v1.3.8 修复：LIMIT_B 解析只抓「等号后第一个数字」——原 $(grep '^LIMIT_B=' | grep -oE '[0-9]+')
+# 会把注释里的版本号/行数全部抓出（v1.3.8/26/24…）→ 多片段含换行 → [ "$AB" -le "$LIMIT_VAL" ]
+# 报 integer expression expected（run-06 实测误报）。head -1 不管用（按行不按片段）。
+LIMIT_VAL=$(grep -oE '^LIMIT_B=[0-9]+' tools/check-docs.sh | head -1 | cut -d= -f2 || true)
+LIMIT_VAL=${LIMIT_VAL:-0}
 AB=$(cat docs/ARCHITECTURE.md docs/DEVELOPMENT.md docs/HANDBOOK.md docs/PHILOSOPHY.md docs/WIKI.md SECURITY.md docs/VALIDATION.md docs/THANKS.md docs/ROADMAP.md docs/LIMITATIONS.md FDE/GUIDE.md FDE/README.md 2>/dev/null | wc -l)
-echo "B 层: $AB 行（LIMIT_B=$(grep '^LIMIT_B=' tools/check-docs.sh | grep -oE '[0-9]+')）"
-[ "$AB" -le "$(grep '^LIMIT_B=' tools/check-docs.sh | grep -oE '[0-9]+')" ] && echo "✅" || echo "⚠️ 超标——内容增强后需上调 LIMIT_B"
+echo "B 层: $AB 行（LIMIT_B=$LIMIT_VAL）"
+[ "$AB" -le "$LIMIT_VAL" ] && echo "✅" || echo "⚠️ 超标——内容增强后需上调 LIMIT_B"
 ```
 
 ---
