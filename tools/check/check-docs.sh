@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 # 文档一致性自动化检查
+# v1.3.9: 补 locale export——CI/sandbox 默认 LANG=C 会把含中文的文件
+# 判成二进制（BSD grep 误判 .md 为 binary），文档扫描静默失效（v1.3.1 run-10 阻塞复发防御）。
+export LANG="${LANG:-en_US.UTF-8}"
+export LC_ALL="${LC_ALL:-en_US.UTF-8}"
 set -uo pipefail
 shopt -s nullglob
 
