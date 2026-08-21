@@ -172,7 +172,7 @@
 | 五 | **ROADMAP 同步**（详见 [08-roadmap-sync.md](./08-roadmap-sync.md)）：本版移出规划表→进迭代表；探索方向表清理已交付/已排期条目；版本号+日期更新；迭代表瘦身（老版本合并）。⚠️ **每次发版后还要做 ROADMAP 体检**（重复表/散落章节/死链/模糊版本号）——详见子文档「体检清单」 | ROADMAP 更新 |
 | 六 | **全项目版本号扫描**：所有 package.json + 文档头版本号一致 | check-version.sh 全绿 |
 | 七 | **文档同步闭环**：changelog 每个功能点 → 对应项目文档有覆盖（详见下方按需文档表） | D6 清单零遗漏 |
-| 八 | **changelog 文件命名一致性**：`ls docs/changelog/**/*.md \| grep -v -E 'v[0-9]+\.[0-9]+\.[0-9]+\.md'` 期望无输出（全三段式） | 无输出 |
+| 八 | **changelog 文件命名一致性**：`ls docs/changelog/*/v*.md \| grep -v -E 'v[0-9]+\.[0-9]+\.[0-9]+\.md'` 期望无输出（全三段式）——**限定版本日志目录**（v1.3.9 修正：原 `docs/changelog/**/*.md` 会把 releasing/ 子目录的 SOP 文件误报为不合规，版本日志才是检查对象） | 无输出 |
 
 ---
 
@@ -242,7 +242,7 @@ grep -rn "$DATE" *.md docs/archive/design/*.md | grep -v "docs/changelog/" | gre
 ## changelog 文件命名一致性
 
 ```bash
-# 检查 docs/changelog/ 下所有文件名都是三段式 vX.Y.Z.md
-ls docs/changelog/*.md | grep -v -E 'v[0-9]+\.[0-9]+\.[0-9]+\.md'
+# 检查 docs/changelog/ 下所有版本日志文件名都是三段式 vX.Y.Z.md（限定版本目录，releasing/ 子目录 SOP 文件不属检查对象）
+ls docs/changelog/*/v*.md | grep -v -E 'v[0-9]+\.[0-9]+\.[0-9]+\.md'
 # 期望：无输出（所有文件都是三段式）
 ```
