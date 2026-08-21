@@ -17,6 +17,7 @@
   "scripts": {
     "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
     "build": "npm run clean && tsc",
+    "postbuild": "node -e \"const fs=require('fs');for(const b of ['dist/mcp-server.js']){try{fs.chmodSync(require('path').join(__dirname,b),0o755)}catch(e){}}\"",
     "prepublishOnly": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\" && npm run build && find dist -name '*.js.map' -delete && find dist -name '*.d.ts.map' -delete",
     "check": "tsc --noEmit",
     "test": "vitest run"
