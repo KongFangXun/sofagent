@@ -1259,7 +1259,7 @@ done
 
 ```bash
 # 被自动化解析的脚本必须有 ANSI-stripped 纯文本汇总行
-grep -q "^SUMMARY:" FORGE/playbook/acceptance-test.sh && echo "✓ 有纯文本 SUMMARY" || echo "⚠️ 缺机器可解析汇总行"
+grep -qE 'echo "SUMMARY:' FORGE/playbook/acceptance-test.sh && echo "✓ 有纯文本 SUMMARY" || echo "⚠️ 缺机器可解析汇总行"
 # 通用规则：任何被 driver/grep 解析的输出行，不应依赖 ANSI 色码
 ```
 
@@ -1422,12 +1422,12 @@ grep -q "EVOLUTION" engine/orchestrator/src/commons/retire.ts || echo "⚠️ �
 
 #### 105. fresh-eyes worker 臆造链——b-fix 越界 + 碎片上下文编造（v1.3.4 新增 · B 类防回归 · run-01 事故）
 
-**背景**：v1.3.4 run-01 的 b-fix worker 严重越界：臆造升级计划（automerge 排期）、新建 CI 配置（dependabot.yml）、改未来版本 changelog（v1.3.5/v1.4.x）。根因：工具预算 15/20 摸不完 2870 文件 → 撞硬熔断 → 碎片上下文编报告。be131c9e 三重防护（预算 40/50 + 证据门槛 + 反臆造铁律）已修，此维度守护防护不回归。
+**背景**：v1.3.4 run-01 的 b-fix worker 严重越界：臆造升级计划（automerge 排期）、新建 CI 配置（dependabot.yml）、改未来版本 changelog（v1.3.5/v1.4.x）。根因：工具预算 15/20 摸不完 2870 文件 → 撞硬熔断 → 碎片上下文编报告。be131c9e 三重防护（预算 40/50 + 证据门槛 + 反臆造铁律）已修，此维度守护防护不回归。v1.3.9 loop 修复 P2-1 上调视角预算 40→50 / 50→60（见 FORGE/LESSONS.md run-12+），断言同步。
 
 ```bash
-# 三重防护在位（driver 常量 + prompt 模板）
-grep -q "PERSPECTIVE_TOOL_SOFT = 40" FORGE/src/fresh-eyes-driver.mjs || echo "⚠️ 预算回退到旧值"
-grep -q "40 次工具调用" FORGE/SKILL/fresh-eyes-loop/prompts/a-check-perspective-1.md || echo "⚠️ prompt 预算未同步"
+# 三重防护在位（driver 常量 + prompt 模板）——v1.3.9 口径 50/60，勿写死旧值
+grep -q "PERSPECTIVE_TOOL_SOFT = 50" FORGE/src/fresh-eyes-driver.mjs || echo "⚠️ 预算回退到旧值"
+grep -q "50 次工具调用" FORGE/SKILL/fresh-eyes-loop/prompts/a-check-perspective-1.md || echo "⚠️ prompt 预算未同步"
 # b-fix 的 A3 审计拦截有效性（b-audit 对越界 commit FAILED）
 grep -q "任务范围" engine/audit/src/rules/rule-a3*.ts 2>/dev/null || echo "ℹ️ A3 文件越界检测依赖规则引擎，人工抽查 b-fix diff 范围"
 ```
@@ -1458,7 +1458,7 @@ node -e "const fs=require('fs');const s=fs.readFileSync('docs/ARCHITECTURE.md','
 node engine/audit/dist/index.js --doctor 2>&1 | grep -q "完整性校验通过" || echo "⚠️ 影子审计器基线链路失效"
 [ -f ~/.sofagent/internal/audit-hash.txt ] || echo "⚠️ 哈希基线未生成"
 # ④ 门禁失败路径自测（防 #5/#19/#27 假绿族）——守卫必须真的会红
-_CTC=$(bash tools/check/check-test-count.sh 2>&1); echo "$_CTC" | grep -q "场景守卫" || echo "⚠️ 场景守卫段消失"; echo "$_CTC" | grep "场景守卫" | grep -qE "FAIL|✗" && echo "⚠️ 场景守卫在报红（先修再验）" || true   # v1.3.6：单次跑缓存输出判双条件（原两次全量 ~110s 必超时）
+grep -q "场景守卫" tools/check/check-test-count.sh || echo "⚠️ 场景守卫段消失"   # v1.3.9：检查源码逻辑存在（正常路径输出无「场景守卫」字样，只有 FAIL 才输出——原输出 grep 恒误报）
 grep -E "^[^#]*| tail.*|| true" install.sh >/dev/null 2>&1 && echo "⚠️ install.sh 假绿模式回潮" || echo "✅ install.sh 无假绿（注释提及旧模式不算）"   # v1.3.6：排除注释行误报（#19 修复说明里引用了旧模式文本）
 SOFAGENT_DATA=/tmp/rg-nonexist node engine/audit/dist/index.js --verify-chain > /tmp/vc.log 2>&1; [ $? -eq 1 ] || echo "⚠️ verify-chain 空链未 exit 1（假绿回潮）"; rm -rf /tmp/rg-nonexist /tmp/vc.log
 # ⑤ SOFAGENT_DATA 隔离下 rule_disabled 落链断言（防 #38）
@@ -1477,17 +1477,17 @@ node -e "const fs=require('fs'),p=require('path');let bad=0;for(const f of fs.re
 **背景**：v1.3.5 七大块交付的审查面。acceptance S270-S276 做执行级验证，本维度做静态一致性——两者成对构成新功能的完整回归网。
 
 ```bash
-# ① MCP 52 tools 三处口径（SKILL.md / ARCHITECTURE 能力表 / dist 实测）
-grep -q "60 tools" SKILL/SKILL.md || echo "⚠️ SKILL 工具速查漂移（v1.3.6 口径 60）"   # v1.3.6：52→60 勿写死，改版时随 SSOT
+# ① MCP 61 tools 三处口径（SKILL.md / ARCHITECTURE 能力表 / dist 实测）——v1.3.9 口径 61，勿写死
+grep -q "61 tools" SKILL/SKILL.md || echo "⚠️ SKILL 工具速查漂移（v1.3.9 口径 61）"   # v1.3.6：52→60；v1.3.9：60→61 勿写死，改版时随 SSOT
 node -e "const m=require('./engine/mcp/dist/tool-registry.js');const doc=require('./package.json').version;console.log('✅ TOOLS='+m.TOOLS.length+'（registry 实数，勿写死——发版后人工对 SSOT 口径）')"   # v1.3.6：写死 52 必漂，改打印实数
-# ② snapshot tool 零 daemon 静态依赖（optionalDependencies 场景会炸）
-grep -q "@sofagent/daemon" engine/mcp/src/tools/snapshot-list.ts engine/mcp/src/tools/snapshot-restore.ts && echo "⚠️ snapshot 静态 import daemon 回潮"
+# ② snapshot tool 零 daemon 静态依赖（optionalDependencies 场景会炸）——排除注释行（🔴 import 铁律注释含 @sofagent/daemon）
+grep -E "@sofagent/daemon" engine/mcp/src/tools/snapshot-list.ts engine/mcp/src/tools/snapshot-restore.ts 2>/dev/null | grep -vE "^\s*//" | head -1 | grep -q . && echo "⚠️ snapshot 静态 import daemon 回潮"
 # ③ evolver 永不写仓库 SKILL/（发布源污染防线）
 grep -qE "join\(REPO|join\(process\.cwd|['\"]\.?/?SKILL/['\"]" engine/orchestrator/src/instinct/evolver.ts && echo "⚠️ evolver 触达仓库 SKILL/" || echo "✅ evolver 只写 SOFAGENT_HOME/skill/custom（join(dir,'SKILL.md') 是合法 custom 文件名）"   # v1.3.6：正则收窄——原 join.*SKILL 误伤 custom skill 的 SKILL.md 文件名
 # ④ companion/fde-registry 的 daemon inspector 三步注册
 grep -q "fde-companion-daily\|fde-registry" engine/daemon/src/inspector-layers.ts 2>/dev/null || grep -rq "runFdeCompanionDaily" engine/daemon/src/inspectors/ || echo "⚠️ FDE 巡检未注册 inspector"
-# ⑤ 文档同步四件套（52 tools/2286 测试/v1.3.5 段/CHANGELOG 索引行）
-grep -q "2286" README.md || echo "⚠️ README 测试数漂移"
+# ⑤ 文档同步四件套（61 tools/2903 测试/v1.3.5 段/CHANGELOG 索引行）
+grep -q "2903" README.md || echo "⚠️ README 测试数漂移"
 grep -q "\*\*v1.3.5\*\*" CHANGELOG.md || echo "⚠️ CHANGELOG 索引缺 v1.3.5"
 ```
 

@@ -43,6 +43,7 @@ FDE 支持两种使用方式——根据你的需求选择：
 2. **开口**：对 AI 说「帮我做 FDE 诊断」——Agent 按 SKILL.md 阶段路由从进场开始引导（梳理 → 深挖 → 量化 → 交付）
 3. **首个产出物**：一份企业画像（岗位 × 五要素表）+ 候选 AI 节点清单（🔄 自动执行 / ⚡ 强化岗位 / 👤 暂不动，含年节省估算）
 4. **不需要 Node.js**：FDE Skill 是纯方法论 Skill，零依赖；之后要审计/回滚/daemon 常驻再装主包（[install.sh](../install.sh)，装在企业设备）
+   > ⚠️ **完整 clone 要求**：主包依赖仓库内全套资产（SKILL/ 发布源 + engine/ 源码 + tools/ 工具链），FDE 无独立安装包——装主包需 `git clone` 完整 sofagent 仓库（不能只拷 install.sh），在企业设备上执行 `bash install.sh`。
 
 > 💡 完整方法论（四阶段十二步）见 [GUIDE.md](./GUIDE.md)——最短路径走的是 §1-§2 的浓缩版；想纯手动梳理（Excel + 人脑）也按 GUIDE 逐步走即可。
 
