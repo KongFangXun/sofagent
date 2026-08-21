@@ -212,7 +212,7 @@ fi
 # ============================================================
 [ "$QUIET" = false ] && echo -e "\n${BOLD}${CYAN}── ⑤ check-version 分母自洽 ──${NC}"
 
-CV_SCRIPT="tools/check-version.sh"
+CV_SCRIPT="tools/check/check-version.sh"
 CV_DENOM=$(grep -oE 'TOTAL=\$\(\(CHECKS \+ ERRORS\)\)' "$CV_SCRIPT" | head -1 || echo "")
 if [ -n "$CV_DENOM" ]; then
   ok "check-version 分母为动态计算（CHECKS+ERRORS），无写死分母"

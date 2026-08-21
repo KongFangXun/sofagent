@@ -6,7 +6,7 @@ export LANG=en_US.UTF-8
 export LC_ALL=en_US.UTF-8
 # sofagent-audit · 上线前验收测试（Pre-Release Acceptance Test）
 # 覆盖：FORGE + MCP + 文件系统审计 + daemon + 红队对抗 + 各版本新功能验收
-# 场景数：237 个场景（SSOT：check-test-count.sh 校验；v1.3.7 +4：S290-S293；v1.3.6 +8：S282-S289；v1.3.8 +11：S294-S304（含 bugfix 防回归 S303/S304））
+# 场景数：250 个场景（SSOT：check-test-count.sh 校验；v1.3.7 +4：S290-S293；v1.3.6 +8：S282-S289；v1.3.8 +11：S294-S304（含 bugfix 防回归 S303/S304）；v1.3.9 +13：S305-S317（阶段五 A 类分发——AST/meta-harness/worklog/@public/DSH/MLflow/Browser/跨平台/分子目录/守护/5MB diff））
 # 编号跳号豁免：S1~S293 间有 70 个空洞号（全在 S36-S202 历史段）——v1.2.x 瘦身删场景
 # 与基线重建（restore 6e542467）的既成事实，非丢失；新场景编号=当前最大+1 顺延，禁止回填空洞
 # 版本段起点见文件内「# ─── v」分组标记（grep "─── v" 定位）
@@ -2758,6 +2758,104 @@ if (shortCircuit && !strips) { console.log("FAIL: FFFD 短路守卫回归（含 
 console.log("OK: FFFD 处理为剥离/降权形态，非整体短路");
 ' "$A2_RULE" || S304_OK=false
 $S304_OK && pass "A2 FFFD 短路绕过防回归在位" || fail "A2 FFFD 处理形态回归"
+
+# ═══════════════════════════════════════════════════════════════
+# v1.3.9 交付验收场景（S305-S317 · 阶段五 A 类分发）
+# ═══════════════════════════════════════════════════════════════
+
+scenario 305 "v1.3.9 交付一：官方 AST 规则引擎（sofagent-ruleset-ast）——引擎+规则注册+ASI 规则集可用"
+S305_OK=true
+[ -d "$PROJECT_ROOT/engine/rules/src/ast" ] || S305_OK=false
+[ -f "$PROJECT_ROOT/engine/rules/src/ast/engine.ts" ] || S305_OK=false
+grep -q "asi01-prompt-injection\|asi04-sbom" "$PROJECT_ROOT/engine/rules/src/ast/rules/index.ts" 2>/dev/null || S305_OK=false
+$S305_OK && pass "AST 引擎+ASI 规则集在位" || fail "AST 规则引擎缺失"
+
+scenario 306 "v1.3.9 交付一·ASI01：prompt 注入检测——三类模式+归一化防御（零宽/全角/折叠）"
+S306_OK=true
+A01_RULE="$PROJECT_ROOT/engine/rules/src/ast/rules/asi01-prompt-injection.ts"
+[ -f "$A01_RULE" ] || S306_OK=false
+grep -q "normalize" "$A01_RULE" || S306_OK=false
+grep -q "指令覆盖\|角色劫持\|结构伪装" "$A01_RULE" || S306_OK=false
+$S306_OK && pass "ASI01 三类模式+归一化在位" || fail "ASI01 注入检测缺失/无归一化"
+
+scenario 307 "v1.3.9 交付一·ASI04：SBOM 离线漏洞匹配——lockfile 优先精确版本"
+S307_OK=true
+A04_RULE="$PROJECT_ROOT/engine/rules/src/ast/rules/asi04-sbom.ts"
+[ -f "$A04_RULE" ] || S307_OK=false
+grep -q "parsePackageLock\|package-lock" "$A04_RULE" || S307_OK=false
+grep -q "inRange" "$A04_RULE" || S307_OK=false
+$S307_OK && pass "ASI04 lockfile 优先+semver 区间在位" || fail "ASI04 SBOM 扫描缺失"
+
+scenario 308 "v1.3.9 交付二：meta-harness 多 harness 统一编排——注册/提交/等待/投递 API + 19 测试"
+S308_OK=true
+MH="$PROJECT_ROOT/engine/orchestrator/src/meta-harness"
+[ -d "$MH" ] || S308_OK=false
+grep -qE "register|installProfile|submitTask|reportDelivery|waitForDelivery|onDelivery" "$MH"/*.ts 2>/dev/null || S308_OK=false
+[ -f "$PROJECT_ROOT/engine/orchestrator/src/__tests__/meta-harness.test.ts" ] || S308_OK=false
+$S308_OK && pass "meta-harness API+测试在位" || fail "meta-harness 缺失"
+
+scenario 309 "v1.3.9 交付三：worklog 数据层——聚合器+worklog_query 工具注册（tools 60→61）"
+S309_OK=true
+[ -f "$PROJECT_ROOT/engine/orchestrator/src/worklog/aggregator.ts" ] || S309_OK=false
+[ -f "$PROJECT_ROOT/engine/orchestrator/src/__tests__/worklog.test.ts" ] || S309_OK=false
+grep -q "worklog_query" "$PROJECT_ROOT/engine/mcp/src/tool-registry.ts" 2>/dev/null || S309_OK=false
+$S309_OK && pass "worklog 聚合器+工具注册在位" || fail "worklog 数据层缺失"
+
+scenario 310 "v1.3.9 交付四：API 分级 @public/@internal——12 包入口双层导出 + public-api 门禁"
+S310_OK=true
+[ -f "$PROJECT_ROOT/tools/check/public-api.mjs" ] || S310_OK=false
+grep -q "@public" "$PROJECT_ROOT/engine/orchestrator/src/index.ts" 2>/dev/null || S310_OK=false
+# public-api.mjs 依赖 cwd 定位仓库根（resolveVersion）——显式 cd 再跑（v1.3.9 阶段五：场景内 cwd 是 playbook，直接跑会路径漂移）
+( cd "$PROJECT_ROOT" && node tools/check/public-api.mjs >/dev/null 2>&1 ) || S310_OK=false
+$S310_OK && pass "public-api 门禁实测通过" || fail "API 分级门禁异常"
+
+scenario 311 "v1.3.9 交付五：DSH 执行后端——execution-backend 显式选择 + SOFAGENT_FORCE_DSH 桥接 + rc 降级保留"
+S311_OK=true
+EB="$PROJECT_ROOT/engine/orchestrator/src/execution-backend.ts"
+[ -f "$EB" ] || S311_OK=false
+grep -q "preferred" "$EB" || S311_OK=false
+grep -q "SOFAGENT_FORCE_DSH" "$EB" || S311_OK=false
+grep -q "createDshCliBackend" "$PROJECT_ROOT/engine/orchestrator/src/execution-backends/dsh-backend.ts" || S311_OK=false
+$S311_OK && pass "DSH 后端选择+CLI 桥接在位" || fail "DSH 执行后端缺失"
+
+scenario 312 "v1.3.9 交付六：MLflow agent 评估集成——13 指标映射 + LLM-as-Judge 降级"
+S312_OK=true
+[ -f "$PROJECT_ROOT/engine/orchestrator/src/benchmark/mlflow-exporter.ts" ] || S312_OK=false
+grep -q "SCORE\|RATIONALE\|0..100\|clamp" "$PROJECT_ROOT/engine/orchestrator/src/benchmark/mlflow-exporter.ts" 2>/dev/null || S312_OK=false
+$S312_OK && pass "MLflow 导出器在位" || fail "MLflow 集成缺失"
+
+scenario 313 "v1.3.9 交付七：Agentic Browser / Playwright——4 工具 + 视觉降级"
+S313_OK=true
+[ -f "$PROJECT_ROOT/engine/orchestrator/src/refine-agent/browser-tools.ts" ] || S313_OK=false
+grep -qE "navigate|click|screenshot|evaluate" "$PROJECT_ROOT/engine/orchestrator/src/refine-agent/browser-tools.ts" 2>/dev/null || S313_OK=false
+$S313_OK && pass "Browser 工具在位" || fail "Agentic Browser 缺失"
+
+scenario 314 "v1.3.9 交付八：跨平台适配器（Cursor/Codex/Gemini CLI）——3 薄挂载"
+S314_OK=true
+[ -f "$PROJECT_ROOT/.cursor/rules/sofagent.mdc" ] || S314_OK=false
+[ -f "$PROJECT_ROOT/AGENTS.md" ] || S314_OK=false
+[ -f "$PROJECT_ROOT/GEMINI.md" ] || S314_OK=false
+grep -q "cursor\|gemini" "$PROJECT_ROOT/install.sh" 2>/dev/null || S314_OK=false
+$S314_OK && pass "跨平台适配器 3 挂载在位" || fail "跨平台适配器缺失"
+
+scenario 315 "v1.3.9 交付九：tools/ 物理分子目录——check/gen/dashboard/release/forge/audit 6 子目录"
+S315_OK=true
+for d in check gen dashboard release forge audit; do [ -d "$PROJECT_ROOT/tools/$d" ] || S315_OK=false; done
+[ -f "$PROJECT_ROOT/tools/check/check-version.sh" ] || S315_OK=false
+$S315_OK && pass "tools 6 子目录在位" || fail "tools 分子目录不完整"
+
+scenario 316 "v1.3.9 交付十三：FORGE driver 进程守护——daemon 自脱离 + watcher 自动 resume"
+S316_OK=true
+grep -q -- "--daemon" "$PROJECT_ROOT/FORGE/src/fresh-eyes-driver.mjs" || S316_OK=false
+grep -q -- "--watch" "$PROJECT_ROOT/FORGE/src/fresh-eyes-driver.mjs" || S316_OK=false
+grep -q -- "--resume" "$PROJECT_ROOT/FORGE/src/fresh-eyes-driver.mjs" || S316_OK=false
+$S316_OK && pass "driver 进程守护（daemon/watch/resume）在位" || fail "driver 进程守护缺失"
+
+scenario 317 "v1.3.9 交付十二：>5MB diff 缝隙修复——spill 落盘 + 64MB 读回 + 截断 locator"
+S317_OK=true
+grep -q "spill\|oversized" "$PROJECT_ROOT/engine/core/src/diff-parser.ts" 2>/dev/null || S317_OK=false
+grep -rn "diff-parser-oversized\|oversized" "$PROJECT_ROOT/engine/core/src/__tests__/" 2>/dev/null | head -1 >/dev/null || S317_OK=false
+$S317_OK && pass "超大 diff spill 处理在位" || fail "5MB diff 缝隙修复缺失"
 
 
 echo -e "  验收测试结果：${GREEN}$PASSED 通过${NC} / ${RED}$FAILED 失败${NC} / 共 $((PASSED + FAILED))"
