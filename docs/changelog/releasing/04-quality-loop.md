@@ -1,18 +1,20 @@
 # 阶段四：fresh-eyes-loop 质量循环 + 代码审核 + 验收测试
 
 > **目的**：开发完的代码过一轮独立审查 + 验收测试，确保质量过关再进审查体系更新。
+>
+> **防止 lost-in-the-middle**：执行顺序——先读「步骤总览」确认要做什么；步骤二 driver 是长跑任务，启动姿势见「driver 启动姿势」专节（8 条，含中断恢复）；跑完后按「阶段汇报模板」汇报，主 session 按「步骤完成判据」打勾。
 
 ---
 
-## 步骤
+## 步骤总览
 
 | # | 步骤 | 产物 | 完成判据 |
 |:--:|------|------|------|
-| 一 | **单次草稿优先**（v1.3.8 交付八）：`node tools/gen/gen-fresh-eyes-draft.mjs --diff <patch 文件> --changelog <changelog> --out ~/Desktop/fresh-eyes-draft-vX.Y.Z.md`——16 视角草稿一次成型；「待取证」项少且变更小 → 草稿 + 人工复核即收口 | 审查草稿 | 见下方「步骤完成判据」表 |
-| 二 | **driver 兜底**（草稿待取证多 / 大版本）：**新 session 跑 fresh-eyes-loop**。启动姿势（v1.3.9 阶段四事故教训补 2026-08-21，共 8 条）：① Bash 工具**后台启动**：`run_in_background:true` + `dangerouslyDisableSandbox:true`；② 输出**必须重定向到文件**：`node FORGE/src/fresh-eyes-driver.mjs --target <本版本号> --max-rounds 10 > /tmp/fresh-eyes-<ver>-driver.log 2>&1`——**禁止管道包装**（`\| head` 触发 SIGPIPE 杀 driver，preflight 已警告仍踩过）；③ 启动后等 8 秒**先验证 `status.json` 有 `round-start` 事件**（event=round-start / phase=round-1-running）再轮询，否则 driver 没真跑需重启；④ **不传 timeout 参数**（v1.3.9 run-01 二次死亡实证：`timeout:600000` 生效 = 10 分钟上限杀 driver，心跳停与重启间隔恰好 10 分钟——后台任务传 timeout 反而被杀）；⑤ **中断恢复用 `--resume` 续跑**（异常死亡 → liveness 探针确认 → `node FORGE/src/fresh-eyes-driver.mjs --target <ver> --max-rounds 10 --resume > <log> 2>&1`——driver 按产物完整性跳过已完成 worker，**保留已有产物续跑，绝不重开浪费**；v1.3.9 run-01 死两次均靠 resume 保住 round-1/2 的 61 个产物）；⑥ **daemon 模式优先**（v1.3.9 已交付 driver 进程守护：daemon 自脱离 + watcher 主管，免疫 WorkBuddy 会话回收杀 driver；daemon 就绪用 daemon 启动，裸后台为 fallback）；⑦ **独占窗口检查**（启动前确认无其他 session 在写本仓库——SKILL.md run-07 教训；v1.3.9 并行 session 同时改驱动文件/v1.3.9.md 曾致 commit 撞 file modified）；⑧ **driver 运行期同步做步骤三/四**（后台跑时当前 session 并行执行代码审核 + 验收增量，不空等）。然后按 `FORGE/SKILL/fresh-eyes-loop/SKILL.md` 监控协议**持续轮询** `status.json`（每 120 秒一轮，session 保持活跃可见；或用 `--check-alive <runDir>` liveness 探针）。loop 修复即本版本代码质量加固 | loop 修复 + changelog 汇总打勾 | 见下方「步骤完成判据」表 |
-| 三 | 代码审核（当前 session）：逐项核对发布检查清单（清单位置见判据表），PASS 或 FAIL→修复 | 检查清单打勾 | 见下方「步骤完成判据」表 |
-| 四 | **验收测试随功能开发先行新增（增量）**：本版本新功能对应的 acceptance 新场景（S 编号顺延）+ checklist 新维度，随功能开发实时加——本步骤只做「增量补齐」。**归并/压缩/校准/A/B/C 分类是阶段五的职责**（见 [05-review-system.md](./05-review-system.md)），这里不动体系 | 验收测试更新（增量） | 见下方「步骤完成判据」表 |
-| 五 | **阶段汇报（v1.3.8 补 · 对话形式）**：全部步骤完成后，执行 session 按下方「阶段汇报模板」以**对话消息**形式发回主 session（不落盘文件）——主 session 依此打勾推进，不再要求主 session 重新考古 | 汇报消息（见模板） | 模板五件套齐全（含步骤完成状态声明） |
+| 一 | **单次草稿优先**（v1.3.8 交付八）：`node tools/gen/gen-fresh-eyes-draft.mjs --diff <patch 文件> --changelog <changelog> --out ~/Desktop/fresh-eyes-draft-vX.Y.Z.md`——16 视角草稿一次成型；「待取证」项少且变更小 → 草稿 + 人工复核即收口 | 审查草稿 | 见「步骤完成判据」表 |
+| 二 | **driver 兜底**（草稿待取证多 / 大版本）：**新 session 跑 fresh-eyes-loop**，启动姿势见下方「driver 启动姿势」专节（8 条）；按监控协议轮询 `status.json`（或 `--check-alive` 探针）。loop 修复即本版本代码质量加固 | loop 修复 + changelog 汇总打勾 | 见「步骤完成判据」表 |
+| 三 | **代码审核**（当前 session）：逐项核对发布检查清单（清单位置见判据表），PASS 或 FAIL→修复 | 检查清单打勾 | 见「步骤完成判据」表 |
+| 四 | **验收测试随功能开发先行新增（增量）**：本版本新功能对应的 acceptance 新场景（S 编号顺延）+ checklist 新维度，随功能开发实时加——本步骤只做「增量补齐」。**归并/压缩/校准/A/B/C 分类是阶段五的职责**（见 [05-review-system.md](./05-review-system.md)），这里不动体系 | 验收测试更新（增量） | 见「步骤完成判据」表 |
+| 五 | **阶段汇报**：全部步骤完成后，执行 session 按下方「阶段汇报模板」以**对话消息**形式发回主 session（不落盘文件）——主 session 依此打勾推进，不再考古 | 汇报消息（见模板） | 模板五件套齐全（含步骤完成状态声明） |
 
 > **审查分层说明**（v1.3.8 交付八，与 [01-review.md](./01-review.md) 同款）：
 > 单次草稿（`gen-fresh-eyes-draft.mjs`，约 1-3 万 token）优先——理解型审查一次成型；
@@ -21,7 +23,26 @@
 
 ---
 
-## 阶段汇报模板（步骤五用 · 2026-08-20 用户拍板）
+## driver 启动姿势（步骤二 · 8 条）
+
+> **为什么是 8 条**：v1.3.9 阶段四实测三趟 driver 踩出全部坑（SIGPIPE 杀 / timeout 上限杀 / 会话回收杀 / 并行 session 冲突）——每条带实证，防再发。执行步骤二前先读本节。
+
+| # | 姿势 | 说明与实证 |
+|:--:|------|------|
+| ① | **后台启动** | Bash 工具 `run_in_background:true` + `dangerouslyDisableSandbox:true`——三层进程嵌套会被 sandbox SIGKILL |
+| ② | **输出重定向到文件** | `node FORGE/src/fresh-eyes-driver.mjs --target <版本号> --max-rounds 10 > /tmp/fresh-eyes-<ver>-driver.log 2>&1`——**禁止管道包装**（`\| head` 触发 SIGPIPE 杀 driver，preflight 已警告仍踩过，v1.3.9 run-01 首死） |
+| ③ | **先验证 round-start 再轮询** | 启动后等 8 秒读 `status.json`：event=round-start / phase=round-1-running 才算真跑起来，否则需重启 |
+| ④ | **不传 timeout 参数** | `timeout:600000` 生效 = 10 分钟上限杀 driver——v1.3.9 run-01 二次死亡实证（心跳停与重启间隔恰好 10 分钟）。后台任务无需 timeout，传了反而被杀 |
+| ⑤ | **中断恢复用 `--resume` 续跑** | 异常死亡 → liveness 探针确认 → `node FORGE/src/fresh-eyes-driver.mjs --target <版本号> --max-rounds 10 --resume > <log> 2>&1`——driver 按产物完整性跳过已完成 worker，**保留已有产物续跑，绝不重开浪费**（v1.3.9 run-01 死两次均靠 resume 保住 round-1/2 的 61 个产物） |
+| ⑥ | **daemon + watch 守护优先** | v1.3.9 已交付进程守护（[767d7c10] 起）：`--daemon` spawn detached 自脱离进程树（WorkBuddy 会话结束不影响存活，日志 → runDir/driver.log）；`--watch <runDir>` 主管模式——每 30s 读心跳，心跳停 → 审计死因（death-audit.jsonl）→ **自动 `--resume` 拉起新 driver**，verdict.md 产出后 watcher 退出（`--watch-interval` 默认 30s / `--watch-threshold` 默认 90s）。**daemon+watch 就绪优先用**，裸后台（①~⑤）为 fallback |
+| ⑦ | **独占窗口检查** | 启动前确认无其他 session 在写本仓库（`git status` 干净 + 无并行 driver 进程）——SKILL.md run-07 教训；v1.3.9 并行 session 同时改驱动文件/v1.3.9.md 曾致 commit 撞 file modified |
+| ⑧ | **driver 运行期并行步骤三/四** | driver 后台跑时当前 session 并行执行代码审核 + 验收增量，不空等（v1.3.9 实测高效） |
+
+> **监控协议**：按 `FORGE/SKILL/fresh-eyes-loop/SKILL.md`——每 120 秒一轮读 `status.json`，session 保持活跃可见；心跳 >90 秒未更新用 `--check-alive <runDir>` liveness 探针（只认心跳不认日志——长 LLM 窗口日志冻结是正常，心跳停才是死）。
+
+---
+
+## 阶段汇报模板（步骤五用）
 
 > **为什么**：阶段四产物此前只写「审查草稿/loop 修复/验收更新」，汇报形态未定义——执行 session 汇报质量全靠自觉（v1.3.8 实录：汇报良好但无格式约束，换个 session 可能只回三行）。本模板把汇报固化为四件套，**对话消息直接发主 session**（不生成文件——发版期桌面已有大量产物文件，汇报属过程性信息，对话即阅即用）。
 
@@ -43,21 +64,13 @@
 三、验收测试
 - 新场景：S<N> 起 X 个（编号区间写实际值），全量 acceptance N/N EXIT=0
 - 场景数 SSOT：旧→新（三处同步：脚本头部/DEVELOPMENT/LIMITATIONS）
-
-四、门禁输出关键行
-- build：0 错 / npm test：N/N / CV：N/N / CD：绿（如有红：根因+处置）
-
-五、未决项（需主 session 定夺）
-- 每项：现象/建议/是否阻塞下一阶段
 ```
-
-**主 session 收到后**：零信任抽验汇报关键声称（新场景 grep 实存、门禁复跑、acceptance 数字），确认后 releasing.md 打勾推进阶段五。
 
 ---
 
-## 步骤完成判据（打勾前置 · 2026-08-20 事故复盘补）
+## 步骤完成判据（主 session 打勾前置）
 
-> **为什么**：v1.3.8 发版实录——执行 session 只做了步骤四就汇报，步骤一二静默跳过（草稿 API 失败后未走降级、driver 只 dry-run），主 session 验了汇报内声称（全真实）却没验产物存在，打勾后发现缺位被迫中途补跑。教训入 `FORGE/lessons/driver.md` 2026-08-20 节。
+> **为什么**：v1.3.8 发版实录——执行 session 只做了步骤四就汇报，步骤一二静默跳过（草稿 API 失败后未走降级、driver 只 dry-run），主 session 验了汇报内声称（全真实）却没验产物存在，打勾后发现缺位被迫中途补跑。教训入 `FORGE/lessons/driver.md`。
 
 **主 session 打勾前，逐项核对产物存在性（ls/grep 实物，不信汇报文本）**：
 
@@ -75,20 +88,30 @@
 
 ---
 
-## fresh-eyes-loop 新 session Prompt 模板
+## 监控 session Prompt 模板
 
 > AI 输出 prompt 时必须把所有占位符替换为实际值（项目路径、版本号），不得残留花括号。
+> 模板含 daemon+watch 守护优先 + resume 中断恢复两个分支——按「启动姿势 8 条」更新（v1.3.9）。
 
 ```
 在 sofagent 项目（{项目实际路径}）中，执行 {实际版本号} 的 fresh-eyes-loop。
 
 先读 `FORGE/SKILL/fresh-eyes-loop/SKILL.md` 拿到完整的「Session 监控协议」，然后按协议执行：
 
-1. 后台启动 driver——必须用 Bash 工具 run_in_background:true + dangerouslyDisableSandbox:true（三层进程嵌套会被 sandbox SIGKILL）：
-   FORGE_MAX_CONCURRENCY=1 node FORGE/src/fresh-eyes-driver.mjs --target {实际版本号} --max-rounds 10
+0. 独占窗口检查：git status 确认工作树无其他 session 残留，无并行 driver 进程。
+1. 启动 driver——**优先 daemon+watch 守护模式**（自动恢复，免疫会话回收）：
+   FORGE_MAX_CONCURRENCY=1 node FORGE/src/fresh-eyes-driver.mjs \
+     --target {实际版本号} --max-rounds 10 --daemon --watch {runDir}
    ⚠️ 8GB 机器必须 FORGE_MAX_CONCURRENCY=1（并发 worker 各占 2GB heap，3+ 并发即 OOM）
+   若为 resume 续跑（上次异常死亡）：命令加 --resume（保留已有产物，不重开）
+   fallback（无 daemon 支持）：Bash 工具 run_in_background:true + dangerouslyDisableSandbox:true，
+   输出重定向文件 > /tmp/fresh-eyes-<ver>-driver.log 2>&1（禁止管道），不传 timeout 参数
 2. 记住 runDir（启动日志第一行打印的路径）
-3. **持续轮询（必做，非可选——session 可见性的来源）**：每 120 秒一轮，读 `<runDir>/status.json`，输出一行状态（round 变化时一句话汇报）——**让 session 一直活跃，用户界面持续可见「在跑」**。心跳冻结检测顺带完成：heartbeat 距今 >90 秒则 pgrep 确认进程是否存活，无输出 = 已死，汇报并退出。
+3. **持续轮询（必做，非可选——session 可见性的来源）**：每 120 秒一轮，读 `<runDir>/status.json`，
+   输出一行状态（round 变化时一句话汇报）——**让 session 一直活跃，用户界面持续可见「在跑」**。
+   心跳冻结检测顺带完成：heartbeat 距今 >90 秒则 pgrep 确认进程是否存活，无输出 = 已死：
+   → daemon+watch 模式：watcher 会自动 resume，观察 death-audit.jsonl + 新 driver 拉起即可
+   → fallback 模式：汇报主 session，主 session 决定 --resume 续跑
 4. round 变成 completed 或 error 时，读报告，用 3-5 行汇报
 
 铁律：不干涉 driver、不改代码、不探索源码——只启动 + 持续轮询监控 + 最终汇报。
@@ -96,7 +119,7 @@
 
 ---
 
-## 版本类 finding 处理规则（2026-08-16 · run-07 教训）
+## 版本类 finding 处理规则
 
 fresh-eyes 在**发版前**跑（阶段四时序先于打 tag/publish），此时版本一致性天然处于中间态——以下 finding 属预期噪音，**默认标 SKIP 不修**，留到阶段十一（publish）自然消解：
 
@@ -111,11 +134,15 @@ fresh-eyes 在**发版前**跑（阶段四时序先于打 tag/publish），此�
 
 > **已知局限（待 FORGE 演进）**：SKIP 判定目前靠修复者读规则自觉执行——v1.3.6 run-03 的 b-fix 曾违反此规则「修复」发版中间态项。理想形态是 driver 在 b-fix prompt 里自动注入本节 SKIP 清单原文（b-fix 看不到规则就不会遵守），属 FORGE 工具链演进项，暂记于此。
 
-## 中止 run 的归档纪律（2026-08-16 · run-07 教训）
+---
+
+## 中止 run 的归档纪律
 
 driver 异常中止（进程死亡/环境冲突）的 run **也必须留 LEDGER 行**（状态 aborted-*，注明死因与已有产出）——run-07 的归档行是事后人工补的，此处 SOP 化：中止 = 当场补行，不等下轮。
 
-## run 汇报的零信任复验（v1.3.6 教训 · 与阶段六分工协议同款）
+---
+
+## run 汇报的零信任复验
 
 > loop 产出的 finding 清单是**线索不是事实**——v1.3.6 run-03 的「上轮遗留 3 条未修」全是 worker 拿旧报告对比的误标（实际早已修复），另有 b-fix 不遵守 SKIP 规则「修复」了不该修的发版中间态项。主 session 收到汇报后：
 
