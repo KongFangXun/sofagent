@@ -3519,9 +3519,13 @@ async function main() {
   }
 
   // 建 run 目录（v1.2.8 功能⑦：resume 模式复用已有目录，不新建）
-  const { runDir, runId, dateStr } = resumeRunDir
-    ? resolveRunDirInfo(resumeRunDir)
-    : resolveRunDir();
+  // v1.3.9：daemon 子进程优先用父进程经 SOFAGENT_DAEMON_RUNDIR 传入的 runDir——
+  // 否则子进程重新 resolveRunDir 会新建不同序号目录（父打印 run-03 子实际跑 run-04）。
+  const { runDir, runId, dateStr } = process.env.SOFAGENT_DAEMON_RUNDIR
+    ? resolveRunDirInfo(process.env.SOFAGENT_DAEMON_RUNDIR)
+    : resumeRunDir
+      ? resolveRunDirInfo(resumeRunDir)
+      : resolveRunDir();
 
   // ─── v1.3.9 daemon 模式（--daemon）：spawn detached 自脱离进程树 ───
   // WorkBuddy run_in_background 的进程随主 session turn 结束被整体清理（run-01
@@ -3534,7 +3538,10 @@ async function main() {
     const childArgs = ['--target', args.target, '--max-rounds', String(args.maxRounds)];
     if (args.resume) childArgs.push('--resume');
     if (args.dryRun) childArgs.push('--dry-run'); // 🔴 必须透传：否则 --daemon --dry-run 的子进程会真跑（调 LLM）
-    const childPid = spawnDetachedDriver(childArgs, daemonLog, { SOFAGENT_DAEMON_CHILD: '1' });
+    const childPid = spawnDetachedDriver(childArgs, daemonLog, {
+      SOFAGENT_DAEMON_CHILD: '1',
+      SOFAGENT_DAEMON_RUNDIR: runDir, // 子进程复用本 runDir，避免重新 resolve 得不同目录
+    });
     console.log(`🛰️ daemon 模式：driver 已脱离进程树（pid=${childPid}），日志 → ${daemonLog}`);
     console.log(`   监控: node FORGE/src/fresh-eyes-driver.mjs --check-alive ${runDir}`);
     process.exit(0);
@@ -3605,12 +3612,18 @@ async function main() {
   // 🔴 v1.2.7 心跳定时器（run-01 SIGKILL 教训）。
   // SIGKILL 杀进程时所有 Node handler 都来不及执行，status.json 停在上一次状态。
   // 解法：每 15s 更新 heartbeat 字段，监控端可判断"超 60s 没更新 = driver 已死"。
-  const heartbeatTimer = setInterval(() => {
-    try { visibility.heartbeat(); } catch { /* 心跳失败不中断 */ }
-  }, 15_000);
+  // v1.3.9：仅非 dry-run 注册——dry-run 结束路径是 return（非 process.exit），
+  // 残留 timer 会让事件循环不排空 → 进程挂住（release-gate dry-run 实测 91685 挂住）。
+  // heartbeatTimer 声明提到 main 作用域：main 正常结束路径（3853）clearInterval 引用。
+  let heartbeatTimer = null;
+  if (!args.dryRun) {
+    heartbeatTimer = setInterval(() => {
+      try { visibility.heartbeat(); } catch { /* 心跳失败不中断 */ }
+    }, 15_000);
 
-  // v1.3.9 pidfile：写 driver.pid 供 watcher 审计死因（SIGTERM 时 cleanup 删除）
-  try { writeFileSync(join(runDir, 'driver.pid'), String(process.pid)); } catch { /* pidfile 失败不阻断 */ }
+    // v1.3.9 pidfile：写 driver.pid 供 watcher 审计死因（SIGTERM 时 cleanup 删除）
+    try { writeFileSync(join(runDir, 'driver.pid'), String(process.pid)); } catch { /* pidfile 失败不阻断 */ }
+  }
 
   console.log(`\n🔍 fresh-eyes-loop 启动`);
   console.log(`   target    = sofagent ${args.target}`);
@@ -3838,8 +3851,8 @@ async function main() {
     counts: finalCounts,
   });
 
-  // 🔴 v1.2.7 清理心跳定时器
-  clearInterval(heartbeatTimer);
+  // 🔴 v1.2.7 清理心跳定时器（v1.3.9：dry-run 不注册，null 守卫）
+  if (heartbeatTimer) clearInterval(heartbeatTimer);
 
   // latest.json 指针：driver 结束时更新（标记停止原因，Dashboard 不再显示"运行中"）
   updateLatestPointer(runDir, {
