@@ -22,6 +22,12 @@
 
 import type { ExecutionBackend, ExecutionTask, ExecutionResult } from '../execution-backend.js';
 import { createTrajectoryCollector, type TrajectoryCollector } from './trajectory.js';
+import { execFile } from 'node:child_process';
+import { createRequire } from 'node:module';
+import { join, dirname } from 'node:path';
+
+// CJS 编译目标下 import.meta 不可用——用 __filename（@types/node 提供）
+const require_ = createRequire(__filename);
 
 // ════════════════════════════════════════
 // Cordis 真实契约类型（duck-typing 最小面）
@@ -501,6 +507,125 @@ export function createDshBackend(
     async close() {
       // Cordis 运行时按任务创建按任务销毁（runCordisAgent finally dispose）——
       // 无进程级资源需要释放
+    },
+  };
+
+  return backend;
+}
+
+// ════════════════════════════════════════
+// CLI 桥接后端（rc 期适配路径）· v1.3.9 增量
+// ════════════════════════════════════════
+
+/**
+ * 解析 @deepseek-ai/dsh 的 CLI 入口（lib/bin.js）。
+ * rc.8 是纯 CLI 包（main: undefined / bin: { dsh: lib/bin.js } / 无 exports）——
+ * import('@deepseek-ai/dsh') 拿不到库入口，只能定位 bin 文件路径 spawn 子进程。
+ */
+function resolveDshCliBin(): string {
+  // package.json 是文件路径，require.resolve 可解析（无 main 也不影响）
+  const pkgJson = require_.resolve('@deepseek-ai/dsh/package.json');
+  return join(dirname(pkgJson), 'lib', 'bin.js');
+}
+
+/**
+ * 创建 DSH CLI 桥接后端（rc.8 形态：纯 CLI + headless profile 单任务执行）。
+ *
+ * 为什么存在：@deepseek-ai/dsh@0.1.0-rc.8 是纯 CLI 包（无库入口），
+ * Cordis 内嵌路线（runCordisAgent）在 rc 期走不通；但 DSH 官方提供
+ * `dsh --profile headless "<task>"` —— 单任务执行、打印最终 assistant 文本后退出，
+ * 语义与 ExecutionBackend.execute 完全对齐。适配姿势 = spawn 子进程桥接。
+ *
+ * 能力边界（rc.8 诚实标注，正式版自动升级到 Cordis 内嵌）：
+ * - ✅ 单任务文本执行（systemPrompt 前置拼接进 task，与 runCordisAgent 语义对齐）
+ * - ⚠️ 无工具面（headless profile 只挂 dsh-base + dsh-headless，无 dsh-tool-*）——
+ *   task.tools 传入时仅记录 WARN，不生效；工具支持排正式版
+ * - ⚠️ 预算熔断退化为外层超时（headless 无工具循环，天然无工具预算概念）
+ * - 模型：透传 modelConfig.apiKeyEnv 对应的 key（默认 DEEPSEEK_API_KEY）给子进程
+ */
+export function createDshCliBackend(): ExecutionBackend {
+  let binPath: string;
+  try {
+    binPath = resolveDshCliBin();
+  } catch {
+    throw new Error(
+      '[dsh-backend] @deepseek-ai/dsh 未安装，无法启用 DSH CLI 桥接。' +
+      '安装：cd <repo> && pnpm add @deepseek-ai/dsh@0.1.0-rc.8（8GB 机器 npm install 会 OOM，用 pnpm）'
+    );
+  }
+
+  const backend: ExecutionBackend = {
+    name: 'dsh',
+
+    async execute(task: ExecutionTask): Promise<ExecutionResult> {
+      // 工具面边界：rc.8 headless 无工具——透传的工具不生效，显式告知
+      if (task.tools && task.tools.length > 0) {
+        console.warn(
+          `[dsh-backend] DSH rc.8 headless 无工具面——收到 ${task.tools.length} 个工具但不生效（工具支持排正式版）`
+        );
+      }
+
+      // systemPrompt 前置拼接（对齐 runCordisAgent 的 fullMessage 构造语义）
+      const fullMessage = task.systemPrompt
+        ? `${task.systemPrompt}\n\n---\n\n${task.task}`
+        : task.task;
+
+      // API key 透传：优先 modelConfig.apiKeyEnv，缺省 DEEPSEEK_API_KEY
+      const keyEnv = String(task.modelConfig?.apiKeyEnv ?? 'DEEPSEEK_API_KEY');
+      const apiKey = process.env[keyEnv] ?? process.env.DEEPSEEK_API_KEY ?? '';
+      const env: NodeJS.ProcessEnv = { ...process.env };
+      if (apiKey) env.DEEPSEEK_API_KEY = apiKey;
+
+      const startedAt = Date.now();
+      const result = await new Promise<{ output: string; rounds: number; timedOut: boolean }>(
+        (resolve, reject) => {
+          execFile(
+            process.execPath,
+            [binPath, '--profile', 'headless', fullMessage],
+            {
+              env,
+              timeout: task.recursionLimit ? Math.max(60_000, task.recursionLimit * 1000) : 120_000,
+              maxBuffer: 4 * 1024 * 1024,
+            },
+            (err, stdout, stderr) => {
+              if (err && !(err as { killed?: boolean }).killed) {
+                reject(
+                  new Error(
+                    `[dsh-backend] headless 执行失败：${(err as Error).message}` +
+                    (stderr ? `\nstderr: ${stderr.slice(0, 800)}` : '')
+                  )
+                );
+                return;
+              }
+              const timedOut = Boolean((err as { killed?: boolean })?.killed);
+              // headless 打印最终 assistant 文本到 stdout；err.killed 是超时截断
+              resolve({
+                output: stdout.trim(),
+                rounds: 1,
+                timedOut,
+              });
+            },
+          );
+        },
+      );
+
+      return {
+        output: result.output,
+        rounds: result.rounds,
+        hitRecursionLimit: result.timedOut,
+        hardBreak: result.timedOut,
+        debugLogs: [
+          {
+            agentId: `dsh-cli-${Date.now()}`,
+            action: `headless:${result.timedOut ? 'timeout' : 'ok'}`,
+            timestamp: new Date(startedAt).toISOString(),
+          },
+        ],
+      };
+    },
+
+    async close() {
+      // 无进程级资源（execFile 子进程随回调结束回收）
     },
   };
 

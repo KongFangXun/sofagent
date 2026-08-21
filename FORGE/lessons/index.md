@@ -269,3 +269,12 @@
 |---|------|------|------|------|
 | 8 | **草稿工具模型配置漂移**——gen-draft-lib 硬编码 GLM-5.2，FORGE 切 deepseek 后仍调 GLM | 模型配置未与 FORGE/models/profile.mjs 同源 | loadModelConfig 同步解析 profile.mjs A 角色（纯文本正则，零异步——同步函数不能用动态 import） | gen-draft-lib.mjs |
 | 9 | **16 视角完整性校验格式不兼容**——deepseek 输出「视角N：名称」带冒号/全角引号，校验查「视角N 名称」 | 校验硬编码 GLM 输出风格 | 归一化剥离引号 + 正则 `视角N[：:\s]名称` 兼容三种风格 | gen-fresh-eyes-draft.mjs |
+
+### DSH rc.8 CLI 桥接适配（2026-08-21 · 执行后端真实路径打通）
+
+| # | 坑位 | 根因 | 修复/铁律 | 涉及 |
+|---|------|------|----------|------|
+| 10 | **npm install 解析大依赖树在 8GB 机器 OOM**——dsh 60+ 包树把 V8 heap 2GB 打爆（FATAL heap out of memory）；NODE_OPTIONS 4GB 又物理 OOM 撞 driver worker（SIGKILL） | 8GB 机器内存天花板（同 run-12 教训） | **pnpm store 硬链接**（解析器内存占用远小于 npm）；独立目录装 + 拷 @deepseek-ai/.pnpm 到根 node_modules（symlink 相对路径保持有效）；`pnpm approve-builds` 处理原生模块构建 | DSH 安装 |
+| 11 | **@deepseek-ai/dsh rc.8 是纯 CLI 包**——main undefined / bin lib/bin.js / 无 exports，`import('@deepseek-ai/dsh')` 直接失败（无库入口） | rc 期包形态未定型（rc.6 假设 plugin 导出，rc.8 变纯 CLI） | 守卫设计正确（rc 拦截等正式版）；想先用 → **CLI 桥接**：`require.resolve('@deepseek-ai/dsh/package.json')` 定位 bin（package.json 是文件路径不受无 main 影响）+ spawn `--profile headless <task>` 单任务执行 | dsh-backend / execution-backend |
+| 12 | **rc.8 headless 无工具面**——headless profile 只挂 dsh-base+dsh-headless（无 dsh-tool-*） | headless 定位是纯文本单轮问答 | 能力边界诚实标注：tools 传入 WARN 不生效；预算熔断退化外层超时；工具支持排正式版（Cordis 内嵌自动升级） | createDshCliBackend |
+| 13 | **CJS 编译目标下 `import.meta` 不可用**（TS1343）——orchestrator module=commonjs | TS 模块配置限制 | `createRequire(__filename)` 替代 `createRequire(import.meta.url)`；类型：modelConfig 是 `Record<string, unknown>` 须 `String()` 转义再当 env 索引 | dsh-backend |
