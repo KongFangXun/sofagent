@@ -356,7 +356,9 @@ clawhub skill verify sofagent 2>&1 | grep version
 # 清理 .DS_Store（macOS 残留会触发 security 扫描 not_clean）
 find ./SKILL -name '.DS_Store' -delete
 # 发布（必须带 --changelog，否则 ClawHub 默认 1.0.0 自增，不走 SKILL.md version）
-clawhub skill publish ./SKILL --slug sofagent --version <版本号> --changelog "vX.Y.Z"
+# 🔴 必须带 --name（2026-08-21 教训：缺 --name 时 ClawHub 显示名回退为 "SKILL"，
+#   不读 SKILL.md frontmatter 的 displayName——重发修复见 v1.3.9 发布记录）
+clawhub skill publish ./SKILL --slug sofagent --name "FDE Skill" --version <版本号> --changelog "vX.Y.Z"
 
 # ── SkillHub 分发 ──
 # SkillHub 不接受 .png 文件，用临时目录排除
