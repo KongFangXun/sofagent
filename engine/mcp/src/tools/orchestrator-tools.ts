@@ -1,6 +1,6 @@
 // ============================================================
 // orchestrator-tools.ts · MCP tool: sofagent_compose
-// v1.3.8: 从 mcp-server.ts 提取
+// v1.3.9: 从 mcp-server.ts 提取
 // ============================================================
 
 import { execFileSync } from 'child_process';

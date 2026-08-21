@@ -1,11 +1,11 @@
 # 路线图 · Roadmap
 
 > 已经做了什么、未来要去哪、哪些地方需要你的帮助。
-> v1.3.8 · 2026-08-20（UTC）· 🛡️ 代理网关硬边界 + 🔐 数据静态加密 + ⏸️ Durable Execution L3 + 🤖 异步长任务自治 + ⚙️ FORGE driver 保活三件套
+> v1.3.9 · 2026-08-21（UTC）· 🛡️ 代理网关硬边界 + 🔐 数据静态加密 + ⏸️ Durable Execution L3 + 🤖 异步长任务自治 + ⚙️ FORGE driver 保活三件套
 
 产品定位详见 [设计哲学](./PHILOSOPHY.md) 和 [README](../README.md)。
 
-## 现在在哪：v1.3.8（已交付）
+## 现在在哪：v1.3.9（已交付）
 
 > **v1.3.8 已于 2026-08-20 交付**——代理网关硬边界（唯一出入口 + 风险分级 + 权限单调守卫 + HITL 审批队列激活）+ 数据静态加密（纯 TS AES-256-GCM 透明加解密 + 密钥指纹强制备份）+ Durable Execution L3（WAL 三态恢复 + undo 三档回滚）+ 异步长任务自治（cron 三档糖 + 依赖图 + 死循环检测）+ FORGE driver 保活三件套（pm2 托管 / resume 断点续跑 / liveness 探针）+ SDK sandbox:true 启用（工具/文件/网络三层沙箱）+ release-gate 瘦身（--judgment-only 判断层直启 + F 循环 FAIL 即停）+ fresh-eyes 成本重构（usage.jsonl 计量 + B 侧复核模式）+ 快照写路径加固（revert 两阶段原子化）· 另含 bugfix 批次（四 P0 安全修复 + 防屎山四项）。详见 [v1.3.8 开发日志](./changelog/v1.3/v1.3.8.md)。
 >

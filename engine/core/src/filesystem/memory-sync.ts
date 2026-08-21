@@ -1,7 +1,7 @@
 // ============================================================
 // memory-sync.ts · Agent Memory persona 同步（路径通用化）
 // v1.3.7 新增：检测 ~/.openclaw/memory-tdai/persona.md 变更
-// v1.3.8 ⑨ 路径通用化：三级优先解析（2026-08-18 用户决策）
+// v1.3.9 ⑨ 路径通用化：三级优先解析（2026-08-18 用户决策）
 //   ① env SOFAGENT_PERSONA_SOURCE（单路径，最高优先）
 //   ② config.yml memory_sync.persona_sources[]（数组）
 //   ③ 内置默认表（原 3 路径降级为 fallback）

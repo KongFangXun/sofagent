@@ -1,6 +1,6 @@
 # sofagent 项目导航索引（WIKI）
 
-> v1.3.8 · 2026-08-20 · 孔放勋
+> v1.3.9 · 2026-08-21 · 孔放勋
 
 > **读者**：人类开发者 & AI Agent 均可阅读。本文档是项目全局索引入口。
 > 如果你是 AI Agent 且需要查找具体实现路径，请直接跳转到"## 代码地图"段。
@@ -11,7 +11,7 @@
 > - **[ARCHITECTURE.md](./ARCHITECTURE.md)**：双层架构设计（约束层 × 生命周期）+ 约束层工程三层嵌套（约束层 → Graph → Loop），关键技术决策记录。**3 秒版**：约束层管"做对"（注入·审计·回溯·进化）· 激活链四阶段管"跑起来" · Graph 控制图分波次 · Loop 自迭代闭环。
 > - **[VALIDATION.md](./VALIDATION.md)**：行业印证与生态定位——sofagent 直觉如何被行业验证 + Agent 三层模型 + 架构框架映射。
 > - **[PHILOSOPHY.md](./PHILOSOPHY.md)**：设计哲学与产品方法论（§一~§九）。"不替代 Agent，做 Agent 的控制面"。
-> - **[ROADMAP.md](./ROADMAP.md)**：版本路线图 + 迭代历程。当前 v1.3.8。
+> - **[ROADMAP.md](./ROADMAP.md)**：版本路线图 + 迭代历程。当前 v1.3.9。
 > - **行业坐标**（2026-08-19 红杉 Neo-Lab 分享吸收）：sofagent = 企业 Neo-Lab 的**智能主权基础设施**——Sovereign AI 四层主权（数据/模型适配/评测迭代/部署）各有落点：ontology+审计=数据主权（已具备）、训练协议接口=模型适配（开源仓库保留完整可自建路径——接口 + 参考实现；商业侧为可选托管增强，非闭源锁定）、Benchmark+MLflow=评测迭代、本地权重+灰度=部署。企业自己掌控智能（Neo-Lab 的活），sofagent 管住这些智能（约束层的活）。
 
 > **30 分钟深度路径**（想动手或评估选型时）：① [ARCHITECTURE](./ARCHITECTURE.md) §一~§二（双层架构 + 约束层四能力，~10 分钟）→ ② [PHILOSOPHY](./PHILOSOPHY.md) §一（为什么不替代 Agent，~5 分钟）→ ③ [SECURITY](../SECURITY.md)「已知风险」+ [LIMITATIONS](./LIMITATIONS.md) 目录（诚实边界，~10 分钟）→ ④ 按角色进 [guides/](./guides/)：企业 IT 读 enterprise-deploy · 开发者读 harness-sdk · 想看审查体系读 review-system
@@ -168,7 +168,7 @@
 
 | 项 | 值 |
 |----|-----|
-| 当前版本 | **v1.3.8**（2026-08-20） |
+| 当前版本 | **v1.3.9**（2026-08-21） |
 | 下一版 | v1.3.9（规划中，参见 docs/ROADMAP.md） |
 | 测试覆盖 | 2903 测试 / 12 包（测试统计标准：有 test script 的 workspace 包；workspace 总数 13 个均发布到 npm，实测见 `tools/check/test-count.sh`、声称数同步校验见 `tools/check/check-test-count.sh`） |
 | 审计规则 | 24 条（17 默认 + 7 扩展），活跃编号 A1-A11 + A14-A23 + E1/E2/E4，每次 commit 自动跑 |
@@ -246,4 +246,4 @@
 
 ---
 
-> **维护规则**：本文档由 AI 在每次发版时更新（版本号、文件清单、状态表）。当前版本 v1.3.8 · 孔放勋 · 2026-08-20。
+> **维护规则**：本文档由 AI 在每次发版时更新（版本号、文件清单、状态表）。当前版本 v1.3.9 · 孔放勋 · 2026-08-21。

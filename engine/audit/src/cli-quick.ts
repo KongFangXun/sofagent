@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 // ============================================================
 // cli-quick.ts · npx sofagent-audit 零配置 CLI 入口
-// v1.3.8 (⑧-1)：30 秒 aha moment——任何 git repo 都能跑
+// v1.3.9 (⑧-1)：30 秒 aha moment——任何 git repo 都能跑
 //
-// 依赖说明（v1.3.8 P0-R13）：
+// 依赖说明（v1.3.9 P0-R13）：
 //   本文件 import @sofagent/core（见 package.json dependencies）。
 //   git clone 后直接跑 dist/cli-quick.js 会报 MODULE_NOT_FOUND——
 //   需先 `npm install`（根目录安装会 link workspace 依赖）或

@@ -2,7 +2,7 @@
 
 > sofagent 站在巨人肩膀上。以下每一个项目、文章和作者，都在某个设计决策里留下了痕迹。
 
-> v1.3.8 · 2026-08-20 · 孔放勋
+> v1.3.9 · 2026-08-21 · 孔放勋
 
 <img src="assets/sofagent.png" alt="sofagent" width="160" />
 

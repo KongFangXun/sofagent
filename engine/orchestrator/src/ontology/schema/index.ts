@@ -2,7 +2,7 @@
 // schema/index.ts · Ontology JSON Schema 统一导出 + 最小校验器（v1.3.7 交付 1）
 //
 // 三份 Schema（entity/concept/relations）是 validator 校验、审计对齐、
-// 未来模型层注入（v1.3.8 注册接口）的单一事实源。
+// 未来模型层注入（v1.3.9 注册接口）的单一事实源。
 //
 // validateAgainstSchema：纯 JS 实现的最小 JSON Schema 校验器
 //（零新依赖，不引入 ajv）——覆盖 type / required / properties / items /

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// orchestrator CLI · v1.3.8
+// orchestrator CLI · v1.3.9
 //
 // loop 子命令 v1.3.7 升级：默认走 LangGraph StateGraph 节点级流转
 // （engineer→audit→reviewer→human_confirm），支持 --resume 从 checkpoint

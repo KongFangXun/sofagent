@@ -2,7 +2,7 @@
 // durable/wal-recovery.ts · WAL 崩溃恢复器（Durable L3）
 // v1.3.8 交付三 新增
 //
-// 崩溃恢复协议（changelog v1.3.8 §三）：
+// 崩溃恢复协议（changelog v1.3.9 §三）：
 //   1. scan(walPath)：扫描 wal.jsonl → 按 taskId 聚合成三态清单
 //        committed   begin + commit（可能含未确认的外部副作用）
 //        aborted     begin + abort（失败收尾——回滚已发生的部分副作用）

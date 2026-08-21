@@ -7,7 +7,7 @@
 
 // sofagent load-chain hook · OpenClaw 2026.6.x
 // 注入三层加载链到 agent:bootstrap：
-//   L1 core-rules.md（核心铁律 ~30 行，始终注入）+ 按 task type 追加岗位规范（v1.3.8 渐进式加载）
+//   L1 core-rules.md（核心铁律 ~30 行，始终注入）+ 按 task type 追加岗位规范（v1.3.9 渐进式加载）
 //   L2 think.md（反思区）
 //   L3 fde.md（用户规则）
 // 由 DeepSeek V4 Pro 和 GLM-5.2 配合生成。
