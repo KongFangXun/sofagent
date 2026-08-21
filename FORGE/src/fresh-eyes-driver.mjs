@@ -140,8 +140,13 @@ const DEFAULT_GRACE_STEPS = 0;   // 其他步骤同上
 // 走裸 LLM 兜底，拿着碎片上下文补全报告 → 审查臆造（"automerge 排期升级"
 // 等无中生有的 finding）→ b-fix 基于臆造越界改文件。40/50 保证单视角有
 // 充裕预算完成"摸地形 → 定点审查 → 输出报告"全流程。
-const PERSPECTIVE_TOOL_SOFT = 40;
-const PERSPECTIVE_TOOL_HARD = 50;
+// v1.3.9 P2-1 调优（2026-08-21）：50/60。run-01 round-3 实测 24 个 worker 里
+// 79% 撞 51-60 次硬熔断产出碎片（B 组 11/12 碎片）——V4 Flash 在 50 次预算内
+// 收敛困难，40/50 对 deepseek-v4-flash 过紧。50/60 给复杂视角（红队/代码审读者）
+// 更充裕的完成空间；配合模板收敛指令（合理用量 8-15 次）控制成本，不回到
+// run-06 全局 60/80 覆辙。
+const PERSPECTIVE_TOOL_SOFT = 50;
+const PERSPECTIVE_TOOL_HARD = 60;
 
 // ─── 模型定价（从 FORGE/models/ 加载）──────────────────────
 // 单位：CNY per 1M tokens（百万 token 计价）
@@ -223,7 +228,8 @@ function buildPerspectiveSteps() {
       // v1.3.4：预算 15/20→40/50 后 recursionLimit 同步放大（30→110）。
       // LangGraph recursionLimit 按 super-step 计：每轮 LLM 调用+工具执行 = 2 步，
       // 50 次工具调用至少需 100 步，+10 冗余。原 30 会在工具预算用完前先熔断。
-      recursionLimit: 110,
+      // v1.3.9 P2-1：预算 50/60 → recursionLimit 130（60 次工具 × 2 步 + 10 冗余）。
+      recursionLimit: 130,
       toolSoftLimit: PERSPECTIVE_TOOL_SOFT,
       toolHardLimit: PERSPECTIVE_TOOL_HARD,
     };
@@ -233,7 +239,7 @@ function buildPerspectiveSteps() {
       outputs: [`check-b-p${p.id}.md`],
       inputs: [],
       perspective: p.label,
-      recursionLimit: 110,
+      recursionLimit: 130,
       toolSoftLimit: PERSPECTIVE_TOOL_SOFT,
       toolHardLimit: PERSPECTIVE_TOOL_HARD,
     };
@@ -758,7 +764,23 @@ async function runWorker(step, roundDir, target) {
   const systemPrompt = buildSystemPrompt(cfg.agentSkillPath);
 
   // 2. 读 prompt 正文
-  const promptTemplate = readFileSync(join(PROMPTS_DIR, stepDef.prompt), 'utf-8');
+  let promptTemplate = readFileSync(join(PROMPTS_DIR, stepDef.prompt), 'utf-8');
+
+  // v1.3.9 P2-2：perspective worker 公共收敛指令注入（单点生效，不逐个改 24 个模板）。
+  // run-01 round-3 实测：V4 Flash 在模板已有的"合理用量 8-15 次"引导下仍普遍撞
+  // 51-60 次硬熔断（B 组 11/12 碎片）——模板引导不够硬。这里在注入层追加强收敛
+  // 指令，对未来新增视角同样生效。
+  if (stepDef.perspective) {
+    promptTemplate += `
+
+## 🔴 收敛要求（v1.3.9 强化）
+
+1. 证据充分立即停止探索：目标 **8-15 次工具调用**完成本视角审查，软上限 50 次、硬上限 60 次。
+2. **到第 40 次工具调用时必须转入写报告**，禁止继续探索。
+3. 同一文件最多读 2 次；同一关键词最多 grep 2 次——禁止反复验证同一件事。
+4. 报告必须 ≥500 字符且含 ## 标题；找不到 P0 就明确写"未发现 P0"，再给出 P1/P2 观察项。
+5. 发现 3-8 条即可收尾，不要为了凑数无限扩张探索范围。`;
+  }
 
   // 3. 组装 user message：prompt 正文 + 路径注入 + target 注入
   // 分片模式：环境变量 FORGE_BATCH_RESULT 覆盖 result.md 的文件名，
@@ -1398,7 +1420,7 @@ function extractAgentText(result) {
  * @param {object} stepDef  步骤定义（含 prompt 文件名等）
  * @returns {Promise<string>} 报告文本，失败返回 null
  */
-async function generateReportWithoutTools(model, messages, step, role, stepDef) {
+async function generateReportWithoutTools(model, messages, step, role, stepDef, opts = {}) {
   // 1. 从工具结果中提取关键摘要（文件路径 + grep 结果等）
   // v1.2.7 run-07：200 字符→500 字符，让裸 LLM 有足够上下文判断 P0/P1 而非全标 P2
   const toolSummaries = [];
@@ -1457,6 +1479,16 @@ async function generateReportWithoutTools(model, messages, step, role, stepDef) 
     '  宁可留空也不得推测补全。',
     '- 只有摘要信息确实不足以确认时才标 P2"待证实"——禁止把推测升为 P0/P1',
     '- 用中文写，Markdown 格式',
+    // v1.3.9 P1-1：兜底碎片重试——首次生成未达质量门控时，重试一次并追加
+    // 收敛指令（证据仍不足时重试无意义，由上方 MIN_TOOL_EVIDENCE 门控拦截）。
+    ...(opts.retry
+      ? ['',
+         '🔴 重试要求（上一轮输出未达质量门控）：',
+         '报告不得少于 500 字符，必须含 ## 标题行。',
+         '至少列出 1 条有文件路径的具体发现（P0/P1/P2 均可，找不到 P0 就如实写"未发现 P0"，',
+         '再给 P1/P2 观察项）。禁止只输出一句话、半截中间思考或空泛总评。',
+         '宁可详细完整，不要精简。']
+      : []),
     // v1.3.0 run-21 修复：多产物步骤（a-consolidate 产 findings.md+result.md）的
     // 兜底报告也必须带 ===FILE: 分隔符，否则 sliceMultiOutput 把 result.md 判空，
     // b-fix 拿不到 finding → 假绿停止（run-21 3 轮全丢的根因）。
@@ -1506,6 +1538,21 @@ async function generateReportWithoutTools(model, messages, step, role, stepDef) 
   // 碎片为有效 finding。
   if (respText && isReportText(respText)) {
     return respText;
+  }
+  // v1.3.9 P1-1：碎片重试一次（证据足够但生成未达质量门控）。
+  // 重试带更强收敛指令（opts.retry=true）；重试仍失败才落降级占位。
+  // 防死循环：retry 标志只允许一次递归。
+  if (!opts.retry) {
+    console.warn(`  ┄ [${step}] 裸 LLM 报告未达质量门控（${respText.length} 字符），重试一次`);
+    try {
+      const retried = await generateReportWithoutTools(model, messages, step, role, stepDef, { retry: true });
+      if (retried && isReportText(retried)) {
+        console.log(`  ✅ [${step}] 重试报告生成成功（${retried.length} 字符）`);
+        return retried;
+      }
+    } catch (retryErr) {
+      console.warn(`  ⚠️ [${step}] 裸 LLM 重试失败: ${retryErr.message}，落降级占位`);
+    }
   }
   // 碎片不达标 → 返回结构化占位（含降级标记词，让 parseStopCondition 识别）
   return [
@@ -2475,9 +2522,17 @@ function parseStopCondition(roundDir) {
   // 里会被 a-verify 覆盖抹掉（run-23 R1 实测降级轮被误判 isClean=true）。flag 与
   // result.md 解耦，任何下游覆盖都不影响。文本标记匹配保留做旧 run 数据兼容（取或）。
   let isDegraded = false;
+  // v1.3.9 P1-2：降级分类——区分「基建/聚合层失败」vs「worker 质量信号」。
+  // infra  = degraded.flag / 全无 check 产物（a-consolidate 崩、worker 全崩等系统层问题）——
+  //          不累计熔断计数（P3 自愈窗口），下轮自然重试
+  // quality = 降级标记词 / 短产物比例超标（worker 兜底碎片、审查质量不足）——累计熔断
+  let degradedKind = null;      // 'infra' | 'quality' | null
+  let degradedReason = '';
   const degradedFlagPath = join(roundDir, 'degraded.flag');
   if (existsSync(degradedFlagPath)) {
     isDegraded = true;
+    degradedKind = 'infra';
+    degradedReason = 'degraded.flag 存在（a-consolidate 等基建/聚合层失败）';
   }
   const degradedMarkers = [
     '崩溃（降级占位）',
@@ -2493,6 +2548,8 @@ function parseStopCondition(roundDir) {
       for (const marker of degradedMarkers) {
         if (text.includes(marker)) {
           isDegraded = true;
+          degradedKind = 'quality';
+          degradedReason = `降级标记词: ${marker}`;
           break;
         }
       }
@@ -2534,10 +2591,16 @@ function parseStopCondition(roundDir) {
   }
   if (totalCheckCount > 0 && (shortCheckCount / totalCheckCount) > CHECK_SHORT_RATIO) {
     isDegraded = true;
+    if (!degradedKind) {
+      degradedKind = 'quality';
+      degradedReason = `短产物占比 ${(shortCheckCount / totalCheckCount * 100).toFixed(0)}%（>${CHECK_SHORT_RATIO * 100}%）`;
+    }
   }
-  // 如果一份 check 产物都没有（全部 perspective worker 崩溃），也是降级
+  // 如果一份 check 产物都没有（全部 perspective worker 崩溃），也是降级（基建/系统层）
   if (!hasAnyCheckProduct && !isDegraded) {
     isDegraded = true;
+    degradedKind = 'infra';
+    degradedReason = '无任何 check 产物（perspective worker 全崩）';
   }
 
   // 干净轮 = 无 P0 无 P1 无 P2 闭环失败 且 非降级产物
@@ -2559,12 +2622,12 @@ function parseStopCondition(roundDir) {
           `\n  ⚠️  [parseStopCondition sanity] ${filePath} 含 P0/P1 标记但解析计数为 0 — ` +
           `判定强制降级为 isClean=false（防假阳性 clean，见 v1.3.2 run-11 教训）`
         );
-        return { p0: Math.max(p0, 1), p1: Math.max(p1, 1), p2, hasFail, isClean: false, isDegraded };
+        return { p0: Math.max(p0, 1), p1: Math.max(p1, 1), p2, hasFail, isClean: false, isDegraded, degradedKind, degradedReason };
       }
     }
   }
 
-  return { p0, p1, p2, hasFail, isClean, isDegraded };
+  return { p0, p1, p2, hasFail, isClean, isDegraded, degradedKind, degradedReason };
 }
 
 /**
@@ -3778,15 +3841,21 @@ async function main() {
     // 一票否决误伤（1 份短产物连累整轮），连续 2 轮误判降级即触发熔断，
     // 循环在第 2 轮就被腰斩，没给第 3 轮自我修复机会。改为 >=3：与 run-06
     // 原始教训（3 轮全降级）精确对齐，给偶发降级 1 次容错。
-    if (counts.isDegraded) {
+    // v1.3.9 P1-2/P3：降级分类累计——quality（worker 碎片/审查不足）累计熔断；
+    // infra（a-consolidate 崩/worker 全崩等基建层）不累计、给自愈窗口（下轮重试）。
+    if (counts.degradedKind === 'quality') {
       consecutiveDegraded++;
       if (consecutiveDegraded >= 3) {
-        console.error(`\n💥 连续 ${consecutiveDegraded} 轮降级，循环无产出意义，直接退出`);
+        console.error(`\n💥 连续 ${consecutiveDegraded} 轮质量降级，循环无产出意义，直接退出`);
         stopReason = 'consecutive-degraded-error';
         preservedStopReason = stopReason;
         saveRoundCheckpoint();  // v1.2.8 功能⑦：退出前写断点（本轮已完成）
         break;
       }
+    } else if (counts.degradedKind === 'infra') {
+      // 基建降级：不累计熔断计数（P3 自愈窗口）——consolidate 故障/worker 全崩
+      // 是系统层问题，重跑下轮即可，不该按"审查质量差"熔断整个循环。
+      console.warn(`  ⚠️ 基建降级（${counts.degradedReason || '?'}）——不累计熔断计数，循环继续（P3 自愈窗口）`);
     } else {
       consecutiveDegraded = 0;
     }
