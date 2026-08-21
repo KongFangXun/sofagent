@@ -19,9 +19,11 @@
 // bin: lib/bin.js / 无 exports）——import('@deepseek-ai/dsh') 拿不到库入口，Cordis 内嵌
 // 路线走不通；但 DSH 官方提供 `dsh --profile headless "<task>"` 单任务执行（打印最终
 // assistant 文本后退出），语义与 ExecutionBackend.execute 对齐。
-// 适配路径：SOFAGENT_FORCE_DSH=1 显式放行 rc 期 → 走 CLI 桥接（createDshCliBackend，
-// spawn headless 子进程）；不设 env 默认仍 rc 拦截 → LangGraph。正式版发布后 Cordis
-// 内嵌自动生效，CLI 桥接作为 rc 期过渡保留。
+// 定位（v1.3.9 拍板）：CLI 桥接 = 当前正式执行后端形态（不等 DSH 正式版）。
+// SOFAGENT_FORCE_DSH=1 显式启用 DSH（spawn headless 子进程）；不设 env 默认 LangGraph
+// （工具任务安全优先——CLI 桥接无工具面，工具类任务暂走 LangGraph）。工具面补齐
+// （库内集成 dsh-base 全套核心服务 + 注入 sofagent 工具）排下版开发项；DSH 包正式版
+// 发布后 Cordis 内嵌自动生效，桥接保留为轻量形态。
 // 守卫策略（两层）：
 // - 层 1（本文件模块守卫）：cordis 可 import 且导出 Context 构造器 + dsh 非 rc——任一
 //   不满足即 fallback LangGraph（force 时改走 CLI 桥接）。

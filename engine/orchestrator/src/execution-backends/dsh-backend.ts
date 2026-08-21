@@ -536,12 +536,15 @@ function resolveDshCliBin(): string {
  * `dsh --profile headless "<task>"` —— 单任务执行、打印最终 assistant 文本后退出，
  * 语义与 ExecutionBackend.execute 完全对齐。适配姿势 = spawn 子进程桥接。
  *
- * 能力边界（rc.8 诚实标注，正式版自动升级到 Cordis 内嵌）：
+ * 能力边界（当前正式形态——DSH 包虽 rc 但执行能力已验证投产，不等正式版）：
  * - ✅ 单任务文本执行（systemPrompt 前置拼接进 task，与 runCordisAgent 语义对齐）
  * - ⚠️ 无工具面（headless profile 只挂 dsh-base + dsh-headless，无 dsh-tool-*）——
- *   task.tools 传入时仅记录 WARN，不生效；工具支持排正式版
+ *   task.tools 传入时仅记录 WARN，不生效；工具面补齐 = 库内集成（dsh-base 聚合包含
+ *   dsh-agent-loop/dsh-llm-deepseek/dsh-bash-sandbox/dsh-fs-local 全套核心服务，可注入
+ *   sofagent 工具），排下版开发项
  * - ⚠️ 预算熔断退化为外层超时（headless 无工具循环，天然无工具预算概念）
  * - 模型：透传 modelConfig.apiKeyEnv 对应的 key（默认 DEEPSEEK_API_KEY）给子进程
+ * - 技术升级路径：DSH 包正式版发布后可切 Cordis 内嵌（runCordisAgent），无需改本桥接语义
  */
 export function createDshCliBackend(): ExecutionBackend {
   let binPath: string;
