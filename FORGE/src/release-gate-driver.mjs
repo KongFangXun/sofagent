@@ -30,6 +30,7 @@ import { createRequire } from 'module';
 import {
   readFileSync, writeFileSync, mkdirSync, existsSync,
   appendFileSync, readdirSync, copyFileSync, createWriteStream,
+  openSync, closeSync, unlinkSync,
 } from 'fs';
 import { join, resolve, dirname, basename } from 'path';
 import { fileURLToPath } from 'url';
@@ -269,7 +270,8 @@ function parseArgs(argv) {
                  worker: false, step: null, runDir: null,
                  skipAcceptance: false, help: false,
                  resume: false, checkAlive: null,
-                 judgmentOnly: false, acceptanceRange: null, autoFix: false };
+                 judgmentOnly: false, acceptanceRange: null, autoFix: false,
+                 daemon: false, watch: null, watchInterval: 30, watchThreshold: 90 };
   for (let i = 2; i < argv.length; i++) {
     const a = argv[i];
     if (a === '--help' || a === '-h') args.help             = true;
@@ -288,6 +290,11 @@ function parseArgs(argv) {
     else if (a === '--acceptance-range') args.acceptanceRange = argv[++i];
     // v1.3.8 交付七：F 修复链默认关闭，显式开关才进
     else if (a === '--auto-fix')    args.autoFix        = true;
+    // v1.3.9 进程守护：--daemon 自脱离进程树；--watch 主管模式（心跳监控+死因审计+自动 resume）
+    else if (a === '--daemon')      args.daemon    = true;
+    else if (a === '--watch')       args.watch     = argv[++i];
+    else if (a === '--watch-interval')  args.watchInterval  = parseInt(argv[++i], 10);
+    else if (a === '--watch-threshold') args.watchThreshold = parseInt(argv[++i], 10);
   }
   return args;
 }
@@ -1980,6 +1987,135 @@ async function detectReporters() {
   return [];
 }
 
+// ═══════════════════════════════════════════════════════════
+//  v1.3.9 进程守护：daemon 自脱离 + watcher 主管（Harness 理念）
+//  与 fresh-eyes-driver 同构平移（commit 767d7c10 的守护三件套）。
+// ═══════════════════════════════════════════════════════════
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+/**
+ * detached spawn 本 driver（脱离父进程树）。
+ * WorkBuddy run_in_background 进程挂 Electron 进程树，主 session turn 结束被
+ * 整体 SIGKILL（run-01 两次静默死亡根因）。detached:true 让子进程成为孤儿
+ * （launchd 收养），宿主会话结束不影响存活。日志 stdio 绑文件 fd（非 ignore）。
+ */
+function spawnDetachedDriver(args, logPath, env = {}) {
+  mkdirSync(dirname(logPath), { recursive: true });
+  const logFd = openSync(logPath, 'a');
+  try {
+    const child = spawn(process.execPath, [__filename, ...args], {
+      detached: true,
+      stdio: ['ignore', logFd, logFd],
+      env: { ...process.env, ...env },
+    });
+    child.unref();
+    return child.pid;
+  } finally {
+    closeSync(logFd);
+  }
+}
+
+/**
+ * 死因审计——Harness「审计」能力落地。
+ * driver 死后把死因证据落盘 runDir/death-audit.jsonl（append）：
+ * verdict = signal-abort（latest.json stopReason='aborted-signal'，SIGTERM 优雅）
+ *         / external-kill（无 stopReason + driver.pid 残留 = 非优雅退出，默认）。
+ */
+function auditDriverDeath(runDir, liveness) {
+  const entry = {
+    ts: new Date().toISOString(),
+    heartbeatAgeMs: liveness.heartbeatAgeMs ?? null,
+    lastEvent: liveness.lastEvent ?? null,
+    phase: liveness.phase ?? null,
+    pidfile: (() => {
+      try {
+        const p = join(runDir, 'driver.pid');
+        return existsSync(p) ? readFileSync(p, 'utf-8').trim() : null;
+      } catch { return null; }
+    })(),
+    stopReason: null,
+    verdict: 'external-kill',
+  };
+  try {
+    const latestPath = join(runDir, 'latest.json');
+    if (existsSync(latestPath)) {
+      const latest = JSON.parse(readFileSync(latestPath, 'utf-8'));
+      if (latest.stopReason) entry.stopReason = latest.stopReason;
+    }
+  } catch { /* latest.json 读失败不阻断审计 */ }
+  if (entry.stopReason === 'aborted-signal') entry.verdict = 'signal-abort';
+  try {
+    appendFileSync(join(runDir, 'death-audit.jsonl'), JSON.stringify(entry) + '\n');
+  } catch { /* 审计落盘失败不阻断 watcher 主循环 */ }
+  return entry;
+}
+
+/**
+ * 从 runDir 现有元数据构造 resume 参数（target）。
+ * latest.json 优先，resume-point.json 兜底。缺 target 返回 null（无法续跑）。
+ * release-gate 无 maxRounds 概念（单轮 V+F 流程），只取 target。
+ */
+function buildRespawnArgs(runDir) {
+  for (const f of ['latest.json', 'resume-point.json']) {
+    try {
+      const p = join(runDir, f);
+      if (!existsSync(p)) continue;
+      const j = JSON.parse(readFileSync(p, 'utf-8'));
+      if (j && typeof j.target === 'string' && j.target) {
+        return { target: j.target };
+      }
+    } catch { /* 单个源损坏继续尝试下一个 */ }
+  }
+  return null;
+}
+
+/**
+ * watcher 主管主循环——Harness 理念：注入（启动规则）→ 审计（死因落盘）→
+ * 回溯（--resume 断点续跑）。每 intervalSec 读 status.json 心跳；心跳停 →
+ * 死因审计 → spawnDetachedDriver --resume 拉起；verdict.md 产出 → watcher 退出。
+ */
+async function runWatcher(runDir, intervalSec, thresholdSec) {
+  const log = (msg) => console.log(`[watcher] ${new Date().toISOString()} ${msg}`);
+  mkdirSync(runDir, { recursive: true });
+  try { writeFileSync(join(runDir, 'watcher.pid'), String(process.pid)); } catch { /* pidfile 失败不阻断 */ }
+  log(`启动 pid=${process.pid} · 盯 ${runDir} · interval=${intervalSec}s threshold=${thresholdSec}s`);
+
+  let resumeCount = 0;
+  while (true) {
+    if (existsSync(join(runDir, 'verdict.md'))) {
+      log('✅ verdict.md 已产出——主管任务完成，退出');
+      return;
+    }
+    const live = checkDriverLiveness(runDir, { thresholdMs: thresholdSec * 1000 });
+    if (live.alive) {
+      await sleep(intervalSec * 1000);
+      continue;
+    }
+    const death = auditDriverDeath(runDir, live);
+    log(`🛑 driver 死亡（heartbeat ${Math.round((death.heartbeatAgeMs ?? 0) / 1000)}s 未更新）→ verdict=${death.verdict} phase=${death.phase ?? '?'}`);
+    const respawn = buildRespawnArgs(runDir);
+    if (!respawn) {
+      log('⚠️ 无法构造 resume 参数（缺 target）——主管退出，需人工介入');
+      return;
+    }
+    resumeCount++;
+    log(`🔄 自动拉起 driver #${resumeCount}：--target ${respawn.target} --resume`);
+    try {
+      spawnDetachedDriver(
+        ['--target', respawn.target, '--resume'],
+        join(runDir, 'driver.log'),
+        { SOFAGENT_DAEMON_CHILD: '1' },
+      );
+    } catch (err) {
+      log(`💥 spawn 失败: ${err.message}——主管退出，需人工介入`);
+      return;
+    }
+    // 拉起后睡眠一轮，避免 driver 刚启动 status.json 未生成被误判 dead 反复拉起
+    await sleep(intervalSec * 1000);
+  }
+}
+
 /**
  * 确保 acceptance 步骤的预跑日志存在。
  *
@@ -2095,6 +2231,13 @@ async function main() {
     console.log(`[check-alive] ${args.checkAlive}`);
     console.log(result.report);
     process.exit(result.rc);
+  }
+
+  // ─── v1.3.9 watcher 主管模式（--watch <runDir>）───
+  // 纯监控进程：无 LLM 调用，不可能撞长窗口/熔断；driver 死了自动审计死因并 --resume 拉起。
+  if (args.watch) {
+    await runWatcher(args.watch, args.watchInterval, args.watchThreshold);
+    process.exit(0);
   }
 
   // ─── Worker 模式 ───
@@ -2320,10 +2463,33 @@ async function main() {
   }
 
   // 建 run 目录（v1.2.8 功能⑦：resume 模式复用已有目录，不新建）
-  const { runDir, runId, dateStr } = resumeRunDir
-    ? resolveRunDirInfo(resumeRunDir)
-    : resolveRunDir();
+  // v1.3.9：daemon 子进程优先用父进程经 SOFAGENT_DAEMON_RUNDIR 传入的 runDir——
+  // 否则子进程重新 resolveRunDir 会新建不同序号目录（父打印 run-03 子实际跑 run-04）。
+  const { runDir, runId, dateStr } = process.env.SOFAGENT_DAEMON_RUNDIR
+    ? resolveRunDirInfo(process.env.SOFAGENT_DAEMON_RUNDIR)
+    : resumeRunDir
+      ? resolveRunDirInfo(resumeRunDir)
+      : resolveRunDir();
   globalRunDir = runDir; // v1.3.6 交付⑩：teardown 守卫（崩溃处理器需要 runDir）
+
+  // ─── v1.3.9 daemon 模式（--daemon）：spawn detached 自脱离进程树 ───
+  // 与 fresh-eyes-driver 同构（commit 767d7c10）：子进程经 SOFAGENT_DAEMON_CHILD=1
+  // 标记跳过本分支避免递归；日志重定向 runDir/driver.log；--dry-run 透传防误真跑。
+  // 🔴 位置必须在 runDir 定义之后（TDZ：提前引用 runDir 会 ReferenceError）。
+  if (args.daemon && !process.env.SOFAGENT_DAEMON_CHILD) {
+    const daemonLog = join(runDir, 'driver.log');
+    // release-gate 无 --max-rounds（单轮 V+F 流程），childArgs 只带 target/resume/dry-run
+    const childArgs = ['--target', args.target];
+    if (args.resume) childArgs.push('--resume');
+    if (args.dryRun) childArgs.push('--dry-run');
+    const childPid = spawnDetachedDriver(childArgs, daemonLog, {
+      SOFAGENT_DAEMON_CHILD: '1',
+      SOFAGENT_DAEMON_RUNDIR: runDir, // 子进程复用本 runDir，避免重新 resolve 得不同目录
+    });
+    console.log(`🛰️ daemon 模式：driver 已脱离进程树（pid=${childPid}），日志 → ${daemonLog}`);
+    console.log(`   监控: node FORGE/src/release-gate-driver.mjs --check-alive ${runDir}`);
+    process.exit(0);
+  }
 
   // ─── v1.3.6 worktree 留存根治：启动时陈旧兜底扫描（镜像 fresh-eyes）───
   try {
@@ -2356,6 +2522,9 @@ async function main() {
   const disarmSignalCleanup = base.registerSignalCleanup({
     cleanup: () => {
       safeTeardownWorktree();
+      // v1.3.9 pidfile：SIGTERM 优雅终止时删除——watcher 审计死因时，
+      // pidfile 残留 = 非优雅退出（SIGKILL/进程树清理），佐证 external-kill。
+      try { unlinkSync(join(runDir, 'driver.pid')); } catch { /* 无 pidfile 正常 */ }
       try {
         base.updateLatestPointer(runDir, {
           round: 0,
@@ -2396,6 +2565,20 @@ async function main() {
     runDir: runDir.replace(REPO_ROOT + '/', ''),
   });
   console.log(`   可见性     = ${reporters.length} 个适配器`);
+
+  // v1.3.9 心跳定时器 + pidfile（镜像 fresh-eyes v1.2.7 心跳机制）：
+  // 每 15s 更新 status.json 心跳，watcher 判死依赖；driver.pid 供死因审计
+  // （SIGTERM 时 cleanup 删除，残留=非优雅退出佐证）。
+  // 🔴 仅非 dry-run 注册——dry-run 不真跑不需要心跳，且 dry-run 结束路径是
+  // return（非 process.exit），残留 timer 会让事件循环不排空 → 进程挂住。
+  // heartbeatTimer 声明提到 main 作用域：main 正常结束路径 clearInterval 引用。
+  let heartbeatTimer = null;
+  if (!args.dryRun) {
+    heartbeatTimer = setInterval(() => {
+      try { visibility.heartbeat(); } catch { /* 心跳失败不中断 */ }
+    }, 15_000);
+    try { writeFileSync(join(runDir, 'driver.pid'), String(process.pid)); } catch { /* pidfile 失败不阻断 */ }
+  }
 
   console.log(`\n🚪 release-gate-loop 启动`);
   console.log(`   target    = sofagent ${args.target}`);
@@ -2876,6 +3059,10 @@ async function main() {
   disarmSignalCleanup();
   // v1.3.6 交付⑩：正常结束清理 worktree（LEDGER 已在上方留行）
   safeTeardownWorktree();
+
+  // v1.3.9：正常结束清理心跳定时器（dry-run 不注册，null 守卫）——否则
+  // 15s interval 阻止事件循环排空 → main return 后进程挂住。
+  if (heartbeatTimer) clearInterval(heartbeatTimer);
 
   console.log(`\n${verdict === 'PASS' ? '✅' : '❌'} release-gate-loop 完成 — 裁决: ${verdict}\n`);
 }
