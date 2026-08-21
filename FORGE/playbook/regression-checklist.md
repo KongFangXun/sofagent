@@ -11,7 +11,7 @@
 | v1.3.5 | #110-111（bugfix 防复发 / 新功能审查面） | 93→70、69/75/77→95（check-version 四盲区） |
 | v1.3.6 | #113-114（八交付锚点一维收口 / run-03 修复防复发） | —（v1.3.5 发布后 hotfix 112 编入） |
 
-> **当前 94 维 · 编号 1-121 · 27 个编号已归并删除（v1.3.7 阶段四 +2：115 新功能审查面 / 116 bugfix 批防复发——acceptance 同批 S290-S293，S293 为阶段四基建加固场景：LLM 超时四文件/resume 越轮守卫/rm-rf 口径同源；v1.3.8 阶段五 +2：117 网关攻击面四项核对 / 118 原子写与单writer 加固（B1+B2+B3 归并）——acceptance 同批 S294-S302 已覆盖功能面，本批为防御性回归标记；v1.3.9 阶段五 +3：119 开发坑防复发（TS7 缓存/promise 形态）/ 120 DSH 适配防复发（CLI 桥接/pnpm/require）/ 121 密钥正则边界防复发（B1-B7 归并）——acceptance 同批 S305-S317）**。维度流连续不中断，分组导航：基线组 → 审查约束组 → 环境敏感组（前置 vitest/沙箱铁律）。
+> **当前 94 维 · 编号 1-121 · 27 个编号已归并删除（v1.3.7 阶段四 +2：115 新功能审查面 / 116 bugfix 批防复发——acceptance 同批 S290-S293，S293 为阶段四基建加固场景：LLM 超时四文件/resume 越轮守卫/rm-rf 口径同源；v1.3.8 阶段五 +2：117 网关攻击面四项核对 / 118 原子写与单writer 加固（B1+B2+B3 归并）——acceptance 同批 S294-S302 已覆盖功能面，本批为防御性回归标记；v1.3.9 阶段五：119 开发坑防复发（TS7 缓存/promise 形态）/ 120 DSH 适配防复发（CLI 桥接/pnpm/require）/ 121 新功能审查面（十三交付锚点收口，参照 113/115 模式）——acceptance 同批 S305-S317；原 A2 正则边界并入 #57 子项）**。维度流连续不中断，分组导航：基线组 → 审查约束组 → 环境敏感组（前置 vitest/沙箱铁律）。
 ## 🔒 维护公约（防膨胀铁律）
 
 **追加新维度前，必须先 grep 同类**：有同类 → 扩展旧维度的子项，不新增编号；无同类 → 才新增编号 = 当前最大 +1。历史维度靠 `git log -p` 找回。**行数警戒线**：`regression-checklist.md` ≤ 1660 行、`acceptance-test.sh` ≤ 2870 行（v1.3.7 阶段四上调 1540→1580 / 2600→2640：+39 维 115/116 新审查面 / +38 S290-S292；v1.3.8 阶段四 +9 场景 S294-S302 真实归并否、上调记录 2640→2730；v1.3.8 阶段五 +2 维 #117-#118 真实归并否、上调记录 1580→1620——三判据①②③全否、本版 checklist 首调非连续两版非同版二次冻结；v1.3.8 阶段五补充 bugfix 防回归 S303-S304（A1 后缀绕过+A2 FFFD 短路端到端，B 类零场景缺口）上调 2730→2770——三判据全否：单测在而端到端缺/非同主题聚簇/真实安全回归风险，非既有场景覆盖；v1.3.9 阶段五 +13 场景 S305-S317（A 类分发）上调 2770→2870、+3 维 #119-#121（B 类防复发归并）上调 1620→1660——三判据①②③全否（119/120/121 为 v1.3.9 实测坑位防复发新审查面，无工具覆盖/无主题聚簇/非模式重复），v1.3.9 为连续第二版上调未触第三版禁令）；releasing.md 方针「超标上调 LIMIT 不删内容」。
@@ -820,6 +820,8 @@ grep -rnE 'sk-[a-zA-Z0-9]{20,}' engine/eval/data/ engine/ab-test/src/__tests__/ 
 grep -rn "$(echo SWdub3JlIHByZXZpb3VzIGluc3RydWN0aW9ucw== | base64 -d)" engine/eval/data/golden-set.yaml 2>/dev/null   # 期望零命中
 # 3. 占位符替换机制存在
 grep -c 'PLACEHOLDER_MAP\|SK_PREFIX\|INJ_PHRASE' engine/eval/src/eval-runner.ts  # ≥3
+# 4. A2 规则正则边界变体回归（v1.3.9 并入 · 原 #121）——编码/大小写/前缀变体用例防正则漂移
+grep -qE '变体|variant|大小写|case' engine/audit/src/__tests__/a2-secret-leak.test.ts 2>/dev/null && echo "✅ A2 边界变体用例在位" || echo "⚠️ A2 边界变体用例缺失"
 ```
 
 >
@@ -1631,7 +1633,7 @@ grep -qE 'deliveryPromise|new Promise\(res' "$MH" && echo "✅ deliveryPromise �
 
 #### 120. v1.3.9 DSH 适配防复发——纯 CLI 包桥接 + pnpm 安装 + ESM require 桥接（阶段五来源提取 B 类 · B4+B5+B6 归并）
 
-> DSH rc.8 三坑：① 纯 CLI 包（无库入口）——import 失败，走 spawn CLI 桥接；② npm install 解析 60+ 依赖树在 8GB 机器 OOM——pnpm store 硬链接；③ ESM 内 require 不可用——createRequire(import.meta.url) 桥接。
+> DSH rc.8 三坑：纯 CLI 包（无库入口→spawn CLI 桥接）/ npm 大依赖树 8GB OOM（→pnpm）/ ESM require 不可用（→createRequire 桥接）。
 
 ```bash
 EB=engine/orchestrator/src/execution-backends/dsh-backend.ts
@@ -1642,13 +1644,17 @@ GT=FORGE/src/gate-tools.mjs
 grep -qE 'createRequire' "$GT" 2>/dev/null && echo "✅ gate-tools ESM require 桥接" || echo "❌ gate-tools require 桥接回退"
 ```
 
-#### 121. v1.3.9 密钥正则边界防复发——A2 编码/大小写/前缀变体回归（阶段五来源提取 B 类 · B7）
+#### 121. v1.3.9 新功能审查面——十三交付锚点一维收口（阶段五来源提取 A 类 · 参照 113/115 先例）
 
-> 历史 A2/ToolGate 密钥正则漂移已修，边界回归用例（编码绕过/大小写/常见变量名前缀变体）必须在测试套件中防再次漂移。
+> v1.3.9 十三项交付核心面收口一维（acceptance S305-S317 端到端，此处为分钟级快速 grep 版——审查 session 可跑）。检查命令指向实际实现路径。
 
 ```bash
-A2=engine/audit/src/__tests__/a2-secret-leak.test.ts
-[ -f "$A2" ] && grep -qE '变体|variant|变体|大小写|case' "$A2" && echo "✅ A2 边界变体回归用例在位" || echo "⚠️ A2 边界变体用例缺失（确认测试套件覆盖）"
+R=engine/rules/src/ast; [ -d "$R" ] && grep -q asi01-prompt-injection "$R/rules/index.ts" && echo "✅ AST 引擎" || echo "❌ AST"
+grep -q worklog_query engine/mcp/src/tool-registry.ts 2>/dev/null && echo "✅ worklog MCP" || echo "❌ worklog"
+grep -q SOFAGENT_FORCE_DSH engine/orchestrator/src/execution-backend.ts 2>/dev/null && echo "✅ DSH 桥接" || echo "❌ DSH"
+[ -f engine/orchestrator/src/benchmark/mlflow-exporter.ts ] && echo "✅ MLflow" || echo "❌ MLflow"
+[ -f .cursor/rules/sofagent.mdc ] && [ -f GEMINI.md ] && echo "✅ 跨平台适配" || echo "❌ 跨平台"
+grep -q -- "--daemon" FORGE/src/fresh-eyes-driver.mjs 2>/dev/null && echo "✅ 进程守护" || echo "❌ 守护"
 ```
-<!-- 瘦身判据（v1.3.9 阶段五）：①②③全否——119/120/121 均为 v1.3.9 开发实测坑位防复发（TS7 缓存/promise 形态/DSH 三坑/A2 边界），三死实录新审查面；净增 3 维 / +约 20 行，checklist 警戒线上调 1620→1660（v1.3.9 连续第二版上调未触第三版禁令）
+<!-- 瘦身判据（v1.3.9 阶段五）：①无工具覆盖 ②聚簇提示全为假信号（通用词误报/同模式不同内容历史锚点） ③原 #121 A2 正则边界并入 #57 扩展子项（真实归并，不新增编号）——净增 2 维（#119 开发坑防复发 / #120 DSH 适配防复发）+ #121 编号复用为 v1.3.9 新功能审查面（参照 113/115 历史模式每版一维）；净增约 20 行，checklist 警戒线 1620→1660（三判据全否 + 1 次真实归并记录，v1.3.9 连续第二版上调未触第三版禁令）
 -->
