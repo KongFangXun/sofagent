@@ -404,7 +404,7 @@ FDE 完整四阶段十二步部署流程（[FDE/GUIDE.md](../FDE/GUIDE.md)）已
 
 ### 端到端验收测试覆盖
 
-v1.0 新增 `FORGE/playbook/acceptance-test.sh`（场景数持续扩展，当前 226 个，SSOT 见脚本头部声明）：
+v1.0 新增 `FORGE/playbook/acceptance-test.sh`（场景数持续扩展，当前 250 个，SSOT 见脚本头部声明）：
 
 - **CI 已覆盖**：单元测试审计核心 857 个、全 workspace 2892 个测试（v1.3.9 开发批次 2787→2892 +105；全绿，详见上方「测试覆盖范围」节，实测见 `tools/check/test-count.sh`，与 pre-push-check 一致）、sofagent-core verify 约 44-48 项（动态）
 - **发版前手动覆盖**：acceptance-test.sh 237 场景（含子断言，CLI 端到端，步骤 2.3）、OpenClaw 验收 63 场景（Agent 端到端，步骤 2.5）
