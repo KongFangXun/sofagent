@@ -11,10 +11,10 @@
 | v1.3.5 | #110-111（bugfix 防复发 / 新功能审查面） | 93→70、69/75/77→95（check-version 四盲区） |
 | v1.3.6 | #113-114（八交付锚点一维收口 / run-03 修复防复发） | —（v1.3.5 发布后 hotfix 112 编入） |
 
-> **当前 91 维 · 编号 1-118 · 27 个编号已归并删除（v1.3.7 阶段四 +2：115 新功能审查面 / 116 bugfix 批防复发——acceptance 同批 S290-S293，S293 为阶段四基建加固场景：LLM 超时四文件/resume 越轮守卫/rm-rf 口径同源；v1.3.8 阶段五 +2：117 网关攻击面四项核对 / 118 原子写与单writer 加固（B1+B2+B3 归并）——acceptance 同批 S294-S302 已覆盖功能面，本批为防御性回归标记）**。维度流连续不中断，分组导航：基线组 → 审查约束组 → 环境敏感组（前置 vitest/沙箱铁律）。
+> **当前 94 维 · 编号 1-121 · 27 个编号已归并删除（v1.3.7 阶段四 +2：115 新功能审查面 / 116 bugfix 批防复发——acceptance 同批 S290-S293，S293 为阶段四基建加固场景：LLM 超时四文件/resume 越轮守卫/rm-rf 口径同源；v1.3.8 阶段五 +2：117 网关攻击面四项核对 / 118 原子写与单writer 加固（B1+B2+B3 归并）——acceptance 同批 S294-S302 已覆盖功能面，本批为防御性回归标记；v1.3.9 阶段五 +3：119 开发坑防复发（TS7 缓存/promise 形态）/ 120 DSH 适配防复发（CLI 桥接/pnpm/require）/ 121 密钥正则边界防复发（B1-B7 归并）——acceptance 同批 S305-S317）**。维度流连续不中断，分组导航：基线组 → 审查约束组 → 环境敏感组（前置 vitest/沙箱铁律）。
 ## 🔒 维护公约（防膨胀铁律）
 
-**追加新维度前，必须先 grep 同类**：有同类 → 扩展旧维度的子项，不新增编号；无同类 → 才新增编号 = 当前最大 +1。历史维度靠 `git log -p` 找回。**行数警戒线**：`regression-checklist.md` ≤ 1620 行、`acceptance-test.sh` ≤ 2770 行（v1.3.7 阶段四上调 1540→1580 / 2600→2640：+39 维 115/116 新审查面 / +38 S290-S292；v1.3.8 阶段四 +9 场景 S294-S302 真实归并否、上调记录 2640→2730；v1.3.8 阶段五 +2 维 #117-#118 真实归并否、上调记录 1580→1620——三判据①②③全否、本版 checklist 首调非连续两版非同版二次冻结；v1.3.8 阶段五补充 bugfix 防回归 S303-S304（A1 后缀绕过+A2 FFFD 短路端到端，B 类零场景缺口）上调 2730→2770——三判据全否：单测在而端到端缺/非同主题聚簇/真实安全回归风险，非既有场景覆盖）；releasing.md 方针「超标上调 LIMIT 不删内容」。
+**追加新维度前，必须先 grep 同类**：有同类 → 扩展旧维度的子项，不新增编号；无同类 → 才新增编号 = 当前最大 +1。历史维度靠 `git log -p` 找回。**行数警戒线**：`regression-checklist.md` ≤ 1660 行、`acceptance-test.sh` ≤ 2870 行（v1.3.7 阶段四上调 1540→1580 / 2600→2640：+39 维 115/116 新审查面 / +38 S290-S292；v1.3.8 阶段四 +9 场景 S294-S302 真实归并否、上调记录 2640→2730；v1.3.8 阶段五 +2 维 #117-#118 真实归并否、上调记录 1580→1620——三判据①②③全否、本版 checklist 首调非连续两版非同版二次冻结；v1.3.8 阶段五补充 bugfix 防回归 S303-S304（A1 后缀绕过+A2 FFFD 短路端到端，B 类零场景缺口）上调 2730→2770——三判据全否：单测在而端到端缺/非同主题聚簇/真实安全回归风险，非既有场景覆盖；v1.3.9 阶段五 +13 场景 S305-S317（A 类分发）上调 2770→2870、+3 维 #119-#121（B 类防复发归并）上调 1620→1660——三判据①②③全否（119/120/121 为 v1.3.9 实测坑位防复发新审查面，无工具覆盖/无主题聚簇/非模式重复），v1.3.9 为连续第二版上调未触第三版禁令）；releasing.md 方针「超标上调 LIMIT 不删内容」。
 
 **维度脚本编写三铁律**（v1.3.6 release-gate run-08 教训——7 个 FAIL 维度中 5 个是脚本自身缺陷而非仓库问题，driver 白跑一轮）：
 
@@ -30,14 +30,14 @@ ACTUAL=$(grep -c "^#### " FORGE/playbook/regression-checklist.md)
 
 # 行数警戒线自检（越线提醒瘦身，非失败；与 releasing.md 阶段五警戒线一致）
 WC_CHK=$(wc -l < FORGE/playbook/regression-checklist.md); WC_ACC=$(wc -l < FORGE/playbook/acceptance-test.sh)
-[ "$WC_CHK" -le 1620 ] && echo "✅ checklist $WC_CHK (≤1620)" || echo "⚠️ checklist $WC_CHK 超 1620"
-[ "$WC_ACC" -le 2770 ] && echo "✅ acceptance $WC_ACC (≤2770)" || echo "⚠️ acceptance $WC_ACC 超 2770"
+[ "$WC_CHK" -le 1660 ] && echo "✅ checklist $WC_CHK (≤1660)" || echo "⚠️ checklist $WC_CHK 超 1660"
+[ "$WC_ACC" -le 2870 ] && echo "✅ acceptance $WC_ACC (≤2870)" || echo "⚠️ acceptance $WC_ACC 超 2870"
 ```
 ## 你的身份
 
 你是**回归测试工程师**——确认已知的修复没有回退，不是发现新问题。逐项核对，全 PASS 即通过。⏰ 时序：回归检查在阶段六跑，git tag/npm registry 未到位的项标 ⏳。🔍 维度 7f/17a-b/20 依赖真实环境（npm/git/OpenClaw），AI 审查标 `⏸️ 需人工环境`。
 
-## 审查维度（91 维 · 版本演进见头部表格）
+## 审查维度（94 维 · 版本演进见头部表格）
 
 ### 审查维度正文（#1-106 · 按版本演进排列 · 分组小节为历史分类，维度流连续不中断）
 
@@ -1612,4 +1612,43 @@ AU=engine/audit/src/audit-history.ts
 grep -qE '串行|serialize' "$AU" && echo "✅ 审计历史跨进程串行写" || echo "❌ 串行写回退"
 ```
 <!-- 瘦身判据（v1.3.6 详录见 git 历史；v1.3.7：①②③全否——116 子项 3 条+S293 均三死实录新审查面；checklist 触 1585>1580 且本版已上调一次触发冻结 → 压缩 v1.3.6 注释 13→3 行真实归并达标未再上调；acceptance 2633<2640 ✓ / fresh-eyes 400=400 ✓；v1.3.8 阶段五：①②③全否——#117 网关攻击面四项（绕过/DDoS/伪造/日志注入，S294 未覆盖的防御面）/ #118 原子写与单writer 加固（B1 审计串行写+B2/B3 快照原子写，归并自 3 条 bugfix 防回归）均三死实录新审查面；净增 2 维 / +约 24 行，本版 checklist 首调 1580→1620（非连续两版、非同版二次冻结——acceptance 2640→2730 已在阶段四用掉一次，checklist 本版首次）
+-->
+
+#### 119. v1.3.9 开发坑防复发——TS7 snapshot 缓存污染 + meta-harness deliveryPromise 形态（阶段五来源提取 B 类 · B1+B2+B3 归并）
+
+> ① TS7 对同一路径已打开的临时文件缓存首次内容——AST 引擎 extractExports 多次调用会串读（AST 引擎/public-api 跨包同根因）；② meta-harness `new Promise(entry.resolve)` 把 resolve 当值立即 fulfilled，waitForDelivery 被提前唤醒。修复：唯一临时路径（${seq}-${path}）+ deliveryPromise 本体等待。
+
+```bash
+ASTE=engine/rules/src/ast/engine.ts
+[ -f "$ASTE" ] || { echo "❌ ast/engine.ts 缺失"; exit 1; }
+grep -qE 'seq|unique|uuid' "$ASTE" && echo "✅ AST 引擎唯一临时路径" || echo "❌ 临时路径复用风险"
+PUB=tools/check/public-api.mjs
+grep -qE 'seq|unique|uuid|tmp' "$PUB" 2>/dev/null && echo "✅ public-api 唯一临时路径" || echo "❌ public-api 临时路径复用风险"
+MH=engine/orchestrator/src/meta-harness/registry.ts
+[ -f "$MH" ] || { echo "❌ meta-harness/registry.ts 缺失"; exit 1; }
+grep -qE 'deliveryPromise|new Promise\(res' "$MH" && echo "✅ deliveryPromise 本体等待" || echo "❌ promise 形态回退"
+```
+
+#### 120. v1.3.9 DSH 适配防复发——纯 CLI 包桥接 + pnpm 安装 + ESM require 桥接（阶段五来源提取 B 类 · B4+B5+B6 归并）
+
+> DSH rc.8 三坑：① 纯 CLI 包（无库入口）——import 失败，走 spawn CLI 桥接；② npm install 解析 60+ 依赖树在 8GB 机器 OOM——pnpm store 硬链接；③ ESM 内 require 不可用——createRequire(import.meta.url) 桥接。
+
+```bash
+EB=engine/orchestrator/src/execution-backends/dsh-backend.ts
+[ -f "$EB" ] || { echo "❌ dsh-backend.ts 缺失"; exit 1; }
+grep -qE 'createDshCliBackend|resolveDshCliBin|headless' "$EB" && echo "✅ DSH CLI 桥接在位" || echo "❌ CLI 桥接回退"
+grep -qE 'createRequire' "$EB" && echo "✅ ESM require 桥接" || echo "❌ require 桥接回退"
+GT=FORGE/src/gate-tools.mjs
+grep -qE 'createRequire' "$GT" 2>/dev/null && echo "✅ gate-tools ESM require 桥接" || echo "❌ gate-tools require 桥接回退"
+```
+
+#### 121. v1.3.9 密钥正则边界防复发——A2 编码/大小写/前缀变体回归（阶段五来源提取 B 类 · B7）
+
+> 历史 A2/ToolGate 密钥正则漂移已修，边界回归用例（编码绕过/大小写/常见变量名前缀变体）必须在测试套件中防再次漂移。
+
+```bash
+A2=engine/audit/src/__tests__/a2-secret-leak.test.ts
+[ -f "$A2" ] && grep -qE '变体|variant|变体|大小写|case' "$A2" && echo "✅ A2 边界变体回归用例在位" || echo "⚠️ A2 边界变体用例缺失（确认测试套件覆盖）"
+```
+<!-- 瘦身判据（v1.3.9 阶段五）：①②③全否——119/120/121 均为 v1.3.9 开发实测坑位防复发（TS7 缓存/promise 形态/DSH 三坑/A2 边界），三死实录新审查面；净增 3 维 / +约 20 行，checklist 警戒线上调 1620→1660（v1.3.9 连续第二版上调未触第三版禁令）
 -->
