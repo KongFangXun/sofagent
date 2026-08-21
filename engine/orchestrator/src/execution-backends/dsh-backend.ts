@@ -538,10 +538,13 @@ function resolveDshCliBin(): string {
  *
  * 能力边界（当前正式形态——DSH 包虽 rc 但执行能力已验证投产，不等正式版）：
  * - ✅ 单任务文本执行（systemPrompt 前置拼接进 task，与 runCordisAgent 语义对齐）
- * - ⚠️ 无工具面（headless profile 只挂 dsh-base + dsh-headless，无 dsh-tool-*）——
- *   task.tools 传入时仅记录 WARN，不生效；工具面补齐 = 库内集成（dsh-base 聚合包含
- *   dsh-agent-loop/dsh-llm-deepseek/dsh-bash-sandbox/dsh-fs-local 全套核心服务，可注入
- *   sofagent 工具），排下版开发项
+ * - ✅ DSH 自带工具链实测可用：fs（读/写文件）+ bash（受 DSH_PERMISSION_MODE 控制）
+ *   ——权限模式环境变量：`DSH_PERMISSION_MODE=danger-full-access` 全权限（macOS 无
+ *   sandbox-exec 沙箱后端时 workspace-write 的 bash 会被拒）；sofagent 侧透传
+ *   `SOFAGENT_DSH_PERMISSION_MODE`（缺省 workspace-write 安全默认）
+ * - ⚠️ sofagent 自定义工具（task.tools）在 CLI 桥接下不生效（子进程无法注入）——
+ *   传入时仅记录 WARN；自定义工具注入 = 库内集成（dsh-base 聚合含全套核心服务），
+ *   排下版开发项
  * - ⚠️ 预算熔断退化为外层超时（headless 无工具循环，天然无工具预算概念）
  * - 模型：透传 modelConfig.apiKeyEnv 对应的 key（默认 DEEPSEEK_API_KEY）给子进程
  * - 技术升级路径：DSH 包正式版发布后可切 Cordis 内嵌（runCordisAgent），无需改本桥接语义
@@ -561,10 +564,12 @@ export function createDshCliBackend(): ExecutionBackend {
     name: 'dsh',
 
     async execute(task: ExecutionTask): Promise<ExecutionResult> {
-      // 工具面边界：rc.8 headless 无工具——透传的工具不生效，显式告知
+      // sofagent 自定义工具边界：CLI 子进程无法注入 task.tools——
+      // DSH 自带 bash/fs 工具链可用，但 sofagent 自定义工具不生效，显式告知
       if (task.tools && task.tools.length > 0) {
         console.warn(
-          `[dsh-backend] DSH rc.8 headless 无工具面——收到 ${task.tools.length} 个工具但不生效（工具支持排正式版）`
+          `[dsh-backend] DSH CLI 桥接下 sofagent 自定义工具（${task.tools.length} 个）不生效——` +
+          `DSH 自带 bash/fs 工具链可用；自定义工具注入排下版（库内集成）`
         );
       }
 
@@ -578,6 +583,11 @@ export function createDshCliBackend(): ExecutionBackend {
       const apiKey = process.env[keyEnv] ?? process.env.DEEPSEEK_API_KEY ?? '';
       const env: NodeJS.ProcessEnv = { ...process.env };
       if (apiKey) env.DEEPSEEK_API_KEY = apiKey;
+
+      // DSH 权限模式透传：SOFAGENT_DSH_PERMISSION_MODE（缺省 workspace-write 安全默认）。
+      // danger-full-access = bash/fs 全权限（macOS 无 sandbox-exec 时 bash 需要它）
+      const dshPermMode = process.env.SOFAGENT_DSH_PERMISSION_MODE ?? 'workspace-write';
+      if (dshPermMode) env.DSH_PERMISSION_MODE = dshPermMode;
 
       const startedAt = Date.now();
       const result = await new Promise<{ output: string; rounds: number; timedOut: boolean }>(
