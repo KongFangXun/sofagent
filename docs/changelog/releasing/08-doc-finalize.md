@@ -165,7 +165,7 @@
 
 | # | 步骤 | 验证方式 |
 |:--:|------|------|
-| 一 | **开发日志定稿**：按上方骨架归位，发布检查清单全部打勾 | 结构完整 + 清单打勾 |
+| 一 | **开发日志定稿**：按上方骨架归位，发布检查清单全部打勾。🔴 **定稿必须含「## Release Notes」段**（08 铁律十一——v1.3.9 发布前才发现该段缺失，补写后才进 gh release；缺该段 = 定稿不完整，打回） | 结构完整 + 清单打勾 + `grep -q "## Release Notes"` 开发日志 |
 | 二 | **CHANGELOG 索引**：根 CHANGELOG.md 新增本版本索引条目（目录非详情） | 索引条目存在 |
 | 三 | **发版日期同步**（详见下方脚本） | `bash tools/check/check-version.sh` 全绿 |
 | 四 | **测试数一致性**：`bash tools/check/check-test-count.sh --quiet` 确认声称数与实际一致。**禁止手动报数——必须跑脚本** | 全绿 |
@@ -173,6 +173,7 @@
 | 六 | **全项目版本号扫描**：所有 package.json + 文档头版本号一致 | check-version.sh 全绿 |
 | 七 | **文档同步闭环**：changelog 每个功能点 → 对应项目文档有覆盖（详见下方按需文档表） | D6 清单零遗漏 |
 | 八 | **changelog 文件命名一致性**：`ls docs/changelog/*/v*.md \| grep -v -E 'v[0-9]+\.[0-9]+\.[0-9]+\.md'` 期望无输出（全三段式）——**限定版本日志目录**（v1.3.9 修正：原 `docs/changelog/**/*.md` 会把 releasing/ 子目录的 SOP 文件误报为不合规，版本日志才是检查对象） | 无输出 |
+| 九 | **文档预算确认**：`bash tools/check/check-docs.sh` 全绿——阶段八文档收尾会新增内容（README 新能力段/ROADMAP 迭代表行/HANDBOOK bullet 等）推高行数可能超 LIMIT；此处先跑提前暴露（v1.3.9 教训：阶段十一 pre-push 才发现 B 层 9363>9300 超标，回阶段八补上调） | check-docs RC=0 |
 
 ---
 

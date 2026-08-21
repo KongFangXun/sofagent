@@ -61,6 +61,7 @@ bash tools/check/check-version.sh        # 期望全绿
 |------|--------------|------------------|------|
 | v1.3.6 | ~9h | 3（2 假 FAIL + 1 真 PASS） | 检查器缺陷：exit 语义 / PROJECT_ROOT / 视野预算 / 零 commit 假 PASS |
 | v1.3.8 | ~6h（10:00 开发完成 → 16:00 发布） | 4（run-03 环境崩溃 / run-06 缺输入 / run-10 截断+占位 / run-13 PASS） | driver 管线问题 3 轮（judgment-only 缺 acceptance 输入 / precheck 截断 / 占位无实证）+ 环境 1 轮（运行窗口 HEAD 漂移 8 次致 OOM）；driver 修复后 run-13 单轮直过 |
+| v1.3.9 | ~25h（08-20 15:00 开发完成 → 08-21 16:10 发布，含隔夜） | 3（run-01 FAIL 4 阻塞 / run-10 FAIL 1 coverage / run-13 PASS） | run-01 真实 4 阻塞（mcp bin 权限 / forge-smoke 路径漂移 / 测试数文档漂移 / checklist #119 路径错，主 session 零信任复验修复）+ run-10 coverage 2 零覆盖（ATTRIBUTION/Dream 补 S318/S319）；driver 无债，全人工修复后 run-13 单轮直过 |
 
 ## 开发 Prompt 校验循环（步骤七）
 
@@ -195,3 +196,13 @@ sed -i '' 's/- \[x\]/- [ ]/g' docs/changelog/releasing.md
 - **步骤编号铁律复查**：11-publish.md「### 5.0」标题 + 工序 1/2/3 + 代码块 2a-2d 三处残留修复为中文序号/①②③④；全仓复查零残留
 - **check-dev-prompt.sh 三缺陷修复（工具）**：① bash/node 命令前缀未剥离 → `bash tools/check/check-version.sh` 误报 ❌ ② is_runtime 定义未接线 → worklog.json 误报 ❌ ③ planned 只看同行关键词 → tools/ 分目录目标路径误报 ❌。修复后 v1.3.9 prompt 校验 0 错误
 - **v1.3.8 发版耗时**：约 6h（08-20 10:00 开发完成 → 16:00 发布）；release-gate 4 轮（3 轮 driver 管线问题 + 1 轮环境，driver 修复后 run-13 单轮直过）
+
+**v1.3.9 发版后的自迭代记录**：
+
+- **阶段十一·步骤八 E409 staged 处理（新增）**：`npm publish` 网络中断留 staged blob（版本号占位未 finalize）→ 同版本重发 E409「previously staged」24h 锁。处理：`npm unpublish <pkg>@<ver> --force` 清记录 + registry 传播完成即可重发（v1.3.9 实战 skillopt）。已写入 11-publish 步骤八
+- **阶段十一·步骤六 tag push 失败重试（新增）**：`git tag -a` 本地打标成功但 push 中断（exit 137 SIGKILL/超时）→ 远端无 tag 本地有。重试用网络降级完整命令单独 push tag + `gh api .../git/refs/tags/vX.Y.Z` 确认远端。已写入 11-publish 步骤六
+- **阶段八·Release Notes 段存在性（新增）**：v1.3.9 发布前才发现 v1.3.9.md 缺「## Release Notes」段（08 铁律十一欠账）→ 补写后才进 gh release。已写入 08 步骤一验证方式（定稿必含该段）
+- **阶段八·文档预算确认（新增步骤九）**：check-docs LIMIT 超标（B 层 9363>9300）到阶段十一 pre-push 才暴露——阶段八文档收尾新增内容推高行数。已写入 08 步骤表（打勾前跑 check-docs）
+- **阶段十·定位优化（v1.3.9 用户拍板）**：「纯确认环节」用户觉得怪（内容重复无决策意义）→ 重定位为「发布放行关口」：发布就绪汇总（门禁基线表）+ 作者一次性放行（三拍板项）+ 发布 prompt 交接，不再逐项过。10-confirm.md 已改
+- **双 SHA 分叉接回实操**：远端 Git Data API 遗留 commit（同 tree 不同 SHA）→ `git fetch`（剥代理直连）+ `git rebase --onto origin/main <本地等价点> main` 接回（v1.3.9 实战 678cc130→d274d826）；本地历史找等价点用 `git log --all --format="%h %T"` 匹配 tree
+- **v1.3.9 发版耗时**：约 25h（08-20 15:00 → 08-21 16:10，含隔夜）；release-gate 3 轮全人工修复（4 阻塞 + 2 零覆盖），driver 无债

@@ -202,6 +202,8 @@ else
 fi
 ```
 
+> 🔴 **tag push 失败重试（v1.3.9 实战）**：`git tag -a` 本地打标成功但 push 可能被中断（实测 exit 137 SIGKILL / 超时）——此时**远端没有 tag，本地有**（`gh api repos/O/R/git/ref/tags/vX.Y.Z` 404 确认）。重试直接用「网络降级策略」的完整命令（剥代理 + HTTP/1.1 + 低速兜底）单独 push tag：`env -u http_proxy -u https_proxy -u HTTP_PROXY -u HTTPS_PROXY -u ALL_PROXY -u all_proxy git -c http.proxy= -c https.proxy= -c http.version=HTTP/1.1 -c http.lowSpeedLimit=1000 -c http.lowSpeedTime=300 push origin vX.Y.Z`——push 完成后用 `gh api repos/O/R/git/refs/tags/vX.Y.Z --jq '.object.sha'` 确认远端存在，与本地 `git rev-parse vX.Y.Z` 一致。
+
 ---
 
 ## 步骤七：gh release（触发 release.yml 自动 publish audit + mcp）
@@ -341,6 +343,8 @@ done
 npm view @sofagent/load-chain version  # 同样应等于当前版本号
 # 期望：全部 = 当前版本号（npm 缓存可能延迟 15 秒，未到则等一下重查）
 ```
+
+> 🔴 **E409「previously staged version」处理（v1.3.9 实战）**：`npm publish` 网络中断会在 registry 留下 **staged blob**（发布事务中间态，版本号被占位但未 finalize）——同版本重发报 `409 Conflict - Cannot publish over previously staged version "X.Y.Z"`，**且持续约 24h（staged 自动过期）**。处理：`npm unpublish <pkg>@<version> --force` 清版本记录（staged blob 独立于记录，unpublish 后 registry 主节点传播完成即可重发同版本；若仍 E409 说明传播未完成，等 60s 重试或等 staged 过期）。⚠️ 与「npm 版本永久锁死」铁律不冲突——E409 staged 是**未 finalize 的占位**，可清除重发；已 published 的版本才不可覆盖。
 
 ---
 
