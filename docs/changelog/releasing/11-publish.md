@@ -373,6 +373,35 @@ skillhub publish "$tmpdir/SKILL" --version <版本号> --changelog "vX.Y.Z: 简�
 
 ---
 
+## 步骤九·补：DSH plugin 分发（v1.4.0 起 · 每版必做）
+
+> **背景（2026-08-21 拍板）**：SkillHub 现已支持 DeepSeek Harness plugin 分发。v1.4.0 起 sofagent 的 DSH plugin 家族（`@sofagent/cordis-plugin-*`，10 个通用插件，见 v1.4.0 开发日志「DSH 反向插件适配」）**每版都要在 SkillHub 发布**——与 SKILL 分发并列，是 DSH 生态的发现层补充（npm 发布仍走主线，两者并行不互替）。
+
+```bash
+# 发布前确认 plugin 家族清单（SSOT = v1.4.0 开发日志 plugin 家族表）
+PLUGIN_DIRS=$(ls -d engine/*/cordis-plugin-* 2>/dev/null || echo "")
+# 若 plugin 目录不在 engine/ 下，改为实际目录（如 packages/ 或 plugins/），以 v1.4.0 交付为准
+
+# 逐 plugin 发布（版本号与 sofagent 主线版本对齐，见 v1.4.0「版本同步机制」）
+for pdir in $PLUGIN_DIRS; do
+  name=$(basename "$pdir")
+  # 清理 .DS_Store / .png（与 SkillHub SKILL 分发同规矩）
+  find "$pdir" -name '.DS_Store' -delete && find "$pdir" -name '*.png' -delete
+  # 先查现有版本，同版本号不可覆盖
+  skillhub verify "$name" 2>&1 | grep version || true
+  skillhub publish "$pdir" --version <版本号> --changelog "vX.Y.Z: $(head -1 "$pdir/README.md" 2>/dev/null || echo "$name")" \
+    && echo "✅ $name 已发布到 SkillHub" || echo "❌ $name 发布失败"
+done
+```
+
+> **DSH plugin 分发铁律**：
+> - 发布源 = 各 cordis-plugin 包目录（不是 SKILL/，SKILL 是方法论分发，plugin 是引擎能力分发）
+> - 版本号 = 与 sofagent 主线版本对齐（v1.4.0 → 各 plugin v0.1.0 起步；DSH Cordis 协议 breaking change 时 bump major）
+> - 每版发版都要推，与 ClawHub/SkillHub SKILL 分发同等强制
+> - SkillHub 与 npm 并行：npm 是安装通道（`dsh plugin add`），SkillHub 是发现层（DSH 生态检索），不互替
+
+---
+
 ## 步骤十：设备端安装
 
 ```bash
