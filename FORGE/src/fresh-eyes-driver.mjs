@@ -3865,6 +3865,10 @@ async function main() {
   // v1.3.6 worktree 留存根治：正常结束解除信号清理（后续 safeTeardownWorktree 兜底）
   disarmSignalCleanup();
 
+  // v1.3.9 补丁：正常结束也删除 pidfile（此前仅 SIGTERM 路径删——正常结束残留 driver.pid，
+  // watcher 审计不误判（stopReason=completed）但产物留脏；与 SIGTERM handler 同款 try/catch）
+  try { unlinkSync(join(runDir, 'driver.pid')); } catch { /* 无 pidfile 正常 */ }
+
   // v1.3.6 交付⑩：正常结束清理 worktree（run 结束 worktree 清理 + LEDGER 留行）
   safeTeardownWorktree();
 
