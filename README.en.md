@@ -182,7 +182,7 @@ Community rulesets are published as `sofagent-ruleset-*` npm packages and loaded
 ## New in v1.3.9
 
 > 🔍 **v1.3.9 new capabilities** (official AST rule engine + meta-harness unified orchestration + AI worklog data layer + API tiering governance + FORGE on DSH + MLflow evaluation + Agentic Browser + cross-platform adapters + toolchain subdirectories + attribution/sandbox/daemon):
-> - **Official AST rule engine**: 🔍 `sofagent-ruleset-ast` semantic rule engine (ASI01 target hijacking + ASI04 supply-chain SBOM · 8+2 rules, same pipeline as the v1.2.9 plugin)
+> - **Official AST rule engine**: 🔍 `sofagent-ruleset-ast` semantic rule engine (ASI01 target hijacking + ASI04 supply-chain SBOM · 8+2 rule checks, same pipeline as the v1.2.9 plugin)
 > - **meta-harness unified orchestration**: 🧩 multi-harness policy enforcement at the infrastructure layer + cross-session collaboration (19 tests + DSH shape alignment)
 > - **AI worklog data layer**: 📊 `worklog` — by Agent / Workflow / week + human-intervention records (reuses audit + decision-log + LLM Trace, zero new data) + `worklog_query` MCP
 > - **API tiering governance**: 🔬 explicit `@public`/`@internal` tiers (1449 symbols) + CI gate baseline — breaking changes to `@internal` never affect adapters
