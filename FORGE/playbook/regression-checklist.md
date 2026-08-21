@@ -1618,16 +1618,16 @@ grep -qE '串行|serialize' "$AU" && echo "✅ 审计历史跨进程串行写" |
 
 #### 119. v1.3.9 开发坑防复发——TS7 snapshot 缓存污染 + meta-harness deliveryPromise 形态（阶段五来源提取 B 类 · B1+B2+B3 归并）
 
-> ① TS7 对同一路径已打开的临时文件缓存首次内容——AST 引擎 extractExports 多次调用会串读（AST 引擎/public-api 跨包同根因）；② meta-harness `new Promise(entry.resolve)` 把 resolve 当值立即 fulfilled，waitForDelivery 被提前唤醒。修复：唯一临时路径（${seq}-${path}）+ deliveryPromise 本体等待。
+> ① TS7 对同一路径已打开的临时文件缓存首次内容——AST 引擎 extractExports 多次调用会串读；② meta-harness `new Promise(entry.resolve)` 把 resolve 当值立即 fulfilled，waitForDelivery 被提前唤醒。修复：AST 引擎唯一临时路径（${seq}-${path}）+ deliveryPromise 本体等待（orchestrator.ts）。public-api 无临时文件（固定 BASELINE 每次现读，不缓存内容）。
 
 ```bash
 ASTE=engine/rules/src/ast/engine.ts
 [ -f "$ASTE" ] || { echo "❌ ast/engine.ts 缺失"; exit 1; }
 grep -qE 'seq|unique|uuid' "$ASTE" && echo "✅ AST 引擎唯一临时路径" || echo "❌ 临时路径复用风险"
 PUB=tools/check/public-api.mjs
-grep -qE 'seq|unique|uuid|tmp' "$PUB" 2>/dev/null && echo "✅ public-api 唯一临时路径" || echo "❌ public-api 临时路径复用风险"
-MH=engine/orchestrator/src/meta-harness/registry.ts
-[ -f "$MH" ] || { echo "❌ meta-harness/registry.ts 缺失"; exit 1; }
+grep -qE 'readFileSync\(BASELINE|BASELINE' "$PUB" 2>/dev/null && grep -qE 'writeFileSync\(BASELINE' "$PUB" 2>/dev/null && echo "✅ public-api 固定 BASELINE 现读现写（无缓存串读）" || echo "❌ public-api BASELINE 机制回退"
+MH=engine/orchestrator/src/meta-harness/orchestrator.ts
+[ -f "$MH" ] || { echo "❌ meta-harness/orchestrator.ts 缺失"; exit 1; }
 grep -qE 'deliveryPromise|new Promise\(res' "$MH" && echo "✅ deliveryPromise 本体等待" || echo "❌ promise 形态回退"
 ```
 

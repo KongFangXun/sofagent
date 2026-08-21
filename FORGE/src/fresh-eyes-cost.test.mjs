@@ -26,7 +26,7 @@ const DRIVER_PATH = join(__dirname, 'fresh-eyes-driver.mjs');
 const DRIVER_CODE = readFileSync(DRIVER_PATH, 'utf-8');
 const PLAYBOOK_PATH = join(__dirname, '..', 'playbook', 'fresh-eyes-review.md');
 const PLAYBOOK_CODE = readFileSync(PLAYBOOK_PATH, 'utf-8');
-const DRAFT_TOOL_PATH = join(__dirname, '..', '..', 'tools', 'gen-fresh-eyes-draft.mjs');
+const DRAFT_TOOL_PATH = join(__dirname, '..', '..', 'tools', 'gen', 'gen-fresh-eyes-draft.mjs');
 const DRAFT_TOOL_CODE = readFileSync(DRAFT_TOOL_PATH, 'utf-8');
 
 // ─── 反射提取（与 release-gate-driver.test.mjs 同款手法）────────
@@ -169,7 +169,8 @@ describe('16 视角零删减（v1.3.8 交付八）', () => {
   it('gen-fresh-eyes-draft.mjs 含 16 视角完整清单', () => {
     // 草稿工具的 16 视角数组（PERSPECTIVES_16）+ 完整性校验
     expect(DRAFT_TOOL_CODE).toContain('PERSPECTIVES_16');
-    const names = [...DRAFT_TOOL_CODE.matchAll(/'(\d+) ([^']+)'/g)].map(m => m[1]);
+    // 只匹配数组元素行（行尾逗号）——注释里的示例串（如「p 形如 '1 陌生人'」）不算
+    const names = [...DRAFT_TOOL_CODE.matchAll(/'(\d+) ([^']+)',/g)].map(m => m[1]);
     expect(names.length).toBe(16);
     // 16 视角完整性校验——缺节拒收
     expect(DRAFT_TOOL_CODE).toContain('完整性校验');
