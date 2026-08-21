@@ -179,20 +179,24 @@ Community rulesets are published as `sofagent-ruleset-*` npm packages and loaded
 - **Methodology path** (zero dependencies): read [FDE/GUIDE.md](./FDE/GUIDE.md) and map workflows manually following the handbook — Excel + your own brain is enough
 - **Tooling path** (Node.js ≥ 18): after installing, tell your AI tool "run an FDE diagnosis for me" and the Agent guides you from the entry phase
 
-## New in v1.3.8
+## New in v1.3.9
 
-> 🛡️ **v1.3.8 new capabilities** (proxy gateway hard boundary + data static encryption + Durable Execution L3 + async long-task autonomy + FORGE driver resilience trio + SDK sandbox + release-gate slimming + fresh-eyes cost refactor + snapshot write-path hardening):
-> - **Proxy gateway hard boundary**: 🛡️ the sole egress for SubAgent external requests — domain/path allowlist (allow/deny) + four-tier risk grading + permission-ceiling monotonic guard (first request locks the ceiling, only-shrink-never-grow, out-of-bounds = deny + audit) + highest-risk requests queued to HITL approval (first real activation of the v1.3.0 no-op loop, verified end-to-end)
-> - **Data static encryption**: 🔐 pure-TS AES-256-GCM (`SOFAGENT-AGE-V1` transparent read/write, zero spawn dependency) + mandatory key-fingerprint backup + four-directory encryption scope
-> - **Durable Execution L3**: recoverable transactions (writer / recovery / undo three-tier reversibility) + gateway-layer integration + real git-rollback verified — crash-recoverable, side-effects replayable
-> - **Async long-task autonomy**: cron three-tier sugar + dependency graph (predecessor PASS before trigger) + dead-loop replan alert after N no-change iterations + WAL resume hook
-> - **FORGE driver resilience trio**: process-manager supervised + resume auto-detection (skip completed workers) + `--check-alive` heartbeat probe (trusts heartbeat not logs, no false-negative on long LLM windows)
-> - **SDK `sandbox: true` enabled**: three-layer wiring (tool-gate verdict / virtual FS / gateway egress) + `approval` combinable — `harness.wrap(agent, { sandbox: true })` one line to enable
-> - **release-gate slimming**: `--judgment-only` direct judgment-layer launch (usage ≤120k tokens, baseline 307k) + F-loop stops on FAIL + shard sampling
-> - **fresh-eyes cost refactor**: `usage.jsonl` metering + B-side review mode + single-shot draft tool, 16 perspectives intact
-> - **Snapshot write-path hardening**: `revert` atomic two-stage + atomic replace — interrupted injection leaves no half-state, CLI/daemon concurrent writes never clobber
+> 🔍 **v1.3.9 new capabilities** (official AST rule engine + meta-harness unified orchestration + AI worklog data layer + API tiering governance + FORGE on DSH + MLflow evaluation + Agentic Browser + cross-platform adapters + toolchain subdirectories + attribution/sandbox/daemon):
+> - **Official AST rule engine**: 🔍 `sofagent-ruleset-ast` semantic rule engine (ASI01 target hijacking + ASI04 supply-chain SBOM · 8+2 rules, same pipeline as the v1.2.9 plugin)
+> - **meta-harness unified orchestration**: 🧩 multi-harness policy enforcement at the infrastructure layer + cross-session collaboration (19 tests + DSH shape alignment)
+> - **AI worklog data layer**: 📊 `worklog` — by Agent / Workflow / week + human-intervention records (reuses audit + decision-log + LLM Trace, zero new data) + `worklog_query` MCP
+> - **API tiering governance**: 🔬 explicit `@public`/`@internal` tiers (1449 symbols) + CI gate baseline — breaking changes to `@internal` never affect adapters
+> - **FORGE driver on DSH**: ⚙️ explicit backend selection (`SOFAGENT_FORCE_DSH` enable + CLI bridge + full bash permission) — execution backend switchable from LangGraph to DSH
+> - **MLflow agent evaluation**: 📈 13 metrics + LLM-as-Judge integration
+> - **Agentic Browser**: 🌐 4 tools (navigate/click/form/screenshot) + visual degradation fallback
+> - **Cross-platform adapters**: 🧭 Cursor/Codex/Gemini CLI thin mounts (AGENTS.md homomorphic)
+> - **Toolchain subdirectories**: 🗂️ `tools/` physically split into `check/`/`gen/`/`forge/`/`release/` + references fully synced
+> - **ATTRIBUTION attribution engine**: 🏷️ decision-attribution persistence + 3-dimension query (metric/decision/agentId) + byAgent join (P2 auxiliary)
+> - **Dream Sandbox audit**: 🏖️ stage isolation + mandatory human-approval merge (approver required) + path-traversal sanitization + 24h cleanup (P2 auxiliary)
+> - **>5MB diff gap fix**: 🩹 spill to disk + 64MB readback + truncation locator
+> - **FORGE driver process guard**: 🔄 daemon self-detach + watcher heartbeat monitoring / death-cause audit / auto-resume
 >
-> See [v1.3.8 devlog](./docs/changelog/v1.3/v1.3.8.md). Earlier versions in [CHANGELOG](./CHANGELOG.md).
+> See [v1.3.9 devlog](./docs/changelog/v1.3/v1.3.9.md). Earlier versions in [CHANGELOG](./CHANGELOG.md).
 
 ## Why sofagent
 

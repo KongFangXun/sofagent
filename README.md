@@ -180,20 +180,24 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # 加载安全规�
 - **方法论路径**（零依赖）：读 [FDE/GUIDE.md](./FDE/GUIDE.md)，按手册手动梳理工作流，Excel + 人脑也能跑
 - **工具路径**（Node.js ≥ 18）：FDE 在企业设备上跑 install.sh 装好约束层后，用自己的 AI 工具说"帮我做 FDE 诊断"，Agent 从进场开始引导
 
-## v1.3.8 新能力
+## v1.3.9 新能力
 
-> 🛡️ **v1.3.8 新能力**（代理网关硬边界 + 数据静态加密 + Durable Execution L3 + 异步长任务自治 + FORGE 保活三件套 + SDK sandbox + release-gate 瘦身 + fresh-eyes 成本重构 + 快照写路径加固）：
-> - **代理网关硬边界**：🛡️ SubAgent 外部请求唯一出入口——域名/路径白名单（allow/deny）+ 四档风险分级 + 权限上界单调守卫（首请求锁定只减不增，越界 deny+审计）+ 极高风险挂 HITL 审批队列（v1.3.0 空转闭环首场景实测）
-> - **数据静态加密**：🔐 纯 TS AES-256-GCM（`SOFAGENT-AGE-V1` 透明读写，零 spawn 依赖）+ 密钥指纹强制备份 + 四目录加密范围
-> - **Durable Execution L3**：⏸️ 可恢复事务（writer/recovery/undo 三档可逆）+ 网关层集成 + 真 git 回滚实测——崩溃可恢复、副作用可回放
-> - **异步长任务自治**：⏰ cron 三档糖 + 依赖图前序 PASS 才触发 + 死循环 N 次无变化触发 replan 告警 + WAL 续跑钩子
-> - **FORGE driver 保活三件套**：🔧 pm2 托管 + resume 自动检测断点续跑 + `--check-alive` 心跳探针（只认心跳不认日志，长 LLM 窗口不误判）
-> - **SDK `sandbox: true` 启用**：🧩 三层接线（tool-gate 判定 / 虚拟 FS / 网关出站）+ `approval` 组合——`harness.wrap(agent, { sandbox: true })` 一行启用
-> - **release-gate 瘦身**：✂️ `--judgment-only` 判断层直启（usage ≤12 万 token，基线 30.7 万）+ F 循环 FAIL 即停 + 分片抽查化
-> - **fresh-eyes 成本重构**：📊 `usage.jsonl` 计量 + B 侧复核模式 + 单次草稿工具，16 视角零删减
-> - **快照写路径加固**：🩹 `revert` 原子化两阶段 + 原子替换——注入中断无半恢复、CLI/daemon 并发写不互覆
+> 🔍 **v1.3.9 新能力**（官方 AST 规则引擎 + meta-harness 统一编排 + AI 工作明细 + API 分级治理 + FORGE 切 DSH + MLflow 评估 + Agentic Browser + 跨平台适配 + 工具链分子目录 + 归因/沙盒/进程守护）：
+> - **官方 AST 规则引擎**：🔍 `sofagent-ruleset-ast` 语义级规则引擎（ASI01 目标劫持 + ASI04 供应链 SBOM · 8+2 规则，与 v1.2.9 插件同管线）
+> - **meta-harness 统一编排**：🧩 多 harness 策略强制在基础设施层 + 跨会话协作（19 测试 + DSH 形态对齐）
+> - **AI 工作明细数据层**：📊 `worklog`——按 Agent/Workflow/周 + 人工介入记录（复用审计 + decision-log + LLM Trace，零新数据）+ `worklog_query` MCP
+> - **API 分级治理**：🔬 `@public`/`@internal` 显式分级（1449 符号）+ CI 门禁基线拦截——@internal 破坏性变更不影响适配层
+> - **FORGE driver 切 DSH**：⚙️ 显式后端选择（`SOFAGENT_FORCE_DSH` 启用 + CLI 桥接 + bash 全权限）——执行后端从 LangGraph 到 DSH 可切换
+> - **MLflow agent 评估**：📈 13 指标 + LLM-as-Judge 集成
+> - **Agentic Browser**：🌐 4 工具（浏览/点击/表单/截图）+ 视觉降级
+> - **跨平台适配器**：🧭 Cursor/Codex/Gemini CLI 三薄挂载（AGENTS.md 同构）
+> - **工具链分子目录**：🗂️ `tools/` 物理分 `check/`/`gen/`/`forge/`/`release/` 子目录 + 引用全同步
+> - **ATTRIBUTION 归因引擎**：🏷️ 决策归因落盘 + 三维查询（metric/decision/agentId）+ byAgent 联结（P2 辅助）
+> - **Dream Sandbox 沙盒审计**：🏖️ stage 隔离 + 强制人审 merge（approver 必填）+ 路径穿越消毒 + 24h 清理（P2 辅助）
+> - **>5MB diff 缝隙修复**：🩹 spill 落盘 + 64MB 读回 + 截断 locator
+> - **FORGE driver 进程守护**：🔄 daemon 自脱离 + watcher 心跳监控/死因审计/自动 resume
 >
-> 详见 [v1.3.8 开发日志](./docs/changelog/v1.3/v1.3.8.md)。更早版本见 [CHANGELOG](./CHANGELOG.md)。
+> 详见 [v1.3.9 开发日志](./docs/changelog/v1.3/v1.3.9.md)。更早版本见 [CHANGELOG](./CHANGELOG.md)。
 
 ## 为什么选 sofagent
 
