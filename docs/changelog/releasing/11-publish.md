@@ -402,6 +402,32 @@ done
 > - 每版发版都要推，与 ClawHub/SkillHub SKILL 分发同等强制
 > - SkillHub 与 npm 并行：npm 是安装通道（`dsh plugin add`），SkillHub 是发现层（DSH 生态检索），不互替
 
+### 步骤十·a：OpenClaw plugin 分发（v1.4.0 起 · 每版必做）
+
+> **背景（2026-08-21 拍板）**：v1.4.0 的 OpenClaw plugin 家族（约束层四能力在 OpenClaw 生态的插件形态，见 v1.4.0 开发日志「OpenClaw plugin 家族」）**每版都要在 ClawHub plugins 发布**——与 DSH plugin 家族（SkillHub）分属两个生态：**ClawHub = OpenClaw 运行时 / SkillHub = DSH 运行时，各发各的**。clawhub CLI 已支持 `package publish`（code-plugin / bundle-plugin）。
+
+```bash
+# 发布前确认 plugin 清单（SSOT = v1.4.0 开发日志 OpenClaw plugin 家族表）
+OPENCLAW_PLUGIN_DIRS=$(ls -d engine/*/openclaw-plugin-* 2>/dev/null || echo "")
+# 若 plugin 目录不在 engine/ 下，改为实际目录，以 v1.4.0 交付为准
+
+# 逐 plugin 发布（版本号与 sofagent 主线版本对齐）
+for pdir in $OPENCLAW_PLUGIN_DIRS; do
+  name=$(basename "$pdir")
+  # 先查现有版本，同版本号不可覆盖
+  clawhub package verify "$name" 2>&1 | grep version || true
+  clawhub package publish "$pdir" --family code-plugin --name "$name" --version <版本号> \
+    --changelog "vX.Y.Z: $(head -1 "$pdir/README.md" 2>/dev/null || echo "$name")" \
+    && echo "✅ $name 已发布到 ClawHub plugins" || echo "❌ $name 发布失败"
+done
+```
+
+> **OpenClaw plugin 分发铁律**：
+> - 发布源 = 各 openclaw-plugin 包目录（与 DSH plugin 家族分开，别混）
+> - 发布通道 = **ClawHub plugins**（`clawhub package publish --family code-plugin`）——注意 ClawHub 的 `skill publish` 与 `package publish` 是两条独立命令
+> - 版本号 = 与 sofagent 主线版本对齐（同 DSH 家族机制）
+> - 每版发版都要推，与 SKILL / DSH plugin 分发同等强制
+
 ---
 
 ## 步骤十一：设备端安装
