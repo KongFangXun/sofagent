@@ -6,7 +6,7 @@ export LANG=en_US.UTF-8
 export LC_ALL=en_US.UTF-8
 # sofagent-audit · 上线前验收测试（Pre-Release Acceptance Test）
 # 覆盖：FORGE + MCP + 文件系统审计 + daemon + 红队对抗 + 各版本新功能验收
-# 场景数：250 个场景（SSOT：check-test-count.sh 校验；v1.3.7 +4：S290-S293；v1.3.6 +8：S282-S289；v1.3.8 +11：S294-S304（含 bugfix 防回归 S303/S304）；v1.3.9 +13：S305-S317（阶段五 A 类分发——AST/meta-harness/worklog/@public/DSH/MLflow/Browser/跨平台/分子目录/守护/5MB diff））
+# 场景数：252 个场景（SSOT：check-test-count.sh 校验，口径=真实 scenario 调用行数，非编号最大值（S1-S319 间有 67 个历史空洞号）；v1.3.7 +4：S290-S293；v1.3.6 +8：S282-S289；v1.3.8 +11：S294-S304（含 bugfix 防回归 S303/S304）；v1.3.9 +15：S305-S319（阶段五 A 类分发 13 项 + 阶段六 coverage 补测 S318 ATTRIBUTION 归因引擎/S319 Dream Sandbox 沙盒审计））
 # 编号跳号豁免：S1~S293 间有 70 个空洞号（全在 S36-S202 历史段）——v1.2.x 瘦身删场景
 # 与基线重建（restore 6e542467）的既成事实，非丢失；新场景编号=当前最大+1 顺延，禁止回填空洞
 # 版本段起点见文件内「# ─── v」分组标记（grep "─── v" 定位）
@@ -2856,6 +2856,49 @@ S317_OK=true
 grep -q "spill\|oversized" "$PROJECT_ROOT/engine/core/src/diff-parser.ts" 2>/dev/null || S317_OK=false
 grep -rn "diff-parser-oversized\|oversized" "$PROJECT_ROOT/engine/core/src/__tests__/" 2>/dev/null | head -1 >/dev/null || S317_OK=false
 $S317_OK && pass "超大 diff spill 处理在位" || fail "5MB diff 缝隙修复缺失"
+
+scenario 318 "v1.3.9 交付十：ATTRIBUTION 归因引擎——决策归因落盘 + 三维查询 + byAgent 联结（P2 库级验收）"
+S318_OK=true
+R318=$(node -e "
+const fs=require('fs'),os=require('os'),path=require('path');
+const { AttributionEngine }=require('$PROJECT_ROOT/engine/orchestrator/dist/worklog/attribution.js');
+const dir=fs.mkdtempSync(path.join(os.tmpdir(),'acc-attribution-'));
+fs.mkdirSync(path.join(dir,'audit'),{recursive:true});
+fs.writeFileSync(path.join(dir,'audit','decision-log.jsonl'),[
+  JSON.stringify({id:'d-001',agentId:'audit',kind:'RULE_TOGGLE',ts:'2026-08-20T10:00:00Z'}),
+  JSON.stringify({id:'d-002',agentId:'refine',kind:'EVOLUTION',ts:'2026-08-20T11:00:00Z'}),
+  JSON.stringify({id:'d-003',agentId:'audit',kind:'KNOWLEDGE_DISTILL',ts:'2026-08-20T12:00:00Z'}),
+].join('\n')+'\n');
+const e=new AttributionEngine({dataDir:dir});
+e.link({decision_id:'d-001',business_metric:'deploy_success_rate',delta:0.12,confidence:1});
+e.link({decision_id:'d-002',business_metric:'deploy_success_rate',delta:0.03,confidence:0.6});
+e.link({decision_id:'d-003',business_metric:'manual_review_hours',delta:-1.0,confidence:0.8});
+const ok=fs.existsSync(path.join(dir,'dashboard','attribution.jsonl'))&&e.query({metric:'deploy_success_rate'}).length===2&&e.query({decisionId:'d-002'}).length===1&&e.query({agentId:'audit'}).length===2&&e.byAgent('audit').length===2;
+if(!ok){console.log('ATTRIBUTION_ASSERT_FAIL');process.exit(1)}
+console.log('ASSERT_OK');
+" 2>&1) || true
+echo "$R318" | grep -q "ASSERT_OK" || S318_OK=false
+$S318_OK && pass "ATTRIBUTION 归因引擎端到端可用" || fail "ATTRIBUTION 归因引擎验收失败"
+
+scenario 319 "v1.3.9 交付十一：Dream Sandbox 沙盒审计——stage 隔离 + 强制人审 merge + 路径穿越消毒（P2 库级验收）"
+S319_OK=true
+R319=$(node -e "
+const fs=require('fs'),os=require('os'),path=require('path');
+const { DreamSandbox }=require('$PROJECT_ROOT/engine/orchestrator/dist/worklog/dream-sandbox.js');
+const repo=fs.mkdtempSync(path.join(os.tmpdir(),'acc-dream-repo-'));
+const data=fs.mkdtempSync(path.join(os.tmpdir(),'acc-dream-data-'));
+fs.mkdirSync(path.join(repo,'src'));fs.writeFileSync(path.join(repo,'src','app.ts'),'const version = 1;\n');
+const s=new DreamSandbox({repoRoot:repo,dataDir:data});
+s.stage('t1',[{path:'src/app.ts',content:'const version = 2;\n'},{path:'../evil.ts',content:'x'}]);
+const staged=fs.readFileSync(path.join(repo,'src','app.ts'),'utf-8')==='const version = 1;\n';
+const r1=s.merge('t1',{});
+const r2=s.merge('t1',{approver:'kongfangxun'});
+const ok=staged&&!r1.merged&&String(r1.reason).includes('approver')&&r2.merged&&fs.readFileSync(path.join(repo,'src','app.ts'),'utf-8')==='const version = 2;\n'&&!fs.existsSync(path.join(repo,'..','evil.ts'));
+if(!ok){console.log('DREAM_ASSERT_FAIL');process.exit(1)}
+console.log('ASSERT_OK');
+" 2>&1) || true
+echo "$R319" | grep -q "ASSERT_OK" || S319_OK=false
+$S319_OK && pass "Dream Sandbox 沙盒审计端到端可用" || fail "Dream Sandbox 沙盒审计验收失败"
 
 
 echo -e "  验收测试结果：${GREEN}$PASSED 通过${NC} / ${RED}$FAILED 失败${NC} / 共 $((PASSED + FAILED))"
