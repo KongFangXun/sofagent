@@ -375,7 +375,7 @@ skillhub publish "$tmpdir/SKILL" --version <版本号> --changelog "vX.Y.Z: 简�
 
 ---
 
-## 步骤九·补：DSH plugin 分发（v1.4.0 起 · 每版必做）
+## 步骤十：DSH plugin 分发（v1.4.0 起 · 每版必做）
 
 > **背景（2026-08-21 拍板）**：SkillHub 现已支持 DeepSeek Harness plugin 分发。v1.4.0 起 sofagent 的 DSH plugin 家族（`@sofagent/cordis-plugin-*`，10 个通用插件，见 v1.4.0 开发日志「DSH 反向插件适配」）**每版都要在 SkillHub 发布**——与 SKILL 分发并列，是 DSH 生态的发现层补充（npm 发布仍走主线，两者并行不互替）。
 
@@ -404,7 +404,7 @@ done
 
 ---
 
-## 步骤十：设备端安装
+## 步骤十一：设备端安装
 
 ```bash
 # 1. 全局包更新（audit + core）
