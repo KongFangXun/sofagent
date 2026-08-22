@@ -27,10 +27,16 @@
 > 📊 **为什么是现在**：MIT NANDA 实验室《生成式人工智能的鸿沟》报告指出，全球企业过去三年在生成式 AI 上烧了三四百亿美元，**95% 的项目没能产生能写进财务报表的价值**；与此同时，一个叫「前线部署工程师」（Forward Deployed Engineer，FDE）的岗位发布量一年涨了 **729%**（Indeed 2025 数据）。模型不稀缺了，能把模型塞进客户真实业务里的人，才稀缺——sofagent 就是把这件事工程化的开源底座。（数据核验与多机构口径对照见 [VALIDATION §一·治理缺口的代价](./docs/VALIDATION.md#治理缺口的代价三项联网核验证据)，FDE 经济账见 [VALIDATION §四](./docs/VALIDATION.md#四市场印证行业判断被市场买单)。）
 
 ```mermaid
-graph LR
-    A["① 进场梳理<br/>对话引导梳理工作流<br/>哪些自动化·哪些人工·哪些不动"] --> B["② 部署 AI 节点<br/>把自动化环节变成 SubAgent<br/>用你已有的 AI 工具，不用学新界面"]
-    B --> C["③ 离场后自运转<br/>FDE 走了，sofagent 留下 7×24<br/>每次干活受检查·越界能拦·出事能回滚"]
-    C -.->|经验沉淀·持续优化| C
+graph TB
+    subgraph S["一个 FDE Agent · sofagent"]
+        K["内核 DeepSeek Harness<br/>ExecutionBackend 抽象"]
+        I["调用面 plugin + skill + MCP<br/>+ dashboard + CLI"]
+        B["行为层 约束底座<br/>注入 · 审计 · 回溯 · 进化"]
+        M["方法论 FDE 四阶段<br/>梳理 → 挖掘 → 交付 → 离场"]
+    end
+    S -->|"进场 · 给企业做 FDE"| D["交付 双 graph<br/>workflow graph + ontology graph"]
+    D --> N["AI 节点<br/>LangGraph 编排 → Harness 执行 → 约束审计"]
+    N -.->|"7×24 自运转 · 越界能拦 · 出事能回滚"| N
 ```
 
 > 💾 **部署完别急着走**：单个节点的 workflow（Agent 的能力）用 LangGraph 定义好后，经 DSH（DeepSeek Harness 执行后端，商业侧可选组件，非开源仓库内交付）直接「烧」进 U 盘——U 盘就变成一个节点、一把 key，插到哪台机器哪台就能跑（拔掉零残留）。详见 [HANDBOOK · USB 一键烧录](./docs/HANDBOOK.md#近期版本新功能速览)。

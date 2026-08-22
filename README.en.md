@@ -19,6 +19,10 @@
 
 **sofagent is an open-source FDE Agent** (Forward Deployed Engineer Agent) — map workflows, deploy AI nodes, and audit every change 7×24, blocking out-of-bounds moves and rolling back breakage. It ships on [ClawHub](https://clawhub.ai/kongfangxun/skills/sofagent) as an **FDE Skill** (a methodology skill that helps everyone at SMBs and OPCs become the FDE of their own business), and once installed on enterprise devices it runs long-term as a **constraint-layer (Harness) engine** (injection · audit · rollback · evolution, with the daemon as its resident carrier).
 
+> 🏗️ **Product shape = one FDE Agent** (encapsulation lands in v1.4.0): sofagent is not a single entry-point agent, but the **wrapper that turns an agent kernel into an FDE Agent** — DeepSeek Harness as the kernel (ExecutionBackend abstraction, extensible to other agent runtimes), plugin + skill + MCP + dashboard + CLI as the full call surface, and the constraint base (injection · audit · rollback · evolution) + FDE methodology as the behavior layer. The wrapped whole is one FDE Agent: it maps workflows on-site, deploys AI nodes, and keeps running 7×24 after handoff, with every action audited.
+>
+> 🔄 **Self-bootstrapping**: its first FDE job is sofagent itself — the project itself is one FDE workflow (map → nodes → dual-graph delivery), and the training engine also orbits FDE (making FDE better, spinning the data flywheel).
+
 > 📊 **Why now**: MIT NANDA Lab's *The GenAI Divide* report shows that over the past three years, global enterprises burned $30–40 billion on generative AI, yet **95% of projects failed to produce value worth putting on a financial statement**. Meanwhile, job postings for a role called "Forward Deployed Engineer" (FDE) surged **729%** year-over-year (Indeed 2025 data). Models are no longer scarce — the scarce thing is people who can embed models into real customer operations. sofagent is the open-source substrate that engineers this. (Data verification and cross-agency calibration: see [VALIDATION §1 · Cost of governance gaps](./docs/VALIDATION.md#治理缺口的代价三项联网核验证据); FDE economics: see [VALIDATION §4](./docs/VALIDATION.md#四市场印证行业判断被市场买单).)
 
 ```mermaid
