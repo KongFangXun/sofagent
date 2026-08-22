@@ -26,10 +26,16 @@
 > 📊 **Why now**: MIT NANDA Lab's *The GenAI Divide* report shows that over the past three years, global enterprises burned $30–40 billion on generative AI, yet **95% of projects failed to produce value worth putting on a financial statement**. Meanwhile, job postings for a role called "Forward Deployed Engineer" (FDE) surged **729%** year-over-year (Indeed 2025 data). Models are no longer scarce — the scarce thing is people who can embed models into real customer operations. sofagent is the open-source substrate that engineers this. (Data verification and cross-agency calibration: see [VALIDATION §1 · Cost of governance gaps](./docs/VALIDATION.md#治理缺口的代价三项联网核验证据); FDE economics: see [VALIDATION §4](./docs/VALIDATION.md#四市场印证行业判断被市场买单).)
 
 ```mermaid
-graph LR
-    A["① Map workflows<br/>Guided conversation maps the workflow<br/>what to automate · what stays human · what to leave alone"] --> B["② Deploy AI nodes<br/>Turn automatable steps into SubAgents<br/>runs inside your existing AI tools, no new UI"]
-    B --> C["③ Self-running after departure<br/>The FDE leaves, sofagent stays 7×24<br/>every action checked · violations blocked · rollback anytime"]
-    C -.->|experience captured · keeps improving| C
+graph TB
+    subgraph S["One FDE Agent · sofagent"]
+        K["Kernel DeepSeek Harness<br/>ExecutionBackend abstraction"]
+        I["Call surface plugin + skill + MCP<br/>+ dashboard + CLI"]
+        B["Behavior layer constraint base<br/>injection · audit · rollback · evolution"]
+        M["Methodology FDE four phases<br/>map → mine → deliver → depart"]
+    end
+    S -->|"on-site · doing FDE for the enterprise"| D["Deliver dual graphs<br/>workflow graph + ontology graph"]
+    D --> N["AI nodes<br/>LangGraph orchestration → Harness execution → constraint audit"]
+    N -.->|"7×24 self-running · blocks violations · rolls back breakage"| N
 ```
 
 > 💾 **Don't rush off after deployment**: once a single node's workflow (the Agent's capability) is defined with LangGraph, burn it straight onto a USB drive via DSH (DeepSeek Harness execution backend — an optional commercial-side component, not delivered in this open-source repo) — the USB drive becomes a node, a key: plug it into any machine and it just runs (unplug for zero residue). See [HANDBOOK · USB one-click burn](./docs/HANDBOOK.md#近期版本新功能速览).
