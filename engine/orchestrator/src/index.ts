@@ -651,7 +651,7 @@
 } from './loop-state-extractor';
 
 // v1.3.4 交付 1+4：L3 组织能力公地（发布→发现 + SkillScan 安全门）
-/* @public */ export { publishCapability, validateMetadata, scanSkillSafetyStub } from './commons/publisher';
+/* @public */ export { publishCapability, validateMetadata } from './commons/publisher';
 /* @public */ export type { CapabilityKind, CapabilityMetadata, PublishResult } from './commons/publisher';
 /* @public */ export {
   readCatalog,

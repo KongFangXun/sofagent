@@ -107,20 +107,8 @@ export function validateMetadata(meta: CapabilityMetadata): string | null {
 // SkillScan 钩子（交付 4 接入）
 // ────────────────────────────────────────────────────────────
 
-/**
- * SkillScan 桩（交付 1 占位）。
- *
- * 交付 1 先返回 SAFE 占位，交付 4 完成后替换为真实 scanForPublish()。
- * 保留这个函数是为了让交付 1 的单测能在没有 scanSkillSafety 真实扫描的情况下跑通。
- */
-export function scanSkillSafetyStub(): ScanResult {
-  // TODO: 交付 4 接 scanSkillSafety
-  return {
-    verdict: 'SAFE',
-    reason: 'stub——交付 4 接入真实扫描',
-    details: [],
-  };
-}
+// SkillScan 桩已删除（v1.3.9+ 清理）：交付 4 已完成，publishCapability 已用真实 scanForPublish()（见下文），
+// 旧占位函数 scanSkillSafetyStub（永远返回 SAFE）曾误导出到 @public API，已随本清理移除。
 
 // ────────────────────────────────────────────────────────────
 // 发布
