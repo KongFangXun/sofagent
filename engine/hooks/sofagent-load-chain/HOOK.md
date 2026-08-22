@@ -69,9 +69,11 @@ DSH 原生支持 **8 个生命周期 hook，全部为瀑布流（Waterfall）可
 |---|---|---|---|
 | **OpenClaw** | ✅（`agent:bootstrap` 事件强制触发） | Hook 注入（core-rules + role-* + think.md + fde.md） | **强制**（平台保证每次会话注入） |
 | **WorkBuddy** | ❌ 无 Hook | Skill 自觉加载（SKILL.md 随调用注入） | 自觉（软约束） |
-| **Codex** | ❌ 无 Hook | Skill 自觉加载 | 自觉（软约束） |
-| **Claude** | ❌ 无 Hook | `~/.claude/fde.md` + Skill 自觉加载 | 自觉（软约束） |
+| **Codex** | ✅（v1.4.0 起 · 生命周期 hook：`pre-tool-use`/`post-tool-use`/`permission-request`/`subagent-start` 等，Claude Code 兼容 JSON 命令行协议） | 生命周期 hook 注入（约束 + 审计拦截，逐工具调用可拦） | **强制**（v1.4.0 Codex plugin 家族交付后；此前为 AGENTS.md 自觉加载） |
+| **Claude** | ✅（Claude Code 原生 hooks——`pre-tool-use` 等，与 Codex 同协议） | 生命周期 hook 注入（Claude Code 生态适配评估中） | 自觉（软约束）→ 可升级（协议同源） |
 | **自建 Agent（npm API）** | ❌ 无 Hook | `@sofagent/harness` 的 `buildConstrainedSystemPrompt` 代码级拼入 | **强制**（代码保证） |
+
+> 🔌 **Codex hook 协议参考（2026-08-22 源码核验 · openai/codex）**：Codex 生命周期 hooks 复用 Claude Code 兼容协议——JSON in/out 命令行引擎（`ClaudeHooksEngine` + `CommandHookRuntime`），事件包括 `pre-tool-use`（工具调用前拦截 + permission_mode，与 DSH `tools/pre-execute` 功能同构）/ `post-tool-use` / `permission-request`（审批请求）/ `session-start` / `subagent-start` / `stop`。挂载点：`.codex/hooks/` 下 JSON 命令行 hook（仿本文件 OpenClaw 形态）。详见 [v1.4.0 开发日志 Codex plugin 家族](https://github.com/KongFangXun/sofagent/blob/main/docs/changelog/v1.4/v1.4.0.md)。
 
 **为什么 OpenClaw 是宿主平台之一、而非主战场**：Hook 依赖平台的「会话生命周期事件」机制（`agent:bootstrap`），只有 OpenClaw 暴露了这个事件。它保证「先有规则、后有执行、再有审计」在 OpenClaw 上完整——但当 DSH 成为默认执行后端后，sofagent 自建执行链路里的逐调用约束才是覆盖所有场景的完整形态。
 
