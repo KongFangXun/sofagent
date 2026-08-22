@@ -135,7 +135,7 @@ Deploying AI nodes is only step one — above we covered **how to map and where 
   <img src="docs/assets/dashboard.png" alt="sofagent Dashboard cockpit" width="100%" />
 </p>
 
-<p align="center"><sub>Dashboard cockpit (single-file HTML): rule pass rate, audit tasks, violation trends — see at a glance what the AI is doing.</sub></p>
+<p align="center"><sub>Dashboard cockpit (single-file HTML): rule pass rate, audit tasks, violation trends — see at a glance what the AI is doing.<br>Screenshot shows v1.2.9; current release is v1.3.9.</sub></p>
 
 > 📊 **The Dashboard has three entries, each in its place**:
 >

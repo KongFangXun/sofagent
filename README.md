@@ -136,7 +136,7 @@ sofagent-audit --doctor    # 验证环境（可选）
   <img src="docs/assets/dashboard.png" alt="sofagent Dashboard 驾驶舱" width="100%" />
 </p>
 
-<p align="center"><sub>Dashboard 驾驶舱（单文件 HTML）：规则通过率、审计任务、违规趋势——AI 在干什么，一眼看清。</sub></p>
+<p align="center"><sub>Dashboard 驾驶舱（单文件 HTML）：规则通过率、审计任务、违规趋势——AI 在干什么，一眼看清。<br>截图版本 v1.2.9，当前已发布 v1.3.9。</sub></p>
 
 > 📊 **Dashboard 有三个入口，各归各位**：
 >
