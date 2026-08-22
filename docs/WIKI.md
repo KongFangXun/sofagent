@@ -30,9 +30,33 @@
 
 > **一条 workflow 的产品**：给企业做 AI 落地 = 一条 FDE workflow。执行这条 workflow 的 Agent = FDE Agent（sofagent）。**它对自己做的第一份 FDE，就是 sofagent 项目本身**——自举循环：FDE Agent 对自己做 FDE → 项目更 AI 化 → 更好地服务企业 → 数据飞轮转起来。
 
-**FDE 交付**：进场梳理 → 交付**双 graph**——人看的 workflow graph + 机器读的 ontology graph。graph 里每个 AI 节点承担 workflow 中的职能；节点执行 = workflow 要求 → LangGraph 编排 → DeepSeek Harness 执行 → 全程约束底座审计 + 回溯净化（plugin 功能）。
+**FDE 交付**：进场梳理 → 交付**双 graph**——人看的 workflow graph + 机器读的 ontology graph。graph 里每个 AI 节点承担 workflow 中的职能；节点执行 = workflow 要求 → LangGraph 编排 → DeepSeek Harness 执行（ExecutionBackend 双后端：workflow 以 DAG 形态在所选后端运行）→ 全程约束底座审计 + 回溯净化（plugin 功能）。
 
 **训练 Agent（内层新 workflow）**：企业 AI 节点要数据主权 → 训练 Agent（受约束）驱动后训练工具：收集企业数据 → 模型后训练 → 私有化部署回节点。这本身是几个新 workflow（数据采集 / 训练 / 部署）。开源训练引擎 v1.4.1~1.4.6 交付；训练也围绕 FDE——怎么让 FDE 更好、怎么让数据飞轮转起来。
+
+**内外层 workflow 全景**（2026-08-23 落盘 · 产品 = 一个 FDE Agent 的可视化）：
+
+```mermaid
+graph TB
+    subgraph OUT["外层 workflow · FDE 交付主流程（卖什么）"]
+        O1["① 梳理<br/>fde_interview"] --> O2["② 挖掘<br/>ontology 构建"]
+        O2 --> O3["③ 交付双 graph<br/>workflow + ontology + skill"]
+        O3 --> O4["④ 激活<br/>激活链：交付物 → 运行态"]
+        O4 --> O5["⑤ 7×24 自运转<br/>daemon + 审计 + 回溯"]
+        O5 -.->|"⑥ 持续陪跑 fde-session 进场记忆"| O1
+    end
+    subgraph IN["内层 workflow · 能力子流程（交付中调用，可复用）"]
+        I1["内① 节点执行<br/>LangGraph 编排 → Harness 执行"]
+        I2["内② 训练 Agent<br/>数据 → 后训练 → 部署回节点"]
+        I3["内③ 激活链执行<br/>交付物 → LangGraph StateGraph"]
+    end
+    O3 --> I3
+    O4 --> I1
+    O5 --> I1
+    O5 --> I2
+```
+
+> 外层 = 卖什么（FDE 交付，每企业一次 + 持续陪跑）；内层 = 交付中调用的能力（节点执行 / 训练 / 激活，可复用）。全程约束底座审计：外层每次 FDE 动作记 fde-session，内层每次节点执行 / 训练决策进审计链。
 
 **为什么这条 workflow 会一直跑**：企业持续需要 AI 落地 → 这条 FDE workflow 不只是 sofagent 的项目，也会成为企业的 workflow。
 
