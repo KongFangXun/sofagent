@@ -158,6 +158,25 @@ DeepSeek 2026-08-13 开源 [DeepSeek Harness](https://github.com/deepseek-ai/dee
 
 > 📖 来源：[deepseek-ai/deepseek-harness](https://github.com/deepseek-ai/deepseek-harness) 官方仓库 docs/（architecture + cordis-tutorial，2026-08-15 核验），MIT
 
+### OpenAI Codex Harness：头部模型厂商把「Harness 决定 Agent 表现」官方量化
+
+OpenAI 2026-08-19 全面开源 [Codex Harness](https://github.com/openai/codex)（Apache-2.0，107k+ stars）——驱动 Codex App/CLI/IDE 的底层执行框架（对话状态、工具调用、沙箱执行、流式输出、人工审批）。开源的是**三层集成接口**而非模型：`codex exec`（轻量非交互 CLI）+ Codex SDK（TS 程序化编排，支持任意 OpenAI 兼容端点模型切换）+ `app-server`（持久会话产品层，官方原话 "your application owns product context, business rules, and tools; Codex app-server provides the agent loop"）。
+
+**给我们的背书——官方量化「Harness 决定 Agent 表现」**：OpenAI 在 ARC-AGI-3 基准上仅对 Harness 做两项调整（保留推理 + 上下文压缩），GPT-5.6 Sol 得分从 **13.3% → 38.3%**，输出 token 消耗**降 6 倍**——「模型能力 × Harness 设计 = Agent 最终表现」被头部模型厂商官方数据实证，正是 sofagent「模型给 90% 智力、约束层补 10% 可靠执行」叙事的最强外部锚点。
+
+**与 sofagent 的工程同构点（仓库源码核验，2026-08-22）**：
+| 维度 | Codex Harness | sofagent |
+|------|--------------|----------|
+| hook 体系 | Claude Code 兼容生命周期 hooks（`pre-tool-use` / `post-tool-use` / `permission-request` / `subagent-start` / `session-start`，JSON in/out 命令行引擎） | 约束注入链 + audit（提交时 git diff）+ HITL 钩子 |
+| 身份码 | Ed25519 agent-identity（JWKS 签发） | v1.3.1 Agent 身份码 Ed25519（同构） |
+| 审批 | 内建 HITL（关键操作暂停请求人类确认）+ 多 permission_mode | 工具审批四模式 + HITL 钩子（v1.3.1） |
+| 分发 | 插件市场（marketplace.json，兼容 `.claude-plugin` / `.cursor-plugin` 格式 + 企业 allowlist/restricted 策略） | ClawHub/SkillHub 分发（双生态） |
+| 沙箱 | 内建沙箱（Landlock + seccomp / Windows sandbox） | v1.3.7 SubAgent 沙箱 |
+
+**sofagent 挂载机会**：Codex 的 `pre-tool-use` hook 与 DSH 的 `tools/pre-execute` **功能同构**（工具调用前拦截 + permission_mode），且 hook 协议是 Claude Code 兼容的 JSON 命令行格式——sofagent 审计/拦截可作为 Codex 生命周期 hook 挂载（v1.4.0 OpenClaw plugin 家族之外的第三个生态位候选，排期待议）。
+
+> 📖 来源：[openai/codex](https://github.com/openai/codex) 官方仓库（2026-08-22 源码核验）+ [Codex as a platform](https://developers.openai.com/blog/codex-as-a-platform)（openai.com，2026-08-19），Apache-2.0
+
 ### Omnigent：meta-harness 把策略强制在基础设施层
 
 [Omnigent](https://github.com/omnigent-ai/omnigent)（Databricks 系团队开源，Apache-2.0，alpha，31 天 7091 star）自称 **meta-harness**——坐在 Claude Code / Codex / Pi 等 harness 之上的一层。它把我们的「Harness 中间件」判断又往前推了一步，给了两个可引用的硬证据：
