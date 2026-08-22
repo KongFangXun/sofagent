@@ -6,7 +6,7 @@ export LANG=en_US.UTF-8
 export LC_ALL=en_US.UTF-8
 # sofagent-audit · 上线前验收测试（Pre-Release Acceptance Test）
 # 覆盖：FORGE + MCP + 文件系统审计 + daemon + 红队对抗 + 各版本新功能验收
-# 场景数：253 个场景（SSOT：check-test-count.sh 校验，口径=真实 scenario 调用行数，非编号最大值（S1-S320 间有 67 个历史空洞号）；v1.3.7 +4：S290-S293；v1.3.6 +8：S282-S289；v1.3.8 +11：S294-S304（含 bugfix 防回归 S303/S304）；v1.3.9 +15：S305-S319（阶段五 A 类分发 13 项 + 阶段六 coverage 补测 S318 ATTRIBUTION 归因引擎/S319 Dream Sandbox 沙盒审计）；v1.4.0 +1：S320（联邦查询跨进程 E2E——补 federation.test.ts 同进程 mock 缺口））
+# 场景数：254 个场景（SSOT：check-test-count.sh 校验，口径=真实 scenario 调用行数，非编号最大值（S1-S321 间有 67 个历史空洞号）；v1.3.7 +4：S290-S293；v1.3.6 +8：S282-S289；v1.3.8 +11：S294-S304（含 bugfix 防回归 S303/S304）；v1.3.9 +15：S305-S319（阶段五 A 类分发 13 项 + 阶段六 coverage 补测 S318 ATTRIBUTION 归因引擎/S319 Dream Sandbox 沙盒审计）；v1.4.0 +2：S320（联邦查询跨进程 E2E——补 federation.test.ts 同进程 mock 缺口）、S321（跨平台 hook stdin 模式闭环验证））
 # 编号跳号豁免：S1~S293 间有 70 个空洞号（全在 S36-S202 历史段）——v1.2.x 瘦身删场景
 # 与基线重建（restore 6e542467）的既成事实，非丢失；新场景编号=当前最大+1 顺延，禁止回填空洞
 # 版本段起点见文件内「# ─── v」分组标记（grep "─── v" 定位）
@@ -2906,8 +2906,48 @@ R320=$(SOFAGENT_REPO="$PROJECT_ROOT" node "$PROJECT_ROOT/FORGE/playbook/federati
 echo "$R320" | grep -q "结果：10 PASS / 0 FAIL" || S320_OK=false
 $S320_OK && pass "联邦查询跨进程 E2E 全绿（10 断言：配对协商/加密查询/篡改检测/离线降级/trust 白名单）" || fail "联邦查询跨进程 E2E 失败: $(echo "$R320" | grep -E '❌|异常' | head -3 || true)"
 
+# ─── v1.4.0：平台 hook stdin 模式（Cursor/Claude Code/千问办公）闭环验证 ───
+scenario 321 "v1.4.0 前置：跨平台 hook 共享脚本 stdin 模式——模拟 Cursor/Claude Code 触发 commit 审计（拦截违规 + 放行正常 + 非commit 不误伤）"
+S321_OK=true
+S321_REPO=$(mktmp_repo)
+HOOK_SH="$PROJECT_ROOT/tools/hooks/sofagent-precommit.sh"
+cd "$S321_REPO"
+git config user.email "test@test.com" 2>/dev/null; git config user.name "Test" 2>/dev/null
+echo "# base" > base.md; git add base.md; GIT_EDITOR=true git commit -q - 2>/dev/null || true
+# ① 违规 commit：staged 含 .env + message 含敏感词 → 期望拦截（exit 1），且仓库无此 commit
+echo "DATABASE_URL=postgres://x@localhost/db" > .env; git add -f .env
+S321_VIOLATION=$(echo '{"tool_name":"Bash","tool_input":{"command":"git commit -m \"add env config\""}}' | bash "$HOOK_SH" 2>&1 || true)
+S321_V_EXIT=$?
+if [ "$S321_V_EXIT" -ne 0 ] && ! git_log_has "add env config"; then
+  echo "  ✔ 违规 commit 被拦截（exit=$S321_V_EXIT，仓库无该提交）"
+else
+  fail "违规 commit 未被拦截（exit=$S321_V_EXIT；git_log=$(git log --oneline | grep 'add env' || echo none)）"; S321_OK=false
+fi
+git reset -q -- .env 2>/dev/null || true; rm -f .env 2>/dev/null || true
+# ② 正常 commit → 期望放行（exit 0）。平台模式下脚本只做审计不放行 commit，
+#    真正的 git commit 由平台在收到 exit 0 后执行（脚本职责边界：审计，不替平台 commit）
+echo "# readme" > README.md; git add README.md
+S321_OKC=$(echo '{"tool_name":"Bash","tool_input":{"command":"git commit -m \"fix: update readme\""}}' | bash "$HOOK_SH" 2>&1 || true)
+S321_O_EXIT=$?
+if [ "$S321_O_EXIT" -eq 0 ]; then
+  echo "  ✔ 正常 commit 审计放行（exit=0，无违规；平台收到后会执行真实 commit）"
+else
+  fail "正常 commit 未放行（exit=$S321_O_EXIT）"; S321_OK=false
+fi
+# ③ 非 commit 命令（平台 hook 命中非 git commit）→ 必须放行，不审计（避免误伤）
+echo "# x" >> README.md; git add README.md
+S321_NC=$(echo '{"tool_name":"Bash","tool_input":{"command":"ls -la /tmp"}}' | bash "$HOOK_SH" 2>&1 || true)
+S321_NC_EXIT=$?
+if [ "$S321_NC_EXIT" -eq 0 ]; then
+  echo "  ✔ 
+非 commit 命令放行（exit=$S321_NC_EXIT，不误伤）"
+else
+  fail "非 commit 命令被误拦截（exit=$S321_NC_EXIT）"; S321_OK=false
+fi
+cleanup_tmp "$S321_REPO"
+$S321_OK && pass "跨平台 hook stdin 模式闭环（拦截违规/放行正常/非commit 不误伤）" || fail "跨平台 hook stdin 模式验证失败"
+
 echo -e "  验收测试结果：${GREEN}$PASSED 通过${NC} / ${RED}$FAILED 失败${NC} / 共 $((PASSED + FAILED))"
-echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 # 🔴 v1.3.1 run-10 教训：无色码纯文本汇总行供 driver grep（EXIT: 0=全PASS / <N>=N失败）
 echo "SUMMARY: ${PASSED}/$((PASSED + FAILED)) passed · EXIT: ${FAILED}"
 if [ "$FAILED" -gt 0 ]; then echo -e "${RED}❌ 有 $FAILED 个场景失败，请修复后再发版${NC}"; exit "$FAILED"
