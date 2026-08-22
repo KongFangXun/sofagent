@@ -1,0 +1,150 @@
+#!/usr/bin/env bash
+# ═══════════════════════════════════════════════════════════════════════
+# sofagent-precommit.sh · 跨平台 commit 审计拦截（共享入口）
+# v1.4.0 新增：Cursor / Claude Code / 千问办公 / git 原生 hook 共用此脚本
+#
+# 设计原则：复用 engine/audit 的成熟审计引擎，不重写审计逻辑。
+#   本脚本只做「适配层」——把不同平台的调用方式归一化后，转发给 sofagent-audit。
+#
+# 支持的调用来源：
+#   1. git commit-msg hook      → 传入 $1 = commit message 文件路径
+#   2. git pre-commit hook      → 无参数，审计 staged diff
+#   3. Cursor PostToolUse hook  → stdin 传 JSON（含 tool_input.command）
+#   4. Claude Code PreToolUse   → stdin 传 JSON（含 tool_input.command）
+#   5. 千问办公自定义 Hook      → 同上 stdin JSON（预留，schema 以实测为准）
+#
+# 退出码约定（与 git / Claude Code 一致）：
+#   0 = 放行；1 / 2 = 拦截（Claude Code 用 2 阻断，git 用 1 阻断；本脚本统一 exit 1 阻断）
+# ═══════════════════════════════════════════════════════════════════════
+
+set -uo pipefail
+
+# ── 0. 解析 commit message（三种来源归一化）──────────────────────────────
+COMMIT_MSG_FILE=""
+COMMIT_SUBJECT=""
+COMMIT_FULL_MSG=""
+
+# 来源 A：git commit-msg hook 直接给文件路径
+if [ -n "${1:-}" ] && [ -f "$1" ]; then
+  COMMIT_MSG_FILE="$1"
+  COMMIT_SUBJECT=$(head -1 "$COMMIT_MSG_FILE")
+  COMMIT_FULL_MSG=$(cat "$COMMIT_MSG_FILE")
+fi
+
+# 来源 B：平台 hook 通过 stdin 传 JSON（Cursor / Claude Code / 千问办公）
+# 形如 {"tool_name":"Bash","tool_input":{"command":"git commit -m '...'"}}
+# 仅当没拿到文件路径时尝试解析（避免与 git 原生 hook 冲突）
+if [ -z "$COMMIT_MSG_FILE" ] && [ ! -t 0 ]; then
+  CMD_INPUT=$(cat 2>/dev/null || true)
+  if [ -n "$CMD_INPUT" ]; then
+    # 提取 tool_input.command 里的 commit message（-m '...' 或 -m "..."）
+    EXTRACTED=$(printf '%s' "$CMD_INPUT" | grep -oE "git[ ]+commit[^\n]*" | head -1 || true)
+    if [ -n "$EXTRACTED" ]; then
+      # 从 -m 参数抽取 message（支持单/双引号）
+      MSG=$(printf '%s' "$EXTRACTED" | grep -oE "(-m[[:space:]]+|--message[[:space:]]+)[\\\"']?.{0,200}" | sed -E "s/^-m[[:space:]]+|^\-\-message[  ]+//" | sed -E "s/^[\"']//" | head -1 || true)
+      [ -n "$MSG" ] && COMMIT_FULL_MSG="$MSG" && COMMIT_SUBJECT="$MSG"
+    fi
+  fi
+fi
+
+# ── 1. 仅对 git commit 类操作生效（平台 hook 模式下）──────────────────────
+# git 原生 hook 模式（来源 A）总是审计；平台 hook 模式仅当命令是 commit 才审计
+IS_GIT_COMMIT=false
+if [ -n "$COMMIT_MSG_FILE" ]; then
+  IS_GIT_COMMIT=true
+elif [ -n "${CMD_INPUT:-}" ]; then
+  if printf '%s' "$CMD_INPUT" | grep -qE "git[[:space:]]+(commit|-c )" 2>/dev/null; then
+    IS_GIT_COMMIT=true
+  fi
+fi
+if [ "$IS_GIT_COMMIT" = false ]; then
+  # 平台 hook 命中了非 commit 命令——放行，不做审计（避免误伤）
+  exit 0
+fi
+
+# ── 2. 暂存区 diff（commit-msg / pre-commit 场景）────────────────────────
+DIFF=$(git diff --cached --name-only 2>/dev/null)
+if [ -z "$DIFF" ] && [ -z "$COMMIT_MSG_FILE" ]; then
+  # 平台模式下没有 staged 内容（commit 尚未产生），仍审计 message
+  :
+fi
+
+# ── 3. Node.js 检测 ──────────────────────────────────────────────────────
+if ! command -v node &>/dev/null; then
+  echo "❌ sofagent-audit: Node.js 未找到，审计未运行"
+  echo "   请安装 Node.js >= 18: https://nodejs.org"
+  exit 1
+fi
+
+# ── 4. sofagent-audit 定位（优先仓库本地 dist，避免全局版本漂移）──────────
+if [ -f "engine/audit/dist/index.js" ]; then
+  AUDIT_CMD=(node "engine/audit/dist/index.js")
+elif command -v sofagent-audit &>/dev/null; then
+  AUDIT_CMD=(sofagent-audit)
+else
+  echo "❌ sofagent-audit 未安装，审计未运行"
+  echo "   请运行: npm install -g @sofagent/audit"
+  exit 1
+fi
+
+# ── 5. dist 完整性校验（P1-A2：防本地覆写致审计失效）─────────────────────
+if [ -f "engine/audit/dist/index.js" ]; then
+  SOFAGENT_HOME="${SOFAGENT_HOME:-$HOME/.sofagent}"
+  HASH_RECORD="$SOFAGENT_HOME/internal/audit-hash.txt"
+  if [ ! -f "$HASH_RECORD" ]; then
+    echo "⚠️ [sofagent] 审计引擎哈希基准缺失——正在补生成..."
+    mkdir -p "$SOFAGENT_HOME/internal"
+    if node -e "const c=require('crypto'),f=require('fs');process.stdout.write(c.createHash('sha256').update(f.readFileSync('engine/audit/dist/index.js')).digest('hex'))" > "$HASH_RECORD" 2>/dev/null && [ -s "$HASH_RECORD" ]; then
+      chmod 600 "$HASH_RECORD" 2>/dev/null || true
+      echo "ℹ️ [sofagent] 基准哈希已记录（后续 commit 将比对完整性）"
+    else
+      echo "🔴 [sofagent] 基准哈希生成失败——无法保证审计引擎未被替换，本次提交终止"
+      echo "   请运行: sofagent-audit --doctor（自动记录基准）后重试"
+      exit 1
+    fi
+  else
+    CURRENT_HASH=$(node -e "const c=require('crypto'),f=require('fs');process.stdout.write(c.createHash('sha256').update(f.readFileSync('engine/audit/dist/index.js')).digest('hex'))" 2>/dev/null)
+    RECORDED_HASH=$(cat "$HASH_RECORD" 2>/dev/null | tr -d '[:space:]')
+    if [ -n "$CURRENT_HASH" ] && [ -n "$RECORDED_HASH" ] && [ "$CURRENT_HASH" != "$RECORDED_HASH" ]; then
+      echo "🔴 [sofagent] 审计引擎完整性校验失败（P1-A2 dist 哈希不匹配）"
+      echo "   engine/audit/dist/index.js 可能被替换（影子审计器劫持风险）。"
+      echo "   记录哈希: ${RECORDED_HASH:0: 12}...  当前哈希: ${CURRENT_HASH:0: 12}..."
+      echo "   如需恢复，运行: npm run build --workspace=engine/audit"
+      echo "   如为故意重建 dist，运行: sofagent-audit --doctor（会更新基准哈希）"
+      exit 1
+    fi
+  fi
+fi
+
+# ── 6. .sofagent/ ignore 兜底 ────────────────────────────────────────────
+if [ -f ".gitignore" ] && ! grep -q '^\.sofagent/$' ".gitignore" 2>/dev/null && ! grep -q '^\.sofagent/' ".gitignore" 2>/dev/null; then
+  printf '\n# sofagent 审计数据（本地配置 + 知识库 + 审计历史）\n.sofagent/\n' >> ".gitignore"
+  echo "ℹ️ [sofagent] 已自动补充 .gitignore（排除 .sofagent/）"
+elif [ ! -f ".gitignore" ]; then
+  printf '# sofagent 审计数据（本地配置 + 知识库 + 审计历史）\n.sofagent/\n' > ".gitignore"
+  echo "ℹ️ [sofagent] 已自动创建 .gitignore（排除 .sofagent/）"
+fi
+git reset -q -- .sofagent/ 2>/dev/null || true
+
+# ── 7. 执行审计 ─────────────────────────────────────────────────────────
+AUDIT_DIFF_ARG="--cached"
+if [ -n "$COMMIT_SUBJECT" ]; then
+  "${AUDIT_CMD[@]}" --diff "$AUDIT_DIFF_ARG" --silent --ci --task "$COMMIT_SUBJECT" --commit-msg "$COMMIT_FULL_MSG"
+else
+  "${AUDIT_CMD[@]}" --diff "$AUDIT_DIFF_ARG" --silent --ci
+fi
+EXIT_CODE=$?
+
+if [ $EXIT_CODE -eq 2 ]; then
+  echo ""
+  echo "❌ sofagent audit: 检测到违规，commit 已阻止。"
+  echo "   请修复违规项后重新提交（或用 git commit --no-verify 跳过，后果自负）。"
+  exit 1
+fi
+
+if [ $EXIT_CODE -eq 1 ]; then
+  echo ""
+  echo "⚠️  sofagent audit: 检测到警告，但允许 commit。"
+fi
+
+exit 0

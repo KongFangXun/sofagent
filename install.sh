@@ -697,7 +697,22 @@ install_skill_unified() {
         if [ -f "${SCRIPT_DIR}/.cursor/rules/sofagent.mdc" ]; then
           cp "${SCRIPT_DIR}/.cursor/rules/sofagent.mdc" "${cur_rules}/sofagent.mdc"
         fi
+        # v1.4.0: 安装 Cursor hook 配置（commit 审计拦截，指向仓库共享脚本）
+        if [ -f "${SCRIPT_DIR}/tools/hooks/sofagent-precommit.sh" ]; then
+          cp "${SCRIPT_DIR}/tools/hooks/sofagent-precommit.sh" "${cur_rules}/../hooks.json" 2>/dev/null || true
+          ok "  Cursor hook 配置：~/.cursor/hooks.json（commit 审计拦截）"
+        fi
         ok "  Cursor 薄挂载：${cur_rules}/sofagent.mdc + Skill symlink ${cur_skills}"
+        ;;
+      # v1.4.0: Claude Code 薄挂载 + hook（与 Cursor 同构）
+      claude)
+        local claude_rules="${HOME}/.claude"
+        mkdir -p "$claude_rules" 2>/dev/null || true
+        ln -sfn "$SOFAGENT_HOME/skill" "${claude_rules}/skills/sofagent" 2>/dev/null || true
+        if [ -f "${SCRIPT_DIR}/.claude/settings.json" ]; then
+          cp "${SCRIPT_DIR}/.claude/settings.json" "${claude_rules}/settings.json"
+        fi
+        ok "  Claude Code 薄挂载：~/.claude/settings.json（commit 审计拦截）+ Skill symlink"
         ;;
       gemini)
         local gem_skills="${HOME}/.gemini/skills/sofagent"
