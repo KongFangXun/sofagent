@@ -156,6 +156,8 @@ sofagent 的定位正卡在这个转折点上：审计引擎（治理侧）+ Ont
 | **workflow 节点级模型偏好绑定（共享执行层启发 · 2026-08-20 新增）** | workflow 每个节点可绑定特定 Provider/模型（默认 DeepSeek 省钱、复杂节点切旗舰）——「workflow 共享执行层」的模型路由维度：与 v1.3.6 模型注册/灰度切换衔接，补「节点级偏好绑定」；**不自研路由**（v1.3.6 已明确企业挂第三方 router），只定义「workflow 执行层模型路由接口」让第三方/企业网关接入。社区共享 DSH 实践（2026-08-19）显示多用户共用执行层时「按场景选模型」是刚需。**候选版本：v1.4.7**（与 G7 多租户抽象层同批评估——企业级共享执行层的两个引擎侧基础） |
 | **插件来源管控补充维度（Codex connectors 启发 · 2026-08-22 新增）** | Codex connectors 的 app_tool_policy（应用级工具策略——哪个 app 能调哪些工具）是企业管控的另一维度——v1.4.8 插件分发企业管控（已排期）落地后评估补此维度 |
 | **审计留痕格式：raw trace + reduced state 双层（Codex rollout-trace 启发 · 2026-08-22 排入 v1.4.7）** | Codex 的 rollout-trace 分「raw bundle（原始事件流，writer 热路径只写不读）+ reduced state（语义规约缓存，供 replay/viewer 消费）」两层——与 sofagent「Ledger 原始不可变 + Views 派生」同构，但 Codex 把「raw 写入器」和「语义回放器」物理拆成两个 crate（热路径零负担）。借鉴点：审计历史（history.jsonl）的读取端拆出独立规约层，避免「写多读少」的单一文件性能瓶颈。**已排期：v1.4.7**（与 SQLite 迁移评估同批） |
+| **自动上下文压缩（Codex compact 启发 · 2026-08-22 新增）** | Codex 的 compact.rs 是官方「ARC-AGI-3 13.3%→38.3%」两大调整之一（保留推理 + 上下文压缩）：`pre-compact`/`post-compact` hooks + SUMMARIZATION_PROMPT 摘要 + 多触发策略（AutoCompactWindowIds / CompactionReason）+ 压缩替代历史保留 initial context。sofagent 加载链预算（≤3% 总占用）已披露「尚未全量落地」——本方向评估自动压缩（窗口超预算触发摘要，对齐 memory 分层「写入笨、派生灵活」哲学）。**候选版本：v1.4.x**（与加载链预算同域评估）。**参考**：context-fragments 的 start/end markers（注入上下文带标记、事后可识别） |
+| **shell 提权分级策略（Codex shell-escalation 启发 · 2026-08-22 新增）** | Codex 的 shell-escalation 是完整提权框架：`EscalationPolicy`（决策）+ `EscalationDecision`（allow/prompt/forbid）+ `EscalationPermissions`（权限位）+ execve wrapper——危险命令从「沙箱内直接跑」升级为「提权策略决策后跑」。sofagent 审计有 HITL 钩子但 shell 执行无分级提权策略——评估把「命令分级 → 策略决策 → HITL/拒绝」接入 daemon/编排层执行（与 v1.3.7 场景驱动权限衔接）。**候选版本：v1.4.x** |
 
 > 📖 DeerFlow / OpenFDE 方法论印证见 [VALIDATION](./VALIDATION.md)。
 
