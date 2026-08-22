@@ -12,7 +12,7 @@
 > - **[VALIDATION.md](./VALIDATION.md)**：行业印证与生态定位——sofagent 直觉如何被行业验证 + Agent 三层模型 + 架构框架映射。
 > - **[PHILOSOPHY.md](./PHILOSOPHY.md)**：设计哲学与产品方法论（§一~§九）。"不替代 Agent，做 Agent 的控制面"。
 > - **[ROADMAP.md](./ROADMAP.md)**：版本路线图 + 迭代历程。当前 v1.3.9。
-> - **行业坐标**（2026-08-19 红杉 Neo-Lab 分享吸收）：sofagent = 企业 Neo-Lab 的**智能主权基础设施**——Sovereign AI 四层主权（数据/模型适配/评测迭代/部署）各有落点：ontology+审计=数据主权（已具备）、训练协议接口=模型适配（开源仓库保留完整可自建路径——接口 + 参考实现；商业侧为可选托管增强，非闭源锁定）、Benchmark+MLflow=评测迭代、本地权重+灰度=部署。企业自己掌控智能（Neo-Lab 的活），sofagent 管住这些智能（约束层的活）。
+> - **行业坐标**（2026-08-19 红杉 Neo-Lab 分享吸收）：sofagent = 企业 Neo-Lab 的**智能主权基础设施**——Sovereign AI 四层主权（数据/模型适配/评测迭代/部署）各有落点：ontology+审计=数据主权（已具备）、训练协议接口=模型适配（开源仓库保留完整可自建路径——接口 + 参考实现；**训练 Agent 化：管理面由受约束的训练 Agent 承载、计算面复用开源框架、语言对话即可驱动训练**；商业侧为可选托管增强，非闭源锁定）、Benchmark+MLflow=评测迭代、本地权重+灰度=部署。企业自己掌控智能（Neo-Lab 的活），sofagent 管住这些智能（约束层的活）。
 
 > **30 分钟深度路径**（想动手或评估选型时，承接上面的 3 分钟全景）：① 深入 [ARCHITECTURE](./ARCHITECTURE.md) §一~§二 + [PHILOSOPHY](./PHILOSOPHY.md) §一（在 3 分钟版基础上读双层架构与"不替代 Agent"论证，~15 分钟）→ ② [SECURITY](../SECURITY.md)「已知风险」+ [LIMITATIONS](./LIMITATIONS.md) 目录（诚实边界，~10 分钟）→ ③ 按角色进 [guides/](./guides/)：企业 IT 读 enterprise-deploy · 开发者读 harness-sdk · 想看审查体系读 review-system
 >
