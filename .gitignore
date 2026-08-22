@@ -54,6 +54,8 @@ tmp/
 
 # FORGE 运行产物（每个 loop 各自的 runs/，不进仓库）
 FORGE/SKILL/*/runs/
+# FORGE 父级 runs 目录防误收（v1.4.0 起；backend-ab-v1.3.9.md 是 v1.3.9 有意交付物，已跟踪保留）
+FORGE/runs/
 
 # 运行时数据 / 临时文件（不进版本库，v1.2.1 后 daemon 运行时产生）
 engine/daemon/data/

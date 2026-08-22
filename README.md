@@ -5,6 +5,7 @@
 <p align="center">
   <a href="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml"><img src="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml/badge.svg" alt="Verify" /></a>
   <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-brightgreen" alt="License: MIT" /></a>
+  <!-- ⚠️ bump 版本时手动同步此 badges 版本号（Version-vX.Y.Z） -->
   <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.3.9-16B8F3" alt="Version" /></a>
 </p>
 
@@ -43,7 +44,7 @@ graph LR
 
 > ℹ️ 对比维度基于能力差异，不针对特定产品；通用扫描器/框架（pre-commit / gitleaks / detect-secrets 等）与 sofagent 互补而非对立。
 
-> ℹ️ **诚实边界**：通用密钥扫描器（gitleaks / detect-secrets）做**全量历史扫描**、模式库更广（100+ 模式）；sofagent 审计专注**当前 diff 的硬证据 + Agent 行为审计**（越界/注入/权限维度是扫描器不做的）。两者互补，不互替——强密钥合规场景建议并用。
+> ℹ️ **诚实边界**：通用密钥扫描器（[gitleaks](https://github.com/gitleaks/gitleaks) / detect-secrets）做**全量历史扫描**、模式库更广（[gitleaks 官方模式库 100+ 规则](https://github.com/gitleaks/gitleaks/tree/master/config)）；sofagent 审计专注**当前 diff 的硬证据 + Agent 行为审计**（越界/注入/权限维度是扫描器不做的）。两者互补，不互替——强密钥合规场景建议并用。
 >
 > ⚠️ **诚实边界**：当前为**单机单用户**设计，多 Agent 共享同一知识库/审计历史——多人/多部门共用需等租户隔离（ROADMAP v1.4.7 G7）。任务日志（task/logs）明文落盘，含任务摘要/代码片段/API 响应摘要/对话摘要——静态加密当前覆盖审计历史主链，task/logs 未覆盖；企业部署前读 [SECURITY](./SECURITY.md)。
 
@@ -59,9 +60,12 @@ graph LR
 
 - 🔍 **零配置审计**——`npx -y -p @sofagent/audit sofagent-audit`，任何 git 仓库秒级审计最近一次 commit（实测环境：Apple Silicon（M 系列）macOS、预热缓存（非冷启动）、quick 模式单次约 1.1s、5 万行 diff 约 6.1s；数值为单机实测参考值，非基准承诺，不同机器/盘速会有差异。首次 npx 下载约 30 秒）
 - 🧱 **24 条审计规则**（quick 零配置默认跑 17 条；完整 24 条 = 17 默认 + 7 扩展经 config 启用，需 `--init` 装 hook 走完整引擎）——密钥泄漏、越界编辑、注入防御、权限红线，git diff 硬证据判定，违规当场拦截
+- 🛡️ **AgentShield 五类配置面扫描**（v1.3.7 起，确定性静态分析·零 LLM 自评）——对 MCP 风险（mcp-risk）/ hook 注入（hook-injection）/ Agent 配置（agent-config）/ 增强密钥（secret-enhanced）/ 影子 AI（shadow-ai）五类面做静态扫描，与 24 条 git-diff 规则互补（详见 [SECURITY](./SECURITY.md)）
 - 🛡️ **自动快照回溯**——每次审计后自动存档，出事一键回到任意快照
 
 ## 快速开始
+
+> ⚠️ **企业用户先读** [LIMITATIONS §三](./docs/LIMITATIONS.md#三安全与信任模型局限)——`config.yml` 默认**非 fail-closed**（规则可被 Agent 篡改绕过），多租户隔离尚未落地。强合规场景建议 CI 兜底 + 文件权限锁（`chmod 444 .sofagent/config.yml`），不要用单机默认配置直接上生产。
 
 **30 秒，零配置**——在任何 git 仓库跑一次审计（开发/测试场景；强合规场景先读 [LIMITATIONS §三](./docs/LIMITATIONS.md#三安全与信任模型局限)——明文存储与多租户隔离是已披露的当前边界）：
 
@@ -164,6 +168,14 @@ graph LR
 | **GitHub Action** | 每次 PR 自动审计，违规标注在 diff 行上 | CI/CD | 配置一次 |
 | **install.sh 全套** | 注入·审计·回溯·进化四能力 + daemon 巡检 + dashboard——Agent 的完整约束层 | **企业设备**（跑 AI 节点的服务器/电脑） | FDE 驻场安装 |
 
+**访问模型对照**（同一引擎三种安装粒度，按使用场景选）：
+
+| 访问模型 | 命令 | 生命周期 | 适合场景 |
+|---------|------|---------|---------|
+| npx 临时 | `npx -y -p @sofagent/audit sofagent-audit` | 用完即走，每次临时下载 | 快速审计任意仓库、CI 外的单次检查 |
+| npm install 项目内 | `npm install @sofagent/audit`（项目 devDependency） | 随项目安装，版本锁进 package-lock | 团队项目固定依赖、可复现审计 |
+| npm install -g 全局 | `npm install -g @sofagent/audit` | 全局可用，一次安装多次调用 | 本机多仓库日常审计、daemon 常驻 |
+
 sofagent 支持加载可组合的规则集（**规则市场**）——内置安全规则集，也支持社区发布的规则集包。内置 24 条审计规则（quick 默认跑 17 条，扩展 7 条经 config 启用），加载额外规则集可以扩展审计覆盖面：
 
 **规则市场**：
@@ -183,10 +195,10 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # 加载安全规�
 ## v1.3.9 新能力
 
 > 🔍 **v1.3.9 新能力**（官方 AST 规则引擎 + meta-harness 统一编排 + AI 工作明细 + API 分级治理 + FORGE 切 DSH + MLflow 评估 + Agentic Browser + 跨平台适配 + 工具链分子目录 + 归因/沙盒/进程守护）：
-> - **官方 AST 规则引擎**：🔍 `sofagent-ruleset-ast` 语义级规则引擎（ASI01 目标劫持 + ASI04 供应链 SBOM · 8+2 规则，与 v1.2.9 插件同管线）
+> - **官方 AST 规则引擎**：🔍 `sofagent-ruleset-ast` 语义级规则引擎（8+2 规则 = 8 条通用语义规则「禁止动态代码执行 / 硬编码密钥 / 动态 require / debugger / child_process shell 管控 / SQL 拼接 / http 明文端点 / 空 catch」 + 2 条 OWASP「ASI01 目标劫持 + ASI04 供应链 SBOM」，与 v1.2.9 插件同管线）
 > - **meta-harness 统一编排**：🧩 多 harness 策略强制在基础设施层 + 跨会话协作（19 测试 + DSH 形态对齐）
 > - **AI 工作明细数据层**：📊 `worklog`——按 Agent/Workflow/周 + 人工介入记录（复用审计 + decision-log + LLM Trace，零新数据）+ `worklog_query` MCP
-> - **API 分级治理**：🔬 `@public`/`@internal` 显式分级（1449 符号）+ CI 门禁基线拦截——@internal 破坏性变更不影响适配层
+> - **API 分级治理**：🔬 `@public`/`@internal` 显式分级（1440 符号）+ CI 门禁基线拦截——@internal 破坏性变更不影响适配层
 > - **FORGE driver 切 DSH**：⚙️ 显式后端选择（`SOFAGENT_FORCE_DSH` 启用 + CLI 桥接 + bash 全权限）——执行后端从 LangGraph 到 DSH 可切换
 > - **MLflow agent 评估**：📈 13 指标 + LLM-as-Judge 集成
 > - **Agentic Browser**：🌐 4 工具（浏览/点击/表单/截图）+ 视觉降级

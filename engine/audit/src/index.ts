@@ -277,7 +277,7 @@ function parseArgs(argv: string[]): Args {
       console.log('快速开始:');
       console.log('  安装    npm install -g @sofagent/audit && sofagent-audit --init');
       console.log('  试用    sofagent-audit --diff HEAD~1..HEAD');
-      console.log('  npx     npx -p @sofagent/audit sofagent-audit --init');
+      console.log('  npx     npx -y -p @sofagent/audit sofagent-audit --init');
       console.log('命令:');
       console.log('  sofagent-audit --diff <range> [--task <desc>]   审计 git diff');
       console.log('  sofagent-audit --init                           一键初始化（配置+hook+冒烟）');

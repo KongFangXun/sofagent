@@ -192,4 +192,62 @@ if (failures > 0) {
   console.error(`\n❌ public API 门禁失败：${failures} 个包未 bump 版本`);
   process.exit(1);
 }
+
+// ── 文档声称符号数校验（根治 1449 漂移类问题）──
+// 从核心文档提取声称的 @public 符号总数，与 baseline 实际总数比对。
+const DOC_FILES = [
+  join(ROOT, 'README.md'),
+  join(ROOT, 'README.en.md'),
+  join(ROOT, 'CHANGELOG.md'),
+  join(ROOT, 'docs', 'changelog', 'v1.3', 'v1.3.9.md'),
+  join(ROOT, 'docs', 'ROADMAP.md'),
+  join(ROOT, 'docs', 'HANDBOOK.md'),
+];
+
+function actualTotal() {
+  let t = 0;
+  for (const v of Object.values(nextBaseline.packages)) {
+    t += Array.isArray(v) ? v.length : (v.symbols || []).length;
+  }
+  return t;
+}
+
+function claimedTotals() {
+  const claims = new Set();
+  const re = /(\d{3,4})\s*(?:个)?\s*(?:符号|symbols)/gi;
+  for (const f of DOC_FILES) {
+    if (!existsSync(f)) continue;
+    const text = readFileSync(f, 'utf-8');
+    let m;
+    while ((m = re.exec(text)) !== null) {
+      const n = parseInt(m[1], 10);
+      // 只收集与 @public/@internal 语境接近的声称（800-2000 区间，避开测试数 2903 等）
+      if (n >= 800 && n <= 2000) claims.add(n);
+    }
+  }
+  return [...claims];
+}
+
+const actual = actualTotal();
+const claims = claimedTotals();
+let docMismatch = 0;
+if (claims.length > 0) {
+  console.log(`\n📋 文档声称符号数校验（实际 baseline = ${actual}）`);
+  for (const c of claims) {
+    if (c === actual) {
+      console.log(`  ✅ 文档声称 ${c} 与 baseline 一致`);
+    } else {
+      console.log(`  ❌ 文档声称 ${c} 与 baseline 实际 ${actual} 不一致（疑似数字漂移，参考问题 20 修复流程）`);
+      docMismatch++;
+    }
+  }
+} else {
+  console.log(`\n📋 文档声称符号数校验：未提取到声称（跳过，无基线冲突风险）`);
+}
+
+if (docMismatch > 0) {
+  console.error(`\n❌ 文档声称符号数校验失败：${docMismatch} 处漂移`);
+  process.exit(1);
+}
+
 console.log('\n✅ public API 门禁通过');

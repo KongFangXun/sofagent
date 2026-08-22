@@ -32,7 +32,7 @@
 | 1 | **单包测试需先 build**——monorepo 未 build 时单包 `npm test` 可能失败（依赖 dist/），需先 `npm run build --workspaces`。 | [四、成熟度与测试局限](#四成熟度与测试局限) |
 | 2 | **默认非 fail-closed**——config.yml 可被 Agent 篡改绕过审计规则。仅当 config 解析失败时走 safeDefaults（fail-closed 强制启用）。 | [三、安全与信任模型局限](#三安全与信任模型局限) |
 | 3 | **编排能力依赖 orchestrator 包 + 模型质量**——LangGraph createReactAgent 驱动，编排效果依赖模型质量。模型降级 → 编排降级。 | [五、审计与工程局限 → 编排引擎稳定性](#五审计与工程局限) |
-| 4 | **静态加密覆盖不全**——审计历史主链已加密（v1.3.8 交付，纯 TS AES-256-GCM），但 forge-runs/checkpoint/model-registry 三目录的加密接线排 v1.3.9，全量数据仍未全覆盖。 | [三、安全与信任模型局限 → 数据存储安全](#三安全与信任模型局限) |
+| 4 | **静态加密覆盖不全**——审计历史主链已加密（v1.3.8 交付，纯 TS AES-256-GCM），但 forge-runs/checkpoint/model-registry 三目录 + task/logs + think.md 的加密接线**未交付（原声称排 v1.3.9 未兑现），已移排 v1.4.7（G7 数据主权主题）**，全量数据仍未全覆盖。 | [三、安全与信任模型局限 → 数据存储安全](#三安全与信任模型局限) |
 | 5 | **单平台场景可能过重**——只用单一 Agent 平台且接受云端审计的用户，平台内置治理比 sofagent 更顺滑。sofagent 的价值在多供应商混用 + 本地留证场景。 | [二、平台与兼容性局限 → 单平台场景](#单平台用户建议) |
 
 > ✅ **已解决的历史问题**（v1.3.2 移出 Key Limitations，不再计入当前边界）：
@@ -203,13 +203,13 @@ sofagent 跑在单个 Agent 里——没有 agent-to-agent 通信，没有多实
 
 ### 🔒 数据存储安全
 
-> ℹ️ **审计历史全局共享是设计决策**：审计历史（`history.jsonl` / `decision-log.jsonl`）写入全局 `~/.sofagent/data/audit/`，不做项目级隔离——这是**有意为之**：① HMAC 签名链完整性要求全量连续历史（`--verify-chain` 需要完整链）；② 跨仓库查询审计历史是运维刚需。多项目场景下审计记录会混合存储。**运行时审计日志（`runtime-audit.jsonl`）在 FORGE 自托管 SubAgent 路径已按 git 仓库隔离（`data/audit/runtime/<repo-hash>/`）；引擎侧 data-sovereignty 审计日志仍全局，排 v1.3.9**；审计历史保持全局。**临时方案**：使用 `SOFAGENT_HOME` 环境变量为不同项目/Agent 隔离数据目录。
+> ℹ️ **审计历史全局共享是设计决策**：审计历史（`history.jsonl` / `decision-log.jsonl`）写入全局 `~/.sofagent/data/audit/`，不做项目级隔离——这是**有意为之**：① HMAC 签名链完整性要求全量连续历史（`--verify-chain` 需要完整链）；② 跨仓库查询审计历史是运维刚需。多项目场景下审计记录会混合存储。**运行时审计日志（`runtime-audit.jsonl`）在 FORGE 自托管 SubAgent 路径已按 git 仓库隔离（`data/audit/runtime/<repo-hash>/`）；引擎侧 data-sovereignty 审计日志仍全局（原声称排 v1.3.9 未兑现，已移排 v1.4.7 复用 FORGE 方案补齐 repo-hash 隔离）**；审计历史保持全局。**临时方案**：使用 `SOFAGENT_HOME` 环境变量为不同项目/Agent 隔离数据目录。
 
 > ⚠️ **知识库同样全局共享（当前单机单用户设计）**：`~/.sofagent/data/knowledge/` 单目录遍历、无租户/项目维度隔离——多项目、多 Agent 的知识沉淀（entities/concepts/comparisons/summaries）混合存储，查询时全局命中。财务与人事等不同域 Agent 的数据会串。**当前定位为单机单用户**：多 Agent 共享同一知识库/审计历史——多人/多部门共用需等租户隔离（ROADMAP v1.4.7 G7 多租户抽象层 v0）。**临时方案**：使用 `SOFAGENT_HOME` 环境变量为不同项目/Agent 隔离数据目录（见 [企业部署指南](./guides/enterprise-deploy.md#多项目数据隔离v128)）。
 
 > ⚠️ **`.sofagent/.git-shadow/` 在被审计仓库内创建**：sofagent 审计时会在被审计的 git 仓库根目录创建 `.sofagent/.git-shadow/` 目录存放审计快照——设计意图是按 git 仓库隔离快照（不同仓库的快照不能串，否则回溯到错误仓库）。快照内容**已 sanitize 脱敏**（API key / 密码 / 手机号打码，v1.3.4 起），位于仓库内便于 git worktree 隔离。经 `--init` 或 `--install-hook` 安装时，自动写入 .gitignore（v1.3.6 起两路径行为一致；commit-msg hook 首次运行还会兜底补写），该目录不进 git 提交，但用户 `ls -a` 可见。可安全删除（重新审计会重建）。改存储位置是 v1.4 架构决策，当前版本只披露。
 
-task/logs 和 think.md 以 Markdown 存储，可能含代码片段、API 响应、用户对话摘要。LLM 提炼反思时可能无意写入敏感信息。审计历史主链已静态加密（v1.3.8 交付，纯 TS AES-256-GCM），task/logs 与 think.md 仍为明文（加密接线排 v1.3.9，见 [ROADMAP](./ROADMAP.md) 和 [SECURITY](../SECURITY.md)）。
+task/logs 和 think.md 以 Markdown 存储，可能含代码片段、API 响应、用户对话摘要。LLM 提炼反思时可能无意写入敏感信息。审计历史主链已静态加密（v1.3.8 交付，纯 TS AES-256-GCM），task/logs 与 think.md 仍为明文（加密接线原声称排 v1.3.9 未兑现，已移排 v1.4.7，见 [ROADMAP](./ROADMAP.md) 和 [SECURITY](../SECURITY.md)）。
 - history.jsonl 存审计判定详情，A2/A9 已脱敏，其他规则 details 可能含代码片段或文件路径，敏感场景请配合外部加密卷
 - **v1.3.1 #44 披露：审计历史并发写入无文件锁**——appendFileSync 在 POSIX 上对小于 PIPE_BUF (4KB) 的写入是原子的，审计历史条目通常 < 1KB，单次写入安全。但多进程同时写入（daemon 文件监控 + Agent commit）可能导致行交错，产生损坏行触发 hash chain 完整性校验失败。概率极低（审计触发频率 < 1次/分钟），但损坏会导致校验失败。**v1.3.8 解决**——WAL 写在网关层，天然单 writer 模式（所有工具调用经网关串行写入，消除并发写入）。
 

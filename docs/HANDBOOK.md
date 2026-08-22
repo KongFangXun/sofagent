@@ -33,7 +33,7 @@
 | 想理解设计哲学 | [架构文档](./ARCHITECTURE.md) |
 | 想理解为什么这么做 | [设计哲学](./PHILOSOPHY.md)（**强烈推荐，读 5 分钟**） |
 
-> 📁 **项目文件导航**：根目录 6 个 .md 文件各司其职——[README.md](../README.md)（项目概览）、[README.en.md](../README.en.md)（英文概览）、[CHANGELOG.md](../CHANGELOG.md)（版本索引）、[SECURITY.md](../SECURITY.md)（安全策略）、[CONTRIBUTING.md](../CONTRIBUTING.md)（贡献指南）、[CODE_OF_CONDUCT.md](../CODE_OF_CONDUCT.md)（行为准则）。[ROADMAP.md](./ROADMAP.md)（路线图）和 [LIMITATIONS.md](./LIMITATIONS.md)（已知局限）在 `docs/` 下。
+> 📁 **项目文件导航**：根目录 8 个 .md 文件各司其职——[README.md](../README.md)（项目概览）、[README.en.md](../README.en.md)（英文概览）、[CHANGELOG.md](../CHANGELOG.md)（版本索引）、[SECURITY.md](../SECURITY.md)（安全策略）、[CONTRIBUTING.md](../CONTRIBUTING.md)（贡献指南）、[CODE_OF_CONDUCT.md](../CODE_OF_CONDUCT.md)（行为准则）、[AGENTS.md](../AGENTS.md)（Codex 适配薄挂载，四层加载链入口）、[GEMINI.md](../GEMINI.md)（Gemini CLI 适配薄挂载）。[ROADMAP.md](./ROADMAP.md)（路线图）和 [LIMITATIONS.md](./LIMITATIONS.md)（已知局限）在 `docs/` 下。
 
 ---
 
@@ -70,7 +70,7 @@
 - **🔌 v1.3.6 新增**：引擎接口外化完整版（模型层接入前置）——模型生成的 workflow / ontology 可经标准接口进入约束层：`workflow_submit`（含 merge_criteria/approver 审阅协议字段）/ `ontology_import` / `model_register`+`model_switch`+`model_unregister`（模型灰度全流程审计）/ `harness.wrap` 托管 SDK / `train_budget` 训练预算控制 / `define_acceptance`+`check_acceptance` 机器可判定验收（52→60 tools）；可靠性五件：FORGE worktree 隔离、双闸验证（postToolCall 副作用复查）、Agent 疲劳度检测、分级降级梯队、decisions.jsonl 完整版。详见 [v1.3.6 开发日志](./changelog/v1.3/v1.3.6.md)。
 - **🏰 v1.3.7 新增**：SubAgent 完整沙箱（虚拟文件系统 / 网络出站白名单 / 工具调用中介 / 虚拟 key / 独立进程 / 真·实时 A-B 双跑——企业 SubAgent 在隔离环境里干活，写入先进虚拟层审批后落盘）；场景驱动权限（身份→场景→风险→放行/deny/人审，每步留痕）；AgentShield 五类扫描（MCP 画像 / Hook 注入 / 配置审查 / 密钥增强 / Shadow AI 发现——揪出未注册的影子 agent）；行业 overlay 四套（金融/医疗/政务/AI 自动加载额外约束）；断路器行为监控（连败熔断 + 失控隔离）；ontology 生命周期（branch/trunk + 审阅门 + OKF 三件套）。详见 [v1.3.7 开发日志](./changelog/v1.3/v1.3.7.md)。
 - **🛡️ v1.3.8 新增（交付⑥）**：托管 SDK `sandbox: true` 已启用——`harness.wrap(agent, { sandbox: true })` 一行接入沙箱三层（工具调用经 tool-gate 前置判定，未注册 ID fail-closed deny；文件写经虚拟层，未审批不落盘，`sandboxHandle.approveWrite()` 人审后原子落盘；网络出站经白名单网关，invoke 期间 net/dns 全拦）。可与 `approval: 'require-approval'` 组合——沙箱内副作用工具仍挂人审。详见 [v1.3.8 开发日志](./changelog/v1.3/v1.3.8.md)。
-- **🔍 v1.3.9 新增**：官方 AST 规则引擎（`sofagent-ruleset-ast`，ASI01 目标劫持 + ASI04 供应链 SBOM 语义检测）；meta-harness 多 harness 统一编排（策略强制下沉基础设施层，跨会话协作）；AI 工作明细数据层（`worklog` 按 Agent/Workflow/周 + 人工介入，`worklog_query` MCP）；API 分级治理（`@public`/`@internal` 1449 符号 + CI 门禁）；FORGE driver 切 DSH（显式后端选择 + CLI 桥接 + bash 全权限）；MLflow agent 评估（13 指标 + LLM-as-Judge）；Agentic Browser（4 工具 + 视觉降级）；跨平台适配器（Cursor/Codex/Gemini CLI）；tools/ 物理分子目录；ATTRIBUTION 归因引擎 + Dream Sandbox 沙盒审计（强制人审 merge + 路径穿越消毒）；>5MB diff 缝隙修复；FORGE driver 进程守护（daemon + watcher）。详见 [v1.3.9 开发日志](./changelog/v1.3/v1.3.9.md)。
+- **🔍 v1.3.9 新增**：官方 AST 规则引擎（`sofagent-ruleset-ast`，ASI01 目标劫持 + ASI04 供应链 SBOM 语义检测）；meta-harness 多 harness 统一编排（策略强制下沉基础设施层，跨会话协作）；AI 工作明细数据层（`worklog` 按 Agent/Workflow/周 + 人工介入，`worklog_query` MCP）；API 分级治理（`@public`/`@internal` 1440 符号 + CI 门禁）；FORGE driver 切 DSH（显式后端选择 + CLI 桥接 + bash 全权限）；MLflow agent 评估（13 指标 + LLM-as-Judge）；Agentic Browser（4 工具 + 视觉降级）；跨平台适配器（Cursor/Codex/Gemini CLI）；tools/ 物理分子目录；ATTRIBUTION 归因引擎 + Dream Sandbox 沙盒审计（强制人审 merge + 路径穿越消毒）；>5MB diff 缝隙修复；FORGE driver 进程守护（daemon + watcher）。详见 [v1.3.9 开发日志](./changelog/v1.3/v1.3.9.md)。
 
 **现在还干不了的事（已排期，暂无代码）**：本地推理小模型、云 VM 多租户执行面——路线见 [ROADMAP](./ROADMAP.md)。
 

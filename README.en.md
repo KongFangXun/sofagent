@@ -5,6 +5,7 @@
 <p align="center">
   <a href="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml"><img src="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml/badge.svg" alt="Verify" /></a>
   <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-brightgreen" alt="License: MIT" /></a>
+  <!-- ⚠️ bump version: manually sync this badge version (Version-vX.Y.Z) -->
   <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.3.9-16B8F3" alt="Version" /></a>
 </p>
 
@@ -42,7 +43,7 @@ graph LR
 
 > ℹ️ The comparison dimensions are based on capability differences, not aimed at any specific product; general-purpose scanners/frameworks (pre-commit / gitleaks / detect-secrets, etc.) complement sofagent rather than oppose it.
 
-> ℹ️ **Honest boundary**: general-purpose secret scanners (gitleaks / detect-secrets) do **full-history scans** with broader pattern libraries (100+ patterns); sofagent auditing focuses on **hard evidence from the current diff + Agent behavior auditing** (out-of-scope/injection/privilege dimensions scanners don't cover). They complement rather than replace each other — for strict secret-compliance scenarios, use both.
+> ℹ️ **Honest boundary**: general-purpose secret scanners ([gitleaks](https://github.com/gitleaks/gitleaks) / detect-secrets) do **full-history scans** with broader pattern libraries ([gitleaks official pattern library, 100+ rules](https://github.com/gitleaks/gitleaks/tree/master/config)); sofagent auditing focuses on **hard evidence from the current diff + Agent behavior auditing** (out-of-scope/injection/privilege dimensions scanners don't cover). They complement rather than replace each other — for strict secret-compliance scenarios, use both.
 >
 > ⚠️ **Honest boundary**: currently a single-machine, single-user design — multiple Agents share one knowledge base / audit history; multi-person / multi-department sharing requires tenant isolation (ROADMAP v1.4.7 G7). Task logs (task/logs) are written in plaintext, containing task summaries / code snippets / API response summaries / conversation summaries — static encryption currently covers the audit history main chain, not task/logs; read [SECURITY](./SECURITY.md) before enterprise deployment.
 
@@ -58,9 +59,12 @@ graph LR
 
 - 🔍 **Zero-setup audit** — `npx -y -p @sofagent/audit sofagent-audit`, audits your last commit in any git repo in seconds (measured on: Apple Silicon macOS, warm cache — ~1.1s per quick run, ~6.1s for a 50k-line diff; single-machine reference figures, not benchmarks; first npx download takes ~30s)
 - 🧱 **24 audit rules** (quick runs 17 by default out of the box; the full 24 = 17 default + 7 extensions enabled via config, requiring `--init` to install hooks and enter the full engine) — secret leaks, out-of-scope edits, injection defense, privilege red lines — judged on hard git diff evidence, violations blocked on the spot
+- 🛡️ **AgentShield five-face config scanner** (since v1.3.7, deterministic static analysis · zero LLM self-eval) — statically scans five faces: MCP risk (mcp-risk) / hook injection (hook-injection) / Agent config (agent-config) / enhanced secrets (secret-enhanced) / shadow AI (shadow-ai), complementing the 24 git-diff rules (see [SECURITY](./SECURITY.md))
 - 🛡️ **Automatic snapshot & rollback** — auto-archived after every audit, one-click restore to any snapshot
 
 ## Quick Start
+
+> ⚠️ **Enterprise users read first** [LIMITATIONS §3](./docs/LIMITATIONS.md) — `config.yml` is **non-fail-closed by default** (rules can be bypassed by Agent tampering), and multi-tenant isolation is not yet landed. For strict-compliance scenarios use CI fallback + file-permission lock (`chmod 444 .sofagent/config.yml`); do not put the single-machine default config directly into production.
 
 **30 seconds, zero setup** — run an audit in any git repo (dev/testing scenarios; for strong-compliance scenarios read [LIMITATIONS §3](./docs/LIMITATIONS.md) first — plaintext storage and multi-tenant isolation are known limitations):
 
@@ -163,6 +167,14 @@ graph LR
 | **GitHub Action** | Auto-audit every PR, violations annotated on the diff lines | CI/CD | Set up once |
 | **install.sh full suite** | injection · audit · rollback · evolution + daemon inspection + dashboard — the Agent's complete constraint layer | **Enterprise device** (server/computer running the AI nodes) | FDE residency |
 
+**Access-model comparison** (same engine, three install granularities — pick by scenario):
+
+| Access model | Command | Lifecycle | Best for |
+|--------------|---------|-----------|----------|
+| npx temporary | `npx -y -p @sofagent/audit sofagent-audit` | use-and-go, downloaded each time | quick audit of any repo, one-off checks outside CI |
+| npm install (in-project) | `npm install @sofagent/audit` (project devDependency) | installed with project, version locked in package-lock | team projects with fixed deps, reproducible audits |
+| npm install -g (global) | `npm install -g @sofagent/audit` | globally available, install once call many | daily audit across local repos, daemon residency |
+
 sofagent supports composable rulesets (**rule marketplace**) — a built-in security ruleset plus community-published ruleset packages. With 24 audit rules built in (quick runs 17 by default, the 7 extensions enabled via config), loading extra rulesets extends audit coverage:
 
 **Rule marketplace**:
@@ -182,10 +194,10 @@ Community rulesets are published as `sofagent-ruleset-*` npm packages and loaded
 ## New in v1.3.9
 
 > 🔍 **v1.3.9 new capabilities** (official AST rule engine + meta-harness unified orchestration + AI worklog data layer + API tiering governance + FORGE on DSH + MLflow evaluation + Agentic Browser + cross-platform adapters + toolchain subdirectories + attribution/sandbox/daemon):
-> - **Official AST rule engine**: 🔍 `sofagent-ruleset-ast` semantic rule engine (ASI01 target hijacking + ASI04 supply-chain SBOM · 8+2 rule checks, same pipeline as the v1.2.9 plugin)
+> - **Official AST rule engine**: 🔍 `sofagent-ruleset-ast` semantic rule engine (8+2 rule checks = 8 general semantic rules "no dynamic code execution / hardcoded secrets / dynamic require / debugger / child_process shell control / SQL concatenation / http plaintext endpoint / empty catch" + 2 OWASP "ASI01 target hijacking + ASI04 supply-chain SBOM", same pipeline as the v1.2.9 plugin)
 > - **meta-harness unified orchestration**: 🧩 multi-harness policy enforcement at the infrastructure layer + cross-session collaboration (19 tests + DSH shape alignment)
 > - **AI worklog data layer**: 📊 `worklog` — by Agent / Workflow / week + human-intervention records (reuses audit + decision-log + LLM Trace, zero new data) + `worklog_query` MCP
-> - **API tiering governance**: 🔬 explicit `@public`/`@internal` tiers (1449 symbols) + CI gate baseline — breaking changes to `@internal` never affect adapters
+> - **API tiering governance**: 🔬 explicit `@public`/`@internal` tiers (1440 symbols) + CI gate baseline — breaking changes to `@internal` never affect adapters
 > - **FORGE driver on DSH**: ⚙️ explicit backend selection (`SOFAGENT_FORCE_DSH` enable + CLI bridge + full bash permission) — execution backend switchable from LangGraph to DSH
 > - **MLflow agent evaluation**: 📈 13 metrics + LLM-as-Judge integration
 > - **Agentic Browser**: 🌐 4 tools (navigate/click/form/screenshot) + visual degradation fallback

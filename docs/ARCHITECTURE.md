@@ -162,6 +162,22 @@ graph TB
 
 > 💬 **交互范式**：sofagent 没有图形界面。所有能力通过 MCP 协议暴露，用户通过 Agent 对话（LUI）操作——说一句话，它做完告诉你结果在哪。这是架构的根本设计约束：不存在「仅 CLI 可用」或「需要打开页面」的能力。详见 [设计哲学](./PHILOSOPHY.md)。
 
+### 约束层七维度（Agent 的构成面）
+
+Agent = **模型 + 上下文 + 工具 + 状态 + 执行控制 + 权限 + 可观测性** 七个维度。约束层四种能力（注入·审计·回溯·进化）各自覆盖其中若干维度，不构成独立架构层——七维度是「Agent 由什么构成」的分析框架，四种能力是「约束层对 Agent 做什么」的生命周期框架，两者正交。
+
+| 维度 | 含义 | 主要受约束层哪阶段覆盖 |
+|------|------|----------------------|
+| 模型 | 推理内核 | 注入（系统约束）+ 进化（模型选择反思） |
+| 上下文 | 注入的知识 / 记忆 / 本体 | 注入（L1-L4 加载链） |
+| 工具 | Agent 可调用的外部能力 | 注入（工具边界红线）+ 审计（越权调用） |
+| 状态 | 运行中的中间态 | 审计（变更留痕）+ 回溯（快照） |
+| 执行控制 | 编排 / DAG / HITL | 注入（流程约束）+ 审计（异常路径） |
+| 权限 | 能碰什么资源 | 审计（A 类越权规则）+ 回溯（最小权限） |
+| 可观测性 | 日志 / 追溯 / 签名 | 审计（硬证据）+ 进化（趋势反思） |
+
+> 维度构成以 [WIKI 术语表](./WIKI.md) 本行为准；四种能力各自的维度分工详见 [设计哲学 §一·四件事的分工](./PHILOSOPHY.md#四件事的分工mcp--skills--ontology--harness)。
+
 ---
 
 ## 能力与状态总览
@@ -185,6 +201,20 @@ graph TB
 | skillopt | Skill 优化：复用 audit 规则做安全审查 + 集成优化 + 回填 | ✅ 已实现 |
 | think | 思考链分析：基于 diff + 审计结果自动生成 think.md 反思条目（append-only） | ✅ 已实现（⚠️ 仅 MCP/CLI 路径触发，git hook 路径不自动生成） |
 | load-chain | 加载链 Hook 包 `@sofagent/load-chain`：Agent 平台（OpenClaw / WorkBuddy 等）hook 注入四层约束（v1.2.0 DP-4（设计原则 4）提升为正式 workspace 包） | ✅ 已实现 |
+
+### API 分级边界决策（@public / @internal）
+
+v1.3.9 起对所有 workspace 包的入口 export 做显式分级，CI 门禁（[tools/check/public-api.mjs](./../tools/check/public-api.mjs)）拦截未 bump 版本的 `@public` 破坏性变更。
+
+**为什么是这个粒度**：
+- 基线覆盖 **12 个含 test script 的包**（hooks 包 `load-chain` 为纯 hook 安装器，无 `@public` 符号，不计入分级基线）——当前 12 包共 **1440 个 @public 符号**（以 `public-api.mjs` AST 解析为权威口径，非 grep 计数）。
+- 未标记的导出**默认视为 @public**（保守默认：宁可多承诺不可漏承诺），`@internal` 需显式标注。
+
+**为什么 @internal 破坏性变更不影响适配层**：
+- 跨平台适配器（Cursor / Codex / Gemini CLI 薄挂载）与 `@sofagent/audit` 等外部依赖方**只许 import `@public` 层**——`@internal` 是引擎内部实现细节，破坏性变更不触发 semver 约束。
+- 若某符号从 `@internal` 升为 `@public`，等同新增公开 API，需 bump 版本 + CHANGELOG 记录（门禁自动拦截漏标场景）。
+
+> 符号数声称与 baseline 的自动校验见 `public-api.mjs` 的「文档声称符号数校验」段——文档写 1440 必须与 baseline 实际数一致，否则门禁 FAIL（根治历史 1449 漂移类问题）。
 
 ### 对外核心能力（FDE Agent 给用户什么）
 

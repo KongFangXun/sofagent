@@ -126,7 +126,7 @@ git clone https://github.com/KongFangXun/sofagent.git
 cd sofagent && bash install.sh && bash engine/scripts/verify.sh
 ```
 
-发版：`docs/changelog/vX.Y.md` 写日志 → `CHANGELOG.md` 加索引 → `tools/release/bump-version.sh` 升级版本号 → `cp -r sofagent/ ~/.workbuddy/skills/sofagent/` → `git tag vX.Y && git push` → `gh release create vX.Y`
+发版：按 [docs/changelog/releasing.md](./docs/changelog/releasing.md) 十二阶段 SOP 执行——阶段一~四（审查/开发/测试）→ 阶段五~八（审查体系/文档收尾）→ 阶段九~十（工具健康/确认关口）→ 阶段十一（发布：npm 13 包 + ClawHub/SkillHub 双分发 + tag + Release）→ 阶段十二（发布后收尾）。简版：`docs/changelog/vX.Y/vX.Y.Z.md` 写日志 → `CHANGELOG.md` 加索引 → `tools/release/bump-version.sh` 升级版本号 → `./tools/pre-push-check.sh` 全绿 → `git tag vX.Y && git push` → `gh release create vX.Y`。
 
 > 📋 **changelog 写作规范（v1.2.9 起）**：changelog 是对外公开文档，**不写人名、内部私有路径、内部工单/审查代号**。
 > - ❌ 不写开发成员名字或角色代号（如"某某拍板""供某某实现"）
