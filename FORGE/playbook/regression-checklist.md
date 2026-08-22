@@ -857,15 +857,15 @@ grep -m1 "v${CUR_VER}.*—" CHANGELOG.md | grep -oE "[0-9]{4}-[0-9]{2}-[0-9]{2}"
 
 #### 108. SOP hook 测试用例自身合格性——message 长度 + git add -f（v1.3.4 发版流程 · 阶段九暴露）
 
-**背景**：09-tool-health.md 的 hook 测试用例 message 用 `test`/`add app`（太短），被 A5+A19 正确拦截——**测试用例自己不合格导致假失败**，误判为 hook 坏了。且 `.env` 被 init 自带 .gitignore 挡住时不 `-f` 强加，hook 层 A1/A2 根本测不到（只测到 git 层双保险）。SOP 已修，本维度防 SOP 再漂移。
+**背景**：08-tool-health.md 的 hook 测试用例 message 用 `test`/`add app`（太短），被 A5+A19 正确拦截——**测试用例自己不合格导致假失败**，误判为 hook 坏了。且 `.env` 被 init 自带 .gitignore 挡住时不 `-f` 强加，hook 层 A1/A2 根本测不到（只测到 git 层双保险）。SOP 已修，本维度防 SOP 再漂移。
 
 ```bash
 # SOP 用例 message 必须合格（≥8 有效字符，Conventional Commits）
-grep -A2 "拦截验证" docs/changelog/releasing/09-tool-health.md | grep -oE 'commit -m "[^"]+"' | while read -r c; do
+grep -A2 "拦截验证" docs/changelog/releasing/08-tool-health.md | grep -oE 'commit -m "[^"]+"' | while read -r c; do
   msg=$(echo "$c" | grep -oE '"[^"]+"' | tr -d '"'); [ ${#msg} -lt 20 ] && echo "⚠️ SOP hook 测试 message 过短: $msg"
 done
 # -f 说明存在
-grep -q "git add -f .env" docs/changelog/releasing/09-tool-health.md || echo "⚠️ 缺 git add -f 说明（hook 层测不到）"
+grep -q "git add -f .env" docs/changelog/releasing/08-tool-health.md || echo "⚠️ 缺 git add -f 说明（hook 层测不到）"
 # v1.3.5 子项 c：verify.sh 脱敏测试输入不被全局脱敏误伤（测试输入须真实手机号，非 1**REDACTED***）
 grep -q "13812345678" engine/scripts/verify.sh || echo "⚠️ verify.sh 脱敏测试输入被误打码（脱敏误伤测试用例）"
 ```

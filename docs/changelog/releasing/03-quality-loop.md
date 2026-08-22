@@ -1,4 +1,4 @@
-# 阶段四：fresh-eyes-loop 质量循环 + 代码审核 + 验收测试
+# 阶段三：fresh-eyes-loop 质量循环 + 代码审核 + 验收测试
 
 > **目的**：开发完的代码过一轮独立审查 + 验收测试，确保质量过关再进审查体系更新。
 >
@@ -13,7 +13,7 @@
 | 一 | **单次草稿优先**（v1.3.8 交付八）：`node tools/gen/gen-fresh-eyes-draft.mjs --diff <patch 文件> --changelog <changelog> --out ~/Desktop/fresh-eyes-draft-vX.Y.Z.md`——16 视角草稿一次成型；「待取证」项少且变更小 → 草稿 + 人工复核即收口 | 审查草稿 | 见「步骤完成判据」表 |
 | 二 | **driver 兜底**（草稿待取证多 / 大版本）：**新 session 跑 fresh-eyes-loop**，启动姿势见下方「driver 启动姿势」专节（8 条）；按监控协议轮询 `status.json`（或 `--check-alive` 探针）。loop 修复即本版本代码质量加固 | loop 修复 + changelog 汇总打勾 | 见「步骤完成判据」表 |
 | 三 | **代码审核**（当前 session）：逐项核对发布检查清单（清单位置见判据表），PASS 或 FAIL→修复 | 检查清单打勾 | 见「步骤完成判据」表 |
-| 四 | **验收测试随功能开发先行新增（增量）**：本版本新功能对应的 acceptance 新场景（S 编号顺延）+ checklist 新维度，随功能开发实时加——本步骤只做「增量补齐」。**归并/压缩/校准/A/B/C 分类是阶段五的职责**（见 [05-review-system.md](./05-review-system.md)），这里不动体系 | 验收测试更新（增量） | 见「步骤完成判据」表 |
+| 四 | **验收测试随功能开发先行新增（增量）**：本版本新功能对应的 acceptance 新场景（S 编号顺延）+ checklist 新维度，随功能开发实时加——本步骤只做「增量补齐」。**归并/压缩/校准/A/B/C 分类是阶段四的职责**（见 [04-review-system.md](./04-review-system.md)），这里不动体系 | 验收测试更新（增量） | 见「步骤完成判据」表 |
 | 五 | **阶段汇报**：全部步骤完成后，执行 session 按下方「阶段汇报模板」以**对话消息**形式发回主 session（不落盘文件）——主 session 依此打勾推进，不再考古 | 汇报消息（见模板） | 模板五件套齐全（含步骤完成状态声明） |
 
 > **审查分层说明**（v1.3.8 交付八，与 [01-review.md](./01-review.md) 同款）：
@@ -49,7 +49,7 @@
 执行 session 完成全部步骤后，按此结构汇报：
 
 ```
-【vX.Y.Z 阶段四汇报】
+【vX.Y.Z 阶段三汇报】
 
 一、步骤完成状态（先行声明——哪个步骤没做、为什么，写在这里）
 - 步骤一 草稿：已完成 / 未做+原因 / 走降级（.prompt.md 粘贴执行）
@@ -121,12 +121,12 @@
 
 ## 版本类 finding 处理规则
 
-fresh-eyes 在**发版前**跑（阶段四时序先于打 tag/publish），此时版本一致性天然处于中间态——以下 finding 属预期噪音，**默认标 SKIP 不修**，留到阶段十一（publish）自然消解：
+fresh-eyes 在**发版前**跑（阶段三时序先于打 tag/publish），此时版本一致性天然处于中间态——以下 finding 属预期噪音，**默认标 SKIP 不修**，留到阶段十（publish）自然消解：
 
 | finding 模式 | 为何是中间态 |
 |------|------|
 | npm registry 版本落后本地 | publish 前注册表必然是旧版 |
-| git tag 缺当前版本 | tag 在阶段十一打 |
+| git tag 缺当前版本 | tag 在阶段十打 |
 | README/bootstrap URL 指向未发布 tag | 打完 tag 即生效的死链 |
 | workspace 依赖锁旧版 | bump-version.sh [2c] 发版时统一对齐 |
 
@@ -148,4 +148,4 @@ driver 异常中止（进程死亡/环境冲突）的 run **也必须留 LEDGER 
 
 1. **「未修」类 finding 先 grep 当前仓库复验**——旧审查报告是快照，不是当前状态
 2. **修复前对照「版本类 finding 处理规则」（本文件上方）**——会在 push+tag+publish 后自动消失的项判 SKIP，不修
-3. 分工：监控 session 管跑与报，主 session 管验与修（完整协议见 [06 的分工表](./06-release-gate.md)）
+3. 分工：监控 session 管跑与报，主 session 管验与修（完整协议见 [06 的分工表](./05-release-gate.md)）

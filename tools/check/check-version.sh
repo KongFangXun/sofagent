@@ -1033,7 +1033,7 @@ else
     echo -e "  ${RED}✗${NC} 安装入口 tag 三方不一致：README.md=$TAG_README_CN README.en.md=$TAG_README_EN bootstrap.sh=$TAG_BOOTSTRAP"
     ERRORS=$((ERRORS + 1))
   elif [[ "$TAG_README_CN" != "refs/tags/v${SSOT_VERSION}" ]]; then
-    echo -e "  ${YELLOW}⚠${NC} 安装入口 tag=$TAG_README_CN 落后于当前版本 v${SSOT_VERSION}——发版后需 bump（B1 教训：tag 打完后安装入口三处随版同步，见 releasing/11-publish.md 步骤 4b）"
+    echo -e "  ${YELLOW}⚠${NC} 安装入口 tag=$TAG_README_CN 落后于当前版本 v${SSOT_VERSION}——发版后需 bump（B1 教训：tag 打完后安装入口三处随版同步，见 releasing/10-publish.md 步骤 4b）"
     WARNINGS=$((WARNINGS + 1))
   else
     echo -e "  ${GREEN}✓${NC} 安装入口 tag 三方一致且与当前版本对齐：${TAG_README_CN}"

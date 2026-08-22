@@ -160,7 +160,7 @@ sofagent（https://github.com/KongFangXun/sofagent）。不管当前处于什么
 
 ### 🤖 视角八 [8]：数字侦探
 
-> 📌 **校准**：发版前跑审查时版本一致性天然处于中间态——registry 落后本地 / tag 未打 / URL 指向未来 tag 这类 finding 在「push+tag+publish」后自动消失，**默认 SKIP 不报**（判别口径见 releasing/04-quality-loop.md）。把中间态当发现 = 给修复者制造噪音。
+> 📌 **校准**：发版前跑审查时版本一致性天然处于中间态——registry 落后本地 / tag 未打 / URL 指向未来 tag 这类 finding 在「push+tag+publish」后自动消失，**默认 SKIP 不报**（判别口径见 releasing/03-quality-loop.md）。把中间态当发现 = 给修复者制造噪音。
 > ⚠️ **但中间态豁免只限 registry / 远端 tag / URL 指向**——文档与脚本内的**字面版本 tag 残留**（如安装用法示例里写死的旧版本号）不是中间态，是实打实的 bug，必须报。
 
 

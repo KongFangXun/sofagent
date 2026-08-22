@@ -643,7 +643,7 @@ node FORGE/src/fresh-eyes-driver.mjs --target v1.2.9 > /tmp/fresh-eyes-v1.2.9.lo
 
 **根因链（四层，层层失守）**：
 
-1. **SOP 产物定义不含「完成证明」**——04-quality-loop.md 步骤表只写产物名（「审查草稿」「loop 修复」），不写「产物存在的判据」。执行 session 做完 Step 4 就认为完工（它视角里 Step 1-2 是「可选前置」，SOP 里「草稿待取证≤3 可收口」的表述被误读成「可整体跳过」）。
+1. **SOP 产物定义不含「完成证明」**——03-quality-loop.md 步骤表只写产物名（「审查草稿」「loop 修复」），不写「产物存在的判据」。执行 session 做完 Step 4 就认为完工（它视角里 Step 1-2 是「可选前置」，SOP 里「草稿待取证≤3 可收口」的表述被误读成「可整体跳过」）。
 2. **汇报无格式约束**（用户同日拍板已修）——自由格式汇报只报做了的，没做的不会出现在汇报里。「没提」≠「没做」，但主 session 默认「没提=无异常」。
 3. **主 session 打勾只核对了汇报内声称**（三门禁绿、场景数 235——这些都真实），**没核对产物清单**（草稿文件/driver runDir 的存在性）。汇报内的真掩盖了汇报外的缺。
 4. **dry-run 空转产物有迷惑性**——run-01/02 的 status.json 是 completed 状态（stopReason=dry-run 藏在字段里），ls 目录看到 run 目录存在容易误判「跑过了」。
@@ -651,7 +651,7 @@ node FORGE/src/fresh-eyes-driver.mjs --target v1.2.9 > /tmp/fresh-eyes-v1.2.9.lo
 **修复与防复发**：
 
 - 补跑草稿审查（工具 API 两次失败 → 降级路径主 session 代跑闭环——降级设计首次实战验证有效）
-- 04-quality-loop.md 补步骤五「阶段汇报模板」四件套（用户拍板）——其中第四件「未决项」+ 第一件「三分类统计（含未跑步骤显式声明）」直接堵根因 2
+- 03-quality-loop.md 补步骤五「阶段汇报模板」四件套（用户拍板）——其中第四件「未决项」+ 第一件「三分类统计（含未跑步骤显式声明）」直接堵根因 2
 - **主 session 打勾纪律（新）**：打勾前必须核对 SOP 该阶段**全部产物存在性**（ls/grep 实物），不只信汇报文本——「汇报说什么做了」和「产物真的在」是两个独立断言
 - **判据固化**：本阶段产物存在判据 = ①`~/Desktop/fresh-eyes-draft-vX.Y.Z.md` 存在且含 16 视角节 ②（若跑了 driver）runDir 含 verdict/findings 产物文件而非仅 status.json
 

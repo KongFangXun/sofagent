@@ -43,7 +43,7 @@ const HELP = `gen-fresh-eyes-draft.mjs — fresh-eyes 16 视角审查草稿生�
 分层说明（v1.3.8 交付八）：
   本工具是「单次草稿优先」层——16 视角草稿一次成型（省 24 worker 的探查循环）；
   草稿经人工筛出可疑项后，需要定点取证的项再交 fresh-eyes-driver 兜底复核。
-  完整 SOP 见 docs/changelog/releasing/01-review.md / 04-quality-loop.md。
+  完整 SOP 见 docs/changelog/releasing/01-review.md / 03-quality-loop.md。
 
 退出码：0=成功 / 1=输入错误 / 2=LLM 不可用（降级输出 prompt 到 <out>.prompt.md）`;
 
@@ -140,7 +140,7 @@ try {
 `;
   writeOutput(OUT, header, content);
   console.log(`✅ 16 视角草稿已生成：${OUT}（${content.length} 字符）`);
-  console.log('   下一步：人工筛「待取证」项 → fresh-eyes-driver 兜底（01-review.md / 04-quality-loop.md 分层 SOP）');
+  console.log('   下一步：人工筛「待取证」项 → fresh-eyes-driver 兜底（01-review.md / 03-quality-loop.md 分层 SOP）');
   process.exit(0);
 } catch (err) {
   writeDegraded(OUT, `LLM 调用失败（${err.message}）`, { system: SYSTEM_PROMPT, user: USER_PROMPT });

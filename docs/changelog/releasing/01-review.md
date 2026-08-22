@@ -34,13 +34,13 @@ B 侧复核模式（v1.3.8 起 driver 内置）：全量跑 driver 时，B 侧 1
 
 ## changelog 章节顺序铁律
 
-> 合并版本（新功能 + BugFix 同版）的章节顺序规则见 [08-doc-finalize.md](./08-doc-finalize.md)——新功能在前、BugFix 在后。阶段二活文档随记时就开始遵守，定稿在阶段八。
+> 合并版本（新功能 + BugFix 同版）的章节顺序规则见 [06-doc-finalize.md](./06-doc-finalize.md)——新功能在前、BugFix 在后。阶段二活文档随记时就开始遵守，定稿在阶段六。
 
 ---
 
 ## fresh-eyes-loop 新 session Prompt 模板
 
-> 阶段一和阶段四都用 fresh-eyes-loop，区别是 target（阶段一审上版本，阶段四审本版本）。AI 输出 prompt 时必须把所有占位符替换为实际值（项目路径、版本号），不得残留花括号。
+> 阶段一和阶段三都用 fresh-eyes-loop，区别是 target（阶段一审上版本，阶段三审本版本）。AI 输出 prompt 时必须把所有占位符替换为实际值（项目路径、版本号），不得残留花括号。
 
 ```
 在 sofagent 项目（{项目实际路径}）中，执行 {实际版本号} 的 fresh-eyes-loop。

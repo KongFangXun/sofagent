@@ -42,7 +42,7 @@ RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; BOLD='\033[1m'; CYAN=
 CHECKLIST="FORGE/playbook/regression-checklist.md"
 ACCEPTANCE="FORGE/playbook/acceptance-test.sh"
 FRESH_EYES="FORGE/playbook/fresh-eyes-review.md"
-RELEASING5="docs/changelog/releasing/05-review-system.md"
+RELEASING5="docs/changelog/releasing/04-review-system.md"
 
 for _f in "$CHECKLIST" "$ACCEPTANCE" "$FRESH_EYES" "$RELEASING5"; do
   if [ ! -f "$_f" ]; then

@@ -1,4 +1,4 @@
-# 阶段八：开发日志定稿 + 文档收尾
+# 阶段六：开发日志定稿 + 文档收尾
 
 ---
 
@@ -108,7 +108,7 @@
 
 > 面向用户的发布说明——开发日志正文给开发者看，Release Notes（本段 + GitHub Release body）给用户看。
 > **标准范本：v1.3.7 实际发布物（唯一锚点）**——[GitHub v1.3.7 Release](https://github.com/KongFangXun/sofagent/releases/tag/v1.3.7)。2026-08-20 实证：v1.3.0/1.3.1/1.3.7 三版同构（定位句 + H2 分节 + 质量验证表 + 尾链）；SOP 08 曾误写「简洁三段式」→ v1.3.8 发布时漏质量验证表与标题主题短语，被作者两次退回。
-> 🔴 **铁律：发布时禁止把 changelog 内嵌段直接复制当 GitHub body**——本段是格式规范源头，GitHub body 由 [11-publish.md 5.0 三道工序](./11-publish.md) 生成；两处同源同构，但生成动作在阶段十一，此段只定义标准。
+> 🔴 **铁律：发布时禁止把 changelog 内嵌段直接复制当 GitHub body**——本段是格式规范源头，GitHub body 由 [10-publish.md 5.0 三道工序](./10-publish.md) 生成；两处同源同构，但生成动作在阶段十，此段只定义标准。
 
 ### 格式规范（对照 v1.3.7 逐要素）
 
@@ -162,7 +162,7 @@
 | N5 | **H3 小节标题带功能领域 emoji**（`### 🏰 SubAgent 完整沙箱`）——emoji 在领域名最前，语义化（🛡️ 安全/🔐 权限/⚙️ 基建/📊 计量/🔒 bugfix） | v1.3.7 八节全带 emoji |
 | N6 | **标题三层不重复**——changelog H1（动词化故事，不带 emoji）≠ release title（名词化主题短语，带 emoji）≠ H3 小节（交付名，带 emoji）。同一交付名只出现在 H3 小节标题，不逐项罗列进 H1/title | v1.3.3 教训：H1 与 note 同 6 项逐字复读 |
 | N7 | **质量验证表固定 7 项**（npm test / acceptance-test / shellcheck / check-version / 回归检查 / release-gate / fresh-eyes）——不可增减、顺序固定（v1.3.0/1.3.1 缺 release-gate/fresh-eyes 的教训） | 信任信号标准化 |
-| N8 | **changelog 内嵌「## Release Notes」段 = GitHub body 同源**——阶段八写入，阶段十一发布时按 11-publish.md 5.0 工序生成并自检（title 主题/定位句/H2 骨架/7 项表/尾链五对照），发布前禁止凭记忆手写简化（v1.3.8 教训：生成 prompt 手写 `--title "v1.3.8"` 丢主题） | 发布物与开发日志同步 |
+| N8 | **changelog 内嵌「## Release Notes」段 = GitHub body 同源**——阶段八写入，阶段十一发布时按 10-publish.md 5.0 工序生成并自检（title 主题/定位句/H2 骨架/7 项表/尾链五对照），发布前禁止凭记忆手写简化（v1.3.8 教训：生成 prompt 手写 `--title "v1.3.8"` 丢主题） | 发布物与开发日志同步 |
 
 ### 体例铁律（防止跨版本漂移）
 
@@ -192,7 +192,7 @@
 | 二 | **CHANGELOG 索引**：根 CHANGELOG.md 新增本版本索引条目（目录非详情） | 索引条目存在 |
 | 三 | **发版日期同步**（详见下方脚本） | `bash tools/check/check-version.sh` 全绿 |
 | 四 | **测试数一致性**：`bash tools/check/check-test-count.sh --quiet` 确认声称数与实际一致。**禁止手动报数——必须跑脚本** | 全绿 |
-| 五 | **ROADMAP 同步**（详见 [08-roadmap-sync.md](./08-roadmap-sync.md)）：本版移出规划表→进迭代表；探索方向表清理已交付/已排期条目；版本号+日期更新；迭代表瘦身（老版本合并）。⚠️ **每次发版后还要做 ROADMAP 体检**（重复表/散落章节/死链/模糊版本号）——详见子文档「体检清单」 | ROADMAP 更新 |
+| 五 | **ROADMAP 同步**（详见 [07-roadmap-sync.md](./07-roadmap-sync.md)）：本版移出规划表→进迭代表；探索方向表清理已交付/已排期条目；版本号+日期更新；迭代表瘦身（老版本合并）。⚠️ **每次发版后还要做 ROADMAP 体检**（重复表/散落章节/死链/模糊版本号）——详见子文档「体检清单」 | ROADMAP 更新 |
 | 六 | **全项目版本号扫描**：所有 package.json + 文档头版本号一致 | check-version.sh 全绿 |
 | 七 | **文档同步闭环**：changelog 每个功能点 → 对应项目文档有覆盖（详见下方按需文档表） | D6 清单零遗漏 |
 | 八 | **changelog 文件命名一致性**：`ls docs/changelog/*/v*.md \| grep -v -E 'v[0-9]+\.[0-9]+\.[0-9]+\.md'` 期望无输出（全三段式）——**限定版本日志目录**（v1.3.9 修正：原 `docs/changelog/**/*.md` 会把 releasing/ 子目录的 SOP 文件误报为不合规，版本日志才是检查对象） | 无输出 |

@@ -1,6 +1,6 @@
-# 阶段六：release-gate-loop 发版闸门
+# 阶段五：release-gate-loop 发版闸门
 
-> **必须 verdict=PASS 才能进阶段七~八。** FAIL 回阶段五修复后重跑。
+> **必须 verdict=PASS 才能进阶段六~八。** FAIL 回阶段四修复后重跑。
 
 ---
 
@@ -10,7 +10,7 @@
 |:--:|------|
 | 一 | **脚本层直跑（零 LLM）**：acceptance-test.sh + check-version + check-docs + 锚点 + check-review-system + check-tool-health 依次跑，**全绿才进下一步** |
 | 二 | 开新 session 跑**判断层**：driver `--judgment-only` 一次启动四步（regression → coverage → consolidate → verdict），**跳过 acceptance 分片 LLM 复核**（v1.3.8 交付七起不再 --step 四步手工编排） |
-| 三 | verdict=PASS → 过「零信任复验三件套」→ 进阶段七 |
+| 三 | verdict=PASS → 过「零信任复验三件套」→ 进阶段六 |
 | 四 | verdict=FAIL → **循环即停**（v1.3.8 交付七起 F 修复链默认关闭，无 f-* 产物）→ 回阶段五修复后重跑。显式 `--auto-fix` 才进修复链（最多 3 轮） |
 
 > **为什么分层（run-04 实测 2026-08-19）**：driver 全流程实测 30.7 万 token / 58 分钟，其中 **61%（18.7 万）花在 acceptance 12 分片 LLM 复核**——复核的是脚本 `exit 0 + 303/303 SUMMARY` 的确定性结果，没有主观判断空间，盲审增值≈0。脚本层零 token 直跑拿到同样保证；driver 只保留有判断空间的 regression 语义审查 + coverage 交叉 + 终裁（约 9 万 token / 20 分钟）。**独立性不伤**：盲审保留在真正需要判断的环节。
@@ -68,7 +68,7 @@
 
 | 结果 | 下一步 |
 |------|--------|
-| **verdict = PASS**（regression + coverage 全 PASS，acceptance 已由脚本层保证） | 过「零信任复验三件套」（见下）→ 全过才进阶段七 |
+| **verdict = PASS**（regression + coverage 全 PASS，acceptance 已由脚本层保证） | 过「零信任复验三件套」（见下）→ 全过才进阶段六 |
 | **verdict = FAIL** | 循环即停（v1.3.8 起 F 链默认关闭，无 f-* 产物）→ 根据报告定位问题 → **回阶段五** → 修复后重跑本阶段 |
 | **需要 driver 内自动修复** | 显式加 `--auto-fix` 启动（f-diagnose → f-fix → f-audit，最多 3 轮）——默认不开，盲审独立性与修复上下文不混跑 |
 | **driver 反复 FAIL 且复验全为检查器债** | 走「手工裁决路径」（见下）——v1.3.7 实操 run-01/04 两轮 FAIL 均改判检查器债已修，主 session 手工裁决 PASS |
@@ -103,7 +103,7 @@ node -e "const s=require('<runDir>/status.json');console.log(JSON.stringify(s.st
 ls <runDir>/f-* 2>/dev/null && git -C <主仓> rev-list --count <基线SHA>..<F分支>   # 期望 >0
 ```
 
-**任一不过 → 按 FAIL 处理**（回阶段五）。F 链从未触发（无 f-* 产物）时 ③ 跳过——「没进修复链」与「修复链零产出」是两回事，后者才是假 PASS 特征。
+**任一不过 → 按 FAIL 处理**（回阶段四）。F 链从未触发（无 f-* 产物）时 ③ 跳过——「没进修复链」与「修复链零产出」是两回事，后者才是假 PASS 特征。
 
 ## 监控 session 与主 session 的分工协议（v1.3.6 实战模式 SOP 化）
 

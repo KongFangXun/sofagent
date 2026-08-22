@@ -1,6 +1,8 @@
-# 阶段十一：发布
+# 阶段十：发布流水线
 
 > **项目负责人亲手执行，或授权 AI 代执行。**
+>
+> **本阶段只做 npm 发布流水线（狗粮→检查→push→tag→release→npm publish）。分发（Skill / DSH plugin / OpenClaw plugin / 设备端安装）见 [11-distribute.md](./11-distribute.md)。**
 
 ---
 
@@ -235,7 +237,7 @@ done
 echo "$BODY" | grep -qE '\[详细开发日志\]\(\./docs/changelog/' && echo "✅ 尾链" || echo "🔴 缺尾链"
 ```
 
-**工序三 · 上一版结构对照（2026-08-19 用户拍板：取代人工过目）**：自检全过后，与上一版 release body 做**结构级并排对照**——title 形式（`vX.Y.Z — emoji 短语`）/ 定位句有无 / H2 骨架 / 质量表 7 项顺序 / 尾链位置，五要素逐一比对上一版，**结构不一致即重写，直到同构**。机制标准 = **v1.3.7 实际发布物（2026-08-20 用户拍板的标准锚点，见 08-doc-finalize.md Release Notes 段）**——若上一版漂移（v1.3.8 曾两次漂移被作者退回），以 v1.3.7 为准重写，不追随上一版。对照命令：`gh release view v1.3.7 --json name,body -q '{name, body}'`（锚点）+ `gh release view 上一版 --json name,body`（漂移检测）。
+**工序三 · 上一版结构对照（2026-08-19 用户拍板：取代人工过目）**：自检全过后，与上一版 release body 做**结构级并排对照**——title 形式（`vX.Y.Z — emoji 短语`）/ 定位句有无 / H2 骨架 / 质量表 7 项顺序 / 尾链位置，五要素逐一比对上一版，**结构不一致即重写，直到同构**。机制标准 = **v1.3.7 实际发布物（2026-08-20 用户拍板的标准锚点，见 06-doc-finalize.md Release Notes 段）**——若上一版漂移（v1.3.8 曾两次漂移被作者退回），以 v1.3.7 为准重写，不追随上一版。对照命令：`gh release view v1.3.7 --json name,body -q '{name, body}'`（锚点）+ `gh release view 上一版 --json name,body`（漂移检测）。
 
 ```bash
 > 🔴 **发布前必做（v1.3.6 教训）**：生成 body 后先与上一版并排对照——`gh release view v上一版 --json body -q '.body' | grep -E "^## "`——两版 H2 骨架必须同构（首行定位句/核心变更/破坏性变更/质量验证/尾链五要素）。**changelog 内嵌的 Release Notes 段 ≠ GitHub Release body**：前者归 08 的 N1-N7 管（✨ 新功能 bullet 式），后者归本规范管（### 功能领域子标题式）——分别核对，禁止把 changelog 段直接复制当 body。
@@ -345,115 +347,6 @@ npm view @sofagent/load-chain version  # 同样应等于当前版本号
 ```
 
 > 🔴 **E409「previously staged version」处理（v1.3.9 实战）**：`npm publish` 网络中断会在 registry 留下 **staged blob**（发布事务中间态，版本号被占位但未 finalize）——同版本重发报 `409 Conflict - Cannot publish over previously staged version "X.Y.Z"`，**且持续约 24h（staged 自动过期）**。处理：`npm unpublish <pkg>@<version> --force` 清版本记录（staged blob 独立于记录，unpublish 后 registry 主节点传播完成即可重发同版本；若仍 E409 说明传播未完成，等 60s 重试或等 staged 过期）。⚠️ 与「npm 版本永久锁死」铁律不冲突——E409 staged 是**未 finalize 的占位**，可清除重发；已 published 的版本才不可覆盖。
-
----
-
-## 步骤九：Skill 分发
-
-```bash
-# 发布前确认 slug（SSOT）
-head -3 SKILL/SKILL.md   # 期望 slug: sofagent
-
-# ── ClawHub 分发 ──
-# 发布前先查现有版本（同版本号不可覆盖，冲突则递增版本号）
-clawhub skill verify sofagent 2>&1 | grep version
-# 清理 .DS_Store（macOS 残留会触发 security 扫描 not_clean）
-find ./SKILL -name '.DS_Store' -delete
-# 发布（必须带 --changelog，否则 ClawHub 默认 1.0.0 自增，不走 SKILL.md version）
-# 🔴 必须带 --name（2026-08-21 教训：缺 --name 时 ClawHub 显示名回退为 "SKILL"，
-#   不读 SKILL.md frontmatter 的 displayName——重发修复见 v1.3.9 发布记录）
-clawhub skill publish ./SKILL --slug sofagent --name "FDE Skill" --version <版本号> --changelog "vX.Y.Z"
-
-# ── SkillHub 分发 ──
-# SkillHub 不接受 .png 文件，用临时目录排除
-tmpdir=$(mktemp -d) && cp -r SKILL "$tmpdir/" && find "$tmpdir" -name "*.png" -delete && find "$tmpdir" -name '.DS_Store' -delete
-skillhub publish "$tmpdir/SKILL" --version <版本号> --changelog "vX.Y.Z: 简短变更说明" && rm -rf "$tmpdir"
-```
-
-> **Skill 分发铁律**：
-> - 唯一发布源 = `./SKILL` 目录（不是 FDE）
-> - 两个平台 slug 统一 = `sofagent`（SKILL/SKILL.md frontmatter 的 slug 字段是 SSOT）
-> - ClawHub 同版本号不可覆盖——dev 分支不要预发 Skill（会占用正式版本号）
-> - skillhub CLI 无 `skill` 子命令，直接 `skillhub publish <path> --version X.Y.Z`
-> - 两个平台每次发版都要推，一个都不能少
-
----
-
-## 步骤十：DSH plugin 分发（v1.4.0 起 · 每版必做）
-
-> **背景（2026-08-21 拍板）**：SkillHub 现已支持 DeepSeek Harness plugin 分发。v1.4.0 起 sofagent 的 DSH plugin 家族（`@sofagent/cordis-plugin-*`，10 个通用插件，见 v1.4.0 开发日志「DSH 反向插件适配」）**每版都要在 SkillHub 发布**——与 SKILL 分发并列，是 DSH 生态的发现层补充（npm 发布仍走主线，两者并行不互替）。
-
-```bash
-# 发布前确认 plugin 家族清单（SSOT = v1.4.0 开发日志 plugin 家族表）
-PLUGIN_DIRS=$(ls -d engine/*/cordis-plugin-* 2>/dev/null || echo "")
-# 若 plugin 目录不在 engine/ 下，改为实际目录（如 packages/ 或 plugins/），以 v1.4.0 交付为准
-
-# 逐 plugin 发布（版本号与 sofagent 主线版本对齐，见 v1.4.0「版本同步机制」）
-for pdir in $PLUGIN_DIRS; do
-  name=$(basename "$pdir")
-  # 清理 .DS_Store / .png（与 SkillHub SKILL 分发同规矩）
-  find "$pdir" -name '.DS_Store' -delete && find "$pdir" -name '*.png' -delete
-  # 先查现有版本，同版本号不可覆盖
-  skillhub verify "$name" 2>&1 | grep version || true
-  skillhub publish "$pdir" --version <版本号> --changelog "vX.Y.Z: $(head -1 "$pdir/README.md" 2>/dev/null || echo "$name")" \
-    && echo "✅ $name 已发布到 SkillHub" || echo "❌ $name 发布失败"
-done
-```
-
-> **DSH plugin 分发铁律**：
-> - 发布源 = 各 cordis-plugin 包目录（不是 SKILL/，SKILL 是方法论分发，plugin 是引擎能力分发）
-> - 版本号 = 与 sofagent 主线版本对齐（v1.4.0 → 各 plugin v0.1.0 起步；DSH Cordis 协议 breaking change 时 bump major）
-> - 每版发版都要推，与 ClawHub/SkillHub SKILL 分发同等强制
-> - SkillHub 与 npm 并行：npm 是安装通道（`dsh plugin add`），SkillHub 是发现层（DSH 生态检索），不互替
-
-### 步骤十·a：OpenClaw plugin 分发（v1.4.0 起 · 每版必做）
-
-> **背景（2026-08-21 拍板）**：v1.4.0 的 OpenClaw plugin 家族（约束层四能力在 OpenClaw 生态的插件形态，见 v1.4.0 开发日志「OpenClaw plugin 家族」）**每版都要在 ClawHub plugins 发布**——与 DSH plugin 家族（SkillHub）分属两个生态：**ClawHub = OpenClaw 运行时 / SkillHub = DSH 运行时，各发各的**。clawhub CLI 已支持 `package publish`（code-plugin / bundle-plugin）。
-
-```bash
-# 发布前确认 plugin 清单（SSOT = v1.4.0 开发日志 OpenClaw plugin 家族表）
-OPENCLAW_PLUGIN_DIRS=$(ls -d engine/*/openclaw-plugin-* 2>/dev/null || echo "")
-# 若 plugin 目录不在 engine/ 下，改为实际目录，以 v1.4.0 交付为准
-
-# 逐 plugin 发布（版本号与 sofagent 主线版本对齐）
-for pdir in $OPENCLAW_PLUGIN_DIRS; do
-  name=$(basename "$pdir")
-  # 先查现有版本，同版本号不可覆盖
-  clawhub package verify "$name" 2>&1 | grep version || true
-  clawhub package publish "$pdir" --family code-plugin --name "$name" --version <版本号> \
-    --changelog "vX.Y.Z: $(head -1 "$pdir/README.md" 2>/dev/null || echo "$name")" \
-    && echo "✅ $name 已发布到 ClawHub plugins" || echo "❌ $name 发布失败"
-done
-```
-
-> **OpenClaw plugin 分发铁律**：
-> - 发布源 = 各 openclaw-plugin 包目录（与 DSH plugin 家族分开，别混）
-> - 发布通道 = **ClawHub plugins**（`clawhub package publish --family code-plugin`）——注意 ClawHub 的 `skill publish` 与 `package publish` 是两条独立命令
-> - 版本号 = 与 sofagent 主线版本对齐（同 DSH 家族机制）
-> - 每版发版都要推，与 SKILL / DSH plugin 分发同等强制
-
----
-
-## 步骤十一：设备端安装
-
-```bash
-# 1. 全局包更新（audit + core）
-npm install -g @sofagent/audit@latest @sofagent/core@latest
-sofagent-audit --version   # 确认 registry 版本
-sofagent-core --doctor     # 期望全部通过
-
-# 2. Skill 同步（WorkBuddy + OpenClaw 双平台）
-cp -r SKILL/harness/* ~/.workbuddy/skills/sofagent/
-cp -r SKILL/harness/* ~/.openclaw/skills/sofagent/
-cp SKILL/SKILL.md ~/.workbuddy/skills/sofagent-fde/
-cp -r SKILL/agents/audit/ ~/.workbuddy/skills/sofagent-audit/
-cp -r SKILL/agents/audit/ ~/.openclaw/skills/sofagent-audit/
-cp -r SKILL/agents/fde/ ~/.workbuddy/skills/sofagent-fde/ 2>/dev/null || echo "FDE Agent 目录不存在，跳过"
-cp -r SKILL/agents/fde/ ~/.openclaw/skills/sofagent-fde/ 2>/dev/null || true
-
-# 3. 最终验证
-bash tools/check/check-version.sh   # 全绿
-```
 
 ---
 

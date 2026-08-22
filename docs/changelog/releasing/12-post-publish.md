@@ -10,7 +10,7 @@
 |:--:|:--:|------|------|
 | 一 | [x] | **发布后验证**（见下方脚本） | 全绿 |
 | 二 | [x] | CI 全绿检查 | CI 全绿 |
-| 三 | [x] | **审查三文档回写**：发版过程（阶段六~十一）暴露的新问题回写到 regression-checklist（新维度）/ fresh-eyes-review（新教训）/ acceptance-test（新场景）。与阶段五分工：阶段五管代码质量（发版前可见），本步骤管发版流程（发版中才暴露——如 CI 失败模式、publish 限制、日期硬编码等） | 三文档更新 |
+| 三 | [x] | **审查三文档回写**：发版过程（阶段五~十一）暴露的新问题回写到 regression-checklist（新维度）/ fresh-eyes-review（新教训）/ acceptance-test（新场景）。与阶段四分工：阶段四管代码质量（发版前可见），本步骤管发版流程（发版中才暴露——如 CI 失败模式、publish 限制、日期硬编码等） | 三文档更新 |
 | 四 | [x] | SOP 漏洞吸收：本次迭代暴露的 releasing.md 流程问题直接吸收进对应阶段 | SOP 更新 |
 | 五 | [x] | SOP 数字核对：维度数、检查项数等是否过期 | 数字一致 |
 | 六 | [x] | 生成「下一版本开发 Prompt」到桌面：综合 ROADMAP + CHANGELOG + 下一版本 changelog | `~/Desktop/vX.Y-dev-prompt.md` |
@@ -150,7 +150,7 @@ sed -i '' 's/- \[x\]/- [ ]/g' docs/changelog/releasing.md
 | 三 | **配套文档链接有效** | releasing.md 底部 3 个配套文档链接可访问 | 失效 → 更新路径 |
 | 四 | **本次发版暴露的 SOP 缺口** | 回顾发版过程中「SOP 没写但我踩了坑」的环节 | 缺口 → 吸收进对应阶段 |
 | 五 | **冗余/过时步骤** | 有没有阶段写了但实际从不执行（或已被工具覆盖）的步骤 | 删除或标注「工具已覆盖」 |
-| 六 | **ROADMAP 体检** | 按 [08-roadmap-sync.md](./08-roadmap-sync.md) 的「体检清单」7 项扫一遍（重复表/散落章节/死链/已交付混入/范围过期/模糊版本号/U+FFFD） | 逐项修复 |
+| 六 | **ROADMAP 体检** | 按 [07-roadmap-sync.md](./07-roadmap-sync.md) 的「体检清单」7 项扫一遍（重复表/散落章节/死链/已交付混入/范围过期/模糊版本号/U+FFFD） | 逐项修复 |
 
 > 📋 **发版 commit 规范（防 git log 噪音）**：发版过程中阶段一~十二的进度打勾（`releasing.md` 进度追踪 `[x]`）会产生大量「元工作 commit」。**这些打勾类 commit 应 squash 为单个 `docs(releasing): vX.Y.Z 发版流程完成`**，不要每个阶段一个 commit——否则 git log 充斥 `docs(releasing): 阶段X打勾` 噪音，外部贡献者看 commit 历史会以为项目没有产品迭代。实际产品改动（代码 fix/feat、文档内容修改）照常各自独立 commit，只有「纯进度打勾」类元工作 commit 才 squash。
 
@@ -161,18 +161,18 @@ sed -i '' 's/- \[x\]/- [ ]/g' docs/changelog/releasing.md
 
 **v1.3.3 发版后的自迭代记录**：
 
-- **阶段九新增 LIMIT 检查**：check-docs.sh LIMIT_B 超标（8437 > 8400）在 CI 才暴露——本地 WorkBuddy 环境跑 check-docs.sh 超时（锚点段 node 逐行调慢），CI 上才能跑完。已补 regression-checklist 维度 101（LIMIT 超标提前检查）。建议阶段九加一步"CI 模拟只跑 B 层行数检查（不跑锚点段避免超时）"
-- **阶段十一 git proxy 对齐**：WorkBuddy 环境的代理端口会变（54621→53957），git global config 里的旧端口导致 push 失败。阶段十一加一步"push 前确认 git proxy 端口与环境变量一致"
-- **阶段十一 gh API 推 tag**：git push tag 遇代理 502 时，用 `gh api` 创建 tag object + ref 绕过（走 api.github.com 通道）。已验证可行，加入阶段十一网络降级策略
+- **阶段八新增 LIMIT 检查**：check-docs.sh LIMIT_B 超标（8437 > 8400）在 CI 才暴露——本地 WorkBuddy 环境跑 check-docs.sh 超时（锚点段 node 逐行调慢），CI 上才能跑完。已补 regression-checklist 维度 101（LIMIT 超标提前检查）。建议阶段八加一步"CI 模拟只跑 B 层行数检查（不跑锚点段避免超时）"
+- **阶段十 git proxy 对齐**：WorkBuddy 环境的代理端口会变（54621→53957），git global config 里的旧端口导致 push 失败。阶段十加一步"push 前确认 git proxy 端口与环境变量一致"
+- **阶段十 gh API 推 tag**：git push tag 遇代理 502 时，用 `gh api` 创建 tag object + ref 绕过（走 api.github.com 通道）。已验证可行，加入阶段十网络降级策略
 - **阶段六 release-gate driver 两个 bug**：① verdict 误判 PASS（status.json 标 PASS 但 results 全 FAIL）② changelogPath 路径偏差（指向 `docs/changelog/1.3.3.md` 而非 `v1.3/v1.3.3.md`）。driver bug 未修但不影响发版判定（verdict.md 为准）——FORGE 工程债
 
 **v1.3.4 发版后的自迭代记录**：
 
-- **阶段六 verdict 读取规则**：driver 在 verdict.md 尾部追加的「FAIL→PASS 修复收敛」段不可信——run-01 中 f-fix 报错没改任何代码，尾部照样写 PASS。阶段六模板加判定规则：verdict 以主体 `IS_PASS:` 行为准 + f-fix 有 git diff 才算修复收敛（stepErrors 非空 = 本轮作废）。已回写 regression-checklist 维度（臆造链家族）与 fresh-eyes-review 教训
-- **阶段九 hook 测试用例合格性**：SOP 自带的测试用例 message（"test"/"add app"）太短被 A5+A19 正确拦截——测试用例自己不合格导致假失败。已修 09-tool-health.md（合格 message + `git add -f` 说明），并回写 checklist 维度 108 防 SOP 再漂移
-- **阶段十一 pre-push 环境降级**：check-docs 第 11 项锚点扫描（bash 逐行）在 WorkBuddy shim 环境必然超时——与 check-anchors.mjs 功能重复。已加 `SKIP_ANCHOR_SCAN=1` 降级开关（CI 跑完整版）；WorkBuddy 环境跑 pre-push 应带此变量（4m43s vs 13min+）。回写 checklist 维度 109
-- **阶段十一 Git Data API 收尾通道实战**：发布完成后网络彻底断（github.com 443 不通），最后的打勾 commit 走 blobs→trees→commits→refs PATCH 完成。新增后续动作：**网络恢复后必须 `git pull --rebase` 对齐本地远端 SHA**（API commit 与本地 commit 同内容不同 SHA，git 会识别 cherry-pick 重复自动消化）
-- **阶段十二 stash 清理纳入发版收尾**：本轮发版过程发现 4 个历史 stash 残留——逐段甄别后 3 段有价值内容恢复进对应 changelog、其余确认覆盖后清理。原则：stash 是隐形技术债，发版收尾时顺手清（stash list 非空即处理）
+- **阶段五 verdict 读取规则**：driver 在 verdict.md 尾部追加的「FAIL→PASS 修复收敛」段不可信——run-01 中 f-fix 报错没改任何代码，尾部照样写 PASS。阶段五模板加判定规则：verdict 以主体 `IS_PASS:` 行为准 + f-fix 有 git diff 才算修复收敛（stepErrors 非空 = 本轮作废）。已回写 regression-checklist 维度（臆造链家族）与 fresh-eyes-review 教训
+- **阶段八 hook 测试用例合格性**：SOP 自带的测试用例 message（"test"/"add app"）太短被 A5+A19 正确拦截——测试用例自己不合格导致假失败。已修 08-tool-health.md（合格 message + `git add -f` 说明），并回写 checklist 维度 108 防 SOP 再漂移
+- **阶段十 pre-push 环境降级**：check-docs 第 11 项锚点扫描（bash 逐行）在 WorkBuddy shim 环境必然超时——与 check-anchors.mjs 功能重复。已加 `SKIP_ANCHOR_SCAN=1` 降级开关（CI 跑完整版）；WorkBuddy 环境跑 pre-push 应带此变量（4m43s vs 13min+）。回写 checklist 维度 109
+- **阶段十 Git Data API 收尾通道实战**：发布完成后网络彻底断（github.com 443 不通），最后的打勾 commit 走 blobs→trees→commits→refs PATCH 完成。新增后续动作：**网络恢复后必须 `git pull --rebase` 对齐本地远端 SHA**（API commit 与本地 commit 同内容不同 SHA，git 会识别 cherry-pick 重复自动消化）
+- **阶段九二 stash 清理纳入发版收尾**：本轮发版过程发现 4 个历史 stash 残留——逐段甄别后 3 段有价值内容恢复进对应 changelog、其余确认覆盖后清理。原则：stash 是隐形技术债，发版收尾时顺手清（stash list 非空即处理）
 - **阶段三 + 阶段十一加 check-test-count 门禁**：v1.3.4 周期内 bugfix（+31 测试 → 8 处漂移）+ dev（+93 → 11 处）+ dsh（+11 → 7 处）**三次犯同类错误**——新增测试后文档声称数（README/WIKI/LIMITATIONS/ARCHITECTURE）未同步。根因：check-test-count.sh 只在 tag 前（阶段十一步骤四）跑一次，开发过程中没人跑。修复：① 阶段三（自测）加步骤四——`check-test-count.sh --quiet` 作为开发完成后的强制门禁；② 阶段十一（发布）步骤二 显式列 check-test-count 与 check-docs.sh 并列。**原则：新增/删除测试 = 必须同步文档声称数，check-test-count 不绿不算开发完成**
 
 **v1.3.7 发版后的自迭代记录**：
@@ -181,28 +181,28 @@ sed -i '' 's/- \[x\]/- [ ]/g' docs/changelog/releasing.md
 - **release note 三道工序**：v1.3.0~1.3.6 每次发布后都发现问题再改——本次新增「生成→自检（质量表恰 7 项/H2 骨架同构/七项逐字/尾链）→上一版结构对照」工序，v1.3.7 一次到位零修改
 - **CI 全绿硬前置**：push 后轮询到全绿（60s 循环）才允许打 tag——原 sleep 30 单次查看可被跳过。实测 shellcheck runner apt stall（16 分钟挂 Install ShellCheck）→ `gh run rerun` 解决；空 commit 不触发 paths 过滤的 workflow，重触发用 rerun 而非空 commit
 - **check-version TS 文件头溯源标记误报（CI 红实录）**：文件头注释版本号是功能溯源标记（`v1.1.9 新增`）非当前版本锚点，历史 check 误判为「漏 bump」。判据改为「找 = SSOT 版本号」：有锚点通过、纯溯源跳过；bump 同步豁免（防误伤）。已回写 checklist 维度 116
-- **push 连接三连失败实录**：git config 死代理 → 直连 443 超时/HTTP2 framing → HTTP/1.1 + 慢速兜底解决。经验：curl 能通 ≠ git 能通。已写入 11-publish 网络降级策略
+- **push 连接三连失败实录**：git config 死代理 → 直连 443 超时/HTTP2 framing → HTTP/1.1 + 慢速兜底解决。经验：curl 能通 ≠ git 能通。已写入 10-publish 网络降级策略
 - **daemon CI 模拟姿势对齐**：SOFAGENT_HOME=/tmp 会触发 data-paths 越界守卫回退——模拟脚本与 daemon-macos-ci.yml 对齐（仓库内 .sofagent + daemon.sh + sleep 35）
 - **v1.3.7 发版耗时**：开发完成（08-18 14:00 前后）→ 发布（08-19 13:40）约 24h（含隔夜）；release-gate 2 轮 FAIL 均检查器侧债（dim106 SSOT/dim116 awk 转义），手工裁决 PASS
 
 **v1.3.8 发版后的自迭代记录**：
 
-- **阶段六·仓库冻结纪律（新增）**：run-03 运行窗口（31.5 分钟）HEAD 被改 8 次 → 三 worker 崩溃/OOM。判断层运行期间仓库必须冻结（含脚本层直跑）——已写入 06-release-gate.md「运行期间仓库冻结纪律」小节 + 判 FAIL 分诊方法（先查运行窗口 HEAD 变动）
-- **阶段六·judgment-only 注入机制（更新）**：run-06（缺 acceptance 输入 FAIL）+ run-10（占位无实证）两次踩坑 → driver 修复为「启动时注入脚本层预跑日志（仓库根 acceptance-raw.log / SOFAGENT_ACCEPTANCE_LOG）+ 无日志主动实测」。**SOP 侧根因：prompt 模板写 /tmp/acceptance-raw.log 但 driver 找仓库根——路径不一致**。已修 06 prompt 模板 + 更新旧描述
+- **阶段五·仓库冻结纪律（新增）**：run-03 运行窗口（31.5 分钟）HEAD 被改 8 次 → 三 worker 崩溃/OOM。判断层运行期间仓库必须冻结（含脚本层直跑）——已写入 05-release-gate.md「运行期间仓库冻结纪律」小节 + 判 FAIL 分诊方法（先查运行窗口 HEAD 变动）
+- **阶段五·judgment-only 注入机制（更新）**：run-06（缺 acceptance 输入 FAIL）+ run-10（占位无实证）两次踩坑 → driver 修复为「启动时注入脚本层预跑日志（仓库根 acceptance-raw.log / SOFAGENT_ACCEPTANCE_LOG）+ 无日志主动实测」。**SOP 侧根因：prompt 模板写 /tmp/acceptance-raw.log 但 driver 找仓库根——路径不一致**。已修 06 prompt 模板 + 更新旧描述
 - **阶段六·precheck 紧凑格式（更新）**：run-10 的 59/91 维截断根因是 indent=2 JSON 格式化结构开销 637 行 + sf_read 引擎层 500 行上限（v1.3.6 修 FORGE 预算表 800 是修错层）——driver 已改紧凑格式单行写盘。认知：sf_read 是行数限制非字符限制，单行大文件整行返回
-- **阶段九·bump dry-run 先 commit（新增）**：v1.3.8 阶段九误把未提交的阶段八改动当 dry-run 污染，git checkout -- . 整批误撤。已写入 09-tool-health.md 步骤三：先 commit 再跑 dry-run
-- **阶段十一·Git Data API 四坑（更新）**：原三坑（base64/eol/cat-file）补第四坑——tree 条目 mode 硬编码 100644 丢全部 .sh 执行位（verify CI 失败），恢复靠「blob 内容寻址引用既有 blob 建新 tree」；另 create-tree 无法表达删除/rename 残留，须 Contents API 补删。验收唯一标准：远端 tree sha == 本地 HEAD tree
+- **阶段九·bump dry-run 先 commit（新增）**：v1.3.8 阶段九误把未提交的阶段八改动当 dry-run 污染，git checkout -- . 整批误撤。已写入 08-tool-health.md 步骤三：先 commit 再跑 dry-run
+- **阶段十·Git Data API 四坑（更新）**：原三坑（base64/eol/cat-file）补第四坑——tree 条目 mode 硬编码 100644 丢全部 .sh 执行位（verify CI 失败），恢复靠「blob 内容寻址引用既有 blob 建新 tree」；另 create-tree 无法表达删除/rename 残留，须 Contents API 补删。验收唯一标准：远端 tree sha == 本地 HEAD tree
 - **阶段八·Release Notes 锚点对照（更新）**：SOP 08 曾误写「简洁三段式」但 v1.3.0/1.3.1/1.3.7 实际发布均为「分节式 + 质量验证表」——v1.3.8 两次被作者退回（漏质量验证表 + 漏标题主题短语）。SOP 08 重写为 v1.3.7 锚点 + 铁律 N1-N8 + SOP 11 工序 3 机制标准 = v1.3.7 实际发布物；10-confirm 补防漂移铁律（发布 prompt 的 gh release 段必须逐字引用 SOP 11 模板）
-- **步骤编号铁律复查**：11-publish.md「### 5.0」标题 + 工序 1/2/3 + 代码块 2a-2d 三处残留修复为中文序号/①②③④；全仓复查零残留
+- **步骤编号铁律复查**：10-publish.md「### 5.0」标题 + 工序 1/2/3 + 代码块 2a-2d 三处残留修复为中文序号/①②③④；全仓复查零残留
 - **check-dev-prompt.sh 三缺陷修复（工具）**：① bash/node 命令前缀未剥离 → `bash tools/check/check-version.sh` 误报 ❌ ② is_runtime 定义未接线 → worklog.json 误报 ❌ ③ planned 只看同行关键词 → tools/ 分目录目标路径误报 ❌。修复后 v1.3.9 prompt 校验 0 错误
 - **v1.3.8 发版耗时**：约 6h（08-20 10:00 开发完成 → 16:00 发布）；release-gate 4 轮（3 轮 driver 管线问题 + 1 轮环境，driver 修复后 run-13 单轮直过）
 
 **v1.3.9 发版后的自迭代记录**：
 
-- **阶段十一·步骤八 E409 staged 处理（新增）**：`npm publish` 网络中断留 staged blob（版本号占位未 finalize）→ 同版本重发 E409「previously staged」24h 锁。处理：`npm unpublish <pkg>@<ver> --force` 清记录 + registry 传播完成即可重发（v1.3.9 实战 skillopt）。已写入 11-publish 步骤八
-- **阶段十一·步骤六 tag push 失败重试（新增）**：`git tag -a` 本地打标成功但 push 中断（exit 137 SIGKILL/超时）→ 远端无 tag 本地有。重试用网络降级完整命令单独 push tag + `gh api .../git/refs/tags/vX.Y.Z` 确认远端。已写入 11-publish 步骤六
+- **阶段十一·步骤八 E409 staged 处理（新增）**：`npm publish` 网络中断留 staged blob（版本号占位未 finalize）→ 同版本重发 E409「previously staged」24h 锁。处理：`npm unpublish <pkg>@<ver> --force` 清记录 + registry 传播完成即可重发（v1.3.9 实战 skillopt）。已写入 10-publish 步骤八
+- **阶段十·步骤六 tag push 失败重试（新增）**：`git tag -a` 本地打标成功但 push 中断（exit 137 SIGKILL/超时）→ 远端无 tag 本地有。重试用网络降级完整命令单独 push tag + `gh api .../git/refs/tags/vX.Y.Z` 确认远端。已写入 10-publish 步骤六
 - **阶段八·Release Notes 段存在性（新增）**：v1.3.9 发布前才发现 v1.3.9.md 缺「## Release Notes」段（08 铁律十一欠账）→ 补写后才进 gh release。已写入 08 步骤一验证方式（定稿必含该段）
-- **阶段八·文档预算确认（新增步骤九）**：check-docs LIMIT 超标（B 层 9363>9300）到阶段十一 pre-push 才暴露——阶段八文档收尾新增内容推高行数。已写入 08 步骤表（打勾前跑 check-docs）
-- **阶段十·定位优化（v1.3.9 用户拍板）**：「纯确认环节」用户觉得怪（内容重复无决策意义）→ 重定位为「发布放行关口」：发布就绪汇总（门禁基线表）+ 作者一次性放行（三拍板项）+ 发布 prompt 交接，不再逐项过。10-confirm.md 已改
+- **阶段六·文档预算确认（新增步骤九）**：check-docs LIMIT 超标（B 层 9363>9300）到阶段十 pre-push 才暴露——阶段六文档收尾新增内容推高行数。已写入 08 步骤表（打勾前跑 check-docs）
+- **阶段十·定位优化（v1.3.9 用户拍板）**：「纯确认环节」用户觉得怪（内容重复无决策意义）→ 重定位为「发布放行关口」：发布就绪汇总（门禁基线表）+ 作者一次性放行（三拍板项）+ 发布 prompt 交接，不再逐项过。09-confirm.md 已改
 - **双 SHA 分叉接回实操**：远端 Git Data API 遗留 commit（同 tree 不同 SHA）→ `git fetch`（剥代理直连）+ `git rebase --onto origin/main <本地等价点> main` 接回（v1.3.9 实战 678cc130→d274d826）；本地历史找等价点用 `git log --all --format="%h %T"` 匹配 tree
 - **v1.3.9 发版耗时**：约 25h（08-20 15:00 → 08-21 16:10，含隔夜）；release-gate 3 轮全人工修复（4 阻塞 + 2 零覆盖），driver 无债
