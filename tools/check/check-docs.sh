@@ -138,6 +138,35 @@ echo "=== 3. 版本号同步检查 ==="
 VERSION_PKG=$(node -e "console.log(require('./engine/audit/package.json').version)" 2>/dev/null || echo "N/A")
 echo "  package.json: $VERSION_PKG"
 
+# 3a. WIKI 状态表「下一版」语义声称 vs ROADMAP（2026-08-22 新增——上轮发现 WIKI 曾写
+#     「下一版 v1.3.9」但 v1.3.9 已交付、应为 v1.4.0；check-version 只查格式声称查不到语义声称，
+#     这是人工维护盲区。此处比对 WIKI 状态表「下一版」与 ROADMAP 顶部「下一版」一致性）
+WIKI_NEXT=$(grep -m1 "下一版" docs/WIKI.md 2>/dev/null | sed -E 's/.*下一版[|｜][^|]*\*\*([^)]*)\*\*.*/\1/' )
+WIKI_NEXT_V=$(echo "$WIKI_NEXT" | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+ROADMAP_NEXT_V=$(head -30 docs/ROADMAP.md 2>/dev/null | grep -oE '下一版 v[0-9]+\.[0-9]+\.[0-9]+' | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+if [ -z "$WIKI_NEXT_V" ]; then
+  echo "  ⚠️ WIKI 状态表未找到「下一版」版本号——人工检查（非阻断）"
+elif [ -n "$ROADMAP_NEXT_V" ] && [ "$WIKI_NEXT_V" != "$ROADMAP_NEXT_V" ]; then
+  echo "  ${RED}✗ WIKI 状态表「下一版」=$WIKI_NEXT_V ≠ ROADMAP「下一版」=$ROADMAP_NEXT_V —— 版本语义声称漂移${NC}"
+  ERRORS=$((ERRORS + 1))
+else
+  echo "  ✓ WIKI 状态表「下一版」$WIKI_NEXT_V 与 ROADMAP 一致"
+fi
+
+# 3b. 新能力段版本堆叠检查（2026-08-22 新增——上轮发现 HANDBOOK 堆叠 v1.3.1~v1.3.8 六段历史能力，
+#     违反「新能力段只留最新版本」铁律；README 合规但 HANDBOOK 漏网。此处扫活文档中
+#     独立的新能力段标题（列表项 + 加粗 emoji 版本号 + 「新增」，如 `- **🧠 v1.3.1 新增**：`），
+#     排除句中/段首历史引用（LIMITATIONS 的「v1.0.9 新增的 A16 规则」是历史说明非堆叠段）；
+#     排除 CHANGELOG/archive（历史快照本就该有）+ 排除当前版本 v1.3.9））
+STACKED=$(grep -rnE '^\s*[-*]\s+\*{1,2}[^ ]*v[0-9]+\.[0-9]+\.[1-9][0-9]*\s+新增' README.md README.en.md docs/ --include="*.md" 2>/dev/null | grep -v "docs/changelog" | grep -v "docs/archive" | grep -v "v1.3.9" | head -5)
+if [ -n "$STACKED" ]; then
+  echo "  ⚠️ 活文档存在历史版本新能力段堆叠（新能力段应只留最新版，旧版去 CHANGELOG）"
+  echo "$STACKED" | while read -r line; do echo "    $line" | cut -c1-100; done
+  echo "  （警告非阻断——历史段可能是有意的版本追溯对照表，人工裁决）"
+else
+  echo "  ✓ 活文档无历史版本新能力段堆叠（新能力段只留最新版）"
+fi
+
 echo ""
 echo "=== 4. 文档分层预算 ==="
 

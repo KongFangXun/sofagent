@@ -99,8 +99,8 @@ print_completion_summary() {  # 安装完成 · 使用说明（按平台）
   [ "$PLATFORM" = "openclaw" ] || return 0
   # API Key 提醒 + Hook 状态提示（仅 OpenClaw）
   [ "${NO_CONFIG_INJECT:-0}" = "1" ] && echo "  ⚠️  --no-config-inject 已启用：未注入断路器配置，需手动配置 tools.loopDetection"
-  if command -v ao &>/dev/null && [ -z "${DEEPSEEK_API_KEY:-}${ANTHROPIC_API_KEY:-}${OPENAI_API_KEY:-}" ]; then
-    echo "  🔑 配置 AO API Key（这是你已有的 LLM Key，三选一）："
+  if [ -z "${DEEPSEEK_API_KEY:-}${ANTHROPIC_API_KEY:-}${OPENAI_API_KEY:-}" ]; then
+    echo "  🔑 配置 LLM API Key（这是你已有的模型 Key，三选一）："
     echo "     export DEEPSEEK_API_KEY=你的DeepSeek密钥"
     echo "     export ANTHROPIC_API_KEY=你的Claude密钥"
     echo "     export OPENAI_API_KEY=你的OpenAI密钥"; echo "     写入 ~/.zshrc 永久生效"; echo ""
