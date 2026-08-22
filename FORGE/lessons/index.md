@@ -27,6 +27,8 @@
 | **维护方式** | 每次踩到新坑或做出架构决策后，更新对应章节 + commit hash |
 | **不替代** | LangGraph / deepagents 官方文档——本文档讲"我们怎么用"，不讲"它是什么" |
 
+> 🔄 **定期整理机制（v1.3.9+ 分层修正配套）**：`FORGE/lessons/` 不在 check-docs 五层硬预算内（经验沉淀持续增长属正常，硬上限不合理）——由 check-docs **F 软检查**约束（只提示不阻断）：lessons 总量 > 3000 行时提示整理。**整理触发点**：① F 软检查提示（≥3000 行）② 每 3 个发版周期（季度级）。**整理动作**：归并重复教训（同根因只留一条 + 互相引用）、归档已泛化到 SOP/checklist/regression 的条目（移至 `FORGE/lessons/archive/`）、教训只写「问题 + 解决方案」不写考古（去日期去 run 编号，同用户级记忆铁律）。**目标**：index.md 保持「新 loop 开发者 30 分钟内读完」的体量，lessons 总量随沉淀可控增长。
+
 > **与其他文档的关系**：架构全景看 [ARCHITECTURE.md](../../docs/ARCHITECTURE.md)，产品哲学看 [PHILOSOPHY.md](../../docs/PHILOSOPHY.md)，FORGE 双层循环架构看 [FORGE/README.md](../README.md)。本文档聚焦**开发层面**。
 
 ---

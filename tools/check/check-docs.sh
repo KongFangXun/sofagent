@@ -186,8 +186,10 @@ count_md() {
   find . -name "*.md" "$@" -print0 2>/dev/null | xargs -0 wc -l 2>/dev/null | tail -1 | awk '{print $1+0}'
 }
 
-# A 层：用户文档（根目录 *.md + audit/README + mcp/README + hooks/HOOK.md）
+# A 层：用户文档（根目录 *.md + docs/ 主文档）
 # 排除：B/C/D/E 层目录 + 公共排除
+# v1.3.9+ 分层修正（2026-08-22）：engine/*/README.md + tools/README.md 是包级开发者文档，
+# 从 A 层（用户文档）移出——由 F 软检查（只提示不阻断）约束，不再占用户文档预算
 LAYER_A=$(find . -name "*.md" \
   -not -path "*/node_modules/*" \
   -not -path "*/.workbuddy/*" \
@@ -200,7 +202,6 @@ LAYER_A=$(find . -name "*.md" \
   -not -path "*/docs/guides/*" \
   -not -path "*/docs/architecture/*" \
   -not -path "*/docs/prd/*" \
-  -not -path "*/FORGE/*" \
   -not -path "*/agents/*" \
   -not -path "*/.github/*" \
   -not -path "*/engine/hooks/*" \
@@ -208,6 +209,8 @@ LAYER_A=$(find . -name "*.md" \
   -not -path "*/docs/DEVELOPMENT.md" \
   -not -path "*/docs/archive/*" \
   -not -path "*/data/*" \
+  -not -path "*/engine/*/README.md" \
+  -not -path "*/tools/README.md" \
   -print0 2>/dev/null | xargs -0 wc -l 2>/dev/null | tail -1 | awk '{print $1+0}')
 LAYER_A=${LAYER_A:-0}
 
@@ -215,10 +218,13 @@ LAYER_A=${LAYER_A:-0}
 # v1.2.1: 排除 fresh-eyes runs/ 运行时产物（check/findings/result.md 是审查轮输出，
 # 已被 .gitignore 忽略，不是开发者参考文档——不计入文档预算）
 # v1.2.1: 排除 data/forge-runs/（同属审查轮运行时产物，数据重构后从 .sofagent/ 迁来）
+# v1.3.9+ 分层修正（2026-08-22）：FORGE/lessons/ 是内部经验沉淀（每轮审查持续增长，
+# 设硬上限不合理）——移出 B 层预算，由 F 软检查（只提示不阻断）触发定期整理
 LAYER_B=$(find ./FORGE ./agents ./.github ./engine/hooks ./docs/DEVELOPMENT.md \
   -name "*.md" \
   -not -path "*/node_modules/*" \
   -not -path "*/fresh-eyes-loop/runs/*" \
+  -not -path "*/FORGE/lessons/*" \
   -print0 2>/dev/null | xargs -0 wc -l 2>/dev/null | tail -1 | awk '{print $1+0}')
 LAYER_B=${LAYER_B:-0}
 
@@ -250,6 +256,24 @@ echo "  B 开发者参考:   ${LAYER_B} 行 / ${LIMIT_B} 上限"
 echo "  C 审查体系:     ${LAYER_C} 行 / ${LIMIT_C} 上限"
 echo "  D 设计文档:     ${LAYER_D} 行 / ${LIMIT_D} 上限"
 echo "  E 运维指南:     ${LAYER_E} 行 / ${LIMIT_E} 上限"
+
+# F 检查（软提示非阻断 · v1.3.9+ 分层修正配套）：lessons 经验沉淀 + 包级 README
+# 只提示不阻断（不增加 ERRORS）；超软警戒线 → 提示触发定期整理（机制见 FORGE/lessons/index.md 维护公约）
+LESSONS_LINES=$(find ./FORGE/lessons -name "*.md" -print0 2>/dev/null | xargs -0 wc -l 2>/dev/null | tail -1 | awk '{print $1+0}')
+LESSONS_LINES=${LESSONS_LINES:-0}
+PKG_README_LINES=$(find ./engine ./tools -name "README.md" -not -path "*/node_modules/*" -not -path "*/dist/*" -print0 2>/dev/null | xargs -0 wc -l 2>/dev/null | tail -1 | awk '{print $1+0}')
+PKG_README_LINES=${PKG_README_LINES:-0}
+if [ "$LESSONS_LINES" -gt 3000 ]; then
+  echo "  ⚠️ F-lessons 经验沉淀 ${LESSONS_LINES} 行 > 3000 软警戒——建议整理（归并重复/归档已泛化条目，见 FORGE/lessons/index.md 维护公约）"
+else
+  echo "  ✓ F-lessons 经验沉淀 ${LESSONS_LINES} 行（≤3000 软警戒，定期整理机制见 index.md）"
+fi
+if [ "$PKG_README_LINES" -gt 1500 ]; then
+  echo "  ⚠️ F-pkg 包级 README 合计 ${PKG_README_LINES} 行 > 1500 软警戒——建议精简"
+else
+  echo "  ✓ F-pkg 包级 README 合计 ${PKG_README_LINES} 行（≤1500 软警戒）"
+fi
+
 echo "  ─────────────────────────"
 AB_TOTAL=$(( ${LAYER_A:-0} + ${LAYER_B:-0} ))
 echo "  A+B 合计:       ${AB_TOTAL} 行 / ${LIMIT_TOTAL} 上限"
