@@ -2,6 +2,7 @@
 // index.ts · 规则注册表
 // reporter 从此导入规则数组，循环调用——不再硬编码 import 每条规则
 // v0.97：铁律与审计分离——defaultRules (A1-A11) + extendedRules (E1-E4)
+// Last revised: v1.3.9（2026-08-21）——24 条注册：A1-A11 + A14-A23 + E1/E2/E4
 // ============================================================
 
 import type { Rule } from './types';

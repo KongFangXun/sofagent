@@ -1575,6 +1575,8 @@ export function printResults(results: AuditResult, diffFiles: DiffFile[], json: 
   // v1.0.8: PASS 时向 stderr 输出轻量签名行（防遗忘装了 sofagent）
   if (exitCode === 0) {
     process.stderr.write(`✅ sofagent-audit v${VERSION} · ${results.rules.length} 条规则全部通过\n`);
+    // v1.3.9+: PASS 时补行动指示——消除"PASS 无感"（审计通过与失败都带 [sofagent]，用户看不出持续感）
+    console.log('  下次 commit 也将自动审计——无需任何操作，持续守护中');
   }
 
   // 失败时输出"下一步"指引

@@ -5,7 +5,7 @@
 > **读者**：人类开发者 & AI Agent 均可阅读。本文档是项目全局索引入口。
 > 如果你是 AI Agent 且需要查找具体实现路径，请直接跳转到"## 代码地图"段。
 
-> ⚠️ **术语声明（AI Agent 与人类读者必读）**：sofagent 现行架构术语以 [ARCHITECTURE.md](./ARCHITECTURE.md) 与 [PHILOSOPHY.md](./PHILOSOPHY.md) 为准——**约束层（Harness）**（一个层四种能力：注入·审计·回溯·进化，FORGE 为内部工具）+ **双层架构**（约束层 × 生命周期）。`docs/archive/` 与 `docs/changelog/v1.0/`、`docs/changelog/v1.1/` 为**历史版本快照**，其中"四引擎""认知底座"等旧术语反映当时版本，**不代表现行设计**，请勿据此推断当前架构。
+> ⚠️ **术语声明（AI Agent 与人类读者必读）**：sofagent 现行架构术语以 [ARCHITECTURE.md](./ARCHITECTURE.md) 与 [PHILOSOPHY.md](./PHILOSOPHY.md) 为准——**约束层（Harness）**（一个层四种能力：注入·审计·回溯·进化，FORGE 为内部工具）+ **双层架构**（约束层 × 生命周期）。`docs/archive/` 与 `docs/changelog/v1.0/`、`docs/changelog/v1.1/` 为**历史版本快照**，其中"四引擎""认知底座"等旧术语反映当时版本，**不代表现行设计**，请勿据此推断当前架构；`docs/changelog/v1.4/` 为**规划目录**（v1.4.0 尚未发布，内容为开发排期与设计草案，**不代表已交付能力**）。
 
 > **3 分钟建立全景理解**：核心文档太长？先看这 4 句：
 > - **[ARCHITECTURE.md](./ARCHITECTURE.md)**：双层架构设计（约束层 × 生命周期）+ 约束层工程三层嵌套（约束层 → Graph → Loop），关键技术决策记录。**3 秒版**：约束层管"做对"（注入·审计·回溯·进化）· 激活链四阶段管"跑起来" · Graph 控制图分波次 · Loop 自迭代闭环。
@@ -14,7 +14,7 @@
 > - **[ROADMAP.md](./ROADMAP.md)**：版本路线图 + 迭代历程。当前 v1.3.9。
 > - **行业坐标**（2026-08-19 红杉 Neo-Lab 分享吸收）：sofagent = 企业 Neo-Lab 的**智能主权基础设施**——Sovereign AI 四层主权（数据/模型适配/评测迭代/部署）各有落点：ontology+审计=数据主权（已具备）、训练协议接口=模型适配（开源仓库保留完整可自建路径——接口 + 参考实现；商业侧为可选托管增强，非闭源锁定）、Benchmark+MLflow=评测迭代、本地权重+灰度=部署。企业自己掌控智能（Neo-Lab 的活），sofagent 管住这些智能（约束层的活）。
 
-> **30 分钟深度路径**（想动手或评估选型时）：① [ARCHITECTURE](./ARCHITECTURE.md) §一~§二（双层架构 + 约束层四能力，~10 分钟）→ ② [PHILOSOPHY](./PHILOSOPHY.md) §一（为什么不替代 Agent，~5 分钟）→ ③ [SECURITY](../SECURITY.md)「已知风险」+ [LIMITATIONS](./LIMITATIONS.md) 目录（诚实边界，~10 分钟）→ ④ 按角色进 [guides/](./guides/)：企业 IT 读 enterprise-deploy · 开发者读 harness-sdk · 想看审查体系读 review-system
+> **30 分钟深度路径**（想动手或评估选型时，承接上面的 3 分钟全景）：① 深入 [ARCHITECTURE](./ARCHITECTURE.md) §一~§二 + [PHILOSOPHY](./PHILOSOPHY.md) §一（在 3 分钟版基础上读双层架构与"不替代 Agent"论证，~15 分钟）→ ② [SECURITY](../SECURITY.md)「已知风险」+ [LIMITATIONS](./LIMITATIONS.md) 目录（诚实边界，~10 分钟）→ ③ 按角色进 [guides/](./guides/)：企业 IT 读 enterprise-deploy · 开发者读 harness-sdk · 想看审查体系读 review-system
 >
 > **评估选型对照框架**：对照 [README · 为什么选 sofagent](../README.md#为什么选-sofagent) 对比表 + [VALIDATION](./VALIDATION.md) 生态定位，建议按四维评估——**审计方式 / 部署方式 / 数据主权 / 知识积累**——逐一对照自身现状做选型决策。
 

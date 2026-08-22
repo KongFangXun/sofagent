@@ -39,7 +39,7 @@ graph LR
 | Change auditing | Roll your own pre-commit + gitleaks/detect-secrets toolchain (general-purpose scanners, broad coverage) | 24 rules on git diff, hard-evidence verdicts aimed at Agent behavior, works out of the box |
 | Out-of-bounds blocking | Assemble the hooks yourself | Violations blocked on the spot + audit trail |
 | Rollback after breakage | Manually dig through commits | One-click snapshot restore to any point |
-| Experience accumulation | Starts from zero every time | Auto-captured by design (effect grows with use), evolution capabilities under continuous iteration |
+| Experience accumulation | Starts from zero every time | Auto-captured into the knowledge base (think.md + Dream Cycle + skillopt live); effect requires sustained iteration in real use |
 
 > ℹ️ The comparison dimensions are based on capability differences, not aimed at any specific product; general-purpose scanners/frameworks (pre-commit / gitleaks / detect-secrets, etc.) complement sofagent rather than oppose it.
 
@@ -217,7 +217,7 @@ Community rulesets are published as `sofagent-ruleset-*` npm packages and loaded
 | Core question | How to build an Agent | **Where AI should go** (map first, then deploy) |
 | Safety guarantee | Integrate scanning/gate tools yourself (pre-commit / trufflehog / gitleaks etc.) | git diff hard-evidence audit + runtime interception + one-click rollback out of the box (see the "honest boundary" note above on scanner coverage) |
 | Review model | Manual human review (bottleneck) | **Machine review** — 24 rules auto-audit + git diff hard evidence; even fully autonomous AI nodes get reviewed |
-| Knowledge accumulation | Starts from zero | Experience auto-captured by design (effect grows with use), continuously optimized |
+| Knowledge accumulation | Starts from zero | Auto-captured into the knowledge base (think.md + Dream Cycle live); effect requires sustained iteration in real use |
 | Data sovereignty | Cloud-hosted | Local by default, optional federated queries (user-configured cloud sync = data leaves the machine, see SECURITY) |
 | Deployment | Learn a new platform | Runs inside your existing AI tools (Claude Code / Cursor / WorkBuddy…) |
 

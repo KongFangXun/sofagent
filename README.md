@@ -40,7 +40,7 @@ graph LR
 | 变更审计 | 可自行配 pre-commit + gitleaks/detect-secrets 等工具链（通用扫描器，覆盖面广） | git diff 24 条规则面向 Agent 行为的硬证据判定，装好即用 |
 | 越界拦截 | 需自行拼装 hooks / 规则 | 违规当场阻断 + 审计留证 |
 | 出事回滚 | 手动翻 commit | 一键快照回到任意节点 |
-| 经验积累 | 每次从零开始 | 设计上自动沉淀进知识库（think.md + Dream Cycle + skillopt，v1.3.x 持续增强），效果随使用积累 |
+| 经验积累 | 每次从零开始 | 自动沉淀进知识库（think.md + Dream Cycle + skillopt 已实装），效果需随使用持续迭代观察 |
 
 > ℹ️ 对比维度基于能力差异，不针对特定产品；通用扫描器/框架（pre-commit / gitleaks / detect-secrets 等）与 sofagent 互补而非对立。
 
@@ -218,7 +218,7 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # 加载安全规�
 | 核心问题 | 怎么造 Agent | **AI 该放在哪**（先梳理再部署） |
 | 安全保障 | 需自行集成扫描/门禁工具（pre-commit / trufflehog / gitleaks 等） | git diff 硬证据审计 + 运行时拦截 + 一键回滚，开箱即用（扫描器覆盖面对照见上方「诚实边界」注） |
 | 审阅方式 | 靠人手动 review（人力瓶颈） | **机器审阅**——24 条规则自动审 + git diff 硬证据，纯 AI 节点也能被审 |
-| 知识积累 | 从零开始 | 设计上自动沉淀进 knowledge 知识库（think.md + Dream Cycle，v1.3.x 持续增强），效果随使用积累 |
+| 知识积累 | 从零开始 | 自动沉淀进 knowledge 知识库（think.md + Dream Cycle 已实装），效果需随使用持续迭代观察 |
 | 数据主权 | 云端托管 | 缺省全量本地，可选联邦查询（用户自主配置云同步=数据出本机，见 SECURITY） |
 | 部署方式 | 学新平台 | 装进你已有的 AI 工具（Claude Code / Cursor / WorkBuddy…） |
 
