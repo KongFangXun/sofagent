@@ -54,7 +54,7 @@
 
 ## FDE Agent 能替你干什么
 
-> 这一节先讲「价值」，再讲「怎么用」。sofagent 不是一个工具包，而是一个**能进场、能部署、能离场常驻的 Agent**——它替企业把大模型变成 7×24 自动执行的 AI 节点。完整能力矩阵见 [ARCHITECTURE · 能力与状态总览](./ARCHITECTURE.md#能力与状态总览)。
+> 这一节先讲「价值」，再讲「怎么用」。sofagent 不是一个工具包，而是一个**能进场、能部署、能离场常驻的 Agent**——它替企业把大模型变成 7×24 自动执行的 AI 节点（产品形态 = 一个 FDE Agent：以 DeepSeek Harness 为内核，plugin + skill + MCP + dashboard + CLI 为调用面，见 [WIKI 产品叙事](./WIKI.md#一五产品叙事sofagent-是一个-fde-agent)）。完整能力矩阵见 [ARCHITECTURE · 能力与状态总览](./ARCHITECTURE.md#能力与状态总览)。
 
 **已经能替你干的事（v1.3.9 已交付）**：
 

@@ -22,7 +22,19 @@
 
 ## 一、一句话
 
-**sofagent 是一个开源 FDE Agent**（MIT，同时也是 FDE 方法论的参考实现）——进场梳理工作流、把能自动化的环节变成 AI 节点、部署到设备上 7×24 自己跑。底层是 **约束层（Harness）**——约束 Agent 行为、审计每次变更、沉淀经验。
+**sofagent 是一个开源 FDE Agent**（MIT，同时也是 FDE 方法论的参考实现）——进场梳理工作流、把能自动化的环节变成 AI 节点、部署到设备上 7×24 自己跑。底层是 **约束层（Harness）**——约束 Agent 行为、审计每次变更、沉淀经验。**产品形态 = 一个 FDE Agent**：以 DeepSeek Harness 为内核，plugin + skill + MCP + dashboard + CLI 为调用面，约束底座 + FDE 方法论为行为层——它给自己做的第一份 FDE，就是 sofagent 自己（自举）。
+
+---
+
+## 一·五、产品叙事：sofagent 是一个 FDE Agent
+
+> **一条 workflow 的产品**：给企业做 AI 落地 = 一条 FDE workflow。执行这条 workflow 的 Agent = FDE Agent（sofagent）。**它对自己做的第一份 FDE，就是 sofagent 项目本身**——自举循环：FDE Agent 对自己做 FDE → 项目更 AI 化 → 更好地服务企业 → 数据飞轮转起来。
+
+**FDE 交付**：进场梳理 → 交付**双 graph**——人看的 workflow graph + 机器读的 ontology graph。graph 里每个 AI 节点承担 workflow 中的职能；节点执行 = workflow 要求 → LangGraph 编排 → DeepSeek Harness 执行 → 全程约束底座审计 + 回溯净化（plugin 功能）。
+
+**训练 Agent（内层新 workflow）**：企业 AI 节点要数据主权 → 训练 Agent（受约束）驱动后训练工具：收集企业数据 → 模型后训练 → 私有化部署回节点。这本身是几个新 workflow（数据采集 / 训练 / 部署）。开源训练引擎 v1.4.1~1.4.6 交付；训练也围绕 FDE——怎么让 FDE 更好、怎么让数据飞轮转起来。
+
+**为什么这条 workflow 会一直跑**：企业持续需要 AI 落地 → 这条 FDE workflow 不只是 sofagent 的项目，也会成为企业的 workflow。
 
 ---
 
