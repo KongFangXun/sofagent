@@ -7,7 +7,7 @@
 
 ## 现在在哪：v1.3.9（已交付）
 
-> **v1.3.9 已于 2026-08-21 交付**——官方 AST 规则引擎（sofagent-ruleset-ast 含 ASI01/ASI04）+ meta-harness 多 harness 统一编排（DSH 形态对齐）+ AI 工作明细数据层（worklog + worklog_query MCP）+ API 分级 @public/@internal（1440 符号 + CI 门禁）+ FORGE driver 切 DSH（显式后端选择 + CLI 桥接 + bash 全权限）+ MLflow agent 评估 + Agentic Browser + 跨平台适配器（Cursor/Codex/Gemini）+ tools/ 物理分子目录 + ATTRIBUTION 归因引擎 + Dream Sandbox 沙盒审计 + >5MB diff 缝隙修复 + FORGE driver 进程守护（daemon + watcher）。详见 [v1.3.9 开发日志](./changelog/v1.3/v1.3.9.md)。
+> **v1.3.9 已于 2026-08-21 交付**——官方 AST 规则引擎（sofagent-ruleset-ast 含 ASI01/ASI04）+ meta-harness 多 harness 统一编排（DSH 形态对齐）+ AI 工作明细数据层（worklog + worklog_query MCP）+ API 分级 @public/@internal（1439 符号 + CI 门禁）+ FORGE driver 切 DSH（显式后端选择 + CLI 桥接 + bash 全权限）+ MLflow agent 评估 + Agentic Browser + 跨平台适配器（Cursor/Codex/Gemini）+ tools/ 物理分子目录 + ATTRIBUTION 归因引擎 + Dream Sandbox 沙盒审计 + >5MB diff 缝隙修复 + FORGE driver 进程守护（daemon + watcher）。详见 [v1.3.9 开发日志](./changelog/v1.3/v1.3.9.md)。
 >
 > **下一版 v1.4.0（规划中）**：Web 工作明细页 + 成本审计（超支告警 + `cost_query` MCP）+ DSH 反向插件家族（cordis-plugin-* 九件套）。详见下方「版本规划」表。
 >
@@ -27,7 +27,7 @@
 
 | 版本 | 核心交付 |
 |------|------|
-| **v1.3.9** | 🔍 官方 AST 规则引擎（sofagent-ruleset-ast 含 ASI01/ASI04 · 8+2 规则）+ 🧩 meta-harness 多 harness 统一编排（DSH 形态对齐）+ 📊 AI 工作明细数据层（worklog + worklog_query MCP）+ 🔬 API 分级 @public/@internal（1440 符号 + CI 门禁）+ ⚙️ FORGE driver 切 DSH（显式后端选择 + CLI 桥接 + bash 全权限）+ 📈 MLflow agent 评估（13 指标 + LLM-as-Judge）+ 🌐 Agentic Browser（4 工具 + 视觉降级）+ 🧭 跨平台适配器（Cursor/Codex/Gemini CLI）+ 🗂️ tools/ 物理分子目录 + 🏷️ ATTRIBUTION 归因引擎 + 🏖️ Dream Sandbox 沙盒审计 + 🩹 >5MB diff 缝隙修复（spill 落盘）+ 🔄 FORGE driver 进程守护（daemon + watcher）· 阶段五~八全流程（15 acceptance 场景补齐 + release-gate 三跑 PASS） |
+| **v1.3.9** | 🔍 官方 AST 规则引擎（sofagent-ruleset-ast 含 ASI01/ASI04 · 8+2 规则）+ 🧩 meta-harness 多 harness 统一编排（DSH 形态对齐）+ 📊 AI 工作明细数据层（worklog + worklog_query MCP）+ 🔬 API 分级 @public/@internal（1439 符号 + CI 门禁）+ ⚙️ FORGE driver 切 DSH（显式后端选择 + CLI 桥接 + bash 全权限）+ 📈 MLflow agent 评估（13 指标 + LLM-as-Judge）+ 🌐 Agentic Browser（4 工具 + 视觉降级）+ 🧭 跨平台适配器（Cursor/Codex/Gemini CLI）+ 🗂️ tools/ 物理分子目录 + 🏷️ ATTRIBUTION 归因引擎 + 🏖️ Dream Sandbox 沙盒审计 + 🩹 >5MB diff 缝隙修复（spill 落盘）+ 🔄 FORGE driver 进程守护（daemon + watcher）· 阶段五~八全流程（15 acceptance 场景补齐 + release-gate 三跑 PASS） |
 | **v1.3.8** | 🛡️ 代理网关硬边界（唯一出入口 + 风险分级 + 权限单调守卫 + HITL 审批队列激活）+ 🔐 数据静态加密（纯 TS AES-256-GCM + 密钥指纹强制备份）+ ⏸️ Durable Execution L3（WAL 三态恢复 + undo 三档）+ 🤖 异步长任务自治（cron 三档糖 + 依赖图 + 死循环检测）+ ⚙️ FORGE driver 保活三件套（pm2 / resume / liveness）+ 🧩 SDK sandbox:true 启用（三层沙箱）+ 🔻 release-gate 瘦身（--judgment-only + F 循环 FAIL 即停）+ 📊 fresh-eyes 成本重构（usage.jsonl + B 侧复核）+ 📸 快照写路径加固（revert 原子化）· bugfix 四 P0（A1 后缀绕过 / A2 FFFD / 安装链 / 声称断裂） |
 | **v1.3.7** | 🏰 SubAgent 完整沙箱（虚拟 FS / 网络白名单 / 工具中介 / 虚拟 key / 独立进程 / A-B 双跑）+ 🔐 场景驱动权限（身份→场景→风险→放行，fail-closed）+ 🛡️ AgentShield 五类扫描（MCP 画像 / Hook 注入 / 配置审查 / 密钥增强 / Shadow AI 发现）+ 🏥 行业 overlay 四套（fintech/medical/government/ai）+ ⚡ 断路器行为监控（ASI08 熔断 + ASI10 隔离）+ 🌳 ontology 生命周期（branch/trunk + migrateToTrunk 审阅门 + OKF 三件套）+ ⚙️ FORGE 审查循环自适应并发 + 🔌 memory-sync 路径通用化 + 26 项独立审查 bugfix |
 | **v1.3.6** | 🔌 引擎接口外化完整版（模型层接入前置）：📥 三个数据接口（Workflow 标准格式 + 运行容器 + merge_criteria/approver 审阅协议字段 / Ontology 标准 Schema 注册 D1-D5 留痕 / 模型注册 + 灰度切换全流程审计 + 强制人审）+ 🧩 SubAgent 托管 SDK（harness.wrap 双形态兼容）+ 🏋️ 训练协议三约定 + 预算控制（自 v1.4.1 前移）+ 🧭 路由决策可解释性（EndpointProfile + route-policy + routeReason 结构化理由链）+ ✅ 机器可判定验收（define_acceptance / check_acceptance，复用 Benchmark 判定引擎）+ 🛡️ 可靠性五件（FORGE worktree 隔离根治 run-07 / 双闸验证 postToolCall 副作用复查 / Agent 疲劳度检测 / 分级降级梯队 / decisions.jsonl 五分类完整版）+ 🌳 仓库森林叙事升级 · MCP 52→60 tools（8 个新 tool 全登记） |
