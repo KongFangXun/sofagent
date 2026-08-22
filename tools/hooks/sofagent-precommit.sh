@@ -76,9 +76,16 @@ if ! command -v node &>/dev/null; then
   exit 1
 fi
 
-# ── 4. sofagent-audit 定位（优先仓库本地 dist，避免全局版本漂移）──────────
-if [ -f "engine/audit/dist/index.js" ]; then
-  AUDIT_CMD=(node "engine/audit/dist/index.js")
+# ── 4. 仓库根定位（编辑器从子目录触发 hook 时仍能找到本地 dist）──────────
+REPO_ROOT=""
+if command -v git &>/dev/null && git rev-parse --show-toplevel &>/dev/null; then
+  REPO_ROOT="$(git rev-parse --show-toplevel)"
+fi
+
+# ── 5. sofagent-audit 定位（优先仓库本地 dist，避免全局版本漂移）──────────
+AUDIT_DIST="$REPO_ROOT/engine/audit/dist/index.js"
+if [ -n "$REPO_ROOT" ] && [ -f "$AUDIT_DIST" ]; then
+  AUDIT_CMD=(node "$AUDIT_DIST")
 elif command -v sofagent-audit &>/dev/null; then
   AUDIT_CMD=(sofagent-audit)
 else
@@ -87,14 +94,14 @@ else
   exit 1
 fi
 
-# ── 5. dist 完整性校验（P1-A2：防本地覆写致审计失效）─────────────────────
-if [ -f "engine/audit/dist/index.js" ]; then
+# ── 6. dist 完整性校验（P1-A2：防本地覆写致审计失效）─────────────────────
+if [ -n "$REPO_ROOT" ] && [ -f "$AUDIT_DIST" ]; then
   SOFAGENT_HOME="${SOFAGENT_HOME:-$HOME/.sofagent}"
   HASH_RECORD="$SOFAGENT_HOME/internal/audit-hash.txt"
   if [ ! -f "$HASH_RECORD" ]; then
     echo "⚠️ [sofagent] 审计引擎哈希基准缺失——正在补生成..."
     mkdir -p "$SOFAGENT_HOME/internal"
-    if node -e "const c=require('crypto'),f=require('fs');process.stdout.write(c.createHash('sha256').update(f.readFileSync('engine/audit/dist/index.js')).digest('hex'))" > "$HASH_RECORD" 2>/dev/null && [ -s "$HASH_RECORD" ]; then
+    if node -e "const c=require('crypto'),f=require('fs');process.stdout.write(c.createHash('sha256').update(f.readFileSync('$AUDIT_DIST')).digest('hex'))" > "$HASH_RECORD" 2>/dev/null && [ -s "$HASH_RECORD" ]; then
       chmod 600 "$HASH_RECORD" 2>/dev/null || true
       echo "ℹ️ [sofagent] 基准哈希已记录（后续 commit 将比对完整性）"
     else
@@ -103,7 +110,7 @@ if [ -f "engine/audit/dist/index.js" ]; then
       exit 1
     fi
   else
-    CURRENT_HASH=$(node -e "const c=require('crypto'),f=require('fs');process.stdout.write(c.createHash('sha256').update(f.readFileSync('engine/audit/dist/index.js')).digest('hex'))" 2>/dev/null)
+    CURRENT_HASH=$(node -e "const c=require('crypto'),f=require('fs');process.stdout.write(c.createHash('sha256').update(f.readFileSync('$AUDIT_DIST')).digest('hex'))" 2>/dev/null)
     RECORDED_HASH=$(cat "$HASH_RECORD" 2>/dev/null | tr -d '[:space:]')
     if [ -n "$CURRENT_HASH" ] && [ -n "$RECORDED_HASH" ] && [ "$CURRENT_HASH" != "$RECORDED_HASH" ]; then
       echo "🔴 [sofagent] 审计引擎完整性校验失败（P1-A2 dist 哈希不匹配）"
