@@ -234,7 +234,7 @@ while IFS='|' read -r tag func c || [ -n "$tag" ]; do
   esac
 
   hits=$(grep -rl --include="*.ts" --include="*.sh" --include="*.mjs" \
-    -E "(function ${func}\b)|(const ${func}\s*=)|(${func}\s*\(\s*\)\s*\{)" \
+    -E "(function ${func}\b)|(const ${func}\s*=)|(${func}\s*\(\s*\)\s*\{)|(${func}\s*\(\s*\)\s*:.*\{)" \
     engine/ tools/ FORGE/src/ 2>/dev/null | head -1 || true)
 
   if [ -n "$hits" ]; then
