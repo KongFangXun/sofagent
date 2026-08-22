@@ -10,14 +10,14 @@
 > - **§四 市场**——这些技术判断有没有被市场买单（FDE 经济账 / SMB 断层 / 产品化四条 / 价值度量翻转）
 >
 > 四个维度共同指向同一结论：**不管你的 Agent 怎么搭、在哪跑，它需要一个独立的约束层。**
->
-> v1.3.9 · 2026-08-21（UTC）· 孔放勋
 
 ---
 
 ## 一、方法论印证：行业研究怎么验证 sofagent 直觉
 
-> 这一节不是新理论，而是把跨批行业研读（Palantir Ontology / 五层骨架 / Stage 渐进 / Loop / FDE 边界 / 王阳明）里反复出现、能**直接印证** sofagent 已有直觉的结论落到纸面。它们不替代正文，只是给「我们一直这么干」补上行业证据。有公开来源者已标注出处。
+> 这一节不是新理论，而是把跨批行业研读（Palantir Ontology / 五层骨架 / Stage 渐进 / Loop / FDE 边界 / 王阳明 / 红杉闭门会 / Cloudflare / Loop Engineering 等）里反复出现、能**直接印证** sofagent 已有直觉的结论落到纸面。它们不替代正文，只是给「我们一直这么干」补上行业证据。有公开来源者已标注出处。
+
+**▍概念层——行业对「约束」的独立论证（骨架 / 确定性迁移 / Verifier / 治理缺口等，逐条印证约束层为什么是刚需）**
 
 ### 骨架开场钩子
 
@@ -88,7 +88,7 @@ Harness 的另一价值点是**「不依赖 AI 也能守门」**。当 LLM 不�
 | 1 | 事实1 成本倒挂（人比软件便宜） | 90/10 价值分层 | 已具备（叙事） | 叙事支撑 | Harness = 把 p90 拉回 p10 的管理杠杆 |
 | 2 | 事实2 增员非裁员（AI 放大组织） | FDE 卖转型 + sustain | 已具备（定位） | 叙事支撑 | AI 放大组织，sofagent 管放大后的队伍 |
 | 3 | 1841 铁路事故 → 现代管理 | guard edge + Reality Anchor + River 约束层 | 已具备 | 叙事背书 | 直接引用作 Harness 必要性历史背书 |
-| 4 | 法则1 挥霍 Tokenmaxxing | 约束底座 + 明确不做 + FDE 讲清流程 + Ontology | 已具备+可强化 | 印证 | FDE 把模糊流程讲清即抗 Tokenmaxxing |
+| 4 | 法则1 挥霍 Tokenmaxxing | 约束层 + 明确不做 + FDE 讲清流程 + Ontology | 已具备+可强化 | 印证 | FDE 把模糊流程讲清即抗 Tokenmaxxing |
 | 5 | 法则2 空转 Loops | graph.ts guard edge retryCount<3 | 已原生具备（核心） | 印证 | Loops 治理工程答案 |
 | 6 | 法则3 冗员 Token Bloat | 明确不做清单 / 防 scope 蔓延 + 审计拦改测试 | 已具备+可强化 | 印证 | 砍循环优于优化 |
 | 7 | 法则4 杠杆 100X Token | 90/10 分层 Harness 可靠性最值钱 | 已具备（叙事） | 印证 | 那 10% 即文章「管理杠杆」 |
@@ -149,6 +149,8 @@ Cloudflare 2026-05 裁撤超 1100 人（约 20%）并转向「agentic AI-first o
 **测量者的反常识转型**：测量类岗位减少，但「测量」这件事不会减少，反而无处不在——当 AI 智能体可以查数据、发邮件、改价格、调用预算，企业必须知道：**它读过什么、做过什么、花了多少钱、有没有越权、出问题能不能撤回**。以前是月底一张审计报表，以后是**每次 AI 行动都留日志**，每个团队实时看成本、质量、安全和权限。
 
 > 💡 **这就是 sofagent 审计引擎 + daemon + worklog 的行业定位印证**：把「测量、合规、安全、成本控制做进系统里」，让常规动作自动通过、少数异常准确找到专家——「强中台」的测量者形态正是约束层（Harness）的工程化。吴恩达把 AI 打破各环节「速度比」后的瓶颈称为「法务合规瓶颈」（legal compliance bottleneck）——强中台不是养庞大测量者队伍，是把测量做进系统，对应 sofagent 不做「审计人员外包」、做「审计引擎基建」。
+
+**▍厂商实证——Harness 品类被多方独立验证（DeerFlow / DeepSeek / OpenAI / Omnigent / DataFlow / OpenFDE，逐家印证「约束层」是行业共识）**
 
 ### DeerFlow：大厂用「Harness」命名
 
@@ -223,7 +225,7 @@ OpenAI 2026-08-19 全面开源 [Codex Harness](https://github.com/openai/codex)�
 
 [DataFlow](https://github.com/OpenDCAI/DataFlow)（论文 [arXiv:2607.16617](https://arxiv.org/abs/2607.16617)，HuggingFace Paper of the day）来自**北京大学 DCAI**团队——与 DeerFlow 2.0（字节）、Omnigent（Databricks）**同月**，再次以独立开源项目用「Harness」一词命名其 Agent 约束层。这是**第三个、且来自顶尖高校的第三方独立佐证**：Harness 作为 Agent 工程化品类的共识已非孤证。
 
-它治理的是「数据流水线」（从噪声源生成 / 精炼 / 评估 / 过滤高质量 AI 数据），与 sofagent 治理「企业 AI 数字员工（FDE Agent）工作流」对象不同，但**约束范式同源**：Agent 经 MCP server 作业而非自由写脚本、受控变异走 Request-Validate-Commit、用 DataFlow-Skills 结构化约束而非裸提示词——每一条都独立复现了 sofagent 的 scoped tool-gate / SKILL 约束底座 / audit 判断。
+它治理的是「数据流水线」（从噪声源生成 / 精炼 / 评估 / 过滤高质量 AI 数据），与 sofagent 治理「企业 AI 数字员工（FDE Agent）工作流」对象不同，但**约束范式同源**：Agent 经 MCP server 作业而非自由写脚本、受控变异走 Request-Validate-Commit、用 DataFlow-Skills 结构化约束而非裸提示词——每一条都独立复现了 sofagent 的 scoped tool-gate / SKILL 约束层 / audit 判断。
 
 其**独特点**是可借鉴方向：① **可视化 DAG 画布 + 双模态共享状态**（会话 Agent 与 DAG 画布实时同步同一 pipeline 表示）——补 sofagent Dashboard 缺的「workflow 可视图」，建议 v2.x 引入；② **MCP server 集成**（暴露算子注册表 / serving / pipeline 状态给 Agent）——印证「对外 MCP 暴露 ontology/audit」是合理路线，建议 v2.x+；③ **Validation Engine（DAG 无环 + schema 兼容）**——印证 ontology 从目录级升级为带 JSON Schema 校验的约束图，建议 v2.x 硬化节点 I/O。以上可借鉴项已落入 [ROADMAP · 行业印证](./ROADMAP.md#行业印证)。
 
@@ -436,13 +438,13 @@ Onyx 四阶段闭环（L1：可见性 → 仿真 → 执行 → 学习）与人�
 
 > 💡 **协议 Adapter 封装**：中间件应在底层封装 MCP / A2A / ACP 协议差异，上层语义层（Ontology / Action Type）不感知底层协议——对齐 sofagent「合的框架」定位：企业换 Agent 平台，约束与审计不动。
 
-> 💡 **产品化视角（控制平面）**：上面「企业换 Agent 平台，约束与审计不动」就是产品化时 **控制平面打法** 的技术根——底层 Agent 智能随便换（OpenClaw / 客户自选 / 大厂），治理与真相（策略谁配、审计链长啥样、Agent 注册在哪）永远在 sofagent 一侧。产品化时这层真相源表现为一个**自有 dashboard**（只读可见视图：审计状态 / AI 采用进度 / 合规月报），靠 **MCP** 作向外接的桥把数据喂进来；MCP 是桥、不是唯一入口，dashboard 必须自己拥有。详见 [设计哲学](./PHILOSOPHY.md) 与 [README](../README.md)。
+> 💡 **产品化视角（控制平面）**：上面「企业换 Agent 平台，约束与审计不动」就是产品化时**控制平面打法**的技术根——底层 Agent 智能随便换，治理与真相永远在 sofagent 一侧。产品化的完整展开（dashboard 只读视图 + MCP 作桥）见 [设计哲学 §六 产品化哲学](./PHILOSOPHY.md#产品化哲学控制平面与-mcp--dashboard)。
 
 > 💡 **实现参考**：指令层用 Jinja2 变量槽渲染 `prompts/`（把企业规则注入为可填充模板）；校验层用 JSON Schema 三步校验（格式 → 完整性 → 约束）；经验法则——首次因 AI 格式问题排查超 1 小时，就该上校验层（把概率性输出收口到确定性 schema）。
 
 ### 行业五层骨架 → sofagent 三层架构映射
 
-> ⚠️ **消歧**：这里的"三层架构"（约束底座 / 知识层 / 编排层）是**行业映射视角**——把 sofagent 能力对标行业"五层骨架"时的纵向切分。它与 [ARCHITECTURE §心智模型](./ARCHITECTURE.md#心智模型先读这个) 的**双层架构**（约束层 × 生命周期，唯一主框架）不冲突——前者是"跟行业对标怎么切"，后者是"产品怎么组织"。
+> ⚠️ **消歧**：这里的"三层架构"（约束层 / 知识层 / 编排层）是**行业映射视角**——把 sofagent 能力对标行业"五层骨架"时的纵向切分。它与 [ARCHITECTURE §心智模型](./ARCHITECTURE.md#心智模型先读这个) 的**双层架构**（约束层 × 生命周期，唯一主框架）不冲突——前者是"跟行业对标怎么切"，后者是"产品怎么组织"。
 
 行业「五层骨架」（配置 / 知识 / 指令 / 校验 / 编排）作为映射参考，吸收其「确定性迁移」哲学，但**不对齐为强制模板**。sofagent 对标行业五层的纵向切分：
 
@@ -490,6 +492,59 @@ Onyx 四阶段闭环（L1：可见性 → 仿真 → 执行 → 学习）与人�
 
 > 完整行业对标（a16z 七法则 / Ontology Runtime 六组件 / 工具网关 / MoA 四层 / AI to B 三层基建 / 自主级别 L1-L3 / 贝恩控制面）统一见本文件 §一~§四及 [ROADMAP · 行业印证](./ROADMAP.md#行业印证)。
 
+### 企业级 Agent 的确定性执行底线
+
+企业落地 AI 的三条底线（零数据权限 / 全链路留痕 / 确定性执行）——与 sofagent 的「LLM 动脑指挥，Ontology 指路，确定性工具执行」分工完全同构：
+
+| 底线 | 含义 | sofagent 落点 |
+|------|------|--------------|
+| **零数据权限** | LLM 不直接写 SQL / 连数据库，与原始数据隔离 | 零凭证沙箱 + v1.3.7 虚拟 key 边界注入——LLM 只按按钮，不碰数据 |
+| **全链路留痕** | 每操作步骤有日志，可追踪可回溯可审计 | 审计引擎（git diff 硬证据 + HMAC 链）+ 运行时审计（v1.3.0） |
+| **确定性执行** | 工具函数预先写好，参数固定，同样输入同样输出 | 工具审批四模式（v1.3.1）+ Ontology Action 七步管线——LLM 当翻译官，不当写逻辑的人 |
+
+### 循环的边界：从 Loop 到 Graph 的升级判据
+
+**Loop 是 Graph 的特例**（包含关系，非替代）。单 Loop 有四种典型失败，sofagent 的审计节点（★Reality Anchor）逐一对应解法；当任务复杂度触及任一升级信号时，才从 Loop 升级到 Graph（满足其一才升级，否则 Loop 就够，避免过度设计）：
+
+**单 Loop 四类失败 → sofagent 解法**：指标异化（优化解决率→流失率翻倍）→ audit 节点看 git diff 硬证据不信自报；目标僵化（Agent 不质疑目标本身）→ human_confirm 节点 + 危险操作前人工批准钩子；多目标冲突（两个 loop 打架）→ ★Reality Anchor guard edge 统一裁决；测量衰退（测试数据老化假象）→ audit 规则不可篡改 + acceptance-test 冻结验收标准。
+
+**升级六信号 → sofagent 落点**：任务需交接（dag-runner 单任务 vs 并行编排波次）/ 需散出汇合（Send API 并行 + MergeQueue，v1.3.1）/ 每步不同模型工具（model-router 路由）/ 需显式可审计角色（StateGraph 四节点）/ 节点失败需隔离（git worktree，v1.2.3）/ 需独立 reviewer（audit + fresh-eyes）。完整对照见 [ARCHITECTURE §Graph Engineering 视角](./ARCHITECTURE.md#graph-engineering-视角控制图--stategraph)。
+
+### Loop Engineering 四层循环：从 Agent Demo 到可交付 AI 产品
+
+> 📖 来源：Launching《The Art of Loop Engineering》（2026-08，行业文章转写吸收）——「Agent 自己说做完 ≠ 业务真的完成」。
+
+四层循环不是四个并列技术名词，而是**四个不同时间尺度的控制**——单 Agent Loop 只能算「会连续执行的 Demo」，四层打通才是可交付、可运行、可持续改进的 AI 产品：
+
+| 循环层级 | 管什么 | 时间尺度 | 解决什么问题 |
+|---------|-------|---------|-------------|
+| **Agent Loop** | 一次行动 | 单次执行 | 模型自动调用工具、循环执行到自判完成 |
+| **Fortification Loop** | 一次任务 | 单次交付 | 把「完成」的定义权从模型手里拿出来——Agent 输出 → 独立 Grader → 按预设 Rubric 验收 → 不通过打回重改 |
+| **Event Driven Loop** | 持续业务 | 长期运行 | 事件自动触发 Agent，完成并验证后写回真实系统——处理任务排队/重复事件/并发冲突/失败重试/状态恢复 |
+| **Hill Climbing Loop** | 系统进化 | 跨多次任务 | 收集大量运行 Trace → 分析系统性失败模式 → 修改 Harness（Prompt/工具/上下文/Memory/Grader）→ 提升整体表现 |
+
+**对 sofagent 的四点印证**：
+
+1. **Fortification Loop = 审计 + 验收的定位一句话**——「把什么叫做完成，从模型的自我判断变成可执行可追责的验收标准」正是 sofagent 审计引擎 + `acceptance-test.sh` 冻结验收 + `define_acceptance` 机器可判定验收的定位（完成定义权的转移，完整论证见上文 [Verifier 才是瓶颈](#verifier-才是瓶颈)）。Fortification Loop 的价值不是让 Agent 多检查一遍，是完成定义权从模型转移到系统。
+2. **Event Driven Loop = daemon + WAL 续跑**——事件驱动不是加个定时器：任务排队（daemon scheduler/cron 三档）、重复事件（幂等）、并发冲突（MergeQueue）、失败重试（退避 + 收敛）、状态恢复（checkpoint 续跑）——sofagent 异步长任务自治（v1.3.8）逐项对应。
+3. **Hill Climbing Loop = 进化引擎 + FORGE 自迭代**——「分析多次运行留下的 Trace，找到重复出现的问题，再修改产生这些问题的 Harness」：sofagent 进化引擎（think.md 反思 + Dream Cycle 知识蒸馏 + skillopt 优化）消费 audit/eval 轨迹；FORGE fresh-eyes-loop 本身就是一个 Hill Climbing Loop（16 视角审查 → 修复 → 验证 → 系统改 harness）。**关键安全网：Hill Climbing ≠ 让 Agent 随意改自己的 Prompt 然后直接上线**——可靠改进仍需候选版本/离线评测/回归测试/人工审核/小流量验证/回滚，sofagent 的 release-gate-loop + check-version 门禁 + 快照回滚正是这套安全网。
+4. **自动化不是把人移出循环，是重新安排人的位置**——人不再盯着 Agent 每一步，但在高责任节点保留判断权和否决权：敏感工具（转账/删数据/改数据库）前人工确认、业务取舍/价值判断时担任 Grader、结果发客户或写核心系统前审批、Harness 新版本部署前评审——**这正是 sofagent HITL 钩子 + 工具审批四模式 + 危险操作前人工批准钩子的设计哲学**。
+
+### 循环系统的鲁棒性：四类故障与六要素
+
+自主循环系统稳定运行需要六要素（自动化触发 / 隔离演练 / 安全边界 / 工具连接 / 角色分离 / 记忆分层）——sofagent 全部已有：pre/post hook = 激活链 + daemon cron；隔离演练 = git worktree（v1.2.3）；安全边界 = 工具审批 + HITL；工具连接 = MCP server；角色分离 = Explore/Code Agent 拆分；记忆分层 = v1.2.8 记忆分层 + 四层加载链。
+
+四类故障模式与 Onboard Agent 收敛判据直接对应（L1 判定 crash/error/超时，L5 连续 PASS 判收敛 / 连续 FAIL 判发散）：
+
+| 故障模式 | 表现 | sofagent 对应 |
+|------|------|------|
+| **空转** | 反复改几十次测试通不过 | Onboard L5 连续 FAIL 判发散（v1.3.2）|
+| **过拟合测试** | 单元测试全过，业务不能用 | Benchmark 评测（v1.3.1）+ 人工验收 |
+| **上下文漂移** | 基于过期假设写代码 | Durable Execution L1 checkpoint 续跑（v1.3.1）|
+| **不安全自主** | AI 越权搞破坏 | 工具审批四模式 + 保守默认拒绝（v1.3.1）|
+
+> 💡 **核心定律**：「测试失败 = 最高质量的下一轮上下文」「仓库记得，即使模型不记得」——与「Agent 会失忆，文件不会」（Ralph Loop）同源：git diff 是无状态的地面真相，仓库是模型永远可以回读的外部记忆。
+
 ### OLAF-I 五块骨架：Ontology 的最小不可再分集
 
 Palantir Foundry 10 年迭代收敛出 Ontology 的 5 块构建块——**Object Type / Link Type / Action Type / Function / Interface**（缩写 OLAF-I）。不是 3 块不是 7 块，5 块是数字孪生的最小够用集。
@@ -524,59 +579,6 @@ Palantir Foundry 10 年迭代收敛出 Ontology 的 5 块构建块——**Object
 | **动手前先搜索**（设计前搜方法论、审查前搜安全清单） | Ontology knowledge/ + search_knowledge MCP tool | 完全同构——知识库 + MCP 搜索即先搜索后动手 |
 
 顶尖团队用 Harness 的工业级验证数据：OpenAI Codex 团队 3-7 人 5 个月产出 100 万行生产级代码；LangChain + Deep Agents 在 Terminal 基准测试排名从 30 名升到前五。不改底层模型，只加 Harness 就能大幅提效——与 sofagent「能力长在代码里不长在 prompt 里」的产品哲学一致。
-
-### 企业级 Agent 的确定性执行底线
-
-企业落地 AI 的三条底线（零数据权限 / 全链路留痕 / 确定性执行）——与 sofagent 的「LLM 动脑指挥，Ontology 指路，确定性工具执行」分工完全同构：
-
-| 底线 | 含义 | sofagent 落点 |
-|------|------|--------------|
-| **零数据权限** | LLM 不直接写 SQL / 连数据库，与原始数据隔离 | 零凭证沙箱 + v1.3.7 虚拟 key 边界注入——LLM 只按按钮，不碰数据 |
-| **全链路留痕** | 每操作步骤有日志，可追踪可回溯可审计 | 审计引擎（git diff 硬证据 + HMAC 链）+ 运行时审计（v1.3.0） |
-| **确定性执行** | 工具函数预先写好，参数固定，同样输入同样输出 | 工具审批四模式（v1.3.1）+ Ontology Action 七步管线——LLM 当翻译官，不当写逻辑的人 |
-
-### 循环的边界：从 Loop 到 Graph 的升级判据
-
-**Loop 是 Graph 的特例**（包含关系，非替代）。单 Loop 有四种典型失败，sofagent 的审计节点（★Reality Anchor）逐一对应解法；当任务复杂度触及任一升级信号时，才从 Loop 升级到 Graph（满足其一才升级，否则 Loop 就够，避免过度设计）：
-
-**单 Loop 四类失败 → sofagent 解法**：指标异化（优化解决率→流失率翻倍）→ audit 节点看 git diff 硬证据不信自报；目标僵化（Agent 不质疑目标本身）→ human_confirm 节点 + 危险操作前人工批准钩子；多目标冲突（两个 loop 打架）→ ★Reality Anchor guard edge 统一裁决；测量衰退（测试数据老化假象）→ audit 规则不可篡改 + acceptance-test 冻结验收标准。
-
-**升级六信号 → sofagent 落点**：任务需交接（dag-runner 单任务 vs 并行编排波次）/ 需散出汇合（Send API 并行 + MergeQueue，v1.3.1）/ 每步不同模型工具（model-router 路由）/ 需显式可审计角色（StateGraph 四节点）/ 节点失败需隔离（git worktree，v1.2.3）/ 需独立 reviewer（audit + fresh-eyes）。完整对照见 [ARCHITECTURE §Graph Engineering 视角](./ARCHITECTURE.md#graph-engineering-视角控制图--stategraph)。
-
-### Loop Engineering 四层循环：从 Agent Demo 到可交付 AI 产品
-
-> 📖 来源：Launching《The Art of Loop Engineering》（2026-08，行业文章转写吸收）——「Agent 自己说做完 ≠ 业务真的完成」。
-
-四层循环不是四个并列技术名词，而是**四个不同时间尺度的控制**——单 Agent Loop 只能算「会连续执行的 Demo」，四层打通才是可交付、可运行、可持续改进的 AI 产品：
-
-| 循环层级 | 管什么 | 时间尺度 | 解决什么问题 |
-|---------|-------|---------|-------------|
-| **Agent Loop** | 一次行动 | 单次执行 | 模型自动调用工具、循环执行到自判完成 |
-| **Fortification Loop** | 一次任务 | 单次交付 | 把「完成」的定义权从模型手里拿出来——Agent 输出 → 独立 Grader → 按预设 Rubric 验收 → 不通过打回重改 |
-| **Event Driven Loop** | 持续业务 | 长期运行 | 事件自动触发 Agent，完成并验证后写回真实系统——处理任务排队/重复事件/并发冲突/失败重试/状态恢复 |
-| **Hill Climbing Loop** | 系统进化 | 跨多次任务 | 收集大量运行 Trace → 分析系统性失败模式 → 修改 Harness（Prompt/工具/上下文/Memory/Grader）→ 提升整体表现 |
-
-**对 sofagent 的四点印证**：
-
-1. **Fortification Loop = 审计 + 验收的定位一句话**——「AI 产品特别容易犯的错误就是把流程状态当成业务结果：生成了内容等于完成、接口返回成功等于完成、模型没有报错也等于完成。用户真正需要的是数据准确、链接可用、表达合规、改动没有越界。」sofagent 的 git-diff 24 条硬证据审计 + `acceptance-test.sh` 冻结验收 + `define_acceptance` 机器可判定验收，正是「把什么叫做完成，从模型的自我判断变成可执行可追责的验收标准」——**Fortification Loop 的价值不是让 Agent 多检查一遍，是完成定义权的转移**（Verifier 才是瓶颈，见上文）。
-2. **Event Driven Loop = daemon + WAL 续跑**——事件驱动不是加个定时器：任务排队（daemon scheduler/cron 三档）、重复事件（幂等）、并发冲突（MergeQueue）、失败重试（退避 + 收敛）、状态恢复（checkpoint 续跑）——sofagent 异步长任务自治（v1.3.8）逐项对应。
-3. **Hill Climbing Loop = 进化引擎 + FORGE 自迭代**——「分析多次运行留下的 Trace，找到重复出现的问题，再修改产生这些问题的 Harness」：sofagent 进化引擎（think.md 反思 + Dream Cycle 知识蒸馏 + skillopt 优化）消费 audit/eval 轨迹；FORGE fresh-eyes-loop 本身就是一个 Hill Climbing Loop（16 视角审查 → 修复 → 验证 → 系统改 harness）。**关键安全网：Hill Climbing ≠ 让 Agent 随意改自己的 Prompt 然后直接上线**——可靠改进仍需候选版本/离线评测/回归测试/人工审核/小流量验证/回滚，sofagent 的 release-gate-loop + check-version 门禁 + 快照回滚正是这套安全网。
-4. **自动化不是把人移出循环，是重新安排人的位置**——人不再盯着 Agent 每一步，但在高责任节点保留判断权和否决权：敏感工具（转账/删数据/改数据库）前人工确认、业务取舍/价值判断时担任 Grader、结果发客户或写核心系统前审批、Harness 新版本部署前评审——**这正是 sofagent HITL 钩子 + 工具审批四模式 + 危险操作前人工批准钩子的设计哲学**。
-
-### 循环系统的鲁棒性：四类故障与六要素
-
-自主循环系统稳定运行需要六要素（自动化触发 / 隔离演练 / 安全边界 / 工具连接 / 角色分离 / 记忆分层）——sofagent 全部已有：pre/post hook = 激活链 + daemon cron；隔离演练 = git worktree（v1.2.3）；安全边界 = 工具审批 + HITL；工具连接 = MCP server；角色分离 = Explore/Code Agent 拆分；记忆分层 = v1.2.8 记忆分层 + 四层加载链。
-
-四类故障模式与 Onboard Agent 收敛判据直接对应（L1 判定 crash/error/超时，L5 连续 PASS 判收敛 / 连续 FAIL 判发散）：
-
-| 故障模式 | 表现 | sofagent 对应 |
-|------|------|------|
-| **空转** | 反复改几十次测试通不过 | Onboard L5 连续 FAIL 判发散（v1.3.2）|
-| **过拟合测试** | 单元测试全过，业务不能用 | Benchmark 评测（v1.3.1）+ 人工验收 |
-| **上下文漂移** | 基于过期假设写代码 | Durable Execution L1 checkpoint 续跑（v1.3.1）|
-| **不安全自主** | AI 越权搞破坏 | 工具审批四模式 + 保守默认拒绝（v1.3.1）|
-
-> 💡 **核心定律**：「测试失败 = 最高质量的下一轮上下文」「仓库记得，即使模型不记得」——与「Agent 会失忆，文件不会」（Ralph Loop）同源：git diff 是无状态的地面真相，仓库是模型永远可以回读的外部记忆。
 
 ### Palantir 落地路径：Red Loop、KLM 范式与「能换模型的对象层」
 
