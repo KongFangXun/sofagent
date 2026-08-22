@@ -64,13 +64,9 @@
 - **平台无关、即挂即用**：骑在你自选的大厂 Agent（Claude Code / Codex / WorkBuddy / 扣子 / OpenClaw）之上，不替代模型，只补「可靠执行」。（Cursor 社区验证中）
 - **能带走、能协同**：USB 一键烧录（插上即用、拔掉零残留）；多设备加密联邦互查；内置 `@sofagent-fde` + `@sofagent-audit` 双 Agent。
 - **🔗 激活链（v1.2.5+ 已实现 Phase 1-4）**：FDE 诊断交付后，ontology + workflow.yml + skills/ 不再是一堆静态文件躺在磁盘上——激活链自动读交付物 → 注册企业 SubAgent → 编排成 LangGraph 工作流 → 带人工审批（HITL）和审计地自动跑。从"交给企业一堆文档"变成"交给企业一个会自己跑的系统"。Phase 4（SUSTAIN）已于 v1.3.0 交付。详见 [激活链设计文档](./guides/fde-activation-chain.md)。
-- **🧠 v1.3.1 新增**：Ontology 运行时层（执行前校验）· 并行编排（波次并发 + MergeQueue）· Agent 身份码（Ed25519）· Benchmark 评测 · 工具审批四模式 · LLM 调用级 Trace · Durable Execution（checkpoint 续跑）· 本体建模要求对齐 GB/T 48000.3-2026（ontology 合规参考基线，非审计国标）。详见 [v1.3.1 开发日志](./changelog/v1.3/v1.3.1.md)。
-- **🏪 v1.3.4**：组织能力市场——Skill/Agent/流程可发布、可搜索、可调用、可评分、可退役；SkillScan 安全扫描双触发。
-- **🧬 v1.3.5 新增**：自进化与运维闭环 MCP 化——A/B 实验（`run_ab_test`）与晋升决策（`promote_ab`，强制人审）、审计快照查询与恢复（`snapshot_list` / `snapshot_restore`，恢复强制人审）全部可从任意 MCP 宿主调用（当年 48→52 tools）；instinct→skill 自动进化（经验自动聚合成可复用 skill）；FDE 运维五件（陪跑期/进场记忆/节点注册表/审计问卷 7 行业）；DSH MCP 互通；四份独立审查 38 项加固。详见 [v1.3.5 开发日志](./changelog/v1.3/v1.3.5.md)。
-- **🔌 v1.3.6 新增**：引擎接口外化完整版（模型层接入前置）——模型生成的 workflow / ontology 可经标准接口进入约束层：`workflow_submit`（含 merge_criteria/approver 审阅协议字段）/ `ontology_import` / `model_register`+`model_switch`+`model_unregister`（模型灰度全流程审计）/ `harness.wrap` 托管 SDK / `train_budget` 训练预算控制 / `define_acceptance`+`check_acceptance` 机器可判定验收（52→60 tools）；可靠性五件：FORGE worktree 隔离、双闸验证（postToolCall 副作用复查）、Agent 疲劳度检测、分级降级梯队、decisions.jsonl 完整版。详见 [v1.3.6 开发日志](./changelog/v1.3/v1.3.6.md)。
-- **🏰 v1.3.7 新增**：SubAgent 完整沙箱（虚拟文件系统 / 网络出站白名单 / 工具调用中介 / 虚拟 key / 独立进程 / 真·实时 A-B 双跑——企业 SubAgent 在隔离环境里干活，写入先进虚拟层审批后落盘）；场景驱动权限（身份→场景→风险→放行/deny/人审，每步留痕）；AgentShield 五类扫描（MCP 画像 / Hook 注入 / 配置审查 / 密钥增强 / Shadow AI 发现——揪出未注册的影子 agent）；行业 overlay 四套（金融/医疗/政务/AI 自动加载额外约束）；断路器行为监控（连败熔断 + 失控隔离）；ontology 生命周期（branch/trunk + 审阅门 + OKF 三件套）。详见 [v1.3.7 开发日志](./changelog/v1.3/v1.3.7.md)。
-- **🛡️ v1.3.8 新增（交付⑥）**：托管 SDK `sandbox: true` 已启用——`harness.wrap(agent, { sandbox: true })` 一行接入沙箱三层（工具调用经 tool-gate 前置判定，未注册 ID fail-closed deny；文件写经虚拟层，未审批不落盘，`sandboxHandle.approveWrite()` 人审后原子落盘；网络出站经白名单网关，invoke 期间 net/dns 全拦）。可与 `approval: 'require-approval'` 组合——沙箱内副作用工具仍挂人审。详见 [v1.3.8 开发日志](./changelog/v1.3/v1.3.8.md)。
 - **🔍 v1.3.9 新增**：官方 AST 规则引擎（`sofagent-ruleset-ast`，ASI01 目标劫持 + ASI04 供应链 SBOM 语义检测）；meta-harness 多 harness 统一编排（策略强制下沉基础设施层，跨会话协作）；AI 工作明细数据层（`worklog` 按 Agent/Workflow/周 + 人工介入，`worklog_query` MCP）；API 分级治理（`@public`/`@internal` 1440 符号 + CI 门禁）；FORGE driver 切 DSH（显式后端选择 + CLI 桥接 + bash 全权限）；MLflow agent 评估（13 指标 + LLM-as-Judge）；Agentic Browser（4 工具 + 视觉降级）；跨平台适配器（Cursor/Codex/Gemini CLI）；tools/ 物理分子目录；ATTRIBUTION 归因引擎 + Dream Sandbox 沙盒审计（强制人审 merge + 路径穿越消毒）；>5MB diff 缝隙修复；FORGE driver 进程守护（daemon + watcher）。详见 [v1.3.9 开发日志](./changelog/v1.3/v1.3.9.md)。
+
+> 📌 **历史版本能力已并入当前能力**（v1.3.1 Ontology 运行时层 / v1.3.4 能力市场 / v1.3.5 自进化 MCP / v1.3.6 引擎接口外化 / v1.3.7 SubAgent 沙箱 / v1.3.8 托管 SDK sandbox 等，均属「每次变更被管住」「知识自动长出来」等当前能力的实现细节）——不再逐版列举，各版本明细见 [CHANGELOG](../CHANGELOG.md)。
 
 **现在还干不了的事（已排期，暂无代码）**：本地推理小模型、云 VM 多租户执行面——路线见 [ROADMAP](./ROADMAP.md)。
 
