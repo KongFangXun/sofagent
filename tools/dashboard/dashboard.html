@@ -221,7 +221,9 @@ a:hover{text-decoration:underline}
 .btn-ghost:hover{color:var(--text)}
 
 .fde-stage{display:flex;align-items:center;gap:12px;padding:10px 12px;background:var(--bg-s);border:1px solid var(--border);border-radius:var(--radius-s);margin-bottom:8px}
-.fde-num{width:18px;height:18px;border-radius:50%;background:var(--brand);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0}
+.fde-num{width:20px;height:20px;border-radius:50%;background:var(--brand);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0}
+/* FDE Agent 内置模板步骤卡：类型点 10px→8px（局部，不影响业务流/流水线卡） */
+.fde-step .agent-dot{width:8px;height:8px}
 .fde-content{flex:1;display:flex;align-items:baseline;gap:8px;min-width:0}
 .fde-title{font-size:13px;font-weight:500;white-space:nowrap;flex-shrink:0}
 .fde-desc{font-size:12px;color:var(--text-s);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -313,7 +315,7 @@ a:hover{text-decoration:underline}
 .wl-table .cell-over{color:var(--text-s);font-weight:600;cursor:help;border-bottom:1px dashed var(--text-t)}
 .wl-table .cell-over .delta{font-size:10px;font-weight:400;opacity:.8}
 /* 节点状态着色 */
-.st-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:8px;vertical-align:middle;position:relative;top:2px}
+.st-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px}
 .st-active{background:var(--brand)}
 .st-done{background:var(--text-t)}
 .st-failed{background:var(--red)}
@@ -372,7 +374,7 @@ a:hover{text-decoration:underline}
   .seg-btn{flex:1;min-height:36px;font-size:13px}
   .seg-refresh{flex:0 0 auto;width:34px;height:34px}
   .fde-stage{gap:8px;padding:10px;flex-wrap:wrap}
-  .fde-num{width:18px;height:18px;font-size:11px}
+  .fde-num{width:20px;height:20px;font-size:11px}
   .fde-content{flex-wrap:wrap}
   .fde-desc{white-space:normal;overflow:visible}
   /* FDE 步骤卡：移动端单列 */
@@ -1859,7 +1861,7 @@ function loadPipelineGraph(){
         var tx=x+nodeW/2;
         if(st==='running'||st==='active'){
           var tw=String(statusCn).length*9;
-          svg+='<circle class="pulse-svg" cx="'+(tx-tw/2-5)+'" cy="72" r="2" fill="var(--brand)"/>';
+          svg+='<circle class="pulse-svg" cx="'+(tx-tw/2-5)+'" cy="73.5" r="3" fill="var(--brand)"/>';
         }
         svg+='<text x="'+tx+'" y="76" text-anchor="middle" font-size="9" fill="var(--text-t)">'+escapeHtml(statusCn)+'</text>';
       });
@@ -2360,7 +2362,7 @@ function renderFlowGraph(nodes,edges){
     var tx=p.x+nodeW/2;
     if(st==='active'||st==='hitl'){
       var tw=String(stLabel).length*9;
-      svg+='<circle class="pulse-svg" cx="'+(tx-tw/2-5)+'" cy="'+(p.y+72)+'" r="2" fill="var(--brand)"/>';
+      svg+='<circle class="pulse-svg" cx="'+(tx-tw/2-5)+'" cy="'+(p.y+73.5)+'" r="3" fill="var(--brand)"/>';
     }
     svg+='<text x="'+tx+'" y="'+(p.y+76)+'" text-anchor="middle" font-size="9" fill="var(--text-t)">'+escapeHtml(stLabel)+'</text>';
   });
