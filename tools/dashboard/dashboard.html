@@ -119,6 +119,8 @@ a:hover{text-decoration:underline}
 .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;align-items:stretch}
 /* grid 容器内 section 不设 margin（gap 已负责间距），避免与容器 margin 叠加 */
 .grid-2 > .section,.grid-3 > .section{margin-bottom:0}
+/* 每页最后一个 section/info-note 去 margin-bottom——footer 前间距统一 = footer padding-top（16px） */
+.page .section:last-child,.page .info-note:last-child{margin-bottom:0}
 
 .chart-box{background:var(--bg-s);border:none;border-radius:var(--radius-s);padding:16px}
 .chart-box h4{font-size:13px;font-weight:500;color:var(--text-s);margin-bottom:12px}
@@ -1147,6 +1149,8 @@ function goPage(name){
   window.scrollTo(0,0);
   if(name==='cockpit') loadLiveData();
   if(name==='workflow'){loadAiNodesData();loadPipelineGraph();}
+  // 引擎执行流水线卡片在工具箱页（v1.4.0 迁移）——进工具箱也要加载（幂等）
+  if(name==='resources'){loadPipelineGraph();}
   if(name==='ontology'){loadOntologyData();loadGraphView();}
   if(name==='fde'){loadFdeWorkflowData();loadFdeSelfGraph();}
   if(name==='knowledge') loadKnowledgeData();
