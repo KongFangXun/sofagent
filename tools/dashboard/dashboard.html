@@ -44,8 +44,8 @@ a:hover{text-decoration:underline}
 /* 页内 tab（工作明细/帮助）：active 品牌蓝文字，无下划线（与顶部导航区分） */
 .tab-inline{display:inline-flex;gap:2px;align-items:center;flex-wrap:wrap}
 .tab-inline .nav-item{border-bottom:none;margin-bottom:0;padding:5px 12px;border-radius:4px;font-size:13px}
-.tab-inline .nav-item:hover{color:var(--text);background:var(--bg)}
-.tab-inline .nav-item.active{color:var(--brand);background:var(--brand-l);font-weight:600;border-bottom:none}
+.tab-inline .nav-item:hover{color:var(--text)}
+.tab-inline .nav-item.active{color:var(--brand);font-weight:600;border-bottom:none}
 /* 点击反馈（统一按下微缩） */
 .btn:active,.seg-refresh:active,.nav-item:active,.qs-item:active,.rule-chip:active{transform:scale(.96)}
 
@@ -2540,6 +2540,8 @@ document.addEventListener('keydown',function(e){
 detectFsApi();
 loadLiveData();
 loadStarCount();
+// 工作记录默认选中「概况」：显式初始化（不依赖 HTML 静态 active，保证刷新后必选中）
+wlTab('overview');
 // 固定 5s 自动刷新（不再提供间隔选择）
 refreshTimer=setInterval(loadLiveData,5000);
 </script>
