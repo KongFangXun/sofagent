@@ -455,13 +455,20 @@ a:hover{text-decoration:underline}
   </div>
 
   <div class="section">
-    <div class="section-header"><div class="section-title"><span class="dot-emoji">📊</span>工作明细摘要</div>
-      <span style="font-size:11px;color:var(--text-t)">数据源 worklog.json · 完整明细在 <a href="javascript:void(0)" onclick="goPage('workflow')" style="color:var(--brand)">业务流</a> 页</span>
+    <div class="section-header"><div class="section-title"><span class="dot-emoji">📊</span>工作明细（worklog）</div>
+      <span style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+        <span style="font-size:11px;color:var(--text-t)">超支标红 kind=COST</span>
+        <button class="nav-item active" id="wl-tab-agent" onclick="wlTab('agent')">按 Agent</button>
+        <button class="nav-item" id="wl-tab-workflow" onclick="wlTab('workflow')">按 Workflow</button>
+        <button class="nav-item" id="wl-tab-week" onclick="wlTab('week')">按周</button>
+        <button class="nav-item" id="wl-tab-intervention" onclick="wlTab('intervention')">介入</button>
+      </span>
     </div>
     <div class="section-body">
-      <div id="wlSummaryBox" style="font-size:12px;color:var(--text-s)">
-        <div style="text-align:center;color:var(--text-t);padding:12px">加载中...</div>
-      </div>
+      <div id="wl-view-agent"></div>
+      <div id="wl-view-workflow" style="display:none"></div>
+      <div id="wl-view-week" style="display:none"></div>
+      <div id="wl-view-intervention" style="display:none"></div>
     </div>
   </div>
 
@@ -496,23 +503,6 @@ a:hover{text-decoration:underline}
 <!-- PAGE: 业务流（AI 节点 + 工作明细，v1.4.0 归并） -->
 <!-- ================================================== -->
 <div class="page" id="page-workflow">
-  <div class="section">
-    <div class="section-header"><div class="section-title"><span class="dot-emoji">📊</span>工作明细（worklog）</div>
-      <span style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-        <span style="font-size:11px;color:var(--text-t)">超支标红 kind=COST</span>
-        <button class="nav-item active" id="wl-tab-agent" onclick="wlTab('agent')">按 Agent</button>
-        <button class="nav-item" id="wl-tab-workflow" onclick="wlTab('workflow')">按 Workflow</button>
-        <button class="nav-item" id="wl-tab-week" onclick="wlTab('week')">按周</button>
-        <button class="nav-item" id="wl-tab-intervention" onclick="wlTab('intervention')">介入</button>
-      </span>
-    </div>
-    <div class="section-body">
-      <div id="wl-view-agent"></div>
-      <div id="wl-view-workflow" style="display:none"></div>
-      <div id="wl-view-week" style="display:none"></div>
-      <div id="wl-view-intervention" style="display:none"></div>
-    </div>
-  </div>
   <div class="section">
     <div class="section-header">
       <div class="section-title"><span class="dot-emoji">🤖</span>业务 AI 节点</div>
@@ -1147,7 +1137,7 @@ function goPage(name){
   }
   window.scrollTo(0,0);
   if(name==='cockpit') loadLiveData();
-  if(name==='workflow'){loadAiNodesData();loadPipelineGraph();loadWorklogData();}
+  if(name==='workflow'){loadAiNodesData();loadPipelineGraph();}
   if(name==='ontology'){loadOntologyData();loadGraphView();}
   if(name==='fde'){loadFdeWorkflowData();loadFdeSelfGraph();}
   if(name==='knowledge') loadKnowledgeData();
@@ -1195,7 +1185,7 @@ async function loadLiveData(){
       updateDataStatus(true);
       renderSummaryData(summary);
       document.getElementById('lastRefresh').textContent='更新于 '+new Date().toLocaleTimeString('zh-CN');
-      loadWorklogSummary();
+      loadWorklogData();
       return;
     }
   }
@@ -1234,12 +1224,12 @@ async function loadLiveData(){
       if(sr.dataFlow&&sr.dataFlow.direction&&sr.dataFlow.direction!=='local-only')sovereigntyData.dataOutflow++;
     });
     renderSovereignty(sovereigntyData,daemonHealth);
-    loadWorklogSummary();
+    loadWorklogData();
   }else{
     liveDataConnected=false;
     updateDataStatus(false);
     loadSampleData();
-    loadWorklogSummary();
+    loadWorklogData();
   }
 
   document.getElementById('lastRefresh').textContent='更新于 '+new Date().toLocaleTimeString('zh-CN');
@@ -2293,50 +2283,6 @@ function renderFlowGraph(nodes,edges){
   return '<div class="chart-box"><svg class="graph-wide" width="100%" viewBox="0 0 '+boxW+' '+H+'" style="display:block;max-width:'+boxW+'px;margin:0 auto">'+
     '<defs><marker id="flow-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M2 2L8 5L2 8" fill="none" stroke="var(--text-t)" stroke-width="1.5"/></marker></defs>'+
     svg+'</svg></div>';
-}
-
-/* 驾驶舱 · 工作明细摘要（Agent 汇总卡 + 周趋势 mini 折线） */
-function loadWorklogSummary(){
-  var box=document.getElementById('wlSummaryBox');
-  if(!box)return;
-  resolveDataRoot().then(function(root){
-    if(!root){box.innerHTML=emptyState('📊','还没有工作明细','运行过 sofagent-audit 或编排任务后自动生成','去业务流页',"goPage('workflow')");return}
-    return tryFetch(root+'/dashboard/worklog.json').then(function(text){
-      if(!text){box.innerHTML=emptyState('📊','还没有工作明细','运行过 sofagent-audit 或编排任务后自动生成','去业务流页',"goPage('workflow')");return}
-      var d;try{d=JSON.parse(text)}catch(e){d=null}
-      if(!d||!d.agents||!d.agents.length){box.innerHTML=emptyState('📊','还没有工作明细','运行过 sofagent-audit 或编排任务后自动生成','去业务流页',"goPage('workflow')");return}
-      // Agent 汇总卡（最多 4 个）
-      var cards=(d.agents||[]).slice(0,4).map(function(a){
-        return '<div class="metric-card" style="text-align:left;padding:12px 14px">'+
-          '<div style="font-size:12px;font-weight:600;color:var(--text);word-break:break-all">'+escapeHtml(a.agentId)+'</div>'+
-          '<div style="display:flex;gap:10px;margin-top:6px;font-size:11px;color:var(--text-s);flex-wrap:wrap">'+
-          '<span>任务 '+a.totals.tasks+'</span><span>LLM '+a.totals.llmCalls+'</span><span>Token '+fmtTokens(a.totals.tokens)+'</span><span>成本 '+fmtCost(a.totals.costUsd)+'</span>'+
-          ((a.totals.humanInterventions||0)>0?'<span style="color:var(--amber)">介入 '+a.totals.humanInterventions+'</span>':'')+
-          '</div></div>';
-      }).join('');
-      // 周趋势 mini 折线（活跃度 + 成本）
-      var weeks=(d.weeklyTrend||[]).slice(-8);
-      var wkHtml='';
-      if(weeks.length){
-        var maxA=Math.max.apply(null,weeks.map(function(w){return w.activity||0}).concat([1]));
-        var maxC=Math.max.apply(null,weeks.map(function(w){return w.costUsd||0}).concat([0.01]));
-        var ptsA=weeks.map(function(w,i){return (20+i*(280/weeks.length))+','+(70-((w.activity||0)/maxA)*50)});
-        var ptsC=weeks.map(function(w,i){return (20+i*(280/weeks.length))+','+(70-((w.costUsd||0)/maxC)*50)});
-        wkHtml='<div class="chart-box"><div style="font-size:12px;font-weight:600;color:var(--text-s);margin-bottom:8px">周趋势（活跃度 · 成本）</div>'+
-          '<svg viewBox="0 0 300 78" style="width:100%;display:block">'+
-          '<polyline points="'+ptsA.join(' ')+'" fill="none" stroke="var(--brand)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'+
-          '<polyline points="'+ptsC.join(' ')+'" fill="none" stroke="var(--amber)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'+
-          '</svg>'+
-          '<div style="display:flex;gap:14px;font-size:10px;color:var(--text-t);margin-top:6px"><span style="display:inline-flex;align-items:center;gap:4px"><span style="width:14px;height:2px;background:var(--brand);display:inline-block"></span>活跃度</span><span style="display:inline-flex;align-items:center;gap:4px"><span style="width:14px;height:2px;background:var(--amber);display:inline-block"></span>成本</span></div></div>';
-      }
-      box.innerHTML='<div class="grid-2" style="margin-bottom:0">'+
-        '<div><div style="font-size:12px;font-weight:600;color:var(--text-s);margin-bottom:8px">按 Agent 汇总</div>'+
-        '<div class="metrics" style="grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:0">'+cards+'</div></div>'+
-        '<div>'+wkHtml+'</div></div>';
-    });
-  }).catch(function(){
-    box.innerHTML='<div style="font-size:12px;color:var(--text-t);text-align:center;padding:8px 0">暂无工作明细数据</div>';
-  });
 }
 
 /* 本体图谱页 · 图谱视图（原 loadGraphData #2，改名消冲突 + 真实数据优先） */
