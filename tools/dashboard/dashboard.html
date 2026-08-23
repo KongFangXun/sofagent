@@ -64,16 +64,6 @@ a:hover{text-decoration:underline}
 .metric-label{font-size:12px;color:var(--text-s);margin-top:4px}
 .metric-sub{font-size:11px;color:var(--text-t);margin-top:2px}
 
-/* 需关注置顶区（驾驶舱） */
-.attention{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:16px}
-.attention-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;display:flex;align-items:center;gap:14px}
-.attention-card .a-icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.attention-card .a-icon svg{width:20px;height:20px}
-.attention-card .a-val{font-size:22px;font-weight:700;line-height:1.1}
-.attention-card .a-label{font-size:12px;color:var(--text-s);margin-top:2px}
-.attention-card .a-sub{font-size:11px;color:var(--text-t);margin-top:2px}
-.attention-clear{grid-column:1/-1;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:12px 16px;display:flex;align-items:center;gap:10px;font-size:13px;color:var(--text-s)}
-
 .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:stretch}
 .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;align-items:stretch}
 /* grid 容器内 section 不设 margin（gap 已负责间距），避免与容器 margin 叠加 */
@@ -285,7 +275,7 @@ a:hover{text-decoration:underline}
   .container{padding:12px 12px calc(12px + env(safe-area-inset-bottom))}
   .metrics{grid-template-columns:repeat(2,1fr);gap:16px}
   .metric-value{font-size:24px}
-  .grid-2,.grid-3,.attention{grid-template-columns:1fr}
+  .grid-2,.grid-3{grid-template-columns:1fr}
   /* header 两行：第一行 logo+star，第二行导航 */
   .header{padding:8px 8px 0;gap:6px;display:flex;flex-direction:column;height:auto;align-items:stretch}
   .header-inner{display:flex;flex-direction:column;height:auto;padding:0;gap:6px;width:100%}
@@ -387,11 +377,6 @@ a:hover{text-decoration:underline}
       <button class="seg-btn" data-val="10" onclick="changeRefresh('10')">10s</button>
       <button class="seg-btn" data-val="30" onclick="changeRefresh('30')">30s</button>
     </div>
-  </div>
-
-  <!-- 需关注置顶区：打开就看异常 -->
-  <div class="attention" id="attentionBox">
-    <div style="grid-column:1/-1;font-size:12px;color:var(--text-t);text-align:center;padding:16px">加载中...</div>
   </div>
 
   <div class="metrics">
@@ -1131,7 +1116,6 @@ async function loadLiveData(){
       updateDataStatus(true);
       renderSummaryData(summary);
       document.getElementById('lastRefresh').textContent='更新于 '+new Date().toLocaleTimeString('zh-CN');
-      loadAttention(summary);
       return;
     }
   }
@@ -1170,12 +1154,10 @@ async function loadLiveData(){
       if(sr.dataFlow&&sr.dataFlow.direction&&sr.dataFlow.direction!=='local-only')sovereigntyData.dataOutflow++;
     });
     renderSovereignty(sovereigntyData,daemonHealth);
-    loadAttention(null);
   }else{
     liveDataConnected=false;
     updateDataStatus(false);
     loadSampleData();
-    loadAttention(null);
   }
 
   document.getElementById('lastRefresh').textContent='更新于 '+new Date().toLocaleTimeString('zh-CN');
@@ -1225,63 +1207,6 @@ function renderSummaryData(s){
   }else if(s.top3&&s.top3.length){
     renderTop3Trend(s.top3);
   }
-}
-
-/* 需关注置顶区：今日问题 / 人工介入待处理 / 超支告警 */
-function loadAttention(summary){
-  var box=document.getElementById('attentionBox');
-  if(!box)return;
-  var issues=0,fails=0;
-  if(summary){
-    var lastDay=(summary.daily&&summary.daily.length)?summary.daily[summary.daily.length-1]:null;
-    if(lastDay){issues=(lastDay.ruleAll||0)-(lastDay.rulePass||0)}
-    fails=(summary.recent||[]).filter(function(r){return r.exitCode>1}).length;
-  }
-  // 探测数据根 → 读 worklog + decisions（HITL 待处理 / 成本告警）
-  resolveDataRoot().then(function(root){
-    if(!root){renderAttentionCards(issues,fails,0,0);return}
-    return Promise.all([
-      tryFetch(root+'/dashboard/worklog.json'),
-      tryFetch(root+'/decisions.jsonl')
-    ]).then(function(res){
-      var wl=null;try{wl=res[0]?JSON.parse(res[0]):null}catch(e){}
-      var costWarns=0;
-      if(res[1]){costWarns=parseJSONL(res[1]).filter(function(r){return r.kind==='COST'}).length}
-      var hitl=0;
-      (wl&&wl.workflows||[]).forEach(function(w){
-        (w.nodes||[]).forEach(function(n){if(n.status==='active'||n.humanInterventions>0)hitl++});
-      });
-      renderAttentionCards(issues,fails,costWarns,hitl);
-    }).catch(function(){renderAttentionCards(issues,fails,0,0)});
-  });
-}
-function renderAttentionCards(issues,fails,costs,hitl){
-  var box=document.getElementById('attentionBox');
-  if(!box)return;
-  // 全部为零 → 绿态横幅
-  if(!issues&&!fails&&!costs&&!hitl){
-    box.innerHTML='<div class="attention-clear"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;color:var(--green);flex-shrink:0"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>今日无异常——没有 FAIL 记录、没有待处理的人工介入、没有超支告警</div>';
-    return;
-  }
-  function card(icon,color,bg,val,label,sub){
-    return '<div class="attention-card"><div class="a-icon" style="background:'+bg+'">'+icon+'</div>'+
-      '<div><div class="a-val" style="color:'+color+'">'+val+'</div><div class="a-label">'+label+'</div><div class="a-sub">'+sub+'</div></div></div>';
-  }
-  var svgWarn='<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>';
-  var svgUser='<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>';
-  var svgCoin='<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>';
-  var cards=[];
-  if(issues||fails)cards.push(card(svgWarn,'var(--red)','#E24B4A',issues,'今日问题',fails+' 条 FAIL 记录'));
-  if(hitl)cards.push(card(svgUser,'var(--amber)','#EF9F27',hitl,'人工介入待处理','active 节点 / 介入记录'));
-  if(costs)cards.push(card(svgCoin,'var(--red)','#E24B4A',costs,'超支告警','kind=COST 决策记录'));
-  // 有异常但有某类为 0 时补一个绿卡
-  if(cards.length<3){
-    var rest=3-cards.length;
-    for(var i=0;i<rest;i++){
-      cards.push(card(svgWarn,'var(--green)','#1D9E75',0,'无异常','——'));
-    }
-  }
-  box.innerHTML=cards.join('');
 }
 
 /* 通栏趋势图：规则检查口径——蓝柱审计次数(总检查) + 黄柱问题次数（左轴次数），绿线规则通过率（右轴比率）
