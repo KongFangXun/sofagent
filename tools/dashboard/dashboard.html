@@ -46,8 +46,8 @@ a:hover{text-decoration:underline}
 .tab-inline .nav-item{border-bottom:none;margin-bottom:0;padding:5px 12px;border-radius:4px;font-size:13px}
 .tab-inline .nav-item:hover{color:var(--text)}
 .tab-inline .nav-item.active{color:var(--brand);font-weight:600;border-bottom:none}
-/* 点击反馈（统一按下微缩） */
-.btn:active,.seg-refresh:active,.nav-item:active,.qs-item:active,.rule-chip:active{transform:scale(.96)}
+/* 点击反馈（统一按下微缩——所有可点按钮同一 click 样式） */
+.btn:active,.btn-outline:active,.btn-primary:active,.help-btn:active,.star-btn:active,.copy-btn:active,.seg-btn:active,.seg-refresh:active,.nav-item:active,.qs-item:active,.rule-chip:active,.doc-item:active,.fde-stage:active{transform:scale(.96)}
 
 .header-right{display:flex;gap:6px;justify-content:flex-end}
 /* header 按钮（统一直角 6px，非跑道形） */
@@ -215,7 +215,8 @@ a:hover{text-decoration:underline}
 .prompt-box .copy-btn.copied{background:var(--brand);border-color:var(--brand);color:#fff}
 
 /* ===== 按钮体系（统一变体，shadcn 风格 · 全白系简洁）===== */
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:5px;height:28px;padding:0 14px;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;font-family:var(--font);border:1px solid transparent;transition:all .15s;white-space:nowrap;line-height:1}
+/* help-btn/star-btn 继承 .btn 基础（HTML 无 class=btn，选择器扩展覆盖） */
+.btn,.help-btn,.star-btn{display:inline-flex;align-items:center;justify-content:center;gap:5px;height:28px;padding:0 14px;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;font-family:var(--font);border:1px solid transparent;transition:all .15s;white-space:nowrap;line-height:1}
 .btn svg{width:13px;height:13px}
 .btn-primary{background:var(--card);border-color:var(--border);color:var(--text)}
 .btn-primary:hover{border-color:var(--text-t);color:var(--text)}
