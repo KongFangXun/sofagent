@@ -71,7 +71,8 @@ a:hover{text-decoration:underline}
 /* 快捷入口（FDE 怎么开始：4 个独立 block，非一条背景条） */
 .quick-start{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
 .qs-item{background:var(--bg-s);border:1px solid var(--border);border-radius:var(--radius-s);padding:16px 12px;text-align:center;cursor:pointer;transition:all .15s;text-decoration:none;display:block}
-.qs-item:hover{border-color:var(--brand);background:var(--brand-l)}
+.qs-item:hover{border-color:var(--brand);background:var(--brand-l);text-decoration:none}
+.qs-item:visited{text-decoration:none}
 .qs-item .qs-icon{font-size:20px;line-height:1.2}
 .qs-item .qs-title{font-size:13px;font-weight:600;color:var(--text);margin-top:5px}
 .qs-item .qs-desc{font-size:11px;color:var(--text-s);margin-top:2px}
@@ -89,7 +90,7 @@ a:hover{text-decoration:underline}
 .section-sub{font-size:12px;color:var(--text-s);font-weight:400;margin-left:4px}
 .section-body{padding:20px;flex:1;display:flex;flex-direction:column;min-height:0}
 
-.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:16px}
+.metrics{display:grid;grid-template-columns:repeat(6,1fr);gap:16px;margin-bottom:16px}
 .metric-card{background:var(--card);border:none;box-shadow:0 1px 3px rgba(16,24,40,.06),0 1px 2px rgba(16,24,40,.04);border-radius:var(--radius);padding:16px;text-align:center}
 .metric-value{font-size:28px;font-weight:700;line-height:1.2;font-variant-numeric:tabular-nums}
 .metric-label{font-size:12px;color:var(--text-s);margin-top:4px}
@@ -270,8 +271,12 @@ a:hover{text-decoration:underline}
 /* 工作明细表格（窄屏横向滚动） */
 .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -4px}
 .wl-table{width:100%;border-collapse:collapse;font-size:12px;min-width:600px}
-.wl-table th{color:var(--text-t);text-align:left;padding:8px;border-bottom:1px solid var(--border);font-weight:500;white-space:nowrap;font-size:11px}
-.wl-table td{padding:8px;border-bottom:1px solid var(--border);vertical-align:top}
+.wl-table th{color:var(--text-s);text-align:left;padding:9px 10px;border-bottom:1px solid var(--border);font-weight:600;white-space:nowrap;font-size:11px;background:var(--bg);letter-spacing:.2px}
+.wl-table th:first-child{border-radius:6px 0 0 6px}
+.wl-table th:last-child{border-radius:0 6px 6px 0}
+.wl-table td{padding:9px 10px;border-bottom:1px solid var(--border);vertical-align:top;font-variant-numeric:tabular-nums}
+.wl-table tbody tr{transition:background .12s}
+.wl-table tbody tr:hover{background:var(--brand-l)}
 .wl-table tbody tr:last-child td{border-bottom:none}
 .wl-table .cell-over{color:var(--red);font-weight:600;cursor:help;border-bottom:1px dashed rgba(226,75,74,.4)}
 .wl-table .cell-over .delta{font-size:10px;font-weight:400;opacity:.8}
@@ -428,22 +433,15 @@ a:hover{text-decoration:underline}
       <div class="metric-label">问题次数（今日）</div>
       <div class="metric-sub" id="m-violations-sub">总 — 次问题</div>
     </div>
-  </div>
-
-  <div class="section">
-    <div class="section-header">
-      <div class="section-title"><span class="dot-emoji">📉</span>违规趋势（近 7 天）</div>
-      <div style="display:flex;align-items:center;gap:16px;font-size:11px;color:var(--text-s);flex-wrap:wrap;justify-content:flex-end">
-        <span style="display:inline-flex;align-items:center;gap:5px"><span style="width:12px;height:12px;background:var(--brand);border-radius:3px"></span>审计次数</span>
-        <span style="display:inline-flex;align-items:center;gap:5px"><span style="width:12px;height:12px;background:var(--amber);border-radius:3px"></span>问题次数</span>
-        <span style="display:inline-flex;align-items:center;gap:5px"><span style="width:14px;height:3px;background:var(--green);border-radius:2px"></span>通过率</span>
-      </div>
+    <div class="metric-card">
+      <div class="metric-value" style="color:var(--brand-d)" id="m-agents">—</div>
+      <div class="metric-label">活跃 Agent</div>
+      <div class="metric-sub" id="m-agents-sub">来自 worklog</div>
     </div>
-    <div class="section-body">
-      <svg width="100%" height="180" viewBox="0 0 920 180" preserveAspectRatio="xMidYMid meet" id="trendChart">
-        <text x="460" y="90" text-anchor="middle" font-size="13" fill="var(--text-t)">加载中...</text>
-      </svg>
-      <div id="topRules" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:12px"></div>
+    <div class="metric-card">
+      <div class="metric-value" style="color:var(--brand)" id="m-cost">—</div>
+      <div class="metric-label">总成本（USD）</div>
+      <div class="metric-sub" id="m-cost-sub">LLM 估算</div>
     </div>
   </div>
 
@@ -462,6 +460,23 @@ a:hover{text-decoration:underline}
       <div id="wl-view-workflow" style="display:none"></div>
       <div id="wl-view-week" style="display:none"></div>
       <div id="wl-view-intervention" style="display:none"></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-header">
+      <div class="section-title"><span class="dot-emoji">📉</span>违规趋势（近 7 天）</div>
+      <div style="display:flex;align-items:center;gap:16px;font-size:11px;color:var(--text-s);flex-wrap:wrap;justify-content:flex-end">
+        <span style="display:inline-flex;align-items:center;gap:5px"><span style="width:12px;height:12px;background:var(--brand);border-radius:3px"></span>审计次数</span>
+        <span style="display:inline-flex;align-items:center;gap:5px"><span style="width:12px;height:12px;background:var(--amber);border-radius:3px"></span>问题次数</span>
+        <span style="display:inline-flex;align-items:center;gap:5px"><span style="width:14px;height:3px;background:var(--green);border-radius:2px"></span>通过率</span>
+      </div>
+    </div>
+    <div class="section-body">
+      <svg width="100%" height="180" viewBox="0 0 920 180" preserveAspectRatio="xMidYMid meet" id="trendChart">
+        <text x="460" y="90" text-anchor="middle" font-size="13" fill="var(--text-t)">加载中...</text>
+      </svg>
+      <div id="topRules" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:12px"></div>
     </div>
   </div>
 
@@ -2134,6 +2149,15 @@ function loadWorklogData(){
         }).filter(function(w){return w.key});
       }
       var sampleFlag=isSample?'<div style="font-size:11px;color:var(--text-t);margin-bottom:8px">示例数据（未检测到真实 worklog.json / 结构不完整）</div>':'';
+      // 驾驶舱指标卡：活跃 Agent / 总成本（LLM 估算）
+      var agEl=document.getElementById('m-agents');
+      if(agEl)animateNumber(agEl,(d.agents||[]).length);
+      var costEl=document.getElementById('m-cost');
+      if(costEl){
+        var totCost=0;
+        (d.agents||[]).forEach(function(a){if(a.totals&&a.totals.costUsd!=null)totCost+=a.totals.costUsd});
+        costEl.textContent=totCost>0?'$'+totCost.toFixed(2):'—';
+      }
 
       /* 按 Agent：汇总表 + 任务明细表 */
       var agRows=(d.agents||[]).map(function(a){
