@@ -1359,7 +1359,9 @@ function renderSummaryData(s){
 /* 通栏趋势图：规则检查口径——蓝柱审计次数(总检查) + 黄柱问题次数（左轴次数），绿线规则通过率（右轴比率）
  * 图内自洽：绿线 = 1 − 黄柱÷蓝柱，与左上角"规则通过率"同源 */
 function renderDailyTrend(days){
-  var maxCount=Math.max.apply(null,days.map(function(d){return d.ruleAll||0}).concat([1]));
+  var rawMax=Math.max.apply(null,days.map(function(d){return d.ruleAll||0}).concat([1]));
+  // 顶留 15% 余量：最高柱子顶端不贴绘图区顶部（否则最高柱被截断/吃掉）
+  var maxCount=Math.ceil(rawMax*1.15);
   // viewBox 宽 500 匹配半宽卡片——图不再等比缩小，柱子视觉充实
   var W=500,padL=40,padR=40,top=10,base=132;
   var bw=(W-padL-padR)/days.length;
@@ -1410,7 +1412,9 @@ function renderDailyTrend(days){
 
 /* 降级：summary 无 daily 时用 TOP3 画柱状（通栏版） */
 function renderTop3Trend(t){
-  var max=Math.max.apply(null,t.map(function(x){return x.count||0}).concat([1]));
+  var rawMax=Math.max.apply(null,t.map(function(x){return x.count||0}).concat([1]));
+  // 顶留 15% 余量（同主图）：最高柱不贴顶
+  var max=Math.ceil(rawMax*1.15);
   var W=500,padL=40,padR=20,base=132,top=10;
   var sw=(W-padL-padR)/t.length;
   var svg='<line x1="'+padL+'" y1="'+top+'" x2="'+(W-padR)+'" y2="'+top+'" stroke="var(--border)" stroke-width="0.5" stroke-dasharray="3,3"/>';
