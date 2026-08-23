@@ -414,6 +414,16 @@ a:hover{text-decoration:underline}
 
   <div class="metrics">
     <div class="metric-card">
+      <div class="metric-value" style="color:var(--brand-d)" id="m-agents">—</div>
+      <div class="metric-label">活跃 Agent</div>
+      <div class="metric-sub" id="m-agents-sub">来自 worklog</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-value" style="color:var(--amber-d)" id="m-cost">—</div>
+      <div class="metric-label">总成本（USD）</div>
+      <div class="metric-sub" id="m-cost-sub">LLM 估算</div>
+    </div>
+    <div class="metric-card">
       <div class="metric-value" style="color:var(--green)" id="m-audit">—</div>
       <div class="metric-label">规则通过率</div>
       <div class="metric-sub" id="m-audit-sub">通过的检查 ÷ 全部检查</div>
@@ -433,15 +443,22 @@ a:hover{text-decoration:underline}
       <div class="metric-label">问题次数（今日）</div>
       <div class="metric-sub" id="m-violations-sub">总 — 次问题</div>
     </div>
-    <div class="metric-card">
-      <div class="metric-value" style="color:var(--brand-d)" id="m-agents">—</div>
-      <div class="metric-label">活跃 Agent</div>
-      <div class="metric-sub" id="m-agents-sub">来自 worklog</div>
+  </div>
+
+  <div class="section">
+    <div class="section-header">
+      <div class="section-title"><span class="dot-emoji">📉</span>违规趋势（近 7 天）</div>
+      <div style="display:flex;align-items:center;gap:16px;font-size:11px;color:var(--text-s);flex-wrap:wrap;justify-content:flex-end">
+        <span style="display:inline-flex;align-items:center;gap:5px"><span style="width:12px;height:12px;background:var(--brand);border-radius:3px"></span>审计次数</span>
+        <span style="display:inline-flex;align-items:center;gap:5px"><span style="width:12px;height:12px;background:var(--amber);border-radius:3px"></span>问题次数</span>
+        <span style="display:inline-flex;align-items:center;gap:5px"><span style="width:14px;height:3px;background:var(--green);border-radius:2px"></span>通过率</span>
+      </div>
     </div>
-    <div class="metric-card">
-      <div class="metric-value" style="color:var(--brand)" id="m-cost">—</div>
-      <div class="metric-label">总成本（USD）</div>
-      <div class="metric-sub" id="m-cost-sub">LLM 估算</div>
+    <div class="section-body">
+      <svg width="100%" height="180" viewBox="0 0 920 180" preserveAspectRatio="xMidYMid meet" id="trendChart">
+        <text x="460" y="90" text-anchor="middle" font-size="13" fill="var(--text-t)">加载中...</text>
+      </svg>
+      <div id="topRules" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:12px"></div>
     </div>
   </div>
 
@@ -460,23 +477,6 @@ a:hover{text-decoration:underline}
       <div id="wl-view-workflow" style="display:none"></div>
       <div id="wl-view-week" style="display:none"></div>
       <div id="wl-view-intervention" style="display:none"></div>
-    </div>
-  </div>
-
-  <div class="section">
-    <div class="section-header">
-      <div class="section-title"><span class="dot-emoji">📉</span>违规趋势（近 7 天）</div>
-      <div style="display:flex;align-items:center;gap:16px;font-size:11px;color:var(--text-s);flex-wrap:wrap;justify-content:flex-end">
-        <span style="display:inline-flex;align-items:center;gap:5px"><span style="width:12px;height:12px;background:var(--brand);border-radius:3px"></span>审计次数</span>
-        <span style="display:inline-flex;align-items:center;gap:5px"><span style="width:12px;height:12px;background:var(--amber);border-radius:3px"></span>问题次数</span>
-        <span style="display:inline-flex;align-items:center;gap:5px"><span style="width:14px;height:3px;background:var(--green);border-radius:2px"></span>通过率</span>
-      </div>
-    </div>
-    <div class="section-body">
-      <svg width="100%" height="180" viewBox="0 0 920 180" preserveAspectRatio="xMidYMid meet" id="trendChart">
-        <text x="460" y="90" text-anchor="middle" font-size="13" fill="var(--text-t)">加载中...</text>
-      </svg>
-      <div id="topRules" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:12px"></div>
     </div>
   </div>
 
