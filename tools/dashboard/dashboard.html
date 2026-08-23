@@ -13,8 +13,8 @@
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
   --brand:#16B8F3;--brand-d:#0C447C;--brand-l:#E6F1FB;
-  --red:#E24B4A;--green:#1D9E75;--amber:#EF9F27;--purple:#7F77DD;
-  --bg:#F6F8FA;--card:#fff;--border:#E1E4E8;--text:#24292E;--text-s:#57606A;--text-t:#8B949E;
+  --red:#E24B4A;--red-l:#FCEBEB;--green:#1D9E75;--green-l:#E1F5EE;--amber:#EF9F27;--amber-l:#FAEEDA;--amber-d:#854F0B;--purple:#7F77DD;--purple-l:#F3E8FF;
+  --bg:#F6F8FA;--bg-s:#FAFBFC;--card:#fff;--border:#E1E4E8;--text:#24292E;--text-s:#57606A;--text-t:#8B949E;
   --radius:12px;--radius-s:8px;--shadow:0 1px 3px rgba(0,0,0,.08);
   --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",sans-serif;
   --mono:"SF Mono",SFMono-Regular,Consolas,"Liberation Mono",Menlo,monospace;
@@ -43,7 +43,7 @@ a:hover{text-decoration:underline}
 
 .header-right{display:flex;gap:6px;justify-content:flex-end}
 .star-btn{display:inline-flex;align-items:center;gap:5px;padding:6px 14px;border:1px solid var(--border);border-radius:20px;background:var(--card);color:var(--text-s);font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;font-family:var(--font);text-decoration:none;line-height:1.4}
-.star-btn:hover{border-color:#1F2328;color:#1F2328;background:var(--bg);text-decoration:none}
+.star-btn:hover{border-color:var(--text);color:var(--text);background:var(--bg);text-decoration:none}
 .star-btn svg{width:14px;height:14px;flex-shrink:0}
 .star-count{background:var(--amber);color:#fff;font-size:11px;padding:1px 6px;border-radius:8px;font-weight:700}
 
@@ -69,7 +69,7 @@ a:hover{text-decoration:underline}
 .page-context{font-size:11px;color:var(--text-t);margin:0 0 12px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .page-context svg{width:12px;height:12px;flex-shrink:0}
 /* 高频违规规则 chip（洞察层） */
-.rule-chip{display:inline-flex;align-items:center;gap:4px;background:#FCEBEB;color:var(--red);font-family:var(--mono);font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px;cursor:pointer;transition:all .15s}
+.rule-chip{display:inline-flex;align-items:center;gap:4px;background:var(--red-l);color:var(--red);font-family:var(--mono);font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px;cursor:pointer;transition:all .15s}
 .rule-chip:hover{background:var(--red);color:#fff}
 .rule-chip .rc-count{font-weight:400;opacity:.8}
 /* 快捷入口条（FDE 怎么开始：浅灰底 + 白块，去卡片套卡片） */
@@ -113,13 +113,13 @@ a:hover{text-decoration:underline}
 /* grid 容器内 section 不设 margin（gap 已负责间距），避免与容器 margin 叠加 */
 .grid-2 > .section,.grid-3 > .section{margin-bottom:0}
 
-.chart-box{background:#FAFBFC;border:none;border-radius:var(--radius-s);padding:16px}
+.chart-box{background:var(--bg-s);border:none;border-radius:var(--radius-s);padding:16px}
 .chart-box h4{font-size:13px;font-weight:500;color:var(--text-s);margin-bottom:12px}
 
 /* Data status */
 .data-status{display:inline-flex;align-items:center;gap:6px;font-size:12px;padding:4px 12px;border-radius:20px;font-weight:500}
-.ds-live{background:#E1F5EE;color:var(--green)}
-.ds-sample{background:#FAEEDA;color:#854F0B}
+.ds-live{background:var(--green-l);color:var(--green)}
+.ds-sample{background:var(--amber-l);color:var(--amber-d)}
 .data-status .pulse{width:8px;height:8px;border-radius:50%;animation:pulse 2s infinite}
 .ds-live .pulse{background:var(--green)}
 .ds-sample .pulse{background:var(--amber)}
@@ -146,7 +146,7 @@ a:hover{text-decoration:underline}
 
 /* Rules */
 .rule-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
-.rule-item{background:#FAFBFC;border:1px solid var(--border);border-radius:var(--radius-s);padding:8px 10px;font-size:12px;transition:border-color .15s}
+.rule-item{background:var(--bg-s);border:1px solid var(--border);border-radius:var(--radius-s);padding:8px 10px;font-size:12px;transition:border-color .15s}
 .rule-item:hover{border-color:var(--brand)}
 .rule-code{font-family:var(--mono);font-weight:600;font-size:11px}
 .rule-name{color:var(--text-s);margin-top:2px}
@@ -157,19 +157,19 @@ a:hover{text-decoration:underline}
 .rule-cat-purple .rule-code{color:var(--purple)}
 .rule-cat-gray .rule-code{color:var(--text-s)}
 
-.node-card{background:#FAFBFC;border:1px solid var(--border);border-radius:var(--radius-s);padding:14px}
+.node-card{background:var(--bg-s);border:1px solid var(--border);border-radius:var(--radius-s);padding:14px}
 .node-status{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:500}
 .node-status .icon{width:8px;height:8px;border-radius:50%}
 .status-running .icon{background:var(--green);animation:pulse 2s infinite}
 /* Agent 类型统一色点（FDE 引导 + AI 节点共用） */
 .agent-dot{width:10px;height:10px;border-radius:50%;display:inline-block;flex-shrink:0;animation:pulse 2s infinite}
-.agent-dot.analyst{background:#16B8F3}
-.agent-dot.audit{background:#E24B4A}
-.agent-dot.planner{background:#1D9E75}
-.agent-dot.deployer{background:#EF9F27}
-.agent-dot.engineer{background:#E0A800}
-.agent-dot.reviewer{background:#7F77DD}
-.agent-dot.human{background:#8B949E}
+.agent-dot.analyst{background:var(--brand)}
+.agent-dot.audit{background:var(--red)}
+.agent-dot.planner{background:var(--green)}
+.agent-dot.deployer{background:var(--amber)}
+.agent-dot.engineer{background:var(--amber)}
+.agent-dot.reviewer{background:var(--purple)}
+.agent-dot.human{background:var(--text-t)}
 .status-pending .icon{background:var(--amber)}
 .node-meta{font-size:12px;color:var(--text-s);margin-top:6px}
 .node-stats{display:flex;gap:12px;margin-top:8px;font-size:11px;color:var(--text-t)}
@@ -179,16 +179,16 @@ a:hover{text-decoration:underline}
 .audit-row:last-child{border-bottom:none}
 .audit-time{color:var(--text-t);font-family:var(--mono);font-size:11px;min-width:110px}
 .audit-badge{padding:2px 8px;border-radius:4px;font-size:11px;font-weight:500;font-family:var(--mono)}
-.badge-pass{background:#E1F5EE;color:var(--green)}
-.badge-warn{background:#FAEEDA;color:var(--amber)}
-.badge-fail{background:#FCEBEB;color:var(--red)}
+.badge-pass{background:var(--green-l);color:var(--green)}
+.badge-warn{background:var(--amber-l);color:var(--amber)}
+.badge-fail{background:var(--red-l);color:var(--red)}
 .audit-rule{font-family:var(--mono);font-size:11px;color:var(--text-s);min-width:80px}
 .audit-task{color:var(--text-s);font-size:12px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
 .prompt-box{background:#0D1117;border-radius:var(--radius-s);padding:14px;margin-top:8px}
 .prompt-box code{display:block;font-family:var(--mono);font-size:12px;color:#C9D1D9;white-space:pre-wrap;word-break:break-all;line-height:1.5}
 .prompt-action{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
-.prompt-label{font-size:11px;color:#8B949E;font-weight:500}
+.prompt-label{font-size:11px;color:var(--text-t);font-weight:500}
 .copy-btn{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);color:#C9D1D9;padding:3px 10px;border-radius:4px;font-size:11px;cursor:pointer;font-family:var(--font);display:inline-flex;align-items:center;gap:4px;transition:all .15s}
 .copy-btn:hover{background:rgba(255,255,255,.12)}
 .copy-btn.copied{background:var(--green);border-color:var(--green);color:#fff}
@@ -196,15 +196,15 @@ a:hover{text-decoration:underline}
 .copy-btn.light{background:var(--card);border:1px solid var(--border);color:var(--text-s)}
 .copy-btn.light:hover{border-color:var(--brand);color:var(--brand)}
 
-.fde-stage{display:flex;align-items:center;gap:12px;padding:10px 12px;background:#FAFBFC;border:1px solid var(--border);border-radius:var(--radius-s);margin-bottom:8px}
+.fde-stage{display:flex;align-items:center;gap:12px;padding:10px 12px;background:var(--bg-s);border:1px solid var(--border);border-radius:var(--radius-s);margin-bottom:8px}
 .fde-num{width:20px;height:20px;border-radius:50%;background:var(--brand);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0}
 .fde-content{flex:1;display:flex;align-items:baseline;gap:8px;min-width:0}
 .fde-title{font-size:13px;font-weight:500;white-space:nowrap;flex-shrink:0}
 .fde-desc{font-size:12px;color:var(--text-s);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .node-type{display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:2px 8px;border-radius:4px;font-weight:500}
-.nt-ai{background:#E6F1FB;color:var(--brand)}
-.nt-auto{background:#E1F5EE;color:var(--green)}
-.nt-human{background:#FAEEDA;color:var(--amber)}
+.nt-ai{background:var(--brand-l);color:var(--brand)}
+.nt-auto{background:var(--green-l);color:var(--green)}
+.nt-human{background:var(--amber-l);color:var(--amber)}
 
 .doc-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px}
 .doc-item{display:flex;align-items:center;gap:8px;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius-s);font-size:13px;color:var(--text);transition:all .15s}
@@ -212,7 +212,7 @@ a:hover{text-decoration:underline}
 .doc-item svg{width:14px;height:14px;color:var(--text-t);flex-shrink:0}
 .doc-item .ext{margin-left:auto;color:var(--text-t);font-size:11px}
 
-.think-entry{background:#FAFBFC;border-left:3px solid var(--amber);padding:10px 12px;border-radius:0 var(--radius-s) var(--radius-s) 0;margin-bottom:8px}
+.think-entry{background:var(--bg-s);border-left:3px solid var(--amber);padding:10px 12px;border-radius:0 var(--radius-s) var(--radius-s) 0;margin-bottom:8px}
 .think-entry .t-rule{font-family:var(--mono);font-size:11px;color:var(--amber);font-weight:600}
 .think-entry .t-text{font-size:12px;color:var(--text-s);margin-top:2px}
 
@@ -220,16 +220,16 @@ a:hover{text-decoration:underline}
 .install-box code{font-family:var(--mono);font-size:13px;color:#7EE787}
 
 .mcp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:8px}
-.mcp-item{background:#FAFBFC;border:1px solid var(--border);border-radius:6px;padding:8px 10px;font-size:12px}
+.mcp-item{background:var(--bg-s);border:1px solid var(--border);border-radius:6px;padding:8px 10px;font-size:12px}
 .mcp-item code{font-family:var(--mono);font-size:11px;color:var(--brand-d);font-weight:600}
 .mcp-item .mcp-desc{color:var(--text-s);margin-top:2px;font-size:11px}
 
 .npm-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px}
-.npm-item{background:#FAFBFC;border:1px solid var(--border);border-radius:var(--radius-s);padding:10px 12px}
+.npm-item{background:var(--bg-s);border:1px solid var(--border);border-radius:var(--radius-s);padding:10px 12px}
 .npm-item code{font-family:var(--mono);font-size:12px;color:var(--brand-d);font-weight:600}
 .npm-item .npm-desc{font-size:11px;color:var(--text-s);margin-top:3px}
 
-.step-card{background:#FAFBFC;border:1px solid var(--border);border-radius:var(--radius-s);padding:14px;margin-bottom:8px}
+.step-card{background:var(--bg-s);border:1px solid var(--border);border-radius:var(--radius-s);padding:14px;margin-bottom:8px}
 .step-num{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:var(--brand);color:#fff;font-size:11px;font-weight:600;margin-right:8px}
 .step-title{font-size:13px;font-weight:500;display:flex;align-items:center}
 .step-desc{font-size:12px;color:var(--text-s);margin-top:6px;margin-left:28px}
@@ -238,13 +238,13 @@ a:hover{text-decoration:underline}
 .lvp-col{flex:1;padding:10px 14px;border:1px solid var(--border);font-size:12px}
 .lvp-col:first-child{border-radius:var(--radius-s) 0 0 var(--radius-s)}
 .lvp-col:last-child{border-radius:0 var(--radius-s) var(--radius-s) 0}
-.lvp-col.l{background:#FAEEDA;border-color:var(--amber)}
-.lvp-col.v{background:#EEEDFE;border-color:var(--purple)}
-.lvp-col.p{background:#E1F5EE;border-color:var(--green)}
+.lvp-col.l{background:var(--amber-l);border-color:var(--amber)}
+.lvp-col.v{background:var(--purple-l);border-color:var(--purple)}
+.lvp-col.p{background:var(--green-l);border-color:var(--green)}
 .lvp-label{font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.5px}
 .lvp-arrow{display:flex;align-items:center;padding:0 8px;color:var(--text-t);font-size:16px}
 
-.ont-card{background:#FAFBFC;border:1px solid var(--border);border-radius:var(--radius-s);padding:16px;transition:border-color .15s}
+.ont-card{background:var(--bg-s);border:1px solid var(--border);border-radius:var(--radius-s);padding:16px;transition:border-color .15s}
 .ont-card:hover{border-color:var(--brand)}
 .ont-card h4{font-size:14px;font-weight:600;margin-bottom:8px;display:flex;align-items:center;gap:6px}
 .ont-card p{font-size:12px;color:var(--text-s);margin-bottom:8px}
@@ -270,7 +270,7 @@ a:hover{text-decoration:underline}
 .seg-refresh{display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--border);border-radius:50%;background:var(--card);color:var(--brand);width:26px;height:26px;padding:0;font-size:11px;font-weight:600;transition:all .15s}
 .seg-refresh:hover{border-color:var(--brand);background:var(--brand-l);color:var(--brand)}
 .seg-refresh svg{width:14px;height:14px}
-.seg-refresh.refreshing{border-color:var(--green);color:var(--green);background:#E1F5EE}
+.seg-refresh.refreshing{border-color:var(--green);color:var(--green);background:var(--green-l)}
 .seg-refresh.refreshing svg{animation:spin .6s linear}
 @keyframes spin{to{transform:rotate(360deg)}}
 
@@ -293,7 +293,7 @@ a:hover{text-decoration:underline}
 .pulse-svg{animation:pulse 2s infinite}
 /* skill 加载链（纵向阶梯） */
 .skill-chain{display:flex;flex-direction:column;gap:0;max-width:560px;margin:0 auto;width:100%}
-.sc-item{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--border);border-radius:var(--radius-s);background:#FAFBFC}
+.sc-item{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--border);border-radius:var(--radius-s);background:var(--bg-s)}
 .sc-item .sc-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0}
 .sc-item .sc-name{font-size:13px;font-weight:600;flex-shrink:0}
 .sc-item .sc-desc{font-size:11px;color:var(--text-s)}
@@ -443,14 +443,14 @@ a:hover{text-decoration:underline}
     <div class="section-header">
       <div class="section-title"><span class="dot-emoji">📉</span>违规趋势（近 7 天）</div>
       <div style="display:flex;align-items:center;gap:16px;font-size:11px;color:var(--text-s);flex-wrap:wrap;justify-content:flex-end">
-        <span style="display:inline-flex;align-items:center;gap:5px"><span style="width:12px;height:12px;background:#16B8F3;border-radius:3px"></span>审计次数</span>
-        <span style="display:inline-flex;align-items:center;gap:5px"><span style="width:12px;height:12px;background:#EF9F27;border-radius:3px"></span>问题次数</span>
-        <span style="display:inline-flex;align-items:center;gap:5px"><span style="width:14px;height:3px;background:#1D9E75;border-radius:2px"></span>通过率</span>
+        <span style="display:inline-flex;align-items:center;gap:5px"><span style="width:12px;height:12px;background:var(--brand);border-radius:3px"></span>审计次数</span>
+        <span style="display:inline-flex;align-items:center;gap:5px"><span style="width:12px;height:12px;background:var(--amber);border-radius:3px"></span>问题次数</span>
+        <span style="display:inline-flex;align-items:center;gap:5px"><span style="width:14px;height:3px;background:var(--green);border-radius:2px"></span>通过率</span>
       </div>
     </div>
     <div class="section-body">
       <svg width="100%" height="180" viewBox="0 0 920 180" preserveAspectRatio="xMidYMid meet" id="trendChart">
-        <text x="460" y="90" text-anchor="middle" font-size="13" fill="#8B949E">加载中...</text>
+        <text x="460" y="90" text-anchor="middle" font-size="13" fill="var(--text-t)">加载中...</text>
       </svg>
       <div id="topRules" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:12px"></div>
       <div id="caliberNote" style="margin-top:12px;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-size:11px;line-height:1.6;color:var(--text-s)"></div>
@@ -758,19 +758,19 @@ a:hover{text-decoration:underline}
       <a href="https://github.com/KongFangXun/sofagent/blob/main/docs/ARCHITECTURE.md" target="_blank" class="copy-btn light">ARCHITECTURE.md →</a>
     </div>
     <div class="section-body">
-      <div class="arch-layer" style="background:#E6F1FB;border:1px solid var(--brand)">
+      <div class="arch-layer" style="background:var(--brand-l);border:1px solid var(--brand)">
         <h5 style="color:var(--brand-d)">注入</h5>
         <div style="font-size:12px;color:var(--text-s)">开工前注入红线 · 四层加载链 · SKILL.md → fde.md → think.md → knowledge/</div>
       </div>
-      <div class="arch-layer" style="background:#FCEBEB;border:1px solid var(--red)">
+      <div class="arch-layer" style="background:var(--red-l);border:1px solid var(--red)">
         <h5 style="color:#791F1F">审计</h5>
         <div style="font-size:12px;color:var(--text-s)">每次变更硬证据 · 24 条规则 · 19 条零 token · 违规当场拦截</div>
       </div>
-      <div class="arch-layer" style="background:#E1F5EE;border:1px solid var(--green)">
+      <div class="arch-layer" style="background:var(--green-l);border:1px solid var(--green)">
         <h5 style="color:#085041">回溯</h5>
         <div style="font-size:12px;color:var(--text-s)">自动快照 · 一键回滚 · git snapshot 不污染历史</div>
       </div>
-      <div class="arch-layer" style="background:#EEEDFE;border:1px solid var(--purple)">
+      <div class="arch-layer" style="background:var(--purple-l);border:1px solid var(--purple)">
         <h5 style="color:#3C3489">进化</h5>
         <div style="font-size:12px;color:var(--text-s)">think.md 反思 + Dream Cycle 知识回灌 + skillopt Skill 优化</div>
       </div>
@@ -1357,10 +1357,10 @@ function renderDailyTrend(days){
   // 左轴：次数 0-maxCount（4 格）
   for(var g=0;g<=4;g++){
     var yy=base-(g/4)*(base-top);
-    svg+='<line x1="'+padL+'" y1="'+yy+'" x2="'+(W-padR)+'" y2="'+yy+'" stroke="#E1E4E8" stroke-width="0.5" stroke-dasharray="3,3"/>';
-    svg+='<text x="'+(padL-6)+'" y="'+(yy+3)+'" text-anchor="end" font-size="10" fill="#8B949E">'+Math.round(maxCount*g/4)+'</text>';
+    svg+='<line x1="'+padL+'" y1="'+yy+'" x2="'+(W-padR)+'" y2="'+yy+'" stroke="var(--border)" stroke-width="0.5" stroke-dasharray="3,3"/>';
+    svg+='<text x="'+(padL-6)+'" y="'+(yy+3)+'" text-anchor="end" font-size="10" fill="var(--text-t)">'+Math.round(maxCount*g/4)+'</text>';
     // 右轴：通过率 80-100%（0-100 会把波动压扁，80 起才能看到绿线波动）
-    svg+='<text x="'+(W-padR+6)+'" y="'+(yy+3)+'" text-anchor="start" font-size="10" fill="#8B949E">'+(80+g*5)+'%</text>';
+    svg+='<text x="'+(W-padR+6)+'" y="'+(yy+3)+'" text-anchor="start" font-size="10" fill="var(--text-t)">'+(80+g*5)+'%</text>';
   }
   // 通过率 → y：80-100 映射到绘图区（<80 钳位到底）
   function rateY(rate){
@@ -1378,21 +1378,21 @@ function renderDailyTrend(days){
     // 蓝柱：审计次数(总检查)；黄柱：问题次数（并排）
     var h1=Math.max(2,checks/maxCount*(base-top));
     var h2=issues>0?Math.max(2,issues/maxCount*(base-top)):0;
-    svg+='<rect x="'+(cx-barW-gap/2)+'" y="'+(base-h1)+'" width="'+barW+'" height="'+h1+'" rx="3" fill="#16B8F3"/>';
-    if(h2>0)svg+='<rect x="'+(cx+gap/2)+'" y="'+(base-h2)+'" width="'+barW+'" height="'+h2+'" rx="3" fill="#EF9F27"/>';
-    svg+='<text x="'+(cx-barW/2-gap/2)+'" y="'+(base-h1-5)+'" text-anchor="middle" font-size="9" fill="#16B8F3">'+checks+'</text>';
-    if(h2>0)svg+='<text x="'+(cx+barW/2+gap/2)+'" y="'+(base-h2-5)+'" text-anchor="middle" font-size="9" fill="#EF9F27">'+issues+'</text>';
-    svg+='<text x="'+cx+'" y="'+(base+17)+'" text-anchor="middle" font-size="10" fill="#8B949E">'+String(d.day).slice(5)+'</text>';
+    svg+='<rect x="'+(cx-barW-gap/2)+'" y="'+(base-h1)+'" width="'+barW+'" height="'+h1+'" rx="3" fill="var(--brand)"/>';
+    if(h2>0)svg+='<rect x="'+(cx+gap/2)+'" y="'+(base-h2)+'" width="'+barW+'" height="'+h2+'" rx="3" fill="var(--amber)"/>';
+    svg+='<text x="'+(cx-barW/2-gap/2)+'" y="'+(base-h1-5)+'" text-anchor="middle" font-size="9" fill="var(--brand)">'+checks+'</text>';
+    if(h2>0)svg+='<text x="'+(cx+barW/2+gap/2)+'" y="'+(base-h2-5)+'" text-anchor="middle" font-size="9" fill="var(--amber)">'+issues+'</text>';
+    svg+='<text x="'+cx+'" y="'+(base+17)+'" text-anchor="middle" font-size="10" fill="var(--text-t)">'+String(d.day).slice(5)+'</text>';
     ratePts.push([cx,rate]);
   });
   // 绿线：规则通过率（右轴 80-100%）
   var line=ratePts.map(function(pt){return pt[0]+','+rateY(pt[1])}).join(' ');
   if(ratePts.length>1){
-    svg+='<polyline points="'+line+'" fill="none" stroke="#1D9E75" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"/>';
+    svg+='<polyline points="'+line+'" fill="none" stroke="var(--green)" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"/>';
   }
   ratePts.forEach(function(pt){
     var yy=rateY(pt[1]);
-    svg+='<circle cx="'+pt[0]+'" cy="'+yy+'" r="4" fill="#fff" stroke="#1D9E75" stroke-width="2.4"/>';
+    svg+='<circle cx="'+pt[0]+'" cy="'+yy+'" r="4" fill="#fff" stroke="var(--green)" stroke-width="2.4"/>';
   });
   document.getElementById('trendChart').innerHTML=svg;
   // 一行计算公式
@@ -1414,18 +1414,18 @@ function renderTop3Trend(t){
   var max=Math.max.apply(null,t.map(function(x){return x.count||0}).concat([1]));
   var W=920,padL=40,padR=20,base=140,top=20;
   var sw=(W-padL-padR)/t.length;
-  var svg='<line x1="'+padL+'" y1="'+top+'" x2="'+(W-padR)+'" y2="'+top+'" stroke="#E1E4E8" stroke-width="0.5" stroke-dasharray="3,3"/>';
-  svg+='<line x1="'+padL+'" y1="'+base+'" x2="'+(W-padR)+'" y2="'+base+'" stroke="#E1E4E8" stroke-width="1"/>';
+  var svg='<line x1="'+padL+'" y1="'+top+'" x2="'+(W-padR)+'" y2="'+top+'" stroke="var(--border)" stroke-width="0.5" stroke-dasharray="3,3"/>';
+  svg+='<line x1="'+padL+'" y1="'+base+'" x2="'+(W-padR)+'" y2="'+base+'" stroke="var(--border)" stroke-width="1"/>';
   t.forEach(function(item,i){
     var h=Math.max(3,(item.count||0)/max*(base-top));
     var x=padL+i*sw+sw*0.25;
     var w=sw*0.5;
-    svg+='<rect x="'+x+'" y="'+(base-h)+'" width="'+w+'" height="'+h+'" rx="4" fill="#E24B4A"/>';
-    svg+='<text x="'+(x+w/2)+'" y="'+(base+16)+'" text-anchor="middle" font-size="11" fill="#8B949E">'+escapeHtml(item.code)+'</text>';
-    svg+='<text x="'+(x+w/2)+'" y="'+(base+30)+'" text-anchor="middle" font-size="10" fill="#57606A" font-weight="500">'+escapeHtml(item.name||'')+'</text>';
-    svg+='<text x="'+(x+w/2)+'" y="'+(base-h-6)+'" text-anchor="middle" font-size="11" fill="#E24B4A">'+(item.count||0)+'</text>';
+    svg+='<rect x="'+x+'" y="'+(base-h)+'" width="'+w+'" height="'+h+'" rx="4" fill="var(--red)"/>';
+    svg+='<text x="'+(x+w/2)+'" y="'+(base+16)+'" text-anchor="middle" font-size="11" fill="var(--text-t)">'+escapeHtml(item.code)+'</text>';
+    svg+='<text x="'+(x+w/2)+'" y="'+(base+30)+'" text-anchor="middle" font-size="10" fill="var(--text-s)" font-weight="500">'+escapeHtml(item.name||'')+'</text>';
+    svg+='<text x="'+(x+w/2)+'" y="'+(base-h-6)+'" text-anchor="middle" font-size="11" fill="var(--red)">'+(item.count||0)+'</text>';
   });
-  svg+='<text x="4" y="'+(top+4)+'" font-size="10" fill="#8B949E">'+max+'</text>';
+  svg+='<text x="4" y="'+(top+4)+'" font-size="10" fill="var(--text-t)">'+max+'</text>';
   document.getElementById('trendChart').innerHTML=svg;
   document.getElementById('trendChart').setAttribute('viewBox','0 0 920 200');
 }
@@ -1744,11 +1744,11 @@ function loadFdeWorkflowData(){
       }
       // agent 类型 → 颜色 + 角色名（明确分配，不靠兜底）
       var agentColor={
-        analyst:{bg:'#E6F1FB',border:'var(--brand)',label:'⚡ 强化岗位',role:'分析师'},
-        planner:{bg:'#E1F5EE',border:'var(--green)',label:'🔄 自动执行',role:'规划师'},
-        deployer:{bg:'#FAEEDA',border:'var(--amber)',label:'🔄 自动执行',role:'部署专家'},
-        engineer:{bg:'#FFF8E1',border:'#E0A800',label:'🔄 自动执行',role:'工程'},
-        reviewer:{bg:'#F3E8FF',border:'var(--purple)',label:'👤 人工确认',role:'审查'}
+        analyst:{bg:'var(--brand-l)',border:'var(--brand)',label:'⚡ 强化岗位',role:'分析师'},
+        planner:{bg:'var(--green-l)',border:'var(--green)',label:'🔄 自动执行',role:'规划师'},
+        deployer:{bg:'var(--amber-l)',border:'var(--amber)',label:'🔄 自动执行',role:'部署专家'},
+        engineer:{bg:'var(--amber-l)',border:'var(--amber)',label:'🔄 自动执行',role:'工程'},
+        reviewer:{bg:'var(--purple-l)',border:'var(--purple)',label:'👤 人工确认',role:'审查'}
       };
       var html='';
       var sustain=d.sustain||null;
@@ -1771,7 +1771,7 @@ function loadFdeWorkflowData(){
           var tw=wr.thisWeek||{};
           var trendCn={improving:'📈 改善',degrading:'📉 恶化',stable:'➡️ 平稳'}[wr.trend]||wr.trend||'-';
           var top5=(wr.violationTop5||[]).slice(0,3).map(function(v){return escapeHtml(v.rule)+'×'+v.count}).join(' · ');
-          html+='<div style="margin-top:12px;background:#FAFBFC;border:1px solid var(--border);border-radius:var(--radius-s);padding:10px 14px;font-size:12px;color:var(--text-s)">'+
+          html+='<div style="margin-top:12px;background:var(--bg-s);border:1px solid var(--border);border-radius:var(--radius-s);padding:10px 14px;font-size:12px;color:var(--text-s)">'+
             // 第一行：标题 + 右上角链接 + 统计
             '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">'+
               '<b style="color:var(--text)">📊 '+escapeHtml(wr.weekLabel)+' 持续优化周报</b>'+
@@ -1843,7 +1843,7 @@ function loadPipelineGraph(){
       var nodeW=110,nodeH=34,gap=20;
       var svg='<svg class="graph-wide" width="100%" viewBox="0 0 '+boxW+' 90" style="display:block;max-width:'+boxW+'px;margin:0 auto">';
       // 节点按类型着色（与 FDE/卡片统一）；状态用文字标注
-      var typeColMap={planner:{fill:'#E1F5EE',stroke:'#1D9E75'},engineer:{fill:'#FFF8E1',stroke:'#E0A800'},audit:{fill:'#FCEBEB',stroke:'#E24B4A'},reviewer:{fill:'#F3E8FF',stroke:'#7F77DD'},human:{fill:'#F1F3F4',stroke:'#8B949E'}};
+      var typeColMap={planner:{fill:'var(--green-l)',stroke:'var(--green)'},engineer:{fill:'var(--amber-l)',stroke:'var(--amber)'},audit:{fill:'var(--red-l)',stroke:'var(--red)'},reviewer:{fill:'var(--purple-l)',stroke:'var(--purple)'},human:{fill:'var(--bg-s)',stroke:'var(--text-t)'}};
       // edges first (behind)
       edges.forEach(function(e){
         var fi=nodes.findIndex(function(n){return n.id===e.from});
@@ -1852,11 +1852,11 @@ function loadPipelineGraph(){
         var x1=30+fi*(nodeW+gap)+nodeW;
         var x2=30+ti*(nodeW+gap);
         var y=45;
-        svg+='<line x1="'+x1+'" y1="'+y+'" x2="'+(x2-4)+'" y2="'+y+'" stroke="#8B949E" stroke-width="1.5" marker-end="url(#arrG)"/>';
+        svg+='<line x1="'+x1+'" y1="'+y+'" x2="'+(x2-4)+'" y2="'+y+'" stroke="var(--text-t)" stroke-width="1.5" marker-end="url(#arrG)"/>';
       });
       nodes.forEach(function(n,i){
         var x=30+i*(nodeW+gap);
-        var tc=typeColMap[n.type]||{fill:'#FAFBFC',stroke:'#E1E4E8'};
+        var tc=typeColMap[n.type]||{fill:'var(--bg-s)',stroke:'var(--border)'};
         var fill=tc.fill;
         var stroke=tc.stroke;
         var textCol=stroke;
@@ -1869,11 +1869,11 @@ function loadPipelineGraph(){
         var tx=x+nodeW/2;
         if(st==='running'||st==='active'){
           var tw=String(statusCn).length*9;
-          svg+='<circle class="pulse-svg" cx="'+(tx-tw/2-5)+'" cy="72" r="3" fill="#16B8F3"/>';
+          svg+='<circle class="pulse-svg" cx="'+(tx-tw/2-5)+'" cy="72" r="3" fill="var(--brand)"/>';
         }
-        svg+='<text x="'+tx+'" y="76" text-anchor="middle" font-size="9" fill="#8B949E">'+escapeHtml(statusCn)+'</text>';
+        svg+='<text x="'+tx+'" y="76" text-anchor="middle" font-size="9" fill="var(--text-t)">'+escapeHtml(statusCn)+'</text>';
       });
-      svg+='<defs><marker id="arrG" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M2 2L8 5L2 8" fill="none" stroke="#8B949E" stroke-width="1.5"/></marker></defs>';
+      svg+='<defs><marker id="arrG" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M2 2L8 5L2 8" fill="none" stroke="var(--text-t)" stroke-width="1.5"/></marker></defs>';
       svg+='</svg>';
       box.innerHTML=svg;
       // 图下方不再堆元信息——移到区块 header 右侧
@@ -2024,13 +2024,13 @@ function loadOntologyData(){
           any=true;
           var h='<div style="font-size:13px;font-weight:600;color:'+color+';margin:10px 0 6px">'+escapeHtml(title)+'（'+items.length+'）</div>';
           h+='<div style="display:flex;flex-wrap:wrap;gap:6px">'+items.map(function(it){
-            return '<div style="background:#FAFBFC;border:1px solid var(--border);border-radius:var(--radius-s);padding:6px 10px;font-size:12px"><span style="font-family:var(--mono);color:var(--brand-d);font-weight:600">'+escapeHtml(it.title)+'</span></div>';
+            return '<div style="background:var(--bg-s);border:1px solid var(--border);border-radius:var(--radius-s);padding:6px 10px;font-size:12px"><span style="font-family:var(--mono);color:var(--brand-d);font-weight:600">'+escapeHtml(it.title)+'</span></div>';
           }).join('')+'</div>';
           return h;
         }
-        html+=renderGroup('实体 Entities', '#1D9E75', entities);
-        html+=renderGroup('概念 Concepts', '#7F77DD', concepts);
-        html+=renderGroup('关系 Relations', '#16B8F3', relations);
+        html+=renderGroup('实体 Entities', 'var(--green)', entities);
+        html+=renderGroup('概念 Concepts', 'var(--purple)', concepts);
+        html+=renderGroup('关系 Relations', 'var(--brand)', relations);
         if(!any){
           html=emptyState('🗺️','还没有本体结构','在 FDE 引导页复制 Prompt 执行深挖阶段，或运行 create_entity / create_concept 构建','去 FDE 引导构建',"goPage('fde')");
         }
@@ -2317,11 +2317,11 @@ function renderFlowGraph(nodes,edges){
     var f=pos[e.from],t=pos[e.to];
     if(!f||!t)return'';
     var x1=f.x+nodeW,y1=f.y+45,x2=t.x,y2=t.y+45;
-    svg+='<line x1="'+x1+'" y1="'+y1+'" x2="'+x2+'" y2="'+y2+'" stroke="#8B949E" stroke-width="1.5" marker-end="url(#flow-arrow)"/>';
+    svg+='<line x1="'+x1+'" y1="'+y1+'" x2="'+x2+'" y2="'+y2+'" stroke="var(--text-t)" stroke-width="1.5" marker-end="url(#flow-arrow)"/>';
   });
   // 状态 → 颜色（对齐编排控制图：填充浅色 + 描边/文字用状态色）
-  var stCol={active:'#16B8F3',done:'#1D9E75',failed:'#E24B4A',hitl:'#EF9F27',unknown:'#8B949E'};
-  var stFill={active:'#E6F1FB',done:'#E1F5EE',failed:'#FCEBEB',hitl:'#FAEEDA',unknown:'#FAFBFC'};
+  var stCol={active:'var(--brand)',done:'var(--green)',failed:'var(--red)',hitl:'var(--amber)',unknown:'var(--text-t)'};
+  var stFill={active:'var(--brand-l)',done:'var(--green-l)',failed:'var(--red-l)',hitl:'var(--amber-l)',unknown:'var(--bg-s)'};
   var stCn={active:'运行中',done:'完成',failed:'失败',hitl:'人工介入',unknown:'未知'};
   nodes.forEach(function(n){
     var p=pos[n.id];
@@ -2337,12 +2337,12 @@ function renderFlowGraph(nodes,edges){
     var tx=p.x+nodeW/2;
     if(st==='active'||st==='hitl'){
       var tw=String(stLabel).length*9;
-      svg+='<circle class="pulse-svg" cx="'+(tx-tw/2-5)+'" cy="'+(p.y+72)+'" r="3" fill="'+(st==='hitl'?'#EF9F27':'#16B8F3')+'"/>';
+      svg+='<circle class="pulse-svg" cx="'+(tx-tw/2-5)+'" cy="'+(p.y+72)+'" r="3" fill="'+(st==='hitl'?'var(--amber)':'var(--brand)')+'"/>';
     }
-    svg+='<text x="'+tx+'" y="'+(p.y+76)+'" text-anchor="middle" font-size="9" fill="#8B949E">'+escapeHtml(stLabel)+'</text>';
+    svg+='<text x="'+tx+'" y="'+(p.y+76)+'" text-anchor="middle" font-size="9" fill="var(--text-t)">'+escapeHtml(stLabel)+'</text>';
   });
   return '<div class="chart-box"><svg class="graph-wide" width="100%" viewBox="0 0 '+boxW+' '+H+'" style="display:block;max-width:'+boxW+'px;margin:0 auto">'+
-    '<defs><marker id="flow-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M2 2L8 5L2 8" fill="none" stroke="#8B949E" stroke-width="1.5"/></marker></defs>'+
+    '<defs><marker id="flow-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M2 2L8 5L2 8" fill="none" stroke="var(--text-t)" stroke-width="1.5"/></marker></defs>'+
     svg+'</svg></div>';
 }
 
@@ -2471,10 +2471,10 @@ function renderSkillChain(){
   var box=document.getElementById('skillChainBox');
   if(!box)return;
   var layers=[
-    {name:'L1 · SKILL.md',desc:'宪法 · 不可改——Agent 启动时最先注入的硬约束',tag:'~/.sofagent/skills/sofagent/SKILL.md',dot:'#E24B4A'},
-    {name:'L2 · fde.md',desc:'企业规范 · 可改——业务底线与红线',tag:'~/.sofagent/skills/sofagent/fde.md',dot:'#8B949E'},
-    {name:'L3 · think.md',desc:'反思 · 自动生成——每次被拦下的毛病沉淀',tag:'~/.sofagent/skills/sofagent/think.md',dot:'#8B949E'},
-    {name:'L4 · knowledge/',desc:'知识 · 按需加载——实体/概念/教训检索注入',tag:'~/.sofagent/skills/sofagent/knowledge/',dot:'#16B8F3'}
+    {name:'L1 · SKILL.md',desc:'宪法 · 不可改——Agent 启动时最先注入的硬约束',tag:'~/.sofagent/skills/sofagent/SKILL.md',dot:'var(--red)'},
+    {name:'L2 · fde.md',desc:'企业规范 · 可改——业务底线与红线',tag:'~/.sofagent/skills/sofagent/fde.md',dot:'var(--text-t)'},
+    {name:'L3 · think.md',desc:'反思 · 自动生成——每次被拦下的毛病沉淀',tag:'~/.sofagent/skills/sofagent/think.md',dot:'var(--text-t)'},
+    {name:'L4 · knowledge/',desc:'知识 · 按需加载——实体/概念/教训检索注入',tag:'~/.sofagent/skills/sofagent/knowledge/',dot:'var(--brand)'}
   ];
   var html='<div style="font-size:11px;color:var(--text-t);margin-bottom:12px">每次 Agent 启动按序注入四层约束——约束先于行为，红线先于干活：</div>';
   html+='<div class="skill-chain">';
