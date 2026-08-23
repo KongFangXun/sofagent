@@ -207,6 +207,8 @@ Community rulesets are published as `sofagent-ruleset-*` npm packages and loaded
 > - **DSH plugin family**: 🔌 constraint layer packaged as 9 `cordis-plugin-sofagent-*` plugins (audit/rollback/inject/evolve/ontology/commons/gate/daemon/fde) — live in DeepSeek Harness (Plugin list shows 9 Enabled · inventory soga-1~9 · 9 settings namespaces) + shared precommit hook for Cursor/Claude Code (verified by S321)
 > - **OpenClaw plugin family**: 🦞 4 code-plugins (sofagent-inject/audit/rollback/evolve) — ClawHub ready (dry-run 4/4)
 > - **Federation cross-device E2E**: 🔄 pairing (ECDH + fingerprint anchor) / encrypted cross-device query / tamper detection / offline fallback — fork 10 asserts (S320) + independent-process 4 scenarios (S322)
+> - **Remote API channel**: 📡 client→server workflow trigger + status query (C/S control plane, contract documented)
+> - **Dashboard HTML productization**: 🏠 ships with `install.sh` (dev/installed dual paths)
 > - **MLflow wiring**: 🔗 `logBenchmarkToMlflow` connected to eval pipeline (degrades gracefully when tracking server is unreachable)
 > - **Agentic Browser MCP**: 🌐 navigate/click/screenshot/assert registered (MCP 61→66) + real Playwright driver
 > - **Audit provenance fields**: 🔍 `whichDataVersion` + `beforeAfter` (structured summary, raw diff stays out of history.jsonl)
@@ -214,3 +216,46 @@ Community rulesets are published as `sofagent-ruleset-*` npm packages and loaded
 >
 > See the [v1.4.0 devlog](./docs/changelog/v1.4/v1.4.0.md). Earlier versions in [CHANGELOG](./CHANGELOG.md).
 
+
+## Why sofagent
+
+| Dimension | Generic Agent frameworks | sofagent |
+|------|----------------|----------|
+| Core question | How to build an Agent | **Where AI should go** (map first, then deploy) |
+| Safety guarantee | Integrate scanning/gate tools yourself (pre-commit / trufflehog / gitleaks etc.) | git diff hard-evidence audit + runtime interception + one-click rollback out of the box (see the "honest boundary" note above on scanner coverage) |
+| Review model | Manual human review (bottleneck) | **Machine review** — 24 rules auto-audit + git diff hard evidence; even fully autonomous AI nodes get reviewed |
+| Knowledge accumulation | Starts from zero | Auto-captured into the knowledge base (think.md + Dream Cycle live); effect requires sustained iteration in real use |
+| Data sovereignty | Cloud-hosted | Local by default, optional federated queries (user-configured cloud sync = data leaves the machine, see SECURITY) |
+| Deployment | Learn a new platform | Runs inside your existing AI tools (Claude Code / Cursor / WorkBuddy…) |
+
+> ℹ️ **Platform-agnostic boundary**: the core engine (audit / constraint layer) is platform-agnostic; automatic hook injection currently works only on OpenClaw — on other platforms, inject constraints manually and auditing works as usual.
+
+## Evidence & Credibility
+
+> 📊 **Why now**: MIT NANDA Lab's *The GenAI Divide* report shows that over the past three years, global enterprises burned $30–40 billion on generative AI, yet **95% of projects failed to produce value worth putting on a financial statement**. Meanwhile, job postings for a role called "Forward Deployed Engineer" (FDE) surged **729%** year-over-year (Indeed 2025 data). Models are no longer scarce — the scarce thing is people who can embed models into real customer operations. sofagent is the open-source substrate that engineers this. (Data verification and cross-agency calibration: see [VALIDATION §1 · Cost of governance gaps](./docs/VALIDATION.md#治理缺口的代价三项联网核验证据); FDE economics: see [VALIDATION §4](./docs/VALIDATION.md#四市场印证行业判断被市场买单).)
+
+> 🔬 **Independent external evidence** (not an official self-test): Joel Niklaus' harness-optimization research ([research code repository](https://github.com/JoelNiklaus/harness-optimization), data in the repo experiments) shows that with the same model and unchanged weights, optimizing only the outer harness lifted a legal-Agent benchmark from **63.4% → 80.1% (+16.7pp)**. See [THANKS.md](./docs/THANKS.md).
+
+> 🧪 **Engineering credibility**: 2915 tests / 13 packages (12 with tests) (test counts are determined by `tools/check/test-count.sh` (with a built-in flaky retry mechanism); running `npm test` directly may show mcp package timeouts (red) on low-memory machines — re-running that package alone passes, an environment concurrency issue, not a product defect) · 24 audit rules · fresh-eyes independent review continuously running (see [docs/guides/review-system.md](./docs/guides/review-system.md) for how the review system works). Performance figures are single-machine reference values; cross-tool benchmarking is scheduled for v1.4.x together with Benchmark integration.
+
+## Docs
+
+| You want to know | Where |
+|:---------|:--------|
+| **Global index** (one entry to all docs, in Chinese) | [WIKI](./docs/WIKI.md) |
+| How to install, use, FAQ | [HANDBOOK](./docs/HANDBOOK.md) |
+| Architecture (constraint layer · injection chain · evolution · 24 rules) | [ARCHITECTURE](./docs/ARCHITECTURE.md) |
+| Design philosophy | [PHILOSOPHY](./docs/PHILOSOPHY.md) |
+| Industry validation & ecosystem positioning (differences from existing tools) | [VALIDATION](./docs/VALIDATION.md) |
+| Version roadmap | [ROADMAP](./docs/ROADMAP.md) |
+| What each version delivered | [CHANGELOG](./CHANGELOG.md) |
+| FDE diagnostic methodology (four phases, twelve steps) | [FDE/GUIDE.md](./FDE/GUIDE.md) |
+| Security statement · known limitations | [SECURITY](./SECURITY.md) · [LIMITATIONS](./docs/LIMITATIONS.md) |
+| Contribution guide | [CONTRIBUTING](./CONTRIBUTING.md) |
+
+---
+
+<p align="center">
+  Issues and PRs welcome, especially the nitpicky kind · <a href="./CONTRIBUTING.md">Contributing</a> · <a href="./docs/THANKS.md">Thanks</a><br/>
+  <sub>MIT License © <a href="https://github.com/KongFangXun/sofagent">Kong Fangxun</a> · <a href="https://github.com/KongFangXun/sofagent">⭐ If sofagent helps you, star it and help more people find it</a></sub>
+</p>

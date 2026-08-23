@@ -144,7 +144,7 @@ sofagent-audit --doctor    # 验证环境（可选）
   <img src="docs/assets/dashboard.png" alt="sofagent Dashboard 驾驶舱" width="100%" />
 </p>
 
-<p align="center"><sub>Dashboard 驾驶舱（单文件 HTML）：规则通过率、审计任务、违规趋势——AI 在干什么，一眼看清。<br>截图版本 v1.2.9，当前已发布 v1.4.0。</sub></p>
+<p align="center"><sub>Dashboard 驾驶舱（单文件 HTML）：规则通过率、审计任务、违规趋势——AI 在干什么，一眼看清。<br>（截图版本 v1.2.9，当前已发布 v1.4.0——Dashboard 为示意，真实界面以安装态为准）</sub></p>
 
 > 📊 **Dashboard 有三个入口，各归各位**：
 >
@@ -208,6 +208,8 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # 加载安全规�
 > - **DSH 插件家族**：🔌 约束层四能力包装 9 款 `cordis-plugin-sofagent-*`（audit/rollback/inject/evolve/ontology/commons/gate/daemon/fde）——真实挂载进 DeepSeek Harness（Plugin list 搜 sofagent 可见 9 个 Enabled · inventory soga-1~9 · 9 个 settings namespace）+ Cursor/Claude Code 共享 precommit hook 拦截（S321 CI 闭环验证）
 > - **OpenClaw 插件家族**：🦞 约束层四能力 OpenClaw 形态 4 款 code-plugin（sofagent-inject/audit/rollback/evolve）——ClawHub 发布就绪（dry-run 4/4）
 > - **联邦查询跨设备 E2E**：🔄 配对（ECDH + 指纹锚点）/ 跨设备加密查询 / 篡改检测 / 离线降级——fork 版 10 断言（S320）+ 独立进程版 4 场景（S322）+ 双设备真实测试用例（桌面）
+> - **远程 API 通道**：📡 客户端→服务器 workflow 触发 + 状态查询（C/S 控制面，契约文档化）
+> - **Dashboard HTML 产品化**：🏠 随 `install.sh` 装到用户机（开发态/安装态双路径）
 > - **MLflow 接线**：🔗 `logBenchmarkToMlflow` 接入评测链路（tracking server 不可达降级不抛）
 > - **Agentic Browser MCP**：🌐 navigate/click/screenshot/assert 4 工具注册（MCP 61→66）+ Playwright 真实驱动
 > - **审计溯源字段**：🔍 `whichDataVersion`（决策基于哪版知识）+ `beforeAfter`（变更前后结构化摘要，diff 原文不进 history.jsonl）
