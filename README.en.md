@@ -31,7 +31,7 @@ It ships on [ClawHub](https://clawhub.ai/kongfangxun/skills/sofagent) as an **FD
 - **Phase 3 · Deploy AI nodes** — three-layer deliverables (documents + Skills + runtime), installing AI nodes into your existing tools; from "you do the work" to "you delegate the work"
 - **Phase 4 · Continuous optimization after departure** — 7×24 automated task execution after the FDE leaves: inspection, audit, optimization; the human leaves, governance doesn't
 
-Official slogan: **Map business flows · Build ontology graphs · Deploy AI nodes · Audit every change**
+Official slogan: **Map business flows · Build ontology graphs · Deploy AI nodes · Audit every change · Reflect & iterate**
 
 ```mermaid
 graph TB
