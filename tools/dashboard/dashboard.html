@@ -253,22 +253,6 @@ a:hover{text-decoration:underline}
 .sc-item .sc-desc{font-size:11px;color:var(--text-s)}
 .sc-item .sc-tag{margin-left:auto;font-size:10px;color:var(--text-t);font-family:var(--mono);flex-shrink:0}
 .sc-arrow{text-align:center;color:var(--text-t);font-size:13px;line-height:1;padding:5px 0;flex-shrink:0}
-/* 图谱节点（编排控制图同款：110×34 矩形 + 状态色 + 脉冲点） */
-.fg-edge{stroke:#8B949E;stroke-width:1.5}
-.fg-node{stroke-width:1.2}
-.fg-active{fill:#E6F1FB;stroke:#16B8F3}
-.fg-done{fill:#E1F5EE;stroke:#1D9E75}
-.fg-failed{fill:#FCEBEB;stroke:#E24B4A}
-.fg-hitl{fill:#FAEEDA;stroke:#EF9F27}
-.fg-unknown{fill:#FAFBFC;stroke:#8B949E}
-.fg-dot{stroke:none}
-.fg-dot.fg-active{fill:#16B8F3}
-.fg-dot.fg-done{fill:#1D9E75}
-.fg-dot.fg-failed{fill:#E24B4A}
-.fg-dot.fg-hitl{fill:#EF9F27}
-.fg-dot.fg-unknown{fill:#8B949E}
-.fg-label{font-size:11px;font-weight:500;fill:#24292E}
-.fg-status{font-size:9px;fill:#8B949E}
 
 @media(max-width:768px){
   :root{--nav-h:auto}
@@ -2100,41 +2084,44 @@ function grTab(tab){
   });
 }
 
-/* SVG 节点图渲染——编排控制图同款（110×34 矩形 + 状态色 + 脉冲点 + 箭头 + 状态文字）
- * 横向流水线排布，每行 6 个自动换行；样式走 CSS class（.fg-*） */
+/* SVG 节点图渲染——与编排控制图逐行同构（110×34 矩形 y28 / 文字居中 y49 / 状态 y76 / 脉冲块右上）
+ * 仅颜色语义换为状态色（编排控制图是类型色）；横向流水线，每行 6 个自动换行 */
 function renderFlowGraph(nodes,edges){
   if(!nodes||!nodes.length)return '<div style="font-size:12px;color:var(--text-t);padding:8px 0">暂无节点</div>';
-  var nodeW=110,nodeH=34,gap=20,perRow=6,rowH=54;
+  var nodeW=110,nodeH=34,gap=20,perRow=6,rowH=96;
   var rows=Math.max(1,Math.ceil(nodes.length/perRow));
   var boxW=Math.max(500,perRow*(nodeW+gap)+40);
-  var H=rows*rowH+8;
+  var H=rows*rowH+28;
   var pos={};
   nodes.forEach(function(n,i){
-    pos[n.id]={x:30+(i%perRow)*(nodeW+gap),y:8+Math.floor(i/perRow)*rowH};
+    pos[n.id]={x:30+(i%perRow)*(nodeW+gap),y:Math.floor(i/perRow)*rowH};
   });
   var svg='';
-  // 边（背后）：前节点右缘 → 后节点左缘，箭头收尾
+  // 边（背后）：前节点右缘 → 后节点左缘，水平线 y+45 + 箭头
   edges.forEach(function(e){
     var f=pos[e.from],t=pos[e.to];
     if(!f||!t)return'';
-    var x1=f.x+nodeW,y1=f.y+nodeH/2,x2=t.x,y2=t.y+nodeH/2;
-    svg+='<line class="fg-edge" x1="'+x1+'" y1="'+y1+'" x2="'+x2+'" y2="'+y2+'" marker-end="url(#flow-arrow)"/>';
+    var x1=f.x+nodeW,y1=f.y+45,x2=t.x,y2=t.y+45;
+    svg+='<line x1="'+x1+'" y1="'+y1+'" x2="'+x2+'" y2="'+y2+'" stroke="#8B949E" stroke-width="1.5" marker-end="url(#flow-arrow)"/>';
   });
-  // 节点
+  // 状态 → 颜色（对齐编排控制图：填充浅色 + 描边/文字用状态色）
+  var stCol={active:'#16B8F3',done:'#1D9E75',failed:'#E24B4A',hitl:'#EF9F27',unknown:'#8B949E'};
+  var stFill={active:'#E6F1FB',done:'#E1F5EE',failed:'#FCEBEB',hitl:'#FAEEDA',unknown:'#FAFBFC'};
   var stCn={active:'跑中',done:'完成',failed:'失败',hitl:'人工介入',unknown:'未知'};
   nodes.forEach(function(n){
     var p=pos[n.id];
     var st=n.status||'unknown';
+    var c=stCol[st]||stCol.unknown;
+    var fill=stFill[st]||stFill.unknown;
     var label=String(n.label||n.id||'');
     if(label.length>10)label=label.slice(0,9)+'…';
-    // 跑中/人工介入：右上角脉冲点
+    // 跑中/人工介入：右上角脉冲块（同编排控制图位置）
     if(st==='active'||st==='hitl'){
-      svg+='<circle class="pulse-svg" cx="'+(p.x+nodeW-12)+'" cy="'+(p.y+8)+'" r="4" fill="'+(st==='hitl'?'#EF9F27':'#16B8F3')+'"/>';
+      svg+='<rect x="'+(p.x+nodeW-14)+'" y="'+(p.y+14)+'" width="8" height="8" rx="4" fill="'+(st==='hitl'?'#EF9F27':'#16B8F3')+'" class="pulse-svg"/>';
     }
-    svg+='<rect class="fg-node fg-'+st+'" x="'+p.x+'" y="'+p.y+'" width="'+nodeW+'" height="'+nodeH+'" rx="6"/>';
-    svg+='<circle class="fg-dot fg-'+st+'" cx="'+(p.x+14)+'" cy="'+(p.y+nodeH/2)+'" r="4"/>';
-    svg+='<text class="fg-label" x="'+(p.x+26)+'" y="'+(p.y+21)+'">'+escapeHtml(label)+'</text>';
-    svg+='<text class="fg-status" x="'+(p.x+nodeW/2)+'" y="'+(p.y+nodeH+14)+'" text-anchor="middle">'+(stCn[st]||st)+'</text>';
+    svg+='<rect x="'+p.x+'" y="'+(p.y+28)+'" width="'+nodeW+'" height="'+nodeH+'" rx="6" fill="'+fill+'" stroke="'+c+'" stroke-width="1"/>';
+    svg+='<text x="'+(p.x+nodeW/2)+'" y="'+(p.y+49)+'" text-anchor="middle" font-size="11" font-weight="500" fill="'+c+'">'+escapeHtml(label)+'</text>';
+    svg+='<text x="'+(p.x+nodeW/2)+'" y="'+(p.y+76)+'" text-anchor="middle" font-size="9" fill="#8B949E">'+(stCn[st]||st)+'</text>';
   });
   return '<div class="chart-box" style="overflow-x:auto;padding:14px">'+
     '<svg class="graph-wide" viewBox="0 0 '+boxW+' '+H+'" style="min-width:520px;width:100%;display:block">'+
