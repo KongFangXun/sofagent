@@ -35,7 +35,7 @@
 | ④ | **不传 timeout 参数** | `timeout:600000` 生效 = 10 分钟上限杀 driver——v1.3.9 run-01 二次死亡实证（心跳停与重启间隔恰好 10 分钟）。后台任务无需 timeout，传了反而被杀 |
 | ⑤ | **中断恢复用 `--resume` 续跑** | 异常死亡 → liveness 探针确认 → `node FORGE/src/fresh-eyes-driver.mjs --target <版本号> --max-rounds 10 --resume > <log> 2>&1`——driver 按产物完整性跳过已完成 worker，**保留已有产物续跑，绝不重开浪费**（v1.3.9 run-01 死两次均靠 resume 保住 round-1/2 的 61 个产物） |
 | ⑥ | **daemon + watch 守护优先** | v1.3.9 已交付进程守护（[767d7c10] 起）：`--daemon` spawn detached 自脱离进程树（WorkBuddy 会话结束不影响存活，日志 → runDir/driver.log）；`--watch <runDir>` 主管模式——每 30s 读心跳，心跳停 → 审计死因（death-audit.jsonl）→ **自动 `--resume` 拉起新 driver**，verdict.md 产出后 watcher 退出（`--watch-interval` 默认 30s / `--watch-threshold` 默认 90s）。**daemon+watch 就绪优先用**，裸后台（①~⑤）为 fallback |
-| ⑦ | **独占窗口检查** | 启动前确认无其他 session 在写本仓库（`git status` 干净 + 无并行 driver 进程）——SKILL.md run-07 教训；v1.3.9 并行 session 同时改驱动文件/v1.3.9.md 曾致 commit 撞 file modified |
+| ⑦ | **独占窗口检查（三查）** | 启动前确认无其他 session 在写本仓库——一查 `git status --short \| wc -l` 改动文件数（预期 0 或个位数，几十个 = 有其他 session 在写）；二查近 5 分钟 mtime（`find . -path ./node_modules -prune -o -mmin -5 -type f -print`）；三查 `.workbuddy/memory/$(date +%Y-%m-%d).md` 今日日志有无他人活跃记录（「commit 收编」「working tree clean」等他 session 痕迹）。**任一命中即停手问用户**——SKILL.md run-07 教训 + 2026-08-23 双 session 并行写同一仓库撞车实证（bugfix session 与术语重构 session 交替写 README/WIKI，靠对方收编才合流） |
 | ⑧ | **driver 运行期并行步骤三/四** | driver 后台跑时当前 session 并行执行代码审核 + 验收增量，不空等（v1.3.9 实测高效） |
 
 > **监控协议**：按 `FORGE/SKILL/fresh-eyes-loop/SKILL.md`——每 120 秒一轮读 `status.json`，session 保持活跃可见；心跳 >90 秒未更新用 `--check-alive <runDir>` liveness 探针（只认心跳不认日志——长 LLM 窗口日志冻结是正常，心跳停才是死）。
@@ -98,7 +98,7 @@
 
 先读 `FORGE/SKILL/fresh-eyes-loop/SKILL.md` 拿到完整的「Session 监控协议」，然后按协议执行：
 
-0. 独占窗口检查：git status 确认工作树无其他 session 残留，无并行 driver 进程。
+0. 独占窗口检查（三查，2026-08-23 双 session 并行撞车升级）：① `git status --short | wc -l` 改动文件数（预期 0/个位数，几十个 = 有其他 session 在写）② `find . -path ./node_modules -prune -o -mmin -5 -type f -print` 近 5 分钟活跃文件 ③ `tail .workbuddy/memory/$(date +%Y-%m-%d).md` 今日日志他人活跃记录——任一命中先停手问用户「是否还有其他 session 在写本仓库」。
 1. 启动 driver——**优先 daemon+watch 守护模式**（自动恢复，免疫会话回收）：
    FORGE_MAX_CONCURRENCY=1 node FORGE/src/fresh-eyes-driver.mjs \
      --target {实际版本号} --max-rounds 10 --daemon --watch {runDir}
