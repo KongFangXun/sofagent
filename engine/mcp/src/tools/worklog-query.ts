@@ -11,6 +11,11 @@
 
 import { WorklogAggregator } from '@sofagent/orchestrator';
 
+/** 成本显示统一人民币：引擎 costUsd 按美元计费，展示 ×7.2 估算汇率换算（与 dashboard fmtCost 同口径） */
+const USD_CNY = 7.2;
+const fmtCny = (usd: number | null | undefined): string =>
+  usd === null || usd === undefined ? '' : `¥${(usd * USD_CNY).toFixed(2)}`;
+
 export interface WorklogQueryResult {
   /** 首行必须 [sofagent] 前缀 */
   text: string;
@@ -53,7 +58,7 @@ export async function worklogQuery(params: {
       lines.push(
         `· ${a.agentId}: ${t.tasks} 任务 / ${t.llmCalls} 次调用 / ` +
         `${t.tokens.input + t.tokens.output} tokens / ${duration}` +
-        `${t.costUsd !== null ? ` / ~$${t.costUsd}` : ''}` +
+        `${t.costUsd !== null ? ` / ~${fmtCny(t.costUsd)}` : ''}` +
         `${t.humanInterventions > 0 ? ` / 人工介入 ${t.humanInterventions} 次` : ''}`
       );
       for (const task of a.tasks.slice(0, 10)) { // 文本视图截前 10 条，全量走 data
@@ -75,7 +80,7 @@ export async function worklogQuery(params: {
     if (result.weeklyTrend) {
       lines.push('周趋势:');
       for (const w of result.weeklyTrend) {
-        lines.push(`  ${w.week}: 活跃 ${w.activity} / 审计通过率 ${w.auditPassRate ?? '—'} / 成本 ~$${w.costUsd}`);
+        lines.push(`  ${w.week}: 活跃 ${w.activity} / 审计通过率 ${w.auditPassRate ?? '—'} / 成本 ~${fmtCny(w.costUsd)}`);
       }
     }
     if (result.evolution) {

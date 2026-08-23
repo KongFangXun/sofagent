@@ -12,6 +12,11 @@ import { runCostAudit, loadWorklogSlice, type CostBudget } from '@sofagent/audit
 import { join } from 'path';
 import { homedir } from 'os';
 
+/** 成本显示统一人民币：引擎 costUsd 按美元计费，展示 ×7.2 估算汇率换算（与 dashboard fmtCost 同口径） */
+const USD_CNY = 7.2;
+const fmtCny = (usd: number | null | undefined, digits = 2): string =>
+  usd === null || usd === undefined ? '' : `¥${(usd * USD_CNY).toFixed(digits)}`;
+
 export interface CostQueryResult {
   /** 首行必须 [sofagent] 前缀 */
   text: string;
@@ -39,7 +44,7 @@ export async function costQuery(params: { budget?: CostBudget } = {}): Promise<C
 
     const lines: string[] = [];
     lines.push('[sofagent] 成本审计（cost_query）');
-    lines.push(`预算: ${budget ? `token ${budget.maxTokensPerRun ?? '未配'} / 日成本 $${budget.maxCostPerDay ?? '未配'}` : '未配置（opt-in——workflow.yml 配 budget 后启用）'}`);
+    lines.push(`预算: ${budget ? `token ${budget.maxTokensPerRun ?? '未配'} / 日成本 ${fmtCny(budget.maxCostPerDay) || '未配'}` : '未配置（opt-in——workflow.yml 配 budget 后启用）'}`);
     if (!worklog) {
       lines.push('（无 worklog 数据——运行编排/审计任务后产生 data/dashboard/worklog.json）');
     } else {
@@ -48,7 +53,7 @@ export async function costQuery(params: { budget?: CostBudget } = {}): Promise<C
         const total = (t?.input || 0) + (t?.output || 0);
         const c = a.totals?.costUsd;
         lines.push(
-          `· ${a.agentId}: ${total} tokens${c !== null && c !== undefined ? ` / ~$${c.toFixed(4)}` : ''}` +
+          `· ${a.agentId}: ${total} tokens${c !== null && c !== undefined ? ` / ~${fmtCny(c, 4)}` : ''}` +
           (a.totals?.tasks ? ` / ${a.totals.tasks} 任务` : '') +
           (a.totals?.llmCalls ? ` / ${a.totals.llmCalls} 调用` : '')
         );
