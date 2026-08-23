@@ -9,6 +9,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>sofagent · FDE Agent 控制台</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2316B8F3'/%3E%3Ccircle cx='16' cy='16' r='7' fill='white'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -102,6 +103,9 @@ a:hover{text-decoration:underline}
 
 .metrics{display:grid;grid-template-columns:repeat(5,1fr);gap:16px;margin-bottom:16px}
 .metric-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;text-align:center}
+/* 加载骨架：数据区加载态统一（shimmer 灰块，替代「加载中...」文字） */
+.skeleton{background:linear-gradient(90deg,var(--bg) 25%,var(--bg-s) 50%,var(--bg) 75%);background-size:200% 100%;animation:sk-shimmer 1.4s infinite;border-radius:var(--radius-s)}
+@keyframes sk-shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
 .metric-value{font-size:28px;font-weight:700;line-height:1.2;font-variant-numeric:tabular-nums;color:var(--brand)}
 .metric-label{font-size:12px;color:var(--text-s);margin-top:4px}
 .metric-sub{font-size:11px;color:var(--text-t);margin-top:2px}
@@ -406,7 +410,7 @@ a:hover{text-decoration:underline}
       <button class="nav-item" onclick="goPage('resources')">工具箱</button>
     </nav>
     <div class="header-right">
-      <button class="help-btn" onclick="openHelp('workflow')" title="使用帮助：业务流/本体图谱/知识库/FDE 引导" aria-label="打开帮助">
+      <button class="help-btn" onclick="openHelp()" title="使用帮助：业务流/本体图谱/知识库/FDE 引导" aria-label="打开帮助">
         <i class="bi bi-question-circle"></i>
         帮助
       </button>
@@ -488,7 +492,7 @@ a:hover{text-decoration:underline}
       <div id="wl-view-audit" style="display:none">
         <div id="auditRecordCount" style="font-size:11px;color:var(--text-t);margin-bottom:8px;display:flex;align-items:center;gap:10px;justify-content:space-between;flex-wrap:wrap"></div>
         <div class="audit-log" id="liveAuditLog">
-          <div style="color:var(--text-t);font-size:12px;text-align:center;padding:20px">加载中...</div>
+          <div class="skeleton" style="height:80px"></div>
         </div>
       </div>
       <div id="wl-view-intervention" style="display:none"></div>
@@ -519,7 +523,7 @@ a:hover{text-decoration:underline}
         <div id="sovDaemonBadge" style="font-size:11px;font-weight:600;display:none"></div>
       </div>
       <div class="section-body" id="sovereigntyBox">
-        <div style="color:var(--text-t);font-size:12px;text-align:center;padding:20px">加载中...</div>
+        <div class="skeleton" style="height:80px"></div>
       </div>
     </div>
   </div>
@@ -536,7 +540,7 @@ a:hover{text-decoration:underline}
     </div>
     <div class="section-body">
       <div id="aiNodeList" style="font-size:12px;color:var(--text-s)">
-        <div style="text-align:center;color:var(--text-t);padding:12px">加载中...</div>
+        <div class="skeleton" style="height:60px"></div>
       </div>
       <div class="info-note" style="margin-top:12px">
         这里显示你<strong>通过 FDE 部署的业务 AI 节点</strong>（<i class="bi bi-arrow-repeat"></i> 自动执行 / <i class="bi bi-lightning-charge"></i> 强化岗位）。当前展示的是 FDE 十步流程模板；部署节点后会自动出现在这里（数据源 <code style="background:var(--brand-l);padding:2px 6px;border-radius:4px">~/.sofagent/fde/workflow/</code>）。
@@ -553,7 +557,7 @@ a:hover{text-decoration:underline}
     </div>
     <div class="section-body">
       <div class="chart-box" id="graphBox">
-        <div style="text-align:center;color:var(--text-t);font-size:12px;padding:12px">加载中...</div>
+        <div class="skeleton" style="height:60px"></div>
       </div>
     </div>
   </div>
@@ -577,7 +581,7 @@ a:hover{text-decoration:underline}
         <div class="chart-box" style="text-align:center;padding:12px"><div style="font-size:24px;font-weight:700;color:var(--text)">—</div><div style="font-size:11px;color:var(--text-s)">概念 Concepts</div></div>
         <div class="chart-box" style="text-align:center;padding:12px"><div style="font-size:24px;font-weight:700;color:var(--text)">—</div><div style="font-size:11px;color:var(--text-s)">关系 Relations</div></div>
       </div>
-      <div id="ontEntries" style="font-size:12px;color:var(--text-s)">加载中...</div>
+      <div id="ontEntries"><div class="skeleton" style="height:60px"></div></div>
     </div>
   </div>
   <div class="section">
@@ -609,14 +613,14 @@ a:hover{text-decoration:underline}
         <div class="chart-box" style="text-align:center;padding:12px"><div style="font-size:24px;font-weight:700;color:var(--text)">—</div><div style="font-size:11px;color:var(--text-s)">业务领域</div></div>
         <div class="chart-box" style="text-align:center;padding:12px"><div style="font-size:24px;font-weight:700;color:var(--text)">—</div><div style="font-size:11px;color:var(--text-s)">更新日志</div></div>
       </div>
-      <div id="kbEntries" style="font-size:12px;color:var(--text-s)">加载中...</div>
+      <div id="kbEntries"><div class="skeleton" style="height:60px"></div></div>
     </div>
   </div>
   <div class="section">
     <div class="section-header"><div class="section-title"><span class="dot-emoji"><i class="bi bi-lightbulb"></i></span>最近经验教训（自动沉淀）</div></div>
     <div class="section-body">
       <div class="grid-2" id="thinkList">
-        <div style="grid-column:1/-1;text-align:center;color:var(--text-t);font-size:12px;padding:12px">加载中...</div>
+        <div class="skeleton" style="grid-column:1/-1;height:60px"></div>
       </div>
       <div class="prompt-box" style="margin-top:12px">
         <div class="prompt-action"><span class="prompt-label">在 Agent 中查询知识库</span><button class="copy-btn" onclick="copyPrompt(this, '用 sofagent 知识库查一下：上次踩了什么坑？有没有相关的实体或概念？帮我避免重蹈覆辙。')">复制</button></div>
@@ -707,7 +711,7 @@ a:hover{text-decoration:underline}
     </div>
     <div class="section-body">
       <div id="fdeWorkflowBox" style="font-size:12px;color:var(--text-s)">
-        <div style="text-align:center;color:var(--text-t);padding:12px">加载中...</div>
+        <div class="skeleton" style="height:60px"></div>
       </div>
     </div>
   </div>
@@ -719,7 +723,7 @@ a:hover{text-decoration:underline}
     <div class="section-body">
       <div style="font-size:11px;color:var(--text-t);margin-bottom:10px">sofagent 自己的 FDE 流程节点图——自举：梳理 → 识别 AI 节点 → 双 graph 交付 → 7×24 审计。我们是自己的第一个客户（数据源 <code style="background:var(--brand-l);padding:2px 6px;border-radius:4px">~/.sofagent/fde/workflow/template.yaml</code>）。</div>
       <div id="fdeSelfGraphBox" style="font-size:12px;color:var(--text-s)">
-        <div style="text-align:center;color:var(--text-t);padding:12px">加载中...</div>
+        <div class="skeleton" style="height:60px"></div>
       </div>
     </div>
   </div>
@@ -745,7 +749,7 @@ a:hover{text-decoration:underline}
     </div>
     <div class="section-body">
       <div id="skillChainBox" style="font-size:12px;color:var(--text-s)">
-        <div style="text-align:center;color:var(--text-t);padding:12px">加载中...</div>
+        <div class="skeleton" style="height:60px"></div>
       </div>
     </div>
   </div>
@@ -851,7 +855,7 @@ a:hover{text-decoration:underline}
     </div>
     <div class="section-body">
       <div class="mcp-grid" id="mcpList">
-        <div style="grid-column:1/-1;color:var(--text-t);font-size:12px;padding:8px">加载中...</div>
+        <div class="skeleton" style="grid-column:1/-1;height:50px"></div>
       </div>
     </div>
   </div>
@@ -888,7 +892,7 @@ a:hover{text-decoration:underline}
         <div class="step-desc">两个 Agent 互不可见：A（审查模型）不带前置上下文独立找问题，B（工程模型）收到报告独立修复，多轮迭代直到收敛（默认 5 轮）。</div>
       </div>
       <div class="chart-box" id="forgeBox">
-        <div style="text-align:center;color:var(--text-t);font-size:12px;padding:12px">加载中...</div>
+        <div class="skeleton" style="height:60px"></div>
       </div>
       <div class="prompt-box" style="margin-top:12px">
         <div class="prompt-action"><span class="prompt-label">在你的项目中运行 fresh-eyes-loop</span>
@@ -905,7 +909,7 @@ Agent A 找问题，Agent B 修复，
         <div class="step-desc">发版前按十二阶段 SOP 逐门禁验收（build → acceptance → regression → coverage…），任一环节 FAIL 即卡关，全部通过才允许打 tag 发版。</div>
       </div>
       <div class="chart-box" id="releaseGateBox">
-        <div style="text-align:center;color:var(--text-t);font-size:12px;padding:12px">加载中...</div>
+        <div class="skeleton" style="height:60px"></div>
       </div>
       <div class="prompt-box" style="margin-top:12px">
         <div class="prompt-action"><span class="prompt-label">运行 release-gate 门禁</span>
@@ -922,7 +926,7 @@ build → acceptance → regression → coverage，
         <div class="step-desc">每次 AI 任务自动走的五步（planner → engineer → audit → reviewer → human）——sofagent 引擎内部机制，与 FORGE 同类。业务角色节点（分析师/规划师/部署专家）见 <a href="javascript:void(0)" onclick="goPage('fde')" style="color:var(--brand)">FDE 引导</a> 页。</div>
       </div>
       <div class="grid-3" id="nodeList" style="gap:10px">
-        <div style="grid-column:1/-1;text-align:center;color:var(--text-t);font-size:12px;padding:12px">加载中...</div>
+        <div class="skeleton" style="grid-column:1/-1;height:60px"></div>
       </div>
     </div>
   </div>
@@ -1128,6 +1132,7 @@ build → acceptance → regression → coverage，
 <script>
 /* ===== Page Navigation ===== */
 function goPage(name){
+  window.__currentPage=name;
   document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active')});
   document.querySelectorAll('.nav-item').forEach(function(n){n.classList.remove('active')});
   document.getElementById('page-'+name).classList.add('active');
@@ -1923,7 +1928,7 @@ function loadKnowledgeData(){
               '<span style="margin-left:auto;color:var(--text-t)">节点：'+escapeHtml(r.nodes||'-')+'</span></div>';
           }).join('');
       }else{
-        entries.innerHTML=emptyState('<i class="bi bi-journal-bookmark"></i>','知识库还是空的','运行 FDE 或在 Agent 中执行知识沉淀后自动写入（~/.sofagent/data/knowledge/）','去 FDE 引导',"goPage('fde')");
+        entries.innerHTML=emptyState('<i class="bi bi-journal-bookmark"></i>','还没有知识库数据','运行 FDE 或在 Agent 中执行知识沉淀后自动写入（~/.sofagent/data/knowledge/）','去 FDE 引导',"goPage('fde')");
       }
     }
     if(updated)updated.textContent=fmtUpdatedAt();
@@ -2430,7 +2435,7 @@ function loadFdeSelfGraph(){
       if(updated)updated.textContent=fmtUpdatedAt();
     });
   }).catch(function(){
-    box.innerHTML=emptyState('<i class="bi bi-diagram-2"></i>','还没有 FDE workflow 数据','部署 FDE workflow 后读取真实节点（template.yaml）','去 FDE 引导',"goPage('fde')");
+    box.innerHTML=emptyState('<i class="bi bi-diagram-2"></i>','还没有 FDE workflow 模板','部署 FDE workflow 后读取真实节点（template.yaml）','去 FDE 引导',"goPage('fde')");
   });
 }
 
@@ -2491,7 +2496,10 @@ function openHelp(page){
   var overlay=document.getElementById('helpOverlay');
   if(!overlay)return;
   overlay.style.display='flex';
-  switchHelpTab(page||'workflow');
+  // 联动：不传参时跟随当前页面（cockpit/resources 无对应教学页 → 默认业务流）
+  var cur=page||window.__currentPage||'workflow';
+  if(cur!=='workflow'&&cur!=='ontology'&&cur!=='knowledge'&&cur!=='fde')cur='workflow';
+  switchHelpTab(cur);
 }
 function closeHelp(){
   var overlay=document.getElementById('helpOverlay');
