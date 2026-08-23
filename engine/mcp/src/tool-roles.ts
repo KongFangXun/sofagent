@@ -1,8 +1,9 @@
 // ============================================================
 // tool-roles.ts · MCP 工具角色分层（v1.4.0）
 //
-// 66 个工具按角色打标签，默认只暴露 fde+audit+agent 三面
-// （企业部署核心场景），SOFAGENT_MCP_ROLES=all 恢复全量。
+// 66 个工具按角色打标签，默认全量暴露（通用对话助手形态，
+// 对话可跨场景，硬砍会挡模型）。专职 Agent 部署时显式设
+// SOFAGENT_MCP_ROLES=fde,audit,agent 等收窄到专用工具箱。
 // 未打 roles 的工具（动态工具 memory_backends）始终暴露。
 // ============================================================
 
@@ -10,29 +11,24 @@
 export const ROLES = ['audit', 'fde', 'eval', 'agent', 'ops', 'commons', 'browser'] as const;
 export type Role = (typeof ROLES)[number];
 
-/** 默认暴露的角色面——企业部署核心场景（部署 + 审计 + 运行时编排） */
-export const DEFAULT_ROLES: Role[] = ['fde', 'audit', 'agent'];
-
-/** 环境变量名——逗号分隔角色列表；all / * / 空 = 全量暴露 */
+/** 环境变量名——逗号分隔角色列表；未配置 / all / * / 空 = 全量暴露 */
 export const ROLES_ENV = 'SOFAGENT_MCP_ROLES';
 
 /**
  * 解析当前激活的角色集。
- * - `null` = 全量暴露（仅显式 `all` / `*`）
- * - 未配置 / 空 / 全非法 → 默认三面（fde/audit/agent）
- * - 否则 = 只暴露指定面
+ * - `null` = 全量暴露（未配置 / 空 / `all` / `*` / 全非法值）
+ * - 否则 = 只暴露显式指定的面
  */
 export function getActiveRoles(env: NodeJS.ProcessEnv = process.env): Role[] | null {
   const raw = (env[ROLES_ENV] ?? '').trim().toLowerCase();
-  if (raw === 'all' || raw === '*') return null; // 显式全量
-  if (raw === '') return DEFAULT_ROLES; // 未配置 → 默认分层
+  if (raw === '' || raw === 'all' || raw === '*') return null; // 默认 / 显式全量
 
   const valid = raw
     .split(',')
     .map((s) => s.trim())
     .filter((s) => (ROLES as readonly string[]).includes(s)) as Role[];
 
-  if (valid.length === 0) return DEFAULT_ROLES;
+  if (valid.length === 0) return null; // 全非法 → 全量兜底
   return [...new Set(valid)];
 }
 

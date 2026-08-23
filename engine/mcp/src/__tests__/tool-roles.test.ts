@@ -5,15 +5,14 @@ import { describe, it, expect } from 'vitest';
 import { TOOLS } from '../tool-registry';
 import {
   ROLES,
-  DEFAULT_ROLES,
   getActiveRoles,
   isToolExposed,
   filterToolsByRoles,
 } from '../tool-roles';
 
 describe('getActiveRoles 环境变量解析', () => {
-  it('未配置 → 默认三面 fde/audit/agent', () => {
-    expect(getActiveRoles({})).toEqual(['fde', 'audit', 'agent']);
+  it('未配置 → 全量（null）', () => {
+    expect(getActiveRoles({})).toBeNull();
   });
 
   it('all → null（全量暴露）', () => {
@@ -24,8 +23,8 @@ describe('getActiveRoles 环境变量解析', () => {
     expect(getActiveRoles({ SOFAGENT_MCP_ROLES: '*' })).toBeNull();
   });
 
-  it('空字符串 → 默认三面（视为未配置）', () => {
-    expect(getActiveRoles({ SOFAGENT_MCP_ROLES: '' })).toEqual(DEFAULT_ROLES);
+  it('空字符串 → 全量（null）', () => {
+    expect(getActiveRoles({ SOFAGENT_MCP_ROLES: '' })).toBeNull();
   });
 
   it('单个角色 eval', () => {
@@ -44,8 +43,8 @@ describe('getActiveRoles 环境变量解析', () => {
     expect(getActiveRoles({ SOFAGENT_MCP_ROLES: 'fde,bogus,agent' })).toEqual(['fde', 'agent']);
   });
 
-  it('全非法值 → 回退默认三面', () => {
-    expect(getActiveRoles({ SOFAGENT_MCP_ROLES: 'bogus,foo' })).toEqual(DEFAULT_ROLES);
+  it('全非法值 → 全量兜底（null）', () => {
+    expect(getActiveRoles({ SOFAGENT_MCP_ROLES: 'bogus,foo' })).toBeNull();
   });
 });
 
@@ -76,8 +75,8 @@ describe('filterToolsByRoles 清单过滤', () => {
     expect(filtered).toHaveLength(66);
   });
 
-  it('默认三面 → 只暴露 fde/audit/agent（约 30 个，且不含 browser/ops/commons 独占工具）', () => {
-    const filtered = filterToolsByRoles(TOOLS, DEFAULT_ROLES);
+  it('显式 fde+audit+agent 三面 → 只暴露这三面（不含 browser/ops/commons 独占工具）', () => {
+    const filtered = filterToolsByRoles(TOOLS, ['fde', 'audit', 'agent']);
     expect(filtered.length).toBeGreaterThan(20);
     expect(filtered.length).toBeLessThan(66);
     const names = filtered.map((t) => t.name);
