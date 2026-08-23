@@ -1,8 +1,8 @@
 // ============================================================
 // watch-config.ts · 文件监控配置解析器
-// v1.3.9 从 sofagent/audit/src/config/watch-config.ts 迁出
+// v1.4.0 从 sofagent/audit/src/config/watch-config.ts 迁出
 // v1.3.7 新增：从 .sofagent/watch.yml 加载配置
-// v1.3.9: 追加 cron 配置段 + CronJob 类型
+// v1.4.0: 追加 cron 配置段 + CronJob 类型
 //
 // 配置结构（watch.yml）：
 //   watch:

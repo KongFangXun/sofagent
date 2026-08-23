@@ -1,5 +1,5 @@
 #!/bin/bash
-# sofagent commit-msg hook v1.3.9
+# sofagent commit-msg hook v1.4.0
 # 安装：sofagent-audit --init 或 sofagent-audit --install-hook
 # commit-msg hook 接收 $1 = commit message 文件路径
 
@@ -40,7 +40,7 @@ fi
 # 2.1 P1-A2: dist 完整性校验——防止本地覆写 dist 致审计失效
 #     比对 engine/audit/dist/index.js 的 SHA-256 与安装时记录的基准哈希。
 #     基准哈希存储在 ~/.sofagent/internal/audit-hash.txt（install.sh 首装或 --doctor 首次运行时记录）。
-#     v1.3.9 P1-A3：基准缺失时 FAIL 而非跳过——此前 if [ -f ] 缺基准即静默放行，
+#     v1.4.0 P1-A3：基准缺失时 FAIL 而非跳过——此前 if [ -f ] 缺基准即静默放行，
 #     首次部署窗口内可植入冒牌引擎（基准仅 --doctor 生成而首装不生成，空窗被利用）。
 if [ -f "engine/audit/dist/index.js" ]; then
   SOFAGENT_HOME="${SOFAGENT_HOME:-$HOME/.sofagent}"

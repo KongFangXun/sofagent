@@ -1,5 +1,5 @@
 // ============================================================
-// skillopt-trigger.ts · L2 @weekly skillopt 自动触发（v1.3.9 · P1）
+// skillopt-trigger.ts · L2 @weekly skillopt 自动触发（v1.4.0 · P1）
 // ============================================================
 //
 // @weekly：检查 failure-ledger 中连续 ≥3 次的失败聚类 → 自动触发 optimize()

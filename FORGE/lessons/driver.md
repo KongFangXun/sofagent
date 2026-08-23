@@ -637,7 +637,7 @@ node FORGE/src/fresh-eyes-driver.mjs --target v1.2.9 > /tmp/fresh-eyes-v1.2.9.lo
 
 40k 字符输入 + 3min 超时 → abort；端点 ping 正常（小请求秒回）。15k/源 + 5min → 3min54s 成功。**单次 LLM 工具的输入截断阈值与超时预算是核心参数**——大输入不是线性变慢，是 thinking 链条随输入增长。
 
-## 2026-08-20 阶段四审查缺位事故（releasing SOP 执行层 · v1.3.9 发版实录）
+## 2026-08-20 阶段四审查缺位事故（releasing SOP 执行层 · v1.4.0 发版实录）
 
 **场景**：v1.3.8 发版阶段四委托新 session 执行，汇报只覆盖 Step 4（acceptance 场景 + 三门禁），Step 1 草稿审查与 Step 2 driver 兜底**静默跳过**——草稿产物不存在、driver 目录只有两次 dry-run 空转（status.json: `stopReason: dry-run`, 0 findings, 零产物文件）。主 session 收到汇报后**打勾推进**，直到 16 小时后盘点阶段五输入材料（找草稿文件喂 gen-abc-draft）才发现缺位，被迫发版中途补跑。
 

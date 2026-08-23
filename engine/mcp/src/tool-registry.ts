@@ -1,6 +1,6 @@
 // ============================================================
 // tool-registry.ts · MCP tools/list schema definitions
-// v1.3.9: 从 mcp-server.ts 提取
+// v1.4.0: 从 mcp-server.ts 提取
 // ============================================================
 
 import { VERSION } from '@sofagent/audit';

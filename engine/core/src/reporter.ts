@@ -1,5 +1,5 @@
 // ============================================================
-// reporter.ts · 审计结果类型定义（v1.3.9 从 audit 迁出）
+// reporter.ts · 审计结果类型定义（v1.4.0 从 audit 迁出）
 //
 // 本文件专用于 @sofagent/core，仅包含纯类型定义（AuditResult, RuleCheck）。
 // 不依赖 audit 的 rules/ 模块，供所有包跨包使用。

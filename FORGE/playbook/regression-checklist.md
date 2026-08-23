@@ -99,7 +99,7 @@ grep -A5 "'A4\|name.*不删配置" engine/audit/src/rules/index.ts | grep "ruleC
 grep "name:" engine/audit/src/rules/index.ts | wc -l   # 期望 24
 grep "A6.*能力拐杖\|A11.*业务底线" engine/audit/README.md | wc -l   # 期望 2
 
-# 子项 d: ruleClass SSOT ↔ README 逐条比对（v1.1.3 盲区 · v1.3.9 重写）
+# 子项 d: ruleClass SSOT ↔ README 逐条比对（v1.1.3 盲区 · v1.4.0 重写）
 # v1.2.5：旧版用 `diff <(index.ts 代码) <(README 表格行)`——两种文本格式天生不同，永远报差异（误报 12 行）。
 # 改为两侧归一化成「A编号 ruleClass」再比对，才是真正检查"每条规则分级两边一致"。
 diff <(grep -E "name: 'A[0-9]+" engine/audit/src/rules/index.ts | sed -E "s/.*name: '(A[0-9]+)[^']*'.*ruleClass: '([^']+)'.*/\1 \2/" | sort) \
@@ -195,7 +195,7 @@ echo "index.ts: $INDEX_RULES / knownKeys: $KNOWN_KEYS"   # 期望：两集合相
 # 文档侧：声称型数字（v1.1.5 教训——6 文档漏改）
 grep -rnE "A1-A11、A14-A1[0-9]|[0-9]+ 条审计规则" --include="*.md" README.md README.en.md docs/ FDE/ FORGE/ ROADMAP.md 2>/dev/null | grep -v "regression-checklist\|fresh-eyes-review\|changelog/"   # 人工核对：与 SSOT 一致
 
-# 字段完整性（v1.1.6：name+ruleClass 各 24 条=48 · v1.3.9 修正 21→24）+ evidenceMode 计数（v1.1.4：期望 24）
+# 字段完整性（v1.1.6：name+ruleClass 各 24 条=48 · v1.4.0 修正 21→24）+ evidenceMode 计数（v1.1.4：期望 24）
 grep -oE "name:|ruleClass:" engine/audit/src/rules/index.ts | wc -l   # 期望 48
 grep -cE "evidenceMode:" engine/audit/src/rules/index.ts   # 期望 24
 ```
@@ -976,7 +976,7 @@ grep -rnE "^#{1,4} .*(🔮|🔄|🪟|✨|[+/（）():：])" docs/ README.md SECU
 
 > **PASS 标准**：所有跨文档 `#锚点` 链接指向的标题，按 GitHub 渲染规则（剥 emoji/标点、空格→`-`）推算的锚点与链接一致。标题含特殊字符者重点核对。
 
-#### 65. FORGE stream 迁移数据处理——finalState 须累积 delta + extractAgentText 须防御对象 content（v1.2.4 新盲区 · v1.3.1 归并 65+66）
+#### 65. FORGE stream 迁移数据处理——finalState 须累积 delta + extractAgentText 须防御对象 content（v1.2.4 新盲区 · v1.4.1 归并 65+66）
 
 > v1.2.4 教训（归并原 65+66）：FORGE stream 迁移有两个数据处理陷阱：① `stream(streamMode: 'updates')` 的 chunk 是 `{ nodeName: stateDelta }`，直接 `finalState = chunk` 会丢 `result.messages` → 输出 `[object Object]`——必须 `Object.entries(chunk)` 累积。② LangGraph message content 可能是 `Array<{type, text}>` 或嵌套对象，`extractAgentText` 只做 string 判断时会 fallback 到 `String(message)` → 同样输出 `[object Object]`。
 
@@ -1010,7 +1010,7 @@ EN=$(grep 'Current version' README.en.md | head -1)
 # 手动比对：两者都应包含当前版本的核心交付描述（如 Activation Chain / Audit / Daemon）
 ```
 
-#### 70. MCP tool 注册三处一致性——新增 tool 必须在 tool-registry + case dispatch + capabilities 三处都注册（v1.2.6 新盲区 · v1.3.1 修：跟上 v1.2.9 tool-registry.ts 拆分）
+#### 70. MCP tool 注册三处一致性——新增 tool 必须在 tool-registry + case dispatch + capabilities 三处都注册（v1.2.6 新盲区 · v1.4.1 修：跟上 v1.2.9 tool-registry.ts 拆分）
 > 📌 **v1.3.5 归并（判据②·MCP 聚簇 5→4）**：原维度 93（v1.3.2 五轮审查发现：新 tool 漏注册 TOOLS 数组/switch）与本维度同主题——注册一致性检查统一归此。93 的教训并入：三处 = tool-registry TOOLS 数组 + mcp-server switch case + import 语句；acceptance S270 已含四新 tool 的三处验证。
 
 > v1.2.6 教训：新增 MCP tool 时每个 tool 必须在三处同步注册。v1.2.9 mcp 拆分后工具注册从 mcp-server.ts 迁移到 **tool-registry.ts**（`import { TOOLS } from './tool-registry'`）——原检查命令查 mcp-server.ts 的 name: 字段恒得 0（架构迁移后该字段已移走），需改查 tool-registry.ts。验收测试 scenario 192 已覆盖此检查。
@@ -1048,7 +1048,7 @@ node -e "const fs=require('fs'),raw=fs.readFileSync('FORGE/src/fresh-eyes-driver
 # 期望：OK
 ```
 
-#### 73. ESM named export 完整性 + FORGE 模块加载烟测（v1.2.8 新盲区 · v1.3.1 归并 73+74）
+#### 73. ESM named export 完整性 + FORGE 模块加载烟测（v1.2.8 新盲区 · v1.4.1 归并 73+74）
 
 > v1.2.9 教训（归并原 73+74）：FORGE/ 不在 npm workspaces → `npm test` 从不执行 FORGE/ 下的 `.test.mjs`。曾出过 `DEFAULT_BUDGET` 缺 `export` 关键字导致 3 个 driver 启动即崩溃的 P0 bug。补建 `tools/forge/forge-smoke-test.sh` 做 6 模块加载 + 3 测试文件烟测，集成到 pre-push-check.sh。
 

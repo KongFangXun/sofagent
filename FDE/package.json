@@ -1,6 +1,6 @@
 {
   "name": "@sofagent/fde",
-  "version": "1.3.9",
+  "version": "1.4.0",
   "description": "企业 AI 落地的引导者。装上后 Agent 帮你逐岗位梳理业务流，用三问判定法识别哪些环节适合上 AI，算清每个节点的年节省金额，产出企业画像、节点方案、部署清单和交付手册。方法论零依赖（纯对话产出方案文档）；工具辅助路径需 Node.js ≥ 18。更多能力与完整文档见 GitHub kongfangxun/sofagent。",
   "private": true,
   "sofagent": {

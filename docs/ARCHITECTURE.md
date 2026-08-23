@@ -3,7 +3,7 @@
 > 设计决策记录——从为什么存在、约束层四种能力如何协作，到每个关键决策的工程理由。
 >
 > **产品定位锚定**：本架构服务的产品 = **一个 FDE Agent**（sofagent）——执行「给企业做 AI 落地」这条 workflow 的 Agent，以 LangGraph + 约束层为内核（ExecutionBackend 抽象，可扩展其他 Agent 运行时；DeepSeek Harness 为商业侧可选内核），plugin + skill + MCP + CLI + dashboard 为调用面，约束底座（注入·审计·回溯·进化）+ FDE 方法论为行为层（产品叙事见 [WIKI 一·五](./WIKI.md#一五产品叙事sofagent-是一个-fde-agent)）。
-> v1.3.9 · 2026-08-21（UTC）
+> v1.4.0 · 2026-08-23（UTC）
 
 <img src="assets/sofagent.png" alt="sofagent" width="160" />
 
@@ -29,7 +29,7 @@ graph TD
 
 ```mermaid
 graph LR
-    subgraph 层2 · 生命周期（流程视角 · v1.3.1+）
+    subgraph 层2 · 生命周期（流程视角 · v1.4.1+）
         D1[诊断<br/>FDE 四阶段] --> D2[激活 ACTIVATE<br/>交付物→SubAgent]
         D2 --> D3[编排 ORCHESTRATE<br/>多 Agent→StateGraph]
         D3 --> D4[执行 EXECUTE<br/>DAG + HITL + 审计]
