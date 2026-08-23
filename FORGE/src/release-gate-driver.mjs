@@ -989,8 +989,12 @@ async function runWorker(step, runDir, target) {
     // v1.3.4 增量：通过 ExecutionBackend 调用 agent
     // v1.3.9（五）：执行层切 DSH 默认（fallback 保留作降级——DSH rc 期守卫
     // 拦截自动降级 LangGraph，DSH 正式版发布后无需改代码自动切换）
+    // v1.4.0 修复（run-04/05 系统性 ERROR 根因）：release-gate worker **必须走 LangGraph**——
+    // DSH CLI 桥接不注入 sofagent 自定义工具（dsh-backend 显式警告），worker 的工具循环
+    // （读 precheck/写判定）依赖 tools 注入，走 DSH 则零 tool 事件 → worker 判定崩溃。
+    // FORGE_BACKEND=langgraph 仍可显式覆盖（保留逃生舱），但默认强制 langgraph。
     const { createExecutionBackend } = await import('../../engine/orchestrator/dist/execution-backend.js');
-    const backendPref = process.env.FORGE_BACKEND === 'langgraph' ? 'langgraph' : 'dsh';
+    const backendPref = process.env.FORGE_BACKEND === 'dsh' ? 'dsh' : 'langgraph';
     const backend = await createExecutionBackend({ preferred: backendPref });
     console.log(`[worker] 执行后端：preferred=${backendPref} → actual=${backend.name}`);
     const execResult = await backend.execute({
