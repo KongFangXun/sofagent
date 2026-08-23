@@ -8,7 +8,7 @@
 ## 正式版（v1.0.0+）
 
 > 未来版本规划见 [ROADMAP.md](./docs/ROADMAP.md)。
-> 未来版本的规划文件在 `docs/changelog/v1.3/` 下（标注"尚未实现"），不纳入本索引。
+> 未来版本的规划文件在 `docs/changelog/v1.4/` 下（标注"尚未实现"），不纳入本索引。
 
 - **v1.4.0** — 📊 Web 工作明细页 + 图谱栏（FDE 双 graph + MCP 工具视图 + skill 加载链）+ 💰 成本审计（超支告警 WARN only + `cost_query` MCP + COST DecisionKind）+ 🔌 DSH 插件家族（`cordis-plugin-sofagent-*` 9 款 · inventory 全可见 + Cursor/Claude hook 拦截）+ 🦞 OpenClaw 插件家族（4 款 code-plugin · ClawHub 发布就绪）+ 🏠 Dashboard HTML 产品化 + 📡 远程 API 通道（契约）+ 🔗 MLflow 接线 + 🌐 Agentic Browser MCP（61→66 tools）+ 🔄 联邦查询跨设备 E2E（S320 fork 10 断言 + S322 独立进程 4 场景 + 双设备用例）+ 🐚 bash 3.2 真实环境验证 + 🔍 审计溯源字段回填 · 测试 2903→**2959**（+56 · 引擎 +12 / DSH 插件 +27 / OpenClaw 插件 +17）· 2026-08-23 · [开发日志](./docs/changelog/v1.4/v1.4.0.md)
 - **v1.3.9** — 🔍 官方 AST 规则引擎（sofagent-ruleset-ast 含 ASI01/ASI04 · 8+2 规则同管线）+ 🧩 meta-harness 多 harness 统一编排（19 测试 + DSH 形态对齐）+ 📊 AI 工作明细数据层（worklog + worklog_query MCP）+ 🔬 API 分级 @public/@internal（1439 符号 + CI 门禁基线）+ ⚙️ FORGE driver 切 DSH（显式后端选择 + CLI 桥接 + bash 全权限）+ 📈 MLflow agent 评估（13 指标 + LLM-as-Judge）+ 🌐 Agentic Browser（4 工具 + 视觉降级）+ 🧭 跨平台适配器（Cursor/Codex/Gemini CLI 薄挂载）+ 🗂️ tools/ 物理分子目录 + 🏷️ ATTRIBUTION 归因引擎（S318）+ 🏖️ Dream Sandbox 沙盒审计（S319）+ 🩹 >5MB diff 缝隙修复（spill 落盘）+ 🔄 FORGE driver 进程守护（daemon + watcher）· 测试 2782→**2903**（+121）· 2026-08-23 · [开发日志](./docs/changelog/v1.3/v1.3.9.md)

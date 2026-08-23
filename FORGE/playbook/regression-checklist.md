@@ -1644,17 +1644,17 @@ GT=FORGE/src/gate-tools.mjs
 grep -qE 'createRequire' "$GT" 2>/dev/null && echo "✅ gate-tools ESM require 桥接" || echo "❌ gate-tools require 桥接回退"
 ```
 
-#### 121. v1.3.9 新功能审查面——十三交付锚点一维收口（阶段五来源提取 A 类 · 参照 113/115 先例）
+#### 121. v1.4.0 新功能审查面——双生态插件 + 工作明细 + 成本审计锚点一维收口（阶段四来源提取 A 类 · 参照 113/115/121 历史每版一维）
 
-> v1.3.9 十三项交付核心面收口一维（acceptance S305-S317 端到端，此处为分钟级快速 grep 版——审查 session 可跑）。检查命令指向实际实现路径。
+> v1.4.0 核心交付核心面收口一维（acceptance S320-S322 端到端，此处为分钟级快速 grep 版——审查 session 可跑）。检查命令指向实际实现路径。DSH 插件 9 款 + OpenClaw 插件 4 款 + 工作明细/图谱栏/成本审计为 v1.4.0 主线。
 
 ```bash
-R=engine/rules/src/ast; [ -d "$R" ] && grep -q asi01-prompt-injection "$R/rules/index.ts" && echo "✅ AST 引擎" || echo "❌ AST"
-grep -q worklog_query engine/mcp/src/tool-registry.ts 2>/dev/null && echo "✅ worklog MCP" || echo "❌ worklog"
-grep -q SOFAGENT_FORCE_DSH engine/orchestrator/src/execution-backend.ts 2>/dev/null && echo "✅ DSH 桥接" || echo "❌ DSH"
-[ -f engine/orchestrator/src/benchmark/mlflow-exporter.ts ] && echo "✅ MLflow" || echo "❌ MLflow"
-[ -f .cursor/rules/sofagent.mdc ] && [ -f GEMINI.md ] && echo "✅ 跨平台适配" || echo "❌ 跨平台"
-grep -q -- "--daemon" FORGE/src/fresh-eyes-driver.mjs 2>/dev/null && echo "✅ 进程守护" || echo "❌ 守护"
+grep -q "cost_query" engine/mcp/src/tool-registry.ts 2>/dev/null && echo "✅ 成本审计 MCP" || echo "❌ cost_query"
+grep -q "COST" engine/audit/src/decision-schema.ts 2>/dev/null && echo "✅ COST DecisionKind" || echo "❌ COST"
+[ -d engine/dsh-plugins/cordis-plugin-sofagent-audit ] && [ -d engine/dsh-plugins/cordis-plugin-sofagent-fde ] && echo "✅ DSH 插件家族（9 款 cordis-plugin-sofagent-*）" || echo "❌ DSH 插件"
+[ -f engine/openclaw-plugins/sofagent-inject/openclaw.plugin.json ] && [ -f engine/openclaw-plugins/sofagent-audit/openclaw.plugin.json ] && echo "✅ OpenClaw 插件家族（4 款 code-plugin）" || echo "❌ OpenClaw 插件"
+grep -q "worklog" tools/dashboard/dashboard.html 2>/dev/null && echo "✅ 工作明细/图谱栏" || echo "❌ 工作明细"
+grep -q "before_tool_execute" engine/openclaw-plugins/sofagent-audit/src/index.ts 2>/dev/null && echo "✅ OpenClaw 审计拦截" || echo "❌ OpenClaw 审计"
 ```
-<!-- 瘦身判据（v1.3.9 阶段五）：①无工具覆盖 ②聚簇提示全为假信号（通用词误报/同模式不同内容历史锚点） ③原 #121 A2 正则边界并入 #57 扩展子项（真实归并，不新增编号）——净增 2 维（#119 开发坑防复发 / #120 DSH 适配防复发）+ #121 编号复用为 v1.3.9 新功能审查面（参照 113/115 历史模式每版一维）；净增约 20 行，checklist 警戒线 1620→1660（三判据全否 + 1 次真实归并记录，v1.3.9 连续第二版上调未触第三版禁令）
+<!-- v1.4.0 阶段四：#121 由 v1.3.9 锚点原地更新（参照 113/115 每版一维先例，不新增编号不触警戒线）；v1.3.9 锚点检查项（AST/worklog/DSH 桥接/MLflow/跨平台/守护）已被 #119/#120 防复发维 + acceptance S305-S317 覆盖，不重复。B 类防回归（dist 陈旧/文档数字漂移）进 check-version 检查项 21/22（fresh-eyes F-01/F-05 防复发）。
 -->

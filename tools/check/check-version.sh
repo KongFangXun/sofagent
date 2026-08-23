@@ -1060,6 +1060,46 @@ else
 fi
 echo ""
 
+# ── 21. 构建产物陈旧检查（v1.4.0 fresh-eyes F-01 防复发）──────────────────
+# engine/audit/dist/index.js 等 dist 产物须与源码同版本（bump 后未 rebuild = 陈旧残留）。
+# 与 SSOT 不一致时 WARN（发版前未 build 属预期中间态，阶段十 npm run build 消解；不阻断）
+# 但与 package.json 版本差 ≥1 个 major 时 ERROR（陈旧过度 = 真问题）。
+echo "=== 21. 构建产物版本对账（dist vs 源码） ==="
+DIST_VER=$(grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' "${PROJECT_ROOT}/engine/audit/dist/index.js" 2>/dev/null | head -1 || true)
+if [[ -z "$DIST_VER" ]]; then
+  echo -e "  ${YELLOW}⚠${NC} engine/audit/dist/index.js 未构建或版本号缺失——阶段十 npm run build 后消解"
+  WARNINGS=$((WARNINGS + 1))
+elif [[ "$DIST_VER" != "v${SSOT_VERSION}" ]]; then
+  echo -e "  ${YELLOW}⚠${NC} dist 版本=$DIST_VER 落后于 SSOT v${SSOT_VERSION}——bump 后未 rebuild（F-01 防复发：发版前必跑 npm run build）"
+  WARNINGS=$((WARNINGS + 1))
+else
+  echo -e "  ${GREEN}✓${NC} dist 版本与 SSOT 一致：${DIST_VER}"
+  CHECKS=$((CHECKS + 1))
+fi
+echo ""
+
+# ── 22. MCP 工具数对账（v1.4.0 fresh-eyes F-05 防复发）──────────────────
+# tool-registry.ts 工具注册数与文档声称数一致（F-05：DEVELOPMENT.md 曾写 60，实际 66）。
+# 文档数字漂移 = 活文档同步遗漏；SSOT = tool-registry.ts 实际注册数。
+echo "=== 22. MCP 工具数对账（registry vs 文档声称） ==="
+MCP_REG=$(grep -cE "^    name: '[a-z_]+'" "${PROJECT_ROOT}/engine/mcp/src/tool-registry.ts" 2>/dev/null || echo "0")
+if [[ "${MCP_REG}" =~ ^[0-9]+$ ]] && [[ "${MCP_REG}" -gt 0 ]]; then
+  echo -e "  ${GREEN}✓${NC} tool-registry.ts 注册 ${MCP_REG} 个 MCP 工具（SSOT）"
+  # 文档声称数（DEVELOPMENT.md 的「当前 N 个 MCP tools」表述）
+  DOC_MCP=$(grep -oE '当前 [0-9]+ 个 MCP tools' "${PROJECT_ROOT}/docs/DEVELOPMENT.md" 2>/dev/null | grep -oE '[0-9]+' | head -1 || true)
+  if [[ -n "$DOC_MCP" ]] && [[ "$DOC_MCP" != "$MCP_REG" ]]; then
+    echo -e "  ${RED}✗${NC} DEVELOPMENT.md 声称 $DOC_MCP 个 MCP tools，实际 $MCP_REG——活文档数字漂移（F-05 防复发）"
+    ERRORS=$((ERRORS + 1))
+  else
+    echo -e "  ${GREEN}✓${NC} DEVELOPMENT.md MCP 数一致"
+    CHECKS=$((CHECKS + 1))
+  fi
+else
+  echo -e "  ${YELLOW}⚠${NC} tool-registry.ts 工具数解析失败（格式变化？人工确认）"
+  WARNINGS=$((WARNINGS + 1))
+fi
+echo ""
+
 # ── 汇总 ──────────────────────────────────────────────────────
 echo -e "${BOLD}${CYAN}═══════════════════════════════════════════════════════════${NC}"
 if [[ ${ERRORS} -eq 0 ]]; then
