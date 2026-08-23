@@ -469,17 +469,15 @@ a:hover{text-decoration:underline}
     <div class="section-header"><div class="section-title"><span class="dot-emoji"><i class="bi bi-bar-chart"></i></span>工作明细（worklog）</div>
       <span style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
         <span class="tab-inline">
-          <button class="nav-item active" id="wl-tab-overview" onclick="wlTab('overview')">概况</button>
-          <button class="nav-item" id="wl-tab-tasks" onclick="wlTab('tasks')">任务明细</button>
-          <button class="nav-item" id="wl-tab-audit" onclick="wlTab('audit')">审计</button>
-          <button class="nav-item" id="wl-tab-intervention" onclick="wlTab('intervention')">审核</button>
-          <button class="nav-item" id="wl-tab-weekly" onclick="wlTab('weekly')">周报</button>
+          <button class="nav-item active" id="wl-tab-overview" onclick="wlTab('overview')">概况明细</button>
+          <button class="nav-item" id="wl-tab-audit" onclick="wlTab('audit')">审计明细</button>
+          <button class="nav-item" id="wl-tab-intervention" onclick="wlTab('intervention')">人工介入</button>
+          <button class="nav-item" id="wl-tab-weekly" onclick="wlTab('weekly')">周报汇总</button>
         </span>
       </span>
     </div>
     <div class="section-body">
       <div id="wl-view-overview"></div>
-      <div id="wl-view-tasks" style="display:none"></div>
       <div id="wl-view-audit" style="display:none">
         <div id="auditRecordCount" style="font-size:11px;color:var(--text-t);margin-bottom:8px"></div>
         <div class="audit-log" id="liveAuditLog">
@@ -2011,32 +2009,40 @@ function loadOntologyData(){
 function loadForgeData(){
   var box=document.getElementById('forgeBox');
   if(!box)return;
-  fetch('/data/forge-runs/fresh-eyes-loop/latest.json')
-    .then(function(r){
-      if(!r.ok)throw new Error(r.status);
-      return r.json();
-    })
+  // 优先取最近一次真实运行（latest.json 可能被 dry-run 覆盖，/api/forge-latest 兜底扫历史目录）
+  fetch('/api/forge-latest')
+    .then(function(r){return r.json()})
     .then(function(f){
+      if(!f){throw new Error('no-run')}
       var a=f.agentA||{},b=f.agentB||{};
-      // dry-run / 初始空状态 → 诚实提示（真实审查跑过后自动更新）
-      var isDry=f.stopReason==='dry-run'||((a.status==='idle'||!a.status)&&(b.status==='idle'||!b.status)&&!(a.findings||b.findings));
-      if(isDry){
-        box.innerHTML=emptyState('<i class="bi bi-microscope"></i>','FORGE 尚未实际运行','最近记录是 dry-run 试运行（'+(f.updatedAt||'').slice(0,16)+'）——跑 fresh-eyes-loop 真实审查后显示进度');
-        return;
-      }
       var statusCn={running:'运行中',idle:'空闲',done:'完成',failed:'失败'};
       function card(name,agent){
         return '<div style="flex:1;min-width:200px"><div style="font-size:13px;font-weight:500;color:var(--text-s)">'+name+'</div>'+
           '<div style="font-size:12px;color:var(--text-s);margin-top:4px">状态：'+escapeHtml(statusCn[agent.status]||agent.status||'-')+' · 当前文件：'+escapeHtml(agent.currentFile||'-')+'</div>'+
           '<div style="font-size:11px;color:var(--text-t);margin-top:2px">本轮发现：'+(agent.findings||0)+' · 累计：'+escapeHtml(agent.cumulative||'-')+'</div></div>';
       }
+      var stopCn={maxRounds:'跑满轮次',clean:'正常完成',aborted:'中断','dry-run':'试运行'};
+      var stopText=stopCn[f.stopReason]||f.stopReason||'-';
       var html='<div style="display:flex;gap:16px;flex-wrap:wrap">'+
         card('Agent A · 审查模型',a)+card('Agent B · 工程模型',b)+'</div>';
-      html+='<div style="margin-top:12px;padding:8px 12px;background:var(--bg-s);border:1px solid var(--border);border-radius:var(--radius-s);font-size:12px;color:var(--text-s)">第 '+(f.round||0)+' 轮 / 共 '+(f.totalRounds||0)+' 轮 · '+escapeHtml(f.stopReason||'A/B 双盲中（互不可见）')+'</div>';
+      html+='<div style="margin-top:12px;padding:8px 12px;background:var(--bg-s);border:1px solid var(--border);border-radius:var(--radius-s);font-size:12px;color:var(--text-s)">'+escapeHtml(f.runDir||'')+' · '+escapeHtml(stopText)+' · 问题 '+((f.counts&&(f.counts.p0||0))+((f.counts&&(f.counts.p1||0))))+'（P0×'+((f.counts&&f.counts.p0)||0)+' P1×'+((f.counts&&f.counts.p1)||0)+'）</div>';
       box.innerHTML=html;
     })
     .catch(function(){
-      box.innerHTML=emptyState('<i class="bi bi-microscope"></i>','还没有 FORGE 运行记录','跑过 fresh-eyes-loop / release-gate-loop 后生成（latest.json）');
+      // 无真实运行 → 读 latest.json 判断 dry-run 给诚实提示
+      fetch('/data/forge-runs/fresh-eyes-loop/latest.json')
+        .then(function(r){return r.json()})
+        .then(function(f){
+          var isDry=f.stopReason==='dry-run'||(!(f.agentA&&f.agentA.findings)&&!(f.agentB&&f.agentB.findings));
+          if(isDry){
+            box.innerHTML=emptyState('<i class="bi bi-microscope"></i>','最近 FORGE 运行是 dry-run','最近多次 fresh-eyes-loop 均退化为试运行（perspective worker 未产出 check 产物）——检查 FORGE 运行环境后重跑');
+          }else{
+            box.innerHTML=emptyState('<i class="bi bi-microscope"></i>','还没有 FORGE 运行记录','跑过 fresh-eyes-loop / release-gate-loop 后生成');
+          }
+        })
+        .catch(function(){
+          box.innerHTML=emptyState('<i class="bi bi-microscope"></i>','还没有 FORGE 运行记录','跑过 fresh-eyes-loop / release-gate-loop 后生成');
+        });
     });
 }
 
@@ -2105,7 +2111,7 @@ function fmtCost(c){
 function fmtMs(ms){if(ms===null||ms===undefined)return '—';if(ms<1000)return ms+'ms';if(ms<60000)return (ms/1000).toFixed(1)+'s';return (ms/60000).toFixed(1)+'min'}
 
 function wlTab(tab){
-  ['overview','tasks','audit','intervention','weekly'].forEach(function(t){
+  ['overview','audit','intervention','weekly'].forEach(function(t){
     document.getElementById('wl-tab-'+t).classList.toggle('active',t===tab);
     document.getElementById('wl-view-'+t).style.display=t===tab?'':'none';
   });
@@ -2173,7 +2179,7 @@ function loadWorklogData(){
         costEl.textContent=totCost>0?'$'+totCost.toFixed(2):'—';
       }
 
-      /* 概况：Agent 汇总 + Workflow 节点状态（任务明细独立 tab） */
+      /* 概况明细：Agent 汇总 + Workflow 状态 + 任务明细 */
       var agRows=(d.agents||[]).map(function(a){
         var over=costCell(a.totals.costUsd,a.agentId,costWarns);
         return ['<strong>'+escapeHtml(a.agentId)+'</strong>',a.totals.tasks,a.totals.llmCalls,fmtTokens(a.totals.tokens),fmtMs(a.totals.modelCallMs),over,a.totals.humanInterventions||0];
@@ -2193,9 +2199,6 @@ function loadWorklogData(){
       });
       agHtml+='<div style="font-size:12px;font-weight:600;color:var(--text-s);margin:16px 0 4px">Workflow 节点状态（跑/完/失败/人工介入）</div>'+
         wlTable(['Workflow','节点状态','人工介入'],wfRows);
-      document.getElementById('wl-view-overview').innerHTML=agHtml;
-
-      /* 任务明细（独立 tab：每个任务怎么消耗/结果如何） */
       var taskRows=[];
       (d.agents||[]).forEach(function(a){
         (a.tasks||[]).forEach(function(t){
@@ -2213,11 +2216,11 @@ function loadWorklogData(){
           ]);
         });
       });
-      var taskHtml=sampleFlag+
+      agHtml+='<div style="font-size:12px;font-weight:600;color:var(--text-s);margin:16px 0 4px">任务明细</div>'+
         '<div style="font-size:11px;color:var(--text-t);margin-bottom:6px">口径：Token 数=输入+输出 · 成本=LLM 估算 · 耗时=模型调用时长 · 人工介入=需要人审批/纠正的次数</div>';
-      if(taskRows.length>30)taskHtml+='<div style="font-size:11px;color:var(--text-t);margin-bottom:6px">共 '+taskRows.length+' 条任务，仅显示最近 30 条</div>';
-      taskHtml+=wlTable(['任务','所属流程','决策次数','模型调用','Token 数','耗时','成本','重试','人工介入','最后活跃'],taskRows.slice(0,30));
-      document.getElementById('wl-view-tasks').innerHTML=taskHtml;
+      if(taskRows.length>30)agHtml+='<div style="font-size:11px;color:var(--text-t);margin-bottom:6px">共 '+taskRows.length+' 条任务，仅显示最近 30 条</div>';
+      agHtml+=wlTable(['任务','所属流程','决策次数','模型调用','Token 数','耗时','成本','重试','人工介入','最后活跃'],taskRows.slice(0,30));
+      document.getElementById('wl-view-overview').innerHTML=agHtml;
 
       /* 周报 */
       var wkRows=(d.weeklyTrend||[]).map(function(w){

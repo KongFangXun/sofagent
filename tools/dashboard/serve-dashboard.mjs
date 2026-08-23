@@ -472,6 +472,36 @@ const server = createServer(async (req, res) => {
     return;
   }
 
+  // /api/forge-latest → 最近一次真实 FORGE 运行（latest.json 被 dry-run 覆盖时兜底）
+  // 倒序扫 fresh-eyes-loop 日期目录，找 stopReason != 'dry-run' 的最新运行
+  if (urlPath === '/api/forge-latest') {
+    const base = join(SOFAGENT_DATA, 'forge-runs', 'fresh-eyes-loop');
+    let found = null;
+    try {
+      const dateDirs = readdirSync(base).filter((x) => /^\d{4}-\d{2}-\d{2}$/.test(x)).sort().reverse();
+      for (const dateDir of dateDirs) {
+        const runDirs = readdirSync(join(base, dateDir)).filter((x) => /^run-\d+$/.test(x)).sort((a, b) => parseInt(a.slice(4), 10) - parseInt(b.slice(4), 10)).reverse();
+        for (const runDir of runDirs) {
+          const statusFile = join(base, dateDir, runDir, 'status.json');
+          try { statSync(statusFile) } catch { continue }
+          try {
+            const st = JSON.parse(readFileSync(statusFile, 'utf8'));
+            if (st && st.stopReason !== 'dry-run') {
+              st.runDir = `${dateDir}/${runDir}`;
+              st.updatedAt = st.lastUpdate || st.updatedAt || null;
+              found = st;
+              break;
+            }
+          } catch { /* 跳过损坏 status */ }
+        }
+        if (found) break;
+      }
+    } catch { /* 目录不存在则返回 null */ }
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify(found));
+    return;
+  }
+
   // /api/export-history → 下载完整审计历史（原始全量，含测试记录，不截断）
   if (urlPath === '/api/export-history') {
     const raw = await tryRead(HISTORY_FILE);
