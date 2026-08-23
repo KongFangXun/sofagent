@@ -9,11 +9,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>sofagent · FDE Agent 控制台</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
   --brand:#16B8F3;--brand-d:#0C447C;--brand-l:#E6F1FB;
-  --red:#E24B4A;--red-l:#FCEBEB;--green:#1D9E75;--green-l:#E1F5EE;--amber:#EF9F27;--amber-l:#FAEEDA;--amber-d:#854F0B;--purple:#7F77DD;--purple-l:#F3E8FF;
+  --red:#E24B4A;--red-l:#FCEBEB;--green:#2AB573;--green-l:#E1F5EE;--amber:#F5A623;--amber-l:#FAEEDA;--amber-d:#854F0B;--purple:#7F77DD;--purple-l:#F3E8FF;
   --bg:#F6F8FA;--bg-s:#FAFBFC;--card:#fff;--border:#E1E4E8;--text:#24292E;--text-s:#57606A;--text-t:#8B949E;
   --radius:12px;--radius-s:8px;--shadow:0 1px 3px rgba(0,0,0,.08);
   --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",sans-serif;
@@ -44,7 +45,7 @@ a:hover{text-decoration:underline}
 .star-btn{display:inline-flex;align-items:center;gap:5px;padding:6px 14px;border:1px solid var(--border);border-radius:20px;background:var(--card);color:var(--text-s);font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;font-family:var(--font);text-decoration:none;line-height:1.4}
 .star-btn:hover{border-color:var(--text);color:var(--text);background:var(--bg);text-decoration:none}
 .star-btn svg{width:14px;height:14px;flex-shrink:0}
-.star-count{background:var(--bg-s);color:var(--text-s);font-size:11px;padding:1px 6px;border-radius:8px;font-weight:700}
+.star-count{background:var(--brand-l);color:var(--brand);font-size:11px;padding:1px 6px;border-radius:8px;font-weight:700}
 
 /* 帮助面板（全局教学入口，header 右上角） */
 .help-btn{display:inline-flex;align-items:center;gap:5px;padding:6px 14px;border:1px solid var(--border);border-radius:20px;background:var(--card);color:var(--text-s);font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;font-family:var(--font);line-height:1.4}
@@ -87,6 +88,7 @@ a:hover{text-decoration:underline}
 .section-title{font-size:15px;font-weight:600;display:flex;align-items:center;gap:8px}
 .section-title .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
 .dot-emoji{font-size:14px;line-height:1;flex-shrink:0}
+.dot-emoji .bi{font-size:14px;vertical-align:-1px}
 .section-sub{font-size:12px;color:var(--text-s);font-weight:400;margin-left:4px}
 .section-body{padding:20px;flex:1;display:flex;flex-direction:column;min-height:0}
 
@@ -98,7 +100,7 @@ a:hover{text-decoration:underline}
 /* 指标趋势箭头（洞察层） */
 .metric-trend{font-size:10px;font-weight:600;margin-left:4px}
 .trend-up{color:var(--red)}
-.trend-down{color:var(--green)}
+.trend-down{color:var(--brand)}
 .trend-flat{color:var(--text-t)}
 
 .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:stretch}
@@ -111,10 +113,10 @@ a:hover{text-decoration:underline}
 
 /* Data status */
 .data-status{display:inline-flex;align-items:center;gap:6px;font-size:12px;padding:4px 12px;border-radius:20px;font-weight:500}
-.ds-live{background:var(--green-l);color:var(--green)}
+.ds-live{background:var(--brand-l);color:var(--brand-d)}
 .ds-sample{background:var(--amber-l);color:var(--amber-d)}
 .data-status .pulse{width:8px;height:8px;border-radius:50%;animation:pulse 2s infinite}
-.ds-live .pulse{background:var(--green)}
+.ds-live .pulse{background:var(--brand)}
 .ds-sample .pulse{background:var(--amber)}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
 @keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
@@ -153,7 +155,7 @@ a:hover{text-decoration:underline}
 .node-card{background:var(--bg-s);border:1px solid var(--border);border-radius:var(--radius-s);padding:14px}
 .node-status{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:500}
 .node-status .icon{width:8px;height:8px;border-radius:50%}
-.status-running .icon{background:var(--green);animation:pulse 2s infinite}
+.status-running .icon{background:var(--brand);animation:pulse 2s infinite}
 /* Agent 类型统一灰点（图形全灰，角色不靠颜色区分靠文字） */
 .agent-dot{width:10px;height:10px;border-radius:50%;display:inline-block;flex-shrink:0;animation:pulse 2s infinite;background:var(--text-t)}
 .agent-dot.audit{background:var(--text-s)}
@@ -168,7 +170,7 @@ a:hover{text-decoration:underline}
 .audit-row:last-child{border-bottom:none}
 .audit-time{color:var(--text-t);font-family:var(--mono);font-size:11px;min-width:110px}
 .audit-badge{padding:2px 8px;border-radius:4px;font-size:11px;font-weight:500;font-family:var(--mono)}
-.badge-pass{background:var(--green-l);color:var(--green)}
+.badge-pass{background:var(--brand-l);color:var(--brand)}
 .badge-warn{background:var(--amber-l);color:var(--amber)}
 .badge-fail{background:var(--red-l);color:var(--red)}
 .audit-rule{font-family:var(--mono);font-size:11px;color:var(--text-s);min-width:80px}
@@ -180,7 +182,7 @@ a:hover{text-decoration:underline}
 .prompt-label{font-size:11px;color:var(--text-t);font-weight:500}
 .copy-btn{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);color:#C9D1D9;padding:3px 10px;border-radius:4px;font-size:11px;cursor:pointer;font-family:var(--font);display:inline-flex;align-items:center;gap:4px;transition:all .15s}
 .copy-btn:hover{background:rgba(255,255,255,.12)}
-.copy-btn.copied{background:var(--green);border-color:var(--green);color:#fff}
+.copy-btn.copied{background:var(--brand);border-color:var(--brand);color:#fff}
 .copy-btn svg{width:12px;height:12px}
 .copy-btn.light{background:var(--card);border:1px solid var(--border);color:var(--text-s)}
 .copy-btn.light:hover{border-color:var(--brand);color:var(--brand)}
@@ -270,7 +272,7 @@ a:hover{text-decoration:underline}
 .seg-refresh{display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--border);border-radius:50%;background:var(--card);color:var(--brand);width:26px;height:26px;padding:0;font-size:11px;font-weight:600;transition:all .15s}
 .seg-refresh:hover{border-color:var(--brand);background:var(--brand-l);color:var(--brand)}
 .seg-refresh svg{width:14px;height:14px}
-.seg-refresh.refreshing{border-color:var(--green);color:var(--green);background:var(--green-l)}
+.seg-refresh.refreshing{border-color:var(--brand);color:var(--brand);background:var(--brand-l)}
 .seg-refresh.refreshing svg{animation:spin .6s linear}
 @keyframes spin{to{transform:rotate(360deg)}}
 
@@ -453,7 +455,7 @@ a:hover{text-decoration:underline}
   </div>
 
   <div class="section">
-    <div class="section-header"><div class="section-title"><span class="dot-emoji">📊</span>工作明细（worklog）</div>
+    <div class="section-header"><div class="section-title"><span class="dot-emoji"><i class="bi bi-bar-chart"></i></span>工作明细（worklog）</div>
       <span style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
         <span style="font-size:11px;color:var(--text-t)">超支标红 kind=COST</span>
         <button class="nav-item active" id="wl-tab-agent" onclick="wlTab('agent')">按 Agent</button>
@@ -472,7 +474,7 @@ a:hover{text-decoration:underline}
 
   <div class="section">
     <div class="section-header">
-      <div class="section-title"><span class="dot-emoji">📉</span>违规趋势（近 7 天）</div>
+      <div class="section-title"><span class="dot-emoji"><i class="bi bi-graph-down"></i></span>违规趋势（近 7 天）</div>
       <div style="display:flex;align-items:center;gap:16px;font-size:11px;color:var(--text-s);flex-wrap:wrap;justify-content:flex-end">
         <span style="display:inline-flex;align-items:center;gap:5px"><span style="width:12px;height:12px;background:var(--brand-l);border-radius:3px"></span>审计次数</span>
         <span style="display:inline-flex;align-items:center;gap:5px"><span style="width:12px;height:12px;background:var(--text-t);border-radius:3px"></span>问题次数</span>
@@ -490,7 +492,7 @@ a:hover{text-decoration:underline}
   <div class="grid-2">
     <div class="section">
       <div class="section-header">
-        <div class="section-title"><span class="dot-emoji">📋</span>最近审计记录<span id="auditRecordCount" style="font-size:11px;color:var(--text-t);font-weight:400;margin-left:6px"></span></div>
+        <div class="section-title"><span class="dot-emoji"><i class="bi bi-list-check"></i></span>最近审计记录<span id="auditRecordCount" style="font-size:11px;color:var(--text-t);font-weight:400;margin-left:6px"></span></div>
         <a href="/api/export-history" download="audit-history.jsonl" title="下载完整审计历史（原始 JSONL）" style="display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;color:var(--brand);text-decoration:none;border:1px solid var(--border);border-radius:14px;padding:3px 10px;background:var(--bg)">
           <svg width="11" height="11" viewBox="0 0 16 16" fill="none"><path d="M8 1.5v9M8 10.5 4.5 7M8 10.5 11.5 7M2.5 13.5h11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
           全量历史
@@ -504,7 +506,7 @@ a:hover{text-decoration:underline}
     </div>
     <div class="section">
       <div class="section-header">
-        <div class="section-title"><span class="dot-emoji">🔐</span>数据主权</div>
+        <div class="section-title"><span class="dot-emoji"><i class="bi bi-lock"></i></span>数据主权</div>
         <div id="sovDaemonBadge" style="font-size:11px;font-weight:600;display:none"></div>
       </div>
       <div class="section-body" id="sovereigntyBox">
@@ -520,7 +522,7 @@ a:hover{text-decoration:underline}
 <div class="page" id="page-workflow">
   <div class="section">
     <div class="section-header">
-      <div class="section-title"><span class="dot-emoji">🤖</span>业务 AI 节点</div>
+      <div class="section-title"><span class="dot-emoji"><i class="bi bi-robot"></i></span>业务 AI 节点</div>
       <span style="font-size:11px;color:var(--text-t)" id="aiNodesUpdatedAt">加载中...</span>
     </div>
     <div class="section-body">
@@ -528,13 +530,13 @@ a:hover{text-decoration:underline}
         <div style="text-align:center;color:var(--text-t);padding:12px">加载中...</div>
       </div>
       <div class="info-note" style="margin-top:12px">
-        这里显示你<strong>通过 FDE 部署的业务 AI 节点</strong>（🔄 自动执行 / ⚡ 强化岗位）。当前展示的是 FDE 十步流程模板；部署节点后会自动出现在这里（数据源 <code style="background:var(--brand-l);padding:2px 6px;border-radius:4px">~/.sofagent/fde/workflow/</code>）。
+        这里显示你<strong>通过 FDE 部署的业务 AI 节点</strong>（<i class="bi bi-arrow-repeat"></i> 自动执行 / <i class="bi bi-lightning-charge"></i> 强化岗位）。当前展示的是 FDE 十步流程模板；部署节点后会自动出现在这里（数据源 <code style="background:var(--brand-l);padding:2px 6px;border-radius:4px">~/.sofagent/fde/workflow/</code>）。
       </div>
     </div>
   </div>
   <div class="section">
     <div class="section-header">
-      <div class="section-title"><span class="dot-emoji">🔀</span>编排控制图</div>
+      <div class="section-title"><span class="dot-emoji"><i class="bi bi-shuffle"></i></span>编排控制图</div>
       <span style="font-size:11px;color:var(--text-t);display:flex;align-items:center;gap:10px;flex-wrap:wrap">
         <span id="graphMeta" style="display:none"></span>
         <span id="graphUpdatedAt">加载中...</span>
@@ -547,7 +549,7 @@ a:hover{text-decoration:underline}
     </div>
   </div>
   <div class="section">
-    <div class="section-header"><div class="section-title"><span class="dot-emoji">🧩</span>编排流水线节点</div></div>
+    <div class="section-header"><div class="section-title"><span class="dot-emoji"><i class="bi bi-puzzle"></i></span>编排流水线节点</div></div>
     <div class="section-body">
       <div style="font-size:11px;color:var(--text-t);margin-bottom:10px">这里是 <b>sofagent 引擎内部执行流水线</b>（planner → engineer → audit → reviewer → human），每次 AI 任务自动走的五步。业务角色节点（分析师/规划师/部署专家）见 <a href="javascript:void(0)" onclick="goPage('fde')" style="color:var(--brand)">FDE 引导</a> 页。</div>
       <div class="grid-3" id="nodeList">
@@ -556,7 +558,7 @@ a:hover{text-decoration:underline}
     </div>
   </div>
   <div class="info-note" style="margin-top:0">
-    <strong>怎么设置自己的 AI 节点？</strong>点右上角 <button class="btn btn-outline" onclick="openHelp('workflow')" style="padding:2px 8px">？帮助</button> 查看四步引导与 Prompt（或链 <a href="https://github.com/KongFangXun/sofagent/blob/main/FDE/GUIDE.md" target="_blank">FDE/GUIDE.md 第四章</a>）。节点部署后 7×24 自动执行，类型分：<strong>🔄 自动执行</strong>（AI 自主完成）、<strong>⚡ 强化岗位</strong>（AI 辅助人）、<strong>👤 暂不介入</strong>。
+    <strong>怎么设置自己的 AI 节点？</strong>点右上角 <button class="btn btn-outline" onclick="openHelp('workflow')" style="padding:2px 8px">？帮助</button> 查看四步引导与 Prompt（或链 <a href="https://github.com/KongFangXun/sofagent/blob/main/FDE/GUIDE.md" target="_blank">FDE/GUIDE.md 第四章</a>）。节点部署后 7×24 自动执行，类型分：<strong><i class="bi bi-arrow-repeat"></i> 自动执行</strong>（AI 自主完成）、<strong><i class="bi bi-lightning-charge"></i> 强化岗位</strong>（AI 辅助人）、<strong><i class="bi bi-person"></i> 暂不介入</strong>。
   </div>
 </div>
 
@@ -566,7 +568,7 @@ a:hover{text-decoration:underline}
 <div class="page" id="page-ontology">
     <div class="section">
     <div class="section-header">
-      <div class="section-title"><span class="dot-emoji">🗺️</span>你的本体结构（ontology）</div>
+      <div class="section-title"><span class="dot-emoji"><i class="bi bi-map"></i></span>你的本体结构（ontology）</div>
       <span style="font-size:11px;color:var(--text-t)" id="ontUpdatedAt">加载中...</span>
     </div>
     <div class="section-body">
@@ -579,7 +581,7 @@ a:hover{text-decoration:underline}
     </div>
   </div>
   <div class="section">
-    <div class="section-header"><div class="section-title"><span class="dot-emoji">🕸️</span>图谱视图</div>
+    <div class="section-header"><div class="section-title"><span class="dot-emoji"><i class="bi bi-diagram-3"></i></span>图谱视图</div>
       <span style="font-size:11px;color:var(--text-t)">FDE 双 graph（人读 workflow · 机器读 ontology）</span>
     </div>
     <div class="section-body">
@@ -598,7 +600,7 @@ a:hover{text-decoration:underline}
 <div class="page" id="page-knowledge">
     <div class="section">
     <div class="section-header">
-      <div class="section-title"><span class="dot-emoji">📚</span>你的知识库</div>
+      <div class="section-title"><span class="dot-emoji"><i class="bi bi-journal-bookmark"></i></span>你的知识库</div>
       <span style="font-size:11px;color:var(--text-t)" id="kbUpdatedAt">加载中...</span>
     </div>
     <div class="section-body">
@@ -611,7 +613,7 @@ a:hover{text-decoration:underline}
     </div>
   </div>
   <div class="section">
-    <div class="section-header"><div class="section-title"><span class="dot-emoji">💡</span>最近经验教训（自动沉淀）</div></div>
+    <div class="section-header"><div class="section-title"><span class="dot-emoji"><i class="bi bi-lightbulb"></i></span>最近经验教训（自动沉淀）</div></div>
     <div class="section-body">
       <div class="grid-2" id="thinkList">
         <div style="grid-column:1/-1;text-align:center;color:var(--text-t);font-size:12px;padding:12px">加载中...</div>
@@ -635,28 +637,28 @@ a:hover{text-decoration:underline}
 <!-- ================================================== -->
 <div class="page" id="page-fde">
     <div class="section">
-    <div class="section-header"><div class="section-title"><span class="dot-emoji">🚀</span>怎么开始</div>
+    <div class="section-header"><div class="section-title"><span class="dot-emoji"><i class="bi bi-rocket-takeoff"></i></span>怎么开始</div>
       <span style="font-size:11px;color:var(--text-t)">零依赖方法论 · 或装进你的 Agent</span>
     </div>
     <div class="section-body">
       <div class="quick-start">
         <a class="qs-item" href="https://github.com/KongFangXun/sofagent/blob/main/FDE/GUIDE.md" target="_blank">
-          <div class="qs-icon">📖</div>
+          <div class="qs-icon"><i class="bi bi-book"></i></div>
           <div class="qs-title">读 GUIDE.md</div>
           <div class="qs-desc">方法论 · 零依赖</div>
         </a>
         <a class="qs-item" href="https://clawhub.ai/skill/sofagent" target="_blank">
-          <div class="qs-icon">🔍</div>
+          <div class="qs-icon"><i class="bi bi-search"></i></div>
           <div class="qs-title">WorkBuddy 搜 sofagent</div>
           <div class="qs-desc">一键安装 Skill</div>
         </a>
         <a class="qs-item" href="https://github.com/KongFangXun/sofagent" target="_blank">
-          <div class="qs-icon">💻</div>
+          <div class="qs-icon"><i class="bi bi-code-slash"></i></div>
           <div class="qs-title">bash install.sh</div>
           <div class="qs-desc">OpenClaw / npm</div>
         </a>
         <div class="qs-item" onclick="openHelp('fde')">
-          <div class="qs-icon">🧭</div>
+          <div class="qs-icon"><i class="bi bi-compass"></i></div>
           <div class="qs-title">场景速查</div>
           <div class="qs-desc">踩坑 / 健康检查 → 帮助</div>
         </div>
@@ -665,7 +667,7 @@ a:hover{text-decoration:underline}
   </div>
 
   <div class="section">
-    <div class="section-header"><div class="section-title"><span class="dot-emoji">🧭</span>FDE 五阶段 Prompt</div>
+    <div class="section-header"><div class="section-title"><span class="dot-emoji"><i class="bi bi-compass"></i></span>FDE 五阶段 Prompt</div>
       <a href="https://github.com/KongFangXun/sofagent/blob/main/FDE/GUIDE.md" target="_blank" class="btn btn-outline">FDE/GUIDE.md →</a>
     </div>
     <div class="section-body">
@@ -700,7 +702,7 @@ a:hover{text-decoration:underline}
   </div>
   <div class="section">
     <div class="section-header">
-      <div class="section-title"><span class="dot-emoji">📋</span>FDE Agent（内置 Workflow 模板）</div>
+      <div class="section-title"><span class="dot-emoji"><i class="bi bi-list-check"></i></span>FDE Agent（内置 Workflow 模板）</div>
       <span style="font-size:11px;color:var(--text-t)" id="fdeWfUpdatedAt">加载中...</span>
     </div>
     <div class="section-body">
@@ -711,7 +713,7 @@ a:hover{text-decoration:underline}
   </div>
   <div class="section">
     <div class="section-header">
-      <div class="section-title"><span class="dot-emoji">🧬</span>FDE workflow</div>
+      <div class="section-title"><span class="dot-emoji"><i class="bi bi-diagram-2"></i></span>FDE workflow</div>
       <span style="font-size:11px;color:var(--text-t)" id="fdeSelfUpdatedAt">加载中...</span>
     </div>
     <div class="section-body">
@@ -722,7 +724,7 @@ a:hover{text-decoration:underline}
     </div>
   </div>
   <div class="section">
-    <div class="section-header"><div class="section-title"><span class="dot-emoji">⚡</span>持续优化场景速查</div>
+    <div class="section-header"><div class="section-title"><span class="dot-emoji"><i class="bi bi-lightning-charge"></i></span>持续优化场景速查</div>
       <span style="font-size:11px;color:var(--text-t)">两个常用 Prompt（查询踩坑 / 健康检查）已移入右上角 <button class="btn btn-outline" onclick="openHelp('fde')" style="padding:2px 8px">？帮助</button></span>
     </div>
     <div class="section-body">
@@ -736,7 +738,7 @@ a:hover{text-decoration:underline}
 <!-- ================================================== -->
 <div class="page" id="page-resources">
   <div class="section">
-    <div class="section-header"><div class="section-title"><span class="dot-emoji">⚙️</span>快速安装</div></div>
+    <div class="section-header"><div class="section-title"><span class="dot-emoji"><i class="bi bi-gear"></i></span>快速安装</div></div>
     <div class="section-body">
       <div class="install-box" style="margin-bottom:8px">
         <code>bash install.sh &amp;&amp; sofagent-audit --init</code>
@@ -746,7 +748,7 @@ a:hover{text-decoration:underline}
     </div>
   </div>
   <div class="section">
-    <div class="section-header"><div class="section-title"><span class="dot-emoji">🧬</span>skill 加载链（四层约束注入）</div>
+    <div class="section-header"><div class="section-title"><span class="dot-emoji"><i class="bi bi-diagram-2"></i></span>skill 加载链（四层约束注入）</div>
       <a href="https://github.com/KongFangXun/sofagent/blob/main/docs/ARCHITECTURE.md" target="_blank" class="btn btn-outline">ARCHITECTURE.md →</a>
     </div>
     <div class="section-body">
@@ -756,7 +758,7 @@ a:hover{text-decoration:underline}
     </div>
   </div>
   <div class="section">
-    <div class="section-header"><div class="section-title"><span class="dot-emoji">📄</span>文档直达</div></div>
+    <div class="section-header"><div class="section-title"><span class="dot-emoji"><i class="bi bi-file-text"></i></span>文档直达</div></div>
     <div class="section-body">
       <div class="doc-list">
         <a class="doc-item" href="https://github.com/KongFangXun/sofagent/blob/main/README.md" target="_blank"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>README<span class="ext">介绍 + 安装</span></a>
@@ -777,7 +779,7 @@ a:hover{text-decoration:underline}
   </div>
   <div class="section">
     <div class="section-header">
-      <div class="section-title"><span class="dot-emoji">🏗️</span>约束层（Harness）· 一个层四种能力</div>
+      <div class="section-title"><span class="dot-emoji"><i class="bi bi-bricks"></i></span>约束层（Harness）· 一个层四种能力</div>
       <a href="https://github.com/KongFangXun/sofagent/blob/main/docs/ARCHITECTURE.md" target="_blank" class="btn btn-outline">ARCHITECTURE.md →</a>
     </div>
     <div class="section-body">
@@ -789,7 +791,7 @@ a:hover{text-decoration:underline}
         <h5 style="color:#791F1F">审计</h5>
         <div style="font-size:12px;color:var(--text-s)">每次变更硬证据 · 24 条规则 · 19 条零 token · 违规当场拦截</div>
       </div>
-      <div class="arch-layer" style="background:var(--green-l);border:1px solid var(--green)">
+      <div class="arch-layer" style="background:var(--bg-s);border:1px solid var(--border)">
         <h5 style="color:#085041">回溯</h5>
         <div style="font-size:12px;color:var(--text-s)">自动快照 · 一键回滚 · git snapshot 不污染历史</div>
       </div>
@@ -800,7 +802,7 @@ a:hover{text-decoration:underline}
     </div>
   </div>
   <div class="section">
-    <div class="section-header"><div class="section-title"><span class="dot-emoji">🛡️</span>审计规则全览（24 条）</div>
+    <div class="section-header"><div class="section-title"><span class="dot-emoji"><i class="bi bi-shield-check"></i></span>审计规则全览（24 条）</div>
       <a href="https://github.com/KongFangXun/sofagent/blob/main/SECURITY.md" target="_blank" class="btn btn-outline">SECURITY.md →</a>
     </div>
     <div class="section-body">
@@ -850,7 +852,7 @@ a:hover{text-decoration:underline}
   </div>
 
   <div class="section">
-    <div class="section-header"><div class="section-title"><span class="dot-emoji">🔌</span>MCP 工具（66 个 · v1.4.0）</div>
+    <div class="section-header"><div class="section-title"><span class="dot-emoji"><i class="bi bi-plug"></i></span>MCP 工具（66 个 · v1.4.0）</div>
       <a href="https://github.com/KongFangXun/sofagent/blob/main/engine/mcp/src/tool-registry.ts" target="_blank" class="btn btn-outline">tool-registry →</a>
     </div>
     <div class="section-body">
@@ -860,7 +862,7 @@ a:hover{text-decoration:underline}
     </div>
   </div>
   <div class="section">
-    <div class="section-header"><div class="section-title"><span class="dot-emoji">📦</span>npm 包（13 个）</div></div>
+    <div class="section-header"><div class="section-title"><span class="dot-emoji"><i class="bi bi-box"></i></span>npm 包（13 个）</div></div>
     <div class="section-body">
       <div class="npm-grid">
         <div class="npm-item"><code>@sofagent/audit</code><div class="npm-desc">审计引擎（24 条规则）</div></div>
@@ -881,7 +883,7 @@ a:hover{text-decoration:underline}
   </div>
   <div class="section">
     <div class="section-header">
-      <div class="section-title"><span class="dot-emoji">🔬</span>FORGE · 自迭代质量审查工具链</div>
+      <div class="section-title"><span class="dot-emoji"><i class="bi bi-microscope"></i></span>FORGE · 自迭代质量审查工具链</div>
       <a href="https://github.com/KongFangXun/sofagent/blob/main/FORGE/README.md" target="_blank" class="btn btn-outline">FORGE README →</a>
     </div>
     <div class="section-body">
@@ -946,9 +948,9 @@ build → acceptance → regression → coverage，
         <div class="step-card">
           <div class="step-title"><span class="step-num">2</span>三问判定节点类型</div>
           <div class="step-desc">
-            <span class="node-type nt-auto">🔄 自动执行</span> 输入能自动取 + 规则能写清 + 输出能自动推<br>
-            <span class="node-type nt-ai">⚡ 强化岗位</span> 两问满足——AI 辅助人完成<br>
-            <span class="node-type nt-human">👤 暂不介入</span> 一问满足——暂不上 AI
+            <span class="node-type nt-auto"><i class="bi bi-arrow-repeat"></i> 自动执行</span> 输入能自动取 + 规则能写清 + 输出能自动推<br>
+            <span class="node-type nt-ai"><i class="bi bi-lightning-charge"></i> 强化岗位</span> 两问满足——AI 辅助人完成<br>
+            <span class="node-type nt-human"><i class="bi bi-person"></i> 暂不介入</span> 一问满足——暂不上 AI
           </div>
         </div>
         <div class="step-card">
@@ -975,7 +977,7 @@ build → acceptance → regression → coverage，
           </div>
         </div>
         <div class="info-note" style="margin-top:12px">
-          节点部署后 7×24 自动执行。节点类型分三种：<strong>🔄 自动执行</strong>（AI 自主完成）、<strong>⚡ 强化岗位</strong>（AI 辅助人）、<strong>👤 暂不介入</strong>。详见 <a href="https://github.com/KongFangXun/sofagent/blob/main/FDE/GUIDE.md" target="_blank">FDE/GUIDE.md 第四章</a>
+          节点部署后 7×24 自动执行。节点类型分三种：<strong><i class="bi bi-arrow-repeat"></i> 自动执行</strong>（AI 自主完成）、<strong><i class="bi bi-lightning-charge"></i> 强化岗位</strong>（AI 辅助人）、<strong><i class="bi bi-person"></i> 暂不介入</strong>。详见 <a href="https://github.com/KongFangXun/sofagent/blob/main/FDE/GUIDE.md" target="_blank">FDE/GUIDE.md 第四章</a>
         </div>
       </div>
 
@@ -1268,7 +1270,7 @@ function renderSummaryData(s){
       // rule 列：FAIL/WARN 显示触发的规则码，PASS 显示 ✓
       var ruleCell=rec.rule
         ? '<span class="audit-rule" style="color:var(--'+(verdict==='FAIL'?'red':'amber')+')">'+escapeHtml(rec.rule)+'</span>'
-        : '<span class="audit-rule" style="color:var(--green)">✓</span>';
+        : '<span class="audit-rule" style="color:var(--brand)">✓</span>';
       return '<div class="audit-row"><span class="audit-time">'+(rec.time||'')+'</span><span class="audit-badge '+cls+'">'+verdict+'</span>'+ruleCell+'<span class="audit-task">'+escapeHtml(rec.task||'')+'</span></div>';
     }).join('');
     document.getElementById('liveAuditLog').innerHTML=html;
@@ -1305,7 +1307,7 @@ function renderSummaryData(s){
       if(prevDay2){
         var prevIss2=(prevDay2.ruleAll||0)-(prevDay2.rulePass||0);
         var dlt=todayIssues-prevIss2;
-        parts.push('问题较昨日 '+(dlt>0?'<b style="color:var(--amber)">+'+dlt+'</b>':dlt<0?'<b style="color:var(--green)">'+dlt+'</b>':'持平'));
+        parts.push('问题较昨日 '+(dlt>0?'<b style="color:var(--amber)">+'+dlt+'</b>':dlt<0?'<b style="color:var(--brand)">'+dlt+'</b>':'持平'));
       }
       ib.innerHTML='<span style="opacity:.5">|</span> '+parts.join(' · ');
     }else{
@@ -1404,11 +1406,11 @@ function renderSovereigntyBox(sov,daemonStatus){
   var el=document.getElementById('sovereigntyBox');
   if(!el)return;
   var ds=(daemonStatus==='ok'||daemonStatus==='healthy')?'运行中':(daemonStatus||'运行中');
-  var dc=(daemonStatus==='degraded'||daemonStatus==='down')?'var(--amber)':'var(--green)';
+  var dc=(daemonStatus==='degraded'||daemonStatus==='down')?'var(--amber)':'var(--brand)';
   /* 守护进程放卡片头部右上角 */
   var badge=document.getElementById('sovDaemonBadge');
   if(badge){badge.style.display='inline-flex';badge.style.alignItems='center';badge.style.color=dc;badge.innerHTML='● 守护进程 '+escapeHtml(ds);}
-  /* 四栏数字：本地执行 / 本地化率 / 云端调用 / 数据流出，无分割线（🔒 小字在 section 外） */
+  /* 四栏数字：本地执行 / 本地化率 / 云端调用 / 数据流出，无分割线（锁定小字在 section 外） */
   el.innerHTML='<div class="chart-box" style="display:flex;align-items:center;justify-content:space-around;flex:1;min-height:80px;height:100%">'+
     '<div style="display:flex;flex-direction:column;justify-content:center;align-items:center"><div style="font-size:20px;font-weight:700;color:var(--text)">'+sov.local+'</div><div style="font-size:11px;color:var(--text-s);margin-top:2px">本地执行</div></div>'+
     '<div style="display:flex;flex-direction:column;justify-content:center;align-items:center"><div style="font-size:20px;font-weight:700;color:var(--text)">'+sov.localRate+'%</div><div style="font-size:11px;color:var(--text-s);margin-top:2px">本地化率</div></div>'+
@@ -1468,7 +1470,7 @@ function renderLiveAuditLog(records){
     // rule 列：FAIL/WARN 显示触发规则码（红/橙），PASS 显示绿色 ✓
     var ruleCell=rule
       ? '<span class="audit-rule" style="color:var(--'+(verdict==='FAIL'?'red':'amber')+')">'+escapeHtml(rule)+'</span>'
-      : '<span class="audit-rule" style="color:var(--green)">✓</span>';
+      : '<span class="audit-rule" style="color:var(--brand)">✓</span>';
     var ts=(r.timestamp||'').slice(5,16);
     var task=(r.task||r.commitMsg||'').slice(0,50);
     return '<div class="audit-row"><span class="audit-time">'+escapeHtml(ts)+'</span><span class="audit-badge '+verdictClass+'">'+verdict+'</span>'+ruleCell+'<span class="audit-task">'+escapeHtml(task)+'</span></div>';
@@ -1541,7 +1543,7 @@ function loadSampleData(){
   document.getElementById('liveAuditLog').innerHTML=samples.map(function(r){
     var ruleCell=r.rule
       ? '<span class="audit-rule" style="color:var(--'+(r.verdict==='FAIL'?'red':'amber')+')">'+escapeHtml(r.rule)+'</span>'
-      : '<span class="audit-rule" style="color:var(--green)">✓</span>';
+      : '<span class="audit-rule" style="color:var(--brand)">✓</span>';
     return '<div class="audit-row"><span class="audit-time">'+escapeHtml(r.time)+'</span><span class="audit-badge badge-'+r.verdict.toLowerCase()+'">'+r.verdict+'</span>'+ruleCell+'<span class="audit-task">'+escapeHtml(r.task)+'</span></div>';
   }).join('');
   // 示例趋势：近 7 天每日 PASS/WARN/FAIL + 规则级通过率
@@ -1711,16 +1713,16 @@ function loadFdeWorkflowData(){
       if(updated)updated.textContent=fmtUpdatedAt(d.generatedAt);
       var wfs=d.workflow||[];
       if(!wfs.length){
-        box.innerHTML=emptyState('📋','还没有 FDE workflow 模板','部署或运行 FDE 流程后自动生成（~/.sofagent/fde/workflow/）','去 FDE 引导',"goPage('fde')");
+        box.innerHTML=emptyState('<i class="bi bi-list-check"></i>','还没有 FDE workflow 模板','部署或运行 FDE 流程后自动生成（~/.sofagent/fde/workflow/）','去 FDE 引导',"goPage('fde')");
         return;
       }
       // agent 类型 → 颜色 + 角色名（明确分配，不靠兜底）
       var agentColor={
-        analyst:{bg:'var(--bg-s)',border:'var(--text-t)',label:'⚡ 强化岗位',role:'分析师'},
-        planner:{bg:'var(--bg-s)',border:'var(--text-t)',label:'🔄 自动执行',role:'规划师'},
-        deployer:{bg:'var(--bg-s)',border:'var(--text-t)',label:'🔄 自动执行',role:'部署专家'},
-        engineer:{bg:'var(--bg-s)',border:'var(--text-t)',label:'🔄 自动执行',role:'工程'},
-        reviewer:{bg:'var(--bg-s)',border:'var(--text-t)',label:'👤 人工确认',role:'审查'}
+        analyst:{bg:'var(--bg-s)',border:'var(--text-t)',label:'<i class="bi bi-lightning-charge"></i> 强化岗位',role:'分析师'},
+        planner:{bg:'var(--bg-s)',border:'var(--text-t)',label:'<i class="bi bi-arrow-repeat"></i> 自动执行',role:'规划师'},
+        deployer:{bg:'var(--bg-s)',border:'var(--text-t)',label:'<i class="bi bi-arrow-repeat"></i> 自动执行',role:'部署专家'},
+        engineer:{bg:'var(--bg-s)',border:'var(--text-t)',label:'<i class="bi bi-arrow-repeat"></i> 自动执行',role:'工程'},
+        reviewer:{bg:'var(--bg-s)',border:'var(--text-t)',label:'<i class="bi bi-person"></i> 人工确认',role:'审查'}
       };
       var html='';
       var sustain=d.sustain||null;
@@ -1741,14 +1743,14 @@ function loadFdeWorkflowData(){
         if(sustain&&sustain.active&&sustain.weeklyReport){
           var wr=sustain.weeklyReport;
           var tw=wr.thisWeek||{};
-          var trendCn={improving:'📈 改善',degrading:'📉 恶化',stable:'➡️ 平稳'}[wr.trend]||wr.trend||'-';
+          var trendCn={improving:'<i class="bi bi-graph-up"></i> 改善',degrading:'<i class="bi bi-graph-down"></i> 恶化',stable:'➡️ 平稳'}[wr.trend]||wr.trend||'-';
           var top5=(wr.violationTop5||[]).slice(0,3).map(function(v){return escapeHtml(v.rule)+'×'+v.count}).join(' · ');
           html+='<div style="margin-top:12px;background:var(--bg-s);border:1px solid var(--border);border-radius:var(--radius-s);padding:10px 14px;font-size:12px;color:var(--text-s)">'+
             // 第一行：标题 + 右上角链接 + 统计
             '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">'+
-              '<b style="color:var(--text)">📊 '+escapeHtml(wr.weekLabel)+' 持续优化周报</b>'+
+              '<b style="color:var(--text)"><i class="bi bi-bar-chart"></i> '+escapeHtml(wr.weekLabel)+' 持续优化周报</b>'+
               '<span>本周 '+tw.taskCount+' 任务 · '+tw.passes+' 通过 · '+tw.warnings+' 警告 · <b style="color:var(--red)">'+tw.violations+' 违规</b> · 趋势 '+trendCn+'</span>'+
-              '<a href="data:application/json;charset=utf-8,'+encodeURIComponent(JSON.stringify(wr))+'" download="weekly-'+escapeHtml(wr.weekLabel)+'.json" title="下载周报 JSON" style="margin-left:auto;color:var(--brand);text-decoration:none;font-size:11px;display:inline-flex;align-items:center;gap:3px">⬇️ 周报 JSON</a>'+
+              '<a href="data:application/json;charset=utf-8,'+encodeURIComponent(JSON.stringify(wr))+'" download="weekly-'+escapeHtml(wr.weekLabel)+'.json" title="下载周报 JSON" style="margin-left:auto;color:var(--brand);text-decoration:none;font-size:11px;display:inline-flex;align-items:center;gap:3px"><i class="bi bi-download"></i> 周报 JSON</a>'+
             '</div>'+
             (top5?'<div style="margin-top:6px;font-size:11px;color:var(--text-t)">违规 TOP3：'+top5+'</div>':'')+
             '</div>';
@@ -1757,7 +1759,7 @@ function loadFdeWorkflowData(){
       box.innerHTML=html;
     })
     .catch(function(){
-      box.innerHTML=emptyState('📋','还没有 FDE workflow 模板','部署或运行 FDE 流程后自动生成','去 FDE 引导',"goPage('fde')");
+      box.innerHTML=emptyState('<i class="bi bi-list-check"></i>','还没有 FDE workflow 模板','部署或运行 FDE 流程后自动生成','去 FDE 引导',"goPage('fde')");
     });
 }
 
@@ -1778,7 +1780,7 @@ function loadAiNodesData(){
       if(deployed.length){
         var total=d.deployedTotal||deployed.length;
         var showCount=Math.min(deployed.length,12); // 一屏最多 12 个，避免长列表
-        html+='<div style="font-size:12px;color:var(--green);font-weight:600;margin-bottom:8px">✅ 已部署 '+total+' 个企业节点</div>';
+        html+='<div style="font-size:12px;color:var(--brand);font-weight:600;margin-bottom:8px"><i class="bi bi-check-circle"></i> 已部署 '+total+' 个企业节点</div>';
         html+='<div class="grid-3">'+deployed.slice(0,showCount).map(function(nd){
           return '<div class="node-card status-running"><div class="node-status"><span class="icon"></span>'+escapeHtml(nd.name)+'</div><div class="node-meta">'+escapeHtml(nd.description||nd.file||'')+'</div></div>';
         }).join('')+'</div>';
@@ -1786,12 +1788,12 @@ function loadAiNodesData(){
           html+='<div style="font-size:11px;color:var(--text-t);margin-top:8px">共 '+total+' 个节点，仅显示前 '+showCount+' 个——完整列表见 <code style="background:var(--brand-l);padding:2px 6px;border-radius:4px">~/.sofagent/subagents/</code></div>';
         }
       }else{
-        html=emptyState('🤖','还没有部署业务 AI 节点','在 FDE 引导页复制 Prompt 开始部署，节点会自动出现在这里（~/.sofagent/subagents/）','去 FDE 引导部署',"goPage('fde')");
+        html=emptyState('<i class="bi bi-robot"></i>','还没有部署业务 AI 节点','在 FDE 引导页复制 Prompt 开始部署，节点会自动出现在这里（~/.sofagent/subagents/）','去 FDE 引导部署',"goPage('fde')");
       }
       list.innerHTML=html;
     })
     .catch(function(){
-      list.innerHTML=emptyState('🤖','还没有节点数据','通过 tools/dashboard/serve-dashboard.mjs 启动可看真实数据','去 FDE 引导部署',"goPage('fde')");
+      list.innerHTML=emptyState('<i class="bi bi-robot"></i>','还没有节点数据','通过 tools/dashboard/serve-dashboard.mjs 启动可看真实数据','去 FDE 引导部署',"goPage('fde')");
     });
 }
 
@@ -1873,7 +1875,7 @@ function loadPipelineGraph(){
       list.innerHTML=html||'<div style="grid-column:1/-1;text-align:center;color:var(--text-t);padding:12px">暂无节点</div>';
     })
     .catch(function(){
-      box.innerHTML=emptyState('🔀','还没有编排数据','运行过 AI 编排任务后自动生成（graph-state.json）','去 FDE 引导部署',"goPage('fde')");
+      box.innerHTML=emptyState('<i class="bi bi-shuffle"></i>','还没有编排数据','运行过 AI 编排任务后自动生成（graph-state.json）','去 FDE 引导部署',"goPage('fde')");
       if(updated)updated.textContent=fmtUpdatedAt();
       list.innerHTML='<div style="grid-column:1/-1;text-align:center;color:var(--text-t);font-size:12px;padding:12px">—</div>';
     });
@@ -1932,7 +1934,7 @@ function loadKnowledgeData(){
               '<span style="margin-left:auto;color:var(--text-t)">节点：'+escapeHtml(r.nodes||'-')+'</span></div>';
           }).join('');
       }else{
-        entries.innerHTML=emptyState('📚','知识库还是空的','运行 FDE 或在 Agent 中执行知识沉淀后自动写入（~/.sofagent/data/knowledge/）','去 FDE 引导',"goPage('fde')");
+        entries.innerHTML=emptyState('<i class="bi bi-journal-bookmark"></i>','知识库还是空的','运行 FDE 或在 Agent 中执行知识沉淀后自动写入（~/.sofagent/data/knowledge/）','去 FDE 引导',"goPage('fde')");
       }
     }
     if(updated)updated.textContent=fmtUpdatedAt();
@@ -1962,7 +1964,7 @@ function loadKnowledgeData(){
     }
   }).catch(function(){
     if(stats)stats.innerHTML='<div style="grid-column:1/-1;text-align:center;color:var(--text-t);font-size:12px;padding:12px">未连接数据源</div>';
-    if(entries)entries.innerHTML=emptyState('📚','还没有知识库数据','通过 tools/dashboard/serve-dashboard.mjs 启动可看真实数据','去 FDE 引导',"goPage('fde')");
+    if(entries)entries.innerHTML=emptyState('<i class="bi bi-journal-bookmark"></i>','还没有知识库数据','通过 tools/dashboard/serve-dashboard.mjs 启动可看真实数据','去 FDE 引导',"goPage('fde')");
   });
 }
 
@@ -2000,18 +2002,18 @@ function loadOntologyData(){
           }).join('')+'</div>';
           return h;
         }
-        html+=renderGroup('实体 Entities', 'var(--green)', entities);
+        html+=renderGroup('实体 Entities', 'var(--text-s)', entities);
         html+=renderGroup('概念 Concepts', 'var(--text-s)', concepts);
         html+=renderGroup('关系 Relations', 'var(--text-s)', relations);
         if(!any){
-          html=emptyState('🗺️','还没有本体结构','在 FDE 引导页复制 Prompt 执行深挖阶段，或运行 create_entity / create_concept 构建','去 FDE 引导构建',"goPage('fde')");
+          html=emptyState('<i class="bi bi-map"></i>','还没有本体结构','在 FDE 引导页复制 Prompt 执行深挖阶段，或运行 create_entity / create_concept 构建','去 FDE 引导构建',"goPage('fde')");
         }
         entries.innerHTML=html;
       }
     })
     .catch(function(){
       if(stats)stats.innerHTML='<div style="grid-column:1/-1;text-align:center;color:var(--text-t);font-size:12px;padding:12px">未连接数据源</div>';
-      if(entries)entries.innerHTML=emptyState('🗺️','还没有本体数据','通过 tools/dashboard/serve-dashboard.mjs 启动可看真实数据','去 FDE 引导构建',"goPage('fde')");
+      if(entries)entries.innerHTML=emptyState('<i class="bi bi-map"></i>','还没有本体数据','通过 tools/dashboard/serve-dashboard.mjs 启动可看真实数据','去 FDE 引导构建',"goPage('fde')");
     });
 }
 
@@ -2031,7 +2033,7 @@ function loadForgeData(){
       html+='<div style="flex:1;min-width:200px"><div style="font-size:13px;font-weight:500;color:var(--brand)">Agent A · 审查模型</div>'+
         '<div style="font-size:12px;color:var(--text-s);margin-top:4px">状态：'+escapeHtml(statusCn[a.status]||a.status||'-')+' · 当前文件：'+escapeHtml(a.currentFile||'-')+'</div>'+
         '<div style="font-size:11px;color:var(--text-t);margin-top:2px">本轮发现：'+(a.findings||0)+' · 累计：'+escapeHtml(a.cumulative||'-')+'</div></div>';
-      html+='<div style="flex:1;min-width:200px"><div style="font-size:13px;font-weight:500;color:var(--green)">Agent B · 工程模型</div>'+
+      html+='<div style="flex:1;min-width:200px"><div style="font-size:13px;font-weight:500;color:var(--text-s)">Agent B · 工程模型</div>'+
         '<div style="font-size:12px;color:var(--text-s);margin-top:4px">状态：'+escapeHtml(statusCn[b.status]||b.status||'-')+' · 当前文件：'+escapeHtml(b.currentFile||'-')+'</div>'+
         '<div style="font-size:11px;color:var(--text-t);margin-top:2px">本轮发现：'+(b.findings||0)+' · 累计：'+escapeHtml(b.cumulative||'-')+'</div></div>';
       html+='</div>';
@@ -2039,7 +2041,7 @@ function loadForgeData(){
       box.innerHTML=html;
     })
     .catch(function(){
-      box.innerHTML=emptyState('🔬','还没有 FORGE 运行记录','跑过 fresh-eyes-loop / release-gate-loop 后生成（latest.json）');
+      box.innerHTML=emptyState('<i class="bi bi-microscope"></i>','还没有 FORGE 运行记录','跑过 fresh-eyes-loop / release-gate-loop 后生成（latest.json）');
     });
 }
 
@@ -2074,12 +2076,12 @@ function loadReleaseGateData(){
       var done=st.stepIndex||0;
       var pct=Math.round(done*100/total);
       html+='<div style="margin-top:12px;font-size:12px;color:var(--text-s)">十二阶段门禁进度（当前运行）：</div>';
-      html+='<div style="background:var(--bg);border-radius:6px;height:10px;margin-top:6px;overflow:hidden"><div style="width:'+pct+'%;height:100%;background:var(--green);border-radius:6px;transition:width .3s"></div></div>';
+      html+='<div style="background:var(--bg);border-radius:6px;height:10px;margin-top:6px;overflow:hidden"><div style="width:'+pct+'%;height:100%;background:var(--brand);border-radius:6px;transition:width .3s"></div></div>';
       html+='<div style="margin-top:6px;font-size:11px;color:var(--text-t)">'+escapeHtml(latest.date||'')+' · '+escapeHtml(latest.run||'')+' · 更新于 '+escapeHtml(String(st.lastUpdate||'').replace('T',' ').slice(0,16))+'</div>';
       box.innerHTML=html;
     })
     .catch(function(){
-      box.innerHTML=emptyState('🏁','还没有 release-gate 运行记录','跑过发版门禁后生成');
+      box.innerHTML=emptyState('<i class="bi bi-flag"></i>','还没有 release-gate 运行记录','跑过发版门禁后生成');
     });
 }
 
@@ -2248,7 +2250,7 @@ function loadWorklogData(){
       }
     });
   }).catch(function(){
-    document.getElementById('wl-view-agent').innerHTML=emptyState('📊','还没有工作明细','运行过 sofagent-audit 或编排任务后自动生成（worklog.json）','去 FDE 引导部署',"goPage('fde')");
+    document.getElementById('wl-view-agent').innerHTML=emptyState('<i class="bi bi-bar-chart"></i>','还没有工作明细','运行过 sofagent-audit 或编排任务后自动生成（worklog.json）','去 FDE 引导部署',"goPage('fde')");
   });
 }
 
@@ -2363,7 +2365,7 @@ function loadGraphView(){
         renderFlowGraph(ontNodes,ontEdges);
     });
   }).catch(function(){
-    document.getElementById('gr-view-workflow').innerHTML=emptyState('🕸️','还没有图谱数据','运行过 AI 编排任务后自动生成（worklog.json）','查看工作明细',"goPage('workflow')");
+    document.getElementById('gr-view-workflow').innerHTML=emptyState('<i class="bi bi-diagram-3"></i>','还没有图谱数据','运行过 AI 编排任务后自动生成（worklog.json）','查看工作明细',"goPage('workflow')");
   });
 }
 
@@ -2397,7 +2399,7 @@ function loadFdeSelfGraph(){
       if(updated)updated.textContent=fmtUpdatedAt();
     });
   }).catch(function(){
-    box.innerHTML=emptyState('🧬','还没有 FDE workflow 数据','部署 FDE workflow 后读取真实节点（template.yaml）','去 FDE 引导部署',"goPage('fde')");
+    box.innerHTML=emptyState('<i class="bi bi-diagram-2"></i>','还没有 FDE workflow 数据','部署 FDE workflow 后读取真实节点（template.yaml）','去 FDE 引导部署',"goPage('fde')");
   });
 }
 
