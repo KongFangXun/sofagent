@@ -47,7 +47,9 @@ a:hover{text-decoration:none} /* 全站 hover 无下划线（统一）——按�
 .tab-inline .nav-item:hover{color:var(--text)}
 .tab-inline .nav-item.active{color:var(--brand);font-weight:600;border-bottom:none}
 /* 点击反馈（统一：按下微缩 + 变蓝，参考「刷新」按钮；fde-stage 整行不参与防偏移） */
-.btn:active,.btn-outline:active,.btn-primary:active,.help-btn:active,.star-btn:active,.copy-btn:active,.seg-btn:active,.seg-refresh:active,.nav-item:active,.qs-item:active,.rule-chip:active,.doc-item:active{transform:scale(.96);border-color:var(--brand);color:var(--brand)}
+.btn:active,.btn-outline:active,.btn-primary:active,.help-btn:active,.star-btn:active,.copy-btn:active,.seg-btn:active,.seg-refresh:active,.qs-item:active,.rule-chip:active,.doc-item:active{transform:scale(.96);border-color:var(--brand);color:var(--brand)}
+/* nav-item 点击只微缩：border-bottom 是 active 指示线（2px transparent 预留），:active 变蓝会闪出横线 */
+.nav-item:active{transform:scale(.96)}
 
 .header-right{display:flex;gap:6px;justify-content:flex-end}
 /* header 按钮（统一直角 6px，非跑道形） */
@@ -289,7 +291,6 @@ a:hover{text-decoration:none} /* 全站 hover 无下划线（统一）——按�
 
 .refresh-bar{display:flex;align-items:center;gap:12px;margin-bottom:16px;font-size:12px;color:var(--text-s);flex-wrap:wrap}
 .refresh-bar select{padding:4px 8px;border:1px solid var(--border);border-radius:4px;font-size:12px;font-family:var(--font)}
-.insight-inline{font-size:12px;color:var(--text-s);display:flex;align-items:center;gap:6px}
 
 /* 刷新间隔（扁平文字式，无胶囊容器） */
 .seg-group{display:inline-flex;gap:2px}
@@ -458,7 +459,6 @@ a:hover{text-decoration:none} /* 全站 hover 无下划线（统一）——按�
       <span class="pulse"></span>
       <span id="dataStatusText">使用示例数据</span>
     </span>
-    <span id="insightInline" class="insight-inline"></span>
     <button class="seg-btn seg-refresh" id="connectDirBtn" onclick="connectDataDir()" style="display:none" title="连接数据目录（Chrome 可直接选 ~/.sofagent/data 目录）" aria-label="连接数据目录">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;display:block"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><line x1="12" y1="11" x2="12" y2="17"/><polyline points="9 14 12 17 15 14"/></svg>
     </button>
@@ -1325,24 +1325,6 @@ function renderSummaryData(s){
     var mViol=document.getElementById('m-violations');
     if(mViol){
       mViol.innerHTML=todayIssues+(todayIssues>prevIssues?'<span class="metric-trend trend-up">↑</span>':todayIssues<prevIssues?'<span class="metric-trend trend-down">↓</span>':'<span class="metric-trend trend-flat">→</span>');
-    }
-  }
-  // 洞察：今日一句话（并入顶部状态条，不单独一栏）
-  var ib=document.getElementById('insightInline');
-  if(ib){
-    if(lastDay){
-      var parts=['今日 '+todayTasks+' 个任务、'+todayChecks+' 次检查'];
-      if(todayIssues>0)parts.push(todayIssues+' 个问题');
-      if(s.top3&&s.top3[0])parts.push('<b>'+escapeHtml(s.top3[0].code)+'</b> 触发最多（'+s.top3[0].count+' 次）');
-      var prevDay2=(s.daily&&s.daily.length>1)?s.daily[s.daily.length-2]:null;
-      if(prevDay2){
-        var prevIss2=(prevDay2.ruleAll||0)-(prevDay2.rulePass||0);
-        var dlt=todayIssues-prevIss2;
-        parts.push('问题较昨日 '+(dlt>0?'<b style="color:var(--text-s)">+'+dlt+'</b>':dlt<0?'<b style="color:var(--text-s)">'+dlt+'</b>':'持平'));
-      }
-      ib.innerHTML='<span style="opacity:.5">|</span> '+parts.join(' · ');
-    }else{
-      ib.innerHTML='';
     }
   }
   // 洞察：高频违规规则 chips + 计算口径一行（点击跳工具箱审计规则）

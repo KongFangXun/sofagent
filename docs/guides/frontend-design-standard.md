@@ -143,6 +143,8 @@
 4. header 结构：PC 三段对齐（logo | 导航 | 按钮），`.header-inner{max-width:1200px;margin:0 auto}` 与内容对齐；**别给 header 本身加 max-width**（背景会变窄）。
 5. **导航顺序**（v1.4.0）：驾驶舱 → 业务流 → 本体图谱 → **知识库 → FDE 引导** → 工具箱——知识库在 FDE 引导前（业务流/本体/知识库空态都引导去 FDE，链路更顺）。
 6. **页内 Tab 显式初始化**：默认 tab（如工作记录"概况"）必须在 Init 里显式调用 `wlTab('overview')`——不依赖 HTML 静态 `active` class（刷新后 active 可能丢失，显式初始化最稳）。
+7. **导航点击反馈只微缩**：`.nav-item:active` 仅 `transform:scale(.96)`，**不参与通用 `:active` 组的 border-color/color 变蓝**——nav-item 的 `border-bottom:2px solid transparent` 是 active 指示线预留位，:active 变蓝会在点击瞬间闪出横线（曾误伤，教训）。
+8. **顶部状态条不放数据概语**：refresh-bar 只放「数据状态 + 操作按钮 + 更新时间」——与指标卡同源的文字概语（今日 X 任务 · X 次检查…）是重复信息，指标卡本身已展示（曾删 insightInline）。
 
 ---
 
