@@ -187,11 +187,11 @@ a:hover{text-decoration:underline}
 .copy-btn.light{background:var(--card);border:1px solid var(--border);color:var(--text-s)}
 .copy-btn.light:hover{border-color:var(--brand);color:var(--brand)}
 
-/* ===== 按钮体系（统一四变体，shadcn 风格）===== */
+/* ===== 按钮体系（统一变体，shadcn 风格 · 全白系简洁）===== */
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:5px;height:28px;padding:0 14px;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;font-family:var(--font);border:1px solid transparent;transition:all .15s;white-space:nowrap;line-height:1}
 .btn svg{width:13px;height:13px}
-.btn-primary{background:var(--brand);color:#fff}
-.btn-primary:hover{background:var(--brand-d)}
+.btn-primary{background:var(--card);border-color:var(--border);color:var(--text)}
+.btn-primary:hover{border-color:var(--text-t);background:var(--bg)}
 .btn-outline{background:var(--card);border-color:var(--border);color:var(--text-s)}
 .btn-outline:hover{border-color:var(--text-t);color:var(--text)}
 .btn-ghost{background:transparent;border-color:transparent;color:var(--text-s)}
@@ -1830,20 +1830,24 @@ function loadPipelineGraph(){
       });
       nodes.forEach(function(n,i){
         var x=30+i*(nodeW+gap);
+        var st=n.status||'unknown';
+        // 运行中（active/running）→ 品牌蓝激活态；其余按类型灰阶
         var tc=typeColMap[n.type]||{fill:'var(--bg-s)',stroke:'var(--border)'};
         var fill=tc.fill;
         var stroke=tc.stroke;
+        if(st==='running'||st==='active'){
+          fill='var(--brand-l)';stroke='var(--brand)';
+        }
         var textCol=stroke;
         svg+='<rect x="'+x+'" y="28" width="'+nodeW+'" height="'+nodeH+'" rx="6" fill="'+fill+'" stroke="'+stroke+'" stroke-width="1"/>';
         var label=(n.label||n.id||n.type||'').replace(/-1$/,'');
         svg+='<text x="'+(x+nodeW/2)+'" y="49" text-anchor="middle" font-size="11" font-weight="500" fill="'+textCol+'">'+escapeHtml(label)+'</text>';
         // 状态中文 + 运行脉冲点（跟随状态文字，不占右上角）
-        var st=n.status||'unknown';
         var statusCn={'completed':'已完成','running':'运行中','pending':'等待中','blocked':'已阻断','failed':'失败','active':'运行中'}[st]||st;
         var tx=x+nodeW/2;
         if(st==='running'||st==='active'){
           var tw=String(statusCn).length*9;
-          svg+='<circle class="pulse-svg" cx="'+(tx-tw/2-5)+'" cy="72" r="3" fill="var(--text-s)"/>';
+          svg+='<circle class="pulse-svg" cx="'+(tx-tw/2-5)+'" cy="72" r="3" fill="var(--brand)"/>';
         }
         svg+='<text x="'+tx+'" y="76" text-anchor="middle" font-size="9" fill="var(--text-t)">'+escapeHtml(statusCn)+'</text>';
       });
@@ -2277,9 +2281,9 @@ function renderFlowGraph(nodes,edges){
     var x1=f.x+nodeW,y1=f.y+45,x2=t.x,y2=t.y+45;
     svg+='<line x1="'+x1+'" y1="'+y1+'" x2="'+x2+'" y2="'+y2+'" stroke="var(--text-t)" stroke-width="1.5" marker-end="url(#flow-arrow)"/>';
   });
-  // 状态 → 灰阶（图形全灰：fill 统一浅底，stroke 按状态深浅区分——失败最深）
-  var stCol={active:'var(--text-s)',done:'var(--text-t)',failed:'var(--text)',hitl:'var(--text-s)',unknown:'var(--text-t)'};
-  var stFill={active:'var(--bg-s)',done:'var(--bg-s)',failed:'var(--bg-s)',hitl:'var(--bg-s)',unknown:'var(--bg-s)'};
+  // 状态 → 颜色：运行中=品牌蓝（激活）、完成=灰、失败=红（错误）、人工介入=黄（报警）
+  var stCol={active:'var(--brand)',done:'var(--text-t)',failed:'var(--red)',hitl:'var(--amber)',unknown:'var(--text-t)'};
+  var stFill={active:'var(--brand-l)',done:'var(--bg-s)',failed:'var(--red-l)',hitl:'var(--amber-l)',unknown:'var(--bg-s)'};
   var stCn={active:'运行中',done:'完成',failed:'失败',hitl:'人工介入',unknown:'未知'};
   nodes.forEach(function(n){
     var p=pos[n.id];
@@ -2295,7 +2299,7 @@ function renderFlowGraph(nodes,edges){
     var tx=p.x+nodeW/2;
     if(st==='active'||st==='hitl'){
       var tw=String(stLabel).length*9;
-      svg+='<circle class="pulse-svg" cx="'+(tx-tw/2-5)+'" cy="'+(p.y+72)+'" r="3" fill="var(--text-s)"/>';
+      svg+='<circle class="pulse-svg" cx="'+(tx-tw/2-5)+'" cy="'+(p.y+72)+'" r="3" fill="'+(st==='hitl'?'var(--amber)':'var(--brand)')+'"/>';
     }
     svg+='<text x="'+tx+'" y="'+(p.y+76)+'" text-anchor="middle" font-size="9" fill="var(--text-t)">'+escapeHtml(stLabel)+'</text>';
   });
