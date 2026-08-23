@@ -8,7 +8,7 @@
 </p>
 
 <p align="center">
-  <a href="README.en.md">English</a> · <a href="#这是什么">这是什么</a> · <a href="#核心特性">核心特性</a> · <a href="#什么是-fde-agent">FDE Agent</a> · <a href="#v140结合-deepseek-harness">v1.4.0 × DSH</a> · <a href="#多平台挂载">多平台</a> · <a href="#fde-方法论">FDE 方法论</a> · <a href="#fde-skill-体系">Skill 体系</a> · <a href="#约束层harness">约束层</a> · <a href="#安装">安装</a> · <a href="#使用">使用</a> · <a href="#常见问题">FAQ</a> · <a href="#生态与文档索引">文档</a> · <a href="https://github.com/KongFangXun/sofagent">⭐ Star</a>
+  <a href="README.en.md">English</a> · <a href="#v140结合-deepseek-harness">v1.4.0 × DSH</a> · <a href="#多平台挂载">多平台</a> · <a href="#fde-skill-体系">Skill 体系</a> · <a href="#约束层harness">约束层</a> · <a href="#安装">安装</a> · <a href="#生态与文档索引">文档</a> · <a href="https://github.com/KongFangXun/sofagent">⭐ Star</a>
 </p>
 
 ---

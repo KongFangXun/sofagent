@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <a href="README.md">中文</a> · <a href="#what-is-this">What is this</a> · <a href="#what-is-an-fde-agent">FDE Agent</a> · <a href="#v140-united-with-deepseek-harness">v1.4.0 × DSH</a> · <a href="#fde-methodology">FDE Methodology</a> · <a href="#constraint-layer-harness">Constraint Layer</a> · <a href="#installation">Install</a> · <a href="#usage">Usage</a> · <a href="#ecosystem--docs-index">Docs</a> · <a href="https://github.com/KongFangXun/sofagent">⭐ Star</a>
+  <a href="README.md">中文</a> · <a href="#v140-united-with-deepseek-harness">v1.4.0 × DSH</a> · <a href="#multi-platform-mounting">Multi-platform</a> · <a href="#fde-skill-system">Skill System</a> · <a href="#constraint-layer-harness">Constraint Layer</a> · <a href="#installation">Install</a> · <a href="#ecosystem--docs-index">Docs</a> · <a href="https://github.com/KongFangXun/sofagent">⭐ Star</a>
 </p>
 
 
@@ -21,6 +21,17 @@
 **An open-source FDE Agent.** On entry: map the business flow clearly, build the ontology graph, deploy the AI nodes in place. On departure: audit every change and keep optimizing.
 
 It ships on [ClawHub](https://clawhub.ai/kongfangxun/skills/sofagent) as an **FDE Skill** (a methodology skill that helps everyone at SMBs and OPCs become the FDE of their own business), and once installed on enterprise devices it runs long-term as a **constraint-layer (Harness) engine**.
+
+> 🏞️ Big tech hands you "water" (foundation models) and "riverbeds" (Agent platforms) — but the water is raw, and you don't dare drink it straight. sofagent is the engineering that makes the river usable for a whole city: dams keep the water from flooding, treatment plants turn raw water into drinking water, and pipe networks deliver it to every faucet. Models supply 90% of the intelligence; sofagent supplies the 10% of reliable execution.
+
+## Core Features
+
+- 🧭 **Map the business flow on entry** — five-element deep-dive + three-question triage, capturing every role's process steps and pricing out what each AI node is worth
+- 🤖 **Deploy AI nodes** — three-layer deliverables (documents + Skills + runtime), installed into your existing AI tools; from "you do the work" to "you delegate the work"
+- 🏠 **Stay resident after departure** — the FDE Agent remains for inspection, audit, and optimization, 7×24 online; the human leaves, governance doesn't
+- 🔍 **Zero-setup audit** — `npx -y -p @sofagent/audit sofagent-audit`, auditing the latest commit of any git repo in seconds (single-machine measured: quick ~1.1s, 50k-line diff ~6.1s; see [HANDBOOK](./docs/HANDBOOK.md))
+- 🧱 **24 audit rules** — secret leaks, out-of-scope edits, injection defense, privilege red lines; judged on git diff hard evidence, violations blocked on the spot (quick runs 17 by default; full 24 = 17 default + 7 extensions)
+- 🛡️ **Automatic snapshot rollback** — auto-archived after every audit, one-click restore to any snapshot when something breaks
 
 ## What is an FDE Agent
 
@@ -93,6 +104,22 @@ The core of this release: officially united with [DeepSeek Harness](https://gith
 - **Agentic Browser + eval**: navigate / click / screenshot / assert registered (MCP 61→66) + real Playwright driver + MLflow eval wiring (degrades gracefully when unreachable)
 - **Engineering base**: audit provenance fields (`whichDataVersion` + `beforeAfter`) + all shell scripts verified on real bash 3.2
 
+## Multi-platform Mounting
+
+Rides on top of the Agents you already use — it doesn't replace the model, only adds reliable execution. The constraint layer is platform-agnostic; the methodology follows the business, not the platform:
+
+| Tier | Platform | Constraint injection | Mounting method |
+|------|----------|---------------------|-----------------|
+| **Deep integration** | DeepSeek Harness | ✅ Plugin-level | 9 `cordis-plugin-sofagent-*` mounted into the runtime (previous chapter) |
+| **Full mounting** | OpenClaw | ✅ Automatic | Hook injection + circuit breaker |
+| | WorkBuddy | ✅ Automatic | Skill on-demand loading |
+| **Thin mounting** | Claude Code / Codex / Cursor / Gemini CLI | ⚠️ Manual | Deployment constitution + seed directives (written into each platform's config file) |
+
+- **Auto-loading is granted by the host runtime** — Skill on-demand loading depends on whether the host has a skill registry (DSH / OpenClaw / WorkBuddy do; thin-mount platforms carry it via static config files)
+- **Audit fallback is platform-agnostic** — `sofagent-audit --install-hook` runs as a git hook; at every tier, every commit passes through all 24 audit rules, violations hard-blocked. Constraints are advisory; auditing is mandatory
+
+One command selects your mounting tier: `bash install.sh --platform <platform-name>` (all platforms and differences in [HANDBOOK](./docs/HANDBOOK.md))
+
 ## FDE Methodology
 
 Many companies adopt AI the wrong way around — they pick models, build platforms, and buy Agents first, only to find nobody uses them. The problem isn't the technology; it's that **they haven't figured out their own business processes before handing them to AI**.
@@ -107,6 +134,19 @@ Most tools teach you how to build Agents; sofagent first answers **where AI shou
 
 Full methodology (four phases, twelve steps) in [FDE/GUIDE.md](./FDE/GUIDE.md) — a half-day read, enough to run FDE independently afterwards.
 
+> 💾 **Don't rush off after deployment**: each node's workflow is "burned" onto a USB drive through the DeepSeek Harness execution backend — the drive becomes one node, one key: plug it into any machine and it runs there (unplug, zero residue). The 9 open-source plugins are already mounted into DSH — burn and go.
+
+## FDE Skill System
+
+Deploying an AI node is only the first step — the chapters above cover how to map the flow and where to put it; this one covers how to keep it behaving every single time. The FDE Skill System, loaded together with the node, answers that:
+
+- 📜 **SKILL.md** — the single main entry, loaded by your AI tool: routes to the corresponding sub-Skill by phase, with role norms auto-injected by task type (mapping / audit / orchestration)
+- 🧩 **Phase sub-Skills** — a five-step closed loop of entry → deep-dive → quantify → deliver → depart (01-entry → 05-exit); what to do and what to deliver at each step is defined up front
+- 🔒 **Harness constraint skeleton** — entry-gate / fde-template / engage / loop-check / task-closure… every step from entry to departure has its matching constraint template
+- 🧬 **Experience auto-capture** — think.md reflection + knowledge maintenance; the lessons of every task land in the knowledge base automatically
+
+> What gets deployed is not a bare Agent, but an **Agent with a constraint skeleton** — constraints are advisory, auditing is mandatory: the Agent may ignore the constraints, but every change gets audited without exception.
+
 ## Constraint Layer (Harness)
 
 The constraint layer is sofagent's behavioral foundation, with four capabilities:
@@ -115,12 +155,6 @@ The constraint layer is sofagent's behavioral foundation, with four capabilities
 - **Audit** — 24 git-diff hard-evidence rules (quick runs 17 by default, 7 extensions enabled via config) + AgentShield five-face static config scanning; auditing is mandatory — every change gets audited, violations blocked on the spot
 - **Rollback** — auto-archived snapshot after every audit, one-click restore to any snapshot
 - **Evolution** — think.md reflection + Dream Cycle + skillopt, experience auto-captured into the knowledge base
-
-**Platform-agnostic**: mounts on OpenClaw / WorkBuddy / Cursor / Claude / Gemini — with DeepSeek Harness being the deepest integration (9 plugins live-mounted, previous chapter). Automatic hook injection currently works only on OpenClaw; on other platforms, inject constraints manually and auditing works as usual.
-
-> What gets deployed is not a bare Agent, but an **Agent with a constraint skeleton** — the Agent may ignore the constraints, but every change gets audited without exception.
-
-> ⚠️ **Honest boundary**: currently a single-machine, single-user design — multiple Agents share one knowledge base / audit history (tenant isolation is on the ROADMAP); task logs (task/logs) are written in plaintext, and static encryption currently covers the audit history main chain but not task/logs — read [SECURITY](./SECURITY.md) · [LIMITATIONS](./docs/LIMITATIONS.md) before enterprise deployment. sofagent auditing focuses on **hard evidence from the current diff + Agent behavior auditing** (out-of-scope / injection / privilege dimensions), complementing general-purpose secret scanners (gitleaks / detect-secrets etc., which do full-history scans with broader pattern libraries) rather than replacing them.
 
 ## Installation
 
@@ -223,6 +257,12 @@ Community rulesets are published as `sofagent-ruleset-*` npm packages and loaded
 
 - **Methodology path** (zero dependencies): read [FDE/GUIDE.md](./FDE/GUIDE.md) and map workflows manually following the handbook — Excel + your own brain is enough
 - **Tooling path** (Node.js ≥ 18): after installing, tell your AI tool "run an FDE diagnosis for me" and the Agent guides you from the entry phase
+
+## FAQ
+
+- **Is it production-ready?** Currently a single-machine, single-user design — multiple Agents share one knowledge base / audit history (tenant isolation is on the [ROADMAP](./docs/ROADMAP.md)); task logs (task/logs) are written in plaintext, and static encryption currently covers the audit history main chain but not task/logs. Read [SECURITY](./SECURITY.md) · [LIMITATIONS](./docs/LIMITATIONS.md) before enterprise deployment. `config.yml` is non-fail-closed by default; for strict-compliance scenarios use CI fallback + file-permission lock.
+- **Does it collect my data?** Fully local by default. Optional federation queries leave your machine only when you configure them yourself (see SECURITY).
+- **How does it relate to scanners like gitleaks?** Complementary, not substitutes — scanners do full-history scans with broader pattern libraries; sofagent focuses on hard evidence from the current diff + Agent behavior auditing (out-of-scope / injection / privilege dimensions). For strict secret compliance, use both together.
 
 ## Ecosystem & Docs Index
 
