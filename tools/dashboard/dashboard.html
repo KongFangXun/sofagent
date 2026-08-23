@@ -558,12 +558,12 @@ a:hover{text-decoration:underline}
 </div>
 
 <!-- ================================================== -->
-<!-- PAGE: 本体图谱（本体结构 + 图谱，v1.4.0 归并） -->
+<!-- PAGE: 本体图谱（本体数据 + 图谱，v1.4.0 归并） -->
 <!-- ================================================== -->
 <div class="page" id="page-ontology">
     <div class="section">
     <div class="section-header">
-      <div class="section-title"><span class="dot-emoji"><i class="bi bi-map"></i></span>你的本体结构（ontology）</div>
+      <div class="section-title"><span class="dot-emoji"><i class="bi bi-map"></i></span>本体数据（ontology）</div>
       <span style="font-size:11px;color:var(--text-t)" id="ontUpdatedAt">加载中...</span>
     </div>
     <div class="section-body">
@@ -585,7 +585,7 @@ a:hover{text-decoration:underline}
     </div>
   </div>
   <div class="info-note" style="margin-top:0">
-    <strong>想学怎么建本体结构？</strong>点右上角 <button class="btn btn-outline" onclick="openHelp('ontology')" style="padding:2px 8px">？帮助</button> 查看「什么是本体结构 / 业务四问 / 五条筛选标准 / 构建 Prompt」（或链 <a href="https://github.com/KongFangXun/sofagent/blob/main/FDE/GUIDE.md" target="_blank">FDE/GUIDE.md §3.2</a>）。
+    <strong>想学怎么建本体数据？</strong>点右上角 <button class="btn btn-outline" onclick="openHelp('ontology')" style="padding:2px 8px">？帮助</button> 查看「什么是本体数据 / 业务四问 / 五条筛选标准 / 构建 Prompt」（或链 <a href="https://github.com/KongFangXun/sofagent/blob/main/FDE/GUIDE.md" target="_blank">FDE/GUIDE.md §3.2</a>）。
   </div>
 </div>
 
@@ -673,8 +673,8 @@ a:hover{text-decoration:underline}
       </div>
       <div class="fde-stage">
         <div class="fde-num">2</div>
-        <div class="fde-content"><div class="fde-title">深挖 · 五要素 + 本体结构</div><div class="fde-desc">梳理输入/输出/负责人/耗时/痛点，构建 ontology 本体结构。</div></div>
-        <button class="btn btn-outline" onclick="copyPrompt(this, '进入 FDE 深挖阶段。帮我梳理关键岗位的业务流：输入是什么、输出是什么、谁负责、耗多少时间、痛点在哪。然后构建本体结构。')">复制</button>
+        <div class="fde-content"><div class="fde-title">深挖 · 五要素 + 本体数据</div><div class="fde-desc">梳理输入/输出/负责人/耗时/痛点，构建 ontology 本体数据。</div></div>
+        <button class="btn btn-outline" onclick="copyPrompt(this, '进入 FDE 深挖阶段。帮我梳理关键岗位的业务流：输入是什么、输出是什么、谁负责、耗多少时间、痛点在哪。然后构建本体数据。')">复制</button>
       </div>
       <div class="fde-stage">
         <div class="fde-num">3</div>
@@ -861,7 +861,7 @@ a:hover{text-decoration:underline}
         <div class="npm-item"><code>@sofagent/harness</code><div class="npm-desc">SKILL 加载链</div></div>
         <div class="npm-item"><code>@sofagent/mcp</code><div class="npm-desc">MCP Server</div></div>
         <div class="npm-item"><code>@sofagent/load-chain</code><div class="npm-desc">SKILL 加载 git hook</div></div>
-        <div class="npm-item"><code>@sofagent/ontology</code><div class="npm-desc">本体结构建模</div></div>
+        <div class="npm-item"><code>@sofagent/ontology</code><div class="npm-desc">本体数据建模</div></div>
         <div class="npm-item"><code>@sofagent/eval</code><div class="npm-desc">评估反馈闭环</div></div>
         <div class="npm-item"><code>@sofagent/think</code><div class="npm-desc">反思教训生成</div></div>
         <div class="npm-item"><code>@sofagent/ab-test</code><div class="npm-desc">A/B 测试</div></div>
@@ -911,15 +911,11 @@ Agent A 找问题，Agent B 修复，
 build → acceptance → regression → coverage，
 全部通过再报告。</code>
       </div>
-    </div>
-  </div>
 
-  <div class="section">
-    <div class="section-header"><div class="section-title"><span class="dot-emoji"><i class="bi bi-puzzle"></i></span>引擎执行流水线节点</div>
-      <a href="https://github.com/KongFangXun/sofagent/blob/main/docs/ARCHITECTURE.md" target="_blank" class="btn btn-outline">ARCHITECTURE.md →</a>
-    </div>
-    <div class="section-body">
-      <div style="font-size:11px;color:var(--text-t);margin-bottom:10px">这里是 <b>sofagent 引擎内部执行流水线</b>（planner → engineer → audit → reviewer → human），每次 AI 任务自动走的五步——与 FORGE 一样属于项目自身的机制，不属于企业工作流。业务角色节点（分析师/规划师/部署专家）见 <a href="javascript:void(0)" onclick="goPage('fde')" style="color:var(--brand)">FDE 引导</a> 页。</div>
+      <div class="step-card" style="margin:16px 0 12px">
+        <div class="step-title"><span class="step-num">3</span>引擎执行流水线</div>
+        <div class="step-desc">每次 AI 任务自动走的五步（planner → engineer → audit → reviewer → human）——sofagent 引擎内部机制，与 FORGE 同类。业务角色节点（分析师/规划师/部署专家）见 <a href="javascript:void(0)" onclick="goPage('fde')" style="color:var(--brand)">FDE 引导</a> 页。</div>
+      </div>
       <div class="grid-3" id="nodeList" style="gap:10px">
         <div style="grid-column:1/-1;text-align:center;color:var(--text-t);font-size:12px;padding:12px">加载中...</div>
       </div>
@@ -983,9 +979,9 @@ build → acceptance → regression → coverage，
       </div>
 
       <div class="help-tab" id="help-ontology">
-        <div class="help-intro"><b>构建本体结构的完整方法论</b>（FDE 深挖阶段）：</div>
-        <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:8px">什么是本体结构（ontology）</div>
-        <p style="font-size:13px;color:var(--text-s);margin-bottom:12px">类比城市规划中的<strong>「用地性质图」</strong>——每块地是住宅/商业/工业，决定了这块地能干什么、归谁管。本体结构 = 企业知识的「用地性质图」——每个知识节点是什么类型、归哪个业务域、能看什么不能看什么。</p>
+        <div class="help-intro"><b>构建本体数据的完整方法论</b>（FDE 深挖阶段）：</div>
+        <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:8px">什么是本体数据（ontology）</div>
+        <p style="font-size:13px;color:var(--text-s);margin-bottom:12px">类比城市规划中的<strong>「用地性质图」</strong>——每块地是住宅/商业/工业，决定了这块地能干什么、归谁管。本体数据 = 企业知识的「用地性质图」——每个知识节点是什么类型、归哪个业务域、能看什么不能看什么。</p>
         <div class="grid-3" style="margin-bottom:16px">
           <div class="ont-card">
             <h4 style="color:var(--text-s)">实体 Entity</h4>
@@ -1045,18 +1041,18 @@ build → acceptance → regression → coverage，
           <div class="ont-card"><h4 style="color:var(--brand-d);font-size:13px">5. 责任可绑定</h4><p style="font-size:11px;margin:0">权限和责任能绑定到它吗？</p></div>
         </div>
         <div class="prompt-box" style="margin-top:16px">
-          <div class="prompt-action"><span class="prompt-label">让 Agent 帮你构建本体结构</span>
-            <button class="copy-btn" onclick="copyPrompt(this, '作为 sofagent FDE Agent，帮我构建本体结构。先用业务四问梳理关键业务对象，然后筛选 Object Type，建立 entity / concept / relations。最后用 validate_ontology 验证完整性。')">复制 Prompt</button>
+          <div class="prompt-action"><span class="prompt-label">让 Agent 帮你构建本体数据</span>
+            <button class="copy-btn" onclick="copyPrompt(this, '作为 sofagent FDE Agent，帮我构建本体数据。先用业务四问梳理关键业务对象，然后筛选 Object Type，建立 entity / concept / relations。最后用 validate_ontology 验证完整性。')">复制 Prompt</button>
           </div>
           <code>作为 sofagent FDE Agent，
-帮我构建本体结构。
+帮我构建本体数据。
 先用业务四问梳理关键业务对象，
 然后筛选 Object Type，
 建立 entity / concept / relations。
 最后用 validate_ontology 验证完整性。</code>
         </div>
         <div class="info-note" style="margin-top:12px">
-          <strong>适配性判断</strong>：多数中小企业不必建全量本体结构。如果不需要业务域级 Agent Runtime、也不是一号位工程推进，用<strong>轻量 Agent + 企业 Skill</strong>即可。详见 <a href="https://github.com/KongFangXun/sofagent/blob/main/FDE/GUIDE.md" target="_blank">FDE/GUIDE.md §3.2</a>
+          <strong>适配性判断</strong>：多数中小企业不必建全量本体数据。如果不需要业务域级 Agent Runtime、也不是一号位工程推进，用<strong>轻量 Agent + 企业 Skill</strong>即可。详见 <a href="https://github.com/KongFangXun/sofagent/blob/main/FDE/GUIDE.md" target="_blank">FDE/GUIDE.md §3.2</a>
         </div>
       </div>
 
@@ -1979,7 +1975,7 @@ function loadKnowledgeData(){
   });
 }
 
-/* ===== Ontology Data (本体结构) ===== */
+/* ===== Ontology Data (本体数据) ===== */
 function loadOntologyData(){
   var stats=document.getElementById('ontStats');
   var entries=document.getElementById('ontEntries');
@@ -2017,7 +2013,7 @@ function loadOntologyData(){
         html+=renderGroup('概念 Concepts', 'var(--text-s)', concepts);
         html+=renderGroup('关系 Relations', 'var(--text-s)', relations);
         if(!any){
-          html=emptyState('<i class="bi bi-map"></i>','还没有本体结构','在 FDE 引导页复制 Prompt 执行深挖阶段，或运行 create_entity / create_concept 构建','去 FDE 引导构建',"goPage('fde')");
+          html=emptyState('<i class="bi bi-map"></i>','还没有本体数据','在 FDE 引导页复制 Prompt 执行深挖阶段，或运行 create_entity / create_concept 构建','去 FDE 引导构建',"goPage('fde')");
         }
         entries.innerHTML=html;
       }
