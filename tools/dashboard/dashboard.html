@@ -51,12 +51,13 @@ a:hover{text-decoration:underline}
 .help-btn svg{width:14px;height:14px;flex-shrink:0}
 .help-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:400;display:none;align-items:center;justify-content:center;padding:20px}
 .help-panel{background:var(--card);border-radius:16px;max-width:780px;width:100%;height:min(74vh,640px);display:flex;flex-direction:column;box-shadow:0 12px 40px rgba(0,0,0,.18)}
-.help-header{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
-.help-title{font-size:15px;font-weight:600}
-.help-close{width:30px;height:30px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text-s);font-size:16px;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center;font-family:var(--font)}
+.help-header{padding:10px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;flex-shrink:0}
+.help-title{font-size:15px;font-weight:600;flex-shrink:0}
+.help-close{width:30px;height:30px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text-s);font-size:16px;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center;font-family:var(--font);flex-shrink:0}
 .help-close:hover{border-color:var(--brand);color:var(--brand)}
-.help-tabs{display:flex;gap:4px;padding:10px 16px 0;border-bottom:1px solid var(--border);overflow-x:auto;scrollbar-width:none;flex-shrink:0}
+.help-tabs{display:flex;gap:2px;align-items:center;overflow-x:auto;scrollbar-width:none;flex:1;min-width:0}
 .help-tabs::-webkit-scrollbar{display:none}
+.help-tabs .nav-item{padding:6px 12px;font-size:12px;flex-shrink:0}
 .help-body{padding:20px;overflow-y:auto;flex:1}
 .help-tab{display:none}
 .help-tab.active{display:block}
@@ -472,7 +473,10 @@ a:hover{text-decoration:underline}
   <div class="section">
     <div class="section-header">
       <div class="section-title"><span class="dot-emoji">🔀</span>编排控制图</div>
-      <span style="font-size:11px;color:var(--text-t)" id="graphUpdatedAt">加载中...</span>
+      <span style="font-size:11px;color:var(--text-t);display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <span id="graphMeta" style="display:none"></span>
+        <span id="graphUpdatedAt">加载中...</span>
+      </span>
     </div>
     <div class="section-body">
       <div class="chart-box" id="graphBox">
@@ -590,6 +594,36 @@ a:hover{text-decoration:underline}
 <!-- ================================================== -->
 <div class="page" id="page-fde">
   <div class="section">
+    <div class="section-header"><div class="section-title"><span class="dot-emoji">🚀</span>怎么开始</div>
+      <span style="font-size:11px;color:var(--text-t)">零依赖方法论 · 或装进你的 Agent</span>
+    </div>
+    <div class="section-body">
+      <div class="metrics" style="grid-template-columns:repeat(4,1fr);margin-bottom:0">
+        <a class="metric-card" href="https://github.com/KongFangXun/sofagent/blob/main/FDE/GUIDE.md" target="_blank" style="display:block;text-decoration:none">
+          <div style="font-size:22px;line-height:1.2">📖</div>
+          <div style="font-size:13px;font-weight:600;margin-top:6px;color:var(--text)">读 GUIDE.md</div>
+          <div style="font-size:11px;color:var(--text-s);margin-top:2px">方法论 · 零依赖，纸笔即可</div>
+        </a>
+        <a class="metric-card" href="https://clawhub.ai/skill/sofagent" target="_blank" style="display:block;text-decoration:none">
+          <div style="font-size:22px;line-height:1.2">🔍</div>
+          <div style="font-size:13px;font-weight:600;margin-top:6px;color:var(--text)">WorkBuddy 搜 sofagent</div>
+          <div style="font-size:11px;color:var(--text-s);margin-top:2px">一键安装 Skill · ClawHub</div>
+        </a>
+        <a class="metric-card" href="https://github.com/KongFangXun/sofagent" target="_blank" style="display:block;text-decoration:none">
+          <div style="font-size:22px;line-height:1.2">💻</div>
+          <div style="font-size:13px;font-weight:600;margin-top:6px;color:var(--text)">bash install.sh</div>
+          <div style="font-size:11px;color:var(--text-s);margin-top:2px">OpenClaw / npm 全局安装</div>
+        </a>
+        <div class="metric-card" onclick="openHelp('fde')" style="cursor:pointer">
+          <div style="font-size:22px;line-height:1.2">🧭</div>
+          <div style="font-size:13px;font-weight:600;margin-top:6px;color:var(--text)">场景速查</div>
+          <div style="font-size:11px;color:var(--text-s);margin-top:2px">踩坑查询 / 健康检查 → 帮助</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
     <div class="section-header"><div class="section-title"><span class="dot-emoji">🧭</span>FDE 五阶段 Prompt</div>
       <a href="https://github.com/KongFangXun/sofagent/blob/main/FDE/GUIDE.md" target="_blank" class="copy-btn light">FDE/GUIDE.md →</a>
     </div>
@@ -621,15 +655,6 @@ a:hover{text-decoration:underline}
         <div class="fde-content"><div class="fde-title">离场 · 自检 + 观察期 + 确认</div><div class="fde-desc">审计自检、反思沉淀、设置观察期。</div></div>
         <button class="copy-btn light" onclick="copyPrompt(this, '进入 FDE 离场阶段。做自检清单：审计有没有遗漏、反思有没有沉淀、知识库有没有更新。然后设置观察期。')">复制</button>
       </div>
-    </div>
-  </div>
-
-  <div class="section">
-    <div class="section-header"><div class="section-title"><span class="dot-emoji">🚀</span>怎么开始（方法论/工具路径/场景速查）</div>
-      <span style="font-size:11px;color:var(--text-t)">详细引导见右上角 <button class="copy-btn light" onclick="openHelp('fde')" style="padding:2px 8px">？帮助</button> · <a href="https://clawhub.ai/skill/sofagent" target="_blank" class="copy-btn light">ClawHub Skill →</a></span>
-    </div>
-    <div class="section-body">
-      <div style="font-size:12px;color:var(--text-s)">① 方法论路径：读 <a href="https://github.com/KongFangXun/sofagent/blob/main/FDE/GUIDE.md" target="_blank">GUIDE.md</a>（零依赖，纯对话/纸笔可完成）· ② 工具路径：WorkBuddy 搜索 <code style="background:var(--brand-l);padding:2px 6px;border-radius:4px;font-size:11px">sofagent</code> 或 <code style="background:var(--brand-l);padding:2px 6px;border-radius:4px;font-size:11px">bash install.sh</code> · ③ 场景速查（查询踩坑 / 健康检查）在帮助面板。</div>
     </div>
   </div>
   <div class="section">
@@ -878,13 +903,13 @@ build → acceptance → regression → coverage，
   <div class="help-panel" role="dialog" aria-label="帮助与支持">
     <div class="help-header">
       <div class="help-title">帮助与支持</div>
+      <div class="help-tabs" id="helpTabs">
+        <button class="nav-item" data-help="workflow" onclick="switchHelpTab('workflow')">业务流</button>
+        <button class="nav-item" data-help="ontology" onclick="switchHelpTab('ontology')">本体图谱</button>
+        <button class="nav-item" data-help="knowledge" onclick="switchHelpTab('knowledge')">知识库</button>
+        <button class="nav-item" data-help="fde" onclick="switchHelpTab('fde')">FDE 引导</button>
+      </div>
       <button class="help-close" onclick="closeHelp()" aria-label="关闭帮助">×</button>
-    </div>
-    <div class="help-tabs" id="helpTabs">
-      <button class="nav-item" data-help="workflow" onclick="switchHelpTab('workflow')">业务流</button>
-      <button class="nav-item" data-help="ontology" onclick="switchHelpTab('ontology')">本体图谱</button>
-      <button class="nav-item" data-help="knowledge" onclick="switchHelpTab('knowledge')">知识库</button>
-      <button class="nav-item" data-help="fde" onclick="switchHelpTab('fde')">FDE 引导</button>
     </div>
     <div class="help-body">
 
@@ -1728,8 +1753,13 @@ function loadPipelineGraph(){
       });
       svg+='<defs><marker id="arrG" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M2 2L8 5L2 8" fill="none" stroke="#8B949E" stroke-width="1.5"/></marker></defs>';
       svg+='</svg>';
-      box.innerHTML=svg+
-        '<div style="margin-top:10px;font-size:12px;color:var(--text-s)">轮次 '+(g.wave||1)+' · 降级等级 '+(g.degradationLevel||0)+' · 激活节点 '+(g.activeNode||'-')+' · 任务数 '+(g.workGraphTasks||0)+'</div>';
+      box.innerHTML=svg;
+      // 图下方不再堆元信息——移到区块 header 右侧
+      var meta=document.getElementById('graphMeta');
+      if(meta){
+        meta.textContent='轮次 '+(g.wave||1)+' · 降级等级 '+(g.degradationLevel||0)+' · 激活节点 '+(g.activeNode||'-')+' · 任务数 '+(g.workGraphTasks||0);
+        meta.style.display='inline';
+      }
       // === 节点卡片列表 ===
       var typeDot={'planner':'planner','engineer':'engineer','audit':'audit','reviewer':'reviewer','human':'human'};
       var html=nodes.map(function(n){
