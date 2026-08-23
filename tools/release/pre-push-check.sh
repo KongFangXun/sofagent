@@ -16,9 +16,9 @@
 #   + npm run build         → 审计引擎构建
 #
 # 用法:
-#   ./tools/pre-push-check.sh           # 全量检查（留根：四门禁聚合入口）
-#   ./tools/pre-push-check.sh --quick   # 跳过 npm test/build（快）
-#   ./tools/pre-push-check.sh --minimal      # 结构性快检（跳过版本号/文档/构建/测试门禁）
+#   ./tools/release/pre-push-check.sh   # 全量检查（v1.4.0 移入 release/：四门禁聚合入口）
+#   ./tools/release/pre-push-check.sh --quick   # 跳过 npm test/build（快）
+#   ./tools/release/pre-push-check.sh --minimal      # 结构性快检（跳过版本号/文档/构建/测试门禁）
 #
 # 退出码:
 #   0 = 全部通过，可以 push
@@ -30,7 +30,8 @@ set -uo pipefail
 # v1.2.2 F-03: 预防性内存限制——防止 node/shellcheck 进程 OOM (exit 137)
 export NODE_OPTIONS="${NODE_OPTIONS:---max-old-space-size=4096}"
 
-cd "$(dirname "$0")/.." || exit 1
+# v1.4.0：脚本从 tools/ 移入 tools/release/，仓库根定位改为上两级（原 tools/ 上 1 级）
+cd "$(dirname "$0")/../.." || exit 1
 
 # ── 颜色 ──
 RED='\033[0;31m'
@@ -460,7 +461,7 @@ echo ""
 if [ "$FAIL" -gt 0 ]; then
   echo -e "  ${RED}❌ 有 ${FAIL} 项失败，先修再推！${NC}"
   echo ""
-  echo "  修复后重新跑: ./tools/pre-push-check.sh"
+  echo "  修复后重新跑: ./tools/release/pre-push-check.sh"
   exit 1
 else
   echo -e "  ${GREEN}✅ 可以 push 了！${NC}"

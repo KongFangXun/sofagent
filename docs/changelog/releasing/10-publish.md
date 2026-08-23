@@ -52,7 +52,7 @@ sofagent-audit --doctor
 
 ```bash
 # 推前预检全绿
-bash tools/pre-push-check.sh
+bash tools/release/pre-push-check.sh
 
 # 文档预算 + 死链 + Skill 行数（pre-push-check 内含，但发布前必须单独显式跑一次确认）
 bash tools/check/check-docs.sh

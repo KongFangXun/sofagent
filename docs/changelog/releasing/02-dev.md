@@ -51,7 +51,7 @@
 | 三 | `npm run build && npm test` | exit 0 + 全部通过 |
 | 四 | **测试数文档同步门禁**（v1.3.4 教训：bugfix/dev/dsh 三阶段均漏此步）：`bash tools/check/check-test-count.sh --quiet` | 输出 OK / EXIT=0。FAIL = README/WIKI/LIMITATIONS/ARCHITECTURE 测试数与 test-count.sh SSOT 不一致，必须手动同步后再继续 |
 | 五 | **关键依赖版本检查**：`bash tools/check/check-deps.sh`。检查 LangGraph 三件套 / automerge / zod / js-yaml / DSH 的当前版本 vs 最新版本——Dependabot 做周检查自动提 PR，本步做发版前快照确认 | 输出各依赖状态。automerge 标 🔒 精确锁（禁升 2.x），其余 ⚠️ 有新版本时按规则评估 |
-| 六 | shellcheck：`bash tools/pre-push-check.sh --quick`。⚠️ 涉及 CLI 命令迁移时跳过，延后到阶段六 | 零 error |
+| 六 | shellcheck：`bash tools/release/pre-push-check.sh --quick`。⚠️ 涉及 CLI 命令迁移时跳过，延后到阶段六 | 零 error |
 | 七 | **工作区卫生检查**（2026-08-16 新增 · 根目录测试残留事件教训）：`npx sofagent-audit --diff-range HEAD --silent` 看「A18+ 工作区垃圾残留扫描」段（或直接跑 `git status --short` + 人工扫根目录） | 扫描零残留。有残留 = 先清理再发版（rm + `git rm --cached` + 补 .gitignore）——发版不带实验垃圾出门 |
 | 八 | **dist 与 src 同步验证**：`diff <(grep "关键命令" engine/audit/src/index.ts) <(grep "关键命令" engine/audit/dist/index.js)` | 无实质差异（排除编译格式化） |
 | 九 | 改动清单核对 | `git diff --stat` 确认只改了 changelog 规定的文件 |

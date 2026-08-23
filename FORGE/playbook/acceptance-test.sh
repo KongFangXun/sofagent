@@ -497,7 +497,7 @@ node "$PROJECT_ROOT/engine/audit/dist/index.js" --diff ${SAFE_HASH}..HEAD --task
 set -eo pipefail; cd "$PROJECT_ROOT"
 $PASS_SIGN && pass || fail "PASS 输出缺少 sofagent-audit 签名行"
 scenario 45 "pre-push-check 含 tag message 校验 + 依赖图循环检测"
-PPC="$PROJECT_ROOT/tools/pre-push-check.sh"
+PPC="$PROJECT_ROOT/tools/release/pre-push-check.sh"
 assert_grep "tag.*message\|Tag message" "$PPC" && assert_grep "循环依赖\|circular\|循环检测" "$PPC" && pass || fail "pre-push-check 缺 tag message 或循环依赖检测"
 scenario 47 "Agent 身份 + A19 commit 质量"
 assert_grep "露脸" "$PROJECT_ROOT/SKILL/SKILL.md" && pass || fail "SKILL.md 缺少 Agent 身份感知指令"
@@ -763,9 +763,9 @@ grep -q "'conflict-check'.*'@weekly'" "$INSPECTOR_INDEX" || { fail "DEFAULT_INSP
 grep -q "export.*checkConflict\|from.*conflict-check" "$INSPECTOR_INDEX" || { fail "export 列表缺 checkConflict"; S85_OK=false; }
 $S85_OK && pass
 scenario 86 "pre-push-check + SKILL.md frontmatter"
-S86_OK=true; SHELL_FIND=$(grep "find.*\.sh" "$PROJECT_ROOT/tools/pre-push-check.sh")
+S86_OK=true; SHELL_FIND=$(grep "find.*\.sh" "$PROJECT_ROOT/tools/release/pre-push-check.sh")
 echo "$SHELL_FIND" | grep -q "FORGE" || { fail "pre-push-check shellcheck find 漏扫 FORGE/"; S86_OK=false; }
-grep -q "0.11.0\|SC_VER\|brew upgrade shellcheck" "$PROJECT_ROOT/tools/pre-push-check.sh" || { fail "pre-push-check 缺 shellcheck 版本兼容检测"; S86_OK=false; }
+grep -q "0.11.0\|SC_VER\|brew upgrade shellcheck" "$PROJECT_ROOT/tools/release/pre-push-check.sh" || { fail "pre-push-check 缺 shellcheck 版本兼容检测"; S86_OK=false; }
 $S86_OK && pass
 S87_OK=true; S87_MISSING=0
 for f in SKILL/agents/*/SKILL.md "$PROJECT_ROOT/SKILL/SKILL.md"; do
@@ -1008,7 +1008,7 @@ for f in acceptance-test.sh regression-checklist.md fresh-eyes-review.md; do
   [ -f "$PROJECT_ROOT/FORGE/playbook/$f" ] || { fail "FORGE/playbook/$f 不存在"; S124_OK=false; }
 done
 # v1.3.9（九）：tools/ 物理分子目录——check/ gen/ dashboard/ release/ forge/ audit/
-for f in pre-push-check.sh check/check-version.sh check/check-docs.sh check/check-test-count.sh check/test-count.sh release/bump-version.sh; do
+for f in release/pre-push-check.sh check/check-version.sh check/check-docs.sh check/check-test-count.sh check/test-count.sh release/bump-version.sh; do
   [ -f "$PROJECT_ROOT/tools/$f" ] || { fail "tools/$f 不存在"; S124_OK=false; }
 done
 [ -f "$PROJECT_ROOT/docs/changelog/releasing.md" ] || { fail "docs/changelog/releasing.md 不存在"; S124_OK=false; }
@@ -1097,7 +1097,7 @@ else
   $S136_OK && pass
 fi
 scenario 137 "v1.2.1 exit code+数据目录+custom+ToolGate+SubAgent L2"
-S137_OK=true; _PPC_SH="$PROJECT_ROOT/tools/pre-push-check.sh"
+S137_OK=true; _PPC_SH="$PROJECT_ROOT/tools/release/pre-push-check.sh"
 if [ ! -f "$_PPC_SH" ]; then
   echo "  ⏭ pre-push-check.sh 不存在，跳过"; PASSED=$((PASSED + 1))
 else

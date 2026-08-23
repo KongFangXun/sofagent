@@ -244,7 +244,12 @@ async function tryLoadDshBackend(): Promise<ExecutionBackend | null> {
     const agentPlugin = (
       typeof dshMod?.plugin === 'function' ? { plugin: dshMod.plugin } : undefined
     ) as Parameters<typeof dshBackendMod.createDshBackend>[1];
-    return dshBackendMod.createDshBackend(cordisMod, agentPlugin);
+    // v1.4.0：真实 cordis 类型过深且导出面超 CordisModule 接口（TS2589/TS2345）——
+    // 运行时已验证可用（execution-backend.test.ts 11 绿），显式断言到 createDshBackend 期望形状
+    return dshBackendMod.createDshBackend(
+      cordisMod as Parameters<typeof dshBackendMod.createDshBackend>[0],
+      agentPlugin,
+    );
   } catch {
     // cordis 包未安装或 import 失败——force 时尝试 CLI 桥接，失败仍 fallback LangGraph
     return forceDsh ? loadDshCliBackend() : null;

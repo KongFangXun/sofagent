@@ -2,13 +2,11 @@
 
 > **边界说明**：`engine/scripts/` 是 install.sh 组装调用的**用户安装链**（install / verify / daemon 等随安装流程到达用户）；`tools/` 面向维护者发版 SOP 与仓库健康检查，不随安装分发。
 >
-> **目录结构（v1.3.9 物理分目录）**：按职能分子目录——check/ 门禁与测试统计、gen/ 草稿生成、dashboard/ 仪表盘、release/ 发布三件套、forge/ FORGE 运维、audit/ FDE 进场审计（脚本 + 问卷数据源同目录）；`pre-push-check.sh` 留根（四门禁聚合入口，被 acceptance-test 大量引用）。
+> **目录结构（v1.3.9 物理分目录 · v1.4.0 收口）**：按职能分子目录——check/ 门禁与测试统计、gen/ 草稿生成、dashboard/ 仪表盘、release/ 发布与签名（v1.4.0 起含 `pre-push-check.sh` 四门禁聚合入口）、forge/ FORGE 运维、audit/ FDE 进场审计（脚本 + 问卷数据源同目录）、hooks/ 共享 hook 脚本（v1.4.0 交付五）。**根目录不再留脚本**（pre-push-check 原留根，v1.4.0 移入 release/）。
 
 ## 根目录
 
-| 脚本 | 用途 | 何时使用 |
-|------|------|---------|
-| `pre-push-check.sh` | 推送前完整检查（四门禁聚合：check-version / check-docs / check-anchors / check-cjk-var / test-count / check-test-count / forge-smoke-test） | git push 前 |
+> v1.4.0 起根目录无脚本——`pre-push-check.sh` 已移入 [release/](#四release--发布与签名)（四门禁聚合入口，被 acceptance-test 大量引用）。
 
 ## 一、check/ — 门禁与检查
 
@@ -52,6 +50,7 @@
 | 脚本 | 用途 | 何时使用 |
 |------|------|---------|
 | `release/bump-version.sh` | 版本号 bump（SSOT 联动 253+ 处） | 发版 SOP 阶段三 |
+| `release/pre-push-check.sh` | 推送前完整检查（四门禁聚合：check-version / check-docs / check-anchors / check-cjk-var / test-count / check-test-count / forge-smoke-test；v1.4.0 由根目录移入） | git push 前 |
 | `release/publish-packages.sh` | npm 包批量发布（workspace 全量） | 发版 SOP 阶段十一 |
 | `release/sign-config.mjs` | config.yml HMAC-SHA256 签名颁发（读 `~/.sofagent-key`，DP-2） | 安装后 |
 
@@ -81,4 +80,4 @@
 
 1. **新增前置 grep**：新增检查项/生成器/脚本前，先 `grep -rn <功能关键词> tools/ engine/scripts/` 确认无同类实现；有则增量扩展，不新建；
 2. **同类即抽**：同类文件 ≥3 个时必须抽公共库（现状：gen-* 系列 6 个 → `gen/gen-draft-lib.mjs` 已抽）；
-3. **归类落位**：新脚本按职能进对应子目录（check/gen/dashboard/release/forge/audit），不留根——根目录只允许 `pre-push-check.sh` 聚合入口。
+3. **归类落位**：新脚本按职能进对应子目录（check/gen/dashboard/release/forge/audit/hooks），不留根——根目录不放置任何脚本（v1.4.0 起 pre-push-check 已移入 release/）。
