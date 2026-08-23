@@ -1,0 +1,53 @@
+{
+  "name": "sofagent-evolve",
+  "version": "1.4.0",
+  "description": "经验沉淀——think.md 反思条目生成 + 反思区注入（Dream Cycle + skillopt 数据源），品牌色 #16B8F3",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "openclaw": {
+    "extensions": [
+      "./dist/index.js"
+    ],
+    "runtimeExtensions": [
+      "./dist/index.js"
+    ],
+    "compat": {
+      "pluginApi": ">=2026.7.1-2"
+    }
+  },
+  "scripts": {
+    "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
+    "build": "npm run clean && tsc",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "sofagent",
+    "openclaw",
+    "plugin",
+    "evolve"
+  ],
+  "license": "MIT",
+  "author": "KongFangXun",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/KongFangXun/sofagent"
+  },
+  "bugs": {
+    "url": "https://github.com/KongFangXun/sofagent/issues"
+  },
+  "homepage": "https://github.com/KongFangXun/sofagent#readme",
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^7.0.2"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "files": [
+    "dist/",
+    "openclaw.plugin.json",
+    "README.md",
+    "!dist/**/*.js.map",
+    "!dist/**/*.d.ts.map"
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "id": "sofagent-audit",
+  "name": "sofagent 审计",
+  "description": "变更机器审阅——24 规则 + git diff 硬证据 + 危险工具拦截（before_tool_execute），品牌色 #16B8F3",
+  "version": "1.4.0",
+  "icon": "https://raw.githubusercontent.com/KongFangXun/sofagent/main/assets/logo.png",
+  "uiHints": {
+    "brandColor": {
+      "label": "品牌色",
+      "placeholder": "#16B8F3"
+    }
+  },
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "enabled": {
+        "type": "boolean",
+        "default": true,
+        "description": "是否启用危险工具拦截"
+      },
+      "projectRoot": {
+        "type": "string",
+        "description": "审计工作区根目录"
+      },
+      "brandColor": {
+        "type": "string",
+        "default": "#16B8F3"
+      }
+    }
+  }
+}

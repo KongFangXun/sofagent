@@ -1,0 +1,30 @@
+{
+  "id": "sofagent-rollback",
+  "name": "sofagent 回溯",
+  "description": "出错逆序撤销——git snapshot 快照 + 逆序回滚（effect disposer 语义），品牌色 #16B8F3",
+  "version": "1.4.0",
+  "icon": "https://raw.githubusercontent.com/KongFangXun/sofagent/main/assets/logo.png",
+  "uiHints": {
+    "brandColor": {
+      "label": "品牌色",
+      "placeholder": "#16B8F3"
+    }
+  },
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "enabled": {
+        "type": "boolean",
+        "default": true
+      },
+      "projectRoot": {
+        "type": "string"
+      },
+      "brandColor": {
+        "type": "string",
+        "default": "#16B8F3"
+      }
+    }
+  }
+}
