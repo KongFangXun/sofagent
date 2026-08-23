@@ -98,6 +98,10 @@ a:hover{text-decoration:underline}
 .metric-value{font-size:28px;font-weight:700;line-height:1.2;font-variant-numeric:tabular-nums}
 .metric-label{font-size:12px;color:var(--text-s);margin-top:4px}
 .metric-sub{font-size:11px;color:var(--text-t);margin-top:2px}
+/* 今日一句话洞察 */
+.insight-bar{background:var(--brand-l);border-radius:var(--radius-s);padding:10px 14px;font-size:12px;color:var(--brand-d);margin-bottom:16px;display:flex;align-items:center;gap:8px;line-height:1.5}
+.insight-bar svg{width:14px;height:14px;flex-shrink:0}
+.insight-bar b{font-weight:600}
 /* 指标趋势箭头（洞察层） */
 .metric-trend{font-size:10px;font-weight:600;margin-left:4px}
 .trend-up{color:var(--red)}
@@ -410,6 +414,8 @@ a:hover{text-decoration:underline}
     </div>
   </div>
 
+  <div class="insight-bar" id="insightBar"></div>
+
   <div class="metrics">
     <div class="metric-card">
       <div class="metric-value" style="color:var(--green)" id="m-audit">—</div>
@@ -483,6 +489,11 @@ a:hover{text-decoration:underline}
 <!-- ================================================== -->
 <div class="page" id="page-workflow">
   <div class="page-context"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>业务流 = 你部署的 AI 节点 + 工作明细 · 数据源 graph-state.json / worklog.json</div>
+  <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+    <button class="nav-item active" data-wf="status" onclick="wfMainTab('status')">实时状态</button>
+    <button class="nav-item" data-wf="detail" onclick="wfMainTab('detail')">工作明细</button>
+  </div>
+  <div id="wf-view-status">
   <div class="section">
     <div class="section-header">
       <div class="section-title"><span class="dot-emoji">🤖</span>业务 AI 节点</div>
@@ -520,6 +531,8 @@ a:hover{text-decoration:underline}
       </div>
     </div>
   </div>
+  </div><!-- /wf-view-status -->
+  <div id="wf-view-detail" style="display:none">
   <div class="section">
     <div class="section-header"><div class="section-title"><span class="dot-emoji">📊</span>工作明细（worklog）</div>
       <span style="font-size:11px;color:var(--text-t)">数据源：data/dashboard/worklog.json · 超支项标红（kind=COST）</span>
@@ -537,6 +550,7 @@ a:hover{text-decoration:underline}
       <div id="wl-view-intervention" style="display:none"></div>
     </div>
   </div>
+  </div><!-- /wf-view-detail -->
   <div class="info-note" style="margin-top:0">
     <strong>怎么设置自己的 AI 节点？</strong>点右上角 <button class="copy-btn light" onclick="openHelp('workflow')" style="padding:2px 8px">？帮助</button> 查看四步引导与 Prompt（或链 <a href="https://github.com/KongFangXun/sofagent/blob/main/FDE/GUIDE.md" target="_blank">FDE/GUIDE.md 第四章</a>）。节点部署后 7×24 自动执行，类型分：<strong>🔄 自动执行</strong>（AI 自主完成）、<strong>⚡ 强化岗位</strong>（AI 辅助人）、<strong>👤 暂不介入</strong>。
   </div>
@@ -720,7 +734,14 @@ a:hover{text-decoration:underline}
 <!-- PAGE: 工具箱 -->
 <!-- ================================================== -->
 <div class="page" id="page-resources">
-  <div class="page-context"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>工具箱 = 能力与生态 · 安装 / 约束层 / 审计规则 / MCP 66 工具 / 文档</div>
+  <div class="page-context"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>工具箱 = 能力与生态 · 安装 / 能力 / 生态 / 文档 / FORGE</div>
+  <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+    <button class="nav-item active" data-rs="install" onclick="resTab('install')">安装</button>
+    <button class="nav-item" data-rs="ability" onclick="resTab('ability')">能力</button>
+    <button class="nav-item" data-rs="ecosystem" onclick="resTab('ecosystem')">生态</button>
+    <button class="nav-item" data-rs="docs" onclick="resTab('docs')">文档</button>
+    <button class="nav-item" data-rs="forge" onclick="resTab('forge')">FORGE</button>
+  </div>
   <div class="section">
     <div class="section-header"><div class="section-title"><span class="dot-emoji">⚙️</span>快速安装</div></div>
     <div class="section-body">
@@ -1290,6 +1311,24 @@ function renderSummaryData(s){
     var mViol=document.getElementById('m-violations');
     if(mViol){
       mViol.innerHTML=todayIssues+(todayIssues>prevIssues?'<span class="metric-trend trend-up">↑</span>':todayIssues<prevIssues?'<span class="metric-trend trend-down">↓</span>':'<span class="metric-trend trend-flat">→</span>');
+    }
+  }
+  // 洞察：今日一句话（人话结论）
+  var ib=document.getElementById('insightBar');
+  if(ib){
+    if(lastDay){
+      var parts=['今日 '+todayTasks+' 个任务、'+todayChecks+' 次检查'];
+      if(todayIssues>0)parts.push(todayIssues+' 个问题');
+      if(s.top3&&s.top3[0])parts.push('<b>'+escapeHtml(s.top3[0].code)+'</b> 触发最多（'+s.top3[0].count+' 次）');
+      var prevDay2=(s.daily&&s.daily.length>1)?s.daily[s.daily.length-2]:null;
+      if(prevDay2){
+        var prevIss2=(prevDay2.ruleAll||0)-(prevDay2.rulePass||0);
+        var dlt=todayIssues-prevIss2;
+        parts.push('问题较昨日 '+(dlt>0?'<b style="color:var(--red)">+'+dlt+'</b>':dlt<0?'<b style="color:var(--green)">'+dlt+'</b>':'持平'));
+      }
+      ib.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="10"/></svg>'+parts.join(' · ');
+    }else{
+      ib.innerHTML='';
     }
   }
   // 洞察：高频违规规则 chips（点击跳工具箱审计规则）
@@ -2095,6 +2134,36 @@ function wlTab(tab){
   ['agent','workflow','week','intervention'].forEach(function(t){
     document.getElementById('wl-tab-'+t).classList.toggle('active',t===tab);
     document.getElementById('wl-view-'+t).style.display=t===tab?'':'none';
+  });
+}
+
+/* 业务流页主 tab：实时状态 / 工作明细 */
+function wfMainTab(tab){
+  document.querySelectorAll('#page-workflow .nav-item[data-wf]').forEach(function(b){
+    b.classList.toggle('active',b.getAttribute('data-wf')===tab);
+  });
+  document.getElementById('wf-view-status').style.display=tab==='status'?'':'none';
+  document.getElementById('wf-view-detail').style.display=tab==='detail'?'':'none';
+}
+
+/* 工具箱分类 tab：安装 / 能力 / 生态 / 文档 / FORGE */
+function resTab(group){
+  document.querySelectorAll('#page-resources .nav-item[data-rs]').forEach(function(b){
+    b.classList.toggle('active',b.getAttribute('data-rs')===group);
+  });
+  var groups={
+    install:['快速安装'],
+    ability:['约束层','生命周期','审计规则','skill 加载链'],
+    ecosystem:['MCP 工具','npm 包'],
+    docs:['文档直达'],
+    forge:['FORGE']
+  };
+  var names=groups[group]||[];
+  document.querySelectorAll('#page-resources > .section').forEach(function(s){
+    var t=s.querySelector('.section-title');
+    var txt=t?t.textContent:'';
+    var show=names.some(function(n){return txt.indexOf(n)>=0});
+    s.style.display=show?'':'none';
   });
 }
 
