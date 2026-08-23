@@ -470,14 +470,16 @@ a:hover{text-decoration:underline}
       <span style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
         <span class="tab-inline">
           <button class="nav-item active" id="wl-tab-overview" onclick="wlTab('overview')">概况</button>
+          <button class="nav-item" id="wl-tab-tasks" onclick="wlTab('tasks')">任务明细</button>
           <button class="nav-item" id="wl-tab-audit" onclick="wlTab('audit')">审计</button>
-          <button class="nav-item" id="wl-tab-intervention" onclick="wlTab('intervention')">审批</button>
+          <button class="nav-item" id="wl-tab-intervention" onclick="wlTab('intervention')">审核</button>
           <button class="nav-item" id="wl-tab-weekly" onclick="wlTab('weekly')">周报</button>
         </span>
       </span>
     </div>
     <div class="section-body">
       <div id="wl-view-overview"></div>
+      <div id="wl-view-tasks" style="display:none"></div>
       <div id="wl-view-audit" style="display:none">
         <div id="auditRecordCount" style="font-size:11px;color:var(--text-t);margin-bottom:8px"></div>
         <div class="audit-log" id="liveAuditLog">
@@ -649,9 +651,9 @@ a:hover{text-decoration:underline}
           <div class="qs-title">读 GUIDE.md</div>
           <div class="qs-desc">方法论 · 零依赖</div>
         </a>
-        <a class="qs-item" href="https://clawhub.ai/skill/sofagent" target="_blank">
+        <a class="qs-item" href="https://clawhub.ai/kongfangxun/skills/sofagent" target="_blank">
           <div class="qs-icon"><i class="bi bi-search"></i></div>
-          <div class="qs-title">WorkBuddy 搜 sofagent</div>
+          <div class="qs-title">ClawHub 搜 sofagent</div>
           <div class="qs-desc">一键安装 Skill</div>
         </a>
         <a class="qs-item" href="https://github.com/KongFangXun/sofagent" target="_blank">
@@ -2103,7 +2105,7 @@ function fmtCost(c){
 function fmtMs(ms){if(ms===null||ms===undefined)return '—';if(ms<1000)return ms+'ms';if(ms<60000)return (ms/1000).toFixed(1)+'s';return (ms/60000).toFixed(1)+'min'}
 
 function wlTab(tab){
-  ['overview','audit','intervention','weekly'].forEach(function(t){
+  ['overview','tasks','audit','intervention','weekly'].forEach(function(t){
     document.getElementById('wl-tab-'+t).classList.toggle('active',t===tab);
     document.getElementById('wl-view-'+t).style.display=t===tab?'':'none';
   });
@@ -2171,14 +2173,29 @@ function loadWorklogData(){
         costEl.textContent=totCost>0?'$'+totCost.toFixed(2):'—';
       }
 
-      /* 按 Agent：汇总表 + 任务明细表 */
+      /* 概况：Agent 汇总 + Workflow 节点状态（任务明细独立 tab） */
       var agRows=(d.agents||[]).map(function(a){
         var over=costCell(a.totals.costUsd,a.agentId,costWarns);
         return ['<strong>'+escapeHtml(a.agentId)+'</strong>',a.totals.tasks,a.totals.llmCalls,fmtTokens(a.totals.tokens),fmtMs(a.totals.modelCallMs),over,a.totals.humanInterventions||0];
       });
       var agHtml=sampleFlag+'<div style="font-size:12px;font-weight:600;color:var(--text-s);margin:8px 0 4px">Agent 汇总</div>'+
         wlTable(['Agent','任务数','模型调用','Token 数','耗时','成本','人工介入'],agRows);
-      // 任务明细（taskId → 消耗 → 状态信号）
+      var statusMap={
+        active:'<span class="st-dot st-active"></span>跑',
+        done:'<span class="st-dot st-done"></span>完',
+        failed:'<span class="st-dot st-failed"></span>失败',
+        hitl:'<span class="st-dot st-hitl"></span>人工介入',
+        unknown:'<span class="st-dot st-unknown"></span>?'
+      };
+      var wfRows=(d.workflows||[]).map(function(w){
+        var nodeHtml=(w.nodes||[]).map(function(n){return statusMap[n.status]||statusMap.unknown}).join(' ');
+        return ['<strong>'+escapeHtml(w.workflowId)+'</strong>',nodeHtml,w.humanInterventions||0];
+      });
+      agHtml+='<div style="font-size:12px;font-weight:600;color:var(--text-s);margin:16px 0 4px">Workflow 节点状态（跑/完/失败/人工介入）</div>'+
+        wlTable(['Workflow','节点状态','人工介入'],wfRows);
+      document.getElementById('wl-view-overview').innerHTML=agHtml;
+
+      /* 任务明细（独立 tab：每个任务怎么消耗/结果如何） */
       var taskRows=[];
       (d.agents||[]).forEach(function(a){
         (a.tasks||[]).forEach(function(t){
@@ -2196,26 +2213,11 @@ function loadWorklogData(){
           ]);
         });
       });
-      agHtml+='<div style="font-size:12px;font-weight:600;color:var(--text-s);margin:16px 0 4px">任务明细</div>'+
+      var taskHtml=sampleFlag+
         '<div style="font-size:11px;color:var(--text-t);margin-bottom:6px">口径：Token 数=输入+输出 · 成本=LLM 估算 · 耗时=模型调用时长 · 人工介入=需要人审批/纠正的次数</div>';
-      if(taskRows.length>30)agHtml+='<div style="font-size:11px;color:var(--text-t);margin-bottom:6px">共 '+taskRows.length+' 条任务，仅显示最近 30 条</div>';
-      agHtml+=wlTable(['任务','所属流程','决策次数','模型调用','Token 数','耗时','成本','重试','人工介入','最后活跃'],taskRows.slice(0,30));
-
-      /* 概况：Agent 汇总 + 任务明细 + Workflow 节点状态 */
-      var statusMap={
-        active:'<span class="st-dot st-active"></span>跑',
-        done:'<span class="st-dot st-done"></span>完',
-        failed:'<span class="st-dot st-failed"></span>失败',
-        hitl:'<span class="st-dot st-hitl"></span>人工介入',
-        unknown:'<span class="st-dot st-unknown"></span>?'
-      };
-      var wfRows=(d.workflows||[]).map(function(w){
-        var nodeHtml=(w.nodes||[]).map(function(n){return statusMap[n.status]||statusMap.unknown}).join(' ');
-        return ['<strong>'+escapeHtml(w.workflowId)+'</strong>',nodeHtml,w.humanInterventions||0];
-      });
-      agHtml+='<div style="font-size:12px;font-weight:600;color:var(--text-s);margin:16px 0 4px">Workflow 节点状态（跑/完/失败/人工介入）</div>'+
-        wlTable(['Workflow','节点状态','人工介入'],wfRows);
-      document.getElementById('wl-view-overview').innerHTML=agHtml;
+      if(taskRows.length>30)taskHtml+='<div style="font-size:11px;color:var(--text-t);margin-bottom:6px">共 '+taskRows.length+' 条任务，仅显示最近 30 条</div>';
+      taskHtml+=wlTable(['任务','所属流程','决策次数','模型调用','Token 数','耗时','成本','重试','人工介入','最后活跃'],taskRows.slice(0,30));
+      document.getElementById('wl-view-tasks').innerHTML=taskHtml;
 
       /* 周报 */
       var wkRows=(d.weeklyTrend||[]).map(function(w){
