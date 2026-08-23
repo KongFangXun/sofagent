@@ -32,7 +32,7 @@ a:hover{text-decoration:underline}
 .header-left{display:flex;align-items:center;gap:12px}
 .header-left img{width:36px;height:36px;border-radius:8px}
 .logo-text{font-size:18px;font-weight:700;color:var(--text);letter-spacing:-.3px}
-.logo-version{font-size:11px;color:var(--brand);background:var(--brand-l);padding:2px 8px;border-radius:10px;font-weight:600;line-height:1.4;display:inline-flex;align-items:center}
+.logo-version{font-size:11px;color:var(--brand);background:var(--brand-l);padding:2px 8px;border-radius:8px;font-weight:600;line-height:1.4;display:inline-flex;align-items:center}
 
 /* shadcn segmented tab：浅灰容器内嵌 active 白胶囊 */
 .nav{display:inline-flex;gap:2px;justify-content:center;align-items:center;padding:3px;background:var(--bg);border:1px solid var(--border);border-radius:9px;overflow-x:auto;scrollbar-width:none;flex-shrink:0;max-width:100%}
@@ -42,14 +42,15 @@ a:hover{text-decoration:underline}
 .nav-item.active{color:var(--text);background:var(--card);font-weight:600;box-shadow:0 1px 2px rgba(0,0,0,.07)}
 
 .header-right{display:flex;gap:6px;justify-content:flex-end}
-.star-btn{display:inline-flex;align-items:center;gap:5px;padding:6px 14px;border:1px solid var(--border);border-radius:20px;background:var(--card);color:var(--text-s);font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;font-family:var(--font);text-decoration:none;line-height:1.4}
+/* header 按钮（统一直角 6px，非跑道形） */
+.star-btn{display:inline-flex;align-items:center;gap:5px;padding:6px 14px;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--text-s);font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;font-family:var(--font);text-decoration:none;line-height:1.4}
 .star-btn:hover{border-color:var(--text);color:var(--text);background:var(--bg);text-decoration:none}
 .star-btn svg{width:14px;height:14px;flex-shrink:0}
 .star-count{background:var(--brand-l);color:var(--brand);font-size:11px;padding:1px 6px;border-radius:8px;font-weight:700}
 
 /* 帮助面板（全局教学入口，header 右上角） */
-.help-btn{display:inline-flex;align-items:center;gap:5px;padding:6px 14px;border:1px solid var(--border);border-radius:20px;background:var(--card);color:var(--text-s);font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;font-family:var(--font);line-height:1.4}
-.help-btn:hover{border-color:var(--brand);color:var(--brand);background:var(--brand-l)}
+.help-btn{display:inline-flex;align-items:center;gap:5px;padding:6px 14px;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--text-s);font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;font-family:var(--font);line-height:1.4}
+.help-btn:hover{border-color:var(--text-t);color:var(--text);background:var(--bg)}
 .help-btn svg{width:14px;height:14px;flex-shrink:0}
 .help-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:400;display:none;align-items:center;justify-content:center;padding:20px}
 .help-panel{background:var(--card);border-radius:16px;max-width:780px;width:100%;height:min(74vh,640px);display:flex;flex-direction:column;box-shadow:0 12px 40px rgba(0,0,0,.18)}
@@ -71,7 +72,9 @@ a:hover{text-decoration:underline}
 .rule-chip .rc-count{font-weight:400;opacity:.8}
 /* 快捷入口（FDE 怎么开始：4 个独立 block，非一条背景条） */
 .quick-start{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
-.qs-item{background:var(--bg-s);border:1px solid var(--border);border-radius:var(--radius-s);padding:16px 12px;text-align:center;cursor:pointer;transition:all .15s;text-decoration:none;display:block}
+.qs-item{background:var(--bg-s);border:1px solid var(--border);border-radius:var(--radius-s);padding:16px 12px;text-align:center;cursor:pointer;transition:all .15s;text-decoration:none;display:block;color:var(--text)}
+.qs-item:hover{border-color:var(--text-t);background:var(--bg)}
+.qs-icon{font-size:20px;line-height:1.2;color:var(--text-s)}
 .qs-item:hover{border-color:var(--brand);background:var(--brand-l);text-decoration:none}
 .qs-item:visited{text-decoration:none}
 .qs-item .qs-icon{font-size:20px;line-height:1.2}
@@ -113,8 +116,8 @@ a:hover{text-decoration:underline}
 
 /* Data status */
 .data-status{display:inline-flex;align-items:center;gap:6px;font-size:12px;padding:4px 12px;border-radius:20px;font-weight:500}
-.ds-live{background:var(--brand-l);color:var(--brand-d)}
-.ds-sample{background:var(--amber-l);color:var(--amber-d)}
+.ds-live{background:var(--brand-l);color:var(--brand)}
+.ds-sample{background:var(--bg-s);color:var(--text-s);border:1px solid var(--border)}
 .data-status .pulse{width:8px;height:8px;border-radius:50%;animation:pulse 2s infinite}
 .ds-live .pulse{background:var(--brand)}
 .ds-sample .pulse{background:var(--text-t)}
@@ -133,7 +136,7 @@ a:hover{text-decoration:underline}
 .tl-item:last-child{padding-bottom:0}
 .tl-dot{position:absolute;left:-20px;top:2px;width:12px;height:12px;border-radius:50%;border:2px solid var(--card)}
 .tl-dot.done{background:var(--text-t)}
-.tl-dot.current{background:var(--text);box-shadow:0 0 0 3px rgba(36,41,46,.12)}
+.tl-dot.current{background:var(--brand);box-shadow:0 0 0 3px rgba(22,184,243,.15)}
 .tl-dot.planned{background:var(--card);border-color:var(--border)}
 .tl-title{font-size:13px;font-weight:500}
 .tl-version{font-family:var(--mono);font-size:11px;color:var(--text-t);margin-left:6px}
@@ -290,10 +293,10 @@ a:hover{text-decoration:underline}
 .wl-table .cell-over .delta{font-size:10px;font-weight:400;opacity:.8}
 /* 节点状态着色 */
 .st-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px}
-.st-active{background:var(--text-s)}
+.st-active{background:var(--brand)}
 .st-done{background:var(--text-t)}
-.st-failed{background:var(--text)}
-.st-hitl{background:var(--text-s)}
+.st-failed{background:var(--red)}
+.st-hitl{background:var(--amber)}
 .st-unknown{background:var(--text-t)}
 /* 图节点脉冲动画（编排控制图 / 图谱共用） */
 .pulse-svg{animation:pulse 2s infinite}
@@ -495,7 +498,7 @@ a:hover{text-decoration:underline}
     <div class="section">
       <div class="section-header">
         <div class="section-title"><span class="dot-emoji"><i class="bi bi-list-check"></i></span>最近审计记录<span id="auditRecordCount" style="font-size:11px;color:var(--text-t);font-weight:400;margin-left:6px"></span></div>
-        <a href="/api/export-history" download="audit-history.jsonl" title="下载完整审计历史（原始 JSONL）" style="display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;color:var(--brand);text-decoration:none;border:1px solid var(--border);border-radius:14px;padding:3px 10px;background:var(--bg)">
+        <a href="/api/export-history" download="audit-history.jsonl" title="下载完整审计历史（原始 JSONL）" class="btn btn-outline" style="height:26px;padding:0 10px;font-size:11px">
           <svg width="11" height="11" viewBox="0 0 16 16" fill="none"><path d="M8 1.5v9M8 10.5 4.5 7M8 10.5 11.5 7M2.5 13.5h11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
           全量历史
         </a>
@@ -1308,7 +1311,7 @@ function renderSummaryData(s){
       if(prevDay2){
         var prevIss2=(prevDay2.ruleAll||0)-(prevDay2.rulePass||0);
         var dlt=todayIssues-prevIss2;
-        parts.push('问题较昨日 '+(dlt>0?'<b style="color:var(--amber)">+'+dlt+'</b>':dlt<0?'<b style="color:var(--brand)">'+dlt+'</b>':'持平'));
+        parts.push('问题较昨日 '+(dlt>0?'<b style="color:var(--text-s)">+'+dlt+'</b>':dlt<0?'<b style="color:var(--text-s)">'+dlt+'</b>':'持平'));
       }
       ib.innerHTML='<span style="opacity:.5">|</span> '+parts.join(' · ');
     }else{
@@ -1749,7 +1752,7 @@ function loadFdeWorkflowData(){
             '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">'+
               '<b style="color:var(--text)"><i class="bi bi-bar-chart"></i> '+escapeHtml(wr.weekLabel)+' 持续优化周报</b>'+
               '<span>本周 '+tw.taskCount+' 任务 · '+tw.passes+' 通过 · '+tw.warnings+' 警告 · <b style="color:var(--red)">'+tw.violations+' 违规</b> · 趋势 '+trendCn+'</span>'+
-              '<a href="data:application/json;charset=utf-8,'+encodeURIComponent(JSON.stringify(wr))+'" download="weekly-'+escapeHtml(wr.weekLabel)+'.json" title="下载周报 JSON" style="margin-left:auto;color:var(--brand);text-decoration:none;font-size:11px;display:inline-flex;align-items:center;gap:3px"><i class="bi bi-download"></i> 周报 JSON</a>'+
+              '<a href="data:application/json;charset=utf-8,'+encodeURIComponent(JSON.stringify(wr))+'" download="weekly-'+escapeHtml(wr.weekLabel)+'.json" title="下载周报 JSON" class="btn btn-outline" style="margin-left:auto;height:24px;padding:0 8px;font-size:11px"><i class="bi bi-download"></i> 周报 JSON</a>'+
             '</div>'+
             (top5?'<div style="margin-top:6px;font-size:11px;color:var(--text-t)">违规 TOP3：'+top5+'</div>':'')+
             '</div>';
