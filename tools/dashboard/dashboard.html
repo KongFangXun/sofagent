@@ -44,13 +44,13 @@ a:hover{text-decoration:underline}
 .header-right{display:flex;gap:6px;justify-content:flex-end}
 /* header 按钮（统一直角 6px，非跑道形） */
 .star-btn{display:inline-flex;align-items:center;gap:5px;padding:6px 14px;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--text-s);font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;font-family:var(--font);text-decoration:none;line-height:1.4}
-.star-btn:hover{border-color:var(--text);color:var(--text);background:var(--bg);text-decoration:none}
+.star-btn:hover{border-color:var(--text-t);color:var(--text);text-decoration:none}
 .star-btn svg{width:14px;height:14px;flex-shrink:0}
 .star-count{background:var(--brand-l);color:var(--brand);font-size:11px;padding:1px 6px;border-radius:8px;font-weight:700}
 
 /* 帮助面板（全局教学入口，header 右上角） */
 .help-btn{display:inline-flex;align-items:center;gap:5px;padding:6px 14px;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--text-s);font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;font-family:var(--font);line-height:1.4}
-.help-btn:hover{border-color:var(--text-t);color:var(--text);background:var(--bg)}
+.help-btn:hover{border-color:var(--text-t);color:var(--text)}
 .help-btn svg{width:14px;height:14px;flex-shrink:0}
 .help-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:400;display:none;align-items:center;justify-content:center;padding:20px}
 .help-panel{background:var(--card);border-radius:16px;max-width:780px;width:100%;height:min(74vh,640px);display:flex;flex-direction:column;box-shadow:0 12px 40px rgba(0,0,0,.18)}
@@ -68,12 +68,12 @@ a:hover{text-decoration:underline}
 
 /* 高频违规规则 chip（洞察层） */
 .rule-chip{display:inline-flex;align-items:center;gap:4px;background:var(--bg-s);color:var(--text-s);font-family:var(--mono);font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px;cursor:pointer;transition:all .15s}
-.rule-chip:hover{background:var(--text-s);color:#fff}
+.rule-chip:hover{color:var(--text)}
 .rule-chip .rc-count{font-weight:400;opacity:.8}
 /* 快捷入口（FDE 怎么开始：4 个独立 block，非一条背景条） */
 .quick-start{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
 .qs-item{background:var(--bg-s);border:1px solid var(--border);border-radius:var(--radius-s);padding:16px 12px;text-align:center;cursor:pointer;transition:all .15s;text-decoration:none;display:block;color:var(--text)}
-.qs-item:hover{border-color:var(--text-t);background:var(--bg);text-decoration:none}
+.qs-item:hover{border-color:var(--text-t);text-decoration:none}
 .qs-item:visited{text-decoration:none}
 .qs-icon{font-size:20px;line-height:1.2;color:var(--text-s)}
 .qs-item .qs-title{font-size:13px;font-weight:600;color:var(--text);margin-top:5px}
@@ -94,7 +94,7 @@ a:hover{text-decoration:underline}
 .section-body{padding:20px;flex:1;display:flex;flex-direction:column;min-height:0}
 
 .metrics{display:grid;grid-template-columns:repeat(6,1fr);gap:16px;margin-bottom:16px}
-.metric-card{background:var(--card);border:none;box-shadow:0 1px 3px rgba(16,24,40,.06),0 1px 2px rgba(16,24,40,.04);border-radius:var(--radius);padding:16px;text-align:center}
+.metric-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;text-align:center}
 .metric-value{font-size:28px;font-weight:700;line-height:1.2;font-variant-numeric:tabular-nums;color:var(--brand)}
 .metric-label{font-size:12px;color:var(--text-s);margin-top:4px}
 .metric-sub{font-size:11px;color:var(--text-t);margin-top:2px}
@@ -112,10 +112,10 @@ a:hover{text-decoration:underline}
 .chart-box{background:var(--bg-s);border:none;border-radius:var(--radius-s);padding:16px}
 .chart-box h4{font-size:13px;font-weight:500;color:var(--text-s);margin-bottom:12px}
 
-/* Data status */
-.data-status{display:inline-flex;align-items:center;gap:6px;font-size:12px;padding:4px 12px;border-radius:20px;font-weight:500}
-.ds-live{background:var(--brand-l);color:var(--brand)}
-.ds-sample{background:var(--bg-s);color:var(--text-s);border:1px solid var(--border)}
+/* Data status：扁平「点 + 文字」，无胶囊背景 */
+.data-status{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--text-s);font-weight:500}
+.ds-live{background:none}
+.ds-sample{background:none}
 .data-status .pulse{width:8px;height:8px;border-radius:50%;animation:pulse 2s infinite}
 .ds-live .pulse{background:var(--brand)}
 .ds-sample .pulse{background:var(--text-t)}
@@ -177,8 +177,9 @@ a:hover{text-decoration:underline}
 .audit-rule{font-family:var(--mono);font-size:11px;color:var(--text-s);min-width:80px}
 .audit-task{color:var(--text-s);font-size:12px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
-.prompt-box{background:#0D1117;border-radius:var(--radius-s);padding:14px;margin-top:8px}
-.prompt-box code{display:block;font-family:var(--mono);font-size:12px;color:#C9D1D9;white-space:pre-wrap;word-break:break-all;line-height:1.5}
+/* Prompt 复制块（浅色统一；bash 命令保留深色 install-box） */
+.prompt-box{background:var(--bg-s);border:1px solid var(--border);border-radius:var(--radius-s);padding:14px;margin-top:8px}
+.prompt-box code{display:block;font-family:var(--mono);font-size:12px;color:var(--text-s);white-space:pre-wrap;word-break:break-all;line-height:1.5}
 .prompt-action{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
 .prompt-label{font-size:11px;color:var(--text-t);font-weight:500}
 .copy-btn{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);color:#C9D1D9;padding:3px 10px;border-radius:4px;font-size:11px;cursor:pointer;font-family:var(--font);display:inline-flex;align-items:center;gap:4px;transition:all .15s}
@@ -187,16 +188,20 @@ a:hover{text-decoration:underline}
 .copy-btn svg{width:12px;height:12px}
 .copy-btn.light{background:var(--card);border:1px solid var(--border);color:var(--text-s)}
 .copy-btn.light:hover{border-color:var(--text-t);color:var(--text)}
+/* prompt-box 内的复制按钮适配浅色 */
+.prompt-box .copy-btn{background:var(--card);border:1px solid var(--border);color:var(--text-s)}
+.prompt-box .copy-btn:hover{background:none;border-color:var(--text-t);color:var(--text)}
+.prompt-box .copy-btn.copied{background:var(--brand);border-color:var(--brand);color:#fff}
 
 /* ===== 按钮体系（统一变体，shadcn 风格 · 全白系简洁）===== */
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:5px;height:28px;padding:0 14px;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;font-family:var(--font);border:1px solid transparent;transition:all .15s;white-space:nowrap;line-height:1}
 .btn svg{width:13px;height:13px}
 .btn-primary{background:var(--card);border-color:var(--border);color:var(--text)}
-.btn-primary:hover{border-color:var(--text-t);background:var(--bg)}
+.btn-primary:hover{border-color:var(--text-t);color:var(--text)}
 .btn-outline{background:var(--card);border-color:var(--border);color:var(--text-s)}
 .btn-outline:hover{border-color:var(--text-t);color:var(--text)}
 .btn-ghost{background:transparent;border-color:transparent;color:var(--text-s)}
-.btn-ghost:hover{background:var(--bg);color:var(--text)}
+.btn-ghost:hover{color:var(--text)}
 
 .fde-stage{display:flex;align-items:center;gap:12px;padding:10px 12px;background:var(--bg-s);border:1px solid var(--border);border-radius:var(--radius-s);margin-bottom:8px}
 .fde-num{width:20px;height:20px;border-radius:50%;background:var(--brand);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0}
@@ -210,7 +215,7 @@ a:hover{text-decoration:underline}
 
 .doc-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px}
 .doc-item{display:flex;align-items:center;gap:8px;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius-s);font-size:13px;color:var(--text);transition:all .15s}
-.doc-item:hover{border-color:var(--text-t);background:var(--bg);text-decoration:none}
+.doc-item:hover{border-color:var(--text-t);text-decoration:none}
 .doc-item svg{width:14px;height:14px;color:var(--text-t);flex-shrink:0}
 .doc-item .ext{margin-left:auto;color:var(--text-t);font-size:11px}
 
@@ -271,7 +276,7 @@ a:hover{text-decoration:underline}
 .seg-btn.active{color:var(--brand);font-weight:600}
 /* 手动刷新按钮：纯圆形 icon，与胶囊同高 */
 .seg-refresh{display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--border);border-radius:50%;background:var(--card);color:var(--brand);width:26px;height:26px;padding:0;font-size:11px;font-weight:600;transition:all .15s}
-.seg-refresh:hover{border-color:var(--text-t);background:var(--bg);color:var(--text)}
+.seg-refresh:hover{border-color:var(--text-t);color:var(--text)}
 .seg-refresh svg{width:14px;height:14px}
 .seg-refresh.refreshing{border-color:var(--brand);color:var(--brand);background:var(--brand-l)}
 .seg-refresh.refreshing svg{animation:spin .6s linear}
@@ -285,7 +290,7 @@ a:hover{text-decoration:underline}
 .wl-table th:last-child{border-radius:0 6px 6px 0}
 .wl-table td{padding:9px 10px;border-bottom:1px solid var(--border);vertical-align:top;font-variant-numeric:tabular-nums}
 .wl-table tbody tr{transition:background .12s}
-.wl-table tbody tr:hover{background:var(--bg)}
+.wl-table tbody tr:hover td{color:var(--text)}
 .wl-table tbody tr:last-child td{border-bottom:none}
 .wl-table .cell-over{color:var(--text-s);font-weight:600;cursor:help;border-bottom:1px dashed var(--text-t)}
 .wl-table .cell-over .delta{font-size:10px;font-weight:400;opacity:.8}
@@ -2207,7 +2212,7 @@ function loadWorklogData(){
             fmtTokens(t.tokens),
             fmtMs(t.modelCallMs),
             costCell(t.costUsd,a.agentId,costWarns),
-            (t.retries||0)>0?'<span style="color:var(--amber)">'+(t.retries)+'</span>':'—',
+            (t.retries||0)>0?'<span style="color:var(--text-s)">'+(t.retries)+'</span>':'—',
             (t.humanInterventions||0)>0?'<span style="color:var(--text-s)">'+(t.humanInterventions)+'</span>':'—',
             escapeHtml(String(t.lastSeen||'').slice(5,16))
           ]);
