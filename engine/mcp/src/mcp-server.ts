@@ -13,6 +13,8 @@ import type { AuditResult } from '@sofagent/audit';
 
 // tool registry (schemas)
 import { TOOLS } from './tool-registry';
+// v1.4.0: 工具角色分层
+import { getActiveRoles, filterToolsByRoles, isToolExposed } from './tool-roles';
 
 // resources
 import { listResources, readResource } from './resources';
@@ -223,7 +225,9 @@ class McpServer {
       case 'exit': process.exit(0); break;
       case 'tools/list': if (this.checkInit(id)) {
         // v1.3.0 (交付 10 MA1)：动态工具合并——不污染静态 TOOLS 清单
-        this.sendResult(id, { tools: [...TOOLS, ...getDynamicTools()] });
+        // v1.4.0：角色分层过滤——默认 fde+audit+agent，SOFAGENT_MCP_ROLES=all 恢复全量
+        const activeRoles = getActiveRoles();
+        this.sendResult(id, { tools: filterToolsByRoles([...TOOLS, ...getDynamicTools()], activeRoles) });
       } break;
       case 'tools/call': if (this.checkInit(id)) await this.handleToolsCall(id, params); break;
       case 'resources/list': if (this.checkInit(id)) this.sendResult(id, listResources()); break;
@@ -262,6 +266,14 @@ class McpServer {
       if (dynamicTool) {
         const r = await dynamicTool.handler(args);
         this.sendTool(id, { text: `[sofagent] ${toolName} 调用完成`, data: r });
+        return;
+      }
+
+      // v1.4.0：角色分层拦截——静态工具不在当前角色集时明确拒绝（防模型猜到隐藏工具名硬调）
+      const activeRoles = getActiveRoles();
+      const staticTool = TOOLS.find((t) => t.name === toolName);
+      if (staticTool && activeRoles !== null && !isToolExposed(staticTool.roles, activeRoles)) {
+        this.sendError(id, -32602, `工具 ${toolName} 未在当前角色集（${activeRoles.join(',')}）暴露——设 ${'SOFAGENT_MCP_ROLES'}=all 恢复全量`);
         return;
       }
 

@@ -16,6 +16,8 @@ export interface ToolDef {
     properties: Record<string, unknown>;
     required?: string[];
   };
+  /** v1.4.0：角色分层标签——工具所属角色面（一个工具可多面）。缺省 = 始终暴露（动态工具未打标）。 */
+  roles?: string[];
 }
 
 /**
@@ -25,6 +27,7 @@ export const TOOLS: ToolDef[] = [
   {
     // v1.3.9（三）：AI 工作明细查询——三源聚合（审计+决策+LLM Trace）零新数据
     name: 'worklog_query',
+    roles: ['ops'],
     description: 'AI 工作明细查询（v1.3.9）——按 Agent / Workflow / 周趋势查「AI 节点干了什么」（任务/token/耗时/成本/人工介入），可附带进化四维趋势（审计 PASS 率/错题复发率/AB 胜负/首次通过率）。数据零新增：聚合既有审计日志三源。',
     inputSchema: {
       type: 'object',
@@ -39,6 +42,7 @@ export const TOOLS: ToolDef[] = [
   {
     // v1.4.0（三）：成本审计查询——预算/实际消耗/超限记录（商业平台 G3 计量接口预留）
     name: 'cost_query',
+    roles: ['ops'],
     description: '成本审计查询（v1.4.0）——查预算配置 / 各 Agent 实际消耗（token/成本）/ 超限记录（WARN 级发现）。预算 opt-in（workflow.yml 或 config 配 budget 后启用）。',
     inputSchema: {
       type: 'object',
@@ -51,6 +55,7 @@ export const TOOLS: ToolDef[] = [
   {
     // v1.4.0（十）：Agentic Browser——Playwright 驱动的浏览器 4 工具（v1.3.9 交付实现，本版注册 MCP 面）
     name: 'playwright_navigate',
+    roles: ['browser'],
     description: '浏览器导航（Agentic Browser · v1.4.0）——打开 URL 并返回页面标题/状态码。Playwright 不可用时返回视觉降级结果（不抛）。',
     inputSchema: {
       type: 'object',
@@ -62,6 +67,7 @@ export const TOOLS: ToolDef[] = [
   },
   {
     name: 'playwright_click',
+    roles: ['browser'],
     description: '浏览器点击（Agentic Browser · v1.4.0）——按 CSS 选择器点击元素。Playwright 不可用时降级。',
     inputSchema: {
       type: 'object',
@@ -73,6 +79,7 @@ export const TOOLS: ToolDef[] = [
   },
   {
     name: 'playwright_screenshot',
+    roles: ['browser'],
     description: '浏览器截图（Agentic Browser · v1.4.0）——截取当前页面，返回图片路径与字节数。',
     inputSchema: {
       type: 'object',
@@ -83,6 +90,7 @@ export const TOOLS: ToolDef[] = [
   },
   {
     name: 'playwright_assert',
+    roles: ['browser'],
     description: '浏览器断言（Agentic Browser · v1.4.0）——对页面执行断言（文本/元素存在性），返回 passed 与详情。',
     inputSchema: {
       type: 'object',
@@ -94,6 +102,7 @@ export const TOOLS: ToolDef[] = [
   },
   {
     name: 'run_audit',
+    roles: ['audit'],
     description: '对 git diff 运行全量审计规则（sofagent 审计引擎 · 24 条审计规则，静态规则扫描为主，复杂项可走 LLM 辅助）。返回结构化审计报告。',
     inputSchema: {
       type: 'object',
@@ -107,6 +116,7 @@ export const TOOLS: ToolDef[] = [
   },
   {
     name: 'get_think',
+    roles: ['fde', 'eval'],
     description: '读取 think.md 的最新反思条目。返回最后一条 ## 开头的反思记录，含审计结果、教训、改动范围。',
     inputSchema: {
       type: 'object',
@@ -117,6 +127,7 @@ export const TOOLS: ToolDef[] = [
   },
   {
     name: 'write_think',
+    roles: ['fde', 'eval'],
     description: '向 think.md 追加一条手动反思记录。用于 Agent 主动记录经验教训。',
     inputSchema: {
       type: 'object',
@@ -129,6 +140,7 @@ export const TOOLS: ToolDef[] = [
   },
   {
     name: 'sofagent_compose',
+    roles: ['fde'],
     description: '编排引擎——传入任务描述，返回 Sub Agent 编排方案（YAML）',
     inputSchema: {
       type: 'object',
@@ -142,6 +154,7 @@ export const TOOLS: ToolDef[] = [
   },
   {
     name: 'audit_file',
+    roles: ['audit'],
     description: '单文件变更即时审计（v1.1.5 新增）——Agent 通过 MCP 编辑文件时调用，即时跑适用于单文件的规则（A3/A7/A11/A18，可选 A14 当传 task 时）。返回结构化结果（不阻断，由 Agent 自决）。',
     inputSchema: {
       type: 'object',
@@ -156,6 +169,7 @@ export const TOOLS: ToolDef[] = [
   },
   {
     name: 'search_knowledge',
+    roles: ['fde', 'audit', 'eval'],
     description: '跨 entities/concepts 模糊搜索 knowledge 库（v1.1.5）。返回匹配的页面列表（含路径 + 首行摘要）。',
     inputSchema: {
       type: 'object',
@@ -167,6 +181,7 @@ export const TOOLS: ToolDef[] = [
   },
   {
     name: 'read_entity',
+    roles: ['fde'],
     description: '读取单个 entity 页（knowledge/entities/<name>.md）',
     inputSchema: {
       type: 'object',
@@ -178,6 +193,7 @@ export const TOOLS: ToolDef[] = [
   },
   {
     name: 'read_concept',
+    roles: ['fde'],
     description: '读取单个 concept 页（knowledge/concepts/<name>.md）',
     inputSchema: {
       type: 'object',
@@ -189,6 +205,7 @@ export const TOOLS: ToolDef[] = [
   },
   {
     name: 'list_entities',
+    roles: ['fde'],
     description: '列出 knowledge/entities/ 下所有 entity（可选按 domain 过滤）',
     inputSchema: {
       type: 'object',
@@ -199,26 +216,31 @@ export const TOOLS: ToolDef[] = [
   },
   {
     name: 'read_lessons',
+    roles: ['fde', 'eval', 'audit'],
     description: '读取 knowledge/lessons-missteps.md（踩坑记录）',
     inputSchema: { type: 'object', properties: {} },
   },
   {
     name: 'read_think_md',
+    roles: ['fde', 'eval'],
     description: '读取 think.md 完整内容（v1.1.5 新增，返回值首行带 [sofagent] 前缀）',
     inputSchema: { type: 'object', properties: {} },
   },
   {
     name: 'stats',
+    roles: ['ops'],
     description: 'knowledge 库统计（entities 数 / concepts 数 / 最后更新时间）',
     inputSchema: { type: 'object', properties: {} },
   },
   {
     name: 'list_capabilities',
+    roles: ['ops'],
     description: '返回 sofagent MCP 完整能力清单（tools + resources + 描述）——Agent 首次连上时调用获取能力地图',
     inputSchema: { type: 'object', properties: {} },
   },
   {
     name: 'data_sovereignty_report',
+    roles: ['audit'],
     description: '查询数据主权审计报告摘要（v1.2.2 P0）。支持 date 参数：today / yesterday / YYYY-MM-DD。返回云端调用、本地执行、数据流出、敏感本地处理率、异常明细。',
     inputSchema: {
       type: 'object',
@@ -229,6 +251,7 @@ export const TOOLS: ToolDef[] = [
   },
   {
     name: 'create_entity',
+    roles: ['fde'],
     description: '在知识库中创建/更新一个 entity 页（knowledge/entities/<name>.md）。写入前跑 D1-D5 数据审计，FAIL 时拒绝写入。',
     inputSchema: {
       type: 'object',
@@ -243,6 +266,7 @@ export const TOOLS: ToolDef[] = [
   },
   {
     name: 'create_concept',
+    roles: ['fde'],
     description: '在知识库中创建/更新一个 concept 页（knowledge/concepts/<name>.md）。用于沉淀业务概念定义。',
     inputSchema: {
       type: 'object',
@@ -256,6 +280,7 @@ export const TOOLS: ToolDef[] = [
   {
     // v1.3.1 (交付 5)：Ontology CRUD 补全——字段级更新
     name: 'update_entity',
+    roles: ['fde'],
     description: '字段级更新 entity 页（knowledge/entities/<name>.md，v1.3.1 交付 5）——只改传入字段（domain/description/relations/content/newName），保留其余 frontmatter 与正文，updated_at 自动刷新。写入前跑 D1-D5 数据审计，FAIL 时拒绝写入。',
     inputSchema: {
       type: 'object',
@@ -273,6 +298,7 @@ export const TOOLS: ToolDef[] = [
   {
     // v1.3.1 (交付 5)：Ontology CRUD 补全——删除 entity，强制人审
     name: 'delete_entity',
+    roles: ['fde'],
     description: '删除 entity 页（knowledge/entities/<name>.md，v1.3.1 交付 5）——破坏性操作，强制人审确认：必须显式传 confirmed:true 才执行，否则只返回提示。删除全程 D1-D5 审计留痕。',
     inputSchema: {
       type: 'object',
@@ -286,6 +312,7 @@ export const TOOLS: ToolDef[] = [
   {
     // v1.3.1 (交付 5)：Ontology CRUD 补全——删除 concept，强制人审
     name: 'delete_concept',
+    roles: ['fde'],
     description: '删除 concept 页（knowledge/concepts/<name>.md，v1.3.1 交付 5）——破坏性操作，强制人审确认：必须显式传 confirmed:true 才执行，否则只返回提示。删除全程 D1-D5 审计留痕。',
     inputSchema: {
       type: 'object',
@@ -298,6 +325,7 @@ export const TOOLS: ToolDef[] = [
   },
   {
     name: 'validate_ontology',
+    roles: ['fde'],
     description: '检查本体结构完整性——实体数、关联断裂、孤儿实体、死链。复用 ontology merge-engine 逻辑。',
     inputSchema: {
       type: 'object',
@@ -308,6 +336,7 @@ export const TOOLS: ToolDef[] = [
   },
   {
     name: 'evaluate_output',
+    roles: ['eval'],
     description: '用 golden set 评估 Agent 产出质量。复用 eval 引擎逻辑。返回评分 + 失败用例。',
     inputSchema: {
       type: 'object',
@@ -319,6 +348,7 @@ export const TOOLS: ToolDef[] = [
   },
   {
     name: 'optimize_skill',
+    roles: ['eval'],
     description: '优化指定 Skill 文件——调用 skillopt 引擎分析并生成优化建议。复用 skillopt 逻辑。',
     inputSchema: {
       type: 'object',
@@ -331,6 +361,7 @@ export const TOOLS: ToolDef[] = [
   },
   {
     name: 'health_check',
+    roles: ['ops'],
     description: '运行 sofagent 环境健康检查——环境/配置/数据目录/Hook/依赖。复用 core doctor/verify 逻辑。',
     inputSchema: {
       type: 'object',
@@ -342,6 +373,7 @@ export const TOOLS: ToolDef[] = [
   },
   {
     name: 'audit_data_change',
+    roles: ['audit'],
     description: '对知识库结构化数据变更跑审计（D1-D5 数据规则）。可审计最近 N 次数据变更，或指定 entity/concept 名称。',
     inputSchema: {
       type: 'object',
@@ -354,6 +386,7 @@ export const TOOLS: ToolDef[] = [
   },
   {
     name: 'notify_session',
+    roles: ['audit'],
     description: '向当前 Agent session 推送审计结果摘要。用于审计完成后主动告知用户审计状态，确保"结果可见"。',
     inputSchema: {
       type: 'object',
@@ -369,6 +402,7 @@ export const TOOLS: ToolDef[] = [
   },
   {
     name: 'activate_workflow',
+    roles: ['agent', 'fde'],
     description: '读取 FDE 交付物（workflow.yml + skills/ + entities/），注册企业 SubAgent 到 .sofagent/subagents/*.yml。激活后 registry.listAgents() 可发现企业 Agent。',
     inputSchema: {
       type: 'object',
@@ -380,21 +414,25 @@ export const TOOLS: ToolDef[] = [
   },
   {
     name: 'daemon_status',
+    roles: ['ops'],
     description: '查询 sofagent daemon 的运行状态（PID/启动时间/心跳/错误）。只读操作，不启动或停止 daemon。',
     inputSchema: { type: 'object', properties: {} },
   },
   {
     name: 'list_agents',
+    roles: ['fde', 'agent'],
     description: '列出已注册的 Agent（内置 + 企业 SubAgent），含 name/type/description/hitl/knowledgeDomain。',
     inputSchema: { type: 'object', properties: {} },
   },
   {
     name: 'list_concepts',
+    roles: ['fde'],
     description: '列出 knowledge/concepts/ 下所有 concept（业务概念页）。',
     inputSchema: { type: 'object', properties: {} },
   },
   {
     name: 'hitl_resolve',
+    roles: ['agent'],
     description: 'HITL 异步决议——对挂起等待人工确认的 LOOP checkpoint 提交决策（approve/reject/aborted），触发 LOOP 恢复运行。',
     inputSchema: {
       type: 'object',
@@ -409,6 +447,7 @@ export const TOOLS: ToolDef[] = [
   {
     // v1.3.0 (交付 4)：规则透明化——只读列出规则清单（不暴露实现逻辑）
     name: 'list_rules',
+    roles: ['audit'],
     description: '列出所有审计规则清单（只读）——tool 运行时拦截规则 + diff 提交时审计规则。参数 type: tool|diff|all（默认 all）。不暴露规则实现逻辑。',
     inputSchema: {
       type: 'object',
@@ -420,6 +459,7 @@ export const TOOLS: ToolDef[] = [
   {
     // v1.3.1 (交付 6)：Agent 独立身份码查询（Ed25519 完整版）
     name: 'agent_identity',
+    roles: ['agent', 'fde'],
     description: '查询 Agent 身份码（v1.3.1 Ed25519 完整版）——无参数查自己，传 agent_id 查他人。返回委托人/约束版本/责任声明/公钥/签名验证结果（不含私钥）。',
     inputSchema: {
       type: 'object',
@@ -431,6 +471,7 @@ export const TOOLS: ToolDef[] = [
   {
     // v1.3.1 (交付 8)：Onboard Agent L1 调试循环
     name: 'loop_debug',
+    roles: ['eval'],
     description: 'Onboard Agent L1 调试循环（v1.3.1 交付 8）——传 task 触发 activate→run→judge→fix→re-run 循环（只判 crash/error/超时，不判语义对错）；不传 task 查询最近调试记录（带 agentId 可追溯）。',
     inputSchema: {
       type: 'object',
@@ -445,6 +486,7 @@ export const TOOLS: ToolDef[] = [
   {
     // v1.3.1 (交付 9)：Benchmark 评测
     name: 'evaluate',
+    roles: ['eval'],
     description: 'Benchmark 评测（v1.3.1 交付 9）——传 benchmark_id 触发隔离评测（statement/rubric 物理分离 + Test Agent 强制 read-only，评分 0..100 写入 HMAC 链 evaluation-log）；传 query:true 查询评测日志。',
     inputSchema: {
       type: 'object',
@@ -459,6 +501,7 @@ export const TOOLS: ToolDef[] = [
   {
     // v1.3.1 (交付 7)：跨设备审计轨迹查询
     name: 'audit_trail',
+    roles: ['audit'],
     description: '跨设备审计轨迹查询（v1.3.1 交付 7）——按 agent_id 查完整轨迹（合并跨设备审计记录，HMAC 验签 + trust 优先级裁决）；不传 agent_id 列出全部有轨迹的 agent。',
     inputSchema: {
       type: 'object',
@@ -471,6 +514,7 @@ export const TOOLS: ToolDef[] = [
   {
     // v1.3.2 (交付 5)：一句话需求 → 自动建节点
     name: 'create_agent',
+    roles: ['fde'],
     description: '一句话需求自动推导 Agent 配置（角色 + 域规则 + think.md + knowledge 安装）。需求够具体就不追问（如「回答金融合规问题的专家」→直接推导；「有用的助手」→追问）。',
     inputSchema: {
       type: 'object',
@@ -484,6 +528,7 @@ export const TOOLS: ToolDef[] = [
   {
     // v1.3.2 (交付 6)：企业专属 eval 套件
     name: 'eval_suite',
+    roles: ['eval'],
     description: '企业专属 eval 套件管理（行业模板加载 + 基线冻结 + 运行评测 + 查询日志）。支持金融/制造/供应链行业模板，首次冻结基线调 freezeBenchmark，运行评测写 evaluation-log（HMAC 链）。',
     inputSchema: {
       type: 'object',
@@ -499,6 +544,7 @@ export const TOOLS: ToolDef[] = [
   {
     // v1.3.2 (交付 7右)：FDE 梳理辅助
     name: 'fde_compose',
+    roles: ['fde'],
     description: 'FDE 梳理辅助——五要素引导 → workflow.yml 草稿或 ontology 草稿生成。纯规则驱动（LLM 不参与），action=workflow 生成 workflow 草稿，action=ontology 生成 entity/concept/relations 草稿。',
     inputSchema: {
       type: 'object',
@@ -512,6 +558,7 @@ export const TOOLS: ToolDef[] = [
   {
     // v1.3.3 (交付 T01)：入口路由
     name: 'route_workflow',
+    roles: ['agent'],
     description: '入口路由（v1.3.3）——传入用户请求 task + 已解析的 workflow，返回路由结果：命中 workflow 节点（route=workflow）或走 fallback 直答（route=fallback）。匹配判定记 audit decision（可审计）。⚡/🔄 节点路由进 workflow，👤 节点和不命中走 fallback。',
     inputSchema: {
       type: 'object',
@@ -525,6 +572,7 @@ export const TOOLS: ToolDef[] = [
   {
     // v1.3.3 (交付 T02)：团队协作——建队
     name: 'team_create',
+    roles: ['agent'],
     description: '创建团队（v1.3.3 L2 协作协议）——传入 team.yml 文本，解析校验后写入 data/teams/<team-id>/team.yml。team.yml 含 name/team_id/members[agent_id,role,trust]/shared_state/broadcast_channels。',
     inputSchema: {
       type: 'object',
@@ -537,6 +585,7 @@ export const TOOLS: ToolDef[] = [
   {
     // v1.3.3 (交付 T02)：团队协作——意图广播
     name: 'team_broadcast',
+    roles: ['agent'],
     description: '意图广播（v1.3.3 L2 协作协议）——Agent 广播「我要做什么」到团队意图总线。匹配的订阅者触发反应。意图类型支持 glob 匹配（intent.create.* / intent.modify.*）。记 audit decision（kind=TEAM）。',
     inputSchema: {
       type: 'object',
@@ -553,6 +602,7 @@ export const TOOLS: ToolDef[] = [
   {
     // v1.3.3 (交付 T03/T04)：Refine Agent 质量优化循环
     name: 'refine',
+    roles: ['eval'],
     description: 'Refine Agent 质量优化循环（v1.3.3）——复用 loop-agent 引擎（L1/L3/L4/L5），只换 L2 判据（质量规则集）。action=trigger 触发质量循环（针对 Agent 产出做质量优化），action=query 查询结果。Onboard 收敛 PASS 后自动触发。',
     inputSchema: {
       type: 'object',
@@ -568,6 +618,7 @@ export const TOOLS: ToolDef[] = [
   {
     // v1.3.4 (交付 1)：能力发布
     name: 'commons_publish',
+    roles: ['commons'],
     description: '能力发布（v1.3.4 L3 组织能力公地）——将 Skill/Agent/流程发布到企业能力公地。发布前校验元数据完整性 + SkillScan 安全门（DANGEROUS 拦截）。发布后能力可被其他 Agent 检索发现。全程记审计（kind=COMMONS）。',
     inputSchema: {
       type: 'object',
@@ -593,6 +644,7 @@ export const TOOLS: ToolDef[] = [
   {
     // v1.3.4 (交付 1)：能力检索
     name: 'commons_search',
+    roles: ['commons'],
     description: '能力检索（v1.3.4 L3 组织能力公地）——按标签/关键词/类型检索企业能力公地目录。复用 searchKnowledge 的模糊匹配链路（匹配名称/描述/标签）。无参数列出全部已发布能力。',
     inputSchema: {
       type: 'object',
@@ -606,6 +658,7 @@ export const TOOLS: ToolDef[] = [
   {
     // v1.3.4 (交付 2)：能力调用
     name: 'commons_invoke',
+    roles: ['commons'],
     description: '能力调用（v1.3.4 L3 组织能力公地）——发现能力 → 挂载调用 → 结果回流。挂载前强制 SkillScan（DANGEROUS 拦截 / SUSPICIOUS 走 HITL 人工确认）。调用全程审计（kind=COMMONS，谁调了谁的能力、结果如何）。',
     inputSchema: {
       type: 'object',
@@ -620,6 +673,7 @@ export const TOOLS: ToolDef[] = [
   {
     // v1.3.4 (交付 2)：能力评价
     name: 'commons_rate',
+    roles: ['commons'],
     description: '能力评价（v1.3.4 L3 组织能力公地）——调用后累积评分（0.0~1.0），加权排序让高频高价值能力自然上浮。评分公式 = trust(owner) × 平均评分 × log(调用量+1)。防刷：同一评价者对同一能力仅一票（后评覆盖前评）。评价回流同时更新 owner trust 信誉分。',
     inputSchema: {
       type: 'object',
@@ -636,6 +690,7 @@ export const TOOLS: ToolDef[] = [
   {
     // v1.3.4 (交付 3)：能力退役
     name: 'commons_retire',
+    roles: ['commons'],
     description: '能力退役/恢复（v1.3.4 L3 组织能力公地养护环）——标记能力为退役（不删除，可恢复，保留审计轨迹）。强制 owner 确认（confirmed=true 才执行）。退役触发 owner trust 下调。action=retire 退役 / restore 恢复 / scan 扫描退役候选（低评分/低调用量）。',
     inputSchema: {
       type: 'object',
@@ -651,6 +706,7 @@ export const TOOLS: ToolDef[] = [
   {
     // v1.3.4 (交付 5)：规则提炼
     name: 'commons_harvest_rule',
+    roles: ['commons'],
     description: '评估体系三步（v1.3.4 L3 组织能力公地）——从公地调用日志低分差评 + Refine 循环反复触发 case 提炼质量规则候选（action=harvest），或全跑三步（action=full：提炼→业务方评审→晋升 builtin）。让 Refine 质量规则从生产中长出来。晋升记录 kind=EVOLUTION。',
     inputSchema: {
       type: 'object',
@@ -663,6 +719,7 @@ export const TOOLS: ToolDef[] = [
   {
     // v1.3.5 (交付 1)：A/B 实验发起
     name: 'run_ab_test',
+    roles: ['eval'],
     description: 'MCP 自进化闭环（v1.3.5）——发起 A/B 对比实验：current vs candidate 两版 Agent 定义在 golden-set 上并行评测，返回双方分数（exact/semantic/rule 三维 + overall）、胜出方、分差、连续胜出次数与晋升建议。结果持久化到 data/ab-test/latest.json。实验通过后调 promote_ab（需人工确认）完成晋升。',
     inputSchema: {
       type: 'object',
@@ -679,6 +736,7 @@ export const TOOLS: ToolDef[] = [
   {
     // v1.3.5 (交付 1)：A/B 晋升（强制人审）
     name: 'promote_ab',
+    roles: ['eval'],
     description: 'MCP 自进化闭环（v1.3.5）——晋升 candidate 为 current（覆写 Agent 定义文件）。🔴 破坏性操作强制人审：human_confirmed ≠ true 时挂起不执行，只返回决策依据（最近实验数据 + 晋升建议）；human_confirmed=true 才执行晋升并写 decision-log 审计留痕（kind=EVOLUTION）。',
     inputSchema: {
       type: 'object',
@@ -694,6 +752,7 @@ export const TOOLS: ToolDef[] = [
   {
     // v1.3.5 (交付 2)：快照时间线（只读）
     name: 'snapshot_list',
+    roles: ['ops'],
     description: 'MCP 运维闭环（v1.3.5）——列出审计快照时间线（SHA + 时间 + 文件数，最新在前）。只读查询，无副作用。恢复到指定快照用 snapshot_restore（需人工确认）。',
     inputSchema: {
       type: 'object',
@@ -706,6 +765,7 @@ export const TOOLS: ToolDef[] = [
   {
     // v1.3.5 (交付 2)：快照恢复（强制人审）
     name: 'snapshot_restore',
+    roles: ['ops'],
     description: 'MCP 运维闭环（v1.3.5）——恢复工作区到指定审计快照。🔴 破坏性操作强制人审：human_confirmed ≠ true 时挂起不执行，只返回目标快照时间线上下文；human_confirmed=true 才执行恢复并写 decision-log 审计留痕（kind=CONFIG_CHANGE）。恢复后建议跑 build + test 验证。',
     inputSchema: {
       type: 'object',
@@ -721,6 +781,7 @@ export const TOOLS: ToolDef[] = [
   {
     // v1.3.6 (交付 ①)：Workflow 外部提交通道——模型层生成的 workflow 从 MCP 进约束层
     name: 'workflow_submit',
+    roles: ['agent'],
     description: 'Workflow 外部提交通道（v1.3.6）——模型层生成的 workflow（YAML/JSON）从 MCP 进入约束层：schema 校验（单一事实源 workflow.schema.json）→ parser 解析（DAG/节点/审阅协议 merge_criteria+approver）→ 可执行句柄。mode=validate（默认）只校验返回结构化结论；mode=run 校验通过后经 dag-runner 执行。非法 workflow 返回结构化错误清单（issues），绝不 crash。',
     inputSchema: {
       type: 'object',
@@ -735,6 +796,7 @@ export const TOOLS: ToolDef[] = [
   {
     // v1.3.6 (交付 ②)：Ontology 标准注入通道——模型层生成的 ontology 从 MCP 进约束层
     name: 'ontology_import',
+    roles: ['fde'],
     description: 'Ontology 标准注入通道（v1.3.6）——外部提交 entity/concept/relations（JSON），经 v1.3.1 schema 校验（单一事实源）+ D1-D5 数据审计后注册进 entity-store 并写 knowledge 页，每次注入 decision-log 留痕（谁注入的/注入什么/校验结果）。全量校验先行——任何一项非法返回结构化错误清单且零写入；注入失败自动回滚已写文件（历史级回溯走 git snapshot 兜底）。',
     inputSchema: {
       type: 'object',
@@ -749,6 +811,7 @@ export const TOOLS: ToolDef[] = [
   {
     // v1.3.6 (交付 ④)：模型注册——评测→注册→灰度→晋升→退役闭环第一站
     name: 'model_register',
+    roles: ['ops'],
     description: '模型注册（v1.3.6）——注册后训练模型 endpoint（client_type + 模型名 + 元信息），原子写 model-registry.json + register 事件留痕。endpoint 可以是第三方 router（LiteLLM/OpenRouter）地址——sofagent 只管上线状态，路由由第三方决定。source=local-path 为 v1.4.1 本地权重部署扩展位预留（可注册，本版不可切换为活动模型）。注册后用 model_switch 灰度。',
     inputSchema: {
       type: 'object',
@@ -778,6 +841,7 @@ export const TOOLS: ToolDef[] = [
   {
     // v1.3.6 (交付 ④)：模型灰度切换/晋升/回滚——晋升强制人审（对齐 promote_ab）
     name: 'model_switch',
+    roles: ['ops'],
     description: '模型灰度切换（v1.3.6）——按档位（executor/pipeline）切换活动模型。percent<100 → canary 灰度（可逆运维操作直接生效）；percent=100/缺省 → 晋升全量 🔴 强制人审（human_confirmed≠true 挂起，对齐 v1.3.5 promote_ab）；action=rollback → 一键回滚到上一活动模型（止损不要求人审）。每次操作事件留痕。',
     inputSchema: {
       type: 'object',
@@ -794,6 +858,7 @@ export const TOOLS: ToolDef[] = [
   {
     // v1.3.6 (交付 ④)：模型退役/恢复——强制人审，对齐 v1.3.4 养护环 + v1.3.5 promote_ab
     name: 'model_unregister',
+    roles: ['ops'],
     description: '模型退役（v1.3.6）——下线模型走退役标记（可恢复），对齐 v1.3.4 L3 养护环「失效退役」：无人调用/评测走低 → 标记退役 → 不再参与路由。🔴 强制人审（human_confirmed≠true 挂起）。action=restore 恢复退役模型（同样强制人审）。退役的活动模型自动从档位摘除。',
     inputSchema: {
       type: 'object',
@@ -809,6 +874,7 @@ export const TOOLS: ToolDef[] = [
   {
     // v1.3.6 (交付 ⑦)：训练预算控制——查预算 / 超预算人审续跑或终止
     name: 'train_budget',
+    roles: ['eval', 'ops'],
     description: '训练预算控制（v1.3.6）——train-job 横切能力，成本透明。action=status 查任务预算状态（实际消耗/是否超预算暂停）；action=resolve 人审决策落地（decision=resume 从 checkpoint 续跑 / terminate 终止）。超预算自动 SIGINT 存 checkpoint 暂停（协议③）+ 记 train_budget_exceeded 审计，挂起等 resolve。预算字段写入 job.json（协议①），事件进 stdout 流（协议②）。',
     inputSchema: {
       type: 'object',
@@ -823,6 +889,7 @@ export const TOOLS: ToolDef[] = [
   {
     // v1.3.6 (交付 ⑨)：验收条件定义——任务创建时附机器可判定验收条件
     name: 'define_acceptance',
+    roles: ['eval'],
     description: '验收条件定义（v1.3.6）——任务创建时附机器可判定的验收条件，复用 Benchmark 判定引擎结构。四类条件：test（测试通过）/ build（build 成功）/ grep-absent（指定 pattern 零命中）/ schema（JSON 必需字段校验）。同一 task_id 重复定义 = 覆盖更新。软约束版验收（Agent 主动调用）；v1.4.0 cordis-plugin 升级为硬门禁。',
     inputSchema: {
       type: 'object',
@@ -853,6 +920,7 @@ export const TOOLS: ToolDef[] = [
   {
     // v1.3.6 (交付 ⑨)：验收执行——修改后跑验收返回结构化结果
     name: 'check_acceptance',
+    roles: ['eval'],
     description: '验收执行（v1.3.6）——修改后跑验收返回结构化结果。逐条执行 define_acceptance 登记的条件，全部通过 = 验收通过。未定义的 task_id 返回 notDefined=true（区别于定义了但失败）。通用 MCP tool，任何宿主（含 DSH 经 v1.3.5 互通）可调。',
     inputSchema: {
       type: 'object',

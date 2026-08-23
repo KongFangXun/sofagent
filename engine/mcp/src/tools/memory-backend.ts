@@ -25,6 +25,8 @@ export interface DynamicToolDef {
   };
   /** 工具执行 handler（转发到后端 / 本地降级） */
   handler: (args: Record<string, unknown>) => Promise<unknown>;
+  /** v1.4.0：角色分层标签（可选）——缺省 = 始终暴露（动态工具默认不打标） */
+  roles?: string[];
 }
 
 /** 动态工具表——tools/list 时合并到响应，不写入静态 TOOLS */
