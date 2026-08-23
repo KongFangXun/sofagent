@@ -325,7 +325,9 @@ a:hover{text-decoration:underline}
 @media(max-width:768px){
   :root{--nav-h:auto}
   .container{padding:12px 12px calc(12px + env(safe-area-inset-bottom))}
-  .metrics{grid-template-columns:repeat(2,1fr);gap:16px}
+  .metrics{grid-template-columns:repeat(2,1fr);gap:12px}
+  /* 5 张指标卡 2 列布局：最后一张占满整行，避免孤卡 */
+  .metrics .metric-card:last-child:nth-child(odd){grid-column:1/-1}
   .metric-value{font-size:24px}
   .grid-2,.grid-3,.attention,.quick-start{grid-template-columns:1fr}
   /* header 两行：第一行 logo+star，第二行导航 */
@@ -343,6 +345,8 @@ a:hover{text-decoration:underline}
   .nav-item{padding:10px 12px;font-size:13px;flex-shrink:0}
   .section-body{padding:14px}
   .rule-grid,.doc-list,.mcp-grid,.npm-grid{grid-template-columns:1fr}
+  /* 帮助面板 tab 窄屏换行（4 个 tab 不溢出） */
+  .help-tabs{flex-wrap:wrap}
   .lvp-col{border-radius:var(--radius-s)!important;margin-bottom:4px}
   .lvp-arrow{transform:rotate(90deg);justify-content:center;padding:2px}
   /* 移动端触控区 ≥44px（Apple HIG） */
@@ -375,6 +379,11 @@ a:hover{text-decoration:underline}
 /* iPhone 底部安全区兜底 */
 @media(max-width:768px){
   .footer{padding-bottom:calc(16px + env(safe-area-inset-bottom))}
+}
+
+/* 平板（769-1024px）：FDE 步骤 5 列太窄 → 3 列 */
+@media(min-width:769px) and (max-width:1024px){
+  .fde-step{flex:0 0 calc(33.33% - 7px)}
 }
 </style>
 </head>
@@ -1226,6 +1235,48 @@ async function loadLiveData(){
 
 }
 
+/* 审计记录行渲染（recent / 加载更多共用） */
+function renderAuditRows(records){
+  return records.map(function(rec){
+    var verdict=rec.exitCode===0?'PASS':(rec.exitCode===1?'WARN':'FAIL');
+    var cls=verdict==='PASS'?'badge-pass':(verdict==='WARN'?'badge-warn':'badge-fail');
+    // rule 列：FAIL/WARN 显示触发的规则码，PASS 显示 ✓
+    var ruleCell=rec.rule
+      ? '<span class="audit-rule" style="color:var(--'+(verdict==='FAIL'?'red':'amber')+')">'+escapeHtml(rec.rule)+'</span>'
+      : '<span class="audit-rule" style="color:var(--brand)">✓</span>';
+    return '<div class="audit-row"><span class="audit-time">'+(rec.time||'')+'</span><span class="audit-badge '+cls+'">'+verdict+'</span>'+ruleCell+'<span class="audit-task">'+escapeHtml(rec.task||'')+'</span></div>';
+  }).join('');
+}
+
+/* 加载更多审计记录（/api/audit-recent 分页，每次 +10 条） */
+function loadMoreAudit(){
+  var btn=document.getElementById('auditMoreBtn');
+  if(!btn)return;
+  btn.disabled=true;btn.textContent='加载中…';
+  fetch('/api/audit-recent?offset='+(window.__auditOffset||0)+'&limit=10')
+    .then(function(r){return r.json()})
+    .then(function(d){
+      var box=document.getElementById('liveAuditLog');
+      if(!box)return;
+      if(d.ok&&d.records.length){
+        // 移除旧按钮容器，追加新记录
+        var holder=btn.closest('div');
+        if(holder)holder.remove();
+        box.insertAdjacentHTML('beforeend',renderAuditRows(d.records));
+        window.__auditOffset=(window.__auditOffset||0)+d.records.length;
+        // 还有更多 → 重建按钮
+        if((window.__auditOffset||0)<(d.total||0)){
+          box.insertAdjacentHTML('beforeend','<div style="text-align:center;padding:8px"><button class="btn btn-outline" id="auditMoreBtn" onclick="loadMoreAudit()" style="height:26px;padding:0 14px;font-size:11px">加载更多</button></div>');
+        }else{
+          box.insertAdjacentHTML('beforeend','<div style="text-align:center;padding:8px;font-size:11px;color:var(--text-t)">已加载全部 '+d.total+' 条</div>');
+        }
+      }else{
+        btn.disabled=false;btn.textContent='加载更多';
+      }
+    })
+    .catch(function(){btn.disabled=false;btn.textContent='加载更多'});
+}
+
 /* 用 /api/summary（bash 同口径）渲染驾驶舱 */
 function renderSummaryData(s){
   var r=s.rules;
@@ -1250,18 +1301,17 @@ function renderSummaryData(s){
   if(s.sovereignty){
     renderSovereigntyBox(s.sovereignty,s.daemon?s.daemon.status:null,s.auditTotal,s.todayCount);
   }
-  // 最近审计记录
+  // 最近审计记录（10 条起步，可加载更多）
   if(s.recent&&s.recent.length){
-    var html=s.recent.map(function(rec){
-      var verdict=rec.exitCode===0?'PASS':(rec.exitCode===1?'WARN':'FAIL');
-      var cls=verdict==='PASS'?'badge-pass':(verdict==='WARN'?'badge-warn':'badge-fail');
-      // rule 列：FAIL/WARN 显示触发的规则码，PASS 显示 ✓
-      var ruleCell=rec.rule
-        ? '<span class="audit-rule" style="color:var(--'+(verdict==='FAIL'?'red':'amber')+')">'+escapeHtml(rec.rule)+'</span>'
-        : '<span class="audit-rule" style="color:var(--brand)">✓</span>';
-      return '<div class="audit-row"><span class="audit-time">'+(rec.time||'')+'</span><span class="audit-badge '+cls+'">'+verdict+'</span>'+ruleCell+'<span class="audit-task">'+escapeHtml(rec.task||'')+'</span></div>';
-    }).join('');
-    document.getElementById('liveAuditLog').innerHTML=html;
+    var html=renderAuditRows(s.recent);
+    var box=document.getElementById('liveAuditLog');
+    box.innerHTML=html;
+    // 总数大于已显示 → 加载更多按钮
+    window.__auditOffset=10;
+    window.__auditTotal=(s.auditTotal||0);
+    if(window.__auditTotal>10){
+      box.insertAdjacentHTML('beforeend','<div style="text-align:center;padding:8px"><button class="btn btn-outline" id="auditMoreBtn" onclick="loadMoreAudit()" style="height:26px;padding:0 14px;font-size:11px">加载更多</button></div>');
+    }
   }
   // 趋势图：近 7 天每日违规数（API 提供 daily 数组）
   if(s.daily&&s.daily.length){

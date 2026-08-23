@@ -518,6 +518,36 @@ const server = createServer(async (req, res) => {
     return;
   }
 
+  // /api/audit-recent → 审计记录分页（过滤测试记录，timestamp 倒序取窗口——summary recent 同口径）
+  if (urlPath.startsWith('/api/audit-recent')) {
+    const u = new URL(req.url, 'http://localhost');
+    const limit = Math.min(parseInt(u.searchParams.get('limit') || '10', 10) || 10, 100);
+    const offset = Math.max(parseInt(u.searchParams.get('offset') || '0', 10) || 0, 0);
+    const out = { ok: true, records: [], total: 0 };
+    try {
+      const raw = readFileSync(HISTORY_FILE, 'utf8');
+      const allRecs = [];
+      for (const line of raw.trim().split('\n')) {
+        try { allRecs.push(JSON.parse(line)); } catch { /* 跳过损坏行 */ }
+      }
+      const clean = allRecs.filter((r) => !isTestRecord(r));
+      const sorted = clean.slice().sort((a, b) => String(b.timestamp || '').localeCompare(String(a.timestamp || '')));
+      out.total = sorted.length;
+      out.records = sorted.slice(offset, offset + limit).map((r) => {
+        const violated = (r.ruleResults || []).filter((x) => x.status === 'FAIL' || x.status === 'WARN').map((x) => 'A' + x.number);
+        return {
+          time: String(r.timestamp || '').slice(5, 16),
+          exitCode: r.exitCode || 0,
+          rule: violated[0] || '',
+          task: String(r.task || r.commitMsg || '').slice(0, 40),
+        };
+      });
+    } catch { out.ok = false; }
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify(out));
+    return;
+  }
+
   // /data/* → ~/.sofagent/data/*
   if (urlPath.startsWith('/data/')) {
     const relPath = normalize(urlPath.slice('/data/'.length));
