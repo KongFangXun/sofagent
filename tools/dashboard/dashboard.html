@@ -222,8 +222,8 @@ a:hover{text-decoration:underline}
 
 .fde-stage{display:flex;align-items:center;gap:12px;padding:10px 12px;background:var(--bg-s);border:1px solid var(--border);border-radius:var(--radius-s);margin-bottom:8px}
 .fde-num{width:20px;height:20px;border-radius:50%;background:var(--brand);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0}
-/* FDE Agent 内置模板步骤卡：类型点 10px→8px（局部，不影响业务流/流水线卡） */
-.fde-step .agent-dot{width:8px;height:8px}
+/* FDE Agent 内置模板步骤卡：类型点 10px→8px（局部，不影响业务流/流水线卡）；上移 1px 与 STEP 文字垂直对齐 */
+.fde-step .agent-dot{width:8px;height:8px;position:relative;top:-1px}
 .fde-content{flex:1;display:flex;align-items:baseline;gap:8px;min-width:0}
 .fde-title{font-size:13px;font-weight:500;white-space:nowrap;flex-shrink:0}
 .fde-desc{font-size:12px;color:var(--text-s);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -1861,7 +1861,7 @@ function loadPipelineGraph(){
         var tx=x+nodeW/2;
         if(st==='running'||st==='active'){
           var tw=String(statusCn).length*9;
-          svg+='<circle class="pulse-svg" cx="'+(tx-tw/2-5)+'" cy="73.5" r="3" fill="var(--brand)"/>';
+          svg+='<circle class="pulse-svg" cx="'+(tx-tw/2-8)+'" cy="73.5" r="3" fill="var(--brand)"/>';
         }
         svg+='<text x="'+tx+'" y="76" text-anchor="middle" font-size="9" fill="var(--text-t)">'+escapeHtml(statusCn)+'</text>';
       });
@@ -2362,7 +2362,7 @@ function renderFlowGraph(nodes,edges){
     var tx=p.x+nodeW/2;
     if(st==='active'||st==='hitl'){
       var tw=String(stLabel).length*9;
-      svg+='<circle class="pulse-svg" cx="'+(tx-tw/2-5)+'" cy="'+(p.y+73.5)+'" r="3" fill="var(--brand)"/>';
+      svg+='<circle class="pulse-svg" cx="'+(tx-tw/2-8)+'" cy="'+(p.y+73.5)+'" r="3" fill="var(--brand)"/>';
     }
     svg+='<text x="'+tx+'" y="'+(p.y+76)+'" text-anchor="middle" font-size="9" fill="var(--text-t)">'+escapeHtml(stLabel)+'</text>';
   });
