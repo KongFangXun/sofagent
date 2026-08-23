@@ -70,6 +70,13 @@ a:hover{text-decoration:underline}
 .rule-chip{display:inline-flex;align-items:center;gap:4px;background:#FCEBEB;color:var(--red);font-family:var(--mono);font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px;cursor:pointer;transition:all .15s}
 .rule-chip:hover{background:var(--red);color:#fff}
 .rule-chip .rc-count{font-weight:400;opacity:.8}
+/* 快捷入口条（FDE 怎么开始：浅灰底 + 白块，去卡片套卡片） */
+.quick-start{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-s);overflow:hidden}
+.qs-item{background:var(--card);padding:14px 12px;text-align:center;cursor:pointer;transition:background .15s;text-decoration:none;display:block}
+.qs-item:hover{background:var(--brand-l)}
+.qs-item .qs-icon{font-size:20px;line-height:1.2}
+.qs-item .qs-title{font-size:13px;font-weight:600;color:var(--text);margin-top:5px}
+.qs-item .qs-desc{font-size:11px;color:var(--text-s);margin-top:2px}
 
 /* === Layout === */
 .container{max-width:1200px;margin:0 auto;padding:20px}
@@ -555,12 +562,8 @@ a:hover{text-decoration:underline}
       <span style="font-size:11px;color:var(--text-t)">FDE 双 graph（人读 workflow · 机器读 ontology）</span>
     </div>
     <div class="section-body">
-      <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
-        <button class="nav-item active" id="gr-tab-workflow" onclick="grTab('workflow')">Workflow 图谱</button>
-        <button class="nav-item" id="gr-tab-ontology" onclick="grTab('ontology')">Ontology 图谱</button>
-      </div>
       <div id="gr-view-workflow"></div>
-      <div id="gr-view-ontology" style="display:none"></div>
+      <div id="gr-view-ontology" style="margin-top:20px"></div>
     </div>
   </div>
   <div class="info-note" style="margin-top:0">
@@ -617,26 +620,26 @@ a:hover{text-decoration:underline}
       <span style="font-size:11px;color:var(--text-t)">零依赖方法论 · 或装进你的 Agent</span>
     </div>
     <div class="section-body">
-      <div class="metrics" style="grid-template-columns:repeat(4,1fr);margin-bottom:0">
-        <a class="metric-card" href="https://github.com/KongFangXun/sofagent/blob/main/FDE/GUIDE.md" target="_blank" style="display:block;text-decoration:none">
-          <div style="font-size:22px;line-height:1.2">📖</div>
-          <div style="font-size:13px;font-weight:600;margin-top:6px;color:var(--text)">读 GUIDE.md</div>
-          <div style="font-size:11px;color:var(--text-s);margin-top:2px">方法论 · 零依赖，纸笔即可</div>
+      <div class="quick-start">
+        <a class="qs-item" href="https://github.com/KongFangXun/sofagent/blob/main/FDE/GUIDE.md" target="_blank">
+          <div class="qs-icon">📖</div>
+          <div class="qs-title">读 GUIDE.md</div>
+          <div class="qs-desc">方法论 · 零依赖</div>
         </a>
-        <a class="metric-card" href="https://clawhub.ai/skill/sofagent" target="_blank" style="display:block;text-decoration:none">
-          <div style="font-size:22px;line-height:1.2">🔍</div>
-          <div style="font-size:13px;font-weight:600;margin-top:6px;color:var(--text)">WorkBuddy 搜 sofagent</div>
-          <div style="font-size:11px;color:var(--text-s);margin-top:2px">一键安装 Skill · ClawHub</div>
+        <a class="qs-item" href="https://clawhub.ai/skill/sofagent" target="_blank">
+          <div class="qs-icon">🔍</div>
+          <div class="qs-title">WorkBuddy 搜 sofagent</div>
+          <div class="qs-desc">一键安装 Skill</div>
         </a>
-        <a class="metric-card" href="https://github.com/KongFangXun/sofagent" target="_blank" style="display:block;text-decoration:none">
-          <div style="font-size:22px;line-height:1.2">💻</div>
-          <div style="font-size:13px;font-weight:600;margin-top:6px;color:var(--text)">bash install.sh</div>
-          <div style="font-size:11px;color:var(--text-s);margin-top:2px">OpenClaw / npm 全局安装</div>
+        <a class="qs-item" href="https://github.com/KongFangXun/sofagent" target="_blank">
+          <div class="qs-icon">💻</div>
+          <div class="qs-title">bash install.sh</div>
+          <div class="qs-desc">OpenClaw / npm</div>
         </a>
-        <div class="metric-card" onclick="openHelp('fde')" style="cursor:pointer">
-          <div style="font-size:22px;line-height:1.2">🧭</div>
-          <div style="font-size:13px;font-weight:600;margin-top:6px;color:var(--text)">场景速查</div>
-          <div style="font-size:11px;color:var(--text-s);margin-top:2px">踩坑查询 / 健康检查 → 帮助</div>
+        <div class="qs-item" onclick="openHelp('fde')">
+          <div class="qs-icon">🧭</div>
+          <div class="qs-title">场景速查</div>
+          <div class="qs-desc">踩坑 / 健康检查 → 帮助</div>
         </div>
       </div>
     </div>
@@ -1313,8 +1316,13 @@ function renderDailyTrend(days){
     var yy=base-(g/4)*(base-top);
     svg+='<line x1="'+padL+'" y1="'+yy+'" x2="'+(W-padR)+'" y2="'+yy+'" stroke="#E1E4E8" stroke-width="0.5" stroke-dasharray="3,3"/>';
     svg+='<text x="'+(padL-6)+'" y="'+(yy+3)+'" text-anchor="end" font-size="10" fill="#8B949E">'+Math.round(maxCount*g/4)+'</text>';
-    // 右轴：比率 0-100%（灰色刻度）
-    svg+='<text x="'+(W-padR+6)+'" y="'+(yy+3)+'" text-anchor="start" font-size="10" fill="#8B949E">'+(g*25)+'%</text>';
+    // 右轴：通过率 80-100%（0-100 会把波动压扁，80 起才能看到绿线波动）
+    svg+='<text x="'+(W-padR+6)+'" y="'+(yy+3)+'" text-anchor="start" font-size="10" fill="#8B949E">'+(80+g*5)+'%</text>';
+  }
+  // 通过率 → y：80-100 映射到绘图区（<80 钳位到底）
+  function rateY(rate){
+    var r=Math.max(80,Math.min(100,rate));
+    return base-((r-80)/20)*(base-top);
   }
   var ratePts=[];
   days.forEach(function(d,i){
@@ -1334,13 +1342,13 @@ function renderDailyTrend(days){
     svg+='<text x="'+cx+'" y="'+(base+17)+'" text-anchor="middle" font-size="10" fill="#8B949E">'+String(d.day).slice(5)+'</text>';
     ratePts.push([cx,rate]);
   });
-  // 绿线：规则通过率（右轴 0-100%）
-  var line=ratePts.map(function(pt){return pt[0]+','+(base-(pt[1]/100)*(base-top))}).join(' ');
+  // 绿线：规则通过率（右轴 80-100%）
+  var line=ratePts.map(function(pt){return pt[0]+','+rateY(pt[1])}).join(' ');
   if(ratePts.length>1){
     svg+='<polyline points="'+line+'" fill="none" stroke="#1D9E75" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"/>';
   }
   ratePts.forEach(function(pt){
-    var yy=base-(pt[1]/100)*(base-top);
+    var yy=rateY(pt[1]);
     svg+='<circle cx="'+pt[0]+'" cy="'+yy+'" r="4" fill="#fff" stroke="#1D9E75" stroke-width="2.4"/>';
   });
   document.getElementById('trendChart').innerHTML=svg;
@@ -1799,7 +1807,7 @@ function loadPipelineGraph(){
         svg+='<text x="'+(x+nodeW/2)+'" y="49" text-anchor="middle" font-size="11" font-weight="500" fill="'+textCol+'">'+escapeHtml(label)+'</text>';
         // 状态中文 + 运行脉冲点（跟随状态文字，不占右上角）
         var st=n.status||'unknown';
-        var statusCn={'completed':'已完成','running':'运行中','pending':'等待中','blocked':'已阻断','failed':'失败','active':'运行'}[st]||st;
+        var statusCn={'completed':'已完成','running':'运行中','pending':'等待中','blocked':'已阻断','failed':'失败','active':'运行中'}[st]||st;
         var tx=x+nodeW/2;
         if(st==='running'||st==='active'){
           var tw=String(statusCn).length*9;
@@ -2201,12 +2209,6 @@ function loadWorklogData(){
 }
 
 /* ===== 图谱（本体图谱页 · v1.4.0） ===== */
-function grTab(tab){
-  ['workflow','ontology'].forEach(function(t){
-    document.getElementById('gr-tab-'+t).classList.toggle('active',t===tab);
-    document.getElementById('gr-view-'+t).style.display=t===tab?'':'none';
-  });
-}
 
 /* SVG 节点图渲染——与编排控制图同构（容器/svg 策略/绘制参数全一致）
  * 容器纯 .chart-box；svg max-width 居中缩放（移动端 .graph-wide min-width 横滑兜底）
@@ -2232,7 +2234,7 @@ function renderFlowGraph(nodes,edges){
   // 状态 → 颜色（对齐编排控制图：填充浅色 + 描边/文字用状态色）
   var stCol={active:'#16B8F3',done:'#1D9E75',failed:'#E24B4A',hitl:'#EF9F27',unknown:'#8B949E'};
   var stFill={active:'#E6F1FB',done:'#E1F5EE',failed:'#FCEBEB',hitl:'#FAEEDA',unknown:'#FAFBFC'};
-  var stCn={active:'运行',done:'完成',failed:'失败',hitl:'人工介入',unknown:'未知'};
+  var stCn={active:'运行中',done:'完成',failed:'失败',hitl:'人工介入',unknown:'未知'};
   nodes.forEach(function(n){
     var p=pos[n.id];
     var st=n.status||'unknown';
@@ -2279,7 +2281,7 @@ function loadGraphView(){
         wfNodes=[{id:'demo:map',label:'梳理',status:'done'},{id:'demo:deploy',label:'部署节点',status:'done'},{id:'demo:audit',label:'审计',status:'active'}];
         wfEdges=[{from:'demo:map',to:'demo:deploy'},{from:'demo:deploy',to:'demo:audit'}];
       }
-      wfBox.innerHTML='<div style="font-size:11px;color:var(--text-t);margin-bottom:8px">workflow 节点图（状态着色：蓝=跑 绿=完 红=失败 黄=人工介入）</div>'+renderFlowGraph(wfNodes,wfEdges);
+      wfBox.innerHTML='<div style="font-size:11px;color:var(--text-t);margin-bottom:8px">workflow 节点图（状态着色：蓝=运行中 绿=完成 红=失败 黄=人工介入）</div>'+renderFlowGraph(wfNodes,wfEdges);
 
       // ontology 图谱：优先 knowledge/index.md 解析实体（按域分组连线），降级示例
       var ontNodes=[],ontEdges=[];
@@ -2346,7 +2348,7 @@ function loadFdeSelfGraph(){
         selfNodes=[{id:'s1',label:'梳理（FDE 进场）',status:'done'},{id:'s2',label:'识别 AI 节点',status:'done'},{id:'s3',label:'双图谱交付',status:'done'},{id:'s4',label:'7×24 审计',status:'active'}];
         selfEdges=[{from:'s1',to:'s2'},{from:'s2',to:'s3'},{from:'s3',to:'s4'}];
       }
-      box.innerHTML='<div style="font-size:11px;color:var(--text-t);margin-bottom:8px">状态着色：蓝=运行 绿=完成 黄=人工介入'+(fromYaml?' · 来自 template.yaml':' · 示例数据（部署 FDE workflow 后读真实节点）')+'</div>'+
+      box.innerHTML='<div style="font-size:11px;color:var(--text-t);margin-bottom:8px">状态着色：蓝=运行中 绿=完成 黄=人工介入'+(fromYaml?' · 来自 template.yaml':' · 示例数据（部署 FDE workflow 后读真实节点）')+'</div>'+
         renderFlowGraph(selfNodes,selfEdges);
       if(updated)updated.textContent=fmtUpdatedAt();
     });
