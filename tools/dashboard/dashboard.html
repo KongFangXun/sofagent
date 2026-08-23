@@ -722,7 +722,7 @@ a:hover{text-decoration:underline}
   </div>
   <div class="section">
     <div class="section-header">
-      <div class="section-title"><span class="dot-emoji"><i class="bi bi-list-check"></i></span>FDE Agent（内置 Workflow 模板）</div>
+      <div class="section-title"><span class="dot-emoji"><i class="bi bi-list-check"></i></span>FDE Agent 执行流程（template.yaml）</div>
       <span style="font-size:11px;color:var(--text-t)" id="fdeWfUpdatedAt">加载中...</span>
     </div>
     <div class="section-body">
@@ -1747,16 +1747,16 @@ function loadFdeWorkflowData(){
       var sustain=d.sustain||null;
       wfs.forEach(function(wf){
         var dispName=(wf.name||wf.file||'').replace('template.yaml','').trim();
-        html+='<div style="font-weight:600;font-size:13px;margin-bottom:10px">FDE 执行流程（template.yaml）</div>';
+        // 标题已在 section-header（FDE Agent 执行流程（template.yaml）），内部不再重复一条
         // 每行 5 个卡片（flex 5 列），不足 5 个自动靠左；移动端单列见 .fde-steps
         html+='<div class="fde-steps" style="display:flex;flex-wrap:wrap;gap:8px">';
         wf.steps.forEach(function(s,i){
           var ac=agentColor[s.agent]||agentColor.analyst;
-          html+='<div class="fde-step" style="flex:0 0 calc(20% - 7px);box-sizing:border-box;background:'+ac.bg+';border:1px solid '+ac.border+';border-radius:var(--radius-s);padding:10px 12px">'+
+          html+='<div class="fde-step" style="flex:0 0 calc(20% - 7px);box-sizing:border-box;background:var(--bg-s);border:1px solid var(--border);border-radius:var(--radius-s);padding:12px;display:flex;flex-direction:column;gap:4px;min-width:0">'+
             // 第一行：点 + STEP 标签 + 标题（黑字，单行截断）；循环=右上角 icon+灰字（参考流水线卡右对齐）
             '<div style="font-size:12px;display:flex;align-items:center;gap:6px;min-width:0"><span class="agent-dot '+escapeHtml(s.agent)+'" style="flex-shrink:0"></span><span style="font-size:12px;color:var(--text);flex-shrink:0">STEP '+(i+1)+'</span><span title="'+escapeHtml(s.name)+'" style="font-size:12px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0">'+escapeHtml(s.name)+'</span>'+(s.loop?'<span style="margin-left:auto;font-size:11px;color:var(--text-t);flex-shrink:0;display:inline-flex;align-items:center;gap:3px"><i class="bi bi-arrow-clockwise"></i>循环</span>':'')+'</div>'+
-            // 第二行：agent 英文 · 中文角色 · 类型（说明行）——字号显式统一 11px
-            '<div style="font-size:11px;color:var(--text-s);margin-top:4px;display:flex;align-items:center;gap:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"><span style="font-size:11px;font-family:var(--mono)">'+escapeHtml(s.agent)+'</span><span style="font-size:11px">·</span><span style="font-size:11px">'+escapeHtml(ac.role)+'</span><span style="font-size:11px;color:var(--text-t);flex-shrink:0">'+ac.label+'</span></div>'+
+            // 第二行：agent 英文 · 中文角色 · 类型（说明行）——字号显式统一 11px（gap 负责行距）
+            '<div style="font-size:11px;color:var(--text-s);display:flex;align-items:center;gap:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"><span style="font-size:11px;font-family:var(--mono)">'+escapeHtml(s.agent)+'</span><span style="font-size:11px">·</span><span style="font-size:11px">'+escapeHtml(ac.role)+'</span><span style="font-size:11px;color:var(--text-t);flex-shrink:0">'+ac.label+'</span></div>'+
             '</div>';
         });
         html+='</div>';
