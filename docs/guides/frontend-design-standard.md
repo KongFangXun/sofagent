@@ -105,6 +105,24 @@
 
 > **教训**：小卡片"点位置不对"大多是**标题字号不统一**（10px/13px/12px 混用）导致的视觉错位——先统一文字等级，再微调点坐标。
 
+### 4.3 公用小类（消灭重复内联）
+
+设计原则「优先用类」的落点——新增重复样式先查是否已有公用类，禁止再写内联：
+
+| 类 | 用途 | 等于 |
+|----|------|------|
+| `.hint` | 灰色说明文字 | `font-size:11px;color:var(--text-t)` |
+| `.meta` | 次要说明文字 | `font-size:11px;color:var(--text-s)` |
+| `.ellipsis` | 单行截断 | `white-space:nowrap;overflow:hidden;text-overflow:ellipsis` |
+| `.updated-at` | 更新时间 span | `font-size:11px;color:var(--text-t)` |
+| `.right-meta` | 第一行右对齐元信息 | `margin-left:auto;11px;text-t;inline-flex` |
+
+**圆点共用**：`.agent-dot,.sc-dot,.st-dot,.sov-dot,.node-status .icon` 共用 `display:inline-block;border-radius:50%;flex-shrink:0` 基础——新增圆点类时并入该组，只写尺寸/颜色/动画差异。
+
+**按钮继承**：`.help-btn/.star-btn` 继承 `.btn` 基础 + `.btn-outline` 共用外观——新增按钮类优先继承，不重复写完整定义。
+
+> 内联样式红线：`font-size:11px` 与 `color:var(--text-*)` 组合必须用公用类（曾 282 处内联泛滥）。
+
 ---
 
 ## 五、图标标准
