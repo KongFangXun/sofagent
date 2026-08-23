@@ -7,6 +7,11 @@ export LC_ALL="${LC_ALL:-en_US.UTF-8}"
 set -uo pipefail
 shopt -s nullglob
 
+# 颜色变量（set -u 下必须初始化——v1.4.0 修复：3a 段 RED 未定义导致 unbound 崩溃）
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+NC='\033[0m'
+
 cd "$(dirname "$0")/../.." || exit 1
 
 # v1.3.6 B11: 并发防护——mkdir 原子锁（macOS/Linux 兼容）。已有实例运行时第二个实例
