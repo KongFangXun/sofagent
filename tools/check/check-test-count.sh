@@ -88,7 +88,8 @@ PKG_COUNT=$(echo "$TC_OUT" | sed $'s/\033\[[0-9;]*m//g' | grep -oE 'PKGS=[0-9]+'
 [ -z "$PKG_COUNT" ] && PKG_COUNT=0
 
 # B13: workspace 总包数（package.json workspaces 数组条目数，README 声称「13 包」对账用）
-WORKSPACE_COUNT=$(grep -cE '^\s*"engine/' package.json || echo "0")
+# v1.4.0：只数 13 个发布到 npm 的引擎包——engine/dsh-plugins/ 下 9 个插件包为 private（不发布），不计入
+WORKSPACE_COUNT=$(grep -cE '^\s*"engine/(harness|ontology|eval|core|think|audit|orchestrator|daemon|ab-test|skillopt|mcp|rules|hooks/)' package.json || echo "0")
 [ -z "$WORKSPACE_COUNT" ] && WORKSPACE_COUNT=0
 
 # audit 包单独数（从 test-count.sh 全量输出的逐包明细行提取，格式「✓ audit: 498 passed (498 tests)」）。
