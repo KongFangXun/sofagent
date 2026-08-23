@@ -461,18 +461,18 @@ a:hover{text-decoration:underline}
     <div class="section-header"><div class="section-title"><span class="dot-emoji"><i class="bi bi-bar-chart"></i></span>工作明细（worklog）</div>
       <span style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
         <span class="nav" style="justify-content:flex-start">
-          <button class="nav-item active" id="wl-tab-agent" onclick="wlTab('agent')">按 Agent</button>
-          <button class="nav-item" id="wl-tab-workflow" onclick="wlTab('workflow')">按 Workflow</button>
-          <button class="nav-item" id="wl-tab-week" onclick="wlTab('week')">按周</button>
+          <button class="nav-item active" id="wl-tab-overview" onclick="wlTab('overview')">概况</button>
+          <button class="nav-item" id="wl-tab-weekly" onclick="wlTab('weekly')">周报</button>
+          <button class="nav-item" id="wl-tab-monthly" onclick="wlTab('monthly')">月报</button>
           <button class="nav-item" id="wl-tab-intervention" onclick="wlTab('intervention')">介入</button>
-          <button class="nav-item" id="wl-tab-audit" onclick="wlTab('audit')">审计记录</button>
+          <button class="nav-item" id="wl-tab-audit" onclick="wlTab('audit')">审计</button>
         </span>
       </span>
     </div>
     <div class="section-body">
-      <div id="wl-view-agent"></div>
-      <div id="wl-view-workflow" style="display:none"></div>
-      <div id="wl-view-week" style="display:none"></div>
+      <div id="wl-view-overview"></div>
+      <div id="wl-view-weekly" style="display:none"></div>
+      <div id="wl-view-monthly" style="display:none"></div>
       <div id="wl-view-intervention" style="display:none"></div>
       <div id="wl-view-audit" style="display:none">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
@@ -2104,7 +2104,7 @@ function fmtCost(c){
 function fmtMs(ms){if(ms===null||ms===undefined)return '—';if(ms<1000)return ms+'ms';if(ms<60000)return (ms/1000).toFixed(1)+'s';return (ms/60000).toFixed(1)+'min'}
 
 function wlTab(tab){
-  ['agent','workflow','week','intervention','audit'].forEach(function(t){
+  ['overview','weekly','monthly','intervention','audit'].forEach(function(t){
     document.getElementById('wl-tab-'+t).classList.toggle('active',t===tab);
     document.getElementById('wl-view-'+t).style.display=t===tab?'':'none';
   });
@@ -2200,9 +2200,8 @@ function loadWorklogData(){
       agHtml+='<div style="font-size:12px;font-weight:600;color:var(--text-s);margin:16px 0 4px">任务明细（taskId → 消耗 → 状态信号）</div>';
       if(taskRows.length>30)agHtml+='<div style="font-size:11px;color:var(--text-t);margin-bottom:6px">共 '+taskRows.length+' 条任务，仅显示最近 30 条</div>';
       agHtml+=wlTable(['Task ID','Workflow','决策','LLM 调用','Token','耗时','成本','重试','介入','最后活动'],taskRows.slice(0,30));
-      document.getElementById('wl-view-agent').innerHTML=agHtml;
 
-      /* 按 Workflow：节点状态（跑/完/失败/人工介入） */
+      /* 概况：Agent 汇总 + 任务明细 + Workflow 节点状态 */
       var statusMap={
         active:'<span class="st-dot st-active"></span>跑',
         done:'<span class="st-dot st-done"></span>完',
@@ -2214,13 +2213,33 @@ function loadWorklogData(){
         var nodeHtml=(w.nodes||[]).map(function(n){return statusMap[n.status]||statusMap.unknown}).join(' ');
         return ['<strong>'+escapeHtml(w.workflowId)+'</strong>',nodeHtml,w.humanInterventions||0];
       });
-      document.getElementById('wl-view-workflow').innerHTML=sampleFlag+wlTable(['Workflow','节点状态','人工介入'],wfRows);
+      agHtml+='<div style="font-size:12px;font-weight:600;color:var(--text-s);margin:16px 0 4px">Workflow 节点状态（跑/完/失败/人工介入）</div>'+
+        wlTable(['Workflow','节点状态','人工介入'],wfRows);
+      document.getElementById('wl-view-overview').innerHTML=agHtml;
 
-      /* 按周 */
+      /* 周报 */
       var wkRows=(d.weeklyTrend||[]).map(function(w){
         return [escapeHtml(w.week),w.activity,w.auditPassRate!==null&&w.auditPassRate!==undefined?(w.auditPassRate*100).toFixed(0)+'%':'—',fmtCost(w.costUsd)];
       });
-      document.getElementById('wl-view-week').innerHTML=sampleFlag+wlTable(['周','活跃度','审计成功率','成本'],wkRows);
+      document.getElementById('wl-view-weekly').innerHTML=sampleFlag+wlTable(['周','活跃度','审计成功率','成本'],wkRows);
+
+      /* 月报：近 4 周聚合（活跃度求和 · 成本求和 · 成功率平均） */
+      var mWeeks=(d.weeklyTrend||[]).slice(-4);
+      if(mWeeks.length){
+        var mA=0,mC=0,mR=0,mN=0;
+        mWeeks.forEach(function(w){mA+=w.activity||0;mC+=w.costUsd||0;if(w.auditPassRate!=null){mR+=w.auditPassRate;mN++}});
+        var mRate=mN>0?Math.round((mR/mN)*100)+'%':'—';
+        document.getElementById('wl-view-monthly').innerHTML=sampleFlag+
+          '<div style="font-size:11px;color:var(--text-t);margin-bottom:6px">近 4 周聚合（'+escapeHtml(mWeeks[0].week)+' → '+escapeHtml(mWeeks[mWeeks.length-1].week)+'）</div>'+
+          wlTable(['指标','近 4 周'],[
+            ['活跃度（任务/操作）',mA],
+            ['审计成功率（平均）',mRate],
+            ['成本',fmtCost(mC)],
+            ['周数',mWeeks.length]
+          ]);
+      }else{
+        document.getElementById('wl-view-monthly').innerHTML=emptyState('<i class="bi bi-calendar-month"></i>','还没有月报数据','worklog 周趋势积累满 1 周后自动生成','查看周报',"wlTab('weekly')");
+      }
 
       /* 人工介入：优先 decisions.jsonl 事件（谁批的/为什么），降级 worklog 次数 */
       var ivRows=[];
@@ -2244,7 +2263,7 @@ function loadWorklogData(){
       }
     });
   }).catch(function(){
-    document.getElementById('wl-view-agent').innerHTML=emptyState('<i class="bi bi-bar-chart"></i>','还没有工作明细','运行过 sofagent-audit 或编排任务后自动生成（worklog.json）','去 FDE 引导部署',"goPage('fde')");
+    document.getElementById('wl-view-overview').innerHTML=emptyState('<i class="bi bi-bar-chart"></i>','还没有工作明细','运行过 sofagent-audit 或编排任务后自动生成（worklog.json）','去 FDE 引导部署',"goPage('fde')");
   });
 }
 
