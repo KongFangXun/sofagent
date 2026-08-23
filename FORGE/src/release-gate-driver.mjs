@@ -1514,6 +1514,7 @@ function parseRegressionDimensions() {
   let current = null;       // { num, title, blocks: [] }
   let inCode = false;
   let codeBuf = [];
+  let manualFlag = false;   // v1.4.0：人工核对项标记（维度 94 实证——占位命令被 worker 当真执行致崩溃）
 
   const flushCode = () => {
     if (current && codeBuf.length > 0) {
@@ -1528,7 +1529,15 @@ function parseRegressionDimensions() {
       flushCode();
       current = { num: parseInt(dimMatch[1], 10), title: dimMatch[2].trim(), script: '' };
       dims.push(current);
+      manualFlag = false;   // 每个维度重置
       continue;
+    }
+    // v1.4.0：人工核对项标记检测——checklist 用「⚠️ 本维度是**人工核对项**…不要作为命令直接执行」标注。
+    // 这种维度的代码块是操作指引（含 <script.sh> 占位符），不是可执行命令——worker 执行会崩（No such file）。
+    // 命中后丢弃当前维度的脚本，worker 判定时按「人工核对」处理。
+    if (current && /人工核对项|不要作为命令直接执行/.test(line)) {
+      manualFlag = true;
+      current.script = '';  // 清空已收集的脚本
     }
     if (/^```bash\s*$/.test(line)) {
       flushCode();           // 上一个块收尾（如有）
@@ -1541,7 +1550,7 @@ function parseRegressionDimensions() {
       inCode = false;
       continue;
     }
-    if (inCode && current) {
+    if (inCode && current && !manualFlag) {
       codeBuf.push(line);
     }
     // 维度外的代码块（current === null 或不在维度内）忽略
@@ -2783,10 +2792,15 @@ async function main() {
       }
     }
     const raw = readFileSync(accRawPath, 'utf-8');
+    // v1.4.0 修复：原 `raw.slice(0, 4000)` 硬编码截断前 4000 字符——63KB 的 acceptance 日志
+    // 只注入前 128 行（场景 1-17），consolidate/verdict 拿到残缺证据误判「场景 17 截断 + 无 SUMMARY」。
+    // 改为：完整日志 + 尾部 SUMMARY 兜底（consolidate 判定依赖 SUMMARY 行；超长场景保留全部证据）。
+    const rawLines = raw.split('\n');
+    const accBody = raw.length <= 120_000 ? raw : rawLines.slice(0, 3000).join('\n') + '\n...（日志超长截断，见尾部 SUMMARY）\n' + rawLines.slice(-60).join('\n');
     const accContent =
       `# acceptance-test 结果（--judgment-only 模式 · 脚本层实测注入）\n\n` +
       `> 来源：${accRawPath}\n\n` +
-      `\`\`\`\n${raw.slice(0, 4000)}\n\`\`\`\n`;
+      `\`\`\`\n${accBody}\n\`\`\`\n`;
     writeFileSync(accOutPath, accContent, 'utf-8');
     const summaryLine = raw.split('\n').filter(l => l.includes('SUMMARY')).slice(-1)[0] || '（未找到 SUMMARY 行）';
     console.log(`[driver] --judgment-only：acceptance 实证已注入 ${accOutPath}（${summaryLine}）`);
