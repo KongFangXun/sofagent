@@ -1266,7 +1266,7 @@ function renderSummaryData(s){
   animateNumber(document.getElementById('m-violations'),todayIssues);
   var vsEl=document.getElementById('m-violations-sub');
   vsEl.textContent='总 '+totalIssues+' 次问题';
-  // 审计记录卡：最近 10 条 + 总数 + 下载全量按钮（头部右侧，不无限追加列表）
+  // 审计记录卡：最近 10 条 + 总数 + 下载审计记录按钮（头部右侧，不无限追加列表）
   var cnt=document.getElementById('auditRecordCount');
   if(cnt){
     cnt.innerHTML='<span>最近审计 · 显示最近 10 条（共 '+(s.auditTotal||r.total)+' 条'+(s.filteredTestRecords?(' · 已过滤 '+s.filteredTestRecords+' 条测试'):'')+'）</span>'+
@@ -1276,7 +1276,7 @@ function renderSummaryData(s){
   if(s.sovereignty){
     renderSovereigntyBox(s.sovereignty,s.daemon?s.daemon.status:null,s.auditTotal,s.todayCount);
   }
-  // 最近审计记录（10 条，全量走「下载全量」按钮）
+  // 最近审计记录（10 条，全量走「下载审计记录」按钮）
   if(s.recent&&s.recent.length){
     document.getElementById('liveAuditLog').innerHTML=renderAuditRows(s.recent);
   }
