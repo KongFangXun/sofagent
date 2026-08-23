@@ -518,6 +518,23 @@ const server = createServer(async (req, res) => {
     return;
   }
 
+  // /api/export-worklog → 下载工作记录（worklog.json 全量：概况/任务/介入/周报数据源）
+  if (urlPath === '/api/export-worklog') {
+    let raw = null;
+    try { raw = readFileSync(join(SOFAGENT_DATA, 'dashboard', 'worklog.json'), 'utf8'); } catch { /* 不存在 */ }
+    if (raw === null) {
+      res.writeHead(404);
+      res.end('Not found: worklog.json');
+      return;
+    }
+    res.writeHead(200, {
+      'Content-Type': 'application/json',
+      'Content-Disposition': 'attachment; filename="worklog.json"',
+    });
+    res.end(raw);
+    return;
+  }
+
   // /api/audit-recent → 审计记录分页（过滤测试记录，timestamp 倒序取窗口——summary recent 同口径）
   if (urlPath.startsWith('/api/audit-recent')) {
     const u = new URL(req.url, 'http://localhost');

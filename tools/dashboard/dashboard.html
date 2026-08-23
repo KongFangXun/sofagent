@@ -100,7 +100,7 @@ a:hover{text-decoration:underline}
 .section-sub{font-size:12px;color:var(--text-s);font-weight:400;margin-left:4px}
 .section-body{padding:20px;flex:1;display:flex;flex-direction:column;min-height:0}
 
-.metrics{display:grid;grid-template-columns:repeat(6,1fr);gap:16px;margin-bottom:16px}
+.metrics{display:grid;grid-template-columns:repeat(5,1fr);gap:16px;margin-bottom:16px}
 .metric-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;text-align:center}
 .metric-value{font-size:28px;font-weight:700;line-height:1.2;font-variant-numeric:tabular-nums;color:var(--brand)}
 .metric-label{font-size:12px;color:var(--text-s);margin-top:4px}
@@ -401,8 +401,8 @@ a:hover{text-decoration:underline}
       <button class="nav-item active" onclick="goPage('cockpit')">驾驶舱</button>
       <button class="nav-item" onclick="goPage('workflow')">业务流</button>
       <button class="nav-item" onclick="goPage('ontology')">本体图谱</button>
-      <button class="nav-item" onclick="goPage('fde')">FDE 引导</button>
       <button class="nav-item" onclick="goPage('knowledge')">知识库</button>
+      <button class="nav-item" onclick="goPage('fde')">FDE 引导</button>
       <button class="nav-item" onclick="goPage('resources')">工具箱</button>
     </nav>
     <div class="header-right">
@@ -472,6 +472,7 @@ a:hover{text-decoration:underline}
   <div class="section">
     <div class="section-header"><div class="section-title"><span class="dot-emoji"><i class="bi bi-bar-chart"></i></span>工作记录（worklog）</div>
       <span style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <a href="/api/export-worklog" download="worklog.json" title="下载工作记录（worklog.json，含概况/任务/介入/周报数据）" class="btn btn-outline" id="wlDownloadBtn" style="display:none;height:26px;padding:0 10px;font-size:11px"><i class="bi bi-download"></i> 下载数据</a>
         <span class="tab-inline">
           <button class="nav-item active" id="wl-tab-overview" onclick="wlTab('overview')">概况</button>
           <button class="nav-item" id="wl-tab-tasks" onclick="wlTab('tasks')">任务</button>
@@ -485,7 +486,7 @@ a:hover{text-decoration:underline}
       <div id="wl-view-overview"></div>
       <div id="wl-view-tasks" style="display:none"></div>
       <div id="wl-view-audit" style="display:none">
-        <div id="auditRecordCount" style="font-size:11px;color:var(--text-t);margin-bottom:8px"></div>
+        <div id="auditRecordCount" style="font-size:11px;color:var(--text-t);margin-bottom:8px;display:flex;align-items:center;gap:10px;justify-content:space-between;flex-wrap:wrap"></div>
         <div class="audit-log" id="liveAuditLog">
           <div style="color:var(--text-t);font-size:12px;text-align:center;padding:20px">加载中...</div>
         </div>
@@ -1248,35 +1249,6 @@ function renderAuditRows(records){
   }).join('');
 }
 
-/* 加载更多审计记录（/api/audit-recent 分页，每次 +10 条） */
-function loadMoreAudit(){
-  var btn=document.getElementById('auditMoreBtn');
-  if(!btn)return;
-  btn.disabled=true;btn.textContent='加载中…';
-  fetch('/api/audit-recent?offset='+(window.__auditOffset||0)+'&limit=10')
-    .then(function(r){return r.json()})
-    .then(function(d){
-      var box=document.getElementById('liveAuditLog');
-      if(!box)return;
-      if(d.ok&&d.records.length){
-        // 移除旧按钮容器，追加新记录
-        var holder=btn.closest('div');
-        if(holder)holder.remove();
-        box.insertAdjacentHTML('beforeend',renderAuditRows(d.records));
-        window.__auditOffset=(window.__auditOffset||0)+d.records.length;
-        // 还有更多 → 重建按钮
-        if((window.__auditOffset||0)<(d.total||0)){
-          box.insertAdjacentHTML('beforeend','<div style="text-align:center;padding:8px"><button class="btn btn-outline" id="auditMoreBtn" onclick="loadMoreAudit()" style="height:26px;padding:0 14px;font-size:11px">加载更多</button></div>');
-        }else{
-          box.insertAdjacentHTML('beforeend','<div style="text-align:center;padding:8px;font-size:11px;color:var(--text-t)">已加载全部 '+d.total+' 条</div>');
-        }
-      }else{
-        btn.disabled=false;btn.textContent='加载更多';
-      }
-    })
-    .catch(function(){btn.disabled=false;btn.textContent='加载更多'});
-}
-
 /* 用 /api/summary（bash 同口径）渲染驾驶舱 */
 function renderSummaryData(s){
   var r=s.rules;
@@ -1294,24 +1266,19 @@ function renderSummaryData(s){
   animateNumber(document.getElementById('m-violations'),todayIssues);
   var vsEl=document.getElementById('m-violations-sub');
   vsEl.textContent='总 '+totalIssues+' 次问题';
-  // 审计记录卡：最近 10 条（非全量明细）+ 总数 + 测试过滤说明
+  // 审计记录卡：最近 10 条 + 总数 + 下载全量按钮（头部右侧，不无限追加列表）
   var cnt=document.getElementById('auditRecordCount');
-  if(cnt){cnt.textContent='最近审计 · 显示最近 10 条（共 '+(s.auditTotal||r.total)+' 条'+(s.filteredTestRecords?(' · 已过滤 '+s.filteredTestRecords+' 条测试'):'')+'）'}
+  if(cnt){
+    cnt.innerHTML='<span>最近审计 · 显示最近 10 条（共 '+(s.auditTotal||r.total)+' 条'+(s.filteredTestRecords?(' · 已过滤 '+s.filteredTestRecords+' 条测试'):'')+'）</span>'+
+      '<a href="/api/export-history" download="audit-history.jsonl" title="下载完整审计历史（原始 JSONL）" class="btn btn-outline" style="height:24px;padding:0 10px;font-size:11px"><i class="bi bi-download"></i> 下载全量</a>';
+  }
   // 主权
   if(s.sovereignty){
     renderSovereigntyBox(s.sovereignty,s.daemon?s.daemon.status:null,s.auditTotal,s.todayCount);
   }
-  // 最近审计记录（10 条起步，可加载更多）
+  // 最近审计记录（10 条，全量走「下载全量」按钮）
   if(s.recent&&s.recent.length){
-    var html=renderAuditRows(s.recent);
-    var box=document.getElementById('liveAuditLog');
-    box.innerHTML=html;
-    // 总数大于已显示 → 加载更多按钮
-    window.__auditOffset=10;
-    window.__auditTotal=(s.auditTotal||0);
-    if(window.__auditTotal>10){
-      box.insertAdjacentHTML('beforeend','<div style="text-align:center;padding:8px"><button class="btn btn-outline" id="auditMoreBtn" onclick="loadMoreAudit()" style="height:26px;padding:0 14px;font-size:11px">加载更多</button></div>');
-    }
+    document.getElementById('liveAuditLog').innerHTML=renderAuditRows(s.recent);
   }
   // 趋势图：近 7 天每日违规数（API 提供 daily 数组）
   if(s.daily&&s.daily.length){
@@ -1576,6 +1543,9 @@ function loadSampleData(){
       : '<span class="audit-rule" style="color:var(--brand)">✓</span>';
     return '<div class="audit-row"><span class="audit-time">'+escapeHtml(r.time)+'</span><span class="audit-badge badge-'+r.verdict.toLowerCase()+'">'+r.verdict+'</span>'+ruleCell+'<span class="audit-task">'+escapeHtml(r.task)+'</span></div>';
   }).join('');
+  // 示例数据：计数行整合（标注示例，不显示下载按钮——示例无下载意义）
+  var cntEl=document.getElementById('auditRecordCount');
+  if(cntEl){cntEl.innerHTML='<span>示例数据 · 最近 8 条（未连接真实数据）</span>';}
   // 示例趋势：近 7 天每日 PASS/WARN/FAIL + 规则级通过率
   var samplePass=[19,17,20,13,18,11,16];
   var sampleWarn=[6,5,8,3,5,2,4];
@@ -1803,12 +1773,12 @@ function loadAiNodesData(){
           html+='<div style="font-size:11px;color:var(--text-t);margin-top:8px">共 '+total+' 个节点，仅显示前 '+showCount+' 个——完整列表见 <code style="background:var(--brand-l);padding:2px 6px;border-radius:4px">~/.sofagent/subagents/</code></div>';
         }
       }else{
-        html=emptyState('<i class="bi bi-robot"></i>','还没有部署业务 AI 节点','在 FDE 引导页复制 Prompt 开始部署，节点会自动出现在这里（~/.sofagent/subagents/）','去 FDE 引导部署',"goPage('fde')");
+        html=emptyState('<i class="bi bi-robot"></i>','还没有部署业务 AI 节点','在 FDE 引导页复制 Prompt 开始部署，节点会自动出现在这里（~/.sofagent/subagents/）','去 FDE 引导',"goPage('fde')");
       }
       list.innerHTML=html;
     })
     .catch(function(){
-      list.innerHTML=emptyState('<i class="bi bi-robot"></i>','还没有节点数据','通过 tools/dashboard/serve-dashboard.mjs 启动可看真实数据','去 FDE 引导部署',"goPage('fde')");
+      list.innerHTML=emptyState('<i class="bi bi-robot"></i>','还没有节点数据','通过 tools/dashboard/serve-dashboard.mjs 启动可看真实数据','去 FDE 引导',"goPage('fde')");
     });
 }
 
@@ -1894,7 +1864,7 @@ function loadPipelineGraph(){
       list.innerHTML=html||'<div style="grid-column:1/-1;text-align:center;color:var(--text-t);padding:12px">暂无节点</div>';
     })
     .catch(function(){
-      box.innerHTML=emptyState('<i class="bi bi-shuffle"></i>','还没有编排数据','运行过 AI 编排任务后自动生成（graph-state.json）','去 FDE 引导部署',"goPage('fde')");
+      box.innerHTML=emptyState('<i class="bi bi-shuffle"></i>','还没有编排数据','运行过 AI 编排任务后自动生成（graph-state.json）','去 FDE 引导',"goPage('fde')");
       if(updated)updated.textContent=fmtUpdatedAt();
       list.innerHTML='<div style="grid-column:1/-1;text-align:center;color:var(--text-t);font-size:12px;padding:12px">—</div>';
     });
@@ -2025,14 +1995,14 @@ function loadOntologyData(){
         html+=renderGroup('概念 Concepts', 'var(--text-s)', concepts);
         html+=renderGroup('关系 Relations', 'var(--text-s)', relations);
         if(!any){
-          html=emptyState('<i class="bi bi-map"></i>','还没有本体数据','在 FDE 引导页复制 Prompt 执行深挖阶段，或运行 create_entity / create_concept 构建','去 FDE 引导构建',"goPage('fde')");
+          html=emptyState('<i class="bi bi-map"></i>','还没有本体数据','在 FDE 引导页复制 Prompt 执行深挖阶段，或运行 create_entity / create_concept 构建','去 FDE 引导',"goPage('fde')");
         }
         entries.innerHTML=html;
       }
     })
     .catch(function(){
       if(stats)stats.innerHTML='<div style="grid-column:1/-1;text-align:center;color:var(--text-t);font-size:12px;padding:12px">未连接数据源</div>';
-      if(entries)entries.innerHTML=emptyState('<i class="bi bi-map"></i>','还没有本体数据','通过 tools/dashboard/serve-dashboard.mjs 启动可看真实数据','去 FDE 引导构建',"goPage('fde')");
+      if(entries)entries.innerHTML=emptyState('<i class="bi bi-map"></i>','还没有本体数据','通过 tools/dashboard/serve-dashboard.mjs 启动可看真实数据','去 FDE 引导',"goPage('fde')");
     });
 }
 
@@ -2294,14 +2264,19 @@ function loadWorklogData(){
         (d.workflows||[]).forEach(function(w){if(w.humanInterventions>0)ivRows.push(['<strong>'+escapeHtml(w.workflowId)+'</strong>',w.humanInterventions,'审批 / 纠正 / 回退'])});
         document.getElementById('wl-view-intervention').innerHTML=sampleFlag+wlTable(['对象','介入次数','类型'],ivRows);
       }
+      // 下载按钮：真实 worklog 数据才显示（示例/空态隐藏）
+      var dlBtn=document.getElementById('wlDownloadBtn');
+      if(dlBtn)dlBtn.style.display=isSample?'none':'inline-flex';
     });
   }).catch(function(){
-    var emptyHtml=emptyState('<i class="bi bi-bar-chart"></i>','还没有工作记录','部署 AI 节点并运行编排任务后生成（worklog.json）','去 FDE 引导部署',"goPage('fde')");
+    var dlBtn=document.getElementById('wlDownloadBtn');
+    if(dlBtn)dlBtn.style.display='none';
+    var emptyHtml=emptyState('<i class="bi bi-bar-chart"></i>','还没有工作记录','部署 AI 节点并运行编排任务后生成（worklog.json）','去 FDE 引导',"goPage('fde')");
     // 概况 tab 顶部加主动引导条（说明数据来源 + 一键跳转），其他 tab 保持空态
     var guideBar='<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--bg-s);border:1px solid var(--border);border-radius:var(--radius-s);padding:10px 14px;font-size:12px;color:var(--text-s);margin-bottom:12px">'+
       '<i class="bi bi-info-circle" style="color:var(--brand)"></i>'+
       '<span>工作记录来自 <b>编排任务</b>（AI 节点实际干活：规划 → 执行 → 审计 → 审查）。部署 AI 节点后，这里自动生成每个任务的记录。</span>'+
-      '<button class="btn btn-outline" onclick="goPage(\'fde\')" style="margin-left:auto;height:26px;padding:0 12px;font-size:12px">去 FDE 引导部署</button>'+
+      '<button class="btn btn-outline" onclick="goPage(\'fde\')" style="margin-left:auto;height:26px;padding:0 12px;font-size:12px">去 FDE 引导</button>'+
       '</div>';
     document.getElementById('wl-view-overview').innerHTML=guideBar+emptyHtml;
     document.getElementById('wl-view-tasks').innerHTML=emptyHtml;
@@ -2455,7 +2430,7 @@ function loadFdeSelfGraph(){
       if(updated)updated.textContent=fmtUpdatedAt();
     });
   }).catch(function(){
-    box.innerHTML=emptyState('<i class="bi bi-diagram-2"></i>','还没有 FDE workflow 数据','部署 FDE workflow 后读取真实节点（template.yaml）','去 FDE 引导部署',"goPage('fde')");
+    box.innerHTML=emptyState('<i class="bi bi-diagram-2"></i>','还没有 FDE workflow 数据','部署 FDE workflow 后读取真实节点（template.yaml）','去 FDE 引导',"goPage('fde')");
   });
 }
 
