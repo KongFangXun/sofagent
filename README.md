@@ -20,7 +20,7 @@
 
 **sofagent 是一个开源 FDE Agent**（MIT）——进场梳理工作流、部署 AI 节点、7×24 审计每次变更，越界能拦、出事能回滚。它以 [FDE Skill](https://clawhub.ai/kongfangxun/skills/sofagent) 形态在 ClawHub 分发（帮 SMB · OPC 的每个人成为自己业务的 FDE 的方法论 Skill），装到企业设备后以**约束层（Harness）引擎**长期运行（注入·审计·回溯·进化四种能力，daemon 为其常驻载体）。
 
-> 🏗️ **产品形态 = 一个 FDE Agent**（v1.4.0 封装形态落地）：sofagent 不是某个入口级 Agent，而是**把 Agent 内核变成 FDE Agent 的封装**——以 DeepSeek Harness 为内核（ExecutionBackend 抽象，可扩展其他 Agent 运行时），plugin + skill + MCP + dashboard + CLI 构成完整调用面，约束底座（注入·审计·回溯·进化）+ FDE 方法论构成行为层。封装后的整体就是一个 FDE Agent：进场梳理工作流、部署 AI 节点、离场后 7×24 自运转，每次干活受审计。
+> 🏗️ **产品形态 = 一个 FDE Agent**（v1.4.0 封装形态规划落地，当前 v1.3.x 为约束层 + LangGraph 内核）：sofagent 不是某个入口级 Agent，而是**把 Agent 内核变成 FDE Agent 的封装**——以 LangGraph + 约束层为内核（ExecutionBackend 抽象，可扩展其他 Agent 运行时；DeepSeek Harness 为商业侧可选内核，非开源仓库内交付，见下），plugin + skill + MCP + dashboard + CLI 构成完整调用面，约束底座（注入·审计·回溯·进化）+ FDE 方法论构成行为层。封装后的整体就是一个 FDE Agent：进场梳理工作流、部署 AI 节点、离场后 7×24 自运转，每次干活受审计。
 >
 > 🔄 **自举**：它给自己做的第一份 FDE，就是 sofagent 自己——项目自身就是一条 FDE workflow（梳理 → 节点 → 双 graph 交付），训练引擎也围绕 FDE（怎么让 FDE 更好、怎么让数据飞轮转起来）。
 
@@ -29,7 +29,7 @@
 ```mermaid
 graph TB
     subgraph S["一个 FDE Agent · sofagent"]
-        K["内核 DeepSeek Harness<br/>ExecutionBackend 抽象"]
+        K["内核 LangGraph + 约束层<br/>ExecutionBackend 抽象"]
         I["调用面 plugin + skill + MCP<br/>+ dashboard + CLI"]
         B["行为层 约束底座<br/>注入 · 审计 · 回溯 · 进化"]
         M["方法论 FDE 四阶段<br/>梳理 → 挖掘 → 交付 → 离场"]
@@ -39,7 +39,7 @@ graph TB
     N -.->|"7×24 自运转 · 越界能拦 · 出事能回滚"| N
 ```
 
-> 💾 **部署完别急着走**：单个节点的 workflow（Agent 的能力）用 LangGraph 定义好后，经 DSH（DeepSeek Harness 执行后端，商业侧可选组件，非开源仓库内交付）直接「烧」进 U 盘——U 盘就变成一个节点、一把 key，插到哪台机器哪台就能跑（拔掉零残留）。详见 [HANDBOOK · USB 一键烧录](./docs/HANDBOOK.md#近期版本新功能速览)。
+> 💾 **部署完别急着走**：单个节点的 workflow（Agent 的能力）用 LangGraph 定义好后，经 DSH（DeepSeek Harness 执行后端，商业侧可选组件，非开源仓库内交付）直接「烧」进 U 盘——U 盘就变成一个节点、一把 key，插到哪台机器哪台就能跑（拔掉零残留）。开源版默认执行后端为 LangGraph，DSH 为商业增强。详见 [HANDBOOK · USB 一键烧录](./docs/HANDBOOK.md#近期版本新功能速览)。
 
 > 🏞️ 大厂给你"水"（大模型）和"河床"（Agent 平台），但水是原水，你不敢直接喝。sofagent 是帮你把河里的水让整个城市用起来的工程——堤坝不让水泛滥、自来水厂把原水变直饮水、管网把水送到每家每户的水龙头。模型给 90% 的智力，sofagent 补 10% 的可靠执行。
 

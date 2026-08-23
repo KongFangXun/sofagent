@@ -19,7 +19,7 @@
 
 **sofagent is an open-source FDE Agent** (Forward Deployed Engineer Agent) — map workflows, deploy AI nodes, and audit every change 7×24, blocking out-of-bounds moves and rolling back breakage. It ships on [ClawHub](https://clawhub.ai/kongfangxun/skills/sofagent) as an **FDE Skill** (a methodology skill that helps everyone at SMBs and OPCs become the FDE of their own business), and once installed on enterprise devices it runs long-term as a **constraint-layer (Harness) engine** (injection · audit · rollback · evolution, with the daemon as its resident carrier).
 
-> 🏗️ **Product shape = one FDE Agent** (encapsulation lands in v1.4.0): sofagent is not a single entry-point agent, but the **wrapper that turns an agent kernel into an FDE Agent** — DeepSeek Harness as the kernel (ExecutionBackend abstraction, extensible to other agent runtimes), plugin + skill + MCP + dashboard + CLI as the full call surface, and the constraint base (injection · audit · rollback · evolution) + FDE methodology as the behavior layer. The wrapped whole is one FDE Agent: it maps workflows on-site, deploys AI nodes, and keeps running 7×24 after handoff, with every action audited.
+> 🏗️ **Product shape = one FDE Agent** (encapsulation lands in v1.4.0 as planned; current v1.3.x is constraint layer + LangGraph kernel): sofagent is not a single entry-point agent, but the **wrapper that turns an agent kernel into an FDE Agent** — LangGraph + constraint layer as the kernel (ExecutionBackend abstraction, extensible to other agent runtimes; DeepSeek Harness is an optional commercial-side kernel, not delivered in this open-source repo, see below), plugin + skill + MCP + dashboard + CLI as the full call surface, and the constraint base (injection · audit · rollback · evolution) + FDE methodology as the behavior layer. The wrapped whole is one FDE Agent: it maps workflows on-site, deploys AI nodes, and keeps running 7×24 after handoff, with every action audited.
 >
 > 🔄 **Self-bootstrapping**: its first FDE job is sofagent itself — the project itself is one FDE workflow (map → nodes → dual-graph delivery), and the training engine also orbits FDE (making FDE better, spinning the data flywheel).
 
@@ -28,7 +28,7 @@
 ```mermaid
 graph TB
     subgraph S["One FDE Agent · sofagent"]
-        K["Kernel DeepSeek Harness<br/>ExecutionBackend abstraction"]
+        K["Kernel LangGraph + constraint layer<br/>ExecutionBackend abstraction"]
         I["Call surface plugin + skill + MCP<br/>+ dashboard + CLI"]
         B["Behavior layer constraint base<br/>injection · audit · rollback · evolution"]
         M["Methodology FDE four phases<br/>map → mine → deliver → depart"]
@@ -38,7 +38,7 @@ graph TB
     N -.->|"7×24 self-running · blocks violations · rolls back breakage"| N
 ```
 
-> 💾 **Don't rush off after deployment**: once a single node's workflow (the Agent's capability) is defined with LangGraph, burn it straight onto a USB drive via DSH (DeepSeek Harness execution backend — an optional commercial-side component, not delivered in this open-source repo) — the USB drive becomes a node, a key: plug it into any machine and it just runs (unplug for zero residue). See [HANDBOOK · USB one-click burn](./docs/HANDBOOK.md#近期版本新功能速览).
+> 💾 **Don't rush off after deployment**: once a single node's workflow (the Agent's capability) is defined with LangGraph, burn it straight onto a USB drive via DSH (DeepSeek Harness execution backend — an optional commercial-side component, not delivered in this open-source repo) — the USB drive becomes a node, a key: plug it into any machine and it just runs (unplug for zero residue). The open-source default execution backend is LangGraph; DSH is a commercial enhancement. See [HANDBOOK · USB one-click burn](./docs/HANDBOOK.md#近期版本新功能速览).
 
 > 🏞️ Big vendors hand you "water" (the LLM) and a "riverbed" (the Agent platform), but the water is raw — you wouldn't dare drink it straight. sofagent is the engineering that makes the river water usable across a whole city: the dam stops floods, the treatment plant turns raw water into drinking water, and the pipe network delivers it to every faucet. The model provides 90% of the intelligence; sofagent adds the 10% of reliable execution.
 

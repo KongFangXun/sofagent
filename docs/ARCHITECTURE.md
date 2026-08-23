@@ -474,7 +474,7 @@ graph LR
 
 - 规则引擎：`@sofagent/rules`（`RulesEngine.check + aggregate`），3 条 tool-gate 规则（A1/A2/A9 移植版，`ruleType: 'tool'`）
 - 判定便捷 API：`shouldAllow(engine, ctx)` → `{ allow, reason, requireApproval }`
-- 运行时审计日志按 git 仓库隔离（**FORGE 自托管 SubAgent 路径已交付**——`FORGE/src/audit-middleware.mjs` 写 `data/audit/runtime/<repo-hash>/runtime-audit.jsonl`，`git rev-parse --show-toplevel` hash，非 git 回退 `nogit-<cwd-hash>`；**引擎侧 data-sovereignty 审计日志（`data/audit/data-sovereignty/{年}/{月}/`）仍全局，已排期 v1.3.9 复用 FORGE 方案补齐**）
+- 运行时审计日志按 git 仓库隔离（**FORGE 自托管 SubAgent 路径已交付**——`FORGE/src/audit-middleware.mjs` 写 `data/audit/runtime/<repo-hash>/runtime-audit.jsonl`，`git rev-parse --show-toplevel` hash，非 git 回退 `nogit-<cwd-hash>`；**引擎侧 data-sovereignty 审计日志（`data/audit/data-sovereignty/{年}/{月}/`）仍全局，已移排 v1.4.7 复用 FORGE 方案补齐**）
 - 每次判定同步写 `emitDecision`（决策审计 TOOL_GATE）
 - 企业 Agent 路径（node-executor）经 `wrapToolsWithGate` 补 gate——与 LOOP 路径一致
 
