@@ -6,7 +6,7 @@ export LANG=en_US.UTF-8
 export LC_ALL=en_US.UTF-8
 # sofagent-audit · 上线前验收测试（Pre-Release Acceptance Test）
 # 覆盖：FORGE + MCP + 文件系统审计 + daemon + 红队对抗 + 各版本新功能验收
-# 场景数：254 个场景（SSOT：check-test-count.sh 校验，口径=真实 scenario 调用行数，非编号最大值（S1-S321 间有 67 个历史空洞号）；v1.3.7 +4：S290-S293；v1.3.6 +8：S282-S289；v1.3.8 +11：S294-S304（含 bugfix 防回归 S303/S304）；v1.3.9 +15：S305-S319（阶段五 A 类分发 13 项 + 阶段六 coverage 补测 S318 ATTRIBUTION 归因引擎/S319 Dream Sandbox 沙盒审计）；v1.4.0 +2：S320（联邦查询跨进程 E2E——补 federation.test.ts 同进程 mock 缺口）、S321（跨平台 hook stdin 模式闭环验证））
+# 场景数：255 个场景（SSOT：check-test-count.sh 校验，口径=真实 scenario 调用行数，非编号最大值（S1-S322 间有 67 个历史空洞号）；v1.3.7 +4：S290-S293；v1.3.6 +8：S282-S289；v1.3.8 +11：S294-S304（含 bugfix 防回归 S303/S304）；v1.3.9 +15：S305-S319（阶段五 A 类分发 13 项 + 阶段六 coverage 补测 S318 ATTRIBUTION 归因引擎/S319 Dream Sandbox 沙盒审计）；v1.4.0 +3：S320（联邦查询跨进程 E2E——补 federation.test.ts 同进程 mock 缺口）、S321（跨平台 hook stdin 模式闭环验证）、S322（双设备联邦独立进程模拟——两个独立 node 进程 + 真实 TCP，补 fork 形态缺口））
 # 编号跳号豁免：S1~S293 间有 70 个空洞号（全在 S36-S202 历史段）——v1.2.x 瘦身删场景
 # 与基线重建（restore 6e542467）的既成事实，非丢失；新场景编号=当前最大+1 顺延，禁止回填空洞
 # 版本段起点见文件内「# ─── v」分组标记（grep "─── v" 定位）
@@ -2946,6 +2946,13 @@ else
 fi
 cleanup_tmp "$S321_REPO"
 $S321_OK && pass "跨平台 hook stdin 模式闭环（拦截违规/放行正常/非commit 不误伤）" || fail "跨平台 hook stdin 模式验证失败"
+
+# ─── v1.4.0：双设备联邦独立进程模拟（两个独立 node 进程 + 真实 TCP）───
+scenario 322 "v1.4.0：双设备联邦独立进程模拟——配对/跨设备查询/篡改检测/离线降级（两个独立 node 进程，补 federation-e2e.mjs fork 形态缺口）"
+S322_OK=true
+R322=$(SOFAGENT_REPO="$PROJECT_ROOT" node "$PROJECT_ROOT/FORGE/playbook/dual-device-federation.mjs" 2>&1 || true)
+echo "$R322" | grep -q "结果：双进程联邦链路完成" || S322_OK=false
+$S322_OK && pass "双设备联邦独立进程模拟全绿（配对/跨设备查询/篡改检测/离线降级 4 场景）" || fail "双设备联邦独立进程模拟失败: $(echo "$R322" | grep -E '❌|失败' | head -3 || true)"
 
 echo -e "  验收测试结果：${GREEN}$PASSED 通过${NC} / ${RED}$FAILED 失败${NC} / 共 $((PASSED + FAILED))"
 # 🔴 v1.3.1 run-10 教训：无色码纯文本汇总行供 driver grep（EXIT: 0=全PASS / <N>=N失败）
