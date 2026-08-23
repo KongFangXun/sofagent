@@ -744,6 +744,22 @@ install_skill_unified() {
         fi
         ok "  Gemini CLI 薄挂载：${HOME}/.gemini/GEMINI.md + Skill symlink ${gem_skills}"
         ;;
+      # v1.4.0：Codex 薄挂载——AGENTS.md 是 Codex 四层加载链挂载点（L1 SKILL.md → L2 fde.md）
+      codex)
+        local codex_dir="${HOME}/.codex"
+        mkdir -p "$codex_dir" 2>/dev/null || true
+        if [ -f "${SCRIPT_DIR}/AGENTS.md" ]; then
+          cp "${SCRIPT_DIR}/AGENTS.md" "${codex_dir}/AGENTS.md"
+        fi
+        ok "  Codex 薄挂载：~/.codex/AGENTS.md（四层加载链挂载点）+ fde.md（FDE 步骤写入）"
+        ;;
+      # v1.4.0：Hermes 薄挂载（fde.md 已由 FDE 步骤写入 ~/.hermes/fde.md）
+      hermes)
+        local hermes_dir="${HOME}/.hermes"
+        mkdir -p "${hermes_dir}/skills" 2>/dev/null || true
+        ln -sfn "$SOFAGENT_HOME/skill" "${hermes_dir}/skills/sofagent" 2>/dev/null || true
+        ok "  Hermes 薄挂载：Skill symlink（fde.md 已由 FDE 步骤写入 ~/.hermes/fde.md）"
+        ;;
       *)
         ok "  Skill 已安装到统一路径：$SOFAGENT_HOME/skill/（平台无关安装，未修改任何平台目录）"
         ;;
@@ -751,8 +767,63 @@ install_skill_unified() {
   fi
 }
 
+# ════════════════════════════════════════
+# MCP 自动配置（v1.4.0）——装完即连，不用手动在各平台添加 MCP server
+# ════════════════════════════════════════
+# 写 JSON 格式 MCP 配置（workbuddy / claude / cursor）——merge 不覆盖用户已有 server
+write_mcp_json() {
+  local cfg="$1" node_bin="$2" server_js="$3"
+  mkdir -p "$(dirname "$cfg")" 2>/dev/null || true
+  MCP_CFG="$cfg" MCP_NODE="$node_bin" MCP_SERVER="$server_js" "$node_bin" -e '
+    const fs = require("fs");
+    const cfg = process.env.MCP_CFG;
+    let obj = {};
+    if (fs.existsSync(cfg)) { try { obj = JSON.parse(fs.readFileSync(cfg, "utf8")); } catch { obj = {}; } }
+    obj.mcpServers = obj.mcpServers || {};
+    obj.mcpServers.sofagent = { command: process.env.MCP_NODE, args: [process.env.MCP_SERVER], disabled: false };
+    fs.writeFileSync(cfg, JSON.stringify(obj, null, 2) + "\n");
+  '
+  ok "  MCP 已配置：$cfg（sofagent → $server_js）"
+}
+
+# 写 TOML 格式 MCP 配置（codex）——追加 [mcp_servers.sofagent] 段，幂等
+write_mcp_toml() {
+  local cfg="$1" node_bin="$2" server_js="$3"
+  mkdir -p "$(dirname "$cfg")" 2>/dev/null || true
+  if grep -q '\[mcp_servers\.sofagent\]' "$cfg" 2>/dev/null; then
+    ok "  MCP 已配置（存在）：$cfg"
+    return
+  fi
+  {
+    echo ""
+    echo "[mcp_servers.sofagent]"
+    echo "command = \"$node_bin\""
+    echo "args = [\"$server_js\"]"
+  } >> "$cfg"
+  ok "  MCP 已配置：$cfg（[mcp_servers.sofagent] → $server_js）"
+}
+
+install_mcp_config() {
+  local mcp_server_js="${SCRIPT_DIR}/engine/mcp/dist/mcp-server.js"
+  if [ ! -f "$mcp_server_js" ]; then
+    warn "  mcp-server.js 缺失（$mcp_server_js）——跳过 MCP 自动配置（需先 npm run build）"
+    return
+  fi
+  local node_bin
+  node_bin="$(command -v node 2>/dev/null || echo node)"
+
+  case "$PLATFORM" in
+    workbuddy) write_mcp_json "$HOME/.workbuddy/mcp.json" "$node_bin" "$mcp_server_js" ;;
+    codex)     write_mcp_toml "$HOME/.codex/config.toml" "$node_bin" "$mcp_server_js" ;;
+    claude)    write_mcp_json "$HOME/.claude/mcp.json" "$node_bin" "$mcp_server_js" ;;
+    cursor)    write_mcp_json "$HOME/.cursor/mcp.json" "$node_bin" "$mcp_server_js" ;;
+    *)         return ;;
+  esac
+}
+
 install_cli
 install_skill_unified
+install_mcp_config
 
 # 安装完整性自检——必须在 install_cli 之后（bin/sofagent 由 install_cli 创建）
 verify_component_integrity

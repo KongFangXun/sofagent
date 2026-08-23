@@ -1,14 +1,14 @@
 // execution-backend.test.ts · v1.3.4 增量 · ExecutionBackend 接口 + 工厂函数单测
 //
 // 覆盖：
-// 1. createExecutionBackend() 工厂——DSH rc 版本不加载，fallback 到 LangGraph
+// 1. createExecutionBackend() 工厂——DSH rc 版本默认走 CLI 桥接（不等正式版）
 // 2. LangGraph 后端——默认 stateModifier（SystemMessage 注入）路径
 // 3. LangGraph 后端——自定义 stateModifierFactory（FORGE driver 回调）路径
 // 4. LangGraph 后端——streamHandler 硬熔断路径
 // 5. mock backend——execute 接口契约验证
 //
-// ⚠️ DSH 已上架 @deepseek-ai/dsh@0.1.0-rc.6，但 rc 版本被版本守卫拦截（不走骨架）。
-//    正式版发布后补真实 DSH 加载测试。
+// v1.4.0：DSH rc 期默认启用（CLI 桥接，headless + 自带 fs/bash 工具链），
+//    正式版发布后自动切 Cordis 内嵌（库内集成 + sofagent 工具注入）。
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { mkdtempSync, rmSync, writeFileSync, mkdirSync } from 'node:fs';
@@ -31,15 +31,14 @@ describe('ExecutionBackend 接口 + 工厂函数', () => {
   });
 
   describe('createExecutionBackend 工厂', () => {
-    it('DSH rc 版本被版本守卫拦截时 fallback 到 LangGraph', async () => {
-      // DSH @deepseek-ai/dsh@0.1.0-rc.6 已上架但 rc 版本被版本守卫拦截
-      // （/rc|beta|alpha|pre/i 正则匹配 version 字段），createExecutionBackend 应降级到 LangGraph
+    it('DSH rc 版本默认启用（CLI 桥接，不等正式版）', async () => {
+      // v1.4.0：不等 DSH 正式版——rc 期默认走 CLI 桥接（headless + 自带 fs/bash 工具链）。
+      // @deepseek-ai/dsh 在 dependencies（^0.1.1-rc.2），createExecutionBackend 应返回 dsh。
       const { createExecutionBackend } = await import('../execution-backend.js');
       const backend = await createExecutionBackend();
 
-      // LangGraph 已安装（sofagent 依赖），应成功加载
       expect(backend).toBeDefined();
-      expect(backend.name).toBe('langgraph');
+      expect(backend.name).toBe('dsh');
     });
 
     it('工厂返回的后端实现了 execute 方法', async () => {

@@ -19,17 +19,15 @@
 // bin: lib/bin.js / 无 exports）——import('@deepseek-ai/dsh') 拿不到库入口，Cordis 内嵌
 // 路线走不通；但 DSH 官方提供 `dsh --profile headless "<task>"` 单任务执行（打印最终
 // assistant 文本后退出），语义与 ExecutionBackend.execute 对齐。
-// 定位（v1.3.9 拍板）：CLI 桥接 = 当前正式执行后端形态（不等 DSH 正式版）。
-// SOFAGENT_FORCE_DSH=1 显式启用 DSH（spawn headless 子进程）；不设 env 默认 LangGraph
-// （工具任务安全优先——CLI 桥接无工具面，工具类任务暂走 LangGraph）。工具面补齐
-// （库内集成 dsh-base 全套核心服务 + 注入 sofagent 工具）排下版开发项；DSH 包正式版
-// 发布后 Cordis 内嵌自动生效，桥接保留为轻量形态。
+// 定位（v1.4.0 拍板）：CLI 桥接 = 当前正式执行后端形态（不等 DSH 正式版）。
+// DSH 默认启用（spawn headless 子进程，自带 fs/bash 工具链已投产验证）；rc 期
+// 默认走 CLI 桥接，正式版发布后自动切 Cordis 内嵌（库内集成 + 注入 sofagent 工具）。
+// LangGraph 保留为 fallback（DSH 包未安装）+ 编排层（StateGraph DAG 结构永远不换）。
 // 守卫策略（两层）：
-// - 层 1（本文件模块守卫）：cordis 可 import 且导出 Context 构造器 + dsh 非 rc——任一
-//   不满足即 fallback LangGraph（force 时改走 CLI 桥接）。
+// - 层 1（本文件模块守卫）：cordis 可 import 且导出 Context 构造器 + dsh 非 rc——
+//   rc 期走 CLI 桥接（默认）；正式版走库内集成；包未安装 fallback LangGraph。
 // - 层 2（dsh-backend 能力守卫）：execute 时探测 ctx 的 agent 驱动服务面，
-//   缺失抛 DshCapabilityMissingError → execute 消费方降级。rc 期 dsh 守卫拦截，
-//   正式版发布后自动通过，无需改代码。
+//   缺失抛 DshCapabilityMissingError → execute 消费方降级。
 
 /**
  * 执行后端契约——编排层通过这个接口调用执行层。
@@ -214,18 +212,18 @@ export async function createExecutionBackend(options: {
  *    但 rc 版 API 不做生产承诺），正式版发布后自动通过。
  */
 async function tryLoadDshBackend(): Promise<ExecutionBackend | null> {
-  // v1.3.9：SOFAGENT_FORCE_DSH=1 显式放行 rc 期 DSH——走 CLI 桥接（headless 单任务执行）。
-  // 默认行为不变（rc 仍拦截→LangGraph）；force 只在包已安装且可解析时生效。
-  const forceDsh = process.env.SOFAGENT_FORCE_DSH === '1';
+  // v1.4.0：不等 DSH 正式版——rc 期默认走 CLI 桥接（headless 单任务 + DSH 自带
+  // fs/bash 工具链，已投产验证：文本/fs/bash 全通，git 审计任务 8.6s 单轮）。
+  // 正式版发布后自动切 Cordis 内嵌（库内集成 + sofagent 工具注入），无需改代码。
   try {
     // @ts-ignore — Cordis 类型未安装（不进 dependencies，运行时动态 import）
     const cordisMod = await import('@deepseek-ai/cordis');
     if (!cordisMod || typeof cordisMod.Context !== 'function') {
-      // cordis 包存在但导出面不符（框架大版本变化）——force 时走 CLI 桥接
-      return forceDsh ? loadDshCliBackend() : null;
+      // cordis 包存在但导出面不符（框架大版本变化）——走 CLI 桥接
+      return loadDshCliBackend();
     }
 
-    // 配套 DSH 包版本守卫：rc/beta/alpha/pre 拦截（正式版自动放开）
+    // 配套 DSH 包版本守卫：rc/beta/alpha/pre → 走 CLI 桥接（不等正式版）
     // @ts-ignore — dsh 类型未安装
     const dshMod = (await import('@deepseek-ai/dsh').catch(() => null)) as {
       version?: string;
@@ -234,8 +232,8 @@ async function tryLoadDshBackend(): Promise<ExecutionBackend | null> {
     } | null;
     const dshVersion = dshMod?.version ?? dshMod?.VERSION ?? 'rc';
     if (/(rc|beta|alpha|pre)/i.test(dshVersion)) {
-      // rc 期守卫拦截——正式版发布后自动通过；force 时走 CLI 桥接
-      return forceDsh ? loadDshCliBackend() : null;
+      // rc 期——默认走 CLI 桥接（正式版发布后自动切库内集成）
+      return loadDshCliBackend();
     }
 
     const dshBackendMod = await import('./execution-backends/dsh-backend.js');
@@ -251,8 +249,8 @@ async function tryLoadDshBackend(): Promise<ExecutionBackend | null> {
       agentPlugin,
     );
   } catch {
-    // cordis 包未安装或 import 失败——force 时尝试 CLI 桥接，失败仍 fallback LangGraph
-    return forceDsh ? loadDshCliBackend() : null;
+    // cordis 包未安装或 import 失败——尝试 CLI 桥接，失败仍 fallback LangGraph
+    return loadDshCliBackend();
   }
 }
 
@@ -264,7 +262,7 @@ async function loadDshCliBackend(): Promise<ExecutionBackend | null> {
   try {
     const { createDshCliBackend } = await import('./execution-backends/dsh-backend.js');
     const backend = createDshCliBackend();
-    console.log('[sofagent] 执行后端：DSH CLI 桥接（headless 单任务，SOFAGENT_FORCE_DSH=1 rc 期放行）');
+    console.log('[sofagent] 执行后端：DSH CLI 桥接（headless 单任务 + 自带 fs/bash 工具链，rc 期默认启用）');
     return backend;
   } catch (e) {
     console.error(`[sofagent] DSH CLI 桥接不可用（${(e as Error).message}）——降级 LangGraph`);
