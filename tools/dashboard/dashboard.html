@@ -46,16 +46,15 @@ a:hover{text-decoration:none} /* 全站 hover 无下划线（统一）——按�
 .tab-inline .nav-item{border-bottom:none;margin-bottom:0;padding:5px 12px;border-radius:4px;font-size:13px}
 .tab-inline .nav-item:hover{color:var(--text)}
 .tab-inline .nav-item.active{color:var(--brand);font-weight:600;border-bottom:none}
-/* 点击反馈（统一按下微缩——所有可点按钮同一 click 样式） */
-.btn:active,.btn-outline:active,.btn-primary:active,.help-btn:active,.star-btn:active,.copy-btn:active,.seg-btn:active,.seg-refresh:active,.nav-item:active,.qs-item:active,.rule-chip:active,.doc-item:active,.fde-stage:active{transform:scale(.96)}
+/* 点击反馈（统一：按下微缩 + 变蓝，参考「刷新」按钮；fde-stage 整行不参与防偏移） */
+.btn:active,.btn-outline:active,.btn-primary:active,.help-btn:active,.star-btn:active,.copy-btn:active,.seg-btn:active,.seg-refresh:active,.nav-item:active,.qs-item:active,.rule-chip:active,.doc-item:active{transform:scale(.96);border-color:var(--brand);color:var(--brand)}
 
 .header-right{display:flex;gap:6px;justify-content:flex-end}
 /* header 按钮（统一直角 6px，非跑道形） */
-/* 按钮共用外观：star-btn / help-btn 与 btn-outline 同款（高度差异覆盖） */
-.btn-outline,.help-btn,.star-btn{background:var(--card);border-color:var(--border);color:var(--text-s)}
+/* 按钮共用外观：star-btn / help-btn 与 btn-outline 同款（高度差异覆盖）——border-color 依赖 .btn 基础在 CSS 后方生效 */
 .help-btn,.star-btn{padding:6px 14px;height:auto;font-size:13px}
 .star-btn{text-decoration:none}
-.star-btn:hover,.help-btn:hover,.btn-outline:hover{border-color:var(--text-t);color:var(--text)}
+.star-btn:hover,.help-btn:hover,.btn-outline:hover,.btn-primary:hover{border-color:var(--text);color:var(--text)}
 .star-btn svg{width:14px;height:14px;flex-shrink:0}
 .star-count{background:var(--brand-l);color:var(--brand);font-size:11px;padding:1px 6px;border-radius:8px;font-weight:700}
 
@@ -203,23 +202,21 @@ a:hover{text-decoration:none} /* 全站 hover 无下划线（统一）——按�
 .prompt-box code{display:block;font-family:var(--mono);font-size:12px;color:var(--text-s);white-space:pre-wrap;word-break:break-all;line-height:1.5}
 .prompt-action{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
 .prompt-label{font-size:11px;color:var(--text-t);font-weight:500}
-.copy-btn{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);color:#C9D1D9;padding:3px 10px;border-radius:4px;font-size:11px;cursor:pointer;font-family:var(--font);display:inline-flex;align-items:center;gap:4px;transition:all .15s}
-.copy-btn:hover{background:rgba(255,255,255,.12)}
+.copy-btn{background:var(--card);border:1px solid var(--border);color:var(--text-s);padding:3px 10px;border-radius:4px;font-size:11px;cursor:pointer;font-family:var(--font);display:inline-flex;align-items:center;gap:4px;transition:all .15s}
+.copy-btn:hover{border-color:var(--text);color:var(--text)}
 .copy-btn.copied{background:var(--brand);border-color:var(--brand);color:#fff}
 .copy-btn svg{width:12px;height:12px}
-.copy-btn.light{background:var(--card);border:1px solid var(--border);color:var(--text-s)}
-.copy-btn.light:hover{border-color:var(--text-t);color:var(--text)}
-/* prompt-box 内的复制按钮适配浅色 */
-.prompt-box .copy-btn{background:var(--card);border:1px solid var(--border);color:var(--text-s)}
-.prompt-box .copy-btn:hover{background:none;border-color:var(--text-t);color:var(--text)}
+/* prompt-box 内复制按钮（基础已浅色，无需单独适配——保留 copied 态） */
 .prompt-box .copy-btn.copied{background:var(--brand);border-color:var(--brand);color:#fff}
 
 /* ===== 按钮体系（统一变体，shadcn 风格 · 全白系简洁）===== */
 /* help-btn/star-btn 继承 .btn 基础（HTML 无 class=btn，选择器扩展覆盖） */
 .btn,.help-btn,.star-btn{display:inline-flex;align-items:center;justify-content:center;gap:5px;height:28px;padding:0 14px;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;font-family:var(--font);border:1px solid transparent;transition:all .15s;white-space:nowrap;line-height:1}
 .btn svg{width:13px;height:13px}
+/* 外观（必须在 .btn 基础之后——border-color 覆盖基础 border:transparent） */
+.btn-outline,.help-btn,.star-btn{background:var(--card);border-color:var(--border);color:var(--text-s)}
 .btn-primary{background:var(--card);border-color:var(--border);color:var(--text)}
-.btn-primary:hover{border-color:var(--text-t);color:var(--text)}
+.btn-primary:hover{border-color:var(--text);color:var(--text)}
 .btn-outline{background:var(--card);border-color:var(--border);color:var(--text-s)}
 .btn-outline:hover{border-color:var(--text-t);color:var(--text)}
 .btn-ghost{background:transparent;border-color:transparent;color:var(--text-s)}
@@ -705,29 +702,29 @@ a:hover{text-decoration:none} /* 全站 hover 无下划线（统一）——按�
       <div class="fde-stage">
         <div class="fde-num">1</div>
         <div class="fde-content"><div class="fde-title">进场 · 确定场景 + 盘点平台 + 建档</div><div class="fde-desc">摸清企业底子：业务、协同平台、业务系统、数据可达性。</div></div>
-        <button class="btn btn-outline" onclick="copyPrompt(this, '作为 sofagent FDE Agent 进入进场阶段。先了解我的企业：名称、行业、规模、主要业务。然后盘点协同平台和业务系统，帮我建企业画像。')">复制</button>
+        <button class="copy-btn" onclick="copyPrompt(this, '作为 sofagent FDE Agent 进入进场阶段。先了解我的企业：名称、行业、规模、主要业务。然后盘点协同平台和业务系统，帮我建企业画像。')">复制</button>
       </div>
       <div class="fde-stage">
         <div class="fde-num">2</div>
         <div class="fde-content"><div class="fde-title">深挖 · 五要素 + 本体数据</div><div class="fde-desc">梳理输入/输出/负责人/耗时/痛点，构建 ontology 本体数据。</div></div>
-        <button class="btn btn-outline" onclick="copyPrompt(this, '进入 FDE 深挖阶段。帮我梳理关键岗位的业务流：输入是什么、输出是什么、谁负责、耗多少时间、痛点在哪。然后构建本体数据。')">复制</button>
+        <button class="copy-btn" onclick="copyPrompt(this, '进入 FDE 深挖阶段。帮我梳理关键岗位的业务流：输入是什么、输出是什么、谁负责、耗多少时间、痛点在哪。然后构建本体数据。')">复制</button>
       </div>
       <div class="fde-stage">
         <div class="fde-num">3</div>
         <div class="fde-content"><div class="fde-title">量化 · 三问判定 + 价值计算</div><div class="fde-desc">三问判定类型，计算年节省金额。
           <span class="node-type nt-auto" style="margin-left:4px">AI 自主</span><span class="node-type nt-ai">AI 辅助</span><span class="node-type nt-human">人工确认</span></div>
         </div>
-        <button class="btn btn-outline" onclick="copyPrompt(this, '进入 FDE 量化阶段。对每个业务流节点做三问判定：能全自动吗？需要人确认吗？适合 AI 辅助吗？然后计算每个 AI 节点的年节省金额。')">复制</button>
+        <button class="copy-btn" onclick="copyPrompt(this, '进入 FDE 量化阶段。对每个业务流节点做三问判定：能全自动吗？需要人确认吗？适合 AI 辅助吗？然后计算每个 AI 节点的年节省金额。')">复制</button>
       </div>
       <div class="fde-stage">
         <div class="fde-num">4</div>
         <div class="fde-content"><div class="fde-title">交付 · 三层实体 + 部署引导</div><div class="fde-desc">文档层 + Skill 层 + 运行层，部署到企业平台。</div></div>
-        <button class="btn btn-outline" onclick="copyPrompt(this, '进入 FDE 交付阶段。帮我生成三层交付物：文档层操作手册、Skill 层行为约束、运行层可执行节点。然后引导部署。')">复制</button>
+        <button class="copy-btn" onclick="copyPrompt(this, '进入 FDE 交付阶段。帮我生成三层交付物：文档层操作手册、Skill 层行为约束、运行层可执行节点。然后引导部署。')">复制</button>
       </div>
       <div class="fde-stage">
         <div class="fde-num">5</div>
         <div class="fde-content"><div class="fde-title">离场 · 自检 + 观察期 + 确认</div><div class="fde-desc">审计自检、反思沉淀、设置观察期。</div></div>
-        <button class="btn btn-outline" onclick="copyPrompt(this, '进入 FDE 离场阶段。做自检清单：审计有没有遗漏、反思有没有沉淀、知识库有没有更新。然后设置观察期。')">复制</button>
+        <button class="copy-btn" onclick="copyPrompt(this, '进入 FDE 离场阶段。做自检清单：审计有没有遗漏、反思有没有沉淀、知识库有没有更新。然后设置观察期。')">复制</button>
       </div>
     </div>
   </div>
