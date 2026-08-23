@@ -568,6 +568,13 @@ a:hover{text-decoration:underline}
       </span>
     </div>
     <div class="section-body">
+      <!-- 状态点图例：灰=停止/蓝=运行/黄=警告/红=错误 -->
+      <div style="display:flex;align-items:center;gap:14px;font-size:11px;color:var(--text-t);margin-bottom:8px;flex-wrap:wrap">
+        <span style="display:inline-flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:50%;background:var(--brand);display:inline-block"></span>运行中</span>
+        <span style="display:inline-flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:50%;background:var(--amber);display:inline-block"></span>警告</span>
+        <span style="display:inline-flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:50%;background:var(--red);display:inline-block"></span>错误</span>
+        <span style="display:inline-flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:50%;background:var(--text-t);display:inline-block"></span>停止</span>
+      </div>
       <div class="chart-box" id="graphBox">
         <div class="skeleton" style="height:60px"></div>
       </div>
@@ -866,6 +873,7 @@ a:hover{text-decoration:underline}
       <a href="https://github.com/KongFangXun/sofagent/blob/main/engine/mcp/src/tool-registry.ts" target="_blank" class="btn btn-outline">tool-registry →</a>
     </div>
     <div class="section-body">
+      <div style="font-size:11px;color:var(--text-t);margin-bottom:8px">静态能力清单（工具注册表）——<strong>连接/断开状态在 WorkBuddy 连接器</strong>管理，不在此页展示。</div>
       <div class="mcp-grid" id="mcpList">
         <div class="skeleton" style="grid-column:1/-1;height:50px"></div>
       </div>
@@ -2158,6 +2166,8 @@ function costCell(cost,key,costWarns){
 }
 
 function loadWorklogData(){
+  // 5s 自动刷新会重渲染工作记录——先记录滚动位置，渲染完成后恢复（不跳顶）
+  window.__wlScrollTop=document.scrollTop;
   var sample={
     agents:[
       {agentId:'demo-agent',tasks:[
@@ -2288,10 +2298,13 @@ function loadWorklogData(){
       // 下载按钮：真实 worklog 数据才显示（示例/空态隐藏）
       var dlBtn=document.getElementById('wlDownloadBtn');
       if(dlBtn)dlBtn.style.display=isSample?'none':'inline-flex';
+      // 恢复滚动位置（5s 刷新不跳顶）
+      if(window.__wlScrollTop>0)window.scrollTo(0,window.__wlScrollTop);
     });
   }).catch(function(){
     var dlBtn=document.getElementById('wlDownloadBtn');
     if(dlBtn)dlBtn.style.display='none';
+    if(window.__wlScrollTop>0)window.scrollTo(0,window.__wlScrollTop);
     var emptyHtml=emptyState('<i class="bi bi-bar-chart"></i>','还没有工作记录','部署 AI 节点并运行编排任务后生成（worklog.json）','去 FDE 引导',"goPage('fde')");
     // 概况 tab 顶部加主动引导条（说明数据来源 + 一键跳转），其他 tab 保持空态
     var guideBar='<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--bg-s);border:1px solid var(--border);border-radius:var(--radius-s);padding:10px 14px;font-size:12px;color:var(--text-s);margin-bottom:12px">'+
@@ -2511,6 +2524,7 @@ function openHelp(page){
   var overlay=document.getElementById('helpOverlay');
   if(!overlay)return;
   overlay.style.display='flex';
+  document.body.style.overflow='hidden'; // 模态框标准：锁背景滚动
   // 联动：不传参时跟随当前页面（cockpit/resources 无对应教学页 → 默认业务流）
   var cur=page||window.__currentPage||'workflow';
   if(cur!=='workflow'&&cur!=='ontology'&&cur!=='knowledge'&&cur!=='fde')cur='workflow';
@@ -2519,6 +2533,7 @@ function openHelp(page){
 function closeHelp(){
   var overlay=document.getElementById('helpOverlay');
   if(overlay)overlay.style.display='none';
+  document.body.style.overflow=''; // 恢复背景滚动
 }
 function switchHelpTab(page){
   document.querySelectorAll('.nav-item[data-help]').forEach(function(b){
