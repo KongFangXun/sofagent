@@ -170,9 +170,9 @@ function aggregateSummary() {
       return { name, code, count: parseInt(count || 0, 10) };
     });
 
-    // ── 最近 5 条审计（bash render_rules 同一 jq + 规则码）──
+    // ── 最近 10 条审计（bash render_rules 同一 jq + 规则码）──
     const recentRaw = runJq(
-      'sort_by(.timestamp) | .[-5:] | reverse[]' +
+      'sort_by(.timestamp) | .[-10:] | reverse[]' +
       ' | [(.ruleResults[]? | select(.status == "FAIL" or .status == "WARN") | "A" + (.number | tostring))] as $violated' +
       ' | "\\(.timestamp[5:16])\t\\(.exitCode)\t\\($violated[0] // "")\t\\((.task // .commitMsg // "")[0:40])"',
       filteredRaw

@@ -40,6 +40,13 @@ a:hover{text-decoration:underline}
 .nav-item{padding:10px 14px;font-size:14px;color:var(--text-s);cursor:pointer;border:none;background:transparent;font-family:var(--font);font-weight:500;border-bottom:2px solid transparent;margin-bottom:-2px;transition:color .15s,border-color .15s;white-space:nowrap}
 .nav-item:hover{color:var(--text)}
 .nav-item.active{color:var(--brand);border-bottom-color:var(--brand);font-weight:600}
+/* 页内 tab（工作明细/帮助）：active 品牌蓝文字，无下划线（与顶部导航区分） */
+.tab-inline{display:inline-flex;gap:2px;align-items:center;flex-wrap:wrap}
+.tab-inline .nav-item{border-bottom:none;margin-bottom:0;padding:5px 12px;border-radius:4px;font-size:13px}
+.tab-inline .nav-item:hover{color:var(--text)}
+.tab-inline .nav-item.active{color:var(--brand);font-weight:600;border-bottom:none}
+/* 点击反馈（统一按下微缩） */
+.btn:active,.seg-refresh:active,.nav-item:active,.qs-item:active,.rule-chip:active{transform:scale(.96)}
 
 .header-right{display:flex;gap:6px;justify-content:flex-end}
 /* header 按钮（统一直角 6px，非跑道形） */
@@ -419,6 +426,7 @@ a:hover{text-decoration:underline}
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;display:block"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><line x1="12" y1="11" x2="12" y2="17"/><polyline points="9 14 12 17 15 14"/></svg>
     </button>
     <span style="margin-left:auto"></span>
+    <span id="lastRefresh" style="color:var(--text-t);font-size:11px"></span>
     <button class="seg-btn seg-refresh" onclick="manualRefresh()" title="立即刷新（每 5 秒自动刷新）" aria-label="立即刷新">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;display:block"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><polyline points="21 3 21 9 15 9"/></svg>
     </button>
@@ -460,32 +468,24 @@ a:hover{text-decoration:underline}
   <div class="section">
     <div class="section-header"><div class="section-title"><span class="dot-emoji"><i class="bi bi-bar-chart"></i></span>工作明细（worklog）</div>
       <span style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-        <span class="nav" style="justify-content:flex-start">
+        <span class="tab-inline">
           <button class="nav-item active" id="wl-tab-overview" onclick="wlTab('overview')">概况</button>
-          <button class="nav-item" id="wl-tab-weekly" onclick="wlTab('weekly')">周报</button>
-          <button class="nav-item" id="wl-tab-monthly" onclick="wlTab('monthly')">月报</button>
-          <button class="nav-item" id="wl-tab-intervention" onclick="wlTab('intervention')">介入</button>
           <button class="nav-item" id="wl-tab-audit" onclick="wlTab('audit')">审计</button>
+          <button class="nav-item" id="wl-tab-intervention" onclick="wlTab('intervention')">人工介入</button>
+          <button class="nav-item" id="wl-tab-weekly" onclick="wlTab('weekly')">周报</button>
         </span>
       </span>
     </div>
     <div class="section-body">
       <div id="wl-view-overview"></div>
-      <div id="wl-view-weekly" style="display:none"></div>
-      <div id="wl-view-monthly" style="display:none"></div>
-      <div id="wl-view-intervention" style="display:none"></div>
       <div id="wl-view-audit" style="display:none">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-          <span id="auditRecordCount" style="font-size:11px;color:var(--text-t)"></span>
-          <a href="/api/export-history" download="audit-history.jsonl" title="下载完整审计历史（原始 JSONL）" class="btn btn-outline" style="height:26px;padding:0 10px;font-size:11px">
-            <svg width="11" height="11" viewBox="0 0 16 16" fill="none"><path d="M8 1.5v9M8 10.5 4.5 7M8 10.5 11.5 7M2.5 13.5h11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            全量历史
-          </a>
-        </div>
+        <div id="auditRecordCount" style="font-size:11px;color:var(--text-t);margin-bottom:8px"></div>
         <div class="audit-log" id="liveAuditLog">
           <div style="color:var(--text-t);font-size:12px;text-align:center;padding:20px">加载中...</div>
         </div>
       </div>
+      <div id="wl-view-intervention" style="display:none"></div>
+      <div id="wl-view-weekly" style="display:none"></div>
     </div>
   </div>
 
@@ -931,7 +931,7 @@ build → acceptance → regression → coverage，
   <div class="help-panel" role="dialog" aria-label="帮助与支持">
     <div class="help-header">
       <div class="help-title">帮助与支持</div>
-      <div class="nav help-tabs" id="helpTabs">
+      <div class="tab-inline help-tabs" id="helpTabs">
         <button class="nav-item" data-help="workflow" onclick="switchHelpTab('workflow')">业务流</button>
         <button class="nav-item" data-help="ontology" onclick="switchHelpTab('ontology')">本体图谱</button>
         <button class="nav-item" data-help="knowledge" onclick="switchHelpTab('knowledge')">知识库</button>
@@ -1185,6 +1185,7 @@ async function loadLiveData(){
     if(summary&&summary.rules){
       liveDataConnected=true;
       updateDataStatus(true);
+      document.getElementById('lastRefresh').textContent=fmtUpdatedAt();
       renderSummaryData(summary);
       loadWorklogData();
       return;
@@ -1333,7 +1334,7 @@ function renderSummaryData(s){
  * 图内自洽：绿线 = 1 − 黄柱÷蓝柱，与左上角"规则通过率"同源 */
 function renderDailyTrend(days){
   var maxCount=Math.max.apply(null,days.map(function(d){return d.ruleAll||0}).concat([1]));
-  var W=920,padL=44,padR=44,top=24,base=142;
+  var W=920,padL=44,padR=44,top=14,base=152;
   var bw=(W-padL-padR)/days.length;
   var svg='';
   // 左轴：次数 0-maxCount（4 格）
@@ -1355,11 +1356,12 @@ function renderDailyTrend(days){
     var issues=checks-(d.rulePass||0);
     var rate=checks>0?Math.round((d.rulePass||0)*100/checks):0;
     var cx=padL+i*bw+bw/2;
-    var barW=Math.min(bw*0.26,34);
-    var gap=4;
+    // 柱状缩窄 + 拉高（填满半宽卡片）
+    var barW=Math.min(bw*0.16,20);
+    var gap=6;
     // 双柱：审计次数(品牌淡蓝)；问题次数(灰)（蓝读主数据，灰读报警量）
-    var h1=Math.max(2,checks/maxCount*(base-top));
-    var h2=issues>0?Math.max(2,issues/maxCount*(base-top)):0;
+    var h1=Math.max(3,checks/maxCount*(base-top));
+    var h2=issues>0?Math.max(3,issues/maxCount*(base-top)):0;
     svg+='<rect x="'+(cx-barW-gap/2)+'" y="'+(base-h1)+'" width="'+barW+'" height="'+h1+'" rx="3" fill="var(--brand-l)"/>';
     if(h2>0)svg+='<rect x="'+(cx+gap/2)+'" y="'+(base-h2)+'" width="'+barW+'" height="'+h2+'" rx="3" fill="var(--text-t)"/>';
     svg+='<text x="'+(cx-barW/2-gap/2)+'" y="'+(base-h1-5)+'" text-anchor="middle" font-size="9" fill="var(--brand)">'+checks+'</text>';
@@ -2104,7 +2106,7 @@ function fmtCost(c){
 function fmtMs(ms){if(ms===null||ms===undefined)return '—';if(ms<1000)return ms+'ms';if(ms<60000)return (ms/1000).toFixed(1)+'s';return (ms/60000).toFixed(1)+'min'}
 
 function wlTab(tab){
-  ['overview','weekly','monthly','intervention','audit'].forEach(function(t){
+  ['overview','audit','intervention','weekly'].forEach(function(t){
     document.getElementById('wl-tab-'+t).classList.toggle('active',t===tab);
     document.getElementById('wl-view-'+t).style.display=t===tab?'':'none';
   });
@@ -2222,24 +2224,6 @@ function loadWorklogData(){
         return [escapeHtml(w.week),w.activity,w.auditPassRate!==null&&w.auditPassRate!==undefined?(w.auditPassRate*100).toFixed(0)+'%':'—',fmtCost(w.costUsd)];
       });
       document.getElementById('wl-view-weekly').innerHTML=sampleFlag+wlTable(['周','活跃度','审计成功率','成本'],wkRows);
-
-      /* 月报：近 4 周聚合（活跃度求和 · 成本求和 · 成功率平均） */
-      var mWeeks=(d.weeklyTrend||[]).slice(-4);
-      if(mWeeks.length){
-        var mA=0,mC=0,mR=0,mN=0;
-        mWeeks.forEach(function(w){mA+=w.activity||0;mC+=w.costUsd||0;if(w.auditPassRate!=null){mR+=w.auditPassRate;mN++}});
-        var mRate=mN>0?Math.round((mR/mN)*100)+'%':'—';
-        document.getElementById('wl-view-monthly').innerHTML=sampleFlag+
-          '<div style="font-size:11px;color:var(--text-t);margin-bottom:6px">近 4 周聚合（'+escapeHtml(mWeeks[0].week)+' → '+escapeHtml(mWeeks[mWeeks.length-1].week)+'）</div>'+
-          wlTable(['指标','近 4 周'],[
-            ['活跃度（任务/操作）',mA],
-            ['审计成功率（平均）',mRate],
-            ['成本',fmtCost(mC)],
-            ['周数',mWeeks.length]
-          ]);
-      }else{
-        document.getElementById('wl-view-monthly').innerHTML=emptyState('<i class="bi bi-calendar-month"></i>','还没有月报数据','worklog 周趋势积累满 1 周后自动生成','查看周报',"wlTab('weekly')");
-      }
 
       /* 人工介入：优先 decisions.jsonl 事件（谁批的/为什么），降级 worklog 次数 */
       var ivRows=[];
