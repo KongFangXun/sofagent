@@ -1750,7 +1750,7 @@ function loadFdeWorkflowData(){
         if(sustain&&sustain.active&&sustain.weeklyReport){
           var wr=sustain.weeklyReport;
           var tw=wr.thisWeek||{};
-          var trendCn={improving:'<i class="bi bi-graph-up"></i> 改善',degrading:'<i class="bi bi-graph-down"></i> 恶化',stable:'➡️ 平稳'}[wr.trend]||wr.trend||'-';
+          var trendCn={improving:'<i class="bi bi-graph-up"></i> 改善',degrading:'<i class="bi bi-graph-down"></i> 恶化',stable:'<i class="bi bi-arrow-right"></i> 平稳'}[wr.trend]||wr.trend||'-';
           html+='<div style="margin-top:12px;background:var(--bg-s);border:1px solid var(--border);border-radius:var(--radius-s);padding:10px 14px;font-size:12px;color:var(--text-s)">'+
             '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">'+
               '<b style="color:var(--text)"><i class="bi bi-bar-chart"></i> '+escapeHtml(wr.weekLabel)+' 持续优化周报</b>'+
@@ -2151,7 +2151,7 @@ function costCell(cost,key,costWarns){
   if(costWarns&&costWarns.length){
     var hit=costWarns.find(function(w){return w.key===key});
     if(hit){
-      return '<span class="cell-over" title="'+escapeHtml(hit.summary||'超支告警')+'">'+fmtCost(cost)+' <span class="delta">⚠ 超支</span></span>';
+      return '<span class="cell-over" title="'+escapeHtml(hit.summary||'超支告警')+'">'+fmtCost(cost)+' <span class="delta"><i class="bi bi-exclamation-triangle"></i> 超支</span></span>';
     }
   }
   return fmtCost(cost);
