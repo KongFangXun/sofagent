@@ -45,6 +45,26 @@ a:hover{text-decoration:underline}
 .star-btn svg{width:14px;height:14px;flex-shrink:0}
 .star-count{background:var(--amber);color:#fff;font-size:11px;padding:1px 6px;border-radius:8px;font-weight:700}
 
+/* 帮助面板（全局教学入口，header 右上角） */
+.help-btn{display:inline-flex;align-items:center;gap:5px;padding:6px 14px;border:1px solid var(--border);border-radius:20px;background:var(--card);color:var(--text-s);font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;font-family:var(--font);line-height:1.4}
+.help-btn:hover{border-color:var(--brand);color:var(--brand);background:var(--brand-l)}
+.help-btn svg{width:14px;height:14px;flex-shrink:0}
+.help-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:400;display:none;align-items:center;justify-content:center;padding:20px}
+.help-panel{background:var(--card);border-radius:16px;max-width:780px;width:100%;max-height:84vh;display:flex;flex-direction:column;box-shadow:0 12px 40px rgba(0,0,0,.18)}
+.help-header{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.help-title{font-size:15px;font-weight:600}
+.help-close{width:30px;height:30px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text-s);font-size:16px;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center;font-family:var(--font)}
+.help-close:hover{border-color:var(--brand);color:var(--brand)}
+.help-tabs{display:flex;gap:4px;padding:10px 16px 0;border-bottom:1px solid var(--border);overflow-x:auto;scrollbar-width:none;flex-shrink:0}
+.help-tabs::-webkit-scrollbar{display:none}
+.help-tab-btn{padding:7px 14px;font-size:12px;color:var(--text-s);cursor:pointer;border-radius:8px 8px 0 0;white-space:nowrap;transition:all .15s;border:none;background:none;font-family:var(--font);font-weight:500}
+.help-tab-btn:hover{color:var(--text);background:var(--bg)}
+.help-tab-btn.active{color:var(--brand);background:var(--brand-l);font-weight:600}
+.help-body{padding:20px;overflow-y:auto;flex:1}
+.help-tab{display:none}
+.help-tab.active{display:block}
+.help-intro{font-size:12px;color:var(--text-s);margin-bottom:14px}
+
 /* === Layout === */
 .container{max-width:1200px;margin:0 auto;padding:20px}
 .page{display:none}
@@ -328,6 +348,10 @@ a:hover{text-decoration:underline}
       <button class="nav-item" onclick="goPage('resources')">工具箱</button>
     </nav>
     <div class="header-right">
+      <button class="help-btn" onclick="openHelp('workflow')" title="使用帮助：业务流/本体图谱/知识库/FDE 引导" aria-label="打开帮助">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        帮助
+      </button>
       <a href="https://github.com/KongFangXun/sofagent" target="_blank" class="star-btn">
         <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>
         <span>Stars</span>
@@ -485,48 +509,8 @@ a:hover{text-decoration:underline}
       <div id="wl-view-intervention" style="display:none"></div>
     </div>
   </div>
-  <div class="section">
-    <div class="section-header"><div class="section-title"><span class="dot-emoji">🛠️</span>怎么设置自己的 AI 节点</div></div>
-    <div class="section-body">
-      <div class="step-card">
-        <div class="step-title"><span class="step-num">1</span>梳理业务流，识别可自动化环节</div>
-        <div class="step-desc">用五要素法（输入/输出/负责人/耗时/痛点）盘点每个岗位，找出重复频率高、规则明确的环节。</div>
-      </div>
-      <div class="step-card">
-        <div class="step-title"><span class="step-num">2</span>三问判定节点类型</div>
-        <div class="step-desc">
-          <span class="node-type nt-auto">🔄 自动执行</span> 输入能自动取 + 规则能写清 + 输出能自动推<br>
-          <span class="node-type nt-ai">⚡ 强化岗位</span> 两问满足——AI 辅助人完成<br>
-          <span class="node-type nt-human">👤 暂不介入</span> 一问满足——暂不上 AI
-        </div>
-      </div>
-      <div class="step-card">
-        <div class="step-title"><span class="step-num">3</span>在你的 Agent 中加载 sofagent Skill</div>
-        <div class="step-desc">WorkBuddy 搜索 <code style="background:var(--brand-l);padding:2px 6px;border-radius:4px;font-size:11px">sofagent</code> · 或 <code style="background:var(--brand-l);padding:2px 6px;border-radius:4px;font-size:11px">bash install.sh</code></div>
-      </div>
-      <div class="step-card">
-        <div class="step-title"><span class="step-num">4</span>用 Prompt 让 Agent 帮你创建节点</div>
-        <div class="step-desc">复制下方 Prompt → Agent 会调 create_entity / validate_ontology 等 MCP 工具帮你建节点</div>
-      </div>
-      <div class="grid-2" style="margin-top:12px">
-        <div class="prompt-box" style="margin-top:0">
-          <div class="prompt-action"><span class="prompt-label">创建 AI 节点</span><button class="copy-btn" onclick="copyPrompt(this, '作为 sofagent FDE Agent，帮我梳理业务流。先了解我的业务，盘点现有平台和系统，把能自动化的环节变成 AI 节点。')">复制</button></div>
-          <code>作为 sofagent FDE Agent，
-帮我梳理业务流。先了解我的业务，
-盘点现有平台和系统，
-把能自动化的环节变成 AI 节点。</code>
-        </div>
-        <div class="prompt-box" style="margin-top:0">
-          <div class="prompt-action"><span class="prompt-label">查看节点状态</span><button class="copy-btn" onclick="copyPrompt(this, '用 sofagent 查看 AI 节点运行状态，有没有挂起的、失败的、需要我确认的任务。')">复制</button></div>
-          <code>用 sofagent 查看 AI 节点运行状态，
-有没有挂起的、失败的、
-需要我确认的任务。</code>
-        </div>
-      </div>
-    </div>
-  </div>
-  <div class="info-note">
-    节点部署后 7×24 自动执行。节点类型分三种：<strong>🔄 自动执行</strong>（AI 自主完成）、<strong>⚡ 强化岗位</strong>（AI 辅助人）、<strong>👤 暂不介入</strong>。详见 <a href="https://github.com/KongFangXun/sofagent/blob/main/FDE/GUIDE.md" target="_blank">FDE/GUIDE.md 第四章</a>
+  <div class="info-note" style="margin-top:0">
+    <strong>怎么设置自己的 AI 节点？</strong>点右上角 <button class="copy-btn light" onclick="openHelp('workflow')" style="padding:2px 8px">？帮助</button> 查看四步引导与 Prompt（或链 <a href="https://github.com/KongFangXun/sofagent/blob/main/FDE/GUIDE.md" target="_blank">FDE/GUIDE.md 第四章</a>）。节点部署后 7×24 自动执行，类型分：<strong>🔄 自动执行</strong>（AI 自主完成）、<strong>⚡ 强化岗位</strong>（AI 辅助人）、<strong>👤 暂不介入</strong>。
   </div>
 </div>
 
@@ -561,102 +545,8 @@ a:hover{text-decoration:underline}
       <div id="gr-view-ontology" style="display:none"></div>
     </div>
   </div>
-  <div class="section">
-    <div class="section-header">
-      <div class="section-title"><span class="dot-emoji">📖</span>什么是本体结构（ontology）</div>
-      <a href="https://github.com/KongFangXun/sofagent/blob/main/FDE/GUIDE.md" target="_blank" class="copy-btn light">FDE/GUIDE 第三章 →</a>
-    </div>
-    <div class="section-body">
-      <p style="font-size:13px;color:var(--text-s);margin-bottom:12px">类比城市规划中的<strong>「用地性质图」</strong>——每块地是住宅/商业/工业，决定了这块地能干什么、归谁管。本体结构 = 企业知识的「用地性质图」——每个知识节点是什么类型、归哪个业务域、能看什么不能看什么。</p>
-      <div class="grid-3" style="margin-bottom:16px">
-        <div class="ont-card">
-          <h4 style="color:var(--green)">实体 Entity</h4>
-          <p>业务对象（如「客户」「订单」「员工」）</p>
-          <ul class="ont-list">
-            <li>业务可命名</li>
-            <li>系统可查询</li>
-            <li>有独立生命周期</li>
-          </ul>
-        </div>
-        <div class="ont-card">
-          <h4 style="color:var(--purple)">概念 Concept</h4>
-          <p>业务规则（如「审批流」「权限矩阵」）</p>
-          <ul class="ont-list">
-            <li>抽象规则定义</li>
-            <li>跨实体复用</li>
-            <li>约束行为边界</li>
-          </ul>
-        </div>
-        <div class="ont-card">
-          <h4 style="color:var(--brand)">关系 Relations</h4>
-          <p>实体/概念间关联</p>
-          <ul class="ont-list">
-            <li>belongs_to（属于）</li>
-            <li>has_many（拥有多个）</li>
-            <li>depends_on（依赖）</li>
-          </ul>
-        </div>
-      </div>
-      <div class="info-note" style="margin-top:0">
-        <strong>本体 ≠ 知识图谱数据库</strong>：本体的核心是<strong>业务刻画</strong>——完整呈现业务领域的客观事实与关联关系。知识图谱只是它的一种技术实现。
-      </div>
-    </div>
-  </div>
-
-  <div class="section">
-    <div class="section-header"><div class="section-title"><span class="dot-emoji">❓</span>业务四问（入场必填）</div></div>
-    <div class="section-body">
-      <p style="font-size:13px;color:var(--text-s);margin-bottom:12px">建本体前先用四问把「企业到底在做什么业务」钉死：</p>
-      <div class="step-card">
-        <div class="step-title"><span class="step-num">1</span>关键业务对象有哪些？</div>
-        <div class="step-desc">客户 / 商品 / 订单 / 供应商……列清实体类型</div>
-      </div>
-      <div class="step-card">
-        <div class="step-title"><span class="step-num">2</span>每个对象的归属负责人是谁？</div>
-        <div class="step-desc">谁对这个结果负责</div>
-      </div>
-      <div class="step-card">
-        <div class="step-title"><span class="step-num">3</span>权威数据来源系统是哪个？</div>
-        <div class="step-desc">ERP / CRM / 自研 / Excel——避免 Agent 从非权威源编造</div>
-      </div>
-      <div class="step-card">
-        <div class="step-title"><span class="step-num">4</span>动作风险等级？</div>
-        <div class="step-desc">低（查询/只读）/ 中高（写操作/审批/对外发）</div>
-      </div>
-    </div>
-  </div>
-
-  <div class="section">
-    <div class="section-header"><div class="section-title"><span class="dot-emoji">🎯</span>Object Type 五条筛选标准</div></div>
-    <div class="section-body">
-      <p style="font-size:13px;color:var(--text-s);margin-bottom:12px">业务四问列出的名词不是全部都能当 Object Type——<strong>数据库表 ≠ 业务对象</strong>。五条标准缺两三条就要谨慎：</p>
-      <div class="grid-3">
-        <div class="ont-card"><h4 style="color:var(--brand-d);font-size:13px">1. 业务可命名</h4><p style="font-size:11px;margin:0">业务人员叫得出这个名字吗？</p></div>
-        <div class="ont-card"><h4 style="color:var(--brand-d);font-size:13px">2. 系统可查询</h4><p style="font-size:11px;margin:0">系统里能稳定查到它吗？</p></div>
-        <div class="ont-card"><h4 style="color:var(--brand-d);font-size:13px">3. AI 可推理</h4><p style="font-size:11px;margin:0">AI 能围绕它做推理吗？</p></div>
-        <div class="ont-card"><h4 style="color:var(--brand-d);font-size:13px">4. 动作可落地</h4><p style="font-size:11px;margin:0">业务动作能落在它身上吗？</p></div>
-        <div class="ont-card"><h4 style="color:var(--brand-d);font-size:13px">5. 责任可绑定</h4><p style="font-size:11px;margin:0">权限和责任能绑定到它吗？</p></div>
-      </div>
-    </div>
-  </div>
-
-  <div class="section">
-    <div class="section-body">
-      <div class="prompt-box">
-        <div class="prompt-action"><span class="prompt-label">让 Agent 帮你构建本体结构</span>
-          <button class="copy-btn" onclick="copyPrompt(this, '作为 sofagent FDE Agent，帮我构建本体结构。先用业务四问梳理关键业务对象，然后筛选 Object Type，建立 entity / concept / relations。最后用 validate_ontology 验证完整性。')">复制 Prompt</button>
-        </div>
-        <code>作为 sofagent FDE Agent，
-帮我构建本体结构。
-先用业务四问梳理关键业务对象，
-然后筛选 Object Type，
-建立 entity / concept / relations。
-最后用 validate_ontology 验证完整性。</code>
-      </div>
-    </div>
-  </div>
-  <div class="info-note">
-    <strong>适配性判断</strong>：多数中小企业不必建全量本体结构。如果不需要业务域级 Agent Runtime、也不是一号位工程推进，用<strong>轻量 Agent + 企业 Skill</strong>即可。详见 <a href="https://github.com/KongFangXun/sofagent/blob/main/FDE/GUIDE.md" target="_blank">FDE/GUIDE.md §3.2</a>
+  <div class="info-note" style="margin-top:0">
+    <strong>想学怎么建本体结构？</strong>点右上角 <button class="copy-btn light" onclick="openHelp('ontology')" style="padding:2px 8px">？帮助</button> 查看「什么是本体结构 / 业务四问 / 五条筛选标准 / 构建 Prompt」（或链 <a href="https://github.com/KongFangXun/sofagent/blob/main/FDE/GUIDE.md" target="_blank">FDE/GUIDE.md §3.2</a>）。
   </div>
 </div>
 
@@ -693,23 +583,8 @@ a:hover{text-decoration:underline}
       </div>
     </div>
   </div>
-  <div class="section">
-    <div class="section-header">
-      <div class="section-title"><span class="dot-emoji">🏛️</span>Ledger-Views-Policy 三层治理</div>
-      <a href="https://github.com/KongFangXun/sofagent/blob/main/docs/PHILOSOPHY.md" target="_blank" class="copy-btn light">PHILOSOPHY §五 →</a>
-    </div>
-    <div class="section-body">
-      <div class="lvp-row">
-        <div class="lvp-col l"><div class="lvp-label">Ledger · 发生了什么</div><div style="margin-top:4px;font-size:11px;color:var(--text-s)">原始数据 · append-only · 不可改</div><div style="font-size:11px;color:var(--text-t);margin-top:2px">task/logs · think.md · 审计历史</div></div>
-        <div class="lvp-arrow">→</div>
-        <div class="lvp-col v"><div class="lvp-label">Views · 这代表什么</div><div style="margin-top:4px;font-size:11px;color:var(--text-s)">知识提炼 · 单向派生</div><div style="font-size:11px;color:var(--text-t);margin-top:2px">knowledge/ entities · concepts · comparisons</div></div>
-        <div class="lvp-arrow">→</div>
-        <div class="lvp-col p"><div class="lvp-label">Policy · 该怎么办</div><div style="margin-top:4px;font-size:11px;color:var(--text-s)">约束规则 · 启动时注入</div><div style="font-size:11px;color:var(--text-t);margin-top:2px">SKILL.md 铁律 · fde.md 业务底线</div></div>
-      </div>
-    </div>
-  </div>
-  <div class="info-note">
-    知识库是 FDE 离场后企业留下的<strong>知识资产</strong>。三层治理保证数据单向流动、经验自动积累。<strong>数据主权</strong>（本地化率、数据流向）已在驾驶舱展示，此处不再重复。
+  <div class="info-note" style="margin-top:0">
+    知识库是 FDE 离场后企业留下的<strong>知识资产</strong>。<strong>数据主权</strong>（本地化率、数据流向）已在驾驶舱展示。Ledger-Views-Policy 三层治理说明见右上角 <button class="copy-btn light" onclick="openHelp('knowledge')" style="padding:2px 8px">？帮助</button>（或 <a href="https://github.com/KongFangXun/sofagent/blob/main/docs/PHILOSOPHY.md" target="_blank">PHILOSOPHY §五</a>）。
   </div>
 </div>
 
@@ -753,33 +628,11 @@ a:hover{text-decoration:underline}
   </div>
 
   <div class="section">
-    <div class="section-header"><div class="section-title"><span class="dot-emoji">🚀</span>怎么用 sofagent 做 FDE</div>
-      <a href="https://clawhub.ai/skill/sofagent" target="_blank" class="copy-btn light">ClawHub Skill →</a>
+    <div class="section-header"><div class="section-title"><span class="dot-emoji">🚀</span>怎么开始（方法论/工具路径/场景速查）</div>
+      <span style="font-size:11px;color:var(--text-t)">详细引导见右上角 <button class="copy-btn light" onclick="openHelp('fde')" style="padding:2px 8px">？帮助</button> · <a href="https://clawhub.ai/skill/sofagent" target="_blank" class="copy-btn light">ClawHub Skill →</a></span>
     </div>
     <div class="section-body">
-      <div class="step-card">
-        <div class="step-title"><span class="step-num">A</span>方法论路径（零依赖，不需要 Node.js）</div>
-        <div class="step-desc">
-          只想了解方法论 → 读 <a href="https://github.com/KongFangXun/sofagent/blob/main/FDE/GUIDE.md" target="_blank">GUIDE.md</a>（半天精读）→ 用你喜欢的工具按手册逐步梳理<br>
-          <span style="color:var(--text-t);font-size:11px">方法论本身不依赖工具——五要素 + 三问判定法纯对话/纸笔即可完成</span>
-        </div>
-      </div>
-      <div class="step-card">
-        <div class="step-title"><span class="step-num">B</span>工具路径（在你的 Agent 中加载 Skill）</div>
-        <div class="step-desc">
-          <strong>方式 1 · WorkBuddy</strong>：搜索 <code style="background:var(--brand-l);padding:2px 6px;border-radius:4px;font-size:11px">sofagent</code> → 点击安装 → Agent 自动加载 FDE Skill<br>
-          <strong>方式 2 · OpenClaw</strong>：<code style="background:var(--brand-l);padding:2px 6px;border-radius:4px;font-size:11px">bash install.sh</code> → 自动配置 Skill 加载链<br>
-          <strong>方式 3 · npm 全局安装</strong>：<code style="background:var(--brand-l);padding:2px 6px;border-radius:4px;font-size:11px">npm i -g @sofagent/audit && sofagent-audit --init</code>
-        </div>
-      </div>
-      <div class="step-card">
-        <div class="step-title"><span class="step-num">→</span>加载后怎么开始</div>
-        <div class="step-desc">
-          安装完成后，在你的 Agent 里直接对话：<br>
-          <span style="color:var(--brand)">"帮我做 FDE 诊断"</span> → Agent 会从 §1 进场开始引导你<br>
-          <span style="color:var(--brand)">"帮我梳理工作流"</span> → Agent 从当前阶段开始
-        </div>
-      </div>
+      <div style="font-size:12px;color:var(--text-s)">① 方法论路径：读 <a href="https://github.com/KongFangXun/sofagent/blob/main/FDE/GUIDE.md" target="_blank">GUIDE.md</a>（零依赖，纯对话/纸笔可完成）· ② 工具路径：WorkBuddy 搜索 <code style="background:var(--brand-l);padding:2px 6px;border-radius:4px;font-size:11px">sofagent</code> 或 <code style="background:var(--brand-l);padding:2px 6px;border-radius:4px;font-size:11px">bash install.sh</code> · ③ 场景速查（查询踩坑 / 健康检查）在帮助面板。</div>
     </div>
   </div>
   <div class="section">
@@ -806,20 +659,11 @@ a:hover{text-decoration:underline}
     </div>
   </div>
   <div class="section">
-    <div class="section-header"><div class="section-title"><span class="dot-emoji">⚡</span>持续优化场景速查</div></div>
+    <div class="section-header"><div class="section-title"><span class="dot-emoji">⚡</span>持续优化场景速查</div>
+      <span style="font-size:11px;color:var(--text-t)">两个常用 Prompt（查询踩坑 / 健康检查）已移入右上角 <button class="copy-btn light" onclick="openHelp('fde')" style="padding:2px 8px">？帮助</button></span>
+    </div>
     <div class="section-body">
-      <div class="grid-2">
-        <div class="prompt-box" style="margin-top:0">
-          <div class="prompt-action"><span class="prompt-label">查询上次踩坑</span><button class="copy-btn" onclick="copyPrompt(this, '用 sofagent 查一下最近踩了什么坑，帮我回顾一下，避免重蹈覆辙。')">复制</button></div>
-          <code>用 sofagent 查一下最近踩了什么坑，
-帮我回顾一下，避免重蹈覆辙。</code>
-        </div>
-        <div class="prompt-box" style="margin-top:0">
-          <div class="prompt-action"><span class="prompt-label">系统健康检查</span><button class="copy-btn" onclick="copyPrompt(this, '用 sofagent 做一次系统健康检查，看看节点状态、审计趋势、知识库健康度。')">复制</button></div>
-          <code>用 sofagent 做一次系统健康检查，
-看看节点状态、审计趋势、知识库健康度。</code>
-        </div>
-      </div>
+      <div style="font-size:12px;color:var(--text-s)">持续优化场景的 Prompt 速查见帮助面板「FDE 引导」页。</div>
     </div>
   </div>
 </div>
@@ -1028,6 +872,199 @@ Agent A 找问题，Agent B 修复，
 build → acceptance → regression → coverage，
 全部通过再报告。</code>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ HELP PANEL（全局教学入口） ============ -->
+<div class="help-overlay" id="helpOverlay">
+  <div class="help-panel" role="dialog" aria-label="帮助与支持">
+    <div class="help-header">
+      <div class="help-title">帮助与支持</div>
+      <button class="help-close" onclick="closeHelp()" aria-label="关闭帮助">×</button>
+    </div>
+    <div class="help-tabs" id="helpTabs">
+      <button class="help-tab-btn" data-help="workflow" onclick="switchHelpTab('workflow')">业务流</button>
+      <button class="help-tab-btn" data-help="ontology" onclick="switchHelpTab('ontology')">本体图谱</button>
+      <button class="help-tab-btn" data-help="knowledge" onclick="switchHelpTab('knowledge')">知识库</button>
+      <button class="help-tab-btn" data-help="fde" onclick="switchHelpTab('fde')">FDE 引导</button>
+    </div>
+    <div class="help-body">
+
+      <div class="help-tab" id="help-workflow">
+        <div class="help-intro"><b>怎么设置自己的 AI 节点</b>——四步引导，复制 Prompt 即可开始：</div>
+        <div class="step-card">
+          <div class="step-title"><span class="step-num">1</span>梳理业务流，识别可自动化环节</div>
+          <div class="step-desc">用五要素法（输入/输出/负责人/耗时/痛点）盘点每个岗位，找出重复频率高、规则明确的环节。</div>
+        </div>
+        <div class="step-card">
+          <div class="step-title"><span class="step-num">2</span>三问判定节点类型</div>
+          <div class="step-desc">
+            <span class="node-type nt-auto">🔄 自动执行</span> 输入能自动取 + 规则能写清 + 输出能自动推<br>
+            <span class="node-type nt-ai">⚡ 强化岗位</span> 两问满足——AI 辅助人完成<br>
+            <span class="node-type nt-human">👤 暂不介入</span> 一问满足——暂不上 AI
+          </div>
+        </div>
+        <div class="step-card">
+          <div class="step-title"><span class="step-num">3</span>在你的 Agent 中加载 sofagent Skill</div>
+          <div class="step-desc">WorkBuddy 搜索 <code style="background:var(--brand-l);padding:2px 6px;border-radius:4px;font-size:11px">sofagent</code> · 或 <code style="background:var(--brand-l);padding:2px 6px;border-radius:4px;font-size:11px">bash install.sh</code></div>
+        </div>
+        <div class="step-card">
+          <div class="step-title"><span class="step-num">4</span>用 Prompt 让 Agent 帮你创建节点</div>
+          <div class="step-desc">复制下方 Prompt → Agent 会调 create_entity / validate_ontology 等 MCP 工具帮你建节点</div>
+        </div>
+        <div class="grid-2" style="margin-top:12px">
+          <div class="prompt-box" style="margin-top:0">
+            <div class="prompt-action"><span class="prompt-label">创建 AI 节点</span><button class="copy-btn" onclick="copyPrompt(this, '作为 sofagent FDE Agent，帮我梳理业务流。先了解我的业务，盘点现有平台和系统，把能自动化的环节变成 AI 节点。')">复制</button></div>
+            <code>作为 sofagent FDE Agent，
+帮我梳理业务流。先了解我的业务，
+盘点现有平台和系统，
+把能自动化的环节变成 AI 节点。</code>
+          </div>
+          <div class="prompt-box" style="margin-top:0">
+            <div class="prompt-action"><span class="prompt-label">查看节点状态</span><button class="copy-btn" onclick="copyPrompt(this, '用 sofagent 查看 AI 节点运行状态，有没有挂起的、失败的、需要我确认的任务。')">复制</button></div>
+            <code>用 sofagent 查看 AI 节点运行状态，
+有没有挂起的、失败的、
+需要我确认的任务。</code>
+          </div>
+        </div>
+        <div class="info-note" style="margin-top:12px">
+          节点部署后 7×24 自动执行。节点类型分三种：<strong>🔄 自动执行</strong>（AI 自主完成）、<strong>⚡ 强化岗位</strong>（AI 辅助人）、<strong>👤 暂不介入</strong>。详见 <a href="https://github.com/KongFangXun/sofagent/blob/main/FDE/GUIDE.md" target="_blank">FDE/GUIDE.md 第四章</a>
+        </div>
+      </div>
+
+      <div class="help-tab" id="help-ontology">
+        <div class="help-intro"><b>构建本体结构的完整方法论</b>（FDE 深挖阶段）：</div>
+        <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:8px">什么是本体结构（ontology）</div>
+        <p style="font-size:13px;color:var(--text-s);margin-bottom:12px">类比城市规划中的<strong>「用地性质图」</strong>——每块地是住宅/商业/工业，决定了这块地能干什么、归谁管。本体结构 = 企业知识的「用地性质图」——每个知识节点是什么类型、归哪个业务域、能看什么不能看什么。</p>
+        <div class="grid-3" style="margin-bottom:16px">
+          <div class="ont-card">
+            <h4 style="color:var(--green)">实体 Entity</h4>
+            <p>业务对象（如「客户」「订单」「员工」）</p>
+            <ul class="ont-list">
+              <li>业务可命名</li>
+              <li>系统可查询</li>
+              <li>有独立生命周期</li>
+            </ul>
+          </div>
+          <div class="ont-card">
+            <h4 style="color:var(--purple)">概念 Concept</h4>
+            <p>业务规则（如「审批流」「权限矩阵」）</p>
+            <ul class="ont-list">
+              <li>抽象规则定义</li>
+              <li>跨实体复用</li>
+              <li>约束行为边界</li>
+            </ul>
+          </div>
+          <div class="ont-card">
+            <h4 style="color:var(--brand)">关系 Relations</h4>
+            <p>实体/概念间关联</p>
+            <ul class="ont-list">
+              <li>belongs_to（属于）</li>
+              <li>has_many（拥有多个）</li>
+              <li>depends_on（依赖）</li>
+            </ul>
+          </div>
+        </div>
+        <div class="info-note" style="margin-top:0">
+          <strong>本体 ≠ 知识图谱数据库</strong>：本体的核心是<strong>业务刻画</strong>——完整呈现业务领域的客观事实与关联关系。知识图谱只是它的一种技术实现。
+        </div>
+        <div style="font-size:13px;font-weight:600;color:var(--text);margin:16px 0 8px">业务四问（入场必填）</div>
+        <div class="step-card">
+          <div class="step-title"><span class="step-num">1</span>关键业务对象有哪些？</div>
+          <div class="step-desc">客户 / 商品 / 订单 / 供应商……列清实体类型</div>
+        </div>
+        <div class="step-card">
+          <div class="step-title"><span class="step-num">2</span>每个对象的归属负责人是谁？</div>
+          <div class="step-desc">谁对这个结果负责</div>
+        </div>
+        <div class="step-card">
+          <div class="step-title"><span class="step-num">3</span>权威数据来源系统是哪个？</div>
+          <div class="step-desc">ERP / CRM / 自研 / Excel——避免 Agent 从非权威源编造</div>
+        </div>
+        <div class="step-card">
+          <div class="step-title"><span class="step-num">4</span>动作风险等级？</div>
+          <div class="step-desc">低（查询/只读）/ 中高（写操作/审批/对外发）</div>
+        </div>
+        <div style="font-size:13px;font-weight:600;color:var(--text);margin:16px 0 8px">Object Type 五条筛选标准</div>
+        <p style="font-size:13px;color:var(--text-s);margin-bottom:12px">业务四问列出的名词不是全部都能当 Object Type——<strong>数据库表 ≠ 业务对象</strong>。五条标准缺两三条就要谨慎：</p>
+        <div class="grid-3">
+          <div class="ont-card"><h4 style="color:var(--brand-d);font-size:13px">1. 业务可命名</h4><p style="font-size:11px;margin:0">业务人员叫得出这个名字吗？</p></div>
+          <div class="ont-card"><h4 style="color:var(--brand-d);font-size:13px">2. 系统可查询</h4><p style="font-size:11px;margin:0">系统里能稳定查到它吗？</p></div>
+          <div class="ont-card"><h4 style="color:var(--brand-d);font-size:13px">3. AI 可推理</h4><p style="font-size:11px;margin:0">AI 能围绕它做推理吗？</p></div>
+          <div class="ont-card"><h4 style="color:var(--brand-d);font-size:13px">4. 动作可落地</h4><p style="font-size:11px;margin:0">业务动作能落在它身上吗？</p></div>
+          <div class="ont-card"><h4 style="color:var(--brand-d);font-size:13px">5. 责任可绑定</h4><p style="font-size:11px;margin:0">权限和责任能绑定到它吗？</p></div>
+        </div>
+        <div class="prompt-box" style="margin-top:16px">
+          <div class="prompt-action"><span class="prompt-label">让 Agent 帮你构建本体结构</span>
+            <button class="copy-btn" onclick="copyPrompt(this, '作为 sofagent FDE Agent，帮我构建本体结构。先用业务四问梳理关键业务对象，然后筛选 Object Type，建立 entity / concept / relations。最后用 validate_ontology 验证完整性。')">复制 Prompt</button>
+          </div>
+          <code>作为 sofagent FDE Agent，
+帮我构建本体结构。
+先用业务四问梳理关键业务对象，
+然后筛选 Object Type，
+建立 entity / concept / relations。
+最后用 validate_ontology 验证完整性。</code>
+        </div>
+        <div class="info-note" style="margin-top:12px">
+          <strong>适配性判断</strong>：多数中小企业不必建全量本体结构。如果不需要业务域级 Agent Runtime、也不是一号位工程推进，用<strong>轻量 Agent + 企业 Skill</strong>即可。详见 <a href="https://github.com/KongFangXun/sofagent/blob/main/FDE/GUIDE.md" target="_blank">FDE/GUIDE.md §3.2</a>
+        </div>
+      </div>
+
+      <div class="help-tab" id="help-knowledge">
+        <div class="help-intro"><b>Ledger-Views-Policy 三层治理</b>——知识库怎么保证数据单向流动、经验自动积累：</div>
+        <div class="lvp-row">
+          <div class="lvp-col l"><div class="lvp-label">Ledger · 发生了什么</div><div style="margin-top:4px;font-size:11px;color:var(--text-s)">原始数据 · append-only · 不可改</div><div style="font-size:11px;color:var(--text-t);margin-top:2px">task/logs · think.md · 审计历史</div></div>
+          <div class="lvp-arrow">→</div>
+          <div class="lvp-col v"><div class="lvp-label">Views · 这代表什么</div><div style="margin-top:4px;font-size:11px;color:var(--text-s)">知识提炼 · 单向派生</div><div style="font-size:11px;color:var(--text-t);margin-top:2px">knowledge/ entities · concepts · comparisons</div></div>
+          <div class="lvp-arrow">→</div>
+          <div class="lvp-col p"><div class="lvp-label">Policy · 该怎么办</div><div style="margin-top:4px;font-size:11px;color:var(--text-s)">约束规则 · 启动时注入</div><div style="font-size:11px;color:var(--text-t);margin-top:2px">SKILL.md 铁律 · fde.md 业务底线</div></div>
+        </div>
+        <div class="info-note" style="margin-top:12px">
+          知识库是 FDE 离场后企业留下的<strong>知识资产</strong>。三层治理保证数据单向流动、经验自动积累。详见 <a href="https://github.com/KongFangXun/sofagent/blob/main/docs/PHILOSOPHY.md" target="_blank">PHILOSOPHY §五</a>
+        </div>
+      </div>
+
+      <div class="help-tab" id="help-fde">
+        <div class="help-intro"><b>怎么用 sofagent 做 FDE</b>——方法论 / 工具路径 / 场景速查：</div>
+        <div class="step-card">
+          <div class="step-title"><span class="step-num">A</span>方法论路径（零依赖，不需要 Node.js）</div>
+          <div class="step-desc">
+            只想了解方法论 → 读 <a href="https://github.com/KongFangXun/sofagent/blob/main/FDE/GUIDE.md" target="_blank">GUIDE.md</a>（半天精读）→ 用你喜欢的工具按手册逐步梳理<br>
+            <span style="color:var(--text-t);font-size:11px">方法论本身不依赖工具——五要素 + 三问判定法纯对话/纸笔即可完成</span>
+          </div>
+        </div>
+        <div class="step-card">
+          <div class="step-title"><span class="step-num">B</span>工具路径（在你的 Agent 中加载 Skill）</div>
+          <div class="step-desc">
+            <strong>方式 1 · WorkBuddy</strong>：搜索 <code style="background:var(--brand-l);padding:2px 6px;border-radius:4px;font-size:11px">sofagent</code> → 点击安装 → Agent 自动加载 FDE Skill<br>
+            <strong>方式 2 · OpenClaw</strong>：<code style="background:var(--brand-l);padding:2px 6px;border-radius:4px;font-size:11px">bash install.sh</code> → 自动配置 Skill 加载链<br>
+            <strong>方式 3 · npm 全局安装</strong>：<code style="background:var(--brand-l);padding:2px 6px;border-radius:4px;font-size:11px">npm i -g @sofagent/audit && sofagent-audit --init</code>
+          </div>
+        </div>
+        <div class="step-card">
+          <div class="step-title"><span class="step-num">→</span>加载后怎么开始</div>
+          <div class="step-desc">
+            安装完成后，在你的 Agent 里直接对话：<br>
+            <span style="color:var(--brand)">"帮我做 FDE 诊断"</span> → Agent 会从 §1 进场开始引导你<br>
+            <span style="color:var(--brand)">"帮我梳理工作流"</span> → Agent 从当前阶段开始
+          </div>
+        </div>
+        <div style="font-size:13px;font-weight:600;color:var(--text);margin:16px 0 8px">持续优化场景速查</div>
+        <div class="grid-2">
+          <div class="prompt-box" style="margin-top:0">
+            <div class="prompt-action"><span class="prompt-label">查询上次踩坑</span><button class="copy-btn" onclick="copyPrompt(this, '用 sofagent 查一下最近踩了什么坑，帮我回顾一下，避免重蹈覆辙。')">复制</button></div>
+            <code>用 sofagent 查一下最近踩了什么坑，
+帮我回顾一下，避免重蹈覆辙。</code>
+          </div>
+          <div class="prompt-box" style="margin-top:0">
+            <div class="prompt-action"><span class="prompt-label">系统健康检查</span><button class="copy-btn" onclick="copyPrompt(this, '用 sofagent 做一次系统健康检查，看看节点状态、审计趋势、知识库健康度。')">复制</button></div>
+            <code>用 sofagent 做一次系统健康检查，
+看看节点状态、审计趋势、知识库健康度。</code>
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
 </div>
@@ -2268,6 +2305,33 @@ function renderSkillChain(){
   html+='</div>';
   box.innerHTML=html;
 }
+
+/* ===== 帮助面板（全局教学入口） ===== */
+function openHelp(page){
+  var overlay=document.getElementById('helpOverlay');
+  if(!overlay)return;
+  overlay.style.display='flex';
+  switchHelpTab(page||'workflow');
+}
+function closeHelp(){
+  var overlay=document.getElementById('helpOverlay');
+  if(overlay)overlay.style.display='none';
+}
+function switchHelpTab(page){
+  document.querySelectorAll('.help-tab-btn').forEach(function(b){
+    b.classList.toggle('active',b.getAttribute('data-help')===page);
+  });
+  document.querySelectorAll('.help-tab').forEach(function(t){
+    t.classList.toggle('active',t.id==='help-'+page);
+  });
+}
+/* 点击遮罩关闭 + Esc 关闭 */
+document.addEventListener('click',function(e){
+  if(e.target&&e.target.id==='helpOverlay')closeHelp();
+});
+document.addEventListener('keydown',function(e){
+  if(e.key==='Escape')closeHelp();
+});
 
 /* ===== Init ===== */
 detectFsApi();
