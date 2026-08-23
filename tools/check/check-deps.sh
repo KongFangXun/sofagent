@@ -80,10 +80,16 @@ echo "────────────────────────�
 DSH_VER=$(npm view @deepseek-ai/dsh version 2>/dev/null || echo "❓")
 CORDIS_VER=$(npm view @deepseek-ai/cordis version 2>/dev/null || echo "❓")
 DSH_GIT_TAG=$(git ls-remote --tags https://github.com/deepseek-ai/DeepSeek-Harness.git 2>/dev/null | tail -1 | grep -oE '[^/]+$' || echo "无 tag")
-printf "%-40s %-22s %-18s %s\n" "@deepseek-ai/dsh" "未接入" "$DSH_VER" "🔵 npm 已发布"
-printf "%-40s %-22s %-18s %s\n" "@deepseek-ai/cordis" "未接入" "$CORDIS_VER" "🔵 npm 已发布"
+# v1.4.0：DSH 已真实接入（orchestrator dependencies @deepseek-ai/dsh，SOFAGENT_FORCE_DSH=1 启用）
+if grep -q '"@deepseek-ai/dsh"' engine/orchestrator/package.json 2>/dev/null; then
+  DSH_STATUS="已接入"
+else
+  DSH_STATUS="未接入"
+fi
+printf "%-40s %-22s %-18s %s\n" "@deepseek-ai/dsh" "$DSH_STATUS" "$DSH_VER" "🔵 npm 已发布"
+printf "%-40s %-22s %-18s %s\n" "@deepseek-ai/cordis" "随 dsh 安装" "$CORDIS_VER" "🔵 npm 已发布"
 printf "%-40s %-22s %-18s %s\n" "  └ GitHub tag" "—" "$DSH_GIT_TAG" "📌"
-echo "   v1.3.4 接入方式：运行时动态 import + 版本守卫拦截 rc（fallback LangGraph）——不进 dependencies，正式版发布后自动切换"
+echo "   v1.4.0 接入方式：orchestrator dependencies（@deepseek-ai/dsh，rc 期）+ SOFAGENT_FORCE_DSH=1 走 DSH CLI 桥接；正式版发布后守卫自动放行"
 
 echo ""
 echo "════════════════════════════════════════════════════════════"
