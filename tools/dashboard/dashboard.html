@@ -98,10 +98,10 @@ a:hover{text-decoration:underline}
 .metric-value{font-size:28px;font-weight:700;line-height:1.2;font-variant-numeric:tabular-nums;color:var(--brand)}
 .metric-label{font-size:12px;color:var(--text-s);margin-top:4px}
 .metric-sub{font-size:11px;color:var(--text-t);margin-top:2px}
-/* 指标趋势箭头（洞察层） */
+/* 指标趋势箭头（洞察层）——统一灰 */
 .metric-trend{font-size:10px;font-weight:600;margin-left:4px}
-.trend-up{color:var(--red)}
-.trend-down{color:var(--brand)}
+.trend-up{color:var(--text-s)}
+.trend-down{color:var(--text-s)}
 .trend-flat{color:var(--text-t)}
 
 .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:stretch}
@@ -460,12 +460,12 @@ a:hover{text-decoration:underline}
   <div class="section">
     <div class="section-header"><div class="section-title"><span class="dot-emoji"><i class="bi bi-bar-chart"></i></span>工作明细（worklog）</div>
       <span style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-        <span style="font-size:11px;color:var(--text-t)">超支标红 kind=COST</span>
         <span class="nav" style="justify-content:flex-start">
           <button class="nav-item active" id="wl-tab-agent" onclick="wlTab('agent')">按 Agent</button>
           <button class="nav-item" id="wl-tab-workflow" onclick="wlTab('workflow')">按 Workflow</button>
           <button class="nav-item" id="wl-tab-week" onclick="wlTab('week')">按周</button>
           <button class="nav-item" id="wl-tab-intervention" onclick="wlTab('intervention')">介入</button>
+          <button class="nav-item" id="wl-tab-audit" onclick="wlTab('audit')">审计记录</button>
         </span>
       </span>
     </div>
@@ -474,39 +474,36 @@ a:hover{text-decoration:underline}
       <div id="wl-view-workflow" style="display:none"></div>
       <div id="wl-view-week" style="display:none"></div>
       <div id="wl-view-intervention" style="display:none"></div>
-    </div>
-  </div>
-
-  <div class="section">
-    <div class="section-header">
-      <div class="section-title"><span class="dot-emoji"><i class="bi bi-graph-down"></i></span>违规趋势（近 7 天）</div>
-      <div style="display:flex;align-items:center;gap:16px;font-size:11px;color:var(--text-s);flex-wrap:wrap;justify-content:flex-end">
-        <span style="display:inline-flex;align-items:center;gap:5px"><span style="width:12px;height:12px;background:var(--brand-l);border-radius:3px"></span>审计次数</span>
-        <span style="display:inline-flex;align-items:center;gap:5px"><span style="width:12px;height:12px;background:var(--text-t);border-radius:3px"></span>问题次数</span>
-        <span style="display:inline-flex;align-items:center;gap:5px"><span style="width:14px;height:3px;background:var(--brand);border-radius:2px"></span>通过率</span>
+      <div id="wl-view-audit" style="display:none">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <span id="auditRecordCount" style="font-size:11px;color:var(--text-t)"></span>
+          <a href="/api/export-history" download="audit-history.jsonl" title="下载完整审计历史（原始 JSONL）" class="btn btn-outline" style="height:26px;padding:0 10px;font-size:11px">
+            <svg width="11" height="11" viewBox="0 0 16 16" fill="none"><path d="M8 1.5v9M8 10.5 4.5 7M8 10.5 11.5 7M2.5 13.5h11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            全量历史
+          </a>
+        </div>
+        <div class="audit-log" id="liveAuditLog">
+          <div style="color:var(--text-t);font-size:12px;text-align:center;padding:20px">加载中...</div>
+        </div>
       </div>
-    </div>
-    <div class="section-body">
-      <svg width="100%" height="180" viewBox="0 0 920 180" preserveAspectRatio="xMidYMid meet" id="trendChart">
-        <text x="460" y="90" text-anchor="middle" font-size="13" fill="var(--text-t)">加载中...</text>
-      </svg>
-      <div id="topRules" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:12px"></div>
     </div>
   </div>
 
   <div class="grid-2">
     <div class="section">
       <div class="section-header">
-        <div class="section-title"><span class="dot-emoji"><i class="bi bi-list-check"></i></span>最近审计记录<span id="auditRecordCount" style="font-size:11px;color:var(--text-t);font-weight:400;margin-left:6px"></span></div>
-        <a href="/api/export-history" download="audit-history.jsonl" title="下载完整审计历史（原始 JSONL）" class="btn btn-outline" style="height:26px;padding:0 10px;font-size:11px">
-          <svg width="11" height="11" viewBox="0 0 16 16" fill="none"><path d="M8 1.5v9M8 10.5 4.5 7M8 10.5 11.5 7M2.5 13.5h11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          全量历史
-        </a>
+        <div class="section-title"><span class="dot-emoji"><i class="bi bi-graph-down"></i></span>违规趋势（近 7 天）</div>
+        <div style="display:flex;align-items:center;gap:16px;font-size:11px;color:var(--text-s);flex-wrap:wrap;justify-content:flex-end">
+          <span style="display:inline-flex;align-items:center;gap:5px"><span style="width:12px;height:12px;background:var(--brand-l);border-radius:3px"></span>审计次数</span>
+          <span style="display:inline-flex;align-items:center;gap:5px"><span style="width:12px;height:12px;background:var(--text-t);border-radius:3px"></span>问题次数</span>
+          <span style="display:inline-flex;align-items:center;gap:5px"><span style="width:14px;height:3px;background:var(--brand);border-radius:2px"></span>通过率</span>
+        </div>
       </div>
       <div class="section-body">
-        <div class="audit-log" id="liveAuditLog">
-          <div style="color:var(--text-t);font-size:12px;text-align:center;padding:20px">加载中...</div>
-        </div>
+        <svg width="100%" height="180" viewBox="0 0 920 180" preserveAspectRatio="xMidYMid meet" id="trendChart">
+          <text x="460" y="90" text-anchor="middle" font-size="13" fill="var(--text-t)">加载中...</text>
+        </svg>
+        <div id="topRules" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:12px"></div>
       </div>
     </div>
     <div class="section">
@@ -2107,7 +2104,7 @@ function fmtCost(c){
 function fmtMs(ms){if(ms===null||ms===undefined)return '—';if(ms<1000)return ms+'ms';if(ms<60000)return (ms/1000).toFixed(1)+'s';return (ms/60000).toFixed(1)+'min'}
 
 function wlTab(tab){
-  ['agent','workflow','week','intervention'].forEach(function(t){
+  ['agent','workflow','week','intervention','audit'].forEach(function(t){
     document.getElementById('wl-tab-'+t).classList.toggle('active',t===tab);
     document.getElementById('wl-view-'+t).style.display=t===tab?'':'none';
   });
