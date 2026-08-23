@@ -38,10 +38,12 @@ if [ -z "$COMMIT_MSG_FILE" ] && [ ! -t 0 ]; then
   CMD_INPUT=$(cat 2>/dev/null || true)
   if [ -n "$CMD_INPUT" ]; then
     # 提取 tool_input.command 里的 commit message（-m '...' 或 -m "..."）
-    EXTRACTED=$(printf '%s' "$CMD_INPUT" | grep -oE "git[ ]+commit[^\n]*" | head -1 || true)
+    # v1.4.0 修复：`[^\n]*` 在 grep 里匹配字面反斜杠n（JSON 内是 \\n 转义序列），
+    # 导致命令在 -m 后截断 → message 只取到 4 字符（A19 误拦）。改 `.*`（JSON 单行无换行）。
+    EXTRACTED=$(printf '%s' "$CMD_INPUT" | grep -oE "git[ ]+commit.*" | head -1 || true)
     if [ -n "$EXTRACTED" ]; then
-      # 从 -m 参数抽取 message（支持单/双引号）
-      MSG=$(printf '%s' "$EXTRACTED" | grep -oE "(-m[[:space:]]+|--message[[:space:]]+)[\\\"']?.{0,200}" | sed -E "s/^-m[[:space:]]+|^\-\-message[  ]+//" | sed -E "s/^[\"']//" | head -1 || true)
+      # 从 -m 参数抽取 message（支持单/双引号；JSON 内是 \" 转义，剥掉反斜杠）
+      MSG=$(printf '%s' "$EXTRACTED" | grep -oE "(-m[[:space:]]+|--message[[:space:]]+).{0,200}" | sed -E "s/^(-m|--message)[[:space:]]+//" | sed -E "s/^\\\\?[\"']//" | sed -E "s/\\\\?[\"'].*$//" | head -1 || true)
       [ -n "$MSG" ] && COMMIT_FULL_MSG="$MSG" && COMMIT_SUBJECT="$MSG"
     fi
   fi
