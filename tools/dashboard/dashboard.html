@@ -2104,9 +2104,8 @@ function resolveDataRoot(){
 function fmtTokens(t){if(!t)return '—';return (t.input+t.output).toLocaleString()}
 function fmtCost(c){
   if(c===null||c===undefined)return '—';
-  // 成本符号本地化：中文界面 ¥，英文界面 $
-  var sym=(document.documentElement.lang||'zh').toLowerCase().indexOf('zh')===0?'¥':'$';
-  return sym+c.toFixed(4);
+  // 成本统一人民币：引擎按美元计费（costUsd），展示 ×7.2 估算汇率换算为 ¥（数值为人民币估算）
+  return '¥'+(c*7.2).toFixed(4);
 }
 function fmtMs(ms){if(ms===null||ms===undefined)return '—';if(ms<1000)return ms+'ms';if(ms<60000)return (ms/1000).toFixed(1)+'s';return (ms/60000).toFixed(1)+'min'}
 
@@ -2176,7 +2175,8 @@ function loadWorklogData(){
       if(costEl){
         var totCost=0;
         (d.agents||[]).forEach(function(a){if(a.totals&&a.totals.costUsd!=null)totCost+=a.totals.costUsd});
-        costEl.textContent=totCost>0?'$'+totCost.toFixed(2):'—';
+        // 引擎 costUsd 按美元计费，总成本统一人民币（×7.2 估算汇率）
+        costEl.textContent=totCost>0?'¥'+(totCost*7.2).toFixed(2):'—';
       }
 
       /* 概况明细：Agent 汇总 + Workflow 状态 + 任务明细 */
@@ -2262,7 +2262,7 @@ function loadWorklogData(){
       }
     });
   }).catch(function(){
-    document.getElementById('wl-view-overview').innerHTML=emptyState('<i class="bi bi-bar-chart"></i>','还没有工作明细','运行过 sofagent-audit 或编排任务后自动生成（worklog.json）','去 FDE 引导部署',"goPage('fde')");
+    document.getElementById('wl-view-overview').innerHTML=emptyState('<i class="bi bi-bar-chart"></i>','还没有工作明细','部署 AI 节点并运行编排任务后生成（worklog.json）','去 FDE 引导部署',"goPage('fde')");
   });
 }
 
