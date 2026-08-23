@@ -427,7 +427,7 @@ a:hover{text-decoration:underline}
     </button>
     <span style="margin-left:auto"></span>
     <span id="lastRefresh" style="color:var(--text-t);font-size:11px"></span>
-    <button class="seg-btn seg-refresh" onclick="manualRefresh()" title="立即刷新（每 5 秒自动刷新）" aria-label="立即刷新">
+    <button class="seg-btn seg-refresh" onclick="manualRefresh(this)" title="立即刷新（每 5 秒自动刷新）" aria-label="立即刷新">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;display:block"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><polyline points="21 3 21 9 15 9"/></svg>
     </button>
   </div>
@@ -560,7 +560,7 @@ a:hover{text-decoration:underline}
     </div>
   </div>
   <div class="info-note" style="margin-top:0">
-    <strong>怎么设置自己的 AI 节点？</strong>点右上角 <button class="btn btn-outline" onclick="openHelp('workflow')" style="padding:2px 8px">？帮助</button> 查看四步引导与 Prompt（或链 <a href="https://github.com/KongFangXun/sofagent/blob/main/FDE/GUIDE.md" target="_blank">FDE/GUIDE.md 第四章</a>）。节点部署后 7×24 自动执行，类型分：<strong><i class="bi bi-arrow-repeat"></i> 自动执行</strong>（AI 自主完成）、<strong><i class="bi bi-lightning-charge"></i> 强化岗位</strong>（AI 辅助人）、<strong><i class="bi bi-person"></i> 暂不介入</strong>。
+    <strong>怎么设置自己的 AI 节点？</strong>点右上角 <button class="btn btn-outline" onclick="openHelp('workflow')" style="padding:2px 8px">？帮助</button> 查看四步引导与 Prompt（或链 <a href="https://github.com/KongFangXun/sofagent/blob/main/FDE/GUIDE.md" target="_blank">FDE/GUIDE.md 第四章</a>）。
   </div>
 </div>
 
@@ -723,14 +723,6 @@ a:hover{text-decoration:underline}
       <div id="fdeSelfGraphBox" style="font-size:12px;color:var(--text-s)">
         <div style="text-align:center;color:var(--text-t);padding:12px">加载中...</div>
       </div>
-    </div>
-  </div>
-  <div class="section">
-    <div class="section-header"><div class="section-title"><span class="dot-emoji"><i class="bi bi-lightning-charge"></i></span>持续优化场景速查</div>
-      <span style="font-size:11px;color:var(--text-t)">两个常用 Prompt（查询踩坑 / 健康检查）已移入右上角 <button class="btn btn-outline" onclick="openHelp('fde')" style="padding:2px 8px">？帮助</button></span>
-    </div>
-    <div class="section-body">
-      <div style="font-size:12px;color:var(--text-s)">持续优化场景的 Prompt 速查见帮助面板「FDE 引导」页。</div>
     </div>
   </div>
 </div>
@@ -1578,11 +1570,10 @@ function emptyState(emoji,title,desc,ctaText,ctaFn){
 }
 
 /* 手动刷新一次（不清自动刷新定时器） */
-function manualRefresh(){
+function manualRefresh(btn){
   loadLiveData();
-  var btn=document.querySelector('.seg-refresh');
   if(btn){
-    btn.classList.add('refreshing'); // 短暂反馈：变绿 + 旋转
+    btn.classList.add('refreshing'); // 短暂反馈：旋转
     setTimeout(function(){btn.classList.remove('refreshing')},800);
   }
 }
@@ -2025,16 +2016,21 @@ function loadForgeData(){
     })
     .then(function(f){
       var a=f.agentA||{},b=f.agentB||{};
+      // dry-run / 初始空状态 → 诚实提示（真实审查跑过后自动更新）
+      var isDry=f.stopReason==='dry-run'||((a.status==='idle'||!a.status)&&(b.status==='idle'||!b.status)&&!(a.findings||b.findings));
+      if(isDry){
+        box.innerHTML=emptyState('<i class="bi bi-microscope"></i>','FORGE 尚未实际运行','最近记录是 dry-run 试运行（'+(f.updatedAt||'').slice(0,16)+'）——跑 fresh-eyes-loop 真实审查后显示进度');
+        return;
+      }
       var statusCn={running:'运行中',idle:'空闲',done:'完成',failed:'失败'};
-      var html='<div style="display:flex;gap:16px;flex-wrap:wrap">';
-      html+='<div style="flex:1;min-width:200px"><div style="font-size:13px;font-weight:500;color:var(--brand)">Agent A · 审查模型</div>'+
-        '<div style="font-size:12px;color:var(--text-s);margin-top:4px">状态：'+escapeHtml(statusCn[a.status]||a.status||'-')+' · 当前文件：'+escapeHtml(a.currentFile||'-')+'</div>'+
-        '<div style="font-size:11px;color:var(--text-t);margin-top:2px">本轮发现：'+(a.findings||0)+' · 累计：'+escapeHtml(a.cumulative||'-')+'</div></div>';
-      html+='<div style="flex:1;min-width:200px"><div style="font-size:13px;font-weight:500;color:var(--text-s)">Agent B · 工程模型</div>'+
-        '<div style="font-size:12px;color:var(--text-s);margin-top:4px">状态：'+escapeHtml(statusCn[b.status]||b.status||'-')+' · 当前文件：'+escapeHtml(b.currentFile||'-')+'</div>'+
-        '<div style="font-size:11px;color:var(--text-t);margin-top:2px">本轮发现：'+(b.findings||0)+' · 累计：'+escapeHtml(b.cumulative||'-')+'</div></div>';
-      html+='</div>';
-      html+='<div style="margin-top:12px;padding:8px 12px;background:var(--brand-l);border-radius:var(--radius-s);font-size:12px;color:var(--brand-d)">第 '+(f.round||0)+' 轮 / 共 '+(f.totalRounds||0)+' 轮 · '+escapeHtml(f.stopReason||'A/B 双盲中（互不可见）')+'</div>';
+      function card(name,agent){
+        return '<div style="flex:1;min-width:200px"><div style="font-size:13px;font-weight:500;color:var(--text-s)">'+name+'</div>'+
+          '<div style="font-size:12px;color:var(--text-s);margin-top:4px">状态：'+escapeHtml(statusCn[agent.status]||agent.status||'-')+' · 当前文件：'+escapeHtml(agent.currentFile||'-')+'</div>'+
+          '<div style="font-size:11px;color:var(--text-t);margin-top:2px">本轮发现：'+(agent.findings||0)+' · 累计：'+escapeHtml(agent.cumulative||'-')+'</div></div>';
+      }
+      var html='<div style="display:flex;gap:16px;flex-wrap:wrap">'+
+        card('Agent A · 审查模型',a)+card('Agent B · 工程模型',b)+'</div>';
+      html+='<div style="margin-top:12px;padding:8px 12px;background:var(--bg-s);border:1px solid var(--border);border-radius:var(--radius-s);font-size:12px;color:var(--text-s)">第 '+(f.round||0)+' 轮 / 共 '+(f.totalRounds||0)+' 轮 · '+escapeHtml(f.stopReason||'A/B 双盲中（互不可见）')+'</div>';
       box.innerHTML=html;
     })
     .catch(function(){
@@ -2181,7 +2177,7 @@ function loadWorklogData(){
         return ['<strong>'+escapeHtml(a.agentId)+'</strong>',a.totals.tasks,a.totals.llmCalls,fmtTokens(a.totals.tokens),fmtMs(a.totals.modelCallMs),over,a.totals.humanInterventions||0];
       });
       var agHtml=sampleFlag+'<div style="font-size:12px;font-weight:600;color:var(--text-s);margin:8px 0 4px">Agent 汇总</div>'+
-        wlTable(['Agent','任务数','LLM 调用','Token','耗时','成本','人工介入'],agRows);
+        wlTable(['Agent','任务数','模型调用','Token 数','耗时','成本','人工介入'],agRows);
       // 任务明细（taskId → 消耗 → 状态信号）
       var taskRows=[];
       (d.agents||[]).forEach(function(a){
@@ -2200,9 +2196,10 @@ function loadWorklogData(){
           ]);
         });
       });
-      agHtml+='<div style="font-size:12px;font-weight:600;color:var(--text-s);margin:16px 0 4px">任务明细（taskId → 消耗 → 状态信号）</div>';
+      agHtml+='<div style="font-size:12px;font-weight:600;color:var(--text-s);margin:16px 0 4px">任务明细</div>'+
+        '<div style="font-size:11px;color:var(--text-t);margin-bottom:6px">口径：Token 数=输入+输出 · 成本=LLM 估算 · 耗时=模型调用时长 · 人工介入=需要人审批/纠正的次数</div>';
       if(taskRows.length>30)agHtml+='<div style="font-size:11px;color:var(--text-t);margin-bottom:6px">共 '+taskRows.length+' 条任务，仅显示最近 30 条</div>';
-      agHtml+=wlTable(['Task ID','Workflow','决策','LLM 调用','Token','耗时','成本','重试','介入','最后活动'],taskRows.slice(0,30));
+      agHtml+=wlTable(['任务','所属流程','决策次数','模型调用','Token 数','耗时','成本','重试','人工介入','最后活跃'],taskRows.slice(0,30));
 
       /* 概况：Agent 汇总 + 任务明细 + Workflow 节点状态 */
       var statusMap={
@@ -2225,6 +2222,18 @@ function loadWorklogData(){
         return [escapeHtml(w.week),w.activity,w.auditPassRate!==null&&w.auditPassRate!==undefined?(w.auditPassRate*100).toFixed(0)+'%':'—',fmtCost(w.costUsd)];
       });
       document.getElementById('wl-view-weekly').innerHTML=sampleFlag+wlTable(['周','活跃度','审计成功率','成本'],wkRows);
+
+      /* 周报增强：近 4 周聚合摘要（原月报内容并入周报） */
+      var mWeeks=(d.weeklyTrend||[]).slice(-4);
+      if(mWeeks.length){
+        var mA=0,mC=0,mR=0,mN=0;
+        mWeeks.forEach(function(w){mA+=w.activity||0;mC+=w.costUsd||0;if(w.auditPassRate!=null){mR+=w.auditPassRate;mN++}});
+        var mRate=mN>0?Math.round((mR/mN)*100)+'%':'—';
+        var weeklyEl=document.getElementById('wl-view-weekly');
+        weeklyEl.innerHTML=sampleFlag+
+          '<div style="font-size:11px;color:var(--text-t);margin-bottom:6px">近 4 周合计（'+escapeHtml(mWeeks[0].week)+' → '+escapeHtml(mWeeks[mWeeks.length-1].week)+'）：活跃度 '+mA+' · 审计成功率 '+mRate+' · 成本 '+fmtCost(mC)+'</div>'+
+          wlTable(['周','活跃度','审计成功率','成本'],wkRows);
+      }
 
       /* 人工介入：优先 decisions.jsonl 事件（谁批的/为什么），降级 worklog 次数 */
       var ivRows=[];
