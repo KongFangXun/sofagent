@@ -91,7 +91,7 @@
 ## 六、导航 / Tab 标准
 
 1. **顶部导航**：扁平**纯文字**导航——无背景容器、无胶囊。active 项：品牌蓝文字 + 底部 2px 品牌色线条；hover：文字变深灰。
-2. **页内 Tab**（工作明细、帮助面板）：active 品牌蓝文字加粗，**无下划线**（与顶部导航区分，）。
+2. **页内 Tab**（工作明细、帮助面板）：active 品牌蓝文字加粗，**无下划线**（与顶部导航区分，用 `.tab-inline` 类）。
 3. 徽章/状态条（badge）：允许胶囊形 `border-radius:20px`——徽章与按钮形态区分。
 4. header 结构：PC 三段对齐（logo | 导航 | 按钮），`.header-inner{max-width:1200px;margin:0 auto}` 与内容对齐；**别给 header 本身加 max-width**（背景会变窄）。
 
