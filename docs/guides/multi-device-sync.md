@@ -167,3 +167,26 @@ A：v1.1.x 轻量版 = 文件级别的异步同步（你负责传输，sofagent 
 ---
 
 > 📖 相关文档：[ROADMAP](../ROADMAP.md)（多设备完整协同拆分至 v1.3.1-v1.3.9）· [v1.1.0 开发日志](../changelog/v1.1/v1.1.0.md)
+
+---
+
+## 远程 API 通道（v1.4.0 排入 · C/S 控制面）
+
+> **语义区分**：联邦查询 = 服务器间 P2P 查询（对等互查）；远程 API = **客户端 → 服务器控制面**（触发 workflow / 查询状态）。两者共享跨机器通信基础设施（TLS + 鉴权 + 帧协议），语义不同。
+
+**解决的问题**：无头服务器 / 远程调用部署形态——企业把 sofagent 跑在无头服务器上，运维 / 上层系统需要远程触发 workflow 并查询执行状态，但没有交互终端。
+
+**通道契约（v1.4.0 定义，实现随 daemon HTTP 面接入）**：
+
+| 端点 | 语义 | 鉴权 |
+|------|------|------|
+| `POST /remote/workflow/trigger` | 触发一个 workflow（YAML 定义或 workflowId） | 共享 token（Bearer） |
+| `GET /remote/workflow/{id}/status` | 查询 workflow 执行状态（running/done/failed/hitl-waiting） | 同上 |
+
+**安全边界**：
+- 只绑定本机/内网接口（默认 127.0.0.1，跨机需显式配置 + TLS）
+- 共享 token 走带外交换（对齐联邦通道 federation.token 的语义，不落环境变量）
+- 触发与查询全程进审计（decision-log 记 `kind=REMOTE_API` 决策留痕）
+- 与联邦通道共用同一跨机器帧协议基座（IV‖tag‖ciphertext 密文帧）
+
+**双设备联调记录（v1.4.0 验收）**：E2E 脚本已固化入仓（`FORGE/playbook/federation-e2e.mjs`，10 断言全 PASS）；远程 API 通道的跨机实测依赖真实双设备环境，单机环境标注「依赖真实双设备，单机跳过」（技术选型 OpenClaw / DSH 通道留白，不锁死）。

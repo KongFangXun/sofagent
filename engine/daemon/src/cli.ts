@@ -44,6 +44,20 @@ async function main() {
   }
 
   switch (subcommand) {
+    case 'worklog': {
+      // v1.4.0 交付七：TUI 工作明细视图（worklog.json ASCII 渲染）
+      const { renderWorklogView } = await import('./dashboard/worklog-view');
+      const dataDir = process.env.SOFAGENT_DATA || (process.env.SOFAGENT_HOME || require('os').homedir()) + '/.sofagent/data';
+      console.log(renderWorklogView(dataDir + '/dashboard/worklog.json'));
+      break;
+    }
+    case 'decision-tree': {
+      // v1.4.0 交付七：对话分支回溯（decisions.jsonl 分支树）
+      const { renderDecisionTree } = await import('./dashboard/decision-tree');
+      const dataDir = process.env.SOFAGENT_DATA || (process.env.SOFAGENT_HOME || require('os').homedir()) + '/.sofagent/data';
+      console.log(renderDecisionTree(dataDir + '/audit/decision-log.jsonl'));
+      break;
+    }
     case 'knowledge': {
       const action = args[1];
       const projectDir = process.cwd();
