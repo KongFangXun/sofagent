@@ -5,10 +5,17 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "openclaw": {
-    "extensions": ["./dist/index.js"],
-    "runtimeExtensions": ["./dist/index.js"],
+    "extensions": [
+      "./dist/index.js"
+    ],
+    "runtimeExtensions": [
+      "./dist/index.js"
+    ],
     "compat": {
       "pluginApi": ">=2026.7.1-2"
+    },
+    "build": {
+      "openclawVersion": "2026.7.1-2"
     }
   },
   "scripts": {
@@ -16,7 +23,14 @@
     "build": "npm run clean && tsc",
     "prepublishOnly": "npm run build"
   },
-  "keywords": ["sofagent", "openclaw", "plugin", "inject", "constraint", "load-chain"],
+  "keywords": [
+    "sofagent",
+    "openclaw",
+    "plugin",
+    "inject",
+    "constraint",
+    "load-chain"
+  ],
   "license": "MIT",
   "author": "KongFangXun",
   "repository": {
@@ -34,5 +48,11 @@
   "engines": {
     "node": ">=18"
   },
-  "files": ["dist/", "openclaw.plugin.json", "README.md", "!dist/**/*.js.map", "!dist/**/*.d.ts.map"]
+  "files": [
+    "dist/",
+    "openclaw.plugin.json",
+    "README.md",
+    "!dist/**/*.js.map",
+    "!dist/**/*.d.ts.map"
+  ]
 }
