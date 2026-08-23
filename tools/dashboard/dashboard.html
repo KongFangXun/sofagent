@@ -215,6 +215,14 @@ a:hover{text-decoration:underline}
 .mcp-item{background:var(--bg-s);border:1px solid var(--border);border-radius:6px;padding:8px 10px;font-size:12px}
 .mcp-item code{font-family:var(--mono);font-size:11px;color:var(--brand-d);font-weight:600}
 .mcp-item .mcp-desc{color:var(--text-s);margin-top:2px;font-size:11px}
+/* MCP 工具分组折叠 */
+.tool-group{border:1px solid var(--border);border-radius:var(--radius-s);background:var(--card);margin-bottom:8px;overflow:hidden}
+.tool-group summary{cursor:pointer;padding:10px 14px;font-size:13px;font-weight:600;color:var(--text);list-style:none;display:flex;align-items:center;gap:8px;user-select:none}
+.tool-group summary::-webkit-details-marker{display:none}
+.tool-group summary::before{content:'▸';font-size:11px;color:var(--text-t);transition:transform .15s}
+.tool-group[open] summary::before{transform:rotate(90deg)}
+.tool-group summary:hover{background:var(--bg)}
+.tg-count{font-size:11px;font-weight:500;color:var(--text-t);background:var(--bg);border-radius:10px;padding:1px 8px;margin-left:2px}
 
 .npm-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px}
 .npm-item{background:var(--bg-s);border:1px solid var(--border);border-radius:var(--radius-s);padding:10px 12px}
@@ -478,11 +486,6 @@ a:hover{text-decoration:underline}
 <!-- PAGE: 业务流（AI 节点 + 工作明细，v1.4.0 归并） -->
 <!-- ================================================== -->
 <div class="page" id="page-workflow">
-    <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
-    <button class="nav-item active" data-wf="status" onclick="wfMainTab('status')">实时状态</button>
-    <button class="nav-item" data-wf="detail" onclick="wfMainTab('detail')">工作明细</button>
-  </div>
-  <div id="wf-view-status">
   <div class="section">
     <div class="section-header">
       <div class="section-title"><span class="dot-emoji">🤖</span>业务 AI 节点</div>
@@ -520,8 +523,6 @@ a:hover{text-decoration:underline}
       </div>
     </div>
   </div>
-  </div><!-- /wf-view-status -->
-  <div id="wf-view-detail" style="display:none">
   <div class="section">
     <div class="section-header"><div class="section-title"><span class="dot-emoji">📊</span>工作明细（worklog）</div>
       <span style="font-size:11px;color:var(--text-t)">数据源：data/dashboard/worklog.json · 超支项标红（kind=COST）</span>
@@ -539,7 +540,6 @@ a:hover{text-decoration:underline}
       <div id="wl-view-intervention" style="display:none"></div>
     </div>
   </div>
-  </div><!-- /wf-view-detail -->
   <div class="info-note" style="margin-top:0">
     <strong>怎么设置自己的 AI 节点？</strong>点右上角 <button class="copy-btn light" onclick="openHelp('workflow')" style="padding:2px 8px">？帮助</button> 查看四步引导与 Prompt（或链 <a href="https://github.com/KongFangXun/sofagent/blob/main/FDE/GUIDE.md" target="_blank">FDE/GUIDE.md 第四章</a>）。节点部署后 7×24 自动执行，类型分：<strong>🔄 自动执行</strong>（AI 自主完成）、<strong>⚡ 强化岗位</strong>（AI 辅助人）、<strong>👤 暂不介入</strong>。
   </div>
@@ -720,13 +720,6 @@ a:hover{text-decoration:underline}
 <!-- PAGE: 工具箱 -->
 <!-- ================================================== -->
 <div class="page" id="page-resources">
-    <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
-    <button class="nav-item active" data-rs="install" onclick="resTab('install')">安装</button>
-    <button class="nav-item" data-rs="ability" onclick="resTab('ability')">能力</button>
-    <button class="nav-item" data-rs="ecosystem" onclick="resTab('ecosystem')">生态</button>
-    <button class="nav-item" data-rs="docs" onclick="resTab('docs')">文档</button>
-    <button class="nav-item" data-rs="forge" onclick="resTab('forge')">FORGE</button>
-  </div>
   <div class="section">
     <div class="section-header"><div class="section-title"><span class="dot-emoji">⚙️</span>快速安装</div></div>
     <div class="section-body">
@@ -2122,36 +2115,6 @@ function wlTab(tab){
   });
 }
 
-/* 业务流页主 tab：实时状态 / 工作明细 */
-function wfMainTab(tab){
-  document.querySelectorAll('#page-workflow .nav-item[data-wf]').forEach(function(b){
-    b.classList.toggle('active',b.getAttribute('data-wf')===tab);
-  });
-  document.getElementById('wf-view-status').style.display=tab==='status'?'':'none';
-  document.getElementById('wf-view-detail').style.display=tab==='detail'?'':'none';
-}
-
-/* 工具箱分类 tab：安装 / 能力 / 生态 / 文档 / FORGE */
-function resTab(group){
-  document.querySelectorAll('#page-resources .nav-item[data-rs]').forEach(function(b){
-    b.classList.toggle('active',b.getAttribute('data-rs')===group);
-  });
-  var groups={
-    install:['快速安装'],
-    ability:['约束层','生命周期','审计规则','skill 加载链'],
-    ecosystem:['MCP 工具','npm 包'],
-    docs:['文档直达'],
-    forge:['FORGE']
-  };
-  var names=groups[group]||[];
-  document.querySelectorAll('#page-resources > .section').forEach(function(s){
-    var t=s.querySelector('.section-title');
-    var txt=t?t.textContent:'';
-    var show=names.some(function(n){return txt.indexOf(n)>=0});
-    s.style.display=show?'':'none';
-  });
-}
-
 /* 统一表格渲染：窄屏横向滚动 + 全量转义 */
 function wlTable(headers,rows){
   if(!rows||!rows.length)return '<div style="font-size:12px;color:var(--text-t);padding:12px 0">暂无数据</div>';
@@ -2431,25 +2394,37 @@ function loadFdeSelfGraph(){
 }
 
 /* MCP 工具清单（v1.4.0 · 66 个，与 engine/mcp/src/tool-registry.ts 对齐） */
+/* MCP 工具清单（v1.4.0 · 66 个，与 engine/mcp/src/tool-registry.ts 对齐 · 按功能分组折叠） */
 var MCP_TOOLS=[
-  ['worklog_query','工作明细查询'],['cost_query','成本审计查询'],['playwright_navigate','浏览器导航'],['playwright_click','浏览器点击'],['playwright_screenshot','浏览器截图'],['playwright_assert','浏览器断言'],
-  ['run_audit','全量审计'],['get_think','读取反思'],['write_think','写入反思'],['sofagent_compose','任务编排'],['audit_file','单文件审计'],['search_knowledge','知识库搜索'],
-  ['read_entity','读取实体'],['read_concept','读取概念'],['list_entities','实体列表'],['read_lessons','踩坑记录'],['read_think_md','读取 think.md'],['stats','知识库统计'],
-  ['list_capabilities','能力清单'],['data_sovereignty_report','数据主权报告'],['create_entity','创建实体'],['create_concept','创建概念'],['update_entity','更新实体'],['delete_entity','删除实体'],
-  ['delete_concept','删除概念'],['validate_ontology','本体校验'],['evaluate_output','产出评估'],['optimize_skill','Skill 优化'],['health_check','健康检查'],['audit_data_change','数据变更审计'],
-  ['notify_session','会话通知'],['activate_workflow','激活工作流'],['daemon_status','守护进程状态'],['list_agents','Agent 列表'],['list_concepts','概念列表'],['hitl_resolve','人工决议'],
-  ['list_rules','规则清单'],['agent_identity','身份码查询'],['loop_debug','调试循环'],['evaluate','Benchmark 评测'],['audit_trail','审计轨迹'],['create_agent','推导 Agent'],
-  ['eval_suite','评测套件'],['fde_compose','FDE 梳理辅助'],['route_workflow','入口路由'],['team_create','创建团队'],['team_broadcast','意图广播'],['refine','质量优化循环'],
-  ['commons_publish','能力发布'],['commons_search','能力检索'],['commons_invoke','能力调用'],['commons_rate','能力评价'],['commons_retire','能力退役'],['commons_harvest_rule','规则提炼'],
-  ['run_ab_test','A/B 实验'],['promote_ab','晋升版本'],['snapshot_list','快照列表'],['snapshot_restore','快照恢复'],['workflow_submit','工作流提交'],['ontology_import','本体注入'],
-  ['model_register','模型注册'],['model_switch','模型切换'],['model_unregister','模型退役'],['train_budget','训练预算'],['define_acceptance','验收定义'],['check_acceptance','验收执行']
+  {g:'审计与安全',open:true,items:[
+    ['run_audit','全量审计'],['audit_file','单文件审计'],['audit_data_change','数据变更审计'],['audit_trail','审计轨迹'],['cost_query','成本审计查询'],['data_sovereignty_report','数据主权报告'],['list_rules','规则清单'],['agent_identity','身份码查询']
+  ]},
+  {g:'知识库与本体',open:true,items:[
+    ['search_knowledge','知识库搜索'],['read_entity','读取实体'],['read_concept','读取概念'],['list_entities','实体列表'],['list_concepts','概念列表'],['read_lessons','踩坑记录'],['read_think_md','读取 think.md'],['stats','知识库统计'],['create_entity','创建实体'],['create_concept','创建概念'],['update_entity','更新实体'],['delete_entity','删除实体'],['delete_concept','删除概念'],['validate_ontology','本体校验'],['ontology_import','本体注入']
+  ]},
+  {g:'反思与进化',open:false,items:[
+    ['get_think','读取反思'],['write_think','写入反思'],['refine','质量优化循环'],['optimize_skill','Skill 优化'],['evaluate_output','产出评估'],['evaluate','Benchmark 评测'],['eval_suite','评测套件'],['run_ab_test','A/B 实验'],['promote_ab','晋升版本']
+  ]},
+  {g:'编排与执行',open:false,items:[
+    ['worklog_query','工作明细查询'],['sofagent_compose','任务编排'],['activate_workflow','激活工作流'],['workflow_submit','工作流提交'],['route_workflow','入口路由'],['fde_compose','FDE 梳理辅助'],['loop_debug','调试循环'],['create_agent','推导 Agent'],['hitl_resolve','人工决议'],['notify_session','会话通知'],['define_acceptance','验收定义'],['check_acceptance','验收执行']
+  ]},
+  {g:'能力公地与模型',open:false,items:[
+    ['commons_publish','能力发布'],['commons_search','能力检索'],['commons_invoke','能力调用'],['commons_rate','能力评价'],['commons_retire','能力退役'],['commons_harvest_rule','规则提炼'],['model_register','模型注册'],['model_switch','模型切换'],['model_unregister','模型退役'],['train_budget','训练预算']
+  ]},
+  {g:'协作与运维',open:false,items:[
+    ['playwright_navigate','浏览器导航'],['playwright_click','浏览器点击'],['playwright_screenshot','浏览器截图'],['playwright_assert','浏览器断言'],['list_capabilities','能力清单'],['health_check','健康检查'],['daemon_status','守护进程状态'],['list_agents','Agent 列表'],['team_create','创建团队'],['team_broadcast','意图广播'],['snapshot_list','快照列表'],['snapshot_restore','快照恢复']
+  ]}
 ];
 
 function renderMcpList(){
   var box=document.getElementById('mcpList');
   if(!box)return;
-  box.innerHTML=MCP_TOOLS.map(function(t){
-    return '<div class="mcp-item"><code>'+escapeHtml(t[0])+'</code><div class="mcp-desc">'+escapeHtml(t[1])+'</div></div>';
+  box.innerHTML=MCP_TOOLS.map(function(g){
+    return '<details class="tool-group"'+(g.open?' open':'')+'>'+
+      '<summary>'+escapeHtml(g.g)+'<span class="tg-count">'+g.items.length+'</span></summary>'+
+      '<div class="mcp-grid" style="padding:0 14px 14px;margin-top:10px">'+g.items.map(function(t){
+        return '<div class="mcp-item"><code>'+escapeHtml(t[0])+'</code><div class="mcp-desc">'+escapeHtml(t[1])+'</div></div>';
+      }).join('')+'</div></details>';
   }).join('');
 }
 function renderSkillChain(){
