@@ -92,7 +92,7 @@ a:hover{text-decoration:underline}
 
 .metrics{display:grid;grid-template-columns:repeat(6,1fr);gap:16px;margin-bottom:16px}
 .metric-card{background:var(--card);border:none;box-shadow:0 1px 3px rgba(16,24,40,.06),0 1px 2px rgba(16,24,40,.04);border-radius:var(--radius);padding:16px;text-align:center}
-.metric-value{font-size:28px;font-weight:700;line-height:1.2;font-variant-numeric:tabular-nums}
+.metric-value{font-size:28px;font-weight:700;line-height:1.2;font-variant-numeric:tabular-nums;color:var(--text)}
 .metric-label{font-size:12px;color:var(--text-s);margin-top:4px}
 .metric-sub{font-size:11px;color:var(--text-t);margin-top:2px}
 /* 指标趋势箭头（洞察层） */
@@ -414,32 +414,32 @@ a:hover{text-decoration:underline}
 
   <div class="metrics">
     <div class="metric-card">
-      <div class="metric-value" style="color:var(--brand-d)" id="m-agents">—</div>
+      <div class="metric-value" id="m-agents">—</div>
       <div class="metric-label">活跃 Agent</div>
       <div class="metric-sub" id="m-agents-sub">来自 worklog</div>
     </div>
     <div class="metric-card">
-      <div class="metric-value" style="color:var(--brand-d)" id="m-cost">—</div>
+      <div class="metric-value" id="m-cost">—</div>
       <div class="metric-label">总成本</div>
       <div class="metric-sub" id="m-cost-sub">LLM 估算</div>
     </div>
     <div class="metric-card">
-      <div class="metric-value" style="color:var(--green)" id="m-audit">—</div>
+      <div class="metric-value" id="m-audit">—</div>
       <div class="metric-label">规则通过率</div>
       <div class="metric-sub" id="m-audit-sub">通过的检查 ÷ 全部检查</div>
     </div>
     <div class="metric-card">
-      <div class="metric-value" style="color:var(--brand-d)" id="m-today">—</div>
+      <div class="metric-value" id="m-today">—</div>
       <div class="metric-label">今日任务</div>
       <div class="metric-sub" id="m-today-sub">总 — 个任务</div>
     </div>
     <div class="metric-card">
-      <div class="metric-value" style="color:var(--brand-d)" id="m-nodes">—</div>
+      <div class="metric-value" id="m-nodes">—</div>
       <div class="metric-label">审计次数（今日）</div>
       <div class="metric-sub" id="m-nodes-sub">总 — 次检查</div>
     </div>
     <div class="metric-card">
-      <div class="metric-value" style="color:var(--amber)" id="m-violations">—</div>
+      <div class="metric-value" id="m-violations">—</div>
       <div class="metric-label">问题次数（今日）</div>
       <div class="metric-sub" id="m-violations-sub">总 — 次问题</div>
     </div>
@@ -1243,7 +1243,9 @@ function renderSummaryData(s){
   animateNumber(document.getElementById('m-nodes'),todayChecks);
   document.getElementById('m-nodes-sub').textContent='总 '+(r.total||0)+' 次检查';
   animateNumber(document.getElementById('m-violations'),todayIssues);
-  document.getElementById('m-violations-sub').textContent='总 '+totalIssues+' 次问题';
+  var vsEl=document.getElementById('m-violations-sub');
+  vsEl.textContent='总 '+totalIssues+' 次问题';
+  vsEl.style.color=totalIssues>0?'var(--amber)':'';
   // 审计记录卡：总数 + 测试过滤说明
   var cnt=document.getElementById('auditRecordCount');
   if(cnt){cnt.textContent='共 '+(s.auditTotal||r.total)+' 条'+(s.filteredTestRecords?(' · 已过滤 '+s.filteredTestRecords+' 条测试'):'')}
@@ -1296,7 +1298,7 @@ function renderSummaryData(s){
       if(prevDay2){
         var prevIss2=(prevDay2.ruleAll||0)-(prevDay2.rulePass||0);
         var dlt=todayIssues-prevIss2;
-        parts.push('问题较昨日 '+(dlt>0?'<b style="color:var(--red)">+'+dlt+'</b>':dlt<0?'<b style="color:var(--green)">'+dlt+'</b>':'持平'));
+        parts.push('问题较昨日 '+(dlt>0?'<b style="color:var(--amber)">+'+dlt+'</b>':dlt<0?'<b style="color:var(--green)">'+dlt+'</b>':'持平'));
       }
       ib.innerHTML='<span style="opacity:.5">|</span> '+parts.join(' · ');
     }else{
@@ -1434,7 +1436,9 @@ function processAuditData(records){
   animateNumber(document.getElementById('m-nodes'),records.length);
   document.getElementById('m-nodes-sub').textContent='审计次数';
   animateNumber(document.getElementById('m-violations'),(warn+fail));
-  document.getElementById('m-violations-sub').textContent='WARN '+warn+' / FAIL '+fail;
+  var vsEl2=document.getElementById('m-violations-sub');
+  vsEl2.textContent='WARN '+warn+' / FAIL '+fail;
+  vsEl2.style.color=(warn+fail)>0?'var(--amber)':'';
   // 今日审计次数
   var today=new Date().toISOString().slice(0,10);
   var todayCount=records.filter(function(r){return (r.timestamp||'').slice(0,10)===today}).length;
@@ -1516,6 +1520,7 @@ function loadSampleData(){
   document.getElementById('m-nodes-sub').textContent='总 26488 次检查 · 示例';
   document.getElementById('m-violations').textContent='14';
   document.getElementById('m-violations-sub').textContent='总 2112 次问题 · 示例';
+  document.getElementById('m-violations-sub').style.color='var(--amber)';
   var samples=[
     {time:'08-03 00:42',verdict:'PASS',rule:'',task:'feat: 添加 A22 权限提升审计规则'},
     {time:'08-02 23:18',verdict:'WARN',rule:'A19',task:'fix: 修复 daemon 启动顺序'},
