@@ -2,7 +2,7 @@
 <!--
   sofagent Dashboard 驾驶舱——安装后 sofagent web 启动
   开发预览：node tools/dashboard/serve-dashboard.mjs（localhost:3780）
-  v1.4.0：导航收敛 6 项（驾驶舱/业务流/本体图谱/知识库/FDE Agent/工具箱）
+  v1.4.0：导航收敛 6 项（驾驶舱/业务流/本体图谱/FDE 引导/知识库/工具箱）
 -->
 <html lang="zh-CN">
 <head>
@@ -253,6 +253,16 @@ a:hover{text-decoration:underline}
 .st-failed{background:var(--red)}
 .st-hitl{background:var(--amber)}
 .st-unknown{background:var(--text-t)}
+/* 图节点脉冲动画（编排控制图 / 图谱共用） */
+.pulse-svg{animation:pulse 2s infinite}
+/* skill 加载链（纵向阶梯） */
+.skill-chain{display:flex;flex-direction:column;gap:0;max-width:560px}
+.sc-item{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--border);border-radius:var(--radius-s);background:#FAFBFC}
+.sc-item .sc-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0}
+.sc-item .sc-name{font-size:13px;font-weight:600;flex-shrink:0}
+.sc-item .sc-desc{font-size:11px;color:var(--text-s)}
+.sc-item .sc-tag{margin-left:auto;font-size:10px;color:var(--text-t);font-family:var(--mono);flex-shrink:0}
+.sc-arrow{text-align:center;color:var(--text-t);font-size:13px;line-height:1;padding:5px 0;flex-shrink:0}
 
 @media(max-width:768px){
   :root{--nav-h:auto}
@@ -323,8 +333,8 @@ a:hover{text-decoration:underline}
       <button class="nav-item active" onclick="goPage('cockpit')">驾驶舱</button>
       <button class="nav-item" onclick="goPage('workflow')">业务流</button>
       <button class="nav-item" onclick="goPage('ontology')">本体图谱</button>
+      <button class="nav-item" onclick="goPage('fde')">FDE 引导</button>
       <button class="nav-item" onclick="goPage('knowledge')">知识库</button>
-      <button class="nav-item" onclick="goPage('fde')">FDE Agent</button>
       <button class="nav-item" onclick="goPage('resources')">工具箱</button>
     </nav>
     <div class="header-right">
@@ -441,7 +451,7 @@ a:hover{text-decoration:underline}
 <div class="page" id="page-workflow">
   <div class="section">
     <div class="section-header">
-      <div class="section-title"><span class="dot-emoji">🤖</span>企业 AI 节点</div>
+      <div class="section-title"><span class="dot-emoji">🤖</span>业务 AI 节点</div>
       <span style="font-size:11px;color:var(--text-t)" id="aiNodesUpdatedAt">加载中...</span>
     </div>
     <div class="section-body">
@@ -449,7 +459,7 @@ a:hover{text-decoration:underline}
         <div style="text-align:center;color:var(--text-t);padding:12px">加载中...</div>
       </div>
       <div class="info-note" style="margin-top:12px">
-        这里显示你<strong>通过 FDE 部署的企业 AI 节点</strong>（🔄 自动执行 / ⚡ 强化岗位）。当前展示的是 FDE 十步流程模板；部署节点后会自动出现在这里（数据源 <code style="background:var(--brand-l);padding:2px 6px;border-radius:4px">~/.sofagent/fde/workflow/</code>）。
+        这里显示你<strong>通过 FDE 部署的业务 AI 节点</strong>（🔄 自动执行 / ⚡ 强化岗位）。当前展示的是 FDE 十步流程模板；部署节点后会自动出现在这里（数据源 <code style="background:var(--brand-l);padding:2px 6px;border-radius:4px">~/.sofagent/fde/workflow/</code>）。
       </div>
     </div>
   </div>
@@ -467,7 +477,7 @@ a:hover{text-decoration:underline}
   <div class="section">
     <div class="section-header"><div class="section-title"><span class="dot-emoji">🧩</span>编排流水线节点</div></div>
     <div class="section-body">
-      <div style="font-size:11px;color:var(--text-t);margin-bottom:10px">这里是 <b>sofagent 引擎内部执行流水线</b>（planner → engineer → audit → reviewer → human），每次 AI 任务自动走的五步。业务角色节点（分析师/规划师/部署专家）见 <a href="javascript:void(0)" onclick="goPage('fde')" style="color:var(--brand)">FDE Agent</a> 页。</div>
+      <div style="font-size:11px;color:var(--text-t);margin-bottom:10px">这里是 <b>sofagent 引擎内部执行流水线</b>（planner → engineer → audit → reviewer → human），每次 AI 任务自动走的五步。业务角色节点（分析师/规划师/部署专家）见 <a href="javascript:void(0)" onclick="goPage('fde')" style="color:var(--brand)">FDE 引导</a> 页。</div>
       <div class="grid-3" id="nodeList">
         <div style="grid-column:1/-1;text-align:center;color:var(--text-t);font-size:12px;padding:12px">加载中...</div>
       </div>
@@ -494,7 +504,7 @@ a:hover{text-decoration:underline}
     <div class="section-header"><div class="section-title"><span class="dot-emoji">🛠️</span>怎么设置自己的 AI 节点</div></div>
     <div class="section-body">
       <div class="step-card">
-        <div class="step-title"><span class="step-num">1</span>梳理工作流，识别可自动化环节</div>
+        <div class="step-title"><span class="step-num">1</span>梳理业务流，识别可自动化环节</div>
         <div class="step-desc">用五要素法（输入/输出/负责人/耗时/痛点）盘点每个岗位，找出重复频率高、规则明确的环节。</div>
       </div>
       <div class="step-card">
@@ -515,9 +525,9 @@ a:hover{text-decoration:underline}
       </div>
       <div class="grid-2" style="margin-top:12px">
         <div class="prompt-box" style="margin-top:0">
-          <div class="prompt-action"><span class="prompt-label">创建 AI 节点</span><button class="copy-btn" onclick="copyPrompt(this, '作为 sofagent FDE Agent，帮我梳理工作流。先了解我的业务，盘点现有平台和系统，把能自动化的环节变成 AI 节点。')">复制</button></div>
+          <div class="prompt-action"><span class="prompt-label">创建 AI 节点</span><button class="copy-btn" onclick="copyPrompt(this, '作为 sofagent FDE Agent，帮我梳理业务流。先了解我的业务，盘点现有平台和系统，把能自动化的环节变成 AI 节点。')">复制</button></div>
           <code>作为 sofagent FDE Agent，
-帮我梳理工作流。先了解我的业务，
+帮我梳理业务流。先了解我的业务，
 盘点现有平台和系统，
 把能自动化的环节变成 AI 节点。</code>
         </div>
@@ -555,21 +565,15 @@ a:hover{text-decoration:underline}
   </div>
   <div class="section">
     <div class="section-header"><div class="section-title"><span class="dot-emoji">🕸️</span>图谱视图</div>
-      <span style="font-size:11px;color:var(--text-t)">FDE 双 graph（人读 workflow · 机器读 ontology）· 自 FDE workflow · MCP 工具 · skill 加载链</span>
+      <span style="font-size:11px;color:var(--text-t)">FDE 双 graph（人读 workflow · 机器读 ontology）</span>
     </div>
     <div class="section-body">
       <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
         <button class="nav-item active" id="gr-tab-workflow" onclick="grTab('workflow')">Workflow 图谱</button>
         <button class="nav-item" id="gr-tab-ontology" onclick="grTab('ontology')">Ontology 图谱</button>
-        <button class="nav-item" id="gr-tab-self" onclick="grTab('self')">自 FDE workflow</button>
-        <button class="nav-item" id="gr-tab-mcp" onclick="grTab('mcp')">MCP 工具视图</button>
-        <button class="nav-item" id="gr-tab-skill" onclick="grTab('skill')">skill 加载链</button>
       </div>
       <div id="gr-view-workflow"></div>
       <div id="gr-view-ontology" style="display:none"></div>
-      <div id="gr-view-self" style="display:none"></div>
-      <div id="gr-view-mcp" style="display:none"></div>
-      <div id="gr-view-skill" style="display:none"></div>
     </div>
   </div>
   <div class="section">
@@ -725,9 +729,44 @@ a:hover{text-decoration:underline}
 </div>
 
 <!-- ================================================== -->
-<!-- PAGE: FDE Agent（原 FDE 引导，v1.4.0 改名） -->
+<!-- PAGE: FDE 引导 -->
 <!-- ================================================== -->
 <div class="page" id="page-fde">
+  <div class="section">
+    <div class="section-header"><div class="section-title"><span class="dot-emoji">🧭</span>FDE 五阶段 Prompt</div>
+      <a href="https://github.com/KongFangXun/sofagent/blob/main/FDE/GUIDE.md" target="_blank" class="copy-btn light">FDE/GUIDE.md →</a>
+    </div>
+    <div class="section-body">
+      <div class="fde-stage">
+        <div class="fde-num">1</div>
+        <div class="fde-content"><div class="fde-title">进场 · 确定场景 + 盘点平台 + 建档</div><div class="fde-desc">摸清企业底子：业务、协同平台、业务系统、数据可达性。</div></div>
+        <button class="copy-btn light" onclick="copyPrompt(this, '作为 sofagent FDE Agent 进入进场阶段。先了解我的企业：名称、行业、规模、主要业务。然后盘点协同平台和业务系统，帮我建企业画像。')">复制</button>
+      </div>
+      <div class="fde-stage">
+        <div class="fde-num">2</div>
+        <div class="fde-content"><div class="fde-title">深挖 · 五要素 + 本体结构</div><div class="fde-desc">梳理输入/输出/负责人/耗时/痛点，构建 ontology 本体结构。</div></div>
+        <button class="copy-btn light" onclick="copyPrompt(this, '进入 FDE 深挖阶段。帮我梳理关键岗位的业务流：输入是什么、输出是什么、谁负责、耗多少时间、痛点在哪。然后构建本体结构。')">复制</button>
+      </div>
+      <div class="fde-stage">
+        <div class="fde-num">3</div>
+        <div class="fde-content"><div class="fde-title">量化 · 三问判定 + 价值计算</div><div class="fde-desc">三问判定类型，计算年节省金额。
+          <span class="node-type nt-auto" style="margin-left:4px">AI 自主</span><span class="node-type nt-ai">AI 辅助</span><span class="node-type nt-human">人工确认</span></div>
+        </div>
+        <button class="copy-btn light" onclick="copyPrompt(this, '进入 FDE 量化阶段。对每个业务流节点做三问判定：能全自动吗？需要人确认吗？适合 AI 辅助吗？然后计算每个 AI 节点的年节省金额。')">复制</button>
+      </div>
+      <div class="fde-stage">
+        <div class="fde-num">4</div>
+        <div class="fde-content"><div class="fde-title">交付 · 三层实体 + 部署引导</div><div class="fde-desc">文档层 + Skill 层 + 运行层，部署到企业平台。</div></div>
+        <button class="copy-btn light" onclick="copyPrompt(this, '进入 FDE 交付阶段。帮我生成三层交付物：文档层操作手册、Skill 层行为约束、运行层可执行节点。然后引导部署。')">复制</button>
+      </div>
+      <div class="fde-stage">
+        <div class="fde-num">5</div>
+        <div class="fde-content"><div class="fde-title">离场 · 自检 + 观察期 + 确认</div><div class="fde-desc">审计自检、反思沉淀、设置观察期。</div></div>
+        <button class="copy-btn light" onclick="copyPrompt(this, '进入 FDE 离场阶段。做自检清单：审计有没有遗漏、反思有没有沉淀、知识库有没有更新。然后设置观察期。')">复制</button>
+      </div>
+    </div>
+  </div>
+
   <div class="section">
     <div class="section-header"><div class="section-title"><span class="dot-emoji">🚀</span>怎么用 sofagent 做 FDE</div>
       <a href="https://clawhub.ai/skill/sofagent" target="_blank" class="copy-btn light">ClawHub Skill →</a>
@@ -758,41 +797,6 @@ a:hover{text-decoration:underline}
       </div>
     </div>
   </div>
-
-  <div class="section">
-    <div class="section-header"><div class="section-title"><span class="dot-emoji">🧭</span>FDE 五阶段 Prompt</div>
-      <a href="https://github.com/KongFangXun/sofagent/blob/main/FDE/GUIDE.md" target="_blank" class="copy-btn light">FDE/GUIDE.md →</a>
-    </div>
-    <div class="section-body">
-      <div class="fde-stage">
-        <div class="fde-num">1</div>
-        <div class="fde-content"><div class="fde-title">进场 · 确定场景 + 盘点平台 + 建档</div><div class="fde-desc">摸清企业底子：业务、协同平台、业务系统、数据可达性。</div></div>
-        <button class="copy-btn light" onclick="copyPrompt(this, '作为 sofagent FDE Agent 进入进场阶段。先了解我的企业：名称、行业、规模、主要业务。然后盘点协同平台和业务系统，帮我建企业画像。')">复制</button>
-      </div>
-      <div class="fde-stage">
-        <div class="fde-num">2</div>
-        <div class="fde-content"><div class="fde-title">深挖 · 五要素 + 本体结构</div><div class="fde-desc">梳理输入/输出/负责人/耗时/痛点，构建 ontology 本体结构。</div></div>
-        <button class="copy-btn light" onclick="copyPrompt(this, '进入 FDE 深挖阶段。帮我梳理关键岗位的工作流：输入是什么、输出是什么、谁负责、耗多少时间、痛点在哪。然后构建本体结构。')">复制</button>
-      </div>
-      <div class="fde-stage">
-        <div class="fde-num">3</div>
-        <div class="fde-content"><div class="fde-title">量化 · 三问判定 + 价值计算</div><div class="fde-desc">三问判定类型，计算年节省金额。
-          <span class="node-type nt-auto" style="margin-left:4px">AI 自主</span><span class="node-type nt-ai">AI 辅助</span><span class="node-type nt-human">人工确认</span></div>
-        </div>
-        <button class="copy-btn light" onclick="copyPrompt(this, '进入 FDE 量化阶段。对每个工作流节点做三问判定：能全自动吗？需要人确认吗？适合 AI 辅助吗？然后计算每个 AI 节点的年节省金额。')">复制</button>
-      </div>
-      <div class="fde-stage">
-        <div class="fde-num">4</div>
-        <div class="fde-content"><div class="fde-title">交付 · 三层实体 + 部署引导</div><div class="fde-desc">文档层 + Skill 层 + 运行层，部署到企业平台。</div></div>
-        <button class="copy-btn light" onclick="copyPrompt(this, '进入 FDE 交付阶段。帮我生成三层交付物：文档层操作手册、Skill 层行为约束、运行层可执行节点。然后引导部署。')">复制</button>
-      </div>
-      <div class="fde-stage">
-        <div class="fde-num">5</div>
-        <div class="fde-content"><div class="fde-title">离场 · 自检 + 观察期 + 确认</div><div class="fde-desc">审计自检、反思沉淀、设置观察期。</div></div>
-        <button class="copy-btn light" onclick="copyPrompt(this, '进入 FDE 离场阶段。做自检清单：审计有没有遗漏、反思有没有沉淀、知识库有没有更新。然后设置观察期。')">复制</button>
-      </div>
-    </div>
-  </div>
   <div class="section">
     <div class="section-header">
       <div class="section-title"><span class="dot-emoji">📋</span>FDE Agent（内置 Workflow 模板）</div>
@@ -800,6 +804,18 @@ a:hover{text-decoration:underline}
     </div>
     <div class="section-body">
       <div id="fdeWorkflowBox" style="font-size:12px;color:var(--text-s)">
+        <div style="text-align:center;color:var(--text-t);padding:12px">加载中...</div>
+      </div>
+    </div>
+  </div>
+  <div class="section">
+    <div class="section-header">
+      <div class="section-title"><span class="dot-emoji">🧬</span>自 FDE workflow（我们对自己做 FDE）</div>
+      <span style="font-size:11px;color:var(--text-t)" id="fdeSelfUpdatedAt">加载中...</span>
+    </div>
+    <div class="section-body">
+      <div style="font-size:11px;color:var(--text-t);margin-bottom:10px">sofagent 自己的 FDE 流程节点图——自举：梳理 → 识别 AI 节点 → 双 graph 交付 → 7×24 审计。我们是自己的第一个客户（数据源 <code style="background:var(--brand-l);padding:2px 6px;border-radius:4px">~/.sofagent/fde/workflow/template.yaml</code>）。</div>
+      <div id="fdeSelfGraphBox" style="font-size:12px;color:var(--text-s)">
         <div style="text-align:center;color:var(--text-t);padding:12px">加载中...</div>
       </div>
     </div>
@@ -937,6 +953,16 @@ a:hover{text-decoration:underline}
     </div>
   </div>
   <div class="section">
+    <div class="section-header"><div class="section-title"><span class="dot-emoji">🧬</span>skill 加载链（四层约束注入）</div>
+      <a href="https://github.com/KongFangXun/sofagent/blob/main/docs/ARCHITECTURE.md" target="_blank" class="copy-btn light">ARCHITECTURE.md →</a>
+    </div>
+    <div class="section-body">
+      <div id="skillChainBox" style="font-size:12px;color:var(--text-s)">
+        <div style="text-align:center;color:var(--text-t);padding:12px">加载中...</div>
+      </div>
+    </div>
+  </div>
+  <div class="section">
     <div class="section-header"><div class="section-title"><span class="dot-emoji">📦</span>npm 包（13 个）</div></div>
     <div class="section-body">
       <div class="npm-grid">
@@ -1043,9 +1069,9 @@ function goPage(name){
   if(name==='cockpit') loadLiveData();
   if(name==='workflow'){loadAiNodesData();loadPipelineGraph();loadWorklogData();}
   if(name==='ontology'){loadOntologyData();loadGraphView();}
+  if(name==='fde'){loadFdeWorkflowData();loadFdeSelfGraph();}
   if(name==='knowledge') loadKnowledgeData();
-  if(name==='fde') loadFdeWorkflowData();
-  if(name==='resources'){renderMcpList();loadForgeData();loadReleaseGateData();}
+  if(name==='resources'){renderMcpList();renderSkillChain();loadForgeData();loadReleaseGateData();}
 }
 
 /* ===== Copy Prompt ===== */
@@ -1682,7 +1708,7 @@ function loadAiNodesData(){
         }
       }else{
         html='<div style="font-size:12px;color:var(--text-s)">尚未部署企业 AI 节点。</div>'+
-          '<div style="font-size:12px;color:var(--text-s);margin-top:6px">在 <a href="javascript:void(0)" onclick="goPage(\'fde\')" style="color:var(--brand)">FDE Agent</a> 页复制 Prompt 开始部署，部署完成后节点会自动出现在这里（数据源 <code style="background:var(--brand-l);padding:2px 6px;border-radius:4px">~/.sofagent/subagents/</code>）。</div>';
+          '<div style="font-size:12px;color:var(--text-s);margin-top:6px">在 <a href="javascript:void(0)" onclick="goPage(\'fde\')" style="color:var(--brand)">FDE 引导</a> 页复制 Prompt 开始部署，部署完成后节点会自动出现在这里（数据源 <code style="background:var(--brand-l);padding:2px 6px;border-radius:4px">~/.sofagent/subagents/</code>）。</div>';
       }
       list.innerHTML=html;
     })
@@ -1891,7 +1917,7 @@ function loadOntologyData(){
         html+=renderGroup('概念 Concepts', '#7F77DD', concepts);
         html+=renderGroup('关系 Relations', '#16B8F3', relations);
         if(!any){
-          html='<div style="font-size:12px;color:var(--text-s)">尚未建立本体结构——在 <a href="javascript:void(0)" onclick="goPage(\'fde\')" style="color:var(--brand)">FDE Agent</a> 页复制 Prompt 执行深挖阶段，或运行 <code style="background:var(--brand-l);padding:2px 6px;border-radius:4px">create_entity / create_concept</code> 构建。实体/概念文件写入 <code style="background:var(--brand-l);padding:2px 6px;border-radius:4px">~/.sofagent/data/knowledge/</code> 后自动显示。</div>';
+          html='<div style="font-size:12px;color:var(--text-s)">尚未建立本体结构——在 <a href="javascript:void(0)" onclick="goPage(\'fde\')" style="color:var(--brand)">FDE 引导</a> 页复制 Prompt 执行深挖阶段，或运行 <code style="background:var(--brand-l);padding:2px 6px;border-radius:4px">create_entity / create_concept</code> 构建。实体/概念文件写入 <code style="background:var(--brand-l);padding:2px 6px;border-radius:4px">~/.sofagent/data/knowledge/</code> 后自动显示。</div>';
         }
         entries.innerHTML=html;
       }
@@ -2127,44 +2153,59 @@ function loadWorklogData(){
 
 /* ===== 图谱（本体图谱页 · v1.4.0） ===== */
 function grTab(tab){
-  ['workflow','ontology','self','mcp','skill'].forEach(function(t){
+  ['workflow','ontology'].forEach(function(t){
     document.getElementById('gr-tab-'+t).classList.toggle('active',t===tab);
     document.getElementById('gr-view-'+t).style.display=t===tab?'':'none';
   });
-  if(tab==='mcp')renderMcpView();
-  if(tab==='skill')renderSkillView();
 }
 
-/* SVG 节点图渲染：nodes=[{id,label,status}] edges=[{from,to}]（escapeHtml + 多行自适应布局） */
-function renderGraphSVG(nodes,edges){
-  var COLS=3,nodeW=240,nodeH=32,colGap=10,rowGap=18;
+/* SVG 节点图渲染（编排控制图风格：矩形节点 + 状态色 + 箭头 + 状态文字）
+ * nodes=[{id,label,status}] edges=[{from,to}]；3 列网格，多行自适应 */
+function renderFlowGraph(nodes,edges){
+  if(!nodes||!nodes.length)return '<div style="font-size:12px;color:var(--text-t);padding:8px 0">暂无节点</div>';
+  var typeCol={
+    active:{fill:'#E6F1FB',stroke:'#16B8F3'},
+    done:{fill:'#E1F5EE',stroke:'#1D9E75'},
+    failed:{fill:'#FCEBEB',stroke:'#E24B4A'},
+    hitl:{fill:'#FAEEDA',stroke:'#EF9F27'},
+    unknown:{fill:'#FAFBFC',stroke:'#8B949E'}
+  };
+  var stCn={active:'跑中',done:'完成',failed:'失败',hitl:'人工介入',unknown:'未知'};
+  var COLS=3,nodeW=150,nodeH=38,gap=24,rowH=nodeH+30;
   var rows=Math.max(1,Math.ceil(nodes.length/COLS));
-  var W=COLS*nodeW+(COLS-1)*colGap+60;
-  var H=30+rows*(nodeH+rowGap)+20;
-  var colors={active:'#16B8F3',done:'#2ecc71',failed:'#ff4d4d',hitl:'#f1c40f',unknown:'#999'};
+  var W=COLS*nodeW+(COLS-1)*gap+40;
+  var H=rows*rowH+24;
   var pos={};
   nodes.forEach(function(n,i){
-    pos[n.id]={x:30+(i%COLS)*(nodeW+colGap),y:30+Math.floor(i/COLS)*(nodeH+rowGap)};
+    pos[n.id]={x:20+(i%COLS)*(nodeW+gap),y:14+Math.floor(i/COLS)*rowH};
   });
-  var edgeSvg=edges.map(function(e){
+  var svg='';
+  // 边（背后）
+  edges.forEach(function(e){
     var f=pos[e.from],t=pos[e.to];
-    if(!f||!t)return '';
+    if(!f||!t)return'';
     var x1=f.x+nodeW,y1=f.y+nodeH/2,x2=t.x,y2=t.y+nodeH/2;
-    return '<line x1="'+x1+'" y1="'+y1+'" x2="'+x2+'" y2="'+y2+'" stroke="#bbb" stroke-width="1.5" marker-end="url(#gr-arrow)"/>';
-  }).join('');
-  var nodeSvg=nodes.map(function(n){
-    var c=colors[n.status]||colors.unknown;
-    var stLabel=n.status==='active'?'跑中':n.status==='done'?'完成':n.status==='failed'?'失败':n.status==='hitl'?'人工介入':'未知';
+    svg+='<line x1="'+x1+'" y1="'+y1+'" x2="'+x2+'" y2="'+y2+'" stroke="#8B949E" stroke-width="1.5" marker-end="url(#flow-arrow)"/>';
+  });
+  // 节点
+  nodes.forEach(function(n){
     var p=pos[n.id];
-    var fill=n.status==='active'||n.status==='failed'?c+'22':'#fff';
-    return '<g title="'+escapeHtml(n.id)+' · '+stLabel+'" style="cursor:pointer" onclick="goPage(\'cockpit\')">'+
-      '<rect x="'+p.x+'" y="'+p.y+'" width="'+nodeW+'" height="'+nodeH+'" rx="8" fill="'+fill+'" stroke="'+c+'" stroke-width="1.5"/>'+
-      '<circle cx="'+(p.x+14)+'" cy="'+(p.y+nodeH/2)+'" r="5" fill="'+c+'"/>'+
-      '<text x="'+(p.x+26)+'" y="'+(p.y+21)+'" font-size="11" fill="#333">'+escapeHtml(n.label)+'</text></g>';
-  }).join('');
-  return '<div class="chart-box" style="overflow-x:auto"><svg viewBox="0 0 '+W+' '+H+'" style="min-width:520px;width:100%">'+
-    '<defs><marker id="gr-arrow" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto"><path d="M0,0L7,3L0,6Z" fill="#bbb"/></marker></defs>'+
-    edgeSvg+nodeSvg+'</svg></div>';
+    var st=n.status||'unknown';
+    var tc=typeCol[st]||typeCol.unknown;
+    var label=String(n.label||n.id||'');
+    if(label.length>14)label=label.slice(0,13)+'…';
+    // 跑中/人工介入：右上角脉冲点
+    if(st==='active'||st==='hitl'){
+      svg+='<circle cx="'+(p.x+nodeW-10)+'" cy="'+(p.y+10)+'" r="4" fill="'+(st==='hitl'?'#EF9F27':'#16B8F3')+'" class="pulse-svg"/>';
+    }
+    svg+='<rect x="'+p.x+'" y="'+p.y+'" width="'+nodeW+'" height="'+nodeH+'" rx="7" fill="'+tc.fill+'" stroke="'+tc.stroke+'" stroke-width="1.2"/>';
+    svg+='<circle cx="'+(p.x+14)+'" cy="'+(p.y+nodeH/2)+'" r="5" fill="'+tc.stroke+'"/>';
+    svg+='<text x="'+(p.x+26)+'" y="'+(p.y+nodeH/2+4)+'" font-size="11" font-weight="500" fill="#24292E">'+escapeHtml(label)+'</text>';
+    svg+='<text x="'+(p.x+nodeW/2)+'" y="'+(p.y+nodeH+14)+'" text-anchor="middle" font-size="9" fill="#8B949E">'+(stCn[st]||st)+'</text>';
+  });
+  return '<div class="chart-box" style="overflow-x:auto;padding:14px"><svg class="graph-wide" viewBox="0 0 '+W+' '+H+'" style="min-width:520px;width:100%;display:block">'+
+    '<defs><marker id="flow-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M2 2L8 5L2 8" fill="none" stroke="#8B949E" stroke-width="1.5"/></marker></defs>'+
+    svg+'</svg></div>';
 }
 
 /* 本体图谱页 · 图谱视图（原 loadGraphData #2，改名消冲突 + 真实数据优先） */
@@ -2174,12 +2215,10 @@ function loadGraphView(){
   resolveDataRoot().then(function(root){
     return Promise.all([
       root?tryFetch(root+'/dashboard/worklog.json'):null,
-      root?tryFetch(root+'/knowledge/index.md'):null,
-      root?tryFetch(root+'/fde/workflow/template.yaml'):null
+      root?tryFetch(root+'/knowledge/index.md'):null
     ]).then(function(res){
       var wl=null;if(res[0]){try{wl=JSON.parse(res[0])}catch(e){}}
       var indexMd=res[1]||'';
-      var fdeYaml=res[2]||'';
       // workflow 图谱（读 worklog workflows 节点状态）
       var wfNodes=[],wfEdges=[];
       (wl&&wl.workflows||[]).forEach(function(w){
@@ -2192,7 +2231,7 @@ function loadGraphView(){
         wfNodes=[{id:'demo:map',label:'梳理',status:'done'},{id:'demo:deploy',label:'部署节点',status:'done'},{id:'demo:audit',label:'审计',status:'active'}];
         wfEdges=[{from:'demo:map',to:'demo:deploy'},{from:'demo:deploy',to:'demo:audit'}];
       }
-      wfBox.innerHTML='<div style="font-size:11px;color:var(--text-t);margin-bottom:8px">workflow 节点图（状态着色：蓝=跑 绿=完 红=失败 黄=人工介入）</div>'+renderGraphSVG(wfNodes,wfEdges);
+      wfBox.innerHTML='<div style="font-size:11px;color:var(--text-t);margin-bottom:8px">workflow 节点图（状态着色：蓝=跑 绿=完 红=失败 黄=人工介入）</div>'+renderFlowGraph(wfNodes,wfEdges);
 
       // ontology 图谱：优先 knowledge/index.md 解析实体（按域分组连线），降级示例
       var ontNodes=[],ontEdges=[];
@@ -2227,33 +2266,44 @@ function loadGraphView(){
       }
       document.getElementById('gr-view-ontology').innerHTML=
         '<div style="font-size:11px;color:var(--text-t);margin-bottom:8px">ontology 语义图（实体 + 关系 · 按业务域分组连线'+(domKeys.length?' · 来自 knowledge/index.md':' · 示例')+'）</div>'+
-        renderGraphSVG(ontNodes,ontEdges);
+        renderFlowGraph(ontNodes,ontEdges);
+    });
+  }).catch(function(){
+    document.getElementById('gr-view-workflow').innerHTML='<div style="font-size:12px;color:var(--text-t)">未检测到 workflow 数据</div>';
+  });
+}
 
-      // 自 FDE workflow：优先 template.yaml 简单解析，降级示例
+/* FDE 引导页 · 自 FDE workflow 图谱（dogfooding：我们对自己做 FDE） */
+function loadFdeSelfGraph(){
+  var box=document.getElementById('fdeSelfGraphBox');
+  var updated=document.getElementById('fdeSelfUpdatedAt');
+  if(!box)return;
+  resolveDataRoot().then(function(root){
+    var read=root?tryFetch(root+'/fde/workflow/template.yaml'):null;
+    return Promise.resolve(read).then(function(yaml){
       var selfNodes=[],selfEdges=[];
-      if(fdeYaml){
+      var fromYaml=false;
+      if(yaml){
         var names=[];
-        fdeYaml.split('\n').forEach(function(line){
+        yaml.split('\n').forEach(function(line){
           var m=line.match(/^\s*-\s*name:\s*(.+?)\s*$/);
           if(m)names.push(m[1].trim());
         });
-        if(names.length){
-          names.forEach(function(nm,i){
-            selfNodes.push({id:'s'+(i+1),label:nm,status:i===names.length-1?'active':'done'});
-            if(i>0)selfEdges.push({from:'s'+i,to:'s'+(i+1)});
-          });
-        }
+        if(names.length){fromYaml=true;names.forEach(function(nm,i){
+          selfNodes.push({id:'s'+(i+1),label:nm,status:i===names.length-1?'active':'done'});
+          if(i>0)selfEdges.push({from:'s'+i,to:'s'+(i+1)});
+        })}
       }
       if(!selfNodes.length){
         selfNodes=[{id:'s1',label:'梳理（FDE 进场）',status:'done'},{id:'s2',label:'识别 AI 节点',status:'done'},{id:'s3',label:'双图谱交付',status:'done'},{id:'s4',label:'7×24 审计',status:'active'}];
         selfEdges=[{from:'s1',to:'s2'},{from:'s2',to:'s3'},{from:'s3',to:'s4'}];
       }
-      document.getElementById('gr-view-self').innerHTML=
-        '<div style="font-size:11px;color:var(--text-t);margin-bottom:8px">sofagent 自己的 FDE workflow（自举：梳理→节点→双 graph 交付'+(fdeYaml?' · 来自 template.yaml':' · 示例')+'）</div>'+
-        renderGraphSVG(selfNodes,selfEdges);
+      box.innerHTML='<div style="font-size:11px;color:var(--text-t);margin-bottom:8px">状态着色：蓝=跑中 绿=完成 黄=人工介入'+(fromYaml?' · 来自 template.yaml':' · 示例数据（部署 FDE workflow 后读真实节点）')+'</div>'+
+        renderFlowGraph(selfNodes,selfEdges);
+      if(updated)updated.textContent=fmtUpdatedAt();
     });
   }).catch(function(){
-    document.getElementById('gr-view-workflow').innerHTML='<div style="font-size:12px;color:var(--text-t)">未检测到 workflow 数据</div>';
+    box.innerHTML='<div style="font-size:12px;color:var(--text-t)">未检测到 FDE workflow 数据</div>';
   });
 }
 
@@ -2279,23 +2329,23 @@ function renderMcpList(){
     return '<div class="mcp-item"><code>'+escapeHtml(t[0])+'</code><div class="mcp-desc">'+escapeHtml(t[1])+'</div></div>';
   }).join('');
 }
-function renderMcpView(){
-  var box=document.getElementById('gr-view-mcp');
-  if(!box||box.dataset.done)return;
-  box.dataset.done='1';
-  box.innerHTML='<div style="font-size:11px;color:var(--text-t);margin-bottom:8px">MCP 工具视图（66 个 · 与 tool-registry 对齐 · 完整见 <code style="background:var(--brand-l);padding:2px 6px;border-radius:4px">engine/mcp/src/tool-registry.ts</code>）</div>'+
-    '<div class="mcp-grid">'+MCP_TOOLS.map(function(t){return '<div class="mcp-item"><code>'+escapeHtml(t[0])+'</code><div class="mcp-desc">'+escapeHtml(t[1])+'</div></div>'}).join('')+'</div>';
-}
-function renderSkillView(){
-  var box=document.getElementById('gr-view-skill');
-  if(!box||box.dataset.done)return;
-  box.dataset.done='1';
-  box.innerHTML='<div style="font-size:11px;color:var(--text-t);margin-bottom:8px">四层约束加载链（每次 Agent 启动注入 · SKILL.md → fde.md → think.md → knowledge/）</div>'+
-    '<div style="display:flex;flex-direction:column;gap:10px">'+
-    ['L1 · SKILL.md（宪法 · 不可改）','L2 · fde.md（企业规范 · 可改）','L3 · think.md（反思 · 自动生成）','L4 · knowledge/（知识 · 按需加载）'].map(function(s,i){
-      var c=i===0?'#ff4d4d':i===3?'#16B8F3':'#999';
-      return '<div style="display:flex;align-items:center;gap:10px"><div style="width:14px;height:14px;border-radius:50%;background:'+c+'"></div><span style="font-size:12px">'+escapeHtml(s)+'</span></div>';
-    }).join('')+'</div>';
+function renderSkillChain(){
+  var box=document.getElementById('skillChainBox');
+  if(!box)return;
+  var layers=[
+    {name:'L1 · SKILL.md',desc:'宪法 · 不可改——Agent 启动时最先注入的硬约束',tag:'~/.sofagent/skills/sofagent/SKILL.md',dot:'#E24B4A'},
+    {name:'L2 · fde.md',desc:'企业规范 · 可改——业务底线与红线',tag:'~/.sofagent/skills/sofagent/fde.md',dot:'#8B949E'},
+    {name:'L3 · think.md',desc:'反思 · 自动生成——每次被拦下的毛病沉淀',tag:'~/.sofagent/skills/sofagent/think.md',dot:'#8B949E'},
+    {name:'L4 · knowledge/',desc:'知识 · 按需加载——实体/概念/教训检索注入',tag:'~/.sofagent/skills/sofagent/knowledge/',dot:'#16B8F3'}
+  ];
+  var html='<div style="font-size:11px;color:var(--text-t);margin-bottom:12px">每次 Agent 启动按序注入四层约束——约束先于行为，红线先于干活：</div>';
+  html+='<div class="skill-chain">';
+  layers.forEach(function(l,i){
+    html+='<div class="sc-item"><span class="sc-dot" style="background:'+l.dot+'"></span><span class="sc-name">'+escapeHtml(l.name)+'</span><span class="sc-desc">'+escapeHtml(l.desc)+'</span><span class="sc-tag">'+escapeHtml(l.tag)+'</span></div>';
+    if(i<layers.length-1)html+='<div class="sc-arrow">↓</div>';
+  });
+  html+='</div>';
+  box.innerHTML=html;
 }
 
 /* ===== Init ===== */
