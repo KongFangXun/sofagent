@@ -51,13 +51,15 @@ a:hover{text-decoration:underline}
 
 .header-right{display:flex;gap:6px;justify-content:flex-end}
 /* header 按钮（统一直角 6px，非跑道形） */
-.star-btn{display:inline-flex;align-items:center;gap:5px;padding:6px 14px;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--text-s);font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;font-family:var(--font);text-decoration:none;line-height:1.4}
-.star-btn:hover{border-color:var(--text-t);color:var(--text);text-decoration:none}
+/* 按钮共用外观：star-btn / help-btn 与 btn-outline 同款（高度差异覆盖） */
+.btn-outline,.help-btn,.star-btn{background:var(--card);border-color:var(--border);color:var(--text-s)}
+.help-btn,.star-btn{padding:6px 14px;height:auto;font-size:13px}
+.star-btn{text-decoration:none}
+.star-btn:hover,.help-btn:hover,.btn-outline:hover{border-color:var(--text-t);color:var(--text)}
 .star-btn svg{width:14px;height:14px;flex-shrink:0}
 .star-count{background:var(--brand-l);color:var(--brand);font-size:11px;padding:1px 6px;border-radius:8px;font-weight:700}
 
-/* 帮助面板（全局教学入口，header 右上角） */
-.help-btn{display:inline-flex;align-items:center;gap:5px;padding:6px 14px;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--text-s);font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;font-family:var(--font);line-height:1.4}
+/* 帮助面板（全局教学入口，header 右上角）——外观继承 .btn 基础 + btn-outline 共用（见按钮声明） */
 .help-btn:hover{border-color:var(--text-t);color:var(--text)}
 .help-btn .bi{font-size:15px;line-height:1}
 .help-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:400;display:none;align-items:center;justify-content:center;padding:20px}
@@ -324,6 +326,14 @@ a:hover{text-decoration:underline}
 .st-hitl{background:var(--amber)}
 .st-unknown{background:var(--text-t)}
 /* 守护进程徽章点（呼吸蓝标准） */
+/* 圆点共用结构：5 类圆点共用基础（尺寸/颜色/动画各自定义） */
+.agent-dot,.sc-dot,.st-dot,.sov-dot,.node-status .icon{display:inline-block;border-radius:50%;flex-shrink:0}
+/* 公用小类：消灭重复内联（设计原则：优先用类） */
+.hint{font-size:11px;color:var(--text-t)}
+.meta{font-size:11px;color:var(--text-s)}
+.ellipsis{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.updated-at{font-size:11px;color:var(--text-t)}
+.right-meta{class="right-meta"}
 .sov-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:6px;animation:pulse 2s infinite}
 /* 图节点脉冲动画（编排控制图 / 图谱共用） */
 .pulse-svg{animation:pulse 2s infinite}
@@ -552,7 +562,7 @@ a:hover{text-decoration:underline}
   <div class="section">
     <div class="section-header">
       <div class="section-title"><span class="dot-emoji"><i class="bi bi-robot"></i></span>业务 AI 节点</div>
-      <span style="font-size:11px;color:var(--text-t)" id="aiNodesUpdatedAt">加载中...</span>
+      <span class="updated-at" id="aiNodesUpdatedAt">加载中...</span>
     </div>
     <div class="section-body">
       <div id="aiNodeList" style="font-size:12px;color:var(--text-s)">
@@ -589,7 +599,7 @@ a:hover{text-decoration:underline}
     <div class="section">
     <div class="section-header">
       <div class="section-title"><span class="dot-emoji"><i class="bi bi-map"></i></span>本体数据（ontology）</div>
-      <span style="font-size:11px;color:var(--text-t)" id="ontUpdatedAt">加载中...</span>
+      <span class="updated-at" id="ontUpdatedAt">加载中...</span>
     </div>
     <div class="section-body">
       <div id="ontStats" class="grid-3" style="margin-bottom:16px">
@@ -621,7 +631,7 @@ a:hover{text-decoration:underline}
     <div class="section">
     <div class="section-header">
       <div class="section-title"><span class="dot-emoji"><i class="bi bi-journal-bookmark"></i></span>你的知识库</div>
-      <span style="font-size:11px;color:var(--text-t)" id="kbUpdatedAt">加载中...</span>
+      <span class="updated-at" id="kbUpdatedAt">加载中...</span>
     </div>
     <div class="section-body">
       <div id="kbStats" class="grid-3" style="margin-bottom:16px">
@@ -723,7 +733,7 @@ a:hover{text-decoration:underline}
   <div class="section">
     <div class="section-header">
       <div class="section-title"><span class="dot-emoji"><i class="bi bi-list-check"></i></span>FDE Agent 执行流程（template.yaml）</div>
-      <span style="font-size:11px;color:var(--text-t)" id="fdeWfUpdatedAt">加载中...</span>
+      <span class="updated-at" id="fdeWfUpdatedAt">加载中...</span>
     </div>
     <div class="section-body">
       <div id="fdeWorkflowBox" style="font-size:12px;color:var(--text-s)">
@@ -734,7 +744,7 @@ a:hover{text-decoration:underline}
   <div class="section">
     <div class="section-header">
       <div class="section-title"><span class="dot-emoji"><i class="bi bi-diagram-2"></i></span>FDE workflow</div>
-      <span style="font-size:11px;color:var(--text-t)" id="fdeSelfUpdatedAt">加载中...</span>
+      <span class="updated-at" id="fdeSelfUpdatedAt">加载中...</span>
     </div>
     <div class="section-body">
       <div style="font-size:11px;color:var(--text-t);margin-bottom:10px">sofagent 自己的 FDE 流程节点图——自举：梳理 → 识别 AI 节点 → 双 graph 交付 → 7×24 审计。我们是自己的第一个客户（数据源 <code style="background:var(--brand-l);padding:2px 6px;border-radius:4px">~/.sofagent/fde/workflow/template.yaml</code>）。</div>
@@ -1754,9 +1764,9 @@ function loadFdeWorkflowData(){
           var ac=agentColor[s.agent]||agentColor.analyst;
           html+='<div class="fde-step" style="flex:0 0 calc(20% - 7px);box-sizing:border-box;background:var(--bg-s);border:1px solid var(--border);border-radius:var(--radius-s);padding:12px;display:flex;flex-direction:column;gap:4px;min-width:0">'+
             // 第一行：点 + STEP 标签 + 标题（黑字，单行截断）；循环=右上角 icon+灰字（参考流水线卡右对齐）
-            '<div style="font-size:12px;display:flex;align-items:center;gap:6px;min-width:0"><span class="agent-dot '+escapeHtml(s.agent)+'" style="flex-shrink:0"></span><span style="font-size:12px;color:var(--text);flex-shrink:0">STEP '+(i+1)+'</span><span title="'+escapeHtml(s.name)+'" style="font-size:12px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0">'+escapeHtml(s.name)+'</span>'+(s.loop?'<span style="margin-left:auto;font-size:11px;color:var(--text-t);flex-shrink:0;display:inline-flex;align-items:center;gap:3px"><i class="bi bi-arrow-clockwise"></i>循环</span>':'')+'</div>'+
+            '<div style="font-size:12px;display:flex;align-items:center;gap:6px;min-width:0"><span class="agent-dot '+escapeHtml(s.agent)+'" style="flex-shrink:0"></span><span style="font-size:12px;color:var(--text);flex-shrink:0">STEP '+(i+1)+'</span><span title="'+escapeHtml(s.name)+'" class="ellipsis" style="font-size:12px;font-weight:600;color:var(--text)">'+escapeHtml(s.name)+'</span>'+(s.loop?'<span class="right-meta"><i class="bi bi-arrow-clockwise"></i>循环</span>':'')+'</div>'+
             // 第二行：agent 英文 · 中文角色 · 类型（说明行）——字号显式统一 11px（gap 负责行距）
-            '<div style="font-size:11px;color:var(--text-s);display:flex;align-items:center;gap:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"><span style="font-size:11px;font-family:var(--mono)">'+escapeHtml(s.agent)+'</span><span style="font-size:11px">·</span><span style="font-size:11px">'+escapeHtml(ac.role)+'</span><span style="font-size:11px;color:var(--text-t);flex-shrink:0">'+ac.label+'</span></div>'+
+            '<div class="meta" style="display:flex;align-items:center;gap:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"><span style="font-size:11px;font-family:var(--mono)">'+escapeHtml(s.agent)+'</span><span style="font-size:11px">·</span><span style="font-size:11px">'+escapeHtml(ac.role)+'</span><span style="font-size:11px;color:var(--text-t);flex-shrink:0">'+ac.label+'</span></div>'+
             '</div>';
         });
         html+='</div>';
@@ -1888,11 +1898,11 @@ function loadPipelineGraph(){
         var dotClass=typeDot[n.type]||'human';
         var subtaskHtml='';
         if(n.subtasks&&n.subtasks.length){
-          subtaskHtml='<span class="node-stats" style="margin-left:6px;flex-shrink:0">子任务 '+(n.subtasks.length)+' 个</span>';
+          subtaskHtml='<span class="node-stats right-meta" style="margin-left:6px">子任务 '+(n.subtasks.length)+' 个</span>';
         }
         // 两行紧凑：第一行 点+名称+状态（右对齐），第二行 类型·id（+子任务）
         return '<div class="node-card '+cls+'"><div class="node-status"><span class="agent-dot '+dotClass+'"></span><span>'+escapeHtml(n.label||n.id||'')+'</span>'+
-          '<span style="margin-left:auto;font-size:11px;color:var(--text-t);font-weight:400">'+escapeHtml(statusCn)+'</span></div>'+
+          '<span class="right-meta" style="font-weight:400">'+escapeHtml(statusCn)+'</span></div>'+
           '<div class="node-meta">'+escapeHtml(typeCn)+' · '+escapeHtml(n.id||'')+subtaskHtml+'</div>'+
           '</div>';
       }).join('');
