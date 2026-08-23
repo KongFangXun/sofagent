@@ -35,9 +35,11 @@ a:hover{text-decoration:underline}
 
 .nav{display:flex;gap:2px;justify-content:center;overflow-x:auto;scrollbar-width:none}
 .nav::-webkit-scrollbar{display:none}
-.nav-item{padding:8px 14px;font-size:13px;color:var(--text-s);cursor:pointer;border-radius:var(--radius-s);white-space:nowrap;transition:all .15s;border:none;background:none;font-family:var(--font);font-weight:500}
-.nav-item:hover{color:var(--text);background:var(--bg)}
-.nav-item.active{color:var(--brand);background:var(--brand-l)}
+/* 文字导航（Vercel 风：无胶囊，active 下划线） */
+.nav-item{padding:8px 4px;margin:0 7px;font-size:13px;color:var(--text-s);cursor:pointer;border-radius:0;white-space:nowrap;transition:color .15s;border:none;background:none;font-family:var(--font);font-weight:500;position:relative}
+.nav-item:hover{color:var(--text);background:none}
+.nav-item.active{color:var(--brand);background:none}
+.nav-item.active::after{content:'';position:absolute;left:2px;right:2px;bottom:4px;height:2px;border-radius:1px;background:var(--brand)}
 
 .header-right{display:flex;gap:6px;justify-content:flex-end}
 .star-btn{display:inline-flex;align-items:center;gap:5px;padding:6px 14px;border:1px solid var(--border);border-radius:20px;background:var(--card);color:var(--text-s);font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;font-family:var(--font);text-decoration:none;line-height:1.4}
@@ -118,6 +120,8 @@ a:hover{text-decoration:underline}
 .ds-live .pulse{background:var(--green)}
 .ds-sample .pulse{background:var(--amber)}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.chart-box svg{animation:fadeIn .35s ease}
 
 /* Architecture */
 .arch-layer{border-radius:var(--radius-s);padding:12px;margin-bottom:8px}
@@ -1241,11 +1245,11 @@ function renderSummaryData(s){
   var totalIssues=(r.warn||0)+(r.fail||0);
   document.getElementById('m-audit').textContent=r.passRate+'%';
   document.getElementById('m-audit-sub').textContent='通过的检查 ÷ 全部检查';
-  document.getElementById('m-today').textContent=todayTasks;
+  animateNumber(document.getElementById('m-today'),todayTasks);
   document.getElementById('m-today-sub').textContent='总 '+(t.total||0)+' 个任务';
-  document.getElementById('m-nodes').textContent=todayChecks;
+  animateNumber(document.getElementById('m-nodes'),todayChecks);
   document.getElementById('m-nodes-sub').textContent='总 '+(r.total||0)+' 次检查';
-  document.getElementById('m-violations').textContent=todayIssues;
+  animateNumber(document.getElementById('m-violations'),todayIssues);
   document.getElementById('m-violations-sub').textContent='总 '+totalIssues+' 次问题';
   // 审计记录卡：总数 + 测试过滤说明
   var cnt=document.getElementById('auditRecordCount');
@@ -1428,14 +1432,14 @@ function processAuditData(records){
   var rate=total>0?Math.round(pass*100/total):0;
   document.getElementById('m-audit').textContent=rate+'%';
   document.getElementById('m-audit-sub').textContent='24 条规则';
-  document.getElementById('m-nodes').textContent=records.length;
+  animateNumber(document.getElementById('m-nodes'),records.length);
   document.getElementById('m-nodes-sub').textContent='审计次数';
-  document.getElementById('m-violations').textContent=(warn+fail);
+  animateNumber(document.getElementById('m-violations'),(warn+fail));
   document.getElementById('m-violations-sub').textContent='WARN '+warn+' / FAIL '+fail;
   // 今日审计次数
   var today=new Date().toISOString().slice(0,10);
   var todayCount=records.filter(function(r){return (r.timestamp||'').slice(0,10)===today}).length;
-  document.getElementById('m-today').textContent=todayCount;
+  animateNumber(document.getElementById('m-today'),todayCount);
   document.getElementById('m-today-sub').textContent='当日审计任务';
   var recent=records.slice(-8).reverse();
   renderLiveAuditLog(recent);
@@ -1665,6 +1669,21 @@ function fmtUpdatedAt(raw){
   var t=raw?new Date(String(raw).replace(' ','T')):new Date();
   if(isNaN(t.getTime()))t=new Date();
   return '更新于 '+t.toLocaleTimeString('zh-CN',{hour12:false});
+}
+
+/* 指标数字滚动动画（easeOutCubic） */
+function animateNumber(el,val){
+  if(!el)return;
+  var start=parseFloat(String(el.textContent).replace(/[^0-9.-]/g,''))||0;
+  if(start===val){el.textContent=val;return}
+  var dur=480,startT=Date.now();
+  function tick(){
+    var p=Math.min(1,(Date.now()-startT)/dur);
+    var eased=1-Math.pow(1-p,3);
+    el.textContent=Math.round(start+(val-start)*eased);
+    if(p<1)requestAnimationFrame(tick);
+  }
+  tick();
 }
 
 /* ===== FDE Workflow (十步流程模板) ===== */
