@@ -1,0 +1,24 @@
+{
+  "name": "cordis-plugin-inject",
+  "version": "0.1.0",
+  "description": "启动注入企业约束——四层加载链（seam: apply(ctx)）",
+  "private": true,
+  "license": "MIT",
+  "author": "KongFangXun",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run"
+  },
+  "keywords": [
+    "sofagent",
+    "dsh",
+    "cordis-plugin"
+  ],
+  "sofagent": {
+    "type": "dsh-plugin",
+    "family": "cordis",
+    "seam": "apply(ctx"
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "name": "cordis-plugin-ontology",
+  "version": "0.1.0",
+  "description": "共享语义底座 + 知识检索（seam: ontology_* tools + search_knowledge）",
+  "private": true,
+  "license": "MIT",
+  "author": "KongFangXun",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run"
+  },
+  "keywords": [
+    "sofagent",
+    "dsh",
+    "cordis-plugin"
+  ],
+  "sofagent": {
+    "type": "dsh-plugin",
+    "family": "cordis",
+    "seam": "ontology_* tools + search_knowledge"
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "name": "cordis-plugin-gate",
+  "version": "0.1.0",
+  "description": "验收不过不放行——机器可判定验收 + 人审（seam: agent/turn-stopping）",
+  "private": true,
+  "license": "MIT",
+  "author": "KongFangXun",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run"
+  },
+  "keywords": [
+    "sofagent",
+    "dsh",
+    "cordis-plugin"
+  ],
+  "sofagent": {
+    "type": "dsh-plugin",
+    "family": "cordis",
+    "seam": "agent/turn-stopping"
+  }
+}

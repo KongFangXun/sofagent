@@ -19,7 +19,16 @@
     "engine/skillopt",
     "engine/mcp",
     "engine/rules",
-    "engine/hooks/sofagent-load-chain"
+    "engine/hooks/sofagent-load-chain",
+    "engine/dsh-plugins/cordis-plugin-audit",
+    "engine/dsh-plugins/cordis-plugin-rollback",
+    "engine/dsh-plugins/cordis-plugin-inject",
+    "engine/dsh-plugins/cordis-plugin-evolve",
+    "engine/dsh-plugins/cordis-plugin-ontology",
+    "engine/dsh-plugins/cordis-plugin-commons",
+    "engine/dsh-plugins/cordis-plugin-gate",
+    "engine/dsh-plugins/cordis-plugin-daemon",
+    "engine/dsh-plugins/cordis-plugin-fde"
   ],
   "scripts": {
     "test": "npm test --workspaces --if-present && bash tools/dashboard/sofagent-dashboard.test.sh",

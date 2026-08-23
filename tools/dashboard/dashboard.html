@@ -1998,7 +1998,10 @@ function renderGraphSVG(nodes,edges){
   }).join('');
   var nodeSvg=nodes.map(function(n){
     var c=colors[n.status]||colors.unknown;
-    return '<g><rect x="'+xs[n.id]+'" y="'+ys[n.id]+'" width="240" height="32" rx="8" fill="'+(n.status==='active'?c+'22':(n.status==='failed'?c+'22':'#fff'))+'" stroke="'+c+'" stroke-width="1.5"/>'+
+    // v1.4.0 交付六：DAG 交互——节点 hover 提示（id+状态）+ 点击跳转驾驶舱审计视图
+    var stLabel=n.status==='active'?'跑中':n.status==='done'?'完成':n.status==='failed'?'失败':n.status==='hitl'?'人工介入':'未知';
+    return '<g title="'+n.id+' · '+stLabel+'" style="cursor:pointer" onclick="goPage(\'cockpit\')">'+
+      '<rect x="'+xs[n.id]+'" y="'+ys[n.id]+'" width="240" height="32" rx="8" fill="'+(n.status==='active'?c+'22':(n.status==='failed'?c+'22':'#fff'))+'" stroke="'+c+'" stroke-width="1.5"/>'+
       '<circle cx="'+(xs[n.id]+14)+'" cy="'+(ys[n.id]+16)+'" r="5" fill="'+c+'"/>'+
       '<text x="'+(xs[n.id]+26)+'" y="'+(ys[n.id]+21)+'" font-size="11" fill="#333">'+n.label+'</text></g>';
   }).join('');

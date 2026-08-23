@@ -1,0 +1,24 @@
+{
+  "name": "cordis-plugin-fde",
+  "version": "0.1.0",
+  "description": "进场方法论六 tool 闭环（fde_interview/classify/quantify/derive/distill/deploy）",
+  "private": true,
+  "license": "MIT",
+  "author": "KongFangXun",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run"
+  },
+  "keywords": [
+    "sofagent",
+    "dsh",
+    "cordis-plugin"
+  ],
+  "sofagent": {
+    "type": "dsh-plugin",
+    "family": "cordis",
+    "seam": "plugin"
+  }
+}

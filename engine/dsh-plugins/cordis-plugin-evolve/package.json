@@ -1,0 +1,24 @@
+{
+  "name": "cordis-plugin-evolve",
+  "version": "0.1.0",
+  "description": "经验沉淀——think.md 反思 + Dream Cycle + skillopt + instinct→skill + refine（seam: 任务结束 hook）",
+  "private": true,
+  "license": "MIT",
+  "author": "KongFangXun",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run"
+  },
+  "keywords": [
+    "sofagent",
+    "dsh",
+    "cordis-plugin"
+  ],
+  "sofagent": {
+    "type": "dsh-plugin",
+    "family": "cordis",
+    "seam": "任务结束 hook"
+  }
+}
