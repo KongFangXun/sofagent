@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <!--
-  sofagent Dashboard 驾驶舱——安装后运行 sofagent-dashboard --full 启动
-  开发预览：node tools/serve-dashboard.mjs（localhost:3780）
+  sofagent Dashboard 驾驶舱——安装后 sofagent web 启动
+  开发预览：node tools/dashboard/serve-dashboard.mjs（localhost:3780）
+  v1.4.0：导航收敛 6 项（驾驶舱/业务流/本体图谱/知识库/FDE Agent/工具箱）
 -->
 <html lang="zh-CN">
 <head>
@@ -62,6 +63,16 @@ a:hover{text-decoration:underline}
 .metric-value{font-size:28px;font-weight:700;line-height:1.2}
 .metric-label{font-size:12px;color:var(--text-s);margin-top:4px}
 .metric-sub{font-size:11px;color:var(--text-t);margin-top:2px}
+
+/* 需关注置顶区（驾驶舱） */
+.attention{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:16px}
+.attention-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;display:flex;align-items:center;gap:14px}
+.attention-card .a-icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.attention-card .a-icon svg{width:20px;height:20px}
+.attention-card .a-val{font-size:22px;font-weight:700;line-height:1.1}
+.attention-card .a-label{font-size:12px;color:var(--text-s);margin-top:2px}
+.attention-card .a-sub{font-size:11px;color:var(--text-t);margin-top:2px}
+.attention-clear{grid-column:1/-1;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:12px 16px;display:flex;align-items:center;gap:10px;font-size:13px;color:var(--text-s)}
 
 .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:stretch}
 .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;align-items:stretch}
@@ -172,7 +183,7 @@ a:hover{text-decoration:underline}
 .install-box{background:#0D1117;border-radius:var(--radius-s);padding:16px;display:flex;align-items:center;justify-content:space-between;gap:12px}
 .install-box code{font-family:var(--mono);font-size:13px;color:#7EE787}
 
-.mcp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px}
+.mcp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:8px}
 .mcp-item{background:#FAFBFC;border:1px solid var(--border);border-radius:6px;padding:8px 10px;font-size:12px}
 .mcp-item code{font-family:var(--mono);font-size:11px;color:var(--brand-d);font-weight:600}
 .mcp-item .mcp-desc{color:var(--text-s);margin-top:2px;font-size:11px}
@@ -227,12 +238,28 @@ a:hover{text-decoration:underline}
 .seg-refresh.refreshing svg{animation:spin .6s linear}
 @keyframes spin{to{transform:rotate(360deg)}}
 
+/* 工作明细表格（窄屏横向滚动） */
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -4px}
+.wl-table{width:100%;border-collapse:collapse;font-size:12px;min-width:600px}
+.wl-table th{color:var(--text-t);text-align:left;padding:8px;border-bottom:1px solid var(--border);font-weight:500;white-space:nowrap;font-size:11px}
+.wl-table td{padding:8px;border-bottom:1px solid var(--border);vertical-align:top}
+.wl-table tbody tr:last-child td{border-bottom:none}
+.wl-table .cell-over{color:var(--red);font-weight:600;cursor:help;border-bottom:1px dashed rgba(226,75,74,.4)}
+.wl-table .cell-over .delta{font-size:10px;font-weight:400;opacity:.8}
+/* 节点状态着色 */
+.st-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px}
+.st-active{background:var(--brand)}
+.st-done{background:var(--green)}
+.st-failed{background:var(--red)}
+.st-hitl{background:var(--amber)}
+.st-unknown{background:var(--text-t)}
+
 @media(max-width:768px){
   :root{--nav-h:auto}
   .container{padding:12px 12px calc(12px + env(safe-area-inset-bottom))}
   .metrics{grid-template-columns:repeat(2,1fr);gap:16px}
   .metric-value{font-size:24px}
-  .grid-2,.grid-3{grid-template-columns:1fr}
+  .grid-2,.grid-3,.attention{grid-template-columns:1fr}
   /* header 两行：第一行 logo+star，第二行导航 */
   .header{padding:8px 8px 0;gap:6px;display:flex;flex-direction:column;height:auto;align-items:stretch}
   .header-inner{display:flex;flex-direction:column;height:auto;padding:0;gap:6px;width:100%}
@@ -290,16 +317,14 @@ a:hover{text-decoration:underline}
     <div class="header-left">
       <img src="docs/assets/sofagent.png" alt="sofagent" onerror="this.style.display='none'">
       <span class="logo-text">sofagent</span>
-      <span class="logo-version">v1.3.9</span>
+      <span class="logo-version">v1.4.0</span>
     </div>
     <nav class="nav" id="nav">
       <button class="nav-item active" onclick="goPage('cockpit')">驾驶舱</button>
-      <button class="nav-item" onclick="goPage('fde')">FDE 引导</button>
-      <button class="nav-item" onclick="goPage('nodes')">AI 节点</button>
-      <button class="nav-item" onclick="goPage('ontology')">本体结构</button>
+      <button class="nav-item" onclick="goPage('workflow')">业务流</button>
+      <button class="nav-item" onclick="goPage('ontology')">本体图谱</button>
       <button class="nav-item" onclick="goPage('knowledge')">知识库</button>
-      <button class="nav-item" onclick="goPage('worklog')">工作明细</button>
-      <button class="nav-item" onclick="goPage('graph')">图谱</button>
+      <button class="nav-item" onclick="goPage('fde')">FDE Agent</button>
       <button class="nav-item" onclick="goPage('resources')">工具箱</button>
     </nav>
     <div class="header-right">
@@ -338,6 +363,11 @@ a:hover{text-decoration:underline}
     </div>
   </div>
 
+  <!-- 需关注置顶区：打开就看异常 -->
+  <div class="attention" id="attentionBox">
+    <div style="grid-column:1/-1;font-size:12px;color:var(--text-t);text-align:center;padding:16px">加载中...</div>
+  </div>
+
   <div class="metrics">
     <div class="metric-card">
       <div class="metric-value" style="color:var(--green)" id="m-audit">—</div>
@@ -374,7 +404,7 @@ a:hover{text-decoration:underline}
       <svg width="100%" height="180" viewBox="0 0 920 180" preserveAspectRatio="xMidYMid meet" id="trendChart">
         <text x="460" y="90" text-anchor="middle" font-size="13" fill="#8B949E">加载中...</text>
       </svg>
-      <div id="caliberNote" style="margin-top:12px;padding:10px 12px;background:var(--bg-s,#F6F8FA);border:1px solid var(--border);border-radius:8px;font-size:11px;line-height:1.6;color:var(--text-s)"></div>
+      <div id="caliberNote" style="margin-top:12px;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-size:11px;line-height:1.6;color:var(--text-s)"></div>
     </div>
   </div>
 
@@ -406,9 +436,9 @@ a:hover{text-decoration:underline}
 </div>
 
 <!-- ================================================== -->
-<!-- PAGE: 节点 -->
+<!-- PAGE: 业务流（AI 节点 + 工作明细，v1.4.0 归并） -->
 <!-- ================================================== -->
-<div class="page" id="page-nodes">
+<div class="page" id="page-workflow">
   <div class="section">
     <div class="section-header">
       <div class="section-title"><span class="dot-emoji">🤖</span>企业 AI 节点</div>
@@ -437,10 +467,27 @@ a:hover{text-decoration:underline}
   <div class="section">
     <div class="section-header"><div class="section-title"><span class="dot-emoji">🧩</span>编排流水线节点</div></div>
     <div class="section-body">
-      <div style="font-size:11px;color:var(--text-t);margin-bottom:10px">这里是 <b>sofagent 引擎内部执行流水线</b>（planner → engineer → audit → reviewer → human），每次 AI 任务自动走的五步。业务角色节点（分析师/规划师/部署专家）见 <a href="javascript:void(0)" onclick="goPage('fde')" style="color:var(--brand)">FDE 引导</a> 页。</div>
+      <div style="font-size:11px;color:var(--text-t);margin-bottom:10px">这里是 <b>sofagent 引擎内部执行流水线</b>（planner → engineer → audit → reviewer → human），每次 AI 任务自动走的五步。业务角色节点（分析师/规划师/部署专家）见 <a href="javascript:void(0)" onclick="goPage('fde')" style="color:var(--brand)">FDE Agent</a> 页。</div>
       <div class="grid-3" id="nodeList">
         <div style="grid-column:1/-1;text-align:center;color:var(--text-t);font-size:12px;padding:12px">加载中...</div>
       </div>
+    </div>
+  </div>
+  <div class="section">
+    <div class="section-header"><div class="section-title"><span class="dot-emoji">📊</span>工作明细（worklog）</div>
+      <span style="font-size:11px;color:var(--text-t)">数据源：data/dashboard/worklog.json · 超支项标红（kind=COST）</span>
+    </div>
+    <div class="section-body">
+      <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+        <button class="nav-item active" id="wl-tab-agent" onclick="wlTab('agent')">按 Agent</button>
+        <button class="nav-item" id="wl-tab-workflow" onclick="wlTab('workflow')">按 Workflow</button>
+        <button class="nav-item" id="wl-tab-week" onclick="wlTab('week')">按周趋势</button>
+        <button class="nav-item" id="wl-tab-intervention" onclick="wlTab('intervention')">人工介入</button>
+      </div>
+      <div id="wl-view-agent"></div>
+      <div id="wl-view-workflow" style="display:none"></div>
+      <div id="wl-view-week" style="display:none"></div>
+      <div id="wl-view-intervention" style="display:none"></div>
     </div>
   </div>
   <div class="section">
@@ -489,65 +536,12 @@ a:hover{text-decoration:underline}
 </div>
 
 <!-- ================================================== -->
-<!-- PAGE: 知识库 -->
-<!-- ================================================== -->
-<div class="page" id="page-knowledge">
-  <div class="section">
-    <div class="section-header">
-      <div class="section-title"><span class="dot-emoji">📚</span>你的知识库</div>
-      <span style="font-size:11px;color:var(--text-t)" id="kbUpdatedAt">加载中...</span>
-    </div>
-    <div class="section-body">
-      <div id="kbStats" class="grid-3" style="margin-bottom:16px">
-        <div class="chart-box" style="text-align:center;padding:12px"><div style="font-size:24px;font-weight:700;color:var(--purple)">—</div><div style="font-size:11px;color:var(--text-s)">知识页面</div></div>
-        <div class="chart-box" style="text-align:center;padding:12px"><div style="font-size:24px;font-weight:700;color:var(--brand)">—</div><div style="font-size:11px;color:var(--text-s)">业务领域</div></div>
-        <div class="chart-box" style="text-align:center;padding:12px"><div style="font-size:24px;font-weight:700;color:var(--amber)">—</div><div style="font-size:11px;color:var(--text-s)">更新日志</div></div>
-      </div>
-      <div id="kbEntries" style="font-size:12px;color:var(--text-s)">加载中...</div>
-    </div>
-  </div>
-  <div class="section">
-    <div class="section-header"><div class="section-title"><span class="dot-emoji">💡</span>最近经验教训（自动沉淀）</div></div>
-    <div class="section-body">
-      <div class="grid-2" id="thinkList">
-        <div style="grid-column:1/-1;text-align:center;color:var(--text-t);font-size:12px;padding:12px">加载中...</div>
-      </div>
-      <div class="prompt-box" style="margin-top:12px">
-        <div class="prompt-action"><span class="prompt-label">在 Agent 中查询知识库</span><button class="copy-btn" onclick="copyPrompt(this, '用 sofagent 知识库查一下：上次踩了什么坑？有没有相关的实体或概念？帮我避免重蹈覆辙。')">复制</button></div>
-        <code>用 sofagent 知识库查一下：
-上次踩了什么坑？
-有没有相关的实体或概念？
-帮我避免重蹈覆辙。</code>
-      </div>
-    </div>
-  </div>
-  <div class="section">
-    <div class="section-header">
-      <div class="section-title"><span class="dot-emoji">🏛️</span>Ledger-Views-Policy 三层治理</div>
-      <a href="https://github.com/KongFangXun/sofagent/blob/main/docs/PHILOSOPHY.md" target="_blank" class="copy-btn light">PHILOSOPHY §五 →</a>
-    </div>
-    <div class="section-body">
-      <div class="lvp-row">
-        <div class="lvp-col l"><div class="lvp-label">Ledger · 发生了什么</div><div style="margin-top:4px;font-size:11px;color:var(--text-s)">原始数据 · append-only · 不可改</div><div style="font-size:11px;color:var(--text-t);margin-top:2px">task/logs · think.md · 审计历史</div></div>
-        <div class="lvp-arrow">→</div>
-        <div class="lvp-col v"><div class="lvp-label">Views · 这代表什么</div><div style="margin-top:4px;font-size:11px;color:var(--text-s)">知识提炼 · 单向派生</div><div style="font-size:11px;color:var(--text-t);margin-top:2px">knowledge/ entities · concepts · comparisons</div></div>
-        <div class="lvp-arrow">→</div>
-        <div class="lvp-col p"><div class="lvp-label">Policy · 该怎么办</div><div style="margin-top:4px;font-size:11px;color:var(--text-s)">约束规则 · 启动时注入</div><div style="font-size:11px;color:var(--text-t);margin-top:2px">SKILL.md 铁律 · fde.md 业务底线</div></div>
-      </div>
-    </div>
-  </div>
-  <div class="info-note">
-    知识库是 FDE 离场后企业留下的<strong>知识资产</strong>。三层治理保证数据单向流动、经验自动积累。<strong>数据主权</strong>（本地化率、数据流向）已在驾驶舱展示，此处不再重复。
-  </div>
-</div>
-
-<!-- ================================================== -->
-<!-- PAGE: 本体 -->
+<!-- PAGE: 本体图谱（本体结构 + 图谱，v1.4.0 归并） -->
 <!-- ================================================== -->
 <div class="page" id="page-ontology">
   <div class="section">
     <div class="section-header">
-      <div class="section-title"><span class="dot-emoji">🗺️</span>你的本体结构</div>
+      <div class="section-title"><span class="dot-emoji">🗺️</span>你的本体结构（ontology）</div>
       <span style="font-size:11px;color:var(--text-t)" id="ontUpdatedAt">加载中...</span>
     </div>
     <div class="section-body">
@@ -557,6 +551,25 @@ a:hover{text-decoration:underline}
         <div class="chart-box" style="text-align:center;padding:12px"><div style="font-size:24px;font-weight:700;color:var(--brand)">—</div><div style="font-size:11px;color:var(--text-s)">关系 Relations</div></div>
       </div>
       <div id="ontEntries" style="font-size:12px;color:var(--text-s)">加载中...</div>
+    </div>
+  </div>
+  <div class="section">
+    <div class="section-header"><div class="section-title"><span class="dot-emoji">🕸️</span>图谱视图</div>
+      <span style="font-size:11px;color:var(--text-t)">FDE 双 graph（人读 workflow · 机器读 ontology）· 自 FDE workflow · MCP 工具 · skill 加载链</span>
+    </div>
+    <div class="section-body">
+      <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+        <button class="nav-item active" id="gr-tab-workflow" onclick="grTab('workflow')">Workflow 图谱</button>
+        <button class="nav-item" id="gr-tab-ontology" onclick="grTab('ontology')">Ontology 图谱</button>
+        <button class="nav-item" id="gr-tab-self" onclick="grTab('self')">自 FDE workflow</button>
+        <button class="nav-item" id="gr-tab-mcp" onclick="grTab('mcp')">MCP 工具视图</button>
+        <button class="nav-item" id="gr-tab-skill" onclick="grTab('skill')">skill 加载链</button>
+      </div>
+      <div id="gr-view-workflow"></div>
+      <div id="gr-view-ontology" style="display:none"></div>
+      <div id="gr-view-self" style="display:none"></div>
+      <div id="gr-view-mcp" style="display:none"></div>
+      <div id="gr-view-skill" style="display:none"></div>
     </div>
   </div>
   <div class="section">
@@ -659,7 +672,60 @@ a:hover{text-decoration:underline}
 </div>
 
 <!-- ================================================== -->
-<!-- PAGE: FDE 引导 -->
+<!-- PAGE: 知识库 -->
+<!-- ================================================== -->
+<div class="page" id="page-knowledge">
+  <div class="section">
+    <div class="section-header">
+      <div class="section-title"><span class="dot-emoji">📚</span>你的知识库</div>
+      <span style="font-size:11px;color:var(--text-t)" id="kbUpdatedAt">加载中...</span>
+    </div>
+    <div class="section-body">
+      <div id="kbStats" class="grid-3" style="margin-bottom:16px">
+        <div class="chart-box" style="text-align:center;padding:12px"><div style="font-size:24px;font-weight:700;color:var(--purple)">—</div><div style="font-size:11px;color:var(--text-s)">知识页面</div></div>
+        <div class="chart-box" style="text-align:center;padding:12px"><div style="font-size:24px;font-weight:700;color:var(--brand)">—</div><div style="font-size:11px;color:var(--text-s)">业务领域</div></div>
+        <div class="chart-box" style="text-align:center;padding:12px"><div style="font-size:24px;font-weight:700;color:var(--amber)">—</div><div style="font-size:11px;color:var(--text-s)">更新日志</div></div>
+      </div>
+      <div id="kbEntries" style="font-size:12px;color:var(--text-s)">加载中...</div>
+    </div>
+  </div>
+  <div class="section">
+    <div class="section-header"><div class="section-title"><span class="dot-emoji">💡</span>最近经验教训（自动沉淀）</div></div>
+    <div class="section-body">
+      <div class="grid-2" id="thinkList">
+        <div style="grid-column:1/-1;text-align:center;color:var(--text-t);font-size:12px;padding:12px">加载中...</div>
+      </div>
+      <div class="prompt-box" style="margin-top:12px">
+        <div class="prompt-action"><span class="prompt-label">在 Agent 中查询知识库</span><button class="copy-btn" onclick="copyPrompt(this, '用 sofagent 知识库查一下：上次踩了什么坑？有没有相关的实体或概念？帮我避免重蹈覆辙。')">复制</button></div>
+        <code>用 sofagent 知识库查一下：
+上次踩了什么坑？
+有没有相关的实体或概念？
+帮我避免重蹈覆辙。</code>
+      </div>
+    </div>
+  </div>
+  <div class="section">
+    <div class="section-header">
+      <div class="section-title"><span class="dot-emoji">🏛️</span>Ledger-Views-Policy 三层治理</div>
+      <a href="https://github.com/KongFangXun/sofagent/blob/main/docs/PHILOSOPHY.md" target="_blank" class="copy-btn light">PHILOSOPHY §五 →</a>
+    </div>
+    <div class="section-body">
+      <div class="lvp-row">
+        <div class="lvp-col l"><div class="lvp-label">Ledger · 发生了什么</div><div style="margin-top:4px;font-size:11px;color:var(--text-s)">原始数据 · append-only · 不可改</div><div style="font-size:11px;color:var(--text-t);margin-top:2px">task/logs · think.md · 审计历史</div></div>
+        <div class="lvp-arrow">→</div>
+        <div class="lvp-col v"><div class="lvp-label">Views · 这代表什么</div><div style="margin-top:4px;font-size:11px;color:var(--text-s)">知识提炼 · 单向派生</div><div style="font-size:11px;color:var(--text-t);margin-top:2px">knowledge/ entities · concepts · comparisons</div></div>
+        <div class="lvp-arrow">→</div>
+        <div class="lvp-col p"><div class="lvp-label">Policy · 该怎么办</div><div style="margin-top:4px;font-size:11px;color:var(--text-s)">约束规则 · 启动时注入</div><div style="font-size:11px;color:var(--text-t);margin-top:2px">SKILL.md 铁律 · fde.md 业务底线</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="info-note">
+    知识库是 FDE 离场后企业留下的<strong>知识资产</strong>。三层治理保证数据单向流动、经验自动积累。<strong>数据主权</strong>（本地化率、数据流向）已在驾驶舱展示，此处不再重复。
+  </div>
+</div>
+
+<!-- ================================================== -->
+<!-- PAGE: FDE Agent（原 FDE 引导，v1.4.0 改名） -->
 <!-- ================================================== -->
 <div class="page" id="page-fde">
   <div class="section">
@@ -860,33 +926,13 @@ a:hover{text-decoration:underline}
     </div>
   </div>
 
-
-<div class="section">
-    <div class="section-header"><div class="section-title"><span class="dot-emoji">🔌</span>MCP 工具（22 个）</div></div>
+  <div class="section">
+    <div class="section-header"><div class="section-title"><span class="dot-emoji">🔌</span>MCP 工具（66 个 · v1.4.0）</div>
+      <a href="https://github.com/KongFangXun/sofagent/blob/main/engine/mcp/src/tool-registry.ts" target="_blank" class="copy-btn light">tool-registry →</a>
+    </div>
     <div class="section-body">
-      <div class="mcp-grid">
-        <div class="mcp-item"><code>run_audit</code><div class="mcp-desc">执行审计检查</div></div>
-        <div class="mcp-item"><code>audit_file</code><div class="mcp-desc">审计指定文件</div></div>
-        <div class="mcp-item"><code>audit_data_change</code><div class="mcp-desc">审计数据变更</div></div>
-        <div class="mcp-item"><code>get_think</code><div class="mcp-desc">读取反思教训</div></div>
-        <div class="mcp-item"><code>write_think</code><div class="mcp-desc">写入经验教训</div></div>
-        <div class="mcp-item"><code>search_knowledge</code><div class="mcp-desc">搜索知识库</div></div>
-        <div class="mcp-item"><code>read_entity</code><div class="mcp-desc">读取实体详情</div></div>
-        <div class="mcp-item"><code>read_concept</code><div class="mcp-desc">读取概念解释</div></div>
-        <div class="mcp-item"><code>list_entities</code><div class="mcp-desc">列出所有实体</div></div>
-        <div class="mcp-item"><code>create_entity</code><div class="mcp-desc">创建实体</div></div>
-        <div class="mcp-item"><code>create_concept</code><div class="mcp-desc">创建概念</div></div>
-        <div class="mcp-item"><code>validate_ontology</code><div class="mcp-desc">验证本体结构</div></div>
-        <div class="mcp-item"><code>read_lessons</code><div class="mcp-desc">读取踩坑记录</div></div>
-        <div class="mcp-item"><code>stats</code><div class="mcp-desc">知识库统计</div></div>
-        <div class="mcp-item"><code>evaluate_output</code><div class="mcp-desc">评估输出质量</div></div>
-        <div class="mcp-item"><code>optimize_skill</code><div class="mcp-desc">优化 Skill 质量</div></div>
-        <div class="mcp-item"><code>health_check</code><div class="mcp-desc">系统健康检查</div></div>
-        <div class="mcp-item"><code>data_sovereignty_report</code><div class="mcp-desc">数据主权报告</div></div>
-        <div class="mcp-item"><code>sofagent_compose</code><div class="mcp-desc">编排任务</div></div>
-        <div class="mcp-item"><code>notify_session</code><div class="mcp-desc">会话通知</div></div>
-        <div class="mcp-item"><code>activate_workflow</code><div class="mcp-desc">激活工作流（v1.2.5+）</div></div>
-        <div class="mcp-item"><code>list_capabilities</code><div class="mcp-desc">获取完整能力清单</div></div>
+      <div class="mcp-grid" id="mcpList">
+        <div style="grid-column:1/-1;color:var(--text-t);font-size:12px;padding:8px">加载中...</div>
       </div>
     </div>
   </div>
@@ -923,13 +969,12 @@ a:hover{text-decoration:underline}
         <a class="doc-item" href="https://github.com/KongFangXun/sofagent/blob/main/docs/HANDBOOK.md" target="_blank"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>HANDBOOK<span class="ext">操作手册</span></a>
         <a class="doc-item" href="https://github.com/KongFangXun/sofagent/blob/main/FDE/GUIDE.md" target="_blank"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>FDE GUIDE<span class="ext">诊断方法论</span></a>
         <a class="doc-item" href="https://github.com/KongFangXun/sofagent/blob/main/SECURITY.md" target="_blank"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>SECURITY<span class="ext">安全策略</span></a>
-        <a class="doc-item" href="https://github.com/KongFangXun/sofagent/blob/main/LIMITATIONS.md" target="_blank"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>LIMITATIONS<span class="ext">已知局限</span></a>
+        <a class="doc-item" href="https://github.com/KongFangXun/sofagent/blob/main/docs/LIMITATIONS.md" target="_blank"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>LIMITATIONS<span class="ext">已知局限</span></a>
         <a class="doc-item" href="https://github.com/KongFangXun/sofagent/blob/main/ROADMAP.md" target="_blank"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>ROADMAP<span class="ext">路线图</span></a>
         <a class="doc-item" href="https://github.com/KongFangXun/sofagent/blob/main/CONTRIBUTING.md" target="_blank"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>CONTRIBUTING<span class="ext">贡献指南</span></a>
         <a class="doc-item" href="https://github.com/KongFangXun/sofagent/blob/main/docs/THANKS.md" target="_blank"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>THANKS<span class="ext">致谢</span></a>
-      
+      </div>
     </div>
-  </div>
   </div>
   <div class="section">
     <div class="section-header">
@@ -976,57 +1021,9 @@ build → acceptance → regression → coverage，
   </div>
 </div>
 
-<!-- ================================================== -->
-<!-- PAGE: 工作明细 -->
-<!-- ================================================== -->
-<div class="page" id="page-worklog">
-  <div class="section">
-    <div class="section-header"><div class="section-title"><span class="dot-emoji">📊</span>工作明细</div>
-      <span style="font-size:11px;color:var(--text-t)">数据源：data/dashboard/worklog.json（worklog 聚合 · 无数据时展示示例）</span>
-    </div>
-    <div class="section-body">
-      <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
-        <button class="nav-item active" id="wl-tab-agent" onclick="wlTab('agent')">按 Agent</button>
-        <button class="nav-item" id="wl-tab-workflow" onclick="wlTab('workflow')">按 Workflow</button>
-        <button class="nav-item" id="wl-tab-week" onclick="wlTab('week')">按周趋势</button>
-        <button class="nav-item" id="wl-tab-intervention" onclick="wlTab('intervention')">人工介入</button>
-      </div>
-      <div id="wl-view-agent"></div>
-      <div id="wl-view-workflow" style="display:none"></div>
-      <div id="wl-view-week" style="display:none"></div>
-      <div id="wl-view-intervention" style="display:none"></div>
-    </div>
-  </div>
-</div>
-
-<!-- ================================================== -->
-<!-- PAGE: 图谱 -->
-<!-- ================================================== -->
-<div class="page" id="page-graph">
-  <div class="section">
-    <div class="section-header"><div class="section-title"><span class="dot-emoji">🗺️</span>图谱</div>
-      <span style="font-size:11px;color:var(--text-t)">FDE 双 graph（人读 workflow · 机器读 ontology）· 自 FDE workflow · MCP 工具 · skill 加载链</span>
-    </div>
-    <div class="section-body">
-      <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
-        <button class="nav-item active" id="gr-tab-workflow" onclick="grTab('workflow')">Workflow 图谱</button>
-        <button class="nav-item" id="gr-tab-ontology" onclick="grTab('ontology')">Ontology 图谱</button>
-        <button class="nav-item" id="gr-tab-self" onclick="grTab('self')">自 FDE workflow</button>
-        <button class="nav-item" id="gr-tab-mcp" onclick="grTab('mcp')">MCP 工具视图</button>
-        <button class="nav-item" id="gr-tab-skill" onclick="grTab('skill')">skill 加载链</button>
-      </div>
-      <div id="gr-view-workflow"></div>
-      <div id="gr-view-ontology" style="display:none"></div>
-      <div id="gr-view-self" style="display:none"></div>
-      <div id="gr-view-mcp" style="display:none"></div>
-      <div id="gr-view-skill" style="display:none"></div>
-    </div>
-  </div>
-</div>
-
   <div class="footer">
     <p>sofagent · FDE Agent — 梳理工作流 · 部署 AI 节点 · 审计每次变更</p>
-    <p style="margin-top:4px"><a href="https://github.com/KongFangXun/sofagent" target="_blank">GitHub</a> · MIT License · 孔放勋 · v1.3.9</p>
+    <p style="margin-top:4px"><a href="https://github.com/KongFangXun/sofagent" target="_blank">GitHub</a> · MIT License · 孔放勋 · v1.4.0</p>
   </div>
 </div>
 
@@ -1044,13 +1041,11 @@ function goPage(name){
   }
   window.scrollTo(0,0);
   if(name==='cockpit') loadLiveData();
-  if(name==='nodes'){loadAiNodesData();loadGraphData();}
+  if(name==='workflow'){loadAiNodesData();loadPipelineGraph();loadWorklogData();}
+  if(name==='ontology'){loadOntologyData();loadGraphView();}
   if(name==='knowledge') loadKnowledgeData();
-  if(name==='ontology') loadOntologyData();
   if(name==='fde') loadFdeWorkflowData();
-  if(name==='worklog') loadWorklogData();
-  if(name==='graph') loadGraphData();
-  if(name==='resources'){loadForgeData();loadReleaseGateData();}
+  if(name==='resources'){renderMcpList();loadForgeData();loadReleaseGateData();}
 }
 
 /* ===== Copy Prompt ===== */
@@ -1094,6 +1089,7 @@ async function loadLiveData(){
       updateDataStatus(true);
       renderSummaryData(summary);
       document.getElementById('lastRefresh').textContent='更新于 '+new Date().toLocaleTimeString('zh-CN');
+      loadAttention(summary);
       return;
     }
   }
@@ -1132,10 +1128,12 @@ async function loadLiveData(){
       if(sr.dataFlow&&sr.dataFlow.direction&&sr.dataFlow.direction!=='local-only')sovereigntyData.dataOutflow++;
     });
     renderSovereignty(sovereigntyData,daemonHealth);
+    loadAttention(null);
   }else{
     liveDataConnected=false;
     updateDataStatus(false);
     loadSampleData();
+    loadAttention(null);
   }
 
   document.getElementById('lastRefresh').textContent='更新于 '+new Date().toLocaleTimeString('zh-CN');
@@ -1173,7 +1171,7 @@ function renderSummaryData(s){
       var cls=verdict==='PASS'?'badge-pass':(verdict==='WARN'?'badge-warn':'badge-fail');
       // rule 列：FAIL/WARN 显示触发的规则码，PASS 显示 ✓
       var ruleCell=rec.rule
-        ? '<span class="audit-rule" style="color:var(--'+(verdict==='FAIL'?'red':'amber')+')">'+rec.rule+'</span>'
+        ? '<span class="audit-rule" style="color:var(--'+(verdict==='FAIL'?'red':'amber')+')">'+escapeHtml(rec.rule)+'</span>'
         : '<span class="audit-rule" style="color:var(--green)">✓</span>';
       return '<div class="audit-row"><span class="audit-time">'+(rec.time||'')+'</span><span class="audit-badge '+cls+'">'+verdict+'</span>'+ruleCell+'<span class="audit-task">'+escapeHtml(rec.task||'')+'</span></div>';
     }).join('');
@@ -1185,6 +1183,63 @@ function renderSummaryData(s){
   }else if(s.top3&&s.top3.length){
     renderTop3Trend(s.top3);
   }
+}
+
+/* 需关注置顶区：今日问题 / 人工介入待处理 / 超支告警 */
+function loadAttention(summary){
+  var box=document.getElementById('attentionBox');
+  if(!box)return;
+  var issues=0,fails=0;
+  if(summary){
+    var lastDay=(summary.daily&&summary.daily.length)?summary.daily[summary.daily.length-1]:null;
+    if(lastDay){issues=(lastDay.ruleAll||0)-(lastDay.rulePass||0)}
+    fails=(summary.recent||[]).filter(function(r){return r.exitCode>1}).length;
+  }
+  // 探测数据根 → 读 worklog + decisions（HITL 待处理 / 成本告警）
+  resolveDataRoot().then(function(root){
+    if(!root){renderAttentionCards(issues,fails,0,0);return}
+    return Promise.all([
+      tryFetch(root+'/dashboard/worklog.json'),
+      tryFetch(root+'/decisions.jsonl')
+    ]).then(function(res){
+      var wl=null;try{wl=res[0]?JSON.parse(res[0]):null}catch(e){}
+      var costWarns=0;
+      if(res[1]){costWarns=parseJSONL(res[1]).filter(function(r){return r.kind==='COST'}).length}
+      var hitl=0;
+      (wl&&wl.workflows||[]).forEach(function(w){
+        (w.nodes||[]).forEach(function(n){if(n.status==='active'||n.humanInterventions>0)hitl++});
+      });
+      renderAttentionCards(issues,fails,costWarns,hitl);
+    }).catch(function(){renderAttentionCards(issues,fails,0,0)});
+  });
+}
+function renderAttentionCards(issues,fails,costs,hitl){
+  var box=document.getElementById('attentionBox');
+  if(!box)return;
+  // 全部为零 → 绿态横幅
+  if(!issues&&!fails&&!costs&&!hitl){
+    box.innerHTML='<div class="attention-clear"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;color:var(--green);flex-shrink:0"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>今日无异常——没有 FAIL 记录、没有待处理的人工介入、没有超支告警</div>';
+    return;
+  }
+  function card(icon,color,bg,val,label,sub){
+    return '<div class="attention-card"><div class="a-icon" style="background:'+bg+'">'+icon+'</div>'+
+      '<div><div class="a-val" style="color:'+color+'">'+val+'</div><div class="a-label">'+label+'</div><div class="a-sub">'+sub+'</div></div></div>';
+  }
+  var svgWarn='<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>';
+  var svgUser='<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>';
+  var svgCoin='<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>';
+  var cards=[];
+  if(issues||fails)cards.push(card(svgWarn,'var(--red)','#E24B4A',issues,'今日问题',fails+' 条 FAIL 记录'));
+  if(hitl)cards.push(card(svgUser,'var(--amber)','#EF9F27',hitl,'人工介入待处理','active 节点 / 介入记录'));
+  if(costs)cards.push(card(svgCoin,'var(--red)','#E24B4A',costs,'超支告警','kind=COST 决策记录'));
+  // 有异常但有某类为 0 时补一个绿卡
+  if(cards.length<3){
+    var rest=3-cards.length;
+    for(var i=0;i<rest;i++){
+      cards.push(card(svgWarn,'var(--green)','#1D9E75',0,'无异常','——'));
+    }
+  }
+  box.innerHTML=cards.join('');
 }
 
 /* 通栏趋势图：规则检查口径——蓝柱审计次数(总检查) + 黄柱问题次数（左轴次数），绿线规则通过率（右轴比率）
@@ -1256,8 +1311,8 @@ function renderTop3Trend(t){
     var x=padL+i*sw+sw*0.25;
     var w=sw*0.5;
     svg+='<rect x="'+x+'" y="'+(base-h)+'" width="'+w+'" height="'+h+'" rx="4" fill="#E24B4A"/>';
-    svg+='<text x="'+(x+w/2)+'" y="'+(base+16)+'" text-anchor="middle" font-size="11" fill="#8B949E">'+item.code+'</text>';
-    svg+='<text x="'+(x+w/2)+'" y="'+(base+30)+'" text-anchor="middle" font-size="10" fill="#57606A" font-weight="500">'+(item.name||'')+'</text>';
+    svg+='<text x="'+(x+w/2)+'" y="'+(base+16)+'" text-anchor="middle" font-size="11" fill="#8B949E">'+escapeHtml(item.code)+'</text>';
+    svg+='<text x="'+(x+w/2)+'" y="'+(base+30)+'" text-anchor="middle" font-size="10" fill="#57606A" font-weight="500">'+escapeHtml(item.name||'')+'</text>';
     svg+='<text x="'+(x+w/2)+'" y="'+(base-h-6)+'" text-anchor="middle" font-size="11" fill="#E24B4A">'+(item.count||0)+'</text>';
   });
   svg+='<text x="4" y="'+(top+4)+'" font-size="10" fill="#8B949E">'+max+'</text>';
@@ -1273,7 +1328,7 @@ function renderSovereigntyBox(sov,daemonStatus){
   var dc=(daemonStatus==='degraded'||daemonStatus==='down')?'var(--amber)':'var(--green)';
   /* 守护进程放卡片头部右上角 */
   var badge=document.getElementById('sovDaemonBadge');
-  if(badge){badge.style.display='inline-flex';badge.style.alignItems='center';badge.style.color=dc;badge.innerHTML='● 守护进程 '+ds;}
+  if(badge){badge.style.display='inline-flex';badge.style.alignItems='center';badge.style.color=dc;badge.innerHTML='● 守护进程 '+escapeHtml(ds);}
   /* 四栏数字：本地执行 / 本地化率 / 云端调用 / 数据流出，无分割线（🔒 小字在 section 外） */
   el.innerHTML='<div class="chart-box" style="display:flex;align-items:center;justify-content:space-around;flex:1;min-height:80px;height:100%">'+
     '<div style="display:flex;flex-direction:column;justify-content:center;align-items:center"><div style="font-size:20px;font-weight:700;color:var(--green)">'+sov.local+'</div><div style="font-size:11px;color:var(--text-s);margin-top:2px">本地执行</div></div>'+
@@ -1287,7 +1342,7 @@ function updateDataStatus(connected){
   var el=document.getElementById('dataStatus');
   var txt=document.getElementById('dataStatusText');
   if(connected){el.className='data-status ds-live';txt.textContent='实时数据已连接（~/.sofagent/data）'}
-  else{el.className='data-status ds-sample';txt.textContent='示例数据 · 用 node tools/serve-dashboard.mjs 启动看实时数据'}
+  else{el.className='data-status ds-sample';txt.textContent='示例数据 · 用 node tools/dashboard/serve-dashboard.mjs 启动看实时数据'}
 }
 
 function processAuditData(records){
@@ -1331,11 +1386,11 @@ function renderLiveAuditLog(records){
     }
     // rule 列：FAIL/WARN 显示触发规则码（红/橙），PASS 显示绿色 ✓
     var ruleCell=rule
-      ? '<span class="audit-rule" style="color:var(--'+(verdict==='FAIL'?'red':'amber')+')">'+rule+'</span>'
+      ? '<span class="audit-rule" style="color:var(--'+(verdict==='FAIL'?'red':'amber')+')">'+escapeHtml(rule)+'</span>'
       : '<span class="audit-rule" style="color:var(--green)">✓</span>';
     var ts=(r.timestamp||'').slice(5,16);
     var task=(r.task||r.commitMsg||'').slice(0,50);
-    return '<div class="audit-row"><span class="audit-time">'+ts+'</span><span class="audit-badge '+verdictClass+'">'+verdict+'</span>'+ruleCell+'<span class="audit-task">'+escapeHtml(task)+'</span></div>';
+    return '<div class="audit-row"><span class="audit-time">'+escapeHtml(ts)+'</span><span class="audit-badge '+verdictClass+'">'+verdict+'</span>'+ruleCell+'<span class="audit-task">'+escapeHtml(task)+'</span></div>';
   }).join('');
   document.getElementById('liveAuditLog').innerHTML=html||'<div style="color:var(--text-t);font-size:12px;text-align:center;padding:20px">暂无记录</div>';
 }
@@ -1403,9 +1458,9 @@ function loadSampleData(){
   ];
   document.getElementById('liveAuditLog').innerHTML=samples.map(function(r){
     var ruleCell=r.rule
-      ? '<span class="audit-rule" style="color:var(--'+(r.verdict==='FAIL'?'red':'amber')+')">'+r.rule+'</span>'
+      ? '<span class="audit-rule" style="color:var(--'+(r.verdict==='FAIL'?'red':'amber')+')">'+escapeHtml(r.rule)+'</span>'
       : '<span class="audit-rule" style="color:var(--green)">✓</span>';
-    return '<div class="audit-row"><span class="audit-time">'+r.time+'</span><span class="audit-badge badge-'+r.verdict.toLowerCase()+'">'+r.verdict+'</span>'+ruleCell+'<span class="audit-task">'+r.task+'</span></div>';
+    return '<div class="audit-row"><span class="audit-time">'+escapeHtml(r.time)+'</span><span class="audit-badge badge-'+r.verdict.toLowerCase()+'">'+r.verdict+'</span>'+ruleCell+'<span class="audit-task">'+escapeHtml(r.task)+'</span></div>';
   }).join('');
   // 示例趋势：近 7 天每日 PASS/WARN/FAIL + 规则级通过率
   var samplePass=[19,17,20,13,18,11,16];
@@ -1457,7 +1512,7 @@ function detectFsApi(){
 
 async function connectDataDir(){
   if(!window.showDirectoryPicker){
-    alert('当前浏览器不支持直连目录（需 Chrome / Edge）。\n请改用：node tools/serve-dashboard.mjs 启动服务器。');
+    alert('当前浏览器不支持直连目录（需 Chrome / Edge）。\n请改用：node tools/dashboard/serve-dashboard.mjs 启动服务器。');
     return;
   }
   try{
@@ -1474,7 +1529,7 @@ async function connectDataDir(){
     }
     fsDataConnected=true;
     updateDataStatus(true);
-    document.getElementById('dataStatusText').textContent='已连接数据目录（'+fsRootHandle.name+'）';
+    document.getElementById('dataStatusText').textContent='已连接数据目录（'+escapeHtml(fsRootHandle.name)+'）';
     await loadLiveDataFs();
   }catch(e){
     if(e&&e.name!=='AbortError')alert('连接失败：'+e.message);
@@ -1556,11 +1611,11 @@ function loadFdeWorkflowData(){
       }
       // agent 类型 → 颜色 + 角色名（明确分配，不靠兜底）
       var agentColor={
-        analyst:{bg:'#E6F1FB',border:'var(--brand)',label:'⚡ 强化岗位',role:'分析师',dot:'🔵'},
-        planner:{bg:'#E1F5EE',border:'var(--green)',label:'🔄 自动执行',role:'规划师',dot:'🟢'},
-        deployer:{bg:'#FAEEDA',border:'var(--amber)',label:'🔄 自动执行',role:'部署专家',dot:'🟠'},
-        engineer:{bg:'#FFF8E1',border:'#E0A800',label:'🔄 自动执行',role:'工程',dot:'🟡'},
-        reviewer:{bg:'#F3E8FF',border:'var(--purple)',label:'👤 人工确认',role:'审查',dot:'🟣'}
+        analyst:{bg:'#E6F1FB',border:'var(--brand)',label:'⚡ 强化岗位',role:'分析师'},
+        planner:{bg:'#E1F5EE',border:'var(--green)',label:'🔄 自动执行',role:'规划师'},
+        deployer:{bg:'#FAEEDA',border:'var(--amber)',label:'🔄 自动执行',role:'部署专家'},
+        engineer:{bg:'#FFF8E1',border:'#E0A800',label:'🔄 自动执行',role:'工程'},
+        reviewer:{bg:'#F3E8FF',border:'var(--purple)',label:'👤 人工确认',role:'审查'}
       };
       var html='';
       var sustain=d.sustain||null;
@@ -1572,8 +1627,8 @@ function loadFdeWorkflowData(){
         wf.steps.forEach(function(s,i){
           var ac=agentColor[s.agent]||agentColor.analyst;
           html+='<div class="fde-step" style="flex:0 0 calc(20% - 7px);box-sizing:border-box;background:'+ac.bg+';border:1px solid '+ac.border+';border-radius:var(--radius-s);padding:10px 12px">'+
-            '<div style="font-size:10px;color:var(--text-t);font-family:var(--mono);display:flex;align-items:center;gap:5px"><span class="agent-dot '+s.agent+'"></span> STEP '+(i+1)+' · <span style="color:var(--brand-d)">'+ac.role+' · '+s.agent+'</span></div>'+
-            '<div style="font-size:12px;font-weight:600;margin-top:4px;display:flex;align-items:baseline;gap:6px;flex-wrap:wrap"><span>'+s.name+'</span><span style="font-size:10px;font-weight:400;color:var(--text-t)">'+ac.label+(s.loop?' · 循环':'')+'</span></div>'+
+            '<div style="font-size:10px;color:var(--text-t);font-family:var(--mono);display:flex;align-items:center;gap:5px"><span class="agent-dot '+escapeHtml(s.agent)+'"></span> STEP '+(i+1)+' · <span style="color:var(--brand-d)">'+escapeHtml(ac.role)+' · '+escapeHtml(s.agent)+'</span></div>'+
+            '<div style="font-size:12px;font-weight:600;margin-top:4px;display:flex;align-items:baseline;gap:6px;flex-wrap:wrap"><span>'+escapeHtml(s.name)+'</span><span style="font-size:10px;font-weight:400;color:var(--text-t)">'+ac.label+(s.loop?' · 循环':'')+'</span></div>'+
             '</div>';
         });
         html+='</div>';
@@ -1582,13 +1637,13 @@ function loadFdeWorkflowData(){
           var wr=sustain.weeklyReport;
           var tw=wr.thisWeek||{};
           var trendCn={improving:'📈 改善',degrading:'📉 恶化',stable:'➡️ 平稳'}[wr.trend]||wr.trend||'-';
-          var top5=(wr.violationTop5||[]).slice(0,3).map(function(v){return v.rule+'×'+v.count}).join(' · ');
+          var top5=(wr.violationTop5||[]).slice(0,3).map(function(v){return escapeHtml(v.rule)+'×'+v.count}).join(' · ');
           html+='<div style="margin-top:12px;background:#FAFBFC;border:1px solid var(--border);border-radius:var(--radius-s);padding:10px 14px;font-size:12px;color:var(--text-s)">'+
             // 第一行：标题 + 右上角链接 + 统计
             '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">'+
-              '<b style="color:var(--text)">📊 '+wr.weekLabel+' 持续优化周报</b>'+
+              '<b style="color:var(--text)">📊 '+escapeHtml(wr.weekLabel)+' 持续优化周报</b>'+
               '<span>本周 '+tw.taskCount+' 任务 · '+tw.passes+' 通过 · '+tw.warnings+' 警告 · <b style="color:var(--red)">'+tw.violations+' 违规</b> · 趋势 '+trendCn+'</span>'+
-              '<a href="data:application/json;charset=utf-8,'+encodeURIComponent(JSON.stringify(wr))+'" download="weekly-'+wr.weekLabel+'.json" title="下载周报 JSON" style="margin-left:auto;color:var(--brand);text-decoration:none;font-size:11px;display:inline-flex;align-items:center;gap:3px">⬇️ 周报 JSON</a>'+
+              '<a href="data:application/json;charset=utf-8,'+encodeURIComponent(JSON.stringify(wr))+'" download="weekly-'+escapeHtml(wr.weekLabel)+'.json" title="下载周报 JSON" style="margin-left:auto;color:var(--brand);text-decoration:none;font-size:11px;display:inline-flex;align-items:center;gap:3px">⬇️ 周报 JSON</a>'+
             '</div>'+
             (top5?'<div style="margin-top:6px;font-size:11px;color:var(--text-t)">违规 TOP3：'+top5+'</div>':'')+
             '</div>';
@@ -1620,24 +1675,24 @@ function loadAiNodesData(){
         var showCount=Math.min(deployed.length,12); // 一屏最多 12 个，避免长列表
         html+='<div style="font-size:12px;color:var(--green);font-weight:600;margin-bottom:8px">✅ 已部署 '+total+' 个企业节点</div>';
         html+='<div class="grid-3">'+deployed.slice(0,showCount).map(function(nd){
-          return '<div class="node-card status-running"><div class="node-status"><span class="icon"></span>'+nd.name+'</div><div class="node-meta">'+(nd.description||nd.file||'')+'</div></div>';
+          return '<div class="node-card status-running"><div class="node-status"><span class="icon"></span>'+escapeHtml(nd.name)+'</div><div class="node-meta">'+escapeHtml(nd.description||nd.file||'')+'</div></div>';
         }).join('')+'</div>';
         if(total>showCount){
           html+='<div style="font-size:11px;color:var(--text-t);margin-top:8px">共 '+total+' 个节点，仅显示前 '+showCount+' 个——完整列表见 <code style="background:var(--brand-l);padding:2px 6px;border-radius:4px">~/.sofagent/subagents/</code></div>';
         }
       }else{
         html='<div style="font-size:12px;color:var(--text-s)">尚未部署企业 AI 节点。</div>'+
-          '<div style="font-size:12px;color:var(--text-s);margin-top:6px">在 <a href="javascript:void(0)" onclick="goPage(\'fde\')" style="color:var(--brand)">FDE 引导</a> 页复制 Prompt 开始部署，部署完成后节点会自动出现在这里（数据源 <code style="background:var(--brand-l);padding:2px 6px;border-radius:4px">~/.sofagent/subagents/</code>）。</div>';
+          '<div style="font-size:12px;color:var(--text-s);margin-top:6px">在 <a href="javascript:void(0)" onclick="goPage(\'fde\')" style="color:var(--brand)">FDE Agent</a> 页复制 Prompt 开始部署，部署完成后节点会自动出现在这里（数据源 <code style="background:var(--brand-l);padding:2px 6px;border-radius:4px">~/.sofagent/subagents/</code>）。</div>';
       }
       list.innerHTML=html;
     })
     .catch(function(){
-      list.innerHTML='<div style="font-size:12px;color:var(--text-s)">未检测到节点数据（通过 tools/serve-dashboard.mjs 启动可看）</div>';
+      list.innerHTML='<div style="font-size:12px;color:var(--text-s)">未检测到节点数据（通过 tools/dashboard/serve-dashboard.mjs 启动可看）</div>';
     });
 }
 
-/* ===== Graph Data (AI 节点) ===== */
-function loadGraphData(){
+/* ===== Pipeline Graph（业务流 · 编排控制图，读 graph-state.json） ===== */
+function loadPipelineGraph(){
   var box=document.getElementById('graphBox');
   var list=document.getElementById('nodeList');
   var updated=document.getElementById('graphUpdatedAt');
@@ -1679,8 +1734,8 @@ function loadGraphData(){
         }
         svg+='<rect x="'+x+'" y="28" width="'+nodeW+'" height="'+nodeH+'" rx="6" fill="'+fill+'" stroke="'+stroke+'" stroke-width="1"/>';
         var label=(n.label||n.id||n.type||'').replace(/-1$/,'');
-        svg+='<text x="'+(x+nodeW/2)+'" y="49" text-anchor="middle" font-size="11" font-weight="500" fill="'+textCol+'">'+label+'</text>';
-        svg+='<text x="'+(x+nodeW/2)+'" y="76" text-anchor="middle" font-size="9" fill="#8B949E">'+n.status+'</text>';
+        svg+='<text x="'+(x+nodeW/2)+'" y="49" text-anchor="middle" font-size="11" font-weight="500" fill="'+textCol+'">'+escapeHtml(label)+'</text>';
+        svg+='<text x="'+(x+nodeW/2)+'" y="76" text-anchor="middle" font-size="9" fill="#8B949E">'+escapeHtml(n.status)+'</text>';
       });
       svg+='<defs><marker id="arrG" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M2 2L8 5L2 8" fill="none" stroke="#8B949E" stroke-width="1.5"/></marker></defs>';
       svg+='</svg>';
@@ -1690,7 +1745,7 @@ function loadGraphData(){
       var typeDot={'planner':'planner','engineer':'engineer','audit':'audit','reviewer':'reviewer','human':'human'};
       var html=nodes.map(function(n){
         var st=n.status||'unknown';
-        var cls=st==='completed'?'status-running':(st==='pending'?'status-pending':'status-pending');
+        var cls=st==='completed'||st==='running'?'status-running':'status-pending';
         var statusCn={'completed':'已完成','running':'运行中','pending':'等待中','blocked':'已阻断','failed':'失败'}[st]||st;
         var typeCn={'planner':'规划器','engineer':'工程师','audit':'审计','reviewer':'审查','human':'人工确认'}[n.type]||n.type||'-';
         var dotClass=typeDot[n.type]||'human';
@@ -1698,14 +1753,14 @@ function loadGraphData(){
         if(n.subtasks&&n.subtasks.length){
           subtaskHtml='<div class="node-stats"><span>子任务 '+(n.subtasks.length)+' 个</span></div>';
         }
-        return '<div class="node-card '+cls+'"><div class="node-status"><span class="agent-dot '+dotClass+'"></span>'+(n.label||n.id||'')+'</div>'+
-          '<div class="node-meta">类型：'+typeCn+' · id: '+(n.id||'')+'</div>'+
-          '<div class="node-stats"><span>状态：'+statusCn+'</span></div>'+subtaskHtml+'</div>';
+        return '<div class="node-card '+cls+'"><div class="node-status"><span class="agent-dot '+dotClass+'"></span>'+escapeHtml(n.label||n.id||'')+'</div>'+
+          '<div class="node-meta">类型：'+escapeHtml(typeCn)+' · id: '+escapeHtml(n.id||'')+'</div>'+
+          '<div class="node-stats"><span>状态：'+escapeHtml(statusCn)+'</span></div>'+subtaskHtml+'</div>';
       }).join('');
       list.innerHTML=html||'<div style="grid-column:1/-1;text-align:center;color:var(--text-t);padding:12px">暂无节点</div>';
     })
     .catch(function(){
-      box.innerHTML='<div style="text-align:center;color:var(--text-t);font-size:12px;padding:12px">未检测到 graph-state.json（通过 tools/serve-dashboard.mjs 启动可看真实数据）</div>';
+      box.innerHTML='<div style="text-align:center;color:var(--text-t);font-size:12px;padding:12px">未检测到 graph-state.json（通过 tools/dashboard/serve-dashboard.mjs 启动可看真实数据）</div>';
       if(updated)updated.textContent=fmtUpdatedAt();
       list.innerHTML='<div style="grid-column:1/-1;text-align:center;color:var(--text-t);font-size:12px;padding:12px">—</div>';
     });
@@ -1756,12 +1811,12 @@ function loadKnowledgeData(){
     });
     if(entries){
       if(rows.length){
-        entries.innerHTML='<div style="font-size:12px;color:var(--text-s);margin-bottom:8px"><b>知识页面 '+(pageCount)+' 个</b>，来自 index.md（daemon Ingest 自动维护）：</div>'+
+        entries.innerHTML='<div style="font-size:12px;color:var(--text-s);margin-bottom:8px"><b>知识页面 '+pageCount+' 个</b>，来自 index.md（daemon Ingest 自动维护）：</div>'+
           rows.map(function(r){
             return '<div style="display:flex;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid var(--border);font-size:12px">'+
-              '<span style="font-family:var(--mono);color:var(--brand-d);font-weight:600">'+r.name+'</span>'+
-              '<span style="color:var(--text-t)">域：'+(r.domain||'-')+'</span>'+
-              '<span style="margin-left:auto;color:var(--text-t)">节点：'+(r.nodes||'-')+'</span></div>';
+              '<span style="font-family:var(--mono);color:var(--brand-d);font-weight:600">'+escapeHtml(r.name)+'</span>'+
+              '<span style="color:var(--text-t)">域：'+escapeHtml(r.domain||'-')+'</span>'+
+              '<span style="margin-left:auto;color:var(--text-t)">节点：'+escapeHtml(r.nodes||'-')+'</span></div>';
           }).join('');
       }else{
         entries.innerHTML='<div style="font-size:12px;color:var(--text-s)">知识库目前为空——运行 FDE 或在 Agent 中执行知识沉淀后会自动写入 <code style="background:var(--brand-l);padding:2px 6px;border-radius:4px">~/.sofagent/data/knowledge/</code></div>';
@@ -1785,7 +1840,7 @@ function loadKnowledgeData(){
       });
       if(thinks.length){
         thinkBox.innerHTML=thinks.slice(0,6).map(function(t){
-          return '<div class="think-entry"><div class="t-rule">'+(t.rule||'反思')+'</div><div class="t-text"><b>'+
+          return '<div class="think-entry"><div class="t-rule">'+escapeHtml(t.rule||'反思')+'</div><div class="t-text"><b>'+
             escapeHtml(t.title)+'</b> '+(t.text!==t.title?escapeHtml(t.text):'')+'</div></div>';
         }).join('');
       }else{
@@ -1794,7 +1849,7 @@ function loadKnowledgeData(){
     }
   }).catch(function(){
     if(stats)stats.innerHTML='<div style="grid-column:1/-1;text-align:center;color:var(--text-t);font-size:12px;padding:12px">未连接数据源</div>';
-    if(entries)entries.innerHTML='<div style="font-size:12px;color:var(--text-s)">未检测到知识库（通过 tools/serve-dashboard.mjs 启动可看真实数据）</div>';
+    if(entries)entries.innerHTML='<div style="font-size:12px;color:var(--text-s)">未检测到知识库（通过 tools/dashboard/serve-dashboard.mjs 启动可看真实数据）</div>';
   });
 }
 
@@ -1823,12 +1878,12 @@ function loadOntologyData(){
       if(entries){
         var html='';
         var any=false;
-        function renderGroup(title,color,items,key){
+        function renderGroup(title,color,items){
           if(!items.length)return'';
           any=true;
-          var h='<div style="font-size:13px;font-weight:600;color:'+color+';margin:10px 0 6px">'+title+'（'+items.length+'）</div>';
+          var h='<div style="font-size:13px;font-weight:600;color:'+color+';margin:10px 0 6px">'+escapeHtml(title)+'（'+items.length+'）</div>';
           h+='<div style="display:flex;flex-wrap:wrap;gap:6px">'+items.map(function(it){
-            return '<div style="background:#FAFBFC;border:1px solid var(--border);border-radius:var(--radius-s);padding:6px 10px;font-size:12px"><span style="font-family:var(--mono);color:var(--brand-d);font-weight:600">'+it.title+'</span></div>';
+            return '<div style="background:#FAFBFC;border:1px solid var(--border);border-radius:var(--radius-s);padding:6px 10px;font-size:12px"><span style="font-family:var(--mono);color:var(--brand-d);font-weight:600">'+escapeHtml(it.title)+'</span></div>';
           }).join('')+'</div>';
           return h;
         }
@@ -1836,14 +1891,14 @@ function loadOntologyData(){
         html+=renderGroup('概念 Concepts', '#7F77DD', concepts);
         html+=renderGroup('关系 Relations', '#16B8F3', relations);
         if(!any){
-          html='<div style="font-size:12px;color:var(--text-s)">尚未建立本体结构——在 <a href="javascript:void(0)" onclick="goPage(\'fde\')" style="color:var(--brand)">FDE 引导</a> 页复制 Prompt 执行深挖阶段，或运行 <code style="background:var(--brand-l);padding:2px 6px;border-radius:4px">create_entity / create_concept</code> 构建。实体/概念文件写入 <code style="background:var(--brand-l);padding:2px 6px;border-radius:4px">~/.sofagent/data/knowledge/</code> 后自动显示。</div>';
+          html='<div style="font-size:12px;color:var(--text-s)">尚未建立本体结构——在 <a href="javascript:void(0)" onclick="goPage(\'fde\')" style="color:var(--brand)">FDE Agent</a> 页复制 Prompt 执行深挖阶段，或运行 <code style="background:var(--brand-l);padding:2px 6px;border-radius:4px">create_entity / create_concept</code> 构建。实体/概念文件写入 <code style="background:var(--brand-l);padding:2px 6px;border-radius:4px">~/.sofagent/data/knowledge/</code> 后自动显示。</div>';
         }
         entries.innerHTML=html;
       }
     })
     .catch(function(){
       if(stats)stats.innerHTML='<div style="grid-column:1/-1;text-align:center;color:var(--text-t);font-size:12px;padding:12px">未连接数据源</div>';
-      if(entries)entries.innerHTML='<div style="font-size:12px;color:var(--text-s)">未检测到本体数据（通过 tools/serve-dashboard.mjs 启动可看）</div>';
+      if(entries)entries.innerHTML='<div style="font-size:12px;color:var(--text-s)">未检测到本体数据（通过 tools/dashboard/serve-dashboard.mjs 启动可看）</div>';
     });
 }
 
@@ -1861,13 +1916,13 @@ function loadForgeData(){
       var statusCn={running:'运行中',idle:'空闲',done:'完成',failed:'失败'};
       var html='<div style="display:flex;gap:16px;flex-wrap:wrap">';
       html+='<div style="flex:1;min-width:200px"><div style="font-size:13px;font-weight:500;color:var(--brand)">Agent A · 审查模型</div>'+
-        '<div style="font-size:12px;color:var(--text-s);margin-top:4px">状态：'+(statusCn[a.status]||a.status||'-')+' · 当前文件：'+(a.currentFile||'-')+'</div>'+
-        '<div style="font-size:11px;color:var(--text-t);margin-top:2px">本轮发现：'+(a.findings||0)+' · 累计：'+(a.cumulative||'-')+'</div></div>';
+        '<div style="font-size:12px;color:var(--text-s);margin-top:4px">状态：'+escapeHtml(statusCn[a.status]||a.status||'-')+' · 当前文件：'+escapeHtml(a.currentFile||'-')+'</div>'+
+        '<div style="font-size:11px;color:var(--text-t);margin-top:2px">本轮发现：'+(a.findings||0)+' · 累计：'+escapeHtml(a.cumulative||'-')+'</div></div>';
       html+='<div style="flex:1;min-width:200px"><div style="font-size:13px;font-weight:500;color:var(--green)">Agent B · 工程模型</div>'+
-        '<div style="font-size:12px;color:var(--text-s);margin-top:4px">状态：'+(statusCn[b.status]||b.status||'-')+' · 当前文件：'+(b.currentFile||'-')+'</div>'+
-        '<div style="font-size:11px;color:var(--text-t);margin-top:2px">本轮发现：'+(b.findings||0)+' · 累计：'+(b.cumulative||'-')+'</div></div>';
+        '<div style="font-size:12px;color:var(--text-s);margin-top:4px">状态：'+escapeHtml(statusCn[b.status]||b.status||'-')+' · 当前文件：'+escapeHtml(b.currentFile||'-')+'</div>'+
+        '<div style="font-size:11px;color:var(--text-t);margin-top:2px">本轮发现：'+(b.findings||0)+' · 累计：'+escapeHtml(b.cumulative||'-')+'</div></div>';
       html+='</div>';
-      html+='<div style="margin-top:12px;padding:8px 12px;background:var(--brand-l);border-radius:var(--radius-s);font-size:12px;color:var(--brand-d)">第 '+(f.round||0)+' 轮 / 共 '+(f.totalRounds||0)+' 轮 · '+(f.stopReason||'A/B 双盲中（互不可见）')+'</div>';
+      html+='<div style="margin-top:12px;padding:8px 12px;background:var(--brand-l);border-radius:var(--radius-s);font-size:12px;color:var(--brand-d)">第 '+(f.round||0)+' 轮 / 共 '+(f.totalRounds||0)+' 轮 · '+escapeHtml(f.stopReason||'A/B 双盲中（互不可见）')+'</div>';
       box.innerHTML=html;
     })
     .catch(function(){
@@ -1895,11 +1950,11 @@ function loadReleaseGateData(){
       var eventCn={'run-start':'运行开始','step-done':'步骤完成','step-fail':'步骤失败','gate-fail':'门禁失败','all-pass':'全部通过'}[st.event]||st.event||'-';
       var html='<div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">';
       // 目标版本
-      html+='<div style="text-align:center"><div style="font-size:20px;font-weight:700;color:var(--brand-d)">'+(st.target||'-')+'</div><div style="font-size:11px;color:var(--text-s)">目标版本</div></div>';
+      html+='<div style="text-align:center"><div style="font-size:20px;font-weight:700;color:var(--brand-d)">'+escapeHtml(st.target||'-')+'</div><div style="font-size:11px;color:var(--text-s)">目标版本</div></div>';
       // 当前步骤
-      html+='<div style="text-align:center"><div style="font-size:20px;font-weight:700;color:var(--amber)">'+stepCn+'</div><div style="font-size:11px;color:var(--text-s)">当前步骤 '+((st.stepIndex||0)+1)+'/'+(st.totalSteps||'-')+'</div></div>';
+      html+='<div style="text-align:center"><div style="font-size:20px;font-weight:700;color:var(--amber)">'+escapeHtml(stepCn)+'</div><div style="font-size:11px;color:var(--text-s)">当前步骤 '+((st.stepIndex||0)+1)+'/'+(st.totalSteps||'-')+'</div></div>';
       // 事件
-      html+='<div style="text-align:center"><div style="font-size:16px;font-weight:600;color:var(--text-s)">'+eventCn+'</div><div style="font-size:11px;color:var(--text-t)">最近事件</div></div>';
+      html+='<div style="text-align:center"><div style="font-size:16px;font-weight:600;color:var(--text-s)">'+escapeHtml(eventCn)+'</div><div style="font-size:11px;color:var(--text-t)">最近事件</div></div>';
       html+='</div>';
       // 步骤进度条
       var total=st.totalSteps||5;
@@ -1907,7 +1962,7 @@ function loadReleaseGateData(){
       var pct=Math.round(done*100/total);
       html+='<div style="margin-top:12px;font-size:12px;color:var(--text-s)">十二阶段门禁进度（当前运行）：</div>';
       html+='<div style="background:var(--bg);border-radius:6px;height:10px;margin-top:6px;overflow:hidden"><div style="width:'+pct+'%;height:100%;background:var(--green);border-radius:6px;transition:width .3s"></div></div>';
-      html+='<div style="margin-top:6px;font-size:11px;color:var(--text-t)">'+(latest.date||'')+' · '+(latest.run||'')+' · 更新于 '+String(st.lastUpdate||'').replace('T',' ').slice(0,16)+'</div>';
+      html+='<div style="margin-top:6px;font-size:11px;color:var(--text-t)">'+escapeHtml(latest.date||'')+' · '+escapeHtml(latest.run||'')+' · 更新于 '+escapeHtml(String(st.lastUpdate||'').replace('T',' ').slice(0,16))+'</div>';
       box.innerHTML=html;
     })
     .catch(function(){
@@ -1915,69 +1970,162 @@ function loadReleaseGateData(){
     });
 }
 
-/* ===== 工作明细（v1.4.0 交付一）===== */
+/* ===== 工作明细（业务流页 · v1.4.0） ===== */
+
+/* 异步探测 worklog.json 所在数据根（替代同步 XHR） */
 function resolveDataRoot(){
-  for(var i=0;i<DATA_ROOTS.length;i++){
-    var root=DATA_ROOTS[i];
-    // 同步探测 worklog.json（tryFetch 是异步的，这里用 XMLHttpRequest 同步探一次）
-    try{
-      var xhr=new XMLHttpRequest();
-      xhr.open('GET',root+'/dashboard/worklog.json',false);
-      xhr.send();
-      if(xhr.status===200){return root}
-    }catch(e){}
-  }
-  return '';
+  return new Promise(function(resolve){
+    var i=0;
+    (function next(){
+      if(i>=DATA_ROOTS.length){resolve('');return}
+      tryFetch(DATA_ROOTS[i]+'/dashboard/worklog.json').then(function(t){
+        if(t){resolve(DATA_ROOTS[i])}
+        else{i++;next()}
+      });
+    })();
+  });
 }
 function fmtTokens(t){if(!t)return '—';return (t.input+t.output).toLocaleString()}
 function fmtCost(c){if(c===null||c===undefined)return '—';return '$'+c.toFixed(4)}
 function fmtMs(ms){if(ms===null||ms===undefined)return '—';if(ms<1000)return ms+'ms';if(ms<60000)return (ms/1000).toFixed(1)+'s';return (ms/60000).toFixed(1)+'min'}
+
 function wlTab(tab){
   ['agent','workflow','week','intervention'].forEach(function(t){
     document.getElementById('wl-tab-'+t).classList.toggle('active',t===tab);
     document.getElementById('wl-view-'+t).style.display=t===tab?'':'none';
   });
 }
+
+/* 统一表格渲染：窄屏横向滚动 + 全量转义 */
 function wlTable(headers,rows){
-  if(!rows||!rows.length)return '<div style="font-size:12px;color:var(--text-t)">暂无数据</div>';
-  return '<table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr style="color:var(--text-t);text-align:left">'+headers.map(function(h){return '<th style="padding:6px 8px;border-bottom:1px solid var(--border)">'+h+'</th>'}).join('')+'</tr></thead><tbody>'+rows.map(function(r){return '<tr style="border-bottom:1px solid var(--border-l)">'+r.map(function(c){return '<td style="padding:6px 8px">'+c+'</td>'}).join('')+'</tr>'}).join('')+'</tbody></table>';
+  if(!rows||!rows.length)return '<div style="font-size:12px;color:var(--text-t);padding:12px 0">暂无数据</div>';
+  var head='<thead><tr>'+headers.map(function(h){return '<th>'+h+'</th>'}).join('')+'</tr></thead>';
+  var body='<tbody>'+rows.map(function(r){return '<tr>'+r.map(function(c){return '<td>'+c+'</td>'}).join('')+'</tr>'}).join('')+'</tbody>';
+  return '<div class="table-wrap"><table class="wl-table">'+head+body+'</table></div>';
 }
+
+/* 超支判定：costWarns 匹配 agent/workflow → 标红 + hover 显示超支说明 */
+function costCell(cost,key,costWarns){
+  if(costWarns&&costWarns.length){
+    var hit=costWarns.find(function(w){return w.key===key});
+    if(hit){
+      return '<span class="cell-over" title="'+escapeHtml(hit.summary||'超支告警')+'">'+fmtCost(cost)+' <span class="delta">⚠ 超支</span></span>';
+    }
+  }
+  return fmtCost(cost);
+}
+
 function loadWorklogData(){
-  var root=resolveDataRoot();
-  var sample={agents:[{agentId:'demo-agent',tasks:[],totals:{tasks:12,llmCalls:34,tokens:{input:120000,output:30000},modelCallMs:890000,costUsd:0.42,humanInterventions:1,durationBasis:'model-call-only'}}],workflows:[{workflowId:'wf-demo',nodes:[{taskId:'node-a',status:'done',humanInterventions:0},{taskId:'node-b',status:'active',humanInterventions:1}],humanInterventions:1}],weeklyTrend:[{week:'2026-W33',activity:210,auditPassRate:0.92,costUsd:1.8}],generatedAt:null};
-  tryFetch(root+'/dashboard/worklog.json').then(function(text){
-    var d;
-    try{d=text?JSON.parse(text):null}catch(e){d=null}
-    if(!d||(!d.agents&&!d.workflows))d=sample;
-    var isSample=!text||text.indexOf('"demo-agent"')>=0;
-    // 按 Agent
-    var agRows=(d.agents||[]).map(function(a){
-      return ['<strong>'+a.agentId+'</strong>',a.totals.tasks,a.totals.llmCalls,fmtTokens(a.totals.tokens),fmtMs(a.totals.modelCallMs),fmtCost(a.totals.costUsd),a.totals.humanInterventions||0];
+  var sample={
+    agents:[
+      {agentId:'demo-agent',tasks:[
+        {taskId:'node-a',workflowId:'wf-demo',decisions:6,humanInterventions:0,retries:0,llmCalls:12,tokens:{input:60000,output:15000},modelCallMs:420000,nodeTotalMs:null,costUsd:0.21,lastSeen:'2026-08-23T10:12:00Z'},
+        {taskId:'node-b',workflowId:'wf-demo',decisions:4,humanInterventions:1,retries:2,llmCalls:9,tokens:{input:45000,output:11000},modelCallMs:310000,nodeTotalMs:null,costUsd:0.15,lastSeen:'2026-08-23T11:03:00Z'},
+        {taskId:'node-c',workflowId:'wf-demo',decisions:2,humanInterventions:0,retries:0,llmCalls:5,tokens:{input:15000,output:4000},modelCallMs:130000,nodeTotalMs:null,costUsd:0.06,lastSeen:'2026-08-23T11:40:00Z'}
+      ],totals:{tasks:3,llmCalls:26,tokens:{input:120000,output:30000},modelCallMs:860000,durationBasis:'model-call-only',costUsd:0.42,humanInterventions:1}}
+    ],
+    workflows:[{workflowId:'wf-demo',nodes:[{taskId:'node-a',status:'done',humanInterventions:0},{taskId:'node-b',status:'active',humanInterventions:1},{taskId:'node-c',status:'done',humanInterventions:0}],humanInterventions:1}],
+    weeklyTrend:[{week:'2026-W33',activity:210,auditPassRate:0.92,costUsd:1.8},{week:'2026-W34',activity:246,auditPassRate:0.94,costUsd:2.1}],
+    generatedAt:null
+  };
+  resolveDataRoot().then(function(root){
+    return Promise.all([
+      root?tryFetch(root+'/dashboard/worklog.json'):null,
+      root?tryFetch(root+'/decisions.jsonl'):null
+    ]).then(function(res){
+      var text=res[0],decText=res[1];
+      var d=null;
+      if(text){try{d=JSON.parse(text)}catch(e){d=null}}
+      // 数据契约校验：无 agents/workflows 结构 → 降级示例
+      var isSample=!d||!Array.isArray(d.agents)||!Array.isArray(d.workflows);
+      if(isSample)d=sample;
+      // 超支告警：decisions.jsonl 中 kind=COST 记录 → 关联 agent/workflow
+      var costWarns=[];
+      if(decText){
+        costWarns=parseJSONL(decText).filter(function(r){return r.kind==='COST'}).map(function(r){
+          var key=r.agentId||r.workflowId||r.sessionId||'';
+          return {key:key,summary:r.summary||r.beforeAfter||r.reason||'成本超支告警'};
+        }).filter(function(w){return w.key});
+      }
+      var sampleFlag=isSample?'<div style="font-size:11px;color:var(--text-t);margin-bottom:8px">示例数据（未检测到真实 worklog.json / 结构不完整）</div>':'';
+
+      /* 按 Agent：汇总表 + 任务明细表 */
+      var agRows=(d.agents||[]).map(function(a){
+        var over=costCell(a.totals.costUsd,a.agentId,costWarns);
+        return ['<strong>'+escapeHtml(a.agentId)+'</strong>',a.totals.tasks,a.totals.llmCalls,fmtTokens(a.totals.tokens),fmtMs(a.totals.modelCallMs),over,a.totals.humanInterventions||0];
+      });
+      var agHtml=sampleFlag+'<div style="font-size:12px;font-weight:600;color:var(--text-s);margin:8px 0 4px">Agent 汇总</div>'+
+        wlTable(['Agent','任务数','LLM 调用','Token','耗时','成本 USD','人工介入'],agRows);
+      // 任务明细（taskId → 消耗 → 状态信号）
+      var taskRows=[];
+      (d.agents||[]).forEach(function(a){
+        (a.tasks||[]).forEach(function(t){
+          taskRows.push([
+            '<strong>'+escapeHtml(t.taskId)+'</strong>',
+            escapeHtml(t.workflowId||'-'),
+            t.decisions||0,
+            t.llmCalls||0,
+            fmtTokens(t.tokens),
+            fmtMs(t.modelCallMs),
+            costCell(t.costUsd,a.agentId,costWarns),
+            (t.retries||0)>0?'<span style="color:var(--amber)">'+(t.retries)+'</span>':'—',
+            (t.humanInterventions||0)>0?'<span style="color:var(--purple)">'+(t.humanInterventions)+'</span>':'—',
+            escapeHtml(String(t.lastSeen||'').slice(5,16))
+          ]);
+        });
+      });
+      agHtml+='<div style="font-size:12px;font-weight:600;color:var(--text-s);margin:16px 0 4px">任务明细（taskId → 消耗 → 状态信号）</div>';
+      if(taskRows.length>30)agHtml+='<div style="font-size:11px;color:var(--text-t);margin-bottom:6px">共 '+taskRows.length+' 条任务，仅显示最近 30 条</div>';
+      agHtml+=wlTable(['Task ID','Workflow','决策','LLM 调用','Token','耗时','成本 USD','重试','介入','最后活动'],taskRows.slice(0,30));
+      document.getElementById('wl-view-agent').innerHTML=agHtml;
+
+      /* 按 Workflow：节点状态（跑/完/失败/人工介入） */
+      var statusMap={
+        active:'<span class="st-dot st-active"></span>跑',
+        done:'<span class="st-dot st-done"></span>完',
+        failed:'<span class="st-dot st-failed"></span>失败',
+        hitl:'<span class="st-dot st-hitl"></span>人工介入',
+        unknown:'<span class="st-dot st-unknown"></span>?'
+      };
+      var wfRows=(d.workflows||[]).map(function(w){
+        var nodeHtml=(w.nodes||[]).map(function(n){return statusMap[n.status]||statusMap.unknown}).join(' ');
+        return ['<strong>'+escapeHtml(w.workflowId)+'</strong>',nodeHtml,w.humanInterventions||0];
+      });
+      document.getElementById('wl-view-workflow').innerHTML=sampleFlag+wlTable(['Workflow','节点状态','人工介入'],wfRows);
+
+      /* 按周 */
+      var wkRows=(d.weeklyTrend||[]).map(function(w){
+        return [escapeHtml(w.week),w.activity,w.auditPassRate!==null&&w.auditPassRate!==undefined?(w.auditPassRate*100).toFixed(0)+'%':'—',fmtCost(w.costUsd)];
+      });
+      document.getElementById('wl-view-week').innerHTML=sampleFlag+wlTable(['周','活跃度','审计成功率','成本 USD'],wkRows);
+
+      /* 人工介入：优先 decisions.jsonl 事件（谁批的/为什么），降级 worklog 次数 */
+      var ivRows=[];
+      var ivEvents=[];
+      if(decText){
+        ivEvents=parseJSONL(decText).filter(function(r){
+          return r.kind==='ESCALATE_REPORT'||r.category==='escalate';
+        }).map(function(r){
+          var who=r.agentId||r.sessionId||r.harnessId||'—';
+          var why=r.summary||r.reason||'';
+          return [escapeHtml(String(r.ts||r.timestamp||'').slice(0,16)),'<strong>'+escapeHtml(who)+'</strong>','审批 / 纠正',escapeHtml(String(why).slice(0,80))];
+        });
+      }
+      if(ivEvents.length){
+        document.getElementById('wl-view-intervention').innerHTML=sampleFlag+'<div style="font-size:11px;color:var(--text-t);margin-bottom:6px">来源：decisions.jsonl（ESCALATE_REPORT）</div>'+
+          wlTable(['时间','对象','类型','为什么（摘要）'],ivEvents.slice(0,30));
+      }else{
+        (d.agents||[]).forEach(function(a){if(a.totals.humanInterventions>0)ivRows.push(['<strong>'+escapeHtml(a.agentId)+'</strong>',a.totals.humanInterventions,'审批 / 纠正 / 回退'])});
+        (d.workflows||[]).forEach(function(w){if(w.humanInterventions>0)ivRows.push(['<strong>'+escapeHtml(w.workflowId)+'</strong>',w.humanInterventions,'审批 / 纠正 / 回退'])});
+        document.getElementById('wl-view-intervention').innerHTML=sampleFlag+wlTable(['对象','介入次数','类型'],ivRows);
+      }
     });
-    document.getElementById('wl-view-agent').innerHTML=(isSample?'<div style="font-size:11px;color:var(--text-t);margin-bottom:8px">示例数据（未检测到真实 worklog.json）</div>':'')+wlTable(['Agent','任务数','LLM 调用','Token','耗时','成本 USD','人工介入'],agRows);
-    // 按 Workflow
-    var wfRows=(d.workflows||[]).map(function(w){
-      var statusMap={active:'<span style="color:var(--brand)">跑</span>',done:'<span style="color:var(--green)">完</span>',failed:'<span style="color:var(--red)">失败</span>',unknown:'<span style="color:var(--text-t)">?</span>'};
-      var nodeHtml=(w.nodes||[]).map(function(n){return statusMap[n.status]||statusMap.unknown}).join(' ');
-      return ['<strong>'+w.workflowId+'</strong>',nodeHtml,w.humanInterventions||0];
-    });
-    document.getElementById('wl-view-workflow').innerHTML=(isSample?'<div style="font-size:11px;color:var(--text-t);margin-bottom:8px">示例数据</div>':'')+wlTable(['Workflow','节点状态','人工介入'],wfRows);
-    // 按周
-    var wkRows=(d.weeklyTrend||[]).map(function(w){
-      return [w.week,w.activity,w.auditPassRate!==null&&w.auditPassRate!==undefined?(w.auditPassRate*100).toFixed(0)+'%':'—',fmtCost(w.costUsd)];
-    });
-    document.getElementById('wl-view-week').innerHTML=(isSample?'<div style="font-size:11px;color:var(--text-t);margin-bottom:8px">示例数据</div>':'')+wlTable(['周','活跃度','审计成功率','成本 USD'],wkRows);
-    // 人工介入
-    var ivRows=[];
-    (d.agents||[]).forEach(function(a){if(a.totals.humanInterventions>0)ivRows.push([a.agentId,a.totals.humanInterventions,'审批 / 纠正 / 回退'])});
-    (d.workflows||[]).forEach(function(w){if(w.humanInterventions>0)ivRows.push([w.workflowId,w.humanInterventions,'审批 / 纠正 / 回退'])});
-    document.getElementById('wl-view-intervention').innerHTML=(isSample?'<div style="font-size:11px;color:var(--text-t);margin-bottom:8px">示例数据</div>':'')+wlTable(['对象','介入次数','类型'],ivRows);
   }).catch(function(){
     document.getElementById('wl-view-agent').innerHTML='<div style="font-size:12px;color:var(--text-t)">未检测到 worklog.json（运行过 sofagent-audit / 编排任务后自动生成）</div>';
   });
 }
 
-/* ===== 图谱（v1.4.0 交付一）===== */
+/* ===== 图谱（本体图谱页 · v1.4.0） ===== */
 function grTab(tab){
   ['workflow','ontology','self','mcp','skill'].forEach(function(t){
     document.getElementById('gr-tab-'+t).classList.toggle('active',t===tab);
@@ -1986,74 +2134,167 @@ function grTab(tab){
   if(tab==='mcp')renderMcpView();
   if(tab==='skill')renderSkillView();
 }
-/* SVG 节点图渲染：nodes=[{id,label,status}] edges=[{from,to}] */
+
+/* SVG 节点图渲染：nodes=[{id,label,status}] edges=[{from,to}]（escapeHtml + 多行自适应布局） */
 function renderGraphSVG(nodes,edges){
-  var W=760,H=Math.max(180,(nodes.length+1)*44);
+  var COLS=3,nodeW=240,nodeH=32,colGap=10,rowGap=18;
+  var rows=Math.max(1,Math.ceil(nodes.length/COLS));
+  var W=COLS*nodeW+(COLS-1)*colGap+60;
+  var H=30+rows*(nodeH+rowGap)+20;
   var colors={active:'#16B8F3',done:'#2ecc71',failed:'#ff4d4d',hitl:'#f1c40f',unknown:'#999'};
-  var xs={};nodes.forEach(function(n,i){xs[n.id]=40+(i%3)*240});
-  var ys={};nodes.forEach(function(n,i){ys[n.id]=30+Math.floor(i/3)*44});
+  var pos={};
+  nodes.forEach(function(n,i){
+    pos[n.id]={x:30+(i%COLS)*(nodeW+colGap),y:30+Math.floor(i/COLS)*(nodeH+rowGap)};
+  });
   var edgeSvg=edges.map(function(e){
-    var x1=xs[e.from]+120,y1=ys[e.from]+16,x2=xs[e.to],y2=ys[e.to]+16;
+    var f=pos[e.from],t=pos[e.to];
+    if(!f||!t)return '';
+    var x1=f.x+nodeW,y1=f.y+nodeH/2,x2=t.x,y2=t.y+nodeH/2;
     return '<line x1="'+x1+'" y1="'+y1+'" x2="'+x2+'" y2="'+y2+'" stroke="#bbb" stroke-width="1.5" marker-end="url(#gr-arrow)"/>';
   }).join('');
   var nodeSvg=nodes.map(function(n){
     var c=colors[n.status]||colors.unknown;
-    // v1.4.0 交付六：DAG 交互——节点 hover 提示（id+状态）+ 点击跳转驾驶舱审计视图
     var stLabel=n.status==='active'?'跑中':n.status==='done'?'完成':n.status==='failed'?'失败':n.status==='hitl'?'人工介入':'未知';
-    return '<g title="'+n.id+' · '+stLabel+'" style="cursor:pointer" onclick="goPage(\'cockpit\')">'+
-      '<rect x="'+xs[n.id]+'" y="'+ys[n.id]+'" width="240" height="32" rx="8" fill="'+(n.status==='active'?c+'22':(n.status==='failed'?c+'22':'#fff'))+'" stroke="'+c+'" stroke-width="1.5"/>'+
-      '<circle cx="'+(xs[n.id]+14)+'" cy="'+(ys[n.id]+16)+'" r="5" fill="'+c+'"/>'+
-      '<text x="'+(xs[n.id]+26)+'" y="'+(ys[n.id]+21)+'" font-size="11" fill="#333">'+n.label+'</text></g>';
+    var p=pos[n.id];
+    var fill=n.status==='active'||n.status==='failed'?c+'22':'#fff';
+    return '<g title="'+escapeHtml(n.id)+' · '+stLabel+'" style="cursor:pointer" onclick="goPage(\'cockpit\')">'+
+      '<rect x="'+p.x+'" y="'+p.y+'" width="'+nodeW+'" height="'+nodeH+'" rx="8" fill="'+fill+'" stroke="'+c+'" stroke-width="1.5"/>'+
+      '<circle cx="'+(p.x+14)+'" cy="'+(p.y+nodeH/2)+'" r="5" fill="'+c+'"/>'+
+      '<text x="'+(p.x+26)+'" y="'+(p.y+21)+'" font-size="11" fill="#333">'+escapeHtml(n.label)+'</text></g>';
   }).join('');
-  return '<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;background:var(--bg-l);border-radius:12px">'+
+  return '<div class="chart-box" style="overflow-x:auto"><svg viewBox="0 0 '+W+' '+H+'" style="min-width:520px;width:100%">'+
     '<defs><marker id="gr-arrow" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto"><path d="M0,0L7,3L0,6Z" fill="#bbb"/></marker></defs>'+
-    edgeSvg+nodeSvg+'</svg>';
+    edgeSvg+nodeSvg+'</svg></div>';
 }
-function loadGraphData(){
-  var root=resolveDataRoot();
-  tryFetch(root+'/dashboard/worklog.json').then(function(text){
-    var d;try{d=text?JSON.parse(text):null}catch(e){d=null}
-    // workflow 图谱（读 worklog workflows 节点状态）
-    var wfNodes=[],wfEdges=[];
-    (d&&d.workflows||[]).forEach(function(w){
-      (w.nodes||[]).forEach(function(n,i){
-        wfNodes.push({id:w.workflowId+':'+n.taskId,label:n.taskId,status:n.status||'unknown'});
-        if(i>0)wfEdges.push({from:w.workflowId+':'+(w.nodes[i-1].taskId),to:w.workflowId+':'+n.taskId});
+
+/* 本体图谱页 · 图谱视图（原 loadGraphData #2，改名消冲突 + 真实数据优先） */
+function loadGraphView(){
+  var wfBox=document.getElementById('gr-view-workflow');
+  if(!wfBox)return;
+  resolveDataRoot().then(function(root){
+    return Promise.all([
+      root?tryFetch(root+'/dashboard/worklog.json'):null,
+      root?tryFetch(root+'/knowledge/index.md'):null,
+      root?tryFetch(root+'/fde/workflow/template.yaml'):null
+    ]).then(function(res){
+      var wl=null;if(res[0]){try{wl=JSON.parse(res[0])}catch(e){}}
+      var indexMd=res[1]||'';
+      var fdeYaml=res[2]||'';
+      // workflow 图谱（读 worklog workflows 节点状态）
+      var wfNodes=[],wfEdges=[];
+      (wl&&wl.workflows||[]).forEach(function(w){
+        (w.nodes||[]).forEach(function(n,i){
+          wfNodes.push({id:w.workflowId+':'+n.taskId,label:n.taskId,status:n.status||'unknown'});
+          if(i>0)wfEdges.push({from:w.workflowId+':'+(w.nodes[i-1].taskId),to:w.workflowId+':'+n.taskId});
+        });
       });
+      if(!wfNodes.length){
+        wfNodes=[{id:'demo:map',label:'梳理',status:'done'},{id:'demo:deploy',label:'部署节点',status:'done'},{id:'demo:audit',label:'审计',status:'active'}];
+        wfEdges=[{from:'demo:map',to:'demo:deploy'},{from:'demo:deploy',to:'demo:audit'}];
+      }
+      wfBox.innerHTML='<div style="font-size:11px;color:var(--text-t);margin-bottom:8px">workflow 节点图（状态着色：蓝=跑 绿=完 红=失败 黄=人工介入）</div>'+renderGraphSVG(wfNodes,wfEdges);
+
+      // ontology 图谱：优先 knowledge/index.md 解析实体（按域分组连线），降级示例
+      var ontNodes=[],ontEdges=[];
+      var domains={};
+      indexMd.split('\n').forEach(function(line){
+        var m=line.match(/\|.*?\[\[([^\]]+)\]\]\s*\|\s*([^|]*)\|/);
+        if(m){
+          var name=m[1].trim(),dom=m[2].trim()||'未分组';
+          if(!domains[dom])domains[dom]=[];
+          domains[dom].push(name);
+        }
+      });
+      var domKeys=Object.keys(domains);
+      if(domKeys.length){
+        var gi=0,byDom={};
+        domKeys.forEach(function(dom){
+          byDom[dom]=[];
+          domains[dom].forEach(function(name){
+            ontNodes.push({id:'e:'+gi,label:name,status:'done'});
+            byDom[dom].push('e:'+gi);
+            gi++;
+          });
+        });
+        // 同域实体链式连线（has_many 语义的直观呈现）
+        domKeys.forEach(function(dom){
+          var ids=byDom[dom];
+          for(var i=1;i<ids.length;i++)ontEdges.push({from:ids[i-1],to:ids[i]});
+        });
+      }else{
+        ontNodes=[{id:'e:org',label:'企业',status:'done'},{id:'e:dept',label:'部门',status:'done'},{id:'e:workflow',label:'业务流',status:'done'},{id:'e:agent',label:'AI 节点',status:'active'}];
+        ontEdges=[{from:'e:org',to:'e:dept'},{from:'e:dept',to:'e:workflow'},{from:'e:workflow',to:'e:agent'}];
+      }
+      document.getElementById('gr-view-ontology').innerHTML=
+        '<div style="font-size:11px;color:var(--text-t);margin-bottom:8px">ontology 语义图（实体 + 关系 · 按业务域分组连线'+(domKeys.length?' · 来自 knowledge/index.md':' · 示例')+'）</div>'+
+        renderGraphSVG(ontNodes,ontEdges);
+
+      // 自 FDE workflow：优先 template.yaml 简单解析，降级示例
+      var selfNodes=[],selfEdges=[];
+      if(fdeYaml){
+        var names=[];
+        fdeYaml.split('\n').forEach(function(line){
+          var m=line.match(/^\s*-\s*name:\s*(.+?)\s*$/);
+          if(m)names.push(m[1].trim());
+        });
+        if(names.length){
+          names.forEach(function(nm,i){
+            selfNodes.push({id:'s'+(i+1),label:nm,status:i===names.length-1?'active':'done'});
+            if(i>0)selfEdges.push({from:'s'+i,to:'s'+(i+1)});
+          });
+        }
+      }
+      if(!selfNodes.length){
+        selfNodes=[{id:'s1',label:'梳理（FDE 进场）',status:'done'},{id:'s2',label:'识别 AI 节点',status:'done'},{id:'s3',label:'双图谱交付',status:'done'},{id:'s4',label:'7×24 审计',status:'active'}];
+        selfEdges=[{from:'s1',to:'s2'},{from:'s2',to:'s3'},{from:'s3',to:'s4'}];
+      }
+      document.getElementById('gr-view-self').innerHTML=
+        '<div style="font-size:11px;color:var(--text-t);margin-bottom:8px">sofagent 自己的 FDE workflow（自举：梳理→节点→双 graph 交付'+(fdeYaml?' · 来自 template.yaml':' · 示例')+'）</div>'+
+        renderGraphSVG(selfNodes,selfEdges);
     });
-    if(!wfNodes.length){wfNodes=[{id:'demo:map',label:'梳理',status:'done'},{id:'demo:deploy',label:'部署节点',status:'done'},{id:'demo:audit',label:'审计',status:'active'}];wfEdges=[{from:'demo:map',to:'demo:deploy'},{from:'demo:deploy',to:'demo:audit'}]}
-    document.getElementById('gr-view-workflow').innerHTML='<div style="font-size:11px;color:var(--text-t);margin-bottom:8px">workflow 节点图（状态着色：蓝=跑 绿=完 红=失败 黄=人工介入）</div>'+renderGraphSVG(wfNodes,wfEdges);
-    // ontology 图谱（降级示例 + 尝试读 ontology 数据）
-    var ontNodes=[{id:'e:org',label:'企业',status:'done'},{id:'e:dept',label:'部门',status:'done'},{id:'e:workflow',label:'业务流',status:'done'},{id:'e:agent',label:'AI 节点',status:'active'}];
-    var ontEdges=[{from:'e:org',to:'e:dept'},{from:'e:dept',to:'e:workflow'},{from:'e:workflow',to:'e:agent'}];
-    tryFetch(root+'/ontology/entities.json').then(function(ot){
-      if(ot){try{var od=JSON.parse(ot);if(od&&od.entities&&od.entities.length){ontNodes=od.entities.map(function(x,i){return {id:'e:'+i,label:x.name||x.id,status:'done'}});ontEdges=[]}}catch(e){}}
-      document.getElementById('gr-view-ontology').innerHTML='<div style="font-size:11px;color:var(--text-t);margin-bottom:8px">ontology 语义图（实体 + 关系）</div>'+renderGraphSVG(ontNodes,ontEdges);
-    }).catch(function(){document.getElementById('gr-view-ontology').innerHTML='<div style="font-size:11px;color:var(--text-t);margin-bottom:8px">ontology 语义图（示例）</div>'+renderGraphSVG(ontNodes,ontEdges)});
-    // 自 FDE workflow（sofagent 自己的 workflow——dogfooding）
-    var selfNodes=[{id:'s1',label:'梳理（FDE 进场）',status:'done'},{id:'s2',label:'识别 AI 节点',status:'done'},{id:'s3',label:'双图谱交付',status:'done'},{id:'s4',label:'7×24 审计',status:'active'}];
-    document.getElementById('gr-view-self').innerHTML='<div style="font-size:11px;color:var(--text-t);margin-bottom:8px">sofagent 自己的 FDE workflow（自举：梳理→节点→双 graph 交付）</div>'+renderGraphSVG(selfNodes,[{from:'s1',to:'s2'},{from:'s2',to:'s3'},{from:'s3',to:'s4'}]);
   }).catch(function(){
     document.getElementById('gr-view-workflow').innerHTML='<div style="font-size:12px;color:var(--text-t)">未检测到 workflow 数据</div>';
   });
+}
+
+/* MCP 工具清单（v1.4.0 · 66 个，与 engine/mcp/src/tool-registry.ts 对齐） */
+var MCP_TOOLS=[
+  ['worklog_query','工作明细查询'],['cost_query','成本审计查询'],['playwright_navigate','浏览器导航'],['playwright_click','浏览器点击'],['playwright_screenshot','浏览器截图'],['playwright_assert','浏览器断言'],
+  ['run_audit','全量审计'],['get_think','读取反思'],['write_think','写入反思'],['sofagent_compose','任务编排'],['audit_file','单文件审计'],['search_knowledge','知识库搜索'],
+  ['read_entity','读取实体'],['read_concept','读取概念'],['list_entities','实体列表'],['read_lessons','踩坑记录'],['read_think_md','读取 think.md'],['stats','知识库统计'],
+  ['list_capabilities','能力清单'],['data_sovereignty_report','数据主权报告'],['create_entity','创建实体'],['create_concept','创建概念'],['update_entity','更新实体'],['delete_entity','删除实体'],
+  ['delete_concept','删除概念'],['validate_ontology','本体校验'],['evaluate_output','产出评估'],['optimize_skill','Skill 优化'],['health_check','健康检查'],['audit_data_change','数据变更审计'],
+  ['notify_session','会话通知'],['activate_workflow','激活工作流'],['daemon_status','守护进程状态'],['list_agents','Agent 列表'],['list_concepts','概念列表'],['hitl_resolve','人工决议'],
+  ['list_rules','规则清单'],['agent_identity','身份码查询'],['loop_debug','调试循环'],['evaluate','Benchmark 评测'],['audit_trail','审计轨迹'],['create_agent','推导 Agent'],
+  ['eval_suite','评测套件'],['fde_compose','FDE 梳理辅助'],['route_workflow','入口路由'],['team_create','创建团队'],['team_broadcast','意图广播'],['refine','质量优化循环'],
+  ['commons_publish','能力发布'],['commons_search','能力检索'],['commons_invoke','能力调用'],['commons_rate','能力评价'],['commons_retire','能力退役'],['commons_harvest_rule','规则提炼'],
+  ['run_ab_test','A/B 实验'],['promote_ab','晋升版本'],['snapshot_list','快照列表'],['snapshot_restore','快照恢复'],['workflow_submit','工作流提交'],['ontology_import','本体注入'],
+  ['model_register','模型注册'],['model_switch','模型切换'],['model_unregister','模型退役'],['train_budget','训练预算'],['define_acceptance','验收定义'],['check_acceptance','验收执行']
+];
+
+function renderMcpList(){
+  var box=document.getElementById('mcpList');
+  if(!box)return;
+  box.innerHTML=MCP_TOOLS.map(function(t){
+    return '<div class="mcp-item"><code>'+escapeHtml(t[0])+'</code><div class="mcp-desc">'+escapeHtml(t[1])+'</div></div>';
+  }).join('');
 }
 function renderMcpView(){
   var box=document.getElementById('gr-view-mcp');
   if(!box||box.dataset.done)return;
   box.dataset.done='1';
-  var tools=['run_audit','worklog_query','snapshot_restore','audit_trail','list_rules','model_register','define_acceptance','ontology_import','commons_publish','commons_search','commons_invoke','train_budget','create_entity','create_concept','search_knowledge'];
-  box.innerHTML='<div style="font-size:11px;color:var(--text-t);margin-bottom:8px">MCP 工具视图（61 tools 代表性节选——完整见 <code style="background:var(--brand-l);padding:2px 6px;border-radius:4px">engine/mcp/src/tool-registry.ts</code>）</div>'+
-    '<div class="grid-3">'+tools.map(function(t){return '<div class="node-card status-running" style="padding:8px"><div class="node-meta">🔧 '+t+'</div></div>'}).join('')+'</div>';
+  box.innerHTML='<div style="font-size:11px;color:var(--text-t);margin-bottom:8px">MCP 工具视图（66 个 · 与 tool-registry 对齐 · 完整见 <code style="background:var(--brand-l);padding:2px 6px;border-radius:4px">engine/mcp/src/tool-registry.ts</code>）</div>'+
+    '<div class="mcp-grid">'+MCP_TOOLS.map(function(t){return '<div class="mcp-item"><code>'+escapeHtml(t[0])+'</code><div class="mcp-desc">'+escapeHtml(t[1])+'</div></div>'}).join('')+'</div>';
 }
 function renderSkillView(){
   var box=document.getElementById('gr-view-skill');
   if(!box||box.dataset.done)return;
   box.dataset.done='1';
-  box.innerHTML='<div style="font-size:11px;color:var(--text-t);margin-bottom:8px">四层约束加载链（每次 Agent 启动注入）</div>'+
+  box.innerHTML='<div style="font-size:11px;color:var(--text-t);margin-bottom:8px">四层约束加载链（每次 Agent 启动注入 · SKILL.md → fde.md → think.md → knowledge/）</div>'+
     '<div style="display:flex;flex-direction:column;gap:10px">'+
     ['L1 · SKILL.md（宪法 · 不可改）','L2 · fde.md（企业规范 · 可改）','L3 · think.md（反思 · 自动生成）','L4 · knowledge/（知识 · 按需加载）'].map(function(s,i){
       var c=i===0?'#ff4d4d':i===3?'#16B8F3':'#999';
-      return '<div style="display:flex;align-items:center;gap:10px"><div style="width:14px;height:14px;border-radius:50%;background:'+c+'"></div><span style="font-size:12px">'+s+'</span></div>';
+      return '<div style="display:flex;align-items:center;gap:10px"><div style="width:14px;height:14px;border-radius:50%;background:'+c+'"></div><span style="font-size:12px">'+escapeHtml(s)+'</span></div>';
     }).join('')+'</div>';
 }
 
