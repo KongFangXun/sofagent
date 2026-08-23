@@ -15,7 +15,7 @@
 :root{
   --brand:#16B8F3;--brand-d:#0C447C;--brand-l:#E6F1FB;
   --red:#E24B4A;--red-l:#FCEBEB;--green:#2AB573;--green-l:#E1F5EE;--amber:#F5A623;--amber-l:#FAEEDA;--amber-d:#854F0B;--purple:#7F77DD;--purple-l:#F3E8FF;
-  --bg:#F6F8FA;--bg-s:#FAFBFC;--card:#fff;--border:#E1E4E8;--text:#24292E;--text-s:#57606A;--text-t:#8B949E;
+  --bg:#F6F8FA;--bg-s:#FAFBFC;--card:#fff;--border:#E1E4E8;--text:#3F3F46;--text-s:#5D6570;--text-t:#8B949E;
   --radius:12px;--radius-s:8px;--shadow:0 1px 3px rgba(0,0,0,.08);
   --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",sans-serif;
   --mono:"SF Mono",SFMono-Regular,Consolas,"Liberation Mono",Menlo,monospace;
@@ -117,7 +117,7 @@ a:hover{text-decoration:underline}
 .ds-sample{background:var(--amber-l);color:var(--amber-d)}
 .data-status .pulse{width:8px;height:8px;border-radius:50%;animation:pulse 2s infinite}
 .ds-live .pulse{background:var(--brand)}
-.ds-sample .pulse{background:var(--amber)}
+.ds-sample .pulse{background:var(--text-t)}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
 @keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
 .chart-box svg{animation:fadeIn .35s ease}
@@ -1254,7 +1254,6 @@ function renderSummaryData(s){
   animateNumber(document.getElementById('m-violations'),todayIssues);
   var vsEl=document.getElementById('m-violations-sub');
   vsEl.textContent='总 '+totalIssues+' 次问题';
-  vsEl.style.color=totalIssues>0?'var(--amber)':'';
   // 审计记录卡：总数 + 测试过滤说明
   var cnt=document.getElementById('auditRecordCount');
   if(cnt){cnt.textContent='共 '+(s.auditTotal||r.total)+' 条'+(s.filteredTestRecords?(' · 已过滤 '+s.filteredTestRecords+' 条测试'):'')}
@@ -1415,7 +1414,7 @@ function renderSovereigntyBox(sov,daemonStatus){
     '<div style="display:flex;flex-direction:column;justify-content:center;align-items:center"><div style="font-size:20px;font-weight:700;color:var(--text)">'+sov.local+'</div><div style="font-size:11px;color:var(--text-s);margin-top:2px">本地执行</div></div>'+
     '<div style="display:flex;flex-direction:column;justify-content:center;align-items:center"><div style="font-size:20px;font-weight:700;color:var(--text)">'+sov.localRate+'%</div><div style="font-size:11px;color:var(--text-s);margin-top:2px">本地化率</div></div>'+
     '<div style="display:flex;flex-direction:column;justify-content:center;align-items:center"><div style="font-size:20px;font-weight:700;color:var(--text)">'+sov.cloud+'</div><div style="font-size:11px;color:var(--text-s);margin-top:2px">云端调用</div></div>'+
-    '<div style="display:flex;flex-direction:column;justify-content:center;align-items:center"><div style="font-size:20px;font-weight:700;color:var(--amber)">'+(sov.outbound||0)+'</div><div style="font-size:11px;color:var(--text-s);margin-top:2px">数据流出</div></div>'+
+    '<div style="display:flex;flex-direction:column;justify-content:center;align-items:center"><div style="font-size:20px;font-weight:700;color:var(--text)">'+(sov.outbound||0)+'</div><div style="font-size:11px;color:var(--text-s);margin-top:2px">数据流出</div></div>'+
     '</div>';
 }
 
@@ -1447,7 +1446,6 @@ function processAuditData(records){
   animateNumber(document.getElementById('m-violations'),(warn+fail));
   var vsEl2=document.getElementById('m-violations-sub');
   vsEl2.textContent='WARN '+warn+' / FAIL '+fail;
-  vsEl2.style.color=(warn+fail)>0?'var(--amber)':'';
   // 今日审计次数
   var today=new Date().toISOString().slice(0,10);
   var todayCount=records.filter(function(r){return (r.timestamp||'').slice(0,10)===today}).length;
@@ -1529,7 +1527,6 @@ function loadSampleData(){
   document.getElementById('m-nodes-sub').textContent='总 26488 次检查 · 示例';
   document.getElementById('m-violations').textContent='14';
   document.getElementById('m-violations-sub').textContent='总 2112 次问题 · 示例';
-  document.getElementById('m-violations-sub').style.color='var(--amber)';
   var samples=[
     {time:'08-03 00:42',verdict:'PASS',rule:'',task:'feat: 添加 A22 权限提升审计规则'},
     {time:'08-02 23:18',verdict:'WARN',rule:'A19',task:'fix: 修复 daemon 启动顺序'},
@@ -2070,8 +2067,8 @@ function loadReleaseGateData(){
       var html='<div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">';
       // 目标版本
       html+='<div style="text-align:center"><div style="font-size:20px;font-weight:700;color:var(--brand-d)">'+escapeHtml(st.target||'-')+'</div><div style="font-size:11px;color:var(--text-s)">目标版本</div></div>';
-      // 当前步骤
-      html+='<div style="text-align:center"><div style="font-size:20px;font-weight:700;color:var(--amber)">'+escapeHtml(stepCn)+'</div><div style="font-size:11px;color:var(--text-s)">当前步骤 '+((st.stepIndex||0)+1)+'/'+(st.totalSteps||'-')+'</div></div>';
+      // 当前步骤（进行中=品牌蓝激活）
+      html+='<div style="text-align:center"><div style="font-size:20px;font-weight:700;color:var(--brand)">'+escapeHtml(stepCn)+'</div><div style="font-size:11px;color:var(--text-s)">当前步骤 '+((st.stepIndex||0)+1)+'/'+(st.totalSteps||'-')+'</div></div>';
       // 事件
       html+='<div style="text-align:center"><div style="font-size:16px;font-weight:600;color:var(--text-s)">'+escapeHtml(eventCn)+'</div><div style="font-size:11px;color:var(--text-t)">最近事件</div></div>';
       html+='</div>';
