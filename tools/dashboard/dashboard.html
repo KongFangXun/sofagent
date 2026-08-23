@@ -472,7 +472,7 @@ a:hover{text-decoration:underline}
   <div class="section">
     <div class="section-header"><div class="section-title"><span class="dot-emoji"><i class="bi bi-bar-chart"></i></span>工作记录（worklog）</div>
       <span style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-        <a href="/api/export-worklog" download="worklog.json" title="下载工作记录（worklog.json，含概况/任务/介入/周报数据）" class="btn btn-outline" id="wlDownloadBtn" style="display:none;height:26px;padding:0 10px;font-size:11px"><i class="bi bi-download"></i> 下载数据</a>
+        <a href="/api/export-worklog" download="worklog.json" title="下载工作记录（worklog.json，含概况/任务/介入/周报数据）" class="btn btn-outline" id="wlDownloadBtn" style="display:none;height:26px;padding:0 10px;font-size:11px"><i class="bi bi-download"></i> 下载工作记录</a>
         <span class="tab-inline">
           <button class="nav-item active" id="wl-tab-overview" onclick="wlTab('overview')">概况</button>
           <button class="nav-item" id="wl-tab-tasks" onclick="wlTab('tasks')">任务</button>
@@ -1270,7 +1270,7 @@ function renderSummaryData(s){
   var cnt=document.getElementById('auditRecordCount');
   if(cnt){
     cnt.innerHTML='<span>最近审计 · 显示最近 10 条（共 '+(s.auditTotal||r.total)+' 条'+(s.filteredTestRecords?(' · 已过滤 '+s.filteredTestRecords+' 条测试'):'')+'）</span>'+
-      '<a href="/api/export-history" download="audit-history.jsonl" title="下载完整审计历史（原始 JSONL）" class="btn btn-outline" style="height:24px;padding:0 10px;font-size:11px"><i class="bi bi-download"></i> 下载全量</a>';
+      '<a href="/api/export-history" download="audit-history.jsonl" title="下载完整审计历史（原始 JSONL）" class="btn btn-outline" style="height:24px;padding:0 10px;font-size:11px"><i class="bi bi-download"></i> 下载审计记录</a>';
   }
   // 主权
   if(s.sovereignty){
