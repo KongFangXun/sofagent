@@ -1754,7 +1754,7 @@ function loadFdeWorkflowData(){
           var ac=agentColor[s.agent]||agentColor.analyst;
           html+='<div class="fde-step" style="flex:0 0 calc(20% - 7px);box-sizing:border-box;background:'+ac.bg+';border:1px solid '+ac.border+';border-radius:var(--radius-s);padding:10px 12px">'+
             '<div style="font-size:12px;color:var(--text-t);font-family:var(--mono);display:flex;align-items:center;gap:5px"><span class="agent-dot '+escapeHtml(s.agent)+'"></span> STEP '+(i+1)+' · <span style="color:var(--text-s)">'+escapeHtml(ac.role)+' · '+escapeHtml(s.agent)+'</span></div>'+
-            '<div style="font-size:12px;font-weight:600;margin-top:4px;display:flex;align-items:baseline;gap:6px;flex-wrap:wrap"><span>'+escapeHtml(s.name)+'</span><span style="font-size:10px;font-weight:400;color:var(--text-t)">'+ac.label+(s.loop?' · 循环':'')+'</span></div>'+
+            '<div style="font-size:12px;font-weight:600;margin-top:4px;display:flex;align-items:baseline;gap:6px;min-width:0"><span title="'+escapeHtml(s.name)+'" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0">'+escapeHtml(s.name)+'</span><span style="font-size:10px;font-weight:400;color:var(--text-t);flex-shrink:0">'+ac.label+(s.loop?' · 循环':'')+'</span></div>'+
             '</div>';
         });
         html+='</div>';
