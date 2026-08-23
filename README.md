@@ -151,7 +151,7 @@ sofagent-audit --doctor    # 验证环境（可选）
 > | 入口 | 命令 | 形态 | 给谁看 |
 > |------|------|------|--------|
 > | **终端版** | `sofagent-dashboard --full` | 终端 ASCII 三栏（零前端依赖） | 开发者 / FDE 快速看 |
-> | **Web 版** | `node tools/dashboard/serve-dashboard.mjs` | 浏览器可视化（localhost:3780） | 老板 / IT 可视化看 |
+> | **Web 版** | `sofagent web`（装完即用）· 仓库态 `node tools/dashboard/serve-dashboard.mjs` | 浏览器可视化（localhost:3780） | 老板 / IT 可视化看 |
 > | **macOS 双击** | 双击 `start-dashboard.command` | Web 版的 macOS 快捷方式（仅 macOS 双击入口） | macOS 用户 |
 >
 > ⚠️ **Dashboard 是已用用户的运维面板，不是首次体验入口。** 数据源是 `~/.sofagent/data/` 下的审计记录——没跑过 `sofagent-audit` 就没数据（Web 版降级显示示例数据）。第一次用？先在你的项目里跑 `npx -y -p @sofagent/audit sofagent-audit`，跑完 Dashboard 才有真实数据。
@@ -206,7 +206,7 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # 加载安全规�
 > - **官方 AST 规则引擎**：🔍 `sofagent-ruleset-ast` 语义级规则引擎（8+2 规则 = 8 条通用语义规则「禁止动态代码执行 / 硬编码密钥 / 动态 require / debugger / child_process shell 管控 / SQL 拼接 / http 明文端点 / 空 catch」 + 2 条 OWASP「ASI01 目标劫持 + ASI04 供应链 SBOM」，与 v1.2.9 插件同管线）
 > - **meta-harness 统一编排**：🧩 多 harness 策略强制在基础设施层 + 跨会话协作（19 测试 + DSH 形态对齐）
 > - **AI 工作明细数据层**：📊 `worklog`——按 Agent/Workflow/周 + 人工介入记录（复用审计 + decision-log + LLM Trace，零新数据）+ `worklog_query` MCP
-> - **API 分级治理**：🔬 `@public`/`@internal` 显式分级（1439 符号）+ CI 门禁基线拦截——@internal 破坏性变更不影响适配层
+> - **API 分级治理**：🔬 `@public`/`@internal` 显式分级（1444 符号）+ CI 门禁基线拦截——@internal 破坏性变更不影响适配层
 > - **FORGE driver 切 DSH**：⚙️ 显式后端选择（`SOFAGENT_FORCE_DSH` 启用 + CLI 桥接 + bash 全权限）——执行后端从 LangGraph 到 DSH 可切换
 > - **MLflow agent 评估**：📈 13 指标 + LLM-as-Judge 集成
 > - **Agentic Browser**：🌐 4 工具（浏览/点击/表单/截图）+ 视觉降级

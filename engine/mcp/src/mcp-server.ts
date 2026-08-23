@@ -44,6 +44,7 @@ import { notifySession } from './tools/notify-session';
 import { activateWorkflowTool } from './tools/activate-workflow';
 import { daemonStatus } from './tools/daemon-status';
 import { worklogQuery } from './tools/worklog-query';
+import { costQuery } from './tools/cost-query';
 import { listAgentsTool } from './tools/list-agents';
 import { listConcepts } from './tools/list-concepts';
 import { hitlResolve } from './tools/hitl-resolve';
@@ -229,6 +230,7 @@ class McpServer {
         case 'activate_workflow': { this.sendTool(id, await activateWorkflowTool({ ...(args.dry_run !== undefined ? { dry_run: args.dry_run as boolean } : {}), ...(args.node_filter !== undefined ? { node_filter: args.node_filter as string[] } : {}) })); break; }
         case 'daemon_status': { this.sendTool(id, await daemonStatus()); break; }
         case 'worklog_query': { this.sendTool(id, await worklogQuery({ ...(args.agentId ? { agentId: args.agentId as string } : {}), ...(args.workflowId ? { workflowId: args.workflowId as string } : {}), ...(args.weeklyTrend !== undefined ? { weeklyTrend: args.weeklyTrend as boolean } : {}), ...(args.evolution !== undefined ? { evolution: args.evolution as boolean } : {}) })); break; }
+        case 'cost_query': { this.sendTool(id, await costQuery({ ...(args.maxTokensPerRun !== undefined ? { budget: { maxTokensPerRun: args.maxTokensPerRun as number, ...(args.maxCostPerDay !== undefined ? { maxCostPerDay: args.maxCostPerDay as number } : {}) } } : {}) })); break; }
         case 'list_agents': { this.sendTool(id, await listAgentsTool()); break; }
         case 'list_concepts': { this.sendTool(id, listConcepts()); break; }
         case 'hitl_resolve': { this.sendTool(id, await hitlResolve({ checkpoint_id: args.checkpoint_id as string, decision: args.decision as 'approve' | 'reject' | 'aborted', ...(args.comment ? { comment: args.comment as string } : {}) })); break; }

@@ -26,6 +26,7 @@
 import { execFileSync } from 'child_process';
 import { existsSync, readFileSync, writeFileSync, mkdirSync, chmodSync, readdirSync, statSync } from 'fs';
 import { join, dirname } from 'path';
+import { homedir } from 'os';
 import { createInterface } from 'readline';
 import { parseDiff, parseStagedDiff, isInGitRepo, type DiffFile } from '@sofagent/core';
 import { loadConfig, ConfigLoadError, ConfigParseError, ConfigSignatureError } from '@sofagent/core';
@@ -67,6 +68,9 @@ export type { SafetyResult, SafetyRule } from './rules/skill-safety-rules';
 // Re-export webhook 推送（mcp-server.ts 从 audit 消费 pushAuditResult）
 export { pushAuditResult } from './webhook';
 export type { WebhookPlatform } from './webhook';
+// v1.4.0 交付三：成本审计维度（cost_query MCP 与外部脚本 import 用）
+export { runCostAudit, loadWorklogSlice } from './cost-audit';
+export type { CostBudget, CostFinding, WorklogSlice } from './cost-audit';
 // v1.3.9 交付⑭：分级降级梯队（韧性设计——workflow never stops）
 export {
   DegradationManager,
@@ -1181,6 +1185,29 @@ async function main(): Promise<void> {
   }
 
   printResults(results, diffFiles, args.json, args.ci, args.silent);
+
+  // v1.4.0 交付三: 成本审计维度（opt-in WARN only——不配 budget 不审计；
+  // 不进 A1-A23 规则体系，exitCode 不变；铁律 12：WARN 不拦截任务执行）
+  if (!args.json) {
+    const costBudget = config.cost?.budget;
+    if (costBudget && (costBudget.maxTokensPerRun || costBudget.maxCostPerDay)) {
+      try {
+        // 数据目录解析与 getHistoryFilePath 同链（SOFAGENT_DATA > 默认 ~/.sofagent/data）
+        const costDataDir = process.env.SOFAGENT_DATA || join(homedir(), '.sofagent', 'data');
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const { runCostAudit, loadWorklogSlice } = require('./cost-audit');
+        const costFindings = runCostAudit({
+          worklog: loadWorklogSlice(costDataDir),
+          budget: costBudget,
+        });
+        for (const f of costFindings) {
+          console.log(`⚠️ [sofagent] 成本告警 [${f.dimension}]: ${f.message}`);
+        }
+      } catch {
+        // 成本审计是附带维度，异常静默降级（不阻断主审计）
+      }
+    }
+  }
 
   // v1.3.9: 工作区垃圾残留扫描（WARN 不阻断——附带的巡检能力，防「实验残留」积压）
   if (!args.json) {

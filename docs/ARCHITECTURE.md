@@ -209,14 +209,14 @@ Agent = **模型 + 上下文 + 工具 + 状态 + 执行控制 + 权限 + 可观�
 v1.3.9 起对所有 workspace 包的入口 export 做显式分级，CI 门禁（[tools/check/public-api.mjs](./../tools/check/public-api.mjs)）拦截未 bump 版本的 `@public` 破坏性变更。
 
 **为什么是这个粒度**：
-- 基线覆盖 **12 个含 test script 的包**（hooks 包 `load-chain` 为纯 hook 安装器，无 `@public` 符号，不计入分级基线）——当前 12 包共 **1439 个 @public 符号**（以 `public-api.mjs` AST 解析为权威口径，非 grep 计数）。
+- 基线覆盖 **12 个含 test script 的包**（hooks 包 `load-chain` 为纯 hook 安装器，无 `@public` 符号，不计入分级基线）——当前 12 包共 **1444 个 @public 符号**（以 `public-api.mjs` AST 解析为权威口径，非 grep 计数；v1.4.0 成本审计新增 5 符号：runCostAudit/loadWorklogSlice/CostBudget/CostFinding/WorklogSlice）。
 - 未标记的导出**默认视为 @public**（保守默认：宁可多承诺不可漏承诺），`@internal` 需显式标注。
 
 **为什么 @internal 破坏性变更不影响适配层**：
 - 跨平台适配器（Cursor / Codex / Gemini CLI 薄挂载）与 `@sofagent/audit` 等外部依赖方**只许 import `@public` 层**——`@internal` 是引擎内部实现细节，破坏性变更不触发 semver 约束。
 - 若某符号从 `@internal` 升为 `@public`，等同新增公开 API，需 bump 版本 + CHANGELOG 记录（门禁自动拦截漏标场景）。
 
-> 符号数声称与 baseline 的自动校验见 `public-api.mjs` 的「文档声称符号数校验」段——文档写 1439 必须与 baseline 实际数一致，否则门禁 FAIL（根治历史 1449 漂移类问题）。
+> 符号数声称与 baseline 的自动校验见 `public-api.mjs` 的「文档声称符号数校验」段——文档写 1444 必须与 baseline 实际数一致，否则门禁 FAIL（根治历史 1449 漂移类问题）。
 
 ### 对外核心能力（FDE Agent 给用户什么）
 

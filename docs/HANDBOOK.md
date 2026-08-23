@@ -355,6 +355,22 @@ sofagent-dashboard --full    # 展开：编排控制图 + FORGE 审查进度 + �
 
 > 前置依赖：需要 `jq`（`brew install jq` / `apt install jq`）。`--full` 追加编排控制图（Org Graph + Work Graph）、FORGE 审查进度、最近文件变更三个扩展面板。FORGE 是 sofagent 项目的内部开发工具链（非对外引擎），企业用户可忽略 FORGE 审查进度面板。
 
+### Web Dashboard：浏览器可视化（v1.4.0 装完即用）
+
+安装态（`bash install.sh` 后直接可用，读本机真实数据）：
+
+```bash
+sofagent web          # 起服务 + 自动开浏览器 → http://localhost:3780
+```
+
+仓库开发态（行为不变）：
+
+```bash
+node tools/dashboard/serve-dashboard.mjs
+```
+
+Web 版含驾驶舱 / FDE 引导 / AI 节点 / 本体结构 / 知识库 / **工作明细**（v1.4.0：按 Agent / Workflow / 周 / 人工介入 4 视角）/ **图谱**（v1.4.0：workflow 图 + ontology 图 + 自 FDE workflow + MCP 工具视图 + skill 加载链）/ 工具箱。数据源 `~/.sofagent/data/`，没跑过 `sofagent-audit` 就没数据（降级示例）。
+
 ### CI 集成
 
 在 GitHub Actions 中自动运行审计（静默模式 + CI 严格模式）：

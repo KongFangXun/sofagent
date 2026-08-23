@@ -194,6 +194,22 @@ export function checkRuleA2(ctx: AuditContext): RuleCheck {
               }
             }
           }
+          // v1.4.0 交付四③：SECRET_ASSIGNMENT_REGEX——赋值形态通用检测（补已知格式之外的空档）
+          // 覆盖 api_key=xxx / token: "xxx" / secret = xxx / password=xxx 等通用赋值；
+          // 值长度 ≥8 且排除常见占位符（REPLACE_ME/your_/example/xxx）——保守防误报
+          const ASSIGNMENT_PATTERN =
+            /(?:api[_-]?key|apikey|access[_-]?token|auth[_-]?token|token|secret|passwd|password)\s*[=:]\s*["']?([A-Za-z0-9_\-./+=]{8,})/i;
+          const m = candidate.match(ASSIGNMENT_PATTERN);
+          const assigned = m?.[1];
+          if (assigned && !/^(REPLACE_ME|YOUR_[A-Z_]+|EXAMPLE|PLACEHOLDER|CHANGE_ME|xxxx+)$/i.test(assigned)) {
+            const key = `${file.path}|密钥赋值`;
+            const existing = groupedDetections.get(key);
+            if (existing) {
+              existing.count++;
+            } else {
+              groupedDetections.set(key, { file: file.path, label: '密钥赋值形态', count: 1 });
+            }
+          }
         }
       }
     }

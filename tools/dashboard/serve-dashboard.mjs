@@ -28,8 +28,28 @@ import net from 'node:net';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const PORT = process.env.DASHBOARD_PORT || 3780;
-// dashboard.html 在 tools/（与其服务器同目录）（docs/assets/ 存放静态资源，仓库根为 static root）
-const DOCS_DIR = join(__dirname, '../..');
+// v1.4.0 双态路径解析（交付二）：
+//   安装态：dashboard.html 在 $SOFAGENT_HOME/web/，serve 脚本在 $SOFAGENT_HOME/bin/（install.sh 部署）
+//   仓库态：dashboard.html 在 tools/dashboard/，serve 脚本在仓库内（开发/回归，行为不变）
+// 判定：SOFAGENT_HOME 下存在 web/dashboard.html → 安装态；否则回退仓库态
+const SOFAGENT_HOME_INSTALL =
+  process.env.SOFAGENT_HOME || join(homedir(), '.sofagent');
+const INSTALL_WEB_DIR = join(SOFAGENT_HOME_INSTALL, 'web');
+const INSTALL_WEB_HTML = join(INSTALL_WEB_DIR, 'dashboard.html');
+let DOCS_DIR, DASHBOARD_HTML_REL;
+try {
+  if (statSync(INSTALL_WEB_HTML).isFile()) {
+    // 安装态：web 目录即静态根（dashboard.html 在根）
+    DOCS_DIR = INSTALL_WEB_DIR;
+    DASHBOARD_HTML_REL = '/dashboard.html';
+  } else {
+    throw new Error('install web not found');
+  }
+} catch {
+  // 仓库态：tools/dashboard/ 为页面目录，仓库根为 static root（docs/assets/ 静态资源）
+  DOCS_DIR = join(__dirname, '../..');
+  DASHBOARD_HTML_REL = '/tools/dashboard/dashboard.html';
+}
 const SOFAGENT_DATA = process.env.SOFAGENT_HOME
   ? join(process.env.SOFAGENT_HOME, 'data')
   : join(homedir(), '.sofagent', 'data');
@@ -503,9 +523,9 @@ const server = createServer(async (req, res) => {
     return;
   }
 
-  // Default route → dashboard.html（tools/dashboard/，v1.3.9 分目录）
+  // Default route → dashboard.html（v1.4.0 双态：安装态 web/dashboard.html / 仓库态 tools/dashboard/）
   if (urlPath === '/' || urlPath === '') {
-    urlPath = '/tools/dashboard/dashboard.html';
+    urlPath = DASHBOARD_HTML_REL;
   }
 
   const filePath = join(DOCS_DIR, normalize(urlPath));

@@ -17,6 +17,7 @@ import type { DiffFile } from '@sofagent/core';
 import type { LogEntry } from '@sofagent/core';
 import type { AuditConfig } from '@sofagent/core';
 import type { AuditContext, RuleCheck } from './rules/types';
+import { defaultRules, extendedRules } from './rules';
 import type { AuditHistoryEntry } from './audit-history';
 import { runRules as runRulesWithFastFail } from './rules/runner';
 
@@ -133,6 +134,9 @@ export function formatRuleDetails(results: AuditResult): string[] {
   const lines: string[] = [];
   const problems = results.rules.filter((r) => r.status === 'FAIL' || r.status === 'WARN');
 
+  // v1.4.0 交付四①（规则即测试）：从规则注册表按 number 查 justification（人类可读拦截理由）
+  const allRules = [...defaultRules, ...extendedRules];
+
   for (const rule of problems) {
     const icon = rule.status === 'FAIL' ? '❌' : '⚠️';
     const ruleId = rule.number >= 200 ? `E${rule.number - 200}` : `A${rule.number}`;
@@ -140,14 +144,15 @@ export function formatRuleDetails(results: AuditResult): string[] {
       : rule.ruleClass === '能力拐杖' ? '[拐杖]'
       : rule.ruleClass === '工程规范' ? '[规范]'
       : '';
+    const justification = allRules.find((r) => r.number === rule.number)?.justification;
 
     if (rule.details.length === 0) {
       // 无详情时仍输出规则名（让用户知道是哪条规则拦的）
-      lines.push(`${icon} [sofagent] ${rule.name} (${ruleId}) ${classTag}`);
+      lines.push(`${icon} [sofagent] ${rule.name} (${ruleId}) ${classTag}${justification ? `：${justification}` : ''}`);
     } else {
       for (const detail of rule.details) {
-        // 每条 detail 已经包含触发原因（规则 check 函数生成），这里补上规则名 + ID
-        lines.push(`${icon} [sofagent] ${rule.name} (${ruleId}) ${classTag}: ${detail}`);
+        // 每条 detail 已经包含触发原因（规则 check 函数生成），这里补上规则名 + ID + 理由
+        lines.push(`${icon} [sofagent] ${rule.name} (${ruleId}) ${classTag}: ${detail}${justification ? `（${justification}）` : ''}`);
       }
     }
   }

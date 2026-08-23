@@ -19,6 +19,10 @@
 /* @public */ export { runRules } from './reporter';
 /* @public */ export type { AuditResult, RuleCheck } from './reporter';
 
+// v1.4.0 交付三：成本审计维度（cost_query MCP 与外部脚本 import 用）
+/* @public */ export { runCostAudit, loadWorklogSlice } from './cost-audit';
+/* @public */ export type { CostBudget, CostFinding, WorklogSlice } from './cost-audit';
+
 // v1.3.0 (交付 4)：规则清单只读暴露（list_rules 用）——默认规则 + 扩展规则全量
 /* @public */ export { defaultRules, extendedRules, rules as allDiffRules } from './rules';
 /* @public */ export type { Rule, RuleClass, EvidenceMode } from './rules/types';

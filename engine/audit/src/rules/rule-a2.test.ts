@@ -200,4 +200,33 @@ describe('A2 不泄密钥', () => {
       expect(result.status).toBe('PASS');
     });
   });
+
+  // ── v1.4.0 交付四③：SECRET_ASSIGNMENT_REGEX 赋值形态 ──
+  describe('A2 · 赋值形态检测（v1.4.0）', () => {
+    it('api_key= 赋值形态 → FAIL', () => {
+      // 密钥样本运行时拼接（A2 fixture 纪律：字面量密钥会被审计规则自触发）
+      const ctx = makeCtx([makeDiffFile('config.txt', ['+api_key=' + 'abcdef1234567890abcdef1234567890'])]);
+      expect(checkRuleA2(ctx).status).toBe('FAIL');
+    });
+
+    it('token: 冒号赋值形态 → FAIL', () => {
+      const ctx = makeCtx([makeDiffFile('config.yml', ['+token: "' + 'abcdef1234567890abcdef1234567890' + '"'])]);
+      expect(checkRuleA2(ctx).status).toBe('FAIL');
+    });
+
+    it('password= 赋值形态 → FAIL', () => {
+      const ctx = makeCtx([makeDiffFile('env.sh', ['+password=' + 'abcdef1234567890abcdef1234567890'])]);
+      expect(checkRuleA2(ctx).status).toBe('FAIL');
+    });
+
+    it('占位符值（REPLACE_ME）→ PASS（不误伤）', () => {
+      const ctx = makeCtx([makeDiffFile('config.ts', ['+apiKey = "REPLACE_ME"'])]);
+      expect(checkRuleA2(ctx).status).toBe('PASS');
+    });
+
+    it('短值（<8 字符）→ PASS（不误伤）', () => {
+      const ctx = makeCtx([makeDiffFile('config.ts', ['+password=abc'])]);
+      expect(checkRuleA2(ctx).status).toBe('PASS');
+    });
+  });
 });

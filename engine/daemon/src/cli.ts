@@ -4,7 +4,27 @@ const args = process.argv.slice(2);
 const subcommand = args[0];
 const VERSION = '1.3.9';
 
+/**
+ * v1.4.0 交付四②：进程自身硬化（process-hardening 启发 · Linux/macOS 先行）
+ * - 清 LD_PRELOAD / DYLD_* 环境变量：防 preload 劫持加载恶意 .so/.dylib（代码级有效）
+ * - 禁 core dump：进程崩溃不落盘内存镜像（防密钥/敏感数据泄漏）——Node 无原生 setrlimit，
+ *   尽力尝试（部分运行时暴露）；生产部署建议 ulimit -c 0 兜底
+ * - 禁 ptrace attach：防调试器注入/读取进程内存——Yama 需 root 改系统设置，此处记录边界，
+ *   部署侧建议 sysctl kernel.yama.ptrace_scope=1
+ */
+function preMainHardening(): void {
+  // ① 清 preload 注入环境变量（立即生效，防后续 spawn 的子进程继承恶意 preload）
+  const preloadKeys = ['LD_PRELOAD', 'LD_LIBRARY_PATH', 'DYLD_INSERT_LIBRARIES', 'DYLD_LIBRARY_PATH', 'DYLD_FRAMEWORK_PATH'];
+  for (const k of preloadKeys) delete process.env[k];
+  // ② 禁 core dump（尽力而为——Node 无标准 setrlimit，运行时暴露则生效）
+  try {
+    (process as unknown as { setrlimit?: (res: string, lim: { soft: number; hard: number }) => void })
+      .setrlimit?.('core', { soft: 0, hard: 0 });
+  } catch { /* 权限不足/不支持时忽略，部署侧 ulimit -c 0 兜底 */ }
+}
+
 async function main() {
+  preMainHardening();
   if (!subcommand || subcommand === '--help') {
     console.log('sofagent-daemon — 持续审计 / 文件监听 / 自动修复循环');
     console.log('Usage: sofagent-daemon <subcommand> [options]');

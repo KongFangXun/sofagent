@@ -607,6 +607,14 @@ case "$COMMAND" in
       ls -la "$SOFAGENT_HOME/data/" 2>/dev/null
     fi
     ;;
+  web)
+    # v1.4.0 交付二：Web Dashboard（HTML 版，装完即用——读本机真实数据）
+    if [ -f "$SOFAGENT_HOME/bin/serve-dashboard.mjs" ]; then
+      exec node "$SOFAGENT_HOME/bin/serve-dashboard.mjs" "$@"
+    else
+      echo "Web Dashboard 未安装（serve-dashboard.mjs 缺失）——请重新运行 bash install.sh"
+    fi
+    ;;
   data)
     # 打开数据目录（macOS 用 Finder，Linux 用 xdg-open）
     if command -v open >/dev/null 2>&1; then
@@ -625,6 +633,7 @@ case "$COMMAND" in
     echo "  sofagent where      Show all install paths"
     echo "  sofagent version    Show version only"
     echo "  sofagent dashboard  Open dashboard (v1.2.4)"
+    echo "  sofagent web        Open Web Dashboard in browser (v1.4.0)"
     echo "  sofagent data       Open data directory in Finder"
     echo "  sofagent help       Show this help"
     ;;
@@ -642,6 +651,19 @@ CLIEOF
     ok "  Dashboard 入口已注册：sofagent-dashboard → $bin_dir/sofagent-dashboard"
   else
     warn "  Dashboard 实现脚本缺失（$dashboard_src），跳过软链；wrapper 占位分支兜底"
+  fi
+
+  # v1.4.0 交付二：Web Dashboard HTML 三件套安装（dashboard.html → web/ + serve-dashboard.mjs → bin/）
+  # 装完即用：sofagent web 起服务开浏览器，读 $SOFAGENT_HOME/data/ 真实数据
+  local web_dir="$SOFAGENT_HOME/web"
+  mkdir -p "$web_dir"
+  if [ -f "${SCRIPT_DIR}/tools/dashboard/dashboard.html" ]; then
+    cp "${SCRIPT_DIR}/tools/dashboard/dashboard.html" "$web_dir/dashboard.html" 2>/dev/null
+    cp "${SCRIPT_DIR}/tools/dashboard/serve-dashboard.mjs" "$bin_dir/serve-dashboard.mjs" 2>/dev/null
+    chmod +x "$bin_dir/serve-dashboard.mjs" 2>/dev/null || true
+    ok "  Web Dashboard 已安装（sofagent web 启动，读 $SOFAGENT_HOME/data/）"
+  else
+    warn "  dashboard.html 缺失（${SCRIPT_DIR}/tools/dashboard/dashboard.html），跳过 Web Dashboard 安装"
   fi
 
   # symlink 到 PATH（优先 /usr/local/bin，fallback ~/.local/bin）

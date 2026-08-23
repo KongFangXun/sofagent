@@ -313,6 +313,20 @@ if [ "$LIST_ONLY" = true ]; then
   exit 0
 fi
 
+# ── v1.4.0 交付二：Web Dashboard 安装产物清理（web/ + bin/serve-dashboard.mjs）──
+# 只删安装产物，保留 data/ 用户数据
+SOFAGENT_HOME_DIR="${SOFAGENT_HOME:-$HOME/.sofagent}"
+if [ -d "$SOFAGENT_HOME_DIR/web" ]; then
+  rm -rf "$SOFAGENT_HOME_DIR/web"
+  ok "已删除 Web Dashboard 目录（$SOFAGENT_HOME_DIR/web/）"
+  ((removed++)) || true
+fi
+if [ -f "$SOFAGENT_HOME_DIR/bin/serve-dashboard.mjs" ]; then
+  rm -f "$SOFAGENT_HOME_DIR/bin/serve-dashboard.mjs"
+  ok "已删除 Web Dashboard 启动脚本（$SOFAGENT_HOME_DIR/bin/serve-dashboard.mjs）"
+  ((removed++)) || true
+fi
+
 # ── daemon 清理 ──
 DAEMON_UNINSTALL="${SCRIPT_DIR}/daemon-uninstall.sh"
 if [ -f "$DAEMON_UNINSTALL" ] && [ -x "$DAEMON_UNINSTALL" ]; then

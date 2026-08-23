@@ -19,7 +19,7 @@ export interface ToolDef {
 }
 
 /**
- * 完整工具清单——61 个 tool（v1.3.9：worklog_query 新增；v1.3.6：workflow_submit/ontology_import/model_register/model_switch/model_unregister/train_budget/define_acceptance/check_acceptance；v1.3.5：run_ab_test/promote_ab/snapshot_list/snapshot_restore；v1.3.4：commons_publish/search/invoke/rate/retire/harvest_rule；不含 4 个 resource shortcut）
+ * 完整工具清单——62 个 tool（v1.4.0：cost_query 新增；v1.3.9：worklog_query 新增；v1.3.6：workflow_submit/ontology_import/model_register/model_switch/model_unregister/train_budget/define_acceptance/check_acceptance；v1.3.5：run_ab_test/promote_ab/snapshot_list/snapshot_restore；v1.3.4：commons_publish/search/invoke/rate/retire/harvest_rule；不含 4 个 resource shortcut）
  */
 export const TOOLS: ToolDef[] = [
   {
@@ -33,6 +33,18 @@ export const TOOLS: ToolDef[] = [
         workflowId: { type: 'string', description: '按 Workflow 过滤（缺省全量）' },
         weeklyTrend: { type: 'boolean', description: '附带周趋势（活跃度/成功率/成本）', default: false },
         evolution: { type: 'boolean', description: '附带进化四维趋势', default: false },
+      },
+    },
+  },
+  {
+    // v1.4.0（三）：成本审计查询——预算/实际消耗/超限记录（商业平台 G3 计量接口预留）
+    name: 'cost_query',
+    description: '成本审计查询（v1.4.0）——查预算配置 / 各 Agent 实际消耗（token/成本）/ 超限记录（WARN 级发现）。预算 opt-in（workflow.yml 或 config 配 budget 后启用）。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        maxTokensPerRun: { type: 'number', description: '查询时临时指定单 run token 上限（不传则仅报实际消耗）' },
+        maxCostPerDay: { type: 'number', description: '查询时临时指定每日成本上限（USD）' },
       },
     },
   },

@@ -132,5 +132,16 @@ export interface Rule {
   priority?: 'critical' | 'warning' | 'crutch' | 'extended';
   /** v1.3.0 (交付 7)：双规则统一——'diff' = 提交时扫 git diff */
   ruleType: 'diff';
+  /**
+   * v1.4.0 交付四①（规则即测试 · execpolicy 启发）：
+   * 命中/放行示例——进 acceptance 自动回归，规则对不对可自动化验证。
+   * match = 该拦的样本（含文件名/内容片段），notMatch = 该放行的样本。
+   */
+  examples?: {
+    match: string[];
+    notMatch: string[];
+  };
+  /** v1.4.0 交付四①：人类可读拦截理由（reporter 输出层渲染，替代笼统「违规」） */
+  justification?: string;
   check(ctx: AuditContext): RuleCheck;
 }

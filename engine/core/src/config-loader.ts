@@ -91,6 +91,16 @@ export interface AuditConfig {
     /** persona.md 候选源路径（按序取第一个存在者） */
     persona_sources?: string[];
   };
+  /** v1.4.0 交付三: 成本审计配置（opt-in——不配 budget 不审计成本；WARN only 不拦截） */
+  cost?: {
+    /** 成本预算（workflow.yml `budget:` 段的引擎侧落点） */
+    budget?: {
+      /** 单 run token 上限（input+output，按 Agent 聚合判定） */
+      maxTokensPerRun?: number;
+      /** 每日成本上限（USD，按 Agent 成本估算聚合判定） */
+      maxCostPerDay?: number;
+    };
+  };
 }
 
 /**
@@ -278,6 +288,7 @@ export function warnUnknownConfigKeys(auditObj: Record<string, unknown>, filePat
     'lowRiskPatterns', 'testPatterns', 'carefulModifyThreshold',
     'extendedRulesEnabled', 'rules', 'loopCheckMaxRounds', 'strict', 'A16', 'A17',
     'loop', 'webhook', 'toolGate', 'sanitizePatterns', 'memory_backends', 'memory_sync',
+    'cost',
   ]);
 
   for (const key of Object.keys(auditObj)) {

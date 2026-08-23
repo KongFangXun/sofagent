@@ -194,14 +194,14 @@ if (failures > 0) {
 }
 
 // ── 文档声称符号数校验（根治 1449 漂移类问题）──
-// 从核心文档提取声称的 @public 符号总数，与 baseline 实际总数比对。
+// 从「当前状态」文档提取声称的 @public 符号总数，与 baseline 实际总数比对。
+// ⚠️ 只含当前文档——历史 changelog（CHANGELOG.md / docs/changelog/*）的符号数是
+// 「该版本发布时点」的值，随新版本加符号自然落后于当前 baseline，纳入校验会误报
+// （v1.4.0 新增 cost 符号 1439→1444 实证）。
 const DOC_FILES = [
   join(ROOT, 'README.md'),
   join(ROOT, 'README.en.md'),
-  join(ROOT, 'CHANGELOG.md'),
-  join(ROOT, 'docs', 'changelog', 'v1.3', 'v1.3.9.md'),
-  join(ROOT, 'docs', 'ROADMAP.md'),
-  join(ROOT, 'docs', 'HANDBOOK.md'),
+  join(ROOT, 'docs', 'ARCHITECTURE.md'),
 ];
 
 function actualTotal() {
