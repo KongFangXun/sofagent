@@ -18,6 +18,7 @@
   "scripts": {
     "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
     "build": "npm run clean && tsc",
+    "prepublishOnly": "npm run build",
     "test": "vitest run",
     "check": "tsc --noEmit",
     "postbuild": "node -e \"const fs=require('fs');for(const b of ['dist/cli.js']){try{fs.chmodSync(require('path').join(__dirname,b),0o755)}catch(e){}}\""
