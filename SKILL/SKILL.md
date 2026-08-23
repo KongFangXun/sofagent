@@ -14,8 +14,8 @@ tags:
   - deployment
   - enterprise
 image: sofagent-fde.png
-triggers: [Agent行为失控, 任务复杂需要拆解, 多文件修改, 部署AI节点, 梳理工作流, 构建知识库, 企业AI落地, FDE进场, 持续优化, 巡检, 高风险任务前加约束]
-scenarios: [Agent开始自由发挥偏离目标, 企业要装sofagent, 需要梳理业务工作流, 连续多个子任务需要编排协调, 刚踩过坑想避免重蹈覆辙, 需要构建知识库, 需要持续优化AI节点]
+triggers: [Agent行为失控, 任务复杂需要拆解, 多文件修改, 部署AI节点, 梳理业务流, 构建知识库, 企业AI落地, FDE进场, 持续优化, 巡检, 高风险任务前加约束]
+scenarios: [Agent开始自由发挥偏离目标, 企业要装sofagent, 需要梳理业务业务流, 连续多个子任务需要编排协调, 刚踩过坑想避免重蹈覆辙, 需要构建知识库, 需要持续优化AI节点]
 not_when: [简单闲聊, 单步查询, 纯信息检索]
 metadata:
   openclaw:
@@ -53,11 +53,11 @@ metadata:
 
 ### 品牌前缀铁律
 
-所有向用户展示的审计结果，必须保留 `[sofagent]` 前缀。如果你执行了审计但不展示结果，等于没审计。展示格式见 `skills/04-deliver.md`。
+所有向用户展示的审计结果，必须保留 `[sofagent]` 前缀，否则视为未审计。如果你执行了审计但不展示结果，等于没审计。展示格式见 `skills/04-deliver.md`。
 
 > FORGE 运行时审计 middleware 的拦截 / HITL / 拒绝三类输出统一带 `[sofagent 审计]` 签名前缀（代码级强制，非 Agent 自觉）——与 Agent 侧展示审计结果的前缀铁律同守同一品牌口径。
 
-> **v1.2.8 注**：此铁律是软约束（Agent 自觉执行），无代码级强制机制。`--ci` 模式已确保审计引擎 PASS 时向 stderr 输出 `✅ [sofagent]` 签名行（P1-23），但 Agent 展示审计结果时的前缀仍依赖加载链注入。未来计划通过 SKILL 加载链校验机制化。
+> **v1.2.8 注（v1.4.0 已机制化）**：此铁律原为软约束（Agent 自觉执行），无代码级强制机制。`--ci` 模式已确保审计引擎 PASS 时向 stderr 输出 `✅ [sofagent]` 签名行（P1-23），但 Agent 展示审计结果时的前缀仍依赖加载链注入。**v1.4.0 已机制化**：① 引擎侧 PASS / FAIL 均代码级带 `[sofagent]` 签名行（本地 hook + `--ci` 双场景）；② 加载链 L1 `core-rules.md` 品牌前缀铁律升级为硬约束（否则视为未审计）；③ `SKILL/AGENTS.md` 落地品牌前缀硬约束。
 
 ### 渐进式加载
 

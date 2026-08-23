@@ -23,8 +23,6 @@
 >
 > 🔄 **Self-bootstrapping**: its first FDE job is sofagent itself — the project itself is one FDE workflow (map → nodes → dual-graph delivery), and the training engine also orbits FDE (making FDE better, spinning the data flywheel).
 
-> 📊 **Why now**: MIT NANDA Lab's *The GenAI Divide* report shows that over the past three years, global enterprises burned $30–40 billion on generative AI, yet **95% of projects failed to produce value worth putting on a financial statement**. Meanwhile, job postings for a role called "Forward Deployed Engineer" (FDE) surged **729%** year-over-year (Indeed 2025 data). Models are no longer scarce — the scarce thing is people who can embed models into real customer operations. sofagent is the open-source substrate that engineers this. (Data verification and cross-agency calibration: see [VALIDATION §1 · Cost of governance gaps](./docs/VALIDATION.md#治理缺口的代价三项联网核验证据); FDE economics: see [VALIDATION §4](./docs/VALIDATION.md#四市场印证行业判断被市场买单).)
-
 ```mermaid
 graph TB
     subgraph S["One FDE Agent · sofagent"]
@@ -37,8 +35,6 @@ graph TB
     D --> N["AI nodes<br/>LangGraph orchestration → Harness execution → constraint audit"]
     N -.->|"7×24 self-running · blocks violations · rolls back breakage"| N
 ```
-
-> 💾 **Don't rush off after deployment**: once a single node's workflow (the Agent's capability) is defined with LangGraph, burn it straight onto a USB drive via DSH (DeepSeek Harness execution backend — an optional commercial-side component, not delivered in this open-source repo) — the USB drive becomes a node, a key: plug it into any machine and it just runs (unplug for zero residue). The open-source default execution backend is LangGraph; DSH is a commercial enhancement. See [HANDBOOK · USB one-click burn](./docs/HANDBOOK.md#近期版本新功能速览).
 
 > 🏞️ Big vendors hand you "water" (the LLM) and a "riverbed" (the Agent platform), but the water is raw — you wouldn't dare drink it straight. sofagent is the engineering that makes the river water usable across a whole city: the dam stops floods, the treatment plant turns raw water into drinking water, and the pipe network delivers it to every faucet. The model provides 90% of the intelligence; sofagent adds the 10% of reliable execution.
 
@@ -127,6 +123,8 @@ Most tools teach you how to build Agents; sofagent first answers **where AI shou
 | ③ Deliver | **Three-layer deliverables** — documents + Skills + runtime, so AI nodes actually run | Ontology + workflow.yml + skills/ |
 
 Full methodology (four phases, twelve steps) in [FDE/GUIDE.md](./FDE/GUIDE.md) — a half-day read, enough to run FDE independently afterwards.
+
+> 💾 **Don't rush off after deployment**: once a single node's workflow (the Agent's capability) is defined with LangGraph, burn it straight onto a USB drive via DSH (DeepSeek Harness execution backend — an optional commercial-side component, not delivered in this open-source repo) — the USB drive becomes a node, a key: plug it into any machine and it just runs (unplug for zero residue). The open-source default execution backend is LangGraph; DSH is a commercial enhancement. See [HANDBOOK · USB one-click burn](./docs/HANDBOOK.md#近期版本新功能速览).
 
 ## FDE Skill System
 
@@ -234,6 +232,8 @@ Community rulesets are published as `sofagent-ruleset-*` npm packages and loaded
 > ℹ️ **Platform-agnostic boundary**: the core engine (audit / constraint layer) is platform-agnostic; automatic hook injection currently works only on OpenClaw — on other platforms, inject constraints manually and auditing works as usual.
 
 ## Evidence & Credibility
+
+> 📊 **Why now**: MIT NANDA Lab's *The GenAI Divide* report shows that over the past three years, global enterprises burned $30–40 billion on generative AI, yet **95% of projects failed to produce value worth putting on a financial statement**. Meanwhile, job postings for a role called "Forward Deployed Engineer" (FDE) surged **729%** year-over-year (Indeed 2025 data). Models are no longer scarce — the scarce thing is people who can embed models into real customer operations. sofagent is the open-source substrate that engineers this. (Data verification and cross-agency calibration: see [VALIDATION §1 · Cost of governance gaps](./docs/VALIDATION.md#治理缺口的代价三项联网核验证据); FDE economics: see [VALIDATION §4](./docs/VALIDATION.md#四市场印证行业判断被市场买单).)
 
 > 🔬 **Independent external evidence** (not an official self-test): Joel Niklaus' harness-optimization research ([research code repository](https://github.com/JoelNiklaus/harness-optimization), data in the repo experiments) shows that with the same model and unchanged weights, optimizing only the outer harness lifted a legal-Agent benchmark from **63.4% → 80.1% (+16.7pp)**. See [THANKS.md](./docs/THANKS.md).
 

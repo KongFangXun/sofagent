@@ -28,7 +28,7 @@ FDE 诊断完成后，交付了一堆**静态文件**：
   └──────────────────────────────────────────────────┘
 
 理想终态：
-  企业的工作流自动运行——每个 🔄 节点是一个 sub-agent，
+  企业的业务流自动运行——每个 🔄 节点是一个 sub-agent，
   每个 ⚡ 节点是一个辅助 Agent，节点间按 workflow.yml 的依赖自动编排
 ```
 
@@ -94,7 +94,7 @@ FDE 诊断完成（交付物就绪）
 | **v1.2.7** | 编排引擎增强 | composeEnterpriseWorkflow + LangGraph StateGraph 构建 + 数据流设计 | Phase 2 后半 |
 | **v1.2.8** | 记忆分层+定时任务 | dag-runner 扩展 + run-enterprise CLI + 节点执行器 | Phase 3 前半 |
 | **v1.2.9** | HITL + 审计集成 | HITL interrupt + 审计集成 + 异常处理 | Phase 3 后半 |
-| **v1.3.0** | 运行时审计最小闭环 | 激活链收尾——全闭环验证 + wrapToolCall 联动 + 企业工作流审计 | Phase 4 收尾 |
+| **v1.3.0** | 运行时审计最小闭环 | 激活链收尾——全闭环验证 + wrapToolCall 联动 + 企业业务流审计 | Phase 4 收尾 |
 
 > 开发每个版本时读本文档作为设计指引。各 Phase 的开发 Prompt 仅作开发过程内部参考，不随仓库分发。
 
@@ -118,7 +118,7 @@ FDE 诊断完成后，以下文件就绪：
 │   │   ├── concepts/
 │   │   │   └── ...
 │   │   └── enterprise-profile.md   # 企业画像
-│   └── workflow.yml                 # FDE §5 输出的工作流定义
+│   └── workflow.yml                 # FDE §5 输出的业务流定义
 ├── skills/                           # FDE §7 交付的节点 Skill
 │   ├── 客户管理/
 │   │   └── SKILL.md
@@ -394,7 +394,7 @@ const compiled = graph.compile({
 ### 运行方式
 
 ```bash
-# 启动企业工作流
+# 启动企业业务流
 sofagent-orchestrator run-enterprise
 
 # 或通过 MCP
@@ -413,7 +413,7 @@ sofagent-orchestrator run-enterprise
   - 每个 🔄 节点：自动执行，结果写入 State + entity
   - 每个 ⚡ 节点：执行到此处暂停 → 向用户展示方案 → 等待确认 → 继续
   - 每个节点执行后：自动触发审计（@sofagent-audit）
-  - 审计 FAIL：暂停整个工作流，通知用户
+  - 审计 FAIL：暂停整个业务流，通知用户
   - 异常：写入 exceptions 队列，根据节点配置决定重试 or 跳过
 ```
 
@@ -432,7 +432,7 @@ async function executeNode(node, state) {
   if (diff.length > 0) {
     const auditResult = await runAuditRules(diff);
     if (auditResult.exitCode === 2) {  // FAIL
-      // 暂停工作流，通知用户
+      // 暂停业务流，通知用户
       state.exceptions.push({ node: node.id, audit: auditResult });
       return { ...state, nodeStatus: { ...state.nodeStatus, [node.id]: 'audit-failed' } };
     }
@@ -462,7 +462,7 @@ async function executeNode(node, state) {
 ### 激活链补全的闭环
 
 ```
-企业工作流运行
+企业业务流运行
   → 每个节点执行 → 自动审计 → think.md 回溯
   → FDE sustain 读 think.md 趋势 → 发现"某节点反复出错"
   → skillopt 优化该节点 Skill → A/B 测试验证
@@ -470,7 +470,7 @@ async function executeNode(node, state) {
   → 下次 activate 时自动加载优化后的 Skill
 ```
 
-**这就是自运转**：企业工作流不仅跑起来了，还能自己优化自己。
+**这就是自运转**：企业业务流不仅跑起来了，还能自己优化自己。
 
 ---
 
@@ -516,7 +516,7 @@ async function executeNode(node, state) {
   → 用户确认 / 修改 / 拒绝
   → 确认 → 继续执行
   → 修改 → 更新 State 后继续
-  → 拒绝 → 工作流终止，写入异常日志
+  → 拒绝 → 业务流终止，写入异常日志
 ```
 
 ### 决策 4：平台兼容性
@@ -592,7 +592,7 @@ dag-runner.ts（修改）
 | 数据流 | State 实时传递 + entity 持久化双写 | v1.2.7+ |
 | 节点执行器 | dag-runner 能跑企业 Agent | v1.2.8 |
 | HITL 中断 | ⚡ 节点执行前暂停，等待用户确认 | v1.2.9 |
-| 审计集成 | 每个节点执行后自动审计，FAIL 时暂停工作流 | v1.2.9 |
+| 审计集成 | 每个节点执行后自动审计，FAIL 时暂停业务流 | v1.2.9 |
 | MCP tool | `activate_workflow` 可从任意 MCP 平台调用 | v1.2.5 |
 | 纯 CLI | `sofagent-orchestrator activate && sofagent-orchestrator run-enterprise` 可跑通 | v1.3.0 |
 | npm test | 全绿（1207 + 新增） | 每版本 |
@@ -644,13 +644,13 @@ flowchart TD
 
 | 进化层级 | 机制 | 状态 | 企业 SubAgent 能得到吗 |
 |---------|------|:--:|----------------------|
-| **行为级进化** | think.md 反思（不犯同样错）+ Dream Cycle 知识回灌（越跑越懂企业）+ skillopt Skill 优化（失败 3 次自动改） | ✅ 已交付/轻量态 | **能，自动获得**——"越用越好" |
+| **行为级进化** | think.md 反思（不犯同样错）+ Dream Cycle 知识回灌（越跑越懂企业）+ skillopt Skill 优化（失败 3 次自动改） | ✅ 已交付/轻量态 | **能，自动获得**——沉淀机制随使用迭代（轻量态，效果待验证） |
 | **模型级进化** | QLoRA 后训练小模型（workflow 数据训练进权重） | ⚠️ v3.x-v4.x 远期 | 远期蓝图，当前不具备 |
 
-> 🔒 **进化不碰宪法**：进化引擎优化的是 Skill / 知识 / 反思，**不碰加载链第 1 层 SKILL.md 宪法**（4 底线 + 7 铁律，`❌ 不可修改`）。企业 SubAgent 会越用越好，但不会"越用越不守规矩"——**自主性只给到能力层，宪法层永远不可改**。这是"受控自主"的设计哲学。
+> 🔒 **进化不碰宪法**：进化引擎优化的是 Skill / 知识 / 反思，**不碰加载链第 1 层 SKILL.md 宪法**（4 底线 + 7 铁律，`❌ 不可修改`）。企业 SubAgent 的沉淀机制会随使用迭代，但不会"越用越不守规矩"——**自主性只给到能力层，宪法层永远不可改**。这是"受控自主"的设计哲学。
 
 ---
 
 ## 一句话总结
 
-> **FDE 诊断产出的是"图纸"（ontology + workflow + skills）。激活链是"施工队"——读图纸、砌墙（注册 Agent）、接水管（数据流）、通电（编排）、验收（审计）。施工完了，企业的工作流就自己跑起来了。**
+> **FDE 诊断产出的是"图纸"（ontology + workflow + skills）。激活链是"施工队"——读图纸、砌墙（注册 Agent）、接水管（数据流）、通电（编排）、验收（审计）。施工完了，企业的业务流就自己跑起来了。**

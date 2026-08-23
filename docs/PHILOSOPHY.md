@@ -31,13 +31,13 @@
 
 Agent 越聪明，企业越不敢让它碰真活——真出事了，谁负责？能拦住吗？能回滚吗？大厂给你水（LLM）、给你河床（Agent 平台），但企业门口的那段管子——从"能喝"到"敢喝"——没人帮你接。
 
-**② sofagent 的答案：一个常驻你企业的 FDE Agent，帮你把工作流梳理成 AI 节点，部署完它自己跑。**
+**② sofagent 的答案：一个常驻你企业的 FDE Agent，帮你把业务流梳理成 AI 节点，部署完它自己跑。**
 
 sofagent 不替代大厂 Agent，而是建在它们之上——做河的约束层，不做河本身（River 比喻详见 [README · 这是什么](../README.md#这是什么)）。FDE 进场四阶段：梳理→挖掘→交付→离场。离场后 AI 节点自己跑。
 
-> **🔄 自举（产品哲学的核心）：FDE Agent 给自己做的第一份 FDE，就是 sofagent 自己。** 我们自己是一家"FDE 公司"——执行「给企业做 AI 落地」这条 workflow 的 Agent 就是 sofagent。它对自己做 FDE：把项目自身梳理成一条 FDE workflow（梳理 → 节点 → 双 graph 交付），确认每个节点全自动（LangGraph 编排 + DeepSeek Harness 执行 + 约束底座审计），训练引擎也围绕 FDE——怎么让 FDE 更好、怎么让数据飞轮转起来。这是自举循环：**FDE Agent 对自己做 FDE → 项目更 AI 化 → 更好地服务企业**。产品形态 = 一个 FDE Agent（以 LangGraph + 约束层为内核，plugin + skill + MCP + CLI + dashboard 为调用面，v1.4.0 封装形态规划落地）。
+> **🔄 自举（产品哲学的核心）：FDE Agent 给自己做的第一份 FDE，就是 sofagent 自己。** 我们自己是一家"FDE 公司"——执行「给企业做 AI 落地」这条 workflow 的 Agent 就是 sofagent。它对自己做 FDE：把项目自身梳理成一条 FDE workflow（梳理 → 节点 → 双图谱交付），确认每个节点全自动（LangGraph 编排 + DeepSeek Harness 执行 + 约束底座审计），训练引擎也围绕 FDE——怎么让 FDE 更好、怎么让数据飞轮转起来。这是自举循环：**FDE Agent 对自己做 FDE → 项目更 AI 化 → 更好地服务企业**。产品形态 = 一个 FDE Agent（以 LangGraph + 约束层为内核，plugin + skill + MCP + CLI + dashboard 为调用面，v1.4.0 封装形态规划落地）。
 
-> **🔗 激活链——从"交付"到"自运转"**：FDE 交付了 ontology + workflow.yml + skills/ 等静态文件后，交付物和"企业工作流自动运行"之间曾有一道**大断裂带**——企业 IT 拿到一堆 .md 和 .yml 不知道怎么跑起来。v1.2.5 起的**激活链**（ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN，已交付）解决这个问题：读交付物 → 注册企业 SubAgent → 构建 LangGraph StateGraph → DAG 运行 + HITL + 审计 → 持续优化自运转。详见 [激活链设计文档](./guides/fde-activation-chain.md)。
+> **🔗 激活链——从"交付"到"自运转"**：FDE 交付了 ontology + workflow.yml + skills/ 等静态文件后，交付物和"企业业务流自动运行"之间曾有一道**大断裂带**——企业 IT 拿到一堆 .md 和 .yml 不知道怎么跑起来。v1.2.5 起的**激活链**（ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN，已交付）解决这个问题：读交付物 → 注册企业 SubAgent → 构建 LangGraph StateGraph → DAG 运行 + HITL + 审计 → 持续优化自运转。详见 [激活链设计文档](./guides/fde-activation-chain.md)。
 
 **③ 底层引擎：sofagent 的约束层（Harness）保证每次变更可审计、可回滚、可进化。**
 
@@ -79,7 +79,7 @@ WorkBuddy / OpenClaw 等大厂 Agent 平台管路由调度——「会不会做�
 
 **一条河的比喻**：大厂造河，我们做河的约束层——不做河，做河的堤坝 + 自来水厂 + 管网 + 水龙头（详见 [README · 这是什么](../README.md#这是什么)）。这把「做平台/中间件、不做外包/服务」具象化。
 
-**模型层**：强模型时代，人工工作流的边际收益从 30 分降到 5 分——甚至负收益（人工结构 = 设计者认知上限，限制模型找最优解）。历史规律反复验证：RAG 流水线被长上下文吃掉 → Prompt Chain 被 agentic 模型取代 → MoT Agent 编排被 sub-agent/plan 覆盖。但三件事的价值**反升**：上下文工程、可追踪验收标准、安全护栏（Harness）。转折点：从告诉 AI "怎么做"(How) → 定义 "做什么 + 做完的判定"(What + Done)。**通用模型越强，Harness 越值钱——这是 90%/10% 价值分层（知行合一框架见 [VALIDATION](./VALIDATION.md)）的外部验证。**
+**模型层**：强模型时代，人工业务流的边际收益从 30 分降到 5 分——甚至负收益（人工结构 = 设计者认知上限，限制模型找最优解）。历史规律反复验证：RAG 流水线被长上下文吃掉 → Prompt Chain 被 agentic 模型取代 → MoT Agent 编排被 sub-agent/plan 覆盖。但三件事的价值**反升**：上下文工程、可追踪验收标准、安全护栏（Harness）。转折点：从告诉 AI "怎么做"(How) → 定义 "做什么 + 做完的判定"(What + Done)。**通用模型越强，Harness 越值钱——这是 90%/10% 价值分层（知行合一框架见 [VALIDATION](./VALIDATION.md)）的外部验证。**
 
 > 💡 **为什么 sofagent 是「系统型」不是「薄壳型」（行业产品生死线判断）**：行业把 AI 产品分为「薄壳型」与「系统型」——薄壳站在**完成型任务**上（翻译/总结/识图，有终点），赚「比用户更会用模型」的信息差，模型一升级门槛被抹平、壳被穿透；系统型站在**开拓型指标**上（更多客户/更高复购/更高转化，没有终点），模型每一代升级都是把结果往上推的工具。sofagent 的审计引擎 19/24 条规则是纯 git-diff 确定性判定、零 token、不依赖模型版本——模型升级不仅不穿透审计，反而让「AI 干更多活 → 需要审计的变更更多」，这正是系统型的结构：护城河在「定义完成 + 验收 + 留痕」的闭环，不在模型调用技巧本身（同源见下文「市场实证——垂直 Harness 才是护城河」）。
 
@@ -93,7 +93,7 @@ WorkBuddy / OpenClaw 等大厂 Agent 平台管路由调度——「会不会做�
 
 客服 Agent **Sierra** 上线七季度破 1 亿美元 ARR——客户买的是"解决问题+完成服务"，不只调一次模型。
 
-这与 sofagent「不做通用平台、做细分业务 workflow 的可约束性」定位同频：护城河在垂直、在审计、在客户工作流，不在通用能力堆叠。
+这与 sofagent「不做通用平台、做细分业务 workflow 的可约束性」定位同频：护城河在垂直、在审计、在客户业务流，不在通用能力堆叠。
 
 ### 智能与控制分离——sofagent 的理论锚点
 
@@ -195,7 +195,7 @@ sofagent：说一句话 → MCP 调用 → 返回结果
 |------|------|
 | 语言入口 | Agent 第一次连上 MCP server 时，`list_capabilities` 主动推送所有能力 |
 | 零交互 GUI | 语言是主界面，不建交互式网页/面板；dashboard 是只读视图（见 §六），需要可视化呈现时推送 Markdown 报告到 IM |
-| 输出有家 | 每个工作流节点的输出有明确的 push target（飞书/钉钉/企微 Webhook、daemon 通知、联邦 knowledge/） |
+| 输出有家 | 每个业务流节点的输出有明确的 push target（飞书/钉钉/企微 Webhook、daemon 通知、联邦 knowledge/） |
 | 降级优雅 | MCP 不可用时退到 CLI；IM 不可用时退到 daemon 通知 |
 
 **推送机制**（`@sofagent/mcp` 内置）：
@@ -425,7 +425,7 @@ FDE 一线观察指出：AI 项目失败的最根因往往不是技术，而是"
 - **默认小基座选型（业务 workflow 严格 ≤1B）**：中文业务 **Qwen2.5-0.5B** / 英文场景（外贸等）**Llama-3.2-1B**。中文、英文两类业务 workflow 用本地小模型，省钱、数据不出域。
 - 🔴 **任务价值分流——代码/强推理直接用最好模型**：代码生成、复杂推理、多步规划这类"值得用最强智能"的高价值任务，用户明确**直接选用云端最强 LLM**（如 Claude / GPT / Gemini），**不强行本地化**。本地小模型只覆盖"可窄域替代"的业务 workflow 场景；私有部署优先铁律针对业务数据，不与高价值智能任务走云端冲突。云端大厂 LLM 在此类场景是**默认路径**（非 fallback）。
 
-**结论——本地小模型可跑**：基于开源小基座 + **QLoRA 精调**（4-bit 量化基座 + 低秩适配器，比全参微调更轻，Mac Mini 上即可跑，适配器仅几 MB）+ 消费级硬件，业务专属小模型即可在本地微调与推理，无需 GPU 集群；多台设备的价值在推理并发节点，而非训练集群。整个项目对外保持纯 Node/TS 工作流（训练封装 Python、推理绑定 Node）。具体推理 / 训练框架详见 DEVELOPMENT 文档。
+**结论——本地小模型可跑**：基于开源小基座 + **QLoRA 精调**（4-bit 量化基座 + 低秩适配器，比全参微调更轻，Mac Mini 上即可跑，适配器仅几 MB）+ 消费级硬件，业务专属小模型即可在本地微调与推理，无需 GPU 集群；多台设备的价值在推理并发节点，而非训练集群。整个项目对外保持纯 Node/TS 技术栈（训练封装 Python、推理绑定 Node）。具体推理 / 训练框架详见 DEVELOPMENT 文档。
 
 **四阶段路线**（详见 ROADMAP「Subagent 内置专精小模型」）：v1.2.x 架构预留（`inference` 字段支持 Ollama）→ v3.x 工具链（`sofagent-model` 微调 CLI）→ v4.x 本地推理（业务 workflow 跑精调模型；代码/强推理直连云端最强 LLM）→ v4.x+ 离线节点（USB key 完整离线 AI 节点，覆盖业务 workflow）。
 
@@ -502,7 +502,7 @@ FDE 入场时，不搭交互页面。做的事是：梳理 workflow 节点 → �
 - **为什么需要 dashboard**：sofagent 自身 LUI-first（语言即界面）——但 Agent 的 LUI + LLM 会"吞噬一切"，非专家买家看不到持久状态、没有成就感锚点。所以产品化必须带一个**轻量 dashboard** 作为自有视图（审计状态 / AI 化进度 / 合规月报），让买家随时看得见"我公司 AI 化到哪了"。这与"持续存在感是设计需求"一致——只是这次是 buyer 的持续存在感。
 - **为什么用 MCP**：dashboard 是轻量化的，靠 **MCP** 配合——MCP 作为向外接的桥，让客户已有的 Agent / 你的 sub-agent 把数据喂给 dashboard 后端。MCP 是桥、不是唯一入口；dashboard 必须自己拥有。
 - **零 GUI 铁律不变**：上面的 dashboard 是**只读可见视图**（看审计状态 / 进度 / 月报），不是用来下令的图形界面——下令仍走 LUI。这与 §二「零 GUI」不矛盾。
-- **open-core 双轨**：内核（审计规则 / FDE 工作流 / 编排）继续 MIT 开源做信任资产；商业化只卖那层 dashboard（控制台 / 合规月报 / 告警）。开源负责让人信，闭源负责让人付。
+- **open-core 双轨**：内核（审计规则 / FDE 业务流 / 编排）继续 MIT 开源做信任资产；商业化只卖那层 dashboard（控制台 / 合规月报 / 告警）。开源负责让人信，闭源负责让人付。
 - **控制平面打法**：底层 Agent 智能随便换（OpenClaw / 客户自选 / 大厂），治理与真相（策略谁配、审计链长啥样、Agent 注册在哪）永远在 sofagent 的 dashboard 里。sofagent 不做 Agent 运行，只管住跑任务的 Agent——这是它能被信任的前提。
 
 ---
@@ -558,7 +558,7 @@ sofagent 的版本演进不是拍脑袋排的——它遵循 Agent 工程的生�
 | think.md 强制 gate | 强制会导致 Agent 用垃圾内容填模板 |
 | 记忆压缩自动化 | 每个 Agent 有自己的记忆 |
 | Connector | sofagent 是约束层 + 审计能力，不是自动化流水线 |
-| **Workflow Graph → Ontology Graph 单向转换** | 转换丢访谈中的隐性知识，本体沦为工作流的副产品——workflow（流转）与 ontology（语义）必须从同一次 FDE 访谈**并行产出**、SHACL 互相校验 |
+| **Workflow Graph → Ontology Graph 单向转换** | 转换丢访谈中的隐性知识，本体沦为业务流的副产品——workflow（流转）与 ontology（语义）必须从同一次 FDE 访谈**并行产出**、SHACL 互相校验 |
 | **把 DSH 当唯一执行层** | 企业命脉不押单一运行时——编排层 LangGraph 永不换，执行层走 ExecutionBackend 接口（DSH 默认 / createReactAgent fallback / 三平台可选），DSH 只是可选后端之一（「堤修在哪条河上都行」） |
 | **治理逐节点插桩** | 治理是事件域横切面，不是节点附件——挂 tools/result、turn-stopping、approval seam 一次即全域生效，逐节点插桩是把约束层降格为工具配件 |
 

@@ -74,10 +74,10 @@
 
 | # | 测试 | 命令 | 结果 | 耗时/Token |
 |:--:|------|------|:--:|------|
-| 12 | ao demo（零配置） | `ao demo` | ✅ 4 步工作流通（OpenClaw CLI） | 11.8s / 4326 |
+| 12 | ao demo（零配置） | `ao demo` | ✅ 4 步业务流通（OpenClaw CLI） | 11.8s / 4326 |
 | 13 | ao compose（API） | `ao compose "扫描 sofagent..." --lang zh --run` | ✅ AI 编排 2 步 workflow + 执行 | 6.7s / 11347 |
 | 14 | ao compose（CLI） | 同上，--provider openclaw-cli --model {3种} | ❌ 跨 3 模型均失败 | — |
-| 15 | ao run（手写 YAML） | `ao run workflows/...yaml` | ✅ 3 步工作流（OpenClaw CLI） | 9.4s / 2748 |
+| 15 | ao run（手写 YAML） | `ao run workflows/...yaml` | ✅ 3 步业务流（OpenClaw CLI） | 9.4s / 2748 |
 | 16 | 模板注入验证 | 专用 workflow + code-reviewer 角色 | ✅ Agent 回复含模板特有词汇 | 1.6s / 2904 |
 
 **ao compose AI 编排细节**：

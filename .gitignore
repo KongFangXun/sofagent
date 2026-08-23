@@ -69,7 +69,6 @@ pnpm-lock.yaml
 pnpm-workspace.yaml
 npm-p4-test/
 p4npx/
-stranger-audit-test/
 t/
 c.txt
 

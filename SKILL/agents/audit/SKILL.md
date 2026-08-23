@@ -59,7 +59,7 @@ sofagent-audit subagent run audit --task "<用户的任务描述，原样传入>
 **总计**：阻断 [N] · 建议 [N] · 通过 [N] · 判定 IS_PASS: [YES/NO]
 ```
 
-## 工作流程
+## 业务流程
 
 1. **范围界定**：确定仓库/节点/实体范围，读取 fde.md
 2. **逐项审查**：role/rules、knowledge-domain、铁律映射、entity 死链

@@ -1,6 +1,6 @@
 # sofagent Handbook
 
-> **sofagent 是一个 FDE Agent——进场梳理你的工作流、部署 AI 节点、离场后 7×24 自己跑。** 装完之后，你在自己的 Agent（WorkBuddy / Codex / Claude Code）里说一句话，它就帮你干活——审计每次变更、沉淀每次经验、越用越好。下面从装到用到查问题，全流程走一遍。
+> **sofagent 是一个 FDE Agent——进场梳理你的业务流、部署 AI 节点、离场后 7×24 自己跑。** 装完之后，你在自己的 Agent（WorkBuddy / Codex / Claude Code）里说一句话，它就帮你干活——审计每次变更、沉淀每次经验，沉淀机制随使用迭代。下面从装到用到查问题，全流程走一遍。
 >
 > v1.3.9 · 2026-08-21（UTC）· 孔放勋
 
@@ -41,7 +41,7 @@
 
 | 你想知道的 | 一句话 | 详见 |
 |------|------|------|
-| 这是什么 | sofagent——一个 FDE Agent，进场梳理工作流、部署 AI 节点、离场后 7×24 自己跑 | [FDE Agent 能替你干什么](#fde-agent-能替你干什么) |
+| 这是什么 | sofagent——一个 FDE Agent，进场梳理业务流、部署 AI 节点、离场后 7×24 自己跑 | [FDE Agent 能替你干什么](#fde-agent-能替你干什么) |
 | 怎么装 | `bash install.sh`（企业设备安装器，装底座 + Agent Skill）· `bash install.sh --base-only`（仅底座） | [落地：装好就能派活](#落地装好就能派活) |
 | 怎么用 | 装完直接派任务，复杂任务自动拆解 | [运行：每次变更都被管住](#运行每次变更都被管住) |
 | AI 节点怎么跑 | 开发者：git commit 自动审计。非开发者：v1.0.8+ daemon 监控文件变更自动审计 | [落地：装好就能派活](#落地装好就能派活) |
@@ -58,12 +58,12 @@
 
 **已经能替你干的事（v1.3.9 已交付）**：
 
-- **进场梳理 → 部署 AI 节点 → 离场常驻**：FDE 帮你盘清工作流、识别可自动化环节、把重复业务变成自动跑的 Agent，离场后 7×24 自己巡检、自己优化。
+- **进场梳理 → 部署 AI 节点 → 离场常驻**：FDE 帮你盘清业务流、识别可自动化环节、把重复业务变成自动跑的 Agent，离场后 7×24 自己巡检、自己优化。
 - **每次变更都被管住**：24 条规则硬证据审计，密钥泄漏 / 越界编辑 / 注入攻击 / 盲改当场拦截；出事一键回滚到任意安全状态。
 - **知识自动长出来**：Dream Cycle 把每次任务沉淀成企业知识库 + Ontology 本体，越用越懂你的业务。
 - **平台无关、即挂即用**：骑在你自选的大厂 Agent（Claude Code / Codex / WorkBuddy / 扣子 / OpenClaw）之上，不替代模型，只补「可靠执行」。（Cursor 社区验证中）
 - **能带走、能协同**：USB 一键烧录（插上即用、拔掉零残留）；多设备加密联邦互查；内置 `@sofagent-fde` + `@sofagent-audit` 双 Agent。
-- **🔗 激活链（v1.2.5+ 已实现 Phase 1-4）**：FDE 诊断交付后，ontology + workflow.yml + skills/ 不再是一堆静态文件躺在磁盘上——激活链自动读交付物 → 注册企业 SubAgent → 编排成 LangGraph 工作流 → 带人工审批（HITL）和审计地自动跑。从"交给企业一堆文档"变成"交给企业一个会自己跑的系统"。Phase 4（SUSTAIN）已于 v1.3.0 交付。详见 [激活链设计文档](./guides/fde-activation-chain.md)。
+- **🔗 激活链（v1.2.5+ 已实现 Phase 1-4）**：FDE 诊断交付后，ontology + workflow.yml + skills/ 不再是一堆静态文件躺在磁盘上——激活链自动读交付物 → 注册企业 SubAgent → 编排成 LangGraph 业务流 → 带人工审批（HITL）和审计地自动跑。从"交给企业一堆文档"变成"交给企业一个会自己跑的系统"。Phase 4（SUSTAIN）已于 v1.3.0 交付。详见 [激活链设计文档](./guides/fde-activation-chain.md)。
 - **🔍 v1.3.9 新增**：官方 AST 规则引擎（`sofagent-ruleset-ast`，ASI01 目标劫持 + ASI04 供应链 SBOM 语义检测）；meta-harness 多 harness 统一编排（策略强制下沉基础设施层，跨会话协作）；AI 工作明细数据层（`worklog` 按 Agent/Workflow/周 + 人工介入，`worklog_query` MCP）；API 分级治理（`@public`/`@internal` 1439 符号 + CI 门禁）；FORGE driver 切 DSH（显式后端选择 + CLI 桥接 + bash 全权限）；MLflow agent 评估（13 指标 + LLM-as-Judge）；Agentic Browser（4 工具 + 视觉降级）；跨平台适配器（Cursor/Codex/Gemini CLI）；tools/ 物理分子目录；ATTRIBUTION 归因引擎 + Dream Sandbox 沙盒审计（强制人审 merge + 路径穿越消毒）；>5MB diff 缝隙修复；FORGE driver 进程守护（daemon + watcher）。详见 [v1.3.9 开发日志](./changelog/v1.3/v1.3.9.md)。
 
 > 📌 **历史版本能力已并入当前能力**（v1.3.1 Ontology 运行时层 / v1.3.4 能力市场 / v1.3.5 自进化 MCP / v1.3.6 引擎接口外化 / v1.3.7 SubAgent 沙箱 / v1.3.8 托管 SDK sandbox 等，均属「每次变更被管住」「知识自动长出来」等当前能力的实现细节）——不再逐版列举，各版本明细见 [CHANGELOG](../CHANGELOG.md)。
@@ -102,15 +102,15 @@
 | 🔍 引擎① | **审计引擎**（audit） | git diff → 24 条规则硬扫描，违规当场拦 | git commit / daemon 文件变更 |
 | 🔄 引擎② | **回溯引擎**（core） | 审计后自动快照，出事一键回滚 | 审计完成后自动 |
 | ⚙️ 内部工具 | **FORGE 工具链**（orchestrator） | LOOP 流水线（项目自迭代用，非对外引擎） | CLI compose tool |
-| 🧬 引擎③ | **进化引擎**（think.md 反思 + Dream Cycle 知识回灌 + skillopt Skill 优化；eval/ab-test 为评估支撑；由 daemon 定时驱动） | 知识沉淀 + 反思 + 自优化，越用越好 | daemon cron / 手动触发 |
+| 🧬 引擎③ | **进化引擎**（think.md 反思 + Dream Cycle 知识回灌 + skillopt Skill 优化；eval/ab-test 为评估支撑；由 daemon 定时驱动） | 知识沉淀 + 反思 + 自优化，沉淀机制随使用迭代 | daemon cron / 手动触发 |
 
 **层 2 · 生命周期（激活链，v1.2.5+ Phase 1-4 已交付）**：
 
 | 环 | 阶段 | 做什么 |
 |:--:|------|--------|
-| ① | **诊断**（FDE 四阶段） | 梳理工作流、判定 AI 节点、交付三层实体（✅ 已交付） |
+| ① | **诊断**（FDE 四阶段） | 梳理业务流、判定 AI 节点、交付三层实体（✅ 已交付） |
 | ② | **激活** ACTIVATE（v1.2.5） | 读交付物 → 注册企业 SubAgent |
-| ③ | **编排** ORCHESTRATE（v1.2.6-7） | 多 Agent → StateGraph 工作流 |
+| ③ | **编排** ORCHESTRATE（v1.2.6-7） | 多 Agent → StateGraph 业务流 |
 | ④ | **执行** EXECUTE（v1.2.8-9） | DAG 运行 + 人工审批（HITL）+ 审计集成 |
 | ⑤ | **持续** SUSTAIN（v1.3.0） | 反思 + 回灌，喂下一轮诊断 |
 
@@ -421,7 +421,7 @@ jobs:
 
 > 知识库不是数据库，是会「长」的资产。完整治理机制见 [FDE/GUIDE.md §5.6 经验怎么沉淀](../FDE/GUIDE.md#56-经验怎么沉淀)。
 
-### 进化引擎（越用越好）
+### 进化引擎（沉淀机制随使用迭代）
 
 进化引擎 = eval（三维评分：精确匹配 / 语义相似 / 规则合规）+ ab-test（current vs candidate 并行对比，连续胜出 + 非退化守卫才晋升）+ skillopt（复用审计规则做安全审查与集成优化）+ think（基于 diff + 审计结果自动生成反思条目，append-only）。
 
@@ -565,7 +565,7 @@ sofagent-audit subagent run fde --mode sustain --task "巡检所有节点"
 | 阶段 | 做什么 | 什么时候 |
 |------|--------|---------|
 | ACTIVATE 激活 | 读交付物（ontology + workflow.yml + skills/）→ 写 `.sofagent/subagents/*.yml` → 注册企业 SubAgent | v1.2.5 |
-| ORCHESTRATE 编排 | 把多个企业 Agent 串联成 LangGraph StateGraph 工作流 | v1.2.6-v1.2.7 |
+| ORCHESTRATE 编排 | 把多个企业 Agent 串联成 LangGraph StateGraph 业务流 | v1.2.6-v1.2.7 |
 | EXECUTE 执行 | DAG 运行 + 人工审批节点（HITL）+ 每步审计集成 + 异常兜底 | v1.2.8-v1.2.9 |
 | SUSTAIN 闭环 | 全链路验证 + wrapToolCall 联动（执行→审计→反思→进化完整循环） | v1.3.0 |
 
@@ -631,7 +631,7 @@ sofagent 不是孤立的——它构建于以下成熟项目之上，各司其�
 | [@langchain/langgraph](https://github.com/langchain-ai/langgraph) | Sub Agent 系统（createReactAgent）——FDE Sub Agent + Audit Sub Agent | v1.0.1（v1.2.0 从 deepagents 迁移） |
 | [Agency Agents](https://github.com/msitarzewski/agency-agents) | 230+ 岗位模板——Sub Agent 角色定义 | v1.0.3 |
 | [微软 SkillOpt](https://github.com/microsoft/SkillOpt) | Skill 自进化引擎——训练→验证→替换 | v1.0.3 |
-| [OpenFDE](https://open-fde.com) | 行业定位验证——10 步工作流 + 8 维能力模型 | v1.0 |
+| [OpenFDE](https://open-fde.com) | 行业定位验证——10 步业务流 + 8 维能力模型 | v1.0 |
 | [Palantir Ontology](https://www.palantir.com/platforms/aip/) | 企业世界模型——实体+关系+动作+约束 | v1.0.1-v1.0.5 |
 
 ## 致谢

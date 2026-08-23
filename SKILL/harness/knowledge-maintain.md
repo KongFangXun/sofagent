@@ -15,7 +15,7 @@ category: "entities|concepts|comparisons|summaries"
 created: "2026-07-11"
 updated: "2026-07-11"
 sources: ["task/logs 2026-07-11", "think.md"]
-accessible-to: ["AP-审批", "AP-执行"]  # 可选：哪些工作流节点可访问
+accessible-to: ["AP-审批", "AP-执行"]  # 可选：哪些业务流节点可访问
 relations:                              # 可选（v1.0.1 Ontology）：实体关联
   has_many: ["Payment-2026-001"]
   belongs_to: "采购/华南区"

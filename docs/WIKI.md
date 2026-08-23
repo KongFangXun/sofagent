@@ -12,7 +12,7 @@
 > - **[VALIDATION.md](./VALIDATION.md)**：行业印证与生态定位——sofagent 直觉如何被行业验证 + Agent 三层模型 + 架构框架映射。
 > - **[PHILOSOPHY.md](./PHILOSOPHY.md)**：设计哲学与产品方法论（§一~§九）。"不替代 Agent，做 Agent 的控制面"。
 > - **[ROADMAP.md](./ROADMAP.md)**：版本路线图 + 迭代历程。当前 v1.3.9。
-> - **行业坐标**（2026-08-19 红杉 Neo-Lab 分享吸收）：sofagent = 企业 Neo-Lab 的**智能主权基础设施**——Sovereign AI 四层主权（数据/模型适配/评测迭代/部署）各有落点：ontology+审计=数据主权（已具备）、训练协议接口=模型适配（开源仓库保留完整可自建路径——接口 + 参考实现；**训练 Agent 化：管理面由受约束的训练 Agent 承载、计算面复用开源框架、语言对话即可驱动训练**；商业侧为可选托管增强，非闭源锁定）、Benchmark+MLflow=评测迭代、本地权重+灰度=部署。企业自己掌控智能（Neo-Lab 的活），sofagent 管住这些智能（约束层的活）。
+> - **行业坐标**：sofagent = 企业 Neo-Lab 的**智能主权基础设施**——Sovereign AI 四层主权的落点详见 [VALIDATION · 红杉 Neo-Lab](./VALIDATION.md#红杉-neo-lab--sovereign-ai-四层主权)。
 
 > **30 分钟深度路径**（想动手或评估选型时，承接上面的 3 分钟全景）：① 深入 [ARCHITECTURE](./ARCHITECTURE.md) §一~§二 + [PHILOSOPHY](./PHILOSOPHY.md) §一（在 3 分钟版基础上读双层架构与"不替代 Agent"论证，~15 分钟）→ ② [SECURITY](../SECURITY.md)「已知风险」+ [LIMITATIONS](./LIMITATIONS.md) 目录（诚实边界，~10 分钟）→ ③ 按角色进 [guides/](./guides/)：企业 IT 读 enterprise-deploy · 开发者读 harness-sdk · 想看审查体系读 review-system
 >
@@ -22,7 +22,7 @@
 
 ## 一、一句话
 
-**sofagent 是一个开源 FDE Agent**（MIT，同时也是 FDE 方法论的参考实现）——进场梳理工作流、把能自动化的环节变成 AI 节点、部署到设备上 7×24 自己跑。底层是 **约束层（Harness）**——约束 Agent 行为、审计每次变更、沉淀经验。**产品形态 = 一个 FDE Agent**：以 LangGraph + 约束层为内核，plugin + skill + MCP + CLI + dashboard 为调用面，约束底座 + FDE 方法论为行为层——它给自己做的第一份 FDE，就是 sofagent 自己（自举）。
+**sofagent 是一个开源 FDE Agent**（MIT，同时也是 FDE 方法论的参考实现）——进场梳理业务流、把能自动化的环节变成 AI 节点、部署到设备上 7×24 自己跑。底层是 **约束层（Harness）**——约束 Agent 行为、审计每次变更、沉淀经验。**产品形态 = 一个 FDE Agent**：以 LangGraph + 约束层为内核，plugin + skill + MCP + CLI + dashboard 为调用面，约束底座 + FDE 方法论为行为层——它给自己做的第一份 FDE，就是 sofagent 自己（自举）。
 
 ---
 
@@ -30,7 +30,7 @@
 
 > **一条 workflow 的产品**：给企业做 AI 落地 = 一条 FDE workflow。执行这条 workflow 的 Agent = FDE Agent（sofagent）。**它对自己做的第一份 FDE，就是 sofagent 项目本身**——自举循环：FDE Agent 对自己做 FDE → 项目更 AI 化 → 更好地服务企业 → 数据飞轮转起来。
 
-**FDE 交付**：进场梳理 → 交付**双 graph**——人看的 workflow graph + 机器读的 ontology graph。graph 里每个 AI 节点承担 workflow 中的职能；节点执行 = workflow 要求 → LangGraph 编排 → DeepSeek Harness 执行（ExecutionBackend 双后端：workflow 以 DAG 形态在所选后端运行）→ 全程约束底座审计 + 回溯净化（plugin 功能）。
+**FDE 交付**：进场梳理 → 交付**双图谱**——人看的业务图谱（workflow graph）+ 机器读的本体图谱（ontology graph）。图谱里每个 AI 节点承担业务流中的职能；节点执行 = workflow 要求 → LangGraph 编排 → DeepSeek Harness 执行（ExecutionBackend 双后端：workflow 以 DAG 形态在所选后端运行）→ 全程约束底座审计 + 回溯净化（plugin 功能）。
 
 **训练 Agent（内层新 workflow）**：企业 AI 节点要数据主权 → 训练 Agent（受约束）驱动后训练工具：收集企业数据 → 模型后训练 → 私有化部署回节点。这本身是几个新 workflow（数据采集 / 训练 / 部署）。开源训练引擎 v1.4.1~1.4.6 交付；训练也围绕 FDE——怎么让 FDE 更好、怎么让数据飞轮转起来。
 
@@ -42,7 +42,7 @@
 graph TB
     subgraph OUT["外层 workflow · FDE 交付主流程（卖什么）"]
         O1["① 梳理<br/>fde_interview"] --> O2["② 挖掘<br/>ontology 构建"]
-        O2 --> O3["③ 交付双 graph<br/>workflow + ontology + skill"]
+        O2 --> O3["③ 交付双图谱<br/>业务图谱 + 本体图谱 + skill"]
         O3 --> O4["④ 激活<br/>激活链：交付物 → 运行态"]
         O4 --> O5["⑤ 7×24 自运转<br/>daemon + 审计 + 回溯"]
         O5 -.->|"⑥ 持续陪跑 fde-session 进场记忆"| O1
@@ -70,13 +70,17 @@ graph TB
 |------|--------|------|
 | **FDE Agent** | 对外的产品身份：「Forward Deployed Engineer」——进场→部署→离场，留一套能持续维护的 AI 化资产 | [PHILOSOPHY §一](./PHILOSOPHY.md) |
 | **约束层（Harness）** | 对内的技术身份：约束 Agent 行为的「缰绳」——一个层四种能力（注入·审计·回溯·进化），编排（FORGE）为内部工具 | [ARCHITECTURE §二](./ARCHITECTURE.md) |
-| **约束层七维度** | Agent = 模型 + 上下文 + 工具 + 状态 + 执行控制 + 权限 + 可观测性——四种能力各自覆盖其中哪些维度 | [PHILOSOPHY §一 · 四件事的分工](./PHILOSOPHY.md#四件事的分工mcp--skills--ontology--harness)（维度构成以本行为准，ARCHITECTURE 暂无独立小节） |
+| **约束层七维度** | Agent = 模型 + 上下文 + 工具 + 状态 + 执行控制 + 权限 + 可观测性——四种能力各自覆盖其中哪些维度 | [ARCHITECTURE §一 · 约束层七维度](./ARCHITECTURE.md#约束层七维度agent-的构成面)（维度构成以本行为准；四种能力维度分工详见 [PHILOSOPHY §一·四件事的分工](./PHILOSOPHY.md#四件事的分工mcp--skills--ontology--harness)） |
 | **约束层构成（企业视角）** | 黄仁勋定义：企业专属约束层 = 知识 + 记忆 + 工作流 + 权限 + 安全机制 + 运行环境——模型是起点，围绕模型积累的这套专属系统才是核心资产 | [PHILOSOPHY §一·理论锚点](./PHILOSOPHY.md#智能与控制分离sofagent-的理论锚点) |
+| **业务图谱** | 人读的流程图谱 = Workflow Graph——FDE 交付的企业业务流完整拓扑，每条业务链路即一条业务流 | [ARCHITECTURE §定义表](./ARCHITECTURE.md) |
+| **本体图谱** | 机器读的语义图谱 = Ontology Graph——FDE 交付的企业全部业务节点和关联关系的全局拓扑（本体结构的图形化呈现） | [ARCHITECTURE §定义表](./ARCHITECTURE.md) |
+| **业务流** | 企业业务流的完整链路 = Workflow，由业务节点（AI 节点 + Human 节点）交替组成 | [ARCHITECTURE §定义表](./ARCHITECTURE.md) |
+| **业务节点** | 业务流中的执行单元 = Node——AI 自动执行（Loop）或 Human 介入（审批/检查/兜底）；AI 节点 = 业务节点中经三问判定法识别为可 AI 化的部分 | [ARCHITECTURE §定义表](./ARCHITECTURE.md) |
 | **审计引擎** | git diff 驱动，24 条规则（17 默认 + 7 扩展），活跃编号 A1-A11 + A14-A23 + E1/E2/E4（A12/A13 已并入 A11，编号不再使用），每次 commit 自动跑 | [24 条完整清单（SECURITY SSOT）](../SECURITY.md#24-条审计规则完整清单文档级-ssot) |
 | **三层治理** | Ledger（原始数据）→ Views（派生视图）→ Policy（约束规则），单向派生、不可逆写 | [PHILOSOPHY §五](./PHILOSOPHY.md) |
 | **FORGE** | 自迭代引擎（内部工具，外部用户可忽略）——通过 Workflow 驱动 Agent 审查/修复/验证自己的代码，核心是 fresh-eyes-loop | [FORGE/README.md](../FORGE/README.md) |
 | **SKILL** | Agent 的行为约束文件系统——三层：SKILL.md（主入口）/ harness/（约束层）/ agents/（Sub Agent） | [SKILL/SKILL.md](../SKILL/SKILL.md) |
-| **激活链** | FDE 交付物→企业工作流自运转的四阶段生命周期：ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN（v1.2.5-v1.3.0） | [guides/fde-activation-chain.md](./guides/fde-activation-chain.md) |
+| **激活链** | FDE 交付物→企业业务流自运转的四阶段生命周期：ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN（v1.2.5-v1.3.0） | [guides/fde-activation-chain.md](./guides/fde-activation-chain.md) |
 | **data/** | ~/.sofagent/data/ v1.2.1 确立的 SSOT 数据目录（原 .sofagent/ 已迁移）：history.jsonl、knowledge/、audit/、config/ | [DEVELOPMENT §数据目录](./DEVELOPMENT.md) |
 
 ---
@@ -169,7 +173,7 @@ graph TB
 | `docs/ARCHITECTURE.md` | 架构详解：约束层四种能力（注入·审计·回溯·进化）、数据流、部署模式、文件结构（含 Ledger-Views-Policy ↔ LLM Wiki 三层同构对照） |
 | `docs/DEVELOPMENT.md` | 开发指南：本地环境、包结构、测试、发版流程 |
 | `docs/HANDBOOK.md` | FDE 操作手册：进场流程、节点部署、持续维护 |
-| `docs/guides/fde-activation-chain.md` | 🔗 激活链设计（v1.2.5+）：FDE 交付物 → 企业工作流自动运转（ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN） |
+| `docs/guides/fde-activation-chain.md` | 🔗 激活链设计（v1.2.5+）：FDE 交付物 → 企业业务流自动运转（ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN） |
 | `docs/THANKS.md` | 致谢——谁启发了哪个设计决策 |
 | `docs/changelog/` | 每版本开发日志（`v1.0/` `v1.1/` `v1.2/` `v1.3/` `v1.4/`）。⚠️ 早期版本日志含"审查元信息/开发过程备注"等非产品文档内容，属当时开发留痕，不代表产品能力声明。✅ **v1.3.3 起已清理审查元信息**（见 v1.3.4 bugfix），当前版本 changelog 只含产品变更声明。以各版本 changelog 顶部的"已开发/已排期"标记为准。规划中版本的开发排期见 [ROADMAP](./ROADMAP.md) |
 | `docs/changelog/releasing.md` | **发版 SOP**——十二阶段全流程 |

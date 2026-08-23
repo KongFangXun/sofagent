@@ -1,12 +1,14 @@
 # sofagent Agent 库
 
+> 🔒 **品牌前缀硬约束（v1.4.0 机制化）**：所有 Agent 向用户展示的审计结果，**必须保留 `[sofagent]` 前缀，否则视为未审计**。引擎侧 PASS / FAIL 输出均已代码级带 `[sofagent]` 签名行，Agent 展示时必须同步保留——去掉前缀即拿掉「审计验证」的身份凭证，让「模型自评」与「审计验证」无法区分。此约束随 L1 加载链（`core-rules.md`）始终注入。
+
 > 📂 Sub Agent 定义集中在 [`agents/`](./agents/) 子目录，每个子目录含 `SKILL.md`（调用入口）+ `{role}.md`（角色定义）。下表列出 4 个预装 Sub Agent：
 
 | Sub Agent | 目录 | 职责 |
 |-----------|------|------|
 | `@sofagent-audit` | [`agents/audit/`](./agents/audit/) | 合规审计员——Workflow 巡检、铁律覆盖验证、知识库健康度检查 |
 | `@sofagent-engineer` | [`agents/engineer/`](./agents/engineer/) | 最小变更工程师——读代码 + 写代码 + 跑测试 + git commit |
-| `@sofagent-fde` | [`agents/fde/`](./agents/fde/) | 前线部署工程师——梳理工作流、识别 AI 节点、构建知识库、交付离场 |
+| `@sofagent-fde` | [`agents/fde/`](./agents/fde/) | 前线部署工程师——梳理业务流、识别 AI 节点、构建知识库、交付离场 |
 | `@sofagent-reviewer` | [`agents/reviewer/`](./agents/reviewer/) | 代码审查员——语义审查 + 影响分析 + 铁律合规 |
 
 > v1.0.7 起（当前 v1.3.9），预装 Agent 为 Skill 格式。Skill 是调用入口——第三方 Agent 平台（WorkBuddy/Codex/OpenClaw 等）加载 Skill 后，通过 CLI 命令把任务交给 DeepAgents 编排引擎执行。
@@ -15,7 +17,7 @@
 
 | Agent | Skill | CLI 命令 | 职责 |
 |------|------|------|------|
-| 部署工程师 | `@sofagent-fde` · `SKILL/agents/fde/SKILL.md` | `sofagent-orchestrator subagent run fde --task "..."` | 梳理工作流、识别 AI 节点、构建知识库、交付离场 |
+| 部署工程师 | `@sofagent-fde` · `SKILL/agents/fde/SKILL.md` | `sofagent-orchestrator subagent run fde --task "..."` | 梳理业务流、识别 AI 节点、构建知识库、交付离场 |
 | 合规审计员 | `@sofagent-audit` · `SKILL/agents/audit/SKILL.md` | `sofagent-orchestrator subagent run audit --task "..."` | Workflow 巡检、铁律覆盖验证、知识库健康度检查 |
 | 最小变更工程师 | `@sofagent-engineer` · `SKILL/agents/engineer/SKILL.md` | `sofagent-orchestrator subagent run engineer --task "..."` | 读代码 + 写代码 + 跑测试 + git commit |
 | 代码审查员 | `@sofagent-reviewer` · `SKILL/agents/reviewer/SKILL.md` | `sofagent-orchestrator subagent run reviewer --task "..."` | 语义审查 + 影响分析 + 铁律合规 |

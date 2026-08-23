@@ -8,7 +8,7 @@
 
 <img src="assets/sofagent.png" alt="sofagent" width="160" />
 
-> 💡 **行业背景**：sofagent 是一个 FDE Agent——进场梳理工作流、部署 AI 节点、离场后 7×24 自己跑。底层引擎（Harness 中间件）**约束层 × 生命周期**双层架构：约束层 = 约束层四种能力（注入·审计·回溯·进化），生命周期 = 激活链四阶段（诊断→激活→编排→执行→进化，v1.2.5+）。不管企业用 OpenClaw / WorkBuddy / 扣子还是其他 Agent 平台，sofagent 是独立的底线守卫层。详见 [FDE/GUIDE.md](../FDE/GUIDE.md)。
+> 💡 **行业背景**：sofagent 是一个 FDE Agent——进场梳理业务流、部署 AI 节点、离场后 7×24 自己跑。底层引擎（Harness 中间件）**约束层 × 生命周期**双层架构：约束层 = 约束层四种能力（注入·审计·回溯·进化），生命周期 = 激活链四阶段（诊断→激活→编排→执行→进化，v1.2.5+）。不管企业用 OpenClaw / WorkBuddy / 扣子还是其他 Agent 平台，sofagent 是独立的底线守卫层。详见 [FDE/GUIDE.md](../FDE/GUIDE.md)。
 
 > 💬 **开发铁律**：sofagent 不建编辑器类交互界面。只读 Dashboard 面板（如 `tools/dashboard/dashboard.html`）例外——它是状态可视化，不做双向编辑。核心能力通过 MCP 协议暴露。Agent 首次连接时主动推送 `list_capabilities`。开发任何新功能前，先回答三个问题：（1）用户怎么通过对话发现这个能力？（2）结果推到哪？（3）用户怎么知道这个结果是 sofagent 做的，不是模型做的？——任何面向用户的输出必须带 `[sofagent]` 签名标注来源。详见 [设计哲学](./PHILOSOPHY.md)。
 
@@ -124,9 +124,9 @@ Skill 的核心不是写执行步骤，而是划定**决策边界**。一个好 
 
 | 类别 | 核心定义 | 与 sofagent 对应 |
 |------|------|------|
-| 工具操作型 | 模型知目标但不懂本地工具调用规则，打通可靠工作流 | MCP / Hook（外部系统对接层） |
+| 工具操作型 | 模型知目标但不懂本地工具调用规则，打通可靠业务流 | MCP / Hook（外部系统对接层） |
 | 专有方法论型 | 非通用公开知识的自定义判断体系（如七成产业链评估） | fde.md 业务四问 + Ontology 约束（企业专属判断） |
-| 高风险强约束工作流型 | 错误代价极高，严格限定执行规则 | 铁律 4 条 + entry-gate 风险分级（🟢🟡🔴） |
+| 高风险强约束业务流型 | 错误代价极高，严格限定执行规则 | 铁律 4 条 + entry-gate 风险分级（🟢🟡🔴） |
 | 确定性生产型 | 输出须机器可验证固定格式，模型+脚本消除随机性 | discipline-check.sh（焊死的门）+ 审计引擎（git diff 硬证据） |
 | 项目知识与组织协作型 | 团队/项目专属长期约定（命名/目录/交付/归档） | SKILL.md + rules.md + 记忆系统（Ralph 路径外化） |
 
@@ -146,12 +146,12 @@ Skill 的核心不是写执行步骤，而是划定**决策边界**。一个好 
 
 **A7｜先做产物后做 Skill（黄金顺序）**
 
-先交付真实跑通的产物/工作流（pipeline），再从中抽象出可复用的 Skill；反序（先写 Skill 框架再找场景）会导致空壳 Skill。
+先交付真实跑通的产物/业务流（pipeline），再从中抽象出可复用的 Skill；反序（先写 Skill 框架再找场景）会导致空壳 Skill。
 
 FDE 部署 SOP 应遵循此顺序：
 
 ```
-现场跑通客户工作流  →  沉淀为 fde.md 规则  →  抽象为 SkillHub 模板
+现场跑通客户业务流  →  沉淀为 fde.md 规则  →  抽象为 SkillHub 模板
 ```
 
 而非先造 Skill 再硬套场景。
@@ -235,7 +235,7 @@ CLI 入口：`sofagent-daemon create-usb-key --role --target --platform`（写�
 
 #### 两条执行路径与降级链
 
-编排引擎有两条执行路径，新代码应优先走 StateGraph（v1.1.3+，主推）：入口 `runLoopGraph()` / `sofagent-orchestrator loop --task`，LangGraph 四节点状态机 + checkpoint（`.sofagent/checkpoint/`，断点续跑）+ HITL（human_confirm 节点，`loop --resume` 可恢复）。路径一 compose（v1.0.6+，`composeWithDeepAgents()`）保留兼容——v1.2.0 前基于 deepagents，现已迁移至 LangGraph `createReactAgent` 拆任务为 YAML 工作流 DAG，无 checkpoint 无 HITL。对应源码：路径一 `engine/orchestrator/src/composer.ts` + `loop-runner.ts`；路径二 `engine/orchestrator/src/loop/`（state/nodes/graph）。StateGraph 的 engineer/reviewer 节点优先走"工具注入路径"（LangGraph `createReactAgent` + 工具集，systemPrompt 拼装四层约束链）；`SOFAGENT_LLM` 未设置或解析失败时，自动降级到 `spawnSubAgent` 零工具路径（composer）。v1.2.6 起 `resolveLLMModel()` 增加四级回退：`SOFAGENT_LLM`（显式优先）→ `SOFAGENT_LLM_A` → `SOFAGENT_LLM_B` → null，API key 同链回退——FORGE 审查用的 A/B 配置可直接驱动编排主链路。
+编排引擎有两条执行路径，新代码应优先走 StateGraph（v1.1.3+，主推）：入口 `runLoopGraph()` / `sofagent-orchestrator loop --task`，LangGraph 四节点状态机 + checkpoint（`.sofagent/checkpoint/`，断点续跑）+ HITL（human_confirm 节点，`loop --resume` 可恢复）。路径一 compose（v1.0.6+，`composeWithDeepAgents()`）保留兼容——v1.2.0 前基于 deepagents，现已迁移至 LangGraph `createReactAgent` 拆任务为 YAML 业务流 DAG，无 checkpoint 无 HITL。对应源码：路径一 `engine/orchestrator/src/composer.ts` + `loop-runner.ts`；路径二 `engine/orchestrator/src/loop/`（state/nodes/graph）。StateGraph 的 engineer/reviewer 节点优先走"工具注入路径"（LangGraph `createReactAgent` + 工具集，systemPrompt 拼装四层约束链）；`SOFAGENT_LLM` 未设置或解析失败时，自动降级到 `spawnSubAgent` 零工具路径（composer）。v1.2.6 起 `resolveLLMModel()` 增加四级回退：`SOFAGENT_LLM`（显式优先）→ `SOFAGENT_LLM_A` → `SOFAGENT_LLM_B` → null，API key 同链回退——FORGE 审查用的 A/B 配置可直接驱动编排主链路。
 #### 测试友好：依赖注入
 
 StateGraph 的流转逻辑通过 `LoopGraphDeps` 接口完全可 mock——`runEngineer / runAudit / runReviewer / confirmHuman / recordBlocked / checkpointer / maxRetries / log` 七个槽位。`defaultDeps()` 给生产实现，测试时整体替换。这让节点流转逻辑可以脱离真实 LLM 单测（v1.1.7 测试堆到 770 case 的前提）。
@@ -308,7 +308,7 @@ Session 边界用百分比（缓存≥50%，token≥70%），子 Agent 不参与
 
 子 Agent 销毁后 → ② 反思→think.md ③ 评分→data/eval/ ④ A/B→orchestrator/ ⑤ 口头汇报。外部 Skill 从 [ClawHub](https://clawhub.ai) 获取，岗位模板来自 [agency-agents-zh](https://github.com/jnMetaCode/agency-agents-zh)。
 
-> **Loop 五组件对照**：行业共识 Loop = Goals / Automations / Skills / Sub Agents / Worktraces。sofagent 对应：Goals = fde.md，Automations = daemon，Skills = skill/，Sub Agents = agents/，Worktraces = task/logs + think.md。gstack 的七步工作流进一步验证了这个结构。
+> **Loop 五组件对照**：行业共识 Loop = Goals / Automations / Skills / Sub Agents / Worktraces。sofagent 对应：Goals = fde.md，Automations = daemon，Skills = skill/，Sub Agents = agents/，Worktraces = task/logs + think.md。gstack 的七步业务流进一步验证了这个结构。
 
 > **Loop 落地前置条件**：① 任务重复发生 ② 支持自动化核验 ③ Token 预算覆盖 ④ AI 具备适配工具。核心原则——**自己不能当自己裁判**：生成与核验的模型必须独立，与 sofagent「审计与编排分离」同源。
 

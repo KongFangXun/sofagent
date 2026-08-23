@@ -225,7 +225,7 @@ OpenAI 2026-08-19 全面开源 [Codex Harness](https://github.com/openai/codex)�
 
 [DataFlow](https://github.com/OpenDCAI/DataFlow)（论文 [arXiv:2607.16617](https://arxiv.org/abs/2607.16617)，HuggingFace Paper of the day）来自**北京大学 DCAI**团队——与 DeerFlow 2.0（字节）、Omnigent（Databricks）**同月**，再次以独立开源项目用「Harness」一词命名其 Agent 约束层。这是**第三个、且来自顶尖高校的第三方独立佐证**：Harness 作为 Agent 工程化品类的共识已非孤证。
 
-它治理的是「数据流水线」（从噪声源生成 / 精炼 / 评估 / 过滤高质量 AI 数据），与 sofagent 治理「企业 AI 数字员工（FDE Agent）工作流」对象不同，但**约束范式同源**：Agent 经 MCP server 作业而非自由写脚本、受控变异走 Request-Validate-Commit、用 DataFlow-Skills 结构化约束而非裸提示词——每一条都独立复现了 sofagent 的 scoped tool-gate / SKILL 约束层 / audit 判断。
+它治理的是「数据流水线」（从噪声源生成 / 精炼 / 评估 / 过滤高质量 AI 数据），与 sofagent 治理「企业 AI 数字员工（FDE Agent）业务流」对象不同，但**约束范式同源**：Agent 经 MCP server 作业而非自由写脚本、受控变异走 Request-Validate-Commit、用 DataFlow-Skills 结构化约束而非裸提示词——每一条都独立复现了 sofagent 的 scoped tool-gate / SKILL 约束层 / audit 判断。
 
 其**独特点**是可借鉴方向：① **可视化 DAG 画布 + 双模态共享状态**（会话 Agent 与 DAG 画布实时同步同一 pipeline 表示）——补 sofagent Dashboard 缺的「workflow 可视图」，建议 v2.x 引入；② **MCP server 集成**（暴露算子注册表 / serving / pipeline 状态给 Agent）——印证「对外 MCP 暴露 ontology/audit」是合理路线，建议 v2.x+；③ **Validation Engine（DAG 无环 + schema 兼容）**——印证 ontology 从目录级升级为带 JSON Schema 校验的约束图，建议 v2.x 硬化节点 I/O。以上可借鉴项已落入 [ROADMAP · 行业印证](./ROADMAP.md#行业印证)。
 
@@ -235,7 +235,7 @@ OpenAI 2026-08-19 全面开源 [Codex Harness](https://github.com/openai/codex)�
 
 ### OpenFDE：FDE 术语同源佐证
 
-[OpenFDEAI/ChatDemo](https://github.com/OpenFDEAI/ChatDemo)（OpenFDEAI 组织，MIT）以 **Forward Deployed Engineer** 命名其「边聊边出 Demo」的售前工作流——FDE 坐在客户对面，边聊边把需求变成可点的 Demo，散会时客户手里已有一个能点的 Demo + 一页可确认的需求清单。它和 sofagent 的**「前线部署工程师 / Forward Deployed Engineer」同源、同英文写法、来自同一 Palantir 脉络**——印证我们 FDE 术语的正统性：把工程师部署到客户现场、用一套纪律化交付流程、把经验沉淀为可复用资产，本就是行业共识的 FDE 内核。进一步佐证来自 OpenFDE **主仓**：它把 **INDUC 显式成 FDE Loop 的一个阶段、产出可开关的 Judgment Unit**（专家判断资产化、规则可开可关可版本化）——与我们「蓄水池/知识库 → A1-A23 判定层」同源，但它把知识归纳提升为 Loop 的一等公民阶段。
+[OpenFDEAI/ChatDemo](https://github.com/OpenFDEAI/ChatDemo)（OpenFDEAI 组织，MIT）以 **Forward Deployed Engineer** 命名其「边聊边出 Demo」的售前业务流——FDE 坐在客户对面，边聊边把需求变成可点的 Demo，散会时客户手里已有一个能点的 Demo + 一页可确认的需求清单。它和 sofagent 的**「前线部署工程师 / Forward Deployed Engineer」同源、同英文写法、来自同一 Palantir 脉络**——印证我们 FDE 术语的正统性：把工程师部署到客户现场、用一套纪律化交付流程、把经验沉淀为可复用资产，本就是行业共识的 FDE 内核。进一步佐证来自 OpenFDE **主仓**：它把 **INDUC 显式成 FDE Loop 的一个阶段、产出可开关的 Judgment Unit**（专家判断资产化、规则可开可关可版本化）——与我们「蓄水池/知识库 → A1-A23 判定层」同源，但它把知识归纳提升为 Loop 的一等公民阶段。
 
 但两者**范围差一个数量级、且互补**：ChatDemo 的 FDE 是售前 POC 共创工具（Claude Code Skill + localhost 控制台，回合制 start/turn/wrap），散会即结束、无常驻员工；sofagent 的 FDE 是售后常驻部署+治理方法论（四阶段十二步→交付离场→sustain）。它做"漏斗前端"（拿 POC），我们做"漏斗后端"（常驻、可审计、受治理的硅基员工）——定位不冲突。
 

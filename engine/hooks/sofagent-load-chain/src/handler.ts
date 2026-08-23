@@ -108,10 +108,13 @@ const handler = async (event: LoadChainEvent) => {
     const coreRulesFile = path.join(rulesDir, "core-rules.md");
     if (fs.existsSync(coreRulesFile)) {
       const content = fs.readFileSync(coreRulesFile, "utf-8");
+      // v1.4.0：品牌前缀硬约束代码级兜底注入——即使 core-rules.md 该段被改，注入层仍强制「无前缀视为未审计」
+      const brandPrefixRule =
+        "\n\n> 🔒 [sofagent] 品牌前缀硬约束（v1.4.0）：展示审计结果必须保留 `[sofagent]` 前缀，否则视为未审计。\n";
       event.context.bootstrapFiles.push({
         name: "sofagent-core-rules.md",
         path: coreRulesFile,
-        content: `<!-- ===== sofagent 第 1 层：核心铁律（core-rules.md）===== -->\n${content}`,
+        content: `<!-- ===== sofagent 第 1 层：核心铁律（core-rules.md）===== -->\n${content}${brandPrefixRule}`,
       });
       pushed.push("rules/core-rules.md");
     } else {
