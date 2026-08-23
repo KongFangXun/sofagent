@@ -1726,36 +1726,17 @@ function loadFdeWorkflowData(){
             '</div>';
         });
         html+='</div>';
-        // 第 10 步"持续优化"的周报摘要（真实数据，卡片下方展示）
+        // 第 10 步"持续优化"的周报摘要（真实数据，一行讲清：多少任务/多少警告/多少违规，详情看下载的 JSON）
         if(sustain&&sustain.active&&sustain.weeklyReport){
           var wr=sustain.weeklyReport;
           var tw=wr.thisWeek||{};
           var trendCn={improving:'<i class="bi bi-graph-up"></i> 改善',degrading:'<i class="bi bi-graph-down"></i> 恶化',stable:'➡️ 平稳'}[wr.trend]||wr.trend||'-';
-          var top5=(wr.violationTop5||[]).slice(0,3).map(function(v){return escapeHtml(v.rule)+'×'+v.count}).join(' · ');
-          // 任务级通过率（一次任务=一条记录），与顶部"规则级"通过率区分口径
-          var tCnt=tw.taskCount||0;
-          var pRate=tCnt>0?Math.round((tw.passes||0)*100/tCnt):0;
-          var wPct=tCnt>0?Math.round((tw.warnings||0)*100/tCnt):0;
-          var vPct=tCnt>0?Math.round((tw.violations||0)*100/tCnt):0;
-          var barHtml='<div style="display:flex;height:6px;border-radius:3px;overflow:hidden;margin:8px 0">'+
-            '<div style="width:'+pRate+'%;background:var(--brand)"></div>'+
-            '<div style="width:'+wPct+'%;background:var(--amber)"></div>'+
-            '<div style="width:'+vPct+'%;background:var(--red)"></div></div>';
           html+='<div style="margin-top:12px;background:var(--bg-s);border:1px solid var(--border);border-radius:var(--radius-s);padding:10px 14px;font-size:12px;color:var(--text-s)">'+
-            // 第一行：标题 + 右上角链接 + 统计
             '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">'+
               '<b style="color:var(--text)"><i class="bi bi-bar-chart"></i> '+escapeHtml(wr.weekLabel)+' 持续优化周报</b>'+
-              '<span>任务通过率 <b style="color:var(--text)">'+pRate+'%</b>（'+tw.passes+'/'+tCnt+'）· 警告 '+tw.warnings+' · <b style="color:var(--red)">违规 '+tw.violations+'</b> · 趋势 '+trendCn+'</span>'+
+              '<span>本周 '+tw.taskCount+' 任务 · 其中警告 <b style="color:var(--amber)">'+tw.warnings+'</b> 条 · 违规 <b style="color:var(--red)">'+tw.violations+'</b> 条 · 趋势 '+trendCn+'</span>'+
               '<a href="data:application/json;charset=utf-8,'+encodeURIComponent(JSON.stringify(wr))+'" download="weekly-'+escapeHtml(wr.weekLabel)+'.json" title="下载周报 JSON" class="btn btn-outline" style="margin-left:auto;height:24px;padding:0 8px;font-size:11px"><i class="bi bi-download"></i> 周报 JSON</a>'+
             '</div>'+
-            barHtml+
-            '<div style="display:flex;align-items:center;gap:12px;font-size:11px;color:var(--text-t);flex-wrap:wrap">'+
-              '<span style="display:inline-flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:var(--brand);border-radius:2px"></span>通过 '+pRate+'%</span>'+
-              '<span style="display:inline-flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:var(--amber);border-radius:2px"></span>警告 '+wPct+'%</span>'+
-              '<span style="display:inline-flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:var(--red);border-radius:2px"></span>违规 '+vPct+'%</span>'+
-              (top5?'<span>违规 TOP3：'+top5+'</span>':'')+
-            '</div>'+
-            '<div style="margin-top:6px;font-size:10px;color:var(--text-t)">任务级口径（一次 AI 任务=一条记录）——顶部"审计通过率 95%"是规则级（24 条规则逐条检查），两者不冲突。</div>'+
             '</div>';
         }
       });
