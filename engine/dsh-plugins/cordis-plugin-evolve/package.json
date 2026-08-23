@@ -9,7 +9,7 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc",
-    "test": "vitest run"
+    "test": "vitest run src/index.test.ts"
   },
   "keywords": [
     "sofagent",
@@ -20,5 +20,9 @@
     "type": "dsh-plugin",
     "family": "cordis",
     "seam": "任务结束 hook"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "vitest": "^2.0.0"
   }
 }
