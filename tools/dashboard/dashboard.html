@@ -63,12 +63,20 @@ a:hover{text-decoration:underline}
 .help-tab.active{display:block}
 .help-intro{font-size:12px;color:var(--text-s);margin-bottom:14px}
 
+/* 页内上下文（每页顶部一行说明） */
+.page-context{font-size:11px;color:var(--text-t);margin:0 0 12px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.page-context svg{width:12px;height:12px;flex-shrink:0}
+/* 高频违规规则 chip（洞察层） */
+.rule-chip{display:inline-flex;align-items:center;gap:4px;background:#FCEBEB;color:var(--red);font-family:var(--mono);font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px;cursor:pointer;transition:all .15s}
+.rule-chip:hover{background:var(--red);color:#fff}
+.rule-chip .rc-count{font-weight:400;opacity:.8}
+
 /* === Layout === */
 .container{max-width:1200px;margin:0 auto;padding:20px}
 .page{display:none}
 .page.active{display:block}
 
-.section{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:16px;overflow:hidden;display:flex;flex-direction:column}
+.section{background:var(--card);border:none;box-shadow:0 1px 3px rgba(16,24,40,.06),0 1px 2px rgba(16,24,40,.04);border-radius:var(--radius);margin-bottom:16px;overflow:hidden;display:flex;flex-direction:column}
 .section-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
 .section-title{font-size:15px;font-weight:600;display:flex;align-items:center;gap:8px}
 .section-title .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
@@ -77,17 +85,22 @@ a:hover{text-decoration:underline}
 .section-body{padding:20px;flex:1;display:flex;flex-direction:column;min-height:0}
 
 .metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:16px}
-.metric-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;text-align:center}
+.metric-card{background:var(--card);border:none;box-shadow:0 1px 3px rgba(16,24,40,.06),0 1px 2px rgba(16,24,40,.04);border-radius:var(--radius);padding:16px;text-align:center}
 .metric-value{font-size:28px;font-weight:700;line-height:1.2;font-variant-numeric:tabular-nums}
 .metric-label{font-size:12px;color:var(--text-s);margin-top:4px}
 .metric-sub{font-size:11px;color:var(--text-t);margin-top:2px}
+/* 指标趋势箭头（洞察层） */
+.metric-trend{font-size:10px;font-weight:600;margin-left:4px}
+.trend-up{color:var(--red)}
+.trend-down{color:var(--green)}
+.trend-flat{color:var(--text-t)}
 
 .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:stretch}
 .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;align-items:stretch}
 /* grid 容器内 section 不设 margin（gap 已负责间距），避免与容器 margin 叠加 */
 .grid-2 > .section,.grid-3 > .section{margin-bottom:0}
 
-.chart-box{background:#FAFBFC;border:1px solid var(--border);border-radius:var(--radius-s);padding:16px}
+.chart-box{background:#FAFBFC;border:none;border-radius:var(--radius-s);padding:16px}
 .chart-box h4{font-size:13px;font-weight:500;color:var(--text-s);margin-bottom:12px}
 
 /* Data status */
@@ -365,6 +378,7 @@ a:hover{text-decoration:underline}
 <!-- PAGE: 驾驶舱 (Live Dashboard) -->
 <!-- ================================================== -->
 <div class="page active" id="page-cockpit">
+  <div class="page-context"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>审计总览 · 数据源 ~/.sofagent/data（未连接时展示示例）</div>
   <div class="refresh-bar">
     <span class="data-status ds-sample" id="dataStatus">
       <span class="pulse"></span>
@@ -421,6 +435,7 @@ a:hover{text-decoration:underline}
       <svg width="100%" height="180" viewBox="0 0 920 180" preserveAspectRatio="xMidYMid meet" id="trendChart">
         <text x="460" y="90" text-anchor="middle" font-size="13" fill="#8B949E">加载中...</text>
       </svg>
+      <div id="topRules" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:12px"></div>
       <div id="caliberNote" style="margin-top:12px;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-size:11px;line-height:1.6;color:var(--text-s)"></div>
     </div>
   </div>
@@ -456,6 +471,7 @@ a:hover{text-decoration:underline}
 <!-- PAGE: 业务流（AI 节点 + 工作明细，v1.4.0 归并） -->
 <!-- ================================================== -->
 <div class="page" id="page-workflow">
+  <div class="page-context"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>业务流 = 你部署的 AI 节点 + 工作明细 · 数据源 graph-state.json / worklog.json</div>
   <div class="section">
     <div class="section-header">
       <div class="section-title"><span class="dot-emoji">🤖</span>业务 AI 节点</div>
@@ -519,6 +535,7 @@ a:hover{text-decoration:underline}
 <!-- PAGE: 本体图谱（本体结构 + 图谱，v1.4.0 归并） -->
 <!-- ================================================== -->
 <div class="page" id="page-ontology">
+  <div class="page-context"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>本体图谱 = 企业语义地图 · 数据源 knowledge/index.md + worklog.json</div>
   <div class="section">
     <div class="section-header">
       <div class="section-title"><span class="dot-emoji">🗺️</span>你的本体结构（ontology）</div>
@@ -555,6 +572,7 @@ a:hover{text-decoration:underline}
 <!-- PAGE: 知识库 -->
 <!-- ================================================== -->
 <div class="page" id="page-knowledge">
+  <div class="page-context"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>知识库 = 经验沉淀资产 · 数据源 knowledge/index.md + think.md</div>
   <div class="section">
     <div class="section-header">
       <div class="section-title"><span class="dot-emoji">📚</span>你的知识库</div>
@@ -593,6 +611,7 @@ a:hover{text-decoration:underline}
 <!-- PAGE: FDE 引导 -->
 <!-- ================================================== -->
 <div class="page" id="page-fde">
+  <div class="page-context"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>FDE 引导 = 怎么梳理业务流、部署 AI 节点 · 完整方法论见帮助面板</div>
   <div class="section">
     <div class="section-header"><div class="section-title"><span class="dot-emoji">🚀</span>怎么开始</div>
       <span style="font-size:11px;color:var(--text-t)">零依赖方法论 · 或装进你的 Agent</span>
@@ -694,6 +713,7 @@ a:hover{text-decoration:underline}
 <!-- PAGE: 工具箱 -->
 <!-- ================================================== -->
 <div class="page" id="page-resources">
+  <div class="page-context"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>工具箱 = 能力与生态 · 安装 / 约束层 / 审计规则 / MCP 66 工具 / 文档</div>
   <div class="section">
     <div class="section-header"><div class="section-title"><span class="dot-emoji">⚙️</span>快速安装</div></div>
     <div class="section-body">
@@ -1250,6 +1270,35 @@ function renderSummaryData(s){
   }else if(s.top3&&s.top3.length){
     renderTop3Trend(s.top3);
   }
+  // 洞察：指标卡较昨日趋势箭头（通过率 ↑绿 / 问题 ↑红）
+  var prevDay=(s.daily&&s.daily.length>1)?s.daily[s.daily.length-2]:null;
+  if(prevDay){
+    var prevIssues=(prevDay.ruleAll||0)-(prevDay.rulePass||0);
+    var prevRate=prevDay.ruleAll?Math.round(prevDay.rulePass*100/prevDay.ruleAll):null;
+    var mAud=document.getElementById('m-audit');
+    if(mAud&&prevRate!=null){
+      var rateNum=parseFloat(r.passRate);
+      mAud.innerHTML=rateNum+'%'+(rateNum>prevRate?'<span class="metric-trend trend-up">↑</span>':rateNum<prevRate?'<span class="metric-trend trend-down">↓</span>':'<span class="metric-trend trend-flat">→</span>');
+    }
+    var mViol=document.getElementById('m-violations');
+    if(mViol){
+      mViol.innerHTML=todayIssues+(todayIssues>prevIssues?'<span class="metric-trend trend-up">↑</span>':todayIssues<prevIssues?'<span class="metric-trend trend-down">↓</span>':'<span class="metric-trend trend-flat">→</span>');
+    }
+  }
+  // 洞察：高频违规规则 chips（点击跳工具箱审计规则）
+  var topEl=document.getElementById('topRules');
+  if(topEl){
+    var top=s.top3||[];
+    if(top.length){
+      topEl.innerHTML='<span style="font-size:11px;color:var(--text-s);font-weight:600">高频违规规则</span>'+
+        top.slice(0,3).map(function(t){
+          return '<span class="rule-chip" title="点击查看工具箱审计规则" onclick="goPage(\'resources\')">'+escapeHtml(t.code)+'<span class="rc-count">×'+t.count+'</span></span>';
+        }).join('')+
+        '<a href="javascript:void(0)" onclick="goPage(\'workflow\')" style="margin-left:auto;font-size:11px;color:var(--brand);font-weight:600">工作明细 →</a>';
+    }else{
+      topEl.innerHTML='';
+    }
+  }
 }
 
 /* 通栏趋势图：规则检查口径——蓝柱审计次数(总检查) + 黄柱问题次数（左轴次数），绿线规则通过率（右轴比率）
@@ -1489,6 +1538,16 @@ function loadSampleData(){
 
 function escapeHtml(s){return String(s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
 
+/* 统一空态组件：图标 + 文案 + CTA 按钮（产品化空态，替代「未检测到 xxx」） */
+function emptyState(emoji,title,desc,ctaText,ctaFn){
+  return '<div style="text-align:center;padding:26px 16px">'+
+    '<div style="font-size:26px;line-height:1">'+emoji+'</div>'+
+    '<div style="font-size:13px;font-weight:600;color:var(--text);margin-top:10px">'+escapeHtml(title)+'</div>'+
+    (desc?'<div style="font-size:12px;color:var(--text-s);margin-top:4px;max-width:420px;margin-left:auto;margin-right:auto">'+escapeHtml(desc)+'</div>':'')+
+    (ctaText?'<div style="margin-top:12px"><button class="copy-btn light" onclick="'+ctaFn+'" style="padding:7px 16px;min-height:36px;font-size:12px;font-weight:600">'+escapeHtml(ctaText)+'</button></div>':'')+
+    '</div>';
+}
+
 function changeRefresh(val){
   val=parseInt(val||0,10);
   // 更新分段按钮选中态
@@ -1594,12 +1653,10 @@ function loadStarCount(){
 }
 
 function fmtUpdatedAt(raw){
-  // 统一右上角时间戳格式：更新于 HH:MM:SS
-  if(raw){
-    var s=String(raw).replace('T',' ').slice(11,19);
-    return '更新于 '+s;
-  }
-  return '更新于 '+new Date().toLocaleTimeString('zh-CN',{hour12:false});
+  // 统一本地时间：ISO(UTC) → 本地 HH:MM:SS（此前直接 slice 会显示北美时间）
+  var t=raw?new Date(String(raw).replace(' ','T')):new Date();
+  if(isNaN(t.getTime()))t=new Date();
+  return '更新于 '+t.toLocaleTimeString('zh-CN',{hour12:false});
 }
 
 /* ===== FDE Workflow (十步流程模板) ===== */
@@ -1616,7 +1673,7 @@ function loadFdeWorkflowData(){
       if(updated)updated.textContent=fmtUpdatedAt(d.generatedAt);
       var wfs=d.workflow||[];
       if(!wfs.length){
-        box.innerHTML='<div style="font-size:12px;color:var(--text-s)">未检测到 FDE workflow 模板（<code style="background:var(--brand-l);padding:2px 6px;border-radius:4px">~/.sofagent/fde/workflow/</code>）</div>';
+        box.innerHTML=emptyState('📋','还没有 FDE workflow 模板','部署或运行 FDE 流程后自动生成（~/.sofagent/fde/workflow/）','去 FDE 引导',"goPage('fde')");
         return;
       }
       // agent 类型 → 颜色 + 角色名（明确分配，不靠兜底）
@@ -1662,7 +1719,7 @@ function loadFdeWorkflowData(){
       box.innerHTML=html;
     })
     .catch(function(){
-      box.innerHTML='<div style="font-size:12px;color:var(--text-s)">未检测到 FDE workflow 模板</div>';
+      box.innerHTML=emptyState('📋','还没有 FDE workflow 模板','部署或运行 FDE 流程后自动生成','去 FDE 引导',"goPage('fde')");
     });
 }
 
@@ -1691,13 +1748,12 @@ function loadAiNodesData(){
           html+='<div style="font-size:11px;color:var(--text-t);margin-top:8px">共 '+total+' 个节点，仅显示前 '+showCount+' 个——完整列表见 <code style="background:var(--brand-l);padding:2px 6px;border-radius:4px">~/.sofagent/subagents/</code></div>';
         }
       }else{
-        html='<div style="font-size:12px;color:var(--text-s)">尚未部署企业 AI 节点。</div>'+
-          '<div style="font-size:12px;color:var(--text-s);margin-top:6px">在 <a href="javascript:void(0)" onclick="goPage(\'fde\')" style="color:var(--brand)">FDE 引导</a> 页复制 Prompt 开始部署，部署完成后节点会自动出现在这里（数据源 <code style="background:var(--brand-l);padding:2px 6px;border-radius:4px">~/.sofagent/subagents/</code>）。</div>';
+        html=emptyState('🤖','还没有部署业务 AI 节点','在 FDE 引导页复制 Prompt 开始部署，节点会自动出现在这里（~/.sofagent/subagents/）','去 FDE 引导部署',"goPage('fde')");
       }
       list.innerHTML=html;
     })
     .catch(function(){
-      list.innerHTML='<div style="font-size:12px;color:var(--text-s)">未检测到节点数据（通过 tools/dashboard/serve-dashboard.mjs 启动可看）</div>';
+      list.innerHTML=emptyState('🤖','还没有节点数据','通过 tools/dashboard/serve-dashboard.mjs 启动可看真实数据','去 FDE 引导部署',"goPage('fde')");
     });
 }
 
@@ -1779,7 +1835,7 @@ function loadPipelineGraph(){
       list.innerHTML=html||'<div style="grid-column:1/-1;text-align:center;color:var(--text-t);padding:12px">暂无节点</div>';
     })
     .catch(function(){
-      box.innerHTML='<div style="text-align:center;color:var(--text-t);font-size:12px;padding:12px">未检测到 graph-state.json（通过 tools/dashboard/serve-dashboard.mjs 启动可看真实数据）</div>';
+      box.innerHTML=emptyState('🔀','还没有编排数据','运行过 AI 编排任务后自动生成（graph-state.json）','去 FDE 引导部署',"goPage('fde')");
       if(updated)updated.textContent=fmtUpdatedAt();
       list.innerHTML='<div style="grid-column:1/-1;text-align:center;color:var(--text-t);font-size:12px;padding:12px">—</div>';
     });
@@ -1838,7 +1894,7 @@ function loadKnowledgeData(){
               '<span style="margin-left:auto;color:var(--text-t)">节点：'+escapeHtml(r.nodes||'-')+'</span></div>';
           }).join('');
       }else{
-        entries.innerHTML='<div style="font-size:12px;color:var(--text-s)">知识库目前为空——运行 FDE 或在 Agent 中执行知识沉淀后会自动写入 <code style="background:var(--brand-l);padding:2px 6px;border-radius:4px">~/.sofagent/data/knowledge/</code></div>';
+        entries.innerHTML=emptyState('📚','知识库还是空的','运行 FDE 或在 Agent 中执行知识沉淀后自动写入（~/.sofagent/data/knowledge/）','去 FDE 引导',"goPage('fde')");
       }
     }
     if(updated)updated.textContent=fmtUpdatedAt();
@@ -1868,7 +1924,7 @@ function loadKnowledgeData(){
     }
   }).catch(function(){
     if(stats)stats.innerHTML='<div style="grid-column:1/-1;text-align:center;color:var(--text-t);font-size:12px;padding:12px">未连接数据源</div>';
-    if(entries)entries.innerHTML='<div style="font-size:12px;color:var(--text-s)">未检测到知识库（通过 tools/dashboard/serve-dashboard.mjs 启动可看真实数据）</div>';
+    if(entries)entries.innerHTML=emptyState('📚','还没有知识库数据','通过 tools/dashboard/serve-dashboard.mjs 启动可看真实数据','去 FDE 引导',"goPage('fde')");
   });
 }
 
@@ -1910,14 +1966,14 @@ function loadOntologyData(){
         html+=renderGroup('概念 Concepts', '#7F77DD', concepts);
         html+=renderGroup('关系 Relations', '#16B8F3', relations);
         if(!any){
-          html='<div style="font-size:12px;color:var(--text-s)">尚未建立本体结构——在 <a href="javascript:void(0)" onclick="goPage(\'fde\')" style="color:var(--brand)">FDE 引导</a> 页复制 Prompt 执行深挖阶段，或运行 <code style="background:var(--brand-l);padding:2px 6px;border-radius:4px">create_entity / create_concept</code> 构建。实体/概念文件写入 <code style="background:var(--brand-l);padding:2px 6px;border-radius:4px">~/.sofagent/data/knowledge/</code> 后自动显示。</div>';
+          html=emptyState('🗺️','还没有本体结构','在 FDE 引导页复制 Prompt 执行深挖阶段，或运行 create_entity / create_concept 构建','去 FDE 引导构建',"goPage('fde')");
         }
         entries.innerHTML=html;
       }
     })
     .catch(function(){
       if(stats)stats.innerHTML='<div style="grid-column:1/-1;text-align:center;color:var(--text-t);font-size:12px;padding:12px">未连接数据源</div>';
-      if(entries)entries.innerHTML='<div style="font-size:12px;color:var(--text-s)">未检测到本体数据（通过 tools/dashboard/serve-dashboard.mjs 启动可看）</div>';
+      if(entries)entries.innerHTML=emptyState('🗺️','还没有本体数据','通过 tools/dashboard/serve-dashboard.mjs 启动可看真实数据','去 FDE 引导构建',"goPage('fde')");
     });
 }
 
@@ -1945,7 +2001,7 @@ function loadForgeData(){
       box.innerHTML=html;
     })
     .catch(function(){
-      box.innerHTML='<div style="text-align:center;color:var(--text-t);font-size:12px;padding:12px">未检测到 FORGE 运行记录（latest.json）</div>';
+      box.innerHTML=emptyState('🔬','还没有 FORGE 运行记录','跑过 fresh-eyes-loop / release-gate-loop 后生成（latest.json）');
     });
 }
 
@@ -1985,7 +2041,7 @@ function loadReleaseGateData(){
       box.innerHTML=html;
     })
     .catch(function(){
-      box.innerHTML='<div style="text-align:center;color:var(--text-t);font-size:12px;padding:12px">未检测到 release-gate 数据</div>';
+      box.innerHTML=emptyState('🏁','还没有 release-gate 运行记录','跑过发版门禁后生成');
     });
 }
 
@@ -2140,7 +2196,7 @@ function loadWorklogData(){
       }
     });
   }).catch(function(){
-    document.getElementById('wl-view-agent').innerHTML='<div style="font-size:12px;color:var(--text-t)">未检测到 worklog.json（运行过 sofagent-audit / 编排任务后自动生成）</div>';
+    document.getElementById('wl-view-agent').innerHTML=emptyState('📊','还没有工作明细','运行过 sofagent-audit 或编排任务后自动生成（worklog.json）','去 FDE 引导部署',"goPage('fde')");
   });
 }
 
@@ -2261,7 +2317,7 @@ function loadGraphView(){
         renderFlowGraph(ontNodes,ontEdges);
     });
   }).catch(function(){
-    document.getElementById('gr-view-workflow').innerHTML='<div style="font-size:12px;color:var(--text-t)">未检测到 workflow 数据</div>';
+    document.getElementById('gr-view-workflow').innerHTML=emptyState('🕸️','还没有图谱数据','运行过 AI 编排任务后自动生成（worklog.json）','查看工作明细',"goPage('workflow')");
   });
 }
 
@@ -2295,7 +2351,7 @@ function loadFdeSelfGraph(){
       if(updated)updated.textContent=fmtUpdatedAt();
     });
   }).catch(function(){
-    box.innerHTML='<div style="font-size:12px;color:var(--text-t)">未检测到 FDE workflow 数据</div>';
+    box.innerHTML=emptyState('🧬','还没有 FDE workflow 数据','部署 FDE workflow 后读取真实节点（template.yaml）','去 FDE 引导部署',"goPage('fde')");
   });
 }
 
