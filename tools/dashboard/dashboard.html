@@ -1487,9 +1487,9 @@ function processAuditData(records){
   animateNumber(document.getElementById('m-violations'),(warn+fail));
   var vsEl2=document.getElementById('m-violations-sub');
   vsEl2.textContent='WARN '+warn+' / FAIL '+fail;
-  // 今日审计次数
-  var today=new Date().toISOString().slice(0,10);
-  var todayCount=records.filter(function(r){return (r.timestamp||'').slice(0,10)===today}).length;
+  // 今日审计次数（北京时间日期——UTC 日期在北京 0-8 点会错位）
+  var today=fmtDay(new Date());
+  var todayCount=records.filter(function(r){return fmtDay(r.timestamp)===today}).length;
   animateNumber(document.getElementById('m-today'),todayCount);
   document.getElementById('m-today-sub').textContent='当日审计任务';
   var recent=records.slice(-8).reverse();
@@ -1510,7 +1510,7 @@ function renderLiveAuditLog(records){
     var ruleCell=rule
       ? '<span class="audit-rule" style="color:var(--'+(verdict==='FAIL'?'red':'amber')+')">'+escapeHtml(rule)+'</span>'
       : '<span class="audit-rule" style="color:var(--brand)">✓</span>';
-    var ts=(r.timestamp||'').slice(5,16);
+    var ts=fmtTime(r.timestamp);
     var task=(r.task||r.commitMsg||'').slice(0,50);
     return '<div class="audit-row"><span class="audit-time">'+escapeHtml(ts)+'</span><span class="audit-badge '+verdictClass+'">'+verdict+'</span>'+ruleCell+'<span class="audit-task">'+escapeHtml(task)+'</span></div>';
   }).join('');
@@ -1521,7 +1521,7 @@ function renderTrendChart(records){
   var byDay={};
   records.forEach(function(r){
     if(!r.timestamp)return;
-    var day=r.timestamp.slice(0,10);
+    var day=fmtDay(r.timestamp);
     if(!byDay[day])byDay[day]={pass:0,warn:0,fail:0,rulePass:0,ruleAll:0};
     var ec=r.exitCode||0;
     if(ec===0)byDay[day].pass++;
@@ -1540,7 +1540,7 @@ function renderTrendChart(records){
   var days=[];
   for(var i=6;i>=0;i--){
     var dt=new Date(Date.now()-i*24*3600*1000);
-    var key=dt.toISOString().slice(0,10);
+    var key=fmtDay(dt);
     var d=byDay[key]||{pass:0,warn:0,fail:0,rulePass:0,ruleAll:0};
     days.push({day:key,pass:d.pass,warn:d.warn,fail:d.fail,rulePass:d.rulePass,ruleAll:d.ruleAll,ruleRate:d.ruleAll>0?Math.round(d.rulePass*100/d.ruleAll):0});
   }
@@ -1594,7 +1594,7 @@ function loadSampleData(){
     var dt=new Date(Date.now()-i*24*3600*1000);
     var t=samplePass[6-i],w=sampleWarn[6-i],f=sampleFail[6-i];
     var tasks=t+w+f, checks=tasks*22, rulePass=checks-(w+f)*2; // 每个违规任务平均触 2 条规则
-    sampleDays.push({day:dt.toISOString().slice(0,10),pass:t,warn:w,fail:f,ruleAll:checks,rulePass:rulePass,ruleRate:Math.round(rulePass*100/checks)});
+    sampleDays.push({day:fmtDay(dt),pass:t,warn:w,fail:f,ruleAll:checks,rulePass:rulePass,ruleRate:Math.round(rulePass*100/checks)});
   }
   renderDailyTrend(sampleDays);
   renderSovereignty(null,null);
@@ -1704,11 +1704,23 @@ function loadStarCount(){
     .catch(function(){document.getElementById('starCount').textContent='★'});
 }
 
+// ── 统一时间工具（v1.4.0 · 北京时间）────────────────────────────
+// 审计/工作记录 timestamp 落盘为 UTC ISO（如 2026-07-28T13:05:42.416Z）。
+// 此前多处直接 slice(0,10)/(5,16) 显示 UTC 时间 = 北美时间（差 8 小时）——
+// 统一转北京时间（Asia/Shanghai）显示与按天分组。
+var SOFAGENT_TZ = 'Asia/Shanghai';
+function parseTs(raw){var t=raw?new Date(String(raw).replace(' ','T').replace(/\.\d+Z$/,'Z')):new Date();if(isNaN(t.getTime()))t=new Date();return t;}
+// 北京时间 HH:MM 显示（审计日志行用）
+function fmtTime(raw){return parseTs(raw).toLocaleTimeString('zh-CN',{timeZone:SOFAGENT_TZ,hour12:false,hour:'2-digit',minute:'2-digit'});}
+// 北京时间 YYYY-MM-DD 日期（今日计数/按天分组/趋势图用）
+function fmtDay(raw){return parseTs(raw).toLocaleDateString('en-CA',{timeZone:SOFAGENT_TZ});} // en-CA → YYYY-MM-DD
+// 北京时间完整显示（门禁进度等用）：MM-DD HH:MM
+function fmtDayTime(raw){var t=parseTs(raw);var d=t.toLocaleDateString('en-CA',{timeZone:SOFAGENT_TZ});var tm=t.toLocaleTimeString('zh-CN',{timeZone:SOFAGENT_TZ,hour12:false,hour:'2-digit',minute:'2-digit'});return d.slice(5)+' '+tm;}
+
 function fmtUpdatedAt(raw){
-  // 统一本地时间：ISO(UTC) → 本地 HH:MM:SS（此前直接 slice 会显示北美时间）
-  var t=raw?new Date(String(raw).replace(' ','T')):new Date();
-  if(isNaN(t.getTime()))t=new Date();
-  return '更新于 '+t.toLocaleTimeString('zh-CN',{hour12:false});
+  // 统一北京时间：ISO(UTC) → 北京时间 HH:MM:SS（此前直接 slice 会显示北美时间）
+  var t=parseTs(raw);
+  return '更新于 '+t.toLocaleTimeString('zh-CN',{timeZone:SOFAGENT_TZ,hour12:false});
 }
 
 /* 指标数字滚动动画（easeOutCubic） */
@@ -2122,7 +2134,7 @@ function loadReleaseGateData(){
       var pct=Math.round(done*100/total);
       html+='<div style="margin-top:12px;font-size:12px;color:var(--text-s)">十二阶段门禁进度（当前运行）：</div>';
       html+='<div style="background:var(--bg);border-radius:6px;height:10px;margin-top:6px;overflow:hidden"><div style="width:'+pct+'%;height:100%;background:var(--brand);border-radius:6px;transition:width .3s"></div></div>';
-      html+='<div style="margin-top:6px;font-size:11px;color:var(--text-t)">'+escapeHtml(latest.date||'')+' · '+escapeHtml(latest.run||'')+' · 更新于 '+escapeHtml(String(st.lastUpdate||'').replace('T',' ').slice(0,16))+'</div>';
+      html+='<div style="margin-top:6px;font-size:11px;color:var(--text-t)">'+escapeHtml(latest.date||'')+' · '+escapeHtml(latest.run||'')+' · 更新于 '+escapeHtml(fmtDayTime(st.lastUpdate))+'</div>';
       box.innerHTML=html;
     })
     .catch(function(){
@@ -2261,7 +2273,7 @@ function loadWorklogData(){
             costCell(t.costUsd,a.agentId,costWarns),
             (t.retries||0)>0?'<span style="color:var(--text-s)">'+(t.retries)+'</span>':'—',
             (t.humanInterventions||0)>0?'<span style="color:var(--text-s)">'+(t.humanInterventions)+'</span>':'—',
-            escapeHtml(String(t.lastSeen||'').slice(5,16))
+            escapeHtml(fmtDayTime(t.lastSeen))
           ]);
         });
       });
