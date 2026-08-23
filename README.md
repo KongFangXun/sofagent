@@ -20,7 +20,7 @@
 
 **sofagent 是一个开源 FDE Agent**（MIT）——进场梳理业务流、部署 AI 节点、7×24 审计每次变更，越界能拦、出事能回滚。它以 [FDE Skill](https://clawhub.ai/kongfangxun/skills/sofagent) 形态在 ClawHub 分发（帮 SMB · OPC 的每个人成为自己业务的 FDE 的方法论 Skill），装到企业设备后以**约束层（Harness）引擎**长期运行（注入·审计·回溯·进化四种能力，daemon 为其常驻载体）。
 
-> 🏗️ **产品形态 = 一个 FDE Agent**（v1.4.0 封装形态规划落地，当前 v1.3.x 为约束层 + LangGraph 内核）：sofagent 不是某个入口级 Agent，而是**把 Agent 内核变成 FDE Agent 的封装**——以 LangGraph + 约束层为内核（ExecutionBackend 抽象，可扩展其他 Agent 运行时；DeepSeek Harness 为商业侧可选内核，非开源仓库内交付，见下），plugin + skill + MCP + CLI + dashboard 构成完整调用面，约束底座（注入·审计·回溯·进化）+ FDE 方法论构成行为层。封装后的整体就是一个 FDE Agent：进场梳理业务流、部署 AI 节点、离场后 7×24 自运转，每次干活受审计。
+> 🏗️ **产品形态 = 一个 FDE Agent**（v1.4.0 封装形态规划落地，当前 v1.3.9 为约束层 + LangGraph 内核）：sofagent 不是某个入口级 Agent，而是**把 Agent 内核变成 FDE Agent 的封装**——以 LangGraph + 约束层为内核（ExecutionBackend 抽象，可扩展其他 Agent 运行时；DeepSeek Harness 为商业侧可选内核，非开源仓库内交付，见下），plugin + skill + MCP + CLI + dashboard 构成完整调用面，约束底座（注入·审计·回溯·进化）+ FDE 方法论构成行为层。封装后的整体就是一个 FDE Agent：进场梳理业务流、部署 AI 节点、离场后 7×24 自运转，每次干活受审计。
 >
 > 🔄 **自举**：它给自己做的第一份 FDE，就是 sofagent 自己——项目自身就是一条 FDE workflow（梳理 → 节点 → 双图谱交付），训练引擎也围绕 FDE（怎么让 FDE 更好、怎么让数据飞轮转起来）。
 

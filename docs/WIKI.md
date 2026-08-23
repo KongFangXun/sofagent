@@ -190,7 +190,7 @@ graph TB
 | `engine/orchestrator/` | @sofagent/orchestrator — LangGraph createReactAgent 编排 |
 | `engine/daemon/` | @sofagent/daemon — 后台守护进程（cron 巡检 + 文件监听） |
 | `engine/harness/` | @sofagent/harness — SKILL 加载链（上下文注入） |
-| `engine/mcp/` | @sofagent/mcp — MCP Server（知识库 CRUD tool）· **当前 61 个 MCP tool**（以 `engine/mcp/src/tool-registry.ts` SSOT 为准；v1.4.0 规划 +5 至 66，插件家族 MCP 面另计） |
+| `engine/mcp/` | @sofagent/mcp — MCP Server（知识库 CRUD tool）· **61 个 MCP tool**（以 `engine/mcp/src/tool-registry.ts` SSOT 为准；1.4.0 规划 +5 至 66，插件家族 MCP 面另计） |
 | `engine/hooks/sofagent-load-chain/` | @sofagent/load-chain — SKILL 加载链 git hook（v1.2.x 新增，第 13 个 workspace） |
 | `engine/scripts/` | 运维脚本集（9 个 .sh + lib/ 模块 + windows/ .ps1 安装与卸载脚本）——安装（install.sh 调用）、卸载、验证（verify.sh）、daemon 管理、运行时审计日志记录等 |
 | `~/.sofagent/bin/sofagent` | CLI 入口（安装时生成，不在仓库内）— `sofagent status/where/version/data/help` |
