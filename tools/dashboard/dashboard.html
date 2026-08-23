@@ -57,7 +57,7 @@ a:hover{text-decoration:underline}
 .help-header{padding:10px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;flex-shrink:0}
 .help-title{font-size:15px;font-weight:600;flex-shrink:0}
 .help-close{width:30px;height:30px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text-s);font-size:16px;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center;font-family:var(--font);flex-shrink:0}
-.help-close:hover{border-color:var(--brand);color:var(--brand)}
+.help-close:hover{border-color:var(--text-t);color:var(--text)}
 .help-tabs{flex:1;min-width:0;justify-content:flex-start}
 .help-tabs::-webkit-scrollbar{display:none}
 .help-tabs .nav-item{padding:6px 12px;font-size:12px;flex-shrink:0}
@@ -73,11 +73,9 @@ a:hover{text-decoration:underline}
 /* 快捷入口（FDE 怎么开始：4 个独立 block，非一条背景条） */
 .quick-start{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
 .qs-item{background:var(--bg-s);border:1px solid var(--border);border-radius:var(--radius-s);padding:16px 12px;text-align:center;cursor:pointer;transition:all .15s;text-decoration:none;display:block;color:var(--text)}
-.qs-item:hover{border-color:var(--text-t);background:var(--bg)}
-.qs-icon{font-size:20px;line-height:1.2;color:var(--text-s)}
-.qs-item:hover{border-color:var(--brand);background:var(--brand-l);text-decoration:none}
+.qs-item:hover{border-color:var(--text-t);background:var(--bg);text-decoration:none}
 .qs-item:visited{text-decoration:none}
-.qs-item .qs-icon{font-size:20px;line-height:1.2}
+.qs-icon{font-size:20px;line-height:1.2;color:var(--text-s)}
 .qs-item .qs-title{font-size:13px;font-weight:600;color:var(--text);margin-top:5px}
 .qs-item .qs-desc{font-size:11px;color:var(--text-s);margin-top:2px}
 
@@ -145,7 +143,7 @@ a:hover{text-decoration:underline}
 /* Rules */
 .rule-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
 .rule-item{background:var(--bg-s);border:1px solid var(--border);border-radius:var(--radius-s);padding:8px 10px;font-size:12px;transition:border-color .15s}
-.rule-item:hover{border-color:var(--brand)}
+.rule-item:hover{border-color:var(--text-t)}
 .rule-code{font-family:var(--mono);font-weight:600;font-size:11px}
 .rule-name{color:var(--text-s);margin-top:2px}
 .rule-cat-red .rule-code{color:var(--text-s)}
@@ -188,7 +186,7 @@ a:hover{text-decoration:underline}
 .copy-btn.copied{background:var(--brand);border-color:var(--brand);color:#fff}
 .copy-btn svg{width:12px;height:12px}
 .copy-btn.light{background:var(--card);border:1px solid var(--border);color:var(--text-s)}
-.copy-btn.light:hover{border-color:var(--brand);color:var(--brand)}
+.copy-btn.light:hover{border-color:var(--text-t);color:var(--text)}
 
 /* ===== 按钮体系（统一变体，shadcn 风格 · 全白系简洁）===== */
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:5px;height:28px;padding:0 14px;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;font-family:var(--font);border:1px solid transparent;transition:all .15s;white-space:nowrap;line-height:1}
@@ -212,7 +210,7 @@ a:hover{text-decoration:underline}
 
 .doc-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px}
 .doc-item{display:flex;align-items:center;gap:8px;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius-s);font-size:13px;color:var(--text);transition:all .15s}
-.doc-item:hover{border-color:var(--brand);background:var(--brand-l);text-decoration:none}
+.doc-item:hover{border-color:var(--text-t);background:var(--bg);text-decoration:none}
 .doc-item svg{width:14px;height:14px;color:var(--text-t);flex-shrink:0}
 .doc-item .ext{margin-left:auto;color:var(--text-t);font-size:11px}
 
@@ -250,7 +248,7 @@ a:hover{text-decoration:underline}
 .lvp-arrow{display:flex;align-items:center;padding:0 8px;color:var(--text-t);font-size:16px}
 
 .ont-card{background:var(--bg-s);border:1px solid var(--border);border-radius:var(--radius-s);padding:16px;transition:border-color .15s}
-.ont-card:hover{border-color:var(--brand)}
+.ont-card:hover{border-color:var(--text-t)}
 .ont-card h4{font-size:14px;font-weight:600;margin-bottom:8px;display:flex;align-items:center;gap:6px}
 .ont-card p{font-size:12px;color:var(--text-s);margin-bottom:8px}
 .ont-list{font-size:12px;color:var(--text-s);padding-left:16px}
@@ -273,7 +271,7 @@ a:hover{text-decoration:underline}
 .seg-btn.active{color:var(--brand);font-weight:600}
 /* 手动刷新按钮：纯圆形 icon，与胶囊同高 */
 .seg-refresh{display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--border);border-radius:50%;background:var(--card);color:var(--brand);width:26px;height:26px;padding:0;font-size:11px;font-weight:600;transition:all .15s}
-.seg-refresh:hover{border-color:var(--brand);background:var(--brand-l);color:var(--brand)}
+.seg-refresh:hover{border-color:var(--text-t);background:var(--bg);color:var(--text)}
 .seg-refresh svg{width:14px;height:14px}
 .seg-refresh.refreshing{border-color:var(--brand);color:var(--brand);background:var(--brand-l)}
 .seg-refresh.refreshing svg{animation:spin .6s linear}
@@ -287,7 +285,7 @@ a:hover{text-decoration:underline}
 .wl-table th:last-child{border-radius:0 6px 6px 0}
 .wl-table td{padding:9px 10px;border-bottom:1px solid var(--border);vertical-align:top;font-variant-numeric:tabular-nums}
 .wl-table tbody tr{transition:background .12s}
-.wl-table tbody tr:hover{background:var(--brand-l)}
+.wl-table tbody tr:hover{background:var(--bg)}
 .wl-table tbody tr:last-child td{border-bottom:none}
 .wl-table .cell-over{color:var(--text-s);font-weight:600;cursor:help;border-bottom:1px dashed var(--text-t)}
 .wl-table .cell-over .delta{font-size:10px;font-weight:400;opacity:.8}
