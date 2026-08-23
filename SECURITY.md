@@ -308,6 +308,23 @@ sofagent-audit（v0.92+）是 TypeScript CLI，执行 `execFileSync('git', ...)`
 | E2 | TODO 未声明 | 新增 TODO 未在任务中声明 | WARN |
 | E4 | 低注释率 | 新增 >200 行且注释率 <5% | WARN |
 
+### AST 规则引擎 SSOT（8+2）
+
+> 官方 AST 规则引擎（`sofagent-ruleset-ast`，v1.3.9 交付）——10 条示范规则（8 条代码 AST + 2 条 OWASP 语义），与上面 24 条 git-diff 规则同管线。规则代码在 `engine/rules/src/ast/rules/`（注册表 `engine/rules/src/ast/rules/index.ts` 的 `builtinAstRules`），触发条件以各文件 `description` 字段为准。
+
+| 编号 | 名称 | 触发条件 | 代码位置 |
+|------|------|---------|---------|
+| no-eval | 禁止动态代码执行 | `eval()` / `new Function()` 执行任意字符串代码（prompt 注入 / 供应链攻击放大器） | `ast/rules/no-eval.ts` |
+| no-hardcoded-secret | 禁止硬编码密钥（AST 语义级） | `secret`/`token`/`apiKey` 等密钥类变量赋长字符串字面量（比正则扫行误报率低） | `ast/rules/no-hardcoded-secret.ts` |
+| no-dynamic-require | 禁止动态 require | `require(非字面量)` 模块来源静态不可见（供应链投毒隐藏通道，ASI04 关联） | `ast/rules/no-dynamic-require.ts` |
+| no-debugger | 禁止 debugger 语句 | `debugger` 语句遗留在生产代码会冻结 Node 进程 | `ast/rules/no-debugger.ts` |
+| no-child-process-shell | child_process shell 执行管控 | `exec`/`execSync` 走 shell——字面量含元字符或动态拼接参数（动态参数 FAIL / 静态参数 WARN） | `ast/rules/no-child-process-shell.ts` |
+| no-sql-string-concat | 禁止 SQL 字符串拼接 | query 类调用的参数含「字符串 + 非字面量」拼接（SQL 注入入口） | `ast/rules/no-sql-string-concat.ts` |
+| no-insecure-url | 禁止 http:// 明文端点 | 字符串字面量里的 `http://` 端点（本地/示例域名除外，明文传输可被中间人替换） | `ast/rules/no-insecure-url.ts` |
+| no-empty-catch | 禁止空 catch 块 | 空 catch 吞异常且无注释说明（错误静默扩散） | `ast/rules/no-empty-catch.ts` |
+| asi01-prompt-injection | OWASP ASI01 目标劫持检测 | system prompt 类文件的对抗性注入模式（指令覆盖/角色劫持/结构伪装，含编码变体归一化） | `ast/rules/asi01-prompt-injection.ts` |
+| asi04-sbom | OWASP ASI04 供应链 SBOM 检测 | 扫描依赖清单（lockfile 优先精确版本、manifest 兜底）生成 SBOM 查离线样例漏洞库 | `ast/rules/asi04-sbom.ts` |
+
 ### history.jsonl 访问控制
 
 > 引入版本：v1.1.3。

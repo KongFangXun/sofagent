@@ -22,7 +22,7 @@
 
 ## 一、一句话
 
-**sofagent 是一个开源 FDE Agent**（MIT，同时也是 FDE 方法论的参考实现）——进场梳理工作流、把能自动化的环节变成 AI 节点、部署到设备上 7×24 自己跑。底层是 **约束层（Harness）**——约束 Agent 行为、审计每次变更、沉淀经验。**产品形态 = 一个 FDE Agent**：以 DeepSeek Harness 为内核，plugin + skill + MCP + dashboard + CLI 为调用面，约束底座 + FDE 方法论为行为层——它给自己做的第一份 FDE，就是 sofagent 自己（自举）。
+**sofagent 是一个开源 FDE Agent**（MIT，同时也是 FDE 方法论的参考实现）——进场梳理工作流、把能自动化的环节变成 AI 节点、部署到设备上 7×24 自己跑。底层是 **约束层（Harness）**——约束 Agent 行为、审计每次变更、沉淀经验。**产品形态 = 一个 FDE Agent**：以 LangGraph + 约束层为内核，plugin + skill + MCP + CLI + dashboard 为调用面，约束底座 + FDE 方法论为行为层——它给自己做的第一份 FDE，就是 sofagent 自己（自举）。
 
 ---
 
@@ -186,7 +186,7 @@ graph TB
 | `engine/orchestrator/` | @sofagent/orchestrator — LangGraph createReactAgent 编排 |
 | `engine/daemon/` | @sofagent/daemon — 后台守护进程（cron 巡检 + 文件监听） |
 | `engine/harness/` | @sofagent/harness — SKILL 加载链（上下文注入） |
-| `engine/mcp/` | @sofagent/mcp — MCP Server（知识库 CRUD tool） |
+| `engine/mcp/` | @sofagent/mcp — MCP Server（知识库 CRUD tool）· **当前 61 个 MCP tool**（以 `engine/mcp/src/tool-registry.ts` SSOT 为准；v1.4.0 规划 +5 至 66，插件家族 MCP 面另计） |
 | `engine/hooks/sofagent-load-chain/` | @sofagent/load-chain — SKILL 加载链 git hook（v1.2.x 新增，第 13 个 workspace） |
 | `engine/scripts/` | 运维脚本集（9 个 .sh + lib/ 模块 + windows/ .ps1 安装与卸载脚本）——安装（install.sh 调用）、卸载、验证（verify.sh）、daemon 管理、运行时审计日志记录等 |
 | `~/.sofagent/bin/sofagent` | CLI 入口（安装时生成，不在仓库内）— `sofagent status/where/version/data/help` |
