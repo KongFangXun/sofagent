@@ -20,9 +20,9 @@
 
 **sofagent 是一个开源 FDE Agent**（MIT）——进场梳理业务流、构建本体图谱、部署 AI 节点、7×24 审计每次变更，越界能拦、出事能回滚。它以 [FDE Skill](https://clawhub.ai/kongfangxun/skills/sofagent) 形态在 ClawHub 分发（帮 SMB · OPC 的每个人成为自己业务的 FDE 的方法论 Skill），装到企业设备后以**约束层（Harness）引擎**长期运行（注入·审计·回溯·进化四种能力，daemon 为其常驻载体）。
 
-> 🏗️ **产品形态 = 一个 FDE Agent**（v1.4.0 封装形态规划落地，当前 v1.4.0 为约束层 + LangGraph 内核）：sofagent 不是某个入口级 Agent，而是**把 Agent 内核变成 FDE Agent 的封装**——以 LangGraph + 约束层为内核（ExecutionBackend 抽象，可扩展其他 Agent 运行时；DeepSeek Harness 为商业侧可选内核，非开源仓库内交付，见下），plugin + skill + MCP + CLI + dashboard 构成完整调用面，约束底座（注入·审计·回溯·进化）+ FDE 方法论构成行为层。封装后的整体就是一个 FDE Agent：进场梳理业务流、构建本体图谱、部署 AI 节点、离场后 7×24 自运转，每次干活受审计。
+> 🏗️ **产品形态 = 一个 FDE Agent**：sofagent 不是某个入口级 Agent，而是**把 Agent 内核变成 FDE Agent 的封装**——以 LangGraph + 约束层为开源内核（ExecutionBackend 抽象，可扩展其他 Agent 运行时；DeepSeek Harness 为商业侧可选内核），plugin + skill + MCP + CLI + dashboard 构成完整调用面，约束底座（注入·审计·回溯·进化）+ FDE 方法论构成行为层。封装后的整体就是一个 FDE Agent：进场梳理业务流、构建本体图谱、部署 AI 节点、离场后 7×24 自运转，每次干活受审计。
 >
-> 🔄 **自举**：它给自己做的第一份 FDE，就是 sofagent 自己——项目自身就是一条 FDE workflow（梳理 → 节点 → 双图谱交付），训练引擎也围绕 FDE（怎么让 FDE 更好、怎么让数据飞轮转起来）。
+> 🔄 **自举**：它给自己做的第一份 FDE，就是 sofagent 自己——项目自身就是一条 FDE 业务流（梳理 → 节点 → 双图谱交付），训练引擎也围绕 FDE（怎么让 FDE 更好、怎么让数据飞轮转起来）。
 
 ```mermaid
 graph TB
@@ -32,7 +32,7 @@ graph TB
         B["行为层 约束底座<br/>注入 · 审计 · 回溯 · 进化"]
         M["方法论 FDE 四阶段<br/>梳理 → 挖掘 → 交付 → 离场"]
     end
-    S -->|"进场 · 给企业做 FDE"| D["交付 双图谱<br/>业务图谱 + 本体图谱"]
+    S -->|"进场 · 给企业做 FDE"| D["双图谱交付<br/>业务图谱 + 本体图谱"]
     D --> N["AI 节点<br/>LangGraph 编排 → Harness 执行 → 约束审计"]
     N -.->|"7×24 自运转 · 越界能拦 · 出事能回滚"| N
 ```
@@ -121,7 +121,7 @@ sofagent-audit --doctor    # 验证环境（可选）
 |------|--------|------|
 | ① 梳理 | **五要素深挖**——按岗位把每个环节的输入 / 输出 / 负责人 / 耗时 / 痛点摸清 | 企业画像 |
 | ② 判定 | **三问判定法**——从业务流中的**业务节点**识别哪些可 AI 化：🔄 自动执行 / ⚡ 强化岗位 → **AI 节点**，👤 暂不动 → Human 节点，按 ROI 排优先级 | 节点方案 + 年节省金额 |
-| ③ 交付 | **三层交付物**——文档层 + Skill 层 + 运行层，让 AI 节点真的跑起来 | 本体结构（ontology）+ workflow.yml + skills/ |
+| ③ 交付 | **三层交付物**——文档层 + Skill 层 + 运行层，让 AI 节点真的跑起来 | 本体数据（ontology）+ workflow.yml + skills/ |
 
 完整方法论（四阶段十二步）见 [FDE/GUIDE.md](./FDE/GUIDE.md)——半天精读，读完能独立做 FDE。
 
@@ -144,7 +144,7 @@ sofagent-audit --doctor    # 验证环境（可选）
   <img src="docs/assets/dashboard.png" alt="sofagent Dashboard 驾驶舱" width="100%" />
 </p>
 
-<p align="center"><sub>Dashboard 驾驶舱（单文件 HTML）：规则通过率、审计任务、违规趋势——AI 在干什么，一眼看清。<br>（截图版本 v1.2.9，当前已发布 v1.4.0——Dashboard 为示意，真实界面以安装态为准）</sub></p>
+<p align="center"><sub>Dashboard 驾驶舱（单文件 HTML · 截图版本 v1.4.0）：规则通过率、审计任务、违规趋势——AI 在干什么，一眼看清。<br>（实际界面以安装态为准）</sub></p>
 
 > 📊 **Dashboard 有三个入口，各归各位**：
 >
@@ -202,18 +202,13 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # 加载安全规�
 
 ## v1.4.0 新能力
 
-> 📊 **v1.4.0 新能力**（Web 工作明细页 + 图谱栏 + 成本审计 + DSH/OpenClaw 插件家族 + 联邦 E2E + MLflow 接线 + Agentic Browser 66 tools）：
-> - **Web 工作明细页**：📊 Dashboard 新增工作明细（按 Agent / 按 Workflow / 按周趋势 / 人工介入记录四视角，读 `worklog.json` 无数据降级）+ **图谱栏**（🗺️ FDE 双 graph：业务图谱 + 本体图谱 + MCP 工具视图 66 tools + skill 加载链四层可视化）——Dashboard 随 `install.sh` 装到用户机
+> 📊 **v1.4.0 新能力**（Dashboard 产品化 + 成本审计 + 双插件家族 + 跨设备 + Agentic Browser）：
+> - **Dashboard 产品化**：📊 Web 工作明细页（按 Agent / Workflow / 周趋势 / 人工介入四视角）+ **图谱栏**（🗺️ FDE 双图谱：业务图谱 + 本体图谱 + MCP 工具视图 66 tools + skill 加载链四层可视化）+ 单文件 HTML 随 `install.sh` 装到用户机（`worklog.json` 无数据自动降级）
 > - **成本审计**：💰 超支告警（WARN only 不拦截）+ `cost_query` MCP tool + `DecisionKind.COST` 决策日志追溯
-> - **DSH 插件家族**：🔌 约束层四能力包装 9 款 `cordis-plugin-sofagent-*`（audit/rollback/inject/evolve/ontology/commons/gate/daemon/fde）——真实挂载进 DeepSeek Harness（Plugin list 搜 sofagent 可见 9 个 Enabled · inventory soga-1~9 · 9 个 settings namespace）+ Cursor/Claude Code 共享 precommit hook 拦截（S321 CI 闭环验证）
-> - **OpenClaw 插件家族**：🦞 约束层四能力 OpenClaw 形态 4 款 code-plugin（sofagent-inject/audit/rollback/evolve）——ClawHub 发布就绪（dry-run 4/4）
-> - **联邦查询跨设备 E2E**：🔄 配对（ECDH + 指纹锚点）/ 跨设备加密查询 / 篡改检测 / 离线降级——fork 版 10 断言（S320）+ 独立进程版 4 场景（S322）+ 双设备真实测试用例（桌面）
-> - **远程 API 通道**：📡 客户端→服务器 workflow 触发 + 状态查询（C/S 控制面，契约文档化）
-> - **Dashboard HTML 产品化**：🏠 随 `install.sh` 装到用户机（开发态/安装态双路径）
-> - **MLflow 接线**：🔗 `logBenchmarkToMlflow` 接入评测链路（tracking server 不可达降级不抛）
-> - **Agentic Browser MCP**：🌐 navigate/click/screenshot/assert 4 工具注册（MCP 61→66）+ Playwright 真实驱动
-> - **审计溯源字段**：🔍 `whichDataVersion`（决策基于哪版知识）+ `beforeAfter`（变更前后结构化摘要，diff 原文不进 history.jsonl）
-> - **bash 3.2 验证**：🐚 全 shell 脚本真实环境 EXIT=0
+> - **双插件家族**：🔌 DSH 形态 9 款 `cordis-plugin-sofagent-*`（真实挂载进 DeepSeek Harness，Plugin list 可见 9 个 Enabled）+ 🦞 OpenClaw 形态 4 款 code-plugin（ClawHub 发布就绪）+ Cursor/Claude Code 共享 precommit hook 拦截
+> - **跨设备**：🔄 联邦查询端到端（配对 / 加密查询 / 篡改检测 / 离线降级——S320 + S322 双覆盖）+ 📡 远程 API 通道（C/S 控制面契约文档化）
+> - **Agentic Browser + 评测**：🌐 navigate/click/screenshot/assert 4 工具注册（MCP 61→66）+ Playwright 真实驱动 + 🔗 MLflow 评测接线（不可达降级不抛）
+> - **工程基座**：🔍 审计溯源字段（`whichDataVersion` + `beforeAfter`）+ 🐚 bash 3.2 真实环境全脚本验证
 >
 > 详见 [v1.4.0 开发日志](./docs/changelog/v1.4/v1.4.0.md)。更早版本见 [CHANGELOG](./CHANGELOG.md)。
 

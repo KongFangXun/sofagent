@@ -19,9 +19,9 @@
 
 **sofagent is an open-source FDE Agent** (Forward Deployed Engineer Agent) — map workflows, deploy AI nodes, and audit every change 7×24, blocking out-of-bounds moves and rolling back breakage. It ships on [ClawHub](https://clawhub.ai/kongfangxun/skills/sofagent) as an **FDE Skill** (a methodology skill that helps everyone at SMBs and OPCs become the FDE of their own business), and once installed on enterprise devices it runs long-term as a **constraint-layer (Harness) engine** (injection · audit · rollback · evolution, with the daemon as its resident carrier).
 
-> 🏗️ **Product shape = one FDE Agent** (encapsulation lands in v1.4.0 as planned; current v1.3.x is constraint layer + LangGraph kernel): sofagent is not a single entry-point agent, but the **wrapper that turns an agent kernel into an FDE Agent** — LangGraph + constraint layer as the kernel (ExecutionBackend abstraction, extensible to other agent runtimes; DeepSeek Harness is an optional commercial-side kernel, not delivered in this open-source repo, see below), plugin + skill + MCP + CLI + dashboard as the full call surface, and the constraint base (injection · audit · rollback · evolution) + FDE methodology as the behavior layer. The wrapped whole is one FDE Agent: it maps workflows on-site, deploys AI nodes, and keeps running 7×24 after handoff, with every action audited.
+> 🏗️ **Product shape = one FDE Agent**: sofagent is not a single entry-point agent, but the **wrapper that turns an agent kernel into an FDE Agent** — LangGraph + constraint layer as the open-source kernel (ExecutionBackend abstraction, extensible to other agent runtimes; DeepSeek Harness is an optional commercial-side kernel), plugin + skill + MCP + CLI + dashboard as the full call surface, and the constraint base (injection · audit · rollback · evolution) + FDE methodology as the behavior layer. The wrapped whole is one FDE Agent: it maps business flows on-site, deploys AI nodes, and keeps running 7×24 after handoff, with every action audited.
 >
-> 🔄 **Self-bootstrapping**: its first FDE job is sofagent itself — the project itself is one FDE workflow (map → nodes → dual-graph delivery), and the training engine also orbits FDE (making FDE better, spinning the data flywheel).
+> 🔄 **Self-bootstrapping**: its first FDE job is sofagent itself — the project itself is one FDE business flow (map → nodes → dual-graph delivery), and the training engine also orbits FDE (making FDE better, spinning the data flywheel).
 
 ```mermaid
 graph TB
@@ -31,7 +31,7 @@ graph TB
         B["Behavior layer constraint base<br/>injection · audit · rollback · evolution"]
         M["Methodology FDE four phases<br/>map → mine → deliver → depart"]
     end
-    S -->|"on-site · doing FDE for the enterprise"| D["Deliver dual graphs<br/>workflow graph + ontology graph"]
+    S -->|"on-site · doing FDE for the enterprise"| D["Dual-graph delivery<br/>business graph + ontology graph"]
     D --> N["AI nodes<br/>LangGraph orchestration → Harness execution → constraint audit"]
     N -.->|"7×24 self-running · blocks violations · rolls back breakage"| N
 ```
@@ -143,7 +143,7 @@ Deploying AI nodes is only step one — above we covered **how to map and where 
   <img src="docs/assets/dashboard.png" alt="sofagent Dashboard cockpit" width="100%" />
 </p>
 
-<p align="center"><sub>Dashboard cockpit (single-file HTML): rule pass rate, audit tasks, violation trends — see at a glance what the AI is doing.<br>Screenshot shows v1.2.9; current release is v1.4.0.</sub></p>
+<p align="center"><sub>Dashboard cockpit (single-file HTML · screenshot shows v1.4.0): rule pass rate, audit tasks, violation trends — see at a glance what the AI is doing.<br>(The installed UI is the source of truth.)</sub></p>
 
 > 📊 **The Dashboard has three entries, each in its place**:
 >
@@ -201,18 +201,13 @@ Community rulesets are published as `sofagent-ruleset-*` npm packages and loaded
 
 ## New in v1.4.0
 
-> 📊 **v1.4.0 new capabilities** (Web worklog view + graph panel + cost audit + DSH/OpenClaw plugin families + federation E2E + MLflow wiring + Agentic Browser 66 tools):
-> - **Web worklog page**: 📊 Dashboard worklog view (by Agent / by Workflow / weekly trend / human-in-the-loop records, reads `worklog.json` with sample-data fallback) + **graph panel** (🗺️ FDE dual graphs: business graph + ontology graph + MCP tool view 66 tools + skill load-chain visualization) — Dashboard ships with `install.sh`
+> 📊 **v1.4.0 new capabilities** (Dashboard productization + cost audit + dual plugin families + cross-device + Agentic Browser):
+> - **Dashboard productization**: 📊 Web worklog page (by Agent / by Workflow / weekly trend / human-in-the-loop, four views) + **graph panel** (🗺️ FDE dual graphs: business graph + ontology graph + MCP tool view 66 tools + skill load-chain visualization) + single-file HTML ships with `install.sh` (`worklog.json` falls back to sample data)
 > - **Cost audit**: 💰 overspend warning (WARN only) + `cost_query` MCP tool + `DecisionKind.COST` traceability
-> - **DSH plugin family**: 🔌 constraint layer packaged as 9 `cordis-plugin-sofagent-*` plugins (audit/rollback/inject/evolve/ontology/commons/gate/daemon/fde) — live in DeepSeek Harness (Plugin list shows 9 Enabled · inventory soga-1~9 · 9 settings namespaces) + shared precommit hook for Cursor/Claude Code (verified by S321)
-> - **OpenClaw plugin family**: 🦞 4 code-plugins (sofagent-inject/audit/rollback/evolve) — ClawHub ready (dry-run 4/4)
-> - **Federation cross-device E2E**: 🔄 pairing (ECDH + fingerprint anchor) / encrypted cross-device query / tamper detection / offline fallback — fork 10 asserts (S320) + independent-process 4 scenarios (S322)
-> - **Remote API channel**: 📡 client→server workflow trigger + status query (C/S control plane, contract documented)
-> - **Dashboard HTML productization**: 🏠 ships with `install.sh` (dev/installed dual paths)
-> - **MLflow wiring**: 🔗 `logBenchmarkToMlflow` connected to eval pipeline (degrades gracefully when tracking server is unreachable)
-> - **Agentic Browser MCP**: 🌐 navigate/click/screenshot/assert registered (MCP 61→66) + real Playwright driver
-> - **Audit provenance fields**: 🔍 `whichDataVersion` + `beforeAfter` (structured summary, raw diff stays out of history.jsonl)
-> - **bash 3.2 verification**: 🐚 all shell scripts run on real bash 3.2 EXIT=0
+> - **Dual plugin families**: 🔌 9 `cordis-plugin-sofagent-*` in DSH form (live in DeepSeek Harness — Plugin list shows 9 Enabled) + 🦞 4 code-plugins in OpenClaw form (ClawHub ready) + shared precommit hook for Cursor/Claude Code
+> - **Cross-device**: 🔄 federation end-to-end (pairing / encrypted query / tamper detection / offline fallback — S320 + S322 dual coverage) + 📡 remote API channel (C/S control plane, contract documented)
+> - **Agentic Browser + eval**: 🌐 navigate/click/screenshot/assert registered (MCP 61→66) + real Playwright driver + 🔗 MLflow eval wiring (degrades gracefully when unreachable)
+> - **Engineering base**: 🔍 audit provenance fields (`whichDataVersion` + `beforeAfter`) + 🐚 all shell scripts verified on real bash 3.2
 >
 > See the [v1.4.0 devlog](./docs/changelog/v1.4/v1.4.0.md). Earlier versions in [CHANGELOG](./CHANGELOG.md).
 
