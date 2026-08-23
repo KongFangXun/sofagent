@@ -106,6 +106,12 @@ describe('filterToolsByRoles 清单过滤', () => {
     expect(filtered).toHaveLength(1);
   });
 
+  it('list_capabilities（能力发现元工具，无 roles）在专职收窄时也始终暴露', () => {
+    const filtered = filterToolsByRoles(TOOLS, ['audit']);
+    const names = filtered.map((t) => t.name);
+    expect(names).toContain('list_capabilities');
+  });
+
   it('所有工具 roles 值均属于合法 ROLES', () => {
     for (const t of TOOLS) {
       if (t.roles) {

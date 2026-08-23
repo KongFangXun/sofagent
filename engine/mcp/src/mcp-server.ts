@@ -225,7 +225,7 @@ class McpServer {
       case 'exit': process.exit(0); break;
       case 'tools/list': if (this.checkInit(id)) {
         // v1.3.0 (交付 10 MA1)：动态工具合并——不污染静态 TOOLS 清单
-        // v1.4.0：角色分层过滤——默认 fde+audit+agent，SOFAGENT_MCP_ROLES=all 恢复全量
+        // v1.4.0：角色分层过滤——默认全量（未配置/all），SOFAGENT_MCP_ROLES 显式收窄专职面
         const activeRoles = getActiveRoles();
         this.sendResult(id, { tools: filterToolsByRoles([...TOOLS, ...getDynamicTools()], activeRoles) });
       } break;
