@@ -502,7 +502,7 @@ a:hover{text-decoration:underline}
         </div>
       </div>
       <div class="section-body">
-        <svg width="100%" height="180" viewBox="0 0 500 180" preserveAspectRatio="xMidYMid meet" id="trendChart">
+        <svg width="100%" height="160" viewBox="0 0 500 160" preserveAspectRatio="xMidYMid meet" id="trendChart">
           <text x="250" y="115" text-anchor="middle" font-size="13" fill="var(--text-t)">加载中...</text>
         </svg>
         <div id="topRules" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px"></div>
@@ -1330,7 +1330,7 @@ function renderSummaryData(s){
 function renderDailyTrend(days){
   var maxCount=Math.max.apply(null,days.map(function(d){return d.ruleAll||0}).concat([1]));
   // viewBox 宽 500 匹配半宽卡片——图不再等比缩小，柱子视觉充实
-  var W=500,padL=40,padR=40,top=12,base=150;
+  var W=500,padL=40,padR=40,top=10,base=132;
   var bw=(W-padL-padR)/days.length;
   var svg='';
   // 左轴：次数 0-maxCount（4 格）
@@ -1380,7 +1380,7 @@ function renderDailyTrend(days){
 /* 降级：summary 无 daily 时用 TOP3 画柱状（通栏版） */
 function renderTop3Trend(t){
   var max=Math.max.apply(null,t.map(function(x){return x.count||0}).concat([1]));
-  var W=500,padL=40,padR=20,base=150,top=12;
+  var W=500,padL=40,padR=20,base=132,top=10;
   var sw=(W-padL-padR)/t.length;
   var svg='<line x1="'+padL+'" y1="'+top+'" x2="'+(W-padR)+'" y2="'+top+'" stroke="var(--border)" stroke-width="0.5" stroke-dasharray="3,3"/>';
   svg+='<line x1="'+padL+'" y1="'+base+'" x2="'+(W-padR)+'" y2="'+base+'" stroke="var(--border)" stroke-width="1"/>';
@@ -1395,7 +1395,7 @@ function renderTop3Trend(t){
   });
   svg+='<text x="4" y="'+(top+4)+'" font-size="10" fill="var(--text-t)">'+max+'</text>';
   document.getElementById('trendChart').innerHTML=svg;
-  document.getElementById('trendChart').setAttribute('viewBox','0 0 500 180');
+  document.getElementById('trendChart').setAttribute('viewBox','0 0 500 160');
 }
 
 /* 统一渲染函数：API 路径和降级路径共用 */
@@ -1412,7 +1412,7 @@ function renderSovereigntyBox(sov,daemonStatus,auditTotal,todayCount){
     badge.innerHTML='<span class="sov-dot" style="background:'+dotCol+'"></span><span style="color:var(--text-s)">守护进程 '+escapeHtml(ds)+'</span>';
   }
   /* 四栏数字：本地执行 / 本地化率 / 云端调用 / 数据流出，无分割线（锁定小字在 section 外） */
-  el.innerHTML='<div class="chart-box" style="display:flex;align-items:center;justify-content:space-around;flex:1;min-height:64px;height:100%">'+
+  el.innerHTML='<div class="chart-box" style="display:flex;align-items:center;justify-content:space-around;flex:1;min-height:56px;height:100%">'+
     '<div style="display:flex;flex-direction:column;justify-content:center;align-items:center"><div style="font-size:20px;font-weight:700;color:var(--text)">'+sov.local+'</div><div style="font-size:11px;color:var(--text-s);margin-top:2px">本地执行</div></div>'+
     '<div style="display:flex;flex-direction:column;justify-content:center;align-items:center"><div style="font-size:20px;font-weight:700;color:var(--text)">'+sov.localRate+'%</div><div style="font-size:11px;color:var(--text-s);margin-top:2px">本地化率</div></div>'+
     '<div style="display:flex;flex-direction:column;justify-content:center;align-items:center"><div style="font-size:20px;font-weight:700;color:var(--text)">'+sov.cloud+'</div><div style="font-size:11px;color:var(--text-s);margin-top:2px">云端调用</div></div>'+
@@ -1734,7 +1734,7 @@ function loadFdeWorkflowData(){
           html+='<div style="margin-top:12px;background:var(--bg-s);border:1px solid var(--border);border-radius:var(--radius-s);padding:10px 14px;font-size:12px;color:var(--text-s)">'+
             '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">'+
               '<b style="color:var(--text)"><i class="bi bi-bar-chart"></i> '+escapeHtml(wr.weekLabel)+' 持续优化周报</b>'+
-              '<span>本周 '+tw.taskCount+' 任务 · 其中警告 <b style="color:var(--amber)">'+tw.warnings+'</b> 条 · 违规 <b style="color:var(--red)">'+tw.violations+'</b> 条 · 趋势 '+trendCn+'</span>'+
+              '<span>本周 '+tw.taskCount+' 次任务 · 警告 '+tw.warnings+' 条 · 违规 '+tw.violations+' 条 · 趋势 '+trendCn+'</span>'+
               '<a href="data:application/json;charset=utf-8,'+encodeURIComponent(JSON.stringify(wr))+'" download="weekly-'+escapeHtml(wr.weekLabel)+'.json" title="下载周报 JSON" class="btn btn-outline" style="margin-left:auto;height:24px;padding:0 8px;font-size:11px"><i class="bi bi-download"></i> 周报 JSON</a>'+
             '</div>'+
             '</div>';
