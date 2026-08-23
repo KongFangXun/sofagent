@@ -35,11 +35,10 @@ a:hover{text-decoration:underline}
 
 .nav{display:flex;gap:2px;justify-content:center;overflow-x:auto;scrollbar-width:none}
 .nav::-webkit-scrollbar{display:none}
-/* 文字导航（Vercel 风：无胶囊，active 下划线） */
-.nav-item{padding:8px 4px;margin:0 7px;font-size:13px;color:var(--text-s);cursor:pointer;border-radius:0;white-space:nowrap;transition:color .15s;border:none;background:none;font-family:var(--font);font-weight:500;position:relative}
-.nav-item:hover{color:var(--text);background:none}
-.nav-item.active{color:var(--brand);background:none}
-.nav-item.active::after{content:'';position:absolute;left:2px;right:2px;bottom:4px;height:2px;border-radius:1px;background:var(--brand)}
+/* 胶囊导航（active 浅蓝底） */
+.nav-item{padding:8px 14px;font-size:13px;color:var(--text-s);cursor:pointer;border-radius:var(--radius-s);white-space:nowrap;transition:all .15s;border:none;background:none;font-family:var(--font);font-weight:500}
+.nav-item:hover{color:var(--text);background:var(--bg)}
+.nav-item.active{color:var(--brand);background:var(--brand-l)}
 
 .header-right{display:flex;gap:6px;justify-content:flex-end}
 .star-btn{display:inline-flex;align-items:center;gap:5px;padding:6px 14px;border:1px solid var(--border);border-radius:20px;background:var(--card);color:var(--text-s);font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;font-family:var(--font);text-decoration:none;line-height:1.4}
@@ -65,9 +64,6 @@ a:hover{text-decoration:underline}
 .help-tab.active{display:block}
 .help-intro{font-size:12px;color:var(--text-s);margin-bottom:14px}
 
-/* 页内上下文（每页顶部一行说明） */
-.page-context{font-size:11px;color:var(--text-t);margin:0 0 12px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
-.page-context svg{width:12px;height:12px;flex-shrink:0}
 /* 高频违规规则 chip（洞察层） */
 .rule-chip{display:inline-flex;align-items:center;gap:4px;background:var(--red-l);color:var(--red);font-family:var(--mono);font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px;cursor:pointer;transition:all .15s}
 .rule-chip:hover{background:var(--red);color:#fff}
@@ -98,10 +94,6 @@ a:hover{text-decoration:underline}
 .metric-value{font-size:28px;font-weight:700;line-height:1.2;font-variant-numeric:tabular-nums}
 .metric-label{font-size:12px;color:var(--text-s);margin-top:4px}
 .metric-sub{font-size:11px;color:var(--text-t);margin-top:2px}
-/* 今日一句话洞察 */
-.insight-bar{background:var(--brand-l);border-radius:var(--radius-s);padding:10px 14px;font-size:12px;color:var(--brand-d);margin-bottom:16px;display:flex;align-items:center;gap:8px;line-height:1.5}
-.insight-bar svg{width:14px;height:14px;flex-shrink:0}
-.insight-bar b{font-weight:600}
 /* 指标趋势箭头（洞察层） */
 .metric-trend{font-size:10px;font-weight:600;margin-left:4px}
 .trend-up{color:var(--red)}
@@ -393,12 +385,12 @@ a:hover{text-decoration:underline}
 <!-- PAGE: 驾驶舱 (Live Dashboard) -->
 <!-- ================================================== -->
 <div class="page active" id="page-cockpit">
-  <div class="page-context"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>审计总览 · 数据源 ~/.sofagent/data（未连接时展示示例）</div>
   <div class="refresh-bar">
     <span class="data-status ds-sample" id="dataStatus">
       <span class="pulse"></span>
       <span id="dataStatusText">使用示例数据</span>
     </span>
+    <span id="insightInline" style="font-size:12px;color:var(--text-s);display:flex;align-items:center;gap:6px"></span>
     <button class="seg-btn seg-refresh" id="connectDirBtn" onclick="connectDataDir()" style="display:none" title="连接数据目录（Chrome 可直接选 ~/.sofagent/data 目录）" aria-label="连接数据目录">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;display:block"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><line x1="12" y1="11" x2="12" y2="17"/><polyline points="9 14 12 17 15 14"/></svg>
     </button>
@@ -413,8 +405,6 @@ a:hover{text-decoration:underline}
       <button class="seg-btn" data-val="30" onclick="changeRefresh('30')">30s</button>
     </div>
   </div>
-
-  <div class="insight-bar" id="insightBar"></div>
 
   <div class="metrics">
     <div class="metric-card">
@@ -488,8 +478,7 @@ a:hover{text-decoration:underline}
 <!-- PAGE: 业务流（AI 节点 + 工作明细，v1.4.0 归并） -->
 <!-- ================================================== -->
 <div class="page" id="page-workflow">
-  <div class="page-context"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>业务流 = 你部署的 AI 节点 + 工作明细 · 数据源 graph-state.json / worklog.json</div>
-  <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+    <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
     <button class="nav-item active" data-wf="status" onclick="wfMainTab('status')">实时状态</button>
     <button class="nav-item" data-wf="detail" onclick="wfMainTab('detail')">工作明细</button>
   </div>
@@ -560,8 +549,7 @@ a:hover{text-decoration:underline}
 <!-- PAGE: 本体图谱（本体结构 + 图谱，v1.4.0 归并） -->
 <!-- ================================================== -->
 <div class="page" id="page-ontology">
-  <div class="page-context"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>本体图谱 = 企业语义地图 · 数据源 knowledge/index.md + worklog.json</div>
-  <div class="section">
+    <div class="section">
     <div class="section-header">
       <div class="section-title"><span class="dot-emoji">🗺️</span>你的本体结构（ontology）</div>
       <span style="font-size:11px;color:var(--text-t)" id="ontUpdatedAt">加载中...</span>
@@ -593,8 +581,7 @@ a:hover{text-decoration:underline}
 <!-- PAGE: 知识库 -->
 <!-- ================================================== -->
 <div class="page" id="page-knowledge">
-  <div class="page-context"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>知识库 = 经验沉淀资产 · 数据源 knowledge/index.md + think.md</div>
-  <div class="section">
+    <div class="section">
     <div class="section-header">
       <div class="section-title"><span class="dot-emoji">📚</span>你的知识库</div>
       <span style="font-size:11px;color:var(--text-t)" id="kbUpdatedAt">加载中...</span>
@@ -632,8 +619,7 @@ a:hover{text-decoration:underline}
 <!-- PAGE: FDE 引导 -->
 <!-- ================================================== -->
 <div class="page" id="page-fde">
-  <div class="page-context"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>FDE 引导 = 怎么梳理业务流、部署 AI 节点 · 完整方法论见帮助面板</div>
-  <div class="section">
+    <div class="section">
     <div class="section-header"><div class="section-title"><span class="dot-emoji">🚀</span>怎么开始</div>
       <span style="font-size:11px;color:var(--text-t)">零依赖方法论 · 或装进你的 Agent</span>
     </div>
@@ -734,8 +720,7 @@ a:hover{text-decoration:underline}
 <!-- PAGE: 工具箱 -->
 <!-- ================================================== -->
 <div class="page" id="page-resources">
-  <div class="page-context"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>工具箱 = 能力与生态 · 安装 / 能力 / 生态 / 文档 / FORGE</div>
-  <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+    <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
     <button class="nav-item active" data-rs="install" onclick="resTab('install')">安装</button>
     <button class="nav-item" data-rs="ability" onclick="resTab('ability')">能力</button>
     <button class="nav-item" data-rs="ecosystem" onclick="resTab('ecosystem')">生态</button>
@@ -1313,8 +1298,8 @@ function renderSummaryData(s){
       mViol.innerHTML=todayIssues+(todayIssues>prevIssues?'<span class="metric-trend trend-up">↑</span>':todayIssues<prevIssues?'<span class="metric-trend trend-down">↓</span>':'<span class="metric-trend trend-flat">→</span>');
     }
   }
-  // 洞察：今日一句话（人话结论）
-  var ib=document.getElementById('insightBar');
+  // 洞察：今日一句话（并入顶部状态条，不单独一栏）
+  var ib=document.getElementById('insightInline');
   if(ib){
     if(lastDay){
       var parts=['今日 '+todayTasks+' 个任务、'+todayChecks+' 次检查'];
@@ -1326,7 +1311,7 @@ function renderSummaryData(s){
         var dlt=todayIssues-prevIss2;
         parts.push('问题较昨日 '+(dlt>0?'<b style="color:var(--red)">+'+dlt+'</b>':dlt<0?'<b style="color:var(--green)">'+dlt+'</b>':'持平'));
       }
-      ib.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="10"/></svg>'+parts.join(' · ');
+      ib.innerHTML='<span style="opacity:.5">|</span> '+parts.join(' · ');
     }else{
       ib.innerHTML='';
     }
