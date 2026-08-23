@@ -317,14 +317,14 @@ a:hover{text-decoration:underline}
 .sov-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:6px;animation:pulse 2s infinite}
 /* 图节点脉冲动画（编排控制图 / 图谱共用） */
 .pulse-svg{animation:pulse 2s infinite}
-/* skill 加载链（纵向阶梯） */
-.skill-chain{display:flex;flex-direction:column;gap:0;max-width:560px;margin:0 auto;width:100%}
-.sc-item{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--border);border-radius:var(--radius-s);background:var(--bg-s)}
-.sc-item .sc-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0}
-.sc-item .sc-name{font-size:13px;font-weight:600;flex-shrink:0}
-.sc-item .sc-desc{font-size:11px;color:var(--text-s)}
-.sc-item .sc-tag{margin-left:auto;font-size:10px;color:var(--text-t);font-family:var(--mono);flex-shrink:0}
-.sc-arrow{text-align:center;color:var(--text-t);font-size:13px;line-height:1;padding:5px 0;flex-shrink:0}
+/* skill 加载链（横向四层卡片——减少高度） */
+.skill-chain{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;max-width:100%}
+.sc-item{display:flex;flex-direction:column;gap:4px;padding:12px;border:1px solid var(--border);border-radius:var(--radius-s);background:var(--bg-s);min-width:0}
+.sc-item .sc-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.sc-name{font-size:12px;font-weight:600;display:flex;align-items:center;gap:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sc-desc{font-size:11px;color:var(--text-s);line-height:1.5}
+.sc-tag{display:none}
+.sc-arrow{display:none}
 
 @media(max-width:768px){
   :root{--nav-h:auto}
@@ -334,6 +334,8 @@ a:hover{text-decoration:underline}
   .metrics .metric-card:last-child:nth-child(odd){grid-column:1/-1}
   .metric-value{font-size:24px}
   .grid-2,.grid-3,.attention,.quick-start{grid-template-columns:1fr}
+  /* 加载链横向 4 卡窄屏回单列 */
+  .skill-chain{grid-template-columns:1fr}
   /* header 两行：第一行 logo+star，第二行导航 */
   .header{padding:8px 8px 0;gap:6px;display:flex;flex-direction:column;height:auto;align-items:stretch}
   .header-inner{display:flex;flex-direction:column;height:auto;padding:0;gap:6px;width:100%}
@@ -2485,9 +2487,8 @@ function renderSkillChain(){
   ];
   var html='<div style="font-size:11px;color:var(--text-t);margin-bottom:12px">每次 Agent 启动按序注入四层约束——约束先于行为，红线先于干活：</div>';
   html+='<div class="skill-chain">';
-  layers.forEach(function(l,i){
-    html+='<div class="sc-item"><span class="sc-dot" style="background:'+l.dot+'"></span><span class="sc-name">'+escapeHtml(l.name)+'</span><span class="sc-desc">'+escapeHtml(l.desc)+'</span><span class="sc-tag">'+escapeHtml(l.tag)+'</span></div>';
-    if(i<layers.length-1)html+='<div class="sc-arrow">↓</div>';
+  layers.forEach(function(l){
+    html+='<div class="sc-item" title="'+escapeHtml(l.tag)+'"><span class="sc-name"><span class="sc-dot" style="background:'+l.dot+'"></span>'+escapeHtml(l.name)+'</span><span class="sc-desc">'+escapeHtml(l.desc)+'</span></div>';
   });
   html+='</div>';
   box.innerHTML=html;
