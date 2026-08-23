@@ -173,7 +173,7 @@ a:hover{text-decoration:underline}
 .rule-cat-gray .rule-code{color:var(--text-t)}
 
 .node-card{background:var(--bg-s);border:1px solid var(--border);border-radius:var(--radius-s);padding:10px 12px}
-.node-status{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:500}
+.node-status{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:500}
 .node-status .icon{width:8px;height:8px;border-radius:50%}
 .status-running .icon{background:var(--brand);animation:pulse 2s infinite}
 /* Agent 类型统一灰点（图形全灰，角色不靠颜色区分靠文字） */
@@ -1753,7 +1753,7 @@ function loadFdeWorkflowData(){
         wf.steps.forEach(function(s,i){
           var ac=agentColor[s.agent]||agentColor.analyst;
           html+='<div class="fde-step" style="flex:0 0 calc(20% - 7px);box-sizing:border-box;background:'+ac.bg+';border:1px solid '+ac.border+';border-radius:var(--radius-s);padding:10px 12px">'+
-            '<div style="font-size:10px;color:var(--text-t);font-family:var(--mono);display:flex;align-items:center;gap:5px"><span class="agent-dot '+escapeHtml(s.agent)+'"></span> STEP '+(i+1)+' · <span style="color:var(--text-s)">'+escapeHtml(ac.role)+' · '+escapeHtml(s.agent)+'</span></div>'+
+            '<div style="font-size:12px;color:var(--text-t);font-family:var(--mono);display:flex;align-items:center;gap:5px"><span class="agent-dot '+escapeHtml(s.agent)+'"></span> STEP '+(i+1)+' · <span style="color:var(--text-s)">'+escapeHtml(ac.role)+' · '+escapeHtml(s.agent)+'</span></div>'+
             '<div style="font-size:12px;font-weight:600;margin-top:4px;display:flex;align-items:baseline;gap:6px;flex-wrap:wrap"><span>'+escapeHtml(s.name)+'</span><span style="font-size:10px;font-weight:400;color:var(--text-t)">'+ac.label+(s.loop?' · 循环':'')+'</span></div>'+
             '</div>';
         });
