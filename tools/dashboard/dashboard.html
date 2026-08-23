@@ -137,8 +137,10 @@ a:hover{text-decoration:underline}
 .chart-box svg{animation:fadeIn .35s ease}
 
 /* Architecture */
-.arch-layer{border-radius:var(--radius-s);padding:12px;margin-bottom:8px}
+.arch-layer{border-radius:var(--radius-s);padding:12px}
 .arch-layer h5{font-size:13px;font-weight:600;margin-bottom:4px}
+/* 约束层四能力横向 4 卡 */
+.arch-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
 
 /* Timeline */
 .timeline{position:relative;padding-left:24px}
@@ -154,7 +156,7 @@ a:hover{text-decoration:underline}
 .tl-desc{font-size:12px;color:var(--text-s);margin-top:2px}
 
 /* Rules */
-.rule-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.rule-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:8px}
 .rule-item{background:var(--bg-s);border:1px solid var(--border);border-radius:var(--radius-s);padding:8px 10px;font-size:12px;transition:border-color .15s}
 .rule-item:hover{border-color:var(--text-t)}
 .rule-code{font-family:var(--mono);font-weight:600;font-size:11px}
@@ -239,7 +241,7 @@ a:hover{text-decoration:underline}
 .install-box{background:#0D1117;border-radius:var(--radius-s);padding:16px;display:flex;align-items:center;justify-content:space-between;gap:12px}
 .install-box code{font-family:var(--mono);font-size:13px;color:#7EE787}
 
-.mcp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:8px}
+.mcp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px}
 .mcp-item{background:var(--bg-s);border:1px solid var(--border);border-radius:6px;padding:8px 10px;font-size:12px}
 .mcp-item code{font-family:var(--mono);font-size:11px;color:var(--text-s);font-weight:600}
 .mcp-item .mcp-desc{color:var(--text-s);margin-top:2px;font-size:11px}
@@ -338,6 +340,8 @@ a:hover{text-decoration:underline}
   .grid-2,.grid-3,.attention,.quick-start{grid-template-columns:1fr}
   /* 加载链横向 4 卡窄屏回单列 */
   .skill-chain{grid-template-columns:1fr}
+  /* 约束层四能力窄屏回单列 */
+  .arch-grid{grid-template-columns:1fr}
   /* header 两行：第一行 logo+star，第二行导航 */
   .header{padding:8px 8px 0;gap:6px;display:flex;flex-direction:column;height:auto;align-items:stretch}
   .header-inner{display:flex;flex-direction:column;height:auto;padding:0;gap:6px;width:100%}
@@ -748,6 +752,28 @@ a:hover{text-decoration:underline}
     </div>
   </div>
   <div class="section">
+    <div class="section-header">
+      <div class="section-title"><span class="dot-emoji"><i class="bi bi-bricks"></i></span>约束层（Harness）· 一个层四种能力</div>
+      <a href="https://github.com/KongFangXun/sofagent/blob/main/docs/ARCHITECTURE.md" target="_blank" class="btn btn-outline">ARCHITECTURE.md →</a>
+    </div>
+    <div class="section-body arch-grid">
+      <div class="arch-layer" style="background:var(--bg-s);border:1px solid var(--border)">
+        <h5 style="color:var(--text-s)">注入</h5>
+        <div style="font-size:12px;color:var(--text-s)">开工前注入红线 · 四层加载链 · SKILL.md → fde.md → think.md → knowledge/</div>
+      </div>
+      <div class="arch-layer" style="background:var(--bg-s);border:1px solid var(--border)">
+        <h5 style="color:var(--text-s)">审计</h5>
+        <div style="font-size:12px;color:var(--text-s)">每次变更硬证据 · 24 条规则 · 19 条零 token · 违规当场拦截</div>
+      </div>
+      <div class="arch-layer" style="background:var(--bg-s);border:1px solid var(--border)">
+        <h5 style="color:var(--text-s)">回溯</h5>
+        <div style="font-size:12px;color:var(--text-s)">自动快照 · 一键回滚 · git snapshot 不污染历史</div>
+      </div>
+      <div class="arch-layer" style="background:var(--bg-s);border:1px solid var(--border)">
+        <h5 style="color:var(--text-s)">进化</h5>
+        <div style="font-size:12px;color:var(--text-s)">think.md 反思 + Dream Cycle 知识回灌 + skillopt Skill 优化</div>
+      </div>
+    <div class="section">
     <div class="section-header"><div class="section-title"><span class="dot-emoji"><i class="bi bi-diagram-2"></i></span>skill 加载链（四层约束注入）</div>
       <a href="https://github.com/KongFangXun/sofagent/blob/main/docs/ARCHITECTURE.md" target="_blank" class="btn btn-outline">ARCHITECTURE.md →</a>
     </div>
@@ -779,29 +805,7 @@ a:hover{text-decoration:underline}
       </div>
     </div>
   </div>
-  <div class="section">
-    <div class="section-header">
-      <div class="section-title"><span class="dot-emoji"><i class="bi bi-bricks"></i></span>约束层（Harness）· 一个层四种能力</div>
-      <a href="https://github.com/KongFangXun/sofagent/blob/main/docs/ARCHITECTURE.md" target="_blank" class="btn btn-outline">ARCHITECTURE.md →</a>
-    </div>
-    <div class="section-body">
-      <div class="arch-layer" style="background:var(--bg-s);border:1px solid var(--border)">
-        <h5 style="color:var(--text-s)">注入</h5>
-        <div style="font-size:12px;color:var(--text-s)">开工前注入红线 · 四层加载链 · SKILL.md → fde.md → think.md → knowledge/</div>
-      </div>
-      <div class="arch-layer" style="background:var(--bg-s);border:1px solid var(--border)">
-        <h5 style="color:var(--text-s)">审计</h5>
-        <div style="font-size:12px;color:var(--text-s)">每次变更硬证据 · 24 条规则 · 19 条零 token · 违规当场拦截</div>
-      </div>
-      <div class="arch-layer" style="background:var(--bg-s);border:1px solid var(--border)">
-        <h5 style="color:var(--text-s)">回溯</h5>
-        <div style="font-size:12px;color:var(--text-s)">自动快照 · 一键回滚 · git snapshot 不污染历史</div>
-      </div>
-      <div class="arch-layer" style="background:var(--bg-s);border:1px solid var(--border)">
-        <h5 style="color:var(--text-s)">进化</h5>
-        <div style="font-size:12px;color:var(--text-s)">think.md 反思 + Dream Cycle 知识回灌 + skillopt Skill 优化</div>
-      </div>
-    </div>
+  </div>
   </div>
   <div class="section">
     <div class="section-header"><div class="section-title"><span class="dot-emoji"><i class="bi bi-shield-check"></i></span>审计规则全览（24 条）</div>
@@ -1105,7 +1109,7 @@ build → acceptance → regression → coverage，
           <div class="step-desc">
             安装完成后，在你的 Agent 里直接对话：<br>
             <span style="color:var(--brand)">"帮我做 FDE 诊断"</span> → Agent 会从 §1 进场开始引导你<br>
-            <span style="color:var(--brand)">"帮我梳理工作流"</span> → Agent 从当前阶段开始
+            <span style="color:var(--brand)">"帮我梳理业务流"</span> → Agent 从当前阶段开始
           </div>
         </div>
         <div style="font-size:13px;font-weight:600;color:var(--text);margin:16px 0 8px">持续优化场景速查</div>
@@ -1128,7 +1132,7 @@ build → acceptance → regression → coverage，
 </div>
 
   <div class="footer">
-    <p>sofagent · FDE Agent — 梳理工作流 · 部署 AI 节点 · 审计每次变更</p>
+    <p>sofagent · FDE Agent — 梳理业务流 · 构建本体图谱 · 部署 AI 节点 · 审计每次变更</p>
     <p style="margin-top:4px"><a href="https://github.com/KongFangXun/sofagent" target="_blank">GitHub</a> · MIT License · 孔放勋 · v1.4.0</p>
   </div>
 </div>
