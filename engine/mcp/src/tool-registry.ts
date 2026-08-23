@@ -234,7 +234,8 @@ export const TOOLS: ToolDef[] = [
   },
   {
     name: 'list_capabilities',
-    roles: ['ops'],
+    // v1.4.0 修正：能力发现元工具不归任何角色面（原 roles:['ops'] 致默认三面下被过滤，
+    // Agent 首次连接拿不到能力地图——S59 回归抓出）。未打标 = 始终暴露（同动态工具机制）。
     description: '返回 sofagent MCP 完整能力清单（tools + resources + 描述）——Agent 首次连上时调用获取能力地图',
     inputSchema: { type: 'object', properties: {} },
   },

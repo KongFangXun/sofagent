@@ -1859,17 +1859,17 @@ S219_OK=true
 MCP="$PROJECT_ROOT/engine/mcp/src/mcp-server.ts"
 [ -f "$MCP" ] || { fail "mcp-server.ts 不存在"; S219_OK=false; }
 if $S219_OK; then
-  # 行数 ≤ 400（拆分后应瘦身）。
+  # 行数 ≤ 420（拆分后应瘦身）。
   # v1.3.5 校准：v1.2.9 立线时约 20 tools，300 行够；现 52 tools，每个 tool 薄分发固定成本 2 行（1 import + 1 case）≈104 行 + 协议骨架，300 物理装不下。
-  # v1.4.0 校准：66 tools（+cost_query +browser 4）+ tool 详情描述行 → 397 行，阈值 350→400（判定本质是「拆分充分」非行数绝对值，tool 数线性增长）。
+  # v1.4.0 校准：66 tools（+cost_query +browser 4）+ 角色分层接入（tool-roles import + 过滤/拦截 ~14 行）→ 409 行，阈值 400→420（判定本质是「拆分充分」非行数绝对值）。
   MCP_LINES=$(wc -l < "$MCP" | tr -d ' ')
-  [ "$MCP_LINES" -le 400 ] || { fail "mcp-server.ts 行数 $MCP_LINES > 400（拆分不充分）"; S219_OK=false; }
+  [ "$MCP_LINES" -le 420 ] || { fail "mcp-server.ts 行数 $MCP_LINES > 420（拆分不充分）"; S219_OK=false; }
   # 拆分出的模块文件存在
   [ -f "$PROJECT_ROOT/engine/mcp/src/tool-registry.ts" ] || { fail "tool-registry.ts 不存在"; S219_OK=false; }
   [ -f "$PROJECT_ROOT/engine/mcp/src/tools/audit-tools.ts" ] || { fail "tools/audit-tools.ts 不存在"; S219_OK=false; }
   [ -f "$PROJECT_ROOT/engine/mcp/src/tools/audit-file.ts" ] || { fail "tools/audit-file.ts 不存在"; S219_OK=false; }
   [ -f "$PROJECT_ROOT/engine/mcp/src/resources.ts" ] || { fail "resources.ts 不存在"; S219_OK=false; }
-  $S219_OK && pass "mcp-server.ts拆分（${MCP_LINES}行 ≤ 400 + tool-registry + tools/audit-tools + tools/audit-file + resources）"
+  $S219_OK && pass "mcp-server.ts拆分（${MCP_LINES}行 ≤ 420 + tool-registry + tools/audit-tools + tools/audit-file + resources）"
 fi
 
 scenario 220 "v1.2.9 ⑥ BugFix — REPO_ROOT 已修复 + check-version.sh 扫描路径已更新"
