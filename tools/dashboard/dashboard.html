@@ -141,6 +141,8 @@ a:hover{text-decoration:underline}
 .arch-layer h5{font-size:13px;font-weight:600;margin-bottom:4px}
 /* 约束层四能力横向 4 卡 */
 .arch-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+/* 引擎执行流水线节点：一行 5 个 */
+.node-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
 
 /* Timeline */
 .timeline{position:relative;padding-left:24px}
@@ -342,6 +344,8 @@ a:hover{text-decoration:underline}
   .skill-chain{grid-template-columns:1fr}
   /* 约束层四能力窄屏回单列 */
   .arch-grid{grid-template-columns:1fr}
+  /* 引擎流水线节点窄屏回单列 */
+  .node-grid{grid-template-columns:1fr}
   /* header 两行：第一行 logo+star，第二行导航 */
   .header{padding:8px 8px 0;gap:6px;display:flex;flex-direction:column;height:auto;align-items:stretch}
   .header-inner{display:flex;flex-direction:column;height:auto;padding:0;gap:6px;width:100%}
@@ -933,7 +937,7 @@ build → acceptance → regression → coverage，
         <div class="step-title"><span class="step-num">3</span>引擎执行流水线</div>
         <div class="step-desc">每次 AI 任务自动走的五步（planner → engineer → audit → reviewer → human）——sofagent 引擎内部机制，与 FORGE 同类。业务角色节点（分析师/规划师/部署专家）见 <a href="javascript:void(0)" onclick="goPage('fde')" style="color:var(--brand)">FDE 引导</a> 页。</div>
       </div>
-      <div class="grid-3" id="nodeList" style="gap:10px">
+      <div class="node-grid" id="nodeList">
         <div class="skeleton" style="grid-column:1/-1;height:60px"></div>
       </div>
     </div>

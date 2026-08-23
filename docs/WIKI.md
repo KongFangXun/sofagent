@@ -22,7 +22,7 @@
 
 ## 一、一句话
 
-**sofagent 是一个开源 FDE Agent**（MIT，同时也是 FDE 方法论的参考实现）——进场梳理业务流、把能自动化的环节变成 AI 节点、部署到设备上 7×24 自己跑。底层是 **约束层（Harness）**——约束 Agent 行为、审计每次变更、沉淀经验。**产品形态 = 一个 FDE Agent**：以 LangGraph + 约束层为内核，plugin + skill + MCP + CLI + dashboard 为调用面，约束底座 + FDE 方法论为行为层——它给自己做的第一份 FDE，就是 sofagent 自己（自举）。
+**sofagent 是一个开源 FDE Agent**（MIT，同时也是 FDE 方法论的参考实现）——进场梳理业务流、构建本体图谱、把能自动化的环节变成 AI 节点、部署到设备上 7×24 自己跑。底层是 **约束层（Harness）**——约束 Agent 行为、审计每次变更、沉淀经验。**产品形态 = 一个 FDE Agent**：以 LangGraph + 约束层为内核，plugin + skill + MCP + CLI + dashboard 为调用面，约束底座 + FDE 方法论为行为层——它给自己做的第一份 FDE，就是 sofagent 自己（自举）。
 
 ---
 
