@@ -57,13 +57,13 @@ export default {
       const cur = (c.sofagent ?? {}) as Record<string, unknown>;
       c.sofagent = { ...cur, audit: service };
     }
-    // v1.4.0 第二步（Dynamic Cordis Runner PoC）：尝试把 sofagent audit 注册为动态插件，
+    // v1.4.0 第二步（Dynamic Cordis Runner）：把 sofagent audit 注册为动态插件，
     // 让 WebUI Plugin list（dynamicCordisRunner/inventory）显示加载状态 + 品牌名。
-    // define 不跨 wire（进程内调用），profile apply 时若无可用会话则优雅跳过（不崩）。
+    // inject: [dynamicCordisRunner] 后服务已就绪；define 是进程内 registry.add（sessionId 仅记录字段）。
     try {
       const runner = c.dynamicCordisRunner as { define?: (r: Record<string, unknown>) => unknown } | undefined;
       if (runner && typeof runner.define === 'function') {
-        runner.define({
+        const res = runner.define({
           name: 'sofagent-audit',
           purpose: 'sofagent 审计插件——24 规则 + git diff 硬证据（品牌色 #16B8F3）',
           code: {
@@ -76,11 +76,16 @@ export default {
             ].join('\n'),
           },
           plugin: { kind: 'new', idPrefix: 'soga' },
-          sessionId: (c as { sessionId?: string }).sessionId ?? 'profile-boot',
+          // sessionId 仅作记录字段（define 不校验会话真实性）——profile apply 无会话上下文，传固定标记
+          sessionId: 'profile-boot',
         });
+        console.error('[sofagent-audit] dynamicCordisRunner.define 成功:', JSON.stringify(res));
+      } else {
+        console.error('[sofagent-audit] dynamicCordisRunner 服务不可用（inject 未生效）');
       }
-    } catch {
-      // define 需要真实会话上下文——profile 启动期无会话时跳过（动态注册由会话内模型工具 cordis_define 驱动）
+    } catch (err) {
+      // define 失败不崩——动态注册为增强项（WebUI Plugin list 显形）
+      console.error('[sofagent-audit] dynamicCordisRunner.define 失败:', err instanceof Error ? err.message : String(err));
     }
     // v1.4.0 第二步（Settings namespace）：注册 sofagent-audit 配置命名空间，
     // 让 WebUI Settings → Plugins → Plugin configuration 显示 sofagent 审计插件（可配置 + 品牌色）。
