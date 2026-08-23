@@ -1859,7 +1859,7 @@ function loadPipelineGraph(){
         var tx=x+nodeW/2;
         if(st==='running'||st==='active'){
           var tw=String(statusCn).length*9;
-          svg+='<circle class="pulse-svg" cx="'+(tx-tw/2-5)+'" cy="72" r="3" fill="var(--brand)"/>';
+          svg+='<circle class="pulse-svg" cx="'+(tx-tw/2-5)+'" cy="72" r="2" fill="var(--brand)"/>';
         }
         svg+='<text x="'+tx+'" y="76" text-anchor="middle" font-size="9" fill="var(--text-t)">'+escapeHtml(statusCn)+'</text>';
       });
@@ -2360,7 +2360,7 @@ function renderFlowGraph(nodes,edges){
     var tx=p.x+nodeW/2;
     if(st==='active'||st==='hitl'){
       var tw=String(stLabel).length*9;
-      svg+='<circle class="pulse-svg" cx="'+(tx-tw/2-5)+'" cy="'+(p.y+72)+'" r="3" fill="var(--brand)"/>';
+      svg+='<circle class="pulse-svg" cx="'+(tx-tw/2-5)+'" cy="'+(p.y+72)+'" r="2" fill="var(--brand)"/>';
     }
     svg+='<text x="'+tx+'" y="'+(p.y+76)+'" text-anchor="middle" font-size="9" fill="var(--text-t)">'+escapeHtml(stLabel)+'</text>';
   });
