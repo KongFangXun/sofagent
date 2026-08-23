@@ -160,7 +160,7 @@ a:hover{text-decoration:underline}
 .rule-cat-purple .rule-code{color:var(--text-s)}
 .rule-cat-gray .rule-code{color:var(--text-t)}
 
-.node-card{background:var(--bg-s);border:1px solid var(--border);border-radius:var(--radius-s);padding:14px}
+.node-card{background:var(--bg-s);border:1px solid var(--border);border-radius:var(--radius-s);padding:10px 12px}
 .node-status{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:500}
 .node-status .icon{width:8px;height:8px;border-radius:50%}
 .status-running .icon{background:var(--brand);animation:pulse 2s infinite}
@@ -170,8 +170,8 @@ a:hover{text-decoration:underline}
 .agent-dot.planner{background:var(--brand)}
 .agent-dot.human{background:var(--brand)}
 .status-pending .icon{background:var(--text-t)}
-.node-meta{font-size:12px;color:var(--text-s);margin-top:6px}
-.node-stats{display:flex;gap:12px;margin-top:8px;font-size:11px;color:var(--text-t)}
+.node-meta{font-size:12px;color:var(--text-s);margin-top:4px}
+.node-stats{display:flex;gap:12px;margin-top:5px;font-size:11px;color:var(--text-t)}
 
 .audit-log{font-size:12px}
 .audit-row{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)}
@@ -466,14 +466,14 @@ a:hover{text-decoration:underline}
   </div>
 
   <div class="section">
-    <div class="section-header"><div class="section-title"><span class="dot-emoji"><i class="bi bi-bar-chart"></i></span>任务日志（worklog）</div>
+    <div class="section-header"><div class="section-title"><span class="dot-emoji"><i class="bi bi-bar-chart"></i></span>工作记录（worklog）</div>
       <span style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
         <span class="tab-inline">
-          <button class="nav-item active" id="wl-tab-overview" onclick="wlTab('overview')">全局总览</button>
-          <button class="nav-item" id="wl-tab-tasks" onclick="wlTab('tasks')">任务明细</button>
-          <button class="nav-item" id="wl-tab-audit" onclick="wlTab('audit')">审计记录</button>
-          <button class="nav-item" id="wl-tab-intervention" onclick="wlTab('intervention')">人工介入</button>
-          <button class="nav-item" id="wl-tab-weekly" onclick="wlTab('weekly')">周报汇总</button>
+          <button class="nav-item active" id="wl-tab-overview" onclick="wlTab('overview')">概况</button>
+          <button class="nav-item" id="wl-tab-tasks" onclick="wlTab('tasks')">任务</button>
+          <button class="nav-item" id="wl-tab-audit" onclick="wlTab('audit')">审计</button>
+          <button class="nav-item" id="wl-tab-intervention" onclick="wlTab('intervention')">介入</button>
+          <button class="nav-item" id="wl-tab-weekly" onclick="wlTab('weekly')">周报</button>
         </span>
       </span>
     </div>
@@ -549,15 +549,6 @@ a:hover{text-decoration:underline}
     <div class="section-body">
       <div class="chart-box" id="graphBox">
         <div style="text-align:center;color:var(--text-t);font-size:12px;padding:12px">加载中...</div>
-      </div>
-    </div>
-  </div>
-  <div class="section">
-    <div class="section-header"><div class="section-title"><span class="dot-emoji"><i class="bi bi-puzzle"></i></span>编排流水线节点</div></div>
-    <div class="section-body">
-      <div style="font-size:11px;color:var(--text-t);margin-bottom:10px">这里是 <b>sofagent 引擎内部执行流水线</b>（planner → engineer → audit → reviewer → human），每次 AI 任务自动走的五步。业务角色节点（分析师/规划师/部署专家）见 <a href="javascript:void(0)" onclick="goPage('fde')" style="color:var(--brand)">FDE 引导</a> 页。</div>
-      <div class="grid-3" id="nodeList">
-        <div style="grid-column:1/-1;text-align:center;color:var(--text-t);font-size:12px;padding:12px">加载中...</div>
       </div>
     </div>
   </div>
@@ -922,6 +913,18 @@ build → acceptance → regression → coverage，
       </div>
     </div>
   </div>
+
+  <div class="section">
+    <div class="section-header"><div class="section-title"><span class="dot-emoji"><i class="bi bi-puzzle"></i></span>引擎执行流水线节点</div>
+      <a href="https://github.com/KongFangXun/sofagent/blob/main/docs/ARCHITECTURE.md" target="_blank" class="btn btn-outline">ARCHITECTURE.md →</a>
+    </div>
+    <div class="section-body">
+      <div style="font-size:11px;color:var(--text-t);margin-bottom:10px">这里是 <b>sofagent 引擎内部执行流水线</b>（planner → engineer → audit → reviewer → human），每次 AI 任务自动走的五步——与 FORGE 一样属于项目自身的机制，不属于企业工作流。业务角色节点（分析师/规划师/部署专家）见 <a href="javascript:void(0)" onclick="goPage('fde')" style="color:var(--brand)">FDE 引导</a> 页。</div>
+      <div class="grid-3" id="nodeList" style="gap:10px">
+        <div style="grid-column:1/-1;text-align:center;color:var(--text-t);font-size:12px;padding:12px">加载中...</div>
+      </div>
+    </div>
+  </div>
 </div><!-- ============ HELP PANEL（全局教学入口） ============ -->
 <div class="help-overlay" id="helpOverlay">
   <div class="help-panel" role="dialog" aria-label="帮助与支持">
@@ -1251,9 +1254,9 @@ function renderSummaryData(s){
   animateNumber(document.getElementById('m-violations'),todayIssues);
   var vsEl=document.getElementById('m-violations-sub');
   vsEl.textContent='总 '+totalIssues+' 次问题';
-  // 审计记录卡：总数 + 测试过滤说明
+  // 审计记录卡：最近 10 条（非全量明细）+ 总数 + 测试过滤说明
   var cnt=document.getElementById('auditRecordCount');
-  if(cnt){cnt.textContent='共 '+(s.auditTotal||r.total)+' 条'+(s.filteredTestRecords?(' · 已过滤 '+s.filteredTestRecords+' 条测试'):'')}
+  if(cnt){cnt.textContent='最近审计 · 显示最近 10 条（共 '+(s.auditTotal||r.total)+' 条'+(s.filteredTestRecords?(' · 已过滤 '+s.filteredTestRecords+' 条测试'):'')+'）'}
   // 主权
   if(s.sovereignty){
     renderSovereigntyBox(s.sovereignty,s.daemon?s.daemon.status:null,s.auditTotal,s.todayCount);
@@ -2276,7 +2279,7 @@ function loadWorklogData(){
       }
     });
   }).catch(function(){
-    var emptyHtml=emptyState('<i class="bi bi-bar-chart"></i>','还没有任务日志','部署 AI 节点并运行编排任务后生成（worklog.json）','去 FDE 引导部署',"goPage('fde')");
+    var emptyHtml=emptyState('<i class="bi bi-bar-chart"></i>','还没有工作记录','部署 AI 节点并运行编排任务后生成（worklog.json）','去 FDE 引导部署',"goPage('fde')");
     document.getElementById('wl-view-overview').innerHTML=emptyHtml;
     document.getElementById('wl-view-tasks').innerHTML=emptyHtml;
     document.getElementById('wl-view-intervention').innerHTML=emptyHtml;
@@ -2395,7 +2398,7 @@ function loadGraphView(){
         renderFlowGraph(ontNodes,ontEdges);
     });
   }).catch(function(){
-    document.getElementById('gr-view-workflow').innerHTML=emptyState('<i class="bi bi-diagram-3"></i>','还没有图谱数据','运行过 AI 编排任务后自动生成（worklog.json）','查看任务日志',"goPage('workflow')");
+    document.getElementById('gr-view-workflow').innerHTML=emptyState('<i class="bi bi-diagram-3"></i>','还没有图谱数据','运行过 AI 编排任务后自动生成（worklog.json）','查看工作记录',"goPage('workflow')");
   });
 }
 
@@ -2446,7 +2449,7 @@ var MCP_TOOLS=[
     ['get_think','读取反思'],['write_think','写入反思'],['refine','质量优化循环'],['optimize_skill','Skill 优化'],['evaluate_output','产出评估'],['evaluate','Benchmark 评测'],['eval_suite','评测套件'],['run_ab_test','A/B 实验'],['promote_ab','晋升版本']
   ]},
   {g:'编排与执行',open:false,items:[
-    ['worklog_query','任务日志查询'],['sofagent_compose','任务编排'],['activate_workflow','激活工作流'],['workflow_submit','工作流提交'],['route_workflow','入口路由'],['fde_compose','FDE 梳理辅助'],['loop_debug','调试循环'],['create_agent','推导 Agent'],['hitl_resolve','人工决议'],['notify_session','会话通知'],['define_acceptance','验收定义'],['check_acceptance','验收执行']
+    ['worklog_query','工作记录查询'],['sofagent_compose','任务编排'],['activate_workflow','激活工作流'],['workflow_submit','工作流提交'],['route_workflow','入口路由'],['fde_compose','FDE 梳理辅助'],['loop_debug','调试循环'],['create_agent','推导 Agent'],['hitl_resolve','人工决议'],['notify_session','会话通知'],['define_acceptance','验收定义'],['check_acceptance','验收执行']
   ]},
   {g:'能力公地与模型',open:false,items:[
     ['commons_publish','能力发布'],['commons_search','能力检索'],['commons_invoke','能力调用'],['commons_rate','能力评价'],['commons_retire','能力退役'],['commons_harvest_rule','规则提炼'],['model_register','模型注册'],['model_switch','模型切换'],['model_unregister','模型退役'],['train_budget','训练预算']
