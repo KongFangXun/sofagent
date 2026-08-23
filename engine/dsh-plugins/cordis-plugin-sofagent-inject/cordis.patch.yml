@@ -1,0 +1,7 @@
+# sofagent cordis-plugin-sofagent-inject bundle patch——sofagent 品牌插件，注册为 DSH profile layer
+- insert:
+    - id: sofagent-inject
+      name: 'cordis-plugin-sofagent-inject'
+      config:
+        seam: "apply(ctx) 注入四层加载链"
+        description: "启动注入企业约束——四层加载链（sofagent 品牌 · #16B8F3）"

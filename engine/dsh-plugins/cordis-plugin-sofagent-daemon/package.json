@@ -1,7 +1,7 @@
 {
-  "name": "cordis-plugin-daemon",
+  "name": "cordis-plugin-sofagent-daemon",
   "version": "0.1.0",
-  "description": "7×24 巡检 + 健康监测 + webhook 推送（seam: 独立调度进程）",
+  "description": "7×24 巡检 + 健康监测 + webhook 推送（seam: 独立调度进程）（sofagent 品牌插件 · 主色 #16B8F3）",
   "private": true,
   "license": "MIT",
   "author": "KongFangXun",
@@ -24,5 +24,10 @@
   "devDependencies": {
     "typescript": "^5.0.0",
     "vitest": "^2.0.0"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
   }
 }

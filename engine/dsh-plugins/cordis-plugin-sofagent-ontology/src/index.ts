@@ -7,7 +7,7 @@
 
 /** 插件元数据（DSH profile/注册表消费） */
 export const pluginMeta = {
-  id: 'cordis-plugin-ontology',
+  id: 'cordis-plugin-sofagent-ontology',
   version: '0.1.0',
   description: '共享语义底座 + 知识检索（seam: ontology_* tools + search_knowledge）',
   seam: 'ontology_* tools + search_knowledge',
@@ -34,3 +34,24 @@ export async function invoke<T = unknown>(...args: unknown[]): Promise<T> {
     throw new Error('cordis-plugin-ontology 依赖 @sofagent/ontology 不可用：' + (err instanceof Error ? err.message : String(err)));
   }
 }
+
+
+/**
+ * DSH Cordis 插件契约（v1.4.0 品牌化）：默认导出 apply(ctx) 把能力注册为 ctx 服务（sofagent.ontology）。
+ * 插件被挂进 DSH profile（dsh.bundle + cordis.patch.yml）后由 Cordis loader 调用。
+ */
+export default {
+  apply(ctx: unknown): void {
+    const c = ctx as {
+      provide?: (name: string, service: Record<string, unknown>) => unknown;
+      [key: string]: unknown;
+    };
+    const service = { invoke, meta: pluginMeta, capability };
+    if (typeof c.provide === 'function') {
+      c.provide('sofagent.ontology', service);
+    } else {
+      const cur = (c.sofagent ?? {}) as Record<string, unknown>;
+      c.sofagent = { ...cur, ontology: service };
+    }
+  },
+};

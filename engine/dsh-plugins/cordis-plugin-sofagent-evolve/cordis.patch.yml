@@ -1,0 +1,7 @@
+# sofagent cordis-plugin-sofagent-evolve bundle patch——sofagent 品牌插件，注册为 DSH profile layer
+- insert:
+    - id: sofagent-evolve
+      name: 'cordis-plugin-sofagent-evolve'
+      config:
+        seam: "任务结束 hook + refine tool"
+        description: "经验沉淀——think.md 反思 + Dream Cycle + skillopt（sofagent 品牌 · #16B8F3）"

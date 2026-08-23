@@ -7,7 +7,7 @@
 
 /** 插件元数据（DSH profile/注册表消费） */
 export const pluginMeta = {
-  id: 'cordis-plugin-audit',
+  id: 'cordis-plugin-sofagent-audit',
   version: '0.1.0',
   description: '变更机器审阅——24 规则 + git diff 硬证据 + 节点级审计（seam: tools/result + tools/pre-execute + fs/write-intent）',
   seam: 'tools/result + tools/pre-execute + fs/write-intent',
@@ -34,3 +34,25 @@ export async function invoke<T = unknown>(...args: unknown[]): Promise<T> {
     throw new Error('cordis-plugin-audit 依赖 @sofagent/audit 不可用：' + (err instanceof Error ? err.message : String(err)));
   }
 }
+
+/**
+ * DSH Cordis 插件契约（v1.4.0 补全）：默认导出 apply(ctx) 注册能力。
+ * 插件被挂进 DSH profile（dsh.bundle + cordis.patch.yml）后由 Cordis loader 调用；
+ * apply 把 sofagent 审计能力注册为 ctx 服务（sofagent.audit），其他插件/Agent 可经 ctx 调用。
+ */
+export default {
+  apply(ctx: unknown): void {
+    const c = ctx as {
+      provide?: (name: string, service: Record<string, unknown>) => unknown;
+      [key: string]: unknown;
+    };
+    const service = { invoke, meta: pluginMeta, capability };
+    if (typeof c.provide === 'function') {
+      c.provide('sofagent.audit', service);
+    } else {
+      // 降级：无 provide API 时挂到 ctx 命名空间（保持可发现）
+      const cur = (c.sofagent ?? {}) as Record<string, unknown>;
+      c.sofagent = { ...cur, audit: service };
+    }
+  },
+};

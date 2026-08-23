@@ -1,0 +1,7 @@
+# sofagent cordis-plugin-sofagent-gate bundle patch——sofagent 品牌插件，注册为 DSH profile layer
+- insert:
+    - id: sofagent-gate
+      name: 'cordis-plugin-sofagent-gate'
+      config:
+        seam: "agent/turn-stopping"
+        description: "验收不过不放行——机器可判定验收 + 人审（sofagent 品牌 · #16B8F3）"

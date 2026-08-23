@@ -1,0 +1,7 @@
+# sofagent cordis-plugin-sofagent-daemon bundle patch——sofagent 品牌插件，注册为 DSH profile layer
+- insert:
+    - id: sofagent-daemon
+      name: 'cordis-plugin-sofagent-daemon'
+      config:
+        seam: "独立调度进程"
+        description: "7×24 巡检 + 健康监测 + webhook 推送（sofagent 品牌 · #16B8F3）"

@@ -1,0 +1,7 @@
+# sofagent cordis-plugin-sofagent-commons bundle patch——sofagent 品牌插件，注册为 DSH profile layer
+- insert:
+    - id: sofagent-commons
+      name: 'cordis-plugin-sofagent-commons'
+      config:
+        seam: "commons_* tools"
+        description: "能力公地五环——发布/发现/调用/评价/养护（sofagent 品牌 · #16B8F3）"

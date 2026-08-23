@@ -1,0 +1,7 @@
+# sofagent cordis-plugin-sofagent-fde bundle patch——sofagent 品牌插件，注册为 DSH profile layer
+- insert:
+    - id: sofagent-fde
+      name: 'cordis-plugin-sofagent-fde'
+      config:
+        seam: "fde_* tools"
+        description: "进场方法论六 tool——interview/classify/quantify/derive/distill/deploy（sofagent 品牌 · #16B8F3）"

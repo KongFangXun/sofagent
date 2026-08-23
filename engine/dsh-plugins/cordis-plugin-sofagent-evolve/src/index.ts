@@ -7,7 +7,7 @@
 
 /** 插件元数据（DSH profile/注册表消费） */
 export const pluginMeta = {
-  id: 'cordis-plugin-evolve',
+  id: 'cordis-plugin-sofagent-evolve',
   version: '0.1.0',
   description: '经验沉淀——think.md 反思 + Dream Cycle + skillopt + instinct→skill + refine（seam: 任务结束 hook）',
   seam: '任务结束 hook',
@@ -34,3 +34,24 @@ export async function invoke<T = unknown>(...args: unknown[]): Promise<T> {
     throw new Error('cordis-plugin-evolve 依赖 @sofagent/think 不可用：' + (err instanceof Error ? err.message : String(err)));
   }
 }
+
+
+/**
+ * DSH Cordis 插件契约（v1.4.0 品牌化）：默认导出 apply(ctx) 把能力注册为 ctx 服务（sofagent.evolve）。
+ * 插件被挂进 DSH profile（dsh.bundle + cordis.patch.yml）后由 Cordis loader 调用。
+ */
+export default {
+  apply(ctx: unknown): void {
+    const c = ctx as {
+      provide?: (name: string, service: Record<string, unknown>) => unknown;
+      [key: string]: unknown;
+    };
+    const service = { invoke, meta: pluginMeta, capability };
+    if (typeof c.provide === 'function') {
+      c.provide('sofagent.evolve', service);
+    } else {
+      const cur = (c.sofagent ?? {}) as Record<string, unknown>;
+      c.sofagent = { ...cur, evolve: service };
+    }
+  },
+};

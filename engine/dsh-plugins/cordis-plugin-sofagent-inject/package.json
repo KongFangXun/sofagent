@@ -1,7 +1,7 @@
 {
-  "name": "cordis-plugin-inject",
+  "name": "cordis-plugin-sofagent-inject",
   "version": "0.1.0",
-  "description": "启动注入企业约束——四层加载链（seam: apply(ctx)）",
+  "description": "启动注入企业约束——四层加载链（seam: apply(ctx)）（sofagent 品牌插件 · 主色 #16B8F3）",
   "private": true,
   "license": "MIT",
   "author": "KongFangXun",
@@ -24,5 +24,10 @@
   "devDependencies": {
     "typescript": "^5.0.0",
     "vitest": "^2.0.0"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
   }
 }

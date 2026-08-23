@@ -5,9 +5,9 @@
 import { describe, it, expect } from 'vitest';
 import { pluginMeta, capability, invoke } from './index';
 
-describe('cordis-plugin-fde', () => {
+describe('cordis-plugin-sofagent-fde', () => {
   it('插件元数据完整（id/version/description/seam）', () => {
-    expect(pluginMeta.id).toBe('cordis-plugin-fde');
+    expect(pluginMeta.id).toBe('cordis-plugin-sofagent-fde');
     expect(pluginMeta.version).toBe('0.1.0');
     expect(pluginMeta.description.length).toBeGreaterThan(10);
     expect(pluginMeta.seam.length).toBeGreaterThan(0);
