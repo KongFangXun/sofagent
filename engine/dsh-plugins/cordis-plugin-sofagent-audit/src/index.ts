@@ -44,6 +44,9 @@ export default {
   apply(ctx: unknown): void {
     const c = ctx as {
       provide?: (name: string, service: Record<string, unknown>) => unknown;
+      dynamicCordisRunner?: {
+        define?: (request: Record<string, unknown>) => unknown;
+      };
       [key: string]: unknown;
     };
     const service = { invoke, meta: pluginMeta, capability };
@@ -53,6 +56,56 @@ export default {
       // 降级：无 provide API 时挂到 ctx 命名空间（保持可发现）
       const cur = (c.sofagent ?? {}) as Record<string, unknown>;
       c.sofagent = { ...cur, audit: service };
+    }
+    // v1.4.0 第二步（Dynamic Cordis Runner PoC）：尝试把 sofagent audit 注册为动态插件，
+    // 让 WebUI Plugin list（dynamicCordisRunner/inventory）显示加载状态 + 品牌名。
+    // define 不跨 wire（进程内调用），profile apply 时若无可用会话则优雅跳过（不崩）。
+    try {
+      const runner = c.dynamicCordisRunner as { define?: (r: Record<string, unknown>) => unknown } | undefined;
+      if (runner && typeof runner.define === 'function') {
+        runner.define({
+          name: 'sofagent-audit',
+          purpose: 'sofagent 审计插件——24 规则 + git diff 硬证据（品牌色 #16B8F3）',
+          code: {
+            host: [
+              'module.exports = {',
+              '  async main(ctx, args) {',
+              '    return { ok: true, source: "sofagent-audit", message: "审计服务就绪（24 规则）" };',
+              '  }',
+              '};',
+            ].join('\n'),
+          },
+          plugin: { kind: 'new', idPrefix: 'soga' },
+          sessionId: (c as { sessionId?: string }).sessionId ?? 'profile-boot',
+        });
+      }
+    } catch {
+      // define 需要真实会话上下文——profile 启动期无会话时跳过（动态注册由会话内模型工具 cordis_define 驱动）
+    }
+    // v1.4.0 第二步（Settings namespace）：注册 sofagent-audit 配置命名空间，
+    // 让 WebUI Settings → Plugins → Plugin configuration 显示 sofagent 审计插件（可配置 + 品牌色）。
+    try {
+      const settings = c.settings as { register?: (ns: string, schema: unknown, opts?: Record<string, unknown>) => unknown } | undefined;
+      if (settings?.register) {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const s = require('@deepseek-ai/schemastery') as {
+          object: (shape: Record<string, unknown>) => unknown;
+          boolean: () => unknown;
+          string: () => unknown;
+        };
+        const schema = s.object({
+          enabled: s.boolean(),
+          rules: s.string(),
+          brandColor: s.string(),
+        });
+        settings.register('sofagent-audit', schema, { base: { enabled: true, rules: '24', brandColor: '#16B8F3' } });
+        console.error('[sofagent-audit] settings.register 成功（Plugin configuration 可见）');
+      } else {
+        console.error('[sofagent-audit] settings 服务不可用（inject 未生效）');
+      }
+    } catch (err) {
+      // settings 服务在 profile apply 时可能未就绪——跳过不崩（配置面板注册为增强项）
+      console.error('[sofagent-audit] settings.register 失败:', err instanceof Error ? err.message : String(err));
     }
   },
 };
