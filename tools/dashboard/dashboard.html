@@ -263,6 +263,22 @@ a:hover{text-decoration:underline}
 .sc-item .sc-desc{font-size:11px;color:var(--text-s)}
 .sc-item .sc-tag{margin-left:auto;font-size:10px;color:var(--text-t);font-family:var(--mono);flex-shrink:0}
 .sc-arrow{text-align:center;color:var(--text-t);font-size:13px;line-height:1;padding:5px 0;flex-shrink:0}
+/* 图谱节点（编排控制图同款：110×34 矩形 + 状态色 + 脉冲点） */
+.fg-edge{stroke:#8B949E;stroke-width:1.5}
+.fg-node{stroke-width:1.2}
+.fg-active{fill:#E6F1FB;stroke:#16B8F3}
+.fg-done{fill:#E1F5EE;stroke:#1D9E75}
+.fg-failed{fill:#FCEBEB;stroke:#E24B4A}
+.fg-hitl{fill:#FAEEDA;stroke:#EF9F27}
+.fg-unknown{fill:#FAFBFC;stroke:#8B949E}
+.fg-dot{stroke:none}
+.fg-dot.fg-active{fill:#16B8F3}
+.fg-dot.fg-done{fill:#1D9E75}
+.fg-dot.fg-failed{fill:#E24B4A}
+.fg-dot.fg-hitl{fill:#EF9F27}
+.fg-dot.fg-unknown{fill:#8B949E}
+.fg-label{font-size:11px;font-weight:500;fill:#24292E}
+.fg-status{font-size:9px;fill:#8B949E}
 
 @media(max-width:768px){
   :root{--nav-h:auto}
@@ -810,7 +826,7 @@ a:hover{text-decoration:underline}
   </div>
   <div class="section">
     <div class="section-header">
-      <div class="section-title"><span class="dot-emoji">🧬</span>自 FDE workflow（我们对自己做 FDE）</div>
+      <div class="section-title"><span class="dot-emoji">🧬</span>FDE workflow</div>
       <span style="font-size:11px;color:var(--text-t)" id="fdeSelfUpdatedAt">加载中...</span>
     </div>
     <div class="section-body">
@@ -2159,51 +2175,44 @@ function grTab(tab){
   });
 }
 
-/* SVG 节点图渲染（编排控制图风格：矩形节点 + 状态色 + 箭头 + 状态文字）
- * nodes=[{id,label,status}] edges=[{from,to}]；3 列网格，多行自适应 */
+/* SVG 节点图渲染——编排控制图同款（110×34 矩形 + 状态色 + 脉冲点 + 箭头 + 状态文字）
+ * 横向流水线排布，每行 6 个自动换行；样式走 CSS class（.fg-*） */
 function renderFlowGraph(nodes,edges){
   if(!nodes||!nodes.length)return '<div style="font-size:12px;color:var(--text-t);padding:8px 0">暂无节点</div>';
-  var typeCol={
-    active:{fill:'#E6F1FB',stroke:'#16B8F3'},
-    done:{fill:'#E1F5EE',stroke:'#1D9E75'},
-    failed:{fill:'#FCEBEB',stroke:'#E24B4A'},
-    hitl:{fill:'#FAEEDA',stroke:'#EF9F27'},
-    unknown:{fill:'#FAFBFC',stroke:'#8B949E'}
-  };
-  var stCn={active:'跑中',done:'完成',failed:'失败',hitl:'人工介入',unknown:'未知'};
-  var COLS=3,nodeW=150,nodeH=38,gap=24,rowH=nodeH+30;
-  var rows=Math.max(1,Math.ceil(nodes.length/COLS));
-  var W=COLS*nodeW+(COLS-1)*gap+40;
-  var H=rows*rowH+24;
+  var nodeW=110,nodeH=34,gap=20,perRow=6,rowH=54;
+  var rows=Math.max(1,Math.ceil(nodes.length/perRow));
+  var boxW=Math.max(500,perRow*(nodeW+gap)+40);
+  var H=rows*rowH+8;
   var pos={};
   nodes.forEach(function(n,i){
-    pos[n.id]={x:20+(i%COLS)*(nodeW+gap),y:14+Math.floor(i/COLS)*rowH};
+    pos[n.id]={x:30+(i%perRow)*(nodeW+gap),y:8+Math.floor(i/perRow)*rowH};
   });
   var svg='';
-  // 边（背后）
+  // 边（背后）：前节点右缘 → 后节点左缘，箭头收尾
   edges.forEach(function(e){
     var f=pos[e.from],t=pos[e.to];
     if(!f||!t)return'';
     var x1=f.x+nodeW,y1=f.y+nodeH/2,x2=t.x,y2=t.y+nodeH/2;
-    svg+='<line x1="'+x1+'" y1="'+y1+'" x2="'+x2+'" y2="'+y2+'" stroke="#8B949E" stroke-width="1.5" marker-end="url(#flow-arrow)"/>';
+    svg+='<line class="fg-edge" x1="'+x1+'" y1="'+y1+'" x2="'+x2+'" y2="'+y2+'" marker-end="url(#flow-arrow)"/>';
   });
   // 节点
+  var stCn={active:'跑中',done:'完成',failed:'失败',hitl:'人工介入',unknown:'未知'};
   nodes.forEach(function(n){
     var p=pos[n.id];
     var st=n.status||'unknown';
-    var tc=typeCol[st]||typeCol.unknown;
     var label=String(n.label||n.id||'');
-    if(label.length>14)label=label.slice(0,13)+'…';
+    if(label.length>10)label=label.slice(0,9)+'…';
     // 跑中/人工介入：右上角脉冲点
     if(st==='active'||st==='hitl'){
-      svg+='<circle cx="'+(p.x+nodeW-10)+'" cy="'+(p.y+10)+'" r="4" fill="'+(st==='hitl'?'#EF9F27':'#16B8F3')+'" class="pulse-svg"/>';
+      svg+='<circle class="pulse-svg" cx="'+(p.x+nodeW-12)+'" cy="'+(p.y+8)+'" r="4" fill="'+(st==='hitl'?'#EF9F27':'#16B8F3')+'"/>';
     }
-    svg+='<rect x="'+p.x+'" y="'+p.y+'" width="'+nodeW+'" height="'+nodeH+'" rx="7" fill="'+tc.fill+'" stroke="'+tc.stroke+'" stroke-width="1.2"/>';
-    svg+='<circle cx="'+(p.x+14)+'" cy="'+(p.y+nodeH/2)+'" r="5" fill="'+tc.stroke+'"/>';
-    svg+='<text x="'+(p.x+26)+'" y="'+(p.y+nodeH/2+4)+'" font-size="11" font-weight="500" fill="#24292E">'+escapeHtml(label)+'</text>';
-    svg+='<text x="'+(p.x+nodeW/2)+'" y="'+(p.y+nodeH+14)+'" text-anchor="middle" font-size="9" fill="#8B949E">'+(stCn[st]||st)+'</text>';
+    svg+='<rect class="fg-node fg-'+st+'" x="'+p.x+'" y="'+p.y+'" width="'+nodeW+'" height="'+nodeH+'" rx="6"/>';
+    svg+='<circle class="fg-dot fg-'+st+'" cx="'+(p.x+14)+'" cy="'+(p.y+nodeH/2)+'" r="4"/>';
+    svg+='<text class="fg-label" x="'+(p.x+26)+'" y="'+(p.y+21)+'">'+escapeHtml(label)+'</text>';
+    svg+='<text class="fg-status" x="'+(p.x+nodeW/2)+'" y="'+(p.y+nodeH+14)+'" text-anchor="middle">'+(stCn[st]||st)+'</text>';
   });
-  return '<div class="chart-box" style="overflow-x:auto;padding:14px"><svg class="graph-wide" viewBox="0 0 '+W+' '+H+'" style="min-width:520px;width:100%;display:block">'+
+  return '<div class="chart-box" style="overflow-x:auto;padding:14px">'+
+    '<svg class="graph-wide" viewBox="0 0 '+boxW+' '+H+'" style="min-width:520px;width:100%;display:block">'+
     '<defs><marker id="flow-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M2 2L8 5L2 8" fill="none" stroke="#8B949E" stroke-width="1.5"/></marker></defs>'+
     svg+'</svg></div>';
 }
