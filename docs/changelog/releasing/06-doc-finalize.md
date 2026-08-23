@@ -1,5 +1,12 @@
 # 阶段六：开发日志定稿 + 文档收尾
 
+> 🔴 **前置闸门（v1.4.0 补 · 防跳阶段）**：阶段六开工前必须确认**阶段三~五已按 SOP 完成**——
+> - 阶段三（fresh-eyes-loop 质量循环）：草稿产物存在 / driver verdict 产出（若应跑）——见 [03-quality-loop.md](./03-quality-loop.md) 步骤完成判据
+> - 阶段四（审查体系合并更新）：本轮 finding 已按 A/B/C 分类并入四份审查文档——见 [04-review-system.md](./04-review-system.md)
+> - 阶段五（release-gate 闸门）：**verdict=PASS**——见 [05-release-gate.md](./05-release-gate.md)
+>
+> 2026-08-23 v1.4.0 实证：跳阶段三~五直接进阶段六 → README.en 误删 46 行 + 测试数口径三处打架 + 返工补跑三阶段。**任一未完成 → 先回去补，禁止带病进文档收尾**。
+
 ---
 
 ## 开发日志标准结构
@@ -162,7 +169,7 @@
 | N5 | **H3 小节标题带功能领域 emoji**（`### 🏰 SubAgent 完整沙箱`）——emoji 在领域名最前，语义化（🛡️ 安全/🔐 权限/⚙️ 基建/📊 计量/🔒 bugfix） | v1.3.7 八节全带 emoji |
 | N6 | **标题三层不重复**——changelog H1（动词化故事，不带 emoji）≠ release title（名词化主题短语，带 emoji）≠ H3 小节（交付名，带 emoji）。同一交付名只出现在 H3 小节标题，不逐项罗列进 H1/title | v1.3.3 教训：H1 与 note 同 6 项逐字复读 |
 | N7 | **质量验证表固定 7 项**（npm test / acceptance-test / shellcheck / check-version / 回归检查 / release-gate / fresh-eyes）——不可增减、顺序固定（v1.3.0/1.3.1 缺 release-gate/fresh-eyes 的教训） | 信任信号标准化 |
-| N8 | **changelog 内嵌「## Release Notes」段 = GitHub body 同源**——阶段八写入，阶段十一发布时按 10-publish.md 5.0 工序生成并自检（title 主题/定位句/H2 骨架/7 项表/尾链五对照），发布前禁止凭记忆手写简化（v1.3.8 教训：生成 prompt 手写 `--title "v1.3.8"` 丢主题） | 发布物与开发日志同步 |
+| N8 | **changelog 内嵌「## Release Notes」段 = GitHub body 同源**——本阶段（六）写入，阶段十一发布时按 10-publish.md 5.0 工序生成并自检（title 主题/定位句/H2 骨架/7 项表/尾链五对照），发布前禁止凭记忆手写简化（v1.3.8 教训：生成 prompt 手写 `--title "v1.3.8"` 丢主题） | 发布物与开发日志同步 |
 
 ### 体例铁律（防止跨版本漂移）
 
@@ -193,10 +200,10 @@
 | 三 | **发版日期同步**（详见下方脚本） | `bash tools/check/check-version.sh` 全绿 |
 | 四 | **测试数一致性**：`bash tools/check/check-test-count.sh --quiet` 确认声称数与实际一致。**禁止手动报数——必须跑脚本** | 全绿 |
 | 五 | **ROADMAP 同步**（详见 [07-roadmap-sync.md](./07-roadmap-sync.md)）：本版移出规划表→进迭代表；探索方向表清理已交付/已排期条目；版本号+日期更新；迭代表瘦身（老版本合并）。⚠️ **每次发版后还要做 ROADMAP 体检**（重复表/散落章节/死链/模糊版本号）——详见子文档「体检清单」 | ROADMAP 更新 |
-| 六 | **全项目版本号扫描**：所有 package.json + 文档头版本号一致 | check-version.sh 全绿 |
+| 六 | **全项目版本号扫描**：所有 package.json + 文档头版本号一致。🔴 **bump 中断恢复清单（v1.4.0 补 · 2026-08-23 实证）**：`bump-version.sh` 可能 EXIT 137 中断（后置步骤被杀），核心版本号已改但部分位置残留——**bump 后必须跑 check-version.sh 抓残留，命中后按以下清单补漏**：① 全量扫 `package.json`（根 + engine/* + FDE + FORGE）的 **4 个 section**（dependencies/devDependencies/peerDependencies/**optionalDependencies**——脚本只扫 3 个，mcp 的 @sofagent/daemon 在 optional 漏过）② `action.yml` 的 npm 包@版本格式（`@sofagent/audit@1.3.9`，正则 `@sofagent/[a-z-]*@[0-9]`）③ 文档头日期批量同步（14 文档 `· 2026-08-XX`，bump 只改版本不改日期）④ WIKI 状态表/尾部维护规则 + FORGE/FDE 文档日期 ⑤ package-lock.json version 字段 | check-version.sh 全绿 |
 | 七 | **文档同步闭环**：changelog 每个功能点 → 对应项目文档有覆盖（详见下方按需文档表） | D6 清单零遗漏 |
 | 八 | **changelog 文件命名一致性**：`ls docs/changelog/*/v*.md \| grep -v -E 'v[0-9]+\.[0-9]+\.[0-9]+\.md'` 期望无输出（全三段式）——**限定版本日志目录**（v1.3.9 修正：原 `docs/changelog/**/*.md` 会把 releasing/ 子目录的 SOP 文件误报为不合规，版本日志才是检查对象） | 无输出 |
-| 九 | **文档预算确认**：`bash tools/check/check-docs.sh` 全绿——阶段八文档收尾会新增内容（README 新能力段/ROADMAP 迭代表行/HANDBOOK bullet 等）推高行数可能超 LIMIT；此处先跑提前暴露（v1.3.9 教训：阶段十一 pre-push 才发现 B 层 9363>9300 超标，回阶段八补上调） | check-docs RC=0 |
+| 九 | **文档预算确认**：`bash tools/check/check-docs.sh` 全绿——本阶段文档收尾会新增内容（README 新能力段/ROADMAP 迭代表行/HANDBOOK bullet 等）推高行数可能超 LIMIT；此处先跑提前暴露（v1.3.9 教训：阶段十 pre-push 才发现 B 层 9363>9300 超标，回阶段六补上调） | check-docs RC=0 |
 
 ---
 
@@ -235,6 +242,13 @@ bash tools/check/check-version.sh   # 期望：日期一致项全绿
 | `README.en.md` | **与 README.md 同步**——badge 自动改，但新能力段 + 测试数 + 规则数需手动同步（英文版易漏）· 同样只留最新版本新能力段 |
 
 > **README 新能力段写入后必须语义交叉核对**（v1.3.9 起由阶段五移入本阶段——核对紧贴写入时机）：逐项对照 README.md/README.en.md「vX.Y 新能力」段与 CHANGELOG/changelog/vX.Y/vX.Y.Z.md 交付清单——新能力段每项都是**本版本真实交付**（非上版本残留），且本版本所有核心交付**均已出现在新能力段**。check-version.sh 只校验版本号字面一致，无法检测语义错配（如 v1.3.2 段写 v1.3.1 内容）——此项必须人工执行。
+>
+> 🔴 **README 新能力段替换安全步骤（v1.4.0 补 · 防误删）**——2026-08-23 实证：用脚本按「`## v1.3.9 新能力` 到 `## 为什么选`」范围替换时，**删除范围超预期**导致 README.en.md 误删 46 行（Why sofagent / Evidence / Docs 导航表整段消失，262→216 行）。替换必须三步走：
+> ① **替换前 diff 预览删除范围**：`python3 -c` 定位起止 index 后先打印将删除的段落（或 `git diff --stat` 前后对比），确认边界正确（起止锚点要精确到「目标段结尾的下一节标题」，不是任意 ## 标题）
+> ② **替换后验证关键段存在**：`grep -c "关键段标题"` 逐个确认（README: 为什么选/Why choose、Evidence、Docs 导航表、LICENSE 等结构段不能被吞）
+> ③ **中英结构对称检查**：`grep -c "^## " README.md README.en.md` 两侧标题数一致（v1.4.0 实测 11:11 对称——不对称 = 有段被误删/误加）
+>
+> **测试数口径规则（v1.4.0 补 · 防三处打架）**：所有文档写测试数必须**带口径标注**——`workspace 口径`（引擎 12 包，check-test-count SSOT）vs `全量口径`（引擎 + DSH 插件 + OpenClaw 插件）。2026-08-23 实证：WIKI「2915/12 包」、ROADMAP「2903→2959」、changelog「2915+27+17」三处打架。写法统一：`全量 N（workspace M/12 包）`（如 ROADMAP 已改「2959 全量（workspace 2915/12 包）」）；纯 engine 语境用 workspace 口径并写清「12 包」。
 | `ARCHITECTURE.md` | 架构决策或设计思路有变更 · 13/12 包口径一致性（13=npm 发布总数，12=有 test script） |
 | `DEVELOPMENT.md` | 开发流程有变更 · 正文测试数声称同步（grep `XX 测试`，bump 后数字会过时） |
 | `LIMITATIONS.md` | 新发现的局限或旧局限被消除 · 已知问题标注修复版本落点（写具体 v1.3.x，不写「未来版本」） |

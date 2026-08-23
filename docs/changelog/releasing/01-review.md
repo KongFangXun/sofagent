@@ -47,9 +47,14 @@ B 侧复核模式（v1.3.8 起 driver 内置）：全量跑 driver 时，B 侧 1
 
 先读 `FORGE/SKILL/fresh-eyes-loop/SKILL.md` 拿到完整的「Session 监控协议」，然后按协议执行：
 
-1. 后台启动 driver——必须用 Bash 工具 run_in_background:true + dangerouslyDisableSandbox:true（三层进程嵌套会被 sandbox SIGKILL）：
-   FORGE_MAX_CONCURRENCY=1 node FORGE/src/fresh-eyes-driver.mjs --target {实际版本号} --max-rounds 10
+0. 独占窗口检查（三查）：① `git status --short | wc -l` 改动文件数（预期 0/个位数）② `find . -path ./node_modules -prune -o -mmin -5 -type f -print` 近 5 分钟活跃文件 ③ `tail .workbuddy/memory/$(date +%Y-%m-%d).md` 今日日志他人活跃记录——任一命中先停手问用户。
+0b. **先查 driver 是否已在跑（v1.4.0 补——主 session 可能已用 daemon 启动，新窗口只做监控）**：读 {runDir}/status.json（或 pgrep -f fresh-eyes-driver），若在跑 → 跳过步骤 1 直接进步骤 3 轮询；若已死/无产物 → 正常走步骤 1。
+1. 启动 driver——**优先 daemon+watch 守护模式**（自动恢复，免疫会话回收，姿势同 03-quality-loop.md「driver 启动姿势 8 条」）：
+   FORGE_MAX_CONCURRENCY=1 node FORGE/src/fresh-eyes-driver.mjs --target {实际版本号} --max-rounds 10 --daemon --watch {runDir}
    ⚠️ 8GB 机器必须 FORGE_MAX_CONCURRENCY=1（并发 worker 各占 2GB heap，3+ 并发即 OOM）
+   若为 resume 续跑（上次异常死亡）：命令加 --resume（保留已有产物，不重开）
+   fallback（无 daemon 支持）：Bash 工具 run_in_background:true + dangerouslyDisableSandbox:true，
+   输出重定向文件 > /tmp/fresh-eyes-<ver>-driver.log 2>&1（禁止管道），不传 timeout 参数
 2. 记住 runDir（启动日志第一行打印的路径）
 3. 在 session 内持续轮询——每 120 秒一个工作周期：
    ① 读 <runDir>/status.json 看 round 变化，变化时一句话汇报

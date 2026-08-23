@@ -11,7 +11,7 @@
 | # | 步骤 | 产物 | 完成判据 |
 |:--:|------|------|------|
 | 一 | **单次草稿优先**（v1.3.8 交付八）：`node tools/gen/gen-fresh-eyes-draft.mjs --diff <patch 文件> --changelog <changelog> --out ~/Desktop/fresh-eyes-draft-vX.Y.Z.md`——16 视角草稿一次成型；「待取证」项少且变更小 → 草稿 + 人工复核即收口 | 审查草稿 | 见「步骤完成判据」表 |
-| 二 | **driver 兜底**（草稿待取证多 / 大版本）：**新 session 跑 fresh-eyes-loop**，启动姿势见下方「driver 启动姿势」专节（8 条）；按监控协议轮询 `status.json`（或 `--check-alive` 探针）。loop 修复即本版本代码质量加固 | loop 修复 + changelog 汇总打勾 | 见「步骤完成判据」表 |
+| 二 | **driver 兜底**（草稿待取证多 / 大版本）：**新 session 跑 fresh-eyes-loop**——「新 session」= **用户手动开的新 WorkBuddy 窗口**（独立上下文、用户可控、隔离审查视角），不是主 session 的 subagent/spawn 子进程。主 session 按下方「监控 session Prompt 模板」生成 prompt、**直接在对话中输出**（不落盘文件——零号铁律：未经确认不创建文件），用户复制粘贴到新窗口执行；新 session 跑完以对话消息汇报回主 session。启动姿势见「driver 启动姿势」专节（8 条）；按监控协议轮询 `status.json`（或 `--check-alive` 探针）。loop 修复即本版本代码质量加固 | loop 修复 + changelog 汇总打勾 | 见「步骤完成判据」表 |
 | 三 | **代码审核**（当前 session）：逐项核对发布检查清单（清单位置见判据表），PASS 或 FAIL→修复 | 检查清单打勾 | 见「步骤完成判据」表 |
 | 四 | **验收测试随功能开发先行新增（增量）**：本版本新功能对应的 acceptance 新场景（S 编号顺延）+ checklist 新维度，随功能开发实时加——本步骤只做「增量补齐」。**归并/压缩/校准/A/B/C 分类是阶段四的职责**（见 [04-review-system.md](./04-review-system.md)），这里不动体系 | 验收测试更新（增量） | 见「步骤完成判据」表 |
 | 五 | **阶段汇报**：全部步骤完成后，执行 session 按下方「阶段汇报模板」以**对话消息**形式发回主 session（不落盘文件）——主 session 依此打勾推进，不再考古 | 汇报消息（见模板） | 模板五件套齐全（含步骤完成状态声明） |
@@ -99,6 +99,7 @@
 先读 `FORGE/SKILL/fresh-eyes-loop/SKILL.md` 拿到完整的「Session 监控协议」，然后按协议执行：
 
 0. 独占窗口检查（三查，2026-08-23 双 session 并行撞车升级）：① `git status --short | wc -l` 改动文件数（预期 0/个位数，几十个 = 有其他 session 在写）② `find . -path ./node_modules -prune -o -mmin -5 -type f -print` 近 5 分钟活跃文件 ③ `tail .workbuddy/memory/$(date +%Y-%m-%d).md` 今日日志他人活跃记录——任一命中先停手问用户「是否还有其他 session 在写本仓库」。
+0b. **先查 driver 是否已在跑（v1.4.0 补——主 session 可能已用 daemon 启动，新窗口只做监控）**：读 {runDir}/status.json（或 pgrep -f fresh-eyes-driver），若 event 含 running / 进程存活 → **跳过步骤 1 直接进步骤 3 轮询**，不重复启动；若已死/无产物 → 正常走步骤 1。
 1. 启动 driver——**优先 daemon+watch 守护模式**（自动恢复，免疫会话回收）：
    FORGE_MAX_CONCURRENCY=1 node FORGE/src/fresh-eyes-driver.mjs \
      --target {实际版本号} --max-rounds 10 --daemon --watch {runDir}

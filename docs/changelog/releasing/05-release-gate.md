@@ -13,7 +13,7 @@
 | 三 | verdict=PASS → 过「零信任复验三件套」→ 进阶段六 |
 | 四 | verdict=FAIL → **循环即停**（v1.3.8 交付七起 F 修复链默认关闭，无 f-* 产物）→ 回阶段五修复后重跑。显式 `--auto-fix` 才进修复链（最多 3 轮） |
 
-> **为什么分层（run-04 实测 2026-08-19）**：driver 全流程实测 30.7 万 token / 58 分钟，其中 **61%（18.7 万）花在 acceptance 12 分片 LLM 复核**——复核的是脚本 `exit 0 + 303/303 SUMMARY` 的确定性结果，没有主观判断空间，盲审增值≈0。脚本层零 token 直跑拿到同样保证；driver 只保留有判断空间的 regression 语义审查 + coverage 交叉 + 终裁（约 9 万 token / 20 分钟）。**独立性不伤**：盲审保留在真正需要判断的环节。
+> **为什么分层（run-04 实测 2026-08-19）**：driver 全流程实测 30.7 万 token / 58 分钟，其中 **61%（18.7 万）花在 acceptance 12 分片 LLM 复核**——复核的是脚本 `exit 0 + 303/303 SUMMARY`（v1.3.8 时点断言数，现每版变化）的确定性结果，没有主观判断空间，盲审增值≈0。脚本层零 token 直跑拿到同样保证；driver 只保留有判断空间的 regression 语义审查 + coverage 交叉 + 终裁（约 9 万 token / 20 分钟）。**独立性不伤**：盲审保留在真正需要判断的环节。
 
 > **为什么开新 session**：阶段三~五在开发 session 做完后，上下文已经很长。判断层需要 15-20 分钟，期间只需执行命令 + 持续轮询 + 汇报——不需要开发 session 的上下文。开一个干净的 session，上下文短、不互相干扰。
 >
@@ -84,9 +84,9 @@
 3. **独立复核对冲突**——手工裁决是**有上下文裁决**（主 session 知道自己修了什么），独立性弱于 driver 盲审，必须交给**无上下文 session**（如监控 session）复查关键判定后才生效
 
 **手工裁决内容**（三者全过才算 PASS）：
-- regression 89 维「driver 同款语义亲跑」全绿（不是只跑脚本——按维度判定逻辑逐维过）
+- regression 94 维「driver 同款语义亲跑」全绿（维度数每版变化，以 `FORGE/playbook/regression-checklist.md` 头部「当前 N 维」为准——v1.4.0 修正：原写「89 维」是 v1.3.8 时点数，已过时；不是只跑脚本——按维度判定逻辑逐维过）
 - coverage 关键词矩阵全命中
-- acceptance 303/303 EXIT=0
+- acceptance 全量 EXIT=0（`bash FORGE/playbook/acceptance-test.sh` 尾部 `SUMMARY: N/N passed`，**断言数每版变化，勿写死历史数字**——v1.4.0 修正：原写「303/303」是 v1.3.8 断言数，已过时）
 
 **记录纪律**：进度追踪必须写「手工裁决 PASS（driver N 轮 FAIL + 复验改判记录）」，**禁止写成「loop PASS」**——手工裁决与 driver 盲审是两个不同的保证等级，混淆即造假。
 
