@@ -16,8 +16,13 @@ npm install
 npm ci --dry-run 2>&1 | grep -q "missing\|error" && echo "❌ lock 不一致" || echo "✅ lock 一致"
 
 # 内部 @sofagent/* 依赖版本同步检查（bump 后所有内部依赖必须是同一版本）
+# ⚠️ v1.4.0 升级：必须扫全部 4 个 section（dependencies/devDependencies/peerDependencies/optionalDependencies）
+#    + action.yml 的 npm 包@版本格式（@sofagent/audit@1.3.9）——2026-08-23 实证 bump 中断后 mcp 的
+#    optionalDependencies（@sofagent/daemon）和 action.yml 各漏 1 处，check-version 抓出才补上
 grep -rn '"@sofagent/' engine/*/package.json | grep -v "$(node -p "require('./package.json').version")" | grep -v "^.*:.*\"dev\|peer"
 # 期望：无输出（所有内部依赖版本 = 当前版本）。有输出 = 某些包的内部依赖版本未同步 bump
+grep -n '@sofagent/[a-z-]*@[0-9]' action.yml | grep -v "$(node -p "require('./package.json').version")"
+# 期望：无输出（action.yml 的 @sofagent/*@版本 全部 = 当前版本）
 ```
 
 ---
