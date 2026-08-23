@@ -1210,6 +1210,7 @@ async function runWorker(step, roundDir, target) {
 
     return {
       messages: execResult.rawMessages ?? [],
+      content: execResult.output ?? '',   // DSH CLI 桥接无 rawMessages——output 是唯一文本面（ExecutionResult 标准字段）
       _hardBreak: execResult.hardBreak || hardBreak,
     };
   };

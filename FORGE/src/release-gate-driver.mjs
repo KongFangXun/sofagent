@@ -1012,6 +1012,7 @@ async function runWorker(step, runDir, target) {
     // 兼容下游 extractAgentText / extractUsage 的返回格式
     return {
       messages: execResult.rawMessages ?? [],
+      content: execResult.output ?? '',   // DSH CLI 桥接无 rawMessages——output 是唯一文本面（ExecutionResult 标准字段）
       hardBreak: execResult.hardBreak || hardBreak,
     };
   };
