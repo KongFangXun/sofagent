@@ -206,12 +206,13 @@ export async function runEvalSuite(
   for (const evalCase of suite.cases) {
     const startedAt = Date.now();
     let output = '';
-    let failureCode: string | null = null;
+    // v1.4.0 交付九：failureCode 用 EvaluationFailureCode 枚举（MLflow CaseEvaluation 类型对齐）
+    let failureCode: import('../benchmark/case-evaluator').EvaluationFailureCode | null = null;
 
     try {
       output = await agentFn(evalCase.statement);
     } catch (err) {
-      failureCode = 'agent_error';
+      failureCode = 'evaluation_failed';
       output = err instanceof Error ? err.message : String(err);
     }
 
@@ -222,24 +223,59 @@ export async function runEvalSuite(
     // 写 evaluation-log（调用 appendEvaluationRecord，HMAC 链防篡改）
     try {
       appendEvaluationRecord({
+      benchmarkId: suite.benchmarkId,
+      caseId: evalCase.id,
+      revision: suite.revision,
+      score,
+      failureCode,
+      durationMs,
+    });
+  } catch {
+    // 日志写入失败静默（eval 运行优先）
+  }
+
+  // v1.4.0 交付九：MLflow 旁路导出（tracking server 不可达降级 ok=false 不抛——
+  // evaluation-log 仍是主存储，MLflow 是旁路；商业模型层「评测迭代主权」链路接通）
+  try {
+    const { logBenchmarkToMlflow, buildMetrics } = await import('../benchmark/mlflow-exporter');
+    await logBenchmarkToMlflow({
+      evaluation: {
         benchmarkId: suite.benchmarkId,
         caseId: evalCase.id,
         revision: suite.revision,
         score,
         failureCode,
+        details: [],
+        workspace: '',
         durationMs,
-      });
-    } catch {
-      // 日志写入失败静默（eval 运行优先）
-    }
-
-    caseResults.push({
+      },
+      benchmarkId: suite.benchmarkId,
       caseId: evalCase.id,
-      score,
-      failureCode,
-      durationMs,
+      metrics: buildMetrics(
+        {
+          benchmarkId: suite.benchmarkId,
+          caseId: evalCase.id,
+          revision: suite.revision,
+          score,
+          failureCode,
+          details: [],
+          workspace: '',
+          durationMs,
+        },
+        { judgeScore: score },
+      ),
     });
+  } catch {
+    // MLflow 不可达/失败静默降级（主存储 evaluation-log 不受影响）
   }
+
+  caseResults.push({
+    caseId: evalCase.id,
+    score,
+    failureCode,
+    durationMs,
+  });
+}
 
   const totalCases = suite.cases.length;
   const passedCases = caseResults.filter((r) => r.score >= 60).length;

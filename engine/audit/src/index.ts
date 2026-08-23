@@ -100,6 +100,37 @@ function exit(code: 0 | 1 | 2, message?: string): never {
   process.exit(code);
 }
 
+/**
+ * v1.4.0 交付十三：beforeAfter 结构化摘要——从 diff 提取变更前/后值。
+ * 截断至 MAX 字符 + 复用脱敏语义（A2/A9 敏感内容打码），diff 原文不进 history.jsonl。
+ * 提取规则：删除行（-）→ before，新增行（+）→ after；各取前 3 条，单条截断 120 字符。
+ */
+const BEFORE_AFTER_MAX_ITEMS = 3;
+const BEFORE_AFTER_MAX_CHARS = 120;
+function buildBeforeAfterSummary(diffFiles: DiffFile[]): { before?: string; after?: string } | undefined {
+  if (!Array.isArray(diffFiles) || diffFiles.length === 0) return undefined;
+  const before: string[] = [];
+  const after: string[] = [];
+  for (const file of diffFiles) {
+    if (!file || !Array.isArray(file.lines)) continue;
+    for (const line of file.lines) {
+      if (!line || line.length < 1) continue;
+      if (line.startsWith('+') && !line.startsWith('+++')) {
+        if (after.length < BEFORE_AFTER_MAX_ITEMS) after.push(line.substring(1).slice(0, BEFORE_AFTER_MAX_CHARS));
+      } else if (line.startsWith('-') && !line.startsWith('---')) {
+        if (before.length < BEFORE_AFTER_MAX_ITEMS) before.push(line.substring(1).slice(0, BEFORE_AFTER_MAX_CHARS));
+      }
+      if (before.length >= BEFORE_AFTER_MAX_ITEMS && after.length >= BEFORE_AFTER_MAX_ITEMS) break;
+    }
+    if (before.length >= BEFORE_AFTER_MAX_ITEMS && after.length >= BEFORE_AFTER_MAX_ITEMS) break;
+  }
+  if (before.length === 0 && after.length === 0) return undefined;
+  return {
+    ...(before.length > 0 ? { before: before.join('\n') } : {}),
+    ...(after.length > 0 ? { after: after.join('\n') } : {}),
+  };
+}
+
 interface Args {
   diffRange: string;
   task?: string;
@@ -1329,12 +1360,16 @@ async function main(): Promise<void> {
         actor,
         timestamp: govTimestamp,
         targetEntity,
-        // beforeAfter: 当前审计流不承载 diff 前后值原文（避免大段写入 history.jsonl，且 A2/A9 需脱敏），按需从 git diff 取。TODO(v1.x)
+        // v1.4.0 交付十三：beforeAfter 结构化摘要回填——从 diff 提取前/后值（截断至 200 字符 + 脱敏，
+        // diff 原文不进 history.jsonl；A2/A9 脱敏语义不变）
+        beforeAfter: buildBeforeAfterSummary(diffFiles),
         context: args.task || commitMsg || undefined,
         decisionProvenance: {
           who: actor,
           when: govTimestamp,
-          // whichDataVersion: 知识 / 本体数据版本——FDE 知识库版本化后回填。TODO(v1.x)
+          // v1.4.0 交付十三：whichDataVersion 契约就位——FDE 知识库版本化未就绪时留空（不报错），
+          // 版本化落地后从 knowledge 版本元数据回填
+          whichDataVersion: undefined,
           whichApp: `sofagent-audit v${VERSION}`,
         },
       },

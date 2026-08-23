@@ -205,7 +205,7 @@ Community rulesets are published as `sofagent-ruleset-*` npm packages and loaded
 > - **Official AST rule engine**: 🔍 `sofagent-ruleset-ast` semantic rule engine (8+2 rule checks = 8 general semantic rules "no dynamic code execution / hardcoded secrets / dynamic require / debugger / child_process shell control / SQL concatenation / http plaintext endpoint / empty catch" + 2 OWASP "ASI01 target hijacking + ASI04 supply-chain SBOM", same pipeline as the v1.2.9 plugin)
 > - **meta-harness unified orchestration**: 🧩 multi-harness policy enforcement at the infrastructure layer + cross-session collaboration (19 tests + DSH shape alignment)
 > - **AI worklog data layer**: 📊 `worklog` — by Agent / Workflow / week + human-intervention records (reuses audit + decision-log + LLM Trace, zero new data) + `worklog_query` MCP
-> - **API tiering governance**: 🔬 explicit `@public`/`@internal` tiers (1444 symbols) + CI gate baseline — breaking changes to `@internal` never affect adapters
+> - **API tiering governance**: 🔬 explicit `@public`/`@internal` tiers (1456 symbols) + CI gate baseline — breaking changes to `@internal` never affect adapters
 > - **FORGE driver on DSH**: ⚙️ explicit backend selection (`SOFAGENT_FORCE_DSH` enable + CLI bridge + full bash permission) — execution backend switchable from LangGraph to DSH
 > - **MLflow agent evaluation**: 📈 13 metrics + LLM-as-Judge integration
 > - **Agentic Browser**: 🌐 4 tools (navigate/click/form/screenshot) + visual degradation fallback

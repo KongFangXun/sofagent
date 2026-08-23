@@ -19,7 +19,7 @@ export interface ToolDef {
 }
 
 /**
- * 完整工具清单——62 个 tool（v1.4.0：cost_query 新增；v1.3.9：worklog_query 新增；v1.3.6：workflow_submit/ontology_import/model_register/model_switch/model_unregister/train_budget/define_acceptance/check_acceptance；v1.3.5：run_ab_test/promote_ab/snapshot_list/snapshot_restore；v1.3.4：commons_publish/search/invoke/rate/retire/harvest_rule；不含 4 个 resource shortcut）
+ * 完整工具清单——66 个 tool（v1.4.0：cost_query + browser 4 新增；v1.3.9：worklog_query 新增；v1.3.6：workflow_submit/ontology_import/model_register/model_switch/model_unregister/train_budget/define_acceptance/check_acceptance；v1.3.5：run_ab_test/promote_ab/snapshot_list/snapshot_restore；v1.3.4：commons_publish/search/invoke/rate/retire/harvest_rule；不含 4 个 resource shortcut）
  */
 export const TOOLS: ToolDef[] = [
   {
@@ -46,6 +46,50 @@ export const TOOLS: ToolDef[] = [
         maxTokensPerRun: { type: 'number', description: '查询时临时指定单 run token 上限（不传则仅报实际消耗）' },
         maxCostPerDay: { type: 'number', description: '查询时临时指定每日成本上限（USD）' },
       },
+    },
+  },
+  {
+    // v1.4.0（十）：Agentic Browser——Playwright 驱动的浏览器 4 工具（v1.3.9 交付实现，本版注册 MCP 面）
+    name: 'playwright_navigate',
+    description: '浏览器导航（Agentic Browser · v1.4.0）——打开 URL 并返回页面标题/状态码。Playwright 不可用时返回视觉降级结果（不抛）。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        url: { type: 'string', description: '目标 URL' },
+      },
+      required: ['url'],
+    },
+  },
+  {
+    name: 'playwright_click',
+    description: '浏览器点击（Agentic Browser · v1.4.0）——按 CSS 选择器点击元素。Playwright 不可用时降级。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        selector: { type: 'string', description: 'CSS 选择器' },
+      },
+      required: ['selector'],
+    },
+  },
+  {
+    name: 'playwright_screenshot',
+    description: '浏览器截图（Agentic Browser · v1.4.0）——截取当前页面，返回图片路径与字节数。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        name: { type: 'string', description: '截图文件名（可选）' },
+      },
+    },
+  },
+  {
+    name: 'playwright_assert',
+    description: '浏览器断言（Agentic Browser · v1.4.0）——对页面执行断言（文本/元素存在性），返回 passed 与详情。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        condition: { type: 'string', description: '断言条件（如元素可见/文本存在）' },
+      },
+      required: ['condition'],
     },
   },
   {

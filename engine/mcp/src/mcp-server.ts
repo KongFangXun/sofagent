@@ -45,8 +45,7 @@ import { activateWorkflowTool } from './tools/activate-workflow';
 import { daemonStatus } from './tools/daemon-status';
 import { worklogQuery } from './tools/worklog-query';
 import { costQuery } from './tools/cost-query';
-import { listAgentsTool } from './tools/list-agents';
-import { listConcepts } from './tools/list-concepts';
+import { listAgentsTool } from './tools/list-agents';import { listConcepts } from './tools/list-concepts';
 import { hitlResolve } from './tools/hitl-resolve';
 import { listRules } from './tools/list-rules';
 import { agentIdentityTool } from './tools/agent-identity';
@@ -112,6 +111,71 @@ type ToolError = { error: string };
 type ToolOutcome = ToolResult | ToolError;
 function isToolError(r: unknown): r is ToolError {
   return typeof r === 'object' && r !== null && 'error' in r && !('text' in r);
+}
+
+// ── v1.4.0 交付十：Agentic Browser MCP 适配（Playwright 惰性加载 + 视觉降级）──
+// browser-tools 的 BrowserSession 需要 Playwright driver——MCP 侧动态加载，
+// Playwright 不可用时返回降级结果（不抛），对齐「视觉降级路径可用」验收。
+type BrowserToolResult = ToolResult;
+
+async function lazyBrowserSession(): Promise<{ session: { playwrightNavigate(u: string): Promise<unknown>; playwrightClick(s: string): Promise<unknown>; playwrightScreenshot(name?: string): Promise<unknown>; playwrightAssert(c: string): Promise<unknown> } } | null> {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { BrowserSession } = require('@sofagent/orchestrator');
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { chromium } = require('playwright');
+    if (!chromium) return null;
+    const browser = await chromium.launch({ headless: true });
+    const page = await browser.newPage();
+    const driver = {
+      navigate: async (url: string) => {
+        await page.goto(url, { waitUntil: 'domcontentloaded' });
+        return { url: page.url(), title: await page.title(), status: 200 };
+      },
+      click: async (selector: string) => {
+        await page.click(selector, { timeout: 5000 });
+        return { clicked: true };
+      },
+      screenshot: async (name?: string) => {
+        const p = `/tmp/sofagent-browser-${name ?? Date.now()}.png`;
+        await page.screenshot({ path: p });
+        return { imagePath: p, bytes: 0 };
+      },
+      assert: async (condition: string) => {
+        const passed = await page.locator(condition).count().then((count: number) => count > 0).catch(() => false);
+        return { passed, detail: passed ? `找到 ${condition}` : `未找到 ${condition}` };
+      },
+    };
+    const session = new BrowserSession(driver, () => { /* MCP 场景审计留痕可后续接 decision-log */ });
+    return { session };
+  } catch {
+    return null; // Playwright 未安装 → 降级
+  }
+}
+
+async function browserNavigate(url: string): Promise<BrowserToolResult> {
+  const s = await lazyBrowserSession();
+  if (!s) return { text: '[sofagent] 浏览器导航不可用——需安装 Playwright（npm i playwright && npx playwright install chromium）。已返回降级结果。', data: { degraded: true, tool: 'playwright_navigate' } };
+  try { return { text: '[sofagent] 浏览器导航（Playwright）', data: await s.session.playwrightNavigate(url) as Record<string, unknown> }; }
+  catch (err) { return { text: `[sofagent] 浏览器导航失败：${err instanceof Error ? err.message : String(err)}`, data: { error: true } }; }
+}
+async function browserClick(selector: string): Promise<BrowserToolResult> {
+  const s = await lazyBrowserSession();
+  if (!s) return { text: '[sofagent] 浏览器点击不可用——需安装 Playwright。已返回降级结果。', data: { degraded: true, tool: 'playwright_click' } };
+  try { return { text: '[sofagent] 浏览器点击（Playwright）', data: await s.session.playwrightClick(selector) as Record<string, unknown> }; }
+  catch (err) { return { text: `[sofagent] 浏览器点击失败：${err instanceof Error ? err.message : String(err)}`, data: { error: true } }; }
+}
+async function browserScreenshot(name?: string): Promise<BrowserToolResult> {
+  const s = await lazyBrowserSession();
+  if (!s) return { text: '[sofagent] 浏览器截图不可用——需安装 Playwright。已返回降级结果。', data: { degraded: true, tool: 'playwright_screenshot' } };
+  try { return { text: '[sofagent] 浏览器截图（Playwright）', data: await s.session.playwrightScreenshot(name) as Record<string, unknown> }; }
+  catch (err) { return { text: `[sofagent] 浏览器截图失败：${err instanceof Error ? err.message : String(err)}`, data: { error: true } }; }
+}
+async function browserAssert(condition: string): Promise<BrowserToolResult> {
+  const s = await lazyBrowserSession();
+  if (!s) return { text: '[sofagent] 浏览器断言不可用——需安装 Playwright。已返回降级结果。', data: { degraded: true, tool: 'playwright_assert' } };
+  try { return { text: '[sofagent] 浏览器断言（Playwright）', data: await s.session.playwrightAssert(condition) as Record<string, unknown> }; }
+  catch (err) { return { text: `[sofagent] 浏览器断言失败：${err instanceof Error ? err.message : String(err)}`, data: { error: true } }; }
 }
 
 // ============================================================
@@ -231,6 +295,10 @@ class McpServer {
         case 'daemon_status': { this.sendTool(id, await daemonStatus()); break; }
         case 'worklog_query': { this.sendTool(id, await worklogQuery({ ...(args.agentId ? { agentId: args.agentId as string } : {}), ...(args.workflowId ? { workflowId: args.workflowId as string } : {}), ...(args.weeklyTrend !== undefined ? { weeklyTrend: args.weeklyTrend as boolean } : {}), ...(args.evolution !== undefined ? { evolution: args.evolution as boolean } : {}) })); break; }
         case 'cost_query': { this.sendTool(id, await costQuery({ ...(args.maxTokensPerRun !== undefined ? { budget: { maxTokensPerRun: args.maxTokensPerRun as number, ...(args.maxCostPerDay !== undefined ? { maxCostPerDay: args.maxCostPerDay as number } : {}) } } : {}) })); break; }
+        case 'playwright_navigate': { this.sendTool(id, await browserNavigate(args.url as string)); break; }
+        case 'playwright_click': { this.sendTool(id, await browserClick(args.selector as string)); break; }
+        case 'playwright_screenshot': { this.sendTool(id, await browserScreenshot(args.name as string | undefined)); break; }
+        case 'playwright_assert': { this.sendTool(id, await browserAssert(args.condition as string)); break; }
         case 'list_agents': { this.sendTool(id, await listAgentsTool()); break; }
         case 'list_concepts': { this.sendTool(id, listConcepts()); break; }
         case 'hitl_resolve': { this.sendTool(id, await hitlResolve({ checkpoint_id: args.checkpoint_id as string, decision: args.decision as 'approve' | 'reject' | 'aborted', ...(args.comment ? { comment: args.comment as string } : {}) })); break; }

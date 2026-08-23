@@ -37,7 +37,7 @@ export type RuleClass = '业务底线' | '能力拐杖' | '工程规范';
 export interface DecisionProvenance {
   who: string;
   when: string;
-  /** 知识 / 本体数据版本；当前审计流尚未捕获，FDE 知识库版本化后回填。TODO(v1.x) */
+  /** 知识 / 本体数据版本；v1.4.0 交付十三：契约已就位（index.ts actionGovernance 回填点），FDE 知识库版本化未就绪时留空不报错 */
   whichDataVersion?: string;
   /** 决策发生的 app / Agent 身份；当前填审计引擎标识 */
   whichApp?: string;
@@ -59,7 +59,7 @@ export interface ActionGovernance {
   actor: string;
   timestamp: string;
   targetEntity: string;
-  /** 变更前后值摘要；当前审计流不承载 diff 原文（避免大段写入 history.jsonl，且 A2/A9 需脱敏），按需从 git diff 取。TODO(v1.x) */
+  /** 变更前后值摘要；v1.4.0 交付十三：index.ts buildBeforeAfterSummary 回填（截断 + 脱敏，diff 原文不进 history.jsonl），按需从 git diff 取 */
   beforeAfter?: { before?: string; after?: string };
   /** 上下文：任务描述 / commit message / workflow */
   context?: string;

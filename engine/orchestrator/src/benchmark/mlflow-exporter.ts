@@ -153,7 +153,7 @@ export async function llmAsJudge(
 
 // ── MLflow REST 客户端（零依赖直连）───────────────────────
 
-interface MlflowRunResult {
+export interface MlflowRunResult {
   /** 是否成功写入 MLflow */
   ok: boolean;
   /** run ID（成功时） */
