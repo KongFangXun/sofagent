@@ -58,7 +58,7 @@ a:hover{text-decoration:underline}
 /* 帮助面板（全局教学入口，header 右上角） */
 .help-btn{display:inline-flex;align-items:center;gap:5px;padding:6px 14px;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--text-s);font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;font-family:var(--font);line-height:1.4}
 .help-btn:hover{border-color:var(--text-t);color:var(--text)}
-.help-btn svg{width:14px;height:14px;flex-shrink:0}
+.help-btn .bi{font-size:15px;line-height:1}
 .help-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:400;display:none;align-items:center;justify-content:center;padding:20px}
 .help-panel{background:var(--card);border-radius:16px;max-width:780px;width:100%;height:min(74vh,640px);display:flex;flex-direction:column;box-shadow:0 12px 40px rgba(0,0,0,.18)}
 .help-header{padding:10px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;flex-shrink:0}
@@ -398,7 +398,7 @@ a:hover{text-decoration:underline}
     </nav>
     <div class="header-right">
       <button class="help-btn" onclick="openHelp('workflow')" title="使用帮助：业务流/本体图谱/知识库/FDE 引导" aria-label="打开帮助">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        <i class="bi bi-question-circle"></i>
         帮助
       </button>
       <a href="https://github.com/KongFangXun/sofagent" target="_blank" class="star-btn">
@@ -471,7 +471,7 @@ a:hover{text-decoration:underline}
         <span class="tab-inline">
           <button class="nav-item active" id="wl-tab-overview" onclick="wlTab('overview')">概况</button>
           <button class="nav-item" id="wl-tab-audit" onclick="wlTab('audit')">审计</button>
-          <button class="nav-item" id="wl-tab-intervention" onclick="wlTab('intervention')">人工介入</button>
+          <button class="nav-item" id="wl-tab-intervention" onclick="wlTab('intervention')">审批</button>
           <button class="nav-item" id="wl-tab-weekly" onclick="wlTab('weekly')">周报</button>
         </span>
       </span>
@@ -492,7 +492,7 @@ a:hover{text-decoration:underline}
   <div class="grid-2">
     <div class="section">
       <div class="section-header">
-        <div class="section-title"><span class="dot-emoji"><i class="bi bi-graph-down"></i></span>违规趋势（近 7 天）</div>
+        <div class="section-title"><span class="dot-emoji"><i class="bi bi-graph-down"></i></span>审计分析（近 7 天）</div>
         <div style="display:flex;align-items:center;gap:16px;font-size:11px;color:var(--text-s);flex-wrap:wrap;justify-content:flex-end">
           <span style="display:inline-flex;align-items:center;gap:5px"><span style="width:12px;height:12px;background:var(--brand-l);border-radius:3px"></span>审计次数</span>
           <span style="display:inline-flex;align-items:center;gap:5px"><span style="width:12px;height:12px;background:var(--text-t);border-radius:3px"></span>问题次数</span>
@@ -500,8 +500,8 @@ a:hover{text-decoration:underline}
         </div>
       </div>
       <div class="section-body">
-        <svg width="100%" height="180" viewBox="0 0 920 180" preserveAspectRatio="xMidYMid meet" id="trendChart">
-          <text x="460" y="90" text-anchor="middle" font-size="13" fill="var(--text-t)">加载中...</text>
+        <svg width="100%" height="230" viewBox="0 0 500 230" preserveAspectRatio="xMidYMid meet" id="trendChart">
+          <text x="250" y="115" text-anchor="middle" font-size="13" fill="var(--text-t)">加载中...</text>
         </svg>
         <div id="topRules" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:12px"></div>
       </div>
@@ -1334,7 +1334,8 @@ function renderSummaryData(s){
  * 图内自洽：绿线 = 1 − 黄柱÷蓝柱，与左上角"规则通过率"同源 */
 function renderDailyTrend(days){
   var maxCount=Math.max.apply(null,days.map(function(d){return d.ruleAll||0}).concat([1]));
-  var W=920,padL=44,padR=44,top=14,base=152;
+  // viewBox 宽 500 匹配半宽卡片——图不再等比缩小，柱子视觉充实
+  var W=500,padL=40,padR=40,top=14,base=190;
   var bw=(W-padL-padR)/days.length;
   var svg='';
   // 左轴：次数 0-maxCount（4 格）
@@ -1356,8 +1357,8 @@ function renderDailyTrend(days){
     var issues=checks-(d.rulePass||0);
     var rate=checks>0?Math.round((d.rulePass||0)*100/checks):0;
     var cx=padL+i*bw+bw/2;
-    // 柱状缩窄 + 拉高（填满半宽卡片）
-    var barW=Math.min(bw*0.16,20);
+    // 柱更粗 + 绘图区更高（填满半宽卡片）
+    var barW=Math.min(bw*0.24,26);
     var gap=6;
     // 双柱：审计次数(品牌淡蓝)；问题次数(灰)（蓝读主数据，灰读报警量）
     var h1=Math.max(3,checks/maxCount*(base-top));
@@ -1384,7 +1385,7 @@ function renderDailyTrend(days){
 /* 降级：summary 无 daily 时用 TOP3 画柱状（通栏版） */
 function renderTop3Trend(t){
   var max=Math.max.apply(null,t.map(function(x){return x.count||0}).concat([1]));
-  var W=920,padL=40,padR=20,base=140,top=20;
+  var W=500,padL=40,padR=20,base=190,top=14;
   var sw=(W-padL-padR)/t.length;
   var svg='<line x1="'+padL+'" y1="'+top+'" x2="'+(W-padR)+'" y2="'+top+'" stroke="var(--border)" stroke-width="0.5" stroke-dasharray="3,3"/>';
   svg+='<line x1="'+padL+'" y1="'+base+'" x2="'+(W-padR)+'" y2="'+base+'" stroke="var(--border)" stroke-width="1"/>';
@@ -1399,7 +1400,7 @@ function renderTop3Trend(t){
   });
   svg+='<text x="4" y="'+(top+4)+'" font-size="10" fill="var(--text-t)">'+max+'</text>';
   document.getElementById('trendChart').innerHTML=svg;
-  document.getElementById('trendChart').setAttribute('viewBox','0 0 920 200');
+  document.getElementById('trendChart').setAttribute('viewBox','0 0 500 230');
 }
 
 /* 统一渲染函数：API 路径和降级路径共用 */
