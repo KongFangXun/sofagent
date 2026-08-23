@@ -420,7 +420,7 @@ a:hover{text-decoration:underline}
     </div>
     <div class="metric-card">
       <div class="metric-value" style="color:var(--amber-d)" id="m-cost">—</div>
-      <div class="metric-label">总成本（USD）</div>
+      <div class="metric-label">总成本</div>
       <div class="metric-sub" id="m-cost-sub">LLM 估算</div>
     </div>
     <div class="metric-card">
@@ -430,7 +430,7 @@ a:hover{text-decoration:underline}
     </div>
     <div class="metric-card">
       <div class="metric-value" style="color:var(--purple)" id="m-today">—</div>
-      <div class="metric-label">审计任务（今日）</div>
+      <div class="metric-label">今日任务</div>
       <div class="metric-sub" id="m-today-sub">总 — 个任务</div>
     </div>
     <div class="metric-card">
@@ -2087,7 +2087,12 @@ function resolveDataRoot(){
   });
 }
 function fmtTokens(t){if(!t)return '—';return (t.input+t.output).toLocaleString()}
-function fmtCost(c){if(c===null||c===undefined)return '—';return '$'+c.toFixed(4)}
+function fmtCost(c){
+  if(c===null||c===undefined)return '—';
+  // 成本符号本地化：中文界面 ¥，英文界面 $
+  var sym=(document.documentElement.lang||'zh').toLowerCase().indexOf('zh')===0?'¥':'$';
+  return sym+c.toFixed(4);
+}
 function fmtMs(ms){if(ms===null||ms===undefined)return '—';if(ms<1000)return ms+'ms';if(ms<60000)return (ms/1000).toFixed(1)+'s';return (ms/60000).toFixed(1)+'min'}
 
 function wlTab(tab){
@@ -2165,7 +2170,7 @@ function loadWorklogData(){
         return ['<strong>'+escapeHtml(a.agentId)+'</strong>',a.totals.tasks,a.totals.llmCalls,fmtTokens(a.totals.tokens),fmtMs(a.totals.modelCallMs),over,a.totals.humanInterventions||0];
       });
       var agHtml=sampleFlag+'<div style="font-size:12px;font-weight:600;color:var(--text-s);margin:8px 0 4px">Agent 汇总</div>'+
-        wlTable(['Agent','任务数','LLM 调用','Token','耗时','成本 USD','人工介入'],agRows);
+        wlTable(['Agent','任务数','LLM 调用','Token','耗时','成本','人工介入'],agRows);
       // 任务明细（taskId → 消耗 → 状态信号）
       var taskRows=[];
       (d.agents||[]).forEach(function(a){
@@ -2186,7 +2191,7 @@ function loadWorklogData(){
       });
       agHtml+='<div style="font-size:12px;font-weight:600;color:var(--text-s);margin:16px 0 4px">任务明细（taskId → 消耗 → 状态信号）</div>';
       if(taskRows.length>30)agHtml+='<div style="font-size:11px;color:var(--text-t);margin-bottom:6px">共 '+taskRows.length+' 条任务，仅显示最近 30 条</div>';
-      agHtml+=wlTable(['Task ID','Workflow','决策','LLM 调用','Token','耗时','成本 USD','重试','介入','最后活动'],taskRows.slice(0,30));
+      agHtml+=wlTable(['Task ID','Workflow','决策','LLM 调用','Token','耗时','成本','重试','介入','最后活动'],taskRows.slice(0,30));
       document.getElementById('wl-view-agent').innerHTML=agHtml;
 
       /* 按 Workflow：节点状态（跑/完/失败/人工介入） */
@@ -2207,7 +2212,7 @@ function loadWorklogData(){
       var wkRows=(d.weeklyTrend||[]).map(function(w){
         return [escapeHtml(w.week),w.activity,w.auditPassRate!==null&&w.auditPassRate!==undefined?(w.auditPassRate*100).toFixed(0)+'%':'—',fmtCost(w.costUsd)];
       });
-      document.getElementById('wl-view-week').innerHTML=sampleFlag+wlTable(['周','活跃度','审计成功率','成本 USD'],wkRows);
+      document.getElementById('wl-view-week').innerHTML=sampleFlag+wlTable(['周','活跃度','审计成功率','成本'],wkRows);
 
       /* 人工介入：优先 decisions.jsonl 事件（谁批的/为什么），降级 worklog 次数 */
       var ivRows=[];
