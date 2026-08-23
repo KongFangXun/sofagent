@@ -223,7 +223,7 @@ node tools/gen/gen-weekly-report.mjs       # 手动生成持续优化周报
 
 | 页面 | 数据源 | 职责 |
 |------|--------|------|
-| 驾驶舱 | /api/summary + daemon-health | 指标卡 + 审计趋势（规则检查口径）+ 工作明细 + 全量导出 + 数据主权 |
+| 驾驶舱 | /api/summary + daemon-health | 指标卡 → 工作明细（5 视角含审计记录）→ 违规趋势+数据主权（一行） |
 | 业务流 | /api/ai-nodes + graph-state | 业务节点 + 编排控制图 + 编排流水线 |
 | 本体图谱 | /api/ontology | 实体/概念/关系 + 图谱视图 |
 | FDE 引导 | workflow 模板 + 五阶段 Prompt | 方法论 + 部署入口 |
