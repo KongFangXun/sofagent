@@ -32,14 +32,14 @@ a:hover{text-decoration:underline}
 .header-left{display:flex;align-items:center;gap:12px}
 .header-left img{width:36px;height:36px;border-radius:8px}
 .logo-text{font-size:18px;font-weight:700;color:var(--text);letter-spacing:-.3px}
-.logo-version{font-size:11px;color:var(--brand-d);background:var(--brand-l);padding:2px 8px;border-radius:10px;font-weight:600;line-height:1.4;display:inline-flex;align-items:center}
+.logo-version{font-size:11px;color:var(--brand);background:var(--brand-l);padding:2px 8px;border-radius:10px;font-weight:600;line-height:1.4;display:inline-flex;align-items:center}
 
-.nav{display:flex;gap:2px;justify-content:center;overflow-x:auto;scrollbar-width:none}
+/* shadcn segmented tab：浅灰容器内嵌 active 白胶囊 */
+.nav{display:inline-flex;gap:2px;justify-content:center;align-items:center;padding:3px;background:var(--bg);border:1px solid var(--border);border-radius:9px;overflow-x:auto;scrollbar-width:none;flex-shrink:0;max-width:100%}
 .nav::-webkit-scrollbar{display:none}
-/* 胶囊导航（active 浅蓝底） */
-.nav-item{padding:8px 14px;font-size:13px;color:var(--text-s);cursor:pointer;border-radius:var(--radius-s);white-space:nowrap;transition:all .15s;border:none;background:none;font-family:var(--font);font-weight:500}
-.nav-item:hover{color:var(--text);background:var(--bg)}
-.nav-item.active{color:var(--brand);background:var(--brand-l)}
+.nav-item{padding:6px 14px;font-size:13px;color:var(--text-s);cursor:pointer;border-radius:6px;white-space:nowrap;transition:all .15s;border:none;background:transparent;font-family:var(--font);font-weight:500}
+.nav-item:hover{color:var(--text);background:var(--card)}
+.nav-item.active{color:var(--text);background:var(--card);font-weight:600;box-shadow:0 1px 2px rgba(0,0,0,.07)}
 
 .header-right{display:flex;gap:6px;justify-content:flex-end}
 .star-btn{display:inline-flex;align-items:center;gap:5px;padding:6px 14px;border:1px solid var(--border);border-radius:20px;background:var(--card);color:var(--text-s);font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;font-family:var(--font);text-decoration:none;line-height:1.4}
@@ -57,7 +57,7 @@ a:hover{text-decoration:underline}
 .help-title{font-size:15px;font-weight:600;flex-shrink:0}
 .help-close{width:30px;height:30px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text-s);font-size:16px;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center;font-family:var(--font);flex-shrink:0}
 .help-close:hover{border-color:var(--brand);color:var(--brand)}
-.help-tabs{display:flex;gap:2px;align-items:center;overflow-x:auto;scrollbar-width:none;flex:1;min-width:0}
+.help-tabs{flex:1;min-width:0;justify-content:flex-start}
 .help-tabs::-webkit-scrollbar{display:none}
 .help-tabs .nav-item{padding:6px 12px;font-size:12px;flex-shrink:0}
 .help-body{padding:20px;overflow-y:auto;flex:1}
@@ -157,10 +157,10 @@ a:hover{text-decoration:underline}
 .node-status .icon{width:8px;height:8px;border-radius:50%}
 .status-running .icon{background:var(--brand);animation:pulse 2s infinite}
 /* Agent 类型统一灰点（图形全灰，角色不靠颜色区分靠文字） */
-.agent-dot{width:10px;height:10px;border-radius:50%;display:inline-block;flex-shrink:0;animation:pulse 2s infinite;background:var(--text-t)}
-.agent-dot.audit{background:var(--text-s)}
-.agent-dot.planner{background:var(--text-t)}
-.agent-dot.human{background:var(--text-t)}
+.agent-dot{width:10px;height:10px;border-radius:50%;display:inline-block;flex-shrink:0;animation:pulse 2s infinite;background:var(--brand)}
+.agent-dot.audit{background:var(--brand)}
+.agent-dot.planner{background:var(--brand)}
+.agent-dot.human{background:var(--brand)}
 .status-pending .icon{background:var(--text-t)}
 .node-meta{font-size:12px;color:var(--text-s);margin-top:6px}
 .node-stats{display:flex;gap:12px;margin-top:8px;font-size:11px;color:var(--text-t)}
@@ -267,7 +267,7 @@ a:hover{text-decoration:underline}
 .seg-group{display:inline-flex;border:1px solid var(--border);border-radius:16px;background:var(--bg);overflow:hidden;padding:2px}
 .seg-btn{border:none;background:transparent;color:var(--text-s);font-size:11px;font-weight:500;padding:3px 10px;border-radius:13px;cursor:pointer;font-family:var(--font);transition:all .15s;min-height:22px;line-height:1.2}
 .seg-btn:hover{color:var(--text)}
-.seg-btn.active{background:var(--brand);color:#fff;box-shadow:0 1px 3px rgba(22,184,243,.35)}
+.seg-btn.active{background:var(--card);color:var(--text);box-shadow:0 1px 2px rgba(0,0,0,.07)}
 /* 手动刷新按钮：纯圆形 icon，与胶囊同高 */
 .seg-refresh{display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--border);border-radius:50%;background:var(--card);color:var(--brand);width:26px;height:26px;padding:0;font-size:11px;font-weight:600;transition:all .15s}
 .seg-refresh:hover{border-color:var(--brand);background:var(--brand-l);color:var(--brand)}
@@ -323,7 +323,7 @@ a:hover{text-decoration:underline}
   .header-right .star-btn{padding:6px 10px;min-height:36px}
   .header-right .star-btn span:not(.star-count){display:none}
   /* 导航独占一行横向滚动 + 隐藏滚动条 */
-  .nav{justify-content:flex-start;overflow-x:auto;-webkit-overflow-scrolling:touch;width:100%;padding-bottom:8px}
+  .nav{display:flex;justify-content:flex-start;overflow-x:auto;-webkit-overflow-scrolling:touch;width:100%;padding:3px}
   .nav-item{padding:8px 12px;font-size:12px;min-height:36px;flex-shrink:0}
   .section-body{padding:14px}
   .rule-grid,.doc-list,.mcp-grid,.npm-grid{grid-template-columns:1fr}
@@ -456,12 +456,14 @@ a:hover{text-decoration:underline}
 
   <div class="section">
     <div class="section-header"><div class="section-title"><span class="dot-emoji"><i class="bi bi-bar-chart"></i></span>工作明细（worklog）</div>
-      <span style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+      <span style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
         <span style="font-size:11px;color:var(--text-t)">超支标红 kind=COST</span>
-        <button class="nav-item active" id="wl-tab-agent" onclick="wlTab('agent')">按 Agent</button>
-        <button class="nav-item" id="wl-tab-workflow" onclick="wlTab('workflow')">按 Workflow</button>
-        <button class="nav-item" id="wl-tab-week" onclick="wlTab('week')">按周</button>
-        <button class="nav-item" id="wl-tab-intervention" onclick="wlTab('intervention')">介入</button>
+        <span class="nav" style="justify-content:flex-start">
+          <button class="nav-item active" id="wl-tab-agent" onclick="wlTab('agent')">按 Agent</button>
+          <button class="nav-item" id="wl-tab-workflow" onclick="wlTab('workflow')">按 Workflow</button>
+          <button class="nav-item" id="wl-tab-week" onclick="wlTab('week')">按周</button>
+          <button class="nav-item" id="wl-tab-intervention" onclick="wlTab('intervention')">介入</button>
+        </span>
       </span>
     </div>
     <div class="section-body">
@@ -783,20 +785,20 @@ a:hover{text-decoration:underline}
       <a href="https://github.com/KongFangXun/sofagent/blob/main/docs/ARCHITECTURE.md" target="_blank" class="btn btn-outline">ARCHITECTURE.md →</a>
     </div>
     <div class="section-body">
-      <div class="arch-layer" style="background:var(--brand-l);border:1px solid var(--brand)">
+      <div class="arch-layer" style="background:var(--bg-s);border:1px solid var(--border)">
         <h5 style="color:var(--text-s)">注入</h5>
         <div style="font-size:12px;color:var(--text-s)">开工前注入红线 · 四层加载链 · SKILL.md → fde.md → think.md → knowledge/</div>
       </div>
-      <div class="arch-layer" style="background:var(--red-l);border:1px solid var(--red)">
-        <h5 style="color:#791F1F">审计</h5>
+      <div class="arch-layer" style="background:var(--bg-s);border:1px solid var(--border)">
+        <h5 style="color:var(--text-s)">审计</h5>
         <div style="font-size:12px;color:var(--text-s)">每次变更硬证据 · 24 条规则 · 19 条零 token · 违规当场拦截</div>
       </div>
       <div class="arch-layer" style="background:var(--bg-s);border:1px solid var(--border)">
-        <h5 style="color:#085041">回溯</h5>
+        <h5 style="color:var(--text-s)">回溯</h5>
         <div style="font-size:12px;color:var(--text-s)">自动快照 · 一键回滚 · git snapshot 不污染历史</div>
       </div>
       <div class="arch-layer" style="background:var(--bg-s);border:1px solid var(--border)">
-        <h5 style="color:#3C3489">进化</h5>
+        <h5 style="color:var(--text-s)">进化</h5>
         <div style="font-size:12px;color:var(--text-s)">think.md 反思 + Dream Cycle 知识回灌 + skillopt Skill 优化</div>
       </div>
     </div>
@@ -929,7 +931,7 @@ build → acceptance → regression → coverage，
   <div class="help-panel" role="dialog" aria-label="帮助与支持">
     <div class="help-header">
       <div class="help-title">帮助与支持</div>
-      <div class="help-tabs" id="helpTabs">
+      <div class="nav help-tabs" id="helpTabs">
         <button class="nav-item" data-help="workflow" onclick="switchHelpTab('workflow')">业务流</button>
         <button class="nav-item" data-help="ontology" onclick="switchHelpTab('ontology')">本体图谱</button>
         <button class="nav-item" data-help="knowledge" onclick="switchHelpTab('knowledge')">知识库</button>
@@ -2296,7 +2298,7 @@ function renderFlowGraph(nodes,edges){
     var tx=p.x+nodeW/2;
     if(st==='active'||st==='hitl'){
       var tw=String(stLabel).length*9;
-      svg+='<circle class="pulse-svg" cx="'+(tx-tw/2-5)+'" cy="'+(p.y+72)+'" r="3" fill="'+(st==='hitl'?'var(--amber)':'var(--brand)')+'"/>';
+      svg+='<circle class="pulse-svg" cx="'+(tx-tw/2-5)+'" cy="'+(p.y+72)+'" r="3" fill="var(--brand)"/>';
     }
     svg+='<text x="'+tx+'" y="'+(p.y+76)+'" text-anchor="middle" font-size="9" fill="var(--text-t)">'+escapeHtml(stLabel)+'</text>';
   });
@@ -2441,10 +2443,10 @@ function renderSkillChain(){
   var box=document.getElementById('skillChainBox');
   if(!box)return;
   var layers=[
-    {name:'L1 · SKILL.md',desc:'宪法 · 不可改——Agent 启动时最先注入的硬约束',tag:'~/.sofagent/skills/sofagent/SKILL.md',dot:'var(--text)'},
-    {name:'L2 · fde.md',desc:'企业规范 · 可改——业务底线与红线',tag:'~/.sofagent/skills/sofagent/fde.md',dot:'var(--text-t)'},
-    {name:'L3 · think.md',desc:'反思 · 自动生成——每次被拦下的毛病沉淀',tag:'~/.sofagent/skills/sofagent/think.md',dot:'var(--text-t)'},
-    {name:'L4 · knowledge/',desc:'知识 · 按需加载——实体/概念/教训检索注入',tag:'~/.sofagent/skills/sofagent/knowledge/',dot:'var(--text-s)'}
+    {name:'L1 · SKILL.md',desc:'宪法 · 不可改——Agent 启动时最先注入的硬约束',tag:'~/.sofagent/skills/sofagent/SKILL.md',dot:'var(--brand)'},
+    {name:'L2 · fde.md',desc:'企业规范 · 可改——业务底线与红线',tag:'~/.sofagent/skills/sofagent/fde.md',dot:'var(--brand)'},
+    {name:'L3 · think.md',desc:'反思 · 自动生成——每次被拦下的毛病沉淀',tag:'~/.sofagent/skills/sofagent/think.md',dot:'var(--brand)'},
+    {name:'L4 · knowledge/',desc:'知识 · 按需加载——实体/概念/教训检索注入',tag:'~/.sofagent/skills/sofagent/knowledge/',dot:'var(--brand)'}
   ];
   var html='<div style="font-size:11px;color:var(--text-t);margin-bottom:12px">每次 Agent 启动按序注入四层约束——约束先于行为，红线先于干活：</div>';
   html+='<div class="skill-chain">';
