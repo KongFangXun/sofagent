@@ -502,10 +502,10 @@ a:hover{text-decoration:underline}
         </div>
       </div>
       <div class="section-body">
-        <svg width="100%" height="230" viewBox="0 0 500 230" preserveAspectRatio="xMidYMid meet" id="trendChart">
+        <svg width="100%" height="180" viewBox="0 0 500 180" preserveAspectRatio="xMidYMid meet" id="trendChart">
           <text x="250" y="115" text-anchor="middle" font-size="13" fill="var(--text-t)">加载中...</text>
         </svg>
-        <div id="topRules" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:12px"></div>
+        <div id="topRules" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px"></div>
       </div>
     </div>
     <div class="section">
@@ -1334,7 +1334,7 @@ function renderSummaryData(s){
 function renderDailyTrend(days){
   var maxCount=Math.max.apply(null,days.map(function(d){return d.ruleAll||0}).concat([1]));
   // viewBox 宽 500 匹配半宽卡片——图不再等比缩小，柱子视觉充实
-  var W=500,padL=40,padR=40,top=14,base=190;
+  var W=500,padL=40,padR=40,top=12,base=150;
   var bw=(W-padL-padR)/days.length;
   var svg='';
   // 左轴：次数 0-maxCount（4 格）
@@ -1384,7 +1384,7 @@ function renderDailyTrend(days){
 /* 降级：summary 无 daily 时用 TOP3 画柱状（通栏版） */
 function renderTop3Trend(t){
   var max=Math.max.apply(null,t.map(function(x){return x.count||0}).concat([1]));
-  var W=500,padL=40,padR=20,base=190,top=14;
+  var W=500,padL=40,padR=20,base=150,top=12;
   var sw=(W-padL-padR)/t.length;
   var svg='<line x1="'+padL+'" y1="'+top+'" x2="'+(W-padR)+'" y2="'+top+'" stroke="var(--border)" stroke-width="0.5" stroke-dasharray="3,3"/>';
   svg+='<line x1="'+padL+'" y1="'+base+'" x2="'+(W-padR)+'" y2="'+base+'" stroke="var(--border)" stroke-width="1"/>';
@@ -1399,7 +1399,7 @@ function renderTop3Trend(t){
   });
   svg+='<text x="4" y="'+(top+4)+'" font-size="10" fill="var(--text-t)">'+max+'</text>';
   document.getElementById('trendChart').innerHTML=svg;
-  document.getElementById('trendChart').setAttribute('viewBox','0 0 500 230');
+  document.getElementById('trendChart').setAttribute('viewBox','0 0 500 180');
 }
 
 /* 统一渲染函数：API 路径和降级路径共用 */
@@ -1416,19 +1416,12 @@ function renderSovereigntyBox(sov,daemonStatus,auditTotal,todayCount){
     badge.innerHTML='<span class="sov-dot" style="background:'+dotCol+'"></span><span style="color:var(--text-s)">守护进程 '+escapeHtml(ds)+'</span>';
   }
   /* 四栏数字：本地执行 / 本地化率 / 云端调用 / 数据流出，无分割线（锁定小字在 section 外） */
-  var rows='<div class="chart-box" style="display:flex;align-items:center;justify-content:space-around;flex:1;min-height:80px;height:100%">'+
+  el.innerHTML='<div class="chart-box" style="display:flex;align-items:center;justify-content:space-around;flex:1;min-height:64px;height:100%">'+
     '<div style="display:flex;flex-direction:column;justify-content:center;align-items:center"><div style="font-size:20px;font-weight:700;color:var(--text)">'+sov.local+'</div><div style="font-size:11px;color:var(--text-s);margin-top:2px">本地执行</div></div>'+
     '<div style="display:flex;flex-direction:column;justify-content:center;align-items:center"><div style="font-size:20px;font-weight:700;color:var(--text)">'+sov.localRate+'%</div><div style="font-size:11px;color:var(--text-s);margin-top:2px">本地化率</div></div>'+
     '<div style="display:flex;flex-direction:column;justify-content:center;align-items:center"><div style="font-size:20px;font-weight:700;color:var(--text)">'+sov.cloud+'</div><div style="font-size:11px;color:var(--text-s);margin-top:2px">云端调用</div></div>'+
     '<div style="display:flex;flex-direction:column;justify-content:center;align-items:center"><div style="font-size:20px;font-weight:700;color:var(--text)">'+(sov.outbound||0)+'</div><div style="font-size:11px;color:var(--text-s);margin-top:2px">数据流出</div></div>'+
     '</div>';
-  /* 信息条：敏感操作 / 数据目录 / 审计统计（充实模块，全本地语义） */
-  rows+='<div style="margin-top:12px;padding:8px 12px;background:var(--bg-s);border:1px solid var(--border);border-radius:var(--radius-s);font-size:11px;color:var(--text-s);line-height:1.7">'+
-    '<div style="display:flex;align-items:center;gap:6px"><i class="bi bi-shield-lock" style="color:var(--text-t)"></i>敏感操作 <strong style="color:var(--text)">'+(sov.sensitive||0)+'</strong> 条全部本地处理</div>'+
-    '<div style="display:flex;align-items:center;gap:6px"><i class="bi bi-hdd" style="color:var(--text-t)"></i>数据目录 <code style="font-family:var(--mono);color:var(--text-s)">~/.sofagent/data</code> · 0 条出网</div>'+
-    '<div style="display:flex;align-items:center;gap:6px"><i class="bi bi-clipboard-check" style="color:var(--text-t)"></i>审计记录 <strong style="color:var(--text)">'+(auditTotal||0)+'</strong> 条'+(todayCount?'（今日 '+todayCount+' 条）':'')+'</div>'+
-    '</div>';
-  el.innerHTML=rows;
 }
 
 function updateDataStatus(connected){
@@ -1743,14 +1736,30 @@ function loadFdeWorkflowData(){
           var tw=wr.thisWeek||{};
           var trendCn={improving:'<i class="bi bi-graph-up"></i> 改善',degrading:'<i class="bi bi-graph-down"></i> 恶化',stable:'➡️ 平稳'}[wr.trend]||wr.trend||'-';
           var top5=(wr.violationTop5||[]).slice(0,3).map(function(v){return escapeHtml(v.rule)+'×'+v.count}).join(' · ');
+          // 任务级通过率（一次任务=一条记录），与顶部"规则级"通过率区分口径
+          var tCnt=tw.taskCount||0;
+          var pRate=tCnt>0?Math.round((tw.passes||0)*100/tCnt):0;
+          var wPct=tCnt>0?Math.round((tw.warnings||0)*100/tCnt):0;
+          var vPct=tCnt>0?Math.round((tw.violations||0)*100/tCnt):0;
+          var barHtml='<div style="display:flex;height:6px;border-radius:3px;overflow:hidden;margin:8px 0">'+
+            '<div style="width:'+pRate+'%;background:var(--brand)"></div>'+
+            '<div style="width:'+wPct+'%;background:var(--amber)"></div>'+
+            '<div style="width:'+vPct+'%;background:var(--red)"></div></div>';
           html+='<div style="margin-top:12px;background:var(--bg-s);border:1px solid var(--border);border-radius:var(--radius-s);padding:10px 14px;font-size:12px;color:var(--text-s)">'+
             // 第一行：标题 + 右上角链接 + 统计
             '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">'+
               '<b style="color:var(--text)"><i class="bi bi-bar-chart"></i> '+escapeHtml(wr.weekLabel)+' 持续优化周报</b>'+
-              '<span>本周 '+tw.taskCount+' 任务 · '+tw.passes+' 通过 · '+tw.warnings+' 警告 · <b style="color:var(--red)">'+tw.violations+' 违规</b> · 趋势 '+trendCn+'</span>'+
+              '<span>任务通过率 <b style="color:var(--text)">'+pRate+'%</b>（'+tw.passes+'/'+tCnt+'）· 警告 '+tw.warnings+' · <b style="color:var(--red)">违规 '+tw.violations+'</b> · 趋势 '+trendCn+'</span>'+
               '<a href="data:application/json;charset=utf-8,'+encodeURIComponent(JSON.stringify(wr))+'" download="weekly-'+escapeHtml(wr.weekLabel)+'.json" title="下载周报 JSON" class="btn btn-outline" style="margin-left:auto;height:24px;padding:0 8px;font-size:11px"><i class="bi bi-download"></i> 周报 JSON</a>'+
             '</div>'+
-            (top5?'<div style="margin-top:6px;font-size:11px;color:var(--text-t)">违规 TOP3：'+top5+'</div>':'')+
+            barHtml+
+            '<div style="display:flex;align-items:center;gap:12px;font-size:11px;color:var(--text-t);flex-wrap:wrap">'+
+              '<span style="display:inline-flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:var(--brand);border-radius:2px"></span>通过 '+pRate+'%</span>'+
+              '<span style="display:inline-flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:var(--amber);border-radius:2px"></span>警告 '+wPct+'%</span>'+
+              '<span style="display:inline-flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:var(--red);border-radius:2px"></span>违规 '+vPct+'%</span>'+
+              (top5?'<span>违规 TOP3：'+top5+'</span>':'')+
+            '</div>'+
+            '<div style="margin-top:6px;font-size:10px;color:var(--text-t)">任务级口径（一次 AI 任务=一条记录）——顶部"审计通过率 95%"是规则级（24 条规则逐条检查），两者不冲突。</div>'+
             '</div>';
         }
       });
