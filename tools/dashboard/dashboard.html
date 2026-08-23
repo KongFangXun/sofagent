@@ -68,10 +68,10 @@ a:hover{text-decoration:underline}
 .rule-chip{display:inline-flex;align-items:center;gap:4px;background:var(--red-l);color:var(--red);font-family:var(--mono);font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px;cursor:pointer;transition:all .15s}
 .rule-chip:hover{background:var(--red);color:#fff}
 .rule-chip .rc-count{font-weight:400;opacity:.8}
-/* 快捷入口条（FDE 怎么开始：浅灰底 + 白块，去卡片套卡片） */
-.quick-start{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-s);overflow:hidden}
-.qs-item{background:var(--card);padding:14px 12px;text-align:center;cursor:pointer;transition:background .15s;text-decoration:none;display:block}
-.qs-item:hover{background:var(--brand-l)}
+/* 快捷入口（FDE 怎么开始：4 个独立 block，非一条背景条） */
+.quick-start{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.qs-item{background:var(--bg-s);border:1px solid var(--border);border-radius:var(--radius-s);padding:16px 12px;text-align:center;cursor:pointer;transition:all .15s;text-decoration:none;display:block}
+.qs-item:hover{border-color:var(--brand);background:var(--brand-l)}
 .qs-item .qs-icon{font-size:20px;line-height:1.2}
 .qs-item .qs-title{font-size:13px;font-weight:600;color:var(--text);margin-top:5px}
 .qs-item .qs-desc{font-size:11px;color:var(--text-s);margin-top:2px}
@@ -215,14 +215,7 @@ a:hover{text-decoration:underline}
 .mcp-item{background:var(--bg-s);border:1px solid var(--border);border-radius:6px;padding:8px 10px;font-size:12px}
 .mcp-item code{font-family:var(--mono);font-size:11px;color:var(--brand-d);font-weight:600}
 .mcp-item .mcp-desc{color:var(--text-s);margin-top:2px;font-size:11px}
-/* MCP 工具分组折叠 */
-.tool-group{border:1px solid var(--border);border-radius:var(--radius-s);background:var(--card);margin-bottom:8px;overflow:hidden}
-.tool-group summary{cursor:pointer;padding:10px 14px;font-size:13px;font-weight:600;color:var(--text);list-style:none;display:flex;align-items:center;gap:8px;user-select:none}
-.tool-group summary::-webkit-details-marker{display:none}
-.tool-group summary::before{content:'▸';font-size:11px;color:var(--text-t);transition:transform .15s}
-.tool-group[open] summary::before{transform:rotate(90deg)}
-.tool-group summary:hover{background:var(--bg)}
-.tg-count{font-size:11px;font-weight:500;color:var(--text-t);background:var(--bg);border-radius:10px;padding:1px 8px;margin-left:2px}
+/* MCP 工具分组（仅数组组织结构，渲染时平铺全部） */
 
 .npm-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px}
 .npm-item{background:var(--bg-s);border:1px solid var(--border);border-radius:var(--radius-s);padding:10px 12px}
@@ -305,7 +298,7 @@ a:hover{text-decoration:underline}
   .container{padding:12px 12px calc(12px + env(safe-area-inset-bottom))}
   .metrics{grid-template-columns:repeat(2,1fr);gap:16px}
   .metric-value{font-size:24px}
-  .grid-2,.grid-3{grid-template-columns:1fr}
+  .grid-2,.grid-3,.attention,.quick-start{grid-template-columns:1fr}
   /* header 两行：第一行 logo+star，第二行导航 */
   .header{padding:8px 8px 0;gap:6px;display:flex;flex-direction:column;height:auto;align-items:stretch}
   .header-inner{display:flex;flex-direction:column;height:auto;padding:0;gap:6px;width:100%}
@@ -731,6 +724,36 @@ a:hover{text-decoration:underline}
     </div>
   </div>
   <div class="section">
+    <div class="section-header"><div class="section-title"><span class="dot-emoji">🧬</span>skill 加载链（四层约束注入）</div>
+      <a href="https://github.com/KongFangXun/sofagent/blob/main/docs/ARCHITECTURE.md" target="_blank" class="copy-btn light">ARCHITECTURE.md →</a>
+    </div>
+    <div class="section-body">
+      <div id="skillChainBox" style="font-size:12px;color:var(--text-s)">
+        <div style="text-align:center;color:var(--text-t);padding:12px">加载中...</div>
+      </div>
+    </div>
+  </div>
+  <div class="section">
+    <div class="section-header"><div class="section-title"><span class="dot-emoji">📄</span>文档直达</div></div>
+    <div class="section-body">
+      <div class="doc-list">
+        <a class="doc-item" href="https://github.com/KongFangXun/sofagent/blob/main/README.md" target="_blank"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>README<span class="ext">介绍 + 安装</span></a>
+        <a class="doc-item" href="https://github.com/KongFangXun/sofagent/blob/main/docs/WIKI.md" target="_blank"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>WIKI<span class="ext">导航索引</span></a>
+        <a class="doc-item" href="https://github.com/KongFangXun/sofagent/blob/main/docs/ARCHITECTURE.md" target="_blank"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>ARCHITECTURE<span class="ext">架构详解</span></a>
+        <a class="doc-item" href="https://github.com/KongFangXun/sofagent/blob/main/docs/PHILOSOPHY.md" target="_blank"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>PHILOSOPHY<span class="ext">设计哲学</span></a>
+        <a class="doc-item" href="https://github.com/KongFangXun/sofagent/blob/main/docs/VALIDATION.md" target="_blank"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>VALIDATION<span class="ext">行业印证</span></a>
+        <a class="doc-item" href="https://github.com/KongFangXun/sofagent/blob/main/docs/DEVELOPMENT.md" target="_blank"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>DEVELOPMENT<span class="ext">开发指南</span></a>
+        <a class="doc-item" href="https://github.com/KongFangXun/sofagent/blob/main/docs/HANDBOOK.md" target="_blank"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>HANDBOOK<span class="ext">操作手册</span></a>
+        <a class="doc-item" href="https://github.com/KongFangXun/sofagent/blob/main/FDE/GUIDE.md" target="_blank"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>FDE GUIDE<span class="ext">诊断方法论</span></a>
+        <a class="doc-item" href="https://github.com/KongFangXun/sofagent/blob/main/SECURITY.md" target="_blank"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>SECURITY<span class="ext">安全策略</span></a>
+        <a class="doc-item" href="https://github.com/KongFangXun/sofagent/blob/main/docs/LIMITATIONS.md" target="_blank"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>LIMITATIONS<span class="ext">已知局限</span></a>
+        <a class="doc-item" href="https://github.com/KongFangXun/sofagent/blob/main/ROADMAP.md" target="_blank"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>ROADMAP<span class="ext">路线图</span></a>
+        <a class="doc-item" href="https://github.com/KongFangXun/sofagent/blob/main/CONTRIBUTING.md" target="_blank"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>CONTRIBUTING<span class="ext">贡献指南</span></a>
+        <a class="doc-item" href="https://github.com/KongFangXun/sofagent/blob/main/docs/THANKS.md" target="_blank"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>THANKS<span class="ext">致谢</span></a>
+      </div>
+    </div>
+  </div>
+  <div class="section">
     <div class="section-header">
       <div class="section-title"><span class="dot-emoji">🏗️</span>约束层（Harness）· 一个层四种能力</div>
       <a href="https://github.com/KongFangXun/sofagent/blob/main/docs/ARCHITECTURE.md" target="_blank" class="copy-btn light">ARCHITECTURE.md →</a>
@@ -751,21 +774,6 @@ a:hover{text-decoration:underline}
       <div class="arch-layer" style="background:var(--purple-l);border:1px solid var(--purple)">
         <h5 style="color:#3C3489">进化</h5>
         <div style="font-size:12px;color:var(--text-s)">think.md 反思 + Dream Cycle 知识回灌 + skillopt Skill 优化</div>
-      </div>
-    </div>
-  </div>
-  <div class="section">
-    <div class="section-header">
-      <div class="section-title"><span class="dot-emoji">🔗</span>生命周期 · 激活链（v1.2.5+）</div>
-      <a href="https://github.com/KongFangXun/sofagent/blob/main/docs/guides/fde-activation-chain.md" target="_blank" class="copy-btn light">激活链设计 →</a>
-    </div>
-    <div class="section-body">
-      <div class="timeline">
-        <div class="tl-item"><div class="tl-dot done"></div><div class="tl-title">诊断 FDE 四阶段<span class="tl-version">v1.0+ ✅</span></div><div class="tl-desc">进场→深挖→量化→交付→离场，五阶段十二步方法论</div></div>
-        <div class="tl-item"><div class="tl-dot current"></div><div class="tl-title">激活 ACTIVATE<span class="tl-version">v1.2.5 ✅</span></div><div class="tl-desc">读交付物 → 注册企业 SubAgent → 写入 .sofagent/subagents/</div></div>
-        <div class="tl-item"><div class="tl-dot planned"></div><div class="tl-title">编排 ORCHESTRATE<span class="tl-version">v1.2.6-v1.2.8</span></div><div class="tl-desc">构建企业专属 LangGraph StateGraph</div></div>
-        <div class="tl-item"><div class="tl-dot planned"></div><div class="tl-title">执行 EXECUTE<span class="tl-version">v1.2.8-v1.2.9</span></div><div class="tl-desc">DAG 运行 + 人工确认（HITL）+ 每步审计</div></div>
-        <div class="tl-item"><div class="tl-dot planned"></div><div class="tl-title">进化 SUSTAIN<span class="tl-version">v1.3.0</span></div><div class="tl-desc">持续优化 · think.md 回写 · 越跑越好</div></div>
       </div>
     </div>
   </div>
@@ -830,16 +838,6 @@ a:hover{text-decoration:underline}
     </div>
   </div>
   <div class="section">
-    <div class="section-header"><div class="section-title"><span class="dot-emoji">🧬</span>skill 加载链（四层约束注入）</div>
-      <a href="https://github.com/KongFangXun/sofagent/blob/main/docs/ARCHITECTURE.md" target="_blank" class="copy-btn light">ARCHITECTURE.md →</a>
-    </div>
-    <div class="section-body">
-      <div id="skillChainBox" style="font-size:12px;color:var(--text-s)">
-        <div style="text-align:center;color:var(--text-t);padding:12px">加载中...</div>
-      </div>
-    </div>
-  </div>
-  <div class="section">
     <div class="section-header"><div class="section-title"><span class="dot-emoji">📦</span>npm 包（13 个）</div></div>
     <div class="section-body">
       <div class="npm-grid">
@@ -856,26 +854,6 @@ a:hover{text-decoration:underline}
         <div class="npm-item"><code>@sofagent/ab-test</code><div class="npm-desc">A/B 测试</div></div>
         <div class="npm-item"><code>@sofagent/skillopt</code><div class="npm-desc">Skill 自动优化</div></div>
         <div class="npm-item"><code>@sofagent/rules</code><div class="npm-desc">审计规则定义</div></div>
-      </div>
-    </div>
-  </div>
-  <div class="section">
-    <div class="section-header"><div class="section-title"><span class="dot-emoji">📄</span>文档直达</div></div>
-    <div class="section-body">
-      <div class="doc-list">
-        <a class="doc-item" href="https://github.com/KongFangXun/sofagent/blob/main/README.md" target="_blank"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>README<span class="ext">介绍 + 安装</span></a>
-        <a class="doc-item" href="https://github.com/KongFangXun/sofagent/blob/main/docs/WIKI.md" target="_blank"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>WIKI<span class="ext">导航索引</span></a>
-        <a class="doc-item" href="https://github.com/KongFangXun/sofagent/blob/main/docs/ARCHITECTURE.md" target="_blank"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>ARCHITECTURE<span class="ext">架构详解</span></a>
-        <a class="doc-item" href="https://github.com/KongFangXun/sofagent/blob/main/docs/PHILOSOPHY.md" target="_blank"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>PHILOSOPHY<span class="ext">设计哲学</span></a>
-        <a class="doc-item" href="https://github.com/KongFangXun/sofagent/blob/main/docs/VALIDATION.md" target="_blank"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>VALIDATION<span class="ext">行业印证</span></a>
-        <a class="doc-item" href="https://github.com/KongFangXun/sofagent/blob/main/docs/DEVELOPMENT.md" target="_blank"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>DEVELOPMENT<span class="ext">开发指南</span></a>
-        <a class="doc-item" href="https://github.com/KongFangXun/sofagent/blob/main/docs/HANDBOOK.md" target="_blank"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>HANDBOOK<span class="ext">操作手册</span></a>
-        <a class="doc-item" href="https://github.com/KongFangXun/sofagent/blob/main/FDE/GUIDE.md" target="_blank"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>FDE GUIDE<span class="ext">诊断方法论</span></a>
-        <a class="doc-item" href="https://github.com/KongFangXun/sofagent/blob/main/SECURITY.md" target="_blank"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>SECURITY<span class="ext">安全策略</span></a>
-        <a class="doc-item" href="https://github.com/KongFangXun/sofagent/blob/main/docs/LIMITATIONS.md" target="_blank"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>LIMITATIONS<span class="ext">已知局限</span></a>
-        <a class="doc-item" href="https://github.com/KongFangXun/sofagent/blob/main/ROADMAP.md" target="_blank"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>ROADMAP<span class="ext">路线图</span></a>
-        <a class="doc-item" href="https://github.com/KongFangXun/sofagent/blob/main/CONTRIBUTING.md" target="_blank"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>CONTRIBUTING<span class="ext">贡献指南</span></a>
-        <a class="doc-item" href="https://github.com/KongFangXun/sofagent/blob/main/docs/THANKS.md" target="_blank"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>THANKS<span class="ext">致谢</span></a>
       </div>
     </div>
   </div>
@@ -922,9 +900,7 @@ build → acceptance → regression → coverage，
       </div>
     </div>
   </div>
-</div>
-
-<!-- ============ HELP PANEL（全局教学入口） ============ -->
+</div><!-- ============ HELP PANEL（全局教学入口） ============ -->
 <div class="help-overlay" id="helpOverlay">
   <div class="help-panel" role="dialog" aria-label="帮助与支持">
     <div class="help-header">
@@ -2410,12 +2386,11 @@ var MCP_TOOLS=[
 function renderMcpList(){
   var box=document.getElementById('mcpList');
   if(!box)return;
-  box.innerHTML=MCP_TOOLS.map(function(g){
-    return '<details class="tool-group"'+(g.open?' open':'')+'>'+
-      '<summary>'+escapeHtml(g.g)+'<span class="tg-count">'+g.items.length+'</span></summary>'+
-      '<div class="mcp-grid" style="padding:0 14px 14px;margin-top:10px">'+g.items.map(function(t){
-        return '<div class="mcp-item"><code>'+escapeHtml(t[0])+'</code><div class="mcp-desc">'+escapeHtml(t[1])+'</div></div>';
-      }).join('')+'</div></details>';
+  // 全部平铺（与 24 审计规则同风格），分组仅作为数组组织结构
+  var all=[];
+  MCP_TOOLS.forEach(function(g){(g.items||[]).forEach(function(t){all.push(t)})});
+  box.innerHTML=all.map(function(t){
+    return '<div class="mcp-item"><code>'+escapeHtml(t[0])+'</code><div class="mcp-desc">'+escapeHtml(t[1])+'</div></div>';
   }).join('');
 }
 function renderSkillChain(){
