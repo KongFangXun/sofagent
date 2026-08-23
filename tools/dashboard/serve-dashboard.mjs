@@ -3,9 +3,9 @@
  * sofagent Dashboard 本地服务器
  *
  * 用法：
- *   node tools/serve-dashboard.mjs            # 起服务并自动打开浏览器
- *   DASHBOARD_PORT=4000 node tools/serve-dashboard.mjs   # 指定端口
- *   SOFAGENT_HOME=/path node tools/serve-dashboard.mjs   # 指定数据目录
+ *   node tools/dashboard/serve-dashboard.mjs            # 起服务并自动打开浏览器
+ *   DASHBOARD_PORT=4000 node tools/dashboard/serve-dashboard.mjs   # 指定端口
+ *   SOFAGENT_HOME=/path node tools/dashboard/serve-dashboard.mjs   # 指定数据目录
  *
  * 提供三类接口：
  *   1. /              → dashboard.html（tools/）
