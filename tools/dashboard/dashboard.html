@@ -386,7 +386,7 @@ a:hover{text-decoration:underline}
     <div class="header-left">
       <img src="docs/assets/sofagent.png" alt="sofagent" onerror="this.style.display='none'">
       <span class="logo-text">sofagent</span>
-      <span class="logo-version">v1.4.0</span>
+      <span class="logo-version">v1.3.9</span>
     </div>
     <nav class="nav" id="nav">
       <button class="nav-item active" onclick="goPage('cockpit')">驾驶舱</button>
@@ -457,11 +457,6 @@ a:hover{text-decoration:underline}
       <div class="metric-value" id="m-violations">—</div>
       <div class="metric-label">问题次数（今日）</div>
       <div class="metric-sub" id="m-violations-sub">总 — 次问题</div>
-    </div>
-    <div class="metric-card">
-      <div class="metric-value" id="m-audit">—</div>
-      <div class="metric-label">规则通过率</div>
-      <div class="metric-sub" id="m-audit-sub">通过的检查 ÷ 全部检查</div>
     </div>
   </div>
 
@@ -1116,7 +1111,7 @@ build → acceptance → regression → coverage，
 
   <div class="footer">
     <p>sofagent · FDE Agent — 梳理工作流 · 部署 AI 节点 · 审计每次变更</p>
-    <p style="margin-top:4px"><a href="https://github.com/KongFangXun/sofagent" target="_blank">GitHub</a> · MIT License · 孔放勋 · v1.4.0</p>
+    <p style="margin-top:4px"><a href="https://github.com/KongFangXun/sofagent" target="_blank">GitHub</a> · MIT License · 孔放勋 · v1.3.9</p>
   </div>
 </div>
 
@@ -1241,8 +1236,6 @@ function renderSummaryData(s){
   var todayChecks=lastDay?(lastDay.ruleAll||0):0;
   var todayIssues=lastDay?((lastDay.ruleAll||0)-(lastDay.rulePass||0)):0;
   var totalIssues=(r.warn||0)+(r.fail||0);
-  document.getElementById('m-audit').textContent=r.passRate+'%';
-  document.getElementById('m-audit-sub').textContent='通过的检查 ÷ 全部检查';
   animateNumber(document.getElementById('m-today'),todayTasks);
   document.getElementById('m-today-sub').textContent='总 '+(t.total||0)+' 个任务';
   animateNumber(document.getElementById('m-nodes'),todayChecks);
@@ -1276,16 +1269,10 @@ function renderSummaryData(s){
   }else if(s.top3&&s.top3.length){
     renderTop3Trend(s.top3);
   }
-  // 洞察：指标卡较昨日趋势箭头（通过率 ↑绿 / 问题 ↑红）
+  // 洞察：指标卡较昨日趋势箭头（问题 ↑红）
   var prevDay=(s.daily&&s.daily.length>1)?s.daily[s.daily.length-2]:null;
   if(prevDay){
     var prevIssues=(prevDay.ruleAll||0)-(prevDay.rulePass||0);
-    var prevRate=prevDay.ruleAll?Math.round(prevDay.rulePass*100/prevDay.ruleAll):null;
-    var mAud=document.getElementById('m-audit');
-    if(mAud&&prevRate!=null){
-      var rateNum=parseFloat(r.passRate);
-      mAud.innerHTML=rateNum+'%'+(rateNum>prevRate?'<span class="metric-trend trend-up">↑</span>':rateNum<prevRate?'<span class="metric-trend trend-down">↓</span>':'<span class="metric-trend trend-flat">→</span>');
-    }
     var mViol=document.getElementById('m-violations');
     if(mViol){
       mViol.innerHTML=todayIssues+(todayIssues>prevIssues?'<span class="metric-trend trend-up">↑</span>':todayIssues<prevIssues?'<span class="metric-trend trend-down">↓</span>':'<span class="metric-trend trend-flat">→</span>');
@@ -1439,10 +1426,6 @@ function processAuditData(records){
       })
     }
   });
-  var total=pass+warn+fail;
-  var rate=total>0?Math.round(pass*100/total):0;
-  document.getElementById('m-audit').textContent=rate+'%';
-  document.getElementById('m-audit-sub').textContent='24 条规则';
   animateNumber(document.getElementById('m-nodes'),records.length);
   document.getElementById('m-nodes-sub').textContent='审计次数';
   animateNumber(document.getElementById('m-violations'),(warn+fail));
@@ -1521,8 +1504,6 @@ function renderSovereignty(sData,dh){
 }
 
 function loadSampleData(){
-  document.getElementById('m-audit').textContent='92%';
-  document.getElementById('m-audit-sub').textContent='通过的检查 ÷ 全部检查';
   document.getElementById('m-today').textContent='6';
   document.getElementById('m-today-sub').textContent='总 1204 个任务 · 示例';
   document.getElementById('m-nodes').textContent='132';
@@ -2266,7 +2247,13 @@ function loadWorklogData(){
     });
   }).catch(function(){
     var emptyHtml=emptyState('<i class="bi bi-bar-chart"></i>','还没有工作记录','部署 AI 节点并运行编排任务后生成（worklog.json）','去 FDE 引导部署',"goPage('fde')");
-    document.getElementById('wl-view-overview').innerHTML=emptyHtml;
+    // 概况 tab 顶部加主动引导条（说明数据来源 + 一键跳转），其他 tab 保持空态
+    var guideBar='<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--bg-s);border:1px solid var(--border);border-radius:var(--radius-s);padding:10px 14px;font-size:12px;color:var(--text-s);margin-bottom:12px">'+
+      '<i class="bi bi-info-circle" style="color:var(--brand)"></i>'+
+      '<span>工作记录来自 <b>编排任务</b>（AI 节点实际干活：规划 → 执行 → 审计 → 审查）。部署 AI 节点后，这里自动生成每个任务的记录。</span>'+
+      '<button class="btn btn-outline" onclick="goPage(\'fde\')" style="margin-left:auto;height:26px;padding:0 12px;font-size:12px">去 FDE 引导部署</button>'+
+      '</div>';
+    document.getElementById('wl-view-overview').innerHTML=guideBar+emptyHtml;
     document.getElementById('wl-view-tasks').innerHTML=emptyHtml;
     document.getElementById('wl-view-intervention').innerHTML=emptyHtml;
     document.getElementById('wl-view-weekly').innerHTML=emptyHtml;

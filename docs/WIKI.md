@@ -267,7 +267,7 @@ graph TB
 | 了解 SKILL 约束体系 | [SKILL/SKILL.md](../SKILL/SKILL.md) |
 | 配置 GitHub Actions CI | [guides/github-action.md](./guides/github-action.md) |
 | 了解文件系统审计 | [guides/filesystem-audit.md](./guides/filesystem-audit.md) |
-| 开发/维护 HTML Dashboard | [guides/dashboard-html-dev.md](./guides/dashboard-html-dev.md)（V1.0 · 设计原则 · 数据链路 · 视觉规范 · 踩坑记录） |
+| 开发/维护 HTML Dashboard | [tools/dashboard/dashboard.html](../tools/dashboard/dashboard.html)（单文件实现 · `serve-dashboard.mjs` 启动 · 设计原则见 tools/dashboard/） |
 | 企业部署指南 | [guides/enterprise-deploy.md](./guides/enterprise-deploy.md) |
 | 多设备联邦同步 | [guides/multi-device-sync.md](./guides/multi-device-sync.md) |
 | 团队批量部署 | [guides/team-deploy.md](./guides/team-deploy.md) |
