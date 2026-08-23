@@ -144,7 +144,7 @@ sofagent-audit --doctor    # 验证环境（可选）
   <img src="docs/assets/dashboard.png" alt="sofagent Dashboard 驾驶舱" width="100%" />
 </p>
 
-<p align="center"><sub>Dashboard 驾驶舱（单文件 HTML）：规则通过率、审计任务、违规趋势——AI 在干什么，一眼看清。<br>截图版本 v1.2.9，当前已发布 v1.3.9。</sub></p>
+<p align="center"><sub>Dashboard 驾驶舱（单文件 HTML）：规则通过率、审计任务、违规趋势——AI 在干什么，一眼看清。<br>截图版本 v1.2.9，当前已发布 v1.4.0。</sub></p>
 
 > 📊 **Dashboard 有三个入口，各归各位**：
 >
@@ -200,24 +200,20 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # 加载安全规�
 - **方法论路径**（零依赖）：读 [FDE/GUIDE.md](./FDE/GUIDE.md)，按手册手动梳理业务流，Excel + 人脑也能跑
 - **工具路径**（Node.js ≥ 18）：FDE 在企业设备上跑 install.sh 装好约束层后，用自己的 AI 工具说"帮我做 FDE 诊断"，Agent 从进场开始引导
 
-## v1.3.9 新能力
+## v1.4.0 新能力
 
-> 🔍 **v1.3.9 新能力**（官方 AST 规则引擎 + meta-harness 统一编排 + AI 工作明细 + API 分级治理 + FORGE 切 DSH + MLflow 评估 + Agentic Browser + 跨平台适配 + 工具链分子目录 + 归因/沙盒/进程守护）：
-> - **官方 AST 规则引擎**：🔍 `sofagent-ruleset-ast` 语义级规则引擎（8+2 规则 = 8 条通用语义规则「禁止动态代码执行 / 硬编码密钥 / 动态 require / debugger / child_process shell 管控 / SQL 拼接 / http 明文端点 / 空 catch」 + 2 条 OWASP「ASI01 目标劫持 + ASI04 供应链 SBOM」，与 v1.2.9 插件同管线）
-> - **meta-harness 统一编排**：🧩 多 harness 策略强制在基础设施层 + 跨会话协作（19 测试 + DSH 形态对齐）
-> - **AI 工作明细数据层**：📊 `worklog`——按 Agent/Workflow/周 + 人工介入记录（复用审计 + decision-log + LLM Trace，零新数据）+ `worklog_query` MCP
-> - **API 分级治理**：🔬 `@public`/`@internal` 显式分级（1456 符号）+ CI 门禁基线拦截——@internal 破坏性变更不影响适配层
-> - **FORGE driver 切 DSH**：⚙️ 显式后端选择（`SOFAGENT_FORCE_DSH` 启用 + CLI 桥接 + bash 全权限）——执行后端从 LangGraph 到 DSH 可切换
-> - **MLflow agent 评估**：📈 13 指标 + LLM-as-Judge 集成
-> - **Agentic Browser**：🌐 4 工具（浏览/点击/表单/截图）+ 视觉降级
-> - **跨平台适配器**：🧭 Cursor/Codex/Gemini CLI 三薄挂载（AGENTS.md 同构）
-> - **工具链分子目录**：🗂️ `tools/` 物理分 `check/`/`gen/`/`forge/`/`release/` 子目录 + 引用全同步
-> - **ATTRIBUTION 归因引擎**：🏷️ 决策归因落盘 + 三维查询（metric/decision/agentId）+ byAgent 联结（P2 辅助）
-> - **Dream Sandbox 沙盒审计**：🏖️ stage 隔离 + 强制人审 merge（approver 必填）+ 路径穿越消毒 + 24h 清理（P2 辅助）
-> - **>5MB diff 缝隙修复**：🩹 spill 落盘 + 64MB 读回 + 截断 locator
-> - **FORGE driver 进程守护**：🔄 daemon 自脱离 + watcher 心跳监控/死因审计/自动 resume
+> 📊 **v1.4.0 新能力**（Web 工作明细页 + 图谱栏 + 成本审计 + DSH/OpenClaw 插件家族 + 联邦 E2E + MLflow 接线 + Agentic Browser 66 tools）：
+> - **Web 工作明细页**：📊 Dashboard 新增工作明细（按 Agent / 按 Workflow / 按周趋势 / 人工介入记录四视角，读 `worklog.json` 无数据降级）+ **图谱栏**（🗺️ FDE 双 graph：业务图谱 + 本体图谱 + MCP 工具视图 66 tools + skill 加载链四层可视化）——Dashboard 随 `install.sh` 装到用户机
+> - **成本审计**：💰 超支告警（WARN only 不拦截）+ `cost_query` MCP tool + `DecisionKind.COST` 决策日志追溯
+> - **DSH 插件家族**：🔌 约束层四能力包装 9 款 `cordis-plugin-sofagent-*`（audit/rollback/inject/evolve/ontology/commons/gate/daemon/fde）——真实挂载进 DeepSeek Harness（Plugin list 搜 sofagent 可见 9 个 Enabled · inventory soga-1~9 · 9 个 settings namespace）+ Cursor/Claude Code 共享 precommit hook 拦截（S321 CI 闭环验证）
+> - **OpenClaw 插件家族**：🦞 约束层四能力 OpenClaw 形态 4 款 code-plugin（sofagent-inject/audit/rollback/evolve）——ClawHub 发布就绪（dry-run 4/4）
+> - **联邦查询跨设备 E2E**：🔄 配对（ECDH + 指纹锚点）/ 跨设备加密查询 / 篡改检测 / 离线降级——fork 版 10 断言（S320）+ 独立进程版 4 场景（S322）+ 双设备真实测试用例（桌面）
+> - **MLflow 接线**：🔗 `logBenchmarkToMlflow` 接入评测链路（tracking server 不可达降级不抛）
+> - **Agentic Browser MCP**：🌐 navigate/click/screenshot/assert 4 工具注册（MCP 61→66）+ Playwright 真实驱动
+> - **审计溯源字段**：🔍 `whichDataVersion`（决策基于哪版知识）+ `beforeAfter`（变更前后结构化摘要，diff 原文不进 history.jsonl）
+> - **bash 3.2 验证**：🐚 全 shell 脚本真实环境 EXIT=0
 >
-> 详见 [v1.3.9 开发日志](./docs/changelog/v1.3/v1.3.9.md)。更早版本见 [CHANGELOG](./CHANGELOG.md)。
+> 详见 [v1.4.0 开发日志](./docs/changelog/v1.4/v1.4.0.md)。更早版本见 [CHANGELOG](./CHANGELOG.md)。
 
 ## 为什么选 sofagent
 

@@ -143,7 +143,7 @@ Deploying AI nodes is only step one — above we covered **how to map and where 
   <img src="docs/assets/dashboard.png" alt="sofagent Dashboard cockpit" width="100%" />
 </p>
 
-<p align="center"><sub>Dashboard cockpit (single-file HTML): rule pass rate, audit tasks, violation trends — see at a glance what the AI is doing.<br>Screenshot shows v1.2.9; current release is v1.3.9.</sub></p>
+<p align="center"><sub>Dashboard cockpit (single-file HTML): rule pass rate, audit tasks, violation trends — see at a glance what the AI is doing.<br>Screenshot shows v1.2.9; current release is v1.4.0.</sub></p>
 
 > 📊 **The Dashboard has three entries, each in its place**:
 >
@@ -199,64 +199,18 @@ Community rulesets are published as `sofagent-ruleset-*` npm packages and loaded
 - **Methodology path** (zero dependencies): read [FDE/GUIDE.md](./FDE/GUIDE.md) and map workflows manually following the handbook — Excel + your own brain is enough
 - **Tooling path** (Node.js ≥ 18): after installing, tell your AI tool "run an FDE diagnosis for me" and the Agent guides you from the entry phase
 
-## New in v1.3.9
+## New in v1.4.0
 
-> 🔍 **v1.3.9 new capabilities** (official AST rule engine + meta-harness unified orchestration + AI worklog data layer + API tiering governance + FORGE on DSH + MLflow evaluation + Agentic Browser + cross-platform adapters + toolchain subdirectories + attribution/sandbox/daemon):
-> - **Official AST rule engine**: 🔍 `sofagent-ruleset-ast` semantic rule engine (8+2 rule checks = 8 general semantic rules "no dynamic code execution / hardcoded secrets / dynamic require / debugger / child_process shell control / SQL concatenation / http plaintext endpoint / empty catch" + 2 OWASP "ASI01 target hijacking + ASI04 supply-chain SBOM", same pipeline as the v1.2.9 plugin)
-> - **meta-harness unified orchestration**: 🧩 multi-harness policy enforcement at the infrastructure layer + cross-session collaboration (19 tests + DSH shape alignment)
-> - **AI worklog data layer**: 📊 `worklog` — by Agent / Workflow / week + human-intervention records (reuses audit + decision-log + LLM Trace, zero new data) + `worklog_query` MCP
-> - **API tiering governance**: 🔬 explicit `@public`/`@internal` tiers (1456 symbols) + CI gate baseline — breaking changes to `@internal` never affect adapters
-> - **FORGE driver on DSH**: ⚙️ explicit backend selection (`SOFAGENT_FORCE_DSH` enable + CLI bridge + full bash permission) — execution backend switchable from LangGraph to DSH
-> - **MLflow agent evaluation**: 📈 13 metrics + LLM-as-Judge integration
-> - **Agentic Browser**: 🌐 4 tools (navigate/click/form/screenshot) + visual degradation fallback
-> - **Cross-platform adapters**: 🧭 Cursor/Codex/Gemini CLI thin mounts (AGENTS.md homomorphic)
-> - **Toolchain subdirectories**: 🗂️ `tools/` physically split into `check/`/`gen/`/`forge/`/`release/` + references fully synced
-> - **ATTRIBUTION attribution engine**: 🏷️ decision-attribution persistence + 3-dimension query (metric/decision/agentId) + byAgent join (P2 auxiliary)
-> - **Dream Sandbox audit**: 🏖️ stage isolation + mandatory human-approval merge (approver required) + path-traversal sanitization + 24h cleanup (P2 auxiliary)
-> - **>5MB diff gap fix**: 🩹 spill to disk + 64MB readback + truncation locator
-> - **FORGE driver process guard**: 🔄 daemon self-detach + watcher heartbeat monitoring / death-cause audit / auto-resume
+> 📊 **v1.4.0 new capabilities** (Web worklog view + graph panel + cost audit + DSH/OpenClaw plugin families + federation E2E + MLflow wiring + Agentic Browser 66 tools):
+> - **Web worklog page**: 📊 Dashboard worklog view (by Agent / by Workflow / weekly trend / human-in-the-loop records, reads `worklog.json` with sample-data fallback) + **graph panel** (🗺️ FDE dual graphs: business graph + ontology graph + MCP tool view 66 tools + skill load-chain visualization) — Dashboard ships with `install.sh`
+> - **Cost audit**: 💰 overspend warning (WARN only) + `cost_query` MCP tool + `DecisionKind.COST` traceability
+> - **DSH plugin family**: 🔌 constraint layer packaged as 9 `cordis-plugin-sofagent-*` plugins (audit/rollback/inject/evolve/ontology/commons/gate/daemon/fde) — live in DeepSeek Harness (Plugin list shows 9 Enabled · inventory soga-1~9 · 9 settings namespaces) + shared precommit hook for Cursor/Claude Code (verified by S321)
+> - **OpenClaw plugin family**: 🦞 4 code-plugins (sofagent-inject/audit/rollback/evolve) — ClawHub ready (dry-run 4/4)
+> - **Federation cross-device E2E**: 🔄 pairing (ECDH + fingerprint anchor) / encrypted cross-device query / tamper detection / offline fallback — fork 10 asserts (S320) + independent-process 4 scenarios (S322)
+> - **MLflow wiring**: 🔗 `logBenchmarkToMlflow` connected to eval pipeline (degrades gracefully when tracking server is unreachable)
+> - **Agentic Browser MCP**: 🌐 navigate/click/screenshot/assert registered (MCP 61→66) + real Playwright driver
+> - **Audit provenance fields**: 🔍 `whichDataVersion` + `beforeAfter` (structured summary, raw diff stays out of history.jsonl)
+> - **bash 3.2 verification**: 🐚 all shell scripts run on real bash 3.2 EXIT=0
 >
-> See [v1.3.9 devlog](./docs/changelog/v1.3/v1.3.9.md). Earlier versions in [CHANGELOG](./CHANGELOG.md).
+> See the [v1.4.0 devlog](./docs/changelog/v1.4/v1.4.0.md). Earlier versions in [CHANGELOG](./CHANGELOG.md).
 
-## Why sofagent
-
-| Dimension | Generic Agent frameworks | sofagent |
-|------|----------------|----------|
-| Core question | How to build an Agent | **Where AI should go** (map first, then deploy) |
-| Safety guarantee | Integrate scanning/gate tools yourself (pre-commit / trufflehog / gitleaks etc.) | git diff hard-evidence audit + runtime interception + one-click rollback out of the box (see the "honest boundary" note above on scanner coverage) |
-| Review model | Manual human review (bottleneck) | **Machine review** — 24 rules auto-audit + git diff hard evidence; even fully autonomous AI nodes get reviewed |
-| Knowledge accumulation | Starts from zero | Auto-captured into the knowledge base (think.md + Dream Cycle live); effect requires sustained iteration in real use |
-| Data sovereignty | Cloud-hosted | Local by default, optional federated queries (user-configured cloud sync = data leaves the machine, see SECURITY) |
-| Deployment | Learn a new platform | Runs inside your existing AI tools (Claude Code / Cursor / WorkBuddy…) |
-
-> ℹ️ **Platform-agnostic boundary**: the core engine (audit / constraint layer) is platform-agnostic; automatic hook injection currently works only on OpenClaw — on other platforms, inject constraints manually and auditing works as usual.
-
-## Evidence & Credibility
-
-> 📊 **Why now**: MIT NANDA Lab's *The GenAI Divide* report shows that over the past three years, global enterprises burned $30–40 billion on generative AI, yet **95% of projects failed to produce value worth putting on a financial statement**. Meanwhile, job postings for a role called "Forward Deployed Engineer" (FDE) surged **729%** year-over-year (Indeed 2025 data). Models are no longer scarce — the scarce thing is people who can embed models into real customer operations. sofagent is the open-source substrate that engineers this. (Data verification and cross-agency calibration: see [VALIDATION §1 · Cost of governance gaps](./docs/VALIDATION.md#治理缺口的代价三项联网核验证据); FDE economics: see [VALIDATION §4](./docs/VALIDATION.md#四市场印证行业判断被市场买单).)
-
-> 🔬 **Independent external evidence** (not an official self-test): Joel Niklaus' harness-optimization research ([research code repository](https://github.com/JoelNiklaus/harness-optimization), data in the repo experiments) shows that with the same model and unchanged weights, optimizing only the outer harness lifted a legal-Agent benchmark from **63.4% → 80.1% (+16.7pp)**. See [THANKS.md](./docs/THANKS.md).
-
-> 🧪 **Engineering credibility**: 2915 tests / 13 packages (12 with tests) (test counts are determined by `tools/check/test-count.sh` (with a built-in flaky retry mechanism); running `npm test` directly may show mcp package timeouts (red) on low-memory machines — re-running that package alone passes, an environment concurrency issue, not a product defect) · 24 audit rules · fresh-eyes independent review continuously running (see [docs/guides/review-system.md](./docs/guides/review-system.md) for how the review system works). Performance figures are single-machine reference values; cross-tool benchmarking is scheduled for v1.4.x together with Benchmark integration.
-
-## Docs
-
-| You want to know | Where |
-|:---------|:--------|
-| **Global index** (one entry to all docs, in Chinese) | [WIKI](./docs/WIKI.md) |
-| How to install, use, FAQ | [HANDBOOK](./docs/HANDBOOK.md) |
-| Architecture (constraint layer · injection chain · evolution · 24 rules) | [ARCHITECTURE](./docs/ARCHITECTURE.md) |
-| Design philosophy | [PHILOSOPHY](./docs/PHILOSOPHY.md) |
-| Industry validation & ecosystem positioning (differences from existing tools) | [VALIDATION](./docs/VALIDATION.md) |
-| Version roadmap | [ROADMAP](./docs/ROADMAP.md) |
-| What each version delivered | [CHANGELOG](./CHANGELOG.md) |
-| FDE diagnostic methodology (four phases, twelve steps) | [FDE/GUIDE.md](./FDE/GUIDE.md) |
-| Security statement · known limitations | [SECURITY](./SECURITY.md) · [LIMITATIONS](./docs/LIMITATIONS.md) |
-| Contribution guide | [CONTRIBUTING](./CONTRIBUTING.md) |
-
----
-
-<p align="center">
-  Issues and PRs welcome, especially the nitpicky kind · <a href="./CONTRIBUTING.md">Contributing</a> · <a href="./docs/THANKS.md">Thanks</a><br/>
-  <sub>MIT License © <a href="https://github.com/KongFangXun/sofagent">Kong Fangxun</a> · <a href="https://github.com/KongFangXun/sofagent">⭐ If sofagent helps you, star it and help more people find it</a></sub>
-</p>
