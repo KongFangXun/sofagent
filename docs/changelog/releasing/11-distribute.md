@@ -66,25 +66,35 @@ done
 
 > **背景（2026-08-21 拍板）**：v1.4.0 的 OpenClaw plugin 家族（约束层四能力在 OpenClaw 生态的插件形态，见 v1.4.0 开发日志「OpenClaw plugin 家族」）**每版都要在 ClawHub plugins 发布**——与 DSH plugin 家族（SkillHub）分属两个生态：**ClawHub = OpenClaw 运行时 / SkillHub = DSH 运行时，各发各的**。clawhub CLI 已支持 `package publish`（code-plugin / bundle-plugin）。
 
+> **前置（v1.4.0 实测补充，缺一不可）**：
+> - 登录态：先 `clawhub whoami` 确认已登录（发布走 ClawHub 账号）
+> - **源码已 push**：ClawHub 发布是 **source-linked 机制**——发布时从 `github:KongFangXun/sofagent@main:<plugin目录>` 拉源码，**必须先 push 到 GitHub 再发布**（dry-run 可验证映射，真实发布依赖远端文件存在）
+> - **`openclaw.build.openclawVersion` 必填**：package.json 的 `openclaw.build.openclawVersion`（= 当前 OpenClaw 版本，`npm view openclaw version` 查）——缺失时 dry-run 报「required for external code plugins」
+> - 先 `--dry-run` 验证格式与 source 映射，再真实发布
+
 ```bash
 # 发布前确认 plugin 清单（SSOT = v1.4.0 开发日志 OpenClaw plugin 家族表）
-OPENCLAW_PLUGIN_DIRS=$(ls -d engine/*/openclaw-plugin-* 2>/dev/null || echo "")
-# 若 plugin 目录不在 engine/ 下，改为实际目录，以 v1.4.0 交付为准
+# 🔴 实际目录是 engine/openclaw-plugins/sofagent-*（前缀 sofagent-，不是 openclaw-plugin-）
+OPENCLAW_PLUGIN_DIRS=$(ls -d engine/openclaw-plugins/sofagent-* 2>/dev/null || echo "")
 
 # 逐 plugin 发布（版本号与 sofagent 主线版本对齐）
 for pdir in $OPENCLAW_PLUGIN_DIRS; do
   name=$(basename "$pdir")
-  # 先查现有版本，同版本号不可覆盖
+  # ① dry-run 验证（source 映射 + 格式，不上传）
+  clawhub package publish "$pdir" --family code-plugin --name "$name" --version <版本号> --dry-run || exit 1
+  # ② 先查现有版本，同版本号不可覆盖
   clawhub package verify "$name" 2>&1 | grep version || true
-  clawhub package publish "$pdir" --family code-plugin --name "$name" --version <版本号> \
+  # ③ 真实发布（--display-name 传中文品牌名）
+  clawhub package publish "$pdir" --family code-plugin --name "$name" --display-name "$name" --version <版本号> \
     --changelog "vX.Y.Z: $(head -1 "$pdir/README.md" 2>/dev/null || echo "$name")" \
     && echo "✅ $name 已发布到 ClawHub plugins" || echo "❌ $name 发布失败"
 done
 ```
 
 > **OpenClaw plugin 分发铁律**：
-> - 发布源 = 各 openclaw-plugin 包目录（与 DSH plugin 家族分开，别混）
+> - 发布源 = `engine/openclaw-plugins/sofagent-*` 包目录（与 DSH plugin 家族分开，别混；前缀是 sofagent-，不是 openclaw-plugin-）
 > - 发布通道 = **ClawHub plugins**（`clawhub package publish --family code-plugin`）——注意 ClawHub 的 `skill publish` 与 `package publish` 是两条独立命令
+> - **必须先 push 再发布**（source-linked 从 GitHub 拉源码；未 push 时真实发布失败，dry-run 只能验证格式）
 > - 版本号 = 与 sofagent 主线版本对齐（同 DSH 家族机制）
 > - 每版发版都要推，与 SKILL / DSH plugin 分发同等强制
 
