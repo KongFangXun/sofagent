@@ -2,6 +2,7 @@
 - insert:
     - id: sofagent-ontology
       name: 'cordis-plugin-sofagent-ontology'
+      inject: [settings, dynamicCordisRunner]
       config:
         seam: "ontology_* tools + search_knowledge"
         description: "共享语义底座 + 知识检索（sofagent 品牌 · #16B8F3）"

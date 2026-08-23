@@ -53,5 +53,40 @@ export default {
       const cur = (c.sofagent ?? {}) as Record<string, unknown>;
       c.sofagent = { ...cur, rollback: service };
     }
+    // v1.4.0 批量：注册为 dynamicCordisRunner 动态插件（Plugin list 可见加载状态）
+    try {
+      const runner = c.dynamicCordisRunner as { define?: (r: Record<string, unknown>) => unknown } | undefined;
+      if (runner && typeof runner.define === 'function') {
+        const res = runner.define({
+          name: 'sofagent-rollback',
+          purpose: '出错逆序撤销——git snapshot → effect disposer（品牌色 #16B8F3）',
+          code: {
+            host: [
+              'module.exports = {',
+              '  async main(ctx, args) {',
+              '    return { ok: true, source: "sofagent-rollback", message: "出错逆序撤销——git snapshot → effect disposer" };',
+              '  }',
+              '};',
+            ].join('\n'),
+          },
+          plugin: { kind: 'new', idPrefix: 'soga' },
+          sessionId: 'profile-boot',
+        });
+        console.error('[sofagent-rollback] dynamicCordisRunner.define 成功:', JSON.stringify(res));
+      }
+    } catch (err) {
+      console.error('[sofagent-rollback] define 失败:', err instanceof Error ? err.message : String(err));
+    }
+    // v1.4.0 批量：注册 settings namespace（Plugin configuration 数据层可见）
+    try {
+      const settings = c.settings as { register?: (ns: string, schema: unknown, opts?: Record<string, unknown>) => unknown } | undefined;
+      if (settings?.register) {
+        const s = require('@deepseek-ai/schemastery') as { object: (s: Record<string, unknown>) => unknown; boolean: () => unknown; string: () => unknown };
+        settings.register('sofagent-rollback', s.object({ enabled: s.boolean(), brandColor: s.string() }), { base: { enabled: true, brandColor: '#16B8F3' } });
+        console.error('[sofagent-rollback] settings.register 成功');
+      }
+    } catch (err) {
+      console.error('[sofagent-rollback] settings.register 失败:', err instanceof Error ? err.message : String(err));
+    }
   },
 };

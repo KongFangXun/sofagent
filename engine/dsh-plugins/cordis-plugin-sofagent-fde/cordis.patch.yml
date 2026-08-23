@@ -2,6 +2,7 @@
 - insert:
     - id: sofagent-fde
       name: 'cordis-plugin-sofagent-fde'
+      inject: [settings, dynamicCordisRunner]
       config:
         seam: "fde_* tools"
         description: "进场方法论六 tool——interview/classify/quantify/derive/distill/deploy（sofagent 品牌 · #16B8F3）"

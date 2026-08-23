@@ -2,6 +2,7 @@
 - insert:
     - id: sofagent-commons
       name: 'cordis-plugin-sofagent-commons'
+      inject: [settings, dynamicCordisRunner]
       config:
         seam: "commons_* tools"
         description: "能力公地五环——发布/发现/调用/评价/养护（sofagent 品牌 · #16B8F3）"

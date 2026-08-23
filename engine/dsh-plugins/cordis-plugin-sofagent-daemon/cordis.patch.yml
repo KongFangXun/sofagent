@@ -2,6 +2,7 @@
 - insert:
     - id: sofagent-daemon
       name: 'cordis-plugin-sofagent-daemon'
+      inject: [settings, dynamicCordisRunner]
       config:
         seam: "独立调度进程"
         description: "7×24 巡检 + 健康监测 + webhook 推送（sofagent 品牌 · #16B8F3）"
