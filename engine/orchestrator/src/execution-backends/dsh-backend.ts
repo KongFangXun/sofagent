@@ -60,6 +60,8 @@ export interface CordisRuntime {
   ): () => void;
   /** 服务获取（DSH agent-loop 等插件注册的服务面） */
   get?(key: string): unknown;
+  /** 服务提供（boot 前置注入 cmdlineArgs/appExit 等服务） */
+  provide?(key: string, value: unknown): unknown;
   /** 运行时销毁（释放资源） */
   dispose?(): void | Promise<void>;
 }
@@ -283,158 +285,209 @@ export interface RunCordisAgentOptions {
   agentPlugin?: CordisPlugin;
 }
 
-/** agent 驱动服务最小契约（DSH agent-loop 插件注册的服务面，duck-typing） */
+/** agent 驱动服务最小契约（rc.2 实际 API——dsh-agent AgentRegistry + dsh-agent-loop 驱动面，实测核实） */
 interface AgentDriver {
-  /** 投递用户消息并驱动一轮执行，返回最终输出（契约按教程 07 章） */
+  /**
+   * 投递用户消息并驱动一轮执行，返回最终 assistant 文本。
+   * rc.2 契约（对照官方 dsh-headless runner 源码）：
+   *   agents.create({sessionId, meta, agentOptions, setup}) → agent
+   *   agent.whenIdle() → agent.followup(createUserMessage(...)) → agent.whenIdle()
+   *   → sessions.flush → 从 session.events 提取 assistant/message 文本
+   */
   deliver(message: string): Promise<unknown> | unknown;
 }
 
 /**
- * 调用 Cordis 运行时执行 agent（对照真实 API 重写，不再是骨架抛错）。
+ * 调用 Cordis 运行时执行 agent（rc.2 真实 API 重写）。
  *
- * 执行链：new Context() → 工具插件（三段式注册）→ 预算插件（waterfall 纪律）
- * → trajectory 插件（事件采集）→ agent 驱动（层 2 能力守卫）→ 提取输出。
+ * 执行链：boot(dsh-base bundle + cmdlineArgs/appExit 注入) → agents.create →
+ * followup 投递 → whenIdle 等待 → session.events 提取最终 assistant 文本。
+ *
+ * 🔴 v1.4.0（2026-08-24）修正：此前用裸 new Context() + resolveAgentDriver 探测
+ * deliver/followup 方法——但 rc.2 的 agents 是 AgentRegistry（create/resume/register），
+ * 无 deliver/followup；真正驱动面是 agent.followup + whenIdle。对照官方
+ * dsh-headless/lib/index.js 的 run() 源码重写（该 runner 是权威范例）。
  */
 async function runCordisAgent(
   cordis: CordisModule,
   opts: RunCordisAgentOptions,
 ): Promise<{ output: string; rounds: number; hitRecursionLimit: boolean }> {
-  const ctx = new cordis.Context(
-    (opts.modelConfig?.runtimeConfig as Record<string, unknown> | undefined) ?? {},
-  );
-  let softWarned = false;
+  // 1. 构造驱动（boot dsh-base + 注入 cmdlineArgs/appExit + 复刻 headless run 逻辑）
+  const deliver = await createCordisDriver(opts);
 
+  // 2. 投递任务（systemPrompt 前置拼接——对齐 langgraph-backend 的 SystemMessage 注入语义）
+  const fullMessage = opts.systemPrompt
+    ? `${opts.systemPrompt}\n\n---\n\n${opts.task}`
+    : opts.task;
+
+  let raw: unknown;
   try {
-    // 1. 工具插件：三段式 ToolDefinition 注册进 ctx.tools 服务
-    //    （ctx.tools 由 DSH 工具子系统插件提供；裸 cordis 无此服务时工具面为空——
-    //     agent 仍可纯文本执行，不视为能力缺失）
-    ctx.plugin((c) => {
-      registerToolsDefensively(c, opts.tools);
-    });
-
-    // 2. 预算软熔断插件（waterfall next() 纪律——见 createBudgetPlugin 注释）
-    ctx.plugin(
-      createBudgetPlugin(opts.budgetGuard, (count) => {
-        if (!softWarned) {
-          softWarned = true;
-          console.warn(`[dsh-backend] 工具预算软熔断：${count} 次调用达 softLimit，注入收尾指令`);
-        }
-      }),
-    );
-
-    // 3. Trajectory 采集插件（turn/step/tool 全链事件 → records）
-    if (opts.trajectory) {
-      ctx.plugin(opts.trajectory.plugin);
+    raw = await deliver(fullMessage);
+  } catch (err) {
+    if (err instanceof ToolBudgetExhaustedError) {
+      return {
+        output: '',
+        rounds: opts.budgetGuard.count(),
+        hitRecursionLimit: true,
+      };
     }
+    throw err;
+  }
 
-    // 3.5 DSH agent-loop 插件（注册 agent 驱动服务面）——先挂插件再探测，
-    //     未提供时层 2 守卫直接探测宿主已注册的服务（正式版 dsh 包场景）
-    if (opts.agentPlugin) {
-      ctx.plugin(opts.agentPlugin);
-    }
+  // 3. 提取输出（防御式）
+  const output = extractDriverOutput(raw);
+  const rounds = Math.max(opts.budgetGuard.count(), 1);
+  return { output, rounds, hitRecursionLimit: false };
+}
 
-    // 4. agent 驱动（层 2 能力守卫）：探测 DSH agent-loop 插件注册的服务面。
-    //    契约按官方教程 07-into-the-harness：服务名候选 'agents' / 'agent'，
-    //    驱动方式候选 deliver / followup。全部探测失败 = DSH agent 插件未装。
-    const driver = resolveAgentDriver(ctx);
+/**
+ * 构造 Cordis agent 驱动（rc.2 实际 API——对照官方 dsh-headless runner）。
+ *
+ * 关键：DSH 是插件架构，正确内嵌姿势是 boot() + loadProfile()（非裸 new Context()），
+ * 且必须前置注入 cmdlineArgs（带 get() 方法）+ appExit 两个服务——缺失时插件树 pending。
+ *
+ * 驱动面：ctx.get('agents')（AgentRegistry）+ ctx.get('agentDefaultModel') +
+ * ctx.get('sessions')——agents.create() 产出 agent，agent.followup() 投递，
+ * agent.whenIdle() 等待，session.events 提取最终 assistant 文本。
+ */
+async function createCordisDriver(
+  opts: RunCordisAgentOptions,
+): Promise<(message: string) => Promise<string>> {
+  // 运行时动态 import DSH 插件包（避免 orchestrator 硬依赖这些包）
+  // ts-ignore：DSH 第三方包类型实例化过深（TS2589）且无 duck-typing 价值——运行时
+  // 已实测验证（createCordisDriver 对照官方 headless runner 源码），宽松断言到 any
+  const { boot, loadProfile } = await import('@deepseek-ai/dsh-app-boot');
+  const { createUserMessage } = await import('@deepseek-ai/dsh-llm');
+  const { SessionId } = await import('@deepseek-ai/dsh-session');
+  const { installModelSelection } = await import('@deepseek-ai/dsh-agent');
+  const { resolveDshHome } = await import('@deepseek-ai/dsh-home-paths');
+  const { randomUUID } = await import('node:crypto');
+  const bootFn = boot as unknown as (
+    bin: string,
+    configPath: string,
+    patches: unknown[],
+    prepare: (ctx: unknown) => void | Promise<void>,
+    baseUrl?: string,
+  ) => Promise<unknown>;
+  const loadProfileFn = loadProfile as unknown as (
+    bin: string,
+    name: string,
+    installAnchor: string,
+    home: string,
+    options?: unknown,
+  ) => Promise<{ dir?: string; layers?: Array<{ packageName?: string; patches?: unknown[] }> }>;
+  const installModelSelectionFn = installModelSelection as unknown as (
+    ctx: unknown,
+    selection: { current?: unknown; assembled?: unknown },
+  ) => unknown;
 
-    // 5. 投递任务并驱动执行（systemPrompt 前置拼接——Cordis 无独立 system 槽位时
-    //    的等价注入姿势，对齐 langgraph-backend 的 SystemMessage 注入语义）
-    const fullMessage = opts.systemPrompt
-      ? `${opts.systemPrompt}\n\n---\n\n${opts.task}`
-      : opts.task;
-    let raw: unknown;
+  // 1. 解析 headless profile 的插件树（dsh-base 是 bundle 非 profile，经 headless profile 取 layers）
+  //    home 必须用 DSH 的 resolveDshHome()（返回 ~/.dsh），不是 node:os homedir()（返回 ~）——
+  //    否则 configPath 解析到 ~/profiles/headless（缺 .dsh）导致 boot「config file not found」
+  const dshHome = resolveDshHome();
+  const dshPkgDir = resolveDshPkgDir();
+  const profile = await loadProfileFn('dsh', 'headless', dshPkgDir, dshHome);
+
+  // 2. 只取 dsh-base bundle 的 patches（跳过 dsh-headless——避免 headless-runner 自动 exit）
+  const basePatches = (profile.layers ?? [])
+    .filter((l: { packageName?: string }) => l.packageName === '@deepseek-ai/dsh-base')
+    .flatMap((l: { patches?: unknown[] }) => (l.patches ?? []) as unknown[]);
+
+  // 3. boot 的 config 路径（headless profile 的 cordis.yml——空 entry list，靠 patches 组合）
+  const configPath = join(dshHome, 'profiles', 'headless', 'cordis.yml');
+
+  return async (message: string): Promise<string> => {
+    // 每次投递创建全新 ctx（对齐 headless runner 一次性语义——避免跨 session 串扰）
+    const ctx = await bootFn('dsh', configPath, basePatches, (c) => {
+      const rc = c as CordisRuntime;
+      rc.provide?.('cmdlineArgs', { get: () => [] });
+      rc.provide?.('appExit', async () => { /* 内嵌不退出进程，appExit 空实现 */ });
+    }, undefined);
+
     try {
-      raw = await driver.deliver(fullMessage);
-    } catch (err) {
-      if (err instanceof ToolBudgetExhaustedError) {
-        // hard 熔断——输出部分结果标记（对齐 LangGraph 后端 hardBreak 语义）
-        return {
-          output: '',
-          rounds: opts.budgetGuard.count(),
-          hitRecursionLimit: true,
-        };
+      // 等 loader 完成
+      const get = (ctx as { get?: (k: string) => unknown }).get?.bind(ctx);
+      const loader = get?.('loader');
+      if (loader && typeof (loader as { await?: () => Promise<void> }).await === 'function') {
+        await (loader as { await: () => Promise<void> }).await();
       }
-      throw err;
-    }
 
-    // 6. 提取输出（防御式——DSH 正式版返回形状以实测为准）
-    const output = extractDriverOutput(raw);
-    const rounds = Math.max(opts.budgetGuard.count(), 1);
-    return { output, rounds, hitRecursionLimit: false };
-  } finally {
-    // 7. 资源释放（插件取消订阅 + 运行时销毁）
-    try {
-      await ctx.dispose?.();
-    } catch {
-      /* dispose 失败不阻塞返回 */
-    }
-  }
-}
+      const agents = get?.('agents') as {
+        create?: (o: unknown) => Promise<{ agent: AgentHandle }>;
+      } | undefined;
+      const defaultModel = get?.('agentDefaultModel') as {
+        currentSelection?: () => { provider: string; model: string };
+      } | undefined;
+      const sessions = get?.('sessions') as {
+        flush?: (s: unknown) => Promise<unknown>;
+      } | undefined;
 
-/** 防御式注册工具——工具服务面（ctx.tools）缺失时静默跳过 */
-function registerToolsDefensively(ctx: CordisRuntime, tools: CordisToolDefinition[]): void {
-  const toolsService = (ctx as { tools?: { register?: (def: CordisToolDefinition) => unknown } }).tools;
-  if (!toolsService || typeof toolsService.register !== 'function') {
-    console.warn(
-      `[dsh-backend] ctx.tools 服务不可用——${tools.length} 个工具未注册（agent 将以纯文本模式执行）`,
-    );
-    return;
-  }
-  for (const def of tools) {
-    try {
-      toolsService.register(def);
-    } catch (err) {
-      console.warn(`[dsh-backend] 工具 ${def.name} 注册失败：`, err instanceof Error ? err.message : String(err));
-    }
-  }
-}
-
-/** 探测 agent 驱动服务（层 2 守卫核心） */
-function resolveAgentDriver(ctx: CordisRuntime): AgentDriver {
-  const serviceCandidates: Array<unknown> = [];
-  try {
-    if (typeof ctx.get === 'function') {
-      serviceCandidates.push(ctx.get('agents'), ctx.get('agent'));
-    }
-  } catch {
-    /* get 抛错——服务未注册，继续探测直挂属性 */
-  }
-  serviceCandidates.push((ctx as { agents?: unknown }).agents, (ctx as { agent?: unknown }).agent);
-
-  for (const svc of serviceCandidates) {
-    const driver = coerceDriver(svc);
-    if (driver) return driver;
-    // 集合型服务（agents registry）：取 create 出的单体再探测
-    const factory = svc as { create?: (...a: unknown[]) => unknown };
-    if (svc && typeof factory.create === 'function') {
-      try {
-        const one = coerceDriver(factory.create());
-        if (one) return one;
-      } catch {
-        /* create 失败——试下一候选 */
+      if (!agents || typeof agents.create !== 'function') {
+        throw new DshCapabilityMissingError('agents 服务面无 create 方法（rc.2 AgentRegistry 契约）');
       }
-    }
-  }
-  throw new DshCapabilityMissingError(
-    'ctx.get/agents/agent 服务面无 deliver 或 followup 驱动方法',
-  );
-}
 
-/** 从候选服务对象探测驱动方法（deliver / followup 二选一） */
-function coerceDriver(svc: unknown): AgentDriver | null {
-  if (!svc || typeof svc !== 'object') return null;
-  const s = svc as {
-    deliver?: (msg: string) => unknown;
-    followup?: (msg: string) => unknown;
+      const selection = defaultModel?.currentSelection?.() ?? { provider: 'deepseek', model: '' };
+      const { agent } = await agents.create({
+        sessionId: SessionId(`session-${randomUUID()}`),
+        meta: { cwd: process.cwd() },
+        agentOptions: { provider: selection.provider, model: selection.model },
+        setup: (agentCtx: unknown) => {
+          installModelSelectionFn(agentCtx, { current: selection, assembled: undefined });
+        },
+      });
+
+      await agent.whenIdle();
+      const firstSeq = agent.session.seq;
+      agent.followup(createUserMessage({
+        content: [{ type: 'text', text: message }],
+        source: { kind: 'user' },
+      }));
+      await agent.whenIdle();
+      await sessions?.flush?.(agent.session);
+
+      return summarizeSession(agent.session.events, firstSeq);
+    } finally {
+      await (ctx as { fiber?: { dispose?: () => Promise<void> } }).fiber?.dispose?.().catch(() => {});
+    }
   };
-  if (typeof s.deliver === 'function') {
-    return { deliver: (msg: string) => s.deliver!(msg) };
+}
+
+/** agent 句柄最小契约（rc.2 dsh-agent-loop AgentHandle 面） */
+interface AgentHandle {
+  whenIdle(): Promise<unknown>;
+  followup(msg: unknown): unknown;
+  session: {
+    seq: number;
+    events: Array<{
+      seq: number;
+      type: string;
+      data?: unknown;
+    }>;
+  };
+}
+
+/** 从 session 事件流聚合最终 assistant 文本（对照 dsh-headless summarize） */
+function summarizeSession(events: AgentHandle['session']['events'], firstSeq: number): string {
+  let started = false;
+  let text = '';
+  for (const event of events) {
+    if (event.seq < firstSeq) continue;
+    if (event.type === 'turn/start') { started = true; continue; }
+    if (!started) continue;
+    if (event.type === 'assistant/message') {
+      const data = event.data as { message?: { content?: Array<{ type: string; text?: string }> } } | undefined;
+      const blocks = data?.message?.content ?? [];
+      const joined = blocks.filter((b) => b.type === 'text').map((b) => b.text ?? '').join('');
+      if (joined !== '') text = joined;
+    }
   }
-  if (typeof s.followup === 'function') {
-    return { deliver: (msg: string) => s.followup!(msg) };
-  }
-  return null;
+  return text;
+}
+
+/** 解析 @deepseek-ai/dsh 包目录（loadProfile 的 installAnchor） */
+function resolveDshPkgDir(): string {
+  const pkgJson = require_.resolve('@deepseek-ai/dsh/package.json');
+  return dirname(pkgJson);
 }
 
 /** 提取 agent 驱动输出（防御式——兼容 string / {output} / {result} / {text}） */

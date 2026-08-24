@@ -212,9 +212,9 @@ export async function createExecutionBackend(options: {
  *    但 rc 版 API 不做生产承诺），正式版发布后自动通过。
  */
 async function tryLoadDshBackend(): Promise<ExecutionBackend | null> {
-  // v1.4.0：不等 DSH 正式版——rc 期默认走 CLI 桥接（headless 单任务 + DSH 自带
-  // fs/bash 工具链，已投产验证：文本/fs/bash 全通，git 审计任务 8.6s 单轮）。
-  // 正式版发布后自动切 Cordis 内嵌（库内集成 + sofagent 工具注入），无需改代码。
+  // v1.4.0（2026-08-24 修正）：DSH 内嵌（Cordis 库内集成）rc.2 已验证可行——
+  // 路径 = boot() + loadProfile() + 注入 cmdlineArgs/appExit + agent.followup 驱动
+  // （对照官方 dsh-headless runner 源码）。rc 期**优先内嵌**，内嵌执行失败 fallback CLI。
   try {
     // @ts-ignore — Cordis 类型未安装（不进 dependencies，运行时动态 import）
     const cordisMod = await import('@deepseek-ai/cordis');
@@ -223,22 +223,19 @@ async function tryLoadDshBackend(): Promise<ExecutionBackend | null> {
       return loadDshCliBackend();
     }
 
-    // 配套 DSH 包版本守卫：rc/beta/alpha/pre → 走 CLI 桥接（不等正式版）
-    // @ts-ignore — dsh 类型未安装
+    // v1.4.0 修正：不再因 rc 版本强制 CLI——cordis + dsh-app-boot + dsh-* 插件包
+    // 都已安装可 import，内嵌路径 createCordisDriver 用 boot()+loadProfile() 驱动。
+    // 保留 dshMod.plugin 探测（正式版若提供 plugin 导出可进一步简化，当前无 plugin 面）
+    // @ts-ignore — dsh 类型未安装（rc 纯 CLI 包无类型声明，运行时动态 import）
     const dshMod = (await import('@deepseek-ai/dsh').catch(() => null)) as {
       version?: string;
       VERSION?: string;
       plugin?: (ctx: unknown) => unknown;
     } | null;
-    const dshVersion = dshMod?.version ?? dshMod?.VERSION ?? 'rc';
-    if (/(rc|beta|alpha|pre)/i.test(dshVersion)) {
-      // rc 期——默认走 CLI 桥接（正式版发布后自动切库内集成）
-      return loadDshCliBackend();
-    }
 
     const dshBackendMod = await import('./execution-backends/dsh-backend.js');
     // dshMod.plugin（若有）转成 CordisPlugin 形状传入；无 plugin 导出时传 undefined
-    // （层 2 能力守卫会在 execute 时探测宿主服务面）
+    // （内嵌驱动 createCordisDriver 用 boot()+loadProfile() 自建插件树，不依赖 plugin 面）
     const agentPlugin = (
       typeof dshMod?.plugin === 'function' ? { plugin: dshMod.plugin } : undefined
     ) as Parameters<typeof dshBackendMod.createDshBackend>[1];
@@ -248,8 +245,9 @@ async function tryLoadDshBackend(): Promise<ExecutionBackend | null> {
       cordisMod as Parameters<typeof dshBackendMod.createDshBackend>[0],
       agentPlugin,
     );
-  } catch {
-    // cordis 包未安装或 import 失败——尝试 CLI 桥接，失败仍 fallback LangGraph
+  } catch (err) {
+    // cordis 包未安装 / import 失败 / 内嵌驱动异常——尝试 CLI 桥接，失败仍 fallback LangGraph
+    console.warn(`[sofagent] DSH 内嵌不可用（${(err as Error).message}）——降级 CLI 桥接`);
     return loadDshCliBackend();
   }
 }
