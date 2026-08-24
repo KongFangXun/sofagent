@@ -117,7 +117,7 @@ graph TB
 ```
 
 > 这张图的三处关键精化（2026-08-16 明确）：
-> - **L1 是「双图谱并行产出」不是单向转换**——Workflow Graph 管流转（**人读它理解企业怎么运转**）、Ontology Graph 管语义（**AI 读它理解企业是什么**），两者从同一次 FDE 访谈并行产出、互相校验（SHACL），不是「Workflow Graph 画完再转 Ontology Graph」（转换会丢访谈里的隐性知识）。**双图谱术语**：ontology 本身是哲学定义，加 Graph 让它成为可被理解、可视化的东西——FDE 交付的两张图谱即 Workflow Graph（多个 workflow 组成，人读的运转图）与 Ontology Graph（本体结构的图谱化形态，AI 读的语义图）。
+> - **L1 是「双图谱并行产出」不是单向转换**——Workflow Graph 管流转（**人读它理解企业怎么运转**）、Ontology Graph 管语义（**AI 读它理解企业是什么**），两者从同一次 FDE 访谈并行产出、互相校验（SHACL），不是「Workflow Graph 画完再转 Ontology Graph」（转换会丢访谈里的隐性知识）。**双图谱术语**：ontology 本身是哲学定义，加 Graph 让它成为可被理解、可视化的东西——FDE 交付的两张图谱即 Workflow Graph（多个 workflow 组成，人读的运转图）与 Ontology Graph（本体数据的图谱化形态，AI 读的语义图）。**行业坐标**：Workflow Graph / Ontology Graph / 知识图谱 / 上下文图谱同属「知识层」（描述业务世界），图谱工程（构建·校验·维护图谱的工程实践）属「工程层」——sofagent 的双图谱交付 = 用工程层方法产出知识层资产，行业对标详见 [VALIDATION](./VALIDATION.md)。
 > - **L2 是「编排层永不换 + 执行层可换」两层分离**——编排层 LangGraph StateGraph 永不替换（确定性审计依赖显式图结构），执行层走 ExecutionBackend 接口：DSH 默认 / createReactAgent fallback / 三平台可选。DSH 是最大的一条河，但「堤修在哪条河上都行」，不把企业命脉押在 developer preview 上。
 > - **L3 挂的是「事件域」不是节点**——plugin 装一次即在 tools/result、turn-stopping、approval seam 上全域生效，无需逐节点插桩；独立模式（OpenClaw/WorkBuddy + git diff 审计）永远保留，不依赖 DSH 才成立。
 
@@ -150,7 +150,7 @@ graph TB
 | Harness | 约束层 | 挂在 Agent 之上的行为约束层：一个层四种能力（注入·审计·回溯·进化）。对外中文「约束层」、英文「Harness」为 SSOT；「Constraint Layer」为同义英文旧称，不再单独使用 |
 | Gateway | Gateway | 企业级 AI 统一入口（WorkBuddy / OpenClaw 等大厂平台），sofagent 不替代它 |
 | Sub Agent | Sub Agent | 用 LangGraph createReactAgent 搭的专有执行节点 |
-| Ontology | 本体结构 | 企业的业务世界模型，FDE 帮你搭建并持续维护 |
+| Ontology | 本体数据 | 企业的业务世界模型——一套「什么实体存在、能做什么动作、受什么约束」的规则书（机器可读），FDE 帮你搭建并持续维护 |
 | River | 统一 Agent 入口 | 多个 Workflow 的集合——每段 Workflow 把模型能力引到业务侧，汇入同一条大河。详见 §三 River—Workflow—Subagent 三层架构 |
 | SMB | 中小企业（Small & Medium Business） | 没有专职 AI 部署团队、想低成本具备 FDE 能力的企业 |
 | OPC | 一人公司（One Person Company） | 个人或小团队，用自己的 Agent + 模型自主完成部署，不愿被单一厂商锁定 |
@@ -224,7 +224,7 @@ v1.3.9 起对所有 workspace 包的入口 export 做显式分级，CI 门禁（
 
 | 版本 | 关键能力 |
 |------|---------|
-| **基座（v1.2.0）** | FDE 常驻部署（进场梳理 → 识别节点 → 构建知识库 → 离场 7×24 自跑）· AI 节点自动化 · 24 条规则行为审计（零 token 纯静态，当场拦截）· 一键回滚（git snapshot `--revert`）· 平台无关核心约束（Claude Code / Codex / WorkBuddy / OpenClaw 均可用审计能力；支持平台 Hook 自动注入，其他平台手动注入约束 + 审计照常生效）· AI 知识库自动积累（Dream Cycle + sensitivity 分级）· Ontology 本体结构 · USB 一键烧录（AES-256 加密 + HMAC 签名，插上即用拔掉零残留）· 安全联邦多设备互查（v1.1.8+）· 4 个 Sub Agent（@sofagent-fde + @sofagent-audit + engineer + reviewer）· daemon 守护进程 + A/B 自动调度器 · MCP Server 暴露全部能力 · FDE 四阶段十二步方法论 · 持续优化 sustain 模式 · 控制图状态抽取（ControlGraphState 数据层） |
+| **基座（v1.2.0）** | FDE 常驻部署（进场梳理 → 识别节点 → 构建知识库 → 离场 7×24 自跑）· AI 节点自动化 · 24 条规则行为审计（零 token 纯静态，当场拦截）· 一键回滚（git snapshot `--revert`）· 平台无关核心约束（Claude Code / Codex / WorkBuddy / OpenClaw 均可用审计能力；支持平台 Hook 自动注入，其他平台手动注入约束 + 审计照常生效）· AI 知识库自动积累（Dream Cycle + sensitivity 分级）· Ontology 本体数据 · USB 一键烧录（AES-256 加密 + HMAC 签名，插上即用拔掉零残留）· 安全联邦多设备互查（v1.1.8+）· 4 个 Sub Agent（@sofagent-fde + @sofagent-audit + engineer + reviewer）· daemon 守护进程 + A/B 自动调度器 · MCP Server 暴露全部能力 · FDE 四阶段十二步方法论 · 持续优化 sustain 模式 · 控制图状态抽取（ControlGraphState 数据层） |
 | **v1.2.9** | 三个入口产品（npx 零配置审计 CLI + 规则市场 `--ruleset` + GitHub Action）· FORGE Driver 短任务化 + Checkpoint/Resume worker 级断点 + PM2 守护进程 |
 | **v1.3.0** | 运行时审计最小闭环（wrapToolCall middleware + tool-gate 动态拦截 + 运行时审计日志）· 决策审计（emitDecision + HMAC 链 + kind-wise 查询）· 规则透明化（`list_rules` MCP tool）· 危险操作 HITL 钩子 · 双规则系统统一（`ruleType`）· 激活链 Phase 4 收尾（SUSTAIN 全闭环）· 外部记忆后端 Path A（可选，缺省关闭）· 进化链路写保护 |
 | **v1.3.1** | Ontology 运行时层（Action 注册表 + validator 三态 + Schema 定稿）· 并行编排（ParallelScheduler + 波次审计卡关 + MergeQueue）· Durable Execution（checkpoint 续跑 + 副作用幂等）· Agent 身份码 Ed25519 · 🚀 Onboard Agent L1（loop_debug）· 📊 Benchmark 评测（evaluate）· 工具审批四模式 · LLM 调用级 Trace · 错误处理升级（stop_reason + 退避）· L4 渐进加载 · 本体建模要求对齐 GB/T 48000.3-2026（`runRules({gb48000:true})`）· 跨设备审计轨迹聚合（audit_trail） |
@@ -280,7 +280,7 @@ v1.3.9 起对所有 workspace 包的入口 export 做显式分级，CI 门禁（
 
 ### 已排期（开发中或即将开发，详见 ROADMAP）
 
-Dashboard Web 前端（`dashboard.html` 单文件控制台已落：驾驶舱/FDE 引导/AI 节点/本体结构/知识库/工具箱 6 页 + `tools/dashboard/serve-dashboard.mjs` 服务，读 `data/` 实时数据 + 示例降级；工作明细数据层 v1.3.9 + Web 工作明细页 v1.4.0）· 完整多设备协同 L2 · meta-harness 多 harness 编排（v1.3.9）· 本地推理 workflow 专属 LoRA 小模型（v3.x–v4.x 远景，纯画饼）。完整路线见 [六、已知局限与未来方向](#六已知局限与未来方向) 与 ROADMAP。
+Dashboard Web 前端（`dashboard.html` 单文件控制台已落：驾驶舱/FDE 引导/AI 节点/本体数据/知识库/工具箱 6 页 + `tools/dashboard/serve-dashboard.mjs` 服务，读 `data/` 实时数据 + 示例降级；工作明细数据层 v1.3.9 + Web 工作明细页 v1.4.0）· 完整多设备协同 L2 · meta-harness 多 harness 编排（v1.3.9）· 本地推理 workflow 专属 LoRA 小模型（v3.x–v4.x 远景，纯画饼）。完整路线见 [六、已知局限与未来方向](#六已知局限与未来方向) 与 ROADMAP。
 >
 > **Dashboard 双形态说明（v1.3.5 归位 tools/）**：`tools/dashboard/dashboard.html`（Web 形态，`node tools/dashboard/serve-dashboard.mjs` 起服务——与服务器同目录）与 `tools/dashboard/sofagent-dashboard.sh`（终端形态，装到 `~/.sofagent/bin/`，零依赖 bash）是同一 Dashboard 的两种产品入口（README 三入口表）：Web 给老板/IT 可视化看，终端给开发者/FDE 快速看。二者职责不同，勿混用/勿删其一。
 
@@ -1202,7 +1202,7 @@ audit:
 
 **已交付（v1.3.0-v1.3.3）**：
 - **v1.3.0**：**🔗 激活链 Phase 4 收尾（SUSTAIN）**——全链路验证（activate→compose→run→HITL→audit→sustain）+ `wrapToolCall` middleware 联动 + FDE SKILL.md 新增 activate 引导。Phase 1-3（v1.2.5-v1.2.8）已交付。详见 [激活链设计文档](./guides/fde-activation-chain.md)
-- **v1.3.1**：Ontology 本体结构 + 并行编排 + Agent 身份码 + Onboard Agent L1
+- **v1.3.1**：Ontology 本体数据 + 并行编排 + Agent 身份码 + Onboard Agent L1
 - **v1.3.2**：Onboard Agent 完整版（L2-L5）
 - **v1.3.3**：L2 团队协作协议 + Refine Agent 完整版 + 主 agent 编排 + 入口路由 + 进化闭环升级
 
@@ -1235,23 +1235,23 @@ audit:
 
 > 本节保留 sofagent 自有的架构设计决策（借行业术语表达），纯行业印证分析（Palantir OAG 五层映射 / Apache Ossie / Onyx / AOS / 脑力自动化四阶段 / 行业五层骨架映射等）已移至 [VALIDATION §三](./VALIDATION.md)。
 
-### 本体结构 = GitHub 生长树（核心设计原则）
+### 本体数据 = GitHub 生长树（核心设计原则）
 
-本体结构不只是一套静态 schema，而是**一棵在长、可分支、可审阅、可回退的活结构**——这一隐喻统一了「本体怎么演化才安全」：
+本体数据不只是一套静态 schema，而是**一棵在长、可分支、可审阅、可回退的活结构**——这一隐喻统一了「本体怎么演化才安全」：
 
-| 生长树角色 | 本体结构里的对应 | 说明 |
+| 生长树角色 | 本体数据里的对应 | 说明 |
 |------|------|------|
-| **树干** = 共同主线 | **本体结构本身**（objects / actions / constraints 的基座） | 企业的共享模型，所有能力从它生长；本体由多个 workflow 组成 |
+| **树干** = 共同主线 | **本体数据本身**（objects / actions / constraints 的基座） | 企业的共享模型，所有能力从它生长；本体由多个 workflow 组成 |
 | **分支** = 小变更空间 | **单个 ontology 节点新增 / 扩展** | 每次给本体加节点、扩关系，是一次 branch，不直接动树干 |
 | **护栏** = 不变量守卫 | **审计**（A7 不盲改 + HMAC + reality anchor） | 错误不会悄悄混进主干；护栏不是树干，是围着树干的围栏 |
 | **根系** = 可复用前提 | **每个节点的强制 frontmatter** | 每个 ontology 节点 / Skill 必须声明：解决什么问题 / 输入 / 产出 / 怎么算通过 / 谁能使用 / 哪些数据不能用 |
 | **养护** = 审阅与回退 | **本体变更的 review + rollback** | 分支经审计闸门（人类按风险分级审阅）才合入主干；不合适就剪掉。对应 v2.x「ontology I/O schema 硬化」+ 运行时审计 |
 
-**与路线图的契合**：v1.3.1「Ontology 本体结构」把这套隐喻落到产品（分布式 knowledge/ + 联邦查询 + git diff 硬证据）；v2.x「ontology I/O schema 硬化」把「根系」升级为 JSON Schema 校验的节点输入/输出形状约束——正是上表「根系」的工程化。5 阶段风险收敛（只读对象层→…→高风险 Action）则是「养护」的节奏参考：不要一上来就让 Agent 自动闭环。
+**与路线图的契合**：v1.3.1「Ontology 本体数据」把这套隐喻落到产品（分布式 knowledge/ + 联邦查询 + git diff 硬证据）；v2.x「ontology I/O schema 硬化」把「根系」升级为 JSON Schema 校验的节点输入/输出形状约束——正是上表「根系」的工程化。5 阶段风险收敛（只读对象层→…→高风险 Action）则是「养护」的节奏参考：不要一上来就让 Agent 自动闭环。
 
 **养护的操作化身**：上表「养护」不是抽象姿态，而是由 fresh-eyes 独立审查机制兑现——`FORGE/playbook/fresh-eyes-review.md`（12 视角独立审查：零上下文、相信直觉、只报告不修复）正是护栏的审阅范式；FORGE `fresh-eyes-loop` 把这套独立视角自动化，ROADMAP v2.x 借 MLflow agent 评估为其补量化评审标准。换言之，本体分支要合入主干前，先过 fresh-eyes 这一关。
 
-**本体运维（OntologyOps = 知识资产的可版本化治理）**：本体结构不只是"一棵在长的树"，它还需要一套运维体系——把 DevOps 的版本化、可审计、可回滚实践应用到知识资产。sofagent 的落地：本体节点 = 带版本和 frontmatter 的文件（可 diff、可 review、可 revert）；knowledge/ 目录 = 可审计的知识仓库（daemon 的 conflict-check 巡检矛盾/孤儿/死链 = 知识层的 CI）；think.md append-only 契约 = 不可篡改的变更日志。换言之，Ledger-Views-Policy 三层不只是知识分类法，还是一套知识运维管线——Ledger 是 git 历史，Views 是构建产物，Policy 是合并保护规则。本体结构走向规模化的标志，不是"节点变多了"，而是"改一个节点有完整的 diff → review → merge → audit → rollback 流程"。
+**本体运维（OntologyOps = 知识资产的可版本化治理）**：本体数据不只是"一棵在长的树"，它还需要一套运维体系——把 DevOps 的版本化、可审计、可回滚实践应用到知识资产。sofagent 的落地：本体节点 = 带版本和 frontmatter 的文件（可 diff、可 review、可 revert）；knowledge/ 目录 = 可审计的知识仓库（daemon 的 conflict-check 巡检矛盾/孤儿/死链 = 知识层的 CI）；think.md append-only 契约 = 不可篡改的变更日志。换言之，Ledger-Views-Policy 三层不只是知识分类法，还是一套知识运维管线——Ledger 是 git 历史，Views 是构建产物，Policy 是合并保护规则。本体数据走向规模化的标志，不是"节点变多了"，而是"改一个节点有完整的 diff → review → merge → audit → rollback 流程"。
 
 ### Ontology 阶段匹配：不要提前进化（A1 实操）
 

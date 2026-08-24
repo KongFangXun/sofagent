@@ -30,7 +30,7 @@
 
 > **一条 workflow 的产品**：给企业做 AI 落地 = 一条 FDE workflow。执行这条 workflow 的 Agent = FDE Agent（sofagent）。**它对自己做的第一份 FDE，就是 sofagent 项目本身**——自举循环：FDE Agent 对自己做 FDE → 项目更 AI 化 → 更好地服务企业 → 数据飞轮转起来。
 
-**FDE 交付**：进场梳理 → 交付**双图谱**——人看的业务图谱（workflow graph）+ 机器读的本体图谱（ontology graph）。图谱里每个 AI 节点承担业务流中的职能；节点执行 = workflow 要求 → LangGraph 编排 → DeepSeek Harness 执行（ExecutionBackend 双后端：workflow 以 DAG 形态在所选后端运行）→ 全程约束底座审计 + 回溯净化（plugin 功能）。
+**FDE 交付**：进场梳理 → 交付**双图谱**——人看的业务图谱（workflow graph）+ 机器读的本体图谱（ontology graph，本体数据的图形化形态）。图谱里每个 AI 节点承担业务流中的职能；节点执行 = workflow 要求 → LangGraph 编排 → DeepSeek Harness 执行（ExecutionBackend 双后端：workflow 以 DAG 形态在所选后端运行）→ 全程约束底座审计 + 回溯净化（plugin 功能）。**行业坐标**：两张图谱同属「知识层」（描述业务世界的语义资产），构建·校验·维护实践属「工程层」（图谱工程），详见 [ARCHITECTURE §一](./ARCHITECTURE.md)。
 
 **训练 Agent（内层新 workflow）**：企业 AI 节点要数据主权 → 训练 Agent（受约束）驱动后训练工具：收集企业数据 → 模型后训练 → 私有化部署回节点。这本身是几个新 workflow（数据采集 / 训练 / 部署）。开源训练引擎 v1.4.1~1.4.6 交付；训练也围绕 FDE——怎么让 FDE 更好、怎么让数据飞轮转起来。
 
@@ -73,7 +73,7 @@ graph TB
 | **约束层七维度** | Agent = 模型 + 上下文 + 工具 + 状态 + 执行控制 + 权限 + 可观测性——四种能力各自覆盖其中哪些维度 | [ARCHITECTURE §一 · 约束层七维度](./ARCHITECTURE.md#约束层七维度agent-的构成面)（维度构成以本行为准；四种能力维度分工详见 [PHILOSOPHY §一·四件事的分工](./PHILOSOPHY.md#四件事的分工mcp--skills--ontology--harness)） |
 | **约束层构成（企业视角）** | 黄仁勋定义：企业专属约束层 = 知识 + 记忆 + 工作流 + 权限 + 安全机制 + 运行环境——模型是起点，围绕模型积累的这套专属系统才是核心资产 | [PHILOSOPHY §一·理论锚点](./PHILOSOPHY.md#智能与控制分离sofagent-的理论锚点) |
 | **业务图谱** | 人读的流程图谱 = Workflow Graph——FDE 交付的企业业务流完整拓扑，每条业务链路即一条业务流 | [ARCHITECTURE §定义表](./ARCHITECTURE.md) |
-| **本体图谱** | 机器读的语义图谱 = Ontology Graph——FDE 交付的企业全部业务节点和关联关系的全局拓扑（本体结构的图形化呈现） | [ARCHITECTURE §定义表](./ARCHITECTURE.md) |
+| **本体图谱** | 机器读的语义图谱 = Ontology Graph——FDE 交付的企业全部业务节点和关联关系的全局拓扑（本体数据的图形化呈现） | [ARCHITECTURE §定义表](./ARCHITECTURE.md) |
 | **业务流** | 企业业务流的完整链路 = Workflow，由业务节点（AI 节点 + Human 节点）交替组成 | [ARCHITECTURE §定义表](./ARCHITECTURE.md) |
 | **业务节点** | 业务流中的执行单元 = Node——AI 自动执行（Loop）或 Human 介入（审批/检查/兜底）；AI 节点 = 业务节点中经三问判定法识别为可 AI 化的部分 | [ARCHITECTURE §定义表](./ARCHITECTURE.md) |
 | **审计引擎** | git diff 驱动，24 条规则（17 默认 + 7 扩展），活跃编号 A1-A11 + A14-A23 + E1/E2/E4（A12/A13 已并入 A11，编号不再使用），每次 commit 自动跑 | [24 条完整清单（SECURITY SSOT）](../SECURITY.md#24-条审计规则完整清单文档级-ssot) |
