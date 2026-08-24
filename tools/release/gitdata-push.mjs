@@ -86,7 +86,22 @@ if (remoteSha === headSha) {
 }
 
 // 待推文件（remote..HEAD 之间的全部变更：新增/修改/删除）
-const changed = sh(`git diff --name-status ${remoteSha}..HEAD`);
+// 🔴 连续 API 推送场景：remoteSha 是上次 API commit，本地对象库没有它，git diff 直接炸
+//    （v1.4.0 复盘实测）——先探测，本地无此对象时走 compare API 兜底
+let changed;
+if (sh('git cat-file -t ' + remoteSha + ' 2>/dev/null || true')) {
+  changed = sh(`git diff --name-status ${remoteSha}..HEAD`);
+} else {
+  console.log(`ℹ️ 本地无远端对象 ${remoteSha.slice(0, 8)}（上次 API 推送遗留）——compare API 兜底取变更`);
+  const cmpRaw = ghApi(`compare/${remoteSha}...HEAD`, []);
+  const cmp = jqOrParse(cmpRaw, j => j);
+  if (cmp.status !== 'ahead') {
+    // diverged/behind：远端有本地没有的内容——禁止盲推，须先 rebase 接回
+    console.error(`🔴 本地与远端分叉（compare status=${cmp.status}）——先按 SOP「双 SHA 分叉接回」处理再推`);
+    process.exit(1);
+  }
+  changed = (cmp.files || []).map(f => `${f.status === 'removed' ? 'D' : f.status === 'added' ? 'A' : 'M'}\t${f.filename}`).join('\n');
+}
 const entries = changed.split('\n').filter(Boolean).map(line => {
   const [status, ...rest] = line.split('\t');
   // rename (R100\told\tnew) 取新路径；删除 (D) 单独标记
