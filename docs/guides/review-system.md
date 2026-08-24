@@ -71,11 +71,13 @@
 
 ### 行数警戒线
 
+> 数值以 `regression-checklist.md` 头部声明为**唯一 SSOT**（check-review-system.sh 动态提取校验），本表不写死——v1.4.0 收口：多处声明必然漂移（本指南曾落后实际值两个版本）。历史上调记录见 checklist 头部警戒线段。
+
 | 文档 | 上限 | 超标怎么办 |
 |------|:----:|-----------|
-| regression-checklist.md | 1660 行 | **超标靠归并不删内容**（v1.3.5 check-version 四盲区归并消化；v1.3.9 +3 维 #119-#121 上调 1620→1660） |
-| acceptance-test.sh | 2870 行 | 同上（v1.3.5 注释/装饰框/冗余分组瘦身消化；v1.3.9 +13 场景 S305-S317 上调 2770→2870） |
-| fresh-eyes-review.md | 400 行 | 同上（v1.3.3 从 370 上调） |
+| regression-checklist.md | 见 checklist 头部 SSOT | **超标靠归并不删内容**（v1.3.5 check-version 四盲区归并消化等，演进记录见 SSOT） |
+| acceptance-test.sh | 见 checklist 头部 SSOT | 同上（v1.3.5 注释/装饰框/冗余分组瘦身消化等） |
+| fresh-eyes-review.md | 见 04-review-system.md 步骤五自检 | 同上（v1.3.3 从 370 上调，v1.4.0 至 410） |
 
 ### 瘦身三步
 

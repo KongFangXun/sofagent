@@ -1309,18 +1309,19 @@ grep 'grep.*条规则' tools/check/check-version.sh | grep -q '\.test\.' && echo
 grep "EXPECTED_DOC_DATE" tools/check/check-version.sh
 grep "$(node -p "require('./package.json').version")" CHANGELOG.md | grep -oE "2026-[0-9]{2}-[0-9]{2}"
 ```
-#### 96. 警戒线声明多处同步——改一处要改 4 处（v1.3.2 新增 · 元维度）
+#### 96. 警戒线声明多处同步——单一 SSOT 引用（v1.3.2 新增 · v1.4.0 收口 · 元维度）
 
-**背景**：acceptance 警戒线 2050→2250 需同步改 4 处（regression-checklist + releasing/05 + guides/review-system + acceptance-test 头部），漏改任一处会导致发版 SOP 与实际不一致。
+**背景**：acceptance 警戒线 2050→2250 时需同步改 4 处，漏改任一处导致 SOP 与实际不一致——v1.4.0 复盘实锤：SOP 表格（1660）与 guides（1500 系）双双落后于 checklist 头部（1690），多处声明必然漂移。**收口（v1.4.0）**：警戒线数值只在 checklist 头部声明一处（SSOT，check-review-system.sh 动态提取校验），其余文档一律引用不写死。
 
 ```bash
-# 同步一致性检查：4 处声明的警戒线值一致
-for v in "2500" "1500" "400"; do   # 警戒线（acceptance 2500 / checklist 1500）——改值时同步更新此处
-  COUNT=$(grep -rn "$v" FORGE/playbook/regression-checklist.md docs/changelog/releasing/05-review-system.md docs/guides/review-system.md 2>/dev/null | wc -l | tr -d ' ')
-  echo "  警戒线 $v: $COUNT 处声明"
-  if [ "$COUNT" -lt 2 ]; then echo "  ⚠️ 声明不足 2 处——可能漏改"; _GATE96=1; fi
-done
-[ "${_GATE96:-0}" -eq 0 ] && echo "✅ 三条警戒线声明均 ≥2 处"   # v1.3.6 修正：显式收尾，防尾判假 exit 1 被 driver 误判 FAIL
+# SSOT 声明完整性：checklist 头部必须有两条 ≤ 声明（门禁提取源，丢失 = warn 提示人工确认）
+grep -oE '(regression-checklist\.md|acceptance-test\.sh)`? ≤ ?[0-9]+' FORGE/playbook/regression-checklist.md | sort -u
+# 期望恰好 2 行（checklist + acceptance 各一条）；非 2 行 = SSOT 声明被破坏，门禁将 warn
+
+# 引用一致性：非 SSOT 文档不得写死警戒线数值（只许「见 checklist 头部」式引用 + 历史上调记录）
+HARDCODED=$(grep -nE '(checklist|acceptance|fresh-eyes)[^0-9]{0,4}≤ ?1[0-9]{3}' docs/changelog/releasing/04-review-system.md docs/guides/review-system.md 2>/dev/null || true)
+[ -z "$HARDCODED" ] && echo "✅ 非 SSOT 文档零写死警戒线" || { echo "❌ 写死值："; echo "$HARDCODED"; }
+# 例外：头部/表格中的「历史上调记录」（如 1620→1660 箭头式演进）不算写死——箭头左值是历史事实
 ```
 
 #### 97. npm publish workspace 限制——12 包分两批发布（v1.3.2 新增 · 发版阻塞）

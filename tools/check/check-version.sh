@@ -378,6 +378,18 @@ while IFS= read -r skill; do
     continue
   fi
   found_ver=$(extract_version "${match}")
+  # DSH plugin SKILL.md 走独立版本线（v1.4.0 起）：与同目录 package.json 比对而非 SSOT——
+  # cordis-plugin-sofagent-* 是 0.x 独立发版（plugin 家族版本自治），不跟 sofagent 主版本走
+  plugin_pkg="${skill%/SKILL.md}/package.json"
+  if [[ -f "${plugin_pkg}" ]] && [[ "${skill}" == */dsh-plugins/* ]]; then
+    plugin_ver=$(node -p "require('${plugin_pkg}').version" 2>/dev/null || echo "")
+    if [[ -n "${plugin_ver}" && "${found_ver}" != "${plugin_ver}" ]]; then
+      report_error "${skill}" "version: ${found_ver}" "version: ${plugin_ver}（同目录 package.json）"
+    else
+      report_ok "${skill#"${PROJECT_ROOT}"/}" "${found_ver}（plugin 线）"
+    fi
+    continue
+  fi
   # SKILL.md 用 3 段精确比对（v1.0.x 系列 patch 号不同也要检测）
   if [[ "${found_ver}" == *.*.* ]]; then
     # 3 段格式：精确比对
@@ -1096,6 +1108,37 @@ if [[ "${MCP_REG}" =~ ^[0-9]+$ ]] && [[ "${MCP_REG}" -gt 0 ]]; then
   fi
 else
   echo -e "  ${YELLOW}⚠${NC} tool-registry.ts 工具数解析失败（格式变化？人工确认）"
+  WARNINGS=$((WARNINGS + 1))
+fi
+echo ""
+
+# ── 23. lock 与 workspace 同步（v1.4.0 发版 CI 4 红防复发 · checklist 维度 122）──
+# 新增/删除 workspace 包后 lock file 必须重新生成——本地 npm install 会静默补齐掩盖问题，
+# CI npm ci 严格校验直接红（v1.4.0：9 个 cordis-plugin 未入 lock，4 工作流同根因红）。
+# 静态比对（快，不跑 npm ci）：package.json workspaces 声明的每个包必须在 lock.packages 有条目。
+echo "=== 23. lock 与 workspace 同步（新包未入 lock = CI 必红） ==="
+LOCK_WS_CHECK=$(node -e "
+const fs = require('fs');
+const path = '${PROJECT_ROOT}';
+try {
+  const pkg = JSON.parse(fs.readFileSync(path + '/package.json', 'utf8'));
+  const lock = JSON.parse(fs.readFileSync(path + '/package-lock.json', 'utf8'));
+  const ws = (pkg.workspaces || []).flat();
+  const missing = ws.filter(w => !lock.packages || !lock.packages[w]);
+  if (missing.length) { console.log('MISSING:' + missing.join(',')); process.exit(1); }
+  console.log('OK:' + ws.length);
+} catch (e) { console.log('PARSE_ERR:' + e.message); process.exit(2); }
+" 2>/dev/null || echo "PARSE_ERR:node-unavailable")
+if [[ "$LOCK_WS_CHECK" == OK:* ]]; then
+  echo -e "  ${GREEN}✓${NC} 全部 ${LOCK_WS_CHECK#OK:} 个 workspace 包已入 lock file"
+  CHECKS=$((CHECKS + 1))
+elif [[ "$LOCK_WS_CHECK" == MISSING:* ]]; then
+  echo -e "  ${RED}✗${NC} 以下 workspace 包未入 lock file（push 后 CI npm ci 必红）："
+  echo "${LOCK_WS_CHECK#MISSING:}" | tr ',' '\n' | sed 's/^/      /'
+  echo -e "  ${RED}修复：npm install --package-lock-only 后随代码同 commit${NC}"
+  ERRORS=$((ERRORS + 1))
+else
+  echo -e "  ${YELLOW}⚠${NC} lock 解析失败（${LOCK_WS_CHECK#PARSE_ERR:}）——人工跑 npm ci --dry-run 确认"
   WARNINGS=$((WARNINGS + 1))
 fi
 echo ""

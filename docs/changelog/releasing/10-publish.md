@@ -335,23 +335,47 @@ EOF
 npm view @sofagent/audit@vX.Y.Z version  # 期望返回版本号
 npm view @sofagent/mcp@vX.Y.Z version    # 期望返回版本号
 
-# 手动 publish 其余 10 包
+# 手动 publish 其余 10 包——每包 publish 后立即 npm view 对账 + E409 自动等待重查
+# 🔴 v1.4.0 教训：publish 输出严禁接管道过滤（| grep xxx）——skillopt 的 E409 报错被过滤吞掉，
+#    表面循环跑完，实际漏发 1 包，13 包对账时才发现。输出必须全量落盘，失败立即停。
+TARGET_VER=$(node -p "require('./package.json').version")
 for pkg in core daemon eval harness ontology orchestrator rules skillopt think ab-test; do
   echo "--- @sofagent/$pkg ---"
-  cd "engine/$pkg" && npm publish --access public && cd ../..
+  ( cd "engine/$pkg" && npm publish --access public ) > "/tmp/publish-$pkg.log" 2>&1
+  RC=$?
+  if [ $RC -ne 0 ] && grep -q "E409\|previously staged" "/tmp/publish-$pkg.log"; then
+    # E409 staged：registry 侧版本占位未 finalize，约 5 分钟自动完成（见下方 E409 段）
+    echo "  ⏳ E409 staged——等 300s 自动 finalize 后重查"
+    sleep 300
+    LIVE=$(npm view "@sofagent/$pkg" dist-tags.latest 2>/dev/null || true)
+    if [ "$LIVE" = "$TARGET_VER" ]; then
+      echo "  ✅ staged 已自动 finalize 为 $LIVE"
+    else
+      echo "  🔴 300s 后仍未 finalize（latest=$LIVE）——按下方 E409 段落人工处理"
+      exit 1
+    fi
+  elif [ $RC -ne 0 ]; then
+    echo "  🔴 publish 失败（exit $RC），完整报错："
+    cat "/tmp/publish-$pkg.log"
+    exit 1
+  fi
+  # 即时对账：publish exit 0 ≠ registry 已收录（npm 传播延迟约 15s），重查 3 次
+  LIVE=""
+  for i in 1 2 3; do
+    LIVE=$(npm view "@sofagent/$pkg" version 2>/dev/null || true)
+    [ "$LIVE" = "$TARGET_VER" ] && break
+    echo "  ⏳ registry 传播中（查到 $LIVE），15s 后重查（第 $i 次）"
+    sleep 15
+  done
+  [ "$LIVE" = "$TARGET_VER" ] && echo "  ✅ @sofagent/$pkg = $LIVE" || { echo "  🔴 对账失败：期望 $TARGET_VER 实际 $LIVE"; exit 1; }
 done
 
-# @sofagent/load-chain（布局在 engine/hooks/ 下，不进上面的循环——v1.3.5 #30 补）
-cd "engine/hooks/sofagent-load-chain" && npm publish --access public && cd ../../..
-
-# 验证全部 13 包（含 load-chain）
-for pkg in audit core daemon eval harness ontology orchestrator rules skillopt think ab-test mcp; do
-  V=$(npm view @sofagent/$pkg version 2>/dev/null || echo "❌ 未发布")
-  echo "  @sofagent/$pkg: $V"
-done
-npm view @sofagent/load-chain version  # 同样应等于当前版本号
-# 期望：全部 = 当前版本号（npm 缓存可能延迟 15 秒，未到则等一下重查）
-```
+# @sofagent/load-chain（布局在 engine/hooks/ 下，不进上面的循环——v1.3.5 #30 补，验证逻辑同上）
+( cd "engine/hooks/sofagent-load-chain" && npm publish --access public ) > /tmp/publish-load-chain.log 2>&1
+RC=$?
+[ $RC -ne 0 ] && { echo "🔴 load-chain publish 失败："; cat /tmp/publish-load-chain.log; exit 1; }
+LIVE=$(npm view @sofagent/load-chain version 2>/dev/null || true)
+[ "$LIVE" = "$TARGET_VER" ] && echo "✅ @sofagent/load-chain = $LIVE" || echo "🔴 load-chain 对账失败：期望 $TARGET_VER 实际 $LIVE"
 
 > 🔴 **E409「previously staged version」处理（v1.3.9 实战 · v1.4.0 修正）**：`npm publish` 网络中断会在 registry 留下 **staged blob**（发布事务中间态，版本号被占位但未 finalize）——同版本重发报 `409 Conflict - Cannot publish over previously staged version "X.Y.Z"`。**v1.4.0 实测修正：staged 版本约 5 分钟内自动 finalize**（skillopt 实证：E409 后等待约 5 分钟，`npm view dist-tags.latest` 即显示新版本，无需 unpublish）。处理顺序：① 先等 5 分钟重查 `npm view <pkg> dist-tags.latest`；② 仍未 finalize 再考虑 `npm unpublish <pkg>@<version> --force`（staged blob 独立于记录，unpublish 后 registry 主节点传播完成即可重发同版本）。⚠️ 与「npm 版本永久锁死」铁律不冲突——E409 staged 是**未 finalize 的占位**，可清除重发；已 published 的版本才不可覆盖。
 
@@ -403,6 +427,8 @@ gh api repos/KongFangXun/sofagent/git/refs -X POST \
 
 
 ### main push 完全走 Git Data API（git push 死代理时 · v1.3.5 实战）
+
+> 🛠 **v1.4.0 起优先用固化脚本**：`node tools/release/gitdata-push.mjs`——上述流程（blobs→trees→commits→refs PATCH + tree 一致性验收 + 删除补删 + mode 保真）已工具化，前置检查（工作树干净/远端实时 SHA）内置。脚本固化自 v1.3.8（82 commits）+ v1.4.0（阶段十二收尾）两次实战。**手工流程仅在脚本不可用时走下方步骤**（三坑/四坑原理同样适用脚本维护者）。
 
 git push 彻底走不了（代理端口 127.0.0.1:53957 连不上）时，用 Git Data API 把本地 commit 内容推上去。核心 = 以远端 HEAD 为 parent 建「压平 commit」（blobs→tree→commit→ref，fast-forward 非 force）：
 
