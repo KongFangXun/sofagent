@@ -2503,6 +2503,21 @@ async function main() {
     process.exit(1);
   }
 
+  // ─── v1.4.0：清理 DSH worker 残留空文件（防污染工作树）───
+  // DSH CLI 桥接 spawn 无 cwd 隔离（继承 REPO_ROOT）——DSH agent 工具行为可能在仓库根
+  // 创建 vX.Y.Z 格式的 0 字节空文件（v1.3.7 已多次出现：08-19/08-24 release-gate 运行期，
+  // 全仓代码无直接创建源 → LLM 执行版本相关命令误重定向）。启动时清理 0 字节残留。
+  try {
+    const { readdirSync, statSync, unlinkSync } = await import('node:fs');
+    const strays = readdirSync(REPO_ROOT).filter(
+      (f) => /^v\d+\.\d+\.\d+$/.test(f) && statSync(join(REPO_ROOT, f)).size === 0
+    );
+    if (strays.length > 0) {
+      for (const f of strays) unlinkSync(join(REPO_ROOT, f));
+      console.log(`   🧹 清理 DSH 残留空文件: ${strays.join(', ')}`);
+    }
+  } catch { /* cleanup 失败不阻断 */ }
+
   // ─── preflight-check 跑前自检 ───
   // 发版门禁单次跑 30-60 分钟（V 阶段 + 可能的 F 修复链），环境不健康时
   // 中途崩溃代价极高。开跑前把路径/管道/API/预算/目录/磁盘全部验一遍。
