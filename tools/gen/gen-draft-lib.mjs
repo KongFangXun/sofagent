@@ -10,7 +10,7 @@
 //   1 = 参数或输入错误（无来源 / 路径不存在 / 版本号读不出）
 //   2 = LLM 不可用（已降级输出 prompt 到 <out>.prompt.md）
 //
-// LLM 配置来源：FORGE/models/glm-5.2.mjs（GLM-5.2 Coding Plan 专用端点）。
+// LLM 配置来源：FORGE/models/glm-5.3.mjs（GLM-5.3 Coding Plan 专用端点）。
 // ============================================================
 
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
@@ -63,7 +63,7 @@ export function loadModelConfig(overrides = {}) {
     }
   } catch { /* 解析失败时回退 GLM（下） */ }
   return {
-    model: 'glm-5.2',
+    model: 'glm-5.3',
     baseURL: 'https://open.bigmodel.cn/api/coding/paas/v4',
     apiKeyEnv: 'GLM_API_KEY',
     temperature: 0.3,
