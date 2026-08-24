@@ -15,7 +15,7 @@ tags:
   - knowledge
 image: sofagent-fde.png
 triggers: [FDE部署, 企业AI落地, 梳理业务流, 识别AI节点, 构建知识库, FDE进场, 持续优化, 巡检, 烧录U盘, USB key]
-scenarios: [企业要装sofagent, 需要梳理业务业务流, 需要识别哪些环节该上AI, 需要构建本体数据, 刚部署完需要持续优化]
+scenarios: [企业要装sofagent, 需要梳理业务流, 需要识别哪些环节该上AI, 需要构建本体数据, 刚部署完需要持续优化]
 not_when: [简单闲聊, 纯代码实现, 单步查询, 纯信息检索]
 emoji: 🎯
 color: "#16B8F3"
@@ -57,7 +57,7 @@ sofagent-orchestrator subagent run fde --mode sustain --task "巡检所有节点
 
 > 执行细节（五要素追问话术 / 业务四问 / 三问判定表 / 三层实体模板 / 自检清单）见 `SKILL/skills/01-05`——AI 按阶段加载，不在此重复。
 
-## USB 烧录（v1.1.8+）
+## USB 烧录
 
 当用户需要给普通员工或无头设备部署时：
 
@@ -86,7 +86,7 @@ U 盘包含：Node.js 便携版 + sofagent 引擎 + knowledge 加密落盘（AES
 | 部署方案 | Workflow 节点清单、knowledge-domain 矩阵、HITL 配置 |
 | 企业 Skill | 注入企业专属规则和行业术语的定制 Skill |
 | 部署手册 | 企业 IT 可独立维护的操作手册（4 章） |
-| USB key（v1.1.8+） | 梳理好的 workflow 烧录到 U 盘——员工插上即用 |
+| USB key | 梳理好的 workflow 烧录到 U 盘——员工插上即用 |
 | **sofagent 本身** | FDE Agent 7×24 在跑——人离场了它留下 |
 
 **成功指标**：知识库覆盖率 ≥80% · 节点定义 100% 完整 · knowledge-domain 零漏洞 · IT 可独立维护 · doctor 全绿

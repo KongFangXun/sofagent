@@ -95,7 +95,7 @@ color: purple
 - 如果 builder 未通过或测试未跑，直接 IS_PASS: NO
 - **IS_PASS: YES 但实际有问题，是你的失职**——后续子任务会基于错误的代码继续开发
 
-**审查报告格式（v1.1.4 必须遵守）：**
+**审查报告格式（必须遵守）：**
 ```
 ## 审查报告 · 子任务 [N]
 
@@ -237,7 +237,7 @@ async function fetchData() {
 ## 📝 审查报告格式
 
 ```markdown
-> **审计引擎**: sofagent-audit v1.2.3 · 21 条规则（13 默认 + 8 扩展） | **审查引擎**: sofagent-orchestrator v1.2.3 · sofagent-reviewer
+> **审计引擎**: sofagent-audit · 24 条规则（17 默认 + 7 扩展） | **审查引擎**: sofagent-orchestrator · sofagent-reviewer
 
 # 代码审查报告
 
