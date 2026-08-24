@@ -369,7 +369,7 @@ sofagent web          # 起服务 + 自动开浏览器 → http://localhost:3780
 node tools/dashboard/serve-dashboard.mjs
 ```
 
-Web 版含驾驶舱 / FDE 引导 / AI 节点 / 本体结构 / 知识库 / **工作明细**（v1.4.0：按 Agent / Workflow / 周 / 人工介入 4 视角）/ **图谱**（v1.4.0：workflow 图 + ontology 图 + 自 FDE workflow + MCP 工具视图 + skill 加载链）/ 工具箱。数据源 `~/.sofagent/data/`，没跑过 `sofagent-audit` 就没数据（降级示例）。
+Web 版含驾驶舱 / FDE 引导 / AI 节点 / 本体数据 / 知识库 / **工作明细**（v1.4.0：按 Agent / Workflow / 周 / 人工介入 4 视角）/ **图谱**（v1.4.0：业务图谱 + 本体图谱 + 自 FDE 业务流 + MCP 工具视图 + skill 加载链）/ 工具箱。数据源 `~/.sofagent/data/`，没跑过 `sofagent-audit` 就没数据（降级示例）。
 
 ### CI 集成
 
@@ -430,7 +430,7 @@ jobs:
 | 静态加密 | v1.3.8 | 纯 TS AES-256-GCM（SOFAGENT-AGE-V1 透明读写）+ 密钥指纹备份 + 四目录加密 | [v1.3.8 开发日志](./changelog/v1.3/v1.3.8.md) |
 | AST 规则引擎 | v1.3.9 | 官方 AST 引擎（ASI01 目标劫持 + ASI04 供应链 SBOM 语义检测）+ meta-harness 多 harness 编排 | [v1.3.9 开发日志](./changelog/v1.3/v1.3.9.md) |
 | AI 工作明细 | v1.3.9 | `worklog` 数据层（按 Agent/Workflow/周 + 人工介入，`worklog_query` MCP） | [v1.3.9 开发日志](./changelog/v1.3/v1.3.9.md) |
-| Web 工作明细 + 图谱 | v1.4.0 | Dashboard 工作明细四视角 + 图谱栏（workflow/ontology 图 + MCP 工具视图 + skill 加载链）+ 随 install.sh 装到用户机 | [v1.4.0 开发日志](./changelog/v1.4/v1.4.0.md) |
+| Web 工作明细 + 图谱 | v1.4.0 | Dashboard 工作明细四视角 + 图谱栏（业务图谱 + 本体图谱 + MCP 工具视图 + skill 加载链）+ 随 install.sh 装到用户机 | [v1.4.0 开发日志](./changelog/v1.4/v1.4.0.md) |
 | 成本审计 | v1.4.0 | 超支告警 + `cost_query` MCP + COST DecisionKind（WARN-only 不拦截） | [v1.4.0 开发日志](./changelog/v1.4/v1.4.0.md) |
 | DSH/OpenClaw 插件家族 | v1.4.0 | DSH cordis-plugin 9 款 + OpenClaw code-plugin 4 款 + MCP 工具角色分层（默认 34/66）+ DSH 默认启用 | [v1.4.0 开发日志](./changelog/v1.4/v1.4.0.md) |
 
