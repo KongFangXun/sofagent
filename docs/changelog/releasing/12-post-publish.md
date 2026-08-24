@@ -19,6 +19,7 @@
 | 九 | [x] | **进度追踪清零**：把 `releasing.md` 进度追踪的 12 个 `[x]` 全部改回 `[ ]`，为下一版本新周期做准备 | 进度追踪重置 |
 | 十 | [x] | **releasing 自迭代**（sop 审查自己）：对照本次发版的实际执行体验，检查 12 个阶段文件是否有过时/缺漏/顺序不合理的地方，直接修正。这是 releasing.md 的「Dream Cycle」——每次发版后用它自己的经验喂养它自己 | releasing.md 更新 |
 | 十一 | [x] | **本机 daemon 重载（dogfooding 保活 · 2026-08-18 新增）**：发版后本机守护进程要吃上新代码。launchd 配置 `~/Library/LaunchAgents/local.sofagent-daemon.plist` 指向仓库 dist（非全局 npm 包），一条命令重载：`launchctl kickstart -k gui/$(id -u)/local.sofagent-daemon`，随后 `tail -3 ~/.sofagent/data/daemon-launchd.log` 确认版本号 = 刚发的版本。开机自启已由 plist 的 RunAtLoad+KeepAlive 保证，无需每次处理 | daemon 跑新版 |
+| 十二 | [x] | **网络恢复收尾（v1.4.0 新增）**：发版全程若用过降级通道（gh api tag / Git Data API push / 剥代理直连），网络恢复后必须做三件事：① `git fetch origin && git status` 确认本地/远端无分叉（有分叉按 10-publish「双 SHA 分叉接回」处理）；② lightweight tag 覆盖为 annotated——`git tag -f -a vX.Y.Z -m "vX.Y.Z · {一句话}" <commit> && git push origin vX.Y.Z --force`（gh api 建的 tag 无 tag object，`git for-each-ref refs/tags` 显示 type blob/commit 即 lightweight）；③ 桌面发布物清理——本版产生的 prompt/body 草稿（`vX.Y.Z-*.md` / `release-note-*.md`）归档或删除，只保留下一版 dev prompt（发布物落盘铁律：统一 `~/Desktop/`，禁仓库内） | 远端/桌面双干净 |
 
 ---
 
@@ -214,4 +215,7 @@ sed -i '' 's/- \[x\]/- [ ]/g' docs/changelog/releasing.md
 - **阶段十一·步骤八 E409 staged 处理修正（更新）**：v1.3.9 记录称「24h 锁 + unpublish 清除」——v1.4.0 实测 skillopt E409 后**约 5 分钟自动 finalize**，无需 unpublish。处理顺序修正为：先等 5 分钟重查 dist-tags，仍未 finalize 再 unpublish。已更新 10-publish 步骤八
 - **阶段十·步骤六 tag push 代理 502 连环（实录）**：`git push origin v1.4.0` 遭 exit 137 SIGKILL → 远端 404 本地有 tag；重试遭 CONNECT 502 → 最终 `gh api repos/O/R/git/refs -f ref=refs/tags/vX.Y.Z -f sha=<commit>` 直接创建远端 tag 成功（走 api.github.com 通道绕过 git CONNECT 隧道）。**gh api 创建 tag 是代理 502 下最可靠通道**，比 v1.3.9 的「剥代理直连」更稳（本机网络必须走代理时直连反而不通）
 - **发布物落盘铁律（用户拍板）**：发布物（publish prompt / release note body）统一 `~/Desktop/`，禁止在 FORGE/ 或仓库内自建目录（FORGE/artifacts/ 已删）。已写入 09-confirm.md
+- **步骤十二 网络恢复收尾（新增 · 发版复盘落地）**：①双 SHA 分叉检查（`git fetch` + `git status`）②lightweight tag 覆盖为 annotated（gh api 通道建的 tag 无 tag object，force push 覆盖）③桌面发布物清理——三件事打包进步骤十二，不再散落各处
+- **警戒线声明收口单一 SSOT（更新 · 发版复盘落地）**：多处写死数值必然漂移（本次实锤：SOP 表 1660 / guides 1500 系 / checklist 维度 96 史前 2500，均落后 checklist 头部 1690）——收口为**checklist 头部唯一 SSOT**（门禁动态提取），04-review-system 与 guides 改引用不写死，维度 96 检查逻辑重写
+- **npm publish 循环即时验证（更新 · 发版复盘落地）**：每包 publish 后立即 `npm view` 对账（3 次重试 ×15s）+ E409 自动 sleep 300 重查 + **publish 输出严禁接管道过滤**（本轮 skillopt E409 被 grep 过滤吞掉，13 包对账才发现漏发）——10-publish 步骤八循环重写
 - **v1.4.0 发版耗时**：约 4h（08-24 14:00 阶段十启动 → 19:00 阶段十二完成）；CI lock 事故 1 次（4 工作流同根因红 → 单 commit 修复转绿）；release-gate 0 轮（v1.4.0 阶段五 fresh-eyes 4 轮已在过渡期完成，发版窗口内零审查轮）
