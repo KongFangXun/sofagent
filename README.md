@@ -42,12 +42,12 @@
 官方 slogan：**梳理业务流 · 构建本体图谱 · 部署 AI 节点 · 审计每次变更 · 自我反思迭代**
 
 ```mermaid
-graph TB
+graph LR
     subgraph S["一个 FDE Agent · sofagent"]
-        K["内核 LangGraph + 约束层<br/>ExecutionBackend 抽象"]
-        I["调用面 plugin + skill + MCP<br/>+ CLI + dashboard"]
-        B["行为层 约束底座<br/>注入 · 审计 · 回溯 · 进化"]
-        M["方法论 FDE 四阶段<br/>梳理 → 构建 → 部署 → 离场"]
+        direction TB
+        K["内核 LangGraph + 约束层<br/>ExecutionBackend 抽象"] ~~~ B["行为层 约束底座<br/>注入 · 审计 · 回溯 · 进化"]
+        I["调用面 plugin + skill + MCP<br/>+ CLI + dashboard"] ~~~ M["方法论 FDE 四阶段<br/>梳理 → 构建 → 部署 → 离场"]
+        K ~~~ I
     end
     S -->|"进场 · 给企业做 FDE"| D["双图谱交付<br/>业务图谱 + 本体图谱"]
     D --> N["AI 节点<br/>LangGraph 编排 → Harness 执行 → 约束审计"]

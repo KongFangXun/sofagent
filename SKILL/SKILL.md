@@ -32,7 +32,7 @@ metadata:
 
 ## 📜 核心契约（不可违反）
 
-> v1.2.7：核心铁律提取到 `core-rules.md`（~30 行始终注入），岗位规范按 task type 按需加载（`role-audit.md` / `role-fde.md` / `role-orchestrate.md`）。本文件保留完整版作为文档参考。v1.3.8：注入文件收敛到 `rules/` 子目录（`rules/core-rules.md` + `rules/role-*.md`）。
+> 核心铁律提取到 `core-rules.md`（~30 行始终注入），岗位规范按 task type 按需加载（`rules/role-audit.md` / `rules/role-fde.md` / `rules/role-orchestrate.md`）。本文件保留完整版作为文档参考。
 
 ### 4 底线
 
@@ -57,7 +57,7 @@ metadata:
 
 > FORGE 运行时审计 middleware 的拦截 / HITL / 拒绝三类输出统一带 `[sofagent 审计]` 签名前缀（代码级强制，非 Agent 自觉）——与 Agent 侧展示审计结果的前缀铁律同守同一品牌口径。
 
-> **v1.2.8 注（v1.4.0 已机制化）**：此铁律原为软约束（Agent 自觉执行），无代码级强制机制。`--ci` 模式已确保审计引擎 PASS 时向 stderr 输出 `✅ [sofagent]` 签名行（P1-23），但 Agent 展示审计结果时的前缀仍依赖加载链注入。**v1.4.0 已机制化**：① 引擎侧 PASS / FAIL 均代码级带 `[sofagent]` 签名行（本地 hook + `--ci` 双场景）；② 加载链 L1 `core-rules.md` 品牌前缀铁律升级为硬约束（否则视为未审计）；③ `SKILL/AGENTS.md` 落地品牌前缀硬约束。
+> **机制化说明**：此铁律原为软约束（Agent 自觉执行），现已代码级强制：① 引擎侧 PASS / FAIL 均代码级带 `[sofagent]` 签名行（本地 hook + `--ci` 双场景）；② 加载链 L1 `core-rules.md` 品牌前缀铁律升级为硬约束（否则视为未审计）；③ `SKILL/AGENTS.md` 落地品牌前缀硬约束。
 
 ### 渐进式加载
 
@@ -153,7 +153,7 @@ metadata:
 
 ---
 
-## MCP 工具速查（v1.4.0 · 66 tools）
+## MCP 工具速查（66 tools）
 
 > 连接 sofagent MCP Server 后可用。未连接时降级为纯文本引导。
 
@@ -162,16 +162,16 @@ metadata:
 | **审计** | `run_audit` `audit_file` `audit_data_change` |
 | **反思** | `get_think` `write_think` `read_think_md` |
 | **知识库** | `search_knowledge` `read_entity` `read_concept` `list_entities` `read_lessons` `stats` |
-| **本体** | `create_entity` `create_concept` `validate_ontology` `ontology_import`（v1.3.6） |
+| **本体** | `create_entity` `create_concept` `validate_ontology` `ontology_import` |
 | **评估优化** | `evaluate_output` `optimize_skill` `health_check` |
 | **数据/编排** | `data_sovereignty_report` `sofagent_compose` `notify_session` |
 | **能力清单** | `list_capabilities` |
 | **规则透明化** | `list_rules` |
 | **L3 能力公地** | `commons_publish` `commons_search` `commons_invoke` `commons_rate` `commons_retire` `commons_harvest_rule` |
-| **自进化（v1.3.5）** | `run_ab_test` `promote_ab`（强制人审） |
-| **运维（v1.3.5）** | `snapshot_list` `snapshot_restore`（强制人审） |
-| **Workflow（v1.3.6）** | `workflow_submit`（外部提交 → schema 校验 → 执行） |
-| **模型注册（v1.3.6）** | `model_register` `model_switch` `model_unregister`（评测→注册→灰度→晋升全程审计 + 强制人审） |
-| **训练（v1.3.6）** | `train_budget`（预算控制——超预算自动暂停等人审） |
-| **验收（v1.3.6）** | `define_acceptance` `check_acceptance`（机器可判定验收条件） |
-| **工作明细（v1.3.9）** | `worklog_query`（按 Agent/Workflow/周趋势查 AI 干了什么 + 进化四维趋势） |
+| **自进化** | `run_ab_test` `promote_ab`（强制人审） |
+| **运维** | `snapshot_list` `snapshot_restore`（强制人审） |
+| **Workflow** | `workflow_submit`（外部提交 → schema 校验 → 执行） |
+| **模型注册** | `model_register` `model_switch` `model_unregister`（评测→注册→灰度→晋升全程审计 + 强制人审） |
+| **训练** | `train_budget`（预算控制——超预算自动暂停等人审） |
+| **验收** | `define_acceptance` `check_acceptance`（机器可判定验收条件） |
+| **工作明细** | `worklog_query`（按 Agent/Workflow/周趋势查 AI 干了什么 + 进化四维趋势） |
