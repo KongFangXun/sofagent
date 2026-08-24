@@ -126,21 +126,17 @@ for (const e of entries) {
 
 // ── ② tree（基于远端 base tree 增量）──
 const baseTree = jqOrParse(ghApi(`git/commits/${remoteSha}`, []), j => j.tree.sha);
-const treeArgs = [];
-for (const t of treeItems) {
-  if (t.deletion) {
-    // create-tree 无法表达删除（v1.3.8 第三坑）——收集起来走 Contents API 补删
-    continue;
-  }
-  treeArgs.push(`tree[][path]=${t.path}`);
-  treeArgs.push(`tree[][mode]=${t.mode}`);
-  treeArgs.push('tree[][type]=blob');
-  treeArgs.push(`tree[][sha]=${t.sha}`);
-}
+const treeEntries = treeItems.filter(t => !t.deletion).map(t => ({
+  path: t.path, mode: t.mode, type: 'blob', sha: t.sha
+}));
+// create-tree 无法表达删除（v1.3.8 第三坑）——删除项收集起来走 Contents API 补删
 let newTree;
-if (treeArgs.length) {
-  const escaped = treeArgs.map(a => a.replace(/ /g, '\\ ')).join(' ');
-  newTree = jqOrParse(sh(`gh api repos/${REPO_SLUG}/git/trees ${escaped} -f base_tree=${baseTree}`), j => j.sha);
+if (treeEntries.length) {
+  // 🔴 传参方式：必须走 stdin JSON（--input -），禁命令行拼 tree[][path]=…
+  //    ——17 文件 = 68 个数组参数，gh CLI「accepts 1 arg(s)」直接炸（v1.4.0 复盘实测）
+  const treeBody = JSON.stringify({ base_tree: baseTree, tree: treeEntries });
+  const raw = sh('gh api repos/' + REPO_SLUG + '/git/trees --input -', { input: treeBody });
+  newTree = jqOrParse(raw, j => j.sha);
 } else {
   newTree = baseTree; // 无增改（纯删除场景在下方处理）
 }
