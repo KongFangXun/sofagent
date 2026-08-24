@@ -66,18 +66,17 @@ if (dirty) {
 }
 
 // 获取远端 main 当前 SHA（fetch 失败时走 gh api 查 ref）
+// ⚠️ 必须以 gh api 实时值为准：本地 origin/main 在连续 API 推送后必然陈旧，
+//    且陈旧 SHA（如 27c6a071）本地有对象——会走错 git diff 路径漏掉中间变更
 let remoteSha;
+const liveRemote = jqOrParse(ghApi('git/refs/heads/' + BRANCH, []), j => j.object.sha);
 try {
-  remoteSha = sh('git rev-parse origin/main');
-  // origin/main 可能是陈旧的（fetch 不动）——用 gh api 实时确认
-  const live = jqOrParse(ghApi('git/refs/heads/' + BRANCH, []), j => j.object.sha);
-  if (live && live !== remoteSha) {
-    console.log(`ℹ️ 本地 origin/main(${remoteSha.slice(0, 8)}) 陈旧，远端实际 ${live.slice(0, 8)}——以远端为准`);
-    remoteSha = live;
+  const localRef = sh('git rev-parse origin/main');
+  if (liveRemote && liveRemote !== localRef) {
+    console.log(`ℹ️ 本地 origin/main(${localRef.slice(0, 8)}) 陈旧，远端实际 ${liveRemote.slice(0, 8)}——以远端为准`);
   }
-} catch {
-  remoteSha = jqOrParse(ghApi('git/refs/heads/' + BRANCH, []), j => j.object.sha);
-}
+} catch { /* 无本地 ref 记录 */ }
+remoteSha = liveRemote;
 
 const headSha = sh('git rev-parse HEAD');
 if (remoteSha === headSha) {
