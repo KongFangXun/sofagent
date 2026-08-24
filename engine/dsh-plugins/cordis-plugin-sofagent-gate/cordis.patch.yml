@@ -5,4 +5,4 @@
       inject: [settings, dynamicCordisRunner]
       config:
         seam: "agent/turn-stopping"
-        description: "验收不过不放行——机器可判定验收 + 人审（sofagent 品牌 · #16B8F3）"
+        description: "验收不过不放行——机器可判定验收 + 人审——桥接 @sofagent/audit runRules（sofagent 品牌 · #16B8F3）"

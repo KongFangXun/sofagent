@@ -5,4 +5,4 @@
       inject: [settings, dynamicCordisRunner]
       config:
         seam: "apply(ctx) 注入四层加载链"
-        description: "启动注入企业约束——四层加载链（sofagent 品牌 · #16B8F3）"
+        description: "启动注入企业约束——四层加载链——桥接 @sofagent/harness buildConstrainedSystemPrompt（sofagent 品牌 · #16B8F3）"

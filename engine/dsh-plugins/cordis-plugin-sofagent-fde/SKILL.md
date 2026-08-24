@@ -4,12 +4,12 @@ slug: cordis-plugin-sofagent-fde
 version: 1.4.0
 displayName: cordis-plugin-sofagent-fde
 description: >
-  进场方法论六 tool 闭环（fde_interview/classify/quantify/derive/distill/deploy）（sofagent 品牌插件 · 主色 #16B8F3）——DSH（DeepSeek Harness）cordis plugin。sofagent 约束层在 DeepSeek Harness 生态的插件形态。
+  FDE 进场方法论桥接——本体数据视图生成（fde_* 六 tool 为规划中形态，见 sofagent ROADMAP）（sofagent 品牌插件 · 主色 #16B8F3）——DSH（DeepSeek Harness）cordis plugin。sofagent 约束层在 DeepSeek Harness 生态的插件形态。
 ---
 
 # cordis-plugin-sofagent-fde
 
-进场方法论六 tool 闭环（fde_interview/classify/quantify/derive/distill/deploy）（sofagent 品牌插件 · 主色 #16B8F3）
+FDE 进场方法论桥接——本体数据视图生成（fde_* 六 tool 为规划中形态，见 sofagent ROADMAP）（sofagent 品牌插件 · 主色 #16B8F3）
 
 ## 用途
 

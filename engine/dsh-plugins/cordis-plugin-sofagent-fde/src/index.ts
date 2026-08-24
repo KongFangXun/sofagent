@@ -9,7 +9,7 @@
 export const pluginMeta = {
   id: 'cordis-plugin-sofagent-fde',
   version: '0.1.0',
-  description: '进场方法论六 tool 闭环（fde_interview/classify/quantify/derive/distill/deploy）',
+  description: 'FDE 进场方法论桥接——本体数据视图生成（fde_* 六 tool 为规划中形态）',
   seam: 'plugin',
 } as const;
 
@@ -59,12 +59,12 @@ export default {
       if (runner && typeof runner.define === 'function') {
         const res = runner.define({
           name: 'sofagent-fde',
-          purpose: '进场方法论六 tool——interview/classify/quantify/derive/distill/deploy（品牌色 #16B8F3）',
+          purpose: 'FDE 进场方法论桥接——本体数据视图生成（品牌色 #16B8F3）',
           code: {
             host: [
               'module.exports = {',
               '  async main(ctx, args) {',
-              '    return { ok: true, source: "sofagent-fde", message: "进场方法论六 tool——interview/classify/quantify/derive/distill/deploy" };',
+              '    return { ok: true, source: "sofagent-fde", message: "FDE 进场方法论桥接——本体数据视图生成" };',
               '  }',
               '};',
             ].join('\n'),

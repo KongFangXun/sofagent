@@ -5,4 +5,4 @@
       inject: [settings, dynamicCordisRunner]
       config:
         seam: "effect 注册/卸载"
-        description: "出错逆序撤销——git snapshot → effect disposer（sofagent 品牌 · #16B8F3）"
+        description: "出错逆序撤销——git snapshot → effect disposer——桥接 @sofagent/core getHistoryFilePath（sofagent 品牌 · #16B8F3）"
