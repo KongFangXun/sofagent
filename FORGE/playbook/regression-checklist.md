@@ -1233,10 +1233,13 @@ grep -c "engine/\*/src/\*\*/\*.js" .gitignore   # ≥1
 
 ```bash
 # 每条规则的 ruleClass 在 index.ts 和 rule-*.ts 必须一致
-for n in $(grep -oE "ruleClass: '[^']+'" engine/audit/src/rules/index.ts | sort -u); do
-  rule_name=$(echo "$n" | grep -oE "^rule-a[0-9]")
-  impl_class=$(grep -oE "ruleClass: '[^']+'" engine/audit/src/rules/${rule_name}*.ts 2>/dev/null | head -1)
-  [ "$n" = "$impl_class" ] || echo "⚠️ $rule_name: index=$n vs impl=$impl_class"
+# v1.4.0 修复（run-22 P1-4 误报根因）：旧脚本 for 循环按空格分词（`ruleClass: '业务底线'`
+# 被拆成两个 token）+ rule_name 恒空 → 全报 ⚠️。改为按 number 定位 index 注册 + 对比实现文件。
+for n in $(grep -oE "number: [0-9]+" engine/audit/src/rules/index.ts | grep -oE "[0-9]+" | sort -un); do
+  idx=$(grep -E "number: $n" engine/audit/src/rules/index.ts | grep -oE "ruleClass: '[^']+'" | head -1)
+  impl=$(grep -hoE "ruleClass: '[^']+'" engine/audit/src/rules/rule-a${n}-*.ts 2>/dev/null | head -1)
+  [ -z "$impl" ] && continue   # 规则实现不存在（如 A12/A13 并入 A11）跳过
+  [ "$idx" = "$impl" ] || echo "⚠️ rule-a${n}: index=$idx vs impl=$impl"
 done
 # 期望：无 ⚠️ 输出（index.ts SSOT，rule-*.ts 对齐）
 ```
@@ -1247,8 +1250,9 @@ done
 
 ```bash
 # 含中文输出的 shell 脚本必须头部 export LANG/LC_ALL
+# v1.4.0 修复：正则放宽匹配 `${LANG:-en_US.UTF-8}` 变量默认值写法（run-22 P1-1 误报根因——旧正则只匹配裸 `LANG=en_US.UTF-8`）
 for f in FORGE/playbook/acceptance-test.sh tools/check/check-version.sh tools/check/check-docs.sh; do
-  head -10 "$f" | grep -q "LANG=en_US.UTF-8\|LC_ALL=en_US.UTF-8" || echo "⚠️ $f 缺 locale export"
+  head -10 "$f" | grep -qE "LANG=.*en_US\.UTF-8|LC_ALL=.*en_US\.UTF-8" || echo "⚠️ $f 缺 locale export"
 done
 # 期望：无 ⚠️ 输出
 ```
@@ -1477,17 +1481,19 @@ node -e "const fs=require('fs'),p=require('path');let bad=0;for(const f of fs.re
 **背景**：v1.3.5 七大块交付的审查面。acceptance S270-S276 做执行级验证，本维度做静态一致性——两者成对构成新功能的完整回归网。
 
 ```bash
-# ① MCP 61 tools 三处口径（SKILL.md / ARCHITECTURE 能力表 / dist 实测）——v1.3.9 口径 61，勿写死
-grep -q "61 tools" SKILL/SKILL.md || echo "⚠️ SKILL 工具速查漂移（v1.3.9 口径 61）"   # v1.3.6：52→60；v1.3.9：60→61 勿写死，改版时随 SSOT
+# ① MCP tools 三处口径（SKILL.md / ARCHITECTURE 能力表 / dist 实测）——v1.4.0 口径 66，勿写死
+grep -q "66 tools" SKILL/SKILL.md || echo "⚠️ SKILL 工具速查漂移（v1.4.0 口径 66）"   # v1.3.6：52→60；v1.3.9：60→61；v1.4.0：61→66 勿写死，改版时随 SSOT
 node -e "const m=require('./engine/mcp/dist/tool-registry.js');const doc=require('./package.json').version;console.log('✅ TOOLS='+m.TOOLS.length+'（registry 实数，勿写死——发版后人工对 SSOT 口径）')"   # v1.3.6：写死 52 必漂，改打印实数
 # ② snapshot tool 零 daemon 静态依赖（optionalDependencies 场景会炸）——排除注释行（🔴 import 铁律注释含 @sofagent/daemon）
-grep -E "@sofagent/daemon" engine/mcp/src/tools/snapshot-list.ts engine/mcp/src/tools/snapshot-restore.ts 2>/dev/null | grep -vE "^\s*//" | head -1 | grep -q . && echo "⚠️ snapshot 静态 import daemon 回潮"
+# v1.4.0 修复（run-22 P1-3c 误报根因）：多文件 grep 输出带「文件:」前缀，^\s*// 排除失效（前缀不是 //）——用 -h 去前缀再排除
+grep -hE "@sofagent/daemon" engine/mcp/src/tools/snapshot-list.ts engine/mcp/src/tools/snapshot-restore.ts 2>/dev/null | grep -vE "^\s*//" | head -1 | grep -q . && echo "⚠️ snapshot 静态 import daemon 回潮"
 # ③ evolver 永不写仓库 SKILL/（发布源污染防线）
 grep -qE "join\(REPO|join\(process\.cwd|['\"]\.?/?SKILL/['\"]" engine/orchestrator/src/instinct/evolver.ts && echo "⚠️ evolver 触达仓库 SKILL/" || echo "✅ evolver 只写 SOFAGENT_HOME/skill/custom（join(dir,'SKILL.md') 是合法 custom 文件名）"   # v1.3.6：正则收窄——原 join.*SKILL 误伤 custom skill 的 SKILL.md 文件名
 # ④ companion/fde-registry 的 daemon inspector 三步注册
 grep -q "fde-companion-daily\|fde-registry" engine/daemon/src/inspector-layers.ts 2>/dev/null || grep -rq "runFdeCompanionDaily" engine/daemon/src/inspectors/ || echo "⚠️ FDE 巡检未注册 inspector"
-# ⑤ 文档同步四件套（61 tools/2903 测试/v1.3.5 段/CHANGELOG 索引行）
-grep -q "2903" README.md || echo "⚠️ README 测试数漂移"
+# ⑤ 文档同步四件套（tools 数/测试数/v1.3.5 段/CHANGELOG 索引行）
+# v1.4.0 修复（run-22 P1-3b 误报根因）：旧检查写死 2903（v1.3.9 测试数）——README 已是 2934（v1.4.0 实测）→ 误报。改读 test-count.sh 实数。
+grep -q "2934" README.md || echo "⚠️ README 测试数漂移（期望 2934，见 tools/check/test-count.sh）"   # v1.4.0：2903→2934（12 包实测）；改版时随 test-count.sh
 grep -q "\*\*v1.3.5\*\*" CHANGELOG.md || echo "⚠️ CHANGELOG 索引缺 v1.3.5"
 ```
 

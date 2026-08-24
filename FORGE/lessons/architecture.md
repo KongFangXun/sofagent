@@ -2,9 +2,24 @@
 
 > [← 返回索引](./index.md)
 
-### 框架选型：createReactAgent，禁用 createDeepAgent
+### 框架选型：执行后端三层（DSH CLI 桥接 → LangGraph createReactAgent → 禁用 createDeepAgent）
 
-所有 FORGE loop 的 sub-agent 必须使用 `@langchain/langgraph/prebuilt` 的 `createReactAgent`，禁止使用 `deepagents` 的 `createDeepAgent`。
+**v1.4.0 现状（执行层已全面转 DSH）**：worker 走 **DSH CLI 桥接**（`dsh --profile headless "<task>"` 子进程，见 dsh-backend.ts）——用户拍板「必须走 DeepSeek Harness」。`createReactAgent` 降级为 **LangGraph fallback 路径**（DSH 包未安装/守卫拦截时），`createDeepAgent` 仍禁止。
+
+```
+worker 执行链（v1.4.0）：
+createExecutionBackend({ preferred: 'dsh' })
+  → DSH CLI 桥接（dsh --profile headless）   ← 默认，worker 无 sofagent 自定义工具面
+  → fallback：LangGraph createReactAgent      ← DSH 不可用时
+```
+
+**🔴 DSH 桥接的核心限制（与本节教训直接相关）**：CLI 桥接**无法注入 sofagent 自定义工具**（task.tools 在子进程边界失效，dsh-backend.ts WARN「不生效」）。后果与对策：
+- worker 手里只有 DSH 自带 bash/fs 工具链——**审查类任务需要的文件读取证据必须由 driver 预执行注入 prompt**（见 [四·DSH 证据注入](./driver.md#2026-08-24-dsh-cli-桥接worker-无工具面--precheck-证据必须由-driver-注入-promptrelease-gate-run-0422-实录)）
+- 预算熔断退化为外层超时（headless 无工具循环，天然无工具预算概念）
+
+**历史教训（LangGraph 时代，fallback 路径仍适用）**：
+
+`createReactAgent` 是 LangGraph 时代 sub-agent 的标准，`createDeepAgent` 禁止使用。
 
 **原因**：`createDeepAgent` 硬编码注入了 `FilesystemMiddleware`（required，无法禁用），其 `wrapToolCall` 在并行工具调用时触发 `undefined.length` 崩溃。DeepSeek 偶然不触发并行调用所以能跑，GLM-5.2 / Qwen 在 superstep 5 即崩（commit 9a9c5dc）。
 

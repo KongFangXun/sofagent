@@ -16,6 +16,7 @@
 >
 > v1.3.0 release-gate run-21 更新（2026-08-09）：确定性判定优先（别让 LLM 解读可确定性解析的日志 + ANSI 剥离坑）、F 链收敛回写权威产物（verdict.md 同步）
 >
+> v1.4.0 release-gate run-22 更新（2026-08-24）：DSH CLI 桥接 worker 无工具面 → precheck 证据由 driver 注入 prompt（含兜底路径 + 全量注入铁律）
 > v1.3.1 run-03 更新（2026-08-10）：降级判定一票否决误伤（改比例阈值 25%）、perspective worker 工具预算偏紧（12/15→15/20）、裸 LLM 降级产物缺结构校验（补 isReportText 门控 + 结构化占位）、连续降级熔断阈值过激进（2→3 轮）四项新坑位
 
 ## 本文档定位
@@ -37,10 +38,10 @@
 
 | 章 | 文件 | 核心内容 |
 |---|------|---------|
-| 一·架构设计 | [./architecture.md](./architecture.md) | createReactAgent 禁用 createDeepAgent · Driver-Worker 编排 · 步骤定义 · 目录架构 |
-| 二·模型配置 | [./models.md](./models.md) | MODEL_CONFIGS · Thinking-only 模型 · 步骤级 maxTokens · 计费模式 |
+| 一·架构设计 | [./architecture.md](./architecture.md) | **执行后端三层（DSH CLI 桥接 → createReactAgent fallback → 禁 createDeepAgent）** · Driver-Worker 编排 · 步骤定义 · 目录架构 |
+| 二·模型配置 | [./models.md](./models.md) | MODEL_CONFIGS · **A/B/V/F 统一 deepseek-v4-flash（v1.3.9 起）** · 步骤级 maxTokens · 计费模式 |
 | 三·性能优化 | [./performance.md](./performance.md) | 三层上下文裁剪（截断+stateModifier+preModelHook）· 效率铁律 · stream |
-| 四·Driver 编排 | [./driver.md](./driver.md) | **preflight-check 跑前自检** · recursionLimit · **三层熔断死循环防护** · **零信任复核（FAIL≠真实 bug）** · 失败容错 · 分片 · 停止条件 · 外部脚本 spawn · --step |
+| 四·Driver 编排 | [./driver.md](./driver.md) | **preflight-check 跑前自检** · recursionLimit · **三层熔断死循环防护** · **零信任复核（FAIL≠真实 bug）** · **DSH 桥接证据注入（无工具面）** · 失败容错 · 分片 · 停止条件 · 外部脚本 spawn · --step |
 | 五~八·Stream/Prompt/工具/可观测 | [./stream-prompt-tools.md](./stream-prompt-tools.md) | stream 迁移 P0 铁律 · BSD 约束 · 工具格式转换 · 两层可观测 |
 
 ---
@@ -51,7 +52,7 @@
 
 ### 🔰 架构与框架
 
-- [ ] **用 `createReactAgent`，禁用 `createDeepAgent`**（[一·框架选型](./architecture.md#框架选型createreactagent禁用-createdeepagent)）
+- [ ] **执行后端三层：DSH CLI 桥接默认 → createReactAgent fallback → 禁 createDeepAgent**（v1.4.0 起 worker 走 DSH，createReactAgent 仅 fallback；DSH 桥接无自定义工具面，审查证据由 driver 注入 prompt）（[一·框架选型](./architecture.md#框架选型执行后端三层dsh-cli-桥接--langgraph-createreactagent--禁用-createdeepagent)）
 - [ ] **Driver-Worker 分离**：Driver 纯编排不审查，Worker 零上下文独立进程（[一·Driver-Worker](./architecture.md#driver-worker-编排模式)）
 - [ ] **步骤在 STEPS 常量中定义**，含 role / prompt / outputs / inputs / maxTokens（[一·步骤定义](./architecture.md#步骤定义模式)）
 - [ ] **runs 目录放在 loop 自己目录下**，`.gitignore` 加 `FORGE/SKILL/*/runs/`（[一·目录架构](./architecture.md#目录架构每个-loop-自包含)）
@@ -60,9 +61,10 @@
 ### 🤖 模型配置
 
 - [ ] **MODEL_CONFIGS 定义完整字段**（[二·模型配置](./models.md#模型配置)）
-- [ ] **Thinking-only 模型不传 thinking/reasoningEffort**（[二·Thinking-only](./models.md#thinking-模型特殊处理)）
+- [ ] **A/B/V/F 统一切 deepseek-v4-flash**（v1.3.9 起；双盲靠 prompt 视角不靠异构模型；权威源 FORGE/models/profile.mjs）（[二·模型配置](./models.md#模型配置)）
+- [ ] **Thinking-only 模型特殊处理已归档**（deepseek-v4-flash 非 thinking-only，历史记录供换回 thinking 模型时参考）（[二·Thinking-only](./models.md#thinking-模型特殊处理历史deepseek-v4-flash-不适用)）
 - [ ] **合并/汇总步骤 maxTokens = 32000**（[二·步骤级 maxTokens](./models.md#步骤级-maxtokens-覆盖)）
-- [ ] **计费模式标注**（subscription 的 cost_cny = null）
+- [ ] **计费模式标注**（subscription 的 cost_cny = null；deepseek-v4-flash 按量计费）
 
 ### ⚡ 性能优化（v1.2.5+）
 
@@ -97,6 +99,10 @@
 - [ ] **降级状态独立持久化**（degraded.flag，勿放会被下游覆盖的产物里——a-verify 覆盖 result.md 抹掉标记致假绿）（[四·产物完整性校验](./driver.md#产物完整性校验防假成功v130-run-21-教训)）
 - [ ] **确定性判定优先**（能用正则/确定性规则判定的结果不让 LLM 解读——日志总结行是权威；解析脚本日志先剥离 ANSI 颜色码）（[四·确定性判定](./driver.md#确定性判定优先别让-llm-解读能确定性解析的日志v130-run-21)）
 - [ ] **driver 状态变量变化要回写权威产物**（F 链收敛 PASS 必须同步 verdict.md，否则文件与 status 矛盾）（[四·F 链收敛](./driver.md#f-链收敛要回写权威产物verdictmd-同步)）
+- [ ] **命令从 LLM 剥离要贯彻到底——证据也剥离**（worker 无工具面时（DSH CLI 桥接）precheck 证据由 driver 直接注入 userMessage，不依赖 worker 读文件；DSH/LangGraph 双后端兼容）（[四·DSH 证据注入](./driver.md#2026-08-24-dsh-cli-桥接worker-无工具面--precheck-证据必须由-driver-注入-promptrelease-gate-run-0422-实录)）
+- [ ] **降级兜底路径也要带证据**（generateReportWithoutTools 硬熔断兜底同样接收 precheckEvidence，否则 DSH 下兜底报告永远「0 条工具结果」）（[四·DSH 证据注入](./driver.md#2026-08-24-dsh-cli-桥接worker-无工具面--precheck-证据必须由-driver-注入-promptrelease-gate-run-0422-实录)）
+- [ ] **审查证据注入要全量**（coverage 252 场景 num+title 实测仅 14.8KB——先实测体积再决定是否截断；截断让模型「猜」不如全量让模型判断）（[四·DSH 证据注入](./driver.md#2026-08-24-dsh-cli-桥接worker-无工具面--precheck-证据必须由-driver-注入-promptrelease-gate-run-0422-实录)）
+- [ ] **连续两轮同症状 = 系统性缺陷，不是环境抖动**（run-04/05 判「抖动重跑」run-05 复现才确认代码缺陷——重跑前先查根因）（[四·DSH 证据注入](./driver.md#2026-08-24-dsh-cli-桥接worker-无工具面--precheck-证据必须由-driver-注入-promptrelease-gate-run-0422-实录)）
 - [ ] **连续 2 轮降级直接 error 退出**（[四·连续降级](./driver.md#连续降级-error-退出)）
 - [ ] **硬熔断 break 后 stream.return()**（防幽灵请求）（[四·stream.return](./driver.md#streamreturn-防幽灵api-请求)）
 - [ ] **每个步骤 try/catch + 降级兜底**（[四·失败路径容错](./driver.md#失败路径容错)）
@@ -226,18 +232,20 @@
 
 | 决策 | 选择 | 理由 |
 |------|------|------|
-| Agent 框架 | createReactAgent | createDeepAgent 硬编码 FilesystemMiddleware |
+| 执行后端 | DSH CLI 桥接（v1.4.0 起） | 用户拍板必须走 DeepSeek Harness；createReactAgent 降级为 fallback；createDeepAgent 禁用（FilesystemMiddleware 硬编码） |
+| Agent 框架（fallback） | createReactAgent | createDeepAgent 硬编码 FilesystemMiddleware |
 | 进程模型 | spawn 子进程 | 零上下文继承，步骤间文件传递 |
 | 沙箱执行 | --step 单步模式 + 外层编排 | 每步全新进程退出，内存归零 |
 | 沙箱内存 | --max-old-space-size=1024 | v1.2.5 起 768→1536；v1.2.9 run-09 调至 2048；2026-08-16 run-07 实测负载轻降半至 1024（OOM 即回退 2048） |
 | 后台启动 | Bash 工具 run_in_background | nohup+disown 被 WorkBuddy 清理（run-07~11 教训） |
 | 并发上限 | floor((RAM - 3GB) / 1GB)，默认 2 | 2026-08-16 run-07：heap 降 1024 后 8GB 默认 2（旧公式 heap 2GB 时 8GB 取 1）；16GB+ 可开 4（run-08~09 OOM 教训 + run-07 优化） |
-| 上下文注入 | stateModifier（非 prompt） | 互斥约束 + 可同时做裁剪 |
-| 上下文物理裁剪 | preModelHook | stateModifier 只裁 prompt，preModelHook 物理替换 messages |
-| 执行模式 | stream（非 invoke） | 实时进度打印 |
+| 上下文注入（fallback） | stateModifier（非 prompt） | 互斥约束 + 可同时做裁剪（仅 LangGraph fallback 路径；DSH 桥接无 state.messages） |
+| 上下文物理裁剪（fallback） | preModelHook | stateModifier 只裁 prompt，preModelHook 物理替换 messages（仅 LangGraph fallback 路径） |
+| 执行模式（fallback） | stream（非 invoke） | 实时进度打印（仅 LangGraph fallback 路径；DSH 桥接 execFile 无 stream） |
+| 证据注入（DSH 桥接） | driver 预执行注入 userMessage | worker 无自定义工具面，precheck 证据必须随 prompt 送达（run-04~22 教训） |
 | 输出截断 | 200 行（头尾各 100） | 平衡信息与上下文膨胀 |
-| prompt 窗口 | 最后 16 条（stateModifier） | 最后 8 轮工具交互 |
-| 物理消息窗口 | 最后 20 条（preModelHook） | state.messages 上限 |
+| prompt 窗口 | 最后 16 条（stateModifier） | 最后 8 轮工具交互（仅 LangGraph fallback 路径） |
+| 物理消息窗口 | 最后 20 条（preModelHook） | state.messages 上限（仅 LangGraph fallback 路径） |
 | 合并步骤 maxTokens | 32000 | thinking-only 16000 不够 |
 | 分片 batch | 动态（≤20→5, ≤35→3, >35→2） | finding 越多每批越小 |
 | 死循环防护 | 三层熔断（L1 软 50→L2 硬 60 窗口 5→L3 recursionLimit 130） | prompt 管不住 Qwen3.8 |
@@ -280,3 +288,4 @@
 | 11 | **@deepseek-ai/dsh rc.8 是纯 CLI 包**——main undefined / bin lib/bin.js / 无 exports，`import('@deepseek-ai/dsh')` 直接失败（无库入口） | rc 期包形态未定型（rc.6 假设 plugin 导出，rc.8 变纯 CLI） | 守卫设计正确（rc 拦截等正式版）；想先用 → **CLI 桥接**：`require.resolve('@deepseek-ai/dsh/package.json')` 定位 bin（package.json 是文件路径不受无 main 影响）+ spawn `--profile headless <task>` 单任务执行 | dsh-backend / execution-backend |
 | 12 | **rc.8 headless 无工具面**——headless profile 只挂 dsh-base+dsh-headless（无 dsh-tool-*） | headless 定位是纯文本单轮问答 | 能力边界诚实标注：tools 传入 WARN 不生效；预算熔断退化外层超时；工具支持排正式版（Cordis 内嵌自动升级） | createDshCliBackend |
 | 13 | **CJS 编译目标下 `import.meta` 不可用**（TS1343）——orchestrator module=commonjs | TS 模块配置限制 | `createRequire(__filename)` 替代 `createRequire(import.meta.url)`；类型：modelConfig 是 `Record<string, unknown>` 须 `String()` 转义再当 env 索引 | dsh-backend |
+| 14 | **release-gate worker 无工具面 → 永远「0 条工具结果」判 FAIL**（run-04~07 连续失败）——worker prompt 要求「读 precheck.json（1 次 tool call）」，但 DSH CLI 桥接无法注入 task.tools，worker 读不到 → 报告「证据不足 P2 待证实」 | 只剥离了「命令执行」没剥离「证据读取」——方案 A 贯彻不彻底 | **precheck 证据内容由 driver 直接注入 userMessage**（buildPrecheckEvidence）+ 兜底函数也带 precheckEvidence（两层兜底都要证据）；覆盖 252 场景全量注入实测仅 14.8KB 不用截断 | release-gate-driver |

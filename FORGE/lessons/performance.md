@@ -4,6 +4,8 @@
 
 ### 上下文管理：三层裁剪（截断 + stateModifier + preModelHook）
 
+> **🔴 v1.4.0 适用范围标注**：本节是 **LangGraph fallback 路径**（createReactAgent）的优化——worker 走 DSH CLI 桥接时**无 state.messages 概念**（子进程独立，DSH 自带上下文管理），三层裁剪不适用。保留本节供 fallback 场景 / 未来 Cordis 内嵌（库内集成）参考。
+
 未做裁剪时：prompt 峰值 **296k tokens**（b-fix round-4），内存 OOM 17 次工具调用即崩。三层裁剪协同：
 
 ```mermaid

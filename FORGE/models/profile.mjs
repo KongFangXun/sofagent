@@ -10,7 +10,7 @@
 //
 // key 映射（自动）：
 //   qwen3.8-max       → QWEN_API_KEY（env.local.template 里配）
-//   glm-5.2           → GLM_API_KEY
+//   glm-5.3           → GLM_API_KEY
 //   deepseek-v4-pro   → DEEPSEEK_API_KEY
 //   deepseek-v4-flash → DEEPSEEK_API_KEY（与 Pro 共用）
 //

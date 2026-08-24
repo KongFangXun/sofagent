@@ -668,6 +668,89 @@ function resolveChangelogPath(target) {
 }
 
 /**
+ * v1.4.0（run-04~07 根因修复）：把 precheck 证据内容直接注入 userMessage。
+ *
+ * 背景：DSH CLI 桥接（dsh-backend.ts）无法把 sofagent 自定义工具注入子进程——
+ * worker 只有 DSH 自带 bash/fs 工具链，但 release-gate 的 worker prompt 要求
+ * 「读 precheck.json（1 次 tool call）→ 判定」。工具不可用 → 「工具调用结果摘要
+ * 0 条」→ 报告永远「证据不足」判 FAIL（run-04/05 ERROR、run-07 FAIL 全因此）。
+ *
+ * 正解：precheck.json 本就是 driver 预执行生成的证据（方案 A：命令执行从 LLM 剥离）。
+ * 证据内容由 driver 直接注入 userMessage——worker 无需任何工具即可判定，
+ * DSH / LangGraph 双后端兼容，且省掉 worker 的读文件工具调用。
+ *
+ * @param {string} runDir 当前 run 目录
+ * @param {{inputs?: string[], precheck?: boolean}} stepDef 步骤定义
+ * @returns {string} 注入文本（非 precheck 步骤返回空串）
+ */
+function buildPrecheckEvidence(runDir, stepDef) {
+  if (!stepDef?.precheck || !Array.isArray(stepDef.inputs)) return '';
+
+  const blocks = [];
+  for (const f of stepDef.inputs) {
+    // v1.4.0：只注入 precheck.json 产物（driver 预执行的证据）；acceptance.md 等
+    // 原始日志/报告文件仍走路径注入（内容太大，且 worker 已有路径可读）
+    if (!f.endsWith('-precheck.json')) continue;
+    const p = join(runDir, f);
+    if (!existsSync(p)) {
+      blocks.push(`[driver 注入] ${f}: 文件不存在——跳过（worker 判定时注意此文件缺失的影响）`);
+      continue;
+    }
+    try {
+      const data = JSON.parse(readFileSync(p, 'utf-8'));
+
+      // ── regression-precheck.json：逐维度 exitCode + 输出摘要 ──
+      if (data.dims && (data.meta?.dims || typeof data.dims === 'object')) {
+        const dims = typeof data.dims === 'object' ? Object.values(data.dims) : data.dims;
+        const lines = [`[driver 注入] ${f} 内容（${dims.length} 维度，逐维度判定依据）：`];
+        let failCount = 0;
+        for (const d of dims) {
+          const isFail = d.exitCode !== 0 && d.exitCode !== null;
+          if (isFail) failCount++;
+          const out = String(d.output ?? '').replace(/\n/g, '⏎').slice(0, 200);
+          lines.push(`  - 维度 ${d.num}「${d.title}」: exit=${d.exitCode ?? 'ERR'}${d.truncated ? '（输出截断）' : ''}${out ? ` | 输出: ${out}` : ''}`);
+        }
+        lines.push(`  → 汇总：${dims.length} 维度中 ${failCount} 个非零退出码${failCount ? '（详见上方 exit 非 0 项）' : '，全部通过'}`);
+        blocks.push(lines.join('\n'));
+        continue;
+      }
+
+      // ── coverage-precheck.json：changelog 模块 + 场景索引 ──
+      // v1.4.0（run-19 复验）：全量输出，不做 slice 截断——252 场景 num+title 实测
+      // 仅 ~12KB，截断反而让 worker 无法核验模块→场景覆盖矩阵（P1-1/P1-2 根因）
+      if (data.meta?.modules || data.changelog) {
+        const lines = ['[driver 注入] ' + f + ' 内容：'];
+        if (data.meta) {
+          lines.push(`  - meta: modules=${data.meta.modules ?? '?'} / scenarios=${data.meta.scenarios ?? '?'}（changelog: ${data.meta.changelogPath ?? '?'}）`);
+        }
+        if (Array.isArray(data.changelog)) {
+          lines.push(`  - changelog 模块（${data.changelog.length}，全量）:`);
+          for (const m of data.changelog) {
+            lines.push(`    * ${m.title ?? '(无标题)'}`);
+          }
+        }
+        if (Array.isArray(data.scenarios)) {
+          lines.push(`  - 场景索引（${data.scenarios.length}，全量）:`);
+          for (const s of data.scenarios) {
+            lines.push(`    * S${s.num} ${s.title ?? ''}`);
+          }
+        }
+        blocks.push(lines.join('\n'));
+        continue;
+      }
+
+      // 兜底：整体 JSON 摘要
+      const raw = JSON.stringify(data).slice(0, 1500);
+      blocks.push(`[driver 注入] ${f} 内容摘要: ${raw}`);
+    } catch (e) {
+      blocks.push(`[driver 注入] ${f}: 解析失败（${e.message}）——worker 判定时注意`);
+    }
+  }
+
+  return blocks.length ? '--- precheck 证据（driver 已预执行，直接据此判定，无需调用工具） ---\n' + blocks.join('\n\n') : '';
+}
+
+/**
  * Worker 主逻辑：读 prompt → 建 model+tools → invoke → 写产物。
  */
 async function runWorker(step, runDir, target) {
@@ -704,6 +787,13 @@ async function runWorker(step, runDir, target) {
   const inputPaths = stepDef.inputs.map(f => `  - ${join(runDir, f)}`).join('\n');
   const outputPaths = stepDef.outputs.map(f => `  - ${join(runDir, f)}`).join('\n');
 
+  // v1.4.0 修复（run-04~07 连续 ERROR/FAIL 根因）：DSH CLI 桥接下 sofagent 自定义工具
+  // 无法注入子进程（dsh-backend.ts WARN「不生效」）→ worker 读不到 precheck.json →
+  // 「工具调用结果摘要 0 条」→ 报告永远「证据不足」判 FAIL。
+  // 正解：precheck.json 本来就是 driver 预执行生成的证据（方案 A 语义）——**证据内容
+  // 由 driver 直接注入 userMessage**，worker 无需任何工具即可判定（DSH/LangGraph 双后端兼容）。
+  const precheckEvidence = buildPrecheckEvidence(runDir, stepDef);
+
   // 注入 changelog 路径（步骤③ coverage 需要）
   // v1.2.5 bugfix：changelog 按版本号嵌套在 docs/changelog/v1.2/v1.2.5.md，
   // 顶层 docs/changelog/v1.2.5.md 不存在 → 模型陷入找文件死循环（run-06 coverage 崩溃根因）。
@@ -724,6 +814,8 @@ async function runWorker(step, runDir, target) {
     // v1.3.0 修复：acceptance shard 动态注入实际场景范围（覆盖模板写死的旧范围文字）
     stepDef.shard ? `你负责的实际场景范围 = S${stepDef.shard.start} 到 S${stepDef.shard.end}（以本注入为准，忽略 prompt 模板中写死的范围数字）` : '',
     inputPaths ? `输入文件（已由 driver 中转）：\n${inputPaths}` : '',
+    // v1.4.0：precheck 证据内容直接注入（DSH 桥接下 worker 无工具可用，证据必须随 prompt 送达）
+    precheckEvidence,
     `Changelog 路径 = ${changelogPath}`,
     `产物输出路径（把你的输出写到这个文件）：\n${outputPaths}`,
   ].filter(Boolean).join('\n');
@@ -1033,10 +1125,12 @@ async function runWorker(step, runDir, target) {
   let text = extractAgentText(result);
   if (!text) {
     // v1.2.7：hardBreak 后 agent 无文本，走无工具裸 LLM 报告生成（和 fresh-eyes-driver 对齐）
+    // v1.4.0：precheckEvidence 一并传入——DSH 桥接无 tool messages，兜底报告
+    // 必须基于 driver 注入的 precheck 证据生成，否则永远「0 条工具结果」判 FAIL
     if (result?.hardBreak) {
       console.warn(`  ┄ [${step}] 硬熔断后模型未输出文本，启动无工具裸 LLM 报告生成`);
       try {
-        text = await generateReportWithoutTools(model, result?.messages ?? [], step, 'V', stepDef);
+        text = await generateReportWithoutTools(model, result?.messages ?? [], step, 'V', stepDef, precheckEvidence);
       } catch (bareErr) {
         console.warn(`  ┄ [${step}] 裸 LLM 报告生成也失败: ${bareErr.message}`);
       }
@@ -1139,9 +1233,11 @@ function extractAgentText(result) {
  * @param {string} step     当前步骤名（acceptance/regression/coverage/consolidate/verdict）
  * @param {string} role     角色名（release-gate 固定为 'V'）
  * @param {object} stepDef  步骤定义（含 outputs 数组）
+ * @param {string} [precheckEvidence] v1.4.0：driver 预执行的 precheck 证据文本
+ *   （DSH 桥接无 tool messages 时作为兜底报告的判定依据，见 buildPrecheckEvidence）
  * @returns {Promise<string|null>} 报告文本，或 null（生成失败）
  */
-async function generateReportWithoutTools(model, messages, step, role, stepDef) {
+async function generateReportWithoutTools(model, messages, step, role, stepDef, precheckEvidence) {
   // 1. 从工具结果中提取关键摘要（文件路径 + grep 结果等）
   // 每个 ToolMessage 截取前 500 字符，去重后最多 20 条（~10K tokens prompt）
   const toolSummaries = [];
@@ -1158,6 +1254,16 @@ async function generateReportWithoutTools(model, messages, step, role, stepDef) 
   // 2. 构造裸 LLM 请求——无 tools，只有 system + user 消息
   const { SystemMessage, HumanMessage } = await import('@langchain/core/messages');
 
+  // v1.4.0：DSH 桥接下 messages 为空（无 rawMessages），precheckEvidence 是唯一证据面——
+  // 把它注入报告生成上下文，避免兜底报告永远「0 条工具结果」判 FAIL
+  const evidenceBlocks = [];
+  if (unique.length > 0) {
+    evidenceBlocks.push(`以下是 ${unique.length} 条工具结果摘要：\n---\n${unique.map((s, i) => `[${i + 1}] ${s}`).join('\n')}\n---`);
+  }
+  if (precheckEvidence) {
+    evidenceBlocks.push(`以下是 driver 预执行的 precheck 证据（命令已由 driver 执行，直接据此判定，无需再调用工具）：\n---\n${precheckEvidence}\n---`);
+  }
+
   const reportPrompt = [
     '你是发版闸门审查报告生成器。以下是之前审查过程中工具调用的结果摘要。',
     '请基于这些信息，写出完整的审查报告。',
@@ -1171,10 +1277,9 @@ async function generateReportWithoutTools(model, messages, step, role, stepDef) 
     '- 只有当摘要信息确实不足以确认时才标 P2"待证实"',
     '- 用中文写，Markdown 格式',
     '',
-    `以下是 ${unique.length} 条工具结果摘要：`,
-    '---',
-    ...unique.map((s, i) => `[${i + 1}] ${s}`),
-    '---',
+    ...(evidenceBlocks.length > 0
+      ? evidenceBlocks
+      : ['（本次审查没有任何工具结果或 precheck 证据——如实说明证据缺失，不要编造）']),
   ].join('\n');
 
   const reportMessages = [
@@ -1692,12 +1797,15 @@ function parseAcceptanceScenarios() {
   const src = readFileSync(accPath, 'utf-8');
   const scenarios = [];
   // 匹配 scenario <num> "<title>..."> 或 scenario <num> 换行 "<title>"
-  const re = /scenario\s+(\d+)\s*(?:\([^)]*\))?\s*"([^"]{0,120})/g;
+  // v1.4.0 修复（run-22 coverage P1-1 误报根因）：场景**内容字符串**里可能出现
+  // 「...A19 scenario 48...」字样（echo 文案）——旧正则无行首锚定会误匹配为场景声明
+  // （S48 title='>'）。要求 scenario 前是行首/换行（(^|\n)\s*）。
+  const re = /(^|\n)\s*scenario\s+(\d+)\s*(?:\([^)]*\))?\s*"([^"]{0,120})/g;
   let m;
   while ((m = re.exec(src)) !== null) {
-    const title = m[2].trim();
+    const title = m[3].trim();
     if (title.length > 0) {
-      scenarios.push({ num: parseInt(m[1], 10), title });
+      scenarios.push({ num: parseInt(m[2], 10), title });
     }
   }
   return scenarios;

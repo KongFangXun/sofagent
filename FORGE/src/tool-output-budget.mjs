@@ -187,7 +187,7 @@ export async function summarizeToolOutput(text, taskContext, options = {}) {
 
   try {
     // 从 FORGE/models/ 动态读取模型配置（与 driver 角色模型一致）
-    const glmConfig = (await import('../models/glm-5.2.mjs')).default;
+    const glmConfig = (await import('../models/glm-5.3.mjs')).default;
     const { ChatOpenAI } = await import('@langchain/openai');
     // 🔴 F-2 修复：baseURL 必须走 configuration 包裹——本仓 @langchain/openai 版本
     // 顶层 baseURL 不落 clientConfig，只有 configuration: { baseURL } 写法才生效

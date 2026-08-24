@@ -4,7 +4,9 @@
 
 ---
 
-## 五、stream 迁移规范（P0 级铁律）
+## 五、stream 迁移规范（P0 级铁律 · LangGraph fallback 专属）
+
+> **🔴 v1.4.0 适用范围标注**：worker 走 DSH CLI 桥接时**无 stream**——`execFile(dsh --profile headless)` 是单次子进程执行、stdout 一次收齐，不存在 stream chunk 适配问题。本节适用于 **LangGraph fallback 路径**（createReactAgent 的 `agent.stream`），保留供 fallback / 未来 Cordis 内嵌参考。
 
 ### API 返回格式差异
 
@@ -71,6 +73,8 @@ V 角色 systemPrompt 追加：禁止 write_file / edit_file / git commit / git 
 ---
 
 ## 七、工具开发规范
+
+> **🔴 v1.4.0 适用范围标注**：本节是 **LangGraph fallback 路径**（loadTools → DynamicStructuredTool）的规范。DSH CLI 桥接下 **sofagent 自定义工具不注入子进程**（task.tools 失效，dsh-backend.ts WARN）——worker 用 DSH 自带 bash/fs 工具链；审查证据由 driver 预执行注入 prompt（见 [四·DSH 证据注入](./driver.md#2026-08-24-dsh-cli-桥接worker-无工具面--precheck-证据必须由-driver-注入-promptrelease-gate-run-0422-实录)）。
 
 ### 工具格式转换
 

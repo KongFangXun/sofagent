@@ -54,6 +54,8 @@
 
 ### Worker 工具调用死循环防护（三层熔断）
 
+> **🔴 v1.4.0 适用范围标注**：本节是 **LangGraph fallback 路径 / 未来 Cordis 内嵌**的防护。worker 走 DSH CLI 桥接时无工具循环（headless 单轮，预算熔断退化为外层超时）——但 fallback 场景（DSH 包不可用 / 未来正式版库内集成）仍可能触发，保留本节。
+
 > **来源**：run-01~run-06（commit 95cd74a → ca9e329 → a610d5d → dd5dde2 → f240594 → 701582a）
 
 **根因**：Qwen3.8 在开放审查场景下会无限探索。prompt 层铁律（L0）对 Qwen 无效，必须在代码层做三层熔断。
@@ -660,3 +662,37 @@ node FORGE/src/fresh-eyes-driver.mjs --target v1.2.9 > /tmp/fresh-eyes-v1.2.9.lo
 1. **委托执行的完成判定 = 产物存在性 × 汇报一致性，缺一不可**——只验汇报=信任传递，只验产物=重新做；两者交叉才闭环。
 2. **「可选步骤」的表述是执行歧义源**——SOP 写「草稿待取证≤3 可收口」意图是「跳过 driver」，被读成「跳过整个审查」。可选分支的条件必须显式绑定到「已完成上一层」的前提上。
 3. **dry-run/降级产物要有显式不可混淆的形态**——run-01 的 dry-run 状态如果叫 `dry-run-no-artifacts` 而不是 `completed`，误导性减半。状态命名即文档。
+
+---
+
+## 2026-08-24 DSH CLI 桥接：worker 无工具面 → precheck 证据必须由 driver 注入 prompt（release-gate run-04~22 实录）
+
+> **来源**：release-gate 判断层连续 run-04/05(ERROR) → run-06(部分) → run-07(FAIL) → run-16/19(渐进) → run-22(PASS)。commit 链：f76e14bb(worker output 提取) → 本 session 三处修复(未 commit)。
+
+**场景**：v1.4.0 用户拍板「worker 必须走 DSH（DeepSeek Harness）」。DSH CLI 桥接形态（`dsh --profile headless "<task>"` 子进程）下，release-gate 判断层连续 6+ 轮失败，症状演进：
+
+| run | 症状 | 根因 |
+|-----|------|------|
+| run-04/05 | 4 worker 全退出码 1（ERROR） | worker 无工具读 precheck → 报告空 → throw |
+| run-06 | coverage/verdict 有产物但「0 条工具结果」 | f76e14bb 前：output 提取缺失 |
+| run-07 | regression 有产物但「0 条工具结果」→ FAIL | f76e14bb 修了 output，但 worker 仍无证据 |
+| run-16/19 | regression PASS、coverage 因注入截断 FAIL | 证据注入生效，但 coverage 全量被 slice 截断 |
+| **run-22** | **verdict=PASS（有条件）** | 三处修复全落地 |
+
+**🔴 根因（架构级）**：DSH CLI 桥接（`dsh-backend.ts`）**无法把 sofagent 自定义工具（task.tools）注入子进程**——CLI 是独立进程，工具定义在父进程，WARN「不生效」。worker prompt 要求「读 precheck.json（1 次 tool call）→ 判定」，但 worker 手里没有任何 read 工具 → 「工具调用结果摘要 0 条」→ 报告只能写「证据不足，P2 待证实」→ 判 FAIL。
+
+**三条教训（层层递进）**：
+
+1. **「命令从 LLM 剥离」要贯彻到底——证据也要剥离，不能只剥离命令执行。** release-gate 的「方案 A」把命令执行从 worker 剥离到 driver 预执行（precheck.json），但 worker prompt 仍要求 worker **自己读文件**（工具调用）。DSH 桥接下工具面不可用 → worker 读不到 → 判不了。**正解：precheck 证据内容由 driver 直接注入 userMessage**（`buildPrecheckEvidence()`），worker 无需任何工具即可判定——DSH/LangGraph 双后端兼容。
+
+2. **降级兜底路径也要带证据。** `generateReportWithoutTools()`（硬熔断后裸 LLM 报告生成）只接收 `messages`（DSH 桥接下为空数组）→ 兜底报告永远「0 条工具结果」。**修复：给兜底函数加 precheckEvidence 参数**——DSH 无 tool messages 时，兜底报告也基于注入证据生成。两层兜底都要有证据，不能只修主路径。
+
+3. **注入要全量，别学"节省 token"的 slice 截断。** coverage 注入最初做了 `slice(0,400)` / `slice(0,600)` 截断 → worker 无法核验 18 模块 / 252 场景全量 → 误报 P1-1/P1-2「清单截断」。**实测 252 场景 num+title 全量仅 ~12KB / 14.8KB——根本不值得截断。** 注入审查证据时，先实测体积再决定是否截断；审查类证据宁可全量注入让模型判断，也不要截断后让模型"猜"。
+
+**🔴 诊断方法论（本次定位根因的路径，可复用）**：
+- 症状「0 条工具结果」→ 先查 `sub-progress-V.jsonl` 的事件分布（只有 `llm-chunk` 无 `tool` 事件 = 工具循环从未执行，不是执行了失败）
+- 看 `usage.jsonl` 的 `note: API 未返回 usage 字段` + `latency ~60s`——DSH headless 的固有形态，**不是故障**（不能当超时误判）
+- 分辨「报告句式」：`generateReportWithoutTools` 的产物是「工具调用结果摘要 0 条 → P2 待证实」的固定句式，一眼可识别 worker 走了兜底路径
+- **连续两轮同症状 = 系统性缺陷，不是环境抖动**——run-04/05 后主 session 判「环境抖动重跑」，run-05 复现才确认是代码缺陷。重跑前先查根因，别用重跑验证"运气"
+
+**⚠️ 放行条件（run-22 PASS 附带，非阻塞但阶段六前需处理）**：5 项 P1（regression 4 + coverage 1）修复或书面豁免；维度 49（v1.2.0 物理结构检查）超时 120s 未验证需补跑；S28（--doctor 未检出 post-commit hook）人工确认。
