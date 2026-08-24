@@ -14,8 +14,8 @@ tags:
   - deployment
   - enterprise
 image: sofagent-fde.png
-triggers: [Agent行为失控, 任务复杂需要拆解, 多文件修改, 部署AI节点, 梳理业务流, 构建知识库, 企业AI落地, FDE进场, 持续优化, 巡检, 高风险任务前加约束]
-scenarios: [Agent开始自由发挥偏离目标, 企业要装sofagent, 需要梳理业务流, 连续多个子任务需要编排协调, 刚踩过坑想避免重蹈覆辙, 需要构建知识库, 需要持续优化AI节点]
+triggers: [Agent行为失控, 任务复杂需要拆解, 多文件修改, 部署AI节点, 梳理业务流, 构建知识库, 企业AI落地, FDE进场, 持续优化, 巡检, 高风险任务前加约束, DSH接入, skillhub, 装sofagent插件, 插件分发, cordis插件]
+scenarios: [Agent开始自由发挥偏离目标, 企业要装sofagent, 需要梳理业务流, 连续多个子任务需要编排协调, 刚踩过坑想避免重蹈覆辙, 需要构建知识库, 需要持续优化AI节点, DSH用户要装sofagent插件, 要在DSH生态用约束能力]
 not_when: [简单闲聊, 单步查询, 纯信息检索]
 metadata:
   openclaw:
@@ -168,23 +168,21 @@ metadata:
 
 ---
 
-## MCP 工具速查（66 tools）
+## MCP 工具速查（66 tools · 12 类）
 
-> 连接 sofagent MCP Server 后可用。未连接时降级为纯文本引导。
+> 连接 sofagent MCP Server 后可用。未连接时降级为纯文本引导。每类列代表工具，**全量 66 个见 `AGENTS.md`「MCP 全量工具表」**。
 
-| 分类 | 工具 |
+| 分类（数） | 代表工具 |
 |------|------|
-| **审计** | `run_audit` `audit_file` `audit_data_change` |
-| **反思** | `get_think` `write_think` `read_think_md` |
-| **知识库** | `search_knowledge` `read_entity` `read_concept` `list_entities` `read_lessons` `stats` |
-| **本体** | `create_entity` `create_concept` `validate_ontology` `ontology_import` |
-| **评估优化** | `evaluate_output` `optimize_skill` `health_check` |
-| **数据/编排/清单** | `data_sovereignty_report` `sofagent_compose` `notify_session` `list_capabilities`（能力清单）`list_rules`（规则透明化） |
-| **L3 能力公地** | `commons_publish` `commons_search` `commons_invoke` `commons_rate` `commons_retire` `commons_harvest_rule` |
-| **自进化** | `run_ab_test` `promote_ab`（强制人审） |
-| **运维** | `snapshot_list` `snapshot_restore`（强制人审） |
-| **Workflow** | `workflow_submit`（外部提交 → schema 校验 → 执行） |
-| **模型注册** | `model_register` `model_switch` `model_unregister`（评测→注册→灰度→晋升全程审计 + 强制人审） |
-| **训练** | `train_budget`（预算控制——超预算自动暂停等人审） |
-| **验收** | `define_acceptance` `check_acceptance`（机器可判定验收条件） |
-| **工作明细** | `worklog_query`（按 Agent/Workflow/周趋势查 AI 干了什么 + 进化四维趋势） |
+| 审计合规（8） | `run_audit` `audit_file` `audit_trail` `hitl_resolve` |
+| 反思沉淀（3） | `get_think` `write_think` |
+| 知识库（7） | `search_knowledge` `list_entities` `stats` |
+| 本体数据（7） | `create_entity` `validate_ontology` `ontology_import` |
+| 评估优化（8） | `evaluate_output` `run_ab_test` `promote_ab`（强制人审） |
+| FDE 编排（4） | `fde_compose` `sofagent_compose` `activate_workflow` `create_agent` |
+| Workflow/Agent（7） | `workflow_submit` `route_workflow` `agent_identity` |
+| 能力公地（6） | `commons_publish` `commons_search` `commons_invoke` |
+| 模型训练（4） | `model_register` `model_switch`（灰度）`train_budget`（超预算等人审） |
+| 验收（2） | `define_acceptance` `check_acceptance` |
+| 运维观测（6） | `health_check` `snapshot_restore`（强制人审）`worklog_query` `cost_query` |
+| 浏览器（4） | `playwright_navigate` `playwright_screenshot` |
