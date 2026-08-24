@@ -45,12 +45,12 @@ It ships on [ClawHub](https://clawhub.ai/kongfangxun/skills/sofagent) as an **FD
 Official slogan: **Map business flows · Build ontology graphs · Deploy AI nodes · Audit every change · Reflect & iterate**
 
 ```mermaid
-graph TB
+graph LR
     subgraph S["One FDE Agent · sofagent"]
-        K["Kernel LangGraph + constraint layer<br/>ExecutionBackend abstraction"]
-        I["Call surface plugin + skill + MCP<br/>+ dashboard + CLI"]
-        B["Behavior layer constraint base<br/>injection · audit · rollback · evolution"]
-        M["Methodology FDE four phases<br/>map → build → deploy → depart"]
+        direction TB
+        K["Kernel LangGraph + constraint layer<br/>ExecutionBackend abstraction"] ~~~ B["Behavior layer constraint base<br/>injection · audit · rollback · evolution"]
+        I["Call surface plugin + skill + MCP<br/>+ dashboard + CLI"] ~~~ M["Methodology FDE four phases<br/>map → build → deploy → depart"]
+        K ~~~ I
     end
     S -->|"on-site · doing FDE for the enterprise"| D["Dual-graph delivery<br/>business graph + ontology graph"]
     D --> N["AI nodes<br/>LangGraph orchestration → Harness execution → constraint audit"]
