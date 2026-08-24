@@ -696,3 +696,41 @@ node FORGE/src/fresh-eyes-driver.mjs --target v1.2.9 > /tmp/fresh-eyes-v1.2.9.lo
 - **连续两轮同症状 = 系统性缺陷，不是环境抖动**——run-04/05 后主 session 判「环境抖动重跑」，run-05 复现才确认是代码缺陷。重跑前先查根因，别用重跑验证"运气"
 
 **⚠️ 放行条件（run-22 PASS 附带，非阻塞但阶段六前需处理）**：5 项 P1（regression 4 + coverage 1）修复或书面豁免；维度 49（v1.2.0 物理结构检查）超时 120s 未验证需补跑；S28（--doctor 未检出 post-commit hook）人工确认。
+
+---
+
+## 2026-08-24 DSH Cordis 内嵌可行性验证（推翻「等正式版」假设 · run-04~22 后续）
+
+> **来源**：用户质疑「为什么不能切 Cordis 内嵌」→ 深读官方架构文档 + 逐层实测（2026-08-24）。修正此前「rc 包无库入口只能 CLI 桥接」的错误判断。
+
+**🔴 核心教训：判断「能否内嵌」不能只看主包 package.json 的 main 字段——DSH 是插件架构，正确路径是 boot() + loadProfile()，不是 import('@deepseek-ai/dsh')。**
+
+### 错误判断（此前的）
+
+`@deepseek-ai/dsh` 主包 main 为空、只有 bin → 下结论「rc 期无法库内嵌，只能 CLI 桥接，等正式版」。**只查了主包，没读架构文档，没看插件包**。
+
+### 正确路径（实测验证链，全绿）
+
+| 步骤 | 验证 | 结果 |
+|---|---|---|
+| 1. import `@deepseek-ai/cordis`（v4.0.1）+ `@deepseek-ai/dsh-app-boot` | main/exports 齐全 | ✅ 可 import |
+| 2. `loadProfile('dsh', 'headless', installAnchor, home)` | 取到 bundles（dsh-base + dsh-headless + sofagent 审计插件） | ✅ 成功 |
+| 3. **boot 前注入 `cmdlineArgs`（带 get() 方法）+ `appExit` 两服务** | 这是真正的卡点——缺它插件树 pending | ✅ 注入后 boot 成功 |
+| 4. task 作为 argv 传入 → `headlessStartup` 服务激活 | `headlessStartup: {task}` 正确出现 | ✅ 成功 |
+| 5. 服务面探测 | `ctx.get('agents'/'agentLoop'/'llm'/'tools'/'sessions'/'systemPrompt')` 全 object | ✅ 激活 |
+
+### 🔴 驱动契约不匹配（层 2 守卫拦住的深层原因）
+
+rc.2 的实际 API 与 `runCordisAgent` 的 `resolveAgentDriver` 契约不一致：
+- `ctx.get('agents')` 是 **AgentRegistry 形态**：`create/resume/register/requireInitiator`——**没有 deliver/followup 方法**
+- 真正驱动面是 **`ctx.get('agentLoop').createAgent/resume`**
+- `resolveAgentDriver` 按旧教程契约探测 deliver/followup → 探测失败 → 抛 DshCapabilityMissingError → fallback CLI 桥接
+
+**所以「为什么现在走 CLI 桥接」的完整答案 = 缺 cmdlineArgs/appExit 注入（启动层）+ 驱动契约未适配 rc.2 实际 API（服务层），两层叠加。** 不是包形态问题。
+
+### 铁律
+
+1. **判断第三方框架能力，先读架构文档 + 实测，别只看主包 package.json**——插件架构下「库入口」可能是 boot 函数而非主包 import
+2. **层 2 守卫探测失败 ≠ 功能不存在**——可能是服务名/驱动方法契约随版本变了，先查实际 API（`Object.getOwnPropertyNames(Object.getPrototypeOf(svc))`）再定
+3. **「等正式版」是最后手段**——先验证 rc 期是否可通过适配打通；rc 期插件 API 已安装可探测，别默认「做不到」
+4. **实现时机修正**：Cordis 内嵌非「等 DSH 正式版」——rc.2 现在就能做，需 ① boot()+loadProfile() 替换裸 new Context() ② 注入 cmdlineArgs/appExit ③ 驱动契约适配 agentLoop.createAgent。ROADMAP 决策已同步修正

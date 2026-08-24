@@ -289,3 +289,9 @@
 | 12 | **rc.8 headless 无工具面**——headless profile 只挂 dsh-base+dsh-headless（无 dsh-tool-*） | headless 定位是纯文本单轮问答 | 能力边界诚实标注：tools 传入 WARN 不生效；预算熔断退化外层超时；工具支持排正式版（Cordis 内嵌自动升级） | createDshCliBackend |
 | 13 | **CJS 编译目标下 `import.meta` 不可用**（TS1343）——orchestrator module=commonjs | TS 模块配置限制 | `createRequire(__filename)` 替代 `createRequire(import.meta.url)`；类型：modelConfig 是 `Record<string, unknown>` 须 `String()` 转义再当 env 索引 | dsh-backend |
 | 14 | **release-gate worker 无工具面 → 永远「0 条工具结果」判 FAIL**（run-04~07 连续失败）——worker prompt 要求「读 precheck.json（1 次 tool call）」，但 DSH CLI 桥接无法注入 task.tools，worker 读不到 → 报告「证据不足 P2 待证实」 | 只剥离了「命令执行」没剥离「证据读取」——方案 A 贯彻不彻底 | **precheck 证据内容由 driver 直接注入 userMessage**（buildPrecheckEvidence）+ 兜底函数也带 precheckEvidence（两层兜底都要证据）；覆盖 252 场景全量注入实测仅 14.8KB 不用截断 | release-gate-driver |
+
+### 2026-08-24 追加：DSH Cordis 内嵌可行性验证（四·DSH 证据注入姊妹篇）
+
+- [ ] **判断第三方框架能力先读架构文档+实测**——插件架构下「库入口」可能是 boot()/loadProfile() 而非主包 import；只查主包 package.json main 字段会误判「不能内嵌」（[四·DSH Cordis 内嵌](./driver.md#2026-08-24-dsh-cordis-内嵌可行性验证推翻等正式版假设--run-0422-后续)）
+- [ ] **层 2 守卫探测失败 ≠ 功能不存在**——服务名/驱动方法契约随版本变（rc.2 是 AgentRegistry + agentLoop.createAgent，非 deliver/followup），先 `Object.getOwnPropertyNames(Object.getPrototypeOf(svc))` 查实际 API 再定（[四·DSH Cordis 内嵌](./driver.md#2026-08-24-dsh-cordis-内嵌可行性验证推翻等正式版假设--run-0422-后续)）
+- [ ] **Cordis 内嵌 rc.2 现在就能做**（非等正式版）：boot()+loadProfile()+注入 cmdlineArgs/appExit 两服务 + 驱动契约适配 agentLoop.createAgent——ROADMAP 决策已同步修正（[四·DSH Cordis 内嵌](./driver.md#2026-08-24-dsh-cordis-内嵌可行性验证推翻等正式版假设--run-0422-后续)）
