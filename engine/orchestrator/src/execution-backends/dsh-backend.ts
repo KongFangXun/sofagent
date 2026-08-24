@@ -398,6 +398,10 @@ async function createCordisDriver(
 
   return async (message: string): Promise<string> => {
     // 每次投递创建全新 ctx（对齐 headless runner 一次性语义——避免跨 session 串扰）
+    // 🔴 argv[1] 守卫覆盖 boot + agent 驱动全程（createArgv1Guard 见其 JSDoc——
+    // cordis-plugin-hmr 对无主脚本宿主的兼容，node -e / REPL 场景）
+    const restoreArgv1 = createArgv1Guard(__filename);
+    try {
     const ctx = await bootFn('dsh', configPath, basePatches, (c) => {
       const rc = c as CordisRuntime;
       rc.provide?.('cmdlineArgs', { get: () => [] });
@@ -449,6 +453,10 @@ async function createCordisDriver(
     } finally {
       await (ctx as { fiber?: { dispose?: () => Promise<void> } }).fiber?.dispose?.().catch(() => {});
     }
+    } finally {
+      // argv[1] 守卫恢复（覆盖 boot + agent 驱动全程）
+      restoreArgv1();
+    }
   };
 }
 
@@ -495,8 +503,7 @@ function extractDriverOutput(raw: unknown): string {
   if (raw == null) return '';
   if (typeof raw === 'string') return raw;
   if (typeof raw === 'object') {
-    const r = raw as { output?: unknown; result?: unknown; text?: unknown; content?: unknown };
-    for (const key of ['output', 'result', 'text', 'content'] as const) {
+    const r = raw as { output?: unknown; result?: unknown; text?: unknown; content?: unknown };    for (const key of ['output', 'result', 'text', 'content'] as const) {
       const v = r[key];
       if (typeof v === 'string' && v.length > 0) return v;
     }
@@ -507,6 +514,26 @@ function extractDriverOutput(raw: unknown): string {
 // ════════════════════════════════════════
 // 工厂：createDshBackend（对齐 execution-backend.ts 层 1 守卫的新契约）
 // ════════════════════════════════════════
+
+/**
+ * 🔴 argv[1] 守卫（cordis-plugin-hmr 兼容）——node -e / REPL 等无主脚本宿主下
+ * argv[1] 是 undefined，hmr 插件的 [cordis.init] resolve(process.argv[1]) 会炸
+ * 「paths[0] must be of type string」→ 整棵插件树挂载失败（内嵌静默降级 CLI）。
+ *
+ * 宿主语义对齐官方 runner（dsh CLI 的 argv[1] = dsh bin）：内嵌宿主主脚本 = fallback 值。
+ *
+ * @param fallback 主脚本占位路径（内嵌场景传 __filename）
+ * @returns 恢复函数——boot 全程结束后调用（undefined 时 delete 保持稀疏数组原状）
+ */
+export function createArgv1Guard(fallback: string): () => void {
+  const saved: string | undefined = process.argv[1];
+  if (typeof saved === 'string' && saved !== '') return () => {}; // 有主脚本无需守卫
+  process.argv[1] = fallback;
+  return () => {
+    if (saved === undefined) delete process.argv[1];
+    else process.argv[1] = saved;
+  };
+}
 
 /**
  * 创建 DSH 后端。

@@ -1492,8 +1492,8 @@ grep -qE "join\(REPO|join\(process\.cwd|['\"]\.?/?SKILL/['\"]" engine/orchestrat
 # ④ companion/fde-registry 的 daemon inspector 三步注册
 grep -q "fde-companion-daily\|fde-registry" engine/daemon/src/inspector-layers.ts 2>/dev/null || grep -rq "runFdeCompanionDaily" engine/daemon/src/inspectors/ || echo "⚠️ FDE 巡检未注册 inspector"
 # ⑤ 文档同步四件套（tools 数/测试数/v1.3.5 段/CHANGELOG 索引行）
-# v1.4.0 修复（run-22 P1-3b 误报）：旧检查写死 2903（v1.3.9 数）→ README 已 2934（实测）。
-grep -q "2934" README.md || echo "⚠️ README 测试数漂移（期望 2934，见 tools/check/test-count.sh）"   # v1.4.0：2903→2934（12 包实测）；改版时随 test-count.sh
+# v1.4.0 修复（run-22 P1-3b 误报）：旧检查写死 2903（v1.3.9 数）→ README 已 2937（实测）。
+grep -q "2937" README.md || echo "⚠️ README 测试数漂移（期望 2937，见 tools/check/test-count.sh）"   # v1.4.0：2903→2937（12 包实测）；改版时随 test-count.sh
 grep -q "\*\*v1.3.5\*\*" CHANGELOG.md || echo "⚠️ CHANGELOG 索引缺 v1.3.5"
 ```
 

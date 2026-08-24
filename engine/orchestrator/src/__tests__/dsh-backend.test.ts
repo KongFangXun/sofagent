@@ -5,6 +5,7 @@
 // 2. 预算守卫 + waterfall next() 纪律（soft 透传 / hard 中断）
 // 3. createDshBackend 入口校验（缺 Context 抛错）
 // 4. Trajectory 采集 PoC（事件落记录 / flush JSONL / failure-log 同步消费）
+// 5. argv[1] 守卫（v1.4.0：node -e 宿主下 cordis-plugin-hmr 兼容）
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { mkdtempSync, rmSync, readFileSync, existsSync } from 'fs';
@@ -15,6 +16,7 @@ import {
   createBudgetGuard,
   createBudgetPlugin,
   createDshBackend,
+  createArgv1Guard,
   ToolBudgetExhaustedError,
   type CordisRuntime,
 } from '../execution-backends/dsh-backend.js';
@@ -169,6 +171,40 @@ describe('预算守卫 + waterfall next() 纪律', () => {
 describe('createDshBackend 入口校验', () => {
   it('缺 Context 构造器抛错（真实入口是 new Context()）', () => {
     expect(() => createDshBackend({} as never)).toThrow(/Context/);
+  });
+});
+
+describe('argv[1] 守卫（v1.4.0：node -e 宿主下 cordis-plugin-hmr 兼容）', () => {
+  const REAL_ARGV1 = process.argv[1];
+
+  afterEach(() => {
+    // 兜底恢复（测试中途断言失败也不泄漏）
+    if (REAL_ARGV1 === undefined) delete process.argv[1];
+    else process.argv[1] = REAL_ARGV1;
+  });
+
+  it('argv[1] undefined（node -e 宿主）→ 守卫注入 fallback，restore 后恢复 undefined', () => {
+    delete process.argv[1];
+    const restore = createArgv1Guard('/fake/main.js');
+    expect(process.argv[1]).toBe('/fake/main.js'); // 守卫生效期：hmr 可 resolve
+    restore();
+    expect(process.argv[1]).toBeUndefined(); // 恢复原状（稀疏数组）
+  });
+
+  it('argv[1] 空串（另一无主脚本形态）→ 同样注入 fallback', () => {
+    process.argv[1] = '';
+    const restore = createArgv1Guard('/fake/main.js');
+    expect(process.argv[1]).toBe('/fake/main.js');
+    restore();
+    expect(process.argv[1]).toBe('');
+  });
+
+  it('argv[1] 有主脚本（正常宿主）→ 零侵入（不注入不恢复）', () => {
+    process.argv[1] = '/real/script.mjs';
+    const restore = createArgv1Guard('/fake/main.js');
+    expect(process.argv[1]).toBe('/real/script.mjs'); // 原值不动
+    restore();
+    expect(process.argv[1]).toBe('/real/script.mjs');
   });
 });
 
