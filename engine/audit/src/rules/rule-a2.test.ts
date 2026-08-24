@@ -229,4 +229,88 @@ describe('A2 不泄密钥', () => {
       expect(checkRuleA2(ctx).status).toBe('PASS');
     });
   });
+
+  // ── v1.4.1 F-15：base64 函数参数位绕过（报告四红队实锤堵洞）──
+  // 攻击形态：密钥 base64 编码后放进 Buffer.from 第二参数位——旧值提取
+  // 正则只覆盖等号/冒号后的值，函数参数位完全逃逸（exit 0 放行）。
+  // 修复：candidatePlaintexts 新增 extractCallArgLiterals——提取调用参数里的
+  // 编码串候选，解码命中密钥正则即 FAIL。
+  describe('A2 · 函数参数位绕过（v1.4.1 F-15）', () => {
+    // 运行时拼接密钥形态（铁律：测试不字面写真实格式密钥）
+    const awsLike = ['AK', 'IAIOSFODNN7EXAMPLE'].join('');
+
+    it('Buffer.from base64 函数参数位 → FAIL（红队实锤形态）', () => {
+      // payload 运行时拼接生成，测试源码内无字面密钥
+      const payload = Buffer.from(awsLike).toString('base64');
+      const ctx = makeCtx([makeDiffFile('src/decode.ts', [
+        `+const key = Buffer.from("${payload}", "base64").toString();`,
+      ])]);
+      const result = checkRuleA2(ctx);
+      expect(result.status).toBe('FAIL');
+    });
+
+    it('atob 函数参数位 → FAIL', () => {
+      const payload = Buffer.from(awsLike).toString('base64');
+      const ctx = makeCtx([makeDiffFile('src/web.ts', [`+const k = atob("${payload}");`])]);
+      expect(checkRuleA2(ctx).status).toBe('FAIL');
+    });
+
+    it('Buffer.from hex 函数参数位 → FAIL', () => {
+      const payload = Buffer.from(awsLike).toString('hex');
+      const ctx = makeCtx([makeDiffFile('src/hex.ts', [
+        `+const key = Buffer.from("${payload}", "hex").toString();`,
+      ])]);
+      expect(checkRuleA2(ctx).status).toBe('FAIL');
+    });
+
+    it('普通函数调用的普通字符串参数 → PASS（不误伤）', () => {
+      // 非编码串参数（普通单词）解码不出密钥特征 → 不告警
+      const ctx = makeCtx([makeDiffFile('src/ok.ts', ['+const s = Buffer.from("hello world", "utf8");'])]);
+      expect(checkRuleA2(ctx).status).toBe('PASS');
+    });
+
+    it('函数参数位 + 非法 UTF-8 尾字节（FFFD）→ 剥离后仍 FAIL', () => {
+      // 攻击组合：函数参数位 + FFFD 干扰尾——两条防御叠加
+      const payload = Buffer.concat([
+        Buffer.from(awsLike),
+        Buffer.from([0xd4, 0x90, 0x8b]),
+      ]).toString('base64');
+      const ctx = makeCtx([makeDiffFile('src/adv.ts', [
+        `+const k = Buffer.from("${payload}", "base64");`,
+      ])]);
+      expect(checkRuleA2(ctx).status).toBe('FAIL');
+    });
+  });
+
+  // ── v1.4.1 F-15：同类绕过面自查（hex 转义 / 字符串拼接）──
+  describe('A2 · 编码转义与拼接绕过（v1.4.1 F-15 自查）', () => {
+    const awsLike = ['AK', 'IAIOSFODNN7EXAMPLE'].join('');
+
+    it('\\xNN hex 转义形态 → FAIL', () => {
+      // "\x41\x4b..." 还原后命中 AWS 密钥正则
+      const escaped = [...awsLike].map((c) => '\\x' + c.charCodeAt(0).toString(16).padStart(2, '0')).join('');
+      const ctx = makeCtx([makeDiffFile('src/esc.ts', [`+const k = "${escaped}";`])]);
+      expect(checkRuleA2(ctx).status).toBe('FAIL');
+    });
+
+    it('字符串拆两半拼接 → FAIL', () => {
+      // 密钥拆两半各自无特征，合并后才命中
+      const ctx = makeCtx([makeDiffFile('src/split.ts', [
+        `+const k = "${awsLike.slice(0, 4)}" + "${awsLike.slice(4)}";`,
+      ])]);
+      expect(checkRuleA2(ctx).status).toBe('FAIL');
+    });
+
+    it('链式三段拼接 → FAIL', () => {
+      const ctx = makeCtx([makeDiffFile('src/chain.ts', [
+        `+const k = "${awsLike.slice(0, 2)}" + "${awsLike.slice(2, 4)}" + "${awsLike.slice(4)}";`,
+      ])]);
+      expect(checkRuleA2(ctx).status).toBe('FAIL');
+    });
+
+    it('普通字符串拼接（无密钥特征）→ PASS（不误伤）', () => {
+      const ctx = makeCtx([makeDiffFile('src/plain.ts', ['+const msg = "hello" + " " + "world";'])]);
+      expect(checkRuleA2(ctx).status).toBe('PASS');
+    });
+  });
 });

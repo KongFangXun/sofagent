@@ -29,7 +29,7 @@ export function listCapabilities(): ToolResult {
       { name: 'data_sovereignty_report', description: '查询数据主权审计报告摘要（today/yesterday/YYYY-MM-DD）' },
       { name: 'create_entity', description: '创建/更新 entity（含 D1-D5 数据审计）' },
       { name: 'create_concept', description: '创建/更新 concept（含 D1-D5 数据审计）' },
-      { name: 'validate_ontology', description: '本体结构完整性校验' },
+      { name: 'validate_ontology', description: '本体数据完整性校验' },
       { name: 'evaluate_output', description: '用 golden set 评估 Agent 产出质量' },
       { name: 'optimize_skill', description: '优化 Skill 文件（skillopt 引擎）' },
       { name: 'health_check', description: '环境健康检查（doctor/verify）' },

@@ -68,6 +68,77 @@ function tryDecodeHex(s: string): string | null {
   return null;
 }
 
+/**
+ * v1.4.1 F-15：还原 JS 字符串里的 \xNN 十六进制转义序列
+ * （如 "\x41\x4b\x49\x41..." → "AKIA..."）。还原结果要求基本可打印，
+ * 防止随机转义噪声触发后续解码路径。
+ */
+function restoreHexEscapes(s: string): string | null {
+  if (!/\\x[0-9a-fA-F]{2}/.test(s)) return null;
+  const restored = s.replace(/\\x([0-9a-fA-F]{2})/g, (_, h) => String.fromCharCode(parseInt(h, 16)));
+  // 还原后须以可打印 ASCII 为主，否则视为噪声转义（如 \x00 控制字符串）
+  if (restored && /^[\x20-\x7E]+$/.test(restored)) return restored;
+  return null;
+}
+
+/**
+ * v1.4.1 F-15：合并同行相邻字符串字面量拼接
+ * （密钥拆成两半用 + 号相邻摆放，合并后才露出完整形态——如 AWS 前缀段 + 尾段）。
+ * 拼接是字符串分割绕过的最简形态——密钥拆成两半各自无特征，合并后才命中。
+ */
+function joinAdjacentLiterals(s: string): string | null {
+  // 仅当存在 "..." + "..." / '...' + '...' 形态才处理，避免无关行空转
+  if (!/["'][^"']*["']\s*\+\s*["'][^"']*["']/.test(s)) return null;
+  let joined = s;
+  // 反复合并相邻字面量对，直到无新合并（支持 "a"+"b"+"c" 链式）
+  for (let i = 0; i < 8; i++) {
+    const next = joined.replace(
+      /(["'])([^"']*)\1\s*\+\s*(["'])([^"']*)\3/g,
+      (_m, q1: string, a: string, _q2: string, b: string) => `${q1}${a}${b}${q1}`,
+    );
+    if (next === joined) break;
+    joined = next;
+  }
+  // 抽出最长的合并产物作为候选（密钥本体通常是最长字面量）
+  const literals = joined.match(/["']([^"']{8,})["']/g) ?? [];
+  let best: string | null = null;
+  for (const lit of literals) {
+    const inner = lit.slice(1, -1);
+    if (!best || inner.length > best.length) best = inner;
+  }
+  return best;
+}
+
+/**
+ * v1.4.1 F-15：提取函数调用参数位的字符串字面量——base64 函数参数位绕过修复。
+ * 覆盖形态（v1.4.1 F-15 红队实锤堵洞）：
+ *   Buffer.from("...", "base64") / atob("...") / decode(..., "base64") 等
+ * 攻击形态：密钥 base64 编码后放进函数第二参数位——旧值提取正则只看
+ * 等号/冒号后的值，函数参数位完全逃逸（报告四红队实测 exit 0 放行）。
+ * 提取策略保守：只对「看起来像编码串」的参数（纯 base64/hex 字符集）解码，
+ * 且解码结果需通过密钥正则才告警——普通字符串参数不误报。
+ */
+function extractCallArgLiterals(content: string): string[] {
+  const out: string[] = [];
+  // 函数调用参数位：ident("..." [, "..."])——单引号/双引号/无引号 base64 形态
+  const callArgRe = /\b(?:Buffer\.from|atob|Buffer\.alloc|decode|decodeURIComponent|unzip|gunzipSync|inflateSync)\s*\(([^()]*)\)/g;
+  let m: RegExpExecArray | null;
+  while ((m = callArgRe.exec(content)) !== null) {
+    const args = m[1] ?? '';
+    // 拆参数：按引号字面量提取，非引号参数（变量名/数字）跳过
+    const strLits = args.match(/(["'])([^"']*)\1/g) ?? [];
+    for (const lit of strLits) {
+      const val = lit.slice(1, -1);
+      if (val.length < 8) continue; // 护栏：过短的参数不可能是编码密钥
+      const b64 = tryDecodeBase64(val);
+      if (b64) out.push(b64);
+      const hex = tryDecodeHex(val);
+      if (hex) out.push(hex);
+    }
+  }
+  return out;
+}
+
 function candidatePlaintexts(content: string): string[] {
   const candidates: string[] = [content];
   const trimmed = content.trim();
@@ -94,6 +165,19 @@ function candidatePlaintexts(content: string): string[] {
   // 整行 hex 候选
   const wholeHex = tryDecodeHex(trimmed);
   if (wholeHex) candidates.push(wholeHex);
+
+  // v1.4.1 F-15：函数参数位提取（Buffer.from/atob/decode 等）——红队实锤绕过堵洞
+  for (const decoded of extractCallArgLiterals(trimmed)) {
+    candidates.push(decoded);
+  }
+
+  // v1.4.1 F-15：\xNN 十六进制转义还原（如 "\x41\x4b..." → "AKIA..."）
+  const hexEscaped = restoreHexEscapes(trimmed);
+  if (hexEscaped) candidates.push(hexEscaped);
+
+  // v1.4.1 F-15：相邻字符串拼接合并（前缀段 + 尾段合并露出完整密钥）
+  const joinedLiteral = joinAdjacentLiterals(trimmed);
+  if (joinedLiteral) candidates.push(joinedLiteral);
 
   return candidates;
 }

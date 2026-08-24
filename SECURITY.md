@@ -46,7 +46,7 @@ sofagent 是一个 FDE Agent——底层引擎是纯本地 Harness 中间件（�
 - ✅ 数据保留：cleanup.sh 支持 --purge --before 定时清理 + tar.gz 归档
 - ✅ 审计日志：task-record.sh 独立审计日志 + task/logs 追溯双通道
 - ✅ 静态加密（v1.3.8 交付）：审计历史落盘前透明加密（纯 TS AES-256-GCM，`SOFAGENT-AGE-V1` 格式，密钥存 `~/.sofagent/keys/` 0600 + 指纹强制备份）——详见 [§ 数据静态加密](#数据静态加密v138-交付)
-- ⚠️ **当前限制**：LLM 自评无外部基准。GDPR / 等保 / SOC2 场景仍需额外措施（age 加密已覆盖审计历史主链，但 forge-runs/checkpoint/model-registry 三目录的加密接线原声称排 v1.3.9 未兑现，已移排 v1.4.7）。合规审查员请注意：**当前版本（v1.3.x）强合规场景仍建议配合外部加密卷（gpg / disk encryption）**。
+- ⚠️ **当前限制**：LLM 自评无外部基准。GDPR / 等保 / SOC2 场景仍需额外措施（age 加密已覆盖审计历史主链，但 forge-runs/checkpoint/model-registry 三目录的加密接线原声称排 v1.3.9 未兑现，已移排 v1.4.7）。合规审查员请注意：**当前版本强合规场景仍建议配合外部加密卷（gpg / disk encryption）**。
 
 ### 纵深防御（静态加密之外的额外措施，持续建议）
 
@@ -210,7 +210,7 @@ sofagent 是一个 FDE Agent——底层引擎是纯本地 Harness 中间件（�
 | 7 | 高危动作强制人工确认 | entry-gate 🔴 高风险审批 | ✅ 已有 |
 | 8 | 全链路日志 + 红队测试 | 审计 history.jsonl + daemon WARN 累积（v1.1.4）；联邦查询 `federation_query` 审计条目 | ✅ 已有 |
 
-> ⚠️ **A9 注入检测局限——编码绕过**：A9 正则检测覆盖常见中文"忽略类"指令、英文"ignore 类"指令，以及 leet speak 变体（`1gn0r3` → `ignore`，通过 normalizeLine() 反转 + ×0.8 降权匹配）。但不覆盖：① Unicode 同形字替换（西里尔字母 `а` 替换拉丁 `a`）；② Base64/hex 编码后的注入 payload。这些绕过手法依赖语义分析（非纯正则可覆盖），规划在 v1.3.x 评估 LLM 辅助检测。**在 v1.3.x LLM 辅助检测落地前，建议对外部输入做归一化（Unicode NFC + 解码后再送检）。**
+> ⚠️ **A9 注入检测局限——编码绕过**：A9 正则检测覆盖常见中文"忽略类"指令、英文"ignore 类"指令，以及 leet speak 变体（`1gn0r3` → `ignore`，通过 normalizeLine() 反转 + ×0.8 降权匹配）。但不覆盖：① Unicode 同形字替换（西里尔字母 `а` 替换拉丁 `a`）；② Base64/hex 编码后的注入 payload。这些绕过手法依赖语义分析（非纯正则可覆盖），LLM 辅助检测暂未排期（跟踪于 ROADMAP）。**在 LLM 辅助检测落地前，建议对外部输入做归一化（Unicode NFC + 解码后再送检）。**
 
 ### Sub Agent 工具集零重叠
 
@@ -418,6 +418,10 @@ chmod 600 ~/.sofagent/data/audit/history.jsonl.bak-*
 | `SOFAGENT_CONFIG` 环境变量指向恶意 config（v1.2.9 起最高优先级配置入口） | ⚠️ `--doctor` 可检测环境变量 | 启动入口用 `env -i` 或显式白名单透传环境变量（见共享服务器缓解建议）；CI 侧用受控 config |
 | `--verify-chain` 场景：追加伪造审计记录（history.jsonl 末尾追加格式合法的假 PASS 行） | ⚠️ 结构异常可检出（缺 timestamp/exitCode 必有字段或非 JSON 行 → 判 tampered，exit 2）；格式完整但 HMAC 不可复验的 legacy 记录仅 ⚠️ 容忍 | 审计后立即备份 history.jsonl（`--verify-chain` 定期校验）；HMAC 密钥妥善保管（密钥在手可伪造任意合法签名） |
 | 密钥藏进二进制文件（blob 夹带，非文本 diff） | ⚠️ A2 对新增二进制扩展（.bin/.exe/.dll/.so/.dylib 等）或 Binary files differ 标记输出 WARN「不扫内容请人工确认」（v1.3.7 起） | 二进制 WARN 人工确认；强合规场景对二进制提交走独立密钥扫描（gitleaks --binary 类工具） |
+| 密钥编码后放函数参数位：`Buffer.from("<b64>", "base64")` / `atob("<b64>")` | ✅ v1.4.1 F-15 起拦截——A2 提取函数调用参数里的编码串候选，base64/hex 解码命中密钥正则即 FAIL（红队实锤堵洞，回归测试固化） | 已默认拦截，无需额外缓解 |
+| 密钥 `\\xNN` hex 转义形态（`"\\x41\\x4b..."`） | ✅ v1.4.1 F-15 起拦截——A2 对含 `\\x` 转义的行还原后跑密钥正则 | 已默认拦截，无需额外缓解 |
+| 密钥字符串拼接形态（拆两半用 `+` 相邻摆放） | ✅ v1.4.1 F-15 起拦截——A2 合并同行相邻字面量后检测 | 已默认拦截，无需额外缓解 |
+| 密钥放环境变量/模板变量（`${env.KEY}` / `process.env.KEY`） | ✅ 不构成泄漏——密钥本体不在 diff 内容中，属合法引用形态，A2 放行是设计行为 | 无需缓解（这是推荐做法：密钥走 .env + .gitignore） |
 
 > ⚠️ 以上绕过路径均依赖 Agent 的"自觉"——这是 sofagent 架构级别的信任模型选择：审计引擎是**协助**人类监督，不是**替代**人类监督。已知绕过路径详见 LIMITATIONS 已有信任模型描述。
 
@@ -427,7 +431,7 @@ chmod 600 ~/.sofagent/data/audit/history.jsonl.bak-*
 >
 > 💡 **`hardenedMode` 配置项尚未实现**（代码中不存在此字段）——一键全规则基线化的便捷配置排入 ROADMAP 评估，当前需手动按上述方式逐条锁定。
 
-> ⚠️ **影子审计器劫持（v1.2.7 已知风险）**：本地安装的 `engine/audit/dist/index.js` 无完整性校验（dist 目录不随 git 版本控制），恶意 Agent 可替换 dist 绕过所有审计规则——比 `--no-verify` 更隐蔽（hook 仍在运行，看不出绕过）。`--doctor` 已增加 dist 哈希校验（SHA-256 比对 `~/.sofagent/internal/audit-hash.txt`），但根治需 v1.3.x 代码签名 + 运行时验证。**CI 侧 `sofagent-audit --diff` 使用独立安装可缓解**（CI 环境的 dist 不可被开发机 Agent 篡改）。
+> ⚠️ **影子审计器劫持（v1.2.7 已知风险）**：本地安装的 `engine/audit/dist/index.js` 无完整性校验（dist 目录不随 git 版本控制），恶意 Agent 可替换 dist 绕过所有审计规则——比 `--no-verify` 更隐蔽（hook 仍在运行，看不出绕过）。`--doctor` 已增加 dist 哈希校验（SHA-256 比对 `~/.sofagent/internal/audit-hash.txt`），但根治需代码签名 + 运行时验证（暂未排期，跟踪于 ROADMAP）。**CI 侧 `sofagent-audit --diff` 使用独立安装可缓解**（CI 环境的 dist 不可被开发机 Agent 篡改）。
 
 ### 详细缓解步骤
 
@@ -522,7 +526,7 @@ install.sh 拆分为以下模块，便于逐模块审查：
 
 **uuid@3.4.0 漏洞可利用性评估（GHSA-w5hq-g745-h8pq · 规划 v1.3.7）**：
 
-automerge preview 版传递依赖 `uuid@3.4.0`（2018 弃用），存在 `uuid()` 默认 RNG 可预测漏洞。评估结论：uuid v3 的漏洞面在 `uuid()` 默认 RNG 可预测——automerge 用它生成文档 ID，非安全凭据，实际可利用性极低。v1.3.x 将重新评估 automerge stable 升级路径或 federation 换用其他 CRDT（如 yjs）。
+automerge preview 版传递依赖 `uuid@3.4.0`（2018 弃用），存在 `uuid()` 默认 RNG 可预测漏洞。评估结论：uuid v3 的漏洞面在 `uuid()` 默认 RNG 可预测——automerge 用它生成文档 ID，非安全凭据，实际可利用性极低。automerge stable 升级路径暂未排期（跟踪于 ROADMAP；或 federation 换用其他 CRDT 如 yjs）。
 
 ---
 

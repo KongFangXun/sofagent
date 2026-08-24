@@ -201,7 +201,7 @@ More install options (clone install / full npx install / minimal install / enter
 > | **Web** | `sofagent web` (works right after install) · repo-mode `node tools/dashboard/serve-dashboard.mjs` | Browser visualization (localhost:3780) | Boss / IT visual review |
 > | **macOS double-click** | Double-click `start-dashboard.command` | macOS shortcut to the Web version (macOS double-click entry only) | macOS users |
 
-> 👁️ **Agent's view**: with hooks installed, every commit triggers an audit — PASS passes silently (auto-snapshot), violations are printed directly into the terminal output and pushed via Webhook / IM per config; there is no separate GUI on the Agent side (see [PHILOSOPHY §2](./docs/PHILOSOPHY.md#用户感知到的能力)).
+> 👁️ **Agent's view**: with hooks installed, every commit triggers an audit — PASS passes silently (auto-snapshot), violations are printed directly into the terminal output and pushed via Webhook / IM per config; there is no separate GUI on the Agent side (see [PHILOSOPHY §2](./docs/PHILOSOPHY.md#系统暴露的能力agent-视角)).
 
 ```mermaid
 graph LR

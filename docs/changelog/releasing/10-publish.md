@@ -237,7 +237,7 @@ fi
 # ① 质量验证表必须恰好 7 项（不可增减——v1.3.0/1.3.1 缺 release-gate/fresh-eyes 的教训）
 echo "$BODY" | grep -c "^| "   # 期望 7 个表行（表头 2 行不算，从「npm test」数到「fresh-eyes」）
 
-# ② H2 骨架与上一版同构（五要素：定位句/核心变更/质量验证/尾链）
+# ② H2 骨架与上一版同构（结构对照七要素见工序三）
 echo "$BODY" | grep -E "^## "          # 期望输出 ## 🔨 核心变更 与 ## ✅ 质量验证
 gh release view v上一版 --json body -q '.body' | grep -E "^## "
 
@@ -248,12 +248,22 @@ done
 
 # ④ 尾链存在且为 markdown 链接语法
 echo "$BODY" | grep -qE '\[详细开发日志\]\(\./docs/changelog/' && echo "✅ 尾链" || echo "🔴 缺尾链"
+
+# ⑤ 定位句长度 ≤ 220 字符（N9 铁律——v1.4.0 曾 321 字符被退回）
+POS_LEN=$(echo "$BODY" | head -1 | awk '{print length($0)}')
+[ "$POS_LEN" -le 220 ] && echo "✅ 定位句 $POS_LEN 字符" || echo "🔴 定位句 $POS_LEN 字符超 220 上限——拆 H3 承载"
+
+# ⑥ BugFix 节标题逐字核对（N10——有 bugfix 节时必须带「（上版遗留）」补语）
+echo "$BODY" | grep -E "^### 🔒" | grep -q "BugFix（上版遗留）" && echo "✅ BugFix 标题合规" || echo "🔴 BugFix 标题漂移（缺「（上版遗留）」补语）"
+
+# ⑦ 里程碑 🎉 前缀规则（N11——仅 vX.Y.0 可用 🎉 vX.Y.Z — 格式；常规版尾部禁装饰）
+echo "$TITLE" | grep -qE "^🎉 v[0-9]+\.[0-9]+\.0 — " && echo "✅ 里程碑格式（X.Y.0）" || echo "$TITLE" | grep -qE "^🎉" && echo "🔴 非 X.Y.0 版误用 🎉 前缀" || echo "✅ 常规版格式"
 ```
 
-**工序三 · 上一版结构对照（2026-08-19 用户拍板：取代人工过目）**：自检全过后，与上一版 release body 做**结构级并排对照**——title 形式（`vX.Y.Z — emoji 短语`）/ 定位句有无 / H2 骨架 / 质量表 7 项顺序 / 尾链位置，五要素逐一比对上一版，**结构不一致即重写，直到同构**。机制标准 = **v1.3.7 实际发布物（2026-08-20 用户拍板的标准锚点，见 06-doc-finalize.md Release Notes 段）**——若上一版漂移（v1.3.8 曾两次漂移被作者退回），以 v1.3.7 为准重写，不追随上一版。对照命令：`gh release view v1.3.7 --json name,body -q '{name, body}'`（锚点）+ `gh release view 上一版 --json name,body`（漂移检测）。
+**工序三 · 上一版结构对照（2026-08-19 用户拍板：取代人工过目）**：自检全过后，与上一版 release body 做**结构级并排对照**——title 形式（`vX.Y.Z — emoji 短语`，里程碑 `🎉 vX.Y.0 —` 前缀规则见 N11）/ 定位句有无 + 长度（N9 ≤220 字符）/ H2 骨架 / 质量表 7 项顺序 / BugFix 节标题逐字（N10）/ 尾链位置，七要素逐一比对上一版，**结构不一致即重写，直到同构**。机制标准 = **v1.3.7 实际发布物（2026-08-20 用户拍板的标准锚点，见 06-doc-finalize.md Release Notes 段）**——若上一版漂移（v1.3.8 曾两次漂移被作者退回），以 v1.3.7 为准重写，不追随上一版。对照命令：`gh release view v1.3.7 --json name,body -q '{name, body}'`（锚点）+ `gh release view 上一版 --json name,body`（漂移检测）。
 
 ```bash
-> 🔴 **发布前必做（v1.3.6 教训）**：生成 body 后先与上一版并排对照——`gh release view v上一版 --json body -q '.body' | grep -E "^## "`——两版 H2 骨架必须同构（首行定位句/核心变更/破坏性变更/质量验证/尾链五要素）。**changelog 内嵌的 Release Notes 段 ≠ GitHub Release body**：前者归 08 的 N1-N7 管（✨ 新功能 bullet 式），后者归本规范管（### 功能领域子标题式）——分别核对，禁止把 changelog 段直接复制当 body。
+> 🔴 **发布前必做（v1.3.6 教训）**：生成 body 后先与上一版并排对照——`gh release view v上一版 --json body -q '.body' | grep -E "^## "`——两版 H2 骨架必须同构（首行定位句/核心变更/破坏性变更/质量验证/尾链）。**changelog 内嵌的 Release Notes 段 ≠ GitHub Release body**：前者归 08 的 N1-N7 管（✨ 新功能 bullet 式），后者归本规范管（### 功能领域子标题式）——分别核对，禁止把 changelog 段直接复制当 body。
 
 gh release create vX.Y.Z --title "vX.Y.Z — {emoji 主题短语}" --notes "$(cat <<'EOF'
 {emoji 主题短语与 title 呼应}——{一句人话说明这版对用户意味着什么}
@@ -292,11 +302,11 @@ EOF
 > **本节是 GitHub Release body 的强制规范——所有版本必须遵守，不可漂移。**
 > 历史教训：v1.3.0/v1.3.1 的 release body 含「CI (8 workflows)」却缺 release-gate / fresh-eyes；v1.3.2/v1.3.3 反过来——四版四样。本规范把质量表 7 项钉死，禁止增减。
 
-- **Title**：`vX.Y.Z — {emoji 主题短语} + {emoji 主题短语}`（常规，≤3 个短语）/ `🎉 vX.Y.Z — ...`（里程碑仅限 vX.Y.0，前缀不在尾部）
+- **Title**：`vX.Y.Z — {emoji 主题短语} + {emoji 主题短语}`（常规，≤3 个短语）/ `🎉 vX.Y.Z — ...`（里程碑仅限 vX.Y.0，🎉 前缀在版本号前，不在短语尾部——N11）
   - **主题短语 ≠ 交付名清单**——title 讲主线故事（如「🏪 组织能力市场（L3 五环）」），不逐项罗列交付名（那是 note 新功能段的事）。**title 与 note 新功能禁止逐字重复**（2026-08-15 拍板，五版已统一修正）
   - 每个主题短语带语义 emoji；尾部不加装饰后缀（🎉/🔧 等历史漂移已清理）
 - **Body 结构**（定位句 + 三段，固定顺序不可调）：
-  0. **首行定位句**——`{emoji 主题短语呼应 title}——{一句人话}`，如「🏪 协作成果像内部应用商店一样流转——Skill/Agent/流程可发布、可评分、可退役，第三方 Skill 先过安全门。」。**禁止用旧 title 清单复读**（v1.3.1-1.3.3 历史遗留：body 首行挂着交付名清单，title 改了 body 没跟——2026-08-15 已统一修正）。与 title/H1 分工：title 点主题（名词短语）/ H1 讲故事（动词句）/ 定位句说人话（给用户的价值）
+  0. **首行定位句**——`{emoji 主题短语呼应 title}——{一句人话}`，如「🏪 协作成果像内部应用商店一样流转——Skill/Agent/流程可发布、可评分、可退役，第三方 Skill 先过安全门。」，**≤220 字符**（N9，超线拆 H3 承载）。**禁止用旧 title 清单复读**（v1.3.1-1.3.3 历史遗留：body 首行挂着交付名清单，title 改了 body 没跟——2026-08-15 已统一修正）。与 title/H1 分工：title 点主题（名词短语）/ H1 讲故事（动词句）/ 定位句说人话（给用户的价值）
   1. `## 🔨 核心变更`——功能按重要性降序，安全修复优先于文档修复。每个变更点用 `-` 列表，一句话说清楚做了什么（不写「为什么」——那在开发日志里）
   2. `## ✅ 质量验证`——**固定 7 项表格**（见下方模板），结果列每项带 ✅，缺一项即视为体例不合规
   3. `📖 [详细开发日志](./docs/changelog/v<major>.<minor>/vX.Y.Z.md)`——必须用 markdown 链接语法，放最末
@@ -325,7 +335,7 @@ EOF
 - **功能领域 emoji 按语义选**：🔧 功能 / 🛡️ 安全 / 📝 文档 / 🔍 审查 / 🆕 新建 / 📊 可视化 / ⚡ 自动化 / 🔗 集成 / 📦 打包 / 🎨 UI
 - **不含审查元信息**（模型名、审查轮次内部代号、P0/P1 标签）——那是内部过程，用户看不懂。「{N} 轮独立审查」可写，但不写「GLM-5.2 / run-11 / P0-3」这种
 - **测试数字写实际值**（从 `npm test 2>&1 | tail -5` 获取），不写约数
-- **BugFix 段在核心变更最末**（不独立成 H2）——`### 🔒 BugFix（上版遗留）`，用 `-` 列表
+- **BugFix 段在核心变更最末**（不独立成 H2）——`### 🔒 BugFix（上版遗留）`逐字固定，补语不可省（N10，v1.4.0/v1.3.9 曾双版简写漂移），用 `-` 列表
 - **与 changelog 内嵌「Release Notes」段的关系**：GitHub Release body = 面向 GitHub 用户（精炼版）；changelog 文件末尾的 `## Release Notes · vX.Y.Z` = 面向深度读者（含破坏性变更细节）。两者内容可重叠但读者层不同——GitHub body 偏精炼，changelog 段偏完整。
 
 ---

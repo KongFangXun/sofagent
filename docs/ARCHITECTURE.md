@@ -2,7 +2,7 @@
 
 > 设计决策记录——从为什么存在、约束层四种能力如何协作，到每个关键决策的工程理由。
 >
-> **产品定位锚定**：本架构服务的产品 = **一个 FDE Agent**（sofagent）——执行「给企业做 AI 落地」这条 workflow 的 Agent，以 LangGraph + 约束层为内核（ExecutionBackend 抽象，可扩展其他 Agent 运行时；DeepSeek Harness 为商业侧可选内核），plugin + skill + MCP + CLI + dashboard 为调用面，约束底座（注入·审计·回溯·进化）+ FDE 方法论为行为层（产品叙事见 [WIKI 一·五](./WIKI.md#一五产品叙事sofagent-是一个-fde-agent)）。
+> **产品定位锚定**：本架构服务的产品 = **一个 FDE Agent**（sofagent）——执行「给企业做 AI 落地」这条 workflow 的 Agent，以 LangGraph + 约束层为内核（ExecutionBackend 抽象，可扩展其他 Agent 运行时；DeepSeek Harness 为商业侧可选内核），plugin + skill + MCP + CLI + dashboard 为调用面，约束底座（注入·审计·回溯·进化）+ FDE 方法论为行为层（产品叙事见 [WIKI §二](./WIKI.md#二产品叙事sofagent-是一个-fde-agent)）。
 > v1.4.0 · 2026-08-23（UTC）
 
 <img src="assets/sofagent.png" alt="sofagent" width="160" />
@@ -89,7 +89,7 @@ graph TD
 
 举例：采购审批流 = `[🔄 收集报价] → [⚡ 主管审批] → [🔄 生成合同] → [Human 签字]`
 
-### 四层运行形态：企业 AI 从梳理到专属模型（2026-08-16 定稿）
+### 四层运行形态：企业 AI 从梳理到专属模型
 
 前两张图分别讲「能力视角」（约束层四种能力）和「流程视角」（激活链五阶段）。这张图是**第三个视角——站在企业/客户看完整运行形态**，回答「装上 sofagent 之后，企业 AI 最终长成什么样」：
 
@@ -162,7 +162,7 @@ graph TB
 
 > ⚠️ **旧名兼容**：注入/审计/回溯/进化即原约束底座/审计引擎/回溯引擎/进化引擎，v1.2.9 起统一为约束层四种能力；「约束底座」「Constraint Layer」均为「约束层（Harness）」的同义旧称，不再单独使用。历史文档中的"引擎"表述保留不动（archive/changelog 是历史快照不改）。代码层面的类名 `AuditEngine`、函数名 `runAuditGate`、文件名 `engine/audit` 全是 API，保持不动。
 
-> 💬 **交互范式**：sofagent 没有图形界面。所有能力通过 MCP 协议暴露，用户通过 Agent 对话（LUI）操作——说一句话，它做完告诉你结果在哪。这是架构的根本设计约束：不存在「仅 CLI 可用」或「需要打开页面」的能力。详见 [设计哲学](./PHILOSOPHY.md)。
+> 💬 **交互范式**：sofagent 的核心交互是语言（MCP / IM / CLI），无操作型 GUI——所有能力通过 MCP 协议暴露，用户通过 Agent 对话（LUI）操作：说一句话，它做完告诉你结果在哪。dashboard 是只读监控视图（localhost:3780，详见下文），不承担操作职能。这是架构的根本设计约束：不存在「仅 CLI 可用」或「需要打开页面」的能力。详见 [设计哲学](./PHILOSOPHY.md)。
 
 ### 约束层七维度（Agent 的构成面）
 
@@ -186,11 +186,11 @@ Agent = **模型 + 上下文 + 工具 + 状态 + 执行控制 + 权限 + 可观�
 
 > 这份清单是「现在能干什么」的单一索引。约束层内部设计见 [二、约束层（Harness）设计——一个层，四种能力](#二约束层harness设计一个层四种能力)；未来方向见 [六、已知局限与未来方向](#六已知局限与未来方向)。
 
-### 13 个 workspace 包（全部 @sofagent/*，均发布到 npm；12 个有 test script，1 个纯类型包无测试——「12 包」统计口径指有 test script 的包）
+### 22 个 workspace 源码包（构成以 package.json workspaces 为准：12 个引擎 @sofagent/* 包 + 1 个工具包 + 9 个 DSH 插件包 cordis-plugin-sofagent-*；其中 13 个发布为 @sofagent npm 包，DSH 插件 9 款经 SkillHub 分发。「12 包」统计口径指有 test script 的引擎包）
 
 | 包 | 职责 | 状态 |
 |---|---|---|
-| audit | 提交时审计，24 条规则（17 默认 + 7 扩展，[完整清单见 SECURITY](../SECURITY.md#24-条审计规则完整清单文档级-ssot)）硬证据扫描 + 快照/回滚/webhook + 本体建模要求对齐维度（`runRules({gb48000:true})` opt-in） | ✅ 已实现（869 测试） |
+| audit | 提交时审计，24 条规则（17 默认 + 7 扩展，[完整清单见 SECURITY](../SECURITY.md#24-条审计规则完整清单文档级-ssot)）硬证据扫描 + 快照/回滚/webhook + 本体建模要求对齐维度（`runRules({gb48000:true})` opt-in） | ✅ 已实现（878 测试） |
 | core | 核心运行时：git diff 解析、shadow-repo 快照、AES-256-GCM/ECDH、think.md 契约、doctor、LLM 调用 Trace、stop_reason 分类、身份码 Ed25519 | ✅ 已实现（368 测试） |
 | harness | 四层约束加载链 `buildConstrainedSystemPrompt()` + L4 渐进加载（热点全文 + 索引） | ✅ 已实现 |
 | rules | 规则引擎纯函数包（零 fs/git 依赖），编排层 tool-call 事前拦截 + 审批四模式 | ✅ 已实现 |
@@ -734,7 +734,7 @@ START → plan（拆解："调研 AI 笔记产品"）
 
 **五类边契约**（行业共识）：当前实现仅有 **数据流**（`artifacts` 传递）和 **控制流**（`routeAfterAudit`/`routeAfterHuman`）——**缺权限流、证据流、失败流**。待 v1.3.1 并行编排落地时形式化全部五类边。
 
-**可学习的未来迭代（落盘见 [ROADMAP](./ROADMAP.md)「v1.2.x Graph Engine 进化路线」）**：① **Planner 节点**——任务分解（✅ v1.2.2）；② **降级路由链**——retry→降级→标记→人工（✅ v1.2.2）；③ **engineer-decide/execute 分层**——LLM 层 + 代码层（✅ v1.2.2）；④ **并行子图执行**——worktree 隔离 + 多 engineer 并发（✅ v1.2.3）；⑤ **Dashboard ASCII 控制图**——节点/边/波次分层（✅ v1.2.3）；⑥ **控制图多循环 DAG 波次并行**——LangGraph 原生 Send API + ★Reality Anchor 每波次卡关（📋 v1.3.1）。
+**可学习的未来迭代（详见 [ROADMAP](./ROADMAP.md)「v1.2.x Graph Engine 进化路线」）**：① **Planner 节点**——任务分解（✅ v1.2.2）；② **降级路由链**——retry→降级→标记→人工（✅ v1.2.2）；③ **engineer-decide/execute 分层**——LLM 层 + 代码层（✅ v1.2.2）；④ **并行子图执行**——worktree 隔离 + 多 engineer 并发（✅ v1.2.3）；⑤ **Dashboard ASCII 控制图**——节点/边/波次分层（✅ v1.2.3）；⑥ **控制图多循环 DAG 波次并行**——LangGraph 原生 Send API + ★Reality Anchor 每波次卡关（📋 v1.3.1）。
 
 #### 重试语义：统一计数器
 
@@ -956,7 +956,7 @@ sofagent 的编排引擎从 v1.3.4 起显式分为两层——**编排层不换�
 
 **DSH 关系定位**：DSH 是「agent 框架插件化」路线，sofagent 是「FDE 方法论 + 确定性审计」路线。两者通过 `ExecutionBackend` 接口对接——DSH Cordis 运行时成为 sofagent 执行层默认后端，LangGraph createReactAgent 作为 fallback。
 
-> ⚠️ **接入门禁状态（2026-08-14）**：DSH 候选包名（deepseek-harness / @deepseek-ai/harness / @dsh/core 等）实测全部 404——npm-public PR #2519 2026-08-13 刚合并但包尚未实际可安装。当前走【分支 B：运行时动态 import + try-catch fallback】，DSH 后端实现完整适配器骨架，加载失败自动降级 LangGraph。DSH 上架后无需改代码——动态 import 会成功。
+> ⚠️ **接入门禁状态（2026-08-24 更新）**：早期候选包名（deepseek-harness / @dsh/core 等）曾长期 404，v1.4.0 已改走 **Cordis 内嵌路径**（@deepseek-ai/cordis@4.0.1 stable + @deepseek-ai/dsh@0.1.0-rc.x，rc.2 内嵌已验证可行：boot() + loadProfile() + 注入 cmdlineArgs/appExit + agent.followup 驱动，对照官方 dsh-headless runner 实现）。rc 期**内嵌为主路径**，内嵌执行失败自动 fallback CLI 桥接；LangGraph 作为最终 fallback。决策记录见 ROADMAP（precheck 证据注入保持主路径）。
 
 > 💡 **为什么不把整个编排层也换成 DSH**：DSH 的事件驱动模型（插件 A 触发 B → B 触发 C）没有显式执行路径，运行时才确定——而 sofagent 的审计引擎（git diff 硬证据 + HMAC 链 + 波次审计卡关）全部依赖预先画好的 DAG 图结构。用 DSH 替代 LangGraph 编排 = 放弃确定性审计能力。分层使用 = 两者各取所长。
 
@@ -1118,7 +1118,7 @@ sofagent 的三层治理与 Karpathy LLM Wiki 的 `raw materials → Wiki entrie
 
 > 注：「7-33% → 73%」为内部实测参考值，非外部基准（呼应 [LIMITATIONS「LLM 自评无外部基准」](./LIMITATIONS.md)）。
 
-### 四层运行形态的三条决策（2026-08-16 明确）
+### 四层运行形态的三条决策
 
 四层运行形态（见心智模型区第三张图）背后是三条硬决策，各自对应一个「不做」：
 
@@ -1314,7 +1314,7 @@ Action Type = 一个**有身份的变更请求**：携带参数 + 校验 + 权�
 
 Claude Code 之父 Boris Cherny（YC 访谈）给出 Harness 层的代际时钟：**Harness 补丁的保质期约半年**——模型每次代际升级都会吞噬一批「教模型怎么做」的能力补丁，此时正确动作不是加规则而是删除（Claude Code 曾一次砍掉 80% 的 prompt）。对 sofagent 的含义：**能力型规则会过时，约束/审计职能常青**——「哪些行为不允许」不随模型变强而失效，「怎么做得更好」会。
 
-工程落点（规则库健康巡检的「消融删除法」）：每代模型升级后，对 24 条审计规则与四层加载链做一轮消融测试——逐条禁用后跑 golden-set，**无指标退化的条目标记为「代际冗余」候选**，进入人审删除队列（不自动删，删什么由人拍板）。这与进化引擎的 Dream Cycle 互补：Dream Cycle 沉淀「该加什么」，消融巡检发现「该删什么」。
+工程落点（规则库健康巡检的「消融删除法」）：每代模型升级后，对 24 条审计规则与四层加载链做一轮消融测试——逐条禁用后跑 golden-set，**无指标退化的条目标记为「代际冗余」候选**，进入人审删除队列（不自动删，删什么由人决策）。这与进化引擎的 Dream Cycle 互补：Dream Cycle 沉淀「该加什么」，消融巡检发现「该删什么」。
 
 
 ### 记忆查算分离与冷热分层同构
@@ -1331,7 +1331,7 @@ Claude Code 之父 Boris Cherny（YC 访谈）给出 Harness 层的代际时钟�
 
 ### 架构反模式：五种常见 Agent 工程错误
 
-> 来源：DBGoal《Agent Harness、Loop 与 Graph：别再把三层架构混为一谈》(2026-07)。以下五种反模式在 Agent 工程实践中反复出现，与 sofagent 的已知局限形成对照。本节原为 LIMITATIONS.md §十一，2026-08 归位至本文件。
+> 来源：DBGoal《Agent Harness、Loop 与 Graph：别再把三层架构混为一谈》(2026-07)。以下五种反模式在 Agent 工程实践中反复出现，与 sofagent 的已知局限形成对照。
 
 | # | 反模式 | 表现 | sofagent 的应对 |
 |:--:|--------|------|----------------|

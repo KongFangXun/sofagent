@@ -217,7 +217,7 @@ OpenAI 2026-08-19 全面开源 [Codex Harness](https://github.com/openai/codex)�
 
 **与 sofagent 的边界（互补，不冲突）**：Omnigent 管**运行时**（坐在 harness 之上，拦截工具调用）；sofagent 管**提交时**（git diff 24 条规则 + 运行时 SKILL.md 约束）。它的策略越重，越反衬「跨平台、本地留证、零依赖、提交时审计」是咱们的地盘。其路线图（GEPA 自动优化 / MemEx 持久记忆 / RLM 强化学习 / Server MCP 跨会话）尚未实现，但方向值得在 v2.x 评估框架参考。
 
-**给我们的演进启示（落盘 ROADMAP）**：① 运行时审计可借 LangGraph middleware 的 wrapToolCall 接入点（咱们已用 createReactAgent）；② 密钥边界可借 bubblewrap/seatbelt + egress proxy 模式；③ 控制平面成本/路由层可借 LiteLLM。详见 [ROADMAP · 行业印证](./ROADMAP.md#行业印证)。
+**给我们的演进启示（已登记 ROADMAP）**：① 运行时审计可借 LangGraph middleware 的 wrapToolCall 接入点（咱们已用 createReactAgent）；② 密钥边界可借 bubblewrap/seatbelt + egress proxy 模式；③ 控制平面成本/路由层可借 LiteLLM。详见 [ROADMAP · 行业印证](./ROADMAP.md#行业印证)。
 
 > 📖 来源：Databricks blog《Introducing Omnigent》(2026-06) + 技术解析（techtimes / chatforest / aixq.cc），GitHub omnigent-ai/omnigent
 
@@ -239,7 +239,7 @@ OpenAI 2026-08-19 全面开源 [Codex Harness](https://github.com/openai/codex)�
 
 但两者**范围差一个数量级、且互补**：ChatDemo 的 FDE 是售前 POC 共创工具（Claude Code Skill + localhost 控制台，回合制 start/turn/wrap），散会即结束、无常驻员工；sofagent 的 FDE 是售后常驻部署+治理方法论（四阶段十二步→交付离场→sustain）。它做"漏斗前端"（拿 POC），我们做"漏斗后端"（常驻、可审计、受治理的硅基员工）——定位不冲突。
 
-其**独特点**是可借鉴方向（落盘 [ROADMAP · 行业印证](./ROADMAP.md#行业印证)）:① 回合制协议 + FDE 控节拍（人控 Agent 不抢跑，我们已有同判断、它执行更细）；② **spec-first 硬禁令**（transcript 永不直接驱动代码——补我们"触发直驱工件"的明文铁律，最高优先）；③ **decisions.jsonl 判断时刻日志**（{kind, moment, why, spec_ref} 现场即时记，会后喂 FDE Loop→INDUCE→Judgment Unit——补 A1-A23 缺的"决策理由链"，最高优先）；④ 分级降级梯队（console→TUI、ASR→手敲、dev 挂→走 spec，workflow never stops——为 7×24 常驻员工补分级降级 SOP，最高优先）；⑤ 开源优先阶梯 + 预验证画廊 + 双引擎无状态 + 数据敏感度分层 + 一键启动器品牌化模板。
+其**独特点**是可借鉴方向（已登记 [ROADMAP · 行业印证](./ROADMAP.md#行业印证)）:① 回合制协议 + FDE 控节拍（人控 Agent 不抢跑，我们已有同判断、它执行更细）；② **spec-first 硬禁令**（transcript 永不直接驱动代码——补我们"触发直驱工件"的明文铁律，最高优先）；③ **decisions.jsonl 判断时刻日志**（{kind, moment, why, spec_ref} 现场即时记，会后喂 FDE Loop→INDUCE→Judgment Unit——补 A1-A23 缺的"决策理由链"，最高优先）；④ 分级降级梯队（console→TUI、ASR→手敲、dev 挂→走 spec，workflow never stops——为 7×24 常驻员工补分级降级 SOP，最高优先）；⑤ 开源优先阶梯 + 预验证画廊 + 双引擎无状态 + 数据敏感度分层 + 一键启动器品牌化模板。
 
 **给我们的背书**：① FDE 作为"前线部署工程师"的方法论术语，已被 OpenFDE 以 Forward Deployed Engineer 独立命名并工程化，与我们同源、互为第三方佐证；② "约束 Agent 经受控接口"的同源判断在售前侧也成立（ChatDemo 约束在"何时/权限/来源"）；③ 我们的差异化仍在——ChatDemo **无 A1-A23 运行时行为审计、无 7×24 常驻 FDE Agent、无控制平面治理、让 Agent 直接写应用代码**，这些是我们的地盘。
 
@@ -285,7 +285,7 @@ OpenAI 2026-08-19 全面开源 [Codex Harness](https://github.com/openai/codex)�
 
 > 要理解 sofagent 在整个 Agent 生态中的位置，先看清这个生态的三层结构。sofagent 不是开发者框架的竞争者，也不是大厂 Agent 平台的替代品——它占据的是一个被三层夹击后依然空出来的生态位：**约束基础设施**。
 >
-> ⚠️ **「几层」术语导航**（三处「层」各自独立，勿混淆）：本节「三层」= Agent **生态位**三层（大厂平台/开发者框架/约束基础设施）；[ARCHITECTURE 心智模型](./ARCHITECTURE.md#心智模型先读这个) 的「双层」= sofagent **产品组织**（约束层 × 生命周期）；[ARCHITECTURE 四层运行形态](./ARCHITECTURE.md#四层运行形态企业-ai-从梳理到专属模型2026-08-16-定稿) 的「四层」= 企业 AI **运行形态**（梳理→编排→插件→模型）。三者是「生态怎么看 / 产品怎么组织 / 客户看到什么」三个维度。
+> ⚠️ **「几层」术语导航**（三处「层」各自独立，勿混淆）：本节「三层」= Agent **生态位**三层（大厂平台/开发者框架/约束基础设施）；[ARCHITECTURE 心智模型](./ARCHITECTURE.md#心智模型先读这个) 的「双层」= sofagent **产品组织**（约束层 × 生命周期）；[ARCHITECTURE 四层运行形态](./ARCHITECTURE.md#四层运行形态企业-ai-从梳理到专属模型) 的「四层」= 企业 AI **运行形态**（梳理→编排→插件→模型）。三者是「生态怎么看 / 产品怎么组织 / 客户看到什么」三个维度。
 
 ### 三层架构——从终端用户到开发者到约束层
 
@@ -678,8 +678,6 @@ DeepSeek Harness（DSH）开源后，一线从业者的通行判断是「垂直 
 ---
 
 ## 五、行业研报印证的新增局限（2026-07）
-
-> 本节原为 LIMITATIONS.md §十，因属「行业印证」而非「局限」，2026-08 归位至本文件。
 
 ### 不要一上来就 Agent 自动闭环
 

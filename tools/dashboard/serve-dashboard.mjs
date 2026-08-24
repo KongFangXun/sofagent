@@ -388,7 +388,7 @@ function aggregateAiNodes() {
 }
 
 /* ────────────────────────────────
- * /api/ontology · 本体结构（knowledge/ 目录真实结构）
+ * /api/ontology · 本体数据（knowledge/ 目录真实结构）
  * 扫描 ~/.sofagent/data/knowledge/ 下的 entities/ concepts/ relations/ 文件
  * ──────────────────────────────── */
 function aggregateOntology() {
@@ -464,7 +464,7 @@ const server = createServer(async (req, res) => {
     return;
   }
 
-  // /api/ontology → 本体结构（knowledge/ 目录真实结构）
+  // /api/ontology → 本体数据（knowledge/ 目录真实结构）
   if (urlPath === '/api/ontology') {
     const s = aggregateOntology();
     res.writeHead(200, { 'Content-Type': 'application/json' });

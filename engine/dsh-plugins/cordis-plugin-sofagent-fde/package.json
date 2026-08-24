@@ -1,6 +1,6 @@
 {
   "name": "cordis-plugin-sofagent-fde",
-  "version": "0.1.0",
+  "version": "1.4.0",
   "description": "进场方法论六 tool 闭环（fde_interview/classify/quantify/derive/distill/deploy）（sofagent 品牌插件 · 主色 #16B8F3）",
   "private": true,
   "license": "MIT",

@@ -14,7 +14,7 @@ export const pluginMeta = {
 } as const;
 
 /** 依赖的 sofagent 能力说明（供 DSH skill 引导链展示） */
-export const capability = '本体结构（业务语义底座）';
+export const capability = '本体数据（业务语义底座）';
 
 /**
  * 调用对应的 sofagent @public API（懒加载 + 降级不抛）。
