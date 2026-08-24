@@ -95,6 +95,12 @@ if (sh('git cat-file -t ' + remoteSha + ' 2>/dev/null || true')) {
   console.log(`ℹ️ 本地无远端对象 ${remoteSha.slice(0, 8)}（上次 API 推送遗留）——compare API 兜底取变更`);
   const cmpRaw = ghApi(`compare/${remoteSha}...HEAD`, []);
   const cmp = jqOrParse(cmpRaw, j => j);
+  if (cmp.status === 'identical') {
+    // 内容逐字节一致、仅 SHA 不同（上次 API 推送的同 tree 双 SHA）——无变更可推
+    console.log('✅ 本地与远端内容完全一致（compare=identical，双 SHA 未接回）——无需推送');
+    console.log('⏭ 网络恢复后接回：git fetch origin && git rebase --onto origin/main HEAD~<N> main（N=本地领先 commit 数）');
+    process.exit(0);
+  }
   if (cmp.status !== 'ahead') {
     // diverged/behind：远端有本地没有的内容——禁止盲推，须先 rebase 接回
     console.error(`🔴 本地与远端分叉（compare status=${cmp.status}）——先按 SOP「双 SHA 分叉接回」处理再推`);
