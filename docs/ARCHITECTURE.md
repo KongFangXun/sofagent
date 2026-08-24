@@ -74,12 +74,12 @@ graph TD
 
 | 层级 | 定义 | sofagent 对应 | 例子 |
 |------|------|--------------|------|
-| **本体图谱（Ontology Graph）** | 企业全部业务节点和关联关系的全局拓扑——FDE 交付的静态语义图谱（机器读） | FDE §5 本体结构（objects / relations / knowledge-domain） | objects.yml + relations |
-| **业务图谱（Workflow Graph）** | 企业全部业务流组成的流程图谱——FDE 交付的动态流程图谱（人读）；其中每条完整业务链路即单个业务流 | FDE §4 梳理出的业务流集合 | 采购审批流、财报生成流 |
+| **本体图谱（Ontology Graph）** | 企业全部业务节点和关联关系的全局拓扑——FDE 交付的静态语义图谱（机器读） | FDE 第三章 本体数据（objects / relations / knowledge-domain） | objects.yml + relations |
+| **业务图谱（Workflow Graph）** | 企业全部业务流组成的流程图谱——FDE 交付的动态流程图谱（人读）；其中每条完整业务链路即单个业务流 | FDE 第四章 梳理出的业务流集合 | 采购审批流、财报生成流 |
 | **Loop** | 业务流中的一个闭环执行单元，由 Goal 驱动 | FORGE loop / AI 节点跑起来 | fresh-eyes-loop、release-gate-loop |
 | **Goal** | Loop 的退出条件——达成即停，偏离即纠 | exit-gate 判定 | "所有 P0 修复完成" "审查全绿" |
 
-**业务流（Workflow）由业务节点组成**——业务节点 = AI 节点 + Human 节点（对应 FDE §6 三问判定法：从业务节点中识别哪些可 AI 化 → 🔄/⚡ 成为 AI 节点，👤 保持 Human 节点）：
+**业务流（Workflow）由业务节点组成**——业务节点 = AI 节点 + Human 节点（对应 FDE 第四章 三问判定法：从业务节点中识别哪些可 AI 化 → 🔄/⚡ 成为 AI 节点，👤 保持 Human 节点）：
 
 - 🔄 **纯 Loop（AI 节点·自动执行）** — AI 跑完即退出，Goal 达成自动收工
 - ⚡ **Loop + Human（AI 节点·强化岗位）** — AI 跑 Loop，Human 在关键环节介入（审批 / 检查 / 兜底）

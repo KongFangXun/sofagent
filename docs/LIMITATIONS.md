@@ -513,7 +513,7 @@ ab-scheduler 连续 2 轮更好即 promote。如果 eval 场景偏窄（只测�
 
 ### 大断裂带
 
-FDE 诊断完成后，交付了一堆**静态文件**（ontology 本体结构 + workflow.yml + skills/ + nodes/），但没人把它们"点燃"——企业 IT 拿到一堆 .md 和 .yml，不知道怎么跑起来。
+FDE 诊断完成后，交付了一堆**静态文件**（ontology 本体数据 + workflow.yml + skills/ + nodes/），但没人把它们"点燃"——企业 IT 拿到一堆 .md 和 .yml，不知道怎么跑起来。
 
 这是 FDE 四阶段十二步流程中的**交付到运行之间的断裂带**：
 

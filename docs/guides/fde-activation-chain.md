@@ -15,7 +15,7 @@ FDE 诊断完成后，交付了一堆**静态文件**：
 
 ```
 交付物：
-  ✅ ontology 本体结构（entities + concepts + relations）
+  ✅ ontology 本体数据（entities + concepts + relations）
   ✅ workflow.yml（节点清单 + 依赖关系）
   ✅ 每个节点的三层实体（文档层 + Skill 层 + 运行层）
   ✅ 每个节点标记了 🔄/⚡/👤

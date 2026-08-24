@@ -451,7 +451,7 @@ Onyx 四阶段闭环（L1：可见性 → 仿真 → 执行 → 学习）与人�
 | 层 | 是什么 | 行业五层中对应 |
 |----|--------|----------------|
 | **约束层（Harness / Constraint Layer）** | 四层约束注入链（SKILL.md→fde.md→think.md→knowledge/）+ 审计 / 回溯能力（本质：git snapshot） | 配置 + 指令 + 校验 |
-| **知识层（Knowledge / Ontology）** | knowledge/ + 本体结构（FDE 在客户侧交付的业务资产，见 FDE/GUIDE.md 第三章 本体结构构建） | 知识 |
+| **知识层（Knowledge / Ontology）** | knowledge/ + 本体数据（FDE 在客户侧交付的业务资产，见 FDE/GUIDE.md 第三章 本体数据构建） | 知识 |
 | **编排层（Orchestration / Loop）** | 编排引擎 + 进化引擎 + 外层 FORGE | 编排 |
 
 逐层映射：
@@ -459,7 +459,7 @@ Onyx 四阶段闭环（L1：可见性 → 仿真 → 执行 → 学习）与人�
 | 行业五层 | 数据流口诀 | 落到 sofagent 哪一层 / 哪部分 |
 |----------|------------|-------------------------------|
 | 配置 Config（决定用什么） | 配置决定用什么 | 约束层 · `.sofagent/config.yml` + SKILL.md / fde.md 的配置约束 |
-| 知识 Knowledge（知道什么） | 知识知道什么 | 知识层 · knowledge/ + 本体结构（FDE 交付，Harness 只挂载 / 校验） |
+| 知识 Knowledge（知道什么） | 知识知道什么 | 知识层 · knowledge/ + 本体数据（FDE 交付，Harness 只挂载 / 校验） |
 | 指令 Instruction（怎么说） | 指令怎么说 | 约束层 · 四层约束注入链即「指令」载体（prompt 注入 Agent 上下文） |
 | 校验 Validation（对不对） | 校验对不对 | 约束层 · 审计能力 + 约束规则（硬约束，AI 绕不过） |
 | 编排 Orchestration（先干什么后干什么） | 编排先干什么后干什么 | 编排层 · 编排引擎 + 进化引擎 + FORGE |
@@ -565,7 +565,7 @@ Palantir Foundry 10 年迭代收敛出 Ontology 的 5 块构建块——**Object
 
 **框架级对等印证**：Pydantic AI（Python Agent 框架，2026-06 V2）独立演化收敛到同一组原语——HITL 工具审批门 = `human_confirm` 节点、Capabilities 可组合能力包 = SKILL.md + registry 动态注册、Evals = `data/eval/` 评分、Graph 编排 = LangGraph StateGraph。跨语言（Python vs TS）、跨范式（runtime 框架 vs harness 约束层）独立收敛到同一组原语，说明 sofagent 的原语选择经受住了独立性检验。
 
-**学术实证印证**：本体抽取（Ontology Extraction）已被学术界作为正式 NLP 任务量化研究——一篇覆盖 36 篇论文的 A 级综述报告，基于 LLM 的本体抽取任务 F1 最高达 72.78%，说明「用 LLM 从非结构化文本抽取结构化本体」不是工程伪命题，而是有公开学术基线、可量化评估的研究方向。sofagent 的 Ontology 本体结构（v1.3.1 规划）走的是同一方向——从企业非结构化文档（SOP / 会议纪要 / 操作手册）抽取实体、关系、动作，落地为可运行的 knowledge/ 节点。
+**学术实证印证**：本体抽取（Ontology Extraction）已被学术界作为正式 NLP 任务量化研究——一篇覆盖 36 篇论文的 A 级综述报告，基于 LLM 的本体抽取任务 F1 最高达 72.78%，说明「用 LLM 从非结构化文本抽取结构化本体」不是工程伪命题，而是有公开学术基线、可量化评估的研究方向。sofagent 的 Ontology 本体数据（v1.3.1 规划）走的是同一方向——从企业非结构化文档（SOP / 会议纪要 / 操作手册）抽取实体、关系、动作，落地为可运行的 knowledge/ 节点。
 
 > 📖 来源：《大模型×本体工程：36 篇论文系统性综述》（A 级综述，2026），本体抽取任务 F1 = 72.78%
 
@@ -592,7 +592,7 @@ Palantir Foundry 10 年迭代收敛出 Ontology 的 5 块构建块——**Object
 - **6 个月路线图**——前 3 个月选一个高价值业务决定，接通最小数据链，做出**有人审批、能写回结果、可追踪**的 Action 闭环（验收不看模型多聪明，看业务有没有真的改变、错误能不能发现、失败能不能恢复）；后 3 个月加 Agent，按 KLM 接入至少两种可替换模型，建立真实业务测试集，记录调用轨迹/成本/结果，补齐发布/回滚/权限治理。
 - **两个验收问题**——① 如果明天更换大模型，业务对象、规则、动作、权限和历史还能不能留下？（查 Ontology + KLM）② 这套东西能不能进我的隔离环境？升级失败能不能回滚？边缘节点断了还能不能跑？（查 Apollo + Rubrik）——**答不上来，你买到的可能只是一个更贵的 Demo**。
 
-> 💡 **对 sofagent 的五点印证**：① **Ontology = 可运行业务契约** 与 sofagent 本体结构（Object Type + Property + Link Type + Action + 状态机，FDE/GUIDE 第三章）完全同构——「对象定义必须和动作一起做」正是 sofagent ontology 的 Action 注册表 + validator 三态 + 生命周期（v1.3.1 / v1.3.7）；② **Red Loop 写回机制** = sofagent Durable Execution（checkpoint 续跑 + 副作用幂等，v1.3.1）+ WAL 三态恢复/undo 三档（v1.3.8）+ HITL 审批 + 审计留痕——「幂等/回执/补偿/审计/人工接管」逐一有对应；③ **KLM 范式** = 智能/控制分离（PHILOSOPHY §一理论锚点）+ 模型注册/灰度切换/路由决策可解释性（v1.3.6）——「把规则动作边界放在模型外边」正是约束层哲学；④ **Apollo 交付层自检五问** = sofagent 版本同步机制 + check-version 门禁 + 快照回滚 + 模型换后重考评测（Benchmark）；⑤ **两个验收问题** = sofagent「编排层永远不换」（24 条 git diff 规则 + HMAC 链不依赖模型）+ 快照 `--revert` 一键回滚——「换模型对象还在不在」的答案就在约束层与模型解耦的设计里。
+> 💡 **对 sofagent 的五点印证**：① **Ontology = 可运行业务契约** 与 sofagent 本体数据（Object Type + Property + Link Type + Action + 状态机，FDE/GUIDE 第三章）完全同构——「对象定义必须和动作一起做」正是 sofagent ontology 的 Action 注册表 + validator 三态 + 生命周期（v1.3.1 / v1.3.7）；② **Red Loop 写回机制** = sofagent Durable Execution（checkpoint 续跑 + 副作用幂等，v1.3.1）+ WAL 三态恢复/undo 三档（v1.3.8）+ HITL 审批 + 审计留痕——「幂等/回执/补偿/审计/人工接管」逐一有对应；③ **KLM 范式** = 智能/控制分离（PHILOSOPHY §一理论锚点）+ 模型注册/灰度切换/路由决策可解释性（v1.3.6）——「把规则动作边界放在模型外边」正是约束层哲学；④ **Apollo 交付层自检五问** = sofagent 版本同步机制 + check-version 门禁 + 快照回滚 + 模型换后重考评测（Benchmark）；⑤ **两个验收问题** = sofagent「编排层永远不换」（24 条 git diff 规则 + HMAC 链不依赖模型）+ 快照 `--revert` 一键回滚——「换模型对象还在不在」的答案就在约束层与模型解耦的设计里。
 
 ### 模型层判断：组合优于单一，本地模型可行
 
