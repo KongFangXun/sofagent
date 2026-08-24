@@ -514,6 +514,40 @@ else
 fi
 
 echo ""
+echo "=== 12. AGENTS.md MCP 全量工具表与 tool-registry 一致性 ==="
+# 门禁目的：防速查表漂移——registry 新增/删除工具而 AGENTS.md 全量表未同步时阻断。
+# 校验面：AGENTS.md「MCP 全量工具表」小节内的 \`tool_name\` 集合 vs tool-registry.ts 注册名集合，双向差集均须为空。
+# 实现注：node 内嵌正则用 [\x60]（反引号）字符类，避开 bash 双引号内 backtick 转义地狱。
+TOOL_TABLE_CHECK=$(node -e "
+const fs = require('fs');
+const agents = fs.readFileSync('SKILL/AGENTS.md', 'utf8');
+const section = agents.split('## MCP 全量工具表')[1] || '';
+const bt = String.fromCharCode(96);
+const re = new RegExp(bt + '([a-z_]+)' + bt, 'g');
+const tableTools = new Set([...section.matchAll(re)].map(m => m[1]));
+const regSrc = fs.readFileSync('engine/mcp/src/tool-registry.ts', 'utf8');
+const regTools = new Set([...regSrc.matchAll(/name:\\s*'([a-z_]+)',/g)].map(m => m[1]));
+const missInTable = [...regTools].filter(t => !tableTools.has(t)).sort();
+const extraInTable = [...tableTools].filter(t => !regTools.has(t)).sort();
+if (missInTable.length === 0 && extraInTable.length === 0) {
+  console.log('OK ' + regTools.size);
+  process.exit(0);
+}
+if (missInTable.length) console.log('MISSING ' + missInTable.join(','));
+if (extraInTable.length) console.log('EXTRA ' + extraInTable.join(','));
+process.exit(1);
+" 2>&1); TOOL_TABLE_RC=$?
+if [ "$TOOL_TABLE_RC" -eq 0 ]; then
+  echo "  ✓ 全量表与 registry 一致（${TOOL_TABLE_CHECK#OK } tools）"
+elif [ "$TOOL_TABLE_CHECK" = "PATTERN_MISS" ]; then
+  echo "  ⚠ AGENTS.md 未找到「MCP 全量工具表」小节，跳过"
+else
+  echo "  ❌ 全量表与 registry 漂移："
+  printf '%s\n' "$TOOL_TABLE_CHECK" | sed 's/^/    /'
+  ERRORS=$((ERRORS + 1))
+fi
+
+echo ""
 if [ "$ERRORS" -gt 0 ]; then
   echo "发现 ${ERRORS} 个问题"
   exit 1

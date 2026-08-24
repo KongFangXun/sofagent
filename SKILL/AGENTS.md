@@ -102,6 +102,132 @@ FORGE engineer commit ──→ 自动调用 @sofagent-audit  → 验证变更�
 
 ---
 
+## MCP 全量工具表（66 tools · 12 类）
+
+> 与 `engine/mcp/src/tool-registry.ts` 一一对应（check-docs 第 12 节门禁校验双向差集为空）。主入口 `SKILL.md` 只列每类代表工具，本表为全量。🔴 = 破坏性操作（强制人审/confirmed）。
+
+### 审计合规（8）
+
+| 工具 | 说明 |
+|------|------|
+| `run_audit` | 对 git diff 运行全量审计（24 条规则），返回结构化审计报告 |
+| `audit_file` | 单文件变更即时审计（不阻断） |
+| `audit_data_change` | 知识库结构化数据变更跑数据审计（D1-D5） |
+| `audit_trail` | 跨设备审计轨迹查询（HMAC 验签） |
+| `list_rules` | 列出所有审计规则清单（只读） |
+| `data_sovereignty_report` | 数据主权审计报告摘要（云端调用/本地执行/数据流出率） |
+| `notify_session` | 向当前 session 推送审计结果摘要 |
+| `hitl_resolve` | 对挂起等人工确认的 checkpoint 提交决策（approve/reject/aborted） |
+
+### 反思沉淀（3）
+
+| 工具 | 说明 |
+|------|------|
+| `get_think` | 读取 think.md 最新反思条目 |
+| `write_think` | 向 think.md 追加手动反思记录 |
+| `read_think_md` | 读取 think.md 完整内容 |
+
+### 知识库（7）
+
+| 工具 | 说明 |
+|------|------|
+| `search_knowledge` | 跨 entities/concepts 模糊搜索 |
+| `read_entity` / `read_concept` | 读取单个 entity / concept 页 |
+| `list_entities` / `list_concepts` | 列出全部（entities 可按 domain 过滤） |
+| `read_lessons` | 读取踩坑记录（lessons-missteps.md） |
+| `stats` | 知识库统计（entities/concepts 数 + 最后更新时间） |
+
+### 本体数据（7）
+
+| 工具 | 说明 |
+|------|------|
+| `create_entity` / `create_concept` | 创建/更新页（写入前跑数据审计，FAIL 拒绝） |
+| `update_entity` | 字段级更新 entity（只改传入字段） |
+| `delete_entity` / `delete_concept` | 🔴 删除页，必须 confirmed:true |
+| `validate_ontology` | 检查本体数据完整性（断裂/孤儿/死链） |
+| `ontology_import` | 提交 entity/concept/relations（JSON），校验+审计后注册 |
+
+### 评估优化（8）
+
+| 工具 | 说明 |
+|------|------|
+| `evaluate_output` | golden set 评估 Agent 产出质量 |
+| `run_ab_test` | A/B 对比实验（current vs candidate） |
+| `promote_ab` | 🔴 晋升 candidate，必须 human_confirmed:true |
+| `evaluate` | Benchmark 隔离评测（评分 0..100） |
+| `eval_suite` | 企业专属 eval 套件（模板/基线冻结/运行） |
+| `optimize_skill` | 优化指定 Skill 文件，生成优化建议 |
+| `refine` | Refine 质量优化循环 |
+| `loop_debug` | Onboard Agent 调试循环（activate→run→judge→fix） |
+
+### FDE 编排（4）
+
+| 工具 | 说明 |
+|------|------|
+| `fde_compose` | FDE 梳理辅助——五要素引导生成 workflow 或 ontology 草稿 |
+| `sofagent_compose` | 编排引擎——任务描述返回 Sub Agent 编排方案（YAML） |
+| `activate_workflow` | 读取 FDE 交付物，注册企业 SubAgent |
+| `create_agent` | 一句话需求自动推导 Agent 配置（角色+域规则+think+knowledge） |
+
+### Workflow / Agent（7）
+
+| 工具 | 说明 |
+|------|------|
+| `workflow_submit` | Workflow 提交（schema 校验 + 解析执行） |
+| `route_workflow` | 入口路由——task + workflow 返回命中节点或 fallback |
+| `agent_identity` | 查询 Agent 身份码（不含私钥） |
+| `team_create` / `team_broadcast` | 创建团队 / 意图广播到团队意图总线 |
+| `list_agents` | 列出已注册 Agent（内置 + 企业 SubAgent） |
+| `list_capabilities` | MCP 能力清单 |
+
+### 能力公地（6）
+
+| 工具 | 说明 |
+|------|------|
+| `commons_publish` | 能力发布（SkillScan 安全门） |
+| `commons_search` | 能力检索（标签/关键词/类型） |
+| `commons_invoke` | 能力调用（SkillScan 拦截 + HITL 确认） |
+| `commons_rate` | 调用后累积评分（0.0~1.0，防刷） |
+| `commons_retire` | 能力退役/恢复（强制 owner 确认） |
+| `commons_harvest_rule` | 从调用日志 + Refine 循环提炼质量规则候选 |
+
+### 模型训练（4）
+
+| 工具 | 说明 |
+|------|------|
+| `model_register` | 注册训练后模型 endpoint |
+| `model_switch` | 灰度切换（percent<100 灰度，100 强制人审） |
+| `model_unregister` | 模型退役（可恢复，强制人审） |
+| `train_budget` | 训练预算控制（超预算人审续跑或终止） |
+
+### 验收（2）
+
+| 工具 | 说明 |
+|------|------|
+| `define_acceptance` | 任务附机器可判定验收条件（test/build/grep-absent/schema） |
+| `check_acceptance` | 跑登记的条件，返回结构化结果 |
+
+### 运维观测（6）
+
+| 工具 | 说明 |
+|------|------|
+| `health_check` | 运行环境健康检查（环境/配置/Hook/依赖） |
+| `snapshot_list` / `snapshot_restore` | 快照时间线 / 🔴 恢复（强制人审） |
+| `worklog_query` | 按 Agent/Workflow/周趋势查 AI 工作明细 + 进化四维趋势 |
+| `cost_query` | 成本审计——预算/各 Agent 实际消耗/超限记录 |
+| `daemon_status` | daemon 运行状态（PID/心跳，只读） |
+
+### 浏览器（4）
+
+| 工具 | 说明 |
+|------|------|
+| `playwright_navigate` | 打开 URL 返回标题/状态码（不可用时降级） |
+| `playwright_click` | 按 CSS 选择器点击 |
+| `playwright_screenshot` | 截图返回图片路径与字节数 |
+| `playwright_assert` | 页面断言（文本/元素存在性） |
+
+---
+
 ## 参考
 
 - [FORGE/](../FORGE/) — 自迭代循环的实验编排
