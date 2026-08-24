@@ -634,3 +634,82 @@ describe('F 链零 commit 校验（两轮假 PASS 根治）', () => {
     expect(SOURCE_CODE).toContain('110: 150_000');
   });
 });
+
+// ═══════════════════════════════════════════════════════════
+//  6. buildPrecheckEvidence 测试套件（v1.4.0 DSH 证据注入防回归）
+// ═══════════════════════════════════════════════════════════
+// 背景：run-04~07 连续失败根因 = DSH CLI 桥接无法注入自定义工具 → worker 读不到
+// precheck.json → 「0 条工具结果」判 FAIL。修复 = 证据内容由 driver 注入 userMessage。
+// 本套件防回归：注入逻辑被改坏（截断/漏注入/只注入路径不注入内容）时测试能抓住。
+
+function createBuildPrecheckEvidence() {
+  const { fullBody } = extractFunctionBody(SOURCE_CODE, 'buildPrecheckEvidence');
+  const wrapper = new Function(
+    'join', 'existsSync', 'readFileSync',
+    fullBody + '\nreturn buildPrecheckEvidence;'
+  );
+  return wrapper(join, existsSync, readFileSync);
+}
+
+describe('buildPrecheckEvidence（DSH 证据注入）', () => {
+  let tmpRoot;
+  let buildEv;
+
+  beforeEach(() => {
+    tmpRoot = join(tmpdir(), `rg-bpe-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`);
+    mkdirSync(tmpRoot, { recursive: true });
+    buildEv = createBuildPrecheckEvidence();
+  });
+
+  afterEach(() => {
+    if (existsSync(tmpRoot)) rmSync(tmpRoot, { recursive: true, force: true });
+  });
+
+  it('非 precheck 步骤返回空串（acceptance/consolidate/verdict 不受影响）', () => {
+    const stepDef = { prompt: 'consolidate.md', outputs: ['stage6-report.md'], inputs: ['acceptance.md', 'regression.md'] };
+    expect(buildEv(tmpRoot, stepDef)).toBe('');
+  });
+
+  it('precheck 步骤但输入文件缺失 → 返回提示不崩溃', () => {
+    const stepDef = { precheck: true, inputs: ['regression-precheck.json'] };
+    const out = buildEv(tmpRoot, stepDef);
+    expect(out).toContain('文件不存在');
+  });
+
+  it('regression-precheck.json → 逐维度注入（含维度号/标题/exitCode + 汇总行）', () => {
+    const dims = {
+      '1': { num: 1, title: 'CHANGELOG 纯度', exitCode: 0, output: 'ok' },
+      '2': { num: 2, title: '文档一致性', exitCode: 1, output: 'fail', truncated: false },
+    };
+    writeFileSync(join(tmpRoot, 'regression-precheck.json'), JSON.stringify({ meta: { dims: 2 }, dims }));
+    const stepDef = { precheck: true, inputs: ['regression-precheck.json'] };
+    const out = buildEv(tmpRoot, stepDef);
+    expect(out).toContain('维度 1');
+    expect(out).toContain('CHANGELOG 纯度');
+    expect(out).toContain('exit=0');
+    expect(out).toContain('exit=1');
+    expect(out).toContain('1 个非零退出码');
+  });
+
+  it('coverage-precheck.json → 模块+场景全量注入（不 slice 截断——P1-1/P1-2 防回归）', () => {
+    const changelog = Array.from({ length: 18 }, (_, i) => ({ title: '模块' + (i + 1) }));
+    const scenarios = Array.from({ length: 252 }, (_, i) => ({ num: i + 1, title: '场景' + (i + 1) }));
+    writeFileSync(join(tmpRoot, 'coverage-precheck.json'), JSON.stringify({
+      meta: { modules: 18, scenarios: 252, changelogPath: 'x' },
+      changelog, scenarios,
+    }));
+    const stepDef = { precheck: true, inputs: ['acceptance.md', 'coverage-precheck.json'] };
+    const out = buildEv(tmpRoot, stepDef);
+    expect(out).toContain('模块18');
+    expect(out).toContain('场景252');
+    expect(out).not.toContain('acceptance.md 内容');
+  });
+
+  it('注入文本含「precheck 证据」标题（worker 可识别为判定依据）', () => {
+    writeFileSync(join(tmpRoot, 'regression-precheck.json'), JSON.stringify({
+      meta: { dims: 1 }, dims: { '1': { num: 1, title: 'x', exitCode: 0, output: '' } },
+    }));
+    const out = buildEv(tmpRoot, { precheck: true, inputs: ['regression-precheck.json'] });
+    expect(out).toContain('precheck 证据');
+  });
+});
