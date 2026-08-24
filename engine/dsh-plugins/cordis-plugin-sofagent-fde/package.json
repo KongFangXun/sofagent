@@ -1,7 +1,7 @@
 {
   "name": "cordis-plugin-sofagent-fde",
-  "version": "0.1.0",
-  "description": "进场方法论六 tool 闭环（fde_interview/classify/quantify/derive/distill/deploy）（sofagent 品牌插件 · 主色 #16B8F3）",
+  "version": "1.4.0",
+  "description": "FDE 进场方法论桥接——本体数据视图生成（fde_* 六 tool 为规划中形态，见 sofagent ROADMAP）（sofagent 品牌插件 · 主色 #16B8F3）",
   "private": true,
   "license": "MIT",
   "author": "KongFangXun",

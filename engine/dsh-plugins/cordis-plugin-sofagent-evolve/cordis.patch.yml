@@ -5,4 +5,4 @@
       inject: [settings, dynamicCordisRunner]
       config:
         seam: "任务结束 hook + refine tool"
-        description: "经验沉淀——think.md 反思 + Dream Cycle + skillopt（sofagent 品牌 · #16B8F3）"
+        description: "经验沉淀——think.md 反思 + Dream Cycle + skillopt——桥接 @sofagent/think generateThinkEntry（sofagent 品牌 · #16B8F3）"

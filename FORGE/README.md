@@ -85,6 +85,10 @@ FORGE 有两个内环，共用同一套模型配置（详见 [`quick-start.md`](
 
 两个 driver 都支持 `--dry-run`（只打印 step 序列不调 LLM）。release-gate-loop 在 sandbox/OOM 环境下有 `--skip-acceptance` 和 `--step` 单步模式（详见 [`quick-start.md`](quick-start.md)）。
 
+## 密钥注入纪律
+
+FORGE driver 运行依赖 LLM API key，经 `env.local` 注入：复制 `env.local.template` 为 `env.local` 并填入真实 key 后 `source FORGE/env.local`。**真实文件永不入库**（`FORGE/.gitignore` 已忽略 env.local，`git log --all -- FORGE/env.local` 恒为 0）。仓库目录内不落任何真实格式密钥——审计工具的仓库不能有审计红旗（A2 纪律的自我要求）。key 泄露嫌疑时优先轮换（控制台重新生成），而非仅删文件。
+
 ## 内置 Agent
 
 FORGE 的 sub-agent 定义在 `SKILL/agents/` 下：

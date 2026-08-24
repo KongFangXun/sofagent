@@ -1,7 +1,7 @@
 {
   "name": "cordis-plugin-sofagent-evolve",
-  "version": "0.1.0",
-  "description": "经验沉淀——think.md 反思 + Dream Cycle + skillopt + instinct→skill + refine（seam: 任务结束 hook）（sofagent 品牌插件 · 主色 #16B8F3）",
+  "version": "1.4.0",
+  "description": "经验沉淀——think.md 反思 + Dream Cycle + skillopt + instinct→skill + refine（seam: 任务结束 hook）——桥接 @sofagent/think generateThinkEntry（sofagent 品牌插件 · 主色 #16B8F3）",
   "private": true,
   "license": "MIT",
   "author": "KongFangXun",

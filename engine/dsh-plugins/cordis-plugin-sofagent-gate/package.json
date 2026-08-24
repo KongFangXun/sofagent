@@ -1,7 +1,7 @@
 {
   "name": "cordis-plugin-sofagent-gate",
-  "version": "0.1.0",
-  "description": "验收不过不放行——机器可判定验收 + 人审（seam: agent/turn-stopping）（sofagent 品牌插件 · 主色 #16B8F3）",
+  "version": "1.4.0",
+  "description": "验收不过不放行——机器可判定验收 + 人审（seam: agent/turn-stopping）——桥接 @sofagent/audit runRules（sofagent 品牌插件 · 主色 #16B8F3）",
   "private": true,
   "license": "MIT",
   "author": "KongFangXun",

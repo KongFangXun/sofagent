@@ -517,6 +517,63 @@ if [ -n "$LIMITATIONS_ALL" ]; then
   done <<< "$LIMITATIONS_ALL"
 fi
 
+# ── CHANGELOG 索引行测试数校验（v1.4.1 F-06：补盲区）──
+# 背景：F-01 的 2978 三处错数字从这个盲区漏出去——开发日志有「历史冻结」豁免，
+# CHANGELOG 索引行却无人校验。本段对最新版本索引行做两条校验：
+#   ① 算术自洽：测试 NNNN→**MMM**（+KKK → 要求 NNN+KKK=MMM
+#   ② 口径对齐：识别「workspace 口径 NNNN/12 包」标注——workspace 值必须等于
+#      test-count.sh 实测 TOTAL_TESTS；全量值必须等于 workspace + DSH 插件 27 +
+#      OpenClaw 插件 17（双口径换算式：2981 = 2937 + 27 + 17，写死防漂移）
+# 双口径防误判：ROADMAP/CHANGELOG 的「全量 NNNN」与「workspace 口径 NNNN」是两个
+# 合法并存口径（报告二误判教训的机制化）——按各自口径比对各自真值，不得把全量判为漂移。
+CHANGELOG_LINE=$(grep -nE '测试 [0-9]+→\*\*[0-9]+\*\*（\+[0-9]+' CHANGELOG.md 2>/dev/null | head -1)
+if [ -z "$CHANGELOG_LINE" ]; then
+  echo -e "  ${RED}✗ CHANGELOG.md 未找到「测试 NNNN→**MMM**（+KKK」索引行声明（grep 未命中 → FAIL，禁止静默跳过）${NC}"
+  ((FAIL++)) || true
+else
+  CL_LINENO=$(echo "$CHANGELOG_LINE" | cut -d: -f1)
+  CL_PREV=$(echo "$CHANGELOG_LINE" | grep -oE '测试 [0-9]+→' | grep -oE '[0-9]+')
+  CL_CUR=$(echo "$CHANGELOG_LINE" | grep -oE '→\*\*[0-9]+\*\*' | grep -oE '[0-9]+')
+  CL_DELTA=$(echo "$CHANGELOG_LINE" | grep -oE '（\+[0-9]+' | grep -oE '[0-9]+')
+  cl_fail=0
+  # ① 算术自洽：前值 + 增量 = 当前值
+  CL_SUM=$((CL_PREV + CL_DELTA))
+  if [ "$CL_SUM" -ne "$CL_CUR" ]; then
+    echo -e "  ${RED}✗ CHANGELOG.md（行 ${CL_LINENO}）：算术不自洽——${CL_PREV}+${CL_DELTA}=${CL_SUM} ≠ ${CL_CUR}${NC}"
+    cl_fail=1
+  fi
+  # ② 双口径对齐（历史快照语义）：CHANGELOG 最新版本行是发版时点快照（同开发日志
+  #    「历史冻结」），不与当前 TOTAL_TESTS 比对（发版后新增测试属正常漂移）。
+  #    只校验「workspace 口径 NNNN」标注与同版本开发日志快照一致——开发日志才是
+  #    该版本测试数的 SSOT。双口径换算式写死防漂移：全量 = workspace + 27(DSH) + 17(OpenClaw)。
+  CL_WS_MARK=$(echo "$CHANGELOG_LINE" | grep -oE 'workspace 口径 [0-9]+' | grep -oE '[0-9]+' || echo "")
+  if [ -n "$CL_WS_MARK" ]; then
+    # 找同版本开发日志的 workspace 快照（「NNNN tests across 12 packages」或「workspace NNNN」）
+    # 注意只取第一个数字（该模式含两个数字——测试数与包数，head -1 取测试数）
+    DEVLOG_SNAPSHOT=$(grep -oE '[0-9]+ tests across 12 packages' "${DEVLOG_FILE}" 2>/dev/null | head -1 | grep -oE '^[0-9]+' || echo "")
+    if [ -n "$DEVLOG_SNAPSHOT" ]; then
+      if [ "$CL_WS_MARK" != "$DEVLOG_SNAPSHOT" ]; then
+        echo -e "  ${RED}✗ CHANGELOG.md（行 ${CL_LINENO}）：workspace 口径声称 ${CL_WS_MARK}，开发日志快照 ${DEVLOG_SNAPSHOT}（${DEVLOG_FILE}）${NC}"
+        cl_fail=1
+      fi
+      # 全量口径 = workspace + DSH 插件 27 + OpenClaw 插件 17（换算式写死，防口径漂移）
+      CL_FULL_EXPECT=$((DEVLOG_SNAPSHOT + 27 + 17))
+      if [ "$CL_CUR" -ne "$CL_FULL_EXPECT" ]; then
+        echo -e "  ${RED}✗ CHANGELOG.md（行 ${CL_LINENO}）：全量口径 ${CL_CUR} ≠ workspace ${DEVLOG_SNAPSHOT} + 27(DSH) + 17(OpenClaw) = ${CL_FULL_EXPECT}（开发日志快照换算）${NC}"
+        cl_fail=1
+      fi
+    fi
+  fi
+  if [ "$cl_fail" = "0" ]; then
+    if [ "$QUIET" = false ]; then
+      echo -e "  ${GREEN}✓ CHANGELOG.md 索引行（行 ${CL_LINENO}）：${CL_PREV}+${CL_DELTA}=${CL_CUR} 算术自洽${CL_WS_MARK:+，workspace 口径 ${CL_WS_MARK} 对齐}"
+    fi
+    ((PASS++)) || true
+  else
+    ((FAIL++)) || true
+  fi
+fi
+
 # ── 结果汇总 ──
 if [ "$QUIET" = false ]; then
   echo ""

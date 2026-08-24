@@ -1,5 +1,5 @@
 // ============================================================
-// validate-ontology.ts · MCP tool：本体结构完整性校验（v1.3.7 S2 新增）
+// validate-ontology.ts · MCP tool：本体数据完整性校验（v1.3.7 S2 新增）
 // ============================================================
 //
 // 复用 @sofagent/ontology 的 checkOntologyStatus() + mergeOntology()
@@ -153,7 +153,7 @@ export function validateOntology(args: ValidateOntologyArgs): ValidateOntologyRe
   const { orphans, brokenRelations } = checkRelationIntegrity(entitiesDir);
 
   const lines: string[] = [];
-  lines.push('[sofagent] 本体结构校验');
+  lines.push('[sofagent] 本体数据校验');
   lines.push(`实体数: ${status.objectCount} · 动作数: ${status.actionCount} · 约束数: ${status.constraintCount}`);
   lines.push(`数据新鲜度: ${status.fresh ? '✅ 24h 内更新' : '⚠️ 超过 24h 未更新或不存在'}`);
 
@@ -172,7 +172,7 @@ export function validateOntology(args: ValidateOntologyArgs): ValidateOntologyRe
   }
 
   if (orphans.length === 0 && brokenRelations.length === 0 && status.exists) {
-    lines.push('✅ 本体结构完整，无孤儿实体或断裂关联');
+    lines.push('✅ 本体数据完整，无孤儿实体或断裂关联');
   }
 
   return {

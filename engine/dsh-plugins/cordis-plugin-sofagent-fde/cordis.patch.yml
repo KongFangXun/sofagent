@@ -5,4 +5,4 @@
       inject: [settings, dynamicCordisRunner]
       config:
         seam: "fde_* tools"
-        description: "进场方法论六 tool——interview/classify/quantify/derive/distill/deploy（sofagent 品牌 · #16B8F3）"
+        description: "FDE 进场方法论桥接——本体数据视图生成（fde_* 六 tool 为规划中形态，见 sofagent ROADMAP）（sofagent 品牌 · #16B8F3）"

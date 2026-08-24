@@ -327,7 +327,7 @@ export const TOOLS: ToolDef[] = [
   {
     name: 'validate_ontology',
     roles: ['fde'],
-    description: '检查本体结构完整性——实体数/关联断裂/孤儿实体/死链。',
+    description: '检查本体数据完整性——实体数/关联断裂/孤儿实体/死链。',
     inputSchema: {
       type: 'object',
       properties: {

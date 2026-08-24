@@ -5,4 +5,4 @@
       inject: [settings, dynamicCordisRunner]
       config:
         seam: "tools/result + tools/pre-execute + fs/write-intent"
-        description: "变更机器审阅——24 规则 + git diff 硬证据 + 节点级审计（sofagent 品牌 · #16B8F3）"
+        description: "变更机器审阅——24 规则 + git diff 硬证据 + 节点级审计——桥接 @sofagent/audit runRules（sofagent 品牌 · #16B8F3）"

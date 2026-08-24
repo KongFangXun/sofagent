@@ -67,7 +67,7 @@ done
 > - 发布源 = 各 cordis-plugin 包目录（`engine/dsh-plugins/cordis-plugin-sofagent-*`，不是 SKILL/，SKILL 是方法论分发，plugin 是引擎能力分发）
 > - 版本号 = 与 sofagent 主线版本对齐（v1.4.0 → 各 plugin v0.1.0 起步；DSH Cordis 协议 breaking change 时 bump major）
 > - 每版发版都要推，与 ClawHub/SkillHub SKILL 分发同等强制
-> - SkillHub 与 npm 并行：npm 是安装通道（`dsh plugin add`），SkillHub 是发现层（DSH 生态检索），不互替
+> - 分发通道真相源（v1.4.1 校准）：**DSH plugin 只走 SkillHub 单通道**——`skillhub install cordis-plugin-sofagent-*` 是唯一安装通道 + 发现层。npm 不发布插件（10-publish 步骤八清单只有 13 个 @sofagent 包，不含插件）——`dsh plugin add` 依赖的 npm 通道未开通，文档一律不得声称 npm 可装
 
 ### 步骤二·a：OpenClaw plugin 分发（v1.4.0 起 · 每版必做）
 

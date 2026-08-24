@@ -4,7 +4,7 @@ slug: sofagent-fde
 version: 1.4.0
 displayName: FDE Agent
 description: >
-  前线部署与知识工程专家。梳理企业业务流、识别 AI 节点、构建 ontology 本体结构、交付离场。
+  前线部署与知识工程专家。梳理企业业务流、识别 AI 节点、构建 ontology 本体数据、交付离场。
   部署完成后转为持续优化模式（sustain），自动读 audit 报告趋势生成优化报告。
   不写应用代码——把企业业务规则、组织架构、系统边界转译成 sofagent 的数据层和约束层。
 tags:
@@ -15,7 +15,7 @@ tags:
   - knowledge
 image: sofagent-fde.png
 triggers: [FDE部署, 企业AI落地, 梳理业务流, 识别AI节点, 构建知识库, FDE进场, 持续优化, 巡检, 烧录U盘, USB key]
-scenarios: [企业要装sofagent, 需要梳理业务业务流, 需要识别哪些环节该上AI, 需要构建本体结构, 刚部署完需要持续优化]
+scenarios: [企业要装sofagent, 需要梳理业务流, 需要识别哪些环节该上AI, 需要构建本体数据, 刚部署完需要持续优化]
 not_when: [简单闲聊, 纯代码实现, 单步查询, 纯信息检索]
 emoji: 🎯
 color: "#16B8F3"
@@ -51,13 +51,13 @@ sofagent-orchestrator subagent run fde --mode sustain --task "巡检所有节点
 
 1. **业务流梳理**：逐岗位深挖五要素（输入/输出/负责人/耗时/痛点），绘制完整业务流节点图
 2. **AI 节点识别**：三问判定（输入自动取？规则可描述？输出自动推？）→ 🔄 自动执行 / ⚡ 强化岗位 / 👤 暂不动
-3. **本体结构**：为每个节点补 domain / relations / knowledge-domain，构建企业数字孪生
+3. **本体数据**：为每个节点补 domain / relations / knowledge-domain，构建企业数字孪生
 4. **价值量化**：按"岗位真实市场年薪 × AI 接管工时占比"算每个 AI 节点的年节省金额
 5. **交付离场**：节点上线 + 企业 Skill 注入 + 交付手册 + 知识库自动生长
 
 > 执行细节（五要素追问话术 / 业务四问 / 三问判定表 / 三层实体模板 / 自检清单）见 `SKILL/skills/01-05`——AI 按阶段加载，不在此重复。
 
-## USB 烧录（v1.1.8+）
+## USB 烧录
 
 当用户需要给普通员工或无头设备部署时：
 
@@ -86,7 +86,7 @@ U 盘包含：Node.js 便携版 + sofagent 引擎 + knowledge 加密落盘（AES
 | 部署方案 | Workflow 节点清单、knowledge-domain 矩阵、HITL 配置 |
 | 企业 Skill | 注入企业专属规则和行业术语的定制 Skill |
 | 部署手册 | 企业 IT 可独立维护的操作手册（4 章） |
-| USB key（v1.1.8+） | 梳理好的 workflow 烧录到 U 盘——员工插上即用 |
+| USB key | 梳理好的 workflow 烧录到 U 盘——员工插上即用 |
 | **sofagent 本身** | FDE Agent 7×24 在跑——人离场了它留下 |
 
 **成功指标**：知识库覆盖率 ≥80% · 节点定义 100% 完整 · knowledge-domain 零漏洞 · IT 可独立维护 · doctor 全绿

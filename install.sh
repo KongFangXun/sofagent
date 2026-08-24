@@ -19,6 +19,8 @@
 #    ⚠️ FDE 不该在自己电脑跑 install.sh——FDE 的工具是 Skill + 未来 商业模型层 模型。
 #    FORGE 是 sofagent 项目的自迭代开发工具包（管理代码变更，给开发者用），
 #    不属于企业交付物。
+#    MCP 自动配置：--platform workbuddy/claude/cursor 时写 mcp.json（JSON merge 不覆盖），
+#    --platform codex 时写 config.toml（[mcp_servers.sofagent] 段追加幂等）——装完即连。
 #
 # 🔗 编排契约：FDE 部署时调用本脚本安装到底座到企业设备。
 #    改动此文件前确认调用方不受影响：

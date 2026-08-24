@@ -78,4 +78,4 @@
 
 ## 下一阶段
 
-→ 读 skills/02-discovery.md（五要素深挖 + 本体结构构建）
+→ 读 skills/02-discovery.md（五要素深挖 + 本体数据构建）
