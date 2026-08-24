@@ -16,5 +16,7 @@
 | 四 | AI 生成完整发布 prompt，交接给项目负责人（可授权 AI 代执行） | prompt 就绪 |
 
 > 🔴 **步骤四防漂移铁律（2026-08-20 v1.3.8 教训）**：生成发布 prompt 时，**步骤六 gh release 段必须逐字引用 10-publish.md「5.0 三道工序」的命令模板**（`--title "vX.Y.Z — {emoji 主题短语}"` + 生成后自检 + 上一版结构对照），**禁止凭记忆手写简化**。v1.3.8 实况：SOP 11 写对了标题格式，但生成 prompt 时被手写简化成 `--title "v1.3.8"`，执行 session 照做 → release 标题丢主题短语（v1.3.0~v1.3.7 全 8 版均为「vX.Y.Z — emoji 短语」惯例）。生成完对照 10-publish.md 逐段核对一次再交接。
+>
+> 🔴 **发布物落盘铁律（2026-08-24 v1.4.0 教训）**：发布 prompt + release note body 等发布物，统一落盘 `~/Desktop/`（命名 `vX.Y.Z-publish-prompt.md` / `release-note-vX.Y.Z-body.md`，与阶段一审查草稿/阶段十二 dev-prompt 的桌面惯例一致）。**禁止自建新目录**（FORGE/artifacts/ 等）——发版产物一律桌面，SOP 引用的路径只有两种：仓库内既有文件 或 `~/Desktop/`。
 
 > **AI 代执行边界**：如果项目负责人说「交给你了」明确授权，AI 可以在项目负责人已登录的环境代执行发布命令（npm publish / git tag / gh release / Skill 分发）。但：npm 凭证必须在项目负责人已登录的终端中使用，**AI 不得自行 `npm login` 或操作凭证**；每一步执行后立即报告结果，遇到报错暂停并请示。授权 AI 跑命令 ≠ 授权 AI 管凭证——凭证始终在人的控制下。
