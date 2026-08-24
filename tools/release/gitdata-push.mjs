@@ -172,8 +172,14 @@ if (treeEntries.length) {
 console.log(`tree: ${newTree.slice(0, 8)}（base ${baseTree.slice(0, 8)}）`);
 
 // ── ③ commit ──
+// msg 聚合：本地有远端对象用 git log range；没有（连续推送）退化取 HEAD 一条 subject
 const msg = customMsg || (() => {
-  const subjects = sh(`git log --format=%s ${remoteSha}..HEAD`).split('\n').filter(Boolean);
+  let subjects;
+  try {
+    subjects = sh(`git log --format=%s ${remoteSha}..HEAD`).split('\n').filter(Boolean);
+  } catch {
+    subjects = [sh('git log -1 --format=%s HEAD')];
+  }
   return `chore: Git Data API 推送（${subjects.length} commits 聚合）——${subjects.slice(0, 3).join(' / ')}${subjects.length > 3 ? ' …' : ''}`;
 })();
 const commitRaw = sh(`gh api repos/${REPO_SLUG}/git/commits -f message="${msg.replace(/"/g, '\\"')}" -f tree=${newTree} -f "parents[]=${remoteSha}"`);
