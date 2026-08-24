@@ -521,7 +521,7 @@ echo "=== 12. AGENTS.md MCP 全量工具表与 tool-registry 一致性 ==="
 TOOL_TABLE_CHECK=$(node -e "
 const fs = require('fs');
 const agents = fs.readFileSync('SKILL/AGENTS.md', 'utf8');
-const section = agents.split('## MCP 全量工具表')[1] || '';
+const section = (agents.split('## MCP 全量工具表')[1] || '').split('\n## ')[0];
 const bt = String.fromCharCode(96);
 const re = new RegExp(bt + '([a-z_]+)' + bt, 'g');
 const tableTools = new Set([...section.matchAll(re)].map(m => m[1]));
