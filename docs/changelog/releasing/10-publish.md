@@ -37,13 +37,19 @@ cd engine/audit && npm run build && npm install -g . && cd ../..
 sofagent-audit --version  # 确认版本号
 
 # 本地 Skill 同步（WorkBuddy + OpenClaw）
+# 🔴 v1.4.0 收尾发现：SKILL/harness/ 只有流程文件、没有 SKILL.md 主入口——
+#    只 cp harness/* 会让本地 skill 主入口停留在旧版（v1.4.0 实况：本地 1.3.6 vs 源头 1.4.0，
+#    fde/audit 子 skill 因单独 cp 是对的）。主入口必须单独 cp，且 cp 后 grep version 验证
+cp SKILL/SKILL.md ~/.workbuddy/skills/sofagent/SKILL.md
 cp -r SKILL/harness/* ~/.workbuddy/skills/sofagent/
+cp SKILL/SKILL.md ~/.openclaw/skills/sofagent/SKILL.md
 cp -r SKILL/harness/* ~/.openclaw/skills/sofagent/
 cp SKILL/SKILL.md ~/.workbuddy/skills/sofagent-fde/
 cp -r SKILL/agents/fde/ ~/.workbuddy/skills/sofagent-fde/
 cp -r SKILL/agents/audit/ ~/.workbuddy/skills/sofagent-audit/
 cp -r SKILL/agents/fde/ ~/.openclaw/skills/sofagent-fde/
 cp -r SKILL/agents/audit/ ~/.openclaw/skills/sofagent-audit/
+grep -m1 "^version" ~/.workbuddy/skills/sofagent/SKILL.md  # 期望 = 当前版本号，不匹配 = cp 路径漂移
 
 # dogfood
 sofagent-audit --doctor
