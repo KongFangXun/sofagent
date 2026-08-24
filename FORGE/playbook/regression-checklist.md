@@ -710,7 +710,7 @@ node -e "const fs=require('fs');const dirs=['engine/orchestrator/src','engine/ru
 # 子项 c: SECURITY.md Dengine/ 残留（应零命中）
 node -e "const fs=require('fs');const c=fs.readFileSync('SECURITY.md','utf8');let n=0;c.split('\n').forEach((l,i)=>{if(l.includes('Dengine')){console.log('  L'+(i+1)+': '+l.trim());n++}});console.log(n===0?'✅ SECURITY.md Dengine 零残留':'❌ FOUND '+n)"
 
-# 子项 d: install.sh VERSION 变量（应为 1.2.0）
+# 子项 d: install.sh VERSION 变量（应为当前 SSOT 版本——v1.4.0，发版时随 package.json）
 grep '^VERSION=' install.sh | head -1
 
 # 子项 e: engine/rules/package.json files 字段存在
@@ -723,8 +723,9 @@ grep -n "engine/skill" .github/workflows/verify.yml   # 期望：零输出
 grep -n "sofagent-lite\|'scripts/\*\*" .github/workflows/shellcheck.yml   # 期望：零输出
 grep -c "'install.sh'" .github/workflows/shellcheck.yml   # 期望：2
 
-# 子项 h: bump-version.sh 同版本号优雅退出
-bash tools/release/bump-version.sh 1.2.0 1.2.0 --dry-run 2>&1 | tail -3   # 期望：无 unbound variable
+# 子项 h: bump-version.sh 同版本号优雅退出（v1.4.0 修复：参数动态读 SSOT——旧写死 1.2.0 与 SSOT 不同会触发完整扫描，worker 超时诱因）
+SSOT_V=$(grep '"version":' engine/audit/package.json | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+bash tools/release/bump-version.sh "$SSOT_V" "$SSOT_V" --dry-run 2>&1 | tail -3   # 期望：版本号相同，无变更 + 无 unbound variable
 
 # 子项 i: install.sh 部署路径 vs handler.ts/checks.ts 读取路径对齐（v1.2.0 P0①）
 INSTALL_FDE=$(grep -oE 'skills/[a-z]+/fde\.md' install.sh | sort -u); HANDLER_FDE=$(grep -oE '"skills", "[a-z]+"' engine/hooks/sofagent-load-chain/src/handler.ts | head -2 | tr '\n' ' '); echo "install: $INSTALL_FDE / handler: $HANDLER_FDE"   # 人工核对路径一致
