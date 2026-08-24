@@ -91,7 +91,10 @@ if (remoteSha === headSha) {
 //    分支头，看不见本地 commit（实测 compare/xxx...HEAD 返回 identical 假阴性）。
 //    正确姿势：远端 tree API（recursive）vs 本地 git ls-tree -r HEAD 按 path→blob sha 双向对齐
 let changed;
-if (sh('git cat-file -t ' + remoteSha + ' 2>/dev/null || true')) {
+// cat-file exit 128 = 对象不在本地；sh() 会 throw——用 try 捕获而不是 `|| true`（子 shell 管道下 || true 不接住 execSync 的非零退出）
+let haveRemoteObj = false;
+try { sh('git cat-file -t ' + remoteSha + ' 2>/dev/null'); haveRemoteObj = true; } catch { haveRemoteObj = false; }
+if (haveRemoteObj) {
   changed = sh(`git diff --name-status ${remoteSha}..HEAD`);
 } else {
   console.log(`ℹ️ 本地无远端对象 ${remoteSha.slice(0, 8)}（上次 API 推送遗留）——远端 tree API 对齐兜底`);
