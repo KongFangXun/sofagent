@@ -87,26 +87,32 @@ if (remoteSha === headSha) {
 
 // 待推文件（remote..HEAD 之间的全部变更：新增/修改/删除）
 // 🔴 连续 API 推送场景：remoteSha 是上次 API commit，本地对象库没有它，git diff 直接炸
-//    （v1.4.0 复盘实测）——先探测，本地无此对象时走 compare API 兜底
+//    （v1.4.0 复盘实测）。⚠️ compare API 兜底是错的——head 参数在 GitHub 侧解析为远端
+//    分支头，看不见本地 commit（实测 compare/xxx...HEAD 返回 identical 假阴性）。
+//    正确姿势：远端 tree API（recursive）vs 本地 git ls-tree -r HEAD 按 path→blob sha 双向对齐
 let changed;
 if (sh('git cat-file -t ' + remoteSha + ' 2>/dev/null || true')) {
   changed = sh(`git diff --name-status ${remoteSha}..HEAD`);
 } else {
-  console.log(`ℹ️ 本地无远端对象 ${remoteSha.slice(0, 8)}（上次 API 推送遗留）——compare API 兜底取变更`);
-  const cmpRaw = ghApi(`compare/${remoteSha}...HEAD`, []);
-  const cmp = jqOrParse(cmpRaw, j => j);
-  if (cmp.status === 'identical') {
-    // 内容逐字节一致、仅 SHA 不同（上次 API 推送的同 tree 双 SHA）——无变更可推
-    console.log('✅ 本地与远端内容完全一致（compare=identical，双 SHA 未接回）——无需推送');
-    console.log('⏭ 网络恢复后接回：git fetch origin && git rebase --onto origin/main HEAD~<N> main（N=本地领先 commit 数）');
-    process.exit(0);
+  console.log(`ℹ️ 本地无远端对象 ${remoteSha.slice(0, 8)}（上次 API 推送遗留）——远端 tree API 对齐兜底`);
+  const remoteCommitTree = jqOrParse(ghApi(`git/commits/${remoteSha}`, []), j => j.tree.sha);
+  const rtRaw = ghApi(`git/trees/${remoteCommitTree}?recursive=1`, []);
+  const remoteMap = new Map(jqOrParse(rtRaw, j => j)
+    .tree.filter(e => e.type === 'blob')
+    .map(e => [e.path, e.sha]));
+  const localMap = new Map(sh('git ls-tree -r HEAD')
+    .split('\n').filter(Boolean)
+    .map(l => { const m = l.match(/^(\d+)\s+blob\s+([0-9a-f]+)\t(.+)$/); return m ? [m[3], m[2]] : null; })
+    .filter(Boolean));
+  const lines = [];
+  for (const [p, sha] of localMap) {
+    if (!remoteMap.has(p)) lines.push(`A\t${p}`);
+    else if (remoteMap.get(p) !== sha) lines.push(`M\t${p}`);
   }
-  if (cmp.status !== 'ahead') {
-    // diverged/behind：远端有本地没有的内容——禁止盲推，须先 rebase 接回
-    console.error(`🔴 本地与远端分叉（compare status=${cmp.status}）——先按 SOP「双 SHA 分叉接回」处理再推`);
-    process.exit(1);
+  for (const p of remoteMap.keys()) {
+    if (!localMap.has(p)) lines.push(`D\t${p}`);
   }
-  changed = (cmp.files || []).map(f => `${f.status === 'removed' ? 'D' : f.status === 'added' ? 'A' : 'M'}\t${f.filename}`).join('\n');
+  changed = lines.join('\n');
 }
 const entries = changed.split('\n').filter(Boolean).map(line => {
   const [status, ...rest] = line.split('\t');
