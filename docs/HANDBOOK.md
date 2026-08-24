@@ -428,6 +428,11 @@ jobs:
 | Durable L3 | v1.3.8 | 可恢复事务（writer/recovery/undo 三档可逆）+ 网关集成 + 真 git 回滚 | [v1.3.8 开发日志](./changelog/v1.3/v1.3.8.md) |
 | 代理网关 | v1.3.8 | SubAgent 外部请求唯一出入口（域名/路径白名单 + 四档风险分级 + 权限上界单调守卫 + HITL） | [v1.3.8 开发日志](./changelog/v1.3/v1.3.8.md) |
 | 静态加密 | v1.3.8 | 纯 TS AES-256-GCM（SOFAGENT-AGE-V1 透明读写）+ 密钥指纹备份 + 四目录加密 | [v1.3.8 开发日志](./changelog/v1.3/v1.3.8.md) |
+| AST 规则引擎 | v1.3.9 | 官方 AST 引擎（ASI01 目标劫持 + ASI04 供应链 SBOM 语义检测）+ meta-harness 多 harness 编排 | [v1.3.9 开发日志](./changelog/v1.3/v1.3.9.md) |
+| AI 工作明细 | v1.3.9 | `worklog` 数据层（按 Agent/Workflow/周 + 人工介入，`worklog_query` MCP） | [v1.3.9 开发日志](./changelog/v1.3/v1.3.9.md) |
+| Web 工作明细 + 图谱 | v1.4.0 | Dashboard 工作明细四视角 + 图谱栏（workflow/ontology 图 + MCP 工具视图 + skill 加载链）+ 随 install.sh 装到用户机 | [v1.4.0 开发日志](./changelog/v1.4/v1.4.0.md) |
+| 成本审计 | v1.4.0 | 超支告警 + `cost_query` MCP + COST DecisionKind（WARN-only 不拦截） | [v1.4.0 开发日志](./changelog/v1.4/v1.4.0.md) |
+| DSH/OpenClaw 插件家族 | v1.4.0 | DSH cordis-plugin 9 款 + OpenClaw code-plugin 4 款 + MCP 工具角色分层（默认 34/66）+ DSH 默认启用 | [v1.4.0 开发日志](./changelog/v1.4/v1.4.0.md) |
 
 ### 知识怎么长出来
 
@@ -445,7 +450,7 @@ jobs:
 
 ### 在 DSH 中使用 sofagent（v1.3.5 · MCP 互通）
 
-sofagent 本身就是一个 MCP server（stdio 传输，bin `sofagent-mcp`，v1.3.6 起 60 个 tool）。DSH（DeepSeek Harness）用户不需要等 v1.4.0 的 cordis-plugin——用官方 `@deepseek-ai/dsh-mcp-client` 桥接插件挂上 `sofagent-mcp`，**今天就能在 DSH 会话里调用 sofagent 的全部能力**：审计查询、知识库检索、A/B 实验（`run_ab_test`）、快照时间线（`snapshot_list`）等。
+sofagent 本身就是一个 MCP server（stdio 传输，bin `sofagent-mcp`，v1.3.6 起 60 个 tool，**v1.4.0 现 66 个**——工具角色分层，默认暴露 34 个，`SOFAGENT_MCP_ROLES` 可恢复全量）。DSH（DeepSeek Harness）用户不需要等 v1.4.0 的 cordis-plugin——用官方 `@deepseek-ai/dsh-mcp-client` 桥接插件挂上 `sofagent-mcp`，**今天就能在 DSH 会话里调用 sofagent 的全部能力**：审计查询、知识库检索、A/B 实验（`run_ab_test`）、快照时间线（`snapshot_list`）等。
 
 #### 配置方法
 
