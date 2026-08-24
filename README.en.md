@@ -50,7 +50,7 @@ graph TB
         K["Kernel LangGraph + constraint layer<br/>ExecutionBackend abstraction"]
         I["Call surface plugin + skill + MCP<br/>+ dashboard + CLI"]
         B["Behavior layer constraint base<br/>injection · audit · rollback · evolution"]
-        M["Methodology FDE four phases<br/>map → mine → deliver → depart"]
+        M["Methodology FDE four phases<br/>map → build → deploy → depart"]
     end
     S -->|"on-site · doing FDE for the enterprise"| D["Dual-graph delivery<br/>business graph + ontology graph"]
     D --> N["AI nodes<br/>LangGraph orchestration → Harness execution → constraint audit"]
@@ -64,7 +64,7 @@ graph TB
 - **"Continuous optimization" only holds with a constraint layer** — backed by auditable, rollback-capable mechanisms, not promises in prompts. Independent external experiment: same model, only the outer Harness optimized — a legal-Agent benchmark rose 63.4% → 80.1% (+16.7pp, see [THANKS](./docs/THANKS.md))
 - **Capabilities are portable, never dead-bound to a platform** — the constraint layer is platform-agnostic; the methodology follows the business, not the platform
 
-> 🔄 **Self-bootstrapping**: its first FDE job is sofagent itself — the project itself is one FDE business flow (map → nodes → dual-graph delivery), and the training engine also orbits FDE.
+> 🔄 **Self-bootstrapping**: sofagent's first FDE engagement is sofagent itself — the project is a complete FDE business flow (map → build → deploy → depart), and this open-source repository is that deliverable.
 
 ## v1.4.0: United with DeepSeek Harness
 
