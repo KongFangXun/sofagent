@@ -359,7 +359,7 @@ if command -v node &>/dev/null; then
   # v1.2.6: Node 版本下限检查——Node < 18 时 err 并退出（不是 warn）
   NODE_MAJOR=$(echo "$NODE_VER" | sed 's/v//' | cut -d. -f1)
   if [ -n "$NODE_MAJOR" ] && [ "$NODE_MAJOR" -lt 18 ] 2>/dev/null; then
-    err "Node.js 版本过低（$NODE_VER），sofagent 需要 Node.js >= 18"
+    err "Node.js 版本过低（${NODE_VER}），sofagent 需要 Node.js >= 18"
     err "请升级 Node.js: https://nodejs.org/"
     exit 1
   fi
@@ -652,7 +652,7 @@ CLIEOF
     chmod +x "$dashboard_link" 2>/dev/null || true
     ok "  Dashboard 入口已注册：sofagent-dashboard → $bin_dir/sofagent-dashboard"
   else
-    warn "  Dashboard 实现脚本缺失（$dashboard_src），跳过软链；wrapper 占位分支兜底"
+    warn "  Dashboard 实现脚本缺失（${dashboard_src}），跳过软链；wrapper 占位分支兜底"
   fi
 
   # v1.4.0 交付二：Web Dashboard HTML 三件套安装（dashboard.html → web/ + serve-dashboard.mjs → bin/）
@@ -706,10 +706,13 @@ install_skill_unified() {
         local psd="${HOME}/.${PLATFORM}/skills/sofagent"
         mkdir -p "$(dirname "$psd")" 2>/dev/null || true
         ln -sfn "$SOFAGENT_HOME/skill" "$psd" 2>/dev/null || true
-        if [ ! -L "$psd" ]; then
-          warn "  Symlink 创建失败：${psd}（可能已被普通目录占用）"
+        if [ -L "$psd" ]; then
+          ok "  Skill 统一路径已建立：${SOFAGENT_HOME}/skill/ → ${psd}（显式平台集成）"
+        else
+          # symlink 被既有普通目录占用时降级为复制（防副本静默过期——收编后须以本源为准确认）
+          cp -R "$SOFAGENT_HOME/skill"/. "$psd"/ 2>/dev/null || true
+          warn "  Symlink 被普通目录占用，已降级为复制同步：${psd}"
         fi
-        ok "  Skill 统一路径已建立：${SOFAGENT_HOME}/skill/ → ${psd}（显式平台集成）"
         ;;
       # v1.3.9（八）：跨平台适配器扩展——Cursor / Gemini CLI 薄挂载
       # （Skill 走平台技能目录 symlink；规则文件 sofagent.mdc / GEMINI.md 复制到平台目录）
@@ -718,6 +721,11 @@ install_skill_unified() {
         local cur_skills="${HOME}/.cursor/skills/sofagent"
         mkdir -p "$cur_rules" 2>/dev/null || true
         ln -sfn "$SOFAGENT_HOME/skill" "$cur_skills" 2>/dev/null || true
+        if [ ! -L "$cur_skills" ]; then
+          # symlink 被既有普通目录占用时降级为复制（防副本静默过期）
+          cp -R "$SOFAGENT_HOME/skill"/. "$cur_skills"/ 2>/dev/null || true
+          warn "  Symlink 被普通目录占用，已降级为复制同步：${cur_skills}"
+        fi
         if [ -f "${SCRIPT_DIR}/.cursor/rules/sofagent.mdc" ]; then
           cp "${SCRIPT_DIR}/.cursor/rules/sofagent.mdc" "${cur_rules}/sofagent.mdc"
         fi
@@ -733,6 +741,11 @@ install_skill_unified() {
         local claude_rules="${HOME}/.claude"
         mkdir -p "$claude_rules" 2>/dev/null || true
         ln -sfn "$SOFAGENT_HOME/skill" "${claude_rules}/skills/sofagent" 2>/dev/null || true
+        if [ ! -L "${claude_rules}/skills/sofagent" ] && [ -d "${claude_rules}/skills/sofagent" ]; then
+          # symlink 被既有普通目录占用时降级为复制（防副本静默过期）
+          cp -R "$SOFAGENT_HOME/skill"/. "${claude_rules}/skills/sofagent"/ 2>/dev/null || true
+          warn "  Symlink 被普通目录占用，已降级为复制同步：${claude_rules}/skills/sofagent"
+        fi
         if [ -f "${SCRIPT_DIR}/.claude/settings.json" ]; then
           cp "${SCRIPT_DIR}/.claude/settings.json" "${claude_rules}/settings.json"
         fi
@@ -741,6 +754,11 @@ install_skill_unified() {
       gemini)
         local gem_skills="${HOME}/.gemini/skills/sofagent"
         ln -sfn "$SOFAGENT_HOME/skill" "$gem_skills" 2>/dev/null || true
+        if [ ! -L "$gem_skills" ] && [ -d "$gem_skills" ]; then
+          # symlink 被既有普通目录占用时降级为复制（防副本静默过期）
+          cp -R "$SOFAGENT_HOME/skill"/. "$gem_skills"/ 2>/dev/null || true
+          warn "  Symlink 被普通目录占用，已降级为复制同步：${gem_skills}"
+        fi
         if [ -f "${SCRIPT_DIR}/GEMINI.md" ]; then
           cp "${SCRIPT_DIR}/GEMINI.md" "${HOME}/.gemini/GEMINI.md"
         fi
@@ -785,7 +803,7 @@ write_mcp_json() {
     obj.mcpServers.sofagent = { command: process.env.MCP_NODE, args: [process.env.MCP_SERVER], disabled: false };
     fs.writeFileSync(cfg, JSON.stringify(obj, null, 2) + "\n");
   '
-  ok "  MCP 已配置：$cfg（sofagent → $server_js）"
+  ok "  MCP 已配置：${cfg}（sofagent → ${server_js}）"
 }
 
 # 写 TOML 格式 MCP 配置（codex）——追加 [mcp_servers.sofagent] 段，幂等
@@ -802,13 +820,13 @@ write_mcp_toml() {
     echo "command = \"$node_bin\""
     echo "args = [\"$server_js\"]"
   } >> "$cfg"
-  ok "  MCP 已配置：$cfg（[mcp_servers.sofagent] → $server_js）"
+  ok "  MCP 已配置：${cfg}（[mcp_servers.sofagent] → ${server_js}）"
 }
 
 install_mcp_config() {
   local mcp_server_js="${SCRIPT_DIR}/engine/mcp/dist/mcp-server.js"
   if [ ! -f "$mcp_server_js" ]; then
-    warn "  mcp-server.js 缺失（$mcp_server_js）——跳过 MCP 自动配置（需先 npm run build）"
+    warn "  mcp-server.js 缺失（${mcp_server_js}）——跳过 MCP 自动配置（需先 npm run build）"
     return
   fi
   local node_bin
@@ -967,7 +985,7 @@ upgrade_skill() {
     return 0
   fi
   if [ ! -d "$SKILL_SRC" ]; then
-    warn "upgrade_skill: SKILL 源目录不存在: $SKILL_SRC，跳过"
+    warn "upgrade_skill: SKILL 源目录不存在: ${SKILL_SRC}，跳过"
     return 0
   fi
 
