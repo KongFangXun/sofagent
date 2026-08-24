@@ -66,18 +66,17 @@ if (dirty) {
 }
 
 // 获取远端 main 当前 SHA（fetch 失败时走 gh api 查 ref）
+// ⚠️ 必须以 gh api 实时值为准：本地 origin/main 在连续 API 推送后必然陈旧，
+//    且陈旧 SHA（如 27c6a071）本地有对象——会走错 git diff 路径漏掉中间变更
 let remoteSha;
+const liveRemote = jqOrParse(ghApi('git/refs/heads/' + BRANCH, []), j => j.object.sha);
 try {
-  remoteSha = sh('git rev-parse origin/main');
-  // origin/main 可能是陈旧的（fetch 不动）——用 gh api 实时确认
-  const live = jqOrParse(ghApi('git/refs/heads/' + BRANCH, []), j => j.object.sha);
-  if (live && live !== remoteSha) {
-    console.log(`ℹ️ 本地 origin/main(${remoteSha.slice(0, 8)}) 陈旧，远端实际 ${live.slice(0, 8)}——以远端为准`);
-    remoteSha = live;
+  const localRef = sh('git rev-parse origin/main');
+  if (liveRemote && liveRemote !== localRef) {
+    console.log(`ℹ️ 本地 origin/main(${localRef.slice(0, 8)}) 陈旧，远端实际 ${liveRemote.slice(0, 8)}——以远端为准`);
   }
-} catch {
-  remoteSha = jqOrParse(ghApi('git/refs/heads/' + BRANCH, []), j => j.object.sha);
-}
+} catch { /* 无本地 ref 记录 */ }
+remoteSha = liveRemote;
 
 const headSha = sh('git rev-parse HEAD');
 if (remoteSha === headSha) {
@@ -86,7 +85,37 @@ if (remoteSha === headSha) {
 }
 
 // 待推文件（remote..HEAD 之间的全部变更：新增/修改/删除）
-const changed = sh(`git diff --name-status ${remoteSha}..HEAD`);
+// 🔴 连续 API 推送场景：remoteSha 是上次 API commit，本地对象库没有它，git diff 直接炸
+//    （v1.4.0 复盘实测）。⚠️ compare API 兜底是错的——head 参数在 GitHub 侧解析为远端
+//    分支头，看不见本地 commit（实测 compare/xxx...HEAD 返回 identical 假阴性）。
+//    正确姿势：远端 tree API（recursive）vs 本地 git ls-tree -r HEAD 按 path→blob sha 双向对齐
+let changed;
+// cat-file exit 128 = 对象不在本地；sh() 会 throw——用 try 捕获而不是 `|| true`（子 shell 管道下 || true 不接住 execSync 的非零退出）
+let haveRemoteObj = false;
+try { sh('git cat-file -t ' + remoteSha + ' 2>/dev/null'); haveRemoteObj = true; } catch { haveRemoteObj = false; }
+if (haveRemoteObj) {
+  changed = sh(`git diff --name-status ${remoteSha}..HEAD`);
+} else {
+  console.log(`ℹ️ 本地无远端对象 ${remoteSha.slice(0, 8)}（上次 API 推送遗留）——远端 tree API 对齐兜底`);
+  const remoteCommitTree = jqOrParse(ghApi(`git/commits/${remoteSha}`, []), j => j.tree.sha);
+  const rtRaw = ghApi(`git/trees/${remoteCommitTree}?recursive=1`, []);
+  const remoteMap = new Map(jqOrParse(rtRaw, j => j)
+    .tree.filter(e => e.type === 'blob')
+    .map(e => [e.path, e.sha]));
+  const localMap = new Map(sh('git ls-tree -r HEAD')
+    .split('\n').filter(Boolean)
+    .map(l => { const m = l.match(/^(\d+)\s+blob\s+([0-9a-f]+)\t(.+)$/); return m ? [m[3], m[2]] : null; })
+    .filter(Boolean));
+  const lines = [];
+  for (const [p, sha] of localMap) {
+    if (!remoteMap.has(p)) lines.push(`A\t${p}`);
+    else if (remoteMap.get(p) !== sha) lines.push(`M\t${p}`);
+  }
+  for (const p of remoteMap.keys()) {
+    if (!localMap.has(p)) lines.push(`D\t${p}`);
+  }
+  changed = lines.join('\n');
+}
 const entries = changed.split('\n').filter(Boolean).map(line => {
   const [status, ...rest] = line.split('\t');
   // rename (R100\told\tnew) 取新路径；删除 (D) 单独标记
@@ -143,8 +172,14 @@ if (treeEntries.length) {
 console.log(`tree: ${newTree.slice(0, 8)}（base ${baseTree.slice(0, 8)}）`);
 
 // ── ③ commit ──
+// msg 聚合：本地有远端对象用 git log range；没有（连续推送）退化取 HEAD 一条 subject
 const msg = customMsg || (() => {
-  const subjects = sh(`git log --format=%s ${remoteSha}..HEAD`).split('\n').filter(Boolean);
+  let subjects;
+  try {
+    subjects = sh(`git log --format=%s ${remoteSha}..HEAD`).split('\n').filter(Boolean);
+  } catch {
+    subjects = [sh('git log -1 --format=%s HEAD')];
+  }
   return `chore: Git Data API 推送（${subjects.length} commits 聚合）——${subjects.slice(0, 3).join(' / ')}${subjects.length > 3 ? ' …' : ''}`;
 })();
 const commitRaw = sh(`gh api repos/${REPO_SLUG}/git/commits -f message="${msg.replace(/"/g, '\\"')}" -f tree=${newTree} -f "parents[]=${remoteSha}"`);

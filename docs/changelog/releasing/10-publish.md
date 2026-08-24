@@ -450,5 +450,7 @@ gh api repos/O/R/git/refs/heads/main -X PATCH -f sha=<新commit>
 2. **`.gitattributes` 的 eol 转换**——`*.ps1 text eol=crlf` 会让 git 存 LF 规范化 blob，工作区是 CRLF。上传必须用 `git cat-file blob <本地git sha>` 拿规范内容，不能读工作区文件（否则 sha 不一致）。**验证铁证：建 tree 后远端 tree sha == 本地 `git rev-parse HEAD^{tree}` = 逐字节一致**
 3. **cat-file 必须用本地 git blob sha**——不能用「上传后 GitHub 返回的 sha」去 cat-file（本地无此对象 → 输出空 → 上传空 blob，sha 变 e69de29b）。修正时用 `git ls-tree` 重新拿本地 sha
 
+**🔴 第五坑（v1.4.0 补 · 连续推送）——tree 参数必须 stdin JSON**：gh CLI 命令行拼 `tree[][path]=…` 数组参数，17 文件 = 68 个参数直接报 `accepts 1 arg(s), received 69`——tree 创建必须 `--input -` 从 stdin 传 `{"base_tree":…,"tree":[…]}` JSON（gitdata-push.mjs 已内置）。另：连续 API 推送时本地无上次 API commit 对象，`git diff <remoteSha>..HEAD` 炸——脚本用 compare API 兜底取变更清单（status=diverged 时拒绝盲推）。
+
 **🔴 四坑（v1.3.8 补 · verify CI 失败根因）——tree 条目 mode 必须用本地真实值**：tree 每一项带 mode（`100644` 普通 / `100755` 可执行），**硬编码 `100644` 会让所有 .sh/.mjs 丢失执行位**——推送前 `git ls-tree -r HEAD | grep "^100755"` 列出全部可执行文件，tree 条目逐项用本地 mode。丢失后 verify CI 报「cleanup.sh 缺失或不可执行」（find 找到文件但 `-x` 检查失败）。**恢复只需一次操作**：blob SHA 只依赖内容，同一文件的 755 与 644 版本 blob SHA 相同——建一个只含 N 个 100755 条目的新 tree（base_tree=当前远端 tree，sha 引用已存在 blob）→ 建 commit → 更新 ref，无需重传内容。**推送完成必验**：远端 tree sha == 本地 `git rev-parse HEAD^{tree}`。
 > 另：Git Data API 的 create-tree **无法表达删除条目**——rename（R100）在 diff 里是「新路径新增」，旧路径永远留在 base_tree；含删除/rename 的 commit 推送后必须用 Contents API（`gh api repos/O/R/contents/<path> -X DELETE -f sha=<file sha>`）逐个补删，最后同样以 tree sha 一致性收尾（v1.3.8 实测：82 commits 推送后补删 6 个残留 + 恢复 34 个执行位，最终 1162 blobs 零差异）。
