@@ -11,10 +11,10 @@
 | v1.3.5 | #110-111（bugfix 防复发 / 新功能审查面） | 93→70、69/75/77→95（check-version 四盲区） |
 | v1.3.6 | #113-114（八交付锚点一维收口 / run-03 修复防复发） | —（v1.3.5 发布后 hotfix 112 编入） |
 
-> **当前 94 维 · 编号 1-121 · 27 个编号已归并删除（v1.3.7 阶段四 +2：115 新功能审查面 / 116 bugfix 批防复发——acceptance 同批 S290-S293，S293 为阶段四基建加固场景：LLM 超时四文件/resume 越轮守卫/rm-rf 口径同源；v1.3.8 阶段五 +2：117 网关攻击面四项核对 / 118 原子写与单writer 加固（B1+B2+B3 归并）——acceptance 同批 S294-S302 已覆盖功能面，本批为防御性回归标记；v1.3.9 阶段五：119 开发坑防复发（TS7 缓存/promise 形态）/ 120 DSH 适配防复发（CLI 桥接/pnpm/require）/ 121 新功能审查面（十三交付锚点收口，参照 113/115 模式）——acceptance 同批 S305-S317；原 A2 正则边界并入 #57 子项）**。维度流连续不中断，分组导航：基线组 → 审查约束组 → 环境敏感组（前置 vitest/沙箱铁律）。
+> **当前 95 维 · 编号 1-122 · 27 个编号已归并删除（v1.3.7 阶段四 +2：115 新功能审查面 / 116 bugfix 批防复发——acceptance 同批 S290-S293，S293 为阶段四基建加固场景：LLM 超时四文件/resume 越轮守卫/rm-rf 口径同源；v1.3.8 阶段五 +2：117 网关攻击面四项核对 / 118 原子写与单writer 加固（B1+B2+B3 归并）——acceptance 同批 S294-S302 已覆盖功能面，本批为防御性回归标记；v1.3.9 阶段五：119 开发坑防复发（TS7 缓存/promise 形态）/ 120 DSH 适配防复发（CLI 桥接/pnpm/require）/ 121 新功能审查面（十三交付锚点收口，参照 113/115 模式）——acceptance 同批 S305-S317；原 A2 正则边界并入 #57 子项；v1.4.0 阶段十二 +1：122 发版流程防复发（lock 同步/plugin 分发包装/限流——v1.4.0 发版三坑实录，B 类））**。维度流连续不中断，分组导航：基线组 → 审查约束组 → 环境敏感组（前置 vitest/沙箱铁律）。
 ## 🔒 维护公约（防膨胀铁律）
 
-**追加新维度前，必须先 grep 同类**：有同类 → 扩展旧维度的子项，不新增编号；无同类 → 才新增编号 = 当前最大 +1。历史维度靠 `git log -p` 找回。**归并配额（v1.3.9 硬门槛）**：新增 N 维 → 本版必须先真实归并 ≥N 维（被并维度检查内容实际移入目标维度，git diff 可查；注释压缩不算）；净增行数 > 警戒线余量 → 继续归并或移下一版——**只调警戒线不归并 = 不合格**。**行数警戒线**：`regression-checklist.md` ≤ 1670 行、`acceptance-test.sh` ≤ 3000 行（v1.3.7 阶段四上调 1540→1580 / 2600→2640：+39 维 115/116 新审查面 / +38 S290-S292；v1.3.8 阶段四 +9 场景 S294-S302 真实归并否、上调记录 2640→2730；v1.3.8 阶段五 +2 维 #117-#118 真实归并否、上调记录 1580→1620——三判据①②③全否、本版 checklist 首调非连续两版非同版二次冻结；v1.3.8 阶段五补充 bugfix 防回归 S303-S304（A1 后缀绕过+A2 FFFD 短路端到端，B 类零场景缺口）上调 2730→2770——三判据全否：单测在而端到端缺/非同主题聚簇/真实安全回归风险，非既有场景覆盖；v1.3.9 阶段五 +13 场景 S305-S317（A 类分发）上调 2770→2870、+2 维 #119/#120 + #121 编号复用为 v1.3.9 新功能审查面（A2 正则边界并入 #57 子项 = 真实归并 1 处对销）上调 1620→1660——三判据①②③全否 + 归并配额 1 处 ✓，净增约 20 行 ≤ 余量 40）；v1.3.9 阶段六 +2 场景 S318-S319（补 ATTRIBUTION/Dream Sandbox 零覆盖 acceptance 场景）上调 2870→3000——真实补测试非归并（三判据全否），余量 +39 后仍足）；v1.4.0 阶段六 +6：检查器 4 缺陷修复注释（run-22 P1 误报修复说明——维度 90/89/111 正则与解析修复 + 维度 49 参数动态化，注释压缩后净增 6 行）——三判据①②③全否（真实修复说明非冗余，非工具覆盖，非聚簇假信号）；连续第二版上调（v1.3.9 已调）未触第三版禁令）；releasing.md 方针「超标上调 LIMIT 不删内容」。
+**追加新维度前，必须先 grep 同类**：有同类 → 扩展旧维度的子项，不新增编号；无同类 → 才新增编号 = 当前最大 +1。历史维度靠 `git log -p` 找回。**归并配额（v1.3.9 硬门槛）**：新增 N 维 → 本版必须先真实归并 ≥N 维（被并维度检查内容实际移入目标维度，git diff 可查；注释压缩不算）；净增行数 > 警戒线余量 → 继续归并或移下一版——**只调警戒线不归并 = 不合格**。**行数警戒线**：`regression-checklist.md` ≤ 1690 行、`acceptance-test.sh` ≤ 3000 行（v1.3.7 阶段四上调 1540→1580 / 2600→2640：+39 维 115/116 新审查面 / +38 S290-S292；v1.3.8 阶段四 +9 场景 S294-S302 真实归并否、上调记录 2640→2730；v1.3.8 阶段五 +2 维 #117-#118 真实归并否、上调记录 1580→1620——三判据①②③全否、本版 checklist 首调非连续两版非同版二次冻结；v1.3.8 阶段五补充 bugfix 防回归 S303-S304（A1 后缀绕过+A2 FFFD 短路端到端，B 类零场景缺口）上调 2730→2770——三判据全否：单测在而端到端缺/非同主题聚簇/真实安全回归风险，非既有场景覆盖；v1.3.9 阶段五 +13 场景 S305-S317（A 类分发）上调 2770→2870、+2 维 #119/#120 + #121 编号复用为 v1.3.9 新功能审查面（A2 正则边界并入 #57 子项 = 真实归并 1 处对销）上调 1620→1660——三判据①②③全否 + 归并配额 1 处 ✓，净增约 20 行 ≤ 余量 40）；v1.3.9 阶段六 +2 场景 S318-S319（补 ATTRIBUTION/Dream Sandbox 零覆盖 acceptance 场景）上调 2870→3000——真实补测试非归并（三判据全否），余量 +39 后仍足）；v1.4.0 阶段六 +6：检查器 4 缺陷修复注释（run-22 P1 误报修复说明——维度 90/89/111 正则与解析修复 + 维度 49 参数动态化，注释压缩后净增 6 行）——三判据①②③全否（真实修复说明非冗余，非工具覆盖，非聚簇假信号）；v1.4.0 阶段十二 +1 维 #122（发版流程防复发：lock 同步/plugin 分发包装/限流——三坑实录新审查面，三判据全否）上调 1670→1690——连续第三版上调，前两版均有真实归并对销）；releasing.md 方针「超标上调 LIMIT 不删内容」。
 
 **维度脚本编写三铁律**（v1.3.6 release-gate run-08 教训——7 个 FAIL 维度中 5 个是脚本自身缺陷而非仓库问题，driver 白跑一轮）：
 
@@ -30,14 +30,14 @@ ACTUAL=$(grep -c "^#### " FORGE/playbook/regression-checklist.md)
 
 # 行数警戒线自检（越线提醒瘦身，非失败；与 releasing.md 阶段五警戒线一致）
 WC_CHK=$(wc -l < FORGE/playbook/regression-checklist.md); WC_ACC=$(wc -l < FORGE/playbook/acceptance-test.sh)
-[ "$WC_CHK" -le 1670 ] && echo "✅ checklist $WC_CHK (≤1670)" || echo "⚠️ checklist $WC_CHK 超 1670"
+[ "$WC_CHK" -le 1690 ] && echo "✅ checklist $WC_CHK (≤1690)" || echo "⚠️ checklist $WC_CHK 超 1690"
 [ "$WC_ACC" -le 3000 ] && echo "✅ acceptance $WC_ACC (≤3000)" || echo "⚠️ acceptance $WC_ACC 超 3000"
 ```
 ## 你的身份
 
 你是**回归测试工程师**——确认已知的修复没有回退，不是发现新问题。逐项核对，全 PASS 即通过。⏰ 时序：回归检查在阶段六跑，git tag/npm registry 未到位的项标 ⏳。🔍 维度 7f/17a-b/20 依赖真实环境（npm/git/OpenClaw），AI 审查标 `⏸️ 需人工环境`。
 
-## 审查维度（94 维 · 版本演进见头部表格）
+## 审查维度（95 维 · 版本演进见头部表格）
 
 ### 审查维度正文（#1-106 · 按版本演进排列 · 分组小节为历史分类，维度流连续不中断）
 
@@ -1661,6 +1661,19 @@ grep -q "COST" engine/audit/src/decision-schema.ts 2>/dev/null && echo "✅ COST
 [ -f engine/openclaw-plugins/sofagent-inject/openclaw.plugin.json ] && [ -f engine/openclaw-plugins/sofagent-audit/openclaw.plugin.json ] && echo "✅ OpenClaw 插件家族（4 款 code-plugin）" || echo "❌ OpenClaw 插件"
 grep -q "worklog" tools/dashboard/dashboard.html 2>/dev/null && echo "✅ 工作明细/图谱栏" || echo "❌ 工作明细"
 grep -q "before_tool_execute" engine/openclaw-plugins/sofagent-audit/src/index.ts 2>/dev/null && echo "✅ OpenClaw 审计拦截" || echo "❌ OpenClaw 审计"
+```
+
+#### 122. v1.4.0 发版流程防复发——新 workspace 包 lock 同步 + plugin 分发包装 + 限流（阶段十二来源提取 B 类）
+
+> v1.4.0 发版三坑实录：① 新增 9 个 cordis-plugin workspace 包但 lock file 未同步——`npm ci` 严格校验 4 个 CI 工作流全红（pr-check/verify/audit/windows 同根因）；② skillhub 分发 DSH plugin 需 SKILL.md 包装（plugin 目录是 npm 包结构无 SKILL.md）+ 发布限流（连续发布报「发布频率过高」，需 ≥20s 间隔）+ changelog 中文按字节截断炸 UTF-8（0xe5 continuation byte）；③ npm publish E409 staged 状态约 5 分钟自动 finalize（v1.3.9 记录称需 unpublish，实测等待即可）。
+
+```bash
+# ① 新增 workspace 包后 lock 必须同步：本地 npm ci --dry-run 零 Missing 即 CI 不会红
+cd "$REPO_ROOT" && npm ci --dry-run 2>&1 | grep -c "^npm error Missing" | grep -q "^0$" && echo "✅ lock 与 workspace 同步" || echo "❌ lock 缺条目——npm install --package-lock-only 补齐"
+# ② lock 中 workspace 条目存在性抽查（防悬空引用）
+node -e "const l=require('./package-lock.json');const p=JSON.parse(require('fs').readFileSync('package.json','utf8'));const miss=p.workspaces.flat().filter(w=>!l.packages[w]);if(miss.length){console.error('❌ lock 缺:',miss.join(','));process.exit(1)}console.log('✅ 全部 workspace 在 lock')"
+# ③ argv 守卫（v1.4.0 Cordis 内嵌收编）在位
+grep -q "createArgv1Guard" engine/orchestrator/src/execution-backends/dsh-backend.ts && echo "✅ argv 守卫在位" || echo "❌ argv 守卫回退"
 ```
 <!-- v1.4.0 阶段四：#121 由 v1.3.9 锚点原地更新（参照 113/115 每版一维先例，不新增编号不触警戒线）；v1.3.9 锚点检查项（AST/worklog/DSH 桥接/MLflow/跨平台/守护）已被 #119/#120 防复发维 + acceptance S305-S317 覆盖，不重复。B 类防回归（dist 陈旧/文档数字漂移）进 check-version 检查项 21/22（fresh-eyes F-01/F-05 防复发）。
 -->

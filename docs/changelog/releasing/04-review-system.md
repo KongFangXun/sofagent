@@ -69,9 +69,9 @@
 ## fresh-eyes-review 风格守护自检（步骤五 必跑）
 
 ```bash
-# 1. 行数守护：不超过 400 行
+# 1. 行数守护：不超过 410 行（v1.4.0 阶段十二上调 400→410：校准笔记 +1 节，真实新教训非冗余）
 WC=$(wc -l < FORGE/playbook/fresh-eyes-review.md)
-[ "$WC" -gt 400 ] && echo "🔴 行数膨胀（$WC > 400）——检查是否在加精确检查项" || echo "✅ 行数正常（$WC）"
+[ "$WC" -gt 410 ] && echo "🔴 行数膨胀（$WC > 410）——检查是否在加精确检查项" || echo "✅ 行数正常（$WC）"
 
 # 2. 反清单化守护：不应出现精确检查命令（fresh-eyes-review 是留白式直觉审查，不是 checklist）
 CMD_COUNT=$(grep -cE '(grep|bash|npm|wc -l|test -)' FORGE/playbook/fresh-eyes-review.md || echo 0)

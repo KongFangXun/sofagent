@@ -125,6 +125,8 @@ git merge-base --is-ancestor "$REMOTE_SHA" HEAD && echo "✓ 快进可推" || \
 
 > **tag 先行策略**（v1.3.2 起统一）：先 push main → 等 CI 全绿验证 → 才打 tag。tag 一定指向 CI 验证过的 commit，不会 tag 了之后才发现 CI 红。
 >
+> 🔴 **push 前置检查：workspace 包与 lock 同步（v1.4.0 教训）**：本版新增了 workspace 包（cordis-plugin 家族）但 lock file 未同步——push 后 4 个 CI 工作流（pr-check/verify/audit/windows-ci）在 `npm ci` 严格校验上**同根因全红**（本地 `npm install` 会静默补齐所以本地全绿，CI `npm ci` 直接炸）。**push 前必跑**：`npm ci --dry-run 2>&1 | grep -c "^npm error Missing"` 期望 0——非 0 则 `npm install --package-lock-only` 补齐 lock 后随代码同 commit。
+>
 > 🔴 **CI 全绿是打 tag 的硬前置（2026-08-19 用户拍板强化）**：push 之后必须**轮询等到全绿**（不是看一眼就走）——`exit 0` 之前禁止进入步骤六。历史教训：CI 红着打 tag 会让用户装到坏版本（tag 是安装入口的锚点），回滚成本远高于等待 2-5 分钟。轮询脚本如下（循环跑直到 exit 0，每次间隔 60s）：
 
 ```bash
@@ -351,7 +353,7 @@ npm view @sofagent/load-chain version  # 同样应等于当前版本号
 # 期望：全部 = 当前版本号（npm 缓存可能延迟 15 秒，未到则等一下重查）
 ```
 
-> 🔴 **E409「previously staged version」处理（v1.3.9 实战）**：`npm publish` 网络中断会在 registry 留下 **staged blob**（发布事务中间态，版本号被占位但未 finalize）——同版本重发报 `409 Conflict - Cannot publish over previously staged version "X.Y.Z"`，**且持续约 24h（staged 自动过期）**。处理：`npm unpublish <pkg>@<version> --force` 清版本记录（staged blob 独立于记录，unpublish 后 registry 主节点传播完成即可重发同版本；若仍 E409 说明传播未完成，等 60s 重试或等 staged 过期）。⚠️ 与「npm 版本永久锁死」铁律不冲突——E409 staged 是**未 finalize 的占位**，可清除重发；已 published 的版本才不可覆盖。
+> 🔴 **E409「previously staged version」处理（v1.3.9 实战 · v1.4.0 修正）**：`npm publish` 网络中断会在 registry 留下 **staged blob**（发布事务中间态，版本号被占位但未 finalize）——同版本重发报 `409 Conflict - Cannot publish over previously staged version "X.Y.Z"`。**v1.4.0 实测修正：staged 版本约 5 分钟内自动 finalize**（skillopt 实证：E409 后等待约 5 分钟，`npm view dist-tags.latest` 即显示新版本，无需 unpublish）。处理顺序：① 先等 5 分钟重查 `npm view <pkg> dist-tags.latest`；② 仍未 finalize 再考虑 `npm unpublish <pkg>@<version> --force`（staged blob 独立于记录，unpublish 后 registry 主节点传播完成即可重发同版本）。⚠️ 与「npm 版本永久锁死」铁律不冲突——E409 staged 是**未 finalize 的占位**，可清除重发；已 published 的版本才不可覆盖。
 
 ---
 

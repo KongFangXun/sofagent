@@ -393,3 +393,13 @@ sofagent（https://github.com/KongFangXun/sofagent）。不管当前处于什么
 - **安全交付触发红队定点探针**：密钥/网关/WAL 类交付默认过 tmp 竞态 / chmod 时序 / PATH 解析三探针——本轮红队三项 P2 全部命中新增安全代码。
 - **单文件职责预警**：proxy-gateway 含判定链+审计+HITL+限速四块，下版网关系新功能前置条件=先拆 audit 出去。
 - **竞品对标叙事校准**：卖点锚定「git diff 硬证据+拦截」，不与扫描器拼规则密度（24 vs 100+ 是定位不是劣势）。
+
+## 校准笔记（v1.4.0）
+
+> 阶段十二发版流程教训归档——发版中才暴露的问题（与阶段四/五代码审查面互补）。
+
+- **新增 workspace 包 = lock 必同步**：本地 `npm install` 会静默补齐，CI `npm ci` 严格校验直接红——新增包后必须本地 `npm ci --dry-run` 验证零 Missing 再 push（v1.4.0 四工作流同根因红）。
+- **分发渠道格式差异是常态**：SkillHub 要 SKILL.md、ClawHub package 要 openclaw 元数据、npm 要 package.json——同一产物发多渠道前先 dry-run 探格式，缺格式用临时目录组装（不动仓库），用完即删。
+- **发布限流与编码坑**：skillhub 连续发布限流（≥20s 间隔）；changelog 描述禁止按字节截断中文（UTF-8 多字节炸 0xe5）——截断用码点感知工具。
+- **E409 staged 自动 finalize**：npm publish 中断留 staged 版本约 5 分钟自动完成（v1.3.9 教训称需 unpublish，实测等待即可，不必动 unpublish）。
+- **代理环境下 curl 验证不可靠**：raw.githubusercontent URL 验证遇 000 超时先怀疑本地代理抖动，用 `gh api contents` 交叉验证文件存在性再下结论。

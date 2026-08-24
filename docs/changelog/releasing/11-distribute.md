@@ -44,6 +44,11 @@ skillhub publish "$tmpdir/SKILL" --version <版本号> --changelog "vX.Y.Z: 简�
 # 🔴 实际目录是 engine/dsh-plugins/cordis-plugin-sofagent-*（v1.4.0 品牌化改名后，前缀 cordis-plugin-sofagent-）
 PLUGIN_DIRS=$(ls -d engine/dsh-plugins/cordis-plugin-sofagent-* 2>/dev/null || echo "")
 
+# 🔴 v1.4.0 实测三坑（发布前必读）：
+#   ① skillhub publish 要求目录内含 SKILL.md——plugin 目录是 npm 包结构（package.json + src/），没有 SKILL.md
+#      → 用临时目录组装发布物（生成 SKILL.md frontmatter + 复制 package.json/src），发布完即删，不动仓库
+#   ② 发布限流：skillhub 连续发布报「发布频率过高」——每次 publish 之间 sleep 20
+#   ③ changelog 中文禁止按字节截断（head -c 炸 UTF-8 0xe5）——用 node 按码点处理
 # 逐 plugin 发布（版本号与 sofagent 主线版本对齐，见 v1.4.0「版本同步机制」）
 for pdir in $PLUGIN_DIRS; do
   name=$(basename "$pdir")
@@ -53,6 +58,7 @@ for pdir in $PLUGIN_DIRS; do
   skillhub verify "$name" 2>&1 | grep version || true
   skillhub publish "$pdir" --version <版本号> --changelog "vX.Y.Z: $(head -1 "$pdir/README.md" 2>/dev/null || echo "$name")" \
     && echo "✅ $name 已发布到 SkillHub" || echo "❌ $name 发布失败"
+  sleep 20   # 限流间隔
 done
 ```
 

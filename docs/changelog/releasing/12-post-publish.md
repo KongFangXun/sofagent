@@ -206,3 +206,12 @@ sed -i '' 's/- \[x\]/- [ ]/g' docs/changelog/releasing.md
 - **阶段十·定位优化（v1.3.9 用户拍板）**：「纯确认环节」用户觉得怪（内容重复无决策意义）→ 重定位为「发布放行关口」：发布就绪汇总（门禁基线表）+ 作者一次性放行（三拍板项）+ 发布 prompt 交接，不再逐项过。09-confirm.md 已改
 - **双 SHA 分叉接回实操**：远端 Git Data API 遗留 commit（同 tree 不同 SHA）→ `git fetch`（剥代理直连）+ `git rebase --onto origin/main <本地等价点> main` 接回（v1.3.9 实战 678cc130→d274d826）；本地历史找等价点用 `git log --all --format="%h %T"` 匹配 tree
 - **v1.3.9 发版耗时**：约 25h（08-20 15:00 → 08-21 16:10，含隔夜）；release-gate 3 轮全人工修复（4 阻塞 + 2 零覆盖），driver 无债
+
+**v1.4.0 发版后的自迭代记录**：
+
+- **阶段十·步骤四 push 前置 lock 检查（新增）**：新增 9 个 cordis-plugin workspace 包但 lock file 未同步——push 后 4 个 CI 工作流（pr-check/verify/audit/windows-ci）在 `npm ci` 严格校验**同根因全红**（本地 `npm install` 静默补齐掩盖问题）。修复：`npm install --package-lock-only` 补齐（+217/-228 行：9 workspace 条目 + vitest@2 依赖树入 lock，悬空旧前缀条目清理）。已写入 10-publish 步骤四（push 前 `npm ci --dry-run` 零 Missing 必跑）+ checklist 维度 122
+- **阶段十一·DSH plugin 分发 SKILL.md 包装三坑（新增）**：skillhub publish 要求目录含 SKILL.md，但 plugin 目录是 npm 包结构——① 临时目录组装发布物（frontmatter + package.json + src），用完即删不动仓库；② 发布限流（连续发布报「频率过高」，≥20s 间隔）；③ changelog 中文按字节截断炸 UTF-8（0xe5）——用码点感知工具。已写入 11-distribute 步骤二
+- **阶段十一·步骤八 E409 staged 处理修正（更新）**：v1.3.9 记录称「24h 锁 + unpublish 清除」——v1.4.0 实测 skillopt E409 后**约 5 分钟自动 finalize**，无需 unpublish。处理顺序修正为：先等 5 分钟重查 dist-tags，仍未 finalize 再 unpublish。已更新 10-publish 步骤八
+- **阶段十·步骤六 tag push 代理 502 连环（实录）**：`git push origin v1.4.0` 遭 exit 137 SIGKILL → 远端 404 本地有 tag；重试遭 CONNECT 502 → 最终 `gh api repos/O/R/git/refs -f ref=refs/tags/vX.Y.Z -f sha=<commit>` 直接创建远端 tag 成功（走 api.github.com 通道绕过 git CONNECT 隧道）。**gh api 创建 tag 是代理 502 下最可靠通道**，比 v1.3.9 的「剥代理直连」更稳（本机网络必须走代理时直连反而不通）
+- **发布物落盘铁律（用户拍板）**：发布物（publish prompt / release note body）统一 `~/Desktop/`，禁止在 FORGE/ 或仓库内自建目录（FORGE/artifacts/ 已删）。已写入 09-confirm.md
+- **v1.4.0 发版耗时**：约 4h（08-24 14:00 阶段十启动 → 19:00 阶段十二完成）；CI lock 事故 1 次（4 工作流同根因红 → 单 commit 修复转绿）；release-gate 0 轮（v1.4.0 阶段五 fresh-eyes 4 轮已在过渡期完成，发版窗口内零审查轮）
