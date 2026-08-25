@@ -80,7 +80,7 @@ graph TB
 
 | 概念 | 一句话 | 详情 |
 |------|--------|------|
-| **FDE Agent** | 对外的产品身份：「Forward Deployed Engineer」——进场→部署→离场，留一套能持续维护的 AI 化资产 | [PHILOSOPHY §一](./PHILOSOPHY.md) |
+| **FDE Agent** | 对外的产品身份：「Forward Deployed Engineer」——sofagent 把 FDE 能力装进成熟 Agent（DSH / OpenClaw / WorkBuddy），任何一个装了 sofagent 能力的 Agent 就是 FDE Agent；进场→部署→离场，留一套能持续维护的 AI 化资产 | [PHILOSOPHY §一](./PHILOSOPHY.md) |
 | **约束层（Harness）** | 对内的技术身份：约束 Agent 行为的「缰绳」——一个层四种能力（注入·审计·回溯·进化），编排（FORGE）为内部工具 | [ARCHITECTURE §二](./ARCHITECTURE.md) |
 | **约束层七维度** | Agent = 模型 + 上下文 + 工具 + 状态 + 执行控制 + 权限 + 可观测性——四种能力各自覆盖其中哪些维度 | [ARCHITECTURE §一 · 约束层七维度](./ARCHITECTURE.md#约束层七维度agent-的构成面)（维度构成以本行为准；四种能力维度分工详见 [PHILOSOPHY §一·四件事的分工](./PHILOSOPHY.md#四件事的分工mcp--skills--ontology--harness)） |
 | **约束层构成（企业视角）** | 黄仁勋定义：企业专属约束层 = 知识 + 记忆 + 工作流 + 权限 + 安全机制 + 运行环境——模型是起点，围绕模型积累的这套专属系统才是核心资产 | [PHILOSOPHY §一·理论锚点](./PHILOSOPHY.md#智能与控制分离sofagent-的理论锚点) |
@@ -101,8 +101,10 @@ graph TB
 
 ```
 ┌─────────────────────────────────────────────────┐
-│                  FDE Agent（产品身份）            │
+│  成熟 Agent 宿主（DSH · OpenClaw · WorkBuddy）    │
+│  模型 + 工具 + 会话（执行能力，不替代）            │
 ├─────────────────────────────────────────────────┤
+│             FDE 能力面（sofagent）                │
 │  SKILL 层（约束注入）  │  FORGE 层（自迭代）      │
 │  SKILL.md + harness/  │  fresh-eyes-loop +       │
 │  + agents/ + custom/  │  release-gate-loop       │

@@ -31,11 +31,11 @@
 
 Agent 越聪明，企业越不敢让它碰真活——真出事了，谁负责？能拦住吗？能回滚吗？大厂给你水（LLM）、给你河床（Agent 平台），但企业门口的那段管子——从"能喝"到"敢喝"——没人帮你接。
 
-**② sofagent 的答案：一个常驻你企业的 FDE Agent，帮你把业务流梳理成 AI 节点，部署完它自己跑。**
+**② sofagent 的答案：一套常驻你企业的 FDE 能力，骑在成熟 Agent 之上，帮你把业务流梳理成 AI 节点，部署完它自己跑。**
 
 sofagent 不替代大厂 Agent，而是建在它们之上——做河的约束层，不做河本身（River 比喻详见 [README · 这是什么](../README.md#这是什么)）。FDE 进场四阶段：梳理→挖掘→交付→离场。离场后 AI 节点自己跑。
 
-> **🔄 自举（产品哲学的核心）：FDE Agent 给自己做的第一份 FDE，就是 sofagent 自己。** 我们自己是一家"FDE 公司"——执行「给企业做 AI 落地」这条 workflow 的 Agent 就是 sofagent。它对自己做 FDE：把项目自身梳理成一条 FDE workflow（梳理 → 节点 → 双图谱交付），确认每个节点全自动（LangGraph 编排 + DeepSeek Harness 执行 + 约束底座审计），训练引擎也围绕 FDE——怎么让 FDE 更好、怎么让数据飞轮转起来。这是自举循环：**FDE Agent 对自己做 FDE → 项目更 AI 化 → 更好地服务企业**。产品形态 = 一个 FDE Agent（以 LangGraph + 约束层为内核，plugin + skill + MCP + CLI + dashboard 为调用面，v1.4.0 封装形态规划落地）。
+> **🔄 自举（产品哲学的核心）：FDE 能力给自己做的第一份 FDE，就是 sofagent 自己。** 我们自己是一家"FDE 公司"——执行「给企业做 AI 落地」这条 workflow 的能力就是 sofagent（骑在成熟 Agent 上）。它对自己做 FDE：把项目自身梳理成一条 FDE workflow（梳理 → 节点 → 双图谱交付），确认每个节点全自动（LangGraph 编排 + DeepSeek Harness 执行 + 约束底座审计），训练引擎也围绕 FDE——怎么让 FDE 更好、怎么让数据飞轮转起来。这是自举循环：**FDE 能力对自己做 FDE → 项目更 AI 化 → 更好地服务企业**。产品形态 = FDE 能力面（不造 Agent：plugin + skill + MCP + CLI + dashboard 五种形态分发到成熟宿主 DSH / OpenClaw / WorkBuddy，约束底座 + FDE 方法论为行为层，2026-08-25 拍板叙事）。
 
 > **🔗 激活链——从"交付"到"自运转"**：FDE 交付了 ontology + workflow.yml + skills/ 等静态文件后，交付物和"企业业务流自动运行"之间曾有一道**大断裂带**——企业 IT 拿到一堆 .md 和 .yml 不知道怎么跑起来。v1.2.5 起的**激活链**（ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN，已交付）解决这个问题：读交付物 → 注册企业 SubAgent → 构建 LangGraph StateGraph → DAG 运行 + HITL + 审计 → 持续优化自运转。详见 [激活链设计文档](./guides/fde-activation-chain.md)。
 

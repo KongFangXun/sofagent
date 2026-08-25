@@ -68,7 +68,7 @@ graph LR
 
 本版核心：正式结合 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)（简称 DSH），成为完整的 FDE Agent。
 
-**一、为什么选 DSH**：DeepSeek 官方开源 Agent 框架，基于 [Cordis](https://github.com/cordiverse/cordis) 运行时，理念「Everything is a Plugin」——插件化与约束层的平台无关形态天然契合，也是当前结合最深的一个内核。
+**一、为什么选 DSH**：DeepSeek 官方开源 Agent 框架，基于 [Cordis](https://github.com/cordiverse/cordis) 运行时，理念「Everything is a Plugin」——插件化与约束层的平台无关形态天然契合，也是当前结合最深的一个宿主。
 
 **二、怎么结合**：约束层四能力（注入 · 审计 · 回溯 · 进化）封装成 9 款 `cordis-plugin-sofagent-*` 插件，全部真实挂载进 DSH（Plugin list 可见 9 个 Enabled），可独立安装、渐进采用：
 
@@ -91,7 +91,7 @@ graph LR
 | DeepSeek Harness（DSH） | **执行体**——模型 + 工具 + 会话 |
 | sofagent | **企业约束与审计 + FDE 方法论** |
 
-**两者合一 = 完整 FDE Agent**：DSH 负责「能干活」，sofagent 负责「干得住」——每次变更受审计，越界能拦、出事能回滚。
+**DSH 宿主 + sofagent 能力 = 完整 FDE Agent**：DSH 负责「能干活」，sofagent 负责「干得住」——每次变更受审计，越界能拦、出事能回滚。
 
 **本版其他新能力**（详见[开发日志](./docs/changelog/v1.4/v1.4.0.md)，更早版本见 [CHANGELOG](./CHANGELOG.md)）：
 
