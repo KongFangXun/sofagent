@@ -43,7 +43,7 @@ metadata:
 
 ## 🔌 DSH（DeepSeek Harness）生态
 
-> 一句话定位：sofagent = FDE 能力层，DSH = 执行宿主——sofagent 把 FDE 能力装进 DSH（及其他成熟 Agent），两者合一即完整 FDE Agent。四环节链路：
+> 一句话定位：sofagent = FDE Harness 层，DSH = 执行宿主——sofagent 把 FDE 能力装进 DSH（及其他成熟 Agent），对执行体约束、对智力源治理，两者合一即完整 FDE Agent。四环节链路：
 
 一、`bash install.sh` 装底座——MCP 自动配置随 `--platform` 落地（workbuddy/claude/cursor 写 mcp.json、codex 写 config.toml），装完即连
 二、DSH 用户按需挂插件——`skillhub install cordis-plugin-sofagent-<名>`（SkillHub 通道，每款独立安装渐进采用）

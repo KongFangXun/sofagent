@@ -2,19 +2,19 @@
 
 > 设计决策记录——从为什么存在、约束层四种能力如何协作，到每个关键决策的工程理由。
 >
-> **产品定位锚定**：本架构服务的产品 = **FDE 能力层**（sofagent）——不造 Agent，骑在成熟 Agent（DSH / OpenClaw / WorkBuddy）之上，给「给企业做 AI 落地」这条 workflow 的执行体装 FDE 能力：plugin + skill + MCP + CLI + dashboard 为调用面，约束底座（注入·审计·回溯·进化）+ FDE 方法论为行为层（产品叙事见 [WIKI §二](./WIKI.md#二产品叙事sofagent-是-fde-能力层不造-agent给-agent-装-fde-能力)）。
+> **产品定位锚定**：本架构服务的产品 = **FDE Harness 层**（sofagent）——不造 Agent，夹在成熟 Agent（执行体：DSH / OpenClaw / WorkBuddy）与模型层（智力源：通用大模型 + 专属小模型 / 后训练模型）之间做治理：对执行体约束（plugin + skill + MCP + CLI + dashboard 五种形态分发），对智力源治理（注册 / 灰度 / 训练 / 部署全留痕）（产品叙事见 [WIKI §二](./WIKI.md#二产品叙事sofagent-是-fde-harness-层不造-agent夹在-agent-与模型之间做治理)）。
 > v1.4.0 · 2026-08-23（UTC）
 
 <img src="assets/sofagent.png" alt="sofagent" width="160" />
 
 ## 心智模型（先读这个）
 
-> **sofagent 是一个开源 FDE 能力层**（MIT）——不造 Agent，骑在成熟 Agent（DSH / OpenClaw / WorkBuddy）之上，对外帮你进场梳理业务流、构建本体图谱、部署 AI 节点、离场后 7×24 自己跑。能力底座是一套约束 Agent 行为的约束层（Harness），**约束层 × 生命周期**双层架构：层 1 约束层 = 一个层四种能力（注入·审计·回溯·进化）；层 2 生命周期 = 诊断 → 激活 → 编排 → 执行 → 进化。FORGE 自迭代工具链（LOOP 流水线）是项目内部开发工具，保证每次变更可审计、可回滚、可进化。
+> **sofagent 是一个开源 FDE Harness 层**（MIT）——不造 Agent，夹在成熟 Agent（DSH / OpenClaw / WorkBuddy）与模型层之间做治理，对外帮你进场梳理业务流、构建本体图谱、部署 AI 节点、离场后 7×24 自己跑。能力底座是一套约束 Agent 行为的约束层（Harness），**约束层 × 生命周期**双层架构：层 1 约束层 = 一个层四种能力（注入·审计·回溯·进化）；层 2 生命周期 = 诊断 → 激活 → 编排 → 执行 → 进化。FORGE 自迭代工具链（LOOP 流水线）是项目内部开发工具，保证每次变更可审计、可回滚、可进化。
 
 ```mermaid
 graph TD
     A[成熟 Agent 宿主 + 大模型<br/>DSH · OpenClaw · WorkBuddy<br/>90% 智力 · 你自选 · 我们不替代] --> B[约束层（Harness）<br/>一个层四种能力<br/>约束层 × 生命周期]
-    B --> C[FDE 能力面<br/>帮你梳理→部署→离场→AI 节点自己跑]
+    B --> C[FDE Harness 层<br/>帮你梳理→部署→离场→AI 节点自己跑]
     C --> D[SMB · OPC 的每个人<br/>成为自己业务的 FDE]
 ```
 

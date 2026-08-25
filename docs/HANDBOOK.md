@@ -54,7 +54,7 @@
 
 ## FDE Agent 能替你干什么
 
-> 这一节先讲「价值」，再讲「怎么用」。sofagent 不是一个工具包，而是一套**能进场、能部署、能离场常驻的 FDE 能力**——装在成熟 Agent（DSH / OpenClaw / WorkBuddy）上，替企业把大模型变成 7×24 自动执行的 AI 节点（产品形态 = FDE 能力面：plugin + skill + MCP + CLI + dashboard 五种形态分发到宿主，见 [WIKI 产品叙事](./WIKI.md#二产品叙事sofagent-是-fde-能力层不造-agent给-agent-装-fde-能力)）。完整能力矩阵见 [ARCHITECTURE · 能力与状态总览](./ARCHITECTURE.md#能力与状态总览)。
+> 这一节先讲「价值」，再讲「怎么用」。sofagent 不是一个工具包，而是**一层 FDE Harness**——夹在成熟 Agent（DSH / OpenClaw / WorkBuddy）与模型层之间，对执行体约束、对智力源治理，替企业把大模型变成 7×24 自动执行的 AI 节点（产品形态 = FDE Harness 层，见 [WIKI 产品叙事](./WIKI.md#二产品叙事sofagent-是-fde-harness-层不造-agent夹在-agent-与模型之间做治理)）。完整能力矩阵见 [ARCHITECTURE · 能力与状态总览](./ARCHITECTURE.md#能力与状态总览)。
 
 **已经能替你干的事（v1.3.9 已交付）**：
 

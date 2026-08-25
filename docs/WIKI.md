@@ -34,11 +34,11 @@
 
 ## 一、一句话
 
-**sofagent 是一个开源 FDE 能力层**（MIT，同时也是 FDE 方法论的参考实现）——不造 Agent，骑在成熟 Agent（DSH / OpenClaw / WorkBuddy）之上：进场梳理业务流、构建本体图谱、把能自动化的环节变成 AI 节点、部署后 7×24 自己跑。底层是 **约束层（Harness）**——约束 Agent 行为、审计每次变更、沉淀经验。**产品形态 = FDE 能力面**：plugin + Skill + MCP + CLI + dashboard 五种形态分发到宿主，方法论 + 约束底座 + 审计为行为层——它给自己做的第一份 FDE，就是 sofagent 自己（自举）。
+**sofagent 是一个开源 FDE Harness 层**（MIT，同时也是 FDE 方法论的参考实现）——不造 Agent，夹在成熟 Agent（DSH / OpenClaw / WorkBuddy）与模型层（通用大模型 + 专属小模型 / 后训练模型）之间做治理：进场梳理业务流、构建本体图谱、把能自动化的环节变成 AI 节点、部署后 7×24 自己跑。底层是 **约束层（Harness）**——约束 Agent 行为、审计每次变更、沉淀经验。**产品形态 = FDE Harness 层**：对执行体（Agent）做约束、对智力源（模型）做治理——它给自己做的第一份 FDE，就是 sofagent 自己（自举）。
 
 ---
 
-## 二、产品叙事：sofagent 是 FDE 能力层（不造 Agent，给 Agent 装 FDE 能力）
+## 二、产品叙事：sofagent 是 FDE Harness 层（不造 Agent，夹在 Agent 与模型之间做治理）
 
 > **一条 workflow 的产品**：给企业做 AI 落地 = 一条 FDE workflow。执行这条 workflow 的 Agent = FDE Agent（sofagent 让任何成熟 Agent 具备这个能力）。**它对自己做的第一份 FDE，就是 sofagent 项目本身**——自举循环：FDE Agent 对自己做 FDE → 项目更 AI 化 → 更好地服务企业 → 数据飞轮转起来。
 
@@ -48,7 +48,7 @@
 
 > **现实预期（产品口径 · 详细边界见 v1.4.1 开发日志）**：后训练分两种——**行为对齐型**（教模型守企业规矩/风格，用自家服务轨迹数据，sofagent 自给自足）与**知识注入型**（教模型懂行业知识，需企业提供业务数据）。最现实起步 = 行为对齐 + 小模型 QLoRA（一张消费级 GPU 即可）；框架安装、算力检测由训练 Agent 自动接管。期望边界：垂直精调（LoRA/QLoRA），不是从零训大模型。
 
-**内外层 workflow 全景**（产品 = FDE 能力面骑在成熟 Agent 上的可视化）：
+**内外层 workflow 全景**（产品 = FDE Harness 层夹在 Agent 与模型之间的可视化）：
 
 ```mermaid
 graph TB
@@ -104,7 +104,7 @@ graph TB
 │  成熟 Agent 宿主（DSH · OpenClaw · WorkBuddy）    │
 │  模型 + 工具 + 会话（执行能力，不替代）            │
 ├─────────────────────────────────────────────────┤
-│             FDE 能力面（sofagent）                │
+│             FDE Harness 层（sofagent）            │
 │  SKILL 层（约束注入）  │  FORGE 层（自迭代）      │
 │  SKILL.md + harness/  │  fresh-eyes-loop +       │
 │  + agents/ + custom/  │  release-gate-loop       │
