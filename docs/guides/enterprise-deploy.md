@@ -46,8 +46,8 @@ task/logs 和 think.md 以明文 Markdown 存储，可能含代码片段和对�
 | 数据脱敏 | ✅ | A2/A9 命中行脱敏后存储 |
 | 数据加密 | ❌ | 本地存储为明文（如需加密，用 OS 级全盘加密） |
 | 权限控制 | ✅ 700 | install.sh 自动设置 |
-| 数据保留策略 | ✅ 已完成 | v0.71 落地 cleanup.sh 自动清理，支持 --purge --before |
-| 审计日志 | ✅ 已完成 | v0.71 落地 task-record.sh 独立审计日志 + task/logs 追溯双通道 |
+| 数据保留策略 | ✅ 已完成 | cleanup.sh 自动清理，支持 --purge --before |
+| 审计日志 | ✅ 已完成 | task-record.sh 独立审计日志 + task/logs 追溯双通道 |
 | 外部 API 调用 | ✅ 可关闭 | 离线模式跳过 ClawHub |
 | 配置文件修改 | ✅ 可控 | --no-config-inject 跳过 |
 
@@ -102,7 +102,7 @@ done
 
 > ⚠️ **v1.2.8 修正**：此前文档写的 `.sofagent/data/config.yml` 是错误路径——配置加载器只读 `.sofagent/config.yml`。
 
-**方案 B · SOFAGENT_CONFIG 环境变量（集中管控，v1.2.8 新增）**
+**方案 B · SOFAGENT_CONFIG 环境变量（集中管控）**
 
 ```bash
 # 全局环境变量指向企业统一配置（优先级最高）
@@ -198,7 +198,7 @@ if [ "$LATEST" != "$INSTALLED" ]; then
 fi
 ```
 
-> `--doctor` 也会报告"运行引擎版本 vs 已发布版本"不一致（v1.2.8 新增检查项）。
+> `--doctor` 也会报告"运行引擎版本 vs 已发布版本"不一致。
 
 ### Windows 支持边界（v1.2.8）
 

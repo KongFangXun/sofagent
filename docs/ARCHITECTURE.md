@@ -1145,24 +1145,24 @@ flowchart TD
     FDE[FDE 诊断交付物<br/>ontology + workflow.yml + skills/<br/>nodes/*.md — 静态文件]
     FDE --> A1[① ACTIVATE 激活<br/>activate.ts<br/>v1.2.5]
     A1 -->|写 .sofagent/subagents/*.yml| REG[registry.ts 动态注册<br/>v1.0.8 起已有]
-    REG --> A2[② ORCHESTRATE 编排<br/>composeEnterpriseWorkflow<br/>v1.2.6-v1.2.7]
+    REG --> A2[② ORCHESTRATE 编排<br/>composeEnterpriseWorkflow<br/>映射扩展 + StateGraph 构建]
     A2 -->|多 Agent → StateGraph| SG[LangGraph StateGraph<br/>条件路由 + 并行 + 汇合]
-    SG --> A3[③ EXECUTE 执行<br/>dag-runner + node-executor<br/>v1.2.8-v1.2.9]
+    SG --> A3[③ EXECUTE 执行<br/>dag-runner + node-executor<br/>HITL + 审计集成 + 异常兜底]
     A3 -->|HITL interrupt_before| HITL[人工审批节点<br/>高风险操作暂停等人确认]
     A3 -->|审计 hook| AUDIT[审计<br/>每步变更自动审计]
-    A3 --> A4[④ SUSTAIN 持续<br/>wrapToolCall 联动<br/>v1.3.0]
+    A3 --> A4[④ SUSTAIN 持续<br/>wrapToolCall 联动<br/>全链路验证]
     A4 -->|think.md 回写| EVOLVE[进化引擎<br/>执行→审计→反思→进化]
     EVOLVE -.->|喂下一轮诊断| FDE
 ```
 
-### 四阶段 × 版本 × 依赖
+### 四阶段 × 核心交付 × 依赖
 
-| 阶段 | 版本 | 核心交付 | 依赖已有能力 |
-|------|------|---------|-------------|
-| ① ACTIVATE | v1.2.5 | `activate.ts` + MCP `activate_workflow` tool + workflow.yml 扩展 | registry.ts 动态注册（v1.0.8）+ MCP Server（27 tools） |
-| ② ORCHESTRATE | v1.2.6-v1.2.7 | workflow-parser 扩展 + `composeEnterpriseWorkflow()` + StateGraph 构建 | orchestrator + LangGraph StateGraph |
-| ③ EXECUTE | v1.2.8-v1.2.9 | dag-runner node-executor + HITL interrupt + 审计集成 + 异常兜底 | audit + daemon 文件监控 |
-| ④ SUSTAIN | v1.3.0 | 全链路验证 + `wrapToolCall` 联动 | think（反思引擎）+ eval + skillopt |
+| 阶段 | 核心交付 | 依赖已有能力 |
+|------|---------|-------------|
+| ① ACTIVATE | `activate.ts` + MCP `activate_workflow` tool + workflow.yml 扩展 | registry.ts 动态注册 + MCP Server |
+| ② ORCHESTRATE | workflow-parser 扩展 + `composeEnterpriseWorkflow()` + StateGraph 构建 | orchestrator + LangGraph StateGraph |
+| ③ EXECUTE | dag-runner node-executor + HITL interrupt + 审计集成 + 异常兜底 | audit + daemon 文件监控 |
+| ④ SUSTAIN | 全链路验证 + `wrapToolCall` 联动 | think（反思引擎）+ eval + skillopt |
 
 > **关键认知**：底座（引擎）已经全绿（测试数量以 `tools/check/test-count.sh` 实测为准），激活链不是造新引擎，是往已有引擎上放车厢——"轨道从早期就铺好了，一直没人往上面放车厢"。
 

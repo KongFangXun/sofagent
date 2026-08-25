@@ -50,7 +50,7 @@ sofagent 是一套 FDE 能力——底层引擎是纯本地 Harness 中间件（
 
 ### 纵深防御（静态加密之外的额外措施，持续建议）
 
-在静态加密（v1.3.8 已交付，覆盖审计历史主链）之外，仍建议：
+在静态加密（覆盖审计历史主链）之外，仍建议：
 1. **设置 `~/.sofagent/data/` 目录权限为 700**：`chmod 700 ~/.sofagent/data/`（用户可见运行时数据；`~/.sofagent/internal/` 引擎内部状态同样 700）
 2. **将 `~/.sofagent/` 父目录放在加密文件系统上**（如 macOS APFS 加密卷）
 3. **定期轮换 `~/.sofagent/data/` 中的历史审计数据**
@@ -59,7 +59,7 @@ sofagent 是一套 FDE 能力——底层引擎是纯本地 Harness 中间件（
 
 **企业环境建议**：
 - 对 `data/` 目录做 gpg 加密或放在加密卷上
-- 脱敏/保留/审计能力已在 v0.71 落地，详见 [企业部署指南](./docs/guides/enterprise-deploy.md)
+- 脱敏/保留/审计能力已落地，详见 [企业部署指南](./docs/guides/enterprise-deploy.md)
 
 ---
 
