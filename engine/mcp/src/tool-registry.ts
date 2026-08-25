@@ -21,7 +21,7 @@ export interface ToolDef {
 }
 
 /**
- * 完整工具清单——66 个 tool（v1.4.0：cost_query + browser 4 新增；v1.3.9：worklog_query 新增；v1.3.6：workflow_submit/ontology_import/model_register/model_switch/model_unregister/train_budget/define_acceptance/check_acceptance；v1.3.5：run_ab_test/promote_ab/snapshot_list/snapshot_restore；v1.3.4：commons_publish/search/invoke/rate/retire/harvest_rule；不含 4 个 resource shortcut）
+ * 完整工具清单——67 个 tool（v1.4.1：train_submit 新增；v1.4.0：cost_query + browser 4 新增；v1.3.9：worklog_query 新增；v1.3.6：workflow_submit/ontology_import/model_register/model_switch/model_unregister/train_budget/define_acceptance/check_acceptance；v1.3.5：run_ab_test/promote_ab/snapshot_list/snapshot_restore；v1.3.4：commons_publish/search/invoke/rate/retire/harvest_rule；不含 4 个 resource shortcut）
  */
 export const TOOLS: ToolDef[] = [
   {
@@ -885,6 +885,33 @@ export const TOOLS: ToolDef[] = [
         decision: { type: 'string', enum: ['resume', 'terminate'], description: 'resolve 时的人审决策：resume 续跑 / terminate 终止' },
       },
       required: ['action', 'job_id'],
+    },
+  },
+  {
+    // v1.4.1 (块二)：训练任务提交——生成 trainJobId（编排层 train-scheduler 接管 spawn）
+    name: 'train_submit',
+    roles: ['eval', 'ops'],
+    description: '训练任务提交——数据+基座+算法(sft/dpo/grpo)+超参+预算 → 生成 trainJobId（同 id 重复提交幂等）。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        data_path: { type: 'string', description: '数据路径（训练集）' },
+        base_model: { type: 'string', description: '基座模型（企业专属模型 / 开源基座）' },
+        algorithm: { type: 'string', enum: ['sft', 'dpo', 'grpo'], description: '训练算法' },
+        hyperparams: { type: 'object', description: '超参（透传训练框架，键值自定）', additionalProperties: true },
+        budget: {
+          type: 'object',
+          description: '预算（可选——超限 SIGINT 暂停等人审，train_budget 衔接）',
+          properties: {
+            max_minutes: { type: 'number', description: '时间预算上限（分钟）' },
+            max_steps: { type: 'number', description: '训练步数上限' },
+            max_cost: { type: 'number', description: '估算算力成本上限' },
+          },
+        },
+        enterprise_id: { type: 'string', description: '🔴 企业标识（必填——企业隔离分区依赖）' },
+        train_job_id: { type: 'string', description: '训练任务标识（可选——同 id 重复提交幂等返回既有任务）' },
+      },
+      required: ['data_path', 'base_model', 'algorithm', 'enterprise_id'],
     },
   },
   {

@@ -41,6 +41,8 @@ import { runCommonsHealth } from './inspectors/commons-health';
 import { runFdeCompanionDaily } from './inspectors/fde-companion-daily';
 // v1.3.5 交付 5：FDE 节点注册表巡检（@daily——fde-registry.yaml cadence 调度）
 import { runFdeRegistryDaily } from './inspectors/fde-registry-daily';
+// v1.4.1 块七：训练孤儿任务巡检（@daily——data/train 假活 job 检测）
+import { runTrainOrphanScan } from './inspectors/train-orphan-scan';
 
 /** 巡检层级 */
 export type InspectorLayer = 'L1' | 'L2' | 'L3';
@@ -75,6 +77,8 @@ const LAYER_INSPECTORS: Record<InspectorLayer, { name: string; fn: InspectorFn }
     { name: 'fde-companion-daily', fn: runFdeCompanionDaily },
     // v1.3.5 交付 5：FDE 节点注册表巡检（@daily——fde-registry.yaml cadence 调度）
     { name: 'fde-registry-daily', fn: runFdeRegistryDaily },
+    // v1.4.1 块七：训练孤儿任务巡检（@daily——data/train 假活 job 检测）
+    { name: 'train-orphan-scan', fn: runTrainOrphanScan },
   ],
   L2: [
     { name: 'conflict-check', fn: checkConflict },

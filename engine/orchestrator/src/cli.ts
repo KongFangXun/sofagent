@@ -38,6 +38,14 @@ async function main() {
     console.log('                                   v1.3.5: /evolve 聚合器——从 think.md + decision-log + 错题本');
     console.log('                                   提取 instinct，置信度达标聚合成 skill 写入运行时目录');
     console.log('                                   （缺省 ~/.sofagent/skill/custom/）');
+    console.log('  train doctor [--gpu]             v1.4.1 块七: 训练环境体检——GPU 显存核对');
+    console.log('                                   （无 nvidia-smi 输出 unsupported + 走孤儿检测报告）');
+    console.log('  train cleanup <enterpriseId> [--passes <n>] [--data-dir <dir>]');
+    console.log('                                   v1.4.1 块七: 清空企业训练数据（覆写→混淆→删除）');
+    console.log('  train reproduce --fingerprint <file> --data <dir> [--seed <n>]');
+    console.log('                                   v1.4.1 块七: 复现校验——现场 vs 冻结指纹差异报告');
+    console.log('  train verify <trainJobId> [--enterprise <id>] [--data-dir <dir>]');
+    console.log('                                   v1.4.1 块七: 产物完整性校验（签名+逐文件 hash+指纹关联）');
     process.exit(0);
   }
 
@@ -409,9 +417,249 @@ async function main() {
       }
       break;
     }
+    case 'train': {
+      // v1.4.1 块七：train 子命令族（doctor 本波实装；cleanup/reproduce/verify 骨架待接线）
+      const trainAction = args[1];
+      if (!trainAction) {
+        console.error('❌ train 需要子动作: doctor | cleanup | reproduce | verify');
+        process.exit(1);
+      }
+      if (trainAction === 'doctor') {
+        const wantGpu = args.includes('--gpu');
+        const { snapshotGpuMemory } = await import('./train/process-guard');
+        const { loadEnvConfig } = await import('@sofagent/core');
+        const { listTrainJobRecords } = await import('./train/train-job');
+        const { existsSync, readdirSync } = await import('fs');
+        const { join } = await import('path');
+
+        const dataDir = loadEnvConfig().dataDir;
+
+        // ① GPU 显存核对（--gpu 或默认都执行——无 nvidia-smi 输出 unsupported）
+        if (wantGpu) {
+          const gpu = snapshotGpuMemory();
+          if (!gpu.supported) {
+            console.log(`ℹ️ GPU 显存核对：unsupported（${gpu.note}）`);
+          } else {
+            const used = gpu.perGpuUsedMiB ?? [];
+            const total = used.reduce((a, b) => a + b, 0);
+            console.log(`🎮 GPU 显存：${gpu.note}，已用 ${used.join(' / ')} MiB（合计 ${total} MiB）`);
+          }
+        }
+
+        // ② 孤儿检测报告（state=running 的 job → pid 存活探测 + 无主进程识别）
+        const trainRoot = join(dataDir, 'train');
+        const activePids: Array<{ pid: number; jobId: string; enterpriseId: string }> = [];
+        if (existsSync(trainRoot)) {
+          for (const ent of readdirSync(trainRoot, { withFileTypes: true })) {
+            if (!ent.isDirectory()) continue;
+            for (const rec of listTrainJobRecords(dataDir, ent.name)) {
+              if (rec.status !== 'running' && rec.status !== 'checkpointing') continue;
+              if (typeof rec.pid !== 'number') continue;
+              activePids.push({ pid: rec.pid, jobId: rec.jobId, enterpriseId: rec.enterpriseId });
+            }
+          }
+        }
+
+        // 假活检测（进程探测）
+        const probe = (pid: number): boolean => {
+          try {
+            process.kill(pid, 0);
+            return true;
+          } catch (err) {
+            return (err as NodeJS.ErrnoException).code === 'EPERM';
+          }
+        };
+        const dead = activePids.filter((p) => !probe(p.pid));
+        const alive = activePids.length - dead.length;
+
+        console.log(`📋 训练任务体检：运行中 ${activePids.length} 个（子进程存活 ${alive} / 假活 ${dead.length}）`);
+        for (const d of dead) {
+          console.log(`  ⚠️ ${d.enterpriseId}/${d.jobId}（pid=${d.pid} 已死——建议引擎重启触发 crash-recovery）`);
+        }
+        if (dead.length > 0) {
+          process.exit(1);
+        }
+        console.log('✅ 训练环境体检通过');
+        break;
+      }
+
+      // ── v1.4.1 块七挂线：cleanup / reproduce / verify（doctor 已实装）──
+      if (trainAction === 'cleanup') {
+        // train cleanup <enterpriseId> [--data-dir <dir>] [--passes <n>]
+        const enterpriseId = args[2];
+        if (!enterpriseId || enterpriseId.startsWith('--')) {
+          console.error('❌ 用法: train cleanup <enterpriseId> [--data-dir <dir>] [--passes <n>]');
+          console.error('   清空该企业全部训练数据（覆写 → 混淆 → 删除——不可复原）');
+          process.exit(1);
+        }
+        const dataDirIdx = args.indexOf('--data-dir');
+        const passesIdx = args.indexOf('--passes');
+        const { cleanupEnterpriseTrainData } = await import('./train/cleanup');
+        const { EnterpriseAccessDeniedError } = await import('./train/isolation-guard');
+        const { loadEnvConfig } = await import('@sofagent/core');
+        const cleanupDataDir = dataDirIdx !== -1 && args[dataDirIdx + 1] ? args[dataDirIdx + 1]! : loadEnvConfig().dataDir;
+        const passes = passesIdx !== -1 ? parseInt(args[passesIdx + 1]!, 10) : undefined;
+        if (passesIdx !== -1 && (!passes || passes < 1)) {
+          console.error('❌ train cleanup --passes 需要正整数（如 1）');
+          process.exit(1);
+        }
+        try {
+          const report = cleanupEnterpriseTrainData(
+            cleanupDataDir,
+            enterpriseId,
+            passes !== undefined ? { passes } : {},
+          );
+          console.log(`🧹 企业训练数据清理报告（${report.enterpriseDir}）`);
+          console.log(`   覆写删除文件: ${report.wipedFiles} 个（${report.overwrittenBytes} 字节）`);
+          console.log(`   混淆删除目录: ${report.removedDirs} 个（含企业分区根: ${report.enterpriseDirRemoved ? '已删' : '未删'}）`);
+          if (report.skipped.length > 0) {
+            console.error(`⚠️  ${report.skipped.length} 项跳过（失败如实报告）：`);
+            for (const s of report.skipped) {
+              console.error(`   - [${s.stage}] ${s.path}：${s.reason}`);
+            }
+          }
+          console.log(report.fullyCleaned ? '✅ 全部清理完成' : '❌ 存在未清项（见 skipped）');
+          process.exit(report.fullyCleaned ? 0 : 1);
+        } catch (err) {
+          if (err instanceof EnterpriseAccessDeniedError) {
+            console.error(`❌ 企业隔离拒绝：${err.message}`);
+          } else {
+            console.error(`❌ cleanup 失败: ${(err as Error).message}`);
+          }
+          process.exit(1);
+        }
+      }
+
+      if (trainAction === 'reproduce') {
+        // train reproduce --fingerprint <file> --data <dir> [--seed <n>] [--data-dir <dir>]
+        const fpIdx = args.indexOf('--fingerprint');
+        const dataIdx = args.indexOf('--data');
+        if (fpIdx === -1 || !args[fpIdx + 1]) {
+          console.error('❌ 用法: train reproduce --fingerprint <指纹文件> --data <当前数据目录> [--seed <n>]');
+          console.error('   现场数据/环境/超参/种子 与冻结指纹逐项比对，输出差异报告');
+          process.exit(1);
+        }
+        const fingerprintFile = args[fpIdx + 1]!;
+        const { readFileSync, existsSync: fpExists } = await import('fs');
+        if (!fpExists(fingerprintFile)) {
+          console.error(`❌ 指纹文件不存在: ${fingerprintFile}`);
+          process.exit(1);
+        }
+        // 指纹解析（TrainFingerprintSchema 校验——坏文件明确报错）
+        const { TrainFingerprintSchema } = await import('./train/train-fingerprint');
+        let fingerprint: import('./train/train-fingerprint').TrainFingerprint;
+        try {
+          const parsed = TrainFingerprintSchema.safeParse(JSON.parse(readFileSync(fingerprintFile, 'utf-8')));
+          if (!parsed.success) {
+            throw new Error(parsed.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('；'));
+          }
+          fingerprint = parsed.data;
+        } catch (err) {
+          console.error(`❌ 指纹文件解析失败（schema 校验不过）: ${(err as Error).message}`);
+          process.exit(1);
+        }
+        // 当前上下文采集：数据目录（--data 必填）+ 环境快照（现场探测）+ 超参/种子（指纹回显口径说明）
+        const datasetDir = dataIdx !== -1 ? args[dataIdx + 1] : undefined;
+        if (!datasetDir) {
+          console.error('❌ train reproduce 需要 --data <当前数据目录>（现场重算 hash 的比对对象）');
+          process.exit(1);
+        }
+        const { prepareTrainEnv } = await import('./train/train-env');
+        const envReport = await prepareTrainEnv();
+        const seedIdx = args.indexOf('--seed');
+        const seed = seedIdx !== -1 ? parseInt(args[seedIdx + 1]!, 10) : fingerprint.randomSeed;
+        const { reproduceCheck } = await import('./train/train-fingerprint');
+        const result = reproduceCheck(fingerprint, {
+          datasetDir,
+          envSnapshot: {
+            branch: envReport.branch,
+            gpuName: envReport.gpu?.name ?? null,
+            frameworkName: envReport.framework?.name ?? null,
+            frameworkVersion: envReport.framework?.version ?? null,
+            checkedAt: envReport.checkedAt,
+          },
+          // CLI 复现口径：超参无现场输入源（job.json 已随 job 归档），缺省按指纹
+          // 原值比对（差异只会来自数据/环境/种子三面——如实报告比对口径）
+          hyperparams: fingerprint.hyperparams,
+          randomSeed: seed,
+        });
+        console.log(`🔍 复现校验（job=${fingerprint.trainJobId}，数据集版本 ${fingerprint.datasetVersion}）`);
+        if (result.reproducible) {
+          console.log('✅ 四要素全一致——理论上可复现（数据 hash / 环境 / 超参 / 种子）');
+          process.exit(0);
+        }
+        console.error(`❌ ${result.diffs.length} 处差异（不可复现）：`);
+        for (const d of result.diffs) {
+          console.error(`   - [${d.field}] ${d.detail}`);
+        }
+        process.exit(1);
+      }
+
+      if (trainAction === 'verify') {
+        // train verify <trainJobId> [--enterprise <id>] [--data-dir <dir>]
+        const trainJobId = args[2];
+        if (!trainJobId || trainJobId.startsWith('--')) {
+          console.error('❌ 用法: train verify <trainJobId> [--enterprise <id>] [--data-dir <dir>]');
+          console.error('   产物完整性校验（manifest 签名 + 逐文件 hash + 指纹关联）');
+          process.exit(1);
+        }
+        const entIdx = args.indexOf('--enterprise');
+        const dataDirIdx = args.indexOf('--data-dir');
+        const { loadEnvConfig } = await import('@sofagent/core');
+        const verifyDataDir = dataDirIdx !== -1 && args[dataDirIdx + 1] ? args[dataDirIdx + 1]! : loadEnvConfig().dataDir;
+        // enterpriseId 定位：显式 --enterprise > 全企业扫描 data/train/*/<jobId>
+        // （扫描是只读定位不跨界写——同名 jobId 撞多企业时列出候选要求显式指定）
+        const { existsSync, readdirSync } = await import('fs');
+        const { join } = await import('path');
+        let enterpriseId: string | undefined = entIdx !== -1 ? args[entIdx + 1] : undefined;
+        if (!enterpriseId) {
+          const trainRoot = join(verifyDataDir, 'train');
+          const candidates: string[] = [];
+          if (existsSync(trainRoot)) {
+            for (const ent of readdirSync(trainRoot, { withFileTypes: true })) {
+              if (ent.isDirectory() && existsSync(join(trainRoot, ent.name, trainJobId))) {
+                candidates.push(ent.name);
+              }
+            }
+          }
+          if (candidates.length === 0) {
+            console.error(`❌ 未找到任务 ${trainJobId}（扫描 ${trainRoot}/*/${trainJobId} 无命中）`);
+            process.exit(1);
+          }
+          if (candidates.length > 1) {
+            console.error(`❌ 任务 ${trainJobId} 命中多个企业分区（${candidates.join(', ')}）——请用 --enterprise <id> 显式指定`);
+            process.exit(1);
+          }
+          enterpriseId = candidates[0]!;
+        }
+        const { verifyArtifacts } = await import('./train/artifact-verify');
+        const report = await verifyArtifacts({ dataDir: verifyDataDir, enterpriseId, trainJobId });
+        console.log(`🔐 产物完整性校验（${report.enterpriseId}/${report.trainJobId}）`);
+        console.log(`   manifest 完整性: ${report.manifestIntegrity}`);
+        console.log(`   指纹关联: ${report.fingerprintLinked ? '已关联' : '断裂'}`);
+        if (report.files.length > 0) {
+          for (const f of report.files) {
+            const icon = f.status === 'ok' ? '✅' : f.status === 'tampered' ? '🔴' : '⚠️';
+            console.log(`   ${icon} ${f.path}（${f.status}）`);
+          }
+        }
+        for (const u of report.unregistered) {
+          console.log(`   ⚠️ 未登记文件: ${u}`);
+        }
+        if (report.ok) {
+          console.log(`✅ ${report.detail}——可挂载`);
+          process.exit(0);
+        }
+        console.error(`❌ ${report.rejectionReason ?? report.detail}`);
+        process.exit(1);
+      }
+
+      console.error(`❌ 不支持的 train 子动作 "${trainAction}"（可用: doctor | cleanup | reproduce | verify）`);
+      process.exit(1);
+    }
     default:
       console.error(`❌ sofagent 提示：不支持的子命令 "${subcommand}"`);
-      console.error('   可用子命令: compose | subagent | loop | compare | activate | run-enterprise | evolve');
+      console.error('   可用子命令: compose | subagent | loop | compare | activate | run-enterprise | evolve | train');
       process.exit(1);
   }
 }

@@ -27,9 +27,9 @@
   "dependencies": {
     "@automerge/automerge": "^3.4.1",
     "@deepseek-ai/dsh": "0.1.1-rc.2",
-    "@langchain/core": "^1.2.8",
-    "@langchain/langgraph": "^1.4.10",
-    "@langchain/openai": "^1.5.8",
+    "@langchain/core": "^1.2.9",
+    "@langchain/langgraph": "^1.4.12",
+    "@langchain/openai": "^1.5.10",
     "@sofagent/audit": "1.4.0",
     "@sofagent/core": "1.4.0",
     "@sofagent/harness": "1.4.0",
