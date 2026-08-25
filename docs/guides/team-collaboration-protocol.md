@@ -545,4 +545,4 @@ freezeBenchmark(def)           // benchmark-designer.ts:172 冻结基线
 
 ---
 
-*本文档 review 通过后进入实现阶段。所有 v1.3.3 交付物的协作行为必须遵循本文约束。*
+*本文档 review 通过后进入实现阶段。所有协作行为必须遵循本文约束。*

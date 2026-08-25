@@ -54,19 +54,19 @@
 
 ## FDE Agent 能替你干什么
 
-> 这一节先讲「价值」，再讲「怎么用」。sofagent 不是一个工具包，而是**一层 FDE Harness**——夹在成熟 Agent（DSH / OpenClaw / WorkBuddy）与模型层之间，对执行体约束、对智力源治理，替企业把大模型变成 7×24 自动执行的 AI 节点（产品形态 = FDE Harness 层，见 [WIKI 产品叙事](./WIKI.md#二产品叙事sofagent-是-fde-harness-层不造-agent夹在-agent-与模型之间做治理)）。完整能力矩阵见 [ARCHITECTURE · 能力与状态总览](./ARCHITECTURE.md#能力与状态总览)。
+> 这一节先讲「价值」，再讲「怎么用」。sofagent 不是一个工具包，而是**一层 FDE Harness**——嵌在成熟 Agent（DSH / OpenClaw / WorkBuddy）与模型层之间，对执行体约束、对智力源治理，替企业把大模型变成 7×24 自动执行的 AI 节点（产品形态 = FDE Harness 层，见 [WIKI 产品叙事](./WIKI.md#二产品叙事sofagent-是-fde-harness-层不造-agent嵌在-agent-与模型之间做治理)）。完整能力矩阵见 [ARCHITECTURE · 能力与状态总览](./ARCHITECTURE.md#能力与状态总览)。
 
-**已经能替你干的事（v1.3.9 已交付）**：
+**已经能替你干的事**：
 
 - **进场梳理 → 构建本体图谱 → 部署 AI 节点 → 离场常驻**：FDE 帮你盘清业务流、识别可自动化环节、把重复业务变成自动跑的 Agent，离场后 7×24 自己巡检、自己优化。
 - **每次变更都被管住**：24 条规则硬证据审计，密钥泄漏 / 越界编辑 / 注入攻击 / 盲改当场拦截；出事一键回滚到任意安全状态。
 - **知识自动长出来**：Dream Cycle 把每次任务沉淀成企业知识库 + Ontology 本体，越用越懂你的业务。
-- **平台无关、即挂即用**：夹在你自选的大厂 Agent（Claude Code / Codex / WorkBuddy / 扣子 / OpenClaw）与模型层之间，不替代模型，只补「可靠执行」——对 Agent 约束、对模型治理。（Cursor 社区验证中）
+- **平台无关、即挂即用**：嵌在你自选的大厂 Agent（Claude Code / Codex / WorkBuddy / 扣子 / OpenClaw）与模型层之间，不替代模型，只补「可靠执行」——对 Agent 约束、对模型治理。（Cursor 社区验证中）
 - **能带走、能协同**：USB 一键烧录（插上即用、拔掉零残留）；多设备加密联邦互查；内置 `@sofagent-fde` + `@sofagent-audit` 双 Agent。
-- **🔗 激活链（v1.2.5+ 已实现 Phase 1-4）**：FDE 诊断交付后，ontology + workflow.yml + skills/ 不再是一堆静态文件躺在磁盘上——激活链自动读交付物 → 注册企业 SubAgent → 编排成 LangGraph 业务流 → 带人工审批（HITL）和审计地自动跑。从"交给企业一堆文档"变成"交给企业一个会自己跑的系统"。Phase 4（SUSTAIN）已于 v1.3.0 交付。详见 [激活链设计文档](./guides/fde-activation-chain.md)。
-- **🔍 v1.3.9 新增**：官方 AST 规则引擎（`sofagent-ruleset-ast`，ASI01 目标劫持 + ASI04 供应链 SBOM 语义检测）；meta-harness 多 harness 统一编排（策略强制下沉基础设施层，跨会话协作）；AI 工作明细数据层（`worklog` 按 Agent/Workflow/周 + 人工介入，`worklog_query` MCP）；API 分级治理（`@public`/`@internal` 1439 符号 + CI 门禁）；FORGE driver 切 DSH（显式后端选择 + CLI 桥接 + bash 全权限）；MLflow agent 评估（13 指标 + LLM-as-Judge）；Agentic Browser（4 工具 + 视觉降级）；跨平台适配器（Cursor/Codex/Gemini CLI）；tools/ 物理分子目录；ATTRIBUTION 归因引擎 + Dream Sandbox 沙盒审计（强制人审 merge + 路径穿越消毒）；>5MB diff 缝隙修复；FORGE driver 进程守护（daemon + watcher）。详见 [v1.3.9 开发日志](./changelog/v1.3/v1.3.9.md)。
+- **🔗 激活链**：FDE 诊断交付后，ontology + workflow.yml + skills/ 不再是一堆静态文件躺在磁盘上——激活链自动读交付物 → 注册企业 SubAgent → 编排成 LangGraph 业务流 → 带人工审批（HITL）和审计地自动跑。从"交给企业一堆文档"变成"交给企业一个会自己跑的系统"（ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN 四阶段完整交付）。详见 [激活链设计文档](./guides/fde-activation-chain.md)。
+- **🔍 引擎纵深**：官方 AST 规则引擎（`sofagent-ruleset-ast`，ASI01 目标劫持 + ASI04 供应链 SBOM 语义检测）；meta-harness 多 harness 统一编排（策略强制下沉基础设施层，跨会话协作）；AI 工作明细数据层（`worklog` 按 Agent/Workflow/周 + 人工介入，`worklog_query` MCP）；API 分级治理（`@public`/`@internal` 1439 符号 + CI 门禁）；MLflow agent 评估（13 指标 + LLM-as-Judge）；Agentic Browser（4 工具 + 视觉降级）；跨平台适配器（Cursor/Codex/Gemini CLI）；ATTRIBUTION 归因引擎 + Dream Sandbox 沙盒审计（强制人审 merge + 路径穿越消毒）；>5MB diff 缝隙修复。明细见 [开发日志](./changelog/v1.3/v1.3.9.md)。
 
-> 📌 **历史版本能力已并入当前能力**（v1.3.1 Ontology 运行时层 / v1.3.4 能力市场 / v1.3.5 自进化 MCP / v1.3.6 引擎接口外化 / v1.3.7 SubAgent 沙箱 / v1.3.8 托管 SDK sandbox 等，均属「每次变更被管住」「知识自动长出来」等当前能力的实现细节）——不再逐版列举，各版本明细见 [CHANGELOG](../CHANGELOG.md)。
+> 📌 各版本演进明细见 [CHANGELOG](../CHANGELOG.md)（能力已并入当前版本，不逐版列举）。
 
 **现在还干不了的事（已排期，暂无代码）**：本地推理小模型、云 VM 多租户执行面——路线见 [ROADMAP](./ROADMAP.md)。
 
@@ -74,7 +74,7 @@
 
 ## 心智模型：约束层与生命周期
 
-把 sofagent 想成**夹在你选好的 Agent 与模型之间的一层 Harness**——不自己造 Agent、不自己造模型，只把每次执行管得可靠、可审计，把每个模型管住（注册/灰度/训练/部署留痕）。
+把 sofagent 想成**嵌在你选好的 Agent 与模型之间的一层 Harness**——不自己造 Agent、不自己造模型，只把每次执行管得可靠、可审计，把每个模型管住（注册/灰度/训练/部署留痕）。
 
 借一条河来记：
 
@@ -91,7 +91,7 @@
 
 | 层 | 是什么 | 一句话 | 状态 |
 |:--:|------|------|:--:|
-| **层 1 · 约束层（Harness）** | 约束层四种能力（注入 · 审计 / 回溯 / 进化） | 怎么保证每次执行都做对 | ✅ 已交付 |
+| **层 1 · 约束层** | 约束层四种能力（注入 · 审计 / 回溯 / 进化） | 怎么保证每次执行都做对 | ✅ 已交付 |
 | **层 2 · 生命周期（五阶段）** | 诊断 → 激活 → 编排 → 执行 → 持续（激活链四阶段 = 激活→编排→执行→持续 ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN，为五阶段中后四环） | 企业 AI 从诊断到自运转怎么走 | 🔗 Phase 1-4 已交付 |
 
 **层 1 · 约束层（约束层四种能力）**：

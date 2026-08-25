@@ -5,7 +5,7 @@
 > **读者**：人类开发者 & AI Agent 均可阅读。本文档是项目全局索引入口。
 > 如果你是 AI Agent 且需要查找具体实现路径，请直接跳转到"## 五、文件地图"段。
 
-> ⚠️ **术语声明（AI Agent 与人类读者必读）**：sofagent 现行架构术语以 [ARCHITECTURE.md](./ARCHITECTURE.md) 与 [PHILOSOPHY.md](./PHILOSOPHY.md) 为准——**约束层（Harness）**（一个层四种能力：注入·审计·回溯·进化，FORGE 为内部工具）+ **双层架构**（约束层 × 生命周期）。`docs/archive/` 与 `docs/changelog/v1.0/`、`docs/changelog/v1.1/` 为**历史版本快照**，其中"四引擎""认知底座"等旧术语反映当时版本，**不代表现行设计**，请勿据此推断当前架构；`docs/changelog/v1.4/` 为**当前版本目录**（v1.4.0 已发布，内容为各版本变更记录；后续排期内容**不代表已交付能力**）。**训练引擎归属**：工程骨架随开源仓排期交付 + 训练资产商业侧（商业模型层），真相源见 [ROADMAP](./ROADMAP.md) 版本表。
+> ⚠️ **术语声明（AI Agent 与人类读者必读）**：sofagent 现行架构术语以 [ARCHITECTURE.md](./ARCHITECTURE.md) 与 [PHILOSOPHY.md](./PHILOSOPHY.md) 为准——**约束层**（一个层四种能力：注入·审计·回溯·进化，FORGE 为内部工具）+ **双层架构**（约束层 × 生命周期）。`docs/archive/` 与 `docs/changelog/v1.0/`、`docs/changelog/v1.1/` 为**历史版本快照**，其中"四引擎""认知底座"等旧术语反映当时版本，**不代表现行设计**，请勿据此推断当前架构；`docs/changelog/v1.4/` 为**当前版本目录**（v1.4.0 已发布，内容为各版本变更记录；后续排期内容**不代表已交付能力**）。**训练引擎归属**：工程骨架随开源仓排期交付 + 训练资产商业侧（商业模型层），真相源见 [ROADMAP](./ROADMAP.md) 版本表。
 
 > **3 分钟建立全景理解**：核心文档太长？先看这 4 句：
 > - **[ARCHITECTURE.md](./ARCHITECTURE.md)**：双层架构设计（约束层 × 生命周期）+ 约束层工程三层嵌套（约束层 → Graph → Loop），关键技术决策记录。**3 秒版**：约束层管"做对"（注入·审计·回溯·进化）· 激活链四阶段管"跑起来" · Graph 控制图分波次 · Loop 自迭代闭环。
@@ -34,11 +34,11 @@
 
 ## 一、一句话
 
-**sofagent 是一个开源 FDE Harness 层**（MIT，同时也是 FDE 方法论的参考实现）——不造 Agent，夹在成熟 Agent（DSH / OpenClaw / WorkBuddy）与模型层（通用大模型 + 专属小模型 / 后训练模型）之间做治理：进场梳理业务流、构建本体图谱、把能自动化的环节变成 AI 节点、部署后 7×24 自己跑。底层是 **约束层（Harness）**——约束 Agent 行为、审计每次变更、沉淀经验。**产品形态 = FDE Harness 层**：对执行体（Agent）做约束、对智力源（模型）做治理——它给自己做的第一份 FDE，就是 sofagent 自己（自举）。
+**sofagent 是一个开源 FDE Harness 层**（MIT，同时也是 FDE 方法论的参考实现）——不造 Agent，嵌在成熟 Agent（DSH / OpenClaw / WorkBuddy）与模型层（通用大模型 + 专属小模型 / 后训练模型）之间做治理：进场梳理业务流、构建本体图谱、把能自动化的环节变成 AI 节点、部署后 7×24 自己跑。底层是 **约束层**——约束 Agent 行为、审计每次变更、沉淀经验。**产品形态 = FDE Harness 层**：对执行体（Agent）做约束、对智力源（模型）做治理——它给自己做的第一份 FDE，就是 sofagent 自己（自举）。
 
 ---
 
-## 二、产品叙事：sofagent 是 FDE Harness 层（不造 Agent，夹在 Agent 与模型之间做治理）
+## 二、产品叙事：sofagent 是 FDE Harness 层（不造 Agent，嵌在 Agent 与模型之间做治理）
 
 > **一条 workflow 的产品**：给企业做 AI 落地 = 一条 FDE workflow。执行这条 workflow 的 Agent = FDE Agent（sofagent 让任何成熟 Agent 具备这个能力）。**它对自己做的第一份 FDE，就是 sofagent 项目本身**——自举循环：FDE Agent 对自己做 FDE → 项目更 AI 化 → 更好地服务企业 → 数据飞轮转起来。
 
@@ -48,7 +48,7 @@
 
 > **现实预期（产品口径 · 详细边界见 v1.4.1 开发日志）**：后训练分两种——**行为对齐型**（教模型守企业规矩/风格，用自家服务轨迹数据，sofagent 自给自足）与**知识注入型**（教模型懂行业知识，需企业提供业务数据）。最现实起步 = 行为对齐 + 小模型 QLoRA（一张消费级 GPU 即可）；框架安装、算力检测由训练 Agent 自动接管。期望边界：垂直精调（LoRA/QLoRA），不是从零训大模型。
 
-**内外层 workflow 全景**（产品 = FDE Harness 层夹在 Agent 与模型之间的可视化）：
+**内外层 workflow 全景**（产品 = FDE Harness 层嵌在 Agent 与模型之间的可视化）：
 
 ```mermaid
 graph TB
@@ -81,7 +81,7 @@ graph TB
 | 概念 | 一句话 | 详情 |
 |------|--------|------|
 | **FDE Agent** | 对外的产品身份：「Forward Deployed Engineer」——sofagent 把 FDE 能力装进成熟 Agent（DSH / OpenClaw / WorkBuddy），任何一个装了 sofagent 能力的 Agent 就是 FDE Agent；进场→部署→离场，留一套能持续维护的 AI 化资产 | [PHILOSOPHY §一](./PHILOSOPHY.md) |
-| **约束层（Harness）** | 对内的技术身份：约束 Agent 行为的「缰绳」——一个层四种能力（注入·审计·回溯·进化），编排（FORGE）为内部工具 | [ARCHITECTURE §二](./ARCHITECTURE.md) |
+| **约束层** | 对内的技术身份：约束 Agent 行为的「缰绳」——一个层四种能力（注入·审计·回溯·进化），编排（FORGE）为内部工具 | [ARCHITECTURE §二](./ARCHITECTURE.md) |
 | **约束层七维度** | Agent = 模型 + 上下文 + 工具 + 状态 + 执行控制 + 权限 + 可观测性——四种能力各自覆盖其中哪些维度 | [ARCHITECTURE §一 · 约束层七维度](./ARCHITECTURE.md#约束层七维度agent-的构成面)（维度构成以本行为准；四种能力维度分工详见 [PHILOSOPHY §一·四件事的分工](./PHILOSOPHY.md#四件事的分工mcp--skills--ontology--harness)） |
 | **约束层构成（企业视角）** | 黄仁勋定义：企业专属约束层 = 知识 + 记忆 + 工作流 + 权限 + 安全机制 + 运行环境——模型是起点，围绕模型积累的这套专属系统才是核心资产 | [PHILOSOPHY §一·理论锚点](./PHILOSOPHY.md#智能与控制分离sofagent-的理论锚点) |
 | **业务图谱** | 人读的流程图谱 = Workflow Graph——FDE 交付的企业业务流完整拓扑，每条业务链路即一条业务流 | [ARCHITECTURE §定义表](./ARCHITECTURE.md) |
@@ -106,18 +106,14 @@ graph TB
 │  （注册 / 灰度 / 训练 / 部署全留痕）              │
 ├─────────────────────────────────────────────────┤
 │             FDE Harness 层（sofagent）            │
-│  SKILL 层（约束注入）  │  FORGE 层（自迭代）      │
-│  SKILL.md + harness/  │  fresh-eyes-loop +       │
-│  + agents/ + custom/  │  release-gate-loop       │
-├─────────────────────────────────────────────────┤
-│              约束层（Harness）              │
 │  ┌─────────┬─────────┬─────────┬─────────┐ │
 │  │ 注入能力 │ 审计能力 │ 回溯能力 │ 进化能力 │ │
-│  │约束注入链│ git diff │ HMAC 链 │知识蒸馏 │←四种能力│
-│  │SKILL加载│ 24条规则 │ 防篡改  │sustain  │（面向用户的能力）│
+│  │ 约束注入链│ git diff │ HMAC 链 │知识蒸馏 │←约束层引擎│
+│  │ SKILL加载│ 24条规则 │ 防篡改  │sustain  │（四能力）│
 │  └─────────┴─────────┴─────────┴─────────┘ │
-│  内部：编排引擎 @sofagent/orchestrator            │
-│        （LangGraph ReactAgent，非对外产品引擎）   │
+│  分发形态：插件 · Skill · MCP · CLI · Dashboard    │
+│  方法论：FDE 四阶段（梳理→构建→部署→离场）         │
+│  内部：编排引擎 @sofagent/orchestrator（LangGraph）│
 ├─────────────────────────────────────────────────┤
 │  成熟 Agent 宿主（DSH · OpenClaw · WorkBuddy）    │
 │  模型 + 工具 + 会话（执行能力，不替代）            │
@@ -239,7 +235,7 @@ graph TB
 
 ## 七、术语表
 
-> **术语标准表述（SSOT）**：对外中文「约束层」、英文「Harness」；「Constraint Layer」「约束底座」为同义归并，统一写作「约束层（Harness）」，不再单列。
+> **术语标准表述（SSOT）**：对外中文「约束层」、英文「Harness」；「Constraint Layer」「约束底座」为同义归并，统一写作「约束层」，不再单列。
 
 | 术语 | 简释 | 精确定义 |
 |------|------|---------|
