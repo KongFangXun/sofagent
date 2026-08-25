@@ -141,7 +141,7 @@ sofagent 的定位正卡在这个转折点上：审计引擎（治理侧）+ Ont
 | **理解债务应对（loop-engineering 启发）** | Comprehension Debt Spiral（S2 级故障）——审计已覆盖「发生了什么」，需补「为什么这么做」（auto-PR 要求 Agent 解释决策）+「本周摘要」（daemon 周报）|
 | **DSH 训练控制面 plugin（2026-08-16 新增 · 深水区终局）** | v1.4.x 训练引擎的控制面 tools（`train_submit/status/budget_check`）天然 plugin 形态（DSH jobs 托管长任务互补）；执行面/GPU/商业模型层 训练资产**绝不进 plugin**（§3.6 归属决策：训练资产属商业层）。终局拼图：Trajectory 采集（v1.3.6）+ 训练引擎（v1.4.x）+ plugin 包装 = **DSH Agent 用自己的执行轨迹训练自己**（Cordis 论文指向但 DSH 未交付的自进化 Harness）。**远期方向：v1.4.x 尾段或 v2.x，引擎本体稳定后再评估** |
 | **ACS YAML 策略引擎（Microsoft AGT 启发）** | 现有 ruleset 是 JSON，AGT 的 ACS 用 YAML + OPA Rego + Cedar 三引擎——策略更人类可读，需评估兼容性 |
-| **RL 训练治理（Microsoft AGT Agent Lightning 启发）** | 训练期间策略违规惩罚——与 v1.4.1 训练引擎预算控制同向 |
+| **RL 训练治理（Microsoft AGT Agent Lightning 启发）** | 训练期间策略违规惩罚（policy-enforced runners + reward shaping）——需训练引擎跑通后有 reward 回路可挂，**待 v1.4.4 交付后评估排期**（2026-08-25 复审裁决：v1.4.1 地基阶段强行同版 = 无实现载体的空头承诺） |
 | **OWASP Agentic Top 10 全覆盖路线（Microsoft AGT 启发）** | v1.3.7 补 ASI08+ASI10，v1.3.9 补 ASI01+ASI04，远期 10/10 全覆盖对齐 AGT |
 | **评测结论证据树（HarnessEval 启发）** | 评测结论须挂可验证证据树——每个结论可回溯到原始执行证据，与审计引擎「先留证据再给结论」同源。可借鉴 Plan→Route→Decompose→Verify 四阶段范式升级 release-gate-loop 的裁决链。当前单源（15 机构联合评测主张），待独立来源累计后评估排期 |
 | **证据强度分级标注（Loop Engineering 控制面启发 · 2026-08-19 新增）** | 对外展示的案例/证据按来源强度分级（公开可查 / 用户自报 / 自测自报），只维护最强少数案例——防止把自测当实证。当前 VALIDATION/THANKS 有来源纪律但无强度分级，发版 SOP 可吸收 |
