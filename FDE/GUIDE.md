@@ -51,7 +51,7 @@ FDE 全称 Forward Deployed Engineer（前线部署工程师），源自 Palanti
 sofagent 把它从岗位 title 升级为能力模型，再升级为**常驻 FDE Agent**：
 
 - 人（FDE）帮客户部署完离场，FDE 能力留在客户那里继续干活（装在成熟 Agent 上 7×24 运行）
-- 产品形态 = FDE 能力层（2026-08-25 叙事）：不造 Agent，plugin + skill + MCP + CLI + dashboard 五种形态分发到成熟宿主（DSH / OpenClaw / WorkBuddy），约束底座 + FDE 方法论为行为层——任何已有 Agent 装上它就是一个 FDE Agent（见 [WIKI 产品叙事](../docs/WIKI.md#二产品叙事sofagent-是-fde-能力层不造-agent给-agent-装-fde-能力)）
+- 产品形态 = FDE Harness 层（2026-08-25 叙事）：不造 Agent，夹在成熟 Agent（DSH / OpenClaw / WorkBuddy）与模型层之间做治理——对执行体约束、对智力源治理，plugin + skill + MCP + CLI + dashboard 五种形态分发，任何已有 Agent 装上它就是一个 FDE Agent（见 [WIKI 产品叙事](../docs/WIKI.md#二产品叙事sofagent-是-fde-harness-层不造-agent夹在-agent-与模型之间做治理)）
 - 梳理好的业务流在跑、合规自检在跑、周度巡检在跑
 - 客户得到的不是一个工具，是一个 7×24 在线的 FDE 能力
 

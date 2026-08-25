@@ -15,9 +15,9 @@
 
 ## 这是什么
 
-**开源 FDE 能力层。**一人公司 / 小企业的 AI 落地工程师——不睡觉、不离职、自带审计官。以 **FDE 插件 + Skill + MCP + CLI + Dashboard** 五种形态，骑在成熟 Agent（DSH / OpenClaw / WorkBuddy）之上：进场，把业务流梳理清楚、把本体图谱构建起来、把 AI 节点部署到位；离场，审计每一次变更，持续优化。
+**开源 FDE Harness 层。**一人公司 / 小企业的 AI 落地工程师——不睡觉、不离职、自带审计官。**横跨成熟 Agent（执行体：DSH / OpenClaw / WorkBuddy）、纵贯模型层（智力源：通用大模型 + 专属小模型 / 后训练模型）**，夹在两者之间做治理。以 **FDE 插件 + Skill + MCP + CLI + Dashboard** 五种形态分发：进场，把业务流梳理清楚、把本体图谱构建起来、把 AI 节点部署到位；离场，审计每一次变更，持续优化。
 
-sofagent 不造 Agent——执行能力交给成熟宿主（模型 + 工具 + 会话），它交付的是 **FDE 能力面**：方法论 + 约束层 + 审计，让任何已有 Agent 变成「会做企业 AI 落地的 FDE」。
+sofagent 不造 Agent——执行能力交给成熟宿主（模型 + 工具 + 会话），它交付的是 **FDE Harness 层**：方法论 + 约束层 + 审计，让任何已有 Agent 变成「会做企业 AI 落地的 FDE」，让任何模型（通用或专属）都被管住（注册/灰度/训练/部署全留痕）。
 
 > 🏞️ 大厂给你"水"（大模型）和"河床"（Agent 平台），但水是原水，你不敢直接喝。sofagent 是帮你把河里的水让整个城市用起来的工程——堤坝不让水泛滥、自来水厂把原水变直饮水、管网把水送到每家每户的水龙头。模型给 90% 的智力，sofagent 补 10% 的可靠执行。
 
@@ -42,20 +42,25 @@ sofagent 不造 Agent——执行能力交给成熟宿主（模型 + 工具 + �
 官方 slogan：**梳理业务流 · 构建本体图谱 · 部署 AI 节点 · 审计每次变更 · 自我反思迭代**
 
 ```mermaid
-graph LR
-    subgraph H["成熟 Agent 宿主<br/>DSH · OpenClaw · WorkBuddy"]
-        M["模型 + 工具 + 会话<br/>执行能力"]
+graph TB
+    subgraph M["模型层（智力源）"]
+        M1["通用大模型<br/>DSH · OpenAI · Claude"]
+        M2["专属小模型 · 后训练模型<br/>v1.4.x 训练引擎 · 本地权重部署"]
     end
-    subgraph S["sofagent · FDE 能力面"]
-        direction TB
+    subgraph H["sofagent · FDE Harness 层"]
+        direction LR
         P["形态 插件 · Skill · MCP<br/>CLI · Dashboard"]
         C["约束层 注入 · 审计 · 回溯 · 进化"]
         F["方法论 FDE 四阶段<br/>梳理 → 构建 → 部署 → 离场"]
         P ~~~ C ~~~ F
     end
-    H -->|"挂载能力面"| S
-    S -->|"进场 · 给企业做 FDE"| D["双图谱交付<br/>业务图谱 + 本体图谱"]
-    D --> N["AI 节点<br/>宿主执行 → 约束审计"]
+    subgraph A["Agent 层（执行体 · 不替代）"]
+        A1["DSH · OpenClaw · WorkBuddy<br/>模型 + 工具 + 会话"]
+    end
+    M -->|"管住模型：注册/灰度/训练/部署"| H
+    H -->|"约束 Agent：注入/审计/回溯/进化"| A
+    A -->|"进场 · 给企业做 FDE"| D["双图谱交付<br/>业务图谱 + 本体图谱"]
+    D --> N["AI 节点<br/>宿主执行 → Harness 审计"]
     N -.->|"7×24 自运转 · 越界能拦 · 出事能回滚"| N
 ```
 
@@ -104,7 +109,7 @@ graph LR
 
 ## 多平台挂载
 
-骑在你已有的 Agent 之上，不替代模型，只补可靠执行——**FDE 能力面平台无关**（插件 / Skill / MCP / CLI / Dashboard 五种形态按宿主能力分发），方法论跟着业务走，不跟着平台走：
+横跨你已有的 Agent、纵贯模型层，不替代模型，只补可靠执行——**FDE Harness 层平台无关**（插件 / Skill / MCP / CLI / Dashboard 五种形态按宿主能力分发），方法论跟着业务走，不跟着平台走：
 
 | 档位 | 平台 | 约束注入 | 挂载方式 |
 |------|------|---------|---------|
