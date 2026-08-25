@@ -567,12 +567,9 @@ else
         cl_fail=1
       fi
       # 全量口径 = workspace + DSH 插件 27 + OpenClaw 插件 17（换算式写死，防口径漂移）
-      # v1.4.1 起插件测试已并入 workspace 总数（3168 已含），仅当 workspace 快照为旧口径（<3168）时叠加 27+17
-      if [ "$DEVLOG_SNAPSHOT" -lt 3168 ]; then
-        CL_FULL_EXPECT=$((DEVLOG_SNAPSHOT + 27 + 17))
-      else
-        CL_FULL_EXPECT=$DEVLOG_SNAPSHOT
-      fi
+      # ⚠️ 插件包（engine/dsh-plugins/、engine/openclaw-plugins/ 嵌套二级目录）不在 test-count
+      #    的 12 包扫描内（只扫 engine/ 一级），workspace 快照永远不含插件测试——一律叠加 27+17
+      CL_FULL_EXPECT=$((DEVLOG_SNAPSHOT + 27 + 17))
       if [ "$CL_CUR" -ne "$CL_FULL_EXPECT" ]; then
         echo -e "  ${RED}✗ CHANGELOG.md（行 ${CL_LINENO}）：全量口径 ${CL_CUR} ≠ workspace ${DEVLOG_SNAPSHOT} + 27(DSH) + 17(OpenClaw) = ${CL_FULL_EXPECT}（开发日志快照换算）${NC}"
         cl_fail=1
