@@ -1050,6 +1050,82 @@
 } from './train/artifact-verify';
 
 // ============================================================
+// v1.4.1 块一：训练环境准备（GPU 检测双分支 + 就绪报告）
+// ============================================================
+/* @public */ export {
+  parseCudaVersion,
+  parseGpuQueryCsv,
+  parseMetalInfo,
+  detectCudaGpu,
+  detectMetalGpu,
+  defaultMlxInstallDir,
+  prepareTrainEnv,
+  DEFAULT_CUDA_FRAMEWORK,
+  DEFAULT_MLX_FRAMEWORK,
+} from './train/train-env';
+/* @public */ export type {
+  ExecResult,
+  ExecFn as TrainEnvExecFn,
+  TrainEnvDeps,
+  GpuInfo,
+  TrainEnvReport,
+} from './train/train-env';
+
+// ============================================================
+// v1.4.1 块四：训练隔离边界（enterpriseId 全链路守卫）
+// ============================================================
+/* @public */ export {
+  checkEnterpriseAccess,
+  assertEnterpriseAccess,
+  isSafePathSegment,
+  assertSafePathSegment,
+  isPathInside,
+  resolveEnterpriseDir,
+  EnterpriseAccessDeniedError,
+} from './train/isolation-guard';
+/* @public */ export type {
+  EnterpriseAccessErrorCode,
+  EnterpriseAccessError,
+  EnterpriseAccessDecision,
+  GuardedRead,
+} from './train/isolation-guard';
+
+// ============================================================
+// v1.4.1 块四：数据主权清理（覆写清理）
+// ============================================================
+/* @public */ export {
+  wipeFile,
+  wipeDirectoryContents,
+  cleanupEnterpriseTrainData,
+} from './train/cleanup';
+/* @public */ export type {
+  FileCleanupResult,
+  SkippedItem,
+  DirObfuscation,
+  CleanupReport,
+  CleanupOptions,
+} from './train/cleanup';
+
+// ============================================================
+// v1.4.1 块八：训练安全基线（路径白名单 + 注入过滤 + 凭据脱敏 + 自检）
+// ============================================================
+/* @public */ export {
+  validateTrainPath,
+  TrainPathSchema,
+  containsShellMetachars,
+  sanitizeHyperparamsForSpawn,
+  isCredentialKey,
+  maskCredentials,
+  runSandboxSelfCheck,
+} from './train/security-baseline';
+/* @public */ export type {
+  TrainPathRejectionCode,
+  TrainPathValidation,
+  SanitizedValue,
+  HyperparamsSanitizeResult,
+} from './train/security-baseline';
+
+// ============================================================
 // v1.3.6 交付⑨：验收条件定义与执行（机器可判定验收 · 软约束先行）
 // ============================================================
 /* @public */ export {
