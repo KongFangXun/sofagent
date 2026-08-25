@@ -550,14 +550,29 @@ else
   if [ -n "$CL_WS_MARK" ]; then
     # 找同版本开发日志的 workspace 快照（「NNNN tests across 12 packages」或「workspace NNNN」）
     # 注意只取第一个数字（该模式含两个数字——测试数与包数，head -1 取测试数）
-    DEVLOG_SNAPSHOT=$(grep -oE '[0-9]+ tests across 12 packages' "${DEVLOG_FILE}" 2>/dev/null | head -1 | grep -oE '^[0-9]+' || echo "")
+    # v1.4.1 适配：DEVLOG_FILE 按 package.json 版本指向（版本未 bump 时指向上版已发日志），
+    # 而 CHANGELOG 最新行已是开发中版本——优先在「下一版开发日志」找快照：若 CHANGELOG 行
+    # 版本号 ≠ CUR_VERSION，则优先探测 docs/changelog/vX.Y/v<行版本>.md（存在即用），否则回退 DEVLOG_FILE。
+    CL_VER=$(echo "$CHANGELOG_LINE" | grep -oE '\*\*v[0-9]+\.[0-9]+\.[0-9]+\*\*' | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' || echo "")
+    CL_DEVLOG="${DEVLOG_FILE}"
+    if [ -n "$CL_VER" ] && [ "$CL_VER" != "$CUR_VERSION" ]; then
+      CL_MAJOR_MINOR=$(echo "$CL_VER" | cut -d. -f1-2)
+      CL_CAND="docs/changelog/v${CL_MAJOR_MINOR}/v${CL_VER}.md"
+      [ -f "$CL_CAND" ] && CL_DEVLOG="$CL_CAND"
+    fi
+    DEVLOG_SNAPSHOT=$(grep -oE '[0-9]+ tests across 12 packages' "${CL_DEVLOG}" 2>/dev/null | head -1 | grep -oE '^[0-9]+' || echo "")
     if [ -n "$DEVLOG_SNAPSHOT" ]; then
       if [ "$CL_WS_MARK" != "$DEVLOG_SNAPSHOT" ]; then
-        echo -e "  ${RED}✗ CHANGELOG.md（行 ${CL_LINENO}）：workspace 口径声称 ${CL_WS_MARK}，开发日志快照 ${DEVLOG_SNAPSHOT}（${DEVLOG_FILE}）${NC}"
+        echo -e "  ${RED}✗ CHANGELOG.md（行 ${CL_LINENO}）：workspace 口径声称 ${CL_WS_MARK}，开发日志快照 ${DEVLOG_SNAPSHOT}（${CL_DEVLOG}）${NC}"
         cl_fail=1
       fi
       # 全量口径 = workspace + DSH 插件 27 + OpenClaw 插件 17（换算式写死，防口径漂移）
-      CL_FULL_EXPECT=$((DEVLOG_SNAPSHOT + 27 + 17))
+      # v1.4.1 起插件测试已并入 workspace 总数（3168 已含），仅当 workspace 快照为旧口径（<3168）时叠加 27+17
+      if [ "$DEVLOG_SNAPSHOT" -lt 3168 ]; then
+        CL_FULL_EXPECT=$((DEVLOG_SNAPSHOT + 27 + 17))
+      else
+        CL_FULL_EXPECT=$DEVLOG_SNAPSHOT
+      fi
       if [ "$CL_CUR" -ne "$CL_FULL_EXPECT" ]; then
         echo -e "  ${RED}✗ CHANGELOG.md（行 ${CL_LINENO}）：全量口径 ${CL_CUR} ≠ workspace ${DEVLOG_SNAPSHOT} + 27(DSH) + 17(OpenClaw) = ${CL_FULL_EXPECT}（开发日志快照换算）${NC}"
         cl_fail=1

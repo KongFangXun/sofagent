@@ -872,6 +872,184 @@
 } from './train/train-budget';
 
 // ============================================================
+// v1.4.1 块二：训练任务编排层（train-job 生命周期 · 引擎骨架）
+// ============================================================
+/* @public */ export {
+  TRAIN_JOB_STATUSES,
+  TRAIN_JOB_TRANSITIONS,
+  canTransition,
+  isTerminalStatus,
+  trainJobDir,
+  trainJobFilePaths,
+  generateTrainJobId,
+  loadTrainJobRecord,
+  saveTrainJobRecord,
+  listTrainJobRecords,
+  createTrainJob,
+  applyTrainJobTransition,
+  transitionTrainJob,
+  appendTrainEventLine,
+  readTrainEvents,
+} from './train/train-job';
+/* @public */ export type {
+  TrainJobStatus,
+  TrainJobCheckpoint,
+  TrainJobRecord,
+  CreateTrainJobInput,
+  CreateTrainJobResult,
+  TrainJobTransitionPatch,
+} from './train/train-job';
+/* @public */ export {
+  createTrainScheduler,
+  getTrainJobRecord,
+  getTrainProgress,
+} from './train/train-scheduler';
+/* @public */ export type {
+  RegisterHeartbeat,
+  SpawnFn,
+  TrainSchedulerOptions,
+  SubmitTrainJobInput,
+  SubmitTrainJobResult,
+  TrainRunHandle,
+  TrainMonitorSnapshot,
+  CancelTrainJobResult,
+  ResumeTrainJobResult,
+  ResumeTrainJobOutcome,
+} from './train/train-scheduler';
+
+// ============================================================
+// v1.4.1 块七：训练中断回收 + 引擎崩溃恢复（process-guard · crash-recovery）
+// ============================================================
+/* @public */ export {
+  createProcessGuard,
+  snapshotGpuMemory,
+  killProcessGroup,
+  abnormalReclaim,
+  cleanupTmpFiles,
+  emitTrainAbnormalExit,
+  detectTrainOrphans,
+} from './train/process-guard';
+/* @public */ export type {
+  ProcessGuard,
+  ProcessGuardOptions,
+  KillFn,
+  ExecFn,
+  NowFn,
+  StalledProcess,
+  GpuMemorySnapshot,
+  ReclaimTarget,
+  ReclaimStep,
+  ReclaimResult,
+  ReclaimOptions,
+  ProcessInfo,
+  OrphanProcess,
+  OrphanDetectOptions,
+} from './train/process-guard';
+/* @public */ export {
+  runCrashRecoveryScan,
+  appendEngineCrashLog,
+  readEngineCrashLog,
+  engineCrashLogPath,
+  applyRecoveryDecision,
+  TRAIN_RECOVERY_DECISIONS,
+  checkpointManifestPath,
+  loadCheckpointManifest,
+  recordCheckpointEntry,
+} from './train/crash-recovery';
+/* @public */ export type {
+  ProbeFn,
+  CrashRecoveryFinding,
+  CrashRecoveryScanResult,
+  TrainRecoveryDecision,
+  RecoveryDecisionResult,
+  EngineCrashLogEntry,
+  CheckpointManifest,
+  CheckpointManifestEntry,
+} from './train/crash-recovery';
+
+// ============================================================
+// v1.4.1 块三：训练任务审计（train_job 事件 + HMAC 链 + 失败回滚）
+// ============================================================
+/* @public */ export {
+  STATUS_TO_EVENT,
+  sanitizeDeep,
+  computeDataSourceHash,
+  trainAuditPath,
+  emitTrainAudit,
+  readTrainAudit,
+  checkTrainAuditChain,
+  rollbackFailedTrainJob,
+  failTrainJobWithRollback,
+} from './train/train-audit';
+/* @public */ export type {
+  TrainAuditEventType,
+  TrainAuditEntry,
+  EmitTrainAuditInput,
+  TrainAuditChainStatus,
+  TrainAuditChainResult,
+  TrainRollbackResult,
+} from './train/train-audit';
+
+// ============================================================
+// v1.4.1 块五：训练可复现指纹（冻结 + 三态校验 + 复现差异报告 + 版本锁定）
+// ============================================================
+/* @public */ export {
+  EnvSnapshotSchema,
+  TrainFingerprintBodySchema,
+  TrainFingerprintSchema,
+  computeDatasetHash,
+  resolveDatasetVersion,
+  trainFingerprintPath,
+  freezeTrainFingerprint,
+  loadTrainFingerprint,
+  verifyTrainFingerprint,
+  reproduceCheck,
+  assertDatasetVersionLocked,
+  buildDatasetLockEntry,
+} from './train/train-fingerprint';
+/* @public */ export type {
+  EnvSnapshot,
+  TrainFingerprintBody,
+  TrainFingerprint,
+  FreezeTrainFingerprintInput,
+  TrainFingerprintVerifyStatus,
+  TrainFingerprintVerifyResult,
+  ReproduceContext,
+  FingerprintDiff,
+  ReproduceCheckResult,
+  DatasetVersionLockResult,
+} from './train/train-fingerprint';
+
+// ============================================================
+// v1.4.1 块六：训练产物完整性（逐文件签名 manifest + 加载前校验闸门）
+// ============================================================
+/* @public */ export {
+  ArtifactFileEntrySchema,
+  ArtifactManifestBodySchema,
+  ArtifactManifestSchema,
+  hashArtifactFile,
+  artifactManifestPath,
+  signArtifacts,
+  loadArtifactManifest,
+  ArtifactSigningError,
+  ArtifactSigningWriteError,
+} from './train/artifact-signing';
+/* @public */ export type {
+  ArtifactFileEntry,
+  ArtifactManifestBody,
+  ArtifactManifest,
+} from './train/artifact-signing';
+/* @public */ export {
+  verifyArtifacts,
+  verifyManifestIntegrity,
+} from './train/artifact-verify';
+/* @public */ export type {
+  ManifestIntegrity,
+  ArtifactFileCheck,
+  ArtifactVerifyReport,
+} from './train/artifact-verify';
+
+// ============================================================
 // v1.3.6 交付⑨：验收条件定义与执行（机器可判定验收 · 软约束先行）
 // ============================================================
 /* @public */ export {

@@ -1,7 +1,9 @@
 # 路线图 · Roadmap
 
 > 已经做了什么、未来要去哪、哪些地方需要你的帮助。
-> v1.4.0 · 2026-08-23（UTC）· 📊 Web 工作明细页 + 🗺️ 图谱栏 + 💰 成本审计 + 🔌 DSH/OpenClaw 插件家族（约束层外化双生态）+ 🔀 工具角色分层
+> v1.4.0 · 2026-08-23（UTC）· 🚂 训练引擎 · 地基（八大块）+ 🚉 train_submit + 🔬 阶段 0 Metal 验证 + 🛡️ 训练安全基线（当前 CHECKLOG 主题；v1.4.0 交付详见 L10）
+>
+> **进行中 v1.4.1（已交付待发版 · 2026-08-25 开发完成）**：🚂 训练引擎 · 地基 八大块（编排/审计/隔离/指纹/签名/回收/恢复/安全）+ 🚉 train_submit（66→67 tools）+ 🔬 阶段 0 Metal 验证 + 🛡️ 训练安全基线——详见 L12 摘要与 [v1.4.1 开发日志](./changelog/v1.4/v1.4.1.md)。
 
 产品定位详见 [设计哲学](./PHILOSOPHY.md) 和 [README](../README.md)。
 
@@ -9,7 +11,7 @@
 
 > **v1.4.0 已于 2026-08-23 交付**——Web 工作明细页（四视角工作记录）+ 图谱栏（FDE 双图谱 + MCP 工具视图 + skill 加载链）+ 成本审计（超支告警 + `cost_query` MCP + COST DecisionKind）+ DSH 插件家族（`cordis-plugin-sofagent-*` 9 款，DSH inventory 全可见 + Cursor/Claude hook 拦截）+ OpenClaw 插件家族（4 款 code-plugin）+ Dashboard HTML 产品化 + 联邦查询跨设备 E2E（S320 fork 10 断言 + S322 独立进程 4 场景）+ MLflow 接线 + Agentic Browser（61→66 tools）+ 工具角色分层 + 瘦描述（默认全量 66 · `SOFAGENT_MCP_ROLES` 显式收窄专职面）+ DSH 默认启用（rc 期 CLI 桥接）+ MCP 自动配置（install.sh 装完即连）+ bash 3.2 真实环境验证 + 审计溯源字段回填。详见 [v1.4.0 开发日志](./changelog/v1.4/v1.4.0.md)。
 >
-> **下一版 v1.4.1（规划中）**：训练引擎 · 地基（编排 + 审计 + 隔离 + 指纹 + 签名 + 回收 + 恢复 + 安全）。详见下方「版本规划」表。
+> **v1.4.1 已交付（待发版 · 2026-08-25 开发完成）**——训练引擎 · 地基 八大块（train-job 编排 + train_job 审计 + enterpriseId 隔离 + 可复现指纹 + 权重 HMAC 签名 + 中断回收 + 崩溃恢复 + 安全基线）+ `train_submit`（66→67 tools）+ 阶段 0 Metal reward 收敛验证（@mlx-node/trl）+ 双栈契约文档 + 训练安全基线文档 + SKILL 体系重构 + 依赖升级。详见 [v1.4.1 开发日志](./changelog/v1.4/v1.4.1.md)。
 >
 > **v1.3.8 已于 2026-08-20 交付**——代理网关硬边界（唯一出入口 + 风险分级 + 权限单调守卫 + HITL 审批队列激活）+ 数据静态加密（纯 TS AES-256-GCM 透明加解密 + 密钥指纹强制备份）+ Durable Execution L3（WAL 三态恢复 + undo 三档回滚）+ 异步长任务自治（cron 三档糖 + 依赖图 + 死循环检测）+ FORGE driver 保活三件套（pm2 托管 / resume 断点续跑 / liveness 探针）+ SDK sandbox:true 启用（工具/文件/网络三层沙箱）+ release-gate 瘦身（--judgment-only 判断层直启 + F 循环 FAIL 即停）+ fresh-eyes 成本重构（usage.jsonl 计量 + B 侧复核模式）+ 快照写路径加固（revert 两阶段原子化）· 另含 bugfix 批次（四 P0 安全修复 + 防屎山四项）。详见 [v1.3.8 开发日志](./changelog/v1.3/v1.3.8.md)。
 >
@@ -86,7 +88,7 @@ sofagent 的定位正卡在这个转折点上：审计引擎（治理侧）+ Ont
 
 | 版本 | 状态 | 核心交付 | 日志 |
 |------|:--:|------|:--:|
-| **v1.4.1** | 📋 规划中 | **🚀 训练引擎 · 地基（编排 + 审计 + 隔离 + 指纹 + 签名 + 回收 + 恢复 + 安全）**：① **train-job 编排层** ② **train_job 审计** ③ **训练隔离边界**（enterpriseId 全链路）④ **训练可复现指纹**（checkpoint 续跑版本锁定）⑤ **训练产物完整性校验**（权重 HMAC）⑥ **训练中断与资源回收**（心跳+孤儿巡检+GPU 泄漏检测）⑦ **引擎崩溃恢复**（假活任务清理+三选项恢复）⑧ **训练安全基线**（路径注入/沙箱自检/凭据脱敏+攻击面声明文档）——**训练协议三约定 + 训练预算控制已前移至 v1.3.6（2026-08-12）** + **训练 Agent 化 + 复用 vs 自研边界（2026-08-23 拍板）**——管理面由受约束的训练 Agent 承载（决策面：数据质检/超参/失败诊断/评估/晋升，走约束层审计/回溯/进化），计算面复用开源框架（verl/DeepSpeed spawn），资源面引擎调度（GPU 队列/显存预算）；轮子全复用（LLaMA-Factory/Unsloth/MLflow/vLLM），只自研轻量编排 + 四源语料导出 + 训练审计（详见 v1.4.1 开发日志） | [日志](./changelog/v1.4/v1.4.1.md) |
+| **v1.4.1** | ✅ 已交付（待发版） | **🚀 训练引擎 · 地基（编排 + 审计 + 隔离 + 指纹 + 签名 + 回收 + 恢复 + 安全）**：① **train-job 编排层** ② **train_job 审计** ③ **训练隔离边界**（enterpriseId 全链路）④ **训练可复现指纹**（checkpoint 续跑版本锁定）⑤ **训练产物完整性校验**（权重 HMAC）⑥ **训练中断与资源回收**（心跳+孤儿巡检+GPU 泄漏检测）⑦ **引擎崩溃恢复**（假活任务清理+三选项恢复）⑧ **训练安全基线**（路径注入/沙箱自检/凭据脱敏+攻击面声明文档）——**训练协议三约定 + 训练预算控制已前移至 v1.3.6（2026-08-12）** + **训练 Agent 化 + 复用 vs 自研边界（2026-08-23 拍板）**——管理面由受约束的训练 Agent 承载（决策面：数据质检/超参/失败诊断/评估/晋升，走约束层审计/回溯/进化），计算面复用开源框架（verl/DeepSpeed spawn），资源面引擎调度（GPU 队列/显存预算）；轮子全复用（LLaMA-Factory/Unsloth/MLflow/vLLM），只自研轻量编排 + 四源语料导出 + 训练审计（详见 v1.4.1 开发日志） | [日志](./changelog/v1.4/v1.4.1.md) |
 | **v1.4.2** | 📋 规划中 | **🚀 训练引擎 · 数据与评估 + FDE Harness 层（六引擎 + IM 桥）**：训练侧——① **企业数据 → 训练集管道**（CSV/Excel/**DB/API** 多源异构接入 + instruction/偏好对构建 + 质量闸门 + 训练入口脱敏）② **训练集版本管理**（dataset_version，eval 引用版本可复现）③ **训练中 eval 闭环**（复用 v1.3.1 Benchmark，阈值外部化——机制开源/阈值外部化）④ **训练环境管理**（train env init + train doctor + 基座模型下载管理 + 环境版本清单）⑤ **训练 dry-run 与配置预检**（train dry-run：极小数据集跑通管线 + 显存预检 + 数据抽样检查）⑥ **训练报告**（train report：客户可读交付物 + 量化四字段，绩效量化引擎输入）；**FDE Harness 层**——⑦ **FDE 引擎化六件**（fde_interview 访谈结构化 + fde_classify 三问判定 + fde_quantify 量化计算器 + fde_derive 本体推导 + fde_distill 沉淀 + fde_deploy 部署，方法论 → 可执行引擎，产物落 `data/fde/`，MCP 67→73 tools）⑧ **IM 桥远程指挥**（DSH dsh-im 扫码接入微信/钉钉/飞书 + AI Office Connector 无公网 IP + 安全审计，FDE Harness 层执行通道） | [日志](./changelog/v1.4/v1.4.2.md) |
 | **v1.4.3** | 📋 规划中 | **🚀 训练引擎 · 运行与需求（监控 + 诊断 + 沙箱 + 推导 + 模板 + workflow + 可观测）**：① **训练监控与 GPU 队列**（train_status + **train_list** + 显存预算排队 + webhook + **Dashboard 训练区块 + 健康度指标落盘**）② **训练失败诊断**（OOM/数据/发散/框架/环境五类）③ **训练沙箱 + 设备打包**（扩展 v1.3.7 + 离线 + 设备封装前置）④ **训练需求推导 + 模板库**（`train analyze` + 场景模板）⑤ **后训练 workflow 模板**（七节点 FDE 载体 + 三 HITL） | [日志](./changelog/v1.4/v1.4.3.md) |
 | **v1.4.4** | 📋 规划中 | **🚀 训练引擎 · 信号与部署闭环（语料 + 权重 + 注册 + 对比）**：① **训练语料导出三件套**（规则 + GUIDE 方法论 + 样本四源 [decision-log/llm-calls/evaluation-log/runtime-audit] + Trace 轨迹 + 通用脱敏管线 + HMAC 签名 + 合规红线——含 human-fde 人工基准，从 v1.3.2/v1.3.6 归集）② **企业专属模型本地权重部署链路**（权重目录规范 + 本地加载 + 版本回滚，从 v1.3.6 归集）③ **训练产物 → 模型注册自动衔接**（train done + eval pass → model_register，闭环最后一步）④ **多基座对比训练**（train compare：同数据多基座并行 + ROI 排序，阶段 2 选型前置） | [日志](./changelog/v1.4/v1.4.4.md) |
