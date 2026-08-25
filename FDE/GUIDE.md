@@ -89,7 +89,7 @@ FDE 交付不是只有一种姿势。Palantir 实施方法论给出三种交付�
 | **权限经理**（IT 部门） | 不可替代 | Agent 身份发放、权限路线判定——缺位则生产写入权限无法开放 |
 | **业务建模师**（车间主任级） | FDE 可代行≤3 个月 | 确认对象口径与状态机约束——超期客户须自行培养接任 |
 
-> 💡 **与 sofagent Onboard Agent 的关系**：Onboard Agent L1-L5（v1.3.1-v1.3.2）本质是在替代"业务建模师"角色——Agent 自动调试 AI 节点到跑通。平台 owner 和权限经理的判断力仍然不可被 Agent 替代。
+> 💡 **与 sofagent Onboard Agent 的关系**：Onboard Agent L1-L5 本质是在替代"业务建模师"角色——Agent 自动调试 AI 节点到跑通。平台 owner 和权限经理的判断力仍然不可被 Agent 替代。
 
 > 📖 来源：Palantir 实施方法论报告（2026-08，§4.3 三形态与责任分担）
 
