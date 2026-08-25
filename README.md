@@ -32,7 +32,7 @@ sofagent 不造 Agent——执行能力交给成熟宿主（模型 + 工具 + �
 
 ## 什么是 FDE Agent
 
-**FDE = Forward Deployed Engineer（前线部署工程师）**——把模型塞进企业真实业务里的人。sofagent 把这个角色做成开源能力面，让你已有的 Agent（DSH / OpenClaw / WorkBuddy）具备 FDE 能力，四个阶段走完一条完整的 FDE 业务流：
+**FDE = Forward Deployed Engineer（前线部署工程师）**——把模型塞进企业真实业务里的人。sofagent 把这个角色做成开源 FDE Harness 层，夹在你的 Agent（DSH / OpenClaw / WorkBuddy）与模型层之间，让已有 Agent 具备 FDE 能力、让模型被管住，四个阶段走完一条完整的 FDE 业务流：
 
 - **一、进场梳理业务流**——五要素深挖 + 三问判定法，把每个岗位环节的输入 / 输出 / 负责人 / 耗时 / 痛点摸清，算清每个 AI 节点值多少钱
 - **二、构建双图谱**——业务图谱（系统边界、数据流向）+ 本体图谱（共享语义底座），把企业变成机器可读的结构
