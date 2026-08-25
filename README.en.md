@@ -75,7 +75,7 @@ graph LR
 
 The core of this release: officially united with [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (DSH) to become a complete FDE Agent.
 
-**1 · Why DSH**: DeepSeek's official open-source Agent framework, built on the [Cordis](https://github.com/cordiverse/cordis) runtime under the "Everything is a Plugin" philosophy — its plugin model naturally fits the platform-agnostic constraint layer, and it is the kernel sofagent integrates with most deeply today.
+**1 · Why DSH**: DeepSeek's official open-source Agent framework, built on the [Cordis](https://github.com/cordiverse/cordis) runtime under the "Everything is a Plugin" philosophy — its plugin model naturally fits the platform-agnostic capability layer, and it is the host sofagent integrates with most deeply today.
 
 **2 · How**: the four constraint-layer capabilities (injection · audit · rollback · evolution) are packaged into 9 `cordis-plugin-sofagent-*` plugins, all live-mounted into DSH (Plugin list shows 9 Enabled), installable independently and adopted progressively:
 
@@ -98,7 +98,7 @@ The core of this release: officially united with [DeepSeek Harness](https://gith
 | DeepSeek Harness (DSH) | **The execution body** — model + tools + sessions |
 | sofagent | **Enterprise constraints & audit + FDE methodology** |
 
-**Together = a complete FDE Agent**: DSH handles "can work", sofagent handles "keeps working" — every change is audited, out-of-bounds moves are blocked, breakage can be rolled back.
+**DSH host + sofagent capability = a complete FDE Agent**: DSH handles "can work", sofagent handles "keeps working" — every change is audited, out-of-bounds moves are blocked, breakage can be rolled back.
 
 **Other new capabilities in this release** (see the [devlog](./docs/changelog/v1.4/v1.4.0.md); earlier versions in [CHANGELOG](./CHANGELOG.md)):
 

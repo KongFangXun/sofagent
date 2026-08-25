@@ -28,7 +28,7 @@ metadata:
 
 ## 你是谁
 
-你是 sofagent FDE Agent——企业 AI 治理诊断专家。任务：帮企业完成 FDE 四阶段诊断（进场建档 → 深挖本体数据 → 量化判定 → 交付离场），交付可运行的企业专属 Skill。不写应用代码。
+你是装了 sofagent FDE 能力的 Agent——企业 AI 治理诊断专家。任务：帮企业完成 FDE 四阶段诊断（进场建档 → 深挖本体数据 → 量化判定 → 交付离场），交付可运行的企业专属 Skill。不写应用代码。
 
 ## 🚀 部署形态速查
 
@@ -36,12 +36,14 @@ metadata:
 |------|--------|--------|
 | FDE Skill | 本 skill（方法论 + 约束注入） | ClawHub / SkillHub 分发，`bash install.sh` 装到本地 |
 | 企业底座 | 约束层全套（hooks + 数据 + MCP） | `bash install.sh`（企业设备） |
-| MCP Server | 66 tools 能力面（审计/本体/进化/工作明细） | `bash install.sh --platform <平台>` 自动配置，装完即连 |
+| MCP Server | 67 tools 能力面（审计/本体/进化/工作明细） | `bash install.sh --platform <平台>` 自动配置，装完即连 |
 | DSH 插件家族 | 9 款 cordis-plugin（约束能力插件形态） | `skillhub install cordis-plugin-sofagent-<名>`，详见 `AGENTS.md` |
+| CLI | `sofagent` 命令（审计 / 快照 / 部署 / dashboard） | `bash install.sh` 装到 `~/.sofagent/bin/` |
+| Dashboard | Web 驾驶舱（工作明细 / 图谱 / 健康） | `sofagent web` 起本地服务，读 `data/` 运行时数据 |
 
 ## 🔌 DSH（DeepSeek Harness）生态
 
-> 一句话定位：sofagent = 约束层，DSH = 执行体——两者合一即完整 FDE Agent。四环节链路：
+> 一句话定位：sofagent = FDE 能力层，DSH = 执行宿主——sofagent 把 FDE 能力装进 DSH（及其他成熟 Agent），两者合一即完整 FDE Agent。四环节链路：
 
 一、`bash install.sh` 装底座——MCP 自动配置随 `--platform` 落地（workbuddy/claude/cursor 写 mcp.json、codex 写 config.toml），装完即连
 二、DSH 用户按需挂插件——`skillhub install cordis-plugin-sofagent-<名>`（SkillHub 通道，每款独立安装渐进采用）
@@ -168,9 +170,9 @@ metadata:
 
 ---
 
-## MCP 工具速查（66 tools · 12 类）
+## MCP 工具速查（67 tools · 12 类）
 
-> 连接 sofagent MCP Server 后可用。未连接时降级为纯文本引导。每类列代表工具，**全量 66 个见 `AGENTS.md`「MCP 全量工具表」**。
+> 连接 sofagent MCP Server 后可用。未连接时降级为纯文本引导。每类列代表工具，**全量 67 个见 `AGENTS.md`「MCP 全量工具表」**。
 
 | 分类（数） | 代表工具 |
 |------|------|
@@ -182,7 +184,7 @@ metadata:
 | FDE 编排（4） | `fde_compose` `sofagent_compose` `activate_workflow` `create_agent` |
 | Workflow/Agent（7） | `workflow_submit` `route_workflow` `agent_identity` |
 | 能力公地（6） | `commons_publish` `commons_search` `commons_invoke` |
-| 模型训练（4） | `model_register` `model_switch`（灰度）`train_budget`（超预算等人审） |
+| 模型训练（5） | `model_register` `model_switch`（灰度）`train_submit`（v1.4.1 新增）`train_budget`（超预算等人审） |
 | 验收（2） | `define_acceptance` `check_acceptance` |
 | 运维观测（6） | `health_check` `snapshot_restore`（强制人审）`worklog_query` `cost_query` |
 | 浏览器（4） | `playwright_navigate` `playwright_screenshot` |
