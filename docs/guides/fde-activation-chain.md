@@ -87,14 +87,12 @@ FDE 诊断完成（交付物就绪）
 
 ## 版本分配表
 
-| 版本 | 原有主题 | 激活链增量 | 对应 Phase |
-|------|---------|-----------|-----------|
-| **v1.2.5** | 多设备前置（身份码轻量版 + 审计聚合 + 协议中立） | activate.ts + workflow.yml 扩展 + subagents/*.yml 写入 + dry-run + MCP tool | Phase 1 完整 |
-| **v1.2.6** | 激活链 Phase 2 前半 + MCP 修补 + 死链清零 | workflow-parser 扩展支持 enterprise agent + registry 扩展 hitl 字段 | Phase 2 前半 |
-| **v1.2.7** | 编排引擎增强 | composeEnterpriseWorkflow + LangGraph StateGraph 构建 + 数据流设计 | Phase 2 后半 |
-| **v1.2.8** | 记忆分层+定时任务 | dag-runner 扩展 + run-enterprise CLI + 节点执行器 | Phase 3 前半 |
-| **v1.2.9** | HITL + 审计集成 | HITL interrupt + 审计集成 + 异常处理 | Phase 3 后半 |
-| **v1.3.0** | 运行时审计最小闭环 | 激活链收尾——全闭环验证 + wrapToolCall 联动 + 企业业务流审计 | Phase 4 收尾 |
+| 版本 | 激活链增量 | 对应 Phase |
+|------|-----------|-----------|
+| **v1.2.5** | activate.ts + workflow.yml 扩展 + subagents/*.yml 写入 + dry-run + MCP tool | Phase 1 完整 |
+| **v1.2.6-7** | workflow-parser 扩展 + composeEnterpriseWorkflow + LangGraph StateGraph 构建 | Phase 2 |
+| **v1.2.8-9** | dag-runner 扩展 + run-enterprise CLI + HITL interrupt + 审计集成 + 异常处理 | Phase 3 |
+| **v1.3.0** | 激活链收尾——全闭环验证 + wrapToolCall 联动 + 企业业务流审计 | Phase 4 收尾 |
 
 > 开发每个版本时读本文档作为设计指引。各 Phase 的开发 Prompt 仅作开发过程内部参考，不随仓库分发。
 
@@ -492,32 +490,11 @@ async function executeNode(node, state) {
 
 ### 决策 2：数据流方案
 
-采用**混合方案 C**（实时走 State + 知识走 entity）：
-
-```
-节点 A（接单）执行
-  → 结果写入 LangGraph State（currentOrder = { 订单号, 客户, 金额 }）
-  → 同时更新 entity（entities/客户管理.md 的 recent_orders 字段）
-  → State 传给节点 B（排产）
-  → 节点 B 从 State 拿 currentOrder，从 entity 拿排程规则
-```
-
-好处：State 保证实时性，entity 保证持久性和可审计性。
+采用**混合方案 C**（实时走 State + 知识走 entity）：节点执行结果写入 LangGraph State（实时传递），同时更新 ontology entity（持久留痕）——State 保证实时性，entity 保证持久性和可审计性（详见上方「数据流设计」）。
 
 ### 决策 3：HITL 实现方式
 
-用 LangGraph 原生 `interrupt_before`。
-
-```
-节点 A（🔄 接单）→ 自动执行
-  ↓
-节点 B（⚡ 排产）→ interrupt_before 触发
-  → 向用户展示："排程方案如下...是否确认？"
-  → 用户确认 / 修改 / 拒绝
-  → 确认 → 继续执行
-  → 修改 → 更新 State 后继续
-  → 拒绝 → 业务流终止，写入异常日志
-```
+用 LangGraph 原生 `interrupt_before`：在 ⚡ 节点前暂停，向用户展示方案 → 确认 / 修改 / 拒绝 → 确认继续、修改更新 State 后继续、拒绝终止并写异常日志（详见上方「HITL 集成」）。
 
 ### 决策 4：平台兼容性
 
@@ -538,76 +515,63 @@ async function executeNode(node, state) {
 
 ### 新增文件
 
-| 文件 | 版本 | 说明 |
-|------|------|------|
-| `engine/orchestrator/src/activate.ts` | v1.2.5 | **核心**：Phase 1 激活逻辑 |
-| `engine/orchestrator/src/enterprise-graph.ts` | v1.2.7 | Phase 2 企业编排图构建 |
-| `engine/orchestrator/src/node-executor.ts` | v1.2.8 | Phase 3 企业节点执行器（新建）；v1.2.9 接入 HITL/审计集成 |
-| `engine/orchestrator/src/hitl-handler.ts` | v1.2.9 | Phase 3 HITL 中断处理 |
-| `engine/orchestrator/src/__tests__/activate.test.ts` | v1.2.5 | 单测 |
-| `engine/orchestrator/src/__tests__/enterprise-graph.test.ts` | v1.2.7 | 单测 |
-| `engine/orchestrator/src/__tests__/node-executor.test.ts` | v1.2.8 | 单测 |
-| `engine/mcp/src/tools/activate-workflow.ts` | v1.2.5 | MCP `activate_workflow` tool |
+| 文件 | 说明 |
+|------|------|
+| `engine/orchestrator/src/activate.ts` | **核心**：Phase 1 激活逻辑 |
+| `engine/orchestrator/src/enterprise-graph.ts` | Phase 2 企业编排图构建 |
+| `engine/orchestrator/src/node-executor.ts` | Phase 3 企业节点执行器（含 HITL/审计集成） |
+| `engine/orchestrator/src/hitl-handler.ts` | Phase 3 HITL 中断处理 |
+| `engine/orchestrator/src/__tests__/activate.test.ts` | 单测 |
+| `engine/orchestrator/src/__tests__/enterprise-graph.test.ts` | 单测 |
+| `engine/orchestrator/src/__tests__/node-executor.test.ts` | 单测 |
+| `engine/mcp/src/tools/activate-workflow.ts` | MCP `activate_workflow` tool |
 
 ### 修改文件
 
-| 文件 | 版本 | 修改内容 |
-|------|------|---------|
-| `engine/orchestrator/src/workflow-parser.ts` | v1.2.6 | 扩展映射表支持 `agent: enterprise` 类型 |
-| `engine/orchestrator/src/registry.ts` | v1.2.6 | 扩展 `SubAgentDefinition` 增加 hitl / hitlConfig 字段 |
-| `engine/orchestrator/src/composer.ts` | v1.2.7 | 新增 `composeEnterpriseWorkflow()` |
-| `engine/orchestrator/src/dag-runner.ts` | v1.2.8 | 扩展支持企业 Agent + HITL 节点 |
-| `engine/orchestrator/src/cli.ts` | v1.2.8 | 新增 `activate` 子命令 + `run-enterprise` 子命令 |
-| `engine/mcp/src/mcp-server.ts` | v1.2.5 | 注册 `activate_workflow` tool |
+| 文件 | 修改内容 |
+|------|---------|
+| `engine/orchestrator/src/workflow-parser.ts` | 扩展映射表支持 `agent: enterprise` 类型 |
+| `engine/orchestrator/src/registry.ts` | 扩展 `SubAgentDefinition` 增加 hitl / hitlConfig 字段 |
+| `engine/orchestrator/src/composer.ts` | 新增 `composeEnterpriseWorkflow()` |
+| `engine/orchestrator/src/dag-runner.ts` | 扩展支持企业 Agent + HITL 节点 |
+| `engine/orchestrator/src/cli.ts` | 新增 `activate` 子命令 + `run-enterprise` 子命令 |
+| `engine/mcp/src/mcp-server.ts` | 注册 `activate_workflow` tool |
 | `SKILL/agents/fde/SKILL.md` | v1.3.0 | FDE §8 新增 activate 引导（交付后执行 activate） |
 
 ### 依赖关系
 
-```
-activate.ts
-  依赖 → workflow-parser.ts（解析 workflow.yml）
-  依赖 → registry.ts（写入 subagents/）
-  依赖 → builtin-agents.ts 的 parseSkillMd（复用 SKILL.md 解析）
-
-enterprise-graph.ts
-  依赖 → activate.ts 的输出（EnterpriseAgentConfig[]）
-  依赖 → @langchain/langgraph（StateGraph）
-
-dag-runner.ts（修改）
-  扩展 → 支持企业 Agent 执行
-  扩展 → 支持 HITL 中断
-```
+`activate.ts` → workflow-parser（解析 workflow.yml）+ registry（写入 subagents/）+ parseSkillMd（复用 SKILL.md 解析）；`enterprise-graph.ts` → activate 输出 + LangGraph StateGraph；`dag-runner.ts` 扩展支持企业 Agent 执行 + HITL 中断（细节见 Phase 1-3 正文）。
 
 ---
 
 ## 验证方式
 
-| 检查项 | 通过标准 | 版本 |
-|--------|------|------|
-| activate 命令 | 能读 workflow.yml + skills/ + entities/ → 生成 .sofagent/subagents/*.yml | v1.2.5 |
-| dry-run 模式 | `--dry-run` 只预览不写文件 | v1.2.5 |
-| 👤 节点跳过 | type 为 👤 的节点被跳过，记录在 skippedNodes | v1.2.5 |
-| 企业 Agent 注册 | registry.listAgents() 能读到企业自定义 Agent | v1.2.6 |
-| StateGraph 构建 | composeEnterpriseWorkflow 输出合法 LangGraph 配置 | v1.2.7 |
-| 数据流 | State 实时传递 + entity 持久化双写 | v1.2.7+ |
-| 节点执行器 | dag-runner 能跑企业 Agent | v1.2.8 |
-| HITL 中断 | ⚡ 节点执行前暂停，等待用户确认 | v1.2.9 |
-| 审计集成 | 每个节点执行后自动审计，FAIL 时暂停业务流 | v1.2.9 |
-| MCP tool | `activate_workflow` 可从任意 MCP 平台调用 | v1.2.5 |
-| 纯 CLI | `sofagent-orchestrator activate && sofagent-orchestrator run-enterprise` 可跑通 | v1.3.0 |
-| npm test | 全绿（1207 + 新增） | 每版本 |
-| 现有 compose 不受影响 | 通用 compose() 功能不变 | v1.2.7 |
+| 检查项 | 通过标准 |
+|--------|------|
+| activate 命令 | 能读 workflow.yml + skills/ + entities/ → 生成 .sofagent/subagents/*.yml |
+| dry-run 模式 | `--dry-run` 只预览不写文件 |
+| 👤 节点跳过 | type 为 👤 的节点被跳过，记录在 skippedNodes |
+| 企业 Agent 注册 | registry.listAgents() 能读到企业自定义 Agent |
+| StateGraph 构建 | composeEnterpriseWorkflow 输出合法 LangGraph 配置 |
+| 数据流 | State 实时传递 + entity 持久化双写 |
+| 节点执行器 | dag-runner 能跑企业 Agent |
+| HITL 中断 | ⚡ 节点执行前暂停，等待用户确认 |
+| 审计集成 | 每个节点执行后自动审计，FAIL 时暂停业务流 |
+| MCP tool | `activate_workflow` 可从任意 MCP 平台调用 |
+| 纯 CLI | `sofagent-orchestrator activate && sofagent-orchestrator run-enterprise` 可跑通 |
+| npm test | 全绿 |
+| 现有 compose 不受影响 | 通用 compose() 功能不变 |
 
 ---
 
-## 与其他开发线的关系
+## 与其他开发线的衔接
 
-| 开发线 | 关系 |
+| 开发线 | 衔接 |
 |--------|------|
-| **S1-S5（Skill × MCP 集成）** | S1-S5 完成后 FDE Skill 有 MCP 工具调用能力。激活链的 `activate_workflow` 是新增的第 9 个 MCP tool |
-| **Skill 分包（README/GUIDE/SKILL/skills/）** | FDE 分包后，skills/04-deliver.md 中应加入 activate 引导——交付后不是结束，activate 才是 |
-| **v1.3.0 运行时审计** | v1.3.0 的 LangGraph middleware wrapToolCall 与激活链的"每个节点执行后审计"互补。v1.3.0 是通用拦截，激活链是企业专属 |
-| **v1.3.7 沙箱** | 激活链生成的企业 Agent 最终也需要沙箱隔离 |
+| **Skill × MCP 集成（S1-S5）** | FDE Skill 有 MCP 工具调用能力；激活链的 `activate_workflow` 是新增 MCP tool |
+| **Skill 分包** | skills/04-deliver.md 应含 activate 引导——交付后不是结束，activate 才是 |
+| **运行时审计** | LangGraph middleware wrapToolCall（通用拦截）与激活链"每个节点执行后审计"（企业专属）互补 |
+| **沙箱** | 激活链生成的企业 Agent 最终也需要沙箱隔离 |
 
 ---
 

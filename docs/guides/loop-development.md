@@ -35,41 +35,15 @@ const agent = createReactAgent({ llm: model, tools, prompt: systemPrompt });
 
 ## 二、为什么选 LangGraph（弃用 deepagents）
 
-deepagents 在 v1.0.1-v1.1.x 阶段启发了 sofagent 编排引擎的设计，但 v1.2.0 起被彻底弃用。三个**不可逆硬伤**决定了它不适合 FORGE：
+deepagents 早期启发了编排引擎设计，后因三个**不可逆硬伤**弃用，改用 LangGraph `createReactAgent`（同一套 React 模式，但节点/边全暴露，白盒可控）：
 
-### 硬伤 1：FilesystemMiddleware 硬编码注入（P0）
+| 硬伤 | 说明 |
+|------|------|
+| FilesystemMiddleware 硬编码注入 | 源码强制注入文件中间件，`middleware:[]` 语义是「追加到链尾」不是「替换」，无法禁用 |
+| wrapToolCall 并行调用崩溃 | 并行工具调用触发 `Cannot read properties of undefined`，偶发崩溃 = 根因未解 |
+| REQUIRED_MIDDLEWARE_NAMES 白名单 | 源码禁止排除内置中间件，想修也改不了 |
 
-deepagents 的 `createDeepAgent` 在源码中硬编码注入 `FilesystemMiddleware`（`deepagents/dist/langsmith-DjCMSywL.js:5879-5895`）：
-
-```js
-// deepagents 源码（不可修改）
-const middleware = [
-  todoMiddleware,
-  fsMiddleware,           // ← 硬编码，无法通过参数禁用
-  subagentMiddleware,     // ← REQUIRED，也不能排除
-  ...customMiddleware,    // ← 你的 middleware:[] 只追加到这
-];
-```
-
-`REQUIRED_MIDDLEWARE_NAMES = Set(["FilesystemMiddleware","SubAgentMiddleware"])` 明确禁止排除这两个。你以为 `middleware:[]` 能禁用它？不——语义是"追加空数组到链尾"，不是"替换整个链"。
-
-### 硬伤 2：wrapToolCall 并行调用崩溃（P0）
-
-FilesystemMiddleware 的 `wrapToolCall` 在处理并行工具调用时触发 `Cannot read properties of undefined (reading 'length')`（superstep N AggregateError）。DeepSeek 偶然没触发并行调用所以能跑，GLM-5.2 在 superstep 5 触发即崩。
-
-**"修了但偶尔还崩" = 根因没找对，DeepSeek 跑通只是运气好。**
-
-### 硬伤 3：REQUIRED_MIDDLEWARE_NAMES 白名单禁止排除（P0）
-
-即使你知道是 FilesystemMiddleware 的锅，也无法排除它——源码里 `validateExcludedMiddlewareName()` 会抛错阻止你。
-
-### deepagents 适合什么场景？
-
-deepagents 不是"不能用"——它适合：快速原型、串行工具调用、标准文件操作、不需要并行 SubAgent 的场景。如果你只需要一个能读写文件的 Agent demo，deepagents 开箱即用很好。
-
-**但 FORGE loop 需要精细控制**：每步独立进程隔离、并行双盲审查、自定义工具集（不依赖 deepagents 的内置文件工具）、按步骤区分 recursionLimit、审计可追溯。这些需求下 deepagents 的黑盒成了枷锁。
-
-LangGraph 的 `createReactAgent` 是同一套 React 模式（ToolNode + agent loop），但所有节点和边都暴露给你——白盒可控。
+**适用边界**：deepagents 适合快速原型 / 串行工具调用 / 标准文件操作；FORGE loop 需要进程隔离、并行双盲审查、自定义工具集、按步 recursionLimit、审计可追溯——这些需求下 deepagents 的黑盒成了枷锁。
 
 ---
 
@@ -412,18 +386,6 @@ FORGE/SKILL/fresh-eyes-loop/
         ├── usage.jsonl
         └── progress.jsonl
 ```
-
-### run-03 结果摘要
-
-| 维度 | 数据 |
-|------|------|
-| 审查目标 | sofagent v1.2.0 完整交付物 |
-| 轮数 | 1 轮 |
-| 耗时 | ~19 分 20 秒 |
-| 总 token | 1,050,313（A: 903,462 + B: 146,851） |
-| 成本 | ¥0.44（B 按量计费；A 为订阅制不单独计费） |
-| 发现 | P0×14 P1×21 P2×16 |
-| 停止原因 | max-rounds（单轮仍有大量 P0/P1） |
 
 ### driver 源码
 

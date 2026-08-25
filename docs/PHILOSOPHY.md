@@ -31,15 +31,15 @@
 
 Agent 越聪明，企业越不敢让它碰真活——真出事了，谁负责？能拦住吗？能回滚吗？大厂给你水（LLM）、给你河床（Agent 平台），但企业门口的那段管子——从"能喝"到"敢喝"——没人帮你接。
 
-**② sofagent 的答案：一套常驻你企业的 FDE Harness，夹在成熟 Agent 与模型层之间，帮你把业务流梳理成 AI 节点，部署完它自己跑。**
+**② sofagent 的答案：一套常驻你企业的 FDE Harness，嵌在成熟 Agent 与模型层之间，帮你把业务流梳理成 AI 节点，部署完它自己跑。**
 
 sofagent 不替代大厂 Agent，而是建在它们之上——做河的约束层，不做河本身（River 比喻详见 [README · 这是什么](../README.md#这是什么)）。FDE 进场四阶段：梳理→挖掘→交付→离场。离场后 AI 节点自己跑。
 
-> **🔄 自举（产品哲学的核心）：FDE Harness 层给自己做的第一份 FDE，就是 sofagent 自己。** 我们自己是一家"FDE 公司"——执行「给企业做 AI 落地」这条 workflow 的能力就是 sofagent（夹在成熟 Agent 与模型之间）。它对自己做 FDE：把项目自身梳理成一条 FDE workflow（梳理 → 节点 → 双图谱交付），确认每个节点全自动（LangGraph 编排 + DeepSeek Harness 执行 + 约束底座审计），训练引擎也围绕 FDE——怎么让 FDE 更好、怎么让数据飞轮转起来。这是自举循环：**FDE Harness 层对自己做 FDE → 项目更 AI 化 → 更好地服务企业**。产品形态 = FDE Harness 层（不造 Agent：对执行体 DSH / OpenClaw / WorkBuddy 约束、对智力源通用/专属模型治理，plugin + skill + MCP + CLI + dashboard 五种形态分发，2026-08-25 拍板叙事）。
+> **🔄 自举（产品哲学的核心）：FDE Harness 层给自己做的第一份 FDE，就是 sofagent 自己。** 我们自己是一家"FDE 公司"——执行「给企业做 AI 落地」这条 workflow 的能力就是 sofagent（嵌在成熟 Agent 与模型之间）。它对自己做 FDE：把项目自身梳理成一条 FDE workflow（梳理 → 节点 → 双图谱交付），确认每个节点全自动（LangGraph 编排 + DeepSeek Harness 执行 + 约束底座审计），训练引擎也围绕 FDE——怎么让 FDE 更好、怎么让数据飞轮转起来。这是自举循环：**FDE Harness 层对自己做 FDE → 项目更 AI 化 → 更好地服务企业**。产品形态 = FDE Harness 层（不造 Agent：对执行体 DSH / OpenClaw / WorkBuddy 约束、对智力源通用/专属模型治理，plugin + skill + MCP + CLI + dashboard 五种形态分发，2026-08-25 拍板叙事）。
 
-> **🔗 激活链——从"交付"到"自运转"**：FDE 交付了 ontology + workflow.yml + skills/ 等静态文件后，交付物和"企业业务流自动运行"之间曾有一道**大断裂带**——企业 IT 拿到一堆 .md 和 .yml 不知道怎么跑起来。v1.2.5 起的**激活链**（ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN，已交付）解决这个问题：读交付物 → 注册企业 SubAgent → 构建 LangGraph StateGraph → DAG 运行 + HITL + 审计 → 持续优化自运转。详见 [激活链设计文档](./guides/fde-activation-chain.md)。
+> **🔗 激活链——从"交付"到"自运转"**：FDE 交付了 ontology + workflow.yml + skills/ 等静态文件后，交付物和"企业业务流自动运行"之间曾有一道**大断裂带**——企业 IT 拿到一堆 .md 和 .yml 不知道怎么跑起来。**激活链**（ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN，已交付）解决这个问题：读交付物 → 注册企业 SubAgent → 构建 LangGraph StateGraph → DAG 运行 + HITL + 审计 → 持续优化自运转。详见 [激活链设计文档](./guides/fde-activation-chain.md)。
 
-**③ 底层引擎：sofagent 的约束层（Harness）保证每次变更可审计、可回滚、可进化。**
+**③ 底层引擎：sofagent 的约束层保证每次变更可审计、可回滚、可进化。**
 
 约束注入链是骨架里的钢筋，审计能力是质检——开发者才需要往下看。审计能力 24 条规则按实现方式分 19 条纯 git-diff（零 token、不调 LLM）+ 4 条混合需 Agent 日志 + 1 条文件系统扫描（按启用方式则为 17 默认 + 7 扩展，SSOT 见 [SECURITY](../SECURITY.md)）；**约束层（一个层四种能力：注入·审计·回溯·进化）× 生命周期（诊断→激活→编排→执行→进化）**双层架构覆盖从治理到自运转。FORGE 自迭代工具链是项目内部开发工具。本文档以下九章讲的就是这套底层引擎的设计哲学。
 
@@ -47,7 +47,7 @@ sofagent 不替代大厂 Agent，而是建在它们之上——做河的约束�
 
 ## 零、一句话
 
-**sofagent 没有图形界面。** 你通过电脑上已有的 Agent（WorkBuddy / Codex / Claude Code 等）或 IM（钉钉 / 飞书 / 企微）与它对话——说一句话，它做完了告诉你结果在哪。语言是界面，这也是 sofagent 与用户交互的核心方式。（v1.2.3 已落地终端 Dashboard 作为只读可见视图，给非技术买家看进度，详见 §六；但下令仍走语言。）
+**sofagent 没有图形界面。** 你通过电脑上已有的 Agent（WorkBuddy / Codex / Claude Code 等）或 IM（钉钉 / 飞书 / 企微）与它对话——说一句话，它做完了告诉你结果在哪。语言是界面，这也是 sofagent 与用户交互的核心方式。（终端 Dashboard 作为只读可见视图，给非技术买家看进度，详见 §六；但下令仍走语言。）
 
 语言是界面。MCP 是通道。硬证据（git diff）是唯一的真相来源。
 
@@ -555,7 +555,7 @@ sofagent 的版本演进不是拍脑袋排的——它遵循 Agent 工程的生�
 | 想法 | 为什么不 |
 |------|------|
 | 自研行为验证器 | Agent 平台原生已覆盖 |
-| 图形界面/仪表盘 | LUI-first——语言就是界面（v1.2.3 已落地的只读终端 Dashboard 见 §六，是「只读可见视图」不是「下令用的交互式 GUI」——禁的是后者，前者是产品化外壳）|
+| 图形界面/仪表盘 | LUI-first——语言就是界面（只读终端 Dashboard 见 §六，是「只读可见视图」不是「下令用的交互式 GUI」——禁的是后者，前者是产品化外壳）|
 | 全栈企业 Agent 平台 | 不做 扣子（Coze，字节跳动） 竞品——sofagent 是独立底线守卫层 |
 | think.md 强制 gate | 强制会导致 Agent 用垃圾内容填模板 |
 | 记忆压缩自动化 | 每个 Agent 有自己的记忆 |

@@ -5,7 +5,7 @@ version: 1.4.0
 displayName: FDE Skill
 description: >
   FDE Skill——帮 FDE（前线部署工程师）更好完成企业 AI 落地的方法论 Skill。约束 Agent 行为、审计每次变更、沉淀经验。
-  底层实现叫约束层（Harness）——一个层四种能力：注入·审计·回溯·进化。FORGE 自迭代工具链是内部开发工具。
+  底层实现叫约束层——一个层四种能力：注入·审计·回溯·进化。FORGE 自迭代工具链是内部开发工具。
   内置持续优化模式（sustain），自动读 audit 报告趋势生成优化报告。
 tags:
   - fde
@@ -184,7 +184,7 @@ metadata:
 | FDE 编排（4） | `fde_compose` `sofagent_compose` `activate_workflow` `create_agent` |
 | Workflow/Agent（7） | `workflow_submit` `route_workflow` `agent_identity` |
 | 能力公地（6） | `commons_publish` `commons_search` `commons_invoke` |
-| 模型训练（5） | `model_register` `model_switch`（灰度）`train_submit`（v1.4.1 新增）`train_budget`（超预算等人审） |
+| 模型训练（5） | `model_register` `model_switch`（灰度）`train_submit` `train_budget`（超预算等人审） |
 | 验收（2） | `define_acceptance` `check_acceptance` |
 | 运维观测（6） | `health_check` `snapshot_restore`（强制人审）`worklog_query` `cost_query` |
 | 浏览器（4） | `playwright_navigate` `playwright_screenshot` |
