@@ -18,9 +18,9 @@
 
 ## What is this
 
-**An open-source FDE capability layer.** The AI-deployment engineer for one-person companies and SMBs — never sleeps, never leaves, and carries its own auditor. Shipped as **FDE plugins + Skill + MCP + CLI + Dashboard**, riding on top of mature Agents (DSH / OpenClaw / WorkBuddy): on entry, map the business flow clearly, build the ontology graph, deploy the AI nodes in place; on departure, audit every change and keep optimizing.
+**An open-source FDE Harness layer.** The AI-deployment engineer for one-person companies and SMBs — never sleeps, never leaves, and carries its own auditor. It sits **between mature Agents (executors: DSH / OpenClaw / WorkBuddy) and the model layer (intelligence sources: general LLMs + bespoke/small post-trained models)**, governing both sides. Shipped as **FDE plugins + Skill + MCP + CLI + Dashboard**: on entry, map the business flow clearly, build the ontology graph, deploy the AI nodes in place; on departure, audit every change and keep optimizing.
 
-sofagent does not build its own Agent — execution is delegated to mature hosts (model + tools + sessions). What it delivers is the **FDE capability surface**: methodology + constraint layer + audit, turning any existing Agent into one that "does enterprise AI deployment like an FDE".
+sofagent does not build its own Agent — execution is delegated to mature hosts (model + tools + sessions). What it delivers is the **FDE Harness layer**: methodology + constraint layer + audit — constraining executors (Agents) and governing intelligence sources (models), turning any existing Agent into one that "does enterprise AI deployment like an FDE" and keeping every model (general or bespoke) under control (register / rollout / train / deploy fully audited).
 
 > 🏞️ Big tech hands you "water" (foundation models) and "riverbeds" (Agent platforms) — but the water is raw, and you don't dare drink it straight. sofagent is the engineering that makes the river usable for a whole city: dams keep the water from flooding, treatment plants turn raw water into drinking water, and pipe networks deliver it to every faucet. Models supply 90% of the intelligence; sofagent supplies the 10% of reliable execution.
 
@@ -35,7 +35,7 @@ sofagent does not build its own Agent — execution is delegated to mature hosts
 
 ## What is an FDE Agent
 
-**FDE = Forward Deployed Engineer** — the person who embeds models into real enterprise operations. sofagent turns this role into an open-source capability layer, so that the Agents you already have (DSH / OpenClaw / WorkBuddy) gain FDE capability and walk a full FDE business flow through four phases:
+**FDE = Forward Deployed Engineer** — the person who embeds models into real enterprise operations. sofagent turns this role into an open-source FDE Harness layer, sitting between the Agents you already have (DSH / OpenClaw / WorkBuddy) and the model layer, so they gain FDE capability and models stay governed, walking a full FDE business flow through four phases:
 
 - **Phase 1 · Map the business flow on entry** — five-element deep-dive + three-question triage, capturing each role's input / output / owner / time cost / pain points, and calculating what each AI node is worth
 - **Phase 2 · Build dual graphs** — business graph (system boundaries, data flows) + ontology graph (shared semantic foundation), turning the enterprise into a machine-readable structure
@@ -45,20 +45,25 @@ sofagent does not build its own Agent — execution is delegated to mature hosts
 Official slogan: **Map business flows · Build ontology graphs · Deploy AI nodes · Audit every change · Reflect & iterate**
 
 ```mermaid
-graph LR
-    subgraph H["Mature Agent hosts<br/>DSH · OpenClaw · WorkBuddy"]
-        M["Model + tools + sessions<br/>execution capability"]
+graph TB
+    subgraph M["Model layer (intelligence sources)"]
+        M1["General LLMs<br/>DSH · OpenAI · Claude"]
+        M2["Bespoke / post-trained models<br/>v1.4.x training engine · local weight deploy"]
     end
-    subgraph S["sofagent · FDE capability layer"]
-        direction TB
+    subgraph H["sofagent · FDE Harness layer"]
+        direction LR
         P["Forms plugin · Skill · MCP<br/>CLI · Dashboard"]
         C["Constraint layer inject · audit · rollback · evolve"]
         F["Methodology FDE four phases<br/>map → build → deploy → depart"]
         P ~~~ C ~~~ F
     end
-    H -->|"mount capability layer"| S
-    S -->|"on-site · doing FDE for the enterprise"| D["Dual-graph delivery<br/>business graph + ontology graph"]
-    D --> N["AI nodes<br/>host executes → constraint audit"]
+    subgraph A["Agent layer (executors · not replaced)"]
+        A1["DSH · OpenClaw · WorkBuddy<br/>model + tools + sessions"]
+    end
+    M -->|"govern models: register / rollout / train / deploy"| H
+    H -->|"constrain Agents: inject / audit / rollback / evolve"| A
+    A -->|"on-site · doing FDE for the enterprise"| D["Dual-graph delivery<br/>business graph + ontology graph"]
+    D --> N["AI nodes<br/>host executes → Harness audit"]
     N -.->|"7×24 self-running · blocks violations · rolls back breakage"| N
 ```
 
@@ -75,7 +80,7 @@ graph LR
 
 The core of this release: officially united with [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (DSH) to become a complete FDE Agent.
 
-**1 · Why DSH**: DeepSeek's official open-source Agent framework, built on the [Cordis](https://github.com/cordiverse/cordis) runtime under the "Everything is a Plugin" philosophy — its plugin model naturally fits the platform-agnostic capability layer, and it is the host sofagent integrates with most deeply today.
+**1 · Why DSH**: DeepSeek's official open-source Agent framework, built on the [Cordis](https://github.com/cordiverse/cordis) runtime under the "Everything is a Plugin" philosophy — its plugin model naturally fits the platform-agnostic FDE Harness layer, and it is the host sofagent integrates with most deeply today.
 
 **2 · How**: the four constraint-layer capabilities (injection · audit · rollback · evolution) are packaged into 9 `cordis-plugin-sofagent-*` plugins, all live-mounted into DSH (Plugin list shows 9 Enabled), installable independently and adopted progressively:
 
@@ -111,7 +116,7 @@ The core of this release: officially united with [DeepSeek Harness](https://gith
 
 ## Multi-platform Mounting
 
-Rides on top of the Agents you already use — it doesn't replace the model, only adds reliable execution. **The FDE capability layer is platform-agnostic** (five forms — plugin / Skill / MCP / CLI / Dashboard — distributed by host capability); the methodology follows the business, not the platform:
+Sits between the Agents you already use and the model layer — it doesn't replace the model, only adds reliable execution. **The FDE Harness layer is platform-agnostic** (five forms — plugin / Skill / MCP / CLI / Dashboard — distributed by host capability); the methodology follows the business, not the platform:
 
 | Tier | Platform | Constraint injection | Mounting method |
 |------|----------|---------------------|-----------------|
