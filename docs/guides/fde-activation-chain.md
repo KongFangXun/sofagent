@@ -2,7 +2,7 @@
 
 > 项目：sofagent · 2026-08-01 战略讨论
 > 作者：孔放勋
-> 状态：Phase 1-4 全部已实现（v1.2.5-v1.3.0）
+> 状态：Phase 1-4（ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN）全部已实现
 > 灵感来源：用户提出"FDE Agent 读自己的交付物，自动生成企业 sub-agent"
 
 ---
@@ -54,7 +54,7 @@ FDE 诊断完成（交付物就绪）
     │
     ▼
 ┌─────────────────────────────────────────┐
-│  Phase 1: ACTIVATE（激活）     [v1.2.5]  │
+│  Phase 1: ACTIVATE（激活）               │
 │  读交付物 → 注册企业 SubAgent            │
 │  新增 activate.ts                        │
 └──────────────┬──────────────────────────┘
@@ -62,39 +62,24 @@ FDE 诊断完成（交付物就绪）
                ▼
 ┌─────────────────────────────────────────┐
 │  Phase 2: ORCHESTRATE（编排）           │
-│  [v1.2.6] 前半：映射表+注册扩展          │
-│  [v1.2.7] 后半：StateGraph 构建          │
+│  映射表+注册扩展 → StateGraph 构建        │
 │  扩展 composer.ts + workflow-parser.ts   │
 └──────────────┬──────────────────────────┘
                │
                ▼
 ┌─────────────────────────────────────────┐
 │  Phase 3: EXECUTE（执行）               │
-│  [v1.2.8] 前半：dag-runner+节点执行器    │
-│  [v1.2.9] 后半：HITL+审计集成+异常处理   │
+│  dag-runner+节点执行器 → HITL+审计集成+异常处理 │
 │  扩展 dag-runner.ts                      │
 └──────────────┬──────────────────────────┘
                │
                ▼
 ┌─────────────────────────────────────────┐
-│  Phase 4: SUSTAIN（持续）    [v1.3.0]    │
+│  Phase 4: SUSTAIN（持续）               │
 │  全闭环验证 + wrapToolCall 联动          │
 │  已有 sustain 模式 + think.md            │
 └─────────────────────────────────────────┘
 ```
-
----
-
-## 版本分配表
-
-| 版本 | 激活链增量 | 对应 Phase |
-|------|-----------|-----------|
-| **v1.2.5** | activate.ts + workflow.yml 扩展 + subagents/*.yml 写入 + dry-run + MCP tool | Phase 1 完整 |
-| **v1.2.6-7** | workflow-parser 扩展 + composeEnterpriseWorkflow + LangGraph StateGraph 构建 | Phase 2 |
-| **v1.2.8-9** | dag-runner 扩展 + run-enterprise CLI + HITL interrupt + 审计集成 + 异常处理 | Phase 3 |
-| **v1.3.0** | 激活链收尾——全闭环验证 + wrapToolCall 联动 + 企业业务流审计 | Phase 4 收尾 |
-
-> 开发每个版本时读本文档作为设计指引。各 Phase 的开发 Prompt 仅作开发过程内部参考，不随仓库分发。
 
 ---
 
@@ -536,7 +521,7 @@ async function executeNode(node, state) {
 | `engine/orchestrator/src/dag-runner.ts` | 扩展支持企业 Agent + HITL 节点 |
 | `engine/orchestrator/src/cli.ts` | 新增 `activate` 子命令 + `run-enterprise` 子命令 |
 | `engine/mcp/src/mcp-server.ts` | 注册 `activate_workflow` tool |
-| `SKILL/agents/fde/SKILL.md` | v1.3.0 | FDE §8 新增 activate 引导（交付后执行 activate） |
+| `SKILL/agents/fde/SKILL.md` | FDE §8 新增 activate 引导（交付后执行 activate） |
 
 ### 依赖关系
 
