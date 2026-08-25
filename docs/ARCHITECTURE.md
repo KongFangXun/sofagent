@@ -2,7 +2,7 @@
 
 > 设计决策记录——从为什么存在、约束层四种能力如何协作，到每个关键决策的工程理由。
 >
-> **产品定位锚定**：本架构服务的产品 = **一个 FDE Agent**（sofagent）——执行「给企业做 AI 落地」这条 workflow 的 Agent，以 LangGraph + 约束层为内核（ExecutionBackend 抽象，可扩展其他 Agent 运行时；DeepSeek Harness 为商业侧可选内核），plugin + skill + MCP + CLI + dashboard 为调用面，约束底座（注入·审计·回溯·进化）+ FDE 方法论为行为层（产品叙事见 [WIKI §二](./WIKI.md#二产品叙事sofagent-是一个-fde-agent)）。
+> **产品定位锚定**：本架构服务的产品 = **FDE 能力层**（sofagent）——不造 Agent，骑在成熟 Agent（DSH / OpenClaw / WorkBuddy）之上，给「给企业做 AI 落地」这条 workflow 的执行体装 FDE 能力：plugin + skill + MCP + CLI + dashboard 为调用面，约束底座（注入·审计·回溯·进化）+ FDE 方法论为行为层（产品叙事见 [WIKI §二](./WIKI.md#二产品叙事sofagent-是-fde-能力层不造-agent给-agent-装-fde-能力)）。
 > v1.4.0 · 2026-08-23（UTC）
 
 <img src="assets/sofagent.png" alt="sofagent" width="160" />
@@ -198,7 +198,7 @@ Agent = **模型 + 上下文 + 工具 + 状态 + 执行控制 + 权限 + 可观�
 | ab-test | A/B 自进化：current vs candidate 并行对比，连续胜出 + 非退化守卫才晋升 | ✅ 已实现 |
 | orchestrator | 编排引擎：DAG 任务拆解 + LangGraph 闭环 + A/B 调度器 + ToolGate 事前拦截 + Ontology 运行时层 + 并行编排（MergeQueue/ParallelScheduler/波次卡关）+ Durable Execution + Onboard L1-L5 + Benchmark 评测 + agent-creation + FDE 梳理辅助 + Session 隔离 + meta-harness 多 harness 编排 + worklog 工作明细数据层 | ✅ 已实现（1070 测试） |
 | daemon | 守护进程：cron + fs 监听 + 文件级审计 + USB 烧录 + 联邦查询 + Dream Cycle 6 阶段 + 启动 LOOP 续跑检查 + 审计轨迹聚合巡检 | ✅ 已实现（267 测试） |
-| mcp | MCP Server：JSON-RPC 2.0 over stdio，tools + resources（66 tools） | ✅ 已实现 |
+| mcp | MCP Server：JSON-RPC 2.0 over stdio，tools + resources（67 tools） | ✅ 已实现 |
 | ontology | 领域本体：合并 / 状态 / 视图 / 概念合成，三层 YAML 自动生长 | ✅ 已实现 |
 | skillopt | Skill 优化：复用 audit 规则做安全审查 + 集成优化 + 回填 | ✅ 已实现 |
 | think | 思考链分析：基于 diff + 审计结果自动生成 think.md 反思条目（append-only） | ✅ 已实现（⚠️ 仅 MCP/CLI 路径触发，git hook 路径不自动生成） |

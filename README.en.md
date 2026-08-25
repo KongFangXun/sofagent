@@ -18,9 +18,9 @@
 
 ## What is this
 
-**An open-source FDE Agent.** On entry: map the business flow clearly, build the ontology graph, deploy the AI nodes in place. On departure: audit every change and keep optimizing.
+**An open-source FDE capability layer.** The AI-deployment engineer for one-person companies and SMBs — never sleeps, never leaves, and carries its own auditor. Shipped as **FDE plugins + Skill + MCP + CLI + Dashboard**, riding on top of mature Agents (DSH / OpenClaw / WorkBuddy): on entry, map the business flow clearly, build the ontology graph, deploy the AI nodes in place; on departure, audit every change and keep optimizing.
 
-It ships on [ClawHub](https://clawhub.ai/kongfangxun/skills/sofagent) as an **FDE Skill** (a methodology skill that helps everyone at SMBs and OPCs become the FDE of their own business), and once installed on enterprise devices it runs long-term as a **constraint-layer (Harness) engine**.
+sofagent does not build its own Agent — execution is delegated to mature hosts (model + tools + sessions). What it delivers is the **FDE capability surface**: methodology + constraint layer + audit, turning any existing Agent into one that "does enterprise AI deployment like an FDE".
 
 > 🏞️ Big tech hands you "water" (foundation models) and "riverbeds" (Agent platforms) — but the water is raw, and you don't dare drink it straight. sofagent is the engineering that makes the river usable for a whole city: dams keep the water from flooding, treatment plants turn raw water into drinking water, and pipe networks deliver it to every faucet. Models supply 90% of the intelligence; sofagent supplies the 10% of reliable execution.
 
@@ -28,14 +28,14 @@ It ships on [ClawHub](https://clawhub.ai/kongfangxun/skills/sofagent) as an **FD
 
 - 🧭 **Map the business flow on entry** — five-element deep-dive + three-question triage, capturing every role's process steps and pricing out what each AI node is worth
 - 🤖 **Deploy AI nodes** — three-layer deliverables (documents + Skills + runtime), installed into your existing AI tools; from "you do the work" to "you delegate the work"
-- 🏠 **Stay resident after departure** — the FDE Agent remains for inspection, audit, and optimization, 7×24 online; the human leaves, governance doesn't
+- 🏠 **Stay resident after departure** — the FDE capability remains for inspection, audit, and optimization, 7×24 online; the human leaves, governance doesn't
 - 🔍 **Zero-setup audit** — `npx -y -p @sofagent/audit sofagent-audit`, auditing the latest commit of any git repo in seconds (single-machine measured: quick ~1.1s, 50k-line diff ~6.1s; see [HANDBOOK](./docs/HANDBOOK.md))
 - 🧱 **24 audit rules** — secret leaks, out-of-scope edits, injection defense, privilege red lines; judged on git diff hard evidence, violations blocked on the spot (quick runs 17 by default; full 24 = 17 default + 7 extensions)
 - 🛡️ **Automatic snapshot rollback** — auto-archived after every audit, one-click restore to any snapshot when something breaks
 
 ## What is an FDE Agent
 
-**FDE = Forward Deployed Engineer** — the person who embeds models into real enterprise operations. sofagent turns this role into an open-source Agent that walks a full FDE business flow through four phases:
+**FDE = Forward Deployed Engineer** — the person who embeds models into real enterprise operations. sofagent turns this role into an open-source capability layer, so that the Agents you already have (DSH / OpenClaw / WorkBuddy) gain FDE capability and walk a full FDE business flow through four phases:
 
 - **Phase 1 · Map the business flow on entry** — five-element deep-dive + three-question triage, capturing each role's input / output / owner / time cost / pain points, and calculating what each AI node is worth
 - **Phase 2 · Build dual graphs** — business graph (system boundaries, data flows) + ontology graph (shared semantic foundation), turning the enterprise into a machine-readable structure
@@ -46,14 +46,19 @@ Official slogan: **Map business flows · Build ontology graphs · Deploy AI node
 
 ```mermaid
 graph LR
-    subgraph S["One FDE Agent · sofagent"]
-        direction TB
-        K["Kernel LangGraph + constraint layer<br/>ExecutionBackend abstraction"] ~~~ B["Behavior layer constraint base<br/>injection · audit · rollback · evolution"]
-        I["Call surface plugin + skill + MCP<br/>+ dashboard + CLI"] ~~~ M["Methodology FDE four phases<br/>map → build → deploy → depart"]
-        K ~~~ I
+    subgraph H["Mature Agent hosts<br/>DSH · OpenClaw · WorkBuddy"]
+        M["Model + tools + sessions<br/>execution capability"]
     end
+    subgraph S["sofagent · FDE capability layer"]
+        direction TB
+        P["Forms plugin · Skill · MCP<br/>CLI · Dashboard"]
+        C["Constraint layer inject · audit · rollback · evolve"]
+        F["Methodology FDE four phases<br/>map → build → deploy → depart"]
+        P ~~~ C ~~~ F
+    end
+    H -->|"mount capability layer"| S
     S -->|"on-site · doing FDE for the enterprise"| D["Dual-graph delivery<br/>business graph + ontology graph"]
-    D --> N["AI nodes<br/>LangGraph orchestration → Harness execution → constraint audit"]
+    D --> N["AI nodes<br/>host executes → constraint audit"]
     N -.->|"7×24 self-running · blocks violations · rolls back breakage"| N
 ```
 
@@ -97,7 +102,7 @@ The core of this release: officially united with [DeepSeek Harness](https://gith
 
 **Other new capabilities in this release** (see the [devlog](./docs/changelog/v1.4/v1.4.0.md); earlier versions in [CHANGELOG](./CHANGELOG.md)):
 
-- **Dashboard productization**: Web worklog page (by Agent / by Workflow / weekly trend / human-in-the-loop, four views) + graph panel (FDE dual graphs: business graph + ontology graph + MCP tool view 66 tools + skill load-chain visualization) + single-file HTML ships with `install.sh` (`worklog.json` falls back to sample data)
+- **Dashboard productization**: Web worklog page (by Agent / by Workflow / weekly trend / human-in-the-loop, four views) + graph panel (FDE dual graphs: business graph + ontology graph + MCP tool view 67 tools + skill load-chain visualization) + single-file HTML ships with `install.sh` (`worklog.json` falls back to sample data)
 - **Cost audit**: overspend warning (WARN only) + `cost_query` MCP tool + `DecisionKind.COST` traceability
 - **Dual plugin families**: 9 DSH-form plugins (above) + 4 code-plugins in OpenClaw form (ClawHub ready) + shared precommit hook for Cursor / Claude Code
 - **Cross-device**: federation end-to-end (pairing / encrypted query / tamper detection / offline fallback — S320 + S322 dual coverage) + remote API channel (C/S control plane, contract documented)
@@ -106,7 +111,7 @@ The core of this release: officially united with [DeepSeek Harness](https://gith
 
 ## Multi-platform Mounting
 
-Rides on top of the Agents you already use — it doesn't replace the model, only adds reliable execution. The constraint layer is platform-agnostic; the methodology follows the business, not the platform:
+Rides on top of the Agents you already use — it doesn't replace the model, only adds reliable execution. **The FDE capability layer is platform-agnostic** (five forms — plugin / Skill / MCP / CLI / Dashboard — distributed by host capability); the methodology follows the business, not the platform:
 
 | Tier | Platform | Constraint injection | Mounting method |
 |------|----------|---------------------|-----------------|

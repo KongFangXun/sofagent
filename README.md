@@ -15,9 +15,9 @@
 
 ## 这是什么
 
-**开源 FDE Agent。**进场，把业务流梳理清楚、把本体图谱构建起来、把 AI 节点部署到位；离场，审计每一次变更，持续优化。
+**开源 FDE 能力层。**一人公司 / 小企业的 AI 落地工程师——不睡觉、不离职、自带审计官。以 **FDE 插件 + Skill + MCP + CLI + Dashboard** 五种形态，骑在成熟 Agent（DSH / OpenClaw / WorkBuddy）之上：进场，把业务流梳理清楚、把本体图谱构建起来、把 AI 节点部署到位；离场，审计每一次变更，持续优化。
 
-以 [FDE Skill](https://clawhub.ai/kongfangxun/skills/sofagent) 形态在 ClawHub 分发（帮 SMB · OPC 的每个人成为自己业务的 FDE 的方法论 Skill），装到企业设备后以**约束层（Harness）引擎**长期运行。
+sofagent 不造 Agent——执行能力交给成熟宿主（模型 + 工具 + 会话），它交付的是 **FDE 能力面**：方法论 + 约束层 + 审计，让任何已有 Agent 变成「会做企业 AI 落地的 FDE」。
 
 > 🏞️ 大厂给你"水"（大模型）和"河床"（Agent 平台），但水是原水，你不敢直接喝。sofagent 是帮你把河里的水让整个城市用起来的工程——堤坝不让水泛滥、自来水厂把原水变直饮水、管网把水送到每家每户的水龙头。模型给 90% 的智力，sofagent 补 10% 的可靠执行。
 
@@ -25,14 +25,14 @@
 
 - 🧭 **进场梳理业务流**——五要素深挖 + 三问判定法，把每个岗位环节摸清，算清每个 AI 节点值多少钱
 - 🤖 **部署 AI 节点**——三层交付物（文档层 + Skill 层 + 运行层），装进你已有的 AI 工具，从"你干活"变"你派活"
-- 🏠 **离场后常驻**——FDE Agent 留下巡检、审计、优化，7×24 在线，人离场治理不离开
+- 🏠 **离场后常驻**——FDE 能力留下巡检、审计、优化，7×24 在线，人离场治理不离开
 - 🔍 **零配置审计**——`npx -y -p @sofagent/audit sofagent-audit`，任何 git 仓库秒级审计最近一次 commit（单机实测：quick 约 1.1s、5 万行 diff 约 6.1s，口径见 [HANDBOOK](./docs/HANDBOOK.md)）
 - 🧱 **24 条审计规则**——密钥泄漏、越界编辑、注入防御、权限红线，git diff 硬证据判定，违规当场拦截（quick 默认 17 条，完整 24 条 = 17 默认 + 7 扩展）
 - 🛡️ **自动快照回溯**——每次审计后自动存档，出事一键回到任意快照
 
 ## 什么是 FDE Agent
 
-**FDE = Forward Deployed Engineer（前线部署工程师）**——把模型塞进企业真实业务里的人。sofagent 把这个角色做成开源 Agent，四个阶段走完一条完整的 FDE 业务流：
+**FDE = Forward Deployed Engineer（前线部署工程师）**——把模型塞进企业真实业务里的人。sofagent 把这个角色做成开源能力面，让你已有的 Agent（DSH / OpenClaw / WorkBuddy）具备 FDE 能力，四个阶段走完一条完整的 FDE 业务流：
 
 - **一、进场梳理业务流**——五要素深挖 + 三问判定法，把每个岗位环节的输入 / 输出 / 负责人 / 耗时 / 痛点摸清，算清每个 AI 节点值多少钱
 - **二、构建双图谱**——业务图谱（系统边界、数据流向）+ 本体图谱（共享语义底座），把企业变成机器可读的结构
@@ -43,14 +43,19 @@
 
 ```mermaid
 graph LR
-    subgraph S["一个 FDE Agent · sofagent"]
-        direction TB
-        K["内核 LangGraph + 约束层<br/>ExecutionBackend 抽象"] ~~~ B["行为层 约束底座<br/>注入 · 审计 · 回溯 · 进化"]
-        I["调用面 plugin + skill + MCP<br/>+ CLI + dashboard"] ~~~ M["方法论 FDE 四阶段<br/>梳理 → 构建 → 部署 → 离场"]
-        K ~~~ I
+    subgraph H["成熟 Agent 宿主<br/>DSH · OpenClaw · WorkBuddy"]
+        M["模型 + 工具 + 会话<br/>执行能力"]
     end
+    subgraph S["sofagent · FDE 能力面"]
+        direction TB
+        P["形态 插件 · Skill · MCP<br/>CLI · Dashboard"]
+        C["约束层 注入 · 审计 · 回溯 · 进化"]
+        F["方法论 FDE 四阶段<br/>梳理 → 构建 → 部署 → 离场"]
+        P ~~~ C ~~~ F
+    end
+    H -->|"挂载能力面"| S
     S -->|"进场 · 给企业做 FDE"| D["双图谱交付<br/>业务图谱 + 本体图谱"]
-    D --> N["AI 节点<br/>LangGraph 编排 → Harness 执行 → 约束审计"]
+    D --> N["AI 节点<br/>宿主执行 → 约束审计"]
     N -.->|"7×24 自运转 · 越界能拦 · 出事能回滚"| N
 ```
 
@@ -90,7 +95,7 @@ graph LR
 
 **本版其他新能力**（详见[开发日志](./docs/changelog/v1.4/v1.4.0.md)，更早版本见 [CHANGELOG](./CHANGELOG.md)）：
 
-- **Dashboard 产品化**：Web 工作明细页（按 Agent / Workflow / 周趋势 / 人工介入四视角）+ 图谱栏（FDE 双图谱：业务图谱 + 本体图谱 + MCP 工具视图 66 tools + skill 加载链四层可视化）+ 单文件 HTML 随 `install.sh` 装到用户机（`worklog.json` 无数据自动降级）
+- **Dashboard 产品化**：Web 工作明细页（按 Agent / Workflow / 周趋势 / 人工介入四视角）+ 图谱栏（FDE 双图谱：业务图谱 + 本体图谱 + MCP 工具视图 67 tools + skill 加载链四层可视化）+ 单文件 HTML 随 `install.sh` 装到用户机（`worklog.json` 无数据自动降级）
 - **成本审计**：超支告警（WARN only 不拦截）+ `cost_query` MCP tool + `DecisionKind.COST` 决策日志追溯
 - **插件家族双轨**：DSH 形态 9 款插件（如上）+ OpenClaw 形态 4 款 code-plugin（ClawHub 发布就绪）+ Cursor / Claude Code 共享 precommit hook 拦截
 - **跨设备**：联邦查询端到端（配对 / 加密查询 / 篡改检测 / 离线降级——S320 + S322 双覆盖）+ 远程 API 通道（C/S 控制面契约文档化）
@@ -99,7 +104,7 @@ graph LR
 
 ## 多平台挂载
 
-骑在你已有的 Agent 之上，不替代模型，只补可靠执行——约束层平台无关，方法论跟着业务走，不跟着平台走：
+骑在你已有的 Agent 之上，不替代模型，只补可靠执行——**FDE 能力面平台无关**（插件 / Skill / MCP / CLI / Dashboard 五种形态按宿主能力分发），方法论跟着业务走，不跟着平台走：
 
 | 档位 | 平台 | 约束注入 | 挂载方式 |
 |------|------|---------|---------|
