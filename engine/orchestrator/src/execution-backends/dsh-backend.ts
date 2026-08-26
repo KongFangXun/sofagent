@@ -227,7 +227,23 @@ function normalizeParameters(schema: unknown): Record<string, unknown> {
     return { type: 'object', properties: {} };
   }
   const s = schema as Record<string, unknown>;
-  // zod schema 对象（带 _def/shape）——提取 shape 转 JSON Schema 太重，给空对象签名
+  // 🔴 zod schema 优先检测（v1.4.1 判断层 run-01 根因修复）：
+  // zod 对象自带 type 属性（值 'object'），下方 `'type' in s` 会被骗过——整个 zod
+  // 对象（含 toJSONSchema/parse/def 等方法）透传给 tools.register 后，DSH 组装
+  // LLM 请求序列化含函数的 parameters 失败 → turn 立即 end、零 LLM 调用、静默空返回。
+  // zod v4 起有 toJSONSchema()——先检测再转换，产物为纯 JSON Schema。
+  if (typeof (s as { toJSONSchema?: unknown }).toJSONSchema === 'function') {
+    try {
+      const jsonSchema = (s as { toJSONSchema: () => unknown }).toJSONSchema();
+      if (jsonSchema && typeof jsonSchema === 'object') {
+        return jsonSchema as Record<string, unknown>;
+      }
+    } catch {
+      // toJSONSchema() 抛错（zod 版本差异）——落空对象签名兜底，绝不透传 zod 对象
+    }
+    return { type: 'object', properties: {} };
+  }
+  // zod v3 老形态（带 _def/shape 无 toJSONSchema）——提取太重，给空对象签名
   // （LangGraph 侧 convertToLangGraphTools 已做过 zod 适配，到这里的一般是 JSON Schema）
   if ('type' in s || 'properties' in s) {
     return s;
