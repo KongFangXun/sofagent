@@ -7,6 +7,7 @@
 // 4. Trajectory 采集 PoC（事件落记录 / flush JSONL / failure-log 同步消费）
 // 5. argv[1] 守卫（v1.4.0：node -e 宿主下 cordis-plugin-hmr 兼容）
 // 6. 工具注入（v1.4.1：registerSofagentTools——tools.register 接线 + 防御式降级）
+// 7. zod schema 泄漏防御（v1.4.1：normalizeParameters zod 优先检测——判断层 run-01 根因修复）
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { mkdtempSync, rmSync, readFileSync, existsSync } from 'fs';
@@ -135,6 +136,96 @@ describe('convertTools 三段式转换', () => {
       null,
     ]);
     expect(defs).toHaveLength(0);
+  });
+});
+
+// ────────────────────────────────────────────────────────────
+// zod schema 泄漏防御（v1.4.1：normalizeParameters zod 优先检测）
+//
+// 根因：LangChain tool 的 schema 字段是 zod 对象，zod v4 起自带 type 属性（值
+// 'object'），'type' in s 检测被骗过 → 整个 zod 实例（含 toJSONSchema/parse/def
+// 等方法）透传给 tools.register → DSH 组装 LLM 请求序列化含函数的 parameters
+// 失败 → turn 立即 end、零 LLM 调用、静默空返回。此组用例锁死该泄漏路径。
+// ────────────────────────────────────────────────────────────
+
+/** 模拟 zod v4 对象形态（duck-typing，不依赖真实 zod 包）：type 属性 + toJSONSchema/parse/def 方法 */
+function fakeZodV4(overrides: Partial<{ toJSONSchema: () => unknown }> = {}) {
+  return {
+    type: 'object',
+    toJSONSchema: () => ({
+      type: 'object',
+      properties: { path: { type: 'string' } },
+      required: ['path'],
+    }),
+    parse: (input: unknown) => input,
+    def: { typeName: 'ZodObject' },
+    ...overrides,
+  };
+}
+
+describe('normalizeParameters zod schema 泄漏防御', () => {
+  it('zod v4 对象 → toJSONSchema() 转纯 JSON Schema，无任何 zod 方法残留', () => {
+    const defs = convertTools([
+      { name: 'check_version', description: '门禁', schema: fakeZodV4(), func: () => 'ok' },
+    ]);
+    expect(defs).toHaveLength(1);
+    const params = defs[0].parameters as Record<string, unknown>;
+    // 纯 JSON Schema——绝无 zod 实例泄漏（序列化安全）
+    expect(typeof (params as { toJSONSchema?: unknown }).toJSONSchema).toBe('undefined');
+    expect(typeof (params as { parse?: unknown }).parse).toBe('undefined');
+    expect('def' in params).toBe(false);
+    // 内容来自 toJSONSchema() 产物
+    expect(params.type).toBe('object');
+    expect(params.properties).toEqual({ path: { type: 'string' } });
+    expect(params.required).toEqual(['path']);
+  });
+
+  it('toJSONSchema() 抛错（zod 版本差异）→ 空对象签名兜底，绝不透传 zod 实例', () => {
+    const throwing = fakeZodV4({
+      toJSONSchema: () => {
+        throw new Error('zod version mismatch');
+      },
+    });
+    const defs = convertTools([
+      { name: 'bad_gate', description: '', schema: throwing, func: () => 'ok' },
+    ]);
+    expect(defs[0].parameters).toEqual({ type: 'object', properties: {} });
+  });
+
+  it('toJSONSchema() 返回非对象（null 等）→ 空对象签名兜底', () => {
+    const weird = fakeZodV4({ toJSONSchema: () => null });
+    const defs = convertTools([
+      { name: 'weird_gate', description: '', schema: weird, func: () => 'ok' },
+    ]);
+    expect(defs[0].parameters).toEqual({ type: 'object', properties: {} });
+  });
+
+  it('zod v3 老形态（_def/shape 无 toJSONSchema）→ 空对象签名兜底', () => {
+    const zodV3 = { _def: { typeName: 'ZodObject' }, shape: {} };
+    const defs = convertTools([
+      { name: 'v3_tool', description: '', schema: zodV3, func: () => 'ok' },
+    ]);
+    expect(defs[0].parameters).toEqual({ type: 'object', properties: {} });
+  });
+
+  it('zod 转纯 JSON Schema 后可直接喂 registerSofagentTools（转换-注册管道贯通）', () => {
+    const ctx = createFakeRuntime();
+    const { svc, registered } = createFakeToolsService();
+    (ctx as unknown as { get: (k: string) => unknown }).get = (k: string) =>
+      k === 'tools' ? svc : undefined;
+
+    const defs = convertTools([
+      { name: 'gate_check', description: '门禁', schema: fakeZodV4(), func: () => 'gate-ok' },
+    ]);
+    const n = registerSofagentTools(ctx, defs);
+    expect(n).toBe(1);
+    // 注册产物 execute 保 wrapper + parameters 为纯 JSON Schema
+    const def = registered[0].def as {
+      parameters: Record<string, unknown>;
+      execute: (a: Record<string, unknown>) => unknown;
+    };
+    expect(def.parameters.properties).toEqual({ path: { type: 'string' } });
+    expect(def.execute({ path: '/a' })).toBe('gate-ok');
   });
 });
 
