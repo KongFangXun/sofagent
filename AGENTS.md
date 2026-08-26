@@ -1,6 +1,8 @@
 # AGENTS.md · sofagent Codex 适配（薄挂载）
 
 > 本文件是 Codex CLI 的顶层指令挂载点（AGENTS.md 约定），**不含规范内容**——四层加载链的规范资产唯一来源是 sofagent 的 `SKILL/` 目录（单一真相源）。规则更新只发生在 SKILL/，本文件永不复制它们。
+>
+> 区分：`FORGE/SKILL/` 不是规范资产——它仅存放 FORGE 内部循环（fresh-eyes-loop、release-gate-loop）的技能定义，与根 `SKILL/` 规范目录同名但职责无关。
 
 ## 会话开始时按序加载（四层加载链）
 

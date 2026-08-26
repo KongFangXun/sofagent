@@ -491,8 +491,8 @@ install.sh 是 sofagent 的一键安装脚本。以下是其完整行为清单�
 
 #### 脚本不会做的事
 
-- ❌ 不会 `sudo`——所有操作在用户权限范围内
-- ❌ 不会改系统文件——不碰 `/etc`、`/usr`、`/System`
+- ⚠️ 不会交互式提权（不弹密码框）——仅当 symlink 目标目录不可写且 sudo NOPASSWD 已配置时，以非交互 `sudo -n` 注册 CLI 命令（失败则回退 `~/.local/bin`），其余操作在用户权限范围内
+- ❌ 不会改系统文件——不碰 `/etc`、`/System`（`/usr/local/bin` 仅创建一个 symlink）
 - ❌ 除安装时的 npm 依赖拉取（见上表）与 `--remote` 模式的 git clone 外，**运行时不联网**——安装后的审计引擎、daemon、MCP server 均不发起网络请求（webhook 为可选功能需显式配置）
 - ❌ 不会执行远程脚本（`--remote` 模式只做 git clone 官方仓库）
 - ❌ 不会收集或上传任何用户数据

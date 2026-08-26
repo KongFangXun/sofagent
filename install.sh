@@ -299,16 +299,23 @@ migrate_to_install_dir() {
 
   if [ -d "$old_data" ] && [ "$(ls -A "$old_data" 2>/dev/null)" ]; then
     info "检测到旧数据目录 ${old_data}，开始迁移..."
-    # 不覆盖已有文件（cp -Rn）
-    cp -Rn "$old_data"/. "$new_data"/ 2>/dev/null || true
-    # 迁移成功后清理仓库内的 data/
-    [ -n "$old_data" ] && rm -rf "$old_data"
+    # 迁移完整性优先：cp -R 全量复制（含覆盖），失败时保留源目录绝不删除（防"复制失败但删除成功"丢数据）
+    if cp -R "$old_data"/. "$new_data"/ 2>/dev/null; then
+      rm -rf "$old_data"
+    else
+      warn "迁移复制失败，源目录已保留：${old_data} → ${new_data}（请手动检查后重试）"
+      return 1
+    fi
     # 同步迁移引擎内部状态（.sofagent/ → internal/）
     local old_internal="${SCRIPT_DIR}/.sofagent"
     local new_internal="$SOFAGENT_HOME/internal"
     if [ -d "$old_internal" ]; then
-      cp -Rn "$old_internal"/. "$new_internal"/ 2>/dev/null || true
-      [ -n "$old_internal" ] && rm -rf "$old_internal"
+      if cp -R "$old_internal"/. "$new_internal"/ 2>/dev/null; then
+        rm -rf "$old_internal"
+      else
+        warn "迁移复制失败，源目录已保留：${old_internal} → ${new_internal}（请手动检查后重试）"
+        return 1
+      fi
     fi
     ok "数据已迁移到 ${SOFAGENT_HOME}"
   fi
@@ -319,9 +326,13 @@ migrate_to_install_dir() {
     local old_path
     old_path=$(tr -d '[:space:]' < "$old_marker" 2>/dev/null)
     if [ -n "$old_path" ] && [ -d "$old_path" ]; then
-      cp -Rn "$old_path"/. "$new_data"/ 2>/dev/null || true
-      rm -f "$old_marker"
-      ok "旧版安装数据已迁移"
+      # 同迁移纪律：复制失败保留源、绝不删除
+      if cp -R "$old_path"/. "$new_data"/ 2>/dev/null; then
+        rm -f "$old_marker"
+        ok "旧版安装数据已迁移"
+      else
+        warn "旧版数据迁移失败，源目录已保留：${old_path}（请手动检查后重试）"
+      fi
     fi
   fi
 }
@@ -670,8 +681,19 @@ CLIEOF
 
   # symlink 到 PATH（优先 /usr/local/bin，fallback ~/.local/bin）
   local target="/usr/local/bin/sofagent"
-  if [ -w "/usr/local/bin" ] || sudo -n true 2>/dev/null; then
-    ln -sf "$bin_dir/sofagent" "$target" 2>/dev/null || true
+  local registered=0
+  if [ -w "/usr/local/bin" ]; then
+    if ln -sf "$bin_dir/sofagent" "$target" 2>/dev/null; then
+      registered=1
+    fi
+  elif sudo -n true 2>/dev/null; then
+    # 进入此分支 = /usr/local/bin 不可写且 sudo NOPASSWD 可用——ln 必须带 sudo 前缀
+    if sudo ln -sf "$bin_dir/sofagent" "$target" 2>/dev/null; then
+      registered=1
+    fi
+  fi
+  if [ "$registered" -eq 1 ]; then
+    ok "  CLI 命令注册完成：sofagent → $target"
   else
     target="$HOME/.local/bin/sofagent"
     mkdir -p "$HOME/.local/bin"
@@ -684,9 +706,8 @@ CLIEOF
         warn "  echo 'export PATH=\"\$HOME/.local/bin:\$PATH\"' >> ~/.zshrc"
         ;;
     esac
+    ok "  CLI 命令注册完成：sofagent → $target"
   fi
-
-  ok "  CLI 命令注册完成：sofagent → $target"
 }
 
 # ── Skill 统一路径（Q3 决策：单一真相源 + symlink）──
