@@ -82,7 +82,7 @@ sofagent-npm-test/
 npm-p4-test/
 p4npx/
 t/
-stranger-audit-test/
+stranger-test/
 b.ts
 c.txt
 

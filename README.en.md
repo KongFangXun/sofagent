@@ -9,6 +9,8 @@
   <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.4.0-16B8F3" alt="Version" /></a>
 </p>
 
+> 📌 **Status**: v1.4.1 training-engine foundation is code-complete (**pending release** — npm and the install command below still serve v1.4.0; see [CHANGELOG](./CHANGELOG.md)).
+
 <p align="center">
   <a href="README.md">中文</a> · <a href="#v140-united-with-deepseek-harness">v1.4.0 × DSH</a> · <a href="#multi-platform-mounting">Multi-platform</a> · <a href="#fde-skill-system">Skill System</a> · <a href="#constraint-layer-harness">Constraint Layer</a> · <a href="#installation">Install</a> · <a href="#ecosystem--docs-index">Docs</a> · <a href="https://github.com/KongFangXun/sofagent">⭐ Star</a>
 </p>
@@ -107,7 +109,7 @@ The core of this release: officially united with [DeepSeek Harness](https://gith
 
 **Other new capabilities in this release** (see the [devlog](./docs/changelog/v1.4/v1.4.0.md); earlier versions in [CHANGELOG](./CHANGELOG.md)):
 
-- **Dashboard productization**: Web worklog page (by Agent / by Workflow / weekly trend / human-in-the-loop, four views) + graph panel (FDE dual graphs: business graph + ontology graph + MCP tool view 67 tools + skill load-chain visualization) + single-file HTML ships with `install.sh` (`worklog.json` falls back to sample data)
+- **Dashboard productization**: Web worklog page (by Agent / by Workflow / weekly trend / human-in-the-loop, four views) + graph panel (FDE dual graphs: business graph + ontology graph + MCP tool view 67 tools (since v1.4.1, pending release; v1.4.0 ships 66) + skill load-chain visualization) + single-file HTML ships with `install.sh` (`worklog.json` falls back to sample data)
 - **Cost audit**: overspend warning (WARN only) + `cost_query` MCP tool + `DecisionKind.COST` traceability
 - **Dual plugin families**: 9 DSH-form plugins (above) + 4 code-plugins in OpenClaw form (ClawHub ready) + shared precommit hook for Cursor / Claude Code
 - **Cross-device**: federation end-to-end (pairing / encrypted query / tamper detection / offline fallback — S320 + S322 dual coverage) + remote API channel (C/S control plane, contract documented)

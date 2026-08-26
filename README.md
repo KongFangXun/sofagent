@@ -7,6 +7,8 @@
   <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.4.0-16B8F3" alt="Version" /></a>
 </p>
 
+> 📌 **当前状态**：v1.4.1 训练引擎地基已开发完成（**待发版**——npm 与下方安装命令暂为 v1.4.0，训练能力随 v1.4.1 发布提供，见 [CHANGELOG](./CHANGELOG.md)）。
+
 <p align="center">
   <a href="README.en.md">English</a> · <a href="#v140结合-deepseek-harness">v1.4.0 × DSH</a> · <a href="#多平台挂载">多平台</a> · <a href="#fde-skill-体系">Skill 体系</a> · <a href="#约束层harness">约束层</a> · <a href="#安装">安装</a> · <a href="#生态与文档索引">文档</a> · <a href="https://github.com/KongFangXun/sofagent">⭐ Star</a>
 </p>
@@ -100,7 +102,7 @@ graph TB
 
 **本版其他新能力**（详见[开发日志](./docs/changelog/v1.4/v1.4.0.md)，更早版本见 [CHANGELOG](./CHANGELOG.md)）：
 
-- **Dashboard 产品化**：Web 工作明细页（按 Agent / Workflow / 周趋势 / 人工介入四视角）+ 图谱栏（FDE 双图谱：业务图谱 + 本体图谱 + MCP 工具视图 67 tools + skill 加载链四层可视化）+ 单文件 HTML 随 `install.sh` 装到用户机（`worklog.json` 无数据自动降级）
+- **Dashboard 产品化**：Web 工作明细页（按 Agent / Workflow / 周趋势 / 人工介入四视角）+ 图谱栏（FDE 双图谱：业务图谱 + 本体图谱 + MCP 工具视图 67 tools（v1.4.1 起，待发版；v1.4.0 为 66）+ skill 加载链四层可视化）+ 单文件 HTML 随 `install.sh` 装到用户机（`worklog.json` 无数据自动降级）
 - **成本审计**：超支告警（WARN only 不拦截）+ `cost_query` MCP tool + `DecisionKind.COST` 决策日志追溯
 - **插件家族双轨**：DSH 形态 9 款插件（如上）+ OpenClaw 形态 4 款 code-plugin（ClawHub 发布就绪）+ Cursor / Claude Code 共享 precommit hook 拦截
 - **跨设备**：联邦查询端到端（配对 / 加密查询 / 篡改检测 / 离线降级——S320 + S322 双覆盖）+ 远程 API 通道（C/S 控制面契约文档化）
