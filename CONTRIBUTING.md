@@ -52,12 +52,12 @@ bash install.sh && bash engine/scripts/verify.sh
 | 目录 | 内容 |
 |------|------|
 | `engine/` | 13 个 @sofagent/* npm 发布包（`audit` 审计引擎 / `core` 底座 / `daemon` 守护 / `orchestrator` 编排 / `mcp` / `rules` / `eval` / `think` / `skillopt` / `ontology` / `harness` / `ab-test` / `hooks/sofagent-load-chain` 加载链 Hook）——全部发布到 npm，12 个含 test script |
-| `engine/audit/src/rules/` | 审计规则实现（`rule-a*.ts` A1-A23 + `skill-safety-engine.ts`）；A20 网络外传 / A21 持久化后门 / A22 权限提升 / A23 路径穿越（v1.2.5 新增） |
-| `engine/audit/src/` | 审计核心：`audit-trail.ts` 审计轨迹聚合 + `protocol-neutrality.ts` 协议中立声明（v1.2.5 新增） |
+| `engine/audit/src/rules/` | 审计规则实现（`rule-a*.ts` A1-A23 + `skill-safety-engine.ts`）；A20 网络外传 / A21 持久化后门 / A22 权限提升 / A23 路径穿越 |
+| `engine/audit/src/` | 审计核心：`audit-trail.ts` 审计轨迹聚合 + `protocol-neutrality.ts` 协议中立声明 |
 | `engine/audit/src/permission/` | 权限配置加载与检查 |
-| `engine/core/src/` | 底座：配置加载 / 原子写入 / 审计历史哈希链 / 联邦合并 / 安全脱敏；`agent-identity.ts` Agent 身份码（v1.2.5 新增） |
-| `engine/daemon/src/` | 守护进程：cron / fs 监听 / 联邦查询 / Dream Cycle / 巡检器；`with-retry.ts` 推送重试 + `daemon-health.ts` 健康自检（v1.2.5 新增） |
-| `engine/orchestrator/src/` | 编排引擎：`activate.ts` 激活链 Phase 1（v1.2.5 新增——读 FDE 交付物 → 注册企业 SubAgent） |
+| `engine/core/src/` | 底座：配置加载 / 原子写入 / 审计历史哈希链 / 联邦合并 / 安全脱敏；`agent-identity.ts` Agent 身份码 |
+| `engine/daemon/src/` | 守护进程：cron / fs 监听 / 联邦查询 / Dream Cycle / 巡检器；`with-retry.ts` 推送重试 + `daemon-health.ts` 健康自检 |
+| `engine/orchestrator/src/` | 编排引擎：`activate.ts` 激活链 Phase 1（读 FDE 交付物 → 注册企业 SubAgent） |
 | `tools/` | 门禁脚本（`check-docs.sh` / `check-test-count.sh` / `pre-push-check.sh` / `sofagent-dashboard.sh`） |
 | `FORGE/` | 项目自迭代工具链（LOOP 流水线 / playbook / fresh-eyes 审查体系） |
 | `FDE/` | 前线部署方法论（GUIDE + templates） |
@@ -128,13 +128,13 @@ cd sofagent && bash install.sh && bash engine/scripts/verify.sh
 
 发版：按 [docs/changelog/releasing.md](./docs/changelog/releasing.md) 十二阶段 SOP 执行——阶段一~四（审查/开发/测试）→ 阶段五~八（审查体系/文档收尾）→ 阶段九~十（工具健康/确认关口）→ 阶段十一（发布：npm 13 包 + ClawHub/SkillHub 双分发 + tag + Release）→ 阶段十二（发布后收尾）。简版：`docs/changelog/vX.Y/vX.Y.Z.md` 写日志 → `CHANGELOG.md` 加索引 → `tools/release/bump-version.sh` 升级版本号 → `./tools/pre-push-check.sh` 全绿 → `git tag vX.Y && git push` → `gh release create vX.Y`。
 
-> 📋 **changelog 写作规范（v1.2.9 起）**：changelog 是对外公开文档，**不写人名、内部私有路径、内部工单/审查代号**。
+> 📋 **changelog 写作规范**：changelog 是对外公开文档，**不写人名、内部私有路径、内部工单/审查代号**。
 > - ❌ 不写开发成员名字或角色代号（如"某某拍板""供某某实现"）
 > - ❌ 不写本机私有路径（如 `~/Desktop/xxx-prompts/`），开发 Prompt 仅作内部参考不分发
 > - ❌ 不写内部工单 / 审查代号（如 `F-XX` / `P0-XX` / `FLAG-X`），改用描述性文字（"密钥泄漏修复""链校验重构"）
 > - ✅ 版本号、功能描述、行为变更、兼容性说明照常写
 >
-> 已发布版本（≤ v1.2.8）的 changelog 按"已发布不改"原则保留原样。
+> 已发布版本的 changelog 按"已发布不改"原则保留原样。
 
 ---
 

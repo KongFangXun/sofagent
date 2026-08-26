@@ -280,7 +280,7 @@ v1.3.9 起对所有 workspace 包的入口 export 做显式分级，CI 门禁（
 
 ### 已排期（开发中或即将开发，详见 ROADMAP）
 
-Dashboard Web 前端（`dashboard.html` 单文件控制台已落：驾驶舱/FDE 引导/AI 节点/本体数据/知识库/工具箱 6 页 + `tools/dashboard/serve-dashboard.mjs` 服务，读 `data/` 实时数据 + 示例降级；工作明细数据层 v1.3.9 + Web 工作明细页 v1.4.0）· 完整多设备协同 L2 · meta-harness 多 harness 编排（v1.3.9）· 本地推理 workflow 专属 LoRA 小模型（v3.x–v4.x 远景，纯画饼）。完整路线见 [六、已知局限与未来方向](#六已知局限与未来方向) 与 ROADMAP。
+Dashboard Web 前端（`dashboard.html` 单文件控制台已落：驾驶舱/FDE 引导/AI 节点/本体数据/知识库/工具箱 6 页 + `tools/dashboard/serve-dashboard.mjs` 服务，读 `data/` 实时数据 + 示例降级；工作明细数据层 v1.3.9 + Web 工作明细页 v1.4.0）· 完整多设备协同 L2 · meta-harness 多 harness 编排 · 本地推理 workflow 专属 LoRA 小模型（v3.x–v4.x 远景，纯画饼）。完整路线见 [六、已知局限与未来方向](#六已知局限与未来方向) 与 ROADMAP。
 >
 > **Dashboard 双形态说明（v1.3.5 归位 tools/）**：`tools/dashboard/dashboard.html`（Web 形态，`node tools/dashboard/serve-dashboard.mjs` 起服务——与服务器同目录）与 `tools/dashboard/sofagent-dashboard.sh`（终端形态，装到 `~/.sofagent/bin/`，零依赖 bash）是同一 Dashboard 的两种产品入口（README 三入口表）：Web 给老板/IT 可视化看，终端给开发者/FDE 快速看。二者职责不同，勿混用/勿删其一。
 
@@ -321,7 +321,7 @@ graph LR
 
 > 约束层四种能力的完整设计哲学见 [PHILOSOPHY §三 架构全景](./PHILOSOPHY.md#三怎么跑架构全景)。
 
-### 输出签名机制（v1.1.3）
+### 输出签名机制
 
 约束层最大的挑战是存在感——约束在正常工作，但用户看到好结果时不知道是约束层在起作用。v1.1.3 引入三层签名：
 
@@ -408,7 +408,7 @@ Agent 平台（OpenClaw / WorkBuddy 等）通过 Hook 精确注入，其他平�
 - 熔断拦截：高危操作实时拦截、等待人类确认。
 - 红线制度：超阈值动作（如合同金额 > 10 万）须 VP 签字等边际审批。
 
-### 联邦查询（v1.1.8）
+### 联邦查询
 
 两台配对设备经 Agent 平台 channel（如 OpenClaw）互相查 knowledge/。纵深防御四层：MCP localhost 绑定 → 平台 channel 路由 → **AES-256-GCM 应用加密**（审计结论：本地回环 ws:// 明文无 TLS，第 3 层是唯一保密防线）→ sensitivity frontmatter 过滤。
 
@@ -456,7 +456,7 @@ graph LR
 
 > a16z 研判：智能体经济瓶颈从「智力」转向「身份」——非人类身份:人类 = 96:1，急需 KYA。审计 + 约束层 = 企业内部轻量版 KYA。v1.2.x 评估引入签名凭证做 Agent 行动的可审计绑定（身份层，**对所有 Agent 适用**）；凭证虚拟 key 中介（host 边界注入真凭证）在 v1.3.7 **仅限自派 SubAgent 沙箱**（v1.3.0 为 middleware 层轻量拦截，无沙箱隔离）。
 
-#### 运行时审计 tool wrapper（v1.3.0）
+#### 运行时审计 tool wrapper
 
 v1.3.0 把「提交时审计（git diff）」扩展为「运行时拦截 + 留证」——在 `createReactAgent` 的工具定义层包一层 tool wrapper（`FORGE/src/audit-middleware.mjs` 的 `createAuditMiddleware`，对标 `progressMw.wrapToolCall` 模式）：
 
@@ -807,13 +807,13 @@ graph LR
 ├─────────────────────────────────────────┤  ├──────────────────────┤  ├─────────────────────────────────────┤
 │ @sofagent/eval（评分引擎）⭐ v1.2.1 补全   │  │ eval/ ⭐              │  │ @sofagent/think（进化引擎）⭐ 接通    │
 │   runEval() 跑 golden set                │→ │   history.jsonl      │→ │   检测 passRate 下降→写 think.md      │
-│   eval-reporter 持久化                    │→ │   reports/*.md       │→ │ Dashboard（v1.2.3）质量趋势面板       │
+│   eval-reporter 持久化                    │→ │   reports/*.md       │→ │ Dashboard 质量趋势面板               │
 ├─────────────────────────────────────────┤  ├──────────────────────┤  ├─────────────────────────────────────┤
 │ @sofagent/ab-test（A/B 框架）⭐ v1.2.1   │  │ ab-test/ ⭐           │  │ @sofagent/orchestrator（ab-scheduler）│
 │   runABTest() 对比方案                     │→ │   history.jsonl      │→ │   aggregateRecent() 方案判定          │
-│                                          │→ │   reports/*.md       │→ │ Dashboard（v1.2.3）A/B 对比面板       │
+│                                          │→ │   reports/*.md       │→ │ Dashboard A/B 对比面板               │
 ├─────────────────────────────────────────┤  ├──────────────────────┤  ├─────────────────────────────────────┤
-│ @sofagent/daemon（守护进程）              │  │ dashboard/           │  │ Dashboard（v1.2.3）                  │
+│ @sofagent/daemon（守护进程）              │  │ dashboard/           │  │ Dashboard                            │
 │   health-reporter → runHealthReport()    │→ │   daemon-health.json │→ │   健康面板                            │
 │   dream-cycle → extract/synthesize       │→ ├──────────────────────┤  │ @sofagent/harness（加载链第4层）      │
 │                                          │→ │ knowledge/           │→ │   buildConstrainedSystemPrompt()     │
@@ -937,7 +937,7 @@ sofagent 的编排引擎从 v1.3.4 起显式分为两层——**编排层不换�
 ├── HITL 挂载：人工审批节点（graph.ts / nodes.ts）
 ├── loop 编排规则：fresh-eyes / release-gate 的 A→B→汇总→修→验
 │   （verdict 解析 / 场景覆盖 / 行数警戒线 / 声称一致性检查）
-└── 并行调度：ParallelScheduler + MergeQueue（v1.3.1）
+└── 并行调度：ParallelScheduler + MergeQueue
         ↓ 通过 ExecutionBackend 接口调用执行层
 执行层（可替换 · 默认 DSH Cordis 运行时 · fallback createReactAgent）
 ├── 默认后端：DSH Cordis 插件运行时（v1.3.4 接入）
@@ -1203,7 +1203,7 @@ audit:
 **已交付**：激活链 Phase 1-4（ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN）全链路——activate→compose→run→HITL→audit→sustain 验证 + `wrapToolCall` middleware 联动 + Ontology 本体数据 + 并行编排 + Agent 身份码 + Onboard Agent L1-L5 + Refine Agent + 进化闭环。各版本明细见 [CHANGELOG](../CHANGELOG.md) 与 [激活链设计文档](./guides/fde-activation-chain.md)。
 
 **未来方向**：
-- **v1.3.x 后期**：完整多设备协同——Agent 独立身份 + 跨设备审计聚合 + 场景驱动权限（v1.3.7）+ 代理网关硬边界（v1.3.8）+ SubAgent 沙箱（v1.3.7）
+- **v1.3.x 后期**：完整多设备协同——Agent 独立身份 + 跨设备审计聚合 + 场景驱动权限 + 代理网关硬边界 + SubAgent 沙箱
 - **v2.x**：组织级共享记忆 + 协同层 + **分层模型路由**（Harness 按任务复杂度路由到云端大模型/本地 7B/本地 0.5B，数据主权驱动——敏感数据不出内网）+ **离线 USB 节点**（企业专属模型本地推理 + workflow 烧录合体，依赖 v1.4.4 本地权重部署 + v1.4.7 workflow 烧录底座，2026-08-19 从 v3.x-v4.x 提前）
 - **v3.x-v4.x+**：企业专属小模型精调（`sofagent-model distill` QLoRA）——离线节点本地推理的轻量化（蒸馏到 7B/0.5B）。详见 [ROADMAP · 分层模型架构](./ROADMAP.md#分层模型架构v3x-远景概述)
 - **远期护城河演进方向（非当前能力）**：当前护城河 = 约束层 + 审计能力（模型越强越值钱）。更远的演进方向：把「帮 sofagent 自身进化」的 Harness + 进化引擎能力，泛化为「**自动帮企业部署后训练模型**」的引擎。届时护城河从「约束能力」升维为「**后训练模型的自动化部署能力**」——交付物是部署在企业侧的定制模型（基于企业自有/通用基座后训练，非 sofagent 自制大模型），使用者是企业客户而非 sofagent 自身；ontology 在此既是企业数字孪生（语义层），也是后训练规格来源（每个 workflow 节点 → 一个专精模型）。**此为长期目标蓝图，当前完全不具备该能力**，仅作演进方向记录，不视为现状或近期计划。

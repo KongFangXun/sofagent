@@ -200,7 +200,7 @@ OpenAI 2026-08-19 全面开源 [Codex Harness](https://github.com/openai/codex)�
 |------|--------------|----------|
 | hook 体系 | Claude Code 兼容生命周期 hooks（`pre-tool-use` / `post-tool-use` / `permission-request` / `subagent-start` / `session-start`，JSON in/out 命令行引擎） | 约束注入链 + audit（提交时 git diff）+ HITL 钩子 |
 | 身份码 | Ed25519 agent-identity（JWKS 签发） | v1.3.1 Agent 身份码 Ed25519（同构） |
-| 审批 | 内建 HITL（关键操作暂停请求人类确认）+ 多 permission_mode | 工具审批四模式 + HITL 钩子（v1.3.1） |
+| 审批 | 内建 HITL（关键操作暂停请求人类确认）+ 多 permission_mode | 工具审批四模式 + HITL 钩子 |
 | 分发 | 插件市场（marketplace.json，兼容 `.claude-plugin` / `.cursor-plugin` 格式 + 企业 allowlist/restricted 策略） | ClawHub/SkillHub 分发（双生态） |
 | 沙箱 | 内建沙箱（Landlock + seccomp / Windows sandbox） | v1.3.7 SubAgent 沙箱 |
 
@@ -434,7 +434,7 @@ Ontology 的本质是「**翻译而非统一**」——在多个异构 Agent / �
 
 ### 外层 FORGE 的节奏与护栏
 
-Onyx 四阶段闭环（L1：可见性 → 仿真 → 执行 → 学习）与人类审批双模式（L2：高风险人工确认 / 常规受信自动执行）是 31 篇研读里外层 Loop 的两个关键印证——前者给出闭环叙事节奏，后者给出「按风险分级放行」的 human 节点策略。sofagent 对应落地：外层循环节奏 = SUSTAIN 巡检（`docs/guides/fde-activation-chain.md`）+ `releasing.md` 阶段十二（发版后 SOP 自进化）；human 节点分级 = 审计引擎 critical/warning/crutch 分层 + 危险操作前人工批准钩子（v1.3.0）。
+Onyx 四阶段闭环（L1：可见性 → 仿真 → 执行 → 学习）与人类审批双模式（L2：高风险人工确认 / 常规受信自动执行）是 31 篇研读里外层 Loop 的两个关键印证——前者给出闭环叙事节奏，后者给出「按风险分级放行」的 human 节点策略。sofagent 对应落地：外层循环节奏 = SUSTAIN 巡检（`docs/guides/fde-activation-chain.md`）+ `releasing.md` 阶段十二（发版后 SOP 自进化）；human 节点分级 = 审计引擎 critical/warning/crutch 分层 + 危险操作前人工批准钩子。
 
 > 💡 **协议 Adapter 封装**：中间件应在底层封装 MCP / A2A / ACP 协议差异，上层语义层（Ontology / Action Type）不感知底层协议——对齐 sofagent「合的框架」定位：企业换 Agent 平台，约束与审计不动。
 
@@ -499,8 +499,8 @@ Onyx 四阶段闭环（L1：可见性 → 仿真 → 执行 → 学习）与人�
 | 底线 | 含义 | sofagent 落点 |
 |------|------|--------------|
 | **零数据权限** | LLM 不直接写 SQL / 连数据库，与原始数据隔离 | 零凭证沙箱 + v1.3.7 虚拟 key 边界注入——LLM 只按按钮，不碰数据 |
-| **全链路留痕** | 每操作步骤有日志，可追踪可回溯可审计 | 审计引擎（git diff 硬证据 + HMAC 链）+ 运行时审计（v1.3.0） |
-| **确定性执行** | 工具函数预先写好，参数固定，同样输入同样输出 | 工具审批四模式（v1.3.1）+ Ontology Action 七步管线——LLM 当翻译官，不当写逻辑的人 |
+| **全链路留痕** | 每操作步骤有日志，可追踪可回溯可审计 | 审计引擎（git diff 硬证据 + HMAC 链）+ 运行时审计 |
+| **确定性执行** | 工具函数预先写好，参数固定，同样输入同样输出 | 工具审批四模式 + Ontology Action 七步管线——LLM 当翻译官，不当写逻辑的人 |
 
 ### 循环的边界：从 Loop 到 Graph 的升级判据
 
@@ -526,22 +526,22 @@ Onyx 四阶段闭环（L1：可见性 → 仿真 → 执行 → 学习）与人�
 **对 sofagent 的四点印证**：
 
 1. **Fortification Loop = 审计 + 验收的定位一句话**——「把什么叫做完成，从模型的自我判断变成可执行可追责的验收标准」正是 sofagent 审计引擎 + `acceptance-test.sh` 冻结验收 + `define_acceptance` 机器可判定验收的定位（完成定义权的转移，完整论证见上文 [Verifier 才是瓶颈](#verifier-才是瓶颈)）。Fortification Loop 的价值不是让 Agent 多检查一遍，是完成定义权从模型转移到系统。
-2. **Event Driven Loop = daemon + WAL 续跑**——事件驱动不是加个定时器：任务排队（daemon scheduler/cron 三档）、重复事件（幂等）、并发冲突（MergeQueue）、失败重试（退避 + 收敛）、状态恢复（checkpoint 续跑）——sofagent 异步长任务自治（v1.3.8）逐项对应。
+2. **Event Driven Loop = daemon + WAL 续跑**——事件驱动不是加个定时器：任务排队（daemon scheduler/cron 三档）、重复事件（幂等）、并发冲突（MergeQueue）、失败重试（退避 + 收敛）、状态恢复（checkpoint 续跑）——sofagent 异步长任务自治逐项对应。
 3. **Hill Climbing Loop = 进化引擎 + FORGE 自迭代**——「分析多次运行留下的 Trace，找到重复出现的问题，再修改产生这些问题的 Harness」：sofagent 进化引擎（think.md 反思 + Dream Cycle 知识蒸馏 + skillopt 优化）消费 audit/eval 轨迹；FORGE fresh-eyes-loop 本身就是一个 Hill Climbing Loop（16 视角审查 → 修复 → 验证 → 系统改 harness）。**关键安全网：Hill Climbing ≠ 让 Agent 随意改自己的 Prompt 然后直接上线**——可靠改进仍需候选版本/离线评测/回归测试/人工审核/小流量验证/回滚，sofagent 的 release-gate-loop + check-version 门禁 + 快照回滚正是这套安全网。
 4. **自动化不是把人移出循环，是重新安排人的位置**——人不再盯着 Agent 每一步，但在高责任节点保留判断权和否决权：敏感工具（转账/删数据/改数据库）前人工确认、业务取舍/价值判断时担任 Grader、结果发客户或写核心系统前审批、Harness 新版本部署前评审——**这正是 sofagent HITL 钩子 + 工具审批四模式 + 危险操作前人工批准钩子的设计哲学**。
 
 ### 循环系统的鲁棒性：四类故障与六要素
 
-自主循环系统稳定运行需要六要素（自动化触发 / 隔离演练 / 安全边界 / 工具连接 / 角色分离 / 记忆分层）——sofagent 全部已有：pre/post hook = 激活链 + daemon cron；隔离演练 = git worktree（v1.2.3）；安全边界 = 工具审批 + HITL；工具连接 = MCP server；角色分离 = Explore/Code Agent 拆分；记忆分层 = v1.2.8 记忆分层 + 四层加载链。
+自主循环系统稳定运行需要六要素（自动化触发 / 隔离演练 / 安全边界 / 工具连接 / 角色分离 / 记忆分层）——sofagent 全部已有：pre/post hook = 激活链 + daemon cron；隔离演练 = git worktree；安全边界 = 工具审批 + HITL；工具连接 = MCP server；角色分离 = Explore/Code Agent 拆分；记忆分层 = v1.2.8 记忆分层 + 四层加载链。
 
 四类故障模式与 Onboard Agent 收敛判据直接对应（L1 判定 crash/error/超时，L5 连续 PASS 判收敛 / 连续 FAIL 判发散）：
 
 | 故障模式 | 表现 | sofagent 对应 |
 |------|------|------|
-| **空转** | 反复改几十次测试通不过 | Onboard L5 连续 FAIL 判发散（v1.3.2）|
-| **过拟合测试** | 单元测试全过，业务不能用 | Benchmark 评测（v1.3.1）+ 人工验收 |
-| **上下文漂移** | 基于过期假设写代码 | Durable Execution L1 checkpoint 续跑（v1.3.1）|
-| **不安全自主** | AI 越权搞破坏 | 工具审批四模式 + 保守默认拒绝（v1.3.1）|
+| **空转** | 反复改几十次测试通不过 | Onboard L5 连续 FAIL 判发散 |
+| **过拟合测试** | 单元测试全过，业务不能用 | Benchmark 评测 + 人工验收 |
+| **上下文漂移** | 基于过期假设写代码 | Durable Execution L1 checkpoint 续跑 |
+| **不安全自主** | AI 越权搞破坏 | 工具审批四模式 + 保守默认拒绝 |
 
 > 💡 **核心定律**：「测试失败 = 最高质量的下一轮上下文」「仓库记得，即使模型不记得」——与「Agent 会失忆，文件不会」（Ralph Loop）同源：git diff 是无状态的地面真相，仓库是模型永远可以回读的外部记忆。
 
@@ -592,7 +592,7 @@ Palantir Foundry 10 年迭代收敛出 Ontology 的 5 块构建块——**Object
 - **6 个月路线图**——前 3 个月选一个高价值业务决定，接通最小数据链，做出**有人审批、能写回结果、可追踪**的 Action 闭环（验收不看模型多聪明，看业务有没有真的改变、错误能不能发现、失败能不能恢复）；后 3 个月加 Agent，按 KLM 接入至少两种可替换模型，建立真实业务测试集，记录调用轨迹/成本/结果，补齐发布/回滚/权限治理。
 - **两个验收问题**——① 如果明天更换大模型，业务对象、规则、动作、权限和历史还能不能留下？（查 Ontology + KLM）② 这套东西能不能进我的隔离环境？升级失败能不能回滚？边缘节点断了还能不能跑？（查 Apollo + Rubrik）——**答不上来，你买到的可能只是一个更贵的 Demo**。
 
-> 💡 **对 sofagent 的五点印证**：① **Ontology = 可运行业务契约** 与 sofagent 本体数据（Object Type + Property + Link Type + Action + 状态机，FDE/GUIDE 第三章）完全同构——「对象定义必须和动作一起做」正是 sofagent ontology 的 Action 注册表 + validator 三态 + 生命周期（v1.3.1 / v1.3.7）；② **Red Loop 写回机制** = sofagent Durable Execution（checkpoint 续跑 + 副作用幂等，v1.3.1）+ WAL 三态恢复/undo 三档（v1.3.8）+ HITL 审批 + 审计留痕——「幂等/回执/补偿/审计/人工接管」逐一有对应；③ **KLM 范式** = 智能/控制分离（PHILOSOPHY §一理论锚点）+ 模型注册/灰度切换/路由决策可解释性（v1.3.6）——「把规则动作边界放在模型外边」正是约束层哲学；④ **Apollo 交付层自检五问** = sofagent 版本同步机制 + check-version 门禁 + 快照回滚 + 模型换后重考评测（Benchmark）；⑤ **两个验收问题** = sofagent「编排层永远不换」（24 条 git diff 规则 + HMAC 链不依赖模型）+ 快照 `--revert` 一键回滚——「换模型对象还在不在」的答案就在约束层与模型解耦的设计里。
+> 💡 **对 sofagent 的五点印证**：① **Ontology = 可运行业务契约** 与 sofagent 本体数据（Object Type + Property + Link Type + Action + 状态机，FDE/GUIDE 第三章）完全同构——「对象定义必须和动作一起做」正是 sofagent ontology 的 Action 注册表 + validator 三态 + 生命周期（v1.3.1 / v1.3.7）；② **Red Loop 写回机制** = sofagent Durable Execution（checkpoint 续跑 + 副作用幂等，v1.3.1）+ WAL 三态恢复/undo 三档 + HITL 审批 + 审计留痕——「幂等/回执/补偿/审计/人工接管」逐一有对应；③ **KLM 范式** = 智能/控制分离（PHILOSOPHY §一理论锚点）+ 模型注册/灰度切换/路由决策可解释性——「把规则动作边界放在模型外边」正是约束层哲学；④ **Apollo 交付层自检五问** = sofagent 版本同步机制 + check-version 门禁 + 快照回滚 + 模型换后重考评测（Benchmark）；⑤ **两个验收问题** = sofagent「编排层永远不换」（24 条 git diff 规则 + HMAC 链不依赖模型）+ 快照 `--revert` 一键回滚——「换模型对象还在不在」的答案就在约束层与模型解耦的设计里。
 
 ### 模型层判断：组合优于单一，本地模型可行
 
@@ -601,7 +601,7 @@ AI 从「程序」（单一模型）走向「协议」（多模型组合）是 S
 1. **智能密度提升**——小模型与大模型能力差距从 2 年缩到 1 年甚至半年。这印证 sofagent v3.x 分层模型架构的可行性（本地 7B 执行 workflow + 本地 0.5B 跑管道层）：小模型够用时，本地推理的成本/隐私优势才真正成立。
 2. **运行时动态路由**——推理框架自动化后，runtime 动态把请求路由到最优模型组合。与 sofagent model-router（敏感度×复杂度四档路由）同构：public/internal 走云端，restricted/confidential 走本地，confidential 超复杂阻断。
 
-> 💡 **self-recording improvement**：模型协作产生 trace → 用 trace 训练单模型 → 个体变强 → 增强协作边界。与 sofagent 进化能力同源：Dream Cycle 从 think.md 派生 knowledge/（Ledger→Views 单向），进化闭环（v1.3.3）用 Benchmark 分数驱动经验层优化——都是「把执行经验沉淀回个体」。
+> 💡 **self-recording improvement**：模型协作产生 trace → 用 trace 训练单模型 → 个体变强 → 增强协作边界。与 sofagent 进化能力同源：Dream Cycle 从 think.md 派生 knowledge/（Ledger→Views 单向），进化闭环用 Benchmark 分数驱动经验层优化——都是「把执行经验沉淀回个体」。
 
 ---
 

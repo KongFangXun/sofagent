@@ -475,7 +475,7 @@ Ontology 统一层的合并引擎从 `knowledge/entities/` 目录的 Markdown fr
 
 ### audit ↔ daemon 循环依赖（v1.2.3 已解决）
 
-> **状态：已解决（v1.2.3）**。历史上 `@sofagent/audit` 的 `optionalDependencies` 曾包含 `@sofagent/daemon`（snapshot helpers），形成逻辑循环依赖。
+> **状态：已解决**。历史上 `@sofagent/audit` 的 `optionalDependencies` 曾包含 `@sofagent/daemon`（snapshot helpers），形成逻辑循环依赖。
 
 **v1.2.3 修复**：snapshot helpers（`restoreSnapshot` / `listAllSnapshots`）从 `@sofagent/daemon` 迁移到 `@sofagent/core`，`audit` 包的 `package.json` 不再含任何 `daemon` 引用（含 `optionalDependencies`），源码中仅保留 `types/daemon.d.ts` 类型 shim（无 runtime import）。依赖图恢复为单向：`daemon → audit → core`，符合四层单向依赖原则。
 
@@ -489,23 +489,23 @@ v1.1.3 新增 `daemon/src/notify.ts` 提供 `[sofagent-daemon]` 品牌包装的�
 
 ## 九、v1.1.7-v1.1.9 新功能局限
 
-### Dream Cycle 知识质量依赖 LLM（v1.1.7）
+### Dream Cycle 知识质量依赖 LLM
 
 Dream Cycle 6 阶段管道从 think.md / task logs 抽取知识（fact → atom → concept → cluster）。当前 MockLLM 产出的是占位符文本——格式正确但内容为零。接入 RealLLM 后，知识质量完全依赖模型能力，无法保证产出的 fact/atom/concept 是有意义的知识点而非「正确的废话」。冷启动阶段尤其明显——没有足够 task logs 时，Dream Cycle 提炼出的概念可能高度重复或过于泛化。
 
-### sensitivity 标注质量（v1.1.7）
+### sensitivity 标注质量
 
 public / internal / restricted 三级安全分级缺省 internal。安全分级系统的致命弱点不在实现，在标注质量——开发者写 frontmatter 时不会逐条思考分级，99% 页面走缺省值。Dream Cycle 自动生成的 concept.md 如果缺省标 public，restricted 知识可能通过联邦查询泄露到不信任的 peer。联邦层有 peer 端 + 本地端二次校验，但二次校验依赖标签准确性——标签本身错了，校验也防不住。
 
-### USB 完整运行时信任根（v1.1.9）
+### USB 完整运行时信任根
 
 U 盘本身即信任根——`federation.json` 的 `key` 字段（AES-256 解密密钥）存在 U 盘上。拿到 U 盘 = 拿到 knowledge 解密能力。防的是「丢盘后被读」（加密 + HMAC 签名），不防「拿到盘的人」（拿到盘 = 合法用户）。HMAC key 如与 `federation.json` 同介质存储，可被伪造（SECURITY.md 已声明此限制）。
 
-### knowledge-health 治理悖论（v1.1.7）
+### knowledge-health 治理悖论
 
 巡检器检测 5 类问题（矛盾 / 孤儿 / 死链 / 过期 / 重复）但只生成报告不自动修复。warning 级 = 「知道有问题但不紧急」，在 daemon 语境里意味着永远不会被修——除非人来看报告。只建议不修复的巡检器面临治理悖论：越用越觉得「知道有问题就够了」，但问题不会自己消失。
 
-### A/B 自动调度 promote 风险（v1.1.9）
+### A/B 自动调度 promote 风险
 
 ab-scheduler 连续 2 轮更好即 promote。如果 eval 场景偏窄（只测了简单 case），promote 的版本在复杂场景下可能更差。已有 `overallImprovement > 0` 守卫，但窄 eval 集的局限性无法靠代码解决——需要人工定期审查 promote 历史，确认 eval 集是否覆盖了真实业务场景的复杂度。**v1.3.2 缓解**——企业专属 eval 套件（金融/制造/供应链行业模板）扩充 eval 覆盖面，窄 eval 风险降低。
 
