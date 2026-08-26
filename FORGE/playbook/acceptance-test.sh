@@ -6,7 +6,7 @@ export LANG=en_US.UTF-8
 export LC_ALL=en_US.UTF-8
 # sofagent-audit · 上线前验收测试（Pre-Release Acceptance Test）
 # 覆盖：FORGE + MCP + 文件系统审计 + daemon + 红队对抗 + 各版本新功能验收
-# 场景数：260 个场景（SSOT：check-test-count.sh 校验，口径=真实 scenario 调用行数，非编号最大值（S1-S327 间有 67 个历史空洞号）；v1.3.7 +4：S290-S293；v1.3.6 +8：S282-S289；v1.3.8 +11：S294-S304（含 bugfix 防回归 S303/S304）；v1.3.9 +15：S305-S319（阶段五 A 类分发 13 项 + 阶段六 coverage 补测 S318 ATTRIBUTION 归因引擎/S319 Dream Sandbox 沙盒审计）；v1.4.0 +3：S320（联邦查询跨进程 E2E——补 federation.test.ts 同进程 mock 缺口）、S321（跨平台 hook stdin 模式闭环验证）、S322（双设备联邦独立进程模拟——两个独立 node 进程 + 真实 TCP，补 fork 形态缺口）；v1.4.1 +5：S323（train doctor CLI 实跑）、S324（enterpriseId 强制绑定+幂等）、S325（fingerprint 冻结+不可变）、S326（artifact 签名+篡改检测）、S327（安全基线路径白名单+注入检测））
+# 场景数：262 个场景（SSOT：check-test-count.sh 校验，口径=真实 scenario 调用行数，非编号最大值（S1-S329 间有 67 个历史空洞号）；v1.3.7 +4：S290-S293；v1.3.6 +8：S282-S289；v1.3.8 +11：S294-S304（含 bugfix 防回归 S303/S304）；v1.3.9 +15：S305-S319（阶段五 A 类分发 13 项 + 阶段六 coverage 补测 S318 ATTRIBUTION 归因引擎/S319 Dream Sandbox 沙盒审计）；v1.4.0 +3：S320（联邦查询跨进程 E2E——补 federation.test.ts 同进程 mock 缺口）、S321（跨平台 hook stdin 模式闭环验证）、S322（双设备联邦独立进程模拟——两个独立 node 进程 + 真实 TCP，补 fork 形态缺口）；v1.4.1 +7：S323（train doctor CLI 实跑）、S324（enterpriseId 强制绑定+幂等）、S325（fingerprint 冻结+不可变）、S326（artifact 签名+篡改检测）、S327（安全基线路径白名单+注入检测）、S328（install.sh 迁移丢数据窗口防回归——阶段四 B2 分发）、S329（install.sh symlink 谎报守卫——阶段四 B3 分发））
 # 编号跳号豁免：S1~S293 间有 70 个空洞号（全在 S36-S202 历史段）——v1.2.x 瘦身删场景
 # 与基线重建（restore 6e542467）的既成事实，非丢失；新场景编号=当前最大+1 顺延，禁止回填空洞
 # 版本段起点见文件内「# ─── v」分组标记（grep "─── v" 定位）
@@ -3085,6 +3085,44 @@ echo "$R327" | grep -q "absolute-rejected: true" || S327_OK=false
 echo "$R327" | grep -q "escape-rejected: true" || S327_OK=false
 echo "$R327" | grep -q "injection-detected: true" || S327_OK=false
 $S327_OK && pass "安全基线四断言（白名单/绝对路径拒/逃逸拒/注入检测）" || fail "安全基线失败: $(echo "$R327" | grep -v '^$' | head -4 || true)"
+
+scenario 328 "v1.4.1 阶段四 B2：install.sh 迁移丢数据窗口防回归——复制失败保留源目录 + err 中止叙事（源码断言 + 隔离行为实测）"
+S328_OK=true
+# ① 源码断言：cp -Rn 吞错语义零残留 + 删源在复制成功分支 + 调用处接管退出（3c61d980）
+grep -q "cp -Rn" "$PROJECT_ROOT/install.sh" && { fail "install.sh 存在 cp -Rn 吞错语义"; S328_OK=false; }
+grep -A2 'cp -R "$old_data"' "$PROJECT_ROOT/install.sh" | grep -q 'rm -rf "$old_data"' || { fail "删源脱离复制成功分支"; S328_OK=false; }
+grep -q "安装因迁移失败中止" "$PROJECT_ROOT/install.sh" || { fail "迁移中止 err 叙事缺失"; S328_OK=false; }
+# ② 隔离行为实测：复刻 install.sh 前置目录环境（:278 预建 data/——只赋变量不预建必假失败，3c61d980 实录坑）
+S328_TMP=$(mktemp -d)
+mkdir -p "$S328_TMP/src-repo/data" "$S328_TMP/src-repo/.sofagent" "$S328_TARGET_HOME/data"
+echo "payload" > "$S328_TMP/src-repo/data/x.jsonl"; echo "state" > "$S328_TMP/src-repo/.sofagent/y.jsonl"
+chmod 000 "$S328_TARGET_HOME/data" 2>/dev/null || true
+MIGRATE_SNIP=$(sed -n '/^migrate_to_install_dir() {/,/^}/p' "$PROJECT_ROOT/install.sh")
+S328_RC=$(cd "$S328_TMP/src-repo" && SCRIPT_DIR="$S328_TMP/src-repo" SOFAGENT_HOME="$S328_TARGET_HOME" bash -c "
+warn() { echo \"WARN: \$1\"; }; err() { echo \"ERR: \$1\"; }; ok() { echo \"OK: \$1\"; }
+$MIGRATE_SNIP
+migrate_to_install_dir || { err 'abort-exit-1'; exit 1; }
+" 2>&1; echo "rc=$?")
+chmod 755 "$S328_TARGET_HOME/data" 2>/dev/null || true
+echo "$S328_RC" | grep -q "ERR:" || { fail "失败场景无 err 级话术"; S328_OK=false; }
+echo "$S328_RC" | grep -q "rc=1" || { fail "失败场景未以非零退出（set -e 叙事接管缺失）"; S328_OK=false; }
+[ -f "$S328_TMP/src-repo/data/x.jsonl" ] || { fail "复制失败后源数据被删——丢数据窗口回归"; S328_OK=false; }
+rm -rf "$S328_TMP" "$S328_TARGET_HOME" 2>/dev/null || true
+$S328_OK && pass "迁移丢数据窗口已闭（err 叙事 + exit 1 + 源保留）" || true
+
+scenario 329 "v1.4.1 阶段四 B3：install.sh symlink 谎报守卫——ln -sf 全守卫 + fallback 失败 warn（源码断言）"
+S329_OK=true
+# ① 全文件 ln -sf 恰 4 处且均带 if 守卫（sudo 分支 1 + 普通分支 2 + dashboard 1——多出即需人工核）
+S329_SF=$(grep -E 'ln -sf "' "$PROJECT_ROOT/install.sh" | grep -vc 'warn\|echo\|#' || true)
+[ "$S329_SF" = "4" ] || { fail "ln -sf 计数 $S329_SF（预期 4）——逐处核对守卫"; S329_OK=false; }
+grep -E 'ln -sf "' "$PROJECT_ROOT/install.sh" | grep -vc 'if \|sudo ln' || true | grep -qE '^0$' 2>/dev/null || { grep -E 'ln -sf "' "$PROJECT_ROOT/install.sh" | grep -v 'warn\|echo\|#' | grep -qv 'if \|sudo ln' && { fail "存在无守卫 ln -sf"; S329_OK=false; }; }
+# ② fallback 分支失败路径有 warn 手动命令（非无条件 ok）
+sed -n '/\.local\/bin/,/^  fi/p' "$PROJECT_ROOT/install.sh" | grep -q "注册到.*失败\|注册.*失败" || { fail "fallback 失败路径缺 warn 提示"; S329_OK=false; }
+# ③ sfn 类 5 处全部带 [ -L ] 校验或降级分支（openclaw/cursor/claude/gemini/hermes）
+S329_SFN=$(grep -c 'ln -sfn "' "$PROJECT_ROOT/install.sh" || true)
+S329_GUARDED=$(grep -A2 'ln -sfn "' "$PROJECT_ROOT/install.sh" | grep -c 'if \[ -L\|if \[ ! -L\|\[ -L "' || true)
+[ "$S329_GUARDED" -ge 5 ] 2>/dev/null || { grep -A2 'ln -sfn "' "$PROJECT_ROOT/install.sh" | head -30; fail "sfn 降级守卫不足（$S329_GUARDED/$S329_SFN）"; S329_OK=false; }
+$S329_OK && pass "symlink 谎报守卫（sf 4 处全守卫 + sfn 降级全覆盖）" || true
 
 echo -e "  验收测试结果：${GREEN}$PASSED 通过${NC} / ${RED}$FAILED 失败${NC} / 共 $((PASSED + FAILED))"
 # 🔴 v1.3.1 run-10 教训：无色码纯文本汇总行供 driver grep（EXIT: 0=全PASS / <N>=N失败）

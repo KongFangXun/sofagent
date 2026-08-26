@@ -10,11 +10,13 @@
 | v1.2.6-1.3.4 | #70-109（MCP 一致性 / ESM / 运行时审计 / HMAC / 市场五环 / SkillScan 等） | 48 子项 e-h、16+44、65+66、73+74 等 |
 | v1.3.5 | #110-111（bugfix 防复发 / 新功能审查面） | 93→70、69/75/77→95（check-version 四盲区） |
 | v1.3.6 | #113-114（八交付锚点一维收口 / run-03 修复防复发） | —（v1.3.5 发布后 hotfix 112 编入） |
+| v1.3.7-1.4.0 | #115-122（详见头部段落） | A2 正则边界→#57 子项 |
+| v1.4.1 | #123-124（训练引擎地基八大块收口 / 发版防复发） | #114→#113（同版配套面）、#63 命令体→S166 |
 
-> **当前 95 维 · 编号 1-122 · 27 个编号已归并删除（v1.3.7 阶段四 +2：115 新功能审查面 / 116 bugfix 批防复发——acceptance 同批 S290-S293，S293 为阶段四基建加固场景：LLM 超时四文件/resume 越轮守卫/rm-rf 口径同源；v1.3.8 阶段五 +2：117 网关攻击面四项核对 / 118 原子写与单writer 加固（B1+B2+B3 归并）——acceptance 同批 S294-S302 已覆盖功能面，本批为防御性回归标记；v1.3.9 阶段五：119 开发坑防复发（TS7 缓存/promise 形态）/ 120 DSH 适配防复发（CLI 桥接/pnpm/require）/ 121 新功能审查面（十三交付锚点收口，参照 113/115 模式）——acceptance 同批 S305-S317；原 A2 正则边界并入 #57 子项；v1.4.0 阶段十二 +1：122 发版流程防复发（lock 同步/plugin 分发包装/限流——v1.4.0 发版三坑实录，B 类））**。维度流连续不中断，分组导航：基线组 → 审查约束组 → 环境敏感组（前置 vitest/沙箱铁律）。
+> **当前 96 维 · 编号 1-124 · 28 个编号已归并删除（v1.3.7 阶段四 +2：115 新功能审查面 / 116 bugfix 批防复发——acceptance 同批 S290-S293，S293 为阶段四基建加固场景：LLM 超时四文件/resume 越轮守卫/rm-rf 口径同源；v1.3.8 阶段五 +2：117 网关攻击面四项核对 / 118 原子写与单writer 加固（B1+B2+B3 归并）——acceptance 同批 S294-S302 已覆盖功能面，本批为防御性回归标记；v1.3.9 阶段五：119 开发坑防复发（TS7 缓存/promise 形态）/ 120 DSH 适配防复发（CLI 桥接/pnpm/require）/ 121 新功能审查面（十三交付锚点收口，参照 113/115 模式）——acceptance 同批 S305-S317；原 A2 正则边界并入 #57 子项；v1.4.0 阶段十二 +1：122 发版流程防复发（lock 同步/plugin 分发包装/限流——v1.4.0 发版三坑实录，B 类）；v1.4.1 阶段四 +2：123 训练引擎地基八大块一维收口（A 类 18 条压 1 维）/ 124 发版防复发（B 类 10 条压 1 维）——acceptance 同批 S328-S329；真实归并 2 处对销：#114→#113（同版配套面）+ #63 命令体→S166）**。维度流连续不中断，分组导航：基线组 → 审查约束组 → 环境敏感组（前置 vitest/沙箱铁律）。
 ## 🔒 维护公约（防膨胀铁律）
 
-**追加新维度前，必须先 grep 同类**：有同类 → 扩展旧维度的子项，不新增编号；无同类 → 才新增编号 = 当前最大 +1。历史维度靠 `git log -p` 找回。**归并配额（v1.3.9 硬门槛）**：新增 N 维 → 本版必须先真实归并 ≥N 维（被并维度检查内容实际移入目标维度，git diff 可查；注释压缩不算）；净增行数 > 警戒线余量 → 继续归并或移下一版——**只调警戒线不归并 = 不合格**。**行数警戒线**：`regression-checklist.md` ≤ 1690 行、`acceptance-test.sh` ≤ 3000 行（v1.3.7 阶段四上调 1540→1580 / 2600→2640：+39 维 115/116 新审查面 / +38 S290-S292；v1.3.8 阶段四 +9 场景 S294-S302 真实归并否、上调记录 2640→2730；v1.3.8 阶段五 +2 维 #117-#118 真实归并否、上调记录 1580→1620——三判据①②③全否、本版 checklist 首调非连续两版非同版二次冻结；v1.3.8 阶段五补充 bugfix 防回归 S303-S304（A1 后缀绕过+A2 FFFD 短路端到端，B 类零场景缺口）上调 2730→2770——三判据全否：单测在而端到端缺/非同主题聚簇/真实安全回归风险，非既有场景覆盖；v1.3.9 阶段五 +13 场景 S305-S317（A 类分发）上调 2770→2870、+2 维 #119/#120 + #121 编号复用为 v1.3.9 新功能审查面（A2 正则边界并入 #57 子项 = 真实归并 1 处对销）上调 1620→1660——三判据①②③全否 + 归并配额 1 处 ✓，净增约 20 行 ≤ 余量 40）；v1.3.9 阶段六 +2 场景 S318-S319（补 ATTRIBUTION/Dream Sandbox 零覆盖 acceptance 场景）上调 2870→3000——真实补测试非归并（三判据全否），余量 +39 后仍足）；v1.4.0 阶段六 +6：检查器 4 缺陷修复注释（run-22 P1 误报修复说明——维度 90/89/111 正则与解析修复 + 维度 49 参数动态化，注释压缩后净增 6 行）——三判据①②③全否（真实修复说明非冗余，非工具覆盖，非聚簇假信号）；v1.4.0 阶段十二 +1 维 #122（发版流程防复发：lock 同步/plugin 分发包装/限流——三坑实录新审查面，三判据全否）上调 1670→1690——连续第三版上调，前两版均有真实归并对销）；releasing.md 方针「超标上调 LIMIT 不删内容」。
+**追加新维度前，必须先 grep 同类**：有同类 → 扩展旧维度的子项，不新增编号；无同类 → 才新增编号 = 当前最大 +1。历史维度靠 `git log -p` 找回。**归并配额（v1.3.9 硬门槛）**：新增 N 维 → 本版必须先真实归并 ≥N 维（被并维度检查内容实际移入目标维度，git diff 可查；注释压缩不算）；净增行数 > 警戒线余量 → 继续归并或移下一版——**只调警戒线不归并 = 不合格**。**行数警戒线**：`regression-checklist.md` ≤ 1720 行、`acceptance-test.sh` ≤ 3150 行（v1.3.7 阶段四上调 1540→1580 / 2600→2640：+39 维 115/116 新审查面 / +38 S290-S292；v1.3.8 阶段四 +9 场景 S294-S302 真实归并否、上调记录 2640→2730；v1.3.8 阶段五 +2 维 #117-#118 真实归并否、上调记录 1580→1620——三判据①②③全否、本版 checklist 首调非连续两版非同版二次冻结；v1.3.8 阶段五补充 bugfix 防回归 S303-S304（A1 后缀绕过+A2 FFFD 短路端到端，B 类零场景缺口）上调 2730→2770——三判据全否：单测在而端到端缺/非同主题聚簇/真实安全回归风险，非既有场景覆盖；v1.3.9 阶段五 +13 场景 S305-S317（A 类分发）上调 2770→2870、+2 维 #119/#120 + #121 编号复用为 v1.3.9 新功能审查面（A2 正则边界并入 #57 子项 = 真实归并 1 处对销）上调 1620→1660——三判据①②③全否 + 归并配额 1 处 ✓，净增约 20 行 ≤ 余量 40）；v1.3.9 阶段六 +2 场景 S318-S319（补 ATTRIBUTION/Dream Sandbox 零覆盖 acceptance 场景）上调 2870→3000——真实补测试非归并（三判据全否），余量 +39 后仍足）；v1.4.0 阶段六 +6：检查器 4 缺陷修复注释（run-22 P1 误报修复说明——维度 90/89/111 正则与解析修复 + 维度 49 参数动态化，注释压缩后净增 6 行）——三判据①②③全否（真实修复说明非冗余，非工具覆盖，非聚簇假信号）；v1.4.0 阶段十二 +1 维 #122（发版流程防复发：lock 同步/plugin 分发包装/限流——三坑实录新审查面，三判据全否）上调 1670→1690——连续第三版上调，前两版均有真实归并对销；**v1.4.1 阶段四**：checklist +2 维 #123-#124（A 类 18 条压 1 维训练引擎地基收口 / B 类 10 条压 1 维发版防复发，三判据全否）+ 真实归并 2 处（#114→#113 同版配套面并入、#63 命令体移入 S166——归并配额 2:2 ✓，连续上调禁令因本版真实归并解锁）上调 1690→1720（净增 +26 ≤ 余量 30）；acceptance +2 场景 S328-S329（阶段三增量 S323-S327 顶破 + 阶段四 B2/B3 分发，真实端到端场景非归并，三判据全否；acceptance 上版未上调，非连续）上调 3000→3150（净增 +38 ≤ 余量 150）；fresh-eyes 警戒线上调见 04-review-system.md 风格守护段（410→425，校准笔记 +1 节真实新校准））；releasing.md 方针「超标上调 LIMIT 不删内容」。
 
 **维度脚本编写三铁律**（v1.3.6 release-gate run-08 教训——7 个 FAIL 维度中 5 个是脚本自身缺陷而非仓库问题，driver 白跑一轮）：
 
@@ -30,14 +32,14 @@ ACTUAL=$(grep -c "^#### " FORGE/playbook/regression-checklist.md)
 
 # 行数警戒线自检（越线提醒瘦身，非失败；与 releasing.md 阶段五警戒线一致）
 WC_CHK=$(wc -l < FORGE/playbook/regression-checklist.md); WC_ACC=$(wc -l < FORGE/playbook/acceptance-test.sh)
-[ "$WC_CHK" -le 1690 ] && echo "✅ checklist $WC_CHK (≤1690)" || echo "⚠️ checklist $WC_CHK 超 1690"
-[ "$WC_ACC" -le 3000 ] && echo "✅ acceptance $WC_ACC (≤3000)" || echo "⚠️ acceptance $WC_ACC 超 3000"
+[ "$WC_CHK" -le 1720 ] && echo "✅ checklist $WC_CHK (≤1720)" || echo "⚠️ checklist $WC_CHK 超 1720"
+[ "$WC_ACC" -le 3150 ] && echo "✅ acceptance $WC_ACC (≤3150)" || echo "⚠️ acceptance $WC_ACC 超 3150"
 ```
 ## 你的身份
 
 你是**回归测试工程师**——确认已知的修复没有回退，不是发现新问题。逐项核对，全 PASS 即通过。⏰ 时序：回归检查在阶段六跑，git tag/npm registry 未到位的项标 ⏳。🔍 维度 7f/17a-b/20 依赖真实环境（npm/git/OpenClaw），AI 审查标 `⏸️ 需人工环境`。
 
-## 审查维度（95 维 · 版本演进见头部表格）
+## 审查维度（96 维 · 版本演进见头部表格）
 
 ### 审查维度正文（#1-106 · 按版本演进排列 · 分组小节为历史分类，维度流连续不中断）
 
@@ -951,16 +953,11 @@ grep -c 'slice(i, i + 4)' FORGE/src/release-gate-driver.mjs   # ≥2
 grep -Fc 'replace(/```[\s\S]*?```/g' FORGE/src/release-gate-driver.mjs   # ≥2
 ```
 
-#### 63. Worker 批量输出 U+FFFD 零污染——每次批量修复后必扫（v1.2.3 新盲区）
+#### 63. Worker 批量输出 U+FFFD 零污染——每次批量修复后必扫（v1.2.3 新盲区 · v1.4.1 阶段四瘦身：命令并入 acceptance S166 同款，此处留纪律+引用）
 
 > v1.2.3 教训：fresh-eyes-loop 批量修复 worker 多次产出含 U+FFFD 的文件——LLM 输出编码损坏时把无法表示的字节写成 U+FFFD。肉眼难辨（显示为 ▯ 或空白），但污染 grep、破坏锚点、影响 npm 产物。**任何 Agent 批量写入文件后，提交前必须扫一遍 U+FFFD，零容忍。**
-
-```bash
-# 1. 全仓活跃文档 U+FFFD 扫描（期望 CLEAN）
-node -e "const fs=require('fs');const{execSync}=require('child_process');const files=execSync('git ls-files \"*.md\"').toString().split('\n').filter(f=>f&&!/archive|node_modules/.test(f));let bad=[];for(const f of files){try{if(fs.readFileSync(f,'utf8').includes('\uFFFD'))bad.push(f);}catch(e){}}if(bad.length){console.log('FAIL:',bad.join(','));process.exit(1);}console.log('CLEAN');"
-# 2. 引擎源码 U+FFFD 扫描（期望无输出）
-grep -rlP '\x{FFFD}' engine/*/src/ 2>/dev/null | grep -v node_modules || true   # 零命中=PASS（grep exit 1 语义反转防误报）
-```
+>
+> v1.4.1 阶段四判据①（冗余）：本维两条扫描命令与 acceptance 场景 S166（Markdown 格式完整性——代码块闭合 + 活跃文档无 U+FFFD）的 node 扫描命令**逐字符同款**——自动化已覆盖，命令体并入 S166 引用，本维保留纪律叙述（归并配额对销记录：#63 命令体 → S166，净减 5 行）。引擎源码侧扫描同 S304 的 FFFD 守卫场景覆盖（A2 审计规则含 FFFD 检测路径）。
 
 #### 64. GitHub 锚点剥除规则——跨文档链接须匹配渲染后锚点（v1.2.4 新盲区）
 
@@ -1515,9 +1512,9 @@ grep -q "isBinaryBuffer" engine/core/src/filesystem/isomorphic-git.ts && echo "�
 grep -qi "png" engine/core/src/__tests__/isomorphic-git-v2.test.ts && echo "✅ PNG 测试" || echo "❌ 缺 PNG 测试"
 ```
 
-#### 113. v1.3.6 新功能审查面——八交付锚点一维收口（阶段五来源提取 A 类）
+#### 113. v1.3.6 新功能审查面——八交付锚点一维收口（阶段五来源提取 A 类 · v1.4.1 阶段四归并 114 入此：run-03 修复防复发三锚点为同版配套面）
 
-> v1.3.6 十六项交付的核心面收口为一维（acceptance S282-S289 已有端到端断言，此处是快速 grep 版——审查 session 分钟级可跑）。检查命令全部指向**实际实现路径**（changelog 的涉及文件表是开发前预估，ontology 管线实际在 `import-pipeline.ts` 非 `writer.ts`——S283 初版就错在这）。
+> v1.3.6 十六项交付的核心面收口为一维（acceptance S282-S289 已有端到端断言，此处是快速 grep 版——审查 session 分钟级可跑）。检查命令全部指向**实际实现路径**（changelog 的涉及文件表是开发前预估，ontology 管线实际在 `import-pipeline.ts` 非 `writer.ts`——S283 初版就错在这）。**v1.4.1 阶段四归并**：原 #114（v1.3.6 run-03 修复防复发——脱敏两层同源 + 安全渠道 + worktree 信号清理）为同版配套修复面，三锚点并入本维（归并配额对销记录：#114 → #113，净减 13 行）。
 
 ```bash
 # 引擎接口外化四件
@@ -1531,20 +1528,11 @@ grep -q "define_acceptance" engine/mcp/src/tools/acceptance.ts && echo "✅ ⑨�
 # 可靠性件
 grep -q "postToolCall" engine/orchestrator/src/middleware/dual-gate-mw.ts && test -f engine/daemon/src/fatigue.ts && grep -q "safe-stop" engine/audit/src/degradation.ts && echo "✅ ⑫⑬⑭双闸+疲劳+降级" || echo "❌ 可靠性缺"
 grep -q "DecisionCategory" engine/audit/src/decision-schema.ts && echo "✅ ⑮decisions五分类" || echo "❌ ⑮缺"
-```
-
-#### 114. v1.3.6 run-03 修复防复发——脱敏两层同源 + 安全渠道 + worktree 信号清理
-
-> fresh-eyes run-03 的 3 条 P1 修复锚点（finding-01 安装 URL 属发版中间态不在此列——阶段十一 4b 消解）。
-
-```bash
-# finding-02：prompt 层与 tool 层脱敏同源（模块加载级行为断言在 prompt-sanitizer.ts 内）
-grep -q "sk_live_\|sk_(live|test)" engine/core/src/security/prompt-sanitizer.ts && echo "✅ prompt 层 Stripe 覆盖" || echo "❌ 脱敏不对称回退"
-grep -q "SHARED_REDACTION_SAMPLES" engine/core/src/security/prompt-sanitizer.ts && echo "✅ 两层漂移断言在位" || echo "❌ 防漂移断言丢失"
-# finding-03：noreply 邮箱不得复列为联系渠道（commit 邮箱无妨）
+# 原 #114 并入：v1.3.6 run-03 修复防复发三锚点（脱敏两层同源 + 安全渠道 + worktree 信号清理）
+grep -q "SHARED_REDACTION_SAMPLES" engine/core/src/security/prompt-sanitizer.ts && echo "✅ 脱敏两层漂移断言在位" || echo "❌ 防漂移断言丢失"
 grep -q "Security Advisory" SECURITY.md && ! grep -q "noreply.*备选" SECURITY.md && echo "✅ 漏洞渠道单通道" || echo "❌ 摆设渠道回潮"
-# worktree 留存根治（双 driver 均接线）
 grep -q "registerSignalCleanup" FORGE/src/driver-base.mjs && grep -q "registerSignalCleanup\|cleanupStaleWorktrees" FORGE/src/fresh-eyes-driver.mjs && grep -q "registerSignalCleanup\|cleanupStaleWorktrees" FORGE/src/release-gate-driver.mjs && echo "✅ 信号清理双 driver" || echo "❌ 镜像漂移回退"
+```
 
 #### 115. v1.3.7 新功能审查面——沙箱五件套/权限三防线/并发三级来源/OKF 三件套（阶段四来源提取 A 类）
 
@@ -1677,4 +1665,52 @@ node -e "const l=require('./package-lock.json');const p=JSON.parse(require('fs')
 grep -q "createArgv1Guard" engine/orchestrator/src/execution-backends/dsh-backend.ts && echo "✅ argv 守卫在位" || echo "❌ argv 守卫回退"
 ```
 <!-- v1.4.0 阶段四：#121 由 v1.3.9 锚点原地更新（参照 113/115 每版一维先例，不新增编号不触警戒线）；v1.3.9 锚点检查项（AST/worklog/DSH 桥接/MLflow/跨平台/守护）已被 #119/#120 防复发维 + acceptance S305-S317 覆盖，不重复。B 类防回归（dist 陈旧/文档数字漂移）进 check-version 检查项 21/22（fresh-eyes F-01/F-05 防复发）。
+-->
+
+#### 123. v1.4.1 新功能审查面——训练引擎地基八大块一维收口（阶段四来源提取 A 类 · 参照 113/115/121 每版一维）
+
+> v1.4.1 训练引擎 · 地基核心面收口一维（acceptance S323-S327 端到端已断言 doctor/隔离/指纹/签名/安全基线五面，此处为分钟级快速 grep 版）。锚点全部实测存在。阶段 0 Metal 验证（@mlx-node/trl）定位 Mac-only 验证路径不入生产审查面。
+
+```bash
+# 块二 train-job 编排 + 块四隔离 + 块五指纹 + 块六签名 + 块七守卫/恢复 + 块八安全（协议/预算在 #113 ⑥⑦ 已锚）
+test -f engine/orchestrator/src/train/train-scheduler.ts && grep -q "spawn" engine/orchestrator/src/train/train-scheduler.ts && echo "✅ 编排 spawn 在位" || echo "❌ scheduler 缺"
+grep -q "assertEnterpriseAccess" engine/orchestrator/src/train/isolation-guard.ts && grep -q "assertSafePathSegment" engine/orchestrator/src/train/isolation-guard.ts && echo "✅ 企业隔离两级原语" || echo "❌ 隔离守卫缺"
+grep -q "freezeTrainFingerprint" engine/orchestrator/src/train/train-fingerprint.ts && grep -q "datasetVersion" engine/orchestrator/src/train/train-fingerprint.ts && echo "✅ 指纹冻结+续跑版本锁" || echo "❌ 指纹缺"
+grep -q "signArtifacts" engine/orchestrator/src/train/artifact-signing.ts && grep -q "manifestHmac" engine/orchestrator/src/train/artifact-signing.ts && grep -q "artifact_tampered\|tampered" engine/orchestrator/src/train/artifact-verify.ts && echo "✅ 签名+加载阻断" || echo "❌ 签名链缺"
+grep -q "lastBeatMs" engine/orchestrator/src/train/process-guard.ts && grep -q "120_000\|120000" engine/orchestrator/src/train/process-guard.ts && echo "✅ 心跳回收（120s 阈值）" || echo "❌ 心跳守卫缺"
+grep -q "resumeTrainJob" engine/orchestrator/src/train/crash-recovery.ts && echo "✅ 崩溃恢复三选项（checkpoint 续跑前置）" || echo "❌ 恢复缺"
+grep -q "validateTrainPath" engine/orchestrator/src/train/security-baseline.ts && grep -q "sanitizeHyperparamsForSpawn" engine/orchestrator/src/train/security-baseline.ts && grep -q "maskCredentials" engine/orchestrator/src/train/security-baseline.ts && echo "✅ 安全基线三件" || echo "❌ 安全基线缺"
+grep -q "train_submit" engine/mcp/src/tool-registry.ts && echo "✅ train_submit MCP 注册（66→67）" || echo "❌ train_submit 未注册"
+grep -q "TrainAuditEventType\|train_job_submitted" engine/orchestrator/src/train/train-audit.ts && grep -q "hmacSig" engine/orchestrator/src/train/train-audit.ts && echo "✅ train 审计事件+HMAC 链（事件 union 本文件自持，audit 包无扩展点不动）" || echo "❌ 审计链缺"
+```
+
+#### 124. v1.4.1 发版防复发——install.sh 迁移/谎报守卫/安全披露/文档状态一维收口（阶段四来源提取 B 类 · fresh-eyes round-02 + 补审 + 3c61d980）
+
+> v1.4.1 阶段三全链路（fresh-eyes round-02 12 findings + f5430de4 修复 + 独立补审 + 3c61d980 次生修复）的防复发锚点。B2/B3 端到端见 acceptance S328/S329；B1/B8 工具化见 check-version 检查项；此处收口剩余面的快速 grep。
+
+```bash
+# B2 迁移纪律：复制成功才删源（cp -Rn 吞错+无条件 rm 的丢数据窗口已闭）
+grep -q 'cp -Rn' install.sh && echo "❌ cp -Rn 吞错语义回流" || echo "✅ 迁移无 cp -Rn"
+grep -A2 'cp -R "$old_data"' install.sh | grep -q 'rm -rf "$old_data"' && echo "✅ 删源在复制成功分支内" || echo "❌ 删源脱离成功分支"
+# B3 谎报守卫：全文件 ln 调用无「失败仍报 ok」路径（4 处 sf 全守卫 + 5 处 sfn 全降级——BSD grep 下 sfn 前缀含 sf，用显式计数）
+SF_COUNT=$(grep -E 'ln -sf "' install.sh | grep -vc 'warn\|#' || true); [ "$SF_COUNT" = "4" ] && echo "✅ ln -sf 恰 4 处（均带守卫——多出即需人工核）" || echo "🟡 ln -sf 计数 $SF_COUNT（预期 4），逐处核对守卫"
+# P1 次生修复：迁移中止叙事（err 话术 + 调用处接管退出）
+grep -q '安装因迁移失败中止' install.sh && echo "✅ 迁移中止 err 叙事在位" || echo "❌ 中止叙事缺失"
+# B4 安全披露：豁免开关必须在 .md 有披露
+grep -rq "SOFAGENT_WEBHOOK_ALLOW_LOCALHOST" docs/LIMITATIONS.md && echo "✅ SSRF 豁免开关已披露" || echo "❌ 隐藏开关回潮"
+# B5 注释数字不失实
+LINES=$(wc -l < install.sh | tr -d ' '); grep -o '~[0-9]* 行' bootstrap.sh | grep -o '[0-9]*' | awk -v n="$LINES" '{if ($1 > n * 1.05 || $1 < n * 0.95) exit 1}' && echo "✅ bootstrap 行数注释与实测偏差 <5%" || echo "❌ 注释行数失实"
+# B6 无 untracked 残留 + gitignore 无死规则
+[ -z "$(git status --short | grep '^??')" ] && echo "✅ 无 untracked 残留" || echo "❌ 残留：$(git status --short | grep '^??' | head -2)"
+# B9/B10 结构可发现性
+grep -q "FORGE/SKILL" AGENTS.md && echo "✅ FORGE/SKILL 区分说明在位" || echo "❌ 同名异义无解释"
+grep -q "releasing/" docs/changelog/releasing.md && head -5 docs/changelog/releasing.md | grep -q "入口" && echo "✅ releasing 入口指引在位" || echo "❌ 入口指向不明"
+```
+
+<!-- 瘦身判据记录 v1.4.1（阶段四步骤四 · 执行模板第 2 份执行）
+①冗余：#63 命令体与 acceptance S166 的 node 扫描命令逐字符同款（判据①）→ 命令体移入 S166，维度留纪律叙述 + 引用，净减 5 行
+②重叠：聚簇「新功能审查面」×6（111/113/115/117/121/123）为同模式不同内容（每版锚点须留，判据④.4 假信号）；「tool/commit/check/FORGE/HMAC/完整性/test」为通用词假信号——无真实重叠归并
+③增长性质：+2 维中 #123 训练引擎地基（新审查面，参照 113/115/121 每版一维惯例，A 类 18 条压 1 维）、#124 发版防复发（新审查面，B 类 10 条压 1 维）——均非模式重复
+④归并配额：新增 2 维 → 本版真实归并 2 处（#114→#113 同版配套面并入，净减 13 行；#63 命令体→S166，净减 5 行——均内容实移非注释压缩，git diff 可查）；2≥2 ✓；净增 26 行 ≤ 上调后余量 30 ✓
+结论：净增 26 行；checklist 警戒线上调 1690→1720（连续上调禁令：v1.3.9/v1.4.0 连续上调，本版先完成真实归并 2 处解锁方准上调）；acceptance 警戒线上调 3000→3150（阶段三 +7 场景顶破 + 阶段四 +2 场景 S328/S329，上版未调非连续）；fresh-eyes 警戒线上调 410→425（见 04-review-system.md，同 v1.4.0「校准笔记 +1 节」先例）——三处均「超标上调 LIMIT 不删内容」方针，不删视角/不删锚点
 -->

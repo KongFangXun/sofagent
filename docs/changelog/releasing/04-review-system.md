@@ -69,16 +69,18 @@
 ## fresh-eyes-review 风格守护自检（步骤五 必跑）
 
 ```bash
-# 1. 行数守护：不超过 410 行（v1.4.0 阶段十二上调 400→410：校准笔记 +1 节，真实新教训非冗余）
+# 1. 行数守护：不超过 425 行（v1.4.1 阶段四上调 410→425：校准笔记 +1 节（11 条 C 类校准），真实新校准非冗余非清单化——同 v1.4.0「400→410 校准笔记 +1 节」先例）
 WC=$(wc -l < FORGE/playbook/fresh-eyes-review.md)
-[ "$WC" -gt 410 ] && echo "🔴 行数膨胀（$WC > 410）——检查是否在加精确检查项" || echo "✅ 行数正常（$WC）"
+[ "$WC" -gt 425 ] && echo "🔴 行数膨胀（$WC > 425）——检查是否在加精确检查项" || echo "✅ 行数正常（$WC）"
 
 # 2. 反清单化守护：不应出现精确检查命令（fresh-eyes-review 是留白式直觉审查，不是 checklist）
 CMD_COUNT=$(grep -cE '(grep|bash|npm|wc -l|test -)' FORGE/playbook/fresh-eyes-review.md || echo 0)
 [ "$CMD_COUNT" -gt 5 ] && echo "🟡 命令引用偏多（$CMD_COUNT 处）——确认都是举例而非检查项" || echo "✅ 命令引用适度（$CMD_COUNT 处）"
 
 # 3. 视角数守护：当前 16 个常规视角（v1.3.1 从 12 扩到 16，commit 157c6eb9），新增需谨慎
-VIEWS=$(grep -c '^### ' FORGE/playbook/fresh-eyes-review.md)
+# v1.4.1 精度修复：原 `grep -c '^### '` 把规则子节（审查校准/工程防线/文档治理）误计为视角，
+# 预存在假阳性（恒报 19）——改为只数真视角标题（「视角N [n]：」模式），动态对账不产生假信号。
+VIEWS=$(grep -cE '^### .*视角[一二三四五六七八九十]+ \[' FORGE/playbook/fresh-eyes-review.md)
 [ "$VIEWS" -ne 16 ] && echo "🟡 视角数变化（当前 $VIEWS，基线 16）——确认是刻意调整" || echo "✅ 视角数稳定（$VIEWS）"
 ```
 
