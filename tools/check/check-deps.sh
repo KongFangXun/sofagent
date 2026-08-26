@@ -53,13 +53,15 @@ echo "────────────────────────�
 check_npm "js-yaml" "5.3.0"
 check_npm "zod" "4.4.3"
 check_npm "archiver" "8.0.0"
+# ⚠️ 上方「当前版本」为脚本硬编码基线——升级依赖后必须同步更新（v1.4.1 教训：
+#    基线滞后于 lock 实际版本会把「已是最新」误报成「有新版本」，门禁假红）
 
 echo ""
 echo "🟡 核心框架（LangGraph 三件套）"
 echo "─────────────────────────────────────────────────────────────"
-check_npm "@langchain/langgraph" "1.4.10"
-check_npm "@langchain/core" "1.2.8"
-check_npm "@langchain/openai" "1.5.8"
+check_npm "@langchain/langgraph" "1.4.12"
+check_npm "@langchain/core" "1.2.9"
+check_npm "@langchain/openai" "1.5.10"
 
 echo ""
 echo "🔴 automerge（v1.3.5 排期升级）"
