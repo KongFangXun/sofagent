@@ -1,20 +1,21 @@
 #!/usr/bin/env node
 // ============================================================
-// check-anchors.mjs · 跨文档 Markdown 锚点校验
+// check-anchors.mjs · Markdown 锚点校验（跨文件 + 文件内）
 // ============================================================
-// 用法: node tools/check-anchors.mjs [--fix]
+// 用法: node tools/check/check-anchors.mjs [--fix]
 //
-// 功能: 扫描所有 .md 文件中的 ](xxx.md#yyy) 跨文件锚点引用，
+// 功能: 扫描所有 .md 文件中的锚点引用：
+//       ① 跨文件引用 ](xxx.md#yyy)；
+//       ② 文件内部目录引用 ](#yyy)。
 //       按 GitHub 锚点归一化规则生成实际锚点表，比对引用的
-//       #yyy 是否存在。文件不存在报断链，锚点不存在报锚点过时。
+//       #yyy 是否存在。跨文件目标不存在报断链，锚点不存在报锚点过时。
 //
-// 检查范围: 跨文件锚点引用（](文件.md#锚点)）。
-// 不检查: 文件内部目录链接（](#锚点)）——这些不带 .md 文件名，
-//          工具的正则不匹配。文件内部目录通常是手写时一次性的，
-//          如需检查可后续扩展（遍历每个文件的内部 #引用）。
+// 检查范围: 跨文件锚点引用（](文件.md#锚点)）+ 文件内部目录链接（](#锚点)）。
+// 文件内部引用的排除规则：跳过空锚点 ](#)；跳过被 ``` 包裹的代码块内容。
 //
-// --fix: 对锚点过时的引用，尝试用模糊匹配找到最接近的实际锚点，
-//        自动修复（改 #yyy 为正确值）。无法确定时跳过并输出建议。
+// --fix: 对锚点过时的引用（含文件内部引用），尝试用模糊匹配找到
+//        最接近的实际锚点，自动修复（改 #yyy 为正确值）。
+//        无法确定时跳过并输出建议。
 //
 // 退出码:
 //   0 = 全部通过（或 --fix 已修复全部）
@@ -129,17 +130,56 @@ function collectMarkdownFiles() {
 // ── 锚点表构建 ──────────────────────────────────────────────
 
 /**
+ * 判断每一行是否处于围栏代码块（``` 或 ~~~）内部。
+ * 代码块内的标题/链接不是真实 Markdown 结构，需整体跳过。
+ * @param {string[]} lines 按行拆分的内容
+ * @returns {boolean[]} 与 lines 等长，true 表示该行在代码块内（含围栏行）
+ */
+function computeCodeBlockMask(lines) {
+  const mask = new Array(lines.length).fill(false);
+  let inFence = false;
+  let fenceMarker = '';
+
+  for (let i = 0; i < lines.length; i++) {
+    const fence = lines[i].match(/^\s*(```+|~~~+)/);
+    if (fence) {
+      if (!inFence) {
+        // 进入代码块（记录围栏符类型，``` 与 ~~~ 各自配对）
+        inFence = true;
+        fenceMarker = fence[1][0];
+        mask[i] = true;
+      } else if (fence[1][0] === fenceMarker) {
+        // 同类型围栏闭合，退出代码块
+        inFence = false;
+        fenceMarker = '';
+        mask[i] = true;
+      } else {
+        // 代码块内部出现的异类围栏仍视为普通内容
+        mask[i] = true;
+      }
+      continue;
+    }
+    mask[i] = inFence;
+  }
+
+  return mask;
+}
+
+/**
  * 从文件内容提取所有标题，生成锚点表。
+ * 跳过围栏代码块内的行（代码块里的 # 开头行不是真实标题）。
  * @param {string} content 文件内容
  * @returns {Set<string>} 锚点集合（不含 # 前缀）
  */
 function extractAnchors(content) {
   const anchors = new Set();
   const lines = content.split('\n');
+  const mask = computeCodeBlockMask(lines);
 
-  for (const line of lines) {
+  for (let i = 0; i < lines.length; i++) {
+    if (mask[i]) continue;
     // 匹配 ATX 标题：# 到 ######
-    const match = line.match(/^(#{1,6})\s+(.+)$/);
+    const match = lines[i].match(/^(#{1,6})\s+(.+)$/);
     if (match) {
       const title = match[2];
       const anchor = githubAnchor(title);
@@ -155,7 +195,7 @@ function extractAnchors(content) {
 // ── 引用提取 ────────────────────────────────────────────────
 
 /**
- * 从文件内容提取所有 .md 锚点引用。
+ * 从文件内容提取所有 .md 锚点引用（跳过围栏代码块内容）。
  * @param {string} content
  * @param {string} filePath 当前文件路径（用于解析相对路径）
  * @returns {{targetFile: string, anchor: string, fullMatch: string, lineNum: number}[]}
@@ -164,6 +204,7 @@ function extractAnchorRefs(content, filePath) {
   const refs = [];
   const lines = content.split('\n');
   const dir = path.dirname(filePath);
+  const mask = computeCodeBlockMask(lines);
 
   // 匹配 ](xxx.md#yyy) 或 ](xxx.md#yyy "title")
   // 不匹配纯文件链接 ](xxx.md)
@@ -171,6 +212,7 @@ function extractAnchorRefs(content, filePath) {
   const refRegex = /\]\(([^)#\s]+\.md)#([^)\s]+)\)/g;
 
   for (let i = 0; i < lines.length; i++) {
+    if (mask[i]) continue; // 跳过代码块内的内容
     let match;
     const line = lines[i];
     refRegex.lastIndex = 0;
@@ -181,6 +223,39 @@ function extractAnchorRefs(content, filePath) {
         targetFile,
         anchor,
         fullMatch: match[0],
+        lineNum: i + 1,
+        line: line.trim(),
+      });
+    }
+  }
+
+  return refs;
+}
+
+/**
+ * 从文件内容提取文件内部目录锚点引用（](#锚点)），
+ * 排除空锚点 ](#) 与围栏代码块内的内容。
+ * @param {string} content
+ * @returns {{anchor: string, lineNum: number, line: string}[]}
+ */
+function extractInternalAnchorRefs(content) {
+  const refs = [];
+  const lines = content.split('\n');
+  const mask = computeCodeBlockMask(lines);
+
+  // 匹配 ](#yyy)（yyy 非空即排除空锚点 ](#)）
+  const internalRegex = /\]\(#([^)\s]+)\)/g;
+
+  for (let i = 0; i < lines.length; i++) {
+    if (mask[i]) continue; // 跳过代码块内的内容
+    let match;
+    const line = lines[i];
+    internalRegex.lastIndex = 0;
+    while ((match = internalRegex.exec(line)) !== null) {
+      const anchor = decodeURIComponent(match[1]);
+      if (!anchor) continue; // 空锚点兜底跳过
+      refs.push({
+        anchor,
         lineNum: i + 1,
         line: line.trim(),
       });
@@ -264,7 +339,7 @@ const colors = {
 };
 
 console.log(colors.bold(colors.cyan('═'.repeat(60))));
-console.log(colors.bold(colors.cyan('  check-anchors · 跨文档锚点校验')));
+console.log(colors.bold(colors.cyan('  check-anchors · Markdown 锚点校验（跨文件 + 文件内）')));
 console.log(colors.bold(colors.cyan('═'.repeat(60))));
 console.log('');
 
@@ -283,16 +358,19 @@ console.log('');
 
 // 收集所有引用并校验
 let brokenFiles = 0;     // 文件本身不存在
-let staleAnchors = 0;   // 锚点过时
+let staleAnchors = 0;    // 锚点过时（跨文件 + 文件内，同一口径）
 let validRefs = 0;
 let fixedCount = 0;
 const staleReports = [];
 
 for (const f of files) {
   const content = fs.readFileSync(f, 'utf8');
-  const refs = extractAnchorRefs(content, f);
   const relFile = path.relative(PROJECT_ROOT, f);
+  const fileLines = content.split('\n');
+  let fileDirty = false;
 
+  // ① 跨文件引用 ](xxx.md#锚点)
+  const refs = extractAnchorRefs(content, f);
   for (const ref of refs) {
     // 1. 检查目标文件是否存在
     if (!fs.existsSync(ref.targetFile)) {
@@ -326,18 +404,55 @@ for (const f of files) {
     if (FIX_MODE) {
       const suggestion = fuzzyMatch(ref.anchor, anchors);
       if (suggestion) {
-        // 执行修复
-        const lines = fs.readFileSync(f, 'utf8').split('\n');
         const oldRef = `#${ref.anchor}`;
         const newRef = `#${suggestion}`;
-        lines[ref.lineNum - 1] = lines[ref.lineNum - 1].replace(oldRef, newRef);
-        fs.writeFileSync(f, lines.join('\n'));
+        fileLines[ref.lineNum - 1] = fileLines[ref.lineNum - 1].replace(oldRef, newRef);
+        fileDirty = true;
         fixedCount++;
         console.log(colors.green(`  ✓ 修复: ${relFile}:${ref.lineNum}`));
         console.log(colors.green(`    ${oldRef} → ${newRef}`));
         console.log('');
       }
     }
+  }
+
+  // ② 文件内部目录引用 ](#锚点)——与跨文件引用同一统计口径
+  const ownAnchors = anchorTables.get(f);
+  const internalRefs = extractInternalAnchorRefs(content);
+  for (const ref of internalRefs) {
+    if (ownAnchors.has(ref.anchor)) {
+      validRefs++;
+      continue;
+    }
+
+    // 文件内锚点过时
+    staleAnchors++;
+    staleReports.push({
+      sourceFile: relFile,
+      sourceLine: ref.lineNum,
+      targetFile: relFile,
+      badAnchor: ref.anchor,
+      line: ref.line,
+    });
+
+    if (FIX_MODE) {
+      const suggestion = fuzzyMatch(ref.anchor, ownAnchors);
+      if (suggestion) {
+        const oldRef = `#${ref.anchor}`;
+        const newRef = `#${suggestion}`;
+        fileLines[ref.lineNum - 1] = fileLines[ref.lineNum - 1].replace(oldRef, newRef);
+        fileDirty = true;
+        fixedCount++;
+        console.log(colors.green(`  ✓ 修复: ${relFile}:${ref.lineNum}（文件内）`));
+        console.log(colors.green(`    ${oldRef} → ${newRef}`));
+        console.log('');
+      }
+    }
+  }
+
+  // 该文件有修复 → 一次性写回
+  if (fileDirty) {
+    fs.writeFileSync(f, fileLines.join('\n'));
   }
 }
 

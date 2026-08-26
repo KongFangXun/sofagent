@@ -42,11 +42,11 @@ sofagent 是一套 FDE 能力——底层引擎是纯本地 Harness 中间件（
 | `knowledge/` | `data/knowledge/` | 知识库 / 评估反馈（eval 体系；旧 `scoring/` 已废弃） |
 | `orchestrator/` | `data/orchestrator/` | 编排决策历史 |
 
-**当前状态（v1.4.0）**：
+**当前状态**：
 - ✅ 脱敏：sanitize() 管道扫描 API Key / 密码 / 手机号，写入前自动打码
 - ✅ 数据保留：cleanup.sh 支持 --purge --before 定时清理 + tar.gz 归档
 - ✅ 审计日志：task-record.sh 独立审计日志 + task/logs 追溯双通道
-- ✅ 静态加密（v1.3.8 交付）：审计历史落盘前透明加密（纯 TS AES-256-GCM，`SOFAGENT-AGE-V1` 格式，密钥存 `~/.sofagent/keys/` 0600 + 指纹强制备份）——详见 [§ 数据静态加密](#数据静态加密v138-交付)
+- ✅ 静态加密（v1.3.8 交付）：审计历史落盘前透明加密（纯 TS AES-256-GCM，`SOFAGENT-AGE-V1` 格式，密钥存 `~/.sofagent/keys/` 0600 + 指纹强制备份）
 - ⚠️ **当前限制**：LLM 自评无外部基准。GDPR / 等保 / SOC2 场景仍需额外措施（age 加密已覆盖审计历史主链，但 forge-runs/checkpoint/model-registry 三目录的加密接线原声称排 v1.3.9 未兑现，已移排 v1.4.7）。合规审查员请注意：**当前版本强合规场景仍建议配合外部加密卷（gpg / disk encryption）**。
 
 ### 纵深防御（静态加密之外的额外措施，持续建议）
@@ -109,7 +109,7 @@ sofagent 是一套 FDE 能力——底层引擎是纯本地 Harness 中间件（
 
 **影响范围**：v1.1.0 - v1.2.2（已修复于 v1.2.3）
 
-> ⚠️ **HMAC key 分发安全**（v1.1.8）：路径 C 的 HMAC 签名密钥如与 federation.json 同放在 USB 等可移动介质上，攻击者获取介质即可伪造 `.sig` 文件。建议 HMAC key 通过独立渠道（如密码管理器 / 加密邮件）分发，不与 federation.json 同介质存储。
+> ⚠️ **HMAC key 分发安全**：路径 C 的 HMAC 签名密钥如与 federation.json 同放在 USB 等可移动介质上，攻击者获取介质即可伪造 `.sig` 文件。建议 HMAC key 通过独立渠道（如密码管理器 / 加密邮件）分发，不与 federation.json 同介质存储。
 
 ### USB federation 安全模型
 
@@ -124,7 +124,7 @@ sofagent 是一套 FDE 能力——底层引擎是纯本地 Harness 中间件（
 | 注入风险 | 🔴 **任何人制作的 SOFAGENT 卷标 U 盘可注入任意 federation 配置** | ✅ 签名不匹配则拒绝导入 |
 | Schema 校验 | ❌ JSON.parse 后直接序列化写入，不校验字段 | ✅ 按 FederationConfig schema 校验（✅ v1.1.5 已落地，`validateFederationSchema()`） |
 
-**企业部署建议（v1.1.6）**：
+**企业部署建议**：
 - 不要在共享/公共设备上启用 USB federation 自动检测
 - 如需使用，插入 U 盘前先在隔离设备上检查 `federation.json` 内容
 - 生产环境等 v1.1.5 的签名校验上线后再启用
@@ -203,13 +203,13 @@ sofagent 是一套 FDE 能力——底层引擎是纯本地 Harness 中间件（
 | 层 | 防护内容 | sofagent 落点 | 状态 |
 |:--:|------|------|:---:|
 | 1 | 指令分层隔离——外部内容 `<untrusted>` 标签包裹 | `core/src/security/prompt-sanitizer.ts` `wrapUntrusted()`（闭合标签转义防逃逸；harness 加载链联邦知识强制包裹） | ✅ v1.1.8 补齐 |
-| 2 | 工具动态最小权限 | Sub Agent 工具集零重叠设计（v1.1.0） | ✅ 已有 |
+| 2 | 工具动态最小权限 | Sub Agent 工具集零重叠设计 | ✅ 已有 |
 | 3 | 工具参数后端强制校验 | 审计引擎 git diff 硬证据 | ✅ 已有 |
 | 4 | 敏感数据不进 prompt——脱敏 | `prompt-sanitizer.ts` `redactForPrompt()`（sk-\*\*\*/AKIA\*\*\*/手机号/邮箱/GitHub token/PEM 私钥；restricted 占位兜底，与 v1.1.6 `isSensitivityVisible` 过滤双保险） | ✅ v1.1.8 补齐 |
 | 5 | RAG 召回可信分级 | `core/src/security/trust-grading.ts`（`resolveTrust` 缺省 internal；official>internal>user>web；web+restricted 丢弃；sortByTrust） | ✅ v1.1.8 补齐 |
 | 6 | 输出结构化 + 执行前审核 | entry-gate 风险分级 + HITL | ✅ 已有 |
 | 7 | 高危动作强制人工确认 | entry-gate 🔴 高风险审批 | ✅ 已有 |
-| 8 | 全链路日志 + 红队测试 | 审计 history.jsonl + daemon WARN 累积（v1.1.4）；联邦查询 `federation_query` 审计条目 | ✅ 已有 |
+| 8 | 全链路日志 + 红队测试 | 审计 history.jsonl + daemon WARN 累积；联邦查询 `federation_query` 审计条目 | ✅ 已有 |
 
 > ⚠️ **A9 注入检测局限——编码绕过**：A9 正则检测覆盖常见中文"忽略类"指令、英文"ignore 类"指令，以及 leet speak 变体（`1gn0r3` → `ignore`，通过 normalizeLine() 反转 + ×0.8 降权匹配）。但不覆盖：① Unicode 同形字替换（西里尔字母 `а` 替换拉丁 `a`）；② Base64/hex 编码后的注入 payload。这些绕过手法依赖语义分析（非纯正则可覆盖），LLM 辅助检测暂未排期（跟踪于 ROADMAP）。**在 LLM 辅助检测落地前，建议对外部输入做归一化（Unicode NFC + 解码后再送检）。**
 
@@ -366,7 +366,7 @@ sanitize() 管道在写入 history.jsonl、think.md、task/logs 等文件前自�
 
 审计拦截记录以 JSONL 明文存储在 `data/audit/history.jsonl`，目录权限 0o700、文件权限 0o600（v1.1.3 起收紧）。仅追加写入（`appendFileSync`），不覆盖、不删除。历史记录供编排引擎和进化引擎本地读取。
 
-**HMAC 密钥轮换**（v1.2.8）：HMAC 签名密钥存储在 `~/.sofagent-key`（权限 0600）。如需轮换（如安全审计要求或疑似泄露）：
+**HMAC 密钥轮换**：HMAC 签名密钥存储在 `~/.sofagent-key`（权限 0600）。如需轮换（如安全审计要求或疑似泄露）：
 
 ```bash
 # 1. 备份旧密钥（旧 hash chain 仍需此密钥验证）
@@ -465,7 +465,7 @@ sofagent daemon 是本地文件系统监控守护进程，其行为边界如下�
 | **权限** | 只读监听文件事件（hash 变化检测 + cron 定时巡检）。**不修改用户文件、不删除文件、不外传数据**。审计发现写入 `daemon-health.json` 和 `history.jsonl`。 |
 | **审计结果推送** | **v1.2.1 已支持 Webhook 推送**（飞书/钉钉/企微，`engine/audit/src/webhook.ts` + `engine/daemon/src/notify.ts` + `push-target.ts`）。企业 IT 可配置 `webhook` 字段实现实时告警推送。 |
 
-> 💡 **企业集中收集（v1.2.1）**：v1.2.1 已支持 Webhook 推送（飞书/钉钉/企微），企业 IT 可配置 `webhook` 字段实现实时告警推送。如仍需集中收集审计日志（如用 Filebeat / Logstash / Fluentd 采集），可定时轮询 `data/audit/history.jsonl`（append-only、JSONL 明文），转发至 SIEM / 企业日志平台。注意 history.jsonl 为明文存储，转发前建议配合外部加密卷或 age 加密，避免敏感 diff 摘要外泄。
+> 💡 **企业集中收集**：v1.2.1 已支持 Webhook 推送（飞书/钉钉/企微），企业 IT 可配置 `webhook` 字段实现实时告警推送。如仍需集中收集审计日志（如用 Filebeat / Logstash / Fluentd 采集），可定时轮询 `data/audit/history.jsonl`（append-only、JSONL 明文），转发至 SIEM / 企业日志平台。注意 history.jsonl 为明文存储，转发前建议配合外部加密卷或 age 加密，避免敏感 diff 摘要外泄。
 
 > daemon 源码见 `engine/daemon/src/`：`fs-watch.ts`（文件监听）、`cron.ts`（定时巡检）、`snapshot.ts`（快照）、`usb-detect.ts`（USB federation 检测，v1.1.4+）、`dream-cycle/`（Dream Cycle 6 阶段管道，v1.1.7+）、`inspectors/knowledge-health.ts`（知识健康巡检，v1.1.7+）、`commands/knowledge-status.ts`（知识状态聚合命令，v1.1.7+）、`federation/`（联邦查询，v1.1.8+）、`usb-signature.ts`（USB HMAC 签名，v1.1.9+）、`usb-key.ts`（USB key 创建，v1.1.9+）、`usb-runtime.ts`（USB 运行时启动，v1.1.9+）、`notify.ts`（统一通知接口，v1.1.3+）。
 
@@ -521,7 +521,7 @@ install.sh 拆分为以下模块，便于逐模块审查：
 - 每次 `npm install` 后运行 `npm audit`
 - 内网环境建议预装 @langchain/langgraph 并验证安装通过后再部署
 
-**automerge@1.0.1-preview.7 风险声明（v1.1.9）**：
+**automerge@1.0.1-preview.7 风险声明**：
 
 `automerge@1.0.1-preview.7` 为 preview 版（非稳定版），API 可能在后续版本变更。截至 v1.2.7 复核，npm 仍无 stable（latest=2.0.0-alpha.3），uuid 弃用警告为已知观感问题；federation 功能不使用时该依赖路径不触达。daemon 精确锁定版本号（`"automerge": "1.0.1-preview.7"`，非 `^` 前缀）避免意外升级。如 automerge 发布 stable 版本或 breaking change，`engine/core/src/federation.ts` 的 `Automerge.change/clone/merge` 调用需重新验证。
 
