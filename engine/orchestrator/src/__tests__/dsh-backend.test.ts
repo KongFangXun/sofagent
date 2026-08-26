@@ -6,6 +6,7 @@
 // 3. createDshBackend 入口校验（缺 Context 抛错）
 // 4. Trajectory 采集 PoC（事件落记录 / flush JSONL / failure-log 同步消费）
 // 5. argv[1] 守卫（v1.4.0：node -e 宿主下 cordis-plugin-hmr 兼容）
+// 6. 工具注入（v1.4.1：registerSofagentTools——tools.register 接线 + 防御式降级）
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { mkdtempSync, rmSync, readFileSync, existsSync } from 'fs';
@@ -17,8 +18,11 @@ import {
   createBudgetPlugin,
   createDshBackend,
   createArgv1Guard,
+  registerSofagentTools,
   ToolBudgetExhaustedError,
   type CordisRuntime,
+  type CordisToolDefinition,
+  type DshToolsService,
 } from '../execution-backends/dsh-backend.js';
 import { createTrajectoryCollector } from '../execution-backends/trajectory.js';
 import { readFailureLog } from '../instinct/failure-log.js';
@@ -286,5 +290,111 @@ describe('Trajectory 采集 PoC', () => {
 
     expect(collector.consumeFailure(dataDir)).toBe(0);
     expect(existsSync(join(dataDir, 'instinct', 'failure-log.jsonl'))).toBe(false);
+  });
+});
+
+// ────────────────────────────────────────────────────────────
+// 工具注入（v1.4.1：registerSofagentTools——tools.register 接线）
+// ────────────────────────────────────────────────────────────
+
+/** 假 tools 服务（DshToolsService 契约——可注入失败行为） */
+function createFakeToolsService(failNames: Set<string> = new Set()) {
+  const registered: Array<{ name: string; def: unknown }> = [];
+  const svc: DshToolsService = {
+    register(def) {
+      if (failNames.has(def.name)) {
+        throw new TypeError(`tool "${def.name}" must declare output { schema, render, presentationMeta? }`);
+      }
+      registered.push({ name: def.name, def });
+      return () => registered.pop();
+    },
+  };
+  return { svc, registered };
+}
+
+describe('registerSofagentTools 工具注入', () => {
+  it('tools 服务就绪——全部注册成功，output 双字段补全', () => {
+    const ctx = createFakeRuntime();
+    const { svc, registered } = createFakeToolsService();
+    (ctx as unknown as { get: (k: string) => unknown }).get = (k: string) =>
+      k === 'tools' ? svc : undefined;
+
+    const tools: CordisToolDefinition[] = [
+      {
+        name: 'check_version',
+        description: '运行版本门禁',
+        parameters: { type: 'object', properties: {} },
+        execute: () => ({ ok: true }),
+        output: { schema: { type: 'string' }, render: (r) => JSON.stringify(r) },
+      },
+      {
+        name: 'check_docs',
+        description: '运行文档门禁',
+        parameters: { type: 'object', properties: {} },
+        execute: () => 'docs-ok',
+        // 无 output 段——注册时应补全 schema 兜底 + safeRender
+      },
+    ];
+    const n = registerSofagentTools(ctx, tools);
+
+    expect(n).toBe(2);
+    expect(registered).toHaveLength(2);
+    // output.render 双参签名（args, value）——无自定义 render 时走 safeRender
+    const docsDef = registered[1].def as {
+      output: { schema: unknown; render: (a: unknown, v: unknown) => string };
+    };
+    expect(docsDef.output.render(undefined, 'docs-ok')).toBe('docs-ok');
+    expect(docsDef.output.render(undefined, { ok: 1 })).toBe('{"ok":1}');
+  });
+
+  it('单项注册失败——跳过该工具，其余照常注册（防御式不中断）', () => {
+    const ctx = createFakeRuntime();
+    const { svc, registered } = createFakeToolsService(new Set(['bad_tool']));
+    (ctx as unknown as { get: (k: string) => unknown }).get = (k: string) =>
+      k === 'tools' ? svc : undefined;
+
+    const tools: CordisToolDefinition[] = [
+      { name: 'bad_tool', description: '', parameters: { type: 'object', properties: {} }, execute: () => null },
+      { name: 'good_tool', description: '', parameters: { type: 'object', properties: {} }, execute: () => null },
+    ];
+    const n = registerSofagentTools(ctx, tools);
+
+    expect(n).toBe(1);
+    expect(registered.map((r) => r.name)).toEqual(['good_tool']);
+  });
+
+  it('tools 服务缺失——返回 0 降级不崩（rc 形态变化防御）', () => {
+    const ctx = createFakeRuntime();
+    // 假 runtime 无 get 面时 CordisRuntime.get 可选——补一个返回 undefined 的 get
+    (ctx as unknown as { get: (k: string) => unknown }).get = () => undefined;
+
+    const n = registerSofagentTools(ctx, [
+      { name: 'x', description: '', parameters: { type: 'object', properties: {} }, execute: () => null },
+    ]);
+    expect(n).toBe(0);
+  });
+
+  it('convertTools 产物可直接喂 registerSofagentTools（转换-注册管道贯通）', () => {
+    const ctx = createFakeRuntime();
+    const { svc, registered } = createFakeToolsService();
+    (ctx as unknown as { get: (k: string) => unknown }).get = (k: string) =>
+      k === 'tools' ? svc : undefined;
+
+    // LangGraph 形状工具（invoke 型）→ convertTools → register
+    const langGraphTools = [
+      {
+        name: 'gate_check',
+        description: '门禁',
+        schema: { type: 'object', properties: {} },
+        invoke: (input: Record<string, unknown>) => ({ gate: 'ok', ...input }),
+      },
+    ];
+    const converted = convertTools(langGraphTools);
+    const n = registerSofagentTools(ctx, converted);
+
+    expect(n).toBe(1);
+    // execute 段保 wrapper：注册后的 def.execute 仍调原 invoke
+    const def = registered[0].def as { execute: (a: Record<string, unknown>) => unknown };
+    expect(def.execute({ k: 1 })).toEqual({ gate: 'ok', k: 1 });
   });
 });

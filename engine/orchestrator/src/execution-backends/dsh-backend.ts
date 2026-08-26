@@ -66,6 +66,26 @@ export interface CordisRuntime {
   dispose?(): void | Promise<void>;
 }
 
+/**
+ * DSH tools 服务最小契约（rc.2 dsh-tools ToolsService 实测面）。
+ * register() 返回 disposer（unregister）——driver 每任务一个 ctx，任务结束
+ * dispose 整棵树，disposer 无需单独保存（生命周期与 ctx 同寿）。
+ */
+export interface DshToolsService {
+  /**
+   * 注册工具（全局层或调用方 scope——prepare 回调内调用即全局）。
+   * 契约（assertSupportedJsonSchema 强校验）：name 非保留字（run_code）、
+   * output.schema 必须是受支持 JSON Schema 子集、output.render 必须是函数。
+   */
+  register(definition: {
+    name: string;
+    description?: string;
+    parameters: Record<string, unknown>;
+    output: { schema: Record<string, unknown>; render: (args: unknown, value: unknown) => string };
+    execute: (args: Record<string, unknown>, exec: unknown) => unknown;
+  }): () => void;
+}
+
 /** Cordis 模块契约——cordis@4.0.1 真实导出（解包核实） */
 export interface CordisModule {
   /** 根上下文构造器：new Context(config?) */
@@ -102,6 +122,64 @@ export interface CordisToolDefinition {
 }
 
 /**
+ * 把 CordisToolDefinition 注册进 DSH tools 服务（v1.4.1 工具注入接线）。
+ *
+ * 通道（实测 rc.2）：boot(dsh-base) 后 ctx.get('tools') → ToolsService.register()。
+ * 注册时机在 boot 的 prepare 回调内 = 全局层——dsh-base 会话内所有 agent 可见。
+ *
+ * 防御式边界（rc 期 API 无生产承诺，缺面降级不崩）：
+ * - tools 服务缺失 → 返回 0 并 WARN（agent 仍可用 DSH 自带 fs/bash）
+ * - 单工具注册失败（schema 不合子集等）→ 跳过该工具 WARN，不中断其余注册
+ *
+ * @returns 实际注册成功的工具数
+ */
+export function registerSofagentTools(
+  ctx: CordisRuntime,
+  tools: CordisToolDefinition[],
+): number {
+  const svc = ctx.get?.('tools') as DshToolsService | undefined;
+  if (!svc || typeof svc.register !== 'function') {
+    console.warn(
+      '[dsh-backend] DSH tools 服务面缺失（rc 形态变化？）——sofagent 自定义工具未注入，' +
+        'agent 回落 DSH 自带 fs/bash 工具链',
+    );
+    return 0;
+  }
+  let registered = 0;
+  for (const t of tools) {
+    try {
+      svc.register({
+        name: t.name,
+        description: t.description,
+        parameters: t.parameters,
+        // output 双字段补全（register 强校验：schema + render 都必须可调用/合法）
+        output: {
+          schema: t.output?.schema ?? { type: 'string' },
+          render: (_args: unknown, value: unknown) =>
+            t.output?.render ? String(t.output.render(value)) : safeRender(value),
+        },
+        execute: (args: unknown) => t.execute(args as Record<string, unknown>, undefined),
+      });
+      registered++;
+    } catch (err) {
+      console.warn(`[dsh-backend] 工具 ${t.name} 注册失败（跳过，不中断其余）：${(err as Error).message}`);
+    }
+  }
+  return registered;
+}
+
+/** render 兜底——字符串直出，对象 JSON 化（截断防超大输出进 prompt） */
+function safeRender(value: unknown): string {
+  if (typeof value === 'string') return value;
+  try {
+    const s = JSON.stringify(value);
+    return s && s.length > 4000 ? s.slice(0, 4000) + '…(截断)' : (s ?? '');
+  } catch {
+    return String(value);
+  }
+}
+
+/**
  * 工具格式转换：LangGraph ToolInterface / ExecutableTool → Cordis ToolDefinition 三段式。
  *
  * 🔴 只适配协议（字段名映射），不替换工具实现——task.tools 可能已被
@@ -132,8 +210,10 @@ export function convertTools(tools: unknown[]): CordisToolDefinition[] {
       parameters: normalizeParameters(tool.schema ?? tool.parameters),
       // ── execute 段（宿主私有）：原样引用，保 wrapper ──
       execute: (args) => invoker(args),
-      // ── output 段（宿主私有）：字符串化兜底渲染 ──
+      // ── output 段（宿主私有）：schema 兜底 string（tools.register 强校验要求
+      //    output.schema 必填——受支持子集；sofagent 工具返回统一字符串化 JSON）──
       output: {
+        schema: { type: 'string' },
         render: (result) => (typeof result === 'string' ? result : JSON.stringify(result)),
       },
     });
@@ -416,6 +496,16 @@ async function createCordisDriver(
         await (loader as { await: () => Promise<void> }).await();
       }
 
+      // v1.4.1 工具注入：loader 完成后 tools 服务就绪——把 sofagent 自定义工具
+      // （gate-tools / FORGE worker 工具面）注册进 DSH 会话。注册在 ctx 全局层，
+      // 后续 agents.create 的 agent 即可调用。防御式：tools 面缺失/单项失败降级不崩。
+      if (opts.tools && opts.tools.length > 0) {
+        const n = registerSofagentTools(ctx as CordisRuntime, opts.tools);
+        if (n > 0) {
+          console.log(`[dsh-backend] sofagent 工具注入：${n}/${opts.tools.length} 个已注册进 DSH 会话`);
+        }
+      }
+
       const agents = get?.('agents') as {
         create?: (o: unknown) => Promise<{ agent: AgentHandle }>;
       } | undefined;
@@ -645,11 +735,12 @@ export function createDshCliBackend(): ExecutionBackend {
 
     async execute(task: ExecutionTask): Promise<ExecutionResult> {
       // sofagent 自定义工具边界：CLI 子进程无法注入 task.tools——
-      // DSH 自带 bash/fs 工具链可用，但 sofagent 自定义工具不生效，显式告知
+      // DSH 自带 bash/fs 工具链可用；自定义工具注入已在内嵌路径交付
+      // （registerSofagentTools——cordis 内嵌形态，rc 守卫放行后生效）
       if (task.tools && task.tools.length > 0) {
         console.warn(
           `[dsh-backend] DSH CLI 桥接下 sofagent 自定义工具（${task.tools.length} 个）不生效——` +
-          `DSH 自带 bash/fs 工具链可用；自定义工具注入排下版（库内集成）`
+          `DSH 自带 bash/fs 工具链可用；自定义工具注入走内嵌路径（registerSofagentTools）`
         );
       }
 
