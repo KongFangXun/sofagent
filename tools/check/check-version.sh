@@ -30,6 +30,9 @@ export LC_ALL="${LC_ALL:-en_US.UTF-8}"
 #  12. .ts 文件头注释版本号
 #  13. 全局 npm 二进制版本（sofagent-audit --version）
 #  14. 文档示例版本号占位符（docs/ 下 @sofagent/*@<真实版本> = bug，应用 <LATEST>）
+#  15-24. ROADMAP/WIKI/MCP 工具数/安装入口 tag/构建产物/lock 同步/CHANGELOG 顶版漂移等
+#  25. 待发版窗口三态一致性（B1：CHANGELOG 收录 × 双语 README 状态行 × 安装 URL 配套齐）
+#  26. 工具数全仓口径（B8：六文档工具数叙事必含当前实数，防口径漏改）
 #
 # 排除目录: docs/changelog/, node_modules/, .git/, dist/
 #
@@ -1163,6 +1166,88 @@ console.log('OK:' + '${CHANGELOG_TOP_VERSION}' + ' vs ' + '${PKG_VERSION}');
     echo -e "  ${RED}修复：bash tools/release/bump-version.sh <旧> <新> 后随代码同 commit${NC}"
     ERRORS=$((ERRORS + 1))
   }
+fi
+echo ""
+
+echo "=== 25. 待发版窗口三态一致性（B1 防复发：CHANGELOG 收录 × README 状态行 × 安装 URL） ==="
+# v1.4.1 fresh-eyes F01/B1：开发完成→发版之间，「tag/npm=旧版、代码=新版、文档=待发版标注」
+# 三处状态信号必须配套齐——CHANGELOG 收录了新版但 README 无状态行解释，或安装 URL 已指向
+# 未打的 tag，都是三态缺角（陌生人视角必误报/安装链必断）。
+# 前置条件：第 24 项已算出顶版 > SSOT（drift=1）才进入；非待发版窗口三态天然一致，跳过。
+if [[ -n "${CHANGELOG_TOP_VERSION}" ]] && [[ "${CHANGELOG_TOP_VERSION}" != "${PKG_VERSION}" ]]; then
+  # a. CHANGELOG 顶版行必须带「待发版」状态标注（索引规则自我一致：收录了就要标）
+  if grep -m1 -F -- "- **${CHANGELOG_TOP_VERSION}**" "${PROJECT_ROOT}/CHANGELOG.md" 2>/dev/null | grep -q "待发版"; then
+    echo -e "  ${GREEN}✓${NC} CHANGELOG 顶版行带「待发版」标注"
+    CHECKS=$((CHECKS + 1))
+  else
+    echo -e "  ${RED}✗${NC} CHANGELOG 顶版 ${CHANGELOG_TOP_VERSION} 已收录但缺「待发版」标注——索引规则与收录条目互斥（B1）"
+    ERRORS=$((ERRORS + 1))
+  fi
+  # b/c. 双语 README 头部状态行（中间态的对外解释，缺一即陌生人视角版本族误报源）
+  if head -20 "${PROJECT_ROOT}/README.md" 2>/dev/null | grep -q "待发版"; then
+    echo -e "  ${GREEN}✓${NC} README.md 头部状态行含「待发版」"
+    CHECKS=$((CHECKS + 1))
+  else
+    echo -e "  ${RED}✗${NC} README.md 头部 20 行内无「待发版」状态行——三态缺角（B1）"
+    ERRORS=$((ERRORS + 1))
+  fi
+  if head -20 "${PROJECT_ROOT}/README.en.md" 2>/dev/null | grep -qiE "pending release|pre-release"; then
+    echo -e "  ${GREEN}✓${NC} README.en.md 头部状态行含 pending/pre-release"
+    CHECKS=$((CHECKS + 1))
+  else
+    echo -e "  ${RED}✗${NC} README.en.md 头部 20 行内无 pending/pre-release 状态行——双语漂移（B1）"
+    ERRORS=$((ERRORS + 1))
+  fi
+  # d. 安装 URL refs/tags 不得指向未发布的新版 tag（指向未来 = 安装链断）
+  B1_TAG_OVER=0
+  while IFS= read -r _tagurl; do
+    [[ -z "${_tagurl}" ]] && continue
+    _tagver="${_tagurl#refs/tags/v}"
+    _cmp=$(node -e "
+const a='${_tagver}'.split('.').map(Number), b='${SSOT_VERSION}'.split('.').map(Number);
+console.log(((a[0]-b[0])*10000+(a[1]-b[1])*100+((a[2]||0)-(b[2]||0))) > 0 ? 'OVER' : 'OK');
+" 2>/dev/null || echo "OK")
+    if [[ "${_cmp}" == "OVER" ]]; then
+      echo -e "  ${RED}✗${NC} ${_tagurl} 指向未发布 tag（SSOT=${SSOT_VERSION}）——安装链断（B1）"
+      B1_TAG_OVER=$((B1_TAG_OVER + 1))
+    fi
+  done <<EOF
+$(grep -ohE 'refs/tags/v[0-9]+\.[0-9]+\.[0-9]+' "${PROJECT_ROOT}/README.md" "${PROJECT_ROOT}/README.en.md" "${PROJECT_ROOT}/bootstrap.sh" 2>/dev/null | sort -u || true)
+EOF
+  if [[ ${B1_TAG_OVER} -eq 0 ]]; then
+    echo -e "  ${GREEN}✓${NC} 安装 URL tag 全部 ≤ ${SSOT_VERSION}（未指向未发布 tag）"
+    CHECKS=$((CHECKS + 1))
+  else
+    ERRORS=$((ERRORS + B1_TAG_OVER))
+  fi
+else
+  echo -e "  ${GREEN}✓${NC} 非待发版窗口（顶版 = 包版本），三态天然一致，跳过"
+  CHECKS=$((CHECKS + 1))
+fi
+echo ""
+
+echo "=== 26. 工具数口径：全仓文档声称 vs registry SSOT（B8 漏改防复发） ==="
+# v1.4.1 fresh-eyes F08/B8：HANDBOOK 写「v1.4.0 现 66」与 ARCHITECTURE/SKILL/AGENTS 的 67 漂移。
+# 口径：工具数变更时全仓一次全量清点——白名单内每个声称过工具数的文档，当前口径数字
+# （registry 实数）必须至少出现一次；历史双态表述（66/67 并列）不豁免「缺当前数」。
+# 白名单语义：这些文档实际写着工具数叙事，口径必须跟住；叙事删除时应有意识地移白名单，不静默漏。
+if [[ "${MCP_REG:-0}" =~ ^[0-9]+$ ]] && [[ "${MCP_REG}" -gt 0 ]]; then
+  B8_DOC_MISS=0
+  for _td in SKILL/SKILL.md docs/HANDBOOK.md docs/ARCHITECTURE.md AGENTS.md README.md README.en.md; do
+    [[ -f "${PROJECT_ROOT}/${_td}" ]] || continue
+    # 口径：该文档任一含 tool 的行出现当前实数即算口径已跟（双态表述「66→67」天然含 67）
+    if grep -i "tool" "${PROJECT_ROOT}/${_td}" 2>/dev/null | grep -qE "(^|[^0-9])${MCP_REG}([^0-9]|$)"; then
+      echo -e "  ${GREEN}✓${NC} ${_td} 含当前口径 ${MCP_REG} tools"
+      CHECKS=$((CHECKS + 1))
+    else
+      echo -e "  ${RED}✗${NC} ${_td} 含 tool 叙事但缺当前口径 ${MCP_REG}——口径漏改，补数字或有意识移白名单（B8）"
+      B8_DOC_MISS=$((B8_DOC_MISS + 1))
+    fi
+  done
+  [[ ${B8_DOC_MISS} -gt 0 ]] && ERRORS=$((ERRORS + B8_DOC_MISS))
+else
+  echo -e "  ${YELLOW}⚠${NC} tool-registry.ts 工具数解析失败，跳过全仓口径核对（第 22 项已报原因）"
+  WARNINGS=$((WARNINGS + 1))
 fi
 echo ""
 
