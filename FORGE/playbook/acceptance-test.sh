@@ -6,7 +6,7 @@ export LANG=en_US.UTF-8
 export LC_ALL=en_US.UTF-8
 # sofagent-audit · 上线前验收测试（Pre-Release Acceptance Test）
 # 覆盖：FORGE + MCP + 文件系统审计 + daemon + 红队对抗 + 各版本新功能验收
-# 场景数：255 个场景（SSOT：check-test-count.sh 校验，口径=真实 scenario 调用行数，非编号最大值（S1-S322 间有 67 个历史空洞号）；v1.3.7 +4：S290-S293；v1.3.6 +8：S282-S289；v1.3.8 +11：S294-S304（含 bugfix 防回归 S303/S304）；v1.3.9 +15：S305-S319（阶段五 A 类分发 13 项 + 阶段六 coverage 补测 S318 ATTRIBUTION 归因引擎/S319 Dream Sandbox 沙盒审计）；v1.4.0 +3：S320（联邦查询跨进程 E2E——补 federation.test.ts 同进程 mock 缺口）、S321（跨平台 hook stdin 模式闭环验证）、S322（双设备联邦独立进程模拟——两个独立 node 进程 + 真实 TCP，补 fork 形态缺口））
+# 场景数：260 个场景（SSOT：check-test-count.sh 校验，口径=真实 scenario 调用行数，非编号最大值（S1-S327 间有 67 个历史空洞号）；v1.3.7 +4：S290-S293；v1.3.6 +8：S282-S289；v1.3.8 +11：S294-S304（含 bugfix 防回归 S303/S304）；v1.3.9 +15：S305-S319（阶段五 A 类分发 13 项 + 阶段六 coverage 补测 S318 ATTRIBUTION 归因引擎/S319 Dream Sandbox 沙盒审计）；v1.4.0 +3：S320（联邦查询跨进程 E2E——补 federation.test.ts 同进程 mock 缺口）、S321（跨平台 hook stdin 模式闭环验证）、S322（双设备联邦独立进程模拟——两个独立 node 进程 + 真实 TCP，补 fork 形态缺口）；v1.4.1 +5：S323（train doctor CLI 实跑）、S324（enterpriseId 强制绑定+幂等）、S325（fingerprint 冻结+不可变）、S326（artifact 签名+篡改检测）、S327（安全基线路径白名单+注入检测））
 # 编号跳号豁免：S1~S293 间有 70 个空洞号（全在 S36-S202 历史段）——v1.2.x 瘦身删场景
 # 与基线重建（restore 6e542467）的既成事实，非丢失；新场景编号=当前最大+1 顺延，禁止回填空洞
 # 版本段起点见文件内「# ─── v」分组标记（grep "─── v" 定位）
@@ -2963,6 +2963,128 @@ S322_OK=true
 R322=$(SOFAGENT_REPO="$PROJECT_ROOT" node "$PROJECT_ROOT/FORGE/playbook/dual-device-federation.mjs" 2>&1 || true)
 echo "$R322" | grep -q "结果：双进程联邦链路完成" || S322_OK=false
 $S322_OK && pass "双设备联邦独立进程模拟全绿（配对/跨设备查询/篡改检测/离线降级 4 场景）" || fail "双设备联邦独立进程模拟失败: $(echo "$R322" | grep -E '❌|失败' | head -3 || true)"
+
+# ─── v1.4.1：训练引擎地基（S323-S327 · 八大块可执行面验收）───
+scenario 323 "v1.4.1 块七：train doctor 子命令——CLI 真实可跑（无训练任务环境返回体检通过，不误报假活）"
+S323_OK=true
+R323=$(cd "$PROJECT_ROOT" && node engine/orchestrator/dist/cli.js train doctor 2>&1 || true)
+echo "$R323" | grep -q "训练环境体检通过" || S323_OK=false
+echo "$R323" | grep -q "假活 0" || S323_OK=false
+$S323_OK && pass "train doctor 实跑通过（运行中 0 / 假活 0 / 体检通过）" || fail "train doctor 失败: $(echo "$R323" | head -3 || true)"
+
+scenario 324 "v1.4.1 块三：enterpriseId 隔离——train-job 数据模型强制绑定（缺失拒绝创建）+ 合法创建全链路标记"
+S324_OK=true
+S324_TMP=$(mktemp -d)
+R324=$(cd "$PROJECT_ROOT" && SOFAGENT_TEST_TMP="$S324_TMP" node -e "
+const { createTrainJob } = require('./engine/orchestrator/dist/train/train-job.js');
+const dataDir = process.env.SOFAGENT_TEST_TMP;
+// ① 缺 enterpriseId → zod 拒绝（CreateTrainJobInput enterpriseId 必填）
+let rejected = false;
+try { createTrainJob({ dataDir, dataPath: 'data/train/x/d.json', baseModel: 'm', algorithm: 'sft' }); }
+catch (e) { rejected = true; }
+console.log('missing-enterpriseId-rejected:', rejected);
+// ② 合法创建 → 记录带 enterpriseId（全链路标记）
+const r = createTrainJob({ dataDir, enterpriseId: 'ent-a', dataPath: 'data/train/a/d.json', baseModel: 'm', algorithm: 'sft' });
+const rec = r.record || r.job || r;
+console.log('bound:', rec && rec.enterpriseId === 'ent-a');
+// ③ 幂等：同 jobId 重复提交返回同一实例
+const again = createTrainJob({ dataDir, enterpriseId: 'ent-a', jobId: rec.jobId, dataPath: 'data/train/a/d.json', baseModel: 'm', algorithm: 'sft' });
+const againRec = again.record || again.job || again;
+console.log('idempotent:', againRec.jobId === rec.jobId);
+" 2>&1 || true)
+echo "$R324" | grep -q "missing-enterpriseId-rejected: true" || S324_OK=false
+echo "$R324" | grep -q "bound: true" || S324_OK=false
+echo "$R324" | grep -q "idempotent: true" || S324_OK=false
+rm -rf "$S324_TMP"
+$S324_OK && pass "train-job enterpriseId 强制绑定 + 全链路标记 + 幂等" || fail "enterpriseId 隔离失败: $(echo "$R324" | grep -v '^$' | head -3 || true)"
+
+scenario 325 "v1.4.1 块五：可复现指纹——freezeTrainFingerprint 冻结（datasetHash + HMAC + datasetVersion）+ 不可变重冻结拒绝"
+S325_OK=true
+S325_TMP=$(mktemp -d)
+R325=$(cd "$PROJECT_ROOT" && SOFAGENT_TEST_TMP="$S325_TMP" node -e "
+const fs = require('fs'), path = require('path');
+const { freezeTrainFingerprint } = require('./engine/orchestrator/dist/train/train-fingerprint.js');
+const tmp = process.env.SOFAGENT_TEST_TMP;
+const ds = path.join(tmp, 'ds'); fs.mkdirSync(ds, { recursive: true });
+fs.writeFileSync(path.join(ds, 'train.jsonl'), 'a,b,c');
+const env = { branch: 'metal-degraded', gpuName: null, frameworkName: null, frameworkVersion: null, checkedAt: '2026-08-26T00:00:00Z' };
+const fp = freezeTrainFingerprint({
+  dataDir: tmp, enterpriseId: 'ent-a', trainJobId: 'job-fp-1',
+  datasetDir: ds, envSnapshot: env, hyperparams: { lr: 1e-4 }, randomSeed: 42,
+});
+console.log('has-hmac:', typeof fp.hmac === 'string' && fp.hmac.length > 0);
+console.log('has-dataset-hash:', typeof fp.datasetHash === 'string' && fp.datasetHash.length > 0);
+// 不可变：重复冻结拒绝
+let refrozen = false;
+try { freezeTrainFingerprint({ dataDir: tmp, enterpriseId: 'ent-a', trainJobId: 'job-fp-1', datasetDir: ds, envSnapshot: env, hyperparams: { lr: 1e-5 }, randomSeed: 43 }); }
+catch (e) { refrozen = true; }
+console.log('immutable-refreeze-rejected:', refrozen);
+" 2>&1 || true)
+echo "$R325" | grep -q "has-hmac: true" || S325_OK=false
+echo "$R325" | grep -q "has-dataset-hash: true" || S325_OK=false
+echo "$R325" | grep -q "immutable-refreeze-rejected: true" || S325_OK=false
+rm -rf "$S325_TMP"
+$S325_OK && pass "fingerprint 冻结（datasetHash+HMAC）+ 不可变重冻结拒绝" || fail "fingerprint 失败: $(echo "$R325" | grep -v '^$' | head -3 || true)"
+
+scenario 326 "v1.4.1 块六：产物签名——signArtifacts manifest 逐文件 SHA-256 + 汇总 HMAC + 篡改检测"
+S326_OK=true
+S326_TMP=$(mktemp -d)
+R326=$(cd "$PROJECT_ROOT" && SOFAGENT_TEST_TMP="$S326_TMP" node -e "
+(async () => {
+const fs = require('fs'), path = require('path');
+const { createTrainJob } = require('./engine/orchestrator/dist/train/train-job.js');
+const { signArtifacts, loadArtifactManifest } = require('./engine/orchestrator/dist/train/artifact-signing.js');
+const tmp = process.env.SOFAGENT_TEST_TMP;
+const r = createTrainJob({ dataDir: tmp, enterpriseId: 'ent-a', jobId: 'job-s-1', dataPath: 'data/train/a/d.json', baseModel: 'm', algorithm: 'sft' });
+const rec = r.record || r.job || r;
+// 前置：先冻结指纹（无指纹的产物不做完整性背书——产品正确行为）
+const { freezeTrainFingerprint } = require('./engine/orchestrator/dist/train/train-fingerprint.js');
+const ds = path.join(tmp, 'ds'); fs.mkdirSync(ds, { recursive: true }); fs.writeFileSync(path.join(ds, 'train.jsonl'), 'a,b');
+freezeTrainFingerprint({ dataDir: tmp, enterpriseId: 'ent-a', trainJobId: 'job-s-1', datasetDir: ds, envSnapshot: { branch: 'metal-degraded', gpuName: null, frameworkName: null, frameworkVersion: null, checkedAt: '2026-08-26T00:00:00Z' }, hyperparams: { lr: 1e-4 }, randomSeed: 1 });
+// 产物目录 = job 目录 output/（createTrainJob 缺省）——写两个权重文件
+const outDir = path.join(tmp, 'train', 'ent-a', 'job-s-1', 'output');
+fs.mkdirSync(outDir, { recursive: true });
+fs.writeFileSync(path.join(outDir, 'adapter.safetensors'), 'BIN-A');
+fs.writeFileSync(path.join(outDir, 'q4.gguf'), 'BIN-B');
+const m = await signArtifacts({ dataDir: tmp, enterpriseId: 'ent-a', trainJobId: 'job-s-1' });
+console.log('files-signed:', m.files.length);
+console.log('manifest-hmac:', typeof m.manifestHmac === 'string' && m.manifestHmac.length > 0);
+// 篡改检测：改一个字节 → verify 失败（用 loadArtifactManifest + 逐文件 hash 对比）
+fs.writeFileSync(path.join(outDir, 'q4.gguf'), 'BIN-X');
+const { hashArtifactFile } = require('./engine/orchestrator/dist/train/artifact-signing.js');
+const m2 = loadArtifactManifest(tmp, 'ent-a', 'job-s-1');
+let tampered = false;
+for (const f of m2.files) {
+  const h = await hashArtifactFile(path.join(outDir, path.basename(f.path)));
+  if (h.sha256 !== f.sha256) tampered = true;
+}
+console.log('tamper-detected:', tampered);
+})().catch(e => { console.error('ERR', e.message); process.exit(1); });
+" 2>&1 || true)
+echo "$R326" | grep -q "files-signed: 2" || S326_OK=false
+echo "$R326" | grep -q "manifest-hmac: true" || S326_OK=false
+echo "$R326" | grep -q "tamper-detected: true" || S326_OK=false
+rm -rf "$S326_TMP"
+$S326_OK && pass "artifact manifest（2 文件 SHA-256+HMAC）+ 篡改检测" || fail "artifact 签名失败: $(echo "$R326" | grep -v '^$' | head -3 || true)"
+
+scenario 327 "v1.4.1 块九：安全基线——路径白名单（data/train/ 内放行/绝对路径拒/逃逸拒）+ 注入元字符检测"
+S327_OK=true
+R327=$(cd "$PROJECT_ROOT" && node -e "
+const { validateTrainPath, containsShellMetachars } = require('./engine/orchestrator/dist/train/security-baseline.js');
+const inOk = validateTrainPath('data/train/ent-a/job-1/train.jsonl');
+const absRejected = validateTrainPath('/etc/passwd').valid === false;
+const escRejected = validateTrainPath('data/train/../../../etc/x').valid === false;
+const injDetected = containsShellMetachars('a;rm -rf /') && !containsShellMetachars('plain-value-1');
+console.log('in-whitelist-ok:', inOk.valid === true);
+console.log('absolute-rejected:', absRejected);
+console.log('escape-rejected:', escRejected);
+console.log('injection-detected:', injDetected);
+" 2>&1 || true)
+echo "$R327" | grep -q "in-whitelist-ok: true" || S327_OK=false
+echo "$R327" | grep -q "absolute-rejected: true" || S327_OK=false
+echo "$R327" | grep -q "escape-rejected: true" || S327_OK=false
+echo "$R327" | grep -q "injection-detected: true" || S327_OK=false
+$S327_OK && pass "安全基线四断言（白名单/绝对路径拒/逃逸拒/注入检测）" || fail "安全基线失败: $(echo "$R327" | grep -v '^$' | head -4 || true)"
 
 echo -e "  验收测试结果：${GREEN}$PASSED 通过${NC} / ${RED}$FAILED 失败${NC} / 共 $((PASSED + FAILED))"
 # 🔴 v1.3.1 run-10 教训：无色码纯文本汇总行供 driver grep（EXIT: 0=全PASS / <N>=N失败）
