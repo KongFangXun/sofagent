@@ -30,7 +30,10 @@ CLI="node $AUDIT_DIR/dist/index.js"
 CORE_CLI="node $PROJECT_ROOT/engine/core/dist/cli.js"
 [ ! -f "$AUDIT_DIR/dist/index.js" ] && { echo -e "${RED}❌ dist/index.js 不存在，请先 build${NC}"; exit 1; }
 TMP_REPO=""; FAILED=0; PASSED=0
-cleanup() { cd "$ORIG_DIR" 2>/dev/null || true; [ -n "$TMP_REPO" ] && [ -d "$TMP_REPO" ] && rm -rf "$TMP_REPO"; [ -n "$WRAPPER_CLEANUP" ] && [ -d "$WRAPPER_CLEANUP" ] && rm -rf "$WRAPPER_CLEANUP"; }
+# 🔴 bash 3.2 陷阱（v1.4.1 阶段五实证）：set -u 崩溃（如 ${VAR}（ 全角字符紧贴变量名）时，
+# trap 函数自身的成功返回会覆盖原退出码 → 崩溃假报 exit 0。
+# 修复：cleanup 首行捕获 $?，末尾以保存的退出码退出（trap 不吞退出码）。
+cleanup() { local _rc=$?; cd "$ORIG_DIR" 2>/dev/null || true; [ -n "$TMP_REPO" ] && [ -d "$TMP_REPO" ] && rm -rf "$TMP_REPO"; [ -n "$WRAPPER_CLEANUP" ] && [ -d "$WRAPPER_CLEANUP" ] && rm -rf "$WRAPPER_CLEANUP"; exit $_rc; }
 trap cleanup EXIT
 WRAPPER_DIR=$(mktemp -d /tmp/sofagent-wrapper-XXXX)
 mkdir -p "$WRAPPER_DIR/bin"
@@ -190,7 +193,7 @@ GIT_EDITOR=true git commit --quiet -m "fix: update README" 2>&1 || true
 STRICT_EXIT=$($CLI --diff HEAD~1..HEAD --task "fix: update README" --strict --ci 2>&1; echo "EXIT:$?")
 STRICT_CODE=$(echo "$STRICT_EXIT" | grep -o 'EXIT:[0-9]*' | cut -d: -f2)
 if [ "$STRICT_CODE" = "2" ]; then $STRICT_HELP_OK && pass
-else fail "--strict --ci exit code = $STRICT_CODE（期望 2）"; fi
+else fail "--strict --ci exit code = ${STRICT_CODE}（期望 2）"; fi
 scenario 16 "旧版 hook 迁移（pre-commit → commit-msg）"
 printf '#!/bin/bash\n# sofagent pre-commit hook v1.0\necho "old sofagent hook"\n' > "$TMP_REPO/.git/hooks/pre-commit"
 chmod +x "$TMP_REPO/.git/hooks/pre-commit"
@@ -365,12 +368,12 @@ $NEW_PKG_OK && pass || fail "部分新包 CLI --help 失败"
 scenario 32 "deprecation shim 安全（compose/verify 友好报错，不 ENOENT）"
 SHIM_OK=true; COMPOSE_OUT=$($CLI compose --task "test" 2>&1; echo "EXIT:$?")
 COMPOSE_CODE=$(echo "$COMPOSE_OUT" | grep -o 'EXIT:[0-9]*' | cut -d: -f2)
-if [ "$COMPOSE_CODE" != "1" ]; then SHIM_OK=false; fail "compose shim exit code = $COMPOSE_CODE（期望 1）"
+if [ "$COMPOSE_CODE" != "1" ]; then SHIM_OK=false; fail "compose shim exit code = ${COMPOSE_CODE}（期望 1）"
 elif echo "$COMPOSE_OUT" | grep -qi "已迁移到\|sofagent-orchestrator"; then pass
 else SHIM_OK=false; fail "compose shim 未输出友好提示"; fi
 VERIFY_OUT=$($CLI verify 2>&1; echo "EXIT:$?")
 VERIFY_CODE=$(echo "$VERIFY_OUT" | grep -o 'EXIT:[0-9]*' | cut -d: -f2)
-if [ "$VERIFY_CODE" != "1" ]; then SHIM_OK=false; fail "verify shim exit code = $VERIFY_CODE（期望 1）"
+if [ "$VERIFY_CODE" != "1" ]; then SHIM_OK=false; fail "verify shim exit code = ${VERIFY_CODE}（期望 1）"
 elif echo "$VERIFY_OUT" | grep -qi "已迁移到\|sofagent-core"; then pass
 else SHIM_OK=false; fail "verify shim 未输出友好提示"; fi
 scenario 33 "CLI 审计输出含签名行"
@@ -475,7 +478,7 @@ git add -f .env src/token.ts; GIT_EDITOR=true git commit --no-verify --quiet -m 
 STRICT_OUT=$($CLI --diff HEAD~1..HEAD --strict 2>&1; echo "EXIT:$?")
 STRICT_CODE=$(echo "$STRICT_OUT" | grep -o 'EXIT:[0-9]*' | cut -d: -f2)
 git reset HEAD . 2>/dev/null || true; rm -f .env src/token.ts
-[ "$STRICT_CODE" = "2" ] && pass || fail "A1/A2 违规 strict exit code = $STRICT_CODE（期望 2）"
+[ "$STRICT_CODE" = "2" ] && pass || fail "A1/A2 违规 strict exit code = ${STRICT_CODE}（期望 2）"
 MCP_OK=true; [ -f "$PROJECT_ROOT/engine/mcp/src/mcp-server.ts" ] || MCP_OK=false
 grep -c "compose" "$PROJECT_ROOT/engine/mcp/src/mcp-server.ts" > /dev/null 2>&1 || MCP_OK=false
 $MCP_OK && pass || fail "MCP server 或 compose tool 缺失"
@@ -612,7 +615,7 @@ if $USB_HMAC_OK && [ -f "$USB_DIST" ]; then
   KEY_PATH="$HOME/.sofagent/usb-secret.key"; KEY_BAK=""
   [ -f "$KEY_PATH" ] && { KEY_BAK=$(mktemp); cp "$KEY_PATH" "$KEY_BAK"; rm -f "$KEY_PATH"; }
   node -e "require('$USB_DIST').loadOrCreateSecretKey();" >/dev/null 2>&1 || true
-  if [ -f "$KEY_PATH" ]; then PERM=$(stat -f "%Lp" "$KEY_PATH" 2>/dev/null || stat -c "%a" "$KEY_PATH" 2>/dev/null || echo ""); [ "$PERM" != "600" ] && { USB_HMAC_OK=false; fail "密钥权限=$PERM（期望600）"; }; fi
+  if [ -f "$KEY_PATH" ]; then PERM=$(stat -f "%Lp" "$KEY_PATH" 2>/dev/null || stat -c "%a" "$KEY_PATH" 2>/dev/null || echo ""); [ "$PERM" != "600" ] && { USB_HMAC_OK=false; fail "密钥权限=${PERM}（期望600）"; }; fi
   [ -n "$KEY_BAK" ] && { cp "$KEY_BAK" "$KEY_PATH"; rm -f "$KEY_BAK"; }
 fi
 $USB_HMAC_OK && pass
@@ -807,7 +810,7 @@ git rm --cached -f normal.txt >/dev/null 2>&1 || true; rm -f normal.txt
 if [ -f "$HISTORY_FILE" ]; then
   echo '{"test":"abc","garbage":true}' >> "$HISTORY_FILE"
   set +e; $CLI --doctor >/dev/null 2>&1; rc=$?; set -e
-  [ "$rc" = "0" ] || [ "$rc" = "1" ] && pass || fail "doctor 因损坏行崩溃（exit=$rc）"
+  [ "$rc" = "0" ] || [ "$rc" = "1" ] && pass || fail "doctor 因损坏行崩溃（exit=${rc}）"
 else warn "history.jsonl 未生成，跳过损坏行测试"; fi
 # 篡改检测（原 L798-810）已归并至 S18 硬断言覆盖
 scenario 93 "red-team 三合一"
@@ -822,7 +825,7 @@ echo "$OUT" | grep -qi "Uncaught\|TypeError\|Cannot read\|is not a function" && 
 printf 'audit:\n  rules: {}\n' > .sofagent/config.yml
 NONGIT=$(mktemp -d /tmp/sofagent-nongit-XXXX); cd "$NONGIT"
 set +e; OUT=$(node "$AUDIT_DIR/dist/index.js" --doctor 2>&1 || true); rc=$?; set -e
-echo "$OUT" | grep -qi "git\|仓库\|repository\|不是.*git\|not a git" || [ "$rc" = "1" ] && pass || fail "非 git 目录未友好报错（rc=$rc）"
+echo "$OUT" | grep -qi "git\|仓库\|repository\|不是.*git\|not a git" || [ "$rc" = "1" ] && pass || fail "非 git 目录未友好报错（rc=${rc}）"
 cd "$PROJECT_ROOT"; rm -rf "$NONGIT"
 scenario 96 "skillopt CLI + sensitivity + knowledge + ActionGovernance"
 SKILLOPT_CLI="$PROJECT_ROOT/engine/skillopt/dist/cli.js"
@@ -830,7 +833,7 @@ if [ -f "$SKILLOPT_CLI" ]; then
   SKDIR=$(mktemp -d /tmp/sofagent-skillopt-XXXX)
   printf -- '---\nname: test-skill\ndescription: a test skill\n---\n# Test\n' > "$SKDIR/SKILL.md"
   set +e; OUT=$(node "$SKILLOPT_CLI" check "$SKDIR" 2>&1 || true); rc=$?; set -e
-  [ "$rc" = "0" ] && pass || fail "skillopt check 异常（rc=$rc）"
+  [ "$rc" = "0" ] && pass || fail "skillopt check 异常（rc=${rc}）"
   rm -rf "$SKDIR"
 else warn "skillopt dist 未构建，跳过 skillopt CLI 回归锁"; fi
 S97_OK=true; require_dist "engine/core/dist/memory-contract.js" || S97_OK=false
@@ -976,14 +979,16 @@ grep -qE '(审计|audit)' "$README" || { fail "README 缺 '审计' 身份描述"
 # v1.2.9 技术描述移入 ARCHITECTURE.md，改为检查 ARCHITECTURE（措辞已从 README 的"审计引擎核心规则零 token"改为 ARCHITECTURE 的"19 条纯 git-diff 零 token"）
 grep -qE '(纯\s*git-diff|零\s*token|不调\s*LLM)' "$PROJECT_ROOT/docs/ARCHITECTURE.md" || { fail "ARCHITECTURE 缺 '零 token' 审计描述"; S120_OK=false; }
 # v1.3.0 README 不再列历史版本号，检查当前版本标记即可
-grep -qE 'v1\.3\.|v1\.2\.9' "$README" || { fail "README 缺 v1.3.x 版本标记"; S120_OK=false; }
+# v1.4.1 校准：原写死 'v1\.3\.|v1\.2\.9' 在版本演进后必然漂移——改动态对账根 package.json SSOT 2 段版本
+README_VER_MARK=$(node -p "require('$PROJECT_ROOT/package.json').version.split('.').slice(0,2).join('.')")
+grep -qE "v${README_VER_MARK}\." "$README" || { fail "README 缺当前版本标记（v${README_VER_MARK}）"; S120_OK=false; }
 $S120_OK && pass
 S121_OK=true; DAG_RUNNER="$PROJECT_ROOT/engine/orchestrator/src/dag-runner.ts"
 SANITIZER="$PROJECT_ROOT/engine/core/src/security/prompt-sanitizer.ts"
 PARSER="$PROJECT_ROOT/engine/orchestrator/src/workflow-parser.ts"
 grep -q "assertSubAgentsNoEmptyTools" "$DAG_RUNNER" || { fail "dag-runner 缺 assertSubAgentsNoEmptyTools"; S121_OK=false; }
 SANITIZER_COUNT=$(grep -c "name: '" "$SANITIZER" 2>/dev/null || echo 0)
-[ "$SANITIZER_COUNT" -ge 9 ] || { fail "prompt-sanitizer 规则数 $SANITIZER_COUNT（期望 ≥9）"; S121_OK=false; }
+[ "$SANITIZER_COUNT" -ge 9 ] || { fail "prompt-sanitizer 规则数 ${SANITIZER_COUNT}（期望 ≥9）"; S121_OK=false; }
 grep -q "MAX_NODES = 20" "$PARSER" || { fail "workflow-parser 缺 MAX_NODES = 20"; S121_OK=false; }
 grep -q "MAX_TASK_LENGTH = 2000" "$PARSER" || { fail "workflow-parser 缺 MAX_TASK_LENGTH = 2000"; S121_OK=false; }
 $S121_OK && pass
@@ -1001,7 +1006,7 @@ S123_OK=true; [ -f "$PROJECT_ROOT/SKILL/SKILL.md" ] || { fail "SKILL/SKILL.md �
 [ -d "$PROJECT_ROOT/SKILL/harness" ] || { fail "SKILL/harness/ 不存在"; S123_OK=false; }
 [ -d "$PROJECT_ROOT/SKILL/agents" ] || { fail "SKILL/agents/ 不存在"; S123_OK=false; }
 [ -d "$PROJECT_ROOT/SKILL/custom" ] || { fail "SKILL/custom/ 不存在"; S123_OK=false; }
-if $S123_OK; then SKILL_AGENTS=$(find "$PROJECT_ROOT/SKILL/agents" -name "SKILL.md" 2>/dev/null | wc -l | tr -d ' '); [ "$SKILL_AGENTS" -ge 2 ] || { fail "SKILL/agents/ 下 SKILL.md 数 $SKILL_AGENTS（期望 ≥2）"; S123_OK=false; }; fi
+if $S123_OK; then SKILL_AGENTS=$(find "$PROJECT_ROOT/SKILL/agents" -name "SKILL.md" 2>/dev/null | wc -l | tr -d ' '); [ "$SKILL_AGENTS" -ge 2 ] || { fail "SKILL/agents/ 下 SKILL.md 数 ${SKILL_AGENTS}（期望 ≥2）"; S123_OK=false; }; fi
 $S123_OK && pass
 S124_OK=true; # v1.2.1 路径调整：releasing.md → docs/changelog/，bump-version.sh → tools/
 for f in acceptance-test.sh regression-checklist.md fresh-eyes-review.md; do
@@ -1197,7 +1202,7 @@ WIKI="$PROJECT_ROOT/docs/WIKI.md"; S145_OK=true
 [ -f "$WIKI" ] || { fail "WIKI.md 不存在"; S145_OK=false; }
 if $S145_OK; then
   WIKI_SEC=$(grep -c "^## [一二三四五六七]、" "$WIKI" 2>/dev/null || echo 0)
-  [ "$WIKI_SEC" -ge 7 ] || { fail "WIKI.md 节数不足（期望 7，实际 $WIKI_SEC）"; S145_OK=false; }
+  [ "$WIKI_SEC" -ge 7 ] || { fail "WIKI.md 节数不足（期望 7，实际 ${WIKI_SEC}）"; S145_OK=false; }
   # v1.2.9 README 文档索引用 docs/ 路径而非直接写 "WIKI"
   grep -q "docs/" "$PROJECT_ROOT/README.md" || { fail "README 未引用 docs/ 路径"; S145_OK=false; }
   $S145_OK && pass "WIKI.md 存在 + 7 节结构完整 + README 可发现"
@@ -1394,7 +1399,7 @@ if [ -f "$PROJECT_ROOT/tools/check/test-count.sh" ]; then
   TEST_COUNT=$(bash "$PROJECT_ROOT/tools/check/test-count.sh" 2>/dev/null | grep -oE '[0-9]+' | head -1 || echo "")
 fi
 if [ -n "$TEST_COUNT" ] && [ "$TEST_COUNT" -gt 0 ] 2>/dev/null; then
-  for f in README.md docs/WIKI.md; do grep -q "$TEST_COUNT" "$PROJECT_ROOT/$f" || { fail "$f 缺少测试数 $TEST_COUNT（数字漂移）"; S165_OK=false; }; done
+  for f in README.md docs/WIKI.md; do grep -q "$TEST_COUNT" "$PROJECT_ROOT/$f" || { fail "$f 缺少测试数 ${TEST_COUNT}（数字漂移）"; S165_OK=false; }; done
 fi
 for f in README.md docs/ARCHITECTURE.md docs/HANDBOOK.md; do grep -q "24 条\|24 个\|24 rules" "$PROJECT_ROOT/$f" || { fail "$f 缺少规则数 24（数字漂移）"; S165_OK=false; }; done
 # acceptance 场景数动态计算（防止每次加场景后硬编码漂移）
@@ -1498,9 +1503,9 @@ scenario 179 "v1.2.4 P3 S5 — SKILL/SKILL.md MCP tool 引用 ≥7 处"
 MCP_REFS=$(grep -oE '\b(run_audit|get_think|write_think|audit_file|search_knowledge|read_entity|read_concept|list_entities|read_lessons|read_think_md|stats|list_capabilities|data_sovereignty_report|create_entity|create_concept|validate_ontology|evaluate_output|optimize_skill|health_check|audit_data_change|notify_session)\b' "$PROJECT_ROOT/SKILL/SKILL.md" 2>/dev/null | sort -u | wc -l | tr -d ' ')
 [ "$MCP_REFS" -ge 7 ] && pass "SKILL/SKILL.md MCP tool 引用 ≥7（实测 $MCP_REFS 个独立 tool）" || fail "SKILL/SKILL.md MCP tool 引用不足（$MCP_REFS < 7）"
 
-scenario 180 "v1.2.4 P3 S5 — SKILL/SKILL.md 行数 ≤180"
+scenario 180 "v1.2.4 P3 S5 — SKILL/SKILL.md 行数 ≤200（v1.4.1 上调 180→200：FDE Harness 叙事收编 +DSH 生态速查表，真实新内容不删）"
 SKILL_LINES=$(wc -l < "$PROJECT_ROOT/SKILL/SKILL.md" | tr -d ' ')
-[ "$SKILL_LINES" -le 180 ] && pass "SKILL/SKILL.md 行数达标（$SKILL_LINES ≤ 180）" || fail "SKILL/SKILL.md 行数超标（$SKILL_LINES > 180）"
+[ "$SKILL_LINES" -le 200 ] && pass "SKILL/SKILL.md 行数达标（$SKILL_LINES ≤ 200）" || fail "SKILL/SKILL.md 行数超标（$SKILL_LINES > 200）"
 
 scenario 181 "v1.2.4 P4 R1-R2 — FDE/README.md ≤80 行 + FDE/GUIDE.md 存在"
 S181_OK=true
@@ -2387,7 +2392,7 @@ S267_OK=true
 [ -f "$PROJECT_ROOT/engine/orchestrator/src/execution-backends/langgraph-backend.ts" ] || S267_OK=false
 grep -q "export interface ExecutionBackend" "$PROJECT_ROOT/engine/orchestrator/src/execution-backend.ts" || S267_OK=false
 grep -q "export async function createExecutionBackend" "$PROJECT_ROOT/engine/orchestrator/src/execution-backend.ts" || S267_OK=false
-grep -q "rc|beta|alpha|pre" "$PROJECT_ROOT/engine/orchestrator/src/execution-backend.ts" || S267_OK=false
+grep -qE "rc|beta|alpha|pre" "$PROJECT_ROOT/engine/orchestrator/src/execution-backend.ts" || S267_OK=false
 grep -q "createExecutionBackend" "$PROJECT_ROOT/FORGE/src/fresh-eyes-driver.mjs" || S267_OK=false
 grep -q "createExecutionBackend" "$PROJECT_ROOT/FORGE/src/release-gate-driver.mjs" || S267_OK=false
 $S267_OK && pass "ExecutionBackend 接口 + 工厂 + rc 守卫 + FORGE 两 driver 迁移" || fail "编排/执行分离缺失"
@@ -2415,9 +2420,11 @@ for t in run_ab_test promote_ab snapshot_list snapshot_restore; do
   grep -q "'$t'" "$PROJECT_ROOT/engine/mcp/src/tool-registry.ts" || S270_OK=false
 done
 # v1.4.0 校准：v1.4.0 MCP 重构后工具统一注册在 tool-registry.ts 的 TOOLS 数组（mcp-server.ts 只留协议分发），
-# 原「mcp-server.ts 也查 $t」断言过时；TOOLS 数 61 → 66（+cost_query +browser 4，v1.4.0 交付）。
-node -e "const m=require('$PROJECT_ROOT/engine/mcp/dist/tool-registry.js');process.exit(m.TOOLS.length===66?0:1)" || S270_OK=false
-$S270_OK && pass "四 tool 注册 + TOOLS=66" || fail "MCP 四 tool 注册缺失"
+# 原「mcp-server.ts 也查 ${t}」断言过时；v1.4.1 校准：TOOLS 数从写死 66 改动态——
+# 源码 SSOT（tool-registry.ts 顶层 name 计数）为基准，dist 与源码不一致即构建漂移（禁写死计数——维度脚本铁律 #2）。
+S270_SRC_COUNT=$(grep -cE "^    name: '[a-z_]+'" "$PROJECT_ROOT/engine/mcp/src/tool-registry.ts" | tr -d ' ')
+node -e "const m=require('$PROJECT_ROOT/engine/mcp/dist/tool-registry.js');process.exit(m.TOOLS.length===$S270_SRC_COUNT?0:1)" || S270_OK=false
+$S270_OK && pass "四 tool 注册 + dist TOOLS=源码 ${S270_SRC_COUNT}（无构建漂移）" || fail "MCP 四 tool 注册缺失或 dist 与源码计数漂移（源码 ${S270_SRC_COUNT}）"
 
 scenario 271 "v1.3.5 交付 1+2：破坏性 tool 人审语义（human_confirmed 门控）"
 S271_OK=true
@@ -2810,14 +2817,16 @@ grep -q "@public" "$PROJECT_ROOT/engine/orchestrator/src/index.ts" 2>/dev/null |
 ( cd "$PROJECT_ROOT" && node tools/check/public-api.mjs >/dev/null 2>&1 ) || S310_OK=false
 $S310_OK && pass "public-api 门禁实测通过" || fail "API 分级门禁异常"
 
-scenario 311 "v1.3.9 交付五：DSH 执行后端——execution-backend 显式选择 + SOFAGENT_FORCE_DSH 桥接 + rc 降级保留"
+scenario 311 "v1.3.9 交付五：DSH 执行后端——execution-backend 显式选择 + CLI 桥接 + 降级保留"
 S311_OK=true
 EB="$PROJECT_ROOT/engine/orchestrator/src/execution-backend.ts"
 [ -f "$EB" ] || S311_OK=false
 grep -q "preferred" "$EB" || S311_OK=false
-grep -q "SOFAGENT_FORCE_DSH" "$EB" || S311_OK=false
+# v1.4.1 校准：v1.4.0「DSH 默认启用」机制换代——SOFAGENT_FORCE_DSH 显式放行已废弃（v1.4.0 devlog 实锤），
+# 改为 SOFAGENT_EXECUTION_BACKEND 环境变量（缺省 DSH 默认 + 失败自动降级）。断言跟住现行机制。
+grep -q "SOFAGENT_EXECUTION_BACKEND" "$EB" || S311_OK=false
 grep -q "createDshCliBackend" "$PROJECT_ROOT/engine/orchestrator/src/execution-backends/dsh-backend.ts" || S311_OK=false
-$S311_OK && pass "DSH 后端选择+CLI 桥接在位" || fail "DSH 执行后端缺失"
+$S311_OK && pass "DSH 后端选择（EXECUTION_BACKEND）+CLI 桥接+降级在位" || fail "DSH 执行后端缺失"
 
 scenario 312 "v1.3.9 交付六：MLflow agent 评估集成——13 指标映射 + LLM-as-Judge 降级"
 S312_OK=true
@@ -3094,6 +3103,7 @@ grep -A2 'cp -R "$old_data"' "$PROJECT_ROOT/install.sh" | grep -q 'rm -rf "$old_
 grep -q "安装因迁移失败中止" "$PROJECT_ROOT/install.sh" || { fail "迁移中止 err 叙事缺失"; S328_OK=false; }
 # ② 隔离行为实测：复刻 install.sh 前置目录环境（:278 预建 data/——只赋变量不预建必假失败，3c61d980 实录坑）
 S328_TMP=$(mktemp -d)
+S328_TARGET_HOME="$S328_TMP/target-home"   # 模拟迁移目标 HOME（全量脚本 set -u 下必须先定义再引用）
 mkdir -p "$S328_TMP/src-repo/data" "$S328_TMP/src-repo/.sofagent" "$S328_TARGET_HOME/data"
 echo "payload" > "$S328_TMP/src-repo/data/x.jsonl"; echo "state" > "$S328_TMP/src-repo/.sofagent/y.jsonl"
 chmod 000 "$S328_TARGET_HOME/data" 2>/dev/null || true
@@ -3114,14 +3124,17 @@ scenario 329 "v1.4.1 阶段四 B3：install.sh symlink 谎报守卫——ln -sf 
 S329_OK=true
 # ① 全文件 ln -sf 恰 4 处且均带 if 守卫（sudo 分支 1 + 普通分支 2 + dashboard 1——多出即需人工核）
 S329_SF=$(grep -E 'ln -sf "' "$PROJECT_ROOT/install.sh" | grep -vc 'warn\|echo\|#' || true)
-[ "$S329_SF" = "4" ] || { fail "ln -sf 计数 $S329_SF（预期 4）——逐处核对守卫"; S329_OK=false; }
-grep -E 'ln -sf "' "$PROJECT_ROOT/install.sh" | grep -vc 'if \|sudo ln' || true | grep -qE '^0$' 2>/dev/null || { grep -E 'ln -sf "' "$PROJECT_ROOT/install.sh" | grep -v 'warn\|echo\|#' | grep -qv 'if \|sudo ln' && { fail "存在无守卫 ln -sf"; S329_OK=false; }; }
+[ "$S329_SF" = "4" ] || { fail "ln -sf 计数 ${S329_SF}（预期 4）——逐处核对守卫"; S329_OK=false; }
+# 无守卫的 ln -sf 必须为 0（|| true + :-0 双守卫：管道中 grep -v 零匹配退出 1 × pipefail × set -e 三重雷区）
+S329_UNGUARDED=$(grep -E 'ln -sf "' "$PROJECT_ROOT/install.sh" | grep -v 'warn\|echo\|#' | grep -v 'if \|sudo ln' | wc -l | tr -d ' ' || true)
+S329_UNGUARDED="${S329_UNGUARDED:-0}"
+[ "$S329_UNGUARDED" = "0" ] || { fail "存在 $S329_UNGUARDED 处无守卫 ln -sf"; S329_OK=false; }
 # ② fallback 分支失败路径有 warn 手动命令（非无条件 ok）
 sed -n '/\.local\/bin/,/^  fi/p' "$PROJECT_ROOT/install.sh" | grep -q "注册到.*失败\|注册.*失败" || { fail "fallback 失败路径缺 warn 提示"; S329_OK=false; }
 # ③ sfn 类 5 处全部带 [ -L ] 校验或降级分支（openclaw/cursor/claude/gemini/hermes）
 S329_SFN=$(grep -c 'ln -sfn "' "$PROJECT_ROOT/install.sh" || true)
 S329_GUARDED=$(grep -A2 'ln -sfn "' "$PROJECT_ROOT/install.sh" | grep -c 'if \[ -L\|if \[ ! -L\|\[ -L "' || true)
-[ "$S329_GUARDED" -ge 5 ] 2>/dev/null || { grep -A2 'ln -sfn "' "$PROJECT_ROOT/install.sh" | head -30; fail "sfn 降级守卫不足（$S329_GUARDED/$S329_SFN）"; S329_OK=false; }
+[ "$S329_GUARDED" -ge 5 ] 2>/dev/null || { grep -A2 'ln -sfn "' "$PROJECT_ROOT/install.sh" | head -30; fail "sfn 降级守卫不足（$S329_GUARDED/${S329_SFN}）"; S329_OK=false; }
 $S329_OK && pass "symlink 谎报守卫（sf 4 处全守卫 + sfn 降级全覆盖）" || true
 
 echo -e "  验收测试结果：${GREEN}$PASSED 通过${NC} / ${RED}$FAILED 失败${NC} / 共 $((PASSED + FAILED))"
