@@ -175,7 +175,8 @@ sofagent-audit --init    # 数据写入 /data/sofagent-hr/data/
 # 将各机器的 ~/.sofagent/data/ 通过 NFS/共享存储挂载到 dashboard 所在机器
 #
 # ⚠️ 安全警告：NFS/共享存储挂载明文审计目录与"数据不出本机"的数据主权立场存在矛盾。
-#    history.jsonl 为明文 JSONL（含文件路径、代码片段摘要），NFS 挂载使同 NFS 卷的其他
+#    history.jsonl 无激活密钥时为明文 JSONL（含文件路径、代码片段摘要）；密钥激活后为
+#    SOFAGENT-AGE-V1 密文（v1.3.8 静态加密）。明文态下 NFS 挂载使同 NFS 卷的其他
 #    主机可能读取。如需此方案，务必：
 #    ① NFS export 限制为 dashboard 机器 IP（ro 只读挂载）
 #    ② NFS export 使用 sec=sys + root_squash，防止非授权 UID 读取
@@ -230,6 +231,8 @@ sofagent 对 Windows 的支持是**实验性**的：
 ## 审计日志对接
 
 sofagent 的审计记录以 JSONL 格式存储在 `data/audit/history.jsonl`，每行一个审计事件对象。
+
+> 🔐 **加密双态（v1.3.8 数据静态加密）**：`~/.sofagent/keys/` 存在激活密钥时，落盘整行为 `SOFAGENT-AGE-V1` 密文（AES-256-GCM）；无密钥时按明文 JSONL。SIEM 直读方案适用于**明文态**；密文态需先经解密管道（`sofagent-audit` 读侧自动解密）或改走 `--json` 输出通道对接——下表 Filebeat/Forwarder 直采配置在密文态不可用。
 
 ### 日志格式（核心字段）
 

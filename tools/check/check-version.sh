@@ -1141,6 +1141,29 @@ else
   echo -e "  ${YELLOW}⚠${NC} lock 解析失败（${LOCK_WS_CHECK#PARSE_ERR:}）——人工跑 npm ci --dry-run 确认"
   WARNINGS=$((WARNINGS + 1))
 fi
+
+echo "=== 24. CHANGELOG 顶版 vs package.json SSOT（防「CHANGELOG 已收录新版本但包未 bump」漂移）==="
+# v1.4.1 fresh-eyes run-01 finding-09：CHANGELOG 顶版可先于包版本收录（开发完成待发版），
+# 该窗口是合法中间态——但**顶版 > 包版本**超一版即为漂移（说明上一版发完忘了 bump 或跳版收录）。
+CHANGELOG_TOP_VERSION=$(grep -m1 -oE '^- \*\*v[0-9]+\.[0-9]+\.[0-9]+' "${PROJECT_ROOT}/CHANGELOG.md" 2>/dev/null | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' || echo "")
+PKG_VERSION="v${SSOT_VERSION}"
+if [[ -z "${CHANGELOG_TOP_VERSION}" ]]; then
+  echo -e "  ${YELLOW}⚠${NC} CHANGELOG 顶版提取失败（格式变更？）——人工核对"
+  WARNINGS=$((WARNINGS + 1))
+else
+  node -e "
+const top = '${CHANGELOG_TOP_VERSION}'.slice(1).split('.').map(Number);
+const pkg = '${PKG_VERSION}'.slice(1).split('.').map(Number);
+// 顶版超前包版本最多 1 个 patch 位（开发完成待发版窗口）；超过 = 漂移
+const drift = (top[0]-pkg[0]) * 10000 + (top[1]-pkg[1]) * 100 + (top[2]-pkg[2]);
+if (drift > 1) { console.log('DRIFT:' + '${CHANGELOG_TOP_VERSION}' + '>' + '${PKG_VERSION}'); process.exit(1); }
+console.log('OK:' + '${CHANGELOG_TOP_VERSION}' + ' vs ' + '${PKG_VERSION}');
+" 2>/dev/null && { echo -e "  ${GREEN}✓${NC} CHANGELOG 顶版与包版本差 ≤1 patch（待发版窗口合法）"; CHECKS=$((CHECKS + 1)); } || {
+    echo -e "  ${RED}✗${NC} CHANGELOG 顶版 ${CHANGELOG_TOP_VERSION} 超前包版本 ${PKG_VERSION} 超一版——上一版发完未 bump 或跳版收录"
+    echo -e "  ${RED}修复：bash tools/release/bump-version.sh <旧> <新> 后随代码同 commit${NC}"
+    ERRORS=$((ERRORS + 1))
+  }
+fi
 echo ""
 
 # ── 汇总 ──────────────────────────────────────────────────────
