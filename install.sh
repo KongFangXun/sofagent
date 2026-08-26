@@ -304,6 +304,7 @@ migrate_to_install_dir() {
       rm -rf "$old_data"
     else
       warn "迁移复制失败，源目录已保留：${old_data} → ${new_data}（请手动检查后重试）"
+      err "数据迁移失败，安装中止——源目录未删除、数据安全，请检查磁盘/权限后重跑 install.sh"
       return 1
     fi
     # 同步迁移引擎内部状态（.sofagent/ → internal/）
@@ -314,6 +315,7 @@ migrate_to_install_dir() {
         rm -rf "$old_internal"
       else
         warn "迁移复制失败，源目录已保留：${old_internal} → ${new_internal}（请手动检查后重试）"
+        err "数据迁移失败，安装中止——源目录未删除、数据安全，请检查磁盘/权限后重跑 install.sh"
         return 1
       fi
     fi
@@ -336,7 +338,7 @@ migrate_to_install_dir() {
     fi
   fi
 }
-migrate_to_install_dir
+migrate_to_install_dir || { err "安装因迁移失败中止（数据安全，见上方提示）"; exit 1; }
 
 # v1.3.2 P1-8: 清理仓库内 .sofagent/ 残留（运行时数据应全在 ~/.sofagent/，仓库内不保留）
 if [ -d "${SCRIPT_DIR}/.sofagent" ] && [ "$SCRIPT_DIR" != "$HOME" ]; then
@@ -659,9 +661,13 @@ CLIEOF
   local dashboard_src="${SCRIPT_DIR}/tools/dashboard/sofagent-dashboard.sh"
   local dashboard_link="$bin_dir/sofagent-dashboard"
   if [ -f "$dashboard_src" ]; then
-    ln -sf "$dashboard_src" "$dashboard_link" 2>/dev/null || true
-    chmod +x "$dashboard_link" 2>/dev/null || true
-    ok "  Dashboard 入口已注册：sofagent-dashboard → $bin_dir/sofagent-dashboard"
+    # 同守卫纪律：软链成功才报 ok（失败走 wrapper 占位分支兜底并提示）
+    if ln -sf "$dashboard_src" "$dashboard_link" 2>/dev/null && [ -L "$dashboard_link" ]; then
+      chmod +x "$dashboard_link" 2>/dev/null || true
+      ok "  Dashboard 入口已注册：sofagent-dashboard → $bin_dir/sofagent-dashboard"
+    else
+      warn "  Dashboard 软链注册失败（${dashboard_link}），wrapper 占位分支兜底；可手动执行：ln -sf ${dashboard_src} ${dashboard_link}"
+    fi
   else
     warn "  Dashboard 实现脚本缺失（${dashboard_src}），跳过软链；wrapper 占位分支兜底"
   fi
@@ -697,16 +703,20 @@ CLIEOF
   else
     target="$HOME/.local/bin/sofagent"
     mkdir -p "$HOME/.local/bin"
-    ln -sf "$bin_dir/sofagent" "$target"
-    # 提示用户 ~/.local/bin 需要在 PATH 里（BSD 兼容：用 case 而非 grep -q）
-    case ":$PATH:" in
-      *":$HOME/.local/bin:"*) ;;
-      *)
-        warn "  请将 ~/.local/bin 加入 PATH："
-        warn "  echo 'export PATH=\"\$HOME/.local/bin:\$PATH\"' >> ~/.zshrc"
-        ;;
-    esac
-    ok "  CLI 命令注册完成：sofagent → $target"
+    # 同守卫纪律：注册成功才报 ok，失败给手动命令（防"报成功实际未注册"）
+    if ln -sf "$bin_dir/sofagent" "$target" 2>/dev/null; then
+      # 提示用户 ~/.local/bin 需要在 PATH 里（BSD 兼容：用 case 而非 grep -q）
+      case ":$PATH:" in
+        *":$HOME/.local/bin:"*) ;;
+        *)
+          warn "  请将 ~/.local/bin 加入 PATH："
+          warn "  echo 'export PATH=\"\$HOME/.local/bin:\$PATH\"' >> ~/.zshrc"
+          ;;
+      esac
+      ok "  CLI 命令注册完成：sofagent → $target"
+    else
+      warn "  注册到 ~/.local/bin 失败，可手动执行：ln -sf ${bin_dir}/sofagent ~/.local/bin/sofagent"
+    fi
   fi
 }
 
@@ -799,7 +809,13 @@ install_skill_unified() {
         local hermes_dir="${HOME}/.hermes"
         mkdir -p "${hermes_dir}/skills" 2>/dev/null || true
         ln -sfn "$SOFAGENT_HOME/skill" "${hermes_dir}/skills/sofagent" 2>/dev/null || true
-        ok "  Hermes 薄挂载：Skill symlink（fde.md 已由 FDE 步骤写入 ~/.hermes/fde.md）"
+        if [ -L "${hermes_dir}/skills/sofagent" ]; then
+          ok "  Hermes 薄挂载：Skill symlink（fde.md 已由 FDE 步骤写入 ~/.hermes/fde.md）"
+        else
+          # symlink 注册失败时降级为复制（防 ok 谎报——与 openclaw/claude 分支同构）
+          cp -R "$SOFAGENT_HOME/skill"/. "${hermes_dir}/skills/sofagent"/ 2>/dev/null || true
+          warn "  Hermes Symlink 注册失败，已降级为复制同步：${hermes_dir}/skills/sofagent"
+        fi
         ;;
       *)
         ok "  Skill 已安装到统一路径：$SOFAGENT_HOME/skill/（平台无关安装，未修改任何平台目录）"
