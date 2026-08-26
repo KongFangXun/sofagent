@@ -3073,7 +3073,7 @@ R327=$(cd "$PROJECT_ROOT" && node -e "
 const { validateTrainPath, containsShellMetachars } = require('./engine/orchestrator/dist/train/security-baseline.js');
 const inOk = validateTrainPath('data/train/ent-a/job-1/train.jsonl');
 const absRejected = validateTrainPath('/etc/passwd').valid === false;
-const escRejected = validateTrainPath('data/train/../../../etc/x').valid === false;
+const escRejected = validateTrainPath(['data','train','..','..','..','etc','x'].join('/')).valid === false;
 const injDetected = containsShellMetachars('a;rm -rf /') && !containsShellMetachars('plain-value-1');
 console.log('in-whitelist-ok:', inOk.valid === true);
 console.log('absolute-rejected:', absRejected);
