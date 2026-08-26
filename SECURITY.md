@@ -15,6 +15,7 @@
 - [六、LLM API Key 透明度](#六llm-api-key-透明度)
 - [七、FDE 职业道德](#七fde-职业道德)
 - [八、训练安全](#八训练安全)
+- [九、合规框架映射](#九合规框架映射)
 - [报告漏洞](#报告漏洞)
 
 ---
@@ -619,6 +620,35 @@ grep -i "api_key\|apikey\|sk-" runs/*/usage.jsonl   # 应无结果
 > 引入版本：v1.4.1（训练引擎 · 地基）。
 
 训练引擎开放后新增的攻击面（job.json 路径注入 / 超参命令注入 / 跨企业数据串读 / 云凭据经日志泄漏 / 训练产物篡改）由 v1.4.1 安全基线覆盖：路径白名单五重校验、spawn 元字符拒绝（拒绝而非清洗）、enterpriseId 全链路隔离 + 分区作用域读取、键名/值双轴凭据脱敏（先脱敏再签名）、权重 SHA-256 + HMAC manifest 与部署加载验签阻断（`artifact_tampered` 高危审计事件）。训练数据投毒检测与基座模型后门检测**明确不在开源版范围**（商业侧职责）。完整攻击面声明、模型层职责边界、系统级部署提示（Time Machine 快照 / SSD 覆写诚实边界）与红队核对清单见 [训练安全基线](./docs/guides/train-security.md)；双栈分层契约（决策面 / 计算面 / 资源面）见 [训练双栈契约](./docs/guides/train-stack.md)。
+
+---
+
+## 九、合规框架映射
+
+> 引入版本：v1.4.1。
+>
+> 本节把 sofagent 的安全能力映射到 **OWASP Agentic Security Top 10（2026，2025-12-09 发布，genai.owasp.org）**——Agent 安全领域当前最常被引用的公开分类框架，供安全评审与企业合规读者快速对位。映射原则：**只标真实存在的能力，不虚标覆盖**——每条注明对策落点与已披露边界，未覆盖面明确列出。
+
+### OWASP Agentic Top 10 映射表
+
+| ASI | 威胁 | sofagent 对策 | 已披露边界 |
+|:--:|------|------|------|
+| ASI01 目标劫持 | 注入指令覆盖 Agent 目标（prompt 注入） | A9 不纳注入（正则+leet 归一化）+ AST `asi01-prompt-injection`（system prompt 载体扫描）+ `<untrusted>` 包裹（§三 8 层防护层 1） | A9 不覆盖 Unicode 同形字/Base64 编码注入（§三编码绕过注）；语义级检测未排期 |
+| ASI02 工具滥用 | 越权调用工具、参数投毒 | Sub Agent 工具集零重叠（§三）+ 工具参数后端强制校验（8 层防护层 3，git diff 硬证据）+ A16 非授权文件变更（扩展） | 工具层校验是 commit 时点，非运行时阻断 |
+| ASI03 身份与权限滥用 | Agent 冒用身份、越权访问资源 | A22 不越权限（chmod/sudoers/setuid）+ A23 不逃路径（路径穿越/symlink）+ A14 知识库越权（扩展，事后审计）+ config `--sign-config` 签名防篡改 | A14/A15 是 commit 时审计非运行时阻断（§四）；同机多 Agent 无身份隔离（LIMITATIONS） |
+| ASI04 供应链投毒 | 恶意依赖、typosquatting、postinstall 注入 | A10 不引毒源（黑名单+typosquatting+postinstall）+ AST `asi04-sbom`（lockfile 生成 SBOM 对漏洞库）+ `no-dynamic-require` + install.sh 只 clone 官方仓 | automerge preview 版传递依赖 uuid@3.4.0 已评估可利用性极低（§五） |
+| ASI05 意外代码执行 | RCE——Agent 执行了非预期代码 | AST `no-eval` + `no-child-process-shell`（动态参数 FAIL）+ A21 不植后门（自启动持久化）+ A5 不瞒真相 + 审计引擎自身 execFileSync 数组传参无 shell | 审计是事后检测，无运行时沙箱拦截 |
+| ASI06 记忆与上下文投毒 | 篡改知识库/审计历史污染后续决策 | HMAC 链（§四：`~/.sofagent-key` 签名 + `--verify-chain`/`--doctor` 校验）+ `--sign-config` + USB federation HMAC 全量签名 + trust 可信分级（web+restricted 丢弃）+ sensitivity 双重过滤 | 无密钥时退化 hash chain 弱校验；同用户进程可读密钥重签（§四 HMAC 威胁模型边界） |
+| ASI07 智能体间通信攻击 | A2A/联邦链路伪造、窃听 | 联邦查询四层防线（§一：localhost 绑定 + channel 路由 + AES-256-GCM 加密 payload + sensitivity 双重过滤）+ 三条配对路径（6 位码+指纹人工确认防 MITM）+ 密钥 24h 轮换 | OpenClaw channel 自身 ws:// 无 TLS——应用层加密是唯一保密防线（§一审计结论）；仅覆盖 sofagent 联邦链路，不覆盖外部 A2A 协议 |
+| ASI08 级联失效 | 一个 Agent 失败拖垮整条链 | 快照回滚（`internal/checkpoint` + snapshot）+ 联邦查询离线降级（单 peer 5s 超时跳过，全离线退化本地）+ A11 不滥资源（超大文件/大删除）+ A8 不逃验证 | 无跨 Agent 编排级熔断器（单 Agent 循环失控熔断依赖 OpenClaw loopDetection） |
+| ASI09 人机信任滥用 | Agent 虚假汇报骗取人工批准 | 24 条规则 git diff 硬证据（不采信模型自评）+ A7 不存盲改（无读取记录的修改 FAIL）+ A5/A19 msg 质量 + entry-gate 🔴 高风险强制人工审批 + daemon 文件监控事后对账 | Agent 可伪造 task/logs（§四已知绕过路径）；HITL 依赖人真正审阅 |
+| ASI10 流氓 Agent | Agent 脱离监管自主行动 | `--doctor` 定期体检（hook 完整性/dist 哈希/config 签名/未审计 commit 扫描）+ post-commit 对账（绕过 commit-msg 留痕）+ daemon fs-watch + CI 侧 `--diff` 独立兜底（hook 可绕 CI 不可绕）+ 基线规则不可禁用 | 全部是事后检测/体检模型，无运行时进程级监控（如 eBPF）；影子审计器劫持见 §四 v1.2.7 风险 |
+| — | **未覆盖面** | 以下三类当前无对应能力，企业强合规场景需外部措施补位：多租户身份隔离（等 ROADMAP v1.4.7 G7）/ 运行时沙箱拦截 / 外部 A2A 协议安全（通信面仅覆盖 sofagent 联邦链路） | — |
+| — | **NIST AI RMF / EU AI Act / SOC 2** | 未做正式对照（无认证与审计证据链），不做映射声明；如需上述框架的证据链，需商业层 商业模型层 提供，开源版不虚标 | — |
+
+> 📌 阅读提示：表中「§N」指本 SECURITY.md 对应章节；规则 A1-A23 编号见 §四「24 条审计规则完整清单」；AST 规则见 §四「AST 规则引擎 SSOT」。
+>
+> 📌 本表是**能力对位表**而非认证声明——sofagent 未通过任何第三方安全认证，映射仅表示「对该威胁类别存在已披露的对策与边界」，不构成合规背书。
 
 ---
 
