@@ -11,7 +11,7 @@
 | # | 步骤 | 产物 | 完成判据 |
 |:--:|------|------|------|
 | 一 | **单次草稿优先**（v1.3.8 交付八）：`node tools/gen/gen-fresh-eyes-draft.mjs --diff <patch 文件> --changelog <changelog> --out ~/Desktop/fresh-eyes-draft-vX.Y.Z.md`——16 视角草稿一次成型；「待取证」项少且变更小 → 草稿 + 人工复核即收口 | 审查草稿 | 见「步骤完成判据」表 |
-| 二 | **driver 兜底**（草稿待取证多 / 大版本）：**新 session 跑 fresh-eyes-loop**——「新 session」= **用户手动开的新 WorkBuddy 窗口**（独立上下文、用户可控、隔离审查视角），不是主 session 的 subagent/spawn 子进程。主 session 按下方「监控 session Prompt 模板」生成 prompt、**直接在对话中输出**（不落盘文件——零号铁律：未经确认不创建文件），用户复制粘贴到新窗口执行；新 session 跑完以对话消息汇报回主 session。启动姿势见「driver 启动姿势」专节（8 条）；按监控协议轮询 `status.json`（或 `--check-alive` 探针）。loop 修复即本版本代码质量加固 | loop 修复 + changelog 汇总打勾 | 见「步骤完成判据」表 |
+| 二 | **driver 兜底**（草稿待取证多 / 大版本）：**新 session 跑 fresh-eyes-loop**——「新 session」= **用户手动开的新 WorkBuddy 窗口**（独立上下文、用户可控、隔离审查视角），不是主 session 的 subagent/spawn 子进程。主 session 按下方「监控 session Prompt 模板」生成 prompt、**直接在对话中输出**（不落盘文件——零号铁律：未经确认不创建文件），用户复制粘贴到新窗口执行；新 session 跑完以对话消息汇报回主 session。启动姿势见「driver 启动姿势」专节（8 条）；按监控协议轮询 `status.json`（或 `--check-alive` 探针）。loop 修复即本版本代码质量加固。**loop 修复的分工守「修复分工与三角色分离」专节**（v1.4.1 固化：修复交独立 session，主 session 只复验收编） | loop 修复 + changelog 汇总打勾 | 见「步骤完成判据」表 |
 | 三 | **代码审核**（当前 session）：逐项核对发布检查清单（清单位置见判据表），PASS 或 FAIL→修复 | 检查清单打勾 | 见「步骤完成判据」表 |
 | 四 | **验收测试随功能开发先行新增（增量）**：本版本新功能对应的 acceptance 新场景（S 编号顺延）+ checklist 新维度，随功能开发实时加——本步骤只做「增量补齐」。**归并/压缩/校准/A/B/C 分类是阶段四的职责**（见 [04-review-system.md](./04-review-system.md)），这里不动体系 | 验收测试更新（增量） | 见「步骤完成判据」表 |
 | 五 | **阶段汇报**：全部步骤完成后，执行 session 按下方「阶段汇报模板」以**对话消息**形式发回主 session（不落盘文件）——主 session 依此打勾推进，不再考古 | 汇报消息（见模板） | 模板五件套齐全（含步骤完成状态声明） |
@@ -120,7 +120,24 @@
 
 ---
 
-## 版本类 finding 处理规则
+## 修复分工与三角色分离（v1.4.1 实录固化）
+
+> **为什么**：v1.4.1 run-01 实录——loop 因 worktree 钉死基线 + b-fix 沙箱拒写结构性不收敛，主 session 停轮后**直接代做修复 + 自己复验 + 自己收编**（f5430de4），发现问题（worker）、修复、复验三角色中后两者重合，「谁来检查检查者」缺位，被迫事后开新 session 补审。此后固化分工：
+
+| 角色 | 承担者 | 职责边界 |
+|------|--------|---------|
+| **发现问题** | loop 的 A/B worker（独立子会话） | 审查 + findings 产出，不修 |
+| **修复执行** | **独立 session**（用户开新窗口，或工程师寇豆码） | 消费 result.md / b-fix 修复规格（summary-batch-*.md），机械应用到主仓库并 commit |
+| **复验收编** | 主 session | 零信任复验修复内容（grep 实证每条）→ 收编 or 打回；**不代写修复** |
+
+**铁律**：
+- 一、主 session 发现 loop 结构性不收敛需人工收口时，停轮决策可自做，**修复必须移交独立 session**——主 session 只产出「修复指令 prompt」（含 findings 裁决清单 + 验收标准），在对话中输出给用户转发
+- 二、若极端情况主 session 确实代做了修复（如单行紧急止血），**必须事后补独立审查**（新 session 或单次草稿模式审该 diff），verdict 记「人工收口 PASS（有保留）+ 补审 PASS」
+- 三、复验与修复不得同人同轮完成——同一 session 先修后验等于没验
+
+**driver 天然进程独立**（daemon detached，不依赖任何 session 存活）——「新 session」要求的本质不是进程隔离而是角色隔离：审查者 ≠ 修复者 ≠ 复验者。loop 在哪个 session 启动均可，收口时守住三角色分离即可。
+
+---
 
 fresh-eyes 在**发版前**跑（阶段三时序先于打 tag/publish），此时版本一致性天然处于中间态——以下 finding 属预期噪音，**默认标 SKIP 不修**，留到阶段十（publish）自然消解：
 
