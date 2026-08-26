@@ -15,9 +15,10 @@
 //   node FORGE/src/release-gate-driver.mjs --worker --step <step> --run-dir <abs> --target <ver>
 //
 // 模型配置（V + F 双角色，v1.2.8）：
-//   V（验证者）= deepseek-v4-flash  reviewer skill + REVIEWER_TOOLS（只读）
-//   F（修复者）= deepseek-v4-flash  engineer skill + ENGINEER_TOOLS（可写代码）
+//   V（验证者）/ F（修复者）= glm-5.3（智谱 Coding Plan 订阅制，GLM_API_KEY，v1.4.1 起）
+//   V = reviewer skill + REVIEWER_TOOLS（只读）· F = engineer skill + ENGINEER_TOOLS（可写代码）
 //   f-audit = driver 步骤（role:null，不调 LLM，driver 直接跑 sofagent-audit）
+//   历史选型：deepseek-v4-flash（v1.3.9 按量低成本档）→ glm-5.3（v1.4.1 切换）
 //
 // 与 fresh-eyes-driver 的差异：
 //   - V+F 双角色（无 A/B 双盲），V 只读验证，F 读写修复
@@ -67,15 +68,14 @@ const LEDGER_PATH = join(REPO_ROOT, 'FORGE/LEDGER.md');
 const AGENTS_DIR  = join(REPO_ROOT, 'SKILL/agents');
 
 // ─── 单角色模型配置（V = 验证者，从 FORGE/models/ 加载）──────
-// V 用 deepseek-v4-flash：DeepSeek API 按量计费（OpenAI 兼容接口）。
+// V 用 glm-5.3（智谱 Coding Plan 订阅制，OpenAI 兼容接口，v1.4.1 起）。
 // 换模型改 FORGE/models/profile.mjs 即可，不需要改 driver 代码。
 import { resolveConfigs, resolvePricing } from '../models/index.mjs';
 const MODEL_CONFIGS = resolveConfigs(AGENTS_DIR);
 
 // ─── 模型定价（从 FORGE/models/ 加载）─────────────────────
 // 单位：CNY per 1M tokens（百万 token 计价）
-// V 用 deepseek-v4-flash = DeepSeek API 按量计费（pay-as-you-go）。
-// MODEL_PRICING 按 V4 Flash pricing 字段估算成本，recordUsage 输出真实 cost_cny（非 null）。
+// 定价按当前 profile 模型（glm-5.3）字段估算成本，recordUsage 输出真实 cost_cny（非 null）。
 const MODEL_PRICING = resolvePricing();
 
 // ─── driver-base 公共编排层实例 ──────────────────────────
@@ -366,12 +366,13 @@ function buildSystemPrompt(skillPath) {
  * 为角色 V 创建 LLM 模型实例。
  *
  * 模型配置从 FORGE/models/ 加载（profile.mjs 定义角色→模型映射）。
- * 当前配置：V = deepseek-v4-flash（DeepSeek API 按量计费，OpenAI 兼容接口）。
+ * 当前配置：V = glm-5.3（智谱 Coding Plan 订阅制，OpenAI 兼容接口，v1.4.1 起）。
  * 换模型只改 FORGE/models/profile.mjs，不需要改 driver 代码。
  *
- * deepseek-v4-flash 支持 reasoning_effort 参数（无 thinking 字段）：MODEL_CONFIGS.V 定义了
- * reasoningEffort='max' + temperature=1.0，
- * 下方条件注入分支（cfg.reasoningEffort）自动带上，cfg.thinking 因模型无此字段不触发。
+ * 参数注入按模型文件声明的字段自适应：若模型定义 thinking 字段则走 thinking 分支，
+ * 定义 reasoningEffort 则走 reasoningEffort 分支——历史注记：deepseek-v4-flash 时代
+ * 用 reasoningEffort='max' + temperature=1.0（无 thinking 字段）；切模型后以
+ * FORGE/models/glm-5.3.mjs 实际字段为准。
  *
  * @param {string} role 角色名（本 driver 固定为 'V'）
  * @param {number} [maxTokensOverride] 步骤级输出 token 上限覆盖，优先于 cfg.maxTokens

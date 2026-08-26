@@ -534,10 +534,13 @@ describe('extractUsage', () => {
 // 此处以源码级断言锁定 clamp 表达式存在且方向正确（运行时行为由 spawnAcceptanceShards
 // 的 maxConcurrency 参数承接，该函数签名不变）。
 describe('acceptance 分片并发 clamp（run-05 OOM 修复）', () => {
-  it('MAX_ACC_CONCURRENCY 取 min(FORGE_ACCEPTANCE_CONCURRENCY, FORGE_MAX_CONCURRENCY)', () => {
+  it('MAX_ACC_CONCURRENCY 取 min(FORGE_ACCEPTANCE_CONCURRENCY, resolveMaxConcurrency)', () => {
     expect(SOURCE_CODE).toContain('Math.min(');
+    // v1.3.7 ⑦ 起 FORGE_MAX_CONCURRENCY 的解析升级为 resolveMaxConcurrency()
+    // （显式 CLI/env > totalmem 预算表 > 兜底 1），不再写死 env || '6'
     expect(SOURCE_CODE).toContain("process.env.FORGE_ACCEPTANCE_CONCURRENCY || '6'");
-    expect(SOURCE_CODE).toContain("process.env.FORGE_MAX_CONCURRENCY || '6'");
+    expect(SOURCE_CODE).toContain('resolveMaxConcurrency({ defaultConcurrency: 1 })');
+    expect(SOURCE_CODE).toContain('GATE_CONCURRENCY_RESOLVED.concurrency');
     // clamp 表达式必须在 spawnAcceptanceShards 调用之前定义
     const clampIdx = SOURCE_CODE.indexOf('const MAX_ACC_CONCURRENCY = Math.min(');
     const callIdx = SOURCE_CODE.indexOf('await spawnAcceptanceShards(');
