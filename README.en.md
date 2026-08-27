@@ -6,13 +6,13 @@
   <a href="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml"><img src="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml/badge.svg" alt="Verify" /></a>
   <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-brightgreen" alt="License: MIT" /></a>
   <!-- ⚠️ bump version: manually sync this badge version (Version-vX.Y.Z) -->
-  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.4.0-16B8F3" alt="Version" /></a>
+  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.4.1-16B8F3" alt="Version" /></a>
 </p>
 
 > 📌 **Status**: v1.4.1 training-engine foundation is code-complete (**pending release** — npm and the install command below still serve v1.4.0; see [CHANGELOG](./CHANGELOG.md)).
 
 <p align="center">
-  <a href="README.md">中文</a> · <a href="#v140-united-with-deepseek-harness">v1.4.0 × DSH</a> · <a href="#multi-platform-mounting">Multi-platform</a> · <a href="#fde-skill-system">Skill System</a> · <a href="#constraint-layer-harness">Constraint Layer</a> · <a href="#installation">Install</a> · <a href="#ecosystem--docs-index">Docs</a> · <a href="https://github.com/KongFangXun/sofagent">⭐ Star</a>
+  <a href="README.md">中文</a> · <a href="#v141-training-engine-foundation">v1.4.1 Training Engine</a> · <a href="#multi-platform-mounting">Multi-platform</a> · <a href="#fde-skill-system">Skill System</a> · <a href="#constraint-layer-harness">Constraint Layer</a> · <a href="#installation">Install</a> · <a href="#ecosystem--docs-index">Docs</a> · <a href="https://github.com/KongFangXun/sofagent">⭐ Star</a>
 </p>
 
 
@@ -78,43 +78,33 @@ graph TB
 
 > 🔄 **Self-bootstrapping**: sofagent's first FDE engagement is sofagent itself — the project is a complete FDE business flow (map → build → deploy → depart), and this open-source repository is that deliverable.
 
-## v1.4.0: United with DeepSeek Harness
+## v1.4.1: Training Engine Foundation
 
-The core of this release: officially united with [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (DSH) to become a complete FDE Agent.
+The core of this release: a foundation for enterprise AI that "gets stronger by itself" — the training engine foundation, eight blocks delivered at once.
 
-**1 · Why DSH**: DeepSeek's official open-source Agent framework, built on the [Cordis](https://github.com/cordiverse/cordis) runtime under the "Everything is a Plugin" philosophy — its plugin model naturally fits the platform-agnostic FDE Harness layer, and it is the host sofagent integrates with most deeply today.
+**1 · Why a training engine**: once business flows run, every correction, confirmation, and follow-up at an AI node is a valuable signal — but until now those signals could only "sit in logs". The training engine turns them into model capability: audit-accumulated trajectories → training sets → enterprise-specific models → back into business flows, closing the self-evolution loop (sofagent builds only the management plane and auditing; the compute plane reuses open-source frameworks).
 
-**2 · How**: the four constraint-layer capabilities (injection · audit · rollback · evolution) are packaged into 9 `cordis-plugin-sofagent-*` plugins, all live-mounted into DSH (Plugin list shows 9 Enabled), installable independently and adopted progressively:
+**2 · The eight blocks** (each with acceptance tests):
 
-| Plugin | Responsibility |
-|--------|----------------|
-| `audit` | Machine review of changes — 24 rules + git diff hard evidence + node-level auditing |
-| `rollback` | Reverse-ordered undo on failure — git snapshot → effect disposer |
-| `inject` | Inject enterprise constraints at startup — four-layer loading chain |
-| `evolve` | Experience capture — think.md reflection + Dream Cycle + skillopt |
-| `ontology` | Shared semantic foundation + knowledge retrieval (ontology_* tools + search_knowledge) |
-| `commons` | The commons of capabilities — reuse via commons_* tools |
-| `gate` | No pass without acceptance — machine-decidable acceptance + human review |
-| `daemon` | 7×24 inspection + health monitoring + webhook push |
-| `fde` | Six-tool closed loop of the on-site methodology (fde_interview / classify / quantify / derive / distill / deploy) |
+| Block | Responsibility |
+|-------|----------------|
+| train-job orchestration | Full training-task lifecycle (submit / status / resume) + `train_submit` (66→67 tools) |
+| train_job audit | HMAC-chained records for the whole training run — every submit / heartbeat / artifact is traceable |
+| Isolation boundary | enterpriseId isolation end to end — company A's data never enters company B's training |
+| Reproducible fingerprint | Same data + same config = same result; checkpoint resume locks versions |
+| Weight integrity | Output weights are HMAC-signed and verified at load; tampered weights are blocked |
+| Interruption reclaim | Stalled-heartbeat detection → kill → GPU notify → temp-dir cleanup → audit on chain |
+| Crash recovery | Dead-task cleanup + three recovery options (rerun / resume / abandon) |
+| Security baseline | Path whitelist + injection metacharacter filtering + credential masking + attack-surface disclosure |
 
-**3 · Division of labor**
+**3 · Stage-0 hard-part validation first**: reward convergence verified on macOS Metal with @mlx-node/trl — the minimal training loop really runs, not a paper design.
 
-| Side | Provides |
-|------|----------|
-| DeepSeek Harness (DSH) | **The execution body** — model + tools + sessions |
-| sofagent | **Enterprise constraints & audit + FDE methodology** |
+**Other new capabilities in this release** (see the [devlog](./docs/changelog/v1.4/v1.4.1.md); earlier versions in [CHANGELOG](./CHANGELOG.md)):
 
-**DSH host + sofagent capability = a complete FDE Agent**: DSH handles "can work", sofagent handles "keeps working" — every change is audited, out-of-bounds moves are blocked, breakage can be rolled back.
-
-**Other new capabilities in this release** (see the [devlog](./docs/changelog/v1.4/v1.4.0.md); earlier versions in [CHANGELOG](./CHANGELOG.md)):
-
-- **Dashboard productization**: Web worklog page (by Agent / by Workflow / weekly trend / human-in-the-loop, four views) + graph panel (FDE dual graphs: business graph + ontology graph + MCP tool view 67 tools (since v1.4.1, pending release; v1.4.0 ships 66) + skill load-chain visualization) + single-file HTML ships with `install.sh` (`worklog.json` falls back to sample data)
-- **Cost audit**: overspend warning (WARN only) + `cost_query` MCP tool + `DecisionKind.COST` traceability
-- **Dual plugin families**: 9 DSH-form plugins (above) + 4 code-plugins in OpenClaw form (ClawHub ready) + shared precommit hook for Cursor / Claude Code
-- **Cross-device**: federation end-to-end (pairing / encrypted query / tamper detection / offline fallback — S320 + S322 dual coverage) + remote API channel (C/S control plane, contract documented)
-- **Agentic Browser + eval**: navigate / click / screenshot / assert registered (MCP 61→66) + real Playwright driver + MLflow eval wiring (degrades gracefully when unreachable)
-- **Engineering base**: audit provenance fields (`whichDataVersion` + `beforeAfter`) + all shell scripts verified on real bash 3.2
+- **SKILL system refactor**: SKILL/ main entry four-layer loading chain rebuilt, agents/ rules split by role (audit/engineer/reviewer/fde), load-chain visualization in Dashboard
+- **DSH plugin descriptions de-inflated**: 9 `cordis-plugin-sofagent-*` plugin descriptions rewritten from claims to actual bridging reality
+- **Dependency upgrades**: LangChain trio + vitest
+- **Tests 2981→3221** (+240: train module +231 + zod schema leak defense 5) · 340/340 acceptance scenarios green
 
 ## Multi-platform Mounting
 

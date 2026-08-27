@@ -1,5 +1,5 @@
 // ============================================================
-// commons-rule-fixtures.ts · 评估体系三步单测 fixture（v1.4.0 对齐）  // v1.4.0
+// commons-rule-fixtures.ts · 评估体系三步单测 fixture（v1.4.1 对齐）  // v1.4.1
 //
 // Mock 数据——单测读 fixture 不读真实 data/。
 // 构造：

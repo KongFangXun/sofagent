@@ -1,6 +1,6 @@
 // ============================================================
 // asi01-prompt-injection.ts · OWASP ASI01 目标劫持检测
-// v1.4.0（一）：扫描 SKILL.md / fde.md 等 system prompt 类文件中的
+// v1.4.1（一）：扫描 SKILL.md / fde.md 等 system prompt 类文件中的
 // 对抗性注入模式——「忽略上述指令」类指令覆盖（Microsoft AGT 启发）
 //
 // 边界说明：markdown 没有 TS AST，语义级检测落在

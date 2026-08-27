@@ -1,8 +1,8 @@
 #!/usr/bin/env node
-// daemon CLI · v1.4.0
+// daemon CLI · v1.4.1
 const args = process.argv.slice(2);
 const subcommand = args[0];
-const VERSION = '1.4.0';
+const VERSION = '1.4.1';
 
 /**
  * v1.4.0 交付四②：进程自身硬化（process-hardening 启发 · Linux/macOS 先行）

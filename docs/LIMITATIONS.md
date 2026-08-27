@@ -2,7 +2,7 @@
 
 > 诚实坦白：已知局限。列出 sofagent 当前做不到什么、为什么做不到、等什么才能做到。
 >
-> v1.4.0 · 2026-08-23（UTC）· 孔放勋
+> v1.4.1 · 2026-08-27（UTC）· 孔放勋
 
 > 🧭 **阅读引导**：本文档按主题分节——**安全/合规局限见第三节**（强合规选型先读），**能力边界**（其余各节）多为设计取舍而非缺陷。通读一遍即可建立心智模型：**大多数局限有明确版本路线（见 ROADMAP），不是"永远做不到"**。首次阅读建议先看目录 + 每节第一段，无需逐条读完。
 
@@ -409,7 +409,7 @@ FDE 完整四阶段十二步部署流程（[FDE/GUIDE.md](../FDE/GUIDE.md)）已
 v1.0 新增 `FORGE/playbook/acceptance-test.sh`（场景数持续扩展，当前 255 个，SSOT 见脚本头部声明）：
 
 - **CI 已覆盖**：单元测试审计核心 878 个、全 workspace 3177 个测试（v1.4.1 开发批次 2946→3177 +231：train 模块 orchestrator 215 + daemon 7 + DSH 工具注入 dsh-backend 9（含 zod schema 泄漏防御 5）；全绿，详见上方「测试覆盖范围」节，实测见 `tools/check/test-count.sh`，与 pre-push-check 一致）、sofagent-core verify 约 44-48 项（动态）
-- **发版前手动覆盖**：acceptance-test.sh 262 场景（含子断言，CLI 端到端，步骤 2.3）、OpenClaw 验收 63 场景（Agent 端到端，步骤 2.5）
+- **发版前手动覆盖**：acceptance-test.sh 263 场景（含子断言，CLI 端到端，步骤 2.3）、OpenClaw 验收 63 场景（Agent 端到端，步骤 2.5）
 - **CI 未覆盖**：daemon → MCP → webhook → 编排四组件串联行为（仍依赖手动验证）
 - **CI 未覆盖**：多平台兼容性（macOS only verified，Linux/Windows 未验证）
 

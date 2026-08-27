@@ -1,7 +1,7 @@
 // ============================================================
 // fs-watch.ts · 文件系统监控守护进程
 // v1.3.7 新增：基于 Node.js 内置 fs.watch 的文件变更监控
-// v1.4.0：迁移至 @sofagent/daemon
+// v1.4.1：迁移至 @sofagent/daemon
 //
 // 设计原则：
 //   - 零外部依赖（不依赖 chokidar）——使用 Node.js 内置 fs.watch

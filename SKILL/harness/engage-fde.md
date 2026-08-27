@@ -1,4 +1,4 @@
-# engage-fde.md · FDE 场景引导 · v1.4.0
+# engage-fde.md · FDE 场景引导 · v1.4.1
 
 > FDE 部署场景的主动引导逻辑。检测到 FDE 场景时自动激活。
 > 与 FDE/GUIDE.md 互补——GUIDE.md 是知识文档（被动），本文件是引导逻辑（主动）。

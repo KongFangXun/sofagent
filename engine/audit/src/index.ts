@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // ============================================================
 // sofagent-audit · 提交时审计 CLI 入口
-// v1.4.0 · 审计闭环六步（检测+分类+根因+改进+回归+上线）
+// v1.4.1 · 审计闭环六步（检测+分类+根因+改进+回归+上线）
 // v1.0.8 精简（历史）：compose→orchestrator, subagent→orchestrator,
 //          skillopt-run→skillopt, ab-test→ab-test,
 //          daemon→daemon, doctor/verify→core (deprecation shim)
@@ -68,7 +68,7 @@ export type { SafetyResult, SafetyRule } from './rules/skill-safety-rules';
 // Re-export webhook 推送（mcp-server.ts 从 audit 消费 pushAuditResult）
 export { pushAuditResult } from './webhook';
 export type { WebhookPlatform } from './webhook';
-// v1.4.0 交付三：成本审计维度（cost_query MCP 与外部脚本 import 用）
+// v1.4.1 交付三：成本审计维度（cost_query MCP 与外部脚本 import 用）
 export { runCostAudit, loadWorklogSlice } from './cost-audit';
 export type { CostBudget, CostFinding, WorklogSlice } from './cost-audit';
 // v1.4.9 交付⑭：分级降级梯队（韧性设计——workflow never stops）
@@ -101,7 +101,7 @@ function exit(code: 0 | 1 | 2, message?: string): never {
 }
 
 /**
- * v1.4.0 交付十三：beforeAfter 结构化摘要——从 diff 提取变更前/后值。
+ * v1.4.1 交付十三：beforeAfter 结构化摘要——从 diff 提取变更前/后值。
  * 截断至 MAX 字符 + 复用脱敏语义（A2/A9 敏感内容打码），diff 原文不进 history.jsonl。
  * 提取规则：删除行（-）→ before，新增行（+）→ after；各取前 3 条，单条截断 120 字符。
  */
@@ -1217,7 +1217,7 @@ async function main(): Promise<void> {
 
   printResults(results, diffFiles, args.json, args.ci, args.silent);
 
-  // v1.4.0 交付三: 成本审计维度（opt-in WARN only——不配 budget 不审计；
+  // v1.4.1 交付三: 成本审计维度（opt-in WARN only——不配 budget 不审计；
   // 不进 A1-A23 规则体系，exitCode 不变；铁律 12：WARN 不拦截任务执行）
   if (!args.json) {
     const costBudget = config.cost?.budget;
@@ -1360,14 +1360,14 @@ async function main(): Promise<void> {
         actor,
         timestamp: govTimestamp,
         targetEntity,
-        // v1.4.0 交付十三：beforeAfter 结构化摘要回填——从 diff 提取前/后值（截断至 200 字符 + 脱敏，
+        // v1.4.1 交付十三：beforeAfter 结构化摘要回填——从 diff 提取前/后值（截断至 200 字符 + 脱敏，
         // diff 原文不进 history.jsonl；A2/A9 脱敏语义不变）
         beforeAfter: buildBeforeAfterSummary(diffFiles),
         context: args.task || commitMsg || undefined,
         decisionProvenance: {
           who: actor,
           when: govTimestamp,
-          // v1.4.0 交付十三：whichDataVersion 契约就位——FDE 知识库版本化未就绪时留空（不报错），
+          // v1.4.1 交付十三：whichDataVersion 契约就位——FDE 知识库版本化未就绪时留空（不报错），
           // 版本化落地后从 knowledge 版本元数据回填
           whichDataVersion: undefined,
           whichApp: `sofagent-audit v${VERSION}`,

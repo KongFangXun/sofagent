@@ -16,7 +16,7 @@
 > **当前 96 维 · 编号 1-124 · 28 个编号已归并删除（v1.3.7 阶段四 +2：115 新功能审查面 / 116 bugfix 批防复发——acceptance 同批 S290-S293，S293 为阶段四基建加固场景：LLM 超时四文件/resume 越轮守卫/rm-rf 口径同源；v1.3.8 阶段五 +2：117 网关攻击面四项核对 / 118 原子写与单writer 加固（B1+B2+B3 归并）——acceptance 同批 S294-S302 已覆盖功能面，本批为防御性回归标记；v1.3.9 阶段五：119 开发坑防复发（TS7 缓存/promise 形态）/ 120 DSH 适配防复发（CLI 桥接/pnpm/require）/ 121 新功能审查面（十三交付锚点收口，参照 113/115 模式）——acceptance 同批 S305-S317；原 A2 正则边界并入 #57 子项；v1.4.0 阶段十二 +1：122 发版流程防复发（lock 同步/plugin 分发包装/限流——v1.4.0 发版三坑实录，B 类）；v1.4.1 阶段四 +2：123 训练引擎地基八大块一维收口（A 类 18 条压 1 维）/ 124 发版防复发（B 类 10 条压 1 维）——acceptance 同批 S328-S329；真实归并 2 处对销：#114→#113（同版配套面）+ #63 命令体→S166）**。维度流连续不中断，分组导航：基线组 → 审查约束组 → 环境敏感组（前置 vitest/沙箱铁律）。
 ## 🔒 维护公约（防膨胀铁律）
 
-**追加新维度前，必须先 grep 同类**：有同类 → 扩展旧维度的子项，不新增编号；无同类 → 才新增编号 = 当前最大 +1。历史维度靠 `git log -p` 找回。**归并配额（v1.3.9 硬门槛）**：新增 N 维 → 本版必须先真实归并 ≥N 维（被并维度检查内容实际移入目标维度，git diff 可查；注释压缩不算）；净增行数 > 警戒线余量 → 继续归并或移下一版——**只调警戒线不归并 = 不合格**。**行数警戒线**：`regression-checklist.md` ≤ 1720 行、`acceptance-test.sh` ≤ 3150 行（v1.3.7 阶段四上调 1540→1580 / 2600→2640：+39 维 115/116 新审查面 / +38 S290-S292；v1.3.8 阶段四 +9 场景 S294-S302 真实归并否、上调记录 2640→2730；v1.3.8 阶段五 +2 维 #117-#118 真实归并否、上调记录 1580→1620——三判据①②③全否、本版 checklist 首调非连续两版非同版二次冻结；v1.3.8 阶段五补充 bugfix 防回归 S303-S304（A1 后缀绕过+A2 FFFD 短路端到端，B 类零场景缺口）上调 2730→2770——三判据全否：单测在而端到端缺/非同主题聚簇/真实安全回归风险，非既有场景覆盖；v1.3.9 阶段五 +13 场景 S305-S317（A 类分发）上调 2770→2870、+2 维 #119/#120 + #121 编号复用为 v1.3.9 新功能审查面（A2 正则边界并入 #57 子项 = 真实归并 1 处对销）上调 1620→1660——三判据①②③全否 + 归并配额 1 处 ✓，净增约 20 行 ≤ 余量 40）；v1.3.9 阶段六 +2 场景 S318-S319（补 ATTRIBUTION/Dream Sandbox 零覆盖 acceptance 场景）上调 2870→3000——真实补测试非归并（三判据全否），余量 +39 后仍足）；v1.4.0 阶段六 +6：检查器 4 缺陷修复注释（run-22 P1 误报修复说明——维度 90/89/111 正则与解析修复 + 维度 49 参数动态化，注释压缩后净增 6 行）——三判据①②③全否（真实修复说明非冗余，非工具覆盖，非聚簇假信号）；v1.4.0 阶段十二 +1 维 #122（发版流程防复发：lock 同步/plugin 分发包装/限流——三坑实录新审查面，三判据全否）上调 1670→1690——连续第三版上调，前两版均有真实归并对销；**v1.4.1 阶段四**：checklist +2 维 #123-#124（A 类 18 条压 1 维训练引擎地基收口 / B 类 10 条压 1 维发版防复发，三判据全否）+ 真实归并 2 处（#114→#113 同版配套面并入、#63 命令体移入 S166——归并配额 2:2 ✓，连续上调禁令因本版真实归并解锁）上调 1690→1720（净增 +26 ≤ 余量 30）；acceptance +2 场景 S328-S329（阶段三增量 S323-S327 顶破 + 阶段四 B2/B3 分发，真实端到端场景非归并，三判据全否；acceptance 上版未上调，非连续）上调 3000→3150（净增 +38 ≤ 余量 150）；fresh-eyes 警戒线上调见 04-review-system.md 风格守护段（410→425，校准笔记 +1 节真实新校准））；releasing.md 方针「超标上调 LIMIT 不删内容」。
+**追加新维度前，必须先 grep 同类**：有同类 → 扩展旧维度的子项，不新增编号；无同类 → 才新增编号 = 当前最大 +1。历史维度靠 `git log -p` 找回。**归并配额（v1.3.9 硬门槛）**：新增 N 维 → 本版必须先真实归并 ≥N 维（被并维度检查内容实际移入目标维度，git diff 可查；注释压缩不算）；净增行数 > 警戒线余量 → 继续归并或移下一版——**只调警戒线不归并 = 不合格**。**行数警戒线**：`regression-checklist.md` ≤ 1720 行、`acceptance-test.sh` ≤ 3200 行（v1.3.7 阶段四上调 1540→1580 / 2600→2640：+39 维 115/116 新审查面 / +38 S290-S292；v1.3.8 阶段四 +9 场景 S294-S302 真实归并否、上调记录 2640→2730；v1.3.8 阶段五 +2 维 #117-#118 真实归并否、上调记录 1580→1620——三判据①②③全否、本版 checklist 首调非连续两版非同版二次冻结；v1.3.8 阶段五补充 bugfix 防回归 S303-S304（A1 后缀绕过+A2 FFFD 短路端到端，B 类零场景缺口）上调 2730→2770——三判据全否：单测在而端到端缺/非同主题聚簇/真实安全回归风险，非既有场景覆盖；v1.3.9 阶段五 +13 场景 S305-S317（A 类分发）上调 2770→2870、+2 维 #119/#120 + #121 编号复用为 v1.3.9 新功能审查面（A2 正则边界并入 #57 子项 = 真实归并 1 处对销）上调 1620→1660——三判据①②③全否 + 归并配额 1 处 ✓，净增约 20 行 ≤ 余量 40）；v1.3.9 阶段六 +2 场景 S318-S319（补 ATTRIBUTION/Dream Sandbox 零覆盖 acceptance 场景）上调 2870→3000——真实补测试非归并（三判据全否），余量 +39 后仍足）；v1.4.0 阶段六 +6：检查器 4 缺陷修复注释（run-22 P1 误报修复说明——维度 90/89/111 正则与解析修复 + 维度 49 参数动态化，注释压缩后净增 6 行）——三判据①②③全否（真实修复说明非冗余，非工具覆盖，非聚簇假信号）；v1.4.0 阶段十二 +1 维 #122（发版流程防复发：lock 同步/plugin 分发包装/限流——三坑实录新审查面，三判据全否）上调 1670→1690——连续第三版上调，前两版均有真实归并对销；**v1.4.1 阶段四**：checklist +2 维 #123-#124（A 类 18 条压 1 维训练引擎地基收口 / B 类 10 条压 1 维发版防复发，三判据全否）+ 真实归并 2 处（#114→#113 同版配套面并入、#63 命令体移入 S166——归并配额 2:2 ✓，连续上调禁令因本版真实归并解锁）上调 1690→1720（净增 +26 ≤ 余量 30）；acceptance +2 场景 S328-S329（阶段三增量 S323-S327 顶破 + 阶段四 B2/B3 分发，真实端到端场景非归并，三判据全否；acceptance 上版未上调，非连续）上调 3000→3150（净增 +38 ≤ 余量 150）；**v1.4.1 阶段六**：acceptance +1 场景 S330（训练异常退出资源回收四步链——阶段六 coverage 补测，判断层唯一零覆盖项补齐，真实端到端场景非归并，三判据全否）上调 3150→3200（净增 +37 ≤ 余量 50，checklist 同版未上调非连续同侧）；fresh-eyes 警戒线上调见 04-review-system.md 风格守护段（410→425，校准笔记 +1 节真实新校准））；releasing.md 方针「超标上调 LIMIT 不删内容」。
 
 **维度脚本编写三铁律**（v1.3.6 release-gate run-08 教训——7 个 FAIL 维度中 5 个是脚本自身缺陷而非仓库问题，driver 白跑一轮）：
 
@@ -33,7 +33,7 @@ ACTUAL=$(grep -c "^#### " FORGE/playbook/regression-checklist.md)
 # 行数警戒线自检（越线提醒瘦身，非失败；与 releasing.md 阶段五警戒线一致）
 WC_CHK=$(wc -l < FORGE/playbook/regression-checklist.md); WC_ACC=$(wc -l < FORGE/playbook/acceptance-test.sh)
 [ "$WC_CHK" -le 1720 ] && echo "✅ checklist $WC_CHK (≤1720)" || echo "⚠️ checklist $WC_CHK 超 1720"
-[ "$WC_ACC" -le 3150 ] && echo "✅ acceptance $WC_ACC (≤3150)" || echo "⚠️ acceptance $WC_ACC 超 3150"
+[ "$WC_ACC" -le 3200 ] && echo "✅ acceptance $WC_ACC (≤3200)" || echo "⚠️ acceptance $WC_ACC 超 3200"
 ```
 ## 你的身份
 
@@ -101,7 +101,7 @@ grep -A5 "'A4\|name.*不删配置" engine/audit/src/rules/index.ts | grep "ruleC
 grep "name:" engine/audit/src/rules/index.ts | wc -l   # 期望 24
 grep "A6.*能力拐杖\|A11.*业务底线" engine/audit/README.md | wc -l   # 期望 2
 
-# 子项 d: ruleClass SSOT ↔ README 逐条比对（v1.1.3 盲区 · v1.4.0 重写）
+# 子项 d: ruleClass SSOT ↔ README 逐条比对（v1.1.3 盲区 · v1.4.1 重写）
 # v1.2.5：旧版用 `diff <(index.ts 代码) <(README 表格行)`——两种文本格式天生不同，永远报差异（误报 12 行）。
 # 改为两侧归一化成「A编号 ruleClass」再比对，才是真正检查"每条规则分级两边一致"。
 diff <(grep -E "name: 'A[0-9]+" engine/audit/src/rules/index.ts | sed -E "s/.*name: '(A[0-9]+)[^']*'.*ruleClass: '([^']+)'.*/\1 \2/" | sort) \
@@ -197,7 +197,7 @@ echo "index.ts: $INDEX_RULES / knownKeys: $KNOWN_KEYS"   # 期望：两集合相
 # 文档侧：声称型数字（v1.1.5 教训——6 文档漏改）
 grep -rnE "A1-A11、A14-A1[0-9]|[0-9]+ 条审计规则" --include="*.md" README.md README.en.md docs/ FDE/ FORGE/ ROADMAP.md 2>/dev/null | grep -v "regression-checklist\|fresh-eyes-review\|changelog/"   # 人工核对：与 SSOT 一致
 
-# 字段完整性（v1.1.6：name+ruleClass 各 24 条=48 · v1.4.0 修正 21→24）+ evidenceMode 计数（v1.1.4：期望 24）
+# 字段完整性（v1.1.6：name+ruleClass 各 24 条=48 · v1.4.1 修正 21→24）+ evidenceMode 计数（v1.1.4：期望 24）
 grep -oE "name:|ruleClass:" engine/audit/src/rules/index.ts | wc -l   # 期望 48
 grep -cE "evidenceMode:" engine/audit/src/rules/index.ts   # 期望 24
 ```
@@ -1048,12 +1048,12 @@ node -e "const fs=require('fs'),raw=fs.readFileSync('FORGE/src/fresh-eyes-driver
 
 #### 73. ESM named export 完整性 + FORGE 模块加载烟测（v1.2.8 新盲区 · v1.4.1 归并 73+74）
 
-> v1.2.9 教训（归并原 73+74）：FORGE/ 不在 npm workspaces → `npm test` 从不执行 FORGE/ 下的 `.test.mjs`。曾出过 `DEFAULT_BUDGET` 缺 `export` 关键字导致 3 个 driver 启动即崩溃的 P0 bug。补建 `tools/forge/forge-smoke-test.sh` 做 6 模块加载 + 3 测试文件烟测，集成到 pre-push-check.sh。
+> v1.2.9 教训（归并原 73+74）：FORGE/ 不在 npm workspaces → `npm test` 从不执行 FORGE/ 下的 `.test.mjs`。曾出过 `DEFAULT_BUDGET` 缺 `export` 关键字导致 3 个 driver 启动即崩溃的 P0 bug。补建 `tools/forge/forge-smoke-test.sh` 做 6 模块加载 + 3 测试文件烟测，集成到 pre-push-check.sh（v1.4.1 修正：脚本已迁 `tools/release/pre-push-check.sh`，旧路径 `tools/pre-push-check.sh` 不存在）。
 
 ```bash
 # 确认 forge-smoke-test.sh 存在且集成到 pre-push
 test -f tools/forge/forge-smoke-test.sh && echo "✅ smoke test 存在" || echo "❌ 缺失"
-grep -q "forge-smoke-test" tools/pre-push-check.sh && echo "✅ 已集成" || echo "❌ 未集成"
+grep -q "forge-smoke-test" tools/release/pre-push-check.sh && echo "✅ 已集成" || echo "❌ 未集成"
 bash tools/forge/forge-smoke-test.sh 2>&1 | tail -3
 # ESM named export 检查（被 import 引用的符号须有 export 声明）
 node -e "const fs=require('fs');const files=fs.readdirSync('FORGE/src').filter(f=>f.endsWith('.mjs'));let issues=[];for(const f of files){const s=fs.readFileSync('FORGE/src/'+f,'utf8');const exp=new Set([...s.matchAll(/export\s+(?:const|function|class)\s+(\w+)/g)].map(m=>m[1]));for(const f2 of files){if(f2===f)continue;const s2=fs.readFileSync('FORGE/src/'+f2,'utf8');const imp=[...s2.matchAll(/import\s*\{([^}]+)\}\s*from\s*['\"]\.\/([\w.-]+)['\"]/g)];for(const i of imp){if(i[2].replace('.mjs','')===f.replace('.m','')){for(const n of i[1].split(',').map(x=>x.trim().split(/\s+as\s+/)[0])){if(n&&!exp.has(n)&&n!=='default')issues.push(f2+' imports {'+n+'} from '+f);}}}}}console.log(issues.length?'ISSUE: '+issues.join('; '):'OK')" 2>/dev/null
@@ -1306,7 +1306,7 @@ grep 'grep.*条规则' tools/check/check-version.sh | grep -q '\.test\.' && echo
 grep "EXPECTED_DOC_DATE" tools/check/check-version.sh
 grep "$(node -p "require('./package.json').version")" CHANGELOG.md | grep -oE "2026-[0-9]{2}-[0-9]{2}"
 ```
-#### 96. 警戒线声明多处同步——单一 SSOT 引用（v1.3.2 新增 · v1.4.0 收口 · 元维度）
+#### 96. 警戒线声明多处同步——单一 SSOT 引用（v1.3.2 新增 · v1.4.1 收口 · 元维度）
 
 **背景**：acceptance 警戒线 2050→2250 时需同步改 4 处，漏改任一处导致 SOP 与实际不一致——v1.4.0 复盘实锤：SOP 表格（1660）与 guides（1500 系）双双落后于 checklist 头部（1690），多处声明必然漂移。**收口（v1.4.0）**：警戒线数值只在 checklist 头部声明一处（SSOT，check-review-system.sh 动态提取校验），其余文档一律引用不写死。
 
@@ -1479,8 +1479,8 @@ node -e "const fs=require('fs'),p=require('path');let bad=0;for(const f of fs.re
 **背景**：v1.3.5 七大块交付的审查面。acceptance S270-S276 做执行级验证，本维度做静态一致性——两者成对构成新功能的完整回归网。
 
 ```bash
-# ① MCP tools 三处口径（SKILL.md / ARCHITECTURE 能力表 / dist 实测）——v1.4.0 口径 66，勿写死
-grep -q "66 tools" SKILL/SKILL.md || echo "⚠️ SKILL 工具速查漂移（v1.4.0 口径 66）"   # v1.3.6：52→60；v1.3.9：60→61；v1.4.0：61→66 勿写死，改版时随 SSOT
+# ① MCP tools 三处口径（SKILL.md / ARCHITECTURE 能力表 / dist 实测）——v1.4.1 口径 67，勿写死
+grep -q "67 tools" SKILL/SKILL.md || echo "⚠️ SKILL 工具速查漂移（v1.4.1 口径 67）"   # v1.3.6：52→60；v1.3.9：60→61；v1.4.0：61→66；v1.4.1：66→67（train_submit）勿写死，改版时随 SSOT
 node -e "const m=require('./engine/mcp/dist/tool-registry.js');const doc=require('./package.json').version;console.log('✅ TOOLS='+m.TOOLS.length+'（registry 实数，勿写死——发版后人工对 SSOT 口径）')"   # v1.3.6：写死 52 必漂，改打印实数
 # ② snapshot tool 零 daemon 静态依赖（optionalDependencies 场景会炸）——排除注释行（🔴 import 铁律注释含 @sofagent/daemon）
 # v1.4.0 修复（run-22 P1-3c 误报）：多文件 grep 带文件前缀致 ^\s*// 排除失效 → 用 -h 去前缀。
@@ -1491,7 +1491,9 @@ grep -qE "join\(REPO|join\(process\.cwd|['\"]\.?/?SKILL/['\"]" engine/orchestrat
 grep -q "fde-companion-daily\|fde-registry" engine/daemon/src/inspector-layers.ts 2>/dev/null || grep -rq "runFdeCompanionDaily" engine/daemon/src/inspectors/ || echo "⚠️ FDE 巡检未注册 inspector"
 # ⑤ 文档同步四件套（tools 数/测试数/v1.3.5 段/CHANGELOG 索引行）
 # v1.4.0 修复（run-22 P1-3b 误报）：旧检查写死 2903（v1.3.9 数）→ README 已 2937（实测）。
-grep -q "2937" README.md || echo "⚠️ README 测试数漂移（期望 2937，见 tools/check/test-count.sh）"   # v1.4.0：2903→2937（12 包实测）；改版时随 test-count.sh
+# v1.4.1 修正：写死数字必漂（2937→3177）——改为从 test-count.sh SSOT 读实际数对账，不写死。
+TC=$(bash tools/check/test-count.sh 2>/dev/null | grep -oE 'TOTAL_TESTS=[0-9]+' | cut -d= -f2)
+grep -q "$TC" README.md || echo "⚠️ README 测试数漂移（期望 $TC，见 tools/check/test-count.sh）"   # v1.4.0：2903→2937；v1.4.1：2937→3177（12 包实测）
 grep -q "\*\*v1.3.5\*\*" CHANGELOG.md || echo "⚠️ CHANGELOG 索引缺 v1.3.5"
 ```
 

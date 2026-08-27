@@ -2,7 +2,7 @@
 
 > **sofagent 是一套 FDE 能力——装进你的 Agent（DSH / OpenClaw / WorkBuddy / Codex / Claude Code）后，进场梳理业务流、部署 AI 节点、离场后 7×24 自己跑。** 装完之后，你在自己的 Agent 里说一句话，它就帮你干活——审计每次变更、沉淀每次经验，沉淀机制随使用迭代。下面从装到用到查问题，全流程走一遍。
 >
-> v1.4.0 · 2026-08-23（UTC）· 孔放勋
+> v1.4.1 · 2026-08-27（UTC）· 孔放勋
 
 <img src="assets/sofagent.png" alt="sofagent" width="160" />
 
@@ -433,6 +433,7 @@ jobs:
 | Web 工作明细 + 图谱 | v1.4.0 | Dashboard 工作明细四视角 + 图谱栏（业务图谱 + 本体图谱 + MCP 工具视图 + skill 加载链）+ 随 install.sh 装到用户机 | [v1.4.0 开发日志](./changelog/v1.4/v1.4.0.md) |
 | 成本审计 | v1.4.0 | 超支告警 + `cost_query` MCP + COST DecisionKind（WARN-only 不拦截） | [v1.4.0 开发日志](./changelog/v1.4/v1.4.0.md) |
 | DSH/OpenClaw 插件家族 | v1.4.0 | DSH cordis-plugin 9 款 + OpenClaw code-plugin 4 款 + MCP 工具角色分层（默认 34/66）+ DSH 默认启用 | [v1.4.0 开发日志](./changelog/v1.4/v1.4.0.md) |
+| 训练引擎地基 | v1.4.1 | train-job 编排 + `train_submit`（67 tools）+ 审计 HMAC 链 + 隔离/指纹/签名/回收/恢复/安全基线八块 | [v1.4.1 开发日志](./changelog/v1.4/v1.4.1.md) |
 
 ### 知识怎么长出来
 

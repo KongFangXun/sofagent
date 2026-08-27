@@ -6,7 +6,7 @@ export LANG=en_US.UTF-8
 export LC_ALL=en_US.UTF-8
 # sofagent-audit · 上线前验收测试（Pre-Release Acceptance Test）
 # 覆盖：FORGE + MCP + 文件系统审计 + daemon + 红队对抗 + 各版本新功能验收
-# 场景数：262 个场景（SSOT：check-test-count.sh 校验，口径=真实 scenario 调用行数，非编号最大值（S1-S329 间有 67 个历史空洞号）；v1.3.7 +4：S290-S293；v1.3.6 +8：S282-S289；v1.3.8 +11：S294-S304（含 bugfix 防回归 S303/S304）；v1.3.9 +15：S305-S319（阶段五 A 类分发 13 项 + 阶段六 coverage 补测 S318 ATTRIBUTION 归因引擎/S319 Dream Sandbox 沙盒审计）；v1.4.0 +3：S320（联邦查询跨进程 E2E——补 federation.test.ts 同进程 mock 缺口）、S321（跨平台 hook stdin 模式闭环验证）、S322（双设备联邦独立进程模拟——两个独立 node 进程 + 真实 TCP，补 fork 形态缺口）；v1.4.1 +7：S323（train doctor CLI 实跑）、S324（enterpriseId 强制绑定+幂等）、S325（fingerprint 冻结+不可变）、S326（artifact 签名+篡改检测）、S327（安全基线路径白名单+注入检测）、S328（install.sh 迁移丢数据窗口防回归——阶段四 B2 分发）、S329（install.sh symlink 谎报守卫——阶段四 B3 分发））
+# 场景数：263 个场景（SSOT：check-test-count.sh 校验，口径=真实 scenario 调用行数，非编号最大值（S1-S330 间有 67 个历史空洞号）；v1.3.7 +4：S290-S293；v1.3.6 +8：S282-S289；v1.3.8 +11：S294-S304（含 bugfix 防回归 S303/S304）；v1.3.9 +15：S305-S319（阶段五 A 类分发 13 项 + 阶段六 coverage 补测 S318 ATTRIBUTION 归因引擎/S319 Dream Sandbox 沙盒审计）；v1.4.0 +3：S320（联邦查询跨进程 E2E——补 federation.test.ts 同进程 mock 缺口）、S321（跨平台 hook stdin 模式闭环验证）、S322（双设备联邦独立进程模拟——两个独立 node 进程 + 真实 TCP，补 fork 形态缺口）；v1.4.1 +8：S323（train doctor CLI 实跑）、S324（enterpriseId 强制绑定+幂等）、S325（fingerprint 冻结+不可变）、S326（artifact 签名+篡改检测）、S327（安全基线路径白名单+注入检测）、S328（install.sh 迁移丢数据窗口防回归——阶段四 B2 分发）、S329（install.sh symlink 谎报守卫——阶段四 B3 分发）、S330（训练异常退出资源回收四步链——阶段六 coverage 补测，补判断层唯一零覆盖项））
 # 编号跳号豁免：S1~S293 间有 70 个空洞号（全在 S36-S202 历史段）——v1.2.x 瘦身删场景
 # 与基线重建（restore 6e542467）的既成事实，非丢失；新场景编号=当前最大+1 顺延，禁止回填空洞
 # 版本段起点见文件内「# ─── v」分组标记（grep "─── v" 定位）
@@ -3136,6 +3136,49 @@ S329_SFN=$(grep -c 'ln -sfn "' "$PROJECT_ROOT/install.sh" || true)
 S329_GUARDED=$(grep -A2 'ln -sfn "' "$PROJECT_ROOT/install.sh" | grep -c 'if \[ -L\|if \[ ! -L\|\[ -L "' || true)
 [ "$S329_GUARDED" -ge 5 ] 2>/dev/null || { grep -A2 'ln -sfn "' "$PROJECT_ROOT/install.sh" | head -30; fail "sfn 降级守卫不足（$S329_GUARDED/${S329_SFN}）"; S329_OK=false; }
 $S329_OK && pass "symlink 谎报守卫（sf 4 处全守卫 + sfn 降级全覆盖）" || true
+
+scenario 330 "v1.4.1 阶段六 coverage 补测：训练任务异常退出→资源回收四步链——卡死检测 + abnormalReclaim（kill/gpu-notify/tmp-cleanup/audit）+ 审计入链（注入观察器零真实进程 · A2 纪律）"
+S330_OK=true
+S330_TMP=$(mktemp -d)
+R330=$(cd "$PROJECT_ROOT" && SOFAGENT_TEST_TMP="$S330_TMP" node -e "
+const fs = require('fs'), path = require('path');
+const guard = require('./engine/orchestrator/dist/train/process-guard.js');
+const tmp = process.env.SOFAGENT_TEST_TMP;
+// ① 心跳守卫：注册后超过阈值无心跳 → detectStalled 命中（nowFn 注入推进时钟——零真实等待）
+let fakeNow = 1_000_000;
+const g = guard.createProcessGuard({ staleThresholdMs: 50, now: () => fakeNow });
+g.registerHeartbeat(4321, 'job-abnormal-1');
+fakeNow += 100; // 时钟推进 100ms > 阈值 50ms → 卡死
+const hit = g.detectStalled();
+console.log('stalled-detected:', hit.length === 1 && hit[0].pid === 4321 && hit[0].jobId === 'job-abnormal-1');
+// 未超时的注册项不误报
+g.registerHeartbeat(5678, 'job-fresh-1');
+console.log('fresh-not-flagged:', g.detectStalled().every((s) => s.pid !== 5678));
+// ② 异常回收四步（killFn 注入观察器——零真实进程；kill -pid 是进程组语义）
+const killed = [];
+const result = guard.abnormalReclaim(tmp, {
+  pid: 4321, jobId: 'job-abnormal-1', enterpriseId: 'ent-a', reason: 'stalled-test',
+}, { killFn: (p, s) => { killed.push(p + ':' + s); }, execFn: () => { throw new Error('no-gpu-env'); } });
+const names = result.steps.map((s) => s.name).join(',');
+console.log('four-steps:', names === 'kill,gpu-notify,tmp-cleanup,audit');
+console.log('kill-observed:', killed.join('|'));
+console.log('kill-is-group:', killed.length === 1 && String(killed[0]).includes('4321'));
+// ③ 审计事件入链（audit.jsonl 落 job 目录：data/train/<ent>/<jobId>/）+ gpu-notify 无环境降级不失败
+const auditPath = path.join(tmp, 'train', 'ent-a', 'job-abnormal-1', 'audit.jsonl');
+const auditLine = fs.readFileSync(auditPath, 'utf8').trim().split('\n').pop();
+const evt = JSON.parse(auditLine);
+console.log('audit-chained:', evt.type === 'train_abnormal_exit' && evt.trainJobId === 'job-abnormal-1');
+const gpuStep = result.steps.find((s) => s.name === 'gpu-notify');
+console.log('gpu-degraded-ok:', gpuStep.ok === true);
+" 2>&1 || true)
+echo "$R330" | grep -q "stalled-detected: true" || S330_OK=false
+echo "$R330" | grep -q "fresh-not-flagged: true" || S330_OK=false
+echo "$R330" | grep -q "four-steps: true" || S330_OK=false
+echo "$R330" | grep -q "kill-is-group: true" || S330_OK=false
+echo "$R330" | grep -q "audit-chained: true" || S330_OK=false
+echo "$R330" | grep -q "gpu-degraded-ok: true" || S330_OK=false
+rm -rf "$S330_TMP"
+$S330_OK && pass "异常退出回收四步链（卡死检测 + kill/gpu/tmp/audit + 审计入链）" || fail "训练异常回收失败: $(echo "$R330" | grep -v '^$' | head -3 || true)"
 
 echo -e "  验收测试结果：${GREEN}$PASSED 通过${NC} / ${RED}$FAILED 失败${NC} / 共 $((PASSED + FAILED))"
 # 🔴 v1.3.1 run-10 教训：无色码纯文本汇总行供 driver grep（EXIT: 0=全PASS / <N>=N失败）

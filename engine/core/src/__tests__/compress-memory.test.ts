@@ -33,7 +33,9 @@ describe('compress-memory', () => {
     });
 
     it('think.md 存在但无旧条目时返回 0', () => {
-      const content = '## 2026-06-28\n- #超时 新问题\n';
+      // 新条目用「昨天」的动态日期——写死日历日期会在 60 天后自然过期，测试随日期腐烂
+      const freshDate = new Date(Date.now() - 24 * 3600 * 1000).toISOString().slice(0, 10);
+      const content = `## ${freshDate}\n- #超时 新问题\n`;
       writeFileSync(join(testDir, 'think.md'), content);
       expect(archiveOldEntries(testDir)).toBe(0);
     });
@@ -41,7 +43,8 @@ describe('compress-memory', () => {
     it('60 天前的条目被正确归档', () => {
       const sixtyDaysAgo = new Date(Date.now() - 61 * 24 * 3600 * 1000);
       const oldDate = sixtyDaysAgo.toISOString().slice(0, 10);
-      const content = `## ${oldDate}\n- #超时 旧问题\n\n## 2026-06-28\n- #权限 新问题\n`;
+      const freshDate = new Date(Date.now() - 24 * 3600 * 1000).toISOString().slice(0, 10);
+      const content = `## ${oldDate}\n- #超时 旧问题\n\n## ${freshDate}\n- #权限 新问题\n`;
       writeFileSync(join(testDir, 'think.md'), content);
 
       const moved = archiveOldEntries(testDir);
@@ -56,7 +59,7 @@ describe('compress-memory', () => {
       // 活跃文件不应包含旧条目
       const activeContent = readFileSync(join(testDir, 'think.md'), 'utf-8');
       expect(activeContent).not.toContain(oldDate);
-      expect(activeContent).toContain('2026-06-28');
+      expect(activeContent).toContain(freshDate);
     });
   });
 

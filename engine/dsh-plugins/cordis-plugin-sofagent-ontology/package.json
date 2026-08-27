@@ -1,6 +1,6 @@
 {
   "name": "cordis-plugin-sofagent-ontology",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "description": "共享语义底座 + 知识检索（seam: ontology_* tools + search_knowledge）——桥接 @sofagent/ontology generateOntologyView（sofagent 品牌插件 · 主色 #16B8F3）",
   "private": true,
   "license": "MIT",

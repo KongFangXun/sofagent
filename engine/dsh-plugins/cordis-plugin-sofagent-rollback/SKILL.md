@@ -1,7 +1,7 @@
 ---
 name: cordis-plugin-sofagent-rollback
 slug: cordis-plugin-sofagent-rollback
-version: 1.4.0
+version: 1.4.1
 displayName: cordis-plugin-sofagent-rollback
 description: >
   出错逆序撤销——git snapshot → effect disposer（seam: effect 注册/卸载）——桥接 @sofagent/core getHistoryFilePath（sofagent 品牌插件 · 主色 #16B8F3）——DSH（DeepSeek Harness）cordis plugin。sofagent 约束层在 DeepSeek Harness 生态的插件形态。

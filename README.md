@@ -4,13 +4,13 @@
   <a href="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml"><img src="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml/badge.svg" alt="Verify" /></a>
   <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-brightgreen" alt="License: MIT" /></a>
   <!-- ⚠️ bump 版本时手动同步此 badges 版本号（Version-vX.Y.Z） -->
-  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.4.0-16B8F3" alt="Version" /></a>
+  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.4.1-16B8F3" alt="Version" /></a>
 </p>
 
 > 📌 **当前状态**：v1.4.1 训练引擎地基已开发完成（**待发版**——npm 与下方安装命令暂为 v1.4.0，训练能力随 v1.4.1 发布提供，见 [CHANGELOG](./CHANGELOG.md)）。
 
 <p align="center">
-  <a href="README.en.md">English</a> · <a href="#v140结合-deepseek-harness">v1.4.0 × DSH</a> · <a href="#多平台挂载">多平台</a> · <a href="#fde-skill-体系">Skill 体系</a> · <a href="#约束层harness">约束层</a> · <a href="#安装">安装</a> · <a href="#生态与文档索引">文档</a> · <a href="https://github.com/KongFangXun/sofagent">⭐ Star</a>
+  <a href="README.en.md">English</a> · <a href="#v141训练引擎地基">v1.4.1 训练引擎</a> · <a href="#多平台挂载">多平台</a> · <a href="#fde-skill-体系">Skill 体系</a> · <a href="#约束层harness">约束层</a> · <a href="#安装">安装</a> · <a href="#生态与文档索引">文档</a> · <a href="https://github.com/KongFangXun/sofagent">⭐ Star</a>
 </p>
 
 ---
@@ -71,43 +71,33 @@ graph TB
 
 > 🔄 **自举**：sofagent 给自己做的第一份 FDE，就是 sofagent 自己——项目本身就是一条完整的 FDE 业务流（梳理 → 构建 → 部署 → 离场），这个开源仓库就是那份交付物。
 
-## v1.4.0：结合 DeepSeek Harness
+## v1.4.1：训练引擎地基
 
-本版核心：正式结合 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)（简称 DSH），成为完整的 FDE Agent。
+本版核心：给企业 AI 补上「自己会变强」的底座——训练引擎地基，八大块一次成型。
 
-**一、为什么选 DSH**：DeepSeek 官方开源 Agent 框架，基于 [Cordis](https://github.com/cordiverse/cordis) 运行时，理念「Everything is a Plugin」——插件化与约束层的平台无关形态天然契合，也是当前结合最深的一个宿主。
+**一、为什么做训练引擎**：业务流跑起来后，AI 节点的每一次纠正、确认、追问都是宝贵信号——但这些信号此前只能「存在日志里」。训练引擎把这些信号变成模型能力：审计沉淀的轨迹 → 训练集 → 企业专属模型 → 回到业务流，形成自进化闭环（sofagent 只做管理面与审计，计算面复用开源框架）。
 
-**二、怎么结合**：约束层四能力（注入 · 审计 · 回溯 · 进化）封装成 9 款 `cordis-plugin-sofagent-*` 插件，全部真实挂载进 DSH（Plugin list 可见 9 个 Enabled），可独立安装、渐进采用：
+**二、八大块**（每一块都带验收测试）：
 
-| 插件 | 职责 |
+| 块 | 职责 |
 |------|------|
-| `audit` | 变更机器审阅——24 规则 + git diff 硬证据 + 节点级审计 |
-| `rollback` | 出错逆序撤销——git snapshot → effect disposer |
-| `inject` | 启动注入企业约束——四层加载链 |
-| `evolve` | 经验沉淀——think.md 反思 + Dream Cycle + skillopt |
-| `ontology` | 共享语义底座 + 知识检索（ontology_* tools + search_knowledge） |
-| `commons` | 能力公地五环——commons_* tool 复用 |
-| `gate` | 验收不过不放行——机器可判定验收 + 人审 |
-| `daemon` | 7×24 巡检 + 健康监测 + webhook 推送 |
-| `fde` | 进场方法论六 tool 闭环（fde_interview / classify / quantify / derive / distill / deploy） |
+| train-job 编排 | 训练任务全生命周期（提交/状态/续跑）+ `train_submit`（66→67 tools） |
+| train_job 审计 | 训练全程 HMAC 链留痕——提交/心跳/产出每步可追溯 |
+| 训练隔离边界 | enterpriseId 全链路隔离——企业 A 的数据进不了企业 B 的训练 |
+| 可复现指纹 | 同一数据 + 同一配置 = 同一结果，checkpoint 续跑版本锁定 |
+| 权重完整性 | 产出权重 HMAC 签名，加载时校验，被篡改即阻断 |
+| 中断回收 | 心跳卡死检测 → kill → GPU 通知 → 临时目录清理 → 审计入链 |
+| 崩溃恢复 | 假活任务清理 + 三选项恢复（重跑/续跑/放弃） |
+| 安全基线 | 路径白名单 + 注入元字符过滤 + 凭据脱敏 + 攻击面声明 |
 
-**三、分工**
+**三、阶段 0 难点验证先行**：在 macOS Metal 上用 @mlx-node/trl 实测 reward 收敛——训练管线最小闭环真跑通，不是纸面设计。
 
-| 一方 | 提供什么 |
-|------|----------|
-| DeepSeek Harness（DSH） | **执行体**——模型 + 工具 + 会话 |
-| sofagent | **企业约束与审计 + FDE 方法论** |
+**本版其他新能力**（详见[开发日志](./docs/changelog/v1.4/v1.4.1.md)，更早版本见 [CHANGELOG](./CHANGELOG.md)）：
 
-**DSH 宿主 + sofagent 能力 = 完整 FDE Agent**：DSH 负责「能干活」，sofagent 负责「干得住」——每次变更受审计，越界能拦、出事能回滚。
-
-**本版其他新能力**（详见[开发日志](./docs/changelog/v1.4/v1.4.0.md)，更早版本见 [CHANGELOG](./CHANGELOG.md)）：
-
-- **Dashboard 产品化**：Web 工作明细页（按 Agent / Workflow / 周趋势 / 人工介入四视角）+ 图谱栏（FDE 双图谱：业务图谱 + 本体图谱 + MCP 工具视图 67 tools（v1.4.1 起，待发版；v1.4.0 为 66）+ skill 加载链四层可视化）+ 单文件 HTML 随 `install.sh` 装到用户机（`worklog.json` 无数据自动降级）
-- **成本审计**：超支告警（WARN only 不拦截）+ `cost_query` MCP tool + `DecisionKind.COST` 决策日志追溯
-- **插件家族双轨**：DSH 形态 9 款插件（如上）+ OpenClaw 形态 4 款 code-plugin（ClawHub 发布就绪）+ Cursor / Claude Code 共享 precommit hook 拦截
-- **跨设备**：联邦查询端到端（配对 / 加密查询 / 篡改检测 / 离线降级——S320 + S322 双覆盖）+ 远程 API 通道（C/S 控制面契约文档化）
-- **Agentic Browser + 评测**：navigate / click / screenshot / assert 4 工具注册（MCP 61→66）+ Playwright 真实驱动 + MLflow 评测接线（不可达降级不抛）
-- **工程基座**：审计溯源字段（`whichDataVersion` + `beforeAfter`）+ bash 3.2 真实环境全脚本验证
+- **SKILL 体系重构**：SKILL/ 主入口四层加载链重构，agents/ 规则分角色拆分（audit/engineer/reviewer/fde），加载链可视化入 Dashboard
+- **DSH 插件降实**：9 款 `cordis-plugin-sofagent-*` 插件 description 从宣称口径改为桥接实况口径
+- **依赖升级**：LangChain 三包 + vitest 升级
+- **测试 2981→3221**（+240：train 模块 +231 + zod schema 泄漏防御 5）· 测试 340/340 场景全绿
 
 ## 多平台挂载
 

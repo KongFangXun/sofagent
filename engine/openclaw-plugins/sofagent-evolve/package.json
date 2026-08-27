@@ -1,6 +1,6 @@
 {
   "name": "sofagent-evolve",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "description": "经验沉淀——think.md 反思条目生成 + 反思区注入（Dream Cycle + skillopt 数据源），品牌色 #16B8F3",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
