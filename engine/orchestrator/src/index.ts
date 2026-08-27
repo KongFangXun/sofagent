@@ -1126,6 +1126,100 @@
 } from './train/security-baseline';
 
 // ============================================================
+// v1.4.2 章一+章二：数据管道与版本管理（异构接入 → 训练集 → dataset_version）
+// ============================================================
+/* @public */ export {
+  DEFAULT_EMPTY_MARKERS,
+  parseCsv,
+  ingestCsv,
+  ingestExcel,
+  ingestJson,
+  ingestText,
+  ingestFile,
+  inferCellType,
+  normalizeValue,
+  unzipEntries,
+  parseSharedStrings,
+  parseSheetXml,
+  excelColumnToIndex,
+} from './train/data-ingest';
+/* @public */ export type {
+  CellValue,
+  IngestRecord,
+  IngestOptions,
+  IngestResult,
+} from './train/data-ingest';
+/* @public */ export {
+  isReadonlySql,
+  inferColumns,
+  parseDbFlavor,
+  makeDefaultQueryFn,
+  pullFromDb,
+  pullFromApi,
+  extractItems,
+  getPath,
+  defaultFetchFn,
+} from './train/db-source';
+/* @public */ export type {
+  DbQueryResult,
+  QueryFn,
+  ApiFetchResult,
+  FetchFn,
+  DbFlavor,
+  DbIngestResult,
+  PullFromDbInput,
+  PullFromApiInput,
+} from './train/db-source';
+/* @public */ export {
+  inferColumnMapping,
+  sanitizeCell,
+  defaultSampleSanitize,
+  buildDataset,
+  buildAndPersistDataset,
+  datasetDir,
+  generateDatasetId,
+} from './train/dataset-builder';
+/* @public */ export type {
+  DatasetAlgorithm,
+  SftSample,
+  DpoSample,
+  RlSample,
+  DatasetSample,
+  DatasetLine,
+  ColumnMapping,
+  BuildDatasetOptions,
+  BuildDatasetResult,
+  BuildAndPersistInput,
+  BuildAndPersistResult,
+  SampleSanitizeFn,
+} from './train/dataset-builder';
+/* @public */ export {
+  datasetVersionsPath,
+  recordDatasetVersion,
+  readDatasetVersions,
+  listDatasetVersions,
+  getDatasetVersion,
+  diffDatasetVersions,
+} from './train/dataset-version';
+/* @public */ export type {
+  DatasetVersionRecord,
+  RecordDatasetVersionInput,
+  DatasetVersionDiff,
+} from './train/dataset-version';
+/* @public */ export {
+  requiredFieldsOf,
+  computeLabelDistribution,
+  validateDataset,
+} from './train/dataset-validator';
+/* @public */ export type {
+  DatasetValidatorOptions,
+  DatasetViolationCode,
+  DatasetViolation,
+  DatasetWarning,
+  DatasetValidationResult,
+} from './train/dataset-validator';
+
+// ============================================================
 // v1.3.6 交付⑨：验收条件定义与执行（机器可判定验收 · 软约束先行）
 // ============================================================
 /* @public */ export {
