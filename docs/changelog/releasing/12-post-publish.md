@@ -63,6 +63,7 @@ bash tools/check/check-version.sh        # 期望全绿
 | v1.3.6 | ~9h | 3（2 假 FAIL + 1 真 PASS） | 检查器缺陷：exit 语义 / PROJECT_ROOT / 视野预算 / 零 commit 假 PASS |
 | v1.3.8 | ~6h（10:00 开发完成 → 16:00 发布） | 4（run-03 环境崩溃 / run-06 缺输入 / run-10 截断+占位 / run-13 PASS） | driver 管线问题 3 轮（judgment-only 缺 acceptance 输入 / precheck 截断 / 占位无实证）+ 环境 1 轮（运行窗口 HEAD 漂移 8 次致 OOM）；driver 修复后 run-13 单轮直过 |
 | v1.3.9 | ~25h（08-20 15:00 开发完成 → 08-21 16:10 发布，含隔夜） | 3（run-01 FAIL 4 阻塞 / run-10 FAIL 1 coverage / run-13 PASS） | run-01 真实 4 阻塞（mcp bin 权限 / forge-smoke 路径漂移 / 测试数文档漂移 / checklist #119 路径错，主 session 零信任复验修复）+ run-10 coverage 2 零覆盖（ATTRIBUTION/Dream 补 S318/S319）；driver 无债，全人工修复后 run-13 单轮直过 |
+| v1.4.1 | ~3.5h（08-27 08:30 阶段十启动 → 12:00 阶段十二完成） | 0（判断层 PASS 已在发版窗口前凌晨完成，与 v1.4.0 同模式） | CI 红 1 次（sandbox 时间戳双源竞态真 bug——修复+回归锁+8 文档数字同 commit 转绿）；分发期补修双层 manifest 盲区 2 commit（bump 通配误伤 + manifest 层未覆盖） |
 
 ## 开发 Prompt 校验循环（步骤七）
 
@@ -219,3 +220,15 @@ sed -i '' 's/- \[x\]/- [ ]/g' docs/changelog/releasing.md
 - **警戒线声明收口单一 SSOT（更新 · 发版复盘落地）**：多处写死数值必然漂移（本次实锤：SOP 表 1660 / guides 1500 系 / checklist 维度 96 史前 2500，均落后 checklist 头部 1690）——收口为**checklist 头部唯一 SSOT**（门禁动态提取），04-review-system 与 guides 改引用不写死，维度 96 检查逻辑重写
 - **npm publish 循环即时验证（更新 · 发版复盘落地）**：每包 publish 后立即 `npm view` 对账（3 次重试 ×15s）+ E409 自动 sleep 300 重查 + **publish 输出严禁接管道过滤**（本轮 skillopt E409 被 grep 过滤吞掉，13 包对账才发现漏发）——10-publish 步骤八循环重写
 - **v1.4.0 发版耗时**：约 4h（08-24 14:00 阶段十启动 → 19:00 阶段十二完成）；CI lock 事故 1 次（4 工作流同根因红 → 单 commit 修复转绿）；release-gate 0 轮（v1.4.0 阶段五 fresh-eyes 4 轮已在过渡期完成，发版窗口内零审查轮）
+
+**v1.4.1 发版后的自迭代记录**：
+
+- **阶段十·CI 红先怀疑真 bug（实录 · CI Linux vs 本地 Mac 时序差）**：banner commit 只改 png 却触发 sandbox.test.ts 红（retry x1 仍挂）——根因是 `record()` 时间戳双源竞态（chainMac 内 ts() 取 T1 算 HMAC、事件对象再 ts() 取 T2 存储，verifyChain 用 T2 重放，跨毫秒边界链必断）。**CI Linux 慢机器高频命中、本地 Mac 快从未撞上 = 平台时序差不是 flaky 假象**。修复模式：单源取时后传参 + 确定性回归锁（mock `Date.prototype.toISOString` 每调用 +1ms 强走毫秒边界；mock 体必须 `realToISOString.call(new Date(fakeNow))` 防自递归）+ git stash 撤修复实测「旧代码必红/新代码必绿」验证锁有效。测试数同步 8 文档同 commit
+- **阶段十·Git Data API 打 annotated tag 通道（新增）**：git 通道断时 tag 也能走 API——先 `gh api repos/O/R/git/tags`（type=tag + message + object 指目标 commit）建 tag object，再 `gh api repos/O/R/git/refs -f ref=refs/tags/vX.Y.Z -f sha=<tag-object-sha>` 建 ref 指向 tag object。**产出直接是 annotated**（`git for-each-ref` type=tag），与 v1.4.0 的 `-f sha=<commit>` lightweight 形态不同——后者才需步骤十二 force 覆盖。坑：本地补打 tag 想对齐时 message 中文两次乱码（输入法残留）→ 删本地 tag，远端 tag object 为权威源，网络恢复后 `git fetch origin tag vX.Y.Z` 同步即可
+- **阶段十·npm staged finalize 时序（更新）**：脚本分层发布中 audit/mcp 手动 publish 报 403「already exists」+ registry 时间戳早于脚本尝试 26s——**不是他人发布，是自己 release.yml 自动 publish 已成功**（staged finalize 时序：registry 时间戳可早于后续尝试）。定性通道：`npm view <pkg> time` 时间戳 vs release workflow 触发时间对账，全包 dist-tags 对账为准
+- **阶段十·tarball 内容验证路径坑（新增）**：抽验 orchestrator tarball 内修复代码必须查**正确的 dist 子路径**（`dist/sandbox/filesystem-backend.js` 而非 `dist/` 根）——查错路径 = 假阴性「修复没进包」
+- **阶段十一·双层发版门禁盲区（本版最重教训 · 已三层根治）**：盲区一 bump-version.sh 2c 段通配 `*audit/package.json` 跳过逻辑误伤 `openclaw-plugins/sofagent-audit/package.json`（阶段六静默漏 bump）；盲区二 `openclaw.plugin.json` manifest 层从未被任何 bump 覆盖（4 款全停 1.4.0），ClawHub publish 报 manifest version drift 拒收。三层修复：补漏（5542cc2c）+ check-version 新增 9c 段双 manifest 检查（94→102）+ bump 脚本新增 2d 段扫 manifest。已写入 11-distribute 步骤二·a 前置
+- **阶段十一·ClawHub publish 输出歧义判读（新增）**：输出「Fix: Align the plugin version...」是**自动修复提示非拒收**（首次发布已成功）；重试报「Version already exists」是已发布证据。定性唯一通道 = API `clawhub.ai/api/v1/packages/<name>?ownerHandle=` 查 latestVersion + scanStatus + verification.sourceCommit，勿据 CLI 输出盲改版本号。已写入 11-distribute
+- **阶段十一·SkillHub 限流间隔实测（更新）**：sleep 20 偶发不足——daemon 款实测 20s 间隔仍被限流（「发布频率过高」），等 60s 补发成功。已更新 11-distribute 步骤二限流注释
+- **阶段十二·步骤十二 annotated tag 辨析修正（更新）**：原表述「gh api 建的 tag 无 tag object 需 force 覆盖」只适用于 `-f sha=<commit>` lightweight 形态；v1.4.1 实战「先 git/tags 建 object 再 git/refs 建 ref」产出直接 annotated（`git for-each-ref` type=tag 验证），**可免覆盖**。判据：`git for-each-ref refs/tags --format="%(objecttype)"` 显示 tag = annotated 已合规，commit/blob 才需覆盖
+- **v1.4.1 发版耗时**：约 3.5h（08-27 08:30 阶段十启动 → 12:00 阶段十二完成）；CI 红 1 次（sandbox 时间戳双源竞态真 bug——修复+回归锁+8 文档数字同 commit 37d393e4 转绿）；release-gate 0 轮（阶段五判断层 PASS 已在发版窗口前凌晨 07:41 完成，与 v1.4.0 同模式）；分发期补修双层 manifest 盲区 2 commit（de45a53e + 5542cc2c）
