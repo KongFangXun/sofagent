@@ -9,13 +9,6 @@
   <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.4.1-16B8F3" alt="Version" /></a>
 </p>
 
-> 📌 **Status**: v1.4.1 training-engine foundation is code-complete (**pending release** — npm and the install command below still serve v1.4.0; see [CHANGELOG](./CHANGELOG.md)).
-
-<p align="center">
-  <a href="README.md">中文</a> · <a href="#v141-training-engine-foundation">v1.4.1 Training Engine</a> · <a href="#multi-platform-mounting">Multi-platform</a> · <a href="#fde-skill-system">Skill System</a> · <a href="#constraint-layer-harness">Constraint Layer</a> · <a href="#installation">Install</a> · <a href="#ecosystem--docs-index">Docs</a> · <a href="https://github.com/KongFangXun/sofagent">⭐ Star</a>
-</p>
-
-
 ---
 
 ## What is this
@@ -32,79 +25,34 @@ sofagent does not build its own Agent — execution is delegated to mature hosts
 - 🤖 **Deploy AI nodes** — three-layer deliverables (documents + Skills + runtime), installed into your existing AI tools; from "you do the work" to "you delegate the work"
 - 🏠 **Stay resident after departure** — the FDE capability remains for inspection, audit, and optimization, 7×24 online; the human leaves, governance doesn't
 - 🔍 **Zero-setup audit** — `npx -y -p @sofagent/audit sofagent-audit`, auditing the latest commit of any git repo in seconds (single-machine measured: quick ~1.1s, 50k-line diff ~6.1s; see [HANDBOOK](./docs/HANDBOOK.md))
-- 🧱 **24 audit rules** — secret leaks, out-of-scope edits, injection defense, privilege red lines; judged on git diff hard evidence, violations blocked on the spot; evidence is based on local diffs — trust boundaries and known bypass surfaces in [LIMITATIONS §3](./docs/LIMITATIONS.md) (quick runs 17 by default; full 24 = 17 default + 7 extensions)
+- 🧱 **24 audit rules + 67 MCP tools** — secret leaks, out-of-scope edits, injection defense, privilege red lines; judged on git diff hard evidence, violations blocked on the spot; evidence is based on local diffs — trust boundaries and known bypass surfaces in [LIMITATIONS §3](./docs/LIMITATIONS.md) (quick runs 17 by default; full 24 = 17 default + 7 extensions)
 - 🛡️ **Automatic snapshot rollback** — auto-archived after every audit, one-click restore to any snapshot when something breaks
 
 ## What is an FDE Agent
 
 **FDE = Forward Deployed Engineer** — the person who embeds models into real enterprise operations. sofagent turns this role into an open-source FDE Harness layer, sitting between the Agents you already have (DSH / OpenClaw / WorkBuddy) and the model layer, so they gain FDE capability and models stay governed, walking a full FDE business flow through four phases:
 
-- **Phase 1 · Map the business flow on entry** — five-element deep-dive + three-question triage, capturing each role's input / output / owner / time cost / pain points, and calculating what each AI node is worth
+- **Phase 1 · Map the business flow on entry** — capturing each role's input / output / owner / time cost / pain points, and calculating what each AI node is worth
 - **Phase 2 · Build dual graphs** — business graph (system boundaries, data flows) + ontology graph (shared semantic foundation), turning the enterprise into a machine-readable structure
 - **Phase 3 · Deploy AI nodes** — three-layer deliverables (documents + Skills + runtime), installing AI nodes into your existing tools; from "you do the work" to "you delegate the work"
 - **Phase 4 · Continuous optimization after departure** — 7×24 automated task execution after the FDE leaves: inspection, audit, optimization; the human leaves, governance doesn't
 
 Official slogan: **Map business flows · Build ontology graphs · Deploy AI nodes · Audit every change · Reflect & iterate**
 
-```mermaid
-graph TB
-    subgraph M["Model layer (intelligence sources)"]
-        M1["General LLMs<br/>DSH · OpenAI · Claude"]
-        M2["Bespoke / post-trained models<br/>v1.4.x training engine · local weight deploy"]
-    end
-    subgraph H["sofagent · FDE Harness layer"]
-        direction LR
-        P["Forms plugin · Skill · MCP<br/>CLI · Dashboard"]
-        C["Constraint layer inject · audit · rollback · evolve"]
-        F["Methodology FDE four phases<br/>map → build → deploy → depart"]
-        P ~~~ C ~~~ F
-    end
-    subgraph A["Agent layer (executors · not replaced)"]
-        A1["DSH · OpenClaw · WorkBuddy<br/>model + tools + sessions"]
-    end
-    M -->|"govern models: register / rollout / train / deploy"| H
-    H -->|"constrain Agents: inject / audit / rollback / evolve"| A
-    A -->|"on-site · doing FDE for the enterprise"| D["Dual-graph delivery<br/>business graph + ontology graph"]
-    D --> N["AI nodes<br/>host executes → Harness audit"]
-    N -.->|"7×24 self-running · blocks violations · rolls back breakage"| N
-```
+<p align="center"><img src="docs/assets/arch-layers-en.png" alt="sofagent three-layer positioning: model layer → FDE Harness layer → Agent layer" width="85%" /></p>
 
 **Why an FDE Agent**
 
 - **The bottleneck for enterprise AI is deployment, not the model** — mapping workflows, drawing system boundaries, and setting data rules is precisely the FDE's job. MIT NANDA's *The GenAI Divide*: 95% of enterprise GenAI projects failed to produce value worth a financial statement, while FDE job postings surged 729% in a year (verification in [VALIDATION](./docs/VALIDATION.md))
 - **Completeness comes from the union** — DSH solves "can work"; sofagent solves "keeps working"; only together do they make a complete FDE Agent (next chapter)
-- **"Continuous optimization" only holds with a constraint layer** — backed by auditable, rollback-capable mechanisms, not promises in prompts. Independent external experiment: same model, only the outer Harness optimized — a legal-Agent benchmark rose 63.4% → 80.1% (+16.7pp, see [THANKS](./docs/THANKS.md))
+- **"Continuous optimization" only holds with a constraint layer** — backed by auditable, rollback-capable mechanisms, not promises in prompts. Independent external experiment: same model, only the outer Harness optimized — a legal-Agent benchmark rose 63.4% → 80.1% (+16.7pp). More verification in [VALIDATION](./docs/VALIDATION.md) · [THANKS](./docs/THANKS.md)
 - **Capabilities are portable, never dead-bound to a platform** — the constraint layer is platform-agnostic; the methodology follows the business, not the platform
 
 > 🔄 **Self-bootstrapping**: sofagent's first FDE engagement is sofagent itself — the project is a complete FDE business flow (map → build → deploy → depart), and this open-source repository is that deliverable.
 
 ## v1.4.1: Training Engine Foundation
 
-The core of this release: a foundation for enterprise AI that "gets stronger by itself" — the training engine foundation, eight blocks delivered at once.
-
-**1 · Why a training engine**: once business flows run, every correction, confirmation, and follow-up at an AI node is a valuable signal — but until now those signals could only "sit in logs". The training engine turns them into model capability: audit-accumulated trajectories → training sets → enterprise-specific models → back into business flows, closing the self-evolution loop (sofagent builds only the management plane and auditing; the compute plane reuses open-source frameworks).
-
-**2 · The eight blocks** (each with acceptance tests):
-
-| Block | Responsibility |
-|-------|----------------|
-| train-job orchestration | Full training-task lifecycle (submit / status / resume) + `train_submit` (66→67 tools) |
-| train_job audit | HMAC-chained records for the whole training run — every submit / heartbeat / artifact is traceable |
-| Isolation boundary | enterpriseId isolation end to end — company A's data never enters company B's training |
-| Reproducible fingerprint | Same data + same config = same result; checkpoint resume locks versions |
-| Weight integrity | Output weights are HMAC-signed and verified at load; tampered weights are blocked |
-| Interruption reclaim | Stalled-heartbeat detection → kill → GPU notify → temp-dir cleanup → audit on chain |
-| Crash recovery | Dead-task cleanup + three recovery options (rerun / resume / abandon) |
-| Security baseline | Path whitelist + injection metacharacter filtering + credential masking + attack-surface disclosure |
-
-**3 · Stage-0 hard-part validation first**: reward convergence verified on macOS Metal with @mlx-node/trl — the minimal training loop really runs, not a paper design.
-
-**Other new capabilities in this release** (see the [devlog](./docs/changelog/v1.4/v1.4.1.md); earlier versions in [CHANGELOG](./CHANGELOG.md)):
-
-- **SKILL system refactor**: SKILL/ main entry four-layer loading chain rebuilt, agents/ rules split by role (audit/engineer/reviewer/fde), load-chain visualization in Dashboard
-- **DSH plugin descriptions de-inflated**: 9 `cordis-plugin-sofagent-*` plugin descriptions rewritten from claims to actual bridging reality
-- **Dependency upgrades**: LangChain trio + vitest
-- **Tests 2981→3221** (+240: train module +231 + zod schema leak defense 5) · 340/340 acceptance scenarios green
+🚂 The foundation for enterprise AI that "gets stronger by itself" — eight training-engine blocks (train-job orchestration / HMAC audit chain / enterpriseId isolation / reproducible fingerprint / weight signing / interruption reclaim / crash recovery / security baseline) + Stage-0 convergence verified on macOS Metal. Tests 2981→**3221** (+240). Full details in the [devlog](./docs/changelog/v1.4/v1.4.1.md) · earlier versions in [CHANGELOG](./CHANGELOG.md).
 
 ## Multi-platform Mounting
 
@@ -130,7 +78,7 @@ Most tools teach you how to build Agents; sofagent first answers **where AI shou
 
 | Phase | Input | What happens | Deliverable |
 |-------|-------|--------------|-------------|
-| 1 · Map | Role roster · existing systems | **Five-element deep-dive** — for each process step, capture input / output / owner / time cost / pain points | Enterprise profile |
+| 1 · Map | Role roster · existing systems | **Five-element deep-dive** — capture each step's input / output / owner / time cost / pain points | Enterprise profile |
 | 2 · Triage | Enterprise profile | **Three-question triage** — which steps fit AI: 🔄 automate · ⚡ augment · 👤 leave alone, prioritized by ROI | Node plan + annual savings |
 | 3 · Deliver | Node plan | **Three-layer deliverables** — documents + Skills + runtime, so AI nodes actually run | Ontology + workflow.yml + skills/ |
 
@@ -191,6 +139,7 @@ sofagent-audit --doctor    # verify the environment (optional)
 > 📌 **How bootstrap.sh and install.sh relate**: bootstrap.sh is a one-line download wrapper around install.sh — `curl bootstrap.sh | bash` is equivalent to "download install.sh + run install.sh". Both scripts install exactly the same thing; bootstrap just saves you the manual clone/download step.
 
 More install options (clone install / full npx install / minimal install / enterprise deployment) in [HANDBOOK](./docs/HANDBOOK.md). Enterprise users who just want the FDE methodology for mapping business workflows, see [FDE/README.md](./FDE/README.md) (zero dependencies, no Node.js needed; for the 15-minute shortest path see its "15-minute shortest path" section).
+
 ## Usage
 
 <p align="center"><img src="docs/assets/dashboard.png" alt="sofagent Dashboard cockpit" width="100%" /><br/><sub>Dashboard cockpit (single-file HTML · screenshot shows v1.4.0): rule pass rate, audit tasks, violation trends — see at a glance what the AI is doing.<br>(The installed UI is the source of truth.)</sub></p>
@@ -205,18 +154,14 @@ More install options (clone install / full npx install / minimal install / enter
 
 > 👁️ **Agent's view**: with hooks installed, every commit triggers an audit — PASS passes silently (auto-snapshot), violations are printed directly into the terminal output and pushed via Webhook / IM per config; there is no separate GUI on the Agent side (see [PHILOSOPHY §2](./docs/PHILOSOPHY.md#系统暴露的能力agent-视角)).
 
-```mermaid
-graph LR
-    A["① Trial<br/>npx -y -p @sofagent/audit sofagent-audit<br/>30-sec zero-setup audit · any git repo"] --> B["② Team<br/>Rule marketplace + GitHub Action<br/>PR auto-audit · CI/CD"] --> C["③ Enterprise<br/>install.sh full suite<br/>on enterprise devices · 7×24 monitoring"]
-    C -.->|after FDE departs| D["④ Self-running<br/>Agents work · sofagent watches<br/>audit · rollback · inspection"]
-```
+<p align="center"><img src="docs/assets/usage-path-en.png" alt="Usage path: trial → team → enterprise → self-running" width="85%" /></p>
 
 | Entry | What it does | Where installed | Time needed |
 |------|--------|--------|:----:|
 | **`npx -y -p @sofagent/audit sofagent-audit`** | Zero-setup audit of the last commit, results in seconds (first npx ~30s) | Any git repo (temporary) | 30 sec |
 | **`--ruleset` rule marketplace** | Load rulesets like security, or custom JSON rules | Same as above | 1 min |
 | **GitHub Action** | Auto-audit every PR, violations annotated on the diff lines | CI/CD | Set up once |
-| **install.sh full suite** | injection · audit · rollback · evolution + daemon inspection + dashboard — the Agent's complete constraint layer | **Enterprise device** (server/computer running the AI nodes) | FDE residency |
+| **install.sh full suite** | inject · audit · rollback · evolve + daemon inspection + dashboard — the Agent's complete constraint layer | **Enterprise device** (server/computer running the AI nodes) | FDE residency |
 
 **Install-granularity comparison** (same engine, three install styles — pick by scenario):
 
@@ -226,7 +171,7 @@ graph LR
 | npm in-project | `npm install @sofagent/audit` (project devDependency) | installed with project, version locked in package-lock | team projects with fixed deps, reproducible audits |
 | npm global | `npm install -g @sofagent/audit` | install once, use everywhere | daily audit across repos, daemon residency |
 
-**Rule marketplace** — 24 audit rules built in (quick runs 17 by default); community rulesets are published as `sofagent-ruleset-*` npm packages and loaded manually via `--ruleset-path` (which also accepts your own JSON rules):
+**Rule marketplace** — community rulesets are published as `sofagent-ruleset-*` npm packages and loaded manually via `--ruleset-path` (which also accepts your own JSON rules):
 
 ```bash
 npx -y -p @sofagent/audit sofagent-audit --list-rulesets      # see available rulesets
@@ -264,7 +209,7 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # load the securit
 | Security statement · known limitations | [SECURITY](./SECURITY.md) · [LIMITATIONS](./docs/LIMITATIONS.md) |
 | Contribution guide | [CONTRIBUTING](./CONTRIBUTING.md) |
 
-> 🧪 **Engineering credibility**: 3177 tests / 13 packages (12 with tests) (test counts are determined by `tools/check/test-count.sh` (with a built-in flaky retry mechanism); running `npm test` directly may show mcp package timeouts (red) on low-memory machines — re-running that package alone passes, an environment concurrency issue, not a product defect) · 24 audit rules · fresh-eyes independent review continuously running (see [docs/guides/review-system.md](./docs/guides/review-system.md) for how the review system works). Performance figures are single-machine reference values; cross-tool benchmarking is scheduled for v1.4.x together with Benchmark integration.
+> 🧪 **Engineering credibility**: 3177 tests / 13 packages (12 with tests) · 24 audit rules · fresh-eyes independent review continuously running (test counts are determined by `tools/check/test-count.sh`; running `npm test` directly may show mcp package timeouts (red) on low-memory machines — re-running that package alone passes, an environment concurrency issue, not a product defect. Review system: [docs/guides/review-system.md](./docs/guides/review-system.md). Performance figures are single-machine reference values; cross-tool benchmarking is scheduled for v1.4.x together with Benchmark integration).
 
 ---
 
