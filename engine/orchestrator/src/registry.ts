@@ -26,7 +26,7 @@ export interface SubAgentDefinition {
   triggerOn?: string[];
   /** YML 文件路径 */
   _sourcePath?: string;
-  /** v1.0.8: FDE Agent 运行模式 */
+  /** v1.0.8: FDE 运行模式 */
   mode?: 'deploy' | 'sustain';
   /** v1.2.6: 是否需要 Human-in-the-Loop 确认 */
   hitl?: boolean;
@@ -74,6 +74,7 @@ export function loadDefinition(ymlPath: string): SubAgentDefinition | null {
       knowledgeDomain: parsed.knowledgeDomain as string | undefined,
     };
   } catch {
+    // 单个 agent yml 解析失败跳过该条——registry 整体可用，不让一个坏文件拖垮加载
     return null;
   }
 }

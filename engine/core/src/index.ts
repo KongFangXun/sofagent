@@ -151,6 +151,7 @@
   resolveDaemonLog,
   resolveDaemonJson,
   getConfigFile,
+  getDataDir,
 } from './data-paths';
 
 // ── 配置模板 ──

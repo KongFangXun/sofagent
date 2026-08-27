@@ -9,8 +9,7 @@
 // ============================================================
 
 import { runCostAudit, loadWorklogSlice, type CostBudget } from '@sofagent/audit';
-import { join } from 'path';
-import { homedir } from 'os';
+import { getDataDir } from '@sofagent/core';
 
 /** 成本显示统一人民币：引擎 costUsd 按美元计费，展示 ×7.2 估算汇率换算（与 dashboard fmtCost 同口径） */
 const USD_CNY = 7.2;
@@ -24,9 +23,9 @@ export interface CostQueryResult {
   data: Record<string, unknown>;
 }
 
-/** 解析 dataDir（与 getHistoryFilePath 同链：SOFAGENT_DATA > 默认 ~/.sofagent/data） */
+/** 解析 dataDir（v1.4.2 G-05: 收编进 data-paths SSOT getDataDir()——SOFAGENT_DATA > SOFAGENT_HOME/data） */
 function resolveDataDir(): string {
-  return process.env.SOFAGENT_DATA || join(homedir(), '.sofagent', 'data');
+  return getDataDir();
 }
 
 /**

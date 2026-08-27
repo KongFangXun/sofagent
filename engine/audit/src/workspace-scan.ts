@@ -77,6 +77,7 @@ function gitLines(args: string[]): string[] | null {
     const out = execFileSync('git', args, { stdio: ['ignore', 'pipe', 'ignore'], encoding: 'utf-8', maxBuffer: 16 * 1024 * 1024 });
     return out.split('\n').filter((l) => l.trim().length > 0);
   } catch {
+    // git 命令失败（非 git 仓库/参数不支持）降级 null——扫描是附带能力，不影响主审计
     return null;
   }
 }

@@ -30,6 +30,7 @@ async function loadReactAgentCreate(): Promise<ReactAgentFactory | null> {
     const resolved = await resolveAgentFactory();
     return (resolved.factory as unknown as ReactAgentFactory) ?? null;
   } catch {
+    // LangGraph 运行时不可用——降级 null，调用方走 DSH 后端兼容代理
     return null;
   }
 }

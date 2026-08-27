@@ -118,6 +118,7 @@ export function loadWorklogSlice(dataDir: string): WorklogSlice | null {
       workflows: Array.isArray(raw.workflows) ? raw.workflows : undefined,
     };
   } catch {
+    // worklog.json 损坏按无数据处理——成本审计是附带维度，不阻断主审计
     return null;
   }
 }

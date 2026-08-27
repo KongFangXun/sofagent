@@ -22,6 +22,7 @@ import {
 } from 'fs';
 import { join } from 'path';
 import { randomUUID } from 'crypto';
+import { getDataDir } from '@sofagent/core';
 
 // ────────────────────────────────────────────────────────────
 // 类型定义
@@ -86,7 +87,9 @@ export interface TaskRun {
 // ────────────────────────────────────────────────────────────
 
 function getSchedulerRoot(dataBase?: string): string {
-  const base = dataBase || process.env.SOFAGENT_DATA || join(process.env.HOME || '~', '.sofagent', 'data');
+  // v1.4.2 G-05: 默认回退收编进 data-paths SSOT getDataDir()（消灭 join(HOME, '.sofagent', 'data') 硬编码，
+  // SOFAGENT_DATA / SOFAGENT_HOME 优先级语义不变）
+  const base = getDataDir(dataBase);
   return join(base, 'scheduler');
 }
 

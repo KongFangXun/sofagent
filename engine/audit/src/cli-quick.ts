@@ -52,6 +52,7 @@ function getLatestCommitSha(): string | null {
     }).trim();
     return sha;
   } catch {
+    // 非 git 仓库取不到 HEAD SHA——降级 null，输出省略该字段
     return null;
   }
 }
@@ -70,6 +71,7 @@ function hasParentCommit(): boolean {
     });
     return true;
   } catch {
+    // 首次提交（无 HEAD~1）或非 git 仓库——按「无父提交」处理
     return false;
   }
 }

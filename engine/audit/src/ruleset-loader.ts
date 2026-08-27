@@ -328,6 +328,7 @@ export function listBuiltinRulesetNames(): string[] {
       .map((f) => f.replace(/\.json$/, ''))
       .sort();
   } catch {
+    // 内置 ruleset 目录不可读（打包缺失等）——返回空列表走默认规则集
     return [];
   }
 }

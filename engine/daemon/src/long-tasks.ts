@@ -31,6 +31,7 @@ import {
 } from 'fs';
 import { join } from 'path';
 import { load as yamlLoad, dump as yamlDump } from 'js-yaml';
+import { getDataDir } from '@sofagent/core';
 import { createScheduler, nextCronTime, type ScheduledTask, type TaskRun } from './scheduler';
 
 // ────────────────────────────────────────────────────────────
@@ -203,7 +204,8 @@ export function saveLongTaskRegistry(projectDir: string, registry: LongTaskRegis
 
 /** daemon-health.json 路径（与 daemon-health.ts 同口径——SOFAGENT_DATA 优先） */
 function healthFilePath(dataBase?: string): string {
-  const base = dataBase || process.env.SOFAGENT_DATA || join(process.env.HOME || '~', '.sofagent', 'data');
+  // v1.4.2 G-05: 默认回退收编进 data-paths SSOT getDataDir()
+  const base = getDataDir(dataBase);
   return join(base, 'daemon-health.json');
 }
 
@@ -303,7 +305,8 @@ export const DEFAULT_MAX_NO_CHANGE_RUNS = 6;
  * @returns 未完成条目（空数组 = 无需恢复）
  */
 export function readUnfinishedWalEntries(dataBase?: string): Array<{ id?: string; op?: string; status?: string } & Record<string, unknown>> {
-  const base = dataBase || process.env.SOFAGENT_DATA || join(process.env.HOME || '~', '.sofagent', 'data');
+  // v1.4.2 G-05: 默认回退收编进 data-paths SSOT getDataDir()
+  const base = getDataDir(dataBase);
   const path = join(base, 'wal.jsonl');
   if (!existsSync(path)) return [];
   const unfinished: Array<{ id?: string; op?: string; status?: string } & Record<string, unknown>> = [];
@@ -469,7 +472,8 @@ export function createLongTaskScheduler(options: {
       const { writeFileSync: wf, mkdirSync: mk } = require('fs') as typeof import('fs');
       // eslint-disable-next-line @typescript-eslint/no-require-imports
       const { randomUUID } = require('crypto') as typeof import('crypto');
-      const base = dataBase || process.env.SOFAGENT_DATA || join(process.env.HOME || '~', '.sofagent', 'data');
+      // v1.4.2 G-05: 默认回退收编进 data-paths SSOT getDataDir()
+      const base = getDataDir(dataBase);
       const dir = join(base, 'scheduler', 'history', `long-task:${taskName}`);
       mk(dir, { recursive: true });
       const safeTime = run.startedAt.replace(/[:.]/g, '-');
