@@ -74,7 +74,7 @@ nodes:
     depends_on: [pt-train-run]
     actions: [read]
     hitl: false
-    capability_ref: "v1.4.2 训练中 eval 闭环（阈值由 商业模型层 侧配置）"
+    capability_ref: "v1.4.2 训练中 eval 闭环（阈值由商业侧配置）"
 
   # ── SUSTAIN 运转 ───────────────────────────────
   - id: pt-deploy

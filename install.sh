@@ -16,7 +16,7 @@
 #    │ install.sh --base-only  │ 企业设备     │ 约束层（无 Skill）   │
 #    │ npx @sofagent/audit     │ 任意（临时） │ 零安装审计           │
 #    └─────────────────────────┴──────────────┴──────────────────────┘
-#    ⚠️ FDE 不该在自己电脑跑 install.sh——FDE 的工具是 Skill + 未来 商业模型层 模型。
+#    ⚠️ FDE 不该在自己电脑跑 install.sh——FDE 的工具是 Skill + 未来商业模型。
 #    FORGE 是 sofagent 项目的自迭代开发工具包（管理代码变更，给开发者用），
 #    不属于企业交付物。
 #    MCP 自动配置：--platform workbuddy/claude/cursor 时写 mcp.json（JSON merge 不覆盖），

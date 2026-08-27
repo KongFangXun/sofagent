@@ -235,7 +235,7 @@ export async function runEvalSuite(
   }
 
   // v1.4.0 交付九：MLflow 旁路导出（tracking server 不可达降级 ok=false 不抛——
-  // evaluation-log 仍是主存储，MLflow 是旁路；商业模型层「评测迭代主权」链路接通）
+  // evaluation-log 仍是主存储，MLflow 是旁路；商业侧「评测迭代主权」链路接通）
   try {
     const { logBenchmarkToMlflow, buildMetrics } = await import('../benchmark/mlflow-exporter');
     await logBenchmarkToMlflow({

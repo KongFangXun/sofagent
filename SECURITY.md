@@ -644,7 +644,7 @@ grep -i "api_key\|apikey\|sk-" runs/*/usage.jsonl   # 应无结果
 | ASI09 人机信任滥用 | Agent 虚假汇报骗取人工批准 | 24 条规则 git diff 硬证据（不采信模型自评）+ A7 不存盲改（无读取记录的修改 FAIL）+ A5/A19 msg 质量 + entry-gate 🔴 高风险强制人工审批 + daemon 文件监控事后对账 | Agent 可伪造 task/logs（§四已知绕过路径）；HITL 依赖人真正审阅 |
 | ASI10 流氓 Agent | Agent 脱离监管自主行动 | `--doctor` 定期体检（hook 完整性/dist 哈希/config 签名/未审计 commit 扫描）+ post-commit 对账（绕过 commit-msg 留痕）+ daemon fs-watch + CI 侧 `--diff` 独立兜底（hook 可绕 CI 不可绕）+ 基线规则不可禁用 | 全部是事后检测/体检模型，无运行时进程级监控（如 eBPF）；影子审计器劫持见 §四 v1.2.7 风险 |
 | — | **未覆盖面** | 以下三类当前无对应能力，企业强合规场景需外部措施补位：多租户身份隔离（等 ROADMAP v1.4.7 G7）/ 运行时沙箱拦截 / 外部 A2A 协议安全（通信面仅覆盖 sofagent 联邦链路） | — |
-| — | **NIST AI RMF / EU AI Act / SOC 2** | 未做正式对照（无认证与审计证据链），不做映射声明；如需上述框架的证据链，需商业层 商业模型层 提供，开源版不虚标 | — |
+| — | **NIST AI RMF / EU AI Act / SOC 2** | 未做正式对照（无认证与审计证据链），不做映射声明；如需上述框架的证据链，需商业层提供，开源版不虚标 | — |
 
 > 📌 阅读提示：表中「§N」指本 SECURITY.md 对应章节；规则 A1-A23 编号见 §四「24 条审计规则完整清单」；AST 规则见 §四「AST 规则引擎 SSOT」。
 >

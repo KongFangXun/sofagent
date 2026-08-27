@@ -239,7 +239,7 @@ v1.3.9 起对所有 workspace 包的入口 export 做显式分级，CI 门禁（
 
 ### 安装包边界与部署架构（v1.3.2 定位校准）
 
-> **核心定位**：sofagent 装在**企业跑 AI 节点的设备**上，是 Agent 的监控约束层。FDE 自己的电脑不该跑 install.sh——FDE 的工具是 Skill（方法论）+ 未来 商业模型层 模型。
+> **核心定位**：sofagent 装在**企业跑 AI 节点的设备**上，是 Agent 的监控约束层。FDE 自己的电脑不该跑 install.sh——FDE 的工具是 Skill（方法论）+ 未来商业模型。
 >
 > **行业坐标（2026-08-19 红杉闭门分享吸收）**：红杉说「所有 AI 应用公司终将成为 Neo-Lab」——竞争主战场从应用层转向智能层，**产品即智能**。sofagent 的差异化立场不在智能层而在约束层：**智能是模型厂商的，管住智能的约束层才是企业的护城河**。Sovereign AI 要的是「对关键智能链路的控制权」，而控制权的一半（数据主权、审计、审批、回滚、灰度）正是约束层的职责——红杉说智能是护城河，sofagent 说「管住智能」才是护城河，两者互补不冲突：企业掌控智能（Neo-Lab 的活），sofagent 提供管控（约束层的活）。
 
@@ -247,7 +247,7 @@ v1.3.9 起对所有 workspace 包的入口 export 做显式分级，CI 门禁（
 
 | 位置 | 装什么 | 目的 |
 |------|--------|------|
-| **FDE 的电脑** | FDE Skill（ClawHub 装）+ 未来 商业模型层 FDE 模型 | FDE 做诊断——五要素拆解、建 workflow、搭 ontology |
+| **FDE 的电脑** | FDE Skill（ClawHub 装）+ 未来商业 FDE 模型 | FDE 做诊断——五要素拆解、建 workflow、搭 ontology |
 | **企业设备**（跑 AI 节点）| **sofagent install.sh 全套** | **盯 Agent**——审计每次变更、回溯、注入铁律、daemon 7×24 巡检 |
 | **企业员工的 Agent 平台**（WorkBuddy/Codex） | sofagent Skill（ClawHub 装）| 员工的 Agent 受铁律约束干活 |
 
@@ -272,7 +272,7 @@ v1.3.9 起对所有 workspace 包的入口 export 做显式分级，CI 门禁（
 | `install.sh --base-only` | 仅底座（审计·回溯·daemon） | 企业 IT：只要核心监控，不装 Agent Skill |
 | `npx -y -p @sofagent/audit sofagent-audit` | 零安装，临时审计 | 开发者：30 秒体验，在任何 git 仓库跑一次 |
 
-> ⚠️ **FDE 不该在自己电脑跑 install.sh**——install.sh 是企业设备安装器，不是 FDE 工具。FDE 的工具是 Skill（ClawHub 装）+ 未来 商业模型层 模型。
+> ⚠️ **FDE 不该在自己电脑跑 install.sh**——install.sh 是企业设备安装器，不是 FDE 工具。FDE 的工具是 Skill（ClawHub 装）+ 未来商业模型。
 >
 > ⚠️ **dashboard 是单机监控面板**——每台装了 sofagent 的设备一个 dashboard，盯本机 Agent。多设备聚合是企业级需求，走商业侧平台（不在开源范围）。
 
