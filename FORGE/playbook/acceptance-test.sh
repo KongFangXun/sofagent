@@ -6,7 +6,7 @@ export LANG=en_US.UTF-8
 export LC_ALL=en_US.UTF-8
 # sofagent-audit · 上线前验收测试（Pre-Release Acceptance Test）
 # 覆盖：FORGE + MCP + 文件系统审计 + daemon + 红队对抗 + 各版本新功能验收
-# 场景数：263 个场景（SSOT：check-test-count.sh 校验，口径=真实 scenario 调用行数，非编号最大值（S1-S330 间有 67 个历史空洞号）；v1.3.7 +4：S290-S293；v1.3.6 +8：S282-S289；v1.3.8 +11：S294-S304（含 bugfix 防回归 S303/S304）；v1.3.9 +15：S305-S319（阶段五 A 类分发 13 项 + 阶段六 coverage 补测 S318 ATTRIBUTION 归因引擎/S319 Dream Sandbox 沙盒审计）；v1.4.0 +3：S320（联邦查询跨进程 E2E——补 federation.test.ts 同进程 mock 缺口）、S321（跨平台 hook stdin 模式闭环验证）、S322（双设备联邦独立进程模拟——两个独立 node 进程 + 真实 TCP，补 fork 形态缺口）；v1.4.1 +8：S323（train doctor CLI 实跑）、S324（enterpriseId 强制绑定+幂等）、S325（fingerprint 冻结+不可变）、S326（artifact 签名+篡改检测）、S327（安全基线路径白名单+注入检测）、S328（install.sh 迁移丢数据窗口防回归——阶段四 B2 分发）、S329（install.sh symlink 谎报守卫——阶段四 B3 分发）、S330（训练异常退出资源回收四步链——阶段六 coverage 补测，补判断层唯一零覆盖项））
+# 场景数：265 个场景（SSOT：check-test-count.sh 校验，口径=真实 scenario 调用行数，非编号最大值（S1-S332 间有 67 个历史空洞号）；v1.3.7 +4：S290-S293；v1.3.6 +8：S282-S289；v1.3.8 +11：S294-S304（含 bugfix 防回归 S303/S304）；v1.3.9 +15：S305-S319（阶段五 A 类分发 13 项 + 阶段六 coverage 补测 S318 ATTRIBUTION 归因引擎/S319 Dream Sandbox 沙盒审计）；v1.4.0 +3：S320（联邦查询跨进程 E2E——补 federation.test.ts 同进程 mock 缺口）、S321（跨平台 hook stdin 模式闭环验证）、S322（双设备联邦独立进程模拟——两个独立 node 进程 + 真实 TCP，补 fork 形态缺口）；v1.4.1 +10：S323（train doctor CLI 实跑）、S324（enterpriseId 强制绑定+幂等）、S325（fingerprint 冻结+不可变）、S326（artifact 签名+篡改检测）、S327（安全基线路径白名单+注入检测）、S328（install.sh 迁移丢数据窗口防回归——阶段四 B2 分发）、S329（install.sh symlink 谎报守卫——阶段四 B3 分发）、S330（训练异常退出资源回收四步链——阶段六 coverage 补测，补判断层唯一零覆盖项）、S331（OpenClaw plugin 双 manifest 一致性——阶段十一 ClawHub 拒收踩坑回写）、S332（bump 脚本通配误伤防回归——阶段十一静默漏 bump 踩坑回写））
 # 编号跳号豁免：S1~S293 间有 70 个空洞号（全在 S36-S202 历史段）——v1.2.x 瘦身删场景
 # 与基线重建（restore 6e542467）的既成事实，非丢失；新场景编号=当前最大+1 顺延，禁止回填空洞
 # 版本段起点见文件内「# ─── v」分组标记（grep "─── v" 定位）
@@ -3179,6 +3179,50 @@ echo "$R330" | grep -q "audit-chained: true" || S330_OK=false
 echo "$R330" | grep -q "gpu-degraded-ok: true" || S330_OK=false
 rm -rf "$S330_TMP"
 $S330_OK && pass "异常退出回收四步链（卡死检测 + kill/gpu/tmp/audit + 审计入链）" || fail "训练异常回收失败: $(echo "$R330" | grep -v '^$' | head -3 || true)"
+
+# ─────────────────────────────────────────────────────────────
+# S331 · v1.4.1 阶段十一踩坑回写：OpenClaw plugin 双 manifest 版本一致性
+# 根因：openclaw.plugin.json 从 v1.4.0 创建起未被任何 bump 覆盖——4 款全漂移 1.4.0，
+# ClawHub package publish 以「manifest version drift」全拒。本场景守 check-version 9c
+# 双 manifest 覆盖真在工作（4 款 × 2 层 manifest 全部 = SSOT 版本）
+# ─────────────────────────────────────────────────────────────
+scenario 331 "v1.4.1 阶段十一回写：OpenClaw plugin 双 manifest 一致性——package.json + openclaw.plugin.json 8 层全部 = SSOT（ClawHub manifest drift 拒收防回归）"
+S331_OK=true
+S331_SSOT=$(node -p "require('$PROJECT_ROOT/package.json').version" 2>/dev/null || echo "")
+[ -n "$S331_SSOT" ] || { S331_OK=false; echo "  无法读取 SSOT 版本（package.json）"; }
+for _pdir in "$PROJECT_ROOT"/engine/openclaw-plugins/*/; do
+  _name=$(basename "$_pdir")
+  for _manifest in package.json openclaw.plugin.json; do
+    _f="$_pdir$_manifest"
+    [ -f "$_f" ] || continue
+    _v=$(grep -o '"version": "[^"]*"' "$_f" | head -1 | sed 's/"version": "//;s/"//')
+    if [ "$_v" != "$S331_SSOT" ]; then
+      S331_OK=false
+      echo "  manifest 漂移: $_name/$_manifest = $_v（期望 $S331_SSOT）"
+    fi
+  done
+done
+$S331_OK && pass "OpenClaw plugin 双 manifest 一致（8 层 = $S331_SSOT）" || fail "plugin manifest 版本漂移（上方列出）"
+
+# ─────────────────────────────────────────────────────────────
+# S332 · v1.4.1 阶段十一踩坑回写：bump 脚本通配误伤防回归
+# 根因：bump-version.sh 旧跳过逻辑 *audit/package.json 通配匹配了
+# openclaw-plugins/sofagent-audit/package.json——阶段六 bump 静默漏改 1 款。
+# 本场景静态断言 bump 脚本用精确路径匹配（不再出现 *audit/package.json 通配）
+# ─────────────────────────────────────────────────────────────
+scenario 332 "v1.4.1 阶段十一回写：bump 脚本跳过逻辑精确匹配——通配 *audit/package.json 误伤 sofagent-audit 静默漏 bump 防回归（静态断言）"
+S332_OK=true
+# 断言执行行（非注释）：跳过必须用精确路径。旧形态「[[ "$ws_pkg" == *audit/package.json ]]」通配
+# 会误伤 openclaw-plugins/sofagent-audit——grep 模式锚定 [[ 开头（^[[）排除注释行
+if grep -qE '^\s*\[\[ "\$ws_pkg" == \*audit' "$PROJECT_ROOT/tools/release/bump-version.sh" 2>/dev/null; then
+  S332_OK=false
+  echo "  bump-version.sh 执行行仍含通配 *audit 跳过（会误伤 sofagent-audit）"
+fi
+if ! grep -qF '[[ "$ws_pkg" == "$PROJECT_ROOT/engine/audit/package.json" ]] && continue' "$PROJECT_ROOT/tools/release/bump-version.sh" 2>/dev/null; then
+  S332_OK=false
+  echo "  bump-version.sh 缺精确路径跳过（engine/audit/package.json）"
+fi
+$S332_OK && pass "bump 脚本跳过逻辑为精确路径匹配" || fail "bump 脚本跳过逻辑回退到通配形态（上方列出）"
 
 echo -e "  验收测试结果：${GREEN}$PASSED 通过${NC} / ${RED}$FAILED 失败${NC} / 共 $((PASSED + FAILED))"
 # 🔴 v1.3.1 run-10 教训：无色码纯文本汇总行供 driver grep（EXIT: 0=全PASS / <N>=N失败）
