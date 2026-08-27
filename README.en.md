@@ -11,6 +11,8 @@
 
 <p align="center"><sub>[简体中文](./README.md) | [English](./README.en.md)</sub></p>
 
+> 🚀 **v1.4.2 pre-release** — Training engine: data & evaluation (pipeline / versioning / eval loop / environment / dry-run / report) + FDE six engines + IM bridge + FORGE data-flow foundation. See [CHANGELOG](./CHANGELOG.md).
+
 ---
 
 ## What is this
@@ -203,7 +205,7 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # load the securit
 | Security statement · known limitations | [SECURITY](./SECURITY.md) · [LIMITATIONS](./docs/LIMITATIONS.md) |
 | Contribution guide | [CONTRIBUTING](./CONTRIBUTING.md) |
 
-> 🧪 **Engineering credibility**: 3202 tests / 13 packages (12 with tests) · 24 audit rules · fresh-eyes independent review continuously running (test counts are determined by `tools/check/test-count.sh`; running `npm test` directly may show mcp package timeouts (red) on low-memory machines — re-running that package alone passes, an environment concurrency issue, not a product defect. Review system: [docs/guides/review-system.md](./docs/guides/review-system.md). Performance figures are single-machine reference values; cross-tool benchmarking is scheduled for v1.4.x together with Benchmark integration).
+> 🧪 **Engineering credibility**: 3349 tests / 13 packages (12 with tests) · 24 audit rules · fresh-eyes independent review continuously running (test counts are determined by `tools/check/test-count.sh`; running `npm test` directly may show mcp package timeouts (red) on low-memory machines — re-running that package alone passes, an environment concurrency issue, not a product defect. Review system: [docs/guides/review-system.md](./docs/guides/review-system.md). Performance figures are single-machine reference values; cross-tool benchmarking is scheduled for v1.4.x together with Benchmark integration).
 
 ---
 
