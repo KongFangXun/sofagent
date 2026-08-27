@@ -1375,3 +1375,44 @@
   WeekTrend,
   EvolutionTrends,
 } from './worklog';
+
+// ============================================================
+// v1.4.2 章五+章六：训练 dry-run（失败前预防）+ 训练报告（客户可读交付物）
+// ============================================================
+/* @public */ export {
+  estimateVram,
+  runDryrun,
+} from './train/train-dryrun';
+/* @public */ export type {
+  VramEstimateInput,
+  VramEstimate,
+  DryrunCheck,
+  DryrunResult,
+  DryrunInput,
+} from './train/train-dryrun';
+/* @public */ export {
+  sigmoid,
+  fitSigmoid,
+  extrapolate,
+  suggestNextPilotCompute,
+} from './train/scale-curve';
+/* @public */ export type {
+  ScaleCurvePoint,
+  SigmoidParams,
+  FitQuality,
+  FitResult,
+  Extrapolation,
+} from './train/scale-curve';
+/* @public */ export {
+  computeQuantification,
+  generateTrainReport,
+  trainReportsDir,
+  trainReportPaths,
+} from './train/train-report';
+/* @public */ export type {
+  QuantificationMetrics,
+  QuantifyInput,
+  TrainReportInput,
+  TrainReportResult,
+  TrainReportJson,
+} from './train/train-report';

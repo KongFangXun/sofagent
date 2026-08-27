@@ -21,7 +21,7 @@ export interface ToolDef {
 }
 
 /**
- * 完整工具清单——68 个 tool（v1.4.2：train_doctor 新增；v1.4.1：train_submit 新增；v1.4.0：cost_query + browser 4 新增；v1.3.9：worklog_query 新增；v1.3.6：workflow_submit/ontology_import/model_register/model_switch/model_unregister/train_budget/define_acceptance/check_acceptance；v1.3.5：run_ab_test/promote_ab/snapshot_list/snapshot_restore；v1.3.4：commons_publish/search/invoke/rate/retire/harvest_rule；不含 4 个 resource shortcut）
+ * 完整工具清单——70 个 tool（v1.4.2：train_doctor/train_dryrun/train_report 新增；v1.4.1：train_submit 新增；v1.4.0：cost_query + browser 4 新增；v1.3.9：worklog_query 新增；v1.3.6：workflow_submit/ontology_import/model_register/model_switch/model_unregister/train_budget/define_acceptance/check_acceptance；v1.3.5：run_ab_test/promote_ab/snapshot_list/snapshot_restore；v1.3.4：commons_publish/search/invoke/rate/retire/harvest_rule；不含 4 个 resource shortcut）
  */
 export const TOOLS: ToolDef[] = [
   {
@@ -925,6 +925,85 @@ export const TOOLS: ToolDef[] = [
         enterprise_id: { type: 'string', description: '🔴 企业标识（必填——train-env.json 清单的企业分区）' },
       },
       required: ['enterprise_id'],
+    },
+  },
+  {
+    // v1.4.2 (章五)：训练 dry-run——失败前预防（管线连通/数据抽样/显存/算力外推）
+    name: 'train_dryrun',
+    roles: ['eval', 'ops'],
+    description: '训练 dry-run——提交前预检：极小样本管线连通 + 数据质量抽样 + 显存估算（超限提前告警）+ 算力外推（sigmoid 缩放律——ScaleRL 方法，外推成本超预算提交前告警）。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        data_path: { type: 'string', description: '🔴 数据文件路径（CSV/Excel/JSON/文本——相对 data 目录或绝对路径）' },
+        algorithm: { type: 'string', enum: ['sft', 'dpo', 'grpo'], description: '🔴 训练算法' },
+        column_mapping: { type: 'object', description: '列映射（可选——缺省按常见命名约定推断；如 {"instruction":"问题","output":"答案"}）', additionalProperties: { type: 'string' } },
+        vram: {
+          type: 'object',
+          description: '显存预检（可选——不填跳过该项）',
+          properties: {
+            params_billions: { type: 'number', description: '模型参数量（十亿为单位，如 8 = 8B）' },
+            batch_size: { type: 'number', description: 'batch size' },
+            sequence_length: { type: 'number', description: '序列长度（token 数）' },
+            bytes_per_param: { type: 'number', description: '精度字节（fp32=4/bf16=2；缺省 2 混合精度）' },
+            gradient_checkpointing: { type: 'boolean', description: '梯度检查点（开启省激活内存）' },
+            gpu_vram_mib: { type: 'number', description: 'GPU 可用显存（MiB——估算超此值提前 fail）' },
+          },
+          required: ['params_billions', 'batch_size', 'sequence_length'],
+        },
+        extrapolate: {
+          type: 'object',
+          description: '算力外推（可选——ScaleRL sigmoid 缩放律；数据点不足明示置信低不硬报）',
+          properties: {
+            points: {
+              type: 'array',
+              description: 'pilot run 数据点（算力, 性能）',
+              items: {
+                type: 'object',
+                properties: {
+                  compute: { type: 'number', description: '算力投入（GPU 小时等同单位）' },
+                  performance: { type: 'number', description: '性能（eval 分 0..100）' },
+                },
+                required: ['compute', 'performance'],
+              },
+            },
+            target_compute: { type: 'number', description: '目标算力规模（外推目标）' },
+            cost_per_unit: { type: 'number', description: '成本单价（元/GPU小时）' },
+            budget_cap: { type: 'number', description: '预算上限（元——外推成本超限提交前告警）' },
+          },
+          required: ['points', 'target_compute'],
+        },
+      },
+      required: ['data_path', 'algorithm'],
+    },
+  },
+  {
+    // v1.4.2 (章六)：训练报告——客户可读交付物（量化四字段 + 归档 dashboard）
+    name: 'train_report',
+    roles: ['eval', 'ops'],
+    description: '训练报告生成——数据概况+配置+eval对比+产物清单+量化四字段（GUIDE §4.3：年节省=岗位年薪×AI接管工时占比），markdown+JSON 归档 data/dashboard/train-reports/。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        train_job_id: { type: 'string', description: '🔴 训练任务标识' },
+        enterprise_id: { type: 'string', description: '🔴 企业标识' },
+        baseline_eval: { type: 'object', description: '基线 eval 报告（训练前——章三 runTrainEval 产出；缺省该段降级）', additionalProperties: true },
+        after_eval: { type: 'object', description: '训后 eval 报告（章三 runTrainEval 产出）', additionalProperties: true },
+        dataset_version: { type: 'object', description: '训练集版本记录（章二 dataset_version——数据概况段）', additionalProperties: true },
+        quantification: {
+          type: 'object',
+          description: '量化四字段输入（GUIDE §4.3 岗位口径——供绩效量化引擎消费）',
+          properties: {
+            annual_salary: { type: 'number', description: '岗位真实市场年薪（元/年）' },
+            takeover_ratio: { type: 'number', description: 'AI 接管工时占比（0..1，如 0.33）' },
+            ai_annual_cost: { type: 'number', description: 'AI 方案年运行成本（元/年）' },
+            one_time_investment: { type: 'number', description: '一次性投入（元——回本周期用）' },
+          },
+          required: ['annual_salary', 'takeover_ratio', 'ai_annual_cost'],
+        },
+        artifacts: { type: 'array', description: '产物清单（可选——缺省从 job record 推导）', items: { type: 'string' } },
+      },
+      required: ['train_job_id', 'enterprise_id'],
     },
   },
   {
