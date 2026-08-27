@@ -447,7 +447,7 @@ v1.0.7 预装了两个内置 Agent，v1.0.8 将它们升级为**基础设施 Age
 ```
 每个节点完成任务：
   → Audit Agent    "你做得合规吗？"
-  → FDE Agent sustain  "你能做得更好吗？"
+  → FDE Harness sustain  "你能做得更好吗？"
 ```
 
 **不是"又一个检查清单"——是两个 Agent 形成自进化闭环**（双 Agent 定义详见 [ARCHITECTURE §双 Agent 定义](./ARCHITECTURE.md#agent-基础设施层v108)）。

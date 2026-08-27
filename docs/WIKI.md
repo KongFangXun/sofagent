@@ -28,7 +28,7 @@
 
 > **30 分钟深度路径**（想动手或评估选型时，承接上面的 3 分钟全景）：① 深入 [ARCHITECTURE](./ARCHITECTURE.md) §一~§二 + [PHILOSOPHY](./PHILOSOPHY.md) §一（在 3 分钟版基础上读双层架构与"不替代 Agent"论证，~15 分钟）→ ② [SECURITY](../SECURITY.md)「已知风险」+ [LIMITATIONS](./LIMITATIONS.md) 目录（诚实边界，~10 分钟）→ ③ 按角色进 [guides/](./guides/)：企业 IT 读 enterprise-deploy · 开发者读 harness-sdk · 想看审查体系读 review-system
 >
-> **评估选型对照框架**：对照 [README · 什么是 FDE Agent](../README.md#什么是-fde-agent) 对比表 + [VALIDATION](./VALIDATION.md) 生态定位，建议按四维评估——**审计方式 / 部署方式 / 数据主权 / 知识积累**——逐一对照自身现状做选型决策。
+> **评估选型对照框架**：对照 [README · 什么是 FDE Harness](../README.md#什么是-fde-harness) 对比表 + [VALIDATION](./VALIDATION.md) 生态定位，建议按四维评估——**审计方式 / 部署方式 / 数据主权 / 知识积累**——逐一对照自身现状做选型决策。
 
 ---
 
@@ -40,7 +40,7 @@
 
 ## 二、产品叙事：sofagent 是 FDE Harness 层（不造 Agent，嵌在 Agent 与模型之间做治理）
 
-> **一条 workflow 的产品**：给企业做 AI 落地 = 一条 FDE workflow。执行这条 workflow 的 Agent = FDE Agent（sofagent 让任何成熟 Agent 具备这个能力）。**它对自己做的第一份 FDE，就是 sofagent 项目本身**——自举循环：FDE Agent 对自己做 FDE → 项目更 AI 化 → 更好地服务企业 → 数据飞轮转起来。
+> **一条 workflow 的产品**：给企业做 AI 落地 = 一条 FDE workflow。执行这条 workflow 的 Agent = 装上 FDE Harness 的 Agent（sofagent 让任何成熟 Agent 具备这个能力）。**它对自己做的第一份 FDE，就是 sofagent 项目本身**——自举循环：FDE Harness 对自己做 FDE → 项目更 AI 化 → 更好地服务企业 → 数据飞轮转起来。
 
 **FDE 交付**：进场梳理 → 交付**双图谱**——人看的业务图谱（workflow graph）+ 机器读的本体图谱（ontology graph，本体数据的图形化形态）。图谱里每个 AI 节点承担业务流中的职能；节点执行 = workflow 要求 → LangGraph 编排 → DeepSeek Harness 执行（ExecutionBackend 双后端：workflow 以 DAG 形态在所选后端运行）→ 全程约束底座审计 + 回溯净化（plugin 功能）。**行业坐标**：两张图谱同属「知识层」（描述业务世界的语义资产），构建·校验·维护实践属「工程层」（图谱工程），详见 [ARCHITECTURE §一](./ARCHITECTURE.md)。
 
@@ -80,7 +80,7 @@ graph TB
 
 | 概念 | 一句话 | 详情 |
 |------|--------|------|
-| **FDE Agent** | 对外的产品身份：「Forward Deployed Engineer」——sofagent 把 FDE 能力装进成熟 Agent（DSH / OpenClaw / WorkBuddy），任何一个装了 sofagent 能力的 Agent 就是 FDE Agent；进场→部署→离场，留一套能持续维护的 AI 化资产 | [PHILOSOPHY §一](./PHILOSOPHY.md) |
+| **FDE Harness** | 对外的产品身份：「Forward Deployed Engineer」——sofagent 把 FDE 能力装进成熟 Agent（DSH / OpenClaw / WorkBuddy），任何一个装了 sofagent 能力的 Agent 就具备 FDE Harness；进场→部署→离场，留一套能持续维护的 AI 化资产 | [PHILOSOPHY §一](./PHILOSOPHY.md) |
 | **约束层** | 对内的技术身份：约束 Agent 行为的「缰绳」——一个层四种能力（注入·审计·回溯·进化），编排（FORGE）为内部工具 | [ARCHITECTURE §二](./ARCHITECTURE.md) |
 | **约束层七维度** | Agent = 模型 + 上下文 + 工具 + 状态 + 执行控制 + 权限 + 可观测性——四种能力各自覆盖其中哪些维度 | [ARCHITECTURE §一 · 约束层七维度](./ARCHITECTURE.md#约束层七维度agent-的构成面)（维度构成以本行为准；四种能力维度分工详见 [PHILOSOPHY §一·四件事的分工](./PHILOSOPHY.md#四件事的分工mcp--skills--ontology--harness)） |
 | **约束层构成（企业视角）** | 黄仁勋定义：企业专属约束层 = 知识 + 记忆 + 工作流 + 权限 + 安全机制 + 运行环境——模型是起点，围绕模型积累的这套专属系统才是核心资产 | [PHILOSOPHY §一·理论锚点](./PHILOSOPHY.md#智能与控制分离sofagent-的理论锚点) |
@@ -170,7 +170,7 @@ graph TB
 | `README.md` | 项目介绍、安装、部署（给人看） |
 | `docs/ROADMAP.md` | 版本路线图、行业借鉴项、技术预研方向 |
 | `CHANGELOG.md` | 纯目录索引——每版本一行，细节见 `docs/changelog/` |
-| `SKILL/SKILL.md` | FDE Agent 主入口（Harness 加载链起点） |
+| `SKILL/SKILL.md` | FDE Harness 主入口（Harness 加载链起点） |
 | `install.sh` | 一键安装脚本 |
 | `LICENSE` | MIT |
 | `SECURITY.md` | 安全策略、审计规则清单 |
@@ -258,7 +258,7 @@ graph TB
 
 ## 八、导航：按你的意图选路
 
-### 了解 FDE Agent（产品 → 理念 → 路线）
+### 了解 FDE Harness（产品 → 理念 → 路线）
 
 | 你想…… | 读这个 |
 |---------|--------|

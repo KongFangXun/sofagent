@@ -48,10 +48,10 @@
 
 FDE 全称 Forward Deployed Engineer（前线部署工程师），源自 Palantir 的交付纪律——工程师驻场客户，把通用产品变成客户能用的方案。
 
-sofagent 把它从岗位 title 升级为能力模型，再升级为**常驻 FDE Agent**：
+sofagent 把它从岗位 title 升级为能力模型，再升级为**常驻 FDE Harness**：
 
 - 人（FDE）帮客户部署完离场，FDE 能力留在客户那里继续干活（装在成熟 Agent 上 7×24 运行）
-- 产品形态 = FDE Harness 层（2026-08-25 叙事）：不造 Agent，嵌在成熟 Agent（DSH / OpenClaw / WorkBuddy）与模型层之间做治理——对执行体约束、对智力源治理，plugin + skill + MCP + CLI + dashboard 五种形态分发，任何已有 Agent 装上它就是一个 FDE Agent（见 [WIKI 产品叙事](../docs/WIKI.md#二产品叙事sofagent-是-fde-harness-层不造-agent嵌在-agent-与模型之间做治理)）
+- 产品形态 = FDE Harness 层（2026-08-25 叙事）：不造 Agent，嵌在成熟 Agent（DSH / OpenClaw / WorkBuddy）与模型层之间做治理——对执行体约束、对智力源治理，plugin + skill + MCP + CLI + dashboard 五种形态分发，任何已有 Agent 装上它就是一个 FDE Harness（见 [WIKI 产品叙事](../docs/WIKI.md#二产品叙事sofagent-是-fde-harness-层不造-agent嵌在-agent-与模型之间做治理)）
 - 梳理好的业务流在跑、合规自检在跑、周度巡检在跑
 - 客户得到的不是一个工具，是一个 7×24 在线的 FDE 能力
 
@@ -120,16 +120,16 @@ AI 能力强但不可控 vs 企业需要可控可审计。FDE 用四件事化解
 
 | ❌ 误解 | ✅ 正确认知 |
 |--------|-----------|
-| 这是个 Git 审计安全工具 | 审计引擎只是 FDE Agent「约束层」中的一环，单独拿出来没有意义 |
+| 这是个 Git 审计安全工具 | 审计引擎只是 FDE Harness「约束层」中的一环，单独拿出来没有意义 |
 | 这是要跟大厂 Agent 竞争 | 我们不造 Agent，嵌在大厂 Agent 与模型之间做问责底座（对执行体约束、对智力源治理） |
-| 这是卖软件的 | 这是开源（MIT）的 FDE Agent——目标是让每个人都能成为 FDE |
+| 这是卖软件的 | 这是开源（MIT）的 FDE Harness——目标是让每个人都能成为 FDE |
 
 ### 1.7 心智模型
 
 ```mermaid
 graph TD
     A[大厂 Agent + 大模型<br/>90% 智力 · 你自选 · 我们不替代] --> B[sofagent 引擎<br/>Harness 中间件<br/>约束层 × 生命周期]
-    B --> C[FDE Agent<br/>帮你梳理→部署→离场→AI 节点自己跑]
+    B --> C[FDE Harness<br/>帮你梳理→部署→离场→AI 节点自己跑]
     C --> D[SMB · OPC 的每个人<br/>成为自己业务的 FDE]
 ```
 
@@ -425,7 +425,7 @@ Link Type 定义业务对象之间**可解释、可治理、可追踪的关系**
 - 推导出：「合同」entity（业务对象）→「审核通过」action（动作）→「belongs_to 法务域」relation（归属）
 - 补上边界：「knowledge-domain include = 合同库、审批流；exclude = 人事档案」
 
-> 🤝 **交互模式（2026-08-10 落盘）**：本体推导是**咨询产物**，不是 Agent 单方面生成——**FDE Agent 引导提问，用户拍板确认**：
+> 🤝 **交互模式（2026-08-10 落盘）**：本体推导是**咨询产物**，不是 Agent 单方面生成——**FDE Harness 引导提问，用户拍板确认**：
 > 1. **Agent 引导**：拿五要素当提问脚本，一句句问（「这个节点输入是什么？输出给谁？最卡在哪？」）
 > 2. **Agent 给建议**：根据五要素给出 entity/concept/relations 推导建议（LLM 辅助，供用户参考）
 > 3. **用户拍板**：每个 entity/concept/relations 用户可改、可否定——「合同 belongs_to 订单」对不对只有用户知道
@@ -896,7 +896,7 @@ AI 节点跑起来后，自动生成这些文件：
 4. **能独立风险判断**——审批规则、风险边界、什么情况升级到外部支持
 5. **有后续改进机制**——下一阶段优化清单已有，不是「装完就结束」
 
-> 🚀 人走，FDE Agent 不走。离场那一刻，它从部署模式自动切到持续优化模式：周度巡检知识库健康度、月度汇总审计趋势、季度回顾 Skill 退化。客户看到的不是「FDE 走了系统就没人管」，而是「FDE 一直在，只是换了个工作节奏」。
+> 🚀 人走，FDE Harness 不走。离场那一刻，它从部署模式自动切到持续优化模式：周度巡检知识库健康度、月度汇总审计趋势、季度回顾 Skill 退化。客户看到的不是「FDE 走了系统就没人管」，而是「FDE 一直在，只是换了个工作节奏」。
 
 > 📋 **离场前必做：回写交付报告**。FDE 工程师离场前，按 `templates/delivery-report.md` 模板回写一份交付报告——把本次交付中踩的坑、调试难点、可复用模式结构化沉淀。这份报告**不交给客户**，而是回流到 sofagent 知识库，作为飞轮闭环的数据入口（详见 PHILOSOPHY §五「飞轮闭环」）。没有它，经验就散落在对话和脑子里，随时间流失。
 

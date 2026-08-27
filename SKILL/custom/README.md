@@ -1,6 +1,6 @@
 # 用户自定义层（custom/）
 
-> **一句话**：给 FDE Agent 追加**私有行为规则**的地方——你写的规则在官方规则之后加载，追加生效。**只管规则，不管代码。**
+> **一句话**：给 FDE Harness 追加**私有行为规则**的地方——你写的规则在官方规则之后加载，追加生效。**只管规则，不管代码。**
 
 ---
 
@@ -48,7 +48,7 @@ custom/ 里的 `.md` 文件是**文字规则**，被 Agent 当 prompt 加载。�
 
 | 文件名 | 追加到 | 效果 |
 |--------|--------|------|
-| `fde-overrides.md` | FDE Agent 主入口（SKILL.md） | 企业全局行为规则 |
+| `fde-overrides.md` | FDE Harness 主入口（SKILL.md） | 企业全局行为规则 |
 | `engineer-overrides.md` | engineer Sub Agent | 工程师行为约束（如文件范围限定） |
 | `reviewer-overrides.md` | reviewer Sub Agent | 审查员行为调整（如审查重点） |
 | `audit-overrides.md` | audit Sub Agent | 审计规则补充说明 |

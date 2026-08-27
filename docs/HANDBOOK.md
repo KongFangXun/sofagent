@@ -8,7 +8,7 @@
 
 - [阅读指南](#阅读指南)
 - [5 分钟速览](#5-分钟速览)
-- [FDE Agent 能替你干什么](#fde-agent-能替你干什么)
+- [FDE Harness 能替你干什么](#fde-harness-能替你干什么)
 - [心智模型：约束层与生命周期](#心智模型约束层与生命周期)
 - [落地：装好就能派活](#落地装好就能派活)
 - [运行：每次变更都被管住](#运行每次变更都被管住)
@@ -41,7 +41,7 @@
 
 | 你想知道的 | 一句话 | 详见 |
 |------|------|------|
-| 这是什么 | sofagent——一套 FDE 能力，装进你的 Agent：进场梳理业务流、构建本体图谱、部署 AI 节点、离场后 7×24 自己跑 | [FDE Agent 能替你干什么](#fde-agent-能替你干什么) |
+| 这是什么 | sofagent——一套 FDE 能力，装进你的 Agent：进场梳理业务流、构建本体图谱、部署 AI 节点、离场后 7×24 自己跑 | [FDE Harness 能替你干什么](#fde-harness-能替你干什么) |
 | 怎么装 | `bash install.sh`（企业设备安装器，装底座 + Agent Skill）· `bash install.sh --base-only`（仅底座） | [落地：装好就能派活](#落地装好就能派活) |
 | 怎么用 | 装完直接派任务，复杂任务自动拆解 | [运行：每次变更都被管住](#运行每次变更都被管住) |
 | AI 节点怎么跑 | 开发者：git commit 自动审计。非开发者：v1.0.8+ daemon 监控文件变更自动审计 | [落地：装好就能派活](#落地装好就能派活) |
@@ -52,7 +52,7 @@
 
 ---
 
-## FDE Agent 能替你干什么
+## FDE Harness 能替你干什么
 
 > 这一节先讲「价值」，再讲「怎么用」。sofagent 不是一个工具包，而是**一层 FDE Harness**——嵌在成熟 Agent（DSH / OpenClaw / WorkBuddy）与模型层之间，对执行体约束、对智力源治理，替企业把大模型变成 7×24 自动执行的 AI 节点（产品形态 = FDE Harness 层，见 [WIKI 产品叙事](./WIKI.md#二产品叙事sofagent-是-fde-harness-层不造-agent嵌在-agent-与模型之间做治理)）。完整能力矩阵见 [ARCHITECTURE · 能力与状态总览](./ARCHITECTURE.md#能力与状态总览)。
 
@@ -574,9 +574,9 @@ sofagent-audit subagent run fde --mode sustain --task "巡检所有节点"
 @sofagent-fde sustain     # WorkBuddy 中直接 @
 ```
 
-审计 Agent 管"刹车是不是还在"，FDE Agent 管"能不能换更好的轮胎"。两者合在一起，企业的 AI 节点不需要人盯着。
+审计 Agent 管"刹车是不是还在"，FDE Harness 管"能不能换更好的轮胎"。两者合在一起，企业的 AI 节点不需要人盯着。
 
-> sofagent 不做 AI 中台——做 AI 中台里**约束 Agent 行为和审计的那一层**。sofagent 本质上是一款 FDE Agent：对外你用的是品牌名 sofagent（它正是一款 FDE Agent 在帮你干活），对内是 sofagent 引擎（Harness 中间件）在跑。
+> sofagent 不做 AI 中台——做 AI 中台里**约束 Agent 行为和审计的那一层**。sofagent 本质上是一款 FDE Harness：对外你用的是品牌名 sofagent（它正是一套 FDE Harness 在帮你干活），对内是 sofagent 引擎（Harness 中间件）在跑。
 
 ### 🔗 激活链：从"交付文档"到"自动运转"（v1.2.5+ Phase 1-3 已交付）
 

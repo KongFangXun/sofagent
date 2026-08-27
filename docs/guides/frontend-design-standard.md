@@ -294,7 +294,7 @@ node tools/gen/gen-weekly-report.mjs       # 手动生成持续优化周报
 | 驾驶舱 | /api/summary + daemon-health | 5 指标卡 → 工作记录（概况/任务/审计/介入/周报）→ 审计分析+数据主权（一行） |
 | 业务流 | /api/ai-nodes + graph-state | 业务节点 + 编排控制图（+状态点图例） |
 | 本体图谱 | /api/ontology | 本体数据（实体/概念/关系）+ 图谱视图 |
-| FDE 引导 | workflow 模板 + 五阶段 Prompt | 方法论 + 部署入口（FDE Agent 模板 + FDE workflow 自举图） |
+| FDE 引导 | workflow 模板 + 五阶段 Prompt | 方法论 + 部署入口（FDE Harness 模板 + FDE workflow 自举图） |
 | 知识库 | index.md + log.md + think.md | 知识页面 + 业务领域 + 经验教训 |
 | 工具箱 | 安装 + 约束层(4 卡横排) + skill 加载链(4 卡横排) + 文档直达 + 审计规则(8 列) + MCP(6 列) + npm + FORGE(含引擎流水线 5 卡一行) | 资源/参考 |
 
