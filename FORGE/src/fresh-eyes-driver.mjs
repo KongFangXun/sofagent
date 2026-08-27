@@ -86,6 +86,130 @@ function safeTeardownWorktree() {
   }
 }
 
+// ─── ① worktree 逐轮 re-sync（章九·步零数据流地基）─────────────────
+//
+// run-01（2026-08-26）根因：worktree 在 driver 启动时只建一次（L3636
+// setupWorktree），round-02+ 钉死旧基线（findings.md 实录「worktree @
+// 65c93c18」，而主仓当时已前进 10+ commit）。后续轮审查的是陈旧快照——
+// b-fix 在副本分支上的修复已 commit，主仓新 commit 也没进来——审查对象
+// 与真实交付物脱节，产出重复 finding 空转。
+//
+// 修法：每轮开始（spawnWorker 前）检测主仓 HEAD 是否前进（对比
+// lastSyncedHead），前进了就 re-sync：
+//   1. 优先 git -C worktree merge <主仓新HEAD>——保留 b-fix 已 commit 的
+//      分支历史（forge/<driver>/<runId>），冲突时不 abort 已有产物；
+//   2. merge 失败/冲突 → 回退 git reset --hard <主仓新HEAD>（丢弃未合并的
+//      本地工作区改动，但已 commit 的 b-fix 提交仍在分支上可达）；
+//   3. 全部失败 → 重建 worktree（teardown + setupWorktree ref=新HEAD，
+//      分支名不变用 -B 重置）——b-fix 旧 commit 因已 commit 仍保留在 reflog/分支。
+// re-sync 结果写 roundDir/worktree-sync.log，异常降级继续用旧基线（绝不阻塞审查）。
+let lastSyncedHead = null;  // driver 进程内记录上次同步时的主仓 HEAD
+
+/**
+ * 逐轮 re-sync worktree 到主仓最新 HEAD。
+ *
+ * @param {string} runDir   run 目录（worktree-meta.json / worktree 所在）
+ * @returns {{synced:boolean, headBefore:string, headAfter:string, mode:string, reason:string}}
+ *          mode: 'noop'|'merge'|'reset'|'rebuild'|'skip'|'fail'
+ */
+function syncWorktreeToMain(runDir) {
+  const out = { synced: false, headBefore: '', headAfter: '', mode: 'skip', reason: '' };
+  if (!globalWorktree || !globalWorktree.worktreeDir) {
+    out.reason = '无 worktree（共享主仓模式或未启用隔离）';
+    return out;
+  }
+  const worktreeDir = globalWorktree.worktreeDir;
+  const { execSync } = require('child_process');
+  const git = (args, cwd) => execSync(`git ${args}`, { cwd, encoding: 'utf-8', timeout: 60_000 }).toString().trim();
+
+  try {
+    out.headBefore = lastSyncedHead || git('rev-parse HEAD', REPO_ROOT);
+  } catch (err) {
+    out.mode = 'fail'; out.reason = `主仓 HEAD 解析失败: ${err.message}`;
+    return out;
+  }
+
+  let mainHead;
+  try {
+    mainHead = git('rev-parse HEAD', REPO_ROOT);
+  } catch (err) {
+    out.mode = 'fail'; out.reason = `主仓 HEAD 解析失败: ${err.message}`;
+    return out;
+  }
+  out.headAfter = mainHead;
+
+  if (mainHead === out.headBefore) {
+    out.mode = 'noop'; out.reason = '主仓 HEAD 未前进，无需同步';
+    return out;
+  }
+
+  // worktree 目录健全性：损坏（被外部清理/磁盘问题）直接重建
+  try {
+    git('rev-parse --git-dir', worktreeDir);
+  } catch {
+    try {
+      const rebuilt = resyncRebuildWorktree(runDir, mainHead);
+      Object.assign(out, rebuilt);
+      return out;
+    } catch (rbErr) {
+      out.mode = 'fail'; out.reason = `worktree 损坏且重建失败: ${rbErr.message}`;
+      return out;
+    }
+  }
+
+  // 优先 merge：保留 b-fix 已 commit 的分支历史
+  try {
+    git(`merge ${mainHead} --no-edit -m "FORGE round re-sync: ${mainHead.slice(0, 8)}"`, worktreeDir);
+    lastSyncedHead = mainHead;
+    out.synced = true; out.mode = 'merge';
+    out.reason = `已 merge 主仓新 commit ${mainHead.slice(0, 8)}（b-fix 分支历史保留）`;
+    return out;
+  } catch { /* 冲突/失败 → 走 reset */ }
+
+  // 回退 reset --hard：丢弃工作区未合并改动，重置到主仓新 HEAD。
+  // 注意：reset --hard 会丢工作区改动，但 b-fix 产物三保险不丢——
+  // ① runRound 在 b-fix 后立刻由 driver 跑 runAuditGate（b-fix 改动先 auto-commit
+  //   到分支，commit 过的历史 reset 不掉，仅 HEAD 指针移动，旧 commit reflog 可达）；
+  // ② 审查真相源是 runDir/round-*/ 下的 findings/result/summary 产物（不在 worktree 内）；
+  // ③ 下一轮重审时 b-fix 修复若真重要会以新 finding 形态再现（重复率熔断兜底防空转）。
+  try {
+    git(`reset --hard ${mainHead}`, worktreeDir);
+    lastSyncedHead = mainHead;
+    out.synced = true; out.mode = 'reset';
+    out.reason = `merge 冲突已回退 reset --hard ${mainHead.slice(0, 8)}（b-fix 已 commit 的历史保留在分支）`;
+    return out;
+  } catch (err) {
+    out.mode = 'fail'; out.reason = `merge/reset 均失败: ${err.message}`;
+    return out;
+  }
+}
+
+/**
+ * 重建 worktree 到指定 HEAD（merge/reset 均不可用时的兜底）。
+ * 分支名复用 setupWorktree 的命名（-B 强制重置）。保留语义：审查产物在
+ * runDir 的 round 目录内完整保留（run 数据是审查真相源），分支 git 历史
+ * 被重置到主仓新 HEAD——旧 commit 仍经 reflog 可达一段时间，属可接受损耗。
+ */
+function resyncRebuildWorktree(runDir, targetHead) {
+  const branch = globalWorktree.branch || `forge/fresh-eyes/${basename(runDir)}`;
+  const { execSync } = require('child_process');
+  const quotePath = (p) => `"${p}"`;
+  // 1. 清掉旧注册 + 目录
+  try {
+    execSync(`git worktree remove --force ${quotePath(globalWorktree.worktreeDir)}`, { cwd: REPO_ROOT, encoding: 'utf-8', timeout: 60_000 });
+  } catch { /* 可能已不存在 */ }
+  // 2. 重建（-B 重置同名分支到新 HEAD）
+  execSync(`git worktree add -B ${quotePath(branch)} ${quotePath(globalWorktree.worktreeDir)} ${targetHead}`, {
+    cwd: REPO_ROOT, encoding: 'utf-8', timeout: 120_000,
+  });
+  lastSyncedHead = targetHead;
+  globalWorktree = { ...globalWorktree, baseSha: targetHead };
+  return {
+    synced: true, headAfter: targetHead, mode: 'rebuild',
+    reason: `worktree 已重建到主仓新 HEAD ${targetHead.slice(0, 8)}（分支 ${branch} 重置；产物已落 runDir 不丢）`,
+  };
+}
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname  = dirname(__filename);
 const REPO_ROOT  = resolve(__dirname, '../..');
@@ -776,6 +900,9 @@ async function runWorker(step, roundDir, target) {
 
 ## 🔴 收敛要求（v1.3.9 强化）
 
+0. **开工即先写报告骨架**（章·步零 A 侧收敛指令）：读任务后先用 sf_write 把报告骨架
+   （各章节标题 + 你计划核验的问题清单）写入产物文件，之后每完成一项探查就回填一项——
+   探查只是验证骨架里的假设，不是开放式漫游。零成本防撞熔断后从零补写报告。
 1. 证据充分立即停止探索：目标 **8-15 次工具调用**完成本视角审查，软上限 50 次、硬上限 60 次。
 2. **到第 40 次工具调用时必须转入写报告**，禁止继续探索。
 3. 同一文件最多读 2 次；同一关键词最多 grep 2 次——禁止反复验证同一件事。
@@ -1754,6 +1881,152 @@ function chunk(arr, size) {
   return batches;
 }
 
+// ─── ④ findings 重复率熔断（章九·步零数据流地基）─────────────────
+//
+// run-01（2026-08-26）实录：round-01 报 10 条 finding → b-fix 修复 →
+// round-02 在陈旧 worktree（@65c93c18）上重审，又报 12 条——其中大部分
+// 与 round-01 同文件同问题（审查对象没跟上修复，空转烧 token）。发现数
+// 波动（10→12→…）让 detectWeightedConvergence（发现数降下来才触发）
+// 永远不满足；「发现数没降但全是重复」是它覆盖不到的收敛形态。
+//
+// 本熔断与 detectWeightedConvergence 互补不替代：
+//   detectWeightedConvergence = 数量维度（P0+P1 趋势收敛到低位）
+//   repeat-convergence        = 内容维度（同一批问题指纹反复出现）
+// 两者独立判定，任一触发即停轮。
+
+/** 重复率熔断阈值——本轮 finding 与上轮 fingerprint 重复占比超过此值即停轮。
+ *  env FORGE_REPEAT_BREAK_THRESHOLD 可调（0~1，默认 0.6）。 */
+const REPEAT_BREAK_THRESHOLD = (() => {
+  const raw = parseFloat(process.env.FORGE_REPEAT_BREAK_THRESHOLD || '');
+  return Number.isFinite(raw) && raw > 0 && raw <= 1 ? raw : 0.6;
+})();
+
+/**
+ * 规范化 finding 标题——去除空白/标点差异，只留语义稳定字符。
+ * fingerprint 稳定性的关键：同一问题两次被写出来，标题的空格、
+ * 标点（：vs :、——vs -）常有微差，规范化后才能命中。
+ */
+function normalizeFindingTitle(title) {
+  return String(title || '')
+    .replace(/[\s\u3000]+/g, '')              // 全部空白（含全角空格）
+    .replace(/[，。：；、！？·…（）“”‘’"':;,.!?()\-—―~～_*>`]/g, '') // 中西标点
+    .toLowerCase()
+    .slice(0, 60);                             // 截断保稳定（长标题后半常是补充说明）
+}
+
+/**
+ * 规范化文件路径——去反引号/引号、统一分隔符、保留相对形态。
+ * 绝对路径前缀（主仓 vs worktree 根）会随环境漂移，剥掉只留仓库相对段。
+ */
+function normalizeFindingPath(filePath) {
+  let p = String(filePath || '').trim().replace(/^[`'"]+|[`'"]+$/g, '');
+  p = p.replace(/\\/g, '/');
+  // 剥绝对前缀：主仓 REPO_ROOT 或任意 worktree 根（.../forge-runs/.../run-NN/worktree）
+  const wtMark = p.indexOf('/worktree/');
+  if (p.startsWith('/') && wtMark !== -1) p = p.slice(wtMark + '/worktree/'.length);
+  else if (p.startsWith(REPO_ROOT + '/')) p = p.slice(REPO_ROOT.length + 1);
+  // 行号后缀（README.md:103 → README.md）：行号跨轮必漂移，不算指纹稳定字段
+  p = p.replace(/:\d+(-\d+)?$/, '');
+  return p.toLowerCase();
+}
+
+/**
+ * 从单条 finding 正文（splitFindings 切出的 content，含 ### 行）提取
+ * 稳定指纹字段：文件路径 + 问题标题。
+ *
+ * 提取顺序：
+ *   文件路径：正文里第一个反引号路径 / `**文件**:` / `**文件路径**:` 行 / 含 / 的 token
+ *   标题：### 行去掉 id 前缀的剩余部分；无 ### 标题时用首个非空正文行
+ *
+ * @param {{id:string, content:string}} finding splitFindings 的切片
+ * @returns {{fingerprint:string, title:string, filePath:string}|null}
+ */
+function extractFindingFingerprint(finding) {
+  if (!finding || !finding.content) return null;
+  const lines = finding.content.split('\n');
+  const headingLine = lines[0] || '';
+
+  // 标题：### finding-XX: <标题> → 冒号后；### finding-XX <标题> → 空格后
+  let title = '';
+  const hm = headingLine.match(/^#+\s+finding-[A-Z0-9-]+[：:]?\s*(.*)$/i);
+  if (hm && hm[1].trim()) {
+    title = hm[1];
+  } else {
+    // 无标题格式——首个非空非 ### 行
+    title = (lines.slice(1).find(l => l.trim() && !l.trim().startsWith('#')) || '').trim();
+  }
+  const normTitle = normalizeFindingTitle(title);
+
+  // 文件路径：按可信度逐级提取
+  let filePath = '';
+  // ① **文件** / **文件路径** / **涉及文件** 属性行（a-consolidate 结构化输出）
+  for (const line of lines) {
+    const fm = line.match(/\*\*(?:涉及)?文件(?:路径)?\*\*\s*[:：]\s*(.+)/);
+    if (fm) { filePath = fm[1]; break; }
+  }
+  // ② 标题或正文中的首个反引号包裹路径
+  if (!filePath) {
+    const bm = finding.content.match(/`([A-Za-z0-9_@\-./\\]+\.[A-Za-z0-9]{1,8}(?::\d+)?)`/);
+    if (bm) filePath = bm[1];
+  }
+  // ③ 任意含路径分隔符且像文件名的 token
+  if (!filePath) {
+    const pm = finding.content.match(/([A-Za-z0-9_@\-./\\]+\.[A-Za-z0-9]{1,8})(?::\d+)?/);
+    if (pm) filePath = pm[1];
+  }
+  const normPath = normalizeFindingPath(filePath);
+
+  // 无标题且无路径 → 无法构造稳定指纹（返回 id-only 退化指纹，判不重复更安全）
+  if (!normTitle && !normPath) return null;
+  return {
+    fingerprint: `${normPath}||${normTitle}`,
+    title: title.slice(0, 80),
+    filePath: filePath.slice(0, 200),
+  };
+}
+
+/**
+ * 提取一轮 result.md 的全部 finding 指纹（repeat-convergence 判定输入）。
+ *
+ * @param {string} roundDir 本轮目录
+ * @returns {Array<{fingerprint:string, title:string, filePath:string}>}
+ */
+function extractRoundFingerprints(roundDir) {
+  const resultPath = join(roundDir, 'result.md');
+  if (!existsSync(resultPath)) return [];
+  const findings = splitFindings(readFileSync(resultPath, 'utf-8'));
+  const fps = [];
+  for (const f of findings) {
+    const fp = extractFindingFingerprint(f);
+    if (fp) fps.push(fp);
+  }
+  return fps;
+}
+
+/**
+ * 重复率熔断判定：本轮指纹与上轮指纹的重复占比超阈值 → 停轮。
+ *
+ * 重复 = 本轮某 fingerprint 在上轮指纹集合中命中。
+ * 重复率 = 重复数 / 本轮指纹总数（本轮 0 条不判定——clean 轮走别的停止路径）。
+ *
+ * @param {Array<{fingerprint:string}>} currentFps  本轮指纹（空数组=本轮无 finding）
+ * @param {Array<{fingerprint:string}>|null} prevFps 上轮指纹（null=首轮/resume 无对照，不判定）
+ * @returns {{triggered:boolean, ratio:number, repeated:number, total:number, examples:string[]}}
+ */
+function checkRepeatConvergence(currentFps, prevFps) {
+  const result = { triggered: false, ratio: 0, repeated: 0, total: currentFps ? currentFps.length : 0, examples: [] };
+  if (!currentFps || currentFps.length === 0) return result;
+  if (!prevFps || prevFps.length === 0) return result;  // 首轮 / 上轮无 finding：不判定
+
+  const prevSet = new Set(prevFps.map(fp => fp.fingerprint));
+  const repeatedItems = currentFps.filter(fp => prevSet.has(fp.fingerprint));
+  result.repeated = repeatedItems.length;
+  result.ratio = repeatedItems.length / currentFps.length;
+  result.examples = repeatedItems.slice(0, 3).map(fp => fp.filePath || fp.title || fp.fingerprint);
+  result.triggered = result.ratio > REPEAT_BREAK_THRESHOLD;
+  return result;
+}
+
 /**
  * b-fix 分片执行：把 result.md 按 finding 切片，每批 BATCH_SIZE 条，
  * 每批启动一个独立 worker（全新 agent session，零历史消息）。
@@ -1833,6 +2106,12 @@ async function runBFixSharded(roundDir, target, round) {
     console.log(`\n  [b-fix 分片 ${batchNum}/${batches.length}] 修复 finding: ${batch.map(f => f.id).join(', ')}`);
 
     // 5a. 构造这批的临时 result 文件
+    // ③ 章·步零（中间产物落点核查结论）：roundDir = runDir/round-NN，runDir
+    // 在 SOFAGENT_HOME/data/forge-runs/（主仓外，.gitignore /data/ 双保险）——
+    // result-batch-N.md / summary-batch-N.md 天然不落主仓、不被 git track。
+    // 主仓 FORGE/runs/ 另有独立 .gitignore 规则（FORGE/runs/）兜底。已实测
+    // run-01~run-XX 全部 batch 产物均在 ~/.sofagent/data/.../round-NN/ 下，
+    // 主仓 git status 零残留（2026-08-27 核查）。
     const batchResultPath = join(roundDir, `result-batch-${batchNum}.md`);
     const batchHeader =
       `# result-batch-${batchNum}.md · B 的执行 prompt（分片 ${batchNum}/${batches.length}）\n\n` +
@@ -3635,6 +3914,8 @@ async function main() {
     try {
       globalWorktree = base.setupWorktree(runDir, { runId });
       console.log(`   隔离模式   = worktree ${globalWorktree.reused ? '复用' : '新建'}（分支 ${globalWorktree.branch}，基线 ${globalWorktree.baseSha.slice(0, 8)}）`);
+      // ① 章·步零（worktree 逐轮 re-sync）：记录初始基线，后续每轮对照主仓 HEAD。
+      lastSyncedHead = globalWorktree.baseSha;
     } catch (wtErr) {
       console.warn(`   ⚠️ worktree 隔离创建失败（降级为共享主仓模式）: ${wtErr.message}`);
       globalWorktree = null;
@@ -3750,9 +4031,42 @@ async function main() {
     );
   }
 
+  // ④ 章·步零：重复率熔断的跨轮指纹状态。
+  // prevRoundFingerprints = 上一轮的 finding 指纹集合（首轮为 null 不判定）。
+  // resume 场景：断点只存摘要，指纹需重建——从上一轮 roundDir 的 result.md
+  // 重提取（文件还在 runDir 内，成本一次磁盘读）。
+  let prevRoundFingerprints = null;
+  if (resumeFromRound > 0) {
+    try {
+      const prevRoundDir = join(runDir, `round-${String(resumeFromRound).padStart(2, '0')}`);
+      prevRoundFingerprints = extractRoundFingerprints(prevRoundDir);
+    } catch { /* 指纹重建失败 → 置 null（本轮不判定重复率，fail-open） */ }
+  }
+
   for (let round = resumeFromRound + 1; round <= args.maxRounds; round++) {
     actualRounds = round;
     visibility.emit(EVENTS.ROUND_START, { round, target: args.target });
+
+    // ─── ① 章·步零（worktree 逐轮 re-sync）：每轮开始检测主仓 HEAD ───
+    // round-02+ 审查对象钉死旧基线的根因修复。结果写 roundDir/worktree-sync.log，
+    // 异常降级继续旧基线（re-sync 是数据新鲜度优化层，不是正确性层）。
+    if (!args.dryRun && globalWorktree) {
+      try {
+        const syncInfo = syncWorktreeToMain(runDir);
+        const roundDirForSync = join(runDir, `round-${String(round).padStart(2, '0')}`);
+        mkdirSync(roundDirForSync, { recursive: true });
+        const logLine = `[round-${round}] ${syncInfo.mode} | ${new Date().toISOString()} | ${syncInfo.reason}` +
+          (syncInfo.headBefore ? ` | head ${syncInfo.headBefore.slice(0, 8)}→${syncInfo.headAfter.slice(0, 8)}` : '') + '\n';
+        appendFileSync(join(roundDirForSync, 'worktree-sync.log'), logLine, 'utf-8');
+        if (syncInfo.synced) {
+          console.log(`   worktree re-sync = ${syncInfo.mode}：${syncInfo.reason}`);
+        } else if (syncInfo.mode === 'fail') {
+          console.warn(`   ⚠️ worktree re-sync 失败（降级继续旧基线）: ${syncInfo.reason}`);
+        }
+      } catch (syncErr) {
+        console.warn(`   ⚠️ worktree re-sync 异常（降级继续旧基线）: ${syncErr.message}`);
+      }
+    }
 
     // #14 轮内实时刷新：轮执行期间每 30s 刷一次 latest.json，
     // 让 Dashboard 不用等轮结束就能看到 stall / agent 状态变化。
@@ -3872,6 +4186,34 @@ async function main() {
       }
     } else {
       cleanStreak = 0;
+
+      // ─── ④ 章·步零（findings 重复率熔断）───
+      // 与 detectWeightedConvergence 互补不替代：那是数量维度（发现数降下来），
+      // 这是内容维度（同一批问题指纹反复出现）。run-01 实录：round-01 报 10 条
+      // → round-02 在陈旧 worktree 上又报 12 条大部分同款——数量不降 + 内容
+      // 重复，两条收敛路径都漏。本判定独立生效：重复率超阈值直接停轮，
+      // verdict 标 repeat-convergence（LEDGER 停止原因列可查）。
+      let repeatBreak = null;
+      try {
+        const currentFps = extractRoundFingerprints(roundDir);
+        repeatBreak = checkRepeatConvergence(currentFps, prevRoundFingerprints);
+        prevRoundFingerprints = currentFps;  // 滚动更新（含本轮，供下轮对照）
+      } catch (fpErr) {
+        console.warn(`  ⚠️ 重复率指纹提取失败（跳过本判定）: ${fpErr.message}`);
+        prevRoundFingerprints = null;  // 下轮无对照 → fail-open 不误熔断
+      }
+      if (repeatBreak && repeatBreak.triggered) {
+        console.warn(
+          `\n  🔁 重复率熔断：本轮 ${repeatBreak.total} 条 finding 中 ${repeatBreak.repeated} 条与上轮重复` +
+          `（重复率 ${(repeatBreak.ratio * 100).toFixed(0)}% > 阈值 ${REPEAT_BREAK_THRESHOLD * 100}%）`
+        );
+        console.warn(`     重复样例: ${repeatBreak.examples.join(' / ') || '(无)'}`);
+        console.warn(`     判定：审查已收敛到同一批问题（修复未生效或不可修），继续轮转是 token 空转，自动停轮`);
+        stopReason = 'repeat-convergence';
+        saveRoundCheckpoint();  // 退出前写断点（本轮已完成）
+        break;
+      }
+
       // #13 加权收敛：不干净但趋势已收敛到极低位时，提前停止
       if (detectWeightedConvergence(severityHistory)) {
         console.log(`\n  📉 加权收敛：近 3 轮 severity=${severityHistory.slice(-3).join('→')}，已收敛到极低位，提前停止`);
