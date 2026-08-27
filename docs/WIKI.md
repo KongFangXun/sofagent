@@ -290,6 +290,9 @@ graph TB
 | 节点级审计（DSH 事件流口径） | [guides/node-level-audit.md](./guides/node-level-audit.md)（24 条规则子集逐条判定） |
 | 运行测试 / 验证效果 | [guides/testing.md](./guides/testing.md) |
 | 开发/维护前端（Dashboard 等） | [guides/frontend-design-standard.md](./guides/frontend-design-standard.md)（设计标准 + 开发指南，改前端前必读） |
+| 用 SDK 接入约束层 | [guides/harness-sdk.md](./guides/harness-sdk.md)（SubAgent 托管 SDK · `harness.wrap` 一行包装） |
+| 了解训练引擎 | [guides/train-stack.md](./guides/train-stack.md)（双栈契约）+ [train-security.md](./guides/train-security.md)（攻击面声明） |
+| 浏览全部专题指南 | [guides/README.md](./guides/README.md)（16 份指南按角色分类索引） |
 | 添加新审计规则 | `engine/audit/src/rules/` → 对照现有规则模式（defaultRules / extendedRules） |
 | 新建 Sub Agent | `SKILL/agents/` → 参照 `agents/engineer/SKILL.md` |
 | 运行测试 | `npm test`（根目录）；全量统计以 `tools/check/test-count.sh` 为准，`npm test` 直跑遇 mcp 超时属 flaky，重跑即可 |
