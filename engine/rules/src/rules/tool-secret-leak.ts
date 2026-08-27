@@ -37,8 +37,10 @@ export const toolSecretLeak: ToolRule = {
     const detections: string[] = [];
 
     for (const str of allStrings) {
-      for (const { pattern, label } of SECRET_PATTERNS) {
+      for (const { pattern, label, contextKeyword } of SECRET_PATTERNS) {
         if (pattern.test(str)) {
+          // v1.4.2 H-02: 带 contextKeyword 的模式需同行含关键词才报告（与 A2 同口径防误报）
+          if (contextKeyword && !contextKeyword.test(str)) continue;
           detections.push(label);
         }
       }

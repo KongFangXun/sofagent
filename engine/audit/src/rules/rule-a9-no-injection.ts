@@ -103,6 +103,10 @@ export function normalizeLine(line: string): string {
   // U+200B 零宽空格 / U+200C 零宽非连接符 / U+200D 零宽连接符 /
   // U+200E·200F 方向标记 / U+FEFF BOM·零宽不换行空格 / U+00AD 软连字符
   normalized = normalized.replace(/[\u200B\u200C\u200D\u200E\u200F\uFEFF\u00AD]/g, '');
+  // v1.4.2 H-03: 连续空白折叠为单空格并去首尾空白——HIGH_CONFIDENCE_PATTERNS 中
+  // 首条模式是字面单空格匹配，多空格与 tab 混排变体此前只落到 MEDIUM 模糊档
+  // （WARN 放行）。折叠后变体升入拦截档。
+  normalized = normalized.replace(/\s+/g, ' ').trim();
   normalized = normalized
     .replace(/1/gi, 'i')
     .replace(/0/g, 'o')

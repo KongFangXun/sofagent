@@ -267,8 +267,12 @@ export function checkRuleA2(ctx: AuditContext): RuleCheck {
         }
         // 原行 + base64/hex 解码候选（v1.2.9: 用归一化后的内容防 zero-width 绕过）
         for (const candidate of candidatePlaintexts(normalized)) {
-          for (const { pattern, label } of SECRET_PATTERNS) {
+          for (const { pattern, label, contextKeyword } of SECRET_PATTERNS) {
             if (pattern.test(candidate)) {
+              // v1.4.2 H-02: 带 contextKeyword 的模式（裸 40 位 base64 形态）需同行含
+              // 关键词才报告——裸串误报面大（hash/commit 都是 40 位 base64），上下文
+              // 二次判定防误报。
+              if (contextKeyword && !contextKeyword.test(candidate)) continue;
               const key = `${file.path}|${label}`;
               const existing = groupedDetections.get(key);
               if (existing) {

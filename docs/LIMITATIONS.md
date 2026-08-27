@@ -233,7 +233,7 @@ task/logs 和 think.md 以 Markdown 存储，可能含代码片段、API 响应�
 
 ### A2 密钥检测局限——编码与格式绕过（v1.2.5 披露）
 
-> ⚠️ **A2 仅检测明文常见 API key 格式**（AWS AKIA、OpenAI/Anthropic/DeepSeek sk-*、GitHub token、私钥块等；**v1.3.6 起含 Stripe `sk_live_`/`sk_test_` 下划线前缀格式**）。v1.2.5 起已补 base64/hex 编码检测（新增行先解码再跑正则）与 `.gitattributes -diff` 绕过检测（WARN）。但仍不在检测范围：
+> ⚠️ **A2 仅检测明文常见 API key 格式**（AWS AKIA、OpenAI/Anthropic/DeepSeek sk-*、GitHub token、私钥块等；**v1.3.6 起含 Stripe `sk_live_`/`sk_test_` 下划线前缀格式**；**v1.4.2 起含 Google `AIza`、Slack `xox*-`、JWT `eyJ` 三段式，及 AWS Secret Access Key 裸 40 位 base64 形态（需同行含 aws/secret/key 关键词才报，防 hash/commit SHA 误报）**）。v1.2.5 起已补 base64/hex 编码检测（新增行先解码再跑正则）与 `.gitattributes -diff` 绕过检测（WARN）。但仍不在检测范围：
 > - 短密钥（<32 位）、非标准格式、其他厂商下划线前缀（保守设计防误报，等真实泄漏案例驱动，不逐格式打地鼠——v1.3.6 决策，Stripe 因前缀在生产代码无合法用途而纳入）
 > - 其他编码（URL-safe base64、rot13、自定义混淆）与压缩/加密后的密钥
 > - 历史提交中的密钥（A2 只扫当前 diff 新增行，不扫全量历史）
