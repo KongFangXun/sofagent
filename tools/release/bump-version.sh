@@ -226,6 +226,8 @@ echo ""
 # 1d. v1.1.3: 批量处理所有 workspace 子包 package.json version 字段
 #     v1.1.7: 同时替换 dependencies/devDependencies 里的 @sofagent/* 版本号
 # （audit/mcp 已在上面处理，这里覆盖其余 10 个子包）
+# 1e. v1.4.1: openclaw-plugins 双 manifest（package.json + openclaw.plugin.json）
+#     ClawHub 发布校验两层版本必须一致——manifest 漂移会被 package publish 直接拒收
 echo -e "${BOLD}[2c/13] workspace 子包 package.json version + @sofagent/* 依赖${NC}"
 ws_pkg_count=0
 while IFS= read -r ws_pkg; do
@@ -259,6 +261,34 @@ done < <(find "$PROJECT_ROOT/engine" \
   -type f 2>/dev/null || true)
 if [[ $ws_pkg_count -eq 0 ]]; then
   echo -e "  ${YELLOW}（无匹配——可能已是 ${NEW_3SEG}）${NC}"
+fi
+echo ""
+
+# 1e. v1.4.1: openclaw-plugins 的 openclaw.plugin.json manifest 版本（ClawHub 双 manifest 一致铁律）
+echo -e "${BOLD}[2d/13] openclaw-plugins openclaw.plugin.json manifest${NC}"
+opm_count=0
+while IFS= read -r opm; do
+  [[ -f "$opm" ]] || continue
+  opm_content=$(cat "$opm")
+  opm_new=$(sed "s/\"version\": \"$OLD_3SEG\"/\"version\": \"$NEW_3SEG\"/g" "$opm")
+  if [[ "$opm_new" == "$opm_content" ]]; then
+    opm_new=$(sed "s/\"version\": \"$OLD_2SEG\"/\"version\": \"$NEW_2SEG\"/g" "$opm")
+  fi
+  if [[ "$opm_new" != "$opm_content" ]]; then
+    echo -e "  ${GREEN}✓${NC} manifest: $OLD_3SEG → $NEW_3SEG"
+    echo -e "    ${CYAN}$opm${NC}"
+    if ! $DRY_RUN; then
+      printf '%s\n' "$opm_new" > "$opm"
+    fi
+    opm_count=$((opm_count + 1))
+    TOTAL_CHANGED=$((TOTAL_CHANGED + 1))
+  fi
+done < <(find "$PROJECT_ROOT/engine/openclaw-plugins" \
+  -name 'openclaw.plugin.json' \
+  -not -path '*/node_modules/*' \
+  -type f 2>/dev/null || true)
+if [[ $opm_count -eq 0 ]]; then
+  echo -e "  ${YELLOW}（无匹配——可能已是 ${NEW_3SEG} 或目录不存在）${NC}"
 fi
 echo ""
 

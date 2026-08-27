@@ -455,9 +455,11 @@ echo ""
 # ── 9c. 检查 OpenClaw plugin 家族 version 与 SSOT 一致（v1.4.1 补漏：sofagent-audit 漏 bump 教训）──
 # openclaw-plugins/* 与主线同版发布（11-distribute.md 铁律「版本号与 sofagent 主线版本对齐」），
 # 但 9b 的手写清单不含它们——曾经靠 bump 脚本逐文件替换，漏一个就静默漂移（1.4.1 发版实测）
+# 双 manifest 都查：package.json + openclaw.plugin.json（ClawHub 发布校验两层版本必须一致——
+# manifest 版本漂移会直接被 package publish 拒收，v1.4.1 发版实测 4/4 全拒）
 OPENCLAW_PLUGIN_DIR="${PROJECT_ROOT}/engine/openclaw-plugins"
 if [[ -d "${OPENCLAW_PLUGIN_DIR}" ]]; then
-  for PKG_JSON in "${OPENCLAW_PLUGIN_DIR}"/*/package.json; do
+  for PKG_JSON in "${OPENCLAW_PLUGIN_DIR}"/*/package.json "${OPENCLAW_PLUGIN_DIR}"/*/openclaw.plugin.json; do
     [[ -f "${PKG_JSON}" ]] || continue
     pkg_ver=$(grep -o '"version": "[^"]*"' "${PKG_JSON}" | head -1 | sed 's/"version": "//;s/"//')
     [[ -z "${pkg_ver}" ]] && continue
