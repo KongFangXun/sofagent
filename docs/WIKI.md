@@ -225,7 +225,7 @@ graph TB
 | 项 | 值 |
 |----|-----|
 | 当前版本 | **v1.4.1**（2026-08-27） |
-| 下一版 | v1.4.1 已定稿待发（2026-08-27，参见 docs/ROADMAP.md） |
+| 下一版 | v1.4.2（训练引擎 · 数据与评估 + FDE Harness 层，规划中，参见 docs/ROADMAP.md） |
 | 测试覆盖 | 3177 测试 / 12 包（测试统计标准：有 test script 的 workspace 包；workspace 总数 13 个均发布到 npm，实测见 `tools/check/test-count.sh`、声称数同步校验见 `tools/check/check-test-count.sh`） |
 | 审计规则 | 24 条（17 默认 + 7 扩展），活跃编号 A1-A11 + A14-A23 + E1/E2/E4，每次 commit 自动跑 |
 | FORGE | fresh-eyes-loop + release-gate-loop 运行中 |

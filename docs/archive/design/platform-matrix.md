@@ -1,6 +1,6 @@
 # sofagent 五平台能力矩阵
 
-> v0.84 五平台实测（2026-06-22）。实测案例：[docs/cases/](../evidence/cases/)
+> v0.84 五平台实测（2026-06-22）。实测案例：[docs/cases/](../../evidence/cases/)
 
 ## 8 维度 × 5 平台
 
@@ -29,4 +29,4 @@
 
 **Claude Code**：缺乏种子指令和脚本部署，大部分能力不可用。
 
-> 完整实测数据见 [docs/evidence/cases/](../evidence/cases/)
+> 完整实测数据见 [docs/evidence/cases/](../../evidence/cases/)
