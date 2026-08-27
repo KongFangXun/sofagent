@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1180" height="600" viewBox="0 0 1180 600" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#6A737D"/>
+    </marker>
+  </defs>
+
+  <!-- 层 1：模型层 -->
+  <rect x="80" y="24" width="1020" height="102" rx="14" fill="#F9FAFC" stroke="#D2DAE4" stroke-width="1.5"/>
+  <text x="590" y="66" text-anchor="middle" font-size="25" font-weight="600" fill="#2D3238">模型层（智力源）</text>
+  <text x="590" y="102" text-anchor="middle" font-size="16" fill="#646C78">通用大模型 · 专属小模型 / 后训练模型（v1.4.x 训练引擎 · 本地权重）</text>
+
+  <!-- 箭头 1 -->
+  <line x1="590" y1="126" x2="590" y2="168" stroke="#6A737D" stroke-width="1.8" marker-end="url(#arr)"/>
+  <text x="604" y="152" text-anchor="start" font-size="15" fill="#6A737D">管住模型 —— 注册 / 灰度 / 训练 / 部署</text>
+
+  <!-- 层 2：Harness 层 -->
+  <rect x="80" y="176" width="1020" height="224" rx="14" fill="#E8F2FC" stroke="#16B8F3" stroke-width="1.8"/>
+  <text x="590" y="218" text-anchor="middle" font-size="25" font-weight="600" fill="#2D3238">sofagent · FDE Harness 层</text>
+
+  <!-- 三能力块 -->
+  <rect x="104" y="246" width="316" height="134" rx="10" fill="#FFFFFF" stroke="#16B8F3" stroke-width="1.5"/>
+  <text x="262" y="288" text-anchor="middle" font-size="17" font-weight="600" fill="#16B8F3">形态</text>
+  <text x="262" y="324" text-anchor="middle" font-size="15" fill="#646C78">插件 · Skill · MCP</text>
+  <text x="262" y="352" text-anchor="middle" font-size="15" fill="#646C78">CLI · Dashboard</text>
+
+  <rect x="432" y="246" width="316" height="134" rx="10" fill="#FFFFFF" stroke="#16B8F3" stroke-width="1.5"/>
+  <text x="590" y="288" text-anchor="middle" font-size="17" font-weight="600" fill="#16B8F3">约束层</text>
+  <text x="590" y="324" text-anchor="middle" font-size="15" fill="#646C78">注入 · 审计</text>
+  <text x="590" y="352" text-anchor="middle" font-size="15" fill="#646C78">回溯 · 进化</text>
+
+  <rect x="760" y="246" width="316" height="134" rx="10" fill="#FFFFFF" stroke="#16B8F3" stroke-width="1.5"/>
+  <text x="918" y="288" text-anchor="middle" font-size="17" font-weight="600" fill="#16B8F3">方法论</text>
+  <text x="918" y="324" text-anchor="middle" font-size="15" fill="#646C78">FDE 四阶段</text>
+  <text x="918" y="352" text-anchor="middle" font-size="15" fill="#646C78">梳理 → 构建 → 部署 → 离场</text>
+
+  <!-- 箭头 2 -->
+  <line x1="590" y1="400" x2="590" y2="442" stroke="#6A737D" stroke-width="1.8" marker-end="url(#arr)"/>
+  <text x="604" y="426" text-anchor="start" font-size="15" fill="#6A737D">约束 Agent —— 注入 / 审计 / 回溯 / 进化</text>
+
+  <!-- 层 3：Agent 层 -->
+  <rect x="80" y="450" width="1020" height="78" rx="14" fill="#F9FAFC" stroke="#D2DAE4" stroke-width="1.5"/>
+  <text x="590" y="484" text-anchor="middle" font-size="21" font-weight="600" fill="#2D3238">Agent 层（执行体 · 不替代）</text>
+  <text x="590" y="510" text-anchor="middle" font-size="15" fill="#646C78">DSH · OpenClaw · WorkBuddy —— 模型 + 工具 + 会话</text>
+
+  <!-- 底部交付行 -->
+  <rect x="80" y="544" width="1020" height="44" rx="10" fill="#FFFFFF" stroke="#D2DAE4" stroke-width="1.5"/>
+  <text x="590" y="572" text-anchor="middle" font-size="16" fill="#646C78">双图谱交付 —— 业务图谱 + 本体图谱 → AI 节点（宿主执行 · Harness 审计 · 7×24 自运转）</text>
+</svg>

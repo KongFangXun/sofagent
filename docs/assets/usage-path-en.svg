@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1180" height="240" viewBox="0 0 1180 240" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="arr2e" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#6A737D"/>
+    </marker>
+  </defs>
+
+  <!-- Step 1 Trial (brand highlight) -->
+  <rect x="70" y="40" width="250" height="160" rx="12" fill="#E8F2FC" stroke="#16B8F3" stroke-width="1.8"/>
+  <text x="195" y="88" text-anchor="middle" font-size="21" font-weight="600" fill="#16B8F3">1. Trial</text>
+  <text x="195" y="134" text-anchor="middle" font-size="15" fill="#646C78">npx 30-sec zero-config audit</text>
+  <text x="195" y="164" text-anchor="middle" font-size="15" fill="#646C78">Any git repo</text>
+
+  <line x1="328" y1="120" x2="352" y2="120" stroke="#6A737D" stroke-width="1.8" marker-end="url(#arr2e)"/>
+
+  <!-- Step 2 Team -->
+  <rect x="360" y="40" width="250" height="160" rx="12" fill="#FFFFFF" stroke="#D2DAE4" stroke-width="1.5"/>
+  <text x="485" y="88" text-anchor="middle" font-size="21" font-weight="600" fill="#2D3238">2. Team</text>
+  <text x="485" y="134" text-anchor="middle" font-size="15" fill="#646C78">Rule marketplace + GitHub Action</text>
+  <text x="485" y="164" text-anchor="middle" font-size="15" fill="#646C78">PR auto-audit · CI/CD</text>
+
+  <line x1="618" y1="120" x2="642" y2="120" stroke="#6A737D" stroke-width="1.8" marker-end="url(#arr2e)"/>
+
+  <!-- Step 3 Enterprise -->
+  <rect x="650" y="40" width="250" height="160" rx="12" fill="#FFFFFF" stroke="#D2DAE4" stroke-width="1.5"/>
+  <text x="775" y="88" text-anchor="middle" font-size="21" font-weight="600" fill="#2D3238">3. Enterprise</text>
+  <text x="775" y="134" text-anchor="middle" font-size="15" fill="#646C78">install.sh on enterprise devices</text>
+  <text x="775" y="164" text-anchor="middle" font-size="15" fill="#646C78">4 capabilities + daemon + 7x24</text>
+
+  <line x1="906" y1="120" x2="928" y2="120" stroke="#6A737D" stroke-width="1.8" marker-end="url(#arr2e)"/>
+
+  <!-- Step 4 Self-running -->
+  <rect x="930" y="40" width="250" height="160" rx="12" fill="#FFFFFF" stroke="#D2DAE4" stroke-width="1.5"/>
+  <text x="1055" y="88" text-anchor="middle" font-size="21" font-weight="600" fill="#2D3238">4. Self-running</text>
+  <text x="1055" y="134" text-anchor="middle" font-size="15" fill="#646C78">Agent works after FDE departs</text>
+  <text x="1055" y="164" text-anchor="middle" font-size="15" fill="#646C78">Audit · rollback · patrol watch</text>
+</svg>

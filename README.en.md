@@ -32,7 +32,7 @@ sofagent does not build its own Agent — execution is delegated to mature hosts
 
 **FDE = Forward Deployed Engineer** — the person who embeds models into real enterprise operations. sofagent turns this role into an open-source FDE Harness layer, sitting between the Agents you already have (DSH / OpenClaw / WorkBuddy) and the model layer, walking a full FDE business flow through four phases: **map the business flow → build dual graphs → deploy AI nodes → continuous optimization after departure**. Dual graphs = business graph (system boundaries, data flows) + ontology graph (shared semantic foundation), turning the enterprise into a machine-readable structure; after the FDE leaves, 7×24 inspection, audit, and optimization continue — the human leaves, governance doesn't.
 
-<p align="center"><img src="docs/assets/arch-layers-en.png" alt="sofagent three-layer positioning: model layer → FDE Harness layer → Agent layer" width="85%" /></p>
+<p align="center"><img src="docs/assets/arch-layers-en.svg" alt="sofagent three-layer positioning: model layer → FDE Harness layer → Agent layer" width="85%" /></p>
 
 **Why an FDE Agent**
 
@@ -146,7 +146,7 @@ More install options (clone install / full npx install / minimal install / enter
 
 > 👁️ **Agent's view**: with hooks installed, every commit triggers an audit — PASS passes silently (auto-snapshot), violations are printed directly into the terminal output and pushed via Webhook / IM per config; there is no separate GUI on the Agent side (see [PHILOSOPHY §2](./docs/PHILOSOPHY.md#系统暴露的能力agent-视角)).
 
-<p align="center"><img src="docs/assets/usage-path-en.png" alt="Usage path: trial → team → enterprise → self-running" width="85%" /></p>
+<p align="center"><img src="docs/assets/usage-path-en.svg" alt="Usage path: trial → team → enterprise → self-running" width="85%" /></p>
 
 | Entry | What it does | Where installed | Time needed |
 |------|--------|--------|:----:|
