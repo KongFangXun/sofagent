@@ -145,8 +145,11 @@ function buildContent(payload: WebhookPayload, failedRules: RuleCheck[], isPass:
 
   if (isPass) {
     const lines: string[] = ['✅ sofagent 审计通过'];
-    if (payload.task) {
-      lines.push(`任务：${payload.task}`);
+    // v1.4.2 G-07: task 描述常由 Agent 自由文本生成，可含密钥/内网路径——
+    // 推送出网前过 redactDetail 管道（与 FAIL 分支 details 同口径脱敏）
+    const safeTask = payload.task ? redactDetail(payload.task, customPatterns) : '';
+    if (safeTask) {
+      lines.push(`任务：${safeTask}`);
     }
     lines.push(`扫描 ${payload.rules.length} 条规则全部通过`);
     lines.push(tracingLine);
@@ -155,8 +158,10 @@ function buildContent(payload: WebhookPayload, failedRules: RuleCheck[], isPass:
   }
 
   const lines: string[] = ['⚠️ sofagent 审计警告'];
-  if (payload.task) {
-    lines.push(`任务：${payload.task}`);
+  // v1.4.2 G-07: 同 PASS 分支——task 先脱敏再出网
+  const safeTask = payload.task ? redactDetail(payload.task, customPatterns) : '';
+  if (safeTask) {
+    lines.push(`任务：${safeTask}`);
   }
   for (const rule of failedRules) {
     lines.push(`A${rule.number} ${rule.name}：${rule.details.map((d: string) => redactDetail(d, customPatterns)).join('；')}`);

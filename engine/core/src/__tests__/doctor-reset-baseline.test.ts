@@ -105,16 +105,18 @@ describe('doctor --reset-baseline（v1.3.5 交付 2 附带小件）', () => {
     expect(readFileSync(baselinePath, 'utf-8').trim()).toBe('0123456789abcdef'.repeat(8));
   });
 
-  it('验收 4 · 基线不存在 + 不带 flag → 首跑自动写入（既有行为回归保护）', () => {
+  it('验收 4 · 基线不存在 + 不带 flag → 显性报错提示建基线，不自动写入（v1.4.2 G-01 行为变更）', () => {
     expect(existsSync(baselinePath)).toBe(false);
 
-    runDoctor(tmpHome, {});
+    const report = runDoctor(tmpHome, {});
 
-    // 首跑自动记录当前哈希（v1.3.5 #18 路径修复后的既有行为）
-    expect(existsSync(baselinePath)).toBe(true);
-    expect(readFileSync(baselinePath, 'utf-8').trim()).toBe(currentDistHash());
+    // v1.4.2 G-01：基线缺失不再自动记录（防止把已篡改 dist 固化为合法基线）——
+    // 改为显眼提示 + fail，引导 --baseline 人工建立信任锚
+    expect(existsSync(baselinePath)).toBe(false);
+    expect(report.allOk).toBe(false);
     const output = vi.mocked(console.log).mock.calls.map((c) => String(c[0])).join('\n');
-    expect(output).toContain('自动记录当前哈希作为基准');
+    expect(output).toContain('未建立 dist 基线哈希');
+    expect(output).toContain('--baseline');
     // 该路径输出不含「已重置」（resetBaseline 专属文案未误触发）
     expect(output).not.toContain('基准哈希已重置');
   });

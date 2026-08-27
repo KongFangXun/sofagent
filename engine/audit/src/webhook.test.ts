@@ -229,4 +229,57 @@ describe('webhook', () => {
     expect(result).toBe(true);
     expect(mockFetch).toHaveBeenCalledTimes(1);
   });
+
+  // ── v1.4.2 G-07: payload.task 脱敏——task 由 Agent 自由文本生成，
+  // 可含密钥，推送出网前必须过 redactDetail 管道（与 details 同口径）
+  describe('G-07 · payload.task 推送脱敏', () => {
+    // 密钥样本运行时拼接（铁律：测试不字面写真实格式密钥）
+    const leakyTask = 'key=' + 'sk-abc' + '123def456ghi789jkl012mno345';
+
+    it('FAIL 分支：task 含 sk- 密钥 → 推送内容不含明文（含 REDACTED）', async () => {
+      const mockFetch = globalThis.fetch as unknown as ReturnType<typeof vi.fn>;
+      const payload: WebhookPayload = {
+        platform: 'dingtalk',
+        url: 'https://oapi.dingtalk.com/robot/send?access_token=g07',
+        task: leakyTask,
+        rules: [failRule],
+        exitCode: 2,
+      };
+      await pushAuditResult(payload);
+      expect(mockFetch).toHaveBeenCalledTimes(1);
+      const body = JSON.parse((mockFetch.mock.calls[0]![1] as RequestInit).body as string);
+      expect(body.text.content).not.toContain(leakyTask);
+      expect(body.text.content).toContain('REDACTED');
+    });
+
+    it('PASS 分支：task 含 sk- 密钥 → 推送内容不含明文', async () => {
+      const mockFetch = globalThis.fetch as unknown as ReturnType<typeof vi.fn>;
+      const payload: WebhookPayload = {
+        platform: 'dingtalk',
+        url: 'https://oapi.dingtalk.com/robot/send?access_token=g07p',
+        task: leakyTask,
+        rules: [passRule],
+        exitCode: 0,
+      };
+      await pushAuditResult(payload);
+      expect(mockFetch).toHaveBeenCalledTimes(1);
+      const body = JSON.parse((mockFetch.mock.calls[0]![1] as RequestInit).body as string);
+      expect(body.text.content).not.toContain(leakyTask);
+      expect(body.text.content).toContain('REDACTED');
+    });
+
+    it('正常 task 文本 → 原样推送不受影响', async () => {
+      const mockFetch = globalThis.fetch as unknown as ReturnType<typeof vi.fn>;
+      const payload: WebhookPayload = {
+        platform: 'dingtalk',
+        url: 'https://oapi.dingtalk.com/robot/send?access_token=g07n',
+        task: '修复报价计算逻辑',
+        rules: [failRule],
+        exitCode: 2,
+      };
+      await pushAuditResult(payload);
+      const body = JSON.parse((mockFetch.mock.calls[0]![1] as RequestInit).body as string);
+      expect(body.text.content).toContain('修复报价计算逻辑');
+    });
+  });
 });
