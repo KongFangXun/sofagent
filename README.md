@@ -30,7 +30,7 @@ sofagent 不造 Agent——执行能力交给成熟宿主（模型 + 工具 + �
 
 **FDE = Forward Deployed Engineer（前线部署工程师）**——把模型塞进企业真实业务里的人。sofagent 把这个角色做成开源 FDE Harness 层，嵌在你的 Agent（DSH / OpenClaw / WorkBuddy）与模型层之间，四个阶段走完一条完整的 FDE 业务流：**梳理业务流 → 构建双图谱 → 部署 AI 节点 → 离场持续优化**。双图谱 = 业务图谱（系统边界、数据流向）+ 本体图谱（共享语义底座），把企业变成机器可读的结构；离场后 7×24 巡检、审计、优化，人离场治理不离开。
 
-<p align="center"><img src="docs/assets/arch-layers.png" alt="sofagent 三层定位：模型层 → FDE Harness 层 → Agent 层" width="85%" /></p>
+<p align="center"><img src="docs/assets/arch-layers.svg" alt="sofagent 三层定位：模型层 → FDE Harness 层 → Agent 层" width="85%" /></p>
 
 - **企业 AI 落地的瓶颈不是模型，是部署**——MIT NANDA《生成式人工智能的鸿沟》：95% 的企业 GenAI 项目没能产生能写进财务报表的价值，而 FDE 岗位发布量一年涨了 729%
 - **约束层「持续优化」靠机制不靠承诺**——外部独立实验：同一模型仅优化外层 Harness，法律 Agent 基准 63.4% → 80.1%（+16.7pp）。更多核验见 [VALIDATION](./docs/VALIDATION.md) · [THANKS](./docs/THANKS.md)
@@ -140,7 +140,7 @@ sofagent-audit --doctor    # 验证环境（可选）
 
 > 👁️ **Agent 视角**：装完 hook 后每次 commit 触发审计——PASS 静默放行（自动快照），违规直接打进终端输出并按配置推送 Webhook / IM，Agent 侧无独立图形界面（详见 [PHILOSOPHY §二](./docs/PHILOSOPHY.md#系统暴露的能力agent-视角)）。
 
-<p align="center"><img src="docs/assets/usage-path.png" alt="使用路径：试用 → 团队 → 企业 → 自运转" width="85%" /></p>
+<p align="center"><img src="docs/assets/usage-path.svg" alt="使用路径：试用 → 团队 → 企业 → 自运转" width="85%" /></p>
 
 | 入口 | 做什么 | 装在哪 | 花多久 |
 |------|--------|--------|:----:|

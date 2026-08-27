@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1180" height="240" viewBox="0 0 1180 240" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="arr2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#6A737D"/>
+    </marker>
+  </defs>
+
+  <!-- ① 试用（品牌高亮） -->
+  <rect x="70" y="40" width="250" height="160" rx="12" fill="#E8F2FC" stroke="#16B8F3" stroke-width="1.8"/>
+  <text x="195" y="88" text-anchor="middle" font-size="21" font-weight="600" fill="#16B8F3">① 试用</text>
+  <text x="195" y="134" text-anchor="middle" font-size="15" fill="#646C78">npx 30 秒零配置审计</text>
+  <text x="195" y="164" text-anchor="middle" font-size="15" fill="#646C78">任意 git 仓库</text>
+
+  <line x1="328" y1="120" x2="352" y2="120" stroke="#6A737D" stroke-width="1.8" marker-end="url(#arr2)"/>
+
+  <!-- ② 团队 -->
+  <rect x="360" y="40" width="250" height="160" rx="12" fill="#FFFFFF" stroke="#D2DAE4" stroke-width="1.5"/>
+  <text x="485" y="88" text-anchor="middle" font-size="21" font-weight="600" fill="#2D3238">② 团队</text>
+  <text x="485" y="134" text-anchor="middle" font-size="15" fill="#646C78">规则市场 + GitHub Action</text>
+  <text x="485" y="164" text-anchor="middle" font-size="15" fill="#646C78">PR 自动审计 · CI/CD</text>
+
+  <line x1="618" y1="120" x2="642" y2="120" stroke="#6A737D" stroke-width="1.8" marker-end="url(#arr2)"/>
+
+  <!-- ③ 企业 -->
+  <rect x="650" y="40" width="250" height="160" rx="12" fill="#FFFFFF" stroke="#D2DAE4" stroke-width="1.5"/>
+  <text x="775" y="88" text-anchor="middle" font-size="21" font-weight="600" fill="#2D3238">③ 企业</text>
+  <text x="775" y="134" text-anchor="middle" font-size="15" fill="#646C78">install.sh 装企业设备</text>
+  <text x="775" y="164" text-anchor="middle" font-size="15" fill="#646C78">四能力 + daemon + 7×24</text>
+
+  <line x1="906" y1="120" x2="928" y2="120" stroke="#6A737D" stroke-width="1.8" marker-end="url(#arr2)"/>
+
+  <!-- ④ 自运转 -->
+  <rect x="930" y="40" width="250" height="160" rx="12" fill="#FFFFFF" stroke="#D2DAE4" stroke-width="1.5"/>
+  <text x="1055" y="88" text-anchor="middle" font-size="21" font-weight="600" fill="#2D3238">④ 自运转</text>
+  <text x="1055" y="134" text-anchor="middle" font-size="15" fill="#646C78">FDE 离场后 Agent 干活</text>
+  <text x="1055" y="164" text-anchor="middle" font-size="15" fill="#646C78">审计 · 回滚 · 巡检盯着</text>
+</svg>
