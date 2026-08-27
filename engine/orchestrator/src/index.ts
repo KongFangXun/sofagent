@@ -459,6 +459,40 @@
 } from './fde/compose-interview';
 /* @public */ export { generateWorkflowDraft, validateDraftDag } from './fde/workflow-draft';
 /* @public */ export type { WorkflowDraft } from './fde/workflow-draft';
+
+// v1.4.2 章八：FDE 六引擎工作台（访谈/判定/量化/本体/沉淀/部署）
+/* @public */ export {
+  fdeWorkbenchDir,
+  fdeWorkbenchPaths,
+  emitFdeAudit,
+  readFdeAudit,
+  recordInterview,
+  classifyNodes,
+  sixStepDecomposition,
+  interviewPrompts,
+} from './fde/fde-workbench';
+/* @public */ export type {
+  FdeAuditEventType,
+  FdeAuditEntry,
+  InterviewRecord,
+  NodePlan,
+  NodesPlanFile,
+} from './fde/fde-workbench';
+/* @public */ export {
+  quantifyNodes,
+  deriveOntology,
+  distillDeliverables,
+  deployWorkflow,
+} from './fde/fde-quantify';
+/* @public */ export type {
+  NodeQuantifyInput,
+  NodeQuantification,
+  QuantificationFile,
+  DeriveResult,
+  ThreeLayerDeliverables,
+  DistillResult,
+  DeployResult,
+} from './fde/fde-quantify';
 /* @public */ export {
   generateOntologyDraft,
   saveOntologyDraft,
