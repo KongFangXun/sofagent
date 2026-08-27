@@ -163,6 +163,30 @@ elif [ -n "$GLOBAL_DIST" ] && [ -f "$GLOBAL_DIST" ] && [ -f "$HASH_RECORD" ]; th
   fi
 fi
 
+# 2.5 v1.3.6 B22: .sofagent/ ignore 兜底——防御 --install-hook 后用户手工删 .gitignore、
+#     或旧版本安装未写入的间隙。若 .gitignore 未含 .sofagent/，自动补写（幂等），
+#     防止 .sofagent/.git-shadow/ 快照数据被本次 commit 卷入仓库。
+if [ -f ".gitignore" ] && ! grep -q '^\\.sofagent/$' ".gitignore" 2>/dev/null && ! grep -q '^\\.sofagent/' ".gitignore" 2>/dev/null; then
+  printf '\\n# sofagent 审计数据（本地配置 + 知识库 + 审计历史）\\n.sofagent/\\n' >> ".gitignore"
+  echo "ℹ️ [sofagent] 已自动补充 .gitignore（排除 .sofagent/）"
+elif [ ! -f ".gitignore" ]; then
+  printf '# sofagent 审计数据（本地配置 + 知识库 + 审计历史）\\n.sofagent/\\n' > ".gitignore"
+  echo "ℹ️ [sofagent] 已自动创建 .gitignore（排除 .sofagent/）"
+fi
+# 已暂存的 .sofagent/ 路径移出暂存区（.sofagent/ 永不入库；git reset 单路径只影响本目录，不动其他暂存）
+# v1.4.2 H-01: fail-loud 化——此前 \`|| true\` 会在 index.lock 竞态下静默吞掉 reset 失败（退出码 128），
+# 导致 \`git add -f .sofagent/\` 的文件原样进入提交。现改为：
+#   ① 先判断暂存区是否真有 .sofagent/ 条目——无条目直接跳过 reset，零成本消除绝大多数竞态触发面；
+#   ② 有条目但 reset 失败 → 拒绝本次 commit 让用户重试（宁可 false-retry 也不可静默入库）。
+# 注：pre-commit 主防线在 commit 对象生成前已清理 staged；本处再兜一次（macOS git
+# commit 主进程持内存 index 快照，此 reset 保障磁盘 index 干净防后续 commit 卷入）。
+if git diff --cached --name-only -- .sofagent/ 2>/dev/null | grep -q .; then
+  if ! git reset -q -- .sofagent/ 2>/dev/null; then
+    echo "❌ [sofagent] 无法将 .sofagent/ 移出暂存区（index 可能被占用）。请稍后重试 commit。" >&2
+    exit 1
+  fi
+fi
+
 # 3. 用 --cached 只审计暂存区（避免扫到工作树未 staged 的改动导致 A3 误报）
 # 统一用 --cached——审计引擎自带首次提交空 HEAD 兼容
 AUDIT_DIFF_ARG="--cached"
