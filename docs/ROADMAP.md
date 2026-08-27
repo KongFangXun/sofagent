@@ -3,13 +3,13 @@
 > 已经做了什么、未来要去哪、哪些地方需要你的帮助。
 > v1.4.1 · 2026-08-27（UTC）· 🚂 训练引擎 · 地基：train-job 编排 + train_submit（66→67 tools）+ 审计 HMAC 链 + 隔离 + 可复现指纹 + 权重签名 + 中断回收 + 崩溃恢复 + 安全基线（当前 CHANGELOG 主题；v1.4.0 交付详见 L14，v1.4.1 详见 L32）
 >
-> **v1.4.1 已定稿（2026-08-27 · 待发版）**：🚂 训练引擎 · 地基 八大块（编排/审计/隔离/指纹/签名/回收/恢复/安全）+ 🚉 train_submit（66→67 tools）+ 🔬 阶段 0 Metal reward 收敛验证（@mlx-node/trl 实测）+ 🛡️ 训练安全基线——详见 L12 摘要与 [v1.4.1 开发日志](./changelog/v1.4/v1.4.1.md)。
+> **v1.4.1 已于 2026-08-27 交付**：🚂 训练引擎 · 地基 八大块（编排/审计/隔离/指纹/签名/回收/恢复/安全）+ 🚉 train_submit（66→67 tools）+ 🔬 阶段 0 Metal reward 收敛验证（@mlx-node/trl 实测）+ 🛡️ 训练安全基线——详见 L12 摘要与 [v1.4.1 开发日志](./changelog/v1.4/v1.4.1.md)。
 
 产品定位详见 [设计哲学](./PHILOSOPHY.md) 和 [README](../README.md)。
 
 ## 现在在哪：v1.4.1（已交付）
 
-> **v1.4.1 已于 2026-08-27 定稿（待发版）**——训练引擎 · 地基 八大块（train-job 编排 + train_job 审计 HMAC 链 + enterpriseId 隔离 + 可复现指纹 + 权重 HMAC 签名 + 中断回收 + 崩溃恢复 + 安全基线）+ `train_submit`（66→67 tools）+ 阶段 0 Metal reward 收敛验证（@mlx-node/trl）+ 双栈契约文档 + 训练安全基线文档 + SKILL 体系重构 + 依赖升级（LangChain 三包 + vitest）· 测试 2981→3222（+241）。详见 [v1.4.1 开发日志](./changelog/v1.4/v1.4.1.md)。
+> **v1.4.1 已于 2026-08-27 交付**——训练引擎 · 地基 八大块（train-job 编排 + train_job 审计 HMAC 链 + enterpriseId 隔离 + 可复现指纹 + 权重 HMAC 签名 + 中断回收 + 崩溃恢复 + 安全基线）+ `train_submit`（66→67 tools）+ 阶段 0 Metal reward 收敛验证（@mlx-node/trl）+ 双栈契约文档 + 训练安全基线文档 + SKILL 体系重构 + 依赖升级（LangChain 三包 + vitest）· 测试 2981→3222（+241）。详见 [v1.4.1 开发日志](./changelog/v1.4/v1.4.1.md)。
 >
 > **v1.4.0 已于 2026-08-23 交付**——Web 工作明细页（四视角工作记录）+ 图谱栏（FDE 双图谱 + MCP 工具视图 + skill 加载链）+ 成本审计（超支告警 + `cost_query` MCP + COST DecisionKind）+ DSH 插件家族（`cordis-plugin-sofagent-*` 9 款，DSH inventory 全可见 + Cursor/Claude hook 拦截）+ OpenClaw 插件家族（4 款 code-plugin）+ Dashboard HTML 产品化 + 联邦查询跨设备 E2E（S320 fork 10 断言 + S322 独立进程 4 场景）+ MLflow 接线 + Agentic Browser（61→66 tools）+ 工具角色分层 + 瘦描述（默认全量 66 · `SOFAGENT_MCP_ROLES` 显式收窄专职面）+ DSH 默认启用（rc 期 CLI 桥接）+ MCP 自动配置（install.sh 装完即连）+ bash 3.2 真实环境验证 + 审计溯源字段回填。详见 [v1.4.0 开发日志](./changelog/v1.4/v1.4.0.md)。
 >
