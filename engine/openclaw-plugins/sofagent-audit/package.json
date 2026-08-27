@@ -1,6 +1,6 @@
 {
   "name": "sofagent-audit",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "description": "变更机器审阅——24 规则 + git diff 硬证据 + 危险工具拦截（before_tool_execute），品牌色 #16B8F3",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
