@@ -30,14 +30,7 @@ sofagent does not build its own Agent — execution is delegated to mature hosts
 
 ## What is an FDE Agent
 
-**FDE = Forward Deployed Engineer** — the person who embeds models into real enterprise operations. sofagent turns this role into an open-source FDE Harness layer, sitting between the Agents you already have (DSH / OpenClaw / WorkBuddy) and the model layer, so they gain FDE capability and models stay governed, walking a full FDE business flow through four phases:
-
-- **Phase 1 · Map the business flow on entry** — capturing each role's input / output / owner / time cost / pain points, and calculating what each AI node is worth
-- **Phase 2 · Build dual graphs** — business graph (system boundaries, data flows) + ontology graph (shared semantic foundation), turning the enterprise into a machine-readable structure
-- **Phase 3 · Deploy AI nodes** — three-layer deliverables (documents + Skills + runtime), installing AI nodes into your existing tools; from "you do the work" to "you delegate the work"
-- **Phase 4 · Continuous optimization after departure** — 7×24 automated task execution after the FDE leaves: inspection, audit, optimization; the human leaves, governance doesn't
-
-Official slogan: **Map business flows · Build ontology graphs · Deploy AI nodes · Audit every change · Reflect & iterate**
+**FDE = Forward Deployed Engineer** — the person who embeds models into real enterprise operations. sofagent turns this role into an open-source FDE Harness layer, sitting between the Agents you already have (DSH / OpenClaw / WorkBuddy) and the model layer, walking a full FDE business flow through four phases: **map the business flow → build dual graphs → deploy AI nodes → continuous optimization after departure**. Dual graphs = business graph (system boundaries, data flows) + ontology graph (shared semantic foundation), turning the enterprise into a machine-readable structure; after the FDE leaves, 7×24 inspection, audit, and optimization continue — the human leaves, governance doesn't.
 
 <p align="center"><img src="docs/assets/arch-layers-en.png" alt="sofagent three-layer positioning: model layer → FDE Harness layer → Agent layer" width="85%" /></p>
 
@@ -61,11 +54,10 @@ Sits between the Agents you already use and the model layer — it doesn't repla
 | Tier | Platform | Constraint injection | Mounting method |
 |------|----------|---------------------|-----------------|
 | **Deep integration** | DeepSeek Harness | ✅ Plugin-level | 9 `cordis-plugin-sofagent-*` mounted into the runtime (previous chapter) |
-| **Full mounting** | OpenClaw | ✅ Automatic | Hook injection + circuit breaker |
-| | WorkBuddy | ✅ Automatic | Skill on-demand loading |
-| **Thin mounting** | Claude Code / Codex / Cursor / Gemini CLI | ⚠️ Manual | Deployment constitution + seed directives (written into each platform's config file) |
+| **Full mounting** | OpenClaw / WorkBuddy | ✅ Automatic | Hook-injected four-layer constraints + circuit breaker |
+| **Thin mounting** | Claude Code / Codex / Cursor / Gemini CLI | ⚠️ Semi-auto | Skills-directory symlink / AGENTS.md seed directives + git-hook audit |
 
-- **Auto-loading is granted by the host runtime** — Skill on-demand loading depends on whether the host has a skill registry (DSH / OpenClaw / WorkBuddy do; thin-mount platforms carry it via static config files)
+- **The difference is the Hook channel, not skills** — Claude Code and Cursor also have skills directories (installed Skills load just the same); what differs is whether the host runtime opens Hook channels like preToolCall / session injection: where it does (OpenClaw / WorkBuddy), the four constraint layers auto-inject at startup and the circuit breaker blocks in real time; where it doesn't, constraints ride along as Skill text (advisory) and hard blocking falls to the git hook (mandatory)
 - **Audit fallback is platform-agnostic** — `sofagent-audit --install-hook` runs as a git hook; at every tier, every commit passes through all 24 audit rules, violations hard-blocked. Constraints are advisory; auditing is mandatory
 
 One command selects your mounting tier: `bash install.sh --platform <platform-name>` (all platforms and differences in [HANDBOOK](./docs/HANDBOOK.md))
