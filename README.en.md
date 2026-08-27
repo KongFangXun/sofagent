@@ -66,7 +66,7 @@ One command selects your mounting tier: `bash install.sh --platform <platform-na
 
 Many companies adopt AI the wrong way around — they pick models, build platforms, and buy Agents first, only to find nobody uses them. The problem isn't the technology; it's that **they haven't figured out their own business processes before handing them to AI**.
 
-Most tools teach you how to build Agents; sofagent first answers **where AI should go** — turning the five-element deep-dive and three-question triage from guesswork into a repeatable methodology:
+Most tools teach you how to build Agents; sofagent first answers **where AI should go** — turning that judgment from guesswork into a repeatable methodology:
 
 | Phase | Input | What happens | Deliverable |
 |-------|-------|--------------|-------------|
