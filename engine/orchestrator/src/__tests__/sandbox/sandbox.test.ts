@@ -87,6 +87,28 @@ describe('虚拟文件系统（验收 1/8）', () => {
     expect(vfs.verifyChain().ok).toBe(true);
   });
 
+  it('证据链时间戳单源：跨毫秒边界 verifyChain 不断链（CI Linux 回归锁）', () => {
+    // 确定性复现平台竞态：mock toISOString 每次调用 +1ms——
+    // 旧实现 chainMac 与事件对象各取一次 ts()，任何两次调用跨毫秒即断链
+    // （CI Linux 慢机器实测 flaky 根因；单源修复后无论时钟怎么跳都稳定）
+    const realToISOString = Date.prototype.toISOString;
+    let fakeNow = Date.parse('2026-08-27T00:00:00.000Z');
+    Date.prototype.toISOString = function () {
+      fakeNow += 1; // 每次调用强走毫秒边界
+      return realToISOString.call(new Date(fakeNow)); // 用保存的原方法——防 mock 自递归
+    };
+    try {
+      const vfs = createFilesystemBackend(dataDir, { hmacKey: 'test-key' });
+      const target = join(dataDir, 'ts-single-source.txt');
+      expect(vfs.writeVirtual(target, 'a').ok).toBe(true);
+      expect(vfs.approve(target).ok).toBe(true);
+      const verdict = vfs.verifyChain();
+      expect(verdict.ok).toBe(true);
+    } finally {
+      Date.prototype.toISOString = realToISOString; // 必须还原——污染全局时钟会炸其他测试
+    }
+  });
+
   it('完整性自检：正常状态下 ok', () => {
     const vfs = createFilesystemBackend(dataDir);
     expect(vfs.integrityCheck().ok).toBe(true);
