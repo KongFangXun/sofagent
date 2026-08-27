@@ -48,7 +48,8 @@ PLUGIN_DIRS=$(ls -d engine/dsh-plugins/cordis-plugin-sofagent-* 2>/dev/null || e
 #   ① 各 plugin 目录已含静态 SKILL.md（v1.4.0 发版收尾补齐，skillhub 直接读它发布——
 #      不再需要临时目录组装）。⚠️ bump 版本时必须同步 SKILL.md frontmatter 的 version
 #      字段（与 package.json 同步——bump-version.sh 覆盖范围内，见检查项）
-#   ② 发布限流：skillhub 连续发布报「发布频率过高」——每次 publish 之间 sleep 20
+#   ② 发布限流：skillhub 连续发布报「发布频率过高」——每次 publish 之间 sleep 20；
+#      偶发仍命中限流时等 60s 补发该款即可（v1.4.1 实测 daemon 款 20s 间隔被限、60s 补发成功）
 #   ③ changelog 中文禁止按字节截断（head -c 炸 UTF-8 0xe5）——用 node 按码点处理
 # 逐 plugin 发布（版本号与 sofagent 主线版本对齐，见 v1.4.0「版本同步机制」）
 for pdir in $PLUGIN_DIRS; do
@@ -77,7 +78,10 @@ done
 > - 登录态：先 `clawhub whoami` 确认已登录（发布走 ClawHub 账号）
 > - **源码已 push**：ClawHub 发布是 **source-linked 机制**——发布时从 `github:KongFangXun/sofagent@main:<plugin目录>` 拉源码，**必须先 push 到 GitHub 再发布**（dry-run 可验证映射，真实发布依赖远端文件存在）
 > - **`openclaw.build.openclawVersion` 必填**：package.json 的 `openclaw.build.openclawVersion`（= 当前 OpenClaw 版本，`npm view openclaw version` 查）——缺失时 dry-run 报「required for external code plugins」
+> - **双 manifest 版本一致（v1.4.1 实测拒收教训）**：ClawHub 校验 `package.json` 与 `openclaw.plugin.json` 两层 version 必须一致且 = 目标版本——bump 后先跑 `bash tools/check/check-version.sh`（9c 段已覆盖双 manifest），漂移直接被拒
 > - 先 `--dry-run` 验证格式与 source 映射，再真实发布
+
+> **publish 输出歧义判读（v1.4.1 实测）**：真实发布输出「Fix: Align the plugin version...」是**自动修复提示非拒收**——发布已成功。重试报「Version already exists」也是已发布证据。**定性唯一通道**：API 查证 `clawhub.ai/api/v1/packages/<name>?ownerHandle=<handle>` 的 `latestVersion` + `scanStatus` + `verification.sourceCommit`，勿据 CLI 输出盲改版本号。
 
 ```bash
 # 发布前确认 plugin 清单（SSOT = v1.4.0 开发日志 OpenClaw plugin 家族表）

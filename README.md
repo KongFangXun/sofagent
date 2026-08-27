@@ -28,14 +28,7 @@ sofagent 不造 Agent——执行能力交给成熟宿主（模型 + 工具 + �
 
 ## 什么是 FDE Agent
 
-**FDE = Forward Deployed Engineer（前线部署工程师）**——把模型塞进企业真实业务里的人。sofagent 把这个角色做成开源 FDE Harness 层，嵌在你的 Agent（DSH / OpenClaw / WorkBuddy）与模型层之间，让已有 Agent 具备 FDE 能力、让模型被管住，四个阶段走完一条完整的 FDE 业务流：
-
-- **一、进场梳理业务流**——把每个岗位环节的输入 / 输出 / 负责人 / 耗时 / 痛点摸清，算清每个 AI 节点值多少钱
-- **二、构建双图谱**——业务图谱（系统边界、数据流向）+ 本体图谱（共享语义底座），把企业变成机器可读的结构
-- **三、部署 AI 节点**——三层交付物（文档层 + Skill 层 + 运行层），把 AI 节点装进你已有的工具，从"你干活"变"你派活"
-- **四、离场持续优化**——离场后 7×24 自动执行任务：巡检、审计、优化，人离场治理不离开
-
-官方 slogan：**梳理业务流 · 构建本体图谱 · 部署 AI 节点 · 审计每次变更 · 自我反思迭代**
+**FDE = Forward Deployed Engineer（前线部署工程师）**——把模型塞进企业真实业务里的人。sofagent 把这个角色做成开源 FDE Harness 层，嵌在你的 Agent（DSH / OpenClaw / WorkBuddy）与模型层之间，四个阶段走完一条完整的 FDE 业务流：**梳理业务流 → 构建双图谱 → 部署 AI 节点 → 离场持续优化**。双图谱 = 业务图谱（系统边界、数据流向）+ 本体图谱（共享语义底座），把企业变成机器可读的结构；离场后 7×24 巡检、审计、优化，人离场治理不离开。
 
 <p align="center"><img src="docs/assets/arch-layers.png" alt="sofagent 三层定位：模型层 → FDE Harness 层 → Agent 层" width="85%" /></p>
 
@@ -55,11 +48,10 @@ sofagent 不造 Agent——执行能力交给成熟宿主（模型 + 工具 + �
 | 档位 | 平台 | 约束注入 | 挂载方式 |
 |------|------|---------|---------|
 | **深度结合** | DeepSeek Harness | ✅ 插件级 | 9 款 `cordis-plugin-sofagent-*` 挂载进运行时（见上章） |
-| **完整挂载** | OpenClaw | ✅ 自动 | Hook 注入 + 断路器 |
-| | WorkBuddy | ✅ 自动 | Skill 按需加载 |
-| **薄挂载** | Claude Code / Codex / Cursor / Gemini CLI | ⚠️ 手动 | 部署宪法 + 种子指令（写入各自配置文件） |
+| **完整挂载** | OpenClaw / WorkBuddy | ✅ 自动 | Hook 注入四层约束 + 断路器 |
+| **薄挂载** | Claude Code / Codex / Cursor / Gemini CLI | ⚠️ 半自动 | Skill 目录 symlink / AGENTS.md 种子指令 + git hook 审计 |
 
-- **自动加载是宿主运行时给的**——Skill 按需加载取决于宿主有没有技能注册表（DSH / OpenClaw / WorkBuddy 有；薄挂载平台以静态配置文件承载）
+- **差在 Hook 通道，不是差在 skill**——Claude Code、Cursor 也有 skills 目录（装完 Skill 同样能加载），差别是宿主运行时有没有开放 preToolCall / 会话注入这类 Hook 通道：有（OpenClaw / WorkBuddy）则四层约束开机自动注入 + 断路器实时拦截；没有则约束随 Skill 文本加载（建议性），硬拦截交给 git hook（强制性）
 - **审计兜底平台无关**——`sofagent-audit --install-hook` 走 git hook，任何档位每次 commit 都过 24 条审计，违规硬拦截。约束是建议性的，审计是强制性的
 
 一条命令选定挂载档位：`bash install.sh --platform <平台名>`（全部平台与差异见 [HANDBOOK](./docs/HANDBOOK.md)）

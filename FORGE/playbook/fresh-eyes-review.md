@@ -419,3 +419,14 @@ sofagent（https://github.com/KongFangXun/sofagent）。不管当前处于什么
 - **正面交叉确认留档**：多视角正面确认的已知好实践要让审查者知晓，防误报。
 - **环境变量豁免开关固定检查**：隐藏安全开关只存在于代码注释即成审计盲区——豁免类开关必须全仓 grep 并核对文档披露。
 - **文件结构陌生人视角价值证实**：单份完整报告独立产出多条结构性发现——优先保障该视角报告完整度。
+
+## 校准笔记（v1.4.1 发版期 · 阶段十~十二实录）
+
+> 阶段十~十二发版执行期踩坑校准——发布流水线与分发链的教训（非审查循环本身，与上方阶段四笔记互补）。
+
+- **平台时序竞态是 flaky 假象**：CI Linux 慢机器命中毫秒边界竞态（retry 仍挂 + 本地 Mac 绿 + 中间提交只改 png）→ 高度怀疑时序敏感而非内容敏感，先写确定性复现（mock 时钟强走边界）再修。
+- **mock 原型方法防自递归**：`Date.prototype.toISOString` 替换后，mock 体内 `new Date(...).toISOString()` 调到 mock 自身 → 无限递归——必须 `realFn.call(new Date(...))` 用保存的原方法。
+- **验证 dist 内容须查正确子路径**：npm tarball 抽验 grep dist/ 根路径假阴性（sandbox 模块在 dist/sandbox/ 子目录）——先 find 定位文件再 grep，防止「修复没进包」误报。
+- **publish 输出歧义先查再重试**：ClawHub package publish 输出「Fix: Align...」是自动修复提示非拒收——重试报 already exists 时先 API 查证 latestVersion/scanStatus/sourceCommit 再定性，勿盲目改版本号。
+- **门禁全绿≠无盲区**：check-version 94/94 绿时 openclaw-plugins 版本正漂移——手写清单不含的目录就是盲区；发版执行中发现的盲区当场转 check 脚本检查项（94→98→102 三级补齐）。
+- **registry 时间戳早于脚本尝试≠他人发布**：npm staged finalize 时序可使时间戳先于后续尝试 26s——以最终对账（13 包全 1.4.1）为准，勿误判发布来源。
