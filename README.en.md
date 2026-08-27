@@ -9,6 +9,8 @@
   <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.4.1-16B8F3" alt="Version" /></a>
 </p>
 
+<p align="center"><sub>[简体中文](./README.md) | [English](./README.en.md)</sub></p>
+
 ---
 
 ## What is this
@@ -45,7 +47,7 @@ sofagent does not build its own Agent — execution is delegated to mature hosts
 
 ## v1.4.1: Training Engine Foundation
 
-🚂 The foundation for enterprise AI that "gets stronger by itself" — eight training-engine blocks (train-job orchestration / HMAC audit chain / enterpriseId isolation / reproducible fingerprint / weight signing / interruption reclaim / crash recovery / security baseline) + Stage-0 convergence verified on macOS Metal. Tests 2981→**3222** (+241). Full details in the [devlog](./docs/changelog/v1.4/v1.4.1.md) · earlier versions in [CHANGELOG](./CHANGELOG.md).
+🚂 The foundation for enterprise AI that "gets stronger by itself" — eight training-engine blocks (train-job orchestration / HMAC audit chain / enterpriseId isolation / reproducible fingerprint / weight signing / interruption reclaim / crash recovery / security baseline) + Stage-0 convergence verified on macOS Metal. Tests 2981→**3222** (+241; workspace-scope 2937→3178 across 12 packages, plugin families counted separately). Full details in the [devlog](./docs/changelog/v1.4/v1.4.1.md) · earlier versions in [CHANGELOG](./CHANGELOG.md).
 
 ## Multi-platform Mounting
 
@@ -110,7 +112,7 @@ npx -y -p @sofagent/audit sofagent-audit
 
 > 💡 quick runs the **17 default rules** (A3 task-scope / A9 commit-msg injection detection active — quick mode auto-reads the latest commit message; when no message is available, A9 is handled by the engine as no-input and marked skipped). The full 24 rules + hook auto-audit require `--init` — see [LIMITATIONS §3](./docs/LIMITATIONS.md).
 
-Here's what it looks like when a known-format secret leak is blocked (real output; A2 detects AWS AKIA, OpenAI sk-*, GitHub ghp_, PEM private keys and other known formats — generic secret shapes are intentionally out of scope, a conservative design against false positives, see [LIMITATIONS §3 A2](./docs/LIMITATIONS.md#三安全与信任模型局限)):
+Here's what it looks like when a known-format secret leak is blocked (real output; A2 detects AWS AKIA/Secret, OpenAI sk-*, GitHub ghp_, Google AIza, Slack xox*-, JWT, PEM private keys and other known formats — generic secret shapes are intentionally out of scope, a conservative design against false positives, see [LIMITATIONS §3 A2](./docs/LIMITATIONS.md#三安全与信任模型局限)):
 
 <p align="center"><img src="docs/assets/audit-terminal.png" alt="sofagent-audit blocks a .env commit" width="860" /></p>
 
@@ -124,7 +126,7 @@ sofagent-audit --init      # install the git hook — every commit is audited fr
 sofagent-audit --doctor    # verify the environment (optional)
 ```
 
-> 💡 All install scripts only write to `~/.sofagent/` and never touch system files. `--no-verify` can skip the commit-msg audit — it guards against honest Agents' carelessness, not malicious bypass; skipped commits are reconciled afterwards by the post-commit hook (flagged "suspected bypass") but not blocked. Personal fallbacks: CI-side `sofagent-audit --diff`, periodic `--doctor`, and reviewing the audit records. See [LIMITATIONS](./docs/LIMITATIONS.md).
+> 💡 The install scripts mainly write to `~/.sofagent/` (data directory) + `~/.local/bin` (CLI entry); when OpenClaw is detected they additionally write into its integration directory; if npm permissions are insufficient, the CLI entry falls back to `/usr/local/bin`. No other system files are touched. `--no-verify` can skip the commit-msg audit — it guards against honest Agents' carelessness, not malicious bypass; skipped commits are reconciled afterwards by the post-commit hook (flagged "suspected bypass") but not blocked. Personal fallbacks: CI-side `sofagent-audit --diff`, periodic `--doctor`, and reviewing the audit records. See [LIMITATIONS](./docs/LIMITATIONS.md).
 >
 > 📌 **install.sh is the enterprise device installer** — install it on the enterprise devices running the AI nodes (constraint-layer engine + daemon inspection + single-machine dashboard); FDEs do not need to run it on their own machines — the FDE's tools are the [FDE Skill](https://clawhub.ai/kongfangxun/skills/sofagent) (methodology). See [deployment architecture](./docs/ARCHITECTURE.md#安装包边界与部署架构v132-定位校准).
 >

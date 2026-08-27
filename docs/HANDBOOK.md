@@ -528,6 +528,8 @@ sofagent 本身就是一个 MCP server（stdio 传输，bin `sofagent-mcp`，v1.
 > - **内存**：daemon 常驻进程（~50 MB）+ Node.js 运行时（~200 MB/并发 Agent）
 > - **网络**：仅 LLM API 出站，无入站端口需求
 
+> **性能口径**（README 首屏数字出处）：测量方法 = `time sofagent-audit`（quick 模式计时，含 Node.js 启动；全量模式对 5 万行 diff 计时）；环境 = 单机 macOS（Apple Silicon）。单机实测：quick 约 **1.1s**、5 万行 diff 约 **6.1s**。以上为单机参考值，非跨机器基准——跨工具横评排期 v1.4.x 与 Benchmark 集成。
+
 ⚠️ **数据存储说明**：当前版本将审计数据以 Markdown 明文存储在 `~/.sofagent/data/`。内置加密（age）已排 v1.3.8。生产环境使用前建议将 `~/.sofagent/` 放在加密卷中。详见 [SECURITY.md](../SECURITY.md)。
 
 > ⚠️ **被审计仓库会生成 `.sofagent/` 隐藏目录**：sofagent 审计时会在被审计的 git 仓库根目录创建 `.sofagent/` 隐藏目录，存放审计快照（`.git-shadow/`）、运行时审计日志、dashboard 缓存等。该目录**已默认加入 `.gitignore`**，不会进入 git 提交，但 `ls -a` 可以看到。企业 IT 看到 `.sofagent/` 无需紧张——这是运行时产物，**可安全删除**（重新审计会自动重建，不影响功能）。

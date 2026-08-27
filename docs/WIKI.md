@@ -42,7 +42,7 @@
 
 > **一条 workflow 的产品**：给企业做 AI 落地 = 一条 FDE workflow。执行这条 workflow 的 Agent = 装上 FDE Harness 的 Agent（sofagent 让任何成熟 Agent 具备这个能力）。**它对自己做的第一份 FDE，就是 sofagent 项目本身**——自举循环：FDE Harness 对自己做 FDE → 项目更 AI 化 → 更好地服务企业 → 数据飞轮转起来。
 
-**FDE 交付**：进场梳理 → 交付**双图谱**——人看的业务图谱（workflow graph）+ 机器读的本体图谱（ontology graph，本体数据的图形化形态）。图谱里每个 AI 节点承担业务流中的职能；节点执行 = workflow 要求 → LangGraph 编排 → DeepSeek Harness 执行（ExecutionBackend 双后端：workflow 以 DAG 形态在所选后端运行）→ 全程约束底座审计 + 回溯净化（plugin 功能）。**行业坐标**：两张图谱同属「知识层」（描述业务世界的语义资产），构建·校验·维护实践属「工程层」（图谱工程），详见 [ARCHITECTURE §一](./ARCHITECTURE.md)。
+**FDE 交付**：进场梳理 → 交付**双图谱**——人看的业务图谱（workflow graph）+ 机器读的本体图谱（ontology graph，本体数据的图形化形态）。图谱里每个 AI 节点承担业务流中的职能；节点执行 = workflow 要求 → LangGraph 编排 → DeepSeek Harness 执行（ExecutionBackend 双后端：workflow 以 DAG 形态在所选后端运行）→ 全程约束层审计 + 回溯净化（plugin 功能）。**行业坐标**：两张图谱同属「知识层」（描述业务世界的语义资产），构建·校验·维护实践属「工程层」（图谱工程），详见 [ARCHITECTURE §一](./ARCHITECTURE.md)。
 
 **训练 Agent（内层新 workflow）**：企业 AI 节点要数据主权 → 训练 Agent（受约束）驱动后训练工具：收集企业数据 → 模型后训练 → 私有化部署回节点。这本身是几个新 workflow（数据采集 / 训练 / 部署）。训练引擎**工程骨架**随开源仓排期交付（编排/审计/沙箱，详见 ROADMAP；训练资产走商业侧）；训练也围绕 FDE——怎么让 FDE 更好、怎么让数据飞轮转起来。
 
@@ -70,7 +70,7 @@ graph TB
     O5 --> I2
 ```
 
-> 外层 = 卖什么（FDE 交付，每企业一次 + 持续陪跑）；内层 = 交付中调用的能力（节点执行 / 训练 / 激活，可复用）。全程约束底座审计：外层每次 FDE 动作记 fde-session，内层每次节点执行 / 训练决策进审计链。
+> 外层 = 卖什么（FDE 交付，每企业一次 + 持续陪跑）；内层 = 交付中调用的能力（节点执行 / 训练 / 激活，可复用）。全程约束层审计：外层每次 FDE 动作记 fde-session，内层每次节点执行 / 训练决策进审计链。
 
 **为什么这条 workflow 会一直跑**：企业持续需要 AI 落地 → 这条 FDE workflow 不只是 sofagent 的项目，也会成为企业的 workflow。
 
@@ -195,7 +195,7 @@ graph TB
 | `docs/archive/` | 历史归档：实验版 changelog、早期证据、设计文档 |
 | `docs/guides/` | 专题指南：部署、测试、Dashboard 开发、Loop 开发等 |
 
-### engine/（13 个 npm 发布包，12 个含测试）
+### engine/（13 个 npm 发布包，12 个含测试；13 个发布包 + 2 个插件族 + hooks/scripts 运维件）
 
 | 包 | 职责 |
 |----|------|
@@ -207,6 +207,8 @@ graph TB
 | `engine/mcp/` | @sofagent/mcp — MCP Server（知识库 CRUD tool）· **67 个 MCP tool**（以 `engine/mcp/src/tool-registry.ts` SSOT 为准；v1.4.1 新增 train_submit 训练提交，插件家族 MCP 面另计） |
 | `engine/hooks/sofagent-load-chain/` | @sofagent/load-chain — SKILL 加载链 git hook（v1.2.x 新增，第 13 个 workspace） |
 | `engine/scripts/` | 运维脚本集（9 个 .sh + lib/ 模块 + windows/ .ps1 安装与卸载脚本）——安装（install.sh 调用）、卸载、验证（verify.sh）、daemon 管理、运行时审计日志记录等 |
+| `engine/dsh-plugins/` | cordis-plugin-sofagent-* 9 款 DSH 插件（audit · rollback · inject · evolve · ontology · commons · gate · daemon · fde，inventory 可见 + Cursor/Claude hook 拦截） |
+| `engine/openclaw-plugins/` | OpenClaw code-plugin 4 款（ClawHub 发布形态） |
 | `~/.sofagent/bin/sofagent` | CLI 入口（安装时生成，不在仓库内）— `sofagent status/where/version/data/help` |
 | 其余 6 包（eval/ab-test/skillopt/rules/ontology/think） | 详见 `docs/DEVELOPMENT.md §包结构`（README 口径：13 个 workspace 包、12 个含测试；含 @sofagent/load-chain hook 包，无独立测试） |
 

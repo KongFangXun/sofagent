@@ -7,6 +7,8 @@
   <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.4.1-16B8F3" alt="Version" /></a>
 </p>
 
+<p align="center"><sub>[简体中文](./README.md) | [English](./README.en.md)</sub></p>
+
 ---
 
 ## 这是什么
@@ -43,7 +45,7 @@ sofagent 不造 Agent——执行能力交给成熟宿主（模型 + 工具 + �
 
 ## v1.4.1：训练引擎地基
 
-🚂 给企业 AI 补上「自己会变强」的底座——训练引擎八大块（train-job 编排 / HMAC 审计链 / enterpriseId 隔离 / 可复现指纹 / 权重签名 / 中断回收 / 崩溃恢复 / 安全基线）+ 阶段 0 macOS Metal 实测收敛，测试 2981→**3222**（+241）。完整内容见[开发日志](./docs/changelog/v1.4/v1.4.1.md) · 更早版本见 [CHANGELOG](./CHANGELOG.md)。
+🚂 给企业 AI 补上「自己会变强」的底座——训练引擎八大块（train-job 编排 / HMAC 审计链 / enterpriseId 隔离 / 可复现指纹 / 权重签名 / 中断回收 / 崩溃恢复 / 安全基线）+ 阶段 0 macOS Metal 实测收敛，测试 2981→**3222**（+241；workspace 口径 2937→3178/12 包，插件族另计）。完整内容见[开发日志](./docs/changelog/v1.4/v1.4.1.md) · 更早版本见 [CHANGELOG](./CHANGELOG.md)。
 
 ## 多平台挂载
 
@@ -108,7 +110,7 @@ npx -y -p @sofagent/audit sofagent-audit
 
 > 💡 quick 跑 17 条默认规则（A3 任务范围 / A9 commit-msg 注入检测激活——自动读最近一次 commit 消息，无消息时 A9 引擎按无输入处理标记跳过），完整 24 条 + hook 自动审计需 `--init`——详见 [LIMITATIONS §三](./docs/LIMITATIONS.md#三安全与信任模型局限)。
 
-拦截特定格式密钥泄漏时是这样的（真实输出；A2 检测 AWS AKIA、OpenAI sk-*、GitHub ghp_、PEM 私钥等已知格式，通用密钥形态暂不覆盖——保守设计防误报，详见 [LIMITATIONS §三 A2](./docs/LIMITATIONS.md#三安全与信任模型局限)）：
+拦截特定格式密钥泄漏时是这样的（真实输出；A2 检测 AWS AKIA/Secret、OpenAI sk-*、GitHub ghp_、Google AIza、Slack xox*-、JWT、PEM 私钥等已知格式，通用密钥形态暂不覆盖——保守设计防误报，详见 [LIMITATIONS §三 A2](./docs/LIMITATIONS.md#三安全与信任模型局限)）：
 
 <p align="center"><img src="docs/assets/audit-terminal.png" alt="sofagent-audit 拦截 .env 提交" width="860" /></p>
 
@@ -122,7 +124,7 @@ sofagent-audit --init      # 装 git hook，之后每次 commit 自动审计
 sofagent-audit --doctor    # 验证环境（可选）
 ```
 
-> 💡 安装脚本只写入 `~/.sofagent/`，不碰系统文件。`--no-verify` 可跳过 commit-msg 审计——防的是诚实 Agent 的疏忽不是恶意绕过，被跳过的 commit 由 post-commit 事后对账留痕（提示「疑似绕过」）但不阻断；个人兜底三件事：CI 侧 `sofagent-audit --diff`、定期 `--doctor`、翻审计记录。详见 [LIMITATIONS](./docs/LIMITATIONS.md)。
+> 💡 安装脚本主要写入 `~/.sofagent/`（数据目录）+ `~/.local/bin`（CLI 入口）；检测到 OpenClaw 时额外写入其集成目录；npm 权限不足时 CLI 入口 fallback 到 `/usr/local/bin`。其余系统文件零改动。`--no-verify` 可跳过 commit-msg 审计——防的是诚实 Agent 的疏忽不是恶意绕过，被跳过的 commit 由 post-commit 事后对账留痕（提示「疑似绕过」）但不阻断；个人兜底三件事：CI 侧 `sofagent-audit --diff`、定期 `--doctor`、翻审计记录。详见 [LIMITATIONS](./docs/LIMITATIONS.md)。
 >
 > 📌 **install.sh 是企业设备安装器**——装在企业跑 AI 节点的设备上（约束层引擎 + daemon 巡检 + 单机 dashboard）；FDE 自己的电脑不需要跑，FDE 的工具是 [FDE Skill](https://clawhub.ai/kongfangxun/skills/sofagent)（方法论），详见 [部署架构](./docs/ARCHITECTURE.md#安装包边界与部署架构v132-定位校准)。
 >
