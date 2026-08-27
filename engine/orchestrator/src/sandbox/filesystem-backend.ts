@@ -101,16 +101,19 @@ export function createFilesystemBackend(dataDir: string, options: FilesystemBack
   }
 
   // ── 事件链（append-only + HMAC）──
-  function chainMac(type: VirtualFsEvent['type'], targetPath: string, contentHash: string): string {
-    const payload = `${prevMac}|${ts()}|${type}|${targetPath}|${contentHash}`;
+  // tsIso 由 record() 单源取定后传入——chainMac 与事件对象必须用同一时间戳：
+  // 若各自调 ts()，跨毫秒边界时 verifyChain 用存储 ts 重算 MAC 必断链（CI Linux 慢机器实测）
+  function chainMac(tsIso: string, type: VirtualFsEvent['type'], targetPath: string, contentHash: string): string {
+    const payload = `${prevMac}|${tsIso}|${type}|${targetPath}|${contentHash}`;
     if (hmacKey) return createHmac('sha256', hmacKey).update(payload).digest('hex');
     // 退化模式：无密钥时用哈希链（防无意识篡改，不防定向伪造——密钥模式防两者）
     return createHash('sha256').update(payload).digest('hex');
   }
 
   function record(type: VirtualFsEvent['type'], targetPath: string, contentHash: string): void {
-    const mac = chainMac(type, targetPath, contentHash);
-    const evt: VirtualFsEvent = { ts: ts(), type, targetPath, contentHash, chainMac: mac };
+    const now = ts(); // 单源：本事件时间戳只取这一次
+    const mac = chainMac(now, type, targetPath, contentHash);
+    const evt: VirtualFsEvent = { ts: now, type, targetPath, contentHash, chainMac: mac };
     events.push(evt);
     prevMac = mac;
     try {

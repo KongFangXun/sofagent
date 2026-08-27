@@ -7,12 +7,6 @@
   <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.4.1-16B8F3" alt="Version" /></a>
 </p>
 
-> 📌 **当前状态**：v1.4.1 训练引擎地基已开发完成（**待发版**——npm 与下方安装命令暂为 v1.4.0，训练能力随 v1.4.1 发布提供，见 [CHANGELOG](./CHANGELOG.md)）。
-
-<p align="center">
-  <a href="README.en.md">English</a> · <a href="#v141训练引擎地基">v1.4.1 训练引擎</a> · <a href="#多平台挂载">多平台</a> · <a href="#fde-skill-体系">Skill 体系</a> · <a href="#约束层harness">约束层</a> · <a href="#安装">安装</a> · <a href="#生态与文档索引">文档</a> · <a href="https://github.com/KongFangXun/sofagent">⭐ Star</a>
-</p>
-
 ---
 
 ## 这是什么
@@ -29,75 +23,30 @@ sofagent 不造 Agent——执行能力交给成熟宿主（模型 + 工具 + �
 - 🤖 **部署 AI 节点**——三层交付物（文档层 + Skill 层 + 运行层），装进你已有的 AI 工具，从"你干活"变"你派活"
 - 🏠 **离场后常驻**——FDE 能力留下巡检、审计、优化，7×24 在线，人离场治理不离开
 - 🔍 **零配置审计**——`npx -y -p @sofagent/audit sofagent-audit`，任何 git 仓库秒级审计最近一次 commit（单机实测：quick 约 1.1s、5 万行 diff 约 6.1s，口径见 [HANDBOOK](./docs/HANDBOOK.md)）
-- 🧱 **24 条审计规则**——密钥泄漏、越界编辑、注入防御、权限红线，git diff 硬证据判定，违规当场拦截；证据基于本地 diff，信任边界与已知绕过面见 [LIMITATIONS §三](./docs/LIMITATIONS.md#三安全与信任模型局限)（quick 默认 17 条，完整 24 条 = 17 默认 + 7 扩展）
+- 🧱 **24 条审计规则 + 67 个 MCP tool**——密钥泄漏、越界编辑、注入防御、权限红线，git diff 硬证据判定，违规当场拦截；证据基于本地 diff，信任边界与已知绕过面见 [LIMITATIONS §三](./docs/LIMITATIONS.md#三安全与信任模型局限)（quick 默认 17 条，完整 24 条 = 17 默认 + 7 扩展）
 - 🛡️ **自动快照回溯**——每次审计后自动存档，出事一键回到任意快照
 
 ## 什么是 FDE Agent
 
 **FDE = Forward Deployed Engineer（前线部署工程师）**——把模型塞进企业真实业务里的人。sofagent 把这个角色做成开源 FDE Harness 层，嵌在你的 Agent（DSH / OpenClaw / WorkBuddy）与模型层之间，让已有 Agent 具备 FDE 能力、让模型被管住，四个阶段走完一条完整的 FDE 业务流：
 
-- **一、进场梳理业务流**——五要素深挖 + 三问判定法，把每个岗位环节的输入 / 输出 / 负责人 / 耗时 / 痛点摸清，算清每个 AI 节点值多少钱
+- **一、进场梳理业务流**——把每个岗位环节的输入 / 输出 / 负责人 / 耗时 / 痛点摸清，算清每个 AI 节点值多少钱
 - **二、构建双图谱**——业务图谱（系统边界、数据流向）+ 本体图谱（共享语义底座），把企业变成机器可读的结构
 - **三、部署 AI 节点**——三层交付物（文档层 + Skill 层 + 运行层），把 AI 节点装进你已有的工具，从"你干活"变"你派活"
 - **四、离场持续优化**——离场后 7×24 自动执行任务：巡检、审计、优化，人离场治理不离开
 
 官方 slogan：**梳理业务流 · 构建本体图谱 · 部署 AI 节点 · 审计每次变更 · 自我反思迭代**
 
-```mermaid
-graph TB
-    subgraph M["模型层（智力源）"]
-        M1["通用大模型<br/>DSH · OpenAI · Claude"]
-        M2["专属小模型 · 后训练模型<br/>v1.4.x 训练引擎 · 本地权重部署"]
-    end
-    subgraph H["sofagent · FDE Harness 层"]
-        direction LR
-        P["形态 插件 · Skill · MCP<br/>CLI · Dashboard"]
-        C["约束层 注入 · 审计 · 回溯 · 进化"]
-        F["方法论 FDE 四阶段<br/>梳理 → 构建 → 部署 → 离场"]
-        P ~~~ C ~~~ F
-    end
-    subgraph A["Agent 层（执行体 · 不替代）"]
-        A1["DSH · OpenClaw · WorkBuddy<br/>模型 + 工具 + 会话"]
-    end
-    M -->|"管住模型：注册/灰度/训练/部署"| H
-    H -->|"约束 Agent：注入/审计/回溯/进化"| A
-    A -->|"进场 · 给企业做 FDE"| D["双图谱交付<br/>业务图谱 + 本体图谱"]
-    D --> N["AI 节点<br/>宿主执行 → Harness 审计"]
-    N -.->|"7×24 自运转 · 越界能拦 · 出事能回滚"| N
-```
+<p align="center"><img src="docs/assets/arch-layers.png" alt="sofagent 三层定位：模型层 → FDE Harness 层 → Agent 层" width="85%" /></p>
 
 - **企业 AI 落地的瓶颈不是模型，是部署**——MIT NANDA《生成式人工智能的鸿沟》：95% 的企业 GenAI 项目没能产生能写进财务报表的价值，而 FDE 岗位发布量一年涨了 729%
-- **约束层「持续优化」靠机制不靠承诺**——外部独立实验：同一模型仅优化外层 Harness，法律 Agent 基准 63.4% → 80.1%（+16.7pp）——更多核验见 [VALIDATION](./docs/VALIDATION.md) · [THANKS](./docs/THANKS.md)
+- **约束层「持续优化」靠机制不靠承诺**——外部独立实验：同一模型仅优化外层 Harness，法律 Agent 基准 63.4% → 80.1%（+16.7pp）。更多核验见 [VALIDATION](./docs/VALIDATION.md) · [THANKS](./docs/THANKS.md)
 
 > 🔄 **自举**：sofagent 给自己做的第一份 FDE，就是 sofagent 自己——项目本身就是一条完整的 FDE 业务流（梳理 → 构建 → 部署 → 离场），这个开源仓库就是那份交付物。
 
 ## v1.4.1：训练引擎地基
 
-本版核心：给企业 AI 补上「自己会变强」的底座——训练引擎地基，八大块一次成型。
-
-**一、为什么做训练引擎**：业务流跑起来后，AI 节点的每一次纠正、确认、追问都是宝贵信号——但这些信号此前只能「存在日志里」。训练引擎把这些信号变成模型能力：审计沉淀的轨迹 → 训练集 → 企业专属模型 → 回到业务流，形成自进化闭环（sofagent 只做管理面与审计，计算面复用开源框架）。
-
-**二、八大块**（每一块都带验收测试）：
-
-| 块 | 职责 |
-|------|------|
-| train-job 编排 | 训练任务全生命周期（提交/状态/续跑）+ `train_submit`（66→67 tools） |
-| train_job 审计 | 训练全程 HMAC 链留痕——提交/心跳/产出每步可追溯 |
-| 训练隔离边界 | enterpriseId 全链路隔离——企业 A 的数据进不了企业 B 的训练 |
-| 可复现指纹 | 同一数据 + 同一配置 = 同一结果，checkpoint 续跑版本锁定 |
-| 权重完整性 | 产出权重 HMAC 签名，加载时校验，被篡改即阻断 |
-| 中断回收 | 心跳卡死检测 → kill → GPU 通知 → 临时目录清理 → 审计入链 |
-| 崩溃恢复 | 假活任务清理 + 三选项恢复（重跑/续跑/放弃） |
-| 安全基线 | 路径白名单 + 注入元字符过滤 + 凭据脱敏 + 攻击面声明 |
-
-**三、阶段 0 难点验证先行**：在 macOS Metal 上用 @mlx-node/trl 实测 reward 收敛——训练管线最小闭环真跑通，不是纸面设计。
-
-**本版其他新能力**（详见[开发日志](./docs/changelog/v1.4/v1.4.1.md)，更早版本见 [CHANGELOG](./CHANGELOG.md)）：
-
-- **SKILL 体系重构**：SKILL/ 主入口四层加载链重构，agents/ 规则分角色拆分（audit/engineer/reviewer/fde），加载链可视化入 Dashboard
-- **DSH 插件降实**：9 款 `cordis-plugin-sofagent-*` 插件 description 从宣称口径改为桥接实况口径
-- **依赖升级**：LangChain 三包 + vitest 升级
-- **测试 2981→3221**（+240：train 模块 +231 + zod schema 泄漏防御 5）· 测试 340/340 场景全绿
+🚂 给企业 AI 补上「自己会变强」的底座——训练引擎八大块（train-job 编排 / HMAC 审计链 / enterpriseId 隔离 / 可复现指纹 / 权重签名 / 中断回收 / 崩溃恢复 / 安全基线）+ 阶段 0 macOS Metal 实测收敛，测试 2981→**3222**（+241）。完整内容见[开发日志](./docs/changelog/v1.4/v1.4.1.md) · 更早版本见 [CHANGELOG](./CHANGELOG.md)。
 
 ## 多平台挂载
 
@@ -123,8 +72,8 @@ graph TB
 
 | 阶段 | 输入 | 做什么 | 产出 |
 |------|------|--------|------|
-| 一、梳理 | 岗位清单 · 现有系统 | **五要素深挖**——按岗位把每个环节的输入 / 输出 / 负责人 / 耗时 / 痛点摸清 | 企业画像 |
-| 二、判定 | 企业画像 | **三问判定法**——从业务流中的**业务节点**识别哪些可 AI 化：🔄 自动执行 / ⚡ 强化岗位 → **AI 节点**，👤 暂不动 → Human 节点，按 ROI 排优先级 | 节点方案 + 年节省金额 |
+| 一、梳理 | 岗位清单 · 现有系统 | **五要素深挖**——按岗位摸清每个环节的输入 / 输出 / 负责人 / 耗时 / 痛点 | 企业画像 |
+| 二、判定 | 企业画像 | **三问判定法**——从业务节点识别可 AI 化的：🔄 自动执行 / ⚡ 强化岗位 → **AI 节点**，👤 暂不动，按 ROI 排优先级 | 节点方案 + 年节省金额 |
 | 三、交付 | 节点方案 | **三层交付物**——文档层 + Skill 层 + 运行层，让 AI 节点真的跑起来 | 本体数据（ontology）+ workflow.yml + skills/ |
 
 完整方法论（四阶段十二步）见 [FDE/GUIDE.md](./FDE/GUIDE.md)——半天精读，读完能独立做 FDE。
@@ -199,11 +148,7 @@ sofagent-audit --doctor    # 验证环境（可选）
 
 > 👁️ **Agent 视角**：装完 hook 后每次 commit 触发审计——PASS 静默放行（自动快照），违规直接打进终端输出并按配置推送 Webhook / IM，Agent 侧无独立图形界面（详见 [PHILOSOPHY §二](./docs/PHILOSOPHY.md#系统暴露的能力agent-视角)）。
 
-```mermaid
-graph LR
-    A["① 试用<br/>npx -y -p @sofagent/audit sofagent-audit<br/>30 秒零配置审计·任意 git 仓库"] --> B["② 团队<br/>规则市场 + GitHub Action<br/>PR 自动审计·CI/CD"] --> C["③ 企业<br/>install.sh 全套<br/>装在企业设备·7×24 监控"]
-    C -.->|FDE 离场后| D["④ 自运转<br/>Agent 干活·sofagent 盯着<br/>审计·回滚·巡检"]
-```
+<p align="center"><img src="docs/assets/usage-path.png" alt="使用路径：试用 → 团队 → 企业 → 自运转" width="85%" /></p>
 
 | 入口 | 做什么 | 装在哪 | 花多久 |
 |------|--------|--------|:----:|
@@ -220,7 +165,7 @@ graph LR
 | npm 项目内 | `npm install @sofagent/audit`（项目 devDependency） | 随项目安装，版本锁进 package-lock | 固定依赖的团队项目、可复现审计 |
 | npm 全局 | `npm install -g @sofagent/audit` | 装一次到处用 | 跨仓库日常审计、daemon 常驻 |
 
-**规则市场**——内置 24 条审计规则（quick 默认 17 条），社区规则集以 `sofagent-ruleset-*` npm 包发布、`--ruleset-path` 手动加载（也支持指向你自己的 JSON 规则）：
+**规则市场**——社区规则集以 `sofagent-ruleset-*` npm 包发布、`--ruleset-path` 手动加载（也支持指向你自己的 JSON 规则）：
 
 ```bash
 npx -y -p @sofagent/audit sofagent-audit --list-rulesets      # 看有哪些规则集
@@ -259,7 +204,7 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # 加载安全规�
 | 安全声明 · 已知局限 | [SECURITY](./SECURITY.md) · [LIMITATIONS](./docs/LIMITATIONS.md) |
 | 贡献指南 | [CONTRIBUTING](./CONTRIBUTING.md) |
 
-> 🧪 **工程可信度**：3177 测试 / 13 包（12 个含测试）（测试数以 `tools/check/test-count.sh` 判定为准（内置 flaky 重跑机制）；`npm test` 直跑在低内存机器可能出现 mcp 包超时闪红，单独重跑即绿，属环境并发问题非产品缺陷）· 24 条审计规则 · fresh-eyes 独立审查持续运行（审查体系运作见 [docs/guides/review-system.md](./docs/guides/review-system.md)）。性能数据为单机参考值，跨工具横评排期 v1.4.x 与 Benchmark 集成。
+> 🧪 **工程可信度**：3178 测试 / 13 包（12 个含测试）· 24 条审计规则 · fresh-eyes 独立审查持续运行（测试数以 `tools/check/test-count.sh` 判定为准；`npm test` 直跑在低内存机器可能出现 mcp 包超时闪红，单独重跑即绿，属环境并发问题非产品缺陷。审查体系见 [docs/guides/review-system.md](./docs/guides/review-system.md)。性能数据为单机参考值，跨工具横评排期 v1.4.x 与 Benchmark 集成）。
 
 ---
 
