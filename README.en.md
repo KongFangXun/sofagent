@@ -57,7 +57,7 @@ Sits between the Agents you already use and the model layer — it doesn't repla
 | **Full mounting** | OpenClaw / WorkBuddy | ✅ Automatic | Hook-injected four-layer constraints + circuit breaker |
 | **Thin mounting** | Claude Code / Codex / Cursor / Gemini CLI | ⚠️ Semi-auto | Skills-directory symlink / AGENTS.md seed directives + git-hook audit |
 
-- **The difference is the Hook channel, not skills** — Claude Code and Cursor also have skills directories (installed Skills load just the same); what differs is whether the host runtime opens Hook channels like preToolCall / session injection: where it does (OpenClaw / WorkBuddy), the four constraint layers auto-inject at startup and the circuit breaker blocks in real time; where it doesn't, constraints ride along as Skill text (advisory) and hard blocking falls to the git hook (mandatory)
+- **The difference is the current depth of adaptation, not skills** — Claude Code and Cursor also have skills directories (installed Skills load just the same); what differs is which hosts sofagent has deeply adapted so far: OpenClaw / WorkBuddy have completed Hook-channel integration (four constraint layers auto-inject at startup + circuit-breaker real-time blocking); Claude Code supports event-level hooks like PreToolUse, Cursor/Gemini CLI load via the Skills directory — on hosts without deep adaptation, constraints ride along as Skill text (advisory) and hard blocking falls uniformly to the git hook (mandatory)
 - **Audit fallback is platform-agnostic** — `sofagent-audit --install-hook` runs as a git hook; at every tier, every commit passes through all 24 audit rules, violations hard-blocked. Constraints are advisory; auditing is mandatory
 
 One command selects your mounting tier: `bash install.sh --platform <platform-name>` (all platforms and differences in [HANDBOOK](./docs/HANDBOOK.md))
@@ -85,7 +85,7 @@ Deploying an AI node is only the first step — the chapters above cover how to 
 - 📜 **SKILL.md** — the single main entry, loaded by your AI tool: routes to the corresponding sub-Skill by phase, with role norms auto-injected by task type (mapping / audit / orchestration)
 - 🧩 **Phase sub-Skills** — a five-step closed loop of entry → deep-dive → quantify → deliver → depart (01-entry → 05-exit); what to do and what to deliver at each step is defined up front
 - 🔒 **Harness constraint skeleton** — entry-gate / fde-template / engage / loop-check / task-closure… every step from entry to departure has its matching constraint template
-- 🧬 **Experience auto-capture** — think.md reflection + knowledge maintenance; the lessons of every task land in the knowledge base automatically
+- 🧬 **Experience capture mechanism** — the structured pipeline of think.md reflection + knowledge maintenance is in place; measured data on capture effectiveness under sustained use is still accumulating (see [LIMITATIONS § core-effect measurements](./docs/LIMITATIONS.md#核心效果实测情况))
 
 > What gets deployed is not a bare Agent, but an **Agent with a constraint skeleton** — constraints are advisory, auditing is mandatory: the Agent may ignore the constraints, but every change gets audited without exception.
 

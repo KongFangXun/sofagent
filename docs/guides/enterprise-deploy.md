@@ -44,7 +44,7 @@ task/logs 和 think.md 以明文 Markdown 存储，可能含代码片段和对�
 |------|:--:|------|
 | 数据存储位置 | ✅ 本地 | 不上云，不调外部 API（离线模式） |
 | 数据脱敏 | ✅ | A2/A9 命中行脱敏后存储 |
-| 数据加密 | ❌ | 本地存储为明文（如需加密，用 OS 级全盘加密） |
+| 数据加密 | ⚠️ 双态 | 审计历史 v1.3.8 起支持 AES-256-GCM 密文落盘（~/.sofagent/keys/ 有密钥即激活）；task/logs、think.md、knowledge/ 仍明文——强合规场景配 OS 级全盘加密，边界见 LIMITATIONS |
 | 权限控制 | ✅ 700 | install.sh 自动设置 |
 | 数据保留策略 | ✅ 已完成 | cleanup.sh 自动清理，支持 --purge --before |
 | 审计日志 | ✅ 已完成 | task-record.sh 独立审计日志 + task/logs 追溯双通道 |
