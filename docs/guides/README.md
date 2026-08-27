@@ -1,6 +1,6 @@
 # sofagent 专题指南索引（guides/）
 
-> 本目录收纳 16 份专题指南。按角色找入口：企业 IT / FDE 交付 / 开发者 / 审计与安全 / 训练引擎。全站文档导航见 [WIKI](../WIKI.md)。
+> 本目录收纳 17 份专题指南。按角色找入口：企业 IT / FDE 交付 / 开发者 / 审计与安全 / 训练引擎。全站文档导航见 [WIKI](../WIKI.md)。
 
 ## 一、企业落地（IT 负责人 / 管理员）
 
@@ -9,6 +9,7 @@
 | [enterprise-deploy.md](./enterprise-deploy.md) | 企业部署全流程指南——单企业从零到自运转 |
 | [team-deploy.md](./team-deploy.md) | 团队落地 Checklist——多团队批量上线的逐项核对 |
 | [multi-device-sync.md](./multi-device-sync.md) | 多设备联邦同步——知识库与审计数据跨设备一致 |
+| [im-bridge.md](./im-bridge.md) | IM 桥远程指挥——dsh-im 扫码接入九渠道 + AI Office Connector + 安全审计 |
 | [qwenwork-integration.md](./qwenwork-integration.md) | 千问办公（QwenWork）适配——MCP 接入与状态说明 |
 | [team-collaboration-protocol.md](./team-collaboration-protocol.md) | L2 团队协作协议——多 Agent 协作的底层架构 |
 

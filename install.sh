@@ -77,6 +77,7 @@ sofagent install.sh v${VERSION} — 企业设备安装器（平台无关）
   bash install.sh                       默认模式：平台无关安装（只写 ~/.sofagent/）+ FDE Skill
   bash install.sh --base-only           仅装约束层（审计·回溯·daemon·dashboard，不装 Agent Skill）
   bash install.sh --platform <name>     显式平台集成（opt-in）：openclaw / workbuddy / claude / codex / hermes / cursor / gemini
+  bash install.sh --with-im-bridge      可选：安装 IM 桥远程指挥（@xmanrui/dsh-im 社区插件，默认不装）
   bash install.sh --quick               完整安装（静默模式，跳过交互确认）⚠️ 非预览，会写入文件
   bash install.sh --remote              远程安装模式（git clone）
   bash install.sh --force               升级时强制覆盖 custom/ 用户层（确认+备份）
@@ -159,6 +160,12 @@ QUICK_MODE="${QUICK_MODE:-0}"; REMOTE_MODE="${REMOTE_MODE:-0}"
 
 # ── 全套模式（默认开启，--base-only 关闭）——底座 + Agent Skill ──
 BASE_ONLY=0
+
+# ── v1.4.2: IM 桥可选安装 flag 预扫描（同 BASE_ONLY/REMOTE_MODE 模式，在 source 前捕获）──
+# 为什么预扫描而不进 parse_args：parse_args 在 engine/scripts/lib/platform-detect.sh，
+# 而 IM 桥是 install.sh 自己的可选分支——flag 解析留在本文件，engine/ 零改动（纪律：install.sh 之外不碰 engine/）
+WITH_IM_BRIDGE=0
+for _arg in "$@"; do [ "$_arg" = "--with-im-bridge" ] && WITH_IM_BRIDGE=1; done
 
 # ── 预扫描 --base-only（在 source/参数解析前捕获）──
 for _arg in "$@"; do [ "$_arg" = "--base-only" ] && BASE_ONLY=1; done
@@ -542,6 +549,33 @@ echo "  npm install -g @sofagent/ontology        # 本体模型"
 
 # 编排引擎为独立可选包（不随 @sofagent/audit 自动安装，需按需单独安装）
 echo "  💡 编排引擎为独立可选包 @sofagent/orchestrator，需单独安装（npm install -g @sofagent/orchestrator）"
+
+# ── v1.4.2: IM 桥远程指挥可选安装分支（--with-im-bridge flag，默认不装）──
+# 装的是第三方社区插件 @xmanrui/dsh-im（非 DSH 官方、非 sofagent 产物，MIT），
+# 把九种 IM 机器人 + 公网 AI Office 接入本机 DeepSeek Harness——手机扫码远程指挥。
+# 设计约束（对齐 --with-memory 可选分支纪律）：
+#   1. 默认不装：不传 --with-im-bridge 时本分支完全不执行，不写任何第三方目录
+#   2. 失败不阻断：dsh/npm 缺失或安装失败仅 warn——IM 桥是增强件，不装不影响核心约束层
+#   3. 幂等：dsh plugin add 对已装插件是安全重入
+# 详细指南（命令白名单/安全边界/审计结论）：docs/guides/im-bridge.md
+if [[ "${WITH_IM_BRIDGE:-0}" == "1" ]]; then
+  echo ""
+  info "Step 8a · IM 桥远程指挥（可选，@xmanrui/dsh-im 社区插件）..."
+  if command -v dsh &>/dev/null; then
+    # dsh plugin add：写 DSH 自己的 profile（~/.dsh/），不碰 sofagent 目录
+    if dsh plugin --profile web add -w @xmanrui/dsh-im 2>&1 | tail -3; then
+      ok "  IM 桥已安装——重启 dsh web 后进「设置 → IM机器人」扫码接入"
+      echo "  渠道：微信/飞书/钉钉/企微/QQ/Slack/Telegram/Discord/WhatsApp + AI Office Connector"
+    else
+      warn "  dsh plugin add 失败（网络/权限）——可手动执行: dsh plugin --profile web add -w @xmanrui/dsh-im"
+    fi
+  else
+    # dsh 未装：不代装 DSH 本体（那是 DeepSeek Harness 的安装范围，越权）——给手动指路
+    warn "  未检测到 dsh（DeepSeek Harness）——IM 桥依赖 DSH 宿主，已跳过"
+    warn "  先安装 DeepSeek Harness，再执行: dsh plugin --profile web add -w @xmanrui/dsh-im"
+    warn "  详见: docs/guides/im-bridge.md"
+  fi
+fi
 
 # ── v1.1.0: TencentDB Memory 集成（--with-memory flag）──
 if [[ "${WITH_MEMORY:-0}" == "1" ]]; then
