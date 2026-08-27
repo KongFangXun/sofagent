@@ -229,9 +229,10 @@ echo ""
 echo -e "${BOLD}[2c/13] workspace 子包 package.json version + @sofagent/* 依赖${NC}"
 ws_pkg_count=0
 while IFS= read -r ws_pkg; do
-  # 跳过已处理的 audit 和 mcp
-  [[ "$ws_pkg" == *"audit/package.json" ]] && continue
-  [[ "$ws_pkg" == *"mcp/package.json" ]] && continue
+  # 跳过已处理的 audit 和 mcp（精确路径匹配——通配 *audit/package.json 会误伤
+  # openclaw-plugins/sofagent-audit/package.json，v1.4.1 发版实测漏 bump 根因）
+  [[ "$ws_pkg" == "$PROJECT_ROOT/engine/audit/package.json" ]] && continue
+  [[ "$ws_pkg" == "$PROJECT_ROOT/engine/mcp/package.json" ]] && continue
   [[ -f "$ws_pkg" ]] || continue
   ws_content=$(cat "$ws_pkg")
   # version 字段 + @sofagent/* 依赖版本号一起替换（ERE 分组保留包名）

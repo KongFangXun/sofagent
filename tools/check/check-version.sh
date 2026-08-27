@@ -452,6 +452,24 @@ for pkg in harness ontology eval core audit mcp orchestrator daemon ab-test thin
 done
 echo ""
 
+# ── 9c. 检查 OpenClaw plugin 家族 version 与 SSOT 一致（v1.4.1 补漏：sofagent-audit 漏 bump 教训）──
+# openclaw-plugins/* 与主线同版发布（11-distribute.md 铁律「版本号与 sofagent 主线版本对齐」），
+# 但 9b 的手写清单不含它们——曾经靠 bump 脚本逐文件替换，漏一个就静默漂移（1.4.1 发版实测）
+OPENCLAW_PLUGIN_DIR="${PROJECT_ROOT}/engine/openclaw-plugins"
+if [[ -d "${OPENCLAW_PLUGIN_DIR}" ]]; then
+  for PKG_JSON in "${OPENCLAW_PLUGIN_DIR}"/*/package.json; do
+    [[ -f "${PKG_JSON}" ]] || continue
+    pkg_ver=$(grep -o '"version": "[^"]*"' "${PKG_JSON}" | head -1 | sed 's/"version": "//;s/"//')
+    [[ -z "${pkg_ver}" ]] && continue
+    if [[ "${pkg_ver}" != "${SSOT_VERSION}" ]]; then
+      report_error "${PKG_JSON#"${PROJECT_ROOT}"/}" "version: ${pkg_ver}" "version: ${SSOT_VERSION}"
+    else
+      report_ok "${PKG_JSON#"${PROJECT_ROOT}"/}" "${pkg_ver}"
+    fi
+  done
+fi
+echo ""
+
 # ── 10. 检查 engine/mcp 依赖 @sofagent/audit 版本（支持 ^ 范围） ─
 MCP_PKG="${PROJECT_ROOT}/engine/mcp/package.json"
 if [[ -f "${MCP_PKG}" ]]; then
