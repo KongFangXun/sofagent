@@ -1,6 +1,6 @@
 # 团队落地 Checklist
 
-> 给想落地的人看的简单 checklist——不用读完 593 行 Handbook。
+> 给想落地的人看的简单 checklist——不用读完 700+ 行 Handbook。与 [enterprise-deploy.md](./enterprise-deploy.md)（企业内网部署配置）互补：本文管「怎么分步骤用起来」，那边管「内网/离线环境怎么装」。
 
 ## 📦 第 1 天：装上
 

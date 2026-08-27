@@ -8,7 +8,7 @@
 |------|------|--------|
 | `sofagent.png` | 项目 Logo（200px），README 头部引用 | GitHub README、npm 包页面、tools/dashboard/dashboard.html |
 | `banner.png` | README 头部横幅 | README 中英版头部 |
-| `arch-layers.svg` | 三层定位图（模型层 → FDE Harness 层 → Agent 层），矢量、全内联样式 | README 中文版「什么是 FDE Agent」段 |
+| `arch-layers.svg` | 三层定位图（模型层 → FDE Harness 层 → Agent 层），矢量、全内联样式 | README 中文版「什么是 FDE Harness」段 |
 | `usage-path.svg` | 使用路径图（试用 → 团队 → 企业 → 自运转），矢量、全内联样式 | README 中文版「产品一瞥」段 |
 | `arch-layers-en.svg` / `usage-path-en.svg` | 上两图的英文版 | README 英文版对应段 |
 | `dashboard.png` | Dashboard 驾驶舱截图 | README 中英版「产品一瞥」段 |

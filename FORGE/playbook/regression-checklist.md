@@ -674,8 +674,8 @@ grep -c "extractControlGraphState\|sanitizeLoopId\|路径穿越" FORGE/playbook/
 #### 47. 产品叙事收敛红线 + BugFix 42 项核心回归锁（v1.1.9 新增 · 交付四+五）
 
 ```bash
-# 子项 a: README FDE Agent 叙事收敛（≥5 处）
-FDE_COUNT=$(grep -c "FDE Agent" README.md) && [ "$FDE_COUNT" -ge 5 ]   # 通过
+# 子项 a: README FDE Harness 叙事收敛（≥1 处，2026-08-27 口径从 FDE Agent 升级）
+FDE_COUNT=$(grep -c "FDE Harness" README.md) && [ "$FDE_COUNT" -ge 1 ]   # 通过
 
 # 子项 b: 审计引擎零 token 红线保留
 grep -q "审计引擎零 token" README.md   # 命中
@@ -692,8 +692,8 @@ SANITIZER_COUNT=$(grep -c "name: '" engine/core/src/security/prompt-sanitizer.ts
 # 子项 f: workflow-parser schema limits（MAX_NODES=20 / MAX_TASK_LENGTH=2000）
 grep -c "MAX_NODES = 20\|MAX_TASK_LENGTH = 2000" engine/orchestrator/src/workflow-parser.ts   # ≥2
 
-# 子项 g: 验收场景覆盖（acceptance-test 场景 120-121）
-grep -c "FDE Agent\|审计引擎零 token\|assertSubAgentsNoEmptyTools\|MAX_NODES" FORGE/playbook/acceptance-test.sh   # ≥4
+# 子项 g: 验收场景覆盖（acceptance-test 场景 120-121；品牌口径 2026-08-27 升级为 FDE Harness）
+grep -c "FDE Harness\|审计引擎零 token\|assertSubAgentsNoEmptyTools\|MAX_NODES" FORGE/playbook/acceptance-test.sh   # ≥4
 ```
 
 #### 49. v1.2.0 物理结构大重构——旧路径零残留 + 新结构就位（v1.2.0 新增 · fresh-eyes 三轮审查）

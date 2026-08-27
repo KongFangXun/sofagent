@@ -971,9 +971,9 @@ if $S119_OK; then S119_RESULT=$(LSE="$PROJECT_ROOT/engine/orchestrator/dist/loop
 $S119_OK && pass
 scenario 120 "v1.1.9 叙事收敛 + BugFix 回归锁"
 S120_OK=true; README="$PROJECT_ROOT/README.md"
-# v1.3.2 优化：检查"产品身份叙事三要素"（FDE/约束层/审计）+ "FDE Agent" 出现 ≥1 次防品牌退化
-FDE_AGENT_COUNT=$(grep -c "FDE Agent" "$README" 2>/dev/null || echo 0)
-[ "$FDE_AGENT_COUNT" -ge 1 ] || { fail "README 'FDE Agent' 完全消失（品牌主身份丢失，期望 ≥1）"; S120_OK=false; }
+# v1.4.1 口径升级：品牌主身份从"FDE Agent"改为"FDE Harness"（2026-08-27 用户拍板）——检查三要素（FDE/约束层/审计）+ "FDE Harness" ≥1 防品牌退化
+FDE_HARNESS_COUNT=$(grep -c "FDE Harness" "$README" 2>/dev/null || echo 0)
+[ "$FDE_HARNESS_COUNT" -ge 1 ] || { fail "README 'FDE Harness' 完全消失（品牌主身份丢失，期望 ≥1）"; S120_OK=false; }
 grep -qE '(约束层|Harness)' "$README" || { fail "README 缺 '约束层/Harness' 身份描述"; S120_OK=false; }
 grep -qE '(审计|audit)' "$README" || { fail "README 缺 '审计' 身份描述"; S120_OK=false; }
 # v1.2.9 技术描述移入 ARCHITECTURE.md，改为检查 ARCHITECTURE（措辞已从 README 的"审计引擎核心规则零 token"改为 ARCHITECTURE 的"19 条纯 git-diff 零 token"）

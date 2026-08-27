@@ -15,7 +15,7 @@
 
 **An open-source FDE Harness layer.** The AI-deployment engineer for one-person companies and SMBs — never sleeps, never leaves, and carries its own auditor. It sits **between mature Agents (executors: DSH / OpenClaw / WorkBuddy) and the model layer (intelligence sources: general LLMs + bespoke/small post-trained models)**, governing both sides. Shipped as **FDE plugins + Skill + MCP + CLI + Dashboard**: on entry, map the business flow clearly, build the ontology graph, deploy the AI nodes in place; on departure, audit every change and keep optimizing.
 
-sofagent does not build its own Agent — execution is delegated to mature hosts (model + tools + sessions). What it delivers is the **FDE Harness layer**: methodology + constraint layer + audit — constraining executors (Agents) and governing intelligence sources (models), turning any existing Agent into one that "does enterprise AI deployment like an FDE" and keeping every model (general or bespoke) under control (register / rollout / train / deploy fully audited).
+sofagent does not build its own Agent — execution is delegated to mature hosts (model + tools + sessions). What it delivers is the **FDE Harness layer**. **FDE Harness = FDE methodology × Harness engineering** — the forward-deployed engineer's playbook (map on entry → deploy → depart) baked into a Harness constraint layer (inject · audit · rollback · evolve) that slots into any existing Agent; and it keeps every model (general or bespoke) under control (register / rollout / train / deploy fully audited).
 
 > 🏞️ Big tech hands you "water" (foundation models) and "riverbeds" (Agent platforms) — but the water is raw, and you don't dare drink it straight. sofagent is the engineering that makes the river usable for a whole city: dams keep the water from flooding, treatment plants turn raw water into drinking water, and pipe networks deliver it to every faucet. Models supply 90% of the intelligence; sofagent supplies the 10% of reliable execution.
 
@@ -28,16 +28,16 @@ sofagent does not build its own Agent — execution is delegated to mature hosts
 - 🧱 **24 audit rules + 67 MCP tools** — secret leaks, out-of-scope edits, injection defense, privilege red lines; judged on git diff hard evidence, violations blocked on the spot; evidence is based on local diffs — trust boundaries and known bypass surfaces in [LIMITATIONS §3](./docs/LIMITATIONS.md) (quick runs 17 by default; full 24 = 17 default + 7 extensions)
 - 🛡️ **Automatic snapshot rollback** — auto-archived after every audit, one-click restore to any snapshot when something breaks
 
-## What is an FDE Agent
+## What is the FDE Harness
 
 **FDE = Forward Deployed Engineer** — the person who embeds models into real enterprise operations. sofagent turns this role into an open-source FDE Harness layer, sitting between the Agents you already have (DSH / OpenClaw / WorkBuddy) and the model layer, walking a full FDE business flow through four phases: **map the business flow → build dual graphs → deploy AI nodes → continuous optimization after departure**. Dual graphs = business graph (system boundaries, data flows) + ontology graph (shared semantic foundation), turning the enterprise into a machine-readable structure; after the FDE leaves, 7×24 inspection, audit, and optimization continue — the human leaves, governance doesn't.
 
 <p align="center"><img src="docs/assets/arch-layers-en.svg" alt="sofagent three-layer positioning: model layer → FDE Harness layer → Agent layer" width="85%" /></p>
 
-**Why an FDE Agent**
+**Why the FDE Harness**
 
 - **The bottleneck for enterprise AI is deployment, not the model** — mapping workflows, drawing system boundaries, and setting data rules is precisely the FDE's job. MIT NANDA's *The GenAI Divide*: 95% of enterprise GenAI projects failed to produce value worth a financial statement, while FDE job postings surged 729% in a year (verification in [VALIDATION](./docs/VALIDATION.md))
-- **Completeness comes from the union** — DSH solves "can work"; sofagent solves "keeps working"; only together do they make a complete FDE Agent (next chapter)
+- **Completeness comes from the union** — DSH solves "can work"; sofagent solves "keeps working"; only together do they make a complete FDE Harness (next chapter)
 - **"Continuous optimization" only holds with a constraint layer** — backed by auditable, rollback-capable mechanisms, not promises in prompts. Independent external experiment: same model, only the outer Harness optimized — a legal-Agent benchmark rose 63.4% → 80.1% (+16.7pp). More verification in [VALIDATION](./docs/VALIDATION.md) · [THANKS](./docs/THANKS.md)
 - **Capabilities are portable, never dead-bound to a platform** — the constraint layer is platform-agnostic; the methodology follows the business, not the platform
 
@@ -66,7 +66,7 @@ One command selects your mounting tier: `bash install.sh --platform <platform-na
 
 Many companies adopt AI the wrong way around — they pick models, build platforms, and buy Agents first, only to find nobody uses them. The problem isn't the technology; it's that **they haven't figured out their own business processes before handing them to AI**.
 
-Most tools teach you how to build Agents; sofagent first answers **where AI should go** — turning the five-element deep-dive and three-question triage from guesswork into a repeatable methodology:
+Most tools teach you how to build Agents; sofagent first answers **where AI should go** — turning that judgment from guesswork into a repeatable methodology:
 
 | Phase | Input | What happens | Deliverable |
 |-------|-------|--------------|-------------|

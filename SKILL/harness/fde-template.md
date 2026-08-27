@@ -2,10 +2,10 @@
 
 > 📦 **默认企业约束层模板。** install.sh 会将本文件复制为用户的初始 fde.md。
 > 部署后位置：`~/.openclaw/skills/sofagent/fde.md`（或对应平台路径）。
-> FDE Agent 部署时基于本模板生成实际约束，用户可在此基础上修改。
+> FDE Harness 部署时基于本模板生成实际约束，用户可在此基础上修改。
 >
 
-> 本文件由 FDE 在部署时编写，不是用户自己填。典型流程：FDE Agent 先根据企业 workflow 起草本文件，再由人类审查确认后落盘到 `.sofagent/fde.md`。
+> 本文件由 FDE 在部署时编写，不是用户自己填。典型流程：FDE Harness 先根据企业 workflow 起草本文件，再由人类审查确认后落盘到 `.sofagent/fde.md`。
 >
 > 企业约束层（由 FDE 编写，Agent 运行时加载，优先级最高）。FDE 梳理企业 workflow 后，
 > 将企业合规要求、数据脱敏规则、审计频率、行业约束翻译成本文件。

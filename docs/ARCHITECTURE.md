@@ -218,7 +218,7 @@ v1.3.9 起对所有 workspace 包的入口 export 做显式分级，CI 门禁（
 
 > 符号数声称与 baseline 的自动校验见 `public-api.mjs` 的「文档声称符号数校验」段——文档写 1456 必须与 baseline 实际数一致，否则门禁 FAIL（根治历史 1449 漂移类问题）。
 
-### 对外核心能力（FDE Agent 给用户什么）
+### 对外核心能力（FDE Harness 给用户什么）
 
 > 累计能力表（按版本归组，全部 ✅ 已发布可用；规划中/排期项见下方「已排期」）：
 
@@ -575,203 +575,13 @@ sofagent-audit --revert SHA   # 回滚到任意快照
 
 **工程参照：LangGraph checkpoint**。[LangGraph](https://github.com/langchain-ai/langgraph) 把 checkpoint 持久化状态做成一等公民——任意步可回放、可分叉重跑，这正是「回溯」的工程前提：**先有可寻址的状态快照，才谈得上回溯到某次变更之前**。其 human-in-the-loop 中断点对位约束层的人类终裁闸门，执行轨迹对位审计的 trace 输入。
 
-需要说清分工：业界已把「有状态 + 可回溯 + 可人审」确立为生产级 Agent 编排的**默认要求**，而非 sofagent 独创。差异在 LangGraph 提供机制（checkpoint / interrupt 原语），sofagent 提供策略（什么该拦、拦了怎么判、经验怎么回流）。sofagent 的回溯实现是自有的 FileCheckpointer（详见下方 [Checkpoint 持久化](#checkpoint-持久化) 五条并发安全规矩）+ 自研同构 Git 引擎——与 LangGraph checkpoint 是同一思路的两种载体。
+需要说清分工：业界已把「有状态 + 可回溯 + 可人审」确立为生产级 Agent 编排的**默认要求**，而非 sofagent 独创。差异在 LangGraph 提供机制（checkpoint / interrupt 原语），sofagent 提供策略（什么该拦、拦了怎么判、经验怎么回流）。sofagent 的回溯实现是自有的 FileCheckpointer（五条并发安全规矩，详见 [guides/loop-development.md · Checkpoint 持久化](./guides/loop-development.md#checkpoint-持久化)）+ 自研同构 Git 引擎——与 LangGraph checkpoint 是同一思路的两种载体。
 
 > 📖 来源：[langchain-ai/langgraph](https://github.com/langchain-ai/langgraph)（github.com，2026-08 核实）
 
 ### ⚙️ FORGE 自迭代工具链（内部）
 
-大任务拆小、多 Sub Agent 并行、A/B 对比找更优方案。基于 LangGraph createReactAgent，`sofagent-orchestrator compose --task` CLI 入口——任何 Agent 平台都能用。
-
-**为什么是 Skill + 脚本 + Runtime**：
-| 什么事 | 谁来做 | 为什么 |
-|------|------|------|
-| 判断（评分、反思、选模板） | Skill（MD prompt） | LLM 长项——模式识别 |
-| 机械操作（文件读写、API） | 脚本（bash） | 确定性操作 |
-| 硬安全（加载链、断路器） | Runtime（Agent 平台，如 OpenClaw） | Agent 失控时没法自己管自己 |
-
-**编排收敛条件**：目标必须可验证（有量化标准）+ 模型可自主判断。Maker-Checker 分离是收敛前提——详见下文「解题/验证分离」及 [§四 编排收敛与 A/B 测试](#编排收敛与-ab-测试)。
-
-> 💡 **Loop 和 Graph 不是替代关系**
->
-> 行业从 Loop Engineering 热到 Graph Engineering，但 Loop 没有被淘汰——**Loop 是带回边的 Graph**，复杂 Graph 内部嵌套大量局部 Loop。sofagent 的 fresh-eyes-loop（A/B 双盲审查 5 步循环）就是一个 Loop，它未来会成为 v1.3.1 控制图里的一个子图节点。演进路径是"Loop 跑通一个 → 编排进 Graph"，不是"丢掉 Loop 换成 Graph"。
->
-> Graph 的价值在于把**不可合并的独立角色 + 交接点**直接写进系统里——实现→测试→独立审查、合规审批强制节点、多来源并行检索后合并冲突。sofagent 的审计（24 条规则，其中 19 条纯确定性 git-diff，其余需 LLM 语义判断）= "必须走固定流程"；编排引擎（createReactAgent）= "让模型自由判断"——这正是 Graph Engineering 真正的工程难点：**控制权分配**。
->
-> **一句话分界线：看「谁决定下一步」。** 节点是 Agent 还是 Workflow，不看节点里装了什么（大模型调用、工具调用、子 Agent 都只是积木），只看下一步去哪由谁决定——**模型现场决定 = Agent；代码提前写死 = Workflow**。所以 Workflow 的节点可以是任意类型，关键在控制流归谁。生产环境的主流打法正是"骨架确定、关节灵活"：Workflow 锁死主流程，需要灵活判断的节点才嵌 Agent——纯 Agent 不可控，纯 Workflow 太脆弱，两者组合才是稳态（对应本文件下方「Workflow 的混合架构」）。
-
-> 💡 **「翻译官不应该有决策权」——智能与控制分离**
->
-> 受控智能体引擎的实践验证了一个核心判断：**模型负责理解，不负责执行。** LLM 的不可替代价值是把模糊的自然语言翻译成结构化意图（意图识别、参数提取、歧义消解）；但写操作的确认、权限校验、状态流转——所有需要确定性的控制——必须握在系统代码手里，不交给概率性的模型。你永远无法 100% 确定模型不会在某个奇怪的上下文里，把一句模棱两可的话判定为"用户确认了"。
->
-> 这正是 sofagent 审计的设计逻辑：24 条规则中 19 条是纯 git-diff（零 token、不调 LLM、100% 确定性），不是因为模型不够聪明，而是因为**确认这件事，必须由系统代码硬判断**——"是就是，不是就不是"，没有概率空间。模型产出意图（工程师 Agent 写代码），系统决定能不能放行（审计跑规则）——这就是"智能属于模型，控制属于系统"在 sofagent 的工程落地。
->
-> 📖 来源：受控智能体引擎设计实践（2026-07）·「智能属于模型，控制属于系统」
-
-**工具集设计约束**：每个 Sub Agent 的工具集应零重叠、无歧义——工具功能描述不能模糊交叉。当工具数上百时，瓶颈不在模型推理而在工具描述歧义。v1.1.0 daemon 工具注册将做静态重叠检测。
-
-**为什么多 Agent 协作 > 单强模型**：来自 Apple Dex RSI 训练团队的一手观察——基于 self-attention 架构的固有局限，单模型处理超长上下文有不可逾越的上限。多 Agent 协作（分治验证 + 多路径冗余 + 记忆机制）效果远超单强模型。核心推论：**工程化能力具备独立于模型基础能力的结构性壁垒**，不会被通用模型迭代轻易覆盖。sofagent 的编排引擎（Sub Agent 分治 + Maker-Checker 分离）正是这个理论的产品化落地。
-
-**解题/验证分离**：RSI 研究表明，同一 Agent 自验覆盖率仅 7-33%，分离为独立验证后提升至 73%（内部实测参考值，非外部基准）。这与审计的"不信任 Agent 自我报告"原则同构——解题 Agent 和验证 Agent 必须物理隔离，验证是核心基因，需分领域（代码用单测、数学用形式化证明、非标准领域用多 Agent 协作）。
-
-> 💡 **Agent 粒度判定（X4）**：单请求内被调 >3 次的 Agent 合并到上游；日均调用 <5 次的 Agent 标记僵尸预警——防纳米 Agent 膨胀。
-
-> 💡 **Graph Engineering 实操四纪律**
->
-> **① 节点不全是 Agent。** 节点分三类：Agent 节点（需求分析/代码理解等要语义判断的）、工具节点（跑编译器/JSON 结构校验——普通代码更便宜更稳定）、人工节点（合并主分支这类关键操作交给人）。别看到 graph 就往每个方框里塞一个 Agent——「连三个数组都召唤一个大模型」不是智能，是铺张浪费。sofagent 的四节点状态机正是活例：engineer/reviewer = Agent 节点，audit = 工具节点（19 条纯 git-diff 零 token），human_confirm = 人工节点。
->
-> **② 汇合比并行更难。** 并行的难点不是怎么出去，是怎么回来：哪些结果必须全部到齐、哪些只看关键结果、超时后是停止任务还是带着「尚未确认」的标记继续——这才是汇合规则。不能简单等全部完成（最慢的拖垮整张图），也不能投票放行（两票通过就假装漏洞不存在）。v1.3.1 并行波次落地时须为每一波显式定义汇合条件。
->
-> **③ 画图之前先问值不值得。** 两个条件：任务里真的存在多组依赖/并行/条件分支；每个阶段能交出一个可单独检查的结果。一个 Agent 能完成的简单任务就继续用 Loop——别为了追新名词硬拆五个 Agent 开会；还在探索、问题边界没摸清的任务先让 Agent 调查，等结构稳定再固化成 Graph。
->
-> **④ 五问检验真工程还是花架子**：每个节点交什么？边上传递什么？并行后怎么汇合？失败从哪里继续？哪一步会扩大权限？答得出来才是能稳定运行的图，答不出来就是一张看起来很忙的组织架构图。
->
-> 注：五层工程谱系、「Loop 是带回边的 Graph」、控制权分配等已见于本文件上方「Loop 和 Graph 不是替代关系」段及 [DEVELOPMENT.md「控制权分配」](./DEVELOPMENT.md)，不重复。
-
-#### 四节点状态机（v1.1.3+）
-
-编排引擎的核心是 LangGraph StateGraph——一条 `engineer → audit → reviewer → human_confirm` 的流水线，跑挂了能回退重试，中断了能从断点续跑。
-
-```mermaid
-flowchart LR
-    START([START]) --> Engineer
-    subgraph Inner["StateGraph 内层循环"]
-        Engineer["engineer<br/>AI · createReactAgent + 工具"] --> Audit["audit<br/>CLI · git diff 硬证据"]
-        Audit --> Reviewer["reviewer<br/>AI · 只读工具"]
-        Reviewer --> Human["human_confirm<br/>HITL · y/n"]
-    end
-    Audit -. "FAIL (retryCount<3)" .-> Engineer
-    Human -. "驳回 (retryCount<3)" .-> Engineer
-    Human -->|确认| END([END · completed])
-    Audit -. "FAIL 且重试上限" .-> BLOCKED([END · blocked])
-    Human -. "驳回且重试上限" .-> BLOCKED
-```
-
-**三态终态**：`completed`（人工确认通过）/ `blocked`（重试 3 次仍不过）/ `aborted`（stdin 关闭等中断，checkpoint 已保存可 `loop --resume` 恢复）。
-
-**三个条件路由函数**（纯函数，可单测）：
-
-| 路由 | 判定 | 出口 |
-|------|------|------|
-| `routeAfterAudit` | blocked→END；FAIL→engineer；PASS/WARN→reviewer | engineer / reviewer / END |
-| `routeAfterHuman` | 非 running→END；running（驳回）→engineer | engineer / END |
-| `routeFromStart` | 正常→engineer；resume→指定节点 | 四节点之一 |
-
-**为什么 audit 是程序不是 AI**：audit 节点调 `@sofagent/audit` 跑 A1-A11、A14-A23 + E1-E2/E4（共 24 条）规则——只看 `git diff HEAD` 硬证据，标准是硬的、可复现的，不随模型波动。reviewer 才是 AI 语义审查。这正是上文"解题/验证分离"在编排层的产品化落地——audit 做确定性验证，reviewer 做概率性语义验证，两者物理隔离。
-
-#### 状态契约：LoopArtifacts
-
-节点之间不靠全局变量，全靠 `state.artifacts` 这个对象传递。LangGraph 的 `Annotation` 给它配了浅合并 reducer——节点返回时只需给增量字段，框架自动合并。
-
-| 字段 | 类型 | 谁写 | 谁读 |
-|------|------|------|------|
-| `task` | string | 初始化 | 全部节点 |
-| `engineerOutput` | string | engineer | audit / reviewer |
-| `engineerOutputs` | string[] | engineer（追加） | 历史追溯 |
-| `auditReport` | string | audit | reviewer / engineer 修复 |
-| `auditReports` | string[] | audit（追加） | 历史追溯 |
-| `reviewReport` | string | reviewer | human_confirm / engineer 修复 |
-| `reviewReports` | string[] | reviewer（追加） | 历史追溯 |
-| `humanFeedback` | string | human_confirm | 路由判定 |
-
-> 这张表对应的源码是 `engine/orchestrator/src/loop/state.ts` 的 `LoopArtifacts` 接口。
-
-> 💡 **节点交接三件套：接口契约 + 共享状态 + 上下文隔离**
->
-> Graph 的节点之间怎么交接是真正的工程难点——光有共享状态不够，三件事缺一不可：
->
-> - **接口契约**：每个节点必须明确输入输出（少一项不算完成）。sofagent 的 LoopArtifacts 表就是契约——engineer 交 `engineerOutput` + 追加 `engineerOutputs`，audit 交 `auditReport`，字段缺失则路由判定直接 FAIL。**别只给 Agent 分岗位，还要规定他怎么交差。**
-> - **共享状态**：整张图有一份持续更新的公共记事本（任务 ID、版本、证据、修改记录、当前步骤）。LoopArtifacts 的浅合并 reducer 就是这个公共记事本。
-> - **上下文隔离**：不是所有节点都能看全部信息——前端调查 Agent 不需要生产数据库凭证。sofagent v1.3.7 的 SubAgent 沙箱（文件系统隔离 + 虚拟 key 边界注入）正是上下文隔离的工程落地。Graph 决定信息往哪儿走，Context Engineering 决定每个节点具体看到什么。
-
-#### Graph Engineering 视角（控制图 = StateGraph）
-
-> 📐 2026-07 行业新概念「Graph Engineering」把 Prompt→Context→Harness→Loop→**Graph** 的演进框定为五层工程化方法。核心判断：「先做扎实前四层再上 Graph，跳过前四层直接上图会组织混乱」。sofagent 前四层已扎实（v1.2.0 完成），**Graph 层是自然进化而非跳步。** Carlos E. Perez（[From Loop Engineering to Graph Engineering?](https://engineering.zooz.com/intuitionmachine/from-loop-engineering-to-graph-engineering-d3ebeb08511c)）系统论证了四类失效与拓扑解法，并指出真正的分界线不在 Loop vs Graph，而在是否显式化了 grounding。理论根 = FSM/Statecharts（Harel 1987）。
-
-sofagent 的编排引擎天然就是一张**控制图（Control Graph）**——不必新造能力，只需用这套精确词汇重新表述已有实现：
-
-| Graph Engineering 构件 | sofagent 对应实现 | 源码位置 |
-|------|------|------|
-| **控制图 Control Graph**（node=state, edge=transition, guard edge 守门） | `StateGraph` 四节点 `START→engineer→audit→reviewer→human_confirm→END`，`routeAfterAudit`/`routeAfterHuman` 条件路由，WARN 透传为 guard 放行 | `engine/orchestrator/src/loop/graph.ts` |
-| **★Reality Anchor**（无锚点 = 披 PM 外衣的幻觉） | `audit` 节点——只看 `git diff HEAD` 硬证据（A1-A11、A14-A23 + E1-E2/E4，共 24 条），不信任 Agent 自报，比"只看 PR 号"更硬。**Grounding 三必要条件**（Carlos E. Perez）：① audit 规则不可篡改 = ground-truth ② `acceptance-test.sh` = 冻结验收标准 ③ 用户 task 来自系统外部 | `@sofagent/audit` |
-| **可审计状态文件**（状态落盘可复核） | `FileCheckpointer` 每节点前后 snapshot 到 `.sofagent/checkpoint/`，`resumeLoopGraph()` 断点续跑 | `engine/orchestrator/src/graph/checkpoint.ts` |
-| **数据图 Data Graph**（知识图谱/血缘） | 蓄水池（知识库 `knowledge/`） + 市政规划（Ontology，Ledger-Views-Policy）——与编排控制图正交 | `knowledge/` + Ontology 层 |
-| **Org Graph（稳定角色）** | 四节点（engineer/audit/reviewer/human_confirm）是稳定角色——不随任务变化；变动的是节点内的 Work Graph 子拓扑 | `engine/orchestrator/src/loop/graph.ts:128-132` |
-| **Work Graph（临时拓扑）** | 每个任务的子任务拆分 + 并行 engineer 实例 = 任务结束即解散的工作图；Planner 节点 + 并行子图已落地 | ✅ 已交付 |
-
-**控制图 vs 数据图二分天然具备**：管道（Workflow / StateGraph）= 控制图，决定"先干什么后干什么"；蓄水池 + 市政规划 = 数据图，承载"知道什么、怎么理解"。两者解耦——控制图无知识库也能跑（纯编排），数据图无控制图也能沉淀（Dream Cycle 独立跑）。
-
-**Org Graph vs Work Graph 双图模型**（行业前沿框架）：Org Graph = 长期稳定的角色节点（engineer/audit/reviewer/human_confirm），变动慢，像公司组织架构；Work Graph = 为当前任务动态拼装的协作拓扑（子任务 engineer 实例 + 并行扇出），任务结束即解散。两者分离——长期能力与短期任务解耦，避免每次任务都重建整套组织。
-
-**Org Graph 节点六要素**（每节点定义：职责 / 输入契约 / 输出契约 / 工具权限 / 状态范围 / 退出条件）：
-
-| 节点 | 职责 | 输入 | 输出 | 工具权限 | 退出条件 |
-|------|------|------|------|---------|---------|
-| **engineer** | 写代码/改文件 | `artifacts.task` + `reviewReport` | `engineerOutput` | write/edit/run_bash | audit PASS→next；FAIL→retry；retry≥3→blocked |
-| **audit** | git diff 硬证据审计 | `engineerOutput` | `auditReport` + `auditResult` | 只读 git diff | 规则跑完→next |
-| **reviewer** | AI 语义审查 | `auditReport` + `engineerOutput` | `reviewReport` | 只读上下文 | 审查完成→human_confirm |
-| **human_confirm** | HITL 人工确认 | `reviewReport` + 全量上下文 | `humanFeedback` | 人工决策 | 确认→END；驳回→engineer |
-
-**Work Graph 示例**（行业调研任务，v1.2.3 Planner 落地后自动生成）：
-
-```
-START → plan（拆解："调研 AI 笔记产品"）
-     → engineer-search（并行：竞品 A）
-     → engineer-search（并行：竞品 B）
-     → engineer-search（并行：竞品 C）
-     → merge（合并结果）
-     → engineer-analyze（功能/价格/评价）
-     → audit（审计引用来源）
-     → reviewer（审查分析质量）
-     → human_confirm
-```
-
-**单闭环四类失效 → sofagent 解法**（Carlos E. Perez）：① Goodhart 目标漂移→audit 用 git diff 不信自报；② 参照盲→audit 规则硬编码不随模型波动；③ 耦合冲突→Maker-Checker 职责硬分离；④ 测量退化→指标来自事实层非主观报告。
-
-**Loop 四类失败（行业科普版）**（与 Carlos 四类失效同源互补，偏「业务表现」视角）：① **指标异化**——优化解决率 → 客户流失率翻倍 → audit 节点看 git diff 硬证据兜底；② **目标僵化**——Agent 不质疑目标本身 → human_confirm 节点 + 危险操作前人工批准钩子兜底；③ **多目标冲突**——两个 loop 互相打架 → ★Reality Anchor guard edge 统一裁决；④ **测量衰退**——测试数据老化 95% 通过率是假象 → audit 规则不可篡改（ground-truth）+ acceptance-test 冻结验收标准。完整映射见 [VALIDATION §三](./VALIDATION.md)。
-
-**Loop → Graph 六触发信号**（什么时候该升级，sofagent 并行编排 v1.3.1 的适用性判断框架）：任务需交接 / 需散出汇合 / 每步不同模型工具 / 需显式可审计角色 / 节点失败需隔离 / 需独立 reviewer——满足其一才上 Graph，否则用 Loop 就够（"先用 loop，复杂到需要多角色协作再 graph"，避免过度设计）。sofagent 落点对照（dag-runner vs Send API 并行 / worktree 隔离 / StateGraph 四节点 / audit+fresh-eyes 独立审查）见 [VALIDATION §三](./VALIDATION.md#循环的边界从-loop-到-graph-的升级判据)。
-
-**五类边契约**（行业共识）：当前实现仅有 **数据流**（`artifacts` 传递）和 **控制流**（`routeAfterAudit`/`routeAfterHuman`）——**缺权限流、证据流、失败流**。待 v1.3.1 并行编排落地时形式化全部五类边。
-
-**可学习的未来迭代（详见 [ROADMAP](./ROADMAP.md)「v1.2.x Graph Engine 进化路线」）**：① **Planner 节点**——任务分解（✅ v1.2.2）；② **降级路由链**——retry→降级→标记→人工（✅ v1.2.2）；③ **engineer-decide/execute 分层**——LLM 层 + 代码层（✅ v1.2.2）；④ **并行子图执行**——worktree 隔离 + 多 engineer 并发（✅ v1.2.3）；⑤ **Dashboard ASCII 控制图**——节点/边/波次分层（✅ v1.2.3）；⑥ **控制图多循环 DAG 波次并行**——LangGraph 原生 Send API + ★Reality Anchor 每波次卡关（📋 v1.3.1）。
-
-#### 重试语义：统一计数器
-
-`retryCount` 一个计数器管两种失败——audit 判 FAIL 或 HITL 驳回，都 `retryCount++` 回 engineer。达到上限（默认 3）仍未过 → `finalStatus = 'blocked'` 终态 + 写 audit history（engine 字段标 `loop-graph`），不无限循环。blocked 可被 `audit-root-cause` / 周报追溯。
-
-WARN 不阻断流转——`[审计告警]` 前缀透传给 reviewer 输入，由 reviewer + human_confirm 兜底把关。
-
-#### Checkpoint 持久化
-
-每个节点执行**前后各 snapshot 一次**到 `.sofagent/checkpoint/`。`resumeLoopGraph()` 读 latest checkpoint → 算出恢复入口节点 → 重新跑图。daemon 重启后的自动续跑也复用这条路径。
-
-**FileCheckpointer 五条并发安全规矩**（`engine/orchestrator/src/graph/checkpoint.ts`）：
-
-| # | 规矩 | 实现 |
-|---|------|------|
-| 1 | 文件名永不覆盖 | `checkpoint-{ISO时间戳}-{6位随机}.json`（时间戳 `:`/`.` 替换为 `-`，Windows 兼容） |
-| 2 | latest 指针 | symlink 指向最新（Windows 无权限时降级为指针文件，读取端两种都兼容） |
-| 3 | schema 版本 | JSON 第一字段 `schemaVersion: 'v1'`，未来变化走 `migrateCheckpoint()` 显式迁移，不静默丢字段 |
-| 4 | 原子写 | `writeFileSync(tmp) + renameSync(final)`，跨设备 EXDEV 时降级 copy+unlink |
-| 5 | 文件锁 | `O_EXCL` 排它创建 `locks/{checkpointId}.lock`，30s stale 检测回收，防多进程并发写脏 |
-
-#### audit 节点降级逻辑
-
-audit 节点程序化调用 `@sofagent/audit`（比 CLI 子进程侵入更小，类型安全）。审计不可用时（如 git 环境缺失）**降级 WARN 而非 FAIL**——不直接烧穿重试次数，由 reviewer + human_confirm 兜底。降级时 audit history 的 engine 字段标 `loop-graph-degraded` 便于追溯。`git diff HEAD` 为空时也返回 WARN（engineer 可能未产生文件修改）。
-
-#### 上下文预算管理：四层防御
-
-FORGE 的 worker（LangGraph createReactAgent）跑长任务时面临上下文膨胀——工具调用越多、工具输出越长，prompt_tokens 从 30K 膨胀到 100K+ 直至 OOM。v1.2.5–v1.2.9 的性能优化经验总结为四层防御，每层解决不同层面的膨胀问题：
-
-| 层 | 做什么 | FORGE 实现 | 设计依据 |
-|---|---|---|---|
-| L1 工具输出截断 | 超长工具输出按步骤预算截断 | tool-output-budget.mjs：头尾各半 + 渐进式磁盘加载 | 短结果直接入上下文，长结果截断但不丢失 |
-| L2 小模型总结 | 超阈值输出用 lite 模型按任务目标总结 | summarizeToolOutput：审查类步骤触发，失败 fallback 截断 | 信息密度 > 原文截断 |
-| L3 上下文裁剪 | 每次模型调用前裁剪历史消息 | trimMessagesSafe + preModelHook + 动态 token 估算 | 保留 system + 首条 user + 最近 N 条 |
-| L4 工具调用预算 + 内存限制 | 硬上限撞了立即 break | TOOL_SOFT_LIMIT=35 / HARD=45 + --max-old-space-size=2048 | prompt 层纪律对模型无效，须代码层硬熔断 |
-
-与 ClaudeCode 上下文管理的对标：ClaudeCode 三级压缩（SN 快照→微压缩→全局压缩）解决单进程长会话；FORGE 四层防御解决多 worker 短任务进程。交集在 L1（渐进式加载）和 L3（消息裁剪），差异在 FORGE 独有的 L4（工具调用预算——ClaudeCode 不限制工具调用次数，FORGE 用零窗口熔断强制收敛）。FORGE 不需要 ClaudeCode 的磁盘持久化恢复——worker 是短命子进程，跑完就退出，不存在跨 session 恢复场景。
+大任务拆小、多 Sub Agent 并行、A/B 对比找更优方案。基于 LangGraph createReactAgent 的四节点状态机（`engineer → audit → reviewer → human_confirm`）+ FileCheckpointer 断点续跑 + 上下文四层防御。**FORGE 是内部工具链，架构细节已迁至 [guides/loop-development.md · FORGE 内部架构](./guides/loop-development.md)（四节点状态机 / LoopArtifacts 状态契约 / Graph Engineering 视角 / Checkpoint 并发安全 / 上下文预算管理）。**
 
 ### 🧬 进化能力
 

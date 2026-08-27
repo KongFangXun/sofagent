@@ -8,7 +8,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>sofagent · FDE Agent 控制台</title>
+<title>sofagent · FDE Harness 控制台</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2316B8F3'/%3E%3Ccircle cx='16' cy='16' r='7' fill='white'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 <style>
@@ -226,7 +226,7 @@ a:hover{text-decoration:none} /* 全站 hover 无下划线（统一）——按�
 
 .fde-stage{display:flex;align-items:center;gap:12px;padding:10px 12px;background:var(--bg-s);border:1px solid var(--border);border-radius:var(--radius-s);margin-bottom:8px}
 .fde-num{width:20px;height:20px;border-radius:50%;background:var(--brand);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0}
-/* FDE Agent 内置模板步骤卡：类型点 10px→8px（局部，不影响业务流/流水线卡）；上移 1px 与 STEP 文字垂直对齐 */
+/* FDE Harness 内置模板步骤卡：类型点 10px→8px（局部，不影响业务流/流水线卡）；上移 1px 与 STEP 文字垂直对齐 */
 .fde-step .agent-dot{width:8px;height:8px}
 .fde-content{flex:1;display:flex;align-items:baseline;gap:8px;min-width:0}
 .fde-title{font-size:13px;font-weight:500;white-space:nowrap;flex-shrink:0}
@@ -702,7 +702,7 @@ a:hover{text-decoration:none} /* 全站 hover 无下划线（统一）——按�
       <div class="fde-stage">
         <div class="fde-num">1</div>
         <div class="fde-content"><div class="fde-title">进场 · 确定场景 + 盘点平台 + 建档</div><div class="fde-desc">摸清企业底子：业务、协同平台、业务系统、数据可达性。</div></div>
-        <button class="copy-btn" onclick="copyPrompt(this, '作为 sofagent FDE Agent 进入进场阶段。先了解我的企业：名称、行业、规模、主要业务。然后盘点协同平台和业务系统，帮我建企业画像。')">复制</button>
+        <button class="copy-btn" onclick="copyPrompt(this, '作为 sofagent FDE Harness 进入进场阶段。先了解我的企业：名称、行业、规模、主要业务。然后盘点协同平台和业务系统，帮我建企业画像。')">复制</button>
       </div>
       <div class="fde-stage">
         <div class="fde-num">2</div>
@@ -730,7 +730,7 @@ a:hover{text-decoration:none} /* 全站 hover 无下划线（统一）——按�
   </div>
   <div class="section">
     <div class="section-header">
-      <div class="section-title"><span class="dot-emoji"><i class="bi bi-list-check"></i></span>FDE Agent 执行流程（template.yaml）</div>
+      <div class="section-title"><span class="dot-emoji"><i class="bi bi-list-check"></i></span>FDE Harness 执行流程（template.yaml）</div>
       <span class="updated-at" id="fdeWfUpdatedAt">加载中...</span>
     </div>
     <div class="section-body">
@@ -994,8 +994,8 @@ build → acceptance → regression → coverage，
         </div>
         <div class="grid-2" style="margin-top:12px">
           <div class="prompt-box" style="margin-top:0">
-            <div class="prompt-action"><span class="prompt-label">创建 AI 节点</span><button class="copy-btn" onclick="copyPrompt(this, '作为 sofagent FDE Agent，帮我梳理业务流。先了解我的业务，盘点现有平台和系统，把能自动化的环节变成 AI 节点。')">复制</button></div>
-            <code>作为 sofagent FDE Agent，
+            <div class="prompt-action"><span class="prompt-label">创建 AI 节点</span><button class="copy-btn" onclick="copyPrompt(this, '作为 sofagent FDE Harness，帮我梳理业务流。先了解我的业务，盘点现有平台和系统，把能自动化的环节变成 AI 节点。')">复制</button></div>
+            <code>作为 sofagent FDE Harness，
 帮我梳理业务流。先了解我的业务，
 盘点现有平台和系统，
 把能自动化的环节变成 AI 节点。</code>
@@ -1076,9 +1076,9 @@ build → acceptance → regression → coverage，
         </div>
         <div class="prompt-box" style="margin-top:16px">
           <div class="prompt-action"><span class="prompt-label">让 Agent 帮你构建本体数据</span>
-            <button class="copy-btn" onclick="copyPrompt(this, '作为 sofagent FDE Agent，帮我构建本体数据。先用业务四问梳理关键业务对象，然后筛选 Object Type，建立 entity / concept / relations。最后用 validate_ontology 验证完整性。')">复制 Prompt</button>
+            <button class="copy-btn" onclick="copyPrompt(this, '作为 sofagent FDE Harness，帮我构建本体数据。先用业务四问梳理关键业务对象，然后筛选 Object Type，建立 entity / concept / relations。最后用 validate_ontology 验证完整性。')">复制 Prompt</button>
           </div>
-          <code>作为 sofagent FDE Agent，
+          <code>作为 sofagent FDE Harness，
 帮我构建本体数据。
 先用业务四问梳理关键业务对象，
 然后筛选 Object Type，
@@ -1149,7 +1149,7 @@ build → acceptance → regression → coverage，
 </div>
 
   <div class="footer">
-    <p>sofagent · FDE Agent — 梳理业务流 · 构建本体图谱 · 部署 AI 节点 · 审计每次变更 · 自我反思迭代</p>
+    <p>sofagent · FDE Harness — 梳理业务流 · 构建本体图谱 · 部署 AI 节点 · 审计每次变更 · 自我反思迭代</p>
     <p style="margin-top:4px"><a href="https://github.com/KongFangXun/sofagent" target="_blank">GitHub</a> · MIT License · 孔放勋 · v1.4.1</p>
   </div>
 </div>
@@ -1749,7 +1749,7 @@ function loadFdeWorkflowData(){
       var sustain=d.sustain||null;
       wfs.forEach(function(wf){
         var dispName=(wf.name||wf.file||'').replace('template.yaml','').trim();
-        // 标题已在 section-header（FDE Agent 执行流程（template.yaml）），内部不再重复一条
+        // 标题已在 section-header（FDE Harness 执行流程（template.yaml）），内部不再重复一条
         // 每行 5 个卡片（flex 5 列），不足 5 个自动靠左；移动端单列见 .fde-steps
         html+='<div class="fde-steps" style="display:flex;flex-wrap:wrap;gap:8px">';
         wf.steps.forEach(function(s,i){

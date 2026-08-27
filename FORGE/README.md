@@ -1,10 +1,10 @@
 # FORGE — sofagent 自迭代引擎
 
-> ⚠️ **内部工具，不是对外产品能力**：FORGE 是 sofagent 项目自迭代工具链，用于项目自身的代码审查与发版流程，**不属于企业交付物**。本文档面向**项目维护者**，外部贡献者和企业用户可忽略此目录——它不影响 sofagent 的安装和使用。企业用户的入口是 [FDE Agent](../SKILL/SKILL.md)。
+> ⚠️ **内部工具，不是对外产品能力**：FORGE 是 sofagent 项目自迭代工具链，用于项目自身的代码审查与发版流程，**不属于企业交付物**。本文档面向**项目维护者**，外部贡献者和企业用户可忽略此目录——它不影响 sofagent 的安装和使用。企业用户的入口是 [FDE Harness](../SKILL/SKILL.md)。
 
 > **FORGE = sofagent 的自迭代引擎。** 双层循环架构——外环（项目级，每轮 = 一个版本生命周期）套内环（阶段级，质量循环 + 发版闸门）。终极目标是外环能自转：人给出 `/goal` → Agent 自动走完 A0→A12 → 回到 A0。当前内环已可 driver 自转，外环的关键节点逐步补上证据闸门。
 >
-> 这是给 sofagent 开发者的工具包——如果你是 sofagent 用户，不需要看这里。企业用户的入口是 [FDE Agent](../SKILL/SKILL.md)。
+> 这是给 sofagent 开发者的工具包——如果你是 sofagent 用户，不需要看这里。企业用户的入口是 [FDE Harness](../SKILL/SKILL.md)。
 >
 > ⚠️ **非独立产品**：FORGE 不独立发布、不对外提供安装包。它深度依赖 sofagent 主包（audit 引擎 + 发布闸门 + fresh-eyes 审查）与特定模型配置（fresh-eyes A/B 双盲审查需 LLM），单独复制 FORGE/ 目录无法运行。想复用其思想请参考 [docs/THANKS.md](../docs/THANKS.md) 的设计来源，想跑起来请先完整安装 sofagent。
 
@@ -101,7 +101,7 @@ FORGE 的 sub-agent 定义在 `SKILL/agents/` 下：
 
 fresh-eyes-loop 的 A/B 即基于 reviewer + engineer 构建（同底座，不同行为指令——见 `prompts/`）。
 
-> **⚠️ `FORGE/SKILL/` 与顶层 `SKILL/` 的关系**：两者同名但职责不同——`FORGE/SKILL/` 是 FORGE **内部 loop skill**（fresh-eyes-loop / release-gate-loop 的编排定义，仅 FORGE 自迭代用，不对外分发）；顶层 `SKILL/`（`SKILL/SKILL.md`）是**产品分发物**（FDE Agent 的运行时 skill，随 sofagent 安装部署到平台 skill 目录）。勿混用——改 FORGE 内部 loop 行为改 `FORGE/SKILL/`，改产品交付物改顶层 `SKILL/`。
+> **⚠️ `FORGE/SKILL/` 与顶层 `SKILL/` 的关系**：两者同名但职责不同——`FORGE/SKILL/` 是 FORGE **内部 loop skill**（fresh-eyes-loop / release-gate-loop 的编排定义，仅 FORGE 自迭代用，不对外分发）；顶层 `SKILL/`（`SKILL/SKILL.md`）是**产品分发物**（FDE Harness 的运行时 skill，随 sofagent 安装部署到平台 skill 目录）。勿混用——改 FORGE 内部 loop 行为改 `FORGE/SKILL/`，改产品交付物改顶层 `SKILL/`。
 
 ## 目录
 

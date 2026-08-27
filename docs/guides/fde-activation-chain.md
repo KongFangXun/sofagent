@@ -3,7 +3,7 @@
 > 项目：sofagent · 2026-08-01 战略讨论
 > 作者：孔放勋
 > 状态：Phase 1-4（ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN）全部已实现
-> 灵感来源：用户提出"FDE Agent 读自己的交付物，自动生成企业 sub-agent"
+> 灵感来源：用户提出"FDE Harness 读自己的交付物，自动生成企业 sub-agent"
 
 ---
 
