@@ -257,7 +257,7 @@ v1.3.9 起对所有 workspace 包的入口 export 做显式分级，CI 门禁（
 |---|---|
 | @sofagent/audit + git hook | 事后拦截——Agent commit 时扫 24 条规则 |
 | daemon | 7×24 巡检（数据主权 / 知识健康 / 失败模式） |
-| dashboard | **单机监控面板**——企业 IT 看本设备 Agent 运行状态（多设备聚合走商业侧 商业平台，不在开源范围） |
+| dashboard | **单机监控面板**——企业 IT 看本设备 Agent 运行状态（多设备聚合走商业侧平台，不在开源范围） |
 | SKILL.md + fde.md + rules/core-rules.md + rules/role-*.md | **事前约束**——Agent 启动时读铁律，知道规则才能遵守 |
 | 4 个 Agent Skill（fde/audit/engineer/reviewer）| SubAgent 岗位定义 |
 | HMAC key | 审计记录防篡改 |
@@ -274,7 +274,7 @@ v1.3.9 起对所有 workspace 包的入口 export 做显式分级，CI 门禁（
 
 > ⚠️ **FDE 不该在自己电脑跑 install.sh**——install.sh 是企业设备安装器，不是 FDE 工具。FDE 的工具是 Skill（ClawHub 装）+ 未来 商业模型层 模型。
 >
-> ⚠️ **dashboard 是单机监控面板**——每台装了 sofagent 的设备一个 dashboard，盯本机 Agent。多设备聚合是企业级需求，走商业侧 商业平台（不在开源范围）。
+> ⚠️ **dashboard 是单机监控面板**——每台装了 sofagent 的设备一个 dashboard，盯本机 Agent。多设备聚合是企业级需求，走商业侧平台（不在开源范围）。
 
 > 最小可用：只装 `@sofagent/audit` 就有纯审计（24 条规则，17 默认启用 + 7 扩展 opt-in + 快照 + 回滚）；五包全装才是完整约束层。
 
@@ -938,7 +938,7 @@ sofagent 的三层治理与 Karpathy LLM Wiki 的 `raw materials → Wiki entrie
 | **执行层可换（编排层不换）** | 编排层 LangGraph StateGraph 永不替换；执行层走 ExecutionBackend 接口——DSH 默认 / createReactAgent fallback / 三平台可选，双后端镜像验证 | 不做「只修一处的堤」——企业命脉不押单一运行时，DSH rc 阶段 breaking change 风险不传导给客户 |
 | **治理是事件域横切面** | plugin 挂 tools/result、turn-stopping、approval seam 等全局事件域，装一次全域生效 | 不做「逐节点插桩」——治理不是节点附件，是横切所有节点的约束层 |
 
-> 📖 **双图谱术语定义（2026-08-17 定）**：FDE 的最终输出统一表述为——**梳理 workflow、定义 ontology，交付 Workflow Graph + Ontology Graph 双图谱**。「Graph」是可视化/可理解形态的统称：**Workflow Graph** = FDE 梳理好 workflow 后多个 workflow 组成的流程图谱（动态，**人读它理解企业怎么运转**）；**Ontology Graph** = ontology 的图谱化形态（ontology 本身是哲学定义，加 Graph 才让人知道它是可被理解、可视化的东西；静态，**AI 读它理解企业是什么**）。**两者对应同一套业务，只是读者不同**——人读 Workflow Graph 理解企业的运转方式，AI 读 Ontology Graph 理解企业的语义；FDE 进场两种都读（既向人解释流程，也向 AI 喂语义）。**与 Graph Engineering 的关系**：双图谱正是企业级 Graph Engineering 的前提——有了 Workflow Graph 和 Ontology Graph，Agent 才能针对它们做 graph engineering（编排、审阅、进化都作用在这两张图上）；sofagent 不自创概念，只负责帮企业把这两张图搭建出来。商业平台层（暂定名 商业平台，规划文档独立于本 MIT 仓库维护）托管的就是这双图谱。**名称辨析**：行业研报的 Org Graph（进组织架构的硅基员工，见 VALIDATION）与 Ontology Graph 是不同概念——前者讲 Agent 的组织归属，后者讲业务语义的图谱化形态，勿混。
+> 📖 **双图谱术语定义（2026-08-17 定）**：FDE 的最终输出统一表述为——**梳理 workflow、定义 ontology，交付 Workflow Graph + Ontology Graph 双图谱**。「Graph」是可视化/可理解形态的统称：**Workflow Graph** = FDE 梳理好 workflow 后多个 workflow 组成的流程图谱（动态，**人读它理解企业怎么运转**）；**Ontology Graph** = ontology 的图谱化形态（ontology 本身是哲学定义，加 Graph 才让人知道它是可被理解、可视化的东西；静态，**AI 读它理解企业是什么**）。**两者对应同一套业务，只是读者不同**——人读 Workflow Graph 理解企业的运转方式，AI 读 Ontology Graph 理解企业的语义；FDE 进场两种都读（既向人解释流程，也向 AI 喂语义）。**与 Graph Engineering 的关系**：双图谱正是企业级 Graph Engineering 的前提——有了 Workflow Graph 和 Ontology Graph，Agent 才能针对它们做 graph engineering（编排、审阅、进化都作用在这两张图上）；sofagent 不自创概念，只负责帮企业把这两张图搭建出来。商业平台层（规划文档独立于本 MIT 仓库维护）托管的就是这双图谱。**名称辨析**：行业研报的 Org Graph（进组织架构的硅基员工，见 VALIDATION）与 Ontology Graph 是不同概念——前者讲 Agent 的组织归属，后者讲业务语义的图谱化形态，勿混。
 
 ## 五、激活链架构（v1.2.5+ Phase 1-4 已交付）
 

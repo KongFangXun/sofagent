@@ -577,7 +577,7 @@ AI 只给建议停在**工具层**；能执行受控动作才进入**生产流�
 
 **LLM 的边界**：LLM 适合**生成动作草稿、帮人补齐参数和理由**；动作能不能提交，要靠 schema 校验、权限、审批、审计这些**确定性机制**把关——不靠模型自觉。
 
-> sofagent 对应：四级 = 节点 frontmatter 的 `risk_level`（v1.3.6 审阅协议的 merge_criteria/approver 就是三级动作的门）；「LLM 起草 + 确定性机制把关」= 审计引擎看 git diff 硬证据、不认 Agent 自我报告。三级动作落到 商业平台 即「数字员工提 PR → owner（人或 AI）审阅 → 合并进 trunk」——Action Type 的审批/写回/审计三件套，正是 PR 机制能被企业信任的原因（见 `商业仓库/商业平台/商业平台.md` §2.3）。
+> sofagent 对应：四级 = 节点 frontmatter 的 `risk_level`（v1.3.6 审阅协议的 merge_criteria/approver 就是三级动作的门）；「LLM 起草 + 确定性机制把关」= 审计引擎看 git diff 硬证据、不认 Agent 自我报告。三级动作落到商业平台即「数字员工提 PR → owner（人或 AI）审阅 → 合并进 trunk」——Action Type 的审批/写回/审计三件套，正是 PR 机制能被企业信任的原因（见 `商业平台规划文档` §2.3）。
 
 ### 3.10 FMEA 风险管理参照——部署后的十大失效模式
 

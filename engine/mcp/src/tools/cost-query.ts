@@ -5,7 +5,7 @@
 // 数据口：查预算 / 实际消耗 / 超限记录——成本审计维度的查询面。
 // 复用 cost-audit 判定逻辑（worklog + budget → 超支发现）。
 // 安全约束：本 tool 只读。
-// 商业平台 预留：本 tool 即商业层计量数据暴露接口（商业平台 §9.1 G3）。
+// 商业平台预留：本 tool 即商业层计量数据暴露接口（商业平台 §9.1 G3）。
 // ============================================================
 
 import { runCostAudit, loadWorklogSlice, type CostBudget } from '@sofagent/audit';
