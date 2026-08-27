@@ -267,7 +267,7 @@ NPM_VER=$(npm view /audit version 2>/dev/null)
 TAG_VER=$(git describe --tags --abbrev=0 2>/dev/null | sed 's/^v//')
 echo "npm=$NPM_VER ssot=$SSOT_VER tag=$TAG_VER"   # 期望：三者一致
 
-# 子项 c/d/e: tag commit message 含版本号 + 工作树 clean — 被 pre-push-check.sh 步骤 7 全量覆盖，不再重复
+# 子项 c/d/e: tag commit message 含版本号 + 工作树 clean — 被 tools/release/pre-push-check.sh 步骤 7 全量覆盖，不再重复
 ```
 
 #### 18. 扩展审计规则源码回归锁——A19 commit 质量 + A18 垃圾文件（v1.2.1 归并 18+19）
@@ -887,7 +887,7 @@ grep -q "SKIP_ANCHOR_SCAN" tools/check/check-docs.sh || echo "⚠️ 降级开�
 ---
 
 ## 输出报告格式
-> 审查日期 / 范围 / 环境验证（pre-push-check/npm test/check-docs/check-version）→ 问题清单（P0/P1/P2 分级，维度/文件:行/问题/建议）→ 通过统计 → 最终建议（可发版/需修复P0/需重大修复）。追加维度前先 grep 同类。
+> 审查日期 / 范围 / 环境验证（tools/release/pre-push-check/npm test/check-docs/check-version）→ 问题清单（P0/P1/P2 分级，维度/文件:行/问题/建议）→ 通过统计 → 最终建议（可发版/需修复P0/需重大修复）。追加维度前先 grep 同类。
 
 ---
 
@@ -1048,7 +1048,7 @@ node -e "const fs=require('fs'),raw=fs.readFileSync('FORGE/src/fresh-eyes-driver
 
 #### 73. ESM named export 完整性 + FORGE 模块加载烟测（v1.2.8 新盲区 · v1.4.1 归并 73+74）
 
-> v1.2.9 教训（归并原 73+74）：FORGE/ 不在 npm workspaces → `npm test` 从不执行 FORGE/ 下的 `.test.mjs`。曾出过 `DEFAULT_BUDGET` 缺 `export` 关键字导致 3 个 driver 启动即崩溃的 P0 bug。补建 `tools/forge/forge-smoke-test.sh` 做 6 模块加载 + 3 测试文件烟测，集成到 pre-push-check.sh（v1.4.1 修正：脚本已迁 `tools/release/pre-push-check.sh`，旧路径 `tools/pre-push-check.sh` 不存在）。
+> v1.2.9 教训（归并原 73+74）：FORGE/ 不在 npm workspaces → `npm test` 从不执行 FORGE/ 下的 `.test.mjs`。曾出过 `DEFAULT_BUDGET` 缺 `export` 关键字导致 3 个 driver 启动即崩溃的 P0 bug。补建 `tools/forge/forge-smoke-test.sh` 做 6 模块加载 + 3 测试文件烟测，集成到 pre-push-check（v1.4.1 修正：脚本已迁 `tools/release/pre-push-check.sh`，tools/ 根下旧位置已不存在）。
 
 ```bash
 # 确认 forge-smoke-test.sh 存在且集成到 pre-push
