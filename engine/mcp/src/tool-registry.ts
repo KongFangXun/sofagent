@@ -21,7 +21,7 @@ export interface ToolDef {
 }
 
 /**
- * 完整工具清单——67 个 tool（v1.4.1：train_submit 新增；v1.4.0：cost_query + browser 4 新增；v1.3.9：worklog_query 新增；v1.3.6：workflow_submit/ontology_import/model_register/model_switch/model_unregister/train_budget/define_acceptance/check_acceptance；v1.3.5：run_ab_test/promote_ab/snapshot_list/snapshot_restore；v1.3.4：commons_publish/search/invoke/rate/retire/harvest_rule；不含 4 个 resource shortcut）
+ * 完整工具清单——68 个 tool（v1.4.2：train_doctor 新增；v1.4.1：train_submit 新增；v1.4.0：cost_query + browser 4 新增；v1.3.9：worklog_query 新增；v1.3.6：workflow_submit/ontology_import/model_register/model_switch/model_unregister/train_budget/define_acceptance/check_acceptance；v1.3.5：run_ab_test/promote_ab/snapshot_list/snapshot_restore；v1.3.4：commons_publish/search/invoke/rate/retire/harvest_rule；不含 4 个 resource shortcut）
  */
 export const TOOLS: ToolDef[] = [
   {
@@ -912,6 +912,19 @@ export const TOOLS: ToolDef[] = [
         train_job_id: { type: 'string', description: '训练任务标识（可选——同 id 重复提交幂等返回既有任务）' },
       },
       required: ['data_path', 'base_model', 'algorithm', 'enterprise_id'],
+    },
+  },
+  {
+    // v1.4.2 (章四)：训练环境体检——CUDA/显存/框架/基座缓存四项只查不装
+    name: 'train_doctor',
+    roles: ['eval', 'ops'],
+    description: '训练环境体检——CUDA/显存/框架版本/基座模型缓存四项结构化报告（只查不装；装环境走 train env init / tools/train-env-init.sh，基座下载走 model-downloader 断点续传）。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        enterprise_id: { type: 'string', description: '🔴 企业标识（必填——train-env.json 清单的企业分区）' },
+      },
+      required: ['enterprise_id'],
     },
   },
   {

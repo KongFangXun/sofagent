@@ -59,6 +59,14 @@ const defaultExec: ExecFn = (cmd, args, opts) =>
     );
   });
 
+/**
+ * 生产用 exec 工厂（v1.4.2 章四）：env-manager / MCP train_doctor 等调用方
+ * 不想各自包装 execFile 时取这个默认实现（测试仍走依赖注入 mock）。
+ */
+export function makeDefaultExecFn(): ExecFn {
+  return defaultExec;
+}
+
 /** 环境准备依赖（全部可注入——单测 mock，真机走默认） */
 export interface TrainEnvDeps {
   /** 命令探测（默认 execFile 封装） */

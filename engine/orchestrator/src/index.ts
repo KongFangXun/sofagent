@@ -1220,6 +1220,71 @@
 } from './train/dataset-validator';
 
 // ============================================================
+// v1.4.2 章三：训练中 eval 闭环（复用 Benchmark · 阈值外部化）
+// ============================================================
+/* @public */ export {
+  DEFAULT_EVAL_THRESHOLDS,
+  computeScoreStats,
+  decideFromScores,
+  runTrainEval,
+  compareEvalReports,
+} from './train/train-eval-loop';
+/* @public */ export type {
+  EvalThresholds,
+  EvalDecision,
+  TrainEvalReport,
+  TrainEvalLoopDeps,
+  RunTrainEvalInput,
+  RunTrainEvalResult,
+  EvalScoreStats,
+  EvalComparison,
+} from './train/train-eval-loop';
+
+// ============================================================
+// v1.4.2 章四：训练环境管理（train env init / train doctor / 版本清单 / 模型下载）
+// ============================================================
+/* @public */ export {
+  makeDefaultExecFn,
+} from './train/train-env';
+/* @public */ export {
+  TRAIN_ENV_MANIFEST_FILE,
+  trainEnvManifestPath,
+  trainEnvInit,
+  trainDoctor,
+  DEFAULT_BASE_MODEL_CANDIDATES,
+} from './train/env-manager';
+/* @public */ export type {
+  TrainEnvManifest,
+  EnvCheckStep,
+  TrainEnvInitResult,
+  EnvManagerDeps,
+  TrainDoctorReport,
+  ModelCacheEntry,
+} from './train/env-manager';
+/* @public */ export {
+  DEFAULT_CHUNK_BYTES,
+  makeDefaultFetchRange,
+  defaultFreeSpace,
+  modelDir,
+  modelFilePath,
+  modelManifestPath,
+  partPaths,
+  readPartMeta,
+  preflightDiskSpace,
+  downloadModel,
+} from './train/model-downloader';
+/* @public */ export type {
+  RangeResponse,
+  FetchRangeFn,
+  FreeSpaceFn,
+  ModelManifest,
+  PartMeta,
+  DiskPreflightResult,
+  DownloadModelInput,
+  DownloadModelResult,
+} from './train/model-downloader';
+
+// ============================================================
 // v1.3.6 交付⑨：验收条件定义与执行（机器可判定验收 · 软约束先行）
 // ============================================================
 /* @public */ export {
