@@ -399,12 +399,10 @@ describe('train-env · 就绪报告结构化 JSON', () => {
 });
 
 // ──────────────────────────────────────
-// Mac 真机集成（真实 exec——本机 darwin 可实测分支验收）
-// 平台守卫：非 darwin（CI Linux runner）跳过——本用例验的是 Mac 真机 Metal 检出，
-// 在 Linux 上断言 process.platform==='darwin' 必挂（v1.4.1 CI 实录）
+// Mac 真机集成（真实 exec——平台自适应：darwin 验 Metal 真机检出，Linux 验合法降级）
 // ──────────────────────────────────────
 
-describe.skipIf(process.platform !== 'darwin')('train-env · Mac 真机真实检测（集成）', () => {
+describe('train-env · Mac 真机真实检测（集成·平台自适应）', () => {
   it('test_prepareTrainEnv_真机Mac_无CUDA降级且Metal真实检出', async () => {
     // 场景：本机 darwin——真实跑 which nvidia-smi（不存在）与 system_profiler
     //（真实 Metal 信息），安装/验证注入 mock（不真装包——安装属阶段 0 实测职责）
@@ -433,12 +431,19 @@ describe.skipIf(process.platform !== 'darwin')('train-env · Mac 真机真实检
 
     const report = await prepareTrainEnv({ exec });
 
-    expect(process.platform).toBe('darwin'); // 本用例仅在 Mac 真机有意义
+    // 平台自适应断言：Mac 真机验 Metal 真实检出；Linux CI runner 验无 GPU 合法降级
+    //（双平台都跑 22 tests——测试数不随平台漂移，check-test-count 文档口径才稳定）
     expect(report.branch).toBe('metal-degraded');
-    expect(report.gpu?.kind).toBe('metal');
-    expect(report.gpu?.metalSupport).toMatch(/^Metal /); // 真实探出的 Metal 等级
-    expect(report.gpu?.name.length ?? 0).toBeGreaterThan(0);
     expect(report.degradationHint).toContain('降级');
     expect(report.ready).toBe(true);
+    if (process.platform === 'darwin') {
+      expect(report.gpu?.kind).toBe('metal');
+      expect(report.gpu?.metalSupport).toMatch(/^Metal /); // 真实探出的 Metal 等级
+      expect(report.gpu?.name.length ?? 0).toBeGreaterThan(0);
+    } else {
+      // 非 darwin：detectMetalGpu 平台门槛直接 null——降级提示走「未检测到任何可用 GPU」文案
+      expect(report.gpu).toBeNull();
+      expect(report.degradationHint).toContain('未检测到任何可用 GPU');
+    }
   }, 30_000);
 });
