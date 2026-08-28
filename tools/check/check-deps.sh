@@ -9,15 +9,24 @@
 #   🔵 DSH deepseek-harness（npm 已发布 2026-08-14：@deepseek-ai/dsh + @deepseek-ai/cordis）
 #
 # 用法：
-#   bash tools/check-deps.sh            # 全量检查
-#   bash tools/check-deps.sh --quiet    # 只输出有问题的
+#   bash tools/check-deps.sh              # 全量检查（落后 → exit 1）
+#   bash tools/check-deps.sh --quiet      # 只输出有问题的
+#   bash tools/check-deps.sh --warn-only  # 只提示不阻断（落后仍 exit 0——评估模式）
 #
-# 退出码：0=全部最新 / 1=有落后版本
+# 退出码：0=全部最新（或 --warn-only） / 1=有落后版本
+# --warn-only 语义（v1.4.3 P2-c）：本脚本是纯手动脚本（8 个 CI workflow 零引用），
+#   exit 1 = 「提示评估」而非阻断——加旁路避免手动跑完必须改脚本才能继续的场景。
 
 set -euo pipefail
 
 QUIET="false"
-[ "${1:-}" = "--quiet" ] && QUIET="true"
+WARN_ONLY="false"
+for _arg in "$@"; do
+  case "$_arg" in
+    --quiet) QUIET="true" ;;
+    --warn-only) WARN_ONLY="true" ;;
+  esac
+done
 
 echo "🔍 sofagent 关键依赖版本检查"
 echo "════════════════════════════════════════════════════════════"
@@ -96,6 +105,11 @@ echo "   v1.4.0 接入方式：orchestrator dependencies（@deepseek-ai/dsh，rc
 echo ""
 echo "════════════════════════════════════════════════════════════"
 if [ "$HAS_OUTDATED" = "1" ]; then
+  if [ "$WARN_ONLY" = "true" ]; then
+    echo "⚠️  有依赖落后于最新版本——按 SOP 步骤 5 决策规则评估（automerge v1.3.5 前禁升）"
+    echo "   （--warn-only 模式：exit 0 不阻断，仅提示评估）"
+    exit 0
+  fi
   echo "⚠️  有依赖落后于最新版本——按 SOP 步骤 5 决策规则评估（automerge v1.3.5 前禁升）"
   exit 1
 else

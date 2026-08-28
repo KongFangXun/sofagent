@@ -89,6 +89,14 @@ FORGE 有两个内环，共用同一套模型配置（详见 [`quick-start.md`](
 
 FORGE driver 运行依赖 LLM API key，经 `env.local` 注入：复制 `env.local.template` 为 `env.local` 并填入真实 key 后 `source FORGE/env.local`。**真实文件永不入库**（`FORGE/.gitignore` 已忽略 env.local，`git log --all -- FORGE/env.local` 恒为 0）。仓库目录内不落任何真实格式密钥——审计工具的仓库不能有审计红旗（A2 纪律的自我要求）。key 泄露嫌疑时优先轮换（控制台重新生成），而非仅删文件。
 
+### 敏感文件纪律（env.local 防呆三查）
+
+`FORGE/env.local` 磁盘上存有**真实 API key**——它躺在仓库目录里这件事本身就有流程性误触面（一次 `git add -f` 或 ignore 规则意外失效即泄漏事故）。三个防呆动作：
+
+1. **禁用 `git add -f FORGE/env.local`**——force-add 会绕过 .gitignore，这是唯一能把这个文件送进 git 的常规操作，永远不要用；
+2. **入库自检**：`git ls-files FORGE/env.local` 输出**必须为空**（空 = 未跟踪 = 安全；有任何输出 = 立即 `git rm --cached FORGE/env.local` 并按上节纪律轮换 key）；
+3. **全历史自检**（深查）：`git log --all -- FORGE/env.local` 恒为 0——历史干净才算干净。
+
 ## 内置 Agent
 
 FORGE 的 sub-agent 定义在 `SKILL/agents/` 下：
@@ -132,6 +140,8 @@ FORGE/
     progress-middleware.mjs      ← 进度上报中间件
     visibility.mjs / disk-backend.mjs / reporters/
 ```
+
+> 📏 **LEDGER.md 新条目禁绝对路径**：登记 run 时数据路径一律写 `~/.sofagent/data/forge-runs/...`（展开符），不写 `/Users/<who>/...` 绝对路径——账本会长期更新，他人机器上的绝对路径是纯噪声（2026-08-29 一次性清理 58 处存量后立此规约）。
 
 ### 技术债登记 · 拆分排期
 
