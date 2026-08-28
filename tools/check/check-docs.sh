@@ -548,9 +548,48 @@ else
 fi
 
 echo ""
+echo "=== 13. 接线存在性断言（v1.4.3 任务十一 · 声称「已交付」的能力必须有生产调用点）==="
+# 门禁目的：门禁能测「数字对不对」，测不到「声称的事做没做」——本节补这个盲区。
+# 规则：凡 SECURITY.md 出现「已交付/交付」级能力声称（按 claims 列表逐项），
+#       对应入口函数必须在 engine/ 生产代码（排除定义/测试/dist/类型声明）中 ≥1 处调用，
+#       否则 fail（防「文档虚报已交付、代码零接线」——v1.4.3 P0 加密接线断链同源防御）。
+# 可扩展结构：新检查项只需往 WIRING_CLAIMS 追加一行「文档声称正则|入口函数名|说明」。
+#   2026-08-29 首条：静态加密——SECURITY.md 若声称「已交付」，initDataEncryption
+#   必须有生产调用（当前降级为「接线未启用」态，声称侧不命中即天然通过；
+#   未来 v1.4.7 真接线后若把声称改回「已交付」，本断言自动生效防再虚报）。
+WIRING_FAIL=0
+WIRING_CLAIMS=(
+  "静态加密（v1.3.8 交付）|initDataEncryption|静态加密（SECURITY.md:50 声称族）"
+)
+for claim in "${WIRING_CLAIMS[@]}"; do
+  claim_re="${claim%%|*}"; rest="${claim#*|}"
+  entry_fn="${rest%%|*}"; claim_desc="${rest#*|}"
+  if grep -qF "$claim_re" SECURITY.md 2>/dev/null; then
+    # 声称命中 → 断言入口函数在 engine/ 生产代码（排除定义行/测试/dist/.d.ts）至少 1 处调用
+    call_count=$(grep -rn "$entry_fn(" engine/ --include="*.ts" --include="*.mjs" 2>/dev/null \
+      | grep -v "/node_modules/" | grep -v "/dist/" | grep -v "\.test\." | grep -v "\.d\.ts" \
+      | grep -v "export function $entry_fn" | grep -v "export declare function $entry_fn" \
+      | grep -cv "function $entry_fn(" || true)
+    call_count=${call_count:-0}
+    if [ "$call_count" -eq 0 ] 2>/dev/null; then
+      echo "  ❌ [${claim_desc}] SECURITY.md 命中「${claim_re}」但 ${entry_fn}() 在 engine/ 生产代码零调用——声称与接线断链"
+      WIRING_FAIL=$((WIRING_FAIL + 1))
+    else
+      echo "  ✓ [${claim_desc}] ${entry_fn}() 生产调用 ${call_count} 处（声称与接线一致）"
+    fi
+  else
+    echo "  ⏭️ [${claim_desc}] SECURITY.md 未命中声称「${claim_re}」——断言未触发（天然通过）"
+  fi
+done
+if [ "$WIRING_FAIL" -gt 0 ]; then
+  ERRORS=$((ERRORS + WIRING_FAIL))
+fi
+
+echo ""
 if [ "$ERRORS" -gt 0 ]; then
   echo "发现 ${ERRORS} 个问题"
   exit 1
 else
   echo "全部通过"
+  exit 0
 fi
