@@ -87,12 +87,17 @@ sofagent 的定位正卡在这个转折点上：审计引擎（治理侧）+ Ont
 
 | 版本 | 状态 | 核心交付 | 日志 |
 |------|:--:|------|:--:|
-| **v1.4.3** | 📋 规划中 | **🚀 训练引擎 · 运行与需求（监控 + 诊断 + 沙箱 + 推导 + 模板 + workflow + DSH 执行深化收口 + 审计聚合指标 + 训练反作弊基线 + onboarding 走查）**：① **训练监控与 GPU 队列**（train_status + **train_list** + 显存预算排队 + webhook + **Dashboard 训练区块 + 健康度指标落盘**）② **训练失败诊断**（OOM/数据/发散/框架/环境/重复坍塌/精度异常七类）③ **训练沙箱 + 设备打包**（扩展 v1.3.7 + 离线 + 设备封装前置）④ **训练需求推导 + 模板库**（`train analyze` + 场景模板 + **RL 配方模板** grpo/dapo/cispo 含 ScaleRL 四技巧 + MoE expert 覆盖防护）⑤ **后训练 workflow 模板**（七节点 FDE 载体 + 三 HITL）⑥ **FORGE DSH 执行深化步一~三承接**（2026-08-28 拍板自 v1.4.2 移入：流式面重建 / 审查类 step 分级切 / 治理面收口 usage 自动计量，详见 [v1.4.3 日志](./changelog/v1.4/v1.4.3.md)第六章）⑦ **审计聚合指标 · 安全边界触发率**（`sofagent-audit --stats` CLI + `--json` 纯净输出 + Dashboard 治理健康区块——纯聚合零新采集读 history.jsonl，约束层价值从逐次事件变成可汇报的治理 KPI，2026-08-28 用户拍板收编，详见 [v1.4.3 日志](./changelog/v1.4/v1.4.3.md)第七章）⑧ **训练环境反作弊基线**（reward hacking 四形态双防线默认化——禁 Git 藏 .git / 网络白名单默认拦截写进 train env init 默认配置，防线是设计期输入，2026-08-28 用户拍板收编，详见 [v1.4.3 日志](./changelog/v1.4/v1.4.3.md)第八章）⑨ **新功能入口导览 + onboarding 断层走查**（三条新产品线落地后的入口预检——HANDBOOK 导览表 + install.sh 提示分层 + 空状态友好化，2026-08-28 用户拍板收编，详见 [v1.4.3 日志](./changelog/v1.4/v1.4.3.md)第九章） | [日志](./changelog/v1.4/v1.4.3.md) |
+| **v1.4.3** | 📋 规划中 | **🚀 训练引擎 · 运行与需求（监控 + 诊断 + 沙箱 + 推导 + 模板 + workflow + DSH 执行深化收口 + 审计聚合指标 + 训练反作弊基线 + onboarding 走查 + 存量清扫与升级审查）**：① **训练监控与 GPU 队列**（train_status + **train_list** + 显存预算排队 + webhook + **Dashboard 训练区块 + 健康度指标落盘**）② **训练失败诊断**（OOM/数据/发散/框架/环境/重复坍塌/精度异常七类）③ **训练沙箱 + 设备打包**（扩展 v1.3.7 + 离线 + 设备封装前置）④ **训练需求推导 + 模板库**（`train analyze` + 场景模板 + **RL 配方模板** grpo/dapo/cispo 含 ScaleRL 四技巧 + MoE expert 覆盖防护）⑤ **后训练 workflow 模板**（七节点 FDE 载体 + 三 HITL）⑥ **FORGE DSH 执行深化步一~三承接**（2026-08-28 拍板自 v1.4.2 移入：流式面重建 / 审查类 step 分级切 / 治理面收口 usage 自动计量，详见 [v1.4.3 日志](./changelog/v1.4/v1.4.3.md)第六章）⑦ **审计聚合指标 · 安全边界触发率**（`sofagent-audit --stats` CLI + `--json` 纯净输出 + Dashboard 治理健康区块——纯聚合零新采集读 history.jsonl，约束层价值从逐次事件变成可汇报的治理 KPI，2026-08-28 用户拍板收编，详见 [v1.4.3 日志](./changelog/v1.4/v1.4.3.md)第七章）⑧ **训练环境反作弊基线**（reward hacking 四形态双防线默认化——禁 Git 藏 .git / 网络白名单默认拦截写进 train env init 默认配置，防线是设计期输入，2026-08-28 用户拍板收编，详见 [v1.4.3 日志](./changelog/v1.4/v1.4.3.md)第八章）⑨ **新功能入口导览 + onboarding 断层走查**（三条新产品线落地后的入口预检——HANDBOOK 导览表 + install.sh 提示分层 + 空状态友好化，2026-08-28 用户拍板收编，详见 [v1.4.3 日志](./changelog/v1.4/v1.4.3.md)第九章）⑩ **存量清扫**（ao 探测删除 / composeWithDeepAgents 更名 / fde_compose 收窄 workflow-only / checkHistoryChain 旧 API 退役 / commons_retire 自扫——退场不清扫债务一次收编，SSOT 见 [v1.5.0 第六章](./changelog/v1.5/v1.5.0.md)，2026-08-29 用户拍板收编）⑪ **存量升级审查**（老功能翻新八项登记——eval 三套统一/加载链 token 预算/webhook 事件源扩展/daemon 巡检 28 项归组/IM 桥一等公民评估/76 tools 瘦描述复核/证据强度分级/本体混合检索评估（Semantica 实测 38k→12k token 启发），去向分散 v1.4.4~v1.5.2，详见 [v1.4.3 日志](./changelog/v1.4/v1.4.3.md)第十二章） | [日志](./changelog/v1.4/v1.4.3.md) |
 | **v1.4.4** | 📋 规划中 | **🚀 训练引擎 · 信号与部署闭环（语料 + 权重 + 注册 + 对比）**：① **训练语料导出三件套**（规则 + GUIDE 方法论 + 样本四源 [decision-log/llm-calls/evaluation-log/runtime-audit] + Trace 轨迹 + 通用脱敏管线 + HMAC 签名 + 合规红线——含 human-fde 人工基准 + **规则 → reward/verifier 映射**，从 v1.3.2/v1.3.6 归集）② **企业专属模型本地权重部署链路**（权重目录规范 + 本地加载 + 版本回滚，从 v1.3.6 归集）③ **训练产物 → 模型注册自动衔接**（train done + eval pass → model_register，闭环最后一步）④ **多基座对比训练**（train compare：同数据多基座并行 + ROI 排序，阶段 2 选型前置） | [日志](./changelog/v1.4/v1.4.4.md) |
 | **v1.4.5** | 📋 规划中 | **🚀 训练引擎 · 服务与持续（推理服务 + 持续后训练 + 合规扫描 + 交付包 + 归档 + quickstart · 生命周期补全）**：① **训练推理服务**（train serve + 健康检查 + model_switch 联动）② **持续后训练**（数据回流 + 阈值/定时/人工触发 + 回退保护；权重级持续学习 [self-distillation/online RL] 属商业层不在本版）③ **训练数据合规扫描**（PII/敏感字段 + 合规闸门）④ **FDE 训练交付包**（配置+数据+eval 基线+运维手册+权重清单）⑤ **训练产物归档与保留策略**（train-retention + @weekly 归档 + 90 天销毁 + 空间预警）⑥ **训练引擎 Quickstart**（端到端示例文档 + 合成数据 + 最小 job.json） | [日志](./changelog/v1.4/v1.4.5.md) |
 | **v1.4.6** | 📋 规划中 | **🚀 训练引擎 · 分布式与云端（多卡 + 云 VM 执行面 · 规模化前置）**：① **多卡/分布式训练**（train multi：多卡/多机配置 + verl/DeepSpeed 集群 spawn + GPU 队列多卡拓扑感知 + 分布式失败诊断）② **云端 VM 执行面**（train cloud：Node 控制面本地 + Python 执行面云上——ssh/API 远程 spawn + 数据加密上传/训练后清理 + 云端成本入预算——「全托管」交付模式技术底座；⚠️ 敏感数据不上公有云，走客户机房联合训练） | [日志](./changelog/v1.4/v1.4.6.md) |
 | **v1.4.7** | 📋 规划中 | **🔌 商业平台接口版**：G2 能力缺口查询 · G4 绩效数据导出 · G6 节点可见性元数据 · G7 多租户数据路径 v0 · workflow 烧进 USB · 审计留痕双层 · 静态加密全量接线 · G8 首部署 cron job 包（**本版最高优先级**）。子项定义见 [v1.4.7 规划文件](./changelog/v1.4/v1.4.7.md)；商业侧规划独立于本仓库维护 | [日志](./changelog/v1.4/v1.4.7.md) |
 | **v1.4.8** | 📋 规划中 | **🔌 插件管控与工程效能（2026-08-22 新增 · Codex marketplace 启发；2026-08-24 扩充 · 七项探索方向收编）**：**① 插件来源白名单**（Git URL / 主机模式 / 本地路径三类 + 托管 hook 独裁模式，管控同时覆盖 ClawHub + SkillHub）· **② 应用级工具策略 app_tool_policy**（app×tool 白名单矩阵，fail-closed，Codex connectors 启发）· **③ 多 Agent 协作阵型库**（六阵型：commander&crews / driver&advisor / cross-review / bake-off / research-triangulation / cost-pyramid + formation.yml 配置，v1.3.6 SubAgent SDK 已交付条件成熟）· **④ 自动上下文压缩**（加载链超 3% 预算触发摘要 + 压缩标记留痕，Codex compact 启发，加载链预算收口）· **⑤ shell 提权分级策略**（safe/risky/dangerous 三态分级 + EscalationPolicy 路由 + dangerous 走 HITL，与 v1.3.7 场景权限衔接）· **⑥ 成本 quota 事前门禁**（执行前问配额 + 验证回写才记 spend，v1.4.0 事后记账的自然演进）· **⑦ 依赖方向架构测试**（13 包边界清单 + CI 强制，低成本高价值）· **⑧ workflow 节点级模型偏好绑定**（modelPreference 字段 + 模型注册表解析，不自研路由，2026-08-24 从 v1.4.7 候选移入本版） | [日志](./changelog/v1.4/v1.4.8.md) |
+| **v1.5.0** | 📋 规划中 | **🛡️ 治理引擎 · 可见性与本体成熟（2026-08-29 排期 · GitHub 同类项目扫描消化 + 探索方向收编 + 存量清扫）**：① **治理 KPI 面板**（Dashboard 独立「治理」tab——安全边界触发率/审计覆盖率/HITL 时延/周环比四卡 + **PE/VC 多企业仪表盘 v0** + 周报导出，v1.4.3 `--stats` 的面板化升级）② **本体数据双时态事实**（validFrom/validTo + stateAt 时点快照查询，Semantica 启发）③ **Ontology Validation Engine**（DAG 无环 + schema 兼容 + 激活前置门，DataFlow 启发）④ **决策因果链**（decision-log 加 causedBy/influencedBy + trace_decision_chain + 相似决策检索，Semantica record_decision 启发）⑤ **FDE 陪跑期补全**（期满总结报告 + fde_deploy 登记衔接——核心 v1.3.7 已交付，本版补增量）⑥ **存量清扫**（ao 探测删除 / composeWithDeepAgents 更名 / fde_compose 收窄 workflow-only / checkHistoryChain 旧 API 退役 / commons_retire 自扫——退场不清扫债务一次收编） | [日志](./changelog/v1.5/v1.5.0.md) |
+| **v1.5.1** | 📋 规划中 | **🌱 进化引擎 · 实证收口**：「越用越好」从 11 个一次性 case → **≥1 周持续样本 + A/B 对照**（Dream Cycle 持续采集 passRate 曲线 + 知识库增量 + 进化开关双跑，复用 run_ab_test），样本达标后收紧 README/PHILOSOPHY 措辞（产品验证工作非文档修复） | [日志](./changelog/v1.5/v1.5.1.md) |
+| **v1.5.2** | 📋 规划中 | **⚡ 编排引擎 · 事件驱动**：业务节点从指令驱动 → **事件驱动触发**（上游产出/webhook 入站/cron 三类事件源 + `on:` 声明式订阅 + 事件总线全审计留痕 + 死信重放）+ **理解债务应对**（auto-PR 决策解释块引因果链 + daemon 周报，loop-engineering 启发） | [日志](./changelog/v1.5/v1.5.2.md) |
+| **v1.5.3** | 📋 规划中 | **🔍 审计引擎 · 场景扩展**：**SMB 场景审计**（数据处理/报表生成——勾稽/溯源/口径三规则 + DATA_PRODUCT 决策类型 + 无代码仓库 onboarding 模板）+ **UI 层审计前置评估**（多模态截图证据可行性报告，实做候选 v2.x） | [日志](./changelog/v1.5/v1.5.3.md) |
+| **v2.0.0** | 📋 规划中 | **🏰 数据主权大版本（v3.x 提前路线收口）**：**模型路由层**（云端规划/本地执行/管道分层路由 + 敏感度 fail-closed + routeReason 可解释）+ **离线 USB 节点合体**（v1.4.4 本地权重 + v1.4.7 workflow 烧录 = 完全离线运行 + 离线激活 + 审计滞留回传）+ **凭证隔离 Vault**（Agent 代码碰不到 token + 轮换吊销，OMA 启发）+ **多实例自验证**（N 实例并发多数表决 + 分歧路由 HITL，复用 run_ab_test）——两底座（v1.4.4/v1.4.7）交付后即可启动，最早可提前至 v1.5.x 中段并行开发 | [日志](./changelog/v2.0/v2.0.0.md) |
 
 
 ### 加载链预算目标跟踪
@@ -124,32 +129,23 @@ sofagent 的定位正卡在这个转折点上：审计引擎（治理侧）+ Ont
 
 | 方向 | 一句话 |
 |------|------|
-| PE/VC 多企业审计仪表盘 | 投后管理场景——所有被投企业的 AI 审计数据汇总到一个面板 |
-| FDE 陪跑期机制 | 部署后前 2 周 AI 节点 daily review，人类反馈和 AI 反思双向写入 think.md |
-| SMB 场景审计扩展 | 审计从代码开发扩展到数据处理/报表生成 |
-| **自带净水设备的水龙头（v3.x+ 远景）** | Subagent 支持挂载外部精调小模型（引擎层提供路由与加载插槽），零投喂、本地推理、离线可用 |
+|| **自带净水设备的水龙头（v3.x+ 远景）** | Subagent 支持挂载外部精调小模型（引擎层提供路由与加载插槽），零投喂、本地推理、离线可用 |
 | 国标 Agent 审计对位 | 关注国家 AI 智能体互联标准草案进展，标准正式发布后评估对齐 |
-| **Ontology Validation Engine（DataFlow 启发）** | Schema 已交付（v1.3.1）+ 注册接口排期（v1.3.6）+ Validation Engine（DAG 无环 + schema 兼容）与「本体数据 = GitHub 生长树」的根系工程化合并评估 |
 | **trimMessagesSafe 作用域审计（v1.3.4 release-gate 遗留）** | FORGE 消息裁剪的作用域边界确认（跨闭包引用同款风险家族） |
 | **评估反哺闭环端到端场景（v1.3.4 verdict 遗留）** | harvest→jury→promote 全链路 acceptance 场景（当前只有 3 处单点覆盖） |
 | **MCP 暴露 audit 数据对外（DataFlow 启发）** | v1.3.6 已排期 ontology/workflow 暴露面；audit 数据对外暴露（读 history.jsonl/decision-log 的 MCP 接口）作为 meta-harness（v1.3.9）的延伸能力评估 |
 | **spec-first 硬禁令（OpenFDE 启发 · 设计约束）** | 单一事实源——transcript 永不直驱代码，spec 才是唯一驱动 |
 | **FDE 进场记忆目录工程化（fdeops-arch 启发）** | 每客户一个 `data/fde-sessions/<client-id>/` 目录 + 10 文件各司其职 + session-stop 自动捕获——方法论已在 FDE/GUIDE §5.8b 记录，工程化（自动捕获 hook + 跨 session 恢复）与 v1.3.5 instinct 自动进化合并评估 |
 | **L4 工具层自进化（self-evolution 五层谱系 · 2026-08-17）** | Agent 自写工具→SkillScan 安全门→人审→注册进工具箱——五层中唯一空白层（L1 记忆/L3 技能已交付，L5 训练引擎地基 v1.4.1 已交付）；安全语义基建现成（SkillScan + promote 人审模式复用），谱系定位见 PHILOSOPHY §五，v1.4.x 后续版本评估 |
-| **凭证隔离 Vault（OMA 启发）** | 沙箱发 HTTP 请求时动态注入凭证、Agent 代码碰不到 token——执行层安全基础设施，v1.3.7 虚拟 key 凭证边界已部分覆盖，完整 Vault 属 v2.x+ 方向 |
-| **理解债务应对（loop-engineering 启发）** | Comprehension Debt Spiral（S2 级故障）——审计已覆盖「发生了什么」，需补「为什么这么做」（auto-PR 要求 Agent 解释决策）+「本周摘要」（daemon 周报）|
 | **ACS YAML 策略引擎（Microsoft AGT 启发）** | 现有 ruleset 是 JSON，AGT 的 ACS 用 YAML + OPA Rego + Cedar 三引擎——策略更人类可读，需评估兼容性 |
 | **RL 训练治理（Microsoft AGT Agent Lightning 启发）** | 训练期间策略违规惩罚（policy-enforced runners + reward shaping）——需训练引擎跑通后有 reward 回路可挂，**待 v1.4.4 交付后评估排期**（2026-08-25 复审裁决：v1.4.1 地基阶段强行同版 = 无实现载体的空头承诺） |
 | **OWASP Agentic Top 10 全覆盖路线（Microsoft AGT 启发）** | v1.3.7 补 ASI08+ASI10，v1.3.9 补 ASI01+ASI04，远期 10/10 全覆盖对齐 AGT |
 | **评测结论证据树（HarnessEval 启发）** | 评测结论须挂可验证证据树——每个结论可回溯到原始执行证据，与审计引擎「先留证据再给结论」同源。可借鉴 Plan→Route→Decompose→Verify 四阶段范式升级 release-gate-loop 的裁决链。当前单源（15 机构联合评测主张），待独立来源累计后评估排期 |
 | **证据强度分级标注（Loop Engineering 控制面启发 · 2026-08-19 新增）** | 对外展示的案例/证据按来源强度分级（公开可查 / 用户自报 / 自测自报），只维护最强少数案例——防止把自测当实证。当前 VALIDATION/THANKS 有来源纪律但无强度分级，发版 SOP 可吸收 |
 | **运行时 should-run 判定链（Loop Engineering 控制面启发 · 2026-08-19 新增）** | 每轮开工前统一问一遍的判定链：健康 → 人审 gate → 证据等待 → 专注等待 → 配额，全部通过才执行——断路器（v1.3.7）两态的丰富形态，等运行时数据积累后评估演化 |
-| **UI 层审计（多模态截图证据 · 2026-08-20 新增）** | 审计从代码 diff 扩展到 UI 行为——Agentic Browser（v1.3.9）截图经多模态分析产出 UI 层审计证据（「表单提交是否正确」不再只靠断言），截图作为审计证据入 history；**纯文本模型可用工具层视觉降级消费截图**（OCR+结构化，DSH 社区 dsh-vision 启发）；依赖 v1.3.9 多模态链路跑通 + 审计证据模型扩展，暂占概念位。**候选版本：v2.x**（证据模型扩展是远期，v1.4.x 专注训练引擎与商业平台接口） |
-| **事件驱动执行触发（AI Native 公司实践观察 · 2026-08-24 新增）** | 业务节点从「指令驱动」升级为「事件驱动」——上游节点产出、外部事件（邮件到达/表单提交/定时器）自动触发下游节点，编排引擎从「人来派活」变成「事件来了自己跑」。与 v1.3.8 cron + 依赖图同向但更彻底：触发源泛化到业务事件。等 v1.4.x 训练引擎稳定后评估 |
+| **UI 层审计（多模态截图证据 · 2026-08-20 新增 · v1.5.3 已排期前置评估）** | 审计从代码 diff 扩展到 UI 行为——Agentic Browser（v1.3.9）截图经多模态分析产出 UI 层审计证据（「表单提交是否正确」不再只靠断言），截图作为审计证据入 history；**纯文本模型可用工具层视觉降级消费截图**（OCR+结构化，DSH 社区 dsh-vision 启发）；依赖 v1.3.9 多模态链路跑通 + 审计证据模型扩展，暂占概念位。**候选版本：v2.x（v1.5.3 交付可行性评估报告）**（证据模型扩展是远期） |
 | **AI 异常处理总线（DSH 社区实践观察 · 2026-08-24 新增）** | Agent 执行异常不再各节点自兜底，统一进异常总线：分类（可重试/需人工/需回滚）→ 路由到对应处理器（重试/审批队列/回溯能力）→ 全程审计留痕。与 v1.3.1 错误处理（stop_reason + 退避）衔接，把它升级为跨节点的总线形态。候选版本：v2.x |
-| **多实例自验证（社区实践观察 · 2026-08-24 新增 · 方向参考不引数字）** | 同一任务并发跑多个小模型实例 + 交叉验证多数表决，替代单次大模型调用。方向上与 AB 测试基础设施（v1.3.5 run_ab_test）可复用；先做工程验证（真实任务上验证效果与成本），再决定是否排期 |
-| **进化引擎持续样本验证（产品验证项 · 2026-08-24 登记）** | 「越用越好」宣称当前仅 11 个一次性测试 Case（LIMITATIONS §核心效果实测情况已诚实披露），缺持续 ≥1 周样本与 A/B 对照。补法是跑 Dream Cycle 持续运行采集（eval passRate 曲线 + 知识库增量对照），属产品验证工作非文档修复——样本补上后收紧 README/PHILOSOPHY 措辞。候选版本：v1.4.x 后续 |
-| **本体数据双时态事实（Semantica 启发 · 2026-08-29 新增）** | 本体数据实体加 validFrom/validTo 时间区间，支持「时点快照」查询（系统在某天知道什么）——审计回溯场景「当时依据的版本」目前靠 git snapshot 只覆盖 worktree，本体实体无时间语义。设计级变更（本体数据包 schema + 查询层），收益在长周期企业运营后显现，暂占探索位 |
+| **进化引擎持续样本验证（产品验证项 · 2026-08-24 登记 · v1.5.1 已排期）** | 「越用越好」宣称当前仅 11 个一次性测试 Case（LIMITATIONS §核心效果实测情况已诚实披露），缺持续 ≥1 周样本与 A/B 对照。补法是跑 Dream Cycle 持续运行采集（eval passRate 曲线 + 知识库增量对照），属产品验证工作非文档修复——样本补上后收紧 README/PHILOSOPHY 措辞。详见 [v1.5.1 日志](./changelog/v1.5/v1.5.1.md) |
 
 > 📖 DeerFlow / OpenFDE 方法论印证见 [VALIDATION](./VALIDATION.md)。
 
@@ -188,4 +184,4 @@ sofagent 的定位正卡在这个转折点上：审计引擎（治理侧）+ Ont
 
 > 📖 多设备同步方案见 [多设备同步指南](./guides/multi-device-sync.md)。
 
-> 📖 loop-engineering 启发方向的去向：FDE 节点注册表 + Worktree 隔离已交付（v1.3.5 / v1.3.6），理解债务在上方 [探索方向](#探索方向) 表，quota 事前门禁 + 依赖方向测试已排期（v1.4.8）。来源链接见 [cobusgreyling/loop-engineering](https://github.com/cobusgreyling/loop-engineering)（MIT 开源）。
+> 📖 loop-engineering 启发方向的去向：FDE 节点注册表 + Worktree 隔离已交付（v1.3.5 / v1.3.6），理解债务已排期（v1.5.2），quota 事前门禁 + 依赖方向测试已排期（v1.4.8）。来源链接见 [cobusgreyling/loop-engineering](https://github.com/cobusgreyling/loop-engineering)（MIT 开源）。
