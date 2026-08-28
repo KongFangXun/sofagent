@@ -13,10 +13,11 @@ import profile from './profile.mjs';
 // 这样从 GLM 切回 DeepSeek 时成本估算不需要手动改定价表）
 import qwen38max from './qwen3.8-max.mjs';
 import glm53 from './glm-5.3.mjs';
+import glm53flash from './glm-5.3-flash.mjs';
 import deepseekV4Pro from './deepseek-v4-pro.mjs';
 import deepseekV4Flash from './deepseek-v4-flash.mjs';
 
-const ALL_MODELS = [qwen38max, glm53, deepseekV4Pro, deepseekV4Flash];
+const ALL_MODELS = [qwen38max, glm53, glm53flash, deepseekV4Pro, deepseekV4Flash];
 
 // 角色到工具集的映射
 const ROLE_TOOLS = {
