@@ -6,7 +6,7 @@
 import { existsSync, readFileSync, readdirSync, statSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { load as yamlLoad } from 'js-yaml';
-import { sortByTrust, prepareForPrompt } from '@sofagent/core';
+import {sortByTrust, prepareForPrompt, getDataDir } from '@sofagent/core'
 import type { Trust, Sensitivity } from '@sofagent/core';
 import type { ToolResult } from './audit-tools';
 
@@ -14,12 +14,8 @@ import type { ToolResult } from './audit-tools';
 // 辅助
 // ============================================================
 
-function getSofagentDataDir(): string {
-  return process.env.SOFAGENT_DATA || join(process.cwd(), '.sofagent');
-}
-
 function getKnowledgeDir(): string {
-  return join(getSofagentDataDir(), 'knowledge');
+  return join(getDataDir(), 'knowledge');
 }
 
 // ============================================================

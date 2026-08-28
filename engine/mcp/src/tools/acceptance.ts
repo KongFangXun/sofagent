@@ -13,10 +13,7 @@
 // ============================================================
 
 import { join } from 'path';
-
-function getSofagentDataDir(): string {
-  return process.env.SOFAGENT_DATA || join(process.cwd(), 'data');
-}
+import { getDataDir } from '@sofagent/core';
 
 // ============================================================
 // define_acceptance
@@ -62,7 +59,7 @@ export async function defineAcceptance(args: DefineAcceptanceArgs): Promise<Defi
   try {
     const orch = await import('@sofagent/orchestrator');
     const def = orch.validateAcceptanceDefinition({ taskId: task_id, criteria, ...(notes ? { notes } : {}) });
-    const dataDir = getSofagentDataDir();
+    const dataDir = getDataDir();
     orch.saveAcceptanceDefinition(dataDir, def);
 
     // decision-log 留痕（对齐 train_budget / model_register 审计模式）
@@ -138,7 +135,7 @@ export async function checkAcceptance(args: CheckAcceptanceArgs): Promise<CheckA
 
   try {
     const orch = await import('@sofagent/orchestrator');
-    const dataDir = getSofagentDataDir();
+    const dataDir = getDataDir();
     const root = project_root ?? process.cwd();
     const check = orch.checkAcceptance(dataDir, task_id, root);
 

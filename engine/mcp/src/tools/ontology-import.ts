@@ -16,12 +16,9 @@
 // ============================================================
 
 import { join } from 'path';
+import { getDataDir } from '@sofagent/core';
 
 /** 获取数据根目录（与 create-entity 同源规则） */
-function getSofagentDataDir(): string {
-  return process.env.SOFAGENT_DATA || join(process.cwd(), 'data');
-}
-
 export interface OntologyImportArgs {
   /** ontology JSON 文本：{ entities?, concepts?, relations? } */
   payload: string;
@@ -85,7 +82,7 @@ export async function ontologyImport(args: OntologyImportArgs): Promise<Ontology
   try {
     const { importOntology } = await import('@sofagent/orchestrator');
     const result = importOntology(parsedPayload as never, {
-      dataDir: getSofagentDataDir(),
+      dataDir: getDataDir(),
       agentId: agent_id ?? 'external-model-layer',
       ...(typeof comment === 'string' && comment.trim() !== '' ? { comment } : {}),
     });

@@ -9,7 +9,7 @@
 
 import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
-import { runDataRules, type DataChange, type DataAuditResult } from '@sofagent/core';
+import {runDataRules, type DataChange, type DataAuditResult, getDataDir } from '@sofagent/core'
 
 // ============================================================
 // 类型定义
@@ -38,10 +38,6 @@ export interface AuditDataChangeResult {
 // 辅助函数
 // ============================================================
 
-function getSofagentDataDir(): string {
-  return process.env.SOFAGENT_DATA || join(process.cwd(), 'data');
-}
-
 interface LogEntry {
   timestamp: string;
   type: string;
@@ -55,7 +51,7 @@ interface LogEntry {
  * 从 data-change-log.jsonl 读取变更记录
  */
 function readChangeLog(): LogEntry[] {
-  const logPath = join(getSofagentDataDir(), 'audit', 'data-change-log.jsonl');
+  const logPath = join(getDataDir(), 'audit', 'data-change-log.jsonl');
   if (!existsSync(logPath)) return [];
 
   try {

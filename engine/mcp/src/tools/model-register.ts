@@ -12,10 +12,7 @@
 // ============================================================
 
 import { join } from 'path';
-
-function getSofagentDataDir(): string {
-  return process.env.SOFAGENT_DATA || join(process.cwd(), 'data');
-}
+import { getDataDir } from '@sofagent/core';
 
 export interface ModelRegisterArgs {
   /** 注册名（唯一标识——model_switch 按此切换） */
@@ -98,7 +95,7 @@ export async function modelRegister(args: ModelRegisterArgs): Promise<ModelRegis
         ...(typeof eval_score === 'number' ? { meta: { evalScore: eval_score, ...(comment ? { notes: comment } : {}) } } : comment ? { meta: { notes: comment } } : {}),
         ...(cleanProfile ? { profile: cleanProfile } : {}),
       },
-      { dataDir: getSofagentDataDir(), actor: 'mcp-model-register', ...(comment ? { comment } : {}) },
+      { dataDir: getDataDir(), actor: 'mcp-model-register', ...(comment ? { comment } : {}) },
     );
 
     if (!result.ok) {

@@ -7,7 +7,7 @@
 import { existsSync, readFileSync, mkdirSync } from 'fs';
 import { join } from 'path';
 import type { DiffFile, AuditResult } from '@sofagent/core';
-import { VERSION, getThinkPath, appendThinkEntry, DATA_DIR, EVAL_LATEST } from '@sofagent/core';
+import {VERSION, getThinkPath, appendThinkEntry, DATA_DIR, EVAL_LATEST, getDataDir } from '@sofagent/core'
 import type { DataChange, DataAuditResult } from '@sofagent/core';
 /**
  * think.md 条目生成选项
@@ -38,7 +38,7 @@ export function generateThinkEntry(
   if (diffFiles.length === 0) return;
 
   const now = opts?.now ?? new Date();
-  const dataDir = opts?.dataDir ?? getSofagentDataDir();
+  const dataDir = opts?.dataDir ?? getDataDir();
   const thinkPath = getThinkPath(dataDir);
 
   // 幂等检查：如果 think.md 最后一节是同一 task + 同一分钟，不重复写入
@@ -198,10 +198,6 @@ function formatTimestamp(d: Date): string {
 }
 
 /** 获取数据根目录（v1.2.1：默认从 .sofagent/ 迁移到 data/，SOFAGENT_DATA 可覆盖） */
-function getSofagentDataDir(): string {
-  return process.env.SOFAGENT_DATA || DATA_DIR;
-}
-
 /** 安全读取 think.md 内容用于缓存 */
 function readThinkForCache(thinkPath: string): string {
   try {
@@ -275,7 +271,7 @@ export function generateThinkFromEval(opts?: ThinkEntryOptions): void {
   }
 
   const now = opts?.now ?? new Date();
-  const dataDir = opts?.dataDir ?? getSofagentDataDir();
+  const dataDir = opts?.dataDir ?? getDataDir();
   const thinkPath = getThinkPath(dataDir);
 
   // 确保 dataDir 存在
@@ -462,7 +458,7 @@ export function generateDataThink(
 
   const now = new Date();
   const date = now.toISOString().split('T')[0] ?? '';
-  const dataDir = getSofagentDataDir();
+  const dataDir = getDataDir();
   const thinkPath = getThinkPath(dataDir);
 
   // 确保 dataDir 存在

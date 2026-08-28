@@ -14,6 +14,7 @@ import {
   getIdentity,
   listIdentities,
   verifyAgentIdentity,
+  getDataDir,
 } from '@sofagent/core';
 import type { AgentIdentity } from '@sofagent/core';
 import { existsSync, readFileSync, readdirSync } from 'fs';
@@ -57,14 +58,7 @@ export interface AgentIdentityToolResult {
 // 辅助函数
 // ============================================================
 
-/** 数据目录（与其他 MCP 工具一致：SOFAGENT_DATA 环境变量 > cwd/data） */
-function getSofagentDataDir(): string {
-  try {
-    return loadEnvConfig().dataDir;
-  } catch {
-    return process.env.SOFAGENT_DATA || join(process.cwd(), 'data');
-  }
-}
+// 数据目录走 getDataDir SSOT（SOFAGENT_DATA > SOFAGENT_HOME/data，v1.4.2 收编）
 
 /** 身份码 → 对外摘要（剥离 privateKey） */
 function toView(identity: AgentIdentity, revoked: boolean): IdentityView {
@@ -105,7 +99,7 @@ function resolveSelfIdentity(): AgentIdentity | null {
   }
 
   // 从 subagents/*.yml 读 identity.agent_id（yaml 行级解析，避免引入新解析器）
-  const dataDir = getSofagentDataDir();
+  const dataDir = getDataDir();
   const subagentsDir = join(dataDir, 'subagents');
   if (existsSync(subagentsDir)) {
     try {

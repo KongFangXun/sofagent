@@ -472,26 +472,17 @@ if [[ -d "${OPENCLAW_PLUGIN_DIR}" ]]; then
 fi
 echo ""
 
-# ── 9d. 检查 MCP 工具 dataDir SSOT——禁止新增本地 getSofagentDataDir 定义（v1.4.2 阶段四 · N-1 防复发）──
+# ── 9d. 检查 MCP 工具 dataDir SSOT——禁止本地 getSofagentDataDir 定义（v1.4.2 · N-1 防复发，存量已清零转零容忍）──
 # v1.4.2 N-1（P1）：11 个 fde/train 工具各带 `SOFAGENT_DATA || cwd/data` 本地兜底，与
 # getDataDir SSOT（SOFAGENT_DATA > SOFAGENT_HOME/data）分叉——SOFAGENT_HOME 定制下同
-# server 数据落点分裂。本段机械闸：engine/mcp/src/tools/ 内禁止「新增」本地定义。
-# 豁免：19 处 v1.3.x 存量文件（形态已分化：knowledge-tools 兜底 .sofagent / think-generator
-# 在 engine/think 不在本段扫描面），已登记 v1.4.3 统一收编清零——清零后删本豁免清单。
-DATADIR_EXEMPT="audit-data-change.ts validate-ontology.ts model-unregister.ts knowledge-tools.ts think-tools.ts ontology-import.ts delete-entity.ts create-concept.ts delete-concept.ts model-register.ts agent-identity.ts acceptance.ts create-entity.ts list-concepts.ts model-switch.ts notify-session.ts update-entity.ts"
-DD_HITS=$(grep -rln "getSofagentDataDir" "${PROJECT_ROOT}/engine/mcp/src/tools/" 2>/dev/null || true)
-DD_NEW=""
+# server 数据落点分裂。阶段三收编 11 处；同日用户拍板存量 19 处（tools/ 17 + resources.ts
+# + think-generator.ts）一次清零——豁免清单删除，全域零容忍（engine/ 含 think 包）。
+DD_HITS=$(grep -rln "getSofagentDataDir" "${PROJECT_ROOT}/engine/mcp/src/" "${PROJECT_ROOT}/engine/think/src/" 2>/dev/null || true)
 if [[ -n "${DD_HITS}" ]]; then
-  while IFS= read -r f; do
-    base=$(basename "$f")
-    if ! echo " ${DATADIR_EXEMPT} " | grep -q " ${base} "; then DD_NEW="${DD_NEW} ${base}"; fi
-  done <<< "${DD_HITS}"
-fi
-if [[ -n "${DD_NEW}" ]]; then
-  report_error "engine/mcp/src/tools/" "新增本地 dataDir 函数:${DD_NEW}" "import { getDataDir } from '@sofagent/core'（SSOT）"
+  DD_NAMES=$(echo "${DD_HITS}" | xargs -n1 basename | tr '\n' ' ')
+  report_error "engine/mcp+think" "本地 dataDir 函数残留:${DD_NAMES}" "import { getDataDir } from '@sofagent/core'（SSOT）"
 else
-  DD_EXEMPTED=$(echo "${DD_HITS}" | grep -c .)
-  report_ok "engine/mcp/src/tools/ dataDir SSOT" "无新增本地定义（tools/ 存量豁免 ${DD_EXEMPTED}/17 + resources.ts 在 src/ 层同款待 v1.4.3）"
+  report_ok "engine dataDir SSOT" "零本地定义（mcp+think 全域清零，v1.4.2 收编 30 处）"
 fi
 echo ""
 

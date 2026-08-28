@@ -52,6 +52,7 @@ vi.mock('@sofagent/audit', () => ({
 vi.mock('@sofagent/core', () => ({
   getThinkPath: vi.fn(() => '/tmp/test-think.md'),
   appendThinkEntry: vi.fn(() => 0),
+  getDataDir: vi.fn(() => require('os').tmpdir()),
 }));
 
 // ── Mock readline to prevent auto-start ──

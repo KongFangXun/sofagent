@@ -6,7 +6,7 @@ export LANG=en_US.UTF-8
 export LC_ALL=en_US.UTF-8
 # sofagent-audit · 上线前验收测试（Pre-Release Acceptance Test）
 # 覆盖：FORGE + MCP + 文件系统审计 + daemon + 红队对抗 + 各版本新功能验收
-# 场景数：272 个场景（SSOT：check-test-count.sh 校验，口径=真实 scenario 调用行数，非编号最大值（S1-S338 间有 67 个历史空洞号）；v1.3.7 +4：S290-S293；v1.3.6 +8：S282-S289；v1.3.8 +11：S294-S304（含 bugfix 防回归 S303/S304）；v1.3.9 +15：S305-S319（阶段五 A 类分发 13 项 + 阶段六 coverage 补测 S318 ATTRIBUTION 归因引擎/S319 Dream Sandbox 沙盒审计）；v1.4.0 +3：S320（联邦查询跨进程 E2E——补 federation.test.ts 同进程 mock 缺口）、S321（跨平台 hook stdin 模式闭环验证）、S322（双设备联邦独立进程模拟——两个独立 node 进程 + 真实 TCP，补 fork 形态缺口）；v1.4.1 +10：S323（train doctor CLI 实跑）、S324（enterpriseId 强制绑定+幂等）、S325（fingerprint 冻结+不可变）、S326（artifact 签名+篡改检测）、S327（安全基线路径白名单+注入检测）、S328（install.sh 迁移丢数据窗口防回归——阶段四 B2 分发）、S329（install.sh symlink 谎报守卫——阶段四 B3 分发）、S330（训练异常退出资源回收四步链——阶段六 coverage 补测，补判断层唯一零覆盖项）、S331（OpenClaw plugin 双 manifest 一致性——阶段十一 ClawHub 拒收踩坑回写）、S332（bump 脚本通配误伤防回归——阶段十一静默漏 bump 踩坑回写）；v1.4.2 +6：S333（数据管道 CSV 类型推断端到端）、S334（dataset_version 台账三件套）、S335（eval 阈值判定双态）、S336（dry-run 显存估算单调性）、S337（ScaleRL sigmoid 拟合/外推/建议）、S338（FDE 工作台审计留痕往返——阶段三步骤四增量，行为实测走 dist 产物）、S339（MCP 工具 dataDir SSOT 收编完整——阶段三 fresh-eyes N-1 修复行为锁））
+# 场景数：273 个场景（SSOT：check-test-count.sh 校验，口径=真实 scenario 调用行数，非编号最大值（S1-S338 间有 67 个历史空洞号）；v1.3.7 +4：S290-S293；v1.3.6 +8：S282-S289；v1.3.8 +11：S294-S304（含 bugfix 防回归 S303/S304）；v1.3.9 +15：S305-S319（阶段五 A 类分发 13 项 + 阶段六 coverage 补测 S318 ATTRIBUTION 归因引擎/S319 Dream Sandbox 沙盒审计）；v1.4.0 +3：S320（联邦查询跨进程 E2E——补 federation.test.ts 同进程 mock 缺口）、S321（跨平台 hook stdin 模式闭环验证）、S322（双设备联邦独立进程模拟——两个独立 node 进程 + 真实 TCP，补 fork 形态缺口）；v1.4.1 +10：S323（train doctor CLI 实跑）、S324（enterpriseId 强制绑定+幂等）、S325（fingerprint 冻结+不可变）、S326（artifact 签名+篡改检测）、S327（安全基线路径白名单+注入检测）、S328（install.sh 迁移丢数据窗口防回归——阶段四 B2 分发）、S329（install.sh symlink 谎报守卫——阶段四 B3 分发）、S330（训练异常退出资源回收四步链——阶段六 coverage 补测，补判断层唯一零覆盖项）、S331（OpenClaw plugin 双 manifest 一致性——阶段十一 ClawHub 拒收踩坑回写）、S332（bump 脚本通配误伤防回归——阶段十一静默漏 bump 踩坑回写）；v1.4.2 +7：S333（数据管道 CSV 类型推断端到端）、S334（dataset_version 台账三件套）、S335（eval 阈值判定双态）、S336（dry-run 显存估算单调性）、S337（ScaleRL sigmoid 拟合/外推/建议）、S338（FDE 工作台审计留痕往返——阶段三步骤四增量，行为实测走 dist 产物）、S339（MCP 工具 dataDir SSOT 收编完整——阶段三 fresh-eyes N-1 修复行为锁）、S340（19 处 v1.3.x 存量 getSofagentDataDir 一次清零行为锁——用户拍板 A 桶落点迁移接受））
 # 编号跳号豁免：S1~S293 间有 70 个空洞号（全在 S36-S202 历史段）——v1.2.x 瘦身删场景
 # 与基线重建（restore 6e542467）的既成事实，非丢失；新场景编号=当前最大+1 顺延，禁止回填空洞
 # 版本段起点见文件内「# ─── v」分组标记（grep "─── v" 定位）
@@ -3406,6 +3406,25 @@ console.log('OK:ssot-11tools-' + imported + '-explicit-arg-pass');
 rm -rf "$S339_TMP"
 echo "$S339_OUT" | grep -q "^OK:ssot-11tools-11" || S339_OK=false
 $S339_OK && pass "MCP 工具 dataDir SSOT 收编完整（11 工具 + SSOT 优先级链）" || fail "dataDir SSOT 收编异常：$S339_OUT"
+
+# ─── v1.4.2 存量清零 ───
+scenario 340 "v1.4.2 存量清零：19 处 v1.3.x 本地 getSofagentDataDir 一次收编——mcp+think 全域零残留行为锁"
+S340_OK=true
+# ① engine 全域（mcp + think）零本地定义（故障注入对照：任何残留此断言必挂）
+S340_RESIDUAL=$(grep -rn "function getSofagentDataDir" "$PROJECT_ROOT/engine/mcp/src/" "$PROJECT_ROOT/engine/think/src/" --include="*.ts" 2>/dev/null | grep -v __tests__ | grep -v "\.test\." || true)
+[ -n "$S340_RESIDUAL" ] && { S340_OK=false; echo "残留: $S340_RESIDUAL"; }
+# ② 收编文件 getDataDir import 就位计数（30 收编 + mcp-server 既有引用 = 31）
+S340_COUNT=$(grep -rln "getDataDir" "$PROJECT_ROOT/engine/mcp/src/" "$PROJECT_ROOT/engine/think/src/" --include="*.ts" 2>/dev/null | grep -v __tests__ | grep -v "\.test\." | wc -l | tr -d ' ')
+[ "$S340_COUNT" -ge 30 ] || { S340_OK=false; echo "SSOT 文件数 $S340_COUNT < 30"; }
+# ③ think-generator（跨包收编代表）：dataDir 语义走 SSOT（SOFAGENT_DATA 覆盖生效）
+S340_THINK=$(node -e "
+const path = require('path');
+const src = require('fs').readFileSync(path.join('$PROJECT_ROOT/engine/think/src/think-generator.ts'), 'utf8');
+if (!src.includes(\"getDataDir\") || src.includes('getSofagentDataDir')) { console.log('FAIL'); process.exit(1); }
+console.log('OK');
+" 2>&1) || S340_OK=false
+echo "$S340_THINK" | grep -q "^OK$" || S340_OK=false
+$S340_OK && pass "存量清零行为锁（19 处收编 + 全域零残留 + think 包同批）" || fail "存量清零异常：$S340_RESIDUAL / count=$S340_COUNT / $S340_THINK"
 
 echo -e "  验收测试结果：${GREEN}$PASSED 通过${NC} / ${RED}$FAILED 失败${NC} / 共 $((PASSED + FAILED))"
 # 🔴 v1.3.1 run-10 教训：无色码纯文本汇总行供 driver grep（EXIT: 0=全PASS / <N>=N失败）
