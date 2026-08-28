@@ -794,10 +794,31 @@ install_skill_unified() {
         if [ -f "${SCRIPT_DIR}/.cursor/rules/sofagent.mdc" ]; then
           cp "${SCRIPT_DIR}/.cursor/rules/sofagent.mdc" "${cur_rules}/sofagent.mdc"
         fi
-        # v1.4.0: 安装 Cursor hook 配置（commit 审计拦截，指向仓库共享脚本）
+        # v1.4.3 F-02 修复：Cursor hook 配置必须是合法 hooks.json（Cursor 官方 schema
+        # {version:1, hooks:{preToolUse:[{command,matcher}]}}），旧实现直接 cp .sh 脚本
+        # 为 hooks.json 是字节级错误（Cursor 解析失败 = hook 静默不生效）。
+        # 脚本本体安装到 ~/.sofagent/hooks/（稳定路径，独立于安装源仓库存在），
+        # hooks.json 的 command 用绝对路径引用。
         if [ -f "${SCRIPT_DIR}/tools/hooks/sofagent-precommit.sh" ]; then
-          cp "${SCRIPT_DIR}/tools/hooks/sofagent-precommit.sh" "${cur_rules}/../hooks.json" 2>/dev/null || true
-          ok "  Cursor hook 配置：~/.cursor/hooks.json（commit 审计拦截）"
+          local sofa_hooks_dir="$SOFAGENT_HOME/hooks"
+          mkdir -p "$sofa_hooks_dir" 2>/dev/null || true
+          cp "${SCRIPT_DIR}/tools/hooks/sofagent-precommit.sh" "$sofa_hooks_dir/sofagent-precommit.sh"
+          chmod +x "$sofa_hooks_dir/sofagent-precommit.sh" 2>/dev/null || true
+          cat > "${cur_rules}/../hooks.json" << HOOKJSONEOF
+{
+  "version": 1,
+  "hooks": {
+    "preToolUse": [
+      {
+        "command": "bash '${sofa_hooks_dir}/sofagent-precommit.sh'",
+        "matcher": "Shell",
+        "timeout": 60
+      }
+    ]
+  }
+}
+HOOKJSONEOF
+          ok "  Cursor hook 配置：~/.cursor/hooks.json（preToolUse·Shell → ${sofa_hooks_dir}/sofagent-precommit.sh）"
         fi
         ok "  Cursor 薄挂载：${cur_rules}/sofagent.mdc + Skill symlink ${cur_skills}"
         ;;

@@ -37,14 +37,42 @@ fi
 if [ -z "$COMMIT_MSG_FILE" ] && [ ! -t 0 ]; then
   CMD_INPUT=$(cat 2>/dev/null || true)
   if [ -n "$CMD_INPUT" ]; then
-    # 提取 tool_input.command 里的 commit message（-m '...' 或 -m "..."）
-    # v1.4.0 修复：`[^\n]*` 在 grep 里匹配字面反斜杠n（JSON 内是 \\n 转义序列），
-    # 导致命令在 -m 后截断 → message 只取到 4 字符（A19 误拦）。改 `.*`（JSON 单行无换行）。
-    EXTRACTED=$(printf '%s' "$CMD_INPUT" | grep -oE "git[ ]+commit.*" | head -1 || true)
-    if [ -n "$EXTRACTED" ]; then
-      # 从 -m 参数抽取 message（支持单/双引号；JSON 内是 \" 转义，剥掉反斜杠）
-      MSG=$(printf '%s' "$EXTRACTED" | grep -oE "(-m[[:space:]]+|--message[[:space:]]+).{0,200}" | sed -E "s/^(-m|--message)[[:space:]]+//" | sed -E "s/^\\\\?[\"']//" | sed -E "s/\\\\?[\"'].*$//" | head -1 || true)
-      [ -n "$MSG" ] && COMMIT_FULL_MSG="$MSG" && COMMIT_SUBJECT="$MSG"
+    # v1.4.3 F-03 修复：message 抽取分两级——
+    # ① node JSON 解析（主路径）：正确处理 -m/--message 的空格与等号（--message=）两种形式、
+    #    单/双/嵌套引号、JSON 转义（\" \\n）、中文（Node 字符串处理无 C locale 字节级问题）；
+    # ② grep 管线（fallback，node 不可用时）：在旧正则基础上补等号分支
+    #    （(-m|--message)([[:space:]]+|=)）——第五轮实测：等号形式旧正则抽取为空、
+    #    嵌套引号（it's）被闭引 sed 截断，此为已知 fallback 局限，node 可用时不受影响。
+    if command -v node &>/dev/null; then
+      MSG=$(printf '%s' "$CMD_INPUT" | node -e '
+        let raw = "";
+        process.stdin.on("data", d => raw += d);
+        process.stdin.on("end", () => {
+          try {
+            const j = JSON.parse(raw);
+            const cmd = (j.tool_input && j.tool_input.command) || "";
+            const m = cmd.match(/(?:^|\s)(?:-m|--message)(?:\s+|=)(?:"((?:[^"\\]|\\.)*)"|\x27((?:[^\x27\\]|\\.)*)\x27|(\S+))/);
+            if (m) {
+              const s = m[1] !== undefined ? m[1] : (m[2] !== undefined ? m[2] : m[3]);
+              process.stdout.write(s.replace(/\\n/g, "\n").replace(/\\"/g, "\x27").replace(/\\\\/g, "\\"));
+            }
+          } catch (e) { /* 非 JSON 或结构不符——静默返回空，走 grep fallback */ }
+        });
+      ' 2>/dev/null || true)
+    fi
+    if [ -z "$MSG" ]; then
+      # grep fallback：提取 tool_input.command 里的 commit 命令行
+      # v1.4.0 注：`[^\n]*` 在 grep 里匹配字面反斜杠n（JSON 内是 \\n 转义序列），
+      # 导致命令在 -m 后截断 → message 只取到 4 字符（A19 误拦）。改 `.*`（JSON 单行无换行）。
+      EXTRACTED=$(printf '%s' "$CMD_INPUT" | grep -oE "git[ ]+commit.*" | head -1 || true)
+      if [ -n "$EXTRACTED" ]; then
+        # F-03：补等号分支 (-m|--message)([[:space:]]+|=)——覆盖 -m "x" / -m=x / --message=x
+        MSG=$(printf '%s' "$EXTRACTED" | grep -oE -- "(-m|--message)([[:space:]]+|=).{0,200}" | head -1 | sed -E "s/^(-m|--message)([[:space:]]+|=)//" | sed -E "s/^\\\\?[\"']//" | sed -E "s/\\\\?[\"'].*$//" || true)
+      fi
+    fi
+    if [ -n "$MSG" ]; then
+      COMMIT_FULL_MSG="$MSG"
+      COMMIT_SUBJECT="$MSG"
     fi
   fi
 fi
@@ -101,16 +129,12 @@ if [ -n "$REPO_ROOT" ] && [ -f "$AUDIT_DIST" ]; then
   SOFAGENT_HOME="${SOFAGENT_HOME:-$HOME/.sofagent}"
   HASH_RECORD="$SOFAGENT_HOME/internal/audit-hash.txt"
   if [ ! -f "$HASH_RECORD" ]; then
-    echo "⚠️ [sofagent] 审计引擎哈希基准缺失——正在补生成..."
-    mkdir -p "$SOFAGENT_HOME/internal"
-    if node -e "const c=require('crypto'),f=require('fs');process.stdout.write(c.createHash('sha256').update(f.readFileSync('$AUDIT_DIST')).digest('hex'))" > "$HASH_RECORD" 2>/dev/null && [ -s "$HASH_RECORD" ]; then
-      chmod 600 "$HASH_RECORD" 2>/dev/null || true
-      echo "ℹ️ [sofagent] 基准哈希已记录（后续 commit 将比对完整性）"
-    else
-      echo "🔴 [sofagent] 基准哈希生成失败——无法保证审计引擎未被替换，本次提交终止"
-      echo "   请运行: sofagent-audit --doctor（自动记录基准）后重试"
-      exit 1
-    fi
+    # v1.4.3 F-04 修复（对齐 SECURITY.md:437 声称）：基线缺失 fail-loud exit 1，
+    # 不再「正在补生成...」自动记录——防止把已被篡改的 dist 固化为合法基线
+    # （信任锚必须是用户显式确认的时刻，不是 hook 顺手拍快照）。
+    echo "🔴 [sofagent] 审计引擎哈希基准缺失（$HASH_RECORD 不存在）——无法保证审计引擎未被替换，本次提交终止"
+    echo "   请运行: sofagent-audit --doctor --baseline 显式建立基线（在你确认 dist 可信的时刻）"
+    exit 1
   else
     CURRENT_HASH=$(node -e "const c=require('crypto'),f=require('fs');process.stdout.write(c.createHash('sha256').update(f.readFileSync('$AUDIT_DIST')).digest('hex'))" 2>/dev/null)
     RECORDED_HASH=$(cat "$HASH_RECORD" 2>/dev/null | tr -d '[:space:]')
@@ -133,7 +157,14 @@ elif [ ! -f ".gitignore" ]; then
   printf '# sofagent 审计数据（本地配置 + 知识库 + 审计历史）\n.sofagent/\n' > ".gitignore"
   echo "ℹ️ [sofagent] 已自动创建 .gitignore（排除 .sofagent/）"
 fi
-git reset -q -- .sofagent/ 2>/dev/null || true
+# v1.4.3 F-05 修复（对齐 SECURITY.md:417 声称）：reset 失败 fail-loud 拒绝 commit，
+# 不再 || true 静默放行——.sofagent/ 移不出暂存区（可能 index.lock 竞态）时，
+# 宁可 false-retry 不可审计数据静默入库。
+if ! git reset -q -- .sofagent/ 2>/dev/null; then
+  echo "🔴 [sofagent] .sofagent/ 移出暂存区失败（可能 index.lock 竞态）——commit 终止"
+  echo "   重试 commit 前先确认: git status --short | grep sofagent 应为空；持续失败查 index.lock 残留"
+  exit 1
+fi
 
 # ── 7. 执行审计 ─────────────────────────────────────────────────────────
 AUDIT_DIFF_ARG="--cached"
