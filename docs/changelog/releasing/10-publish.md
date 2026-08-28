@@ -189,6 +189,21 @@ done
 
 > 注意：check-version.sh（v1.3.6 起）含安装入口 tag 对账检查项，`bash tools/check/check-version.sh` 会给出三方 tag 一致性结论；此处 curl 是最后一道实测防线（URL 真实可达性）。
 
+### 🔴 bootstrap.sh sha256 同步（v1.4.3 P2-f 新增 · 每版必做）
+
+> bootstrap.sh 自 v1.4.3 起对下载的 install.sh + 6 个 lib 文件做 sha256 校验（curl | bash 信任模型加固）。**tag 指向新版后哈希必然变化——必须同步更新 bootstrap.sh 内嵌的 7 个哈希，否则用户安装会因校验失败而 fail-closed（好陷阱：宁可不装也不装被劫持的脚本，但会让所有人装不上）。**
+
+```bash
+# ── 新 tag 打好后，在 bootstrap.sh 顶部更新两处后提交 ──
+# ① INSTALL_SHA256（install.sh）：
+git show vX.Y.Z:install.sh | shasum -a 256
+# ② LIB_SHA256S（6 个 lib 文件，顺序与 LIB_FILES 一致）：
+for f in platform-detect.sh file-deploy.sh daemon-register.sh post-install.sh daemon-lib.sh config.sh; do
+  git show "vX.Y.Z:engine/scripts/lib/$f" | shasum -a 256
+done
+# ③ 提交后用 mock curl 篡改场景自测 fail-closed 仍生效（见 bootstrap.sh 头注释）
+```
+
 ---
 
 ## 步骤六：git tag + push tag
