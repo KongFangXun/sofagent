@@ -11,6 +11,7 @@ import { execFileSync, spawnSync } from 'child_process';
 import { createHash } from 'crypto';
 import { mkdirSync, openSync, closeSync, readSync } from 'fs';
 import { join } from 'path';
+import { getDataDir } from './data-paths';
 
 export interface DiffFile {
   path: string;
@@ -53,11 +54,17 @@ const SPILL_READ_CAP = 64 * 1024 * 1024;
 const SPILL_CHUNK = 8 * 1024 * 1024;
 
 /**
- * spill 落盘目录：显式 dataDir 参数 > SOFAGENT_DATA 环境变量 > 仓库 data/
- * （与 audit-history.ts 的数据目录解析链保持同一惯例）
+ * spill 落盘目录：显式 SOFAGENT_DATA 环境变量 > ~/.sofagent/data/（引擎 home）
+ *
+ * v1.4.3 P2-e 修复（跨仓密钥泄漏面）：旧实现 `join(process.env.SOFAGENT_DATA ?? 'data', 'spill')`
+ * 在 SOFAGENT_DATA 未设时落 **CWD/data/spill（被审仓库内）**——本仓靠 .gitignore `/data/` 兜底，
+ * 但跨仓审计时对方仓库无此 ignore，spill 文件（可能含密钥类 diff 内容）会被对方 commit 卷入。
+ * 改走 core getDataDir SSOT 解析链（显式 > SOFAGENT_DATA > SOFAGENT_HOME/data），spill 恒落
+ * 被审仓库外的引擎数据目录（与 audit-history 的 resolveHomeDir 惯例真正同源——旧注释自称
+ * 「与 audit-history 保持同一惯例」实际解析链完全不同，注释与实现二重漂移）。
  */
 function resolveSpillDir(): string {
-  return join(process.env.SOFAGENT_DATA ?? 'data', 'spill');
+  return join(getDataDir(), 'spill');
 }
 
 /**

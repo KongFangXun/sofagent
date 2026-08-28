@@ -709,19 +709,40 @@ export function writeConfig(filePath: string, config: string): void {
 export interface SofaEnvConfig {
   /** 数据目录路径 */
   dataDir: string;
-  /** 日志脱敏开关 */
+  /**
+   * 日志脱敏开关
+   * @deprecated v1.4.3 P2-g 披露：全仓无生产消费点（加载后无人读）——企业设
+   *   SOFAGENT_SANITIZE 不改变任何行为。字段保留仅为兼容既有测试与潜在外部读者；
+   *   真正生效的脱敏在 sanitize() 管道（常开，见 SECURITY.md），不受本开关控制。
+   */
   sanitizeEnabled: boolean;
-  /** 内网 IP 脱敏开关 */
+  /**
+   * 内网 IP 脱敏开关
+   * @deprecated v1.4.3 P2-g 披露：同 sanitizeEnabled——无生产消费点，设
+   *   SOFAGENT_SANITIZE_IPS 无行为效果；脱敏管道实际常开。
+   */
   sanitizeIpsEnabled: boolean;
-  /** 日志保留天数 */
+  /** 日志保留天数（有消费点：engine/scripts/cleanup.sh 读 SOFAGENT_RETENTION_DAYS，v1.4.3 起新名优先） */
   retentionDays: number;
-  /** 日志最大条数 */
+  /** 日志最大条数（有消费点：engine/scripts/cleanup.sh 读 SOFAGENT_RETENTION_MAX，v1.4.3 起新名优先） */
   retentionMax: number;
-  /** 写日志后是否触发清理 */
+  /**
+   * 写日志后是否触发清理
+   * @deprecated v1.4.3 P2-g 披露：无生产消费点——实际清理走 cleanup.sh 手动/定时，
+   *   不存在「写后自动清理」路径，设 SOFAGENT_CLEANUP_ON_RECORD 无行为效果。
+   */
   cleanupOnRecord: boolean;
-  /** 清理触发频率（1/N 概率） */
+  /**
+   * 清理触发频率（1/N 概率）
+   * @deprecated v1.4.3 P2-g 披露：依赖 cleanupOnRecord 的自动清理路径未接线——
+   *   设 SOFAGENT_CLEANUP_FREQUENCY 无行为效果。
+   */
   cleanupFrequency: number;
-  /** 审计日志开关 */
+  /**
+   * 审计日志开关
+   * @deprecated v1.4.3 P2-g 披露：无生产消费点——审计引擎实际由 config.yml 的
+   *   rules:{...} 控制（见 SECURITY.md 企业高安全默认段），本开关不构成第二通道。
+   */
   auditEnabled: boolean;
 }
 

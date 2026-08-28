@@ -99,8 +99,11 @@ if [ "$SHOW_HELP" = true ]; then
 fi
 
 # ── 配置默认值 ──
-RETENTION_DAYS="${SOFA_RETENTION_DAYS:-90}"
-RETENTION_MAX="${SOFA_RETENTION_MAX:-500}"
+# v1.4.3 P2-g：环境变量读 SOFAGENT_ 新名（与 config-loader.ts loadEnvConfig 的
+# 「SOFAGENT_ 全大写+下划线」规范一致）——旧 SOFA_RETENTION_* 保留为向后兼容别名。
+# 此前只读旧名：企业 IT 按文档设 SOFAGENT_RETENTION_DAYS=30 会被静默忽略按默认 90 执行。
+RETENTION_DAYS="${SOFAGENT_RETENTION_DAYS:-${SOFA_RETENTION_DAYS:-90}}"
+RETENTION_MAX="${SOFAGENT_RETENTION_MAX:-${SOFA_RETENTION_MAX:-500}}"
 
 # ── 路径 ──
 LOGS_DIR="${PWD}/.sofagent/task/logs"
