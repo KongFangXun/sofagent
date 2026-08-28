@@ -48,6 +48,21 @@ export const SECRET_PATTERNS: { pattern: RegExp; label: string; contextKeyword?:
 ];
 
 /**
+ * v1.4.4：剥离字符串中的 data URI 内嵌资源载荷（data:image/*;base64,... 等）。
+ * 合法内嵌资源（dashboard logo/图标）的 base64 载荷既会解码撞密钥正则（A2），
+ * 也会原文撞裸 40 位模式 + 载荷内随机子串凑出 contextKeyword（tool-secret-leak
+ * 实锤：70KB PNG 载荷内藏 "aws"/"key" 子串）。data URI 是标准 Web 资源内嵌形态
+ * 非密钥载体——A2 与 ToolGate 两防线在检测前统一剥离，剩余文本照常全路径检测。
+ * URL-safe base64 载荷（含 -_ 字符）不匹配此正则，保持原扫不豁免。
+ */
+export const DATA_URI_PATTERN = /data:[a-z0-9.+-]+\/[a-z0-9.+-]+;base64,[A-Za-z0-9+/=]+/gi;
+
+/** v1.4.4：剥离 data URI 内嵌资源（见 DATA_URI_PATTERN 注释） */
+export function stripDataUris(s: string): string {
+  return s.replace(DATA_URI_PATTERN, '');
+}
+
+/**
  * v1.2.5 §4.10.2: 脱敏正则（从 A9 sanitizeDetailLine 迁移）
  *
  * 用于审计 details 输出时脱敏——防止密钥通过审计报告/历史记录外泄。

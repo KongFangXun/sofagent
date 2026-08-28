@@ -6,7 +6,7 @@
 // ============================================================
 
 import type { ToolRule, ToolCallContext, InterceptVerdict } from '../types';
-import { SECRET_PATTERNS } from '@sofagent/core';
+import { SECRET_PATTERNS, stripDataUris } from '@sofagent/core';
 /**
  * 从 tool call args 中提取所有字符串值（递归）
  */
@@ -37,11 +37,23 @@ export const toolSecretLeak: ToolRule = {
     const detections: string[] = [];
 
     for (const str of allStrings) {
-      for (const { pattern, label, contextKeyword } of SECRET_PATTERNS) {
-        if (pattern.test(str)) {
-          // v1.4.2 H-02: 带 contextKeyword 的模式需同行含关键词才报告（与 A2 同口径防误报）
-          if (contextKeyword && !contextKeyword.test(str)) continue;
-          detections.push(label);
+      // v1.4.4：剥离 data URI 内嵌资源——base64 载荷原文撞裸 40 位模式 + 载荷内
+      // 随机子串凑出 contextKeyword（实锤：70KB logo 载荷内藏 aws/key 子串被拦）。
+      // 与 A2 同口径豁免（stripDataUris 共享自 @sofagent/core），剩余文本照常检测。
+      const scanStr = stripDataUris(str);
+      // v1.4.4：contextKeyword 按「行」判定——H-02 设计语义是「同行含关键词」，
+      // 此前对整串判定：多行文本中 CSS @keyframes 的 "key"（第 1 行）能给 200 行外
+      // 的 GitHub URL 40 位段（形如 KongFangXun/sofagent/blob/main/FDE/GUIDE）
+      // 凑齐上下文——跨行凑词是预存语义 bug。多行文本逐行扫描，行内上下文语义
+      // 与 A2（git diff 逐行）完全对齐；单行 args 行为不变。
+      const lines = scanStr.includes('\n') ? scanStr.split('\n') : [scanStr];
+      for (const line of lines) {
+        for (const { pattern, label, contextKeyword } of SECRET_PATTERNS) {
+          if (pattern.test(line)) {
+            // v1.4.2 H-02: 带 contextKeyword 的模式需同行含关键词才报告（与 A2 同口径防误报）
+            if (contextKeyword && !contextKeyword.test(line)) continue;
+            detections.push(label);
+          }
         }
       }
     }

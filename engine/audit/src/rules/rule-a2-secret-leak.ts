@@ -10,7 +10,7 @@
 // ============================================================
 
 import type { AuditContext, RuleCheck } from './types';
-import { SECRET_PATTERNS } from '@sofagent/core';
+import { SECRET_PATTERNS, stripDataUris } from '@sofagent/core';
 
 /**
  * 密钥泄漏检测正则模式
@@ -35,15 +35,9 @@ const MAX_DISPLAY_PER_GROUP = 5;
  * 仅当行内容形态符合编码特征（且能解码出可打印文本）才尝试，避免误伤普通文本。
  */
 /**
- * v1.4.4：剥离行内 data URI 内嵌资源（data:image/*;base64,... 等）。
- * 合法内嵌资源（dashboard logo/图标 SVG base64）经 base64 解码后产生的
- * 随机可打印段会撞密钥正则（实锤：70KB PNG data-URI 误报 AWS Secret Key）。
- * data URI 是标准 Web 资源内嵌形态，不是密钥载体——在候选生成前整段移除。
+ * v1.4.4：data URI 剥离已下沉 @sofagent/core stripDataUris（共享单一事实源——
+ * A2 与 ToolGate tool-secret-leak 同口径豁免，防两防线漂移互补成洞）。
  */
-function stripDataUris(s: string): string {
-  return s.replace(/data:[a-z0-9.+-]+\/[a-z0-9.+-]+;base64,[A-Za-z0-9+/=]+/gi, '');
-}
-
 function tryDecodeBase64(s: string): string | null {
   if (!/^[A-Za-z0-9+/=\s]+$/.test(s) || s.replace(/\s+/g, '').length < 8 || s.replace(/\s+/g, '').length % 4 !== 0) {
     return null;
