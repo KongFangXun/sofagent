@@ -1677,9 +1677,15 @@ scenario 206 "v1.2.7 ⑧ One-Line Agent Setup — bootstrap.sh 存在 + 轻量�
 S206_OK=true
 [ -f "$PROJECT_ROOT/bootstrap.sh" ] || { fail "bootstrap.sh 不存在"; S206_OK=false; }
 BOOTSTRAP_LINES=$(wc -l < "$PROJECT_ROOT/bootstrap.sh" 2>/dev/null || echo 999)
-[ "$BOOTSTRAP_LINES" -lt 90 ] || { fail "bootstrap.sh 超过 90 行（$BOOTSTRAP_LINES 行）"; S206_OK=false; }
+[ "$BOOTSTRAP_LINES" -lt 140 ] || { fail "bootstrap.sh 超过 140 行（$BOOTSTRAP_LINES 行）"; S206_OK=false; }
 # 阈值 50→90（v1.3.8 P0-1）：安装链修复后 bootstrap 同时下载 lib 六文件（+21 行安全兜底）——
 # 「轻量入口」的语义是「一行安装」而非行数本身，90 仍远小于下载完整仓库方案
+# 阈值 90→140（v1.4.3 bugfix P2-f，2026-08-29）：bootstrap.sh 加 install.sh/lib sha256 完整性校验
+#   （七哈希常量 + _sha256_of/_verify_or_die 两函数 + 校验挂点）+55 行（71→126）——
+#   curl|bash 入口的下载被劫持即任意代码执行，校验逻辑有存在价值不精简（项目铁律
+#   「上调预算不删内容」）；「轻量入口」语义不变（仍是一行安装，140 远小于完整仓库方案）。
+#   修后重跑 --cli-only 全量确认（355/355 EXIT=0），后批破坏前批绿灯的教训：
+#   改可执行面时必须重跑 acceptance 而非依赖前批绿灯快照。
 assert_grep "curl\|bash\|install" "$PROJECT_ROOT/bootstrap.sh" || S206_OK=false
 $S206_OK && pass "One-Line Agent Setup（bootstrap.sh 存在 + ${BOOTSTRAP_LINES} 行 + curl|bash 入口）"
 
