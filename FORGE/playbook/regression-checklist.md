@@ -347,7 +347,7 @@ grep -oE "[0-9]+ 个内置 Agent\|[0-9]+ 个 Agent" FORGE/README.md FORGE/quick-
 # 子项 d: 独立 install 闭环（FDE 仍依赖主 install.sh）
 CLONE_NOTE=$(grep -rliE "完整 clone|完整仓库|需要.*sofagent.*仓库|clone.*完整" FDE/README.md FDE/GUIDE.md FORGE/README.md 2>/dev/null | head -1 || true)
 [ -n "$CLONE_NOTE" ] && echo "✅ 文档已标注完整 clone 要求" || echo "⚠️ 未找到标注"
-grep -q "被 FDE/LOOP 依赖\|FDE/LOOP" install.sh 2>/dev/null && echo "✅ 主 install.sh 已标注" || echo "⚠️ 未标注"
+grep -q "被 FDE/LOOP 依赖\|FDE/LOOP\|FDE 部署时调用" install.sh 2>/dev/null && echo "✅ 主 install.sh 已标注" || echo "⚠️ 未标注"
 
 # 子项 e: install 脚本版本号 = SSOT（v1.1.4 暴露——install.sh 版本号漂移）
 grep -H "v[0-9]\+\.[0-9]\+\.[0-9]\+" install.sh | head -4   # 期望：所有版本号 = SSOT_VER
@@ -1390,17 +1390,17 @@ grep -q "runCommonsHealth" engine/daemon/src/inspector-layers.ts || echo "⚠️
 
 ---
 
-#### 103. SkillScan 三态链 + 版本守卫——DANGEROUS 拦截 / rc 禁入（v1.3.4 新增 · A 类新功能面）
+#### 103. SkillScan 三态链 + 版本守卫——DANGEROUS 拦截 / rc 投产决策落点（v1.3.4 新增 · A 类新功能面 · v1.4.2 校准）
 
-**背景**：v1.3.4 SkillScan 安全门。两个高危点：① 文件不存在时必须判 DANGEROUS 不能默认 SAFE（扫描不到 ≠ 安全）；② DSH 候选包 rc 版本（rc/beta/alpha/pre）必须被守卫拦截——否则骨架 runCordisAgent 被调用直接 throw，FORGE loop 崩溃。
+**背景**：v1.3.4 SkillScan 安全门。两个高危点：① 文件不存在时必须判 DANGEROUS 不能默认 SAFE（扫描不到 ≠ 安全）；② DSH 候选包 rc 版本原须拦截——**v1.4.0 拍板「DSH rc 直接投产」后语义反转**：依赖锁 @deepseek-ai/dsh@0.1.1-rc.2 是刻意决策（npm 无正式版，rc 期内嵌路径已验证），守卫从「拦截 rc」改为「锁定已知可用 rc 版本 + 正式版发布后自动升级」。
 
 ```bash
 grep -q "'SAFE' | 'SUSPICIOUS' | 'DANGEROUS'" engine/orchestrator/src/commons/skill-scan.ts || echo "⚠️ 三态枚举缺失"
 grep -q "scanForPublish\|scanForInstall" engine/orchestrator/src/commons/skill-scan.ts || echo "⚠️ 双触发缺失"
 grep -q "existsSync" engine/orchestrator/src/commons/skill-scan.ts || echo "⚠️ 存在性前置校验缺失"
 grep -q "scanSkillSafety" engine/orchestrator/src/commons/skill-scan.ts || echo "⚠️ 未复用 scanSkillSafety"
-grep -q "rc|beta|alpha|pre" engine/orchestrator/src/execution-backend.ts || echo "⚠️ rc 版本守卫缺失"
-grep -q "@deepseek-ai/dsh" engine/orchestrator/package.json && echo "⚠️ DSH rc 版进了依赖声明"
+grep -q "0\.1\.1-rc\.2" engine/orchestrator/package.json || echo "⚠️ DSH 依赖锁漂移（须为拍板版本 0.1.1-rc.2）"
+grep -qE "正式版发布后自动|rc 期\*\*优先内嵌" engine/orchestrator/src/execution-backend.ts || echo "⚠️ rc 投产决策注释缺失（升正式版时须同步更新此处决策记录）"
 ```
 
 ---
