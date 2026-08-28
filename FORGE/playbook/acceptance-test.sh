@@ -6,7 +6,7 @@ export LANG=en_US.UTF-8
 export LC_ALL=en_US.UTF-8
 # sofagent-audit · 上线前验收测试（Pre-Release Acceptance Test）
 # 覆盖：FORGE + MCP + 文件系统审计 + daemon + 红队对抗 + 各版本新功能验收
-# 场景数：274 个场景（SSOT：check-test-count.sh 校验，口径=真实 scenario 调用行数，非编号最大值（S1-S338 间有 67 个历史空洞号）；v1.3.7 +4：S290-S293；v1.3.6 +8：S282-S289；v1.3.8 +11：S294-S304（含 bugfix 防回归 S303/S304）；v1.3.9 +15：S305-S319（阶段五 A 类分发 13 项 + 阶段六 coverage 补测 S318 ATTRIBUTION 归因引擎/S319 Dream Sandbox 沙盒审计）；v1.4.0 +3：S320（联邦查询跨进程 E2E——补 federation.test.ts 同进程 mock 缺口）、S321（跨平台 hook stdin 模式闭环验证）、S322（双设备联邦独立进程模拟——两个独立 node 进程 + 真实 TCP，补 fork 形态缺口）；v1.4.1 +10：S323（train doctor CLI 实跑）、S324（enterpriseId 强制绑定+幂等）、S325（fingerprint 冻结+不可变）、S326（artifact 签名+篡改检测）、S327（安全基线路径白名单+注入检测）、S328（install.sh 迁移丢数据窗口防回归——阶段四 B2 分发）、S329（install.sh symlink 谎报守卫——阶段四 B3 分发）、S330（训练异常退出资源回收四步链——阶段六 coverage 补测，补判断层唯一零覆盖项）、S331（OpenClaw plugin 双 manifest 一致性——阶段十一 ClawHub 拒收踩坑回写）、S332（bump 脚本通配误伤防回归——阶段十一静默漏 bump 踩坑回写）；v1.4.2 +8：S333（数据管道 CSV 类型推断端到端）、S334（dataset_version 台账三件套）、S335（eval 阈值判定双态）、S336（dry-run 显存估算单调性）、S337（ScaleRL sigmoid 拟合/外推/建议）、S338（FDE 工作台审计留痕往返——阶段三步骤四增量，行为实测走 dist 产物）、S339（MCP 工具 dataDir SSOT 收编完整——阶段三 fresh-eyes N-1 修复行为锁）、S340（19 处 v1.3.x 存量 getSofagentDataDir 一次清零行为锁——用户拍板 A 桶落点迁移接受）、S341（train report 报告生成本体 dist 行为实测——阶段五 coverage 唯一零覆盖项补测））
+# 场景数：276 个场景（SSOT：check-test-count.sh 校验，口径=真实 scenario 调用行数，非编号最大值（S1-S338 间有 67 个历史空洞号）；v1.3.7 +4：S290-S293；v1.3.6 +8：S282-S289；v1.3.8 +11：S294-S304（含 bugfix 防回归 S303/S304）；v1.3.9 +15：S305-S319（阶段五 A 类分发 13 项 + 阶段六 coverage 补测 S318 ATTRIBUTION 归因引擎/S319 Dream Sandbox 沙盒审计）；v1.4.0 +3：S320（联邦查询跨进程 E2E——补 federation.test.ts 同进程 mock 缺口）、S321（跨平台 hook stdin 模式闭环验证）、S322（双设备联邦独立进程模拟——两个独立 node 进程 + 真实 TCP，补 fork 形态缺口）；v1.4.1 +10：S323（train doctor CLI 实跑）、S324（enterpriseId 强制绑定+幂等）、S325（fingerprint 冻结+不可变）、S326（artifact 签名+篡改检测）、S327（安全基线路径白名单+注入检测）、S328（install.sh 迁移丢数据窗口防回归——阶段四 B2 分发）、S329（install.sh symlink 谎报守卫——阶段四 B3 分发）、S330（训练异常退出资源回收四步链——阶段六 coverage 补测，补判断层唯一零覆盖项）、S331（OpenClaw plugin 双 manifest 一致性——阶段十一 ClawHub 拒收踩坑回写）、S332（bump 脚本通配误伤防回归——阶段十一静默漏 bump 踩坑回写）；v1.4.2 +10：S333（数据管道 CSV 类型推断端到端）、S334（dataset_version 台账三件套）、S335（eval 阈值判定双态）、S336（dry-run 显存估算单调性）、S337（ScaleRL sigmoid 拟合/外推/建议）、S338（FDE 工作台审计留痕往返——阶段三步骤四增量，行为实测走 dist 产物）、S339（MCP 工具 dataDir SSOT 收编完整——阶段三 fresh-eyes N-1 修复行为锁）、S340（19 处 v1.3.x 存量 getSofagentDataDir 一次清零行为锁——用户拍板 A 桶落点迁移接受）、S341（train report 报告生成本体 dist 行为实测——阶段五 coverage 唯一零覆盖项补测）；v1.4.2 章五 +2：S342（IM 桥通道交付三面断言——run-17 模块七零覆盖补测）、S343（BugFix 30 项批次级五族锚点——run-17 模块十零覆盖补测，对齐 S281 先例））
 # 编号跳号豁免：S1~S293 间有 70 个空洞号（全在 S36-S202 历史段）——v1.2.x 瘦身删场景
 # 与基线重建（restore 6e542467）的既成事实，非丢失；新场景编号=当前最大+1 顺延，禁止回填空洞
 # 版本段起点见文件内「# ─── v」分组标记（grep "─── v" 定位）
@@ -3460,6 +3460,51 @@ console.log('OK');
 " 2>&1) || S341_OK=false
 echo "$S341_RES" | grep -q "^OK$" || S341_OK=false
 $S341_OK && pass "train report 五段生成 + 双格式归档（章六零覆盖补测）" || fail "train report 异常：$S341_RES"
+
+# ─────────────────────────────────────────────────────────────
+# S342 · v1.4.2 章五补测：IM 桥远程指挥通道交付断言（run-17 零覆盖项一）
+# 模块七 changelog 声称收编 @xmanrui/dsh-im，但无场景直证。本场景静态
+# 断言三面交付：①指南文档（含命令白名单+安全审计附录）②安装器可选分支
+# 三纪律（默认不装/失败不阻断/flag 预扫描）③红线（不写 IM 协议代码）
+# ─────────────────────────────────────────────────────────────
+scenario 342 "v1.4.2 章五补测：IM 桥通道交付三面断言——指南文档+安装器可选分支三纪律+红线（run-17 模块七零覆盖，对齐 S330 先例）"
+S342_OK=true
+# ① 指南文档存在且含安装命令、命令白名单、安全审计附录三关键节
+[ -f "$PROJECT_ROOT/docs/guides/im-bridge.md" ] || S342_OK=false
+grep -q "dsh plugin --profile web add -w @xmanrui/dsh-im" "$PROJECT_ROOT/docs/guides/im-bridge.md" || S342_OK=false  # 安装命令如实
+grep -q "命令白名单\|机器人命令" "$PROJECT_ROOT/docs/guides/im-bridge.md" || S342_OK=false  # 白名单节
+grep -q "安全审计" "$PROJECT_ROOT/docs/guides/im-bridge.md" || S342_OK=false  # 审计附录节
+# ② 安装器 flag 预扫描 + 可选分支三纪律（默认 0 / 失败仅 warn 不阻断 / 不代装 DSH）
+grep -q 'WITH_IM_BRIDGE=0' "$PROJECT_ROOT/install.sh" || S342_OK=false  # 默认不装
+grep -q '\-\-with-im-bridge.*WITH_IM_BRIDGE=1' "$PROJECT_ROOT/install.sh" || S342_OK=false  # flag 预扫描
+grep -q 'WITH_IM_BRIDGE:-0.*==.*1' "$PROJECT_ROOT/install.sh" || S342_OK=false  # 分支门（默认关）
+grep -q "不代装 DSH 本体\|已跳过" "$PROJECT_ROOT/install.sh" || S342_OK=false  # 失败不阻断（dsh 缺失仅指路）
+# ③ 红线：sofagent 仓库不写 IM 协议代码（接入一律走插件层）
+grep -q "不写任何 IM 协议代码" "$PROJECT_ROOT/docs/guides/im-bridge.md" || S342_OK=false
+$S342_OK && pass "IM 桥通道交付三面在位（指南/安装分支三纪律/协议红线）" || fail "IM 桥交付面缺失——模块七收编声称无实证"
+
+# ─────────────────────────────────────────────────────────────
+# S343 · v1.4.2 章五补测：BugFix 30 项批次级防复发锚点（run-17 零覆盖项二）
+# 模块十 changelog 声称 30 项全修收编（F/G/H/J/P2 五族），但无批次级锚点
+# （S281 为 v1.3.5 旧批）。本场景从五族各挑代表修复，静态断言锚点在位。
+# 对齐 S281 批次锚点形态 + S332 静态断言形态。
+# ─────────────────────────────────────────────────────────────
+scenario 343 "v1.4.2 章五补测：BugFix 批（阶段一 30 项）五族代表锚点在位——H-01 三层防线/H-02 密钥四类/G-01 基线显性报错/G-05 SSOT 收编/章九数据流三债（run-17 模块十零覆盖，对齐 S281 先例）"
+S343_OK=true
+# H-01 commit 链完整性：pre-commit 主防线装载检查 + post-commit HEAD tree 对账兜底
+grep -q "v1.4.2 H-01: pre-commit——三层防线主防线" "$PROJECT_ROOT/engine/core/src/doctor.ts" || S343_OK=false  # 主防线装载体检
+grep -q "v1.4.2 H-01: HEAD tree 入库对账兜底" "$PROJECT_ROOT/engine/audit/hooks/post-commit" || S343_OK=false  # 对账兜底
+# H-02 A2 密钥盲区：contextKeyword 二次判定（裸 40 位 base64 形态防绕过）
+grep -q "v1.4.2 H-02: 带 contextKeyword 的模式" "$PROJECT_ROOT/engine/audit/src/rules/rule-a2-secret-leak.ts" || S343_OK=false
+# G-01 dist 完整性：doctor 基线缺失显性 fail + --baseline 显式建立
+grep -q "sofagent-audit --doctor --baseline 建立基线" "$PROJECT_ROOT/engine/core/src/doctor.ts" || S343_OK=false
+# G-05 SSOT：data-paths 五处硬编码回退收编 getDataDir 顶层 import
+grep -q "export function getDataDir" "$PROJECT_ROOT/engine/core/src/data-paths.ts" || S343_OK=false
+# H-03 A9 normalizeLine 空白折叠（绕过检测）
+grep -rq "normalizeLine" "$PROJECT_ROOT/engine/audit/src/rules/rule-a9-no-injection.ts" || S343_OK=false
+# 章九步零 数据流三债：worktree 逐轮 re-sync（钉死基线修复）落 fresh-eyes-driver
+grep -q "re-sync\|resync" "$PROJECT_ROOT/FORGE/src/fresh-eyes-driver.mjs" || S343_OK=false
+$S343_OK && pass "BugFix 30 项五族代表锚点在位（防线/密钥/基线/SSOT/数据流）" || fail "BugFix 批代表锚点丢失——30 项修复面临回退"
 
 echo -e "  验收测试结果：${GREEN}$PASSED 通过${NC} / ${RED}$FAILED 失败${NC} / 共 $((PASSED + FAILED))"
 # 🔴 v1.3.1 run-10 教训：无色码纯文本汇总行供 driver grep（EXIT: 0=全PASS / <N>=N失败）
