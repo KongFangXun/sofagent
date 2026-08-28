@@ -193,7 +193,7 @@ Agent = **模型 + 上下文 + 工具 + 状态 + 执行控制 + 权限 + 可观�
 | audit | 提交时审计，24 条规则（17 默认 + 7 扩展，[完整清单见 SECURITY](../SECURITY.md#24-条审计规则完整清单文档级-ssot)）硬证据扫描 + 快照/回滚/webhook + 本体建模要求对齐维度（`runRules({gb48000:true})` opt-in） | ✅ 已实现（902 测试） |
 | core | 核心运行时：git diff 解析、shadow-repo 快照、AES-256-GCM/ECDH、think.md 契约、doctor、LLM 调用 Trace、stop_reason 分类、身份码 Ed25519 | ✅ 已实现（368 测试） |
 | harness | 四层约束加载链 `buildConstrainedSystemPrompt()` + L4 渐进加载（热点全文 + 索引） | ✅ 已实现 |
-| rules | 规则引擎纯函数包（零 fs/git 依赖），编排层 tool-call 事前拦截 + 审批四模式 | ✅ 已实现 |
+| rules | 规则引擎纯函数包（零 git 依赖；fs 仅限 AST 扫描的临时目录——mkdtemp 写入待检源码片段，扫描后即清理），编排层 tool-call 事前拦截 + 审批四模式 | ✅ 已实现 |
 | eval | 质量评估引擎：精确匹配 / 语义相似 / 规则合规 三维评分 | ✅ 已实现 |
 | ab-test | A/B 自进化：current vs candidate 并行对比，连续胜出 + 非退化守卫才晋升 | ✅ 已实现 |
 | orchestrator | 编排引擎：DAG 任务拆解 + LangGraph 闭环 + A/B 调度器 + ToolGate 事前拦截 + Ontology 运行时层 + 并行编排（MergeQueue/ParallelScheduler/波次卡关）+ Durable Execution + Onboard L1-L5 + Benchmark 评测 + agent-creation + FDE 梳理辅助 + Session 隔离 + meta-harness 多 harness 编排 + worklog 工作明细数据层 + 训练引擎地基（train-job 编排/审计/隔离/指纹/签名/回收/恢复/安全 + 数据管道/版本/eval 闭环/环境/dry-run/报告）+ FDE 六引擎工作台 | ✅ 已实现（1442 测试） |
@@ -597,6 +597,8 @@ graph LR
     E -->|否| G[标记「稳定」]
     F --> A
 ```
+
+**经验蒸馏要在写入端控预算，别等膨胀再清理**。SkillZip（阿里×浙大×杜克，arXiv 2608.11079）的持续压缩实验给了一个反直觉的教训：从第 1 轮就启用压缩的技能，长度全程钉在 1.6-1.9 倍；拖到第 8 轮才清理的，已经涨到 2.6 倍追不回来——冗余一旦写入并被持续引用，事后清理比写入时合并更难。对进化能力（think.md → knowledge/ 的经验蒸馏）的启示：蒸馏应在写入端带预算控制（单条经验长度上限 + 引用代替复述），而不是攒多了再统一清理。
 
 ### 运行时数据层：引擎间数据流全景
 
