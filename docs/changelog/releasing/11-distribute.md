@@ -125,7 +125,7 @@ cp -r SKILL/harness/* ~/.openclaw/skills/sofagent/
 cp SKILL/SKILL.md ~/.workbuddy/skills/sofagent-fde/
 cp -r SKILL/agents/audit/ ~/.workbuddy/skills/sofagent-audit/
 cp -r SKILL/agents/audit/ ~/.openclaw/skills/sofagent-audit/
-cp -r SKILL/agents/fde/ ~/.workbuddy/skills/sofagent-fde/ 2>/dev/null || echo "FDE Agent 目录不存在，跳过"
+cp -r SKILL/agents/fde/ ~/.workbuddy/skills/sofagent-fde/ 2>/dev/null || echo "FDE Harness 目录不存在，跳过"
 cp -r SKILL/agents/fde/ ~/.openclaw/skills/sofagent-fde/ 2>/dev/null || true
 
 # 3. 最终验证
