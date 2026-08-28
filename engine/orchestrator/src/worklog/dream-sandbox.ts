@@ -14,6 +14,7 @@
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync, readdirSync, statSync, rmSync, copyFileSync } from 'fs';
 import { join, dirname } from 'path';
+import { getDataDir } from '@sofagent/core';
 
 /** 沙盒根目录（缺省 <dataDir>/dream-sandbox/） */
 function sandboxRoot(dataDir: string): string {
@@ -68,7 +69,8 @@ export class DreamSandbox {
   private taskDir(taskId: string): string {
     // taskId 消毒：只留安全字符，防路径穿越
     const safe = taskId.replace(/[^\w.-]/g, '_');
-    return join(sandboxRoot(this.options.dataDir ?? process.env.SOFAGENT_DATA ?? 'data'), safe);
+    // v1.4.3 P2-e：data 目录解析收编 core getDataDir SSOT（显式 > SOFAGENT_DATA > SOFAGENT_HOME/data）
+    return join(sandboxRoot(getDataDir(this.options.dataDir)), safe);
   }
 
   /** 暂存操作——写入沙盒（不动真实文件） */
@@ -144,7 +146,8 @@ export class DreamSandbox {
 
   /** 24h 自动清理（超过 maxAgeHours 的沙盒目录删除——含未合并的） */
   cleanup(maxAgeHours = 24): number {
-    const root = sandboxRoot(this.options.dataDir ?? process.env.SOFAGENT_DATA ?? 'data');
+    // v1.4.3 P2-e：同 taskDir——data 目录解析收编 core getDataDir SSOT
+    const root = sandboxRoot(getDataDir(this.options.dataDir));
     if (!existsSync(root)) return 0;
     let removed = 0;
     const cutoff = Date.now() - maxAgeHours * 3600_000;

@@ -315,15 +315,15 @@ fi
 
 # ── v1.4.0 交付二：Web Dashboard 安装产物清理（web/ + bin/serve-dashboard.mjs）──
 # 只删安装产物，保留 data/ 用户数据
-SOFAGENT_HOME_DIR="${SOFAGENT_HOME:-$HOME/.sofagent}"
-if [ -d "$SOFAGENT_HOME_DIR/web" ]; then
-  rm -rf "$SOFAGENT_HOME_DIR/web"
-  ok "已删除 Web Dashboard 目录（$SOFAGENT_HOME_DIR/web/）"
+SOFAGENT_HOME="${SOFAGENT_HOME:-$HOME/.sofagent}"
+if [ -d "$SOFAGENT_HOME/web" ]; then
+  rm -rf "$SOFAGENT_HOME/web"
+  ok "已删除 Web Dashboard 目录（$SOFAGENT_HOME/web/）"
   ((removed++)) || true
 fi
-if [ -f "$SOFAGENT_HOME_DIR/bin/serve-dashboard.mjs" ]; then
-  rm -f "$SOFAGENT_HOME_DIR/bin/serve-dashboard.mjs"
-  ok "已删除 Web Dashboard 启动脚本（$SOFAGENT_HOME_DIR/bin/serve-dashboard.mjs）"
+if [ -f "$SOFAGENT_HOME/bin/serve-dashboard.mjs" ]; then
+  rm -f "$SOFAGENT_HOME/bin/serve-dashboard.mjs"
+  ok "已删除 Web Dashboard 启动脚本（$SOFAGENT_HOME/bin/serve-dashboard.mjs）"
   ((removed++)) || true
 fi
 

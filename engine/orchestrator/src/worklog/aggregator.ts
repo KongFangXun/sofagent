@@ -25,6 +25,7 @@ import { readFileSync, existsSync, mkdirSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import type { AuditHistoryEntry } from '@sofagent/audit';
 import type { LlmCallRecord } from '@sofagent/core';
+import { getDataDir } from '@sofagent/core';
 
 // ── 类型定义 ──────────────────────────────────────────────
 
@@ -183,7 +184,8 @@ export class WorklogAggregator {
   private readonly aggregateEntries: WorklogOptions['aggregateEntries'];
 
   constructor(options: WorklogOptions = {}) {
-    this.dataDir = options.dataDir ?? process.env.SOFAGENT_DATA ?? 'data';
+    // v1.4.3 P2-e：data 目录解析收编 core getDataDir SSOT（显式 > SOFAGENT_DATA > SOFAGENT_HOME/data）
+    this.dataDir = getDataDir(options.dataDir);
     this.nodeDurations = options.nodeDurations;
     this.aggregateEntries = options.aggregateEntries;
   }

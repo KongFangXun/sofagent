@@ -13,6 +13,7 @@
 
 import { readFileSync, existsSync, mkdirSync, appendFileSync } from 'fs';
 import { join } from 'path';
+import { getDataDir } from '@sofagent/core';
 
 /** 因果链单条记录 */
 export interface AttributionLink {
@@ -48,7 +49,9 @@ export class AttributionEngine {
   private readonly decisionAgents = new Map<string, string>();
 
   constructor(options: { dataDir?: string; decisionLog?: Array<{ id?: string; agentId?: string; decisionId?: string }> } = {}) {
-    this.dataDir = options.dataDir ?? process.env.SOFAGENT_DATA ?? 'data';
+    // v1.4.3 P2-e：data 目录解析收编 core getDataDir SSOT（显式 > SOFAGENT_DATA > SOFAGENT_HOME/data）
+    // ——旧 `?? 'data'` 相对路径兜底在跨仓场景把归因数据落被审仓库 CWD 内
+    this.dataDir = getDataDir(options.dataDir);
     // 决策→agent 映射（注入或读 decision-log.jsonl）
     const decisions: Array<{ id?: string; agentId?: string; decisionId?: string }> =
       options.decisionLog ?? this.readDecisionLog();
