@@ -6,7 +6,7 @@ export LANG=en_US.UTF-8
 export LC_ALL=en_US.UTF-8
 # sofagent-audit · 上线前验收测试（Pre-Release Acceptance Test）
 # 覆盖：FORGE + MCP + 文件系统审计 + daemon + 红队对抗 + 各版本新功能验收
-# 场景数：277 个场景（SSOT：check-test-count.sh 校验，口径=真实 scenario 调用行数，非编号最大值（S1-S344 间有 70 个历史空洞号）；v1.3.7 +4：S290-S293；v1.3.6 +8：S282-S289；v1.3.8 +11：S294-S304（含 bugfix 防回归 S303/S304）；v1.3.9 +15：S305-S319（阶段五 A 类分发 13 项 + 阶段六 coverage 补测 S318 ATTRIBUTION 归因引擎/S319 Dream Sandbox 沙盒审计）；v1.4.0 +3：S320（联邦查询跨进程 E2E——补 federation.test.ts 同进程 mock 缺口）、S321（跨平台 hook stdin 模式闭环验证）、S322（双设备联邦独立进程模拟——两个独立 node 进程 + 真实 TCP，补 fork 形态缺口）；v1.4.1 +10：S323（train doctor CLI 实跑）、S324（enterpriseId 强制绑定+幂等）、S325（fingerprint 冻结+不可变）、S326（artifact 签名+篡改检测）、S327（安全基线路径白名单+注入检测）、S328（install.sh 迁移丢数据窗口防回归——阶段四 B2 分发）、S329（install.sh symlink 谎报守卫——阶段四 B3 分发）、S330（训练异常退出资源回收四步链——阶段六 coverage 补测，补判断层唯一零覆盖项）、S331（OpenClaw plugin 双 manifest 一致性——阶段十一 ClawHub 拒收踩坑回写）、S332（bump 脚本通配误伤防回归——阶段十一静默漏 bump 踩坑回写）；v1.4.2 +10：S333（数据管道 CSV 类型推断端到端）、S334（dataset_version 台账三件套）、S335（eval 阈值判定双态）、S336（dry-run 显存估算单调性）、S337（ScaleRL sigmoid 拟合/外推/建议）、S338（FDE 工作台审计留痕往返——阶段三步骤四增量，行为实测走 dist 产物）、S339（MCP 工具 dataDir SSOT 收编完整——阶段三 fresh-eyes N-1 修复行为锁）、S340（19 处 v1.3.x 存量 getSofagentDataDir 一次清零行为锁——用户拍板 A 桶落点迁移接受）、S341（train report 报告生成本体 dist 行为实测——阶段五 coverage 唯一零覆盖项补测）；v1.4.2 章五 +2：S342（IM 桥通道交付三面断言——run-17 模块七零覆盖补测）、S343（BugFix 30 项批次级五族锚点——run-17 模块十零覆盖补测，对齐 S281 先例）；v1.4.2 阶段十二 +1：S344（Git Data API 推送通道 cat-file 防复发——ps1 eol 二坑根因固化））
+# 场景数：278 个场景（SSOT：check-test-count.sh 校验，口径=真实 scenario 调用行数，非编号最大值（S1-S344 间有 70 个历史空洞号）；v1.3.7 +4：S290-S293；v1.3.6 +8：S282-S289；v1.3.8 +11：S294-S304（含 bugfix 防回归 S303/S304）；v1.3.9 +15：S305-S319（阶段五 A 类分发 13 项 + 阶段六 coverage 补测 S318 ATTRIBUTION 归因引擎/S319 Dream Sandbox 沙盒审计）；v1.4.0 +3：S320（联邦查询跨进程 E2E——补 federation.test.ts 同进程 mock 缺口）、S321（跨平台 hook stdin 模式闭环验证）、S322（双设备联邦独立进程模拟——两个独立 node 进程 + 真实 TCP，补 fork 形态缺口）；v1.4.1 +10：S323（train doctor CLI 实跑）、S324（enterpriseId 强制绑定+幂等）、S325（fingerprint 冻结+不可变）、S326（artifact 签名+篡改检测）、S327（安全基线路径白名单+注入检测）、S328（install.sh 迁移丢数据窗口防回归——阶段四 B2 分发）、S329（install.sh symlink 谎报守卫——阶段四 B3 分发）、S330（训练异常退出资源回收四步链——阶段六 coverage 补测，补判断层唯一零覆盖项）、S331（OpenClaw plugin 双 manifest 一致性——阶段十一 ClawHub 拒收踩坑回写）、S332（bump 脚本通配误伤防回归——阶段十一静默漏 bump 踩坑回写）；v1.4.2 +10：S333（数据管道 CSV 类型推断端到端）、S334（dataset_version 台账三件套）、S335（eval 阈值判定双态）、S336（dry-run 显存估算单调性）、S337（ScaleRL sigmoid 拟合/外推/建议）、S338（FDE 工作台审计留痕往返——阶段三步骤四增量，行为实测走 dist 产物）、S339（MCP 工具 dataDir SSOT 收编完整——阶段三 fresh-eyes N-1 修复行为锁）、S340（19 处 v1.3.x 存量 getSofagentDataDir 一次清零行为锁——用户拍板 A 桶落点迁移接受）、S341（train report 报告生成本体 dist 行为实测——阶段五 coverage 唯一零覆盖项补测）；v1.4.2 章五 +2：S342（IM 桥通道交付三面断言——run-17 模块七零覆盖补测）、S343（BugFix 30 项批次级五族锚点——run-17 模块十零覆盖补测，对齐 S281 先例）；v1.4.2 阶段十二 +1：S344（Git Data API 推送通道 cat-file 防复发——ps1 eol 二坑根因固化）；v1.4.3 bugfix 批 +1：S345（跨平台 hook stdin message 抽取三场景行为锁——F-03 等号/中文/嵌套引号 + 空格形式回归，stub 断言 --task 透传））
 # 编号跳号豁免：S1~S293 间有 70 个空洞号（全在 S36-S202 历史段）——v1.2.x 瘦身删场景
 # 与基线重建（restore 6e542467）的既成事实，非丢失；新场景编号=当前最大+1 顺延，禁止回填空洞
 # 版本段起点见文件内「# ─── v」分组标记（grep "─── v" 定位）
@@ -3520,6 +3520,54 @@ grep -q "cat-file" "$PROJECT_ROOT/tools/release/gitdata-push.mjs" || S344_OK=fal
 grep -qE 'eol=lf|text.*crlf|\*\.ps1' "$PROJECT_ROOT/.gitattributes" || S344_OK=false  # eol 规则声明在位
 grep -q "tree 不一致\|tree 一致\|ls-tree" "$PROJECT_ROOT/tools/release/gitdata-push.mjs" || S344_OK=false  # 树对账自检输出
 $S344_OK && pass "Git Data API 推送通道防复发锚点在位（cat-file/eol 规则/树对账）" || fail "推送通道防复发锚点丢失——ps1 eol 分叉坑面临复发"
+
+# ─────────────────────────────────────────────────────────────
+# S345 · v1.4.3 bugfix 批 F-03：平台 hook stdin message 抽取三场景行为锁
+# 第四轮报告 + 第五轮复测修正：--message= 等号形式抽取为空（真问题）、嵌套引号
+# （it's）被闭引 sed 截断、中文 message 抽取。修复=hook §0 双级抽取（node JSON
+# 解析主路径 + grep 等号分支 fallback）。本场景在临时仓库实测 hook 全链：
+# stdin 注入 JSON → hook 抽取 COMMIT_SUBJECT → 转发 --task 给审计入口（stub 捕获）。
+# ─────────────────────────────────────────────────────────────
+scenario 345 "v1.4.3 bugfix F-03：跨平台 hook stdin message 抽取三场景——等号形式（--message=/-m=）+ 中文 + 引号嵌套，经 stub 审计入口断言 --task 透传"
+S345_OK=true
+S345_REPO=$(mktmp_repo)
+S345_HOOK="$PROJECT_ROOT/tools/hooks/sofagent-precommit.sh"
+S345_STUB=$(mktemp -d)
+mkdir -p "$S345_STUB/bin"
+cat > "$S345_STUB/bin/sofagent-audit" << 'S345EOF'
+#!/usr/bin/env bash
+# S345 stub：捕获 --task 参数（hook 抽取的 COMMIT_SUBJECT 透传位）
+S345_PREV=""
+while [ $# -gt 0 ]; do
+  if [ "$S345_PREV" = "--task" ]; then printf '%s' "$1" > "$S345_TASK_FILE"; fi
+  S345_PREV="$1"; shift
+done
+exit 0
+S345EOF
+chmod +x "$S345_STUB/bin/sofagent-audit"
+cd "$S345_REPO"
+git config user.email "test@test.com" 2>/dev/null; git config user.name "Test" 2>/dev/null
+echo "# base" > base.md; git add base.md; git commit -qm "base" 2>/dev/null || true
+echo "# wip" > wip.md; git add wip.md
+s345_run() { # $1=JSON → 输出 stub 捕获的 --task
+  export S345_TASK_FILE="$S345_STUB/task.txt"; : > "$S345_TASK_FILE"
+  printf '%s' "$1" | PATH="$S345_STUB/bin:$PATH" bash "$S345_HOOK" >/dev/null 2>&1
+  cat "$S345_TASK_FILE" 2>/dev/null || true
+}
+# ① 等号形式 --message="fix: update"（第四轮真问题：旧正则抽取为空）
+S345_A=$(s345_run '{"tool_name":"Bash","tool_input":{"command":"git commit --message=\"fix: update\""}}')
+[ "$S345_A" = "fix: update" ] || { echo "  ✗ 等号形式抽取：[$S345_A]"; S345_OK=false; }
+# ② 中文 message（C locale 字节级风险场景）
+S345_B=$(s345_run '{"tool_name":"Bash","tool_input":{"command":"git commit -m \"修复：中文提交信息\""}}')
+[ "$S345_B" = "修复：中文提交信息" ] || { echo "  ✗ 中文抽取：[$S345_B]"; S345_OK=false; }
+# ③ 引号嵌套（外双内单 it's——第五轮发现 sed 闭引截断）
+S345_C=$(s345_run '{"tool_name":"Bash","tool_input":{"command":"git commit -m \"fix: it'"'"'s here\""}}')
+[ "$S345_C" = "fix: it's here" ] || { echo "  ✗ 嵌套引号抽取：[$S345_C]"; S345_OK=false; }
+# ④ 回归：空格 + 单/双引号原路径不破坏
+S345_D=$(s345_run '{"tool_name":"Bash","tool_input":{"command":"git commit -m '"'"'fix: update'"'"'"}}')
+[ "$S345_D" = "fix: update" ] || { echo "  ✗ 回归单引号：[$S345_D]"; S345_OK=false; }
+cleanup_tmp "$S345_REPO"; rm -rf "$S345_STUB"
+$S345_OK && pass "F-03 三场景 + 回归全过（等号/中文/嵌套引号/空格形式 --task 全透传）" || fail "F-03 message 抽取行为回退——见上方 ✗ 行"
 
 echo -e "  验收测试结果：${GREEN}$PASSED 通过${NC} / ${RED}$FAILED 失败${NC} / 共 $((PASSED + FAILED))"
 # 🔴 v1.3.1 run-10 教训：无色码纯文本汇总行供 driver grep（EXIT: 0=全PASS / <N>=N失败）
