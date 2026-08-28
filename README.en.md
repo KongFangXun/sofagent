@@ -56,9 +56,9 @@ sofagent does not build its own Agent — execution is delegated to mature hosts
 
 > 🔄 **Self-bootstrapping**: sofagent's first FDE engagement is sofagent itself — the project is a complete FDE business flow (map → build → deploy → depart), and this open-source repository is that deliverable.
 
-## v1.4.1: Training Engine Foundation
+## v1.4.2: Training Data & Evaluation + Six FDE Engines
 
-🚂 The foundation for enterprise AI that "gets stronger by itself" — eight training-engine blocks (train-job orchestration / HMAC audit chain / enterpriseId isolation / reproducible fingerprint / weight signing / interruption reclaim / crash recovery / security baseline) + Stage-0 convergence verified on macOS Metal. Tests 2981→**3222** (+241; workspace-scope 2937→3178 across 12 packages, plugin families counted separately). Full details in the [devlog](./docs/changelog/v1.4/v1.4.1.md) · earlier versions in [CHANGELOG](./CHANGELOG.md).
+🚀 Make training **eat real data and prove its worth** — enterprise heterogeneous data (CSV/Excel/DB/API) flows through an ingestion pipeline into training sets (quality gates + redaction) · dataset_version ledger (frozen fingerprint + resume version lock) · in-training eval loop (externalized thresholds) · train env/doctor health checks · dry-run VRAM estimation + ScaleRL compute extrapolation · training reports (customer-readable + quantified ROI); the FDE methodology becomes executable engines: fde_interview/classify/quantify/derive/distill/deploy as six MCP tools + IM-bridge remote command. MCP 67→**76** tools, tests 3202→**3349** (workspace 12-package scope). Full details in the [devlog](./docs/changelog/v1.4/v1.4.2.md) · earlier versions in [CHANGELOG](./CHANGELOG.md).
 
 ## Multi-platform Mounting
 

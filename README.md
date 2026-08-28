@@ -54,9 +54,9 @@ sofagent 不造 Agent——执行能力交给成熟宿主（模型 + 工具 + �
 
 > 🔄 **自举**：sofagent 给自己做的第一份 FDE，就是 sofagent 自己——项目本身就是一条完整的 FDE 业务流（梳理 → 构建 → 部署 → 离场），这个开源仓库就是那份交付物。
 
-## v1.4.1：训练引擎地基
+## v1.4.2：训练数据与评估 + FDE 六引擎
 
-🚂 给企业 AI 补上「自己会变强」的底座——训练引擎八大块（train-job 编排 / HMAC 审计链 / enterpriseId 隔离 / 可复现指纹 / 权重签名 / 中断回收 / 崩溃恢复 / 安全基线）+ 阶段 0 macOS Metal 实测收敛，测试 2981→**3222**（+241；workspace 口径 2937→3178/12 包，插件族另计）。完整内容见[开发日志](./docs/changelog/v1.4/v1.4.1.md) · 更早版本见 [CHANGELOG](./CHANGELOG.md)。
+🚀 让训练**吃得到数据、评得出好坏**——企业异构数据（CSV/Excel/DB/API）经管道进训练集（质量闸门+脱敏）· dataset_version 版本台账（指纹冻结+续跑版本锁）· 训练中 eval 闭环（阈值外部化）· train env/doctor 环境体检 · dry-run 显存估算 + ScaleRL 算力外推 · 训练报告（客户可读 + 量化 ROI）；FDE 方法论变成可执行引擎：fde_interview/classify/quantify/derive/distill/deploy 六件 MCP tool + IM 桥远程指挥。MCP 67→**76** tools，测试 3202→**3349**（workspace 12 包口径）。完整内容见[开发日志](./docs/changelog/v1.4/v1.4.2.md) · 更早版本见 [CHANGELOG](./CHANGELOG.md)。
 
 ## 多平台挂载
 
