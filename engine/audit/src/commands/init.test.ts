@@ -253,6 +253,10 @@ describe('post-commit 对账 exitCode 三档分流 (B8)', () => {
     sofagentHome = join(tmpdir(), `sofagent-b8-home-${Date.now()}-${Math.random().toString(36).slice(2)}`);
     mkdirSync(repoDir, { recursive: true });
     mkdirSync(join(sofagentHome, 'data/audit'), { recursive: true });
+    // 迷你 dist——满足 hook 顶部 AUDIT_CMD 探测（CI 无全局 sofagent-audit，
+    // 无此 fixture 时 hook 静默 exit 0，对账回声不输出——与 H-01 describe 同款先例）
+    mkdirSync(join(repoDir, 'engine/audit/dist'), { recursive: true });
+    writeFileSync(join(repoDir, 'engine/audit/dist/index.js'), 'process.exit(0);\n');
     // 真实 git 仓库 + 一个初始 commit（post-commit 依赖 git rev-parse HEAD / HEAD^）
     execFileSync('git', ['init', '-q'], { cwd: repoDir });
     execFileSync('git', ['config', 'user.email', 't@t.com'], { cwd: repoDir });
