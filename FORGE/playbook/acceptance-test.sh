@@ -1889,7 +1889,7 @@ if $S219_OK; then
   [ -f "$PROJECT_ROOT/engine/mcp/src/tools/audit-tools.ts" ] || { fail "tools/audit-tools.ts 不存在"; S219_OK=false; }
   [ -f "$PROJECT_ROOT/engine/mcp/src/tools/audit-file.ts" ] || { fail "tools/audit-file.ts 不存在"; S219_OK=false; }
   [ -f "$PROJECT_ROOT/engine/mcp/src/resources.ts" ] || { fail "resources.ts 不存在"; S219_OK=false; }
-  $S219_OK && pass "mcp-server.ts拆分（${MCP_LINES}行 ≤ 420 + tool-registry + tools/audit-tools + tools/audit-file + resources）"
+  $S219_OK && pass "mcp-server.ts拆分（${MCP_LINES}行 ≤ 450 + tool-registry + tools/audit-tools + tools/audit-file + resources）"
 fi
 
 scenario 220 "v1.2.9 ⑥ BugFix — REPO_ROOT 已修复 + check-version.sh 扫描路径已更新"
