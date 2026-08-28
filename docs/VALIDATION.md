@@ -502,13 +502,19 @@ Onyx 四阶段闭环（L1：可见性 → 仿真 → 执行 → 学习）与人�
 | **全链路留痕** | 每操作步骤有日志，可追踪可回溯可审计 | 审计引擎（git diff 硬证据 + HMAC 链）+ 运行时审计 |
 | **确定性执行** | 工具函数预先写好，参数固定，同样输入同样输出 | 工具审批四模式 + Ontology Action 七步管线——LLM 当翻译官，不当写逻辑的人 |
 
-### 循环的边界：从 Loop 到 Graph 的升级判据
+### 循环的边界：入场判据与升级判据
 
-**Loop 是 Graph 的特例**（包含关系，非替代）。单 Loop 有四种典型失败，sofagent 的审计节点（★Reality Anchor）逐一对应解法；当任务复杂度触及任一升级信号时，才从 Loop 升级到 Graph（满足其一才升级，否则 Loop 就够，避免过度设计）：
+**Loop 是 Graph 的特例**（包含关系，非替代）。边界有两个方向——先判**该不该建**（入场判据），再判**该不该升**（升级判据）：
+
+**入场判据——三适合条件**（任务同时满足三条才值得建 Loop，否则一次性 Agent 调用就够）：一、**重复发生**——同一任务会反复出现（fresh-eyes 审查每版发版都跑；只跑一次的一次性分析不建 Loop）；二、**完成标准清晰**——「做完」能被独立判定（exit 0 / 测试数对账 / verdict PASS；「把文档写好点」这类主观目标先定义 Rubric 或二元清单，定义不出来不建 Loop）；三、**token 成本可扛**——单轮成本 × 预期轮次在预算内（FORGE 三层熔断 + [预算三维度声明](../../FORGE/lessons/index.md)就是这条的工程化）。
+
+单 Loop 有四种典型失败，sofagent 的审计节点（★Reality Anchor）逐一对应解法；当任务复杂度触及任一升级信号时，才从 Loop 升级到 Graph（满足其一才升级，否则 Loop 就够，避免过度设计）：
 
 **单 Loop 四类失败 → sofagent 解法**：指标异化（优化解决率→流失率翻倍）→ audit 节点看 git diff 硬证据不信自报；目标僵化（Agent 不质疑目标本身）→ human_confirm 节点 + 危险操作前人工批准钩子；多目标冲突（两个 loop 打架）→ ★Reality Anchor guard edge 统一裁决；测量衰退（测试数据老化假象）→ audit 规则不可篡改 + acceptance-test 冻结验收标准。
 
 **升级六信号 → sofagent 落点**：任务需交接（dag-runner 单任务 vs 并行编排波次）/ 需散出汇合（Send API 并行 + MergeQueue，v1.3.1）/ 每步不同模型工具（model-router 路由）/ 需显式可审计角色（StateGraph 四节点）/ 节点失败需隔离（git worktree，v1.2.3）/ 需独立 reviewer（audit + fresh-eyes）。完整对照见 [FORGE §Graph Engineering 视角](./guides/loop-development.md#graph-engineering-视角控制图--stategraph)。
+
+> 📖 来源：Loop Engineering 方法论（2026-08，行业笔记转写吸收）——入场三适合条件（重复发生 / 完成标准清晰 / token 成本可扛）与升级六信号互补成完整边界：三适合管「建不建」，六信号管「升不升」——不满足三适合的任务硬建 Loop 是浪费，满足三适合却停在单 Loop 不升级是欠设计。
 
 ### Loop Engineering 四层循环：从 Agent Demo 到可交付 AI 产品
 
