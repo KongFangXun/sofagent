@@ -241,5 +241,5 @@ v0.84 只有一条路径（A→B），无法排除知识传递。v0.85 加反转
 - [2026-06-23-sofagent-test-suite.md](./2026-06-23-sofagent-test-suite.md) — 5 个测试任务的完整说明
 - [2026-06-23-independent-refactor-ab.md](./2026-06-23-independent-refactor-ab.md) — v0.81 首次 A/B（本实验要复现并反转验证的结果）
 - [LIMITATIONS.md](../../LIMITATIONS.md) — 方法论局限的诚实声明
-- [ROADMAP v0.9](../../ROADMAP.md#现在在哪v085) — 实验在路线图中的位置
+- [ROADMAP v0.9](../../ROADMAP.md#现在在哪v142已发版) — 实验在路线图中的位置
 

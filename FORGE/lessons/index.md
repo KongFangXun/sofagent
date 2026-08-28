@@ -126,7 +126,7 @@
 
 ### 🔴 stream 迁移（如做 invoke→stream 改造时必查）
 
-- [ ] **chunk 格式确认**：`{ [nodeName]: delta }`（[五·stream](./stream-prompt-tools.md#五stream-迁移规范p0-级铁律)）
+- [ ] **chunk 格式确认**：`{ [nodeName]: delta }`（[五·stream](./stream-prompt-tools.md#五stream-迁移规范p0-级铁律--langgraph-fallback-专属)）
 - [ ] **下游消费函数验证**（[五·stream](./stream-prompt-tools.md#stream-迁移检查清单)）
 - [ ] **格式适配层**：累积 delta.messages → `{ messages: allMessages }`（[五·stream](./stream-prompt-tools.md#api-返回格式差异)）
 - [ ] **端到端验证**（产物文件 + usage.jsonl）（[五·stream](./stream-prompt-tools.md#stream-迁移检查清单)）
