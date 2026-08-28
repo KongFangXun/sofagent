@@ -154,8 +154,9 @@ for (const e of entries) {
       mode = lsLine.slice(0, 6).trim(); // 100755 可执行 / 100644 常规（保 .sh 执行位——v1.3.8 第四坑）
       const m = lsLine.match(/blob ([0-9a-f]{40})/);
       if (m) {
-        const canonical = sh(`git cat-file blob ${m[1]}`);
-        b64 = Buffer.from(canonical, 'utf8').toString('base64');
+        // 🔴 cat-file 输出禁止走 sh()（trim 剥掉末尾换行 → blob sha 与本地 tree 分叉，v1.4.2 阶段十二实测 13 文件差 1 字节）
+        const canonical = execSync(`git cat-file blob ${m[1]}`, { cwd: REPO_ROOT }); // Buffer 原始字节，零转码零 trim
+        b64 = canonical.toString('base64');
       }
     }
   } catch { /* HEAD 无跟踪（理论不可达——entries 全来自 HEAD diff/ls-tree） */ }
