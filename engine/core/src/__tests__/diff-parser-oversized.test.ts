@@ -121,4 +121,44 @@ describe('超大 diff spill 落盘读回（v1.3.9 十二）', () => {
     expect(small!.oversized).toBeUndefined();
     expect(small!.spillFile).toBeUndefined();
   });
+
+  // v1.4.3 P2-e：跨仓密钥泄漏面行为锁——SOFAGENT_DATA 未设时 spill 必须落
+  // 引擎 home 数据目录（被审仓库外），不得落被审仓库 CWD/data（旧 ?? 'data' 兜底
+  // 的缺陷：对方仓库无本仓 .gitignore /data/ 规则，spill 文件会被对方 commit 卷入）
+  it('P2-e：SOFAGENT_DATA 未设时 spill 落引擎 home 数据目录（被审仓库外），不落 CWD/data', () => {
+    const prevHome = process.env.SOFAGENT_HOME;
+    const fakeHome = fs.mkdtempSync(path.join(os.tmpdir(), 'sofagent-p2e-home-'));
+    process.env.SOFAGENT_HOME = fakeHome;
+    // 显式清掉 SOFAGENT_DATA——测试旧兜底路径的关键前置
+    const prevData = process.env.SOFAGENT_DATA;
+    delete process.env.SOFAGENT_DATA;
+    // 被审仓库在 fakeHome 之外（模拟跨仓审计——被审仓库 ≠ 引擎 home）
+    const auditedRepo = fs.mkdtempSync(path.join(os.tmpdir(), 'sofagent-p2e-audited-'));
+    try {
+      execSync('git init -q', { cwd: auditedRepo });
+      execSync('git config user.email t@t.local', { cwd: auditedRepo });
+      execSync('git config user.name t', { cwd: auditedRepo });
+      fs.writeFileSync(path.join(auditedRepo, 'big.ts'), 'base\n');
+      execSync('git add -A && git commit -qm base', { cwd: auditedRepo });
+      fs.writeFileSync(path.join(auditedRepo, 'big.ts'), makeBigContent(95_000, true));
+      execSync('git add -A && git commit -qm big', { cwd: auditedRepo });
+
+      const files = parseDiff('HEAD~1..HEAD', auditedRepo);
+      const big = files.find((f) => f.path === 'big.ts');
+      expect(big).toBeDefined();
+      expect(big!.spillFile).toBeDefined();
+      // 核心：spill 文件落在引擎 home 数据目录（被审仓库外）
+      const expectedSpillRoot = path.join(fakeHome, 'data', 'spill');
+      expect(path.dirname(big!.spillFile!)).toBe(expectedSpillRoot);
+      expect(fs.existsSync(big!.spillFile!)).toBe(true);
+      // 反向断言：被审仓库内不出现 data/spill（跨仓泄漏面消除）
+      expect(fs.existsSync(path.join(auditedRepo, 'data', 'spill'))).toBe(false);
+    } finally {
+      if (prevHome === undefined) delete process.env.SOFAGENT_HOME;
+      else process.env.SOFAGENT_HOME = prevHome;
+      if (prevData !== undefined) process.env.SOFAGENT_DATA = prevData;
+      fs.rmSync(fakeHome, { recursive: true, force: true });
+      fs.rmSync(auditedRepo, { recursive: true, force: true });
+    }
+  });
 });
