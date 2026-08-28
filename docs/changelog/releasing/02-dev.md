@@ -17,9 +17,9 @@
 
 | 闸门 | 检查项 |
 |:--:|------|
-| D1 | 实现纪要表（changelog 开头的交付→落点→说明表） |
+| D1 | 实现纪要表（changelog 开头的交付→落点→说明表）。⚠️ v1.4.2 教训：开发批九章全落地但 D1 表缺位，发版 session 无法按表对账——补建于阶段六前 |
 | D2 | 测试数一致（changelog 声称数 = 实际 `npm test` 数） |
-| D3 | changelog 章节序（新功能在前、BugFix 在后） |
+| D3 | changelog 章节序（新功能在前、BugFix 在后）。⚠️ 合并版本纪律（v1.4.2 教训）：bugfix 批若在开发前收编（阶段一形态），devlog 需补 BugFix 章节记「N 项审查修复 +24 回归用例」段——修复不留 devlog 章节 = 后续版本考古时找不到出处 |
 | D4 | 版本号状态（changelog 头部标注当前版本号） |
 | D5 | 文档日期（changelog 头部日期已更新） |
 | D6 | 项目文档同步清单（changelog 每个功能点 → 对应文档有覆盖） |
@@ -42,11 +42,11 @@
 
 ## 基础自测（原阶段三 · 开发收尾必做）
 
-> **定位**：开发完成即自测（原独立阶段三并入，同一会话连续动作）——bump 版本 → 构建 → 全量测试 → 文档数同步 → 依赖确认 → 卫生检查。
+> **定位**：开发完成即自测（原独立阶段三并入，同一会话连续动作）——版本预检 → 构建 → 全量测试 → 文档数同步 → 依赖确认 → 卫生检查。bump 延后到阶段六（见步骤一）。
 
 | # | 步骤 | 验证方式 |
 |:--:|------|------|
-| 一 | bump 版本号：`bash tools/release/bump-version.sh X Y`。bump 后检查 hook 文件头版本——`head -2 engine/audit/hooks/commit-msg engine/audit/hooks/post-commit` 的 v 标记必须与 package.json version 一致（check-version.sh 已覆盖） | `bash tools/check/check-version.sh` 全绿 |
+| 一 | **bump 时点（v1.3.9 起定稿：延后到阶段六）**：bump 13 类位置与阶段六文档收尾是同一批文件（版本号/日期/索引/状态行），阶段二 bump = 同批文件改两次、全量门禁跑两次。**本步骤只做预检**：`bash tools/check/check-version.sh` 确认当前版本三态一致（预期 1 警告=阶段六 bump 前置，非缺陷）；真正的 `bash tools/release/bump-version.sh X Y` 在阶段六步骤一执行，届时 hook 文件头版本一致性由 check-version.sh 覆盖 | check-version.sh exit 0（允许 1 警告发版前中间态） |
 | 二 | **changelog 状态转正**：`docs/changelog/v<major>.<minor>/vX.Y.md` 头部「⚠️ 尚未实现」+「状态：已排期」→ 改为「✅ 已开发」。删除「engine/ 下尚无对应代码」等过时警告，保留「前置依赖」 | 头部状态标注为已开发，无「尚未实现」残留 |
 | 三 | `npm run build && npm test` | exit 0 + 全部通过 |
 | 四 | **测试数文档同步门禁**（v1.3.4 教训：bugfix/dev/dsh 三阶段均漏此步）：`bash tools/check/check-test-count.sh --quiet` | 输出 OK / EXIT=0。FAIL = README/WIKI/LIMITATIONS/ARCHITECTURE 测试数与 test-count.sh SSOT 不一致，必须手动同步后再继续 |
