@@ -181,8 +181,11 @@ export function generateQuickOutput(
     // v1.3.2 P2-17: 解释 17 条默认 vs 24 条总量，消除「少装了什么」的认知落差
     parts.push(`✅ 全部 ${passCount} 条规则通过（默认 17 条 · 完整 24 条含扩展，扩展规则经 config 启用，规则集用 --ruleset 加载）${skipCount > 0 ? `（${skipCount} 条跳过）` : ''}`);
     // v1.3.5 #7: 跳过计数解释——让用户知道「跳过」是 quick 模式缺输入而非漏检
+    // v1.4.3 F-08 (bugfix 批): 归因口径如实化——quick 模式不含归因分析（ATTRIBUTION
+    // 引擎需任务描述/Agent 日志输入），原措辞「需任务描述输入的规则」未点破归因
+    // 缺席，用户误以为 quick 也做归因。指向两条升级路径：--task 走完整引擎 / 全局安装。
     if (skipCount > 0) {
-      parts.push(`ⓘ 跳过 = 需任务描述/Agent 日志输入的规则（quick 模式无此输入）——\`--init\` 装 hook 走完整引擎`);
+      parts.push(`ⓘ 跳过 = quick 模式不含归因分析（需任务描述/Agent 日志输入的规则）——用 --task 走完整引擎，或安装后运行 sofagent-audit；\`--init\` 装 hook 走完整引擎`);
     }
     // v1.3.4 P1-8: 显著回声行——用户用了三周可能不知道 sofagent 在工作，此行解决可感知性
     if (commitSha && !isRangeMode) {
@@ -198,8 +201,9 @@ export function generateQuickOutput(
     if (skipCount > 0) summaryParts.push(`${skipCount} 条跳过`);
     parts.push(`📊 ${summaryParts.join(' · ')}`);
     // v1.3.5 #7: 跳过计数解释（同上，非 PASS 分支也需要）
+    // v1.4.3 F-08: 同 PASS 分支——归因口径如实化
     if (skipCount > 0) {
-      parts.push(`ⓘ 跳过 = 需任务描述/Agent 日志输入的规则（quick 模式无此输入）——\`--init\` 装 hook 走完整引擎`);
+      parts.push(`ⓘ 跳过 = quick 模式不含归因分析（需任务描述/Agent 日志输入的规则）——用 --task 走完整引擎，或安装后运行 sofagent-audit；\`--init\` 装 hook 走完整引擎`);
     }
   }
 
@@ -232,7 +236,12 @@ export function runCliQuick(argv: string[]): number {
     '--support-bundle', '--sign-config', '--verify-chain', '--verify-commit',
     // v1.3.1 #1: 以下参数需要完整引擎——quick 模式不审计暂存区/commit-msg，
     // 会静默吞掉这些参数导致 hook 审计滞后。
-    '--diff', '--cached', '--silent', '--ci', '--task', '--commit-msg'];
+    '--diff', '--cached', '--silent', '--ci', '--task', '--commit-msg',
+    // v1.4.3 F-12 (bugfix 批): --strict 需要完整引擎（WARN 升级为 FAIL 的判定在
+    // 完整引擎 runner 内）——此前不在清单，quick 态传 --strict 得「⚠️ 未知参数」
+    // 后被静默忽略继续跑（EXIT=0），用户以为严格模式生效实际没有。加入清单后
+    // 遇之自动路由完整引擎（本仓内）或提示转完整安装（npx 态）。
+    '--strict'];
 
   for (const arg of argv.slice(2)) {
     if (FULL_ONLY_FLAGS.includes(arg)) {
@@ -260,7 +269,7 @@ export function runCliQuick(argv: string[]): number {
     console.log('sofagent-audit — AI Agent 行为审计\n');
     console.log('用法（quick 只读审计，零安装）：');
     console.log('  npx -y -p @sofagent/audit sofagent-audit              审计最近一次 commit（官方入口，始终最新）');
-    console.log('  npx -y -p @sofagent/audit sofagent-audit HEAD~3..HEAD   审计指定范围（路由到完整引擎）');
+    console.log('  npx -y -p @sofagent/audit sofagent-audit HEAD~3..HEAD   审计指定范围（quick 引擎直接跑，规则覆盖面同 quick）');
     console.log('  npx -y -p @sofagent/audit sofagent-audit -v, --version 显示版本号');
     console.log('  npx -y -p @sofagent/audit sofagent-audit -h, --help    显示此帮助\n');
     // v1.3.9 四十四：双模式边界一次性讲清——此前用户敲 --init/--doctor 撞二次安装门槛
