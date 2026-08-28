@@ -92,6 +92,14 @@ PKG_COUNT=$(echo "$TC_OUT" | sed $'s/\033\[[0-9;]*m//g' | grep -oE 'PKGS=[0-9]+'
 WORKSPACE_COUNT=$(grep -cE '^\s*"engine/(harness|ontology|eval|core|think|audit|orchestrator|daemon|ab-test|skillopt|mcp|rules|hooks/)' package.json || echo "0")
 [ -z "$WORKSPACE_COUNT" ] && WORKSPACE_COUNT=0
 
+# 任务八方案A（2026-08-29）：README 包数口径升级为双口径「13 引擎包 + 13 插件（9 DSH + 4 OpenClaw）」。
+# 插件数 SSOT = 插件目录数（每目录一份 package.json），与 README 声称对账；引擎包 SSOT 仍为 WORKSPACE_COUNT。
+DSH_PLUGIN_COUNT=$(find engine/dsh-plugins -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l | tr -d ' ')
+DSH_PLUGIN_COUNT=${DSH_PLUGIN_COUNT:-0}
+OPENCLAW_PLUGIN_COUNT=$(find engine/openclaw-plugins -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l | tr -d ' ')
+OPENCLAW_PLUGIN_COUNT=${OPENCLAW_PLUGIN_COUNT:-0}
+PLUGIN_TOTAL=$(( DSH_PLUGIN_COUNT + OPENCLAW_PLUGIN_COUNT ))
+
 # audit 包单独数（从 test-count.sh 全量输出的逐包明细行提取，格式「✓ audit: 498 passed (498 tests)」）。
 # v1.2.3 修复：不再单独跑 engine/audit && npm test —— 该路径的 vitest 输出同样带 ANSI 码，
 # 在 CI 非 TTY 下 grep '^\s*Tests\s+' 恒失败。复用 TC_OUT 的明细行，strip ANSI 后提取。
@@ -292,12 +300,17 @@ else
   ((FAIL++)) || true
 fi
 
-# README.md — "NNN 测试 / NN 包（NN 个含测试）" 格式（P0-13: grep 未命中 → FAIL；B13: 包数拆双口径——总数对 WORKSPACE_COUNT、含测试数对 PKG_COUNT）
-README_PKG_LINE=$(grep -nE '[0-9]+ 测试 / [0-9]+ 包' README.md 2>/dev/null | head -1)
+# README.md — "NNN 测试 / NN 引擎包 + NN 插件（N DSH + N OpenClaw）" 格式
+# （P0-13: grep 未命中 → FAIL；B13: 包数拆双口径——引擎数对 WORKSPACE_COUNT、插件数对 PLUGIN_TOTAL；
+#  任务八方案A 2026-08-29：旧格式「N 测试 / N 包（N 个含测试）」升级为引擎+插件双口径，
+#  完整呈现交付物面——引擎包 workspace 13 / 发布实体 26 两个数字可区分，消除「交付物只有 13 包」误读）
+README_PKG_LINE=$(grep -nE '[0-9]+ 测试 / [0-9]+ 引擎包 \+ [0-9]+ 插件' README.md 2>/dev/null | head -1)
 if [ -n "$README_PKG_LINE" ]; then
   README_CLAIMED=$(echo "$README_PKG_LINE" | grep -oE '[0-9]+ 测试' | grep -oE '[0-9]+')
-  README_PKGS=$(echo "$README_PKG_LINE" | grep -oE '[0-9]+ 包' | grep -oE '[0-9]+')
-  README_PKGS_TESTED=$(echo "$README_PKG_LINE" | grep -oE '[0-9]+ 个含测试' | grep -oE '[0-9]+')
+  README_PKGS=$(echo "$README_PKG_LINE" | grep -oE '[0-9]+ 引擎包' | grep -oE '[0-9]+')
+  README_PLUGIN_TOTAL=$(echo "$README_PKG_LINE" | grep -oE '[0-9]+ 插件' | grep -oE '[0-9]+')
+  README_PLUGIN_DSH=$(echo "$README_PKG_LINE" | grep -oE '[0-9]+ DSH' | grep -oE '[0-9]+')
+  README_PLUGIN_OC=$(echo "$README_PKG_LINE" | grep -oE '[0-9]+ OpenClaw' | grep -oE '[0-9]+')
   README_LINENO=$(echo "$README_PKG_LINE" | cut -d: -f1)
   if [ "$QUIET" = false ]; then
     echo -e "  校验 README.md（行 ${README_LINENO}）..."
@@ -308,33 +321,44 @@ if [ -n "$README_PKG_LINE" ]; then
     local_fail=1
   fi
   if [ -n "$README_PKGS" ] && [ "$README_PKGS" != "$WORKSPACE_COUNT" ]; then
-    echo -e "  ${RED}✗ README.md（行 ${README_LINENO}）：声称 ${README_PKGS} 包（workspace 总数），实际 ${WORKSPACE_COUNT} 包${NC}"
+    echo -e "  ${RED}✗ README.md（行 ${README_LINENO}）：声称 ${README_PKGS} 引擎包（workspace 引擎总数），实际 ${WORKSPACE_COUNT} 包${NC}"
     local_fail=1
   fi
-  if [ -n "$README_PKGS_TESTED" ] && [ "$README_PKGS_TESTED" != "$PKG_COUNT" ]; then
-    echo -e "  ${RED}✗ README.md（行 ${README_LINENO}）：声称 ${README_PKGS_TESTED} 个含测试，实际 ${PKG_COUNT} 包${NC}"
+  if [ -n "$README_PLUGIN_TOTAL" ] && [ "$README_PLUGIN_TOTAL" != "$PLUGIN_TOTAL" ]; then
+    echo -e "  ${RED}✗ README.md（行 ${README_LINENO}）：声称 ${README_PLUGIN_TOTAL} 插件（DSH+OpenClaw 合计），实际 ${PLUGIN_TOTAL} 插件${NC}"
+    local_fail=1
+  fi
+  if [ -n "$README_PLUGIN_DSH" ] && [ "$README_PLUGIN_DSH" != "$DSH_PLUGIN_COUNT" ]; then
+    echo -e "  ${RED}✗ README.md（行 ${README_LINENO}）：声称 ${README_PLUGIN_DSH} DSH 插件，实际 ${DSH_PLUGIN_COUNT}${NC}"
+    local_fail=1
+  fi
+  if [ -n "$README_PLUGIN_OC" ] && [ "$README_PLUGIN_OC" != "$OPENCLAW_PLUGIN_COUNT" ]; then
+    echo -e "  ${RED}✗ README.md（行 ${README_LINENO}）：声称 ${README_PLUGIN_OC} OpenClaw 插件，实际 ${OPENCLAW_PLUGIN_COUNT}${NC}"
     local_fail=1
   fi
   if [ "$local_fail" = "0" ]; then
     if [ "$QUIET" = false ]; then
-      echo -e "  ${GREEN}✓ README.md：${README_CLAIMED} 测试 / ${README_PKGS} 包（${README_PKGS_TESTED} 个含测试）${NC}"
+      echo -e "  ${GREEN}✓ README.md：${README_CLAIMED} 测试 / ${README_PKGS} 引擎包 + ${README_PLUGIN_TOTAL} 插件（${README_PLUGIN_DSH} DSH + ${README_PLUGIN_OC} OpenClaw）${NC}"
     fi
     ((PASS++)) || true
   else
     ((FAIL++)) || true
   fi
 else
-  echo -e "  ${RED}✗ README.md 未找到「N 测试 / N 包」声明（grep 未命中 → FAIL，禁止静默跳过）${NC}"
+  echo -e "  ${RED}✗ README.md 未找到「N 测试 / N 引擎包 + N 插件」声明（grep 未命中 → FAIL，禁止静默跳过）${NC}"
   ((FAIL++)) || true
 fi
 
-# README.en.md — "NNN tests / NNN packages (NN with tests)" 格式（P1 B2b: 英文版曾二次漂移 2283，
-# 根因是门禁只校验中文 README。补齐英文校验，grep 未命中 → FAIL，与中文版 P0-13 语义一致；B13: 包数拆双口径）
-README_EN_LINE=$(grep -nE '[0-9]+ tests? / [0-9]+ packages?' README.en.md 2>/dev/null | head -1)
+# README.en.md — "NNN tests / NN engine packages + NN plugins (N DSH + N OpenClaw)" 格式
+# （P1 B2b: 英文版曾二次漂移 2283，根因是门禁只校验中文 README。补齐英文校验，grep 未命中 → FAIL，
+#  与中文版 P0-13 语义一致；任务八方案A 2026-08-29：随中文版同步升级为引擎+插件双口径）
+README_EN_LINE=$(grep -nE '[0-9]+ tests? / [0-9]+ engine packages \+ [0-9]+ plugins' README.en.md 2>/dev/null | head -1)
 if [ -n "$README_EN_LINE" ]; then
   README_EN_CLAIMED=$(echo "$README_EN_LINE" | grep -oE '[0-9]+ tests?' | grep -oE '[0-9]+')
-  README_EN_PKGS=$(echo "$README_EN_LINE" | grep -oE '[0-9]+ packages?' | grep -oE '[0-9]+')
-  README_EN_PKGS_TESTED=$(echo "$README_EN_LINE" | grep -oE '[0-9]+ with tests' | grep -oE '[0-9]+')
+  README_EN_PKGS=$(echo "$README_EN_LINE" | grep -oE '[0-9]+ engine packages' | grep -oE '[0-9]+')
+  README_EN_PLUGIN_TOTAL=$(echo "$README_EN_LINE" | grep -oE '[0-9]+ plugins' | grep -oE '[0-9]+')
+  README_EN_PLUGIN_DSH=$(echo "$README_EN_LINE" | grep -oE '[0-9]+ DSH' | grep -oE '[0-9]+')
+  README_EN_PLUGIN_OC=$(echo "$README_EN_LINE" | grep -oE '[0-9]+ OpenClaw' | grep -oE '[0-9]+')
   README_EN_LINENO=$(echo "$README_EN_LINE" | cut -d: -f1)
   if [ "$QUIET" = false ]; then
     echo -e "  校验 README.en.md（行 ${README_EN_LINENO}）..."
@@ -345,23 +369,31 @@ if [ -n "$README_EN_LINE" ]; then
     local_fail=1
   fi
   if [ -n "$README_EN_PKGS" ] && [ "$README_EN_PKGS" != "$WORKSPACE_COUNT" ]; then
-    echo -e "  ${RED}✗ README.en.md（行 ${README_EN_LINENO}）：声称 ${README_EN_PKGS} packages（workspace 总数），实际 ${WORKSPACE_COUNT} 包${NC}"
+    echo -e "  ${RED}✗ README.en.md（行 ${README_EN_LINENO}）：声称 ${README_EN_PKGS} engine packages（workspace 引擎总数），实际 ${WORKSPACE_COUNT} 包${NC}"
     local_fail=1
   fi
-  if [ -n "$README_EN_PKGS_TESTED" ] && [ "$README_EN_PKGS_TESTED" != "$PKG_COUNT" ]; then
-    echo -e "  ${RED}✗ README.en.md（行 ${README_EN_LINENO}）：声称 ${README_EN_PKGS_TESTED} with tests，实际 ${PKG_COUNT} 包${NC}"
+  if [ -n "$README_EN_PLUGIN_TOTAL" ] && [ "$README_EN_PLUGIN_TOTAL" != "$PLUGIN_TOTAL" ]; then
+    echo -e "  ${RED}✗ README.en.md（行 ${README_EN_LINENO}）：声称 ${README_EN_PLUGIN_TOTAL} plugins（DSH+OpenClaw 合计），实际 ${PLUGIN_TOTAL} 插件${NC}"
+    local_fail=1
+  fi
+  if [ -n "$README_EN_PLUGIN_DSH" ] && [ "$README_EN_PLUGIN_DSH" != "$DSH_PLUGIN_COUNT" ]; then
+    echo -e "  ${RED}✗ README.en.md（行 ${README_EN_LINENO}）：声称 ${README_EN_PLUGIN_DSH} DSH plugins，实际 ${DSH_PLUGIN_COUNT}${NC}"
+    local_fail=1
+  fi
+  if [ -n "$README_EN_PLUGIN_OC" ] && [ "$README_EN_PLUGIN_OC" != "$OPENCLAW_PLUGIN_COUNT" ]; then
+    echo -e "  ${RED}✗ README.en.md（行 ${README_EN_LINENO}）：声称 ${README_EN_PLUGIN_OC} OpenClaw plugins，实际 ${OPENCLAW_PLUGIN_COUNT}${NC}"
     local_fail=1
   fi
   if [ "$local_fail" = "0" ]; then
     if [ "$QUIET" = false ]; then
-      echo -e "  ${GREEN}✓ README.en.md：${README_EN_CLAIMED} tests / ${README_EN_PKGS} packages (${README_EN_PKGS_TESTED} with tests)${NC}"
+      echo -e "  ${GREEN}✓ README.en.md：${README_EN_CLAIMED} tests / ${README_EN_PKGS} engine packages + ${README_EN_PLUGIN_TOTAL} plugins (${README_EN_PLUGIN_DSH} DSH + ${README_EN_PLUGIN_OC} OpenClaw)${NC}"
     fi
     ((PASS++)) || true
   else
     ((FAIL++)) || true
   fi
 else
-  echo -e "  ${RED}✗ README.en.md 未找到「N tests / N packages」声明（grep 未命中 → FAIL，禁止静默跳过）${NC}"
+  echo -e "  ${RED}✗ README.en.md 未找到「N tests / N engine packages + N plugins」声明（grep 未命中 → FAIL，禁止静默跳过）${NC}"
   ((FAIL++)) || true
 fi
 

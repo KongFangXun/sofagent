@@ -18,6 +18,13 @@
 # 退出码:
 #   0 = 全部通过（部分包无测试视为正常）
 #   1 = 有包测试失败
+#
+# ── 追因登记（2026-08-29 v1.4.3 bugfix 批 · 任务十方案2）──
+# audit 包偶发「首跑无汇总、复跑通过」（FLAKY_PKGS=audit FLAKY_COUNT=1）：
+#   2026-08-29 三轮审查实证 1 次、同日复验未复现（主因排查：本机 vitest 缓存竞争，
+#   三轮跑时与会话并发的 vitest 缓存活动有关）。下次复现时先清缓存跑对照组：
+#     rm -rf engine/audit/node_modules/.vitest && bash tools/check/test-count.sh
+#   对照组仍复现再考虑锁 vitest pool/sequence 配置根治（单次未复现事件暂缓投入）。
 # ============================================================
 
 set -uo pipefail
