@@ -34,6 +34,16 @@ const MAX_DISPLAY_PER_GROUP = 5;
  * 对一条新增行生成「明文候选」——原行 + 可能的 base64/hex 解码结果。
  * 仅当行内容形态符合编码特征（且能解码出可打印文本）才尝试，避免误伤普通文本。
  */
+/**
+ * v1.4.4：剥离行内 data URI 内嵌资源（data:image/*;base64,... 等）。
+ * 合法内嵌资源（dashboard logo/图标 SVG base64）经 base64 解码后产生的
+ * 随机可打印段会撞密钥正则（实锤：70KB PNG data-URI 误报 AWS Secret Key）。
+ * data URI 是标准 Web 资源内嵌形态，不是密钥载体——在候选生成前整段移除。
+ */
+function stripDataUris(s: string): string {
+  return s.replace(/data:[a-z0-9.+-]+\/[a-z0-9.+-]+;base64,[A-Za-z0-9+/=]+/gi, '');
+}
+
 function tryDecodeBase64(s: string): string | null {
   if (!/^[A-Za-z0-9+/=\s]+$/.test(s) || s.replace(/\s+/g, '').length < 8 || s.replace(/\s+/g, '').length % 4 !== 0) {
     return null;
@@ -140,8 +150,13 @@ function extractCallArgLiterals(content: string): string[] {
 }
 
 function candidatePlaintexts(content: string): string[] {
-  const candidates: string[] = [content];
-  const trimmed = content.trim();
+  // v1.4.4：入口先剥离 data URI 内嵌资源——base64 图像解码/原文的随机 40 位段
+  // 会撞密钥正则（实锤：dashboard logo 70KB PNG data-URI 误报 AWS Secret Key）。
+  // data URI 是标准 Web 资源内嵌形态非密钥载体；剥离后剩余文本照常走全路径检测
+  // （资源以外藏真密钥仍会被抓）。URL-safe base64 载荷（含 -_）不匹配剥离正则，保持原扫。
+  const stripped = stripDataUris(content);
+  const candidates: string[] = [stripped];
+  const trimmed = stripped.trim();
 
   // P1-A4: 带变量前缀的赋值行（如 `token = <b64>` / `key: <hex>`）
   // 提取等号/冒号后的值部分，尝试解码——堵住 `token = <base64>` 绕过路径
