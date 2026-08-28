@@ -81,6 +81,7 @@
 - [ ] **stdout 管道检测定 WARN 不定 HALT**（命令替换/重定向的 stdout 天然是管道，HALT 会误杀冒烟测试和合法日志重定向）（[四·preflight-check](./driver.md#preflight-check-跑前自检)）
 - [ ] **recursionLimit 按步骤区分**（审查类 130）（[四·recursionLimit](./driver.md#recursionlimit-按步骤区分)）
 - [ ] **三层熔断防护**（L1 软 50 + L2 硬 60 写报告窗口 5 + L3 recursionLimit 130）（[四·三层熔断](./driver.md#worker-工具调用死循环防护三层熔断)）
+- [ ] **预算三维度声明**（次数（三层熔断）/ token（记账已有、闸门 v1.4.8 排期）/ 时间（stall watchdog）——新 loop 设计时声明三个维度各自的闸门或豁免理由，防单维度失控）
 - [ ] **L2 用两阶段写报告窗口**（不 break，进 5 superstep 窗口）（[四·L2 两阶段](./driver.md#l2-两阶段写报告窗口关键设计)）
 - [ ] **extractAgentText 跳过空 content**（createReactAgent 中间消息全空）（[四·兜底报告](./driver.md#兜底报告合成)）
 - [ ] **并行 Worker 用 allSettled**（[四·allSettled](./driver.md#allsettled-并行降级)）
