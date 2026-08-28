@@ -15,6 +15,35 @@ describe('A2 不泄密钥', () => {
     expect(result.status).toBe('FAIL');
   });
 
+  it('data URI 内嵌 base64 图像 → PASS（合法资源不误报）', () => {
+    // 实锤场景：dashboard logo PNG base64 data-URI 解码后随机段撞 AWS Secret Key 正则
+    // fixture secret 运行时拼接（项目纪律——A2 fixture 不落字面量）
+    const awsLike = ['AK', 'IAIOSFODNN7EXAMPLE'].join('');
+    const pngB64 = Buffer.from(
+      '\x89PNG\r\n\x1a\n' + 'x'.repeat(200) + awsLike.slice(0, 12) + 'y'.repeat(100),
+    ).toString('base64');
+    const ctx = makeCtx([makeDiffFile('web/index.html', [`+<img src="data:image/png;base64,${pngB64}" alt="logo">`])]);
+    const result = checkRuleA2(ctx);
+    expect(result.status).toBe('PASS');
+  });
+
+  it('data URI 同行混真密钥 → FAIL（豁免不遮真泄漏）', () => {
+    const awsLike = ['AK', 'IAIOSFODNN7EXAMPLE'].join(''); // fixture secret 运行时拼接
+    const pngB64 = Buffer.from('\x89PNG\r\n\x1a\n' + 'x'.repeat(100)).toString('base64');
+    const ctx = makeCtx([
+      makeDiffFile('web/index.html', [`+<img src="data:image/png;base64,${pngB64}"> const k = "${awsLike}"`]),
+    ]);
+    const result = checkRuleA2(ctx);
+    expect(result.status).toBe('FAIL');
+  });
+
+  it('SVG data URI（图标内嵌）→ PASS', () => {
+    const svg = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4 6a2 2 0 1 1 0 4'/%3E%3C/svg%3E";
+    const ctx = makeCtx([makeDiffFile('web/app.html', [`+<i class="bi bi-x" style="background:url("${svg}")">`])]);
+    const result = checkRuleA2(ctx);
+    expect(result.status).toBe('PASS');
+  });
+
   it('新增行含 Private Key → FAIL', () => {
     const ctx = makeCtx([makeDiffFile('src/key.ts', ['+-----BEGIN RSA PRIVATE KEY-----'])]);
     const result = checkRuleA2(ctx);
