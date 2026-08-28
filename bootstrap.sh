@@ -10,11 +10,56 @@ trap 'echo "❌ sofagent bootstrap 失败（exit $?）——请截图此信息�
 # v1.3.5 #31: 锁定已发布 tag（refs/tags/v1.4.2）——main 浮动导致装到的版本不可复现；
 #   升级时改此 tag 与 README 安装段同步。
 INSTALL_URL="https://raw.githubusercontent.com/KongFangXun/sofagent/refs/tags/v1.4.2/install.sh"
+# ════════════════════════════════════════════════════════════════════════
+# v1.4.3 P2-f（F-07）：下载完整性校验（curl | bash 信任模型加固）
+# install.sh 是将被 bash 直接执行的代码——下载通道（HTTPS 上的 raw.githubusercontent）
+# 被劫持即任意代码执行。锁 sha256 后：内容与发版时不一致 → 拒绝执行（fail-closed）。
+# ⚠️ 发版同步纪律：每次发新 tag，更新下方 7 个哈希（install.sh + 6 个 lib 文件）
+#   计算命令（在新 tag 打好后执行）：
+#     git show vX.Y.Z:install.sh | shasum -a 256
+#     for f in $LIB_FILES; do git show vX.Y.Z:engine/scripts/lib/$f | shasum -a 256; done
+#   发布清单同步提醒：docs/changelog/releasing/ 09-tag.md（tag 发布阶段）
+# ════════════════════════════════════════════════════════════════════════
+INSTALL_SHA256="24e5ebeed61923c0c06ba9e95464e7b7698ccfb939fcfd0cf4f8bcdf2e3b7212"  # v1.4.2 tag:install.sh
 # v1.3.8 P0-1 兜底：install.sh 依赖同目录 engine/scripts/lib/ 下 6 个模块——
 #   此前 bootstrap 只下载孤立 install.sh，source 立即失败（安装链全断根因）。
 #   现在同时下载 lib 全部文件到同目录结构，让 install.sh 的 source 可达。
 LIB_BASE_URL="https://raw.githubusercontent.com/KongFangXun/sofagent/refs/tags/v1.4.2/engine/scripts/lib"
 LIB_FILES="platform-detect.sh file-deploy.sh daemon-register.sh post-install.sh daemon-lib.sh config.sh"
+# lib 文件 sha256（v1.4.2 tag；与 LIB_FILES 顺序一一对应）
+LIB_SHA256S="e1a77f47fd92cbae131e88785079184925dbaf548976bc49d14d5c86e824525a
+dfcb89053f57e794d37a47b369eeff225efccdb0453d4a385fb14ccee5e6cdf3
+e83cf4dc60d929ed7c085b7d5d93beb37e781fd5085eaa1a138d298eb37933b3
+ab00287c9ce898658d09168baa9b4650aba675bf5337a20d372c19f5271a8cda
+bec93fd676d2524b11abfb44e1ffa4cb6dd536d13e3a05421aebee5c6bcf6fc2
+80f55df80d39a97d506ad925c1e099682efde7e482695208e421000fcbbb1128"
+
+# sha256 工具兼容（macOS shasum / Linux sha256sum，取输出首段哈希）
+_sha256_of() { # $1=文件路径 → stdout 哈希（失败输出空）
+  if command -v shasum >/dev/null 2>&1; then
+    shasum -a 256 "$1" 2>/dev/null | cut -d' ' -f1
+  elif command -v sha256sum >/dev/null 2>&1; then
+    sha256sum "$1" 2>/dev/null | cut -d' ' -f1
+  else
+    echo ""
+  fi
+}
+# 校验并在不匹配时 fail-closed（exit 1）：被劫持/损坏的安装脚本绝不执行
+_verify_or_die() { # $1=文件路径 $2=期望哈希 $3=显示名
+  local actual
+  actual=$(_sha256_of "$1")
+  if [ -z "$actual" ]; then
+    echo "❌ [bootstrap] 无法计算 $3 的 sha256（缺 shasum/sha256sum）——fail-closed 拒绝执行"
+    exit 1
+  fi
+  if [ "$actual" != "$2" ]; then
+    echo "🔴 [bootstrap] $3 完整性校验失败（sha256 不匹配）——下载内容与发版时不一致，可能被劫持，拒绝执行。"
+    echo "   期望: $2"
+    echo "   实际: $actual"
+    echo "   处置：检查网络/代理，或到 github.com/KongFangXun/sofagent/issues 报告"
+    exit 1
+  fi
+}
 LOCAL_PATH=""; PASSTHROUGH=()
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -34,6 +79,9 @@ else
   TMP_FILE="${TMP_DIR}/install.sh"
   echo "📥 下载 install.sh..."
   curl -fsSL "$INSTALL_URL" -o "$TMP_FILE" || { echo "❌ 下载失败（用 --local <path> 指定本地路径）"; rm -rf "$TMP_DIR"; exit 1; }
+  # v1.4.3 P2-f：install.sh 完整性校验（下载即校验，校验失败不执行）
+  _verify_or_die "$TMP_FILE" "$INSTALL_SHA256" "install.sh"
+  echo "✅ install.sh 完整性校验通过（sha256）"
   # v1.3.8 P0-1 兜底：同步下载 lib 依赖（任一失败不静默——lib 缺失会让 install.sh 的
   # 仓库完整性自检触发 clone 自救，但先在这里明示下载异常，避免用户误以为只有 install.sh）
   LIB_TMP_DIR="${TMP_DIR}/engine/scripts/lib"
@@ -42,8 +90,15 @@ else
   set -- $LIB_FILES
   echo "📥 下载运行时依赖 engine/scripts/lib/（$# 个文件）..."
   LIB_FAIL=0
+  # bash 3.2 兼容：并行遍历文件名与哈希列表（LIB_SHA256S 按行对应 LIB_FILES 顺序）
+  _expected_list="$LIB_SHA256S"
   for _lib in $LIB_FILES; do
-    if ! curl -fsSL "${LIB_BASE_URL}/${_lib}" -o "${LIB_TMP_DIR}/${_lib}"; then
+    _expected=$(printf '%s\n' "$_expected_list" | head -1)
+    _expected_list=$(printf '%s\n' "$_expected_list" | tail -n +2)
+    if curl -fsSL "${LIB_BASE_URL}/${_lib}" -o "${LIB_TMP_DIR}/${_lib}"; then
+      # v1.4.3 P2-f：lib 文件同样校验（同是可执行载荷）
+      _verify_or_die "${LIB_TMP_DIR}/${_lib}" "$_expected" "lib/${_lib}"
+    else
       LIB_FAIL=1
       echo "⚠️  lib/${_lib} 下载失败（install.sh 将尝试 git clone 自救）"
     fi

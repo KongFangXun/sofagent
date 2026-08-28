@@ -499,6 +499,10 @@ install.sh 是 sofagent 的一键安装脚本。以下是其完整行为清单�
 - ❌ 不会执行远程脚本（`--remote` 模式只做 git clone 官方仓库）
 - ❌ 不会收集或上传任何用户数据
 
+#### 远程安装（curl | bash）信任模型（v1.4.3 P2-f 披露）
+
+一行安装（`curl ... bootstrap.sh | bash`）的行业通用信任链是「HTTPS 传输 + GitHub 账号安全」，**无代码签名**——若 raw.githubusercontent 通道或仓库账号被劫持，下载的脚本可被替换为任意代码。sofagent 自 v1.4.3 起在此模型上追加一层：**bootstrap.sh 内嵌发版时硬编码的 sha256（install.sh + 6 个 lib 文件共 7 个哈希），下载内容与发版时不一致即 fail-closed 拒绝执行**——劫持者即使控制传输通道，也无法在不改哈希（哈希在 bootstrap.sh 自身内，用户 curl 到的那份）的情况下替换安装载荷。残余信任面如实披露：① 用户 curl 到的 bootstrap.sh 本身仍无签名（首跳信任，与全行业一致）；② 哈希随发版更新，若发版流程被攻破（哈希与载荷同被替换）校验失效——此层防御针对传输劫持，不针对供应链根攻破；③ 高安全场景建议 `git clone` + 审查后 `bash install.sh`，绕开首跳信任。
+
 #### 源码审查
 
 install.sh 拆分为以下模块，便于逐模块审查：
