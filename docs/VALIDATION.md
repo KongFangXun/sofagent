@@ -277,6 +277,16 @@ OpenAI 2026-08-19 全面开源 [Codex Harness](https://github.com/openai/codex)�
 
 > 📖 来源：唐杰团队等《Memory for Large Language Models》（2026 综述）；应用层「记忆要笨」三原则与死亡测试尺子来自 CT诺团队的工程实证（LoRA 外挂 Ingram 记忆实验）
 
+### harnessed agentic RL：训练域同行验证「审计按 commit 留痕」
+
+2026 年 8 月成熟的 Agent RL 训练基础设施，给出了一个与约束层审计粒度直接对位的设计取舍——**归因单位必须是完整的一次执行，不是单次调用**。
+
+Agent Lightning v1.0（arXiv 2608.17528，微软）实测：因为轨迹合并，coding 场景里每个 rollout 平均展开成 **2.41 个训练样本**，只有 **36% 的 rollout 能保持为单一训练样本**——「一次调用 = 一次归因单位」的假设在真实 Agent 轨迹里根本不成立。这与审计「按一次完整变更（commit）留痕、而非按单次 LLM 调用」的设计同构：审计粒度对齐的是任务单元，不是调用单元。
+
+同一取舍在另一套独立系统里再次出现：阿里的 Dressage（Accio-Lab，建在 slime 上）的 segment-aware training 里，轨迹因历史压缩或工具 schema 变化被切开后，每个 segment 都会展开成训练样本，但 **reward 与 advantage 仍以整条 trajectory 为单位**——只有 anchor segment 承载终局 reward，再广播给 sibling segments，并用 prompt-equal denominator 防止「切得越碎、梯度权重越大」。样本可以拆分，归因保持完整执行级——这是两套系统不约而同划出的边界。
+
+> 📖 来源：[Agent Lightning v1.0](https://arxiv.org/abs/2608.17528)（微软，2026-08）；[Dressage](https://github.com/Accio-Lab/Dressage)（阿里 Accio，2026-06）
+
 ---
 
 > 对应的落地借鉴项清单见 [ROADMAP · 探索方向](./ROADMAP.md#探索方向)。
