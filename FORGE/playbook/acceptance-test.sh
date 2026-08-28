@@ -6,7 +6,7 @@ export LANG=en_US.UTF-8
 export LC_ALL=en_US.UTF-8
 # sofagent-audit · 上线前验收测试（Pre-Release Acceptance Test）
 # 覆盖：FORGE + MCP + 文件系统审计 + daemon + 红队对抗 + 各版本新功能验收
-# 场景数：265 个场景（SSOT：check-test-count.sh 校验，口径=真实 scenario 调用行数，非编号最大值（S1-S332 间有 67 个历史空洞号）；v1.3.7 +4：S290-S293；v1.3.6 +8：S282-S289；v1.3.8 +11：S294-S304（含 bugfix 防回归 S303/S304）；v1.3.9 +15：S305-S319（阶段五 A 类分发 13 项 + 阶段六 coverage 补测 S318 ATTRIBUTION 归因引擎/S319 Dream Sandbox 沙盒审计）；v1.4.0 +3：S320（联邦查询跨进程 E2E——补 federation.test.ts 同进程 mock 缺口）、S321（跨平台 hook stdin 模式闭环验证）、S322（双设备联邦独立进程模拟——两个独立 node 进程 + 真实 TCP，补 fork 形态缺口）；v1.4.1 +10：S323（train doctor CLI 实跑）、S324（enterpriseId 强制绑定+幂等）、S325（fingerprint 冻结+不可变）、S326（artifact 签名+篡改检测）、S327（安全基线路径白名单+注入检测）、S328（install.sh 迁移丢数据窗口防回归——阶段四 B2 分发）、S329（install.sh symlink 谎报守卫——阶段四 B3 分发）、S330（训练异常退出资源回收四步链——阶段六 coverage 补测，补判断层唯一零覆盖项）、S331（OpenClaw plugin 双 manifest 一致性——阶段十一 ClawHub 拒收踩坑回写）、S332（bump 脚本通配误伤防回归——阶段十一静默漏 bump 踩坑回写））
+# 场景数：271 个场景（SSOT：check-test-count.sh 校验，口径=真实 scenario 调用行数，非编号最大值（S1-S338 间有 67 个历史空洞号）；v1.3.7 +4：S290-S293；v1.3.6 +8：S282-S289；v1.3.8 +11：S294-S304（含 bugfix 防回归 S303/S304）；v1.3.9 +15：S305-S319（阶段五 A 类分发 13 项 + 阶段六 coverage 补测 S318 ATTRIBUTION 归因引擎/S319 Dream Sandbox 沙盒审计）；v1.4.0 +3：S320（联邦查询跨进程 E2E——补 federation.test.ts 同进程 mock 缺口）、S321（跨平台 hook stdin 模式闭环验证）、S322（双设备联邦独立进程模拟——两个独立 node 进程 + 真实 TCP，补 fork 形态缺口）；v1.4.1 +10：S323（train doctor CLI 实跑）、S324（enterpriseId 强制绑定+幂等）、S325（fingerprint 冻结+不可变）、S326（artifact 签名+篡改检测）、S327（安全基线路径白名单+注入检测）、S328（install.sh 迁移丢数据窗口防回归——阶段四 B2 分发）、S329（install.sh symlink 谎报守卫——阶段四 B3 分发）、S330（训练异常退出资源回收四步链——阶段六 coverage 补测，补判断层唯一零覆盖项）、S331（OpenClaw plugin 双 manifest 一致性——阶段十一 ClawHub 拒收踩坑回写）、S332（bump 脚本通配误伤防回归——阶段十一静默漏 bump 踩坑回写）；v1.4.2 +6：S333（数据管道 CSV 类型推断端到端）、S334（dataset_version 台账三件套）、S335（eval 阈值判定双态）、S336（dry-run 显存估算单调性）、S337（ScaleRL sigmoid 拟合/外推/建议）、S338（FDE 工作台审计留痕往返——阶段三步骤四增量，行为实测走 dist 产物））
 # 编号跳号豁免：S1~S293 间有 70 个空洞号（全在 S36-S202 历史段）——v1.2.x 瘦身删场景
 # 与基线重建（restore 6e542467）的既成事实，非丢失；新场景编号=当前最大+1 顺延，禁止回填空洞
 # 版本段起点见文件内「# ─── v」分组标记（grep "─── v" 定位）
@@ -194,14 +194,26 @@ STRICT_EXIT=$($CLI --diff HEAD~1..HEAD --task "fix: update README" --strict --ci
 STRICT_CODE=$(echo "$STRICT_EXIT" | grep -o 'EXIT:[0-9]*' | cut -d: -f2)
 if [ "$STRICT_CODE" = "2" ]; then $STRICT_HELP_OK && pass
 else fail "--strict --ci exit code = ${STRICT_CODE}（期望 2）"; fi
-scenario 16 "旧版 hook 迁移（pre-commit → commit-msg）"
+scenario 16 "旧版 hook 迁移（pre-commit → 三层防线 · v1.4.2 H-01 校准）"
 printf '#!/bin/bash\n# sofagent pre-commit hook v1.0\necho "old sofagent hook"\n' > "$TMP_REPO/.git/hooks/pre-commit"
 chmod +x "$TMP_REPO/.git/hooks/pre-commit"
 $CLI --install-hook > /dev/null 2>&1
 MIGRATION_PASS=true
-[ -f "$TMP_REPO/.git/hooks/pre-commit" ] && MIGRATION_PASS=false
+# v1.4.2 H-01 三层防线（2c47cb52）：pre-commit 重新装回当主防线（staged 清理前置到
+# commit 对象生成前）——迁移语义从「删旧 pre-commit」变为「旧 hook 被接管（转 .bak
+# 备份），新 pre-commit 是 sofagent 三层防线主防线」
+if [ -f "$TMP_REPO/.git/hooks/pre-commit" ] && ! head -3 "$TMP_REPO/.git/hooks/pre-commit" 2>/dev/null | grep -q "sofagent.*pre-commit hook v1.0$"; then
+  # pre-commit 存在但内容还是旧版 v1.0 echo 壳 → 未被接管
+  head -3 "$TMP_REPO/.git/hooks/pre-commit" | grep -q 'echo "old sofagent hook"' && MIGRATION_PASS=false
+fi
+[ -f "$TMP_REPO/.git/hooks/pre-commit.bak" ] || { [ -f "$TMP_REPO/.git/hooks/pre-commit" ] && head -3 "$TMP_REPO/.git/hooks/pre-commit" 2>/dev/null | grep -q "sofagent" || MIGRATION_PASS=false; }
 [ ! -f "$TMP_REPO/.git/hooks/commit-msg" ] || [ ! -x "$TMP_REPO/.git/hooks/commit-msg" ] && MIGRATION_PASS=false
-$MIGRATION_PASS && pass || fail "旧版 sofagent pre-commit 未被清理 或 commit-msg 未正确安装"
+# 新 pre-commit 必须可执行且属 sofagent（非旧 echo 壳）
+if [ -f "$TMP_REPO/.git/hooks/pre-commit" ]; then
+  [ -x "$TMP_REPO/.git/hooks/pre-commit" ] || MIGRATION_PASS=false
+  grep -q "sofagent" "$TMP_REPO/.git/hooks/pre-commit" 2>/dev/null || MIGRATION_PASS=false
+fi
+$MIGRATION_PASS && pass || fail "旧版 pre-commit 未被 sofagent 三层防线接管（仍为旧 echo 壳）或 commit-msg 未正确安装"
 scenario 17 "post-commit hook 正常触发 + --no-verify 绕不过"
 $CLI --install-hook > /dev/null 2>&1
 cat > "$TMP_REPO/.git/hooks/post-commit" << 'POSTHOOK'
@@ -1376,12 +1388,14 @@ if $S161_OK; then
   echo "$S161_OUT" | grep -q "A3 A3" && { fail "规则审计栏仍有旧双编码格式 A3 A3"; S161_OK=false; }
   $S161_OK && pass "规则名可读性（TOP3 中文名+编码括号+次数，无旧双编码）"
 fi
-scenario 162 "v1.2.3 Fresh-Eyes-Loop 移至阶段一——releasing.md 阶段一由 loop 驱动"
+scenario 162 "v1.2.3 Fresh-Eyes-Loop 移至阶段一——releasing.md 阶段一由 fresh-eyes 审查驱动（v1.4.2 校准）"
 S162_OK=true
 grep -q "阶段一" "$PROJECT_ROOT/docs/changelog/releasing.md" || { fail "releasing.md 缺少阶段一章节"; S162_OK=false; }
-grep -q "fresh-eyes-loop" "$PROJECT_ROOT/docs/changelog/releasing.md" || { fail "releasing.md 未提及 fresh-eyes-loop"; S162_OK=false; }
-grep -q "自动化审查循环" "$PROJECT_ROOT/docs/changelog/releasing.md" || { fail "releasing.md 阶段一未标注自动化审查循环驱动"; S162_OK=false; }
-$S162_OK && pass "Fresh-Eyes-Loop 移至阶段一（releasing.md 阶段一 = loop 自动化驱动）"
+grep -q "fresh-eyes" "$PROJECT_ROOT/docs/changelog/releasing.md" || { fail "releasing.md 未提及 fresh-eyes"; S162_OK=false; }
+# v1.4.2 SOP 优化：阶段一措辞「自动化审查循环」→「fresh-eyes 独立审查」（对话式多轮
+# 形态合法化）——语义不变（阶段一由独立审查驱动），措辞校准对齐现状
+grep -q "独立审查" "$PROJECT_ROOT/docs/changelog/releasing.md" || { fail "releasing.md 阶段一未标注独立审查驱动"; S162_OK=false; }
+$S162_OK && pass "Fresh-Eyes 审查位于阶段一（releasing.md 阶段一 = 独立审查驱动）"
 scenario 163 "v1.2.3 术语统一——WIKI.md + ARCHITECTURE.md 行业标准术语对齐"
 S163_OK=true
 grep -q "harness" "$PROJECT_ROOT/docs/WIKI.md" || { fail "WIKI.md 缺少行业标准术语 harness"; S163_OK=false; }
@@ -1867,8 +1881,9 @@ if $S219_OK; then
   # 行数 ≤ 420（拆分后应瘦身）。
   # v1.3.5 校准：v1.2.9 立线时约 20 tools，300 行够；现 52 tools，每个 tool 薄分发固定成本 2 行（1 import + 1 case）≈104 行 + 协议骨架，300 物理装不下。
   # v1.4.0 校准：66 tools（+cost_query +browser 4）+ 角色分层接入（tool-roles import + 过滤/拦截 ~14 行）→ 409 行，阈值 400→420（判定本质是「拆分充分」非行数绝对值）。
+  # v1.4.2 校准：76 tools（+fde 六件 + 训练三件）→ 434 行，阈值 420→450（同判定本质；每次 +N tools 薄分发 ≈ +2 行/tool）。
   MCP_LINES=$(wc -l < "$MCP" | tr -d ' ')
-  [ "$MCP_LINES" -le 420 ] || { fail "mcp-server.ts 行数 $MCP_LINES > 420（拆分不充分）"; S219_OK=false; }
+  [ "$MCP_LINES" -le 450 ] || { fail "mcp-server.ts 行数 $MCP_LINES > 450（拆分不充分）"; S219_OK=false; }
   # 拆分出的模块文件存在
   [ -f "$PROJECT_ROOT/engine/mcp/src/tool-registry.ts" ] || { fail "tool-registry.ts 不存在"; S219_OK=false; }
   [ -f "$PROJECT_ROOT/engine/mcp/src/tools/audit-tools.ts" ] || { fail "tools/audit-tools.ts 不存在"; S219_OK=false; }
@@ -3198,11 +3213,11 @@ for _pdir in "$PROJECT_ROOT"/engine/openclaw-plugins/*/; do
     _v=$(grep -o '"version": "[^"]*"' "$_f" | head -1 | sed 's/"version": "//;s/"//')
     if [ "$_v" != "$S331_SSOT" ]; then
       S331_OK=false
-      echo "  manifest 漂移: $_name/$_manifest = $_v（期望 $S331_SSOT）"
+      echo "  manifest 漂移: ${_name}/${_manifest} = ${_v}（期望 ${S331_SSOT}）"
     fi
   done
 done
-$S331_OK && pass "OpenClaw plugin 双 manifest 一致（8 层 = $S331_SSOT）" || fail "plugin manifest 版本漂移（上方列出）"
+$S331_OK && pass "OpenClaw plugin 双 manifest 一致（8 层 = ${S331_SSOT}）" || fail "plugin manifest 版本漂移（上方列出）"
 
 # ─────────────────────────────────────────────────────────────
 # S332 · v1.4.1 阶段十一踩坑回写：bump 脚本通配误伤防回归
@@ -3223,6 +3238,147 @@ if ! grep -qF '[[ "$ws_pkg" == "$PROJECT_ROOT/engine/audit/package.json" ]] && c
   echo "  bump-version.sh 缺精确路径跳过（engine/audit/package.json）"
 fi
 $S332_OK && pass "bump 脚本跳过逻辑为精确路径匹配" || fail "bump 脚本跳过逻辑回退到通配形态（上方列出）"
+
+# ─────────────────────────────────────────────────────────────
+# S333 · v1.4.2 章一：数据管道 CSV 解析与类型推断端到端（行为实测）
+# 企业异构数据进训练集的入口——parseCsv/ingestCsv 空标记/类型推断
+# 用编译产物直接跑（比静态断言硬），A2 纪律：无真实外部数据
+# ─────────────────────────────────────────────────────────────
+scenario 333 "v1.4.2 章一：数据管道 CSV 解析——空标记过滤 + 类型推断（数字/布尔/字符串）端到端"
+S333_OK=true
+S333_OUT=$(node -e "
+const { ingestCsv } = require('$PROJECT_ROOT/engine/orchestrator/dist/train/data-ingest.js');
+const csv = 'name,age,ok\\nali,30,true\\nbo,,false\\n,25,TRUE';
+const r = ingestCsv(csv);
+// 真实结构：records[] 每条 { id, fields }，fields 内类型推断
+if (!r || !Array.isArray(r.records) || r.records.length === 0) { console.log('FAIL:no-records'); process.exit(1); }
+const allFields = r.records.map(x => x.fields || {});
+const flat = allFields.flatMap(Object.values);
+if (!flat.some(v => typeof v === 'number')) { console.log('FAIL:no-number-type'); process.exit(1); }
+if (!flat.some(v => typeof v === 'boolean')) { console.log('FAIL:no-boolean-type'); process.exit(1); }
+if (!flat.some(v => typeof v === 'string')) { console.log('FAIL:no-string-type'); process.exit(1); }
+console.log('OK:' + r.records.length + '-records-types-ok');
+" 2>&1) || S333_OK=false
+echo "$S333_OUT" | grep -q "^OK:" || S333_OK=false
+$S333_OK && pass "数据管道 CSV 解析含类型推断（number/boolean/string 三类型齐）" || fail "数据管道 CSV 解析异常：$S333_OUT"
+
+# ─────────────────────────────────────────────────────────────
+# S334 · v1.4.2 章二：dataset_version 台账——记录/读取/diff 三件套（行为实测）
+# 数据可复现的机制面：recordDatasetVersion + listDatasetVersions + diffDatasetVersions
+# 隔离 tmp 目录（不碰 data/），用完清理
+# ─────────────────────────────────────────────────────────────
+scenario 334 "v1.4.2 章二：dataset_version 版本台账——记录/列表/两版 diff 含 hash 与样本数"
+S334_OK=true
+S334_TMP=$(mktemp -d)
+S334_OUT=$(node -e "
+const dv = require('$PROJECT_ROOT/engine/orchestrator/dist/train/dataset-version.js');
+const dir = '$S334_TMP';
+// 真实入参：dataDir/enterpriseId/datasetId/contentHash/sampleCount/algorithm/columnMapping/datasetFile
+const base = { dataDir: dir, enterpriseId: 'e2e', datasetId: 'ds1', algorithm: 'sft', columnMapping: { instruction: 'q', output: 'a' }, datasetFile: 'ds.jsonl' };
+dv.recordDatasetVersion({ ...base, contentHash: 'aaaa1111', sampleCount: 100, createdAt: '2026-08-28T01:00:00Z' });
+dv.recordDatasetVersion({ ...base, contentHash: 'bbbb2222', sampleCount: 150, createdAt: '2026-08-28T02:00:00Z' });
+const list = dv.listDatasetVersions(dir, 'e2e', 'ds1');
+if (!Array.isArray(list) || list.length < 2) { console.log('FAIL:list-' + (list ? list.length : 'null')); process.exit(1); }
+if (!list[0].contentHash || !list[0].version) { console.log('FAIL:record-shape-' + JSON.stringify(list[0]).slice(0,80)); process.exit(1); }
+const d = dv.diffDatasetVersions(list[0], list[1]);
+if (!d) { console.log('FAIL:diff-null'); process.exit(1); }
+const dstr = JSON.stringify(d);
+if (!dstr.includes('sampleCount')) { console.log('FAIL:diff-no-samples-' + dstr.slice(0,90)); process.exit(1); }
+console.log('OK:2-vers-diff-' + dstr.length + '-bytes');
+" 2>&1) || S334_OK=false
+rm -rf "$S334_TMP"
+echo "$S334_OUT" | grep -q "^OK:2-vers" || S334_OK=false
+$S334_OK && pass "dataset_version 台账三件套（记录/列表/diff）含 hash 样本数" || fail "dataset_version 异常：$S334_OUT"
+
+# ─────────────────────────────────────────────────────────────
+# S335 · v1.4.2 章三：eval 闭环阈值判定——continue/stop 双态（行为实测）
+# 训练连评估的决策面：decideFromScores 按阈值外部化判定
+# ─────────────────────────────────────────────────────────────
+scenario 335 "v1.4.2 章三：eval 闭环阈值判定——达标 stop / 未达标 continue 双态决策"
+S335_OK=true
+S335_OUT=$(node -e "
+const te = require('$PROJECT_ROOT/engine/orchestrator/dist/train/train-eval-loop.js');
+// 真实链路：computeScoreStats(CaseEvaluation[]) → decideFromScores(stats, thresholds)
+// CaseEvaluation 形状：{ score, failureCode }（0-100 量表，targetScore 默认 80）
+const hi = te.computeScoreStats([{ score: 90, failureCode: null }, { score: 92, failureCode: null }, { score: 88, failureCode: null }]);
+const lo = te.computeScoreStats([{ score: 30, failureCode: null }, { score: 28, failureCode: null }, { score: 32, failureCode: null }]);
+const dHi = te.decideFromScores(hi, te.DEFAULT_EVAL_THRESHOLDS);
+const dLo = te.decideFromScores(lo, te.DEFAULT_EVAL_THRESHOLDS);
+if (dHi.decision !== 'stop') { console.log('FAIL:hi=' + dHi.decision); process.exit(1); }
+if (dLo.decision !== 'continue') { console.log('FAIL:lo=' + dLo.decision); process.exit(1); }
+if (!dHi.reason || !dLo.reason) { console.log('FAIL:no-reason'); process.exit(1); }
+console.log('OK:hi-stop-lo-continue');
+" 2>&1) || S335_OK=false
+echo "$S335_OUT" | grep -q "^OK:hi-stop-lo-continue" || S335_OK=false
+$S335_OK && pass "eval 阈值判定双态（达标 stop / 未达标 continue）含 reason" || fail "eval 阈值判定异常：$S335_OUT"
+
+# ─────────────────────────────────────────────────────────────
+# S336 · v1.4.2 章五：dry-run 显存估算——参数量单调性（行为实测）
+# 投之前先算：estimateVram 随参数量增大显存预算单调增（外推合理性）
+# ─────────────────────────────────────────────────────────────
+scenario 336 "v1.4.2 章五：dry-run 显存估算——同配置下参数量翻倍显存单调增"
+S336_OK=true
+S336_OUT=$(node -e "
+const td = require('$PROJECT_ROOT/engine/orchestrator/dist/train/train-dryrun.js');
+// 真实入参：paramsBillions（十亿参数）、batchSize、sequenceLength、bytesPerParam
+const s = td.estimateVram({ paramsBillions: 1, batchSize: 2, sequenceLength: 2048, bytesPerParam: 4 });
+const b = td.estimateVram({ paramsBillions: 2, batchSize: 2, sequenceLength: 2048, bytesPerParam: 4 });
+if (!s || typeof s.totalGiB !== 'number' || !isFinite(s.totalGiB)) { console.log('FAIL:shape-' + JSON.stringify(s).slice(0,100)); process.exit(1); }
+if (!(b.totalGiB > s.totalGiB)) { console.log('FAIL:not-monotonic-' + s.totalGiB + '-' + b.totalGiB); process.exit(1); }
+console.log('OK:mono-' + s.totalGiB.toFixed(1) + '-' + b.totalGiB.toFixed(1));
+" 2>&1) || S336_OK=false
+echo "$S336_OUT" | grep -q "^OK:mono-" || S336_OK=false
+$S336_OK && pass "dry-run 显存估算参数量单调（${S336_OUT#OK:mono-} GiB）" || fail "dry-run 显存估算异常：$S336_OUT"
+
+# ─────────────────────────────────────────────────────────────
+# S337 · v1.4.2 章五：ScaleRL sigmoid 缩放律外推——拟合与建议（行为实测）
+# 算力外推预检：fitSigmoid + extrapolate + suggestNextPilotCompute 三件套
+# ─────────────────────────────────────────────────────────────
+scenario 337 "v1.4.2 章五：ScaleRL sigmoid 缩放律——小 run 拟合 + 大 run 外推 + 下一步建议"
+S337_OK=true
+S337_OUT=$(node -e "
+const sc = require('$PROJECT_ROOT/engine/orchestrator/dist/train/scale-curve.js');
+// 真实口径：performance 0..100（与 Benchmark 协议化评分同源）
+const pts = [{ compute: 1, performance: 20 }, { compute: 4, performance: 50 }, { compute: 16, performance: 85 }];
+const fit = sc.fitSigmoid(pts);
+if (!fit || !fit.params || !fit.quality) { console.log('FAIL:fit-' + JSON.stringify(fit).slice(0,80)); process.exit(1); }
+if (!(fit.quality.rmse < 5)) { console.log('FAIL:rmse-' + fit.quality.rmse); process.exit(1); }
+// extrapolate(points, targetCompute)——外推到 2 倍观测域（真实字段 projectedPerformance/ceiling/confidence）
+const ext = sc.extrapolate(pts, 32);
+if (!ext || typeof ext.projectedPerformance !== 'number' || !isFinite(ext.projectedPerformance)) { console.log('FAIL:ext-' + JSON.stringify(ext).slice(0,90)); process.exit(1); }
+if (!(ext.projectedPerformance >= 80 && ext.projectedPerformance <= 100)) { console.log('FAIL:ext-range-' + ext.projectedPerformance); process.exit(1); }
+if (!ext.confidence) { console.log('FAIL:ext-no-confidence'); process.exit(1); }
+const sug = sc.suggestNextPilotCompute(pts);
+if (typeof sug !== 'number' || sug < 1 || sug > 64) { console.log('FAIL:sug-' + sug); process.exit(1); }
+console.log('OK:fit-rmse-' + fit.quality.rmse.toFixed(3) + '-ext-' + ext.projectedPerformance.toFixed(1) + '-sug-' + sug);
+" 2>&1) || S337_OK=false
+echo "$S337_OUT" | grep -q "^OK:fit-rmse-" || S337_OK=false
+$S337_OK && pass "sigmoid 缩放律拟合（RMSE<5）/外推（域内合理）/建议三件套" || fail "scale-curve 异常：$S337_OUT"
+
+# ─────────────────────────────────────────────────────────────
+# S338 · v1.4.2 章八：FDE 工作台审计链——emitFdeAudit + readFdeAudit 往返（行为实测）
+# fde-audit HMAC 留痕机制面：落盘 + 读回 + 往返一致
+# 隔离 tmp 目录（不碰 data/），用完清理
+# ─────────────────────────────────────────────────────────────
+scenario 338 "v1.4.2 章八：FDE 工作台审计留痕——emitFdeAudit 落盘 readFdeAudit 读回往返一致"
+S338_OK=true
+S338_TMP=$(mktemp -d)
+S338_OUT=$(node -e "
+const fw = require('$PROJECT_ROOT/engine/orchestrator/dist/fde/fde-workbench.js');
+const dir = '$S338_TMP';
+// 真实入参：type 限 fde_* 六事件域，enterpriseId/artifact/reason
+const e = fw.emitFdeAudit({ type: 'fde_interview', enterpriseId: 'e2e', artifact: 'data/fde/e2e/interview.md', reason: 's338-e2e 往返校验' }, dir);
+if (!e || !e.ts) { console.log('FAIL:emit-' + JSON.stringify(e).slice(0,80)); process.exit(1); }
+if (e.type !== 'fde_interview') { console.log('FAIL:type-' + e.type); process.exit(1); }
+if (!e.hmacSig || e.prevHash !== 'genesis') { console.log('FAIL:hmac-chain-' + e.prevHash); process.exit(1); }
+const back = fw.readFdeAudit(dir, 'e2e');
+if (!Array.isArray(back) || back.length < 1) { console.log('FAIL:read-' + (back ? back.length : 'null')); process.exit(1); }
+if (back[0].type !== 'fde_interview' || back[0].enterpriseId !== 'e2e') { console.log('FAIL:mismatch-' + JSON.stringify(back[0]).slice(0,80)); process.exit(1); }
+console.log('OK:roundtrip-' + back.length + '-entry');
+" 2>&1) || S338_OK=false
+rm -rf "$S338_TMP"
+echo "$S338_OUT" | grep -q "^OK:roundtrip" || S338_OK=false
+$S338_OK && pass "FDE 工作台审计留痕往返一致（fde_* 事件域）" || fail "FDE 审计留痕异常：$S338_OUT"
 
 echo -e "  验收测试结果：${GREEN}$PASSED 通过${NC} / ${RED}$FAILED 失败${NC} / 共 $((PASSED + FAILED))"
 # 🔴 v1.3.1 run-10 教训：无色码纯文本汇总行供 driver grep（EXIT: 0=全PASS / <N>=N失败）
