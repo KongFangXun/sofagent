@@ -12,6 +12,7 @@
 | v1.3.6 | #113-114（八交付锚点一维收口 / run-03 修复防复发） | —（v1.3.5 发布后 hotfix 112 编入） |
 | v1.3.7-1.4.0 | #115-122（详见头部段落） | A2 正则边界→#57 子项 |
 | v1.4.1 | #123-124（训练引擎地基八大块收口 / 发版防复发） | #114→#113（同版配套面）、#63 命令体→S166 |
+| v1.4.2 | #125-126（训练九章+FDE 六引擎+IM 桥+FORGE 步零一维收口 / H-01 三层防线+dataDir SSOT+断言校准+CI 纯净防狗粮） | #59→#125g（dataDir 传参纪律）、#112→#51f（二进制快照） |
 
 > **当前 96 维 · 编号 1-126 · 30 个编号已归并删除（v1.3.7 阶段四 +2：115 新功能审查面 / 116 bugfix 批防复发——acceptance 同批 S290-S293，S293 为阶段四基建加固场景：LLM 超时四文件/resume 越轮守卫/rm-rf 口径同源；v1.3.8 阶段五 +2：117 网关攻击面四项核对 / 118 原子写与单writer 加固（B1+B2+B3 归并）——acceptance 同批 S294-S302 已覆盖功能面，本批为防御性回归标记；v1.3.9 阶段五：119 开发坑防复发（TS7 缓存/promise 形态）/ 120 DSH 适配防复发（CLI 桥接/pnpm/require）/ 121 新功能审查面（十三交付锚点收口，参照 113/115 模式）——acceptance 同批 S305-S317；原 A2 正则边界并入 #57 子项；v1.4.0 阶段十二 +1：122 发版流程防复发（lock 同步/plugin 分发包装/限流——v1.4.0 发版三坑实录，B 类）；v1.4.1 阶段四 +2：123 训练引擎地基八大块一维收口（A 类 18 条压 1 维）/ 124 发版防复发（B 类 10 条压 1 维）——acceptance 同批 S328-S329；真实归并 2 处对销：#114→#113（同版配套面）+ #63 命令体→S166；v1.4.2 阶段四 +2：125 新功能审查面（训练九章+FDE 六引擎+IM 桥+FORGE 步零一维收口，A 类）——acceptance 同批 S333-S340 已覆盖功能面（S340 存量清零行为锁）/ 126 防复发（H-01 三层防线 install 形态+dataDir SSOT 机械闸+断言校准三同步，B 类）——真实归并 2 处对销：#59→#125g（dataDir 传参纪律同主题族）+ #112→#51f（二进制快照并入安全回归族））**。维度流连续不中断，分组导航：基线组 → 审查约束组 → 环境敏感组（前置 vitest/沙箱铁律）。
 ## 🔒 维护公约（防膨胀铁律）
@@ -1741,6 +1742,8 @@ ls .git/hooks/*.bak 2>/dev/null | head -1 | grep -q bak && echo "✅ 迁移 .bak
 DD_FILES=$(grep -rln "getDataDir" engine/mcp/src/ engine/think/src/ --include="*.ts" 2>/dev/null | grep -v __tests__ | grep -v "\.test\." | wc -l | tr -d ' '); [ "${DD_FILES:-0}" -ge 30 ] && echo "✅ ${DD_FILES} 文件全员 SSOT（30 收编 + 1 mcp-server 引用）" || echo "⚠️ SSOT 文件数 ${DD_FILES:-0} <30 复核"; grep -rn "function getSofagentDataDir" engine/mcp/src/ engine/think/src/ --include="*.ts" 2>/dev/null | grep -v __tests__ && echo "❌ 本地定义残留" || echo "✅ 零本地定义"
 # c: 断言校准三同步纪律（S219 实录：判定改 450 展示仍 420）——校准场景时标题注释/pass 消息/引用三处同步
 grep -n "≤ 450" FORGE/playbook/acceptance-test.sh | grep -q "S219\|450" && echo "✅ S219 三同步示范在位" || echo "❌ S219 展示残留回潮"
+# d: CI 纯净环境防狗粮假绿（v1.4.2 发版期实录：B8 本地全绿 CI 红——npm install -g 后 PATH 有 sofagent-audit，测试 repoDir 无 dist 时 hook 静默 exit 0）——新增 hook 对账类测试须自带 dist fixture，本地复跑须纯净 PATH
+grep -n "迷你 dist\|dist/index.js" engine/audit/src/commands/init.test.ts | grep -q "迷你 dist" && echo "✅ B8 fixture 先例在位（照 H-01 describe 同款）" || echo "❌ init.test.ts 迷你 dist fixture 丢失——CI 纯净环境将假红"
 ```
 
 <!-- 瘦身判据记录 v1.4.2（阶段四步骤四 · 执行模板第 3 份执行）
@@ -1749,4 +1752,6 @@ grep -n "≤ 450" FORGE/playbook/acceptance-test.sh | grep -q "S219\|450" && ech
 ③增长性质：+2 维（#125 九大交付一维收口参照 113/121/123 惯例、#126 防复发一维收口参照 124 惯例）均新审查面非模式重复
 ④归并配额：新增 2 维 → 本版真实归并 2 处（#59→#125g 净减 8 行、#112→#51f 净减 9 行——内容实移 git diff 可查）；2≥2 ✓
 结论：净增约 +32 行（1719→1751 超 1720）；checklist 警戒线上调 1720→1760（v1.4.1 阶段四已调非本版首调侧，本版先真实归并 2 处解锁方准上调；净增 32 ≤ 余量 41 ✓）；acceptance 警戒线补登记 3270→3450（阶段三 +7 场景 S333-S339 3414 行已超线——真实补测试非归并三判据全否，上版未调非连续）；fresh-eyes 警戒线不动（432→440 余量 8，本版 +8 恰满不调，校准节压缩至 4 条内）
+-->
+<!-- 阶段十二回写 v1.4.2：#126 子项 d（B8 CI 纯净防狗粮，同 #124 扩展 B11/B12 先例，无新编号）净增 +2；acceptance +1 场景 S344（Git Data API 通道 cat-file 防复发，3513→3528）≤3560 不调；fresh-eyes +1 发版期校准节（4 条）上调 440→455（04-review-system.md 同步）；本注释两块合一压缩对销超线 1 行
 -->

@@ -8,18 +8,18 @@
 
 | # | 完成 | 步骤 | 产物 |
 |:--:|:--:|------|------|
-| 一 | [x] | **发布后验证**（见下方脚本） | 全绿 |
-| 二 | [x] | CI 全绿检查 | CI 全绿 |
-| 三 | [x] | **审查三文档回写**：发版过程（阶段五~十一）暴露的新问题回写到 regression-checklist（新维度）/ fresh-eyes-review（新教训）/ acceptance-test（新场景）。与阶段四分工：阶段四管代码质量（发版前可见），本步骤管发版流程（发版中才暴露——如 CI 失败模式、publish 限制、日期硬编码等） | 三文档更新 |
-| 四 | [x] | SOP 漏洞吸收：本次迭代暴露的 releasing.md 流程问题直接吸收进对应阶段 | SOP 更新 |
-| 五 | [x] | SOP 数字核对：维度数、检查项数等是否过期 | 数字一致 |
-| 六 | [x] | 生成「下一版本开发 Prompt」到桌面：综合 ROADMAP + CHANGELOG + 下一版本 changelog | `~/Desktop/vX.Y-dev-prompt.md` |
-| 七 | [x] | **开发 Prompt 校验循环**（详见下方——脚本 + checklist 五条自查两步都要过） | prompt 定稿 |
-| 八 | [x] | **下版本内容对话讲解**（详见下方——三问讲完 + 负责人确认优先级，缺任一不算完） | 项目负责人理解下版本方向 |
-| 九 | [x] | **进度追踪清零**：把 `releasing.md` 进度追踪的 12 个 `[x]` 全部改回 `[ ]`，为下一版本新周期做准备 | 进度追踪重置 |
-| 十 | [x] | **releasing 自迭代**（sop 审查自己）：对照本次发版的实际执行体验，检查 12 个阶段文件是否有过时/缺漏/顺序不合理的地方，直接修正。这是 releasing.md 的「Dream Cycle」——每次发版后用它自己的经验喂养它自己 | releasing.md 更新 |
-| 十一 | [x] | **本机 daemon 重载（dogfooding 保活 · 2026-08-18 新增）**：发版后本机守护进程要吃上新代码。launchd 配置 `~/Library/LaunchAgents/local.sofagent-daemon.plist` 指向仓库 dist（非全局 npm 包），一条命令重载：`launchctl kickstart -k gui/$(id -u)/local.sofagent-daemon`，随后 `tail -3 ~/.sofagent/data/daemon-launchd.log` 确认版本号 = 刚发的版本。开机自启已由 plist 的 RunAtLoad+KeepAlive 保证，无需每次处理 | daemon 跑新版 |
-| 十二 | [x] | **网络恢复收尾（v1.4.0 新增）**：发版全程若用过降级通道（gh api tag / Git Data API push / 剥代理直连），网络恢复后必须做三件事：① `git fetch origin && git status` 确认本地/远端无分叉（有分叉按 10-publish「双 SHA 分叉接回」处理）；② lightweight tag 覆盖为 annotated——`git tag -f -a vX.Y.Z -m "vX.Y.Z · {一句话}" <commit> && git push origin vX.Y.Z --force`（gh api 建的 tag 无 tag object，`git for-each-ref refs/tags` 显示 type blob/commit 即 lightweight）；③ 桌面发布物清理——本版产生的 prompt/body 草稿（`vX.Y.Z-*.md` / `release-note-*.md`）归档或删除，只保留下一版 dev prompt（发布物落盘铁律：统一 `~/Desktop/`，禁仓库内） | 远端/桌面双干净 |
+| 一 | [ ] | **发布后验证**（见下方脚本） | 全绿 |
+| 二 | [ ] | CI 全绿检查 | CI 全绿 |
+| 三 | [ ] | **审查三文档回写**：发版过程（阶段五~十一）暴露的新问题回写到 regression-checklist（新维度）/ fresh-eyes-review（新教训）/ acceptance-test（新场景）。与阶段四分工：阶段四管代码质量（发版前可见），本步骤管发版流程（发版中才暴露——如 CI 失败模式、publish 限制、日期硬编码等） | 三文档更新 |
+| 四 | [ ] | SOP 漏洞吸收：本次迭代暴露的 releasing.md 流程问题直接吸收进对应阶段 | SOP 更新 |
+| 五 | [ ] | SOP 数字核对：维度数、检查项数等是否过期 | 数字一致 |
+| 六 | [ ] | 生成「下一版本开发 Prompt」到桌面：综合 ROADMAP + CHANGELOG + 下一版本 changelog | `~/Desktop/vX.Y-dev-prompt.md` |
+| 七 | [ ] | **开发 Prompt 校验循环**（详见下方——脚本 + checklist 五条自查两步都要过） | prompt 定稿 |
+| 八 | [ ] | **下版本内容对话讲解**（详见下方——三问讲完 + 负责人确认优先级，缺任一不算完） | 项目负责人理解下版本方向 |
+| 九 | [ ] | **进度追踪清零**：把 `releasing.md` 进度追踪的 12 个 `[x]` 全部改回 `[ ]`，为下一版本新周期做准备 | 进度追踪重置 |
+| 十 | [ ] | **releasing 自迭代**（sop 审查自己）：对照本次发版的实际执行体验，检查 12 个阶段文件是否有过时/缺漏/顺序不合理的地方，直接修正。这是 releasing.md 的「Dream Cycle」——每次发版后用它自己的经验喂养它自己 | releasing.md 更新 |
+| 十一 | [ ] | **本机 daemon 重载（dogfooding 保活 · 2026-08-18 新增）**：发版后本机守护进程要吃上新代码。launchd 配置 `~/Library/LaunchAgents/local.sofagent-daemon.plist` 指向仓库 dist（非全局 npm 包），一条命令重载：`launchctl kickstart -k gui/$(id -u)/local.sofagent-daemon`，随后 `tail -3 ~/.sofagent/data/daemon-launchd.log` 确认版本号 = 刚发的版本。开机自启已由 plist 的 RunAtLoad+KeepAlive 保证，无需每次处理 | daemon 跑新版 |
+| 十二 | [ ] | **网络恢复收尾（v1.4.0 新增）**：发版全程若用过降级通道（gh api tag / Git Data API push / 剥代理直连），网络恢复后必须做三件事：① `git fetch origin && git status` 确认本地/远端无分叉（有分叉按 10-publish「双 SHA 分叉接回」处理）；② lightweight tag 覆盖为 annotated——`git tag -f -a vX.Y.Z -m "vX.Y.Z · {一句话}" <commit> && git push origin vX.Y.Z --force`（gh api 建的 tag 无 tag object，`git for-each-ref refs/tags` 显示 type blob/commit 即 lightweight）；③ 桌面发布物清理——本版产生的 prompt/body 草稿（`vX.Y.Z-*.md` / `release-note-*.md`）归档或删除，只保留下一版 dev prompt（发布物落盘铁律：统一 `~/Desktop/`，禁仓库内） | 远端/桌面双干净 |
 
 ---
 
@@ -64,6 +64,7 @@ bash tools/check/check-version.sh        # 期望全绿
 | v1.3.8 | ~6h（10:00 开发完成 → 16:00 发布） | 4（run-03 环境崩溃 / run-06 缺输入 / run-10 截断+占位 / run-13 PASS） | driver 管线问题 3 轮（judgment-only 缺 acceptance 输入 / precheck 截断 / 占位无实证）+ 环境 1 轮（运行窗口 HEAD 漂移 8 次致 OOM）；driver 修复后 run-13 单轮直过 |
 | v1.3.9 | ~25h（08-20 15:00 开发完成 → 08-21 16:10 发布，含隔夜） | 3（run-01 FAIL 4 阻塞 / run-10 FAIL 1 coverage / run-13 PASS） | run-01 真实 4 阻塞（mcp bin 权限 / forge-smoke 路径漂移 / 测试数文档漂移 / checklist #119 路径错，主 session 零信任复验修复）+ run-10 coverage 2 零覆盖（ATTRIBUTION/Dream 补 S318/S319）；driver 无债，全人工修复后 run-13 单轮直过 |
 | v1.4.1 | ~3.5h（08-27 08:30 阶段十启动 → 12:00 阶段十二完成） | 0（判断层 PASS 已在发版窗口前凌晨完成，与 v1.4.0 同模式） | CI 红 1 次（sandbox 时间戳双源竞态真 bug——修复+回归锁+8 文档数字同 commit 转绿）；分发期补修双层 manifest 盲区 2 commit（bump 通配误伤 + manifest 层未覆盖） |
+| v1.4.2 | ~4h（08-28 晚放行 → 08-29 00:5x 阶段十二完成，含隔夜） | 0（判断层 PASS 已在发版窗口前完成，与 v1.4.0/1.4.1 同模式） | 网络故障贯穿全程（git push 502 代理死→Git Data API 三推 + ps1 eol 二坑 11 文件分叉→cat-file 重传逐字节一致）；CI 红 1 次（B8 测试隐式依赖全局安装——本地狗粮假绿 CI 纯净环境真红，补 dist fixture 转绿）；双 SHA rebase 对齐悬置（github.com 443 持续断，登记下版收尾） |
 
 ## 开发 Prompt 校验循环（步骤七）
 
@@ -232,3 +233,12 @@ sed -i '' 's/- \[x\]/- [ ]/g' docs/changelog/releasing.md
 - **阶段十一·SkillHub 限流间隔实测（更新）**：sleep 20 偶发不足——daemon 款实测 20s 间隔仍被限流（「发布频率过高」），等 60s 补发成功。已更新 11-distribute 步骤二限流注释
 - **阶段十二·步骤十二 annotated tag 辨析修正（更新）**：原表述「gh api 建的 tag 无 tag object 需 force 覆盖」只适用于 `-f sha=<commit>` lightweight 形态；v1.4.1 实战「先 git/tags 建 object 再 git/refs 建 ref」产出直接 annotated（`git for-each-ref` type=tag 验证），**可免覆盖**。判据：`git for-each-ref refs/tags --format="%(objecttype)"` 显示 tag = annotated 已合规，commit/blob 才需覆盖
 - **v1.4.1 发版耗时**：约 3.5h（08-27 08:30 阶段十启动 → 12:00 阶段十二完成）；CI 红 1 次（sandbox 时间戳双源竞态真 bug——修复+回归锁+8 文档数字同 commit 37d393e4 转绿）；release-gate 0 轮（阶段五判断层 PASS 已在发版窗口前凌晨 07:41 完成，与 v1.4.0 同模式）；分发期补修双层 manifest 盲区 2 commit（de45a53e + 5542cc2c）
+
+**v1.4.2 发版后的自迭代记录**：
+
+- **阶段十·gitdata-push.mjs cat-file 固化（🔴 本版最重要 SOP 吸收）**：10-publish L466 早已写明「上传必须用 `git cat-file blob <本地sha>` 拿规范内容」，但脚本 L143 一直 `fs.readFileSync` 读工作区——ps1 eol 二坑（v1.3.8 首犯 + v1.4.2 再犯 11 文件分叉）根因即此。已修：mode 与内容同源自 `git ls-tree` 取、内容走 `git cat-file blob`（实测 cat-file 流 hash 恒等于 tree sha），HEAD 未跟踪才兜底读工作区。acceptance S344 锚点在位（cat-file/.gitattributes eol 规则/树对账输出三断言）
+- **阶段十·CI 纯净环境 vs 本地狗粮分叉（新增）**：pr-check 红而本地全绿——本地 `npm install -g` 后 PATH 有 sofagent-audit（狗粮污染），CI 纯净环境无全局命令 + 测试 repoDir 无 dist → hook AUDIT_CMD 探测失败静默 exit 0 → 断言空输出失败。修测试不修产品：照同文件 H-01 describe 先例补迷你 dist fixture。纪律：hook 对账类测试自带 dist fixture；本地复跑剥净 PATH（`PATH="/usr/bin:/bin:$(dirname $(which node))"`）模拟 CI。已写入 checklist #126 子项 d + fresh-eyes 发版期校准
+- **阶段十二·daemon 真假日志辨析（新增）**：`~/.sofagent/daemon.log` 是测试进程写入的残留旧文件（监控目录全是 /tmp/sofagent-*），launchd 真实 daemon 日志在 plist `StandardOutPath` 指向的 `~/.sofagent/data/daemon-launchd.log`——重载验证须查后者（本次真日志确认 v1.4.2 横幅）。`~/.sofagent/VERSION` 1.4.0 系旧装机残留不随 daemon 更新。步骤十一验证命令已按此修正
+- **阶段十二·双 SHA rebase 对齐悬置登记（流程新增）**：github.com 443 断而 api.github.com 通的网络半瘫状态下，阶段十二收尾 commit 照走 Git Data API（顺手狗粮 cat-file 修复）；rebase 对齐（`git fetch origin && git rebase --onto origin/main <本地等价点> main`）悬置并登记下版阶段一收尾——网络恢复判据：`curl -s -o /dev/null -w %{http_code} https://github.com` 返回 200/301
+- **阶段十·Git Data API 连续推送三通道纪律（实录）**：①430 blobs 级大批量推送须 `run_in_background` 后台跑（前台超时 SIGKILL 137）；②连续 API 推送后本地 origin/main 必陈旧，脚本已内置 gh api 实时 ref 查询（勿信本地 ref）；③tree 对账验收用远端 recursive tree API vs 本地 `git ls-tree -r HEAD` 双向对齐（python 解析 ls-tree 时 sha 是 `parts[2]` 非 `parts[1]`——踩过）
+- **v1.4.2 发版耗时**：约 4h（08-28 晚 22:52 放行 → 08-29 00:5x 阶段十二完成）；网络故障贯穿（git push 502 代理死 → Git Data API 三推 + ps1 eol 11 文件重传）；CI 红 1 次（B8 狗粮假绿纯净真红——补 fixture 转绿）；release-gate 0 轮（判断层 PASS 已在发版窗口前完成，连续第三版同模式）

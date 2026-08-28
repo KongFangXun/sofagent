@@ -438,3 +438,12 @@ sofagent（https://github.com/KongFangXun/sofagent）。不管当前处于什么
 - **SSOT 收编收尾双查：grep 同款 + 豁免复审**：收编一处调用点时同批新增文件可能照抄旧模式漏网——G-05 收编 getDataDir 只改 cost-query，同期章八 11 个 MCP 工具各带 `cwd/data` 本地兜底成 N-1（SOFAGENT_HOME 定制下数据落点分裂），「收编」收尾必须全仓 grep 同款函数定义（checklist #125g 已机械化）；豁免清单也非一次性快照——G-05 豁免（doctor/pairing/init）是当时拍板，新代码入场时豁免面重新过一遍（19 处 v1.3.x 存量已登记 v1.4.3 清零）。
 - **降级产物完整性校验**：LLM 降级 `.prompt.md` 不能默认可信——v1.4.2 两次降级第一次残缺（只嵌 2 文件 diff，版本口径还是旧版）、第二次完整。粘贴执行前核对来源节齐全（四来源节都在 + 版本号对当前版），残缺产物照着执行 = 审查对象错位。
 - **断言校准三同步**：校准过时断言时，判定条件、场景标题注释、pass 消息展示文本三处都可能残留旧值——S219 判定已改 450 展示仍印 420（不影响判定但误导读日志的人）。校准 = 三处一次改齐。
+
+## 校准笔记（v1.4.2 发版期 · 阶段十~十二实录）
+
+> v1.4.2 发版执行期踩坑校准——网络故障实战/发布流水线/分发链教训（与 v1.4.1 发版期笔记同族，非审查循环本身）。
+
+- **CI 纯净环境与本地狗粮分叉是真信号**：pr-check 红而本地全绿，先查测试是否隐式依赖全局安装产物（PATH 里的 sofagent-audit / repoDir 无 dist 时 hook 静默 exit 0）——本地复跑须剥净 PATH 模拟 CI；hook 对账类测试自带迷你 dist fixture（B8 实录）。
+- **API 压平 commit 与本地 commit 同 tree 双 SHA 是已知合法态**：Git Data API 推送产出压平 commit，tree 逐字节一致但 SHA 不同——以 tree 对账为验收标准，网络恢复后 rebase 对齐（勿在断网期手工构造等价 commit）。
+- **publish exit 0 ≠ 立即可查**：npm/ClawHub registry 传播延迟 3-5 分钟（staged→finalize），对账须三次重试×15s 以上；ClawHub scan=suspicious 多为扫描器对拦截清单字面量（rm -rf/git push）误判，对照 dist 内容定性，不阻塞发布。
+- **release 标题带主题短语**：gh release 标题必须 `vX.Y.Z — {emoji 主题短语}`（v1.3.8 手写简化丢短语教训）——发布命令前先核对 title 字段完整。

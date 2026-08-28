@@ -11,7 +11,7 @@
 
 <p align="center"><sub>[简体中文](./README.md) | [English](./README.en.md)</sub></p>
 
-> 🚀 **v1.4.2 pre-release** — Training engine: data & evaluation (pipeline / versioning / eval loop / environment / dry-run / report) + FDE six engines + IM bridge + FORGE data-flow foundation. See [CHANGELOG](./CHANGELOG.md).
+> 🚀 **v1.4.2** — Training engine: data & evaluation (pipeline / versioning / eval loop / environment / dry-run / report) + FDE six engines + IM bridge + FORGE data-flow foundation. See [CHANGELOG](./CHANGELOG.md).
 
 ---
 
