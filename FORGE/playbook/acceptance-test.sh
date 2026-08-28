@@ -6,7 +6,7 @@ export LANG=en_US.UTF-8
 export LC_ALL=en_US.UTF-8
 # sofagent-audit · 上线前验收测试（Pre-Release Acceptance Test）
 # 覆盖：FORGE + MCP + 文件系统审计 + daemon + 红队对抗 + 各版本新功能验收
-# 场景数：273 个场景（SSOT：check-test-count.sh 校验，口径=真实 scenario 调用行数，非编号最大值（S1-S338 间有 67 个历史空洞号）；v1.3.7 +4：S290-S293；v1.3.6 +8：S282-S289；v1.3.8 +11：S294-S304（含 bugfix 防回归 S303/S304）；v1.3.9 +15：S305-S319（阶段五 A 类分发 13 项 + 阶段六 coverage 补测 S318 ATTRIBUTION 归因引擎/S319 Dream Sandbox 沙盒审计）；v1.4.0 +3：S320（联邦查询跨进程 E2E——补 federation.test.ts 同进程 mock 缺口）、S321（跨平台 hook stdin 模式闭环验证）、S322（双设备联邦独立进程模拟——两个独立 node 进程 + 真实 TCP，补 fork 形态缺口）；v1.4.1 +10：S323（train doctor CLI 实跑）、S324（enterpriseId 强制绑定+幂等）、S325（fingerprint 冻结+不可变）、S326（artifact 签名+篡改检测）、S327（安全基线路径白名单+注入检测）、S328（install.sh 迁移丢数据窗口防回归——阶段四 B2 分发）、S329（install.sh symlink 谎报守卫——阶段四 B3 分发）、S330（训练异常退出资源回收四步链——阶段六 coverage 补测，补判断层唯一零覆盖项）、S331（OpenClaw plugin 双 manifest 一致性——阶段十一 ClawHub 拒收踩坑回写）、S332（bump 脚本通配误伤防回归——阶段十一静默漏 bump 踩坑回写）；v1.4.2 +7：S333（数据管道 CSV 类型推断端到端）、S334（dataset_version 台账三件套）、S335（eval 阈值判定双态）、S336（dry-run 显存估算单调性）、S337（ScaleRL sigmoid 拟合/外推/建议）、S338（FDE 工作台审计留痕往返——阶段三步骤四增量，行为实测走 dist 产物）、S339（MCP 工具 dataDir SSOT 收编完整——阶段三 fresh-eyes N-1 修复行为锁）、S340（19 处 v1.3.x 存量 getSofagentDataDir 一次清零行为锁——用户拍板 A 桶落点迁移接受））
+# 场景数：274 个场景（SSOT：check-test-count.sh 校验，口径=真实 scenario 调用行数，非编号最大值（S1-S338 间有 67 个历史空洞号）；v1.3.7 +4：S290-S293；v1.3.6 +8：S282-S289；v1.3.8 +11：S294-S304（含 bugfix 防回归 S303/S304）；v1.3.9 +15：S305-S319（阶段五 A 类分发 13 项 + 阶段六 coverage 补测 S318 ATTRIBUTION 归因引擎/S319 Dream Sandbox 沙盒审计）；v1.4.0 +3：S320（联邦查询跨进程 E2E——补 federation.test.ts 同进程 mock 缺口）、S321（跨平台 hook stdin 模式闭环验证）、S322（双设备联邦独立进程模拟——两个独立 node 进程 + 真实 TCP，补 fork 形态缺口）；v1.4.1 +10：S323（train doctor CLI 实跑）、S324（enterpriseId 强制绑定+幂等）、S325（fingerprint 冻结+不可变）、S326（artifact 签名+篡改检测）、S327（安全基线路径白名单+注入检测）、S328（install.sh 迁移丢数据窗口防回归——阶段四 B2 分发）、S329（install.sh symlink 谎报守卫——阶段四 B3 分发）、S330（训练异常退出资源回收四步链——阶段六 coverage 补测，补判断层唯一零覆盖项）、S331（OpenClaw plugin 双 manifest 一致性——阶段十一 ClawHub 拒收踩坑回写）、S332（bump 脚本通配误伤防回归——阶段十一静默漏 bump 踩坑回写）；v1.4.2 +8：S333（数据管道 CSV 类型推断端到端）、S334（dataset_version 台账三件套）、S335（eval 阈值判定双态）、S336（dry-run 显存估算单调性）、S337（ScaleRL sigmoid 拟合/外推/建议）、S338（FDE 工作台审计留痕往返——阶段三步骤四增量，行为实测走 dist 产物）、S339（MCP 工具 dataDir SSOT 收编完整——阶段三 fresh-eyes N-1 修复行为锁）、S340（19 处 v1.3.x 存量 getSofagentDataDir 一次清零行为锁——用户拍板 A 桶落点迁移接受）、S341（train report 报告生成本体 dist 行为实测——阶段五 coverage 唯一零覆盖项补测））
 # 编号跳号豁免：S1~S293 间有 70 个空洞号（全在 S36-S202 历史段）——v1.2.x 瘦身删场景
 # 与基线重建（restore 6e542467）的既成事实，非丢失；新场景编号=当前最大+1 顺延，禁止回填空洞
 # 版本段起点见文件内「# ─── v」分组标记（grep "─── v" 定位）
@@ -3429,6 +3429,37 @@ console.log('OK');
 " 2>&1) || S340_OK=false
 echo "$S340_THINK" | grep -q "^OK$" || S340_OK=false
 $S340_OK && pass "存量清零行为锁（19 处收编 + 全域零残留 + think 包同批）" || fail "存量清零异常：$S340_RESIDUAL / count=$S340_COUNT / $S340_THINK"
+
+scenario 341 "v1.4.2 章六补测：train report 报告生成本体真实可跑——dist 行为实测五段结构与归档落盘（补判断层唯一零覆盖项，对齐 S330 先例）"
+S341_OK=true
+# ① dist 产物 generateTrainReport 真实可跑（隔离 dataDir，零真实训练）
+S341_RES=$(node -e "
+const { generateTrainReport, computeQuantification } = require('$PROJECT_ROOT/engine/orchestrator/dist/train/train-report.js');
+const fs = require('fs'); const os = require('os'); const path = require('path');
+const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 's341-report-'));
+const q = computeQuantification({ annualSalary: 60000, takeoverRatio: 0.33, aiAnnualCost: 3000, oneTimeInvestment: 10000 });
+const r = generateTrainReport({
+  dataDir, enterpriseId: 'ent-s341', trainJobId: 'job-s341',
+  baselineEval: null, afterEval: null, datasetVersion: null, quantification: q,
+});
+// ② 报告五段关键内容非空断言（markdown 客户可读 + json 结构化）
+const md = r.markdown, js = r.json;
+const checks = [
+  js.schemaVersion === 'v1',
+  js.trainJobId === 'job-s341',
+  md.includes('# '),                     // 报告标题
+  md.includes(q.annualSaving.display),   // 量化段真实渲染（GUIDE §4.3 数字入文）
+  typeof js.generatedAt === 'string' && js.generatedAt.length > 0,
+  fs.existsSync(r.archivePaths.markdownPath),   // 归档落盘（md）
+  fs.existsSync(r.archivePaths.jsonPath),       // 归档落盘（json）
+];
+const bad = checks.map((ok, i) => ok ? '' : ['schema','jobId','标题','量化段','generatedAt','归档md','归档json'][i]).filter(Boolean);
+if (bad.length) { console.log('FAIL: ' + bad.join(',')); process.exit(1); }
+fs.rmSync(dataDir, { recursive: true, force: true });
+console.log('OK');
+" 2>&1) || S341_OK=false
+echo "$S341_RES" | grep -q "^OK$" || S341_OK=false
+$S341_OK && pass "train report 五段生成 + 双格式归档（章六零覆盖补测）" || fail "train report 异常：$S341_RES"
 
 echo -e "  验收测试结果：${GREEN}$PASSED 通过${NC} / ${RED}$FAILED 失败${NC} / 共 $((PASSED + FAILED))"
 # 🔴 v1.3.1 run-10 教训：无色码纯文本汇总行供 driver grep（EXIT: 0=全PASS / <N>=N失败）
