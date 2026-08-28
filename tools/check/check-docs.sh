@@ -146,12 +146,24 @@ echo "  package.json: $VERSION_PKG"
 # 3a. WIKI 状态表「下一版」语义声称 vs ROADMAP（2026-08-22 新增——上轮发现 WIKI 曾写
 #     「下一版 v1.3.9」但 v1.3.9 已交付、应为 v1.4.0；check-version 只查格式声称查不到语义声称，
 #     这是人工维护盲区。此处比对 WIKI 状态表「下一版」与 ROADMAP 顶部「下一版」一致性）
+# v1.4.3 F-16 补检查项（2026-08-29）：ROADMAP 无「下一版 vX.Y.Z」字面文本时（现行 ROADMAP
+#     用迭代表「📋 规划中」标记），旧逻辑 ROADMAP_NEXT_V 为空 → elif 分支静默跳过 = 守卫空转
+#     （WIKI 曾写「下一版 v1.4.2」而 v1.4.2 已交付，恰因此漏检）。补 fallback：取 ROADMAP
+#     迭代表中第一个「📋 规划中」版本号作为下一版基准；两头都取不到时升为阻断（守卫空转比没有守卫危险）。
 WIKI_NEXT=$(grep -m1 "下一版" docs/WIKI.md 2>/dev/null | sed -E 's/.*下一版[|｜][^|]*\*\*([^)]*)\*\*.*/\1/' )
 WIKI_NEXT_V=$(echo "$WIKI_NEXT" | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' | head -1)
 ROADMAP_NEXT_V=$(head -30 docs/ROADMAP.md 2>/dev/null | grep -oE '下一版 v[0-9]+\.[0-9]+\.[0-9]+' | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+if [ -z "$ROADMAP_NEXT_V" ]; then
+  # fallback：ROADMAP 迭代表第一个「📋 规划中」行（| **vX.Y.Z** | 📋 规划中 |）
+  ROADMAP_NEXT_V=$(grep -m1 -E '^\| \*\*v[0-9]+\.[0-9]+\.[0-9]+\*\* \| 📋 规划中' docs/ROADMAP.md 2>/dev/null | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+fi
 if [ -z "$WIKI_NEXT_V" ]; then
-  echo "  ⚠️ WIKI 状态表未找到「下一版」版本号——人工检查（非阻断）"
-elif [ -n "$ROADMAP_NEXT_V" ] && [ "$WIKI_NEXT_V" != "$ROADMAP_NEXT_V" ]; then
+  echo "  ${RED}✗ WIKI 状态表未找到「下一版」版本号——人工检查项升为阻断（守卫不得空转）${NC}"
+  ERRORS=$((ERRORS + 1))
+elif [ -z "$ROADMAP_NEXT_V" ]; then
+  echo "  ${RED}✗ ROADMAP 未找到「下一版」基准（无「下一版 vX.Y.Z」文本且无「📋 规划中」行）——版本语义声称漂移检查失效${NC}"
+  ERRORS=$((ERRORS + 1))
+elif [ "$WIKI_NEXT_V" != "$ROADMAP_NEXT_V" ]; then
   echo "  ${RED}✗ WIKI 状态表「下一版」=$WIKI_NEXT_V ≠ ROADMAP「下一版」=$ROADMAP_NEXT_V —— 版本语义声称漂移${NC}"
   ERRORS=$((ERRORS + 1))
 else
@@ -584,6 +596,35 @@ done
 if [ "$WIRING_FAIL" -gt 0 ]; then
   ERRORS=$((ERRORS + WIRING_FAIL))
 fi
+
+echo ""
+echo "=== 14. 平台挂载文件 MCP 工具数对账（v1.4.3 F-16 同源盲区补查）==="
+# 门禁目的：GEMINI.md / .cursor/rules/sofagent.mdc 属平台挂载文件，游离在既有数字门禁外
+# （AGENTS.md 有第 12 节对账，这两个文件此前无人查——2026-08-29 实测 61 vs 实际 76 漂移两个版本）。
+# 规则：文件中「N 个 tool」声称值必须与 tool-registry.ts 注册数一致；未找到声称 → fail（守卫不空转）。
+MCP_REG_COUNT=$(node -e "
+const fs = require('fs');
+const regSrc = fs.readFileSync('engine/mcp/src/tool-registry.ts', 'utf8');
+const regTools = new Set([...regSrc.matchAll(/name:\s*'([a-z_]+)',/g)].map(m => m[1]));
+console.log(regTools.size);
+" 2>/dev/null || echo "0")
+PLATFORM_MOUNT_FILES="GEMINI.md .cursor/rules/sofagent.mdc"
+for pmf in $PLATFORM_MOUNT_FILES; do
+  if [ ! -f "$pmf" ]; then
+    echo "  ⏭️ $pmf 不存在——跳过"
+    continue
+  fi
+  PM_CLAIMED=$(grep -oE '[0-9]+ 个 tool' "$pmf" 2>/dev/null | head -1 | grep -oE '[0-9]+' || true)
+  if [ -z "$PM_CLAIMED" ]; then
+    echo "  ❌ $pmf 未找到「N 个 tool」声称——数字门禁盲区（守卫不空转：有挂载描述就该有数字且对账）"
+    ERRORS=$((ERRORS + 1))
+  elif [ "$PM_CLAIMED" != "$MCP_REG_COUNT" ]; then
+    echo "  ❌ $pmf：声称 ${PM_CLAIMED} 个 tool ≠ registry 实际 ${MCP_REG_COUNT}"
+    ERRORS=$((ERRORS + 1))
+  else
+    echo "  ✓ ${pmf}：${PM_CLAIMED} 个 tool 与 registry 一致"
+  fi
+done
 
 echo ""
 if [ "$ERRORS" -gt 0 ]; then
