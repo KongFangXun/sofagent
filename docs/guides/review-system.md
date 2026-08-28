@@ -94,6 +94,12 @@
 
 ---
 
+## 环境注意事项（README 迁入 · 2026-08-29）
+
+`npm test` 直跑全量时，个别包（mcp/audit）在低内存机器可能出现超时闪红——单独重跑该包即绿，属环境并发问题，非产品缺陷。遇 audit 包偶发「首跑无汇总」时，先清缓存再跑对照组：`rm -rf engine/audit/node_modules/.vitest`（2026-08-29 三轮审查实证 1 次、复验未复现，疑似 vitest 缓存竞争；详见 test-count.sh 头部追因登记）。测试总数以 `tools/check/test-count.sh` 判定为准（flaky 复跑机制见脚本内 FLAKY_PKGS 容错设计）。
+
+---
+
 ## fresh-eyes-review 校准（C 类专用）
 
 fresh-eyes-review 是**留白式直觉审查**——不加检查项，只调整视角。
