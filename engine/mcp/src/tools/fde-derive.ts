@@ -7,11 +7,9 @@
 // ontology_import。委托 @sofagent/orchestrator fde/fde-quantify.deriveOntology。
 // ============================================================
 
+import { getDataDir } from '@sofagent/core';
 import { join } from 'path';
 
-function getSofagentDataDir(): string {
-  return process.env.SOFAGENT_DATA || join(process.cwd(), 'data');
-}
 
 export interface FdeDeriveNode {
   node_id: string;
@@ -68,7 +66,7 @@ export async function fdeDeriveTool(args: FdeDeriveArgs): Promise<FdeDeriveToolR
 
   try {
     const orch = await import('@sofagent/orchestrator');
-    const dataDir = getSofagentDataDir();
+    const dataDir = getDataDir();
 
     const session = {
       enterpriseId: enterprise_id,

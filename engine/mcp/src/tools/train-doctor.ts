@@ -11,11 +11,9 @@
 // tools/train-env-init.sh；基座模型怎么下走 model-downloader）。
 // ============================================================
 
+import { getDataDir } from '@sofagent/core';
 import { join } from 'path';
 
-function getSofagentDataDir(): string {
-  return process.env.SOFAGENT_DATA || join(process.cwd(), 'data');
-}
 
 export interface TrainDoctorArgs {
   /** 企业标识（体检报告与 train-env.json 清单的企业分区） */
@@ -64,7 +62,7 @@ export async function trainDoctorTool(args: TrainDoctorArgs): Promise<TrainDocto
 
   try {
     const orch = await import('@sofagent/orchestrator');
-    const dataDir = getSofagentDataDir();
+    const dataDir = getDataDir();
     // deps 缺省 → env-manager 内部走 makeDefaultExecFn（execFile 封装）——
     // MCP 调用方无需构造；测试经 orchestrator 单测的注入路径覆盖。
     const report = await orch.trainDoctor(dataDir, enterprise_id);

@@ -7,11 +7,9 @@
 // 委托 @sofagent/orchestrator fde/fde-workbench.classifyNodes。
 // ============================================================
 
+import { getDataDir } from '@sofagent/core';
 import { join } from 'path';
 
-function getSofagentDataDir(): string {
-  return process.env.SOFAGENT_DATA || join(process.cwd(), 'data');
-}
 
 export interface FdeClassifyNode {
   node_id: string;
@@ -63,7 +61,7 @@ export async function fdeClassifyTool(args: FdeClassifyArgs): Promise<FdeClassif
 
   try {
     const orch = await import('@sofagent/orchestrator');
-    const dataDir = getSofagentDataDir();
+    const dataDir = getDataDir();
 
     const nodes = args.nodes.map((n) => ({
       nodeId: n.node_id,

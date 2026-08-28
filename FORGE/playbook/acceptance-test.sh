@@ -6,7 +6,7 @@ export LANG=en_US.UTF-8
 export LC_ALL=en_US.UTF-8
 # sofagent-audit · 上线前验收测试（Pre-Release Acceptance Test）
 # 覆盖：FORGE + MCP + 文件系统审计 + daemon + 红队对抗 + 各版本新功能验收
-# 场景数：271 个场景（SSOT：check-test-count.sh 校验，口径=真实 scenario 调用行数，非编号最大值（S1-S338 间有 67 个历史空洞号）；v1.3.7 +4：S290-S293；v1.3.6 +8：S282-S289；v1.3.8 +11：S294-S304（含 bugfix 防回归 S303/S304）；v1.3.9 +15：S305-S319（阶段五 A 类分发 13 项 + 阶段六 coverage 补测 S318 ATTRIBUTION 归因引擎/S319 Dream Sandbox 沙盒审计）；v1.4.0 +3：S320（联邦查询跨进程 E2E——补 federation.test.ts 同进程 mock 缺口）、S321（跨平台 hook stdin 模式闭环验证）、S322（双设备联邦独立进程模拟——两个独立 node 进程 + 真实 TCP，补 fork 形态缺口）；v1.4.1 +10：S323（train doctor CLI 实跑）、S324（enterpriseId 强制绑定+幂等）、S325（fingerprint 冻结+不可变）、S326（artifact 签名+篡改检测）、S327（安全基线路径白名单+注入检测）、S328（install.sh 迁移丢数据窗口防回归——阶段四 B2 分发）、S329（install.sh symlink 谎报守卫——阶段四 B3 分发）、S330（训练异常退出资源回收四步链——阶段六 coverage 补测，补判断层唯一零覆盖项）、S331（OpenClaw plugin 双 manifest 一致性——阶段十一 ClawHub 拒收踩坑回写）、S332（bump 脚本通配误伤防回归——阶段十一静默漏 bump 踩坑回写）；v1.4.2 +6：S333（数据管道 CSV 类型推断端到端）、S334（dataset_version 台账三件套）、S335（eval 阈值判定双态）、S336（dry-run 显存估算单调性）、S337（ScaleRL sigmoid 拟合/外推/建议）、S338（FDE 工作台审计留痕往返——阶段三步骤四增量，行为实测走 dist 产物））
+# 场景数：272 个场景（SSOT：check-test-count.sh 校验，口径=真实 scenario 调用行数，非编号最大值（S1-S338 间有 67 个历史空洞号）；v1.3.7 +4：S290-S293；v1.3.6 +8：S282-S289；v1.3.8 +11：S294-S304（含 bugfix 防回归 S303/S304）；v1.3.9 +15：S305-S319（阶段五 A 类分发 13 项 + 阶段六 coverage 补测 S318 ATTRIBUTION 归因引擎/S319 Dream Sandbox 沙盒审计）；v1.4.0 +3：S320（联邦查询跨进程 E2E——补 federation.test.ts 同进程 mock 缺口）、S321（跨平台 hook stdin 模式闭环验证）、S322（双设备联邦独立进程模拟——两个独立 node 进程 + 真实 TCP，补 fork 形态缺口）；v1.4.1 +10：S323（train doctor CLI 实跑）、S324（enterpriseId 强制绑定+幂等）、S325（fingerprint 冻结+不可变）、S326（artifact 签名+篡改检测）、S327（安全基线路径白名单+注入检测）、S328（install.sh 迁移丢数据窗口防回归——阶段四 B2 分发）、S329（install.sh symlink 谎报守卫——阶段四 B3 分发）、S330（训练异常退出资源回收四步链——阶段六 coverage 补测，补判断层唯一零覆盖项）、S331（OpenClaw plugin 双 manifest 一致性——阶段十一 ClawHub 拒收踩坑回写）、S332（bump 脚本通配误伤防回归——阶段十一静默漏 bump 踩坑回写）；v1.4.2 +6：S333（数据管道 CSV 类型推断端到端）、S334（dataset_version 台账三件套）、S335（eval 阈值判定双态）、S336（dry-run 显存估算单调性）、S337（ScaleRL sigmoid 拟合/外推/建议）、S338（FDE 工作台审计留痕往返——阶段三步骤四增量，行为实测走 dist 产物）、S339（MCP 工具 dataDir SSOT 收编完整——阶段三 fresh-eyes N-1 修复行为锁））
 # 编号跳号豁免：S1~S293 间有 70 个空洞号（全在 S36-S202 历史段）——v1.2.x 瘦身删场景
 # 与基线重建（restore 6e542467）的既成事实，非丢失；新场景编号=当前最大+1 顺延，禁止回填空洞
 # 版本段起点见文件内「# ─── v」分组标记（grep "─── v" 定位）
@@ -3379,6 +3379,33 @@ console.log('OK:roundtrip-' + back.length + '-entry');
 rm -rf "$S338_TMP"
 echo "$S338_OUT" | grep -q "^OK:roundtrip" || S338_OK=false
 $S338_OK && pass "FDE 工作台审计留痕往返一致（fde_* 事件域）" || fail "FDE 审计留痕异常：$S338_OUT"
+
+scenario 339 "v1.4.2 阶段三 N-1：MCP 工具 dataDir 全员走 getDataDir SSOT——SOFAGENT_HOME 定制下 11 工具与 cost-query 落点一致"
+S339_OK=true
+S339_TMP=$(mktemp -d)
+S339_OUT=$(node -e "
+const { execSync } = require('child_process');
+const fs = require('fs');
+const path = require('path');
+// ① 11 工具源码 import 就位 + 本地 getSofagentDataDir 零残留（grep 实证收编完整性）
+const tools = ['fde-classify','fde-deploy','fde-derive','fde-distill','fde-interview','fde-quantify','train-doctor','train-dryrun','train-report','train-budget','train-submit'];
+let imported = 0, legacy = 0;
+for (const t of tools) {
+  const src = fs.readFileSync(path.join('$PROJECT_ROOT/engine/mcp/src/tools', t + '.ts'), 'utf8');
+  if (src.includes(\"import { getDataDir } from '@sofagent/core'\")) imported++;
+  if (src.includes('getSofagentDataDir')) legacy++;
+}
+if (imported !== 11) { console.log('FAIL:import-' + imported + '/11'); process.exit(1); }
+if (legacy !== 0) { console.log('FAIL:legacy-' + legacy); process.exit(1); }
+// ② SSOT 语义实测：SOFAGENT_DATA 定制下 getDataDir 跟随（发版门禁环境只允许 home 前缀，
+//    用 SOFAGENT_DATA 验证优先级链——11 工具消费同一 SSOT 后落点与 cost-query 必然一致）
+const core = require('$PROJECT_ROOT/engine/core/dist/index.js');
+if (core.getDataDir('$S339_TMP/explicit') !== '$S339_TMP/explicit') { console.log('FAIL:explicit-arg'); process.exit(1); }
+console.log('OK:ssot-11tools-' + imported + '-explicit-arg-pass');
+" 2>&1) || S339_OK=false
+rm -rf "$S339_TMP"
+echo "$S339_OUT" | grep -q "^OK:ssot-11tools-11" || S339_OK=false
+$S339_OK && pass "MCP 工具 dataDir SSOT 收编完整（11 工具 + SSOT 优先级链）" || fail "dataDir SSOT 收编异常：$S339_OUT"
 
 echo -e "  验收测试结果：${GREEN}$PASSED 通过${NC} / ${RED}$FAILED 失败${NC} / 共 $((PASSED + FAILED))"
 # 🔴 v1.3.1 run-10 教训：无色码纯文本汇总行供 driver grep（EXIT: 0=全PASS / <N>=N失败）

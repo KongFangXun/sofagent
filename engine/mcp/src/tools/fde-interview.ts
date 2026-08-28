@@ -7,11 +7,9 @@
 // 委托 @sofagent/orchestrator fde/fde-workbench.recordInterview。
 // ============================================================
 
+import { getDataDir } from '@sofagent/core';
 import { join } from 'path';
 
-function getSofagentDataDir(): string {
-  return process.env.SOFAGENT_DATA || join(process.cwd(), 'data');
-}
 
 /** 访谈节点入参（snake_case——MCP 面） */
 export interface FdeInterviewNode {
@@ -63,7 +61,7 @@ export async function fdeInterviewTool(args: FdeInterviewArgs): Promise<FdeInter
   const { enterprise_id } = args;
 
   const orch = await import('@sofagent/orchestrator');
-  const dataDir = getSofagentDataDir();
+  const dataDir = getDataDir();
 
   // 话术模式（访谈前引导——不落盘）
   if (args.prompts_only) {

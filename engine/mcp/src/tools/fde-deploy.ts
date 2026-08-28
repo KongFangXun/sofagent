@@ -9,11 +9,9 @@
 // 委托 @sofagent/orchestrator fde/fde-quantify.deployWorkflow。
 // ============================================================
 
+import { getDataDir } from '@sofagent/core';
 import { join } from 'path';
 
-function getSofagentDataDir(): string {
-  return process.env.SOFAGENT_DATA || join(process.cwd(), 'data');
-}
 
 export interface FdeDeployNode {
   node_id: string;
@@ -70,7 +68,7 @@ export async function fdeDeployTool(args: FdeDeployArgs): Promise<FdeDeployToolR
 
   try {
     const orch = await import('@sofagent/orchestrator');
-    const dataDir = getSofagentDataDir();
+    const dataDir = getDataDir();
 
     const session = {
       enterpriseId: enterprise_id,

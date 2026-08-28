@@ -9,11 +9,9 @@
 // 本版章五 scale-curve）。
 // ============================================================
 
+import { getDataDir } from '@sofagent/core';
 import { join } from 'path';
 
-function getSofagentDataDir(): string {
-  return process.env.SOFAGENT_DATA || join(process.cwd(), 'data');
-}
 
 export interface TrainDryrunArgs {
   /** 数据文件路径（CSV/Excel/JSON/文本——相对 data 目录或绝对路径） */
@@ -79,7 +77,7 @@ export async function trainDryrunTool(args: TrainDryrunArgs): Promise<TrainDryru
     // 相对路径按 data 目录解析（对齐 train_submit 的 data_path 口径）
     const resolvedPath = data_path.startsWith('/')
       ? data_path
-      : join(getSofagentDataDir(), data_path);
+      : join(getDataDir(), data_path);
 
     const result = orch.runDryrun({
       dataPath: resolvedPath,

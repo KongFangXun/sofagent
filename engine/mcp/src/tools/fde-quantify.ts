@@ -8,11 +8,9 @@
 // 委托 @sofagent/orchestrator fde/fde-quantify.quantifyNodes。
 // ============================================================
 
+import { getDataDir } from '@sofagent/core';
 import { join } from 'path';
 
-function getSofagentDataDir(): string {
-  return process.env.SOFAGENT_DATA || join(process.cwd(), 'data');
-}
 
 export interface FdeQuantifyNodeInput {
   node_id: string;
@@ -65,7 +63,7 @@ export async function fdeQuantifyTool(args: FdeQuantifyArgs): Promise<FdeQuantif
 
   try {
     const orch = await import('@sofagent/orchestrator');
-    const dataDir = getSofagentDataDir();
+    const dataDir = getDataDir();
 
     // plans 关联（若引擎二已跑——nodes.json 回读判定标签）
     let plans: Array<{ nodeId: string; tag: 'auto' | 'enhance' | 'manual' }> | null = null;

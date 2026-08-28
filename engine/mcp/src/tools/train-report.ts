@@ -9,11 +9,9 @@
 // （复用章三 TrainEvalReport / 章二 dataset_version / v1.4.1 train job）。
 // ============================================================
 
+import { getDataDir } from '@sofagent/core';
 import { join } from 'path';
 
-function getSofagentDataDir(): string {
-  return process.env.SOFAGENT_DATA || join(process.cwd(), 'data');
-}
 
 export interface TrainReportArgs {
   /** 训练任务标识 */
@@ -66,7 +64,7 @@ export async function trainReportTool(args: TrainReportArgs): Promise<TrainRepor
 
   try {
     const orch = await import('@sofagent/orchestrator');
-    const dataDir = getSofagentDataDir();
+    const dataDir = getDataDir();
 
     const result = orch.generateTrainReport({
       dataDir,
