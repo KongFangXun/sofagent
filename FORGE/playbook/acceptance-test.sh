@@ -1424,7 +1424,11 @@ $S165_OK && pass "关键数字跨文档一致（${TEST_COUNT:-N/A} / 24 / ${S165
 scenario 166 "Markdown 格式完整性——代码块闭合 + 活跃文档无 U+FFFD"
 S166_OK=true
 node -e "const fs=require('fs');const{execSync}=require('child_process');const files=execSync('git ls-files \"*.md\"').toString().split('\n').filter(f=>f&&!/archive|node_modules/.test(f));let bad=[];for(const f of files){try{if(fs.readFileSync(f,'utf8').includes('\uFFFD'))bad.push(f);}catch(e){}}process.exit(bad.length?(console.log('U+FFFD:',bad.join(',')),1):0);" >/dev/null 2>&1 || { fail "活跃文档存在 U+FFFD 编码污染"; S166_OK=false; }
-for f in docs/changelog/releasing.md README.md docs/ARCHITECTURE.md; do N=$(grep -c '^\`\`\`' "$PROJECT_ROOT/$f" 2>/dev/null || echo 0); [ $((N % 2)) -eq 0 ] || { fail "$f 代码围栏未闭合（$N 个 fence 为奇数）"; S166_OK=false; }; done
+# v1.4.2 修复（run-11 场景 166 实测两层坑）：
+# ① grep -c 无匹配时打印 0 且 exit 1 → set -e + pipefail 直接杀脚本；
+# ② || echo 0 兜底时输出变两行 "0\n0" → $(( )) 报 syntax error。
+# 双防：grep 失败兜底单行 0（防①），head -1 + tr 只留数字（防②）。
+for f in docs/changelog/releasing.md README.md docs/ARCHITECTURE.md; do N=$( { grep -c '^\`\`\`' "$PROJECT_ROOT/$f" 2>/dev/null || true; } | head -1 | tr -cd '0-9'); N=${N:-0}; [ $((N % 2)) -eq 0 ] || { fail "$f 代码围栏未闭合（$N 个 fence 为奇数）"; S166_OK=false; }; done
 $S166_OK && pass "Markdown 格式完整（无 U+FFFD + 代码块闭合）"
 scenario 167a "v1.2.4 P0 分层巡检——inspector-layers 三层调度器存在 + L1/L2/L3 名称列表"
 S167A_OK=true
