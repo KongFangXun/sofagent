@@ -9,13 +9,11 @@
 import { existsSync, readFileSync, appendFileSync, mkdirSync } from 'fs';
 import { join } from 'path';
 import { load as yamlLoad } from 'js-yaml';
-import {
-  type DataChange,
+import {type DataChange,
   diffDataChange,
   runDataRules,
   type DataAuditResult,
-  atomicWriteSync,
-} from '@sofagent/core';
+  atomicWriteSync, getDataDir } from '@sofagent/core';
 import { generateDataThink } from '@sofagent/think';
 
 // ============================================================
@@ -45,11 +43,7 @@ export interface CreateConceptResult {
 // ============================================================
 
 function getKnowledgeDir(): string {
-  return join(getSofagentDataDir(), 'knowledge');
-}
-
-function getSofagentDataDir(): string {
-  return process.env.SOFAGENT_DATA || join(process.cwd(), 'data');
+  return join(getDataDir(), 'knowledge');
 }
 
 function parseFrontmatter(content: string): Record<string, unknown> | null {
@@ -115,7 +109,7 @@ function writeConceptFile(filePath: string, content: string): void {
 }
 
 function appendDataChangeLog(change: DataChange, auditResult: DataAuditResult): void {
-  const logDir = join(getSofagentDataDir(), 'audit');
+  const logDir = join(getDataDir(), 'audit');
   if (!existsSync(logDir)) {
     mkdirSync(logDir, { recursive: true });
   }

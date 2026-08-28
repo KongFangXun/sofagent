@@ -1,19 +1,15 @@
 // ============================================================
 // resources.ts · MCP resources handlers (list + read)
-// v1.4.1: 从 mcp-server.ts 提取
+// v1.4.2: 从 mcp-server.ts 提取
 // ============================================================
 
 import { existsSync, readFileSync, readdirSync, statSync } from 'fs';
 import { join } from 'path';
-import { getThinkPath } from '@sofagent/core';
+import {getThinkPath, getDataDir } from '@sofagent/core'
 import { loadHistory } from '@sofagent/audit';
 // ============================================================
 // 辅助
 // ============================================================
-
-function getSofagentDataDir(): string {
-  return process.env.SOFAGENT_DATA || join(process.cwd(), '.sofagent');
-}
 
 export interface ResourceContent {
   uri: string;
@@ -76,7 +72,7 @@ export function readResource(uri: string): ResourceContent | { error: string } {
 }
 
 function readThinkLatest(): ResourceContent {
-  const thinkPath = getThinkPath(getSofagentDataDir());
+  const thinkPath = getThinkPath(getDataDir());
   if (!existsSync(thinkPath)) {
     return {
       uri: 'think://latest',
@@ -95,7 +91,7 @@ function readThinkLatest(): ResourceContent {
 }
 
 function readLogsToday(): ResourceContent {
-  const logsDir = join(getSofagentDataDir(), 'task', 'logs');
+  const logsDir = join(getDataDir(), 'task', 'logs');
   if (!existsSync(logsDir)) {
     return { uri: 'logs://today', mimeType: 'text/plain', text: '[sofagent] (日志目录不存在)' };
   }
@@ -148,7 +144,7 @@ function readAuditHistory(): ResourceContent {
 }
 
 function readLatestComparison(): ResourceContent {
-  const compDir = join(getSofagentDataDir(), 'orchestrator', 'comparisons');
+  const compDir = join(getDataDir(), 'orchestrator', 'comparisons');
   const empty: ResourceContent = { uri: 'orchestrator://latest-comparison', mimeType: 'text/markdown', text: 'No comparison data yet.' };
   if (!existsSync(compDir)) return empty;
   let files: string[];

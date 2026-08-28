@@ -13,11 +13,9 @@
 //   - resolve：人审决策落地（resume 续跑 / terminate 终止）——挂起态才可操作
 // ============================================================
 
+import { getDataDir } from '@sofagent/core';
 import { join } from 'path';
 
-function getSofagentDataDir(): string {
-  return process.env.SOFAGENT_DATA || join(process.cwd(), 'data');
-}
 
 export interface TrainBudgetArgs {
   /** 操作：status 查预算 / resolve 人审续跑或终止 */
@@ -62,7 +60,7 @@ export async function trainBudget(args: TrainBudgetArgs): Promise<TrainBudgetToo
 
   try {
     const budgetMod = await import('@sofagent/orchestrator');
-    const dataDir = getSofagentDataDir();
+    const dataDir = getDataDir();
     const job = budgetMod.findTrainJob(dataDir, job_id);
 
     if (!job) {

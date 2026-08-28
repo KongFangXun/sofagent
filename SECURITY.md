@@ -1,6 +1,6 @@
 # 安全策略
 
-> v1.4.1 · 2026-08-27（UTC）· 孔放勋
+> v1.4.2 · 2026-08-28（UTC）· 孔放勋
 >
 > 按安全主题组织，企业 IT 可按主题快速定位。各能力的引入版本在小节正文首句注明。
 
@@ -281,7 +281,7 @@ sofagent-audit（v0.92+）是 TypeScript CLI，执行 `execFileSync('git', ...)`
 | 编号 | 名称 | 检测什么 | 判定 |
 |------|------|---------|:--:|
 | A1 | 不碰敏感 | `.env` / `*.pem` / `id_rsa` 等敏感文件被修改 | FAIL |
-| A2 | 不泄密钥 | API Key（AWS/OpenAI/Anthropic/DeepSeek/GitHub/Stripe）/ Token / 私钥模式泄漏 | FAIL |
+| A2 | 不泄密钥 | API Key（AWS、OpenAI、Anthropic、DeepSeek、GitHub、Stripe、Google、Slack）/ Token / JWT / 私钥模式泄漏 | FAIL |
 | A3 | 不改越界 | 修改文件路径与任务描述不匹配 | WARN |
 | A4 | 不删配置 | 配置文件被删除 | FAIL |
 | A5 | 不瞒真相 | commit message 为空或纯占位符 | WARN |
@@ -413,7 +413,8 @@ chmod 600 ~/.sofagent/data/audit/history.jsonl.bak-*
 
 | 绕过方式 | 检测手段 | 缓解 |
 |----------|---------|------|
-| `git commit --no-verify` | ⚠️ post-commit hook 事后对账留痕（不阻断） | `--init` 同时装 commit-msg + post-commit：绕过 commit-msg 的 commit 会被 post-commit 对账——命中拦截记录时输出「疑似绕过」提示并留痕 history.jsonl；未命中输出 INFO 提示可用 `--verify-commit <SHA>` 复核。定期 `--doctor` 检查未审计的 commit（`git log --grep` 匹配审计签名）；CI 侧 `sofagent-audit --diff HEAD~1..HEAD` 兜底 |
+| `git commit --no-verify` | ⚠️ post-commit hook 事后对账留痕（不阻断） | `--init` 同时装 pre-commit + commit-msg + post-commit（v1.4.2 三层防线）：绕过 commit-msg 的 commit 会被 post-commit 对账——命中拦截记录时输出「疑似绕过」提示并留痕 history.jsonl；未命中输出 INFO 提示可用 `--verify-commit <SHA>` 复核。定期 `--doctor` 检查未审计的 commit（`git log --grep` 匹配审计签名）；CI 侧 `sofagent-audit --diff HEAD~1..HEAD` 兜底 |
+| `git add -f .sofagent/`（审计数据强制入库） | ✅ v1.4.2 H-01 三层防线拦截——pre-commit 在 commit 对象生成前将 .sofagent/ 移出暂存区（主防线，对当次 commit 直接生效）；commit-msg 阶段再兜一次（护磁盘 index 防后续 commit 卷入）；post-commit 扫 HEAD tree 命中即告警 | pre-commit reset 失败（index.lock 竞态）时 fail-loud 拒绝 commit（宁可 false-retry 不可静默入库）；CI 侧 `--diff` 仍可发现已入库残留 |
 | 删除 commit-msg hook 文件 | ⚠️ `--doctor` 可检测 | daemon 文件监控（fs-watch，v1.3.6 起）可配置监控 .git/hooks/ 目录变化（watch.yml 自定义路径）；hooks 目录监控未内置为默认巡检项（规划中） |
 | 伪造 Agent 日志（task/logs） | ❌ 无自动检测 | 人工抽查 + 交叉验证 git log 时间戳 |
 | 绕过 --init 直接手动修改 config.yml | ❌ 无自动检测 | config hash 校验（`--sign-config` 签名 + 验签，篡改时 CLI 拒绝启动 exit 2） |
@@ -433,7 +434,7 @@ chmod 600 ~/.sofagent/data/audit/history.jsonl.bak-*
 >
 > 💡 **`hardenedMode` 配置项尚未实现**（代码中不存在此字段）——一键全规则基线化的便捷配置排入 ROADMAP 评估，当前需手动按上述方式逐条锁定。
 
-> ⚠️ **影子审计器劫持（v1.2.7 已知风险）**：本地安装的 `engine/audit/dist/index.js` 无完整性校验（dist 目录不随 git 版本控制），恶意 Agent 可替换 dist 绕过所有审计规则——比 `--no-verify` 更隐蔽（hook 仍在运行，看不出绕过）。`--doctor` 已增加 dist 哈希校验（SHA-256 比对 `~/.sofagent/internal/audit-hash.txt`），但根治需代码签名 + 运行时验证（暂未排期，跟踪于 ROADMAP）。**CI 侧 `sofagent-audit --diff` 使用独立安装可缓解**（CI 环境的 dist 不可被开发机 Agent 篡改）。
+> ⚠️ **影子审计器劫持（v1.2.7 已知风险）**：本地安装的 `engine/audit/dist/index.js` 无完整性校验（dist 目录不随 git 版本控制），恶意 Agent 可替换 dist 绕过所有审计规则——比 `--no-verify` 更隐蔽（hook 仍在运行，看不出绕过）。`--doctor` 已增加 dist 哈希校验（SHA-256 比对 `~/.sofagent/internal/audit-hash.txt`），但根治需代码签名 + 运行时验证（暂未排期，跟踪于 ROADMAP）。**CI 侧 `sofagent-audit --diff` 使用独立安装可缓解**（CI 环境的 dist 不可被开发机 Agent 篡改）。**基线建立指引（v1.4.2）**：装好后立即执行 `sofagent-audit --doctor --baseline` 显式建立基线哈希（信任锚 = 你此刻确认 dist 可信的时刻）；此后 `--doctor` 会校验 dist 与基线一致，基线缺失时将显性报错提醒（不再自动记录——防止把已被篡改的 dist 固化为合法基线）。
 
 ### 详细缓解步骤
 

@@ -120,6 +120,7 @@ export function writeHealthFile(
     fs.writeFileSync(healthPath, JSON.stringify(health, null, 2), 'utf-8');
     return health;
   } catch {
+    // 健康文件写失败（磁盘满/权限）不阻断 daemon 主流程——本周期健康数据丢弃
     return null;
   }
 }
@@ -137,6 +138,7 @@ export function readHealthFile(): DaemonHealthFile | null {
     const raw = JSON.parse(fs.readFileSync(healthPath, 'utf-8')) as DaemonHealthFile;
     return raw;
   } catch {
+    // JSON 损坏（写一半崩溃等）按无健康数据处理——下轮写入会覆盖修复
     return null;
   }
 }

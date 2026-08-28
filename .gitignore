@@ -67,17 +67,13 @@ sofagent-audit-*.tgz
 # pnpm 误生成防护（本项目用 npm）
 pnpm-lock.yaml
 pnpm-workspace.yaml
-npm-p4-test/
-p4npx/
-t/
-c.txt
 
 # fresh-eyes worker 测试 fixture（run-07 教训：红队 worker 会创建这些文件测规则拦截）
 config.js
 config.local
 f.txt
 
-# 测试残留物防护（2026-08-16 根目录垃圾事件 + FORGE 教训）
+# 测试残留物防护（2026-08-16 根目录垃圾事件 + FORGE 教训；首现于 pnpm 防护段，此处为带事故出处的主声明）
 sofagent-npm-test/
 npm-p4-test/
 p4npx/
@@ -92,3 +88,8 @@ tsconfig.tsbuildinfo
 
 # driver 主动实测产物（judgment-only 注入源，不入库）
 acceptance-raw.log
+
+# 贡献者私有 IDE 配置不入库（仓库自带 .claude/settings.json / .cursor/hooks.json 是项目级共享配置，tools/hooks 引用真实存在，不删）：
+# 本目录下贡献者的 local 变体先占位排除，防止 git add . 误带入
+.claude/settings.local.json
+.cursor/*.local.json

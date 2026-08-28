@@ -15,13 +15,11 @@
 import { existsSync, readFileSync, appendFileSync, mkdirSync } from 'fs';
 import { join } from 'path';
 import { load as yamlLoad } from 'js-yaml';
-import {
-  type DataChange,
+import {type DataChange,
   diffDataChange,
   runDataRules,
   type DataAuditResult,
-  atomicWriteSync,
-} from '@sofagent/core';
+  atomicWriteSync, getDataDir } from '@sofagent/core';
 import { generateDataThink } from '@sofagent/think';
 
 // ============================================================
@@ -58,14 +56,10 @@ export interface CreateEntityResult {
 
 /** 获取知识库根目录 */
 function getKnowledgeDir(): string {
-  return join(getSofagentDataDir(), 'knowledge');
+  return join(getDataDir(), 'knowledge');
 }
 
 /** 获取数据根目录 */
-function getSofagentDataDir(): string {
-  return process.env.SOFAGENT_DATA || join(process.cwd(), 'data');
-}
-
 /**
  * 从 Markdown 内容中解析 frontmatter
  */
@@ -165,7 +159,7 @@ function writeEntityFile(filePath: string, content: string): void {
  * 追加数据变更日志到 data/audit/data-change-log.jsonl
  */
 function appendDataChangeLog(change: DataChange, auditResult: DataAuditResult): void {
-  const logDir = join(getSofagentDataDir(), 'audit');
+  const logDir = join(getDataDir(), 'audit');
   if (!existsSync(logDir)) {
     mkdirSync(logDir, { recursive: true });
   }

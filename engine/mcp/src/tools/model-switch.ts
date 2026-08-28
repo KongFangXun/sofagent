@@ -8,10 +8,7 @@
 //   - action='rollback' → 一键回滚到上一活动模型（止损不要求人审）
 // ============================================================
 import { join } from 'path';
-
-function getSofagentDataDir(): string {
-  return process.env.SOFAGENT_DATA || join(process.cwd(), 'data');
-}
+import { getDataDir } from '@sofagent/core';
 
 export interface ModelSwitchArgs {
   /** 目标模型名（rollback 时可省略） */
@@ -48,7 +45,7 @@ export async function modelSwitch(args: ModelSwitchArgs): Promise<ModelSwitchToo
   try {
     const { switchModel, rollbackModel } = await import('@sofagent/orchestrator');
     const opts = {
-      dataDir: getSofagentDataDir(),
+      dataDir: getDataDir(),
       actor: 'mcp-model-switch',
       ...(human_confirmed !== undefined ? { humanConfirmed: human_confirmed } : {}),
       ...(comment ? { comment } : {}),
@@ -127,7 +124,7 @@ async function buildRouteReason(
     const projectRoot = process.cwd();
     const { policy } = loadRoutePolicy(projectRoot);
 
-    const dataDir = getSofagentDataDir();
+    const dataDir = getDataDir();
     let matchedEndpoint: string | undefined;
     const rejected: string[] = [];
     try {

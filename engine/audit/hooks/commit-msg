@@ -1,5 +1,5 @@
 #!/bin/bash
-# sofagent commit-msg hook v1.4.1
+# sofagent commit-msg hook v1.4.2
 # 安装：sofagent-audit --init 或 sofagent-audit --install-hook
 # commit-msg hook 接收 $1 = commit message 文件路径
 
@@ -83,7 +83,21 @@ elif [ ! -f ".gitignore" ]; then
   echo "ℹ️ [sofagent] 已自动创建 .gitignore（排除 .sofagent/）"
 fi
 # 已暂存的 .sofagent/ 路径移出暂存区（.sofagent/ 永不入库；git reset 单路径只影响本目录，不动其他暂存）
-git reset -q -- .sofagent/ 2>/dev/null || true
+# v1.4.2 H-01: fail-loud 化——此前 `|| true` 会在 index.lock 竞态下静默吞掉 reset 失败（退出码 128），
+# 导致 `git add -f .sofagent/` 的文件原样进入提交。现改为：
+#   ① 先判断暂存区是否真有 .sofagent/ 条目——无条目直接跳过 reset，零成本消除绝大多数竞态触发面；
+#   ② 有条目但 reset 失败 → 拒绝本次 commit 让用户重试（宁可 false-retry 也不可静默入库）。
+# ⚠️ 行为边界（/tmp 隔离仓实测，macOS git 2.50.1/Apple Git-155）：tree 在 commit-msg 运行前已由
+#    index 生成，且 commit 成功后主进程会把内存 index 写回磁盘——故本 reset 对「正在进行的这次
+#    commit」与「成功后的后续 commit」均不生效（写回覆盖）。「当次」防线由 post-commit 的 HEAD tree
+#    对账告警承担（见 post-commit 末尾 H-01 段）。reset 的真实生效场景是 commit 被拦截/中止时
+#    （commit 未完成不写回 index）：清理 staged 的 .sofagent/，防用户修复违规后重试 commit 时卷入。
+if git diff --cached --name-only -- .sofagent/ 2>/dev/null | grep -q .; then
+  if ! git reset -q -- .sofagent/ 2>/dev/null; then
+    echo "❌ [sofagent] 无法将 .sofagent/ 移出暂存区（index 可能被占用）。请稍后重试 commit。" >&2
+    exit 1
+  fi
+fi
 
 # 3. 审计范围固定为「暂存区（staged）= 即将提交的变更」
 #    无论是否首次提交都用 --cached：

@@ -1,6 +1,6 @@
 {
   "name": "sofagent-rollback",
-  "version": "1.4.1",
+  "version": "1.4.2",
   "description": "出错逆序撤销——git snapshot 快照 + 逆序回滚（effect disposer 语义），品牌色 #16B8F3",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

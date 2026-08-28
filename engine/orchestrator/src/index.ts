@@ -1,4 +1,4 @@
-// ── API 分级契约（v1.4.1 四）────────────────────────────
+// ── API 分级契约（v1.4.2 四）────────────────────────────
 // `/* @public */`：公开 API——semver 锁定，变更必须 bump 版本 + CHANGELOG 记录
 //                 （外部依赖方与跨平台适配器只许 import 这一层）
 // `/* @internal */`：内部 API——不承诺稳定性，破坏性变更无需 bump
@@ -459,6 +459,40 @@
 } from './fde/compose-interview';
 /* @public */ export { generateWorkflowDraft, validateDraftDag } from './fde/workflow-draft';
 /* @public */ export type { WorkflowDraft } from './fde/workflow-draft';
+
+// v1.4.2 章八：FDE 六引擎工作台（访谈/判定/量化/本体/沉淀/部署）
+/* @public */ export {
+  fdeWorkbenchDir,
+  fdeWorkbenchPaths,
+  emitFdeAudit,
+  readFdeAudit,
+  recordInterview,
+  classifyNodes,
+  sixStepDecomposition,
+  interviewPrompts,
+} from './fde/fde-workbench';
+/* @public */ export type {
+  FdeAuditEventType,
+  FdeAuditEntry,
+  InterviewRecord,
+  NodePlan,
+  NodesPlanFile,
+} from './fde/fde-workbench';
+/* @public */ export {
+  quantifyNodes,
+  deriveOntology,
+  distillDeliverables,
+  deployWorkflow,
+} from './fde/fde-quantify';
+/* @public */ export type {
+  NodeQuantifyInput,
+  NodeQuantification,
+  QuantificationFile,
+  DeriveResult,
+  ThreeLayerDeliverables,
+  DistillResult,
+  DeployResult,
+} from './fde/fde-quantify';
 /* @public */ export {
   generateOntologyDraft,
   saveOntologyDraft,
@@ -1126,6 +1160,165 @@
 } from './train/security-baseline';
 
 // ============================================================
+// v1.4.2 章一+章二：数据管道与版本管理（异构接入 → 训练集 → dataset_version）
+// ============================================================
+/* @public */ export {
+  DEFAULT_EMPTY_MARKERS,
+  parseCsv,
+  ingestCsv,
+  ingestExcel,
+  ingestJson,
+  ingestText,
+  ingestFile,
+  inferCellType,
+  normalizeValue,
+  unzipEntries,
+  parseSharedStrings,
+  parseSheetXml,
+  excelColumnToIndex,
+} from './train/data-ingest';
+/* @public */ export type {
+  CellValue,
+  IngestRecord,
+  IngestOptions,
+  IngestResult,
+} from './train/data-ingest';
+/* @public */ export {
+  isReadonlySql,
+  inferColumns,
+  parseDbFlavor,
+  makeDefaultQueryFn,
+  pullFromDb,
+  pullFromApi,
+  extractItems,
+  getPath,
+  defaultFetchFn,
+} from './train/db-source';
+/* @public */ export type {
+  DbQueryResult,
+  QueryFn,
+  ApiFetchResult,
+  FetchFn,
+  DbFlavor,
+  DbIngestResult,
+  PullFromDbInput,
+  PullFromApiInput,
+} from './train/db-source';
+/* @public */ export {
+  inferColumnMapping,
+  sanitizeCell,
+  defaultSampleSanitize,
+  buildDataset,
+  buildAndPersistDataset,
+  datasetDir,
+  generateDatasetId,
+} from './train/dataset-builder';
+/* @public */ export type {
+  DatasetAlgorithm,
+  SftSample,
+  DpoSample,
+  RlSample,
+  DatasetSample,
+  DatasetLine,
+  ColumnMapping,
+  BuildDatasetOptions,
+  BuildDatasetResult,
+  BuildAndPersistInput,
+  BuildAndPersistResult,
+  SampleSanitizeFn,
+} from './train/dataset-builder';
+/* @public */ export {
+  datasetVersionsPath,
+  recordDatasetVersion,
+  readDatasetVersions,
+  listDatasetVersions,
+  getDatasetVersion,
+  diffDatasetVersions,
+} from './train/dataset-version';
+/* @public */ export type {
+  DatasetVersionRecord,
+  RecordDatasetVersionInput,
+  DatasetVersionDiff,
+} from './train/dataset-version';
+/* @public */ export {
+  requiredFieldsOf,
+  computeLabelDistribution,
+  validateDataset,
+} from './train/dataset-validator';
+/* @public */ export type {
+  DatasetValidatorOptions,
+  DatasetViolationCode,
+  DatasetViolation,
+  DatasetWarning,
+  DatasetValidationResult,
+} from './train/dataset-validator';
+
+// ============================================================
+// v1.4.2 章三：训练中 eval 闭环（复用 Benchmark · 阈值外部化）
+// ============================================================
+/* @public */ export {
+  DEFAULT_EVAL_THRESHOLDS,
+  computeScoreStats,
+  decideFromScores,
+  runTrainEval,
+  compareEvalReports,
+} from './train/train-eval-loop';
+/* @public */ export type {
+  EvalThresholds,
+  EvalDecision,
+  TrainEvalReport,
+  TrainEvalLoopDeps,
+  RunTrainEvalInput,
+  RunTrainEvalResult,
+  EvalScoreStats,
+  EvalComparison,
+} from './train/train-eval-loop';
+
+// ============================================================
+// v1.4.2 章四：训练环境管理（train env init / train doctor / 版本清单 / 模型下载）
+// ============================================================
+/* @public */ export {
+  makeDefaultExecFn,
+} from './train/train-env';
+/* @public */ export {
+  TRAIN_ENV_MANIFEST_FILE,
+  trainEnvManifestPath,
+  trainEnvInit,
+  trainDoctor,
+  DEFAULT_BASE_MODEL_CANDIDATES,
+} from './train/env-manager';
+/* @public */ export type {
+  TrainEnvManifest,
+  EnvCheckStep,
+  TrainEnvInitResult,
+  EnvManagerDeps,
+  TrainDoctorReport,
+  ModelCacheEntry,
+} from './train/env-manager';
+/* @public */ export {
+  DEFAULT_CHUNK_BYTES,
+  makeDefaultFetchRange,
+  defaultFreeSpace,
+  modelDir,
+  modelFilePath,
+  modelManifestPath,
+  partPaths,
+  readPartMeta,
+  preflightDiskSpace,
+  downloadModel,
+} from './train/model-downloader';
+/* @public */ export type {
+  RangeResponse,
+  FetchRangeFn,
+  FreeSpaceFn,
+  ModelManifest,
+  PartMeta,
+  DiskPreflightResult,
+  DownloadModelInput,
+  DownloadModelResult,
+} from './train/model-downloader';
+
+// ============================================================
 // v1.3.6 交付⑨：验收条件定义与执行（机器可判定验收 · 软约束先行）
 // ============================================================
 /* @public */ export {
@@ -1216,3 +1409,44 @@
   WeekTrend,
   EvolutionTrends,
 } from './worklog';
+
+// ============================================================
+// v1.4.2 章五+章六：训练 dry-run（失败前预防）+ 训练报告（客户可读交付物）
+// ============================================================
+/* @public */ export {
+  estimateVram,
+  runDryrun,
+} from './train/train-dryrun';
+/* @public */ export type {
+  VramEstimateInput,
+  VramEstimate,
+  DryrunCheck,
+  DryrunResult,
+  DryrunInput,
+} from './train/train-dryrun';
+/* @public */ export {
+  sigmoid,
+  fitSigmoid,
+  extrapolate,
+  suggestNextPilotCompute,
+} from './train/scale-curve';
+/* @public */ export type {
+  ScaleCurvePoint,
+  SigmoidParams,
+  FitQuality,
+  FitResult,
+  Extrapolation,
+} from './train/scale-curve';
+/* @public */ export {
+  computeQuantification,
+  generateTrainReport,
+  trainReportsDir,
+  trainReportPaths,
+} from './train/train-report';
+/* @public */ export type {
+  QuantificationMetrics,
+  QuantifyInput,
+  TrainReportInput,
+  TrainReportResult,
+  TrainReportJson,
+} from './train/train-report';

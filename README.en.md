@@ -6,8 +6,12 @@
   <a href="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml"><img src="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml/badge.svg" alt="Verify" /></a>
   <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-brightgreen" alt="License: MIT" /></a>
   <!-- ⚠️ bump version: manually sync this badge version (Version-vX.Y.Z) -->
-  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.4.1-16B8F3" alt="Version" /></a>
+  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.4.2-16B8F3" alt="Version" /></a>
 </p>
+
+<p align="center"><sub>[简体中文](./README.md) | [English](./README.en.md)</sub></p>
+
+> 🚀 **v1.4.2 pre-release** — Training engine: data & evaluation (pipeline / versioning / eval loop / environment / dry-run / report) + FDE six engines + IM bridge + FORGE data-flow foundation. See [CHANGELOG](./CHANGELOG.md).
 
 ---
 
@@ -19,13 +23,22 @@ sofagent does not build its own Agent — execution is delegated to mature hosts
 
 > 🏞️ Big tech hands you "water" (foundation models) and "riverbeds" (Agent platforms) — but the water is raw, and you don't dare drink it straight. sofagent is the engineering that makes the river usable for a whole city: dams keep the water from flooding, treatment plants turn raw water into drinking water, and pipe networks deliver it to every faucet. Models supply 90% of the intelligence; sofagent supplies the 10% of reliable execution.
 
+### Should you install it?
+
+| If you are... | Recommendation |
+|---------------|----------------|
+| **Adding discipline to an existing Agent** — you already run DSH / OpenClaw / WorkBuddy and want your AI to behave, leave traces, and stay roll-backable when things go wrong | ✅ **Install now**. The core value is exactly the constraint layer (inject · audit · rollback · evolve) — works right after installation |
+| **A one-person company / SMB landing AI** — no dedicated engineer, you need a "never-quitting FDE" to map your business flow and deploy AI nodes | ✅ **Install now**. The FDE Harness layer is built for this — the full journey from mapping to deployment to post-departure audit |
+| **Looking for a turnkey enterprise Agent platform** — you expect a complete commercial product (multi-tenancy, permission management, billing, SLA) | ⏸️ **Hold off**. sofagent is a governance layer, not a platform product — platform-grade capabilities are out of this open-source repository's scope. Teams with integration capacity can still embed the constraint layer into their own platform as its governance module; if you need pure turnkey, look at platform products elsewhere |
+| **Researching / curious about constraint-layer design** — reading code, studying architecture, borrowing methodology | ✅ **Install now**. Full documentation ([HANDBOOK](./docs/HANDBOOK.md) / [ARCHITECTURE](./docs/ARCHITECTURE.md) / [PHILOSOPHY](./docs/PHILOSOPHY.md)), MIT licensed |
+
 ## Core Features
 
 - 🧭 **Map the business flow on entry** — five-element deep-dive + three-question triage, capturing every role's process steps and pricing out what each AI node is worth
 - 🤖 **Deploy AI nodes** — three-layer deliverables (documents + Skills + runtime), installed into your existing AI tools; from "you do the work" to "you delegate the work"
 - 🏠 **Stay resident after departure** — the FDE capability remains for inspection, audit, and optimization, 7×24 online; the human leaves, governance doesn't
 - 🔍 **Zero-setup audit** — `npx -y -p @sofagent/audit sofagent-audit`, auditing the latest commit of any git repo in seconds (single-machine measured: quick ~1.1s, 50k-line diff ~6.1s; see [HANDBOOK](./docs/HANDBOOK.md))
-- 🧱 **24 audit rules + 67 MCP tools** — secret leaks, out-of-scope edits, injection defense, privilege red lines; judged on git diff hard evidence, violations blocked on the spot; evidence is based on local diffs — trust boundaries and known bypass surfaces in [LIMITATIONS §3](./docs/LIMITATIONS.md) (quick runs 17 by default; full 24 = 17 default + 7 extensions)
+- 🧱 **24 audit rules + 76 MCP tools** — secret leaks, out-of-scope edits, injection defense, privilege red lines; judged on git diff hard evidence, violations blocked on the spot; evidence is based on local diffs — trust boundaries and known bypass surfaces in [LIMITATIONS §3](./docs/LIMITATIONS.md) (quick runs 17 by default; full 24 = 17 default + 7 extensions)
 - 🛡️ **Automatic snapshot rollback** — auto-archived after every audit, one-click restore to any snapshot when something breaks
 
 ## What is the FDE Harness
@@ -43,9 +56,9 @@ sofagent does not build its own Agent — execution is delegated to mature hosts
 
 > 🔄 **Self-bootstrapping**: sofagent's first FDE engagement is sofagent itself — the project is a complete FDE business flow (map → build → deploy → depart), and this open-source repository is that deliverable.
 
-## v1.4.1: Training Engine Foundation
+## v1.4.2: Training Data & Evaluation + Six FDE Engines
 
-🚂 The foundation for enterprise AI that "gets stronger by itself" — eight training-engine blocks (train-job orchestration / HMAC audit chain / enterpriseId isolation / reproducible fingerprint / weight signing / interruption reclaim / crash recovery / security baseline) + Stage-0 convergence verified on macOS Metal. Tests 2981→**3222** (+241). Full details in the [devlog](./docs/changelog/v1.4/v1.4.1.md) · earlier versions in [CHANGELOG](./CHANGELOG.md).
+🚀 Make training **eat real data and prove its worth** — enterprise heterogeneous data (CSV/Excel/DB/API) flows through an ingestion pipeline into training sets (quality gates + redaction) · dataset_version ledger (frozen fingerprint + resume version lock) · in-training eval loop (externalized thresholds) · train env/doctor health checks · dry-run VRAM estimation + ScaleRL compute extrapolation · training reports (customer-readable + quantified ROI); the FDE methodology becomes executable engines: fde_interview/classify/quantify/derive/distill/deploy as six MCP tools + IM-bridge remote command. MCP 67→**76** tools, tests 3202→**3349** (workspace 12-package scope). Full details in the [devlog](./docs/changelog/v1.4/v1.4.2.md) · earlier versions in [CHANGELOG](./CHANGELOG.md).
 
 ## Multi-platform Mounting
 
@@ -57,7 +70,7 @@ Sits between the Agents you already use and the model layer — it doesn't repla
 | **Full mounting** | OpenClaw / WorkBuddy | ✅ Automatic | Hook-injected four-layer constraints + circuit breaker |
 | **Thin mounting** | Claude Code / Codex / Cursor / Gemini CLI | ⚠️ Semi-auto | Skills-directory symlink / AGENTS.md seed directives + git-hook audit |
 
-- **The difference is the Hook channel, not skills** — Claude Code and Cursor also have skills directories (installed Skills load just the same); what differs is whether the host runtime opens Hook channels like preToolCall / session injection: where it does (OpenClaw / WorkBuddy), the four constraint layers auto-inject at startup and the circuit breaker blocks in real time; where it doesn't, constraints ride along as Skill text (advisory) and hard blocking falls to the git hook (mandatory)
+- **The difference is the current depth of adaptation, not skills** — Claude Code and Cursor also have skills directories (installed Skills load just the same); what differs is which hosts sofagent has deeply adapted so far: OpenClaw / WorkBuddy have completed Hook-channel integration (four constraint layers auto-inject at startup + circuit-breaker real-time blocking); Claude Code supports event-level hooks like PreToolUse, Cursor/Gemini CLI load via the Skills directory — on hosts without deep adaptation, constraints ride along as Skill text (advisory) and hard blocking falls uniformly to the git hook (mandatory)
 - **Audit fallback is platform-agnostic** — `sofagent-audit --install-hook` runs as a git hook; at every tier, every commit passes through all 24 audit rules, violations hard-blocked. Constraints are advisory; auditing is mandatory
 
 One command selects your mounting tier: `bash install.sh --platform <platform-name>` (all platforms and differences in [HANDBOOK](./docs/HANDBOOK.md))
@@ -85,7 +98,7 @@ Deploying an AI node is only the first step — the chapters above cover how to 
 - 📜 **SKILL.md** — the single main entry, loaded by your AI tool: routes to the corresponding sub-Skill by phase, with role norms auto-injected by task type (mapping / audit / orchestration)
 - 🧩 **Phase sub-Skills** — a five-step closed loop of entry → deep-dive → quantify → deliver → depart (01-entry → 05-exit); what to do and what to deliver at each step is defined up front
 - 🔒 **Harness constraint skeleton** — entry-gate / fde-template / engage / loop-check / task-closure… every step from entry to departure has its matching constraint template
-- 🧬 **Experience auto-capture** — think.md reflection + knowledge maintenance; the lessons of every task land in the knowledge base automatically
+- 🧬 **Experience capture mechanism** — the structured pipeline of think.md reflection + knowledge maintenance is in place; measured data on capture effectiveness under sustained use is still accumulating (see [LIMITATIONS § core-effect measurements](./docs/LIMITATIONS.md#核心效果实测情况))
 
 > What gets deployed is not a bare Agent, but an **Agent with a constraint skeleton** — constraints are advisory, auditing is mandatory: the Agent may ignore the constraints, but every change gets audited without exception.
 
@@ -110,7 +123,7 @@ npx -y -p @sofagent/audit sofagent-audit
 
 > 💡 quick runs the **17 default rules** (A3 task-scope / A9 commit-msg injection detection active — quick mode auto-reads the latest commit message; when no message is available, A9 is handled by the engine as no-input and marked skipped). The full 24 rules + hook auto-audit require `--init` — see [LIMITATIONS §3](./docs/LIMITATIONS.md).
 
-Here's what it looks like when a known-format secret leak is blocked (real output; A2 detects AWS AKIA, OpenAI sk-*, GitHub ghp_, PEM private keys and other known formats — generic secret shapes are intentionally out of scope, a conservative design against false positives, see [LIMITATIONS §3 A2](./docs/LIMITATIONS.md#三安全与信任模型局限)):
+Here's what it looks like when a known-format secret leak is blocked (real output; A2 detects AWS AKIA/Secret, OpenAI sk-*, GitHub ghp_, Google AIza, Slack xox*-, JWT, PEM private keys and other known formats — generic secret shapes are intentionally out of scope, a conservative design against false positives, see [LIMITATIONS §3 A2](./docs/LIMITATIONS.md#三安全与信任模型局限)):
 
 <p align="center"><img src="docs/assets/audit-terminal.png" alt="sofagent-audit blocks a .env commit" width="860" /></p>
 
@@ -124,7 +137,7 @@ sofagent-audit --init      # install the git hook — every commit is audited fr
 sofagent-audit --doctor    # verify the environment (optional)
 ```
 
-> 💡 All install scripts only write to `~/.sofagent/` and never touch system files. `--no-verify` can skip the commit-msg audit — it guards against honest Agents' carelessness, not malicious bypass; skipped commits are reconciled afterwards by the post-commit hook (flagged "suspected bypass") but not blocked. Personal fallbacks: CI-side `sofagent-audit --diff`, periodic `--doctor`, and reviewing the audit records. See [LIMITATIONS](./docs/LIMITATIONS.md).
+> 💡 The install scripts mainly write to `~/.sofagent/` (data directory) + `~/.local/bin` (CLI entry); when OpenClaw is detected they additionally write into its integration directory; if npm permissions are insufficient, the CLI entry falls back to `/usr/local/bin`. No other system files are touched. `--init` installs the three-layer git hook defense (pre-commit blocks `.sofagent/` from entering the repo + commit-msg rule audit + post-commit reconciliation). `--no-verify` can skip the commit-msg audit — it guards against honest Agents' carelessness, not malicious bypass; skipped commits are reconciled afterwards by the post-commit hook (flagged "suspected bypass") but not blocked. Personal fallbacks: CI-side `sofagent-audit --diff`, periodic `--doctor`, and reviewing the audit records. See [LIMITATIONS](./docs/LIMITATIONS.md).
 >
 > 📌 **install.sh is the enterprise device installer** — install it on the enterprise devices running the AI nodes (constraint-layer engine + daemon inspection + single-machine dashboard); FDEs do not need to run it on their own machines — the FDE's tools are the [FDE Skill](https://clawhub.ai/kongfangxun/skills/sofagent) (methodology). See [deployment architecture](./docs/ARCHITECTURE.md#安装包边界与部署架构v132-定位校准).
 >
@@ -201,7 +214,7 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # load the securit
 | Security statement · known limitations | [SECURITY](./SECURITY.md) · [LIMITATIONS](./docs/LIMITATIONS.md) |
 | Contribution guide | [CONTRIBUTING](./CONTRIBUTING.md) |
 
-> 🧪 **Engineering credibility**: 3178 tests / 13 packages (12 with tests) · 24 audit rules · fresh-eyes independent review continuously running (test counts are determined by `tools/check/test-count.sh`; running `npm test` directly may show mcp package timeouts (red) on low-memory machines — re-running that package alone passes, an environment concurrency issue, not a product defect. Review system: [docs/guides/review-system.md](./docs/guides/review-system.md). Performance figures are single-machine reference values; cross-tool benchmarking is scheduled for v1.4.x together with Benchmark integration).
+> 🧪 **Engineering credibility**: 3349 tests / 13 packages (12 with tests) · 24 audit rules · fresh-eyes independent review continuously running (test counts are determined by `tools/check/test-count.sh`; running `npm test` directly may show mcp package timeouts (red) on low-memory machines — re-running that package alone passes, an environment concurrency issue, not a product defect. Review system: [docs/guides/review-system.md](./docs/guides/review-system.md). Performance figures are single-machine reference values; cross-tool benchmarking is scheduled for v1.4.x together with Benchmark integration).
 
 ---
 

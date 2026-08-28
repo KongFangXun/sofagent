@@ -1,4 +1,4 @@
-// train-fingerprint.ts · v1.4.1 块五 · 训练可复现指纹（冻结 + 校验 + 复现差异报告）
+// train-fingerprint.ts · v1.4.2 块五 · 训练可复现指纹（冻结 + 校验 + 复现差异报告）
 //
 // 定位：「这个模型怎么训出来的」要能一键复现——train job 完成时把全部
 // 影响训练结果的输入冻结成不可变指纹文件（train-fingerprint.json），事后

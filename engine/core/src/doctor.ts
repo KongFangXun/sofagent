@@ -7,7 +7,7 @@
 // 检查项：
 //   1. 环境检查（Node / git / npm / disk / bash）
 //   2. 配置检查（.sofagent/config.yml 是否存在且有效）
-//   3. 数据目录结构（v1.4.1：data/ 用户可见数据 + .sofagent/ 引擎内部状态）
+//   3. 数据目录结构（v1.4.2：data/ 用户可见数据 + .sofagent/ 引擎内部状态）
 //   4. Hook 状态（commit-msg 是否安装含 sofagent 标识 + post-commit 是否存在）
 //   5. 包完整性（node_modules 依赖）
 //
@@ -252,6 +252,30 @@ export function runDoctor(projectDir: string = process.cwd(), options: { resetBa
       repairHint('sofagent-audit --install-hook');
     }
 
+    // v1.4.2 H-01: pre-commit——三层防线主防线（.sofagent/ 永不入库的 staged 清理）
+    const preCommitPath = join(gitDir, 'hooks', 'pre-commit');
+    if (existsSync(preCommitPath)) {
+      try {
+        const prcContent = readFileSync(preCommitPath, 'utf-8');
+        const hasGuardLogic = prcContent.includes('git reset') && prcContent.includes('.sofagent/');
+        if (prcContent.includes('sofagent') && hasGuardLogic) {
+          ok('pre-commit hook 已安装并包含 .sofagent/ 入库防线');
+        } else if (prcContent.includes('sofagent')) {
+          warn('pre-commit hook 存在但不含入库防线逻辑（旧版审计 hook，无 reset 守卫）');
+          repairHint('sofagent-audit --install-hook');
+        } else {
+          // 非 sofagent 的用户自有 pre-commit——不告警（尊重用户自己的 hook）
+          info('pre-commit hook 存在（非 sofagent，未接管——如需三层防线运行 --install-hook）');
+        }
+      } catch (err) {
+        warn(`pre-commit hook 存在但无法读取: ${err instanceof Error ? err.message : String(err)}`);
+        repairHint(`检查文件权限（chmod 755 ${preCommitPath}）`);
+      }
+    } else {
+      warn('pre-commit hook 未安装——.sofagent/ 入库主防线缺失。运行 sofagent-audit --install-hook 补装');
+      repairHint('sofagent-audit --install-hook');
+    }
+
     // post-commit：检查存在性 + 内容是否含审计对账逻辑（v1.3.2 P0-RC3 加强）
     const postCommitPath = join(gitDir, 'hooks', 'post-commit');
     if (existsSync(postCommitPath)) {
@@ -358,16 +382,12 @@ export function runDoctor(projectDir: string = process.cwd(), options: { resetBa
           distIntegrityOk = false;
         }
       } else {
-        // 首次记录哈希（安装时未记录）
-        warn(`audit dist/index.js 哈希未记录（首次运行）——当前 SHA-256: ${currentHash.slice(0, 12)}...`);
-        try {
-          const hashDir = join(hashRecordPath, '..');
-          if (!existsSync(hashDir)) mkdirSync(hashDir, { recursive: true, mode: 0o700 });
-          writeFileSync(hashRecordPath, currentHash + '\n', { mode: 0o600 });
-          ok('已自动记录当前哈希作为基准（后续运行将比对）');
-        } catch {
-          // 记录失败不影响核心功能
-        }
+        // v1.4.2 G-01: 基线缺失不再静默自动记录——影子审计器劫持的信任锚必须是「首次人工
+        // 执行时刻」，自动记录会把「已被篡改的 dist」固化为合法基线（首跑即沦陷场景）。
+        // 改为显眼提示 + 引导 --baseline 显式建立（信任锚 = 人工确认时刻）。
+        fail('⚠️ 未建立 dist 基线哈希，影子审计器风险未设防。立即执行 sofagent-audit --doctor --baseline 建立基线');
+        repairHint('sofagent-audit --doctor --baseline（信任锚 = 你此刻确认 dist 可信的时刻）');
+        distIntegrityOk = false;
       }
     } catch (err) {
       warn(`dist 完整性检查异常（已跳过）: ${err instanceof Error ? err.message : String(err)}`);

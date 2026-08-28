@@ -1,7 +1,7 @@
 // ============================================================
 // tool-secret-leak.ts · 移植 audit rule-a2（密钥泄漏检测）
-// v1.4.1：tool 视角——扫 args 字面量里的密钥模式
-// v1.4.1 SECRET_PATTERNS 抽到 @sofagent/core 共享——此前本文件用严格
+// v1.4.2：tool 视角——扫 args 字面量里的密钥模式
+// v1.4.2 SECRET_PATTERNS 抽到 @sofagent/core 共享——此前本文件用严格
 //   48 位 sk- 模式导致 32-47 位密钥被 ToolGate 放行（与 A2 漂移互补成洞）。
 // ============================================================
 
@@ -37,8 +37,10 @@ export const toolSecretLeak: ToolRule = {
     const detections: string[] = [];
 
     for (const str of allStrings) {
-      for (const { pattern, label } of SECRET_PATTERNS) {
+      for (const { pattern, label, contextKeyword } of SECRET_PATTERNS) {
         if (pattern.test(str)) {
+          // v1.4.2 H-02: 带 contextKeyword 的模式需同行含关键词才报告（与 A2 同口径防误报）
+          if (contextKeyword && !contextKeyword.test(str)) continue;
           detections.push(label);
         }
       }

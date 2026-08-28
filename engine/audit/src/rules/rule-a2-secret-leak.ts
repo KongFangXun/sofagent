@@ -1,7 +1,7 @@
 // ============================================================
 // A2 不泄密钥（安全层 · 业务底线）
 // 检测 diff 新增行内容是否含密钥字符串 → 命中任意一条 → FAIL
-// v1.4.1：输出聚合——同文件同模式多次命中时限量显示，避免超大 diff 输出爆炸
+// v1.4.2：输出聚合——同文件同模式多次命中时限量显示，避免超大 diff 输出爆炸
 // v1.3.7 补编码绕过检测——新增行尝试 base64/hex 解码后再跑正则，
 //   命中则报警（此前 `printf 'AKIA...' | base64 > encoded.txt` 即可绕过）。
 //   另补 .gitattributes -diff 绕过检测——把文件标记为 -diff 会让 git diff
@@ -267,8 +267,12 @@ export function checkRuleA2(ctx: AuditContext): RuleCheck {
         }
         // 原行 + base64/hex 解码候选（v1.2.9: 用归一化后的内容防 zero-width 绕过）
         for (const candidate of candidatePlaintexts(normalized)) {
-          for (const { pattern, label } of SECRET_PATTERNS) {
+          for (const { pattern, label, contextKeyword } of SECRET_PATTERNS) {
             if (pattern.test(candidate)) {
+              // v1.4.2 H-02: 带 contextKeyword 的模式（裸 40 位 base64 形态）需同行含
+              // 关键词才报告——裸串误报面大（hash/commit 都是 40 位 base64），上下文
+              // 二次判定防误报。
+              if (contextKeyword && !contextKeyword.test(candidate)) continue;
               const key = `${file.path}|${label}`;
               const existing = groupedDetections.get(key);
               if (existing) {

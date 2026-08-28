@@ -472,6 +472,20 @@ if [[ -d "${OPENCLAW_PLUGIN_DIR}" ]]; then
 fi
 echo ""
 
+# ── 9d. 检查 MCP 工具 dataDir SSOT——禁止本地 getSofagentDataDir 定义（v1.4.2 · N-1 防复发，存量已清零转零容忍）──
+# v1.4.2 N-1（P1）：11 个 fde/train 工具各带 `SOFAGENT_DATA || cwd/data` 本地兜底，与
+# getDataDir SSOT（SOFAGENT_DATA > SOFAGENT_HOME/data）分叉——SOFAGENT_HOME 定制下同
+# server 数据落点分裂。阶段三收编 11 处；同日用户拍板存量 19 处（tools/ 17 + resources.ts
+# + think-generator.ts）一次清零——豁免清单删除，全域零容忍（engine/ 含 think 包）。
+DD_HITS=$(grep -rln "getSofagentDataDir" "${PROJECT_ROOT}/engine/mcp/src/" "${PROJECT_ROOT}/engine/think/src/" 2>/dev/null || true)
+if [[ -n "${DD_HITS}" ]]; then
+  DD_NAMES=$(echo "${DD_HITS}" | xargs -n1 basename | tr '\n' ' ')
+  report_error "engine/mcp+think" "本地 dataDir 函数残留:${DD_NAMES}" "import { getDataDir } from '@sofagent/core'（SSOT）"
+else
+  report_ok "engine dataDir SSOT" "零本地定义（mcp+think 全域清零，v1.4.2 收编 30 处）"
+fi
+echo ""
+
 # ── 10. 检查 engine/mcp 依赖 @sofagent/audit 版本（支持 ^ 范围） ─
 MCP_PKG="${PROJECT_ROOT}/engine/mcp/package.json"
 if [[ -f "${MCP_PKG}" ]]; then

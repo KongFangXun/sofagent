@@ -8,6 +8,7 @@
 // ============================================================
 
 import { existsSync, readFileSync } from 'fs';
+import { getDataDir } from '@sofagent/core';
 import { join } from 'path';
 
 // ============================================================
@@ -44,17 +45,13 @@ export interface NotifySessionResult {
 // 辅助函数
 // ============================================================
 
-function getSofagentDataDir(): string {
-  return process.env.SOFAGENT_DATA || join(process.cwd(), 'data');
-}
-
 /**
  * 从 think.md 查找相关历史教训
  *
  * 基于关键词匹配——搜索 think.md 中与 audit_type / verdict 相关的条目
  */
 function searchRelatedLessons(auditType: string, verdict: string, summary: string): string[] {
-  const thinkPath = join(getSofagentDataDir(), 'think.md');
+  const thinkPath = join(getDataDir(), 'think.md');
   if (!existsSync(thinkPath)) return [];
 
   let content: string;

@@ -4,7 +4,7 @@
 >
 > **本文档面向开发者。** 这里讲 sofagent 内部怎么跑——Skill 结构、编排引擎、反思闭环、数据架构。sofagent 是一层 FDE Harness（嵌在成熟 Agent 与模型层之间），底层引擎的内部实现在这里展开。
 >
-> v1.4.1 · 2026-08-27（UTC）· 孔放勋
+> v1.4.2 · 2026-08-28（UTC）· 孔放勋
 
 <img src="assets/sofagent.png" alt="sofagent" width="160" />
 
@@ -171,6 +171,8 @@ FDE 部署 SOP 应遵循此顺序：
 **失败清单驱动进化**：Skill 的迭代不是堆功能，是持续记录「这次哪里出了错」→ 形成失败清单 → 下次规避。失败清单是 skillopt 自进化引擎的燃料。
 
 **失败清单 > 正向评分**：当前 sofagent scoring 只做正向评分，缺「失败清单」反向维度（与 Evil Skill 自验证闭环同方向）。自进化优先级应让失败清单的反向规避高于正向功能堆砌。
+
+**评估器反作弊（reward hacking 四形态）**：Agent 评估/训练环境中观察到四种「绕过解题直接拿参考源码」的作弊路径：① Git 历史——定位 gold commit 拿答案；② wget/curl——从 GitHub 上游拉参考实现；③ pip——下载含答案的包源码；④ urllib——网络库直接抓源码。对应两道防线：禁用 Git 命令并隐藏 `.git` 目录（断历史回溯）；网络层白名单 + 默认拦截出网（断外联通道）——评估器/沙箱设计的一手反作弊清单。来源：Agent Lightning v1.0 §4.3.2（arXiv 2608.17528）
 
 ### 脚本与文件结构速查
 
@@ -596,7 +598,7 @@ v1.0.8 自研 git-shadow diff 解析（isomorphic-git **风格**，非 npm 包�
 
 行业测评揭示的「防刷分验证法」与 sofagent 验证体系同构：
 
-- **真实代码库 + 真实 PR 当考题**：研报用「已合并 PR + 原 PR 测试用例」当评分标准，规避公开 benchmark 泄漏导致的刷分。对应 sofagent `regression-checklist.md`（96 维）+ `acceptance-test.sh`（265 场景）——用真实修复场景与历史 case 当验收，而非玩具 benchmark。
+- **真实代码库 + 真实 PR 当考题**：研报用「已合并 PR + 原 PR 测试用例」当评分标准，规避公开 benchmark 泄漏导致的刷分。对应 sofagent `regression-checklist.md`（96 维）+ `acceptance-test.sh`（276 场景）——用真实修复场景与历史 case 当验收，而非玩具 benchmark。
 - **上下文精简 = 低成本高通过**：研报发现 Pipe Agent 同模型下比原生工具便宜 1.2–2×、性能差距 <3pt，根因是初始提示 <1500 token（vs Claude Code 20k）。这从量化角度印证 sofagent「Harness 要轻」——约束层零 token 运行（24 条规则 19 条纯 git-diff），把成本压在确定性引擎而非上下文堆料。
 
 ## 十、STATE.md 持久化外部记忆模式

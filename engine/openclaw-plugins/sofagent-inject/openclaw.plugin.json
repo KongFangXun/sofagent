@@ -2,7 +2,7 @@
   "id": "sofagent-inject",
   "name": "sofagent 注入",
   "description": "约束注入——before_prompt_build 时注入 sofagent 四层加载链（core-rules/think.md/fde.md/knowledge），品牌色 #16B8F3",
-  "version": "1.4.1",
+  "version": "1.4.2",
   "icon": "https://raw.githubusercontent.com/KongFangXun/sofagent/main/assets/logo.png",
   "uiHints": {
     "brandColor": {

@@ -313,4 +313,57 @@ describe('A2 不泄密钥', () => {
       expect(checkRuleA2(ctx).status).toBe('PASS');
     });
   });
+
+  // ── v1.4.2 H-02：四类高价值密钥盲区补齐（Google/Slack/JWT/AWS Secret）──
+  // 密钥样本全部运行时拼接（铁律：测试不字面写真实格式密钥，A2 fixture 纪律）
+  describe('A2 · 四类盲区补齐（v1.4.2 H-02）', () => {
+    it('新增行含 Google API Key（AIza 前缀）→ FAIL', () => {
+      const googleKey = 'AIza' + 'Sy' + 'a'.repeat(33); // AIza + 35 位 body
+      const ctx = makeCtx([makeDiffFile('src/gcp.ts', [`+const apiKey = "${googleKey}"`])]);
+      expect(checkRuleA2(ctx).status).toBe('FAIL');
+    });
+
+    it('新增行含 Slack Token（xoxb- 前缀）→ FAIL', () => {
+      const slackToken = 'xox' + 'b-' + 'a1'.repeat(12);
+      const ctx = makeCtx([makeDiffFile('src/slack.ts', [`+const token = "${slackToken}"`])]);
+      expect(checkRuleA2(ctx).status).toBe('FAIL');
+    });
+
+    it('新增行含 JWT（eyJ 三段式）→ FAIL', () => {
+      const jwt = 'eyJ' + 'hbGciOiJIUzI1NiIs'.slice(0, 12) + '.' + 'c3ViamVjdC1wbG9'.slice(0, 12) + '.' + 'sig-nOtReAl'.slice(0, 8);
+      const ctx = makeCtx([makeDiffFile('src/auth.ts', [`+const bearer = "${jwt}"`])]);
+      expect(checkRuleA2(ctx).status).toBe('FAIL');
+    });
+
+    it('新增行含 AWS Secret Access Key（40 位 base64 + aws 关键词同行）→ FAIL', () => {
+      // 动态构造 40 位样本——字面拼接会被 joinAdjacentLiterals（F-15）合并自触发 A2
+      const aws40 = 'wJalrXUtnFEMIK7MDeng'.padEnd(40, 'bPxRfiCYEX');
+      expect(aws40).toHaveLength(40);
+      const ctx = makeCtx([makeDiffFile('src/aws.ts', [`+const awsSecretKey = "${aws40}"`])]);
+      expect(checkRuleA2(ctx).status).toBe('FAIL');
+    });
+
+    it('普通 40 位 base64 串（无 aws/secret/key 关键词同行）→ PASS（不误报）', () => {
+      // git commit SHA / sha1 hash 等合法 40 位 hex-base64 串不应触发 AWS Secret 误报
+      const hash = 'a1b2c3d4e5f6' + '6789abcdef01'.repeat(2) + 'aabbccddee'; // 40 位
+      const ctx = makeCtx([makeDiffFile('src/hash.ts', [`+const commitSha = "${hash}"`])]);
+      expect(checkRuleA2(ctx).status).toBe('PASS');
+    });
+
+    it('AIza 短串（<35 位 body）→ PASS（不误伤）', () => {
+      const ctx = makeCtx([makeDiffFile('src/short.ts', ['+const s = "AIza-short";'])]);
+      expect(checkRuleA2(ctx).status).toBe('PASS');
+    });
+
+    it('xox 非法前缀变体（xoxz-）→ PASS（不误伤）', () => {
+      const bad = 'xox' + 'z-' + 'a1'.repeat(12);
+      const ctx = makeCtx([makeDiffFile('src/bad.ts', [`+const s = "${bad}"`])]);
+      expect(checkRuleA2(ctx).status).toBe('PASS');
+    });
+
+    it('普通 base64 短串（非 JWT 三段式）→ PASS（不误伤）', () => {
+      const ctx = makeCtx([makeDiffFile('src/enc.ts', ['+const s = "YWJjZGVmZ2hpamtsbW5vcA==";'])]);
+      expect(checkRuleA2(ctx).status).toBe('PASS');
+    });
+  });
 });

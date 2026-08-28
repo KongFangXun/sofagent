@@ -7,6 +7,7 @@
 // ============================================================
 
 import { existsSync, readFileSync, readdirSync } from 'fs';
+import { getDataDir } from '@sofagent/core';
 import { join } from 'path';
 import { load as yamlLoad } from 'js-yaml';
 import { checkOntologyStatus, mergeOntology } from '@sofagent/ontology';
@@ -40,10 +41,6 @@ export interface ValidateOntologyResult {
 // ============================================================
 // 辅助函数
 // ============================================================
-
-function getSofagentDataDir(): string {
-  return process.env.SOFAGENT_DATA || join(process.cwd(), 'data');
-}
 
 function parseFrontmatter(content: string): Record<string, unknown> | null {
   const normalized = content.replace(/^\uFEFF/, '').replace(/\r\n/g, '\n');
@@ -127,7 +124,7 @@ function checkRelationIntegrity(entitiesDir: string): { orphans: string[]; broke
 
 export function validateOntology(args: ValidateOntologyArgs): ValidateOntologyResult {
   const fix = args.fix ?? false;
-  const dataDir = getSofagentDataDir();
+  const dataDir = getDataDir();
   const entitiesDir = join(dataDir, 'knowledge', 'entities');
   // checkOntologyStatus() expects configDir whose PARENT contains ontology/
   // e.g. checkOntologyStatus('~/.sofagent/config') → looks for '~/.sofagent/ontology'

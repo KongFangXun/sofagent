@@ -1,19 +1,15 @@
 // ============================================================
 // think-tools.ts · MCP tools: get_think / write_think / read_think_md / read_lessons
-// v1.4.1: 从 mcp-server.ts 提取
+// v1.4.2: 从 mcp-server.ts 提取
 // ============================================================
 
 import { existsSync, readFileSync, mkdirSync } from 'fs';
 import { join } from 'path';
-import { getThinkPath, appendThinkEntry } from '@sofagent/core';
+import {getThinkPath, appendThinkEntry, getDataDir } from '@sofagent/core'
 import type { ToolResult } from './audit-tools';
 // ============================================================
 // 辅助
 // ============================================================
-
-function getSofagentDataDir(): string {
-  return process.env.SOFAGENT_DATA || join(process.cwd(), '.sofagent');
-}
 
 // ============================================================
 // Tool: get_think
@@ -21,7 +17,7 @@ function getSofagentDataDir(): string {
 
 export function getThink(args: Record<string, unknown>): ToolResult {
   const count = (args.count as number) ?? 1;
-  const dataDir = getSofagentDataDir();
+  const dataDir = getDataDir();
   const thinkPath = getThinkPath(dataDir);
 
   if (!existsSync(thinkPath)) {
@@ -67,7 +63,7 @@ export function writeThink(args: Record<string, unknown>): ToolResult | { error:
   lesson = lesson.replace(/[\r\n]+/g, ' ').trim();
 
   const task = (args.task as string) || '(手动记录)';
-  const dataDir = getSofagentDataDir();
+  const dataDir = getDataDir();
   const thinkPath = getThinkPath(dataDir);
 
   const now = new Date();
@@ -92,7 +88,7 @@ export function writeThink(args: Record<string, unknown>): ToolResult | { error:
 // ============================================================
 
 export function readThinkMd(): ToolResult {
-  const thinkPath = getThinkPath(getSofagentDataDir());
+  const thinkPath = getThinkPath(getDataDir());
   if (!existsSync(thinkPath)) {
     return {
       text: '[sofagent] think.md 不存在',
@@ -111,7 +107,7 @@ export function readThinkMd(): ToolResult {
 // ============================================================
 
 export function readLessons(): ToolResult {
-  const file = join(getSofagentDataDir(), 'knowledge', 'lessons-missteps.md');
+  const file = join(getDataDir(), 'knowledge', 'lessons-missteps.md');
   if (!existsSync(file)) {
     return {
       text: '[sofagent] lessons-missteps.md 不存在',

@@ -19,15 +19,16 @@
 //   'engineer'  → engineer/SKILL.md + ENGINEER_TOOLS
 
 import glm53 from './glm-5.3.mjs';
+import glm53flash from './glm-5.3-flash.mjs';
 
 export default {
-  // v1.4.1 起：A/B/V/F 统一切到 glm-5.3（智谱 Coding Plan 订阅制，GLM_API_KEY）。
+  // v1.4.2 起：A/B/V/F 统一切到 glm-5.3-flash（用户 2026-08-28 拍板，Coding Plan 额度 3 倍）。
   // 双盲审查独立性仍通过 A/B 不同 prompt 视角保证（a-check.md ≠ b-check.md），不依赖不同模型。
   // 历史注记（勿删）：run-07 验证 Qwen3.8-max 在工具循环里无法被 stateModifier 约束
   // （thinking-only 模型在工具循环中停不下来）→ 改回 GLM-5.2；GLM-5.2 在审查步骤调 60+ 次工具不收敛、靠软熔断兜底。
   // v1.3.9 曾切 deepseek-v4-flash（按量低成本档），v1.4.1 切 glm-5.3（用户 2026-08-26 拍板）。
-  A: { model: glm53, role: 'reviewer' },  // 审查者：glm-5.3 → GLM_API_KEY
-  B: { model: glm53, role: 'engineer' },  // 工程师：glm-5.3 → GLM_API_KEY
-  V: { model: glm53, role: 'reviewer' },  // 验证者：glm-5.3 → GLM_API_KEY
-  F: { model: glm53, role: 'engineer' },  // 修复者：glm-5.3 → GLM_API_KEY
+  A: { model: glm53flash, role: 'reviewer' },  // 审查者：glm-5.3-flash → GLM_API_KEY
+  B: { model: glm53flash, role: 'engineer' },  // 工程师：glm-5.3-flash → GLM_API_KEY
+  V: { model: glm53flash, role: 'reviewer' },  // 验证者：glm-5.3-flash → GLM_API_KEY
+  F: { model: glm53flash, role: 'engineer' },  // 修复者：glm-5.3-flash → GLM_API_KEY
 };

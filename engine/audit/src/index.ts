@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // ============================================================
 // sofagent-audit · 提交时审计 CLI 入口
-// v1.4.1 · 审计闭环六步（检测+分类+根因+改进+回归+上线）
+// v1.4.2 · 审计闭环六步（检测+分类+根因+改进+回归+上线）
 // v1.0.8 精简（历史）：compose→orchestrator, subagent→orchestrator,
 //          skillopt-run→skillopt, ab-test→ab-test,
 //          daemon→daemon, doctor/verify→core (deprecation shim)
@@ -41,7 +41,7 @@ import { runRules, productSignature, type AuditResult } from './reporter';
 // v1.4.9 B22: installHook 路径复用 init 的 gitignore 保障——此前 --install-hook 不写 .gitignore，
 // shadow 快照数据可被 git add . 卷入用户仓库（LIMITATIONS 声称与行为不符）。
 import { ensureGitignore } from './commands/init';
-// v1.4.1 交付 2：国标对齐 GB/T 48000.3-2026（条款映射清单 + 覆盖度评估）
+// v1.4.2 交付 2：国标对齐 GB/T 48000.3-2026（条款映射清单 + 覆盖度评估）
 export { GB48000_CLAUSE_MAP, assessGb48000Coverage, buildGb48000RuleCheck } from './gb48000';
 export type { Gb48000ClauseMapping, Gb48000Status, Gb48000Coverage } from './gb48000';
 import { loadHistory, appendHistory, type AuditHistoryEntry } from './audit-history';
@@ -68,7 +68,7 @@ export type { SafetyResult, SafetyRule } from './rules/skill-safety-rules';
 // Re-export webhook 推送（mcp-server.ts 从 audit 消费 pushAuditResult）
 export { pushAuditResult } from './webhook';
 export type { WebhookPlatform } from './webhook';
-// v1.4.1 交付三：成本审计维度（cost_query MCP 与外部脚本 import 用）
+// v1.4.2 交付三：成本审计维度（cost_query MCP 与外部脚本 import 用）
 export { runCostAudit, loadWorklogSlice } from './cost-audit';
 export type { CostBudget, CostFinding, WorklogSlice } from './cost-audit';
 // v1.4.9 交付⑭：分级降级梯队（韧性设计——workflow never stops）
@@ -101,7 +101,7 @@ function exit(code: 0 | 1 | 2, message?: string): never {
 }
 
 /**
- * v1.4.1 交付十三：beforeAfter 结构化摘要——从 diff 提取变更前/后值。
+ * v1.4.2 交付十三：beforeAfter 结构化摘要——从 diff 提取变更前/后值。
  * 截断至 MAX 字符 + 复用脱敏语义（A2/A9 敏感内容打码），diff 原文不进 history.jsonl。
  * 提取规则：删除行（-）→ before，新增行（+）→ after；各取前 3 条，单条截断 120 字符。
  */
@@ -144,7 +144,7 @@ interface Args {
   verifyChain: boolean;
   /** v1.2.9: --verify-commit <hash> 检查 commit 是否有审计记录 */
   verifyCommit?: string;
-  /** v1.4.1 交付 2：--gb48000 国标对齐维度（opt-in 默认 false，不影响默认审计行为） */
+  /** v1.4.2 交付 2：--gb48000 国标对齐维度（opt-in 默认 false，不影响默认审计行为） */
   gb48000: boolean;
   regressionDir?: string;
   webhook?: WebhookPlatform;
@@ -168,9 +168,9 @@ interface Args {
   federationDistillCommand?: boolean;
   /** v1.2.9: support-bundle 子命令 */
   supportBundle: boolean;
-  /** v1.4.1: 审计 session 产物（默认开启，--no-session 关闭） */
+  /** v1.4.2: 审计 session 产物（默认开启，--no-session 关闭） */
   noSession: boolean;
-  /** v1.4.1: --commit-msg 完整 commit message（hook 场景传完整 body 供 A9 扫描） */
+  /** v1.4.2: --commit-msg 完整 commit message（hook 场景传完整 body 供 A9 扫描） */
   commitMsgArg?: string;
   /** v1.2.9 (⑧-3): --format github 输出为 GitHub Annotations 格式 */
   format?: string;
@@ -180,9 +180,9 @@ interface Args {
   rulesetPath?: string;
   /** v1.2.9 (⑧-2): --list-rulesets 列出可用规则集 */
   listRulesets?: boolean;
-  /** v1.4.1 #15: --warn-as-error 让 WARN 返回 exit 2（安全优先，CI 阻断） */
+  /** v1.4.2 #15: --warn-as-error 让 WARN 返回 exit 2（安全优先，CI 阻断） */
   warnAsError: boolean;
-  /** v1.4.1 #15: --warn-as-info 让 WARN 返回 exit 0（CI 不阻断，仅信息性） */
+  /** v1.4.2 #15: --warn-as-info 让 WARN 返回 exit 0（CI 不阻断，仅信息性） */
   warnAsInfo: boolean;
 }
 
@@ -213,13 +213,13 @@ function parseArgs(argv: string[]): Args {
     } else if (argv[i] === '--strict') {
       args.strict = true;
     } else if (argv[i] === '--gb48000') {
-      // v1.4.1 交付 2：国标对齐维度（opt-in——信息条目，不影响 exitCode）
+      // v1.4.2 交付 2：国标对齐维度（opt-in——信息条目，不影响 exitCode）
       args.gb48000 = true;
     } else if (argv[i] === '--warn-as-error') {
-      // v1.4.1 #15: WARN 视为 error（exit 2），CI 阻断。安全优先。
+      // v1.4.2 #15: WARN 视为 error（exit 2），CI 阻断。安全优先。
       args.warnAsError = true;
     } else if (argv[i] === '--warn-as-info') {
-      // v1.4.1 #15: WARN 视为 info（exit 0），CI 不阻断。仅信息性输出。
+      // v1.4.2 #15: WARN 视为 info（exit 0），CI 不阻断。仅信息性输出。
       args.warnAsInfo = true;
     } else if (argv[i] === '--silent') {
       args.silent = true;
@@ -282,7 +282,7 @@ function parseArgs(argv: string[]): Args {
     } else if (argv[i] === '--no-session') {
       args.noSession = true;
     } else if (argv[i] === '--no-daemon') {
-      // v1.4.1 #48: --no-daemon flag——跳过 daemon 注册（init 流程使用）。
+      // v1.4.2 #48: --no-daemon flag——跳过 daemon 注册（init 流程使用）。
       // init.ts 通过 process.argv.includes('--no-daemon') 消费，
       // 此处仅注册为已知 flag，避免 parseArgs 误报「不支持的参数」。
       // 值由 init 流程直接从 process.argv 读取，不存入 args。
@@ -308,7 +308,7 @@ function parseArgs(argv: string[]): Args {
       args.federationDistillCommand = true;
     } else if (argv[i] === '--help' || argv[i] === '-h') {
       const verbose = argv.includes('--verbose');
-      console.log(`sofagent-audit v${VERSION} · FDE Agent 的审计引擎\n`);
+      console.log(`sofagent-audit v${VERSION} · FDE Harness 的审计引擎\n`);
       console.log('快速开始:');
       console.log('  安装    npm install -g @sofagent/audit && sofagent-audit --init');
       console.log('  试用    sofagent-audit --diff HEAD~1..HEAD');
@@ -323,13 +323,13 @@ function parseArgs(argv: string[]): Args {
       console.log('  sofagent-audit --verify-chain                   审计链完整性校验');
       console.log('  sofagent-audit --verify-commit <hash>           检查 commit 审计记录');
       console.log('  sofagent-audit --regression <dir>               回归验证');
-      console.log('  sofagent-audit --install-hook                   安装 commit-msg + post-commit hook');
+      console.log('  sofagent-audit --install-hook                   安装 pre-commit + commit-msg + post-commit hook');
       console.log('  sofagent-audit --revert <snapshot-sha>           恢复到指定快照');
       console.log('  sofagent-audit --timeline [N]                   查看快照时间线');
       console.log('  sofagent-audit ontology view                    本体人类可读视图');
       console.log('');
       if (verbose) {
-        console.log('v1.0.8 已弃用的子命令（将在 v1.4.1 移除，请尽快迁移）:');
+        console.log('v1.0.8 已弃用的子命令（将在 v1.4.2 移除，请尽快迁移）:');
         console.log('  compose      → sofagent-orchestrator compose');
         console.log('  subagent run → sofagent-orchestrator subagent run');
         console.log('  skillopt-run → sofagent-skillopt');
@@ -354,13 +354,14 @@ function parseArgs(argv: string[]): Args {
         console.log('  --silent           静默模式');
         console.log('  --ci               CI 模式（= --silent，CI 友好输出，无交互提示）');
         console.log('  --json             JSON 输出');
-        console.log('  --install-hook     安装 commit-msg + post-commit hook');
+        console.log('  --install-hook     安装 pre-commit + commit-msg + post-commit hook');
         console.log('  --root-cause       根因分析');
         console.log('  --verify-chain     审计链完整性校验');
         console.log('  --verify-commit    检查 commit 审计记录');
         console.log('  --regression <dir> 回归验证');
         console.log('  --init             一键初始化');
         console.log('  --doctor           环境健康检查（内置完整诊断）');
+        console.log('  --baseline         建立 dist 基准哈希（影子审计器防线信任锚，等价 --reset-baseline）');
         console.log('  --reset-baseline   重置 dist 基准哈希（rebuild 后一键重置，自动路由 doctor）');
         console.log('  --sign-config      对 config.yml 签名（消除防篡改警告）');
         console.log('  --no-session      不写入 session 报告文件');
@@ -400,12 +401,13 @@ function parseArgs(argv: string[]): Args {
 }
 
 /**
- * 安装 git commit-msg + post-commit hook
- * 从 cwd 往上查找 .git 目录，将 hooks/commit-msg 与 hooks/post-commit 模板复制到 .git/hooks/
- * 迁移：如果 .git/hooks/pre-commit 含 sofagent 标识，自动移除旧 hook
+ * 安装 git pre-commit + commit-msg + post-commit hook（三层防线）
+ * 从 cwd 往上查找 .git 目录，将 hooks/ 下三个模板复制到 .git/hooks/
  *
  * v1.4.9 P0-RC3: hook 安装清单与 --init 对齐——installHook() 也安装 post-commit。
  * 老用户 `sofagent-audit --install-hook` 升级时不再 miss post-commit（--no-verify 绕过的唯一防线）。
+ * v1.4.2 H-01: 补装 pre-commit（.sofagent/ 永不入库主防线——staged 清理在
+ * commit 对象生成前生效，规避 macOS git 内存 index 快照时序问题）。
  */
 function installHook(): void {
   // 从 cwd 往上查找 .git 目录
@@ -441,11 +443,12 @@ function installHook(): void {
 
   // 定位 hook 模板（dist/index.js 编译后，模板在 ../../hooks/ 相对于 dist/）
   const hooksTemplateDir = join(__dirname, '..', 'hooks');
+  const preCommitTemplate = join(hooksTemplateDir, 'pre-commit');
   const commitMsgTemplate = join(hooksTemplateDir, 'commit-msg');
   const postCommitTemplate = join(hooksTemplateDir, 'post-commit');
 
-  if (!existsSync(commitMsgTemplate) || !existsSync(postCommitTemplate)) {
-    console.error(`❌ sofagent 内部错误：hook 模板文件缺失——${commitMsgTemplate} / ${postCommitTemplate}`);
+  if (!existsSync(commitMsgTemplate) || !existsSync(postCommitTemplate) || !existsSync(preCommitTemplate)) {
+    console.error(`❌ sofagent 内部错误：hook 模板文件缺失——${commitMsgTemplate} / ${postCommitTemplate} / ${preCommitTemplate}`);
     exit(1);
   }
 
@@ -455,19 +458,9 @@ function installHook(): void {
     mkdirSync(hooksDir, { recursive: true });
   }
 
-  // 迁移：移除旧版 pre-commit hook（含 sofagent 标识的）
-  const legacyPath = join(hooksDir, 'pre-commit');
-  if (existsSync(legacyPath)) {
-    try {
-      const legacyContent = readFileSync(legacyPath, 'utf-8');
-      if (legacyContent.includes('sofagent')) {
-        require('fs').unlinkSync(legacyPath);
-        console.log('  → 已移除旧版 pre-commit hook（迁移到 commit-msg）');
-      }
-    } catch (e) {
-      console.warn('[sofagent] 警告：读取旧版 pre-commit hook 失败，跳过该项清理', e instanceof Error ? e.message : String(e));
-    }
-  }
+  // v1.4.2 H-01: pre-commit 不再是「旧版迁移对象」而是三层防线主防线——
+  // 旧版（v1.0.5 及更早的 pre-commit 审计 hook）由下方 installOneHook 直接
+  // 覆盖为当前版模板（覆盖前自动备份到 pre-commit.bak），无需单独迁移删除。
 
   // 安装单个 hook：备份旧文件 → 写入模板 → chmod 755
   // v1.4.9 P0-RC3: commit-msg 与 post-commit 共用此逻辑，保证两个入口（--init / --install-hook）安装清单一致
@@ -491,10 +484,13 @@ function installHook(): void {
     console.log(`✅ ${hookName} hook 已安装到 ${destPath}`);
   }
 
+  // v1.4.2 H-01: 三层防线安装顺序——pre-commit（主防线，staged 清理在 commit
+  // 对象生成前生效）→ commit-msg（规则审计 + 二次清理）→ post-commit（对账兜底）
+  installOneHook('pre-commit', preCommitTemplate, 'pre-commit');
   installOneHook('commit-msg', commitMsgTemplate, 'commit-msg');
   // v1.4.9 P0-RC3: 补装 post-commit（--no-verify 绕过检测）
   installOneHook('post-commit', postCommitTemplate, 'post-commit');
-  console.log('   每次 git commit 时会自动运行 sofagent-audit 检查；post-commit 在提交后对账 --no-verify 绕过。');
+  console.log('   每次 git commit 时会自动运行 sofagent-audit 检查；pre-commit 拦 .sofagent/ 入库，post-commit 在提交后对账 --no-verify 绕过。');
   exit(0);
 }
 
@@ -632,7 +628,7 @@ function printTimeline(limit: number, json: boolean): void {
   }
 }
 
-// 同步加载 snapshot 模块（v1.4.1 从 @sofagent/daemon 迁移到 @sofagent/core，消除循环依赖）
+// 同步加载 snapshot 模块（v1.4.2 从 @sofagent/daemon 迁移到 @sofagent/core，消除循环依赖）
 function awaitLoadSnapshot(): typeof import('@sofagent/core') {
   try {
     return require('@sofagent/core');
@@ -694,7 +690,7 @@ async function main(): Promise<void> {
 
   // compose → sofagent-orchestrator (v1.0.8 友好报错降级，不再 execFileSync)
   if (rawArgs.includes('compose')) {
-    console.error('⚠️  "sofagent-audit compose" 已弃用，将在 v1.4.1 移除，请尽快迁移到 "sofagent-orchestrator compose"。');
+    console.error('⚠️  "sofagent-audit compose" 已弃用，将在 v1.4.2 移除，请尽快迁移到 "sofagent-orchestrator compose"。');
     console.error('   请直接运行：sofagent-orchestrator compose');
     console.error('   安装：npm install -g @sofagent/orchestrator');
     exit(1);
@@ -705,13 +701,16 @@ async function main(): Promise<void> {
   // runDoctor，本就是完整诊断，无需再引导到别的命令）
   // v1.4.9：--reset-baseline 自动路由到 doctor（不带 --doctor 也不报未知参数——
   // rebuild dist 后一键重置基准哈希，bugfix #18 执行遗留）
-  if (rawArgs.includes('--doctor') || rawArgs.includes('--reset-baseline')) {
+  // v1.4.2 G-01：--baseline 作为 --reset-baseline 的显式别名——语义都是「计算当前
+  // dist SHA-256 写入 audit-hash.txt 建立基线」（信任锚 = 首次人工执行时刻）
+  const wantsBaseline = rawArgs.includes('--reset-baseline') || rawArgs.includes('--baseline');
+  if (rawArgs.includes('--doctor') || wantsBaseline) {
     try {
       const { runDoctor } = await import('@sofagent/core');
       const report = runDoctor(process.cwd(), {
-        resetBaseline: rawArgs.includes('--reset-baseline'),
+        resetBaseline: wantsBaseline,
       });
-      // v1.4.1 (F-23): doctor 仅在 error 时返回非零，warning 时返回 0——
+      // v1.4.2 (F-23): doctor 仅在 error 时返回非零，warning 时返回 0——
       // 对 cron/CI 脚本友好（仅警告不应被解释为失败）。人类如需 warning 也失败，用 --doctor --strict。
       if (rawArgs.includes('--strict')) {
         exit(report.allOk ? 0 : report.failCount > 0 ? 2 : 1);
@@ -732,7 +731,7 @@ async function main(): Promise<void> {
 
   // verify → sofagent-core (v1.0.8 友好报错降级，不再 execFileSync)
   if (rawArgs.includes('verify')) {
-    console.error('⚠️  "sofagent-audit verify" 已弃用，将在 v1.4.1 移除，请尽快迁移到 "sofagent-core verify"。');
+    console.error('⚠️  "sofagent-audit verify" 已弃用，将在 v1.4.2 移除，请尽快迁移到 "sofagent-core verify"。');
     console.error('   请直接运行：sofagent-core verify');
     console.error('   安装：npm install -g @sofagent/core');
     exit(1);
@@ -743,7 +742,7 @@ async function main(): Promise<void> {
   // P1-A9: 无参数运行静默写库——用户无意识触发真实审计并写入全局数据。
   // 无参数时（argv 仅含 node + 脚本路径，无任何 flag），改为输出 help 而非默认执行审计。
   if (process.argv.slice(2).length === 0) {
-    console.log(`sofagent-audit v${VERSION} · FDE Agent 的审计引擎\n`);
+    console.log(`sofagent-audit v${VERSION} · FDE Harness 的审计引擎\n`);
     console.log('⚠️  无参数运行不会执行审计。请指定要执行的操作：\n');
     console.log('常用命令:');
     console.log('  sofagent-audit --init                           一键初始化（配置+hook+冒烟）');
@@ -1217,14 +1216,16 @@ async function main(): Promise<void> {
 
   printResults(results, diffFiles, args.json, args.ci, args.silent);
 
-  // v1.4.1 交付三: 成本审计维度（opt-in WARN only——不配 budget 不审计；
+  // v1.4.2 交付三: 成本审计维度（opt-in WARN only——不配 budget 不审计；
   // 不进 A1-A23 规则体系，exitCode 不变；铁律 12：WARN 不拦截任务执行）
   if (!args.json) {
     const costBudget = config.cost?.budget;
     if (costBudget && (costBudget.maxTokensPerRun || costBudget.maxCostPerDay)) {
       try {
-        // 数据目录解析与 getHistoryFilePath 同链（SOFAGENT_DATA > 默认 ~/.sofagent/data）
-        const costDataDir = process.env.SOFAGENT_DATA || join(homedir(), '.sofagent', 'data');
+        // v1.4.2 G-05: 数据目录解析收编进 data-paths SSOT getDataDir()（与 getHistoryFilePath
+        // 同链：SOFAGENT_DATA > SOFAGENT_HOME/data，消灭 homedir 硬编码回退）
+        const { getDataDir } = require('@sofagent/core') as typeof import('@sofagent/core');
+        const costDataDir = getDataDir();
         // eslint-disable-next-line @typescript-eslint/no-require-imports
         const { runCostAudit, loadWorklogSlice } = require('./cost-audit');
         const costFindings = runCostAudit({
@@ -1249,7 +1250,7 @@ async function main(): Promise<void> {
   }
 
   // 7. webhook 推送（fire-and-forget，配置了 webhook 时 PASS/WARN/FAIL 三态都推送）
-  // v1.4.1: 优先 CLI --webhook/--webhook-url，回退 config.yml audit.webhook.{platform,url}，
+  // v1.4.2: 优先 CLI --webhook/--webhook-url，回退 config.yml audit.webhook.{platform,url}，
   //         再回退环境变量 SOFAGENT_WEBHOOK_URL（已在 parseArgs 初始化 webhookUrl）。
   //         修复场景：commit-msg hook 不传 CLI webhook 参数，用户在 config.yml 配了 webhook 也不生效。
   const webhookPlatform = args.webhook || config.webhook?.platform;
@@ -1261,7 +1262,7 @@ async function main(): Promise<void> {
         ? config.sanitizePatterns
             .map((p) => {
               try { return { pattern: new RegExp(p.pattern, 'g'), replacement: p.replacement }; }
-              catch { return null; }
+              catch { return null; } // 用户配置了无效正则——剔除该条，其余规则照常推送
             })
             .filter((p): p is { pattern: RegExp; replacement: string } => p !== null)
         : undefined;
@@ -1360,14 +1361,14 @@ async function main(): Promise<void> {
         actor,
         timestamp: govTimestamp,
         targetEntity,
-        // v1.4.1 交付十三：beforeAfter 结构化摘要回填——从 diff 提取前/后值（截断至 200 字符 + 脱敏，
+        // v1.4.2 交付十三：beforeAfter 结构化摘要回填——从 diff 提取前/后值（截断至 200 字符 + 脱敏，
         // diff 原文不进 history.jsonl；A2/A9 脱敏语义不变）
         beforeAfter: buildBeforeAfterSummary(diffFiles),
         context: args.task || commitMsg || undefined,
         decisionProvenance: {
           who: actor,
           when: govTimestamp,
-          // v1.4.1 交付十三：whichDataVersion 契约就位——FDE 知识库版本化未就绪时留空（不报错），
+          // v1.4.2 交付十三：whichDataVersion 契约就位——FDE 知识库版本化未就绪时留空（不报错），
           // 版本化落地后从 knowledge 版本元数据回填
           whichDataVersion: undefined,
           whichApp: `sofagent-audit v${VERSION}`,
@@ -1396,7 +1397,7 @@ async function main(): Promise<void> {
 
   // 审计通过（PASS）后自动创建 shadow repo 快照，供 --timeline/--revert 使用
   // 设计原则：只有 PASS 才快照（WARN/FAIL 不快照，符合「审计通过后自动快照」契约）
-  // v1.4.1：snapshot helpers 已从 @sofagent/daemon 迁移到 @sofagent/core，循环依赖已消除
+  // v1.4.2：snapshot helpers 已从 @sofagent/daemon 迁移到 @sofagent/core，循环依赖已消除
   // 拦截后也存 snapshot——拦截记录比通过记录更有审计价值（--timeline 应可见被拦截的变更）
   if (isInGitRepo()) {
     try {
@@ -1414,7 +1415,7 @@ async function main(): Promise<void> {
   // 其内部经 @sofagent/core 的 appendThinkEntry 契约写入，保证 append-only 不变量。
   // audit 包不直接写 think.md（避免反向依赖 think 生成器）。
 
-  // v1.4.1 #15: WARN 退出码可配——默认 WARN→exit 1（安全优先）。
+  // v1.4.2 #15: WARN 退出码可配——默认 WARN→exit 1（安全优先）。
   // --warn-as-error: WARN→exit 2（CI 阻断，要求零警告）
   // --warn-as-info: WARN→exit 0（CI 不阻断，仅信息性）
   // 两者互斥时 --warn-as-error 优先（安全优先）。仅影响 WARN（exit 1）场景，不改 FAIL（exit 2）。
@@ -1489,6 +1490,7 @@ function getHistoryStats(): { total: number; thisMonth: number } | null {
 
     return { total: history.length, thisMonth };
   } catch {
+    // history 文件损坏/不可读——统计是展示性信息，降级 null 不影响审计
     return null;
   }
 }
@@ -1513,7 +1515,7 @@ export function printResults(results: AuditResult, diffFiles: DiffFile[], json: 
   if (ci || silent) {
     // 产品签名（text 人类可读输出头部；--json 已在上方提前 return，绝不加签名）
     console.log(productSignature(results.exitCode, results.rules.length));
-    // ★ v1.4.1: 无条件向 stdout 输出一行结论（session 可见性核心）
+    // ★ v1.4.2: 无条件向 stdout 输出一行结论（session 可见性核心）
     const c = results.exitCode;
     const failN = results.rules.filter((r) => r.status === 'FAIL').length;
     const warnN = results.rules.filter((r) => r.status === 'WARN').length;
@@ -1571,7 +1573,7 @@ export function printResults(results: AuditResult, diffFiles: DiffFile[], json: 
   // 产品签名行（人类可读输出头部，FAIL 拦截时醒目，让用户知道是 sofagent 拦的）
   console.log('  ' + productSignature(exitCode, totalRules));
   console.log(bannerTop());
-  console.log(bannerLine(`sofagent-audit · FDE Agent · v${VERSION}`));
+  console.log(bannerLine(`sofagent-audit · FDE Harness · v${VERSION}`));
   const defaultCnt = defaultRules.length;
   const extendedCnt = extendedRules.length;
   const totalCnt = defaultCnt + extendedCnt;
@@ -1656,7 +1658,7 @@ export function printResults(results: AuditResult, diffFiles: DiffFile[], json: 
   console.log('');
 }
 
-// v1.4.1: 仅作为 CLI 入口时执行 main，避免被测试 import 时触发副作用（如 process.exit）
+// v1.4.2: 仅作为 CLI 入口时执行 main，避免被测试 import 时触发副作用（如 process.exit）
 if (require.main === module) {
   main().catch((err) => {
     console.error('sofagent-audit 内部错误:', err.message);

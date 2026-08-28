@@ -1,5 +1,5 @@
 // ============================================================
-// train-submit.ts · MCP tool：train_submit（v1.4.1 块二）
+// train-submit.ts · MCP tool：train_submit（v1.4.2 块二）
 // ============================================================
 //
 // 训练任务提交——dataPath + baseModel + algorithm（sft/dpo/grpo）+
@@ -12,11 +12,9 @@
 // enterpriseId 必填——企业隔离分区 data/train/<enterpriseId>/<jobId>/。
 // ============================================================
 
+import { getDataDir } from '@sofagent/core';
 import { join } from 'path';
 
-function getSofagentDataDir(): string {
-  return process.env.SOFAGENT_DATA || join(process.cwd(), 'data');
-}
 
 export interface TrainSubmitArgs {
   /** 数据路径（训练集） */
@@ -89,7 +87,7 @@ export async function trainSubmit(args: TrainSubmitArgs): Promise<TrainSubmitToo
 
   try {
     const orch = await import('@sofagent/orchestrator');
-    const dataDir = getSofagentDataDir();
+    const dataDir = getDataDir();
 
     // 委托编排层：createTrainJob（协议校验 + enterpriseId 必填 + 幂等）
     // spawn 由 daemon 侧调度器（createTrainScheduler）接管——MCP tool 只提交

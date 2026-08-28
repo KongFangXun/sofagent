@@ -1,5 +1,5 @@
 // ============================================================
-// memory-store.ts · 事实级记忆存储（v1.4.1 功能①）
+// memory-store.ts · 事实级记忆存储（v1.4.2 功能①）
 //
 // per-user memory.json 全量索引 + per-fact Markdown 单文件
 // 存储布局：
@@ -27,6 +27,7 @@ import {
 } from 'fs';
 import { join } from 'path';
 import { createHash, randomUUID } from 'crypto';
+import { getDataDir } from './data-paths';
 
 // ────────────────────────────────────────────────────────────
 // 类型定义
@@ -65,9 +66,10 @@ interface MemoryIndex {
 /**
  * 解析 memory 存储根目录。
  * 优先 SOFAGENT_DATA → DATA_DIR → ~/.sofagent/data/
+ * v1.4.2 G-05: 默认回退收编进 data-paths SSOT getDataDir()（消灭 HOME 硬编码）
  */
 function getMemoryRoot(dataBase?: string): string {
-  const base = dataBase || process.env.SOFAGENT_DATA || join(process.env.HOME || '~', '.sofagent', 'data');
+  const base = getDataDir(dataBase);
   return join(base, 'memory');
 }
 

@@ -1,14 +1,17 @@
 // ============================================================
 // shared/secret-patterns.ts · 密钥检测正则单一事实源
-// v1.4.1 A2（engine/audit rule-a2）与 ToolGate（engine/rules
+// v1.4.2 A2（engine/audit rule-a2）与 ToolGate（engine/rules
 //   tool-secret-leak）此前各持一份正则且漂移——ToolGate 用严格 48 位
 //   sk- 模式导致 32-47 位密钥被放行，运行时洞与提交时洞错开互补。
 //   现抽共享常量，两处 import 同一来源。
 // v1.3.7 §4.10.2: 扩展为全规则共享库——新增 REDACTION_PATTERNS /
 //   DOMAIN_WHITELIST / DANGEROUS_SCRIPT_CMDS 三组共享正则
 // ============================================================
-/** 密钥泄漏检测正则模式（权威集——以 audit A2 的宽口径为准） */
-export const SECRET_PATTERNS: { pattern: RegExp; label: string }[] = [
+/** 密钥泄漏检测正则模式（权威集——以 audit A2 的宽口径为准）
+ *  v1.4.2 H-02: 新增可选 contextKeyword 字段——裸形态误报面大的模式（如 AWS Secret
+ *  Access Key 的裸 40 位 base64）声明「同行需含关键词才报告」，由消费方做行级二次判定；
+ *  未声明该字段的模式无上下文条件，行为与旧版完全一致（向后兼容）。 */
+export const SECRET_PATTERNS: { pattern: RegExp; label: string; contextKeyword?: RegExp }[] = [
   { pattern: /AKIA[A-Z0-9]{16}/, label: 'AWS Access Key' },
   { pattern: /-----BEGIN [A-Z ]*PRIVATE KEY-----/, label: 'Private Key' },
   { pattern: /sk-ant-(api03|api04)-[A-Za-z0-9_-]{40,}/, label: 'Anthropic API Key' },
@@ -25,6 +28,23 @@ export const SECRET_PATTERNS: { pattern: RegExp; label: string }[] = [
   // Stripe 真实 key ≥24 位；误报面评估：生产代码中 sk_live_/sk_test_ 前缀几乎无合法用途
   //（测试文档需用占位符，与 v1.3.5 脱敏教训一致）——可控，纳入覆盖。
   { pattern: /sk_(live|test)_[a-zA-Z0-9]{24,}/, label: 'Stripe Secret Key' },
+  // v1.4.2 H-02: Google API Key——固定 AIza 前缀 + 35 位 base64url 字符。
+  // 误报面评估：AIza 前缀由 Google 内部生成（base64url 头两位恰为 AIza），随机字符串
+  // 命中概率可忽略；普通代码不会出现该前缀。真实 key 形如 AIzaSyA...（39 字符总长）。
+  { pattern: /AIza[0-9A-Za-z\-_]{35}/, label: 'Google API Key' },
+  // v1.4.2 H-02: Slack Token——xox[baprs]- 前缀 + ≥10 位 body。
+  // 误报面评估：xox 前缀后必随 b/a/p/r/s 之一的类型字母再接连字符，自然语言与
+  // 普通标识符不会构造出该形态；宽松 {10,} 兼容 bot/user/app/refresh 各长度。
+  { pattern: /xox[baprs]-[A-Za-z0-9\-]{10,}/, label: 'Slack Token' },
+  // v1.4.2 H-02: JWT——eyJ 开头三段式（header.payload. 前两段显式锚定，签名段不限定长度）。
+  // 误报面评估：eyJ 是 base64({'{" 的固定头，随机 base64 不会出现；仅锚定前两段 + 尾点，
+  // 第三段（签名）任意——完整 JWT 必含三段，短句误报可忽略。
+  { pattern: /eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\./, label: 'JWT Token' },
+  // v1.4.2 H-02: AWS Secret Access Key——裸 40 位 base64 无前缀特征，误报面大（任意 40 位
+  // base64 串如 hash/commit 都会命中），采用 b 方案上下文条件：仅当同一行含
+  // aws|secret|key 关键词（不区分大小写）才报告。字段经 requiresLineContext 声明，
+  // 由消费方（A2/ToolGate）做行级上下文二次判定——裸串不报，防误报。
+  { pattern: /\b[A-Za-z0-9/+=]{40}\b/, label: 'Possible AWS Secret Access Key', contextKeyword: /aws|secret|key/i },
 ];
 
 /**

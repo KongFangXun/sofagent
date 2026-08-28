@@ -1,6 +1,6 @@
 // ============================================================
 // data-paths.ts · 数据目录路径单一事实来源（SSOT）
-// v1.4.1 安装路径分离：代码仓库与运行时数据物理分离
+// v1.4.2 安装路径分离：代码仓库与运行时数据物理分离
 // ============================================================
 //
 // 核心原则：
@@ -190,4 +190,15 @@ export function resolveDaemonLog(overrideHome?: string): string {
 /** 解析 daemon 配置路径 */
 export function resolveDaemonJson(overrideHome?: string): string {
   return path.join(resolveDataDir(overrideHome), 'daemon.json');
+}
+
+/**
+ * v1.4.2 G-05: 运行时数据目录解析 SSOT——供各包「读运行时数据」的调用点统一收编。
+ * 优先级语义与各处历史硬编码保持一致：显式入参 > SOFAGENT_DATA 环境变量 > SOFAGENT_HOME/data
+ * （此前 scheduler/long-tasks/memory-store/cost-audit 各自写死 `join(HOME, '.sofagent', 'data')`
+ * 回退，架空 SOFAGENT_HOME 定制——用户设 SOFAGENT_HOME=/custom 后数据落点静默分裂）。
+ * 注意：返回值实时读环境变量（与 resolveDataDir 同语义），不缓存。
+ */
+export function getDataDir(explicitBase?: string): string {
+  return explicitBase || process.env.SOFAGENT_DATA || resolveDataDir();
 }

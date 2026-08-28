@@ -2,7 +2,7 @@
 
 > **sofagent 是一套 FDE 能力——装进你的 Agent（DSH / OpenClaw / WorkBuddy / Codex / Claude Code）后，进场梳理业务流、部署 AI 节点、离场后 7×24 自己跑。** 装完之后，你在自己的 Agent 里说一句话，它就帮你干活——审计每次变更、沉淀每次经验，沉淀机制随使用迭代。下面从装到用到查问题，全流程走一遍。
 >
-> v1.4.1 · 2026-08-27（UTC）· 孔放勋
+> v1.4.2 · 2026-08-28（UTC）· 孔放勋
 
 <img src="assets/sofagent.png" alt="sofagent" width="160" />
 
@@ -67,6 +67,8 @@
 - **能带走、能协同**：USB 一键烧录（插上即用、拔掉零残留）；多设备加密联邦互查；内置 `@sofagent-fde` + `@sofagent-audit` 双 Agent。
 - **🔗 激活链**：FDE 诊断交付后，ontology + workflow.yml + skills/ 不再是一堆静态文件躺在磁盘上——激活链自动读交付物 → 注册企业 SubAgent → 编排成 LangGraph 业务流 → 带人工审批（HITL）和审计地自动跑。从"交给企业一堆文档"变成"交给企业一个会自己跑的系统"（ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN 四阶段完整交付）。详见 [激活链设计文档](./guides/fde-activation-chain.md)。
 - **🔍 引擎纵深**：官方 AST 规则引擎（`sofagent-ruleset-ast`，ASI01 目标劫持 + ASI04 供应链 SBOM 语义检测）；meta-harness 多 harness 统一编排（策略强制下沉基础设施层，跨会话协作）；AI 工作明细数据层（`worklog` 按 Agent/Workflow/周 + 人工介入，`worklog_query` MCP）；API 分级治理（`@public`/`@internal` 1439 符号 + CI 门禁）；MLflow agent 评估（13 指标 + LLM-as-Judge）；Agentic Browser（4 工具 + 视觉降级）；跨平台适配器（Cursor/Codex/Gemini CLI）；ATTRIBUTION 归因引擎 + Dream Sandbox 沙盒审计（强制人审 merge + 路径穿越消毒）；>5MB diff 缝隙修复。明细见 [开发日志](./changelog/v1.3/v1.3.9.md)。
+- **🎓 训练数据与评估**（v1.4.2）：企业异构数据（CSV/Excel/DB/API）经管道进训练集（质量闸门 + 训练入口脱敏）；dataset_version 版本台账（指纹冻结 + 续跑版本锁）；训练中 eval 闭环（阈值外部化 continue/stop）；train env/doctor 环境体检；dry-run 显存估算 + ScaleRL 算力外推；训练报告（客户可读 Markdown + 量化四字段 ROI）。详见 [v1.4.2 开发日志](./changelog/v1.4/v1.4.2.md)。
+- **🧩 FDE 六引擎工作台**（v1.4.2）：fde_interview（访谈结构化）/ fde_classify（三问判定）/ fde_quantify（量化+ROI）/ fde_derive（本体推导）/ fde_distill（三层沉淀）/ fde_deploy（组装部署）——FDE 方法论从文档变成可执行引擎（MCP tool），产物落 `data/fde/` 带独立审计留痕；IM 桥远程指挥（dsh-im）让 FDE 在无头设备上也能干活。
 
 > 📌 各版本演进明细见 [CHANGELOG](../CHANGELOG.md)（能力已并入当前版本，不逐版列举）。
 
@@ -435,7 +437,8 @@ jobs:
 | Web 工作明细 + 图谱 | v1.4.0 | Dashboard 工作明细四视角 + 图谱栏（业务图谱 + 本体图谱 + MCP 工具视图 + skill 加载链）+ 随 install.sh 装到用户机 | [v1.4.0 开发日志](./changelog/v1.4/v1.4.0.md) |
 | 成本审计 | v1.4.0 | 超支告警 + `cost_query` MCP + COST DecisionKind（WARN-only 不拦截） | [v1.4.0 开发日志](./changelog/v1.4/v1.4.0.md) |
 | DSH/OpenClaw 插件家族 | v1.4.0 | DSH cordis-plugin 9 款 + OpenClaw code-plugin 4 款 + MCP 工具角色分层（默认 34/66）+ DSH 默认启用 | [v1.4.0 开发日志](./changelog/v1.4/v1.4.0.md) |
-| 训练引擎地基 | v1.4.1 | train-job 编排 + `train_submit`（67 tools）+ 审计 HMAC 链 + 隔离/指纹/签名/回收/恢复/安全基线八块 | [v1.4.1 开发日志](./changelog/v1.4/v1.4.1.md) |
+| 训练引擎地基 | v1.4.1 | train-job 编排 + `train_submit`（66→67 tools）+ 审计 HMAC 链 + 隔离/指纹/签名/回收/恢复/安全基线八块 | [v1.4.1 开发日志](./changelog/v1.4/v1.4.1.md) |
+| 训练数据与评估 + FDE 六引擎 | v1.4.2 | 企业数据→训练集管道 + dataset_version 版本 + eval 闭环 + train env/doctor + dry-run 算力外推 + 训练报告；FDE 六引擎工作台（fde_interview/classify/quantify/derive/distill/deploy，67→76 tools）+ IM 桥远程指挥 | [v1.4.2 开发日志](./changelog/v1.4/v1.4.2.md) |
 
 ### 知识怎么长出来
 
@@ -453,7 +456,7 @@ jobs:
 
 ### 在 DSH 中使用 sofagent（v1.3.5 · MCP 互通）
 
-sofagent 本身就是一个 MCP server（stdio 传输，bin `sofagent-mcp`，v1.3.6 起 60 个 tool，v1.4.0 为 66 个，v1.4.1（待发版）新增 train_submit 后为 67 个——工具角色分层，默认暴露 34 个，`SOFAGENT_MCP_ROLES` 可恢复全量）。DSH（DeepSeek Harness）用户不需要等 v1.4.0 的 cordis-plugin——用官方 `@deepseek-ai/dsh-mcp-client` 桥接插件挂上 `sofagent-mcp`，**今天就能在 DSH 会话里调用 sofagent 的全部能力**：审计查询、知识库检索、A/B 实验（`run_ab_test`）、快照时间线（`snapshot_list`）等。
+sofagent 本身就是一个 MCP server（stdio 传输，bin `sofagent-mcp`，v1.3.6 起 60 个 tool，v1.4.0 为 66 个，v1.4.1 新增 train_submit 后为 67 个，v1.4.2 新增 train_doctor/train_dryrun/train_report + FDE 六引擎（fde_interview/fde_classify/fde_quantify/fde_derive/fde_distill/fde_deploy）后为 76 个——工具角色分层，默认暴露 34 个，`SOFAGENT_MCP_ROLES` 可恢复全量）。DSH（DeepSeek Harness）用户不需要等 v1.4.0 的 cordis-plugin——用官方 `@deepseek-ai/dsh-mcp-client` 桥接插件挂上 `sofagent-mcp`，**今天就能在 DSH 会话里调用 sofagent 的全部能力**：审计查询、知识库检索、A/B 实验（`run_ab_test`）、快照时间线（`snapshot_list`）等。
 
 #### 配置方法
 
@@ -527,6 +530,8 @@ sofagent 本身就是一个 MCP server（stdio 传输，bin `sofagent-mcp`，v1.
 > - **磁盘**：`~/.sofagent/data/`（审计历史 + 快照 + 知识库，日均 ~5 MB/仓库）
 > - **内存**：daemon 常驻进程（~50 MB）+ Node.js 运行时（~200 MB/并发 Agent）
 > - **网络**：仅 LLM API 出站，无入站端口需求
+
+> **性能口径**（README 首屏数字出处）：测量方法 = `time sofagent-audit`（quick 模式计时，含 Node.js 启动；全量模式对 5 万行 diff 计时）；环境 = 单机 macOS（Apple Silicon）。单机实测：quick 约 **1.1s**、5 万行 diff 约 **6.1s**。以上为单机参考值，非跨机器基准——跨工具横评排期 v1.4.x 与 Benchmark 集成。
 
 ⚠️ **数据存储说明**：当前版本将审计数据以 Markdown 明文存储在 `~/.sofagent/data/`。内置加密（age）已排 v1.3.8。生产环境使用前建议将 `~/.sofagent/` 放在加密卷中。详见 [SECURITY.md](../SECURITY.md)。
 

@@ -783,6 +783,12 @@ export function createDshCliBackend(): ExecutionBackend {
             process.execPath,
             [binPath, '--profile', 'headless', fullMessage],
             {
+              // FORGE 步零（b-fix workspace 对准 worktree）：spawnWorker 已把
+              // FORGE_WORKTREE_ROOT 注入 worker env，此前 execFile 不传 cwd——
+              // DSH 子进程落在父进程 cwd（FORGE 主仓），bash/fs 相对路径全部
+              // 打到主仓工作区（run-01 b-fix 产物落主仓根因）。
+              // worktree 隔离时 DSH 子进程 cwd 对准副本；未设则 undefined（继承）。
+              cwd: process.env.FORGE_WORKTREE_ROOT || undefined,
               env,
               timeout: task.recursionLimit ? Math.max(60_000, task.recursionLimit * 1000) : 120_000,
               maxBuffer: 4 * 1024 * 1024,

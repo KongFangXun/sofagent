@@ -1,6 +1,6 @@
 // ============================================================
 // ruleset-loader.ts · JSON 规则集加载器
-// v1.4.1 (⑧-2)：规则市场核心——从 JSON 加载规则集，支持 pattern + plugin 两种类型
+// v1.4.2 (⑧-2)：规则市场核心——从 JSON 加载规则集，支持 pattern + plugin 两种类型
 //
 // JSON 规则集格式：
 // {
@@ -328,6 +328,7 @@ export function listBuiltinRulesetNames(): string[] {
       .map((f) => f.replace(/\.json$/, ''))
       .sort();
   } catch {
+    // 内置 ruleset 目录不可读（打包缺失等）——返回空列表走默认规则集
     return [];
   }
 }

@@ -72,13 +72,13 @@ describe('isToolExposed 单工具判定', () => {
 describe('filterToolsByRoles 清单过滤', () => {
   it('全量模式 → 返回原清单', () => {
     const filtered = filterToolsByRoles(TOOLS, null);
-    expect(filtered).toHaveLength(67);
+    expect(filtered).toHaveLength(76);
   });
 
   it('显式 fde+audit+agent 三面 → 只暴露这三面（不含 browser/ops/commons 独占工具）', () => {
     const filtered = filterToolsByRoles(TOOLS, ['fde', 'audit', 'agent']);
     expect(filtered.length).toBeGreaterThan(20);
-    expect(filtered.length).toBeLessThan(67);
+    expect(filtered.length).toBeLessThan(76);
     const names = filtered.map((t) => t.name);
     // 独占面工具应被隐藏
     expect(names).not.toContain('playwright_navigate');

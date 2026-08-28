@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 // ============================================================
 // cli-quick.ts · npx sofagent-audit 零配置 CLI 入口
-// v1.4.1 (⑧-1)：30 秒 aha moment——任何 git repo 都能跑
+// v1.4.2 (⑧-1)：30 秒 aha moment——任何 git repo 都能跑
 //
-// 依赖说明（v1.4.1 P0-R13）：
+// 依赖说明（v1.4.2 P0-R13）：
 //   本文件 import @sofagent/core（见 package.json dependencies）。
 //   git clone 后直接跑 dist/cli-quick.js 会报 MODULE_NOT_FOUND——
 //   需先 `npm install`（根目录安装会 link workspace 依赖）或
@@ -52,6 +52,7 @@ function getLatestCommitSha(): string | null {
     }).trim();
     return sha;
   } catch {
+    // 非 git 仓库取不到 HEAD SHA——降级 null，输出省略该字段
     return null;
   }
 }
@@ -70,6 +71,7 @@ function hasParentCommit(): boolean {
     });
     return true;
   } catch {
+    // 首次提交（无 HEAD~1）或非 git 仓库——按「无父提交」处理
     return false;
   }
 }

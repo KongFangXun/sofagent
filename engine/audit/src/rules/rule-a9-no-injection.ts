@@ -2,7 +2,7 @@
 // A9 不纳注入（安全层 · 业务底线）
 // 检测 git diff 新增行中是否含 prompt injection 模式
 // evidenceMode: git-diff（纯正则检测，--silent 可跑）
-// v1.4.1: 追加中文注入检测正则（T01）
+// v1.4.2: 追加中文注入检测正则（T01）
 // 上下文感知扫描——字符串字面量/注释仅走 HIGH 置信度，
 // 消除 MEDIUM 模糊档在文案/注释中的整类误报（详见 splitCodeContext）。
 // ============================================================
@@ -103,6 +103,10 @@ export function normalizeLine(line: string): string {
   // U+200B 零宽空格 / U+200C 零宽非连接符 / U+200D 零宽连接符 /
   // U+200E·200F 方向标记 / U+FEFF BOM·零宽不换行空格 / U+00AD 软连字符
   normalized = normalized.replace(/[\u200B\u200C\u200D\u200E\u200F\uFEFF\u00AD]/g, '');
+  // v1.4.2 H-03: 连续空白折叠为单空格并去首尾空白——HIGH_CONFIDENCE_PATTERNS 中
+  // 首条模式是字面单空格匹配，多空格与 tab 混排变体此前只落到 MEDIUM 模糊档
+  // （WARN 放行）。折叠后变体升入拦截档。
+  normalized = normalized.replace(/\s+/g, ' ').trim();
   normalized = normalized
     .replace(/1/gi, 'i')
     .replace(/0/g, 'o')

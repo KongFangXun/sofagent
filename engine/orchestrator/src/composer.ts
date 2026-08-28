@@ -1,7 +1,7 @@
 // ============================================================
 // composer.ts · 任务编排
 // v1.3.7 新增：用 createReactAgent() 做任务拆解，输出 YAML 工作流
-// v1.4.1：迁移至 @sofagent/orchestrator
+// v1.4.2：迁移至 @sofagent/orchestrator
 // v1.3.7 新增：ComposeResult 结构化返回（yaml + subagents）+
 //   enterpriseWorkflowYaml 企业 workflow 参考 + variant 拆解策略（A/B/C/D）
 // ============================================================
@@ -30,6 +30,7 @@ async function loadReactAgentCreate(): Promise<ReactAgentFactory | null> {
     const resolved = await resolveAgentFactory();
     return (resolved.factory as unknown as ReactAgentFactory) ?? null;
   } catch {
+    // LangGraph 运行时不可用——降级 null，调用方走 DSH 后端兼容代理
     return null;
   }
 }

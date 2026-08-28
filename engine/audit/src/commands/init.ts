@@ -5,7 +5,7 @@
 //   2. 安装 git commit-msg hook
 //   3. 冒烟测试——验证审计引擎可用
 // v1.3.7: 新增仓库状态分类器（gstack 首次运行引导）
-// v1.4.1 daemon 注册改为「确认后注册」——默认不装、非 TTY 不挂起、
+// v1.4.2 daemon 注册改为「确认后注册」——默认不装、非 TTY 不挂起、
 //   已有 plist 询问不静默覆盖、npx 场景如实报错（不生成坏 plist、不打印假成功）、
 //   修正 plist 路径前缀 sofagent/daemon/ → engine/daemon/。
 // v1.2.5 --init 自动生成 HMAC 密钥（~/.sofagent-key，权限 600），
@@ -451,16 +451,87 @@ export function runInit(): void {
       mkdirSync(hooksDir, { recursive: true });
     }
 
-    // 迁移：移除旧版 pre-commit hook（含 sofagent 标识的）
-    const legacyPath = join(hooksDir, 'pre-commit');
-    if (existsSync(legacyPath)) {
+    // v1.4.2 H-01: pre-commit 从「旧版迁移删除对象」升级为三层防线主防线——
+    // 不再删除，改为安装/覆盖（版本与内容校验逻辑同 commit-msg）。
+    //
+    // pre-commit 模板与 hooks/pre-commit 文件保持一致：staged 有 .sofagent/ 条目
+    // 才 reset（零成本判断）；reset 成功输出 ℹ️ 提示；失败（index.lock 竞态等）
+    // fail-loud exit 1 拒绝 commit。commit 对象生成前的清理是唯一对当次 commit
+    // 直接生效的防线（commit-msg 阶段 git 主进程持内存 index 快照，reset 只能
+    // 清理磁盘 index 防后续 commit 卷入）。
+    const PRE_COMMIT_TEMPLATE = `#!/bin/bash
+# sofagent pre-commit hook v\${VERSION}
+# 安装：sofagent-audit --init 或 sofagent-audit --install-hook
+# 三层防线第一层（主防线）：.sofagent/ 永不入库——在 commit 对象生成前
+# 就把 .sofagent/ 条目移出暂存区。
+#
+# v1.4.2 H-01 三层防线：
+#   ① pre-commit（本 hook）：staged 有 .sofagent/ 条目 → reset 移出（主防线）；
+#   ② commit-msg：同样逻辑再兜一次 + 24 条规则审计；
+#   ③ post-commit：HEAD tree 对账告警（best-effort，永不阻断）。
+#
+# reset 失败（如 index.lock 竞态被并发 git 进程持锁）→ fail-loud 拒绝本次
+# commit（宁可 false-retry 也不可静默入库），与 commit-msg 行为一致。
+
+if git diff --cached --name-only -- .sofagent/ 2>/dev/null | grep -q .; then
+  if git reset -q -- .sofagent/ 2>/dev/null; then
+    echo "ℹ️ [sofagent] 已将 .sofagent/ 移出暂存区（审计数据永不入库）"
+  else
+    echo "❌ [sofagent] 无法将 .sofagent/ 移出暂存区（index 可能被占用）。请稍后重试 commit。" >&2
+    exit 1
+  fi
+fi
+
+exit 0
+`;
+
+    const preCommitPath = join(hooksDir, 'pre-commit');
+    let hasPreCommitHook = false;
+    if (existsSync(preCommitPath)) {
       try {
-        const legacyContent = readFileSync(legacyPath, 'utf-8');
-        if (legacyContent.includes('sofagent')) {
-          require('fs').unlinkSync(legacyPath);
-          console.log('  → 已移除旧版 pre-commit hook（迁移到 commit-msg）');
+        const prcContent = readFileSync(preCommitPath, 'utf-8');
+        // 幂等检查对齐 commit-msg：版本达标 + 含 reset 防线逻辑才保留；
+        // 旧版（v1.0.5 及更早的 pre-commit 审计 hook）无 reset 逻辑 → 覆盖。
+        const hasGuardLogic = prcContent.includes('git reset') && prcContent.includes('.sofagent/');
+        const versionMatch = prcContent.match(/v(\d+)\.(\d+)\.(\d+)/);
+        if (versionMatch) {
+          const major = parseInt(versionMatch[1]!, 10);
+          const minor = parseInt(versionMatch[2]!, 10);
+          const patch = parseInt(versionMatch[3]!, 10);
+          if (major < 1 || (major === 1 && (minor < 4 || (minor === 4 && patch < 2)))) {
+            hasPreCommitHook = false;  // 旧版本（含 v1.0.5 迁移前的审计 hook）→ 覆盖
+          } else if (!hasGuardLogic) {
+            hasPreCommitHook = false;  // 版本达标但无 reset 防线逻辑 → 占坑 hook，覆盖
+          } else {
+            hasPreCommitHook = true;
+          }
+        } else if (hasGuardLogic && prcContent.includes('sofagent')) {
+          // 无版本号但含 sofagent reset 防线（手工部署场景）→ 保留
+          hasPreCommitHook = true;
+        } else {
+          hasPreCommitHook = false;  // 无版本号且无防线逻辑 → 覆盖
         }
-      } catch { /* 读不了就跳过 */ }
+      } catch {
+        // 读不了就当不存在
+      }
+    }
+
+    if (hasPreCommitHook) {
+      console.log('  → pre-commit hook 已安装（检测到 sofagent 防线标识），跳过');
+    } else {
+      // 覆盖前备份非 sofagent 的既有 pre-commit（用户自己的 hook，不能静默丢）
+      if (existsSync(preCommitPath)) {
+        try {
+          const existing = readFileSync(preCommitPath, 'utf-8');
+          if (!existing.includes('sofagent')) {
+            writeFileSync(join(hooksDir, 'pre-commit.bak'), existing, 'utf-8');
+            console.log('  → 已备份既有非 sofagent pre-commit hook 到 pre-commit.bak');
+          }
+        } catch { /* 备份失败不阻塞安装 */ }
+      }
+      writeFileSync(preCommitPath, PRE_COMMIT_TEMPLATE, 'utf-8');
+      chmodSync(preCommitPath, 0o755);
+      console.log('  → .git/hooks/pre-commit 已安装（.sofagent/ 永不入库主防线）');
     }
 
     const hookPath = join(hooksDir, 'commit-msg');
@@ -639,6 +710,14 @@ try {
 }
 ' 2>/dev/null
 
+# v1.4.2 H-01: HEAD tree 入库对账兜底——pre-commit/commit-msg 的 reset 在极端时序
+# 竞态下仍可能失败放行，此处扫描刚生成 commit 的 HEAD tree，命中 .sofagent/ 即
+# 告警（best-effort，永不阻断）。
+if git ls-tree -r HEAD --name-only 2>/dev/null | grep -q '^\\.sofagent/'; then
+  echo "  ⚠️ [sofagent] 检测到 .sofagent 文件已入库，违反永不入库承诺（reset 未拦住，疑似 index 竞态）。"
+  echo "  请立即处理：git rm --cached <文件> 并重写历史（git commit --amend 或 filter-branch）。"
+fi
+
 exit 0
 `;
 
@@ -658,6 +737,8 @@ exit 0
         // 主题消歧标记——parentSha 命中后须比对记录 task 与本 commit 主题，
         // 防相邻 commit 的审计记录被误认领（--no-verify 绕过场景）。缺此逻辑的旧 hook 强制覆盖。
         const hasSubjectDisambig = pcContent.includes('COMMIT_SUBJECT');
+        // v1.4.2 H-01: HEAD tree 入库对账兜底标记——缺此逻辑的旧 hook 强制覆盖
+        const hasHeadTreeGuard = pcContent.includes('ls-tree');
         const versionMatch = pcContent.match(/v(\d+)\.(\d+)\.(\d+)/);
         if (versionMatch) {
           const major = parseInt(versionMatch[1]!, 10);
@@ -674,6 +755,8 @@ exit 0
             hasPostCommitHook = false;  // 版本达标但仍是旧 $COMMIT_SHA 对账逻辑 → 覆盖为 HEAD^ 修复版
           } else if (!hasSubjectDisambig) {
             hasPostCommitHook = false;  // 版本达标但无主题消歧逻辑 → 覆盖（防跨 commit 误认领）
+          } else if (!hasHeadTreeGuard) {
+            hasPostCommitHook = false;  // 版本达标但无 HEAD tree 兜底 → 覆盖（H-01 三层防线）
           } else {
             hasPostCommitHook = true;   // 当前版本或更新 → 保留
           }

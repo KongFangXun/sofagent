@@ -1,5 +1,5 @@
 #!/bin/bash
-# sofagent post-commit hook v1.4.1
+# sofagent post-commit hook v1.4.2
 # --no-verify 跳过 commit-msg，但不跳过 post-commit
 # 安装：sofagent-audit --init（v1.0.6 起 --init 同时安装 commit-msg + post-commit）
 #
@@ -106,6 +106,15 @@ try {
   console.log("  如未使用 --no-verify 可忽略；如需确认运行 sofagent-audit --verify-commit " + COMMIT_SHA);
 } catch { process.exit(0); }
 ' 2>/dev/null
+fi
+
+# v1.4.2 H-01: HEAD tree 入库对账兜底——tree 在 commit-msg 运行前已生成、commit 成功后主进程
+# 会把内存 index 写回磁盘（覆盖 reset 的磁盘效果），故 commit-msg 的 reset 无法阻止当次提交
+# 卷入 .sofagent/（git 2.50.1 实测，见 commit-msg H-01 注释）。此处扫描刚生成 commit 的 HEAD tree，
+# 命中 .sofagent/ 即告警——这是「当次提交」的唯一防线（best-effort，永不阻断）。
+if git ls-tree -r HEAD --name-only 2>/dev/null | grep -q '^\.sofagent/'; then
+  echo "  ⚠️ [sofagent] 检测到 .sofagent 文件已入库，违反永不入库承诺（commit-msg reset 未拦住，疑似 index 竞态）。"
+  echo "  请立即处理：git rm --cached <文件> 并重写历史（git commit --amend 或 filter-branch）。"
 fi
 
 exit 0

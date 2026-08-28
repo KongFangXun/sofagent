@@ -1,6 +1,6 @@
 // ============================================================
 // tool-registry.ts · MCP tools/list schema definitions
-// v1.4.1: 从 mcp-server.ts 提取
+// v1.4.2: 从 mcp-server.ts 提取
 // ============================================================
 
 import { VERSION } from '@sofagent/audit';
@@ -21,7 +21,7 @@ export interface ToolDef {
 }
 
 /**
- * 完整工具清单——67 个 tool（v1.4.1：train_submit 新增；v1.4.0：cost_query + browser 4 新增；v1.3.9：worklog_query 新增；v1.3.6：workflow_submit/ontology_import/model_register/model_switch/model_unregister/train_budget/define_acceptance/check_acceptance；v1.3.5：run_ab_test/promote_ab/snapshot_list/snapshot_restore；v1.3.4：commons_publish/search/invoke/rate/retire/harvest_rule；不含 4 个 resource shortcut）
+ * 完整工具清单——76 个 tool（v1.4.2：fde_interview/fde_classify/fde_quantify/fde_derive/fde_distill/fde_deploy 六引擎 + train_doctor/train_dryrun/train_report 新增；v1.4.1：train_submit 新增；v1.4.0：cost_query + browser 4 新增；v1.3.9：worklog_query 新增；v1.3.6：workflow_submit/ontology_import/model_register/model_switch/model_unregister/train_budget/define_acceptance/check_acceptance；v1.3.5：run_ab_test/promote_ab/snapshot_list/snapshot_restore；v1.3.4：commons_publish/search/invoke/rate/retire/harvest_rule；不含 4 个 resource shortcut）
  */
 export const TOOLS: ToolDef[] = [
   {
@@ -915,6 +915,98 @@ export const TOOLS: ToolDef[] = [
     },
   },
   {
+    // v1.4.2 (章四)：训练环境体检——CUDA/显存/框架/基座缓存四项只查不装
+    name: 'train_doctor',
+    roles: ['eval', 'ops'],
+    description: '训练环境体检——CUDA/显存/框架版本/基座模型缓存四项结构化报告（只查不装；装环境走 train env init / tools/train-env-init.sh，基座下载走 model-downloader 断点续传）。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        enterprise_id: { type: 'string', description: '🔴 企业标识（必填——train-env.json 清单的企业分区）' },
+      },
+      required: ['enterprise_id'],
+    },
+  },
+  {
+    // v1.4.2 (章五)：训练 dry-run——失败前预防（管线连通/数据抽样/显存/算力外推）
+    name: 'train_dryrun',
+    roles: ['eval', 'ops'],
+    description: '训练 dry-run——提交前预检：极小样本管线连通 + 数据质量抽样 + 显存估算（超限提前告警）+ 算力外推（sigmoid 缩放律——ScaleRL 方法，外推成本超预算提交前告警）。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        data_path: { type: 'string', description: '🔴 数据文件路径（CSV/Excel/JSON/文本——相对 data 目录或绝对路径）' },
+        algorithm: { type: 'string', enum: ['sft', 'dpo', 'grpo'], description: '🔴 训练算法' },
+        column_mapping: { type: 'object', description: '列映射（可选——缺省按常见命名约定推断；如 {"instruction":"问题","output":"答案"}）', additionalProperties: { type: 'string' } },
+        vram: {
+          type: 'object',
+          description: '显存预检（可选——不填跳过该项）',
+          properties: {
+            params_billions: { type: 'number', description: '模型参数量（十亿为单位，如 8 = 8B）' },
+            batch_size: { type: 'number', description: 'batch size' },
+            sequence_length: { type: 'number', description: '序列长度（token 数）' },
+            bytes_per_param: { type: 'number', description: '精度字节（fp32=4/bf16=2；缺省 2 混合精度）' },
+            gradient_checkpointing: { type: 'boolean', description: '梯度检查点（开启省激活内存）' },
+            gpu_vram_mib: { type: 'number', description: 'GPU 可用显存（MiB——估算超此值提前 fail）' },
+          },
+          required: ['params_billions', 'batch_size', 'sequence_length'],
+        },
+        extrapolate: {
+          type: 'object',
+          description: '算力外推（可选——ScaleRL sigmoid 缩放律；数据点不足明示置信低不硬报）',
+          properties: {
+            points: {
+              type: 'array',
+              description: 'pilot run 数据点（算力, 性能）',
+              items: {
+                type: 'object',
+                properties: {
+                  compute: { type: 'number', description: '算力投入（GPU 小时等同单位）' },
+                  performance: { type: 'number', description: '性能（eval 分 0..100）' },
+                },
+                required: ['compute', 'performance'],
+              },
+            },
+            target_compute: { type: 'number', description: '目标算力规模（外推目标）' },
+            cost_per_unit: { type: 'number', description: '成本单价（元/GPU小时）' },
+            budget_cap: { type: 'number', description: '预算上限（元——外推成本超限提交前告警）' },
+          },
+          required: ['points', 'target_compute'],
+        },
+      },
+      required: ['data_path', 'algorithm'],
+    },
+  },
+  {
+    // v1.4.2 (章六)：训练报告——客户可读交付物（量化四字段 + 归档 dashboard）
+    name: 'train_report',
+    roles: ['eval', 'ops'],
+    description: '训练报告生成——数据概况+配置+eval对比+产物清单+量化四字段（GUIDE §4.3：年节省=岗位年薪×AI接管工时占比），markdown+JSON 归档 data/dashboard/train-reports/。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        train_job_id: { type: 'string', description: '🔴 训练任务标识' },
+        enterprise_id: { type: 'string', description: '🔴 企业标识' },
+        baseline_eval: { type: 'object', description: '基线 eval 报告（训练前——章三 runTrainEval 产出；缺省该段降级）', additionalProperties: true },
+        after_eval: { type: 'object', description: '训后 eval 报告（章三 runTrainEval 产出）', additionalProperties: true },
+        dataset_version: { type: 'object', description: '训练集版本记录（章二 dataset_version——数据概况段）', additionalProperties: true },
+        quantification: {
+          type: 'object',
+          description: '量化四字段输入（GUIDE §4.3 岗位口径——供绩效量化引擎消费）',
+          properties: {
+            annual_salary: { type: 'number', description: '岗位真实市场年薪（元/年）' },
+            takeover_ratio: { type: 'number', description: 'AI 接管工时占比（0..1，如 0.33）' },
+            ai_annual_cost: { type: 'number', description: 'AI 方案年运行成本（元/年）' },
+            one_time_investment: { type: 'number', description: '一次性投入（元——回本周期用）' },
+          },
+          required: ['annual_salary', 'takeover_ratio', 'ai_annual_cost'],
+        },
+        artifacts: { type: 'array', description: '产物清单（可选——缺省从 job record 推导）', items: { type: 'string' } },
+      },
+      required: ['train_job_id', 'enterprise_id'],
+    },
+  },
+  {
     // v1.3.6 (交付 ⑨)：验收条件定义——任务创建时附机器可判定验收条件
     name: 'define_acceptance',
     roles: ['eval'],
@@ -957,6 +1049,279 @@ export const TOOLS: ToolDef[] = [
         project_root: { type: 'string', description: '项目根（验收命令执行工作目录；缺省 cwd）' },
       },
       required: ['task_id'],
+    },
+  },
+  {
+    // v1.4.2 (章八·引擎一)：FDE 访谈结构化——多轮追加 + nodeId 幂等合并 + profile 重算
+    name: 'fde_interview',
+    roles: ['fde'],
+    description: 'FDE 访谈结构化落盘（引擎一）——五要素逐节点收集，多轮追加按 nodeId 幂等合并，自动重算企业画像（节点数/岗位分布/高频痛点）；prompts_only=true 返回五要素追问话术。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        enterprise_id: { type: 'string', description: '🔴 企业标识（data/fde/<id>/ 工作台分区）' },
+        prompts_only: { type: 'boolean', description: '只取五要素追问话术（不落盘——访谈前引导）' },
+        nodes: {
+          type: 'array',
+          description: '本轮访谈节点（五要素 + 三问）',
+          items: {
+            type: 'object',
+            properties: {
+              node_id: { type: 'string', description: '节点 ID（幂等键——重访谈覆盖旧记录）' },
+              description: { type: 'string', description: '节点描述（做什么）' },
+              elements: {
+                type: 'object',
+                description: '五要素（GUIDE 第二章）',
+                properties: {
+                  input: { type: 'string', description: '输入（从哪来）' },
+                  output: { type: 'string', description: '输出（给谁用）' },
+                  owner: { type: 'string', description: '负责人（岗位）' },
+                  duration: { type: 'string', description: '耗时（多久做一次/每次多久）' },
+                  bottleneck: { type: 'string', description: '最卡的地方（痛点——必填）' },
+                },
+                required: ['input', 'output', 'owner', 'duration', 'bottleneck'],
+              },
+              questions: {
+                type: 'object',
+                description: '三问判定（AI 节点识别）',
+                properties: {
+                  input_automatable: { type: 'boolean', description: 'Q1 输入能自动取？' },
+                  rules_codifiable: { type: 'boolean', description: 'Q2 规则能写清？' },
+                  output_predictable: { type: 'boolean', description: 'Q3 输出能自动推？' },
+                },
+                required: ['input_automatable', 'rules_codifiable', 'output_predictable'],
+              },
+              depends_on: { type: 'array', items: { type: 'string' }, description: '依赖节点 ID' },
+            },
+            required: ['node_id', 'description', 'elements', 'questions'],
+          },
+        },
+      },
+      required: ['enterprise_id'],
+    },
+  },
+  {
+    // v1.4.2 (章八·引擎二)：三问判定 → 节点方案（SSOT classifyAutomation + 六步分解）
+    name: 'fde_classify',
+    roles: ['fde'],
+    description: 'FDE 三问判定 → 节点方案（引擎二）——classifyAutomation SSOT 判定（🔄自动/⚡强化/👤暂不动）+ 六步分解最小工作单元（GUIDE §3.2）+ executor 映射，落 nodes.json。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        enterprise_id: { type: 'string', description: '🔴 企业标识' },
+        nodes: {
+          type: 'array',
+          description: '待判定节点（与 fde_interview 同构）',
+          items: {
+            type: 'object',
+            properties: {
+              node_id: { type: 'string', description: '节点 ID' },
+              description: { type: 'string', description: '节点描述' },
+              elements: {
+                type: 'object',
+                description: '五要素',
+                properties: {
+                  input: { type: 'string', description: '输入' },
+                  output: { type: 'string', description: '输出' },
+                  owner: { type: 'string', description: '负责人' },
+                  duration: { type: 'string', description: '耗时' },
+                  bottleneck: { type: 'string', description: '最卡的地方' },
+                },
+                required: ['input', 'output', 'owner', 'duration', 'bottleneck'],
+              },
+              questions: {
+                type: 'object',
+                description: '三问',
+                properties: {
+                  input_automatable: { type: 'boolean', description: 'Q1 输入能自动取？' },
+                  rules_codifiable: { type: 'boolean', description: 'Q2 规则能写清？' },
+                  output_predictable: { type: 'boolean', description: 'Q3 输出能自动推？' },
+                },
+                required: ['input_automatable', 'rules_codifiable', 'output_predictable'],
+              },
+              depends_on: { type: 'array', items: { type: 'string' }, description: '依赖节点' },
+            },
+            required: ['node_id', 'description', 'elements', 'questions'],
+          },
+        },
+      },
+      required: ['enterprise_id', 'nodes'],
+    },
+  },
+  {
+    // v1.4.2 (章八·引擎三)：量化四字段 + ROI 排序（同公式同源 train-report）
+    name: 'fde_quantify',
+    roles: ['fde'],
+    description: 'FDE 量化四字段 + ROI 排序（引擎三）——年节省=岗位年薪×AI接管工时占比（GUIDE §4.3，与 train_report 同公式同源）；ROI=年节省÷(投入+1) 降序，落 quantification.json（若引擎二已跑自动关联判定标签）。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        enterprise_id: { type: 'string', description: '🔴 企业标识' },
+        nodes: {
+          type: 'array',
+          description: '量化入参（岗位口径）',
+          items: {
+            type: 'object',
+            properties: {
+              node_id: { type: 'string', description: '节点 ID' },
+              annual_salary: { type: 'number', description: '岗位真实市场年薪（元/年——追问真实数）' },
+              takeover_ratio: { type: 'number', description: 'AI 接管工时占比（0..1）' },
+              ai_annual_cost: { type: 'number', description: 'AI 方案年运行成本（元/年）' },
+              one_time_investment: { type: 'number', description: '一次性投入（元——回本周期用）' },
+            },
+            required: ['node_id', 'annual_salary', 'takeover_ratio', 'ai_annual_cost'],
+          },
+        },
+      },
+      required: ['enterprise_id', 'nodes'],
+    },
+  },
+  {
+    // v1.4.2 (章八·引擎四)：本体推导——五要素 → ontology YAML 草稿
+    name: 'fde_derive',
+    roles: ['fde'],
+    description: 'FDE 本体推导（引擎四）——五要素+访谈 → 实体/概念/关系 YAML 草稿（复用 compose-interview 推导链路）；机器初稿人工确认后经 ontology_import 导入；超 10 实体或 5 节点提示 needsFullOntology。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        enterprise_id: { type: 'string', description: '🔴 企业标识' },
+        workflow_name: { type: 'string', description: '🔴 工作流名称（草稿命名）' },
+        workflow_description: { type: 'string', description: '工作流描述' },
+        nodes: {
+          type: 'array',
+          description: '访谈节点（与 fde_interview 同构）',
+          items: {
+            type: 'object',
+            properties: {
+              node_id: { type: 'string', description: '节点 ID' },
+              description: { type: 'string', description: '节点描述' },
+              elements: {
+                type: 'object',
+                description: '五要素',
+                properties: {
+                  input: { type: 'string', description: '输入' },
+                  output: { type: 'string', description: '输出' },
+                  owner: { type: 'string', description: '负责人' },
+                  duration: { type: 'string', description: '耗时' },
+                  bottleneck: { type: 'string', description: '最卡的地方' },
+                },
+                required: ['input', 'output', 'owner', 'duration', 'bottleneck'],
+              },
+              questions: {
+                type: 'object',
+                description: '三问',
+                properties: {
+                  input_automatable: { type: 'boolean', description: 'Q1' },
+                  rules_codifiable: { type: 'boolean', description: 'Q2' },
+                  output_predictable: { type: 'boolean', description: 'Q3' },
+                },
+                required: ['input_automatable', 'rules_codifiable', 'output_predictable'],
+              },
+              depends_on: { type: 'array', items: { type: 'string' }, description: '依赖节点' },
+            },
+            required: ['node_id', 'description', 'elements', 'questions'],
+          },
+        },
+      },
+      required: ['enterprise_id', 'workflow_name', 'nodes'],
+    },
+  },
+  {
+    // v1.4.2 (章八·引擎五)：三层交付物——文档/Skill/运行（GUIDE 第五章）
+    name: 'fde_distill',
+    roles: ['fde'],
+    description: 'FDE 三层交付物生成（引擎五）——跑通过程沉淀：文档层手册（人读：现状/六步/验收/回滚）+ Skill 层模板（Agent 可执行）+ 运行层 yaml 片段（引擎六组装用），归档 deliverables/ 带 README 索引。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        enterprise_id: { type: 'string', description: '🔴 企业标识' },
+        nodes: {
+          type: 'array',
+          description: '沉淀节点（与 fde_interview 同构）',
+          items: {
+            type: 'object',
+            properties: {
+              node_id: { type: 'string', description: '节点 ID' },
+              description: { type: 'string', description: '节点描述' },
+              elements: {
+                type: 'object',
+                description: '五要素',
+                properties: {
+                  input: { type: 'string', description: '输入' },
+                  output: { type: 'string', description: '输出' },
+                  owner: { type: 'string', description: '负责人' },
+                  duration: { type: 'string', description: '耗时' },
+                  bottleneck: { type: 'string', description: '最卡的地方' },
+                },
+                required: ['input', 'output', 'owner', 'duration', 'bottleneck'],
+              },
+              questions: {
+                type: 'object',
+                description: '三问',
+                properties: {
+                  input_automatable: { type: 'boolean', description: 'Q1' },
+                  rules_codifiable: { type: 'boolean', description: 'Q2' },
+                  output_predictable: { type: 'boolean', description: 'Q3' },
+                },
+                required: ['input_automatable', 'rules_codifiable', 'output_predictable'],
+              },
+              depends_on: { type: 'array', items: { type: 'string' }, description: '依赖节点' },
+            },
+            required: ['node_id', 'description', 'elements', 'questions'],
+          },
+        },
+      },
+      required: ['enterprise_id', 'nodes'],
+    },
+  },
+  {
+    // v1.4.2 (章八·引擎六)：workflow 组装部署——产物走 submit+activate 现有链路
+    name: 'fde_deploy',
+    roles: ['fde'],
+    description: 'FDE workflow 组装部署（引擎六）——三层交付物 → deployments/<name>.yml（复用 workflow-draft 生成器，与 fde_compose 同格式）；只产出工件不代激活——激活走 workflow_submit + activate_workflow（人审闸门保留）。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        enterprise_id: { type: 'string', description: '🔴 企业标识' },
+        workflow_name: { type: 'string', description: '🔴 工作流名称（yml 文件名）' },
+        workflow_description: { type: 'string', description: '工作流描述' },
+        nodes: {
+          type: 'array',
+          description: '组装节点（与 fde_interview 同构）',
+          items: {
+            type: 'object',
+            properties: {
+              node_id: { type: 'string', description: '节点 ID' },
+              description: { type: 'string', description: '节点描述' },
+              elements: {
+                type: 'object',
+                description: '五要素',
+                properties: {
+                  input: { type: 'string', description: '输入' },
+                  output: { type: 'string', description: '输出' },
+                  owner: { type: 'string', description: '负责人' },
+                  duration: { type: 'string', description: '耗时' },
+                  bottleneck: { type: 'string', description: '最卡的地方' },
+                },
+                required: ['input', 'output', 'owner', 'duration', 'bottleneck'],
+              },
+              questions: {
+                type: 'object',
+                description: '三问',
+                properties: {
+                  input_automatable: { type: 'boolean', description: 'Q1' },
+                  rules_codifiable: { type: 'boolean', description: 'Q2' },
+                  output_predictable: { type: 'boolean', description: 'Q3' },
+                },
+                required: ['input_automatable', 'rules_codifiable', 'output_predictable'],
+              },
+              depends_on: { type: 'array', items: { type: 'string' }, description: '依赖节点' },
+            },
+            required: ['node_id', 'description', 'elements', 'questions'],
+          },
+        },
+      },
+      required: ['enterprise_id', 'workflow_name', 'nodes'],
     },
   },
 ];

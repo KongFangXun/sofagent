@@ -2,7 +2,7 @@
 
 > **想给 FORGE 加新 loop？这份文档告诉你怎么搭。** 从 driver 脚本结构到三个必踩的坑，每条都来自真实 debug 会话。
 >
-> v1.4.1 · 2026-08-27（UTC）
+> v1.4.2 · 2026-08-28（UTC）
 
 <img src="../docs/assets/sofagent.png" alt="sofagent" width="160" />
 

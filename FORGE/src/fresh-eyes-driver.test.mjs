@@ -50,6 +50,90 @@ function chunk(arr, size) {
   return batches;
 }
 
+// ─── 章·步零 ④：重复率熔断（repeat-convergence）内联实现 ──────
+// 与 fresh-eyes-driver.mjs 保持一致（driver 无导出，内联做单元测试）。
+// REPEAT_BREAK_THRESHOLD 阈值逻辑：默认 0.6，FORGE_REPEAT_BREAK_THRESHOLD 可调。
+function resolveRepeatBreakThreshold(env = {}) {
+  const raw = parseFloat(env.FORGE_REPEAT_BREAK_THRESHOLD || '');
+  return Number.isFinite(raw) && raw > 0 && raw <= 1 ? raw : 0.6;
+}
+
+function normalizeFindingTitle(title) {
+  return String(title || '')
+    .replace(/[\s\u3000]+/g, '')
+    .replace(/[，。：；、！？·…（）“”‘’"':;,.!?()\-—―~～_*>`]/g, '')
+    .toLowerCase()
+    .slice(0, 60);
+}
+
+function normalizeFindingPath(filePath, repoRoot = '/repo') {
+  let p = String(filePath || '').trim().replace(/^[`'"]+|[`'"]+$/g, '');
+  p = p.replace(/\\/g, '/');
+  const wtMark = p.indexOf('/worktree/');
+  if (p.startsWith('/') && wtMark !== -1) p = p.slice(wtMark + '/worktree/'.length);
+  else if (p.startsWith(repoRoot + '/')) p = p.slice(repoRoot.length + 1);
+  p = p.replace(/:\d+(-\d+)?$/, '');
+  return p.toLowerCase();
+}
+
+function extractFindingFingerprint(finding, repoRoot = '/repo') {
+  if (!finding || !finding.content) return null;
+  const lines = finding.content.split('\n');
+  const headingLine = lines[0] || '';
+
+  let title = '';
+  const hm = headingLine.match(/^#+\s+finding-[A-Z0-9-]+[：:]?\s*(.*)$/i);
+  if (hm && hm[1].trim()) {
+    title = hm[1];
+  } else {
+    title = (lines.slice(1).find(l => l.trim() && !l.trim().startsWith('#')) || '').trim();
+  }
+  const normTitle = normalizeFindingTitle(title);
+
+  let filePath = '';
+  for (const line of lines) {
+    const fm = line.match(/\*\*(?:涉及)?文件(?:路径)?\*\*\s*[:：]\s*(.+)/);
+    if (fm) { filePath = fm[1]; break; }
+  }
+  if (!filePath) {
+    const bm = finding.content.match(/`([A-Za-z0-9_@\-./\\]+\.[A-Za-z0-9]{1,8}(?::\d+)?)`/);
+    if (bm) filePath = bm[1];
+  }
+  if (!filePath) {
+    const pm = finding.content.match(/([A-Za-z0-9_@\-./\\]+\.[A-Za-z0-9]{1,8})(?::\d+)?/);
+    if (pm) filePath = pm[1];
+  }
+  const normPath = normalizeFindingPath(filePath, repoRoot);
+
+  if (!normTitle && !normPath) return null;
+  return {
+    fingerprint: `${normPath}||${normTitle}`,
+    title: title.slice(0, 80),
+    filePath: filePath.slice(0, 200),
+  };
+}
+
+function checkRepeatConvergence(currentFps, prevFps, threshold = resolveRepeatBreakThreshold()) {
+  const result = { triggered: false, ratio: 0, repeated: 0, total: currentFps ? currentFps.length : 0, examples: [] };
+  if (!currentFps || currentFps.length === 0) return result;
+  if (!prevFps || prevFps.length === 0) return result;
+
+  const prevSet = new Set(prevFps.map(fp => fp.fingerprint));
+  const repeatedItems = currentFps.filter(fp => prevSet.has(fp.fingerprint));
+  result.repeated = repeatedItems.length;
+  result.ratio = repeatedItems.length / currentFps.length;
+  result.examples = repeatedItems.slice(0, 3).map(fp => fp.filePath || fp.title || fp.fingerprint);
+  result.triggered = result.ratio > threshold;
+  return result;
+}
+
+/** 模拟一轮 result.md → 指纹集合（driver 内 extractRoundFingerprints 的测试版） */
+function buildRoundFps(resultText, repoRoot = '/repo') {
+  return splitFindings(resultText)
+    .map(f => extractFindingFingerprint(f, repoRoot))
+    .filter(Boolean);
+}
+
 // ─── 测试用例 ────────────────────────────────────────────────
 
 function testBasicSplit() {
@@ -410,6 +494,170 @@ function testParseStopConditionFallbackForFreeFormHeadings() {
   console.log('  ✓ testParseStopConditionFallbackForFreeFormHeadings');
 }
 
+// ─── 章·步零 ④：重复率熔断测试（mock history 数据，不跑真实 LLM）─────
+
+/**
+ * 组 1：重复率超阈值 → 触发停轮（triggered=true）。
+ *
+ * 场景还原 run-01：round-01 报 10 条，round-02 在陈旧 worktree 上又报
+ * 12 条，其中大部分同文件同问题——重复率 > 0.6 应熔断。
+ */
+function testRepeatBreakTriggers() {
+  // 上轮指纹：5 条（README 2 条 + install.sh 1 条 + bootstrap.sh 2 条）
+  const prevText = [
+    '# result.md', '',
+    '### finding-01: README 工具数口径自相矛盾',
+    '- **文件路径**: README.md',
+    '',
+    '### finding-02: README 安装命令锁定旧版本 tag',
+    '- **文件路径**: README.md',
+    '',
+    '### finding-03: install.sh 迁移逻辑吞错后无条件 rm -rf',
+    '- **文件路径**: install.sh',
+    '',
+    '### finding-04: bootstrap.sh 注释行数与实测偏差过大',
+    '- **文件路径**: bootstrap.sh',
+    '',
+    '### finding-05: bootstrap.sh 环境检测不完整',
+    '- **文件路径**: bootstrap.sh',
+    '',
+  ].join('\n');
+  const prevFps = buildRoundFps(prevText);
+  assert.strictEqual(prevFps.length, 5, '上轮应提取 5 条指纹');
+
+  // 本轮：5 条中 4 条与上轮重复（文件+标题同款），1 条新问题 → 重复率 4/5 = 0.8 > 0.6
+  const currText = [
+    '# result.md', '',
+    '### finding-01: README 工具数口径自相矛盾',
+    '- **文件路径**: README.md',
+    '',
+    '### finding-02: README 安装命令锁定旧版本 tag',
+    '- **文件路径**: README.md',
+    '',
+    '### finding-03: install.sh 迁移逻辑吞错后无条件 rm -rf',
+    '- **文件路径**: install.sh',
+    '',
+    '### finding-04: bootstrap.sh 注释行数与实测偏差过大',
+    '- **文件路径**: bootstrap.sh',
+    '',
+    '### finding-06: 全新问题——CHANGELOG 索引规则互斥',
+    '- **文件路径**: CHANGELOG.md',
+    '',
+  ].join('\n');
+  const currFps = buildRoundFps(currText);
+  assert.strictEqual(currFps.length, 5, '本轮应提取 5 条指纹');
+
+  const verdict = checkRepeatConvergence(currFps, prevFps);
+  assert.strictEqual(verdict.total, 5, 'total 应为本轮指纹数 5');
+  assert.strictEqual(verdict.repeated, 4, '应命中 4 条重复');
+  assert.ok(Math.abs(verdict.ratio - 0.8) < 1e-9, `重复率应为 0.8，实际 ${verdict.ratio}`);
+  assert.strictEqual(verdict.triggered, true, '重复率 0.8 > 阈值 0.6 应触发熔断');
+  assert.ok(verdict.examples.length > 0, '应给出重复样例');
+  console.log('  ✓ testRepeatBreakTriggers');
+}
+
+/**
+ * 组 2：重复率低于阈值 → 不触发（继续轮转）。
+ *
+ * 本轮 5 条中只有 2 条与上轮重复（0.4 < 0.6）——大部分是新问题，
+ * 熔断不该拦截正常审查推进。
+ */
+function testRepeatBreakBelowThreshold() {
+  const prevText = [
+    '### finding-01: 老问题 A', '- **文件路径**: a.md', '',
+    '### finding-02: 老问题 B', '- **文件路径**: b.md', '',
+    '### finding-03: 老问题 C', '- **文件路径**: c.md', '',
+  ].join('\n');
+  const currText = [
+    '### finding-01: 老问题 A', '- **文件路径**: a.md', '',
+    '### finding-02: 老问题 B', '- **文件路径**: b.md', '',
+    '### finding-03: 新问题 D', '- **文件路径**: d.md', '',
+    '### finding-04: 新问题 E', '- **文件路径**: e.md', '',
+    '### finding-05: 新问题 F', '- **文件路径**: f.md', '',
+  ].join('\n');
+
+  const verdict = checkRepeatConvergence(buildRoundFps(currText), buildRoundFps(prevText));
+  assert.strictEqual(verdict.repeated, 2, '应命中 2 条重复');
+  assert.ok(Math.abs(verdict.ratio - 0.4) < 1e-9, `重复率应为 0.4，实际 ${verdict.ratio}`);
+  assert.strictEqual(verdict.triggered, false, '重复率 0.4 ≤ 阈值 0.6 不应触发');
+  console.log('  ✓ testRepeatBreakBelowThreshold');
+}
+
+/**
+ * 组 3：fingerprint 稳定性——同一路径/标题的微差形态（绝对路径 vs 相对、
+ * 反引号包裹、行号后缀、全角标点、大小写、worktree 根前缀）应命中同一指纹；
+ * 不同文件的同名标题不应误判重复。
+ */
+function testFingerprintStability() {
+  const f1 = extractFindingFingerprint({
+    id: '01',
+    content: '### finding-01: README 工具数口径自相矛盾\n- **文件路径**: README.md\n正文',
+  });
+  // 微差形态：worktree 绝对路径 + 行号 + 反引号 + 全角冒号标题 + 大写扩展名
+  const f2 = extractFindingFingerprint({
+    id: '02',
+    content: '### finding-02：README 工具数口径自相矛盾\n- **文件路径**: `/Users/x/.sofagent/data/forge-runs/fresh-eyes-loop/2026-08-26/run-01/worktree/README.md:103`\n正文不同也无妨',
+  });
+
+  assert.ok(f1 && f2, '两条都应提取出指纹');
+  assert.strictEqual(f1.fingerprint, f2.fingerprint,
+    `微差形态应命中同一指纹：\n  f1=${f1.fingerprint}\n  f2=${f2.fingerprint}`);
+
+  // 不同文件同标题 → 不重复（路径是指纹的一部分）
+  const f3 = extractFindingFingerprint({
+    id: '03',
+    content: '### finding-03: README 工具数口径自相矛盾\n- **文件路径**: docs/README.md\n正文',
+  });
+  assert.notStrictEqual(f1.fingerprint, f3.fingerprint, '不同路径不应误判重复');
+
+  // 主仓根前缀剥离（REPO_ROOT 形态）
+  const f4 = extractFindingFingerprint({
+    id: '04',
+    content: '### finding-04: README 工具数口径自相矛盾\n- **文件路径**: /repo/README.md\n正文',
+  });
+  assert.strictEqual(f1.fingerprint, f4.fingerprint, '主仓绝对路径应与相对路径同指纹');
+
+  // 空内容 → null（无法构造稳定指纹，fail-open）
+  assert.strictEqual(extractFindingFingerprint({ id: '05', content: '' }), null);
+
+  console.log('  ✓ testFingerprintStability');
+}
+
+/**
+ * 组 3b：熔断边界语义——首轮无对照（null）、本轮 0 条、阈值 env 可调。
+ */
+function testRepeatBreakEdgeCases() {
+  const fps = buildRoundFps('### finding-01: 问题\n- **文件路径**: a.md\n');
+
+  // 首轮（prevFps=null）→ 不判定
+  assert.strictEqual(checkRepeatConvergence(fps, null).triggered, false, '首轮无对照不应触发');
+
+  // 上轮 0 条（prevFps=[]）→ 不判定（上轮 clean，走别的停止路径）
+  assert.strictEqual(checkRepeatConvergence(fps, []).triggered, false, '上轮无 finding 不应触发');
+
+  // 本轮 0 条 → 不判定
+  assert.strictEqual(checkRepeatConvergence([], fps).triggered, false, '本轮无 finding 不应触发');
+
+  // 全部重复（ratio=1.0）→ 触发
+  assert.strictEqual(checkRepeatConvergence(fps, fps).triggered, true, '完全重复应触发');
+
+  // 阈值 env 可调：FORGE_REPEAT_BREAK_THRESHOLD=0.9 时 0.8 重复率不触发
+  assert.strictEqual(resolveRepeatBreakThreshold({ FORGE_REPEAT_BREAK_THRESHOLD: '0.9' }), 0.9, 'env=0.9 应生效');
+  assert.strictEqual(resolveRepeatBreakThreshold({}), 0.6, '缺省应为 0.6');
+  assert.strictEqual(resolveRepeatBreakThreshold({ FORGE_REPEAT_BREAK_THRESHOLD: 'abc' }), 0.6, '非法 env 应回退 0.6');
+  assert.strictEqual(resolveRepeatBreakThreshold({ FORGE_REPEAT_BREAK_THRESHOLD: '1.5' }), 0.6, '超范围 env 应回退 0.6');
+
+  // 阈值边界：ratio 恰等于阈值 → 不触发（triggered 条件是 > threshold）
+  const p = [{ fingerprint: 'a||x' }, { fingerprint: 'b||y' }];
+  const c = [{ fingerprint: 'a||x' }, { fingerprint: 'b||y' }];
+  const exactlyAtThreshold = checkRepeatConvergence(
+    c, p, 1.0, // threshold=1.0, ratio=1.0 → 不触发（严格大于才触发）
+  );
+  assert.strictEqual(exactlyAtThreshold.triggered, false, 'ratio == threshold 不应触发（严格大于语义）');
+
+  console.log('  ✓ testRepeatBreakEdgeCases');
+}
+
 // ─── 运行测试 ────────────────────────────────────────────────
 console.log('\n🧪 fresh-eyes-driver splitFindings / chunk / a-verify 分片单元测试\n');
 
@@ -432,6 +680,11 @@ const tests = [
   testRealResultMd,
   // v1.3.2 run-11 回归：parseStopCondition fallback for 自由编号格式
   testParseStopConditionFallbackForFreeFormHeadings,
+  // 章·步零 ④：重复率熔断（repeat-convergence）
+  testRepeatBreakTriggers,
+  testRepeatBreakBelowThreshold,
+  testFingerprintStability,
+  testRepeatBreakEdgeCases,
 ];
 
 for (const test of tests) {

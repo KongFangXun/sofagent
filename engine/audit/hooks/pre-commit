@@ -1,0 +1,27 @@
+#!/bin/bash
+# sofagent pre-commit hook v1.4.2
+# 安装：sofagent-audit --init 或 sofagent-audit --install-hook
+# 三层防线第一层（主防线）：.sofagent/ 永不入库——在 commit 对象生成前
+# 就把 .sofagent/ 条目移出暂存区。
+#
+# v1.4.2 H-01 三层防线：
+#   ① pre-commit（本 hook）：staged 有 .sofagent/ 条目 → reset 移出（主防线，
+#      commit 尚未开始生成，reset 对本次 commit 直接生效）；
+#   ② commit-msg：同样逻辑再兜一次 + 24 条规则审计（对 macOS git 内存 index
+#      快照场景，reset 至少清理磁盘 index 防**后续** commit 卷入）；
+#   ③ post-commit：HEAD tree 对账告警（best-effort，永不阻断）。
+#
+# reset 失败（如 index.lock 竞态被并发 git 进程持锁）→ fail-loud 拒绝本次
+# commit（宁可 false-retry 也不可静默入库），与 commit-msg L85-95 行为一致。
+
+# 零成本判断：暂存区无 .sofagent/ 条目直接放行，不触发任何 index 写操作
+if git diff --cached --name-only -- .sofagent/ 2>/dev/null | grep -q .; then
+  if git reset -q -- .sofagent/ 2>/dev/null; then
+    echo "ℹ️ [sofagent] 已将 .sofagent/ 移出暂存区（审计数据永不入库）"
+  else
+    echo "❌ [sofagent] 无法将 .sofagent/ 移出暂存区（index 可能被占用）。请稍后重试 commit。" >&2
+    exit 1
+  fi
+fi
+
+exit 0

@@ -8,10 +8,7 @@
 // 对齐 v1.3.4 L3 养护环「失效退役」+ v1.3.5 promote_ab 人审语义。
 // ============================================================
 import { join } from 'path';
-
-function getSofagentDataDir(): string {
-  return process.env.SOFAGENT_DATA || join(process.cwd(), 'data');
-}
+import { getDataDir } from '@sofagent/core';
 
 export interface ModelUnregisterArgs {
   /** 目标模型名 */
@@ -49,7 +46,7 @@ export async function modelUnregister(args: ModelUnregisterArgs): Promise<ModelU
   try {
     const { retireModel, restoreModel } = await import('@sofagent/orchestrator');
     const opts = {
-      dataDir: getSofagentDataDir(),
+      dataDir: getDataDir(),
       actor: 'mcp-model-unregister',
       ...(human_confirmed !== undefined ? { humanConfirmed: human_confirmed } : {}),
       ...(comment ? { comment } : {}),

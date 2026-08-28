@@ -532,15 +532,27 @@ if [ -z "$CHANGELOG_LINE" ]; then
   ((FAIL++)) || true
 else
   CL_LINENO=$(echo "$CHANGELOG_LINE" | cut -d: -f1)
-  CL_PREV=$(echo "$CHANGELOG_LINE" | grep -oE '测试 [0-9]+→' | grep -oE '[0-9]+')
-  CL_CUR=$(echo "$CHANGELOG_LINE" | grep -oE '→\*\*[0-9]+\*\*' | grep -oE '[0-9]+')
-  CL_DELTA=$(echo "$CHANGELOG_LINE" | grep -oE '（\+[0-9]+' | grep -oE '[0-9]+')
+  # 锚定「测试 N→**M**（+K」整段后按位取数——CHANGELOG 索引行常含多个「→**数字**」
+  # （如 MCP 67→**76**），旧模式 grep -oE '→\*\*[0-9]+\*\*' 多值命中导致
+  # 「[: 76\n3349: integer expression expected」噪声（判定结果虽对但脏输出）
+  CL_ANCHOR=$(echo "$CHANGELOG_LINE" | grep -oE '测试 [0-9]+→\*\*[0-9]+\*\*（\+[0-9]+' | grep -oE '[0-9]+')
+  CL_PREV=$(echo "$CL_ANCHOR" | sed -n '1p')
+  CL_CUR=$(echo "$CL_ANCHOR" | sed -n '2p')
+  CL_DELTA=$(echo "$CL_ANCHOR" | sed -n '3p')
   cl_fail=0
-  # ① 算术自洽：前值 + 增量 = 当前值
-  CL_SUM=$((CL_PREV + CL_DELTA))
-  if [ "$CL_SUM" -ne "$CL_CUR" ]; then
-    echo -e "  ${RED}✗ CHANGELOG.md（行 ${CL_LINENO}）：算术不自洽——${CL_PREV}+${CL_DELTA}=${CL_SUM} ≠ ${CL_CUR}${NC}"
+  # 锚定段防御：必须恰好 3 个数字（前值/当前值/增量），结构异常 fail-loud 不静默
+  CL_COUNT=$(echo "$CL_ANCHOR" | grep -c . )
+  if [ "$CL_COUNT" -ne 3 ] || [ -z "$CL_PREV" ] || [ -z "$CL_CUR" ] || [ -z "$CL_DELTA" ]; then
+    echo -e "  ${RED}✗ CHANGELOG.md（行 ${CL_LINENO}）：锚定段数字解析异常（期望 3 个，实得 ${CL_COUNT} 个：prev=${CL_PREV:-空} cur=${CL_CUR:-空} delta=${CL_DELTA:-空}）${NC}"
     cl_fail=1
+  fi
+  # ① 算术自洽：前值 + 增量 = 当前值（解析异常时短路，防空值参与算术产生新噪声）
+  if [ "$cl_fail" = "0" ]; then
+    CL_SUM=$((CL_PREV + CL_DELTA))
+    if [ "$CL_SUM" -ne "$CL_CUR" ]; then
+      echo -e "  ${RED}✗ CHANGELOG.md（行 ${CL_LINENO}）：算术不自洽——${CL_PREV}+${CL_DELTA}=${CL_SUM} ≠ ${CL_CUR}${NC}"
+      cl_fail=1
+    fi
   fi
   # ② 双口径对齐（历史快照语义）：CHANGELOG 最新版本行是发版时点快照（同开发日志
   #    「历史冻结」），不与当前 TOTAL_TESTS 比对（发版后新增测试属正常漂移）。

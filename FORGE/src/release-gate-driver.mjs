@@ -1123,22 +1123,28 @@ async function runWorker(step, runDir, target) {
   }
 
   // 6. 提取文本输出
+  // v1.4.2 修复（run-11 根因）：兜底不再限 hardBreak——DSH 后端正常返回但 output
+  // 为空（agent 在工具调用后未产出任何 assistant 文本，summarizeSession 扫事件流
+  // 得空串）同样撞「Agent 未返回内容」整步作废。对齐 fresh-eyes-driver 三层兜底
+  // （裸 LLM → 碎片合成 → 抛错）：文本为空即尝试裸 LLM 报告生成，precheckEvidence
+  // 是 DSH 桥接下的唯一证据面（run-11 实证：regression/coverage 两 worker 均死于
+  // 该场景，证据 32KB/34KB 全在 prompt 里，裸 LLM 完全可判）。
   let text = extractAgentText(result);
   if (!text) {
-    // v1.2.7：hardBreak 后 agent 无文本，走无工具裸 LLM 报告生成（和 fresh-eyes-driver 对齐）
-    // v1.4.0：precheckEvidence 一并传入——DSH 桥接无 tool messages，兜底报告
-    // 必须基于 driver 注入的 precheck 证据生成，否则永远「0 条工具结果」判 FAIL
-    if (result?.hardBreak) {
-      console.warn(`  ┄ [${step}] 硬熔断后模型未输出文本，启动无工具裸 LLM 报告生成`);
-      try {
-        text = await generateReportWithoutTools(model, result?.messages ?? [], step, 'V', stepDef, precheckEvidence);
-      } catch (bareErr) {
-        console.warn(`  ┄ [${step}] 裸 LLM 报告生成也失败: ${bareErr.message}`);
-      }
+    console.warn(`  ┄ [${step}] agent 未输出文本${result?.hardBreak ? '（硬熔断后）' : '（正常返回但 content 空）'}，启动无工具裸 LLM 报告生成`);
+    try {
+      text = await generateReportWithoutTools(model, result?.messages ?? [], step, 'V', stepDef, precheckEvidence);
+    } catch (bareErr) {
+      console.warn(`  ┄ [${step}] 裸 LLM 报告生成失败: ${bareErr.message}`);
     }
     if (!text) {
-      throw new Error(`[worker:${step}] Agent 未返回内容`);
+      // 最终兜底：从工具结果碎片合成最小报告（对齐 fresh-eyes synthesizeReportFromMessages）
+      text = synthesizeFallbackReport(step, precheckEvidence);
     }
+    if (!text) {
+      throw new Error(`[worker:${step}] Agent 未返回内容（裸 LLM 兜底与碎片合成均失败）`);
+    }
+    console.log(`  ✅ [${step}] 兜底报告生成成功（${text.length} 字符，质量受限标注见报告内）`);
   }
 
   // 7. 写产物（release-gate 每步只产出 1 个文件）
@@ -1298,6 +1304,34 @@ async function generateReportWithoutTools(model, messages, step, role, stepDef, 
     return respText.map(x => typeof x === 'string' ? x : x?.text ?? '').join('');
   }
   return typeof respText === 'string' && respText.trim() ? respText : null;
+}
+
+/**
+ * v1.4.2（run-11 根因）：裸 LLM 也失败时的最终兜底——基于 precheckEvidence
+ * 合成结构化占位报告（对齐 fresh-eyes synthesizeReportFromMessages 的「降级
+ * 不丢证据」原则）。DSH 桥接下 messages 为空数组，工具结果不可得，precheck
+ * 证据是唯一可用素材。产物明确标注「质量受限」，让下游 consolidate/verdict
+ * 能识别这是降级判定而非正常 worker 判定。
+ *
+ * @param {string} step             步骤名
+ * @param {string} precheckEvidence driver 预执行的 precheck 证据文本
+ * @returns {string}                占位报告文本，证据也缺时返回空串
+ */
+function synthesizeFallbackReport(step, precheckEvidence) {
+  if (!precheckEvidence) return '';
+  return [
+    `## ${step} 判定报告（降级生成——质量受限）`,
+    '',
+    '> ⚠️ **本报告由 driver 兜底合成**：worker agent 未产出文本，裸 LLM 生成亦失败。',
+    '> 判定依据为 driver 预执行的 precheck 证据（命令已实际执行，结果真实），',
+    '> 但未经 worker 语义审查——请主 session 复验后采信。',
+    '',
+    '--- precheck 证据（判定依据） ---',
+    precheckEvidence,
+    '',
+    '---',
+    `**降级占位**：${step} 未经独立语义判定，按 fail-closed 原则交由 verdict 步骤裁量。`,
+  ].join('\n');
 }
 
 // ═══════════════════════════════════════════════════════════

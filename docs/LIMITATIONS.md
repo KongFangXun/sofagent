@@ -2,7 +2,7 @@
 
 > 诚实坦白：已知局限。列出 sofagent 当前做不到什么、为什么做不到、等什么才能做到。
 >
-> v1.4.1 · 2026-08-27（UTC）· 孔放勋
+> v1.4.2 · 2026-08-28（UTC）· 孔放勋
 
 > 🧭 **阅读引导**：本文档按主题分节——**安全/合规局限见第三节**（强合规选型先读），**能力边界**（其余各节）多为设计取舍而非缺陷。通读一遍即可建立心智模型：**大多数局限有明确版本路线（见 ROADMAP），不是"永远做不到"**。首次阅读建议先看目录 + 每节第一段，无需逐条读完。
 
@@ -209,7 +209,7 @@ sofagent 跑在单个 Agent 里——没有 agent-to-agent 通信，没有多实
 
 > ⚠️ **知识库同样全局共享（当前单机单用户设计）**：`~/.sofagent/data/knowledge/` 单目录遍历、无租户/项目维度隔离——多项目、多 Agent 的知识沉淀（entities/concepts/comparisons/summaries）混合存储，查询时全局命中。财务与人事等不同域 Agent 的数据会串。**当前定位为单机单用户**：多 Agent 共享同一知识库/审计历史——多人/多部门共用需等租户隔离（ROADMAP v1.4.7 G7 多租户抽象层 v0）。**临时方案**：使用 `SOFAGENT_HOME` 环境变量为不同项目/Agent 隔离数据目录（见 [企业部署指南](./guides/enterprise-deploy.md#多项目数据隔离v128)）。
 
-> ⚠️ **`.sofagent/.git-shadow/` 在被审计仓库内创建**：sofagent 审计时会在被审计的 git 仓库根目录创建 `.sofagent/.git-shadow/` 目录存放审计快照——设计意图是按 git 仓库隔离快照（不同仓库的快照不能串，否则回溯到错误仓库）。快照内容**已 sanitize 脱敏**（API key / 密码 / 手机号打码，v1.3.4 起），位于仓库内便于 git worktree 隔离。经 `--init` 或 `--install-hook` 安装时，自动写入 .gitignore（v1.3.6 起两路径行为一致；commit-msg hook 首次运行还会兜底补写），该目录不进 git 提交，但用户 `ls -a` 可见。可安全删除（重新审计会重建）。改存储位置是 v1.4 架构决策，当前版本只披露。
+> ⚠️ **`.sofagent/.git-shadow/` 在被审计仓库内创建**：sofagent 审计时会在被审计的 git 仓库根目录创建 `.sofagent/.git-shadow/` 目录存放审计快照——设计意图是按 git 仓库隔离快照（不同仓库的快照不能串，否则回溯到错误仓库）。快照内容**已 sanitize 脱敏**（API key / 密码 / 手机号打码，v1.3.4 起），位于仓库内便于 git worktree 隔离。经 `--init` 或 `--install-hook` 安装时，自动写入 .gitignore（v1.3.6 起两路径行为一致），且 v1.4.2 起三层 hook 防线兜底（pre-commit 在 commit 前将 .sofagent/ 移出暂存区 + commit-msg 二次清理 + post-commit HEAD tree 对账告警），`git add -f` 强制暂存也会被移出（reset 失败则 fail-loud 拒绝 commit）；该目录不进 git 提交，但用户 `ls -a` 可见。可安全删除（重新审计会重建）。改存储位置是 v1.4 架构决策，当前版本只披露。
 
 task/logs 和 think.md 以 Markdown 存储，可能含代码片段、API 响应、用户对话摘要。LLM 提炼反思时可能无意写入敏感信息。审计历史主链已静态加密（v1.3.8 交付，纯 TS AES-256-GCM），task/logs 与 think.md 仍为明文（加密接线原声称排 v1.3.9 未兑现，已移排 v1.4.7，见 [ROADMAP](./ROADMAP.md) 和 [SECURITY](../SECURITY.md)）。
 - history.jsonl 存审计判定详情，A2/A9 已脱敏，其他规则 details 可能含代码片段或文件路径，敏感场景请配合外部加密卷
@@ -233,7 +233,7 @@ task/logs 和 think.md 以 Markdown 存储，可能含代码片段、API 响应�
 
 ### A2 密钥检测局限——编码与格式绕过（v1.2.5 披露）
 
-> ⚠️ **A2 仅检测明文常见 API key 格式**（AWS AKIA、OpenAI/Anthropic/DeepSeek sk-*、GitHub token、私钥块等；**v1.3.6 起含 Stripe `sk_live_`/`sk_test_` 下划线前缀格式**）。v1.2.5 起已补 base64/hex 编码检测（新增行先解码再跑正则）与 `.gitattributes -diff` 绕过检测（WARN）。但仍不在检测范围：
+> ⚠️ **A2 仅检测明文常见 API key 格式**（AWS AKIA、OpenAI/Anthropic/DeepSeek sk-*、GitHub token、私钥块等；**v1.3.6 起含 Stripe `sk_live_`/`sk_test_` 下划线前缀格式**；**v1.4.2 起含 Google `AIza`、Slack `xox*-`、JWT `eyJ` 三段式，及 AWS Secret Access Key 裸 40 位 base64 形态（需同行含 aws/secret/key 关键词才报，防 hash/commit SHA 误报）**）。v1.2.5 起已补 base64/hex 编码检测（新增行先解码再跑正则）与 `.gitattributes -diff` 绕过检测（WARN）。但仍不在检测范围：
 > - 短密钥（<32 位）、非标准格式、其他厂商下划线前缀（保守设计防误报，等真实泄漏案例驱动，不逐格式打地鼠——v1.3.6 决策，Stripe 因前缀在生产代码无合法用途而纳入）
 > - 其他编码（URL-safe base64、rot13、自定义混淆）与压缩/加密后的密钥
 > - 历史提交中的密钥（A2 只扫当前 diff 新增行，不扫全量历史）
@@ -254,7 +254,7 @@ eval.md + think.md 在循环中持续自我修订，会引入**经验漂移**—
 
 ### 平台依赖
 
-核心引擎（审计/约束层）**平台无关**——核心约束（SKILL.md / fde.md）是纯 Markdown，任何能读文件的平台都能加载，审计照常生效。但 **hook 自动注入当前仅 OpenClaw 生效**（深度集成 Hook 注入、session 隔离、sub-agent 管理只有 OpenClaw 能做到——不是我们选择独占，是其他平台不开源到这个程度）；其他平台手动注入约束 + 审计照常。
+核心引擎（审计/约束层）**平台无关**——核心约束（SKILL.md / fde.md）是纯 Markdown，任何能读文件的平台都能加载，审计照常生效。但 **hook 自动注入当前仅 OpenClaw 生效**（深度集成 Hook 注入、session 隔离、sub-agent 管理只有 OpenClaw 能做到——其他平台的 Hook 接入排期见 [ROADMAP](./ROADMAP.md)（Claude Code PreToolUse 适配评估中））；其他平台手动注入约束 + 审计照常。
 
 #### OpenClaw 的两种角色
 
@@ -329,7 +329,7 @@ sofagent-audit 实现了完整的六步审计闭环流程（设计文档见 [ARC
 
 ### 测试覆盖范围
 
-当前审计核心 878 个、全 workspace 3178 个测试（v1.4.1 批次 2946→3178 +232：train 模块 orchestrator 215 + daemon 7 + DSH 工具注入 dsh-backend 9（含 zod schema 泄漏防御 5）+ sandbox 证据链时序竞态回归锁 1；实测见 `tools/check/test-count.sh`，flaky 复跑机制内置，以脚本判定为准，与 pre-push-check 一致），但覆盖范围集中在审计规则和核心逻辑（diff-parser、reporter、config-loader、rules/*.ts）。以下模块没有独立测试：
+当前审计核心 902 个、全 workspace 3349 个测试（v1.4.1 批次 2937→3178 +241，v1.4.2 批 +171：bugfix 批 +24 全部为 audit 包回归用例 878→902（H-01 三层防线 / H-02 密钥四类 / H-03 空白折叠 / G-01 基线 / G-07 webhook 脱敏）+ dev 批 +147（数据管道 53 / eval 闭环与环境 45 / dry-run 与报告 28 / FDE 六引擎 21，orchestrator 1295→1442）；实测见 `tools/check/test-count.sh`，flaky 复跑机制内置，以脚本判定为准，与 pre-push-check 一致），但覆盖范围集中在审计规则和核心逻辑（diff-parser、reporter、config-loader、rules/*.ts）。以下模块没有独立测试：
 
 | 模块 | 测试状态 | 风险 |
 |------|:--:|------|
@@ -408,8 +408,8 @@ FDE 完整四阶段十二步部署流程（[FDE/GUIDE.md](../FDE/GUIDE.md)）已
 
 v1.0 新增 `FORGE/playbook/acceptance-test.sh`（场景数持续扩展，当前 255 个，SSOT 见脚本头部声明）：
 
-- **CI 已覆盖**：单元测试审计核心 878 个、全 workspace 3178 个测试（v1.4.1 开发批次 2946→3178 +232：train 模块 orchestrator 215 + daemon 7 + DSH 工具注入 dsh-backend 9（含 zod schema 泄漏防御 5）+ sandbox 证据链时序竞态回归锁 1；全绿，详见上方「测试覆盖范围」节，实测见 `tools/check/test-count.sh`，与 pre-push-check 一致）、sofagent-core verify 约 44-48 项（动态）
-- **发版前手动覆盖**：acceptance-test.sh 265 场景（含子断言，CLI 端到端，步骤 2.3）、OpenClaw 验收 63 场景（Agent 端到端，步骤 2.5）
+- **CI 已覆盖**：单元测试审计核心 902 个、全 workspace 3349 个测试（v1.4.1 批次 2937→3178 +241，v1.4.2 批 +171：bugfix 批 +24（audit 878→902）+ dev 批 +147（orchestrator 1295→1442）；全绿，详见上方「测试覆盖范围」节，实测见 `tools/check/test-count.sh`，与 pre-push-check 一致）、sofagent-core verify 约 44-48 项（动态）
+- **发版前手动覆盖**：acceptance-test.sh 276 场景（含子断言，CLI 端到端，步骤 2.3；v1.4.2 阶段三 S333-S339 七场景增量 265→272 + 存量清零 S340 272→273 + 章六补测 S341 273→274 + 章五零覆盖补测 S342/S343 274→276）、OpenClaw 验收 63 场景（Agent 端到端，步骤 2.5）
 - **CI 未覆盖**：daemon → MCP → webhook → 编排四组件串联行为（仍依赖手动验证）
 - **CI 未覆盖**：多平台兼容性（macOS only verified，Linux/Windows 未验证）
 

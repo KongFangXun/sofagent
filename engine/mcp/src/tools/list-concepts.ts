@@ -7,6 +7,7 @@
 // ============================================================
 
 import { existsSync, readdirSync } from 'fs';
+import { getDataDir } from '@sofagent/core';
 import { join } from 'path';
 
 // ============================================================
@@ -28,16 +29,11 @@ export interface ListConceptsResult {
 // ============================================================
 
 /**
- * 获取 {SOFAGENT_DATA} 目录
- * 与 mcp-server.ts 中的 getSofagentDataDir 保持一致
+ * 获取 {SOFAGENT_DATA} 目录——走 core getDataDir SSOT（v1.4.2 收编）
  */
-function getSofagentDataDir(): string {
-  return process.env.SOFAGENT_DATA || join(process.cwd(), '.sofagent');
-}
-
-/** knowledge 库根目录（.sofagent/knowledge） */
+/** knowledge 库根目录（data/knowledge） */
 function getKnowledgeDir(): string {
-  return join(getSofagentDataDir(), 'knowledge');
+  return join(getDataDir(), 'knowledge');
 }
 
 // ============================================================

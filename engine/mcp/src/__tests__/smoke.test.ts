@@ -43,6 +43,7 @@ vi.mock('@sofagent/think', () => ({
 vi.mock('@sofagent/core', () => ({
   getThinkPath: vi.fn(() => '/tmp/test-think.md'),
   appendThinkEntry: vi.fn(() => 0),
+  getDataDir: vi.fn(() => require('os').tmpdir()),
 }));
 
 // ── Mock child_process ──
