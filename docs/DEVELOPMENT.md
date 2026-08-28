@@ -4,7 +4,7 @@
 >
 > **本文档面向开发者。** 这里讲 sofagent 内部怎么跑——Skill 结构、编排引擎、反思闭环、数据架构。sofagent 是一层 FDE Harness（嵌在成熟 Agent 与模型层之间），底层引擎的内部实现在这里展开。
 >
-> v1.4.1 · 2026-08-27（UTC）· 孔放勋
+> v1.4.2 · 2026-08-28（UTC）· 孔放勋
 
 <img src="assets/sofagent.png" alt="sofagent" width="160" />
 

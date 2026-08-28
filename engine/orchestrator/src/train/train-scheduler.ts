@@ -1,4 +1,4 @@
-// train-scheduler.ts · v1.4.1 块二 · 训练任务编排（提交 / 监控 / 取消 / 续跑）
+// train-scheduler.ts · v1.4.2 块二 · 训练任务编排（提交 / 监控 / 取消 / 续跑）
 //
 // 定位：Node 控制面 + Python 执行面的「控制面」。完整实现 v1.3.6 训练协议
 // 三约定——协议字段/事件解析/信号控制全部消费 train-protocol.ts SSOT，不重复定义：

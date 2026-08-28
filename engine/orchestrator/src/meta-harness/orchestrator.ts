@@ -1,6 +1,6 @@
 // ============================================================
 // orchestrator.ts · meta-harness 统一编排层
-// v1.4.1（二）：多个 SubAgent harness（各自带沙箱）在一个 meta-harness
+// v1.4.2（二）：多个 SubAgent harness（各自带沙箱）在一个 meta-harness
 // 下协同运行 + 跨会话协作（对齐 Omnigent「策略强制在基础设施层」）
 //
 // DSH RC.7/RC.8 启发的统一调度层形态（2026-08-20）：

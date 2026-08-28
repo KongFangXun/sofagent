@@ -5,7 +5,7 @@
 // 训练环境体检——sofagent train doctor 的 MCP 面：CUDA 可用 / 显存 /
 // 框架版本 / 基座模型缓存四项结构化体检报告（对齐 v1.3.x doctor 模式）。
 // 委托 @sofagent/orchestrator 的 env-manager.trainDoctor（v1.4.2 扩展，
-// 复用 v1.4.1 train-env 检测地基——扩展非重建）。
+// 复用 v1.4.2 train-env 检测地基——扩展非重建）。
 //
 // 只查不装：本 tool 是体检（环境怎么装走 train env init /
 // tools/train-env-init.sh；基座模型怎么下走 model-downloader）。

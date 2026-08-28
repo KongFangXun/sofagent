@@ -1,13 +1,13 @@
 # 路线图 · Roadmap
 
 > 已经做了什么、未来要去哪、哪些地方需要你的帮助。
-> v1.4.1 · 2026-08-27（UTC）· 🚂 训练引擎 · 地基：train-job 编排 + train_submit（66→67 tools）+ 审计 HMAC 链 + 隔离 + 可复现指纹 + 权重签名 + 中断回收 + 崩溃恢复 + 安全基线（已发版 SSOT；v1.4.2 已交付待发版见下行）
+> v1.4.2 · 2026-08-28（UTC）· 🚂 训练引擎 · 地基：train-job 编排 + train_submit（66→67 tools）+ 审计 HMAC 链 + 隔离 + 可复现指纹 + 权重签名 + 中断回收 + 崩溃恢复 + 安全基线（已发版 SSOT；v1.4.2 已交付待发版见下行）
 >
 > **v1.4.2 已于 2026-08-27 交付（待发版）**：🚀 训练引擎 · 数据与评估 六章（数据管道/版本/eval 闭环/环境/dry-run 算力外推/报告）+ FDE 六引擎工作台（fde_interview/classify/quantify/derive/distill/deploy，67→76 tools）+ 🌉 IM 桥远程指挥 + 🔧 FORGE 步零数据流地基与重复率熔断——详见 [v1.4.2 开发日志](./changelog/v1.4/v1.4.2.md)。v1.4.1 训练引擎地基详见 [v1.4.1 开发日志](./changelog/v1.4/v1.4.1.md)。
 
 产品定位详见 [设计哲学](./PHILOSOPHY.md) 和 [README](../README.md)。
 
-## 现在在哪：v1.4.1（已交付）
+## 现在在哪：v1.4.2（已交付）
 
 > **v1.4.1 已于 2026-08-27 交付**——训练引擎 · 地基 八大块（train-job 编排 + train_job 审计 HMAC 链 + enterpriseId 隔离 + 可复现指纹 + 权重 HMAC 签名 + 中断回收 + 崩溃恢复 + 安全基线）+ `train_submit`（66→67 tools）+ 阶段 0 Metal reward 收敛验证（@mlx-node/trl）+ 双栈契约文档 + 训练安全基线文档 + SKILL 体系重构 + 依赖升级（LangChain 三包 + vitest）· 测试 2981→3222（+241）。详见 [v1.4.1 开发日志](./changelog/v1.4/v1.4.1.md)。
 >

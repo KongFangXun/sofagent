@@ -1,6 +1,6 @@
 {
   "name": "cordis-plugin-sofagent-commons",
-  "version": "1.4.1",
+  "version": "1.4.2",
   "description": "能力公地五环——复用 commons_* tool（seam: commons_* tools）——桥接 @sofagent/audit loadConfig（sofagent 品牌插件 · 主色 #16B8F3）",
   "private": true,
   "license": "MIT",

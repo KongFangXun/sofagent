@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// ontology CLI · v1.4.1
+// ontology CLI · v1.4.2
 
 import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';

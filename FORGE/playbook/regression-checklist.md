@@ -101,7 +101,7 @@ grep -A5 "'A4\|name.*不删配置" engine/audit/src/rules/index.ts | grep "ruleC
 grep "name:" engine/audit/src/rules/index.ts | wc -l   # 期望 24
 grep "A6.*能力拐杖\|A11.*业务底线" engine/audit/README.md | wc -l   # 期望 2
 
-# 子项 d: ruleClass SSOT ↔ README 逐条比对（v1.1.3 盲区 · v1.4.1 重写）
+# 子项 d: ruleClass SSOT ↔ README 逐条比对（v1.1.3 盲区 · v1.4.2 重写）
 # v1.2.5：旧版用 `diff <(index.ts 代码) <(README 表格行)`——两种文本格式天生不同，永远报差异（误报 12 行）。
 # 改为两侧归一化成「A编号 ruleClass」再比对，才是真正检查"每条规则分级两边一致"。
 diff <(grep -E "name: 'A[0-9]+" engine/audit/src/rules/index.ts | sed -E "s/.*name: '(A[0-9]+)[^']*'.*ruleClass: '([^']+)'.*/\1 \2/" | sort) \
@@ -197,7 +197,7 @@ echo "index.ts: $INDEX_RULES / knownKeys: $KNOWN_KEYS"   # 期望：两集合相
 # 文档侧：声称型数字（v1.1.5 教训——6 文档漏改）
 grep -rnE "A1-A11、A14-A1[0-9]|[0-9]+ 条审计规则" --include="*.md" README.md README.en.md docs/ FDE/ FORGE/ ROADMAP.md 2>/dev/null | grep -v "regression-checklist\|fresh-eyes-review\|changelog/"   # 人工核对：与 SSOT 一致
 
-# 字段完整性（v1.1.6：name+ruleClass 各 24 条=48 · v1.4.1 修正 21→24）+ evidenceMode 计数（v1.1.4：期望 24）
+# 字段完整性（v1.1.6：name+ruleClass 各 24 条=48 · v1.4.2 修正 21→24）+ evidenceMode 计数（v1.1.4：期望 24）
 grep -oE "name:|ruleClass:" engine/audit/src/rules/index.ts | wc -l   # 期望 48
 grep -cE "evidenceMode:" engine/audit/src/rules/index.ts   # 期望 24
 ```
@@ -948,7 +948,7 @@ grep -c 'slice(i, i + 4)' FORGE/src/release-gate-driver.mjs   # ≥2
 grep -Fc 'replace(/```[\s\S]*?```/g' FORGE/src/release-gate-driver.mjs   # ≥2
 ```
 
-#### 63. Worker 批量输出 U+FFFD 零污染——每次批量修复后必扫（v1.2.3 新盲区 · v1.4.1 阶段四瘦身：命令并入 acceptance S166 同款，此处留纪律+引用）
+#### 63. Worker 批量输出 U+FFFD 零污染——每次批量修复后必扫（v1.2.3 新盲区 · v1.4.2 阶段四瘦身：命令并入 acceptance S166 同款，此处留纪律+引用）
 
 > v1.2.3 教训：fresh-eyes-loop 批量修复 worker 多次产出含 U+FFFD 的文件——LLM 输出编码损坏时把无法表示的字节写成 U+FFFD。肉眼难辨（显示为 ▯ 或空白），但污染 grep、破坏锚点、影响 npm 产物。**任何 Agent 批量写入文件后，提交前必须扫一遍 U+FFFD，零容忍。**
 >
@@ -969,7 +969,7 @@ grep -rnE "^#{1,4} .*(🔮|🔄|🪟|✨|[+/（）():：])" docs/ README.md SECU
 
 > **PASS 标准**：所有跨文档 `#锚点` 链接指向的标题，按 GitHub 渲染规则（剥 emoji/标点、空格→`-`）推算的锚点与链接一致。标题含特殊字符者重点核对。
 
-#### 65. FORGE stream 迁移数据处理——finalState 须累积 delta + extractAgentText 须防御对象 content（v1.2.4 新盲区 · v1.4.1 归并 65+66）
+#### 65. FORGE stream 迁移数据处理——finalState 须累积 delta + extractAgentText 须防御对象 content（v1.2.4 新盲区 · v1.4.2 归并 65+66）
 
 > v1.2.4 教训（归并原 65+66）：FORGE stream 迁移有两个数据处理陷阱：① `stream(streamMode: 'updates')` 的 chunk 是 `{ nodeName: stateDelta }`，直接 `finalState = chunk` 会丢 `result.messages` → 输出 `[object Object]`——必须 `Object.entries(chunk)` 累积。② LangGraph message content 可能是 `Array<{type, text}>` 或嵌套对象，`extractAgentText` 只做 string 判断时会 fallback 到 `String(message)` → 同样输出 `[object Object]`。
 
@@ -1003,7 +1003,7 @@ EN=$(grep 'Current version' README.en.md | head -1)
 # 手动比对：两者都应包含当前版本的核心交付描述（如 Activation Chain / Audit / Daemon）
 ```
 
-#### 70. MCP tool 注册三处一致性——新增 tool 必须在 tool-registry + case dispatch + capabilities 三处都注册（v1.2.6 新盲区 · v1.4.1 修：跟上 v1.2.9 tool-registry.ts 拆分）
+#### 70. MCP tool 注册三处一致性——新增 tool 必须在 tool-registry + case dispatch + capabilities 三处都注册（v1.2.6 新盲区 · v1.4.2 修：跟上 v1.2.9 tool-registry.ts 拆分）
 > 📌 **v1.3.5 归并（判据②·MCP 聚簇 5→4）**：原维度 93（v1.3.2 五轮审查发现：新 tool 漏注册 TOOLS 数组/switch）与本维度同主题——注册一致性检查统一归此。93 的教训并入：三处 = tool-registry TOOLS 数组 + mcp-server switch case + import 语句；acceptance S270 已含四新 tool 的三处验证。
 
 > v1.2.6 教训：新增 MCP tool 时每个 tool 必须在三处同步注册。v1.2.9 mcp 拆分后工具注册从 mcp-server.ts 迁移到 **tool-registry.ts**（`import { TOOLS } from './tool-registry'`）——原检查命令查 mcp-server.ts 的 name: 字段恒得 0（架构迁移后该字段已移走），需改查 tool-registry.ts。验收测试 scenario 192 已覆盖此检查。
@@ -1041,7 +1041,7 @@ node -e "const fs=require('fs'),raw=fs.readFileSync('FORGE/src/fresh-eyes-driver
 # 期望：OK
 ```
 
-#### 73. ESM named export 完整性 + FORGE 模块加载烟测（v1.2.8 新盲区 · v1.4.1 归并 73+74）
+#### 73. ESM named export 完整性 + FORGE 模块加载烟测（v1.2.8 新盲区 · v1.4.2 归并 73+74）
 
 > v1.2.9 教训（归并原 73+74）：FORGE/ 不在 npm workspaces → `npm test` 从不执行 FORGE/ 下的 `.test.mjs`。曾出过 `DEFAULT_BUDGET` 缺 `export` 关键字导致 3 个 driver 启动即崩溃的 P0 bug。补建 `tools/forge/forge-smoke-test.sh` 做 6 模块加载 + 3 测试文件烟测，集成到 pre-push-check（v1.4.1 修正：脚本已迁 `tools/release/pre-push-check.sh`，tools/ 根下旧位置已不存在）。
 
@@ -1301,7 +1301,7 @@ grep 'grep.*条规则' tools/check/check-version.sh | grep -q '\.test\.' && echo
 grep "EXPECTED_DOC_DATE" tools/check/check-version.sh
 grep "$(node -p "require('./package.json').version")" CHANGELOG.md | grep -oE "2026-[0-9]{2}-[0-9]{2}"
 ```
-#### 96. 警戒线声明多处同步——单一 SSOT 引用（v1.3.2 新增 · v1.4.1 收口 · 元维度）
+#### 96. 警戒线声明多处同步——单一 SSOT 引用（v1.3.2 新增 · v1.4.2 收口 · 元维度）
 
 **背景**：acceptance 警戒线 2050→2250 时需同步改 4 处，漏改任一处导致 SOP 与实际不一致——v1.4.0 复盘实锤：SOP 表格（1660）与 guides（1500 系）双双落后于 checklist 头部（1690），多处声明必然漂移。**收口（v1.4.0）**：警戒线数值只在 checklist 头部声明一处（SSOT，check-review-system.sh 动态提取校验），其余文档一律引用不写死。
 
@@ -1500,7 +1500,7 @@ grep -q "\*\*v1.3.5\*\*" CHANGELOG.md || echo "⚠️ CHANGELOG 索引缺 v1.3.5
 结论（v1.3.5 最终）：checklist 1499 行 ≤1500、acceptance 2497 行 ≤2500——靠真实归并消化增量（check-version 四盲区 69/75/77→95 净 -28 行、acceptance 注释/装饰框/冗余分组 -42 行），警戒线未上调
 -->
 
-#### 113. v1.3.6 新功能审查面——八交付锚点一维收口（阶段五来源提取 A 类 · v1.4.1 阶段四归并 114 入此：run-03 修复防复发三锚点为同版配套面）
+#### 113. v1.3.6 新功能审查面——八交付锚点一维收口（阶段五来源提取 A 类 · v1.4.2 阶段四归并 114 入此：run-03 修复防复发三锚点为同版配套面）
 
 > v1.3.6 十六项交付的核心面收口为一维（acceptance S282-S289 已有端到端断言，此处是快速 grep 版——审查 session 分钟级可跑）。检查命令全部指向**实际实现路径**（changelog 的涉及文件表是开发前预估，ontology 管线实际在 `import-pipeline.ts` 非 `writer.ts`——S283 初版就错在这）。**v1.4.1 阶段四归并**：原 #114（v1.3.6 run-03 修复防复发——脱敏两层同源 + 安全渠道 + worktree 信号清理）为同版配套修复面，三锚点并入本维（归并配额对销记录：#114 → #113，净减 13 行）。
 

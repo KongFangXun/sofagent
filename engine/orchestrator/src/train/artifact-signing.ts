@@ -1,4 +1,4 @@
-// artifact-signing.ts · v1.4.1 块六 · 训练产物签名（权重逐文件 SHA-256 + manifest HMAC）
+// artifact-signing.ts · v1.4.2 块六 · 训练产物签名（权重逐文件 SHA-256 + manifest HMAC）
 //
 // 定位：训练产出的模型权重（adapter.safetensors / 量化权重）在落盘后到
 // 被加载（model_register / 部署）之间，任何静默篡改都要可检测——「这个
