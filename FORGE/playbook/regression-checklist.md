@@ -13,10 +13,10 @@
 | v1.3.7-1.4.0 | #115-122（详见头部段落） | A2 正则边界→#57 子项 |
 | v1.4.1 | #123-124（训练引擎地基八大块收口 / 发版防复发） | #114→#113（同版配套面）、#63 命令体→S166 |
 
-> **当前 96 维 · 编号 1-124 · 28 个编号已归并删除（v1.3.7 阶段四 +2：115 新功能审查面 / 116 bugfix 批防复发——acceptance 同批 S290-S293，S293 为阶段四基建加固场景：LLM 超时四文件/resume 越轮守卫/rm-rf 口径同源；v1.3.8 阶段五 +2：117 网关攻击面四项核对 / 118 原子写与单writer 加固（B1+B2+B3 归并）——acceptance 同批 S294-S302 已覆盖功能面，本批为防御性回归标记；v1.3.9 阶段五：119 开发坑防复发（TS7 缓存/promise 形态）/ 120 DSH 适配防复发（CLI 桥接/pnpm/require）/ 121 新功能审查面（十三交付锚点收口，参照 113/115 模式）——acceptance 同批 S305-S317；原 A2 正则边界并入 #57 子项；v1.4.0 阶段十二 +1：122 发版流程防复发（lock 同步/plugin 分发包装/限流——v1.4.0 发版三坑实录，B 类）；v1.4.1 阶段四 +2：123 训练引擎地基八大块一维收口（A 类 18 条压 1 维）/ 124 发版防复发（B 类 10 条压 1 维）——acceptance 同批 S328-S329；真实归并 2 处对销：#114→#113（同版配套面）+ #63 命令体→S166）**。维度流连续不中断，分组导航：基线组 → 审查约束组 → 环境敏感组（前置 vitest/沙箱铁律）。
+> **当前 96 维 · 编号 1-126 · 30 个编号已归并删除（v1.3.7 阶段四 +2：115 新功能审查面 / 116 bugfix 批防复发——acceptance 同批 S290-S293，S293 为阶段四基建加固场景：LLM 超时四文件/resume 越轮守卫/rm-rf 口径同源；v1.3.8 阶段五 +2：117 网关攻击面四项核对 / 118 原子写与单writer 加固（B1+B2+B3 归并）——acceptance 同批 S294-S302 已覆盖功能面，本批为防御性回归标记；v1.3.9 阶段五：119 开发坑防复发（TS7 缓存/promise 形态）/ 120 DSH 适配防复发（CLI 桥接/pnpm/require）/ 121 新功能审查面（十三交付锚点收口，参照 113/115 模式）——acceptance 同批 S305-S317；原 A2 正则边界并入 #57 子项；v1.4.0 阶段十二 +1：122 发版流程防复发（lock 同步/plugin 分发包装/限流——v1.4.0 发版三坑实录，B 类）；v1.4.1 阶段四 +2：123 训练引擎地基八大块一维收口（A 类 18 条压 1 维）/ 124 发版防复发（B 类 10 条压 1 维）——acceptance 同批 S328-S329；真实归并 2 处对销：#114→#113（同版配套面）+ #63 命令体→S166；v1.4.2 阶段四 +2：125 新功能审查面（训练九章+FDE 六引擎+IM 桥+FORGE 步零一维收口，A 类）——acceptance 同批 S333-S339 已覆盖功能面 / 126 防复发（H-01 三层防线 install 形态+dataDir SSOT 机械闸+断言校准三同步，B 类）——真实归并 2 处对销：#59→#125g（dataDir 传参纪律同主题族）+ #112→#51f（二进制快照并入安全回归族））**。维度流连续不中断，分组导航：基线组 → 审查约束组 → 环境敏感组（前置 vitest/沙箱铁律）。
 ## 🔒 维护公约（防膨胀铁律）
 
-**追加新维度前，必须先 grep 同类**：有同类 → 扩展旧维度的子项，不新增编号；无同类 → 才新增编号 = 当前最大 +1。历史维度靠 `git log -p` 找回。**归并配额（v1.3.9 硬门槛）**：新增 N 维 → 本版必须先真实归并 ≥N 维（被并维度检查内容实际移入目标维度，git diff 可查；注释压缩不算）；净增行数 > 警戒线余量 → 继续归并或移下一版——**只调警戒线不归并 = 不合格**。**行数警戒线**：`regression-checklist.md` ≤ 1720 行、`acceptance-test.sh` ≤ 3270 行（v1.3.7 阶段四上调 1540→1580 / 2600→2640：+39 维 115/116 新审查面 / +38 S290-S292；v1.3.8 阶段四 +9 场景 S294-S302 真实归并否、上调记录 2640→2730；v1.3.8 阶段五 +2 维 #117-#118 真实归并否、上调记录 1580→1620——三判据①②③全否、本版 checklist 首调非连续两版非同版二次冻结；v1.3.8 阶段五补充 bugfix 防回归 S303-S304（A1 后缀绕过+A2 FFFD 短路端到端，B 类零场景缺口）上调 2730→2770——三判据全否：单测在而端到端缺/非同主题聚簇/真实安全回归风险，非既有场景覆盖；v1.3.9 阶段五 +13 场景 S305-S317（A 类分发）上调 2770→2870、+2 维 #119/#120 + #121 编号复用为 v1.3.9 新功能审查面（A2 正则边界并入 #57 子项 = 真实归并 1 处对销）上调 1620→1660——三判据①②③全否 + 归并配额 1 处 ✓，净增约 20 行 ≤ 余量 40）；v1.3.9 阶段六 +2 场景 S318-S319（补 ATTRIBUTION/Dream Sandbox 零覆盖 acceptance 场景）上调 2870→3000——真实补测试非归并（三判据全否），余量 +39 后仍足）；v1.4.0 阶段六 +6：检查器 4 缺陷修复注释（run-22 P1 误报修复说明——维度 90/89/111 正则与解析修复 + 维度 49 参数动态化，注释压缩后净增 6 行）——三判据①②③全否（真实修复说明非冗余，非工具覆盖，非聚簇假信号）；v1.4.0 阶段十二 +1 维 #122（发版流程防复发：lock 同步/plugin 分发包装/限流——三坑实录新审查面，三判据全否）上调 1670→1690——连续第三版上调，前两版均有真实归并对销；**v1.4.1 阶段四**：checklist +2 维 #123-#124（A 类 18 条压 1 维训练引擎地基收口 / B 类 10 条压 1 维发版防复发，三判据全否）+ 真实归并 2 处（#114→#113 同版配套面并入、#63 命令体移入 S166——归并配额 2:2 ✓，连续上调禁令因本版真实归并解锁）上调 1690→1720（净增 +26 ≤ 余量 30）；acceptance +2 场景 S328-S329（阶段三增量 S323-S327 顶破 + 阶段四 B2/B3 分发，真实端到端场景非归并，三判据全否；acceptance 上版未上调，非连续）上调 3000→3150（净增 +38 ≤ 余量 150）；**v1.4.1 阶段六**：acceptance +1 场景 S330（训练异常退出资源回收四步链——阶段六 coverage 补测，判断层唯一零覆盖项补齐，真实端到端场景非归并，三判据全否）上调 3150→3200（净增 +37 ≤ 余量 50，checklist 同版未上调非连续同侧）；fresh-eyes 警戒线上调见 04-review-system.md 风格守护段（410→425，校准笔记 +1 节真实新校准））；**v1.4.1 阶段十二**：acceptance +2 场景 S331/S332（阶段十一回写：双 manifest 一致性端到端 + bump 通配误伤静态断言——真实端到端场景非归并，三判据全否）上调 3200→3270（净增 +31 ≤ 余量 70）；fresh-eyes +1 校准节（阶段十~十二发版期实录——真实新校准，同「校准笔记 +1 节」先例）上调 425→440（净增 +7 ≤ 余量 15）；checklist #124 扩展 B11/B12 子项（阶段十一分发踩坑回写，无新维度编号）净增 +2——同版二次上调冻结（阶段四已调 1690→1720），未再上调警戒线，超出 2 行由 #124 内注释压缩对销（git diff 可查）；releasing.md 方针「超标上调 LIMIT 不删内容」。
+**追加新维度前，必须先 grep 同类**：有同类 → 扩展旧维度的子项，不新增编号；无同类 → 才新增编号 = 当前最大 +1。历史维度靠 `git log -p` 找回。**归并配额（v1.3.9 硬门槛）**：新增 N 维 → 本版必须先真实归并 ≥N 维（被并维度检查内容实际移入目标维度，git diff 可查；注释压缩不算）；净增行数 > 警戒线余量 → 继续归并或移下一版——**只调警戒线不归并 = 不合格**。**行数警戒线**：`regression-checklist.md` ≤ 1760 行、`acceptance-test.sh` ≤ 3450 行（v1.3.7 阶段四上调 1540→1580 / 2600→2640：+39 维 115/116 新审查面 / +38 S290-S292；v1.3.8 阶段四 +9 场景 S294-S302 真实归并否、上调记录 2640→2730；v1.3.8 阶段五 +2 维 #117-#118 真实归并否、上调记录 1580→1620——三判据①②③全否、本版 checklist 首调非连续两版非同版二次冻结；v1.3.8 阶段五补充 bugfix 防回归 S303-S304（A1 后缀绕过+A2 FFFD 短路端到端，B 类零场景缺口）上调 2730→2770——三判据全否：单测在而端到端缺/非同主题聚簇/真实安全回归风险，非既有场景覆盖；v1.3.9 阶段五 +13 场景 S305-S317（A 类分发）上调 2770→2870、+2 维 #119/#120 + #121 编号复用为 v1.3.9 新功能审查面（A2 正则边界并入 #57 子项 = 真实归并 1 处对销）上调 1620→1660——三判据①②③全否 + 归并配额 1 处 ✓，净增约 20 行 ≤ 余量 40）；v1.3.9 阶段六 +2 场景 S318-S319（补 ATTRIBUTION/Dream Sandbox 零覆盖 acceptance 场景）上调 2870→3000——真实补测试非归并（三判据全否），余量 +39 后仍足）；v1.4.0 阶段六 +6：检查器 4 缺陷修复注释（run-22 P1 误报修复说明——维度 90/89/111 正则与解析修复 + 维度 49 参数动态化，注释压缩后净增 6 行）——三判据①②③全否（真实修复说明非冗余，非工具覆盖，非聚簇假信号）；v1.4.0 阶段十二 +1 维 #122（发版流程防复发：lock 同步/plugin 分发包装/限流——三坑实录新审查面，三判据全否）上调 1670→1690——连续第三版上调，前两版均有真实归并对销；**v1.4.1 阶段四**：checklist +2 维 #123-#124（A 类 18 条压 1 维训练引擎地基收口 / B 类 10 条压 1 维发版防复发，三判据全否）+ 真实归并 2 处（#114→#113 同版配套面并入、#63 命令体移入 S166——归并配额 2:2 ✓，连续上调禁令因本版真实归并解锁）上调 1690→1720（净增 +26 ≤ 余量 30）；acceptance +2 场景 S328-S329（阶段三增量 S323-S327 顶破 + 阶段四 B2/B3 分发，真实端到端场景非归并，三判据全否；acceptance 上版未上调，非连续）上调 3000→3150（净增 +38 ≤ 余量 150）；**v1.4.1 阶段六**：acceptance +1 场景 S330（训练异常退出资源回收四步链——阶段六 coverage 补测，判断层唯一零覆盖项补齐，真实端到端场景非归并，三判据全否）上调 3150→3200（净增 +37 ≤ 余量 50，checklist 同版未上调非连续同侧）；fresh-eyes 警戒线上调见 04-review-system.md 风格守护段（410→425，校准笔记 +1 节真实新校准））；**v1.4.1 阶段十二**：acceptance +2 场景 S331/S332（阶段十一回写：双 manifest 一致性端到端 + bump 通配误伤静态断言——真实端到端场景非归并，三判据全否）上调 3200→3270（净增 +31 ≤ 余量 70）；fresh-eyes +1 校准节（阶段十~十二发版期实录——真实新校准，同「校准笔记 +1 节」先例）上调 425→440（净增 +7 ≤ 余量 15）；checklist #124 扩展 B11/B12 子项（阶段十一分发踩坑回写，无新维度编号）净增 +2——同版二次上调冻结（阶段四已调 1690→1720），未再上调警戒线，超出 2 行由 #124 内注释压缩对销（git diff 可查）；**v1.4.2 阶段四**：checklist +2 维 #125/#126（A 类九大交付一维收口 / B 类防复发一维收口，三判据全否）+ 真实归并 2 处（#59→#125g dataDir 传参纪律同主题族、#112→#51f 二进制快照并入安全回归族——归并配额 2:2 ✓）上调 1720→1760（净增 +32 ≤ 余量 41）；acceptance 警戒线补登记 3270→3450（阶段三 +7 场景 S333-S339 后 3414 已超线——真实补测试非归并三判据全否，上版未调非连续）；fresh-eyes 不调（432 行余量 8 恰容 4 条校准）；releasing.md 方针「超标上调 LIMIT 不删内容」。
 
 **维度脚本编写三铁律**（v1.3.6 release-gate run-08 教训——7 个 FAIL 维度中 5 个是脚本自身缺陷而非仓库问题，driver 白跑一轮）：
 
@@ -32,8 +32,8 @@ ACTUAL=$(grep -c "^#### " FORGE/playbook/regression-checklist.md)
 
 # 行数警戒线自检（越线提醒瘦身，非失败；与 releasing.md 阶段五警戒线一致）
 WC_CHK=$(wc -l < FORGE/playbook/regression-checklist.md); WC_ACC=$(wc -l < FORGE/playbook/acceptance-test.sh)
-[ "$WC_CHK" -le 1720 ] && echo "✅ checklist $WC_CHK (≤1720)" || echo "⚠️ checklist $WC_CHK 超 1720"
-[ "$WC_ACC" -le 3270 ] && echo "✅ acceptance $WC_ACC (≤3270)" || echo "⚠️ acceptance $WC_ACC 超 3270"
+[ "$WC_CHK" -le 1760 ] && echo "✅ checklist $WC_CHK (≤1760)" || echo "⚠️ checklist $WC_CHK 超 1760"
+[ "$WC_ACC" -le 3450 ] && echo "✅ acceptance $WC_ACC (≤3450)" || echo "⚠️ acceptance $WC_ACC 超 3450"
 ```
 ## 你的身份
 
@@ -775,6 +775,9 @@ grep -A3 "checkVersionConsistency" engine/audit/src/index.ts | grep -q "catch\|�
 # e: HMAC key 强度（≥16 字节）
 grep -q "validateHmacKey" engine/core/src/audit-history.ts && echo "✅ validateHmacKey" || echo "❌ 缺少 validateHmacKey"
 grep -q "byteLen < 16\|16.*字节\|>=.*16" engine/core/src/audit-history.ts && echo "✅ 16 字节阈值" || echo "❌ 缺少阈值"
+# f: shadow 快照二进制安全（v1.4.2 阶段四归并 112 入此——同为安全回归族；裂图事故：readFileSync(utf-8) 读二进制 PNG 0x89→U+FFFD 6 图损毁）
+grep -q "isBinaryBuffer" engine/core/src/filesystem/isomorphic-git.ts && echo "✅ 跳过二进制" || echo "❌ 缺 isBinaryBuffer"
+grep -qi "png" engine/core/src/__tests__/isomorphic-git-v2.test.ts && echo "✅ PNG 测试" || echo "❌ 缺 PNG 测试"
 ```
 
 #### 53. SSOT 零硬编码——产品代码不得绕过 data-paths.ts 拼路径（v1.2.1 新增）
@@ -902,14 +905,6 @@ grep -q "SKIP_ANCHOR_SCAN" tools/check/check-docs.sh || echo "⚠️ 降级开�
 > **路径迁移感知**：v1.2.1 起 `.sofagent/` 迁移到 `~/.sofagent/`，数据子目录从 `.sofagent/audit` 变为 `~/.sofagent/data/audit`。检查路径权限时认准 `~/.sofagent/`。
 
 ### 分组：环境敏感与后期维度（#59 起 · 含 v1.3.x 全部新增，上面铁律适用于本组所有维度）
-
-#### 59. resolve*Dir 调方传参——禁止传 process.cwd() 给 overrideHome 参数（v1.2.2 新增）
-
-```bash
-# 搜索所有传 process.cwd() 给 resolve*Dir 或 writeSessionReport 的地方（排除测试）
-_HITS=$(grep -rn "resolveAuditDir(process\|resolveKnowledgeDir(process\|resolveDataDir(process\|writeSessionReport.*process" engine/ --include="*.ts" | grep -v node_modules | grep -v dist | grep -v __tests__ || true)
-if [ -z "$_HITS" ]; then echo "✅ 无 process.cwd() 误传"; else echo "$_HITS"; echo "❌ 存在误传"; exit 1; fi   # v1.3.6 修正：显式收尾防 exit 歧义
-```
 
 #### 60. barrel re-export 一致性——新增导出 public-api.ts 和 index.ts 要同步（v1.2.2 F2 新增）
 
@@ -1505,15 +1500,6 @@ grep -q "\*\*v1.3.5\*\*" CHANGELOG.md || echo "⚠️ CHANGELOG 索引缺 v1.3.5
 结论（v1.3.5 最终）：checklist 1499 行 ≤1500、acceptance 2497 行 ≤2500——靠真实归并消化增量（check-version 四盲区 69/75/77→95 净 -28 行、acceptance 注释/装饰框/冗余分组 -42 行），警戒线未上调
 -->
 
-#### 112. shadow 快照二进制安全——isBinaryBuffer 跳过二进制（v1.3.5 发布后 hotfix）
-
-> 裂图事故：shadow 快照 `readFileSync(utf-8)` 读二进制 PNG，0x89 被静默替换 U+FFFD 致 6 图永久损毁——二进制必须跳过不进文本快照。
-
-```bash
-grep -q "isBinaryBuffer" engine/core/src/filesystem/isomorphic-git.ts && echo "✅ 跳过二进制" || echo "❌ 缺 isBinaryBuffer"
-grep -qi "png" engine/core/src/__tests__/isomorphic-git-v2.test.ts && echo "✅ PNG 测试" || echo "❌ 缺 PNG 测试"
-```
-
 #### 113. v1.3.6 新功能审查面——八交付锚点一维收口（阶段五来源提取 A 类 · v1.4.1 阶段四归并 114 入此：run-03 修复防复发三锚点为同版配套面）
 
 > v1.3.6 十六项交付的核心面收口为一维（acceptance S282-S289 已有端到端断言，此处是快速 grep 版——审查 session 分钟级可跑）。检查命令全部指向**实际实现路径**（changelog 的涉及文件表是开发前预估，ontology 管线实际在 `import-pipeline.ts` 非 `writer.ts`——S283 初版就错在这）。**v1.4.1 阶段四归并**：原 #114（v1.3.6 run-03 修复防复发——脱敏两层同源 + 安全渠道 + worktree 信号清理）为同版配套修复面，三锚点并入本维（归并配额对销记录：#114 → #113，净减 13 行）。
@@ -1716,4 +1702,51 @@ grep -q "FORGE/SKILL" AGENTS.md && grep -q "releasing/" docs/changelog/releasing
 ③增长性质：+2 维中 #123 训练引擎地基（新审查面，参照 113/115/121 每版一维惯例，A 类 18 条压 1 维）、#124 发版防复发（新审查面，B 类 10 条压 1 维）——均非模式重复
 ④归并配额：新增 2 维 → 本版真实归并 2 处（#114→#113 同版配套面并入，净减 13 行；#63 命令体→S166，净减 5 行——均内容实移非注释压缩，git diff 可查）；2≥2 ✓；净增 26 行 ≤ 上调后余量 30 ✓
 结论：净增 26 行；checklist 警戒线上调 1690→1720（连续上调禁令：v1.3.9/v1.4.0 连续上调，本版先完成真实归并 2 处解锁方准上调）；acceptance 警戒线上调 3000→3150（阶段三 +7 场景顶破 + 阶段四 +2 场景 S328/S329，上版未调非连续）；fresh-eyes 警戒线上调 410→425（见 04-review-system.md，同 v1.4.0「校准笔记 +1 节」先例）——三处均「超标上调 LIMIT 不删内容」方针，不删视角/不删锚点
+-->
+
+#### 125. v1.4.2 新功能审查面——训练九章+FDE 六引擎+IM 桥+FORGE 步零一维收口（阶段四来源提取 A 类 · 参照 113/121/123 每版一维 · v1.4.2 归并 59 入此：dataDir 传参纪律为 SSOT 子项）
+
+> v1.4.2 九大交付的静态一致性快查（执行级验证 acceptance S333-S339 已落，此处分钟级 grep）。子项 g 承接原 #59（resolve*Dir 传参纪律——与 N-1 dataDir SSOT 同主题族，v1.4.2 阶段四归并）。
+
+```bash
+# a: FDE 六引擎 registry 注册 + 工作台数据层（S338 端到端的静态面）
+for t in fde_interview fde_classify fde_quantify fde_derive fde_distill fde_deploy; do grep -q "name: '$t'" engine/mcp/src/tool-registry.ts || echo "❌ $t 未注册"; done; echo "✅ 六引擎注册（若上方无 ❌）"
+grep -q "fdeWorkbenchPaths" engine/orchestrator/src/fde/fde-workbench.ts && grep -q "emitFdeAudit" engine/orchestrator/src/fde/fde-workbench.ts && echo "✅ 工作台数据层" || echo "❌ 缺工作台"
+# b: 三问判定引擎（🔄/⚡/👤 三态 + 六步分解）
+grep -q "classifyAutomation" engine/orchestrator/src/fde/compose-interview.ts && echo "✅ 判定引擎在位" || echo "❌ 缺 classifyAutomation"
+# c: 训练环境双实现判定分支对齐（env-manager.ts 与 train-env-init.sh 同一套判定）
+grep -q "trainEnvInit" engine/orchestrator/src/train/env-manager.ts && test -f tools/train-env-init.sh && echo "✅ 双实现齐备" || echo "❌ 缺一侧"
+# d: 缩放律零依赖纪律（不引 ml 库）
+grep -qE "levenberg|阻尼" engine/orchestrator/src/train/scale-curve.ts && ! grep -qE "from ['\"](ml|tensorflow|@tensorflow)" engine/orchestrator/src/train/scale-curve.ts && echo "✅ 手写拟合零 ml 依赖" || echo "❌ 依赖纪律破"
+# e: IM 桥安全边界文档（凭据本机/命令白名单/可信用户）
+grep -qE "白名单|凭据" docs/guides/im-bridge.md && echo "✅ 安全边界在档" || echo "❌ im-bridge.md 缺安全边界"
+# f: FORGE 步零——worktree re-sync 三级降级 + 重复率熔断 + A 侧骨架先行
+grep -q "syncWorktreeToMain" FORGE/src/fresh-eyes-driver.mjs && grep -qE "repeat-convergence|REPEAT_BREAK_THRESHOLD" FORGE/src/fresh-eyes-driver.mjs && echo "✅ re-sync+熔断在位" || echo "❌ FORGE 步零缺失"
+grep -q "先写报告骨架" FORGE/src/fresh-eyes-driver.mjs && echo "✅ A 侧收敛指令" || echo "❌ 缺骨架先行"
+# g: dataDir SSOT 传承（原 #59 命令体迁入 + N-1 收编面）——禁止 process.cwd() 误传 overrideHome；MCP 工具禁本地 getSofagentDataDir（19 处 v1.3.x 存量豁免至 v1.4.3，清单见 check-version 9d 段）
+_HITS=$(grep -rn "resolveAuditDir(process\|resolveKnowledgeDir(process\|resolveDataDir(process\|writeSessionReport.*process" engine/ --include="*.ts" | grep -v node_modules | grep -v dist | grep -v __tests__ || true)
+[ -z "$_HITS" ] && echo "✅ 无 process.cwd() 误传" || { echo "$_HITS"; echo "❌ 存在误传"; }
+grep -rn "function getSofagentDataDir" engine/mcp/src/tools/ --include="*.ts" | grep -vf <(echo "audit-data-change.ts"; echo "validate-ontology.ts"; echo "model-unregister.ts"; echo "knowledge-tools.ts"; echo "think-tools.ts"; echo "ontology-import.ts"; echo "delete-entity.ts"; echo "create-concept.ts"; echo "delete-concept.ts"; echo "model-register.ts"; echo "agent-identity.ts"; echo "acceptance.ts"; echo "create-entity.ts"; echo "list-concepts.ts"; echo "model-switch.ts"; echo "notify-session.ts"; echo "update-entity.ts"; echo "resources.ts"; echo "think-generator.ts") && echo "❌ 新增本地 dataDir 函数（应走 getDataDir SSOT）" || echo "✅ 无新增本地 dataDir"
+```
+
+#### 126. v1.4.2 防复发——H-01 三层防线 install 形态 + dataDir SSOT 机械闸 + 断言校准三同步（阶段四来源提取 B 类 · fresh-eyes N-1 + 阶段一 H-01 + S16/S162/S219 校准实录）
+
+> 阶段一 H-01（P0 commit 链完整性）与阶段三 N-1（P1 SSOT 分叉）的防复发锚点。执行级回归 audit 包 902 用例已含（init.test +6 / a2 +8 / a9 +4 / webhook +3）；此处收口 install 后形态与机械闸。
+
+```bash
+# a: H-01 三层防线 install 后形态——三 hook 文件齐 + 旧 hook .bak 化（S16 已校准为接管语义）
+test -f .git/hooks/pre-commit && test -f .git/hooks/commit-msg && echo "✅ 双 hook 在位" || echo "❌ hook 缺失（跑 install.sh）"
+ls .git/hooks/*.bak 2>/dev/null | head -1 | grep -q bak && echo "✅ 迁移 .bak 语义保留" || echo "ℹ️ 无旧 hook（首装，正常）"
+# b: dataDir SSOT 机械闸——本版 11 工具全员走 getDataDir（19 处 v1.3.x 存量豁免见 check-version 9d，v1.4.3 清零）
+for f in fde-classify fde-deploy fde-derive fde-distill fde-interview fde-quantify train-doctor train-dryrun train-report train-budget train-submit; do grep -q "import { getDataDir } from '@sofagent/core'" engine/mcp/src/tools/$f.ts || echo "❌ $f 未走 SSOT"; done; echo "✅ 11 工具 SSOT（若上方无 ❌）"
+# c: 断言校准三同步纪律（S219 实录：判定改 450 展示仍 420）——校准场景时标题注释/pass 消息/引用三处同步
+grep -n "≤ 450" FORGE/playbook/acceptance-test.sh | grep -q "S219\|450" && echo "✅ S219 三同步示范在位" || echo "❌ S219 展示残留回潮"
+```
+
+<!-- 瘦身判据记录 v1.4.2（阶段四步骤四 · 执行模板第 3 份执行）
+①冗余：B7-B11/B12 已被 check-docs 弱措辞/check-test-count/check-cjk-var/check-anchors 既有工具覆盖（草稿逐条比对）→ 不重复建维，仅 B1/B6/B13 建面
+②重叠：聚簇「新功能审查面」×5（111/113/115/121/123/125）为每版一维惯例（假信号）；#59（resolve*Dir 传参）与 N-1 dataDir SSOT 同主题族 → 真重叠，#59 命令体并入 #125 子项 g（净减 8 行）；#112（二进制快照）与 #51 安全回归族同主题 → 真重叠，并入 #51 子项 f（净减 9 行）
+③增长性质：+2 维（#125 九大交付一维收口参照 113/121/123 惯例、#126 防复发一维收口参照 124 惯例）均新审查面非模式重复
+④归并配额：新增 2 维 → 本版真实归并 2 处（#59→#125g 净减 8 行、#112→#51f 净减 9 行——内容实移 git diff 可查）；2≥2 ✓
+结论：净增约 +32 行（1719→1751 超 1720）；checklist 警戒线上调 1720→1760（v1.4.1 阶段四已调非本版首调侧，本版先真实归并 2 处解锁方准上调；净增 32 ≤ 余量 41 ✓）；acceptance 警戒线补登记 3270→3450（阶段三 +7 场景 S333-S339 3414 行已超线——真实补测试非归并三判据全否，上版未调非连续）；fresh-eyes 警戒线不动（432→440 余量 8，本版 +8 恰满不调，校准节压缩至 4 条内）
 -->

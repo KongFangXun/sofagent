@@ -430,3 +430,11 @@ sofagent（https://github.com/KongFangXun/sofagent）。不管当前处于什么
 - **publish 输出歧义先查再重试**：ClawHub package publish 输出「Fix: Align...」是自动修复提示非拒收——重试报 already exists 时先 API 查证 latestVersion/scanStatus/sourceCommit 再定性，勿盲目改版本号。
 - **门禁全绿≠无盲区**：check-version 94/94 绿时 openclaw-plugins 版本正漂移——手写清单不含的目录就是盲区；发版执行中发现的盲区当场转 check 脚本检查项（94→98→102 三级补齐）。
 - **registry 时间戳早于脚本尝试≠他人发布**：npm staged finalize 时序可使时间戳先于后续尝试 26s——以最终对账（13 包全 1.4.1）为准，勿误判发布来源。
+
+## 校准笔记（v1.4.2）
+
+> 阶段三/四实录校准——SSOT 收编纪律与降级路径的质量标准（数字侦探/工程防线视角补强）。
+
+- **SSOT 收编收尾双查：grep 同款 + 豁免复审**：收编一处调用点时同批新增文件可能照抄旧模式漏网——G-05 收编 getDataDir 只改 cost-query，同期章八 11 个 MCP 工具各带 `cwd/data` 本地兜底成 N-1（SOFAGENT_HOME 定制下数据落点分裂），「收编」收尾必须全仓 grep 同款函数定义（checklist #125g 已机械化）；豁免清单也非一次性快照——G-05 豁免（doctor/pairing/init）是当时拍板，新代码入场时豁免面重新过一遍（19 处 v1.3.x 存量已登记 v1.4.3 清零）。
+- **降级产物完整性校验**：LLM 降级 `.prompt.md` 不能默认可信——v1.4.2 两次降级第一次残缺（只嵌 2 文件 diff，版本口径还是旧版）、第二次完整。粘贴执行前核对来源节齐全（四来源节都在 + 版本号对当前版），残缺产物照着执行 = 审查对象错位。
+- **断言校准三同步**：校准过时断言时，判定条件、场景标题注释、pass 消息展示文本三处都可能残留旧值——S219 判定已改 450 展示仍印 420（不影响判定但误导读日志的人）。校准 = 三处一次改齐。
