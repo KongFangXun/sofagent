@@ -704,6 +704,18 @@ SMB 断层解释了"为什么需要中间件"，产品化四条回答"中间件�
 
 > 📖 来源：[《2026中国FDE人才白皮书》解读](https://zhuanlan.zhihu.com/p/2045876225479123453)（zhuanlan.zhihu.com，2026）· [中信证券：OpenAI 与 Anthropic 加速布局企业级 AI 市场](https://finance.sina.com.cn/stock/t/2026-05-15/doc-inhxxspq8174672.shtml)（finance.sina.com.cn，2026）
 
+### Ontology 赛道开源竞品格局（2026-08 二次深挖）
+
+**Semantica 真身定位——「问责层」而非全栈**：国内独立评测（新浪科技/老刘说智能）拆穿其「开源 Palantir」营销话术——它本质是「AI Agent 的可审计记忆层」：双时态 + PROV-O 溯源 + 决策即节点是 Palantir 没有的独特性，但**无 Action 行动闭环**（只能看不能动手）、规模差数量级、形态是库不是操作系统。对 sofagent 的启示：**不必追全栈 DataOS——「问责层 + 行动闭环（workflow Action）」的组合恰是 sofagent 已有布局**（审计引擎 + workflow 节点），赛道分工上 sofagent 卡住了 Semantica 缺的那一半。
+
+**Palantir 范式开源复刻代表**：OpenBKN（三层架构：业务语义层/业务动力层/治理与证据链层，Go 后端，自称「首个企业级开源本体平台」）与 ontology-driven-platform（六原语闭环：Object/Link/Action/Logic/Governance/Provenance，OWL2 对齐）——两者验证「Ontology 即控制平面 + Agent 跑在 OS 上」范式已被开源复刻，但共识是**差的不是方向是厚度**（connector 广度/治理生产验证/大规模韧性三缺），且「最稀缺的不是本体库是行动闭环——多数项目停在 catalog 或 KG 底座」。这印证 sofagent 的两件不可外包资产：本体建模方法论（FDE 六引擎）+ Action 治理（审计引擎）。
+
+**混合检索实测参考**：Semantica 公开基准——同任务上下文 token 38k→12k（省约 60%）、HotpotQA 准确率 82.1%→89.2%——「向量召回候选 + 图谱遍历精化」两路合一的价值有实测背书。已登记为 sofagent 本体层升级候选（[v1.4.4 第七章](./changelog/v1.4/v1.4.4.md)第八项，v1.5.0 双时态联动评估）。
+
+**Harness 工程赛道补充（首轮扫描收尾）**：AutoHarness（北卡 UNC AIMING Lab，6/8/14 步治理管线三档 + shadow mode 观察期模式）验证「决策引擎跑在模型上下文之外——提示注入无法覆盖 deny」的工程共识，其 shadow mode（只观察不阻断的灰度上线）与 sofagent「只提示不阻断」审计哲学同源；harness-kit（约束 YAML + doom loop 检测 + 上下文预算 <40% 利用率）的循环检测与 FORGE 重复率熔断同源。两者均为轻量 CLI 形态，与企业级 FDE 部署面无正面重叠。
+
+> 📖 来源：[Semantica 与 Palantir 的技术定位对比](https://www.sina.cn/news/detail/5332269013143443.html)（sina.cn，2026-08）· 老刘说智能《Palantir Ontology+Agent 开源生态盘点》（含 OpenBKN/ontology-driven-platform 评测）· [Semantica GitHub](https://github.com/semantica-agi/semantica)（MIT）· AutoHarness（UNC AIMING Lab，MIT）· [harness-kit](https://github.com/BoxiYu/harness-kit)（MIT）
+
 ### FDE 是「全环节 AI 化」的入口（软印证）
 
 DeepSeek Harness（DSH）开源后，一线从业者的通行判断是「垂直 Agent 的门槛大幅下降，FDE 应该扎进细分赛道，把全环节 AI 化」。这对 sofagent 的方向是一个**软印证**（个人观察转述，非权威机构数据，故不列为核心印证）：全环节 AI 化的前提是**先把环节梳理出来**——这正是 FDE 的第①层（梳理）价值。sofagent 与「直接在 DSH 运行时上做垂直产品」的玩家的差异也在这里：他们从③（插件）开始造，我们从①（梳理）开始——梳理过的企业，插件才装得进去。
