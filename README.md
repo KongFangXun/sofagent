@@ -9,7 +9,7 @@
 
 <p align="center"><sub>[简体中文](./README.md) | [English](./README.en.md)</sub></p>
 
-> 🚀 **v1.4.2 待发版**——训练引擎 · 数据与评估（管道/版本/eval 闭环/环境/dry-run/报告）+ FDE 六引擎 + IM 桥 + FORGE 数据流地基。见 [CHANGELOG](./CHANGELOG.md)。
+> 🚀 **v1.4.2**——训练引擎 · 数据与评估（管道/版本/eval 闭环/环境/dry-run/报告）+ FDE 六引擎 + IM 桥 + FORGE 数据流地基。见 [CHANGELOG](./CHANGELOG.md)。
 
 ---
 

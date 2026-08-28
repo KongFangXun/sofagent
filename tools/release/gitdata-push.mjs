@@ -140,15 +140,28 @@ for (const e of entries) {
     console.error(`🔴 文件不存在：${e.path}（状态 ${e.status}）`);
     process.exit(1);
   }
-  const b64 = fs.readFileSync(abs).toString('base64');
-  const blobRaw = ghApi('git/blobs', [`content=${b64}`, 'encoding=base64']);
-  const blobSha = jqOrParse(blobRaw, j => j.sha);
-  // mode：本地有跟踪用 git ls-tree 的真实 mode（100755 可执行 / 100644 常规）；新文件默认 100644
+  // mode + 规范内容同源：本地有跟踪时读 git ls-tree 的真实 mode，内容用
+  // git cat-file blob <sha> 取 git 规范版本（非工作区文件）。
+  // 🔴 ps1 eol 二坑（v1.3.8 首犯 + v1.4.2 阶段十再犯）：
+  //    .gitattributes `*.ps1 text eol=crlf` 下工作区是 CRLF、git blob 是 LF 规范版；
+  //    fs.readFileSync 读工作区上传 → 远端 blob sha 与本地 tree 分叉（v1.4.2 实测 11 个 .ps1）。
+  //    必须走 cat-file 规范内容，blob sha 才与本地 HEAD tree 逐字节一致。
   let mode = '100644';
+  let b64 = null;
   try {
     const lsLine = sh(`git ls-tree HEAD -- "${e.path}"`);
-    if (lsLine) mode = lsLine.slice(0, 6).trim();
-  } catch { /* 新文件 */ }
+    if (lsLine) {
+      mode = lsLine.slice(0, 6).trim(); // 100755 可执行 / 100644 常规（保 .sh 执行位——v1.3.8 第四坑）
+      const m = lsLine.match(/blob ([0-9a-f]{40})/);
+      if (m) {
+        const canonical = sh(`git cat-file blob ${m[1]}`);
+        b64 = Buffer.from(canonical, 'utf8').toString('base64');
+      }
+    }
+  } catch { /* HEAD 无跟踪（理论不可达——entries 全来自 HEAD diff/ls-tree） */ }
+  if (b64 === null) b64 = fs.readFileSync(abs).toString('base64'); // 兜底：仅 HEAD 未跟踪时读工作区
+  const blobRaw = ghApi('git/blobs', [`content=${b64}`, 'encoding=base64']);
+  const blobSha = jqOrParse(blobRaw, j => j.sha);
   treeItems.push({ path: e.path, mode, type: 'blob', sha: blobSha });
   console.log(` blob: ${e.path} ${blobSha.slice(0, 8)} (${mode})`);
 }
