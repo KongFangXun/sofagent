@@ -379,6 +379,116 @@ export interface RunCordisAgentOptions {
   trajectory?: TrajectoryCollector;
   /** DSH agent-loop 插件（注册 agent 驱动服务——缺失时层 2 守卫兜底探测） */
   agentPlugin?: CordisPlugin;
+  /**
+   * 流式面回调（v1.4.3 第六章步一）：消费 session.events 重建 streamHandler
+   * 三职责——报告捕获（gotReport 即收工）/ 软硬熔断判定 / 逐步 usage 记账。
+   * 事件驱动：agent.whenIdle() 后扫描 events（seq ≥ firstSeq），把
+   * tool/call、assistant/message 翻译成 langgraph streamHandler 兼容 chunk
+   * 喂给回调——driver 的精细流控逻辑零改动复用。
+   */
+  streamHandler?: (chunk: unknown) => { hardBreak?: boolean; gotReport?: boolean };
+  /**
+   * v1.4.3 第六章步一内部钩子：驱动完成时回调 firstSeq + session.events
+   * （runCordisAgent 用来做事件流回放与 usage 提取——调用方不传则不捕获）。
+   */
+  onSessionCapture?: (firstSeq: number, events: AgentHandle['session']['events']) => void;
+}
+
+/** 从 session 事件流提取的运行时 usage（v1.4.3 第六章步三——token 自动计量） */
+export interface DshRuntimeUsage {
+  prompt_tokens: number;
+  completion_tokens: number;
+  total_tokens: number;
+}
+
+/** 从 session.events 提取 usage 数据（assistant/message 的 usage 面多级兜底） */
+function extractSessionUsage(
+  events: AgentHandle['session']['events'],
+  firstSeq: number,
+): DshRuntimeUsage | null {
+  let last: { prompt?: number; completion?: number; total?: number } | null = null;
+  for (const event of events) {
+    if (event.seq < firstSeq) continue;
+    if (event.type !== 'assistant/message') continue;
+    const data = event.data as
+      | {
+          message?: {
+            usage?: { prompt_tokens?: number; completion_tokens?: number; total_tokens?: number };
+            usage_metadata?: { input_tokens?: number; output_tokens?: number; total_tokens?: number };
+          };
+        }
+      | undefined;
+    const msg = data?.message;
+    const u1 = msg?.usage;
+    const u2 = msg?.usage_metadata;
+    const candidate = {
+      prompt: u1?.prompt_tokens ?? u2?.input_tokens,
+      completion: u1?.completion_tokens ?? u2?.output_tokens,
+      total: u1?.total_tokens ?? u2?.total_tokens,
+    };
+    if (typeof candidate.prompt === 'number' || typeof candidate.completion === 'number') {
+      last = candidate; // 取最后一条带 usage 的消息（会话累计口径）
+    }
+  }
+  if (!last) return null;
+  const pt = last.prompt ?? 0;
+  const ct = last.completion ?? 0;
+  return { prompt_tokens: pt, completion_tokens: ct, total_tokens: last.total ?? pt + ct };
+}
+
+/**
+ * 把 DSH session.events 翻译成 langgraph streamHandler 兼容 chunk 喂给回调
+ * （v1.4.3 第六章步一——流式面重建）。
+ *
+ * 事件映射（DSH → langgraph streamMode:'updates' chunk 形态）：
+ *   tool/call       → { tools: { messages: [{ _getType:'ai', tool_calls:[{name}] }] } }
+ *   assistant/message → { agent: { messages: [{ _getType:'ai', content }] } }
+ *
+ * 返回 { gotReport, hardBreak }（回调的最后裁决——driver 的 gotReport
+ * 即收工 / 熔断逻辑经回调返回值生效）。
+ */
+function replayEventsToStreamHandler(
+  streamHandler: NonNullable<RunCordisAgentOptions['streamHandler']>,
+  events: AgentHandle['session']['events'],
+  firstSeq: number,
+): { gotReport: boolean; hardBreak: boolean } {
+  let gotReport = false;
+  let hardBreak = false;
+  for (const event of events) {
+    if (event.seq < firstSeq) continue;
+    let chunk: unknown = null;
+    if (event.type === 'tool/call') {
+      const data = event.data as { name?: string } | undefined;
+      const name = data?.name ?? 'unknown-tool';
+      const fakeAi = {
+        _getType: () => 'ai',
+        tool_calls: [{ name }],
+        content: '',
+      };
+      chunk = { tools: { messages: [fakeAi] } };
+    } else if (event.type === 'assistant/message') {
+      const data = event.data as {
+        message?: { content?: Array<{ type: string; text?: string }> };
+      } | undefined;
+      const blocks = data?.message?.content ?? [];
+      const text = blocks.filter((b) => b.type === 'text').map((b) => b.text ?? '').join('');
+      const fakeAi = {
+        _getType: () => 'ai',
+        content: text,
+        tool_calls: undefined,
+      };
+      chunk = { agent: { messages: [fakeAi] } };
+    }
+    if (chunk === null) continue;
+    try {
+      const verdict = streamHandler(chunk);
+      if (verdict?.gotReport) gotReport = true;
+      if (verdict?.hardBreak) hardBreak = true;
+    } catch {
+      /* 回调异常不中断事件回放（driver 回调自身有防御） */
+    }
+  }
+  return { gotReport, hardBreak };
 }
 
 /** agent 驱动服务最小契约（rc.2 实际 API——dsh-agent AgentRegistry + dsh-agent-loop 驱动面，实测核实） */
@@ -407,9 +517,26 @@ interface AgentDriver {
 async function runCordisAgent(
   cordis: CordisModule,
   opts: RunCordisAgentOptions,
-): Promise<{ output: string; rounds: number; hitRecursionLimit: boolean }> {
+): Promise<{
+  output: string;
+  rounds: number;
+  hitRecursionLimit: boolean;
+  /** v1.4.3 第六章步一：streamHandler 回放裁决（DSH 事件流三职责重建） */
+  streamVerdict: { gotReport: boolean; hardBreak: boolean };
+  /** v1.4.3 第六章步三：运行时级 usage（session.events 提取——token 自动计量） */
+  runtimeUsage: DshRuntimeUsage | null;
+}> {
   // 1. 构造驱动（boot dsh-base + 注入 cmdlineArgs/appExit + 复刻 headless run 逻辑）
-  const deliver = await createCordisDriver(opts);
+  let firstSeq = 0;
+  let capturedEvents: AgentHandle['session']['events'] = [];
+  const deliver = await createCordisDriver({
+    ...opts,
+    /** v1.4.3 第六章步一钩子：驱动内层暴露 firstSeq + events（事件面出口） */
+    onSessionCapture: (seq: number, events: AgentHandle['session']['events']) => {
+      firstSeq = seq;
+      capturedEvents = events;
+    },
+  });
 
   // 2. 投递任务（systemPrompt 前置拼接——对齐 langgraph-backend 的 SystemMessage 注入语义）
   const fullMessage = opts.systemPrompt
@@ -425,6 +552,8 @@ async function runCordisAgent(
         output: '',
         rounds: opts.budgetGuard.count(),
         hitRecursionLimit: true,
+        streamVerdict: { gotReport: false, hardBreak: true },
+        runtimeUsage: extractSessionUsage(capturedEvents, firstSeq),
       };
     }
     throw err;
@@ -433,7 +562,18 @@ async function runCordisAgent(
   // 3. 提取输出（防御式）
   const output = extractDriverOutput(raw);
   const rounds = Math.max(opts.budgetGuard.count(), 1);
-  return { output, rounds, hitRecursionLimit: false };
+
+  // v1.4.3 第六章步一：事件流回放喂 streamHandler（三职责重建——
+  // gotReport 即收工 / 软硬熔断 / 报告质量门控全部经 driver 回调生效）
+  const streamVerdict = opts.streamHandler
+    ? replayEventsToStreamHandler(opts.streamHandler, capturedEvents, firstSeq)
+    : { gotReport: false, hardBreak: false };
+
+  // v1.4.3 第六章步三：运行时 usage 提取（session.events 的 assistant/message
+  // usage 面——「driver 逐步手记」升级为运行时自动记，零手记）
+  const runtimeUsage = extractSessionUsage(capturedEvents, firstSeq);
+
+  return { output, rounds, hitRecursionLimit: streamVerdict.hardBreak, streamVerdict, runtimeUsage };
 }
 
 /**
@@ -555,6 +695,10 @@ async function createCordisDriver(
       await agent.whenIdle();
       await sessions?.flush?.(agent.session);
 
+      // v1.4.3 第六章步一：事件面出口——驱动完成时把 firstSeq + events 交给
+      // 上层（runCordisAgent 做事件流回放 + usage 提取；不传钩子则跳过）
+      opts.onSessionCapture?.(firstSeq, agent.session.events);
+
       return summarizeSession(agent.session.events, firstSeq);
     } finally {
       await (ctx as { fiber?: { dispose?: () => Promise<void> } }).fiber?.dispose?.().catch(() => {});
@@ -675,13 +819,17 @@ export function createDshBackend(
         budgetGuard: createBudgetGuard(task.toolBudget),
         trajectory,
         agentPlugin: agentPlugin?.plugin,
+        // v1.4.3 第六章步一：streamHandler 透传（事件流回放喂 driver 流控回调）
+        streamHandler: task.streamHandler,
       });
 
       return {
         output: result.output,
         rounds: result.rounds,
         hitRecursionLimit: result.hitRecursionLimit,
-        hardBreak: result.hitRecursionLimit,
+        hardBreak: result.hitRecursionLimit || result.streamVerdict.hardBreak,
+        // v1.4.3 第六章步三：运行时 usage 透传（token 自动计量——usage.jsonl 零手记）
+        runtimeUsage: result.runtimeUsage,
         debugLogs: trajectory.records.slice(0, 100).map((r) => ({
           agentId,
           action: `${r.kind}:${r.event}`,

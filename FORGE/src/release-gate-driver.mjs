@@ -1107,6 +1107,9 @@ async function runWorker(step, runDir, target) {
       messages: execResult.rawMessages ?? [],
       content: execResult.output ?? '',   // DSH CLI 桥接无 rawMessages——output 是唯一文本面（ExecutionResult 标准字段）
       hardBreak: execResult.hardBreak || hardBreak,
+      // v1.4.3 第六章步三同步受益：运行时级 usage 透传（DSH session.events
+      // 自动计量——extractUsage 的 result.usage 路径优先命中，零手记）
+      usage: execResult.runtimeUsage ?? undefined,
     };
   };
 
