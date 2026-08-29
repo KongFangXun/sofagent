@@ -1401,6 +1401,25 @@
   QloraTemplateInput,
   QloraOumiConfig,
 } from './train/qlora-template';
+
+// ============================================================
+// v1.4.3 第二章：训练失败诊断（七类分类 + 上下文 + 处方）
+// ============================================================
+/* @public */ export {
+  diagnoseTrainFailure,
+  classifyTrainFailure,
+  saveTrainDiagnoseReport,
+  trainDiagnoseReportPath,
+  FAILURE_CATEGORIES,
+  FAILURE_PRESCRIPTIONS,
+} from './train/train-diagnose';
+/* @public */ export type {
+  TrainFailureCategory,
+  FailureCategoryDef,
+  FailurePrescription,
+  DiagnoseContext,
+  TrainDiagnoseReport,
+} from './train/train-diagnose';
 /* @public */ export {
   DEFAULT_CHUNK_BYTES,
   makeDefaultFetchRange,
