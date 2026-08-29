@@ -103,7 +103,7 @@ export function writeHealthFile(
   const health: DaemonHealthFile = {
     pid: process.pid,
     startTime,
-    version: '1.2.5',
+    version: '1.4.3',
     status,
     lastHeartbeat: now,
     lastPush: extra?.lastPush ?? existingLastPush,
