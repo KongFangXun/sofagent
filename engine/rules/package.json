@@ -1,6 +1,9 @@
 {
   "name": "@sofagent/rules",
   "version": "1.4.2",
+  "engines": {
+    "node": ">=18"
+  },
   "description": "sofagent 规则引擎包——从 audit 抽出，零 git 依赖，供编排引擎 tool call 事前拦截；v1.3.9 起含官方 AST 规则引擎（sofagent-ruleset-ast，经临时文件驱动 TS 编译器，无仓库 fs 依赖）",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
