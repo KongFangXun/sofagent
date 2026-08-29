@@ -27,8 +27,13 @@ function tmpPath(filePath: string): string {
 // 文件锁（O_EXCL 互斥 + 过期回收）
 // ────────────────────────────────────────────────────────────
 
-/** 锁文件过期阈值（10s——正常读改写远快于此，超时视为死锁残留回收） */
-const LOCK_STALE_MS = 10_000;
+/**
+ * 锁文件过期阈值（30s）。
+ * 「慢写进程保护」权衡：本锁用于 >1MB 文件读改写，慢磁盘下写可能超 10s；
+ * 10s 阈值会把仍持锁的慢写进程误判为死锁并回收，锁互斥失效。
+ * 放宽至 30s——正常写不会触发回收，真死锁最多晚 20s 被回收（可接受）。
+ */
+const LOCK_STALE_MS = 30_000;
 /** 锁获取重试间隔（非 CPU 自旋，Atomics.wait 真休眠） */
 const LOCK_RETRY_MS = 20;
 /** 锁获取超时（5s——超过抛错，避免永久阻塞） */
@@ -62,7 +67,10 @@ export function withFileLockSync<T>(filePath: string, fn: () => T): T {
     try {
       const fd = openSync(lock, 'wx', 0o600);
       try {
-        writeFileSync(lock, `${process.pid} ${Date.now()}\n`, 'utf-8');
+        // 锁内容：`${pid} ${acquiredAt} ${startedAt}`。
+        // v1.4.3 追加 startedAt（写开始时间戳）字段：当前获取即写、两值相等，
+        // 字段先落位，供后续区分「慢写」（进程存活且 startedAt 距今未超写耗时上限）与「死锁残留」。
+        writeFileSync(lock, `${process.pid} ${Date.now()} ${Date.now()}\n`, 'utf-8');
       } finally {
         closeSync(fd);
       }

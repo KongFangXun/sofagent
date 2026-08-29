@@ -70,8 +70,8 @@ export function checkRuleA23(ctx: AuditContext): RuleCheck {
     // git diff 中 symlink 文件的 `+++` 行后跟 target 路径（非 + 前缀内容）。
     let symlinkTarget: string | null = null;
     for (const rawLine of file.lines) {
-      // 检测 new mode 120000（symlink）
-      if (rawLine.startsWith('new mode 120000')) {
+      // 检测 new mode 120000（symlink）——v1.4.3 (F-09): 新增 symlink 的 diff 头是 'new file mode 120000'，此前仅匹配修改场景导致漏检
+      if (rawLine.startsWith('new mode 120000') || rawLine.startsWith('new file mode 120000')) {
         // 寻找紧随其后的 symlink target（以 + 开头，不含 +++）
         // git diff symlink 格式：+<target_path>
         for (const l of file.lines) {
