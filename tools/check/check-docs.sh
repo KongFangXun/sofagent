@@ -641,6 +641,66 @@ for pmf in $PLATFORM_MOUNT_FILES; do
 done
 
 echo ""
+
+# ── 15. 全仓工具数声称对账（防新文件成数字门禁盲区）──────────────
+# 门禁目的：§12/§14 只对账登记在册的文件（AGENTS/GEMINI/.cursor/README 等），
+# 新增文档写「N 个 tool」时无人查——八处漂移曾连发三次的根因就是声称点散落。
+# 本节全仓扫「N 个 tool(s)」声称，与 tool-registry.ts 实数对账：
+#   - 排除面：changelog/ 历史快照、archive 归档、node_modules、engine 源码内的
+#     泛型文案（如「N 个 tools 数组」非工具数声称）
+#   - 豁免规则：演进链行（含 v1.x 且含「后为/起/新增」——历史事实行）；
+#     「训练 N tools」等带前缀限定的行（非全局工具数声称）
+#   - 其余声称 ≠ 实数 → fail（新声称点自动进对账面，零登记）
+echo "=== 15. 全仓工具数声称对账（防新文件成盲区）==="
+TOOL_CLAIM_SCAN=$(node -e "
+const fs = require('fs');
+const path = require('path');
+// 排除面与 1b 死链扫描同口径 + engine 源码（内部文案非文档声称）
+const EXCLUDE = [/node_modules/, /\.git/, /\.workbuddy/, /\.sofagent/, /docs\/changelog\//, /docs\/archive\//, /FORGE\/archive\//, /^engine\//, /^FORGE\/runs\//, /commercial/];
+const regSrc = fs.readFileSync('engine/mcp/src/tool-registry.ts', 'utf8');
+const regCount = new Set([...regSrc.matchAll(/name:\s*'([a-z_]+)',/g)].map(m => m[1])).size;
+const results = [];
+function walk(dir) {
+  for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+    const p = path.join(dir, e.name);
+    if (e.isDirectory()) { if (!EXCLUDE.some(re => re.test(p))) walk(p); continue; }
+    if (!e.name.endsWith('.md') && !e.name.endsWith('.mdc')) continue;
+    if (EXCLUDE.some(re => re.test(p))) continue;
+    const lines = fs.readFileSync(p, 'utf8').split('\n');
+    lines.forEach((line, i) => {
+      // 「N 个 tool」「N 个 tools」声称（含 badge/表格/散文各形态）
+      const m = line.match(/([0-9]+) 个 tools?\b/g);
+      if (!m) return;
+      for (const claim of m) {
+        const n = parseInt(claim, 10);
+        // 豁免：演进链历史行（含 vX.Y 且含「后为/起」——HANDBOOK 441 行形态）
+        if (/v[0-9]+\.[0-9]/.test(line) && /(后为|起)/.test(line)) continue;
+        // 豁免：带前缀限定的非全局声称（训练 N tools / N tools 数组等）
+        if (/训练|数组|监控/.test(line.slice(Math.max(0, line.indexOf(claim) - 6), line.indexOf(claim)))) continue;
+        if (n !== regCount) results.push(p.replace(/^\.\//, '') + ':' + (i + 1) + ' 声称 ' + n + ' ≠ registry ' + regCount + ' ｜ ' + line.trim().slice(0, 80));
+      }
+    });
+  }
+}
+walk('.');
+console.log(results.length ? results.join('\n') : '');
+console.error('REG=' + regCount);
+" 2>/tmp/guards-reg.log)
+TOOL_CLAIM_REG=$(grep -oE 'REG=[0-9]+' /tmp/guards-reg.log 2>/dev/null | grep -oE '[0-9]+' || true)
+TOOL_CLAIM_REG=${TOOL_CLAIM_REG:-0}
+if [ "$TOOL_CLAIM_REG" -eq 0 ]; then
+  echo "  ❌ registry 实数提取失败——对账无法进行（检查 tool-registry.ts 路径）"
+  ERRORS=$((ERRORS + 1))
+elif [ -z "$TOOL_CLAIM_SCAN" ]; then
+  echo "  ✓ 全仓「N 个 tool(s)」声称与 registry（${TOOL_CLAIM_REG}）全部一致"
+else
+  echo "  ❌ 全仓工具数声称漂移："
+  echo "$TOOL_CLAIM_SCAN" | sed 's/^/    /'
+  ERRORS=$((ERRORS + $(echo "$TOOL_CLAIM_SCAN" | wc -l | tr -d ' ')))
+fi
+rm -f /tmp/guards-reg.log
+
+echo ""
 if [ "$ERRORS" -gt 0 ]; then
   echo "发现 ${ERRORS} 个问题"
   exit 1
