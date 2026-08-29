@@ -5,6 +5,7 @@
  * 用法：
  *   node tools/dashboard/serve-dashboard.mjs            # 起服务并自动打开浏览器
  *   DASHBOARD_PORT=4000 node tools/dashboard/serve-dashboard.mjs   # 指定端口
+ *   DASHBOARD_HOST=0.0.0.0 node tools/dashboard/serve-dashboard.mjs # 局域网共享（默认仅本机 127.0.0.1）
  *   SOFAGENT_HOME=/path node tools/dashboard/serve-dashboard.mjs   # 指定数据目录
  *
  * 提供三类接口：
@@ -650,10 +651,14 @@ async function main() {
   while (await portInUse(port)) {
     port++;
   }
-  server.listen(port, () => {
+  // v1.4.4 CI 加固：默认只绑回环地址（Node 不传 host 时绑 :: 全网卡——局域网可达）
+  // 局域网共享须显式 DASHBOARD_HOST=0.0.0.0
+  const host = process.env.DASHBOARD_HOST || '127.0.0.1';
+  server.listen(port, host, () => {
     const url = 'http://localhost:' + port;
     console.log('');
     console.log('  sofagent Dashboard → ' + url);
+    console.log('  监听：' + host + ':' + port + (host === '127.0.0.1' ? '（仅本机，局域网共享须 DASHBOARD_HOST=0.0.0.0）' : ''));
     console.log('');
     console.log('  数据源：' + SOFAGENT_DATA);
     console.log('  页面源：' + DOCS_DIR);
