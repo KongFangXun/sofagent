@@ -18,7 +18,7 @@ npm install -g @sofagent/audit
 npm install --save-dev @sofagent/audit
 
 # 方式三：一次性运行（不安装）
-npx @sofagent/audit --diff HEAD~1..HEAD
+npx -y -p @sofagent/audit sofagent-audit --diff HEAD~1..HEAD
 ```
 
 安装后获得以下命令：

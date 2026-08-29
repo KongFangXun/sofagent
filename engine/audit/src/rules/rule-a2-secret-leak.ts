@@ -39,7 +39,9 @@ const MAX_DISPLAY_PER_GROUP = 5;
  * A2 与 ToolGate tool-secret-leak 同口径豁免，防两防线漂移互补成洞）。
  */
 function tryDecodeBase64(s: string): string | null {
-  if (!/^[A-Za-z0-9+/=\s]+$/.test(s) || s.replace(/\s+/g, '').length < 8 || s.replace(/\s+/g, '').length % 4 !== 0) {
+  // finding-13: 字符集补 URL-safe base64 的 - _（Node Buffer 原生兼容两套字母表，
+  // 此前仅字符集门槛拦路——URL-safe 编码的密钥逃逸解码检测）
+  if (!/^[A-Za-z0-9+/=\s_-]+$/.test(s) || s.replace(/\s+/g, '').length < 8 || s.replace(/\s+/g, '').length % 4 !== 0) {
     return null;
   }
   try {
