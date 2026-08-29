@@ -22,7 +22,7 @@ import { join } from 'node:path';
 import {
   REPO_ROOT, loadModelConfig, parseArgs, resolveVersion,
   resolveApiKey, writeDegraded, loadSources, readChangelogLine,
-  callLLM, writeOutput, defaultOut,
+  callLLMWithFallback as callLLM, writeOutput, defaultOut,
 } from './gen-draft-lib.mjs';
 
 // 审查草稿要发散发现：比分类任务（0.3）略高、比创意（0.8）低
