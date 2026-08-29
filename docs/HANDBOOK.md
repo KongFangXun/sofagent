@@ -644,6 +644,24 @@ sofagent-audit subagent run fde --mode sustain --task "巡检所有节点"
 
 当前共 24 条审计规则（A1-A11、A14-A23 + E1-E2/E4），源码在 `engine/audit/src/rules/`。每条规则独立，新增只需写函数 + 注册一行。详见 [DEVELOPMENT §八](./DEVELOPMENT.md#八提交时审计--文件系统审计)。
 
+### 审计聚合指标口径（v1.4.3——单源防漂移）
+
+`sofagent-audit --stats` 输出近 N 天（`--days` 可调，缺省 30）治理 KPI。指标口径以本节为准（CLI 实现 `engine/audit/src/stats.ts` 与此处同源——改口径先改本节）：
+
+| 指标 | 定义 | 分母 |
+|------|------|------|
+| **变更总数** | 统计窗口内 history.jsonl 的审计记录条数（每次 commit 审计一条） | — |
+| **判定分布** | PASS（exitCode=0）/ WARN（exitCode=1）/ FAIL（exitCode=2）三档计数 | — |
+| **安全边界触发率** | (WARN 条数 + FAIL 条数) ÷ 变更总数 | 变更总数 |
+| **阻断率** | FAIL 条数 ÷ 变更总数（FAIL 判定以 exitCode=2 为准） | 变更总数 |
+| **高危规则 Top 5** | ruleResults 中 status=WARN/FAIL 的规则按触发次数降序前五（含 FAIL 分计） | — |
+
+口径细则：
+- **空历史降级**：变更总数为 0 时触发率/阻断率输出 `null`（不硬凑 0——「无数据」与「零触发」语义不同）
+- **下钻说明**：每条触发记录的 17 条默认规则逐条 ruleResults 可查（`history.jsonl` 原始记录 + `--verify-chain` 完整性校验）——Top 5 规则可下钻到具体 commit 与证据
+- **机器可读**：`--stats --json` 输出纯净 JSON（企业 SIEM/监控平台消费）；聚合结果同步落盘 `data/dashboard/audit-stats.json`（Dashboard 面板化消费 v1.5.0）
+- **只读铁律**：聚合层永不写 `history.jsonl`（HMAC 链完整性是审计信任根基——聚合前后文件字节级一致）
+
 ### 概念速查
 
 上述术语（Harness 中间件、约束层 × 生命周期双层架构、约束层四种能力（注入·审计·回溯·进化）、激活链四阶段（ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN）、FORGE 内部工具链、铁律、审计规则、Skill、think.md、daemon、Agent 平台（OpenClaw / WorkBuddy 等）、FDE 等）已在上方各幕详述，此处仅作速查索引。加载链正典顺序：**SKILL.md（宪法）→ fde.md（规范）→ think.md（反思）→ knowledge/（知识）**。核心 = **约束层（约束层四能力）× 生命周期（诊断→激活→编排→执行→持续）**。完整概念见 [README](../README.md) 和 [ARCHITECTURE](./ARCHITECTURE.md)。
