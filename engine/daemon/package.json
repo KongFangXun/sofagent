@@ -1,6 +1,9 @@
 {
   "name": "@sofagent/daemon",
   "version": "1.4.2",
+  "engines": {
+    "node": ">=18"
+  },
   "description": "sofagent 守护进程 — 持续审计 / 文件监听 / 自动修复循环",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

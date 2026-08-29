@@ -1,6 +1,9 @@
 {
   "name": "@sofagent/orchestrator",
   "version": "1.4.2",
+  "engines": {
+    "node": ">=18"
+  },
   "description": "sofagent 编排引擎 — 多 Agent 协作 / 工作流调度 / prompt 模板",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

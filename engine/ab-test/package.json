@@ -1,6 +1,9 @@
 {
   "name": "@sofagent/ab-test",
   "version": "1.4.2",
+  "engines": {
+    "node": ">=18"
+  },
   "description": "sofagent A/B 测试框架 — 对比实验 / 指标显著性 / 实验报告",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

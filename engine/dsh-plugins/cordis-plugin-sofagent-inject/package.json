@@ -1,6 +1,9 @@
 {
   "name": "cordis-plugin-sofagent-inject",
   "version": "1.4.2",
+  "engines": {
+    "node": ">=18"
+  },
   "description": "启动注入企业约束——四层加载链（seam: apply(ctx)）——桥接 @sofagent/harness buildConstrainedSystemPrompt（sofagent 品牌插件 · 主色 #16B8F3）",
   "private": true,
   "license": "MIT",
