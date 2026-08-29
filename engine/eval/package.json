@@ -1,6 +1,9 @@
 {
   "name": "@sofagent/eval",
   "version": "1.4.2",
+  "engines": {
+    "node": ">=18"
+  },
   "description": "sofagent 质量评估引擎 — 量化指标 / 评分逻辑 / evals 接口",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
