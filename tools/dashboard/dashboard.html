@@ -588,6 +588,21 @@ a:hover{text-decoration:none} /* 全站 hover 无下划线（统一）——按�
       </div>
     </div>
   </div>
+
+  <div class="section">
+    <div class="section-header"><div class="section-title"><span class="dot-emoji"><i class="bi bi-cpu"></i></span>训练任务（v1.4.3）</div>
+      <span style="font-size:11px;color:var(--text-t)">读 train-status.json / train-health.json（训练终态自动落盘刷新）</span>
+    </div>
+    <div class="section-body">
+      <div class="metrics" style="margin-bottom:12px">
+        <div class="metric-card"><div class="metric-value" id="tr-running">—</div><div class="metric-label">当前在跑</div></div>
+        <div class="metric-card"><div class="metric-value" id="tr-completed">—</div><div class="metric-label">累计完成</div></div>
+        <div class="metric-card"><div class="metric-value" id="tr-failed">—</div><div class="metric-label">失败/取消</div></div>
+        <div class="metric-card"><div class="metric-value" id="tr-success-rate">—</div><div class="metric-label">成功率</div><div class="metric-sub" id="tr-success-sub">train-health.json 口径</div></div>
+      </div>
+      <div id="trainJobsBox"><div class="skeleton" style="height:60px"></div></div>
+    </div>
+  </div>
 </div>
 
 <!-- ================================================== -->
@@ -1256,6 +1271,7 @@ async function loadLiveData(){
       updateDataStatus(true);
       document.getElementById('lastRefresh').textContent=fmtUpdatedAt();
       renderSummaryData(summary);
+      loadTrainData('');
       loadWorklogData();
       return;
     }
@@ -1276,6 +1292,7 @@ async function loadLiveData(){
     updateDataStatus(true);
     var records=parseJSONL(auditHistory);
     processAuditData(records);
+    loadTrainData(dataRoot);
     var dh=await tryFetch(dataRoot+'/dashboard/daemon-health.json');
     if(dh)try{daemonHealth=JSON.parse(dh)}catch(e){}
     // data-sovereignty 按 年/月/*.jsonl 分目录，取最近的
@@ -1300,9 +1317,80 @@ async function loadLiveData(){
     liveDataConnected=false;
     updateDataStatus(false);
     loadSampleData();
+    loadTrainData('');
     loadWorklogData();
   }
 
+}
+
+/* ===== 训练任务区块（v1.4.3 第一章：读 train-status.json / train-health.json） ===== */
+function loadTrainData(dataRoot){
+  resolveDataRoot().then(function(root){
+    var r=dataRoot||root;
+    if(!r){renderTrainEmpty();return}
+    Promise.all([
+      tryFetch(r+'/dashboard/train-status.json'),
+      tryFetch(r+'/dashboard/train-health.json')
+    ]).then(function(res){
+      var board=null,health=null;
+      if(res[0]){try{board=JSON.parse(res[0])}catch(e){}}
+      if(res[1]){try{health=JSON.parse(res[1])}catch(e){}}
+      if(!board||!Array.isArray(board.running)){renderTrainEmpty();return}
+      renderTrainBoard(board,health);
+    });
+  });
+}
+function trainStatusBadge(status){
+  var map={
+    running:'badge-pass',checkpointing:'badge-warn',queued:'badge-warn',
+    completed:'badge-pass',failed:'badge-fail',cancelled:'badge-warn',interrupted:'badge-warn'
+  };
+  var cls=map[status]||'badge-warn';
+  return '<span class="'+cls+'">'+escapeHtml(status||'?')+'</span>';
+}
+function renderTrainBoard(board,health){
+  var rEl=document.getElementById('tr-running');
+  if(rEl)rEl.textContent=board.running.length;
+  var cEl=document.getElementById('tr-completed');
+  if(cEl)cEl.textContent=board.recentCompleted.length;
+  var fEl=document.getElementById('tr-failed');
+  if(fEl)fEl.textContent=board.recentFailed.length;
+  var sEl=document.getElementById('tr-success-rate');
+  if(sEl)sEl.textContent=health&&health.successRate!==null&&health.successRate!==undefined?Math.round(health.successRate*100)+'%':'—';
+  if(health&&health.avgDurationMinutes!==null&&health.avgDurationMinutes!==undefined){
+    var sub=document.getElementById('tr-success-sub');
+    if(sub)sub.textContent='平均耗时 '+health.avgDurationMinutes+' 分钟';
+  }
+  var box=document.getElementById('trainJobsBox');
+  if(!box)return;
+  var rows=[];
+  board.running.forEach(function(j){
+    rows.push([escapeHtml(j.jobId),trainStatusBadge(j.status),escapeHtml(j.baseModel||'—'),escapeHtml(j.algorithm||'—'),
+      j.lastStep!==null&&j.lastStep!==undefined?('step '+j.lastStep):'—',
+      j.lastLoss!==null&&j.lastLoss!==undefined?j.lastLoss:'—',escapeHtml(j.updatedAt||'—')]);
+  });
+  board.recentCompleted.slice(0,5).forEach(function(j){
+    rows.push([escapeHtml(j.jobId),trainStatusBadge(j.status),escapeHtml(j.baseModel||'—'),escapeHtml(j.algorithm||'—'),
+      j.lastStep!==null&&j.lastStep!==undefined?('step '+j.lastStep):'—','—',escapeHtml(j.updatedAt||'—')]);
+  });
+  board.recentFailed.slice(0,5).forEach(function(j){
+    rows.push([escapeHtml(j.jobId),trainStatusBadge(j.status),escapeHtml(j.baseModel||'—'),escapeHtml(j.algorithm||'—'),
+      '—','—',escapeHtml((j.reason||'').slice(0,80)||j.updatedAt||'—')]);
+  });
+  if(rows.length===0){
+    box.innerHTML=emptyState('<i class="bi bi-cpu"></i>','还没有训练任务','提交训练任务后自动生成（train_submit → 终态落盘 train-status.json）','查看 FDE 引导',"goPage('fde')");
+    return;
+  }
+  box.innerHTML=wlTable(['任务','状态','基座','算法','进度','loss','更新/原因'],rows);
+}
+function renderTrainEmpty(){
+  var box=document.getElementById('trainJobsBox');
+  if(!box)return;
+  ['tr-running','tr-completed','tr-failed','tr-success-rate'].forEach(function(id){
+    var el=document.getElementById(id);
+    if(el)el.textContent='—';
+  });
+  box.innerHTML=emptyState('<i class="bi bi-cpu"></i>','还没有训练数据','训练终态事件自动落盘 data/dashboard/train-status.json（dashboard-sink）','查看 FDE 引导',"goPage('fde')");
 }
 
 /* 审计记录行渲染（recent / 加载更多共用） */
