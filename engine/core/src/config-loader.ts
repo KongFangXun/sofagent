@@ -505,7 +505,10 @@ function verifyConfigSignature(parsed: Record<string, unknown> | null, filePath:
   }
 
   // 从待验内容中剔除顶层 signature 字段（计算签名时不应包含签名自身）
-  delete parsed['signature'];
+  // v1.4.3 FIXED(finding-21): 不再变异入参 parsed——在浅拷贝上剔除，
+  // 调用方读取原始配置对象时 signature 字段仍保留（防静默缺字段）。
+  const parsedForMerge = { ...parsed };
+  delete parsedForMerge['signature'];
 
   const key = getHmacKey();
   if (key === null) {
@@ -514,7 +517,7 @@ function verifyConfigSignature(parsed: Record<string, unknown> | null, filePath:
     console.error(`❌ config.yml 含 signature 字段但无 ~/.sofagent-key，无法验签——拒绝启动: ${filePath}`);
     throw new ConfigSignatureError(`配置文件签名校验失败（缺少 HMAC 密钥），拒绝启动。请创建 ~/.sofagent-key 或删除 config.yml 中的 signature 字段: ${filePath}`, filePath);
   }
-  const canonical = stableStringify(parsed);
+  const canonical = stableStringify(parsedForMerge);
   const expected = createHmac('sha256', key).update(canonical).digest('hex');
   const provided = sig.trim().toLowerCase();
   const matched =

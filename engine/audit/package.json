@@ -2,7 +2,7 @@
   "name": "@sofagent/audit",
   "version": "1.4.2",
   "description": "sofagent 提交时审计——扫描 git diff，检查 Agent 是否遵守工作纪律",
-  "main": "dist/index.js",
+  "main": "./dist/public-api.js",
   "types": "dist/public-api.d.ts",
   "exports": {
     ".": {
