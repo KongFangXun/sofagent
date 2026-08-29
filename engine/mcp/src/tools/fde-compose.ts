@@ -1,10 +1,12 @@
 // ============================================================
-// fde-compose.ts · MCP tool：FDE 梳理辅助（v1.3.7 交付 7右半）
+// fde-compose.ts · MCP tool：FDE 梳理辅助（v1.3.7 交付 7右半 · v1.4.3 清扫任务三收窄）
 // ============================================================
 //
 // fde_compose({ action, ... })
 //   action=workflow → 从五要素生成 workflow.yml 草稿
-//   action=ontology → 从五要素推导 ontology 草稿并落盘
+//   action=ontology → ❌ 已收窄（v1.4.3）——与 v1.4.2 六引擎 fde_derive
+//   完全重叠（五要素→ontology 草稿同能力且产物落 data/fde/），返回迁移
+//   提示文案（旧交付退役，能力归 fde_derive 主入口）
 // ============================================================
 
 import type { ComposeSession, NodeInterview } from '@sofagent/orchestrator';
@@ -49,8 +51,30 @@ export interface FdeComposeResult {
 
 /**
  * FDE 梳理辅助 MCP tool（无 CLI 环境的 MCP 客户端可用）。
+ *
+ * v1.4.3 清扫任务三：只响应 action=workflow；action=ontology 返回迁移
+ * 提示（fde_derive 是六引擎主入口——同能力 + 产物落 data/fde/ 有审计）。
  */
 export async function fdeCompose(args: FdeComposeArgs): Promise<FdeComposeResult> {
+  // v1.4.3 收窄：ontology action → 迁移提示（不执行旧推导路径）
+  if (args.action === 'ontology') {
+    return {
+      text: [
+        '[sofagent] fde_compose 的 action=ontology 已收窄（v1.4.3 清扫任务三）。',
+        '请使用 fde_derive——v1.4.2 六引擎主入口，五要素→ontology 草稿同能力且产物落 data/fde/（含审计留痕）。',
+        'fde_compose 此后仅响应 action=workflow（workflow.yml 草稿生成）。',
+      ].join('\n'),
+      data: { action: 'ontology', isError: true },
+    };
+  }
+
+  if (args.action !== 'workflow') {
+    return {
+      text: `[sofagent] fde_compose 错误: 未知 action '${args.action}'（本 tool 仅支持 workflow——ontology 走 fde_derive）`,
+      data: { action: args.action, isError: true },
+    };
+  }
+
   if (!args.session || !args.session.nodes || args.session.nodes.length === 0) {
     return {
       text: '[sofagent] fde_compose 错误: session.nodes 必填且非空',
@@ -77,54 +101,26 @@ export async function fdeCompose(args: FdeComposeArgs): Promise<FdeComposeResult
       })),
     };
 
-    if (args.action === 'workflow') {
-      const { generateWorkflowDraft, validateDraftDag } = orchestrator;
-      const draft = generateWorkflowDraft(session);
-      const dagCheck = validateDraftDag(draft.nodes);
-      if (!dagCheck.valid) {
-        return {
-          text: `[sofagent] fde_compose: DAG 有环 ${dagCheck.cycle?.join(' → ')}`,
-          data: { action: 'workflow', isError: true },
-        };
-      }
+    const { generateWorkflowDraft, validateDraftDag } = orchestrator;
+    const draft = generateWorkflowDraft(session);
+    const dagCheck = validateDraftDag(draft.nodes);
+    if (!dagCheck.valid) {
       return {
-        text: [
-          `[sofagent] fde_compose: workflow.yml 草稿已生成`,
-          `  节点数：${draft.nodes.length}`,
-          `  agent 字段留空——批量生成时由 agent-creation 推导`,
-        ].join('\n'),
-        data: {
-          action: 'workflow',
-          yaml: draft.yaml,
-          isError: false,
-        },
+        text: `[sofagent] fde_compose: DAG 有环 ${dagCheck.cycle?.join(' → ')}`,
+        data: { action: 'workflow', isError: true },
       };
     }
-
-    if (args.action === 'ontology') {
-      const { generateOntologyDraft } = orchestrator;
-      const { draft, savedPath } = generateOntologyDraft(session);
-      return {
-        text: [
-          `[sofagent] fde_compose: Ontology 草稿已生成并落盘`,
-          `  实体数：${draft.entities.length}`,
-          `  概念数：${draft.concepts.length}`,
-          `  关系数：${draft.relations.length}`,
-          `  落盘路径：${savedPath}`,
-          `  需要全量本体：${draft.needsFullOntology ? '是' : '否'}`,
-        ].join('\n'),
-        data: {
-          action: 'ontology',
-          ontologyPath: savedPath,
-          entityCount: draft.entities.length,
-          isError: false,
-        },
-      };
-    }
-
     return {
-      text: `[sofagent] fde_compose 错误: 未知 action '${args.action}'`,
-      data: { action: args.action, isError: true },
+      text: [
+        `[sofagent] fde_compose: workflow.yml 草稿已生成`,
+        `  节点数：${draft.nodes.length}`,
+        `  agent 字段留空——批量生成时由 agent-creation 推导`,
+      ].join('\n'),
+      data: {
+        action: 'workflow',
+        yaml: draft.yaml,
+        isError: false,
+      },
     };
   } catch (err) {
     return {

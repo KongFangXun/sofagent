@@ -75,8 +75,8 @@ async function main() {
         console.error('❌ compose 需要 --task <描述> 参数');
         process.exit(1);
       }
-      const { composeWithDeepAgents } = await import('./composer');
-      const result = await composeWithDeepAgents(taskDesc);
+      const { composeWithReactAgent } = await import('./composer');
+      const result = await composeWithReactAgent(taskDesc);
       if (result) {
         console.log(result);
       } else {
