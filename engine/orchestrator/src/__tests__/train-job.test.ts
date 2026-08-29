@@ -593,7 +593,10 @@ describe('坏数据降级', () => {
 
   it('test_listTrainJobRecords_企业目录不存在_空数组', () => {
     expect(listTrainJobRecords(dataDir, 'ent-ghost')).toEqual([]);
-    expect(mkdirSync(join(dataDir, 'train', 'ent-ghost2'), { recursive: true })).toBeTruthy();
+    // mkdirSync(recursive:true) 返回值平台敏感（Linux=首建路径 / macOS=undefined），
+    // 断言意图是「目录已就绪」前置条件——用 existsSync 做平台无关验证。
+    mkdirSync(join(dataDir, 'train', 'ent-ghost2'), { recursive: true });
+    expect(existsSync(join(dataDir, 'train', 'ent-ghost2'))).toBe(true);
     expect(listTrainJobRecords(dataDir, 'ent-ghost2')).toEqual([]);
   });
 });
