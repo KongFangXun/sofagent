@@ -570,7 +570,9 @@ const server = createServer(async (req, res) => {
   if (urlPath.startsWith('/data/')) {
     const relPath = normalize(urlPath.slice('/data/'.length));
     const filePath = join(SOFAGENT_DATA, relPath);
-    if (!filePath.startsWith(SOFAGENT_DATA)) {
+    // 前缀判定必须带尾分隔符——裸 startsWith 存在前缀碰撞绕过
+    // （/data/../data-backup/x 解析后以 .../data 开头即可穿透到兄弟目录）
+    if (filePath !== SOFAGENT_DATA && !filePath.startsWith(SOFAGENT_DATA + '/')) {
       res.writeHead(403);
       res.end('Forbidden');
       return;
@@ -592,7 +594,8 @@ const server = createServer(async (req, res) => {
     const data = await tryRead(filePath);
     if (data === null) {
       res.writeHead(404);
-      res.end('Not found: ' + filePath);
+      // 404 不回显绝对路径（含用户名——本地面信息收敛）
+      res.end('Not found');
       return;
     }
     const mime = MIME[extname(filePath)] || 'application/octet-stream';
@@ -607,7 +610,8 @@ const server = createServer(async (req, res) => {
   }
 
   const filePath = join(DOCS_DIR, normalize(urlPath));
-  if (!filePath.startsWith(DOCS_DIR)) {
+  // 前缀判定带尾分隔符（防兄弟目录前缀碰撞，同 /data/* 分支）
+  if (filePath !== DOCS_DIR && !filePath.startsWith(DOCS_DIR + '/')) {
     res.writeHead(403);
     res.end('Forbidden');
     return;

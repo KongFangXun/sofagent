@@ -333,7 +333,7 @@ sofagent-audit 实现了完整的六步审计闭环流程（设计文档见 [ARC
 
 ### 测试覆盖范围
 
-当前审计核心 907 个、全 workspace 3359 个测试（v1.4.1 批次 2937→3178 +241，v1.4.2 批 +171：bugfix 批 +24 全部为 audit 包回归用例 878→902（H-01 三层防线 / H-02 密钥四类 / H-03 空白折叠 / G-01 基线 / G-07 webhook 脱敏）+ dev 批 +147（数据管道 53 / eval 闭环与环境 45 / dry-run 与报告 28 / FDE 六引擎 21，orchestrator 1295→1442）+ A2 data-URI 豁免三用例 902→905 + data-sovereignty data-URI 豁免两用例 905→907）；实测见 `tools/check/test-count.sh`，flaky 复跑机制内置，以脚本判定为准，与 pre-push-check 一致），但覆盖范围集中在审计规则和核心逻辑（diff-parser、reporter、config-loader、rules/*.ts）。以下模块没有独立测试：
+当前审计核心 907 个、全 workspace 3367 个测试（v1.4.1 批次 2937→3178 +241，v1.4.2 批 +171：bugfix 批 +24 全部为 audit 包回归用例 878→902（H-01 三层防线 / H-02 密钥四类 / H-03 空白折叠 / G-01 基线 / G-07 webhook 脱敏）+ dev 批 +147（数据管道 53 / eval 闭环与环境 45 / dry-run 与报告 28 / FDE 六引擎 21，orchestrator 1295→1442）+ A2 data-URI 豁免三用例 902→905 + data-sovereignty data-URI 豁免两用例 905→907 + 四轮深挖 core data-paths 五用例 369→374 + orchestrator 占位豁免三用例 1442→1445）；实测见 `tools/check/test-count.sh`，flaky 复跑机制内置，以脚本判定为准，与 pre-push-check 一致），但覆盖范围集中在审计规则和核心逻辑（diff-parser、reporter、config-loader、rules/*.ts）。以下模块没有独立测试：
 
 | 模块 | 测试状态 | 风险 |
 |------|:--:|------|
@@ -412,7 +412,7 @@ FDE 完整四阶段十二步部署流程（[FDE/GUIDE.md](../FDE/GUIDE.md)）已
 
 v1.0 新增 `FORGE/playbook/acceptance-test.sh`（场景数持续扩展，当前 255 个，SSOT 见脚本头部声明）：
 
-- **CI 已覆盖**：单元测试审计核心 907 个、全 workspace 3359 个测试（v1.4.1 批次 2937→3178 +241，v1.4.2 批 +171：bugfix 批 +24（audit 878→902）+ dev 批 +147（orchestrator 1295→1442）；全绿，详见上方「测试覆盖范围」节，实测见 `tools/check/test-count.sh`，与 pre-push-check 一致）、sofagent-core verify 约 44-48 项（动态）
+- **CI 已覆盖**：单元测试审计核心 907 个、全 workspace 3367 个测试（v1.4.1 批次 2937→3178 +241，v1.4.2 批 +171：bugfix 批 +24（audit 878→902）+ dev 批 +147（orchestrator 1295→1442）；全绿，详见上方「测试覆盖范围」节，实测见 `tools/check/test-count.sh`，与 pre-push-check 一致）、sofagent-core verify 约 44-48 项（动态）
 - **发版前手动覆盖**：acceptance-test.sh 278 场景（含子断言，CLI 端到端，步骤 2.3；v1.4.2 阶段三 S333-S339 七场景增量 265→272 + 存量清零 S340 272→273 + 章六补测 S341 273→274 + 章五零覆盖补测 S342/S343 274→276 + 阶段十二回写 S344 276→277 + v1.4.3 bugfix F-03 行为锁 S345 277→278）、OpenClaw 验收 63 场景（Agent 端到端，步骤 2.5）
 - **CI 未覆盖**：daemon → MCP → webhook → 编排四组件串联行为（仍依赖手动验证）
 - **CI 未覆盖**：多平台兼容性（macOS only verified，Linux/Windows 未验证）

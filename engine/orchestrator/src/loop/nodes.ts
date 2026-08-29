@@ -160,10 +160,15 @@ export async function resolveLLMModel(role: 'engineer' | 'reviewer' | null = nul
   // v1.2.6: 打通 FORGE A/B 环境变量回退
   // 有 role 时：SOFAGENT_LLM_{ROLE} > SOFAGENT_LLM_A（兜底）
   // 无 role 时：SOFAGENT_LLM_A > SOFAGENT_LLM_B（兜底）
-  const effectiveLlmEnv = llmEnv
-    ?? (role
-      ? (process.env[`SOFAGENT_LLM_${role.toUpperCase()}`] ?? process.env.SOFAGENT_LLM_A)
-      : (process.env.SOFAGENT_LLM_A ?? process.env.SOFAGENT_LLM_B));
+  // 占位值豁免：FORGE env.local.template 教用户设 SOFAGENT_LLM_A="active" 等
+  // 占位串（driver 启动检查只要求非空，真实模型由 profile.mjs 决定）——
+  // 这类值不是 provider:model 格式，须跳过该级回退而不是当 provider 解析
+  // （旧实现会打「未知的 LLM provider: active」告警并降级，模板与引擎语义冲突）。
+  const PLACEHOLDER_VALUES = new Set(['active', 'on', 'true', '1', 'enabled', 'yes']);
+  const isPlaceholder = (v: string | undefined): boolean =>
+    !!v && PLACEHOLDER_VALUES.has(v.trim().toLowerCase());
+  const effectiveLlmEnv = [llmEnv, role ? process.env[`SOFAGENT_LLM_${role.toUpperCase()}`] : undefined, process.env.SOFAGENT_LLM_A, process.env.SOFAGENT_LLM_B]
+    .find((v): v is string => !!v && !isPlaceholder(v));
   if (!effectiveLlmEnv) return null;
 
   const [provider, modelName] = effectiveLlmEnv.split(':');
