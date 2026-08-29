@@ -55,8 +55,8 @@ export interface EvaluateCaseInput {
    * 接收隔离 workspace + 只读工具集，返回产出文本。
    */
   agentFn?: (ctx: AgentExecutionContext) => Promise<string>;
-  /** 评分函数（可注入；默认协议化评分：完成 100 / 异常 0） */
-  scoringFn?: (ctx: { output: string; rubric: string; durationMs: number }) => number;
+  /** 评分函数（可注入；默认协议化评分：完成 100 / 异常 0；可返回 Promise——evalBridgeScoringFn 桥接三维度评分） */
+  scoringFn?: (ctx: { output: string; rubric: string; durationMs: number }) => number | Promise<number>;
   /** 审批模式（默认强制 'read-only'——Test Agent 只读） */
   approvalMode?: ApprovalMode;
   /** 日志输出 */
@@ -162,6 +162,38 @@ export function defaultScoringFn(ctx: { output: string; rubric: string; duration
 }
 
 /**
+ * eval 桥接评分（v1.4.4 三套体系统一）——rubric 与 output 均可解析为 JSON
+ * 对象时，走 @sofagent/eval 的三维度评分（精确匹配/语义相似/规则合规，
+ * eval 包为全仓唯一 SSOT scorer）；任一不可解析时回退协议完成度评分。
+ *
+ * 动态 import：orchestrator 与 eval 均依赖 audit/core 但 eval 不在
+ * orchestrator 的 dependencies 里——桥接是可选增强，缺失时优雅降级，
+ * 不引入包级硬依赖（安装裁剪自由）。
+ */
+export async function evalBridgeScoringFn(ctx: { output: string; rubric: string; durationMs: number }): Promise<number> {
+  let expected: Record<string, unknown> | null = null;
+  let actual: Record<string, unknown> | null = null;
+  try {
+    const e = JSON.parse(ctx.rubric);
+    const a = JSON.parse(ctx.output);
+    if (e && typeof e === 'object' && a && typeof a === 'object') {
+      expected = e as Record<string, unknown>;
+      actual = a as Record<string, unknown>;
+    }
+  } catch {
+    // 任一不是合法 JSON 对象 → 回退协议完成度
+  }
+  if (!expected || !actual) return defaultScoringFn(ctx);
+  try {
+    const { evalCase } = await import('@sofagent/eval');
+    return Math.round(evalCase(actual, expected).overall * 100);
+  } catch {
+    // @sofagent/eval 不可用（裁剪安装）→ 回退协议完成度
+    return defaultScoringFn(ctx);
+  }
+}
+
+/**
  * 隔离评测一个 Case——强制 read-only + statement/rubric 物理分离。
  *
  * @param input 评测入参
@@ -250,9 +282,9 @@ export async function evaluateCase(input: EvaluateCaseInput): Promise<CaseEvalua
     return result;
   }
 
-  // ── 协议化评分 0..100 ──
-  const score = scoringFn({ output: agentOutput, rubric: input.rubric, durationMs: Date.now() - startedAt });
-  const clamped = Math.max(0, Math.min(100, Math.round(score)));
+  // ── 协议化评分 0..100（scoringFn 可同步可 async——evalBridgeScoringFn 是异步桥接）──
+  const score = await scoringFn({ output: agentOutput, rubric: input.rubric, durationMs: Date.now() - startedAt });
+  const clamped = Math.max(0, Math.min(100, Math.round(await Promise.resolve(score))))
 
   const result: CaseEvaluation = {
     benchmarkId: input.benchmarkId,
