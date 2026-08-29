@@ -1,16 +1,17 @@
 # 后训练 workflow 模板（post-training.yml）
 # 用途：FDE 交付时实例化——企业需要做专属后训练小模型时，用本模板搭「一句话 → 模型选型 → 训练 → 部署」的完整链路。
-# 对齐：workflow-parser 格式（id / agent / task / depends_on）+ 激活链四阶段（ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN）+ 训练引擎能力（v1.4.1-1.4.5）。
-# 机器可读：本文件是 workflow.yml 的合法实例，可直接被 dag-runner 加载执行（字段对齐 fde-activation-chain.md §workflow.yml 示例）。
+# 对齐：workflow-parser 格式（workflow 根节点 + id / agent / task / depends_on）+ 激活链四阶段（ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN）+ 训练引擎能力（v1.4.1-1.4.5）。
+# 机器可读：本文件是 workflow.yml 的合法实例，可直接被 dag-runner 加载执行（字段对齐 fde-activation-chain.md §workflow.yml 示例；v1.4.3 第五章补 workflow: 根节点——此前缺根不可解析）。
 # 注意：agent: train-engine 是训练引擎托管 Agent（v1.4.1 交付的 harness.wrap 托管形态）；各节点依赖的训练能力版本见 capability_ref。
 
-name: 企业专属后训练
-description: "企业一句话发起 → 环境检查 → 模型选型 → 数据准备 → 训练执行 → eval 验收 → 部署上线（激活链四阶段完整走完）"
-nodes:
+workflow:
+  name: 企业专属后训练
+  description: "企业一句话发起 → 环境检查 → 模型选型 → 数据准备 → 训练执行 → eval 验收 → 部署上线（激活链四阶段完整走完）"
+  nodes:
   # ── ACTIVATE 进场 ──────────────────────────────
   - id: pt-need-collect
     name: 需求采集
-    type: ⚡                    # 需人工确认（企业一句话可能有歧义）
+    type: manual                    # 需人工确认（企业一句话可能有歧义）
     agent: train-engine
     task: "接收企业后训练需求（一句话 + 五要素引导：输入/输出/负责人/耗时/最卡的地方），生成训练需求描述，人工确认"
     depends_on: []
@@ -24,7 +25,7 @@ nodes:
   # ── ORCHESTRATE 编排 ───────────────────────────
   - id: pt-env-check
     name: 环境检查
-    type: 🔄                    # 自动执行（体检报告）
+    type: auto                    # 自动执行（体检报告）
     agent: train-engine
     task: "运行 train doctor 检查训练环境（CUDA 可用/显存/框架版本/基座模型缓存），输出体检报告；环境缺失则给出搭建指引"
     depends_on: [pt-need-collect]
@@ -34,7 +35,7 @@ nodes:
 
   - id: pt-model-select
     name: 模型选型
-    type: ⚡                    # 需人工确认（基座/算法影响成本）
+    type: manual                    # 需人工确认（基座/算法影响成本）
     agent: train-engine
     task: "基于企业要求（任务类型/数据规模/算力条件）从模板库推荐基座（Qwen3-8B/14B 等）+ 算法（SFT/DPO/GRPO）+ LoRA/QLoRA 配置，生成训练配置草案，人工确认"
     depends_on: [pt-env-check]
@@ -48,7 +49,7 @@ nodes:
   # ── EXECUTE 执行 ───────────────────────────────
   - id: pt-data-prep
     name: 数据准备
-    type: 🔄                    # 自动执行（质量闸门卡关）
+    type: auto                    # 自动执行（质量闸门卡关）
     agent: train-engine
     task: "企业异构数据（CSV/Excel/JSON）→ 训练集（instruction/偏好对），质量闸门校验（字段完整性/样本量），训练入口脱敏，记录训练集版本"
     depends_on: [pt-model-select]
@@ -58,7 +59,7 @@ nodes:
 
   - id: pt-train-run
     name: 训练执行
-    type: 🔄                    # 自动执行（预算控制兜底）
+    type: auto                    # 自动执行（预算控制兜底）
     agent: train-engine
     task: "提交 train job（spawn Python 训练环境），按预算控制训练（时间/算力预算，超预算暂停+人审），实时监控进度"
     depends_on: [pt-data-prep]
@@ -68,7 +69,7 @@ nodes:
 
   - id: pt-eval-gate
     name: eval 验收
-    type: 🔄                    # 自动判定（阈值外部化）
+    type: auto                    # 自动判定（阈值外部化）
     agent: train-engine
     task: "训练完成后自动跑 Benchmark eval（read-only 隔离执行），分数 vs 目标阈值判定：合格 → 进部署 / 不合格 → 回炉重训"
     depends_on: [pt-train-run]
@@ -79,7 +80,7 @@ nodes:
   # ── SUSTAIN 运转 ───────────────────────────────
   - id: pt-deploy
     name: 部署上线
-    type: ⚡                    # 强制人审（权重上线是生产变更）
+    type: manual                    # 强制人审（权重上线是生产变更）
     agent: train-engine
     task: "eval 通过 → 权重产物打包 → model_register 注册（source: local-path）→ model_switch 挂载到 workflow 节点（灰度比例），人工确认后晋升"
     depends_on: [pt-eval-gate]
