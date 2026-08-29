@@ -224,7 +224,7 @@ for _sh in $(find tools -name '*.sh' -type f | sort); do
     # 自引用确认：赋值行内出现 "${VAR}（任意后缀）——用 -F 匹配 "${VAR 前缀
     echo "$_assign" | grep -qF '"${'"${_var}"'}' || continue
     # 在该赋值行之前找初始化：VAR= 赋值行（含缩进/local/declare 前缀）或 ${VAR:= / ${VAR:- 兜底
-    _init=$(head -n $((_lineno - 1)) "$_sh" | grep -cE "^\s*(local |declare [-a-zA-Z]+ )?${_var}=|\${${_var}:-|\${${_var}:=" || true)
+    _init=$(head -n $((_lineno - 1)) "$_sh" | grep -cE "^[[:space:]]*(local |declare [-a-zA-Z]+ )?${_var}=|\${${_var}:-|\${${_var}:=" || true)
     if [ "${_init:-0}" -eq 0 ]; then
       GUARD_VIOL=$((GUARD_VIOL + 1))
       GUARD_LIST="${GUARD_LIST}  $_sh:$_lineno → $_var 未初始化即自引用"$'\n'

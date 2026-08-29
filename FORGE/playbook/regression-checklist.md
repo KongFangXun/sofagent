@@ -110,7 +110,7 @@ diff <(grep -E "name: 'A[0-9]+" engine/audit/src/rules/index.ts | sed -E "s/.*na
 
 # 子项 e-g: evidenceMode 计数 + README 表行数 + MCP 规则数（v1.1.4 教训）
 echo "git-diff=$(grep -c "evidenceMode: 'git-diff'" engine/audit/src/rules/index.ts) hybrid=$(grep -c "evidenceMode: 'hybrid'" engine/audit/src/rules/index.ts) fs=$(grep -c "evidenceMode: 'filesystem'" engine/audit/src/rules/index.ts)"   # 人工核对 README
-INDEX=$(grep -cE "name:\s*'A[0-9]|name:\s*'E[0-9]" engine/audit/src/rules/index.ts)
+INDEX=$(grep -cE "name:[[:space:]]*'A[0-9]|name:[[:space:]]*'E[0-9]" engine/audit/src/rules/index.ts)
 TABLE=$(grep -cE "^\| A[0-9]+ |^\| E[0-9]+ " engine/audit/README.md)
 echo "index=$INDEX / README表=$TABLE（期望 TABLE≥INDEX）"   # v1.1.4：A18/A19 漏更新
 grep "rulesCount" engine/mcp/src/tools/report-tools.ts | head -1   # MCP 数字动态化（v1.2.9 拆分后非硬编码）|| true
@@ -156,8 +156,8 @@ grep -n 'grep.*|.*head\|grep.*|.*wc' FORGE/playbook/acceptance-test.sh | grep -v
 grep -c "git rm --cached -f .env" FORGE/playbook/acceptance-test.sh   # 期望：≥ 2
 
 # 子项 c: --init 烟测期望值与实际对齐（v1.1.4 教训）
-DEFAULT_COUNT=$(grep -cE "name:\s*'A[0-9]" engine/audit/src/rules/index.ts | head -1)
-grep -nE "期望.*[0-9]+\s*项\|期望.*[0-9]+\s*条\|expected.*[0-9]+" FORGE/playbook/acceptance-test.sh | head
+DEFAULT_COUNT=$(grep -cE "name:[[:space:]]*'A[0-9]" engine/audit/src/rules/index.ts | head -1)
+grep -nE "期望.*[0-9]+[[:space:]]*项\|期望.*[0-9]+[[:space:]]*条\|expected.*[0-9]+" FORGE/playbook/acceptance-test.sh | head
 # 人工检查：acceptance-test 里所有"期望 N 项/条"的硬编码 N 是否与 index.ts 注册数一致
 
 # 子项 d: check-version 文案扫描 baseline（v1.1.6 教训——工具自身 SSOT 标签误导）
@@ -169,7 +169,7 @@ echo "期望=$EXPECTED_DEFAULT 报告=$REPORTED_DEFAULT"   # 期望：两者相�
 grep -E "\-\-json.*2>&1|2>&1.*\-\-json" FORGE/playbook/acceptance-test.sh   # 期望：零命中
 
 # 子项 f: init.ts 禁止硬编码规则条数常量（v1.1.8 教训）
-grep -nE "expectedDefaultRules\s*=\s*[0-9]+|expectedDefault\s*=\s*[0-9]+" engine/audit/src/commands/init.ts   # 期望：零命中
+grep -nE "expectedDefaultRules[[:space:]]*=[[:space:]]*[0-9]+|expectedDefault[[:space:]]*=[[:space:]]*[0-9]+" engine/audit/src/commands/init.ts   # 期望：零命中
 grep -c "defaultRules\.length\|defaultRules\[.length\]" engine/audit/src/commands/init.ts   # 期望：≥ 1
 
 # 子项 g: acceptance-test.sh 绝不能与 npm run build 并发执行（v1.2.3 血泪教训）
@@ -185,13 +185,13 @@ grep -rnE "nohup.*(build|acceptance-test)|npm run build[^&]*&[[:space:]]*$" tool
 > v1.1.5 扩展：覆盖**代码侧 + 文档侧**两个一致性面
 
 ```bash
-SSOT_TOTAL=$(grep -cE "name:\s*'A[0-9]+" engine/audit/src/rules/index.ts)  # v1.3.5 run-08 勘误：去掉 ^ 行首锚定——index.ts 规则是对象字面量 { name: 'A4...'，行首锚定匹配 0 致 SSOT 总数失明
-SSOT_MAX=$(grep -oE "name:\s*'A[0-9]+" engine/audit/src/rules/index.ts | grep -oE "[0-9]+" | sort -n | tail -1)
+SSOT_TOTAL=$(grep -cE "name:[[:space:]]*'A[0-9]+" engine/audit/src/rules/index.ts)  # v1.3.5 run-08 勘误：去掉 ^ 行首锚定——index.ts 规则是对象字面量 { name: 'A4...'，行首锚定匹配 0 致 SSOT 总数失明
+SSOT_MAX=$(grep -oE "name:[[:space:]]*'A[0-9]+" engine/audit/src/rules/index.ts | grep -oE "[0-9]+" | sort -n | tail -1)
 echo "SSOT 规则总数: $SSOT_TOTAL / 最大编号: A$SSOT_MAX"
 
 # 代码侧：knownKeys = index.ts 注册号（A16-A19 两组各验证）
 grep -c "a1[6-9]" engine/core/src/config-loader.ts   # ≥4
-INDEX_RULES=$(grep -oE "name:\s*'A[0-9]+" engine/audit/src/rules/index.ts | grep -oE "[0-9]+" | sort -n | tr '\n' ',')
+INDEX_RULES=$(grep -oE "name:[[:space:]]*'A[0-9]+" engine/audit/src/rules/index.ts | grep -oE "[0-9]+" | sort -n | tr '\n' ',')
 KNOWN_KEYS=$(grep -A20 "knownKeys = new Set" engine/core/src/config-loader.ts | grep -oE "'a[0-9]+'" | tr -d "'a" | sort -n | tr '\n' ',')
 echo "index.ts: $INDEX_RULES / knownKeys: $KNOWN_KEYS"   # 期望：两集合相等
 
@@ -946,7 +946,7 @@ grep -c 'extractVerdictKeyword' FORGE/src/release-gate-driver.mjs   # ≥2
 # 3. 标记行窗口大小（标记行 + 后续 3 行，期望 ≥2）
 grep -c 'slice(i, i + 4)' FORGE/src/release-gate-driver.mjs   # ≥2
 # 4. 已先剥离围栏代码块再解析（期望 ≥2）
-grep -Fc 'replace(/```[\s\S]*?```/g' FORGE/src/release-gate-driver.mjs   # ≥2
+grep -Fc 'replace(/```[[[:space:]]\S]*?```/g' FORGE/src/release-gate-driver.mjs   # ≥2
 ```
 
 #### 63. Worker 批量输出 U+FFFD 零污染——每次批量修复后必扫（v1.2.3 新盲区 · v1.4.2 阶段四瘦身：命令并入 acceptance S166 同款，此处留纪律+引用）
@@ -1012,7 +1012,7 @@ EN=$(grep 'Current version' README.en.md | head -1)
 ```bash
 # v1.3.1 修：跟上 v1.2.9 架构迁移（mcp-server.ts → tool-registry.ts）
 IMPORTS=$(grep -cE "import.*from.*'./(tools/)?" engine/mcp/src/mcp-server.ts | head -1)
-TOOLS_ARRAY=$(grep -cE "name:\s*'" engine/mcp/src/tool-registry.ts)   # v1.3.1：改查 tool-registry.ts
+TOOLS_ARRAY=$(grep -cE "name:[[:space:]]*'" engine/mcp/src/tool-registry.ts)   # v1.3.1：改查 tool-registry.ts
 CASES=$(grep -cE "case '" engine/mcp/src/mcp-server.ts)
 echo "imports=$IMPORTS tools_array=$TOOLS_ARRAY cases=$CASES"
 # 期望：tools_array（tool-registry.ts）≈ imports（mcp-server.ts 引用） + cases（dispatch）
@@ -1479,8 +1479,8 @@ node -e "const fs=require('fs'),p=require('path');let bad=0;for(const f of fs.re
 grep -q "67 tools" SKILL/SKILL.md || echo "⚠️ SKILL 工具速查漂移（v1.4.1 口径 67）"   # v1.3.6：52→60；v1.3.9：60→61；v1.4.0：61→66；v1.4.1：66→67（train_submit）勿写死，改版时随 SSOT
 node -e "const m=require('./engine/mcp/dist/tool-registry.js');const doc=require('./package.json').version;console.log('✅ TOOLS='+m.TOOLS.length+'（registry 实数，勿写死——发版后人工对 SSOT 口径）')"   # v1.3.6：写死 52 必漂，改打印实数
 # ② snapshot tool 零 daemon 静态依赖（optionalDependencies 场景会炸）——排除注释行（🔴 import 铁律注释含 @sofagent/daemon）
-# v1.4.0 修复（run-22 P1-3c 误报）：多文件 grep 带文件前缀致 ^\s*// 排除失效 → 用 -h 去前缀。
-grep -hE "@sofagent/daemon" engine/mcp/src/tools/snapshot-list.ts engine/mcp/src/tools/snapshot-restore.ts 2>/dev/null | grep -vE "^\s*//" | head -1 | grep -q . && echo "⚠️ snapshot 静态 import daemon 回潮"
+# v1.4.0 修复（run-22 P1-3c 误报）：多文件 grep 带文件前缀致 ^[[:space:]]*// 排除失效 → 用 -h 去前缀。
+grep -hE "@sofagent/daemon" engine/mcp/src/tools/snapshot-list.ts engine/mcp/src/tools/snapshot-restore.ts 2>/dev/null | grep -vE "^[[:space:]]*//" | head -1 | grep -q . && echo "⚠️ snapshot 静态 import daemon 回潮"
 # ③ evolver 永不写仓库 SKILL/（发布源污染防线）
 grep -qE "join\(REPO|join\(process\.cwd|['\"]\.?/?SKILL/['\"]" engine/orchestrator/src/instinct/evolver.ts && echo "⚠️ evolver 触达仓库 SKILL/" || echo "✅ evolver 只写 SOFAGENT_HOME/skill/custom（join(dir,'SKILL.md') 是合法 custom 文件名）"   # v1.3.6：正则收窄——原 join.*SKILL 误伤 custom skill 的 SKILL.md 文件名
 # ④ companion/fde-registry 的 daemon inspector 三步注册

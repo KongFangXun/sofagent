@@ -379,7 +379,7 @@ console.log(s.split("\n").filter(l => /^\| (A|E)[0-9]+ /.test(l)).length);
 AUDIT_README_COUNT=$(echo "$AUDIT_README_COUNT" | tr -d '[:space:]')
 
 # B. rules/index.ts 注册规则数（数 { name: 'A* 或 'E* 开头的对象）
-INDEX_TS_COUNT=$(grep -cE "^\s+\{ name: '(A|E)[0-9]+" engine/audit/src/rules/index.ts 2>/dev/null || echo "0")
+INDEX_TS_COUNT=$(grep -cE "^[[:space:]]+\{ name: '(A|E)[0-9]+" engine/audit/src/rules/index.ts 2>/dev/null || echo "0")
 INDEX_TS_COUNT=$(echo "$INDEX_TS_COUNT" | tr -d '[:space:]')
 
 # C. 主 README 声称的规则数（从 "21 条规则" 这种措辞提取）
