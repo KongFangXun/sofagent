@@ -1295,6 +1295,67 @@
   TrainDoctorReport,
   ModelCacheEntry,
 } from './train/env-manager';
+
+// ============================================================
+// v1.4.3 第四章：训练需求推导 + 模板库（train analyze / templates / MoE 防护 / RL 配方）
+// ============================================================
+/* @public */ export {
+  analyzeTrainNeed,
+  deriveTrainScenario,
+  findInterviewNode,
+  pickDefaultTemplate,
+  saveTrainAnalyzeReport,
+  trainAnalyzeReportPath,
+} from './train/train-analyze';
+/* @public */ export type {
+  TrainGoalDerivation,
+  TrainAnalyzeResult,
+  TrainAnalyzeOptions,
+} from './train/train-analyze';
+/* @public */ export {
+  TRAIN_SCENARIO_TEMPLATES,
+  findTrainTemplate,
+  listTrainTemplates,
+  instantiateTrainTemplate,
+  validateMoeTargetModules,
+  MOE_REQUIRED_EXPERT_MODULES,
+} from './train/train-templates';
+/* @public */ export type {
+  TrainScenario,
+  TrainMethod,
+  TrainScenarioTemplate,
+  InstantiateTrainTemplateInput,
+  QloraTemplateInstance,
+  PlainTemplateInstance,
+  TrainTemplateInstance,
+  MoeValidationResult,
+  MoeValidationError,
+  MoeValidationOk,
+} from './train/train-templates';
+/* @public */ export {
+  instantiateRlTemplate,
+  findRlTemplate,
+  RL_TEMPLATES,
+  SCALE_ADVANTAGE_NORMALIZATION,
+  SCALE_CISPO_CLIP_EPS,
+  SCALE_SKIP_ZERO_VARIANCE,
+  SCALE_WARMUP_RATIO,
+} from './train/rl-templates';
+/* @public */ export type {
+  RlTemplate,
+  RlRecipeId,
+  RlTemplateInstance,
+  RlTemplateInstantiateInput,
+} from './train/rl-templates';
+/* @public */ export {
+  buildQloraTemplate,
+  DENSE_TARGET_MODULES,
+  MOE_TARGET_MODULES,
+} from './train/qlora-template';
+/* @public */ export type {
+  QloraTemplateInput,
+  QloraOumiConfig,
+} from './train/qlora-template';
 /* @public */ export {
   DEFAULT_CHUNK_BYTES,
   makeDefaultFetchRange,
