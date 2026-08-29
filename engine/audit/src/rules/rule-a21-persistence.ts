@@ -60,6 +60,12 @@ export function checkRuleA21(ctx: AuditContext): RuleCheck {
     if (file.path.startsWith('FORGE/playbook/') && file.path.endsWith('.md')) continue;
 
     const addedLines = getAddedLines(file);
+
+    // v1.4.5 finding-16：多行 systemd unit / LaunchAgent plist 绕过修复。
+    // 逐行扫描下 `[Service]` 与 `ExecStart=` 分处两行（heredoc 写入）、无 WantedBy
+    // 行时全部持久化模式逃逸。对持久化落点路径做 hunk 级判定：整段新增行拼接后
+    // 匹配组合特征，不依赖单行命中。行级已命中时跳过，避免同文件重复计数。
+    let fileHit = false;
     for (const line of addedLines) {
       // 跳过纯注释行（// · * · #）——注释不可执行，@daily 等巡检调度标记不是后门。
       // v1.2.5 教训：daemon inspectors 的 @daily 注释曾被误判为 crontab 后门。
@@ -71,8 +77,20 @@ export function checkRuleA21(ctx: AuditContext): RuleCheck {
             line: line.trim().slice(0, 100),
             pattern: name,
           });
+          fileHit = true;
           break;
         }
+      }
+    }
+    if (!fileHit) {
+      const hunk = addedLines.join('\n');
+      const systemdTarget = /\/etc\/systemd\/system\//.test(file.path) || /\/etc\/systemd\/system\//.test(hunk);
+      if (systemdTarget && /\[Service\][\s\S]*?ExecStart/i.test(hunk)) {
+        hits.push({ file: file.path, line: hunk.trim().slice(0, 100), pattern: 'systemd service ExecStart（多行 hunk）' });
+      }
+      const launchAgentTarget = /\/Library\/LaunchAgents\//.test(file.path) || /\/Library\/LaunchAgents\//.test(hunk);
+      if (launchAgentTarget && /<plist[^>]*>[\s\S]*?<key>Label<\/key>/i.test(hunk)) {
+        hits.push({ file: file.path, line: hunk.trim().slice(0, 100), pattern: 'LaunchAgent plist（多行 hunk）' });
       }
     }
   }
