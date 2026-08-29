@@ -619,7 +619,7 @@ for pmf in $PLATFORM_MOUNT_FILES; do
     echo "  ❌ $pmf 未找到「N 个 tool」声称——数字门禁盲区（守卫不空转：有挂载描述就该有数字且对账）"
     ERRORS=$((ERRORS + 1))
   elif [ "$PM_CLAIMED" != "$MCP_REG_COUNT" ]; then
-    echo "  ❌ $pmf：声称 ${PM_CLAIMED} 个 tool ≠ registry 实际 ${MCP_REG_COUNT}"
+    echo "  ❌ ${pmf}：声称 ${PM_CLAIMED} 个 tool ≠ registry 实际 ${MCP_REG_COUNT}"
     ERRORS=$((ERRORS + 1))
   else
     echo "  ✓ ${pmf}：${PM_CLAIMED} 个 tool 与 registry 一致"

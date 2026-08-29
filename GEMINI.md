@@ -30,4 +30,4 @@ Gemini CLI 的 MCP 配置（`settings.json`）指向 sofagent MCP Server（stdio
 { "mcpServers": { "sofagent": { "command": "sofagent-mcp" } } }
 ```
 
-76 个 tool（`run_audit` / `worklog_query` / `snapshot_restore` 等）经 MCP 协议面暴露——适配器只依赖 @public API 子集，@internal 破坏性变更不影响本挂载。
+79 个 tool（`run_audit` / `worklog_query` / `snapshot_restore` 等）经 MCP 协议面暴露——适配器只依赖 @public API 子集，@internal 破坏性变更不影响本挂载。
