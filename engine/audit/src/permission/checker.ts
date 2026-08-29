@@ -15,7 +15,10 @@ import type { MergedPermission } from './types';
  */
 export function compilePermissionPattern(pattern: string): RegExp | null {
   try {
-    return new RegExp('^' + pattern.replace(/\*/g, '.*') + '$');
+    // 先转义正则元字符（保留 * 通配语义），含 +/( 等元字符的 pattern 按字面匹配，
+    // 避免用户串被当作正则语法（注入面）或引发灾难性回溯（ReDoS）。
+    const escaped = pattern.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*');
+    return new RegExp('^' + escaped + '$');
   } catch (err) {
     console.error(
       `[sofagent] 权限配置正则无效: "${pattern}" → ${err instanceof Error ? err.message : String(err)}（该条规则已跳过）`
