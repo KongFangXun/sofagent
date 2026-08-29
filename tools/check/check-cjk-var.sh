@@ -30,11 +30,12 @@ FILES=0
 # find 递归收集 tools/ 下全部 .sh（v1.3.9 目录重组后脚本分散在
 # check/gen/dashboard/release/forge/audit 六个子目录，顶层 glob 会漏扫）
 ALL_SH=$(find tools -name "*.sh" -type f | LC_ALL=C sort)
+GUARDS_VIOL=0
 for f in $ALL_SH; do
   # 自检豁免：本脚本展示规则的文案行（含 \$VAR 字面量教学）不违规
   [ "$f" = "$SELF" ] && continue
   FILES=$((FILES + 1))
-  # 跳过纯注释行（行首 # 后的 $VAR 讲解不违规）
+  # 跳过纯注释行（行首 # 后的 $VAr 讲解不违规）
   MATCHES=$(grep -vE '^[[:space:]]*#' "$f" | perl -ne "print \"$.: \$_\" if /$PATTERN/" 2>/dev/null)
   if [ -n "$MATCHES" ]; then
     echo "✗ $f"
@@ -42,6 +43,13 @@ for f in $ALL_SH; do
     VIOLATIONS=$((VIOLATIONS + $(echo "$MATCHES" | wc -l | tr -d ' ')))
   fi
 done
+# 失明防御对账：perl 引擎自身故障（无 perl / locale 崩）会静默输出空——空输出≠零违规。
+# 自检样本必含一处违规模式（$no_such_var 后跟全角逗号），引擎健康时 perl 必输出 HIT。
+PERL_ALIVE=$(printf 'X$no_such_var，' | perl -ne "print \"HIT\" if /$PATTERN/" 2>/dev/null || true)
+if [ "$PERL_ALIVE" != "HIT" ]; then
+  echo "✗ perl 检测引擎自身故障（自检样本未命中）——空结果不可信，按违规处理"
+  GUARDS_VIOL=1
+fi
 
 echo ""
 if [ "$VIOLATIONS" -gt 0 ]; then
