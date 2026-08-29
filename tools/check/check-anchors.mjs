@@ -12,6 +12,10 @@
 //
 // 检查范围: 跨文件锚点引用（](文件.md#锚点)）+ 文件内部目录链接（](#锚点)）。
 // 文件内部引用的排除规则：跳过空锚点 ](#)；跳过被 ``` 包裹的代码块内容。
+// 文件存在性断言：跨文件引用的目标文件不存在时报「文件断链」（与
+//       check-docs.sh 1b 全仓死链扫描双保险——本脚本单独跑时也能抓文件死链）。
+//       模板占位符白名单（与 check-docs 1b 同口径）：路径含 /vX.Y、
+//       vX.Y.Z、vX.Y.md 的占位链接不视为断链（版本未定时的规划占位）。
 //
 // --fix: 对锚点过时的引用（含文件内部引用），尝试用模糊匹配找到
 //        最接近的实际锚点，自动修复（改 #yyy 为正确值）。
@@ -19,7 +23,7 @@
 //
 // 退出码:
 //   0 = 全部通过（或 --fix 已修复全部）
-//   1 = 有锚点过时（未用 --fix 或 --fix 无法确定正确锚点）
+//   1 = 有锚点过时 / 文件断链（未用 --fix 或 --fix 无法确定正确锚点）
 //
 // GitHub 锚点归一化规则（2026-08 实测）:
 //   1. 取标题文本（去掉前导 # 和行内 `代码` 反引号）
@@ -194,11 +198,17 @@ function extractAnchors(content) {
 
 // ── 引用提取 ────────────────────────────────────────────────
 
+// 模板占位符白名单（与 check-docs.sh 1b 同口径）：版本未定时的规划占位，
+// 不视为断链。http(s) 协议链接本脚本不校验（只管仓内文件）。
+function isPlaceholderPath(p) {
+  return /\/vX\.Y/.test(p) || /vX\.Y\.Z/.test(p) || /vX\.Y\.md/.test(p);
+}
+
 /**
  * 从文件内容提取所有 .md 锚点引用（跳过围栏代码块内容）。
  * @param {string} content
  * @param {string} filePath 当前文件路径（用于解析相对路径）
- * @returns {{targetFile: string, anchor: string, fullMatch: string, lineNum: number}[]}
+ * @returns {{targetFile: string, targetRef: string, anchor: string, fullMatch: string, lineNum: number}[]}
  */
 function extractAnchorRefs(content, filePath) {
   const refs = [];
@@ -221,6 +231,7 @@ function extractAnchorRefs(content, filePath) {
       const anchor = decodeURIComponent(match[2].split(/\s/)[0]);
       refs.push({
         targetFile,
+        targetRef: match[1],
         anchor,
         fullMatch: match[0],
         lineNum: i + 1,
@@ -357,11 +368,12 @@ console.log(`  构建锚点表: ${anchorTables.size} 个文件`);
 console.log('');
 
 // 收集所有引用并校验
-let brokenFiles = 0;     // 文件本身不存在
+let brokenFiles = 0;     // 文件本身不存在（文件断链）
 let staleAnchors = 0;    // 锚点过时（跨文件 + 文件内，同一口径）
 let validRefs = 0;
 let fixedCount = 0;
 const staleReports = [];
+const brokenFileReports = [];
 
 for (const f of files) {
   const content = fs.readFileSync(f, 'utf8');
@@ -372,9 +384,17 @@ for (const f of files) {
   // ① 跨文件引用 ](xxx.md#锚点)
   const refs = extractAnchorRefs(content, f);
   for (const ref of refs) {
-    // 1. 检查目标文件是否存在
+    // 1. 检查目标文件是否存在（占位符白名单豁免；与 check-docs 1b 双保险）
     if (!fs.existsSync(ref.targetFile)) {
-      // 文件断链——跳过锚点校验（check-docs.sh 的死链检查负责这个）
+      if (!isPlaceholderPath(ref.targetRef)) {
+        brokenFiles++;
+        brokenFileReports.push({
+          sourceFile: relFile,
+          sourceLine: ref.lineNum,
+          targetRef: ref.targetRef,
+          line: ref.line,
+        });
+      }
       continue;
     }
 
@@ -457,14 +477,25 @@ for (const f of files) {
 }
 
 // 输出报告
-if (staleReports.length === 0) {
-  console.log(colors.green(`  ✓ 全部通过：${validRefs} 个锚点引用全部有效`));
+if (brokenFileReports.length > 0) {
+  console.log(colors.red(`  ✗ 发现 ${brokenFiles} 个文件断链（目标 .md 不存在）`));
+  console.log('');
+  for (const r of brokenFileReports) {
+    console.log(colors.red(`  ✗ ${r.sourceFile}:${r.sourceLine}`));
+    console.log(`    引用: ${r.targetRef}`);
+    console.log(`    行: ${r.line.substring(0, 100)}`);
+    console.log('');
+  }
+}
+
+if (staleReports.length === 0 && brokenFileReports.length === 0) {
+  console.log(colors.green(`  ✓ 全部通过：${validRefs} 个锚点引用全部有效，无文件断链`));
   console.log('');
   console.log(colors.bold(colors.cyan('═'.repeat(60))));
   process.exit(0);
 }
 
-if (!FIX_MODE) {
+if (!FIX_MODE && staleReports.length > 0) {
   console.log(colors.red(`  ✗ 发现 ${staleAnchors} 个锚点过时（文件存在但章节标题已改）`));
   console.log('');
   console.log(colors.yellow('  提示：运行 node tools/check-anchors.mjs --fix 自动修复'));
@@ -473,7 +504,7 @@ if (!FIX_MODE) {
 
 // 逐条输出未修复的
 const unfixed = staleReports.length - fixedCount;
-if (unfixed > 0 || !FIX_MODE) {
+if (unfixed > 0) {
   console.log(colors.bold(`── 锚点过时报告（${unfixed > 0 ? unfixed : staleAnchors} 处未修复）──`));
   console.log('');
 
@@ -514,8 +545,8 @@ if (FIX_MODE && fixedCount > 0) {
   console.log(colors.green(`  ✓ 已修复 ${fixedCount}/${staleAnchors} 处`));
 }
 const remaining = staleAnchors - fixedCount;
-if (remaining > 0) {
-  console.log(colors.red(`  ✗ 剩余 ${remaining} 处锚点过时需手动修复`));
+if (remaining > 0 || brokenFiles > 0) {
+  console.log(colors.red(`  ✗ 剩余 ${remaining} 处锚点过时 + ${brokenFiles} 处文件断链需手动修复`));
   process.exit(1);
 } else if (FIX_MODE && fixedCount > 0) {
   console.log(colors.green(`  ✓ 全部修复完成`));
