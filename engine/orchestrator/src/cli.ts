@@ -44,8 +44,13 @@ async function main() {
     console.log('                                   v1.4.1 块七: 清空企业训练数据（覆写→混淆→删除）');
     console.log('  train reproduce --fingerprint <file> --data <dir> [--seed <n>]');
     console.log('                                   v1.4.1 块七: 复现校验——现场 vs 冻结指纹差异报告');
-    console.log('  train verify <trainJobId> [--enterprise <id>] [--data-dir <dir>]');
-    console.log('                                   v1.4.1 块七: 产物完整性校验（签名+逐文件 hash+指纹关联）');
+  console.log('  train verify <trainJobId> [--enterprise <id>] [--data-dir <dir>]');
+  console.log('                                   v1.4.1 块七: 产物完整性校验（签名+逐文件 hash+指纹关联）');
+  console.log('  train analyze <nodeId> --enterprise <id> [--data-dir <dir>]');
+  console.log('                                   v1.4.3 四章: 训练需求推导——五要素→目标/数据/评估/配置');
+  console.log('                                   （复用 fde_interview 五要素产出，不重复采集）');
+  console.log('  train templates [scenario] [--data-dir <dir>]');
+  console.log('                                   v1.4.3 四章: 场景模板库（四场景×QLoRA/SFT/DPO + RL 配方）');
     process.exit(0);
   }
 
@@ -421,7 +426,7 @@ async function main() {
       // v1.4.1 块七：train 子命令族（doctor 本波实装；cleanup/reproduce/verify 骨架待接线）
       const trainAction = args[1];
       if (!trainAction) {
-        console.error('❌ train 需要子动作: doctor | cleanup | reproduce | verify');
+        console.error('❌ train 需要子动作: doctor | cleanup | reproduce | verify | analyze | templates');
         process.exit(1);
       }
       if (trainAction === 'doctor') {
@@ -654,7 +659,99 @@ async function main() {
         process.exit(1);
       }
 
-      console.error(`❌ 不支持的 train 子动作 "${trainAction}"（可用: doctor | cleanup | reproduce | verify）`);
+      // ── v1.4.3 第四章：train analyze（训练需求推导——五要素→目标/数据/评估/配置）──
+      if (trainAction === 'analyze') {
+        // train analyze <nodeId> --enterprise <id> [--data-dir <dir>]
+        //   [--base-model <name>] [--base-type dense|moe] [--data-path <path>]
+        //   [--template <id>] [--rl-recipe grpo|dapo|cispo] [--save]
+        const nodeId = args[2];
+        if (!nodeId || nodeId.startsWith('--')) {
+          console.error('❌ 用法: train analyze <nodeId> --enterprise <id> [--base-model <name>] [--base-type dense|moe] [--data-path <path>] [--template <id>] [--rl-recipe grpo|dapo|cispo] [--save]');
+          console.error('   训练需求推导：复用 fde_interview 五要素产出 → 训练目标/数据需求/评估标准/训练配置');
+          process.exit(1);
+        }
+        const flag = (name: string): string | undefined => {
+          const idx = args.indexOf(name);
+          return idx !== -1 && args[idx + 1] ? args[idx + 1] : undefined;
+        };
+        const enterpriseId = flag('--enterprise');
+        if (!enterpriseId) {
+          console.error('❌ train analyze 需要 --enterprise <id>（企业隔离分区依赖）');
+          process.exit(1);
+        }
+        const baseType = flag('--base-type');
+        if (baseType !== undefined && baseType !== 'dense' && baseType !== 'moe') {
+          console.error('❌ --base-type 只接受 dense | moe');
+          process.exit(1);
+        }
+        const rlRecipe = flag('--rl-recipe');
+        if (rlRecipe !== undefined && !['grpo', 'dapo', 'cispo'].includes(rlRecipe)) {
+          console.error('❌ --rl-recipe 只接受 grpo | dapo | cispo');
+          process.exit(1);
+        }
+        const { loadEnvConfig } = await import('@sofagent/core');
+        const analyzeDataDir = flag('--data-dir') ?? loadEnvConfig().dataDir;
+        const { analyzeTrainNeed, saveTrainAnalyzeReport } = await import('./train/train-analyze');
+        try {
+          const report = analyzeTrainNeed(analyzeDataDir, enterpriseId, nodeId, {
+            ...(flag('--base-model') !== undefined ? { baseModel: flag('--base-model') } : {}),
+            ...(baseType !== undefined ? { baseType: baseType as 'dense' | 'moe' } : {}),
+            ...(flag('--data-path') !== undefined ? { dataPath: flag('--data-path') } : {}),
+            ...(flag('--template') !== undefined ? { templateId: flag('--template') } : {}),
+            ...(rlRecipe !== undefined ? { rlRecipe } : {}),
+          });
+          console.log(`📊 训练需求推导（${enterpriseId}/${nodeId}）`);
+          console.log(`   一、训练目标：${report.goal.scenario}${report.goal.confident ? '' : '（兜底判定——需人确认）'}`);
+          if (report.goal.evidence.length > 0) {
+            console.log(`      证据：${report.goal.evidence.join('、')}`);
+          }
+          console.log(`   二、数据需求：≥ ${report.dataRequirement.minSamples} 条 · ${report.dataRequirement.format}`);
+          console.log(`      ${report.dataRequirement.note}`);
+          console.log(`   三、评估标准：${report.evalCriteria.metric} ${report.evalCriteria.threshold}（${report.evalCriteria.note}）`);
+          if (report.config) {
+            const config = report.config as { algorithm?: string; templateId?: string; recipe?: string; submitHint?: string };
+            console.log(`   四、训练配置：✅ 已生成（${config.templateId ?? config.recipe ?? ''} → ${config.algorithm}）`);
+            console.log(`      提交：${config.submitHint ?? 'train_submit'}`);
+          } else {
+            console.log(`   四、训练配置：⚠️ 未生成——${report.configNote ?? '未知原因'}`);
+          }
+          if (args.includes('--save')) {
+            const file = saveTrainAnalyzeReport(analyzeDataDir, report);
+            console.log(`   📝 报告落盘：${file}`);
+          }
+        } catch (err) {
+          console.error(`❌ train analyze 失败: ${(err as Error).message}`);
+          process.exit(1);
+        }
+        break;
+      }
+
+      // ── v1.4.3 第四章：train templates（场景模板库 list——含 RL 配方维度）──
+      if (trainAction === 'templates') {
+        // train templates [scenario] [--data-dir <dir>]
+        const { listTrainTemplates, RL_TEMPLATES } = await import('./train/train-templates');
+        const scenarioArg = args[2] && !args[2].startsWith('--') ? args[2] : undefined;
+        if (scenarioArg !== undefined) {
+          const valid = ['extraction', 'classification', 'generation', 'dialogue'];
+          if (!valid.includes(scenarioArg)) {
+            console.error(`❌ 未知场景：${scenarioArg}（可选：${valid.join(' | ')}，或省略看全量）`);
+            process.exit(1);
+          }
+        }
+        const templates = listTrainTemplates(scenarioArg);
+        console.log('📚 场景模板库（四场景 × QLoRA/SFT/DPO）');
+        for (const t of templates) {
+          console.log(`   ${t.id}`);
+          console.log(`      ${t.name} · base_type=${t.base_type} · 数据 ≥ ${t.dataRequirement.minSamples} 条 · 评估 ${t.evalCriteria.metric} ${t.evalCriteria.threshold}`);
+        }
+        console.log('📚 RL 配方模板（grpo/dapo/cispo + ScaleRL 四技巧）');
+        for (const t of RL_TEMPLATES) {
+          console.log(`   ${t.id}——${t.name}（${t.scenarios[0]}）`);
+        }
+        break;
+      }
+
+      console.error(`❌ 不支持的 train 子动作 "${trainAction}"（可用: doctor | cleanup | reproduce | verify | analyze | templates）`);
       process.exit(1);
     }
     default:
