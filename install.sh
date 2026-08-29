@@ -706,17 +706,30 @@ CLIEOF
     warn "  Dashboard 实现脚本缺失（${dashboard_src}），跳过软链；wrapper 占位分支兜底"
   fi
 
-  # v1.4.0 交付二：Web Dashboard HTML 三件套安装（dashboard.html → web/ + serve-dashboard.mjs → bin/）
+  # v1.4.0 交付二：Web Dashboard 安装（v1.4.4 升级：目录同步取代两文件白名单）
   # 装完即用：sofagent web 起服务开浏览器，读 $SOFAGENT_HOME/data/ 真实数据
+  # 同步规则：页面文件（*.html/*.css/*.js）整体跟随——未来新增页面文件不再改白名单；
+  #           docs/assets/ → web/assets/——安装态静态引用必命中（logo 断链根因的结构性修复）
   local web_dir="$SOFAGENT_HOME/web"
   mkdir -p "$web_dir"
-  if [ -f "${SCRIPT_DIR}/tools/dashboard/dashboard.html" ]; then
-    cp "${SCRIPT_DIR}/tools/dashboard/dashboard.html" "$web_dir/dashboard.html" 2>/dev/null
-    cp "${SCRIPT_DIR}/tools/dashboard/serve-dashboard.mjs" "$bin_dir/serve-dashboard.mjs" 2>/dev/null
+  local dash_src_dir="${SCRIPT_DIR}/tools/dashboard"
+  if [ -d "$dash_src_dir" ] && [ -f "${dash_src_dir}/dashboard.html" ]; then
+    local synced=0 f
+    for f in "$dash_src_dir"/*.html "$dash_src_dir"/*.css "$dash_src_dir"/*.js; do
+      [ -f "$f" ] || continue
+      if cp "$f" "$web_dir/" 2>/dev/null; then
+        synced=$((synced + 1))
+      fi
+    done
+    cp "${dash_src_dir}/serve-dashboard.mjs" "$bin_dir/serve-dashboard.mjs" 2>/dev/null
     chmod +x "$bin_dir/serve-dashboard.mjs" 2>/dev/null || true
-    ok "  Web Dashboard 已安装（sofagent web 启动，读 $SOFAGENT_HOME/data/）"
+    if [ -d "${SCRIPT_DIR}/docs/assets" ]; then
+      mkdir -p "$web_dir/assets"
+      cp "${SCRIPT_DIR}"/docs/assets/* "$web_dir/assets/" 2>/dev/null || true
+    fi
+    ok "  Web Dashboard 已安装（${synced} 个页面文件 + assets/ 静态资源，sofagent web 启动）"
   else
-    warn "  dashboard.html 缺失（${SCRIPT_DIR}/tools/dashboard/dashboard.html），跳过 Web Dashboard 安装"
+    warn "  dashboard.html 缺失（${dash_src_dir}/dashboard.html），跳过 Web Dashboard 安装"
   fi
 
   # symlink 到 PATH（优先 /usr/local/bin，fallback ~/.local/bin）
