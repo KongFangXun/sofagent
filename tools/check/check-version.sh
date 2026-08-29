@@ -782,8 +782,19 @@ echo ""
 # 防止 init.ts 输出文案、fix-suggestions.ts/qa-boundary-verify.test.ts 注释等小数字无人对账
 echo "=== 13. 文案数字漂移扫描（audit 源码硬编码规则条数）==="
 DOC_DRIFT_OK=true
-DEFAULT_RULES_COUNT=$(awk '/export const defaultRules/{f=1; next} f && /^[[:space:]]*\{.*name:/{c++} f && /^[[:space:]]*\];/{exit} END{print c+0}' engine/audit/src/rules/index.ts 2>/dev/null || echo 0)
-TOTAL_RULES_COUNT=$(grep -cE "^[[:space:]]+\{ name: '(A|E)[0-9]+" engine/audit/src/rules/index.ts 2>/dev/null || echo 0)
+# SSOT 源文件前置存在性断言：文件丢失时 awk/grep 双静默归零，对账逻辑整体失明
+# （|| echo 0 家族地雷：检查器宁可报「SSOT 丢失」也绝不假绿/假红继续跑）
+if [ ! -f engine/audit/src/rules/index.ts ]; then
+  echo "  ❌ SSOT 源文件丢失：engine/audit/src/rules/index.ts —— 文案数字对账无法进行"
+  ERRORS=$((ERRORS + 1))
+  DOC_DRIFT_OK=false
+fi
+# 计数兜底用 || true 而非 || echo 0：grep -c 零匹配时已自行输出单行 0，
+# || echo 0 会追加第二行（双零），后续整数比较静默失效
+DEFAULT_RULES_COUNT=$(awk '/export const defaultRules/{f=1; next} f && /^[[:space:]]*\{.*name:/{c++} f && /^[[:space:]]*\];/{exit} END{print c+0}' engine/audit/src/rules/index.ts 2>/dev/null || true)
+TOTAL_RULES_COUNT=$(grep -cE "^[[:space:]]+\{ name: '(A|E)[0-9]+" engine/audit/src/rules/index.ts 2>/dev/null || true)
+DEFAULT_RULES_COUNT=${DEFAULT_RULES_COUNT:-0}
+TOTAL_RULES_COUNT=${TOTAL_RULES_COUNT:-0}
 echo "  SSOT: defaultRules.length=$DEFAULT_RULES_COUNT 注册总数=$TOTAL_RULES_COUNT"
 while IFS= read -r line; do
   num=$(echo "$line" | grep -oE "[0-9]+ 条" | grep -oE "^[0-9]+" | head -1)
@@ -1133,7 +1144,10 @@ echo ""
 # tool-registry.ts 工具注册数与文档声称数一致（F-05：DEVELOPMENT.md 曾写 60，实际 66）。
 # 文档数字漂移 = 活文档同步遗漏；SSOT = tool-registry.ts 实际注册数。
 echo "=== 22. MCP 工具数对账（registry vs 文档声称） ==="
-MCP_REG=$(grep -cE "^    name: '[a-z_]+'" "${PROJECT_ROOT}/engine/mcp/src/tool-registry.ts" 2>/dev/null || echo "0")
+# 兜底用 || true 而非 || echo 0：grep -c 零匹配已自行输出单行 0，|| echo 0 成双零；
+# 且此处 MCP_REG=0 时下方条件分支会显式报错（SSOT 丢失不得静默假绿）
+MCP_REG=$(grep -cE "^    name: '[a-z_]+'" "${PROJECT_ROOT}/engine/mcp/src/tool-registry.ts" 2>/dev/null || true)
+MCP_REG=${MCP_REG:-0}
 if [[ "${MCP_REG}" =~ ^[0-9]+$ ]] && [[ "${MCP_REG}" -gt 0 ]]; then
   echo -e "  ${GREEN}✓${NC} tool-registry.ts 注册 ${MCP_REG} 个 MCP 工具（SSOT）"
   # 文档声称数（DEVELOPMENT.md 的「当前 N 个 MCP tools」表述）
