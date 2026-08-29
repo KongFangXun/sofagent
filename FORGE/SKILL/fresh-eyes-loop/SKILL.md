@@ -23,7 +23,7 @@ version: 1.4.2
 ## 怎么用
 
 1. 读 `loop.md` 拿到完整 SOP（角色 / 轮次协议 / 产物 schema / 停止条件）。
-2. 12 视角的定义见 `FORGE/playbook/fresh-eyes-review.md`（两个 subagent 都按它跑）。
+2. 12 视角的定义见 `FORGE/playbook/fresh-eyes-review.md`（两个 subagent 都按它跑）。playbook 共 19 视角三层分工：1-12 driver 循环、13-16 草稿工具承接、17-19 手动层（跨组件契约/构建产物/执行证据——需跨包追踪或 build/实跑取证，发版审查建议手动追加）。
 3. A/B 的行为指令在 `prompts/`（a-check / b-check / a-consolidate / b-fix / b-audit / a-verify）。
 4. **b-audit** 步骤：b-fix 改完代码后 driver 自动跑 `sofagent-audit --diff`——审计每次变更，dogfooding 铁律。audit FAIL（exit 2）打回 b-fix 重修，不进 a-verify。
 5. 跨 run 的永久索引在 `FORGE/LEDGER.md`（被 git 跟踪）；每轮正文在 `runs/`（不进 git）。
