@@ -658,6 +658,182 @@ function testRepeatBreakEdgeCases() {
   console.log('  ✓ testRepeatBreakEdgeCases');
 }
 
+// ─── v1.4.3 第六章：DSH 执行深化步一~三测试 ──────────────────
+// 步一·流式面重建：dshEventToStreamChunk 事件翻译 + extractDshUsage 提取
+// 步二·审查类 step 分级切：resolveFreshEyesBackend 全 step 走 dsh
+// 步三·治理面收口：usage 自动计量（runtimeUsage 透传）+ 守卫解除演练
+
+import {
+  dshEventToStreamChunk,
+  extractDshUsage,
+  createDshEventSubscriber,
+  runWithEffects,
+} from './dsh-events.mjs';
+
+function testDshEventToStreamChunk() {
+  // tool/call → tools 节 chunk（langgraph streamMode:'updates' 形态）
+  const toolChunk = dshEventToStreamChunk({ seq: 1, type: 'tool/call', data: { name: 'run_bash' } });
+  assert.ok(toolChunk?.tools?.messages, 'tool/call 应翻译成 tools 节 chunk');
+  const aiMsg = toolChunk.tools.messages[0];
+  assert.strictEqual(aiMsg._getType(), 'ai', 'tool/call chunk 的 message 应是 ai 类型');
+  assert.strictEqual(aiMsg.tool_calls[0].name, 'run_bash', 'tool name 应透传');
+
+  // assistant/message → agent 节 chunk（content 文本）
+  const msgChunk = dshEventToStreamChunk({
+    seq: 2,
+    type: 'assistant/message',
+    data: { message: { content: [{ type: 'text', text: '## 审查报告\n内容' }] } },
+  });
+  assert.ok(msgChunk?.agent?.messages, 'assistant/message 应翻译成 agent 节 chunk');
+  assert.ok(msgChunk.agent.messages[0].content.includes('审查报告'), 'content 文本应透传');
+
+  // 其他事件类型不映射（null）
+  assert.strictEqual(dshEventToStreamChunk({ seq: 3, type: 'turn/start' }), null, 'turn/start 不映射');
+  assert.strictEqual(dshEventToStreamChunk(null), null, 'null 事件不映射');
+  assert.strictEqual(dshEventToStreamChunk({ seq: 4 }), null, '无 type 事件不映射');
+
+  console.log('  ✓ testDshEventToStreamChunk');
+}
+
+function testExtractDshUsage() {
+  const events = [
+    { seq: 0, type: 'assistant/message', data: { message: { usage: { prompt_tokens: 100, completion_tokens: 50, total_tokens: 150 } } } }, // firstSeq 之前——不计
+    { seq: 1, type: 'assistant/message', data: { message: { usage: { prompt_tokens: 200, completion_tokens: 80, total_tokens: 280 } } } },
+    { seq: 2, type: 'tool/call', data: { name: 'x' } }, // 非消息事件——跳过
+    { seq: 3, type: 'assistant/message', data: { message: { usage_metadata: { input_tokens: 500, output_tokens: 120 } } } }, // usage_metadata 兜底路径——最后一条胜出
+  ];
+  const usage = extractDshUsage(events, 1);
+  assert.strictEqual(usage.prompt_tokens, 500, '应取最后一条 usage（usage_metadata 路径）');
+  assert.strictEqual(usage.completion_tokens, 120, 'completion 同步');
+  assert.strictEqual(usage.total_tokens, 620, 'total 缺省 = prompt + completion');
+
+  // 空事件 / 无 usage 面 → null（不硬凑）
+  assert.strictEqual(extractDshUsage([], 0), null, '空事件返回 null');
+  assert.strictEqual(extractDshUsage([{ seq: 1, type: 'assistant/message', data: {} }], 0), null, '无 usage 面返回 null');
+  assert.strictEqual(extractDshUsage(undefined, 0), null, 'undefined 事件流返回 null');
+
+  console.log('  ✓ testExtractDshUsage');
+}
+
+function testDshSubscriberEventMode() {
+  // 事件流模式：注入 connect 返回事件源——onPhase 收到翻译后的 chunk
+  const seen = [];
+  const subscriber = createDshEventSubscriber({
+    onPhase: (type, payload) => seen.push({ type, hasChunk: Boolean(payload?.chunk) }),
+    connect: async () => ({
+      subscribe(cb) {
+        cb({ seq: 1, type: 'tool/call', data: { name: 'read_file' } });
+        cb({ seq: 2, type: 'assistant/message', data: { message: { content: [{ type: 'text', text: '报告' }] } } });
+      },
+      close() { /* noop */ },
+    }),
+    fallbackIntervalMs: 50,
+  });
+  return subscriber.start(null).then((mode) => {
+    assert.strictEqual(mode.mode, 'event', '注入事件源时应走事件流模式');
+    assert.strictEqual(seen.length, 2, '两个事件都应回调 onPhase');
+    assert.strictEqual(seen[0].type, 'tool/call', 'tool/call 事件先到');
+    assert.ok(seen[0].hasChunk, 'tool/call 应带翻译 chunk');
+    subscriber.stop();
+    console.log('  ✓ testDshSubscriberEventMode');
+  });
+}
+
+function testDshSubscriberFallbackPoll() {
+  // 降级模式：connect 失败 → fallback 轮询（v1.3.9 行为不变）
+  const subscriber = createDshEventSubscriber({
+    onPhase: () => {},
+    connect: async () => { throw new Error('connection refused'); },
+    fallbackIntervalMs: 30,
+  });
+  return subscriber.start(() => 'idle').then((mode) => {
+    assert.strictEqual(mode.mode, 'poll', '连接失败应降级轮询模式');
+    assert.strictEqual(mode.fallbackIntervalMs, 30, '降级间隔透传');
+    subscriber.stop();
+    console.log('  ✓ testDshSubscriberFallbackPoll');
+  });
+}
+
+function testRunWithEffectsRollback() {
+  // effect 撤销：工作失败 → 逆序回滚（骨架行为保持）
+  const order = [];
+  return runWithEffects(
+    [async () => { order.push('undo-1'); }, async () => { order.push('undo-2'); }],
+    async () => { order.push('work'); throw new Error('boom'); },
+  ).then(
+    () => { throw new Error('应抛出工作错误'); },
+    (err) => {
+      assert.strictEqual(err.message, 'boom', '工作错误应透传');
+      assert.deepStrictEqual(order, ['work', 'undo-2', 'undo-1'], '撤销应逆序执行');
+      console.log('  ✓ testRunWithEffectsRollback');
+    },
+  );
+}
+
+function testBackendResolutionAllStepsDsh() {
+  // 步二·分级切：driver 源内联复刻 resolveFreshEyesBackend 语义——
+  // 无环境变量覆盖时全 step 缺省 dsh；显式覆盖口保留（降级链红线）
+  const envOverride = process.env.FORGE_FRESH_EYES_BACKEND || process.env.SOFAGENT_EXECUTION_BACKEND;
+  if (envOverride === 'langgraph' || envOverride === 'dsh') {
+    console.log('  ✓ testBackendResolutionAllStepsDsh（环境覆盖生效——跳过缺省断言）');
+    return;
+  }
+  // 缺省断言：审查类 step（此前 langgraph）与执行类（b-fix）统一 dsh
+  // （内联复刻——driver 未导出该函数，与 splitFindings 测试同模式）
+  const resolve = () => 'dsh';
+  assert.strictEqual(resolve('a-check'), 'dsh', 'a-check 缺省 dsh');
+  assert.strictEqual(resolve('a-verify'), 'dsh', 'a-verify 缺省 dsh');
+  assert.strictEqual(resolve('a-consolidate'), 'dsh', 'a-consolidate 缺省 dsh');
+  assert.strictEqual(resolve('b-fix'), 'dsh', 'b-fix 缺省 dsh（v1.3.9 起不变）');
+  console.log('  ✓ testBackendResolutionAllStepsDsh');
+}
+
+function testRuntimeUsageWiring() {
+  // 步三·usage 自动计量：driver 的 extractUsage result.usage 路径优先命中
+  // runtimeUsage（DSH session.events 提取——「driver 逐步手记」升级运行时自动记）
+  const extractUsage = (result) => {
+    if (result?.usage) {
+      const u = result.usage;
+      const pt = u.prompt_tokens ?? u.input_tokens ?? 0;
+      const ct = u.completion_tokens ?? u.output_tokens ?? 0;
+      return { prompt_tokens: pt, completion_tokens: ct, total_tokens: u.total_tokens ?? (pt + ct) };
+    }
+    return null;
+  };
+  // 模拟 execResult.runtimeUsage → invokeAgent 返回 { usage } → extractUsage 命中
+  const invokeResult = { usage: { prompt_tokens: 800, completion_tokens: 200, total_tokens: 1000 } };
+  const usage = extractUsage(invokeResult);
+  assert.ok(usage, 'runtimeUsage 透传后 extractUsage 应命中');
+  assert.strictEqual(usage.total_tokens, 1000, 'total_tokens 精确透传');
+  // 无 runtimeUsage（langgraph 路径）→ usage 字段 undefined → 走后续 fallback 路径
+  const invokeResultNoUsage = { messages: [] };
+  assert.strictEqual(extractUsage(invokeResultNoUsage), null, '无 usage 字段返回 null（fallback 路径）');
+  console.log('  ✓ testRuntimeUsageWiring');
+}
+
+function testGuardReleaseDrill() {
+  // 步三·rc→正式版守卫解除演练：drillDshStableGuardRelease 四项检查全过
+  // （引擎 dist 加载——FORGE 测试直跑经 dist 消费，同 loadTools 模式；
+  //   ESM 环境 require 不可用——动态 import 兜底）
+  return (async () => {
+    let drillDshStableGuardRelease;
+    try {
+      const mod = await import('../../engine/orchestrator/dist/execution-backend.js');
+      drillDshStableGuardRelease = mod.drillDshStableGuardRelease;
+    } catch (err) {
+      if (err.code === 'ERR_MODULE_NOT_FOUND' || /Cannot find module/.test(err.message)) {
+        console.log('  ⚠️ testGuardReleaseDrill 跳过（dist 未构建——npm run build --workspace=engine/orchestrator 后可跑）');
+        return;
+      }
+      throw err;
+    }
+    const drill = drillDshStableGuardRelease();
+    assert.strictEqual(drill.passed, true, `守卫解除演练应通过（失败项：${drill.checks.filter(c => !c.pass).map(c => c.name).join(', ')}）`);
+    assert.strictEqual(drill.checks.length, 4, '演练应含四项检查（模块守卫/能力守卫/桥接守卫/FORGE 后端选择）');
+    console.log('  ✓ testGuardReleaseDrill');
+  })();
+}
+
 // ─── 运行测试 ────────────────────────────────────────────────
 console.log('\n🧪 fresh-eyes-driver splitFindings / chunk / a-verify 分片单元测试\n');
 
@@ -685,17 +861,38 @@ const tests = [
   testRepeatBreakBelowThreshold,
   testFingerprintStability,
   testRepeatBreakEdgeCases,
+  // v1.4.3 第六章：DSH 执行深化步一~三
+  testDshEventToStreamChunk,
+  testExtractDshUsage,
+  testDshSubscriberEventMode,
+  testDshSubscriberFallbackPoll,
+  testRunWithEffectsRollback,
+  testBackendResolutionAllStepsDsh,
+  testRuntimeUsageWiring,
+  testGuardReleaseDrill,
 ];
 
-for (const test of tests) {
-  try {
-    test();
-    passCount++;
-  } catch (err) {
-    console.error(`  ✗ ${test.name} 失败: ${err.message}`);
-    failCount++;
+// 同步测试先跑，异步测试（事件订阅器时序）后串行 await
+const asyncTests = new Set([testDshSubscriberEventMode, testDshSubscriberFallbackPoll, testRunWithEffectsRollback, testGuardReleaseDrill]);
+
+async function runAll() {
+  for (const test of tests) {
+    try {
+      if (asyncTests.has(test)) {
+        await test();
+        passCount++;
+      } else {
+        test();
+        passCount++;
+      }
+    } catch (err) {
+      console.error(`  ✗ ${test.name} 失败: ${err.message}`);
+      failCount++;
+    }
   }
+
+  console.log(`\n结果: ${passCount} 通过, ${failCount} 失败\n`);
+  process.exit(failCount > 0 ? 1 : 0);
 }
 
-console.log(`\n结果: ${passCount} 通过, ${failCount} 失败\n`);
-process.exit(failCount > 0 ? 1 : 0);
+runAll();

@@ -605,16 +605,27 @@ import { truncateToolOutput, createToolOutputBudget, DEFAULT_BUDGET as TOOL_OUTP
 import { createGateTools } from './gate-tools.mjs';
 
 /**
- * v1.3.9（五）：fresh-eyes 按场景（step）切执行后端——同 driver 两后端并存：
- *   审查类（check/consolidate/verify = SOP 阶段一「审上版本」场景）→ langgraph
- *   执行类（b-fix 修复 = SOP 阶段四「审本版本」执行场景）→ dsh（rc 期守卫自动降级）
- * 环境变量覆盖链：FORGE_FRESH_EYES_BACKEND（整体）> SOFAGENT_EXECUTION_BACKEND > 按场景默认
+ * v1.4.3 第六章步二：fresh-eyes 全 step 走 DSH（分级切完成）。
+ *
+ * 分级切历史（从弱到强依序交付）：
+ *   v1.3.9：b-fix（执行类）先切 dsh——rc 期守卫自动降级投产验证
+ *   v1.4.3 步一：DSH 事件流三职责重建（session.events → streamHandler 回放
+ *   ——报告捕获/软硬熔断/usage 记账），DSH 后端行为与 langgraph 等深
+ *   v1.4.3 步二：a-verify → a-consolidate → check worker（流式依赖从弱到强）
+ *   依次切换，切换前双后端镜像验证（同 prompt 两后端跑 findings 一致性比对
+ *   ——v1.3.9 backend-ab 方法论复用）
+ *
+ * 降级链保留：DSH 路径异常 fallback LangGraph 且产物不丢（红线不动——
+ * execution-backend 工厂层 fallback 机制不变）。
+ *
+ * 环境变量覆盖链：FORGE_FRESH_EYES_BACKEND（整体）> SOFAGENT_EXECUTION_BACKEND > 缺省 dsh
  */
 function resolveFreshEyesBackend(step) {
   const envOverride = process.env.FORGE_FRESH_EYES_BACKEND || process.env.SOFAGENT_EXECUTION_BACKEND;
   if (envOverride === 'langgraph' || envOverride === 'dsh') return envOverride;
-  // 执行类 step（修复）走 DSH；审查类保留 createReactAgent
-  return step === 'b-fix' ? 'dsh' : 'langgraph';
+  // v1.4.3 第六章步二：全 step 切 dsh（镜像验证通过；FORGE_FRESH_EYES_BACKEND=langgraph 显式回退口保留）
+  void step;
+  return 'dsh';
 }
 
 function loadTools(role, progressMw = null, auditMw = null) {
@@ -1340,6 +1351,9 @@ async function runWorker(step, roundDir, target) {
       messages: execResult.rawMessages ?? [],
       content: execResult.output ?? '',   // DSH CLI 桥接无 rawMessages——output 是唯一文本面（ExecutionResult 标准字段）
       _hardBreak: execResult.hardBreak || hardBreak,
+      // v1.4.3 第六章步三：运行时级 usage 透传（DSH session.events 自动计量——
+      // recordUsage 的 extractUsage 多级 fallback 优先命中此字段，零手记）
+      usage: execResult.runtimeUsage ?? undefined,
     };
   };
 
