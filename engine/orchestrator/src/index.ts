@@ -1420,6 +1420,22 @@
   DiagnoseContext,
   TrainDiagnoseReport,
 } from './train/train-diagnose';
+
+// ============================================================
+// v1.4.3 第三章：训练沙箱（进程级隔离——扩展 v1.3.7 沙箱）
+// ============================================================
+/* @public */ export {
+  createTrainSandbox,
+  createTrainPathGuard,
+  trainSandboxOutputDir,
+} from './train/train-sandbox';
+/* @public */ export type {
+  TrainSandboxOptions,
+  TrainPathGuard,
+  PathAccess,
+  TrainSandbox,
+  TrainSandboxProfile,
+} from './train/train-sandbox';
 /* @public */ export {
   DEFAULT_CHUNK_BYTES,
   makeDefaultFetchRange,
