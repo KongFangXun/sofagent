@@ -1476,7 +1476,7 @@ $S171_OK && pass "Checker 三节点完整（format/fact/source + makeCheckerNode
 scenario 172 "v1.2.4 P3 S2 — MCP tools/list 返回 22 个 tools"
 # v1.2.9 功能⑤：mcp-server.ts 已拆分，tool 定义移至 tool-registry.ts + tools/*.ts + resources.ts
 # 递归扫描 engine/mcp/src/ 全目录（含拆分后的模块）
-MCP_REGISTERED=$(grep -roE "name:\s*'[^']+'" "$PROJECT_ROOT/engine/mcp/src/" 2>/dev/null | sort -u | wc -l | tr -d ' ')
+MCP_REGISTERED=$(grep -roE "name:[[:space:]]*'[^']+'" "$PROJECT_ROOT/engine/mcp/src/" 2>/dev/null | sort -u | wc -l | tr -d ' ')
 [ "${MCP_REGISTERED:-0}" -ge 22 ] && pass "MCP tools/list 注册数 ≥22（实测 ${MCP_REGISTERED}）" || fail "MCP tools/list 注册数不足（${MCP_REGISTERED} < 22）"
 
 scenario 173 "v1.2.4 P3 S2 — 新增 6 个 tool handler 文件存在"
