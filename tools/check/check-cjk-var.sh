@@ -8,7 +8,7 @@
 # 仅在「测试失败分支」触发，日常全绿掩盖了它。08-18 修复（3ec97569）。
 # v1.3.9 实案：check-docs.sh:622（$pmf：——全角冒号 U+FF1A 同族），引入于
 # v1.3.9 目录重组后的新增检查（ba74ae10），同样只在「对账不等分支」触发。
-# v1.4.4 修复守卫自身失明：v1.3.9 目录重组把 check 脚本移入 tools/check/
+# 2026-08-29 修复守卫自身失明：v1.3.9 目录重组把 check 脚本移入 tools/check/
 # 等子目录，本守卫 glob 仍扫 tools/*.sh 顶层——19 个子目录脚本全部漏扫，
 # 622 行违规因此未被拦截。改为 find 递归 + SELF 路径同步 + \s 改 POSIX 类。
 #
@@ -27,7 +27,7 @@ SELF="tools/check/check-cjk-var.sh"
 VIOLATIONS=0
 FILES=0
 
-# v1.4.4：find 递归收集 tools/ 下全部 .sh（v1.3.9 目录重组后脚本分散在
+# find 递归收集 tools/ 下全部 .sh（v1.3.9 目录重组后脚本分散在
 # check/gen/dashboard/release/forge/audit 六个子目录，顶层 glob 会漏扫）
 ALL_SH=$(find tools -name "*.sh" -type f | LC_ALL=C sort)
 for f in $ALL_SH; do
