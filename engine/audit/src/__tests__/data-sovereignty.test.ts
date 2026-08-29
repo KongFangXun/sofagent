@@ -291,6 +291,47 @@ describe('sanitizeRecord', () => {
     expect(result.dataFlow.fields[0]).not.toContain('/home/admin/');
     expect(result.dataFlow.redacted).toBe(true);
   });
+
+  it('data-URI 载荷不被长随机串模式误切（base64 静态资源原样保留）', () => {
+    // 测试：内嵌图标/图片的 data-URI 不属于密钥形态——与 A2 / ToolGate /
+    // prompt-sanitizer 的 data-URI 豁免同口径（H-02 家族）
+    const uri = 'data:image/png;base64,' + 'A'.repeat(64);
+    const record = makeRecord({
+      dataFlow: {
+        direction: 'outbound',
+        sensitivity: 'internal',
+        fields: [`图标 ${uri} 结束`],
+        destination: 'cloud-api',
+        redacted: false,
+      },
+    });
+    const result = sanitizeRecord(record);
+    expect(result.dataFlow.fields[0]).toContain(uri);
+    expect(result.dataFlow.fields[0]).not.toContain('[REDACTED:');
+    expect(result.dataFlow.redacted).toBe(false);
+  });
+
+  it('data-URI 同字段混入真密钥：载荷保留、段外密钥照拦', () => {
+    // 测试：豁免不降低安全性——data-URI 前后拼真密钥仍被脱敏
+    // 运行时拼接避免 A2 扫描（不可写字面量）
+    const secret = ['sk-live-abcdef', '1234567890', 'abcdef123456'].join(''); // 37 字符
+    const uri = 'data:image/svg+xml;base64,' + 'QUJD'.repeat(20);
+    const record = makeRecord({
+      dataFlow: {
+        direction: 'outbound',
+        sensitivity: 'confidential',
+        fields: [`key=${secret} icon=${uri}`],
+        destination: 'cloud-api',
+        redacted: false,
+      },
+    });
+    const result = sanitizeRecord(record);
+    const field = result.dataFlow.fields[0];
+    expect(field).toContain(uri);
+    expect(field).toContain('[REDACTED:');
+    expect(field).not.toContain(secret);
+    expect(result.dataFlow.redacted).toBe(true);
+  });
 });
 
 // ============================================================
