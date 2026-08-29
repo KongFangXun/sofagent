@@ -135,7 +135,8 @@ try {
      模型：${MODEL_CFG.model}（单次调用，无工具）
      来源：${loaded.join('、')}${skipped.length ? `；跳过：${skipped.join('、')}` : ''}
      分层：单次草稿优先层（v1.3.8 交付八）——「待取证」项需 driver 兜底复核
-     ⚠️ 草稿须人工审核——LLM 发现是线索不是结论（fresh-eyes 纪律） -->
+     ⚠️ 草稿须人工审核——LLM 发现是线索不是结论（fresh-eyes 纪律）
+     本文件是一次性工单——结论提炼进 changelog/checklist 后即可删除 -->
 
 `;
   writeOutput(OUT, header, content);
