@@ -439,6 +439,19 @@ jobs:
 | DSH/OpenClaw 插件家族 | v1.4.0 | DSH cordis-plugin 9 款 + OpenClaw code-plugin 4 款 + MCP 工具角色分层（默认 34/66）+ DSH 默认启用 | [v1.4.0 开发日志](./changelog/v1.4/v1.4.0.md) |
 | 训练引擎地基 | v1.4.1 | train-job 编排 + `train_submit`（66→67 tools）+ 审计 HMAC 链 + 隔离/指纹/签名/回收/恢复/安全基线八块 | [v1.4.1 开发日志](./changelog/v1.4/v1.4.1.md) |
 | 训练数据与评估 + FDE 六引擎 | v1.4.2 | 企业数据→训练集管道 + dataset_version 版本 + eval 闭环 + train env/doctor + dry-run 算力外推 + 训练报告；FDE 六引擎工作台（fde_interview/classify/quantify/derive/distill/deploy，67→76 tools）+ IM 桥远程指挥 | [v1.4.2 开发日志](./changelog/v1.4/v1.4.2.md) |
+| 训练引擎·运行与需求 | v1.4.3 | 训练需求推导+模板库（train analyze/templates）+ GPU 显存队列 + train_status/train_list/train_diagnose 三 MCP（76→79 tools）+ 训练沙箱与设备打包 + 审计聚合 KPI（--stats）+ 反作弊双防线 | [v1.4.3 开发日志](./changelog/v1.4/v1.4.3.md) |
+
+### 新功能入口导览（v1.4.2 起三条新产品线——10 分钟上手各条线）
+
+> 多条新产品线同版落地后，新人最常见的问题是「我知道有这功能，但从哪进」。本表按「是什么 / 从哪进 / 前置要求」三列导览——逐条命令真实可跑（v1.4.3 第九章 onboarding 走查对账口径）。
+
+| 产品线 | 是什么 | 从哪进 | 前置要求 |
+|------|------|------|------|
+| **训练引擎**（v1.4.1-1.4.3） | 企业异构数据 → 专属小模型：需求推导 → 模板选型 → 数据管道 → 训练 → eval → 部署 | MCP：`train_doctor`（环境体检）→ `fde_interview`（五要素）→ `train_submit`（提交）；CLI：`sofagent-orchestrator train analyze <nodeId> --enterprise <id>`（需求推导）/ `train templates`（模板库一览）；监控：`train_status` / `train_list` / 失败走 `train_diagnose` | GPU 环境（CUDA/显存/框架）——`bash tools/train-env-init.sh` 一键装；基座模型走 model-downloader；反作弊双防线随 install 默认落盘 |
+| **FDE 六引擎**（v1.4.2） | FDE 方法论变成可执行引擎：访谈结构化 → 三问判定 → 量化 ROI → 本体推导 → 三层沉淀 → 组装部署 | MCP：`fde_interview`（先跑——五要素采集，`prompts_only: true` 拿访谈话术）→ `fde_classify` → `fde_quantify` → `fde_derive` → `fde_distill` → `fde_deploy`；产物落 `data/fde/<企业>/` | 无环境硬依赖（纯规则引擎——LLM 可选辅助）；企业标识必填（`enterprise_id`） |
+| **IM 桥**（v1.4.2） | IM 群远程指挥 Agent：群里发消息 = 跑任务/查状态/批 HITL | 按 [im-bridge 指南](./guides/im-bridge.md) 配置 IM 机器人 → `sofagent-daemon` 常驻后自动桥接 | IM 平台机器人 token（钉钉/飞书/企微三选一）+ daemon 常驻（`sofagent-daemon start`） |
+
+> 走查口径：每条线「装 → 找到入口 → 进入第一步」应在 10 分钟内完成——入口命令逐条真实存在（本表经 v1.4.3 第九章 onboarding 断层走查对账，断点即修记录见发版检查清单）。
 
 ### 知识怎么长出来
 
