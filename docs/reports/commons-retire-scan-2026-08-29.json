@@ -1,0 +1,10 @@
+{
+  "schemaVersion": "v1",
+  "scannedAt": "2026-08-29T08:03:53.166Z",
+  "action": "commons_retire scan 自扫（v1.4.3 清扫任务五——首次自用仓库自带退役扫描）",
+  "catalogSummary": {
+    "candidateCount": 0
+  },
+  "candidates": [],
+  "note": "候选者下版评估（v1.4.3 不强删——本报告为扫描快照落盘）"
+}

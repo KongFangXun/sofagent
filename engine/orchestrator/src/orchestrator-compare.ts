@@ -14,7 +14,7 @@ import { execFileSync } from 'child_process';
 import { existsSync, readdirSync, readFileSync, statSync, mkdirSync, writeFileSync, copyFileSync, renameSync, rmSync } from 'fs';
 import { join, resolve, dirname } from 'path';
 import { createHash } from 'crypto';
-import { composeWithDeepAgents, compose, type ComposeVariant } from './composer';
+import { composeWithReactAgent, compose, type ComposeVariant } from './composer';
 import { runDAG } from './dag-runner';
 import { DATA_DIR, ORCHESTRATOR_DIR } from '@sofagent/core';
 
@@ -397,7 +397,7 @@ export async function composeTask(args: string[]): Promise<void> {
     }
     const agentYaml = enterpriseYaml !== undefined
       ? (await compose({ taskDesc, enterpriseWorkflowYaml: enterpriseYaml, variant: 'A' }))?.yaml ?? null
-      : await composeWithDeepAgents(taskDesc);
+      : await composeWithReactAgent(taskDesc);
     if (agentYaml) {
       writeFileSync(workflowFile, agentYaml);
       ok('createReactAgent compose 成功');
