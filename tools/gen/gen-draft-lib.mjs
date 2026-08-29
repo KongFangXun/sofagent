@@ -133,7 +133,7 @@ export function writeDegraded(out, reason, prompts) {
   // 为保证降级产物逐字一致（重构验收基准）保留原样，不做清理
   const suffix = reason === 'GLM_API_KEY 未设置' ? '（）' : '';
   writeFileSync(out + '.prompt.md',
-    `<!-- 降级产物：${reason}${suffix}——把下面 prompt 粘贴给任意 AI session 执行 -->\n\n` +
+    `<!-- 降级产物：${reason}${suffix}——把下面 prompt 粘贴给任意 AI session 执行；粘贴执行完即可删除本文件 -->\n\n` +
     `## System\n\n${prompts.system}\n\n## User\n\n${prompts.user}\n`, 'utf-8');
   console.error(`⚠️  ${reason} → 降级：prompt 已写入 ${out}.prompt.md`);
 }

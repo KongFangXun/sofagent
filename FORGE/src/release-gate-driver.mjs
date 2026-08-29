@@ -2064,6 +2064,10 @@ function copyToDesktop(runDir, target) {
   const desktopPath = join(os.homedir(), 'Desktop', `${target}-stage6-report.md`);
   try {
     copyFileSync(reportPath, desktopPath);
+    // 副本头部标注正本位置——桌面件是提醒，看完可放心删（正本在 run 目录永久留档）
+    const body = readFileSync(desktopPath, 'utf-8');
+    const provenance = `<!-- 副本——正本: ${reportPath}（可放心删除） -->\n`;
+    if (!body.startsWith('<!-- 副本')) writeFileSync(desktopPath, provenance + body, 'utf-8');
     console.log(`[driver] 报告已复制到桌面: ${desktopPath}`);
   } catch (err) {
     console.warn(`[driver] 桌面复制失败（不影响主流程）: ${err.message}`);
