@@ -103,9 +103,17 @@ const archiveFiles = [];
 for (const d of ["docs/archive", "FORGE/archive"]) { if (fs.existsSync(d)) walk(d, archiveFiles, ARCHIVE_EXCLUDE); }
 const archiveDead = scan(archiveFiles);
 process.stdout.write(JSON.stringify({ mainDead, archiveDead }));
-' 2>/dev/null || echo '{"mainDead":[],"archiveDead":[]}')
-DEAD_LINKS=$(node -e "const d=JSON.parse(process.argv[1]);console.log(d.mainDead.length)" "$DEAD_SCAN" 2>/dev/null || echo 0)
-ARCHIVE_DEAD=$(node -e "const d=JSON.parse(process.argv[1]);console.log(d.archiveDead.length)" "$DEAD_SCAN" 2>/dev/null || echo 0)
+' 2>/dev/null || echo '{"parseError":true}')
+# parseError 标记：node 扫描器自身崩溃时不得伪造空结果（空结果=0 死链=假绿——
+# run-10 教训家族：检查器故障必须显式 FAIL，不能静默降级为「全绿」）
+DEAD_LINKS=$(node -e "const d=JSON.parse(process.argv[1]);if(d.parseError)process.exit(1);console.log(d.mainDead.length)" "$DEAD_SCAN" 2>/dev/null || echo "SCAN_FAIL")
+ARCHIVE_DEAD=$(node -e "const d=JSON.parse(process.argv[1]);if(d.parseError)process.exit(1);console.log(d.archiveDead.length)" "$DEAD_SCAN" 2>/dev/null || echo "SCAN_FAIL")
+if [ "$DEAD_LINKS" = "SCAN_FAIL" ] || [ "$ARCHIVE_DEAD" = "SCAN_FAIL" ]; then
+  echo "  ❌ 死链扫描器自身故障（node 输出不可解析）——结果不可信，按失败处理"
+  ERRORS=$((ERRORS + 1))
+  DEAD_LINKS=0
+  ARCHIVE_DEAD=0
+fi
 DEAD_DETAIL=$(node -e "const d=JSON.parse(process.argv[1]);console.log(d.mainDead.join('\n'))" "$DEAD_SCAN" 2>/dev/null)
 
 if [ "${DEAD_LINKS:-0}" -gt 0 ]; then
@@ -133,7 +141,8 @@ echo "=== 2. 术语一致性检查 ==="
 # "4 底线" "7 铁律" 是当前正确结构，不算过时
 for file in SKILL/SKILL.md HANDBOOK.md DEVELOPMENT.md; do
   if [ -f "$file" ]; then
-    COUNT=$(grep -cE "A1-A14|A1-A11" "$file" 2>/dev/null || echo "0")
+    COUNT=$(grep -cE "A1-A14|A1-A11" "$file" 2>/dev/null || true)
+    COUNT=${COUNT:-0}
     echo "  $file: 过时术语出现 $COUNT 处"
   fi
 done
@@ -379,11 +388,13 @@ console.log(s.split("\n").filter(l => /^\| (A|E)[0-9]+ /.test(l)).length);
 AUDIT_README_COUNT=$(echo "$AUDIT_README_COUNT" | tr -d '[:space:]')
 
 # B. rules/index.ts 注册规则数（数 { name: 'A* 或 'E* 开头的对象）
-INDEX_TS_COUNT=$(grep -cE "^[[:space:]]+\{ name: '(A|E)[0-9]+" engine/audit/src/rules/index.ts 2>/dev/null || echo "0")
+INDEX_TS_COUNT=$(grep -cE "^[[:space:]]+\{ name: '(A|E)[0-9]+" engine/audit/src/rules/index.ts 2>/dev/null || true)
+INDEX_TS_COUNT=${INDEX_TS_COUNT:-0}
 INDEX_TS_COUNT=$(echo "$INDEX_TS_COUNT" | tr -d '[:space:]')
 
 # C. 主 README 声称的规则数（从 "21 条规则" 这种措辞提取）
-MAIN_README_COUNT=$(grep -oE "[0-9]+ 条规则" README.md 2>/dev/null | head -1 | grep -oE "^[0-9]+" || echo "0")
+MAIN_README_COUNT=$(grep -oE "[0-9]+ 条规则" README.md 2>/dev/null | head -1 | grep -oE "^[0-9]+" || true)
+MAIN_README_COUNT=${MAIN_README_COUNT:-0}
 MAIN_README_COUNT=$(echo "$MAIN_README_COUNT" | tr -d '[:space:]')
 
 echo "  audit/README.md 规则表行数: $AUDIT_README_COUNT"
@@ -481,12 +492,14 @@ if [ -f "$SKILL_FILE" ]; then
   IRON_CLAIMED=$(grep -oE "### ([0-9]+) 则铁律" "$SKILL_FILE" | grep -oE "[0-9]+" | head -1)
   # 提取实际底线条数（### N 底线 到下一个 ### 之间的 - 开头行）
   if [ -n "$BOTTOM_CLAIMED" ]; then
-    BOTTOM_ACTUAL=$(sed -n "/^### ${BOTTOM_CLAIMED} 底线/,/^### /p" "$SKILL_FILE" | grep -cE "^[0-9]+\. |^- " || echo "0")
+    BOTTOM_ACTUAL=$(sed -n "/^### ${BOTTOM_CLAIMED} 底线/,/^### /p" "$SKILL_FILE" | grep -cE "^[0-9]+\. |^- " || true)
+    BOTTOM_ACTUAL=${BOTTOM_ACTUAL:-0}
   else
     BOTTOM_ACTUAL=0
   fi
   if [ -n "$IRON_CLAIMED" ]; then
-    IRON_ACTUAL=$(sed -n "/^### ${IRON_CLAIMED} 则铁律/,/^### /p" "$SKILL_FILE" | grep -cE "^[0-9]+\. |^- " || echo "0")
+    IRON_ACTUAL=$(sed -n "/^### ${IRON_CLAIMED} 则铁律/,/^### /p" "$SKILL_FILE" | grep -cE "^[0-9]+\. |^- " || true)
+    IRON_ACTUAL=${IRON_ACTUAL:-0}
   else
     IRON_ACTUAL=0
   fi
@@ -607,7 +620,8 @@ const fs = require('fs');
 const regSrc = fs.readFileSync('engine/mcp/src/tool-registry.ts', 'utf8');
 const regTools = new Set([...regSrc.matchAll(/name:\s*'([a-z_]+)',/g)].map(m => m[1]));
 console.log(regTools.size);
-" 2>/dev/null || echo "0")
+" 2>/dev/null || true)
+PM_CLAIMED=${PM_CLAIMED:-0}
 PLATFORM_MOUNT_FILES="GEMINI.md .cursor/rules/sofagent.mdc"
 for pmf in $PLATFORM_MOUNT_FILES; do
   if [ ! -f "$pmf" ]; then

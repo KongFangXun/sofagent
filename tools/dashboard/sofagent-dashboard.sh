@@ -135,8 +135,8 @@ fi
 # ────────────────────────────────
 
 # 终端尺寸：优先 COLUMNS/LINES（环境变量），tput 兜底（非 tty 下 tput 返回 0）
-TERM_COLS="${COLUMNS:-$(tput cols 2>/dev/null || echo 0)}"
-TERM_ROWS="${LINES:-$(tput lines 2>/dev/null || echo 0)}"
+TERM_COLS="${COLUMNS:-$(tput cols 2>/dev/null || echo 0)}"  # guards-allow: 显示层降级（非 SSOT）
+TERM_ROWS="${LINES:-$(tput lines 2>/dev/null || echo 0)}"  # guards-allow: 显示层降级（非 SSOT）
 case "$TERM_COLS" in ''|*[!0-9]*) TERM_COLS=0 ;; esac
 case "$TERM_ROWS" in ''|*[!0-9]*) TERM_ROWS=0 ;; esac
 if [ "$TERM_COLS" -le 0 ]; then TERM_COLS=120; fi
@@ -397,7 +397,7 @@ render_recent_reports() {
   local reports
   reports="$(
     find "$report_root" -path '*审计报告*' -name '*.md' -type f 2>/dev/null \
-    | while read -r f; do printf '%s %s\n' "$(stat -f '%m' "$f" 2>/dev/null || stat -c '%Y' "$f" 2>/dev/null || echo 0)" "$f"; done \
+    | while read -r f; do printf '%s %s\n' "$(stat -f '%m' "$f" 2>/dev/null || stat -c '%Y' "$f" 2>/dev/null || echo 0)" "$f"; done \  # guards-allow: stat 双格式兜底显示层
     | sort -rn | head -5
   )"
   if [ -n "$reports" ]; then
