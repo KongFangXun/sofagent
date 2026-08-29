@@ -6,7 +6,7 @@ export LANG=en_US.UTF-8
 export LC_ALL=en_US.UTF-8
 # sofagent-audit · 上线前验收测试（Pre-Release Acceptance Test）
 # 覆盖：FORGE + MCP + 文件系统审计 + daemon + 红队对抗 + 各版本新功能验收
-# 场景数：278 个场景（SSOT：check-test-count.sh 校验，口径=真实 scenario 调用行数，非编号最大值（S1-S344 间有 70 个历史空洞号）；v1.3.7 +4：S290-S293；v1.3.6 +8：S282-S289；v1.3.8 +11：S294-S304（含 bugfix 防回归 S303/S304）；v1.3.9 +15：S305-S319（阶段五 A 类分发 13 项 + 阶段六 coverage 补测 S318 ATTRIBUTION 归因引擎/S319 Dream Sandbox 沙盒审计）；v1.4.0 +3：S320（联邦查询跨进程 E2E——补 federation.test.ts 同进程 mock 缺口）、S321（跨平台 hook stdin 模式闭环验证）、S322（双设备联邦独立进程模拟——两个独立 node 进程 + 真实 TCP，补 fork 形态缺口）；v1.4.1 +10：S323（train doctor CLI 实跑）、S324（enterpriseId 强制绑定+幂等）、S325（fingerprint 冻结+不可变）、S326（artifact 签名+篡改检测）、S327（安全基线路径白名单+注入检测）、S328（install.sh 迁移丢数据窗口防回归——阶段四 B2 分发）、S329（install.sh symlink 谎报守卫——阶段四 B3 分发）、S330（训练异常退出资源回收四步链——阶段六 coverage 补测，补判断层唯一零覆盖项）、S331（OpenClaw plugin 双 manifest 一致性——阶段十一 ClawHub 拒收踩坑回写）、S332（bump 脚本通配误伤防回归——阶段十一静默漏 bump 踩坑回写）；v1.4.2 +10：S333（数据管道 CSV 类型推断端到端）、S334（dataset_version 台账三件套）、S335（eval 阈值判定双态）、S336（dry-run 显存估算单调性）、S337（ScaleRL sigmoid 拟合/外推/建议）、S338（FDE 工作台审计留痕往返——阶段三步骤四增量，行为实测走 dist 产物）、S339（MCP 工具 dataDir SSOT 收编完整——阶段三 fresh-eyes N-1 修复行为锁）、S340（19 处 v1.3.x 存量 getSofagentDataDir 一次清零行为锁——用户拍板 A 桶落点迁移接受）、S341（train report 报告生成本体 dist 行为实测——阶段五 coverage 唯一零覆盖项补测）；v1.4.2 章五 +2：S342（IM 桥通道交付三面断言——run-17 模块七零覆盖补测）、S343（BugFix 30 项批次级五族锚点——run-17 模块十零覆盖补测，对齐 S281 先例）；v1.4.2 阶段十二 +1：S344（Git Data API 推送通道 cat-file 防复发——ps1 eol 二坑根因固化）；v1.4.3 bugfix 批 +1：S345（跨平台 hook stdin message 抽取三场景行为锁——F-03 等号/中文/嵌套引号 + 空格形式回归，stub 断言 --task 透传））
+# 场景数：281 个场景（SSOT：check-test-count.sh 校验，口径=真实 scenario 调用行数，非编号最大值（S1-S344 间有 70 个历史空洞号）；v1.3.7 +4：S290-S293；v1.3.6 +8：S282-S289；v1.3.8 +11：S294-S304（含 bugfix 防回归 S303/S304）；v1.3.9 +15：S305-S319（阶段五 A 类分发 13 项 + 阶段六 coverage 补测 S318 ATTRIBUTION 归因引擎/S319 Dream Sandbox 沙盒审计）；v1.4.0 +3：S320（联邦查询跨进程 E2E——补 federation.test.ts 同进程 mock 缺口）、S321（跨平台 hook stdin 模式闭环验证）、S322（双设备联邦独立进程模拟——两个独立 node 进程 + 真实 TCP，补 fork 形态缺口）；v1.4.1 +10：S323（train doctor CLI 实跑）、S324（enterpriseId 强制绑定+幂等）、S325（fingerprint 冻结+不可变）、S326（artifact 签名+篡改检测）、S327（安全基线路径白名单+注入检测）、S328（install.sh 迁移丢数据窗口防回归——阶段四 B2 分发）、S329（install.sh symlink 谎报守卫——阶段四 B3 分发）、S330（训练异常退出资源回收四步链——阶段六 coverage 补测，补判断层唯一零覆盖项）、S331（OpenClaw plugin 双 manifest 一致性——阶段十一 ClawHub 拒收踩坑回写）、S332（bump 脚本通配误伤防回归——阶段十一静默漏 bump 踩坑回写）；v1.4.2 +10：S333（数据管道 CSV 类型推断端到端）、S334（dataset_version 台账三件套）、S335（eval 阈值判定双态）、S336（dry-run 显存估算单调性）、S337（ScaleRL sigmoid 拟合/外推/建议）、S338（FDE 工作台审计留痕往返——阶段三步骤四增量，行为实测走 dist 产物）、S339（MCP 工具 dataDir SSOT 收编完整——阶段三 fresh-eyes N-1 修复行为锁）、S340（19 处 v1.3.x 存量 getSofagentDataDir 一次清零行为锁——用户拍板 A 桶落点迁移接受）、S341（train report 报告生成本体 dist 行为实测——阶段五 coverage 唯一零覆盖项补测）；v1.4.2 章五 +2：S342（IM 桥通道交付三面断言——run-17 模块七零覆盖补测）、S343（BugFix 30 项批次级五族锚点——run-17 模块十零覆盖补测，对齐 S281 先例）；v1.4.2 阶段十二 +1：S344（Git Data API 推送通道 cat-file 防复发——ps1 eol 二坑根因固化）；v1.4.3 bugfix 批 +1：S345（跨平台 hook stdin message 抽取三场景行为锁——F-03 等号/中文/嵌套引号 + 空格形式回归，stub 断言 --task 透传）；v1.4.3 阶段三 +3：S346（审计聚合 --stats CLI 行为实测——--json 纯净/--days 窗口/口径行）、S347（反作弊基线三防线锚点——doctor 体检/缺省全开/白名单外部化）、S348（训练监控三 MCP tools 注册面——registry 79 + SKILL 对账））
 # 编号跳号豁免：S1~S293 间有 70 个空洞号（全在 S36-S202 历史段）——v1.2.x 瘦身删场景
 # 与基线重建（restore 6e542467）的既成事实，非丢失；新场景编号=当前最大+1 顺延，禁止回填空洞
 # 版本段起点见文件内「# ─── v」分组标记（grep "─── v" 定位）
@@ -3574,6 +3574,63 @@ S345_D=$(s345_run '{"tool_name":"Bash","tool_input":{"command":"git commit -m '"
 [ "$S345_D" = "fix: update" ] || { echo "  ✗ 回归单引号：[$S345_D]"; S345_OK=false; }
 cleanup_tmp "$S345_REPO"; rm -rf "$S345_STUB"
 $S345_OK && pass "F-03 三场景 + 回归全过（等号/中文/嵌套引号/空格形式 --task 全透传）" || fail "F-03 message 抽取行为回退——见上方 ✗ 行"
+
+# ─────────────────────────────────────────────────────────────
+# S346 · v1.4.3 第七章：审计聚合 --stats CLI 行为实测（治理 KPI 出口）
+# --stats 人读报告 + --days 窗口 + --json 纯净机器可读——零人类可读混行。
+# 行为实测走 dist 产物（对齐 S338/S341 先例）；真实 history.jsonl 只读消费。
+# ─────────────────────────────────────────────────────────────
+scenario 346 "v1.4.3 第七章：审计聚合 --stats 行为实测——人读报告 + --json 纯净 + --days 窗口生效"
+S346_OK=true
+S346_JSON=$(node "$PROJECT_ROOT/engine/audit/dist/cli-quick.js" --stats --days 7 --json 2>/dev/null) || S346_OK=false
+# ① --json 纯净：整段输出必须是合法 JSON（零人类可读混行——CLI 纪律）
+echo "$S346_JSON" | node -e "
+let raw='';process.stdin.on('data',d=>raw+=d).on('end',()=>{
+  try { const j = JSON.parse(raw);
+    if (typeof j.triggerRate !== 'number' || typeof j.totalChanges !== 'number') process.exit(1);
+    if (j.windowDays !== 7) process.exit(1);
+    process.exit(0);
+  } catch { process.exit(1); }
+})" || S346_OK=false
+# ② 人读报告含口径关键词（触发率/阻断率——HANDBOOK 口径两行）
+S346_HUMAN=$(node "$PROJECT_ROOT/engine/audit/dist/cli-quick.js" --stats --days 7 2>/dev/null) || S346_OK=false
+echo "$S346_HUMAN" | grep -q "安全边界触发率" || S346_OK=false
+echo "$S346_HUMAN" | grep -q "阻断率" || S346_OK=false
+$S346_OK && pass "审计聚合 CLI 三参数行为实测过（--stats/--days/--json 纯净）" || fail "审计聚合 CLI 行为回退——检查 stats.ts/dist 构建与口径行"
+
+# ─────────────────────────────────────────────────────────────
+# S347 · v1.4.3 第八章：反作弊基线三防线默认化（dist 行为锚点）
+# doctor 三项体检接线（anticheat-git-disabled/visibility/network-allowlist）
+# + env-manager 缺省配置全开（anticheat.gitDisabled=true / networkAllowlist 默认端点）
+# ─────────────────────────────────────────────────────────────
+scenario 347 "v1.4.3 第八章：反作弊基线双防线——doctor 三项体检在位 + 缺省配置全开 + 白名单外部化字段"
+S347_OK=true
+S347_ORCH="$PROJECT_ROOT/engine/orchestrator/dist"
+# ① doctor 接线：train-doctor dist 产物含三项体检名
+grep -q "anticheat-git-disabled" "$PROJECT_ROOT/engine/mcp/dist/tools/train-doctor.js" 2>/dev/null || S347_OK=false
+grep -q "anticheat-network-allowlist" "$PROJECT_ROOT/engine/mcp/dist/tools/train-doctor.js" 2>/dev/null || S347_OK=false
+# ② env-manager dist：缺省反作弊配置（gitDisabled true + networkAllowlist 数组）
+grep -q "networkAllowlist" "$S347_ORCH/train/env-manager.js" 2>/dev/null || S347_OK=false
+grep -q "gitDisabled" "$S347_ORCH/train/env-manager.js" 2>/dev/null || S347_OK=false
+# ③ 白名单外部化：train-env-init.sh 落默认白名单配置（install 时随装随落）
+grep -q "networkAllowlist" "$PROJECT_ROOT/tools/train-env-init.sh" 2>/dev/null || S347_OK=false
+$S347_OK && pass "反作弊基线三防线锚点在位（doctor 体检/缺省全开/白名单外部化）" || fail "反作弊基线防线缺失——reward hacking 防线面临回退"
+
+# ─────────────────────────────────────────────────────────────
+# S348 · v1.4.3 第一章：训练监控查询侧三 MCP tools 注册面（76→79 收口锁）
+# registry 79 个 name + 三新 tool 条目 + 头部 SSOT 注释——工具数漂移防复发
+# ─────────────────────────────────────────────────────────────
+scenario 348 "v1.4.3 第一章：训练监控三 MCP tools 注册——train_status/train_list/train_diagnose 在位 + registry 79 个 name"
+S348_OK=true
+# 引号字面量精确匹配（排除接口类型行 name: string;——对齐 check-test-count 口径）
+S348_COUNT=$(grep -oE "name: '[a-z_]+'" "$PROJECT_ROOT/engine/mcp/src/tool-registry.ts" | sort -u | wc -l | tr -d ' ')
+[ "$S348_COUNT" = "79" ] || S348_OK=false
+grep -q "name: 'train_status'" "$PROJECT_ROOT/engine/mcp/src/tool-registry.ts" || S348_OK=false
+grep -q "name: 'train_list'" "$PROJECT_ROOT/engine/mcp/src/tool-registry.ts" || S348_OK=false
+grep -q "name: 'train_diagnose'" "$PROJECT_ROOT/engine/mcp/src/tool-registry.ts" || S348_OK=false
+# SKILL.md 工具清单同步（对账面：训练域 11 tools 行）
+grep -q "train_status.*train_list.*train_diagnose" "$PROJECT_ROOT/SKILL/SKILL.md" || S348_OK=false
+$S348_OK && pass "训练监控三 tools 注册面完整（registry 79 + SKILL 对账）" || fail "MCP 工具注册面漂移——registry 实数 $S348_COUNT 或三 tools 缺席"
 
 echo -e "  验收测试结果：${GREEN}$PASSED 通过${NC} / ${RED}$FAILED 失败${NC} / 共 $((PASSED + FAILED))"
 # 🔴 v1.3.1 run-10 教训：无色码纯文本汇总行供 driver grep（EXIT: 0=全PASS / <N>=N失败）

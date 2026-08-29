@@ -395,10 +395,9 @@ render_recent_reports() {
   fi
 
   local reports
+  # guards-allow: stat 双格式兜底显示层（macOS stat -f / Linux stat -c，单行避免 bash 3.2 命令替换内续行解析坑）
   reports="$(
-    find "$report_root" -path '*审计报告*' -name '*.md' -type f 2>/dev/null \
-    | while read -r f; do printf '%s %s\n' "$(stat -f '%m' "$f" 2>/dev/null || stat -c '%Y' "$f" 2>/dev/null || echo 0)" "$f"; done \  # guards-allow: stat 双格式兜底显示层
-    | sort -rn | head -5
+    find "$report_root" -path '*审计报告*' -name '*.md' -type f 2>/dev/null | while read -r f; do printf '%s %s\n' "$(stat -f '%m' "$f" 2>/dev/null || stat -c '%Y' "$f" 2>/dev/null || echo 0)" "$f"; done | sort -rn | head -5
   )"
   if [ -n "$reports" ]; then
     while read -r _mtime path; do
