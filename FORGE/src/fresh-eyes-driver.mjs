@@ -26,7 +26,7 @@
 //   切换模型：编辑 FORGE/models/profile.mjs，改 import 和映射即可，不需要改本文件。
 // ============================================================
 
-import { spawn } from 'child_process';
+import { spawn, execSync } from 'child_process';
 import { createRequire } from 'module';
 import {
   readFileSync, writeFileSync, mkdirSync, existsSync,
@@ -333,6 +333,86 @@ const PERSPECTIVES = [
   { id: 12, name: 'file-stranger',   label: '文件结构陌生人' },
 ];
 
+// ─── v1.4.4 优化一+四：增量审查 + 视角动态裁剪 ─────────────────
+//
+// run-2026-08-29 实测：多轮 loop 中 round-2+ 的审查对象 90% 与上轮相同
+// （只多了上轮 b-fix 的改动），全量重扫是重复劳动；且同一 finding 常被
+// 5-8 个视角重复报告，视角裁剪可再省约 40% worker 数。
+//
+// 增量模式触发条件（三者同时满足，任一不满足回退全量——安全第一）：
+//   1. roundNum >= 2（round-1 永远全量——首轮面对完整 diff）
+//   2. 能从 worktree git 取到上轮 auto-commit 的文件清单（HEAD~1 的 commit）
+//   3. 文件数 <= 60（改动面过大时说明本轮不是小修，回退全量）
+//
+// 视角裁剪（仅增量模式生效；全量模式 12 视角不动）：
+//   按增量文件路径特征选 6 个核心视角 + 1 个轮换冷视角（防漏报）：
+//   - 代码类（engine/|install.sh|bootstrap.sh）→ red-team + code-reader + enterprise-it
+//   - 文档类（docs/|README|CHANGELOG|WIKI）     → doc-consistency + detective + stranger
+//   - 工具类（tools/）                          → perception + code-reader + npm-user
+//   冷视角轮换序：file-stranger → journey → reviewer → competitor（每轮换一个）。
+//   round-1 与停止判定轮（即将 clean 的轮）不做裁剪——首尾保全量置信度。
+
+/**
+ * 从 worktree git 取上一轮 b-fix auto-commit 的改动文件清单。
+ * @param {string|null} worktreeDir - worktree 副本目录（null=主仓模式）
+ * @returns {string[]} 改动文件路径数组；取不到返回 []（调用方回退全量）
+ */
+function getIncrementalFiles(worktreeDir) {
+  try {
+    const gitRoot = worktreeDir || REPO_ROOT;
+    // 上一个 commit 必须是 FORGE auto-commit（b-fix 的产物）——否则说明中间
+    // 有人插入了其他 commit，增量边界不干净，回退全量
+    const lastMsg = execSync('git log -1 --pretty=%s', { cwd: gitRoot, encoding: 'utf-8', timeout: 10_000 }).toString().trim();
+    if (!lastMsg.startsWith('FORGE auto-commit')) return [];
+    return execSync('git diff-tree --no-commit-id --name-only -r HEAD', { cwd: gitRoot, encoding: 'utf-8', timeout: 10_000 })
+      .toString().split('\n').map(s => s.trim()).filter(Boolean);
+  } catch {
+    return []; // git 不可用/超时/非 git 目录 → 全量
+  }
+}
+
+/** 视角裁剪：按增量文件特征选核心 6 + 轮换冷视角 1。 */
+function pickIncrementalPerspectives(files, roundNum) {
+  const isCode = f => /^(engine\/|install\.sh|bootstrap\.sh|package)/.test(f);
+  const isDoc  = f => /^(docs\/|README|CHANGELOG|WIKI|HANDBOOK|CONTRIBUTING|SECURITY|SKILL\/)/.test(f);
+  const isTool = f => /^tools\//.test(f);
+  const hasCode = files.some(isCode), hasDoc = files.some(isDoc), hasTool = files.some(isTool);
+  const picked = new Set();
+  // 全都没有（如纯配置改动）→ 保守三族各给代表
+  if (hasCode || (!hasCode && !hasDoc && !hasTool)) { picked.add(7); picked.add(11); picked.add(2); }  // red-team / code-reader / enterprise-it
+  if (hasDoc  || (!hasCode && !hasDoc && !hasTool)) { picked.add(10); picked.add(8); picked.add(1); }   // doc-consistency / detective / stranger
+  if (hasTool) { picked.add(9); picked.add(4); }  // perception / npm-user（dashboard 在 tools/ 下）
+  // 补足到 6 个（不足时按固定顺序补）
+  for (const id of [6, 3, 5, 4, 12]) {
+    if (picked.size >= 6) break;
+    picked.add(id);
+  }
+  // 冷视角轮换（防漏报）：每轮换一个非核心视角进名单
+  const coldRotation = [12, 6, 5, 3];
+  picked.add(coldRotation[(roundNum - 2) % coldRotation.length]);
+  return PERSPECTIVES.filter(p => picked.has(p.id));
+}
+
+/**
+ * 解析本轮审查配置：返回 { perspectives, incrementalFiles, mode }。
+ * mode: 'full'（12 视角全量）| 'incremental'（裁剪视角 + 增量文件注入）
+ */
+function resolveRoundScope(roundNum, worktreeDir, isLikelyCleanStop) {
+  // round-1 / 即将判停的确认轮 → 全量
+  if (roundNum <= 1 || isLikelyCleanStop) {
+    return { perspectives: PERSPECTIVES, incrementalFiles: null, mode: 'full' };
+  }
+  const files = getIncrementalFiles(worktreeDir);
+  if (files.length === 0 || files.length > 60) {
+    return { perspectives: PERSPECTIVES, incrementalFiles: null, mode: 'full' };
+  }
+  return {
+    perspectives: pickIncrementalPerspectives(files, roundNum),
+    incrementalFiles: files,
+    mode: 'incremental',
+  };
+}
+
 /**
  * 动态生成 A 侧 perspective 步骤（a-check-p1 ~ a-check-p12）。
  * 每个 perspective worker 的配置：
@@ -383,10 +463,15 @@ const STEPS = {
   // 内容仍需 sf_read），工具调用天然 40-60 次，撞全局 45 硬熔断后裸 LLM 兜底产物
   // 缺 ===FILE: 分隔符 → result.md 判空 → b-fix 跳过 → 假绿停止（run-21 3 轮全丢）。
   // 单独提高预算：check worker 已有 12/15 覆盖（不受影响），不重蹈 run-06 全局 60/80 覆辙。
+  // v1.4.4 优化四：增量模式下 a-consolidate 只收裁剪视角的报告——inputs
+  // 由静态 24 份改为动态构造（本轮 activePerspectives）。全量模式行为不变。
   'a-consolidate': {
     role: 'A',
     prompt: 'a-consolidate.md',
     outputs: ['findings.md', 'result.md'],
+    // 动态 inputs：模块加载时按全部 12 视角注入路径清单（runWorker 只拼路径
+    // 字符串，worker 端 sf_read 不存在的文件会跳过）；增量轮实际产物只有
+    // 裁剪视角的 2N 份，a-consolidate prompt 模板已声明「不存在的报告忽略」。
     inputs: PERSPECTIVES.flatMap(p => [`check-a-p${p.id}.md`, `check-b-p${p.id}.md`]),
     maxTokens: 32000,
     toolSoftLimit: 60,
@@ -919,6 +1004,24 @@ async function runWorker(step, roundDir, target) {
 3. 同一文件最多读 2 次；同一关键词最多 grep 2 次——禁止反复验证同一件事。
 4. 报告必须 ≥500 字符且含 ## 标题；找不到 P0 就明确写"未发现 P0"，再给出 P1/P2 观察项。
 5. 发现 3-8 条即可收尾，不要为了凑数无限扩张探索范围。`;
+
+    // v1.4.4 优化一：增量审查——round-2+ 注入上轮 b-fix 改动文件清单，
+    // worker 只需围绕这些文件审查（其他文件上轮已审过、结论仍然有效）。
+    // FORGE_INCREMENTAL_FILES 由 spawnWorker 写入（\\n 分隔）；不在增量模式的
+    // worker（round-1 / 全量回退）不注入此段，行为与旧版完全一致。
+    const incrementalFiles = (process.env.FORGE_INCREMENTAL_FILES || '')
+      .split('\n').map(s => s.trim()).filter(Boolean);
+    if (incrementalFiles.length > 0) {
+      promptTemplate += `
+
+## 🔍 增量审查范围（本轮只审这些）
+
+上一轮修复（b-fix）改动了以下 ${incrementalFiles.length} 个文件，本轮你的审查对象
+就是这些改动（可用 git diff/log 查看具体变化，或直接读文件）。未列出的文件在
+之前轮次已审查过，除非改动直接波及否则不必重审：
+
+${incrementalFiles.map(f => `- ${f}`).join('\n')}`;
+    }
   }
 
   // 3. 组装 user message：prompt 正文 + 路径注入 + target 注入
@@ -1401,7 +1504,16 @@ async function runWorker(step, roundDir, target) {
       // 最终兜底：从工具结果合成最小报告
       text = synthesizeReportFromMessages(result?.messages ?? [], step, role);
       if (!text) {
-        throw new Error(`[worker:${step}] DeepAgent 未返回内容且无法合成报告`);
+        // v1.4.4 优化三：空响应标记为可重试错误——run-2026-08-29 实测 B 侧
+        // glm-5.3-flash 偶发空响应（1-2 次工具调用后 content 为空，消息太少
+        // 碎片合成也无素材），退出码 1 直接判死导致 r2-r4 B 侧崩溃 1→5→8 份
+        // 爬升。spawnWorker 捕获 isEmptyResponseError 后重启子进程重试（最多
+        // 2 次）——偶发空响应重跑即过，系统性故障仍按原路径失败。
+        const err = new Error(`[worker:${step}] DeepAgent 未返回内容且无法合成报告`);
+        // stderr 标记（父进程 spawnWorker 检测 [empty-response] 触发子进程重启重试）
+        console.error(`[empty-response] ${err.message}`);
+        err.isEmptyResponseError = true;
+        throw err;
       }
     }
   }
@@ -2352,6 +2464,12 @@ function spawnWorker(step, roundDir, target, round, options = {}) {
         env.FORGE_CUSTOM_OUTPUT = options.customOutput;
       }
 
+      // v1.4.4 优化一：增量审查文件清单透传（resolveRoundScope 计算的
+      // 上轮 b-fix 改动文件，\\n 分隔；全量模式不设置，worker 行为不变）
+      if (options.incrementalFiles && options.incrementalFiles.length > 0) {
+        env.FORGE_INCREMENTAL_FILES = options.incrementalFiles.join('\n');
+      }
+
       // 捕获 stderr 以检测 StallError（worker 进程打印 [stall-watchdog] 标记）
       // Capture stderr to detect StallError marker from worker process
       let stderrBuf = '';
@@ -2396,8 +2514,11 @@ function spawnWorker(step, roundDir, target, round, options = {}) {
           // Detect StallError (watchdog abort marker)
           const isStall = stderrBuf.includes('[stall-watchdog]') ||
                           stderrBuf.includes('StallError');
+          // v1.4.4 优化三：检测空响应标记（子进程 console.error('[empty-response]')）
+          const isEmpty = stderrBuf.includes('[empty-response]');
           const err = new Error(`worker ${step} 退出码 ${code}`);
           err.isStallError = isStall;
+          err.isEmptyResponseError = isEmpty;
           rejectP(err);
         }
       });
@@ -2407,11 +2528,25 @@ function spawnWorker(step, roundDir, target, round, options = {}) {
 
   // v1.2.4：StallError 重试逻辑（最多 STALL_RETRY_MAX 次）
   // v1.2.4: StallError retry logic (up to STALL_RETRY_MAX times)
+  // v1.4.4 优化三：空响应（EmptyResponse）重试——B 侧 glm-5.3-flash 偶发
+  // content 为空（非 stall、非 OOM，进程正常退出码 1），run-2026-08-29 实测
+  // B 侧崩溃 1→5→8 份爬升的主因。重启子进程即过（偶发），最多 2 次。
+  const EMPTY_RETRY_MAX = 2;
   return (async () => {
+    let emptyRetries = 0;
     for (let attempt = 0; attempt <= STALL_RETRY_MAX; attempt++) {
       try {
         return await runOnce();
       } catch (err) {
+        if (err.isEmptyResponseError && emptyRetries < EMPTY_RETRY_MAX) {
+          emptyRetries++;
+          console.warn(
+            `\n  ⚠️  [worker:${step}] 空响应（DeepAgent 无内容），` +
+            `重启重试 ${emptyRetries}/${EMPTY_RETRY_MAX}`
+          );
+          attempt--; // 空响应重试不消耗 Stall 重试额度
+          continue;
+        }
         if (err.isStallError && attempt < STALL_RETRY_MAX) {
           console.warn(
             `\n  ⚠️  [worker:${step}] StallError — watchdog 检测到事件循环冻结，` +
@@ -2440,7 +2575,7 @@ function spawnWorker(step, roundDir, target, round, options = {}) {
  * @param {Array<[string,string,string]>} workers  [step, roundDir, target] 元组数组
  * @param {number} round  轮次号（透传给 spawnWorker）
  */
-function spawnParallel(workers, round) {
+function spawnParallel(workers, round, options = {}) {
   // v1.2.6：allSettled 替代 all——一方崩溃不拖累另一方。
   // run-01/run-02 教训：a-check 崩溃导致 Promise.all reject，
   // b-check 的成果也随之丢弃（虽然 b-check 可能已成功写出 check-b.md）。
@@ -2463,7 +2598,7 @@ function spawnParallel(workers, round) {
       console.log(`  [并发批次 ${batchNum}] 启动 ${batch.length} 个 worker（并发=${concurrency}）`);
 
       const settled = await Promise.allSettled(
-        batch.map(([step, roundDir, target]) => spawnWorker(step, roundDir, target, round))
+        batch.map(([step, roundDir, target]) => spawnWorker(step, roundDir, target, round, options))
       );
       // v1.3.7 ⑦：检测本批次是否有 OOM SIGKILL（isSignalKill 由 spawnWorker 标记）
       const batchHadSigkill = settled.some(s => s.status === 'rejected' && s.reason?.isSignalKill);
@@ -3283,6 +3418,48 @@ async function runRound(roundNum, runDir, target, dryRun, opts = {}) {
   console.log(`  Round ${roundNum} — ${roundDir}`);
   console.log(`${'═'.repeat(60)}`);
 
+  // ─── v1.4.4 优化五：草稿预筛 round-1 ───
+  // driver 启动参数 --draft <path>（或 env FORGE_DRAFT）指向 16 视角草稿产物
+  // （tools/gen/gen-fresh-eyes-draft.mjs 生成，30 秒级）。round-1 跳过 24 个
+  // check worker（约 70 分钟），草稿直接作为 check 产物集进入 a-consolidate
+  // → b-fix。草稿本身就是分视角结构（## 视角 N 标题），按视角切片写入
+  // check-a-pN.md（标注来源=草稿）。round-2 起恢复正常增量/全量流程。
+  // 安全阀：草稿文件 < 2KB 视为无效，回退全量。
+  if (roundNum === 1 && !dryRun) {
+    const draftPath = process.env.FORGE_DRAFT || opts.draftPath || null;
+    if (draftPath && existsSync(draftPath)) {
+      const draftText = readFileSync(draftPath, 'utf-8');
+      if (draftText.length >= 2048) {
+        console.log(`\n  [草稿预筛] 使用草稿 ${draftPath}（${(draftText.length / 1024).toFixed(1)}KB），round-1 跳过 24 个 check worker`);
+        // 按视角标题切片（# 视角 N / ## 视角N / ### 视角N 兼容三种格式）
+        const sections = draftText.split(/\n(?=#{1,3}\s*视角\s*\d+)/u);
+        let written = 0;
+        for (const sec of sections) {
+          const m = sec.match(/视角\s*(\d+)/u);
+          if (!m) continue;
+          const pId = parseInt(m[1], 10);
+          if (!(pId >= 1 && pId <= 12)) continue;
+          const content = (sec.trim().length >= 200 ? sec
+            : `# check-a-p${pId}.md · 草稿预筛切片（内容过短，仅作占位）\n\n${sec}`);
+          writeFileSync(join(roundDir, `check-a-p${pId}.md`),
+            `<!-- 草稿预筛：本报告来自 gen-fresh-eyes-draft 草稿（视角${pId}），round-1 未跑独立 check worker -->\n\n` + content,
+            'utf-8');
+          written++;
+        }
+        if (written >= 8) {
+          console.log(`  [草稿预筛] 已写入 ${written}/12 个视角切片，B 侧双盲复核不可省——只跑 B 的 12 个 check worker`);
+          const bOnlyWorkers = PERSPECTIVES.map(p => [`b-check-p${p.id}`, roundDir, target]);
+          await spawnParallel(bOnlyWorkers, roundNum);
+          // 跳过 A 侧 check（草稿已代 A 侧），直接进 a-consolidate 后半轮
+          return await runRoundTail(roundNum, roundDir, target, runDir);
+        }
+        console.warn(`  ⚠️ [草稿预筛] 切片不足（${written}/12，需 ≥8），回退全量流程`);
+      } else {
+        console.warn(`  ⚠️ [草稿预筛] 草稿过短（${draftText.length}B < 2048B），回退全量流程`);
+      }
+    }
+  }
+
   if (dryRun) {
     console.log('  [dry-run] 将执行以下步骤：');
     console.log(`    ① a-check × 12 视角 (A 独立审查·短任务化)  → check-a-p1~12.md`);
@@ -3310,7 +3487,17 @@ async function runRound(roundNum, runDir, target, dryRun, opts = {}) {
 
   // v1.2.9 功能②：worker 级断点——跳过已完成的 perspective worker（resume 模式）
   const resumeCompletedWorkers = resumeStateForRound?.completedWorkers || [];
-  const allPerspectiveWorkers = PERSPECTIVES.flatMap(p => [
+  // v1.4.4 优化一+四：增量审查 + 视角裁剪——round-2+ 只审上轮 b-fix 改动文件，
+  // 并按文件特征裁剪视角（全量=24 worker → 增量≈14 worker）。任一条件不满足
+  // 自动回退全量（round-1 / 停止判定轮 / git 边界不干净 / 改动面 > 60 文件）。
+  const roundScope = resolveRoundScope(roundNum, globalWorktree?.worktreeDir || null, false);
+  if (roundScope.mode === 'incremental') {
+    console.log(`\n  [增量模式] 上轮 b-fix 改动 ${roundScope.incrementalFiles.length} 个文件，裁剪视角 ${roundScope.perspectives.length}/12：${roundScope.perspectives.map(p => p.label).join('、')}`);
+  } else {
+    console.log(`\n  [全量模式] 12 视角 × A/B（round-1 / 确认轮 / 增量边界不可用）`);
+  }
+  const activePerspectives = roundScope.perspectives;
+  const allPerspectiveWorkers = activePerspectives.flatMap(p => [
     [`a-check-p${p.id}`, roundDir, target],
     [`b-check-p${p.id}`, roundDir, target],
   ]);
@@ -3323,18 +3510,23 @@ async function runRound(roundNum, runDir, target, dryRun, opts = {}) {
     console.log(`  [resume] 跳过 ${skippedCount} 个已完成的 perspective worker`);
   }
 
-  // v1.3.8 交付八：两段式拆分——A 批先跑（B 复核依赖 A 产物，不能与 A 并行）
-  const pendingAWorkers = pendingWorkers.filter(([step]) => step.startsWith('a-check'));
-  const pendingBWorkers = pendingWorkers.filter(([step]) => step.startsWith('b-check'));
+  // v1.4.4 优化二：A/B 同批并行（双盲全量）——pendingWorkers 整批直接执行，
+  // 不再拆 A/B 两段（原两段式是 B 复核模式的时序前提，已废弃）。
+  // resume 过滤已保证跳过已完成 worker，顺序天然交错（a1,b1,a2,b2,...），
+  // 并发批内 A/B 混合，信息隔离靠「B 不注入 A 报告路径」保证。
 
   // 跟踪本轮已完成的 worker（用于 worker 级断点）
   const roundCompletedWorkers = [...resumeCompletedWorkers];
 
   // 批执行闭包：spawn + 断点更新 + 崩溃降级占位（v1.3.8 交付八从原内联逻辑提取，
   // A 批/B 批两段复用，行为与原单批完全一致）
+  // v1.4.4 优化一：spawnOptions 透传增量文件清单给每个 perspective worker。
   const runCheckBatch = async (batchWorkers) => {
     if (batchWorkers.length === 0) return { results: [], failures: [] };
-    const { results: checkResults, failures: checkFailures } = await spawnParallel(batchWorkers, roundNum);
+    const spawnOptions = roundScope.incrementalFiles
+      ? { incrementalFiles: roundScope.incrementalFiles }
+      : {};
+    const { results: checkResults, failures: checkFailures } = await spawnParallel(batchWorkers, roundNum, spawnOptions);
 
     // 记录成功完成的 worker（用于 worker 级断点）
     for (const r of checkResults) {
@@ -3381,23 +3573,26 @@ async function runRound(roundNum, runDir, target, dryRun, opts = {}) {
   };
 
   if (pendingWorkers.length > 0) {
-    // 第一段：A 侧全量审查（B 复核的对象）
-    console.log(`\n  [批次 A] ${pendingAWorkers.length} 个 A perspective worker（全量审查）...`);
-    await runCheckBatch(pendingAWorkers);
-
-    // 第二段：B 侧复核模式——FORGE_B_REVIEW_MODE 注入，spawnWorker 按 step
-    // 前缀（b-check-p*）透传给 worker 子进程，runWorker 的 prompt 构造读取。
-    console.log(`\n  [批次 B] ${pendingBWorkers.length} 个 B perspective worker（复核 A 的 P0/P1 发现）...`);
-    const prevReviewMode = process.env.FORGE_B_REVIEW_MODE;
-    process.env.FORGE_B_REVIEW_MODE = 'recheck-a-findings';
-    try {
-      await runCheckBatch(pendingBWorkers);
-    } finally {
-      if (prevReviewMode === undefined) delete process.env.FORGE_B_REVIEW_MODE;
-      else process.env.FORGE_B_REVIEW_MODE = prevReviewMode;
-    }
+    // v1.4.4 优化二：A/B 合并为单段并行执行（信息隔离保持——双盲全量）。
+    // v1.3.8 交付八曾把 B 侧改为「复核 A 的 P0/P1」两段式（先 A 后 B），
+    // 实测代价：B 等 A 全部完成才开始，关键路径翻倍；且 B 复核依赖 A 报告
+    // 落盘，A 崩溃时 B 回退全量，行为不稳定。run-2026-08-29 实测 4 轮 6h。
+    // 双盲的本质要求是「信息隔离」（B 不看 A 的结论），不是「时间串行」——
+    // 本段 A/B 同批并行、各写各的 check-a-pN/check-b-pN，互不可见对方产物，
+    // 双盲语义完整保留；关键路径从 A 串 + B 串 = 24 worker 压到最长 worker。
+    console.log(`\n  [批次 A+B] ${pendingWorkers.length} 个 perspective worker（A/B 双盲并行，并发=${MAX_CONCURRENCY}）...`);
+    await runCheckBatch(pendingWorkers);
   }
 
+  // 步骤 ③~⑤ + 停止判定（v1.4.4 优化五抽出为独立函数，草稿预筛路径复用）
+  return await runRoundTail(roundNum, roundDir, target, runDir);
+}
+
+/**
+ * 轮后半段：a-consolidate → b-fix → b-audit → a-verify → 停止判定 + 成本摘要。
+ * v1.4.4 优化五：从 runRound 抽出——常规路径与草稿预筛路径共用。
+ */
+async function runRoundTail(roundNum, roundDir, target, runDir) {
   // 步骤 ③ A 合并
   // 如果 a-consolidate 失败（OOM/recursionLimit/模型错误），降级用两份 check
   // 报告拼接一个 findings.md，让循环能继续走到 b-fix。
