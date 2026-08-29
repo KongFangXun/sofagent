@@ -543,14 +543,14 @@ export const TOOLS: ToolDef[] = [
     },
   },
   {
-    // v1.3.2 (交付 7右)：FDE 梳理辅助
+    // v1.3.2 (交付 7右)：FDE 梳理辅助 · v1.4.3 清扫任务三收窄 workflow-only
     name: 'fde_compose',
     roles: ['fde'],
-    description: 'FDE 梳理辅助——五要素引导生成 workflow 或 ontology 草稿。',
+    description: 'FDE 梳理辅助——五要素生成 workflow.yml 草稿（workflow-only；ontology 推导走 fde_derive 六引擎主入口）。',
     inputSchema: {
       type: 'object',
       properties: {
-        action: { type: 'string', enum: ['workflow', 'ontology'], description: '生成类型：workflow=workflow.yml 草稿 / ontology=entity/concept/relations 草稿' },
+        action: { type: 'string', enum: ['workflow', 'ontology'], description: '生成类型：workflow=workflow.yml 草稿（ontology 已收窄——传值返回 fde_derive 迁移提示）' },
         session: { type: 'object', description: '梳理会话 JSON（含 enterpriseId / nodes / workflowName 等，由 compose-interview 收集）' },
       },
       required: ['action', 'session'],

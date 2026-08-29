@@ -359,9 +359,9 @@ export async function spawnSubAgent(
 
   try {
     // 尝试通过 compose 编排执行（createReactAgent 内部分发到对应 agent）
-    const { composeWithDeepAgents } = await import('./composer');
+    const { composeWithReactAgent } = await import('./composer');
     // composeTask 自带 agent 名称信息
-    const result = await composeWithDeepAgents(prompt);
+    const result = await composeWithReactAgent(prompt);
     return result ?? `Agent "${agent.name}" 已接收任务，但编排引擎未返回结果。`;
   } catch {
     // 编排引擎不可用时返回提示

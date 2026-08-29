@@ -11,7 +11,7 @@
  */
 
 // Composer
-/* @public */ export { composeWithDeepAgents, compose } from './composer';
+/* @public */ export { composeWithReactAgent, composeWithDeepAgents, compose } from './composer';
 /* @public */ export type { ComposeInput, ComposeResult, ComposeVariant } from './composer';
 
 // DAG Runner（编排执行器 · v1.1.8 新增）
