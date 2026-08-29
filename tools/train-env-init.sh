@@ -168,15 +168,31 @@ fw_ver = os.environ.get("FRAMEWORK_VERSION")
 if fw_name and fw_ver:
     manifest["framework"] = {"name": fw_name, "version": fw_ver}
 
+# v1.4.3 第八章：反作弊基线默认配置落盘（reward hacking 四形态双防线——
+# ① 断历史回溯：数据集 .git 剥离 + 沙箱 git 禁用；② 断外联通道：出网默认
+# 拦截 + 白名单放行。机制开源、阈值外部化（改 networkAllowlist 生效））
+manifest["anticheat"] = {
+    "stripDatasetGit": True,
+    "disableGitInSandbox": True,
+    "networkAllowlist": [
+        "hf-mirror.com",
+        ".hf-mirror.com",
+        "mirrors.tuna.tsinghua.edu.cn",
+        "pypi.tuna.tsinghua.edu.cn",
+    ],
+}
+
 with open(sys.argv[1], "w", encoding="utf-8") as f:
     json.dump(manifest, f, indent=2, ensure_ascii=False)
 PYEOF
 else
   # 无 python3 的兜底：bash 手写 JSON（值均为 null / 纯 ASCII——无转义风险）
-  printf '{\n  "schemaVersion": "v1",\n  "pythonVersion": null,\n  "framework": null,\n  "cudaVersion": null,\n  "gpu": null,\n  "packageManager": "%s",\n  "platform": "%s",\n  "generatedAt": "%s"\n}\n' \
+  # v1.4.3 第八章：反作弊基线默认配置同样落盘（纯 ASCII 手写段）
+  printf '{\n  "schemaVersion": "v1",\n  "pythonVersion": null,\n  "framework": null,\n  "cudaVersion": null,\n  "gpu": null,\n  "packageManager": "%s",\n  "platform": "%s",\n  "anticheat": {\n    "stripDatasetGit": true,\n    "disableGitInSandbox": true,\n    "networkAllowlist": ["hf-mirror.com", ".hf-mirror.com", "mirrors.tuna.tsinghua.edu.cn", "pypi.tuna.tsinghua.edu.cn"]\n  },\n  "generatedAt": "%s"\n}\n' \
     "${PACKAGE_MANAGER}" "$(uname -s | tr '[:upper:]' '[:lower:]')" \
     "$(date -u +%Y-%m-%dT%H:%M:%S.000Z)" > "${MANIFEST_FILE}"
 fi
 
 ok "manifest: ${MANIFEST_FILE}"
-log "完成。体检环境：MCP train_doctor（CUDA/显存/框架/基座缓存四项）"
+ok "反作弊基线已落默认配置（.git 剥离 + git 禁用 + 出网白名单——v1.4.3 第八章）"
+log "完成。体检环境：MCP train_doctor（四项 + 反作弊三项——dataset_mount_path 传数据集挂载点可查 .git 可见性）"

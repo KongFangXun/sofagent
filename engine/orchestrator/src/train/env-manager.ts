@@ -381,3 +381,215 @@ export async function trainDoctor(
     checkedAt: new Date(deps.now ? deps.now() : Date.now()).toISOString(),
   };
 }
+
+// ══════════════════════════════════════
+// v1.4.3 第八章：训练环境反作弊基线（reward hacking 四形态双防线默认化）
+//
+// 四形态（DEVELOPMENT.md A8 失败清单——arXiv 2608.17528 §4.3.2）：
+//   ① Git 历史定位 gold commit 拿答案 → 防线一：断历史回溯
+//   ② wget/curl 拉 GitHub 上游参考实现 → 防线二：断外联通道
+//   ③ pip 下载含答案的包源码 → 防线二
+//   ④ urllib 网络库抓源码 → 防线二
+// ══════════════════════════════════════
+
+import { createNetworkGateway } from '../sandbox/network-gateway';
+
+/** 反作弊白名单默认端点（仅模型/pip 镜像——生产可经 train-env.json.networkAllowlist 覆盖） */
+export const DEFAULT_NETWORK_ALLOWLIST: readonly string[] = [
+  'hf-mirror.com',
+  '.hf-mirror.com', // 后缀通配（镜像站子域）
+  'mirrors.tuna.tsinghua.edu.cn', // pip 镜像（训练依赖安装）
+  'pypi.tuna.tsinghua.edu.cn',
+];
+
+/** train-env.json 的反作弊配置节（外部化——机制开源、阈值外部化） */
+export interface AnticheatConfig {
+  /** 数据集挂载时剥离 .git（防线一上半——gold commit 无法定位） */
+  stripDatasetGit: boolean;
+  /** 训练沙箱内禁用 git 命令（防线一下半——git 不可用） */
+  disableGitInSandbox: boolean;
+  /** 网络白名单（防线二——默认拦截出网，仅白名单端点放行） */
+  networkAllowlist: string[];
+}
+
+/** 缺省反作弊配置（双防线全开——防线是设计期输入不是事后补） */
+export const DEFAULT_ANTICHEAT_CONFIG: AnticheatConfig = {
+  stripDatasetGit: true,
+  disableGitInSandbox: true,
+  networkAllowlist: [...DEFAULT_NETWORK_ALLOWLIST],
+};
+
+/** 读取企业分区的反作弊配置（train-env.json.anticheat 节——缺失用缺省全开） */
+export function loadAnticheatConfig(dataDir: string, enterpriseId: string): AnticheatConfig {
+  const manifestFile = trainEnvManifestPath(dataDir, enterpriseId);
+  if (!existsSync(manifestFile)) return { ...DEFAULT_ANTICHEAT_CONFIG };
+  try {
+    const manifest = JSON.parse(readFileSync(manifestFile, 'utf-8')) as {
+      anticheat?: Partial<AnticheatConfig>;
+      /** v1.4.3 之前字段形态兼容：顶层 networkAllowlist（第八章验收外部化口径） */
+      networkAllowlist?: string[];
+    };
+    const anticheat = manifest.anticheat ?? {};
+    return {
+      stripDatasetGit: anticheat.stripDatasetGit ?? DEFAULT_ANTICHEAT_CONFIG.stripDatasetGit,
+      disableGitInSandbox: anticheat.disableGitInSandbox ?? DEFAULT_ANTICHEAT_CONFIG.disableGitInSandbox,
+      networkAllowlist:
+        anticheat.networkAllowlist ?? manifest.networkAllowlist ?? [...DEFAULT_NETWORK_ALLOWLIST],
+    };
+  } catch {
+    return { ...DEFAULT_ANTICHEAT_CONFIG }; // 坏清单降级缺省（双防线不因坏数据失效）
+  }
+}
+
+// ── 防线一：断历史回溯 ──
+
+/** 数据集挂载的反作弊视图源（注入式——生产是真实文件系统，测试注入内存映射） */
+export interface DatasetMountSource {
+  /** 列目录（返回 null = 目录不存在） */
+  readdir(dir: string): string[] | null;
+  /** 删除目录（递归——.git 剥离用） */
+  rmdir(dir: string): void;
+}
+
+/** 缺省真实文件系统源 */
+function defaultMountSource(): DatasetMountSource {
+  const { readdirSync, rmSync } = require('fs') as typeof import('fs');
+  return {
+    readdir(dir) {
+      try {
+        return readdirSync(dir);
+      } catch {
+        return null;
+      }
+    },
+    rmdir(dir) {
+      rmSync(dir, { recursive: true, force: true });
+    },
+  };
+}
+
+/**
+ * 数据集挂载 .git 剥离（防线一上半——数据集进训练区时剥离 .git 目录，
+ * gold commit 无法被定位检出）。
+ *
+ * 幂等：无 .git 时 no-op；剥离失败如实报告（不静默——防线状态必须可观测）。
+ * 返回剥离报告（doctor 的 .git 可见性检查项消费同源口径）。
+ */
+export function stripDatasetGitOnMount(
+  datasetDir: string,
+  source: DatasetMountSource = defaultMountSource(),
+): { stripped: boolean; reason: string } {
+  const entries = source.readdir(datasetDir);
+  if (entries === null) {
+    return { stripped: false, reason: `数据集目录不存在：${datasetDir}（挂载前置检查未过——不剥离）` };
+  }
+  if (!entries.includes('.git')) {
+    return { stripped: false, reason: '数据集无 .git（干净数据源——无需剥离）' };
+  }
+  try {
+    source.rmdir(join(datasetDir, '.git'));
+    return { stripped: true, reason: `已剥离 ${join(datasetDir, '.git')}（gold commit 不可定位）` };
+  } catch (err) {
+    return {
+      stripped: false,
+      reason: `.git 剥离失败：${err instanceof Error ? err.message : String(err)}（防线未到位——人工处理）`,
+    };
+  }
+}
+
+/**
+ * 构建沙箱内 git 禁用 env（防线一下半——SOFAGENT_GIT_DISABLED 标记 +
+ * GIT_DISCOVERY_ACROSS_FILESYSTEM 封禁上探）。
+ * 注入 spawn env 后沙箱内 git 命令不可用。
+ */
+export function buildGitDisabledEnv(baseEnv: Record<string, string>): Record<string, string> {
+  return {
+    ...baseEnv,
+    SOFAGENT_GIT_DISABLED: '1',
+    GIT_DISCOVERY_ACROSS_FILESYSTEM: '0',
+  };
+}
+
+// ── 防线二：断外联通道（复用 v1.3.7 network-gateway 白名单面） ──
+
+/**
+ * 生成训练沙箱网络网关（防线二——默认拦截出网，白名单端点放行）。
+ * train-env.json.networkAllowlist 外部化：改配置生效、缺省值拦截。
+ */
+export function createTrainNetworkGate(anticheat: AnticheatConfig) {
+  return createNetworkGateway({ allowHosts: anticheat.networkAllowlist });
+}
+
+// ── 反作弊基线体检（三项——train doctor 消费） ──
+
+/** 反作弊体检项结果（doctor 报告新增三步——防线未到位明示告警） */
+export interface AnticheatCheckResult {
+  /** git 禁用状态（防线一下半——沙箱 env 是否带禁用标记） */
+  gitDisabled: { status: 'ok' | 'fail'; detail: string };
+  /** .git 可见性（防线一上半——数据集挂载点是否残留 .git） */
+  datasetGitVisibility: { status: 'ok' | 'fail'; detail: string };
+  /** 网络白名单生效（防线二——白名单外出网被拒 + 白名单内放行） */
+  networkAllowlist: { status: 'ok' | 'fail'; detail: string };
+}
+
+/**
+ * 反作弊基线三项体检（train doctor 新增——对齐既有 doctor 结构化报告模式）。
+ *
+ * 判定口径：
+ *   ① git 禁用：train-env.json.anticheat.disableGitInSandbox=true 即 ok（配置面）
+ *   ② .git 可见性：挂载点无 .git 即 ok（现场面——数据集目录探测）
+ *   ③ 网络白名单：白名单外域名 deny + 白名单内域名 allow 双向验证
+ */
+export function checkAnticheatBaseline(
+  dataDir: string,
+  enterpriseId: string,
+  datasetDir: string | null,
+  source: DatasetMountSource = defaultMountSource(),
+): AnticheatCheckResult {
+  const config = loadAnticheatConfig(dataDir, enterpriseId);
+
+  // ① git 禁用（配置面）
+  const gitDisabled = config.disableGitInSandbox
+    ? { status: 'ok' as const, detail: '沙箱 git 禁用已配置（anticheat.disableGitInSandbox=true）' }
+    : { status: 'fail' as const, detail: '沙箱 git 禁用未配置（reward hacking 形态①——Git 历史回溯可达，请 train env init 落默认配置）' };
+
+  // ② .git 可见性（现场面——数据集挂载点探测）
+  let datasetGitVisibility: AnticheatCheckResult['datasetGitVisibility'];
+  if (datasetDir === null) {
+    datasetGitVisibility = {
+      status: 'fail',
+      detail: '数据集挂载点未登记（无法探测 .git 残留——登记后复检）',
+    };
+  } else {
+    const entries = source.readdir(datasetDir);
+    if (entries === null) {
+      datasetGitVisibility = { status: 'fail', detail: `数据集目录不存在：${datasetDir}` };
+    } else if (entries.includes('.git')) {
+      datasetGitVisibility = {
+        status: 'fail',
+        detail: `数据集残留 .git（${join(datasetDir, '.git')}）——gold commit 可定位，reward hacking 形态①可达，须剥离`,
+      };
+    } else {
+      datasetGitVisibility = { status: 'ok', detail: '数据集无 .git（gold commit 不可定位）' };
+    }
+  }
+
+  // ③ 网络白名单生效（双向验证）
+  const gate = createTrainNetworkGate(config);
+  const probeOutside = 'github.com';
+  const probeInside = config.networkAllowlist[0] ?? 'hf-mirror.com';
+  const outsideVerdict = gate.check({ host: probeOutside, port: 443, protocol: 'https' });
+  const insideVerdict = gate.check({ host: probeInside, port: 443, protocol: 'https' });
+  const networkAllowlist =
+    outsideVerdict === 'deny' && insideVerdict === 'allow'
+      ? {
+          status: 'ok' as const,
+          detail: `白名单生效（${probeOutside} 拒 / ${probeInside} 通——出网默认拦截，白名单 ${config.networkAllowlist.length} 端点放行）`,
+        }
+      : {
+          status: 'fail' as const,
+          detail: `白名单失效（${probeOutside} 应拒实 ${outsideVerdict}，${probeInside} 应通实 ${insideVerdict}——reward hacking 形态②③④外联通道未断）`,
+        };
+
+  return { gitDisabled, datasetGitVisibility, networkAllowlist };
+}

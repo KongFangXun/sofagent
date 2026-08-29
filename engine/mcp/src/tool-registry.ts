@@ -918,11 +918,12 @@ export const TOOLS: ToolDef[] = [
     // v1.4.2 (章四)：训练环境体检——CUDA/显存/框架/基座缓存四项只查不装
     name: 'train_doctor',
     roles: ['eval', 'ops'],
-    description: '训练环境体检——CUDA/显存/框架版本/基座模型缓存四项结构化报告（只查不装；装环境走 train env init / tools/train-env-init.sh，基座下载走 model-downloader 断点续传）。',
+    description: '训练环境体检——CUDA/显存/框架版本/基座模型缓存四项 + 反作弊基线三项（git 禁用/.git 可见性/网络白名单——v1.4.3）结构化报告（只查不装；装环境走 train env init / tools/train-env-init.sh，基座下载走 model-downloader 断点续传）。',
     inputSchema: {
       type: 'object',
       properties: {
         enterprise_id: { type: 'string', description: '🔴 企业标识（必填——train-env.json 清单的企业分区）' },
+        dataset_mount_path: { type: 'string', description: '数据集挂载点（可选——反作弊 .git 可见性探测；缺省该项报 fail 给指引）' },
       },
       required: ['enterprise_id'],
     },
