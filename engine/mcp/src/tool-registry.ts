@@ -21,7 +21,7 @@ export interface ToolDef {
 }
 
 /**
- * 完整工具清单——79 个 tool（v1.4.3：train_status/train_list 新增；v1.4.2：fde_interview/fde_classify/fde_quantify/fde_derive/fde_distill/fde_deploy 六引擎 + train_doctor/train_dryrun/train_report 新增；v1.4.1：train_submit 新增；v1.4.0：cost_query + browser 4 新增；v1.3.9：worklog_query 新增；v1.3.6：workflow_submit/ontology_import/model_register/model_switch/model_unregister/train_budget/define_acceptance/check_acceptance；v1.3.5：run_ab_test/promote_ab/snapshot_list/snapshot_restore；v1.3.4：commons_publish/search/invoke/rate/retire/harvest_rule；不含 4 个 resource shortcut）
+ * 完整工具清单——79 个 tool（v1.4.3：train_status/train_list/train_diagnose 新增；v1.4.2：fde_interview/fde_classify/fde_quantify/fde_derive/fde_distill/fde_deploy 六引擎 + train_doctor/train_dryrun/train_report 新增；v1.4.1：train_submit 新增；v1.4.0：cost_query + browser 4 新增；v1.3.9：worklog_query 新增；v1.3.6：workflow_submit/ontology_import/model_register/model_switch/model_unregister/train_budget/define_acceptance/check_acceptance；v1.3.5：run_ab_test/promote_ab/snapshot_list/snapshot_restore；v1.3.4：commons_publish/search/invoke/rate/retire/harvest_rule；不含 4 个 resource shortcut）
  */
 export const TOOLS: ToolDef[] = [
   {
@@ -1036,6 +1036,21 @@ export const TOOLS: ToolDef[] = [
         limit: { type: 'number', description: '返回上限（可选——缺省 50）' },
       },
       required: ['enterprise_id'],
+    },
+  },
+  {
+    // v1.4.3 (第二章)：训练失败诊断——七类分类 + 上下文 + 处方
+    name: 'train_diagnose',
+    roles: ['eval', 'ops'],
+    description: '训练失败诊断——七类分类（OOM/数据格式/超参发散/框架/环境/重复坍塌/精度异常）+ 上下文四源（日志尾部+环境清单+checkpoint+超参）+ 修复处方（MiniMax-M1/ScaleRL 同款），报告落盘 diagnose.json。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        train_job_id: { type: 'string', description: '🔴 训练任务标识（failed/cancelled 等有失败上下文的任务）' },
+        enterprise_id: { type: 'string', description: '🔴 企业标识（隔离分区依赖）' },
+        save: { type: 'boolean', description: '是否落盘报告（可选——缺省 true，data/train/<企业>/<jobId>/diagnose.json）' },
+      },
+      required: ['train_job_id', 'enterprise_id'],
     },
   },
   {

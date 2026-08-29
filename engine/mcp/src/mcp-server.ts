@@ -87,6 +87,8 @@ import { trainReportTool, type TrainReportArgs } from './tools/train-report';
 // v1.4.3 第一章：训练监控查询侧（train_status / train_list）
 import { trainStatusTool } from './tools/train-status';
 import { trainListTool } from './tools/train-list';
+// v1.4.3 第二章：训练失败诊断（train_diagnose）
+import { trainDiagnoseTool } from './tools/train-diagnose';
 import { fdeInterviewTool, type FdeInterviewArgs } from './tools/fde-interview';
 import { fdeClassifyTool, type FdeClassifyArgs } from './tools/fde-classify';
 import { fdeQuantifyTool, type FdeQuantifyArgs } from './tools/fde-quantify';
@@ -373,6 +375,8 @@ class McpServer {
         // v1.4.3 第一章：训练监控查询侧（train_status / train_list）
         case 'train_status': { if (!args.train_job_id) { this.sendError(id, -32602, 'Missing required argument: train_job_id'); break; } if (!args.enterprise_id) { this.sendError(id, -32602, 'Missing required argument: enterprise_id'); break; } const tsr = await trainStatusTool({ train_job_id: args.train_job_id as string, enterprise_id: args.enterprise_id as string, ...(typeof args.last_n === 'number' ? { last_n: args.last_n } : {}) }); this.sendTool(id, tsr, tsr.data.isError); break; }
         case 'train_list': { if (!args.enterprise_id) { this.sendError(id, -32602, 'Missing required argument: enterprise_id'); break; } const tlr = await trainListTool({ enterprise_id: args.enterprise_id as string, ...(typeof args.status === 'string' ? { status: args.status } : {}), ...(typeof args.base_model === 'string' ? { base_model: args.base_model } : {}), ...(typeof args.last_days === 'number' ? { last_days: args.last_days } : {}), ...(typeof args.limit === 'number' ? { limit: args.limit } : {}) }); this.sendTool(id, tlr, tlr.data.isError); break; }
+        // v1.4.3 第二章：训练失败诊断（train_diagnose）
+        case 'train_diagnose': { if (!args.train_job_id) { this.sendError(id, -32602, 'Missing required argument: train_job_id'); break; } if (!args.enterprise_id) { this.sendError(id, -32602, 'Missing required argument: enterprise_id'); break; } const tdr2 = await trainDiagnoseTool({ train_job_id: args.train_job_id as string, enterprise_id: args.enterprise_id as string, ...(typeof args.save === 'boolean' ? { save: args.save } : {}) }); this.sendTool(id, tdr2, tdr2.data.isError); break; }
         // v1.4.2 章八：FDE 六引擎（interview/classify/quantify/derive/distill/deploy）
         case 'fde_interview': { if (!args.enterprise_id) { this.sendError(id, -32602, 'Missing required argument: enterprise_id'); break; } if (!args.prompts_only && (!Array.isArray(args.nodes) || (args.nodes as unknown[]).length === 0)) { this.sendError(id, -32602, 'Missing required argument: nodes'); break; } const fir = await fdeInterviewTool({ enterprise_id: args.enterprise_id as string, ...(args.prompts_only === true ? { prompts_only: true } : {}), ...(Array.isArray(args.nodes) ? { nodes: args.nodes as NonNullable<FdeInterviewArgs['nodes']> } : {}) }); this.sendTool(id, fir, fir.data.isError); break; }
         case 'fde_classify': { if (!args.enterprise_id) { this.sendError(id, -32602, 'Missing required argument: enterprise_id'); break; } if (!Array.isArray(args.nodes) || (args.nodes as unknown[]).length === 0) { this.sendError(id, -32602, 'Missing or empty required argument: nodes'); break; } const fcr = await fdeClassifyTool({ enterprise_id: args.enterprise_id as string, nodes: args.nodes as NonNullable<FdeClassifyArgs['nodes']> }); this.sendTool(id, fcr, fcr.data.isError); break; }
