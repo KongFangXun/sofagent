@@ -50,6 +50,10 @@ export function loadPermission(projectDir: string): MergedPermission {
     for (const rule of local.rules) {
       const idx = merged.findIndex(r => r.name === rule.name);
       if (idx >= 0) {
+        console.warn(
+          `[sofagent] permission.local.json 规则 ${rule.name} 覆盖全局规则——` +
+            '本机 Agent 可自行写入此文件，本层为 AI 行为 guardrail，非安全隔离边界'
+        );
         merged[idx] = rule;  // 覆盖
       } else {
         merged.push(rule);   // 追加
