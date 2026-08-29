@@ -18,6 +18,8 @@ import { join } from 'path';
 export interface TrainDoctorArgs {
   /** 企业标识（体检报告与 train-env.json 清单的企业分区） */
   enterprise_id: string;
+  /** 数据集挂载点（v1.4.3 第八章反作弊体检——.git 可见性探测；缺省 null 报 fail 给指引） */
+  dataset_mount_path?: string;
 }
 
 export interface TrainDoctorToolResult {
@@ -51,7 +53,7 @@ export interface TrainDoctorToolResult {
  * 错误模式。
  */
 export async function trainDoctorTool(args: TrainDoctorArgs): Promise<TrainDoctorToolResult> {
-  const { enterprise_id } = args;
+  const { enterprise_id, dataset_mount_path } = args;
 
   if (typeof enterprise_id !== 'string' || enterprise_id.trim() === '') {
     return {
@@ -67,9 +69,17 @@ export async function trainDoctorTool(args: TrainDoctorArgs): Promise<TrainDocto
     // MCP 调用方无需构造；测试经 orchestrator 单测的注入路径覆盖。
     const report = await orch.trainDoctor(dataDir, enterprise_id);
 
+    // v1.4.3 第八章：反作弊基线三项体检（git 禁用 / .git 可见性 / 网络白名单）
+    // ——数据集挂载点未登记时传 null（.git 可见性项报 fail 并给指引）。
+    const anticheat = orch.checkAnticheatBaseline(dataDir, enterprise_id, datasetMountPath ?? null);
+
     const okLines: string[] = [];
     const badLines: string[] = [];
-    for (const s of report.steps) {
+    for (const s of [...report.steps, ...[
+      { name: 'anticheat-git-disabled', status: anticheat.gitDisabled.status, detail: anticheat.gitDisabled.detail },
+      { name: 'anticheat-git-visibility', status: anticheat.datasetGitVisibility.status, detail: anticheat.datasetGitVisibility.detail },
+      { name: 'anticheat-network-allowlist', status: anticheat.networkAllowlist.status, detail: anticheat.networkAllowlist.detail },
+    ] as Array<{ name: string; status: string; detail?: string }>]) {
       const line = `${s.name}: ${s.status}${s.detail ? `（${s.detail}）` : ''}`;
       if (s.status === 'ok') okLines.push(line);
       else badLines.push(line);
