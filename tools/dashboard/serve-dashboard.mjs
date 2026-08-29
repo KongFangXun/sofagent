@@ -37,12 +37,13 @@ const SOFAGENT_HOME_INSTALL =
   process.env.SOFAGENT_HOME || join(homedir(), '.sofagent');
 const INSTALL_WEB_DIR = join(SOFAGENT_HOME_INSTALL, 'web');
 const INSTALL_WEB_HTML = join(INSTALL_WEB_DIR, 'dashboard.html');
-let DOCS_DIR, DASHBOARD_HTML_REL;
+let DOCS_DIR, DASHBOARD_HTML_REL, IS_INSTALL_MODE = false;
 try {
   if (statSync(INSTALL_WEB_HTML).isFile()) {
     // 安装态：web 目录即静态根（dashboard.html 在根）
     DOCS_DIR = INSTALL_WEB_DIR;
     DASHBOARD_HTML_REL = '/dashboard.html';
+    IS_INSTALL_MODE = true;
   } else {
     throw new Error('install web not found');
   }
@@ -51,6 +52,8 @@ try {
   DOCS_DIR = join(__dirname, '../..');
   DASHBOARD_HTML_REL = '/tools/dashboard/dashboard.html';
 }
+// 仓库态 /assets/* 别名的映射目标（安装态用 web/assets/，天然命中无需别名）
+const ASSETS_DIR_REPO = join(__dirname, '../../docs');
 const SOFAGENT_DATA = process.env.SOFAGENT_HOME
   ? join(process.env.SOFAGENT_HOME, 'data')
   : join(homedir(), '.sofagent', 'data');
@@ -609,6 +612,29 @@ const server = createServer(async (req, res) => {
     urlPath = DASHBOARD_HTML_REL;
   }
 
+  // /assets/* 别名（v1.4.4 目录同步配套）：安装态 web/assets/ 天然命中；
+  // 仓库态映射 docs/assets/——两态同 URL 引用，页面写 /assets/banner.png 不再断链
+  if (urlPath === '/assets' || urlPath.startsWith('/assets/')) {
+    const rel = urlPath.slice('/assets'.length);
+    const assetsRoot = IS_INSTALL_MODE ? DOCS_DIR : ASSETS_DIR_REPO;
+    const filePath = join(assetsRoot, 'assets', normalize(rel));
+    if (filePath !== join(assetsRoot, 'assets') && !filePath.startsWith(join(assetsRoot, 'assets') + '/')) {
+      res.writeHead(403);
+      res.end('Forbidden');
+      return;
+    }
+    const data = await tryRead(filePath);
+    if (data === null) {
+      res.writeHead(404);
+      res.end('Not found');
+      return;
+    }
+    const mime = MIME[extname(filePath)] || 'application/octet-stream';
+    res.writeHead(200, { 'Content-Type': mime });
+    res.end(data);
+    return;
+  }
+
   const filePath = join(DOCS_DIR, normalize(urlPath));
   // 前缀判定带尾分隔符（防兄弟目录前缀碰撞，同 /data/* 分支）
   if (filePath !== DOCS_DIR && !filePath.startsWith(DOCS_DIR + '/')) {
@@ -620,7 +646,8 @@ const server = createServer(async (req, res) => {
   const data = await tryRead(filePath);
   if (data === null) {
     res.writeHead(404);
-    res.end('Not found: ' + urlPath);
+    // 404 不回显（urlPath 虽非绝对路径，仍统一收敛）
+    res.end('Not found');
     return;
   }
 
