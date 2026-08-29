@@ -31,7 +31,7 @@ import {
   parseBenchmarkConfig,
   benchmarksRoot,
 } from '../benchmark/benchmark-designer';
-import { evaluateCase, defaultScoringFn } from '../benchmark/case-evaluator';
+import { evaluateCase, defaultScoringFn, evalBridgeScoringFn } from '../benchmark/case-evaluator';
 import {
   appendEvaluationRecord,
   readEvaluationLog,
@@ -262,6 +262,29 @@ describe('case-evaluator · 隔离评测（v1.3.1 交付 9）', () => {
   it('defaultScoringFn：空产出 0，有产出 100', () => {
     expect(defaultScoringFn({ output: '', rubric: 'r', durationMs: 1 })).toBe(0);
     expect(defaultScoringFn({ output: 'x', rubric: 'r', durationMs: 1 })).toBe(100);
+  });
+
+  it('evalBridgeScoringFn：rubric/output 均 JSON 时桥接 eval 三维度评分', async () => {
+    const rubric = JSON.stringify({ result: 'pass', severity: 'WARN', rules_triggered: [] });
+    // 完全命中 → 100
+    const full = await evalBridgeScoringFn({ output: JSON.stringify({ result: 'pass', severity: 'WARN', rules_triggered: [] }), rubric, durationMs: 1 });
+    expect(full).toBe(100);
+    // 部分命中 → 0 < score < 100（三维度综合，非 0/100 二值）
+    const partial = await evalBridgeScoringFn({ output: JSON.stringify({ result: 'fail', severity: 'none' }), rubric, durationMs: 1 });
+    expect(partial).toBeGreaterThan(0);
+    expect(partial).toBeLessThan(100);
+  });
+
+  it('evalBridgeScoringFn：非 JSON 回退协议完成度评分', async () => {
+    // rubric 非 JSON → 回退（有产出 100）
+    const a = await evalBridgeScoringFn({ output: '任意产出', rubric: '自然语言 rubric', durationMs: 1 });
+    expect(a).toBe(100);
+    // output 非 JSON → 回退
+    const b = await evalBridgeScoringFn({ output: '纯文本', rubric: JSON.stringify({ k: 'v' }), durationMs: 1 });
+    expect(b).toBe(100);
+    // 空产出 → 回退 0
+    const c = await evalBridgeScoringFn({ output: '', rubric: '自然语言 rubric', durationMs: 1 });
+    expect(c).toBe(0);
   });
 });
 

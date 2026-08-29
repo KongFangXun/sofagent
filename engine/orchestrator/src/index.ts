@@ -544,7 +544,7 @@
   Difficulty,
   ParsedBenchmarkConfig,
 } from './benchmark/benchmark-designer';
-/* @public */ export { evaluateCase, defaultScoringFn, DEFAULT_EVALUATE_TIMEOUT_MS } from './benchmark/case-evaluator';
+/* @public */ export { evaluateCase, defaultScoringFn, evalBridgeScoringFn, DEFAULT_EVALUATE_TIMEOUT_MS } from './benchmark/case-evaluator';
 // v1.4.0 交付九：MLflow 接线——logBenchmarkToMlflow 进公共 API（eval/mcp/外部脚本 import 用）
 /* @public */ export { logBenchmarkToMlflow, buildMetrics, llmAsJudge } from './benchmark/mlflow-exporter';
 /* @public */ export type { MlflowMetrics, MlflowRunResult } from './benchmark/mlflow-exporter';
