@@ -1340,6 +1340,21 @@
   TrainDoctorReport,
   ModelCacheEntry,
 } from './train/env-manager';
+/* @public */ export {
+  // v1.4.3 第八章：训练环境反作弊基线（reward hacking 四形态双防线）
+  DEFAULT_NETWORK_ALLOWLIST,
+  DEFAULT_ANTICHEAT_CONFIG,
+  loadAnticheatConfig,
+  stripDatasetGitOnMount,
+  buildGitDisabledEnv,
+  createTrainNetworkGate,
+  checkAnticheatBaseline,
+} from './train/env-manager';
+/* @public */ export type {
+  AnticheatConfig,
+  DatasetMountSource,
+  AnticheatCheckResult,
+} from './train/env-manager';
 
 // ============================================================
 // v1.4.3 第四章：训练需求推导 + 模板库（train analyze / templates / MoE 防护 / RL 配方）
