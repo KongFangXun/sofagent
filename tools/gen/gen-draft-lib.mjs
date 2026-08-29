@@ -179,6 +179,40 @@ export function readChangelogLine(changelogPath, curVer) {
  * @throws Error HTTP 非 200 / 响应过短 / 网络失败（调用方 catch 后降级）
  */
 export async function callLLM(modelCfg, apiKey, systemPrompt, userPrompt) {
+  return callLLMOnce(modelCfg, apiKey, systemPrompt, userPrompt);
+}
+
+/**
+ * v1.4.4 优化六：带自动降级的 LLM 调用——GLM coding 端点对大输入（~25k 字符）
+ * 偶发 300s 无响应（run-2026-08-29 实测 3 连败 aborted），自动 fallback 到
+ * deepseek-v4-flash 按量通道重试一次。固化当日手工绕行（/tmp/run-draft-deepseek.mjs）
+ * 的降级路径——偶发超时不再卡 SOP。
+ *
+ * 降级条件：主端点 abort（超时）/ HTTP 5xx / 网络错误，且配置了 DEEPSEEK_API_KEY。
+ * 主端点正常返回（含 4xx 业务错误）不降级——那不是端点问题。
+ */
+export async function callLLMWithFallback(modelCfg, apiKey, systemPrompt, userPrompt) {
+  try {
+    return await callLLMOnce(modelCfg, apiKey, systemPrompt, userPrompt);
+  } catch (err) {
+    const isTimeout = err.name === 'AbortError' || /aborted|fetch failed|network/i.test(err.message || '');
+    const isServerError = /HTTP 5\d\d/.test(err.message || '');
+    const hasDeepseekKey = !!process.env.DEEPSEEK_API_KEY;
+    if ((isTimeout || isServerError) && hasDeepseekKey) {
+      console.warn(`⚠️  主端点 ${modelCfg.baseURL} 失败（${(err.message || '').slice(0, 120)}）→ 自动降级 deepseek-v4-flash 重试`);
+      const fallbackCfg = {
+        model: 'deepseek-v4-flash',
+        baseURL: 'https://api.deepseek.com/v1',
+        apiKeyEnv: 'DEEPSEEK_API_KEY',
+        temperature: modelCfg.temperature,
+      };
+      return callLLMOnce(fallbackCfg, process.env.DEEPSEEK_API_KEY, systemPrompt, userPrompt);
+    }
+    throw err;
+  }
+}
+
+async function callLLMOnce(modelCfg, apiKey, systemPrompt, userPrompt) {
   const controller = new AbortController();
   // 5 分钟上限（GLM thinking 模式大输入 3min 实测不够）
   const timeout = setTimeout(() => controller.abort(), 300_000);
