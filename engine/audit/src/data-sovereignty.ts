@@ -24,6 +24,7 @@ import {
   getHmacKey,
   stableStringify,
   atomicAppendSync,
+  DATA_URI_PATTERN,
 } from '@sofagent/core';
 
 // ============================================================
@@ -93,23 +94,40 @@ const SECRET_PATTERNS: RegExp[] = [
   /\/home\/[^/]+\//g, // Linux 用户路径 → [USER_PATH]
 ];
 
+/** 段外文本的常规脱敏（长随机串 / IP / 用户路径） */
+function sanitizeSegment(seg: string): string {
+  for (const pattern of SECRET_PATTERNS) {
+    if (pattern.source === '\\b\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\b') {
+      seg = seg.replace(pattern, '[IP]');
+    } else if (pattern.source === '\\/Users\\/[^/]+\\/' || pattern.source === '\\/home\\/[^/]+\\/') {
+      seg = seg.replace(pattern, '[USER_PATH]');
+    } else {
+      seg = seg.replace(pattern, (m) => `[REDACTED:${m.length}字符]`);
+    }
+  }
+  return seg;
+}
+
 /**
  * 脱敏单个文本——替换敏感串为占位符。
  * 数据主权日志自身绝不能成为第二泄漏点。
  * v1.2.9 支持自定义正则（sanitizePatterns from config.yml）——企业业务机密（合同名称/客户名单/工资表）
  */
 function sanitizeText(text: string, customPatterns?: { pattern: RegExp; replacement: string }[]): string {
-  let out = text;
-  for (const pattern of SECRET_PATTERNS) {
-    if (pattern.source === '\\b\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\b') {
-      out = out.replace(pattern, '[IP]');
-    } else if (pattern.source === '\\/Users\\/[^/]+\\/' || pattern.source === '\\/home\\/[^/]+\\/') {
-      out = out.replace(pattern, '[USER_PATH]');
-    } else {
-      out = out.replace(pattern, (m) => `[REDACTED:${m.length}字符]`);
-    }
+  // data-URI（内嵌图标/图片等静态资源载荷）不属于密钥形态——
+  // 与 A2 / ToolGate / prompt-sanitizer 的 data-URI 豁免同口径（H-02 家族）。
+  // 先按 data-URI 切段，仅对段外文本跑长随机串脱敏，段内载荷原样保留。
+  let out = '';
+  let last = 0;
+  DATA_URI_PATTERN.lastIndex = 0;
+  for (const m of text.matchAll(DATA_URI_PATTERN)) {
+    const idx = m.index ?? 0;
+    out += sanitizeSegment(text.slice(last, idx));
+    out += m[0]; // data-URI 原样保留
+    last = idx + m[0].length;
   }
-  // v1.2.9 自定义业务机密脱敏
+  out += sanitizeSegment(text.slice(last));
+  // v1.2.9 自定义业务机密脱敏（作用在全串——业务机密与格式无关，data-URI 内也替换）
   if (customPatterns) {
     for (const { pattern, replacement } of customPatterns) {
       try {
