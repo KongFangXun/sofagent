@@ -77,6 +77,18 @@ import {
 // 均不回引本文件。
 import { createProcessGuard, type ProcessGuard } from './process-guard';
 import { runCrashRecoveryScan } from './crash-recovery';
+// v1.4.3 第一章挂线：GPU 显存队列（并发不 OOM）+ 事件推送 + Dashboard 落盘。
+import {
+  createGpuQueue,
+  estimateTrainVramMiB,
+  type GpuQueue,
+} from './gpu-queue';
+import {
+  extractPayloadFromRecord,
+  pushTrainEvent,
+  type TrainWebhookTarget,
+} from './train-webhook';
+import { flushTrainDashboard } from './dashboard-sink';
 
 // ════════════════════════════════════════
 // 注入点（测试零真实进程 · 心跳可插拔）
@@ -157,6 +169,17 @@ export interface TrainSchedulerOptions {
   envSnapshotProvider?: () => EnvSnapshot | null;
   /** 随机种子（指纹冻结用——缺省从 hyperparams.seed / hyperparams.random_seed 读） */
   randomSeed?: number;
+  // ── v1.4.3 第一章注入点（GPU 队列 / 推送 / Dashboard 落盘）──
+  /** GPU 显存预算队列注入（缺省自动创建——无预算时串行模式） */
+  gpuQueue?: GpuQueue;
+  /** GPU 总预算（MiB——>0 时缺省队列按预算并发模式创建；0/缺省串行） */
+  gpuTotalMiB?: number;
+  /** 训练终态推送目标（webhook 三态 completed/failed/cancelled——不配则不推送） */
+  webhookTarget?: TrainWebhookTarget | null;
+  /** 终态推送注入（测试——缺省真实 pushTrainEvent） */
+  webhookPush?: typeof pushTrainEvent;
+  /** Dashboard 落盘开关（缺省 true——终态事件后刷 train-status/health.json） */
+  dashboardSink?: boolean;
 }
 
 // ════════════════════════════════════════
@@ -291,8 +314,75 @@ export function createTrainScheduler(opts: TrainSchedulerOptions) {
   // 运行期注册表（进程内视角——重启恢复走块九 crash-recovery，不在本块）
   const runs = new Map<string, RunEntry>();
 
+  // v1.4.3 第一章：排队占位句柄的 done 结算器（onRelease 再 launch 后转发终态）
+  const pendingQueuedResolvers = new Map<string, (record: TrainJobRecord) => void>();
+
   // 数据源指纹缓存（jobId → sha256——提交时算一次，后续事件复用不重算大文件）
   const dataSourceHashes = new Map<string, string>();
+
+  // ── v1.4.3 第一章：GPU 显存队列（并发不 OOM）──
+  // 缺省串行模式（无预算信息时一次一个任务——最保守不 OOM）；注入或
+  // gpuTotalMiB>0 时按预算并发。排队获释回调 → 直接 launch（队首依序）。
+  const gpuQueue: GpuQueue =
+    opts.gpuQueue ??
+    createGpuQueue({
+      ...(opts.gpuTotalMiB !== undefined && opts.gpuTotalMiB > 0
+        ? { totalMiB: opts.gpuTotalMiB }
+        : {}),
+    });
+  gpuQueue.onRelease((queuedJobId) => {
+    // 预算获释：排队任务依序启动（排队记录已在 submitTrainJob 落盘 queued 态）
+    const queuedRecord = loadTrainJobRecord(dataDir, enterpriseId, queuedJobId);
+    if (!queuedRecord || isTerminalStatus(queuedRecord.status)) {
+      // 排队期间被取消/已终态——结算占位 done（排队句柄不悬挂）
+      const resolver = pendingQueuedResolvers.get(queuedJobId);
+      if (resolver && queuedRecord) {
+        resolver(queuedRecord);
+        pendingQueuedResolvers.delete(queuedJobId);
+      }
+      runs.delete(queuedJobId);
+      return;
+    }
+    try {
+      // 获释再启动：新句柄接管（排队占位 done 由真实 done 结算——resolve 转发）
+      const relaunched = launch(queuedRecord);
+      const pendingResolver = pendingQueuedResolvers.get(queuedJobId);
+      if (pendingResolver) {
+        pendingQueuedResolvers.delete(queuedJobId);
+        void relaunched.done.then((finalRecord) => pendingResolver(finalRecord));
+      }
+      // 占位 runs 条目替换为真实进程句柄
+      runs.set(queuedJobId, {
+        child: relaunched.child,
+        monitor: createTrainBudgetMonitor({ jobId: queuedJobId, budget: queuedRecord.job.budget }),
+        done: relaunched.done,
+      });
+    } catch {
+      /* 启动失败由 close 钩子收尾为 failed——队列额度由 release 释放 */
+    }
+  });
+
+  // ── v1.4.3 第一章：终态推送（webhook 三态）+ Dashboard 落盘 ──
+  const webhookPush = opts.webhookPush ?? pushTrainEvent;
+  const notifyTerminal = (record: TrainJobRecord): void => {
+    // 三态推送（completed/failed/cancelled——fire-and-forget 不阻断）
+    if (opts.webhookTarget) {
+      const payload = extractPayloadFromRecord(record);
+      if (payload) {
+        void webhookPush(opts.webhookTarget, payload).catch(() => {
+          /* 推送失败静默（fire-and-forget 纪律） */
+        });
+      }
+    }
+    // Dashboard 落盘（train-status.json + train-health.json 原子刷新）
+    if (opts.dashboardSink !== false) {
+      try {
+        flushTrainDashboard(dataDir, { queue: gpuQueue.snapshot() });
+      } catch {
+        /* 落盘失败不阻断训练（Dashboard 数据降级——下次终态再刷） */
+      }
+    }
+  };
 
   // ── 内部：审计写入（每次状态迁移记一条——降级不阻断训练主链路） ──
   const audit = (
@@ -466,6 +556,9 @@ export function createTrainScheduler(opts: TrainSchedulerOptions) {
           audit(next, { fromStatus: record.status, toStatus: 'completed' });
           // 指纹冻结（块五：完成时冻结可复现口径——降级不阻断完成事实）
           freezeFingerprintQuietly(next);
+          // v1.4.3 第一章：GPU 队列放行 + 三态推送 + Dashboard 落盘
+          gpuQueue.release(next.jobId);
+          notifyTerminal(next);
         }
         break;
       }
@@ -478,6 +571,9 @@ export function createTrainScheduler(opts: TrainSchedulerOptions) {
           // 失败回滚（块三：半成品隔离 + 现场封存 + train_job_rollback 审计）
           runFailureRollback(next, event.reason);
           audit(next, { fromStatus: record.status, toStatus: 'failed', reason: event.reason });
+          // v1.4.3 第一章：GPU 队列放行 + 三态推送 + Dashboard 落盘
+          gpuQueue.release(next.jobId);
+          notifyTerminal(next);
         }
         break;
       }
@@ -532,6 +628,52 @@ export function createTrainScheduler(opts: TrainSchedulerOptions) {
     }
   };
 
+  // ── 内部：收割僵尸 GPU 额度（防御纵深不改变正常路径）。
+  //
+  // 僵尸判定（命中即清——「队列有额 + 进程视角已不占用」）：
+  //   ① 记录已终态/不存在（completed/failed/cancelled/interrupted 或被外部
+  //      清理）——真实链路终态事件已 release，此处兜底重复清扫是幂等 no-op
+  //   ② queued 记录却无排队占位（外部直改 state.json 的 queued——不是本
+  //      队列排的队）
+  //   ③ running/checkpointing 记录但 pid 已死（close 事件丢失/进程被外部
+  //      kill -9 的边缘场景。真实链路 close 钩子兜底释放，此处防御
+  //      「事件丢失额度悬挂」堵死后续任务；活进程恒持有额度不受影响）
+  //
+  // pid 存活口径：process.kill(pid, 0) 探测——ESRCH=死，EPERM=活（进程在
+  // 但不可操作）。pid 回收误判风险接受（标准 liveness 口径）。
+  //
+  // ⚠️ 只清账本不触发 pump（silentRelease）——若走带 pump 的 release 会把
+  // 当前正要 acquire 的任务提前拉进 running，随后 acquire 二次入场判定
+  // 失败 → 任务永远排在自己后面（死锁）。 ──
+  const reapStaleGpuEntries = (excludeJobId?: string): void => {
+    // pid 存活探测（局部工具——同函数内三处判定共用）
+    const pidAlive = (pid: number | undefined): boolean => {
+      if (typeof pid !== 'number') return false;
+      try {
+        process.kill(pid, 0);
+        return true;
+      } catch (err) {
+        return (err as NodeJS.ErrnoException).code === 'EPERM';
+      }
+    };
+    for (const entry of gpuQueue.snapshot().running) {
+      if (entry.jobId === excludeJobId) continue; // 自己不算僵尸
+      const rec = loadTrainJobRecord(dataDir, enterpriseId, entry.jobId);
+      if (!rec) {
+        gpuQueue.silentRelease(entry.jobId);
+        continue;
+      }
+      const terminalStale =
+        rec.status !== 'running' && rec.status !== 'queued' && rec.status !== 'checkpointing';
+      const queuedGhost = rec.status === 'queued' && !pendingQueuedResolvers.has(entry.jobId);
+      const processGhost =
+        (rec.status === 'running' || rec.status === 'checkpointing') && !pidAlive(rec.pid);
+      if (terminalStale || queuedGhost || processGhost) {
+        gpuQueue.silentRelease(entry.jobId); // 清账不泵队——当前 launch 立即用额度
+      }
+    }
+  };
+
   // ── 内部：spawn + 事件流消费（约定①②③全链路） ──
   const launch = (record: TrainJobRecord): TrainRunHandle => {
     if (isTerminalStatus(record.status)) {
@@ -539,6 +681,36 @@ export function createTrainScheduler(opts: TrainSchedulerOptions) {
         `[train-scheduler] 拒绝启动终态任务：${record.jobId}（status=${record.status}，续跑请用 resumeTrainJob）`,
       );
     }
+
+    // v1.4.3 第一章：GPU 显存额度申请（预算不可知=串行——同刻一任务）。
+    // 未获准 → 任务保持 queued 态（submit 路径）——onRelease 回调获释后
+    // 再 launch。获准即占用（在跑账本记名——close 钩子释放）。
+    reapStaleGpuEntries(record.jobId);
+    const gpuAdmitted = gpuQueue.acquire(
+      record.jobId,
+      estimateTrainVramMiB(record.job.baseModel, record.job.algorithm, record.job.hyperparams),
+    );
+
+    // v1.4.3 第一章：GPU 额度未获准 → 不 spawn，任务保持 queued 排队。
+    // 句柄的 done 在 onRelease 获释回调重新 launch 后才会真正收尾——此处
+    // 返回「排队占位句柄」（child=null 的哨兵——调用方按 queued 态处理，
+    // 不操作 child）。排队期间取消 → cancelTrainJob 的 dequeue 路径收尾。
+    if (!gpuAdmitted) {
+      const queuedHandle: TrainRunHandle = {
+        jobId: record.jobId,
+        child: null as unknown as ChildProcess,
+        done: new Promise<TrainJobRecord>((resolvePending) => {
+          pendingQueuedResolvers.set(record.jobId, resolvePending);
+        }),
+      };
+      runs.set(record.jobId, {
+        child: queuedHandle.child,
+        monitor: createTrainBudgetMonitor({ jobId: record.jobId, budget: record.job.budget }),
+        done: queuedHandle.done,
+      });
+      return queuedHandle;
+    }
+
     const { jobDir, jobFile } = trainJobFilePaths(dataDir, enterpriseId, record.jobId);
     if (!existsSync(jobDir)) mkdirSync(jobDir, { recursive: true });
 
@@ -603,6 +775,8 @@ export function createTrainScheduler(opts: TrainSchedulerOptions) {
         runs.delete(record.jobId);
         // 块七挂线①：进程退出即注销心跳（防守卫表膨胀 + 防已死 pid 被误回收）
         if (typeof child.pid === 'number') guard.unregisterHeartbeat(child.pid);
+        // v1.4.3 第一章：进程退出即释放 GPU 额度（终态事件已 release 的幂等）
+        gpuQueue.release(record.jobId);
         const fresh = loadTrainJobRecord(dataDir, enterpriseId, record.jobId) ?? latest;
         if (isTerminalStatus(fresh.status)) {
           resolve(fresh); // 事件流已收尾（done/failed/取消）——幂等不重复迁移
@@ -634,6 +808,9 @@ export function createTrainScheduler(opts: TrainSchedulerOptions) {
         runFailureRollback(failed, failReason);
         saveTrainJobRecord(dataDir, failed);
         audit(failed, { fromStatus: fresh.status, toStatus: 'failed', reason: failReason });
+        // v1.4.3 第一章：失败终态推送 + Dashboard 落盘（close 兜底路径——
+        // spawn 崩溃等不经事件流的失败也推）
+        notifyTerminal(failed);
         resolve(failed);
       });
 
@@ -641,6 +818,8 @@ export function createTrainScheduler(opts: TrainSchedulerOptions) {
         runs.delete(record.jobId);
         // 块七挂线①：spawn 失败同样注销心跳（注册先于 error——防表残留）
         if (typeof child.pid === 'number') guard.unregisterHeartbeat(child.pid);
+        // v1.4.3 第一章：spawn 失败同样释放 GPU 额度
+        gpuQueue.release(record.jobId);
         const fresh = loadTrainJobRecord(dataDir, enterpriseId, record.jobId) ?? latest;
         if (isTerminalStatus(fresh.status)) {
           resolve(fresh);
@@ -654,6 +833,7 @@ export function createTrainScheduler(opts: TrainSchedulerOptions) {
         runFailureRollback(failedRecord, failReason);
         saveTrainJobRecord(dataDir, failedRecord);
         audit(failedRecord, { fromStatus: fresh.status, toStatus: 'failed', reason: failReason });
+        notifyTerminal(failedRecord);
         resolve(failedRecord);
       });
     });
@@ -739,6 +919,12 @@ export function createTrainScheduler(opts: TrainSchedulerOptions) {
     // 约定③：SIGINT → checkpoint 优雅退出（超时升级 SIGKILL 兜底）
     const signal = await gracefulStopChild(jobId);
 
+    // v1.4.3 第一章：排队任务取消——撤出 GPU 队列（未启动的排队任务无进程可停）
+    if (record.status === 'queued') {
+      gpuQueue.dequeue(jobId);
+      gpuQueue.release(jobId); // 幂等防御（在跑账本无此任务时 no-op）
+    }
+
     // 状态机收尾（防御 close 钩子竞态——以落盘后的最新状态为准）
     const fresh = loadTrainJobRecord(dataDir, enterpriseId, jobId) ?? record;
     let next: TrainJobRecord;
@@ -762,6 +948,14 @@ export function createTrainScheduler(opts: TrainSchedulerOptions) {
       // 审计：取消（→ cancelled）
       audit(next, { fromStatus: fresh.status, toStatus: 'cancelled', reason: '用户取消' });
     }
+    // v1.4.3 第一章：取消终态推送 + Dashboard 落盘 + 排队占位 done 结算
+    notifyTerminal(next);
+    const queuedResolver = pendingQueuedResolvers.get(jobId);
+    if (queuedResolver) {
+      pendingQueuedResolvers.delete(jobId);
+      queuedResolver(next);
+    }
+    runs.delete(jobId);
     return { jobId, signal, status: next.status, alreadyInTerminalState: false };
   };
 
@@ -858,6 +1052,8 @@ export function createTrainScheduler(opts: TrainSchedulerOptions) {
     resumeTrainJob,
     /** 进程守卫实例（块七——detectStalled/size 诊断出口；注入优先返回注入值） */
     processGuard: guard,
+    /** GPU 显存队列实例（v1.4.3 第一章——snapshot 监控/审计出口） */
+    gpuQueue,
   };
 }
 

@@ -924,6 +924,10 @@
   transitionTrainJob,
   appendTrainEventLine,
   readTrainEvents,
+  // v1.4.3 第一章：受守卫查询（MCP train_status/train_list 消费——企业隔离面）
+  getJobGuarded,
+  readTrainEventsGuarded,
+  listJobsGuarded,
 } from './train/train-job';
 /* @public */ export type {
   TrainJobStatus,
@@ -950,6 +954,47 @@
   ResumeTrainJobResult,
   ResumeTrainJobOutcome,
 } from './train/train-scheduler';
+
+// ============================================================
+// v1.4.3 第一章：训练监控与 GPU 队列（gpu-queue · webhook 推送 · dashboard 落盘）
+// ============================================================
+/* @public */ export {
+  createGpuQueue,
+  estimateTrainVramMiB,
+} from './train/gpu-queue';
+/* @public */ export type {
+  GpuQueueEntry,
+  GpuRunningEntry,
+  GpuQueueSnapshot,
+  GpuSlotRelease,
+  GpuQueueOptions,
+  GpuQueue,
+} from './train/gpu-queue';
+/* @public */ export {
+  buildTrainEventMessage,
+  extractPayloadFromRecord,
+  pushTrainEvent,
+} from './train/train-webhook';
+/* @public */ export type {
+  TrainWebhookPlatform,
+  TrainEventType,
+  TrainWebhookTarget,
+  TrainEventPayload,
+  PushFn,
+} from './train/train-webhook';
+/* @public */ export {
+  trainStatusSinkPath,
+  trainHealthSinkPath,
+  buildTrainStatusBoard,
+  buildTrainHealthReport,
+  flushTrainDashboard,
+} from './train/dashboard-sink';
+/* @public */ export type {
+  TrainStatusEntry,
+  TrainStatusBoard,
+  FailureReasonEntry,
+  TrainHealthReport,
+} from './train/dashboard-sink';
 
 // ============================================================
 // v1.4.1 块七：训练中断回收 + 引擎崩溃恢复（process-guard · crash-recovery）

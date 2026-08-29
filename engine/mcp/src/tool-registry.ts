@@ -21,7 +21,7 @@ export interface ToolDef {
 }
 
 /**
- * 完整工具清单——76 个 tool（v1.4.2：fde_interview/fde_classify/fde_quantify/fde_derive/fde_distill/fde_deploy 六引擎 + train_doctor/train_dryrun/train_report 新增；v1.4.1：train_submit 新增；v1.4.0：cost_query + browser 4 新增；v1.3.9：worklog_query 新增；v1.3.6：workflow_submit/ontology_import/model_register/model_switch/model_unregister/train_budget/define_acceptance/check_acceptance；v1.3.5：run_ab_test/promote_ab/snapshot_list/snapshot_restore；v1.3.4：commons_publish/search/invoke/rate/retire/harvest_rule；不含 4 个 resource shortcut）
+ * 完整工具清单——79 个 tool（v1.4.3：train_status/train_list 新增；v1.4.2：fde_interview/fde_classify/fde_quantify/fde_derive/fde_distill/fde_deploy 六引擎 + train_doctor/train_dryrun/train_report 新增；v1.4.1：train_submit 新增；v1.4.0：cost_query + browser 4 新增；v1.3.9：worklog_query 新增；v1.3.6：workflow_submit/ontology_import/model_register/model_switch/model_unregister/train_budget/define_acceptance/check_acceptance；v1.3.5：run_ab_test/promote_ab/snapshot_list/snapshot_restore；v1.3.4：commons_publish/search/invoke/rate/retire/harvest_rule；不含 4 个 resource shortcut）
  */
 export const TOOLS: ToolDef[] = [
   {
@@ -1004,6 +1004,38 @@ export const TOOLS: ToolDef[] = [
         artifacts: { type: 'array', description: '产物清单（可选——缺省从 job record 推导）', items: { type: 'string' } },
       },
       required: ['train_job_id', 'enterprise_id'],
+    },
+  },
+  {
+    // v1.4.3 (第一章)：训练进度查询——MCP 客户端长任务轮询入口
+    name: 'train_status',
+    roles: ['eval', 'ops'],
+    description: '训练进度查询——status/step/loss/reward 曲线/断点/用量快照（长任务轮询；日志尾部走 events.jsonl 事件流）。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        train_job_id: { type: 'string', description: '🔴 训练任务标识' },
+        enterprise_id: { type: 'string', description: '🔴 企业标识（隔离分区依赖）' },
+        last_n: { type: 'number', description: '曲线窗口（可选——尾部 N 条 progress 事件，缺省全量）' },
+      },
+      required: ['train_job_id', 'enterprise_id'],
+    },
+  },
+  {
+    // v1.4.3 (第一章)：历史任务列表——FDE 交付复盘、多任务管理
+    name: 'train_list',
+    roles: ['eval', 'ops'],
+    description: '训练任务列表——按时间/状态/模型过滤（历史复盘与多任务管理；只列本企业分区任务）。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        enterprise_id: { type: 'string', description: '🔴 企业标识（隔离分区——只列本企业任务）' },
+        status: { type: 'string', enum: ['queued', 'running', 'checkpointing', 'completed', 'failed', 'cancelled', 'interrupted'], description: '状态过滤（可选）' },
+        base_model: { type: 'string', description: '基座模型过滤（可选——子串匹配，如 Qwen3）' },
+        last_days: { type: 'number', description: '时间过滤（可选——最近 N 天）' },
+        limit: { type: 'number', description: '返回上限（可选——缺省 50）' },
+      },
+      required: ['enterprise_id'],
     },
   },
   {
