@@ -6,8 +6,10 @@
 //      （fresh-eyes 的 usage 落盘在 v1.3.7 已实现，本测试防回归：
 //       prompt/completion/total 三字段 + 末尾 _summary 汇总行）
 //   2. B 侧复核模式——两段式执行 + FORGE_B_REVIEW_MODE 注入 + prompt 拼接
-//   3. 16 视角零删减——PERSPECTIVES 数组 12 项 + playbook 标题 16 个
-//      （13-16 视角在 playbook 有定义，driver 侧由草稿工具承接）
+//   3. 19 视角零删减 + 三层分工——PERSPECTIVES 数组 12 项 + playbook 标题 19 个
+//      （13-16 视角在 playbook 有定义，driver 侧由草稿工具承接；
+//       17-19 为 v1.4.4 增设手动层——跨组件契约/构建产物/执行证据，
+//       需跨包追踪或 build/实跑取证，driver 与静态草稿均不覆盖）
 //
 // 用法：npx vitest run FORGE/src/fresh-eyes-cost.test.mjs
 // ============================================================
@@ -150,15 +152,18 @@ describe('B 侧复核模式（v1.3.8 交付八）', () => {
 });
 
 // ═══════════════════════════════════════════════════════════
-//  3. 16 视角零删减 + 草稿工具
+//  3. 19 视角零删减 + 三层分工 + 草稿工具
 // ═══════════════════════════════════════════════════════════
 
-describe('16 视角零删减（v1.3.8 交付八）', () => {
-  it('playbook 视角标题数 = 16（改造前后一致）', () => {
-    // 匹配「视角一 [1]」~「视角十六 [16]」形态的正式视角节标题
+describe('19 视角零删减 + 三层分工（v1.3.8 交付八 · v1.4.4 扩 17-19）', () => {
+  it('playbook 视角标题数 = 19（v1.4.4 增设十七/十八/十九）', () => {
+    // 匹配「视角一 [1]」~「视角十九 [19]」形态的正式视角节标题
     // （排除「文档治理规则（…视角的常驻敏感）」这类非视角小节）
     const perspectiveHeadings = PLAYBOOK_CODE.match(/^### .*视角[一二三四五六七八九十]+ \[\d+\]/gm) || [];
-    expect(perspectiveHeadings.length).toBe(16);
+    expect(perspectiveHeadings.length).toBe(19);
+    // 三层分工完整：17-19 属手动层（跨组件契约/构建产物/执行证据——
+    // 需跨包追踪或 build/实跑取证，driver 12 视角与静态草稿均不覆盖）
+    expect(perspectiveHeadings.filter(h => /\[1[789]\]/.test(h)).length).toBe(3);
   });
 
   it('driver PERSPECTIVES 12 视角完整（1-12 id 连续）', () => {
@@ -168,6 +173,8 @@ describe('16 视角零删减（v1.3.8 交付八）', () => {
 
   it('gen-fresh-eyes-draft.mjs 含 16 视角完整清单', () => {
     // 草稿工具的 16 视角数组（PERSPECTIVES_16）+ 完整性校验
+    // （17-19 不进草稿：构建产物/执行证据需 build 与实跑取证，
+    //  单次静态 LLM 草稿做不到，硬塞只会产出臆测——保持 16）
     expect(DRAFT_TOOL_CODE).toContain('PERSPECTIVES_16');
     // 只匹配数组元素行（行尾逗号）——注释里的示例串（如「p 形如 '1 陌生人'」）不算
     const names = [...DRAFT_TOOL_CODE.matchAll(/'(\d+) ([^']+)',/g)].map(m => m[1]);
