@@ -272,10 +272,13 @@ export function runCliQuick(argv: string[]): number {
     console.log('  npx -y -p @sofagent/audit sofagent-audit HEAD~3..HEAD   审计指定范围（quick 引擎直接跑，规则覆盖面同 quick）');
     console.log('  npx -y -p @sofagent/audit sofagent-audit -v, --version 显示版本号');
     console.log('  npx -y -p @sofagent/audit sofagent-audit -h, --help    显示此帮助\n');
+    console.log('  npx -y -p @sofagent/audit sofagent-audit --stats          审计聚合报告（近 30 天治理 KPI——v1.4.3）');
+    console.log('  npx -y -p @sofagent/audit sofagent-audit --stats --days 7  窗口可调（近 7 天）');
+    console.log('  npx -y -p @sofagent/audit sofagent-audit --stats --json   机器可读 JSON（SIEM/监控消费）\n');
     // v1.3.9 四十四：双模式边界一次性讲清——此前用户敲 --init/--doctor 撞二次安装门槛
     // 却无处查边界，这里显式并列 quick flag 集 vs 完整引擎 flag 集 + 升级命令。
     console.log('双模式边界：');
-    console.log('  quick 模式（本入口，零安装只读审计）仅支持：[diff 范围参数] + -h/--help + -v/--version；');
+    console.log('  quick 模式（本入口，零安装只读审计）仅支持：[diff 范围参数] + -h/--help + -v/--version + --stats/--days/--json；');
     console.log('  完整引擎（--init/--doctor/--diff/--cached/--ruleset/--task/--commit-msg 等）需 --init 装 hook 或全局安装；');
     console.log('  从 quick 升级到完整：npm install -g @sofagent/audit（或 npx -y -p @sofagent/audit sofagent-audit-full）\n');
     console.log('以下 flag 需完整引擎（sofagent-audit-full 或全局安装），quick 模式会自动路由或提示安装：');
@@ -307,10 +310,51 @@ export function runCliQuick(argv: string[]): number {
     return 0;
   }
 
+  // ── v1.4.3 第七章：审计聚合指标（--stats / --days N / --json）──
+  // 只读聚合（history.jsonl 零写入——HMAC 链完整性不受影响）；--json 纯净
+  // 机器可读（零人类可读混行——企业 SIEM/监控平台消费）。
+  if (argv.includes('--stats')) {
+    const daysIdx = argv.indexOf('--days');
+    const days =
+      daysIdx !== -1 && argv[daysIdx + 1] && Number.isFinite(Number(argv[daysIdx + 1]))
+        ? Math.max(1, Math.floor(Number(argv[daysIdx + 1])))
+        : 30;
+    const asJson = argv.includes('--json');
+    const { computeAuditStats, formatStatsReport, formatStatsJson } = require('./stats');
+    const report = computeAuditStats({ days });
+    if (asJson) {
+      console.log(formatStatsJson(report));
+    } else {
+      console.log(formatStatsReport(report));
+    }
+    // 聚合报告落盘 data/dashboard/audit-stats.json（对齐 train-status.json
+    // 落盘模式——2026-08-29 拍板：只落盘，Dashboard 消费移 v1.5.0）
+    try {
+      const { existsSync: fsExists, mkdirSync, writeFileSync } = require('fs');
+      const { join: pathJoin } = require('path');
+      const { statsHistoryFilePath } = require('./stats');
+      const historyFile = statsHistoryFilePath();
+      const dashboardDir = pathJoin(historyFile, '..', '..', 'dashboard');
+      if (fsExists(dashboardDir) || true) {
+        mkdirSync(dashboardDir, { recursive: true });
+        writeFileSync(
+          pathJoin(dashboardDir, 'audit-stats.json'),
+          JSON.stringify(report, null, 2),
+          'utf-8',
+        );
+      }
+    } catch {
+      /* 落盘失败不阻断输出（聚合报告已打印——落盘是观测增强） */
+    }
+    return 0;
+  }
+
   // v1.3.1 #12: 未知 flag 检测——quick 模式支持的参数有限，
   // 不在此列表中的 `-` 开头参数会被静默忽略，用户误以为审计已覆盖。
   const QUICK_KNOWN_FLAGS = new Set([
     '--help', '-h', '--version', '-v',
+    // v1.4.3 第七章：聚合指标参数组（--stats 主入口 + --days/--json 修饰）
+    '--stats', '--days', '--json',
   ]);
   const warnedFlags = new Set<string>();
   for (const arg of argv.slice(2)) {
