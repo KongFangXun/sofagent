@@ -71,7 +71,7 @@ export async function trainDoctorTool(args: TrainDoctorArgs): Promise<TrainDocto
 
     // v1.4.3 第八章：反作弊基线三项体检（git 禁用 / .git 可见性 / 网络白名单）
     // ——数据集挂载点未登记时传 null（.git 可见性项报 fail 并给指引）。
-    const anticheat = orch.checkAnticheatBaseline(dataDir, enterprise_id, datasetMountPath ?? null);
+    const anticheat = orch.checkAnticheatBaseline(dataDir, enterprise_id, dataset_mount_path ?? null);
 
     const okLines: string[] = [];
     const badLines: string[] = [];
