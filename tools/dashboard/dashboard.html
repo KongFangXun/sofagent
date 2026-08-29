@@ -2525,7 +2525,7 @@ function loadGraphView(){
         wfNodes=[{id:'demo:map',label:'梳理',status:'done'},{id:'demo:deploy',label:'部署节点',status:'done'},{id:'demo:audit',label:'审计',status:'active'}];
         wfEdges=[{from:'demo:map',to:'demo:deploy'},{from:'demo:deploy',to:'demo:audit'}];
       }
-      wfBox.innerHTML='<div style="font-size:11px;color:var(--text-t);margin-bottom:8px">workflow 节点图（状态着色：蓝=运行中 绿=完成 红=失败 黄=人工介入）</div>'+renderFlowGraph(wfNodes,wfEdges);
+      wfBox.innerHTML='<div style="font-size:11px;color:var(--text-t);margin-bottom:8px">workflow 节点图（状态着色：蓝=运行中 灰=完成/未知 红=失败 黄=人工介入）</div>'+renderFlowGraph(wfNodes,wfEdges);
 
       // ontology 图谱：优先 knowledge/index.md 解析实体（按域分组连线），降级示例
       var ontNodes=[],ontEdges=[];
