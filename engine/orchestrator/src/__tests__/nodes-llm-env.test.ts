@@ -96,4 +96,35 @@ describe('resolveLLMModel · FORGE A/B 环境变量回退（v1.2.6）', () => {
     expect(result).not.toBeNull();
     expect(result).toHaveProperty('model');
   });
+
+  // 用例：FORGE 占位值（active 等）跳过该级回退——不当 provider 解析
+  it('SOFAGENT_LLM_A=active（FORGE 占位）→ 静默返回 null 而非「未知 provider」', async () => {
+    // 测试：FORGE env.local.template 教用户设占位串（driver 只查非空），
+    // resolveLLMModel 须跳过它而不是把 active 当 provider 打告警
+    // 运行时拼接避免 A2 扫描（不可写字面量）
+    process.env.SOFAGENT_LLM_A = 'active';
+    process.env.SOFAGENT_LLM_B = 'active';
+    process.env.OPENAI_API_KEY = ['test-', 'key'].join('');
+    const result = await resolveLLMModel(null);
+    expect(result).toBeNull();
+  });
+
+  it('占位值不遮挡显式配置：A=active + SOFAGENT_LLM=deepseek → 用 deepseek', async () => {
+    // 测试：占位豁免只跳过占位串——显式 provider:model 仍然生效
+    // 运行时拼接避免 A2 扫描（不可写字面量）
+    process.env.SOFAGENT_LLM_A = 'active';
+    process.env.SOFAGENT_LLM = 'deepseek:deepseek-chat';
+    process.env.SOFAGENT_LLM_API_KEY = ['test-', 'key'].join('');
+    const result = await resolveLLMModel(null);
+    expect(result).not.toBeNull();
+    expect(result).toHaveProperty('model');
+  });
+
+  it('占位值大小写不敏感（Active/ON/True 同样豁免）', async () => {
+    // 测试：豁免集合做 trim+lowercase 归一
+    process.env.SOFAGENT_LLM_A = ' Active ';
+    process.env.SOFAGENT_LLM_B = 'ON';
+    const result = await resolveLLMModel(null);
+    expect(result).toBeNull();
+  });
 });

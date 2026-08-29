@@ -9,8 +9,11 @@
 
 import { execFileSync } from 'child_process';
 import { readFileSync, existsSync } from 'fs';
-import { join } from 'path';
+import { join, dirname } from 'path';
+import { createRequire } from 'module';
 import { load as yamlLoad } from 'js-yaml';
+
+const nodeRequire = createRequire(__filename);
 
 /** A/B 调度配置（task === 'ab-schedule' 时生效 · v1.1.8 新增） */
 export interface ABCronConfig {
@@ -146,9 +149,17 @@ export function startCron(projectDir: string): void {
     setInterval(() => {
       void (async () => {
       try {
-        const auditCli = join(__dirname, '..', 'index.js');
+        // subagent run 命令真身在 @sofagent/orchestrator 的 CLI（dist/cli.js）。
+        // 旧实现 join(__dirname, '..', 'index.js') 指向 daemon 自己的
+        // dist/index.js——该文件无 CLI 入口，execFileSync 静默 exit 0，
+        // 巡检从未真正执行（路径断链）。改经 createRequire 按包名解析，
+        // workspace 提升与 npm 安装两种形态都命中。
+        const orchCli = join(
+          dirname(nodeRequire.resolve('@sofagent/orchestrator/package.json')),
+          'dist', 'cli.js',
+        );
         const args = [
-          auditCli, 'subagent', 'run', agentName,
+          orchCli, 'subagent', 'run', agentName,
           '--mode', mode,
           '--task', job.task,
         ];

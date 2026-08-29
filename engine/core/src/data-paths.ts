@@ -24,6 +24,7 @@
 
 import path from 'path';
 import os from 'os';
+import fs from 'fs';
 
 // v1.2.1 安装路径分离：优先读环境变量，fallback 到 ~/.sofagent
 // v1.3.1 #8: 空串陷阱修复——SOFAGENT_HOME="" 会被 || 视为 falsy 而 fallback，
@@ -122,13 +123,8 @@ export const SOFAGENT_INTERNAL = INTERNAL_DIR;
 export const CHECKPOINT_DIR = path.join(INTERNAL_DIR, 'checkpoint');
 export const SHADOW_GIT_DIR = path.join(INTERNAL_DIR, '.git-shadow');
 // CONFIG_FILE 保留为常量（基于 process.cwd()），向后兼容已有调用方。
-// 但需要 cwd 参数化的场景应使用 getConfigFile(cwd) 函数——避免硬编码 cwd 导致
-// 测试隔离失败（loadConfig(tmpDir) 需要读 tmpDir 下的 config.yml）。
-// TODO(v1.4.0): monorepo 场景下 process.cwd() 可能不是项目根（如 git commit 在子目录执行时），
-// 导致读取错误配置。届时应引入 git 仓库根查找逻辑（findGitRoot），或改为向上遍历查找
-// .sofagent/config.yml 直到找到或到达文件系统根。
-// 当前权宜之计：用户可在 .bashrc 中 cd 到项目根再执行 git commit，或使用
-// `git -C /path/to/repo commit` 确保 process.cwd() 为项目根。
+// 新代码一律用 getConfigFile(cwd)——它已实现向上遍历查找（monorepo 子目录
+// 场景下 git commit 时读对项目 config，原 TODO(v1.4.0) 已收口）。
 export const CONFIG_FILE = path.join(process.cwd(), '.sofagent', 'config.yml');
 
 // ═══════════════════════════════════════════════════════════
@@ -161,10 +157,34 @@ export function resolveHomeDir(overrideHome?: string): string {
 /**
  * 解析项目级 config.yml 路径（参数化版本，测试隔离用）
  * SSOT for config path——config-loader.ts / doctor.ts 均通过此函数获取路径。
- * @param cwd 项目根目录（默认 process.cwd()）
+ *
+ * 向上遍历查找（收口原 TODO(v1.4.0)，过期两版本）：git commit 在子目录执行时
+ * process.cwd() 不是项目根，直接拼 cwd 会读错/漏读配置。查找顺序：
+ *   1. 从 startDir（默认 process.cwd()）向上逐级找 .sofagent/config.yml，
+ *      至 .git 所在目录为止（含）——找到即用（monorepo 子目录场景）
+ *   2. 未找到 → 回退 startDir/.sofagent/config.yml（保持旧行为：
+ *      loadConfig 的 tryLoadYaml miss 后 fallback 到 ~/.sofagent/config.yml）
+ * @param startDir 起始目录（默认 process.cwd()）
  */
-export function getConfigFile(cwd?: string): string {
-  return path.join(cwd || process.cwd(), '.sofagent', 'config.yml');
+export function getConfigFile(startDir?: string): string {
+  const start = startDir || process.cwd();
+  const legacy = path.join(start, '.sofagent', 'config.yml');
+
+  let dir = start;
+  // 越界保护 64 层（防符号链接环）
+  for (let i = 0; i < 64; i++) {
+    if (fs.existsSync(path.join(dir, '.sofagent', 'config.yml'))) {
+      return path.join(dir, '.sofagent', 'config.yml');
+    }
+    if (fs.existsSync(path.join(dir, '.git'))) {
+      // 到 git 根仍未命中 → 不再上溯（出仓库后的 .sofagent 不属于本项目）
+      break;
+    }
+    const parent = path.dirname(dir);
+    if (parent === dir) break; // 文件系统根
+    dir = parent;
+  }
+  return legacy;
 }
 
 /** 解析用户可见数据根目录（测试可传 fake home 隔离） */
