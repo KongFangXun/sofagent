@@ -3,7 +3,7 @@
 // ============================================================
 //
 // FDE 访谈结构化落盘——多轮追加 + nodeId 幂等合并 + profile 自动重算
-// + fde-audit 留痕。附 action=Prompts 返回五要素追问话术（访谈前引导）。
+// + fde-audit 留痕。附 prompts_only 返回六条追问话术（五要素 + 实际流程，访谈前引导）。
 // 委托 @sofagent/orchestrator fde/fde-workbench.recordInterview。
 // ============================================================
 
@@ -48,7 +48,7 @@ export interface FdeInterviewToolResult {
     interviewPath?: string;
     /** profile 摘要 */
     profile?: Record<string, unknown>;
-    /** 追问话术（prompts_only 时返回） */
+    /** 追问话术（prompts_only 时返回——六条：五要素 + 实际流程） */
     prompts?: Array<{ field: string; question: string }>;
   };
 }
