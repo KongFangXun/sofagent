@@ -141,6 +141,7 @@ sofagent 的定位正卡在这个转折点上：审计引擎（治理侧）+ Ont
 | **UI 层审计（多模态截图证据 · 2026-08-20 新增 · v1.5.3 已排期前置评估）** | 审计从代码 diff 扩展到 UI 行为——Agentic Browser（v1.3.9）截图经多模态分析产出 UI 层审计证据（「表单提交是否正确」不再只靠断言），截图作为审计证据入 history；**纯文本模型可用工具层视觉降级消费截图**（OCR+结构化，DSH 社区 dsh-vision 启发）；依赖 v1.3.9 多模态链路跑通 + 审计证据模型扩展，暂占概念位。**候选版本：v2.x（v1.5.3 交付可行性评估报告）**（证据模型扩展是远期） |
 | **进化引擎持续样本验证（产品验证项 · 2026-08-24 登记 · v1.5.1 已排期）** | 「越用越好」宣称当前仅 11 个一次性测试 Case（LIMITATIONS §核心效果实测情况已诚实披露），缺持续 ≥1 周样本与 A/B 对照。补法是跑 Dream Cycle 持续运行采集（eval passRate 曲线 + 知识库增量对照），属产品验证工作非文档修复——样本补上后收紧 README/PHILOSOPHY 措辞。详见 [v1.5.1 日志](./changelog/v1.5/v1.5.1.md) |
 | **trace 对账（跨 harness 证据一致性 · 2026-08-30 登记 · v1.5.0 已排期）** | 观测层红海且第一方 harness 已标配（DSH Trajectory/Langfuse），sofagent 不做观测产品；但「观测的对账层」是结构性空位——Agent 自述 vs git diff vs 模型行为三源对账（「说的和干的差在哪」），只有 sofagent 能做（git-diff 独立事实 + DSH 插件生态 + 训练链 HMAC）。详见 [v1.5.0 第八章](./changelog/v1.5/v1.5.0.md) |
+| **docs 文体归位（三棵树声明式迁移 · Omarchy 启发 · 2026-08-31 登记）** | 文档按受众×文体分三棵树：任务流程（SKILL/、releasing/）/ 参考（ARCHITECTURE、LIMITATIONS 等）/ 用户手册（README、HANDBOOK）——Omarchy 三棵树启发。**不做目录大迁移**（锚点/预算/历史路径破坏大于收益），走声明式：WIKI 分工表已加文体列，新内容按声明落位，旧文档大改时自然毕业。印证见 [VALIDATION · Omarchy](./VALIDATION.md#omarchyskillmd-形态收敛与单一权威源纪律) |
 
 > 📖 DeerFlow / OpenFDE 方法论印证见 [VALIDATION](./VALIDATION.md)。
 
