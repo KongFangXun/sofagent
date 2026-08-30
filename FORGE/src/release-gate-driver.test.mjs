@@ -439,6 +439,36 @@ describe('parseVerdict', () => {
     expect(parse(tmpRoot).verdict).toBe('PASS');
   });
 
+  // ── v1.4.3（run-01 实证）：表格行「终审裁决」形态 → FAIL ──
+  // LLM 把裁决写进表格行 `| **终审裁决** | ❌ **FAIL（阻塞）—— 维持…** |`，
+  // 结论词前夹中文（阻塞），严格正则（中文即中断）抓不到 → driver 记
+  // ERROR 与内容裁决 FAIL 脱钩。「终审裁决」标记单独放宽（允许中文前缀
+  // + \b 断词），「判定/结论」维持严格纪律防引述误抓。
+  it('verdict.md 表格行「终审裁决」（run-01 真实形态回放） → verdict=FAIL', () => {
+    writeFileSync(join(tmpRoot, 'verdict.md'),
+      '# sofagent 发版闸门终审裁决报告 · verdict（角色 V）\n\n| **终审裁决** | ❌ **FAIL（阻塞）—— 维持，本轮放行** |\n\n## 一、终审裁决\n\n**❌ FAIL（阻塞）。** 本轮发版候选**不予放行**。');
+
+    const parse = makeParser(tmpRoot);
+    const result = parse(tmpRoot);
+    expect(result.verdict).toBe('FAIL');
+  });
+
+  it('verdict.md 表格行「终审裁决」PASS 形态 → verdict=PASS', () => {
+    writeFileSync(join(tmpRoot, 'verdict.md'),
+      '# verdict\n\n| **终审裁决** | ✅ **PASS（放行）** |');
+
+    const parse = makeParser(tmpRoot);
+    expect(parse(tmpRoot).verdict).toBe('PASS');
+  });
+
+  it('「判定」标记维持严格纪律：引述句含中文+FAIL 不误抓', () => {
+    writeFileSync(join(tmpRoot, 'verdict.md'),
+      '# 裁决\n\n判定截断段不可见，维持 P1 观察项\n\n## 判定：PASS');
+
+    const parse = makeParser(tmpRoot);
+    expect(parse(tmpRoot).verdict).toBe('PASS');
+  });
+
   // 测试：verdict.md 不存在 → verdict=ERROR
   it('verdict.md 不存在 → verdict=ERROR', () => {
     const parse = makeParser(tmpRoot);
