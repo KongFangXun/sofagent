@@ -525,19 +525,90 @@ export function createForgeDriverBase(config = {}) {
     }
   }
 
-  /** 从 agent 结果中提取文本 */
+  // ─── 报告质量门控（模块级，extractAgentText 与两个 driver 的 stream loop 共用）────
+  //
+  // v1.2.7 run-07：GLM 的中间思考碎片（172 字符"现在让我查看..."）被当报告写入。
+  // 真报告至少含 1 个 ## 标题行 或 ≥ 500 字符。
+  //
+  // v1.4.3：从 fresh-eyes-driver / release-gate-driver 各一份提到此处共用。两份副本
+  //   曾出现阈值漂移（fresh-eyes 500 / release-gate 300）——这两个 driver 分别是审查
+  //   与发版门禁的裁决口，同一份文本在两处得到相反结论，故判定口径必须同源。
+  //   阈值 500 是 run-07 实战定下的（详见 fresh-eyes 侧修复记录），不是随手取值。
+  const REPORT_MIN_CHARS = 500;
+  function isReportText(text) {
+    if (!text || !text.trim()) return false;
+    if (text.length >= REPORT_MIN_CHARS) return true;       // 长度够
+    if (/^#{1,3}\s/m.test(text)) return true;               // 含 ## 标题行
+    return false;
+  }
+
+  /**
+   * 从 DeepAgent invoke 结果中提取文本（兼容多种返回格式）。
+   *
+   * v1.4.3：此前存在三份实现——driver-base 这份是 15 行弱版本（无质量门控），
+   *   两个 driver 各存一份强版本但互不知道对方。弱版本虽当时无人调用，却作为
+   *   driver-base 的导出符号摆在那里，将来任何 driver 图省事一 import，就是把
+   *   run-07 修过的 bug 原样接回来（思考碎片、乃至输入 prompt 全文被当报告写入）。
+   *   现收敛为唯一实现，两个 driver 通过 base.extractAgentText 复用。
+   */
   function extractAgentText(result) {
     if (typeof result === 'string') return result;
-    if (result && typeof result === 'object') {
-      if (typeof result.content === 'string') return result.content;
-      if (Array.isArray(result.messages)) {
-        for (let i = result.messages.length - 1; i >= 0; i--) {
-          const msg = result.messages[i];
-          if ((msg.role === 'assistant' || msg.type === 'ai') && typeof msg.content === 'string') {
-            return msg.content;
-          }
-        }
+    // 直接有 content 字段（非 messages 结构）
+    if (result?.content) {
+      const content = result.content;
+      if (typeof content === 'string') return content;
+      if (Array.isArray(content)) {
+        return content.map(c => typeof c === 'string' ? c : c?.text ?? '').join('');
       }
+      if (content && typeof content === 'object') {
+        if (typeof content.text === 'string') return content.text;
+        if (typeof content.content === 'string') return content.content;
+        return JSON.stringify(content);
+      }
+    }
+    // messages 数组结构（LangGraph stream 返回格式）
+    if (result?.messages) {
+      // 从后往前找最后一条「有报告级 content 的」AI 消息。
+      //
+      // v1.2.7 run-07 修复：原来只要 text.trim() 非空就返回，但 GLM/Qwen 在
+      // 硬熔断前的最后一条 AI message 可能是一句中间思考碎片（如"现在让我
+      // 查看一些特定的代码文件"），172 字符的碎片被当成报告写入了产物文件。
+      //
+      // 报告质量门控：≥500 字符 或 含 ## 标题行（与 stream loop 的 isReportText 一致）。
+      // 如果所有 AI message 都不达标 → 返回空字符串 → 走 generateReportWithoutTools / synthesize 降级。
+      for (let i = result.messages.length - 1; i >= 0; i--) {
+        const msg = result.messages[i];
+        const isAI = msg?._getType?.() === 'ai' || (msg?.tool_calls !== undefined && msg?.content !== undefined);
+        if (!isAI) continue;
+
+        const content = msg?.content;
+        // 提取文本
+        let text = '';
+        if (typeof content === 'string') text = content;
+        else if (Array.isArray(content)) text = content.map(c => typeof c === 'string' ? c : c?.text ?? '').join('');
+        else if (content && typeof content === 'object') {
+          if (typeof content.text === 'string') text = content.text;
+          else if (typeof content.content === 'string') text = content.content;
+          else text = JSON.stringify(content);
+        }
+        // 报告质量门控：非空 + (≥500 字符 或 含 ## 标题行)
+        if (text.trim() && isReportText(text)) return text;
+      }
+      // 🔴 v1.4.3 修复：此处原有一层「从后往前找非 ToolMessage 的消息」的兜底，实测它
+      //    绕过了上面的 isReportText 质量门控，造成两种灾情：
+      //      ① AI 消息是思考碎片（「现在让我查看一些特定的代码文件」，15 字符）→ 第一层
+      //         判不达标，第二层原样捞出写入产物文件——正是 v1.2.7 run-07 要修的那个 bug，
+      //         当年只修了第一层，兜底这一层把碎片又捞了回来；
+      //      ② AI 消息 content 为 undefined（带 tool_calls 的形态）→ 第二层一路往前找到
+      //         HumanMessage，把**输入 prompt 全文**当成 agent 报告写入产物文件。
+      //    根因是判定口径错了：「非 ToolMessage」≠「agent 输出」——HumanMessage 是输入
+      //    不是输出，它和 ToolMessage 一样不该被当成报告。
+      //    删除后由调用方按 hardBreak 走裸 LLM 抢救或碎片合成降级。
+      return '';
+    }
+    // 最终 fallback——避免 String(object) 产出 "[object Object]"
+    if (result && typeof result === 'object') {
+      return JSON.stringify(result);
     }
     return String(result ?? '');
   }
@@ -1006,8 +1077,10 @@ export function createForgeDriverBase(config = {}) {
     // 辅助函数
     extractUsage,
     extractAgentText,
+    isReportText,   // v1.4.3：与 extractAgentText 同源，供两个 driver 的 stream loop 复用
     relativeRunDir,
     // 常量
+    REPORT_MIN_CHARS,   // v1.4.3：与 isReportText 同源导出，避免阈值在调用侧硬编码漂移
     PROMPTS_DIR,
     AGENTS_DIR,
     RUNS_DIR,
