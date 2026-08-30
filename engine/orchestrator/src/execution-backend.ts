@@ -318,6 +318,9 @@ async function tryLoadLangGraphBackend(): Promise<ExecutionBackend | null> {
  * 断言不因 rc/版本字样拦截。DSH 正式版真实发布时零代码变更自动放行——
  * 演练即证明（FORGE release-gate 同步受益：dsh 后端可用性判定同源）。
  *
+ * 检查形态说明：检查一~三为**代码事实断言**（静态核对守卫实现无版本硬编码，
+ * 非运行时探测）；检查四为真实环境探测（读 FORGE_FRESH_EYES_BACKEND）。
+ *
  * @returns 演练结果（passed=true 守卫链对正式版零阻碍）
  */
 export function drillDshStableGuardRelease(): { passed: boolean; checks: Array<{ name: string; pass: boolean; detail: string }> } {

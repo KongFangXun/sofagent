@@ -26,7 +26,7 @@
 #    改动此文件前确认调用方不受影响：
 #    - FDE 通过 `bash install.sh --base-only --platform "$PLATFORM"` 安装底座
 #    - 删被依赖文件（如 SKILL/harness/fde-template.md）前确认无调用方引用
-# v0.98: 从 941 行拆分为 4 个 lib 模块 + 纯组装入口
+# v0.98: 从 941 行拆分为 4 个 lib 模块 + 纯组装入口（历史锚——此后行数随功能演进增长，勿以此行为当前行数口径）
 # v1.0.7: ao 退役，移除 agency-orchestrator 安装逻辑
 # v1.2.0: install.sh 吸收 FDE/fde-install.sh，成为企业设备安装器
 #
@@ -428,12 +428,13 @@ WRAPPER_EOF
     chmod +x "$NPM_GLOBAL_BIN/sofagent-audit" 2>/dev/null || true
     ok "  @sofagent/audit 已从仓库本地安装（$(node -e "console.log(require('./engine/audit/package.json').version)" 2>/dev/null || echo "v${VERSION}")）"
   else
-    info "  执行: npm install -g @sofagent/audit@latest"
-    if npm install -g "@sofagent/audit@latest" 2>&1 | tail -1; then
-      ok "  @sofagent/audit 已全局安装"
+    # @latest → 固定版本（供应链纪律：安装版本与仓库声明一致，不漂移到未审的 registry 最新）
+    info "  执行: npm install -g @sofagent/audit@${VERSION}"
+    if npm install -g "@sofagent/audit@${VERSION}" 2>&1 | tail -1; then
+      ok "  @sofagent/audit 已全局安装（v${VERSION}）"
     else
       warn "  npm install -g @sofagent/audit 失败（网络/权限问题）"
-      warn "  请手动安装: npm install -g @sofagent/audit"
+      warn "  请手动安装: npm install -g @sofagent/audit@${VERSION}"
     fi
   fi
 else

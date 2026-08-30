@@ -4,7 +4,7 @@
   "engines": {
     "node": ">=18"
   },
-  "description": "sofagent 核心运行时 — doctor / 配置解析 / 通用类型（不含审计逻辑）",
+  "description": "sofagent 核心运行时 — doctor / 配置解析 / 数据路径 SSOT / 哈希链原语与审计基础件 / 通用类型",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
