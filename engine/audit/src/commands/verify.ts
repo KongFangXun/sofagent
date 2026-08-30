@@ -46,7 +46,7 @@ export function runVerifyChain(): void {
         console.log('  ❌ HMAC hash chain 断裂——检测到篡改痕迹');
         console.log(`  详情: ${result.detail ?? '未知'}`);
         console.log('\n  可能原因:');
-        console.log('    1. secret key 变更 → sofagent-audit --init --reset-chain');
+        console.log('    1. secret key 变更 → 预期断裂（见 default 分支「不可复验」说明）');
         console.log('    2. 文件损坏 → 检查 ~/.sofagent/data/audit/history.jsonl');
         console.log('    3. 日志被篡改 → 检查文件修改时间');
         process.exit(2);
@@ -62,7 +62,6 @@ export function runVerifyChain(): void {
         console.log(`  详情: ${result.detail ?? ''}`);
         console.log('\n  如确为本人密钥变更，可忽略。');
         console.log('  如非本人操作，请核查 ~/.sofagent-key');
-        console.log('  如需重置: sofagent-audit --init --reset-chain');
         process.exit(1);
         break;
     }

@@ -197,7 +197,7 @@ Agent = **模型 + 上下文 + 工具 + 状态 + 执行控制 + 权限 + 可观�
 | eval | 质量评估引擎：精确匹配 / 语义相似 / 规则合规 三维评分 | ✅ 已实现 |
 | ab-test | A/B 自进化：current vs candidate 并行对比，连续胜出 + 非退化守卫才晋升 | ✅ 已实现 |
 | orchestrator | 编排引擎：DAG 任务拆解 + LangGraph 闭环 + A/B 调度器 + ToolGate 事前拦截 + Ontology 运行时层 + 并行编排（MergeQueue/ParallelScheduler/波次卡关）+ Durable Execution + Onboard L1-L5 + Benchmark 评测 + agent-creation + FDE 梳理辅助 + Session 隔离 + meta-harness 多 harness 编排 + worklog 工作明细数据层 + 训练引擎地基（train-job 编排/审计/隔离/指纹/签名/回收/恢复/安全 + 数据管道/版本/eval 闭环/环境/dry-run/报告）+ FDE 六引擎工作台 | ✅ 已实现（1648 测试） |
-| daemon | 守护进程：cron + fs 监听 + 文件级审计 + USB 烧录 + 联邦查询 + Dream Cycle 6 阶段 + 启动 LOOP 续跑检查 + 审计轨迹聚合巡检 + 训练孤儿巡检 | ✅ 已实现（274 测试） |
+| daemon | 守护进程：cron + fs 监听 + 文件级审计 + USB 烧录 + 联邦查询 + Dream Cycle 6 阶段 + 启动 LOOP 续跑检查 + 审计轨迹聚合巡检 + 训练孤儿巡检 | ✅ 已实现（281 测试） |
 | mcp | MCP Server：JSON-RPC 2.0 over stdio，tools + resources（79 tools——v1.4.2 新增 FDE 六引擎 fde_interview/classify/quantify/derive/distill/deploy，v1.4.3 新增 train_status/train_list/train_diagnose） | ✅ 已实现 |
 | ontology | 领域本体：合并 / 状态 / 视图 / 概念合成，三层 YAML 自动生长 | ✅ 已实现 |
 | skillopt | Skill 优化：复用 audit 规则做安全审查 + 集成优化 + 回填 | ✅ 已实现 |
@@ -417,7 +417,7 @@ Agent 平台（OpenClaw / WorkBuddy 等）通过 Hook 精确注入，其他平�
 | 安全层 | `core/src/crypto/` | AES-256-GCM（IV 12 字节随机不复用 + tag 校验）· ECDH(prime256v1)+HKDF 派生 32 字节 key（只存内存）· 24h 密钥轮换（旧 key 只解不加）· 三条配对路径（6 位码 + y/N / `~/.sofagent/federation.token` 文件（权限 600，带外交换）/ federation.json HMAC .sig 验签） |
 | 传输层 | `daemon/src/federation/channel.ts` | Agent 平台 channel 抽象（依赖倒置，测试内存 channel）；只搬运密文帧（iv‖tag‖ciphertext） |
 | 查询路由 | `daemon/src/federation/query-router.ts` | 并发 fetch + 单 peer 5s 超时按离线 + sensitivity 本地端二次校验（restricted 不接收；篡改标签降权 trust=web + 审计 WARN） |
-| 合并 | `daemon/src/federation/merge.ts` | `automerge@1.0.1-preview.7`（MIT）CRDT 合并（clone-fork 共享版本史收敛）；裁决：trust 优先于 mtime；排序 trust 降 → mtime 降 |
+| 合并 | `daemon/src/federation/merge.ts`（re-export `@sofagent/core` federation） | `@automerge/automerge@^3.4.1`（MIT，Rust WASM 稳定核心，v1.3.5 迁移）CRDT 合并（clone-fork 共享版本史收敛，实现下沉 core/federation.ts）；裁决：trust 优先于 mtime；排序 trust 降 → mtime 降 |
 | 离线降级 | `daemon/src/federation/offline-fallback.ts` | 任一 peer 离线跳过不阻塞；全部离线/整块失败退化纯本地查；审计 `federation_query{peers, merged, onlinePeers}` |
 | 注入点 | `mcp/src/mcp-server.ts` · `harness/src/index.ts` | search_knowledge 异步联邦合并（best-effort）；harness 加载链第 3 层（`<untrusted>` 包裹） |
 

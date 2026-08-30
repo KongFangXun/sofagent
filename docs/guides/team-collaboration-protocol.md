@@ -19,7 +19,7 @@ v1.3.2 交付了单 Agent 全闭环（Onboard L1-L5）+ workflow 批量生成（
 | **不碰权限体系** | 成员能/不能做什么（准入控制、操作授权）归 v1.3.7 场景权限体系。本协议的 trust **只是排序权重，不是权限令牌** | v1.3.7 |
 | **不碰 L3 组织能力市场** | Agent 的发现/交易/上架归 v1.3.4 | v1.3.4 |
 | **不重写联邦加密链路** | 复用 v1.1.8 AES-256-GCM + FederationChannel 抽象 | v1.1.8 |
-| **不重写 CRDT 同步** | 复用 automerge@1.0.1-preview.7（严禁升 2.x） | v1.1.8 |
+| **不重写 CRDT 同步** | 复用 @automerge/automerge@^3.4.1（v1.3.5 迁移，跨 major 升级须先跑 team-state 回归） | v1.1.8 |
 | **不重写循环引擎** | Refine 复用 loop-agent 的 L1/L3/L4/L5，只换 L2 判据 | v1.3.2 |
 | **进化闭环只动经验层** | L1 SKILL.md / 审计规则 / 回溯机制永远不可碰 | 铁律 |
 
@@ -42,11 +42,11 @@ v1.3.2 交付了单 Agent 全闭环（Onboard L1-L5）+ workflow 批量生成（
 
 ### 1.1 设计选择
 
-共享态让团队成员看到统一的工作状态视图。采用 **automerge CRDT**（无冲突复制数据类型），与 v1.1.8 联邦知识合并（`core/src/federation.ts` 的 `mergeFederationResults`）使用同一套 `Automerge.init / change / clone / merge` API。
+共享态让团队成员看到统一的工作状态视图。采用 **automerge CRDT**（无冲突复制数据类型），与 v1.1.8 联邦知识合并（`core/src/federation.ts` 的 `mergeFederationResults`）使用同一套 `init / change / clone / merge` API。
 
 **为什么用 CRDT 而不是锁**：
 - 团队协作场景冲突概率低（各 Agent 通常改不同文件），乐观并发（CRDT 自动合并）比悲观锁性能好
-- automerge 已在 core 包锁定（1.0.1-preview.7），复用零新依赖
+- @automerge/automerge 已在 core 与 orchestrator 两包声明（^3.4.1，v1.3.5 迁移 Rust WASM 稳定核心），复用零新依赖
 - CRDT 天然支持离线编辑 + 重连合并（团队会话中断恢复不丢数据）
 
 **并发写策略**：乐观并发——各 Agent 直接写本地 CRDT 副本，经联邦通道同步后自动合并。文件级写冲突（两个 Agent 改同一文件）走 §3 冲突消解。共享态 key 级冲突由 CRDT 自动 last-writer-wins（基于 Lamport 时钟）。
@@ -54,7 +54,7 @@ v1.3.2 交付了单 Agent 全闭环（Onboard L1-L5）+ workflow 批量生成（
 ### 1.2 TeamState CRDT 文档结构
 
 ```typescript
-import * as Automerge from 'automerge';
+import * as Automerge from '@automerge/automerge';
 
 /** 团队共享态 CRDT 文档 */
 interface TeamStateDoc {
