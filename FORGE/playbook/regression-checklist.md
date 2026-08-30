@@ -296,17 +296,28 @@ grep "A18" engine/audit/src/rules/runner.ts   # extended 优先级 A18 排在 A1
 
 ```bash
 # 子项 a: plist 内容正确（原维度 20）
-grep "sofagent-daemon" ~/Library/LaunchAgents/com.sofagent.daemon.plist   # ProgramArguments
-# WorkingDirectory 指向本仓库（路径无关，任何克隆位置可跑——v1.3.6 B15 修复硬编码路径换机静默失效）
-REPO=$(git rev-parse --show-toplevel)
-grep -F "$REPO" ~/Library/LaunchAgents/com.sofagent.daemon.plist   # WorkingDirectory
+# v1.4.3 修复（run-01 定谳假绿）：plist/daemon.log 缺失时 grep 报错但脚本继续 → exit 由后续命令决定，
+# 无 daemon 环境静默记绿。改显式守卫：缺失即 ⏸️ 跳过标记（对照维度 7 规范），有 daemon 才检查内容。
+PLIST=~/Library/LaunchAgents/com.sofagent.daemon.plist
+if [ -f "$PLIST" ]; then
+  grep "sofagent-daemon" "$PLIST"   # ProgramArguments
+  # WorkingDirectory 指向本仓库（路径无关，任何克隆位置可跑——v1.3.6 B15 修复硬编码路径换机静默失效）
+  REPO=$(git rev-parse --show-toplevel)
+  grep -F "$REPO" "$PLIST"   # WorkingDirectory
+  ! grep -q "不支持的参数.*--daemon" ~/.sofagent/daemon.log 2>/dev/null   # 无废弃参数
+  tail -20 ~/.sofagent/daemon.log | grep "监控目录"   # 监控目录正确
+else
+  echo "⏸️ plist 不存在（本机未装 daemon）——子项 a 跳过，不算失败"
+fi
 test -f .sofagent/watch.yml && grep "paths:" .sofagent/watch.yml   # --init 生成
-! grep -q "不支持的参数.*--daemon" ~/.sofagent/daemon.log   # 无废弃参数
-tail -20 ~/.sofagent/daemon.log | grep "监控目录"   # 监控目录正确
 
 # 子项 b: --init 覆盖防护（原维度 22）——跑完 acceptance-test.sh 后重复检查
-launchctl list | grep sofagent | awk '{print $2}'   # 期望=0（daemon 正常运行）
-# 跑完 acceptance-test.sh 后重复上述 grep，确认 plist 未被污染
+if launchctl list 2>/dev/null | grep -q sofagent; then
+  launchctl list | grep sofagent | awk '{print $2}'   # 期望=0（daemon 正常运行）
+  # 跑完 acceptance-test.sh 后重复上述 grep，确认 plist 未被污染
+else
+  echo "⏸️ daemon 未运行——子项 b 跳过（CI/无 daemon 环境预期态）"
+fi
 ```
 
 #### 21. LOOP 工具注入 + 硬约束
@@ -832,7 +843,9 @@ grep -rn "$(echo SWdub3JlIHByZXZpb3VzIGluc3RydWN0aW9ucw== | base64 -d)" engine/e
 # 3. 占位符替换机制存在
 grep -c 'PLACEHOLDER_MAP\|SK_PREFIX\|INJ_PHRASE' engine/eval/src/eval-runner.ts  # ≥3
 # 4. A2 规则正则边界变体回归（v1.3.9 并入 · 原 #121）——编码/大小写/前缀变体用例防正则漂移
-grep -qE '变体|variant|大小写|case' engine/audit/src/__tests__/a2-secret-leak.test.ts 2>/dev/null && echo "✅ A2 边界变体用例在位" || echo "⚠️ A2 边界变体用例缺失"
+# 路径勘误（run-01 定谳）：原锚 engine/audit/src/__tests__/a2-secret-leak.test.ts 不存在（实际
+# 文件在 rules/ 下与实现同目录）——死路径 grep 静默通过 = 假绿，与本维度 #1 子项勘误同模式。
+grep -qE '变体|variant|大小写|case|FFFD|base64' engine/audit/src/rules/rule-a2.test.ts 2>/dev/null && echo "✅ A2 边界变体用例在位" || echo "⚠️ A2 边界变体用例缺失（engine/audit/src/rules/rule-a2.test.ts）"
 ```
 
 >
@@ -1399,14 +1412,14 @@ grep -q "runCommonsHealth" engine/daemon/src/inspector-layers.ts || echo "⚠️
 
 #### 103. SkillScan 三态链 + 版本守卫——DANGEROUS 拦截 / rc 投产决策落点（v1.3.4 新增 · A 类新功能面 · v1.4.2 校准）
 
-**背景**：v1.3.4 SkillScan 安全门。两个高危点：① 文件不存在时必须判 DANGEROUS 不能默认 SAFE（扫描不到 ≠ 安全）；② DSH 候选包 rc 版本原须拦截——**v1.4.0 拍板「DSH rc 直接投产」后语义反转**：依赖锁 @deepseek-ai/dsh@0.1.1-rc.2 是刻意决策（npm 无正式版，rc 期内嵌路径已验证），守卫从「拦截 rc」改为「锁定已知可用 rc 版本 + 正式版发布后自动升级」。
+**背景**：v1.3.4 SkillScan 安全门。两个高危点：① 文件不存在时必须判 DANGEROUS 不能默认 SAFE（扫描不到 ≠ 安全）；② DSH 候选包 rc 版本原须拦截——**v1.4.0 拍板「DSH rc 直接投产」后语义反转**：依赖锁是刻意决策（npm 无正式版，预发布期内嵌路径已验证），守卫从「拦截预发布」改为「锁定已知可用版本 + 正式版发布后自动升级」。版本口径（run-01 定谳更新）：v1.4.0 拍板 0.1.1-rc.2 → 2026-08-30 升级 0.1.2-alpha.1（源码构建部署链 edc3eea1，获得「子代理可指定模型/推理力度」能力，execution-backend 11/11 验证；退出条件 = 0.1.2 正式版上架 npm）。**升级版本时须同步本 grep 锚与 package.json。**
 
 ```bash
 grep -q "'SAFE' | 'SUSPICIOUS' | 'DANGEROUS'" engine/orchestrator/src/commons/skill-scan.ts || echo "⚠️ 三态枚举缺失"
 grep -q "scanForPublish\|scanForInstall" engine/orchestrator/src/commons/skill-scan.ts || echo "⚠️ 双触发缺失"
 grep -q "existsSync" engine/orchestrator/src/commons/skill-scan.ts || echo "⚠️ 存在性前置校验缺失"
 grep -q "scanSkillSafety" engine/orchestrator/src/commons/skill-scan.ts || echo "⚠️ 未复用 scanSkillSafety"
-grep -q "0\.1\.1-rc\.2" engine/orchestrator/package.json || echo "⚠️ DSH 依赖锁漂移（须为拍板版本 0.1.1-rc.2）"
+grep -q "0\.1\.2-alpha\.1" engine/orchestrator/package.json || echo "⚠️ DSH 依赖锁漂移（须为拍板版本 0.1.2-alpha.1——源码构建升级，退出条件=0.1.2 上架 npm）"
 grep -qE "正式版发布后自动|rc 期\*\*优先内嵌" engine/orchestrator/src/execution-backend.ts || echo "⚠️ rc 投产决策注释缺失（升正式版时须同步更新此处决策记录）"
 ```
 

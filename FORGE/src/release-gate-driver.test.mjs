@@ -850,6 +850,54 @@ describe('buildInputsEvidence（run-19 verdict 零证据根因）', () => {
 });
 
 // ═══════════════════════════════════════════════════════════
+//  7b. precheck 输出智能截断（v1.4.3 run-01 P1-4 修复）
+// ═══════════════════════════════════════════════════════════
+// 背景：raw.slice(0, 400) 在多字节字符中间切开 → U+FFFD 乱码（run-01 维度 101
+// LIMIT_B= 值被切半不可读）；判定行横跨截断点时两段都匹配不上 → 关键证据丢失。
+// 修正 = 码点边界回退 + 关键行（LIMIT_B=/期望=/报告=）从原文整行补尾。
+
+describe('precheck 输出智能截断（run-01 P1-4）', () => {
+  const MAX_DIM_CHARS = 400;
+  // 与 driver 内实现同构（改实现时本组同步改）
+  const smartTruncate = (output, truncatedOutput) => {
+    if (truncatedOutput.length <= MAX_DIM_CHARS) return truncatedOutput;
+    let cut = MAX_DIM_CHARS;
+    while (cut > 0 && (truncatedOutput.codePointAt(cut) & 0xfc00) === 0xdc00) cut--;
+    while (cut > 0 && (truncatedOutput.codePointAt(cut - 1) >= 0xd800 && truncatedOutput.codePointAt(cut - 1) <= 0xdbff)) cut--;
+    const head = truncatedOutput.slice(0, cut);
+    const keyLineRe = /^[^\n]{0,80}(LIMIT_B?=|期望[=：]|报告[=：])[^\n]{0,40}$/gm;
+    const tailKeep = (output.match(keyLineRe) || [])
+      .filter(l => !head.includes(l) && !/^\s*$/.test(l)).slice(0, 5);
+    return head + (tailKeep.length ? '\n' + tailKeep.join('\n') : '') + `\n…[${truncatedOutput.length - cut} 字符截断${tailKeep.length ? '，关键行已保留' : ''}]`;
+  };
+
+  it('多字节字符截断不产 FFFD（run-01 维度 101 乱码回放）', () => {
+    const cjk = '门'.repeat(250) + '关键行';
+    expect(smartTruncate(cjk, cjk)).not.toContain('\u{FFFD}');
+  });
+
+  it('判定行横跨截断点 → 从原文整行补尾（run-01 维度 8「期望=17 报告=17」形态）', () => {
+    const withKey = 'a'.repeat(390) + '\nLIMIT_B=1250\n其余内容' + 'b'.repeat(50);
+    expect(smartTruncate(withKey, withKey)).toContain('LIMIT_B=1250');
+  });
+
+  it('关键行在尾部深处 → 仍保留', () => {
+    const tail = 'x'.repeat(300) + '\nfiller\n'.repeat(30) + '期望=17 报告=17\n' + 'y'.repeat(20);
+    expect(smartTruncate(tail, tail)).toContain('期望=17 报告=17');
+  });
+
+  it('短文本原样返回（不截断）', () => {
+    expect(smartTruncate('short', 'short')).toBe('short');
+  });
+
+  it('纯 ASCII 无关键行 → 截断标记无「关键行已保留」', () => {
+    const r = smartTruncate('z'.repeat(500), 'z'.repeat(500));
+    expect(r).toContain('字符截断');
+    expect(r).not.toContain('关键行已保留');
+  });
+});
+
+// ═══════════════════════════════════════════════════════════
 //  8. 反向防御假红豁免三家族（v1.4.3 run-19/20 全量定谳）
 // ═══════════════════════════════════════════════════════════
 // 背景：反向防御防的是 run-16 形态的假绿（`cmd || echo "❌ ..."` 收尾，❌ 漏
