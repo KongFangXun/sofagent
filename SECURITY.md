@@ -536,13 +536,13 @@ install.sh 拆分为以下模块，便于逐模块审查：
 - 每次 `npm install` 后运行 `npm audit`
 - 内网环境建议预装 @langchain/langgraph 并验证安装通过后再部署
 
-**automerge@1.0.1-preview.7 风险声明**：
+**@automerge/automerge 现状声明（v1.3.5 迁移后实态）**：
 
-`automerge@1.0.1-preview.7` 为 preview 版（非稳定版），API 可能在后续版本变更。截至 v1.2.7 复核，npm 仍无 stable（latest=2.0.0-alpha.3），uuid 弃用警告为已知观感问题；federation 功能不使用时该依赖路径不触达。daemon 精确锁定版本号（`"automerge": "1.0.1-preview.7"`，非 `^` 前缀）避免意外升级。如 automerge 发布 stable 版本或 breaking change，`engine/core/src/federation.ts` 的 `Automerge.change/clone/merge` 调用需重新验证。
+v1.3.5 交付 4b 起，CRDT 依赖已从旧包 `automerge@1.0.1-preview.7`（preview 版，精确锁定防意外升级）整体切换为 **`@automerge/automerge@^3.4.1`**（Rust WASM 稳定核心，core 与 orchestrator 两包声明）。旧包名已废弃不再使用。
 
-**uuid@3.4.0 漏洞可利用性评估（GHSA-w5hq-g745-h8pq · 规划 v1.3.7）**：
-
-automerge preview 版传递依赖 `uuid@3.4.0`（2018 弃用），存在 `uuid()` 默认 RNG 可预测漏洞。评估结论：uuid v3 的漏洞面在 `uuid()` 默认 RNG 可预测——automerge 用它生成文档 ID，非安全凭据，实际可利用性极低。automerge stable 升级路径暂未排期（跟踪于 ROADMAP；或 federation 换用其他 CRDT 如 yjs）。
+- **迁移面**：`engine/core/src/federation.ts`（init/change/clone/merge）与 orchestrator team 三件（team-state / team-manager / protocol）；API 对照见 v1.3.5 开发日志交付 4b 段，回归保险=team-state.regression.test.ts（11 用例）+ 联邦同步测试。
+- **uuid 传递依赖已消解**：旧 preview 包传递依赖 `uuid@3.4.0`（2018 弃用，`uuid()` 默认 RNG 可预测漏洞 GHSA-w5hq-g745-h8pq）——迁移后 lock 中 uuid 已不在依赖树（实测 package-lock 零 uuid 条目），原「可利用性极低」的评估对象已不存在。
+- **升级纪律**：`^3.4.1` 语义化范围内可升，跨 major 须先跑联邦合并与 team-state 回归测试（与 releasing/02-dev「禁止自动升」清单联动）。
 
 ---
 
@@ -650,7 +650,7 @@ grep -i "api_key\|apikey\|sk-" runs/*/usage.jsonl   # 应无结果
 | ASI01 目标劫持 | 注入指令覆盖 Agent 目标（prompt 注入） | A9 不纳注入（正则+leet 归一化）+ AST `asi01-prompt-injection`（system prompt 载体扫描）+ `<untrusted>` 包裹（§三 8 层防护层 1） | A9 不覆盖 Unicode 同形字/Base64 编码注入（§三编码绕过注）；语义级检测未排期 |
 | ASI02 工具滥用 | 越权调用工具、参数投毒 | Sub Agent 工具集零重叠（§三）+ 工具参数后端强制校验（8 层防护层 3，git diff 硬证据）+ A16 非授权文件变更（扩展） | 工具层校验是 commit 时点，非运行时阻断 |
 | ASI03 身份与权限滥用 | Agent 冒用身份、越权访问资源 | A22 不越权限（chmod/sudoers/setuid）+ A23 不逃路径（路径穿越/symlink）+ A14 知识库越权（扩展，事后审计）+ config `--sign-config` 签名防篡改 | A14/A15 是 commit 时审计非运行时阻断（§四）；同机多 Agent 无身份隔离（LIMITATIONS） |
-| ASI04 供应链投毒 | 恶意依赖、typosquatting、postinstall 注入 | A10 不引毒源（黑名单+typosquatting+postinstall）+ AST `asi04-sbom`（lockfile 生成 SBOM 对漏洞库）+ `no-dynamic-require` + install.sh 只 clone 官方仓 | automerge preview 版传递依赖 uuid@3.4.0 已评估可利用性极低（§五） |
+| ASI04 供应链投毒 | 恶意依赖、typosquatting、postinstall 注入 | A10 不引毒源（黑名单+typosquatting+postinstall）+ AST `asi04-sbom`（lockfile 生成 SBOM 对漏洞库）+ `no-dynamic-require` + install.sh 只 clone 官方仓 | 旧 automerge preview 版 uuid 传递依赖风险已随 v1.3.5 迁移 @automerge/automerge@^3.4.1 消解（§五） |
 | ASI05 意外代码执行 | RCE——Agent 执行了非预期代码 | AST `no-eval` + `no-child-process-shell`（动态参数 FAIL）+ A21 不植后门（自启动持久化）+ A5 不瞒真相 + 审计引擎自身 execFileSync 数组传参无 shell | 审计是事后检测，无运行时沙箱拦截 |
 | ASI06 记忆与上下文投毒 | 篡改知识库/审计历史污染后续决策 | HMAC 链（§四：`~/.sofagent-key` 签名 + `--verify-chain`/`--doctor` 校验）+ `--sign-config` + USB federation HMAC 全量签名 + trust 可信分级（web+restricted 丢弃）+ sensitivity 双重过滤 | 无密钥时退化 hash chain 弱校验；同用户进程可读密钥重签（§四 HMAC 威胁模型边界） |
 | ASI07 智能体间通信攻击 | A2A/联邦链路伪造、窃听 | 联邦查询四层防线（§一：localhost 绑定 + channel 路由 + AES-256-GCM 加密 payload + sensitivity 双重过滤）+ 三条配对路径（6 位码+指纹人工确认防 MITM）+ 密钥 24h 轮换 | OpenClaw channel 自身 ws:// 无 TLS——应用层加密是唯一保密防线（§一审计结论）；仅覆盖 sofagent 联邦链路，不覆盖外部 A2A 协议 |
