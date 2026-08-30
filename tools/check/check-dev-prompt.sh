@@ -225,7 +225,7 @@ while IFS='|' read -r tag func c || [ -n "$tag" ]; do
   # 通用方法名（接口方法）：只检查是否在 interface 定义中出现
   case "$func" in
     create|cleanup|diff|init|run|start|stop|close|open)
-      iface=$(grep -rl --include="*.ts" -E "${func}\s*\(\s*\)\s*:" engine/ 2>/dev/null | head -1 || true)
+      iface=$(grep -rl --include="*.ts" -E "${func}[[:space:]]*\([[:space:]]*\)[[:space:]]*:" engine/ 2>/dev/null | head -1 || true)
       if [ -n "$iface" ]; then
         printf '  ✅ %s() (interface method)\n' "$func"
         continue
@@ -234,7 +234,7 @@ while IFS='|' read -r tag func c || [ -n "$tag" ]; do
   esac
 
   hits=$(grep -rl --include="*.ts" --include="*.sh" --include="*.mjs" \
-    -E "(function ${func}\b)|(const ${func}\s*=)|(${func}\s*\(\s*\)\s*\{)|(${func}\s*\(\s*\)\s*:.*\{)" \
+    -E "(function ${func}[[:<:]])|(const ${func}[[:space:]]*=)|(${func}[[:space:]]*\([[:space:]]*\)[[:space:]]*\{)|(${func}[[:space:]]*\([[:space:]]*\)[[:space:]]*:.*\{)" \
     engine/ tools/ FORGE/src/ 2>/dev/null | head -1 || true)
 
   if [ -n "$hits" ]; then
