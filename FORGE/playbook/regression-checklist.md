@@ -1051,7 +1051,11 @@ node -e "const fs=require('fs'),raw=fs.readFileSync('FORGE/src/fresh-eyes-driver
 # 确认 forge-smoke-test.sh 存在且集成到 pre-push
 test -f tools/forge/forge-smoke-test.sh && echo "✅ smoke test 存在" || echo "❌ 缺失"
 grep -q "forge-smoke-test" tools/release/pre-push-check.sh && echo "✅ 已集成" || echo "❌ 未集成"
-bash tools/forge/forge-smoke-test.sh 2>&1 | tail -3
+# 烟测实跑——🔴 禁止管道后取退出码（管道让 $? 变 tail 的 0，失败被吞=假绿）。
+# 输出重文件再看，退出码用裸命令取（run-01 v1.4.3 教训：`| tail -3` 吞掉 exit 1）。
+bash tools/forge/forge-smoke-test.sh > /tmp/forge-smoke.out 2>&1
+SMOKE_RC=$?
+[ "$SMOKE_RC" -eq 0 ] && echo "✅ 烟测全绿" || { echo "❌ 烟测失败（exit=$SMOKE_RC）："; tail -5 /tmp/forge-smoke.out; }
 # ESM named export 检查（被 import 引用的符号须有 export 声明）
 node -e "const fs=require('fs');const files=fs.readdirSync('FORGE/src').filter(f=>f.endsWith('.mjs'));let issues=[];for(const f of files){const s=fs.readFileSync('FORGE/src/'+f,'utf8');const exp=new Set([...s.matchAll(/export\s+(?:const|function|class)\s+(\w+)/g)].map(m=>m[1]));for(const f2 of files){if(f2===f)continue;const s2=fs.readFileSync('FORGE/src/'+f2,'utf8');const imp=[...s2.matchAll(/import\s*\{([^}]+)\}\s*from\s*['\"]\.\/([\w.-]+)['\"]/g)];for(const i of imp){if(i[2].replace('.mjs','')===f.replace('.m','')){for(const n of i[1].split(',').map(x=>x.trim().split(/\s+as\s+/)[0])){if(n&&!exp.has(n)&&n!=='default')issues.push(f2+' imports {'+n+'} from '+f);}}}}}console.log(issues.length?'ISSUE: '+issues.join('; '):'OK')" 2>/dev/null
 ```
@@ -1476,8 +1480,8 @@ node -e "const fs=require('fs'),p=require('path');let bad=0;for(const f of fs.re
 **背景**：v1.3.5 七大块交付的审查面。acceptance S270-S276 做执行级验证，本维度做静态一致性——两者成对构成新功能的完整回归网。
 
 ```bash
-# ① MCP tools 三处口径（SKILL.md / ARCHITECTURE 能力表 / dist 实测）——v1.4.1 口径 67，勿写死
-grep -q "67 tools" SKILL/SKILL.md || echo "⚠️ SKILL 工具速查漂移（v1.4.1 口径 67）"   # v1.3.6：52→60；v1.3.9：60→61；v1.4.0：61→66；v1.4.1：66→67（train_submit）勿写死，改版时随 SSOT
+# ① MCP tools 三处口径（SKILL.md / ARCHITECTURE 能力表 / dist 实测）——v1.4.2 口径 79，勿写死
+grep -q "79 tools" SKILL/SKILL.md || echo "⚠️ SKILL 工具速查漂移（v1.4.2 口径 79）"   # v1.3.6：52→60；v1.3.9：60→61；v1.4.0：61→66；v1.4.1：66→67（train_submit）；v1.4.2：67→79 勿写死，改版时随 SSOT
 node -e "const m=require('./engine/mcp/dist/tool-registry.js');const doc=require('./package.json').version;console.log('✅ TOOLS='+m.TOOLS.length+'（registry 实数，勿写死——发版后人工对 SSOT 口径）')"   # v1.3.6：写死 52 必漂，改打印实数
 # ② snapshot tool 零 daemon 静态依赖（optionalDependencies 场景会炸）——排除注释行（🔴 import 铁律注释含 @sofagent/daemon）
 # v1.4.0 修复（run-22 P1-3c 误报）：多文件 grep 带文件前缀致 ^[[:space:]]*// 排除失效 → 用 -h 去前缀。
