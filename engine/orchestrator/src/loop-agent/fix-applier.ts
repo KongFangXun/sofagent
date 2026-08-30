@@ -16,6 +16,7 @@ import type { ModelMessage } from '@sofagent/core';
 import type { LocalizationResult } from './error-localizer';
 import type { DiffReport } from './diff-report';
 import { summarizeDiff } from './diff-report';
+import { resolveWithinRoot, PATH_ANCHOR_REASON_TEXT } from '../path-guard';
 
 /** FixProposal 格式（严格按 dev-prompt interface） */
 export interface FixProposal {
@@ -76,6 +77,56 @@ export interface FileOpsDeps {
   applyChange?: (target: string, operation: 'replace' | 'append' | 'delete', content: string) => Promise<void>;
   /** 回滚（git checkout 指定文件） */
   rollback?: (files: string[]) => Promise<void>;
+  /**
+   * 允许写入的根目录（默认 process.cwd()）。
+   *
+   * LLM 产出的 `target` 一律按此根目录锚定——绝对路径、`../` 逃逸、
+   * 控制字符与 shell 元字符在写盘前即被拒绝。
+   */
+  rootDir?: string;
+}
+
+/**
+ * 把 target 渲染进 violations 的安全形态——限长 + 控制字符转义。
+ *
+ * target 来自 LLM，可能含换行/控制字符；直接拼进 violations 会污染日志
+ * 与审计报告（伪造日志行是最常见的日志注入手法）。
+ */
+function describeTarget(t: unknown): string {
+  const raw = typeof t === 'string' ? t : String(t);
+  const escaped = raw
+    .replace(/\\/g, '\\\\')
+    .replace(/\n/g, '\\n')
+    .replace(/\r/g, '\\r')
+    .replace(/\t/g, '\\t');
+  // eslint-disable-next-line no-control-regex
+  const cleaned = escaped.replace(/[\x00-\x1f\x7f]/g, (c) => `\\x${c.charCodeAt(0).toString(16).padStart(2, '0')}`);
+  return cleaned.length > 80 ? `${cleaned.slice(0, 80)}…` : cleaned;
+}
+
+/**
+ * 应用前整体预校验——全部 target 合法才允许动手。
+ *
+ * 为什么不在循环里边写边校验：逐条应用时若第 3 条非法，前 2 条已经落盘，
+ * 只能靠 git checkout 回滚（Agent 目录未必在 git 管理中，回滚可能静默失败
+ * → 留下脏文件）。预校验让「非法批次」零副作用地拒绝掉。
+ *
+ * @returns 违规描述数组（空数组表示全部合法）
+ */
+function validateFixTargets(
+  changes: FixProposal['changes'],
+  rootDir: string,
+): string[] {
+  const violations: string[] = [];
+  for (const change of changes) {
+    const anchored = resolveWithinRoot(rootDir, change.target);
+    if (!anchored.ok) {
+      violations.push(
+        `L4 修复目标路径非法（${PATH_ANCHOR_REASON_TEXT[anchored.reason]}）：${describeTarget(change.target)}`,
+      );
+    }
+  }
+  return violations;
 }
 
 /**
@@ -98,21 +149,34 @@ export async function applyFix(
   // 1. LLM 生成 FixProposal（或降级到规则生成）
   const proposal = await generateFixProposal(localization, diffReport, llmDeps);
 
-  // 2. 应用 changes（写文件）
+  const rootDir = fileOpsDeps?.rootDir ?? process.cwd();
+
+  // 2. 应用前预校验：target 全来自 LLM，非法批次零副作用拒绝（不写任何文件）
+  const targetViolations = validateFixTargets(proposal.changes, rootDir);
+  if (targetViolations.length > 0) {
+    return {
+      proposal: { ...proposal, auditResult: { passed: false, violations: targetViolations } },
+      applied: false,
+      violations: targetViolations,
+      rollbackInfo: { method: 'git-checkout', files: [] },
+    };
+  }
+
+  // 3. 应用 changes（写文件）
   const changedFiles: string[] = [];
   try {
     for (const change of proposal.changes) {
       if (fileOpsDeps?.applyChange) {
         await fileOpsDeps.applyChange(change.target, change.operation, change.content);
       } else {
-        await defaultApplyChange(change.target, change.operation, change.content);
+        await defaultApplyChange(change.target, change.operation, change.content, rootDir);
       }
       changedFiles.push(change.target);
     }
   } catch (err) {
     // 应用失败 → 回滚已应用的 + 返回 FAIL
     if (changedFiles.length > 0) {
-      await rollbackFiles(changedFiles, fileOpsDeps);
+      await rollbackFiles(changedFiles, rootDir, fileOpsDeps);
     }
     return {
       proposal: { ...proposal, auditResult: { passed: false, violations: [`文件应用失败：${err instanceof Error ? err.message : String(err)}`] } },
@@ -122,8 +186,8 @@ export async function applyFix(
     };
   }
 
-  // 3. 审计卡关（调 @sofagent/audit runRules）
-  const auditResult = await runAuditGate(changedFiles, auditDeps);
+  // 4. 审计卡关（调 @sofagent/audit runRules）
+  const auditResult = await runAuditGate(changedFiles, rootDir, auditDeps);
   proposal.auditResult = auditResult;
 
   if (auditResult.passed) {
@@ -131,8 +195,8 @@ export async function applyFix(
     return { proposal, applied: true, violations: [] };
   }
 
-  // 4. FAIL → 回滚 + 留痕
-  await rollbackFiles(changedFiles, fileOpsDeps);
+  // 5. FAIL → 回滚 + 留痕
+  await rollbackFiles(changedFiles, rootDir, fileOpsDeps);
   return {
     proposal,
     applied: false,
@@ -298,31 +362,56 @@ function heuristicFixProposal(
   };
 }
 
-/** 默认文件应用（writeFileSync / appendFileSync） */
+/**
+ * 默认文件应用（writeFileSync / appendFileSync）。
+ *
+ * 写盘前用 resolveWithinRoot 把 target 锚定到 rootDir 内——applyFix 入口已
+ * 预校验过一遍，此处再校验一次是纵深防御：本函数也直接被单测与未来调用方
+ * 使用，不能依赖「调用方一定先校验」。
+ */
 async function defaultApplyChange(
   target: string,
   operation: 'replace' | 'append' | 'delete',
   content: string,
+  rootDir: string,
 ): Promise<void> {
+  const anchored = resolveWithinRoot(rootDir, target);
+  if (!anchored.ok) {
+    throw new Error(
+      `L4 修复目标路径非法（${PATH_ANCHOR_REASON_TEXT[anchored.reason]}）：${describeTarget(target)}`,
+    );
+  }
   const { writeFileSync, appendFileSync, existsSync } = await import('fs');
+  const absPath = anchored.absPath;
   if (operation === 'replace') {
-    writeFileSync(target, content, 'utf-8');
+    writeFileSync(absPath, content, 'utf-8');
   } else if (operation === 'append') {
-    appendFileSync(target, content, 'utf-8');
+    appendFileSync(absPath, content, 'utf-8');
   } else if (operation === 'delete') {
     // delete = 写空（不真正删文件，保留审计可追溯）
-    if (existsSync(target)) {
-      writeFileSync(target, '', 'utf-8');
+    if (existsSync(absPath)) {
+      writeFileSync(absPath, '', 'utf-8');
     }
   }
 }
 
-/** 默认回滚（git checkout 指定文件——Agent 目录是 git 管理的） */
-async function defaultRollback(files: string[]): Promise<void> {
-  const { execSync } = await import('child_process');
+/**
+ * 默认回滚（git checkout 指定文件——Agent 目录是 git 管理的）。
+ *
+ * execFileSync + 参数数组：文件名不经 shell 解析，`$(...)` / 反引号 /
+ * 分号都只是普通字符，无法拼出新命令。此前用
+ * `execSync('git checkout -- "${file}"')` 拼接——双引号在 /bin/sh 里拦不住
+ * 命令替换，实测 `x$(touch PWNED_MARK).md` 会执行 touch。
+ */
+async function defaultRollback(files: string[], rootDir: string): Promise<void> {
+  const { execFileSync } = await import('child_process');
   for (const file of files) {
+    // 同样先锚定——回滚列表来自 changedFiles，虽然入口已校验，但注入式
+    // rollback 的调用方可能传入任意值
+    const anchored = resolveWithinRoot(rootDir, file);
+    if (!anchored.ok) continue;
     try {
-      execSync(`git checkout -- "${file}"`, { stdio: 'pipe' });
+      execFileSync('git', ['checkout', '--', file], { cwd: rootDir, stdio: 'pipe' });
     } catch {
       // git checkout 失败静默（文件可能不在 git 管理中）
     }
@@ -330,17 +419,18 @@ async function defaultRollback(files: string[]): Promise<void> {
 }
 
 /** 回滚文件（注入或默认） */
-async function rollbackFiles(files: string[], fileOpsDeps?: FileOpsDeps): Promise<void> {
+async function rollbackFiles(files: string[], rootDir: string, fileOpsDeps?: FileOpsDeps): Promise<void> {
   if (fileOpsDeps?.rollback) {
     await fileOpsDeps.rollback(files);
   } else {
-    await defaultRollback(files);
+    await defaultRollback(files, rootDir);
   }
 }
 
 /** 审计卡关（调 @sofagent/audit runRules 跑 24 条规则） */
 async function runAuditGate(
   files: string[],
+  rootDir: string,
   auditDeps?: AuditGateDeps,
 ): Promise<{ passed: boolean; violations: string[] }> {
   if (auditDeps?.runAudit) {
@@ -356,7 +446,7 @@ async function runAuditGate(
     let diffOutput = '';
     try {
       diffOutput = execSync('git diff --no-color', {
-        cwd: process.cwd(),
+        cwd: rootDir,
         encoding: 'utf-8',
         stdio: ['pipe', 'pipe', 'pipe'],
       });

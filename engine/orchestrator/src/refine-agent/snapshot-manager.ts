@@ -20,8 +20,9 @@
 
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'fs';
 import { join, dirname } from 'path';
-import { execSync } from 'child_process';
+import { execSync, execFileSync } from 'child_process';
 import { atomicWriteSync } from '@sofagent/core';
+import { isPathWithinRoot } from '../path-guard';
 
 /** Agent 版本信息 */
 export interface AgentVersion {
@@ -111,10 +112,27 @@ export function writeAgentVersion(agentDir: string, version: AgentVersion): void
  * @param files 要快照的文件列表（经验层文件）
  * @returns stash SHA（用于 rollback）或 null
  */
+/** git SHA 形态（40 位 hex）——snapshot SHA 只接受这个形态，防参数注入 */
+function isGitSha(v: unknown): v is string {
+  return typeof v === 'string' && /^[0-9a-f]{40}$/i.test(v);
+}
+
+/**
+ * 过滤出可安全交给 git 的文件列表——只保留解析后仍在 agentDir 内的。
+ *
+ * files 通常由调用方 `join(agentDir, 'think.md')` 拼接（可信），但
+ * `snapshotFn` / `rollbackFn` 是可注入依赖，外部实现可传入任意值——
+ * 锚定是这一层的最后一道闸。
+ */
+function safeFiles(files: string[], agentDir: string): string[] {
+  if (!Array.isArray(files)) return [];
+  return files.filter((f) => isPathWithinRoot(f, agentDir));
+}
+
 export function takeSnapshot(agentDir: string, files: string[]): string | null {
   try {
     // 确保 git 可用
-    execSync('git rev-parse --git-dir', { cwd: agentDir, stdio: 'pipe' });
+    execFileSync('git', ['rev-parse', '--git-dir'], { cwd: agentDir, stdio: 'pipe' });
   } catch {
     return null; // 非 git 仓库 → 降级（不做快照）
   }
@@ -129,7 +147,10 @@ export function takeSnapshot(agentDir: string, files: string[]): string | null {
 
     if (stashSha) {
       // store 快照（使其可用）
-      execSync(`git stash store -m "sofagent-snapshot-${Date.now()}" ${stashSha}`, {
+      // SHA 先过形态校验：它会被当作 git 的位置参数，非 hex 形态的值
+      // （如以 `-` 开头）会被 git 解析成选项
+      if (!isGitSha(stashSha)) return null;
+      execFileSync('git', ['stash', 'store', '-m', `sofagent-snapshot-${Date.now()}`, stashSha], {
         cwd: agentDir,
         stdio: 'pipe',
       });
@@ -137,9 +158,11 @@ export function takeSnapshot(agentDir: string, files: string[]): string | null {
     }
 
     // stash create 返回空（无变更）→ 手动 commit 当前状态
-    for (const file of files) {
+    // 参数数组 + `--` 分隔符：文件名不经 shell，`$(...)` 与反引号只是普通字符；
+    // `--` 拦住以 `-` 开头的文件名被 git 当成选项
+    for (const file of safeFiles(files, agentDir)) {
       try {
-        execSync(`git add "${file}"`, { cwd: agentDir, stdio: 'pipe' });
+        execFileSync('git', ['add', '--', file], { cwd: agentDir, stdio: 'pipe' });
       } catch {
         // 文件不存在跳过
       }
@@ -177,18 +200,18 @@ export function rollbackToSnapshot(
   stashSha: string | null,
 ): void {
   try {
-    if (stashSha) {
+    if (stashSha && isGitSha(stashSha)) {
       // 从 stash 恢复指定文件
-      for (const file of files) {
+      for (const file of safeFiles(files, agentDir)) {
         try {
-          execSync(`git checkout ${stashSha} -- "${file}"`, {
+          execFileSync('git', ['checkout', stashSha, '--', file], {
             cwd: agentDir,
             stdio: 'pipe',
           });
         } catch {
           // 文件不在快照中 → 尝试 HEAD 恢复
           try {
-            execSync(`git checkout HEAD -- "${file}"`, {
+            execFileSync('git', ['checkout', 'HEAD', '--', file], {
               cwd: agentDir,
               stdio: 'pipe',
             });
@@ -198,10 +221,10 @@ export function rollbackToSnapshot(
         }
       }
     } else {
-      // 无快照 → 恢复到 HEAD
-      for (const file of files) {
+      // 无快照（或 SHA 形态非法 → 按无快照处理）→ 恢复到 HEAD
+      for (const file of safeFiles(files, agentDir)) {
         try {
-          execSync(`git checkout -- "${file}"`, {
+          execFileSync('git', ['checkout', '--', file], {
             cwd: agentDir,
             stdio: 'pipe',
           });
