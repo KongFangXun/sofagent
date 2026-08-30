@@ -44,7 +44,7 @@ task/logs 和 think.md 以明文 Markdown 存储，可能含代码片段和对�
 |------|:--:|------|
 | 数据存储位置 | ✅ 本地 | 不上云，不调外部 API（离线模式） |
 | 数据脱敏 | ✅ | A2/A9 命中行脱敏后存储 |
-| 数据加密 | ⚠️ 双态 | 审计历史 v1.3.8 起支持 AES-256-GCM 密文落盘（~/.sofagent/keys/ 有密钥即激活）；task/logs、think.md、knowledge/ 仍明文——强合规场景配 OS 级全盘加密，边界见 LIMITATIONS |
+| 数据加密 | ❌ 当前明文 | 加密能力已实现（AES-256-GCM + SOFAGENT-AGE-V1）但**接线未启用**（规划 v1.4.7，尚未实现）——审计历史主链与 task/logs、think.md、knowledge/ 当前均为**明文**（脱敏管道仍生效）。强合规场景（GDPR/等保/SOC2）请按「明文存储」评估风险并配 OS 级全盘加密，边界见 LIMITATIONS #4 |
 | 权限控制 | ✅ 700 | install.sh 自动设置 |
 | 数据保留策略 | ✅ 已完成 | cleanup.sh 自动清理，支持 --purge --before |
 | 审计日志 | ✅ 已完成 | task-record.sh 独立审计日志 + task/logs 追溯双通道 |
@@ -175,8 +175,9 @@ sofagent-audit --init    # 数据写入 /data/sofagent-hr/data/
 # 将各机器的 ~/.sofagent/data/ 通过 NFS/共享存储挂载到 dashboard 所在机器
 #
 # ⚠️ 安全警告：NFS/共享存储挂载明文审计目录与"数据不出本机"的数据主权立场存在矛盾。
-#    history.jsonl 无激活密钥时为明文 JSONL（含文件路径、代码片段摘要）；密钥激活后为
-#    SOFAGENT-AGE-V1 密文（v1.3.8 静态加密）。明文态下 NFS 挂载使同 NFS 卷的其他
+#    history.jsonl 当前为明文 JSONL（含文件路径、代码片段摘要）——静态加密接线
+#    规划 v1.4.7 尚未实现，接线前无密钥激活路径（见上方合规清单「数据加密」行）。
+#    明文态下 NFS 挂载使同 NFS 卷的其他
 #    主机可能读取。如需此方案，务必：
 #    ① NFS export 限制为 dashboard 机器 IP（ro 只读挂载）
 #    ② NFS export 使用 sec=sys + root_squash，防止非授权 UID 读取
