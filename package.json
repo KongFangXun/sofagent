@@ -43,7 +43,9 @@
   "dependencies": {
     "@sofagent/rules": "1.4.2"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "undici": "^8.10.0"
+  },
   "overrides": {
     "@deepseek-ai/dsh-sdk-minimal": "/Users/kongfangxun/.local/share/dsh-deployed/node_modules/@deepseek-ai/dsh-sdk-minimal",
     "@deepseek-ai/dsh-tool-jobs": "/Users/kongfangxun/.local/share/dsh-deployed/node_modules/@deepseek-ai/dsh-tool-jobs",
