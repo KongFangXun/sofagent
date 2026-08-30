@@ -575,21 +575,29 @@ fi
 echo ""
 echo "=== 13. 接线存在性断言（v1.4.3 任务十一 · 声称「已交付」的能力必须有生产调用点）==="
 # 门禁目的：门禁能测「数字对不对」，测不到「声称的事做没做」——本节补这个盲区。
-# 规则：凡 SECURITY.md 出现「已交付/交付」级能力声称（按 claims 列表逐项），
+# 规则：凡被查文档出现「已交付/核心能力」级能力声称（按 claims 列表逐项），
 #       对应入口函数必须在 engine/ 生产代码（排除定义/测试/dist/类型声明）中 ≥1 处调用，
 #       否则 fail（防「文档虚报已交付、代码零接线」——v1.4.3 P0 加密接线断链同源防御）。
-# 可扩展结构：新检查项只需往 WIRING_CLAIMS 追加一行「文档声称正则|入口函数名|说明」。
+# 可扩展结构：新检查项只需往 WIRING_CLAIMS 追加一行
+#   「文档路径|文档声称字面量|入口函数名|说明」
+#   ——文档路径按条指定：声称散落在不同文档（SECURITY.md / 双语 README）时各查各的，
+#     避免「只查一个文件」形成新盲区（AgentShield 声称在 README 却只查 SECURITY.md 的前车之鉴）。
 #   2026-08-29 首条：静态加密——SECURITY.md 若声称「已交付」，initDataEncryption
 #   必须有生产调用（当前降级为「接线未启用」态，声称侧不命中即天然通过；
 #   未来 v1.4.7 真接线后若把声称改回「已交付」，本断言自动生效防再虚报）。
+#   2026-08-30 次条：AgentShield——双语 README 都当核心能力宣传，createAgentShield 必须有生产调用
+#   （v1.3.7 实现 + 有测试但长期零调用点，同批已补 agent-shield CLI 子命令接线）。
 WIRING_FAIL=0
 WIRING_CLAIMS=(
-  "静态加密（v1.3.8 交付）|initDataEncryption|静态加密（SECURITY.md:50 声称族）"
+  "SECURITY.md|静态加密（v1.3.8 交付）|initDataEncryption|静态加密（SECURITY.md:50 声称族）"
+  "README.md|AgentShield 五类配置面静态扫描|createAgentShield|AgentShield（README 核心能力声称）"
+  "README.en.md|AgentShield five-face static config scanning|createAgentShield|AgentShield（README.en 核心能力声称）"
 )
 for claim in "${WIRING_CLAIMS[@]}"; do
-  claim_re="${claim%%|*}"; rest="${claim#*|}"
-  entry_fn="${rest%%|*}"; claim_desc="${rest#*|}"
-  if grep -qF "$claim_re" SECURITY.md 2>/dev/null; then
+  claim_file="${claim%%|*}"; rest1="${claim#*|}"
+  claim_re="${rest1%%|*}"; rest2="${rest1#*|}"
+  entry_fn="${rest2%%|*}"; claim_desc="${rest2#*|}"
+  if grep -qF "$claim_re" "$claim_file" 2>/dev/null; then
     # 声称命中 → 断言入口函数在 engine/ 生产代码（排除定义行/测试/dist/.d.ts）至少 1 处调用
     call_count=$(grep -rn "$entry_fn(" engine/ --include="*.ts" --include="*.mjs" 2>/dev/null \
       | grep -v "/node_modules/" | grep -v "/dist/" | grep -v "\.test\." | grep -v "\.d\.ts" \
@@ -597,13 +605,13 @@ for claim in "${WIRING_CLAIMS[@]}"; do
       | grep -cv "function $entry_fn(" || true)
     call_count=${call_count:-0}
     if [ "$call_count" -eq 0 ] 2>/dev/null; then
-      echo "  ❌ [${claim_desc}] SECURITY.md 命中「${claim_re}」但 ${entry_fn}() 在 engine/ 生产代码零调用——声称与接线断链"
+      echo "  ❌ [${claim_desc}] ${claim_file} 命中「${claim_re}」但 ${entry_fn}() 在 engine/ 生产代码零调用——声称与接线断链"
       WIRING_FAIL=$((WIRING_FAIL + 1))
     else
       echo "  ✓ [${claim_desc}] ${entry_fn}() 生产调用 ${call_count} 处（声称与接线一致）"
     fi
   else
-    echo "  ⏭️ [${claim_desc}] SECURITY.md 未命中声称「${claim_re}」——断言未触发（天然通过）"
+    echo "  ⏭️ [${claim_desc}] ${claim_file} 未命中声称「${claim_re}」——断言未触发（天然通过）"
   fi
 done
 if [ "$WIRING_FAIL" -gt 0 ]; then
