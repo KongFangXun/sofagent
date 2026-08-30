@@ -404,7 +404,7 @@ FDE 完整四阶段十二步部署流程（[FDE/GUIDE.md](../FDE/GUIDE.md)）已
 
 ### 组件间集成测试
 
-**状态：无集成测试。** 各组件独立验证通过——daemon 手动验证（Case 014）、MCP Server 本地通过、webhook 推送代码完整、编排引擎 LangGraph createReactAgent compose 通过——但 daemon → MCP → webhook → 编排四组件串联行为未验证。**v1.3.2 补全**——Onboard L2-L5 的循环引擎天然跑全链路（编排→审计→定位→修复→再跑），作为验收标准补 smoke test。
+**状态：v1.3.2 起有循环级集成验证，无独立 CI 集成测试。** 各组件独立验证通过——daemon 手动验证（Case 014）、MCP Server 本地通过、webhook 推送代码完整、编排引擎 LangGraph createReactAgent compose 通过。**v1.3.2 补全**——Onboard L2-L5 的循环引擎天然跑全链路（编排→审计→定位→修复→再跑），作为验收标准补 smoke test。当前边界：daemon → MCP → webhook → 编排四组件串联行为依赖发版前手动验证（acceptance-test 步骤 2.3），不在日常 CI 集成测试内（见下节「端到端验收测试覆盖」）。
 
 ---
 
@@ -414,10 +414,10 @@ v1.0 新增 `FORGE/playbook/acceptance-test.sh`（场景数持续扩展，当前
 
 - **CI 已覆盖**：单元测试审计核心 919 个、全 workspace 3507 个测试（v1.4.1 批次 2937→3178 +241，v1.4.2 批 +171，v1.4.3 批 +138（audit +12 / orchestrator +126）：bugfix 批 +24（audit 878→902）+ dev 批 +147（orchestrator 1295→1442）；全绿，详见上方「测试覆盖范围」节，实测见 `tools/check/test-count.sh`，与 pre-push-check 一致）、sofagent-core verify 约 44-48 项（动态）
 - **发版前手动覆盖**：acceptance-test.sh 281 场景（含子断言，CLI 端到端，步骤 2.3；v1.4.2 阶段三 S333-S339 七场景增量 265→272 + 存量清零 S340 272→273 + 章六补测 S341 273→274 + 章五零覆盖补测 S342/S343 274→276 + 阶段十二回写 S344 276→277 + v1.4.3 bugfix F-03 行为锁 S345 277→278 + v1.4.3 阶段三 S346-S348 三场景增量 278→281：审计聚合 CLI 行为实测/反作弊基线三防线锚点/训练监控三 tools 注册面）、OpenClaw 验收 63 场景（Agent 端到端，步骤 2.5）
-- **CI 未覆盖**：daemon → MCP → webhook → 编排四组件串联行为（仍依赖手动验证）
+- **CI 未覆盖**：daemon → MCP → webhook → 编排四组件串联行为（v1.3.2 起由 Onboard 循环引擎跑全链路 smoke test 承接，作为验收标准；日常 CI 无独立集成测试，发版前手动验证兜底）
 - **CI 未覆盖**：多平台兼容性（macOS only verified，Linux/Windows 未验证）
 
-未来版本计划将 acceptance-test.sh 纳入 CI 自动执行（当前为发版前手动），组件串联 smoke test 排入 v1.3.2。
+未来版本计划将 acceptance-test.sh 纳入 CI 自动执行（当前为发版前手动）。
 
 ---
 
@@ -469,9 +469,11 @@ Ontology 统一层的合并引擎从 `knowledge/entities/` 目录的 Markdown fr
 
 > ✅ 已于 v1.1.9 修复：Work模板市场 模板整体迁出 MIT scope，相关 CLI（`sofagent hub deploy`）与模板源已移至外部商业仓，不在开源仓库维护。
 
-### Agent Dashboard 是原型而非生产功能
+### Agent Dashboard（✅ v1.4.0 起产品化，旧「原型假数据」局限已消除）
 
-`--doctor --agents` 读取 `task/logs/` 目录推断 Agent 状态——当目录为空时展示默认假数据（2 个虚拟 Agent）。这不是实时监控，只是时间点快照。daemon-health.json 的异常检测是关键词匹配（"error"/"异常"/"失败"），不是结构化状态报告。当前 2 个 Sub Agent 的规模下 Dashboard 价值有限，验证企业需求后再决定是否进 v2.x 前端（计划中，参见 ROADMAP.md）。
+> ✅ **已于 v1.4.0 修复**：Dashboard HTML 产品化——`dashboard.html` + `serve-dashboard.mjs` 随 install.sh 安装到 `$SOFAGENT_HOME/web/`，`sofagent web` 一键起服务，读用户机 `~/.sofagent/data/` **真实数据**（FDE workflow / 已注册 SubAgent / sustain 周报 / 审计报告），开发态/安装态双路径解析。早期版本「目录为空时展示 2 个虚拟 Agent 假数据」的行为已移除（全仓无残留）。
+>
+> **仍存在的边界**（诚实披露）：① Dashboard 是**时间点快照**而非实时监控（无 WebSocket 推送，刷新即重读）；② daemon-health.json 的异常检测仍是关键词匹配（"error"/"异常"/"失败"），非结构化状态报告；③ 治理 KPI 面板（安全边界触发率/审计覆盖率等）排 v1.5.0。
 
 ---
 
