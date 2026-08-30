@@ -20,13 +20,63 @@ import { z } from 'zod';
 import { ModelRouter, type ModelRoute } from '../model-router';
 
 // ============================================================
+// 路径安全校验（防 LLM 输出逃逸项目根）
+// ============================================================
+
+/** 相对路径长度上限（正常仓库路径远短于此） */
+const MAX_RELATIVE_PATH_LENGTH = 512;
+
+/**
+ * 判定字符串是否为安全的仓库内相对路径。
+ *
+ * `change.file` 直接来自 LLM 输出，随后被用于 `join(cwd, file)` 写盘与
+ * `git add` 命令行拼接——不校验等于把文件系统与 shell 暴露给模型输出。
+ *
+ * 拒绝：绝对路径 / Windows 盘符与 UNC / 反斜杠 / `..` 与 `.` 段（前导 `./`
+ * 除外，LLM 常见输出形态）/ 空段（`a//b`）/ NUL 与控制字符（可截断命令行）/
+ * shell 元字符 `$` 与反引号（纵深深防：路径可能流入其他 shell 上下文）。
+ */
+export function isSafeRelativePath(p: string): boolean {
+  if (typeof p !== 'string' || p.trim() === '') return false;
+  if (p.length > MAX_RELATIVE_PATH_LENGTH) return false;
+  // NUL 与控制字符（含换行/回车——可截断命令行）
+  for (let k = 0; k < p.length; k++) {
+    const code = p.charCodeAt(k);
+    if (code < 0x20 || code === 0x7f) return false;
+  }
+  // 绝对路径：POSIX 根 / Windows 盘符 / UNC
+  if (p.startsWith('/') || /^[A-Za-z]:/.test(p) || p.startsWith('\\\\')) return false;
+  // 反斜杠：POSIX 上是合法文件名字符，但会让路径语义跨平台分裂
+  if (p.includes('\\')) return false;
+  // shell 元字符
+  if (/[$`]/.test(p)) return false;
+
+  const segments = p.split('/');
+  let i = 0;
+  // 允许前导 "./"（可重复），其后必须全是实心段
+  while (i < segments.length && segments[i] === '.') i++;
+  if (i >= segments.length) return false; // 全是 "." 或空段 → 无实心路径
+  for (; i < segments.length; i++) {
+    const seg = segments[i];
+    if (seg === '' || seg === '.' || seg === '..') return false;
+  }
+  return true;
+}
+
+// ============================================================
 // decide JSON schema（zod 校验）
 // ============================================================
 
 /** 单条变更决策 */
 export const EngineerChangeSchema = z.object({
-  /** 目标文件路径（相对项目根） */
-  file: z.string().min(1),
+  /** 目标文件路径（相对项目根，须过 isSafeRelativePath 校验） */
+  file: z
+    .string()
+    .min(1)
+    .refine(isSafeRelativePath, {
+      message:
+        'file 必须是仓库内相对路径（禁 ../ 逃逸、绝对路径、控制字符、$ 与反引号）',
+    }),
   /** 变更动作 */
   action: z.enum(['edit', 'create']),
   /** 变更描述（人可读） */
