@@ -6,7 +6,7 @@ export LANG=en_US.UTF-8
 export LC_ALL=en_US.UTF-8
 # sofagent-audit · 上线前验收测试（Pre-Release Acceptance Test）
 # 覆盖：FORGE + MCP + 文件系统审计 + daemon + 红队对抗 + 各版本新功能验收
-# 场景数：281 个场景（SSOT：check-test-count.sh 校验，口径=真实 scenario 调用行数，非编号最大值（S1-S344 间有 70 个历史空洞号）；v1.3.7 +4：S290-S293；v1.3.6 +8：S282-S289；v1.3.8 +11：S294-S304（含 bugfix 防回归 S303/S304）；v1.3.9 +15：S305-S319（阶段五 A 类分发 13 项 + 阶段六 coverage 补测 S318 ATTRIBUTION 归因引擎/S319 Dream Sandbox 沙盒审计）；v1.4.0 +3：S320（联邦查询跨进程 E2E——补 federation.test.ts 同进程 mock 缺口）、S321（跨平台 hook stdin 模式闭环验证）、S322（双设备联邦独立进程模拟——两个独立 node 进程 + 真实 TCP，补 fork 形态缺口）；v1.4.1 +10：S323（train doctor CLI 实跑）、S324（enterpriseId 强制绑定+幂等）、S325（fingerprint 冻结+不可变）、S326（artifact 签名+篡改检测）、S327（安全基线路径白名单+注入检测）、S328（install.sh 迁移丢数据窗口防回归——阶段四 B2 分发）、S329（install.sh symlink 谎报守卫——阶段四 B3 分发）、S330（训练异常退出资源回收四步链——阶段六 coverage 补测，补判断层唯一零覆盖项）、S331（OpenClaw plugin 双 manifest 一致性——阶段十一 ClawHub 拒收踩坑回写）、S332（bump 脚本通配误伤防回归——阶段十一静默漏 bump 踩坑回写）；v1.4.2 +10：S333（数据管道 CSV 类型推断端到端）、S334（dataset_version 台账三件套）、S335（eval 阈值判定双态）、S336（dry-run 显存估算单调性）、S337（ScaleRL sigmoid 拟合/外推/建议）、S338（FDE 工作台审计留痕往返——阶段三步骤四增量，行为实测走 dist 产物）、S339（MCP 工具 dataDir SSOT 收编完整——阶段三 fresh-eyes N-1 修复行为锁）、S340（19 处 v1.3.x 存量 getSofagentDataDir 一次清零行为锁——用户拍板 A 桶落点迁移接受）、S341（train report 报告生成本体 dist 行为实测——阶段五 coverage 唯一零覆盖项补测）；v1.4.2 章五 +2：S342（IM 桥通道交付三面断言——run-17 模块七零覆盖补测）、S343（BugFix 30 项批次级五族锚点——run-17 模块十零覆盖补测，对齐 S281 先例）；v1.4.2 阶段十二 +1：S344（Git Data API 推送通道 cat-file 防复发——ps1 eol 二坑根因固化）；v1.4.3 bugfix 批 +1：S345（跨平台 hook stdin message 抽取三场景行为锁——F-03 等号/中文/嵌套引号 + 空格形式回归，stub 断言 --task 透传）；v1.4.3 阶段三 +3：S346（审计聚合 --stats CLI 行为实测——--json 纯净/--days 窗口/口径行）、S347（反作弊基线三防线锚点——doctor 体检/缺省全开/白名单外部化）、S348（训练监控三 MCP tools 注册面——registry 79 + SKILL 对账））
+# 场景数：284 个场景（SSOT：check-test-count.sh 校验，口径=真实 scenario 调用行数，非编号最大值（S1-S344 间有 70 个历史空洞号）；v1.3.7 +4：S290-S293；v1.3.6 +8：S282-S289；v1.3.8 +11：S294-S304（含 bugfix 防回归 S303/S304）；v1.3.9 +15：S305-S319（阶段五 A 类分发 13 项 + 阶段六 coverage 补测 S318 ATTRIBUTION 归因引擎/S319 Dream Sandbox 沙盒审计）；v1.4.0 +3：S320（联邦查询跨进程 E2E——补 federation.test.ts 同进程 mock 缺口）、S321（跨平台 hook stdin 模式闭环验证）、S322（双设备联邦独立进程模拟——两个独立 node 进程 + 真实 TCP，补 fork 形态缺口）；v1.4.1 +10：S323（train doctor CLI 实跑）、S324（enterpriseId 强制绑定+幂等）、S325（fingerprint 冻结+不可变）、S326（artifact 签名+篡改检测）、S327（安全基线路径白名单+注入检测）、S328（install.sh 迁移丢数据窗口防回归——阶段四 B2 分发）、S329（install.sh symlink 谎报守卫——阶段四 B3 分发）、S330（训练异常退出资源回收四步链——阶段六 coverage 补测，补判断层唯一零覆盖项）、S331（OpenClaw plugin 双 manifest 一致性——阶段十一 ClawHub 拒收踩坑回写）、S332（bump 脚本通配误伤防回归——阶段十一静默漏 bump 踩坑回写）；v1.4.2 +10：S333（数据管道 CSV 类型推断端到端）、S334（dataset_version 台账三件套）、S335（eval 阈值判定双态）、S336（dry-run 显存估算单调性）、S337（ScaleRL sigmoid 拟合/外推/建议）、S338（FDE 工作台审计留痕往返——阶段三步骤四增量，行为实测走 dist 产物）、S339（MCP 工具 dataDir SSOT 收编完整——阶段三 fresh-eyes N-1 修复行为锁）、S340（19 处 v1.3.x 存量 getSofagentDataDir 一次清零行为锁——用户拍板 A 桶落点迁移接受）、S341（train report 报告生成本体 dist 行为实测——阶段五 coverage 唯一零覆盖项补测）；v1.4.2 章五 +2：S342（IM 桥通道交付三面断言——run-17 模块七零覆盖补测）、S343（BugFix 30 项批次级五族锚点——run-17 模块十零覆盖补测，对齐 S281 先例）；v1.4.2 阶段十二 +1：S344（Git Data API 推送通道 cat-file 防复发——ps1 eol 二坑根因固化）；v1.4.3 bugfix 批 +1：S345（跨平台 hook stdin message 抽取三场景行为锁——F-03 等号/中文/嵌套引号 + 空格形式回归，stub 断言 --task 透传）；v1.4.3 阶段三 +3：S346（审计聚合 --stats CLI 行为实测——--json 纯净/--days 窗口/口径行）、S347（反作弊基线三防线锚点——doctor 体检/缺省全开/白名单外部化）、S348（训练监控三 MCP tools 注册面——registry 79 + SKILL 对账）；v1.4.3 阶段五 +3：S349（训练沙箱三约束行为实测——dist 直调 createTrainSandbox：路径守卫三态/代理黑洞/网关判定）、S350（训练需求推导行为实测——场景派生/默认模板匹配/报告路径企业隔离）、S351（后训练 workflow 模板解析——七节点 DAG 无环/三 HITL/capability_ref 全节点指向））
 # 编号跳号豁免：S1~S293 间有 70 个空洞号（全在 S36-S202 历史段）——v1.2.x 瘦身删场景
 # 与基线重建（restore 6e542467）的既成事实，非丢失；新场景编号=当前最大+1 顺延，禁止回填空洞
 # 版本段起点见文件内「# ─── v」分组标记（grep "─── v" 定位）
@@ -581,8 +581,9 @@ scenario 57 "fresh-eyes-loop Skill 定义完整性（frontmatter + 无 releaser 
 F_SKILL="$PROJECT_ROOT/FORGE/SKILL/fresh-eyes-loop/SKILL.md"; F_OK=true
 [ ! -f "$F_SKILL" ] && { F_OK=false; fail "fresh-eyes-loop/SKILL.md 不存在"; }
 if $F_OK; then
-  # v1.3.5 校准 100→120：独占窗口检查段（run-07 两次进程死亡教训）+12 行属必要安全内容
-  LINE_COUNT=$(wc -l < "$F_SKILL"); [ "$LINE_COUNT" -gt 120 ] && { F_OK=false; fail "行数 $LINE_COUNT > 120"; }
+  # v1.3.5 校准 100→120（独占窗口检查段 +12）→ v1.4.3 校准 120→130：执行载体铁律段
+  # （run-10/11 子代理代跑两级联杀教训）+ 交接 prompt 交付形式铁律（936799f6）属必要安全内容
+  LINE_COUNT=$(wc -l < "$F_SKILL"); [ "$LINE_COUNT" -gt 130 ] && { F_OK=false; fail "行数 $LINE_COUNT > 130"; }
   FRONTMATTER=$(head -10 "$F_SKILL")
   for field in "^name:" "^description:" "^emoji:" "^color:"; do echo "$FRONTMATTER" | grep -qE "$field" || { F_OK=false; fail "frontmatter 缺 $field"; }; done
   grep -q "releaser-skill\|sofagent-releaser" "$PROJECT_ROOT/engine/scripts/lib/file-deploy.sh" 2>/dev/null && { F_OK=false; fail "file-deploy.sh 仍复制 releaser"; }
@@ -3631,6 +3632,112 @@ grep -q "name: 'train_diagnose'" "$PROJECT_ROOT/engine/mcp/src/tool-registry.ts"
 # SKILL.md 工具清单同步（对账面：训练域 11 tools 行）
 grep -q "train_status.*train_list.*train_diagnose" "$PROJECT_ROOT/SKILL/SKILL.md" || S348_OK=false
 $S348_OK && pass "训练监控三 tools 注册面完整（registry 79 + SKILL 对账）" || fail "MCP 工具注册面漂移——registry 实数 $S348_COUNT 或三 tools 缺席"
+
+# ─────────────────────────────────────────────────────────────
+# S349 · v1.4.3 第三章：训练沙箱三约束行为实测（dist 直调）
+# 路径守卫三态（产物可写/数据只读/越界拒绝含 ../ 逃逸归一化）+ spawn env
+# 代理黑洞 + 沙箱标记 + 网关 deny/allow 判定——对齐 S330/S341 行为实测先例。
+# ─────────────────────────────────────────────────────────────
+scenario 349 "v1.4.3 第三章：训练沙箱三约束——路径守卫读写拒三态 + spawn env 代理黑洞 + 网关 deny/allow 判定 + 沙箱标记"
+S349_OK=true
+S349_OUT=$(node -e "
+(async () => {
+  const { createTrainSandbox } = await import('$PROJECT_ROOT/engine/orchestrator/dist/train/train-sandbox.js');
+  const sb = createTrainSandbox({ dataMounts: ['/data/ro'], outputDir: '/ws/out', modelCacheDir: '/models' });
+  let bad = 0;
+  // 路径守卫三态（checkAccess(path, mode)）
+  if (sb.paths.checkAccess('/ws/out/ckpt.bin', 'write') !== 'write') bad++;
+  if (sb.paths.checkAccess('/data/ro/x.csv', 'read') !== 'read') bad++;
+  if (sb.paths.checkAccess('/data/ro/x.csv', 'write') !== 'deny') bad++;
+  if (sb.paths.checkAccess('/data/ro/../etc/hosts', 'write') !== 'deny') bad++;
+  if (sb.paths.checkAccess('/etc/hosts', 'write') !== 'deny') bad++;
+  // spawn env：代理黑洞 + 沙箱标记
+  const env = sb.buildSpawnEnv({ PATH: '/usr/bin' });
+  if (env.HTTPS_PROXY !== 'http://255.255.255.255:1') bad++;
+  if (env.SOFAGENT_TRAIN_SANDBOX !== '1') bad++;
+  // 网络网关：白名单外 deny + 白名单内 allow
+  if (sb.checkNetworkEgress('evil.example.com', 443) !== 'deny') bad++;
+  const sb2 = createTrainSandbox({ dataMounts: ['/data/ro'], outputDir: '/ws/out', networkAllowlist: ['mirrors.example.com'] });
+  if (sb2.checkNetworkEgress('mirrors.example.com', 443) !== 'allow') bad++;
+  // deny 事件审计出口在位
+  if (typeof sb.exportDenyEvents !== 'function') bad++;
+  process.stdout.write(String(bad));
+})().catch(e => { process.stderr.write(String(e.message)); process.stdout.write('8888'); });
+" 2>/dev/null)
+[ "$S349_OUT" = "0" ] || { echo "  ✗ 沙箱行为断言未过数=$S349_OUT"; S349_OK=false; }
+# 打包交付面：package-train-runtime.sh 语法健康 + setup.sh 入口在位
+bash -n "$PROJECT_ROOT/tools/package-train-runtime.sh" 2>/dev/null || S349_OK=false
+grep -q "setup.sh" "$PROJECT_ROOT/tools/package-train-runtime.sh" || S349_OK=false
+$S349_OK && pass "训练沙箱三约束行为实测过（路径三态/代理黑洞/网关判定/打包入口）" || fail "训练沙箱行为回退——见上方 ✗ 行（dist/train-sandbox.js 直调）"
+
+# ─────────────────────────────────────────────────────────────
+# S350 · v1.4.3 第四章：训练需求推导五要素 + 模板库匹配行为实测（dist 直调）
+# deriveTrainScenario（workflow 节点→训练场景）+ pickDefaultTemplate（场景→
+# 默认模板匹配）+ 报告路径企业隔离——node 直调真实函数。
+# ─────────────────────────────────────────────────────────────
+scenario 350 "v1.4.3 第四章：训练需求推导——workflow 节点派生训练场景 + 默认模板匹配 + 报告路径企业隔离"
+S350_OK=true
+S350_OUT=$(node -e "
+(async () => {
+  const m = await import('$PROJECT_ROOT/engine/orchestrator/dist/train/train-analyze.js');
+  let bad = 0;
+  // ① 节点→场景派生（goal 命中分类语义→场景标识）
+  const d = m.deriveTrainScenario({ id: 'n1', label: '训练专属模型', goal: '识别工单意图分类' });
+  if (!d || typeof d.scenario !== 'string' || !d.scenario) bad += 1;
+  // ② 场景→默认模板匹配（模板库联动——id 非空）
+  const tpl = m.pickDefaultTemplate(d.scenario);
+  if (!tpl || !tpl.id) bad += 10;
+  // ③ 报告路径企业隔离 + 节点维度
+  const p = m.trainAnalyzeReportPath('/data', 'ent1', 'node1');
+  if (!p || !p.includes('ent1') || !p.includes('node1')) bad += 100;
+  process.stdout.write(String(bad));
+})().catch(e => { process.stderr.write(String(e.message)); process.stdout.write('8888'); });
+" 2>/dev/null)
+[ "$S350_OUT" = "0" ] || { echo "  ✗ 需求推导断言未过数=$S350_OUT"; S350_OK=false; }
+# 模板库文件面：qlora/rl 两族模板在位
+ls "$PROJECT_ROOT/engine/orchestrator/src/train/qlora-template.ts" "$PROJECT_ROOT/engine/orchestrator/src/train/rl-templates.ts" >/dev/null 2>&1 || S350_OK=false
+$S350_OK && pass "训练需求推导行为实测过（场景派生/模板匹配/报告路径/两族模板）" || fail "训练需求推导行为回退——见上方 ✗ 行（dist/train-analyze.js 直调）"
+
+# ─────────────────────────────────────────────────────────────
+# S351 · v1.4.3 第五章：后训练 workflow 模板可解析 + 七节点 DAG 完整性（dist 直调）
+# parseWorkflowYaml 真实解析 FDE 模板——七节点/依赖无悬空/三 HITL（hitl 字段）
+# /Kahn 拓扑无环 + capability_ref 七节点版本指向（原文对照）。
+# ─────────────────────────────────────────────────────────────
+scenario 351 "v1.4.3 第五章：后训练 workflow 模板——workflow-parser 真实解析 + 七节点 DAG 无环 + 三 HITL + capability_ref 全节点指向"
+S351_OK=true
+S351_OUT=$(node -e "
+(async () => {
+  const fs = require('fs');
+  const { parseWorkflowYaml } = await import('$PROJECT_ROOT/engine/orchestrator/dist/workflow-parser.js');
+  const yaml = fs.readFileSync('$PROJECT_ROOT/FDE/templates/post-training/post-training.yml', 'utf8');
+  let bad = 0;
+  let parsed;
+  try { parsed = parseWorkflowYaml(yaml); } catch (e) { process.stdout.write('9999'); process.exit(0); }
+  const nodes = parsed.nodes || [];
+  // 七节点齐全（激活链四阶段完整走位）
+  if (nodes.length < 7) bad += 1;
+  // 依赖完整性：depends_on 引用全存在（无悬空）
+  const ids = new Set(nodes.map(n => n.id));
+  for (const n of nodes) for (const dep of (n.depends_on || [])) if (!ids.has(dep)) bad += 10;
+  // 三 HITL 节点（parser 将 interrupt_before 映射为 hitl 字段）
+  const hitl = nodes.filter(n => n.hitl === true).length;
+  if (hitl < 3) bad += 100;
+  // DAG 无环：Kahn 拓扑可消费全部节点
+  const indeg = new Map(nodes.map(n => [n.id, 0]));
+  for (const n of nodes) for (const dep of (n.depends_on || [])) indeg.set(n.id, (indeg.get(n.id) || 0) + 1);
+  const q = nodes.filter(n => indeg.get(n.id) === 0).map(n => n.id);
+  let seen = 0;
+  while (q.length) { const id = q.shift(); seen++;
+    for (const m2 of nodes) if ((m2.depends_on || []).includes(id)) { indeg.set(m2.id, indeg.get(m2.id) - 1); if (indeg.get(m2.id) === 0) q.push(m2.id); } }
+  if (seen !== nodes.length) bad += 1000;
+  // capability_ref：原文七节点版本指向全在位
+  const caps = yaml.split('\n').filter(l => l.includes('capability_ref:')).length;
+  if (caps < 7) bad += 10000;
+  process.stdout.write(String(bad));
+})().catch(e => { process.stderr.write(String(e.message)); process.stdout.write('8888'); });
+" 2>/dev/null)
+[ "$S351_OUT" = "0" ] || { echo "  ✗ 后训练 workflow 断言未过数=$S351_OUT（9999=解析失败）"; S351_OK=false; }
+$S351_OK && pass "后训练 workflow 模板解析过（七节点/无悬空/三 HITL/DAG 无环/版本指向）" || fail "后训练 workflow 模板回退——见上方 ✗ 行（dist/workflow-parser.js 真实解析）"
 
 echo -e "  验收测试结果：${GREEN}$PASSED 通过${NC} / ${RED}$FAILED 失败${NC} / 共 $((PASSED + FAILED))"
 # 🔴 v1.3.1 run-10 教训：无色码纯文本汇总行供 driver grep（EXIT: 0=全PASS / <N>=N失败）
