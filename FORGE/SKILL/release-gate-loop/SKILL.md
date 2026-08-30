@@ -16,7 +16,7 @@ version: 1.4.2
 
 - **V** = 验证者：跑 acceptance-test.sh、跑 regression-checklist、做覆盖率交叉检查、合并报告、出裁决。
 - **F** = 修复者：V 裁决 FAIL 后，F 读 verdict 报告 → 定位根因 → 改代码 → driver 自动跑 audit → 回到 V 重验。
-- **driver（"我"，当前会话）**：在步骤间中转、维护 `runs/` 文件、复制报告到桌面。driver 不是 agent，只是编排层。
+- **driver（Node 编排进程，非 agent）**：在步骤间中转、维护 `runs/` 文件、复制报告到桌面。由**用户手动新开的执行 session** 启动（见下「执行载体铁律」）。
 
 ## 怎么用
 
@@ -27,7 +27,7 @@ version: 1.4.2
 
 ## 实现载体
 
-V 由 **Node driver**（`FORGE/src/release-gate-driver.mjs`）驱动——每个 step 独立子进程（真零上下文），LangGraph `createReactAgent` 编排。当前 session 只负责启动 driver + 监控进度。
+V 由 **Node driver**（`FORGE/src/release-gate-driver.mjs`）驱动——每个 step 独立子进程（真零上下文），LangGraph `createReactAgent` 编排。driver 由用户手动新开的执行 session 启动并监控（见下「执行载体铁律」）。
 
 ## 🔴 执行载体铁律：driver 必须由「独立 session」直跑，禁止主 session 内开子代理代跑
 
@@ -41,7 +41,7 @@ V 由 **Node driver**（`FORGE/src/release-gate-driver.mjs`）驱动——每个
 
 **交接 prompt 必含要素**（主 session 生成，自包含）：目标版本号、启动 commit（预期干净树）、启动命令行（含 source env.local）、监控协议要点（120s 轮询 / heartbeat 死亡检测 / 已知降级信号不处理清单）、verdict 产出后的六项回报清单（verdict+stopReason / 四步产物存在性 / usage token 总量 / verdict.md 头 50 行 / status.json 全文 / driver 日志尾 30 行）、异常处置（启动即崩回报不修 / 卡死 15 分钟查 pid）。
 
-## Session 监控协议（CRITICAL）
+## Session 监控协议（CRITICAL · 适用于执行 session）
 
 **启动 driver 后，session 不是傻等，而是进入 sleep 轮询模式**——保持 working 状态，让用户感知"后台在干活"（**每 120 秒一轮，读 status.json 输出一行状态**——session 一直活跃 = 用户界面持续可见「在跑」，这是硬要求非可选）。
 
@@ -102,7 +102,7 @@ V 由 **Node driver**（`FORGE/src/release-gate-driver.mjs`）驱动——每个
 
 2. 记住 runDir（driver 启动日志第一行会打印）
 
-3. 循环（最多 20 次，防 turn 超限）:
+3. 循环（最多 60 次，防 turn 超限——判断层实测约 20 分钟、含 F 修复链最长约 2 小时，20 次×2 分钟容量不足）:
    sleep 120                                          # 等 2 分钟
    cat <runDir>/status.json                           # 读进度
    判断:

@@ -1874,7 +1874,14 @@ function synthesizeReportFromMessages(messages, step, role) {
  * 第一级 = workflow 名，第二级 = 拍平日期（非 YYYY/MM/DD 三级嵌套），第三级 = run 序号
  * 同日多次跑 = run-01, run-02 ...
  */
-function resolveRunDir() {
+function resolveRunDir(dryRun = false) {
+  // dry-run 改道 /tmp 草稿目录（与 release-gate-driver 同款）：dry-run 全部
+  // 落盘（status.json/latest.json/round 目录）自动进草稿，runs/ 正式编号零污染。
+  if (dryRun) {
+    const runDir = join(os.tmpdir(), 'forge-dryrun', `fresh-eyes-${process.pid}-${Date.now()}`);
+    mkdirSync(runDir, { recursive: true });
+    return { runDir, runId: 'dry-run', dateStr: 'dry-run' };
+  }
   const now = new Date();
   const y  = String(now.getFullYear());
   const m  = String(now.getMonth() + 1).padStart(2, '0');
@@ -4078,7 +4085,7 @@ async function main() {
     ? resolveRunDirInfo(process.env.SOFAGENT_DAEMON_RUNDIR)
     : resumeRunDir
       ? resolveRunDirInfo(resumeRunDir)
-      : resolveRunDir();
+      : resolveRunDir(args.dryRun);
 
   // ─── v1.3.9 daemon 模式（--daemon）：spawn detached 自脱离进程树 ───
   // WorkBuddy run_in_background 的进程随主 session turn 结束被整体清理（run-01
