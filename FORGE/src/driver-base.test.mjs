@@ -144,6 +144,11 @@ describe('createForgeDriverBase', () => {
   });
 
   describe('extractAgentText', () => {
+    // v1.4.3：AI 消息的判定用的是 LangGraph 的 _getType()，不是 role 字段——
+    // 测试用例必须模拟真实消息对象，否则 isAI 判 false，测试会假通过。
+    const ai = (content, extra = {}) => ({ _getType: () => 'ai', content, ...extra });
+    const human = (content) => ({ _getType: () => 'human', content });
+
     it('string 直接返回', () => {
       expect(base.extractAgentText('hello')).toBe('hello');
     });
@@ -152,15 +157,50 @@ describe('createForgeDriverBase', () => {
       expect(base.extractAgentText({ content: 'text' })).toBe('text');
     });
 
-    it('从 messages 数组提取最后一条 assistant', () => {
+    it('从 messages 数组提取最后一条 AI 消息', () => {
+      // v1.4.3：原文用 'a1'/'a2' 这类 2 字符文本，升级为带质量门控的实现后会被
+      // 判为思考碎片而拒绝。改用达标文本（含 ## 标题行）。
       const result = {
         messages: [
-          { role: 'user', content: 'q' },
-          { role: 'assistant', content: 'a1' },
-          { role: 'assistant', content: 'a2' },
+          human('q'),
+          ai('## 旧结论\n内容'),
+          ai('## 最终结论\n内容'),
         ],
       };
-      expect(base.extractAgentText(result)).toBe('a2');
+      expect(base.extractAgentText(result)).toBe('## 最终结论\n内容');
+    });
+
+    it('思考碎片不达标 → 返回空（不把碎片当报告）', () => {
+      // v1.2.7 run-07：GLM 的中间思考碎片被当报告写入产物文件。
+      const result = { messages: [ai('现在让我查看一些特定的代码文件')] };
+      expect(base.extractAgentText(result)).toBe('');
+    });
+
+    it('AI 消息无文本时绝不回退到 HumanMessage（输入 prompt）', () => {
+      // 此前 AI 消息 content 为 undefined（带 tool_calls 的形态）时，兜底逻辑会
+      // 一路往前捞到 HumanMessage，把输入 prompt 全文当成 agent 报告写入。
+      const result = {
+        messages: [
+          human('这是输入 prompt 全文，绝不能被当成报告输出'),
+          ai(undefined, { tool_calls: [{ name: 'Read' }] }),
+        ],
+      };
+      expect(base.extractAgentText(result)).toBe('');
+    });
+
+    it('达标 AI 消息在尾部工具消息之后仍能被找到', () => {
+      const result = {
+        messages: [
+          ai('## 报告\n正文'),
+          { _getType: () => 'tool', content: 'tool output' },
+        ],
+      };
+      expect(base.extractAgentText(result)).toBe('## 报告\n正文');
+    });
+
+    it('长文本（≥500 字符）免标题也达标', () => {
+      const long = 'x'.repeat(600);
+      expect(base.extractAgentText({ messages: [ai(long)] })).toBe(long);
     });
   });
 
