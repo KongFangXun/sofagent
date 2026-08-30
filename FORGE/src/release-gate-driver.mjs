@@ -778,6 +778,53 @@ function buildPrecheckEvidence(runDir, stepDef) {
 }
 
 /**
+ * v1.4.3（run-19 根因）：非 precheck 步骤的上一步产物内容注入。
+ *
+ * 背景：v1.4.3 性能优化「判断层直连模式」（跳过 DSH 桥接 worker）落地后，
+ * verdict / consolidate 等无 precheck:true 的步骤在直连模式下既无工具结果
+ * （messages 为空数组）也无 precheck 证据（buildPrecheckEvidence 返回空串）
+ * → generateReportWithoutTools 的 reportPrompt 只剩「（本次审查没有任何工具
+ * 结果或 precheck 证据）」→ verdict 永远「零证据」判 ERROR（run-19 实证：
+ * verdict/consolidate 双双输出「未收到任何工具调用结果」HOLD 报告）。
+ *
+ * 语义修正：这些步骤的 stepDef.inputs 本就是 driver 中转的上一步产物文件
+ * （verdict ← stage6-report.md；consolidate ← acceptance/regression/coverage
+ * 三报告）——DSH 桥接时代 worker 用 read 工具自己读；直连模式没有工具，
+ * 证据就必须像 precheck 一样由 driver 随 prompt 送达（方案 A 语义一贯）。
+ *
+ * 尺寸控制：单文件截 6000 字符（判定所需的结论/发现清单段在前部，足够），
+ * 多文件合计 ≤ 20000 字符——consolidate 三输入全量也在预算内。
+ *
+ * @param {string} runDir 当前 run 目录
+ * @param {{inputs?: string[], precheck?: boolean}} stepDef 步骤定义
+ * @returns {string} 注入文本（precheck 步骤返回空串——已由 buildPrecheckEvidence 覆盖）
+ */
+function buildInputsEvidence(runDir, stepDef) {
+  if (stepDef?.precheck || !Array.isArray(stepDef?.inputs)) return '';
+  const blocks = [];
+  let total = 0;
+  for (const f of stepDef.inputs) {
+    const p = join(runDir, f);
+    if (!existsSync(p)) {
+      blocks.push(`[driver 注入] ${f}: 文件不存在——上一步产物缺失，判定时按「数据不完整」处理`);
+      continue;
+    }
+    try {
+      const raw = readFileSync(p, 'utf-8');
+      const budget = Math.max(0, 20_000 - total);
+      const clipped = raw.length > Math.min(6_000, budget)
+        ? raw.slice(0, Math.min(6_000, budget)) + `\n…（截断，全文 ${raw.length} 字符，见 ${p}）`
+        : raw;
+      total += clipped.length;
+      blocks.push(`[driver 注入] ${f} 内容（上一步产物，判定依据）：\n${clipped}`);
+    } catch (e) {
+      blocks.push(`[driver 注入] ${f}: 读取失败（${e.message}）——判定时按「数据不完整」处理`);
+    }
+  }
+  return blocks.length ? '--- 上一步产物证据（driver 已中转，直接据此判定，无需调用工具） ---\n' + blocks.join('\n\n') : '';
+}
+
+/**
  * Worker 主逻辑：读 prompt → 建 model+tools → invoke → 写产物。
  */
 async function runWorker(step, runDir, target) {
@@ -820,6 +867,9 @@ async function runWorker(step, runDir, target) {
   // 正解：precheck.json 本来就是 driver 预执行生成的证据（方案 A 语义）——**证据内容
   // 由 driver 直接注入 userMessage**，worker 无需任何工具即可判定（DSH/LangGraph 双后端兼容）。
   const precheckEvidence = buildPrecheckEvidence(runDir, stepDef);
+  // v1.4.3（run-19 根因）：非 precheck 步骤的上一步产物内容注入——直连模式
+  // （无工具）下 verdict/consolidate 的唯一证据面，缺失即「零证据」ERROR。
+  const inputsEvidence = buildInputsEvidence(runDir, stepDef);
 
   // 注入 changelog 路径（步骤③ coverage 需要）
   // v1.2.5 bugfix：changelog 按版本号嵌套在 docs/changelog/v1.2/v1.2.5.md，
@@ -843,6 +893,8 @@ async function runWorker(step, runDir, target) {
     inputPaths ? `输入文件（已由 driver 中转）：\n${inputPaths}` : '',
     // v1.4.0：precheck 证据内容直接注入（DSH 桥接下 worker 无工具可用，证据必须随 prompt 送达）
     precheckEvidence,
+    // v1.4.3（run-19 根因）：上一步产物内容注入（verdict ← stage6-report.md 等）
+    inputsEvidence,
     `Changelog 路径 = ${changelogPath}`,
     `产物输出路径（把你的输出写到这个文件）：\n${outputPaths}`,
   ].filter(Boolean).join('\n');
@@ -1116,7 +1168,9 @@ async function runWorker(step, runDir, target) {
     // 逃生舱：FORGE_WORKER=dsh 显式要求时仍走完整 worker（DSH 链路诊断用）。
     if (process.env.FORGE_WORKER !== 'dsh') {
       console.log('[worker] 判断层直连模式（裸 LLM 流式，跳过 DSH 桥接空转）——FORGE_WORKER=dsh 可启用完整 worker');
-      const bare = await generateReportWithoutTools(model, [], step, 'V', stepDef, precheckEvidence);
+      // v1.4.3（run-19 根因）：直连模式下证据面 = precheck 证据 + 上一步产物
+      // （verdict/consolidate 无 precheck，inputs 产物是其唯一判定依据）
+      const bare = await generateReportWithoutTools(model, [], step, 'V', stepDef, [precheckEvidence, inputsEvidence].filter(Boolean).join('\n\n'));
       return { messages: [], content: bare ?? '', hardBreak: false, usage: undefined };
     }
 
@@ -1177,13 +1231,14 @@ async function runWorker(step, runDir, target) {
   if (!text) {
     console.warn(`  ┄ [${step}] agent 未输出文本${result?.hardBreak ? '（硬熔断后）' : '（正常返回但 content 空）'}，启动无工具裸 LLM 报告生成`);
     try {
-      text = await generateReportWithoutTools(model, result?.messages ?? [], step, 'V', stepDef, precheckEvidence);
+      // v1.4.3（run-19）：兜底路径证据面与直连模式对齐（precheck + 上一步产物）
+      text = await generateReportWithoutTools(model, result?.messages ?? [], step, 'V', stepDef, [precheckEvidence, inputsEvidence].filter(Boolean).join('\n\n'));
     } catch (bareErr) {
       console.warn(`  ┄ [${step}] 裸 LLM 报告生成失败: ${bareErr.message}`);
     }
     if (!text) {
       // 最终兜底：从工具结果碎片合成最小报告（对齐 fresh-eyes synthesizeReportFromMessages）
-      text = synthesizeFallbackReport(step, precheckEvidence);
+      text = synthesizeFallbackReport(step, [precheckEvidence, inputsEvidence].filter(Boolean).join('\n\n'));
     }
     if (!text) {
       throw new Error(`[worker:${step}] Agent 未返回内容（裸 LLM 兜底与碎片合成均失败）`);
@@ -1568,38 +1623,71 @@ async function spawnAcceptanceShards(workers, _target, maxConcurrency = 6) {
  *      busybox 系无补齐
  *   ③ PATH 注入探测：process.env.PATH 首段含 brokered-bin/toybox 字样
  *
- * 判定：任一指纹命中 → 环境不可信 → exit(1) fail-fast，提示用独立终端原生启动。
+ * v1.4.3 自愈升级（用户拍板「修复成可以在 WorkBuddy 里跑的状态」）：检测到
+ * 污染指纹不再直接拒跑，而是先自愈——净化 PATH（剥掉所有 brokered-bin/toybox
+ * 段）+ 剥 BASH_ENV（沙箱注入的 bash 启动脚本）→ 重测三指纹 → 通过则继续跑。
+ * 仍不通过才 fail-closed 拒跑。这样 driver 可直接在 AI session 内启动
+ * （run-18+ WorkBuddy 内跑），独立终端原生跑不受影响（零指纹命中零净化）。
  */
 function assertNativeToolchain() {
-  const fingerprints = [];
-  // 指纹③：PATH 首段注入探测（最直接，但沙箱形态可能演化，仅作辅助）。
-  // 注意分隔符是 PATH 列表分隔符（macOS/Linux 为 ':'），不是路径分隔符 '/'。
-  const pathFirst = (process.env.PATH || '').split(':')[0] || '';
-  if (/brokered-bin|toybox/i.test(pathFirst)) {
-    fingerprints.push(`PATH 首段含沙箱工具目录: ${pathFirst}`);
-  }
-  try {
-    // 指纹①：BRE 交替——busybox/toybox grep 不支持（当字面量，永不命中）
-    const r1 = spawnSync('bash', ['-c', 'echo x | grep -q "a\\|x"'], { encoding: 'utf8', timeout: 5000 });
-    if (r1.status !== 0) fingerprints.push(`grep BRE 交替 "\\|" 失效（exit=${r1.status}）——busybox/toybox 系工具链`);
-    // 指纹②：wc 补齐——BSD/GNU 右对齐带前导空格，busybox 系裸输出
-    const r2 = spawnSync('bash', ['-c', 'echo hi | wc -l'], { encoding: 'utf8', timeout: 5000 });
-    if (r2.status === 0 && r2.stdout && !/^\s+\d/.test(r2.stdout)) {
-      fingerprints.push(`wc -l 输出无右对齐补齐（"${r2.stdout.trim()}"）——busybox/toybox 系工具链`);
+  const collectFingerprints = () => {
+    const fingerprints = [];
+    // 指纹③：PATH 首段注入探测（最直接，但沙箱形态可能演化，仅作辅助）。
+    // 注意分隔符是 PATH 列表分隔符（macOS/Linux 为 ':'），不是路径分隔符 '/'。
+    const pathFirst = (process.env.PATH || '').split(':')[0] || '';
+    if (/brokered-bin|toybox/i.test(pathFirst)) {
+      fingerprints.push(`PATH 首段含沙箱工具目录: ${pathFirst}`);
     }
-  } catch (fpErr) {
-    // 自检自身异常——fail-closed：宁可拒跑也不在不可信环境执行 96 维门禁
-    console.error(`[driver] 环境指纹自检执行异常: ${fpErr.message}`);
-    console.error('[driver] fail-closed 拒跑——请在独立终端原生启动 driver（勿在 AI 沙箱/后台代理内启动）。');
-    process.exit(1);
-  }
+    try {
+      // 指纹①：BRE 交替——busybox/toybox grep 不支持（当字面量，永不命中）
+      const r1 = spawnSync('bash', ['-c', 'echo x | grep -q "a\\|x"'], { encoding: 'utf8', timeout: 5000 });
+      if (r1.status !== 0) fingerprints.push(`grep BRE 交替 "\\|" 失效（exit=${r1.status}）——busybox/toybox 系工具链`);
+      // 指纹②：wc 补齐——BSD/GNU 右对齐带前导空格，busybox 系裸输出
+      const r2 = spawnSync('bash', ['-c', 'echo hi | wc -l'], { encoding: 'utf8', timeout: 5000 });
+      if (r2.status === 0 && r2.stdout && !/^\s+\d/.test(r2.stdout)) {
+        fingerprints.push(`wc -l 输出无右对齐补齐（"${r2.stdout.trim()}"）——busybox/toybox 系工具链`);
+      }
+    } catch (fpErr) {
+      // 自检自身异常——fail-closed：宁可拒跑也不在不可信环境执行 96 维门禁
+      console.error(`[driver] 环境指纹自检执行异常: ${fpErr.message}`);
+      console.error('[driver] fail-closed 拒跑——请检查 bash/grep/wc 可用性后重试。');
+      process.exit(1);
+    }
+    return fingerprints;
+  };
+
+  let fingerprints = collectFingerprints();
+
+  // ── 自愈路径：检测到污染先净化，净化后复测通过则继续跑 ──
   if (fingerprints.length > 0) {
-    console.error('[driver] 🔴 执行环境指纹自检未过——检测到 busybox/toybox 系受限工具链：');
-    for (const f of fingerprints) console.error(`[driver]   · ${f}`);
-    console.error('[driver] 后果：BRE 交替/括号表达式/wc 格式类维度检查将集体假红（run-15/16/17 实测 30/96 维），');
-    console.error('[driver] LLM 判断层将吃全假数据产出误导性 NO-GO。');
-    console.error('[driver] 处置：请在独立终端原生启动 driver（勿在 AI 沙箱/后台代理内启动），参照 release-gate-loop SKILL「执行载体铁律」。');
-    process.exit(1);
+    console.warn('[driver] ⚠️ 检测到沙箱工具链污染指纹——启动自愈（净化 PATH + 剥 BASH_ENV）：');
+    for (const f of fingerprints) console.warn(`[driver]   · ${f}`);
+
+    // 一、净化 PATH：剥掉所有含 brokered-bin/toybox 的段（不只首段——沙箱可能多处注入）
+    const origPath = process.env.PATH || '';
+    const cleanedSegs = origPath.split(':').filter(seg => seg && !/brokered-bin|toybox/i.test(seg));
+    const removedSegs = origPath.split(':').filter(seg => seg && /brokered-bin|toybox/i.test(seg));
+    if (removedSegs.length > 0) {
+      process.env.PATH = cleanedSegs.join(':');
+      console.log(`[driver] 自愈①：PATH 已剥 ${removedSegs.length} 个沙箱段（${removedSegs.map(s => s.split('/').pop()).join(', ')}）`);
+    }
+    // 二、剥 BASH_ENV：沙箱常以 BASH_ENV 注入 bash 启动脚本（可能重挂污染 PATH/alias）
+    if (process.env.BASH_ENV) {
+      console.log(`[driver] 自愈②：BASH_ENV 已剥（原值 ${process.env.BASH_ENV}）`);
+      delete process.env.BASH_ENV;
+    }
+    // 三、复测：净化后再跑三指纹，全部通过才放行
+    const after = collectFingerprints();
+    if (after.length === 0) {
+      console.log('[driver] ✅ 自愈成功——净化后三指纹全部通过（BRE 交替/wc 补齐/PATH 首段正常），继续执行');
+    } else {
+      console.error('[driver] 🔴 自愈失败——净化后仍有指纹命中：');
+      for (const f of after) console.error(`[driver]   · ${f}`);
+      console.error('[driver] fail-closed 拒跑：净化后工具链仍不可信，BRE 交替/括号表达式/wc 格式类维度检查将集体假红（run-15/16/17 实测 30/96 维）。');
+      console.error('[driver] 处置：请在独立终端原生启动 driver，或检查沙箱 broker 的 PATH 注入策略。');
+      process.exit(1);
+    }
+    return;
   }
   console.log('[driver] 环境指纹自检通过（BSD/GNU 原生工具链，BRE 交替/wc 补齐正常）');
 }
@@ -1856,7 +1944,12 @@ async function execRegressionDim(script, timeoutMs = 60_000) {
     // （run-16 实测 6 维度：51/113/115/123/126/128 全部假绿）。与既有归一化
     // 方向互补：那边防假 FAIL，这边防假绿。重写为 1 并追加说明（worker 与
     // 人工可追溯），宁可假红待复核也不吞真失败——fail-closed。
-    if (exitCode === 0 && /❌/.test(output)) {
+    // v1.4.3 修正（run-19 实测 125/127 两维误翻转）：❌ 判定必须排除
+    // 「✅ 行内引用」形态——checklist 的 for 循环收尾惯例是
+    // `echo "✅ 三 tools 齐（若上方无 ❌）"`，健康态本身带 ❌ 字面量，
+    // 整文 /❌/ 匹配把健康维度翻转成假红。真失败标记的形态是 ❌ 出现在
+    // 非通过行（行首或行中独立出现，前文不是「若上方无」引用语境）。
+    if (exitCode === 0 && /❌/.test(output.replace(/^✅.*❌.*$/gm, ''))) {
       output += `\n[driver] 反向防御：原 exit=0 但输出含显式 ❌——维度脚本以 || echo ❌ 收尾导致失败被 exit 0 掩盖（假绿），重写为 1。真失败见上方 ❌ 行；若为脚本误报请修脚本（见 regression-checklist.md 维度脚本编写三铁律）。`;
       exitCode = 1;
     }
