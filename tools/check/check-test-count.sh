@@ -90,7 +90,7 @@ PKG_COUNT=$(echo "$TC_OUT" | sed $'s/\033\[[0-9;]*m//g' | grep -oE 'PKGS=[0-9]+'
 # B13: workspace 总包数（package.json workspaces 数组条目数，README 声称「13 包」对账用）
 # v1.4.0：只数 13 个发布到 npm 的引擎包——engine/dsh-plugins/ 下 9 个插件包为 private（不发布），不计入
 # 兜底用 || true 而非 || echo "0"：grep -c 零匹配已自行输出单行 0，|| echo 0 追加第二行成双零
-WORKSPACE_COUNT=$(grep -cE '^\s*"engine/(harness|ontology|eval|core|think|audit|orchestrator|daemon|ab-test|skillopt|mcp|rules|hooks/)' package.json || true)
+WORKSPACE_COUNT=$(grep -cE '^[[:space:]]*"engine/(harness|ontology|eval|core|think|audit|orchestrator|daemon|ab-test|skillopt|mcp|rules|hooks/)' package.json || true)
 [ -z "$WORKSPACE_COUNT" ] && WORKSPACE_COUNT=0
 
 # 任务八方案A（2026-08-29）：README 包数口径升级为双口径「13 引擎包 + 13 插件（9 DSH + 4 OpenClaw）」。

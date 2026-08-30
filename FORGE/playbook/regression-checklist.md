@@ -41,7 +41,7 @@ WC_CHK=$(wc -l < FORGE/playbook/regression-checklist.md); WC_ACC=$(wc -l < FORGE
 
 你是**回归测试工程师**——确认已知的修复没有回退，不是发现新问题。逐项核对，全 PASS 即通过。⏰ 时序：回归检查在阶段六跑，git tag/npm registry 未到位的项标 ⏳。🔍 维度 7f/17a-b/20 依赖真实环境（npm/git/OpenClaw），AI 审查标 `⏸️ 需人工环境`。
 
-## 审查维度（97 维 · 版本演进见头部表格）
+## 审查维度（98 维 · 版本演进见头部表格）
 
 ### 审查维度正文（#1-106 · 按版本演进排列 · 分组小节为历史分类，维度流连续不中断）
 
@@ -1776,25 +1776,25 @@ grep -q "checkHistoryChainIntegrity" CHANGELOG.md && echo "✅ 退役公告在 C
 > run-20260829-01 五轮审查（weighted-convergence 终态 0 P0/0 P1/1 P2 SKIP）修复的防复发锚点。文档数字面/npm 面已被 check-docs/check-version 工具覆盖不重复建维；vitest 并行假红/超时层已被 #110 覆盖。
 
 ```bash
-# a: 门禁假红假绿族——BSD grep 正则 + CI 审计 || true（r1 P0：test-count 在本机从未解析过 Tests 行的终极根因；注释里的历史缺陷描述不算残留）
-grep -rn '\\\\s' tools/check/*.sh 2>/dev/null | grep -vE "^[^:]+:[0-9]+:#" | grep -q . && echo "❌ 门禁活代码残留 \\\\s（BSD 恒不匹配=假红/假绿）" || echo "✅ 门禁活代码无 \\s 残留"
-grep -rn "sofagent-audit.*|| true" .github/workflows/ 2>/dev/null | grep -q . && echo "❌ CI 审计门禁残留 || true 假绿（exit_code 被清 0，FAIL 永不阻断）" || echo "✅ CI 审计无 || true 假绿"
+# a: 门禁正则跨平台健壮性——\s 在 BSD/部分 grep 语义不稳（v1.4.3 实测：本机 2.6.0-FreeBSD 支持 \s，但 test-count 曾因 ANSI 前缀恒 0 假红、\s 组合加剧解析脆性）；shell 活代码一律 POSIX 类——注释行与 Node 内嵌 JS 行（matchAll/test/inFence 上下文）合法
+grep -rn '\\\\s' tools/check/check-docs.sh tools/check/check-review-system.sh tools/check/check-test-count.sh tools/check/check-dev-prompt.sh tools/check/check-version.sh 2>/dev/null | grep -vE "^[^:]+:[0-9]+:#" | grep -vE "(matchAll|\.test\(|inFence|node -e)" | grep -q . && echo "❌ 门禁 shell 活代码残留 \\\\s（跨平台假红隐患）" || echo "✅ 门禁 shell 活代码无 \\\\s 残留"
+grep -rn "sofagent-audit.*|| true" .github/workflows/ 2>/dev/null | grep -q . && echo "❌ CI 审计门禁残留 || true 假绿（exit_code 被清 0，FAIL 永不阻断——v1.4.3 阶段四实测修复）" || echo "✅ CI 审计无 || true 假绿"
 # b: worktree 引用丢失防线（悬挂 commit 根因 80c94f64 + LEDGER worktree 副本蒸发）——teardown 固化 tip + driver 产物主仓落盘
 grep -q "branch -f" FORGE/src/driver-base.mjs && echo "✅ teardown 固化分支 tip 在位" || echo "❌ teardown 前未固化 tip（悬挂 commit 回潮）"
 grep -n "LEDGER" FORGE/src/driver-base.mjs | grep -qE "\\\$REPO_ROOT|repoRoot|主仓" && echo "✅ LEDGER 落盘主仓路径" || echo "⚠️ 复核 LEDGER 落盘路径（须主仓非 worktree 副本）"
 # c: 安全面六件静态锚点（A23 symlink/A22 提权/data URI 脱敏/审计 fail-open/影子审计器基线/--revert 非 TTY）
 grep -q "symlink\|realpath" engine/audit/src/rules/rule-a23-path-traversal.ts && grep -q "escalat\|setuid\|提权" engine/audit/src/rules/rule-a22-privilege-escalation.ts && echo "✅ A23/A22 规则面在位" || echo "❌ A22/A23 规则面缺失"
-grep -q "fail-open\|failOpen" engine/audit/src/permission/checker.ts && echo "✅ fail-open 防线在位" || echo "❌ 审计 fail-open 修复丢失"
+grep -q "escaped" engine/audit/src/permission/checker.ts && grep -q "ReDoS\|灾难性回溯\|正则注入" engine/audit/src/permission/checker.ts && echo "✅ 权限正则元字符转义加固在位" || echo "❌ 权限正则注入/ReDoS 防线丢失"
 # d: dashboard 静态一致性（双版本/缺省态谎报/图例配色/scrollTop 非法 API）
 grep -c "logo-version" tools/dashboard/dashboard.html | grep -qE "^[0-9]+$" && ! grep -q "document.scrollTop" tools/dashboard/dashboard.html && echo "✅ dashboard 版本单源 + 无非法 API" || echo "❌ dashboard 一致性回退"
 ```
 
-<!-- 瘦身判据记录 v1.4.2（阶段四步骤四 · 执行模板第 3 份执行）
-①冗余：B7-B11/B12 已被 check-docs 弱措辞/check-test-count/check-cjk-var/check-anchors 既有工具覆盖（草稿逐条比对）→ 不重复建维，仅 B1/B6/B13 建面
-②重叠：聚簇「新功能审查面」×5（111/113/115/121/123/125）为每版一维惯例（假信号）；#59（resolve*Dir 传参）与 N-1 dataDir SSOT 同主题族 → 真重叠，#59 命令体并入 #125 子项 g（净减 8 行）；#112（二进制快照）与 #51 安全回归族同主题 → 真重叠，并入 #51 子项 f（净减 9 行）
-③增长性质：+2 维（#125 九大交付一维收口参照 113/121/123 惯例、#126 防复发一维收口参照 124 惯例）均新审查面非模式重复
-④归并配额：新增 2 维 → 本版真实归并 2 处（#59→#125g 净减 8 行、#112→#51f 净减 9 行——内容实移 git diff 可查）；2≥2 ✓
-结论：净增约 +32 行（1719→1751 超 1720）；checklist 警戒线上调 1720→1760（v1.4.1 阶段四已调非本版首调侧，本版先真实归并 2 处解锁方准上调；净增 32 ≤ 余量 41 ✓）；acceptance 警戒线补登记 3270→3450（阶段三 +7 场景 S333-S339 3414 行已超线——真实补测试非归并三判据全否，上版未调非连续）；fresh-eyes 警戒线不动（432→440 余量 8，本版 +8 恰满不调，校准节压缩至 4 条内）
+<!-- 瘦身判据记录 v1.4.2（阶段四 + 阶段十二回写合并）①冗余：文档/npm 面已被 check-docs/check-version 覆盖不建维；②重叠：#59→#125g（dataDir 传参，净减 8）、#112→#51f（二进制快照，净减 9）真实归并 2 处对销 +2 维（#125/#126）；③④：新审查面非重复，配额 2:2 ✓。警戒线：checklist 1720→1760（净增 32 ≤ 余量 41）；acceptance 3270→3450（S333-S339 真实补测）→ 阶段五 +S341 调 3450→3490 → 章五重跑 +S342/S343 调 3490→3560；fresh-eyes 440→455（阶段十二发版期校准节）。阶段十二回写：#126+d（B8 CI 防狗粮）净增 +2 由注释压缩对销
 -->
-<!-- 阶段十二回写 v1.4.2：#126 子项 d（B8 CI 纯净防狗粮，同 #124 扩展 B11/B12 先例，无新编号）净增 +2；acceptance +1 场景 S344（Git Data API 通道 cat-file 防复发，3513→3528）≤3560 不调；fresh-eyes +1 发版期校准节（4 条）上调 440→455（04-review-system.md 同步）；本注释两块合一压缩对销超线 1 行
+<!-- 瘦身判据记录 v1.4.3（阶段四步骤四 · run-20260829-01 五轮 60+ 条来源）
+①冗余：文档数字面/npm 元数据面/vitest 假红层已被 check-docs·check-version·#110 覆盖 → 不重复建维
+②重叠：安全面六件与 #51 族同域不同对象（审计规则自身绕过面 vs install/运行时安全）→ 并列；「门禁假绿」与 #100/#110 同族不同机理（|| true 清退出码 vs set-u unbound）→ 并列
+③增长性质：+1 维（#128 fresh-eyes 修复一维收口，参照 124/126 惯例）新审查面非重复
+④归并配额：新增 1 维 → 归并 0 处——#127h 退役收口归并已在开发期完成（5315ffa5 本版配额已用）；如实登记不凑数
+结论：#128 + 判据块净增 25 行（1782→1807），同版二次上调冻结（开发期已调 1760→1800）→ v1.4.2 两块注释合并压缩释放 7 行对销，1800 封顶不调线；acceptance 不动（3639 ≤ 3640）；fresh-eyes 不动（435 ≤ 455，校准入 calibration 档案——外移拍板生效首轮）
 -->
