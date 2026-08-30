@@ -359,9 +359,14 @@ describe('appendLedger', () => {
 
 function createParseVerdict(joinFn, existsSyncFn, readFileSyncFn) {
   const { fullBody } = extractFunctionBody(SOURCE_CODE, 'parseVerdict');
+  // v1.4.3：extractVerdictKeyword 已从 parseVerdict 内部提到模块级（原本
+  // parseVerdict 与 parseStepResults 各存一份相同副本）。本测试是把 parseVerdict
+  // 的函数体单独抠出来用 new Function 构造，抠出的片段不含模块级依赖，故需显式
+  // 把该函数一并注入，否则 ReferenceError。
+  const { fullBody: verdictKeywordFn } = extractFunctionBody(SOURCE_CODE, 'extractVerdictKeyword');
   const wrapper = new Function(
     'join', 'existsSync', 'readFileSync',
-    fullBody + '\nreturn parseVerdict;'
+    verdictKeywordFn + '\n' + fullBody + '\nreturn parseVerdict;'
   );
   return wrapper(joinFn, existsSyncFn, readFileSyncFn);
 }
@@ -402,6 +407,36 @@ describe('parseVerdict', () => {
     const result = parse(tmpRoot);
 
     expect(result.verdict).toBe('FAIL');
+  });
+
+  // ── v1.4.3（run-19 原生复跑教训）：HOLD 同义裁决词 → FAIL ──
+  // LLM 审查者按安全审查惯例写「HOLD（不放行）」，解析器未认 → driver 记账
+  // ERROR 与真实裁决脱钩。HOLD/不放行/暂缓放行 均等价 FAIL（fail-closed）。
+  it('verdict.md 判定 HOLD（run-19 真实形态回放） → verdict=FAIL', () => {
+    writeFileSync(join(tmpRoot, 'verdict.md'),
+      '# sofagent 发版闸门审查报告\n\n| **总体结论** | **HOLD（不放行）** |\n\n## 一、总体结论\n\n**本次发版闸门判定为 HOLD，不予放行。**');
+
+    const parse = makeParser(tmpRoot);
+    const result = parse(tmpRoot);
+
+    expect(result.verdict).toBe('FAIL');
+    expect(result.reason).toBe('verdict.md 裁决');
+  });
+
+  it('verdict.md 判定「不放行」（中文同义词） → verdict=FAIL', () => {
+    writeFileSync(join(tmpRoot, 'verdict.md'),
+      '# 最终裁决\n\n## 总体结论：不放行\n\n依据略');
+
+    const parse = makeParser(tmpRoot);
+    expect(parse(tmpRoot).verdict).toBe('FAIL');
+  });
+
+  it('正文提及 HOLD 但判定行是 PASS → 不误抓（窗口纪律保持）', () => {
+    writeFileSync(join(tmpRoot, 'verdict.md'),
+      '# 最终裁决\n\n## 判定：PASS\n\n## 附注\nHOLD 是安全审查常见措辞，本报告未采用');
+
+    const parse = makeParser(tmpRoot);
+    expect(parse(tmpRoot).verdict).toBe('PASS');
   });
 
   // 测试：verdict.md 不存在 → verdict=ERROR

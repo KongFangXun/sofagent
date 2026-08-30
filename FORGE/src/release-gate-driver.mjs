@@ -254,7 +254,13 @@ const GRACE_STEPS_DEFAULT = 0;    // 零窗口模式（v1.2.7：撞硬上限立�
 const GRACE_STEPS_ANALYSIS = 0;  // 分析型步骤同样零窗口
 
 // v1.2.7：isReportText + REPORT_MIN_CHARS 提到模块级（和 fresh-eyes-driver 对齐，避免局部作用域引用 bug）
-const REPORT_MIN_CHARS = 300;
+// v1.4.3 修正：此处原为 300，与 fresh-eyes-driver 的 500 不一致。查 commit
+//   0e924794（「同步 fresh-eyes 熔断修复」）可知它本就是一次同步提交、注释也写明
+//   「对齐」，300 系同步时的疏漏——500 才是 run-07 实战定下的阈值（GLM 的 172 字符
+//   思考碎片被当成报告写入产物文件）。两者不一致意味着同一份文本在 fresh-eyes 判
+//   不达标、在 release-gate 判达标，而这两个 driver 分别是审查与发版门禁的裁决口，
+//   口径打架会让同一份产物在两处得到相反结论。
+const REPORT_MIN_CHARS = 500;
 function isReportText(text) {
   if (!text || !text.trim()) return false;
   if (text.length >= REPORT_MIN_CHARS) return true;
@@ -2168,6 +2174,54 @@ async function runCoveragePrecheck(runDir, target) {
 }
 
 /**
+ * 从报告文本中提取裁决关键词（PASS/FAIL/SKIP）。
+ *
+ * v1.4.3：原为 parseVerdict 与 parseStepResults 内部各写一份、实现完全相同的
+ * 嵌套函数（22 行 ×2）。提到模块级共用——两份副本是同一套解析纪律的两个拷贝，
+ * 改一处漏一处就会让「verdict.md 判 FAIL」和「LEDGER 记 PASS」对不上，而这
+ * 两者是发版门禁的最后两道口径，必须同源。
+ *
+ * 健壮性要点：
+ *  1. 先剥离 ``` 围栏代码块——报告正文的日志转储/负向测试输出常含 FAIL 字样，
+ *     它们不是裁决结论，必须先去除以免污染解析。
+ *  2. 只在「判定」「结论」标记所在行及其紧邻窗口内提取结论词，
+ *     绝不做「全文含 FAIL 即判 FAIL」这类脆弱兜底。
+ *  3. 标记与结论词之间允许夹杂 emoji（✅/❌）、标点（：:）、空白与 markdown 符号；
+ *     一旦出现中文或英文字母（如「判定理由」「判定为」）即中断匹配，
+ *     防止误抓「无 FAIL 条目」「全部判定 PASS」这类无关句子。
+ *  4. 同义裁决词（BLOCKED/BLOCK/NO-GO/HOLD/不予放行/不通过/阻塞）语义等价 FAIL
+ *     （fail-closed），仅在标记紧邻窗口内匹配——见 run-16 修复；HOLD 为
+ *     run-19 原生复跑新增（LLM 安全审查惯例措辞，driver 记账曾脱钩）。
+ *
+ * @param {string} raw 原始文本
+ * @returns {string|null} 'PASS' | 'FAIL' | 'SKIP' | null
+ */
+function extractVerdictKeyword(raw) {
+  const stripped = raw.replace(/```[\s\S]*?```/g, '\n');
+  const lines = stripped.split(/\r?\n/);
+  const markers = ['判定', '结论'];
+  for (const marker of markers) {
+    for (let i = 0; i < lines.length; i++) {
+      const col = lines[i].indexOf(marker);
+      if (col === -1) continue;
+      // 窗口 = 标记行剩余部分 + 后续 3 行
+      const windowText = lines.slice(i, i + 4).join('\n').slice(col + marker.length);
+      const m = windowText.match(/^[^A-Za-z\u4e00-\u9fff]*?(PASS|FAIL|SKIP)/i);
+      if (m) return m[1].toUpperCase();
+      // run-16 修复：LLM 审查者常用同义裁决词（BLOCKED/BLOCK/NO-GO/不予放行/
+      // 不通过/阻塞/HOLD）——语义全部等价 FAIL（fail-closed），不再误记 ERROR/SKIP。
+      // 仅在「结论/判定」标记紧邻窗口内匹配，维持既有防误抓纪律。
+      // HOLD：run-19 原生复跑实证——LLM 审查者按安全审查惯例写「HOLD（不放行）」，
+      // 解析器未认导致 driver 记账 ERROR 与真实裁决脱钩。
+      const mBlock = windowText.match(/^[^A-Za-z\u4e00-\u9fff]*?(BLOCKED|BLOCK|NO-GO|HOLD)/i);
+      if (mBlock) return 'FAIL';
+      if (/^[^A-Za-z\u4e00-\u9fff]*(不予放行|不通过|不得放行|不放行|阻塞|暂缓放行)/.test(windowText)) return 'FAIL';
+    }
+  }
+  return null;
+}
+
+/**
  * 从 verdict.md 解析最终裁决（PASS/FAIL）。
  * driver 用于 LEDGER 记录和最终输出。
  *
@@ -2183,44 +2237,9 @@ function parseVerdict(runDir) {
 
   const text = readFileSync(verdictPath, 'utf-8');
 
-  /**
-   * 从文本中提取裁决关键词（PASS/FAIL/SKIP）。
-   *
-   * 健壮性要点：
-   *  1. 先剥离 ``` 围栏代码块——报告正文的日志转储/负向测试输出常含 FAIL 字样，
-   *     它们不是裁决结论，必须先去除以免污染解析。
-   *  2. 只在「判定」「结论」标记所在行及其紧邻窗口内提取结论词，
-   *     绝不做「全文含 FAIL 即判 FAIL」这类脆弱兜底。
-   *  3. 标记与结论词之间允许夹杂 emoji（✅/❌）、标点（：:）、空白与 markdown 符号；
-   *     一旦出现中文或英文字母（如「判定理由」「判定为」）即中断匹配，
-   *     防止误抓「无 FAIL 条目」「全部判定 PASS」这类无关句子。
-   *
-   * @param {string} raw 原始文本
-   * @returns {string|null} 'PASS' | 'FAIL' | 'SKIP' | null
-   */
-  function extractVerdictKeyword(raw) {
-    const stripped = raw.replace(/```[\s\S]*?```/g, '\n');
-    const lines = stripped.split(/\r?\n/);
-    const markers = ['判定', '结论'];
-    for (const marker of markers) {
-      for (let i = 0; i < lines.length; i++) {
-        const col = lines[i].indexOf(marker);
-        if (col === -1) continue;
-        // 窗口 = 标记行剩余部分 + 后续 3 行
-        const windowText = lines.slice(i, i + 4).join('\n').slice(col + marker.length);
-        const m = windowText.match(/^[^A-Za-z\u4e00-\u9fff]*?(PASS|FAIL|SKIP)/i);
-        if (m) return m[1].toUpperCase();
-        // run-16 修复：LLM 审查者常用同义裁决词（BLOCKED/BLOCK/NO-GO/不予放行/
-        // 不通过/阻塞）——语义全部等价 FAIL（fail-closed），不再误记 ERROR/SKIP。
-        // 仅在「结论/判定」标记紧邻窗口内匹配，维持既有防误抓纪律。
-        const mBlock = windowText.match(/^[^A-Za-z\u4e00-\u9fff]*?(BLOCKED|BLOCK|NO-GO)/i);
-        if (mBlock) return 'FAIL';
-        if (/^[^A-Za-z\u4e00-\u9fff]*(不予放行|不通过|不得放行|阻塞)/.test(windowText)) return 'FAIL';
-      }
-    }
-    return null;
-  }
-
+  // 裁决关键词提取已提到模块级 extractVerdictKeyword——v1.4.3 之前此处
+  // 与 parseStepResults 内各存一份 22 行的相同副本，改一处漏一处会让
+  // verdict.md 的裁决与 LEDGER 的记录对不上。
   const keyword = extractVerdictKeyword(text);
   if (keyword === 'PASS' || keyword === 'FAIL') {
     return { verdict: keyword, reason: 'verdict.md 裁决' };
@@ -2238,38 +2257,6 @@ function parseVerdict(runDir) {
  * @returns {{ acceptance: string, regression: string, coverage: string }}
  */
 function parseStepResults(runDir) {
-  /**
-   * 从单份报告文本中提取结论关键词（PASS/FAIL/SKIP）。
-   * 解析策略与 parseVerdict 完全一致：剥离代码块 → 定位「判定/结论」标记行 →
-   * 仅在标记行窗口内取结论词，杜绝「全文含 FAIL 即判 FAIL」的系统性误判
-   * （负向测试场景、覆盖率表的 ❌ 都会让旧兜底把 PASS 报告误读成 FAIL）。
-   *
-   * @param {string} raw 原始文本
-   * @returns {string|null} 'PASS' | 'FAIL' | 'SKIP' | null
-   */
-  function extractVerdictKeyword(raw) {
-    const stripped = raw.replace(/```[\s\S]*?```/g, '\n');
-    const lines = stripped.split(/\r?\n/);
-    const markers = ['判定', '结论'];
-    for (const marker of markers) {
-      for (let i = 0; i < lines.length; i++) {
-        const col = lines[i].indexOf(marker);
-        if (col === -1) continue;
-        // 窗口 = 标记行剩余部分 + 后续 3 行
-        const windowText = lines.slice(i, i + 4).join('\n').slice(col + marker.length);
-        const m = windowText.match(/^[^A-Za-z\u4e00-\u9fff]*?(PASS|FAIL|SKIP)/i);
-        if (m) return m[1].toUpperCase();
-        // run-16 修复：LLM 审查者常用同义裁决词（BLOCKED/BLOCK/NO-GO/不予放行/
-        // 不通过/阻塞）——语义全部等价 FAIL（fail-closed），不再误记 ERROR/SKIP。
-        // 仅在「结论/判定」标记紧邻窗口内匹配，维持既有防误抓纪律。
-        const mBlock = windowText.match(/^[^A-Za-z\u4e00-\u9fff]*?(BLOCKED|BLOCK|NO-GO)/i);
-        if (mBlock) return 'FAIL';
-        if (/^[^A-Za-z\u4e00-\u9fff]*(不予放行|不通过|不得放行|阻塞)/.test(windowText)) return 'FAIL';
-      }
-    }
-    return null;
-  }
-
   function extractResult(filename) {
     const filePath = join(runDir, filename);
     if (!existsSync(filePath)) return 'SKIP';
@@ -2676,29 +2663,49 @@ async function main() {
       console.error('worker 模式需要 --step --run-dir --target');
       process.exit(1);
     }
-    try {
-      await runWorker(args.step, args.runDir, args.target);
-      // v1.3.6 交付⑩：worker 写完产物后强制退出（镜像 fresh-eyes run-23 修复）。
-      // workerAliveTimer 是残留句柄——不清理会阻止事件循环排空 → worker 进程永不退出
-      // → driver 的 spawn await 永久挂起。process.exit 无视残留句柄，强制回收。
-      process.exit(0);
-    } catch (err) {
-      console.error(`[worker:${args.step}] 失败: ${err.message}`);
-      if (err.errors) {
-        console.error('--- 子错误 (' + err.errors.length + ' 条) ---');
-        for (const [i, subErr] of err.errors.entries()) {
-          console.error(`  [${i}] ${subErr?.message || subErr}`);
-          if (subErr?.stack) {
-            console.error('     stack:', subErr.stack.split('\n').slice(0, 6).join('\n'));
-          }
+    // v1.4.3（run-20 教训）：LLM 网络错误（5xx/网络超时）重试 ×2——智谱侧
+    // 故障窗口内一次 500 即整步崩溃，17/17 步全毁。对齐 fresh-eyes 空响应
+    // 重试先例：仅对网络类错误重试（判定依据：错误消息含「网络错误」/5xx
+    // 状态码/timeout 字样），业务错误不重试（重试也不会好）。
+    const isNetworkError = (e) => /网络错误|网络超时|timeout|timed?\s*out|ECONNRESET|ECONNREFUSED|ETIMEDOUT|fetch failed|\b5\d{2}\b/.test(String(e?.message || ''));
+    const MAX_ATTEMPTS = 3; // 首跑 + 重试 ×2
+    let attempt = 0;
+    let lastErr = null;
+    while (attempt < MAX_ATTEMPTS) {
+      attempt++;
+      try {
+        await runWorker(args.step, args.runDir, args.target);
+        // v1.3.6 交付⑩：worker 写完产物后强制退出（镜像 fresh-eyes run-23 修复）。
+        // workerAliveTimer 是残留句柄——不清理会阻止事件循环排空 → worker 进程永不退出
+        // → driver 的 spawn await 永久挂起。process.exit 无视残留句柄，强制回收。
+        process.exit(0);
+      } catch (err) {
+        lastErr = err;
+        if (attempt < MAX_ATTEMPTS && isNetworkError(err)) {
+          const waitSec = 15 * attempt; // 递退避：15s / 30s
+          console.error(`[worker:${args.step}] 第 ${attempt} 次尝试失败（网络类错误: ${String(err.message).slice(0, 120)}），${waitSec}s 后重试（${MAX_ATTEMPTS - attempt} 次剩余）`);
+          await new Promise(r => setTimeout(r, waitSec * 1000));
+          continue;
         }
-      } else {
-        console.error('--- stack ---');
-        console.error(err.stack);
+        console.error(`[worker:${args.step}] 失败: ${err.message}`);
+        if (err.errors) {
+          console.error('--- 子错误 (' + err.errors.length + ' 条) ---');
+          for (const [i, subErr] of err.errors.entries()) {
+            console.error(`  [${i}] ${subErr?.message || subErr}`);
+            if (subErr?.stack) {
+              console.error('     stack:', subErr.stack.split('\n').slice(0, 6).join('\n'));
+            }
+          }
+        } else {
+          console.error('--- stack ---');
+          console.error(err.stack);
+        }
+        process.exit(1);
       }
-      process.exit(1);
     }
-    return;
+    // 理论不可达（循环内必 exit）——防御性兜底
+    console.error(`[worker:${args.step}] 重试 ${MAX_ATTEMPTS} 次后仍失败: ${lastErr?.message}`);
+    process.exit(1);
   }
 
   // ─── Driver 模式 ───
