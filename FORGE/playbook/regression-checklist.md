@@ -50,22 +50,25 @@ WC_CHK=$(wc -l < FORGE/playbook/regression-checklist.md); WC_ACC=$(wc -l < FORGE
 #### 1. CHANGELOG 纯度与完整性
 
 ```bash
-# 子项 a: 纯度——不含审查元信息
-grep -rniE "GLM|DeepSeek|双视角|P[012]×|审查修复|陌生视角|fresh-eyes|审查轮次|审查×|审查驱动|审查吸收" CHANGELOG.md docs/changelog/v*.md docs/ROADMAP.md   # 期望：零命中
+# 子项 a: 纯度——不含审查过程元信息（历史版本交付的功能名不算：v1.2.3「Fresh-Eyes 流程化」、
+# v1.3.8「fresh-eyes 成本重构」是产品交付史，非审查过程泄漏——用 -v 排除「交付」语境行）
+grep -rniE "GLM|DeepSeek|双视角|P[012]×|审查修复|陌生视角|fresh-eyes|审查轮次|审查×|审查驱动|审查吸收" CHANGELOG.md docs/changelog/v*.md docs/ROADMAP.md 2>/dev/null | grep -viE "流程化|成本重构|B 侧复核|usage.jsonl" || true   # 期望：零命中（历史交付功能名豁免）
 # 子项 b: 孤儿 changelog 检测
-for f in docs/changelog/v*.md; do v=$(basename $f .md); git rev-parse $v >/dev/null 2>&1 || echo "⚠️ $v: 无对应 tag"; done
+for f in docs/changelog/v*.md; do v=$(basename $f .md); git rev-parse $v >/dev/null 2>&1 || echo "⚠️ $v: 无对应 tag"; done || true
 # 子项 c: CHANGELOG 索引含全部已发版 tag + 规划版独立分组
 grep -A1 "## 规划中" CHANGELOG.md | head -1   # 期望：有「规划中」独立标题
 # 子项 d: README 对核心文档链接可发现性
 grep -c "ARCHITECTURE.md" README.md   # 期望: ≥ 1
 # 子项 e: 当前版本条目不含审查元信息（原维度 48e）
-LATEST_VER=$(grep -m1 "^### \[v" CHANGELOG.md | grep -oE 'v[0-9.]+'); sed -n "/^### \[$LATEST_VER\]/,/^### \[v/p" CHANGELOG.md | grep -qE "P[012]×|fresh-eyes|审查轮次" && echo "⚠️ CHANGELOG 当前版本含审查元信息"
+LATEST_VER=$(grep -m1 "^### \[v" CHANGELOG.md | grep -oE 'v[0-9.]+'); sed -n "/^### \[$LATEST_VER\]/,/^### \[v/p" CHANGELOG.md | grep -qE "P[012]×|fresh-eyes|审查轮次" && echo "⚠️ CHANGELOG 当前版本含审查元信息" || true
 # 子项 f: ROADMAP 版本头描述与当前版本一致（原维度 48a）
 sed -n '4p' docs/ROADMAP.md | grep -qE "训练引擎|数据与评估|FDE Harness|六引擎|IM 桥" || echo "⚠️ ROADMAP 版本头描述可能错配"   # 关键词须随发版同步更新（v1.4.2 口径）
 # 子项 g: SECURITY.md 旧描述清理（原维度 48d）
-grep -q "不做内容安全校验" SECURITY.md && echo "⚠️ SECURITY.md L86 措辞过时"
+grep -q "不做内容安全校验" SECURITY.md && echo "⚠️ SECURITY.md L86 推辞过时" || true
 # 子项 h: SKILL.md 铁律/底线数标题声称与实际一致（原维度 48g；底线是有序列表 `N. ` 格式）
-SKILL_BC=$(grep -oE "### ([0-9]+) 底线" SKILL/SKILL.md | grep -oE "[0-9]+" || echo 0); SKILL_BA=$(sed -n '/^### [0-9] 底线/,/^### /p' SKILL/SKILL.md | grep -cE "^[0-9]+\. " || echo 0); [ "$SKILL_BC" != "$SKILL_BA" ] && echo "⚠️ SKILL.md 底线数 $SKILL_BC vs $SKILL_BA"
+# v1.4.3 修复（run-01 定谳尾判假）：原 `[ ] && echo ⚠️` 结构在健康态（相等）时 `[ ]` 返 1 → 整维度
+# exit=1（健康态假红）。改显式 if 判定，健康态显式 exit 0。
+SKILL_BC=$(grep -oE "### ([0-9]+) 底线" SKILL/SKILL.md | grep -oE "[0-9]+" || echo 0); SKILL_BA=$(sed -n '/^### [0-9] 底线/,/^### /p' SKILL/SKILL.md | grep -cE "^[0-9]+\. " || echo 0); if [ "$SKILL_BC" != "$SKILL_BA" ]; then echo "⚠️ SKILL.md 底线数 $SKILL_BC vs $SKILL_BA"; exit 1; fi; echo "✅ SKILL.md 底线数一致（$SKILL_BC）"
 ```
 
 #### 3. 文档规范源与归属一致性
