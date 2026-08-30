@@ -31,6 +31,7 @@ sofagent 是一套 FDE 能力——底层引擎是纯本地 Harness 中间件（
 ~/.sofagent/
 ├── data/          ← 用户可见运行时数据（审计/知识库/反思/任务日志）
 ├── internal/      ← 引擎内部状态（checkpoint / .git-shadow / watch.yml）
+├── keys/          ← 静态加密密钥（0600，v1.3.8 能力 · 激活排期 v1.4.7）
 ├── bin/           ← CLI 入口
 └── skill/         ← Skill 文件
 ```
@@ -242,6 +243,7 @@ sofagent 是一套 FDE 能力——底层引擎是纯本地 Harness 中间件（
 ~/.sofagent/
 ├── data/          ← 用户可见运行时数据（审计/知识库/反思/任务日志）
 ├── internal/      ← 引擎内部状态（checkpoint / .git-shadow / watch.yml）
+├── keys/          ← 静态加密密钥（0600，v1.3.8 能力 · 激活排期 v1.4.7）
 ├── bin/           ← CLI 入口
 └── skill/         ← Skill 文件
 ```
@@ -256,7 +258,7 @@ sofagent 是一套 FDE 能力——底层引擎是纯本地 Harness 中间件（
 
 > 引入版本：v1.1.8（已落地）。
 
-`history.jsonl` 自 v1.1.8 起支持 HMAC-SHA256 签名（密钥来自 `~/.sofagent-key`）。有密钥时每条记录签名，Agent 无法在无密钥情况下伪造签名；无密钥时降级为 SHA-256 hash chain（Agent 可重算整链，仅事后可追溯非强防篡改）。`--doctor`（v1.2.0 起）会实际调用 `checkHistoryChainIntegrity()` 校验链完整性。建议高安全场景配置 `~/.sofagent-key` 启用强校验。
+`history.jsonl` 自 v1.1.8 起支持 HMAC-SHA256 签名（密钥来自 `~/.sofagent-key`）。有密钥时每条记录签名，Agent 无法在无密钥情况下伪造签名；无密钥时降级为 SHA-256 hash chain（Agent 可重算整链，仅事后可追溯非强防篡改）。`--doctor`（v1.2.0 起）会实际调用 `checkHistoryChainDetailed()` 校验链完整性。建议高安全场景配置 `~/.sofagent-key` 启用强校验。
 
 > ⚠️ **无密钥时篡改检测是「弱校验」**：npm 直装等未配置 `~/.sofagent-key` 的路径，篡改检测退化为 hash chain——手改 `history.jsonl` 后重算整链即可让校验通过（FAIL 抹成 PASS 在结构上可能）。**企业 SOP 应强制配置 HMAC 密钥并周期性 `--doctor` 体检**，不要依赖无密钥路径的篡改检测结论。
 
@@ -302,7 +304,7 @@ sofagent-audit（v0.92+）是 TypeScript CLI，执行 `execFileSync('git', ...)`
 
 | 编号 | 名称 | 检测什么 | 判定 |
 |------|------|---------|:--:|
-| A14 | 知识库越权 | 访问超出工作流声明范围的知识库页面（事后审计） | WARN |
+| A14 | 知识库越权 | 访问超出业务流声明范围的知识库页面（事后审计） | WARN |
 | A15 | 不盲动 | workflow 节点未声明 actions | FAIL |
 | A16 | 非授权文件变更 | 非声明范围文件被修改（行为级） | FAIL |
 | A17 | 异常批量变更 | 单次提交变更文件数超阈值（filesystem 模式） | WARN |
@@ -406,6 +408,13 @@ chmod 600 ~/.sofagent/data/audit/history.jsonl.bak-*
 **本版决策（方案 C · 声明而非改码）**：本版**不修改** `audit-history.ts` 的路径解析逻辑，仅在此明确声明信任边界。理由：① 本地低风险场景下白名单/固定路径会损害测试隔离与多实例部署的灵活性；② 共享服务器场景的正确防线是**环境隔离**（每用户独立 `~/.sofagent/`、CI 作业独立容器/沙箱、`env -i` 清洗环境），而非在审计引擎内做路径白名单（白名单本身也可被同权限攻击者绕过）。
 
 **共享服务器缓解建议**：① CI 作业运行在独立容器/沙箱，环境变量不可跨作业注入；② 启动入口用 `env -i` 或显式白名单透传环境变量；③ 对 `history.jsonl` 所在卷做完整性监控（文件路径 + mtime 基线告警）。路径白名单校验（方案 A）与审计路径固定（方案 B）作为可选加固，列入 ROADMAP 评估。
+
+### 威胁模型：`SOFAGENT_KEY_PATH` / `SOFAGENT_HOME_ALLOWED_PREFIXES` 环境变量
+
+与 `SOFAGENT_DATA` 同属环境变量信任边界，本节一并声明：
+
+- **`SOFAGENT_KEY_PATH`**（`engine/core/src/audit-history.ts:82`）：HMAC 密钥路径覆盖，优先级为 `SOFAGENT_KEY_PATH > ~/.sofagent-key`。能设置该变量的攻击者可将签名密钥重定向到自控文件——写入侧与校验侧同读该密钥时链校验仍「通过」，但密钥已不在用户掌控。设计初衷同 `SOFAGENT_DATA`（测试隔离，如 `llm-call-trace.test.ts` 用其指向临时密钥）；风险分级与缓解同上节（本地低 / 共享中，防线是环境隔离非路径白名单）。
+- **`SOFAGENT_HOME_ALLOWED_PREFIXES`**（`engine/core/src/data-paths.ts:43`）：`SOFAGENT_HOME` 越界回退白名单的扩展入口（冒号分隔，企业场景显式扩展安装根前缀）。注意双向性：它既可把合法定制路径**收进来**（预期用途），也可把越界路径**放进来**——能设置该变量的攻击者可将 `SOFAGENT_HOME` 重定向到自控前缀下（数据落点与审计主链分家，同 [LIMITATIONS 数据目录解析](./docs/LIMITATIONS.md) 已披露的双轨风险叠加）。缓解同上节：入口环境清洗 + 部署期前缀清单管控。
 
 ### 已知绕过路径
 

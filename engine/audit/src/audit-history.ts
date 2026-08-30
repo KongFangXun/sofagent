@@ -14,12 +14,11 @@
 //   依赖方向单向：audit → core（core 绝不反向依赖 audit）。业务持久化含 audit 规则
 //   结果域类型，不能下沉到 core 底座（会违反 core「零上层依赖」分层契约），故保持两份。
 //
-// 并发安全说明：appendFileSync 在 POSIX 上对小于 PIPE_BUF (4KB) 的写入是原子的。
-// 审计历史条目通常 < 1KB，单次写入安全。多进程同时写入可能导致行交错，
-// 但概率极低（审计触发频率 < 1次/分钟）。
-// v1.3.2 #44: 这是已知限制（无文件锁/单 writer），已记录到 docs/LIMITATIONS.md。
-// daemon 文件监控 + Agent commit 并发写 history.jsonl 可能产生损坏行，
-// 导致 hash chain 完整性校验失败。如需强一致，应加文件锁或改为单 writer 模式（未来版本）。
+// 并发安全说明（v1.3.8 后实态）：appendHistory 已走 atomicAppendSync（@sofagent/core
+// SSOT 原语，内置文件锁互斥），早于 v1.3.2 时代「appendFileSync 无文件锁/可能行交错」
+// 的旧限制已在写路径收口（见下方 appendHistory 实现与 LIMITATIONS 并发写入披露）。
+// v1.3.1 #44 披露的并发写风险：WAL 写在网关层单 writer 模式消除（详见 docs/LIMITATIONS.md）。
+// daemon 文件监控 + Agent commit 并发写 history.jsonl 的历史担忧已由上述两层解决。
 //
 // 每次 sofagent-audit 运行后，把结果追加到
 // ${SOFAGENT_DATA}/audit/history.jsonl（JSONL 格式；v1.2.2 起默认 data/audit/history.jsonl）。

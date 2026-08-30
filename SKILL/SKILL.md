@@ -172,7 +172,7 @@ metadata:
 
 ## MCP 工具速查（79 tools · 12 类）
 
-> 连接 sofagent MCP Server 后可用。未连接时降级为纯文本引导。每类列代表工具，**全量 79 个见 `AGENTS.md`「MCP 全量工具表」**。
+> 连接 sofagent MCP Server 后可用。未连接时降级为纯文本引导。每类列代表工具，**MCP 协议面暴露规则与 `SOFAGENT_MCP_ROLES` 收窄说明见 `AGENTS.md`**。
 
 | 分类（数） | 代表工具 |
 |------|------|

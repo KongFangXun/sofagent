@@ -335,7 +335,7 @@ exit code：0 = 通过 / 1 = 有警告 / 2 = 有违规。零 Agent 依赖——�
 | ❌ FAIL | Webhook 推送 + 终端标红 | 存档 + 建议回滚 |
 
 ```bash
-sofagent-audit --history              # 查看审计快照
+sofagent-audit --timeline             # 查看审计时间线快照
 sofagent-audit --revert <sha>         # 回滚到某次审计前
 ```
 
