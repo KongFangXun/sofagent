@@ -287,6 +287,18 @@ Agent Lightning v1.0（arXiv 2608.17528，微软）实测：因为轨迹合并�
 
 > 📖 来源：[Agent Lightning v1.0](https://arxiv.org/abs/2608.17528)（微软，2026-08）；[Dressage](https://github.com/Accio-Lab/Dressage)（阿里 Accio，2026-06）
 
+### Omarchy：SKILL.md 形态收敛与单一权威源纪律
+
+DHH（Rails 之父）的 Omarchy——「有主见」的 Arch Linux 桌面发行版——用 15 个月（2025-06 建仓）冲到 35.3k stars，且几乎每个 commit 都有 AI 共同署名（Claude/Codex 系）。它给两件我们正在做的事提供了独立佐证。
+
+**第一件：SKILL.md 不是小众发明，是正在收敛的 Agent 接口形态。** Omarchy 把带 frontmatter 触发词的 `SKILL.md`（「要编辑 `~/.config/hypr/` 就必须用这个 skill」）随产品安装到用户机器 `/usr/share/omarchy/`，内含安全红线（「`/usr/share/omarchy/` 只读永不编辑」）、命令组速查、决策框架七步——与我们 `SKILL/` 经 install.sh 装到 `~/.sofagent/skills/` 的分发完全同构，且 Claude Code 对 SKILL.md 已是原生支持。当头部开发者的装机量级产品把「约束 AI 别乱改文件」做成随产品分发的 skill，这个形态就从我们的工程选择变成了行业接口。
+
+**第二件：反漂移靠「禁二份」纪律，而非全仓对账。** Omarchy 命令组的权威清单只活在 `bin/omarchy` 的 `GROUP_DESCRIPTIONS` 结构里，AGENTS.md 明文「不要在这里维护第二份清单，以免与路由器漂移」。我们治同一病（工具数声称八处漂移三连发）用的是双招：SSOT 声明 + check-docs §15 全仓扫描对账。两招互补——声明治源头（新文档写前先问权威源在哪），扫描治存量（漂移当场红）。把「任何清单在仓内出现第二处时，一处为权威源、其余必须标注引用」升格为文档分工纪律，成本一行，收益是把「扫出漂移」变成「不产生漂移」。
+
+**对我们的意义**：三棵文档树（task procedure / reference / user manual，按受众×文体切分）的声明式迁移方向已登记 ROADMAP 探索方向；skill 分发与文档分工纪律两条则即刻可抄——前者已被市场验证，后者已被 35k stars 项目的实践验证。
+
+> 📖 来源：[Omarchy](https://github.com/omacom/omarchy)（DHH，2025-06 建仓，35.3k stars@2026-08-30 实测）；AGENTS.md「禁二份清单」与 SKILL.md 均为仓库原文
+
 ---
 
 > 对应的落地借鉴项清单见 [ROADMAP · 探索方向](./ROADMAP.md#探索方向)。
