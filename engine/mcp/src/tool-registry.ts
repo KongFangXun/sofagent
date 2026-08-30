@@ -1103,7 +1103,7 @@ export const TOOLS: ToolDef[] = [
     // v1.4.2 (章八·引擎一)：FDE 访谈结构化——多轮追加 + nodeId 幂等合并 + profile 重算
     name: 'fde_interview',
     roles: ['fde'],
-    description: 'FDE 访谈结构化落盘（引擎一）——五要素逐节点收集，多轮追加按 nodeId 幂等合并，自动重算企业画像（节点数/岗位分布/高频痛点）；prompts_only=true 返回五要素追问话术。',
+    description: 'FDE 访谈结构化落盘（引擎一）——五要素逐节点收集，多轮追加按 nodeId 幂等合并，自动重算企业画像（节点数/岗位分布/高频痛点）；prompts_only=true 返回六条追问话术（五要素 + 实际流程）。',
     inputSchema: {
       type: 'object',
       properties: {

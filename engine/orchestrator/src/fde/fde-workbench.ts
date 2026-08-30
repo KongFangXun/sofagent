@@ -247,7 +247,9 @@ export interface InterviewRecord {
   };
 }
 
-/** 访谈追问话术（GUIDE 第二章 五要素深挖——引导 FDE 问对问题） */
+/** 访谈追问话术（GUIDE 第二章 五要素深挖——引导 FDE 问对问题）
+ * 五要素之外附第 6 条「实际流程」话术——名义流程 ≠ 实际流程（GUIDE §2.3.2），
+ * 关键节点须让执行者打开真实系统走一遍，旁路处才是自动化的真实依据。 */
 export function interviewPrompts(): Array<{ field: string; question: string }> {
   return [
     { field: '输入', question: '这一步的输入是什么？从哪来的？（系统导出 / 人工整理 / 邮件附件）' },
@@ -255,6 +257,7 @@ export function interviewPrompts(): Array<{ field: string; question: string }> {
     { field: '负责人', question: '谁在负责这个环节？什么岗位？大概几个人？' },
     { field: '耗时', question: '每次做要多久？多久做一次？（分钟 / 小时 / 天）' },
     { field: '最卡的地方', question: '这一步最烦最卡的是什么？如果只能自动化一件事，你最想解决哪个？' },
+    { field: '实际流程', question: '能不能现场带我走一遍最近一个真实案例？（不听 SOP 口述——看复制粘贴/私人表格/群内确认等真实旁路）' },
   ];
 }
 
