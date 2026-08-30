@@ -2035,7 +2035,19 @@ async function runRegressionPrecheck(runDir) {
       truncatedOutput = `${outLines.slice(0, MAX_DIM_LINES).join('\n')}\n…[${outLines.length - MAX_DIM_LINES} 行截断——完整输出见维度脚本实跑]`;
     }
     if (truncatedOutput.length > MAX_DIM_CHARS) {
-      truncatedOutput = `${truncatedOutput.slice(0, MAX_DIM_CHARS)}\n…[${truncatedOutput.length - MAX_DIM_CHARS} 字符截断]`;
+      // v1.4.3 修复（run-01 P1-4）：截断在多字节字符中间会产出 U+FFFD 乱码（维度 101
+      // LIMIT_B= 值被切半）。按码点回退到完整字符边界再截；同时保护「数值关键行」——
+      // LIMIT_B/LIMIT/期望/报告/exit 这类短判定行若被截掉，从原文补到尾部保证可见。
+      // 关键行提取基于原始整行（output 变量），不基于截断残余——避免判定行横跨截断
+      // 点时被切成两段都匹配不上。
+      let cut = MAX_DIM_CHARS;
+      while (cut > 0 && (truncatedOutput.codePointAt(cut) & 0xfc00) === 0xdc00) cut--;  // 跳过低代理
+      while (cut > 0 && (truncatedOutput.codePointAt(cut - 1) >= 0xd800 && truncatedOutput.codePointAt(cut - 1) <= 0xdbff)) cut--;  // 不切代理对
+      const head = truncatedOutput.slice(0, cut);
+      const keyLineRe = /^[^\n]{0,80}(LIMIT_B?=|期望[=：]|报告[=：])[^\n]{0,40}$/gm;
+      const tailKeep = (output.match(keyLineRe) || [])
+        .filter(l => !head.includes(l) && !/^\s*$/.test(l)).slice(0, 5);
+      truncatedOutput = head + (tailKeep.length ? '\n' + tailKeep.join('\n') : '') + `\n…[${truncatedOutput.length - cut} 字符截断${tailKeep.length ? '，关键行已保留' : ''}]`;
     }
     return {
       num: dim.num, title: dim.title, exitCode,
