@@ -25,6 +25,10 @@ function preMainHardening(): void {
 
 async function main() {
   preMainHardening();
+  if (subcommand === '--version') {
+    console.log(VERSION);
+    process.exit(0);
+  }
   if (!subcommand || subcommand === '--help') {
     console.log('sofagent-daemon — 持续审计 / 文件监听 / 自动修复循环');
     console.log('Usage: sofagent-daemon <subcommand> [options]');
