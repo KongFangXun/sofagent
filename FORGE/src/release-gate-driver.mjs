@@ -1955,7 +1955,13 @@ async function execRegressionDim(script, timeoutMs = 60_000) {
     // `echo "✅ 三 tools 齐（若上方无 ❌）"`，健康态本身带 ❌ 字面量，
     // 整文 /❌/ 匹配把健康维度翻转成假红。真失败标记的形态是 ❌ 出现在
     // 非通过行（行首或行中独立出现，前文不是「若上方无」引用语境）。
-    if (exitCode === 0 && /❌/.test(output.replace(/^✅.*❌.*$/gm, ''))) {
+    // v1.4.3 补丁（run-20 定谳 60/62 假红根因）：❌ 判定还须排除 driver
+    // 自追加的 [driver] 归一化说明行——归一化文案含「补显式 ❌ 输出」字样，
+    // 反向防御在归一化之后检查整文 output，会匹配到 driver 自己刚追加的
+    // 说明里的 ❌，把已归一化为 0 的维度又翻转回 1（自我消息污染）。
+    // 判定只看维度脚本的真实输出（非 [driver] 前缀行）。
+    const userOutput = output.split('\n').filter(l => !l.startsWith('[driver]')).join('\n');
+    if (exitCode === 0 && /❌/.test(userOutput.replace(/^✅.*❌.*$/gm, ''))) {
       output += `\n[driver] 反向防御：原 exit=0 但输出含显式 ❌——维度脚本以 || echo ❌ 收尾导致失败被 exit 0 掩盖（假绿），重写为 1。真失败见上方 ❌ 行；若为脚本误报请修脚本（见 regression-checklist.md 维度脚本编写三铁律）。`;
       exitCode = 1;
     }
