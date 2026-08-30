@@ -29,6 +29,18 @@ version: 1.4.2
 
 V 由 **Node driver**（`FORGE/src/release-gate-driver.mjs`）驱动——每个 step 独立子进程（真零上下文），LangGraph `createReactAgent` 编排。当前 session 只负责启动 driver + 监控进度。
 
+## 🔴 执行载体铁律：driver 必须由「独立 session」直跑，禁止主 session 内开子代理代跑
+
+**判断层 driver 的执行 session 必须是用户手动新开的独立 session**（与主 session 平行、互不嵌套），不是主 session 里 spawn 的 subagent。
+
+原因（2026-08-30 run-10 实证）：主 session 内子代理 → 后台 shell → driver 三层嵌套，**用户打断主 session 时级联 SIGTERM 会杀掉整棵进程树**——run-10 在 consolidate 步骤被中止（latest.json stopReason=aborted-signal），已完成两步产物差点作废。此外子代理自带 token 开销、driver 崩溃时子代理诊断层还引入过误诊（run-01「缺 15 包」实为 29 包三层根因）。
+
+**正确分工**：
+- 主 session（审查/决策 session）：三查 → 修复环境问题 → 产出「交接 prompt」交给用户 → 用户在新 session 粘贴执行 → 等新 session 回报 verdict → 零信任复验。主 session 全程不 spawn driver。
+- 执行 session（用户新开）：粘贴交接 prompt → 按下方「Session 监控协议」启动 driver 并轮询到 verdict → 回报六项终态数据。
+
+**交接 prompt 必含要素**（主 session 生成，自包含）：目标版本号、启动 commit（预期干净树）、启动命令行（含 source env.local）、监控协议要点（120s 轮询 / heartbeat 死亡检测 / 已知降级信号不处理清单）、verdict 产出后的六项回报清单（verdict+stopReason / 四步产物存在性 / usage token 总量 / verdict.md 头 50 行 / status.json 全文 / driver 日志尾 30 行）、异常处置（启动即崩回报不修 / 卡死 15 分钟查 pid）。
+
 ## Session 监控协议（CRITICAL）
 
 **启动 driver 后，session 不是傻等，而是进入 sleep 轮询模式**——保持 working 状态，让用户感知"后台在干活"（**每 120 秒一轮，读 status.json 输出一行状态**——session 一直活跃 = 用户界面持续可见「在跑」，这是硬要求非可选）。
@@ -114,7 +126,11 @@ pgrep -f "release-gate-driver"  # 有输出=活着，无输出=已死
 
 ### 🔴 中止 run 的 LEDGER 归档铁律
 
-**任何原因中止的 run（进程死亡 / 人工 kill / 环境冲突）也必须在 LEDGER 留一行**——「没有终态记录」的 run 是审计黑洞。监控端在确认 driver 死亡后人工补行（格式与 fresh-eyes-loop SKILL 同款：`日期 | runId | release-gate | 轮数* | 计数 | aborted-<死因> | runDir`）。
+**任何原因中止的 run（进程死亡 / 人工 kill / 环境冲突 / 用户打断级联中止）也必须在 LEDGER 留一行**——「没有终态记录」的 run 是审计黑洞。确认 driver 死亡后人工补行（格式与 fresh-eyes-loop SKILL 同款：`日期 | runId | release-gate | 轮数* | 计数 | aborted-<死因> | runDir`）。
+
+### 🔴 中止 run 的产物处置
+
+中止 run 的已完成产物**不浪费**——regression.md / coverage.md 等已落盘步骤可直接读取采信（dsh-headless 直跑证据可信），只须补跑缺失步骤：`--step consolidate --target <版本号> --run-dir <runDir>` 单步续跑，或全新 run 重跑四步（precheck 有 96 维证据缓存价值不大，重跑仅 ~20 分钟）。处置决策由用户拍板，不默认重跑。
 
 ### 汇报规则
 
