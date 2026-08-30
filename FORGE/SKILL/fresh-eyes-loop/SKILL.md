@@ -39,7 +39,7 @@ A/B 由 **Node driver**（`FORGE/src/fresh-eyes-driver.mjs`）驱动——每个
 原因（与 release-gate-loop run-10 实证同机理）：主 session 内子代理 → 后台 shell → driver 三层嵌套，**用户打断主 session 时级联 SIGTERM 会杀掉整棵进程树**——fresh-eyes 一轮 4 轮 16 视角跑 1-2 小时，中途被级联中止的代价更大。此外子代理自带 token 开销与误诊风险。
 
 **正确分工**：
-- 主 session（审查/决策 session）：三查 → 修复环境问题 → 产出「交接 prompt」交给用户 → 用户在新 session 粘贴执行 → 等回报 → 零信任复验。主 session 全程不 spawn driver。
+- 主 session（审查/决策 session）：三查 → 修复环境问题 → 产出「交接 prompt」交给用户（**直接在对话中输出可复制的 prompt 文本块，禁止落盘成文件**——2026-08-30 用户拍板） → 用户在新 session 粘贴执行 → 等回报 → 零信任复验。主 session 全程不 spawn driver。
 - 执行 session（用户新开）：粘贴交接 prompt → 按下方「Session 监控协议」启动 driver 并轮询到终态 → 回报结果（轮数 / 停止原因 / 最终 P0/P1/P2 计数 / runDir）。
 
 ## Session 监控协议（CRITICAL · 适用于执行 session）

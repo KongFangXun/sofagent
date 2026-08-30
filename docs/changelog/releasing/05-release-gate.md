@@ -1,7 +1,7 @@
 # 阶段五：release-gate-loop 发版闸门
 
 > **必须 verdict=PASS 才能进阶段六~八。** FAIL 回阶段四修复后重跑。
-> **执行方式：开新 session 跑本阶段 loop**（脚本层 + 判断层执行 + 监控），主 session 只做 verdict 复验与 FAIL 分诊——用下方「Prompt 模板」生成交接 prompt。
+> **执行方式：开新 session 跑本阶段 loop**（脚本层 + 判断层执行 + 监控），主 session 只做 verdict 复验与 FAIL 分诊——用下方「Prompt 模板」生成交接 prompt，**直接在对话中输出可复制的 prompt 文本块（不落盘文件），用户复制粘贴到新 session 执行**（与阶段三交付形式一致）。
 
 ---
 
@@ -25,6 +25,7 @@
 ## release-gate-loop 新 session Prompt 模板
 
 > AI 输出 prompt 时必须把所有占位符替换为实际值（项目路径、版本号、runDir），不得残留花括号。
+> **交付形式铁律**：交接 prompt **直接在对话中输出可复制的文本块，禁止落盘成文件**（2026-08-30 用户拍板）——用户复制粘贴到新 session 执行，不经过桌面/仓库中转。
 
 ```
 在 sofagent 项目（/Users/kongfangxun/Workbuddy/sofagent）中，执行 v1.4.2 的 release-gate-loop（发版闸门，脚本层 + 判断层）。
