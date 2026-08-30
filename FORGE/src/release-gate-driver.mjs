@@ -1784,6 +1784,15 @@ async function execRegressionDim(script, timeoutMs = 60_000) {
       output += `\n[driver] exit 语义归一化：原 exit=${exitCode} 但输出无失败标记——判定为语义性退出码（grep 无命中/尾判假），重写为 0。若该维度确有问题，请在维度脚本补显式 ❌ 输出（见 regression-checklist.md 维护公约·维度脚本编写三铁律）`;
       exitCode = 0;
     }
+    // run-16 修复（R-01 假绿根因）：反向防御——exit=0 但输出含显式 ❌。
+    // 维度脚本用 `cmd || echo "❌ ..."` 收尾时 || 分支保证整体 exit 0，❌ 漏网
+    // （run-16 实测 6 维度：51/113/115/123/126/128 全部假绿）。与既有归一化
+    // 方向互补：那边防假 FAIL，这边防假绿。重写为 1 并追加说明（worker 与
+    // 人工可追溯），宁可假红待复核也不吞真失败——fail-closed。
+    if (exitCode === 0 && /❌/.test(output)) {
+      output += `\n[driver] 反向防御：原 exit=0 但输出含显式 ❌——维度脚本以 || echo ❌ 收尾导致失败被 exit 0 掩盖（假绿），重写为 1。真失败见上方 ❌ 行；若为脚本误报请修脚本（见 regression-checklist.md 维度脚本编写三铁律）。`;
+      exitCode = 1;
+    }
     return { exitCode, output: output.slice(0, 8000) };
   } catch (err) {
     return { exitCode: null, output: `[driver] 执行异常: ${err.message}` };
