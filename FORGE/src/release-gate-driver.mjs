@@ -26,7 +26,7 @@
 //   - V 用 REVIEWER_TOOLS（只读），F 用 ENGINEER_TOOLS（可写）
 // ============================================================
 
-import { spawn, execSync } from 'child_process';
+import { spawn, execSync, spawnSync } from 'child_process';
 import { createRequire } from 'module';
 import {
   readFileSync, writeFileSync, mkdirSync, existsSync,
@@ -1553,6 +1553,58 @@ async function spawnAcceptanceShards(workers, _target, maxConcurrency = 6) {
 }
 
 /**
+ * 执行环境指纹自检（run-15/16/17 假红事故根因防御）。
+ *
+ * 事故复盘：driver 由 AI session 在 WorkBuddy 沙箱内启动时，子进程 PATH 首位被
+ * 注入 brokered-bin/toybox（busybox 系）——BRE 交替 `\|` 按字面量匹配、wc 无
+ * 右对齐补齐、报错无换行粘连。96 维 precheck 中所有依赖 `\|` 交替、括号表达式、
+ * wc 格式的检查集体假红（run-17 实测 30/96 维 FAIL），LLM 判断层吃全假数据产出
+ * 误导性 NO-GO。独立终端原生跑（BSD 工具链）无此问题（run-14 全绿对照）。
+ *
+ * 三指纹（run-15~17 实测提炼，缺一不可）：
+ *   ① grep BRE 交替：`echo x | grep -q "a\|x"`——busybox 系把 `\|` 当字面量，
+ *      永不命中；BSD/GNU grep 正常命中（exit 0）
+ *   ② wc 输出格式：`echo hi | wc -l`——BSD/GNU 右对齐补齐（前导空格），
+ *      busybox 系无补齐
+ *   ③ PATH 注入探测：process.env.PATH 首段含 brokered-bin/toybox 字样
+ *
+ * 判定：任一指纹命中 → 环境不可信 → exit(1) fail-fast，提示用独立终端原生启动。
+ */
+function assertNativeToolchain() {
+  const fingerprints = [];
+  // 指纹③：PATH 首段注入探测（最直接，但沙箱形态可能演化，仅作辅助）。
+  // 注意分隔符是 PATH 列表分隔符（macOS/Linux 为 ':'），不是路径分隔符 '/'。
+  const pathFirst = (process.env.PATH || '').split(':')[0] || '';
+  if (/brokered-bin|toybox/i.test(pathFirst)) {
+    fingerprints.push(`PATH 首段含沙箱工具目录: ${pathFirst}`);
+  }
+  try {
+    // 指纹①：BRE 交替——busybox/toybox grep 不支持（当字面量，永不命中）
+    const r1 = spawnSync('bash', ['-c', 'echo x | grep -q "a\\|x"'], { encoding: 'utf8', timeout: 5000 });
+    if (r1.status !== 0) fingerprints.push(`grep BRE 交替 "\\|" 失效（exit=${r1.status}）——busybox/toybox 系工具链`);
+    // 指纹②：wc 补齐——BSD/GNU 右对齐带前导空格，busybox 系裸输出
+    const r2 = spawnSync('bash', ['-c', 'echo hi | wc -l'], { encoding: 'utf8', timeout: 5000 });
+    if (r2.status === 0 && r2.stdout && !/^\s+\d/.test(r2.stdout)) {
+      fingerprints.push(`wc -l 输出无右对齐补齐（"${r2.stdout.trim()}"）——busybox/toybox 系工具链`);
+    }
+  } catch (fpErr) {
+    // 自检自身异常——fail-closed：宁可拒跑也不在不可信环境执行 96 维门禁
+    console.error(`[driver] 环境指纹自检执行异常: ${fpErr.message}`);
+    console.error('[driver] fail-closed 拒跑——请在独立终端原生启动 driver（勿在 AI 沙箱/后台代理内启动）。');
+    process.exit(1);
+  }
+  if (fingerprints.length > 0) {
+    console.error('[driver] 🔴 执行环境指纹自检未过——检测到 busybox/toybox 系受限工具链：');
+    for (const f of fingerprints) console.error(`[driver]   · ${f}`);
+    console.error('[driver] 后果：BRE 交替/括号表达式/wc 格式类维度检查将集体假红（run-15/16/17 实测 30/96 维），');
+    console.error('[driver] LLM 判断层将吃全假数据产出误导性 NO-GO。');
+    console.error('[driver] 处置：请在独立终端原生启动 driver（勿在 AI 沙箱/后台代理内启动），参照 release-gate-loop SKILL「执行载体铁律」。');
+    process.exit(1);
+  }
+  console.log('[driver] 环境指纹自检通过（BSD/GNU 原生工具链，BRE 交替/wc 补齐正常）');
+}
+
+/**
  * 运行一个 shell 命令并等待完成（用于 driver 直接执行，无 run_bash 60s 限制）。
  *
  * @param {string} command    shell 命令
@@ -2708,6 +2760,14 @@ async function main() {
       console.log(formatPreflightReport(preflightResult));
       if (preflightResult.shouldHalt) process.exit(1);
     }
+  }
+
+  // ─── 执行环境指纹自检（run-15/16/17 假红事故根因防御）───
+  // AI 沙箱（brokered-bin/toybox）内启动 driver 会让 96 维 precheck 集体假红，
+  // 判断层吃假数据产出误导性 NO-GO。任何非 dry-run 模式开跑前必须过指纹自检。
+  // dry-run 跳过（不真跑维度检查，环境指纹无实际影响面）。
+  if (!args.dryRun) {
+    assertNativeToolchain();
   }
 
   // ─── 单步模式 (--step，非 worker) ───
