@@ -5,7 +5,7 @@
 >
 > 📌 **已知缺口（自 v1.2.3 挂起至今，未还）**：v1.2.3 起的对照实验数据仍缺。不是忘补——按本页「诚实声明」的口径，**作者自测不计入证据**，需第三方独立运行，而独立样本至今未凑齐。此缺口在补齐前一直挂在这里，不删不绕。
 
-> 当前单元测试数：见 `tools/test-count.sh` 实跑（audit 包 / 全 workspace 汇总），**当前 v1.4.2：全 workspace 3541 测试**。历史沿革：v1.2.4：audit 包 507、全 workspace 1320 测试（共 1320，全绿）。v1.2.3：audit 包 498、全 workspace 1207 测试。v1.2.1：audit 包 428、全 workspace 984（v1.2.1 acceptance-test 场景扩展 + 审查维度新增）。v1.2.0：audit 包 423、全 workspace 957（物理结构重构不增测试 + rules-engine 新增 28 + DP-2 signConfig 回归测试）。
+> 当前单元测试数：见 `tools/test-count.sh` 实跑（audit 包 / 全 workspace 汇总），**当前 v1.4.2：全 workspace 3582 测试**。历史沿革：v1.2.4：audit 包 507、全 workspace 1320 测试（共 1320，全绿）。v1.2.3：audit 包 498、全 workspace 1207 测试。v1.2.1：audit 包 428、全 workspace 984（v1.2.1 acceptance-test 场景扩展 + 审查维度新增）。v1.2.0：audit 包 423、全 workspace 957（物理结构重构不增测试 + rules-engine 新增 28 + DP-2 signConfig 回归测试）。
 
 > ⚠️ **中文版为完整版（截至 Case 025，2026-07-06）。** 英文版同步至 Case 025。
 
