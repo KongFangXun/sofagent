@@ -15,9 +15,10 @@
 // ============================================================
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
-import { dirname, join } from 'path';
-import { execSync } from 'child_process';
+import { dirname, join, resolve, sep } from 'path';
+import { execFileSync } from 'child_process';
 import type { EngineerDecide } from './engineer-decide';
+import { isSafeRelativePath } from './engineer-decide';
 
 // ============================================================
 // 类型定义
@@ -58,8 +59,8 @@ export interface EngineerExecuteDeps {
    * dryRun=false：真正写文件 + git add + git diff
    */
   dryRun?: boolean;
-  /** git 命令执行器（测试可注入 mock；默认 execSync） */
-  gitRunner?: (args: string, cwd: string) => string;
+  /** git 命令执行器（测试可注入 mock；默认 execFileSync，参数数组形式） */
+  gitRunner?: (args: string[], cwd: string) => string;
   /** 日志输出 */
   log?: (msg: string) => void;
 }
@@ -68,8 +69,19 @@ export interface EngineerExecuteDeps {
 // 默认 git 执行器
 // ============================================================
 
-function defaultGitRunner(args: string, cwd: string): string {
-  return execSync(`git ${args}`, { encoding: 'utf-8', cwd, maxBuffer: 16 * 1024 * 1024 });
+/**
+ * 默认 git 执行器。
+ *
+ * 用 execFileSync 参数数组而非 `execSync('git ' + args)`——后者走 /bin/sh，
+ * 文件名里的 `$(...)` / 反引号 / 分号会被 shell 解释成命令执行。
+ * `change.file` 源自 LLM 输出，拼接进 shell 字符串等于把 shell 交给模型。
+ */
+function defaultGitRunner(args: string[], cwd: string): string {
+  return execFileSync('git', args, {
+    encoding: 'utf-8',
+    cwd,
+    maxBuffer: 16 * 1024 * 1024,
+  });
 }
 
 // ============================================================
@@ -98,7 +110,34 @@ export async function engineerExecute(
   const touchedFiles: string[] = [];
 
   for (const change of decide.changes) {
+    // 纵深防御：schema 已校验过 file，此处在真正写盘前再确认一次——
+    // 直接构造对象绕过 zod 的调用路径（内部调用 / 反序列化）同样不得逃逸项目根。
+    if (!isSafeRelativePath(change.file)) {
+      const reason = '拒绝：路径非法的变更（../ 逃逸 / 绝对路径 / 控制字符 / shell 元字符）';
+      log(`[execute] ${reason}，已跳过该条变更`);
+      results.push({
+        file: change.file,
+        action: change.action,
+        success: false,
+        summary: `${reason}`,
+      });
+      continue;
+    }
     const absPath = join(deps.cwd, change.file);
+    // 二次锚定：即使 join 解析出 cwd 之外的路径（符号链接 / 平台差异），
+    // 也拒绝写出——把落点锁死在项目根内。
+    const rootPrefix = resolve(deps.cwd) + sep;
+    if (!resolve(absPath).startsWith(rootPrefix)) {
+      const reason = '拒绝：路径解析后落在项目根之外';
+      log(`[execute] ${reason}，已跳过：${change.file}`);
+      results.push({
+        file: change.file,
+        action: change.action,
+        success: false,
+        summary: `${reason}`,
+      });
+      continue;
+    }
     try {
       const resultContent = computeResultContent(absPath, change.action, change.diffHint);
       if (!dryRun) {
@@ -171,7 +210,7 @@ function produceDiff(
   files: string[],
   cwd: string,
   dryRun: boolean,
-  gitRunner: (args: string, cwd: string) => string,
+  gitRunner: (args: string[], cwd: string) => string,
   results: FileChangeResult[],
 ): string {
   if (dryRun) {
@@ -181,8 +220,8 @@ function produceDiff(
   }
   if (files.length === 0) return '';
   try {
-    gitRunner(`add -- ${files.map((f) => `"${f}"`).join(' ')}`, cwd);
-    return gitRunner('diff --cached', cwd);
+    gitRunner(['add', '--', ...files], cwd);
+    return gitRunner(['diff', '--cached'], cwd);
   } catch {
     // git 不可用（非 git 仓库等）→ 降级摘要，不阻断流程
     return `[git 不可用] 已变更文件：${files.join(', ')}`;
