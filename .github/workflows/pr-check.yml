@@ -23,6 +23,13 @@ jobs:
       # --inject 注入实测会短暂改仓内文件，只留本地人工执行，不进 CI。
       - name: check-guards.sh
         run: bash tools/check/check-guards.sh
+      # v1.4.3：命令注入静态扫——拦住 execSync/exec/spawn 的模板插值与字符串拼接。
+      # 实案：修复前有 6 处 `execSync(\`git checkout -- "${file}"\`)`，双引号拦不住
+      # $(...)，其中 fix-applier 的 target 直出 LLM JSON，实测可执行任意命令；
+      # 6 处全靠人工扫出来，故沉淀为自动防线。只读静态扫，零副作用。
+      # 跨行模板插值本脚本逐行扫会漏检，降级为 WARN 提示人工确认。
+      - name: check-shell-injection.sh
+        run: bash tools/check/check-shell-injection.sh
 
   # v1.3.9（四）：public API 变更检测——@public 符号集变化必须 semver bump + CHANGELOG。
   # 不装依赖直接跑（AST 引擎不可用时自动回退正则解析，门禁语义不变）。
