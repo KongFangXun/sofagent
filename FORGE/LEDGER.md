@@ -237,3 +237,5 @@ release-gate-loop 与 fresh-eyes-loop 共享本文件，通过"循环"列区分�
 
 2026-08-29     | 20260829-01    | fresh-eyes  | 5    | 0          | 0          | 1        | weighted-convergence | ~/.sofagent/data/forge-runs/fresh-eyes-loop/2026-08-29/run-01
 
+
+2026-08-30     | 20260830-01    | release-gate | 0    | SKIP       | SKIP       | SKIP     | ERROR   | /Users/kongfangxun/.sofagent/data/forge-runs/release-gate-loop/2026-08-30/run-01

@@ -120,27 +120,32 @@ describe('usage.jsonl 计量（v1.3.8 交付八 · 防回归）', () => {
 });
 
 // ═══════════════════════════════════════════════════════════
-//  2. B 侧复核模式（两段式 + prompt 注入）
+//  2. B 侧复核模式（v1.4.4 优化二改造后：A/B 同批并行双盲全量）
 // ═══════════════════════════════════════════════════════════
 
-describe('B 侧复核模式（v1.3.8 交付八）', () => {
-  it('runRound 两段式执行：A 批先跑、B 批复核', () => {
-    // 两段式拆分：pendingAWorkers / pendingBWorkers 过滤逻辑存在
-    expect(DRIVER_CODE).toContain("step.startsWith('a-check')");
-    expect(DRIVER_CODE).toContain("step.startsWith('b-check')");
-    // 批次日志明示 B 是复核模式
-    expect(DRIVER_CODE).toContain('复核 A 的 P0/P1 发现');
+describe('B 侧复核模式（v1.3.8 交付八 · v1.4.4 优化二对齐）', () => {
+  it('A/B 同批并行双盲全量：单段执行 + 崩溃降级按 a/b 前缀分派产物', () => {
+    // v1.4.4 优化二：两段式（先 A 后 B 复核）已废弃——pendingWorkers 整批并行，
+    // 信息隔离靠「B 不注入 A 报告路径」保证（见 :3513-3516 注释）。
+    expect(DRIVER_CODE).toContain('A/B 同批并行');
+    expect(DRIVER_CODE).toContain('不再拆 A/B 两段');
+    // 崩溃降级路径仍按 step 前缀分派产物文件（runCheckBatch 内）
+    expect(DRIVER_CODE).toContain("f.step.startsWith('a-check')");
+    // A/B worker 成对构造（flatMap 产出 a-check-pN + b-check-pN）
+    expect(DRIVER_CODE).toContain('[`a-check-p${p.id}`, roundDir, target]');
+    expect(DRIVER_CODE).toContain('[`b-check-p${p.id}`, roundDir, target]');
   });
 
-  it('FORGE_B_REVIEW_MODE 注入 B 批（finally 恢复防泄漏）', () => {
-    expect(DRIVER_CODE).toContain("process.env.FORGE_B_REVIEW_MODE = 'recheck-a-findings'");
-    // finally 块恢复/清除——环境变量不泄漏到后续轮次/步骤
-    expect(DRIVER_CODE).toMatch(/finally\s*\{[^}]*FORGE_B_REVIEW_MODE[^}]*\}/s);
+  it('FORGE_B_REVIEW_MODE 消费端保留（prompt 构造 b-check-p* 限定）', () => {
+    // v1.3.8 交付八的消费端代码保留：FORGE_B_REVIEW_MODE=recheck-a-findings
+    // 时 prompt 追加复核指令段。v1.4.4 双盲全量模式下 driver 不再注入此变量
+    // （注入侧随两段式废弃），消费端留作外部手动触发/未来复用的挂点。
+    expect(DRIVER_CODE).toContain("process.env.FORGE_B_REVIEW_MODE === 'recheck-a-findings'");
+    expect(DRIVER_CODE).toContain("step.startsWith('b-check-p')");
   });
 
   it('worker prompt 构造消费 FORGE_B_REVIEW_MODE（b-check-p* 限定）', () => {
-    expect(DRIVER_CODE).toContain("process.env.FORGE_B_REVIEW_MODE === 'recheck-a-findings'");
-    // 注入段含复核纪律与输出格式
+    // 注入段含复核纪律与输出格式（消费端 :1059-1085 的内容锁定）
     expect(DRIVER_CODE).toContain('独立复核 A 的 P0/P1 发现');
     expect(DRIVER_CODE).toContain('禁止盲从 A');
     expect(DRIVER_CODE).toContain('兜底补充');
