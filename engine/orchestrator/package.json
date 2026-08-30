@@ -29,7 +29,7 @@
   "//automerge": "v1.3.5 交付 4b：已切换 @automerge/automerge ^3.4.1（Rust WASM 稳定核心，旧 automerge 1.0.1-preview.7 包名废弃）。迁移面：team-state.ts / team-manager.ts / protocol.ts + core/federation.ts（API 对照见 v1.3.5 dev-prompt 交付 4b 段）。回归保险：orchestrator team-state.regression.test.ts（11 用例）+ 联邦同步测试。",
   "dependencies": {
     "@automerge/automerge": "^3.4.1",
-    "@deepseek-ai/dsh": "0.1.1-rc.2",
+    "@deepseek-ai/dsh": "0.1.2-alpha.1",
     "@langchain/core": "^1.2.9",
     "@langchain/langgraph": "^1.4.12",
     "@langchain/openai": "^1.5.10",
@@ -39,7 +39,12 @@
     "@sofagent/rules": "1.4.2",
     "@sofagent/skillopt": "1.4.2",
     "js-yaml": "^5.3.0",
-    "zod": "^4.4.3"
+    "zod": "^4.4.3",
+    "@deepseek-ai/dsh-app-boot": "0.1.2-alpha.1",
+    "@deepseek-ai/dsh-llm": "0.1.2-alpha.1",
+    "@deepseek-ai/dsh-session": "0.1.2-alpha.1",
+    "@deepseek-ai/dsh-agent": "0.1.2-alpha.1",
+    "@deepseek-ai/dsh-home-paths": "0.1.2-alpha.1"
   },
   "devDependencies": {
     "@sofagent/daemon": "1.4.2"
