@@ -1606,7 +1606,7 @@ function extractAgentText(result) {
     // 查看一些特定的代码文件"），172 字符的碎片被当成报告写入了产物文件。
     //
     // 报告质量门控：≥500 字符 或 含 ## 标题行（与 stream loop 的 isReportText 一致）。
-    // 如果所有 AI message 都不达标 → 返回 null → 走 generateReportWithoutTools / synthesize 降级。
+    // 如果所有 AI message 都不达标 → 返回空字符串 → 走 generateReportWithoutTools / synthesize 降级。
     for (let i = result.messages.length - 1; i >= 0; i--) {
       const msg = result.messages[i];
       const isAI = msg?._getType?.() === 'ai' || (msg?.tool_calls !== undefined && msg?.content !== undefined);
@@ -1625,24 +1625,17 @@ function extractAgentText(result) {
       // 报告质量门控：非空 + (≥500 字符 或 含 ## 标题行)
       if (text.trim() && isReportText(text)) return text;
     }
-    // 所有消息都不是 AI 类型——从最后一条往前找非 ToolMessage 的消息。
-    // 硬中断场景：最后一条可能是 ToolMessage（工具返回值，如 sf_read 读到的
-    // prompt 文件内容），不能把工具返回值当 agent 输出写入报告。
-    for (let i = result.messages.length - 1; i >= 0; i--) {
-      const msg = result.messages[i];
-      // 跳过 ToolMessage——它的 content 是工具返回值不是 agent 输出
-      if (msg?._getType?.() === 'tool') continue;
-      const content = msg?.content;
-      if (typeof content === 'string') return content;
-      if (Array.isArray(content)) {
-        return content.map(c => typeof c === 'string' ? c : c?.text ?? '').join('');
-      }
-      if (content && typeof content === 'object') {
-        if (typeof content.text === 'string') return content.text;
-        return JSON.stringify(content);
-      }
-    }
-    // 全是 ToolMessage 则返回空字符串（让调用方走 synthesizeReportFromMessages 兜底）
+    // 🔴 v1.4.3 修复：此处原有一层「从后往前找非 ToolMessage 的消息」的兜底，实测它
+    //    绕过了上面的 isReportText 质量门控，造成两种灾情：
+    //      ① AI 消息是思考碎片（「现在让我查看一些特定的代码文件」，15 字符）→ 第一层
+    //         判不达标，第二层原样捞出写入产物文件——正是 v1.2.7 run-07 要修的那个 bug，
+    //         当年只修了第一层，兜底这一层把碎片又捞了回来；
+    //      ② AI 消息 content 为 undefined（带 tool_calls 的形态）→ 第二层一路往前找到
+    //         HumanMessage，把**输入 prompt 全文**当成 agent 报告写入产物文件。
+    //    根因是判定口径错了：「非 ToolMessage」≠「agent 输出」——HumanMessage 是输入
+    //    不是输出，它和 ToolMessage 一样不该被当成报告。
+    //    删除后与 release-gate-driver 同行为：AI 消息不达标即返回空，由调用方按
+    //    hardBreak 走裸 LLM 抢救或碎片合成（见下方 1482 行起的既有降级链）。
     return '';
   }
   // 最终 fallback——避免 String(object) 产出 "[object Object]"

@@ -834,6 +834,96 @@ function testGuardReleaseDrill() {
   })();
 }
 
+// ═══════════════════════════════════════════════════════════
+//  extractAgentText 测试套件（v1.4.3 · 报告质量门控回归）
+// ═══════════════════════════════════════════════════════════
+//
+// 背景：v1.2.7 run-07 修过一次「AI 思考碎片被当报告写入产物文件」，但修复只做在
+// 第一层门控上，下面还有一层「从后往前找非 ToolMessage 消息」的兜底把碎片又捞了
+// 回来；更糟的是当 AI 消息 content 为 undefined 时，那层兜底会一路往前找到
+// HumanMessage，把**输入 prompt 全文**当成 agent 报告写入。本套件锁定这两条灾情。
+//
+// 手法：从 driver 真实源码提取函数体，不在测试里内联副本。本文件前半部分
+// （splitFindings 等）用的是内联副本，注释自己都写着「driver 变了这里也要同步」
+// ——副本必然漂移，改了实现而测试仍绿就是假绿，故本套件不沿用该手法。
+
+/** 按大括号配对从源码截取完整函数体 */
+function extractFunctionBody(source, funcName) {
+  const startRegex = new RegExp(`function\\s+${funcName}\\s*\\([^)]*\\)\\s*\\{`);
+  const startMatch = startRegex.exec(source);
+  if (!startMatch) throw new Error(`无法找到函数 ${funcName}`);
+  const braceStart = startMatch.index + startMatch[0].lastIndexOf('{');
+  let depth = 0;
+  let end = braceStart;
+  for (let i = braceStart; i < source.length; i++) {
+    if (source[i] === '{') depth++;
+    else if (source[i] === '}') { depth--; if (depth === 0) { end = i; break; } }
+  }
+  return { fullBody: source.slice(startMatch.index, end + 1) };
+}
+
+/** 用真实源码构造 extractAgentText——阈值常量也从源码读，避免断言与实现漂移 */
+function createExtractAgentText() {
+  const SRC = readFileSync(new URL('./fresh-eyes-driver.mjs', import.meta.url), 'utf-8');
+  const minChars = SRC.match(/^const REPORT_MIN_CHARS = (\d+);/m);
+  if (!minChars) throw new Error('未找到 REPORT_MIN_CHARS 常量定义（源码结构变更？）');
+  const gate = extractFunctionBody(SRC, 'isReportText').fullBody;
+  const fn = extractFunctionBody(SRC, 'extractAgentText').fullBody;
+  return new Function(`const REPORT_MIN_CHARS = ${minChars[1]};\n${gate}\n${fn}\nreturn extractAgentText;`)();
+}
+
+const msg = (type, content) => ({ _getType: () => type, content });
+// 长度超阈值且含 ## 标题——正常的输入 prompt 长这样，正是容易被误捞的形态
+const HUMAN_PROMPT = '## 审查任务\n' + '你是资深审查专家，请审查本次交付物。'.repeat(12);
+const GOOD_REPORT = '## 审查结论\n' + '正文内容。'.repeat(120);
+
+function testExtractAgentTextRejectsFragment() {
+  const fn = createExtractAgentText();
+  const out = fn({ messages: [msg('human', HUMAN_PROMPT), msg('ai', '现在让我查看一些特定的代码文件'), msg('tool', 't')] });
+  assert.strictEqual(out, '', '15 字符的思考碎片不得被当成报告返回（v1.2.7 run-07 灾情）');
+  console.log('  ✓ testExtractAgentTextRejectsFragment');
+}
+
+function testExtractAgentTextRejectsHumanPrompt() {
+  const fn = createExtractAgentText();
+  // AI 消息带 tool_calls 但 content 为 undefined——LangGraph 真实形态之一
+  const aiNoContent = { _getType: () => 'ai', tool_calls: [{ name: 'sf_read' }], content: undefined };
+  const out = fn({ messages: [msg('human', HUMAN_PROMPT), aiNoContent, msg('tool', 'x')] });
+  assert.ok(!out.includes('审查任务'), '输入 prompt 不得被当成 agent 报告返回');
+  assert.strictEqual(out, '', 'AI 消息无 content 时应返回空走降级，而不是往前捞 HumanMessage');
+  console.log('  ✓ testExtractAgentTextRejectsHumanPrompt');
+}
+
+function testExtractAgentTextReturnsQualifiedReport() {
+  const fn = createExtractAgentText();
+  const out = fn({ messages: [msg('human', HUMAN_PROMPT), msg('ai', GOOD_REPORT), msg('tool', '工具返回值')] });
+  assert.strictEqual(out, GOOD_REPORT, '达标的 AI 报告应原样返回（## 标题 + 超阈值长度）');
+  console.log('  ✓ testExtractAgentTextReturnsQualifiedReport');
+}
+
+function testExtractAgentTextSkipsTrailingToolMessage() {
+  const fn = createExtractAgentText();
+  const out = fn({ messages: [msg('ai', GOOD_REPORT), msg('tool', 'sf_read 读到的文件内容')] });
+  assert.strictEqual(out, GOOD_REPORT, '末尾 ToolMessage（工具返回值）不得覆盖前面的达标报告');
+  console.log('  ✓ testExtractAgentTextSkipsTrailingToolMessage');
+}
+
+function testExtractAgentTextShortHeadingPassesGate() {
+  const fn = createExtractAgentText();
+  // 短但含 ## 标题行——门控的第二条通道，不能被长度阈值误杀
+  const out = fn({ messages: [msg('human', 'p'), msg('ai', '## 结论\n一切正常。')] });
+  assert.strictEqual(out, '## 结论\n一切正常。', '短报告只要含 ## 标题行就应通过门控');
+  console.log('  ✓ testExtractAgentTextShortHeadingPassesGate');
+}
+
+function testExtractAgentTextPassthroughForms() {
+  const fn = createExtractAgentText();
+  assert.strictEqual(fn('直接是字符串'), '直接是字符串', '字符串入参应原样返回');
+  assert.strictEqual(fn({ content: 'content 字段' }), 'content 字段', 'content 字段形态应正确提取');
+  assert.strictEqual(fn({ messages: [] }), '', '空 messages 应返回空');
+  console.log('  ✓ testExtractAgentTextPassthroughForms');
+}
+
 // ─── 运行测试 ────────────────────────────────────────────────
 console.log('\n🧪 fresh-eyes-driver splitFindings / chunk / a-verify 分片单元测试\n');
 
@@ -870,6 +960,12 @@ const tests = [
   testBackendResolutionAllStepsDsh,
   testRuntimeUsageWiring,
   testGuardReleaseDrill,
+  testExtractAgentTextRejectsFragment,
+  testExtractAgentTextRejectsHumanPrompt,
+  testExtractAgentTextReturnsQualifiedReport,
+  testExtractAgentTextSkipsTrailingToolMessage,
+  testExtractAgentTextShortHeadingPassesGate,
+  testExtractAgentTextPassthroughForms,
 ];
 
 // 同步测试先跑，异步测试（事件订阅器时序）后串行 await
