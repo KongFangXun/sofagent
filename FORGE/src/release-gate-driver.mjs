@@ -37,6 +37,19 @@ import { join, resolve, dirname, basename } from 'path';
 import { fileURLToPath } from 'url';
 import os from 'os';
 
+// ── undici headersTimeout 对齐（run-13/14/15 三轮根因修复）───────────
+// 现象：GLM-5.3-flash thinking 模式 + 大 payload（regression 证据 ~19KB）下，
+// 首 token 前思考常超 300s。Node fetch（undici）默认 headersTimeout=300s 在
+// SDK 超时（600s）之前掐线——「Request timed out ... waiting for response
+// headers」。模型还在思考，连接先死（run-15 sub-progress 实测 954s 无 chunk
+// 的洞 = 300s 掐线 ×2 次重试 + 开销）。
+// 修法：全局 dispatcher 的 headers/body timeout 与 createModel 的 SDK
+// timeout（600s）对齐。任何进程内 fetch/ChatOpenAI 请求统一生效。
+try {
+  const { Agent, setGlobalDispatcher } = await import('undici');
+  setGlobalDispatcher(new Agent({ headersTimeout: 600_000, bodyTimeout: 600_000 }));
+} catch { /* undici 不可用（理论不发生——Node 18+ 内置））：维持默认，风险回到修复前 */ }
+
 // v1.2.7 功能⑤：继承 driver-base 公共编排层
 import { createForgeDriverBase, runPreflight, formatPreflightReport, resolveMaxConcurrency, checkDriverLiveness } from './driver-base.mjs';
 import { createGateTools } from './gate-tools.mjs';
@@ -383,6 +396,16 @@ function buildSystemPrompt(skillPath) {
 async function createModel(role, maxTokensOverride) {
   const cfg = MODEL_CONFIGS[role];
   const apiKey = process.env[cfg.apiKeyEnv];
+
+  // run-15 修复：判断层（本 driver）reasoningEffort 降档 max→high。
+  // 判断层任务形态 =「读 precheck 证据写报告」，不需要 max 档思考深度；
+  // max 档在 thinking 模式下首 token 前思考常超 300s，是 headersTimeout
+  // 掐线事故的放大器（fresh-eyes 的 A/B 审查仍走模型文件的 max，不受影响）。
+  const effectiveCfg = { ...cfg };
+  if (effectiveCfg.reasoningEffort === 'max') {
+    effectiveCfg.reasoningEffort = 'high';
+  }
+
   if (!apiKey) {
     throw new Error(`环境变量 ${cfg.apiKeyEnv} 未设置（角色 ${role}）`);
   }
@@ -407,12 +430,12 @@ async function createModel(role, maxTokensOverride) {
   }
 
   // GLM-5.2 / DeepSeek 特殊参数（thinking + reasoningEffort）
-  if (cfg.reasoningEffort) {
-    ctorArgs.reasoningEffort = cfg.reasoningEffort;
+  if (effectiveCfg.reasoningEffort) {
+    ctorArgs.reasoningEffort = effectiveCfg.reasoningEffort;
   }
-  if (cfg.thinking) {
+  if (effectiveCfg.thinking) {
     // modelKwargs 会原样透传到 API 请求 body
-    ctorArgs.modelKwargs = { thinking: cfg.thinking };
+    ctorArgs.modelKwargs = { thinking: effectiveCfg.thinking };
   }
 
   try {
@@ -1300,11 +1323,22 @@ async function generateReportWithoutTools(model, messages, step, role, stepDef, 
     new HumanMessage(reportPrompt),
   ];
 
-  // 3. 裸调用——不带 tools，模型只能输出文本
-  const response = await model.invoke(reportMessages);
-  const respText = typeof response === 'string'
-    ? response
-    : (response?.content ?? '');
+  // 3. 裸调用——不带 tools，模型只能输出文本。
+  // run-15 修复：invoke→stream——流式首字节早、TCP 保活，thinking 模型
+  // 长思考不再撞 headersTimeout（invoke 一次性等完整响应最脆弱）。
+  let respText = '';
+  try {
+    const stream = await model.stream(reportMessages);
+    for await (const chunk of stream) {
+      const c = typeof chunk === 'string' ? chunk : (chunk?.content ?? '');
+      if (typeof c === 'string') respText += c;
+      else if (Array.isArray(c)) respText += c.map(x => (typeof x === 'string' ? x : x?.text ?? '')).join('');
+    }
+  } catch (streamErr) {
+    // 流式失败回退 invoke（双路径防 stream 接口在部分适配器上不可用）
+    const response = await model.invoke(reportMessages);
+    respText = typeof response === 'string' ? response : (response?.content ?? '');
+  }
   // 处理数组格式 content
   if (Array.isArray(respText)) {
     return respText.map(x => typeof x === 'string' ? x : x?.text ?? '').join('');
