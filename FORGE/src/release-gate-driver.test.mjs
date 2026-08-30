@@ -820,61 +820,50 @@ describe('buildInputsEvidence（run-19 verdict 零证据根因）', () => {
 });
 
 // ═══════════════════════════════════════════════════════════
-//  8. 反向防御 ✅ 行内引用豁免（v1.4.3 run-19 125/127 假红根因防回归）
+//  8. 反向防御假红豁免三家族（v1.4.3 run-19/20 全量定谳）
 // ═══════════════════════════════════════════════════════════
-// 背景：checklist for 循环收尾惯例 `echo "✅ 三 tools 齐（若上方无 ❌）"` ——
-// 健康态输出本身带 ❌ 字面量，整文 /❌/ 匹配把健康维度翻转成假红（run-19
-// 实测 dim 125/127 双翻转）。修正 = ❌ 判定排除「✅ 行内引用」形态。
+// 背景：反向防御防的是 run-16 形态的假绿（`cmd || echo "❌ ..."` 收尾，❌ 漏
+// 网）。但整文 /❌/ 匹配误伤三类健康形态，run-19/20 实测九维假红：
+// ① ✅ 行内引用（125/127）② [driver] 自我消息（60/62）③ grep 内容引用
+// （1/3/8/64/95——grep 命中文档正文自带 ❌，如能力对照表）。修正 = ❌ 判定
+// 改「行首锚定」（行首 + 空白/markdown 前缀）+ 剥 [driver] 行。
 
-describe('execRegressionDim · 反向防御 ✅ 行内引用豁免（run-19 假红根因）', () => {
-  // 与 driver 内实现同构的规则镜像（改实现时本组同步改）
-  const hasGenuineFail = (output) => /❌/.test(output.replace(/^✅.*❌.*$/gm, ''));
-
-  it('健康态「（若上方无 ❌）」引用 → 不翻转（run-19 dim125 回放）', () => {
-    const real125 = '✅ 六引擎注册（若上方无 ❌）\n✅ 工作台数据层\n✅ 判定引擎在位\n✅ 零本地 dataDir（30 处已清零）';
-    expect(hasGenuineFail(real125)).toBe(false);
-  });
-
-  it('真失败 ❌ 独立行 → 触发翻转（run-16 假绿形态保留）', () => {
-    expect(hasGenuineFail('✅ 收割链在位\n❌ 僵尸收割缺失')).toBe(true);
-  });
-
-  it('混合形态：✅ 引用行 + ❌ 真失败行并存 → 触发（不吞真失败）', () => {
-    expect(hasGenuineFail('✅ 三 tools 齐（若上方无 ❌）\n❌ train_status 未注册/未分发\n✅ 处方出处标注')).toBe(true);
-  });
-
-  it('纯健康输出零 ❌ → 不触发（语义不变）', () => {
-    expect(hasGenuineFail('✅ A\n✅ B')).toBe(false);
-  });
-
-  it('源码级断言：driver 实现含 ✅ 行内引用剥离正则', () => {
-    expect(SOURCE_CODE).toContain("userOutput.replace(/^✅.*❌.*$/gm, '')");
-  });
-});
-
-// ═══════════════════════════════════════════════════════════
-//  8b. 反向防御 [driver] 自我消息豁免（v1.4.3 run-20 60/62 假红根因防回归）
-// ═══════════════════════════════════════════════════════════
-// 背景：归一化说明文案含「补显式 ❌ 输出」字样，反向防御在追加归一化消息
-// 之后检查整文 output → 匹配到 driver 自己刚追加的说明里的 ❌ → 把已归一化
-// 为 0 的维度又翻转回 1（自我消息污染，run-20 实测 dim 60/62 双假红——
-// 60 实际输出 exports.types 清单全 PASS）。修正 = 判定只看维度脚本真实输出
-// （剥 [driver] 前缀行）。
-
-describe('execRegressionDim · 反向防御 [driver] 自我消息豁免（run-20 假红根因）', () => {
+describe('execRegressionDim · 反向防御假红豁免三家族（run-19/20 假红根因）', () => {
   // 与 driver 内实现同构的规则镜像（改实现时本组同步改）
   const hasGenuineFail = (output) => {
     const userOutput = output.split('\n').filter(l => !l.startsWith('[driver]')).join('\n');
-    return /❌/.test(userOutput.replace(/^✅.*❌.*$/gm, ''));
+    return /^[\s>*#•·-]*❌/m.test(userOutput);
   };
 
-  it('归一化后自我消息污染 → 不翻转（run-20 dim60 回放：✅ 维度 + 两条 [driver] 说明）', () => {
+  it('① ✅ 行内引用 → 不翻转（run-19 dim125/127 回放）', () => {
+    expect(hasGenuineFail('✅ 三 tools 齐（若上方无 ❌）\n✅ 六引擎注册（若上方无 ❌）\n✅ DSH 三步在位')).toBe(false);
+  });
+
+  it('② [driver] 自我消息污染 → 不翻转（run-20 dim60 回放）', () => {
     const real60 = [
-      'exports.types: ./dist/public-api.d.ts',
-      '[driver] exit 语义归一化：原 exit=1 但输出无失败标记——判定为语义性退出码（grep 无命中/尾判假），重写为 0。若该维度确有问题，请在维度脚本补显式 ❌ 输出（见 regression-checklist.md 维护公约·维度脚本编写三铁律）',
-      '[driver] 反向防御：原 exit=0 但输出含显式 ❌——维度脚本以 || echo ❌ 收尾导致失败被 exit 0 掩盖（假绿），重写为 1。',
+      './dist/public-api.d.ts',
+      '[driver] exit 语义归一化：原 exit=1 但输出无失败标记——若该维度确有问题，请在维度脚本补显式 ❌ 输出。',
+      '[driver] 反向防御：原 exit=0 但输出含显式 ❌——重写为 1。',
     ].join('\n');
     expect(hasGenuineFail(real60)).toBe(false);
+  });
+
+  it('③ grep 内容引用 → 不翻转（run-19 dim3/95 回放——文档正文/脚本源码自带 ❌）', () => {
+    expect(hasGenuineFail('enterprise-deploy.md:47:| 数据加密 | ❌ 当前明文 | 加密能力已实现但接线未启用 |')).toBe(false);
+    expect(hasGenuineFail('      echo "  ❌ $md : 文档头日期漂移"')).toBe(false);
+  });
+
+  it('真失败保形：❌ 独立行 → 触发翻转（run-16 假绿形态）', () => {
+    expect(hasGenuineFail('✅ 收割链在位\n❌ 僵尸收割缺失')).toBe(true);
+  });
+
+  it('真失败保形：缩进/markdown 列表前缀的行首 ❌ → 触发', () => {
+    expect(hasGenuineFail('  ❌ file.md : 文档头日期漂移')).toBe(true);
+    expect(hasGenuineFail('- ❌ 列表项失败')).toBe(true);
+  });
+
+  it('混合形态：✅ 引用行 + 真失败行并存 → 仍触发（不吞真失败）', () => {
+    expect(hasGenuineFail('✅ 三 tools 齐（若上方无 ❌）\n❌ train_status 未注册/未分发\n✅ 处方出处标注')).toBe(true);
   });
 
   it('用户输出真 ❌ + [driver] 说明并存 → 仍触发（不吞真失败）', () => {
@@ -886,13 +875,13 @@ describe('execRegressionDim · 反向防御 [driver] 自我消息豁免（run-20
     expect(hasGenuineFail(mixed)).toBe(true);
   });
 
-  it('纯 [driver] 说明含 ❌ 字样、用户输出干净 → 不翻转（62 形态）', () => {
-    expect(hasGenuineFail('[driver] 执行异常: 无法 spawn ❌ 之外的说明')).toBe(false);
+  it('纯健康输出零 ❌ → 不触发（语义不变）', () => {
+    expect(hasGenuineFail('✅ A\n✅ B')).toBe(false);
   });
 
-  it('源码级断言：判定前剥 [driver] 前缀行', () => {
+  it('源码级断言：判定前剥 [driver] 行 + 行首锚定正则', () => {
     expect(SOURCE_CODE).toContain("filter(l => !l.startsWith('[driver]'))");
-    expect(SOURCE_CODE).toContain('const userOutput = output.split');
+    expect(SOURCE_CODE).toContain('/^[\\s>*#•·-]*❌/m');
   });
 });
 
