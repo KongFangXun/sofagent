@@ -48,6 +48,24 @@ VIOL=0
 WARNINGS=0
 SELF="tools/check/check-guards.sh"
 
+# ── 扫描范围（守卫的守卫必须覆盖全部检查器脚本，不能只扫 tools/）──
+# 实案：FORGE/playbook/acceptance-test.sh 存在 9 处 `grep -c ... || echo 0` 双零陷阱，
+# 本脚本原先只 `find tools -name "*.sh"`，导致该漏检长期存在。范围在此集中定义，
+# 目录重组后只改这一处，避免 ①② 两处 find 各自漂移。
+# 可用环境变量覆盖：GUARD_SCAN_PATHS / GUARD_SCAN_FILES。
+# 注：④ 段刻意不复用本函数——它对账的是 check-cjk-var.sh 自身的扫描范围，
+# 期望值必须与对方实际范围一致，否则永久假红。
+GUARD_SCAN_PATHS="${GUARD_SCAN_PATHS:-tools FORGE/playbook engine/scripts}"
+GUARD_SCAN_FILES="${GUARD_SCAN_FILES:-install.sh bootstrap.sh}"
+# shellcheck disable=SC2206
+GUARD_SCAN_PATHS_ARR=(${GUARD_SCAN_PATHS})
+# shellcheck disable=SC2206
+GUARD_SCAN_FILES_ARR=(${GUARD_SCAN_FILES})
+guard_scan_files() {
+  find "${GUARD_SCAN_PATHS_ARR[@]}" -name "*.sh" -type f 2>/dev/null || true
+  for _gf in "${GUARD_SCAN_FILES_ARR[@]}"; do [ -f "${_gf}" ] && echo "${_gf}"; done
+}
+
 echo "=== check-guards · 守卫的守卫（mode=${MODE}）==="
 
 # ============================================================
@@ -60,7 +78,7 @@ BSD_HITS=0
 # 真正的炸弹只在 sed——BSD sed 表达式不认 \s（GNU 认），需写 [[:space:]]。
 # 检测引擎用 perl（BSD grep 对 \s 的自身解释不可靠，不能用它扫 \s）；
 # node -e / perl 内嵌的 JS/PCRE 正则是合法用法，排除。
-_BSD_SCAN=$(find tools -name "*.sh" -type f | while IFS= read -r _sh; do
+_BSD_SCAN=$(guard_scan_files | while IFS= read -r _sh; do
     [ "$_sh" = "$SELF" ] && continue
     perl -ne 'print "$.:$_" if /\bsed\b.*\\\\[sb]\b/ && !/^\s*#/ && !/node|perl/' "$_sh" 2>/dev/null \
       | sed "s|^|${_sh}:|" || true
@@ -99,10 +117,20 @@ echo "── ③ grep -c 双零地雷 ──"
 # 而 `grep -o ... || echo 0` 是合法兜底（grep -o 零匹配输出空，echo 0 补 0）——不扫。
 # 检查器崩溃伪装零违规的 node 系（SCAN_FAIL 模式）属另一形态，此处不覆盖。
 ECHO0_HITS=0
-_E0_SCAN=$(find tools -name "*.sh" -type f | while IFS= read -r _sh; do
-    grep -nE 'grep -c[^|]*\|\| *echo' "$_sh" 2>/dev/null \
+_E0_SCAN=$(guard_scan_files | while IFS= read -r _sh; do
+    # [^;] 而非 [^|]：grep 参数里的 BRE alternation（如 "Ledger\|Views\|Policy"）含单个 |，
+    # 用 [^|] 会在第一个 | 处截断，导致含 alternation 的双零行系统性漏检（实案：
+    # acceptance-test.sh 的 727/769/770/771/1258/1260/1589 共 7 处长期漏网）。
+    # 排除已归一化的形态：$({ ... || echo "0"; } | awk '{s+=$1}END{print s+0}')
+    # awk 会消费掉多行并把结果压成单个数字，双零在此无害（实案：engine/scripts/cleanup.sh）
+    # 这里必须用 .* 不能用 [^;]*——待排除形态是 `|| echo "0"; } | awk`，分号在 echo 与 | awk 之间。
+    # 🔴 铁律：本管道内禁止插入注释行——命令替换里 `\` 续行遇注释行会断链，
+    #    后续 `| grep` 变成孤行报 syntax error，而 bash -n 与 EXIT CODE 都检测不到，
+    #    结果是本段静默归零、输出「✓ 无」假绿（实案：2026-08-30 本段两度踩坑）。
+    grep -nE 'grep -c[^;]*\|\| *echo' "$_sh" 2>/dev/null \
       | grep -vE '^[0-9]+:[[:space:]]*#' \
       | grep -v 'guards-allow' \
+      | grep -vE '\|\|[[:space:]]*echo.*\|[[:space:]]*awk' \
       | sed "s|^|${_sh}:|" || true
   done | sort -u)
 while IFS= read -r _line; do
@@ -128,6 +156,9 @@ echo "── ④ 扫描范围对账（glob 声称 vs find 实际）──"
 # 实案：check-cjk-var 顶层 glob 在目录重组后漏扫 19 个子目录脚本
 GLOB_ACCOUNT_FAIL=0
 # 期望值 = find 总数 - 1：check-cjk-var 自排除自身（SELF 豁免），属正常扣减而非失明
+# 注意：此处刻意保持 tools/ 原范围，不复用 guard_scan_files——本段对账的是
+# check-cjk-var.sh 自己报告的扫描数，期望值必须等于对方的实际范围，否则永久假红。
+# 若将来把 check-cjk-var.sh 的扫描面也扩到 FORGE/playbook、engine/scripts，此处同步扩。
 _cjk_expect=$(find tools -name "*.sh" -type f | grep -v "check-cjk-var.sh" | wc -l | tr -d ' ')
 # check-cjk-var 的输出两种格式：成功「N 个 shell 脚本无违规」/ 失败「N 个文件扫描」
 _cjk_report=$(bash tools/check/check-cjk-var.sh 2>/dev/null | grep -oE '[0-9]+ 个 (shell 脚本|文件)' | grep -oE '^[0-9]+' | head -1 || true)
