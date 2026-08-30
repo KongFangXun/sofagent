@@ -56,7 +56,7 @@ sofagent 不造 Agent——执行能力交给成熟宿主（模型 + 工具 + �
 
 ## v1.4.2：训练数据与评估 + FDE 六引擎
 
-🚀 让训练**吃得到数据、评得出好坏**——企业异构数据（CSV/Excel/DB/API）经管道进训练集（质量闸门+脱敏）· dataset_version 版本台账（指纹冻结+续跑版本锁）· 训练中 eval 闭环（阈值外部化）· train env/doctor 环境体检 · dry-run 显存估算 + ScaleRL 算力外推 · 训练报告（客户可读 + 量化 ROI）；FDE 方法论变成可执行引擎：fde_interview/classify/quantify/derive/distill/deploy 六件 MCP tool + IM 桥远程指挥。MCP 67→**76** tools，测试 3202→**3349**（workspace 12 包口径）。完整内容见[开发日志](./docs/changelog/v1.4/v1.4.2.md) · 更早版本见 [CHANGELOG](./CHANGELOG.md)。
+🚀 让训练**吃得到数据、评得出好坏**——企业异构数据（CSV/Excel/DB/API）经管道进训练集（质量闸门+脱敏）· dataset_version 版本台账（指纹冻结+续跑版本锁）· 训练中 eval 闭环（阈值外部化）· train env/doctor 环境体检 · dry-run 显存估算 + ScaleRL 算力外推 · 训练报告（客户可读 + 量化 ROI）；FDE 方法论变成可执行引擎：fde_interview/classify/quantify/derive/distill/deploy 六件 MCP tool + IM 桥远程指挥。（版本时点数字：MCP 67→76 tools、测试 3202→3349，见开发日志——当前口径以[核心特性](#核心特性)为准。）完整内容见[开发日志](./docs/changelog/v1.4/v1.4.2.md) · 更早版本见 [CHANGELOG](./CHANGELOG.md)。
 
 ## 多平台挂载
 

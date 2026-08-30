@@ -13,7 +13,7 @@ import type { DataChange, DataAuditResult } from '@sofagent/core';
  * think.md 条目生成选项
  */
 export interface ThinkEntryOptions {
-  /** 数据根目录，默认 process.cwd()/data（v1.2.1 起，原 .sofagent/） */
+  /** 数据根目录，缺省走 getDataDir()（@sofagent/core SSOT：显式入参 > SOFAGENT_DATA > SOFAGENT_HOME/data，v1.4.2 G-05 收编） */
   dataDir?: string;
   /** 强制使用的写入时间戳（测试用），默认 now() */
   now?: Date;
