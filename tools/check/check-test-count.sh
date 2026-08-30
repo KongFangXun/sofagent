@@ -217,8 +217,11 @@ fi
 # LIMITATIONS.md — "审计核心 NNN 个、全 workspace NNN 个" 格式
 LIMITATIONS_LINE=$(grep -nE '审计核心 [0-9]+ 个、全 workspace [0-9]+ 个' docs/LIMITATIONS.md | head -1)
 if [ -n "$LIMITATIONS_LINE" ]; then
-  LIMITATIONS_AUDIT=$(echo "$LIMITATIONS_LINE" | grep -oE '审计核心 [0-9]+' | grep -oE '[0-9]+')
-  LIMITATIONS_TOTAL=$(echo "$LIMITATIONS_LINE" | grep -oE '全 workspace [0-9]+' | grep -oE '[0-9]+')
+  # head -1：同一行若出现多个「审计核心 N」/「全 workspace N」（如在句尾追加历史沿革
+  # 「…总数 3507→3541」），grep -o 会返回多行拼成 "3541\n3507"，比对必然失败且报错难读。
+  # 取首个匹配——它就是该行开头的当前声称值。
+  LIMITATIONS_AUDIT=$(echo "$LIMITATIONS_LINE" | grep -oE '审计核心 [0-9]+' | head -1 | grep -oE '[0-9]+')
+  LIMITATIONS_TOTAL=$(echo "$LIMITATIONS_LINE" | grep -oE '全 workspace [0-9]+' | head -1 | grep -oE '[0-9]+')
   LIMITATIONS_LINENO=$(echo "$LIMITATIONS_LINE" | cut -d: -f1)
   if [ "$QUIET" = false ]; then
     echo -e "  校验 LIMITATIONS.md（行 ${LIMITATIONS_LINENO}）..."
