@@ -184,7 +184,7 @@ fi
 #     独立的新能力段标题（列表项 + 加粗 emoji 版本号 + 「新增」，如 `- **🧠 v1.3.1 新增**：`），
 #     排除句中/段首历史引用（LIMITATIONS 的「v1.0.9 新增的 A16 规则」是历史说明非堆叠段）；
 #     排除 CHANGELOG/archive（历史快照本就该有）+ 排除当前版本 v1.3.9））
-STACKED=$(grep -rnE '^\s*[-*]\s+\*{1,2}[^ ]*v[0-9]+\.[0-9]+\.[1-9][0-9]*\s+新增' README.md README.en.md docs/ --include="*.md" 2>/dev/null | grep -v "docs/changelog" | grep -v "docs/archive" | grep -v "v1.3.9" | head -5)
+STACKED=$(grep -rnE '^[[:space:]]*[-*][[:space:]]+\*{1,2}[^ ]*v[0-9]+\.[0-9]+\.[1-9][0-9]*[[:space:]]+新增' README.md README.en.md docs/ --include="*.md" 2>/dev/null | grep -v "docs/changelog" | grep -v "docs/archive" | grep -v "v1.3.9" | head -5)
 if [ -n "$STACKED" ]; then
   echo "  ⚠️ 活文档存在历史版本新能力段堆叠（新能力段应只留最新版，旧版去 CHANGELOG）"
   echo "$STACKED" | while read -r line; do echo "    $line" | cut -c1-100; done

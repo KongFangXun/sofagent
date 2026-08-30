@@ -903,7 +903,7 @@ echo "=== 15. ROADMAP 版本头描述 vs CHANGELOG 标题一致性 ==="
 ROADMAP_HEADER=$(sed -n '4p' "${ROADMAP}" 2>/dev/null || echo "")
 if [[ -n "${ROADMAP_HEADER}" ]]; then
   # 提取 ROADMAP 版本头中的关键词（· 与 + 均为分隔段——v1.2.5 头部用 + 连接多个交付项）
-  ROADMAP_KEYWORDS=$(echo "${ROADMAP_HEADER}" | sed 's/[·+]/\n/g' | grep -vE '^\s*(>?[[:space:]]*v[0-9]|规划|.*→.*|[0-9]{4}-[0-9]{2}-[0-9]{2})' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | grep -vE '^$' | head -8)
+  ROADMAP_KEYWORDS=$(echo "${ROADMAP_HEADER}" | sed 's/[·+]/\n/g' | grep -vE '^[[:space:]]*(>?[[:space:]]*v[0-9]|规划|.*→.*|[0-9]{4}-[0-9]{2}-[0-9]{2})' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | grep -vE '^$' | head -8)
   # 提取 CHANGELOG 当前版本标题
   # v1.2.5 起 CHANGELOG.md 改为纯目录索引格式（- **vX.Y.Z** — 摘要），旧格式 ### [vX.Y.Z] 已废弃
   CHANGELOG_TITLE=$(grep -m1 -E "^(- \*\*|### \[)v" "${PROJECT_ROOT}/CHANGELOG.md" 2>/dev/null || echo "")
