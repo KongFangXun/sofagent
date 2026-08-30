@@ -257,3 +257,7 @@ release-gate-loop 与 fresh-eyes-loop 共享本文件，通过"循环"列区分�
 2026-08-30     | 20260830-17    | release-gate | 0    | -          | -          | -        | aborted-contaminated-env（沙箱 toybox 工具链致 30/96 维假红，主 session 复验识破后杀停，目录已归档 -archived-CONTAMINATED-toybox） | /Users/kongfangxun/.sofagent/data/forge-runs/release-gate-loop/2026-08-30/run-17-archived-CONTAMINATED-toybox
 
 2026-08-30     | 20260830-19    | release-gate | 4    | SKIP       | SKIP       | FAIL     | ERROR   | /Users/kongfangxun/.sofagent/data/forge-runs/release-gate-loop/2026-08-30/run-19
+
+2026-08-30     | 20260830-19    | release-gate | 17   | SKIP       | SKIP       | FAIL     | FAIL    | /Users/kongfangxun/.sofagent/data/forge-runs/release-gate-loop/2026-08-30/run-19
+
+2026-08-30     | 20260830-20    | release-gate | 0    | PASS       | SKIP       | SKIP     | ERROR   | /Users/kongfangxun/.sofagent/data/forge-runs/release-gate-loop/2026-08-30/run-20
