@@ -221,7 +221,7 @@ git commit -m "fix: 修复偏移一错误（仅改 1 行）"
 
 ## 🎯 成功指标
 
-- **每次 commit 前 `npm run build` 零错误 + `npm test` 558 tests 全绿**
+- **每次 commit 前 `npm run build` 零错误 + `npm test` 全绿**（测试总数逐版增长，**此处禁止写死数字**——以 `tools/check/test-count.sh` 实测输出为准）
 - **单个任务的中位差异大小低于 30 行变更**
 - **80%+ 的 bug 修复 PR 只触碰 ≤ 2 个文件**
 - **A3 不改越界零触发**——变更文件数始终在任务范围内

@@ -1,6 +1,6 @@
 name: pr-check
 
-# PR 提交时跑版本号一致性 + 文档检查 + workspace 全量构建测试。
+# PR 提交时跑版本号一致性 + 文档检查 + 守卫的守卫（门禁自身腐烂检测）+ workspace 全量构建测试。
 # 与本地 pre-push-check.sh 保持等价，确保推前和推后检查一致。
 
 on:
@@ -18,6 +18,11 @@ jobs:
         run: bash tools/check/check-version.sh
       - name: check-docs.sh
         run: bash tools/check/check-docs.sh
+      # 守卫的守卫：检查门禁脚本自身的腐烂模式（BSD 不兼容正则 / CJK 标点定界 /
+      # grep -c 双零地雷 / glob 未跟随目录重组导致漏扫）。静态扫只读无副作用；
+      # --inject 注入实测会短暂改仓内文件，只留本地人工执行，不进 CI。
+      - name: check-guards.sh
+        run: bash tools/check/check-guards.sh
 
   # v1.3.9（四）：public API 变更检测——@public 符号集变化必须 semver bump + CHANGELOG。
   # 不装依赖直接跑（AST 引擎不可用时自动回退正则解析，门禁语义不变）。
@@ -41,6 +46,9 @@ jobs:
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version: '22'
+          # 缓存 ~/.npm（key 由根 package-lock.json 哈希派生，lock 变更自动失效）。
+          # 不缓存 node_modules 本体：workspace 软链在 restore 后可能失效，npm ci 更可靠。
+          cache: 'npm'
       - name: Install dependencies
         run: npm ci
       - name: Install rollup native module (Linux)

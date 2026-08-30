@@ -20,6 +20,9 @@ jobs:
         with:
           node-version: '22'
           registry-url: 'https://registry.npmjs.org'
+          # 缓存 ~/.npm（key 由根 package-lock.json 哈希派生，lock 变更自动失效）。
+          # 只加速 npm ci，不影响 npm publish——发布读的是工作区产物与 lock，不是缓存。
+          cache: 'npm'
       # 从根目录安装——workspace 模式让 audit 链接到本地 @sofagent/core
       - run: npm ci
         working-directory: .
@@ -63,6 +66,9 @@ jobs:
         with:
           node-version: '22'
           registry-url: 'https://registry.npmjs.org'
+          # 缓存 ~/.npm（key 由根 package-lock.json 哈希派生，lock 变更自动失效）。
+          # 只加速 npm ci，不影响 npm publish——发布读的是工作区产物与 lock，不是缓存。
+          cache: 'npm'
       # 从根目录安装——workspace 模式让 mcp 链接到本地 @sofagent/audit
       - run: npm ci
         working-directory: .

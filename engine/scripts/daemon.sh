@@ -211,7 +211,7 @@ _main_loop() {
         return
       fi
       local score_count
-      score_count=$(grep -c '^|' "$scoring_file" 2>/dev/null || echo 0)
+      score_count=$(grep -c '^|' "$scoring_file" 2>/dev/null || true); score_count=${score_count:-0}
       if [ "$score_count" -lt "$threshold" ]; then
         return
       fi

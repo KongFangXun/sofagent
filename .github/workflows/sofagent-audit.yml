@@ -19,6 +19,9 @@ jobs:
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version: 22
+          # 缓存 ~/.npm（key 由根 package-lock.json 哈希派生，lock 变更自动失效）。
+          # 不缓存 node_modules 本体：workspace 软链在 restore 后可能失效，npm ci 更可靠。
+          cache: 'npm'
       - name: Install dependencies
         run: npm ci
       - name: Build (workspace 拓扑序)

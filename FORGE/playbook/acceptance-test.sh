@@ -688,11 +688,11 @@ if $S67_OK; then
 fi
 $S67_OK && pass
 scenario 68 "A16+A17 规则注册"
-S68_OK=true; S68_REG=$(grep -c "A16" "$AUDIT_RULES_INDEX" 2>/dev/null || echo "0")
+S68_OK=true; S68_REG=$(grep -c "A16" "$AUDIT_RULES_INDEX" 2>/dev/null || true); S68_REG=${S68_REG:-0}
 [ "$S68_REG" -ge 2 ] || { fail "A16 规则未注册"; S68_OK=false; }
 $S68_OK && [ -f "$PROJECT_ROOT/engine/audit/src/rules/rule-a16-unauthorized-change.ts" ] || { fail "rule-a16-unauthorized-change.ts 不存在"; S68_OK=false; }
 $S68_OK && pass
-S69_OK=true; S69_REG=$(grep -c "A17" "$AUDIT_RULES_INDEX" 2>/dev/null || echo "0")
+S69_OK=true; S69_REG=$(grep -c "A17" "$AUDIT_RULES_INDEX" 2>/dev/null || true); S69_REG=${S69_REG:-0}
 [ "$S69_REG" -ge 2 ] || { fail "A17 规则未注册"; S69_OK=false; }
 $S69_OK && [ -f "$PROJECT_ROOT/engine/audit/src/rules/rule-a17-bulk-change.ts" ] || { fail "rule-a17-bulk-change.ts 不存在"; S69_OK=false; }
 $S69_OK && pass
@@ -719,27 +719,27 @@ $S73_OK && pass
 scenario 74 "EvidenceMode + 经验共享"
 S74_OK=true; [ ! -f "$AUDIT_RULES_TYPES" ] && { fail "audit/src/rules/types.ts 不存在"; S74_OK=false; }
 if $S74_OK; then grep "filesystem" "$AUDIT_RULES_TYPES" 2>/dev/null | head -1 | grep -q "filesystem" || true; grep -q "filesystem" "$AUDIT_RULES_TYPES" 2>/dev/null || { fail "EvidenceMode 不含 filesystem"; S74_OK=false; }; fi
-if $S74_OK; then S74_A17=$(grep "A17" "$AUDIT_RULES_INDEX" | grep -c "filesystem" || echo "0"); [ "$S74_A17" -ge 1 ] || { fail "A17 未使用 filesystem evidenceMode"; S74_OK=false; }; fi
+if $S74_OK; then S74_A17=$(grep "A17" "$AUDIT_RULES_INDEX" | grep -c "filesystem" || true); S74_A17=${S74_A17:-0}; [ "$S74_A17" -ge 1 ] || { fail "A17 未使用 filesystem evidenceMode"; S74_OK=false; }; fi
 $S74_OK && pass
 S75_OK=true; THINK_DIST="$PROJECT_ROOT/engine/think/dist/index.js"
 require_dist "engine/think/dist/index.js" || S75_OK=false
 if $S75_OK; then S75_RESULT=$(node -e "const t = require('$THINK_DIST'); console.log('generateThinkEntry:' + typeof t.generateThinkEntry);" 2>&1 || true); echo "$S75_RESULT" | grep -q "function" || { fail "generateThinkEntry 未导出"; S75_OK=false; }; fi
-if $S75_OK; then S75_MC=$(grep -c "knowledge.*Views\|knowledge/.*派生" "$PROJECT_ROOT/engine/core/src/memory-contract.ts" 2>/dev/null || echo "0"); [ "$S75_MC" -ge 1 ] || { fail "memory-contract.ts 无 knowledge Views 定义"; S75_OK=false; }; fi
+if $S75_OK; then S75_MC=$(grep -c "knowledge.*Views\|knowledge/.*派生" "$PROJECT_ROOT/engine/core/src/memory-contract.ts" 2>/dev/null || true); S75_MC=${S75_MC:-0}; [ "$S75_MC" -ge 1 ] || { fail "memory-contract.ts 无 knowledge Views 定义"; S75_OK=false; }; fi
 $S75_OK && pass
 scenario 76 "harness 约束自加载 + A14+A15 规则"
 S76_OK=true; HARNESS_DIST="$PROJECT_ROOT/engine/harness/dist/index.js"
 require_dist "engine/harness/dist/index.js" || S76_OK=false
 if $S76_OK; then S76_RESULT=$(node -e "try { const h = require('$HARNESS_DIST'); console.log('buildConstrainedSystemPrompt:' + typeof h.buildConstrainedSystemPrompt); } catch(e) { console.log('error:' + e.message); }" 2>&1 || true); echo "$S76_RESULT" | grep -q "function" || { fail "buildConstrainedSystemPrompt 未导出"; S76_OK=false; }; fi
-if $S76_OK; then S76_HARNESS=$(grep -c "harness" "$PROJECT_ROOT/engine/orchestrator/src/launcher.ts" 2>/dev/null || echo "0"); [ "$S76_HARNESS" -ge 1 ] || { fail "launcher.ts 未引用 harness"; S76_OK=false; }; fi
+if $S76_OK; then S76_HARNESS=$(grep -c "harness" "$PROJECT_ROOT/engine/orchestrator/src/launcher.ts" 2>/dev/null || true); S76_HARNESS=${S76_HARNESS:-0}; [ "$S76_HARNESS" -ge 1 ] || { fail "launcher.ts 未引用 harness"; S76_OK=false; }; fi
 $S76_OK && pass
-S77_OK=true; S77_REG=$(grep -c "A14" "$AUDIT_RULES_INDEX" 2>/dev/null || echo "0")
+S77_OK=true; S77_REG=$(grep -c "A14" "$AUDIT_RULES_INDEX" 2>/dev/null || true); S77_REG=${S77_REG:-0}
 [ "$S77_REG" -ge 2 ] || { fail "A14 规则未注册"; S77_OK=false; }
-if $S77_OK; then S77_HYBRID=$(grep "A14" "$AUDIT_RULES_INDEX" | grep -c "hybrid" || echo "0"); [ "$S77_HYBRID" -ge 1 ] || { fail "A14 未使用 hybrid evidenceMode"; S77_OK=false; }; fi
+if $S77_OK; then S77_HYBRID=$(grep "A14" "$AUDIT_RULES_INDEX" | grep -c "hybrid" || true); S77_HYBRID=${S77_HYBRID:-0}; [ "$S77_HYBRID" -ge 1 ] || { fail "A14 未使用 hybrid evidenceMode"; S77_OK=false; }; fi
 $S77_OK && [ -f "$PROJECT_ROOT/engine/audit/src/rules/rule-a14-kb-cross-domain.ts" ] || { fail "rule-a14-kb-cross-domain.ts 不存在"; S77_OK=false; }
 $S77_OK && pass
-S78_OK=true; S78_REG=$(grep -c "A15" "$AUDIT_RULES_INDEX" 2>/dev/null || echo "0")
+S78_OK=true; S78_REG=$(grep -c "A15" "$AUDIT_RULES_INDEX" 2>/dev/null || true); S78_REG=${S78_REG:-0}
 [ "$S78_REG" -ge 2 ] || { fail "A15 规则未注册"; S78_OK=false; }
-if $S78_OK; then S78_HYBRID=$(grep "A15" "$AUDIT_RULES_INDEX" | grep -c "hybrid" || echo "0"); [ "$S78_HYBRID" -ge 1 ] || { fail "A15 未使用 hybrid evidenceMode"; S78_OK=false; }; fi
+if $S78_OK; then S78_HYBRID=$(grep "A15" "$AUDIT_RULES_INDEX" | grep -c "hybrid" || true); S78_HYBRID=${S78_HYBRID:-0}; [ "$S78_HYBRID" -ge 1 ] || { fail "A15 未使用 hybrid evidenceMode"; S78_OK=false; }; fi
 $S78_OK && [ -f "$PROJECT_ROOT/engine/audit/src/rules/rule-a15-action-constraint.ts" ] || { fail "rule-a15-action-constraint.ts 不存在"; S78_OK=false; }
 $S78_OK && pass
 scenario 80 "cron + conflict-check 三态"
@@ -766,9 +766,9 @@ scenario 83 "ARCHITECTURE + llm-wiki 删除 + daemon 注册"
 ARCH="$PROJECT_ROOT/docs/ARCHITECTURE.md"; S83_OK=true
 [ -f "$ARCH" ] || { fail "ARCHITECTURE.md 不存在"; S83_OK=false; }
 if $S83_OK; then
-  S83_MAP=$(grep -c "Ledger\|Views\|Policy" "$ARCH" 2>/dev/null || echo 0)
-  S83_FLOW=$(grep -c "派生\|单向" "$ARCH" 2>/dev/null || echo 0)
-  S83_WIKI=$(grep -c "LLM Wiki\|raw materials\|Wiki entries\|spec norms" "$ARCH" 2>/dev/null || echo 0)
+  S83_MAP=$(grep -c "Ledger\|Views\|Policy" "$ARCH" 2>/dev/null || true); S83_MAP=${S83_MAP:-0}
+  S83_FLOW=$(grep -c "派生\|单向" "$ARCH" 2>/dev/null || true); S83_FLOW=${S83_FLOW:-0}
+  S83_WIKI=$(grep -c "LLM Wiki\|raw materials\|Wiki entries\|spec norms" "$ARCH" 2>/dev/null || true); S83_WIKI=${S83_WIKI:-0}
   [ "$S83_MAP" -ge 3 ] && [ "$S83_FLOW" -ge 1 ] && [ "$S83_WIKI" -ge 1 ] || { fail "ARCHITECTURE.md 缺三层映射内容"; S83_OK=false; }
 fi
 $S83_OK && pass
@@ -984,7 +984,7 @@ $S119_OK && pass
 scenario 120 "v1.1.9 叙事收敛 + BugFix 回归锁"
 S120_OK=true; README="$PROJECT_ROOT/README.md"
 # v1.4.1 口径升级：品牌主身份从"FDE Agent"改为"FDE Harness"（2026-08-27 用户拍板）——检查三要素（FDE/约束层/审计）+ "FDE Harness" ≥1 防品牌退化
-FDE_HARNESS_COUNT=$(grep -c "FDE Harness" "$README" 2>/dev/null || echo 0)
+FDE_HARNESS_COUNT=$(grep -c "FDE Harness" "$README" 2>/dev/null || true); FDE_HARNESS_COUNT=${FDE_HARNESS_COUNT:-0}
 [ "$FDE_HARNESS_COUNT" -ge 1 ] || { fail "README 'FDE Harness' 完全消失（品牌主身份丢失，期望 ≥1）"; S120_OK=false; }
 grep -qE '(约束层|Harness)' "$README" || { fail "README 缺 '约束层/Harness' 身份描述"; S120_OK=false; }
 grep -qE '(审计|audit)' "$README" || { fail "README 缺 '审计' 身份描述"; S120_OK=false; }
@@ -999,7 +999,7 @@ S121_OK=true; DAG_RUNNER="$PROJECT_ROOT/engine/orchestrator/src/dag-runner.ts"
 SANITIZER="$PROJECT_ROOT/engine/core/src/security/prompt-sanitizer.ts"
 PARSER="$PROJECT_ROOT/engine/orchestrator/src/workflow-parser.ts"
 grep -q "assertSubAgentsNoEmptyTools" "$DAG_RUNNER" || { fail "dag-runner 缺 assertSubAgentsNoEmptyTools"; S121_OK=false; }
-SANITIZER_COUNT=$(grep -c "name: '" "$SANITIZER" 2>/dev/null || echo 0)
+SANITIZER_COUNT=$(grep -c "name: '" "$SANITIZER" 2>/dev/null || true); SANITIZER_COUNT=${SANITIZER_COUNT:-0}
 [ "$SANITIZER_COUNT" -ge 9 ] || { fail "prompt-sanitizer 规则数 ${SANITIZER_COUNT}（期望 ≥9）"; S121_OK=false; }
 grep -q "MAX_NODES = 20" "$PARSER" || { fail "workflow-parser 缺 MAX_NODES = 20"; S121_OK=false; }
 grep -q "MAX_TASK_LENGTH = 2000" "$PARSER" || { fail "workflow-parser 缺 MAX_TASK_LENGTH = 2000"; S121_OK=false; }
@@ -1213,7 +1213,7 @@ fi
 WIKI="$PROJECT_ROOT/docs/WIKI.md"; S145_OK=true
 [ -f "$WIKI" ] || { fail "WIKI.md 不存在"; S145_OK=false; }
 if $S145_OK; then
-  WIKI_SEC=$(grep -c "^## [一二三四五六七]、" "$WIKI" 2>/dev/null || echo 0)
+  WIKI_SEC=$(grep -c "^## [一二三四五六七]、" "$WIKI" 2>/dev/null || true); WIKI_SEC=${WIKI_SEC:-0}
   [ "$WIKI_SEC" -ge 7 ] || { fail "WIKI.md 节数不足（期望 7，实际 ${WIKI_SEC}）"; S145_OK=false; }
   # v1.2.9 README 文档索引用 docs/ 路径而非直接写 "WIKI"
   grep -q "docs/" "$PROJECT_ROOT/README.md" || { fail "README 未引用 docs/ 路径"; S145_OK=false; }
@@ -1244,20 +1244,20 @@ echo "$S149_OUT" | grep -q "^OK" || { fail "P1 ModelRouter 端到端失败: $S14
 $S149_OK && pass "P1 ModelRouter 路由端到端完整（public→cloud / restricted→local / confidential≠cloud / reason 有值）"
 scenario 150 "P3 Skill 分层升级——默认安全升级不动 custom/、--force 覆盖、--merge 三路合并"
 S150_OK=true; # 150a: install.sh 含 upgrade_skill 函数 + 三策略参数
-S150A_FUNC=$(grep -c "^upgrade_skill()" "$PROJECT_ROOT/install.sh" 2>/dev/null || echo 0)
+S150A_FUNC=$(grep -c "^upgrade_skill()" "$PROJECT_ROOT/install.sh" 2>/dev/null || true); S150A_FUNC=${S150A_FUNC:-0}
 [ "$S150A_FUNC" -ge 1 ] 2>/dev/null || { fail "install.sh 缺少 upgrade_skill 函数"; S150_OK=false; }
-S150A_FORCE=$(grep -c "\-\-force" "$PROJECT_ROOT/install.sh" 2>/dev/null || echo 0)
+S150A_FORCE=$(grep -c "\-\-force" "$PROJECT_ROOT/install.sh" 2>/dev/null || true); S150A_FORCE=${S150A_FORCE:-0}
 [ "$S150A_FORCE" -ge 1 ] 2>/dev/null || { fail "install.sh 缺少 --force 参数支持"; S150_OK=false; }
-S150A_MERGE=$(grep -c "\-\-merge" "$PROJECT_ROOT/install.sh" 2>/dev/null || echo 0)
+S150A_MERGE=$(grep -c "\-\-merge" "$PROJECT_ROOT/install.sh" 2>/dev/null || true); S150A_MERGE=${S150A_MERGE:-0}
 [ "$S150A_MERGE" -ge 1 ] 2>/dev/null || { fail "install.sh 缺少 --merge 参数支持"; S150_OK=false; }
-S150B_MERGE=$(grep -c "^_merge_one_file()" "$PROJECT_ROOT/install.sh" 2>/dev/null || echo 0)
+S150B_MERGE=$(grep -c "^_merge_one_file()" "$PROJECT_ROOT/install.sh" 2>/dev/null || true); S150B_MERGE=${S150B_MERGE:-0}
 [ "$S150B_MERGE" -ge 1 ] 2>/dev/null || { fail "install.sh 缺少 _merge_one_file 三路合并函数"; S150_OK=false; }
-S150C_BACKUP=$(grep -c "^_backup_layers()" "$PROJECT_ROOT/install.sh" 2>/dev/null || echo 0)
-S150C_ROTATE=$(grep -c "^_rotate_backups()" "$PROJECT_ROOT/install.sh" 2>/dev/null || echo 0)
+S150C_BACKUP=$(grep -c "^_backup_layers()" "$PROJECT_ROOT/install.sh" 2>/dev/null || true); S150C_BACKUP=${S150C_BACKUP:-0}
+S150C_ROTATE=$(grep -c "^_rotate_backups()" "$PROJECT_ROOT/install.sh" 2>/dev/null || true); S150C_ROTATE=${S150C_ROTATE:-0}
 [ "$((S150C_BACKUP + S150C_ROTATE))" -ge 2 ] 2>/dev/null || { fail "install.sh 缺少备份/轮转函数"; S150_OK=false; }
-S150D_PROTECT=$(grep -c "custom|\.backup|\.DS_Store)" "$PROJECT_ROOT/install.sh" 2>/dev/null || echo 0)
+S150D_PROTECT=$(grep -c "custom|\.backup|\.DS_Store)" "$PROJECT_ROOT/install.sh" 2>/dev/null || true); S150D_PROTECT=${S150D_PROTECT:-0}
 [ "$S150D_PROTECT" -ge 1 ] 2>/dev/null || { fail "install.sh 缺少 custom/ 保护逻辑（case 跳过）"; S150_OK=false; }
-S150E_FORCE_CONFIRM=$(grep -c "SOFAGENT_FORCE_YES\|YES_MODE" "$PROJECT_ROOT/install.sh" 2>/dev/null || echo 0)
+S150E_FORCE_CONFIRM=$(grep -c "SOFAGENT_FORCE_YES\|YES_MODE" "$PROJECT_ROOT/install.sh" 2>/dev/null || true); S150E_FORCE_CONFIRM=${S150E_FORCE_CONFIRM:-0}
 [ "$S150E_FORCE_CONFIRM" -ge 1 ] 2>/dev/null || { fail "install.sh 缺少 --force 确认门"; S150_OK=false; }
 $S150_OK && pass "P3 Skill 分层升级完整（upgrade_skill + _merge_one_file + 备份轮转 + custom/ 保护 + --force 确认门）"
 scenario 151 "P3b 异步 HITL 端到端（shouldUseAsyncHITL 降级 + 请求写入 + 响应读取）"
@@ -1586,7 +1586,7 @@ for f in daemon-status.ts list-agents.ts list-concepts.ts hitl-resolve.ts; do
 done
 # v1.4.0 校准：v1.4.0 MCP 重构后工具统一注册在 tool-registry.ts 的 TOOLS 数组（mcp-server.ts 只留协议分发），
 # 原「mcp-server.ts import + case 三处注册」断言过时——改查 registry 内 4 tool 存在。
-MCP_V126_REG=$(grep -cE "'(daemon_status|list_agents|list_concepts|hitl_resolve)'" "$PROJECT_ROOT/engine/mcp/src/tool-registry.ts" 2>/dev/null || echo 0)
+MCP_V126_REG=$(grep -cE "'(daemon_status|list_agents|list_concepts|hitl_resolve)'" "$PROJECT_ROOT/engine/mcp/src/tool-registry.ts" 2>/dev/null || true); MCP_V126_REG=${MCP_V126_REG:-0}
 [ "$MCP_V126_REG" -ge 4 ] || { fail "tool-registry.ts 注册点不足（registry=${MCP_V126_REG}，期望 ≥4）"; S192_OK=false; }
 $S192_OK && pass "v1.2.6 MCP 4 tool 完整（handler 文件 + import + case dispatch）"
 
