@@ -90,7 +90,7 @@ Your data. Any format, just be real.
 
 ---
 
-## Quantification anchors (v0.95 design anchors — data collection starts v1.0)
+## Quantification anchors (v0.95 design anchors — data collection never started)
 
 > Benchmarking against Andrej Karpathy's "LLM raw coding error rate 41% → 11% after human review" — sofagent's goal is to approach human-review-level quality using harness layer + audit layer without human reviewers.
 
