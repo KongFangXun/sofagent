@@ -848,6 +848,30 @@ export function createForgeDriverBase(config = {}) {
     let branch = null;
     try { branch = JSON.parse(readFileSync(metaPath, 'utf-8')).branch || null; } catch { /* 元数据缺失 */ }
 
+    // v1.4.4 修复（run-20260829-01 教训）：移除 worktree 前先固化分支 tip 到主仓 refs。
+    // 根因：worktree 内的 commit（b-fix auto-commit / re-sync merge）只在 worktree 的
+    // HEAD 上——git worktree remove 后主仓同名分支 ref 若未随最后 commit 前进，
+    // 这些 commit 变悬挂（fsck 才能找回）。run-20260829-01 的 4 轮 b-fix 修复链
+    // （4b1337d5→…→1e707628 + re-sync 88cc7c2c）就这样悬空了 8 小时才手工挖掘回收。
+    // 修法：remove 前在 worktree 读当前 HEAD，若与主仓分支 ref 不同则
+    // git branch -f <branch> <HEAD> 固化（worktree 检出态下不能 checkout 该分支，
+    // branch -f 直接写 ref 不受检出限制）。
+    if (branch) {
+      try {
+        const wtHead = execSync('git rev-parse HEAD', { cwd: worktreeDir, encoding: 'utf-8', timeout: 30_000 }).toString().trim();
+        let mainRef = '';
+        try {
+          mainRef = execSync(`git rev-parse ${quotePath(branch)}`, { cwd: repoRoot, encoding: 'utf-8', timeout: 30_000 }).toString().trim();
+        } catch { /* 分支 ref 不存在（首 run 未回流过）——直接创建 */ }
+        if (wtHead && wtHead !== mainRef) {
+          execSync(`git branch -f ${quotePath(branch)} ${wtHead}`, { cwd: repoRoot, encoding: 'utf-8', timeout: 30_000 });
+        }
+      } catch (fixErr) {
+        // 固化失败不阻塞清理（commit 仍在对象库，fsck 可找回）——但必须留下线索
+        console.warn(`[teardown] ⚠️ 分支 tip 固化失败（commit 仍可达，可 fsck 找回）: ${fixErr.message}`);
+      }
+    }
+
     if (!existsSync(worktreeDir)) {
       return { removed: false, branch, detail: 'worktree 目录不存在（未创建或已清理）' };
     }
