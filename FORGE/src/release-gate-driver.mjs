@@ -1105,6 +1105,21 @@ async function runWorker(step, runDir, target) {
   };
 
   const invokeAgent = async () => {
+    // v1.4.3 性能优化（run-16 实测拍板）：判断层直走裸 LLM 报告生成，跳过
+    // DSH 桥接 worker 空转。依据：
+    //   ① 方案 A 语义下证据 100% 在 prompt（precheckEvidence 随 userMessage
+    //      注入）——worker 的 bash/fs 工具链对「读证据写判定」零增益；
+    //   ② run-16 实测 DSH 桥接四步全部空转 175-359s 后吐空 stdout（headless
+    //      子进程内撞同类超时/空响应），再落到裸 LLM 兜底——纯负资产双跑；
+    //   ③ 裸 LLM 流式路径（run-16 修复②）已产出高质量判定书（regression
+    //      4310 字符，P0/P1 结构完整，还能反向抓门禁假绿）。
+    // 逃生舱：FORGE_WORKER=dsh 显式要求时仍走完整 worker（DSH 链路诊断用）。
+    if (process.env.FORGE_WORKER !== 'dsh') {
+      console.log('[worker] 判断层直连模式（裸 LLM 流式，跳过 DSH 桥接空转）——FORGE_WORKER=dsh 可启用完整 worker');
+      const bare = await generateReportWithoutTools(model, [], step, 'V', stepDef, precheckEvidence);
+      return { messages: [], content: bare ?? '', hardBreak: false, usage: undefined };
+    }
+
     // v1.3.4 增量：通过 ExecutionBackend 调用 agent
     // v1.3.9（五）：执行层切 DSH 默认（fallback 保留作降级——DSH rc 期守卫
     // 拦截自动降级 LangGraph，DSH 正式版发布后无需改代码自动切换）
@@ -1831,8 +1846,21 @@ async function runRegressionPrecheck(runDir) {
     dims: {},
   };
 
-  // 顺序执行（维度间无依赖；串行以复用 runCommand 简单实现）
-  for (const dim of dims) {
+  // ── 并行执行（run-16 性能优化：串行 775s → 并行 ~180s）──
+  // 维度间无依赖（脚本只读仓库 + 写 tmp），但两类维度不能盲目并行：
+  //   ① 重维度（106/110/111 跑全量测试门禁，150s 级 CPU 密集）
+  //   ② 互踩型（同时跑 git/测试会互抢锁，如 audit 锁文件）
+  // 策略：分两波——第一波并行跑全部轻维度（并发 6，8GB 安全值，FORGE
+  // run-07 OOM 教训后的保守档），第二波串行跑重维度（DIM_TIMEOUT_OVERRIDE
+  // 声明的 150s 档，它们本身含全量 test-count 会打满 CPU，串行反而总耗时
+  // 更优且零互踩风险）。输出顺序仍按维度号排列（payload.dims 是 dict，
+  // 写入顺序无关，但日志按 num 排序打印保持可读时间线）。
+  const HEAVY_DIMS = new Set(Object.keys(DIM_TIMEOUT_OVERRIDE).map(Number));
+  const lightDims = dims.filter(d => !HEAVY_DIMS.has(d.num));
+  const heavyDims = dims.filter(d => HEAVY_DIMS.has(d.num));
+  const concurrency = Math.min(6, lightDims.length || 1);
+
+  const executeDim = async (dim) => {
     const timeout = DIM_TIMEOUT_OVERRIDE[dim.num] ?? 60_000;
     const { exitCode, output } = await execRegressionDim(dim.script, timeout);
     // v1.3.8 run-10 修复：output 按行截断（保留前 12 行 + 截断标记）。
@@ -1850,14 +1878,40 @@ async function runRegressionPrecheck(runDir) {
     if (truncatedOutput.length > MAX_DIM_CHARS) {
       truncatedOutput = `${truncatedOutput.slice(0, MAX_DIM_CHARS)}\n…[${truncatedOutput.length - MAX_DIM_CHARS} 字符截断]`;
     }
-    payload.dims[String(dim.num)] = {
-      num: dim.num,
-      title: dim.title,
-      exitCode,
+    return {
+      num: dim.num, title: dim.title, exitCode,
       output: truncatedOutput,
       truncated: outLines.length > MAX_DIM_LINES || output.length > MAX_DIM_CHARS,
+      rawLen: output.length, lineCount: outLines.length,
     };
-    console.log(`  [precheck] 维度 ${dim.num} ${dim.title.slice(0, 24)}... exit=${exitCode ?? 'ERR'} (${output.length}B${outLines.length > MAX_DIM_LINES ? `→${outLines.length} 行截断` : ''})`);
+  };
+
+  // 第一波：轻维度并行（并发池）
+  const results = new Map();
+  const queue = [...lightDims];
+  const workers = Array.from({ length: concurrency }, async () => {
+    while (queue.length > 0) {
+      const dim = queue.shift();
+      if (!dim) break;
+      const r = await executeDim(dim);
+      results.set(dim.num, r);
+    }
+  });
+  await Promise.all(workers);
+  // 第二波：重维度串行（全量测试门禁类，CPU 密集防互踩）
+  for (const dim of heavyDims) {
+    const r = await executeDim(dim);
+    results.set(dim.num, r);
+  }
+
+  // 按维度号顺序写 payload + 日志（时间线可读）
+  for (const num of [...results.keys()].sort((a, b) => a - b)) {
+    const r = results.get(num);
+    payload.dims[String(num)] = {
+      num: r.num, title: r.title, exitCode: r.exitCode,
+      output: r.output, truncated: r.truncated,
+    };
+    console.log(`  [precheck] 维度 ${r.num} ${r.title.slice(0, 24)}... exit=${r.exitCode ?? 'ERR'} (${r.rawLen}B${r.lineCount > 12 ? `→${r.lineCount} 行截断` : ''})`);
   }
 
   const outPath = join(runDir, 'regression-precheck.json');
@@ -2011,6 +2065,12 @@ function parseVerdict(runDir) {
         const windowText = lines.slice(i, i + 4).join('\n').slice(col + marker.length);
         const m = windowText.match(/^[^A-Za-z\u4e00-\u9fff]*?(PASS|FAIL|SKIP)/i);
         if (m) return m[1].toUpperCase();
+        // run-16 修复：LLM 审查者常用同义裁决词（BLOCKED/BLOCK/NO-GO/不予放行/
+        // 不通过/阻塞）——语义全部等价 FAIL（fail-closed），不再误记 ERROR/SKIP。
+        // 仅在「结论/判定」标记紧邻窗口内匹配，维持既有防误抓纪律。
+        const mBlock = windowText.match(/^[^A-Za-z\u4e00-\u9fff]*?(BLOCKED|BLOCK|NO-GO)/i);
+        if (mBlock) return 'FAIL';
+        if (/^[^A-Za-z\u4e00-\u9fff]*(不予放行|不通过|不得放行|阻塞)/.test(windowText)) return 'FAIL';
       }
     }
     return null;
@@ -2054,6 +2114,12 @@ function parseStepResults(runDir) {
         const windowText = lines.slice(i, i + 4).join('\n').slice(col + marker.length);
         const m = windowText.match(/^[^A-Za-z\u4e00-\u9fff]*?(PASS|FAIL|SKIP)/i);
         if (m) return m[1].toUpperCase();
+        // run-16 修复：LLM 审查者常用同义裁决词（BLOCKED/BLOCK/NO-GO/不予放行/
+        // 不通过/阻塞）——语义全部等价 FAIL（fail-closed），不再误记 ERROR/SKIP。
+        // 仅在「结论/判定」标记紧邻窗口内匹配，维持既有防误抓纪律。
+        const mBlock = windowText.match(/^[^A-Za-z\u4e00-\u9fff]*?(BLOCKED|BLOCK|NO-GO)/i);
+        if (mBlock) return 'FAIL';
+        if (/^[^A-Za-z\u4e00-\u9fff]*(不予放行|不通过|不得放行|阻塞)/.test(windowText)) return 'FAIL';
       }
     }
     return null;
