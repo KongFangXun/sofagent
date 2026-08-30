@@ -82,6 +82,11 @@ CMD_COUNT=$(grep -cE '(grep|bash|npm|wc -l|test -)' FORGE/playbook/fresh-eyes-re
 # 预存在假阳性（恒报 19）——改为只数真视角标题（「视角N [n]：」模式），动态对账不产生假信号。
 VIEWS=$(grep -cE '^### .*视角[一二三四五六七八九十]+ \[' FORGE/playbook/fresh-eyes-review.md)
 [ "$VIEWS" -ne 19 ] && echo "🟡 视角数变化（当前 $VIEWS，基线 19）——确认是刻意调整" || echo "✅ 视角数稳定（$VIEWS）"
+
+# 4. 门禁有效性注入实测：审查体系更新后，门禁脚本自身可能腐烂（\s 正则/静默兜底/扫描失明）。
+#    --inject 会短暂改仓内文件（注入坏样本→验证必红→还原→验证必绿），前置要求工作树干净；
+#    并行 session 工作期间勿跑（改文件动作与并行写入冲突）。只读静态扫（无 --inject）随时可跑。
+bash tools/check/check-guards.sh --inject
 ```
 
 > 💡 **什么时候 `git diff` 显示无变更也是正常的**：如果所有预料外发现都属于"可精确描述的具体问题模式"，它们全部进了 regression-checklist，fresh-eyes-review 本版本无需更新。零变更 = 审查体系稳定，不是遗漏。
