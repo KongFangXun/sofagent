@@ -204,7 +204,10 @@ describe('readLatestCheckpointId', () => {
 // ════════════════════════════════════════
 
 describe('100 条保留策略', () => {
-  it('追加超过 100 条 → 截断保留最近 100 条', () => {
+  // 105 次 append 每次全量重读+重写（O(N) 保留策略），8GB 本机实测累计 ~6.6s
+  // （60ms/次 → 超限后 130ms/次），撞穿 vitest 默认 5s 超时——功能断言正确，
+  // 纯耗时问题。显式给 30s 预算（产品侧 O(N) 优化另立优化项，不在此修）。
+  it('追加超过 100 条 → 截断保留最近 100 条', { timeout: 30_000 }, () => {
     const total = WORKSPACE_CHANGES_MAX_ENTRIES + 5;
     for (let i = 1; i <= total; i++) {
       const record: WorkspaceChangeRecord = {
