@@ -2300,7 +2300,7 @@ function costCell(cost,key,costWarns){
 
 function loadWorklogData(){
   // 5s 自动刷新会重渲染工作记录——先记录滚动位置，渲染完成后恢复（不跳顶）
-  window.__wlScrollTop=document.scrollTop;
+  window.__wlScrollTop=window.scrollY||document.documentElement.scrollTop;
   var sample={
     agents:[
       {agentId:'demo-agent',tasks:[
