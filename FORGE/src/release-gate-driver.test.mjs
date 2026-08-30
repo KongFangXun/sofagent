@@ -716,3 +716,134 @@ describe('buildPrecheckEvidence（DSH 证据注入）', () => {
     expect(out).toContain('precheck 证据');
   });
 });
+
+// ═══════════════════════════════════════════════════════════
+//  7. buildInputsEvidence 测试套件（v1.4.3 run-19 verdict 零证据根因防回归）
+// ═══════════════════════════════════════════════════════════
+// 背景：v1.4.3 直连模式（跳过 DSH 桥接）下，verdict/consolidate 等 非 precheck
+// 步骤既无工具结果也无 precheck 证据 → generateReportWithoutTools 永远「零证据」
+// → verdict 必然 ERROR（run-19 实证）。修复 = 上一步产物内容由 driver 注入。
+
+function createBuildInputsEvidence() {
+  const { fullBody } = extractFunctionBody(SOURCE_CODE, 'buildInputsEvidence');
+  const wrapper = new Function(
+    'join', 'existsSync', 'readFileSync',
+    fullBody + '\nreturn buildInputsEvidence;'
+  );
+  return wrapper(join, existsSync, readFileSync);
+}
+
+describe('buildInputsEvidence（run-19 verdict 零证据根因）', () => {
+  let tmpRoot;
+  let buildEv;
+
+  beforeEach(() => {
+    tmpRoot = join(tmpdir(), `rg-bie-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`);
+    mkdirSync(tmpRoot, { recursive: true });
+    buildEv = createBuildInputsEvidence();
+  });
+
+  afterEach(() => {
+    if (existsSync(tmpRoot)) rmSync(tmpRoot, { recursive: true, force: true });
+  });
+
+  it('precheck 步骤返回空串（regression/coverage 不受影响——已由 buildPrecheckEvidence 覆盖）', () => {
+    expect(buildEv(tmpRoot, { precheck: true, inputs: ['regression-precheck.json'] })).toBe('');
+  });
+
+  it('verdict 步骤 → stage6-report.md 内容注入（run-19 场景复现）', () => {
+    writeFileSync(join(tmpRoot, 'stage6-report.md'), '# 综合报告\n判定：FAIL\nF-1 P0 缺口');
+    const out = buildEv(tmpRoot, { inputs: ['stage6-report.md'] });
+    expect(out).toContain('上一步产物证据');
+    expect(out).toContain('stage6-report.md');
+    expect(out).toContain('F-1 P0 缺口');
+  });
+
+  it('consolidate 三输入 → 全部注入 + 合计预算控制（单文件 6000 截断）', () => {
+    const big = 'x'.repeat(10_000);
+    writeFileSync(join(tmpRoot, 'acceptance.md'), big);
+    writeFileSync(join(tmpRoot, 'regression.md'), 'R');
+    writeFileSync(join(tmpRoot, 'coverage.md'), 'C');
+    const out = buildEv(tmpRoot, { inputs: ['acceptance.md', 'regression.md', 'coverage.md'] });
+    expect(out).toContain('acceptance.md');
+    expect(out).toContain('截断');
+    expect(out).toContain('regression.md');
+  });
+
+  it('输入文件缺失 → 「数据不完整」提示（verdict prompt 契约：缺失即 FAIL）', () => {
+    const out = buildEv(tmpRoot, { inputs: ['stage6-report.md'] });
+    expect(out).toContain('文件不存在');
+    expect(out).toContain('数据不完整');
+  });
+
+  it('runWorker 直连模式证据面拼接（precheck + inputs 双通道）', () => {
+    // 源码级断言：直连分支与兜底分支都用 [precheckEvidence, inputsEvidence] 拼接
+    expect(SOURCE_CODE).toContain("[precheckEvidence, inputsEvidence].filter(Boolean).join('\\n\\n')");
+    // 直连分支必须存在（v1.4.3 性能优化）
+    expect(SOURCE_CODE).toContain("process.env.FORGE_WORKER !== 'dsh'");
+  });
+});
+
+// ═══════════════════════════════════════════════════════════
+//  8. 反向防御 ✅ 行内引用豁免（v1.4.3 run-19 125/127 假红根因防回归）
+// ═══════════════════════════════════════════════════════════
+// 背景：checklist for 循环收尾惯例 `echo "✅ 三 tools 齐（若上方无 ❌）"` ——
+// 健康态输出本身带 ❌ 字面量，整文 /❌/ 匹配把健康维度翻转成假红（run-19
+// 实测 dim 125/127 双翻转）。修正 = ❌ 判定排除「✅ 行内引用」形态。
+
+describe('execRegressionDim · 反向防御 ✅ 行内引用豁免（run-19 假红根因）', () => {
+  // 与 driver 内实现同构的规则镜像（改实现时本组同步改）
+  const hasGenuineFail = (output) => /❌/.test(output.replace(/^✅.*❌.*$/gm, ''));
+
+  it('健康态「（若上方无 ❌）」引用 → 不翻转（run-19 dim125 回放）', () => {
+    const real125 = '✅ 六引擎注册（若上方无 ❌）\n✅ 工作台数据层\n✅ 判定引擎在位\n✅ 零本地 dataDir（30 处已清零）';
+    expect(hasGenuineFail(real125)).toBe(false);
+  });
+
+  it('真失败 ❌ 独立行 → 触发翻转（run-16 假绿形态保留）', () => {
+    expect(hasGenuineFail('✅ 收割链在位\n❌ 僵尸收割缺失')).toBe(true);
+  });
+
+  it('混合形态：✅ 引用行 + ❌ 真失败行并存 → 触发（不吞真失败）', () => {
+    expect(hasGenuineFail('✅ 三 tools 齐（若上方无 ❌）\n❌ train_status 未注册/未分发\n✅ 处方出处标注')).toBe(true);
+  });
+
+  it('纯健康输出零 ❌ → 不触发（语义不变）', () => {
+    expect(hasGenuineFail('✅ A\n✅ B')).toBe(false);
+  });
+
+  it('源码级断言：driver 实现含 ✅ 行内引用剥离正则', () => {
+    expect(SOURCE_CODE).toContain("output.replace(/^✅.*❌.*$/gm, '')");
+  });
+});
+
+// ═══════════════════════════════════════════════════════════
+//  9. assertNativeToolchain 自愈模式（v1.4.3 用户拍板：WorkBuddy 内可跑）
+// ═══════════════════════════════════════════════════════════
+// 背景：run-15/16/17 沙箱 toybox 污染三连假红后，首版防御是 fail-fast 拒跑；
+// 用户拍板「修复成可以在 WorkBuddy 里跑的状态」→ 升级为自愈：净化 PATH（剥
+// brokered-bin/toybox 段）+ 剥 BASH_ENV → 复测三指纹 → 通过继续跑。
+// 烟测三用例（正常/自愈/拒跑）在开发期已验证；本套件锁源码关键结构。
+
+describe('assertNativeToolchain 自愈模式（run-18+ WorkBuddy 内可跑）', () => {
+  it('源码级断言：自愈三要素在位（净化 PATH / 剥 BASH_ENV / 复测）', () => {
+    expect(SOURCE_CODE).toContain('启动自愈（净化 PATH + 剥 BASH_ENV）');
+    expect(SOURCE_CODE).toContain("filter(seg => seg && !/brokered-bin|toybox/i.test(seg))");
+    expect(SOURCE_CODE).toContain('delete process.env.BASH_ENV');
+    expect(SOURCE_CODE).toContain('自愈成功');
+    expect(SOURCE_CODE).toContain('自愈失败');
+  });
+
+  it('自愈失败仍拒跑（fail-closed 语义保留——净化后不可信照样拒）', () => {
+    const failIdx = SOURCE_CODE.indexOf('自愈失败');
+    const exitIdx = SOURCE_CODE.indexOf('process.exit(1)', failIdx);
+    expect(failIdx).toBeGreaterThan(-1);
+    expect(exitIdx).toBeGreaterThan(failIdx);
+  });
+
+  it('指纹探测保留三件套（BRE 交替 / wc 补齐 / PATH 首段——run-17 教训）', () => {
+    expect(SOURCE_CODE).toContain('grep -q "a\\\\|x"');
+    expect(SOURCE_CODE).toContain('echo hi | wc -l');
+    expect(SOURCE_CODE).toContain('brokered-bin|toybox');
+  });
+});
