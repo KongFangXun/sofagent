@@ -1051,10 +1051,8 @@ node -e "const fs=require('fs'),raw=fs.readFileSync('FORGE/src/fresh-eyes-driver
 # 确认 forge-smoke-test.sh 存在且集成到 pre-push
 test -f tools/forge/forge-smoke-test.sh && echo "✅ smoke test 存在" || echo "❌ 缺失"
 grep -q "forge-smoke-test" tools/release/pre-push-check.sh && echo "✅ 已集成" || echo "❌ 未集成"
-# 烟测实跑——🔴 禁止管道后取退出码（管道让 $? 变 tail 的 0，失败被吞=假绿）。
-# 输出重文件再看，退出码用裸命令取（run-01 v1.4.3 教训：`| tail -3` 吞掉 exit 1）。
-bash tools/forge/forge-smoke-test.sh > /tmp/forge-smoke.out 2>&1
-SMOKE_RC=$?
+# 烟测实跑（🔴 禁管道取退出码——run-01 v1.4.3 教训：`| tail -3` 吞 exit 1 假绿）
+bash tools/forge/forge-smoke-test.sh > /tmp/forge-smoke.out 2>&1; SMOKE_RC=$?
 [ "$SMOKE_RC" -eq 0 ] && echo "✅ 烟测全绿" || { echo "❌ 烟测失败（exit=$SMOKE_RC）："; tail -5 /tmp/forge-smoke.out; }
 # ESM named export 检查（被 import 引用的符号须有 export 声明）
 node -e "const fs=require('fs');const files=fs.readdirSync('FORGE/src').filter(f=>f.endsWith('.mjs'));let issues=[];for(const f of files){const s=fs.readFileSync('FORGE/src/'+f,'utf8');const exp=new Set([...s.matchAll(/export\s+(?:const|function|class)\s+(\w+)/g)].map(m=>m[1]));for(const f2 of files){if(f2===f)continue;const s2=fs.readFileSync('FORGE/src/'+f2,'utf8');const imp=[...s2.matchAll(/import\s*\{([^}]+)\}\s*from\s*['\"]\.\/([\w.-]+)['\"]/g)];for(const i of imp){if(i[2].replace('.mjs','')===f.replace('.m','')){for(const n of i[1].split(',').map(x=>x.trim().split(/\s+as\s+/)[0])){if(n&&!exp.has(n)&&n!=='default')issues.push(f2+' imports {'+n+'} from '+f);}}}}}console.log(issues.length?'ISSUE: '+issues.join('; '):'OK')" 2>/dev/null
@@ -1481,23 +1479,20 @@ node -e "const fs=require('fs'),p=require('path');let bad=0;for(const f of fs.re
 
 ```bash
 # ① MCP tools 三处口径（SKILL.md / ARCHITECTURE 能力表 / dist 实测）——v1.4.2 口径 79，勿写死
-grep -q "79 tools" SKILL/SKILL.md || echo "⚠️ SKILL 工具速查漂移（v1.4.2 口径 79）"   # v1.3.6：52→60；v1.3.9：60→61；v1.4.0：61→66；v1.4.1：66→67（train_submit）；v1.4.2：67→79 勿写死，改版时随 SSOT
-node -e "const m=require('./engine/mcp/dist/tool-registry.js');const doc=require('./package.json').version;console.log('✅ TOOLS='+m.TOOLS.length+'（registry 实数，勿写死——发版后人工对 SSOT 口径）')"   # v1.3.6：写死 52 必漂，改打印实数
-# ② snapshot tool 零 daemon 静态依赖（optionalDependencies 场景会炸）——排除注释行（🔴 import 铁律注释含 @sofagent/daemon）
-# v1.4.0 修复（run-22 P1-3c 误报）：多文件 grep 带文件前缀致 ^[[:space:]]*// 排除失效 → 用 -h 去前缀。
+grep -q "79 tools" SKILL/SKILL.md || echo "⚠️ SKILL 工具速查漂移（v1.4.2 口径 79）"   # 演进：52→60→61→66→67（train_submit）→79，随 SSOT
+node -e "const m=require('./engine/mcp/dist/tool-registry.js');const doc=require('./package.json').version;console.log('✅ TOOLS='+m.TOOLS.length+'（registry 实数，勿写死——发版后人工对 SSOT 口径）')"
+# ② snapshot tool 零 daemon 静态依赖（optionalDependencies 场景会炸）——排除注释行（🔴 import 铁律注释含 @sofagent/daemon；run-22 P1-3c：grep -h 去前缀保排除生效）
 grep -hE "@sofagent/daemon" engine/mcp/src/tools/snapshot-list.ts engine/mcp/src/tools/snapshot-restore.ts 2>/dev/null | grep -vE "^[[:space:]]*//" | head -1 | grep -q . && echo "⚠️ snapshot 静态 import daemon 回潮"
 # ③ evolver 永不写仓库 SKILL/（发布源污染防线）
 grep -qE "join\(REPO|join\(process\.cwd|['\"]\.?/?SKILL/['\"]" engine/orchestrator/src/instinct/evolver.ts && echo "⚠️ evolver 触达仓库 SKILL/" || echo "✅ evolver 只写 SOFAGENT_HOME/skill/custom（join(dir,'SKILL.md') 是合法 custom 文件名）"   # v1.3.6：正则收窄——原 join.*SKILL 误伤 custom skill 的 SKILL.md 文件名
 # ④ companion/fde-registry 的 daemon inspector 三步注册
 grep -q "fde-companion-daily\|fde-registry" engine/daemon/src/inspector-layers.ts 2>/dev/null || grep -rq "runFdeCompanionDaily" engine/daemon/src/inspectors/ || echo "⚠️ FDE 巡检未注册 inspector"
 # ⑤ 文档同步四件套（tools 数/测试数/v1.3.5 段/CHANGELOG 索引行）
-# v1.4.0 修复（run-22 P1-3b 误报）：旧检查写死 2903（v1.3.9 数）→ README 已 2937（实测）。
-# v1.4.1 修正：写死数字必漂（2937→3177）——改为从 test-count.sh SSOT 读实际数对账，不写死。
+# v1.4.0/v1.4.1 教训（run-22 P1-3b 误报）：写死测试数必漂（2903→2937→3177）——改从 test-count.sh SSOT 读实际数对账，不写死。
 TC=$(bash tools/check/test-count.sh 2>/dev/null | grep -oE 'TOTAL_TESTS=[0-9]+' | cut -d= -f2)
 grep -q "$TC" README.md || echo "⚠️ README 测试数漂移（期望 $TC，见 tools/check/test-count.sh）"   # v1.4.0：2903→2937；v1.4.1：2937→3177（12 包实测）
 grep -q "\*\*v1.3.5\*\*" CHANGELOG.md || echo "⚠️ CHANGELOG 索引缺 v1.3.5"
 ```
-
 
 <!-- 瘦身判据记录 v1.3.5（阶段五步骤4 · SOP 首份执行）
 ①冗余：检查本版新增 2 维（110/111）——均为新审查面，无工具覆盖重复 → 无删
@@ -1801,4 +1796,5 @@ grep -c "logo-version" tools/dashboard/dashboard.html | grep -qE "^[0-9]+$" && !
 ③增长性质：+1 维（#128 fresh-eyes 修复一维收口，参照 124/126 惯例）新审查面非重复
 ④归并配额：新增 1 维 → 归并 0 处——#127h 退役收口归并已在开发期完成（5315ffa5 本版配额已用）；如实登记不凑数
 结论：#128 + 判据块净增 25 行（1782→1807），同版二次上调冻结（开发期已调 1760→1800）→ v1.4.2 两块注释合并压缩释放 7 行对销，1800 封顶不调线；acceptance 不动（3639 ≤ 3640）；fresh-eyes 不动（435 ≤ 455，校准入 calibration 档案——外移拍板生效首轮）
+阶段五补充（run-01 三 P0 修复）：#73 烟测行去管道 + #111① 口径 67→79 净增 +4 顶线 → 维度 73 修复注释压缩 3 行对销，1800 封顶不动
 -->
