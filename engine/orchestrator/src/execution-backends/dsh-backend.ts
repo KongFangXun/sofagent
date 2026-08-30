@@ -13,9 +13,8 @@
 //      与宿主私有段（execute/output.schema/output.render）严格分离
 //    - 事件域：tools/pre-execute、tools/result、fs/write-intent、agent/* 生命周期
 //
-// 版本守卫链（rc 期拦截，正式版自动放开）：
-// - 层 1（execution-backend.ts）：模块守卫——cordis 包可 import 且 Context 导出存在，
-//   且配套 DSH agent 插件包（@deepseek-ai/dsh）非 rc 版本。
+// 守卫链（只探测能力面，不做版本字符串比较——rc 版本同样放行）：
+// - 层 1（execution-backend.ts）：模块守卫——cordis 包可 import 且 Context 导出存在。
 // - 层 2（本文件 runCordisAgent）：能力守卫——探测 ctx 上的 agent 驱动服务，
 //   DSH agent-loop 插件缺失时抛 DshCapabilityMissingError → 工厂层 fallback LangGraph。
 //   裸 cordis 框架包没有 agent 循环——两层守卫保证「不装全套 DSH 绝不硬跑」。
@@ -889,8 +888,10 @@ export function createDshCliBackend(): ExecutionBackend {
     binPath = resolveDshCliBin();
   } catch {
     throw new Error(
-      '[dsh-backend] @deepseek-ai/dsh 未安装，无法启用 DSH CLI 桥接。' +
-      '安装：cd <repo> && pnpm add @deepseek-ai/dsh@0.1.0-rc.8（8GB 机器 npm install 会 OOM，用 pnpm）'
+        '[dsh-backend] @deepseek-ai/dsh 未安装，无法启用 DSH CLI 桥接。' +
+        // 不写死版本号——DSH 迭代快，写死必然过时。OOM 警告是实测结论，保留。
+        '安装：cd <repo> && pnpm add @deepseek-ai/dsh' +
+        '（8GB 机器上 npm install 解析 DSH 依赖树会堆溢出，必须用 pnpm）'
     );
   }
 
