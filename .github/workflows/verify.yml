@@ -18,6 +18,9 @@ jobs:
           # Web Crypto 全局（globalThis.crypto），Node 18 不稳定可用（Node 19+ 才 flag-free）。
           # pr-check 用 Node 22 跑同一套测试全绿（测试数动态见 tools/check/test-count.sh），对齐到 Node 22。
           node-version: 22
+          # 缓存 ~/.npm（key 由根 package-lock.json 哈希派生，lock 变更自动失效）。
+          # 不缓存 node_modules 本体：workspace 软链在 restore 后可能失效，npm ci 更可靠。
+          cache: 'npm'
 
       - name: Setup minimal sofagent environment
         run: |
