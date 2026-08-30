@@ -60,6 +60,10 @@
   showHelp,
 } from './rules/skill-safety-reporter';
 
+// ── AgentShield 五类配置面扫描（v1.1.3 同批实现，此前未进公共面 → README 声称无调用点） ──
+/* @public */ export { createAgentShield, DEFAULT_KNOWN_AGENTS } from './agent-shield';
+/* @public */ export type { AgentShield, ShieldFinding, ShieldScanResult, ShieldOptions } from './agent-shield';
+
 // ── 数据主权审计追踪（v1.2.2 · P0） ──
 /* @public */ export { DataSovereigntyLogger, resolveSovereigntyLogPath, resolveDateArg, sanitizeRecord } from './data-sovereignty';
 /* @public */ export type { DataSovereigntyRecord, SovereigntyLogEntry } from './data-sovereignty';
