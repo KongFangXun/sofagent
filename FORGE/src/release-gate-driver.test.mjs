@@ -848,7 +848,51 @@ describe('execRegressionDim · 反向防御 ✅ 行内引用豁免（run-19 假�
   });
 
   it('源码级断言：driver 实现含 ✅ 行内引用剥离正则', () => {
-    expect(SOURCE_CODE).toContain("output.replace(/^✅.*❌.*$/gm, '')");
+    expect(SOURCE_CODE).toContain("userOutput.replace(/^✅.*❌.*$/gm, '')");
+  });
+});
+
+// ═══════════════════════════════════════════════════════════
+//  8b. 反向防御 [driver] 自我消息豁免（v1.4.3 run-20 60/62 假红根因防回归）
+// ═══════════════════════════════════════════════════════════
+// 背景：归一化说明文案含「补显式 ❌ 输出」字样，反向防御在追加归一化消息
+// 之后检查整文 output → 匹配到 driver 自己刚追加的说明里的 ❌ → 把已归一化
+// 为 0 的维度又翻转回 1（自我消息污染，run-20 实测 dim 60/62 双假红——
+// 60 实际输出 exports.types 清单全 PASS）。修正 = 判定只看维度脚本真实输出
+// （剥 [driver] 前缀行）。
+
+describe('execRegressionDim · 反向防御 [driver] 自我消息豁免（run-20 假红根因）', () => {
+  // 与 driver 内实现同构的规则镜像（改实现时本组同步改）
+  const hasGenuineFail = (output) => {
+    const userOutput = output.split('\n').filter(l => !l.startsWith('[driver]')).join('\n');
+    return /❌/.test(userOutput.replace(/^✅.*❌.*$/gm, ''));
+  };
+
+  it('归一化后自我消息污染 → 不翻转（run-20 dim60 回放：✅ 维度 + 两条 [driver] 说明）', () => {
+    const real60 = [
+      'exports.types: ./dist/public-api.d.ts',
+      '[driver] exit 语义归一化：原 exit=1 但输出无失败标记——判定为语义性退出码（grep 无命中/尾判假），重写为 0。若该维度确有问题，请在维度脚本补显式 ❌ 输出（见 regression-checklist.md 维护公约·维度脚本编写三铁律）',
+      '[driver] 反向防御：原 exit=0 但输出含显式 ❌——维度脚本以 || echo ❌ 收尾导致失败被 exit 0 掩盖（假绿），重写为 1。',
+    ].join('\n');
+    expect(hasGenuineFail(real60)).toBe(false);
+  });
+
+  it('用户输出真 ❌ + [driver] 说明并存 → 仍触发（不吞真失败）', () => {
+    const mixed = [
+      '✅ 检查项 A',
+      '❌ audit-rule-registry.ts 未见 zod parse',
+      '[driver] exit 语义归一化：原 exit=1 但输出无失败标记——若该维度确有问题，请在维度脚本补显式 ❌ 输出。',
+    ].join('\n');
+    expect(hasGenuineFail(mixed)).toBe(true);
+  });
+
+  it('纯 [driver] 说明含 ❌ 字样、用户输出干净 → 不翻转（62 形态）', () => {
+    expect(hasGenuineFail('[driver] 执行异常: 无法 spawn ❌ 之外的说明')).toBe(false);
+  });
+
+  it('源码级断言：判定前剥 [driver] 前缀行', () => {
+    expect(SOURCE_CODE).toContain("filter(l => !l.startsWith('[driver]'))");
+    expect(SOURCE_CODE).toContain('const userOutput = output.split');
   });
 });
 
