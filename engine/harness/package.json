@@ -20,7 +20,6 @@
   ],
   "license": "MIT",
   "author": "KongFangXun",
-  "dependencies": {},
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -36,6 +35,6 @@
     "!dist/**/*.test.*"
   ],
   "devDependencies": {
-    "@types/node": "^24.0.0"
+    "@types/node": "^20.0.0"
   }
 }
