@@ -214,14 +214,20 @@ export async function createExecutionBackend(options: {
 /**
  * 尝试加载 DSH/Cordis 执行后端（动态 import + try-catch）。
  *
- * 2026-08 核实：@deepseek-ai/cordis@4.0.1（stable，2 依赖）+ @deepseek-ai/dsh@0.1.0-rc.6（rc）。
  * cordis 真实导出 { Context }（new Context() 入口，解包核实，无 createCordisRuntime）；
  * agent 循环在 DSH agent-loop 插件里，不在 cordis 框架包里。
  *
- * 层 1 模块守卫（v1.3.6 交付⑤）：
+ * 层 1 模块守卫：
  * 1. cordis 可 import 且 Context 是构造器（真实入口）。
- * 2. 配套 @deepseek-ai/dsh 非 rc/beta/alpha/pre——rc 期拦截（骨架虽已补全，
- *    但 rc 版 API 不做生产承诺），正式版发布后自动通过。
+ * 2. 守卫只探测导出面，**不做版本字符串比较**——rc/beta/alpha 版本同样放行
+ *    （早期曾按「非 rc 才放行」拦截，v1.4.0 起移除）。判断 DSH 能否用
+ *    只看能力面，不看版本号。
+ *
+ * ⚠️ 内嵌路径的启用前提是 @deepseek-ai/cordis 可解析。它**不在 orchestrator
+ *    的 dependencies 里**（刻意不装，运行时动态 import），而 npm overrides
+ *    只对被依赖的包生效——cordis 拿不到软链，import 必然失败 → catch
+ *    → 实际一直走 CLI 桥接。想启用内嵌，先把 cordis 加进依赖并验证内嵌驱动
+ *    可用；别只读这段代码就以为内嵌在跑。
  */
 async function tryLoadDshBackend(): Promise<ExecutionBackend | null> {
   // v1.4.0（2026-08-24 修正）：DSH 内嵌（Cordis 库内集成）rc.2 已验证可行——
