@@ -68,7 +68,9 @@ grep -q "不做内容安全校验" SECURITY.md && echo "⚠️ SECURITY.md L86 �
 # 子项 h: SKILL.md 铁律/底线数标题声称与实际一致（原维度 48g；底线是有序列表 `N. ` 格式）
 # v1.4.3 修复（run-01 定谳尾判假）：原 `[ ] && echo ⚠️` 结构在健康态（相等）时 `[ ]` 返 1 → 整维度
 # exit=1（健康态假红）。改显式 if 判定，健康态显式 exit 0。
-SKILL_BC=$(grep -oE "### ([0-9]+) 底线" SKILL/SKILL.md | grep -oE "[0-9]+" || echo 0); SKILL_BA=$(sed -n '/^### [0-9] 底线/,/^### /p' SKILL/SKILL.md | grep -cE "^[0-9]+\. " || echo 0); if [ "$SKILL_BC" != "$SKILL_BA" ]; then echo "⚠️ SKILL.md 底线数 $SKILL_BC vs $SKILL_BA"; exit 1; fi; echo "✅ SKILL.md 底线数一致（$SKILL_BC）"
+SKILL_BC=$(grep -oE "### ([0-9]+) 底线" SKILL/SKILL.md | grep -oE "[0-9]+" || echo 0); SKILL_BA=$(sed -n '/^### [0-9] 底线/,/^### /p' SKILL/SKILL.md | grep -cE "^[0-9]+\. " || echo 0); if [ "$SKILL_BC" != "$SKILL_BA" ]; then echo "⚠️ SKILL.md 底线数 $SKILL_BC vs $SKILL_BA"; exit 1; fi; echo "✅ SKILL.md 底线数一致 ($SKILL_BC)"
+# 注：echo 变量插值处禁用全角括号——macOS bash 3.2 多字节变量展开 bug 会吞「）」
+# 首字节+变量值（输出 FFFD，zsh 正常/printf 不救；半角括号安全，实测定界）。
 ```
 
 #### 3. 文档规范源与归属一致性
