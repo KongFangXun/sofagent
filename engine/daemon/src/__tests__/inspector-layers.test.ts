@@ -118,7 +118,10 @@ describe('inspector-layers', () => {
   // ════════════════════════════════════════
 
   describe('runLayeredInspection', () => {
-    it('L1 执行返回结果数组（结果数 = L1 inspector 数）', () => {
+    // L1 巡检跑全部 L1 inspector（含 audit-history-analyzer 等重量级 fs 扫描），
+    // 8GB 本机实测单测 9.2s 撞穿 vitest 默认 5s——功能断言正确，纯耗时问题。
+    // 显式 30s 预算；inspector 级性能优化另立优化项，不在此修。
+    it('L1 执行返回结果数组（结果数 = L1 inspector 数）', { timeout: 30_000 }, () => {
       const result = runLayeredInspection(tmpDir, 'L1');
       expect(result.layer).toBe('L1');
       expect(result.results).toHaveLength(getLayerInspectorNames('L1').length);

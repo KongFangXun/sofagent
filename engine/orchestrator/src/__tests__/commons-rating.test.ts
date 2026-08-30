@@ -169,7 +169,9 @@ describe('commons-rating 评分聚合 + 防刷', { timeout: 20000 }, () => {
   });
 
   describe('rankCapabilities 加权排序（高频高价值上浮）', () => {
-    it('高频高价值能力排在低价值前面', () => {
+    // 排序前需预热多份 ratings/invoke 日志（每份走 audit 链），8GB 慢机实测 47s+
+    // 撞穿 vitest 默认 20s；显式 60s（断言本身毫秒级）。
+    it('高频高价值能力排在低价值前面', { timeout: 60_000 }, () => {
       // owner 声明
       declareOwner('owner-good', undefined, testDir);
       declareOwner('owner-bad', undefined, testDir);

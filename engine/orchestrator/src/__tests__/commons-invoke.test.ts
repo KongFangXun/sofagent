@@ -178,7 +178,9 @@ describe('commons-invoke 能力调用闭环', { timeout: 20000 }, () => {
   });
 
   describe('调用日志 + 审计', () => {
-    it('多次调用 → 日志累积', async () => {
+    // invoke 内含审计链（spawn audit 子进程 5-6s/次 ×2 次调用），8GB 慢机实测 50s+
+    // 撞穿 vitest 默认 20s；显式 60s（断言本身毫秒级）。
+    it('多次调用 → 日志累积', { timeout: 60_000 }, async () => {
       publishCapability(makeMeta({ sourcePath: skillDir }), testDir);
 
       await invokeCapability({ capabilityId: 'invoke-cap', callerAgentId: 'c1' }, echoExecutor, testDir);

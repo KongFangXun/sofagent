@@ -11,6 +11,9 @@
 // ============================================================
 
 import { describe, it, expect } from 'vitest';
+import { mkdtempSync } from 'fs';
+import { tmpdir } from 'os';
+import { join } from 'path';
 import {
   harvestRules,
   collectLowScoreRatings,
@@ -188,7 +191,9 @@ describe('评估体系三步闭环（rule-harvest → rule-jury → rule-promote
       expect(isAlreadyBuiltin(newRule, builtin)).toBe(false);
     });
 
-    it('promoteRules 批量晋升 + 记 decision-log（kind=EVOLUTION）', () => {
+    // 晋升链含 decision-log 审计落盘（锁竞争下 20s+），8GB 慢机实测撞穿默认
+    // 20s；显式 60s（断言本身毫秒级）。
+    it('promoteRules 批量晋升 + 记 decision-log（kind=EVOLUTION）', { timeout: 60_000 }, () => {
       const candidates = harvestRules({
         lowScoreRatings: FIXTURE_LOW_SCORE_RATINGS,
       }).candidates;
@@ -199,6 +204,10 @@ describe('评估体系三步闭环（rule-harvest → rule-jury → rule-promote
         approvedRules: approved,
         benchmarks: approved.map((r) => ({ ruleId: r.id, benchmarkHash: 'test-hash-1234', scoreDelta: 0.15 })),
         approvals: approved.map((r) => ({ ruleId: r.id, signedBy: 'business-jury' })),
+        // 审计隔离：不传 dataDir 时 emitDecision 写全局 ~/.sofagent/data/audit/，
+        // 全包跑时与其他测试的 audit 写入抢同一把文件锁 → 锁超时 → loggedCount=0
+        // 假失败（单跑绿全包红）。透传 tmp 目录实现测试间隔离。
+        dataDir: mkdtempSync(join(tmpdir(), 'rule-cycle-audit-')),
       });
 
       expect(result.promoted.length).toBeGreaterThan(0);

@@ -34,6 +34,8 @@ export interface PromoteInput {
   invokeStats?: Array<{ capabilityId: string; invokeCount: number }>;
   /** Agent ID（审计用） */
   agentId?: string;
+  /** 数据目录覆盖（透传 emitDecision 测试隔离参数——缺省写全局 ~/.sofagent/data/audit/） */
+  dataDir?: string;
 }
 
 /** 晋升结果 */
@@ -139,7 +141,7 @@ export function promoteRules(input: PromoteInput): PromoteResult {
           `business-signoff: ${signedBy}`,
           `invoke-count: ${invokeCount}`,
         ],
-      });
+      }, input.dataDir);
       loggedCount++;
     } catch (err) {
       process.stderr.write(

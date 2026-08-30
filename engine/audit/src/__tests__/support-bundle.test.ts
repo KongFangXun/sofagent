@@ -70,19 +70,22 @@ describe('support-bundle', () => {
       try { rmSync(tmpDir, { recursive: true, force: true }); } catch { /* #9 shim 加固 */ }
     });
 
-    it('生成 zip 文件', async () => {
+    // generateSupportBundle 内部 readFileSync 全量读真实审计日志
+    //（~/.sofagent/data/audit/audit-history.jsonl，48MB 级随使用增长），
+    // 8GB 机实测 7-13s/次撞 vitest 默认 5s——显式 60s（断言毫秒级）。
+    it('生成 zip 文件', { timeout: 60_000 }, async () => {
       const zipPath = await generateSupportBundle(tmpDir);
       expect(existsSync(zipPath)).toBe(true);
       expect(zipPath).toMatch(/\.zip$/);
     });
 
-    it('文件名包含时间戳', async () => {
+    it('文件名包含时间戳', { timeout: 60_000 }, async () => {
       const zipPath = await generateSupportBundle(tmpDir);
       const filename = zipPath.split('/').pop()!;
       expect(filename).toMatch(/^\d{4}-\d{2}-\d{2}T.*-support-bundle\.zip$/);
     });
 
-    it('zip 文件大小 > 0', async () => {
+    it('zip 文件大小 > 0', { timeout: 60_000 }, async () => {
       const zipPath = await generateSupportBundle(tmpDir);
       const { statSync } = await import('fs');
       const stats = statSync(zipPath);

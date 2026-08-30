@@ -25,7 +25,8 @@ describe('官方 AST 规则集（sofagent-ruleset-ast）· 审计管线集成', 
     expect(rs.rules.every((r) => r.plugin === '@sofagent/rules/ast')).toBe(true);
   });
 
-  it('eval 代码经审计管线命中 no-eval（plugin 真实加载）', () => {
+  // plugin 真实加载走完整审计管线（spawn + AST 解析），8GB 机实测 10s 撞默认 5s。
+  it('eval 代码经审计管线命中 no-eval（plugin 真实加载）', { timeout: 60_000 }, () => {
     const rs = loadRuleset('ast');
     const results = runRulesetRules(
       makeDiff('src/evil.ts', ['const x = eval("1+1");']),

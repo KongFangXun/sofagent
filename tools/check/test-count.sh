@@ -80,6 +80,24 @@ TOTAL_FAILED=0
 PKG_COUNT=0
 FAILED_PKGS=0
 
+# ── 低内存机器 vitest 串行化（2026-08-30 修复：并行假红三连发）──
+# 8GB 本机实测（run-20260829-01 后三跑门禁）：vitest 默认并行 file 模式下
+# daemon/mcp/audit/orchestrator/rules 反复「无 Tests 汇总且退出码非 0」假红，
+# 同包 --no-file-parallelism 串行复跑全绿（daemon 274/274、mcp 154/154、
+# audit 915/919→单跑 15/15、rules 93/93）。根因=并行 worker 抢 8GB 内存，
+# vitest fork 崩溃无汇总输出。修 harness 不修测试：≤8GB 机器给包内 vitest
+# 注入 --no-file-parallelism（file 级串行，测试本身仍并行语义不变），大内存
+# 机器不受影响。CI（GitHub Actions 7GB 报告内存）同样受益。
+MEM_GB=$(sysctl -n hw.memsize 2>/dev/null | awk '{printf "%d", $1/1073741824}')
+SERIAL_FLAG=""
+if [ -n "$MEM_GB" ] && [ "$MEM_GB" -le 8 ]; then
+  SERIAL_FLAG="--no-file-parallelism"
+  if [ "$QUIET" = false ]; then
+    echo "  [串行化] 物理内存 ${MEM_GB}GB ≤ 8GB → vitest 注入 ${SERIAL_FLAG}（防并行假红）"
+  fi
+fi
+export SOFAGENT_TEST_COUNT_SERIAL="$SERIAL_FLAG"
+
 if [ "$QUIET" = false ]; then
   echo ""
   echo -e "${BOLD}═══════════════════════════════════════════════════════════${NC}"
@@ -96,20 +114,20 @@ while IFS= read -r pkg_dir; do
   # 编译失败/进程崩溃时无 Tests 汇总行，此前被误判「无测试」静默跳过 = 假绿。
   # 改为先重定向到临时文件，再 echo $? 取真实退出码（BSD/macOS 兼容写法）。
   tmp_out="/tmp/sofagent-test-count-${pkg_name}-$$.log"
-  (cd "$pkg_dir" && npm test > "$tmp_out" 2>&1)
+  (cd "$pkg_dir" && npm test -- $SOFAGENT_TEST_COUNT_SERIAL > "$tmp_out" 2>&1)
   test_code=$?
   out=$(cat "$tmp_out" 2>/dev/null) || true
   rm -f "$tmp_out"
   # 取该包最后的 Tests 汇总行（vitest 每包仅一行 Tests 汇总，无跨包 grand-total）
   # v1.2.3 修复：CI 环境（GitHub Actions）vitest 即使在非 TTY 下也输出 ANSI 颜色码，
   # 行首 \033[2m 导致 ^\s*Tests 永远不匹配。先 strip ANSI 再 grep。
-  line=$(echo "$out" | sed $'s/\033\[[0-9;]*m//g' | grep -E '^\s*Tests\s+' | tail -1) || true
+  line=$(echo "$out" | sed $'s/\033\[[0-9;]*m//g' | grep -E '^[[:space:]]*Tests[[:space:]]+' | tail -1) || true
   if [ -z "$line" ]; then
     # 无 Tests 汇总行：区分「真无测试（退出码 0 = 正常跳过）」与「崩溃/编译失败
     # （退出码非 0 = 真失败）」。后者复跑一次排除 flaky；复跑仍非零 → 报红。
     if [ "$test_code" -ne 0 ]; then
       tmp_retry="/tmp/sofagent-test-count-${pkg_name}-$$.log"
-      (cd "$pkg_dir" && npm test > "$tmp_retry" 2>&1)
+      (cd "$pkg_dir" && npm test -- $SOFAGENT_TEST_COUNT_SERIAL > "$tmp_retry" 2>&1)
       retry_code=$?
       rm -f "$tmp_retry"
       if [ "$retry_code" -eq 0 ]; then
@@ -134,17 +152,17 @@ while IFS= read -r pkg_dir; do
   # 兜底：任一解析失败（格式变化/无该行/带 failed|skipped 段）只跳过校验不判死
   # （防御失效优于门禁误杀；带 failed 的真失败走下方 flaky 复跑/FAIL 分支，不在此拦截）。
   # 用例级漂移（文件数同步缩水）由 check-test-count.sh 的 SSOT 对账兜底，两层互补。
-  files_line=$(echo "$out" | sed $'s/\033\[[0-9;]*m//g' | grep -E '^\s*Test Files\s+' | tail -1)
+  files_line=$(echo "$out" | sed $'s/\033\[[0-9;]*m//g' | grep -E '^[[:space:]]*Test Files[[:space:]]+' | tail -1)
   files_done=$(echo "$files_line" | grep -oE '[0-9]+ passed' | grep -oE '[0-9]+' || echo "")
   files_total=$(echo "$files_line" | grep -oE '\([0-9]+\)' | tr -d '()' || echo "")
-  if [ -n "$files_done" ] && [ -n "$files_total" ] && echo "$files_line" | grep -qE '^\s*Test Files\s+[0-9]+ passed \([0-9]+\)\s*$'; then
+  if [ -n "$files_done" ] && [ -n "$files_total" ] && echo "$files_line" | grep -qE '^[[:space:]]*Test Files[[:space:]]+[0-9]+ passed \([0-9]+\)\s*$'; then
     if [ "$files_done" -lt "$files_total" ]; then
       echo "  ⚠ ${pkg_name}: Test Files ${files_done}/${files_total} 漏收集——本轮计数不可信，需复跑"
       continue
     fi
   fi
-  PASSED=$(echo "$line" | grep -oE '[0-9]+\s+passed' | grep -oE '[0-9]+' || echo "0")
-  FAILED=$(echo "$line" | grep -oE '[0-9]+\s+failed' | grep -oE '[0-9]+' || echo "0")
+  PASSED=$(echo "$line" | grep -oE '[0-9]+[[:space:]]+passed' | grep -oE '[0-9]+' || echo "0")
+  FAILED=$(echo "$line" | grep -oE '[0-9]+[[:space:]]+failed' | grep -oE '[0-9]+' || echo "0")
   TOTAL=$(echo "$line" | grep -oE '\([0-9]+\)' | grep -oE '[0-9]+' || echo "0")
 
   # v1.3.6 B14: flaky 候选自动复跑——全量串行逐包时 IO 争用偶发超时（orchestrator 实测
@@ -154,13 +172,13 @@ while IFS= read -r pkg_dir; do
     FAILED_ORIG=$FAILED
     # v1.3.9 四十九：复跑同样捕获退出码（tmp 文件 + $?，BSD 兼容）
     tmp_retry="/tmp/sofagent-test-count-${pkg_name}-$$.log"
-    (cd "$pkg_dir" && npm test > "$tmp_retry" 2>&1)
+    (cd "$pkg_dir" && npm test -- $SOFAGENT_TEST_COUNT_SERIAL > "$tmp_retry" 2>&1)
     retry_code=$?
     retry_out=$(cat "$tmp_retry" 2>/dev/null) || true
     rm -f "$tmp_retry"
-    retry_line=$(echo "$retry_out" | sed $'s/\033\[[0-9;]*m//g' | grep -E '^\s*Tests\s+' | tail -1) || true
-    RETRY_PASSED=$(echo "$retry_line" | grep -oE '[0-9]+\s+passed' | grep -oE '[0-9]+' || echo "0")
-    RETRY_FAILED=$(echo "$retry_line" | grep -oE '[0-9]+\s+failed' | grep -oE '[0-9]+' || echo "0")
+    retry_line=$(echo "$retry_out" | sed $'s/\033\[[0-9;]*m//g' | grep -E '^[[:space:]]*Tests[[:space:]]+' | tail -1) || true
+    RETRY_PASSED=$(echo "$retry_line" | grep -oE '[0-9]+[[:space:]]+passed' | grep -oE '[0-9]+' || echo "0")
+    RETRY_FAILED=$(echo "$retry_line" | grep -oE '[0-9]+[[:space:]]+failed' | grep -oE '[0-9]+' || echo "0")
     RETRY_TOTAL=$(echo "$retry_line" | grep -oE '\([0-9]+\)' | grep -oE '[0-9]+' || echo "0")
     if [ -n "$retry_line" ] && [ "$RETRY_FAILED" = "0" ]; then
       # 复跑全绿 → flaky 候选：采用复跑结果（PASSED/TOTAL 取复跑值），WARN 记录 + 计数
