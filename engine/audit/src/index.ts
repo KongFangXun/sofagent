@@ -166,6 +166,8 @@ interface Args {
   conflictCheckCommand?: boolean;
   /** v1.2.5 P2: federation-distill 子命令 */
   federationDistillCommand?: boolean;
+  /** v1.4.3: agent-shield 子命令（AgentShield 五类配置面扫描） */
+  agentShieldCommand?: boolean;
   /** v1.2.9: support-bundle 子命令 */
   supportBundle: boolean;
   /** v1.4.2: 审计 session 产物（默认开启，--no-session 关闭） */
@@ -187,8 +189,14 @@ interface Args {
 }
 
 
+/**
+ * 顶层子命令白名单（v1.4.3 补 agent-shield）。
+ * 位置参数必须是其中之一；否则按「未知子命令」报错。
+ */
+const SUBCOMMANDS = ['ontology', 'conflict-check', 'federation-distill', 'agent-shield'];
+
 function parseArgs(argv: string[]): Args {
-  const args: Args = { diffRange: 'HEAD~1..HEAD', strict: false, silent: false, ci: false, installHook: false, json: false, rootCause: false, verifyChain: false, webhookUrl: process.env.SOFAGENT_WEBHOOK_URL, mcp: false, init: false, signConfig: false, cached: false, noSession: false, conflictCheckCommand: false, federationDistillCommand: false, supportBundle: false, format: undefined, ruleset: undefined, rulesetPath: undefined, listRulesets: false, warnAsError: false, warnAsInfo: false, gb48000: false };
+  const args: Args = { diffRange: 'HEAD~1..HEAD', strict: false, silent: false, ci: false, installHook: false, json: false, rootCause: false, verifyChain: false, webhookUrl: process.env.SOFAGENT_WEBHOOK_URL, mcp: false, init: false, signConfig: false, cached: false, noSession: false, conflictCheckCommand: false, federationDistillCommand: false, agentShieldCommand: false, supportBundle: false, format: undefined, ruleset: undefined, rulesetPath: undefined, listRulesets: false, warnAsError: false, warnAsInfo: false, gb48000: false };
   for (let i = 2; i < argv.length; i++) {
     if (argv[i] === '--diff') {
       // --diff 无显式值（末尾或后跟其他 flag）→ 用默认 HEAD~1..HEAD，
@@ -300,12 +308,19 @@ function parseArgs(argv: string[]): Args {
     } else if (argv[i] === 'ontology' && argv[i + 1]) {
       i++;
       args.ontologyCommand = argv[i] as string;
+      break; // 子命令之后的参数属该子命令——顶层 parser 到此为止
     } else if (argv[i] === 'conflict-check') {
       // v1.2.5 P2: conflict-check 子命令
       args.conflictCheckCommand = true;
+      break;
     } else if (argv[i] === 'federation-distill') {
       // v1.2.5 P2: federation-distill 子命令
       args.federationDistillCommand = true;
+      break;
+    } else if (argv[i] === 'agent-shield') {
+      // v1.4.3: agent-shield 子命令
+      args.agentShieldCommand = true;
+      break;
     } else if (argv[i] === '--help' || argv[i] === '-h') {
       const verbose = argv.includes('--verbose');
       console.log(`sofagent-audit v${VERSION} · FDE Harness 的审计引擎\n`);
@@ -327,6 +342,10 @@ function parseArgs(argv: string[]): Args {
       console.log('  sofagent-audit --revert <snapshot-sha>           恢复到指定快照');
       console.log('  sofagent-audit --timeline [N]                   查看快照时间线');
       console.log('  sofagent-audit ontology view                    本体人类可读视图');
+      console.log('  子命令自有参数见各自 --help 说明：');
+      console.log('  sofagent-audit agent-shield [--json] [--no-process]   AgentShield 五类配置面扫描（MCP/Hook/配置/密钥/影子 AI）');
+      console.log('  sofagent-audit conflict-check [--fix] [--json]       知识矛盾/孤儿/死链检测');
+      console.log('  sofagent-audit federation-distill [--json]           联邦蒸馏');
       console.log('');
       if (verbose) {
         console.log('v1.0.8 已弃用的子命令（将在 v1.5.0 移除，请尽快迁移）:');
@@ -387,8 +406,7 @@ function parseArgs(argv: string[]): Args {
         console.error('   使用 --help 查看可用参数');
         exit(1);
       } else if (arg && !arg.startsWith('-')) {
-        // v1.0.8: 未知子命令报错
-        const SUBCOMMANDS = ['ontology', 'conflict-check', 'federation-distill'];
+        // v1.0.8: 未知子命令报错（子命令之后的参数已在子命令分支 break，不会流到这里）
         if (!SUBCOMMANDS.includes(arg)) {
           console.error(`未知子命令: ${arg}`);
           console.error(`可用子命令: ${SUBCOMMANDS.join(', ')}`);
@@ -859,6 +877,21 @@ async function main(): Promise<void> {
     }
   }
 
+  // v1.4.3：agent-shield 子命令（AgentShield 五类配置面扫描 CLI）
+  if (args.agentShieldCommand) {
+    const { runAgentShieldCli, parseAgentShieldArgs } = await import('./cli/agent-shield');
+    const cliArgs = parseAgentShieldArgs(rawArgs);
+    try {
+      // createAgentShield 就在 audit 包内——无跨包依赖，直接跑
+      const exitCode = runAgentShieldCli(cliArgs);
+      exit(exitCode as 0 | 1 | 2);
+    } catch (err) {
+      console.error(`❌ agent-shield 失败: ${(err as Error).message}`);
+      console.error('   提示：agent-shield 只读扫描，需要可读的项目根目录（--repo <dir> 指定）');
+      exit(1);
+    }
+  }
+
   // --timeline 模式：快照时间线（v1.0.9 新增）
   if (args.timeline) {
     printTimeline(args.timelineLimit || 20, args.timelineJson || false);
@@ -1075,7 +1108,9 @@ async function main(): Promise<void> {
   if (config?.rules) {
     // v1.2.5: 追加 a20-a23（A20-A23 新增安全红线规则）
     // v1.4.3: 规则清单改从 rules 注册表派生（单一事实源）——新增规则自动纳入，无需再手动同步
-    const ALL_RULE_KEYS = [...defaultRules, ...extendedRules].map((r) => r.name.split(' ')[0].toLowerCase());
+    // `[0] ?? ''`：split 恒返回至少一项，但 noUncheckedIndexedAccess 下标类型为 string | undefined，
+    // 显式兜底让 tsc 通过（npm run check 此前因此长期 EXIT=1）
+    const ALL_RULE_KEYS = [...defaultRules, ...extendedRules].map((r) => r.name.split(' ')[0]?.toLowerCase() ?? '');
     // 基线规则集合与 core 共享常量统一（单一事实源）
     const BASELINE_KEYS = new Set<string>(BASELINE_RULE_KEYS);
     const disabledEntries = Object.entries(config.rules)
