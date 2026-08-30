@@ -216,10 +216,11 @@ describe('fde-workbench · 引擎一 interview', () => {
     expect(r.profile.roles).toEqual(['运营专员']);
   });
 
-  it('test_interviewPrompts_五要素话术齐全', () => {
+  it('test_interviewPrompts_五要素加实际流程话术齐全', () => {
     const p = interviewPrompts();
-    expect(p).toHaveLength(5);
-    expect(p.map((x) => x.field)).toEqual(['输入', '输出', '负责人', '耗时', '最卡的地方']);
+    // 五要素 + 第 6 条「实际流程」（GUIDE §2.3.2——名义流程 ≠ 实际流程，走真实案例）
+    expect(p).toHaveLength(6);
+    expect(p.map((x) => x.field)).toEqual(['输入', '输出', '负责人', '耗时', '最卡的地方', '实际流程']);
     for (const x of p) expect(x.question.length).toBeGreaterThan(5);
   });
 });

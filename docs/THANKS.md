@@ -47,6 +47,7 @@
 - **[A Global Workspace in Language Models](https://www.anthropic.com/research/global-workspace)** · Anthropic — 模型输出前已形成未表达判断，为「审计必须外置」提供底层论证
 
 - **[Claude Opus 5 / 上下文工程](https://claude.com/blog/the-new-rules-of-context-engineering-for-claude-5-generation-models)** · Anthropic（Thariq Shihipar）— 指令从 800 词精简至 164 词后性能反升，宣告提示词工程时代终结。底层逻辑转向「上下文工程」——设计信息架构（什么该给 / 何时给）。与 sofagent「约束进代码层而非 prompt 层」判断同源。
+- **FDE 的 20 个问题，不该由人一个一个问** · hugozhu（朱鸿）— 评 FDE 中国社区「20 问」清单：discovery 是组织上下文的采集协议，「知识一旦被写成清单，下一步必然是被写成代码」。证据等级三分法（系统可核验/一线判断/目标愿望）与名义流程 vs 实际流程辨析已吸收进 FDE/GUIDE §2.3（微信 · hugozhu.site，2026-08）
 
 ### 编排与架构
 
