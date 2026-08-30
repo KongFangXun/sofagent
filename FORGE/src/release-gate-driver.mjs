@@ -2197,6 +2197,9 @@ async function runCoveragePrecheck(runDir, target) {
  *  3. 标记与结论词之间允许夹杂 emoji（✅/❌）、标点（：:）、空白与 markdown 符号；
  *     一旦出现中文或英文字母（如「判定理由」「判定为」）即中断匹配，
  *     防止误抓「无 FAIL 条目」「全部判定 PASS」这类无关句子。
+ *     例外：表格标记「终审裁决」单独放宽（允许中文前缀 + \b 断词）——
+ *     run-01 实证 LLM 把裁决写进表格行，结论词夹在中文里，严格正则
+ *     抓不到导致 ERROR 记账；放宽仅限此标记。
  *  4. 同义裁决词（BLOCKED/BLOCK/NO-GO/HOLD/不予放行/不通过/阻塞）语义等价 FAIL
  *     （fail-closed），仅在标记紧邻窗口内匹配——见 run-16 修复；HOLD 为
  *     run-19 原生复跑新增（LLM 安全审查惯例措辞，driver 记账曾脱钩）。
@@ -2207,14 +2210,23 @@ async function runCoveragePrecheck(runDir, target) {
 function extractVerdictKeyword(raw) {
   const stripped = raw.replace(/```[\s\S]*?```/g, '\n');
   const lines = stripped.split(/\r?\n/);
-  const markers = ['判定', '结论'];
+  // 标记分两组（run-01 实证补「终审裁决」）：严格组（判定/结论）维持
+  // 「中文即中断」纪律；表格组（终审裁决）——LLM 把裁决写进表格行
+  // `| **终审裁决** | ❌ **FAIL（阻塞）…** |`，结论词前有中文（阻塞），
+  // 严格正则抓不到 → driver 记 ERROR 与内容裁决 FAIL 脱钩。故该标记
+  // 单独放宽为「允许中文/emoji/markdown 混合前缀」（\b 防 PASSword 类
+  // 误抓）；放宽仅限此标记，防「判定截断不可见…维持 FAIL」引述误抓。
+  const markers = ['判定', '结论', '终审裁决'];
   for (const marker of markers) {
     for (let i = 0; i < lines.length; i++) {
       const col = lines[i].indexOf(marker);
       if (col === -1) continue;
       // 窗口 = 标记行剩余部分 + 后续 3 行
       const windowText = lines.slice(i, i + 4).join('\n').slice(col + marker.length);
-      const m = windowText.match(/^[^A-Za-z\u4e00-\u9fff]*?(PASS|FAIL|SKIP)/i);
+      const re = marker === '终审裁决'
+        ? /^[^A-Za-z]*?(PASS|FAIL|SKIP)\b/i
+        : /^[^A-Za-z\u4e00-\u9fff]*?(PASS|FAIL|SKIP)/i;
+      const m = windowText.match(re);
       if (m) return m[1].toUpperCase();
       // run-16 修复：LLM 审查者常用同义裁决词（BLOCKED/BLOCK/NO-GO/不予放行/
       // 不通过/阻塞/HOLD）——语义全部等价 FAIL（fail-closed），不再误记 ERROR/SKIP。
