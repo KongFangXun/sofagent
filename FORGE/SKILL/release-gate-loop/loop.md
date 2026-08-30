@@ -17,7 +17,7 @@
 |------|------|------|------|
 | **V** | 验证者 | 5 步串行验证 | `acceptance.md` → `regression.md` → `coverage.md` → `stage6-report.md` → `verdict.md` |
 | **F** | 修复者 | verdict FAIL 后修复代码 | `fix-plan.md` → `fix-summary.md` → `audit-result.md` |
-| **driver** | 当前会话 | 中转文件、建 `runs/`、复制报告到桌面、写 `LEDGER.md` | `runs/` 目录 + LEDGER 行 |
+| **driver** | 用户手动新开的执行 session（见 SKILL.md「执行载体铁律」） | 中转文件、建 `runs/`、复制报告到桌面、写 `LEDGER.md` | `runs/` 目录 + LEDGER 行 |
 
 ## 目录约定（round 层级）
 

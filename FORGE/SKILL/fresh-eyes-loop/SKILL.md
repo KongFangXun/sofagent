@@ -18,7 +18,7 @@ version: 1.4.2
 
 - **A** = 审查者 / QA：独立跑 12 视角审查、合并 A/B 两份报告、验证 B 的修复。
 - **B** = 工程师：独立跑 12 视角审查、执行合并后的修复。
-- **driver（"我"，当前会话）**：在 A/B 之间中转、维护 `runs/` 文件、判定停止条件。**driver 不是常驻 agent**，只是一轮里 relay 的人类或会话。
+- **driver（编排进程，非 agent）**：在 A/B 之间中转、维护 `runs/` 文件、判定停止条件。由**用户手动新开的执行 session** 启动（见下「执行载体铁律」）。
 
 ## 怎么用
 
@@ -30,9 +30,19 @@ version: 1.4.2
 
 ## 实现载体
 
-A/B 由 **Node driver**（`FORGE/src/fresh-eyes-driver.mjs`）驱动——每个 step 独立子进程（真零上下文），LangGraph `createReactAgent` 编排。当前 session 只负责启动 driver + 监控进度。
+A/B 由 **Node driver**（`FORGE/src/fresh-eyes-driver.mjs`）驱动——每个 step 独立子进程（真零上下文），LangGraph `createReactAgent` 编排。driver 由用户手动新开的执行 session 启动并监控（见下「执行载体铁律」）。
 
-## Session 监控协议（CRITICAL）
+## 🔴 执行载体铁律：driver 必须由「独立 session」直跑，禁止主 session 内开子代理代跑
+
+**fresh-eyes driver 的执行 session 必须是用户手动新开的独立 session**（与主 session 平行、互不嵌套），不是主 session 里 spawn 的 subagent。
+
+原因（与 release-gate-loop run-10 实证同机理）：主 session 内子代理 → 后台 shell → driver 三层嵌套，**用户打断主 session 时级联 SIGTERM 会杀掉整棵进程树**——fresh-eyes 一轮 4 轮 16 视角跑 1-2 小时，中途被级联中止的代价更大。此外子代理自带 token 开销与误诊风险。
+
+**正确分工**：
+- 主 session（审查/决策 session）：三查 → 修复环境问题 → 产出「交接 prompt」交给用户 → 用户在新 session 粘贴执行 → 等回报 → 零信任复验。主 session 全程不 spawn driver。
+- 执行 session（用户新开）：粘贴交接 prompt → 按下方「Session 监控协议」启动 driver 并轮询到终态 → 回报结果（轮数 / 停止原因 / 最终 P0/P1/P2 计数 / runDir）。
+
+## Session 监控协议（CRITICAL · 适用于执行 session）
 
 **启动 driver 后，session 不是傻等，而是进入 sleep 轮询模式**——保持 working 状态，让用户感知"后台在干活"（每 120 秒一轮，读 status.json 输出一行状态——session 一直活跃 = 用户界面持续可见「在跑」，硬要求非可选）。
 
@@ -67,7 +77,7 @@ A/B 由 **Node driver**（`FORGE/src/fresh-eyes-driver.mjs`）驱动——每个
 
 2. 记住 runDir（driver 启动日志第一行会打印）
 
-3. 循环（最多 30 次，防 turn 超限）:
+3. 循环（最多 60 次，防 turn 超限——fresh-eyes 一轮可跑 1-2 小时，20 次×5 分钟容量不足）:
    sleep 300                                          # 等 5 分钟
    cat <runDir>/status.json                           # 读进度
    判断:

@@ -1348,7 +1348,15 @@ function synthesizeFallbackReport(step, precheckEvidence) {
  * 生成 run 目录路径：runs/release-gate-loop/YYYY-MM-DD/run-NN/
  * 单轮结构，无 round 子目录。
  */
-function resolveRunDir() {
+function resolveRunDir(dryRun = false) {
+  // dry-run 改道 /tmp 草稿目录：dry-run 全部落盘（status.json/latest.json/
+  // round 目录）自动进草稿，runs/ 正式编号零污染（run-02~09 全是烟测 DRY-RUN
+  // 残留的根因修复——烟测调 --dry-run 曾每次 mkdir 2 个正式 run 目录）。
+  if (dryRun) {
+    const runDir = join(os.tmpdir(), 'forge-dryrun', `release-gate-${process.pid}-${Date.now()}`);
+    mkdirSync(runDir, { recursive: true });
+    return { runDir, runId: 'dry-run', dateStr: 'dry-run' };
+  }
   const now = new Date();
   const y  = String(now.getFullYear());
   const m  = String(now.getMonth() + 1).padStart(2, '0');
@@ -2607,7 +2615,7 @@ async function main() {
     // run 目录：优先使用 --run-dir，否则自动发现最新 run 目录或新建
     let stepRunDir = args.runDir;
     if (!stepRunDir) {
-      const resolved = resolveRunDir();
+      const resolved = resolveRunDir(args.dryRun);
       stepRunDir = resolved.runDir;
     }
     if (!existsSync(stepRunDir)) {
@@ -2652,7 +2660,7 @@ async function main() {
     ? resolveRunDirInfo(process.env.SOFAGENT_DAEMON_RUNDIR)
     : resumeRunDir
       ? resolveRunDirInfo(resumeRunDir)
-      : resolveRunDir();
+      : resolveRunDir(args.dryRun);
   globalRunDir = runDir; // v1.3.6 交付⑩：teardown 守卫（崩溃处理器需要 runDir）
 
   // ─── v1.3.9 daemon 模式（--daemon）：spawn detached 自脱离进程树 ───
