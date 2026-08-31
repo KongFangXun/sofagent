@@ -281,3 +281,5 @@ release-gate-loop 与 fresh-eyes-loop 共享本文件，通过"循环"列区分�
 2026-08-31     | 20260831-08    | release-gate | 17   | PASS       | PASS       | PASS     | PASS    | /Users/kongfangxun/.sofagent/data/forge-runs/release-gate-loop/2026-08-31/run-08
 
 2026-09-01     | 20260901-01    | release-gate | 17   | FAIL       | FAIL       | PASS     | FAIL    | /Users/kongfangxun/.sofagent/data/forge-runs/release-gate-loop/2026-09-01/run-01
+
+2026-09-01     | 20260901-03    | release-gate | 17   | FAIL       | SKIP       | PASS     | FAIL    | /Users/kongfangxun/.sofagent/data/forge-runs/release-gate-loop/2026-09-01/run-03
