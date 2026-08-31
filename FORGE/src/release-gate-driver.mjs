@@ -803,8 +803,11 @@ function buildPrecheckEvidence(runDir, stepDef) {
  * 三报告）——DSH 桥接时代 worker 用 read 工具自己读；直连模式没有工具，
  * 证据就必须像 precheck 一样由 driver 随 prompt 送达（方案 A 语义一贯）。
  *
- * 尺寸控制：单文件截 6000 字符（判定所需的结论/发现清单段在前部，足够），
- * 多文件合计 ≤ 20000 字符——consolidate 三输入全量也在预算内。
+ * 尺寸控制：单文件截 12000 字符（run-07 实证：stage6-report.md 7397 字符被旧值
+ * 6000 截断，verdict 第 5 节前置条件 #4/#5 丢失——12000 覆盖实测最大产物全量），
+ * 多文件合计 ≤ 20000 字符。
+ * 截断提示以「字符」计量并显式注明（run-07 教训：V 曾把文件 13720 字节误读为
+ * 「注入止于 7397 字符」——字节 ≠ 字符，UTF-8 中文 3 字节）。
  *
  * @param {string} runDir 当前 run 目录
  * @param {{inputs?: string[], precheck?: boolean}} stepDef 步骤定义
@@ -823,8 +826,8 @@ function buildInputsEvidence(runDir, stepDef) {
     try {
       const raw = readFileSync(p, 'utf-8');
       const budget = Math.max(0, 20_000 - total);
-      const clipped = raw.length > Math.min(6_000, budget)
-        ? raw.slice(0, Math.min(6_000, budget)) + `\n…（截断，全文 ${raw.length} 字符，见 ${p}）`
+      const clipped = raw.length > Math.min(12_000, budget)
+        ? raw.slice(0, Math.min(12_000, budget)) + `\n…（截断，全文 ${raw.length} 字符（字符数非字节数），见 ${p}）`
         : raw;
       total += clipped.length;
       blocks.push(`[driver 注入] ${f} 内容（上一步产物，判定依据）：\n${clipped}`);
@@ -833,6 +836,100 @@ function buildInputsEvidence(runDir, stepDef) {
     }
   }
   return blocks.length ? '--- 上一步产物证据（driver 已中转，直接据此判定，无需调用工具） ---\n' + blocks.join('\n\n') : '';
+}
+
+/**
+ * v1.4.3（run-07 P0-V1 根因修复）：acceptance 分片的日志分段证据注入。
+ *
+ * 背景：直连模式（裸 LLM）下分片 worker 无工具，而分片 stepDef `inputs: []`
+ * 且无 precheck → buildPrecheckEvidence / buildInputsEvidence 双双返回空串 →
+ * worker 收到「没有任何工具结果或 precheck 证据——如实说明证据缺失」→ 12 分片
+ * 全部如实判 BLOCKED（run-07 实证）。acceptance-raw.log 一直躺在 runDir 里，
+ * 但从未进入任何注入路径；prompt 里的 {runDir} 占位符也无替换逻辑。
+ *
+ * 方案：复用 run-21 定谳「预跑日志是权威（driver 确定性判定优先于 LLM 解读）」——
+ * driver 按分片的场景范围从 acceptance-raw.log 切出对应段（`━━━ 场景 N:` 标记
+ * 分界）+ 日志尾部汇总行，随 userMessage 注入。worker 无需工具即可逐场景判定。
+ *
+ * 尺寸控制：单分片切段 ≤ 24000 字符（实测 12 分片均分 73524 字节日志，均 ~6KB，
+ * 富余 4 倍；超限截断并注明——日志异常膨胀时降级不阻塞）。
+ *
+ * @param {string} runDir 当前 run 目录
+ * @param {{shard?: {id: number, start: number, end: number}}} stepDef 步骤定义
+ * @returns {string} 注入文本（非分片步骤返回空串）
+ */
+function buildShardEvidence(runDir, stepDef) {
+  const shard = stepDef?.shard;
+  if (!shard) return '';
+
+  const logPath = join(runDir, 'acceptance-raw.log');
+  if (!existsSync(logPath)) {
+    return `[driver 注入] acceptance-raw.log: 文件不存在——预跑日志缺失，按「数据不完整」处理（你的分片范围 S${shard.start}~S${shard.end} 无法核验，结论标 SKIP）`;
+  }
+
+  let raw;
+  try {
+    raw = readFileSync(logPath, 'utf-8');
+  } catch (e) {
+    return `[driver 注入] acceptance-raw.log: 读取失败（${e.message}）——按「数据不完整」处理，结论标 SKIP`;
+  }
+
+  // 按场景标记行切片：`━━━ 场景 N: 标题 ━━━`
+  // 提取 [shard.start, shard.end] 范围内的所有场景段 + 日志尾部汇总行。
+  const lines = raw.split(/\r?\n/);
+  const sceneHeaderRe = /^━+\s*场景\s*(\d+)\s*[:：]/;
+  const segments = [];
+  const headLines = []; // 首个场景段之前的内容（日志头/进度行）
+  let current = null; // { num, lines: [] }
+  for (const line of lines) {
+    const m = line.match(sceneHeaderRe);
+    if (m) {
+      if (current) segments.push(current);
+      else if (headLines.length < 200) headLines.push(line); // 头部防膨胀上限
+      current = { num: parseInt(m[1], 10), lines: [line] };
+    } else if (current) {
+      current.lines.push(line);
+    } else {
+      headLines.push(line);
+    }
+  }
+  if (current) segments.push(current);
+
+  // 尾部汇总行（权威判定源，run-21 先例）：
+  // 从最后一个场景段的结束位置截取（该段之后的内容 = 统计汇总区），
+  // 避免把最后一个场景段的正文误并入尾部——run-07 测试实证：
+  // 简单取最后 15 行会把紧邻汇总区的最后一个场景段（可能不属于本分片）带进来。
+  const lastSeg = segments[segments.length - 1];
+  let lastSegEnd = lines.length;
+  if (lastSeg) {
+    const lastLine = lastSeg.lines[lastSeg.lines.length - 1];
+    for (let i = lines.length - 1; i >= 0; i--) {
+      if (lines[i] === lastLine) { lastSegEnd = i + 1; break; }
+    }
+  }
+  const tail = lines.slice(Math.max(0, lastSegEnd - 2), lastSegEnd + 15).join('\n');
+
+  const mine = segments.filter(s => s.num >= shard.start && s.num <= shard.end);
+  const blocks = [];
+  blocks.push(`[driver 注入] acceptance-raw.log 分片证据——你的场景范围 = S${shard.start}~S${shard.end}（以本注入为准，忽略 prompt 模板中的范围数字与 {runDir} 路径——直连模式无工具，日志内容已由 driver 切出送达）`);
+
+  if (mine.length === 0) {
+    blocks.push(`  → 日志中未找到 S${shard.start}~S${shard.end} 范围内的任何场景标记（共解析出 ${segments.length} 个场景段）。编号跳号是设计模式；整段范围缺失 = 该范围无场景（结论标 SKIP 并注明），不视为 FAIL。`);
+  } else {
+    let total = 0;
+    for (const s of mine) {
+      let text = s.lines.join('\n');
+      if (text.length > 24_000) {
+        text = text.slice(0, 24_000) + `\n…（本场景段截断，原文 ${text.length} 字符——字符数非字节数）`;
+      }
+      total += text.length;
+      blocks.push(text);
+    }
+    blocks.push(`--- 日志尾部汇总行（脚本真实统计，判定以此为准） ---\n${tail}`);
+    blocks.push(`（本分片注入 ${mine.length} 个场景段，共 ${total} 字符——字符数非字节数；全文见 ${logPath}）`);
+  }
+
+  return '--- acceptance 预跑日志分片证据（driver 已切出，直接据此判定，无需调用工具） ---\n' + blocks.join('\n\n');
 }
 
 /**
@@ -866,7 +963,11 @@ async function runWorker(step, runDir, target) {
   const systemPrompt = buildSystemPrompt(cfg.agentSkillPath);
 
   // 2. 读 prompt 正文
-  const promptTemplate = readFileSync(join(PROMPTS_DIR, stepDef.prompt), 'utf-8');
+  // v1.4.3（run-07）：统一替换 {runDir} 占位符——分片 prompt 写着
+  // `{runDir}/acceptance-raw.log`，但旧代码无替换逻辑，worker 收到的是字面
+  // `{runDir}` 且直连模式无工具可读——占位符从未生效过。
+  const promptTemplate = readFileSync(join(PROMPTS_DIR, stepDef.prompt), 'utf-8')
+    .replaceAll('{runDir}', runDir);
 
   // 3. 组装 user message：prompt 正文 + 路径注入 + target 注入
   const inputPaths = stepDef.inputs.map(f => `  - ${join(runDir, f)}`).join('\n');
@@ -881,6 +982,9 @@ async function runWorker(step, runDir, target) {
   // v1.4.3（run-19 根因）：非 precheck 步骤的上一步产物内容注入——直连模式
   // （无工具）下 verdict/consolidate 的唯一证据面，缺失即「零证据」ERROR。
   const inputsEvidence = buildInputsEvidence(runDir, stepDef);
+  // v1.4.3（run-07 P0-V1 根因）：acceptance 分片的日志分段证据——直连模式下
+  // 分片无工具、无 precheck、无 inputs，raw.log 切段是唯一判定依据。
+  const shardEvidence = buildShardEvidence(runDir, stepDef);
 
   // 注入 changelog 路径（步骤③ coverage 需要）
   // v1.2.5 bugfix：changelog 按版本号嵌套在 docs/changelog/v1.2/v1.2.5.md，
@@ -906,6 +1010,8 @@ async function runWorker(step, runDir, target) {
     precheckEvidence,
     // v1.4.3（run-19 根因）：上一步产物内容注入（verdict ← stage6-report.md 等）
     inputsEvidence,
+    // v1.4.3（run-07 P0-V1 根因）：acceptance 分片日志分段注入
+    shardEvidence,
     `Changelog 路径 = ${changelogPath}`,
     `产物输出路径（把你的输出写到这个文件）：\n${outputPaths}`,
   ].filter(Boolean).join('\n');
@@ -1181,7 +1287,8 @@ async function runWorker(step, runDir, target) {
       console.log('[worker] 判断层直连模式（裸 LLM 流式，跳过 DSH 桥接空转）——FORGE_WORKER=dsh 可启用完整 worker');
       // v1.4.3（run-19 根因）：直连模式下证据面 = precheck 证据 + 上一步产物
       // （verdict/consolidate 无 precheck，inputs 产物是其唯一判定依据）
-      const bare = await generateReportWithoutTools(model, [], step, 'V', stepDef, [precheckEvidence, inputsEvidence].filter(Boolean).join('\n\n'));
+      // + run-07 P0-V1：acceptance 分片的日志分段证据
+      const bare = await generateReportWithoutTools(model, [], step, 'V', stepDef, [precheckEvidence, inputsEvidence, shardEvidence].filter(Boolean).join('\n\n'));
       return { messages: [], content: bare ?? '', hardBreak: false, usage: undefined };
     }
 
@@ -2252,6 +2359,16 @@ function extractVerdictKeyword(raw) {
       const mBlock = windowText.match(/^[^A-Za-z\u4e00-\u9fff]*?(BLOCKED|BLOCK|NO-GO|HOLD)/i);
       if (mBlock) return 'FAIL';
       if (/^[^A-Za-z\u4e00-\u9fff]*(不予放行|不通过|不得放行|不放行|阻塞|阻断|暂缓放行)/.test(windowText)) return 'FAIL';
+      // run-07 实证：coverage 报告写「有条件通过（CONDITIONAL PASS）」、regression 写
+      // 「96/96 维度全部通过」——严格正则只认裸 PASS/FAIL 词，全数漏抓 → status.json
+      // 记 SKIP，下游 consolidate/verdict 证据面失真。补「条件性通过/通过」语义组：
+      // 「有条件通过」= PASS（条件在正文发现清单承载）。前缀容忍中文/ markdown 符号
+      // （「**96/96 维度全部通过**」的「维度」是普通汉字，无法像否定组那样枚举全部
+      // 前缀——改用「锚定窗口内出现即命中」而非「前缀锚定」：窗口本就只有标记行
+      // 尾部 + 后续 3 行，误抓面已被窗口纪律约束）。肯定组放否定组之后——防
+      // 「不通过」被「通过」抢先命中。
+      if (/有条件通过|有条件放行|条件通过/.test(windowText)) return 'PASS';
+      if (/(全部通过|全数通过|全部成功)/.test(windowText)) return 'PASS';
     }
   }
   return null;
