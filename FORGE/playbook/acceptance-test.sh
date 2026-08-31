@@ -4028,5 +4028,9 @@ echo -e "  验收测试结果：${GREEN}$PASSED 通过${NC} / ${RED}$FAILED 失�
 # 全部通过——run-08 场景 28 WARN 蒸发后汇总仍称 368/368 全过的矛盾不再复发）。
 echo "SUMMARY: ${PASSED}/$((PASSED + FAILED + WARNED)) passed · SKIP: ${WARNED} · EXIT: ${FAILED}"
 if [ "$FAILED" -gt 0 ]; then echo -e "${RED}❌ 有 $FAILED 个场景失败，请修复后再发版${NC}"; exit "$FAILED"
-elif [ "$WARNED" -gt 0 ]; then echo -e "${YELLOW}⚠️  有 $WARNED 个场景因环境依赖跳过（证据面不完整），放行前补跑${NC}"; exit 0
+# run-05 P1-3：SKIP>0 原 exit 0——仅看退出码的上游会误判「全通过」，本次被发现
+# 只因人工读 SUMMARY 文本。专用退出码 2 区分三态：0=全过 / 2=有跳过（证据面
+# 不完整，放行前补跑）/ N>0=失败数。driver 不消费本码（文本解析判定），CI 与
+# SOP「exit 0 且 SUMMARY 全过」双条件自动收紧为 exit 0 一条即够。
+elif [ "$WARNED" -gt 0 ]; then echo -e "${YELLOW}⚠️  有 $WARNED 个场景因环境依赖跳过（证据面不完整），放行前补跑${NC}"; exit 2
 else echo -e "${GREEN}✅ 全部通过，可以进入发版流程${NC}"; exit 0; fi
