@@ -20,6 +20,7 @@
 | 十 | [ ] | **releasing 自迭代**（sop 审查自己）：对照本次发版的实际执行体验，检查 12 个阶段文件是否有过时/缺漏/顺序不合理的地方，直接修正。这是 releasing.md 的「Dream Cycle」——每次发版后用它自己的经验喂养它自己 | releasing.md 更新 |
 | 十一 | [ ] | **本机 daemon 重载（dogfooding 保活 · 2026-08-18 新增）**：发版后本机守护进程要吃上新代码。launchd 配置 `~/Library/LaunchAgents/local.sofagent-daemon.plist` 指向仓库 dist（非全局 npm 包），一条命令重载：`launchctl kickstart -k gui/$(id -u)/local.sofagent-daemon`，随后 `tail -3 ~/.sofagent/data/daemon-launchd.log` 确认版本号 = 刚发的版本。开机自启已由 plist 的 RunAtLoad+KeepAlive 保证，无需每次处理 | daemon 跑新版 |
 | 十二 | [ ] | **网络恢复收尾（v1.4.0 新增）**：发版全程若用过降级通道（gh api tag / Git Data API push / 剥代理直连），网络恢复后必须做三件事：① `git fetch origin && git status` 确认本地/远端无分叉（有分叉按 10-publish「双 SHA 分叉接回」处理）；② lightweight tag 覆盖为 annotated——`git tag -f -a vX.Y.Z -m "vX.Y.Z · {一句话}" <commit> && git push origin vX.Y.Z --force`（gh api 建的 tag 无 tag object，`git for-each-ref refs/tags` 显示 type blob/commit 即 lightweight）；③ 桌面发布物清理——本版产生的 prompt/body 草稿（`vX.Y.Z-*.md` / `release-note-*.md`）归档或删除，只保留下一版 dev prompt（发布物落盘铁律：统一 `~/Desktop/`，禁仓库内） | 远端/桌面双干净 |
+| 十三 | [ ] | **Discussions 置顶轮换（网页操作 · 30 秒）**：新版 release 帖（Announcements 自动生成）**不置顶**——版本帖是流水内容，置顶位只留给常青帖。当前常青帖 = #11「用 sofagent 的都在这报到」。若版本帖曾被误置顶，网页右侧齿轮 → Unpin；若需轮换常青帖，同样路径 Pin。🔴 置顶无 API（GitHub GraphQL Mutation 只有 pinIssue 系，无 pinDiscussion——2026-09-01 实测），只能网页操作 | 置顶位干净 |
 
 ---
 
