@@ -271,6 +271,12 @@ mv "$HISTORY.bak" "$HISTORY" 2>/dev/null || true
 if $CHAIN_OK && $TAMPER_DETECTED; then pass
 elif ! $CHAIN_OK; then fail "混合格式误报链断裂"
 else fail "篡改 v2 条目 hash 未被 doctor 检出"; fi
+# run-05 verdict P1-1 根因修复：S18 fixture（61 天前时间戳）残留 repo-local
+# history.jsonl，后续场景（S24-S26/S41 等）commit 时 S17 的 stub post-commit
+# （v1.0.8 旧时间窗逻辑）读到陈旧 fixture 报「可能未经过审计」误报噪音。
+# 断言完成后清掉 fixture，斩断跨场景污染链。产品真实 post-commit v1.4.2 用
+# parentSha+主题消歧对账（不靠时间窗），不受此影响。
+rm -f "$HISTORY" "$HISTORY.bak"
 scenario 19 "A5 commit message 与实际改动不符"
 write_config
 mkdir -p src; echo 'export function newFeature() { return true; }' > src/feature.ts; git add src/feature.ts
