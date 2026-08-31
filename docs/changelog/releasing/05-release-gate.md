@@ -52,9 +52,11 @@
    ⚠️ verdict=FAIL 时循环即停（F 修复链默认关闭，无 f-* 产物），如实汇报后等主 session 决策。
    ⚠️ 运行期间仓库冻结：driver 运行窗口内不 commit / 不改文件 / 不收编——HEAD 变动会击穿 precheck 快照
    与实际仓库状态的一致性，产出时间差假 FAIL（precheck 拍的修复前一瞬）。
-4. **持续轮询（必做，非可选——session 可见性的来源）**：每 120 秒一轮，读 `<runDir>/status.json`，
+4. **持续轮询（必做，非可选——session 可见性的来源；🔴 必须前台执行）**：每 120 秒一轮，读 `<runDir>/status.json`，
    输出一行状态（如「[第 N 轮] step=regression · heartbeat 距今 Xs」）——**让 session 一直活跃，用户界面持续可见「在跑」**。
-   ⚠️ 轮询命令用「短 sleep + 快查」（sleep 90~115 后立即 cat 返回），不要挂超长 sleep——长轮询命令会被系统杀（exit 137）。
+   ⚠️ 轮询是前台短命令：run_in_background 只用于步骤 3 的 driver 启动命令，轮询循环（sleep + cat）严禁挂后台——
+   挂后台 = session 空闲 = 界面无任何进展反馈。
+   前台「短 sleep + 快查」（sleep 90~115 后立即 cat 返回），不要挂超长 sleep——长轮询命令会被系统杀（exit 137）。
    心跳冻结检测：heartbeat 距今 >90s 则探活——`node FORGE/src/release-gate-driver.mjs --check-alive <runDir>`
    （只认心跳不认日志——LLM 长窗口日志冻结 ≠ 死亡；alive=RC0 / dead=RC1）。dead → 立即报告主 session，不要无限等。
 5. 四步完成后读 <runDir>/verdict.md 与 stage6-report.md，5-8 行汇报：裁决结果 / 三步骤通过数 / 失败项清单
@@ -78,7 +80,7 @@ verdict=FAIL/ERROR 修复后重跑判断层**之前**必查三项，任一跳过
 2. **dry-run 残留目录识别**：driver 启动过程自动做 dry-run 探测，产生多个 `verdict=DRY-RUN` 的残留 run 目录。定位正式 run **以 `status.json` 的 `event=run-start` + 最新 heartbeat 为准**，不按目录序号猜。
 3. **启动时段选择**：重型 LLM loop 避开 GLM 3 倍价时段（工作日 14:00-18:00——高峰限流易触发 LLM 流 stall 熔断，症状为 worker 长时间无 chunk 后 stall-abort）；死因鉴定看 `sub-progress-*.jsonl` 的 `stall-detected` 事件。
 
-**监控轮询纪律**：轮询用短命令即时查或 sleep 后快速返回——长 `sleep 120` 挂轮询会被系统杀（exit 137）；监控中断不影响 driver（独立进程），续上后直接查 status.json。
+**监控轮询纪律**：轮询必须**前台**执行（run_in_background 只属于 driver 启动命令，轮询严禁挂后台——挂后台即 session 空闲、界面无进展）；用短命令即时查或 sleep 后快速返回——长 `sleep 120` 挂轮询会被系统杀（exit 137）；监控中断不影响 driver（独立进程），续上后直接查 status.json。
 
 **session 分工**：阶段三 fresh-eyes-loop 与阶段五 release-gate-loop 的**执行+监控都走新 session**；主 session（审查 session）只负责 verdict 复验、FAIL 分诊与 releasing 编排——不代跑 loop（长 session 上下文压缩会损伤 releasing 后段 SOP 执行的细节记忆）。
 
