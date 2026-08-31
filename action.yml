@@ -1,5 +1,5 @@
 name: 'sofagent'
-description: 'Audit AI agent commits on every PR — 24 rules over git diffs (secrets, out-of-scope edits, blind modifications, prompt injection), zero tokens, results inline on the PR. AI Agent 行为审计：24 条规则扫描 git diff，零 token，结果直接标注在 PR diff 行上。'
+description: 'Audit AI agent commits on every PR — 24 rules, zero tokens, inline results. AI 行为审计'
 author: 'KongFangXun'
 branding:
   icon: 'shield'
