@@ -81,12 +81,15 @@ function sanitizeRuleResult(rule: RuleCheck): RuleCheck {
 }
 
 /**
- * v1.3.8 P1-A1：对自由文本字段（commitMsg/task）做脱敏——
+ * 对自由文本字段（commitMsg/task）做脱敏——
  * 此前 sanitize 只覆盖 ruleResults，message 里密钥全文落盘 history.jsonl，
  * 审计工具自身成为第二泄漏点。用 @sofagent/core 的 REDACTION_PATTERNS
  * （与 A9 sanitizeDetailLine 同一套脱敏正则，单一事实源）。
+ *
+ * audit.md（audit-log.ts）落盘路径同样接此函数——审计双持久化路径
+ * （history.jsonl + audit.md）必须同口径脱敏，不能一岸有堤一岸裸奔。
  */
-function sanitizeFreeText(text: string | undefined): string | undefined {
+export function sanitizeFreeText(text: string | undefined): string | undefined {
   if (!text) return text;
   let cleaned = text;
   for (const { pattern, replacement } of REDACTION_PATTERNS) {

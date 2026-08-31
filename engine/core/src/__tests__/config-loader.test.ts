@@ -116,6 +116,101 @@ describe('config-loader', () => {
         try { rmSync(tmpDir, { recursive: true, force: true }); } catch { /* shim 环境下清理失败可接受 */ }
       }
     });
+    // P0-2 回归：audit.cost 曾在 mergeWithDefaults 被静默丢弃——
+    // knownKeys 认识 'cost' 不告警（防呆被欺骗），消费侧 config.cost?.budget 永远 undefined。
+    // 契约：warnUnknownConfigKeys knownKeys 声称认识的键，loadConfig 必须实际保留。
+    it('audit.cost.budget 被透传到返回配置（此前静默丢弃）', () => {
+      const tmpDir = join(process.cwd(), '.tmp-cost-test');
+      const configDir = join(tmpDir, '.sofagent');
+      try {
+        mkdirSync(configDir, { recursive: true });
+        writeFileSync(
+          join(configDir, 'config.yml'),
+          [
+            'audit:',
+            '  cost:',
+            '    budget:',
+            '      maxTokensPerRun: 100000',
+            '      maxCostPerDay: 5',
+          ].join('\n'),
+          'utf-8',
+        );
+
+        const config = loadConfig(tmpDir);
+        expect(config.cost?.budget?.maxTokensPerRun).toBe(100000);
+        expect(config.cost?.budget?.maxCostPerDay).toBe(5);
+      } finally {
+        try { rmSync(tmpDir, { recursive: true, force: true }); } catch { /* 沙箱清理失败可接受 */ }
+      }
+    });
+
+    // 透传契约（防手工同步断链复发）：knownKeys 清单（warnUnknownConfigKeys）里的
+    // 全部键，mergeWithDefaults 必须逐一透传——「配置被认为合法」与「配置实际生效」
+    // 必须是同一件事。新增 audit 段键时：knownKeys 与本测试的 YAML/断言要同步加。
+    it('knownKeys 契约：audit 段全部已知键均被透传（防静默丢弃断链）', () => {
+      const tmpDir = join(process.cwd(), '.tmp-contract-test');
+      const configDir = join(tmpDir, '.sofagent');
+      try {
+        mkdirSync(configDir, { recursive: true });
+        writeFileSync(
+          join(configDir, 'config.yml'),
+          [
+            'audit:',
+            '  lowRiskPatterns:',
+            '    - "*.log"',
+            '  testPatterns:',
+            '    - "npm test"',
+            '  carefulModifyThreshold: 0.15',
+            '  extendedRulesEnabled: true',
+            '  rules:',
+            '    a3: false',
+            '  loopCheckMaxRounds: 15',
+            '  strict: false',
+            '  A16: {}',
+            '  A17: {}',
+            '  loop:',
+            '    maxTurns:',
+            '      engineer: 10',
+            '  webhook:',
+            '    platform: dingtalk',
+            '    url: "https://example.com/hook"',
+            '  toolGate:',
+            '    enabled: true',
+            '    warnAsFail: false',
+            '  sanitizePatterns:',
+            '    - pattern: "foo"',
+            '      replacement: "bar"',
+            '  memory_backends: []',
+            '  memory_sync:',
+            '    persona_sources:',
+            '      - "persona.md"',
+            '  cost:',
+            '    budget:',
+            '      maxTokensPerRun: 100000',
+          ].join('\n'),
+          'utf-8',
+        );
+
+        const config = loadConfig(tmpDir);
+        expect(config.lowRiskPatterns).toContain('*.log');
+        expect(config.testPatterns).toContain('npm test');
+        expect(config.carefulModifyThreshold).toBe(0.15);
+        expect(config.extendedRulesEnabled).toBe(true);
+        expect(config.rules?.a3).toBe(false);
+        expect(config.loopCheckMaxRounds).toBe(15);
+        expect(config.A16).toBeDefined();
+        expect(config.A17).toBeDefined();
+        expect(config.loop?.maxTurns?.engineer).toBe(10);
+        expect(config.webhook?.url).toBe('https://example.com/hook');
+        expect(config.toolGate?.enabled).toBe(true);
+        expect(config.sanitizePatterns?.[0]?.pattern).toBe('foo');
+        expect(config.memory_backends).toBeDefined();
+        expect(config.memory_sync?.persona_sources?.[0]).toBe('persona.md');
+        expect(config.cost?.budget?.maxTokensPerRun).toBe(100000);
+      } finally {
+        try { rmSync(tmpDir, { recursive: true, force: true }); } catch { /* 沙箱清理失败可接受 */ }
+      }
+    });
   });
 
   describe('loadEnvConfig', () => {

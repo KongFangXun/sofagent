@@ -175,16 +175,31 @@ else
 fi
 EXIT_CODE=$?
 
-if [ $EXIT_CODE -eq 2 ]; then
-  echo ""
-  echo "❌ sofagent audit: 检测到违规，commit 已阻止。"
-  echo "   请修复违规项后重新提交（或用 git commit --no-verify 跳过，后果自负）。"
-  exit 1
-fi
-
-if [ $EXIT_CODE -eq 1 ]; then
-  echo ""
-  echo "⚠️  sofagent audit: 检测到警告，但允许 commit。"
-fi
+# 退出码白名单 fail-closed：0=PASS 放行 / 1=WARN 警告放行 / 2=FAIL 拦截。
+# 白名单外的退出码（OOM 137 / 段错误 139 / 命令缺失 126/127 等信号级杀死）
+# 一律拒绝 commit——审计引擎崩溃不能被静默转译为「审计通过」（fail-open）。
+case $EXIT_CODE in
+  2)
+    echo ""
+    echo "❌ sofagent audit: 检测到违规，commit 已阻止。"
+    echo "   请修复违规项后重新提交（或用 git commit --no-verify 跳过，后果自负）。"
+    exit 1
+    ;;
+  1)
+    echo ""
+    echo "⚠️  sofagent audit: 检测到警告，但允许 commit。"
+    ;;
+  0)
+    : # PASS 放行
+    ;;
+  *)
+    echo ""
+    echo "🔴 [sofagent] 审计引擎异常退出（exit $EXIT_CODE，白名单外）——无法确认审计通过，commit 终止"
+    echo "   可能原因：进程被信号杀死（137=OOM / 139=段错误）或命令缺失（126/127）。"
+    echo "   请单独运行: node engine/audit/dist/index.js --diff --cached 排查引擎状态；"
+    echo "   确认为引擎自身故障并修复后重新提交。"
+    exit 1
+    ;;
+esac
 
 exit 0
