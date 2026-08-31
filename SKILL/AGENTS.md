@@ -63,10 +63,10 @@
 所有 sofagent Agent 在完成任务后都会自动调用审计员。这不是"建议检查"——是**合规闸门**：
 
 ```
-FDE agent 部署完成   ──→ 自动调用 @sofagent-audit  → 验证部署合规
-FORGE engineer commit ──→ 自动调用 @sofagent-audit  → 验证变更合规
-每次 git commit      ──→ commit-msg hook          → A1-A11、A14-A23 规则检查（0 token，纯正则引擎）
-未来任何新 Agent      ──→ SKILL.md 内置审计引用    → 合规检查
+FDE agent 部署完成 ──→ 自动调用 @sofagent-audit → 验证部署合规
+FORGE engineer commit ──→ 自动调用 @sofagent-audit → 验证变更合规
+每次 git commit ──→ commit-msg hook → A1-A11、A14-A23 规则检查（0 token，纯正则引擎）
+未来任何新 Agent ──→ SKILL.md 内置审计引用 → 合规检查
 ```
 
 **为什么不是让你手动想起来才跑**：你部署了 10 个 AI 节点，不会记得每个节点都跑一次审计。但每次部署如果不审计，一个 knowledge-domain 配置错误的节点可能让财务数据泄漏到全公司。审计员的价值不在"跑一次"——在于"每次变更自动跑，不给遗忘留空间"。
@@ -165,12 +165,12 @@ FORGE engineer commit ──→ 自动调用 @sofagent-audit  → 验证变更�
 | 工具 | 说明 |
 |------|------|
 | `fde_compose` | FDE 梳理辅助——五要素引导生成 workflow 或 ontology 草稿 |
-| `fde_interview` | FDE 访谈引擎——五要素结构化落盘 data/fde/，企业画像自动生成（v1.4.2） |
-| `fde_classify` | FDE 判定引擎——三问判定（🔄自动/⚡强化/👤暂不动）+ 六步分解→nodes.json（v1.4.2） |
-| `fde_quantify` | FDE 量化引擎——年节省=岗位年薪×接管工时占比，ROI 排序→quantification.json（v1.4.2） |
-| `fde_derive` | FDE 本体推导引擎——五要素+访谈→ontology YAML 草稿（可导入 ontology_import，v1.4.2） |
-| `fde_distill` | FDE 沉淀引擎——三层交付物（文档/Skill/运行层）自动生成（v1.4.2） |
-| `fde_deploy` | FDE 部署引擎——交付物→workflow.yml 部署工件（提交/激活走人审闸门，v1.4.2） |
+| `fde_interview` | FDE 访谈引擎——五要素结构化落盘 data/fde/，企业画像自动生成 |
+| `fde_classify` | FDE 判定引擎——三问判定（🔄自动/⚡强化/👤暂不动）+ 六步分解→nodes.json |
+| `fde_quantify` | FDE 量化引擎——年节省=岗位年薪×接管工时占比，ROI 排序→quantification.json |
+| `fde_derive` | FDE 本体推导引擎——五要素+访谈→ontology YAML 草稿（可导入 ontology_import） |
+| `fde_distill` | FDE 沉淀引擎——三层交付物（文档/Skill/运行层）自动生成 |
+| `fde_deploy` | FDE 部署引擎——交付物→workflow.yml 部署工件（提交/激活走人审闸门） |
 | `sofagent_compose` | 编排引擎——任务描述返回 Sub Agent 编排方案（YAML） |
 | `activate_workflow` | 读取 FDE 交付物，注册企业 SubAgent |
 | `create_agent` | 一句话需求自动推导 Agent 配置（角色+域规则+think+knowledge） |
@@ -205,13 +205,13 @@ FORGE engineer commit ──→ 自动调用 @sofagent-audit  → 验证变更�
 | `model_switch` | 灰度切换（percent<100 灰度，100 强制人审） |
 | `model_unregister` | 模型退役（可恢复，强制人审） |
 | `train_budget` | 训练预算控制（超预算人审续跑或终止） |
-| `train_submit` | 训练任务提交，数据+基座+算法+超参+预算→trainJobId（v1.4.1 新增，同 id 重复提交幂等） |
-| `train_doctor` | 训练环境体检——CUDA/显存/框架/基座缓存四项报告（v1.4.2 新增） |
-| `train_dryrun` | 训练 dry-run 预检——管线连通+显存估算+数据抽样+算力外推（v1.4.2 新增） |
-| `train_report` | 训练报告生成——数据/超参/曲线/eval 对比/量化四字段，归档可追溯（v1.4.2 新增） |
-| `train_status` | 训练进度查询——status/step/loss/reward 曲线/断点/用量快照（长任务轮询；v1.4.3 新增） |
-| `train_list` | 训练任务列表——按时间/状态/模型过滤（历史复盘与多任务管理；v1.4.3 新增） |
-| `train_diagnose` | 训练失败诊断——七类分类 + 上下文四源 + 修复处方，报告落盘 diagnose.json（v1.4.3 新增） |
+| `train_submit` | 训练任务提交，数据+基座+算法+超参+预算→trainJobId |
+| `train_doctor` | 训练环境体检——CUDA/显存/框架/基座缓存四项报告 |
+| `train_dryrun` | 训练 dry-run 预检——管线连通+显存估算+数据抽样+算力外推 |
+| `train_report` | 训练报告生成——数据/超参/曲线/eval 对比/量化四字段，归档可追溯 |
+| `train_status` | 训练进度查询——status/step/loss/reward 曲线/断点/用量快照（长任务轮询） |
+| `train_list` | 训练任务列表——按时间/状态/模型过滤（历史复盘与多任务管理） |
+| `train_diagnose` | 训练失败诊断——七类分类 + 上下文四源 + 修复处方，报告落盘 diagnose.json |
 
 ### 验收（2）
 

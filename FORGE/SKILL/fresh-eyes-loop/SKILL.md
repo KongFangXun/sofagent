@@ -36,7 +36,7 @@ A/B 由 **Node driver**（`FORGE/src/fresh-eyes-driver.mjs`）驱动——每个
 
 **fresh-eyes driver 的执行 session 必须是用户手动新开的独立 session**（与主 session 平行、互不嵌套），不是主 session 里 spawn 的 subagent。
 
-原因（与 release-gate-loop run-10 实证同机理）：主 session 内子代理 → 后台 shell → driver 三层嵌套，**用户打断主 session 时级联 SIGTERM 会杀掉整棵进程树**——fresh-eyes 一轮 4 轮 16 视角跑 1-2 小时，中途被级联中止的代价更大。此外子代理自带 token 开销与误诊风险。
+原因（与 release-gate-loop 实证同机理）：主 session 内子代理 → 后台 shell → driver 三层嵌套，**用户打断主 session 时级联 SIGTERM 会杀掉整棵进程树**——fresh-eyes 一轮 4 轮 16 视角跑 1-2 小时，中途被级联中止的代价更大。此外子代理自带 token 开销与误诊风险。
 
 **正确分工**：
 - 主 session（审查/决策 session）：三查 → 修复环境问题 → 产出「交接 prompt」交给用户（**直接在对话中输出可复制的 prompt 文本块，禁止落盘成文件**——2026-08-30 用户拍板） → 用户在新 session 粘贴执行 → 等回报 → 零信任复验。主 session 全程不 spawn driver。

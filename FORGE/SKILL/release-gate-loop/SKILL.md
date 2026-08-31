@@ -33,7 +33,7 @@ V 由 **Node driver**（`FORGE/src/release-gate-driver.mjs`）驱动——每个
 
 **判断层 driver 的执行 session 必须是用户手动新开的独立 session**（与主 session 平行、互不嵌套），不是主 session 里 spawn 的 subagent。
 
-原因（2026-08-30 run-10 实证）：主 session 内子代理 → 后台 shell → driver 三层嵌套，**用户打断主 session 时级联 SIGTERM 会杀掉整棵进程树**——run-10 在 consolidate 步骤被中止（latest.json stopReason=aborted-signal），已完成两步产物差点作废。此外子代理自带 token 开销、driver 崩溃时子代理诊断层还引入过误诊（run-01「缺 15 包」实为 29 包三层根因）。
+原因（实证）：主 session 内子代理 → 后台 shell → driver 三层嵌套，**用户打断主 session 时级联 SIGTERM 会杀掉整棵进程树**——曾在 consolidate 步骤被中止（latest.json stopReason=aborted-signal），已完成两步产物差点作废。此外子代理自带 token 开销、driver 崩溃时子代理诊断层还引入过误诊（「缺 15 包」实为 29 包三层根因）。
 
 **正确分工**：
 - 主 session（审查/决策 session）：三查 → 修复环境问题 → 产出「交接 prompt」交给用户 → 用户在新 session 粘贴执行 → 等新 session 回报 verdict → 零信任复验。主 session 全程不 spawn driver。
@@ -82,7 +82,7 @@ V 由 **Node driver**（`FORGE/src/release-gate-driver.mjs`）驱动——每个
    node FORGE/src/release-gate-driver.mjs --step consolidate  --target <版本号> --run-dir <runDir>
    node FORGE/src/release-gate-driver.mjs --step verdict       --target <版本号> --run-dir <runDir>
 
-   # 🔥 判断层瘦身模式（阶段五 SOP 默认，2026-08-19 run-04 实测后启用）：
+   # 🔥 判断层瘦身模式（阶段五 SOP 默认）：
    # 脚本层（acceptance-test.sh + check-version/check-docs/锚点/check-review-system/check-tool-health）
    # 由 session 直跑（零 LLM），全绿后 driver 只跑判断层四步——一次启动直达：
    node FORGE/src/release-gate-driver.mjs --judgment-only --target <版本号>

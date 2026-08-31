@@ -1,10 +1,10 @@
-# 三、性能优化基线（v1.2.5+）
+# 三、性能优化基线
 
 > [← 返回索引](./index.md)
 
 ### 上下文管理：三层裁剪（截断 + stateModifier + preModelHook）
 
-> **🔴 v1.4.0 适用范围标注**：本节是 **LangGraph fallback 路径**（createReactAgent）的优化——worker 走 DSH CLI 桥接时**无 state.messages 概念**（子进程独立，DSH 自带上下文管理），三层裁剪不适用。保留本节供 fallback 场景 / 未来 Cordis 内嵌（库内集成）参考。
+> **🔴 适用范围**：本节是 **LangGraph fallback 路径**（createReactAgent）的优化——worker 走 DSH CLI 桥接时**无 state.messages 概念**（子进程独立，DSH 自带上下文管理），三层裁剪不适用。保留本节供 fallback 场景 / 未来 Cordis 内嵌（库内集成）参考。
 
 未做裁剪时：prompt 峰值 **296k tokens**（b-fix round-4），内存 OOM 17 次工具调用即崩。三层裁剪协同：
 
@@ -70,9 +70,9 @@ preModelHook: (state) => {
 
 > **遗留问题**（release-gate regression）：prompt 预期 ~53 次调用，Qwen 实际跑 130-198 次——不遵循「每维度 1 次 run_bash」策略。三层裁剪把 OOM 阈值提到 198 次，但仍不够。后续方向：① prompt 更强调批量执行 + 示例 ② recursionLimit 从 400 降到 100 强制高效 ③ 拆分 regression 步骤。
 
-### 🔴 并发 worker 总内存计算（v1.2.9 run-08~09）
+### 🔴 并发 worker 总内存计算
 
-> **来源**（run-08/09，2026-08-08）：8GB 机器上 6 并发 worker（各 `--max-old-space-size=2048`）= 12GB → 系统级 OOM SIGKILL，driver 静默死亡（无 stderr）。
+> **来源**（实录）：8GB 机器上 6 并发 worker（各 `--max-old-space-size=2048`）= 12GB → 系统级 OOM SIGKILL，driver 静默死亡（无 stderr）。
 
 **根因**：`spawnWorker` 给每个 worker 子进程设 `--max-old-space-size=2048`（2GB）。并发 N 个 worker 时总内存 = N × 2GB + driver 自身。在 8GB 物理内存的机器上：
 
@@ -94,18 +94,18 @@ preModelHook: (state) => {
 **调整方式**：
 ```bash
 # 8GB 机器强制降并发
-FORGE_MAX_CONCURRENCY=1 node FORGE/src/fresh-eyes-driver.mjs --target v1.2.9
+FORGE_MAX_CONCURRENCY=1 node FORGE/src/fresh-eyes-driver.mjs --target <版本>
 ```
 
 **铁律**：在内存受限环境启动 driver 前，先算并发上限。公式：`并发 ≤ floor((RAM - 3GB) / worker_heap_limit)`。
 
-### worker heap 降半 + 默认并发 4→2（2026-08-16 run-07 优化）
+### worker heap 降半 + 默认并发 4→2
 
-> **来源**（run-07，2026-08-16）：并发 1 下整轮 ~60-75 分钟，瓶颈实测不在工具（run_bash 全部 0.0s 级）而在 LLM 生成——24 worker 串行 + 每 worker 多轮 ReAct 流式生成。提速靠并发，而并发的天花板被 worker heap 挡住。
+> **来源**（实录）：并发 1 下整轮 ~60-75 分钟，瓶颈实测不在工具（run_bash 全部 0.0s 级）而在 LLM 生成——24 worker 串行 + 每 worker 多轮 ReAct 流式生成。提速靠并发，而并发的天花板被 worker heap 挡住。
 
-**洞察**：run-09 定的 2048MB heap 是「零窗口模式 a-check+b-check 并行 + generateReportWithoutTools 裸 LLM 调用」场景的保守值。但 run-07 实测 worker 主负载是 grep/read 型轻内存操作，1024MB 足够——**上限≠占用，降上限不改变实际用量，只改变 OOM 保险丝的位置**。
+**洞察**：此前定的 2048MB heap 是「零窗口模式 a-check+b-check 并行 + generateReportWithoutTools 裸 LLM 调用」场景的保守值。但实测 worker 主负载是 grep/read 型轻内存操作，1024MB 足够——**上限≠占用，降上限不改变实际用量，只改变 OOM 保险丝的位置**。
 
-**改动**（fresh-eyes-driver.mjs，2026-08-16）：
+**改动**（fresh-eyes-driver.mjs）：
 | 项 | 旧 | 新 | 理由 |
 |----|----|----|------|
 | worker `--max-old-space-size` | 2048 | **1024** | 实测负载轻；降半后并发 2 总 heap ≤2GB |
@@ -115,7 +115,7 @@ FORGE_MAX_CONCURRENCY=1 node FORGE/src/fresh-eyes-driver.mjs --target v1.2.9
 
 **回退条件**：若再遇 worker OOM（stderr 含 heap out of memory / SIGKILL 静默死亡），heap 回调 2048 并回退并发 1——说明轻负载假设在该场景不成立。
 
-**不影响在跑的 run**：driver 主进程启动时代码已加载进内存，改磁盘 .mjs 对运行中进程零影响（本条改动在 run-07 运行中完成并验证）。
+**不影响在跑的循环**：driver 主进程启动时代码已加载进内存，改磁盘 .mjs 对运行中进程零影响。
 
 ### 流式输出：stream 替代 invoke
 
