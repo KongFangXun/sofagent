@@ -35,6 +35,6 @@
     "!dist/**/*.test.*"
   ],
   "devDependencies": {
-    "@types/node": "^20.0.0"
+    "@types/node": "^24.13.3"
   }
 }

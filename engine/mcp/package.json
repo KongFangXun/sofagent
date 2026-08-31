@@ -55,7 +55,7 @@
     "@sofagent/daemon": "1.4.2"
   },
   "devDependencies": {
-    "@types/node": "^20.0.0",
+    "@types/node": "^24.13.3",
     "typescript": "^7.0.2",
     "vitest": "^4.1.11"
   },
