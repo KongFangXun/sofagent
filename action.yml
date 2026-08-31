@@ -1,5 +1,5 @@
-name: 'sofagent-audit'
-description: 'AI Agent 行为审计——每次 PR 自动检查。sofagent 审计引擎 24 条规则，零 token 纯 git diff 扫描，结果直接显示在 PR diff 行上。'
+name: 'sofagent'
+description: 'Audit AI agent commits on every PR — 24 rules over git diffs (secrets, out-of-scope edits, blind modifications, prompt injection), zero tokens, results inline on the PR. AI Agent 行为审计：24 条规则扫描 git diff，零 token，结果直接标注在 PR diff 行上。'
 author: 'KongFangXun'
 branding:
   icon: 'shield'
@@ -8,15 +8,15 @@ branding:
 # 每次发版必须同步更新此版本号 + package.json version + CHANGELOG，三者保持一致。
 inputs:
   ruleset:
-    description: '规则集名称（sofagent / security / 社区包名）'
+    description: 'Ruleset name (sofagent / security / community package). 规则集名称'
     required: false
     default: 'sofagent'
   diff-range:
-    description: '审计的 diff 范围（默认 origin/main..HEAD）'
+    description: 'Diff range to audit, e.g. origin/main..HEAD. 审计的 diff 范围'
     required: false
     default: 'origin/main..HEAD'
   strict:
-    description: '严格模式（无日志时 WARN 升级为 FAIL）'
+    description: 'Strict mode: WARN escalates to FAIL when no logs exist. 严格模式'
     required: false
     default: 'false'
 runs:
