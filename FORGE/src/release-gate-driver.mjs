@@ -876,6 +876,10 @@ function buildShardEvidence(runDir, stepDef) {
 
   // 按场景标记行切片：`━━━ 场景 N: 标题 ━━━`
   // 提取 [shard.start, shard.end] 范围内的所有场景段 + 日志尾部汇总行。
+  // 🔴 先剥离 ANSI 色码（run-08 实证）：acceptance-test.sh 场景行带
+  // `\x1b[0;36m` 前缀（CYAN），`^━` 锚定正则 291 场景段全数脱靶 → 分片
+  // 全判 SKIP。同 extractAcceptanceResult（run-21 回放）的剥离口径。
+  raw = raw.replace(/\x1b\[[0-9;]*m/g, '');
   const lines = raw.split(/\r?\n/);
   const sceneHeaderRe = /^━+\s*场景\s*(\d+)\s*[:：]/;
   const segments = [];
@@ -896,18 +900,15 @@ function buildShardEvidence(runDir, stepDef) {
   if (current) segments.push(current);
 
   // 尾部汇总行（权威判定源，run-21 先例）：
-  // 从最后一个场景段的结束位置截取（该段之后的内容 = 统计汇总区），
-  // 避免把最后一个场景段的正文误并入尾部——run-07 测试实证：
-  // 简单取最后 15 行会把紧邻汇总区的最后一个场景段（可能不属于本分片）带进来。
-  const lastSeg = segments[segments.length - 1];
-  let lastSegEnd = lines.length;
-  if (lastSeg) {
-    const lastLine = lastSeg.lines[lastSeg.lines.length - 1];
-    for (let i = lines.length - 1; i >= 0; i--) {
-      if (lines[i] === lastLine) { lastSegEnd = i + 1; break; }
-    }
-  }
-  const tail = lines.slice(Math.max(0, lastSegEnd - 2), lastSegEnd + 15).join('\n');
+  // 汇总行（「验收测试结果：N 通过 / M 失败」「全部通过」）物理上出现在最后一个
+  // 场景段**内部**（脚本在末场景后直接打印统计）——按行索引反查定位在段尾为
+  // 空串时会命中日志末尾（run-08 实证 bug），改为**直接在日志尾部窗口内按
+  // 语义正则提取**权威行，不做位置切片。
+  const tailLines = lines.slice(-30).join('\n');
+  const summaryHits = [
+    ...tailLines.matchAll(/^\s*(?:.*?：)?\s*(?:✅|❌)?\s*(验收测试结果：.*|SUMMARY:.*|全部通过.*|有 \d+ 个场景失败.*)$/gm),
+  ].map(m => m[1].trim());
+  const tail = summaryHits.length ? summaryHits.join('\n') : tailLines.split('\n').filter(Boolean).slice(-5).join('\n');
 
   const mine = segments.filter(s => s.num >= shard.start && s.num <= shard.end);
   const blocks = [];
