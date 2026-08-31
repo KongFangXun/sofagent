@@ -879,9 +879,11 @@ describe('buildInputsEvidence（run-19 verdict 零证据根因）', () => {
     expect(out).toContain('F-1 P0 缺口');
   });
 
-  it('consolidate 三输入 → 全部注入 + 合计预算控制（单文件 12000 截断，run-07 四修提升）', () => {
-    // run-07 实证：stage6-report.md 7397 字符被旧值 6000 截断 → 预算提至 12000。
-    // 本用例构造 >12000 字符的第一输入验证合计预算仍然兜底。
+  it('consolidate 三输入 → 全部注入 + 合计预算随输入数缩放（run-08 三修）', () => {
+    // run-08 实证：固定总额 20000 下 12 份分片报告静默截断（s8~s12 未审），
+    // verdict 升格 P1-10。修法：总额 = inputs.length × 12000（硬顶 150000）。
+    // 本用例构造 >12000 字符的第一输入验证截断仍发生（单文件上限不变），
+    // 且三输入总额 36000 足够三份小文件全部完整注入。
     const big = 'x'.repeat(13_000);
     writeFileSync(join(tmpRoot, 'acceptance.md'), big);
     writeFileSync(join(tmpRoot, 'regression.md'), 'R');
@@ -890,6 +892,19 @@ describe('buildInputsEvidence（run-19 verdict 零证据根因）', () => {
     expect(out).toContain('acceptance.md');
     expect(out).toContain('截断');
     expect(out).toContain('regression.md');
+  });
+
+  it('12 输入（run-08 consolidate 实况回放）→ 全部完整注入无截断', () => {
+    // run-08 实况：12 份分片报告各 ~9KB（均 12000 上限内），旧固定总额 20000
+    // 只装得下 2 份 → s8~s12 截断。新预算 12×12000=144000 应全部完整注入。
+    for (let i = 1; i <= 12; i++) {
+      writeFileSync(join(tmpRoot, `s${i}.md`), `分片${i}：` + 'y'.repeat(9_000));
+    }
+    const inputs = Array.from({ length: 12 }, (_, i) => `s${i + 1}.md`);
+    const out = buildEv(tmpRoot, { inputs });
+    expect(out).not.toContain('截断');
+    expect(out).toContain('分片1：');
+    expect(out).toContain('分片12：');
   });
 
   it('输入文件缺失 → 「数据不完整」提示（verdict prompt 契约：缺失即 FAIL）', () => {
@@ -1275,6 +1290,119 @@ describe('run-07 四修：extractVerdictKeyword 条件通过语义映射', () =>
     const extract = createExtractor();
     expect(extract('## 结论\nPASS')).toBe('PASS');
     expect(extract('## 终审结论\n\n❌ 不通过（BLOCKED）—— 维持发布冻结')).toBe('FAIL');
+  });
+});
+
+// ═══════════════════════════════════════════════════════════
+//  9b. run-08 三修测试组（真实产物回放）
+// ═══════════════════════════════════════════════════════════
+// 背景：run-08 完整跑通后零信任核验发现 driver 记账「全 PASS」与产物原文
+// 「BLOCK」脱钩——三处根因（同构回放实锤）：
+//   ① verdict.md L24 叙述句「三项上游判定（…coverage 有条件通过…）」被
+//      run-07 宽松肯定组提前抓中 → return PASS，真裁决行「闸门最终状态：BLOCK」
+//      无既有 marker 字样轮不到；
+//   ② extractAcceptanceResult 日志权威（368/368 → PASS）覆盖 consolidate 的
+//      BLOCK 裁决（run-21 口径未覆盖「日志与审查冲突」形态）；
+//   ③ consolidate 固定 20000 注入总额 → 12 分片报告 s8~s12 静默截断。
+
+describe('run-08 三修：verdict 强标记组前置 + 叙述句 BLOCK 否决', () => {
+  // 与 driver 内实现同构提取（改实现时本组同步改）
+  function createExtractor() {
+    const { fullBody } = extractFunctionBody(SOURCE_CODE, 'extractVerdictKeyword');
+    const wrapper = new Function(fullBody + '\nreturn extractVerdictKeyword;');
+    return wrapper();
+  }
+
+  it('run-08 verdict.md 实录回放：叙述句混排不再抢 PASS，强组裁决 BLOCK 胜出', () => {
+    const extract = createExtractor();
+    // 按真实 verdict.md 结构构造：L14「最终裁定」标题、L16 真裁决行、L24 叙述句
+    const doc = [
+      '# sofagent 发版闸门最终裁定报告（verdict.md）',
+      '',
+      '## 一、最终裁定',
+      '',
+      '**🚫 发版闸门维持 BLOCK**',
+      '',
+      '三项上游判定（acceptance **BLOCK** / regression **PASS** / coverage **有条件通过**）在"任一关卡存在 P0 即整体阻塞"的闸门口径下。',
+      '',
+      '## 七、放行条件最终确认',
+      '',
+      '**闸门最终状态：BLOCK** ❌ —— 全部闭环前，禁止放行。',
+    ].join('\n');
+    expect(extract(doc)).toBe('FAIL');
+  });
+
+  it('叙述句窗口含英文 BLOCK 时肯定词拒判 → null（上层 fail-closed 记 SKIP/ERROR）', () => {
+    const extract = createExtractor();
+    // 「结论」标记的窗口内是叙述句：含「有条件通过」也含 BLOCK → 不得判 PASS；
+    // 也不得判 FAIL（PASS 报告的结论窗口可能引用「acceptance BLOCK」叙述），
+    // 返回 null 让上层按「未知」处理（parseStepResults→SKIP / parseVerdict→ERROR）。
+    const doc = '## 结论\n\n三项上游判定（acceptance BLOCK / regression PASS / coverage 有条件通过）已复核。';
+    expect(extract(doc)).toBeNull();
+  });
+
+  it('run-08 coverage.md 实录回放：闸门判定：有条件通过 → PASS（强组捕获）', () => {
+    const extract = createExtractor();
+    const doc = [
+      '## 二、总体结论',
+      '',
+      '- **meta 自洽性：通过。** 与 modules=15 一致。',
+      '',
+      '## 六、闸门判定',
+      '',
+      '**有条件通过（PASS with conditions）。**',
+    ].join('\n');
+    expect(extract(doc)).toBe('PASS');
+  });
+
+  it('run-07 regression 实录回放不回归：「96/96 维度全部通过」仍 PASS', () => {
+    const extract = createExtractor();
+    // regression 无强组词，走普通组「结论」窗口 → BLOCK 否决不触发（窗口无英文否定词）
+    const doc = '## 二、总体结论\n\n**PASS —— regression 关卡通过。**\n\n96/96 维度全部通过。';
+    expect(extract(doc)).toBe('PASS');
+  });
+
+  it('源码级：强标记组必须先于普通组扫描', () => {
+    const fnIdx = SOURCE_CODE.indexOf('function extractVerdictKeyword');
+    const strongIdx = SOURCE_CODE.indexOf('strongMarkers', fnIdx);
+    const plainIdx = SOURCE_CODE.indexOf("const plainMarkers = ['判定', '结论']", fnIdx);
+    expect(strongIdx).toBeGreaterThan(-1);
+    expect(plainIdx).toBeGreaterThan(strongIdx);
+  });
+});
+
+describe('run-08 三修：acceptance 记账 fail-closed（日志 PASS + 审查 FAIL → 冲突即 FAIL）', () => {
+  // 同构提取 extractAcceptanceResult（闭包依赖 extractResult/join/existsSync/readFileSync/runDir）
+  const FAKE_LOG = '验收测试结果：368 通过 / 0 失败 / 共 368\n✅ 全部通过，可以进入发版流程';
+  function createAcceptor(runDir, reportKeyword) {
+    const { fullBody } = extractFunctionBody(SOURCE_CODE, 'extractAcceptanceResult');
+    const extractResult = (filename) => reportKeyword;
+    const fn = new Function(
+      'join', 'existsSync', 'readFileSync', 'extractResult', 'runDir',
+      fullBody + '\nreturn extractAcceptanceResult;'
+    );
+    return fn(
+      (...a) => a.filter(Boolean).join('/'),
+      () => true,
+      () => FAKE_LOG, // 模拟可解析的预跑日志（368/368 + 全部通过 → logResult=PASS）
+      extractResult,
+      runDir,
+    );
+  }
+
+  it('日志可解析 PASS + 合并报告 FAIL → 冲突即 FAIL（run-08 实录形态）', () => {
+    const extract = createAcceptor('/tmp/whatever', 'FAIL');
+    expect(extract()).toBe('FAIL');
+  });
+
+  it('日志 PASS + 报告 PASS → PASS（不回归）', () => {
+    const extract = createAcceptor('/tmp/whatever', 'PASS');
+    expect(extract()).toBe('PASS');
+  });
+
+  it('日志 PASS + 报告 SKIP → 日志权威 PASS（run-21 口径维持）', () => {
+    const extract = createAcceptor('/tmp/whatever', 'SKIP');
+    expect(extract()).toBe('PASS');
   });
 });
 
