@@ -908,9 +908,12 @@ function buildShardEvidence(runDir, stepDef) {
   // 场景段**内部**（脚本在末场景后直接打印统计）——按行索引反查定位在段尾为
   // 空串时会命中日志末尾（run-08 实证 bug），改为**直接在日志尾部窗口内按
   // 语义正则提取**权威行，不做位置切片。
+  // run-08 P0-1 harness 联动：acceptance-test.sh 汇总新增第三类「N 跳过」与
+  // 「⚠️ 有 N 个场景因环境依赖跳过」行——词表补「有 \d+ 个场景因环境依赖跳过」，
+  // 跳过数必须进入分片证据面（跳过=证据缺失，审查者需知晓）。
   const tailLines = lines.slice(-30).join('\n');
   const summaryHits = [
-    ...tailLines.matchAll(/^\s*(?:.*?：)?\s*(?:✅|❌)?\s*(验收测试结果：.*|SUMMARY:.*|全部通过.*|有 \d+ 个场景失败.*)$/gm),
+    ...tailLines.matchAll(/^\s*(?:.*?：)?\s*(?:✅|❌|⚠️)?\s*(验收测试结果：.*|SUMMARY:.*|全部通过.*|有 \d+ 个场景失败.*|有 \d+ 个场景因环境依赖跳过.*)$/gm),
   ].map(m => m[1].trim());
   const tail = summaryHits.length ? summaryHits.join('\n') : tailLines.split('\n').filter(Boolean).slice(-5).join('\n');
 
@@ -2471,6 +2474,10 @@ function parseStepResults(runDir) {
       if (summaryMatch) {
         const passCount = parseInt(summaryMatch[1], 10);
         const failCount = parseInt(summaryMatch[2], 10);
+        // run-08 P0-1 harness 联动：跳过存在时脚本输出「⚠️ 有 N 个场景因环境
+        // 依赖跳过」而非「✅ 全部通过」——/全部通过/ 自然不命中 → logResult=FAIL。
+        // 这是正确语义（跳过=证据面缺失，不该记 PASS），无需为跳过改判定逻辑；
+        // 仅需确记：无跳过路径（全部通过行存在）行为不变。
         if (passCount > 0 && failCount === 0 && /全部通过/.test(log)) logResult = 'PASS';
         else logResult = 'FAIL';
       }

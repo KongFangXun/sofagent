@@ -1481,3 +1481,112 @@ describe('run-08 二修：ANSI 剥离 + 语义化尾部提取', () => {
     expect(stripIdx).toBeLessThan(regexIdx);
   });
 });
+
+// ═══════════════════════════════════════════════════════════
+//  9c. run-08 P0-1 修复测试组（场景 28 / --doctor flag / WARN 计数口径）
+// ═══════════════════════════════════════════════════════════
+// 背景：run-08 verdict P0-1 双面根因——
+//   产品面：core CLI 只认裸词子命令（doctor），场景 28 用 --doctor flag →
+//     Unknown subcommand（无 post-commit 字样）→ 断言不中；
+//   harness 面：warn() 不计数 → WARN 场景从「共 N」分母蒸发 → 汇总
+//     「368/368 全部通过」与场景 28 WARN 并存自相矛盾。
+// 修复：cli.ts flag 别名路由（--doctor → doctor）+ warn 计数进汇总第三类
+//   「N 跳过」+ 场景 28 断言失败改 fail + 「全部通过」判定加 WARNED=0 门槛。
+
+describe('run-08 P0-1：core CLI --doctor flag 别名路由', () => {
+  it('源码级：--doctor flag 归一到 doctor 子命令', () => {
+    const cliSrc = readFileSync(new URL('../../engine/core/src/cli.ts', import.meta.url), 'utf-8');
+    // flag 别名路由必须存在（rawArgs[0] === '--doctor' → 'doctor'）
+    expect(cliSrc).toContain("rawArgs[0] === '--doctor' ? 'doctor'");
+  });
+
+  it('行为级：--doctor 输出 post-commit 检测行（dist 实测，场景 28 断言回放）', () => {
+    // 场景 28 的断言词表：post-commit / post_commit / post commit 或 ❌/hook 缺
+    const cliDist = new URL('../../engine/core/dist/cli.js', import.meta.url).pathname;
+    if (!existsSync(cliDist)) return; // dist 未构建时跳过（CI 会构建）
+    const { execFileSync } = require('child_process');
+    const tmp = join(tmpdir(), 'rg-p01-' + Date.now());
+    mkdirSync(tmp, { recursive: true });
+    try {
+      execFileSync('git', ['init', '--quiet'], { cwd: tmp });
+      // doctor 在 allOk=false 时 exit 1（如常）——不能让 execFileSync 因非零码抛错
+      let out = '';
+      try { out = execFileSync('node', [cliDist, '--doctor'], { encoding: 'utf-8', cwd: tmp }); }
+      catch (e) { out = String(e.stdout || '') + String(e.stderr || ''); }
+      // 删 post-commit 后（新仓库本就没有）doctor 必须报 post-commit 未安装
+      expect(out).toMatch(/post-commit hook 未安装/);
+      expect(out).not.toMatch(/Unknown subcommand/);
+    } finally {
+      rmSync(tmp, { recursive: true, force: true });
+    }
+  }, 30_000);
+});
+
+describe('run-08 P0-1：acceptance-test.sh WARN 计数口径', () => {
+  const SH = readFileSync(new URL('../playbook/acceptance-test.sh', import.meta.url), 'utf-8');
+
+  it('warn() 计数 WARNED（不再静默蒸发）', () => {
+    // warn() 行内含 WARNED 计数（${YELLOW} 的 } 会截断 [^}]*——用行级断言）
+    const warnLine = SH.split('\n').find(l => l.startsWith('warn()'));
+    expect(warnLine).toBeTruthy();
+    expect(warnLine).toContain('WARNED=$((WARNED + 1))');
+  });
+
+  it('汇总行含第三类「N 跳过」+ SUMMARY 行含 SKIP 数', () => {
+    // 汇总行是 ${YELLOW}$WARNED 跳过${NC}——断言以 $WARNED 与「跳过」分别存在
+    expect(SH).toContain('$WARNED 跳过');
+    expect(SH).toContain('SKIP: ${WARNED}');
+    expect(SH).toContain('PASSED + FAILED + WARNED');
+  });
+
+  it('「全部通过」判定加 WARNED=0 门槛（跳过存在不得宣称全过）', () => {
+    expect(SH).toMatch(/\[ "\$WARNED" -gt 0 \]/);
+    expect(SH).toContain('跳过（证据面不完整），放行前补跑');
+  });
+
+  it('场景 28 断言失败改 fail（fail-closed，不再降级 warn）', () => {
+    const s28 = SH.slice(SH.indexOf('scenario 28'), SH.indexOf('scenario 29'));
+    expect(s28).toContain('fail "--doctor 未检测到 post-commit hook 丢失"');
+    expect(s28).not.toContain('warn "--doctor');
+  });
+});
+
+describe('run-08 P0-1：driver 汇总行联动（跳过行进分片证据）', () => {
+  let tmpRoot, buildShard;
+  beforeEach(() => {
+    tmpRoot = join(tmpdir(), 'rg-p01s-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8));
+    mkdirSync(tmpRoot, { recursive: true });
+    buildShard = createBuildShardEvidence();
+  });
+  afterEach(() => { if (existsSync(tmpRoot)) rmSync(tmpRoot, { recursive: true, force: true }); });
+
+  it('新汇总三态行（含跳过）全部进入分片注入', () => {
+    const raw = [
+      '━━━ 场景 1: x ━━━',
+      '  ✅ PASS',
+      '  验收测试结果：368 通过 / 0 失败 / 6 跳过 / 共 374',
+      'SUMMARY: 368/374 passed · SKIP: 6 · EXIT: 0',
+      '⚠️  有 6 个场景因环境依赖跳过（证据面不完整），放行前补跑',
+    ].join('\n');
+    writeFileSync(join(tmpRoot, 'acceptance-raw.log'), raw);
+    const out = buildShard(tmpRoot, { shard: { id: 1, start: 1, end: 13 } });
+    expect(out).toContain('368 通过 / 0 失败 / 6 跳过');
+    expect(out).toContain('SKIP: 6');
+    expect(out).toContain('有 6 个场景因环境依赖跳过');
+  });
+
+  it('extractAcceptanceResult：跳过存在（无「全部通过」行）→ FAIL（证据面缺失 fail-closed）', () => {
+    const { fullBody } = extractFunctionBody(SOURCE_CODE, 'extractAcceptanceResult');
+    const extractResult = () => 'SKIP';
+    const fn = new Function('join', 'existsSync', 'readFileSync', 'extractResult', 'runDir',
+      fullBody + '\nreturn extractAcceptanceResult;');
+    const extract = fn(
+      (...a) => a.filter(Boolean).join('/'),
+      () => true,
+      () => '验收测试结果：368 通过 / 0 失败 / 6 跳过 / 共 374\nSUMMARY: 368/374 passed · SKIP: 6 · EXIT: 0\n⚠️  有 6 个场景因环境依赖跳过',
+      extractResult,
+      '/tmp/x',
+    );
+    expect(extract()).toBe('FAIL'); // 无「全部通过」行 → 不满足 PASS 三条件 → FAIL
+  });
+});

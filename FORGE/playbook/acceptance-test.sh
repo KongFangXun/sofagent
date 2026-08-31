@@ -20,7 +20,7 @@ for _arg in "$@"; do
     *) echo "未知参数: $_arg"; echo "用法: $0 [--cli-only|--agent-only|--all]"; exit 1 ;;
   esac
 done
-RED='\033[0;31m'; GREEN='\033[0;32m'; CYAN='\033[0;36m'; NC='\033[0m'
+RED='\033[0;31m'; GREEN='\033[0;32m'; CYAN='\033[0;36m'; YELLOW='\033[0;33m'; NC='\033[0m'
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"  # playbook→FORGE→sofagent（v1.2.1 修复：脚本从 specs/ 搬到 playbook/ 后层级同步）
 export PROJECT_ROOT  # v1.2.1: acceptance-node-probes.js 的子进程探针需要读取
@@ -29,7 +29,7 @@ ORIG_DIR="$(pwd)"
 CLI="node $AUDIT_DIR/dist/index.js"
 CORE_CLI="node $PROJECT_ROOT/engine/core/dist/cli.js"
 [ ! -f "$AUDIT_DIR/dist/index.js" ] && { echo -e "${RED}❌ dist/index.js 不存在，请先 build${NC}"; exit 1; }
-TMP_REPO=""; FAILED=0; PASSED=0
+TMP_REPO=""; FAILED=0; PASSED=0; WARNED=0
 # 🔴 bash 3.2 陷阱（v1.4.1 阶段五实证）：set -u 崩溃（如 ${VAR}（ 全角字符紧贴变量名）时，
 # trap 函数自身的成功返回会覆盖原退出码 → 崩溃假报 exit 0。
 # 修复：cleanup 首行捕获 $?，末尾以保存的退出码退出（trap 不吞退出码）。
@@ -55,7 +55,11 @@ init_isolated() { # 用法: init_isolated <command...>
 git_log_has() { set +o pipefail; git log --oneline 2>/dev/null | grep -q "$1"; local rc=$?; set -o pipefail; return $rc; }
 pass() { echo -e "${GREEN}  ✅ PASS${NC}"; PASSED=$((PASSED + 1)); }
 fail() { echo -e "${RED}  ❌ FAIL: $1${NC}"; FAILED=$((FAILED + 1)); }
-warn() { echo -e "${RED}  ⚠️  WARN: $1${NC}"; }
+# WARN 计数（run-08 P0-1 harness 修）：warn 语义 = 环境依赖跳过（dist 未构建/工具
+# 未装），非产品失败——但必须进「共 N」分母且汇总行可见，否则出现「WARN 场景
+# 与 368/368 全部通过并存」的自相矛盾汇总（run-08 s1 分片实证：场景 28 WARN
+# 后汇总仍称全部通过）。跳过场景应显式披露，不应静默蒸发。
+warn() { echo -e "${YELLOW}  ⚠️  WARN: $1${NC}"; WARNED=$((WARNED + 1)); }
 mktmp_repo() { local d; d=$(mktemp -d /tmp/sofagent-e2e-XXXXXX); git -C "$d" init --quiet 2>/dev/null; git -C "$d" config user.email "test@test.com" 2>/dev/null; git -C "$d" config user.name "Test" 2>/dev/null; echo "$d"; }
 cleanup_tmp() { local d="$1"; [ -n "$d" ] && [ -d "$d" ] && case "$d" in /tmp/sofagent-*|/tmp/s[0-9]*) rm -rf "$d";; esac; }
 require_dist() { [ ! -f "$PROJECT_ROOT/$1" ] && { fail "$1 不存在（需先 build）"; return 1; }; return 0; }
@@ -349,9 +353,13 @@ else fail "post-commit hook 不存在"; fi
 scenario 28 "--doctor 检测 post-commit 丢失"
 rm -f "$TMP_REPO/.git/hooks/post-commit"
 DOCTOR_NO_POST=$($CORE_CLI --doctor 2>&1 || true)
+# 断言失败即 FAIL（run-08 P0-1 harness 修）：本场景断言的是产品检测能力——
+# 输出无 post-commit 字样 = 断言不满足 = FAIL（fail-closed），不再降级 warn。
+# （run-08 曾因此 WARN：core CLI 不认 --doctor flag → Unknown subcommand 无
+# post-commit 字样 → warn 蒸发 → 汇总自相矛盾。产品侧已在 cli.ts 加 flag 别名。）
 if echo "$DOCTOR_NO_POST" | grep -qi "post-commit\|post_commit\|post commit"; then pass
 elif echo "$DOCTOR_NO_POST" | grep -qi "❌\|hook.*缺\|hook.*miss"; then pass
-else warn "--doctor 未检测到 post-commit hook 丢失"; fi
+else fail "--doctor 未检测到 post-commit hook 丢失"; fi
 $CLI --install-hook > /dev/null 2>&1
 scenario 29 "subagent 命令可用（fde + audit）"
 ORCH_CLI_29="$PROJECT_ROOT/engine/orchestrator/dist/cli.js"
@@ -3993,8 +4001,12 @@ S358_OUT=$(SOFAGENT_DATA="$(mktemp -d)" node -e "
 [ "$S358_OUT" = "0" ] || { echo "  ✗ train_status 行为断言未过数=$S358_OUT"; S358_OK=false; }
 $S358_OK && pass "train_status 行为实测过（运行态查询/进度曲线/参数校验/隔离面/GPU 队列账本）" || fail "train_status 行为回退——见上方 ✗ 行（run-05 coverage F-1 闭环，注册级→行为级）"
 
-echo -e "  验收测试结果：${GREEN}$PASSED 通过${NC} / ${RED}$FAILED 失败${NC} / 共 $((PASSED + FAILED))"
+echo -e "  验收测试结果：${GREEN}$PASSED 通过${NC} / ${RED}$FAILED 失败${NC} / ${YELLOW}$WARNED 跳过${NC} / 共 $((PASSED + FAILED + WARNED))"
 # 🔴 v1.3.1 run-10 教训：无色码纯文本汇总行供 driver grep（EXIT: 0=全PASS / <N>=N失败）
-echo "SUMMARY: ${PASSED}/$((PASSED + FAILED)) passed · EXIT: ${FAILED}"
+# run-08 P0-1 harness 修：跳过数进 SUMMARY——跳过 = 证据面缺失（环境依赖未构建），
+# 与失败同为闸门关注面；「全部通过」判定加 WARNED=0 门槛（跳过存在时不得宣称
+# 全部通过——run-08 场景 28 WARN 蒸发后汇总仍称 368/368 全过的矛盾不再复发）。
+echo "SUMMARY: ${PASSED}/$((PASSED + FAILED + WARNED)) passed · SKIP: ${WARNED} · EXIT: ${FAILED}"
 if [ "$FAILED" -gt 0 ]; then echo -e "${RED}❌ 有 $FAILED 个场景失败，请修复后再发版${NC}"; exit "$FAILED"
+elif [ "$WARNED" -gt 0 ]; then echo -e "${YELLOW}⚠️  有 $WARNED 个场景因环境依赖跳过（证据面不完整），放行前补跑${NC}"; exit 0
 else echo -e "${GREEN}✅ 全部通过，可以进入发版流程${NC}"; exit 0; fi
