@@ -120,6 +120,18 @@ INDEX=$(grep -cE "name:[[:space:]]*'A[0-9]|name:[[:space:]]*'E[0-9]" engine/audi
 TABLE=$(grep -cE "^\| A[0-9]+ |^\| E[0-9]+ " engine/audit/README.md)
 echo "index=$INDEX / README表=$TABLE（期望 TABLE≥INDEX）"   # v1.1.4：A18/A19 漏更新
 grep "rulesCount" engine/mcp/src/tools/report-tools.ts | head -1   # MCP 数字动态化（v1.2.9 拆分后非硬编码）|| true
+
+# 子项 h: 口径一致性硬断言（run-02 P1-5：17/21/24 三口径并存防复发）——
+# 注册数 = 默认数 + 扩展数 = 24，且横幅签名已统一「N 项检查 · M 条规则」口径
+RULE_CNT_OK=$(node -e "
+const src = require('fs').readFileSync('engine/audit/src/rules/index.ts', 'utf8');
+const cnt = (re) => { const m = src.match(re); if (!m) return -1; return (m[0].match(/name:\s*'(A|E)[0-9]+/g) || []).length; };
+const d = cnt(/export const defaultRules[\s\S]*?^\];/m), e = cnt(/export const extendedRules[\s\S]*?^\];/m);
+process.exit(d === 17 && e === 7 ? 0 : 1);
+" 2>/dev/null && echo yes || echo no)
+if [ "$RULE_CNT_OK" != "yes" ]; then echo "⚠️ 规则口径漂移：defaultRules≠17 或 extendedRules≠7"; exit 1; fi
+grep -q "项检查" engine/audit/src/reporter.ts || { echo "⚠️ productSignature 未统一「N 项检查 · M 条规则」口径"; exit 1; }
+echo "✅ 规则口径一致：17 默认 + 7 扩展 = 24 注册，签名口径已统一"
 ```
 
 #### 7. 感知层配置与推送链路
@@ -933,11 +945,14 @@ grep -q "SKIP_ANCHOR_SCAN" tools/check/check-docs.sh || echo "⚠️ 降级开�
 > ⚠️ **判定规则（CRITICAL — 防误报）**：先检查 `package.json` 的 `exports` 字段——如果 `exports['.']` 已路由到 `public-api.ts`，则所有导出已对消费者暴露，**不需要在 index.ts 中重复 re-export**。`index.ts` 通常是 CLI 入口（含 `require.main === module`）。仅当 exports 指向 index.ts 且缺失 public-api.ts 导出时才算 FAIL。
 
 ```bash
-# 第一步：检查 package.json exports 指向哪个入口
-node -e "const p=require('./engine/audit/package.json'); console.log(p.exports?.['.']?.types || p.types || 'NOT_FOUND')"
-# 含 public-api → PASS；含 index → 继续第二步
-# 第二步（仅 exports 指向 index.ts 时）：对比导出差异
-diff <(grep "^export " engine/audit/src/public-api.ts | sort) <(grep "^export " engine/audit/src/index.ts | sort) | grep "^<"   # 期望：无差异行
+# 显式判定版（run-02 P1-1：裸 grep 健康态语义 exit=1 被 driver 归一化旁路，改显式 if——对齐 dim 1 a602aa62 形态）
+# 注：echo 变量插值处用半角括号（bash 3.2 全角吞字节 bug）；grep -c 配 || true + ${VAR:-0} 守卫
+ENTRY=$(node -e "const p=require('./engine/audit/package.json'); console.log(p.exports?.['.']?.types || p.types || 'NOT_FOUND')")
+if [ "$ENTRY" = "NOT_FOUND" ]; then echo "⚠️ audit package.json 无 exports/types 入口"; exit 1; fi
+if echo "$ENTRY" | grep -q "public-api"; then echo "✅ exports 路由 public-api.ts，全导出已对消费者暴露"; exit 0; fi
+DIFF_LINES=$(diff <(grep "^export " engine/audit/src/public-api.ts | sort) <(grep "^export " engine/audit/src/index.ts | sort) | grep -c "^<" || true)
+if [ "${DIFF_LINES:-0}" -gt 0 ]; then echo "⚠️ index.ts 缺 re-export $DIFF_LINES 处"; exit 1; fi
+echo "✅ barrel re-export 一致 (diff=$DIFF_LINES)"
 ```
 
 #### 61. 新功能必须有自动化测试——禁止零覆盖交付（v1.2.2 F1 新增）
@@ -958,14 +973,20 @@ done
 > v1.2.3 阶段六教训：release-gate-driver.mjs 的 parseVerdict / parseStepResults 曾有脆弱兜底——「报告全文含 \bFAIL\b 字样就判 FAIL」。但发版验证报告的真实结论是 PASS，正文却**必然**提到 FAIL（负向测试场景的预期输出 / 覆盖率表的 ❌ 标记 / 「无 FAIL 条目」这类措辞）。结果一次真实通过的验证被自动化误标成 FAIL，写进 LEDGER.md 和 status.json，靠读 verdict.md 权威产物才还原真相。根因：结论 PASS 的报告正文必然含 FAIL 字样，脆弱兜底把 PASS 误判 FAIL。**读发版裁决以 verdict.md 权威产物为准，别被 LEDGER / status.json 的自动化解析带偏。**
 
 ```bash
-# 1. 断言「全文含 FAIL 即判 FAIL」式脆弱兜底已删除（期望零命中）
-grep -nE "includes\('FAIL'\)|includes\(\"FAIL\"\)" FORGE/src/release-gate-driver.mjs   # 期望：无输出
-# 2. 已采用「判定/结论」标记行窗口提取（期望 ≥2）
-grep -c 'extractVerdictKeyword' FORGE/src/release-gate-driver.mjs   # ≥2
-# 3. 标记行窗口大小（标记行 + 后续 3 行，期望 ≥2）
-grep -c 'slice(i, i + 4)' FORGE/src/release-gate-driver.mjs   # ≥2
-# 4. 已先剥离围栏代码块再解析（期望 ≥2）
-grep -Fc 'replace(/```[[[:space:]]\S]*?```/g' FORGE/src/release-gate-driver.mjs   # ≥2
+# 显式判定版（run-02 P1-1：健康态语义 exit=1 被 driver 归一化旁路，改显式 if——对齐 dim 1 a602aa62 形态）
+# 锚点勘误（run-02 P1-1 同批）：旧锚「slice(i, i + 4) ≥2」与围栏正则 [[[:space:]]\S] 与源码不符——
+# 源码实况：slice 窗口在 extractVerdictKeyword 内仅 1 处；围栏剥离为 replace(/```[\s\S]*?```/g。
+# 旧锚长期假红被归一化掩盖，本次按源码实况改准。
+# 注：echo 变量插值处用半角括号；grep -c 零命中配 || true + ${VAR:-0}（禁 || echo 0 双零形态）
+FRAGILE=$(grep -cE "includes\('FAIL'\)|includes\(\"FAIL\"\)" FORGE/src/release-gate-driver.mjs || true)
+if [ "${FRAGILE:-0}" -ne 0 ]; then echo "⚠️ 脆弱兜底未删尽 $FRAGILE 处"; exit 1; fi
+KW=$(grep -c 'extractVerdictKeyword' FORGE/src/release-gate-driver.mjs || true)
+if [ "${KW:-0}" -lt 2 ]; then echo "⚠️ 标记行窗口提取缺失 (count=$KW)"; exit 1; fi
+WIN=$(grep -c 'slice(i, i + 4)' FORGE/src/release-gate-driver.mjs || true)
+if [ "${WIN:-0}" -lt 1 ]; then echo "⚠️ 标记行窗口提取实现缺失 (count=$WIN)"; exit 1; fi
+FENCE=$(grep -c '\[\\s\\S\]' FORGE/src/release-gate-driver.mjs || true)
+if [ "${FENCE:-0}" -lt 1 ]; then echo "⚠️ 围栏剥离缺失 (count=$FENCE)"; exit 1; fi
+echo "✅ 裁决解析健壮性四锚全过 (fragile=0 window≥1 fence≥1)"
 ```
 
 #### 63. Worker 批量输出 U+FFFD 零污染——每次批量修复后必扫（v1.2.3 新盲区 · v1.4.2 阶段四瘦身：命令并入 acceptance S166 同款，此处留纪律+引用）

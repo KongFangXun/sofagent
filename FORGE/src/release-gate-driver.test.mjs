@@ -461,6 +461,27 @@ describe('parseVerdict', () => {
     expect(parse(tmpRoot).verdict).toBe('PASS');
   });
 
+  // ── v1.4.3（run-02 实证）：表格行「最终裁决」第四形态 → FAIL ──
+  // 同一 LLM 不同 run 会换表格标记词：run-02 用「最终裁决」而非「终审裁决」，
+  // markers 未命中 → driver 记 ERROR 与内容裁决脱钩。收编进表格组同款放宽
+  // （允许中文前缀 + \b 断词），结论词「不通过（BLOCKED）」走同义词链等价 FAIL。
+  it('verdict.md 表格行「最终裁决」+「不通过（BLOCKED）」（run-02 真实形态回放） → verdict=FAIL', () => {
+    writeFileSync(join(tmpRoot, 'verdict.md'),
+      '# V1.4.3 阶段五判断层最终裁决 · verdict（角色 V）\n\n| **最终裁决** | ❌ **不通过（BLOCKED）** |\n\n回归 PASS 但 coverage FAIL，三 P0 闭环前不予放行。');
+
+    const parse = makeParser(tmpRoot);
+    const result = parse(tmpRoot);
+    expect(result.verdict).toBe('FAIL');
+  });
+
+  it('verdict.md 表格行「最终裁决」PASS 形态 → verdict=PASS', () => {
+    writeFileSync(join(tmpRoot, 'verdict.md'),
+      '# verdict\n\n| **最终裁决** | ✅ **PASS（放行）** |');
+
+    const parse = makeParser(tmpRoot);
+    expect(parse(tmpRoot).verdict).toBe('PASS');
+  });
+
   it('「判定」标记维持严格纪律：引述句含中文+FAIL 不误抓', () => {
     writeFileSync(join(tmpRoot, 'verdict.md'),
       '# 裁决\n\n判定截断段不可见，维持 P1 观察项\n\n## 判定：PASS');
