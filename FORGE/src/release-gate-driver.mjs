@@ -1698,7 +1698,11 @@ function spawnWorker(step, runDir, target) {
 /**
  * v1.2.9 功能①：并行执行 acceptance 分片 worker（带并发限制）。
  *
- * 把 12 个 shard worker 按 maxConcurrency 分批执行，避免 API rate limit。
+ * 并发池模式（v1.4.3 性能优化）：N 个 lane 常驻，worker 完成立刻补位下一个——
+ * 替代原批次模式（每 concurrency 个一批、整批 Promise.allSettled 等齐再开下
+ * 一批）的「批间长尾空转」：批内最慢 worker 拖住整批，快 worker 早已闲置。
+ * 12 片按完成顺序补位，总耗时 ≈ 最慢 lane 的累计而非「每批最慢者之和」。
+ * 结果按 workers 输入顺序回填（完成顺序无关，下游 consolidate 拿到稳定序）。
  *
  * @param {Array<[string,string,string]>} workers  [step, runDir, target] 元组数组
  * @param {string} _target  验证目标版本号（当前未使用，预留）
@@ -1707,29 +1711,27 @@ function spawnWorker(step, runDir, target) {
  */
 async function spawnAcceptanceShards(workers, _target, maxConcurrency = 6) {
   const concurrency = Math.max(1, Math.min(maxConcurrency, workers.length));
-  const results = [];
+  const results = new Array(workers.length);
   const failures = [];
+  let nextIndex = 0;
 
-  for (let batchStart = 0; batchStart < workers.length; batchStart += concurrency) {
-    const batch = workers.slice(batchStart, batchStart + concurrency);
-    const batchNum = Math.floor(batchStart / concurrency) + 1;
-    const totalBatches = Math.ceil(workers.length / concurrency);
-    console.log(`  [acceptance 并发批次 ${batchNum}/${totalBatches}] 启动 ${batch.length} 个 shard worker（并发=${concurrency}）`);
+  console.log(`  [acceptance 并发池] ${workers.length} 个 shard，${concurrency} lane 常驻补位`);
 
-    const settled = await Promise.allSettled(
-      batch.map(([step, runDir, target]) => spawnWorker(step, runDir, target))
-    );
-    settled.forEach((s, i) => {
-      const globalIndex = batchStart + i;
-      const [step] = workers[globalIndex];
-      if (s.status === 'fulfilled') {
-        results.push({ step, value: s.value });
-      } else {
-        results.push({ step, value: null });
-        failures.push({ step, reason: s.reason });
+  const lane = async () => {
+    while (true) {
+      const i = nextIndex++;
+      if (i >= workers.length) return;
+      const [step, runDir, target] = workers[i];
+      try {
+        results[i] = { step, value: await spawnWorker(step, runDir, target) };
+      } catch (reason) {
+        results[i] = { step, value: null };
+        failures.push({ step, reason });
       }
-    });
-  }
+    }
+  };
+
+  await Promise.all(Array.from({ length: concurrency }, () => lane()));
   return { results, failures };
 }
 
@@ -3281,6 +3283,7 @@ async function main() {
     }
     console.log('    ② regression  (跑 regression-checklist)   → regression.md');
     console.log('    ③ coverage    (覆盖率交叉检查)             → coverage.md');
+    console.log('       ②③ 并行执行（数据依赖独立：regression 只吃 precheck.json，coverage 另吃 acceptance.md）');
     console.log('    ④ consolidate (合并三份结果)               → stage6-report.md');
     console.log('    ⑤ verdict     (PASS/FAIL 裁决)             → verdict.md');
     if (args.autoFix) {
@@ -3364,7 +3367,12 @@ async function main() {
     // resolveMaxConcurrency()（显式 CLI/env > totalmem 预算表 > 兜底 1）——
     // 未显式设置时 8GB 机器自动取 1，无需用户手工设 env。与 fresh-eyes driver
     // 共用 driver-base 实现（镜像漂移零容忍）。
-    const GATE_CONCURRENCY_RESOLVED = resolveMaxConcurrency({ defaultConcurrency: 1 });
+    //
+    // profile='direct'：release-gate worker 是判断层直连模式（裸 LLM 流式，
+    // RSS ~64MB/worker），比 DSH 档假设（1GB/worker）低一个数量级——
+    // 预算表按直连档推导（8GB 机器 → 4）。fresh-eyes 的 DSH 桥接 worker
+    // 不适用本档（继续用默认 'dsh' 档）。
+    const GATE_CONCURRENCY_RESOLVED = resolveMaxConcurrency({ defaultConcurrency: 1, profile: 'direct' });
     const shardWorkers = shardsToRun.map(s => [`acceptance-s${s.id}`, runDir, args.target]);
     const MAX_ACC_CONCURRENCY = Math.min(
       parseInt(process.env.FORGE_ACCEPTANCE_CONCURRENCY || '6', 10),
@@ -3484,7 +3492,16 @@ async function main() {
     step => !ACCEPTANCE_SHARD_STEPS.includes(step) && step !== 'acceptance-consolidate'
   );
 
-  for (const step of nonShardSteps) {
+  // v1.4.3 性能优化：regression 与 coverage 并行波。数据依赖实况——
+  // regression inputs = [regression-precheck.json]，coverage inputs =
+  // [acceptance.md, coverage-precheck.json]，两者互不消费对方产物（STEP_ORDER
+  // 串行是历史遗留）。coverage-precheck 是纯解析（读 changelog/场景定义 → 写
+  // json），与 regression 维度脚本的 git/test 执行零互踩，并行安全。
+  // precheck 与 spawnWorker 都在波内完成；错误记账（stepErrors/stopReason/
+  // EVENTS.STEP_DONE）与串行路径完全一致——只省墙钟，不改语义。
+  const PARALLEL_WAVE = ['regression', 'coverage'];
+
+  const runStepWithPrechecks = async (step) => {
     const stepIndex = STEP_ORDER.indexOf(step) + 1;
     console.log(`\n${'═'.repeat(60)}`);
     console.log(`  V 步骤 ${stepIndex}/${STEP_ORDER.length} — ${step}`);
@@ -3549,6 +3566,37 @@ async function main() {
 
       stopReason = 'step-error';
     }
+  };
+
+  const sequentialSteps = [];
+  // 从前往后找第一个 wave 步骤——wave 是连续的 ['regression','coverage']，
+  // 首个成员即波起点；波前全串行，波后（consolidate/verdict）串行尾巴。
+  // 注意不能从后往前扫：那会把 regression 留在前导串行、波里只剩 coverage。
+  let waveIndex = nonShardSteps.length;
+  for (let i = 0; i < nonShardSteps.length; i++) {
+    if (PARALLEL_WAVE.includes(nonShardSteps[i])) {
+      waveIndex = i;
+      break;
+    }
+  }
+  for (let i = 0; i < waveIndex; i++) sequentialSteps.push(nonShardSteps[i]);
+  const waveSteps = nonShardSteps.slice(waveIndex, waveIndex + PARALLEL_WAVE.length)
+    .filter(st => PARALLEL_WAVE.includes(st));
+  const tailSteps = nonShardSteps.slice(waveIndex + waveSteps.length);
+
+  for (const step of sequentialSteps) {
+    await runStepWithPrechecks(step);
+  }
+
+  if (waveSteps.length > 0) {
+    console.log(`\n${'═'.repeat(60)}`);
+    console.log(`  V 并行波 — ${waveSteps.join(' ∥ ')}（数据依赖独立，precheck + worker 并行）`);
+    console.log(`${'═'.repeat(60)}`);
+    await Promise.all(waveSteps.map(st => runStepWithPrechecks(st)));
+  }
+
+  for (const step of tailSteps) {
+    await runStepWithPrechecks(step);
   }
 
   // ─── 解析 V 阶段裁决 ───

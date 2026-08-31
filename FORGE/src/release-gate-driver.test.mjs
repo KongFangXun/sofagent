@@ -647,7 +647,9 @@ describe('acceptance 分片并发 clamp（run-05 OOM 修复）', () => {
     // v1.3.7 ⑦ 起 FORGE_MAX_CONCURRENCY 的解析升级为 resolveMaxConcurrency()
     // （显式 CLI/env > totalmem 预算表 > 兜底 1），不再写死 env || '6'
     expect(SOURCE_CODE).toContain("process.env.FORGE_ACCEPTANCE_CONCURRENCY || '6'");
-    expect(SOURCE_CODE).toContain('resolveMaxConcurrency({ defaultConcurrency: 1 })');
+    // v1.4.3 性能优化：release-gate worker 是判断层直连模式（RSS ~64MB），
+    // 预算表切直连档（8GB 机器 1 → 4）——fresh-eyes DSH 档不受影响
+    expect(SOURCE_CODE).toContain("resolveMaxConcurrency({ defaultConcurrency: 1, profile: 'direct' })");
     expect(SOURCE_CODE).toContain('GATE_CONCURRENCY_RESOLVED.concurrency');
     // clamp 表达式必须在 spawnAcceptanceShards 调用之前定义
     const clampIdx = SOURCE_CODE.indexOf('const MAX_ACC_CONCURRENCY = Math.min(');
@@ -670,6 +672,83 @@ describe('acceptance 分片并发 clamp（run-05 OOM 修复）', () => {
     expect(clamp(undefined, undefined)).toBe(6);
     // 显式收窄 acceptance 并发 → 取更小
     expect(clamp('2', '6')).toBe(2);
+  });
+});
+
+// ─── v1.4.3 性能优化：分片并发池 + regression/coverage 并行波 ───
+// ① spawnAcceptanceShards 从批次模式（整批 allSettled 等齐再开下批，批间长尾空转）
+//   改并发池（N lane 常驻补位）——12 片 4 lane 总耗时 ≈ 最慢 lane 累计。
+// ② regression 与 coverage 数据依赖独立（前者只吃 precheck.json，后者另吃
+//   acceptance.md），STEP_ORDER 串行是历史遗留——改并行波省 ~2-3min。
+describe('v1.4.3 性能优化——并发池与并行波（源码级断言）', () => {
+  it('spawnAcceptanceShards 是并发池模式（lane 常驻补位，无批次循环）', () => {
+    // 并发池核心特征：nextIndex 游标 + lane while 循环补位
+    expect(SOURCE_CODE).toContain('const lane = async () => {');
+    expect(SOURCE_CODE).toContain('const i = nextIndex++');
+    expect(SOURCE_CODE).toMatch(/Array\.from\(\{ length: concurrency \}, \(\) => lane\(\)\)/);
+    // 批次模式特征必须移除（防回退）
+    expect(SOURCE_CODE).not.toContain('for (let batchStart');
+    expect(SOURCE_CODE).not.toContain('Promise.allSettled(\n      batch.map');
+    // 结果按输入顺序回填（consolidate 拿稳定序）
+    expect(SOURCE_CODE).toContain('const results = new Array(workers.length);');
+  });
+
+  it('spawnAcceptanceShards 并发池行为模拟——lane 补位 + 结果保序', async () => {
+    // 模拟池调度：3 lane 吃 5 个任务，完成顺序乱序，结果必须按提交顺序对齐
+    const delays = [30, 10, 50, 20, 40];
+    const workers = delays.map((d, k) => [`s${k + 1}`, d]);
+    const results = new Array(workers.length);
+    let nextIndex = 0;
+    const lane = async () => {
+      while (true) {
+        const i = nextIndex++;
+        if (i >= workers.length) return;
+        const [name, d] = workers[i];
+        await new Promise(r => setTimeout(r, d));
+        results[i] = { step: name, value: `${name}-done` };
+      }
+    };
+    await Promise.all(Array.from({ length: 3 }, () => lane()));
+    expect(results.map(r => r.step)).toEqual(['s1', 's2', 's3', 's4', 's5']);
+    expect(results.every(r => r.value.endsWith('-done'))).toBe(true);
+  });
+
+  it('regression 与 coverage 组成并行波（Promise.all 并发执行）', () => {
+    expect(SOURCE_CODE).toContain("const PARALLEL_WAVE = ['regression', 'coverage']");
+    expect(SOURCE_CODE).toMatch(/await Promise\.all\(waveSteps\.map\(st => runStepWithPrechecks\(st\)\)\)/);
+    // 串行尾巴（consolidate/verdict）必须在波后顺序执行
+    const waveIdx = SOURCE_CODE.indexOf('await Promise.all(waveSteps.map');
+    const tailIdx = SOURCE_CODE.indexOf('for (const step of tailSteps)');
+    expect(waveIdx).toBeGreaterThan(-1);
+    expect(tailIdx).toBeGreaterThan(waveIdx);
+  });
+
+  it('行为级：波切分从前往后找首个 wave 步骤（防 regression 掉出波外）', () => {
+    // 与源码同构的切分逻辑回放（首版从后往前扫导致 regression 留在前导串行）
+    const nonShardSteps = ['regression', 'coverage', 'consolidate', 'verdict'];
+    const PARALLEL_WAVE = ['regression', 'coverage'];
+    const sequentialSteps = [];
+    let waveIndex = nonShardSteps.length;
+    for (let i = 0; i < nonShardSteps.length; i++) {
+      if (PARALLEL_WAVE.includes(nonShardSteps[i])) { waveIndex = i; break; }
+    }
+    for (let i = 0; i < waveIndex; i++) sequentialSteps.push(nonShardSteps[i]);
+    const waveSteps = nonShardSteps.slice(waveIndex, waveIndex + PARALLEL_WAVE.length)
+      .filter(st => PARALLEL_WAVE.includes(st));
+    const tailSteps = nonShardSteps.slice(waveIndex + waveSteps.length);
+    expect(waveSteps).toEqual(['regression', 'coverage']);
+    expect(sequentialSteps).toEqual([]);
+    expect(tailSteps).toEqual(['consolidate', 'verdict']);
+  });
+
+  it('并行波错误记账与串行路径一致（stepErrors/stopReason/EVENTS 语义不变）', () => {
+    // runStepWithPrechecks 是唯一执行体：波内波外共用同一 try/catch 记账
+    expect(SOURCE_CODE).toContain('const runStepWithPrechecks = async (step) => {');
+    // 波内失败仍走 stopReason = step-error（不中断后续步骤）
+    const bodyIdx = SOURCE_CODE.indexOf('const runStepWithPrechecks = async (step) => {');
+    const bodySeg = SOURCE_CODE.slice(bodyIdx, bodyIdx + 4000);
+    expect(bodySeg).toContain("stopReason = 'step-error'");
+    expect(bodySeg).toContain('stepErrors.push({ step, error: stepErr.message })');
   });
 });
 

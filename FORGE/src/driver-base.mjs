@@ -1527,6 +1527,17 @@ export function formatPreflightReport(result) {
 //   24-47GB           → 4   （1GB×4 + 4GB = 8GB，24GB 机器安全）
 //   ≥ 48GB            → 6   （上限 6——更高并发撞 GLM API 速率限制，瓶颈从
 //                             内存转移到 API 配额，单点等待抵消并行收益）
+//
+// 直连模式预算表（profile='direct'）：判断层直连模式 worker 是裸 LLM 流式
+// 子进程（无 DSH 桥接、无 LangGraph agent 树），实测 RSS ~64MB/worker——比
+// DSH 档假设低一个数量级。按 256MB/worker + 2GB 系统余量推导：
+//   < 8GB             → 2   （0.25GB×2 + 2GB = 2.5GB ≤ 8GB 物理内存，含
+//                             OS/宿主开销仍留 ≥4GB 余量）
+//   8-15GB            → 4   （0.25GB×4 + 2GB = 3GB，8GB 机器安全档）
+//   ≥ 16GB            → 6   （上限 6——同 DSH 档：更高并发撞 API 速率限制，
+//                             瓶颈转移到配额，单点等待抵消并行收益）
+// 注意：直连档只适用于全直连 worker 的 driver（release-gate v1.4.3+ 默认）；
+// fresh-eyes 的 A/B worker 走 DSH 桥接（重载），必须用默认 DSH 档。
 // ============================================================
 
 /** 自适应预算表（单位 GB → 推荐并发）。导出供单测直接对表。 */
@@ -1537,14 +1548,24 @@ export const CONCURRENCY_BUDGET_TABLE = [
   { minMemGb: 48, maxMemGb: Infinity, concurrency: 6 }, // ≥48GB
 ];
 
+/** 直连模式预算表（profile='direct'，判断层裸 LLM worker，RSS ~64MB/worker）。导出供单测直接对表。 */
+export const DIRECT_CONCURRENCY_BUDGET_TABLE = [
+  { minMemGb: 0,  maxMemGb: 8,  concurrency: 2 },  // <8GB（4GB 小机器也放 2——64MB worker 极轻）
+  { minMemGb: 8,  maxMemGb: 16, concurrency: 4 },  // 8-15GB（8GB 机器安全档）
+  { minMemGb: 16, maxMemGb: Infinity, concurrency: 6 }, // ≥16GB（上限同 DSH：API 配额瓶颈）
+];
+
 /**
  * 按物理内存查预算表取推荐并发。
  * @param {number} totalMemBytes - os.totalmem() 返回的字节数
+ * @param {string} [profile] - worker 负载画像：'dsh'（默认，DSH 桥接重载 worker）
+ *                             或 'direct'（判断层直连裸 LLM worker）
  * @returns {number} 推荐并发数
  */
-export function concurrencyFromMemory(totalMemBytes) {
+export function concurrencyFromMemory(totalMemBytes, profile = 'dsh') {
   const gb = totalMemBytes / (1024 ** 3);
-  for (const row of CONCURRENCY_BUDGET_TABLE) {
+  const table = profile === 'direct' ? DIRECT_CONCURRENCY_BUDGET_TABLE : CONCURRENCY_BUDGET_TABLE;
+  for (const row of table) {
     if (gb >= row.minMemGb && gb < row.maxMemGb) return row.concurrency;
   }
   return 1; // 不可达防御（表已覆盖 0..∞），兜底最保守
@@ -1558,10 +1579,11 @@ export function concurrencyFromMemory(totalMemBytes) {
  * @param {number} [options.defaultConcurrency] - 显式缺省且探测失败时的兜底值（默认 1）
  * @param {Function} [options.totalmem] - 注入的内存探测函数（默认 os.totalmem，单测可 mock）
  * @param {boolean} [options.quiet] - 不打印推导日志（默认 false）
+ * @param {string} [options.profile] - worker 负载画像：'dsh'（默认，DSH 桥接重载）或 'direct'（判断层直连裸 LLM）
  * @returns {{ concurrency: number, source: 'cli'|'env'|'adaptive'|'fallback', memGb: number|null }}
  */
 export function resolveMaxConcurrency(options = {}) {
-  const { cliFlag, defaultConcurrency = 1, totalmem = () => os.totalmem(), quiet = false } = options;
+  const { cliFlag, defaultConcurrency = 1, totalmem = () => os.totalmem(), quiet = false, profile = 'dsh' } = options;
 
   // 1️⃣ 显式 CLI 参数（后写者胜——在 env 之后判定，CLI 优先于 env）
   if (cliFlag !== undefined && cliFlag !== null && String(cliFlag).trim() !== '') {
@@ -1584,13 +1606,13 @@ export function resolveMaxConcurrency(options = {}) {
     if (!quiet) console.warn(`[并发] ⚠️ FORGE_MAX_CONCURRENCY="${envRaw}" 不是合法正整数，忽略`);
   }
 
-  // 3️⃣ 自适应探测（os.totalmem → 预算表）
+  // 3️⃣ 自适应探测（os.totalmem → 预算表，按 worker 负载画像选表）
   try {
     const totalBytes = totalmem();
     if (Number.isFinite(totalBytes) && totalBytes > 0) {
       const gb = totalBytes / (1024 ** 3);
-      const n = concurrencyFromMemory(totalBytes);
-      if (!quiet) console.log(`[并发] 自适应: 物理内存 ${gb.toFixed(0)} GB → ${n}`);
+      const n = concurrencyFromMemory(totalBytes, profile);
+      if (!quiet) console.log(`[并发] 自适应: 物理内存 ${gb.toFixed(0)} GB → ${n}${profile === 'direct' ? '（直连档）' : ''}`);
       return { concurrency: n, source: 'adaptive', memGb: gb };
     }
     throw new Error(`totalmem() 返回非法值: ${totalBytes}`);
