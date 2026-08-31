@@ -1,8 +1,13 @@
 #!/usr/bin/env node
 // core CLI · v1.4.2
 
-const args = process.argv.slice(2);
-const subcommand = args[0];
+// flag 别名路由（run-08 P0-1）：--doctor 是用户高频习惯写法（audit CLI 同名 flag
+// 已路由到 runDoctor）——core 此前只认裸词子命令，手滑写 --doctor 会得到
+// Unknown subcommand，验收场景 28 即因此 WARN（输出无 post-commit 字样，
+// 被误判为 doctor 检测缺失，实则检测一直在）。flag → 子命令归一，两种写法都可用。
+const rawArgs = process.argv.slice(2);
+const subcommand = rawArgs[0] === '--doctor' ? 'doctor' : rawArgs[0];
+const args = rawArgs[0] === '--doctor' ? ['doctor', ...rawArgs.slice(1)] : rawArgs;
 
 async function main() {
   if (!subcommand || subcommand === '--help') {
