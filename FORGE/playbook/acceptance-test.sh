@@ -903,24 +903,31 @@ fi
 $S99_OK && pass
 S100_OK=true; S100_REPO=$(mktemp -d /tmp/sofagent-s100-XXXXXX); cd "$S100_REPO"
 git init --quiet; git config user.email "s100@test.com"; git config user.name "S100"
-init_isolated node "$AUDIT_DIR/dist/index.js" --init > /dev/null 2>&1
+# run-03 P0-01 根因修：--init 与 --diff 必须共享同一隔离 HOME——原实现 --init 走
+# init_isolated（临时 HOME 的 K1 密钥给 config 签名），--diff 只隔离 SOFAGENT_DATA
+# 而读真实 HOME 的 K2 验签 → K2 验 K1 必不匹配 → fail-closed 拒启 → history.jsonl
+# 无产出（场景环境泄漏假失败，非产品写入链断裂——本地无 config 污染时写入链实测正常）。
+S100_HOME=$(mktemp -d /tmp/sofagent-s100-home-XXXXXX)
+S100_DATA=$(mktemp -d /tmp/sofagent-s100-data-XXXXXX)
+HOME="$S100_HOME" SOFAGENT_DATA="$S100_DATA" node "$AUDIT_DIR/dist/index.js" --init > /dev/null 2>&1
 echo "# base" > README.md; git add README.md
-GIT_EDITOR=true git commit --quiet -m "base commit for action governance test" 2>&1 || true
+# commit 也必须在同一隔离 HOME 下——commit-msg hook 会调 audit CLI 验签 config，
+# 真实 HOME 的密钥验隔离 K1 的签名必不匹配 → commit 被拦（HEAD~1 无法生成）
+HOME="$S100_HOME" GIT_EDITOR=true git commit --quiet -m "base commit for action governance test" 2>&1 || true
 echo "# modified content" > README.md; git add README.md
-GIT_EDITOR=true git commit --quiet -m "fix: action governance scenario test" 2>&1 || true
+HOME="$S100_HOME" GIT_EDITOR=true git commit --quiet -m "fix: action governance scenario test" 2>&1 || true
 # run-09 P0-2 修：history.jsonl 落点是 SSOT 路径 ${SOFAGENT_DATA}/audit/history.jsonl
 # （v1.2.2 起默认 ~/.sofagent/data/audit/，repo 本地 .sofagent/audit/ 不再生成——
 # 旧断言查 repo 本地路径必 SKIP）。用 SOFAGENT_DATA 隔离到临时目录：不污染真实
 # 全局 history，断言查隔离路径——隔离下无家可写 ≠ 环境依赖，是真失败。
-S100_DATA=$(mktemp -d /tmp/sofagent-s100-data-XXXXXX)
 S100_HISTORY="$S100_DATA/audit/history.jsonl"
-S100_AUDIT=$(SOFAGENT_DATA="$S100_DATA" node "$AUDIT_DIR/dist/index.js" --diff HEAD~1..HEAD --task "action governance scenario test" 2>&1 || true)
+S100_AUDIT=$(HOME="$S100_HOME" SOFAGENT_DATA="$S100_DATA" node "$AUDIT_DIR/dist/index.js" --diff HEAD~1..HEAD --task "action governance scenario test" 2>&1 || true)
 if [ -f "$S100_HISTORY" ]; then
   S100_LAST=$(tail -1 "$S100_HISTORY")
   echo "$S100_LAST" | python3 -c "
 import sys, json; d = json.load(sys.stdin); ag = d.get('actionGovernance', {}); assert 'actor' in ag" 2>/dev/null || { fail "history.jsonl 缺少 actionGovernance.actor"; S100_OK=false; }
 else fail "history.jsonl 未生成（SOFAGENT_DATA 隔离下 SSOT 路径无产出——审计历史写入链断裂）"; S100_OK=false; fi
-cd "$PROJECT_ROOT"; rm -rf "$S100_REPO" "$S100_DATA"
+cd "$PROJECT_ROOT"; rm -rf "$S100_REPO" "$S100_DATA" "$S100_HOME"
 $S100_OK && pass
 scenario 101 "v1.1.8 安全层三合一（AES+ECDH+配对+联邦过滤）"
 S101_OK=true; require_dist "engine/core/dist/crypto/aes-gcm.js" || S101_OK=false
