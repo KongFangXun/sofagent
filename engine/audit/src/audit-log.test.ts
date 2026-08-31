@@ -91,6 +91,54 @@ describe('audit-log', () => {
       expect(content).toContain('a\\|b');
       expect(content).toContain('c\\|d');
     });
+
+    // P0-42 回归：audit.md 曾只做 escapePipe（格式转义）零内容脱敏，而
+    // history.jsonl 走 REDACTION_PATTERNS 双层脱敏——审计双持久化路径防线不对等，
+    // 审计工具自身成为第二泄漏点。契约：两条落盘路径同口径脱敏。
+    describe('内容脱敏（与 history.jsonl 同口径 REDACTION_PATTERNS）', () => {
+      // 密钥样本运行时拼接（铁律：测试不字面写真实格式密钥）
+      const leakyKey = 'key=' + 'sk-' + 'abcdef1234567890abcdef';
+      const leakyPhone = '138' + '12345678';
+
+      it('target 含 sk- 密钥 → 落盘 REDACTED 不含明文', () => {
+        process.env.SOFA_AUDIT_ENABLED = 'true';
+
+        appendAuditLog({ operation: 'test', target: leakyKey, result: 'ok' }, testDir);
+
+        const month = new Date().toISOString().slice(0, 7);
+        const date = new Date().toISOString().slice(0, 10);
+        const auditFile = join(testDir, 'task', 'audit', month, `${date}.md`);
+        const content = readFileSync(auditFile, 'utf-8');
+        expect(content).not.toContain(leakyKey);
+        expect(content).toContain('sk-***REDACTED***');
+      });
+
+      it('operation/result 含手机号 → 落盘脱敏', () => {
+        process.env.SOFA_AUDIT_ENABLED = 'true';
+
+        appendAuditLog({ operation: 'call ' + leakyPhone, target: 't', result: 'ok ' + leakyPhone }, testDir);
+
+        const month = new Date().toISOString().slice(0, 7);
+        const date = new Date().toISOString().slice(0, 10);
+        const auditFile = join(testDir, 'task', 'audit', month, `${date}.md`);
+        const content = readFileSync(auditFile, 'utf-8');
+        expect(content).not.toContain(leakyPhone);
+        expect(content).toContain('1**REDACTED***');
+      });
+
+      it('正常文本不受脱敏影响（| 转义行为保留）', () => {
+        process.env.SOFA_AUDIT_ENABLED = 'true';
+
+        appendAuditLog({ operation: 'install', target: 'a|b', result: '成功' }, testDir);
+
+        const month = new Date().toISOString().slice(0, 7);
+        const date = new Date().toISOString().slice(0, 10);
+        const auditFile = join(testDir, 'task', 'audit', month, `${date}.md`);
+        const content = readFileSync(auditFile, 'utf-8');
+        expect(content).toContain('a\\|b');
+        expect(content).toContain('成功');
+      });
+    });
   });
 
   describe('extractLogEntries', () => {

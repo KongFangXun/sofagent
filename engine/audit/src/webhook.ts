@@ -37,7 +37,10 @@ export function isPrivateWebhookUrl(rawUrl: string): boolean {
     return true; // 无法解析 → 拒绝
   }
   if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return true;
-  const host = parsed.hostname;
+  // SSRF：parsed.hostname 对 IPv6 字面量保留方括号（[::1]），isIP 判 0 会误入
+  // 公共域名分支整体放行，使下方 IPv6 防御全部不可达——必须先剥方括号
+  // （合法 URL 中 hostname 的方括号只出现在 IPv6 字面量两侧，域名不受影响）
+  const host = parsed.hostname.replace(/^\[|\]$/g, '');
   if (/^localhost$/i.test(host)) return true;
   if (/\.(local|internal|lan|intranet|home)$/i.test(host)) return true;
   const ipType = isIP(host);
@@ -70,8 +73,16 @@ export function isPrivateWebhookUrl(rawUrl: string): boolean {
   }
   // IPv6 私网/链路本地简判
   if (host.startsWith('fc') || host.startsWith('fd') || host.startsWith('fe80')) return true;
-  // P1-A5: IPv6-mapped IPv4（如 ::ffff:169.254.169.254 / ::ffff:10.0.0.1）
-  // 这类地址在 Node.js isIP 中被判为 IPv6（hostname 包含冒号+点），但实际可达 IPv4 内网地址
+  // P1-A5: IPv6-mapped IPv4（如 ::ffff:169.254.169.254——云元数据靶）。
+  // 注意：URL 解析会把 [::ffff:a.b.c.d] 的 hostname 规范化为十六进制形态
+  // ::ffff:hhhh:hhhh（如 ::ffff:a9fe:a9fe），点分形态在 hostname 上不出现；
+  // 两种形态都还原为 IPv4 后递归判定（走上方 IPv4 私网/链路本地全量检查）。
+  const v4MappedHex = host.match(/^::ffff:([0-9a-f]{1,4}):([0-9a-f]{1,4})$/i);
+  if (v4MappedHex) {
+    const hi = parseInt(v4MappedHex[1]!, 16);
+    const lo = parseInt(v4MappedHex[2]!, 16);
+    return isPrivateWebhookUrl(`http://${hi >> 8}.${hi & 0xff}.${lo >> 8}.${lo & 0xff}`);
+  }
   const v4MappedMatch = host.match(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/i);
   if (v4MappedMatch) {
     const mappedV4 = v4MappedMatch[1]!;
