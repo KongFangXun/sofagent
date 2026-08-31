@@ -2,12 +2,19 @@ name: sofagent-audit
 
 # 项目唯一的审计 CI 入口（原 audit.yml 已合并至此）。
 # 只有 FAIL(exit 2) 才阻断 CI；WARN(exit 1) 只提醒不阻断。
+# PR 事件：审计真实增量（base..head）并把结果打到 PR 标签上
+# （audit-pass / audit-warn / audit-fail）——「sofagent 仓由 sofagent 审计」的 dogfooding 门禁。
 
 on:
   push:
     branches: [main, master]
   pull_request:
     branches: [main, master]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
 
 jobs:
   audit:
@@ -26,7 +33,8 @@ jobs:
         run: npm ci
       - name: Build (workspace 拓扑序)
         run: npm run build
-      - name: Run audit
+      - name: Run audit (push · 增量 HEAD~1)
+        if: github.event_name == 'push'
         # exit 0=PASS / 1=WARN / 2=FAIL
         # CI 只阻断 FAIL（exit 2），WARN（exit 1）只提醒不阻断
         # 🔴 set +e 捕获审计退出码——禁用 || true（cmd || true 后 $? 恒 0，FAIL 分支成死代码，阻断失效 22 天实测教训）
@@ -42,4 +50,60 @@ jobs:
             exit 0
           else
             echo "✅ PASS: 审计全通过"
+          fi
+      - name: Run audit (PR · 真实增量 + 结果标签)
+        if: github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        # PR 场景审计 base..head 真实增量（HEAD~1 在 PR 里只是碰巧的前一个 commit）
+        # 结果三态映射标签：0→audit-pass / 1→audit-warn / 2→audit-fail（阻断）
+        # 标签先删后加保持最新；gh label create 幂等（已存在时 || true 吞错）
+        # 🔴 fork PR 的 GITHUB_TOKEN 强制只读（GitHub 安全默认）——标签/approve 写操作
+        #    全部挂 || true 降级：写失败只影响装饰（标签/绿灯），绝不把审计 PASS 误标为 CI 失败。
+        #    审计结论本体在 CI 日志 + Actions 摘要，写操作是锦上添花。
+        run: |
+          set +e
+          cd engine/audit && npx sofagent-audit --silent --diff "$BASE_SHA..$HEAD_SHA" --ci
+          exit_code=$?
+          cd "$GITHUB_WORKSPACE"
+          if [ $exit_code -eq 2 ]; then
+            label=audit-fail
+          elif [ $exit_code -eq 1 ]; then
+            label=audit-warn
+          else
+            label=audit-pass
+          fi
+          echo "审计退出码 $exit_code → 标签 $label"
+          gh label create audit-pass --color 2EA043 --description "sofagent-audit 全通过" || true
+          gh label create audit-warn --color FBCA04 --description "sofagent-audit 有警告（不阻断）" || true
+          gh label create audit-fail --color D73A4A --description "sofagent-audit 发现违规（阻断）" || true
+          gh pr edit "$PR_URL" --remove-label audit-pass --remove-label audit-warn --remove-label audit-fail || true
+          gh pr edit "$PR_URL" --add-label "$label" || echo "⚠️ 标签写入失败（fork PR 只读令牌），结论见 CI 日志"
+          echo "AUDIT_RESULT=$label" >> "$GITHUB_ENV"
+          if [ $exit_code -eq 2 ]; then
+            echo "❌ FAIL: 审计发现违规"
+            exit 1
+          elif [ $exit_code -eq 1 ]; then
+            echo "⚠️ WARN: 审计有警告，已打标签，不阻断 CI"
+            exit 0
+          else
+            echo "✅ PASS: 审计全通过，已打标签"
+          fi
+      - name: Auto-approve (audit-pass only)
+        # 审计全过 → bot 提交 approve review，点亮 merge 绿灯。
+        # 设计边界（对应 sofagent HITL 哲学）：机器只 approve，不自动 merge——
+        # merge 决策保留给人（组织归核三层：merge 决策者 = approver 人审）。
+        # 幂等：已有 APPROVED review 则跳过，防重复评论。
+        if: github.event_name == 'pull_request' && env.AUDIT_RESULT == 'audit-pass'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+        run: |
+          if gh pr view "$PR_URL" --json reviews --jq '[.reviews[] | select(.state == "APPROVED")] | length' | grep -q '^0$'; then
+            gh pr review "$PR_URL" --approve --body "✅ sofagent-audit PASS（24 规则零违规）。bot 自动 approve，merge 决策保留给维护者。" || echo "⚠️ approve 写入失败（fork PR 只读令牌），绿灯由维护者手动给"
+          else
+            echo "已有 approve，跳过"
           fi
