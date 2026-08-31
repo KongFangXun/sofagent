@@ -2368,6 +2368,13 @@ function extractVerdictKeyword(raw) {
   // 混排多关卡词，肯定词命中会覆盖全文真实裁决 FAIL。强组窗口不受此限（强组
   // 词本身专属裁决语境，无叙述句混排问题）。passive 否决同时放行下一 marker 继续扫描。
   const NEGATION_EN = /BLOCKED|BLOCK|NO-GO|HOLD/;
+  // 裸词右边界纪律：命中词后紧跟连字符 = 复合术语（fail-closed / pass-through
+  // / fail-fast 等），不是裸裁决词。run-04 实证：regression.md 表格 meta 行
+  // 「96 维度逐维度判定，fail-closed：超时=证据缺失=未通过」——「判定」标记后
+  // 全角逗号（U+FF0C，不在中文中断排除集）穿透前缀量词，「fail」被 lazy 匹配
+  // 抓走 → PASS 报告记 FAIL。捕获组终点 = match 终点回退词长（match.index 是
+  // 整段前缀起点，不能直接用）。
+  const isCompoundTerm = (text, match) => text[match.index + match[0].length] === '-';
   for (const marker of markers) {
     const isStrong = strongMarkers.includes(marker);
     for (let i = 0; i < lines.length; i++) {
@@ -2379,7 +2386,7 @@ function extractVerdictKeyword(raw) {
         ? /^[^A-Za-z]*?(PASS|FAIL|SKIP)\b/i
         : /^[^A-Za-z\u4e00-\u9fff]*?(PASS|FAIL|SKIP)/i;
       const m = windowText.match(re);
-      if (m) return m[1].toUpperCase();
+      if (m && !isCompoundTerm(windowText, m)) return m[1].toUpperCase();
       // run-16 修复：LLM 审查者常用同义裁决词（BLOCKED/BLOCK/NO-GO/不予放行/
       // 不通过/阻塞/HOLD）——语义全部等价 FAIL（fail-closed），不再误记 ERROR/SKIP。
       // 仅在「结论/判定」标记紧邻窗口内匹配，维持既有防误抓纪律。
@@ -2387,8 +2394,8 @@ function extractVerdictKeyword(raw) {
       // 解析器未认导致 driver 记账 ERROR 与真实裁决脱钩。
       // 阻断：run-04 实证——「🚫 阻断（BLOCKED）」，与「阻塞」同义，链表此前漏收。
       const mBlock = windowText.match(/^[^A-Za-z\u4e00-\u9fff]*?(BLOCKED|BLOCK|NO-GO|HOLD)/i);
-      if (mBlock) return 'FAIL';
-      if (/^[^A-Za-z\u4e00-\u9fff]*(不予放行|不通过|不得放行|不放行|阻塞|阻断|暂缓放行)/.test(windowText)) return 'FAIL';
+      if (mBlock && !isCompoundTerm(windowText, mBlock)) return 'FAIL';
+      if (/^[^A-Za-z\u4e00-\u9fff]*(不予放行|不通过|未通过|不得放行|不放行|阻塞|阻断|暂缓放行)/.test(windowText)) return 'FAIL';
       // run-07 实证：coverage 报告写「有条件通过（CONDITIONAL PASS）」、regression 写
       // 「96/96 维度全部通过」——严格正则只认裸 PASS/FAIL 词，全数漏抓 → status.json
       // 记 SKIP，下游 consolidate/verdict 证据面失真。补「条件性通过/通过」语义组：
@@ -2399,6 +2406,15 @@ function extractVerdictKeyword(raw) {
       // 该窗口继续扫描后续 marker（真实裁决行「闸门最终状态：BLOCK」由强组捕获）。
       // 肯定组放否定组之后——防「不通过」被「通过」抢先命中。
       if (!isStrong && NEGATION_EN.test(windowText)) continue;
+      // run-04 形态：「| 裁决 | ✅ **通过（PASS）** |」——「通过」中文挡住裸词
+      // lazy 前缀，语义组又只收「全部/全数/有条件」前缀。「中文肯定词 + 括号裸词」
+      // 复合形态按括号内裸词判定（通=PASS / 不通过=FAIL 已由否定组前置处理）。
+      // 括号用 [^(]* 跨越：LLM 常写全角括号（U+FF08），ASCII \( 匹配不到
+      // （run-04 实证：ASCII 版正则全 null，宽松版当场命中）。
+      {
+        const paren = windowText.match(/^[^A-Za-z\u4e00-\u9fff]*通过[^(]*\(?\s*(PASS|FAIL|SKIP)\b/i);
+        if (paren) return paren[1].toUpperCase();
+      }
       if (/有条件通过|有条件放行|条件通过/.test(windowText)) return 'PASS';
       if (/(全部通过|全数通过|全部成功)/.test(windowText)) return 'PASS';
     }

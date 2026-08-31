@@ -1512,6 +1512,57 @@ describe('run-03 词表收编：裁决/结果进普通组 + 契约词闭环', ()
   });
 });
 
+// ═══════════════════════════════════════════════════════════
+//  9d. run-04 记账修复测试组（真实产物回放）
+// ═══════════════════════════════════════════════════════════
+// 背景：run-04 零信任核验拆出 regression 记 FAIL 与报告 PASS 脱钩的完整穿透链：
+//   ① 表格 meta 行「96 维度逐维度判定，fail-closed：超时=…」——「判定」标记后
+//      全角逗号（U+FF0C）不在中文中断排除集 → lazy 前缀穿透 → 「fail」被当裸
+//      FAIL 词抓走（fail-closed 复合术语右边界无校验）；
+//   ② 真裁决行「| 裁决 | ✅ **通过（PASS）** |」——「通过」中文挡裸词 + 括号是
+//      全角（U+FF08）ASCII \( 匹配不到 → 两层漏收。
+// 修复：isCompoundTerm 连字复合词后验 + 「通过[^(]*裸词」宽松括号组。
+describe('run-04 记账修复：fail-closed 术语防御 + 通过（PASS）全角括号形态', () => {
+  function createExtractor() {
+    const { fullBody } = extractFunctionBody(SOURCE_CODE, 'extractVerdictKeyword');
+    const wrapper = new Function(fullBody + '\nreturn extractVerdictKeyword;');
+    return wrapper();
+  }
+
+  it('run-04 regression.md 实录回放：meta 行 fail-closed 不再误判，裁决行通过（PASS）→ PASS', () => {
+    const extract = createExtractor();
+    const doc = [
+      '# 发版闸门审查报告 · regression（角色 V）',
+      '',
+      '| 项 | 内容 |',
+      '|---|---|',
+      '| 产物 | `regression.md` |',
+      '| 审查对象 | sofagent v1.4.2（SSOT 版本 1.4.2） |',
+      '| 证据来源 | driver 预执行 `regression-precheck.json`（96 维度逐维度判定，fail-closed：超时=证据缺失=未通过） |',
+      '| 裁决 | ✅ **通过（PASS）** —— 0 × P0，0 × P1，6 × P2 |',
+    ].join('\n');
+    expect(extract(doc)).toBe('PASS');
+  });
+
+  it('fail-closed / fail-fast / pass-through 复合术语不误判（连字右边界）', () => {
+    const extract = createExtractor();
+    expect(extract('## 结论\n\n本维度采用 fail-closed 口径，超时视为证据缺失')).toBeNull();
+    expect(extract('## 判定\n\nfail-fast 策略下立即返回')).toBeNull();
+  });
+
+  it('「通过（PASS）」全角括号形态 → PASS；「通过（FAIL）」→ FAIL（按括号内裸词）', () => {
+    const extract = createExtractor();
+    expect(extract('| 裁决 | ✅ **通过（PASS）** —— 0 × P0 |')).toBe('PASS');
+    expect(extract('| 裁决 | ❌ **通过（FAIL）** —— 存在 P0 |')).toBe('FAIL');
+  });
+
+  it('真裸词不受复合术语防御影响（回归）', () => {
+    const extract = createExtractor();
+    expect(extract('## 结论\nFAIL')).toBe('FAIL');
+    expect(extract('## 判定\nPASS')).toBe('PASS');
+  });
+});
+
 describe('run-08 三修：acceptance 记账 fail-closed（日志 PASS + 审查 FAIL → 冲突即 FAIL）', () => {
   // 同构提取 extractAcceptanceResult（闭包依赖 extractResult/join/existsSync/readFileSync/runDir）
   const FAKE_LOG = '验收测试结果：368 通过 / 0 失败 / 共 368\n✅ 全部通过，可以进入发版流程';
