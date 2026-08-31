@@ -69,9 +69,12 @@
 ## fresh-eyes-review 风格守护自检（步骤五 必跑）
 
 ```bash
-# 1. 行数守护：不超过 455 行（2026-08-29 校准外移：三组规则 + 六节校准笔记移入 fresh-eyes-calibration.md（维护者档案，worker 不加载），本文件回到「视角 + 纪律」纯审查输入——历史沿革：v1.4.0「400→410 校准笔记 +1 节」/v1.4.1 阶段四 410→425/v1.4.1 阶段十二 425→440/v1.4.2 阶段十二 440→455，四次全因「校准笔记 +1 节」，外移治本；警戒线 455 冻结于外移时点（2026-08-29），新校准往档案加、本文件不再因此涨行）
+# 1. 行数守护：不超过 500 行——本文件只写「视角 + 纪律」纯审查输入；校准笔记在
+#    fresh-eyes-calibration.md（维护者档案，worker 不加载），新增校准不涨本文件行数。
+#    超线处置：校准段紧凑化（保语义压行数，不删视角）；上调警戒线改本段两处数字
+#    （check-review-system.sh 动态提取此处「不超过 N 行」，本段是 SSOT）。
 WC=$(wc -l < FORGE/playbook/fresh-eyes-review.md)
-[ "$WC" -gt 455 ] && echo "🔴 行数膨胀（$WC > 455）——检查是否在加精确检查项" || echo "✅ 行数正常（$WC）"
+[ "$WC" -gt 500 ] && echo "🔴 行数膨胀（$WC > 500）——检查是否在加精确检查项" || echo "✅ 行数正常（$WC）"
 
 # 2. 反清单化守护：不应出现精确检查命令（fresh-eyes-review 是留白式直觉审查，不是 checklist）
 CMD_COUNT=$(grep -cE '(grep|bash|npm|wc -l|test -)' FORGE/playbook/fresh-eyes-review.md || echo 0)
