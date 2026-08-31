@@ -4075,7 +4075,12 @@ grep -q "24 条审计规则\|24 条规则" "$PROJECT_ROOT/README.md" || S360_OK=
 # 维度 9 探针全口径：A+E 合计应 24（修后回归锚点，防探针再漏 E 系列）
 S360_PROBE=$(grep -oE "name:[[:space:]]*'[AE][0-9]+" "$PROJECT_ROOT/engine/audit/src/rules/index.ts" | wc -l | tr -d ' ')
 [ "$S360_PROBE" = "24" ] || S360_OK=false  # 探针 pattern 含 A+E 双系列
-grep -q 'SSOT_TOTAL=\$(grep -cE "name:\[\[:space:\]\]\*'"'"'\[AE\]\[0-9\]+" engine/audit/src/rules/index.ts)' "$PROJECT_ROOT/FORGE/playbook/regression-checklist.md" && S360_OK=false  # 旧 A-only 探针不得回潮（BRE 字符类须转义）
+# 🔴 BRE 转义陷阱二阶（run-07 冒烟实测）：\[ 在 BSD grep BRE 里不是字面 [，
+# 仍是字符类括号——「转义写法」的 pattern 反而匹配未转义普通文本，断言语义
+# 写反（匹配新形态=自毙）。凡字面匹配含方括号的文本必须 grep -F + 变量拼接。
+S360_OLDPROBE="name:[[:space:]]*'A[0-9]+"
+S360_OLDPROBE="SSOT_TOTAL=\$(grep -cE \"${S360_OLDPROBE}\" engine/audit/src/rules/index.ts)"
+grep -Fq "$S360_OLDPROBE" "$PROJECT_ROOT/FORGE/playbook/regression-checklist.md" && S360_OK=false  # 旧 A-only 探针形态不得回潮
 # P1-7 防复发：pass() 透传描述在位
 grep -q 'PASS\${1' "$PROJECT_ROOT/FORGE/playbook/acceptance-test.sh" || S360_OK=false  # pass 打印场景级描述
 # P1-6 防复发：S165 标题不再硬编码过时场景数。断言 pattern 从变量拼接（避免
