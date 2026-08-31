@@ -1010,6 +1010,13 @@ async function runWorker(step, runDir, target) {
     '',
     '--- driver 注入 ---',
     `本次验证对象 = sofagent ${target} 完整交付物`,
+    // 版本锚点声明（run-05 P0-2 根因）：发版时序上 SSOT bump 在阶段十（publish），
+    // 闸门跑在阶段六——仓库 package.json/tag 仍指上一版属 SOP 正常状态，不是
+    // 「身份断裂」。但 worker 会在 precheck/日志里看到旧 SSOT，各报告自行引用
+    // 旧号 → verdict 误判「三份输入版本互相矛盾」。显式声明口径：报告版本锚点
+    // 统一写候选版本（${target}）；仓库 SSOT 滞后是预期，发现时如实记录「SSOT
+    // 仍指 vX.Y.Z（待阶段十 bump）」即可，不得当作阻塞项。
+    `版本口径 = 候选版本 ${target}；仓库 package.json/tag 的 SSOT 此刻仍指上一版属发版时序正常状态（bump 在阶段十），报告中的版本锚点一律写 ${target}，SSOT 滞后不构成阻塞项`,
     `项目根目录 = ${workerProjectRoot}`,
     // v1.3.0 修复：acceptance shard 动态注入实际场景范围（覆盖模板写死的旧范围文字）
     stepDef.shard ? `你负责的实际场景范围 = S${stepDef.shard.start} 到 S${stepDef.shard.end}（以本注入为准，忽略 prompt 模板中写死的范围数字）` : '',
