@@ -6,7 +6,7 @@
  *   - 曲线：prime256v1（NIST P-256，Node 内置支持）
  *   - 双方各自 generateKeyPair() → 交换公钥 → deriveSharedKey() 派生同一把 32 字节 AES key
  *   - 派生链路：ECDH shared secret → HKDF-SHA256（带 info 上下文绑定）→ 32 字节 AES-256 key
- *   - key 只存内存，不落盘明文（持久化留 v1.2.0：OS keychain / age 加密）
+ *   - key 只存内存，不落盘明文（磁盘持久化属静态加密接线范围，排期见 ROADMAP v1.4.7「静态加密全量接线」）
  */
 
 import crypto from 'node:crypto';
