@@ -347,13 +347,19 @@ if $EXT_OK; then pass; else
 fi
 write_config
 scenario 25 "history.jsonl 审计历史写入"
-HISTORY="$TMP_REPO/.sofagent/audit/history.jsonl"; mkdir -p "$TMP_REPO/.sofagent/audit"
+# v1.2.1 路径修正（run-06 全量复跑暴露的存量断言缺陷）：产品 SSOT 路径 =
+# ${SOFAGENT_DATA}/audit/history.jsonl（SOFAGENT_DATA 缺省时 ~/.sofagent/data/），
+# 旧断言查 repo-local .sofagent/audit/ 是 v1.2.1 前旧路径，必空——对齐 S100 先例，
+# 用 SOFAGENT_DATA 隔离到临时目录，不污染真实 HOME，也不断言错误路径。
+S25_DATA=$(mktemp -d /tmp/sofagent-acc-hist25-XXXX)
 echo "# history test" >> README.md; git add README.md
-GIT_EDITOR=true git commit --quiet -m "history test" 2>&1 || true
+SOFAGENT_DATA="$S25_DATA" GIT_EDITOR=true git commit --quiet -m "history test" 2>&1 || true
+HISTORY="$S25_DATA/audit/history.jsonl"
 HISTORY_LINES=$(wc -l < "$HISTORY" 2>/dev/null || echo "0")
 if [ "$HISTORY_LINES" -ge 1 ]; then
-  tail -1 "$HISTORY" | python3 -c "import sys,json; d=json.load(sys.stdin); assert 'timestamp' in d and 'exitCode' in d" 2>/dev/null && pass || fail "history.jsonl 最后一条不是有效 JSON"
+  tail -1 "$HISTORY" | python3 -c "import sys,json; d=json.load(sys.stdin); assert 'timestamp' in d and 'exitCode' in d" 2>/dev/null && pass "SSOT 路径审计历史写入（${HISTORY_LINES} 行）" || fail "history.jsonl 最后一条不是有效 JSON"
 else fail "history.jsonl 为空——审计历史未写入"; fi
+rm -rf "$S25_DATA"
 scenario 26 "--json 违规场景输出（含 ruleResults）"
 mkdir -p src
 FAKE_GH_TOKEN2='ghp_'"999999999999999999999999999999999999"
