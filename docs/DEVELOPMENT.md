@@ -611,6 +611,20 @@ Google Research 的 WikiSkill（[arXiv:2608.27454](https://arxiv.org/abs/2608.27
 - **溯源与提案审计**：`PURPOSE.md`（技能回链到所解决的 pattern）与 `skill-impact.md`（每次提案 diff/分数/接受与否程序化落账）两个小机制，与 sofagent 的 LEDGER/审计轨迹理念同源，已列入 ROADMAP 候选。
 - **自进化的开放问题恰是约束层的主场**：技能自进化的公开讨论自认仍缺质量控制、安全审核、版本管理三样——正是 sofagent 审计引擎（规则集）+ 安全审查 + 回滚编排已经在做的事。开发者角色从「写技能」转为「设目标 + 把关」，与 sofagent 约束层哲学（人定规则、AI 执行、审计每次变更）同构，是 FDE 交付叙事的现成参照。
 
+## 九C、meta-harness 生态与 sofagent 的定位（2026-06 Meta-Harness Summer 印证）
+
+2026 年 6 月硅谷一周内涌现一批「harness 之上的 harness」（Databricks 开源 Omnigent 时正式造词，类比 K8s 之于容器）——多 agent 统一接入/调度/治理层。行业评估这类产品已收敛出五维检查清单，与 sofagent 已交付能力对照：
+
+| 五维（行业共识） | sofagent 对应 |
+|------|------|
+| 统一接入（异构 agent 一套接口） | 多 harness 统一编排（多命名实例 + 轮转调度） |
+| 安全隔离（沙箱 + 策略管权限） | SubAgent 沙箱 + PolicyLayer 四内置策略（file-lock/concurrency-cap/profile-allowlist/sensitive-tool） |
+| 调度编排（多 agent 协作收敛） | 协作阵型库（规划中：commander&crews/cross-review/bake-off 等六阵型） |
+| 可观测审计（谁改了什么可回溯） | AuditAggregator + worklog 工作明细 + decision-log 因果边 |
+| 状态恢复（会话可持久可恢复） | FDE 进场记忆目录（session 目录 + 跨 session 恢复，规划中） |
+
+**定位警示**：sofagent 不是「又一个 meta-harness」——meta-harness 解决「让一堆 agent 一起干活」，sofagent 解决「管住每一次变更」（约束层/审计层，平台无关）。对外叙事用「FDE Harness」借力 harness 概念普及时，防定位错置稀释差异化。另：斯坦福 IRIS Lab 同名论文走纵向路线（外循环搜索更优 harness 代码），与自迭代工具链思路同构，技能门控与提案审计机制已在 WikiSkill 收编中覆盖同类问题。
+
 ## 十、STATE.md 持久化外部记忆模式
 
 loop-engineering 社区将 STATE.md 定位为 **"对话外的持久化主干"**——Agent 每次任务启动时**必须先读**状态文件、结束时**必须写回**。这与 sofagent 的 `task/logs` 四字段（看到/改了/验证了/还剩）同构，但有两个增量值得吸收：
