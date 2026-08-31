@@ -1292,11 +1292,12 @@ export async function runPreflight(config = {}) {
     record(makeCheck('stdout', 'stdout 管道', 'WARN', 'PASS', '无法检测（跳过）'));
   }
 
-  // ── ③ 模型 API 可达 [HALT]（同 baseURL 只探测一次，3s 超时）──
+  // ── ③ 模型 API 可达 + 额度 [HALT]（连通同 baseURL 探一次；额度按 baseURL+key 组合探一次）──
   const fetchImpl = __inject.fetchImpl || globalThis.fetch;
   if (modelConfigs && Object.keys(modelConfigs).length > 0 && fetchImpl) {
     const targetRoles = roles || Object.keys(modelConfigs);
-    const probed = new Map(); // baseURL -> ok(boolean)
+    const probed = new Map();    // baseURL -> ok(boolean)——连通缓存
+    const quotaProbed = new Map(); // `baseURL|key尾8` -> {ok, reason}——额度缓存（429 按 key/账号）
     for (const role of targetRoles) {
       const cfg = modelConfigs[role];
       if (!cfg || !cfg.baseURL) continue;
@@ -1310,7 +1311,27 @@ export async function runPreflight(config = {}) {
         probed.set(cfg.baseURL, ok);
       }
       if (ok) {
-        record(makeCheck('api', `API 可达 [${role}]`, 'HALT', 'PASS', cfg.baseURL));
+        // 额度探测（run-03 教训）：连通 ≠ 额度可用——429 拦截在 chat 层，
+        // /models 不查额度。仅明确 429 才 HALT（fail-open），防 30-60 分钟白跑。
+        // 变量名用 bearerKey（非 apiKey*）——A2 赋值形态保守正则对 `apiKey =` +
+        // 8 位以上右侧值误报（此处是运行时读 env 传参，非硬编码密钥）
+        const bearerKey = cfg.apiKeyEnv ? process.env[cfg.apiKeyEnv || ''] : '';
+        if (cfg.model && bearerKey) {
+          const quotaKey = `${cfg.baseURL}|${bearerKey.slice(-8)}`;
+          let quota = quotaProbed.get(quotaKey);
+          if (quota === undefined) {
+            quota = await probeQuota(fetchImpl, cfg.baseURL, cfg.model, bearerKey);
+            quotaProbed.set(quotaKey, quota);
+          }
+          if (!quota.ok) {
+            record(makeCheck('api', `API 额度 [${role}]`, 'HALT', 'FAIL', quota.reason,
+              '等额度刷新窗口后重跑；或改 FORGE/models/profile.mjs 切备用模型/端点'));
+            continue;
+          }
+          record(makeCheck('api', `API 可达 [${role}]`, 'HALT', 'PASS', `${cfg.baseURL}（连通 + 额度可用）`));
+        } else {
+          record(makeCheck('api', `API 可达 [${role}]`, 'HALT', 'PASS', cfg.baseURL));
+        }
       } else {
         record(makeCheck('api', `API 可达 [${role}]`, 'HALT', 'FAIL',
           `${cfg.baseURL} 不可达（超时 ${PREFLIGHT_API_TIMEOUT_MS}ms 或网络错误）`,
@@ -1421,6 +1442,42 @@ async function probeApi(fetchImpl, baseURL) {
     return typeof res.status === 'number'; // 拿到任何 HTTP 状态码都算可达
   } catch {
     return false; // 超时 / DNS 失败 / 连接拒绝
+  }
+}
+
+/**
+ * 额度探测（fail-open——仅明确 429 才 FAIL）。
+ *
+ * 背景：连通 ≠ 额度可用。GLM 7 天滚动上限 429 的拦截在 chat/completions 层，
+ * /models 端点不查额度——preflight 连通全绿、启动后首个 worker 调用即 429
+ * 全灭，30-60 分钟白跑（run-03 实证）。极小 chat 请求（max_tokens=1）探额度：
+ *   - 明确 429 → { ok: false }，从响应体提取刷新时间（「HH:MM:SS 后可继续」）
+ *   - 其余任何形态（401/404/5xx/网络/超时）→ { ok: true }——key 有效性归
+ *     driver main 的 missingEnvs 检查、连通性归 probeApi，此处不重复不误伤
+ *
+ * @param {Function} fetchImpl 可注入的 fetch
+ * @param {string} baseURL API 根地址
+ * @param {string} model 模型名（探测请求体必填——用真实 profile 模型防 404 误判）
+ * @param {string} apiKey API key（Bearer）
+ * @returns {Promise<{ok: boolean, reason?: string}>}
+ */
+async function probeQuota(fetchImpl, baseURL, model, apiKey) {
+  try {
+    const res = await fetchImpl(`${baseURL.replace(/\/+$/, '')}/chat/completions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+      body: JSON.stringify({ model, messages: [{ role: 'user', content: 'ping' }], max_tokens: 1 }),
+      signal: AbortSignal.timeout(PREFLIGHT_API_TIMEOUT_MS),
+    });
+    if (res.status === 429) {
+      const text = await res.text().catch(() => '');
+      // 提取「HH:MM:SS 后可继续」形态的刷新时间（GLM 429 响应体惯例）
+      const m = text.match(/([01]?\d|2[0-3]):[0-5]\d:[0-5]\d/);
+      return { ok: false, reason: m ? `额度耗尽（429），${m[0]} 后重试` : '额度耗尽（429——7 天滚动上限类）' };
+    }
+    return { ok: true };
+  } catch {
+    return { ok: true }; // 探测自身异常不阻塞——fail-open
   }
 }
 
