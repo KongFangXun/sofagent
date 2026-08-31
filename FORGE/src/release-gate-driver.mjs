@@ -2670,6 +2670,18 @@ release-gate-driver.mjs - FORGE release-gate-loop Driver
 async function main() {
   const args = parseArgs(process.argv);
 
+  // ─── run-06 教训：macOS 睡眠冻结 event loop 775s → watchdog 误 abort worker ───
+  // caffeinate 防 idle 睡眠（合盖电池模式 OS 强制睡眠无法阻止，由 watchdog 双钟鉴别兜底）。
+  // 仅 macOS（darwin）有 caffeinate；子进程随 driver 退出自动终止（-w 绑定本进程）。
+  if (process.platform === 'darwin' && !args.help && !args.checkAlive && !args.watch) {
+    try {
+      const { spawn } = await import('child_process');
+      const caf = spawn('caffeinate', ['-i', '-w', String(process.pid)], { detached: false, stdio: 'ignore' });
+      caf.unref();
+      console.log('[caffeinate] 防 idle 睡眠守护已挂（绑定本进程存活期）');
+    } catch { /* 非 macOS 或 caffeinate 缺失：静默跳过，双钟鉴别兜底 */ }
+  }
+
   // ─── 帮助 ───
   if (args.help) {
     printHelp();

@@ -241,6 +241,7 @@ export function createProgressMiddleware(options) {
       //   是 Node.js 标准中止机制，abort 信号触发 stallPromise reject。
       const controller = new AbortController();
       let lastTickTime = Date.now();
+      let lastTickMono = process.hrtime.bigint();
       let stallCount = 0;
       const gapMsArr = [];
       // 在 wrapModelCall 入口处读取阈值（每次调用可独立配置，支持测试动态覆盖）
@@ -252,14 +253,30 @@ export function createProgressMiddleware(options) {
       const timer = setInterval(() => {
         try {
           const now = Date.now();
+          const nowMono = process.hrtime.bigint();
           const actualGap = now - lastTickTime;
+          // 双钟睡眠鉴别：墙钟（Date.now）在系统睡眠时继续走，
+          // 单调钟（hrtime，mach_absolute_time）睡眠时暂停——
+          // 墙钟跳变大而单调钟几乎没走 = 睡眠；两者都大 = 真冻结。
+          const monoGapMs = Number(nowMono - lastTickMono) / 1e6;
+          const sleptMs = Math.max(0, actualGap - monoGapMs);
+          const isSleep = sleptMs > STALL_THRESHOLD_MS;
 
           // 发心跳事件（即使检测到 stall 也照常发——stall 已过去，心跳恢复正常）
           // Emit heartbeat (even if stall detected — stall has passed, heartbeat resumes)
           emit({ ts: new Date().toISOString(), role, event: 'llm-chunk' });
 
-          // watchdog：检测停顿
-          if (actualGap > STALL_THRESHOLD_MS) {
+          // watchdog：检测停顿（系统睡眠不计——run-06 实证：合盖 777s 被
+          // 误判 775s 冻结并 abort，worker 无辜被杀、regression.md 空文件）
+          if (isSleep) {
+            emit({
+              ts: new Date().toISOString(),
+              role,
+              event: 'sleep-detected',
+              gapMs: actualGap,
+              sleptMs,
+            });
+          } else if (actualGap > STALL_THRESHOLD_MS) {
             stallCount++;
             gapMsArr.push(actualGap);
 
@@ -304,6 +321,7 @@ export function createProgressMiddleware(options) {
           }
 
           lastTickTime = now;
+          lastTickMono = nowMono;
         } catch (err) {
           console.error('[sofagent:forge] progress-middleware 清理失败', err);
         }
