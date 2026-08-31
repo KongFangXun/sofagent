@@ -23,7 +23,7 @@ import { checkEnv } from './env-check';
 import { VERSION } from './shared/constants';
 import { load as yamlLoad, YAMLException } from 'js-yaml';
 import { checkHistoryChainDetailed, validateHmacKey } from './audit-history';
-import { DATA_DIR, getConfigFile, resolveDataDir, resolveKnowledgeDir } from './data-paths';
+import { DATA_DIR, getConfigFile, resolveDataDir, resolveHomeDir, resolveKnowledgeDir } from './data-paths';
 
 function ok(msg: string) { console.log(`  ✅ ${msg}`); }
 function warn(msg: string) { console.log(`  ⚠️  ${msg}`); _warnCount++; }
@@ -104,7 +104,10 @@ export function runDoctor(projectDir: string = process.cwd(), options: { resetBa
   //   多仓库用户会把全局安装状态误读为「本仓库健康」，来源必须显式
   console.log('\n── 版本一致性 [全局安装，非当前仓库] ──');
   try {
-    const homeVersionFile = join(process.env.SOFAGENT_HOME || join(process.env.HOME || '~', '.sofagent'), 'VERSION');
+    // run-07 verdict P1-3：改走 data-paths SSOT（resolveHomeDir 内经 sanitizeSofagentHome
+    // 白名单防护），不再直读 process.env.SOFAGENT_HOME——v1.3.2 P0-RC2 path-traversal
+    // 防护对 doctor 三处全局路径读取同样生效。
+    const homeVersionFile = join(resolveHomeDir(), 'VERSION');
     if (existsSync(homeVersionFile)) {
       const installedVersion = readFileSync(homeVersionFile, 'utf-8').trim();
       if (installedVersion !== VERSION) {
@@ -359,7 +362,7 @@ export function runDoctor(projectDir: string = process.cwd(), options: { resetBa
     try {
       const distContent = readFileSync(auditDistPath);
       const currentHash = createHash('sha256').update(distContent).digest('hex');
-      const hashRecordPath = join(process.env.SOFAGENT_HOME || join(homedir(), '.sofagent'), 'internal', 'audit-hash.txt');
+      const hashRecordPath = join(resolveHomeDir(), 'internal', 'audit-hash.txt');
 
       // v1.3.5 --reset-baseline：无条件重算并覆写基线（rebuild dist 后一键重置）
       // 覆写后按「基线 = 当前值」输出校验通过——不产生假 mismatch 告警。
@@ -603,7 +606,9 @@ export function runDoctorWithRepair(projectDir: string = process.cwd(), repair: 
     let repairsApplied = 0;
 
     // 1. ~/.sofagent 不存在 → 创建
-    const home = process.env.SOFAGENT_HOME || join(homedir(), '.sofagent');
+    // run-07 verdict P1-3：同批收口——引导期初始化也走 SSOT 入口（白名单防护生效）；
+    // 引导语义不变（~/.sofagent 不存在时创建骨架目录）。
+    const home = resolveHomeDir();
     if (!existsSync(home)) {
       try {
         mkdirSync(home, { recursive: true, mode: 0o700 });

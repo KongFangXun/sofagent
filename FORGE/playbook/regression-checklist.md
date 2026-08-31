@@ -820,6 +820,12 @@ grep -qi "png" engine/core/src/__tests__/isomorphic-git-v2.test.ts && echo "✅ 
 grep -rn "join(.*'data'" engine/ --include="*.ts" | grep -v "data-paths.ts" | grep -v "\.test\." | grep -v "__tests__" | grep -v "// " | grep -v "新的路径"
 # 期望：零命中或仅注释（注释需说明"原...迁移到..."）
 
+# run-07 verdict P1-3 防复发锚点：doctor.ts 全局路径读取收口 SSOT——
+# 直读 process.env.SOFAGENT_HOME 会绕过 sanitizeSofagentHome 白名单防护
+# （v1.3.2 P0-RC2 path-traversal），改走 resolveHomeDir() 后不得回潮
+grep -c "process.env.SOFAGENT_HOME ||" engine/core/src/doctor.ts # 期望：0（直读形态清零）
+grep -c "resolveHomeDir" engine/core/src/doctor.ts # 期望：≥3（L107/L362/L606 三处收口）
+
 # 额外验证：data-paths.ts 存在且导出 resolve* 函数
 grep -c "resolveAuditDir\|resolveDataDir\|resolveTaskDir\|DATA_ROOT" engine/core/src/data-paths.ts # ≥2
 ```
