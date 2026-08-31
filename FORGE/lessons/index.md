@@ -4,20 +4,6 @@
 >
 > 这不是"踩坑参考"，是**开发参照**——下次开发新的 loop 或 sub-agent 时，必须逐条对照本文档执行。每条标准都来自真实 debug 会话（附 commit hash + 根因），不是理论推演。
 >
-> v1.4.2 · 2026-08-28（UTC）· 孔放勋
->
-> v1.3.9 更新（2026-08-21）：引擎/工具开发通用坑位 7 项（TS7 API 剧变 / TS7 snapshot 缓存污染 / new Promise(resolve) 立即解析 / fs.readSync 返回数字 / ESM require 桥接 / DSH rc 守卫降级 / tools 分子目录根解析断裂）——见文末「v1.3.9 开发批次工程坑位」节
->
-> v1.2.9 run-12 更新（2026-08-08）：跨闭包变量引用、nohup 后台死亡、8GB 并发 OOM 三项新坑位
->
-> v1.3.0 run-21 更新（2026-08-09）：**产物完整性校验（防"假成功"）**、并行工具调用硬熔断超发、步骤级工具预算、LEDGER 假阳性污染四项新坑位
->
-> v1.3.0 run-22/23 更新（2026-08-09）：finding-NN 格式铁律（分类段落切 0 finding 假绿）、worker 写完产物不退出 → driver 永久 await（process.exit + spawn 超时兜底）、降级标记持久化（degraded.flag 防 a-verify 覆盖抹标记）
->
-> v1.3.0 release-gate run-21 更新（2026-08-09）：确定性判定优先（别让 LLM 解读可确定性解析的日志 + ANSI 剥离坑）、F 链收敛回写权威产物（verdict.md 同步）
->
-> v1.4.0 release-gate run-22 更新（2026-08-24）：DSH CLI 桥接 worker 无工具面 → precheck 证据由 driver 注入 prompt（含兜底路径 + 全量注入铁律）
-> v1.3.1 run-03 更新（2026-08-10）：降级判定一票否决误伤（改比例阈值 25%）、perspective worker 工具预算偏紧（12/15→15/20）、裸 LLM 降级产物缺结构校验（补 isReportText 门控 + 结构化占位）、连续降级熔断阈值过激进（2→3 轮）四项新坑位
 
 ## 本文档定位
 
@@ -28,7 +14,7 @@
 | **维护方式** | 每次踩到新坑或做出架构决策后，更新对应章节 + commit hash |
 | **不替代** | LangGraph / deepagents 官方文档——本文档讲"我们怎么用"，不讲"它是什么" |
 
-> 🔄 **定期整理机制（v1.3.9+ 分层修正配套）**：`FORGE/lessons/` 不在 check-docs 五层硬预算内（经验沉淀持续增长属正常，硬上限不合理）——由 check-docs **F 软检查**约束（只提示不阻断）：lessons 总量 > 3000 行时提示整理。**整理触发点**：① F 软检查提示（≥3000 行）② 每 3 个发版周期（季度级）。**整理动作**：归并重复教训（同根因只留一条 + 互相引用）、归档已泛化到 SOP/checklist/regression 的条目（移至 `FORGE/lessons/archive/`）、教训只写「问题 + 解决方案」不写考古（去日期去 run 编号，同用户级记忆铁律）。**目标**：index.md 保持「新 loop 开发者 30 分钟内读完」的体量，lessons 总量随沉淀可控增长。
+> 🔄 **定期整理机制（分层修正配套）**：`FORGE/lessons/` 不在 check-docs 五层硬预算内（经验沉淀持续增长属正常，硬上限不合理）——由 check-docs **F 软检查**约束（只提示不阻断）：lessons 总量 > 3000 行时提示整理。**整理触发点**：① F 软检查提示（≥3000 行）② 每 3 个发版周期（季度级）。**整理动作**：归并重复教训（同根因只留一条 + 互相引用）、归档已泛化到 SOP/checklist/regression 的条目（移至 `FORGE/lessons/archive/`）、教训只写「问题 + 解决方案」不写考古（去日期去 run 编号，同用户级记忆铁律）。**目标**：index.md 保持「新 loop 开发者 30 分钟内读完」的体量，lessons 总量随沉淀可控增长。
 
 > **与其他文档的关系**：架构全景看 [ARCHITECTURE.md](../../docs/ARCHITECTURE.md)，产品哲学看 [PHILOSOPHY.md](../../docs/PHILOSOPHY.md)，FORGE 双层循环架构看 [FORGE/README.md](../README.md)。本文档聚焦**开发层面**。
 
@@ -39,7 +25,7 @@
 | 章 | 文件 | 核心内容 |
 |---|------|---------|
 | 一·架构设计 | [./architecture.md](./architecture.md) | **执行后端三层（DSH CLI 桥接 → createReactAgent fallback → 禁 createDeepAgent）** · Driver-Worker 编排 · 步骤定义 · 目录架构 |
-| 二·模型配置 | [./models.md](./models.md) | MODEL_CONFIGS · **A/B/V/F 统一 deepseek-v4-flash（v1.3.9 起）** · 步骤级 maxTokens · 计费模式 |
+| 二·模型配置 | [./models.md](./models.md) | MODEL_CONFIGS · **A/B/V/F 统一 deepseek-v4-flash** · 步骤级 maxTokens · 计费模式 |
 | 三·性能优化 | [./performance.md](./performance.md) | 三层上下文裁剪（截断+stateModifier+preModelHook）· 效率铁律 · stream |
 | 四·Driver 编排 | [./driver.md](./driver.md) | **preflight-check 跑前自检** · recursionLimit · **三层熔断死循环防护** · **零信任复核（FAIL≠真实 bug）** · **DSH 桥接证据注入（无工具面）** · 失败容错 · 分片 · 停止条件 · 外部脚本 spawn · --step |
 | 五~八·Stream/Prompt/工具/可观测 | [./stream-prompt-tools.md](./stream-prompt-tools.md) | stream 迁移 P0 铁律 · BSD 约束 · 工具格式转换 · 两层可观测 |
@@ -52,7 +38,7 @@
 
 ### 🔰 架构与框架
 
-- [ ] **执行后端三层：DSH CLI 桥接默认 → createReactAgent fallback → 禁 createDeepAgent**（v1.4.0 起 worker 走 DSH，createReactAgent 仅 fallback；DSH 桥接无自定义工具面，审查证据由 driver 注入 prompt）（[一·框架选型](./architecture.md#框架选型执行后端三层dsh-cli-桥接--langgraph-createreactagent--禁用-createdeepagent)）
+- [ ] **执行后端三层：DSH CLI 桥接默认 → createReactAgent fallback → 禁 createDeepAgent**（worker 走 DSH，createReactAgent 仅 fallback；DSH 桥接无自定义工具面，审查证据由 driver 注入 prompt）（[一·框架选型](./architecture.md#框架选型执行后端三层dsh-cli-桥接--langgraph-createreactagent--禁用-createdeepagent)）
 - [ ] **Driver-Worker 分离**：Driver 纯编排不审查，Worker 零上下文独立进程（[一·Driver-Worker](./architecture.md#driver-worker-编排模式)）
 - [ ] **步骤在 STEPS 常量中定义**，含 role / prompt / outputs / inputs / maxTokens（[一·步骤定义](./architecture.md#步骤定义模式)）
 - [ ] **runs 目录放在 loop 自己目录下**，`.gitignore` 加 `FORGE/SKILL/*/runs/`（[一·目录架构](./architecture.md#目录架构每个-loop-自包含)）
@@ -61,12 +47,12 @@
 ### 🤖 模型配置
 
 - [ ] **MODEL_CONFIGS 定义完整字段**（[二·模型配置](./models.md#模型配置)）
-- [ ] **A/B/V/F 统一切 deepseek-v4-flash**（v1.3.9 起；双盲靠 prompt 视角不靠异构模型；权威源 FORGE/models/profile.mjs）（[二·模型配置](./models.md#模型配置)）
+- [ ] **A/B/V/F 统一切 deepseek-v4-flash**（双盲靠 prompt 视角不靠异构模型；权威源 FORGE/models/profile.mjs）（[二·模型配置](./models.md#模型配置)）
 - [ ] **Thinking-only 模型特殊处理已归档**（deepseek-v4-flash 非 thinking-only，历史记录供换回 thinking 模型时参考）（[二·Thinking-only](./models.md#thinking-模型特殊处理历史deepseek-v4-flash-不适用)）
 - [ ] **合并/汇总步骤 maxTokens = 32000**（[二·步骤级 maxTokens](./models.md#步骤级-maxtokens-覆盖)）
 - [ ] **计费模式标注**（subscription 的 cost_cny = null；deepseek-v4-flash 按量计费）
 
-### ⚡ 性能优化（v1.2.5+）
+### ⚡ 性能优化
 
 - [ ] **工具输出截断**：truncateToolOutput(text, 200)（[三·上下文管理](./performance.md#上下文管理三层裁剪截断--statemodifier--premodelhook)）
 - [ ] **上下文窗口裁剪**：stateModifier 保留 system + 首条 + 最后 16 条（[三·上下文管理](./performance.md#上下文管理三层裁剪截断--statemodifier--premodelhook)）
@@ -86,24 +72,24 @@
 - [ ] **extractAgentText 跳过空 content**（createReactAgent 中间消息全空）（[四·兜底报告](./driver.md#兜底报告合成)）
 - [ ] **并行 Worker 用 allSettled**（[四·allSettled](./driver.md#allsettled-并行降级)）
 - [ ] **parseStopCondition 做降级检测**（占位报告不算干净轮）（[四·降级检测](./driver.md#降级检测防假阳性干净)）
-- [ ] **降级判定用比例阈值不用一票否决**（短产物占比 > 25% 才判整轮降级，防 1 份短产物连累整轮——run-03 教训）（[四·一票否决误伤](./driver.md#降级判定一票否决误伤v131-run-03-教训)）
-- [ ] **裸 LLM 降级产物过 isReportText 门控**（所有降级路径质量标准一致，不达标返回结构化占位）（[四·降级产物结构校验](./driver.md#裸-llm-降级产物需过结构校验v131-run-03-教训)）
-- [ ] **产物完整性校验**（"有输出"≠"解析成功"；判定产物 result.md 空占位→降级重建，绝不静默跳过）（[四·产物完整性校验](./driver.md#产物完整性校验防假成功v130-run-21-教训)）
-- [ ] **判定产物必须可消费**（降级重建 result.md 用 `### finding-NN` 带优先级，别写 SKIP 表格让 b-fix 空转）（[四·产物完整性校验](./driver.md#产物完整性校验防假成功v130-run-21-教训)）
-- [ ] **必读文件多的步骤单独配工具预算**（a-consolidate 60/80；开放探索类压低 15/20；并行 tool_call 让硬熔断超发，45 实际撞 48-60）（[四·并行超发](./driver.md#并行工具调用让硬熔断超发--步骤级预算覆盖v130-run-21)）
-- [ ] **perspective worker 预算按真实负载调**（12 视角审查需读 3-5 文件，15/20 够用且不空转；别一刀切压太低导致普遍熔断——run-03 教训）（[四·perspective 预算偏紧](./driver.md#perspective-worker-工具预算偏紧导致普遍熔断v131-run-03-教训)）
-- [ ] **连续降级熔断阈值 >=3**（与 run-06 原始教训对齐，给偶发降级 1 次容错；>=2 在降级判定有误伤时会腰斩循环——run-03 教训）（[四·连续降级](./driver.md#连续降级-error-退出)）
-- [ ] **排查标记字符串防假阳性**（grep `===FILE:` 命中占位注释文本自身，用 `^===FILE:` 只匹配行首）（[四·产物完整性校验](./driver.md#产物完整性校验防假成功v130-run-21-教训)）
-- [ ] **result.md 必须用 finding-NN 结构**（分类段落 `### 🔴 P0 阻塞项` 切 0 finding 假绿；兜底 prompt 强制 + 检测扩展）（[四·产物完整性校验](./driver.md#产物完整性校验防假成功v130-run-21-教训)）
-- [ ] **worker 写完产物必须显式 process.exit(0)**（残留句柄让事件循环不清空 → 进程不退出 → driver 永久 await；心跳正常≠流程在走）（[四·worker 不退出](./driver.md#worker-写完产物不退出--driver-永久-awaitv130-run-23)）
-- [ ] **spawn 子进程必须配超时兜底**（30 分钟 SIGKILL + resolve 124，防任何 worker hang 卡死 driver）（[四·worker 不退出](./driver.md#worker-写完产物不退出--driver-永久-awaitv130-run-23)）
-- [ ] **降级状态独立持久化**（degraded.flag，勿放会被下游覆盖的产物里——a-verify 覆盖 result.md 抹掉标记致假绿）（[四·产物完整性校验](./driver.md#产物完整性校验防假成功v130-run-21-教训)）
-- [ ] **确定性判定优先**（能用正则/确定性规则判定的结果不让 LLM 解读——日志总结行是权威；解析脚本日志先剥离 ANSI 颜色码）（[四·确定性判定](./driver.md#确定性判定优先别让-llm-解读能确定性解析的日志v130-run-21)）
-- [ ] **driver 状态变量变化要回写权威产物**（F 链收敛 PASS 必须同步 verdict.md，否则文件与 status 矛盾）（[四·F 链收敛](./driver.md#f-链收敛要回写权威产物verdictmd-同步)）
-- [ ] **命令从 LLM 剥离要贯彻到底——证据也剥离**（worker 无工具面时（DSH CLI 桥接）precheck 证据由 driver 直接注入 userMessage，不依赖 worker 读文件；DSH/LangGraph 双后端兼容）（[四·DSH 证据注入](./driver.md#2026-08-24-dsh-cli-桥接worker-无工具面--precheck-证据必须由-driver-注入-promptrelease-gate-run-0422-实录)）
-- [ ] **降级兜底路径也要带证据**（generateReportWithoutTools 硬熔断兜底同样接收 precheckEvidence，否则 DSH 下兜底报告永远「0 条工具结果」）（[四·DSH 证据注入](./driver.md#2026-08-24-dsh-cli-桥接worker-无工具面--precheck-证据必须由-driver-注入-promptrelease-gate-run-0422-实录)）
-- [ ] **审查证据注入要全量**（coverage 252 场景 num+title 实测仅 14.8KB——先实测体积再决定是否截断；截断让模型「猜」不如全量让模型判断）（[四·DSH 证据注入](./driver.md#2026-08-24-dsh-cli-桥接worker-无工具面--precheck-证据必须由-driver-注入-promptrelease-gate-run-0422-实录)）
-- [ ] **连续两轮同症状 = 系统性缺陷，不是环境抖动**（run-04/05 判「抖动重跑」run-05 复现才确认代码缺陷——重跑前先查根因）（[四·DSH 证据注入](./driver.md#2026-08-24-dsh-cli-桥接worker-无工具面--precheck-证据必须由-driver-注入-promptrelease-gate-run-0422-实录)）
+- [ ] **降级判定用比例阈值不用一票否决**（短产物占比 > 25% 才判整轮降级，防 1 份短产物连累整轮）（[四·一票否决误伤](./driver.md#-降级判定一票否决误伤)）
+- [ ] **裸 LLM 降级产物过 isReportText 门控**（所有降级路径质量标准一致，不达标返回结构化占位）（[四·降级产物结构校验](./driver.md#-裸-llm-降级产物需过结构校验)）
+- [ ] **产物完整性校验**（"有输出"≠"解析成功"；判定产物 result.md 空占位→降级重建，绝不静默跳过）（[四·产物完整性校验](./driver.md#-产物完整性校验防假成功)）
+- [ ] **判定产物必须可消费**（降级重建 result.md 用 `### finding-NN` 带优先级，别写 SKIP 表格让 b-fix 空转）（[四·产物完整性校验](./driver.md#-产物完整性校验防假成功)）
+- [ ] **必读文件多的步骤单独配工具预算**（a-consolidate 60/80；开放探索类压低 15/20；并行 tool_call 让硬熔断超发，45 实际撞 48-60）（[四·并行超发](./driver.md#并行工具调用让硬熔断超发--步骤级预算覆盖)）
+- [ ] **perspective worker 预算按真实负载调**（12 视角审查需读 3-5 文件，15/20 够用且不空转；别一刀切压太低导致普遍熔断）（[四·perspective 预算偏紧](./driver.md#-perspective-worker-工具预算偏紧导致普遍熔断)）
+- [ ] **连续降级熔断阈值 >=3**（给偶发降级 1 次容错；>=2 在降级判定有误伤时会腰斩循环）（[四·连续降级](./driver.md#连续降级-error-退出)）
+- [ ] **排查标记字符串防假阳性**（grep `===FILE:` 命中占位注释文本自身，用 `^===FILE:` 只匹配行首）（[四·产物完整性校验](./driver.md#-产物完整性校验防假成功)）
+- [ ] **result.md 必须用 finding-NN 结构**（分类段落 `### 🔴 P0 阻塞项` 切 0 finding 假绿；兜底 prompt 强制 + 检测扩展）（[四·产物完整性校验](./driver.md#-产物完整性校验防假成功)）
+- [ ] **worker 写完产物必须显式 process.exit(0)**（残留句柄让事件循环不清空 → 进程不退出 → driver 永久 await；心跳正常≠流程在走）（[四·worker 不退出](./driver.md#-worker-写完产物不退出--driver-永久-await)）
+- [ ] **spawn 子进程必须配超时兜底**（30 分钟 SIGKILL + resolve 124，防任何 worker hang 卡死 driver）（[四·worker 不退出](./driver.md#-worker-写完产物不退出--driver-永久-await)）
+- [ ] **降级状态独立持久化**（degraded.flag，勿放会被下游覆盖的产物里——a-verify 覆盖 result.md 抹掉标记致假绿）（[四·产物完整性校验](./driver.md#-产物完整性校验防假成功)）
+- [ ] **确定性判定优先**（能用正则/确定性规则判定的结果不让 LLM 解读——日志总结行是权威；解析脚本日志先剥离 ANSI 颜色码）（[四·确定性判定](./driver.md#-确定性判定优先别让-llm-解读能确定性解析的日志)）
+- [ ] **driver 状态变量变化要回写权威产物**（F 链收敛 PASS 必须同步 verdict.md，否则文件与 status 矛盾）（[四·F 链收敛](./driver.md#-f-链收敛要回写权威产物verdictmd-同步)）
+- [ ] **命令从 LLM 剥离要贯彻到底——证据也剥离**（worker 无工具面时（DSH CLI 桥接）precheck 证据由 driver 直接注入 userMessage，不依赖 worker 读文件；DSH/LangGraph 双后端兼容）（[四·DSH 证据注入](./driver.md#dsh-cli-桥接worker-无工具面--precheck-证据必须由-driver-注入-prompt实录)）
+- [ ] **降级兜底路径也要带证据**（generateReportWithoutTools 硬熔断兜底同样接收 precheckEvidence，否则 DSH 下兜底报告永远「0 条工具结果」）（[四·DSH 证据注入](./driver.md#dsh-cli-桥接worker-无工具面--precheck-证据必须由-driver-注入-prompt实录)）
+- [ ] **审查证据注入要全量**（coverage 252 场景 num+title 实测仅 14.8KB——先实测体积再决定是否截断；截断让模型「猜」不如全量让模型判断）（[四·DSH 证据注入](./driver.md#dsh-cli-桥接worker-无工具面--precheck-证据必须由-driver-注入-prompt实录)）
+- [ ] **连续两轮同症状 = 系统性缺陷，不是环境抖动**（曾判「抖动重跑」复现才确认代码缺陷——重跑前先查根因）（[四·DSH 证据注入](./driver.md#dsh-cli-桥接worker-无工具面--precheck-证据必须由-driver-注入-prompt实录)）
 - [ ] **连续 2 轮降级直接 error 退出**（[四·连续降级](./driver.md#连续降级-error-退出)）
 - [ ] **硬熔断 break 后 stream.return()**（防幽灵请求）（[四·stream.return](./driver.md#streamreturn-防幽灵api-请求)）
 - [ ] **每个步骤 try/catch + 降级兜底**（[四·失败路径容错](./driver.md#失败路径容错)）
@@ -111,18 +97,18 @@
 - [ ] **finding >10 条时分片执行**（[四·分片执行](./driver.md#分片执行模式)）
 - [ ] **停止条件只数标记不做语义判断**（[四·停止条件](./driver.md#停止条件判定)）
 - [ ] **spawn 外部脚本时流式写入日志**（[四·外部脚本](./driver.md#外部脚本-spawn-生存规范)）
-- [ ] **FAIL 判定必须零信任复核**（亲手实跑检查命令，FAIL≠真实 bug；命令缺陷修 checklist 不修产品代码）（[四·零信任复核](./driver.md#零信任复核worker-的-fail-判定不可全信v125-run-0608-教训)）
+- [ ] **FAIL 判定必须零信任复核**（亲手实跑检查命令，FAIL≠真实 bug；命令缺陷修 checklist 不修产品代码）（[四·零信任复核](./driver.md#-零信任复核worker-的-fail-判定不可全信)）
 - [ ] **child.on('close') 处理 signal 参数**（被 kill 时 code=null）（[四·外部脚本](./driver.md#外部脚本-spawn-生存规范)）
 - [ ] **shell 脚本中禁用 `| head -N`**（pipefail + SIGPIPE）（[四·外部脚本](./driver.md#外部脚本-spawn-生存规范)）
 - [ ] **长脚本每 30s 输出 progress 日志**（[四·外部脚本](./driver.md#外部脚本-spawn-生存规范)）
 - [ ] **init 内部设 SOFAGENT_SKIP_HOOK=1**（[四·SKIP_HOOK](./driver.md#sofagent_skip_hook----skip-acceptance----step)）
 - [ ] **driver 支持 --skip-acceptance**（[四·--skip-acceptance](./driver.md#sofagent_skip_hook----skip-acceptance----step)）
 - [ ] **driver 支持 --step 单步模式**（[四·--step](./driver.md#sofagent_skip_hook----skip-acceptance----step)）
-- [ ] **沙箱环境加 --max-old-space-size=1536**（v1.2.5 run-07 教训：768 在长循环 OOM）（[四·V8 heap](./driver.md#v8-heap-限制--max-old-space-size反直觉优化)）
-- [ ] **跨闭包变量提到 agent 定义前**（stateModifier 和 invokeAgent 是平行闭包，不可见对方局部变量）（[四·跨闭包变量](./driver.md#跨闭包变量引用js-作用域陷阱v129-run-07)）
-- [ ] **后台启动用 Bash 工具 run_in_background，禁用 nohup+disown**（WorkBuddy 清理脱离进程）（[四·nohup 不安全](./driver.md#nohupdisown-在-workbuddy-中不安全v129-run-0711)）
-- [ ] **启动前算并发上限**（并发 ≤ floor((RAM - 3GB) / worker_heap_limit)；heap=1024 时 8GB 默认 2、16GB+ 可 4）（[三·并发内存](./performance.md#并发-worker-总内存计算v129-run-0809)）
-- [ ] **worker heap 按真实负载定，不按最坏场景定**（grep/read 型负载 1024 够；上限≠占用，降上限只挪 OOM 保险丝位置——遇 OOM 再回退）（[三·heap 降半](./performance.md#worker-heap-降半--默认并发-422026-08-16-run-07-优化)）
+- [ ] **沙箱环境加 --max-old-space-size=1536**（教训：768 在长循环 OOM）（[四·V8 heap](./driver.md#v8-heap-限制--max-old-space-size反直觉优化)）
+- [ ] **跨闭包变量提到 agent 定义前**（stateModifier 和 invokeAgent 是平行闭包，不可见对方局部变量）（[四·跨闭包变量](./driver.md#-跨闭包变量引用js-作用域陷阱)）
+- [ ] **后台启动用 Bash 工具 run_in_background，禁用 nohup+disown**（WorkBuddy 清理脱离进程）（[四·nohup 不安全](./driver.md#-nohupdisown-在-workbuddy-中不安全)）
+- [ ] **启动前算并发上限**（并发 ≤ floor((RAM - 3GB) / worker_heap_limit)；heap=1024 时 8GB 默认 2、16GB+ 可 4）（[三·并发内存](./performance.md#-并发-worker-总内存计算)）
+- [ ] **worker heap 按真实负载定，不按最坏场景定**（grep/read 型负载 1024 够；上限≠占用，降上限只挪 OOM 保险丝位置——遇 OOM 再回退）（[三·heap 降半](./performance.md#worker-heap-降半--默认并发-42)）
 
 ### 🔴 stream 迁移（如做 invoke→stream 改造时必查）
 
@@ -153,42 +139,6 @@
 ---
 
 ## 十、附录
-
-### 修复时间线
-
-| 时间 | commit | 问题 | 级别 | 对应章节 |
-|------|--------|------|------|---------|
-| 07-25 | 4a4a143 | 失败路径可见性缺口 | P1 | 四·失败路径容错 |
-| 07-25 | e4ba836 | middleware:[] 假修复 | P0（假修复） | 一·框架选型 |
-| 07-26 | 9a9c5dc | createDeepAgent → createReactAgent | P0 | 一·框架选型 |
-| 07-26 | 3248395 | recursionLimit 按步骤 + macOS 约束 + 降级 | P1 | 四·recursionLimit / 六·BSD 约束 |
-| 07-26 | 8cd7b23 | runs 目录迁回原位（架构纠偏） | P2 | 一·目录架构 |
-| 08-01 | 63b130d | 步骤级 maxTokens 覆盖（consolidate 32000） | P1 | 二·步骤级 maxTokens |
-| 08-01 | da1039a | 四项 ReAct 性能优化（截断+裁剪+铁律+stream） | P1 | 三·上下文管理 / 效率铁律 / 流式输出 |
-| 08-01 | a0571a4 | stream 迁移 finalState 数据丢失 | P0 | 五·stream 迁移 |
-| 08-01 | 35cfb22 | 外部脚本 spawn 生存（流式日志+signal+head 管道） | P1 | 四·外部脚本 spawn 生存 |
-| 08-01 | ae6f1c0 | spawn 生存规范文档化 | P2 | 四·外部脚本 spawn 生存 |
-| 08-01 | 0d3c36e | SOFAGENT_SKIP_HOOK 防递归 + driver --skip-acceptance | P2 | 四·SKIP_HOOK |
-| 08-01 | c1fab22 | 检查清单+附录同步 | P2 | 四·--skip-acceptance |
-| 08-01 | 3530200 | 单步模式 + bash 编排脚本（跨步骤 OOM） | P0 | 四·--step |
-| 08-01 | 95583e2 | preModelHook 物理裁剪 + --max-old-space-size=768（v1.2.5 起上调 1536） | P0 | 三·上下文管理 / 四·V8 heap |
-| 08-02 | 95cd74a | worker 工具调用预算 prompt 铁律 + recursionLimit 熔断 | P1 | 四·死循环防护（L0） |
-| 08-02 | ca9e329 | stateModifier 工具计数硬熔断 + allSettled 降级 + No such file 检测 | P0 | 四·死循环防护（L1/L2） |
-| 08-02 | a610d5d | recursionLimit 130 + extractAgentText 空内容抢救 | P1 | 四·recursionLimit / 四·兜底报告 |
-| 08-02 | dd5dde2 | P2 审查修复 × 3（注释措辞 + magic number 顶层化 + stream.return） | P2 | 四·死循环防护 |
-| 08-02 | f240594 | parseStopCondition 降级检测——占位文件不算干净轮 | P0 | 四·降级检测防假阳性干净 |
-| 08-02 | 701582a | L2 改两阶段写报告窗口 + 连续降级 error 退出 + 兜底合成报告 | P0 | 四·L2 两阶段 / 四·兜底报告 |
-| 08-08 | run-07 | effectiveHardLimit 跨闭包引用——stateModifier 定义→invokeAgent 引用 | P0 | 四·跨闭包变量引用 |
-| 08-08 | run-07~11 | nohup+disown 后台进程被 WorkBuddy 清理（4 次静默死亡） | P0 | 四·nohup 不安全 |
-| 08-08 | run-08~09 | 8GB 机器并发 3/6 worker OOM（各 worker 2GB heap） | P0 | 三·并发 worker 总内存 |
-| 08-09 | d152f1d2 | a-consolidate 假成功——兜底产物缺 ===FILE: 分隔符→result.md 判空→假 2-rounds-clean（findings 全丢） | P0（假阳性） | 四·产物完整性校验 |
-| 08-09 | d152f1d2 | 并行 tool_call 回合边界检查超发 + 步骤级工具预算（a-consolidate 60/80） | P1 | 四·并行超发 |
-| 08-09 | 30c31afe | result.md 分类段落格式切 0 finding 假绿（finding-NN 格式铁律 + 检测扩展） | P0（假阳性） | 四·产物完整性校验 |
-| 08-09 | 3b99a853 | worker 写完产物不退出 → driver 永久 await 18 分钟（process.exit + spawn 30min 超时兜底） | P0（卡死） | 四·worker 不退出 |
-| 08-09 | 33bbb6eb | a-verify 覆盖 result.md 抹掉降级标记 → 降级轮假绿（degraded.flag 持久化） | P0（假阳性） | 四·产物完整性校验 |
-| 08-09 | d4c797c3 | release-gate acceptance 误判 FAIL——worker 把 grep exit code 当脚本退出码 + ANSI 码致正则失败（确定性日志判定） | P0（假 FAIL） | 四·确定性判定 |
-| 08-09 | d4c797c3 | F 链收敛 PASS 但 verdict.md 仍 FAIL——状态变化未回写权威产物 | P1 | 四·F 链收敛 |
-| 08-09 | 待提交 | preflight-check 跑前自检模块（六项检查；管道检测从 HALT 修正为 WARN 防误杀冒烟测试） | P1（预防） | 四·preflight-check |
 
 ### 历史坑位索引
 
@@ -233,17 +183,17 @@
 
 | 决策 | 选择 | 理由 |
 |------|------|------|
-| 执行后端 | DSH CLI 桥接（v1.4.0 起） | 用户拍板必须走 DeepSeek Harness；createReactAgent 降级为 fallback；createDeepAgent 禁用（FilesystemMiddleware 硬编码） |
+| 执行后端 | DSH CLI 桥接 | 用户拍板必须走 DeepSeek Harness；createReactAgent 降级为 fallback；createDeepAgent 禁用（FilesystemMiddleware 硬编码） |
 | Agent 框架（fallback） | createReactAgent | createDeepAgent 硬编码 FilesystemMiddleware |
 | 进程模型 | spawn 子进程 | 零上下文继承，步骤间文件传递 |
 | 沙箱执行 | --step 单步模式 + 外层编排 | 每步全新进程退出，内存归零 |
-| 沙箱内存 | --max-old-space-size=1024 | v1.2.5 起 768→1536；v1.2.9 run-09 调至 2048；2026-08-16 run-07 实测负载轻降半至 1024（OOM 即回退 2048） |
-| 后台启动 | Bash 工具 run_in_background | nohup+disown 被 WorkBuddy 清理（run-07~11 教训） |
-| 并发上限 | floor((RAM - 3GB) / 1GB)，默认 2 | 2026-08-16 run-07：heap 降 1024 后 8GB 默认 2（旧公式 heap 2GB 时 8GB 取 1）；16GB+ 可开 4（run-08~09 OOM 教训 + run-07 优化） |
+| 沙箱内存 | --max-old-space-size=1024 | 实测负载轻降半至 1024（OOM 即回退 2048） |
+| 后台启动 | Bash 工具 run_in_background | nohup+disown 被 WorkBuddy 清理（教训） |
+| 并发上限 | floor((RAM - 3GB) / 1GB)，默认 2 | heap 降 1024 后 8GB 默认 2；16GB+ 可开 4（OOM 教训 + 实测优化） |
 | 上下文注入（fallback） | stateModifier（非 prompt） | 互斥约束 + 可同时做裁剪（仅 LangGraph fallback 路径；DSH 桥接无 state.messages） |
 | 上下文物理裁剪（fallback） | preModelHook | stateModifier 只裁 prompt，preModelHook 物理替换 messages（仅 LangGraph fallback 路径） |
 | 执行模式（fallback） | stream（非 invoke） | 实时进度打印（仅 LangGraph fallback 路径；DSH 桥接 execFile 无 stream） |
-| 证据注入（DSH 桥接） | driver 预执行注入 userMessage | worker 无自定义工具面，precheck 证据必须随 prompt 送达（run-04~22 教训） |
+| 证据注入（DSH 桥接） | driver 预执行注入 userMessage | worker 无自定义工具面，precheck 证据必须随 prompt 送达（教训） |
 | 输出截断 | 200 行（头尾各 100） | 平衡信息与上下文膨胀 |
 | prompt 窗口 | 最后 16 条（stateModifier） | 最后 8 轮工具交互（仅 LangGraph fallback 路径） |
 | 物理消息窗口 | 最后 20 条（preModelHook） | state.messages 上限（仅 LangGraph fallback 路径） |
@@ -252,17 +202,17 @@
 | 死循环防护 | 三层熔断（L1 软 50→L2 硬 60 窗口 5→L3 recursionLimit 130） | prompt 管不住 Qwen3.8 |
 | 降级检测 | DEGRADATION_MARKERS 5 标记词 + isClean 前置 !isDegraded | 占位报告不算干净轮 |
 | 连续降级 | 2 轮直接 fatal-error 退出 | 三层熔断全被打穿时止损 |
-| 产物完整性 | 判定产物（result.md）空占位/格式不符→降级重建为可修 finding | "有输出"≠"解析成功"；判定产物永远可解析（run-21/22 假成功教训） |
+| 产物完整性 | 判定产物（result.md）空占位/格式不符→降级重建为可修 finding | "有输出"≠"解析成功"；判定产物永远可解析（假成功教训） |
 | 步骤级工具预算 | 必读文件多→单独 toolSoftLimit/toolHardLimit（consolidate 60/80） | 并行 tool_call 让硬熔断超发；开放探索类压低（12/15） |
-| worker 退出 | 写完全部产物后强制 process.exit(0) + spawn 30min 超时 SIGKILL | 残留句柄让事件循环不清空→进程不退出→driver 永久 await（run-23） |
-| 结果判定 | 确定性规则优先（日志总结行正则 + ANSI 剥离），LLM 解读仅兜底 | LLM 解读日志误判（grep exit code 幻觉/WARN 当 FAIL）致 F 链空跑（run-21） |
-| 状态一致性 | driver 状态变化必须回写权威产物（F 收敛同步 verdict.md） | 文件与 status 矛盾，监控端拿到互相冲突的结论（run-21） |
+| worker 退出 | 写完全部产物后强制 process.exit(0) + spawn 30min 超时 SIGKILL | 残留句柄让事件循环不清空→进程不退出→driver 永久 await |
+| 结果判定 | 确定性规则优先（日志总结行正则 + ANSI 剥离），LLM 解读仅兜底 | LLM 解读日志误判（grep exit code 幻觉/WARN 当 FAIL）致 F 链空跑 |
+| 状态一致性 | driver 状态变化必须回写权威产物（F 收敛同步 verdict.md） | 文件与 status 矛盾，监控端拿到互相冲突的结论 |
 
 ---
 
-## v1.3.9 开发批次工程坑位（2026-08-21 · 引擎/工具开发通用经验）
+## 引擎/工具开发通用坑位
 
-> **来源**：v1.3.9 十二项交付开发实录（commit 3292e1eb~0b07bf4d）。与上文 driver 编排规范不同，本节是**引擎/工具层开发**的通用坑位——不限于 FORGE loop 开发，适用于任何 TS/Node 模块开发。每条附根因，开发前对照。
+> **来源**：引擎/工具层开发实录。与上文 driver 编排规范不同，本节是**引擎/工具层开发**的通用坑位——不限于 FORGE loop 开发，适用于任何 TS/Node 模块开发。每条附根因，开发前对照。
 
 | # | 坑位 | 根因 | 修复/铁律 | 涉及模块 |
 |---|------|------|----------|---------|
@@ -271,28 +221,28 @@
 | 3 | **`new Promise(entry.resolve)` 立即解析**——resolve 函数被当值 | JS Promise 构造器把 executor 视为 `(resolve, reject) => {}`，`entry.resolve` 传进去立即 fulfilled | pending 直接持有 `deliveryPromise` 本体（`new Promise(res => { release = res })`），等待方 `await entry.deliveryPromise`——多消费者共享同一 promise | meta-harness waitForDelivery |
 | 4 | **`fs.readSync` 返回数字**——不是 `{ bytesRead }` 对象 | readSync 同名易与流式 API（read 返回对象）混淆 | 解构 `{ bytesRead }` 得 undefined → 死循环 OOM；必须接数字返回值 | diff-parser spill 读回 |
 | 5 | **ESM 中 `require` 不可用**——ReferenceError | ESM 文件无 require 全局 | `createRequire(import.meta.url)` 桥接 | execution-backend / gate-tools |
-| 6 | **DSH rc 守卫拦截**——preferred=dsh 降级到 LangGraph | DSH npm 仅 rc 版（@deepseek-ai/dsh@0.1.0-rc.8），v1.3.6 守卫按设计拦截 | 如实记录降级（A/B 实测产物一致），DSH 正式版发布后自动切换无需改代码 | execution-backend |
+| 6 | **DSH rc 守卫拦截**——preferred=dsh 降级到 LangGraph | DSH npm 仅 rc 版（@deepseek-ai/dsh@0.1.0-rc.8），守卫按设计拦截 | 如实记录降级（A/B 实测产物一致），DSH 正式版发布后自动切换无需改代码 | execution-backend |
 | 7 | **tools 物理分子目录后根解析断裂**——`dirname $0/..` 全断 | 脚本移动后相对路径层级变深 | 批量改 `../..`（16 处）；glob 工具脚本改 `find` 递归；serve-dashboard 默认路由同步 | tools/ 分子目录 |
 
-### 阶段四补充（2026-08-21 · 草稿工具适配）
+### 草稿工具适配补充
 
 | # | 坑位 | 根因 | 修复 | 涉及 |
 |---|------|------|------|------|
 | 8 | **草稿工具模型配置漂移**——gen-draft-lib 硬编码 GLM-5.2，FORGE 切 deepseek 后仍调 GLM | 模型配置未与 FORGE/models/profile.mjs 同源 | loadModelConfig 同步解析 profile.mjs A 角色（纯文本正则，零异步——同步函数不能用动态 import） | gen-draft-lib.mjs |
 | 9 | **16 视角完整性校验格式不兼容**——deepseek 输出「视角N：名称」带冒号/全角引号，校验查「视角N 名称」 | 校验硬编码 GLM 输出风格 | 归一化剥离引号 + 正则 `视角N[：:\s]名称` 兼容三种风格 | gen-fresh-eyes-draft.mjs |
 
-### DSH rc.8 CLI 桥接适配（2026-08-21 · 执行后端真实路径打通）
+### DSH rc.8 CLI 桥接适配（执行后端真实路径打通）
 
 | # | 坑位 | 根因 | 修复/铁律 | 涉及 |
 |---|------|------|----------|------|
-| 10 | **npm install 解析大依赖树在 8GB 机器 OOM**——dsh 60+ 包树把 V8 heap 2GB 打爆（FATAL heap out of memory）；NODE_OPTIONS 4GB 又物理 OOM 撞 driver worker（SIGKILL） | 8GB 机器内存天花板（同 run-12 教训） | **pnpm store 硬链接**（解析器内存占用远小于 npm）；独立目录装 + 拷 @deepseek-ai/.pnpm 到根 node_modules（symlink 相对路径保持有效）；`pnpm approve-builds` 处理原生模块构建 | DSH 安装 |
+| 10 | **npm install 解析大依赖树在 8GB 机器 OOM**——dsh 60+ 包树把 V8 heap 2GB 打爆（FATAL heap out of memory）；NODE_OPTIONS 4GB 又物理 OOM 撞 driver worker（SIGKILL） | 8GB 机器内存天花板（同 8GB 天花板教训） | **pnpm store 硬链接**（解析器内存占用远小于 npm）；独立目录装 + 拷 @deepseek-ai/.pnpm 到根 node_modules（symlink 相对路径保持有效）；`pnpm approve-builds` 处理原生模块构建 | DSH 安装 |
 | 11 | **@deepseek-ai/dsh rc.8 是纯 CLI 包**——main undefined / bin lib/bin.js / 无 exports，`import('@deepseek-ai/dsh')` 直接失败（无库入口） | rc 期包形态未定型（rc.6 假设 plugin 导出，rc.8 变纯 CLI） | 守卫设计正确（rc 拦截等正式版）；想先用 → **CLI 桥接**：`require.resolve('@deepseek-ai/dsh/package.json')` 定位 bin（package.json 是文件路径不受无 main 影响）+ spawn `--profile headless <task>` 单任务执行 | dsh-backend / execution-backend |
 | 12 | **rc.8 headless 无工具面**——headless profile 只挂 dsh-base+dsh-headless（无 dsh-tool-*） | headless 定位是纯文本单轮问答 | 能力边界诚实标注：tools 传入 WARN 不生效；预算熔断退化外层超时；工具支持排正式版（Cordis 内嵌自动升级） | createDshCliBackend |
 | 13 | **CJS 编译目标下 `import.meta` 不可用**（TS1343）——orchestrator module=commonjs | TS 模块配置限制 | `createRequire(__filename)` 替代 `createRequire(import.meta.url)`；类型：modelConfig 是 `Record<string, unknown>` 须 `String()` 转义再当 env 索引 | dsh-backend |
-| 14 | **release-gate worker 无工具面 → 永远「0 条工具结果」判 FAIL**（run-04~07 连续失败）——worker prompt 要求「读 precheck.json（1 次 tool call）」，但 DSH CLI 桥接无法注入 task.tools，worker 读不到 → 报告「证据不足 P2 待证实」 | 只剥离了「命令执行」没剥离「证据读取」——方案 A 贯彻不彻底 | **precheck 证据内容由 driver 直接注入 userMessage**（buildPrecheckEvidence）+ 兜底函数也带 precheckEvidence（两层兜底都要证据）；覆盖 252 场景全量注入实测仅 14.8KB 不用截断 | release-gate-driver |
+| 14 | **release-gate worker 无工具面 → 永远「0 条工具结果」判 FAIL**（连续失败实录）——worker prompt 要求「读 precheck.json（1 次 tool call）」，但 DSH CLI 桥接无法注入 task.tools，worker 读不到 → 报告「证据不足 P2 待证实」 | 只剥离了「命令执行」没剥离「证据读取」——方案 A 贯彻不彻底 | **precheck 证据内容由 driver 直接注入 userMessage**（buildPrecheckEvidence）+ 兜底函数也带 precheckEvidence（两层兜底都要证据）；覆盖 252 场景全量注入实测仅 14.8KB 不用截断 | release-gate-driver |
 
-### 2026-08-24 追加：DSH Cordis 内嵌可行性验证（四·DSH 证据注入姊妹篇）
+### DSH Cordis 内嵌可行性验证（四·DSH 证据注入姊妹篇）
 
-- [ ] **判断第三方框架能力先读架构文档+实测**——插件架构下「库入口」可能是 boot()/loadProfile() 而非主包 import；只查主包 package.json main 字段会误判「不能内嵌」（[四·DSH Cordis 内嵌](./driver.md#2026-08-24-dsh-cordis-内嵌可行性验证推翻等正式版假设--run-0422-后续)）
-- [ ] **层 2 守卫探测失败 ≠ 功能不存在**——服务名/驱动方法契约随版本变（rc.2 是 AgentRegistry + agentLoop.createAgent，非 deliver/followup），先 `Object.getOwnPropertyNames(Object.getPrototypeOf(svc))` 查实际 API 再定（[四·DSH Cordis 内嵌](./driver.md#2026-08-24-dsh-cordis-内嵌可行性验证推翻等正式版假设--run-0422-后续)）
-- [ ] **Cordis 内嵌 rc.2 现在就能做**（非等正式版）：boot()+loadProfile()+注入 cmdlineArgs/appExit 两服务 + 驱动契约适配 agentLoop.createAgent——ROADMAP 决策已同步修正（[四·DSH Cordis 内嵌](./driver.md#2026-08-24-dsh-cordis-内嵌可行性验证推翻等正式版假设--run-0422-后续)）
+- [ ] **判断第三方框架能力先读架构文档+实测**——插件架构下「库入口」可能是 boot()/loadProfile() 而非主包 import；只查主包 package.json main 字段会误判「不能内嵌」（[四·DSH Cordis 内嵌](./driver.md#dsh-cordis-内嵌可行性验证推翻等正式版假设)）
+- [ ] **层 2 守卫探测失败 ≠ 功能不存在**——服务名/驱动方法契约随版本变（rc.2 是 AgentRegistry + agentLoop.createAgent，非 deliver/followup），先 `Object.getOwnPropertyNames(Object.getPrototypeOf(svc))` 查实际 API 再定（[四·DSH Cordis 内嵌](./driver.md#dsh-cordis-内嵌可行性验证推翻等正式版假设)）
+- [ ] **Cordis 内嵌 rc.2 现在就能做**（非等正式版）：boot()+loadProfile()+注入 cmdlineArgs/appExit 两服务 + 驱动契约适配 agentLoop.createAgent——ROADMAP 决策已同步修正（[四·DSH Cordis 内嵌](./driver.md#dsh-cordis-内嵌可行性验证推翻等正式版假设)）

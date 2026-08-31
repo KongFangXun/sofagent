@@ -6,7 +6,7 @@
 
 ## 五、stream 迁移规范（P0 级铁律 · LangGraph fallback 专属）
 
-> **🔴 v1.4.0 适用范围标注**：worker 走 DSH CLI 桥接时**无 stream**——`execFile(dsh --profile headless)` 是单次子进程执行、stdout 一次收齐，不存在 stream chunk 适配问题。本节适用于 **LangGraph fallback 路径**（createReactAgent 的 `agent.stream`），保留供 fallback / 未来 Cordis 内嵌参考。
+> **🔴 适用范围**：worker 走 DSH CLI 桥接时**无 stream**——`execFile(dsh --profile headless)` 是单次子进程执行、stdout 一次收齐，不存在 stream chunk 适配问题。本节适用于 **LangGraph fallback 路径**（createReactAgent 的 `agent.stream`），保留供 fallback / 未来 Cordis 内嵌参考。
 
 ### API 返回格式差异
 
@@ -35,7 +35,7 @@ return { messages: allMessages };  // 兼容 invoke 格式
 - [ ] **格式适配层**：累积 delta.messages → `{ messages: allMessages }`
 - [ ] **端到端验证**：检查产物文件 + usage.jsonl 有正常数据
 
-> **核心反思**（commit da1039a → a0571a4）：只测了上游"工具调用能打印"，没测下游"结果能被正确消费"。**这个 bug 只有 agent 实际跑完一轮后才暴露。**
+> **核心反思**：只测了上游"工具调用能打印"，没测下游"结果能被正确消费"。**这个 bug 只有 agent 实际跑完一轮后才暴露。**
 
 ---
 
@@ -43,7 +43,7 @@ return { messages: allMessages };  // 兼容 invoke 格式
 
 ### macOS BSD 工具约束（必加）
 
-LLM 训练数据以 Linux 为主，macOS 是 BSD，不约束就浪费步数重试错误命令（commit 3248395）。systemPrompt 末尾追加：
+LLM 训练数据以 Linux 为主，macOS 是 BSD，不约束就浪费步数重试错误命令。systemPrompt 末尾追加：
 
 ```js
 const shellConstraints = `
@@ -74,7 +74,7 @@ V 角色 systemPrompt 追加：禁止 write_file / edit_file / git commit / git 
 
 ## 七、工具开发规范
 
-> **🔴 v1.4.0 适用范围标注**：本节是 **LangGraph fallback 路径**（loadTools → DynamicStructuredTool）的规范。DSH CLI 桥接下 **sofagent 自定义工具不注入子进程**（task.tools 失效，dsh-backend.ts WARN）——worker 用 DSH 自带 bash/fs 工具链；审查证据由 driver 预执行注入 prompt（见 [四·DSH 证据注入](./driver.md#2026-08-24-dsh-cli-桥接worker-无工具面--precheck-证据必须由-driver-注入-promptrelease-gate-run-0422-实录)）。
+> **🔴 适用范围**：本节是 **LangGraph fallback 路径**（loadTools → DynamicStructuredTool）的规范。DSH CLI 桥接下 **sofagent 自定义工具不注入子进程**（task.tools 失效，dsh-backend.ts WARN）——worker 用 DSH 自带 bash/fs 工具链；审查证据由 driver 预执行注入 prompt（见 [四·DSH 证据注入](./driver.md#dsh-cli-桥接worker-无工具面--precheck-证据必须由-driver-注入-prompt实录)）。
 
 ### 工具格式转换
 
@@ -109,9 +109,9 @@ dist/tools.js 是手写 `ExecutableTool` 格式，LangGraph ToolNode 需要 `too
 
 darwin 平台 `caffeinate -dimsu -w <pid>` 绑定自身 pid，防 App Nap 冻结定时器。
 
-> **坑源**（run-03）：macOS App Nap 挂起后台 node 进程，driver 零感知冻结 2h44m。
+> **坑源**：macOS App Nap 挂起后台 node 进程，driver 零感知冻结 2h44m。
 
-## BSD 三坑补录（2026-08-19 check-review-system ⑦段开发实录）
+## BSD 三坑补录（check-review-system 开发实录）
 
 1. **BSD awk 多字节范围字符类失真**：`[一-龥]` 在多字节 locale 下把 em-dash「—」(U+2014) 判为 CJK——「——」把两侧词粘连成超长串。CJK 判定一律用 `perl -CSD + \p{Han}`（精确 Unicode 汉字类）。
 2. **LC_ALL=C 下 perl -CSD 直接 fatal**（Malformed UTF-8）：多字节工具链必须内联 `LC_ALL=en_US.UTF-8` 守卫，且空输出要防假阴性（标题非空而结果空 → WARN 不是 OK）。
