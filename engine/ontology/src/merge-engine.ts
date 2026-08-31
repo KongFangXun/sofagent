@@ -68,28 +68,90 @@ function parseFrontmatter(content: string): Record<string, unknown> | null {
   }
 }
 
+// ============================================================
+// v1.4.3 十三：解析失败实体跳过清单（静默跳过 → 可对账信号）
+// mergeOntology 每次运行把跳过记录落盘 ontology/skip-log.json，
+// doctor 侧（@sofagent/core）纯 fs 读取对账——叶子包不反向依赖 core。
+// ============================================================
+
+/** 单条跳过记录 */
+export interface OntologySkipEntry {
+  /** 实体文件名（entities/ 目录内相对名） */
+  file: string;
+  /** 病因分类：no-frontmatter（缺 --- 分隔符）/ yaml-error（YAML 语法错）/ unreadable（文件不可读） */
+  reason: 'no-frontmatter' | 'yaml-error' | 'unreadable';
+  /** 病因补充说明（YAML 异常消息等） */
+  detail?: string;
+}
+
+/** skip-log.json 落盘形状 */
+export interface OntologySkipLog {
+  /** 本次合并时间（ISO 8601） */
+  mergedAt: string;
+  /** 扫描的实体文件总数 */
+  scanned: number;
+  /** 跳过清单 */
+  skipped: OntologySkipEntry[];
+}
+
+/** 最近一次 mergeOntology 的内存跳过清单（模块级，进程内消费） */
+let _lastSkipLog: OntologySkipLog = { mergedAt: '', scanned: 0, skipped: [] };
+
+/**
+ * 读取最近一次 mergeOntology 的跳过清单（内存版，测试/进程内对账用）
+ */
+export function getLastMergeSkipLog(): OntologySkipLog {
+  return _lastSkipLog;
+}
+
+/**
+ * 判断 frontmatter 失败病因并分类记录。
+ * 独立小函数：scanEntityFrontmatter 的 catch 分支只拿到内容字符串，
+ * 分类逻辑收口在一处，doctor 与 merge 侧病因文案保持同源。
+ */
+function classifySkip(content: string, err: unknown): OntologySkipEntry['reason'] {
+  void err; // 读文件异常由调用方直接标 unreadable，此函数只处理内容分类
+  const normalized = content.replace(/^\uFEFF/, '').replace(/\r\n/g, '\n');
+  if (!/^---\n[\s\S]*?\n---/.test(normalized)) return 'no-frontmatter';
+  return 'yaml-error';
+}
+
 /**
  * 扫描 knowledge/entities/ 目录，提取 frontmatter relations
  */
 function scanEntityFrontmatter(knowledgeDir: string): OntologyObject[] {
   const objects: OntologyObject[] = [];
   const entitiesDir = join(knowledgeDir, 'entities');
+  const skips: OntologySkipEntry[] = [];
 
-  if (!existsSync(entitiesDir)) return objects;
+  if (!existsSync(entitiesDir)) {
+    _lastSkipLog = { mergedAt: new Date().toISOString(), scanned: 0, skipped: [] };
+    return objects;
+  }
 
   let files: string[];
   try {
     files = readdirSync(entitiesDir).filter((f) => f.endsWith('.md'));
   } catch {
+    _lastSkipLog = { mergedAt: new Date().toISOString(), scanned: 0, skipped: [] };
     return objects;
   }
 
   for (const file of files) {
     const filePath = join(entitiesDir, file);
+    let content: string;
     try {
-      const content = readFileSync(filePath, 'utf-8');
-      const fm = parseFrontmatter(content);
-      if (!fm) continue;
+      content = readFileSync(filePath, 'utf-8');
+    } catch (err) {
+      skips.push({ file, reason: 'unreadable', detail: err instanceof Error ? err.message : String(err) });
+      continue;
+    }
+    const fm = parseFrontmatter(content);
+    if (!fm) {
+      // v1.4.3 十三：静默跳过 → 记入跳过清单（skip-log.json 落盘 + 内存副本）
+      skips.push({ file, reason: classifySkip(content, null) });
+      continue;
+    }
 
       const name = (fm['title'] || fm['name'] || file.replace('.md', '')) as string;
       const type = (fm['type'] || 'entity') as string;
@@ -127,10 +189,10 @@ function scanEntityFrontmatter(knowledgeDir: string): OntologyObject[] {
         stale_after: staleAfter,
         verified,
       });
-    } catch {
-      // 跳过无法读取的文件
-    }
   }
+
+  // v1.4.3 十三：更新内存副本 + 落盘 skip-log.json（合并输出目录 ontology/ 下）
+  _lastSkipLog = { mergedAt: new Date().toISOString(), scanned: files.length, skipped: skips };
 
   return objects;
 }
@@ -349,7 +411,17 @@ export function mergeOntology(configDir: string): MergedOntology {
     }) as unknown as Record<string, unknown>))
   );
 
-  // 5. 返回合并结果
+  // 5. v1.4.3 十三：落盘跳过清单（doctor 对账「跳过数 vs 报告数」的事实源）
+  try {
+    atomicWriteSync(
+      join(ontologyDir, 'skip-log.json'),
+      JSON.stringify(_lastSkipLog, null, 2) + '\n'
+    );
+  } catch {
+    // skip-log 写失败不阻断合并主流程（诊断附属品，非数据本体）
+  }
+
+  // 6. 返回合并结果
   return {
     mergedAt: new Date().toISOString(),
     version: '1.0.5',

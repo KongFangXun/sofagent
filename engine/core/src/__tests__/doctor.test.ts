@@ -8,11 +8,42 @@
 //   「篡改（红）」与「历史不可复验（黄，key/环境漂移）」。
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { mkdtempSync, rmSync, writeFileSync } from 'fs';
+import { mkdtempSync, rmSync, writeFileSync, mkdirSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
 import * as auditHistory from '../audit-history';
 import { runDoctor } from '../doctor';
+
+/**
+ * v1.4.3 十三：Ontology 完整性检查测试的公共隔离装置。
+ * 沙箱 HOME（SOFAGENT_HOME + 白名单前缀，对齐 doctor-reset-baseline.test.ts 先例）+
+ * 链校验 mock（隔离 dist/审计噪音）+ console 静音（输出收集断言）。
+ * knowledge/ 与 ontology/ 布局按用例需要搭建。
+ */
+function setupOntologyTest() {
+  const tmpHome = mkdtempSync(join(tmpdir(), 'doctor-ontology-'));
+  vi.stubEnv('SOFAGENT_HOME', tmpHome);
+  // v1.3.2 path-traversal 白名单：/tmp 不在默认白名单，不设会回退真实 ~/.sofagent
+  vi.stubEnv('SOFAGENT_HOME_ALLOWED_PREFIXES', tmpdir());
+  vi.spyOn(console, 'log').mockImplementation(() => {});
+  vi.spyOn(console, 'error').mockImplementation(() => {});
+  vi.spyOn(auditHistory, 'checkHistoryChainDetailed').mockReturnValue({ status: 'ok' });
+
+  const entitiesDir = join(tmpHome, 'data', 'knowledge', 'entities');
+  const ontologyDir = join(tmpHome, 'data', 'ontology');
+  return {
+    tmpHome,
+    entitiesDir,
+    ontologyDir,
+    skipLogPath: join(ontologyDir, 'skip-log.json'),
+    output: () => (console.log as ReturnType<typeof vi.spyOn>).mock.calls.map((c) => String(c[0])).join('\n'),
+    cleanup: () => {
+      vi.unstubAllEnvs();
+      vi.restoreAllMocks();
+      try { rmSync(tmpHome, { recursive: true, force: true }); } catch { /* */ }
+    },
+  };
+}
 
 describe('doctor 审计日志链完整性校验', () => {
   let tmp: string;
@@ -92,5 +123,104 @@ describe('doctor 审计日志链完整性校验', () => {
       else process.env.SOFAGENT_HOME = savedHome;
       try { rmSync(fakeHome, { recursive: true, force: true }); } catch { /* */ }
     }
+  });
+});
+
+// ============================================================
+// v1.4.3 十三：Ontology 完整性检查
+// 验收（changelog 原文）：坏样本三件逐一 WARN 病因准确 / 正常目录零误报 /
+// 跳过对账一致（合并引擎跳过数与检查报告数一致）
+// ============================================================
+describe('doctor Ontology 完整性检查（v1.4.3 十三）', () => {
+  let t: ReturnType<typeof setupOntologyTest>;
+
+  beforeEach(() => { t = setupOntologyTest(); });
+  afterEach(() => { t.cleanup(); });
+
+  /** 写 skip-log.json（模拟 merge-engine 落盘） */
+  function writeSkipLog(skipped: Array<{ file: string; reason: string }>, scanned = 4) {
+    mkdirSync(t.ontologyDir, { recursive: true });
+    writeFileSync(t.skipLogPath, JSON.stringify({ mergedAt: new Date().toISOString(), scanned, skipped }), 'utf-8');
+  }
+
+  it('坏样本① 缺 --- 分隔符 → WARN 病因含「缺少 frontmatter」且文件路径准确', () => {
+    mkdirSync(t.entitiesDir, { recursive: true });
+    writeFileSync(join(t.entitiesDir, 'no-fm.md'), '# 只有正文，没有 frontmatter\n\n正文内容。\n', 'utf-8');
+    writeSkipLog([{ file: 'no-fm.md', reason: 'no-frontmatter' }]);
+    runDoctor(t.tmpHome);
+    const out = t.output();
+    expect(out).toContain('缺少 frontmatter');
+    expect(out).toContain(join(t.entitiesDir, 'no-fm.md'));
+    // repairHint 附模板样例与文档锚点
+    expect(out).toContain('title:');
+    expect(out).toContain('CHANGELOG v1.0.1');
+    // 跳过对账一致（1 = 1）
+    expect(out).toContain('跳过对账一致（合并引擎跳过 1 = doctor 报告 1）');
+  });
+
+  it('坏样本② frontmatter YAML 语法错误 → WARN 病因含「YAML 语法错误」', () => {
+    mkdirSync(t.entitiesDir, { recursive: true });
+    // 冒号后缺空格 + 未闭合引号 → js-yaml 抛错
+    writeFileSync(join(t.entitiesDir, 'bad-yaml.md'), '---\ntitle: "未闭合\nbad: [a, b\n---\n正文\n', 'utf-8');
+    writeSkipLog([{ file: 'bad-yaml.md', reason: 'yaml-error' }]);
+    runDoctor(t.tmpHome);
+    const out = t.output();
+    expect(out).toContain('YAML 语法错误');
+    expect(out).toContain(join(t.entitiesDir, 'bad-yaml.md'));
+    expect(out).toContain('跳过对账一致（合并引擎跳过 1 = doctor 报告 1）');
+  });
+
+  it('坏样本③ relations 字段拼写错 → WARN 病因含「非法字段名」并列出非法键', () => {
+    mkdirSync(t.entitiesDir, { recursive: true });
+    // has_many 拼成 hasMany（YAML 本身合法，纯字段名错）
+    writeFileSync(
+      join(t.entitiesDir, 'bad-rel.md'),
+      '---\ntitle: 测试实体\ntype: entity\nrelations:\n  hasMany: [其他实体]\n---\n正文\n',
+      'utf-8',
+    );
+    writeSkipLog([]); // YAML 合法 → 合并引擎不跳过此文件
+    runDoctor(t.tmpHome);
+    const out = t.output();
+    expect(out).toContain('非法字段名');
+    expect(out).toContain('hasMany');
+    expect(out).toContain(join(t.entitiesDir, 'bad-rel.md'));
+    expect(out).toContain('has_many / belongs_to / depends_on / produces / consumes');
+  });
+
+  it('正常 entities/ 目录零误报 + 对账一致（0 = 0）', () => {
+    mkdirSync(t.entitiesDir, { recursive: true });
+    writeFileSync(
+      join(t.entitiesDir, 'good.md'),
+      '---\ntitle: 合规实体\ntype: entity\nrelations:\n  has_many: [A, B]\n  belongs_to: [父]\n---\n正文\n',
+      'utf-8',
+    );
+    writeSkipLog([]);
+    runDoctor(t.tmpHome);
+    const out = t.output();
+    expect(out).toContain('Ontology 实体 frontmatter 全部合规');
+    expect(out).not.toContain('非法字段名');
+    expect(out).not.toContain('缺少 frontmatter');
+    expect(out).not.toContain('YAML 语法错误');
+    expect(out).toContain('跳过对账一致（合并引擎跳过 0 = doctor 报告 0）');
+  });
+
+  it('对账不一致 → WARN 指向重新合并（跳过数 vs 报告数脱钩可发现）', () => {
+    mkdirSync(t.entitiesDir, { recursive: true });
+    writeFileSync(join(t.entitiesDir, 'x.md'), '---\ntitle: X\n---\n正文\n', 'utf-8');
+    // 合并引擎记了 2 条跳过，但 doctor 侧当前目录零问题 → 不一致
+    writeSkipLog([{ file: 'gone-a.md', reason: 'yaml-error' }, { file: 'gone-b.md', reason: 'no-frontmatter' }]);
+    runDoctor(t.tmpHome);
+    const out = t.output();
+    expect(out).toContain('跳过对账不一致');
+    expect(out).toContain('记录 2 条跳过');
+    expect(out).toContain('doctor 本次报告 0 条');
+    expect(out).toContain('sofagent-ontology merge');
+  });
+
+  it('entities/ 不存在 → info 跳过（全新安装正常形态，不告警）', () => {
+    runDoctor(t.tmpHome);
+    const out = t.output();
+    expect(out).toContain('knowledge/entities/ 目录不存在');
+    expect(out).not.toContain('Ontology 实体');
   });
 });
