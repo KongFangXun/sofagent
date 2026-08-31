@@ -1,4 +1,4 @@
-# 阶段十一：分发（Skill / DSH plugin / OpenClaw plugin / 设备端）
+# 阶段十一：分发（Skill / DSH plugin / OpenClaw plugin / GitHub Marketplace / 设备端）
 
 > **项目负责人亲手执行，或授权 AI 代执行。npm 发布流水线（本阶段前置）见 [10-publish.md](./10-publish.md) 步骤一~八。**
 
@@ -108,6 +108,28 @@ done
 > - **必须先 push 再发布**（source-linked 从 GitHub 拉源码；未 push 时真实发布失败，dry-run 只能验证格式）
 > - 版本号 = 与 sofagent 主线版本对齐（同 DSH 家族机制）
 > - 每版发版都要推，与 SKILL / DSH plugin 分发同等强制
+
+---
+
+## 步骤二·b：GitHub Marketplace 分发（v1.4.2 起 · 每版必做）
+
+> **背景**：sofagent 的 GitHub Action 形态（action.yml）已上线 GitHub Marketplace（listing：`github.com/marketplace/actions/sofagent`，Primary=Code review / Secondary=Utilities）。marketplace 版本列表跟随 release——**每次发新版，release 发布时必须勾选 Publish to Marketplace**，否则该版本不出现在 marketplace 版本页。
+
+**操作（release 编辑页，网页操作）**：
+
+1. 打开仓库 Releases 页 → 找到本版 release → 右侧铅笔 **Edit**
+2. 勾选 **「Publish this Action to the GitHub Marketplace」**
+3. 核对类目不变（Code review / Utilities），**勿勾 pre-release**
+4. 底部 **Update release** → 2FA 验证 → 即时生效
+
+**铁律**：
+
+- 🔴 **action.yml 的 `name: 'sofagent'` 不得改动**——marketplace 按 name 关联 listing，改名 = 原 listing 失联
+- 🔴 **description ≤ 125 字符（Unicode 码点）**——marketplace 校验硬门槛，中英混排易超限；安全模式 = 英文主句 + 短中文后缀
+- 🔴 **新建 release 会撞已有 tag 报「invalid tag」**——marketplace 发布走**编辑已有 release** 路径（action.yml 文件页横幅的 Draft a release 仅首次/新 tag 用）
+- listing 元数据（name/description/icon/color）读**默认分支当前 action.yml**——改描述后 push 即生效，与 release 无关
+- 引用方 workflow 钉 tag（`KongFangXun/sofagent@vX.Y.Z`），新版不改变已有用户行为
+- 发版时 action.yml 内 `npx -p @sofagent/audit@X.Y.Z` 版本号同步 bump（既有铁律，见文件头注释）
 
 ---
 
