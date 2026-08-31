@@ -46,6 +46,8 @@ A/B 由 **Node driver**（`FORGE/src/fresh-eyes-driver.mjs`）驱动——每个
 
 **启动 driver 后，session 不是傻等，而是进入 sleep 轮询模式**——保持 working 状态，让用户感知"后台在干活"（每 120 秒一轮，读 status.json 输出一行状态——session 一直活跃 = 用户界面持续可见「在跑」，硬要求非可选）。
 
+> 🔴 **前台/后台分界铁律**：`run_in_background: true` **只属于启动 driver 的那一条 Bash 命令**——启动之后的每一轮轮询（sleep + cat status.json）都是**前台短命令**，直接在 session 正常工作流里执行。**严禁把轮询循环本身挂到后台**（run_in_background / nohup 均禁）——挂后台 = session 空闲等通知 = 用户界面看不到任何进展反馈，轮询的全部意义（session 可见性）即被摧毁。
+
 ### 🔴 启动前独占窗口检查
 
 **启动 driver 前，必须确认本仓库当前没有其他写操作会话在跑**——审查 worker 与主仓共享工作目录，git 基线被并发改写（restore 重建 / 回补 / 大批量 commit）会直接杀死进程树，且无终态事件可查。
@@ -77,9 +79,10 @@ A/B 由 **Node driver**（`FORGE/src/fresh-eyes-driver.mjs`）驱动——每个
 
 2. 记住 runDir（driver 启动日志第一行会打印）
 
-3. 循环（最多 60 次，防 turn 超限——fresh-eyes 一轮可跑 1-2 小时，20 次×5 分钟容量不足）:
-   sleep 300                                          # 等 5 分钟
-   cat <runDir>/status.json                           # 读进度
+3. 循环（最多 60 次，防 turn 超限——fresh-eyes 一轮可跑 1-2 小时，20 次×5 分钟容量不足。
+   🔴 本循环是前台操作：session 直接依次执行 sleep/cat——不包 run_in_background、不包任何后台化包装）:
+   sleep 300                                          # 等 5 分钟（前台）
+   cat <runDir>/status.json                           # 读进度（前台）
    判断:
      - phase === "completed" 或 "error"  → 汇报最终结果，退出循环
      - heartbeat 超 90s 未更新            → ⚠️ 疑似 driver 死亡，检查进程存活（见下）

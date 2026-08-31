@@ -34,7 +34,7 @@
 
 | # | 姿势 | 说明与实证 |
 |:--:|------|------|
-| ① | **后台启动** | Bash 工具 `run_in_background:true` + `dangerouslyDisableSandbox:true`——三层进程嵌套会被 sandbox SIGKILL |
+| ① | **后台启动（仅限 driver 启动这一条命令）** | Bash 工具 `run_in_background:true` + `dangerouslyDisableSandbox:true`——三层进程嵌套会被 sandbox SIGKILL。🔴 后台参数**只属于 driver 启动命令本身**，启动之后的轮询等一切操作全部回到**前台**执行（见「监控协议」前台铁律） |
 | ② | **输出重定向到文件** | `node FORGE/src/fresh-eyes-driver.mjs --target <版本号> --max-rounds 10 > /tmp/fresh-eyes-<ver>-driver.log 2>&1`——**禁止管道包装**（`\| head` 触发 SIGPIPE 杀 driver） |
 | ③ | **先验证 round-start 再轮询** | 启动后等 8 秒读 `status.json`：event=round-start / phase=round-1-running 才算真跑起来，否则需重启 |
 | ④ | **不传 timeout 参数** | 后台任务传 `timeout:600000` = 10 分钟上限杀 driver；后台无需 timeout，传了反而被杀 |
@@ -45,6 +45,8 @@
 | ⑨ | **启动时段选择** | 重型 LLM loop 避开 GLM 3 倍价时段（工作日 14:00-18:00——高峰限流易触发 LLM 流 stall 熔断）；轮询用短命令快查，不挂超长 sleep（会被系统杀 exit 137） |
 
 > **监控协议**：按 `FORGE/SKILL/fresh-eyes-loop/SKILL.md`——每 120 秒一轮读 `status.json`（短命令快查），session 保持活跃可见；心跳 >90 秒未更新用 `--check-alive <runDir>` liveness 探针（只认心跳不认日志——长 LLM 窗口日志冻结是正常，心跳停才是死）。
+>
+> 🔴 **轮询前台铁律**：`run_in_background:true` 只用于启动 driver 那一条命令——**每一轮轮询（sleep + cat status.json）必须在 session 前台执行**，禁止把轮询循环挂到后台（run_in_background / nohup 均禁）。挂后台 = session 空闲 = 用户界面看不到任何进展反馈，与「持续轮询的首要目的是 session 可见性」直接冲突。正确姿势：前台 `sleep 90~115` → 立即 `cat status.json` → 输出一行状态 → 下一轮。
 
 ---
 
@@ -115,9 +117,11 @@
    fallback（无 daemon 支持）：Bash 工具 run_in_background:true + dangerouslyDisableSandbox:true，
    输出重定向文件 > /tmp/fresh-eyes-<ver>-driver.log 2>&1（禁止管道），不传 timeout 参数
 2. 记住 runDir（启动日志第一行打印的路径）
-3. **持续轮询（必做，非可选——session 可见性的来源）**：每 120 秒一轮，读 `<runDir>/status.json`，
+3. **持续轮询（必做，非可选——session 可见性的来源；🔴 必须前台执行）**：每 120 秒一轮，读 `<runDir>/status.json`，
    输出一行状态（round 变化时一句话汇报）——**让 session 一直活跃，用户界面持续可见「在跑」**。
-   ⚠️ 轮询用「短 sleep + 快查」（sleep 90~115 后立即 cat 返回），不挂超长 sleep（会被系统杀 exit 137）；
+   ⚠️ 轮询是前台短命令：run_in_background 只用于步骤 1 的 driver 启动命令，轮询循环（sleep + cat）严禁挂后台——
+   挂后台 = session 空闲 = 界面无任何进展反馈。前台「短 sleep + 快查」（sleep 90~115 后立即 cat 返回），
+   不挂超长 sleep（会被系统杀 exit 137）；
    监控中断不影响 driver（独立进程），续上后直接查 status.json。
    心跳冻结检测：heartbeat 距今 >90 秒 → daemon+watch 模式看 watcher 是否自动 resume（观察 death-audit.jsonl + 新 driver 拉起）；
    fallback 模式用 pgrep 确认进程存活，无输出 = 已死 → 汇报主 session，主 session 决定 --resume 续跑。
