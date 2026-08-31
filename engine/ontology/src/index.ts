@@ -16,8 +16,8 @@
   MergedOntology,
 } from './types';
 
-/* @public */ export { mergeOntology, checkOntologyStatus, migrateToTrunk, LIFECYCLE_TO_MARKET_RING } from './merge-engine';
-/* @public */ export type { LifecycleMigrationRequest, LifecycleMigrationResult } from './merge-engine';
+/* @public */ export { mergeOntology, checkOntologyStatus, migrateToTrunk, LIFECYCLE_TO_MARKET_RING, getLastMergeSkipLog } from './merge-engine';
+/* @public */ export type { LifecycleMigrationRequest, LifecycleMigrationResult, OntologySkipEntry, OntologySkipLog } from './merge-engine';
 /* @public */ export { mergeSharedOntology } from './shared-merge';
 /* @public */ export { generateOntologyView } from './ontology-view';
 

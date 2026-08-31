@@ -10,6 +10,7 @@
 //   3. 数据目录结构（v1.4.2：data/ 用户可见数据 + .sofagent/ 引擎内部状态）
 //   4. Hook 状态（commit-msg 是否安装含 sofagent 标识 + post-commit 是否存在）
 //   5. 包完整性（node_modules 依赖）
+//   8. Ontology 完整性（v1.4.3 十三：knowledge/entities/ frontmatter 三查 + skip-log 对账）
 //
 // 注意：post-commit 仅检查存在性——不检查内容是否引用 sofagent
 
@@ -22,7 +23,7 @@ import { checkEnv } from './env-check';
 import { VERSION } from './shared/constants';
 import { load as yamlLoad, YAMLException } from 'js-yaml';
 import { checkHistoryChainDetailed, validateHmacKey } from './audit-history';
-import { DATA_DIR, getConfigFile } from './data-paths';
+import { DATA_DIR, getConfigFile, resolveDataDir, resolveKnowledgeDir } from './data-paths';
 
 function ok(msg: string) { console.log(`  ✅ ${msg}`); }
 function warn(msg: string) { console.log(`  ⚠️  ${msg}`); _warnCount++; }
@@ -448,6 +449,105 @@ export function runDoctor(projectDir: string = process.cwd(), options: { resetBa
     // 不再静默吞掉（P1-B-iv：空 catch 会掩盖内部错误并误报「通过」）
     warn(`审计日志 hash chain 校验异常，已跳过（不影响其余检查）: ${chainErr instanceof Error ? chainErr.message : String(chainErr)}`);
     auditLogOk = true;
+  }
+
+  // 8. Ontology 完整性检查（v1.4.3 十三）
+  // 背景：LIMITATIONS §七多年披露——entities/ frontmatter 格式不规范时实体被合并引擎
+  // 静默跳过，Ontology 缺失对象用户无法自动发现。本段把静默跳过变成 doctor 可见信号：
+  //   ① 遍历 <dataDir>/knowledge/entities/*.md，逐文件 frontmatter 三查：
+  //      `---` 分隔符存在 / YAML 可解析 / relations 字段名合法
+  //   ② 异常文件逐条 WARN（路径 + 病因）+ repairHint（模板样例 + 文档锚点）
+  //   ③ 读取 ontology/skip-log.json（merge-engine 落盘）对账「跳过数 vs 报告数」
+  // 作用域：数据目录读全局 SOFAGENT_HOME/data（知识库全局共享，见 LIMITATIONS §七），
+  // 与第 3 段同款 [全局] 标注——多仓库用户勿误读为「本仓库健康」。
+  console.log('\n── Ontology 完整性检查 [全局 data/knowledge/，非当前仓库] ──');
+  try {
+    const entitiesDir = join(resolveKnowledgeDir(), 'entities');
+    const LEGAL_RELATION_KEYS = ['has_many', 'belongs_to', 'depends_on', 'produces', 'consumes'];
+    let ontologyIssues = 0;
+    let warnReported = 0; // doctor 侧 WARN 计数（对账基准）
+
+    if (existsSync(entitiesDir)) {
+      const entityFiles = readdirSync(entitiesDir).filter((f) => f.endsWith('.md'));
+      for (const file of entityFiles) {
+        const filePath = join(entitiesDir, file);
+        let content: string;
+        try {
+          content = readFileSync(filePath, 'utf-8');
+        } catch (err) {
+          warn(`Ontology 实体不可读: ${filePath} (${err instanceof Error ? err.message : String(err)})`);
+          repairHint('检查文件权限（chmod 644 <实体文件>），或删除损坏文件后从备份恢复');
+          warnReported++;
+          continue;
+        }
+        // ① `---` 分隔符存在
+        const normalized = content.replace(/^\uFEFF/, '').replace(/\r\n/g, '\n');
+        const fmMatch = normalized.match(/^---\n([\s\S]*?)\n---/);
+        if (!fmMatch || !fmMatch[1]) {
+          warn(`Ontology 实体缺少 frontmatter（--- 分隔符）: ${filePath}——该实体已被合并引擎跳过，Ontology 缺失此对象`);
+          repairHint('在文件开头补 frontmatter，模板：---\\ntitle: 实体名\\ntype: entity\\nrelations:\\n  has_many: [其他实体]\\n---（字段说明见 CHANGELOG v1.0.1「页面 frontmatter」节）');
+          warnReported++;
+          continue;
+        }
+        // ② YAML 可解析
+        let fm: Record<string, unknown> | null = null;
+        try {
+          fm = yamlLoad(fmMatch[1]) as Record<string, unknown>;
+        } catch (yamlErr) {
+          const line = yamlErr instanceof YAMLException && yamlErr.mark?.line != null ? yamlErr.mark.line + 1 : '?';
+          warn(`Ontology 实体 frontmatter YAML 语法错误: ${filePath}（第 ${line} 行附近）——该实体已被合并引擎跳过`);
+          repairHint('修正 frontmatter YAML 语法（冒号后补空格 / 引号包裹特殊字符），字段说明见 CHANGELOG v1.0.1「页面 frontmatter」节');
+          warnReported++;
+          continue;
+        }
+        // ③ relations 字段名合法（拼写错 = 关联被静默丢弃）
+        if (fm && typeof fm === 'object' && fm['relations'] !== undefined) {
+          const rel = fm['relations'];
+          if (rel === null || typeof rel !== 'object' || Array.isArray(rel)) {
+            warn(`Ontology 实体 relations 字段类型错误（应为映射对象）: ${filePath}——关联信息被合并引擎忽略`);
+            repairHint('relations 应为映射：relations:\\n  has_many: [其他实体]\\n  belongs_to: [父实体]，合法键：has_many / belongs_to / depends_on / produces / consumes');
+            warnReported++;
+          } else {
+            const illegalKeys = Object.keys(rel as Record<string, unknown>).filter(
+              (k) => !LEGAL_RELATION_KEYS.includes(k),
+            );
+            if (illegalKeys.length > 0) {
+              warn(`Ontology 实体 relations 含非法字段名（${illegalKeys.join(', ')}）: ${filePath}——拼写错误的关联被静默丢弃，合法键：${LEGAL_RELATION_KEYS.join(' / ')}`);
+              repairHint('修正 relations 字段拼写（合法键：has_many / belongs_to / depends_on / produces / consumes），字段说明见 CHANGELOG v1.0.1「页面 frontmatter」节');
+              warnReported++;
+            }
+          }
+        }
+      }
+      ontologyIssues = warnReported;
+    } else {
+      // entities/ 不存在是正常形态（全新安装/未沉淀知识）——info 不告警
+      info('knowledge/entities/ 目录不存在（未沉淀知识实体，跳过 Ontology 检查）');
+    }
+
+    // 对账：merge-engine 落盘的 skip-log.json vs doctor 侧报告数
+    const skipLogPath = join(resolveDataDir(), 'ontology', 'skip-log.json');
+    if (existsSync(skipLogPath)) {
+      try {
+        const skipLog = JSON.parse(readFileSync(skipLogPath, 'utf-8')) as { mergedAt?: string; scanned?: number; skipped?: Array<{ file?: string; reason?: string }> };
+        const skipCount = Array.isArray(skipLog.skipped) ? skipLog.skipped.length : 0;
+        if (skipCount === warnReported) {
+          ok(`跳过对账一致（合并引擎跳过 ${skipCount} = doctor 报告 ${warnReported}）`);
+        } else {
+          warn(`跳过对账不一致：合并引擎 skip-log.json 记录 ${skipCount} 条跳过，doctor 本次报告 ${warnReported} 条——两次读取之间文件可能已变化，或合并引擎未重跑（运行 sofagent-ontology merge 刷新）`);
+          repairHint('sofagent-ontology merge');
+        }
+      } catch (err) {
+        warn(`skip-log.json 读取失败: ${err instanceof Error ? err.message : String(err)}`);
+        repairHint('sofagent-ontology merge（重新生成 skip-log.json）');
+      }
+    }
+    // 有实体且全健康时显式 ok（避免「静默通过」与「没检查」不可区分——对齐 v1.3.5 #18 先例）
+    if (existsSync(entitiesDir) && ontologyIssues === 0) {
+      ok('Ontology 实体 frontmatter 全部合规（三查通过：分隔符 / YAML / relations 字段）');
+    }
+  } catch (err) {
+    warn(`Ontology 完整性检查异常（已跳过，不影响其余检查）: ${err instanceof Error ? err.message : String(err)}`);
   }
 
   // 总结（v1.2.9: — 有 WARN/FAIL 时不再说"全部通过"）
