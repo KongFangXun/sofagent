@@ -25,7 +25,7 @@ export interface OntologyObject {
   lifecycle?: 'trunk' | 'branch';
   /** v1.3.6 · v1.3.7 开发⑥ OKF ②：信任状态（OKF §5.4——draft/stable/deprecated） */
   status?: 'draft' | 'stable' | 'deprecated';
-  /** v1.3.6 · v1.3.7 开发⑥ OKF ②：时效——绝对日期，today ≥ stale_after 即过期（注意：spec 原文是 stale_after，不是 valid_after） */
+  /** v1.3.6 · v1.3.7 开发⑥ OKF ②：时效——绝对时刻，now ≥ stale_after 即过期（OKF 上游 62432a0 起要求 ISO 8601 带显式 offset；存量纯日期格式读取容忍。注意：spec 原文是 stale_after，不是 valid_after） */
   stale_after?: string;
   /** v1.3.6 · v1.3.7 开发⑥ OKF ②：验证记录（OKF §5.2 三级信任 human > process > unverified；actor 复用 Ed25519 身份码三态 human:/process:/agent） */
   verified?: Array<{ by: string; at: string }>;
