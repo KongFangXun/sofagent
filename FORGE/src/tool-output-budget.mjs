@@ -35,16 +35,21 @@ export const STEP_BUDGETS = {
   'f-fix':         100,
   // 验证类：最严格，只看关键输出
   'a-verify':      50,
-  // release-gate V 步骤
-  'acceptance':    200,
+  // release-gate V 步骤——run-05 实证统一对齐 800（regression 先例同根因）：
+  // V 是「证据审读」角色，读的全部是 driver 产物报告（acceptance 分片/汇总、
+  // coverage.md+场景矩阵、consolidate 合并稿、verdict 上游证据），200/100/500
+  // 行头尾截断会让中段与尾部不可见（run-05 三处截断：acceptance-s12 /
+  // coverage.md F-10 / P2 清单尾部——V 以「证据链不完整」fail-closed 阻断）。
+  // v1.3.6 已修过同一根因的 regression 维度（200→800，注释见下），本轮补齐其余四步。
+  'acceptance':    800,
   // v1.3.6（2026-08-18/run-01 假盲区修复）：regression-precheck.json 是 87 维
   // 全量结果（~530 行 JSON），200 行预算只够读到第 32 维——后面 55 维 worker
   // 看不见，被误报成「63% 盲区数据截断」（verdict 假 FAIL 主因）。提到 800
   // 覆盖全量维度 + 输出文本余量。
   'regression':    800,
-  'coverage':      200,
-  'consolidate':   500,
-  'verdict':       100,
+  'coverage':      800,
+  'consolidate':   800,
+  'verdict':       800,
   // F 诊断：读 verdict + 源码，200 够用
   'f-diagnose':    200,
 };
