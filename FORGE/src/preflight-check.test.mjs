@@ -132,13 +132,14 @@ describe('preflight ③ API 可达', () => {
     expect(r.shouldHalt).toBe(true);
   });
 
-  it('最多一次：同 baseURL 的两个角色只探测一次', async () => {
+  it('最多一次：同 baseURL 连通只探一次（额度按 baseURL+key 各探一次）', async () => {
     let callCount = 0;
     await runPreflight({
       repoRoot: tmpRepo, modelConfigs: MODEL_CONFIGS, roles: ['A', 'B'],
       __inject: allPassInject({ fetchImpl: async () => { callCount++; return { status: 200 }; } }),
     });
-    expect(callCount).toBe(1); // A/B 共用 baseURL，只探测一次
+    // 1（A/B 共用 baseURL 连通一次）+ 2（额度探测按 key 各一次：A、B）
+    expect(callCount).toBe(3);
   });
 
   it('key 缺失不探测（交给 driver 的 missingEnvs 检查拦截）', async () => {
@@ -148,7 +149,49 @@ describe('preflight ③ API 可达', () => {
       repoRoot: tmpRepo, modelConfigs: MODEL_CONFIGS, roles: ['A', 'B'],
       __inject: allPassInject({ fetchImpl: async () => { callCount++; return { status: 200 }; } }),
     });
-    expect(callCount).toBe(1); // 只剩 B 需要探测
+    expect(callCount).toBe(2); // 只剩 B：连通 1 + 额度 1
+    expect(r.shouldHalt).toBe(false);
+  });
+
+  // ── 额度探测（run-03 教训）：连通 ≠ 额度可用，429 拦截在 chat 层 ──
+  it('额度耗尽 429 → HALT FAIL + 刷新时间提取（「HH:MM:SS 后可继续」）', async () => {
+    process.env.TEST_KEY_A = 'sk-test-a';
+    process.env.TEST_KEY_B = 'sk-test-b';
+    const r = await runPreflight({
+      repoRoot: tmpRepo, modelConfigs: MODEL_CONFIGS, roles: ['A'],
+      __inject: allPassInject({
+        fetchImpl: async (url) => {
+          if (String(url).includes('/chat/completions')) {
+            return { status: 429, text: async () => '{"error":"已达到 7 天使用上限，13:16:32 后可继续"}' };
+          }
+          return { status: 200 }; // /models 连通正常——429 只在 chat 层
+        },
+      }),
+    });
+    const quota = r.checks.find(c => c.id === 'api' && c.label.includes('额度'));
+    expect(quota).toBeTruthy();
+    expect(quota.status).toBe('FAIL');
+    expect(quota.level).toBe('HALT');
+    expect(quota.detail).toContain('13:16:32');
+    expect(r.shouldHalt).toBe(true);
+  });
+
+  it('额度探测 fail-open：非 429 形态（401/5xx/网络异常）不误伤 → PASS', async () => {
+    process.env.TEST_KEY_A = 'sk-test-a';
+    const r = await runPreflight({
+      repoRoot: tmpRepo, modelConfigs: MODEL_CONFIGS, roles: ['A'],
+      __inject: allPassInject({
+        fetchImpl: async (url) => {
+          if (String(url).includes('/chat/completions')) {
+            return { status: 401, text: async () => '{"error":"invalid key"}' }; // key 问题归 missingEnvs 管
+          }
+          return { status: 200 };
+        },
+      }),
+    });
+    const api = r.checks.find(c => c.id === 'api');
+    expect(api.status).toBe('PASS');
+    expect(api.detail).toContain('额度可用');
     expect(r.shouldHalt).toBe(false);
   });
 });
