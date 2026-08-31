@@ -1176,6 +1176,8 @@ describe('run-07 四修：acceptance 分片证据注入（buildShardEvidence）'
   });
 
   it('按 shard 范围切出对应场景段（S1~S13 只含本段，不含 S14+）', () => {
+    // run-08 二修后语义化尾部提取只抓权威汇总行（验收测试结果/SUMMARY/全部通过），
+    // 不再整段截取日志尾部——S14 场景行天然不会泄入 tail。
     const raw = [
       '━━━ 场景 1: 基线检查 ━━━', '✅ PASS', '',
       '━━━ 场景 5: 审计规则 ━━━', '✅ PASS', '',
@@ -1186,9 +1188,11 @@ describe('run-07 四修：acceptance 分片证据注入（buildShardEvidence）'
     const out = buildShard(tmpRoot, { shard: { id: 1, start: 1, end: 13 } });
     expect(out).toContain('场景 1');
     expect(out).toContain('场景 5');
-    expect(out).not.toContain('不属于本分片');
+    // 场景正文段不泄入（tail 语义提取只带权威行）
+    expect(out).not.toContain('━━━ 场景 14');
     expect(out).toContain('S1~S13');
     // 尾部汇总行必须注入（run-21「预跑日志是权威」）
+    expect(out).toContain('验收测试结果：3 通过 / 0 失败');
     expect(out).toContain('全部通过');
   });
 
@@ -1271,5 +1275,81 @@ describe('run-07 四修：extractVerdictKeyword 条件通过语义映射', () =>
     const extract = createExtractor();
     expect(extract('## 结论\nPASS')).toBe('PASS');
     expect(extract('## 终审结论\n\n❌ 不通过（BLOCKED）—— 维持发布冻结')).toBe('FAIL');
+  });
+});
+
+// ═══════════════════════════════════════════════════════════
+//  9. run-08 二修测试组（真实日志回放）
+// ═══════════════════════════════════════════════════════════
+// 背景：run-08 首跑实证两个新 bug——
+//   ① raw.log 场景行带 ANSI 色码前缀（\x1b[0;36m）→ `^━` 锚定正则
+//      291 场景段全数脱靶 → 分片全判 SKIP；
+//   ② 尾部汇总行物理上在最后一个场景段内部（脚本末场景后直接打印统计），
+//      按行索引反查段尾位置时段尾空行命中日志末尾 → tail 只剩空串。
+
+describe('run-08 二修：ANSI 剥离 + 语义化尾部提取', () => {
+  let tmpRoot;
+  let buildShard;
+
+  beforeEach(() => {
+    tmpRoot = join(tmpdir(), 'rg-ansi-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8));
+    mkdirSync(tmpRoot, { recursive: true });
+    buildShard = createBuildShardEvidence();
+  });
+
+  afterEach(() => {
+    if (existsSync(tmpRoot)) rmSync(tmpRoot, { recursive: true, force: true });
+  });
+
+  it('ANSI 色码场景行可解析（run-08 实证：\\x1b[0;36m 前缀致 291 段全脱靶）', () => {
+    const raw = [
+      '\x1b[0;36m━━━ 场景 1: Fresh install（--install-hook） ━━━\x1b[0m',
+      '  \x1b[0;32m✅ PASS\x1b[0m',
+      '',
+      '\x1b[0;36m━━━ 场景 2: --init 一键初始化 ━━━\x1b[0m',
+      '  ✅ PASS',
+      '',
+      '  验收测试结果：2 通过 / 0 失败 / 共 2',
+      'SUMMARY: 2/2 passed · EXIT: 0',
+      '✅ 全部通过，可以进入发版流程',
+    ].join('\n');
+    writeFileSync(join(tmpRoot, 'acceptance-raw.log'), raw);
+    const out = buildShard(tmpRoot, { shard: { id: 1, start: 1, end: 13 } });
+    // 场景段必须被切出（ANSI 剥离生效）
+    expect(out).toContain('场景 1');
+    expect(out).toContain('场景 2');
+    expect(out).not.toContain('未找到 S1~S13');
+    // 尾部权威行必须进注入（语义提取生效）
+    expect(out).toContain('SUMMARY: 2/2 passed');
+    expect(out).toContain('全部通过');
+  });
+
+  it('汇总行带前导缩进也能抓到（真实日志为「  验收测试结果：…」）', () => {
+    const raw = [
+      '\x1b[0;36m━━━ 场景 1: x ━━━\x1b[0m',
+      '  ✅ PASS',
+      '  验收测试结果：368 通过 / 0 失败 / 共 368',
+      'SUMMARY: 368/368 passed · EXIT: 0',
+      '✅ 全部通过，可以进入发版流程',
+    ].join('\n');
+    writeFileSync(join(tmpRoot, 'acceptance-raw.log'), raw);
+    const out = buildShard(tmpRoot, { shard: { id: 1, start: 1, end: 13 } });
+    expect(out).toContain('368 通过 / 0 失败');
+    expect(out).toContain('EXIT: 0');
+  });
+
+  it('语义提取失败时降级为尾部 5 行非空行（日志格式漂移不空手）', () => {
+    const raw = '\x1b[0;36m━━━ 场景 1: x ━━━\x1b[0m\n✅ PASS\n未知格式尾部A\n未知格式尾部B';
+    writeFileSync(join(tmpRoot, 'acceptance-raw.log'), raw);
+    const out = buildShard(tmpRoot, { shard: { id: 1, start: 1, end: 13 } });
+    expect(out).toContain('未知格式尾部');
+  });
+
+  it('源码级：buildShardEvidence 必须先剥离 ANSI 再切片', () => {
+    // 剥离语句必须在场景头正则定义之前
+    const stripIdx = SOURCE_CODE.indexOf("raw.replace(/\\x1b\\[[0-9;]*m/g, '')", SOURCE_CODE.indexOf('function buildShardEvidence'));
+    const regexIdx = SOURCE_CODE.indexOf('sceneHeaderRe = ', SOURCE_CODE.indexOf('function buildShardEvidence'));
+    expect(stripIdx).toBeGreaterThan(-1);
+    expect(stripIdx).toBeLessThan(regexIdx);
   });
 });
