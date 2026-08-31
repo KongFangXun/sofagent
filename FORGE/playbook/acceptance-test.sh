@@ -91,6 +91,15 @@ check_dist_export() {
   fi
 }
 scenario 1 "Fresh install（--install-hook）"
+# run-09 P0-3 修：开头注入主仓真实基线锚——场景输出里会出现大量 TMP_REPO 的
+# 自建测试 commit（如场景 41 的 "fast-fail test"，git reset 回显其 SHA），
+# 无主仓锚时审查者会把测试 commit 误读为「被测基线」（run-09 P0-3 实证：
+# 2d35cc4 被三层报告当成发版候选）。此锚声明唯一被测基线 = 主仓 HEAD。
+echo "═══ 被测基线（唯一，主仓检出树）═══"
+echo "  主仓 HEAD: $(git -C "$PROJECT_ROOT" rev-parse HEAD 2>/dev/null || echo '未知')"
+echo "  主仓版本: $(node -e "console.log(require('$PROJECT_ROOT/package.json').version)" 2>/dev/null || echo '未知')"
+echo "  （后续各场景中 git 回显的 HEAD/SHA 均为 TMP_REPO 临时测试仓库自建 commit，非被测基线）"
+echo ""
 TMP_REPO=$(mktmp_repo); cd "$TMP_REPO"
 # 注意：不用 | head -N——管道关闭会 SIGPIPE node 进程，在 set -o pipefail 下可能导致脚本退出
 $CLI --install-hook > /dev/null 2>&1
@@ -899,14 +908,19 @@ echo "# base" > README.md; git add README.md
 GIT_EDITOR=true git commit --quiet -m "base commit for action governance test" 2>&1 || true
 echo "# modified content" > README.md; git add README.md
 GIT_EDITOR=true git commit --quiet -m "fix: action governance scenario test" 2>&1 || true
-S100_HISTORY="$S100_REPO/.sofagent/audit/history.jsonl"; mkdir -p "$(dirname "$S100_HISTORY")"
-S100_AUDIT=$(node "$AUDIT_DIR/dist/index.js" --diff HEAD~1..HEAD --task "action governance scenario test" 2>&1 || true)
+# run-09 P0-2 修：history.jsonl 落点是 SSOT 路径 ${SOFAGENT_DATA}/audit/history.jsonl
+# （v1.2.2 起默认 ~/.sofagent/data/audit/，repo 本地 .sofagent/audit/ 不再生成——
+# 旧断言查 repo 本地路径必 SKIP）。用 SOFAGENT_DATA 隔离到临时目录：不污染真实
+# 全局 history，断言查隔离路径——隔离下无家可写 ≠ 环境依赖，是真失败。
+S100_DATA=$(mktemp -d /tmp/sofagent-s100-data-XXXXXX)
+S100_HISTORY="$S100_DATA/audit/history.jsonl"
+S100_AUDIT=$(SOFAGENT_DATA="$S100_DATA" node "$AUDIT_DIR/dist/index.js" --diff HEAD~1..HEAD --task "action governance scenario test" 2>&1 || true)
 if [ -f "$S100_HISTORY" ]; then
   S100_LAST=$(tail -1 "$S100_HISTORY")
   echo "$S100_LAST" | python3 -c "
-import sys, json; d = json.load(sys.stdin); ag = d.get('actionGovernance', {}); assert 'actor' in ag" 2>/dev/null || { warn "history.jsonl 缺少 actionGovernance.actor（环境依赖）"; S100_OK=false; }
-else warn "history.jsonl 未生成（环境依赖，actionGovernance 逻辑由 npm test 覆盖）"; S100_OK=false; fi
-cd "$PROJECT_ROOT"; rm -rf "$S100_REPO"
+import sys, json; d = json.load(sys.stdin); ag = d.get('actionGovernance', {}); assert 'actor' in ag" 2>/dev/null || { fail "history.jsonl 缺少 actionGovernance.actor"; S100_OK=false; }
+else fail "history.jsonl 未生成（SOFAGENT_DATA 隔离下 SSOT 路径无产出——审计历史写入链断裂）"; S100_OK=false; fi
+cd "$PROJECT_ROOT"; rm -rf "$S100_REPO" "$S100_DATA"
 $S100_OK && pass
 scenario 101 "v1.1.8 安全层三合一（AES+ECDH+配对+联邦过滤）"
 S101_OK=true; require_dist "engine/core/dist/crypto/aes-gcm.js" || S101_OK=false
@@ -1136,14 +1150,13 @@ else
   { set +euo pipefail; bash -c "exit $_S137_FAKE_EXIT" > /dev/null 2>&1 || _S137_CAPTURED=$?; set -euo pipefail; }
   if [ "${_S137_CAPTURED:-1}" = "$_S137_FAKE_EXIT" ]; then pass; else fail "退出码捕获失败: 期望 $_S137_FAKE_EXIT, 实际 ${_S137_CAPTURED:-unset}"; fi
 fi
-if [ ! -d "$PROJECT_ROOT/data" ]; then
-  echo "  ⏭ 项目根目录 data/ 不存在，跳过"; PASSED=$((PASSED + 1))
-else
-  S138_OK=true
-  # data/ 目录存在即视为通过（子目录运行时自动创建）
-  [ -d "$PROJECT_ROOT/data" ] || { fail "data/ 目录不存在"; S138_OK=false; }
-  $S138_OK && pass
-fi
+# run-09 P0-2 修：data/ 目录语义 = SOFAGENT_HOME/data（v1.2.2 起，全局安装态
+# 运行时自动创建），非仓库根 ./data（v1.2.1 老语义）。断言改查 SSOT 语义——
+# SOFAGENT_DATA 环境变量可指定 data 根即视为链路在位；仓库根 data/ 仅开发模式
+# （SOFAGENT_HOME=.）存在，不作验收前提。
+if [ -z "${SOFAGENT_DATA:-}" ] && [ ! -d "${HOME:-/root}/.sofagent/data" ]; then
+  fail "数据目录链路断裂：SOFAGENT_DATA 未设且 ~/.sofagent/data 不存在（安装/初始化未跑）"
+else pass; fi
 _S139_SKILL="$PROJECT_ROOT/SKILL/SKILL.md"
 _S139_DEPLOY=""
 for _f in "$PROJECT_ROOT/install.sh" "$PROJECT_ROOT/engine/scripts/lib/file-deploy.sh"; do

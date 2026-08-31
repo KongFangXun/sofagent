@@ -1787,7 +1787,13 @@ grep -q "checkHistoryChainIntegrity" CHANGELOG.md && echo "✅ 退役公告在 C
 ```bash
 # a: 门禁正则跨平台健壮性——\s 在 BSD/部分 grep 语义不稳（实测：本机 2.6.0-FreeBSD 支持 \s，但 test-count 曾因 ANSI 前缀恒 0 假红、\s 组合加剧解析脆性）；shell 活代码一律 POSIX 类——注释行与 Node 内嵌 JS 行（matchAll/test/inFence 上下文）合法
 grep -rn '\\\\s' tools/check/check-docs.sh tools/check/check-review-system.sh tools/check/check-test-count.sh tools/check/check-dev-prompt.sh tools/check/check-version.sh 2>/dev/null | grep -vE "^[^:]+:[0-9]+:#" | grep -vE "(matchAll|\.test\(|inFence|node -e)" | grep -q . && echo "❌ 门禁 shell 活代码残留 \\\\s（跨平台假红隐患）" || echo "✅ 门禁 shell 活代码无 \\\\s 残留"
-grep -rn "sofagent-audit.*|| true" .github/workflows/ 2>/dev/null | grep -q . && echo "❌ CI 审计门禁残留 || true 假绿（exit_code 被清 0，FAIL 永不阻断）" || echo "✅ CI 审计无 || true 假绿"
+# run-09 P0-1 修：正则收窄——旧式 `sofagent-audit.*|| true` 会误中 gh label 装饰行
+# （`gh label create audit-pass --description "sofagent-audit 全通过" || true`——
+# 描述字符串里的产品名，非审计命令；label 写操作挂 || true 是 fork PR 只读令牌的
+# 设计降级，审计命令本体用 set +e 捕获退出码 + FAIL 显式 exit 1，防线完好）。
+# 新正则只锚定审计命令形态：行首（忽略缩进）以 npx/node 调用 sofagent-audit 且
+# 同一行挂 || true——这才是「退出码被清 0」的真假绿形态。
+grep -rnE '^[[:space:]]*(npx|node.*)sofagent-audit.*\|\| true' .github/workflows/ 2>/dev/null | grep -vE "^[^:]+:[0-9]+:#" | grep -q . && echo "❌ CI 审计门禁残留 || true 假绿（exit_code 被清 0，FAIL 永不阻断）" || echo "✅ CI 审计无 || true 假绿"
 # b: worktree 引用丢失防线（悬挂 commit 根因 80c94f64 + LEDGER worktree 副本蒸发）——teardown 固化 tip + driver 产物主仓落盘
 grep -q "branch -f" FORGE/src/driver-base.mjs && echo "✅ teardown 固化分支 tip 在位" || echo "❌ teardown 前未固化 tip（悬挂 commit 回潮）"
 grep -n "LEDGER" FORGE/src/driver-base.mjs | grep -qE "\\\$REPO_ROOT|repoRoot|主仓" && echo "✅ LEDGER 落盘主仓路径" || echo "⚠️ 复核 LEDGER 落盘路径（须主仓非 worktree 副本）"
