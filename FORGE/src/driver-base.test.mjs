@@ -594,7 +594,7 @@ describe('worktree 隔离（v1.3.6 交付⑩）', () => {
 // v1.3.7 ⑦ 自适应并发——resolveMaxConcurrency / createConcurrencyDegrader
 // 三级来源解析（CLI > env > totalmem 预算表 > 兜底）+ OOM 熔断降级
 // ============================================================
-import { resolveMaxConcurrency, concurrencyFromMemory, createConcurrencyDegrader, CONCURRENCY_BUDGET_TABLE } from './driver-base.mjs';
+import { resolveMaxConcurrency, concurrencyFromMemory, createConcurrencyDegrader, CONCURRENCY_BUDGET_TABLE, DIRECT_CONCURRENCY_BUDGET_TABLE } from './driver-base.mjs';
 
 describe('resolveMaxConcurrency · v1.3.7 自适应并发', () => {
   const GB = 1024 ** 3;
@@ -621,6 +621,66 @@ describe('resolveMaxConcurrency · v1.3.7 自适应并发', () => {
         const n = concurrencyFromMemory(gb * GB);
         expect(Number.isInteger(n) && n >= 1).toBe(true);
       }
+    });
+  });
+
+  // v1.4.3 性能优化：直连档预算表——判断层直连 worker（裸 LLM 流式，RSS ~64MB）
+  // 比 DSH 档假设（1GB/worker）低一个数量级，8GB 机器从 1 提到 4。
+  // fresh-eyes 的 DSH 桥接 worker 不适用（继续默认 'dsh' 档）。
+  describe('直连档预算表（profile=direct，8GB 机器 1→4）', () => {
+    it('4GB（<8GB 段）→ 2（64MB worker 极轻，小机器也放 2）', () => {
+      expect(concurrencyFromMemory(4 * GB, 'direct')).toBe(2);
+    });
+    it('8GB（8-15GB 段下界）→ 4（直连安全档，原 DSH 档为 1）', () => {
+      expect(concurrencyFromMemory(8 * GB, 'direct')).toBe(4);
+    });
+    it('16GB（≥16GB 段下界，上限）→ 6（同 DSH 上限——API 配额瓶颈）', () => {
+      expect(concurrencyFromMemory(16 * GB, 'direct')).toBe(6);
+    });
+    it('两档在 8GB 机器分道扬镳：dsh=1 / direct=4（防档位混淆回退）', () => {
+      expect(concurrencyFromMemory(8 * GB, 'dsh')).toBe(1);
+      expect(concurrencyFromMemory(8 * GB, 'direct')).toBe(4);
+    });
+    it('直连表覆盖 0..∞ 无空洞', () => {
+      for (let gb = 0; gb <= 64; gb++) {
+        const n = concurrencyFromMemory(gb * GB, 'direct');
+        expect(Number.isInteger(n) && n >= 1).toBe(true);
+      }
+    });
+    it('未知 profile → 回落 DSH 档（保守默认）', () => {
+      expect(concurrencyFromMemory(8 * GB, 'typo-profile')).toBe(1);
+      expect(concurrencyFromMemory(8 * GB)).toBe(1);
+    });
+    it('直连表行结构合法（min<max，覆盖率连贯）', () => {
+      expect(DIRECT_CONCURRENCY_BUDGET_TABLE.length).toBeGreaterThanOrEqual(3);
+      for (let k = 0; k < DIRECT_CONCURRENCY_BUDGET_TABLE.length; k++) {
+        const row = DIRECT_CONCURRENCY_BUDGET_TABLE[k];
+        expect(row.minMemGb).toBeLessThan(row.maxMemGb);
+        if (k > 0) expect(DIRECT_CONCURRENCY_BUDGET_TABLE[k - 1].maxMemGb).toBe(row.minMemGb);
+      }
+      const last = DIRECT_CONCURRENCY_BUDGET_TABLE[DIRECT_CONCURRENCY_BUDGET_TABLE.length - 1];
+      expect(last.maxMemGb).toBe(Infinity);
+    });
+  });
+
+  describe('resolveMaxConcurrency 的 profile 透传', () => {
+    it("profile='direct' 时自适应走直连表（8GB → 4）", () => {
+      delete process.env.FORGE_MAX_CONCURRENCY;
+      const r = resolveMaxConcurrency({ totalmem: () => 8 * GB, quiet: true, profile: 'direct' });
+      expect(r.concurrency).toBe(4);
+      expect(r.source).toBe('adaptive');
+    });
+    it('默认 profile（不传）保持 DSH 档——fresh-eyes 零变化', () => {
+      delete process.env.FORGE_MAX_CONCURRENCY;
+      const r = resolveMaxConcurrency({ totalmem: () => 8 * GB, quiet: true });
+      expect(r.concurrency).toBe(1);
+    });
+    it('显式 env 仍优先于任何 profile（用户意志最高）', () => {
+      process.env.FORGE_MAX_CONCURRENCY = '2';
+      const r = resolveMaxConcurrency({ totalmem: () => 8 * GB, quiet: true, profile: 'direct' });
+      expect(r.concurrency).toBe(2);
+      expect(r.source).toBe('env');
+      delete process.env.FORGE_MAX_CONCURRENCY;
     });
   });
 
