@@ -7,13 +7,13 @@
 // CLI 层耦合 @sofagent/audit，eval 核心模块保持引擎中立
 // ============================================================
 
-import { existsSync, mkdirSync, writeFileSync } from 'fs';
+import { existsSync, mkdirSync } from 'fs';
 import { dirname, join } from 'path';
 import { runEval } from './eval-runner';
 import { printEvalReport } from './eval-reporter';
 import type { EvalResult } from './types';
 import type { DiffFile, LogEntry, AuditConfig } from '@sofagent/core';
-import { EVAL_DIR, EVAL_HISTORY, EVAL_LATEST, DEFAULT_CONFIG } from '@sofagent/core';
+import { EVAL_DIR, EVAL_HISTORY, EVAL_LATEST, DEFAULT_CONFIG, atomicWriteSync, atomicAppendSync } from '@sofagent/core';
 import type { RuleCheck } from '@sofagent/audit';
 import { runRules } from '@sofagent/audit';
 
@@ -181,18 +181,18 @@ export function persistResult(result: EvalResult): void {
     duration: result.duration,
     failures,
   };
-  writeFileSync(EVAL_LATEST, JSON.stringify(latest, null, 2), 'utf-8');
+  // latest.json（原子覆盖写——temp+rename，并发读不脏读半截 JSON）
+  atomicWriteSync(EVAL_LATEST, JSON.stringify(latest, null, 2));
 
-  // history.jsonl（追加写）
-  const historyLine = JSON.stringify({
+  // history.jsonl（原子追加写——锁内读改写，多进程并发不丢行；原语自动补换行）
+  atomicAppendSync(EVAL_HISTORY, JSON.stringify({
     timestamp,
     total: result.total,
     passed: result.passed,
     failed: result.failed,
     passRate: result.passRate,
     duration: result.duration,
-  }) + '\n';
-  writeFileSync(EVAL_HISTORY, historyLine, { flag: 'a', encoding: 'utf-8' });
+  }));
 }
 
 // ============================================================

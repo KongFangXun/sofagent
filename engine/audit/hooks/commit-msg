@@ -72,12 +72,23 @@ if [ -f "engine/audit/dist/index.js" ]; then
   fi
 fi
 
-# 2.5 v1.3.6 B22: .sofagent/ ignore 兜底——防御 --install-hook 后用户手工删 .gitignore、
+# 2.5 B22: .sofagent/ ignore 兜底——防御 --install-hook 后用户手工删 .gitignore、
 #     或旧版本安装未写入的间隙。若 .gitignore 未含 .sofagent/，自动补写（幂等），
 #     防止 .sofagent/.git-shadow/ 快照数据被本次 commit 卷入仓库。
+#     并发安全：check-then-append 在并发 commit 下会重复追加——用 .git/ 内 mkdir
+#     原子锁互斥（mkdir 同名目录只有一个进程成功）。拿不到锁说明另一 commit 正在
+#     补写，本兜底幂等、跳过即可；锁内二次检查防 TOCTOU。陈旧锁风险接受：兜底
+#     本身是安装期写入的兜底，跳过仅回到「未兜底」状态，post-commit H-01 对账兜底。
 if [ -f ".gitignore" ] && ! grep -q '^\.sofagent/$' ".gitignore" 2>/dev/null && ! grep -q '^\.sofagent/' ".gitignore" 2>/dev/null; then
-  printf '\n# sofagent 审计数据（本地配置 + 知识库 + 审计历史）\n.sofagent/\n' >> ".gitignore"
-  echo "ℹ️ [sofagent] 已自动补充 .gitignore（排除 .sofagent/）"
+  if mkdir ".git/sofagent-gitignore.lock" 2>/dev/null; then
+    (
+      trap 'rmdir ".git/sofagent-gitignore.lock" 2>/dev/null' EXIT
+      if ! grep -q '^\.sofagent/' ".gitignore" 2>/dev/null; then
+        printf '\n# sofagent 审计数据（本地配置 + 知识库 + 审计历史）\n.sofagent/\n' >> ".gitignore"
+        echo "ℹ️ [sofagent] 已自动补充 .gitignore（排除 .sofagent/）"
+      fi
+    )
+  fi
 elif [ ! -f ".gitignore" ]; then
   printf '# sofagent 审计数据（本地配置 + 知识库 + 审计历史）\n.sofagent/\n' > ".gitignore"
   echo "ℹ️ [sofagent] 已自动创建 .gitignore（排除 .sofagent/）"
