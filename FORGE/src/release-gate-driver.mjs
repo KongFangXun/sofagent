@@ -805,7 +805,10 @@ function buildPrecheckEvidence(runDir, stepDef) {
  *
  * 尺寸控制：单文件截 12000 字符（run-07 实证：stage6-report.md 7397 字符被旧值
  * 6000 截断，verdict 第 5 节前置条件 #4/#5 丢失——12000 覆盖实测最大产物全量），
- * 多文件合计 ≤ 20000 字符。
+ * 多文件合计 ≤ inputs.length × 12000（硬顶 150000）。
+ * 合计预算随输入数缩放是 run-08 三修：consolidate 要并 12 份分片报告，固定
+ * 20000 总额导致 s8~s12（恰含 v1.4.3 新场景 S345~S358）静默截断，被 verdict
+ * 升格 P1-10。「单文件上限 × 输入数」让每份输入都可完整到达，硬顶防异常膨胀。
  * 截断提示以「字符」计量并显式注明（run-07 教训：V 曾把文件 13720 字节误读为
  * 「注入止于 7397 字符」——字节 ≠ 字符，UTF-8 中文 3 字节）。
  *
@@ -816,6 +819,7 @@ function buildPrecheckEvidence(runDir, stepDef) {
 function buildInputsEvidence(runDir, stepDef) {
   if (stepDef?.precheck || !Array.isArray(stepDef?.inputs)) return '';
   const blocks = [];
+  const totalBudget = Math.min(150_000, Math.max(20_000, stepDef.inputs.length * 12_000));
   let total = 0;
   for (const f of stepDef.inputs) {
     const p = join(runDir, f);
@@ -825,7 +829,7 @@ function buildInputsEvidence(runDir, stepDef) {
     }
     try {
       const raw = readFileSync(p, 'utf-8');
-      const budget = Math.max(0, 20_000 - total);
+      const budget = Math.max(0, totalBudget - total);
       const clipped = raw.length > Math.min(12_000, budget)
         ? raw.slice(0, Math.min(12_000, budget)) + `\n…（截断，全文 ${raw.length} 字符（字符数非字节数），见 ${p}）`
         : raw;
@@ -2339,14 +2343,27 @@ function extractVerdictKeyword(raw) {
   // 中文（阻断），严格正则抓不到 → driver 记 ERROR 与内容裁决 FAIL 脱钩。故该组
   // 放宽为「允许中文/emoji/markdown 混合前缀」（\b 防 PASSword 类误抓）；同一
   // LLM 不同 run 会换表格标记词，同组收编，防逐词打补丁。
-  const markers = ['判定', '结论', '终审裁决', '最终裁决', '终审结论'];
+  // 分两级扫描（run-08 三修）：强标记组（专属裁决词）优先于普通组（判定/结论）。
+  // 背景：verdict.md 实测裁决行「🚫 发版闸门维持 BLOCK」不含「判定/结论」字样，
+  // 而正文叙述句「三项上游判定（…coverage 有条件通过…）」含「判定」——
+  // 单层扫描时叙述句先于真裁决行命中。强组前置让专属裁决词的窗口（真裁决行
+  // 就在其下）优先消费，叙述句窗口轮不到。
+  const strongMarkers = ['终审裁决', '最终裁决', '终审结论', '最终裁定', '闸门判定', '闸门状态', '最终状态'];
+  const plainMarkers = ['判定', '结论'];
+  const markers = [...strongMarkers, ...plainMarkers];
+  // 普通组窗口含英文闸门否定词（BLOCK/NO-GO/HOLD）时拒判肯定语义——run-08 实证：
+  // 叙述句窗口「acceptance BLOCK / regression PASS / coverage 有条件通过」同窗口
+  // 混排多关卡词，肯定词命中会覆盖全文真实裁决 FAIL。强组窗口不受此限（强组
+  // 词本身专属裁决语境，无叙述句混排问题）。passive 否决同时放行下一 marker 继续扫描。
+  const NEGATION_EN = /BLOCKED|BLOCK|NO-GO|HOLD/;
   for (const marker of markers) {
+    const isStrong = strongMarkers.includes(marker);
     for (let i = 0; i < lines.length; i++) {
       const col = lines[i].indexOf(marker);
       if (col === -1) continue;
       // 窗口 = 标记行剩余部分 + 后续 3 行
       const windowText = lines.slice(i, i + 4).join('\n').slice(col + marker.length);
-      const re = marker === '终审裁决' || marker === '最终裁决' || marker === '终审结论'
+      const re = isStrong
         ? /^[^A-Za-z]*?(PASS|FAIL|SKIP)\b/i
         : /^[^A-Za-z\u4e00-\u9fff]*?(PASS|FAIL|SKIP)/i;
       const m = windowText.match(re);
@@ -2363,11 +2380,13 @@ function extractVerdictKeyword(raw) {
       // run-07 实证：coverage 报告写「有条件通过（CONDITIONAL PASS）」、regression 写
       // 「96/96 维度全部通过」——严格正则只认裸 PASS/FAIL 词，全数漏抓 → status.json
       // 记 SKIP，下游 consolidate/verdict 证据面失真。补「条件性通过/通过」语义组：
-      // 「有条件通过」= PASS（条件在正文发现清单承载）。前缀容忍中文/ markdown 符号
-      // （「**96/96 维度全部通过**」的「维度」是普通汉字，无法像否定组那样枚举全部
-      // 前缀——改用「锚定窗口内出现即命中」而非「前缀锚定」：窗口本就只有标记行
-      // 尾部 + 后续 3 行，误抓面已被窗口纪律约束）。肯定组放否定组之后——防
-      // 「不通过」被「通过」抢先命中。
+      // 「有条件通过」= PASS（条件在正文发现清单承载）。
+      // run-08 三修：普通组（非强组）肯定语义前先做 BLOCK 否决——窗口混排英文
+      // 否定词说明该窗口是叙述句/多关卡混排（如 verdict.md L24「三项上游判定
+      // （acceptance BLOCK / … / coverage 有条件通过）」），肯定词不可信，跳过
+      // 该窗口继续扫描后续 marker（真实裁决行「闸门最终状态：BLOCK」由强组捕获）。
+      // 肯定组放否定组之后——防「不通过」被「通过」抢先命中。
+      if (!isStrong && NEGATION_EN.test(windowText)) continue;
       if (/有条件通过|有条件放行|条件通过/.test(windowText)) return 'PASS';
       if (/(全部通过|全数通过|全部成功)/.test(windowText)) return 'PASS';
     }
@@ -2432,8 +2451,17 @@ function parseStepResults(runDir) {
   // 修复：预跑日志总结行是权威（「验收测试结果：N 通过 / M 失败」+「✅ 全部通过」），
   // driver 用确定性正则判定。日志存在且可解析 → 直接给结论（覆盖 LLM 解读）；
   // 日志缺失/不可解析 → 回退 extractResult('acceptance.md')（LLM 解读兜底）。
+  //
+  // v1.4.3（run-08 三修）：日志 PASS + 合并报告 FAIL → 冲突即 FAIL（fail-closed）。
+  // 背景：run-08 实测——日志汇总「368/368 · EXIT 0」但 consolidate 裁决 BLOCK
+  // （场景 28 WARN 未计入统计，汇总与分片证据矛盾）。两个权威打架时不能再单边
+  // 采信日志（run-21 拍板防的是 worker 幻觉 FAIL；run-08 的 BLOCK 是审查者拿
+  // 分片原文指出的真实统计矛盾）。fail-closed：冲突 = 验收链自身不可信 = FAIL，
+  // 宁可人工复核误报，不可漏报放行。仅合并报告显式判 FAIL 时才触发冲突路径；
+  // 报告 SKIP/未知时维持 run-21 日志权威口径。
   function extractAcceptanceResult() {
     const logPath = join(runDir, 'acceptance-raw.log');
+    let logResult = null;
     if (existsSync(logPath)) {
       const raw = readFileSync(logPath, 'utf-8');
       // 剥离 ANSI 颜色码——acceptance-test.sh 输出带 \x1b[0;32m 等转义，
@@ -2443,11 +2471,16 @@ function parseStepResults(runDir) {
       if (summaryMatch) {
         const passCount = parseInt(summaryMatch[1], 10);
         const failCount = parseInt(summaryMatch[2], 10);
-        if (passCount > 0 && failCount === 0 && /全部通过/.test(log)) return 'PASS';
-        return 'FAIL';
+        if (passCount > 0 && failCount === 0 && /全部通过/.test(log)) logResult = 'PASS';
+        else logResult = 'FAIL';
       }
     }
-    return extractResult('acceptance.md');
+    const reportResult = extractResult('acceptance.md');
+    if (logResult === 'PASS' && reportResult === 'FAIL') {
+      // 日志说全过、审查裁决说阻塞——验收链自相矛盾，fail-closed 记 FAIL
+      return 'FAIL';
+    }
+    return logResult ?? reportResult;
   }
 
   return {
