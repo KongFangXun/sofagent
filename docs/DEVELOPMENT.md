@@ -601,6 +601,15 @@ v1.0.8 自研 git-shadow diff 解析（isomorphic-git **风格**，非 npm 包�
 - **真实代码库 + 真实 PR 当考题**：研报用「已合并 PR + 原 PR 测试用例」当评分标准，规避公开 benchmark 泄漏导致的刷分。对应 sofagent `regression-checklist.md`（96 维）+ `acceptance-test.sh`（291 场景）——用真实修复场景与历史 case 当验收，而非玩具 benchmark。
 - **上下文精简 = 低成本高通过**：研报发现 Pipe Agent 同模型下比原生工具便宜 1.2–2×、性能差距 <3pt，根因是初始提示 <1500 token（vs Claude Code 20k）。这从量化角度印证 sofagent「Harness 要轻」——约束层零 token 运行（24 条规则 19 条纯 git-diff），把成本压在确定性引擎而非上下文堆料。
 
+## 九B、经验编译为持久知识（WikiSkill 印证）
+
+Google Research 的 WikiSkill（[arXiv:2608.27454](https://arxiv.org/abs/2608.27454)）把 Agent 工作区分为 Raw（不可变轨迹）/ Wiki（永不回滚的知识层）/ Skills（可回滚技能）三层，与 sofagent 的三层结构同构且提供了量化证据：
+
+- **持久知识层是进化胜负手**：消融拿掉 Wiki 访问，平均分 63.7% → 48.7%（-15.0pt）——比任何方法间差距都大。印证 sofagent 温故知新/lessons/think.md 反思区这一柱的分量：经验沉淀不是锦上添花，是技能进化的前提。
+- **推理时禁查知识库反而更好**（-2.8pt）：训练 rollout 时让 Agent 直接查 Wiki，产出的轨迹对技能开发失去参考价值。反向印证 sofagent「约束层要轻、零 token 运行」——知识供进化者离线消费，不塞执行时上下文。
+- **跨模型技能迁移有负迁移实锤**：4B 模型进化的技能把 Gemini-3.5-Flash 从 50.5% 拉到 18.1%——弱模型的低层 workaround 束缚强模型。sofagent 覆盖 11 供应商多模型，技能应按模型分级门控，不能全局通用投放。
+- **溯源与提案审计**：`PURPOSE.md`（技能回链到所解决的 pattern）与 `skill-impact.md`（每次提案 diff/分数/接受与否程序化落账）两个小机制，与 sofagent 的 LEDGER/审计轨迹理念同源，已列入 ROADMAP 候选。
+
 ## 十、STATE.md 持久化外部记忆模式
 
 loop-engineering 社区将 STATE.md 定位为 **"对话外的持久化主干"**——Agent 每次任务启动时**必须先读**状态文件、结束时**必须写回**。这与 sofagent 的 `task/logs` 四字段（看到/改了/验证了/还剩）同构，但有两个增量值得吸收：
