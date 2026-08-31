@@ -1540,7 +1540,7 @@ export function printResults(results: AuditResult, diffFiles: DiffFile[], json: 
       version: VERSION,
       verdict: results.exitCode === 0 ? 'PASS' : results.exitCode === 1 ? 'WARN' : 'FAIL',
       timestamp: new Date().toISOString(),
-      signature: productSignature(results.exitCode, results.rules.length),
+      signature: productSignature(results.exitCode, results.rules.length, defaultRules.length + extendedRules.length),
       exitCode: results.exitCode,
       rules: results.rules,
     }, null, 2));
@@ -1550,7 +1550,7 @@ export function printResults(results: AuditResult, diffFiles: DiffFile[], json: 
   // 静默 / CI 模式——只抑制输出，不改 exit code 判定
   if (ci || silent) {
     // 产品签名（text 人类可读输出头部；--json 已在上方提前 return，绝不加签名）
-    console.log(productSignature(results.exitCode, results.rules.length));
+    console.log(productSignature(results.exitCode, results.rules.length, defaultRules.length + extendedRules.length));
     // ★ v1.4.2: 无条件向 stdout 输出一行结论（session 可见性核心）
     const c = results.exitCode;
     const failN = results.rules.filter((r) => r.status === 'FAIL').length;
@@ -1570,8 +1570,15 @@ export function printResults(results: AuditResult, diffFiles: DiffFile[], json: 
     const problems = results.rules.filter((r) => r.status !== 'PASS' && r.status !== 'SKIPPED');
     if (problems.length === 0) {
       // v1.2.9: — PASS 时即使 --ci 也输出极简签名到 stderr（防遗忘装了 sofagent）
-      const totalRules = results.rules.length;
-      process.stderr.write(`✅ [sofagent] 审计通过 · ${totalRules} 条规则\n`);
+      // 口径统一（run-02 P1-5）：本跑检查数与注册规则数分列，不再混用「N 条规则」
+      const n = results.rules.length;
+      const dCnt = defaultRules.length;
+      const eCnt = extendedRules.length;
+      const tCnt = dCnt + eCnt;
+      const passLine = n === tCnt
+        ? `✅ [sofagent] 审计通过 · ${tCnt} 条规则 (${dCnt} 默认 + ${eCnt} 扩展)`
+        : `✅ [sofagent] 审计通过 · ${n} 项检查 · ${tCnt} 条规则 (${dCnt} 默认 + ${eCnt} 扩展)`;
+      process.stderr.write(passLine + '\n');
       return;
     }
 
@@ -1606,13 +1613,16 @@ export function printResults(results: AuditResult, diffFiles: DiffFile[], json: 
   const issueWord = failCount > 0 ? `${failCount} 违规` : warnCount > 0 ? `${warnCount} 警告` : '0 违规';
 
   console.log('');
-  // 产品签名行（人类可读输出头部，FAIL 拦截时醒目，让用户知道是 sofagent 拦的）
-  console.log('  ' + productSignature(exitCode, totalRules));
-  console.log(bannerTop());
-  console.log(bannerLine(`sofagent-audit · FDE Harness · v${VERSION}`));
+  // 口径统一（run-02 P1-5）：defaultCnt/extendedCnt 前置计算——签名行与明细行
+  // 同源同口径「N 项检查 · M 条规则 (D 默认 + E 扩展)」，quick 模式不再出现
+  // 横幅「17 规则」与明细「24 条规则」自相矛盾。
   const defaultCnt = defaultRules.length;
   const extendedCnt = extendedRules.length;
   const totalCnt = defaultCnt + extendedCnt;
+  // 产品签名行（人类可读输出头部，FAIL 拦截时醒目，让用户知道是 sofagent 拦的）
+  console.log('  ' + productSignature(exitCode, totalRules, totalCnt));
+  console.log(bannerTop());
+  console.log(bannerLine(`sofagent-audit · FDE Harness · v${VERSION}`));
   console.log(bannerLine(`扫描 ${diffFiles.length} 文件 · ${totalRules} 项检查 · ${totalCnt} 条规则 (${defaultCnt} 默认 + ${extendedCnt} 扩展) · ${issueWord}`));
   console.log(bannerLine(`${statusLabel}  ·  ${actionLabel}`));
   console.log(bannerBottom());
