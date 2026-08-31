@@ -57,6 +57,9 @@
 ```markdown
 # 覆盖率交叉检查结果
 
+## 执行信息
+- 候选版本：以 driver 注入的「验证对象」为准（禁止自行推测或填写其他版本号）
+
 ## Changelog 功能点提取
 - 来源：<meta.changelogPath>
 - 功能模块数：N
@@ -78,8 +81,11 @@
 | N | xxx | 高风险 | 必须补测试再发版 |
 
 ## 结论
-PASS（N/N 覆盖） / FAIL（X 条零覆盖）
+
+- **结果**：PASS（或 FAIL / SKIP——必须为此裸词独占一行，driver 据此行提取判定；禁止用「有条件通过」「N/N 覆盖」等叙述句代替。存在不阻塞放行的 P1 时仍写 PASS，把条件写进正文发现清单即可）
 ```
+
+🔴 **结论行格式铁律（run-07 实证）**：报告必须含一行 `- **结果**：PASS`（或 FAIL/SKIP 裸词）。「有条件通过（CONDITIONAL PASS）」这类叙述无法被 driver 的 `extractVerdictKeyword` 识别，导致 status.json 记 SKIP、下游 consolidate/verdict 证据面失真。
 
 ## 🔴 铁律：完整报告必须进最终回复
 
