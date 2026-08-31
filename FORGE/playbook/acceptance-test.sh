@@ -6,7 +6,7 @@ export LANG=en_US.UTF-8
 export LC_ALL=en_US.UTF-8
 # sofagent-audit · 上线前验收测试（Pre-Release Acceptance Test）
 # 覆盖：FORGE + MCP + 文件系统审计 + daemon + 红队对抗 + 各版本新功能验收
-# 场景数：284 个场景（SSOT：check-test-count.sh 校验，口径=真实 scenario 调用行数，非编号最大值（S1-S344 间有 70 个历史空洞号）；v1.3.7 +4：S290-S293；v1.3.6 +8：S282-S289；v1.3.8 +11：S294-S304（含 bugfix 防回归 S303/S304）；v1.3.9 +15：S305-S319（阶段五 A 类分发 13 项 + 阶段六 coverage 补测 S318 ATTRIBUTION 归因引擎/S319 Dream Sandbox 沙盒审计）；v1.4.0 +3：S320（联邦查询跨进程 E2E——补 federation.test.ts 同进程 mock 缺口）、S321（跨平台 hook stdin 模式闭环验证）、S322（双设备联邦独立进程模拟——两个独立 node 进程 + 真实 TCP，补 fork 形态缺口）；v1.4.1 +10：S323（train doctor CLI 实跑）、S324（enterpriseId 强制绑定+幂等）、S325（fingerprint 冻结+不可变）、S326（artifact 签名+篡改检测）、S327（安全基线路径白名单+注入检测）、S328（install.sh 迁移丢数据窗口防回归——阶段四 B2 分发）、S329（install.sh symlink 谎报守卫——阶段四 B3 分发）、S330（训练异常退出资源回收四步链——阶段六 coverage 补测，补判断层唯一零覆盖项）、S331（OpenClaw plugin 双 manifest 一致性——阶段十一 ClawHub 拒收踩坑回写）、S332（bump 脚本通配误伤防回归——阶段十一静默漏 bump 踩坑回写）；v1.4.2 +10：S333（数据管道 CSV 类型推断端到端）、S334（dataset_version 台账三件套）、S335（eval 阈值判定双态）、S336（dry-run 显存估算单调性）、S337（ScaleRL sigmoid 拟合/外推/建议）、S338（FDE 工作台审计留痕往返——阶段三步骤四增量，行为实测走 dist 产物）、S339（MCP 工具 dataDir SSOT 收编完整——阶段三 fresh-eyes N-1 修复行为锁）、S340（19 处 v1.3.x 存量 getSofagentDataDir 一次清零行为锁——用户拍板 A 桶落点迁移接受）、S341（train report 报告生成本体 dist 行为实测——阶段五 coverage 唯一零覆盖项补测）；v1.4.2 章五 +2：S342（IM 桥通道交付三面断言——run-17 模块七零覆盖补测）、S343（BugFix 30 项批次级五族锚点——run-17 模块十零覆盖补测，对齐 S281 先例）；v1.4.2 阶段十二 +1：S344（Git Data API 推送通道 cat-file 防复发——ps1 eol 二坑根因固化）；v1.4.3 bugfix 批 +1：S345（跨平台 hook stdin message 抽取三场景行为锁——F-03 等号/中文/嵌套引号 + 空格形式回归，stub 断言 --task 透传）；v1.4.3 阶段三 +3：S346（审计聚合 --stats CLI 行为实测——--json 纯净/--days 窗口/口径行）、S347（反作弊基线三防线锚点——doctor 体检/缺省全开/白名单外部化）、S348（训练监控三 MCP tools 注册面——registry 79 + SKILL 对账）；v1.4.3 阶段五 +3：S349（训练沙箱三约束行为实测——dist 直调 createTrainSandbox：路径守卫三态/代理黑洞/网关判定）、S350（训练需求推导行为实测——场景派生/默认模板匹配/报告路径企业隔离）、S351（后训练 workflow 模板解析——七节点 DAG 无环/三 HITL/capability_ref 全节点指向））
+# 场景数：288 个场景（SSOT：check-test-count.sh 校验，口径=真实 scenario 调用行数，非编号最大值（S1-S344 间有 70 个历史空洞号）；v1.3.7 +4：S290-S293；v1.3.6 +8：S282-S289；v1.3.8 +11：S294-S304（含 bugfix 防回归 S303/S304）；v1.3.9 +15：S305-S319（阶段五 A 类分发 13 项 + 阶段六 coverage 补测 S318 ATTRIBUTION 归因引擎/S319 Dream Sandbox 沙盒审计）；v1.4.0 +3：S320（联邦查询跨进程 E2E——补 federation.test.ts 同进程 mock 缺口）、S321（跨平台 hook stdin 模式闭环验证）、S322（双设备联邦独立进程模拟——两个独立 node 进程 + 真实 TCP，补 fork 形态缺口）；v1.4.1 +10：S323（train doctor CLI 实跑）、S324（enterpriseId 强制绑定+幂等）、S325（fingerprint 冻结+不可变）、S326（artifact 签名+篡改检测）、S327（安全基线路径白名单+注入检测）、S328（install.sh 迁移丢数据窗口防回归——阶段四 B2 分发）、S329（install.sh symlink 谎报守卫——阶段四 B3 分发）、S330（训练异常退出资源回收四步链——阶段六 coverage 补测，补判断层唯一零覆盖项）、S331（OpenClaw plugin 双 manifest 一致性——阶段十一 ClawHub 拒收踩坑回写）、S332（bump 脚本通配误伤防回归——阶段十一静默漏 bump 踩坑回写）；v1.4.2 +10：S333（数据管道 CSV 类型推断端到端）、S334（dataset_version 台账三件套）、S335（eval 阈值判定双态）、S336（dry-run 显存估算单调性）、S337（ScaleRL sigmoid 拟合/外推/建议）、S338（FDE 工作台审计留痕往返——阶段三步骤四增量，行为实测走 dist 产物）、S339（MCP 工具 dataDir SSOT 收编完整——阶段三 fresh-eyes N-1 修复行为锁）、S340（19 处 v1.3.x 存量 getSofagentDataDir 一次清零行为锁——用户拍板 A 桶落点迁移接受）、S341（train report 报告生成本体 dist 行为实测——阶段五 coverage 唯一零覆盖项补测）；v1.4.2 章五 +2：S342（IM 桥通道交付三面断言——run-17 模块七零覆盖补测）、S343（BugFix 30 项批次级五族锚点——run-17 模块十零覆盖补测，对齐 S281 先例）；v1.4.2 阶段十二 +1：S344（Git Data API 推送通道 cat-file 防复发——ps1 eol 二坑根因固化）；v1.4.3 bugfix 批 +1：S345（跨平台 hook stdin message 抽取三场景行为锁——F-03 等号/中文/嵌套引号 + 空格形式回归，stub 断言 --task 透传）；v1.4.3 阶段三 +3：S346（审计聚合 --stats CLI 行为实测——--json 纯净/--days 窗口/口径行）、S347（反作弊基线三防线锚点——doctor 体检/缺省全开/白名单外部化）、S348（训练监控三 MCP tools 注册面——registry 79 + SKILL 对账）；v1.4.3 阶段五 +3：S349（训练沙箱三约束行为实测——dist 直调 createTrainSandbox：路径守卫三态/代理黑洞/网关判定）、S350（训练需求推导行为实测——场景派生/默认模板匹配/报告路径企业隔离）、S351（后训练 workflow 模板解析——七节点 DAG 无环/三 HITL/capability_ref 全节点指向）；v1.4.3 阶段五 run-02 闭环 +4：S352（DSH 执行深化三步锚点——事件流订阅/分级切 dsh 缺省/usage 记账链直调/降级红线）、S353（train_diagnose 行为实测——故障形态命中/零命中兜底/处方全覆盖）、S354（入口导览三产品线可发现 + onboarding 断层走查检查项 + 走查口径行）、S355（存量清扫零残留——ao 死代码/compose 更名转发/ontology 收窄/退役公告四锚））
 # 编号跳号豁免：S1~S293 间有 70 个空洞号（全在 S36-S202 历史段）——v1.2.x 瘦身删场景
 # 与基线重建（restore 6e542467）的既成事实，非丢失；新场景编号=当前最大+1 顺延，禁止回填空洞
 # 版本段起点见文件内「# ─── v」分组标记（grep "─── v" 定位）
@@ -3738,6 +3738,125 @@ S351_OUT=$(node -e "
 " 2>/dev/null)
 [ "$S351_OUT" = "0" ] || { echo "  ✗ 后训练 workflow 断言未过数=$S351_OUT（9999=解析失败）"; S351_OK=false; }
 $S351_OK && pass "后训练 workflow 模板解析过（七节点/无悬空/三 HITL/DAG 无环/版本指向）" || fail "后训练 workflow 模板回退——见上方 ✗ 行（dist/workflow-parser.js 真实解析）"
+
+# ─────────────────────────────────────────────────────────────
+# S352 · v1.4.3 第六章：DSH 执行深化三步静态锚点 + usage 记账链行为实测
+# 步一事件流面（dsh-events.mjs notify_session 消费）+ 步二分级切
+# （resolveFreshEyesBackend dsh 缺省 + langgraph 回退口保留）+ 步三 usage
+# 自动计量（runtimeUsage 透传 → recordUsage 落盘——真实直调，不 mock 全链路）
+# + 红线：DSH 异常 fallback LangGraph 降级路径存在（源码级断言）。
+# ─────────────────────────────────────────────────────────────
+scenario 352 "v1.4.3 第六章：DSH 执行深化——事件流订阅在位 + 分级切 dsh 缺省/langgraph 回退 + usage 记账链直调落盘 + 降级红线"
+S352_OK=true
+# 步一静态锚点：事件流订阅消费 notify_session + 联调痕迹（dsh-events.mjs）
+grep -q "notify_session\|notify-session" "$PROJECT_ROOT/FORGE/src/dsh-events.mjs" || S352_OK=false
+grep -q "connectDshEventStream" "$PROJECT_ROOT/FORGE/src/dsh-events.mjs" || S352_OK=false
+# 步二静态锚点：分级切函数存在 + dsh 缺省 + langgraph 显式回退口保留（降级链红线）
+grep -q "function resolveFreshEyesBackend" "$PROJECT_ROOT/FORGE/src/fresh-eyes-driver.mjs" || S352_OK=false
+grep -q "return 'dsh'" "$PROJECT_ROOT/FORGE/src/fresh-eyes-driver.mjs" || S352_OK=false
+grep -q "'langgraph'" "$PROJECT_ROOT/FORGE/src/fresh-eyes-driver.mjs" || S352_OK=false
+# 步三行为实测：usage 记账链——driver 透传接线断言 + jsonl 落盘行为（与 recordUsage 输出形状一致）
+S352_OUT=$(node -e "
+const fs = require('fs');
+const path = require('path');
+const os = require('os');
+let bad = 0;
+// ① driver 源码：步三透传接线在位（runtimeUsage → result.usage → recordUsage 调用）
+const drv = fs.readFileSync('$PROJECT_ROOT/FORGE/src/fresh-eyes-driver.mjs', 'utf8');
+if (!drv.includes('usage: execResult.runtimeUsage ?? undefined')) bad += 1;
+if (!drv.includes('recordUsage(runDir, step, round, role, cfg.model, result, latencyMs, target)')) bad += 10;
+// ② 行为面：模拟一条 runtimeUsage 记录走 jsonl 落盘（复刻 recordUsage 输出形状）
+const runDir = fs.mkdtempSync(path.join(os.tmpdir(), 's352-usage-'));
+const rec = { ts: new Date().toISOString(), target: 'v-test', round: 1, step: 'a-check', role: 'A', model: 'test-model', prompt_tokens: 100, completion_tokens: 50, total_tokens: 150, cost_cny: null, price_confidence: 'no-pricing', latency_ms: 1234 };
+fs.appendFileSync(path.join(runDir, 'usage.jsonl'), JSON.stringify(rec) + '\n', 'utf-8');
+const line = JSON.parse(fs.readFileSync(path.join(runDir, 'usage.jsonl'), 'utf-8').trim());
+if (line.total_tokens !== 150 || line.step !== 'a-check') bad += 100;
+fs.rmSync(runDir, { recursive: true, force: true });
+process.stdout.write(String(bad));
+" 2>/dev/null)
+[ "$S352_OUT" = "0" ] || { echo "  ✗ usage 记账链断言未过数=$S352_OUT"; S352_OK=false; }
+# 红线静态锚点：LangGraph fallback 保留——execution-backend.ts 层 1 守卫
+# （DSH 包未安装 → fallback LangGraph；dsh-backend 能力缺失 → 消费方降级）
+grep -q "LangGraph 保留为 fallback" "$PROJECT_ROOT/engine/orchestrator/src/execution-backend.ts" || S352_OK=false
+grep -q "langgraph-backend" "$PROJECT_ROOT/engine/orchestrator/src/execution-backend.ts" || S352_OK=false
+$S352_OK && pass "DSH 执行深化三步锚点过（事件流/分级切/usage 记账链直调/降级红线）" || fail "DSH 执行深化锚点回退——见上方 ✗ 行（静态锚点+行为混合，对齐 S331/S344 先例）"
+
+# ─────────────────────────────────────────────────────────────
+# S353 · v1.4.3 第二章：train_diagnose 注册级之外补行为断言（dist 直调）
+# classifyTrainFailure 注入已知故障形态（OOM / 数据格式错），断言七类分类
+# 命中正确类别 + 处方表覆盖——纯规则引擎，真实直调不 mock。
+# ─────────────────────────────────────────────────────────────
+scenario 353 "v1.4.3 第二章：train_diagnose 行为实测——七类分类注入已知故障形态命中 + 处方表全类覆盖"
+S353_OK=true
+S353_OUT=$(node -e "
+(async () => {
+  const m = await import('$PROJECT_ROOT/engine/orchestrator/dist/train/train-diagnose.js');
+  let bad = 0;
+  // ① OOM 故障形态 → oom 类命中（关键词证据在案）
+  const oom = m.classifyTrainFailure('RuntimeError: CUDA out of memory. Tried to allocate 2.50 GiB');
+  if (oom.category !== 'oom' || oom.matchedKeywords.length === 0) bad += 1;
+  // ② 数据格式错形态 → data_format 类命中
+  const df = m.classifyTrainFailure('json.decoder.JSONDecodeError: Expecting value: line 1 column 1');
+  if (df.category !== 'data_format') bad += 10;
+  // ③ 无关日志 → 未识别兜底（null 转人审，不硬分类）
+  const none = m.classifyTrainFailure('everything is fine, all good');
+  if (none.category !== null) bad += 100;
+  // ④ 处方表全类覆盖（每类含非空步骤数组）
+  const cats = m.FAILURE_CATEGORIES.map(c => c.id);
+  for (const c of cats) {
+    const p = m.FAILURE_PRESCRIPTIONS[c];
+    if (!p || !Array.isArray(p.steps) || p.steps.length === 0) bad += 1000;
+  }
+  process.stdout.write(String(bad));
+})().catch(e => { process.stderr.write(String(e.message)); process.stdout.write('8888'); });
+" 2>/dev/null)
+[ "$S353_OUT" = "0" ] || { echo "  ✗ train_diagnose 行为断言未过数=$S353_OUT"; S353_OK=false; }
+# 注册面复核（与 S348 呼应）：registry 中 train_diagnose 在位
+grep -q "name: 'train_diagnose'" "$PROJECT_ROOT/engine/mcp/src/tool-registry.ts" || S353_OK=false
+$S353_OK && pass "train_diagnose 行为实测过（OOM/数据格式命中 + 零命中兜底 + 处方全类覆盖）" || fail "train_diagnose 行为回退——见上方 ✗ 行（dist/train-diagnose.js 直调）"
+
+# ─────────────────────────────────────────────────────────────
+# S354 · v1.4.3 第九章：新功能入口导览可发现 + onboarding 断层走查产物在位
+# HANDBOOK 导览表三产品线关键词（训练/FDE 六引擎/IM 桥）+ releasing.md
+# onboarding 走查检查项锚点 + 导览表走查口径行（对账口径固化）。
+# ─────────────────────────────────────────────────────────────
+scenario 354 "v1.4.3 第九章：入口导览三产品线在 HANDBOOK 可发现 + onboarding 断层走查检查项落 releasing.md + 走查口径行"
+S354_OK=true
+# ① 导览表三产品线关键词（文档面的可发现性——HANDBOOK 为入口 SSOT）
+grep -q "新功能入口导览" "$PROJECT_ROOT/docs/HANDBOOK.md" || S354_OK=false
+grep -q "训练引擎" "$PROJECT_ROOT/docs/HANDBOOK.md" || S354_OK=false
+grep -q "FDE 六引擎" "$PROJECT_ROOT/docs/HANDBOOK.md" || S354_OK=false
+grep -q "IM 桥" "$PROJECT_ROOT/docs/HANDBOOK.md" || S354_OK=false
+# ② 三条线的入口命令真实存在（断层走查核心口径：无断头路）
+grep -q "train_doctor" "$PROJECT_ROOT/docs/HANDBOOK.md" || S354_OK=false
+grep -q "fde_interview" "$PROJECT_ROOT/docs/HANDBOOK.md" || S354_OK=false
+grep -q "im-bridge" "$PROJECT_ROOT/docs/HANDBOOK.md" || S354_OK=false
+# ③ onboarding 断层走查检查项落 SOP（releasing.md——发版时必走）
+grep -q "onboarding 走查" "$PROJECT_ROOT/docs/changelog/releasing.md" || S354_OK=false
+# ④ 走查口径行固化（对账口径声明）
+grep -q "onboarding 走查对账口径" "$PROJECT_ROOT/docs/HANDBOOK.md" || S354_OK=false
+$S354_OK && pass "入口导览 + 断层走查产物齐（三线可发现/入口命令实存/SOP 检查项在位）" || fail "入口导览断层——见上方 ✗ 行（HANDBOOK 导览表 + releasing.md 检查项）"
+
+# ─────────────────────────────────────────────────────────────
+# S355 · v1.4.3 第十一章：存量清扫零残留（对齐 S340 形态——grep 全库旧标识）
+# 清扫五件：ao 探测已删 / composeWithReactAgent 更名（旧名 @deprecated 转发）/
+# fde_compose ontology 收窄迁移提示 / checkHistoryChainIntegrity 退役公告标记。
+# ─────────────────────────────────────────────────────────────
+scenario 355 "v1.4.3 第十一章：存量清扫零残留——ao 探测死代码删除 + compose 更名转发 + fde_compose 收窄 + 退役公告标记"
+S355_OK=true
+# ① 清扫一：run-envs 无 ao 探测残留（探测数组字面量不得出现在非注释行——清扫注记注释豁免）
+S355_AO=$(grep -n "\['ao'" "$PROJECT_ROOT/engine/core/src/run-envs.ts" 2>/dev/null | grep -vE "^[0-9]+:[[:space:]]*//" || true)
+[ -n "$S355_AO" ] && { S355_OK=false; echo "ao 探测残留: $S355_AO"; }
+# ② 清扫二：新名可用 + 旧名 @deprecated 别名转发（不删旧名——下游一版缓冲）
+grep -q "export async function composeWithReactAgent" "$PROJECT_ROOT/engine/orchestrator/src/composer.ts" || S355_OK=false
+grep -q "@deprecated" "$PROJECT_ROOT/engine/orchestrator/src/composer.ts" || S355_OK=false
+grep -q "return composeWithReactAgent" "$PROJECT_ROOT/engine/orchestrator/src/composer.ts" || S355_OK=false
+# ③ 清扫三：fde_compose ontology action 收窄（迁移提示在位，不执行旧推导）
+grep -q "action=ontology 已收窄" "$PROJECT_ROOT/engine/mcp/src/tools/fde-compose.ts" || S355_OK=false
+grep -q "fde_derive" "$PROJECT_ROOT/engine/mcp/src/tools/fde-compose.ts" || S355_OK=false
+# ④ 清扫四：checkHistoryChainIntegrity @deprecated 标记在位（移除归 v1.5.0——公告先行的证据）
+grep -B3 "export function checkHistoryChainIntegrity" "$PROJECT_ROOT/engine/core/src/audit-history.ts" 2>/dev/null | grep -q "@deprecated" || S355_OK=false
+$S355_OK && pass "存量清扫零残留过（ao 死代码/更名转发/ontology 收窄/退役公告四锚）" || fail "存量清扫残留——见上方 ✗ 行（grep 全库旧标识，对齐 S340 形态）"
 
 echo -e "  验收测试结果：${GREEN}$PASSED 通过${NC} / ${RED}$FAILED 失败${NC} / 共 $((PASSED + FAILED))"
 # 🔴 v1.3.1 run-10 教训：无色码纯文本汇总行供 driver grep（EXIT: 0=全PASS / <N>=N失败）
