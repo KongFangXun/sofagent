@@ -1444,9 +1444,71 @@ describe('run-08 三修：verdict 强标记组前置 + 叙述句 BLOCK 否决', 
   it('源码级：强标记组必须先于普通组扫描', () => {
     const fnIdx = SOURCE_CODE.indexOf('function extractVerdictKeyword');
     const strongIdx = SOURCE_CODE.indexOf('strongMarkers', fnIdx);
-    const plainIdx = SOURCE_CODE.indexOf("const plainMarkers = ['判定', '结论']", fnIdx);
+    const plainIdx = SOURCE_CODE.indexOf("const plainMarkers = ['判定', '结论', '裁决', '结果']", fnIdx);
     expect(strongIdx).toBeGreaterThan(-1);
     expect(plainIdx).toBeGreaterThan(strongIdx);
+  });
+});
+
+// ═══════════════════════════════════════════════════════════
+//  9c. run-03 词表收编测试组（真实产物回放）
+// ═══════════════════════════════════════════════════════════
+// 背景：run-03 regression.md 裁决行实为 `- **裁决**：✅ **PASS**`——
+// prompt 契约词「结果」被 LLM 漂移成「裁决」，而「裁决」裸词既不在 strongMarkers
+// （终审裁决等复合词）也不在 plainMarkers（判定/结论）→ driver 记 SKIP 与
+// 报告 PASS 脱钩。双向脱节：契约词「结果」本身也不在词表（历史 run 靠「全部
+// 通过」语义组兜住）。修复 = plainMarkers 收编「裁决」「结果」，沿用普通组
+// 纪律（紧邻窗口 + 中文中断 + BLOCK 否决）。
+describe('run-03 词表收编：裁决/结果进普通组 + 契约词闭环', () => {
+  function createExtractor() {
+    const { fullBody } = extractFunctionBody(SOURCE_CODE, 'extractVerdictKeyword');
+    const wrapper = new Function(fullBody + '\nreturn extractVerdictKeyword;');
+    return wrapper();
+  }
+
+  it('run-03 regression.md 实录回放：「**裁决**：✅ **PASS**」→ PASS（修复前记 SKIP）', () => {
+    const extract = createExtractor();
+    const doc = [
+      '# 回归检查报告（regression）',
+      '',
+      '- **裁决**：✅ **PASS**（P0：0 / P1：0 / P2：4）',
+      '',
+      '## 一、总体结论',
+    ].join('\n');
+    expect(extract(doc)).toBe('PASS');
+  });
+
+  it('契约词「结果」闭环：「- **结果**：PASS」→ PASS（LLM 严格守约不再漏）', () => {
+    const extract = createExtractor();
+    expect(extract('## 汇总\n\n- **结果**：PASS\n\n正文省略')).toBe('PASS');
+    expect(extract('## 汇总\n\n- **结果**：FAIL（存在 P0）')).toBe('FAIL');
+  });
+
+  it('「裁决」FAIL 形态：「裁决：BLOCK」/「裁决：不通过」→ FAIL（fail-closed）', () => {
+    const extract = createExtractor();
+    expect(extract('## 汇总\n\n- **裁决**：🚫 BLOCK（维持发布冻结）')).toBe('FAIL');
+    expect(extract('## 汇总\n\n- **裁决**：不通过，暂缓发布')).toBe('FAIL');
+  });
+
+  it('run-03 verdict.md 叙述句形态不回归：混排窗口含 BLOCK 时肯定词拒判', () => {
+    const extract = createExtractor();
+    // 「裁决」落在叙述句窗口（引用 acceptance BLOCK）时不得抢判——与「判定/结论」
+    // 同纪律：BLOCK 否决 → 轮空 → null（上层记 SKIP/ERROR）
+    const doc = '## 汇总\n\n本裁决基于三项上游结果（acceptance BLOCK / regression PASS / coverage 有条件通过）复核。';
+    expect(extract(doc)).toBeNull();
+  });
+
+  it('叙述句防御：「实测结果为 exit=0」「结果显示无失败」不误抓（中文中断纪律）', () => {
+    const extract = createExtractor();
+    // 「结果为」「结果显示」——「结果」后紧跟中文，普通组中文中断纪律挡住裸词匹配。
+    // 注意不得混入「全部通过」等宽松语义组词——那组是 run-07 四修的独立路径，
+    // 在任何 marker 窗口内都命中 PASS，与本测试的中文中断纪律无关。
+    expect(extract('## 二、过程记录\n\n实测结果为 exit=0，无异常。\n\n## 三、附注')).toBeNull();
+    expect(extract('## 二、过程记录\n\n结果显示无失败项。')).toBeNull();
+  });
+
+  it('源码级：plainMarkers 必须同时含 裁决+结果（防词表回退）', () => {
+    expect(SOURCE_CODE).toContain("const plainMarkers = ['判定', '结论', '裁决', '结果']");
   });
 });
 

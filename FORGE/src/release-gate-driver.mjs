@@ -2354,7 +2354,14 @@ function extractVerdictKeyword(raw) {
   // 单层扫描时叙述句先于真裁决行命中。强组前置让专属裁决词的窗口（真裁决行
   // 就在其下）优先消费，叙述句窗口轮不到。
   const strongMarkers = ['终审裁决', '最终裁决', '终审结论', '最终裁定', '闸门判定', '闸门状态', '最终状态'];
-  const plainMarkers = ['判定', '结论'];
+  // 普通组收词纪律：仅收「裁决语境」词，靠普通组纪律（紧邻窗口 + 中文中断
+  // + BLOCK 否决）防叙述句误抓。「裁决」：run-03 实证 LLM 把契约词「结果」
+  // 漂成「裁决」（`- **裁决**：✅ **PASS**`），裸词不在词表 → regression 记
+  // SKIP 与报告 PASS 脱钩；「结果」：prompt 模板格式契约词本身（「**结果**：
+  // PASS 裸词独占一行」）——契约词必须在词表内闭环，否则 LLM 严格守约反被漏。
+  // 「实测结果：exit=0」「结果显示」等叙述句由中文中断纪律挡住（为/显/依 均
+  // 为中文，中断裸词匹配）。
+  const plainMarkers = ['判定', '结论', '裁决', '结果'];
   const markers = [...strongMarkers, ...plainMarkers];
   // 普通组窗口含英文闸门否定词（BLOCK/NO-GO/HOLD）时拒判肯定语义——run-08 实证：
   // 叙述句窗口「acceptance BLOCK / regression PASS / coverage 有条件通过」同窗口
