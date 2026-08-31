@@ -1080,3 +1080,31 @@ describe('run-05 三修（fail-closed 注入口径 + 证据审读预算 + 超时
     expect(SOURCE_CODE).not.toContain('111: 150_000,');
   });
 });
+
+// ═══════════════════════════════════════════════════════════
+// run-06 P1-2 流程加固：产物完整性校验 + 分片全灭早停
+// ═══════════════════════════════════════════════════════════
+describe('run-06 P1-2 流程加固（产物校验 + 闸门早停）', () => {
+  it('步骤完成后校验 outputs 存在且非空——worker exit 0 但产物缺失按失败记账', () => {
+    // run-06 实证：regression worker 被 stall abort 后 agent 层吞错 exit 0，
+    // regression.md 空文件一路流入合并/裁定步（V 拿到零证据输入）。
+    expect(SOURCE_CODE).toContain('产物缺失或空文件');
+    expect(SOURCE_CODE).toContain('statSync(join(runDir, f)).size === 0');
+    // outputs 声明即契约：校验范围来自步骤定义
+    expect(SOURCE_CODE).toContain("stepDef?.outputs || []");
+  });
+
+  it('分片全灭早停：0 成功即 LOOP_END(ERROR) 返回，不空转后续步骤', () => {
+    // run-06 实证：S1 阻塞后 11 个分片同步空转烧完整轮预算。
+    // 部分失败不早停（单分片问题不污染其他分片证据）。
+    expect(SOURCE_CODE).toContain("shardOk === 0");
+    expect(SOURCE_CODE).toContain("stopReason = 'shards-all-failed'");
+    // 早停路径不走 parseVerdict（verdict.md 必为降级占位/缺失）
+    const earlyStopBlock = SOURCE_CODE.slice(
+      SOURCE_CODE.indexOf("stopReason === 'shards-all-failed'"),
+      SOURCE_CODE.indexOf('const results = parseStepResults(runDir);'),
+    );
+    expect(earlyStopBlock).not.toContain('parseVerdict(');
+    expect(earlyStopBlock).toContain("saveGateCheckpoint('verdict-done', 'ERROR', 0)");
+  });
+});
