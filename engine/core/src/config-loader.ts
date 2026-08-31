@@ -617,6 +617,10 @@ function mergeWithDefaults(partial: Partial<AuditConfig>): AuditConfig {
     memory_backends: partial.memory_backends,
     // v1.3.7 ⑨: persona 同步源配置透传（三级优先解析第二级）
     memory_sync: partial.memory_sync,
+    // cost 配置透传（成本审计消费侧读 config.cost?.budget）。
+    // 透传契约：warnUnknownConfigKeys 的 knownKeys 认识的键必须全部在此透传，
+    // 否则「合法配置被静默丢弃」——knownKeys 不告警 + merge 不透传 = 防呆双失效。
+    cost: partial.cost,
   };
 
   // 校验 rules key——未知规则名输出警告

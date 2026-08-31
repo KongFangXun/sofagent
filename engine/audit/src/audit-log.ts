@@ -10,6 +10,7 @@ import { existsSync, readFileSync, writeFileSync, mkdirSync, readdirSync, statSy
 import { join } from 'path';
 import { VERSION, DATA_DIR } from '@sofagent/core';
 import type { ActionGovernance } from './rules/types';
+import { sanitizeFreeText } from './audit-history';
 import { log } from './logger';
 
 export interface AuditEntry {
@@ -66,7 +67,14 @@ export function appendAuditLog(entry: AuditEntry, dataBase?: string): boolean {
   const user = entry.user || process.env.USER || process.env.USERNAME || 'unknown';
   const host = entry.host || (() => { try { return require('os').hostname(); } catch { return 'unknown'; } })();
 
-  const row = `| ${utcTime} | ${escapePipe(entry.operation)} | ${escapePipe(entry.target || '-')} | ${escapePipe(entry.result || '-')} | ${user} | ${host} | |\n`;
+  // 内容脱敏与格式转义两级处理：sanitizeFreeText 过 REDACTION_PATTERNS SSOT
+  // （与 history.jsonl 落盘同口径——审计工具自身不成为第二泄漏点），
+  // escapePipe 只保 Markdown 表格结构不破。先脱敏后转义（REDACTED 不含 |）。
+  const operation = sanitizeFreeText(entry.operation) || '';
+  const target = sanitizeFreeText(entry.target) || '-';
+  const result = sanitizeFreeText(entry.result) || '-';
+
+  const row = `| ${utcTime} | ${escapePipe(operation)} | ${escapePipe(target)} | ${escapePipe(result)} | ${user} | ${host} | |\n`;
   appendFileSync(auditFile, row);
   return true;
 }

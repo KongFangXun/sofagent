@@ -4,7 +4,7 @@
 // ============================================================
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { pushAuditResult } from './webhook';
+import { pushAuditResult, isPrivateWebhookUrl } from './webhook';
 import type { WebhookPayload } from './webhook';
 import type { RuleCheck } from './rules/types';
 
@@ -228,6 +228,44 @@ describe('webhook', () => {
     const result = await pushAuditResult(payload);
     expect(result).toBe(true);
     expect(mockFetch).toHaveBeenCalledTimes(1);
+  });
+
+  // ── P1-58: IPv6 字面量 SSRF 防护——URL 解析后 hostname 对 IPv6 保留方括号
+  // （[::1]），isIP 判 0 会误入公共域名分支整体放行，下方全部 IPv6 防御不可达。
+  // 修复：剥方括号后再判定。向量覆盖报告实测放行的 4 类攻击形态。
+  describe('P1-58 · IPv6 字面量 SSRF 防护', () => {
+    it('回环 [::1] 被拦截', () => {
+      expect(isPrivateWebhookUrl('http://[::1]:8080/admin')).toBe(true);
+    });
+
+    it('v4-mapped 云元数据靶 [::ffff:169.254.169.254] 被拦截', () => {
+      expect(isPrivateWebhookUrl('http://[::ffff:169.254.169.254]/latest/meta-data/')).toBe(true);
+    });
+
+    it('ULA [fd00::1] 被拦截', () => {
+      expect(isPrivateWebhookUrl('http://[fd00::1]:8080/')).toBe(true);
+    });
+
+    it('链路本地 [fe80::1] 被拦截', () => {
+      expect(isPrivateWebhookUrl('http://[fe80::1]/')).toBe(true);
+    });
+
+    it('公网 IPv6 [2001:4860::1] 正常放行（对照组）', () => {
+      expect(isPrivateWebhookUrl('http://[2001:4860::1]/hook')).toBe(false);
+    });
+
+    it('pushAuditResult 集成：[::1] URL 拒绝且不发起请求', async () => {
+      const mockFetch = globalThis.fetch as unknown as ReturnType<typeof vi.fn>;
+      const payload: WebhookPayload = {
+        platform: 'feishu',
+        url: 'http://[::1]:9090/hook',
+        rules: [failRule],
+        exitCode: 2,
+      };
+      const result = await pushAuditResult(payload);
+      expect(result).toBe(false);
+      expect(mockFetch).not.toHaveBeenCalled();
+    });
   });
 
   // ── v1.4.2 G-07: payload.task 脱敏——task 由 Agent 自由文本生成，
