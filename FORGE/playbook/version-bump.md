@@ -39,7 +39,7 @@
 
 从 `package.json` 读 SSOT 版本号，逐项比对全项目 13 类位置。任何不一致 → 红字报错 + exit 1。
 
-#### 同步 package-lock.json（🔴 v1.0.3 + v1.1.3 教训）
+#### 同步 package-lock.json（🔴 教训）
 
 bump-version.sh 改了 `package.json` 但不会自动同步 `package-lock.json`。必须手动执行：
 
@@ -54,7 +54,7 @@ grep -A3 '"engine/audit":' package-lock.json | grep '"version"'
 
 #### 🔴 v1.1.3 npm 发布铁律：版本号永久锁死（详见 releasing.md 索引段）
 
-> 🔴 v1.1.3 教训：npm 版本号 publish 后永久封存，unpublish 无法复写。发之前确认一切就绪 → 一次性批量发布。
+> 🔴 教训：npm 版本号 publish 后永久封存，unpublish 无法复写。发之前确认一切就绪 → 一次性批量发布。
 
 ```bash
 # ❌ 永远不要：publish→unpublish→re-publish（报 400 Cannot publish over）
@@ -66,7 +66,7 @@ grep -A3 '"engine/audit":' package-lock.json | grep '"version"'
 ```bash
 # 全项目搜旧版本号（排除 changelog 历史 + node_modules）
 grep -rn "vX\.Y\.旧" --include="*.md" --include="*.ts" --include="*.sh" . \
-  | grep -v "docs/changelog/" | grep -v "node_modules"
+ | grep -v "docs/changelog/" | grep -v "node_modules"
 ```
 
 > 手动 grep 的结果会包含大量"合理的历史引用"（如 "v1.0 新增"）。这些**不改**——它们是变更溯源标记。
@@ -81,7 +81,7 @@ grep -rn "vX\.Y\.旧" --include="*.md" --include="*.ts" --include="*.sh" . \
 | `package-lock.json` | bump-version.sh 不覆盖 | 「同步 package-lock.json」小节用 `npm install --package-lock-only` 同步 |
 | 正文中的历史引用 | "v1.0 新增"是溯源标记，不改 | 永远不改 |
 
-#### 🔴 版本重编号全局 grep（v1.0.2 教训）
+#### 🔴 版本重编号全局 grep（教训）
 
 版本重编号时（如 v1.0.x 系列内部跳号），只改规划版本表是不够的——ROADMAP 的详情表、HANDBOOK、DEVELOPMENT、THANKS 中的版本引用也要跟着改。必须全局 grep 所有 `vX.Y.x` 引用，区分"历史引用"（不改）和"未来规划引用"（必须改）。
 
@@ -91,7 +91,7 @@ grep -rn "v1\.0\.[0-9]" --include="*.md" . | grep -v "docs/changelog/" | grep -v
 # 逐一判断哪些是"未来规划引用"（要改），哪些是"历史引用"（不改）
 ```
 
-#### 新增 SKILL.md 覆盖检查（🔴 v1.0.3 教训）
+#### 新增 SKILL.md 覆盖检查（🔴 教训）
 
 新增 SKILL.md 文件时，确认 check-version.sh 能检测到它。check-version.sh 用 `find -name 'SKILL.md'` 动态扫描，理论上自动覆盖——但 SKILL.md 的 version 字段必须用 3 段格式（如 `1.0.3`），否则 2 段比对会漏检 patch 差异。
 

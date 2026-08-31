@@ -24,21 +24,21 @@ LIMITATIONS.md 必须覆盖本版本引入的核心新功能带来的已知局�
 - [ ] 英文版（README.en / EVIDENCE.en）内容是否与中文版同步？
 - [ ] COMMUNITY.md 实验状态、contributor 数是否为当前实际状态？
 - [ ] 🔴 **LIMITATIONS 覆盖新功能**（v1.1.9 fresh-eyes 教训——文档滞后 P1）：LIMITATIONS.md 必须覆盖近 3 个版本引入的核心新功能。检查方式：
-  ```bash
-  # 从最近版本 changelog 提取核心功能关键词，逐个 grep LIMITATIONS.md
-  NEW_FEATURES="Dream Cycle\|sensitivity\|knowledge-health\|ActionGovernance\|ab-scheduler"
-  COV=$(grep -c "$NEW_FEATURES" LIMITATIONS.md || echo 0)
-  [ "$COV" -lt 3 ] && echo "⚠️ LIMITATIONS 新功能覆盖不足（$COV 处）" || echo "✅ $COV 处"
-  ```
+ ```bash
+ # 从最近版本 changelog 提取核心功能关键词，逐个 grep LIMITATIONS.md
+ NEW_FEATURES="Dream Cycle\|sensitivity\|knowledge-health\|ActionGovernance\|ab-scheduler"
+ COV=$(grep -c "$NEW_FEATURES" LIMITATIONS.md || echo 0)
+ [ "$COV" -lt 3 ] && echo "⚠️ LIMITATIONS 新功能覆盖不足（$COV 处）" || echo "✅ $COV 处"
+ ```
 - [ ] 🔴 **evidence 文件存在且测试数一致**（v1.1.9 fresh-eyes 教训）：证据文件路径是 `docs/evidence/evidence.md`（单文件，非按版本拆分），测试数由 `check-test-count.sh` 自动校验。检查方式：
-  ```bash
-  test -f docs/evidence/evidence.md && echo "✅ evidence 文件存在" || echo "❌ evidence 文件缺失"
-  bash tools/check/check-test-count.sh   # 期望：全绿（CHANGELOG/ROADMAP/LIMITATIONS/evidence.md 声称数 vs 实际值）
-  ```
+ ```bash
+ test -f docs/evidence/evidence.md && echo "✅ evidence 文件存在" || echo "❌ evidence 文件缺失"
+ bash tools/check/check-test-count.sh # 期望：全绿（CHANGELOG/ROADMAP/LIMITATIONS/evidence.md 声称数 vs 实际值）
+ ```
 
 ### 文档同步闭环（v1.1.9 D6 闸门 · 详见 releasing.md 索引段）
 
-> 🔴 v1.1.9 教训：changelog 写了新功能但项目文档零提及 = 用户不知道有这功能。本步骤与 D3 对称——D3 做「changelog→验收场景」对照，本步骤做「changelog→项目文档」对照。
+> 🔴 教训：changelog 写了新功能但项目文档零提及 = 用户不知道有这功能。本步骤与 D3 对称——D3 做「changelog→验收场景」对照，本步骤做「changelog→项目文档」对照。
 
 **Step A — 从 D6 清单提取功能关键词**
 
