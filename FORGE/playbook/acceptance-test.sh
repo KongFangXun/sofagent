@@ -6,7 +6,7 @@ export LANG=en_US.UTF-8
 export LC_ALL=en_US.UTF-8
 # sofagent-audit · 上线前验收测试（Pre-Release Acceptance Test）
 # 覆盖：FORGE + MCP + 文件系统审计 + daemon + 红队对抗 + 各版本新功能验收
-# 场景数：292 个场景（SSOT：check-test-count.sh 校验，口径=真实 scenario 调用行数，非编号最大值（S1-S344 间有 70 个历史空洞号）；v1.3.7 +4：S290-S293；v1.3.6 +8：S282-S289；v1.3.8 +11：S294-S304（含 bugfix 防回归 S303/S304）；v1.3.9 +15：S305-S319（阶段五 A 类分发 13 项 + 阶段六 coverage 补测 S318 ATTRIBUTION 归因引擎/S319 Dream Sandbox 沙盒审计）；v1.4.0 +3：S320（联邦查询跨进程 E2E——补 federation.test.ts 同进程 mock 缺口）、S321（跨平台 hook stdin 模式闭环验证）、S322（双设备联邦独立进程模拟——两个独立 node 进程 + 真实 TCP，补 fork 形态缺口）；v1.4.1 +10：S323（train doctor CLI 实跑）、S324（enterpriseId 强制绑定+幂等）、S325（fingerprint 冻结+不可变）、S326（artifact 签名+篡改检测）、S327（安全基线路径白名单+注入检测）、S328（install.sh 迁移丢数据窗口防回归——阶段四 B2 分发）、S329（install.sh symlink 谎报守卫——阶段四 B3 分发）、S330（训练异常退出资源回收四步链——阶段六 coverage 补测，补判断层唯一零覆盖项）、S331（OpenClaw plugin 双 manifest 一致性——阶段十一 ClawHub 拒收踩坑回写）、S332（bump 脚本通配误伤防回归——阶段十一静默漏 bump 踩坑回写）；v1.4.2 +10：S333（数据管道 CSV 类型推断端到端）、S334（dataset_version 台账三件套）、S335（eval 阈值判定双态）、S336（dry-run 显存估算单调性）、S337（ScaleRL sigmoid 拟合/外推/建议）、S338（FDE 工作台审计留痕往返——阶段三步骤四增量，行为实测走 dist 产物）、S339（MCP 工具 dataDir SSOT 收编完整——阶段三 fresh-eyes N-1 修复行为锁）、S340（19 处 v1.3.x 存量 getSofagentDataDir 一次清零行为锁——用户拍板 A 桶落点迁移接受）、S341（train report 报告生成本体 dist 行为实测——阶段五 coverage 唯一零覆盖项补测）；v1.4.2 章五 +2：S342（IM 桥通道交付三面断言——run-17 模块七零覆盖补测）、S343（BugFix 30 项批次级五族锚点——run-17 模块十零覆盖补测，对齐 S281 先例）；v1.4.2 阶段十二 +1：S344（Git Data API 推送通道 cat-file 防复发——ps1 eol 二坑根因固化）；v1.4.3 bugfix 批 +1：S345（跨平台 hook stdin message 抽取三场景行为锁——F-03 等号/中文/嵌套引号 + 空格形式回归，stub 断言 --task 透传）；v1.4.3 阶段三 +3：S346（审计聚合 --stats CLI 行为实测——--json 纯净/--days 窗口/口径行）、S347（反作弊基线三防线锚点——doctor 体检/缺省全开/白名单外部化）、S348（训练监控三 MCP tools 注册面——registry 79 + SKILL 对账）；v1.4.3 阶段五 +3：S349（训练沙箱三约束行为实测——dist 直调 createTrainSandbox：路径守卫三态/代理黑洞/网关判定）、S350（训练需求推导行为实测——场景派生/默认模板匹配/报告路径企业隔离）、S351（后训练 workflow 模板解析——七节点 DAG 无环/三 HITL/capability_ref 全节点指向）；v1.4.3 阶段五 run-02 闭环 +4：S352（DSH 执行深化三步锚点——事件流订阅/分级切 dsh 缺省/usage 记账链直调/降级红线）、S353（train_diagnose 行为实测——故障形态命中/零命中兜底/处方全覆盖）、S354（入口导览三产品线可发现 + onboarding 断层走查检查项 + 走查口径行）、S355（存量清扫零残留——ao 死代码/compose 更名转发/ontology 收窄/退役公告四锚）；v1.4.3 run-04 coverage 闭环 +1：S356（doctor Ontology 完整性检查——entities 遍历 + frontmatter 三查 + skip-log 对账锚点，补十三章零覆盖 P0-1）；v1.4.3 run-05 coverage 闭环 +2：S357（审计聚合触发率数值实测——已知分布 fixture 直调 computeAuditStats：分母/分布/触发率 0.3/阻断率 0.1/空历史 null 降级，F-3 闭环）、S358（train_status 行为实测——fixture 任务+事件流直调：运行态/进度曲线/参数校验/隔离面/GPU 队列账本，F-1 闭环；S347 同批补四形态×双防线映射锁 F-2 闭环））；v1.4.3 闸门 run-05 P1 批 +1：S359（过时承诺排期化 + 悬空引用补锚点——ecdh.ts 注释指向 ROADMAP v1.4.7 / changelog F-10 引 S359 / 三态退出码 exit 2 在位，P1-3/P1-7/P1-8 闭环防复发）
+# 场景数：293 个场景（SSOT：check-test-count.sh 校验，口径=真实 scenario 调用行数，非编号最大值（S1-S344 间有 70 个历史空洞号）；v1.3.7 +4：S290-S293；v1.3.6 +8：S282-S289；v1.3.8 +11：S294-S304（含 bugfix 防回归 S303/S304）；v1.3.9 +15：S305-S319（阶段五 A 类分发 13 项 + 阶段六 coverage 补测 S318 ATTRIBUTION 归因引擎/S319 Dream Sandbox 沙盒审计）；v1.4.0 +3：S320（联邦查询跨进程 E2E——补 federation.test.ts 同进程 mock 缺口）、S321（跨平台 hook stdin 模式闭环验证）、S322（双设备联邦独立进程模拟——两个独立 node 进程 + 真实 TCP，补 fork 形态缺口）；v1.4.1 +10：S323（train doctor CLI 实跑）、S324（enterpriseId 强制绑定+幂等）、S325（fingerprint 冻结+不可变）、S326（artifact 签名+篡改检测）、S327（安全基线路径白名单+注入检测）、S328（install.sh 迁移丢数据窗口防回归——阶段四 B2 分发）、S329（install.sh symlink 谎报守卫——阶段四 B3 分发）、S330（训练异常退出资源回收四步链——阶段六 coverage 补测，补判断层唯一零覆盖项）、S331（OpenClaw plugin 双 manifest 一致性——阶段十一 ClawHub 拒收踩坑回写）、S332（bump 脚本通配误伤防回归——阶段十一静默漏 bump 踩坑回写）；v1.4.2 +10：S333（数据管道 CSV 类型推断端到端）、S334（dataset_version 台账三件套）、S335（eval 阈值判定双态）、S336（dry-run 显存估算单调性）、S337（ScaleRL sigmoid 拟合/外推/建议）、S338（FDE 工作台审计留痕往返——阶段三步骤四增量，行为实测走 dist 产物）、S339（MCP 工具 dataDir SSOT 收编完整——阶段三 fresh-eyes N-1 修复行为锁）、S340（19 处 v1.3.x 存量 getSofagentDataDir 一次清零行为锁——用户拍板 A 桶落点迁移接受）、S341（train report 报告生成本体 dist 行为实测——阶段五 coverage 唯一零覆盖项补测）；v1.4.2 章五 +2：S342（IM 桥通道交付三面断言——run-17 模块七零覆盖补测）、S343（BugFix 30 项批次级五族锚点——run-17 模块十零覆盖补测，对齐 S281 先例）；v1.4.2 阶段十二 +1：S344（Git Data API 推送通道 cat-file 防复发——ps1 eol 二坑根因固化）；v1.4.3 bugfix 批 +1：S345（跨平台 hook stdin message 抽取三场景行为锁——F-03 等号/中文/嵌套引号 + 空格形式回归，stub 断言 --task 透传）；v1.4.3 阶段三 +3：S346（审计聚合 --stats CLI 行为实测——--json 纯净/--days 窗口/口径行）、S347（反作弊基线三防线锚点——doctor 体检/缺省全开/白名单外部化）、S348（训练监控三 MCP tools 注册面——registry 79 + SKILL 对账）；v1.4.3 阶段五 +3：S349（训练沙箱三约束行为实测——dist 直调 createTrainSandbox：路径守卫三态/代理黑洞/网关判定）、S350（训练需求推导行为实测——场景派生/默认模板匹配/报告路径企业隔离）、S351（后训练 workflow 模板解析——七节点 DAG 无环/三 HITL/capability_ref 全节点指向）；v1.4.3 阶段五 run-02 闭环 +4：S352（DSH 执行深化三步锚点——事件流订阅/分级切 dsh 缺省/usage 记账链直调/降级红线）、S353（train_diagnose 行为实测——故障形态命中/零命中兜底/处方全覆盖）、S354（入口导览三产品线可发现 + onboarding 断层走查检查项 + 走查口径行）、S355（存量清扫零残留——ao 死代码/compose 更名转发/ontology 收窄/退役公告四锚）；v1.4.3 run-04 coverage 闭环 +1：S356（doctor Ontology 完整性检查——entities 遍历 + frontmatter 三查 + skip-log 对账锚点，补十三章零覆盖 P0-1）；v1.4.3 run-05 coverage 闭环 +2：S357（审计聚合触发率数值实测——已知分布 fixture 直调 computeAuditStats：分母/分布/触发率 0.3/阻断率 0.1/空历史 null 降级，F-3 闭环）、S358（train_status 行为实测——fixture 任务+事件流直调：运行态/进度曲线/参数校验/隔离面/GPU 队列账本，F-1 闭环；S347 同批补四形态×双防线映射锁 F-2 闭环））；v1.4.3 闸门 run-05 P1 批 +1：S359（过时承诺排期化 + 悬空引用补锚点——ecdh.ts 注释指向 ROADMAP v1.4.7 / changelog F-10 引 S359 / 三态退出码 exit 2 在位，P1-3/P1-7/P1-8 闭环防复发）；v1.4.3 闸门 run-06 误报批 +1：S360（P1-3/P1-6/P1-7 定谳——规则数 24 双口径锚点（number 字段清点 + README 对齐）/ 维度 9 探针 A+E 全口径防漏 E 系列 / PASS 场景级断言输出 pass() 透传描述 / S165 标题去 158 残留）
 # 编号跳号豁免：S1~S293 间有 70 个空洞号（全在 S36-S202 历史段）——v1.2.x 瘦身删场景
 # 与基线重建（restore 6e542467）的既成事实，非丢失；新场景编号=当前最大+1 顺延，禁止回填空洞
 # 版本段起点见文件内「# ─── v」分组标记（grep "─── v" 定位）
@@ -29,7 +29,7 @@ ORIG_DIR="$(pwd)"
 CLI="node $AUDIT_DIR/dist/index.js"
 CORE_CLI="node $PROJECT_ROOT/engine/core/dist/cli.js"
 [ ! -f "$AUDIT_DIR/dist/index.js" ] && { echo -e "${RED}❌ dist/index.js 不存在，请先 build${NC}"; exit 1; }
-TMP_REPO=""; FAILED=0; PASSED=0; WARNED=0
+TMP_REPO=""; FAILED=0; PASSED=0; WARNED=0; CURRENT_SCEN=""  # CURRENT_SCEN：P1-7 warn 场景定位（头部初始化防 set -u）
 # 🔴 bash 3.2 陷阱（v1.4.1 阶段五实证）：set -u 崩溃（如 ${VAR}（ 全角字符紧贴变量名）时，
 # trap 函数自身的成功返回会覆盖原退出码 → 崩溃假报 exit 0。
 # 修复：cleanup 首行捕获 $?，末尾以保存的退出码退出（trap 不吞退出码）。
@@ -43,6 +43,7 @@ export PATH="$WRAPPER_DIR/bin:$PATH"
 WRAPPER_CLEANUP="$WRAPPER_DIR"
 scenario() {
   if [ -n "$TMP_REPO" ] && [ -d "$TMP_REPO" ]; then cd "$TMP_REPO" 2>/dev/null || true; git reset --hard HEAD 2>/dev/null || true; git rm --cached -f .env 2>/dev/null || true; rm -f .env 2>/dev/null || true; fi
+  CURRENT_SCEN="S$1"  # P1-7：记录当前场景号——warn 带场景定位（PASS 描述由调用点透传）
   echo ""; echo -e "${CYAN}━━━ 场景 $1: $2 ━━━${NC}"
 }
 # P1-37(补充): --init 在真实 HOME 跑会写 ~/.sofagent-key（P1-24 自动生成）与
@@ -53,13 +54,17 @@ init_isolated() { # 用法: init_isolated <command...>
   rm -rf "$iso_home"
 }
 git_log_has() { set +o pipefail; git log --oneline 2>/dev/null | grep -q "$1"; local rc=$?; set -o pipefail; return $rc; }
-pass() { echo -e "${GREEN}  ✅ PASS${NC}"; PASSED=$((PASSED + 1)); }
+# P1-7（run-06 verdict）修复：PASS 场景缺场景级断言输出——弱证据链，难逐场景
+# 溯源。调用点形态 `$Sxx_OK && pass "描述"` 本就携带描述，原实现丢弃参数只打
+# 裸 PASS 标记。现在透传描述 → 每场景在日志中留下专属断言结论行，PASS 证据
+# 可逐场景回放（driver 分片按场景头行切段，描述行自动进对应段，无解析影响）。
+pass() { echo -e "${GREEN}  ✅ PASS${1:+: $1}${NC}"; PASSED=$((PASSED + 1)); }
 fail() { echo -e "${RED}  ❌ FAIL: $1${NC}"; FAILED=$((FAILED + 1)); }
 # WARN 计数（run-08 P0-1 harness 修）：warn 语义 = 环境依赖跳过（dist 未构建/工具
 # 未装），非产品失败——但必须进「共 N」分母且汇总行可见，否则出现「WARN 场景
 # 与 368/368 全部通过并存」的自相矛盾汇总（run-08 s1 分片实证：场景 28 WARN
 # 后汇总仍称全部通过）。跳过场景应显式披露，不应静默蒸发。
-warn() { echo -e "${YELLOW}  ⚠️  WARN: $1${NC}"; WARNED=$((WARNED + 1)); }
+warn() { echo -e "${YELLOW}  ⚠️  WARN: ${CURRENT_SCEN:+[${CURRENT_SCEN}] }$1${NC}"; WARNED=$((WARNED + 1)); }
 mktmp_repo() { local d; d=$(mktemp -d /tmp/sofagent-e2e-XXXXXX); git -C "$d" init --quiet 2>/dev/null; git -C "$d" config user.email "test@test.com" 2>/dev/null; git -C "$d" config user.name "Test" 2>/dev/null; echo "$d"; }
 cleanup_tmp() { local d="$1"; [ -n "$d" ] && [ -d "$d" ] && case "$d" in /tmp/sofagent-*|/tmp/s[0-9]*) rm -rf "$d";; esac; }
 require_dist() { [ ! -f "$PROJECT_ROOT/$1" ] && { fail "$1 不存在（需先 build）"; return 1; }; return 0; }
@@ -1441,7 +1446,7 @@ S164_OK=true
 for p in install.sh engine/think/src/think-generator.ts; do test -e "$PROJECT_ROOT/$p" || { fail "文档引用的代码路径不存在: $p"; S164_OK=false; }; done
 node -e "const fs=require('fs'),path=require('path');const{execSync}=require('child_process');const files=execSync('git ls-files \"*.md\"').toString().split('\n').filter(f=>f&&!/archive|node_modules/.test(f));let bad=0;for(const fp of files){const c=fs.readFileSync(fp,'utf8'),dir=path.dirname(fp);const re=/\]\(((?:\.\.?\/)?[^)]+\.md(?:#[^)]*)?)\)/g;let m;while((m=re.exec(c))){const href=m[1].split('#')[0];if(href.startsWith('http'))continue;if(!fs.existsSync(path.resolve(dir,href))){console.log('断链:',fp,'->',m[1]);bad++;}}}process.exit(bad?1:0);" >/dev/null 2>&1 || { fail "存在指向不存在文件的跨文档 Markdown 链接"; S164_OK=false; }
 $S164_OK && pass "文档链接可达性（代码路径存在 + 跨文件链接无死链）"
-scenario 165 "关键数字跨文档一致性——测试数 / 规则数 24 / acceptance 158"
+scenario 165 "关键数字跨文档一致性——测试数 / 规则数 24 / acceptance 场景数动态对账"
 S165_OK=true
 TEST_COUNT=""
 if [ -f "$PROJECT_ROOT/tools/check/test-count.sh" ]; then
@@ -4048,6 +4053,31 @@ grep -q "F-10 定谳（S359" "$PROJECT_ROOT/docs/changelog/v1.4/v1.4.3.md" || S3
 # BSD grep BRE 把 [ ] 解释为字符类（匹配单字符）——必须用 grep -F 字面匹配。
 grep -Fq 'elif [ "$WARNED" -gt 0 ]; then echo -e "${YELLOW}⚠️  有 $WARNED 个场景因环境依赖跳过（证据面不完整），放行前补跑${NC}"; exit 2' "$PROJECT_ROOT/FORGE/playbook/acceptance-test.sh" || S359_OK=false  # elif 分支整行在位
 $S359_OK && pass "run-05 P1 批闭环锚点在位（承诺排期化/悬空引用补锚/三态退出码）" || fail "P1 批闭环锚点丢失——verdict HOLD 项面临回退"
+
+scenario 360 "v1.4.3 闸门 run-06 verdict P1 误报批定谳——规则数 24 双口径锚点 + 维度 9 探针 A+E 全口径 + PASS 场景级断言输出"
+# run-06 verdict P1-3/P1-6/P1-7 定谳处置：
+# ① P1-3 误报——README「24 条」正确：node 清点 index.ts number 字段 = 24
+#   （A 系列 21：A1-A11,A14-A23 + E 系列 3：E1/E2/E4 编号 201/202/204）。
+#   维度 9 探针 grep pattern 只匹配 'A[0-9]+ 漏 E 系列 → 报「SSOT 21」假漂移。
+# ② P1-6 半误报——四文档 158 已零命中，仅 S165 标题残留硬编码（本批已改）。
+# ③ P1-7 已修——pass() 透传描述（本批），每场景留专属断言结论行。
+S360_OK=true
+# 规则数 24：代码 SSOT（number 字段计数）与文档声称对齐
+S360_NUMS=$(grep -oE "number: [0-9]+" "$PROJECT_ROOT/engine/audit/src/rules/index.ts" | grep -oE "[0-9]+" | wc -l | tr -d ' ')
+[ "$S360_NUMS" = "24" ] || S360_OK=false  # index.ts 注册 24 条（17 默认 + 7 扩展）
+grep -q "24 条审计规则\|24 条规则" "$PROJECT_ROOT/README.md" || S360_OK=false  # README 对外口径 24
+# 维度 9 探针全口径：A+E 合计应 24（修后回归锚点，防探针再漏 E 系列）
+S360_PROBE=$(grep -oE "name:[[:space:]]*'[AE][0-9]+" "$PROJECT_ROOT/engine/audit/src/rules/index.ts" | wc -l | tr -d ' ')
+[ "$S360_PROBE" = "24" ] || S360_OK=false  # 探针 pattern 含 A+E 双系列
+grep -q 'SSOT_TOTAL=\$(grep -cE "name:\[\[:space:\]\]\*'"'"'\[AE\]\[0-9\]+" engine/audit/src/rules/index.ts)' "$PROJECT_ROOT/FORGE/playbook/regression-checklist.md" && S360_OK=false  # 旧 A-only 探针不得回潮（BRE 字符类须转义）
+# P1-7 防复发：pass() 透传描述在位
+grep -q 'PASS\${1' "$PROJECT_ROOT/FORGE/playbook/acceptance-test.sh" || S360_OK=false  # pass 打印场景级描述
+# P1-6 防复发：S165 标题不再硬编码过时场景数。断言 pattern 从变量拼接（避免
+# 字面量出现在本文件被自身断言匹配）；grep -F 见 S359 BRE 教训。
+S360_OLD158="acceptance 158"
+S360_OLD158="关键数字跨文档一致性——测试数 / 规则数 24 / ${S360_OLD158}"
+grep -Fq "$S360_OLD158" "$SCRIPT_DIR/acceptance-test.sh" && S360_OK=false  # 过时标题形态不得回潮
+$S360_OK && pass "run-06 误报批闭环（规则数 24 双口径/探针全口径/PASS 证据链/标题去残留）" || fail "run-06 误报批锚点丢失——README 规则数或探针口径回退"
 
 echo -e "  验收测试结果：${GREEN}$PASSED 通过${NC} / ${RED}$FAILED 失败${NC} / ${YELLOW}$WARNED 跳过${NC} / 共 $((PASSED + FAILED + WARNED))"
 # 🔴 v1.3.1 run-10 教训：无色码纯文本汇总行供 driver grep（EXIT: 0=全PASS / <N>=N失败）

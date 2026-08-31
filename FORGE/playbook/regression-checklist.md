@@ -194,13 +194,18 @@ grep -rnE "nohup.*(build|acceptance-test)|npm run build[^&]*&[[:space:]]*$" tool
 > 扩展：覆盖**代码侧 + 文档侧**两个一致性面
 
 ```bash
-SSOT_TOTAL=$(grep -cE "name:[[:space:]]*'A[0-9]+" engine/audit/src/rules/index.ts) # 勘误：去掉 ^ 行首锚定——index.ts 规则是对象字面量 { name: 'A4...'，行首锚定匹配 0 致 SSOT 总数失明
+# run-06 verdict P1-3 定谳：原 pattern 只匹配 A 系列（漏 E1/E2/E4 编号 201/202/204）
+# → 误报「SSOT 21」；README「24 条」经 node number 字段清点为正确（21 A + 3 E）。
+# 探针改 A+E 全口径；字段完整性（name+ruleClass 各 24=48）与此对齐。
+SSOT_TOTAL=$(grep -cE "name:[[:space:]]*'[AE][0-9]+" engine/audit/src/rules/index.ts) # 勘误：去掉 ^ 行首锚定——index.ts 规则是对象字面量 { name: 'A4...'，行首锚定匹配 0 致 SSOT 总数失明
 SSOT_MAX=$(grep -oE "name:[[:space:]]*'A[0-9]+" engine/audit/src/rules/index.ts | grep -oE "[0-9]+" | sort -n | tail -1)
-echo "SSOT 规则总数: $SSOT_TOTAL / 最大编号: A$SSOT_MAX"
+echo "SSOT 规则总数: $SSOT_TOTAL / A 系列最大编号: A$SSOT_MAX"
 
 # 代码侧：knownKeys = index.ts 注册号（A16-A19 两组各验证）
 grep -c "a1[6-9]" engine/core/src/config-loader.ts # ≥4
 INDEX_RULES=$(grep -oE "name:[[:space:]]*'A[0-9]+" engine/audit/src/rules/index.ts | grep -oE "[0-9]+" | sort -n | tr '\n' ',')
+# run-06 P1-3 同批：INDEX_RULES 保持 A 系列（与 knownKeys 的 a14-a17/a18/a19 对账面）；
+# E 系列由 SSOT_TOTAL（A+E=24）覆盖，knownKeys 含 'e1'-'e4' 由下行集合覆盖验证
 KNOWN_KEYS=$(grep -A20 "knownKeys = new Set" engine/core/src/config-loader.ts | grep -oE "'a[0-9]+'" | tr -d "'a" | sort -n | tr '\n' ',')
 echo "index.ts: $INDEX_RULES / knownKeys: $KNOWN_KEYS" # 期望：两集合相等
 
@@ -208,6 +213,7 @@ echo "index.ts: $INDEX_RULES / knownKeys: $KNOWN_KEYS" # 期望：两集合相�
 grep -rnE "A1-A11、A14-A1[0-9]|[0-9]+ 条审计规则" --include="*.md" README.md README.en.md docs/ FDE/ FORGE/ 2>/dev/null | grep -v "regression-checklist\|fresh-eyes-review\|changelog/" # 人工核对：与 SSOT 一致（docs/ 已含 ROADMAP.md）
 
 # 字段完整性（name+ruleClass 各 24 条=48，曾 21→24 勘误）+ evidenceMode 计数（期望 24）
+# run-06 P1-3 勘误注：48/24 的「24」= 全口径（21 A + 3 E），与 SSOT_TOTAL 修后口径一致
 grep -oE "name:|ruleClass:" engine/audit/src/rules/index.ts | wc -l # 期望 48
 grep -cE "evidenceMode:" engine/audit/src/rules/index.ts # 期望 24
 ```
