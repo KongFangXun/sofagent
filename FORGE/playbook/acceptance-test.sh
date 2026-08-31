@@ -1935,15 +1935,19 @@ if $S218_OK; then
   $S218_OK && pass "激活链Phase3后半（hitl-handler.ts HITL+审计集成 + node-executor checkHITL + 测试覆盖）"
 fi
 
-scenario 219 "v1.2.9 ⑤ mcp-server.ts拆分 — 行数≤350 + 模块化（tool-registry + tools/ + resources）"
+scenario 219 "v1.2.9 ⑤ mcp-server.ts拆分 — 行数≤450（历次校准）+ 模块化（tool-registry + tools/ + resources）"
 S219_OK=true
 MCP="$PROJECT_ROOT/engine/mcp/src/mcp-server.ts"
 [ -f "$MCP" ] || { fail "mcp-server.ts 不存在"; S219_OK=false; }
 if $S219_OK; then
-  # 行数 ≤ 420（拆分后应瘦身）。
+  # 行数 ≤ 450（拆分后应瘦身）。
   # v1.3.5 校准：v1.2.9 立线时约 20 tools，300 行够；现 52 tools，每个 tool 薄分发固定成本 2 行（1 import + 1 case）≈104 行 + 协议骨架，300 物理装不下。
   # v1.4.0 校准：66 tools（+cost_query +browser 4）+ 角色分层接入（tool-roles import + 过滤/拦截 ~14 行）→ 409 行，阈值 400→420（判定本质是「拆分充分」非行数绝对值）。
   # v1.4.2 校准：76 tools（+fde 六件 + 训练三件）→ 434 行，阈值 420→450（同判定本质；每次 +N tools 薄分发 ≈ +2 行/tool）。
+  # run-07 verdict P1-6 裁定：阈值历次校准链已到 450 且 444 行在界内——标题「≤350」
+  # 是 v1.2.9 立线时的初值快照，与断言实现（≤450）脱钩。标题改为随校准链表述，
+  # 断言口径不变。判定本质 = 「拆分充分」（tool-registry/tools//resources 模块在位
+  # + 行数随 tools 规模校准），非行数绝对值。
   MCP_LINES=$(wc -l < "$MCP" | tr -d ' ')
   [ "$MCP_LINES" -le 450 ] || { fail "mcp-server.ts 行数 $MCP_LINES > 450（拆分不充分）"; S219_OK=false; }
   # 拆分出的模块文件存在
