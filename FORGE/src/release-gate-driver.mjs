@@ -29,7 +29,7 @@
 import { spawn, execSync, spawnSync } from 'child_process';
 import { createRequire } from 'module';
 import {
-  readFileSync, writeFileSync, mkdirSync, existsSync,
+  readFileSync, writeFileSync, mkdirSync, existsSync, statSync,
   appendFileSync, readdirSync, copyFileSync, createWriteStream,
   openSync, closeSync, unlinkSync,
 } from 'fs';
@@ -3229,6 +3229,22 @@ async function main() {
       stepErrors.push({ step: f.step, error: f.reason?.message || String(f.reason) });
     }
 
+    // v1.4.3 P1-2（run-06 V 裁决）：闸门阻塞早停——分片**全灭**（成功 0）说明
+    // 环境级故障（API 全挂/网络断/权限收窄），继续跑 consolidate 与后续步骤只会
+    // 空转产出无效报告（run-06 实证：S1 阻塞后 11 个分片同步空转烧完整轮预算）。
+    // 部分失败不早停（单分片问题不污染其他分片证据）。
+    const shardOk = shardResults.filter(r => r.value !== null).length;
+    if (shardsToRun.length > 0 && shardOk === 0) {
+      console.error(`\n  🔴 acceptance 分片 0/${shardsToRun.length} 成功——环境级故障，早停本轮（闸门阻塞早停）`);
+      console.error(`     处置：排查环境后 --resume 或重跑；本轮产物不具评审效力`);
+      stopReason = 'shards-all-failed';
+      visibility.emit(EVENTS.LOOP_END, {
+        verdict: 'ERROR',
+        stopReason,
+      });
+      return { verdict: 'ERROR', stopReason };
+    }
+
     for (const r of shardResults) {
       if (r.value !== null) completedSteps++;
     }
@@ -3338,6 +3354,17 @@ async function main() {
       await spawnWorker(step, runDir, args.target);
       completedSteps++;
 
+      // v1.4.3 P1-2（run-06 V 裁决）：产物完整性校验——worker exit 0 但产物缺失/
+      // 空文件（如 stall abort 后 agent 层吞错）按步骤失败记账，不让空缺流入
+      // 合并/裁定步。outputs 声明即契约。
+      const stepDef = STEPS[step];
+      const missingOutputs = (stepDef?.outputs || []).filter(
+        f => !existsSync(join(runDir, f)) || statSync(join(runDir, f)).size === 0,
+      );
+      if (missingOutputs.length > 0) {
+        throw new Error(`产物缺失或空文件: ${missingOutputs.join(', ')}（worker exit 0 但未落盘——agent 层吞错）`);
+      }
+
       visibility.emit(EVENTS.STEP_DONE, {
         step,
         stepIndex,
@@ -3367,6 +3394,21 @@ async function main() {
   }
 
   // ─── 解析 V 阶段裁决 ───
+  // v1.4.3 P1-2：分片全灭早停路径直接落账 ERROR——不 parseVerdict（verdict.md
+  // 不存在或为降级占位，解析必得 ERROR，直接声明语义更明确）。
+  if (stopReason === 'shards-all-failed') {
+    saveGateCheckpoint('verdict-done', 'ERROR', 0);
+    visibility.emit(EVENTS.LOOP_END, {
+      verdict: 'ERROR',
+      stopReason,
+      completedSteps,
+      stepErrors: stepErrors.map(e => e.step),
+    });
+    disarmSignalCleanup();
+    safeTeardownWorktree();
+    if (heartbeatTimer) clearInterval(heartbeatTimer);
+    return 'ERROR';
+  }
   const results = parseStepResults(runDir);
   let verdict, reason;
   if (skipVPhase) {
