@@ -799,7 +799,19 @@ describe('buildPrecheckEvidence（DSH 证据注入）', () => {
     expect(out).toContain('CHANGELOG 纯度');
     expect(out).toContain('exit=0');
     expect(out).toContain('exit=1');
-    expect(out).toContain('1 个非零退出码');
+    expect(out).toContain('1 个失败（非零退出码或超时 ERR');
+  });
+
+  it('run-05 fail-closed：exitCode=null（超时/异常）计入 failCount，不再静默放过', () => {
+    const dims = {
+      '1': { num: 1, title: '正常维度', exitCode: 0, output: 'ok' },
+      '2': { num: 2, title: '超时维度', exitCode: null, output: '[driver] 执行异常: 命令超时', truncated: false },
+    };
+    writeFileSync(join(tmpRoot, 'regression-precheck.json'), JSON.stringify({ meta: { dims: 2 }, dims }));
+    const stepDef = { precheck: true, inputs: ['regression-precheck.json'] };
+    const out = buildEv(tmpRoot, stepDef);
+    expect(out).toContain('exit=ERR(超时/异常)');
+    expect(out).toContain('1 个失败（非零退出码或超时 ERR');
   });
 
   it('coverage-precheck.json → 模块+场景全量注入（不 slice 截断——P1-1/P1-2 防回归）', () => {
@@ -1034,5 +1046,37 @@ describe('assertNativeToolchain 自愈模式（run-18+ WorkBuddy 内可跑）', 
     expect(SOURCE_CODE).toContain('grep -q "a\\\\|x"');
     expect(SOURCE_CODE).toContain('echo hi | wc -l');
     expect(SOURCE_CODE).toContain('brokered-bin|toybox');
+  });
+});
+
+// ═══════════════════════════════════════════════════════════
+// run-05 实证三修：precheck 注入 fail-closed + V 步骤预算 800 + dim 111 超时放宽
+// ═══════════════════════════════════════════════════════════
+describe('run-05 三修（fail-closed 注入口径 + 证据审读预算 + 超时 override）', () => {
+  it('buildPrecheckEvidence fail-closed：exitCode=null（超时）计入 failCount，不再 `!== 0 && !== null` 旧口径', () => {
+    // 旧口径把超时当「非失败」，汇总「0 失败」与 dim exit=ERR 自相矛盾——
+    // V 判定输入不完整，fail-closed 语义在注入层断裂。
+    expect(SOURCE_CODE).not.toContain('d.exitCode !== 0 && d.exitCode !== null');
+    expect(SOURCE_CODE).toContain('const isFail = d.exitCode !== 0;');
+    expect(SOURCE_CODE).toContain('fail-closed：超时=证据缺失=未通过');
+  });
+
+  it('release-gate V 证据审读预算统一 800（acceptance/coverage/consolidate/verdict）', () => {
+    const BUDGET_CODE = readFileSync(new URL('./tool-output-budget.mjs', import.meta.url), 'utf-8');
+    // 三处截断根因（run-05）：verdict 100 / acceptance 200 / coverage 200 头尾截断
+    // → P2 尾部与中段不可见 → V 以证据链不完整阻断。对齐 regression 800 先例。
+    expect(BUDGET_CODE).toContain("'acceptance':    800,");
+    expect(BUDGET_CODE).toContain("'coverage':      800,");
+    expect(BUDGET_CODE).toContain("'consolidate':   800,");
+    expect(BUDGET_CODE).toContain("'verdict':       800,");
+    // 防误伤：fresh-eyes 与 F 诊断预算不动
+    expect(BUDGET_CODE).toContain("'a-consolidate': 500,");
+    expect(BUDGET_CODE).toContain("'f-diagnose':    200,");
+    expect(BUDGET_CODE).not.toContain("'verdict':       100,");
+  });
+
+  it('dim 111 超时 override 150s→240s（run-05 实测全量 test-count >150s）', () => {
+    expect(SOURCE_CODE).toContain('111: 240_000,');
+    expect(SOURCE_CODE).not.toContain('111: 150_000,');
   });
 });

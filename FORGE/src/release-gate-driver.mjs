@@ -281,7 +281,9 @@ const DIM_TIMEOUT_OVERRIDE = {
   110: 150_000,
   // v1.4.3（run-01 复验）：111⑤ 含全量 test-count.sh（12 包测试实跑 >60s），
   // 60s 上限必超时误报 ERR——放宽到 150s（与 106/110 同类：维度脚本跑全量测试）。
-  111: 150_000,
+  // run-05 实证 150s 仍不够（8GB 机器全量实跑波动 >150s）——放宽到 240s；
+  // 配合 buildPrecheckEvidence fail-closed 口径（超时=失败），超时不再被静默放过。
+  111: 240_000,
 };
 
 // ═══════════════════════════════════════════════════════════
@@ -738,12 +740,15 @@ function buildPrecheckEvidence(runDir, stepDef) {
         const lines = [`[driver 注入] ${f} 内容（${dims.length} 维度，逐维度判定依据）：`];
         let failCount = 0;
         for (const d of dims) {
-          const isFail = d.exitCode !== 0 && d.exitCode !== null;
+          // run-05 实证 fail-closed：exitCode=null（超时/异常）也计入失败——
+          // 超时=证据缺失=未通过。旧口径 `!== 0 && !== null` 把超时当「非失败」，
+          // V 看到汇总「0 失败」与 dim 111 exit=ERR 自相矛盾，判定输入不完整。
+          const isFail = d.exitCode !== 0;
           if (isFail) failCount++;
           const out = String(d.output ?? '').replace(/\n/g, '⏎').slice(0, 200);
-          lines.push(`  - 维度 ${d.num}「${d.title}」: exit=${d.exitCode ?? 'ERR'}${d.truncated ? '（输出截断）' : ''}${out ? ` | 输出: ${out}` : ''}`);
+          lines.push(`  - 维度 ${d.num}「${d.title}」: exit=${d.exitCode ?? 'ERR(超时/异常)'}${d.truncated ? '（输出截断）' : ''}${out ? ` | 输出: ${out}` : ''}`);
         }
-        lines.push(`  → 汇总：${dims.length} 维度中 ${failCount} 个非零退出码${failCount ? '（详见上方 exit 非 0 项）' : '，全部通过'}`);
+        lines.push(`  → 汇总：${dims.length} 维度中 ${failCount} 个失败（非零退出码或超时 ERR，fail-closed：超时=证据缺失=未通过）${failCount ? '（详见上方非 0/ERR 项）' : '，全部通过'}`);
         blocks.push(lines.join('\n'));
         continue;
       }
