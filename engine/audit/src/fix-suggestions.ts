@@ -24,7 +24,10 @@ const FIX_SUGGESTIONS: Record<string, string> = {
   'A10 不引毒源': '改用官方 npm registry（npm config set registry https://registry.npmjs.org）',
   'A11 不滥资源': '拆分为多个小提交，每次只做一件事',
   // 扩展规则
-  'E1 不落测试': '测试文件不应进入生产提交，分离到 dev 分支或加 .gitignore',
+  // run-07 verdict P1-5：E1 语义 = src/ 源码变更但缺测试（rule-e1-no-test-files.ts
+  // 判定 hasTestFiles=false 才 WARN）——旧文案「分离到 dev 分支或加 .gitignore」
+  // 与规则意图相反（按文案操作会加剧测试缺失）。改为补测试导向。
+  'E1 不落测试': 'src/ 源码变更应伴随测试：为变更的源码文件补充 *.test.ts（同目录或 tests/），随本次提交一并纳入',
   'E2 不空标记': 'TODO 必须关联 issue 编号（如 TODO(#123)）或直接解决',
   'E3 不滥删除': '确认删除范围，使用保守修剪原则：只删纯 UI，保留结构性模块',
   'E4 不低注释': '补充函数注释，目标注释率 >= 10%',
