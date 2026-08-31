@@ -60,7 +60,7 @@ B 侧复核模式（v1.3.8 起 driver 内置）：全量跑 driver 时，B 侧 1
    fallback（无 daemon 支持）：Bash 工具 run_in_background:true + dangerouslyDisableSandbox:true，
    输出重定向文件 > /tmp/fresh-eyes-<ver>-driver.log 2>&1（禁止管道），不传 timeout 参数
 2. 记住 runDir（启动日志第一行打印的路径）
-3. 在 session 内持续轮询——每 120 秒一个工作周期：
+3. 在 session 内**前台**持续轮询——每 120 秒一个工作周期（run_in_background 只属于步骤 1 的 driver 启动命令，轮询循环严禁挂后台——挂后台 = session 空闲 = 界面无进展反馈）：
    ① 读 <runDir>/status.json 看 round 变化，变化时一句话汇报
    ② 读 heartbeat 字段时间戳——距今 > 90 秒则 pgrep 确认进程是否存活，无输出 = 已死，汇报并退出
    round 不变且 heartbeat 正常 → 继续轮询
