@@ -482,6 +482,28 @@ describe('parseVerdict', () => {
     expect(parse(tmpRoot).verdict).toBe('PASS');
   });
 
+  // ── v1.4.3（run-04 实证）：表格行「终审结论」+「阻断（BLOCKED）」第五形态 → FAIL ──
+  // run-04 verdict.md 第 9 行：`| 终审结论 | **🚫 阻断（BLOCKED）——…** |`——
+  // 「终审结论」不在 markers（「结论」子串命中但属严格组，被「阻断」中文中断）；
+  // 「阻断」不在同义词链（只有「阻塞」）——三路全 miss，driver 记 ERROR 与
+  // 内容裁决脱钩。收编：markers 增「终审结论」进表格组 + 同义词链增「阻断」。
+  it('verdict.md 表格行「终审结论」+「阻断（BLOCKED）」（run-04 真实形态回放） → verdict=FAIL', () => {
+    writeFileSync(join(tmpRoot, 'verdict.md'),
+      '# V1.4.3 阶段五判断层终审报告 · verdict（角色 V）\n\n| 终审结论 | **🚫 阻断（BLOCKED）—— 2 项 P0 未消除，v1.4.3 不得发版。** |\n\n**最终裁决：🚫 阻断（BLOCKED）。2 项 P0 未消除、5 项 P1 未闭环、版本基准未闭合之前，v1.4.3 不得发版。**');
+
+    const parse = makeParser(tmpRoot);
+    const result = parse(tmpRoot);
+    expect(result.verdict).toBe('FAIL');
+  });
+
+  it('verdict.md 表格行「终审结论」PASS 形态（「放行」不误判 FAIL） → verdict=PASS', () => {
+    writeFileSync(join(tmpRoot, 'verdict.md'),
+      '# verdict\n\n| 终审结论 | ✅ **通过（PASS）—— 放行。** |');
+
+    const parse = makeParser(tmpRoot);
+    expect(parse(tmpRoot).verdict).toBe('PASS');
+  });
+
   it('「判定」标记维持严格纪律：引述句含中文+FAIL 不误抓', () => {
     writeFileSync(join(tmpRoot, 'verdict.md'),
       '# 裁决\n\n判定截断段不可见，维持 P1 观察项\n\n## 判定：PASS');
