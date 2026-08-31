@@ -850,15 +850,21 @@ echo "console.log('$(echo "$L_B64" | base64 -d)')" > leet-test.js; git add leet-
 set +e; $CLI --diff --cached --silent >/dev/null 2>&1; rc_leet=$?; set -e
 [ "$rc_unicode" = "2" ] && [ "$rc_leet" = "2" ] && pass || fail "A9 未检出 unicode(rc=$rc_unicode)/leet(rc=$rc_leet) 注入"
 git rm --cached -f unicode-test.js leet-test.js >/dev/null 2>&1 || true; rm -f unicode-test.js leet-test.js
-cd "$TMP_REPO"; HISTORY_FILE=".sofagent/audit/history.jsonl"; mkdir -p "$(dirname "$HISTORY_FILE")"
+# S90 同款路径修正（与 S25 同根因，run-06 全量复跑暴露）：损坏行测试改
+# SOFAGENT_DATA 隔离——旧断言查 repo-local 旧路径（v1.2.1 前），产品 SSOT 写
+# ${SOFAGENT_DATA}/audit/，旧路径必不生成 → 恒 SKIP（证据面不完整）。
+S90_DATA=$(mktemp -d /tmp/sofagent-acc-hist90-XXXX)
+cd "$TMP_REPO"
 echo "test" > normal.txt && git add normal.txt
-$CLI --diff --cached --task "gen history" >/dev/null 2>&1 || true
+SOFAGENT_DATA="$S90_DATA" $CLI --diff --cached --task "gen history" >/dev/null 2>&1 || true
 git rm --cached -f normal.txt >/dev/null 2>&1 || true; rm -f normal.txt
+HISTORY_FILE="$S90_DATA/audit/history.jsonl"
 if [ -f "$HISTORY_FILE" ]; then
   echo '{"test":"abc","garbage":true}' >> "$HISTORY_FILE"
-  set +e; $CLI --doctor >/dev/null 2>&1; rc=$?; set -e
-  [ "$rc" = "0" ] || [ "$rc" = "1" ] && pass || fail "doctor 因损坏行崩溃（exit=${rc}）"
+  set +e; SOFAGENT_DATA="$S90_DATA" $CLI --doctor >/dev/null 2>&1; rc=$?; set -e
+  [ "$rc" = "0" ] || [ "$rc" = "1" ] && pass "doctor 容忍损坏行（exit=${rc}）" || fail "doctor 因损坏行崩溃（exit=${rc}）"
 else warn "history.jsonl 未生成，跳过损坏行测试"; fi
+rm -rf "$S90_DATA"
 # 篡改检测（原 L798-810）已归并至 S18 硬断言覆盖
 scenario 93 "red-team 三合一"
 cd "$TMP_REPO"
