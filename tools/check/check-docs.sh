@@ -392,7 +392,7 @@ INDEX_TS_COUNT=$(grep -cE "^[[:space:]]+\{ name: '(A|E)[0-9]+" engine/audit/src/
 INDEX_TS_COUNT=${INDEX_TS_COUNT:-0}
 INDEX_TS_COUNT=$(echo "$INDEX_TS_COUNT" | tr -d '[:space:]')
 
-# C. 主 README 声称的规则数（从 "21 条规则" 这种措辞提取）
+# C. 主 README 声称的规则数（从 "24 条规则" 这种措辞提取；run-02 P1-5 口径勘误：注释示例 21→24）
 MAIN_README_COUNT=$(grep -oE "[0-9]+ 条规则" README.md 2>/dev/null | head -1 | grep -oE "^[0-9]+" || true)
 MAIN_README_COUNT=${MAIN_README_COUNT:-0}
 MAIN_README_COUNT=$(echo "$MAIN_README_COUNT" | tr -d '[:space:]')

@@ -40,14 +40,24 @@ export interface AuditResult {
  * 判定映射与 printResults 保持一致：exit 0=PASS / 1=WARN / 2=FAIL。
  * FAIL（拦截）时使用 ❌ 前缀，让用户明确知道「是 sofagent 拦的」。
  *
+ * 口径统一（run-02 P1-5）：横幅/明细/尾行三面同口径「N 项检查 · M 条规则」——
+ * quick 模式只跑默认 17 条而规则库注册 24 条，旧版把本跑检查数当规则总数打
+ * 进横幅（「17 规则」），与明细行「24 条规则 (17 默认 + 7 扩展)」自相矛盾。
+ * 现传入注册总数（totalRules）时并列展示；二者相等（全量跑）时维持单数形式。
+ *
  * @param exitCode 审计退出码（0/1/2）
- * @param ruleCount 参与本次审计的规则数
- * @returns 形如「━━━ sofagent 审计 · N 规则 · PASS ━━━」的签名行（N 为运行时规则数，非写死值）
+ * @param ruleCount 参与本次审计的规则数（= 本跑检查项数）
+ * @param totalRules 规则库注册总数（defaultRules + extendedRules；省略时退化为单数形式）
+ * @returns 形如「━━━ sofagent 审计 · 17 项检查 · 24 条规则 · PASS ━━━」的签名行（均为运行时实数，非写死值）
  */
-export function productSignature(exitCode: number, ruleCount: number): string {
+export function productSignature(exitCode: number, ruleCount: number, totalRules?: number): string {
   const verdict = exitCode === 0 ? 'PASS' : exitCode === 1 ? 'WARN' : 'FAIL';
   const icon = exitCode === 0 ? '✅' : exitCode === 1 ? '⚠️ ' : '❌';
-  return `${icon} ━━━ sofagent 审计 · ${ruleCount} 规则 · ${verdict} ━━━`;
+  const scope =
+    totalRules != null && totalRules !== ruleCount
+      ? `${ruleCount} 项检查 · ${totalRules} 条规则`
+      : `${ruleCount} 条规则`;
+  return `${icon} ━━━ sofagent 审计 · ${scope} · ${verdict} ━━━`;
 }
 
 /**
