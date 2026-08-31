@@ -17,6 +17,7 @@
 
 import { notify } from './notify';
 import { DATA_DIR } from '@sofagent/core';
+import { isPrivateWebhookUrl } from '@sofagent/audit';
 import { withRetry, withRetryBestEffort } from './with-retry';
 
 export type PushTargetKind =
@@ -97,6 +98,17 @@ async function pushWebhook(
   const webhookUrl = process.env[envKey];
   if (!webhookUrl) {
     notify(`webhook ${target} 未配置环境变量 ${envKey}`, { source: 'push-target', level: 'warn' });
+    return false;
+  }
+
+  // SSRF 防护（纵深防御，与审计侧 pushAuditResult 同口径）——
+  // 内网/本机 URL 拒绝发起请求；SOFAGENT_WEBHOOK_ALLOW_LOCALHOST=1 为本地联调豁免开关
+  const allowLocalhost = process.env.SOFAGENT_WEBHOOK_ALLOW_LOCALHOST === '1';
+  if (!allowLocalhost && isPrivateWebhookUrl(webhookUrl)) {
+    notify(`webhook ${target} URL 指向本机/内网地址，已拒绝推送（SSRF 防护）: ${webhookUrl}`, {
+      source: 'push-target',
+      level: 'warn',
+    });
     return false;
   }
 

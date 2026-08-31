@@ -68,6 +68,8 @@ export type { SafetyResult, SafetyRule } from './rules/skill-safety-rules';
 // Re-export webhook 推送（mcp-server.ts 从 audit 消费 pushAuditResult）
 export { pushAuditResult } from './webhook';
 export type { WebhookPlatform } from './webhook';
+// SSRF 守卫 re-export——daemon 等其他出站推送方复用同一判定（单一事实源，禁副本）
+export { isPrivateWebhookUrl } from './webhook';
 // v1.4.2 交付三：成本审计维度（cost_query MCP 与外部脚本 import 用）
 export { runCostAudit, loadWorklogSlice } from './cost-audit';
 export type { CostBudget, CostFinding, WorklogSlice } from './cost-audit';

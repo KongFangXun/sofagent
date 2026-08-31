@@ -81,6 +81,8 @@
 // ── webhook 推送（v1.2.4 P3 S5：供 @sofagent/mcp L4 双通道使用） ──
 /* @public */ export { pushAuditResult } from './webhook';
 /* @public */ export type { WebhookPayload, WebhookPlatform } from './webhook';
+// SSRF 守卫——daemon 等其他出站推送方复用同一判定（单一事实源，禁副本）
+/* @public */ export { isPrivateWebhookUrl } from './webhook';
 
 // ── 决策审计（v1.3.0 交付 6 T03）──
 /* @public */ export { emitDecision } from './decision-log';

@@ -7,10 +7,10 @@
 // 结果写入 EVAL_LATEST + 追加 EVAL_HISTORY（与 CLI 行为一致）
 // ============================================================
 
-import { existsSync, writeFileSync, appendFileSync, mkdirSync } from 'fs';
+import { existsSync, mkdirSync } from 'fs';
 import { join } from 'path';
 import { runEval, type EvalResult } from '@sofagent/eval';
-import { EVAL_DIR, EVAL_LATEST, EVAL_HISTORY, VERSION } from '@sofagent/core';
+import { EVAL_DIR, EVAL_LATEST, EVAL_HISTORY, VERSION, atomicWriteSync, atomicAppendSync } from '@sofagent/core';
 
 // ============================================================
 // 类型定义
@@ -124,7 +124,8 @@ export async function evaluateOutput(args: EvaluateOutputArgs): Promise<Evaluate
   }
 
   try {
-    writeFileSync(EVAL_LATEST, JSON.stringify(latestJson, null, 2), 'utf-8');
+    // latest 原子覆盖写 / history 原子追加写（core SSOT 原语——并发读不脏读、并发写不丢行）
+    atomicWriteSync(EVAL_LATEST, JSON.stringify(latestJson, null, 2));
     const historyEntry = JSON.stringify({
       timestamp: latestJson.timestamp,
       total: result.total,
@@ -132,7 +133,7 @@ export async function evaluateOutput(args: EvaluateOutputArgs): Promise<Evaluate
       failed: result.failed,
       passRate: result.passRate,
     });
-    appendFileSync(EVAL_HISTORY, historyEntry + '\n', 'utf-8');
+    atomicAppendSync(EVAL_HISTORY, historyEntry);
   } catch {
     // 写入失败非致命
   }

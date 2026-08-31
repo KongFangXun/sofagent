@@ -1,17 +1,20 @@
 /**
- * loop-audit-history.test.ts · LOOP audit history 完整性验证（v1.1.5）
+ * warn-accumulator.test.ts · warn-accumulator 行为验证
  *
  * 验证：
- * 1. v1.1.4 修复的 defaultRunAudit 三态（PASS/WARN/FAIL）都写 history 是否真实生效
- * 2. warn-accumulator 在 LOOP 场景下不误报（WARN 后有 PASS 清理 → 不触发）
- * 3. 文件级追踪（v1.1.5）——涉及文件已删除的 WARN 不计入累积
+ * 1. defaultRunAudit 三态（PASS/WARN/FAIL）都写 history 时聚合行为正确
+ * 2. LOOP 场景下不误报（WARN 后有 PASS 清理 → 不触发）
+ * 3. 文件级追踪——涉及文件已删除的 WARN 不计入累积
+ *
+ * （原落位 orchestrator 包、跨包借用 @sofagent/daemon——现归位本包，
+ *   import 改包内相对路径，消除 orchestrator→daemon 形式循环依赖）
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
-import { accumulateWarnings } from '@sofagent/daemon';
+import { accumulateWarnings } from '../inspectors/warn-accumulator';
 
 function tmpDir(): string {
   return fs.mkdtempSync(path.join(os.tmpdir(), 'sofagent-loop-history-'));
