@@ -273,9 +273,13 @@ for pkg in audit core orchestrator daemon mcp; do
 done
 
 # 子项 b: npm registry vs git tag vs 工作树三方一致
-NPM_VER=$(npm view /audit version 2>/dev/null)
+# run-05 verdict P1-5 根因修复：原「npm view /audit」缺 @sofagent scope 前缀——
+# /audit 非有效包名，npm 恒空值（探针自身缺陷，非 registry 无数据）。
+# 发版时序注：闸门跑在 SOP 阶段六，npm publish 在阶段十——候选版（如 1.4.3）
+# 此刻必然未上 registry，npm 停在上一正式版（1.4.2）属正常态，与 tag 滞后同源。
+NPM_VER=$(npm view @sofagent/audit version 2>/dev/null)
 TAG_VER=$(git describe --tags --abbrev=0 2>/dev/null | sed 's/^v//')
-echo "npm=$NPM_VER ssot=$SSOT_VER tag=$TAG_VER" # 期望：三者一致
+echo "npm=$NPM_VER ssot=$SSOT_VER tag=$TAG_VER" # 期望：发版完成后三者一致（闸门期允许滞后一步）
 
 # 子项 c/d/e: tag commit message 含版本号 + 工作树 clean — 被 tools/release/pre-push-check.sh 步骤 7 全量覆盖，不再重复
 ```
