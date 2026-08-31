@@ -19,6 +19,7 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
+import { isPrivateWebhookUrl } from '@sofagent/audit';
 
 // ────────────────────────────────
 // 公开类型
@@ -251,6 +252,20 @@ export function createWebhookPusher(options: WebhookPusherOptions = {}): Webhook
         if (!endpoint) {
           // 配置缺失是部署问题不是平台问题——不发 HTTP，直接降级
           return degrade(platform, verdict, message, 0, `未配置 endpoint 环境变量 ${envKey}`);
+        }
+
+        // SSRF 防护（纵深防御，与审计侧 pushAuditResult 同口径）——
+        // 审计数据可能含文件路径/代码片段，endpoint 指向本机/内网时拒绝发起请求；
+        // SOFAGENT_WEBHOOK_ALLOW_LOCALHOST=1 为本地联调豁免开关
+        const allowLocalhost = env.SOFAGENT_WEBHOOK_ALLOW_LOCALHOST === '1';
+        if (!allowLocalhost && isPrivateWebhookUrl(endpoint)) {
+          return degrade(
+            platform,
+            verdict,
+            message,
+            0,
+            `endpoint 指向本机/内网地址，已拒绝推送（SSRF 防护）: ${endpoint}`,
+          );
         }
 
         const body = buildPayload(platform, verdict, message);

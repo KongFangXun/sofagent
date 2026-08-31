@@ -348,3 +348,111 @@ describe('Webhook 企业平台推送（v1.2.1 P0 · 采购阻塞）', () => {
     expect(result.degraded).toBe(true);
   });
 });
+
+// ════════════════════════════════════════
+// SSRF 防护（纵深防御——与审计/训练侧出站推送同口径）
+// ════════════════════════════════════════
+
+describe('Webhook SSRF 防护（纵深防御）', () => {
+  let tmp: { dir: string; logPath: string };
+
+  beforeEach(() => {
+    tmp = tmpLogPath();
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+    try { fs.rmSync(tmp.dir, { recursive: true, force: true }); } catch { /* 清理失败忽略 */ }
+  });
+
+  /** 构造指定 endpoint 的假 env */
+  function envWith(platform: WebhookPlatform, endpoint: string, extra: Record<string, string> = {}): Record<string, string> {
+    return { ...makeEnv(), [ENDPOINT_ENV[platform]]: endpoint, ...extra };
+  }
+
+  // 测试：endpoint 指向本机回环地址时，不发起任何 HTTP 请求，直接降级本地日志。
+  // 输入：SOFAGENT_WEBHOOK_FEISHU=http://127.0.0.1:8080/admin（内网管理端口）
+  // 预期：fetch 零调用，attempts=0, degraded=true, error 含「内网」字样。
+  // 边界：审计数据可能含路径/代码片段——恶意配置可借出站推送探测内网。
+  it('testWebhookPush_ssrfLoopbackEndpoint_noHttpCall_degradesLocally', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(okResponse());
+    vi.stubGlobal('fetch', fetchMock);
+
+    const pusher = createWebhookPusher({
+      env: envWith('feishu', 'http://127.0.0.1:8080/admin'),
+      logPath: tmp.logPath,
+    });
+    const result = await pusher.push('feishu', 'PASS', '回环探针');
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(result.attempts).toBe(0);
+    expect(result.success).toBe(false);
+    expect(result.degraded).toBe(true);
+    expect(result.error).toContain('内网');
+  });
+
+  // 测试：IPv6 回环字面量（方括号形态）同样拦截——hostname 剥括号后判 ::1。
+  it('testWebhookPush_ssrfIpv6LoopbackEndpoint_noHttpCall_degradesLocally', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(okResponse());
+    vi.stubGlobal('fetch', fetchMock);
+
+    const pusher = createWebhookPusher({
+      env: envWith('dingtalk', 'http://[::1]:9000/hook'),
+      logPath: tmp.logPath,
+    });
+    const result = await pusher.push('dingtalk', 'WARN', 'IPv6 回环探针');
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(result.attempts).toBe(0);
+    expect(result.degraded).toBe(true);
+    expect(result.error).toContain('内网');
+  });
+
+  // 测试：云元数据链路本地地址（169.254.169.254）拦截——SSRF 最高价值靶点。
+  it('testWebhookPush_ssrfMetadataEndpoint_noHttpCall_degradesLocally', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(okResponse());
+    vi.stubGlobal('fetch', fetchMock);
+
+    const pusher = createWebhookPusher({
+      env: envWith('wecom', 'http://169.254.169.254/latest/meta-data/'),
+      logPath: tmp.logPath,
+    });
+    const result = await pusher.push('wecom', 'FAIL', '元数据探针');
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(result.attempts).toBe(0);
+    expect(result.degraded).toBe(true);
+    expect(result.error).toContain('内网');
+  });
+
+  // 测试：豁免开关（SOFAGENT_WEBHOOK_ALLOW_LOCALHOST=1）放行本机地址——
+  // 本地联调接收器是合法场景，与审计侧 pushAuditResult 豁免口径一致。
+  // 输入：env 允许内网 + 回环 endpoint → 预期：fetch 正常发起，success=true。
+  it('testWebhookPush_ssrfAllowLocalhostEscapeHatch_permitsLocalEndpoint', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(okResponse());
+    vi.stubGlobal('fetch', fetchMock);
+
+    const pusher = createWebhookPusher({
+      env: envWith('feishu', 'http://127.0.0.1:8080/admin', { SOFAGENT_WEBHOOK_ALLOW_LOCALHOST: '1' }),
+      logPath: tmp.logPath,
+    });
+    const result = await pusher.push('feishu', 'PASS', '豁免联调探针');
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(result.success).toBe(true);
+    expect(result.degraded).toBe(false);
+  });
+
+  // 测试（对照）：公网 endpoint 在防护开启下不受影响——照常发起请求。
+  it('testWebhookPush_ssrfPublicEndpoint_stillReachesHttp', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(okResponse());
+    vi.stubGlobal('fetch', fetchMock);
+
+    const pusher = createWebhookPusher({ env: makeEnv(), logPath: tmp.logPath });
+    const result = await pusher.push('feishu', 'PASS', '公网对照探针');
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(result.success).toBe(true);
+  });
+});

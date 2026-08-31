@@ -4,7 +4,7 @@
 // ============================================================
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { existsSync, readFileSync, mkdtempSync, rmSync, writeFileSync, mkdirSync } from 'fs';
+import { existsSync, readFileSync, mkdtempSync, rmSync, writeFileSync, mkdirSync, readdirSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
 import { createAuditRunner, convertAuditResult, persistResult } from '../cli';
@@ -286,5 +286,54 @@ describe('persistResult', () => {
 
     const latest = JSON.parse(readFileSync(EVAL_LATEST, 'utf-8'));
     expect(latest.failures).toEqual([]);
+  });
+
+  // 原子写契约：persistResult 经 core SSOT 原语落盘——
+  // latest 走 temp+rename 原子覆盖、history 走锁内读改写追加（原语自动补换行）。
+  // 此用例锁定两个可观测契约：① EVAL_DIR 无 .tmp 中间文件残留；
+  // ② history.jsonl 每行都是合法 JSON（行数与有效行数一致，无断行/交错）。
+  it('原子写契约_无tmp残留且history每行合法JSON', () => {
+    if (!existsSync(EVAL_DIR)) {
+      mkdirSync(EVAL_DIR, { recursive: true });
+    }
+
+    const mockResult: EvalResult = {
+      total: 2,
+      passed: 2,
+      failed: 0,
+      passRate: 1,
+      duration: 100,
+      results: [
+        {
+          testId: 'pass-1',
+          passed: true,
+          actual: { result: 'PASS' },
+          expected: { result: 'PASS' },
+          score: { exactMatch: 1, semanticSimilarity: 1, ruleCompliance: 1, overall: 1 },
+          duration: 100,
+        },
+        {
+          testId: 'pass-2',
+          passed: true,
+          actual: { result: 'PASS' },
+          expected: { result: 'PASS' },
+          score: { exactMatch: 1, semanticSimilarity: 1, ruleCompliance: 1, overall: 1 },
+          duration: 100,
+        },
+      ],
+    };
+
+    persistResult(mockResult);
+
+    // 契约 ①：无临时文件残留（rename 成功后 tmp 必然消失）
+    const residue = readdirSync(EVAL_DIR).filter((f) => f.includes('.tmp'));
+    expect(residue).toEqual([]);
+
+    // 契约 ②：history 每行合法 JSON（追加语义未被破坏）
+    const lines = readFileSync(EVAL_HISTORY, 'utf-8').split('\n').filter((l) => l.trim() !== '');
+    expect(lines.length).toBeGreaterThanOrEqual(1);
+    for (const line of lines) {
+      expect(() => JSON.parse(line)).not.toThrow();
+    }
   });
 });
