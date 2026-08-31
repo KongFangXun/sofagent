@@ -2209,33 +2209,31 @@ async function runCoveragePrecheck(runDir, target) {
  *  3. 标记与结论词之间允许夹杂 emoji（✅/❌）、标点（：:）、空白与 markdown 符号；
  *     一旦出现中文或英文字母（如「判定理由」「判定为」）即中断匹配，
  *     防止误抓「无 FAIL 条目」「全部判定 PASS」这类无关句子。
- *     例外：表格标记「终审裁决」「最终裁决」单独放宽（允许中文前缀 + \b 断词）——
- *     run-01/run-02 实证 LLM 把裁决写进表格行且会换标记词，严格正则
- *     抓不到导致 ERROR 记账；放宽仅限表格组标记。
- *  4. 同义裁决词（BLOCKED/BLOCK/NO-GO/HOLD/不予放行/不通过/阻塞）语义等价 FAIL
+ *     例外：表格标记「终审裁决」「最终裁决」「终审结论」单独放宽（允许中文前缀
+ *     + \b 断词）——run-01/run-02/run-04 实证 LLM 把裁决写进表格行且每轮换标记词，
+ *     严格正则抓不到导致 ERROR 记账；放宽仅限表格组标记。
+ *  4. 同义裁决词（BLOCKED/BLOCK/NO-GO/HOLD/不予放行/不通过/阻塞/阻断）语义等价 FAIL
  *     （fail-closed），仅在标记紧邻窗口内匹配——见 run-16 修复；HOLD 为
- *     run-19 原生复跑新增（LLM 安全审查惯例措辞，driver 记账曾脱钩）。
- *
- * @param {string} raw 原始文本
- * @returns {string|null} 'PASS' | 'FAIL' | 'SKIP' | null
+ *     run-19 原生复跑新增（LLM 安全审查惯例措辞，driver 记账曾脱钩）；
+ *     阻断为 run-04 实证新增（「阻断（BLOCKED）」与「阻塞」同义，链表此前漏收）。
  */
 function extractVerdictKeyword(raw) {
   const stripped = raw.replace(/```[\s\S]*?```/g, '\n');
   const lines = stripped.split(/\r?\n/);
-  // 标记分两组（run-01 实证补「终审裁决」，run-02 实证补「最终裁决」）：严格组
-  // （判定/结论）维持「中文即中断」纪律；表格组（终审裁决/最终裁决）——LLM 把
-  // 裁决写进表格行 `| **终审裁决** | ❌ **FAIL（阻塞）…** |`，结论词前有中文
-  // （阻塞），严格正则抓不到 → driver 记 ERROR 与内容裁决 FAIL 脱钩。故该组
+  // 标记分两组（run-01 补「终审裁决」，run-02 补「最终裁决」，run-04 补「终审结论」）：
+  // 严格组（判定/结论）维持「中文即中断」纪律；表格组（终审裁决/最终裁决/终审结论）
+  // ——LLM 把裁决写进表格行 `| **终审结论** | 🚫 **阻断（BLOCKED）…** |`，结论词前有
+  // 中文（阻断），严格正则抓不到 → driver 记 ERROR 与内容裁决 FAIL 脱钩。故该组
   // 放宽为「允许中文/emoji/markdown 混合前缀」（\b 防 PASSword 类误抓）；同一
-  // LLM 不同 run 会换表格标记词（run-02 用「最终裁决」），同组收编，防逐词打补丁。
-  const markers = ['判定', '结论', '终审裁决', '最终裁决'];
+  // LLM 不同 run 会换表格标记词，同组收编，防逐词打补丁。
+  const markers = ['判定', '结论', '终审裁决', '最终裁决', '终审结论'];
   for (const marker of markers) {
     for (let i = 0; i < lines.length; i++) {
       const col = lines[i].indexOf(marker);
       if (col === -1) continue;
       // 窗口 = 标记行剩余部分 + 后续 3 行
       const windowText = lines.slice(i, i + 4).join('\n').slice(col + marker.length);
-      const re = marker === '终审裁决' || marker === '最终裁决'
+      const re = marker === '终审裁决' || marker === '最终裁决' || marker === '终审结论'
         ? /^[^A-Za-z]*?(PASS|FAIL|SKIP)\b/i
         : /^[^A-Za-z\u4e00-\u9fff]*?(PASS|FAIL|SKIP)/i;
       const m = windowText.match(re);
@@ -2245,9 +2243,10 @@ function extractVerdictKeyword(raw) {
       // 仅在「结论/判定」标记紧邻窗口内匹配，维持既有防误抓纪律。
       // HOLD：run-19 原生复跑实证——LLM 审查者按安全审查惯例写「HOLD（不放行）」，
       // 解析器未认导致 driver 记账 ERROR 与真实裁决脱钩。
+      // 阻断：run-04 实证——「🚫 阻断（BLOCKED）」，与「阻塞」同义，链表此前漏收。
       const mBlock = windowText.match(/^[^A-Za-z\u4e00-\u9fff]*?(BLOCKED|BLOCK|NO-GO|HOLD)/i);
       if (mBlock) return 'FAIL';
-      if (/^[^A-Za-z\u4e00-\u9fff]*(不予放行|不通过|不得放行|不放行|阻塞|暂缓放行)/.test(windowText)) return 'FAIL';
+      if (/^[^A-Za-z\u4e00-\u9fff]*(不予放行|不通过|不得放行|不放行|阻塞|阻断|暂缓放行)/.test(windowText)) return 'FAIL';
     }
   }
   return null;
