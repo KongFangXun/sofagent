@@ -4044,7 +4044,9 @@ grep -q "持久化留 v1.2.0" "$PROJECT_ROOT/engine/core/src/crypto/ecdh.ts" && 
 grep -q "S359" "$PROJECT_ROOT/docs/changelog/v1.4/v1.4.3.md" || S359_OK=false  # 锚点落点
 grep -q "F-10 定谳（S359" "$PROJECT_ROOT/docs/changelog/v1.4/v1.4.3.md" || S359_OK=false  # 锚点格式先例对齐
 # P1-3 同批：三态退出码在位（SKIP>0 → exit 2，防 EXIT 0 掩盖跳过）
-grep -q 'elif [ "$WARNED" -gt 0 ]; then echo -e "${YELLOW}⚠️  有 $WARNED 个场景因环境依赖跳过（证据面不完整），放行前补跑${NC}"; exit 2' "$PROJECT_ROOT/FORGE/playbook/acceptance-test.sh" || S359_OK=false  # elif 分支整行在位（注：本断言行 grep 的是源文件自身，pattern 含真实变量展开——若改行会同步失效，属预期）
+# 🔴 BRE 字符类陷阱（run-06 S359 现场失败根因）：pattern 含 [ "$WARNED" ... ]，
+# BSD grep BRE 把 [ ] 解释为字符类（匹配单字符）——必须用 grep -F 字面匹配。
+grep -Fq 'elif [ "$WARNED" -gt 0 ]; then echo -e "${YELLOW}⚠️  有 $WARNED 个场景因环境依赖跳过（证据面不完整），放行前补跑${NC}"; exit 2' "$PROJECT_ROOT/FORGE/playbook/acceptance-test.sh" || S359_OK=false  # elif 分支整行在位
 $S359_OK && pass "run-05 P1 批闭环锚点在位（承诺排期化/悬空引用补锚/三态退出码）" || fail "P1 批闭环锚点丢失——verdict HOLD 项面临回退"
 
 echo -e "  验收测试结果：${GREEN}$PASSED 通过${NC} / ${RED}$FAILED 失败${NC} / ${YELLOW}$WARNED 跳过${NC} / 共 $((PASSED + FAILED + WARNED))"
