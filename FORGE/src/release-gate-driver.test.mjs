@@ -879,8 +879,10 @@ describe('buildInputsEvidence（run-19 verdict 零证据根因）', () => {
     expect(out).toContain('F-1 P0 缺口');
   });
 
-  it('consolidate 三输入 → 全部注入 + 合计预算控制（单文件 6000 截断）', () => {
-    const big = 'x'.repeat(10_000);
+  it('consolidate 三输入 → 全部注入 + 合计预算控制（单文件 12000 截断，run-07 四修提升）', () => {
+    // run-07 实证：stage6-report.md 7397 字符被旧值 6000 截断 → 预算提至 12000。
+    // 本用例构造 >12000 字符的第一输入验证合计预算仍然兜底。
+    const big = 'x'.repeat(13_000);
     writeFileSync(join(tmpRoot, 'acceptance.md'), big);
     writeFileSync(join(tmpRoot, 'regression.md'), 'R');
     writeFileSync(join(tmpRoot, 'coverage.md'), 'C');
@@ -1106,5 +1108,168 @@ describe('run-06 P1-2 流程加固（产物校验 + 闸门早停）', () => {
     );
     expect(earlyStopBlock).not.toContain('parseVerdict(');
     expect(earlyStopBlock).toContain("saveGateCheckpoint('verdict-done', 'ERROR', 0)");
+  });
+});
+
+// ═══════════════════════════════════════════════════════════
+//  8. run-07 四修测试组
+// ═══════════════════════════════════════════════════════════
+// 背景：run-07 零信任核验实锤四个基建问题——
+//   ① acceptance 分片零证据（inputs:[] 且无 precheck → 双注入函数空串，
+//      raw.log 从未注入）+ {runDir} 占位符无替换逻辑；
+//   ② verdict 注入单文件 6000 截断（stage6-report.md 7397 字符，第 5 节丢失）；
+//   ③ extractVerdictKeyword 漏抓「有条件通过」「全部通过」叙述句 → status 记 SKIP；
+//   ④ V 把 13720 字节误读为 7397 字符——注入提示需显式注明「字符数非字节数」。
+
+function createBuildShardEvidence() {
+  const { fullBody } = extractFunctionBody(SOURCE_CODE, 'buildShardEvidence');
+  const wrapper = new Function(
+    'join', 'existsSync', 'readFileSync',
+    fullBody + '\nreturn buildShardEvidence;'
+  );
+  return wrapper(join, existsSync, readFileSync);
+}
+
+describe('run-07 四修：acceptance 分片证据注入（buildShardEvidence）', () => {
+  let tmpRoot;
+  let buildShard;
+
+  beforeEach(() => {
+    tmpRoot = join(tmpdir(), 'rg-bse-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8));
+    mkdirSync(tmpRoot, { recursive: true });
+    buildShard = createBuildShardEvidence();
+  });
+
+  afterEach(() => {
+    if (existsSync(tmpRoot)) rmSync(tmpRoot, { recursive: true, force: true });
+  });
+
+  // 与 driver 内场景标记正则同构（改实现时本组同步改）
+  function sliceShard(raw, start, end) {
+    const lines = raw.split(/\r?\n/);
+    const sceneHeaderRe = /^━+\s*场景\s*(\d+)\s*[:：]/;
+    const segments = [];
+    let current = null;
+    for (const line of lines) {
+      const m = line.match(sceneHeaderRe);
+      if (m) {
+        if (current) segments.push(current);
+        current = { num: parseInt(m[1], 10), lines: [line] };
+      } else if (current) {
+        current.lines.push(line);
+      }
+    }
+    if (current) segments.push(current);
+    return segments.filter(s => s.num >= start && s.num <= end);
+  }
+
+  it('非分片步骤返回空串（regression/verdict 不受影响）', () => {
+    expect(buildShard(tmpRoot, { inputs: ['x.md'] })).toBe('');
+    expect(buildShard(tmpRoot, {})).toBe('');
+  });
+
+  it('日志缺失 → 「数据不完整」+ 标 SKIP 指引（fail-closed 不 FAIL）', () => {
+    const out = buildShard(tmpRoot, { shard: { id: 1, start: 1, end: 13 } });
+    expect(out).toContain('文件不存在');
+    expect(out).toContain('数据不完整');
+    expect(out).toContain('SKIP');
+  });
+
+  it('按 shard 范围切出对应场景段（S1~S13 只含本段，不含 S14+）', () => {
+    const raw = [
+      '━━━ 场景 1: 基线检查 ━━━', '✅ PASS', '',
+      '━━━ 场景 5: 审计规则 ━━━', '✅ PASS', '',
+      '━━━ 场景 14: 不属于本分片 ━━━', '✅ PASS', '',
+      '尾部统计：验收测试结果：3 通过 / 0 失败 / 共 3', '全部通过',
+    ].join('\n');
+    writeFileSync(join(tmpRoot, 'acceptance-raw.log'), raw);
+    const out = buildShard(tmpRoot, { shard: { id: 1, start: 1, end: 13 } });
+    expect(out).toContain('场景 1');
+    expect(out).toContain('场景 5');
+    expect(out).not.toContain('不属于本分片');
+    expect(out).toContain('S1~S13');
+    // 尾部汇总行必须注入（run-21「预跑日志是权威」）
+    expect(out).toContain('全部通过');
+  });
+
+  it('范围全跳号 → 提示 SKIP 不视为 FAIL（编号跳号是设计模式）', () => {
+    const raw = '━━━ 场景 50: 别的 ━━━\n✅ PASS';
+    writeFileSync(join(tmpRoot, 'acceptance-raw.log'), raw);
+    const out = buildShard(tmpRoot, { shard: { id: 1, start: 1, end: 13 } });
+    expect(out).toContain('未找到 S1~S13');
+    expect(out).toContain('SKIP');
+    expect(out).toContain('不视为 FAIL');
+  });
+
+  it('同构切片器：数字解析稳定（多位数编号 / 全角冒号）', () => {
+    const raw = '━━━ 场景 105: 多位数 ━━━\n✅\n━━━ 场景 106：全角冒号 ━━━\n✅';
+    const segs = sliceShard(raw, 100, 110);
+    expect(segs.map(s => s.num)).toEqual([105, 106]);
+  });
+
+  it('runWorker 注入链接线：shardEvidence 进入直连证据面与 userMessage', () => {
+    // 源码级断言：三通道拼接（precheck + inputs + shard）
+    expect(SOURCE_CODE).toContain("[precheckEvidence, inputsEvidence, shardEvidence].filter(Boolean).join('\\n\\n')");
+    expect(SOURCE_CODE).toContain('const shardEvidence = buildShardEvidence(runDir, stepDef);');
+    expect(SOURCE_CODE).toContain('shardEvidence,');
+  });
+
+  it('{runDir} 占位符统一替换（run-07 实证：旧代码无替换逻辑）', () => {
+    expect(SOURCE_CODE).toContain(".replaceAll('{runDir}', runDir)");
+  });
+});
+
+describe('run-07 四修：verdict 注入预算提升（6000→12000）', () => {
+  it('stage6-report.md 7397 字符（run-07 实测体量）全量注入不截断', () => {
+    const { fullBody } = extractFunctionBody(SOURCE_CODE, 'buildInputsEvidence');
+    const wrapper = new Function(
+      'join', 'existsSync', 'readFileSync',
+      fullBody + '\nreturn buildInputsEvidence;'
+    );
+    const buildEv = wrapper(join, existsSync, readFileSync);
+    const tmpRoot = join(tmpdir(), 'rg-b12000-' + Date.now());
+    mkdirSync(tmpRoot, { recursive: true });
+    try {
+      const big = '# stage6\n'.repeat(900); // 7200+ 字符，超旧值 6000、低于新值 12000
+      writeFileSync(join(tmpRoot, 'stage6-report.md'), big);
+      const out = buildEv(tmpRoot, { inputs: ['stage6-report.md'] });
+      expect(out).not.toContain('…（截断');
+      // 截断提示以字符计量并显式注明（防 V 字节/字符误读复发）
+      expect(SOURCE_CODE).toContain('字符数非字节数');
+      expect(SOURCE_CODE).toContain('12_000');
+    } finally {
+      rmSync(tmpRoot, { recursive: true, force: true });
+    }
+  });
+});
+
+describe('run-07 四修：extractVerdictKeyword 条件通过语义映射', () => {
+  // 与 driver 内实现同构提取（改实现时本组同步改）
+  function createExtractor() {
+    const { fullBody } = extractFunctionBody(SOURCE_CODE, 'extractVerdictKeyword');
+    const wrapper = new Function(fullBody + '\nreturn extractVerdictKeyword;');
+    return wrapper();
+  }
+
+  it('「有条件通过（CONDITIONAL PASS）」→ PASS（run-07 coverage 实测措辞）', () => {
+    const extract = createExtractor();
+    expect(extract('## 一、总体结论\n\n**有条件通过（CONDITIONAL PASS）**。\n\n- 无 P0 阻塞项。')).toBe('PASS');
+  });
+
+  it('「96/96 维度全部通过」叙述句 → PASS（run-07 regression 实测措辞）', () => {
+    const extract = createExtractor();
+    expect(extract('## 一、总体结论\n\n- **96 / 96 维度全部通过**：所有维度退出码为 0。')).toBe('PASS');
+  });
+
+  it('否定组优先：不通过/不予放行仍判 FAIL（防肯定词抢先命中）', () => {
+    const extract = createExtractor();
+    expect(extract('## 结论\n\n不通过（BLOCKED）')).toBe('FAIL');
+    expect(extract('## 结论\n\n不予放行，暂缓发布')).toBe('FAIL');
+  });
+
+  it('裸词 PASS/FAIL 既有路径不回归', () => {
+    const extract = createExtractor();
+    expect(extract('## 结论\nPASS')).toBe('PASS');
+    expect(extract('## 终审结论\n\n❌ 不通过（BLOCKED）—— 维持发布冻结')).toBe('FAIL');
   });
 });

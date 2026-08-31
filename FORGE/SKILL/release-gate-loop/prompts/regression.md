@@ -54,6 +54,9 @@
 ```markdown
 # Regression Checklist 结果
 
+## 执行信息
+- 候选版本：以 driver 注入的「验证对象」为准（禁止自行推测或填写其他版本号）
+
 ## 执行摘要
 - 维度总数：49
 - PASS：N
@@ -78,8 +81,11 @@
 | N | xxx | 期望 yyy，实际 zzz |
 
 ## 结论
-PASS / FAIL
+
+- **结果**：PASS（或 FAIL / SKIP——必须为此裸词独占一行，driver 据此行提取判定；禁止用「全部通过」等叙述句代替）
 ```
+
+🔴 **结论行格式铁律（run-07 实证）**：报告必须含一行 `- **结果**：PASS`（或 FAIL/SKIP 裸词）。叙述句（如「96/96 维度全部通过」）无法被 driver 的 `extractVerdictKeyword` 识别，会导致 status.json 记 SKIP、下游 consolidate/verdict 证据面失真。
 
 ## 🔴 铁律：完整报告必须进最终回复
 
