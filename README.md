@@ -194,6 +194,13 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # 加载安全规�
 
 ## 生态与文档索引
 
+**Featured in**（社区收录）：
+
+[![Glama](https://img.shields.io/badge/Glama-indexed-4A90D9)](https://glama.ai/mcp/servers/KongFangXun/sofagent)
+[![awesome-mcp-servers](https://img.shields.io/badge/awesome--mcp--servers-PR%20open-orange)](https://github.com/punkpeye/awesome-mcp-servers/pull/13312)
+[![awesome-harness-engineering](https://img.shields.io/badge/awesome--harness--engineering-PR%20open-orange)](https://github.com/ai-boost/awesome-harness-engineering/pull/227)
+[![awesome-ai-agents](https://img.shields.io/badge/awesome--ai--agents-PR%20open-orange)](https://github.com/e2b-dev/awesome-ai-agents/pull/1471)
+
 **上游与插件入口**：
 
 - DeepSeek Harness（DSH 上游仓库）：<https://github.com/deepseek-ai/deepseek-harness>
