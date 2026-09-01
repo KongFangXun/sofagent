@@ -194,7 +194,7 @@ case $EXIT_CODE in
     ;;
   *)
     echo ""
-    echo "🔴 [sofagent] 审计引擎异常退出（exit $EXIT_CODE，白名单外）——无法确认审计通过，commit 终止"
+    echo "🔴 [sofagent] 审计引擎异常退出（exit ${EXIT_CODE}，白名单外）——无法确认审计通过，commit 终止"
     echo "   可能原因：进程被信号杀死（137=OOM / 139=段错误）或命令缺失（126/127）。"
     echo "   请单独运行: node engine/audit/dist/index.js --diff --cached 排查引擎状态；"
     echo "   确认为引擎自身故障并修复后重新提交。"
