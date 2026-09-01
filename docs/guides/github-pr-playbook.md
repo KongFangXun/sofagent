@@ -108,6 +108,8 @@ Single-line change to README.md only.（或双语两文件）
 | 6 | 表单站硬填 | 时间成本高收益低 | 用户拍板：只走 PR 通道 |
 | 7 | 置顶/某些操作找 API | GraphQL Mutation 无 pinDiscussion | 置顶=网页专属；发帖/回复有 API 可代操作 |
 | 8 | bot 评论当人话回复 | 浪费表情 | 认准 github-actions / *-bot / coderabbit 前缀 |
+| 9 | 投前不查上游是否已有收录 | 重复收录 PR（部分清单有自动扫描，当天就可能被批量收走） | 投前先拉上游 README 搜目标条目；已收录则改为更新既有条目描述 |
+| 10 | 插行 anchor 只用链接不含描述 | 原条目被拦腰截断（描述掉到新行尾），门禁报「missing description」 | anchor 必须用完整行；插完自查「新行独立 + 原行完整」 |
 
 ---
 
