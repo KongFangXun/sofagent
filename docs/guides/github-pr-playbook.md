@@ -111,14 +111,43 @@ Single-line change to README.md only.（或双语两文件）
 
 ---
 
-## 五、本次实战数据（存档）
+## 五、投稿台账（实时状态，巡检用）
 
-- **15 条 PR**：7 MCP 清单 + 5 治理清单 + 2 FDE 生态 + 2 DSH 生态（含 0xsline #547、Anil-matcha #122 当日投当日待审）
-- **1 条已合并**：loop-engineering #573（adopters，仓主 cobusgreyling 亲自合并）
-- **1 条待复审**：agentrust #89（真人 review，披露已补）
-- **1 条流程完备**：e2b #1471（CLA 已签 + cla-bot 复验过）
-- **首日回复率**：13 条老 PR 中 4 条有实质回复（31%），其中 1 条真人 review
-- 未投：VoltAgent 52k（自动索引）、hesreallyhim 53k（人工精选迭代中，条目迁移期）、mahseema ⭐6.1k（**候选**，Developer tools 节格式对口，PR 免费）
+> **快照日期：2026-09-01**。状态会漂移——每次巡检/合并后更新本表对应行的状态列与备注（巡检命令：`gh search prs --author KongFangXun --state open`）。自家仓 PR（KongFangXun/sofagent 内部）不入台账。
+
+### 5.1 在投（14 条 open）
+
+| # | 仓库 | PR | 节 | 投日 | 状态 | 备注 |
+|---|------|----|----|------|------|------|
+| 1 | punkpeye/awesome-mcp-servers ⭐11k | [#13312](https://github.com/punkpeye/awesome-mcp-servers/pull/13312) | MCP servers | 08-31 | open | 重投版（首投 #13273 被 bot 关）；check-submission ✓；glama-badge ✓ |
+| 2 | e2b-dev/awesome-ai-agents | [#1471](https://github.com/e2b-dev/awesome-ai-agents/pull/1471) | Agents | 08-30 | open | CLA 已签 + cla-bot 复验 ✓，等人工 |
+| 3 | yzfly/Awesome-MCP-ZH | [#525](https://github.com/yzfly/Awesome-MCP-ZH/pull/525) | 🔒 安全与分析 | 08-31 | open | 中文清单 |
+| 4 | corca-ai/awesome-llm-security | [#311](https://github.com/corca-ai/awesome-llm-security/pull/311) | Tools | 08-30 | open | coderabbit 摘要已出 |
+| 5 | Puliczek/awesome-mcp-security | [#301](https://github.com/Puliczek/awesome-mcp-security/pull/301) | Tools and code | 08-30 | open | |
+| 6 | ottosulin/awesome-ai-security | [#422](https://github.com/ottosulin/awesome-ai-security/pull/422) | Agent Runtime Security | 08-31 | open | |
+| 7 | scadastrangelove/awesome-ai-security-tools | [#76](https://github.com/scadastrangelove/awesome-ai-security-tools/pull/76) | Runtime Protection | 08-31 | open | |
+| 8 | ccplugins/awesome-claude-code-plugins | [#424](https://github.com/ccplugins/awesome-claude-code-plugins/pull/424) | Security, Compliance & Legal | 08-31 | open | |
+| 9 | agentrust-io/awesome-ai-governance | [#89](https://github.com/agentrust-io/awesome-ai-governance/pull/89) | Governance Frameworks | 08-31 | open | 🔴 **真人 review（imran-siddique）**：自荐披露已补，等复审 |
+| 10 | ai-boost/awesome-harness-engineering ⭐3.9k | [#227](https://github.com/ai-boost/awesome-harness-engineering/pull/227) | Security, Sandbox & Permissions | 08-31 | open | 「Harness Engineering」最对口清单 |
+| 11 | yzhao062/awesome-auditable-ai | [#18](https://github.com/yzhao062/awesome-auditable-ai/pull/18) | Tools | 08-30 | open | 已回 follow-up（本地 check_links 验证） |
+| 12 | OpenFDEAI/OpenFDE | [#1](https://github.com/OpenFDEAI/OpenFDE/pull/1) | 工具地图·可观测/护栏 | 08-31 | open | 该仓**首个 PR** |
+| 13 | global-fde/awesome-fde-resources | [#3](https://github.com/global-fde/awesome-fde-resources/pull/3) | Tools | 08-31 | open | |
+| 14 | 0xsline/awesome-deepseek-harness ⭐961 | [#547](https://github.com/0xsline/awesome-deepseek-harness/pull/547) | Security & Governance（双语） | 09-01 | open | contributing 规范全遵守 |
+| 15 | Anil-matcha/awesome-dsh-plugin ⭐991 | [#122](https://github.com/Anil-matcha/awesome-dsh-plugin/pull/122) | Security & Governance | 09-01 | open | 插节首 |
+
+### 5.2 已收口
+
+| 仓库 | PR | 结果 | 备注 |
+|------|----|------|------|
+| cobusgreyling/loop-engineering | #573 | ✅ **merged 08-31** | adopters 名单；仓主亲自合并；解锁 #326 Show your loop 发帖（已发） |
+| punkpeye/awesome-mcp-servers | #13273 | ❌ closed | fork 落后被 bot 误杀（坑位 #1 教材）→ #13312 重投 |
+| appcypher/awesome-mcp-servers | — | ⛔ 撤单 | archived 仓（坑位 #2 教材） |
+
+### 5.3 巡检节奏
+
+- **频率**：每周一次（顺手挂在发版周检里）
+- **命令**：`gh search prs --author KongFangXun --state open` 对表核状态
+- **动作**：真人评论当天回；merged 的把行移到 5.2；README「Featured in」徽章状态联动（open 橙 → merged 绿）
 
 ## 六、下一步候选（按性价比排序）
 
