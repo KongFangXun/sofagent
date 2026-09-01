@@ -8,17 +8,17 @@
 
 | # | 完成 | 步骤 | 产物 |
 |:--:|:--:|------|------|
-| 一 | [ ] | **发布后验证**（见下方脚本） | 全绿 |
-| 二 | [ ] | CI 全绿检查 | CI 全绿 |
-| 三 | [ ] | **审查三文档回写**：发版过程（阶段五~十一）暴露的新问题回写到 regression-checklist（新维度）/ fresh-eyes-review（新教训）/ acceptance-test（新场景）。与阶段四分工：阶段四管代码质量（发版前可见），本步骤管发版流程（发版中才暴露——如 CI 失败模式、publish 限制、日期硬编码等） | 三文档更新 |
-| 四 | [ ] | SOP 漏洞吸收：本次迭代暴露的 releasing.md 流程问题直接吸收进对应阶段 | SOP 更新 |
-| 五 | [ ] | SOP 数字核对：维度数、检查项数等是否过期 | 数字一致 |
-| 六 | [ ] | 生成「下一版本开发 Prompt」到桌面：综合 ROADMAP + CHANGELOG + 下一版本 changelog | `~/Desktop/vX.Y-dev-prompt.md` |
-| 七 | [ ] | **开发 Prompt 校验循环**（详见下方——脚本 + checklist 五条自查两步都要过） | prompt 定稿 |
+| 一 | [x] | **发布后验证**（见下方脚本） | 全绿 |
+| 二 | [x] | CI 全绿检查 | CI 全绿 |
+| 三 | [x] | **审查三文档回写**：发版过程（阶段五~十一）暴露的新问题回写到 regression-checklist（新维度）/ fresh-eyes-review（新教训）/ acceptance-test（新场景）。与阶段四分工：阶段四管代码质量（发版前可见），本步骤管发版流程（发版中才暴露——如 CI 失败模式、publish 限制、日期硬编码等） | 三文档更新 |
+| 四 | [x] | SOP 漏洞吸收：本次迭代暴露的 releasing.md 流程问题直接吸收进对应阶段 | SOP 更新 |
+| 五 | [x] | SOP 数字核对：维度数、检查项数等是否过期 | 数字一致 |
+| 六 | [x] | 生成「下一版本开发 Prompt」到桌面：综合 ROADMAP + CHANGELOG + 下一版本 changelog | `~/Desktop/vX.Y-dev-prompt.md` |
+| 七 | [x] | **开发 Prompt 校验循环**（详见下方——脚本 + checklist 五条自查两步都要过） | prompt 定稿 |
 | 八 | [ ] | **下版本内容对话讲解**（详见下方——三问讲完 + 负责人确认优先级，缺任一不算完） | 项目负责人理解下版本方向 |
-| 九 | [ ] | **进度追踪清零**：把 `releasing.md` 进度追踪的 12 个 `[x]` 全部改回 `[ ]`，为下一版本新周期做准备 | 进度追踪重置 |
-| 十 | [ ] | **releasing 自迭代**（sop 审查自己）：对照本次发版的实际执行体验，检查 12 个阶段文件是否有过时/缺漏/顺序不合理的地方，直接修正。这是 releasing.md 的「Dream Cycle」——每次发版后用它自己的经验喂养它自己 | releasing.md 更新 |
-| 十一 | [ ] | **本机 daemon 重载（dogfooding 保活 · 2026-08-18 新增）**：发版后本机守护进程要吃上新代码。launchd 配置 `~/Library/LaunchAgents/local.sofagent-daemon.plist` 指向仓库 dist（非全局 npm 包），一条命令重载：`launchctl kickstart -k gui/$(id -u)/local.sofagent-daemon`，随后 `tail -3 ~/.sofagent/data/daemon-launchd.log` 确认版本号 = 刚发的版本。开机自启已由 plist 的 RunAtLoad+KeepAlive 保证，无需每次处理 | daemon 跑新版 |
+| 九 | [x] | **进度追踪清零**：把 `releasing.md` 进度追踪的 12 个 `[x]` 全部改回 `[ ]`，为下一版本新周期做准备 | 进度追踪重置 |
+| 十 | [x] | **releasing 自迭代**（sop 审查自己）：对照本次发版的实际执行体验，检查 12 个阶段文件是否有过时/缺漏/顺序不合理的地方，直接修正。这是 releasing.md 的「Dream Cycle」——每次发版后用它自己的经验喂养它自己 | releasing.md 更新 |
+| 十一 | [x] | **本机 daemon 重载（dogfooding 保活 · 2026-08-18 新增）**：发版后本机守护进程要吃上新代码。launchd 配置 `~/Library/LaunchAgents/local.sofagent-daemon.plist` 指向仓库 dist（非全局 npm 包），一条命令重载：`launchctl kickstart -k gui/$(id -u)/local.sofagent-daemon`，随后 `tail -3 ~/.sofagent/data/daemon-launchd.log` 确认版本号 = 刚发的版本。开机自启已由 plist 的 RunAtLoad+KeepAlive 保证，无需每次处理。⚠️ **重载后仍 exit 78 EX_CONFIG 先查 plist node 路径存在性**（v1.4.3 实录：runtime 目录清理致 plist 写死的绝对路径失效，`launchctl print` 看 last exit code → 手动跑 CLI 排除代码问题 → 核对 `ProgramArguments` 路径；改路径须 `bootout`+`bootstrap` 重载，kickstart 不重读 plist） | daemon 跑新版 |
 | 十二 | [ ] | **网络恢复收尾（v1.4.0 新增）**：发版全程若用过降级通道（gh api tag / Git Data API push / 剥代理直连），网络恢复后必须做三件事：① `git fetch origin && git status` 确认本地/远端无分叉（有分叉按 10-publish「双 SHA 分叉接回」处理）；② lightweight tag 覆盖为 annotated——`git tag -f -a vX.Y.Z -m "vX.Y.Z · {一句话}" <commit> && git push origin vX.Y.Z --force`（gh api 建的 tag 无 tag object，`git for-each-ref refs/tags` 显示 type blob/commit 即 lightweight）；③ 桌面发布物清理——本版产生的 prompt/body 草稿（`vX.Y.Z-*.md` / `release-note-*.md`）归档或删除，只保留下一版 dev prompt（发布物落盘铁律：统一 `~/Desktop/`，禁仓库内） | 远端/桌面双干净 |
 | 十三 | [ ] | **Discussions 置顶轮换（网页操作 · 30 秒）**：新版 release 帖（Announcements 自动生成）**不置顶**——版本帖是流水内容，置顶位只留给常青帖。当前常青帖 = #11「用 sofagent 的都在这报到」。若版本帖曾被误置顶，网页右侧齿轮 → Unpin；若需轮换常青帖，同样路径 Pin。🔴 置顶无 API（GitHub GraphQL Mutation 只有 pinIssue 系，无 pinDiscussion——2026-09-01 实测），只能网页操作 | 置顶位干净 |
 
@@ -258,3 +258,13 @@ sed -i '' 's/- \[x\]/- [ ]/g' docs/changelog/releasing.md
 - **阶段十二·双 SHA rebase 对齐悬置登记（流程新增）**：github.com 443 断而 api.github.com 通的网络半瘫状态下，阶段十二收尾 commit 照走 Git Data API（顺手狗粮 cat-file 修复）；rebase 对齐（`git fetch origin && git rebase --onto origin/main <本地等价点> main`）悬置并登记下版阶段一收尾——网络恢复判据：`curl -s -o /dev/null -w %{http_code} https://github.com` 返回 200/301
 - **阶段十·Git Data API 连续推送三通道纪律（实录）**：①430 blobs 级大批量推送须 `run_in_background` 后台跑（前台超时 SIGKILL 137）；②连续 API 推送后本地 origin/main 必陈旧，脚本已内置 gh api 实时 ref 查询（勿信本地 ref）；③tree 对账验收用远端 recursive tree API vs 本地 `git ls-tree -r HEAD` 双向对齐（python 解析 ls-tree 时 sha 是 `parts[2]` 非 `parts[1]`——踩过）
 - **v1.4.2 发版耗时**：约 4h（08-28 晚 22:52 放行 → 08-29 00:5x 阶段十二完成）；网络故障贯穿（git push 502 代理死 → Git Data API 三推 + ps1 eol 11 文件重传）；CI 红 1 次（B8 狗粮假绿纯净真红——补 fixture 转绿）；release-gate 0 轮（判断层 PASS 已在发版窗口前完成，连续第三版同模式）
+
+**v1.4.3 发版后的自迭代记录**：
+
+- **阶段十·本地部署树 overrides 三红（🔴 本版最重事故 · 已三层固化）**：45517d77 用 `~/.local/share/dsh-deployed`（pnpm deploy 产物）+ 72 条绝对路径 overrides 接 DSH 0.1.2-alpha.1——本地 node_modules symlink 在位全绿，开源 CI `npm ci` 恢复 symlink 指向不存在路径 → TS2307 三红。修复切 npm alpha.3（8c8517b5）。**npm 机制实测**：包不在依赖树时 overrides 惰性不匹配不报警（cordis 系 6 条死配置现状），包一旦进依赖立即生效——残留本地路径 overrides 属地雷应清。三层固化：checklist #122④（lock 零 dsh-deployed 断言）/ acceptance S361（dsh 六包 registry 解析抽查）/ calibration 发版踩坑两条
+- **阶段十·publish 对账重查放宽（SOP 修正）**：3 次 × 15s 实测不够（orchestrator/think 均触发假报「对账失败」，publish 日志「+ pkg@ver」已入队只是传播慢）——改 6 次 × 30s；E409 staged 等 5 分钟自动 finalize 在 orchestrator/think 双包复证成立，10-publish E409 段标注 v1.4.3 复证
+- **阶段十·bootstrap sha256 随版自洽纪律（新增）**：哈希从新 tag `git show vX.Y.Z:install.sh | shasum -a 256` 计算 → 回填 bootstrap.sh → **重打 tag**（delete + re-tag + force push）让哈希入 tag——否则 tag 内 bootstrap.sh 持旧哈希不自洽（check-version 红项）。10-publish sha256 段补时序陷阱注
+- **阶段十二·acceptance 场景脚本 set -e 坑（checklist 铁律自身实证）**：新增 S361 首跑即被 `S361_DSH=$(grep -c ...)` 杀脚本——grep -c 零命中 exit 1 经命令替换继承触发 set -e。checklist 头部「set -e + $(cmd)=静默杀手」铁律的防复发实证：写维度脚本前照铁律加 `|| true`，6fd32d4d 修复
+- **阶段十二·数字对账场景抓真漂移**：S176 抓到 docs/DEVELOPMENT.md 场景数 293 未随 S361 更新（连带发现 96 维→实际 98 维同样滞后）——数字对账类场景的价值实证：改头部 SSOT 数字时全仓对账场景自动暴露所有未同步点
+- **v1.4.3 发版耗时**：约 3.5h（08-31 16:40 三拍板放行 → 09-01 00:1x 阶段十二过半）；CI 红 1 次（本地部署树 overrides——切 npm alpha.3 转绿）；release-gate 0 轮（run-07 verdict=GO 有条件放行，三项硬性前置发版前闭环，连续第四版同模式）；npm publish 网络中断 2 次（E409 staged 等待自愈 ×2）
+- **阶段十二·步骤十一 daemon exit 78 根因 = plist node 路径失效（新增 · 排障实录）**：kickstart 后仍 exit 78 EX_CONFIG 崩溃循环，手动跑 CLI 完全正常（v1.4.3 横幅 + health ok）——根因是 plist `ProgramArguments` 写死的 node 绝对路径 `versions/22.22.2/bin/node` 已不存在（runtime 目录清理后实际为 `22.22.2-2`），launchd spawn 不出进程即报 EX_CONFIG。**排障链：launchctl print 看 last exit code → 手动前台跑 CLI 排除代码问题 → 查 plist 路径存在性**。修复：备份 plist → sed 改路径 → `bootout` + `bootstrap` 重载（kickstart 不重读 plist）→ 日志 v1.4.3 横幅确认。⚠️ plist 内嵌绝对路径属环境硬编码，runtime 目录升级/清理后必断——重载验证失败先查路径存在性，勿先怀疑 daemon 代码
