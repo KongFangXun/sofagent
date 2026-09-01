@@ -153,7 +153,7 @@ Single-line change to README.md only.（或双语两文件）
 
 ### 5.3 巡检节奏
 
-- **每日自动巡检**：晚上 21:00 自动跑（自动化任务「PR 投稿每日巡检」）：读 5.1 台账 → 核 PR 状态 → 状态变化自动写回台账（merged 移 5.2/closed 记原因/真人评论标 🔴）并 commit 收编，绝不 push；真人评论/CHANGES_REQUESTED 出回复草稿等确认后当天回
+- **每日自动巡检**：晚上 21:00 自动跑（自动化任务「PR 投稿每日巡检」）：读 5.1 台账 → 核 PR 状态 → 状态变化自动写回台账（merged 移 5.2/closed 记原因/真人评论标 🔴）并 commit 收编，绝不 push；同时跑阵地检索（awesome deepseek harness / agent harness / harness engineering / ai governance / ai security / dsh-plugin topic 等查询词），新发现写入第六节候选（含防重复核查）但不擅自投稿；真人评论/CHANGES_REQUESTED 出回复草稿等确认后当天回
 - **每周人工巡检**：发版周检顺手对一次台账；merged 的把行移到 5.2；README「Featured in」徽章状态联动（open 橙 → merged 绿）
 - **命令**：`gh search prs --author KongFangXun --state open` 对表核状态
 
