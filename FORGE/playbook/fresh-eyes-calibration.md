@@ -94,6 +94,10 @@
 - 验证 dist 内容先 find 定位正确子路径再 grep，防「修复没进包」假阴性
 - 门禁全绿≠无盲区：手写清单不含的目录就是盲区，发现当场转 check 脚本检查项
 - registry 时间戳早于脚本尝试 ≠ 他人发布：以最终对账为准，勿误判发布来源
+- 本地部署树 + 绝对路径 overrides 接依赖 = 本地全绿 CI 三红（npm ci 把 overrides 恢复成指本机的 symlink，CI 无此路径 TS2307）——依赖只走 npm registry 正式版本；本地 node_modules 在位时的全绿对 CI 无证明力
+- 包不在依赖树时 overrides 是惰性死配置（npm 实测永不匹配、不报警），但属地雷：该包一旦进依赖立即生效——残留本地路径 overrides 应清，不因「现在没炸」留
+- publish 对账重查放宽 6×30s：传播延迟常超 3 次重查，publish 日志「+ pkg@ver」已提交即可信，E409 staged 等 5 分钟 finalize
+- bootstrap sha256 随版纪律：哈希从新 tag 的 `git show vX.Y.Z:<file>` 计算，改完哈希重打 tag（delete + re-tag + force push）让哈希入 tag 自洽
 
 ### 留档参考（未固化，按需取用）
 

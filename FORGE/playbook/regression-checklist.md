@@ -1638,7 +1638,7 @@ grep -q "before_tool_execute" engine/openclaw-plugins/sofagent-audit/src/index.t
 
 #### 122. 发版流程防复发——新 workspace 包 lock 同步 + plugin 分发包装 + 限流（阶段十二来源提取 B 类）
 
-> 发版三坑实录：① 新增 9 个 cordis-plugin workspace 包但 lock file 未同步——`npm ci` 严格校验 4 个 CI 工作流全红（pr-check/verify/audit/windows 同根因）；② skillhub 分发 DSH plugin 需 SKILL.md 包装（plugin 目录是 npm 包结构无 SKILL.md）+ 发布限流（连续发布报「发布频率过高」，需 ≥20s 间隔）+ changelog 中文按字节截断炸 UTF-8（0xe5 continuation byte）；③ npm publish E409 staged 状态约 5 分钟自动 finalize（早期记录称需 unpublish，实测等待即可）。
+> 发版四坑实录：① 新增 9 个 cordis-plugin workspace 包但 lock file 未同步——`npm ci` 严格校验 4 个 CI 工作流全红（pr-check/verify/audit/windows 同根因）；② skillhub 分发 DSH plugin 需 SKILL.md 包装（plugin 目录是 npm 包结构无 SKILL.md）+ 发布限流（连续发布报「发布频率过高」，需 ≥20s 间隔）+ changelog 中文按字节截断炸 UTF-8（0xe5 continuation byte）；③ npm publish E409 staged 状态约 5 分钟自动 finalize（早期记录称需 unpublish，实测等待即可）；④ 本地部署树/绝对路径 overrides 接依赖（pnpm deploy 产物路径 + 72 条 overrides 指向 `/Users/...`）本地 node_modules 在位全绿、CI 无此路径 TS2307 三红——依赖一律走 npm registry 正式版本。
 
 ```bash
 # ① 新增 workspace 包后 lock 必须同步：本地 npm ci --dry-run 零 Missing 即 CI 不会红
@@ -1647,6 +1647,8 @@ cd "$REPO_ROOT" && npm ci --dry-run 2>&1 | grep -c "^npm error Missing" | grep -
 node -e "const l=require('./package-lock.json');const p=JSON.parse(require('fs').readFileSync('package.json','utf8'));const miss=p.workspaces.flat().filter(w=>!l.packages[w]);if(miss.length){console.error('❌ lock 缺:',miss.join(','));process.exit(1)}console.log('✅ 全部 workspace 在 lock')"
 # ③ argv 守卫（Cordis 内嵌收编）在位
 grep -q "createArgv1Guard" engine/orchestrator/src/execution-backends/dsh-backend.ts && echo "✅ argv 守卫在位" || echo "❌ argv 守卫回退"
+# ④ lock 零本地部署树路径（发版实录：workspace 传递依赖 + 绝对路径 overrides → npm ci 恢复成指本机的 symlink，CI 无此路径 TS2307 三红；本地 node_modules 在位时全绿不可信）。package.json 中不被任何依赖引用的本地路径 overrides 是惰性死配置（npm 实测：包不在依赖树则 override 永不匹配），但属地雷——该包一旦进依赖立即生效，应清
+grep -c "dsh-deployed" package-lock.json | grep -q "^0$" && echo "✅ lock 零本地部署树路径" || echo "❌ lock 残留本地部署树 symlink——CI 必红 TS2307"
 ```
 
 #### 123. 新功能审查面——训练引擎地基八大块一维收口（阶段四来源提取 A 类 · 参照 113/115/121 每版一维）

@@ -204,6 +204,8 @@ done
 # ③ 提交后用 mock curl 篡改场景自测 fail-closed 仍生效（见 bootstrap.sh 头注释）
 ```
 
+> 🔴 **时序陷阱（v1.4.3 实战）：回填哈希后必须重打 tag**——「先改 URL 提交 → 打 tag → 算哈希 → 回填提交」会让 tag 内 bootstrap.sh 仍持旧哈希（tag 内不自洽）。正确收口 = 回填哈希的 commit 落盘后**重打 tag**：`git tag -d vX.Y.Z && git tag -a vX.Y.Z -m ... && env -u http_proxy ... push origin :refs/tags/vX.Y.Z && push origin vX.Y.Z`（tag force 覆盖远端）。验收：`git show vX.Y.Z:bootstrap.sh | grep INSTALL_SHA256` 的哈希 == `git show vX.Y.Z:install.sh | shasum -a 256`。install.sh 本体无改动时 6 lib 哈希不变，只重算 install.sh 一项。
+
 ---
 
 ## 步骤六：git tag + push tag
@@ -393,13 +395,15 @@ for pkg in core daemon eval harness ontology orchestrator rules skillopt think a
     cat "/tmp/publish-$pkg.log"
     exit 1
   fi
-  # 即时对账：publish exit 0 ≠ registry 已收录（npm 传播延迟约 15s），重查 3 次
+  # 即时对账：publish exit 0 ≠ registry 已收录（npm 传播延迟波动大——实测常超 45s），
+  # 重查 6 次 × 30s（v1.4.3 修正：3 次 × 15s 实测不够，orchestrator/think 均触发假报「对账失败」；
+  # publish 日志含「+ @sofagent/X@ver」= 已提交入 registry 处理队列，重查超时只是传播慢，勿急着判失败）
   LIVE=""
-  for i in 1 2 3; do
+  for i in 1 2 3 4 5 6; do
     LIVE=$(npm view "@sofagent/$pkg" version 2>/dev/null || true)
     [ "$LIVE" = "$TARGET_VER" ] && break
-    echo "  ⏳ registry 传播中（查到 $LIVE），15s 后重查（第 $i 次）"
-    sleep 15
+    echo "  ⏳ registry 传播中（查到 $LIVE），30s 后重查（第 $i 次）"
+    sleep 30
   done
   [ "$LIVE" = "$TARGET_VER" ] && echo "  ✅ @sofagent/$pkg = $LIVE" || { echo "  🔴 对账失败：期望 $TARGET_VER 实际 $LIVE"; exit 1; }
 done
@@ -411,7 +415,7 @@ RC=$?
 LIVE=$(npm view @sofagent/load-chain version 2>/dev/null || true)
 [ "$LIVE" = "$TARGET_VER" ] && echo "✅ @sofagent/load-chain = $LIVE" || echo "🔴 load-chain 对账失败：期望 $TARGET_VER 实际 $LIVE"
 
-> 🔴 **E409「previously staged version」处理（v1.3.9 实战 · v1.4.0 修正）**：`npm publish` 网络中断会在 registry 留下 **staged blob**（发布事务中间态，版本号被占位但未 finalize）——同版本重发报 `409 Conflict - Cannot publish over previously staged version "X.Y.Z"`。**v1.4.0 实测修正：staged 版本约 5 分钟内自动 finalize**（skillopt 实证：E409 后等待约 5 分钟，`npm view dist-tags.latest` 即显示新版本，无需 unpublish）。处理顺序：① 先等 5 分钟重查 `npm view <pkg> dist-tags.latest`；② 仍未 finalize 再考虑 `npm unpublish <pkg>@<version> --force`（staged blob 独立于记录，unpublish 后 registry 主节点传播完成即可重发同版本）。⚠️ 与「npm 版本永久锁死」铁律不冲突——E409 staged 是**未 finalize 的占位**，可清除重发；已 published 的版本才不可覆盖。
+> 🔴 **E409「previously staged version」处理（v1.3.9 实战 · v1.4.0 修正 · v1.4.3 复证实）**：`npm publish` 网络中断会在 registry 留下 **staged blob**（发布事务中间态，版本号被占位但未 finalize）——同版本重发报 `409 Conflict - Cannot publish over previously staged version "X.Y.Z"`。**staged 版本约 5 分钟内自动 finalize**（skillopt / v1.4.3 orchestrator+think 双版实证：E409 后等待约 5 分钟，`npm view dist-tags.latest` 即显示新版本，无需 unpublish）。处理顺序：① 先等 5 分钟重查 `npm view <pkg> dist-tags.latest`；② 仍未 finalize 再考虑 `npm unpublish <pkg>@<version> --force`（staged blob 独立于记录，unpublish 后 registry 主节点传播完成即可重发同版本）。⚠️ 与「npm 版本永久锁死」铁律不冲突——E409 staged 是**未 finalize 的占位**，可清除重发；已 published 的版本才不可覆盖。
 
 ---
 
