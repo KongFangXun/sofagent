@@ -115,7 +115,7 @@ Single-line change to README.md only.（或双语两文件）
 
 > 活台账：每次巡检/合并后更新本表对应行的状态列与备注（巡检命令：`gh search prs --author KongFangXun --state open`）。自家仓 PR（KongFangXun/sofagent 内部）不入台账。
 
-### 5.1 在投（21 条 open）
+### 5.1 在投（20 条 open）
 
 | # | 仓库 | PR | 节 | 投日 | 状态 | 备注 |
 |---|------|----|----|------|------|------|
@@ -135,9 +135,8 @@ Single-line change to README.md only.（或双语两文件）
 | 14 | 0xsline/awesome-deepseek-harness ⭐961 | [#547](https://github.com/0xsline/awesome-deepseek-harness/pull/547) | Security & Governance（双语） | 09-01 | open | contributing 规范全遵守 |
 | 15 | Anil-matcha/awesome-dsh-plugin ⭐991 | [#122](https://github.com/Anil-matcha/awesome-dsh-plugin/pull/122) | Security & Governance | 09-01 | open | 插节首 |
 | 16 | mahseema/awesome-ai-tools ⭐6.1k | [#2078](https://github.com/mahseema/awesome-ai-tools/pull/2078) | Developer tools | 09-01 | open | PR 模板 checklist 全勾；条目加节尾（模板硬性要求） |
-| 17 | Dominic789654/awesome-deepseek-harness ⭐212 | [#368](https://github.com/Dominic789654/awesome-deepseek-harness/pull/368) | Security & Permissions（双语） | 09-01 | open | 仓库 topics 已补 dsh |
+| 17 | Dominic789654/awesome-deepseek-harness ⭐212 | [#368](https://github.com/Dominic789654/awesome-deepseek-harness/pull/368) | Agents 节既有条目修正（双语） | 09-01 | open | 上游已被 #366 自动扫描批量收录 → 转为更新既有条目（FDE Harness 品牌/79 tools/HMAC 链）；validate ✅ |
 | 18 | beancookie/awesome-dsh-plugin ⭐127 | [#137](https://github.com/beancookie/awesome-dsh-plugin/pull/137) | 开发与运行时（双语） | 09-01 | open | 仓库 topics 已补 dsh-plugin |
-| 19 | imsai-sh/awesome-deepseek-harness-plugins ⭐211 | [#301](https://github.com/imsai-sh/awesome-deepseek-harness-plugins/pull/301) | 目录 JSON（dev） | 09-01 | open | 单条目 fast path 自动合并门禁；JSON 按 schema 提交 |
 | 20 | walkinglabs/awesome-harness-engineering ⭐3.9k | [#88](https://github.com/walkinglabs/awesome-harness-engineering/pull/88) | Security, Authorization & Policy | 09-01 | open | 独立仓（非 ai-boost fork），规模同级最大 |
 | 21 | libukai/awesome-deepseek-harness ⭐225 | [#98](https://github.com/libukai/awesome-deepseek-harness/pull/98) | 开发工具（三语） | 09-01 | open | 李不凯深评测风格条目；中英日三 README 同 PR |
 
@@ -145,6 +144,7 @@ Single-line change to README.md only.（或双语两文件）
 
 | 仓库 | PR | 结果 | 备注 |
 |------|----|------|------|
+| imsai-sh/awesome-deepseek-harness-plugins | #301 | ✅ **merged 09-01（当日）** | 目录 JSON 单条目快车道：static-review 自动通过后自动 squash-merge，全程零人工 |
 | cobusgreyling/loop-engineering | #573 | ✅ **merged 08-31** | adopters 名单；仓主亲自合并；解锁 #326 Show your loop 发帖（已发） |
 | punkpeye/awesome-mcp-servers | #13273 | ❌ closed | fork 落后被 bot 误杀（坑位 #1 教材）→ #13312 重投 |
 | appcypher/awesome-mcp-servers | — | ⛔ 撤单 | archived 仓（坑位 #2 教材） |
