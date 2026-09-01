@@ -3927,7 +3927,8 @@ $S360_OK && pass "run-06 误报批闭环（规则数 24 双口径/探针全口�
 # 依赖立即生效——本地路径 overrides 是地雷应清。对齐 S344 静态锚点形态。
 # ─────────────────────────────────────────────────────────────
 scenario 361 "v1.4.3 阶段十二：lock 零本地部署树路径——overrides 绝对路径地雷防复发（CI TS2307 三红根因固化）"; S361_OK=true
-S361_DSH=$(grep -c "dsh-deployed" "$PROJECT_ROOT/package-lock.json" 2>/dev/null)
+# 🔴 set -e + $(cmd) 静默杀手：grep -c 零命中 exit 1 会杀整个脚本——命令替换必须 || true
+S361_DSH=$(grep -c "dsh-deployed" "$PROJECT_ROOT/package-lock.json" 2>/dev/null || true)
 [ "${S361_DSH:-1}" = "0" ] || S361_OK=false  # lock 零 dsh-deployed symlink（npm ci 在 CI 恢复本地路径必红）
 # registry 解析抽查：dsh 六包 resolved 必须指向 npmjs（防再切回本地部署树）
 for _s361_p in dsh dsh-app-boot dsh-llm dsh-session dsh-agent dsh-home-paths; do
