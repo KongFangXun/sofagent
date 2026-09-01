@@ -20,13 +20,13 @@ INSTALL_URL="https://raw.githubusercontent.com/KongFangXun/sofagent/refs/tags/v1
 #     for f in $LIB_FILES; do git show vX.Y.Z:engine/scripts/lib/$f | shasum -a 256; done
 #   发布清单同步提醒：docs/changelog/releasing/ 09-tag.md（tag 发布阶段）
 # ════════════════════════════════════════════════════════════════════════
-INSTALL_SHA256="24e5ebeed61923c0c06ba9e95464e7b7698ccfb939fcfd0cf4f8bcdf2e3b7212"  # v1.4.2 tag:install.sh
+INSTALL_SHA256="f795e3787d56c5c957846402857a8f0d1bf724895dadf464c65a274282770a41"  # v1.4.3 tag:install.sh
 # v1.3.8 P0-1 兜底：install.sh 依赖同目录 engine/scripts/lib/ 下 6 个模块——
 #   此前 bootstrap 只下载孤立 install.sh，source 立即失败（安装链全断根因）。
 #   现在同时下载 lib 全部文件到同目录结构，让 install.sh 的 source 可达。
 LIB_BASE_URL="https://raw.githubusercontent.com/KongFangXun/sofagent/refs/tags/v1.4.3/engine/scripts/lib"
 LIB_FILES="platform-detect.sh file-deploy.sh daemon-register.sh post-install.sh daemon-lib.sh config.sh"
-# lib 文件 sha256（v1.4.2 tag；与 LIB_FILES 顺序一一对应）
+# lib 文件 sha256（v1.4.3 tag；与 LIB_FILES 顺序一一对应）
 LIB_SHA256S="e1a77f47fd92cbae131e88785079184925dbaf548976bc49d14d5c86e824525a
 dfcb89053f57e794d37a47b369eeff225efccdb0453d4a385fb14ccee5e6cdf3
 e83cf4dc60d929ed7c085b7d5d93beb37e781fd5085eaa1a138d298eb37933b3
