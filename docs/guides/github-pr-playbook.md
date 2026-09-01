@@ -36,7 +36,7 @@
 | **AI 治理/安全** | awesome-ai-governance / llm-security / ai-security | 24 规则 + HMAC 审计链 + commit-time 拦截 |
 | **FDE 生态** | awesome-fde-resources / OpenFDE 工具地图 | FDE 方法论 + 业务流梳理 + 提交时审计护栏 |
 | **DSH 生态** | awesome-deepseek-harness / awesome-dsh-plugin | 9 插件 cordis-plugin 家族 + SkillHub 安装 |
-| （第五轴待补） | awesome-ai-tools 大综合（mahseema ⭐6.1k，Developer tools 节，PR 免费） | 面向泛开发者：AI 行为审计工具 |
+| **泛开发者大综合** | awesome-ai-tools 大综合（mahseema ⭐6.1k） | 面向泛开发者：AI 行为审计工具（Developer tools 节，PR 模板含八项 checklist，条目加节尾） |
 
 **同一清单内**：先读 README 分节，把条目放进**最窄的对口节**（Security & Governance > 泛 Tools 节）。
 
@@ -134,6 +134,7 @@ Single-line change to README.md only.（或双语两文件）
 | 13 | global-fde/awesome-fde-resources | [#3](https://github.com/global-fde/awesome-fde-resources/pull/3) | Tools | 08-31 | open | |
 | 14 | 0xsline/awesome-deepseek-harness ⭐961 | [#547](https://github.com/0xsline/awesome-deepseek-harness/pull/547) | Security & Governance（双语） | 09-01 | open | contributing 规范全遵守 |
 | 15 | Anil-matcha/awesome-dsh-plugin ⭐991 | [#122](https://github.com/Anil-matcha/awesome-dsh-plugin/pull/122) | Security & Governance | 09-01 | open | 插节首 |
+| 16 | mahseema/awesome-ai-tools ⭐6.1k | [#2078](https://github.com/mahseema/awesome-ai-tools/pull/2078) | Developer tools | 09-01 | open | PR 模板 checklist 全勾；条目加节尾（模板硬性要求） |
 
 ### 5.2 已收口
 
@@ -151,7 +152,6 @@ Single-line change to README.md only.（或双语两文件）
 
 ## 六、下一步候选（按性价比排序）
 
-一、**mahseema/awesome-ai-tools**（⭐6.1k，Developer tools 节）——格式已侦察完毕，条目一行即投
-二、**hesreallyhim/awesome-claude-code**（⭐53k）——等其「legacy 迁移期」结束后再投（README 自述正在重构收录）
+一、**hesreallyhim/awesome-claude-code**（⭐53k）——等其「legacy 迁移期」结束后再投（README 自述正在重构收录）
 三、**imsai-sh / Dominic789654 / beancookie 三个小 DSH 清单**——星少但零竞争，顺手投
 四、已投 15 条的合并追踪——每周巡检一次（`gh search prs --author KongFangXun --state open`）
