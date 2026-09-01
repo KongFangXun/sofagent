@@ -21,13 +21,16 @@ set -uo pipefail
 cd "$(dirname "$0")/../.." || exit 1
 
 QUIET=false
+SCENARIOS_ONLY=false
 for arg in "$@"; do
   case "$arg" in
     --quiet) QUIET=true ;;
+    --scenarios-only) SCENARIOS_ONLY=true ;;
     --help|-h)
       echo "check-test-count.sh — 文档声称测试数 vs 实际一致性校验"
-      echo "  --quiet   只输出 OK / FAIL"
-      echo "  --help    显示帮助"
+      echo "  --quiet           只输出 OK / FAIL"
+      echo "  --scenarios-only  只跑 acceptance 场景数守卫（纯文本对账秒级，不跑 npm test）"
+      echo "  --help            显示帮助"
       exit 0 ;;
   esac
 done
@@ -41,6 +44,126 @@ NC='\033[0m'
 
 PASS=0
 FAIL=0
+
+# ── acceptance-test.sh 场景数守卫（F-01/F-02 · v1.4.3 函数化重构）──
+# SSOT = acceptance-test.sh 头部「NNN 个场景」声明。三处文档
+# （DEVELOPMENT.md / LIMITATIONS.md / changelog v1.2.3.md）必须与之一致。
+# v1.3.5 #5 元教训（四份审查独立命中「守卫之死」）：凡是「未找到 X 则跳过」的守卫，
+#   跳过本身必须算 FAIL——否则守卫的存在感为零（守卫空转比没有守卫更危险）。
+#   本脚本此前 head -10 读不到第 11 行的 SSOT 声明（v1.3.1 加 LANG export 挤行所致），
+#   WARN 每次出现但从未有人在意，场景守卫长期失效。现改为：
+#   ① head -10 → head -20（声明行挪动几行不再失明）
+#   ② 头部声明缺失 → 直接 FAIL（exit 1），不再 WARN 跳过
+# v1.4.3 阶段十二：整段抽为 run_scenario_guard 函数——主路径与 --scenarios-only
+#   轻量模式（commit 时秒级拦截场景数漂移，背景：v1.4.3 S361 后 DEVELOPMENT/
+#   LIMITATIONS 两处漂移均到 pre-push 才暴露）共用同一实现，单一 SSOT 口径。
+#   守卫不依赖 npm test（SSOT 从 acceptance-test.sh 头部 grep 提取），
+#   故函数定义置于 npm test 之前——轻量模式在此早退，秒级完成。
+#   计数经全局 SCEN_PASS/SCEN_FAIL 返回，由调用方累入 PASS/FAIL。
+run_scenario_guard() {
+  SCEN_PASS=0
+  SCEN_FAIL=0
+  ACCEPTANCE_ACTUAL=$(head -20 FORGE/playbook/acceptance-test.sh 2>/dev/null | grep -oE '[0-9]+ 个场景' | head -1 | grep -oE '[0-9]+' || echo "")
+  if [ -z "$ACCEPTANCE_ACTUAL" ]; then
+    echo -e "  ${RED}✗ acceptance-test.sh 头部（前 20 行）未找到「NNN 个场景」声明——场景守卫 FAIL（不再静默跳过）${NC}"
+    echo -e "    守卫空转比没有守卫更危险：请在脚本头部补 SSOT 声明「# 场景数：NNN 个场景」"
+    SCEN_FAIL=$((SCEN_FAIL + 1))
+    return
+  fi
+  if [ "$QUIET" = false ]; then
+    echo -e "  场景数 SSOT：acceptance-test.sh 头部声明 ${ACCEPTANCE_ACTUAL} 个场景"
+  fi
+
+  # ── 回数控件（v1.2.4 修复）：实测文件真实 scenario 调用数 vs SSOT 声明 ──
+  # 这是守卫的核心，此前完全缺失——只比对"头部↔文档"，从不回数文件里的真实调用，
+  # 导致 v1.2.3/v1.2.4 用带 bug 的裸 grep（把 echo 探针 "scenario 48/49" 误当声明）
+  # 数出脏数 100/105 仍一路骗绿。精确口径：'scenario N "'（数字后紧跟空格+引号），
+  # 真实场景调用恒为此格式；echo 探针为 'scenario 48"'（引号紧贴数字、前有空格），天然可区分。
+  # v1.2.5: 正则扩展支持字母后缀（34b/34c/167a/167b），[0-9]+ → [0-9]+[a-z]?
+  SCENARIO_REAL=$(grep -oE 'scenario [0-9]+[a-z]? "' FORGE/playbook/acceptance-test.sh 2>/dev/null | wc -l | tr -d ' ')
+  if [ "$SCENARIO_REAL" = "$ACCEPTANCE_ACTUAL" ]; then
+    if [ "$QUIET" = false ]; then
+      echo -e "  ${GREEN}✓ acceptance-test.sh 实测 ${SCENARIO_REAL} 个真实场景调用，与 SSOT 声明一致${NC}"
+    fi
+    SCEN_PASS=$((SCEN_PASS + 1))
+  else
+    echo -e "  ${RED}✗ acceptance-test.sh 实测 ${SCENARIO_REAL} 个真实场景调用，SSOT 声明 ${ACCEPTANCE_ACTUAL} —— 头部数字与文件实际不符${NC}"
+    echo -e "    计数命令：grep -oE 'scenario [0-9]+[a-z]? \"' FORGE/playbook/acceptance-test.sh | wc -l"
+    echo -e "    提示：勿用裸 grep 'scenario [0-9]+'（会把 echo 探针文本误算进去）"
+    SCEN_FAIL=$((SCEN_FAIL + 1))
+  fi
+
+  # 逐个校验三处文档的场景数声称值
+  check_scenario_doc() {
+    local label="$1" file="$2" lineno="$3" claimed="$4"
+    if [ "$claimed" = "$ACCEPTANCE_ACTUAL" ]; then
+      if [ "$QUIET" = false ]; then
+        echo -e "  ${GREEN}✓ ${label}（行 ${lineno}）：${claimed} 场景${NC}"
+      fi
+      SCEN_PASS=$((SCEN_PASS + 1))
+    else
+      echo -e "  ${RED}✗ ${label}（行 ${lineno}）：声称 ${claimed} 场景，SSOT 声明 ${ACCEPTANCE_ACTUAL}${NC}"
+      echo -e "    文件：${file}"
+      SCEN_FAIL=$((SCEN_FAIL + 1))
+    fi
+  }
+
+  # ① DEVELOPMENT.md — "acceptance-test.sh（NNN 场景）"
+  DEV_LINE=$(grep -nE 'acceptance-test\.sh.*[0-9]+ 场景' docs/DEVELOPMENT.md 2>/dev/null | head -1)
+  if [ -n "$DEV_LINE" ]; then
+    check_scenario_doc "DEVELOPMENT.md" "docs/DEVELOPMENT.md" \
+      "$(echo "$DEV_LINE" | cut -d: -f1)" \
+      "$(echo "$DEV_LINE" | grep -oE '[0-9]+ 场景' | grep -oE '[0-9]+')"
+  fi
+
+  # ② LIMITATIONS.md — "acceptance-test.sh NNN 场景"（当前版本口径，取「发版前手动覆盖」行）
+  # 注意：该行同时含「OpenClaw 验收 63 场景」，必须 head -1 只取 acceptance 的紧邻数字，
+  # 否则 grep -oE 会连带捕获 63 造成误报。
+  LIM_SCN_LINE=$(grep -nE 'acceptance-test\.sh [0-9]+ 场景' docs/LIMITATIONS.md 2>/dev/null | head -1)
+  if [ -n "$LIM_SCN_LINE" ]; then
+    check_scenario_doc "docs/LIMITATIONS.md" "docs/LIMITATIONS.md" \
+      "$(echo "$LIM_SCN_LINE" | cut -d: -f1)" \
+      "$(echo "$LIM_SCN_LINE" | grep -oE 'acceptance-test\.sh [0-9]+ 场景' | head -1 | grep -oE '[0-9]+')"
+  fi
+
+  # ③ changelog v1.2.3.md — 历史冻结文档，场景数不随当前 SSOT 变化（v1.2.3 发版时 SSOT=100）
+  #    仅校验文档内部自洽（分母=分子），不与当前 SSOT 比对
+  CHG_SCN_LINE=$(grep -nE '[0-9]+/[0-9]+ 场景 PASS' docs/changelog/v1.2/v1.2.3.md 2>/dev/null | head -1)
+  if [ -n "$CHG_SCN_LINE" ]; then
+    CHG_CLAIMED="$(echo "$CHG_SCN_LINE" | grep -oE '[0-9]+/[0-9]+ 场景' | head -1 | grep -oE '^[0-9]+')"
+    CHG_DENOM="$(echo "$CHG_SCN_LINE" | grep -oE '[0-9]+/[0-9]+ 场景' | head -1 | grep -oE '/[0-9]+' | tr -d '/')"
+    CHG_LINENO=$(echo "$CHG_SCN_LINE" | cut -d: -f1)
+    if [ "$CHG_CLAIMED" = "$CHG_DENOM" ]; then
+      if [ "$QUIET" = false ]; then
+        echo -e "  ${GREEN}✓ changelog v1.2.3.md（行 ${CHG_LINENO}）：历史冻结 ${CHG_CLAIMED}/${CHG_DENOM}（内部自洽，不与当前 SSOT 比对）${NC}"
+      fi
+      SCEN_PASS=$((SCEN_PASS + 1))
+    else
+      echo -e "  ${RED}✗ changelog v1.2.3.md（行 ${CHG_LINENO}）：${CHG_CLAIMED}/${CHG_DENOM} 分母分子不自洽${NC}"
+      SCEN_FAIL=$((SCEN_FAIL + 1))
+    fi
+  fi
+  # ④ changelog v1.2.6.md — 历史冻结文档（v1.2.7 起 v1.2.6 不再是当前版本）
+  # v1.2.7: 改为历史冻结校验（场景数不随当前 SSOT 变化，v1.2.6 发版时 SSOT=132）
+  CHG126_SCN_LINE=$(grep -nE '[0-9]+ 场景' docs/changelog/v1.2/v1.2.6.md 2>/dev/null | head -1)
+  if [ -n "$CHG126_SCN_LINE" ]; then
+    CHG126_CLAIMED=$(echo "$CHG126_SCN_LINE" | grep -oE '[0-9]+ 场景' | grep -oE '[0-9]+' | head -1)
+    CHG126_LINENO=$(echo "$CHG126_SCN_LINE" | cut -d: -f1)
+    echo -e "  ${GREEN}✓ changelog v1.2.6.md（行 ${CHG126_LINENO}）：历史冻结 ${CHG126_CLAIMED} 场景（v1.2.6 发版时 SSOT，不与当前比对）${NC}"
+  fi
+}
+
+# ── 轻量模式入口（--scenarios-only · v1.4.3 阶段十二优化）：跳过 npm test，只跑场景守卫 ──
+# 用途：改 acceptance 场景数后的秒级自检/commit 前拦截——漂移不再等到 pre-push 才暴露。
+if [ "$SCENARIOS_ONLY" = true ]; then
+  run_scenario_guard
+  if [ "$SCEN_FAIL" -gt 0 ]; then
+    echo -e "${RED}场景数守卫：${SCEN_FAIL} 项 FAIL${NC}"
+    exit 1
+  fi
+  echo -e "${GREEN}场景数守卫：全过（SSOT 对账一致）${NC}"
+  exit 0
+fi
 
 # ── 跑 test-count.sh 拿 SSOT 真值 ──
 if [ "$QUIET" = false ]; then
@@ -427,103 +550,6 @@ for pkg in audit core orchestrator daemon; do
   fi
 done
 
-# ── acceptance-test.sh 场景数守卫（F-01/F-02）──
-# SSOT = acceptance-test.sh 头部「NNN 个场景」声明。三处文档
-# （DEVELOPMENT.md / LIMITATIONS.md / changelog v1.2.3.md）必须与之一致。
-# v1.3.5 #5 元教训（四份审查独立命中「守卫之死」）：凡是「未找到 X 则跳过」的守卫，
-#   跳过本身必须算 FAIL——否则守卫的存在感为零（守卫空转比没有守卫更危险）。
-#   本脚本此前 head -10 读不到第 11 行的 SSOT 声明（v1.3.1 加 LANG export 挤行所致），
-#   WARN 每次出现但从未有人在意，场景守卫长期失效。现改为：
-#   ① head -10 → head -20（声明行挪动几行不再失明）
-#   ② 头部声明缺失 → 直接 FAIL（exit 1），不再 WARN 跳过
-ACCEPTANCE_ACTUAL=$(head -20 FORGE/playbook/acceptance-test.sh 2>/dev/null | grep -oE '[0-9]+ 个场景' | head -1 | grep -oE '[0-9]+' || echo "")
-if [ -z "$ACCEPTANCE_ACTUAL" ]; then
-  echo -e "  ${RED}✗ acceptance-test.sh 头部（前 20 行）未找到「NNN 个场景」声明——场景守卫 FAIL（不再静默跳过）${NC}"
-  echo -e "    守卫空转比没有守卫更危险：请在脚本头部补 SSOT 声明「# 场景数：NNN 个场景」"
-  ((FAIL++)) || true
-else
-  if [ "$QUIET" = false ]; then
-    echo -e "  场景数 SSOT：acceptance-test.sh 头部声明 ${ACCEPTANCE_ACTUAL} 个场景"
-  fi
-
-  # ── 回数控件（v1.2.4 修复）：实测文件真实 scenario 调用数 vs SSOT 声明 ──
-  # 这是守卫的核心，此前完全缺失——只比对"头部↔文档"，从不回数文件里的真实调用，
-  # 导致 v1.2.3/v1.2.4 用带 bug 的裸 grep（把 echo 探针 "scenario 48/49" 误当声明）
-  # 数出脏数 100/105 仍一路骗绿。精确口径：'scenario N "'（数字后紧跟空格+引号），
-  # 真实场景调用恒为此格式；echo 探针为 'scenario 48"'（引号紧贴数字、前有空格），天然可区分。
-  # v1.2.5: 正则扩展支持字母后缀（34b/34c/167a/167b），[0-9]+ → [0-9]+[a-z]?
-  SCENARIO_REAL=$(grep -oE 'scenario [0-9]+[a-z]? "' FORGE/playbook/acceptance-test.sh 2>/dev/null | wc -l | tr -d ' ')
-  if [ "$SCENARIO_REAL" = "$ACCEPTANCE_ACTUAL" ]; then
-    if [ "$QUIET" = false ]; then
-      echo -e "  ${GREEN}✓ acceptance-test.sh 实测 ${SCENARIO_REAL} 个真实场景调用，与 SSOT 声明一致${NC}"
-    fi
-    ((PASS++)) || true
-  else
-    echo -e "  ${RED}✗ acceptance-test.sh 实测 ${SCENARIO_REAL} 个真实场景调用，SSOT 声明 ${ACCEPTANCE_ACTUAL} —— 头部数字与文件实际不符${NC}"
-    echo -e "    计数命令：grep -oE 'scenario [0-9]+[a-z]? \"' FORGE/playbook/acceptance-test.sh | wc -l"
-    echo -e "    提示：勿用裸 grep 'scenario [0-9]+'（会把 echo 探针文本误算进去）"
-    ((FAIL++)) || true
-  fi
-
-  # 逐个校验三处文档的场景数声称值
-  check_scenario_doc() {
-    local label="$1" file="$2" lineno="$3" claimed="$4"
-    if [ "$claimed" = "$ACCEPTANCE_ACTUAL" ]; then
-      if [ "$QUIET" = false ]; then
-        echo -e "  ${GREEN}✓ ${label}（行 ${lineno}）：${claimed} 场景${NC}"
-      fi
-      ((PASS++)) || true
-    else
-      echo -e "  ${RED}✗ ${label}（行 ${lineno}）：声称 ${claimed} 场景，SSOT 声明 ${ACCEPTANCE_ACTUAL}${NC}"
-      echo -e "    文件：${file}"
-      ((FAIL++)) || true
-    fi
-  }
-
-  # ① DEVELOPMENT.md — "acceptance-test.sh（NNN 场景）"
-  DEV_LINE=$(grep -nE 'acceptance-test\.sh.*[0-9]+ 场景' docs/DEVELOPMENT.md 2>/dev/null | head -1)
-  if [ -n "$DEV_LINE" ]; then
-    check_scenario_doc "DEVELOPMENT.md" "docs/DEVELOPMENT.md" \
-      "$(echo "$DEV_LINE" | cut -d: -f1)" \
-      "$(echo "$DEV_LINE" | grep -oE '[0-9]+ 场景' | grep -oE '[0-9]+')"
-  fi
-
-  # ② LIMITATIONS.md — "acceptance-test.sh NNN 场景"（当前版本口径，取「发版前手动覆盖」行）
-  # 注意：该行同时含「OpenClaw 验收 63 场景」，必须 head -1 只取 acceptance 的紧邻数字，
-  # 否则 grep -oE 会连带捕获 63 造成误报。
-  LIM_SCN_LINE=$(grep -nE 'acceptance-test\.sh [0-9]+ 场景' docs/LIMITATIONS.md 2>/dev/null | head -1)
-  if [ -n "$LIM_SCN_LINE" ]; then
-    check_scenario_doc "docs/LIMITATIONS.md" "docs/LIMITATIONS.md" \
-      "$(echo "$LIM_SCN_LINE" | cut -d: -f1)" \
-      "$(echo "$LIM_SCN_LINE" | grep -oE 'acceptance-test\.sh [0-9]+ 场景' | head -1 | grep -oE '[0-9]+')"
-  fi
-
-  # ③ changelog v1.2.3.md — 历史冻结文档，场景数不随当前 SSOT 变化（v1.2.3 发版时 SSOT=100）
-  #    仅校验文档内部自洽（分母=分子），不与当前 SSOT 比对
-  CHG_SCN_LINE=$(grep -nE '[0-9]+/[0-9]+ 场景 PASS' docs/changelog/v1.2/v1.2.3.md 2>/dev/null | head -1)
-  if [ -n "$CHG_SCN_LINE" ]; then
-    CHG_CLAIMED="$(echo "$CHG_SCN_LINE" | grep -oE '[0-9]+/[0-9]+ 场景' | head -1 | grep -oE '^[0-9]+')"
-    CHG_DENOM="$(echo "$CHG_SCN_LINE" | grep -oE '[0-9]+/[0-9]+ 场景' | head -1 | grep -oE '/[0-9]+' | tr -d '/')"
-    CHG_LINENO=$(echo "$CHG_SCN_LINE" | cut -d: -f1)
-    if [ "$CHG_CLAIMED" = "$CHG_DENOM" ]; then
-      if [ "$QUIET" = false ]; then
-        echo -e "  ${GREEN}✓ changelog v1.2.3.md（行 ${CHG_LINENO}）：历史冻结 ${CHG_CLAIMED}/${CHG_DENOM}（内部自洽，不与当前 SSOT 比对）${NC}"
-      fi
-      ((PASS++)) || true
-    else
-      echo -e "  ${RED}✗ changelog v1.2.3.md（行 ${CHG_LINENO}）：${CHG_CLAIMED}/${CHG_DENOM} 分母分子不自洽${NC}"
-      ((FAIL++)) || true
-    fi
-  fi
-  # ④ changelog v1.2.6.md — 历史冻结文档（v1.2.7 起 v1.2.6 不再是当前版本）
-  # v1.2.7: 改为历史冻结校验（场景数不随当前 SSOT 变化，v1.2.6 发版时 SSOT=132）
-  CHG126_SCN_LINE=$(grep -nE '[0-9]+ 场景' docs/changelog/v1.2/v1.2.6.md 2>/dev/null | head -1)
-  if [ -n "$CHG126_SCN_LINE" ]; then
-    CHG126_CLAIMED=$(echo "$CHG126_SCN_LINE" | grep -oE '[0-9]+ 场景' | grep -oE '[0-9]+' | head -1)
-    CHG126_LINENO=$(echo "$CHG126_SCN_LINE" | cut -d: -f1)
-    echo -e "  ${GREEN}✓ changelog v1.2.6.md（行 ${CHG126_LINENO}）：历史冻结 ${CHG126_CLAIMED} 场景（v1.2.6 发版时 SSOT，不与当前比对）${NC}"
-  fi
-fi
 
 # LIMITATIONS.md — 多行检查（"审计核心 NNN 个、全 workspace NNN 个" 可能出现多次）
 LIMITATIONS_ALL=$(grep -nE '审计核心 [0-9]+ 个、全 workspace [0-9]+ 个' docs/LIMITATIONS.md 2>/dev/null)

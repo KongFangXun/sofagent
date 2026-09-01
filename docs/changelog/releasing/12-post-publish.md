@@ -10,7 +10,7 @@
 |:--:|:--:|------|------|
 | 一 | [x] | **发布后验证**（见下方脚本） | 全绿 |
 | 二 | [x] | CI 全绿检查 | CI 全绿 |
-| 三 | [x] | **审查三文档回写**：发版过程（阶段五~十一）暴露的新问题回写到 regression-checklist（新维度）/ fresh-eyes-review（新教训）/ acceptance-test（新场景）。与阶段四分工：阶段四管代码质量（发版前可见），本步骤管发版流程（发版中才暴露——如 CI 失败模式、publish 限制、日期硬编码等） | 三文档更新 |
+| 三 | [x] | **审查三文档回写**：发版过程（阶段五~十一）暴露的新问题回写到 regression-checklist（新维度）/ fresh-eyes-review（新教训）/ acceptance-test（新场景）。与阶段四分工：阶段四管代码质量（发版前可见），本步骤管发版流程（发版中才暴露——如 CI 失败模式、publish 限制、日期硬编码等）。⚠️ **改了 acceptance 场景数后立即跑 `bash tools/check/check-test-count.sh --scenarios-only`**（秒级轻量守卫——v1.4.3 教训：S361 后 DEVELOPMENT/LIMITATIONS 漂移拖到 pre-push 才暴露，commit 时即可拦截） | 三文档更新 |
 | 四 | [x] | SOP 漏洞吸收：本次迭代暴露的 releasing.md 流程问题直接吸收进对应阶段 | SOP 更新 |
 | 五 | [x] | SOP 数字核对：维度数、检查项数等是否过期 | 数字一致 |
 | 六 | [x] | 生成「下一版本开发 Prompt」到桌面：综合 ROADMAP + CHANGELOG + 下一版本 changelog | `~/Desktop/vX.Y-dev-prompt.md` |
@@ -18,13 +18,15 @@
 | 八 | [x] | **下版本内容对话讲解**（详见下方——三问讲完 + 负责人确认优先级，缺任一不算完） | 项目负责人理解下版本方向 |
 | 九 | [x] | **进度追踪清零**：把 `releasing.md` 进度追踪的 12 个 `[x]` 全部改回 `[ ]`，为下一版本新周期做准备 | 进度追踪重置 |
 | 十 | [x] | **releasing 自迭代**（sop 审查自己）：对照本次发版的实际执行体验，检查 12 个阶段文件是否有过时/缺漏/顺序不合理的地方，直接修正。这是 releasing.md 的「Dream Cycle」——每次发版后用它自己的经验喂养它自己 | releasing.md 更新 |
-| 十一 | [x] | **本机 daemon 重载（dogfooding 保活 · 2026-08-18 新增）**：发版后本机守护进程要吃上新代码。launchd 配置 `~/Library/LaunchAgents/local.sofagent-daemon.plist` 指向仓库 dist（非全局 npm 包），一条命令重载：`launchctl kickstart -k gui/$(id -u)/local.sofagent-daemon`，随后 `tail -3 ~/.sofagent/data/daemon-launchd.log` 确认版本号 = 刚发的版本。开机自启已由 plist 的 RunAtLoad+KeepAlive 保证，无需每次处理。⚠️ **重载后仍 exit 78 EX_CONFIG 先查 plist node 路径存在性**（v1.4.3 实录：runtime 目录清理致 plist 写死的绝对路径失效，`launchctl print` 看 last exit code → 手动跑 CLI 排除代码问题 → 核对 `ProgramArguments` 路径；改路径须 `bootout`+`bootstrap` 重载，kickstart 不重读 plist） | daemon 跑新版 |
+| 十一 | [x] | **本机 daemon 重载（dogfooding 保活 · 2026-08-18 新增）**：发版后本机守护进程要吃上新代码。launchd 配置 `~/Library/LaunchAgents/local.sofagent-daemon.plist` 指向仓库 dist（非全局 npm 包），一条命令重载：`launchctl kickstart -k gui/$(id -u)/local.sofagent-daemon`，随后 `tail -3 ~/.sofagent/data/daemon-launchd.log` 确认版本号 = 刚发的版本。开机自启已由 plist 的 RunAtLoad+KeepAlive 保证，无需每次处理。⚠️ **重载前先预检 plist node 路径存在性**（`ls "$(grep -o '/[^<]*bin/node' ~/Library/LaunchAgents/local.sofagent-daemon.plist | head -1)"`——v1.4.3 实录：runtime 目录清理致写死的绝对路径失效 → exit 78 EX_CONFIG 崩溃循环，手动跑 CLI 正常即证明是路径问题；改路径须 `bootout`+`bootstrap` 重载，kickstart 不重读 plist） | daemon 跑新版 |
 | 十二 | [x] | **网络恢复收尾（v1.4.0 新增）**：发版全程若用过降级通道（gh api tag / Git Data API push / 剥代理直连），网络恢复后必须做三件事：① `git fetch origin && git status` 确认本地/远端无分叉（有分叉按 10-publish「双 SHA 分叉接回」处理）；② lightweight tag 覆盖为 annotated——`git tag -f -a vX.Y.Z -m "vX.Y.Z · {一句话}" <commit> && git push origin vX.Y.Z --force`（gh api 建的 tag 无 tag object，`git for-each-ref refs/tags` 显示 type blob/commit 即 lightweight）；③ 桌面发布物清理——本版产生的 prompt/body 草稿（`vX.Y.Z-*.md` / `release-note-*.md`）归档或删除，只保留下一版 dev prompt（发布物落盘铁律：统一 `~/Desktop/`，禁仓库内） | 远端/桌面双干净 |
 | 十三 | [x] | **Discussions 置顶轮换（网页操作 · 30 秒）**：新版 release 帖（Announcements 自动生成）**不置顶**——版本帖是流水内容，置顶位只留给常青帖。当前常青帖 = #11「用 sofagent 的都在这报到」。若版本帖曾被误置顶，网页右侧齿轮 → Unpin；若需轮换常青帖，同样路径 Pin。🔴 置顶无 API（GitHub GraphQL Mutation 只有 pinIssue 系，无 pinDiscussion——2026-09-01 实测），只能网页操作（⚠️ GraphQL `pinnedDiscussions { discussion { number title } }` **可只读查询**——v1.4.3 实测置顶位核查不需开网页，仅变更才需要） | 置顶位干净 |
 
 ---
 
 ## 发布后验证脚本（步骤一）
+
+> ⏱️ **时长预期**：全套约 5-8 分钟（`npm install -g` 拉包 + `check-version` 全仓扫描）。回写三文档后若跑全量 acceptance 验证：**4-8 分钟正常，必须 `run_in_background` 后台跑**——300s 前台超时会误判「卡死」（v1.4.3 实录：场景 165 内嵌全量 npm test，实际健康只是慢）。
 
 ```bash
 # Git tag + release 验证
@@ -171,6 +173,8 @@ sed -i '' 's/- \[x\]/- [ ]/g' docs/changelog/releasing.md
 | 六 | **ROADMAP 体检** | 按 [07-roadmap-sync.md](./07-roadmap-sync.md) 的「体检清单」7 项扫一遍（重复表/散落章节/死链/已交付混入/范围过期/模糊版本号/U+FFFD） | 逐项修复 |
 
 > 📋 **发版 commit 规范（防 git log 噪音）**：发版过程中阶段一~十二的进度打勾（`releasing.md` 进度追踪 `[x]`）会产生大量「元工作 commit」。**这些打勾类 commit 应 squash 为单个 `docs(releasing): vX.Y.Z 发版流程完成`**，不要每个阶段一个 commit——否则 git log 充斥 `docs(releasing): 阶段X打勾` 噪音，外部贡献者看 commit 历史会以为项目没有产品迭代。实际产品改动（代码 fix/feat、文档内容修改）照常各自独立 commit，只有「纯进度打勾」类元工作 commit 才 squash。
+
+> 📏 **行内记录瘦身（v1.4.3 起 · 防进度追踪膨胀）**：`releasing.md` 进度追踪每阶段行内的 `**vX.Y.Z：…**` 记录 ≤200 字/版·阶段——超出部分写进对应阶段文件的详情段，行内只留「一句话 + 数字基线 + 指向」。判据：L15-26 每行超过 3 屏（约 1500 字符）即触发瘦身。历史行内记录是快照不追溯改写，只约束新增。
 
 **v1.3.2 发版后的自迭代记录**（示例，每次发版后追加一条）：
 
