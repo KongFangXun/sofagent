@@ -57,11 +57,9 @@ sed -n '4p' docs/ROADMAP.md | grep -qE "训练引擎|数据与评估|FDE Harness
 # 子项 g: SECURITY.md 旧描述清理（原维度 48d）
 grep -q "不做内容安全校验" SECURITY.md && echo "⚠️ SECURITY.md L86 推辞过时" || true
 # 子项 h: SKILL.md 铁律/底线数标题声称与实际一致（原维度 48g；底线是有序列表 `N. ` 格式）
-# 修复（定谳尾判假）：原 `[ ] && echo ⚠️` 结构在健康态（相等）时 `[ ]` 返 1 → 整维度
-# exit=1（健康态假红）。改显式 if 判定，健康态显式 exit 0。
+# 防御（定谳尾判假）：`[ ] && echo ⚠️` 在健康态（相等）时 `[ ]` 返 1 → 整维度 exit=1 假红，改显式 if、健康态显式 exit 0
 SKILL_BC=$(grep -oE "### ([0-9]+) 底线" SKILL/SKILL.md | grep -oE "[0-9]+" || echo 0); SKILL_BA=$(sed -n '/^### [0-9] 底线/,/^### /p' SKILL/SKILL.md | grep -cE "^[0-9]+\. " || echo 0); if [ "$SKILL_BC" != "$SKILL_BA" ]; then echo "⚠️ SKILL.md 底线数 $SKILL_BC vs $SKILL_BA"; exit 1; fi; echo "✅ SKILL.md 底线数一致 ($SKILL_BC)"
-# 注：echo 变量插值处禁用全角括号——macOS bash 3.2 多字节变量展开 bug 会吞「）」
-# 首字节+变量值（输出 FFFD，zsh 正常/printf 不救；半角括号安全，实测定界）。
+# 注：echo 变量插值禁全角括号——macOS bash 3.2 多字节展开 bug 吞「）」首字节+变量值（FFFD），半角安全
 ```
 
 #### 3. 文档规范源与归属一致性
@@ -181,11 +179,8 @@ grep -E "\-\-json.*2>&1|2>&1.*\-\-json" FORGE/playbook/acceptance-test.sh # 期�
 grep -nE "expectedDefaultRules[[:space:]]*=[[:space:]]*[0-9]+|expectedDefault[[:space:]]*=[[:space:]]*[0-9]+" engine/audit/src/commands/init.ts # 期望：零命中
 grep -c "defaultRules\.length\|defaultRules\[.length\]" engine/audit/src/commands/init.ts # 期望：≥ 1
 
-# 子项 g: acceptance-test.sh 绝不能与 npm run build 并发执行（血泪教训）
-# 注意：build 首步 rm -rf dist 清空产物，acceptance-test 此刻读 dist/*.js 会误报 6-7 个「文件不存在」假失败。
-# 本项主体是人工巡检铁律（无法用单条 grep 干净断言「并发」——2>&1 / & 等会误报）：
-# 自测流程必须串行——先 build 完成、dist 稳定，再单独跑 acceptance-test.sh。
-# 辅助自动检查：确认没有脚本把两者用 nohup/后台符号显式并发拉起
+# 子项 g: acceptance-test.sh 绝不能与 npm run build 并发（build 首步 rm -rf dist 清产物，acceptance-test 读 dist/*.js 误报 6-7 个「文件不存在」假失败）——自测须串行：build 完成→dist 稳定→单独跑
+# 「并发」无法单条 grep 干净断言（2>&1 / & 会误报），主体人工巡检铁律；下行只自动查 nohup/后台显式并发拉起
 grep -rnE "nohup.*(build|acceptance-test)|npm run build[^&]*&[[:space:]]*$" tools/ .github/workflows/ 2>/dev/null # 期望：零命中 || true # 零命中=无并发隐患=PASS（grep exit 1 语义反转防误报）
 ```
 
@@ -194,9 +189,7 @@ grep -rnE "nohup.*(build|acceptance-test)|npm run build[^&]*&[[:space:]]*$" tool
 > 扩展：覆盖**代码侧 + 文档侧**两个一致性面
 
 ```bash
-# run-06 verdict P1-3 定谳：原 pattern 只匹配 A 系列（漏 E1/E2/E4 编号 201/202/204）
-# → 误报「SSOT 21」；README「24 条」经 node number 字段清点为正确（21 A + 3 E）。
-# 探针改 A+E 全口径；字段完整性（name+ruleClass 各 24=48）与此对齐。
+# 防御：探针须 A+E 全口径——只匹配 A 系列会漏 E 系列编号，误报「SSOT 21」假红（README 24 条 = 21 A + 3 E 为正确值）
 SSOT_TOTAL=$(grep -cE "name:[[:space:]]*'[AE][0-9]+" engine/audit/src/rules/index.ts) # 勘误：去掉 ^ 行首锚定——index.ts 规则是对象字面量 { name: 'A4...'，行首锚定匹配 0 致 SSOT 总数失明
 SSOT_MAX=$(grep -oE "name:[[:space:]]*'A[0-9]+" engine/audit/src/rules/index.ts | grep -oE "[0-9]+" | sort -n | tail -1)
 echo "SSOT 规则总数: $SSOT_TOTAL / A 系列最大编号: A$SSOT_MAX"
@@ -204,16 +197,14 @@ echo "SSOT 规则总数: $SSOT_TOTAL / A 系列最大编号: A$SSOT_MAX"
 # 代码侧：knownKeys = index.ts 注册号（A16-A19 两组各验证）
 grep -c "a1[6-9]" engine/core/src/config-loader.ts # ≥4
 INDEX_RULES=$(grep -oE "name:[[:space:]]*'A[0-9]+" engine/audit/src/rules/index.ts | grep -oE "[0-9]+" | sort -n | tr '\n' ',')
-# run-06 P1-3 同批：INDEX_RULES 保持 A 系列（与 knownKeys 的 a14-a17/a18/a19 对账面）；
-# E 系列由 SSOT_TOTAL（A+E=24）覆盖，knownKeys 含 'e1'-'e4' 由下行集合覆盖验证
+# 口径分工：INDEX_RULES 保持 A 系列（对账 knownKeys a14-a19）；E 系列由 SSOT_TOTAL（A+E=24）+ 下行 knownKeys 'e1'-'e4' 覆盖
 KNOWN_KEYS=$(grep -A20 "knownKeys = new Set" engine/core/src/config-loader.ts | grep -oE "'a[0-9]+'" | tr -d "'a" | sort -n | tr '\n' ',')
 echo "index.ts: $INDEX_RULES / knownKeys: $KNOWN_KEYS" # 期望：两集合相等
 
 # 文档侧：声称型数字（教训—6 文档漏改）
 grep -rnE "A1-A11、A14-A1[0-9]|[0-9]+ 条审计规则" --include="*.md" README.md README.en.md docs/ FDE/ FORGE/ 2>/dev/null | grep -v "regression-checklist\|fresh-eyes-review\|changelog/" # 人工核对：与 SSOT 一致（docs/ 已含 ROADMAP.md）
 
-# 字段完整性（name+ruleClass 各 24 条=48，曾 21→24 勘误）+ evidenceMode 计数（期望 24）
-# run-06 P1-3 勘误注：48/24 的「24」= 全口径（21 A + 3 E），与 SSOT_TOTAL 修后口径一致
+# 字段完整性（name+ruleClass 全口径 24 条=48 行，与 SSOT_TOTAL 同口径）+ evidenceMode 计数（期望 24）
 grep -oE "name:|ruleClass:" engine/audit/src/rules/index.ts | wc -l # 期望 48
 grep -cE "evidenceMode:" engine/audit/src/rules/index.ts # 期望 24
 ```
@@ -279,10 +270,8 @@ for pkg in audit core orchestrator daemon mcp; do
 done
 
 # 子项 b: npm registry vs git tag vs 工作树三方一致
-# run-05 verdict P1-5 根因修复：原「npm view /audit」缺 @sofagent scope 前缀——
-# /audit 非有效包名，npm 恒空值（探针自身缺陷，非 registry 无数据）。
-# 发版时序注：闸门跑在 SOP 阶段六，npm publish 在阶段十——候选版（如 1.4.3）
-# 此刻必然未上 registry，npm 停在上一正式版（1.4.2）属正常态，与 tag 滞后同源。
+# 防御：npm view 必须带完整 @sofagent scope（裸 /audit 非有效包名恒空值——探针自身缺陷非 registry 无数据）
+# 发版时序：闸门在 SOP 阶段六、npm publish 在阶段十——候选版此刻未上 registry，npm 停在上一正式版属正常态（与 tag 滞后同源）
 NPM_VER=$(npm view @sofagent/audit version 2>/dev/null)
 TAG_VER=$(git describe --tags --abbrev=0 2>/dev/null | sed 's/^v//')
 echo "npm=$NPM_VER ssot=$SSOT_VER tag=$TAG_VER" # 期望：发版完成后三者一致（闸门期允许滞后一步）
@@ -820,9 +809,8 @@ grep -qi "png" engine/core/src/__tests__/isomorphic-git-v2.test.ts && echo "✅ 
 grep -rn "join(.*'data'" engine/ --include="*.ts" | grep -v "data-paths.ts" | grep -v "\.test\." | grep -v "__tests__" | grep -v "// " | grep -v "新的路径"
 # 期望：零命中或仅注释（注释需说明"原...迁移到..."）
 
-# run-07 verdict P1-3 防复发锚点：doctor.ts 全局路径读取收口 SSOT——
-# 直读 process.env.SOFAGENT_HOME 会绕过 sanitizeSofagentHome 白名单防护
-# （v1.3.2 P0-RC2 path-traversal），改走 resolveHomeDir() 后不得回潮
+# 防复发锚点：doctor.ts 全局路径读取收口 SSOT——直读 process.env.SOFAGENT_HOME 会绕过 sanitizeSofagentHome 白名单防护（path-traversal 面）
+# 改走 resolveHomeDir() 后不得回潮
 grep -c "process.env.SOFAGENT_HOME ||" engine/core/src/doctor.ts # 期望：0（直读形态清零）
 grep -c "resolveHomeDir" engine/core/src/doctor.ts # 期望：≥3（L107/L362/L606 三处收口）
 
@@ -886,8 +874,6 @@ grep -A10 'convertAuditResult' engine/eval/src/cli.ts | grep -E 'PASS|WARN|FAIL|
 # 期望：3 种状态都有分支处理（EXIT_CODE_TO_RESULT 含 0/1/2 三个映射）
 ```
 
----
-
 #### 107. CHANGELOG 索引条目就位——版本 bump 后日期提取链
 
 **背景**：bump 后 CHANGELOG.md 未及时补索引条目，check-version 的 EXPECTED_DOC_DATE 动态提取（从 CHANGELOG 当前版本行取日期）返回空——release-gate regression 维度 95 FAIL 才暴露。索引条目是日期链的上游，漏了整条链断。
@@ -897,8 +883,6 @@ CUR_VER=$(node -p "require('./package.json').version")
 grep -q "\*\*v${CUR_VER}\*\* —" CHANGELOG.md || echo "⚠️ CHANGELOG 缺 v${CUR_VER} 索引条目（维度 95 日期链会断）"
 grep -m1 "v${CUR_VER}.*—" CHANGELOG.md | grep -oE "[0-9]{4}-[0-9]{2}-[0-9]{2}" || echo "⚠️ 索引条目无日期"
 ```
-
----
 
 #### 108. SOP hook 测试用例自身合格性——message 长度 + git add -f
 
@@ -915,8 +899,6 @@ grep -q "git add -f .env" docs/changelog/releasing/08-tool-health.md || echo "�
 grep -q "13812345678" engine/scripts/verify.sh || echo "⚠️ verify.sh 脱敏测试输入被误打码（脱敏误伤测试用例）"
 ```
 
----
-
 #### 109. check-docs 锚点扫描环境降级——WorkBuddy shim 超时
 
 **背景**：check-docs.sh 第 11 项（bash 逐行嵌套循环锚点扫描）在 WorkBuddy 环境被 shim 拖慢必然超时，pre-push 因此失败——但它与 tools/check/check-anchors.mjs（node 版，pre-push 第 4 步独立跑）功能重复。已加 SKIP_ANCHOR_SCAN=1 降级。本维度守护降级开关不被误删 + CI 仍跑完整版。
@@ -926,12 +908,8 @@ grep -q "SKIP_ANCHOR_SCAN" tools/check/check-docs.sh || echo "⚠️ 降级开�
 # 本地 WorkBuddy 环境跑 pre-push 应带降级变量
 ```
 
----
-
 ## 输出报告格式
 > 审查日期 / 范围 / 环境验证（tools/release/pre-push-check/npm test/check-docs/check-version）→ 问题清单（P0/P1/P2 分级，维度/文件:行/问题/建议）→ 通过统计 → 最终建议（可发版/需修复P0/需重大修复）。追加维度前先 grep 同类。
-
----
 
 ## 🔴 环境验证铁律（防误报 · 先读再跑下面维度）
 
@@ -980,11 +958,8 @@ done
 > 教训：release-gate-driver.mjs 的 parseVerdict / parseStepResults 曾有脆弱兜底——「报告全文含 \bFAIL\b 字样就判 FAIL」。但发版验证报告的真实结论是 PASS，正文却**必然**提到 FAIL（负向测试场景的预期输出 / 覆盖率表的 ❌ 标记 / 「无 FAIL 条目」这类措辞）。结果一次真实通过的验证被自动化误标成 FAIL，写进 LEDGER.md 和 status.json，靠读 verdict.md 权威产物才还原真相。根因：结论 PASS 的报告正文必然含 FAIL 字样，脆弱兜底把 PASS 误判 FAIL。**读发版裁决以 verdict.md 权威产物为准，别被 LEDGER / status.json 的自动化解析带偏。**
 
 ```bash
-# 显式判定版（校准：健康态语义 exit=1 被 driver 归一化旁路，改显式 if）
-# 锚点勘误（校准：同批）：旧锚「slice(i, i + 4) ≥2」与围栏正则 [[[:space:]]\S] 与源码不符——
-# 源码实况：slice 窗口在 extractVerdictKeyword 内仅 1 处；围栏剥离为 replace(/```[\s\S]*?```/g。
-# 旧锚长期假红被归一化掩盖，本次按源码实况改准。
-# 注：echo 变量插值处用半角括号；grep -c 零命中配 || true + ${VAR:-0}（禁 || echo 0 双零形态）
+# 显式判定版（健康态语义 exit=1 被 driver 归一化旁路，须显式 if）；锚点以源码实况为准：slice 窗口在 extractVerdictKeyword 内仅 1 处，围栏剥离 replace(/```[\s\S]*?```/g
+# 写法注：echo 变量插值用半角括号；grep -c 零命中配 || true + ${VAR:-0}（禁 || echo 0 双零形态）
 FRAGILE=$(grep -cE "includes\('FAIL'\)|includes\(\"FAIL\"\)" FORGE/src/release-gate-driver.mjs || true)
 if [ "${FRAGILE:-0}" -ne 0 ]; then echo "⚠️ 脆弱兜底未删尽 $FRAGILE 处"; exit 1; fi
 KW=$(grep -c 'extractVerdictKeyword' FORGE/src/release-gate-driver.mjs || true)
@@ -1223,8 +1198,6 @@ grep -c "data/audit/runtime" FORGE/src/audit-middleware.mjs # ≥1
 grep -c "rev-parse\|repo.*hash\|resolveRuntimeAuditPath" FORGE/src/audit-middleware.mjs # ≥1
 ```
 
----
-
 #### 85. FORGE driver run_bash cwd 强制——防 worker 路径错误大面积降级
 
 **背景**：worker 模型自己写 `cd /Users/<拼错用户名>/...`，bash 大面积 No such file or directory → 24 worker 硬熔断降级，审查结论不可信。
@@ -1267,8 +1240,6 @@ grep -c '"outDir"' tsconfig.json # 期望 0（待修），修后期望 ≥1
 # .gitignore 防御规则存在（过渡期）
 grep -c "engine/\*/src/\*\*/\*.js" .gitignore # ≥1
 ```
-
----
 
 #### 89. 审计规则 ruleClass 多处声明一致性
 
@@ -1424,8 +1395,6 @@ echo "B 层: $AB 行（LIMIT_B=$LIMIT_VAL）"
 [ "$AB" -le "$LIMIT_VAL" ] && echo "✅" || echo "⚠️ 超标——内容增强后需上调 LIMIT_B"
 ```
 
----
-
 #### 102. 市场五环完整性——10 模块 + 6 MCP tool + inspector 双注册
 
 **背景**：组织能力市场五环（发布→发现→调用→评价→养护）。模块文件、MCP 注册、daemon 巡检三处任一缺失都导致市场断环（如 invoker 缺失则调用环断，retire 缺失则养护环断）。教训：建了文件不注册 = 巡检不生效。MCP 注册一致性已由 #70/#93 覆盖，此处只查 market 专属 tool 名单。
@@ -1436,8 +1405,6 @@ for t in commons_publish commons_search commons_invoke commons_rate commons_reti
 grep -q "runCommonsCatalogDaily" engine/daemon/src/inspectors/index.ts || echo "⚠️ 目录日更未注册" # 更名同步
 grep -q "runCommonsHealth" engine/daemon/src/inspector-layers.ts || echo "⚠️ 健康周检未挂载" # 更名同步
 ```
-
----
 
 #### 103. SkillScan 三态链 + 版本守卫——DANGEROUS 拦截 / rc 投产决策落点
 
@@ -1452,8 +1419,6 @@ grep -q "0\.1\.2-alpha\.1" engine/orchestrator/package.json || echo "⚠️ DSH 
 grep -qE "正式版发布后自动|rc 期\*\*优先内嵌" engine/orchestrator/src/execution-backend.ts || echo "⚠️ rc 投产决策注释缺失（升正式版时须同步更新此处决策记录）"
 ```
 
----
-
 #### 104. DecisionKind.COMMONS 语义分型——市场动作不与 ORCHESTRATION/EVOLUTION 混用
 
 **背景**：铁律「市场调用走审计」。若市场事件塞进 ORCHESTRATION/EVOLUTION，`decision-log --kind MARKET` 查不到任何东西——审计语义分型失效。例外：退役走 EVOLUTION（生命周期事件非市场动作）是刻意设计。
@@ -1463,8 +1428,6 @@ grep -q "'COMMONS'" engine/audit/src/decision-schema.ts || echo "⚠️ Decision
 grep -q "COMMONS" engine/audit/src/decision-log.ts || echo "⚠️ decision-log 未支持 COMMONS" # 更名同步
 grep -q "EVOLUTION" engine/orchestrator/src/commons/retire.ts || echo "⚠️ 退役应走 EVOLUTION（刻意设计）"
 ```
-
----
 
 #### 105. fresh-eyes worker 臆造链——b-fix 越界 + 碎片上下文编造
 
@@ -1477,8 +1440,6 @@ grep -q "50 次工具调用" FORGE/SKILL/fresh-eyes-loop/prompts/a-check-perspec
 # b-fix 的 A3 审计拦截有效性（b-audit 对越界 commit FAILED）
 grep -q "任务范围" engine/audit/src/rules/rule-a3*.ts 2>/dev/null || echo "ℹ️ A3 文件越界检测依赖规则引擎，人工抽查 b-fix diff 范围"
 ```
-
----
 
 #### 106. 测试数文档同步——新增测试后文档声称数漂移
 
@@ -1515,8 +1476,6 @@ diff <(grep -c "exitCode" engine/audit/hooks/post-commit) <(grep -c "exitCode" .
 # ⑦ archive 断链模式（防 #34）：压平迁移后引用路径必须跟着改
 node -e "const fs=require('fs'),p=require('path');let bad=0;for(const f of fs.readdirSync('docs/archive/changelog-experimental')){if(!f.endsWith('.md'))continue;const c=fs.readFileSync(p.join('docs/archive/changelog-experimental',f),'utf8');for(const m of c.matchAll(/\]\((\.[^)]+)\)/g)){const t=p.resolve('docs/archive/changelog-experimental',m[1]);if(!fs.existsSync(t))bad++}}if(bad)console.log('⚠️ archive 断链 '+bad+' 处（迁移没跟引用）')"
 ```
-
----
 
 #### 111. 新功能审查面——MCP 自进化+instinct+FDE 运维
 
@@ -1803,12 +1762,8 @@ grep -q "checkHistoryChainIntegrity" CHANGELOG.md && echo "✅ 退役公告在 C
 ```bash
 # a: 门禁正则跨平台健壮性——\s 在 BSD/部分 grep 语义不稳（实测：本机 2.6.0-FreeBSD 支持 \s，但 test-count 曾因 ANSI 前缀恒 0 假红、\s 组合加剧解析脆性）；shell 活代码一律 POSIX 类——注释行与 Node 内嵌 JS 行（matchAll/test/inFence 上下文）合法
 grep -rn '\\\\s' tools/check/check-docs.sh tools/check/check-review-system.sh tools/check/check-test-count.sh tools/check/check-dev-prompt.sh tools/check/check-version.sh 2>/dev/null | grep -vE "^[^:]+:[0-9]+:#" | grep -vE "(matchAll|\.test\(|inFence|node -e)" | grep -q . && echo "❌ 门禁 shell 活代码残留 \\\\s（跨平台假红隐患）" || echo "✅ 门禁 shell 活代码无 \\\\s 残留"
-# run-09 P0-1 修：正则收窄——旧式 `sofagent-audit.*|| true` 会误中 gh label 装饰行
-# （`gh label create audit-pass --description "sofagent-audit 全通过" || true`——
-# 描述字符串里的产品名，非审计命令；label 写操作挂 || true 是 fork PR 只读令牌的
-# 设计降级，审计命令本体用 set +e 捕获退出码 + FAIL 显式 exit 1，防线完好）。
-# 新正则只锚定审计命令形态：行首（忽略缩进）以 npx/node 调用 sofagent-audit 且
-# 同一行挂 || true——这才是「退出码被清 0」的真假绿形态。
+# 防御：正则只锚定审计命令形态——行首（忽略缩进）npx/node 调用 sofagent-audit 且同行挂 || true，才是「退出码被清 0」真假绿
+# 宽匹配 `sofagent-audit.*|| true` 会误中 gh label 装饰行（描述字符串含产品名）；label 写操作挂 || true 是 fork PR 只读令牌的设计降级，非假绿
 grep -rnE '^[[:space:]]*(npx|node.*)sofagent-audit.*\|\| true' .github/workflows/ 2>/dev/null | grep -vE "^[^:]+:[0-9]+:#" | grep -q . && echo "❌ CI 审计门禁残留 || true 假绿（exit_code 被清 0，FAIL 永不阻断）" || echo "✅ CI 审计无 || true 假绿"
 # b: worktree 引用丢失防线（悬挂 commit 根因 80c94f64 + LEDGER worktree 副本蒸发）——teardown 固化 tip + driver 产物主仓落盘
 grep -q "branch -f" FORGE/src/driver-base.mjs && echo "✅ teardown 固化分支 tip 在位" || echo "❌ teardown 前未固化 tip（悬挂 commit 回潮）"
