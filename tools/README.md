@@ -2,7 +2,7 @@
 
 > **边界说明**：`engine/scripts/` 是 install.sh 组装调用的**用户安装链**（install / verify / daemon 等随安装流程到达用户）；`tools/` 面向维护者发版 SOP 与仓库健康检查，不随安装分发。
 >
-> **目录结构（v1.3.9 物理分目录 · v1.4.2 收口）**：按职能分子目录——check/ 门禁与测试统计、gen/ 草稿生成、dashboard/ 仪表盘、release/ 发布与签名（v1.4.0 起含 `pre-push-check.sh` 四门禁聚合入口）、forge/ FORGE 运维、audit/ FDE 进场审计（脚本 + 问卷数据源同目录）、hooks/ 共享 hook 脚本（v1.4.0 交付五）。**根目录不再留脚本**（pre-push-check 原留根，v1.4.0 移入 release/）。
+> **目录结构（v1.3.9 物理分目录 · v1.4.3 收口）**：按职能分子目录——check/ 门禁与测试统计、gen/ 草稿生成、dashboard/ 仪表盘、release/ 发布与签名（v1.4.0 起含 `pre-push-check.sh` 四门禁聚合入口）、forge/ FORGE 运维、audit/ FDE 进场审计（脚本 + 问卷数据源同目录）、hooks/ 共享 hook 脚本（v1.4.0 交付五）。**根目录不再留脚本**（pre-push-check 原留根，v1.4.0 移入 release/）。
 
 ## 根目录
 

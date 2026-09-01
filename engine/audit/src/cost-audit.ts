@@ -7,7 +7,7 @@
 //   - WARN only，不拦截任务执行（除非 --warn-as-error 由调用方升级）
 //   - 不进 A1-A23 规则体系（不进 rules/index.ts，TOTAL_RULES_COUNT=24 不变）——正交新维度
 //   - opt-in：不配 budget 不审计成本
-// 数据源：data/dashboard/worklog.json（v1.4.2 worklog 聚合落盘）
+// 数据源：data/dashboard/worklog.json（v1.4.3 worklog 聚合落盘）
 // 预算源：workflow.yml 可选 `budget: { maxTokensPerRun, maxCostPerDay }`
 //   （本模块接收解析后的 budget 对象；workflow.yml 的 YAML 解析由调用方注入）
 // ============================================================

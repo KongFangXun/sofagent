@@ -1,4 +1,4 @@
-// train-eval-loop.ts · v1.4.2 章三 · 训练中 eval 闭环（不 eval 的训练是盲训）
+// train-eval-loop.ts · v1.4.3 章三 · 训练中 eval 闭环（不 eval 的训练是盲训）
 //
 // 定位：OpenAI prove 思想——训练必须连着评估。train job 完成后自动跑
 // Benchmark eval（复用 v1.3.1/v1.3.7 评测体系：case-evaluator 隔离执行

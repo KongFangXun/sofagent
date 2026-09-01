@@ -1,7 +1,7 @@
 // ============================================================
 // diff-parser.ts · git diff 解析器
-// v1.4.2: 添加 isomorphic-git fallback（当系统 git 不可用时）
-// v1.4.2（十二）：>5MB diff 缝隙修复——maxBuffer 溢出不再跳过内容扫描，
+// v1.4.3: 添加 isomorphic-git fallback（当系统 git 不可用时）
+// v1.4.3（十二）：>5MB diff 缝隙修复——maxBuffer 溢出不再跳过内容扫描，
 //   改走 spill 落盘（spawnSync stdio fd 重定向，零内存写文件）+ 分块读回。
 //   读回上限 64MB：以内全量扫描（oversized 不置位，无审计盲区）；
 //   超限截断（oversized 置位，WARN 注入）+ spillFile locator 供按需取回。

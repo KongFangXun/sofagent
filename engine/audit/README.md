@@ -1,6 +1,6 @@
 # @sofagent/audit
 
-> v1.4.2 · 提交时审计 —— 扫描 git diff，检查 Agent 是否遵守工作纪律。
+> v1.4.3 · 提交时审计 —— 扫描 git diff，检查 Agent 是否遵守工作纪律。
 >
 > **安装后运行：`sofagent-audit --init`**（一键初始化 config + hook + 冒烟测试）
 >

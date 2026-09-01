@@ -6,12 +6,12 @@
   <a href="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml"><img src="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml/badge.svg" alt="Verify" /></a>
   <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-brightgreen" alt="License: MIT" /></a>
   <!-- ⚠️ bump version: manually sync this badge version (Version-vX.Y.Z) -->
-  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.4.2-16B8F3" alt="Version" /></a>
+  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.4.3-16B8F3" alt="Version" /></a>
 </p>
 
 <p align="center"><sub>[简体中文](./README.md) | [English](./README.en.md)</sub></p>
 
-> 🚀 **v1.4.2** — Training engine: data & evaluation (pipeline / versioning / eval loop / environment / dry-run / report) + FDE six engines + IM bridge + FORGE data-flow foundation. See [CHANGELOG](./CHANGELOG.md).
+> 🚀 **v1.4.3** — Training engine: operations & requirements (monitoring / diagnosis / sandbox / derivation / templates) + audit aggregate metrics + anti-cheat baseline + legacy cleanup. See [CHANGELOG](./CHANGELOG.md).
 
 ---
 
@@ -56,9 +56,9 @@ sofagent does not build its own Agent — execution is delegated to mature hosts
 
 > 🔄 **Self-bootstrapping**: sofagent's first FDE engagement is sofagent itself — the project is a complete FDE business flow (map → build → deploy → depart), and this open-source repository is that deliverable.
 
-## v1.4.2: Training Data & Evaluation + Six FDE Engines
+## v1.4.3: Training Operations & Requirements + Audit Aggregate Metrics
 
-🚀 Make training **eat real data and prove its worth** — enterprise heterogeneous data (CSV/Excel/DB/API) flows through an ingestion pipeline into training sets (quality gates + redaction) · dataset_version ledger (frozen fingerprint + resume version lock) · in-training eval loop (externalized thresholds) · train env/doctor health checks · dry-run VRAM estimation + ScaleRL compute extrapolation · training reports (customer-readable + quantified ROI); the FDE methodology becomes executable engines: fde_interview/classify/quantify/derive/distill/deploy as six MCP tools + IM-bridge remote command. MCP 67→**76** tools, tests 3202→**3349** (workspace 12-package scope). Full details in the [devlog](./docs/changelog/v1.4/v1.4.2.md) · earlier versions in [CHANGELOG](./CHANGELOG.md).
+🚀 Make training **run, self-diagnose, and ship** — `train_status`/`train_list` progress queries + GPU VRAM-budget queue (concurrent jobs without OOM) · `train_diagnose` seven-class failure diagnosis (OOM/data/divergence/framework/environment/repeat-collapse/precision-anomaly, each with a fix prescription) · training sandbox (process isolation + offline training + device packaging) · `train analyze` requirement derivation + template library (QLoRA/SFT/DPO + RL recipes grpo/dapo/cispo with four ScaleRL techniques + MoE expert guard) · post-training workflow template (seven-node DAG + three HITL gates); `sofagent-audit --stats` aggregate audit metrics (safety-boundary trigger rate / block rate — harness value becomes a reportable governance KPI) · anti-cheat training baseline by default (dual defense against four reward-hacking forms) · doctor gains Ontology integrity checks. MCP 76→**79** tools, tests 3349→**3619** (workspace 12-package scope). Full details in the [devlog](./docs/changelog/v1.4/v1.4.3.md) · earlier versions in [CHANGELOG](./CHANGELOG.md).
 
 ## Multi-platform Mounting
 

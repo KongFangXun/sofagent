@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-# sofagent install.sh · 企业设备安装器 · v1.4.2
+# sofagent install.sh · 企业设备安装器 · v1.4.3
 # ============================================================
 # 将 sofagent 约束层部署到企业跑 AI 节点的设备上，让 Agent 获得监控约束。
 #
@@ -8,7 +8,7 @@
 #    默认模式 = 全套（底座 + Agent Skill）——事前约束 + 事后拦截完整闭环。
 #    --base-only 模式 = 仅装约束层（审计·回溯·daemon），不装 Agent Skill。
 #
-# 📦 安装包边界（v1.4.2）：
+# 📦 安装包边界（v1.4.3）：
 #    ┌─────────────────────────┬──────────────┬──────────────────────┐
 #    │ 脚本                    │ 装在哪       │ 装什么               │
 #    ├─────────────────────────┼──────────────┼──────────────────────┤
@@ -31,7 +31,7 @@
 # v1.2.0: install.sh 吸收 FDE/fde-install.sh，成为企业设备安装器
 #
 # 平台无关重构：默认安装不探测/不枚举任何平台，只写 sofagent 自己的目录 ~/.sofagent/；
-# 平台集成改为显式 opt-in：--platform openclaw（完整）/ workbuddy / claude / codex / hermes / cursor / gemini（v1.4.2）
+# 平台集成改为显式 opt-in：--platform openclaw（完整）/ workbuddy / claude / codex / hermes / cursor / gemini（v1.4.3）
 # 约束层四种能力：注入 / 审计 / 回溯 / 进化（FORGE 是内部开发工具，非交付引擎）。
 # 编排引擎为独立可选包 @sofagent/orchestrator，需单独安装（npm install -g @sofagent/orchestrator）。
 #
@@ -49,7 +49,7 @@
 # ============================================================
 
 set -euo pipefail
-VERSION="1.4.2"
+VERSION="1.4.3"
 
 # ERR trap 品牌兜底（v1.3.8 P0-1）：对齐 bootstrap.sh——此前 install.sh 全文无 trap，
 # 任何未处理失败都是裸 bash 报错 exit 1；现在统一输出产品化指路信息。
@@ -894,7 +894,7 @@ HOOKJSONEOF
 }
 
 # ════════════════════════════════════════
-# MCP 自动配置（v1.4.2）——装完即连，不用手动在各平台添加 MCP server
+# MCP 自动配置（v1.4.3）——装完即连，不用手动在各平台添加 MCP server
 # ════════════════════════════════════════
 # 写 JSON 格式 MCP 配置（workbuddy / claude / cursor）——merge 不覆盖用户已有 server
 write_mcp_json() {

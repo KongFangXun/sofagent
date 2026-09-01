@@ -1,4 +1,4 @@
-// process-guard.ts · v1.4.2 块七 · 训练进程守卫（心跳监听 + 异常回收 + 孤儿检测）
+// process-guard.ts · v1.4.3 块七 · 训练进程守卫（心跳监听 + 异常回收 + 孤儿检测）
 //
 // 定位：训练子进程的「看门狗」。spawn 之后 Python 训练进程归谁管？
 // scheduler 管正常生命周期（事件回流 / SIGINT 存档），process-guard 管

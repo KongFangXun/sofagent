@@ -1,5 +1,5 @@
 // ============================================================
-// fde-classify.ts · MCP tool：fde_classify（v1.4.2 章八 · 引擎二）
+// fde-classify.ts · MCP tool：fde_classify（v1.4.3 章八 · 引擎二）
 // ============================================================
 //
 // 三问判定 → 节点方案（nodes.json）：classifyAutomation SSOT 判定 +

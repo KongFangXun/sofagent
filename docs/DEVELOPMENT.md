@@ -4,7 +4,7 @@
 >
 > **本文档面向开发者。** 这里讲 sofagent 内部怎么跑——Skill 结构、编排引擎、反思闭环、数据架构。sofagent 是一层 FDE Harness（嵌在成熟 Agent 与模型层之间），底层引擎的内部实现在这里展开。
 >
-> v1.4.2 · 2026-08-28（UTC）· 孔放勋
+> v1.4.3 · 2026-09-01（UTC）· 孔放勋
 
 <img src="assets/sofagent.png" alt="sofagent" width="160" />
 
@@ -657,7 +657,7 @@ loop-engineering 社区将 STATE.md 定位为 **"对话外的持久化主干"**�
 
 ### 激活链要解决的工程问题
 
-当前 orchestrator 包（1648 测试，实测见 `tools/check/test-count.sh`）和 registry.ts（v1.0.8 动态注册）已经能跑——但只有开发者手动写 `.sofagent/subagents/*.yml` 才能注册自定义 Agent。激活链做的事：**让 FDE 诊断交付物自动变成 `.sofagent/subagents/*.yml`**，不需要人手写。
+当前 orchestrator 包（1642 测试，实测见 `tools/check/test-count.sh`）和 registry.ts（v1.0.8 动态注册）已经能跑——但只有开发者手动写 `.sofagent/subagents/*.yml` 才能注册自定义 Agent。激活链做的事：**让 FDE 诊断交付物自动变成 `.sofagent/subagents/*.yml`**，不需要人手写。
 
 ### 扩展点
 

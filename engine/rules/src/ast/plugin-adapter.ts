@@ -1,6 +1,6 @@
 // ============================================================
 // plugin-adapter.ts · v1.2.9 插件协议适配器
-// v1.4.2（一）：官方 AST 引擎以 `sofagent-ruleset-ast` 形态接入——
+// v1.4.3（一）：官方 AST 引擎以 `sofagent-ruleset-ast` 形态接入——
 // 规则集 JSON 声明 type:plugin + plugin:"@sofagent/rules/ast"，
 // 与 git-diff pattern 规则同管线（ruleset-loader → plugin-runner）
 //

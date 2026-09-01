@@ -1,6 +1,6 @@
 {
   "name": "sofagent-monorepo",
-  "version": "1.4.2",
+  "version": "1.4.3",
   "private": true,
   "license": "MIT",
   "engines": {
@@ -41,7 +41,7 @@
     "@langchain/anthropic": "^1.5.2"
   },
   "dependencies": {
-    "@sofagent/rules": "1.4.2"
+    "@sofagent/rules": "1.4.3"
   },
   "devDependencies": {
     "undici": "^8.10.0"

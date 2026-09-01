@@ -1,4 +1,4 @@
-// dataset-builder.ts · v1.4.2 章一+章二 · 中间格式 → 训练集构建（+ dataset_version 落盘）
+// dataset-builder.ts · v1.4.3 章一+章二 · 中间格式 → 训练集构建（+ dataset_version 落盘）
 //
 // 定位：数据管道的出口——IngestRecord 中间格式按算法选型构建训练集：
 //   - sft：instruction 集（instruction + input + output 三元组）

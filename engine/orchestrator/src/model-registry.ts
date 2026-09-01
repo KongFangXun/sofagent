@@ -7,7 +7,7 @@
 //
 // 边界（changelog 四、定位）：
 //   - 本版只处理 endpoint 型模型（云端/可寻址服务）
-//   - source: 'local-path' 扩展位预留（本地权重部署 v1.4.2 填充）——
+//   - source: 'local-path' 扩展位预留（本地权重部署 v1.4.3 填充）——
 //     字段可存，但 local-path 条目不可切换为活动模型（无可加载权重）
 //   - 通用模型路由不自研——endpoint 可以是第三方 router（LiteLLM/OpenRouter）地址
 //   - 数据主权路由铁律不受本模块影响（model-router.ts 内部保留）

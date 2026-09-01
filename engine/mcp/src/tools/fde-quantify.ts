@@ -1,5 +1,5 @@
 // ============================================================
-// fde-quantify.ts · MCP tool：fde_quantify（v1.4.2 章八 · 引擎三）
+// fde-quantify.ts · MCP tool：fde_quantify（v1.4.3 章八 · 引擎三）
 // ============================================================
 //
 // 量化四字段计算 + ROI 排序（quantification.json）——公式复用
@@ -7,7 +7,6 @@
 // manual 节点不参与（👤 暂不动——量化给 🔄/⚡）。
 // 委托 @sofagent/orchestrator fde/fde-quantify.quantifyNodes。
 // ============================================================
-
 import { getDataDir } from '@sofagent/core';
 import { join } from 'path';
 

@@ -6,7 +6,7 @@
 // 委托 @sofagent/orchestrator 的 registerModel（原子写 + 事件留痕）。
 //
 // 边界：
-//   - 本版只处理 endpoint 型模型；source='local-path' 为 v1.4.2 扩展位预留
+//   - 本版只处理 endpoint 型模型；source='local-path' 为 v1.4.3 扩展位预留
 //   - endpoint 可以是第三方 router（LiteLLM/OpenRouter）地址——
 //     sofagent 只管「上线了没/灰度到多少/退役了没」，路由由第三方决定
 // ============================================================

@@ -1,6 +1,6 @@
 // ============================================================
 // eval/eval-reporter.ts · eval 报告生成器
-// v1.4.2 从 sofagent/audit/src/eval/eval-reporter.ts 迁出
+// v1.4.3 从 sofagent/audit/src/eval/eval-reporter.ts 迁出
 // 输出 markdown 格式报告
 // ============================================================
 

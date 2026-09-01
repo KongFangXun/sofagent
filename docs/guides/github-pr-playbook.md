@@ -1,6 +1,6 @@
 # GitHub PR 投稿运营手册——sofagent 开源曝光实战沉淀
 
-> 本手册沉淀 2026-08-30 ~ 09-01 三轮投稿实战（15 条 PR + 1 条已合并 + 2 个生态位调研）的全部可复用经验。
+> 本手册沉淀 sofagent 开源投稿的全部可复用经验，随每次投稿持续更新。
 > 读者：下次替 sofagent（或任何开源项目）投稿 awesome 清单 / 参与社区的人或 AI session。
 > 定位：**操作手册**，不是叙事复盘——每条规则都可直接执行。
 
@@ -48,7 +48,7 @@
 
 1. **读 contributing.md**（如有）——收录格式、双语要求、PR 标题格式（0xsline 要求 `docs: add <repo>` + 双语 README 同 PR）
 2. **fork 分支必须基于 upstream 最新 HEAD**——🔴 血泪：punkpeye #13273 因 fork 落后，diff 混入别人新合并条目，bot 全家桶检查误杀。正确姿势：`git fetch upstream main && git checkout -b add-xxx upstream/main`
-3. **条目格式照抄该清单现有条目**——`- [名字](链接) - 一行事实性描述`；描述写「是什么/干什么」，不写营销词（0xsline 明言 no fluff, no badges）
+3. **条目格式照抄该清单现有条目**——`- [名字](https://github.com/<owner>/<repo>) - 一行事实性描述`；描述写「是什么/干什么」，不写营销词（0xsline 明言 no fluff, no badges）
 4. **双语清单两个文件同 PR 改**——英文版 + 中文版同条目互译，漏一个会被要求补
 5. **PR body 带自荐披露句**——🔴 agentrust 实证：reviewer 明说「自荐可以，但要摆在明面上」。
 
@@ -83,7 +83,7 @@ Single-line change to README.md only.（或双语两文件）
 
 ## 三、清单投稿之外的曝光面（全景图）
 
-| 曝光面 | 状态（2026-09-01） | 要点 |
+| 曝光面 | 状态 | 要点 |
 |---|---|---|
 | GitHub Marketplace | ✅ 已上线 | name 冻结 `sofagent`；description ≤125 码点；每版 release 勾 Publish（SOP 阶段十一·二b） |
 | Profile README | ✅ 已上线 | KongFangXun/KongFangXun 特殊仓；Contents API `-X PUT` 上传 |
@@ -113,7 +113,7 @@ Single-line change to README.md only.（或双语两文件）
 
 ## 五、投稿台账（实时状态，巡检用）
 
-> **快照日期：2026-09-01**。状态会漂移——每次巡检/合并后更新本表对应行的状态列与备注（巡检命令：`gh search prs --author KongFangXun --state open`）。自家仓 PR（KongFangXun/sofagent 内部）不入台账。
+> 活台账：每次巡检/合并后更新本表对应行的状态列与备注（巡检命令：`gh search prs --author KongFangXun --state open`）。自家仓 PR（KongFangXun/sofagent 内部）不入台账。
 
 ### 5.1 在投（14 条 open）
 

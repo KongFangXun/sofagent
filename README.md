@@ -4,12 +4,12 @@
   <a href="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml"><img src="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml/badge.svg" alt="Verify" /></a>
   <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-brightgreen" alt="License: MIT" /></a>
   <!-- ⚠️ bump 版本时手动同步此 badges 版本号（Version-vX.Y.Z） -->
-  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.4.2-16B8F3" alt="Version" /></a>
+  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.4.3-16B8F3" alt="Version" /></a>
 </p>
 
 <p align="center"><sub>[简体中文](./README.md) | [English](./README.en.md)</sub></p>
 
-> 🚀 **v1.4.2**——训练引擎 · 数据与评估（管道/版本/eval 闭环/环境/dry-run/报告）+ FDE 六引擎 + IM 桥 + FORGE 数据流地基。见 [CHANGELOG](./CHANGELOG.md)。
+> 🚀 **v1.4.3**——训练引擎 · 运行与需求（监控/诊断/沙箱/推导/模板）+ 审计聚合指标 + 反作弊基线 + 存量清扫。见 [CHANGELOG](./CHANGELOG.md)。
 
 ---
 
@@ -54,9 +54,9 @@ sofagent 不造 Agent——执行能力交给成熟宿主（模型 + 工具 + �
 
 > 🔄 **自举**：sofagent 给自己做的第一份 FDE，就是 sofagent 自己——项目本身就是一条完整的 FDE 业务流（梳理 → 构建 → 部署 → 离场），这个开源仓库就是那份交付物。
 
-## v1.4.2：训练数据与评估 + FDE 六引擎
+## v1.4.3：训练运行与需求 + 审计聚合指标
 
-🚀 让训练**吃得到数据、评得出好坏**——企业异构数据（CSV/Excel/DB/API）经管道进训练集（质量闸门+脱敏）· dataset_version 版本台账（指纹冻结+续跑版本锁）· 训练中 eval 闭环（阈值外部化）· train env/doctor 环境体检 · dry-run 显存估算 + ScaleRL 算力外推 · 训练报告（客户可读 + 量化 ROI）；FDE 方法论变成可执行引擎：fde_interview/classify/quantify/derive/distill/deploy 六件 MCP tool + IM 桥远程指挥。（版本时点数字：MCP 67→76 tools、测试 3202→3349，见开发日志——当前口径以[核心特性](#核心特性)为准。）完整内容见[开发日志](./docs/changelog/v1.4/v1.4.2.md) · 更早版本见 [CHANGELOG](./CHANGELOG.md)。
+🚀 让训练**跑得动、找得到问题、出得了交付**——`train_status`/`train_list` 进度查询 + GPU 显存预算队列（并发不 OOM）· `train_diagnose` 七类失败诊断（OOM/数据/发散/框架/环境/重复坍塌/精度异常，每类附修复建议）· 训练沙箱（进程隔离 + 离线可训 + 设备打包）· `train analyze` 需求推导 + 模板库（QLoRA/SFT/DPO + RL 配方 grpo/dapo/cispo 含 ScaleRL 四技巧 + MoE expert 防护）· 后训练 workflow 模板（七节点 DAG + 三 HITL）；`sofagent-audit --stats` 审计聚合指标（安全边界触发率/阻断率——约束层价值变成可汇报的治理 KPI）· 训练反作弊基线默认化（reward hacking 四形态双防线）· doctor 补 Ontology 完整性检查。（版本时点数字：MCP 76→79 tools、测试 3349→3619，见开发日志——当前口径以[核心特性](#核心特性)为准。）完整内容见[开发日志](./docs/changelog/v1.4/v1.4.3.md) · 更早版本见 [CHANGELOG](./CHANGELOG.md)。
 
 ## 多平台挂载
 

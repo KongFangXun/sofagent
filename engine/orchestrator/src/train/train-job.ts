@@ -1,11 +1,11 @@
-// train-job.ts · v1.4.2 块二 · train job 数据模型 + 状态机 + 幂等
+// train-job.ts · v1.4.3 块二 · train job 数据模型 + 状态机 + 幂等
 //
 // 定位：训练任务编排层的地基——「训练任务也是一种长任务」（与 dag-runner 管
 // Agent 同构）。本文件只管数据模型与生命周期规则，进程编排（spawn/信号/事件
 // 回流）在 train-scheduler.ts。
 //
 // 协议纪律（v1.3.6 SSOT）：job.json 字段以 train-protocol.ts 的 TrainJobSchema
-// 为准，本文件只消费不重复定义。enterpriseId 是编排层字段（v1.4.2 块四企业
+// 为准，本文件只消费不重复定义。enterpriseId 是编排层字段（v1.4.3 块四企业
 // 隔离依赖），只进 state.json，不进协议 job.json——协议即版本边界，不越界。
 //
 // 目录分区规范：data/train/<enterpriseId>/<jobId>/（目录中的 trainJobId 即

@@ -1,6 +1,6 @@
 // ============================================================
 // snapshot-helpers.ts · 快照辅助函数（人类可读封装）
-// v1.4.2 从 @sofagent/daemon 迁移至 @sofagent/core
+// v1.4.3 从 @sofagent/daemon 迁移至 @sofagent/core
 //
 // 这三个函数是对 isomorphic-git.ts 底层原语的人类可读封装。
 // 迁移目的：消除 audit↔daemon optional 循环依赖。

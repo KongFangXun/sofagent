@@ -4,7 +4,7 @@
 // 入口路由 tool——传入用户请求，匹配 workflow 节点，返回路由结果。
 // 匹配判定记 audit decision（kind=ORCHESTRATION），保证路由决策可审计。
 //
-// ⚠️ type 修饰符不可运行时解构（v1.4.2 fde-compose 踩过的坑）：
+// ⚠️ type 修饰符不可运行时解构（v1.4.3 fde-compose 踩过的坑）：
 //   正确：顶层 import type { RouteResult } + 运行时只解构 routeRequest 值
 //   错误：const { routeRequest, type RouteResult } = require(...) → build 失败
 // ============================================================
