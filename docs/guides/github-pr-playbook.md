@@ -115,7 +115,7 @@ Single-line change to README.md only.（或双语两文件）
 
 > 活台账：每次巡检/合并后更新本表对应行的状态列与备注（巡检命令：`gh search prs --author KongFangXun --state open`）。自家仓 PR（KongFangXun/sofagent 内部）不入台账。
 
-### 5.1 在投（16 条 open）
+### 5.1 在投（21 条 open）
 
 | # | 仓库 | PR | 节 | 投日 | 状态 | 备注 |
 |---|------|----|----|------|------|------|
@@ -135,6 +135,11 @@ Single-line change to README.md only.（或双语两文件）
 | 14 | 0xsline/awesome-deepseek-harness ⭐961 | [#547](https://github.com/0xsline/awesome-deepseek-harness/pull/547) | Security & Governance（双语） | 09-01 | open | contributing 规范全遵守 |
 | 15 | Anil-matcha/awesome-dsh-plugin ⭐991 | [#122](https://github.com/Anil-matcha/awesome-dsh-plugin/pull/122) | Security & Governance | 09-01 | open | 插节首 |
 | 16 | mahseema/awesome-ai-tools ⭐6.1k | [#2078](https://github.com/mahseema/awesome-ai-tools/pull/2078) | Developer tools | 09-01 | open | PR 模板 checklist 全勾；条目加节尾（模板硬性要求） |
+| 17 | Dominic789654/awesome-deepseek-harness ⭐212 | [#368](https://github.com/Dominic789654/awesome-deepseek-harness/pull/368) | Security & Permissions（双语） | 09-01 | open | 仓库 topics 已补 dsh |
+| 18 | beancookie/awesome-dsh-plugin ⭐127 | [#137](https://github.com/beancookie/awesome-dsh-plugin/pull/137) | 开发与运行时（双语） | 09-01 | open | 仓库 topics 已补 dsh-plugin |
+| 19 | imsai-sh/awesome-deepseek-harness-plugins ⭐211 | [#301](https://github.com/imsai-sh/awesome-deepseek-harness-plugins/pull/301) | 目录 JSON（dev） | 09-01 | open | 单条目 fast path 自动合并门禁；JSON 按 schema 提交 |
+| 20 | walkinglabs/awesome-harness-engineering ⭐3.9k | [#88](https://github.com/walkinglabs/awesome-harness-engineering/pull/88) | Security, Authorization & Policy | 09-01 | open | 独立仓（非 ai-boost fork），规模同级最大 |
+| 21 | libukai/awesome-deepseek-harness ⭐225 | [#98](https://github.com/libukai/awesome-deepseek-harness/pull/98) | 开发工具（三语） | 09-01 | open | 李不凯深评测风格条目；中英日三 README 同 PR |
 
 ### 5.2 已收口
 
@@ -146,12 +151,14 @@ Single-line change to README.md only.（或双语两文件）
 
 ### 5.3 巡检节奏
 
-- **频率**：每周一次（顺手挂在发版周检里）
+- **每日自动巡检**：晚上 21:00 自动跑（自动化任务「PR 投稿每日巡检」，只读不改台账；真人评论/CHANGES_REQUESTED 出报告等确认后当天回）
+- **每周人工巡检**：发版周检顺手对一次台账；merged 的把行移到 5.2；README「Featured in」徽章状态联动（open 橙 → merged 绿）
 - **命令**：`gh search prs --author KongFangXun --state open` 对表核状态
-- **动作**：真人评论当天回；merged 的把行移到 5.2；README「Featured in」徽章状态联动（open 橙 → merged 绿）
 
 ## 六、下一步候选（按性价比排序）
 
 一、**hesreallyhim/awesome-claude-code**（⭐53k）——等其「legacy 迁移期」结束后再投（README 自述正在重构收录）
-三、**imsai-sh / Dominic789654 / beancookie 三个小 DSH 清单**——星少但零竞争，顺手投
-四、已投 15 条的合并追踪——每周巡检一次（`gh search prs --author KongFangXun --state open`）
+二、**awesome-agent-harness 系（harness 研究综述类）**——Picrew ⭐1.7k / AutoJunjie ⭐515 / Gloriaameng ⭐345 / mahonzhan ⭐270 / RUCAIBox ⭐185：偏论文与综述，投稿前先看是否有「实现/工具」节，纯论文清单不对口
+三、**machinae/awesome-claws**（⭐499）——OpenClaw 生态 agent 清单，先确认是否有工具/Skills 类分节再投
+四、**slavakurilyak/awesome-ai-agents**（⭐2.1k）/ jim-schwoebel/awesome_ai_agents（⭐2k）——泛 agent 清单，收录粒度粗，性价比一般
+五、其余小 DSH 清单（fendouai ⭐25 / walkinglabs-plugins ⭐17 等）——星少价值低，有空再投
