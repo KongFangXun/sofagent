@@ -15,12 +15,12 @@
 | 五 | [x] | SOP 数字核对：维度数、检查项数等是否过期 | 数字一致 |
 | 六 | [x] | 生成「下一版本开发 Prompt」到桌面：综合 ROADMAP + CHANGELOG + 下一版本 changelog | `~/Desktop/vX.Y-dev-prompt.md` |
 | 七 | [x] | **开发 Prompt 校验循环**（详见下方——脚本 + checklist 五条自查两步都要过） | prompt 定稿 |
-| 八 | [ ] | **下版本内容对话讲解**（详见下方——三问讲完 + 负责人确认优先级，缺任一不算完） | 项目负责人理解下版本方向 |
+| 八 | [x] | **下版本内容对话讲解**（详见下方——三问讲完 + 负责人确认优先级，缺任一不算完） | 项目负责人理解下版本方向 |
 | 九 | [x] | **进度追踪清零**：把 `releasing.md` 进度追踪的 12 个 `[x]` 全部改回 `[ ]`，为下一版本新周期做准备 | 进度追踪重置 |
 | 十 | [x] | **releasing 自迭代**（sop 审查自己）：对照本次发版的实际执行体验，检查 12 个阶段文件是否有过时/缺漏/顺序不合理的地方，直接修正。这是 releasing.md 的「Dream Cycle」——每次发版后用它自己的经验喂养它自己 | releasing.md 更新 |
 | 十一 | [x] | **本机 daemon 重载（dogfooding 保活 · 2026-08-18 新增）**：发版后本机守护进程要吃上新代码。launchd 配置 `~/Library/LaunchAgents/local.sofagent-daemon.plist` 指向仓库 dist（非全局 npm 包），一条命令重载：`launchctl kickstart -k gui/$(id -u)/local.sofagent-daemon`，随后 `tail -3 ~/.sofagent/data/daemon-launchd.log` 确认版本号 = 刚发的版本。开机自启已由 plist 的 RunAtLoad+KeepAlive 保证，无需每次处理。⚠️ **重载后仍 exit 78 EX_CONFIG 先查 plist node 路径存在性**（v1.4.3 实录：runtime 目录清理致 plist 写死的绝对路径失效，`launchctl print` 看 last exit code → 手动跑 CLI 排除代码问题 → 核对 `ProgramArguments` 路径；改路径须 `bootout`+`bootstrap` 重载，kickstart 不重读 plist） | daemon 跑新版 |
-| 十二 | [ ] | **网络恢复收尾（v1.4.0 新增）**：发版全程若用过降级通道（gh api tag / Git Data API push / 剥代理直连），网络恢复后必须做三件事：① `git fetch origin && git status` 确认本地/远端无分叉（有分叉按 10-publish「双 SHA 分叉接回」处理）；② lightweight tag 覆盖为 annotated——`git tag -f -a vX.Y.Z -m "vX.Y.Z · {一句话}" <commit> && git push origin vX.Y.Z --force`（gh api 建的 tag 无 tag object，`git for-each-ref refs/tags` 显示 type blob/commit 即 lightweight）；③ 桌面发布物清理——本版产生的 prompt/body 草稿（`vX.Y.Z-*.md` / `release-note-*.md`）归档或删除，只保留下一版 dev prompt（发布物落盘铁律：统一 `~/Desktop/`，禁仓库内） | 远端/桌面双干净 |
-| 十三 | [ ] | **Discussions 置顶轮换（网页操作 · 30 秒）**：新版 release 帖（Announcements 自动生成）**不置顶**——版本帖是流水内容，置顶位只留给常青帖。当前常青帖 = #11「用 sofagent 的都在这报到」。若版本帖曾被误置顶，网页右侧齿轮 → Unpin；若需轮换常青帖，同样路径 Pin。🔴 置顶无 API（GitHub GraphQL Mutation 只有 pinIssue 系，无 pinDiscussion——2026-09-01 实测），只能网页操作 | 置顶位干净 |
+| 十二 | [x] | **网络恢复收尾（v1.4.0 新增）**：发版全程若用过降级通道（gh api tag / Git Data API push / 剥代理直连），网络恢复后必须做三件事：① `git fetch origin && git status` 确认本地/远端无分叉（有分叉按 10-publish「双 SHA 分叉接回」处理）；② lightweight tag 覆盖为 annotated——`git tag -f -a vX.Y.Z -m "vX.Y.Z · {一句话}" <commit> && git push origin vX.Y.Z --force`（gh api 建的 tag 无 tag object，`git for-each-ref refs/tags` 显示 type blob/commit 即 lightweight）；③ 桌面发布物清理——本版产生的 prompt/body 草稿（`vX.Y.Z-*.md` / `release-note-*.md`）归档或删除，只保留下一版 dev prompt（发布物落盘铁律：统一 `~/Desktop/`，禁仓库内） | 远端/桌面双干净 |
+| 十三 | [x] | **Discussions 置顶轮换（网页操作 · 30 秒）**：新版 release 帖（Announcements 自动生成）**不置顶**——版本帖是流水内容，置顶位只留给常青帖。当前常青帖 = #11「用 sofagent 的都在这报到」。若版本帖曾被误置顶，网页右侧齿轮 → Unpin；若需轮换常青帖，同样路径 Pin。🔴 置顶无 API（GitHub GraphQL Mutation 只有 pinIssue 系，无 pinDiscussion——2026-09-01 实测），只能网页操作（⚠️ GraphQL `pinnedDiscussions { discussion { number title } }` **可只读查询**——v1.4.3 实测置顶位核查不需开网页，仅变更才需要） | 置顶位干净 |
 
 ---
 
@@ -268,3 +268,4 @@ sed -i '' 's/- \[x\]/- [ ]/g' docs/changelog/releasing.md
 - **阶段十二·数字对账场景抓真漂移**：S176 抓到 docs/DEVELOPMENT.md 场景数 293 未随 S361 更新（连带发现 96 维→实际 98 维同样滞后）——数字对账类场景的价值实证：改头部 SSOT 数字时全仓对账场景自动暴露所有未同步点
 - **v1.4.3 发版耗时**：约 3.5h（08-31 16:40 三拍板放行 → 09-01 00:1x 阶段十二过半）；CI 红 1 次（本地部署树 overrides——切 npm alpha.3 转绿）；release-gate 0 轮（run-07 verdict=GO 有条件放行，三项硬性前置发版前闭环，连续第四版同模式）；npm publish 网络中断 2 次（E409 staged 等待自愈 ×2）
 - **阶段十二·步骤十一 daemon exit 78 根因 = plist node 路径失效（新增 · 排障实录）**：kickstart 后仍 exit 78 EX_CONFIG 崩溃循环，手动跑 CLI 完全正常（v1.4.3 横幅 + health ok）——根因是 plist `ProgramArguments` 写死的 node 绝对路径 `versions/22.22.2/bin/node` 已不存在（runtime 目录清理后实际为 `22.22.2-2`），launchd spawn 不出进程即报 EX_CONFIG。**排障链：launchctl print 看 last exit code → 手动前台跑 CLI 排除代码问题 → 查 plist 路径存在性**。修复：备份 plist → sed 改路径 → `bootout` + `bootstrap` 重载（kickstart 不重读 plist）→ 日志 v1.4.3 横幅确认。⚠️ plist 内嵌绝对路径属环境硬编码，runtime 目录升级/清理后必断——重载验证失败先查路径存在性，勿先怀疑 daemon 代码
+- **阶段十二·步骤十三置顶位可 API 核查（口径修正）**：「置顶无 API 只能网页操作」只对**变更**成立（Mutation 确无 pinDiscussion）——**只读核查**走 GraphQL `pinnedDiscussions { discussion { number title } }` 即可（v1.4.3 实测：置顶位仅常青帖 #11、版本帖未误置顶，网页都不用开）。步骤十三从「必做网页动作」降级为「查询确认，异常才需网页干预」
