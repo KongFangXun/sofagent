@@ -19,6 +19,9 @@ const pkgVersion = (() => {
 //    __tests__ → src → mcp → engine → 仓库根，共四级）──
 const REPO_ROOT = require('path').join(__dirname, '..', '..', '..', '..');
 
+// ── 真实 fs/promises（'fs' 已 mock——临时 HMAC 密钥写入须走未 mock 通道）──
+const realFsp = require('fs/promises');
+
 // ── Mock fs（只 mock mcp-server 侧依赖的表面方法；导出内部用 audit 包真实现）──
 vi.mock('fs', async (importOriginal) => {
   const actual: Record<string, unknown> = await importOriginal();
@@ -100,14 +103,29 @@ async function startServer() {
 }
 
 describe('MCP corpus_export — 训练语料导出三件套（协议面）', () => {
-  beforeEach(() => {
+  let savedKeyPath: string | undefined;
+
+  beforeEach(async () => {
     vi.restoreAllMocks();
     // 方法论段走真实 GUIDE 锚点解析（exportMethodology 读 SOFAGENT_REPO_ROOT）
     process.env.SOFAGENT_REPO_ROOT = REPO_ROOT;
+    // 临时 HMAC 密钥（隔离真实密钥——train-audit.test 同款纪律。
+    // CI 无 ~/.sofagent-key，不设则 hmac=null → .toMatch() 报 typeof null=object）
+    savedKeyPath = process.env.SOFAGENT_KEY_PATH;
+    const keyPath = require('path').join(require('os').tmpdir(), `sofagent-corpus-key-${process.pid}`);
+    await realFsp.writeFile(keyPath, 'test-corpus-export-key-0123456789abcdef');
+    process.env.SOFAGENT_KEY_PATH = keyPath;
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     delete process.env.SOFAGENT_REPO_ROOT;
+    // 还原密钥路径并清理临时密钥（不动真实 ~/.sofagent-key）
+    if (savedKeyPath === undefined) delete process.env.SOFAGENT_KEY_PATH;
+    else process.env.SOFAGENT_KEY_PATH = savedKeyPath;
+    await realFsp.rm(
+      require('path').join(require('os').tmpdir(), `sofagent-corpus-key-${process.pid}`),
+      { force: true },
+    );
   });
 
   it('rules_only 模式：27 编号位 + verifiers 三桶经 JSON-RPC 返回', async () => {
