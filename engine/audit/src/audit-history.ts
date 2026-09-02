@@ -32,7 +32,7 @@
 // 向后兼容——不做指纹校验，只做链完整性校验。
 // ============================================================
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync, chmodSync } from 'fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync, chmodSync, statSync } from 'fs';
 import { dirname } from 'path';
 import { createHash, createHmac } from 'crypto';
 import { loadEnvConfig, resolveHomeDir } from '@sofagent/core';
@@ -133,6 +133,12 @@ export interface AuditHistoryEntry {
    * 手动 --diff <range> 场景无此字段（保持旧语义）。
    */
   commitPhase?: 'pre-commit';
+  /**
+   * D-5 (v1.4.4)：链状态显式标记。'broken' = 本条 prevHash 取 'unknown'
+   * （上一行解密/JSON 解析失败）——写入不阻断（审计可用性优先），但读侧/
+   * 下游消费方可据此优先展示链断裂，不再依赖对 prevHash 字面值的隐式判断。
+   */
+  chainStatus?: 'broken';
   /** hash 算法版本：1 = 无指纹（v1.0.5 及以前），2 = 环境指纹（v1.0.6+） */
   hashVersion?: number;
   /** v1.1.8+: HMAC-SHA256 签名（密钥来自 ~/.sofagent-key，chmod 600）。无密钥时缺省（降级 SHA-256，向后兼容）。用于强防篡改。 */
@@ -217,6 +223,8 @@ export function appendHistory(entry: AuditHistoryEntry, dataDir?: string): void 
 
   // 计算 prevHash（上一行的 hash）
   let prevHash = 'genesis';
+  // D-5 (v1.4.4)：链断裂标记——prevHash 落 'unknown' 时置 true，写入条目带 chainStatus
+  let chainBroken = false;
   if (existsSync(filePath)) {
     const lines = readFileSync(filePath, 'utf-8').trim().split('\n').filter(Boolean);
     if (lines.length > 0) {
@@ -235,6 +243,26 @@ export function appendHistory(entry: AuditHistoryEntry, dataDir?: string): void 
       } catch (e) {
         console.error(`[sofagent] 审计历史 JSON 解析失败: ${e instanceof Error ? e.message : String(e)}`);
         prevHash = 'unknown';
+        // D-5 (v1.4.4)：链断裂显式化——① baseSanitized 落盘时带 chainStatus:'broken'
+        // 标记（读侧/下游优先展示，见 AuditHistoryEntry.chainStatus 注释）；
+        // ② 连续 ≥2 条 unknown 升级 console.warn（首条 console.error 已提示）。
+        // 设计红线：不阻断写入——审计写入被阻断比链断更危险（fail-open 取舍见 LIMITATIONS）。
+        chainBroken = true;
+        // 连续断裂探测：倒数第二行若也是 broken/unknown，说明链问题非单次抖动
+        try {
+          if (lines.length > 1) {
+            const prevLine = isAgePayload(lines[lines.length - 2]!)
+              ? decryptWithAge(lines[lines.length - 2]!, getActiveDataKey())
+              : lines[lines.length - 2]!;
+            const prevEntry = JSON.parse(prevLine);
+            if (prevEntry.chainStatus === 'broken' || prevEntry.prevHash === 'unknown') {
+              console.warn('⚠️ [sofagent] 审计历史链连续断裂（≥2 条 unknown）——上一条记录已是断裂态，请检查 history.jsonl 完整性（--doctor 可跑链校验）');
+            }
+          }
+        } catch {
+          // 倒数第二行也解不开——本身就是「连续断裂」的证据
+          console.warn('⚠️ [sofagent] 审计历史链连续断裂（≥2 条 unknown）——请检查 history.jsonl 完整性（--doctor 可跑链校验）');
+        }
       }
     }
   }
@@ -259,6 +287,9 @@ export function appendHistory(entry: AuditHistoryEntry, dataDir?: string): void 
     ...entry,
     prevHash,
     hashVersion: 2,
+    // D-5 (v1.4.4)：链断裂显式标记——读侧按此字段优先展示（黄→更显眼），
+    // 不再依赖对 prevHash='unknown' 字面值的隐式判断
+    chainStatus: chainBroken ? 'broken' : undefined,
     // (2026-08-02 复核修正): 记录写入时的环境指纹——读侧 HMAC 不匹配时
     // 用它区分「真篡改（指纹一致）」与「环境漂移（指纹不一致）」。
     envFingerprint: fingerprint,
@@ -318,10 +349,27 @@ export function appendHistory(entry: AuditHistoryEntry, dataDir?: string): void 
   // 此前只在 !fileExists 时 chmodSync，后续追加写入不校验权限——
   // 如果文件被外部改为 644（如手动 chmod / 恢复备份），权限会保持 644 不收紧。
   // 每次 appendHistory 后都 chmodSync(filePath, 0o600) 确保权限恒为 0600。
+  // D-5 (v1.4.4)：chmod 失败读回 statSync 验证实际权限——实际 ≤0o600 放行
+  // （false alarm，如 chmod 不支持但 umask 已保证收紧），实际 >0o600 输出
+  // 显式安全告警（含修复命令）。不阻断写入（设计红线：审计可用性优先）。
   try {
     chmodSync(filePath, 0o600);
   } catch (e) {
-    console.error(`[sofagent] 审计历史文件权限设置失败: ${e instanceof Error ? e.message : String(e)}`);
+    // 读回验证：chmod 抛错不代表权限真的宽——看 statSync 实态
+    try {
+      const actualMode = statSync(filePath).mode & 0o777;
+      if (actualMode & 0o077) {
+        // group/other 位有读或写——真实宽松权限，显式告警
+        console.warn(
+          `⚠️ [sofagent] 审计历史文件权限宽松（实际 ${actualMode.toString(8)}，应 600）且 chmod 失败：` +
+          `${e instanceof Error ? e.message : String(e)}——审计数据以宽权限落盘，` +
+          `请手动执行 chmod 600 ${filePath}`
+        );
+      }
+      // 实际 ≤0o600：false alarm（chmod 语义受限但权限已收紧）——静默放行
+    } catch {
+      console.error(`[sofagent] 审计历史文件权限设置失败且无法读回验证: ${e instanceof Error ? e.message : String(e)}`);
+    }
   }
 }
 

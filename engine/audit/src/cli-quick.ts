@@ -32,6 +32,7 @@ import { existsSync } from 'fs';
 import { join } from 'path';
 import { parseDiff, isInGitRepo, type DiffFile } from '@sofagent/core';
 import { runRules, type AuditResult, type RuleCheck } from './reporter';
+import { resolveDiffEndpoint } from './diff-ref';
 
 /**
  * 获取最近一次 commit 的短 SHA
@@ -77,13 +78,23 @@ function hasParentCommit(): boolean {
 }
 
 /**
- * v1.3.8 P1-B2：获取最近一次 commit 的完整 message（供 A9 注入检测）。
+ * 获取指定 ref 的完整 commit message（供 A9 注入检测）。
  * quick 模式此前 runRules 第 6 参 commitMsg=undefined——A9 无输入假绿。
  * 失败时返回 null（不打 raw git stderr，同 P1-B5 原则）。
+ *
+ * v1.4.4 D-1：加可选 ref 参数——range 模式下 A9 的输入必须取被审计
+ * range 的终点（`git log -1 <ref>`），而非字面 HEAD。此前 `git log -1`
+ * 写死 HEAD，range 审计 HEAD~3..HEAD 时 A9 被字面 HEAD 的 commitMsg
+ * 污染（误报面），且被审计历史 commit 自带的注入 payload 完全漏检（漏报面）。
+ * 复用 full 引擎现成件 resolveDiffEndpoint()（diff-ref.ts），与 full 引擎
+ * commitMsg 语义对齐：含 `..` 取终点、普通 ref 原样、空回退 HEAD。
+ *
+ * @param ref 读取 commit message 的 git ref（默认 'HEAD'，语义与旧行为等价）
+ * @returns commit message，或 null（ref 不可解析 / 非 git 仓库）
  */
-function getLatestCommitMsg(): string | null {
+function getLatestCommitMsg(ref: string = 'HEAD'): string | null {
   try {
-    const msg = execFileSync('git', ['log', '-1', '--pretty=%B'], {
+    const msg = execFileSync('git', ['log', '-1', '--pretty=%B', ref], {
       encoding: 'utf-8',
       stdio: ['pipe', 'pipe', 'pipe'],
     });
@@ -428,7 +439,9 @@ export function runCliQuick(argv: string[]): number {
   // A9（prompt 注入检测）在 quick 模式无输入假绿；commitMsg 取不到时 A9 由引擎按
   // 无输入处理（输出标「跳过」），不再假绿。
   // v1.3.8 P1-B4: 改用对象参数签名（十位置参数四布尔陷阱重构）。
-  const commitMsg = getLatestCommitMsg() ?? undefined;
+  // v1.4.4 D-1: commitMsg 取被审计 range 终点（resolveDiffEndpoint）——
+  // 与 diff 面（parseDiff(diffRange)）同源，range 模式下 A9 不再被字面 HEAD 污染。
+  const commitMsg = getLatestCommitMsg(resolveDiffEndpoint(diffRange)) ?? undefined;
   const result = runRules({
     diffFiles,
     logEntries: [],

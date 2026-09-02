@@ -6,7 +6,7 @@
 // 失败超过上限后写 daemon-errors.jsonl 并放弃重试。
 // ============================================================
 
-import { appendFileSync, existsSync, mkdirSync } from 'fs';
+import { appendFileSync, existsSync, mkdirSync, statSync, renameSync, rmSync } from 'fs';
 import { join } from 'path';
 import { DATA_DIR } from '@sofagent/core';
 import { notify } from './notify';
@@ -63,8 +63,34 @@ export function computeBackoff(
 /**
  * daemon-errors.jsonl 错误日志追加。
  *
+ * D-4 (v1.4.4)：加大小阈值轮转——文件 >1MB 时改名 .1 递推（.2→.3 删除旧 .3、
+ * .1→.2、主文件→.1），保留 3 代上限。此前无轮转无告警，实测曾累积 436KB
+ * 测试 fixture（4641 行）持续增长。
+ *
  * @param entry 错误条目
  */
+const ERROR_LOG_MAX_BYTES = 1024 * 1024; // 1MB
+const ERROR_LOG_MAX_GENERATIONS = 3; // 保留 .1 .2 .3 三代
+
+function rotateErrorLogIfNeeded(logPath: string): void {
+  try {
+    const stat = statSync(logPath);
+    if (stat.size <= ERROR_LOG_MAX_BYTES) return;
+    // 递推轮转：.2→.3（删除旧 .3）、.1→.2、主文件→.1
+    for (let gen = ERROR_LOG_MAX_GENERATIONS - 1; gen >= 1; gen--) {
+      const from = `${logPath}.${gen}`;
+      const to = `${logPath}.${gen + 1}`;
+      if (existsSync(from)) {
+        if (existsSync(to)) rmSync(to);
+        renameSync(from, to);
+      }
+    }
+    renameSync(logPath, `${logPath}.1`);
+  } catch {
+    // 轮转失败不影响写入主流程
+  }
+}
+
 function appendErrorLog(entry: {
   context: string;
   error: string;
@@ -77,6 +103,7 @@ function appendErrorLog(entry: {
       mkdirSync(dataDir, { recursive: true });
     }
     const logPath = join(dataDir, 'daemon-errors.jsonl');
+    rotateErrorLogIfNeeded(logPath);
     appendFileSync(logPath, JSON.stringify(entry) + '\n', 'utf-8');
   } catch {
     // 日志写入失败不影响主流程

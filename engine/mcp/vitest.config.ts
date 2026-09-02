@@ -2,6 +2,8 @@ import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   test: {
+    // D-4 (v1.4.4)：全局测试隔离——SOFAGENT_DATA 预置到 tmp，防测试写真实 HOME
+    setupFiles: ['../../tools/vitest-setup.mjs'],
     globals: true,
     // hookTimeout/testTimeout 30s：多个测试文件的 beforeEach 与测试体走
     // vi.resetModules() + 动态 import('./mcp-server')（全模块重载，含

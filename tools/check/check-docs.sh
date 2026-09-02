@@ -709,6 +709,38 @@ fi
 rm -f /tmp/guards-reg.log
 
 echo ""
+echo "=== 13b. 声称限定词反向断言（v1.4.4 D-2 · 「能力交付」级措辞必须带「接线未启用」限定）==="
+# 门禁目的：§13 正向断言防「文档虚报已交付、代码零接线」；本节反向断言防对称面——
+#   历史版本行声称某「能力交付」但实际接线未启用时，若限定词被删掉，读者会把「能力」
+#   误读为「全量交付」（v1.4.4 审查实证：CHANGELOG/ARCHITECTURE 的 v1.3.8 行曾无此限定，
+#   与 SECURITY「接线未启用」直接冲突且正向断言天然盲绿）。
+# 规则：凡被查文档出现「能力交付」字面 + 同行不含「接线未启用」限定词 → FAIL。
+#   grep -F 锚定字面量组合判定，避免正则复杂化；v1.4.7 真接线时本节随 §13 同步改
+#   （接线完成后「能力交付」措辞应升级为「已交付」，届时本节条目同步移除）。
+REVERSE_FAIL=0
+REVERSE_CLAIMS=(
+  "CHANGELOG.md|静态加密|CHANGELOG v1.3.8 行"
+  "docs/ARCHITECTURE.md|静态加密|ARCHITECTURE v1.3.8 行"
+)
+for rclaim in "${REVERSE_CLAIMS[@]}"; do
+  r_file="${rclaim%%|*}"; r_rest="${rclaim#*|}"
+  r_lit="${r_rest%%|*}"; r_desc="${r_rest#*|}"
+  # 命中「静态加密」且不含「接线未启用」的行（排除含「能力已实现，接线未启用」的合规表述——该表述本身含限定词）
+  bad_lines=$(grep -n "$r_lit" "$r_file" 2>/dev/null | grep -cv "接线未启用" || true)
+  bad_lines=${bad_lines:-0}
+  if [ "$bad_lines" -gt 0 ]; then
+    echo "  ❌ [${r_desc}] ${r_file} 存在「${r_lit}」且同行缺「接线未启用」限定的行 ×${bad_lines}——能力级声称必须带限定词（见 SECURITY 口径）"
+    grep -n "$r_lit" "$r_file" 2>/dev/null | grep -v "接线未启用" | sed 's/^/    /' | head -5
+    REVERSE_FAIL=$((REVERSE_FAIL + 1))
+  else
+    echo "  ✓ [${r_desc}] ${r_file} 全部「${r_lit}」声称均带「接线未启用」限定（与 SECURITY 口径一致）"
+  fi
+done
+if [ "$REVERSE_FAIL" -gt 0 ]; then
+  ERRORS=$((ERRORS + REVERSE_FAIL))
+fi
+
+echo ""
 if [ "$ERRORS" -gt 0 ]; then
   echo "发现 ${ERRORS} 个问题"
   exit 1

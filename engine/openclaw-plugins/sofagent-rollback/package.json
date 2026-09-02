@@ -21,6 +21,7 @@
   "scripts": {
     "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
     "build": "npm run clean && tsc",
+    "test": "vitest run src/index.test.ts",
     "prepublishOnly": "npm run build"
   },
   "keywords": [
@@ -41,7 +42,8 @@
   "homepage": "https://github.com/KongFangXun/sofagent#readme",
   "devDependencies": {
     "@types/node": "^20.0.0",
-    "typescript": "^7.0.2"
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.11"
   },
   "engines": {
     "node": ">=18"

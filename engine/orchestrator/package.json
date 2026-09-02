@@ -30,21 +30,21 @@
   "dependencies": {
     "@automerge/automerge": "^3.4.1",
     "@deepseek-ai/dsh": "0.1.2-alpha.3",
+    "@deepseek-ai/dsh-agent": "0.1.2-alpha.3",
+    "@deepseek-ai/dsh-app-boot": "0.1.2-alpha.3",
+    "@deepseek-ai/dsh-home-paths": "0.1.2-alpha.3",
+    "@deepseek-ai/dsh-llm": "0.1.2-alpha.3",
+    "@deepseek-ai/dsh-session": "0.1.2-alpha.3",
     "@langchain/core": "^1.2.9",
     "@langchain/langgraph": "^1.4.12",
-    "@langchain/openai": "^1.5.10",
+    "@langchain/openai": "^1.5.11",
     "@sofagent/audit": "1.4.3",
     "@sofagent/core": "1.4.3",
     "@sofagent/harness": "1.4.3",
     "@sofagent/rules": "1.4.3",
     "@sofagent/skillopt": "1.4.3",
     "js-yaml": "^5.3.0",
-    "zod": "^4.4.3",
-    "@deepseek-ai/dsh-app-boot": "0.1.2-alpha.3",
-    "@deepseek-ai/dsh-llm": "0.1.2-alpha.3",
-    "@deepseek-ai/dsh-session": "0.1.2-alpha.3",
-    "@deepseek-ai/dsh-agent": "0.1.2-alpha.3",
-    "@deepseek-ai/dsh-home-paths": "0.1.2-alpha.3"
+    "zod": "^4.4.3"
   },
   "exports": {
     ".": {

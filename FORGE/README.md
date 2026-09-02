@@ -14,12 +14,12 @@ FORGE 的自迭代不是单一循环，而是**外环 + 内环**的双层结构�
 
 ### 外环 · 项目级（每轮 = 一个版本的生命周期）
 
-外环就是 `docs/changelog/releasing.md` 的十二阶段——从 A0（编写开发日志/dev prompt）到 A12（发布后生成下一版 prompt），A12 → A0 形成闭环。**每一轮外环 = 一个版本从规划到发布的完整生命周期**。
+外环就是 `docs/changelog/releasing.md` 的十一阶段——从 A0（编写开发日志/dev prompt）到 A12（发布后生成下一版 prompt），A12 → A0 形成闭环。**每一轮外环 = 一个版本从规划到发布的完整生命周期**。
 
 外环的 loop body 就是 releasing.md。每转一轮：
 
 - **产出新代码**：本版本的功能开发 + BugFix
-- **产出更成熟的流程**：releasing.md 自身也在进化（阶段十二·步骤 38 SOP 自我进化），审查工具变得更锋利（回归清单 + 验收脚本 + fresh-eyes-review 持续校准）
+- **产出更成熟的流程**：releasing.md 自身也在进化（阶段十一·步骤十 SOP 自我进化），审查工具变得更锋利（回归清单 + 验收脚本 + fresh-eyes-review 持续校准）
 - **每轮的"齿轮"**：外环每转一圈，都有新的节点从"手动"变成"可自动"、从"靠人判断"变成"靠证据闸门"——这正是通向自转的路径
 
 外环的完整动作模型定义在 [`ontology/actions.yml`](ontology/actions.yml)，闭环全景详见 [`ontology/README.md`](ontology/README.md)「版本迭代闭环」。
@@ -31,7 +31,7 @@ FORGE 的自迭代不是单一循环，而是**外环 + 内环**的双层结构�
 | 内环 | 嵌套在外环哪个阶段 | 路径 | 用途 |
 |------|------------------|------|------|
 | **fresh-eyes-loop** | 阶段三（开发后质量循环） | `FORGE/SKILL/fresh-eyes-loop/` | A/B 双角色零上下文 12 视角审查 + 修复 + 验证，连续 2 轮无 P0/P1 即停 |
-| **release-gate-loop** | 阶段六（发版闸门） | `FORGE/SKILL/release-gate-loop/` | acceptance-test + regression + coverage + verdict，异步轮询长任务 |
+| **release-gate-loop** | 阶段五（发版闸门） | `FORGE/SKILL/release-gate-loop/` | acceptance-test + regression + coverage + verdict，异步轮询长任务 |
 
 ### 证据闸门（外环节点的放行条件）
 
@@ -81,7 +81,7 @@ FORGE 有两个内环，共用同一套模型配置（详见 [`quick-start.md`](
 | 内环 | 阶段 | 命令 |
 |------|------|------|
 | **fresh-eyes-loop**（质量循环） | 阶段三（开发后） | `node FORGE/src/fresh-eyes-driver.mjs --target v1.2.4 --max-rounds 10` |
-| **release-gate-loop**（发版闸门） | 阶段六（发版前） | `node FORGE/src/release-gate-driver.mjs --target v1.2.4` |
+| **release-gate-loop**（发版闸门） | 阶段五（发版前） | `node FORGE/src/release-gate-driver.mjs --target v1.2.4` |
 
 两个 driver 都支持 `--dry-run`（只打印 step 序列不调 LLM）。release-gate-loop 在 sandbox/OOM 环境下有 `--skip-acceptance` 和 `--step` 单步模式（详见 [`quick-start.md`](quick-start.md)）。
 
@@ -142,6 +142,8 @@ FORGE/
 ```
 
 > 📏 **LEDGER.md 新条目禁绝对路径**：登记 run 时数据路径一律写 `~/.sofagent/data/forge-runs/...`（展开符），不写 `/Users/<who>/...` 绝对路径——账本会长期更新，他人机器上的绝对路径是纯噪声（2026-08-29 一次性清理 58 处存量后立此规约）。
+
+> 🗂️ **runs 目录边界（看执行证据只看数据目录）**：run 产物**唯一落点是 `~/.sofagent/data/forge-runs/<loop名>/<日期>/run-NN/`**（含 verdict.md / usage.jsonl / findings 等全部证据），数据目录不进 git。仓内 `FORGE/SKILL/*/runs/` 仅是**占位壳**（`.gitignore` 自排除全部内容），无任何历史 run 产物——新 session 查执行证据时若只翻仓内 runs/ 会得出「无运行痕迹」误判，正确姿势：读 `FORGE/LEDGER.md`（跨 run 索引）→ 按索引去数据目录核对原始产物。另注：顶层 `FORGE/runs/` 是**历史留档位**（git 跟踪的实测报告，如 v1.3.9 A/B 实测 `backend-ab-v1.3.9.md`；`fresh-eyes/` 子目录被更深层 .gitignore 覆盖）——新 run 产物一律进数据目录，勿在此新建运行输出。
 
 ### 技术债登记 · 拆分排期
 

@@ -579,40 +579,59 @@ if [ -n "$LIMITATIONS_ALL" ]; then
   done <<< "$LIMITATIONS_ALL"
 fi
 
-# ── CHANGELOG 索引行测试数校验（v1.4.1 F-06：补盲区）──
+# ── CHANGELOG 索引行测试数校验（v1.4.1 F-06：补盲区；锚定三防升级）──
 # 背景：F-01 的 2978 三处错数字从这个盲区漏出去——开发日志有「历史冻结」豁免，
-# CHANGELOG 索引行却无人校验。本段对最新版本索引行做两条校验：
-#   ① 算术自洽：测试 NNNN→**MMM**（+KKK → 要求 NNN+KKK=MMM
-#   ② 口径对齐：识别「workspace 口径 NNNN/12 包」标注——workspace 值必须等于
+# CHANGELOG 索引行却无人校验。本段对最新版本索引行做校验：
+#   ① 锚定版本核对：锚定到的行必须以当前发版/开发中版本号（CUR_VERSION）开头——
+#      多批构成（括号内非单一 +N）不匹配锚定正则时，旧逻辑 head -1 会静默回退
+#      锚定到旧版本行，最新版算术完全绕过校验。现改为：锚定行版本 ≠ CUR_VERSION 即 FAIL。
+#   ② 算术自洽：单批「+N」直接校验；多批构成取括号内全部「+N」求和与 delta 对账；
+#      括号内无任何「+N」时 fail-loud 报「无法解析构成」；含「若干」未量化字样 WARN 提示。
+#   ③ 口径对齐：识别「workspace 口径 NNNN/12 包」标注——workspace 值必须等于
 #      test-count.sh 实测 TOTAL_TESTS；全量值必须等于 workspace + DSH 插件 27 +
-#      OpenClaw 插件 17（双口径换算式：2981 = 2937 + 27 + 17，写死防漂移）
+#      OpenClaw 插件 17（双口径换算式写死防漂移）
 # 双口径防误判：ROADMAP/CHANGELOG 的「全量 NNNN」与「workspace 口径 NNNN」是两个
 # 合法并存口径（报告二误判教训的机制化）——按各自口径比对各自真值，不得把全量判为漂移。
-CHANGELOG_LINE=$(grep -nE '测试 [0-9]+→\*\*[0-9]+\*\*（\+[0-9]+' CHANGELOG.md 2>/dev/null | head -1)
+CHANGELOG_LINE=$(grep -nE '测试 [0-9]+→\*\*[0-9]+\*\*（' CHANGELOG.md 2>/dev/null | head -1)
 if [ -z "$CHANGELOG_LINE" ]; then
-  echo -e "  ${RED}✗ CHANGELOG.md 未找到「测试 NNNN→**MMM**（+KKK」索引行声明（grep 未命中 → FAIL，禁止静默跳过）${NC}"
+  echo -e "  ${RED}✗ CHANGELOG.md 未找到「测试 NNNN→**MMM**（…」索引行声明（grep 未命中 → FAIL，禁止静默跳过）${NC}"
   ((FAIL++)) || true
 else
   CL_LINENO=$(echo "$CHANGELOG_LINE" | cut -d: -f1)
-  # 锚定「测试 N→**M**（+K」整段后按位取数——CHANGELOG 索引行常含多个「→**数字**」
-  # （如 MCP 67→**76**），旧模式 grep -oE '→\*\*[0-9]+\*\*' 多值命中导致
-  # 「[: 76\n3349: integer expression expected」噪声（判定结果虽对但脏输出）
-  CL_ANCHOR=$(echo "$CHANGELOG_LINE" | grep -oE '测试 [0-9]+→\*\*[0-9]+\*\*（\+[0-9]+' | grep -oE '[0-9]+')
-  CL_PREV=$(echo "$CL_ANCHOR" | sed -n '1p')
-  CL_CUR=$(echo "$CL_ANCHOR" | sed -n '2p')
-  CL_DELTA=$(echo "$CL_ANCHOR" | sed -n '3p')
+  # 防一：锚定行版本核对——锚到旧版本行 = 最新版绕过校验，直接 FAIL（先于数字解析）
+  CL_LINE_VER=$(echo "$CHANGELOG_LINE" | grep -oE '\*\*v[0-9]+\.[0-9]+\.[0-9]+\*\*' | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' || echo "")
+  if [ "$CL_LINE_VER" != "$CUR_VERSION" ]; then
+    echo -e "  ${RED}✗ CHANGELOG.md（行 ${CL_LINENO}）：锚定到 v${CL_LINE_VER:-未知} 行，但当前版本是 ${CUR_VERSION}——最新版索引行未命中锚定正则（多批构成格式漂移？），旧版行不得替代校验${NC}"
+    ((FAIL++)) || true
+  else
+  # 锚定「测试 N→**M**（」头段取前值/当前值；增量改为括号内全部「+N」求和——
+  # 兼容单批（+270）与多批构成（+138 +34 +41 … 多批 +N 空格分隔）
+  CL_HEAD=$(echo "$CHANGELOG_LINE" | grep -oE '测试 [0-9]+→\*\*[0-9]+\*\*' | head -1)
+  CL_PREV=$(echo "$CL_HEAD" | grep -oE '[0-9]+' | sed -n '1p')
+  CL_CUR=$(echo "$CL_HEAD" | grep -oE '[0-9]+' | sed -n '2p')
+  CL_PAREN=$(echo "$CHANGELOG_LINE" | sed 's/^.*测试 [0-9]*→\*\*[0-9]*\*\*（//' | sed 's/）.*//' )
+  # 括号内全部「+N」token 求和（grep -o 逐个取出后累加）
+  CL_DELTA_SUM=0
+  CL_DELTA_COUNT=0
+  for tok in $(echo "$CL_PAREN" | grep -oE '\+[0-9]+'); do
+    CL_DELTA_SUM=$((CL_DELTA_SUM + ${tok#+}))
+    CL_DELTA_COUNT=$((CL_DELTA_COUNT + 1))
+  done
   cl_fail=0
-  # 锚定段防御：必须恰好 3 个数字（前值/当前值/增量），结构异常 fail-loud 不静默
-  CL_COUNT=$(echo "$CL_ANCHOR" | grep -c . )
-  if [ "$CL_COUNT" -ne 3 ] || [ -z "$CL_PREV" ] || [ -z "$CL_CUR" ] || [ -z "$CL_DELTA" ]; then
-    echo -e "  ${RED}✗ CHANGELOG.md（行 ${CL_LINENO}）：锚定段数字解析异常（期望 3 个，实得 ${CL_COUNT} 个：prev=${CL_PREV:-空} cur=${CL_CUR:-空} delta=${CL_DELTA:-空}）${NC}"
+  # 防二：解析 fail-loud——头段数字缺失或括号内零个「+N」= 构成无法解析，不静默放行
+  if [ -z "$CL_PREV" ] || [ -z "$CL_CUR" ] || [ "$CL_DELTA_COUNT" -eq 0 ]; then
+    echo -e "  ${RED}✗ CHANGELOG.md（行 ${CL_LINENO}）：构成无法解析——prev=${CL_PREV:-空} cur=${CL_CUR:-空}，括号内「+N」token 0 个（正则失配或格式漂移，禁止静默回退）${NC}"
     cl_fail=1
   fi
-  # ① 算术自洽：前值 + 增量 = 当前值（解析异常时短路，防空值参与算术产生新噪声）
+  # 防三：未量化字样 WARN（不阻塞，但让人看见）——「若干」等字样说明该批没数
+  if echo "$CL_PAREN" | grep -q '若干'; then
+    echo -e "  ${YELLOW}⚠ CHANGELOG.md（行 ${CL_LINENO}）：构成含「若干」未量化批次——算术校验覆盖不到该批，建议补具体数字${NC}"
+  fi
+  # ① 算术自洽：前值 + 各批增量之和 = 当前值（解析异常时短路，防空值参与算术产生新噪声）
   if [ "$cl_fail" = "0" ]; then
-    CL_SUM=$((CL_PREV + CL_DELTA))
+    CL_SUM=$((CL_PREV + CL_DELTA_SUM))
     if [ "$CL_SUM" -ne "$CL_CUR" ]; then
-      echo -e "  ${RED}✗ CHANGELOG.md（行 ${CL_LINENO}）：算术不自洽——${CL_PREV}+${CL_DELTA}=${CL_SUM} ≠ ${CL_CUR}${NC}"
+      echo -e "  ${RED}✗ CHANGELOG.md（行 ${CL_LINENO}）：算术不自洽——${CL_PREV}+Σ(括号内 ${CL_DELTA_COUNT} 批)=${CL_PREV}+${CL_DELTA_SUM}=${CL_SUM} ≠ ${CL_CUR}${NC}"
       cl_fail=1
     fi
   fi
@@ -652,12 +671,13 @@ else
   fi
   if [ "$cl_fail" = "0" ]; then
     if [ "$QUIET" = false ]; then
-      echo -e "  ${GREEN}✓ CHANGELOG.md 索引行（行 ${CL_LINENO}）：${CL_PREV}+${CL_DELTA}=${CL_CUR} 算术自洽${CL_WS_MARK:+，workspace 口径 ${CL_WS_MARK} 对齐}"
+      echo -e "  ${GREEN}✓ CHANGELOG.md 索引行（行 ${CL_LINENO}）：${CL_PREV}+Σ(括号内 ${CL_DELTA_COUNT} 批)=${CL_PREV}+${CL_DELTA_SUM}=${CL_CUR} 算术自洽${CL_WS_MARK:+，workspace 口径 ${CL_WS_MARK} 对齐}"
     fi
     ((PASS++)) || true
   else
     ((FAIL++)) || true
   fi
+  fi  # 锚定行版本核对（CL_LINE_VER）分支闭合
 fi
 
 # ── 结果汇总 ──

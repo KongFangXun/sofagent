@@ -28,7 +28,11 @@
     "engine/dsh-plugins/cordis-plugin-sofagent-commons",
     "engine/dsh-plugins/cordis-plugin-sofagent-gate",
     "engine/dsh-plugins/cordis-plugin-sofagent-daemon",
-    "engine/dsh-plugins/cordis-plugin-sofagent-fde"
+    "engine/dsh-plugins/cordis-plugin-sofagent-fde",
+    "engine/openclaw-plugins/sofagent-audit",
+    "engine/openclaw-plugins/sofagent-evolve",
+    "engine/openclaw-plugins/sofagent-inject",
+    "engine/openclaw-plugins/sofagent-rollback"
   ],
   "scripts": {
     "test": "npm test --workspaces --if-present && bash tools/dashboard/sofagent-dashboard.test.sh",
@@ -40,18 +44,11 @@
   "optionalDependencies": {
     "@langchain/anthropic": "^1.5.2"
   },
+  "//dependencies": "B-3 (v1.4.4) 归属说明：@sofagent/rules 是 root 级声明，实测（临时移除跑 npm install --package-lock-only 对比 lock 面）workspace 态下 node_modules/@sofagent/rules 的 link 条目由 engine/audit、engine/orchestrator、engine/mcp 三个 workspace 消费者维持，root 声明本身零增量语义——但保留声明可让根目录脚本直接 require('@sofagent/rules') 开箱可解析，且对齐 workspace 内部依赖版本对齐原则。勿删（先例：optionalDependencies 同款注释保留）。",
   "dependencies": {
     "@sofagent/rules": "1.4.3"
   },
   "devDependencies": {
     "undici": "^8.10.0"
-  },
-  "overrides": {
-    "@deepseek-ai/cordis-plugin-timer": "/Users/kongfangxun/.local/share/dsh-deployed/node_modules/@deepseek-ai/cordis-plugin-timer",
-    "@deepseek-ai/cordis-plugin-group": "/Users/kongfangxun/.local/share/dsh-deployed/node_modules/@deepseek-ai/cordis-plugin-group",
-    "@deepseek-ai/cordis-plugin-hmr": "/Users/kongfangxun/.local/share/dsh-deployed/node_modules/@deepseek-ai/cordis-plugin-hmr",
-    "@deepseek-ai/cordis-plugin-include": "/Users/kongfangxun/.local/share/dsh-deployed/node_modules/@deepseek-ai/cordis-plugin-include",
-    "@deepseek-ai/cordis": "/Users/kongfangxun/.local/share/dsh-deployed/node_modules/@deepseek-ai/cordis",
-    "@deepseek-ai/cordis-plugin-loader": "/Users/kongfangxun/.local/share/dsh-deployed/node_modules/@deepseek-ai/cordis-plugin-loader"
   }
 }

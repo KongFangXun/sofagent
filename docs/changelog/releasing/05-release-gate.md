@@ -12,7 +12,7 @@
 | 一 | **脚本层直跑（零 LLM）**：acceptance-test.sh + check-version + check-docs + 锚点 + check-review-system + check-tool-health 依次跑，**全绿才进下一步** |
 | 二 | 开新 session 跑**判断层**：driver `--judgment-only` 一次启动四步（regression → coverage → consolidate → verdict），**跳过 acceptance 分片 LLM 复核**（v1.3.8 交付七起不再 --step 四步手工编排） |
 | 三 | verdict=PASS → 过「零信任复验三件套」→ 进阶段六 |
-| 四 | verdict=FAIL → **循环即停**（v1.3.8 交付七起 F 修复链默认关闭，无 f-* 产物）→ 回阶段五修复后重跑（重跑前先过「重跑前置三查」，见下）。显式 `--auto-fix` 才进修复链（最多 3 轮） |
+| 四 | verdict=FAIL → **循环即停**（v1.3.8 交付七起 F 修复链默认关闭，无 f-* 产物）→ 回阶段四修复后重跑（重跑前先过「重跑前置三查」，见下）。显式 `--auto-fix` 才进修复链（最多 3 轮） |
 
 > **为什么分层（run-04 实测 2026-08-19）**：driver 全流程实测 30.7 万 token / 58 分钟，其中 **61%（18.7 万）花在 acceptance 12 分片 LLM 复核**——复核的是脚本 `exit 0 + 303/303 SUMMARY`（v1.3.8 时点断言数，现每版变化）的确定性结果，没有主观判断空间，盲审增值≈0。脚本层零 token 直跑拿到同样保证；driver 只保留有判断空间的 regression 语义审查 + coverage 交叉 + 终裁（约 9 万 token / 20 分钟）。**独立性不伤**：盲审保留在真正需要判断的环节。
 
@@ -102,7 +102,7 @@ verdict=FAIL/ERROR 修复后重跑判断层**之前**必查三项，任一跳过
 | 结果 | 下一步 |
 |------|--------|
 | **verdict = PASS**（regression + coverage 全 PASS，acceptance 已由脚本层保证） | 过「零信任复验三件套」（见下）→ 全过才进阶段六 |
-| **verdict = FAIL** | 循环即停（v1.3.8 起 F 链默认关闭，无 f-* 产物）→ 根据报告定位问题 → **回阶段五** → 修复后重跑本阶段 |
+| **verdict = FAIL** | 循环即停（v1.3.8 起 F 链默认关闭，无 f-* 产物）→ 根据报告定位问题 → **回阶段四** → 修复后重跑本阶段 |
 | **需要 driver 内自动修复** | 显式加 `--auto-fix` 启动（f-diagnose → f-fix → f-audit，最多 3 轮）——默认不开，盲审独立性与修复上下文不混跑 |
 | **driver 反复 FAIL 且复验全为检查器债** | 走「手工裁决路径」（见下）——v1.3.7 实操 run-01/04 两轮 FAIL 均改判检查器债已修，主 session 手工裁决 PASS |
 

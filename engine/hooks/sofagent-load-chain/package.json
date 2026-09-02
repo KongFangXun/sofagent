@@ -7,6 +7,7 @@
   "scripts": {
     "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
     "build": "npm run clean && tsc",
+    "test": "vitest run src/handler.test.ts",
     "prepublishOnly": "npm run build && find dist -name '*.js.map' -delete && find dist -name '*.d.ts.map' -delete"
   },
   "keywords": [
@@ -28,7 +29,8 @@
   "homepage": "https://github.com/KongFangXun/sofagent#readme",
   "devDependencies": {
     "@types/node": "^24.13.3",
-    "typescript": "^7.0.2"
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.11"
   },
   "engines": {
     "node": ">=18"

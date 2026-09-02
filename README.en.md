@@ -19,7 +19,16 @@
 
 **An open-source FDE Harness layer.** The AI-deployment engineer for one-person companies and SMBs — never sleeps, never leaves, and carries its own auditor. It sits **between mature Agents (executors: DSH / OpenClaw / WorkBuddy) and the model layer (intelligence sources: general LLMs + bespoke/small post-trained models)**, governing both sides. Shipped as **FDE plugins + Skill + MCP + CLI + Dashboard**: on entry, map the business flow clearly, build the ontology graph, deploy the AI nodes in place; on departure, audit every change and keep optimizing.
 
+> 💬 **One-sentence version**: every time your AI worker touches code or files, it first passes a security check, leaves a record, and saves a snapshot — traceable and roll-backable when things go wrong. That is what sofagent does.
+
 sofagent does not build its own Agent — execution is delegated to mature hosts (model + tools + sessions). What it delivers is the **FDE Harness layer**. **FDE Harness = FDE methodology × Harness engineering** — the forward-deployed engineer's playbook (map on entry → deploy → depart) baked into a Harness constraint layer (inject · audit · rollback · evolve) that slots into any existing Agent; and it keeps every model (general or bespoke) under control (register / rollout / train / deploy fully audited).
+
+> 🚂 **Why a training engine in a governance repo** (30-second answer): governance is capped by data — what audits uncover (which tasks failed, which outputs were substandard) is exactly training fuel. The training engine closes the loop from "problems found by audits → models that fix those problems", letting governance data feed back into the model layer; training assets themselves ship on the commercial side — this repo keeps only protocols and interfaces (externalized / configurable).
+
+<p align="center">
+  <img src="docs/assets/audit-terminal.png" alt="sofagent-audit blocks a .env commit" width="860" /><br/>
+  <sub>Zero-config audit in action: one command audits the latest commit; leaked secrets get blocked on the spot</sub>
+</p>
 
 > 🏞️ Big tech hands you "water" (foundation models) and "riverbeds" (Agent platforms) — but the water is raw, and you don't dare drink it straight. sofagent is the engineering that makes the river usable for a whole city: dams keep the water from flooding, treatment plants turn raw water into drinking water, and pipe networks deliver it to every faucet. Models supply 90% of the intelligence; sofagent supplies the 10% of reliable execution.
 
@@ -123,9 +132,7 @@ npx -y -p @sofagent/audit sofagent-audit
 
 > 💡 quick runs the **17 default rules** (A3 task-scope / A9 commit-msg injection detection active — quick mode auto-reads the latest commit message; when no message is available, A9 is handled by the engine as no-input and marked skipped). The full 24 rules + hook auto-audit require `--init` — see [LIMITATIONS §3](./docs/LIMITATIONS.md).
 
-Here's what it looks like when a known-format secret leak is blocked (real output; A2 detects AWS AKIA/Secret, OpenAI sk-*, GitHub ghp_, Google AIza, Slack xox*-, JWT, PEM private keys and other known formats — generic secret shapes are intentionally out of scope, a conservative design against false positives, see [LIMITATIONS §3 A2](./docs/LIMITATIONS.md#三安全与信任模型局限)):
-
-<p align="center"><img src="docs/assets/audit-terminal.png" alt="sofagent-audit blocks a .env commit" width="860" /></p>
+Here's what it looks like when a known-format secret leak is blocked (real output; A2 detects AWS AKIA/Secret, OpenAI sk-*, GitHub ghp_, Google AIza, Slack xox*-, JWT, PEM private keys and other known formats — generic secret shapes are intentionally out of scope, a conservative design against false positives, see [LIMITATIONS §3 A2](./docs/LIMITATIONS.md#三安全与信任模型局限)): — the screenshot above (first screen) shows exactly this scenario, not repeated here.
 
 **Full install** (Node.js ≥ 18, download and review before running) — **installed on the enterprise devices running the AI nodes**:
 
@@ -189,7 +196,7 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # load the securit
 - **Tooling path** (Node.js ≥ 18): after the FDE installs the constraint layer on the enterprise device via install.sh, tell your own AI tool "run an FDE diagnosis for me" — the Agent guides you from entry onward
 ## FAQ
 
-- **Is it production-ready?** Currently a single-machine, single-user design — multiple Agents share one knowledge base / audit history (tenant isolation is on the [ROADMAP](./docs/ROADMAP.md)); task logs (task/logs) are written in plaintext — static-encryption capability is implemented but not yet wired in (scheduled on the [ROADMAP](./docs/ROADMAP.md)), task/logs not covered yet. Read [SECURITY](./SECURITY.md) · [LIMITATIONS](./docs/LIMITATIONS.md) before enterprise deployment. `config.yml` is non-fail-closed by default; for strict-compliance scenarios use CI fallback + file-permission lock.
+- **Is it production-ready?** Currently a single-machine, single-user design — multiple Agents share one knowledge base / audit history (tenant isolation is on the [ROADMAP](./docs/ROADMAP.md)); task/logs are currently plaintext — at-rest encryption is not yet wired in (scheduled v1.4.7), and even once wired, task/logs fall outside its coverage (the directory sits outside the main audit-history chain, see [LIMITATIONS §三](./docs/LIMITATIONS.md)). Read [SECURITY](./SECURITY.md) · [LIMITATIONS](./docs/LIMITATIONS.md) before enterprise deployment. `config.yml` is non-fail-closed by default; for strict-compliance scenarios use CI fallback + file-permission lock.
 - **Does it collect my data?** Fully local by default. Optional federation queries leave your machine only when you configure them yourself (see SECURITY).
 - **How does it relate to scanners like gitleaks?** Complementary, not substitutes — scanners do full-history scans with broader pattern libraries; sofagent focuses on hard evidence from the current diff + Agent behavior auditing (out-of-scope / injection / privilege dimensions). For strict secret compliance, use both together.
 
@@ -221,7 +228,7 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # load the securit
 | Security statement · known limitations | [SECURITY](./SECURITY.md) · [LIMITATIONS](./docs/LIMITATIONS.md) |
 | Contribution guide | [CONTRIBUTING](./CONTRIBUTING.md) |
 
-> 🧪 **Engineering credibility**: 3619 tests / 13 engine packages + 13 plugins (9 DSH + 4 OpenClaw) · 24 audit rules · fresh-eyes independent review continuously running (test counts are determined by `tools/check/test-count.sh`; environmental notes are documented in [docs/guides/review-system.md](./docs/guides/review-system.md). Performance figures are single-machine reference values; cross-tool benchmarking is scheduled for v1.4.x together with Benchmark integration).
+> 🧪 **Engineering credibility**: 3635 tests / 13 engine packages + 13 plugins (engine packages = 12 main + 1 load-chain; plugins = 9 DSH + 4 OpenClaw; plugin tests run via the root `npm test --workspaces`) · 24 audit rules · fresh-eyes independent review continuously running (test counts are determined by `tools/check/test-count.sh`; environmental notes are documented in [docs/guides/review-system.md](./docs/guides/review-system.md). Performance figures are single-machine reference values; cross-tool benchmarking is scheduled for v1.4.x together with Benchmark integration).
 
 ---
 

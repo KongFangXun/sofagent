@@ -5,6 +5,8 @@ import { defineConfig } from 'vitest/config';
 // （单跑稳定绿——非代码回归，资源竞争型）。包级 testTimeout 20s。
 export default defineConfig({
   test: {
+    // D-4 (v1.4.4)：全局测试隔离——SOFAGENT_DATA 预置到 tmp，防测试写真实 HOME
+    setupFiles: ['../../tools/vitest-setup.mjs'],
     testTimeout: 20000,
   },
 });

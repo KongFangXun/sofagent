@@ -140,8 +140,13 @@ export function runWorkBuddyChecks(
   // Skills 目录 .md 文件数
   const wbSkillsDir = join(HOME, '.workbuddy', 'skills', 'sofagent');
   if (existsSync(wbSkillsDir)) {
-    const count = countFilesInDir(wbSkillsDir, '.md');
-    v.checkPass(`Skills 目录已部署（${count} 个 .md 文件）`);
+    // D-6 (v1.4.4)：countFilesInDir 读不到时抛错——不再伪装「0 个文件」的 PASS
+    try {
+      const count = countFilesInDir(wbSkillsDir, '.md');
+      v.checkPass(`Skills 目录已部署（${count} 个 .md 文件）`);
+    } catch {
+      v.checkWarn(`Skills 目录存在但无法读取（${wbSkillsDir}）——检查未执行`);
+    }
   } else {
     v.checkWarn('Skills 目录不存在');
   }
@@ -182,10 +187,16 @@ export function runAllChecks(
       v.checkPass(`${f} (${chars} 字符, ${lines} 行)`);
 
       // 权限检查：宪法文件不应 world-writable
+      // D-6 (v1.4.4)：getFileMode 失败返回 'unreadable' 哨兵——显式输出
+      // 「权限不可读」独立结论，不再伪装成「权限正常」静默通过
       const perms = getFileMode(rulesPath);
-      const lastDigit = perms.slice(-1);
-      if (['7', '6', '3', '2'].includes(lastDigit)) {
-        v.checkWarn(`${f} 权限过于宽松 (${perms})，建议 chmod 644`);
+      if (perms === 'unreadable') {
+        v.checkWarn(`${f} 权限不可读（statSync 失败）——权限检查未执行`);
+      } else {
+        const lastDigit = perms.slice(-1);
+        if (['7', '6', '3', '2'].includes(lastDigit)) {
+          v.checkWarn(`${f} 权限过于宽松 (${perms})，建议 chmod 644`);
+        }
       }
 
       // 字符上限（宪法层 fde.md 是 FDE 部署模板，含完整配置项 + 示例注释，90 行可承载大量注释行——合理上限 3200 字符）
@@ -207,8 +218,13 @@ export function runAllChecks(
   {
     const skillsDir = join(openclawDir, 'skills');
     if (existsSync(skillsDir)) {
-      const skillCount = countFilesInDir(skillsDir, '.md');
-      v.checkPass(`Skills 目录存在: ${skillCount} 个 .md 文件`);
+      // D-6 (v1.4.4)：countFilesInDir 读不到时抛错——不再伪装「0 个文件」的 PASS
+      try {
+        const skillCount = countFilesInDir(skillsDir, '.md');
+        v.checkPass(`Skills 目录存在: ${skillCount} 个 .md 文件`);
+      } catch {
+        v.checkWarn(`Skills 目录存在但无法读取（${skillsDir}）——检查未执行`);
+      }
     } else {
       v.checkFail(`Skills 目录不存在: ${skillsDir}`);
     }
@@ -224,14 +240,30 @@ export function runAllChecks(
   {
     const scriptsDir = join(openclawDir, 'scripts');
     if (existsSync(scriptsDir)) {
-      const scriptCount = countFilesInDir(scriptsDir, '.sh');
-      v.checkPass(`scripts/ 目录存在: ${scriptCount} 个 .sh 文件`);
+      // D-6 (v1.4.4)：countFilesInDir 读不到时抛错——不再伪装「0 个文件」的 PASS
+      let scriptCount: number;
+      try {
+        scriptCount = countFilesInDir(scriptsDir, '.sh');
+        v.checkPass(`scripts/ 目录存在: ${scriptCount} 个 .sh 文件`);
+      } catch {
+        scriptCount = -1;
+        v.checkWarn(`scripts/ 目录存在但无法读取（${scriptsDir}）——检查未执行`);
+      }
 
       const taskRecord = join(scriptsDir, 'task-record.sh');
-      if (existsSync(taskRecord) && isExecutable(taskRecord)) {
-        v.checkPass('  task-record.sh 已部署且可执行');
+      // D-6 (v1.4.4)：isExecutable 三态——null（读不到）独立成「检查未执行」结论，
+      // 不再与「缺失/不可执行」合并成同一句 WARN（文案混淆）
+      if (!existsSync(taskRecord)) {
+        v.checkWarn('  task-record.sh 缺失');
       } else {
-        v.checkWarn('  task-record.sh 缺失或不可执行');
+        const executable = isExecutable(taskRecord);
+        if (executable === null) {
+          v.checkWarn('  task-record.sh 存在但权限不可读——可执行检查未执行');
+        } else if (executable) {
+          v.checkPass('  task-record.sh 已部署且可执行');
+        } else {
+          v.checkWarn('  task-record.sh 已部署但不可执行（chmod +x）');
+        }
       }
     } else {
       v.checkWarn('scripts/ 目录不存在，部分功能可能不可用');
@@ -642,34 +674,50 @@ export function runAllChecks(
   }
 
   // 10.3 cleanup.sh 存在性检查
+  // D-6 (v1.4.4)：isExecutable 三态——null（读不到）独立「检查未执行」结论
   {
     const cleanupScript = join(verifyScriptDir, 'scripts', 'cleanup.sh');
-    if (existsSync(cleanupScript) && isExecutable(cleanupScript)) {
-      v.checkPass('cleanup.sh 存在且可执行');
-      const cleanupHelp = tryExec('bash', [cleanupScript, '--help']);
-      if (cleanupHelp && cleanupHelp.includes('dry-run')) {
-        v.checkPass('cleanup.sh --dry-run 参数可用');
-      } else {
-        v.checkWarn('cleanup.sh --dry-run 参数不可用');
-      }
+    if (!existsSync(cleanupScript)) {
+      v.checkFail('cleanup.sh 缺失');
     } else {
-      v.checkFail('cleanup.sh 缺失或不可执行');
+      const cleanupExec = isExecutable(cleanupScript);
+      if (cleanupExec === null) {
+        v.checkWarn('cleanup.sh 存在但权限不可读——可执行检查未执行');
+      } else if (!cleanupExec) {
+        v.checkFail('cleanup.sh 存在但不可执行（chmod +x）');
+      } else {
+        v.checkPass('cleanup.sh 存在且可执行');
+        const cleanupHelp = tryExec('bash', [cleanupScript, '--help']);
+        if (cleanupHelp && cleanupHelp.includes('dry-run')) {
+          v.checkPass('cleanup.sh --dry-run 参数可用');
+        } else {
+          v.checkWarn('cleanup.sh --dry-run 参数不可用');
+        }
+      }
     }
   }
 
   // 10.4 audit.sh 存在性检查
+  // D-6 (v1.4.4)：isExecutable 三态——同 10.3
   {
     const auditScript = join(verifyScriptDir, 'scripts', 'audit.sh');
-    if (existsSync(auditScript) && isExecutable(auditScript)) {
-      v.checkPass('audit.sh 存在且可执行');
-      const auditHelp = tryExec('bash', [auditScript, '--help']);
-      if (auditHelp && auditHelp.includes('operation')) {
-        v.checkPass('audit.sh --operation 参数可用');
-      } else {
-        v.checkWarn('audit.sh --operation 参数不可用');
-      }
+    if (!existsSync(auditScript)) {
+      v.checkFail('audit.sh 缺失');
     } else {
-      v.checkFail('audit.sh 缺失或不可执行');
+      const auditExec = isExecutable(auditScript);
+      if (auditExec === null) {
+        v.checkWarn('audit.sh 存在但权限不可读——可执行检查未执行');
+      } else if (!auditExec) {
+        v.checkFail('audit.sh 存在但不可执行（chmod +x）');
+      } else {
+        v.checkPass('audit.sh 存在且可执行');
+        const auditHelp = tryExec('bash', [auditScript, '--help']);
+        if (auditHelp && auditHelp.includes('operation')) {
+          v.checkPass('audit.sh --operation 参数可用');
+        } else {
+          v.checkWarn('audit.sh --operation 参数不可用');
+        }
+      }
     }
   }
 

@@ -1,8 +1,8 @@
 // ============================================================
 // handler.test.ts · sofagent-load-chain handler 基本测试（P1-11）
 // ============================================================
-// 说明：hooks 包无 package test script（"12 包"SSOT = 有测试的包，hooks 不计入），
-// 本测试供 IDE/手动 vitest 运行（npx vitest run engine/hooks/...）。
+// 说明：本测试经 package test script 接入根 `npm test --workspaces` 统一执行；
+// test-count.sh 的「12 包」SSOT 只扫 engine/ 一级目录，hooks 包（二级嵌套）仍不计入。
 // 覆盖：
 //   1. agent:bootstrap 事件 → 注入 SKILL.md + think.md + fde.md 三层
 //   2. 非 bootstrap 事件 → 不注入（幂等跳过）

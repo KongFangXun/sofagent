@@ -214,6 +214,7 @@ sofagent 跑在单个 Agent 里——没有 agent-to-agent 通信，没有多实
 task/logs 和 think.md 以 Markdown 存储，可能含代码片段、API 响应、用户对话摘要。LLM 提炼反思时可能无意写入敏感信息。静态加密能力已实现（crypto-init.ts AES-256-GCM + SOFAGENT-AGE-V1 格式），但接线未启用（原声称排 v1.3.9 未兑现，现排 v1.4.7）——审计历史主链与 task/logs、think.md、forge-runs/checkpoint/model-registry 当前均为明文（脱敏管道仍生效），见 [ROADMAP](./ROADMAP.md) 和 [SECURITY](../SECURITY.md)。
 - history.jsonl 存审计判定详情，A2/A9 已脱敏，其他规则 details 可能含代码片段或文件路径，敏感场景请配合外部加密卷
 - **v1.3.1 #44 披露：审计历史并发写入无文件锁**——appendFileSync 在 POSIX 上对小于 PIPE_BUF (4KB) 的写入是原子的，审计历史条目通常 < 1KB，单次写入安全。但多进程同时写入（daemon 文件监控 + Agent commit）可能导致行交错，产生损坏行触发 hash chain 完整性校验失败。概率极低（审计触发频率 < 1次/分钟），但损坏会导致校验失败。**v1.3.8 解决**——WAL 写在网关层，天然单 writer 模式（所有工具调用经网关串行写入，消除并发写入）。
+- **写链两处「降级继续」是设计取舍（v1.4.4 D-5 披露）**：① 上一行解密/JSON 解析失败时 prevHash 置 `'unknown'` 继续写入（条目带 `chainStatus:'broken'` 显式标记，连续 ≥2 条断裂升级告警）；② chmod 0o600 失败时读回实际权限验证——真实宽松才告警，写入照常。两处均**不阻断审计写入**：审计写入被阻断 = 审计本身失效，比链断或权限宽更危险（fail-open 取舍，审计可用性 > 链完整性严格性）。攻防注意：能反复损坏 history.jsonl 最后一行的攻击者可让链持续断裂而不被写入侧拦截——发现连续断裂告警时应立即 `--doctor` 全链校验并排查文件篡改来源。
 
 ---
 
@@ -222,6 +223,8 @@ task/logs 和 think.md 以 Markdown 存储，可能含代码片段、API 响应�
 > ⚠️ **A9 注入检测局限——编码绕过**：A9 正则检测覆盖常见中文"忽略类"指令、英文"ignore 类"指令，以及 leet speak 变体（`1gn0r3` → `ignore`，通过 normalizeLine() 反转 + ×0.8 降权匹配）。但不覆盖：① Unicode 同形字替换（西里尔字母 `а` 替换拉丁 `a`）；② Base64/hex 编码后的注入 payload。这些绕过手法依赖语义分析（非纯正则可覆盖），**v1.3.2 评估覆盖**——L3 自动定位（LLM 推理）可检测正则覆盖不了的语义级注入。
 
 > ⚠️ **A9 commit msg 检测 quick 模式已生效（v1.3.8 修复）**：quick 模式（`npx sofagent-audit`，零配置审计最近一次 commit）**自动读取最近一次 commit 的 message**（`git log -1`），A9 commit msg 注入检测生效；commit msg 取不到时（如空仓库 / git 不可用）A9 由引擎按无输入处理（标跳过）。同理 A3（不改越界）依赖任务描述，quick 模式无此输入 → v1.3.3 起 quick 模式跳过 A3（避免占位 task 'quick-audit' 100% 误报越界）。A3 越界检查需 `--init` 安装 git hook 走完整引擎，或手动 `sofagent-audit --diff <range> --commit-msg <msg>`。
+>
+> ℹ️ **range 模式 commitMsg 取范围终点（v1.4.4 修复）**：此前 quick 引擎 range 审计（`sofagent-audit HEAD~3..HEAD` 类调用）的 commitMsg 输入面写死字面 HEAD，与被审计 range 脱钩——终点携带注入载荷漏检、HEAD 的 message 污染在审区间误报。现 commitMsg 经 `resolveDiffEndpoint()` 取 range 终点（与 diff 面同源），回归测试见 engine/audit/src/cli-quick-range.test.ts。
 
 > ⚠️ **边界：空 commit 不审计消息**——empty commit（无文件变更）时审计直接跳过，commit message 中的注入载荷不会被 A9 扫描（A9 的证据面是 diff + 显式传入的 `--commit-msg`）。带文件变更的 commit 消息正常扫描。纯消息攻击需 `--commit-msg` 显式送检。
 
@@ -333,7 +336,7 @@ sofagent-audit 实现了完整的六步审计闭环流程（设计文档见 [ARC
 
 ### 测试覆盖范围
 
-当前审计核心 928 个、全 workspace 3619 个测试（v1.4.1 批次 2937→3178 +241，v1.4.2 批 +171（bugfix 批 +24 全部为 audit 包回归用例 878→902（H-01 三层防线 / H-02 密钥四类 / H-03 空白折叠 / G-01 基线 / G-07 webhook 脱敏）+ dev 批 +147（数据管道 53 / eval 闭环与环境 45 / dry-run 与报告 28 / FDE 六引擎 21，orchestrator 1295→1442）+ A2 data-URI 豁免三用例 902→905 + data-sovereignty data-URI 豁免两用例 905→907 + 四轮深挖 core data-paths 五用例 369→374 + orchestrator 占位豁免三用例 1442→1445 + eval 桥接两用例 1445→1447 + v1.4.3 批 +138：audit +12（stats 聚合）/ orchestrator +126（train-analyze 35 + train-monitor 22 + train-diagnose 26 + train-sandbox 14 + post-training-workflow 11 + env-anticheat 18）至 audit 919 / orchestrator 1648）+ 安全回归批 +34（engineer 路径守卫，orchestrator 1573→1607，总数 3507→3541）+ L4 修复器路径守卫批 +41（orchestrator 1607→1648，总数 3541→3582）+ v1.4.4 审查批 #73 占位重写 +12（daemon cron 1→5 / harness constraints 1→4 / think-generator 1→3 / daemon inspectors 1→4，总数 3582→3594）+ v1.4.3 阶段五 run-02 闭环批一 P0-3 +6（doctor Ontology 完整性检查 6 用例，core 374→380，总数 3594→3600）+ 审查修复批 +11（config-loader cost 透传契约 2 用例 core 380→382 + webhook IPv6 SSRF 防护 6 用例 + audit-log 落盘脱敏 3 用例，audit 919→928，总数 3600→3611）+ 出站防护与原子写契约批 +8（daemon webhook 推送 SSRF 守卫 5 用例 + push-target 2 用例 287→294 + eval 原子写契约 1 用例 32→33，总数 3611→3619））；实测见 `tools/check/test-count.sh`，flaky 复跑机制内置，以脚本判定为准，与 pre-push-check 一致），但覆盖范围集中在审计规则和核心逻辑（diff-parser、reporter、config-loader、rules/*.ts）。以下模块没有独立测试：
+当前审计核心 936 个、全 workspace 3635 个测试（v1.4.1 批次 2937→3178 +241，v1.4.2 批 +171（bugfix 批 +24 全部为 audit 包回归用例 878→902（H-01 三层防线 / H-02 密钥四类 / H-03 空白折叠 / G-01 基线 / G-07 webhook 脱敏）+ dev 批 +147（数据管道 53 / eval 闭环与环境 45 / dry-run 与报告 28 / FDE 六引擎 21，orchestrator 1295→1442）+ A2 data-URI 豁免三用例 902→905 + data-sovereignty data-URI 豁免两用例 905→907 + 四轮深挖 core data-paths 五用例 369→374 + orchestrator 占位豁免三用例 1442→1445 + eval 桥接两用例 1445→1447 + v1.4.3 批 +138：audit +12（stats 聚合）/ orchestrator +126（train-analyze 35 + train-monitor 22 + train-diagnose 26 + train-sandbox 14 + post-training-workflow 11 + env-anticheat 18）至 audit 919 / orchestrator 1648）+ 安全回归批 +34（engineer 路径守卫，orchestrator 1573→1607，总数 3507→3541）+ L4 修复器路径守卫批 +41（orchestrator 1607→1648，总数 3541→3582）+ v1.4.4 审查批 #73 占位重写 +12（daemon cron 1→5 / harness constraints 1→4 / think-generator 1→3 / daemon inspectors 1→4，总数 3582→3594）+ v1.4.3 阶段五 run-02 闭环批一 P0-3 +6（doctor Ontology 完整性检查 6 用例，core 374→380，总数 3594→3600）+ 审查修复批 +11（config-loader cost 透传契约 2 用例 core 380→382 + webhook IPv6 SSRF 防护 6 用例 + audit-log 落盘脱敏 3 用例，audit 919→928，总数 3600→3611）+ 出站防护与原子写契约批 +8（daemon webhook 推送 SSRF 守卫 5 用例 + push-target 2 用例 287→294 + eval 原子写契约 1 用例 32→33，总数 3611→3619）+ 同批形式循环依赖清理删除 loop-audit-history.test.ts −6（orchestrator 1648→1642，净 3619 持平）+ v1.4.4 审查批 stats E 系列规则码回归 +1（audit 928→929，总数 3619→3620）+ v1.4.4 审查修复批 +15（quick A9 range 回归 4 用例 + audit-history 降级增强 3 用例 audit 929→936 + verify 三哨兵三态 6 用例 core 382→388 + daemon 错误日志轮转 2 用例 294→296，总数 3620→3635））；实测见 `tools/check/test-count.sh`，flaky 复跑机制内置，以脚本判定为准，与 pre-push-check 一致），但覆盖范围集中在审计规则和核心逻辑（diff-parser、reporter、config-loader、rules/*.ts）。以下模块没有独立测试：
 
 | 模块 | 测试状态 | 风险 |
 |------|:--:|------|
@@ -410,9 +413,9 @@ FDE 完整四阶段十二步部署流程（[FDE/GUIDE.md](../FDE/GUIDE.md)）已
 
 ### 端到端验收测试覆盖
 
-v1.0 新增 `FORGE/playbook/acceptance-test.sh`（场景数持续扩展，当前 255 个，SSOT 见脚本头部声明）：
+v1.0 新增 `FORGE/playbook/acceptance-test.sh`（场景数持续扩展，当前 294 个，SSOT 见脚本头部声明）：
 
-- **CI 已覆盖**：单元测试审计核心 928 个、全 workspace 3619 个测试（v1.4.1 批次 2937→3178 +241，v1.4.2 批 +171，v1.4.3 批 +138（audit +12 / orchestrator +126）：bugfix 批 +24（audit 878→902）+ dev 批 +147（orchestrator 1295→1442）+ 安全回归批 +34（engineer 路径守卫，orchestrator 1573→1607，总数 3507→3541）+ L4 修复器路径守卫批 +41（orchestrator 1607→1648，总数 3541→3582）+ v1.4.4 审查批 #73 占位重写 +12（总数 3582→3594）+ v1.4.3 阶段五 run-02 闭环批一 P0-3 +6（core 374→380，总数 3594→3600）+ 审查修复批 +11（core 380→382 + audit 919→928，总数 3600→3611）+ 出站防护与原子写契约批 +8（daemon 287→294 + eval 32→33，总数 3611→3619）；全绿，详见上方「测试覆盖范围」节，实测见 `tools/check/test-count.sh`，与 pre-push-check 一致）、sofagent-core verify 约 44-48 项（动态）
+- **CI 已覆盖**：单元测试审计核心 936 个、全 workspace 3635 个测试（v1.4.1 批次 2937→3178 +241，v1.4.2 批 +171，v1.4.3 批 +138（audit +12 / orchestrator +126）：bugfix 批 +24（audit 878→902）+ dev 批 +147（orchestrator 1295→1442）+ 安全回归批 +34（engineer 路径守卫，orchestrator 1573→1607，总数 3507→3541）+ L4 修复器路径守卫批 +41（orchestrator 1607→1648，总数 3541→3582）+ v1.4.4 审查批 #73 占位重写 +12（总数 3582→3594）+ v1.4.3 阶段五 run-02 闭环批一 P0-3 +6（core 374→380，总数 3594→3600）+ 审查修复批 +11（core 380→382 + audit 919→928，总数 3600→3611）+ 出站防护与原子写契约批 +8（daemon 287→294 + eval 32→33，总数 3611→3619）+ 同批删除 loop-audit-history.test.ts −6（orchestrator 1648→1642，总数 3619 持平）+ v1.4.4 审查修复批 +15（audit 929→936 / core 382→388 / daemon 294→296，总数 3620→3635）；全绿，详见上方「测试覆盖范围」节，实测见 `tools/check/test-count.sh`，与 pre-push-check 一致）、sofagent-core verify 约 44-48 项（动态）
 - **发版前手动覆盖**：acceptance-test.sh 294 场景（含子断言，CLI 端到端，步骤 2.3；v1.4.2 阶段三 S333-S339 七场景增量 265→272 + 存量清零 S340 272→273 + 章六补测 S341 273→274 + 章五零覆盖补测 S342/S343 274→276 + 阶段十二回写 S344 276→277 + v1.4.3 bugfix F-03 行为锁 S345 277→278 + v1.4.3 阶段三 S346-S348 三场景增量 278→281：审计聚合 CLI 行为实测/反作弊基线三防线锚点/训练监控三 tools 注册面 + 阶段五 coverage 补测 S349-S351 三场景增量 281→284：训练沙箱三约束行为实测/训练需求推导行为实测/后训练 workflow 模板解析 + v1.4.3 阶段五 run-02 闭环 S352-S355 四场景增量 284→288：DSH 执行深化三步锚点/train_diagnose 行为实测/入口导览与 onboarding 断层走查/存量清扫零残留 + run-04 coverage 闭环 S356 288→289：doctor Ontology 完整性检查锚点，补十三章零覆盖 P0-1 + run-05 coverage 闭环 S357-S358 两场景增量 289→291：审计聚合触发率数值实测/train_status 行为实测，S347 同批补四形态映射锁 + 闸门 run-05 P1 批 S359 291→292：过时承诺排期化/悬空引用补锚点/三态退出码防复发 + 闸门 run-06 误报批 S360 292→293：规则数 24 双口径锚点/维度 9 探针 A+E 全口径/PASS 场景级断言输出/S165 标题去 158 残留 + v1.4.3 阶段十二回写 S361 293→294：lock 零本地部署树路径防复发锚点）、OpenClaw 验收 63 场景（Agent 端到端，步骤 2.5）
 - **CI 未覆盖**：daemon → MCP → webhook → 编排四组件串联行为（v1.3.2 起由 Onboard 循环引擎跑全链路 smoke test 承接，作为验收标准；日常 CI 无独立集成测试，发版前手动验证兜底）
 - **CI 未覆盖**：多平台兼容性（macOS only verified，Linux/Windows 未验证）
@@ -429,7 +432,7 @@ v1.0 新增 `FORGE/playbook/acceptance-test.sh`（场景数持续扩展，当前
 
 ### safe-delete 环境下的测试预期失败（16 个）
 
-- **影响包**：engine/audit（config-loader 2 + audit-history 7 + session-report 1 + usb-detect 3）
+- **影响包**：engine/audit（audit-history 7 + session-report 1）+ engine/core（config-loader 2）+ engine/daemon（usb-detect 3）——三类测试主体跨三包分布，清理逻辑同源
 - **原因**：WorkBuddy.app 内嵌的 genie-safe-delete.cjs shim 拦截 fs.rmSync 调用，测试清理临时文件被误判为大规模删除，导致 ETIMEDOUT。**非源码 bug**——CI / 本地开发机（无 shim）无此问题。
 - **v1.3.3 缓解**：所有测试清理 `rmSync(..., { recursive: true })` 已用 `try-catch` 包裹，断言通过后清理失败不再让测试 FAIL。WorkBuddy 沙箱下连续跑 `bash tools/check/test-count.sh` 应稳定全绿（FAILED=0）。
 - **残余**：极少数在测试**函数体**内（非清理块）调用 rmSync 的用例仍未包裹——那是测试逻辑的一部分，包裹会掩盖真实失败，维持原样。

@@ -81,17 +81,26 @@ describe('§8.2 withRetry', () => {
 
   describe('withRetry — 超过上限抛错', () => {
     it('超过 maxRetries 后抛出最后一个错误', async () => {
+      // D-4 (v1.4.4)：补 SOFAGENT_DATA 隔离——超限路径走 appendErrorLog，
+      // 此前未设 env 落真实 ~/.sofagent/data/（4635 条 fixture 污染的来源之一）
+      const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'sofagent-isolated-'));
+      process.env.SOFAGENT_DATA = tmpDir;
       let callCount = 0;
-      await expect(
-        withRetry(
-          async () => {
-            callCount++;
-            throw new Error('always fails');
-          },
-          { maxRetries: 3, baseDelay: 10, maxDelay: 50, context: 'test-always-fail' },
-        ),
-      ).rejects.toThrow('always fails');
-      expect(callCount).toBe(3);
+      try {
+        await expect(
+          withRetry(
+            async () => {
+              callCount++;
+              throw new Error('always fails');
+            },
+            { maxRetries: 3, baseDelay: 10, maxDelay: 50, context: 'test-always-fail' },
+          ),
+        ).rejects.toThrow('always fails');
+        expect(callCount).toBe(3);
+      } finally {
+        delete process.env.SOFAGENT_DATA;
+        try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch { /* */ }
+      }
     });
 
     it('超过上限后写 daemon-errors.jsonl', async () => {
@@ -124,18 +133,83 @@ describe('§8.2 withRetry', () => {
 
   describe('withRetryBestEffort', () => {
     it('超过上限后返回 null 不抛错', async () => {
-      const result = await withRetryBestEffort(
-        async () => {
-          throw new Error('nope');
-        },
-        { maxRetries: 2, baseDelay: 10, maxDelay: 50, context: 'best-effort-test' },
-      );
-      expect(result).toBeNull();
+      // D-4 (v1.4.4)：补 SOFAGENT_DATA 隔离——同上，超限路径写错误日志
+      const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'sofagent-isolated-'));
+      process.env.SOFAGENT_DATA = tmpDir;
+      try {
+        const result = await withRetryBestEffort(
+          async () => {
+            throw new Error('nope');
+          },
+          { maxRetries: 2, baseDelay: 10, maxDelay: 50, context: 'best-effort-test' },
+        );
+        expect(result).toBeNull();
+      } finally {
+        delete process.env.SOFAGENT_DATA;
+        try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch { /* */ }
+      }
     });
 
     it('成功时返回结果', async () => {
       const result = await withRetryBestEffort(async () => 'ok');
       expect(result).toBe('ok');
+    });
+  });
+
+  // ── D-4 (v1.4.4)：daemon-errors.jsonl 大小阈值轮转 ──
+  describe('daemon-errors.jsonl 轮转（D-4）', () => {
+    it('主文件 >1MB 时轮转为 .1，旧 .1/.2 递推，.3 被删除', async () => {
+      const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'sofagent-rotate-'));
+      process.env.SOFAGENT_DATA = tmpDir;
+      try {
+        const logPath = path.join(tmpDir, 'daemon-errors.jsonl');
+        // 预置：主文件 1MB+（超阈值）、.1、.2、.3 三代既有文件
+        const bigLine = 'x'.repeat(1024); // 1KB
+        fs.writeFileSync(logPath, bigLine.repeat(1100) + '\n'); // ~1.1MB
+        fs.writeFileSync(`${logPath}.1`, 'gen1\n');
+        fs.writeFileSync(`${logPath}.2`, 'gen2\n');
+        fs.writeFileSync(`${logPath}.3`, 'gen3-should-die\n');
+
+        await expect(
+          withRetry(
+            async () => { throw new Error('trigger rotation'); },
+            { maxRetries: 2, baseDelay: 10, maxDelay: 50, context: 'test-rotate' },
+          ),
+        ).rejects.toThrow('trigger rotation');
+
+        // 轮转后：主文件是新错误条目（小文件）、.1=旧主文件（大）、.2=gen1、.3=gen2
+        expect(fs.existsSync(`${logPath}.3`)).toBe(true);
+        expect(fs.readFileSync(`${logPath}.3`, 'utf-8')).toBe('gen2\n');
+        expect(fs.readFileSync(`${logPath}.2`, 'utf-8')).toBe('gen1\n');
+        const newMain = fs.readFileSync(logPath, 'utf-8');
+        expect(newMain).toContain('test-rotate');
+        expect(newMain.length).toBeLessThan(500); // 新主文件只有一条错误
+        // gen3（原 .3）被删除——递推删除最老一代
+        expect(fs.readFileSync(`${logPath}.1`, 'utf-8').length).toBeGreaterThan(1_000_000);
+      } finally {
+        delete process.env.SOFAGENT_DATA;
+        try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch { /* */ }
+      }
+    });
+
+    it('主文件 <1MB 时不轮转（追加正常）', async () => {
+      const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'sofagent-norotate-'));
+      process.env.SOFAGENT_DATA = tmpDir;
+      try {
+        await expect(
+          withRetry(
+            async () => { throw new Error('small'); },
+            { maxRetries: 2, baseDelay: 10, maxDelay: 50, context: 'test-no-rotate' },
+          ),
+        ).rejects.toThrow('small');
+
+        const logPath = path.join(tmpDir, 'daemon-errors.jsonl');
+        expect(fs.existsSync(`${logPath}.1`)).toBe(false);
+        expect(fs.readFileSync(logPath, 'utf-8')).toContain('test-no-rotate');
+      } finally {
+        delete process.env.SOFAGENT_DATA;
+        try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch { /* */ }
+      }
     });
   });
 });

@@ -3925,16 +3925,30 @@ $S360_OK && pass "run-06 误报批闭环（规则数 24 双口径/探针全口�
 # 开源 CI npm ci 恢复 symlink 指向不存在路径 → TS2307 三红。npm 实测：
 # 包不在依赖树时 overrides 惰性不匹配（cordis 系 6 条现状），包一旦进
 # 依赖立即生效——本地路径 overrides 是地雷应清。对齐 S344 静态锚点形态。
+#
+# v1.4.4 补面（锚点自身失效的修复）：原 S361 只 grep package-lock.json，
+# 锁文件一直干净 → 锚点恒绿，而根 package.json 的 overrides 段写死 6 条
+# /Users/<用户名>/.local/share/dsh-deployed/... 绝对路径（45517d77 引入 72 条、
+# 8c8517b5 清到 6 条时留尾），在这道恒绿防线的眼皮底下随 v1.4.3 公开发布，
+# 同时泄漏本机用户名——违反红线 2「依赖零本地路径」。
+# 教训：防复发锚点必须覆盖「声明面」（package.json）而非只守「产物面」（lock）。
+# 双关键字同查：dsh-deployed（本例）+ /Users/（换目录名的未来变体通杀）。
 # ─────────────────────────────────────────────────────────────
-scenario 361 "v1.4.3 阶段十二：lock 零本地部署树路径——overrides 绝对路径地雷防复发（CI TS2307 三红根因固化）"; S361_OK=true
+scenario 361 "v1.4.3 阶段十二：package.json + lock 双文件零本地部署树路径——overrides 绝对路径地雷防复发（CI TS2307 三红根因固化）"; S361_OK=true; S361_PKG_OK=true
 # 🔴 set -e + $(cmd) 静默杀手：grep -c 零命中 exit 1 会杀整个脚本——命令替换必须 || true
 S361_DSH=$(grep -c "dsh-deployed" "$PROJECT_ROOT/package-lock.json" 2>/dev/null || true)
 [ "${S361_DSH:-1}" = "0" ] || S361_OK=false  # lock 零 dsh-deployed symlink（npm ci 在 CI 恢复本地路径必红）
+# ── 声明面（v1.4.4 补）：package.json 零本地路径 ──
+S361_PKG_DSH=$(grep -c "dsh-deployed" "$PROJECT_ROOT/package.json" 2>/dev/null || true)
+S361_PKG_USERS=$(grep -c "/Users/" "$PROJECT_ROOT/package.json" 2>/dev/null || true)
+[ "${S361_PKG_DSH:-1}" = "0" ] || S361_PKG_OK=false    # package.json 零 dsh-deployed 本地部署树路径
+[ "${S361_PKG_USERS:-1}" = "0" ] || S361_PKG_OK=false  # package.json 零 /Users/ 绝对路径（红线 2 通杀口径）
 # registry 解析抽查：dsh 六包 resolved 必须指向 npmjs（防再切回本地部署树）
 for _s361_p in dsh dsh-app-boot dsh-llm dsh-session dsh-agent dsh-home-paths; do
   node -e "const l=require('$PROJECT_ROOT/package-lock.json');const e=l.packages['node_modules/@deepseek-ai/$_s361_p'];process.exit((e&&e.resolved&&e.resolved.includes('registry.npmjs.org'))?0:1)" || S361_OK=false
 done
 $S361_OK && pass "lock 零本地部署树路径（dsh 六包 registry 解析齐）" || fail "本地部署树路径回潮——CI 将 TS2307 三红（对照 8c8517b5 根因修复）"
+$S361_PKG_OK && pass "package.json 零本地路径（dsh-deployed 0 + /Users/ 0）" || fail "package.json 本地部署树路径回潮——红线 2（依赖零本地路径）失守：清除 overrides 段内 /Users/ 绝对路径"
 
 echo -e "  验收测试结果：${GREEN}$PASSED 通过${NC} / ${RED}$FAILED 失败${NC} / ${YELLOW}$WARNED 跳过${NC} / 共 $((PASSED + FAILED + WARNED))"
 # 🔴 v1.3.1 run-10 教训：无色码纯文本汇总行供 driver grep（EXIT: 0=全PASS / <N>=N失败）

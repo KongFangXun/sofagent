@@ -165,8 +165,8 @@ export function computeAuditStats(options: StatsOptions = {}): AuditStatsReport 
   for (const entry of inWindow) {
     for (const rc of entry.ruleResults as RuleCheck[]) {
       if (!rc || rc.status !== 'WARN' && rc.status !== 'FAIL') continue;
-      // 规则码：A<number>（与 17 条默认规则的编号口径一致——A2 密钥 / A9 注入等）
-      const code = `A${rc.number}`;
+      // 规则码：A<n> / E<n>（与 reporter.ts 口径一致——E 系列 number=200+序号，200+ 走 E 前缀）
+      const code = rc.number >= 200 ? `E${rc.number - 200}` : `A${rc.number}`;
       const existing = ruleCounts.get(code) ?? { name: '', count: 0, failCount: 0 };
       existing.count += 1;
       if (rc.status === 'FAIL') existing.failCount += 1;

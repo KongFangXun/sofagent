@@ -192,19 +192,21 @@ EOF
 [ "$QUIET" = false ] && echo -e "\n${BOLD}${CYAN}── ④ fresh-eyes-review 守护 ──${NC}"
 
 WC_FE=$(wc -l < "$FRESH_EYES" | tr -d ' ')
-# 警戒线从 releasing 阶段五动态提取（「不超过 N 行」）；提取不到回退 checklist 维度表引用
+# 警戒线唯一 SSOT：releasing 阶段五 04-review-system.md（「不超过 N 行」）。
+# 别处（含 fresh-eyes-review.md 自身）一律外链，不再自带数字。
+# v1.4.4：删除原先对 regression-checklist.md 的回退分支——该 checklist 第 13 行已把
+# fresh-eyes 阈值外链给 04-review-system.md、自身不再自带数字，回退正则实测零命中
+# （永不生效的死分支），且它使下方 warn 文案指向 ${RELEASING5} 而实读 ${CHECKLIST}，
+# 排障时会被带到错误的文件。删掉后本段唯一读取源即 ${RELEASING5}，文案与之对齐。
 LIMIT_FE=$(grep -oE '不超过 [0-9]+ 行' "$RELEASING5" | head -1 | grep -oE '[0-9]+' || echo "")
-if [ -z "$LIMIT_FE" ]; then
-  LIMIT_FE=$(grep -oE 'fresh-eyes[^|]*≤ ?[0-9]+' "$CHECKLIST" | head -1 | grep -oE '[0-9]+' || echo "")
-fi
 if [ -n "$LIMIT_FE" ]; then
   if [ "$WC_FE" -le "$LIMIT_FE" ]; then
     ok "fresh-eyes-review 行数 $WC_FE ≤ 警戒线 $LIMIT_FE"
   else
-    bad "fresh-eyes-review 行数 $WC_FE 超警戒线 $LIMIT_FE" "    处置：阶段五校准段做紧凑化（保语义压行数，不删视角）"
+    bad "fresh-eyes-review 行数 $WC_FE 超警戒线 $LIMIT_FE" "    处置：阶段五校准段做紧凑化（保语义压行数，不删视角——警戒线只准归并消化，不准抬阈值）\n    权威出处：${RELEASING5}（「不超过 N 行」句式），别处一律外链"
   fi
 else
-  warn "未提取到 fresh-eyes 警戒线（检查 $RELEASING5 格式）"
+  warn "未提取到 fresh-eyes 警戒线（检查 $RELEASING5 是否含「不超过 N 行」句式）"
 fi
 
 # ============================================================

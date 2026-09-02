@@ -53,36 +53,49 @@ export function countLines(filePath: string): number {
   }
 }
 
-/** 获取文件权限数字（如 "644"）。 */
+/**
+ * 获取文件权限数字（如 "644"）。
+ *
+ * D-6 (v1.4.4)：失败返回 'unreadable' 哨兵——此前返回 '???'，经消费方
+ * `perms.slice(-1)` 取尾字符 '?' 不落宽松权限白名单，静默通过权限检查
+ * （读不到伪装成「权限正常」）。现消费方（checks.ts）显式识别 'unreadable'
+ * 输出「权限不可读」独立结论，哨兵值不再流进 PASS/WARN 判定。
+ */
 export function getFileMode(filePath: string): string {
   try {
     const stat = statSync(filePath);
     return (stat.mode & 0o777).toString(8);
   } catch (err) {
     console.error(`[verify] 获取文件权限失败: ${err instanceof Error ? err.message : String(err)}`);
-    return '???';
+    return 'unreadable';
   }
 }
 
-/** 统计目录下匹配后缀的文件数（替代 `find ... | wc -l`）。 */
+/**
+ * 统计目录下匹配后缀的文件数（替代 `find ... | wc -l`）。
+ *
+ * D-6 (v1.4.4)：失败抛错——此前返回 0 被消费方翻译成「目录存在: 0 个文件」
+ * 的 PASS 结论（读不到伪装成空目录）。调用方按「检查未执行」处理（SKIPPED）。
+ */
 export function countFilesInDir(dir: string, suffix: string): number {
-  try {
-    const entries = readdirSync(dir, { withFileTypes: true });
-    return entries.filter((e: Dirent) => e.isFile() && e.name.endsWith(suffix)).length;
-  } catch (err) {
-    console.error(`[verify] 统计目录文件数失败: ${err instanceof Error ? err.message : String(err)}`);
-    return 0;
-  }
+  const entries = readdirSync(dir, { withFileTypes: true });
+  return entries.filter((e: Dirent) => e.isFile() && e.name.endsWith(suffix)).length;
 }
 
-/** 检查文件是否可执行。 */
-export function isExecutable(filePath: string): boolean {
+/**
+ * 检查文件是否可执行。
+ *
+ * D-6 (v1.4.4)：失败返回 null（三态）——此前返回 false 与「文件确实不可执行」
+ * 同值，消费方把「权限抖动读不到」与「缺失」合并成同一句 WARN，文案混淆。
+ * 现调用方把 null 映射为「检查未执行 ⚠️」独立结论行。
+ */
+export function isExecutable(filePath: string): boolean | null {
   try {
     const stat = statSync(filePath);
     return (stat.mode & 0o111) !== 0; // 任意 x 位
   } catch (err) {
     console.error(`[verify] 检查可执行权限失败: ${err instanceof Error ? err.message : String(err)}`);
-    return false;
+    return null;
   }
 }
 

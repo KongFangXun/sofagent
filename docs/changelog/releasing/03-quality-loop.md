@@ -178,4 +178,5 @@ driver 异常中止（进程死亡/环境冲突）的 run **也必须留 LEDGER 
 
 1. **「未修」类 finding 先 grep 当前仓库复验**——旧审查报告是快照，不是当前状态
 2. **修复前对照「版本类 finding 处理规则」（本文件上方）**——会在 push+tag+publish 后自动消失的项判 SKIP，不修
-3. 分工：监控 session 管跑与报，主 session 管验与修（完整协议见 [06 的分工表](./05-release-gate.md)）
+3. **报告里的 `file:line` 引用先解析归属再采信**——审查报告每条发现都带行号，行号只证明「这一行存在」，不证明「这一段在说什么」；段落级结论先跑 `bash tools/check/resolve-section.sh <file> <line> [--chain]` 解析归属标题，对不上结论的引用打回重核（v1.4.4 实录：复核称「视角一第 123 行段落完整」，123 行实属视角五）。排障工具非门禁：不接入 check-guards/CI
+4. 分工：监控 session 管跑与报，主 session 管验与修（完整协议见 [05 的分工协议](./05-release-gate.md)）

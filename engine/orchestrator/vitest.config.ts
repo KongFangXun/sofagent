@@ -9,6 +9,8 @@ import { defineConfig } from 'vitest/config';
 //   746→563 且 FAILED=0 假绿——门禁结果不确定性的又一来源）。
 export default defineConfig({
   test: {
+    // D-4 (v1.4.4)：全局测试隔离——SOFAGENT_DATA 预置到 tmp，防测试写真实 HOME
+    setupFiles: ['../../tools/vitest-setup.mjs'],
     // testTimeout 20s→60s：8GB 慢机全量串行实测仍有 audit spawn 链测试 40-50s
     //（HITL 多次驳回/graph 五环等，spawn audit 5-8s/次 ×N 轮），20s+retry 也不够。
     // 60s 上限不拖慢正常用例（绝大多数毫秒级）。retry 1 保留。

@@ -97,7 +97,7 @@ actions:
     domain: "指挥模型"
     range: "release-sop"
     action_type: "需审批"
-    description: "阶段五：指挥模型 按 releasing.md 十二阶段流程走阶段一审查→阶段二开发→阶段三自测→阶段四代码审核→阶段五审查体系合并更新"
+    description: "阶段五：指挥模型 按 releasing.md 十一阶段流程走阶段一审查→阶段二开发+自测→阶段三质量循环→阶段四审查体系合并更新→阶段五发版闸门"
 
   - id: A5-d3-gate-check
     name: "D3 闸门检查"

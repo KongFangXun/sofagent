@@ -170,17 +170,17 @@ flowchart TD
 | 属性 | 说明 |
 |------|------|
 | **执行者** | 指挥模型 |
-| **依据** | `docs/changelog/releasing.md` 十二阶段发版 SOP |
+| **依据** | `docs/changelog/releasing.md` 十一阶段发版 SOP |
 
 按 releasing SOP 走前五个阶段：
 
 | 阶段 | 名称 | 关键动作 |
 |------|------|---------|
 | 阶段一 | 审查 | 问题收敛，产出 P0/P1/P2 清单 |
-| 阶段二 | 开发 | 按优先级分批开发 |
-| 阶段三 | 自测 | **D3 闸门**：`acceptance-test.sh` 必须补齐新场景 |
-| 阶段四 | 代码审核 | 逐项核对 changelog |
-| 阶段五 | 审查体系合并更新 | regression-checklist 加法 + fresh-eyes-review 校准 + acceptance-test 自动化 |
+| 阶段二 | 开发 + 基础自测 | 按优先级分批开发，收尾跑基础自测 |
+| 阶段三 | 质量循环 | **D3 闸门**：`acceptance-test.sh` 必须补齐新场景 |
+| 阶段四 | 审查体系合并更新 | regression-checklist 加法 + fresh-eyes-review 校准 + acceptance-test 自动化 + 最终确认 |
+| 阶段五 | 发版闸门 | release-gate-loop 必须 verdict=PASS |
 
 #### 阶段六：执行模型 控制 OpenClaw 全面测试
 
@@ -199,8 +199,8 @@ flowchart TD
 
 | 评审结果 | 下一步 |
 |---------|--------|
-| 通过 | 继续 releasing 剩余阶段（7-12） |
-| 不通过 | 回阶段五（最多 2 轮） |
+| 通过 | 继续 releasing 剩余阶段（6-11） |
+| 不通过 | 回阶段四（最多 2 轮） |
 
 #### 发布后
 

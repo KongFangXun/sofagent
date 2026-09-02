@@ -40,9 +40,11 @@ function seedEntry(daysAgo: number, exitCode: number, ruleResults: Array<{ rule:
     diffRange: 'HEAD~1..HEAD',
     exitCode,
     ruleResults: ruleResults.map((r) => ({
-      // RuleCheck 真实字段：name（规则名）/ number（编号）——A<number> 是规则码
+      // RuleCheck 真实字段：name（规则名）/ number（编号）——规则码 A<n>（number<200）/ E<n-200>（number>=200，与 reporter.ts 口径一致）
       name: r.message ?? r.rule,
-      number: parseInt(r.rule.replace('A', ''), 10) || 0,
+      number: r.rule.startsWith('E')
+        ? 200 + (parseInt(r.rule.slice(1), 10) || 0)
+        : parseInt(r.rule.replace('A', ''), 10) || 0,
       status: r.status,
       details: [],
     })),
@@ -89,6 +91,21 @@ describe('computeAuditStats 指标计算', () => {
     expect(report.topRules[0]!.failCount).toBe(2);
     expect(report.topRules[1]!.rule).toBe('A9');
     expect(report.topRules.length).toBe(3); // A2/A9/A3
+  });
+
+  it('E 系列规则码：number>=200 映射 E<n-200>（与 reporter.ts 口径一致，不显示成 A201）', () => {
+    // E1（number=201）WARN + E2（number=202）FAIL —— 聚合后规则码应显示 E1/E2 而非 A201/A202
+    seedEntry(1, 1, [{ rule: 'E1', status: 'WARN', message: 'E 系列规则一' }]);
+    seedEntry(1, 2, [{ rule: 'E2', status: 'FAIL', message: 'E 系列规则二' }]);
+    const report = computeAuditStats({ dataDir, now: () => NOW_MS });
+    const codes = report.topRules.map((r) => r.rule);
+    expect(codes).toContain('E1');
+    expect(codes).toContain('E2');
+    expect(codes).not.toContain('A201');
+    expect(codes).not.toContain('A202');
+    const e2 = report.topRules.find((r) => r.rule === 'E2')!;
+    expect(e2.count).toBe(1);
+    expect(e2.failCount).toBe(1);
   });
 
   it('窗口过滤：窗口外条目不进分母（--days 可调）', () => {

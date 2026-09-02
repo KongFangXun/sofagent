@@ -49,7 +49,7 @@ warn() { [ "$QUIET" = false ] && echo -e "  ${YELLOW}⚠️${NC} $1"; WARN=$((WA
 # ============================================================
 [ "$QUIET" = false ] && echo -e "\n${BOLD}${CYAN}── ① 审查文档路径活性 ──${NC}"
 
-DOC_SOURCES="FORGE/playbook/regression-checklist.md FORGE/playbook/fresh-eyes-review.md docs/changelog/releasing/08-tool-health.md docs/changelog/releasing/04-review-system.md"
+DOC_SOURCES="FORGE/playbook/regression-checklist.md FORGE/playbook/fresh-eyes-review.md docs/changelog/releasing/07-tool-health.md docs/changelog/releasing/04-review-system.md"
 
 DEAD_LINKS=0
 DEAD_LIST=""

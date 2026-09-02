@@ -3,8 +3,9 @@
 // v0.98 新增
 // ============================================================
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { existsSync, readFileSync, writeFileSync, rmSync, mkdirSync } from 'fs';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import * as fs from 'fs';
+import { existsSync, readFileSync, writeFileSync, rmSync, mkdirSync, chmodSync, statSync } from 'fs';
 import { join, dirname } from 'path';
 import { tmpdir, homedir } from 'os';
 import { createHash, randomBytes } from 'crypto';
@@ -510,6 +511,79 @@ describe('audit-history', () => {
         const result = checkHistoryChainDetailed(testDir);
         expect(result.status).not.toBe('tampered');
       });
+    });
+  });
+
+  // ============================================================
+  // D-5 (v1.4.4)：写链两处降级增强——
+  // ① prevHash='unknown' 时条目带 chainStatus:'broken' 显式标记（不阻断写入）
+  // ② chmod 失败读回 statSync 验证实际权限（false alarm 放行 / 真宽松告警）
+  // 设计红线测试：两条降级路径都不抛错、不阻断 appendHistory
+  // ============================================================
+  describe('D-5 写链降级增强', () => {
+    it('上一行 JSON 解析失败 → 新条目带 chainStatus=broken + prevHash=unknown（写入不阻断）', () => {
+      // 先写一条正常记录建立链
+      appendHistory(makeEntry('2026-09-01T00:00:00Z', 0), testDir);
+      // 再追加一条坏行（非 JSON）
+      const histPath = getHistoryFilePath(testDir);
+      const lines = readFileSync(histPath, 'utf-8').trim().split('\n');
+      writeFileSync(histPath, [...lines, 'corrupted-not-json'].join('\n') + '\n');
+
+      // 坏行为最后一行时 appendHistory：解析失败 → prevHash='unknown' + chainStatus='broken'
+      const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      try {
+        appendHistory(makeEntry('2026-09-01T01:00:00Z', 0), testDir);
+      } finally {
+        errSpy.mockRestore();
+      }
+
+      // 写入未被阻断——新条目正常落盘且带显式标记
+      const updated = readFileSync(histPath, 'utf-8').trim().split('\n');
+      expect(updated.length).toBe(3);
+      const newEntry = JSON.parse(updated[updated.length - 1]!);
+      expect(newEntry.prevHash).toBe('unknown');
+      expect(newEntry.chainStatus).toBe('broken');
+    });
+
+    it('上一行正常 → 新条目无 chainStatus 字段（链健康时不误标）', () => {
+      appendHistory(makeEntry('2026-09-01T00:00:00Z', 0), testDir);
+      appendHistory(makeEntry('2026-09-01T01:00:00Z', 0), testDir);
+
+      const lines = readFileSync(getHistoryFilePath(testDir), 'utf-8').trim().split('\n');
+      const last = JSON.parse(lines[lines.length - 1]!);
+      expect(last.prevHash).not.toBe('unknown');
+      expect(last.chainStatus).toBeUndefined();
+    });
+
+    it('chmod 失败 + 实际权限 ≤0600 → false alarm 静默放行（不阻断写入）', async () => {
+      appendHistory(makeEntry('2026-09-01T00:00:00Z', 0), testDir);
+      const histPath = getHistoryFilePath(testDir);
+
+      // 正常 append 后权限已被收紧为 0600——vi.mock 'fs' 替换 chmodSync 抛错，
+      // 模拟「chmod 不可用但权限已收紧」的 false alarm 场景（ESSM namespace
+      // 不可 spyOn，vi.mock + importOriginal 是官方路径）。
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      vi.mock('fs', async (importOriginal) => {
+        const actual = await importOriginal<typeof import('fs')>();
+        return {
+          ...actual,
+          chmodSync: () => { throw new Error('chmod EPERM (mock)'); },
+        };
+      });
+      // vi.mock 是 hoisted 的——需重新 import 被测模块拿新图
+      vi.resetModules();
+      const { appendHistory: appendHistoryFresh } = await import('./audit-history');
+      try {
+        appendHistoryFresh(makeEntry('2026-09-01T01:00:00Z', 0), testDir);
+      } finally {
+        vi.doUnmock('fs');
+        vi.resetModules();
+        warnSpy.mockRestore();
+      }
+
+      // 写入未被阻断，且无宽松权限告警（false alarm 放行）
+      const lines = readFileSync(histPath, 'utf-8').trim().split('\n');
+      expect(lines.length).toBe(2);
     });
   });
 });

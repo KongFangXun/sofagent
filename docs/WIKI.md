@@ -7,7 +7,7 @@
 
 > ⚠️ **术语声明（AI Agent 与人类读者必读）**：sofagent 现行架构术语以 [ARCHITECTURE.md](./ARCHITECTURE.md) 与 [PHILOSOPHY.md](./PHILOSOPHY.md) 为准——**约束层**（一个层四种能力：注入·审计·回溯·进化，FORGE 为内部工具）+ **双层架构**（约束层 × 生命周期）。`docs/archive/` 与 `docs/changelog/v1.0/`、`docs/changelog/v1.1/` 为**历史版本快照**，其中"四引擎""认知底座"等旧术语反映当时版本，**不代表现行设计**，请勿据此推断当前架构；`docs/changelog/v1.4/` 为**当前版本目录**（v1.4.0 已发布，内容为各版本变更记录；后续排期内容**不代表已交付能力**）。**训练引擎归属**：工程骨架随开源仓排期交付 + 训练资产商业侧，真相源见 [ROADMAP](./ROADMAP.md) 版本表。
 
-> **3 分钟建立全景理解**：核心文档太长？先看这 4 句：
+> **3 分钟建立全景理解**：核心文档太长？先看这 5 条：
 > - **[ARCHITECTURE.md](./ARCHITECTURE.md)**：双层架构设计（约束层 × 生命周期）+ 约束层工程三层嵌套（约束层 → Graph → Loop），关键技术决策记录。**3 秒版**：约束层管"做对"（注入·审计·回溯·进化）· 激活链四阶段管"跑起来" · Graph 控制图分波次 · Loop 自迭代闭环。
 > - **[VALIDATION.md](./VALIDATION.md)**：行业印证与生态定位——sofagent 直觉如何被行业验证 + Agent 三层模型 + 架构框架映射。
 > - **[PHILOSOPHY.md](./PHILOSOPHY.md)**：设计哲学与产品方法论（§一~§九）。"不替代 Agent，做 Agent 的控制面"。
@@ -98,7 +98,7 @@ graph TB
 | **FORGE** | 自迭代引擎（内部工具，外部用户可忽略）——通过 Workflow 驱动 Agent 审查/修复/验证自己的代码，核心是 fresh-eyes-loop | [FORGE/README.md](../FORGE/README.md) |
 | **SKILL** | Agent 的行为约束文件系统——三层：SKILL.md（主入口）/ harness/（约束层）/ agents/（Sub Agent） | [SKILL/SKILL.md](../SKILL/SKILL.md) |
 | **激活链** | FDE 交付物→企业业务流自运转的四阶段生命周期：ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN | [guides/fde-activation-chain.md](./guides/fde-activation-chain.md) |
-| **data/** | ~/.sofagent/data/ SSOT 数据目录（原 .sofagent/ 已迁移）：history.jsonl、knowledge/、audit/、config/ | [DEVELOPMENT §数据目录](./DEVELOPMENT.md) |
+| **data/** | ~/.sofagent/data/ SSOT 数据目录（原 .sofagent/ 已迁移）：history.jsonl、knowledge/、audit/；用户配置入口为项目级 `.sofagent/config.yml`（data/config/ 是 daemon 运行时产物，非用户配置面） | [DEVELOPMENT §数据目录](./DEVELOPMENT.md) |
 
 ---
 
@@ -138,7 +138,7 @@ graph TB
 | eval（runEval）⭐ | `eval/history.jsonl` | think（进化引擎：passRate 下降→告警） |
 | daemon（health-reporter） | `daemon-health.json` | Dashboard（健康面板） |
 | daemon（dream-cycle） | `knowledge/` | harness 加载链（Skill 知识注入） |
-| FORGE driver（loop） | `forge-runs/` | 人类（verdict.md） |
+| FORGE driver（loop） | `forge-runs/`（唯一落点 `~/.sofagent/data/forge-runs/`，仓内 `FORGE/SKILL/*/runs/` 仅占位壳；顶层 `FORGE/runs/` 为历史留档位） | 人类（verdict.md），执行证据查证路径见 [FORGE/README.md](../FORGE/README.md)「runs 目录边界」 |
 
 **数据流铁律**：生产者只写不读自己的输出，消费者只读不写——单向派生，不可逆。
 
@@ -195,7 +195,7 @@ graph TB
 | `docs/guides/fde-activation-chain.md` | 🔗 激活链设计（v1.2.5+）：FDE 交付物 → 企业业务流自动运转（ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN） |
 | `docs/THANKS.md` | 致谢——谁启发了哪个设计决策 |
 | `docs/changelog/` | 每版本开发日志（`v1.0/` `v1.1/` `v1.2/` `v1.3/` `v1.4/`）。⚠️ 早期版本日志含"审查元信息/开发过程备注"等非产品文档内容，属当时开发留痕，不代表产品能力声明。✅ **v1.3.3 起已清理审查元信息**（见 v1.3.4 bugfix），当前版本 changelog 只含产品变更声明。以各版本 changelog 顶部的"已开发/已排期"标记为准。规划中版本的开发排期见 [ROADMAP](./ROADMAP.md) |
-| `docs/changelog/releasing.md` | **发版 SOP**——十二阶段全流程 |
+| `docs/changelog/releasing.md` | **发版 SOP**——十一阶段全流程 |
 | `docs/evidence/` | 效果证据：案例、基准测试、反例 |
 | `docs/archive/` | 历史归档：实验版 changelog、早期证据、设计文档 |
 | `docs/guides/` | 专题指南：部署、测试、Dashboard 开发、Loop 开发等 |
@@ -223,7 +223,7 @@ graph TB
 |------|------|
 | `data/audit/history.jsonl` | 审计历史（HMAC 哈希链，append-only） |
 | `data/knowledge/` | 知识库（entities / concepts / comparisons / summaries） |
-| `data/config/` | 配置文件（audit-report.json 等） |
+| `data/config/` | daemon 运行时产物（audit-report.json webhook 推送配置等，未配置相关功能时目录不生成）——**不是用户配置入口**；用户配置走项目级 `.sofagent/config.yml` + `watch.yml`（config-loader 三级 fallback，见 [LIMITATIONS §三](./LIMITATIONS.md)） |
 
 ---
 
@@ -233,7 +233,7 @@ graph TB
 |----|-----|
 | 当前版本 | **v1.4.3**（2026-09-01） |
 | 下一版 | v1.4.4（训练引擎 · 信号与部署，规划中，参见 docs/ROADMAP.md） |
-| 测试覆盖 | 3619 测试 / 12 包（统计标准：`tools/check/test-count.sh` 实际执行的 workspace 包；全仓共 22 个 workspace——13 个引擎包发布至 npm `@sofagent` scope，9 个 DSH 插件为 private 随 DSH 分发。实测见 `tools/check/test-count.sh`、声称数同步校验见 `tools/check/check-test-count.sh`） |
+| 测试覆盖 | 3635 测试 / 12 包（统计标准：`tools/check/test-count.sh` 实际执行的 workspace 包；全仓共 26 个 workspace——13 个引擎包发布至 npm `@sofagent` scope，9 个 DSH 插件为 private 随 DSH 分发，4 个 OpenClaw 插件（`engine/openclaw-plugins/`）经根 `npm test --workspaces` 统一执行测试。实测见 `tools/check/test-count.sh`、声称数同步校验见 `tools/check/check-test-count.sh`） |
 | 审计规则 | 24 条（17 默认 + 7 扩展），活跃编号 A1-A11 + A14-A23 + E1/E2/E4，每次 commit 自动跑 |
 | FORGE | fresh-eyes-loop + release-gate-loop 运行中 |
 | 数据目录 | **data/**（v1.2.1+ SSOT 运行时数据目录） |
@@ -310,7 +310,7 @@ graph TB
 |---------|--------|
 | 了解 FORGE 自迭代工具链 | [FORGE/README.md](../FORGE/README.md) |
 | 给 FORGE 加新 Loop | [guides/loop-development.md](./guides/loop-development.md) |
-| 走发版流程（十二阶段 SOP） | [docs/changelog/releasing.md](./changelog/releasing.md) |
+| 走发版流程（十一阶段 SOP） | [docs/changelog/releasing.md](./changelog/releasing.md) |
 | 跑独立审查 | [FORGE/playbook/fresh-eyes-review.md](../FORGE/playbook/fresh-eyes-review.md) |
 | 贡献代码 | [CONTRIBUTING.md](../CONTRIBUTING.md) |
 
