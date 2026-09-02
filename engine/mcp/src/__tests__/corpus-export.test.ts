@@ -104,6 +104,7 @@ async function startServer() {
 
 describe('MCP corpus_export — 训练语料导出三件套（协议面）', () => {
   let savedKeyPath: string | undefined;
+  let tmpOutDir: string;
 
   beforeEach(async () => {
     vi.restoreAllMocks();
@@ -115,6 +116,11 @@ describe('MCP corpus_export — 训练语料导出三件套（协议面）', () 
     const keyPath = require('path').join(require('os').tmpdir(), `sofagent-corpus-key-${process.pid}`);
     await realFsp.writeFile(keyPath, 'test-corpus-export-key-0123456789abcdef');
     process.env.SOFAGENT_KEY_PATH = keyPath;
+    // 产物外置 tmpdir（不传 outDir 时导出落 cwd 的 data/export/corpus/——
+    // 会两次污染工作树：本仓 engine/mcp/data/ 不在根 .gitignore 覆盖内）
+    tmpOutDir = await realFsp.mkdtemp(
+      require('path').join(require('os').tmpdir(), `sofagent-corpus-out-${process.pid}-`),
+    );
   });
 
   afterEach(async () => {
@@ -126,6 +132,7 @@ describe('MCP corpus_export — 训练语料导出三件套（协议面）', () 
       require('path').join(require('os').tmpdir(), `sofagent-corpus-key-${process.pid}`),
       { force: true },
     );
+    await realFsp.rm(tmpOutDir, { recursive: true, force: true });
   });
 
   it('rules_only 模式：27 编号位 + verifiers 三桶经 JSON-RPC 返回', async () => {
@@ -136,7 +143,7 @@ describe('MCP corpus_export — 训练语料导出三件套（协议面）', () 
       method: 'tools/call',
       params: {
         name: 'corpus_export',
-        arguments: { scope: 'all', rules_only: true },
+        arguments: { scope: 'all', rules_only: true, out_dir: tmpOutDir },
       },
     });
 
@@ -170,7 +177,7 @@ describe('MCP corpus_export — 训练语料导出三件套（协议面）', () 
       method: 'tools/call',
       params: {
         name: 'corpus_export',
-        arguments: { scope: 'all' },
+        arguments: { scope: 'all', out_dir: tmpOutDir },
       },
     });
 
@@ -191,7 +198,7 @@ describe('MCP corpus_export — 训练语料导出三件套（协议面）', () 
       jsonrpc: '2.0',
       id: 102,
       method: 'tools/call',
-      params: { name: 'corpus_export', arguments: {} },
+      params: { name: 'corpus_export', arguments: { out_dir: tmpOutDir } },
     });
 
     await flush();
