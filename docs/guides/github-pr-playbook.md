@@ -87,7 +87,7 @@ Single-line change to README.md only.（或双语两文件）
 |---|---|---|
 | GitHub Marketplace | ✅ 已上线 | name 冻结 `sofagent`；description ≤125 码点；每版 release 勾 Publish（SOP 阶段十一·二b） |
 | Profile README | ✅ 已上线 | KongFangXun/KongFangXun 特殊仓；Contents API `-X PUT` 上传 |
-| 清单 PR | 23 条在飞 / 已收口 7 | 本手册主体 |
+| 清单 PR | 25 条在飞 / 已收口 7 | 本手册主体 |
 | Discussions 常青帖 | #11 报到帖（自家） | 置顶只留常青帖，版本帖不置顶（SOP 阶段十二·十三） |
 | 外站 Discussions 输出 | ✅ loop-engineering #326 已发 | adopters 合并后 24h 内发实践帖衔接最自然；按楼主模板回帖，不开新帖 |
 | Featured in 区 | ✅ 双语 README | 徽章跟 PR 状态联动（open 橙 / merged 绿） |
@@ -119,7 +119,7 @@ Single-line change to README.md only.（或双语两文件）
 
 > 活台账：每次巡检/合并后更新本表对应行的状态列与备注（巡检命令：`gh search prs --author KongFangXun --state open`）。自家仓 PR（KongFangXun/sofagent 内部）不入台账。
 
-### 5.1 在投（23 条 open）
+### 5.1 在投（25 条 open）
 
 | # | 仓库 | PR | 节 | 投日 | 状态 | 备注 |
 |---|------|----|----|------|------|------|
@@ -146,6 +146,8 @@ Single-line change to README.md only.（或双语两文件）
 | 21 | Alex-Yanggg/awesome-DSH-plugin ⭐92 | [#108](https://github.com/Alex-Yanggg/awesome-DSH-plugin/pull/108) | Developer tools | 09-01 | open | 晚间新投；catalog/plugins.json+README+中文镜像三文件（generate_readmes --check 过）；描述提 9 个 Cordis 插件坐实 DSH 集成 |
 | 22 | muellerberndt/awesome-ai-security ⭐123 | [#26](https://github.com/muellerberndt/awesome-ai-security/pull/26) | Tools & Frameworks | 09-01 | open | 晚间新投；学习路径型清单；git 通道挂时走 Git Data API 四步兜底 |
 | 23 | DeepSpaceHarbor/Awesome-AI-Security ⭐1668 | [#50](https://github.com/DeepSpaceHarbor/Awesome-AI-Security/pull/50) | Code（表格行） | 09-01 | open | 晚间新投；默认分支 master 非 main；Code 节有 ClawMoat/SkillFortify 工具先例 |
+| 24 | kejixiaoliang/awesome-dsh-plugins ⭐34 | [#56](https://github.com/kejixiaoliang/awesome-dsh-plugins/pull/56) | infrastructure-dev·健康检查/诊断/审计 | 09-02 | open | 09-02 晚投；CONTRIBUTING 规范（分类文件加一行，插 dsh-security-audit 后）；blob+PR body 双回读验证 |
+| 25 | Awesome-AI-Pedia/Awesome-AI-Pedia ⭐318 | [#11](https://github.com/Awesome-AI-Pedia/Awesome-AI-Pedia/pull/11) | deepseek harness plugins（文章制） | 09-02 | open | 09-02 晚投；新建文章 md（格式照现有：定位/核心功能/技术栈），sidebar.ts 自动扫描收侧边栏 |
 
 ### 5.2 已收口
 
@@ -181,18 +183,19 @@ Single-line change to README.md only.（或双语两文件）
 
 > 2026-09-01 晚间批量投稿后更新：七/八/十/十一/十二共 5 条已投（见 5.1 第 20~24 行），移出候选池；六/九缓投（原因见下）。
 > 2026-09-02 巡检更新：bruc3van 已自动收录（见七）；十四~十七为当日新检索候选。
+> 2026-09-02 晚拍板「能投的投掉」：十四（kejixiaoliang #56）/ 十六（Awesome-AI-Pedia #11）已投出（移入 5.1 #24/#25）；十五/十七改判**自动索引仓不投**（见各自条目）；machinae/awesome-claws 判定不对口（纯助手框架节无工具分节）。
 
 一、**hesreallyhim/awesome-claude-code**（⭐53k）——等其「legacy 迁移期」结束后再投（README 自述正在重构收录）
 二、**awesome-agent-harness 系（harness 研究综述类）**——Picrew ⭐1.7k / AutoJunjie ⭐515 / Gloriaameng ⭐345 / mahonzhan ⭐270 / RUCAIBox ⭐185：偏论文与综述，投稿前先看是否有「实现/工具」节，纯论文清单不对口
-三、**machinae/awesome-claws**（⭐499）——OpenClaw 生态 agent 清单，先确认是否有工具/Skills 类分节再投
+三、**machinae/awesome-claws**（⭐499）——❌ **不对口**（09-02 核实）：仅「Main Projects」助手框架单节（OpenClaw/nanobot 类），无工具/技能分节，治理层产品无落点
 四、**slavakurilyak/awesome-ai-agents**（⭐2.1k）/ jim-schwoebel/awesome_ai_agents（⭐2k）——泛 agent 清单，收录粒度粗，性价比一般
 五、其余小 DSH 清单（fendouai ⭐25 / walkinglabs-plugins ⭐17 等）——星少价值低，有空再投
 六、**awesome-dsh-plugin/awesome-dsh-plugin**（⭐14k）——✅ **已合并**（#4101，09-02，见 5.2）：两轮 gate 修复（-f 字面量 / monorepo 子包 slug）后过审合并——完整流程沉淀见台账 5.2
 七、**bruc3van/awesome-dsh-plugin**（⭐307）——✅ **已自动收录 09-02**（巡检核实）：每日自动抓 dsh-plugin topic 生效（条目带 2026-06-18 日期戳与中文一句话描述，全自动零 PR）；观察态闭环，无需动作
-十四、**Zhiyuan-Fan/Awesome-DeepSeek-Harness-Plugins**（⭐547）——DSH 插件目录（plugins/extensions/tools/skills 分类），README 未收 sofagent、无 CONTRIBUTING、无自动扫描迹象；普通 PR 收录制，建议投（DSH 轴第二梯队）
-十五、**leenkcool/Blue-Whale-Harness**（⭐190）——「DSH 插件总目录」：自称 1958 仓/1819 真插件，人工复核制（README 带 contribution 说明无 CONTRIBUTING.md）；与 14 定位重叠，建议投但排后
-十六、**Awesome-AI-Pedia/Awesome-AI-Pedia**（⭐318）——AI 资源百科（DSH 插件/MCP/Agent 全维度）含 DSH 插件节，有 CONTRIBUTING.md；大杂烩粒度粗，可选投
-十七、**kejixiaoliang/awesome-dsh-plugins**（⭐34）——14 类 280+ 社区插件目录；星少但 DSH 对口，有空再投
+十四、**kejixiaoliang/awesome-dsh-plugins**（⭐34）——✅ **已投 #56**（见 5.1 #24）
+十五、**Zhiyuan-Fan/Awesome-DeepSeek-Harness-Plugins**（⭐547）——🔄 **改判自动索引，不投 PR**：Contributing 明言「加 dsh-plugin topic 让 curator 找到你」+「本地 Codex 定时任务每日复审」——topic 已挂，等抓取收录（巡检顺手核）
+十六、**Awesome-AI-Pedia/Awesome-AI-Pedia**（⭐318）——✅ **已投 #11**（见 5.1 #25）
+十七、**leenkcool/Blue-Whale-Harness**（⭐190）——🔄 **改判自动索引，不投 PR**：README 由 catalog/analyze.mjs 等脚本全自动生成（自动生成于 2026-09-01，人工翻译 merge 层）；PR 改 README 会被下次生成覆盖——正确通道是让上游采集脚本发现（dsh-plugin topic 已挂）
 
 ## 七、非清单曝光渠道（中文圈 + 用户网页动作）
 
