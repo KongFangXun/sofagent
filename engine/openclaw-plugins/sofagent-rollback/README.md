@@ -1,6 +1,6 @@
 # sofagent-rollback
 
-**出错逆序撤销** · sofagent 约束层四能力在 OpenClaw 生态的插件形态（品牌色 #16B8F3）
+**出错逆序撤销** · sofagent 约束层五能力在 OpenClaw 生态的插件形态（品牌色 #16B8F3）
 
 git snapshot 快照 + 逆序回滚（effect disposer 语义），复用 @sofagent/core。
 

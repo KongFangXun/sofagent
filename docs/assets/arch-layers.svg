@@ -37,7 +37,7 @@
 
   <!-- 箭头 2 -->
   <line x1="590" y1="400" x2="590" y2="442" stroke="#6A737D" stroke-width="1.8" marker-end="url(#arr)"/>
-  <text x="604" y="426" text-anchor="start" font-size="15" fill="#6A737D">约束 Agent —— 注入 / 审计 / 回溯 / 进化</text>
+  <text x="604" y="426" text-anchor="start" font-size="15" fill="#6A737D">约束 Agent —— 注入 / 审计 / 回溯 / 沉淀 / 进化</text>
 
   <!-- 层 3：Agent 层 -->
   <rect x="80" y="450" width="1020" height="78" rx="14" fill="#F9FAFC" stroke="#D2DAE4" stroke-width="1.5"/>

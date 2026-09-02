@@ -148,6 +148,72 @@ for file in SKILL/SKILL.md HANDBOOK.md DEVELOPMENT.md; do
 done
 
 echo ""
+
+# 2a. 五能力术语断言（v1.4.4 新增——约束层从四能力升级为五能力「注入·审计·回溯·沉淀·进化」，
+#     活文档残留旧四能力表述即 FAIL。防复发机械化：以后任何术语升级只需改本断言规则本体。
+#     范围覆盖施工面：入口/文档/分发/装载（README 双语、docs 主文档+guides、SKILL、FDE/GUIDE、
+#     HOOK.md、插件 README、install.sh、dashboard.html、SVG）。排除历史快照（changelog 已发布版、
+#     archive）与 engine/ 源码（API 面）。
+#     豁免：ARCHITECTURE.md 旧名兼容注——该行是 v1.2.9→v1.4.4 术语沿革的历史陈述，
+#     「约束层四种能力」作为旧称引用属合法；豁免方式 = 行内容白名单（豁免行固定不随版本漂移）。
+CAP5_FILES=$(grep -rl "" README.md README.en.md docs/*.md docs/guides/*.md SKILL/SKILL.md FDE/GUIDE.md engine/hooks/*/HOOK.md engine/openclaw-plugins/*/README.md install.sh tools/dashboard/dashboard.html docs/assets/*.svg 2>/dev/null || true)
+CAP5_HITS=""
+for f in $CAP5_FILES; do
+  while IFS= read -r line; do
+    # 行级白名单：ARCHITECTURE.md 旧名兼容注（术语沿革历史陈述，引用旧称合法）
+    case "$line" in
+      *"v1.2.9 统一为「约束层四种能力」"*) continue ;;
+    esac
+    CAP5_HITS="$CAP5_HITS
+$line"
+  done <<EOF
+$(grep -nE "四种能力|四能力|一个层四种能力|注入·审计·回溯·进化|注入 · 审计 · 回溯 · 进化|inject · audit · rollback · evolve|four capabilities|注入 / 审计 / 回溯 / 进化|inject / audit / rollback / evolve|4 capabilities" "$f" 2>/dev/null || true)
+EOF
+done
+CAP5_COUNT=$(printf "%s" "$CAP5_HITS" | grep -c "." || true)
+CAP5_COUNT=${CAP5_COUNT:-0}
+if [ "$CAP5_COUNT" -gt 0 ]; then
+  echo "=== 2a. 五能力术语断言 ==="
+  echo "  ❌ 活文档残留旧四能力表述 ${CAP5_COUNT} 处（现行口径：注入·审计·回溯·沉淀·进化）"
+  printf "%s\n" "$CAP5_HITS" | grep "." | head -20
+  ERRORS=$((ERRORS + 1))
+else
+  echo "=== 2a. 五能力术语断言：活文档零残留 ✓ ==="
+fi
+
+# 2b. U+FFFD 扫描（零豁免——替换字符在任何正常中文文档都不该出现，出现即编码损坏；
+#     检测用 UTF-8 字节序列 ef bf bd，避免 BSD grep 对 ANSI-C 引用 $'\uFFFD' 的兼容差异）
+FFFD_FILES=$(grep -rl "" README.md README.en.md docs/*.md docs/guides/*.md SKILL/SKILL.md FDE/GUIDE.md engine/hooks/*/HOOK.md engine/openclaw-plugins/*/README.md install.sh tools/dashboard/dashboard.html docs/assets/*.svg 2>/dev/null || true)
+FFFD_HITS=""
+for f in $FFFD_FILES; do
+  HIT=$(LC_ALL=C grep -n $'\xef\xbf\xbd' "$f" 2>/dev/null || true)
+  if [ -n "$HIT" ]; then
+    FFFD_HITS="$FFFD_HITS
+$f: $HIT"
+  fi
+done
+FFFD_COUNT=$(printf "%s" "$FFFD_HITS" | grep -c "." || true)
+FFFD_COUNT=${FFFD_COUNT:-0}
+if [ "$FFFD_COUNT" -gt 0 ]; then
+  echo "  ❌ 活文档存在 U+FFFD（编码损坏）${FFFD_COUNT} 行"
+  printf "%s\n" "$FFFD_HITS" | grep "." | head -20
+  ERRORS=$((ERRORS + 1))
+else
+  echo "=== 2b. U+FFFD 扫描：活文档零命中 ✓ ==="
+fi
+
+# 2c. 商业名脱敏断言（开源脱敏规范——GrapHub/FlowHub 全词匹配 FAIL；
+#     AIR 不进断言：三字母大写英文语境误报率不可控，维持人工自查）
+LEAK_HITS=$(grep -nwE "GrapHub|FlowHub" README.md README.en.md docs/*.md docs/guides/*.md SKILL/SKILL.md SKILL/rules/*.md FDE/GUIDE.md engine/hooks/*/HOOK.md engine/openclaw-plugins/*/README.md install.sh tools/dashboard/dashboard.html 2>/dev/null || true)
+if [ -n "$LEAK_HITS" ]; then
+  echo "  ❌ 活文档存在商业产品名（GrapHub/FlowHub）——开源脱敏规范违规"
+  echo "$LEAK_HITS" | head -20
+  ERRORS=$((ERRORS + 1))
+else
+  echo "=== 2c. 商业名脱敏断言：活文档零命中 ✓ ==="
+fi
+
+echo ""
 echo "=== 3. 版本号同步检查 ==="
 VERSION_PKG=$(node -e "console.log(require('./engine/audit/package.json').version)" 2>/dev/null || echo "N/A")
 echo "  package.json: $VERSION_PKG"

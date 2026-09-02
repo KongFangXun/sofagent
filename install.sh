@@ -32,7 +32,7 @@
 #
 # 平台无关重构：默认安装不探测/不枚举任何平台，只写 sofagent 自己的目录 ~/.sofagent/；
 # 平台集成改为显式 opt-in：--platform openclaw（完整）/ workbuddy / claude / codex / hermes / cursor / gemini（v1.4.3）
-# 约束层四种能力：注入 / 审计 / 回溯 / 进化（FORGE 是内部开发工具，非交付引擎）。
+# 约束层五种能力：注入 / 审计 / 回溯 / 沉淀 / 进化（FORGE 是内部开发工具，非交付引擎）。
 # 编排引擎为独立可选包 @sofagent/orchestrator，需单独安装（npm install -g @sofagent/orchestrator）。
 #
 # ── 调用契约（v1.2.0）──

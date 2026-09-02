@@ -1,6 +1,6 @@
 # sofagent-audit
 
-**变更机器审阅** · sofagent 约束层四能力在 OpenClaw 生态的插件形态（品牌色 #16B8F3）
+**变更机器审阅** · sofagent 约束层五能力在 OpenClaw 生态的插件形态（品牌色 #16B8F3）
 
 24 规则 + git diff 硬证据 + 危险工具拦截（rm/git push 等黑名单），复用 @sofagent/audit.runRules。
 

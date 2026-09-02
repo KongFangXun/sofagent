@@ -179,8 +179,8 @@ a:hover{text-decoration:none} /* 全站 hover 无下划线（统一）——按�
 /* Architecture */
 .arch-layer{border-radius:var(--radius-s);padding:12px}
 .arch-layer h5{font-size:13px;font-weight:600;margin-bottom:4px}
-/* 约束层四能力横向 4 卡 */
-.arch-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+/* 约束层五能力横向 5 卡 */
+.arch-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
 /* 引擎执行流水线节点：一行 5 个 */
 .node-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
 /* 流水线卡类型点：10px→8px（与 skill 加载链 sc-dot 一致） */
@@ -392,7 +392,7 @@ a:hover{text-decoration:none} /* 全站 hover 无下划线（统一）——按�
   .grid-2,.grid-3,.attention,.quick-start{grid-template-columns:1fr}
   /* 加载链横向 4 卡窄屏回单列 */
   .skill-chain{grid-template-columns:1fr}
-  /* 约束层四能力窄屏回单列 */
+  /* 约束层五能力窄屏回单列 */
   .arch-grid{grid-template-columns:1fr}
   /* 引擎流水线节点窄屏回单列 */
   .node-grid{grid-template-columns:1fr}
@@ -821,7 +821,7 @@ a:hover{text-decoration:none} /* 全站 hover 无下划线（统一）——按�
   </div>
   <div class="section">
     <div class="section-header">
-      <div class="section-title"><span class="dot-emoji"><i class="bi bi-bricks"></i></span>约束层（Harness）· 一个层四种能力</div>
+      <div class="section-title"><span class="dot-emoji"><i class="bi bi-bricks"></i></span>约束层（Harness）· 一个层五种能力</div>
       <a href="https://github.com/KongFangXun/sofagent/blob/main/docs/ARCHITECTURE.md" target="_blank" class="btn btn-outline">ARCHITECTURE.md →</a>
     </div>
     <div class="section-body arch-grid">
@@ -836,6 +836,10 @@ a:hover{text-decoration:none} /* 全站 hover 无下划线（统一）——按�
       <div class="arch-layer" style="background:var(--bg-s);border:1px solid var(--border)">
         <h5 style="color:var(--text-s)">回溯</h5>
         <div style="font-size:12px;color:var(--text-s)">自动快照 · 一键回滚 · git snapshot 独立快照 · 不污染提交历史</div>
+      </div>
+      <div class="arch-layer" style="background:var(--bg-s);border:1px solid var(--border)">
+        <h5 style="color:var(--text-s)">沉淀</h5>
+        <div style="font-size:12px;color:var(--text-s)">审计轨迹 · think.md 反思 · 知识蒸馏进 knowledge/ 知识库</div>
       </div>
       <div class="arch-layer" style="background:var(--bg-s);border:1px solid var(--border)">
         <h5 style="color:var(--text-s)">进化</h5>
