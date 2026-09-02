@@ -164,6 +164,7 @@ Single-line change to README.md only.（或双语两文件）
 ### 5.3 巡检节奏
 
 - **每日自动巡检**：晚上 21:00 自动跑（自动化任务「PR 投稿与关注度每日巡检」）：读 5.1 台账 → 核 PR 状态 → 状态变化自动写回台账（merged 移 5.2/closed 记原因/真人评论标 🔴）并 commit 收编，绝不 push；同时跑阵地检索（awesome deepseek harness / agent harness / harness engineering / ai governance / ai security / dsh-plugin topic 等查询词），新发现写入第六节候选（含防重复核查）但不擅自投稿；真人评论/CHANGES_REQUESTED 出回复草稿等确认后当天回
+- **自动索引仓观察**（每日巡检顺手核，不投 PR 靠收录）：① bruc3van/awesome-dsh-plugin ✅ 已收录（09-02）；② Zhiyuan-Fan/Awesome-DeepSeek-Harness-Plugins ⭐547（本地 Codex 每日复审 + topic 抓取）；③ leenkcool/Blue-Whale-Harness ⭐190（catalog 脚本全自动生成 README）——②③ 核法：拉上游 README 搜 `KongFangXun/sofagent`，已收录则在本条目标 ✅ + 日期，连续 7 天未收再评估是否需要人工介入（如开 issue 问维护者）
 - **关注度监测**（每日）：流量/星数对比基线（见 5.3.1），异动进报告【关注度异动】栏——星数单日 +3、views 翻倍、连续 3 天零增长（冷启动预警）三阈值
 - **门面周检**（每周一）：fresh-eyes 视角 22（GitHub 发现优化审查员）轻量体检——description/topics 失效词、双语首屏一致性、章节漂移；只报告不修改，门面改动由用户拍板
 - **Trending 窗口值守**（每日）：当日有清单 PR merged 即在报告提示 T2 集中发射条件成立（Show HN/V2EX/掘金/知乎同天），由用户拍板执行
