@@ -114,6 +114,23 @@ async function main() {
       console.log(`  监控目录: ${projectDir}`);
       console.log('');
 
+      // v1.4.4 #32+47：启动即写健康文件（writeHealthFile 此前「诞生即死」——
+      // 函数存在但 daemon 主路径零调用，exit 78 死亡无人记录）。心跳每 5min 更新。
+      const { writeHealthFile, recordDaemonExit } = await import('./daemon-health');
+      writeHealthFile('start');
+      const heartbeatTimer = setInterval(() => {
+        writeHealthFile('heartbeat');
+      }, 5 * 60 * 1000);
+      heartbeatTimer.unref?.(); // 计时器不阻止进程退出（退出钩子负责收尾落盘）
+      console.log('  ✅ 健康自检已启动（心跳 5min，~/.sofagent/data/daemon-health.json）');
+
+      // v1.4.4 #32+47：退出收尾——任何退出路径都落盘退出码，doctor 才能感知守护死亡
+      const exitWith = (code: number, reason: 'sigint' | 'sigterm' | 'uncaught-exception' | 'startup-failure' | 'unknown', detail?: string) => {
+        clearInterval(heartbeatTimer);
+        try { recordDaemonExit(code, reason, detail); } catch { /* 落盘失败不阻断退出 */ }
+        process.exit(code);
+      };
+
       // v1.2.1 新增：生成健康报告（替代旧的 daemon-notice.md 非结构化输出）
       const { runHealthReport } = await import('./inspectors/health-reporter');
       const health = runHealthReport(projectDir);
@@ -161,19 +178,25 @@ async function main() {
       console.log('');
       console.log('  守护进程运行中... (Ctrl+C 停止)');
 
-      // 优雅退出
+      // 优雅退出（v1.4.4 #32+47：落盘退出码 0——正常停止）
       process.on('SIGINT', () => {
         console.log('\n  正在停止守护进程...');
         watcher.stop();
         console.log('  ✅ 已停止');
-        process.exit(0);
+        exitWith(0, 'sigint');
       });
       process.on('SIGTERM', () => {
         watcher.stop();
-        process.exit(0);
+        exitWith(0, 'sigterm');
+      });
+      // v1.4.4 #32+47：未捕获异常 = 守护级致命错误，退出码 78（EX_CONFIG 约定）
+      process.on('uncaughtException', (err) => {
+        console.error(`  💥 daemon 未捕获异常，退出（exit 78）: ${err.message}`);
+        try { watcher.stop(); } catch { /* */ }
+        exitWith(78, 'uncaught-exception', err.message);
       });
 
-      // 保持进程运行
+      // 保持进程运行（心跳定时器已 unref——此空定时器维持事件循环）
       setInterval(() => {}, 60000);
       break;
     }
@@ -264,6 +287,7 @@ async function main() {
     }
     case 'doctor': {
       // v1.2.5 §8.4：健康自检——读 daemon-health.json 报告 daemon 状态
+      // v1.4.4 #32+47：新增 dead 态（exit 78 守护死亡可感知）
       const { checkDaemonHealth } = await import('./daemon-health');
       const result = checkDaemonHealth();
       if (result.healthy) {
@@ -277,6 +301,14 @@ async function main() {
             console.log(`  最近错误: ${result.details.lastError}`);
           }
         }
+      } else if (result.status === 'dead') {
+        // 守护死亡（exit 78 等）——最高告警级，附退出码与修复指引
+        console.log(`💀 ${result.message}`);
+        if (result.details) {
+          console.log(`  最近错误: ${result.details.lastError ?? '无'}`);
+        }
+        console.log('  修复: sofagent-daemon start（重启守护进程）');
+        process.exit(1);
       } else {
         console.log(`⚠️ ${result.message}`);
         if (result.details) {
@@ -372,5 +404,14 @@ async function main() {
 
 main().catch((err: Error) => {
   console.error(err.message);
-  process.exit(1);
+  // v1.4.4 #32+47：start 路径启动失败 = 守护级致命错误，落盘 exit 78 后退出。
+  // 其他子命令（doctor/snapshot 等）的一次性失败与守护生死无关，不写健康文件。
+  if (subcommand === 'start') {
+    import('./daemon-health').then(({ recordDaemonExit }) => {
+      recordDaemonExit(78, 'startup-failure', err.message);
+      process.exit(78);
+    }).catch(() => process.exit(78));
+  } else {
+    process.exit(1);
+  }
 });

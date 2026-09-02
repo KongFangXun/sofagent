@@ -400,14 +400,62 @@ export interface DshRuntimeUsage {
   total_tokens: number;
 }
 
-/** 从 session.events 提取 usage 数据（assistant/message 的 usage 面多级兜底） */
-function extractSessionUsage(
-  events: AgentHandle['session']['events'],
+/**
+ * 归一 usage 候选为统一形态。alpha.1 实测：usage 在 `assistant/chunk`
+ * （chunk.type === 'usage'）事件里，字段 camelCase（inputTokens/outputTokens/
+ * totalTokens/cacheReadTokens）；老形态在 `assistant/message` 的
+ * message.usage（snake_case）/usage_metadata（input_tokens 命名）。三种键名并存
+ * ——逐项兜底取数，prompt/completion 全缺返回 null（不算有效样本）。
+ */
+function normalizeUsageCandidate(u: {
+  inputTokens?: number;
+  outputTokens?: number;
+  totalTokens?: number;
+  prompt_tokens?: number;
+  completion_tokens?: number;
+  total_tokens?: number;
+  input_tokens?: number;
+  output_tokens?: number;
+} | undefined): { prompt: number; completion: number; total: number } | null {
+  if (!u) return null;
+  const prompt = u.inputTokens ?? u.prompt_tokens ?? u.input_tokens;
+  const completion = u.outputTokens ?? u.completion_tokens ?? u.output_tokens;
+  const total = u.totalTokens ?? u.total_tokens;
+  if (typeof prompt !== 'number' && typeof completion !== 'number') return null;
+  const pt = prompt ?? 0;
+  const ct = completion ?? 0;
+  return { prompt: pt, completion: ct, total: total ?? pt + ct };
+}
+
+/**
+ * 从 session.events 提取 usage 数据（v1.4.3 第六章步三 + v1.4.4 第七章·十多通道修复）。
+ *
+ * 通道一（alpha.1 实测主通道）：`assistant/chunk` 且 chunk.type === 'usage'——
+ * alpha.1 事件流把 usage 放在流式 chunk 里（assistant/message 顶层仅
+ * role/content/source/id，无 usage 面）。
+ * 通道二/三（老形态兜底）：`assistant/message` 的 message.usage（snake_case）/
+ * message.usage_metadata（LangGraph 命名）。
+ *
+ * 多轮会话取最后一条有效样本（会话累计口径）。导出供单测直接消费。
+ */
+export function extractSessionUsage(
+  events: Array<{ seq: number; type: string; data?: unknown }>,
   firstSeq: number,
 ): DshRuntimeUsage | null {
-  let last: { prompt?: number; completion?: number; total?: number } | null = null;
+  let last: { prompt: number; completion: number; total: number } | null = null;
   for (const event of events) {
     if (event.seq < firstSeq) continue;
+    // 通道一：assistant/chunk type:"usage"（alpha.1 主通道）
+    if (event.type === 'assistant/chunk') {
+      const chunk = (event.data as { chunk?: { type?: string; usage?: unknown } } | undefined)?.chunk;
+      if (chunk?.type !== 'usage') continue;
+      const candidate = normalizeUsageCandidate(
+        chunk.usage as Parameters<typeof normalizeUsageCandidate>[0],
+      );
+      if (candidate) last = candidate;
+      continue;
+    }
+    // 通道二/三：assistant/message 的 usage 面（老形态兜底）
     if (event.type !== 'assistant/message') continue;
     const data = event.data as
       | {
@@ -418,21 +466,13 @@ function extractSessionUsage(
         }
       | undefined;
     const msg = data?.message;
-    const u1 = msg?.usage;
-    const u2 = msg?.usage_metadata;
-    const candidate = {
-      prompt: u1?.prompt_tokens ?? u2?.input_tokens,
-      completion: u1?.completion_tokens ?? u2?.output_tokens,
-      total: u1?.total_tokens ?? u2?.total_tokens,
-    };
-    if (typeof candidate.prompt === 'number' || typeof candidate.completion === 'number') {
-      last = candidate; // 取最后一条带 usage 的消息（会话累计口径）
-    }
+    const candidate =
+      normalizeUsageCandidate(msg?.usage) ??
+      normalizeUsageCandidate(msg?.usage_metadata);
+    if (candidate) last = candidate;
   }
   if (!last) return null;
-  const pt = last.prompt ?? 0;
-  const ct = last.completion ?? 0;
-  return { prompt_tokens: pt, completion_tokens: ct, total_tokens: last.total ?? pt + ct };
+  return { prompt_tokens: last.prompt, completion_tokens: last.completion, total_tokens: last.total };
 }
 
 /**

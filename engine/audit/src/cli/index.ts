@@ -21,3 +21,9 @@ export type {
   DistillResult,
   MergeFn,
 } from './federation-distill';
+
+export {
+  runCorpusExportCli,
+  parseCorpusArgs,
+} from './corpus';
+export type { CorpusArgs } from './corpus';

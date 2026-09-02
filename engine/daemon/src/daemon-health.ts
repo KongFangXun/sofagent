@@ -31,6 +31,10 @@ export interface DaemonHealthFile {
   lastError: string | null;
   /** daemon uptime（毫秒，从 startTime 计算） */
   uptimeMs: number;
+  /** v1.4.4 #32+47：daemon 退出时的进程退出码（0=正常停止；78=守护级致命错误；未退出时无此字段） */
+  lastExitCode?: number;
+  /** v1.4.4 #32+47：daemon 退出原因（'sigint' | 'sigterm' | 'uncaught-exception' | 'startup-failure' | 'unknown'） */
+  stoppedReason?: string;
   /** v1.3.6 交付⑬：Agent 疲劳度报告（每小时采集，fatigue.ts 独立写入） */
   fatigue?: FatigueReport;
 }
@@ -44,21 +48,22 @@ export function resolveHealthFilePath(): string {
 /**
  * 写入 daemon 健康自检文件。
  *
- * daemon 启动时调用 writeHealthFile('start')，运行中调用 writeHealthFile('heartbeat')。
+ * daemon 启动时调用 writeHealthFile('start')，运行中调用 writeHealthFile('heartbeat')，
+ * 退出时调用 recordDaemonExit()（v1.4.4 #32+47——进程退出前落盘退出码）。
  *
  * @param event 事件类型
  * @param extra 额外信息（如 lastPush / lastError）
  * @returns 写入的健康文件对象
  */
 export function writeHealthFile(
-  event: 'start' | 'heartbeat' | 'push' | 'error',
-  extra?: { lastPush?: string; lastError?: string },
+  event: 'start' | 'heartbeat' | 'push' | 'error' | 'exit',
+  extra?: { lastPush?: string; lastError?: string; exitCode?: number; stoppedReason?: string },
 ): DaemonHealthFile | null {
   const healthPath = resolveHealthFilePath();
   const now = new Date().toISOString();
   const dataDir = process.env.SOFAGENT_DATA || DATA_DIR;
 
-  // 读取现有文件获取 startTime（heartbeat/push/error 不应重置 startTime）
+  // 读取现有文件获取 startTime（heartbeat/push/error/exit 不应重置 startTime）
   let startTime = now;
   let existingLastPush: string | null = null;
   let existingLastError: string | null = null;
@@ -99,6 +104,10 @@ export function writeHealthFile(
   if (event === 'error') {
     status = 'degraded';
   }
+  // v1.4.4 #32+47：exit 事件——进程即将退出，状态落 stopped
+  if (event === 'exit') {
+    status = 'stopped';
+  }
 
   const health: DaemonHealthFile = {
     pid: process.pid,
@@ -109,6 +118,9 @@ export function writeHealthFile(
     lastPush: extra?.lastPush ?? existingLastPush,
     lastError: extra?.lastError ?? existingLastError,
     uptimeMs,
+    // v1.4.4 #32+47：退出码落盘（doctor 感知「守护已死亡」的依据）
+    ...(extra?.exitCode !== undefined ? { lastExitCode: extra.exitCode } : {}),
+    ...(extra?.stoppedReason !== undefined ? { stoppedReason: extra.stoppedReason } : {}),
     // v1.3.6 交付⑬：透传已有疲劳度报告（fatigue.ts 独立写入，心跳不擦除）
     ...(existingFatigue !== undefined ? { fatigue: existingFatigue } : {}),
   };
@@ -123,6 +135,31 @@ export function writeHealthFile(
     // 健康文件写失败（磁盘满/权限）不阻断 daemon 主流程——本周期健康数据丢弃
     return null;
   }
+}
+
+/**
+ * 记录 daemon 退出（v1.4.4 #32+47——进程退出钩子调用）。
+ *
+ * 由 cli.ts 的 SIGINT / SIGTERM / uncaughtException 钩子与 main().catch 兜底调用，
+ * 在进程退出前把退出码落盘 daemon-health.json——此后 doctor（daemon 自带 doctor
+ * 与 @sofagent/core doctor）读同一路径即可感知「守护已死亡（exit N）」。
+ *
+ * 与 writeHealthFile('exit', ...) 等价，独立成函数是为了让调用点语义更直白。
+ *
+ * @param exitCode 进程退出码（0=正常停止；78=守护级致命错误——EX_CONFIG 约定）
+ * @param reason 退出原因（'sigint' | 'sigterm' | 'uncaught-exception' | 'startup-failure' | 'unknown'）
+ * @param detail 额外错误信息（uncaughtException 的 message 等）
+ */
+export function recordDaemonExit(
+  exitCode: number,
+  reason: 'sigint' | 'sigterm' | 'uncaught-exception' | 'startup-failure' | 'unknown' = 'unknown',
+  detail?: string,
+): DaemonHealthFile | null {
+  return writeHealthFile('exit', {
+    exitCode,
+    stoppedReason: reason,
+    ...(detail !== undefined ? { lastError: detail } : {}),
+  });
 }
 
 /**
@@ -148,6 +185,7 @@ export function readHealthFile(): DaemonHealthFile | null {
  *
  * 判断逻辑：
  *   - 文件不存在 → daemon 从未运行
+ *   - v1.4.4 #32+47：lastExitCode 非 0 且心跳陈旧 → 守护已死亡（exit 78 等）
  *   - lastHeartbeat 超过 10min → 可能已停止
  *   - status === 'degraded' → 降级中
  *   - 有 lastError → 报告最近错误
@@ -156,7 +194,7 @@ export function readHealthFile(): DaemonHealthFile | null {
  */
 export function checkDaemonHealth(): {
   healthy: boolean;
-  status: 'running' | 'degraded' | 'stopped' | 'never-started';
+  status: 'running' | 'degraded' | 'stopped' | 'never-started' | 'dead';
   message: string;
   details?: DaemonHealthFile;
 } {
@@ -170,9 +208,21 @@ export function checkDaemonHealth(): {
     };
   }
 
+  // v1.4.4 #32+47：退出码检测——非零退出码 + 心跳已陈旧 = 守护已死亡
+  // （心跳新鲜说明 daemon 已重新启动——新一轮 start 事件不会写 lastExitCode，
+  //  但旧值可能残留，故以心跳陈旧为共同条件避免误报活着的 daemon）
   const now = Date.now();
   const heartbeatMs = new Date(health.lastHeartbeat).getTime();
   const staleThreshold = 10 * 60 * 1000; // 10min
+
+  if (health.lastExitCode !== undefined && health.lastExitCode !== 0 && (isNaN(heartbeatMs) || now - heartbeatMs > staleThreshold)) {
+    return {
+      healthy: false,
+      status: 'dead',
+      message: `daemon 守护已死亡（exit ${health.lastExitCode}${health.stoppedReason ? `，原因 ${health.stoppedReason}` : ''}，最后心跳: ${health.lastHeartbeat}）`,
+      details: health,
+    };
+  }
 
   if (isNaN(heartbeatMs) || now - heartbeatMs > staleThreshold) {
     return {

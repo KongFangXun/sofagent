@@ -89,7 +89,7 @@
 /* @public */ export type { DecisionLogEntry, EmitDecisionInput } from './decision-log';
 /* @public */ export { checkDecisionChainDetailed } from './decision-chain';
 /* @public */ export { sanitizeWhy } from './decision-schema';
-/* @public */ export type { DecisionKind, DecisionCategory, LoopPhase, DecisionWhy, RouteReason } from './decision-schema';
+/* @public */ export type { DecisionKind, DecisionCategory, LoopPhase, DecisionWhy, RouteReason, CausalType } from './decision-schema';
 
 // ── 决策审计查询（v1.3.0 交付 6 T04；v1.3.6 交付⑮ 补 moment/agent/category/组合查询）──
 /* @public */ export {
@@ -103,8 +103,10 @@
   traceBack,
   traceFromBehavior,
   getHighFrequencyPatterns,
+  traceDecisionChain,
+  findSimilarDecisions,
 } from './decision-query';
-/* @public */ export type { QueryOptions, DecisionFilter, KindSummary, TraceResult, HighFrequencyPattern } from './decision-query';
+/* @public */ export type { QueryOptions, DecisionFilter, KindSummary, TraceResult, HighFrequencyPattern, DecisionChainTrace, DecisionChainNode, SimilarDecisionHit } from './decision-query';
 
 // ── 分级降级梯队（v1.3.6 交付⑭ · 韧性设计）──
 /* @public */ export {
@@ -117,3 +119,8 @@
   LEVEL_ORDER,
 } from './degradation';
 /* @public */ export type { DegradationLevel, DegradationTrigger, DegradationRecord, LevelCapability, DegradationManagerOptions } from './degradation';
+
+// ── 训练语料导出（MCP corpus_export 经包 main 入口消费此面）──
+/* @public */ export { exportRuleCorpus, generateVerifiers, buildRuleCorpusBody, signBody, jsonToYaml } from './export/exporter';
+/* @public */ export { buildVerifiersManifest, buildVerifiersWithOverrides } from './export/reward-mapping';
+/* @public */ export type { RuleExportEntry, RuleCorpusBody, RuleCorpusExport, Verifiability, RewardHint } from './export/rule-schema';

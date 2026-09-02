@@ -58,6 +58,18 @@ export type { AuditHistoryEntry } from './audit-history';
 // Re-export core diff/log/config 原语（mcp-server.ts 从 audit 消费 parseDiff/checkLogs/loadConfig/VERSION）
 export { parseDiff, checkLogs, loadConfig, VERSION } from '@sofagent/core';
 
+// 训练语料导出（MCP corpus_export 经 require('@sofagent/audit') 消费此面）
+export { exportRuleCorpus, generateVerifiers } from './export/exporter';
+export { buildRuleCorpusBody, signBody, jsonToYaml } from './export/exporter';
+export { buildVerifiersManifest, buildVerifiersWithOverrides } from './export/reward-mapping';
+export type {
+  RuleCorpusBody,
+  RuleCorpusExport,
+  RuleExportEntry,
+  RewardHint,
+  Verifiability,
+} from './export/rule-schema';
+
 // v1.3.9: re-export P0 数据主权 + skill 安全审查，供 daemon/mcp/orchestrator/skillopt 消费
 export { DataSovereigntyLogger, resolveSovereigntyLogPath, resolveDateArg, sanitizeRecord } from './data-sovereignty';
 export type { DataSovereigntyRecord, SovereigntyLogEntry } from './data-sovereignty';
@@ -170,6 +182,8 @@ interface Args {
   federationDistillCommand?: boolean;
   /** v1.4.3: agent-shield 子命令（AgentShield 五类配置面扫描） */
   agentShieldCommand?: boolean;
+  /** corpus 子命令：训练语料导出三件套 */
+  corpusCommand?: boolean;
   /** v1.2.9: support-bundle 子命令 */
   supportBundle: boolean;
   /** v1.4.3: 审计 session 产物（默认开启，--no-session 关闭） */
@@ -195,7 +209,7 @@ interface Args {
  * 顶层子命令白名单（v1.4.3 补 agent-shield）。
  * 位置参数必须是其中之一；否则按「未知子命令」报错。
  */
-const SUBCOMMANDS = ['ontology', 'conflict-check', 'federation-distill', 'agent-shield'];
+const SUBCOMMANDS = ['ontology', 'conflict-check', 'federation-distill', 'agent-shield', 'corpus'];
 
 function parseArgs(argv: string[]): Args {
   const args: Args = { diffRange: 'HEAD~1..HEAD', strict: false, silent: false, ci: false, installHook: false, json: false, rootCause: false, verifyChain: false, webhookUrl: process.env.SOFAGENT_WEBHOOK_URL, mcp: false, init: false, signConfig: false, cached: false, noSession: false, conflictCheckCommand: false, federationDistillCommand: false, agentShieldCommand: false, supportBundle: false, format: undefined, ruleset: undefined, rulesetPath: undefined, listRulesets: false, warnAsError: false, warnAsInfo: false, gb48000: false };
@@ -323,6 +337,10 @@ function parseArgs(argv: string[]): Args {
       // v1.4.3: agent-shield 子命令
       args.agentShieldCommand = true;
       break;
+    } else if (argv[i] === 'corpus') {
+      // corpus 子命令：训练语料导出三件套
+      args.corpusCommand = true;
+      break;
     } else if (argv[i] === '--help' || argv[i] === '-h') {
       const verbose = argv.includes('--verbose');
       console.log(`sofagent-audit v${VERSION} · FDE Harness 的审计引擎\n`);
@@ -348,6 +366,7 @@ function parseArgs(argv: string[]): Args {
       console.log('  sofagent-audit agent-shield [--json] [--no-process]   AgentShield 五类配置面扫描（MCP/Hook/配置/密钥/影子 AI）');
       console.log('  sofagent-audit conflict-check [--fix] [--json]       知识矛盾/孤儿/死链检测');
       console.log('  sofagent-audit federation-distill [--json]           联邦蒸馏');
+      console.log('  sofagent-audit corpus export [--scope all] [--json]  训练语料导出三件套（规则+方法论+样本）');
       console.log('');
       if (verbose) {
         console.log('v1.0.8 已弃用的子命令（将在 v1.5.0 移除，请尽快迁移）:');
@@ -890,6 +909,20 @@ async function main(): Promise<void> {
     } catch (err) {
       console.error(`❌ agent-shield 失败: ${(err as Error).message}`);
       console.error('   提示：agent-shield 只读扫描，需要可读的项目根目录（--repo <dir> 指定）');
+      exit(1);
+    }
+  }
+
+  // corpus 子命令（训练语料导出三件套 CLI）
+  if (args.corpusCommand) {
+    const { runCorpusExportCli, parseCorpusArgs } = await import('./cli/corpus');
+    const cliArgs = parseCorpusArgs(rawArgs);
+    try {
+      const exitCode = await runCorpusExportCli(cliArgs);
+      exit(exitCode as 0 | 1);
+    } catch (err) {
+      console.error(`❌ corpus export 失败: ${(err as Error).message}`);
+      console.error('   提示：样本聚合需要 data/ 目录存在（各源缺席属常态，导出仍继续）');
       exit(1);
     }
   }

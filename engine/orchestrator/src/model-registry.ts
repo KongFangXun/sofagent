@@ -6,9 +6,9 @@
 // 替代「手改 model-router.json」——每次操作原子写 + 事件留痕 + 可回滚。
 //
 // 边界（changelog 四、定位）：
-//   - 本版只处理 endpoint 型模型（云端/可寻址服务）
-//   - source: 'local-path' 扩展位预留（本地权重部署 v1.4.3 填充）——
-//     字段可存，但 local-path 条目不可切换为活动模型（无可加载权重）
+//   - endpoint 型模型（云端/可寻址服务）与 local-path 型（本地权重部署）双支持
+//   - local-path 型注册时强制校验权重目录规范（weights-manifest.ts），
+//     校验通过即可切换为活动模型——加载经 vLLM/Ollama/openai-compatible 本地端点
 //   - 通用模型路由不自研——endpoint 可以是第三方 router（LiteLLM/OpenRouter）地址
 //   - 数据主权路由铁律不受本模块影响（model-router.ts 内部保留）
 //
@@ -20,6 +20,7 @@
 import { existsSync, readFileSync, mkdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { atomicWriteSync } from '@sofagent/core';
+import { checkWeightsDir, type WeightsManifest } from './weights-manifest';
 
 // ============================================================
 // 类型定义
@@ -59,8 +60,17 @@ export interface ModelRegistryEntry {
   clientType: 'ollama' | 'openai-compatible';
   /** 模型名（传给服务的 model 字段） */
   model: string;
-  /** 来源类型（local-path = v1.4.1 扩展位预留） */
+  /** 来源类型（local-path = 本地权重部署） */
   source: ModelSource;
+  /** 本地权重信息（source=local-path 时非空——注册时从 manifest 解析） */
+  localWeights?: {
+    /** 权重目录绝对路径 */
+    dir: string;
+    /** 当前版本 id */
+    currentVersion: string;
+    /** 版本数 */
+    versionCount: number;
+  };
   /** 元信息（评测分数 / 备注——评测→注册流程的证据位） */
   meta?: { evalScore?: number; notes?: string };
   /** 端点能力画像（v1.3.6 交付⑧——可选填，不填向后兼容） */
@@ -195,8 +205,12 @@ export interface RegisterModelInput {
   endpoint: string;
   clientType?: 'ollama' | 'openai-compatible';
   model: string;
-  /** 来源类型（缺省 endpoint；local-path = v1.4.1 扩展位） */
+  /** 来源类型（缺省 endpoint；local-path = 本地权重部署） */
   source?: ModelSource;
+  /** 权重目录（source=local-path 必填——按 weights-manifest 目录规范校验） */
+  weightsDir?: string;
+  /** 注册时是否校验权重哈希（缺省 true——供应链完整性） */
+  verifyHash?: boolean;
   meta?: { evalScore?: number; notes?: string };
   /** 端点能力画像（v1.3.6 交付⑧——可选填，不填向后兼容） */
   profile?: EndpointProfile;
@@ -205,6 +219,9 @@ export interface RegisterModelInput {
 /**
  * 注册模型——写入注册表（status=registered，不参与路由）。
  * 同名重复注册 = 更新（保留 registeredAt 首次时间）。
+ *
+ * local-path 型：weightsDir 按目录规范强制校验（manifest + 当前版本在场），
+ * 校验失败拒绝注册（供应链完整性——无清单即拒绝，不静默降级）。
  */
 export function registerModel(input: RegisterModelInput, options: ModelRegistryOpOptions): ModelRegistryOpResult {
   const issues: string[] = [];
@@ -212,6 +229,24 @@ export function registerModel(input: RegisterModelInput, options: ModelRegistryO
   if (typeof input.endpoint !== 'string' || input.endpoint.trim() === '') issues.push('endpoint 必填且非空');
   if (typeof input.model !== 'string' || input.model.trim() === '') issues.push('model 必填且非空');
   if (issues.length > 0) return { ok: false, awaitingHuman: false, message: `注册参数非法：${issues.join('；')}`, issues };
+
+  // local-path 分支：权重目录规范校验（manifest + 完整性）
+  let localWeights: ModelRegistryEntry['localWeights'];
+  if (input.source === 'local-path') {
+    if (typeof input.weightsDir !== 'string' || input.weightsDir.trim() === '') {
+      return { ok: false, awaitingHuman: false, message: 'local-path 注册缺 weightsDir', issues: ['source=local-path 时 weights_dir 必填（权重目录——按 manifest.json 目录规范）'] };
+    }
+    const check = checkWeightsDir(input.weightsDir, { verifyHash: input.verifyHash !== false });
+    if (!check.ok) {
+      return { ok: false, awaitingHuman: false, message: `权重目录校验失败：${check.issues.join('；')}`, issues: check.issues };
+    }
+    const m = check.manifest as WeightsManifest;
+    localWeights = {
+      dir: input.weightsDir,
+      currentVersion: m.current,
+      versionCount: m.versions.length,
+    };
+  }
 
   const registry = loadRegistry(options.dataDir);
   const existing = registry.models[input.name];
@@ -222,6 +257,7 @@ export function registerModel(input: RegisterModelInput, options: ModelRegistryO
     clientType: input.clientType ?? 'ollama',
     model: input.model,
     source: input.source ?? 'endpoint',
+    ...(localWeights ? { localWeights } : {}),
     meta: input.meta,
     // v1.3.6 交付⑧：能力画像可选填；未填时保留已有画像（重复注册不擦除）
     profile: input.profile ?? existing?.profile,
@@ -244,7 +280,9 @@ export function registerModel(input: RegisterModelInput, options: ModelRegistryO
   return {
     ok: true,
     awaitingHuman: false,
-    message: `模型「${input.name}」已注册（source=${input.source ?? 'endpoint'}${input.source === 'local-path' ? '，本地权重部署 v1.4.1 启用——暂不可切换为活动模型' : ''}）`,
+    message: input.source === 'local-path' && localWeights
+      ? `模型「${input.name}」已注册（source=local-path，权重目录 ${localWeights.versionCount} 版本，当前 ${localWeights.currentVersion}——manifest 校验通过，可 model_switch 挂载）`
+      : `模型「${input.name}」已注册（source=${input.source ?? 'endpoint'}）`,
     event,
     issues: [],
   };
@@ -261,7 +299,7 @@ export function registerModel(input: RegisterModelInput, options: ModelRegistryO
  *   - percent < 100 → canary（灰度验证期，可逆运维操作直接生效）
  *   - percent = 100 / 缺省 → 晋升为全量活动模型 🔴 强制人审
  *
- * local-path 来源模型不可切换（v1.4.1 才有权重加载链路）。
+ * local-path 来源模型切换前重校验权重目录（manifest + 哈希），通过即可挂载。
  */
 export function switchModel(
   modelName: string,
@@ -278,7 +316,12 @@ export function switchModel(
     return { ok: false, awaitingHuman: false, message: `模型「${modelName}」已退役`, issues: ['退役模型不参与路由——先 restore 恢复'] };
   }
   if (entry.source === 'local-path') {
-    return { ok: false, awaitingHuman: false, message: `模型「${modelName}」为 local-path 来源`, issues: ['本地权重部署链路 v1.4.1 填充——本版不可切换为活动模型'] };
+    // 本地权重模型：切换前重校验权重目录（当前版本在场 + 哈希一致）——
+    // 校验通过即可挂载（加载由 vLLM/Ollama/openai-compatible 本地端点承接）
+    const check = checkWeightsDir(entry.localWeights?.dir ?? '', { verifyHash: true });
+    if (!check.ok) {
+      return { ok: false, awaitingHuman: false, message: `本地权重校验失败：${check.issues.join('；')}`, issues: check.issues };
+    }
   }
 
   const pct = percent ?? 100;
@@ -391,6 +434,79 @@ export function rollbackModel(lane: 'executor' | 'pipeline', options: ModelRegis
     ok: true,
     awaitingHuman: false,
     message: `${lane} 已回滚：${current} → ${target}`,
+    event,
+    issues: [],
+  };
+}
+
+/**
+ * 权重版本级回滚——local-path 模型切回上一权重版本（manifest.current 指针回拨）。
+ *
+ * 与 rollbackModel（模型级）的分工：模型级回滚换模型条目，版本级回滚换同一模型
+ * 的权重版本（新训 v2 不如 v1 时用）。止损语义对齐 rollbackModel：直接生效不要求人审。
+ * git snapshot 兜底由上层调用方决定（版本清单本身是回滚依据，文件未动）。
+ */
+export function rollbackWeightsVersion(
+  modelName: string,
+  options: ModelRegistryOpOptions & { targetVersion?: string },
+): ModelRegistryOpResult {
+  const registry = loadRegistry(options.dataDir);
+  const entry = registry.models[modelName];
+  if (!entry) {
+    return { ok: false, awaitingHuman: false, message: `模型「${modelName}」未注册`, issues: [] };
+  }
+  if (entry.source !== 'local-path' || !entry.localWeights) {
+    return { ok: false, awaitingHuman: false, message: `模型「${modelName}」非 local-path 来源（无权重版本面）`, issues: [] };
+  }
+
+  const dir = entry.localWeights.dir;
+  const check = checkWeightsDir(dir, { verifyHash: false });
+  if (!check.ok || !check.manifest) {
+    return { ok: false, awaitingHuman: false, message: `权重清单读取失败：${check.issues.join('；')}`, issues: check.issues };
+  }
+  const manifest = check.manifest;
+
+  // 目标版本：显式指定 > 上一版本（按 versions 序回拨一位）
+  let target: string;
+  if (options.targetVersion) {
+    target = options.targetVersion;
+    if (!manifest.versions.some((v) => v.id === target)) {
+      return { ok: false, awaitingHuman: false, message: `目标版本「${target}」不在 manifest.versions 内`, issues: [`可用版本：${manifest.versions.map((v) => v.id).join(', ')}`] };
+    }
+  } else {
+    const idx = manifest.versions.findIndex((v) => v.id === manifest.current);
+    if (idx === undefined || idx <= 0) {
+      return { ok: false, awaitingHuman: false, message: `当前版本「${manifest.current}」已是首个版本（无上一版可回滚）`, issues: [] };
+    }
+    target = (manifest.versions[idx - 1] as { id: string }).id;
+  }
+  if (target === manifest.current) {
+    return { ok: false, awaitingHuman: false, message: `目标版本「${target}」即当前版本（无需回滚）`, issues: [] };
+  }
+
+  const now = new Date().toISOString();
+  const previousVersion = manifest.current;
+  manifest.current = target;
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const { atomicWriteSync: aws } = require('@sofagent/core') as { atomicWriteSync: (p: string, d: string) => void };
+  aws(require('path').join(dir, 'manifest.json'), JSON.stringify(manifest, null, 2));
+
+  // 注册表条目同步 + 事件留痕
+  entry.localWeights.currentVersion = target;
+  const event: ModelRegistryEvent = {
+    ts: now,
+    op: 'rollback',
+    actor: options.actor ?? 'sofagent-model-registry',
+    model: modelName,
+    comment: `权重版本回滚：${previousVersion} → ${target}${options.comment ? `（${options.comment}）` : ''}`,
+  };
+  registry.events.push(event);
+  saveRegistry(options.dataDir, registry);
+
+  return {
+    ok: true,
+    awaitingHuman: false,
+    message: `「${modelName}」权重版本已回滚：${previousVersion} → ${target}`,
     event,
     issues: [],
   };

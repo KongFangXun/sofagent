@@ -553,6 +553,72 @@ export function runDoctor(projectDir: string = process.cwd(), options: { resetBa
     warn(`Ontology 完整性检查异常（已跳过，不影响其余检查）: ${err instanceof Error ? err.message : String(err)}`);
   }
 
+  // spec 关联覆盖率（纯展示——让「多少代码变更是 spec 驱动的」从不可见变为可运营数字）
+  console.log('\n── spec-first 覆盖率（纯展示）──');
+  try {
+    const recent = execFileSync('git', ['log', '-30', '--pretty=format:%H%x09%s'], { cwd: projectDir, encoding: 'utf8' })
+      .trim().split('\n').filter((l) => l.length > 0);
+    let codeCommits = 0, compliant = 0, exempted = 0;
+    for (const line of recent) {
+      const idx = line.indexOf('\t');
+      const sha = line.slice(0, idx), subject = line.slice(idx + 1);
+      if (/^Merge (branch|pull request|remote-tracking)/i.test(subject)) continue;
+      let files = '';
+      try {
+        files = execFileSync('git', ['show', '--name-only', '--pretty=format:', sha], { cwd: projectDir, encoding: 'utf8' });
+      } catch { continue; }
+      if (!/^engine\/[^/]+\/src\//m.test(files)) continue;
+      codeCommits++;
+      if (/\bspec:\s*\S+/.test(subject)) compliant++;
+      else if (/\bno-spec:\s*\S+/.test(subject)) exempted++;
+    }
+    if (codeCommits === 0) {
+      info('近 30 条 commit 无 engine/*/src 代码变更——spec 覆盖率不适用');
+    } else {
+      const rate = Math.round(((compliant + exempted) / codeCommits) * 100);
+      ok(`spec 关联覆盖率 ${rate}%（近 30 条：代码提交 ${codeCommits}，spec: 标记 ${compliant}，no-spec: 豁免 ${exempted}，无标记 ${codeCommits - compliant - exempted}）`);
+    }
+  } catch (err) {
+    info(`spec 覆盖率统计不可用（非 git 仓库或 git 不可用）：${err instanceof Error ? err.message : String(err)}`);
+  }
+
+  // daemon 守护感知（v1.4.4 #32+47——doctor 与 daemon 读同一路径健康文件）
+  // 注：core 不依赖 daemon 包（依赖方向 daemon → core 单向），此处自读文件。
+  // 路径用 resolveDataDir()（运行时重解析——尊重 SOFAGENT_DATA/SOFAGENT_HOME 沙箱），
+  // 与 daemon 侧 resolveHealthFilePath()（SOFAGENT_DATA || DATA_DIR）同源口径。
+  console.log('\n── daemon 守护状态 ──');
+  try {
+    const daemonHealthPath = join(resolveDataDir(), 'daemon-health.json');
+    if (existsSync(daemonHealthPath)) {
+      try {
+        const dh = JSON.parse(readFileSync(daemonHealthPath, 'utf-8')) as {
+          status?: string; lastExitCode?: number; stoppedReason?: string; lastHeartbeat?: string;
+          startTime?: string; pid?: number;
+        };
+        const heartbeatStale = !dh.lastHeartbeat || (Date.now() - new Date(dh.lastHeartbeat).getTime()) > 10 * 60 * 1000;
+        if (dh.lastExitCode !== undefined && dh.lastExitCode !== 0 && heartbeatStale) {
+          fail(`daemon 守护已死亡（exit ${dh.lastExitCode}${dh.stoppedReason ? `，原因 ${dh.stoppedReason}` : ''}——最后心跳 ${dh.lastHeartbeat}）`);
+          repairHint('sofagent-daemon start（重启守护进程）；若反复 exit 78 查看启动日志定位致命错误');
+        } else if (dh.status === 'stopped' || heartbeatStale) {
+          warn(`daemon 已停止运行（最后心跳 ${dh.lastHeartbeat ?? '无'}${dh.lastExitCode !== undefined ? `，exit ${dh.lastExitCode}` : ''}）`);
+          repairHint('sofagent-daemon start（按需重启守护进程）');
+        } else if (dh.status === 'degraded') {
+          warn(`daemon 降级运行中（PID ${dh.pid ?? '?'}）`);
+          repairHint('sofagent-daemon doctor（查看降级原因）');
+        } else {
+          ok(`daemon 运行正常（PID ${dh.pid ?? '?'}，最后心跳 ${dh.lastHeartbeat}）`);
+        }
+      } catch (parseErr) {
+        warn(`daemon-health.json 解析失败: ${parseErr instanceof Error ? parseErr.message : String(parseErr)}`);
+        repairHint('sofagent-daemon start（下次心跳写入会覆盖修复）');
+      }
+    } else {
+      info('daemon 从未运行过（daemon-health.json 不存在）——审计核心功能不依赖守护，按需 sofagent-daemon start');
+    }
+  } catch (err) {
+    info(`daemon 状态检查异常（已跳过）: ${err instanceof Error ? err.message : String(err)}`);
+  }
+
   // 总结（v1.2.9: — 有 WARN/FAIL 时不再说"全部通过"）
   const allOk = env.allOk && configOk && dirsOk && hookOk && depsOk && distIntegrityOk && auditLogOk;
   console.log('\n── 健康检查结果 ──');

@@ -17,10 +17,10 @@ import { dirname } from 'path';
 import { createHash, createHmac } from 'crypto';
 import { getDecisionLogPath, getEnvFingerprint, getHmacKey, stableStringify } from '@sofagent/core';
 import { atomicAppendSync } from '@sofagent/core';
-import { sanitizeWhy, type DecisionKind, type DecisionCategory, type DecisionLogEntry, type DecisionWhy, type LoopPhase } from './decision-schema';
+import { sanitizeWhy, type DecisionKind, type DecisionCategory, type CausalType, type DecisionLogEntry, type DecisionWhy, type LoopPhase } from './decision-schema';
 
 // Re-export schema 类型——public-api 从 decision-log 统一导出（与 appendHistory 模式一致）
-export type { DecisionLogEntry, DecisionWhy, RouteReason } from './decision-schema';
+export type { DecisionLogEntry, DecisionWhy, RouteReason, CausalType } from './decision-schema';
 
 /**
  * 决策写入入参——schema 未含的运行时输入定义在此并导出。
@@ -38,6 +38,13 @@ export interface EmitDecisionInput {
    * 不传则老语义（只记关键决策类型，无判断时刻分类）。
    */
   category?: DecisionCategory;
+  /**
+   * 因果边（可选）——引用前序决策的 ts 数组 + 因果类型。
+   * 拦截决策引用触发它的路由决策（'caused'）、HITL 引用待审上游（'influenced'）。
+   * 值为目标条目 ts；写入后纳入 HMAC 签名（stableStringify 全字段）。
+   */
+  causedBy?: string[];
+  causalType?: CausalType;
   specRef?: string;
   artifactRef?: string;
   /** 决策引擎标识（缺省 'sofagent-audit'） */
@@ -83,6 +90,9 @@ const VALID_MOMENTS: readonly string[] = [
 const VALID_CATEGORIES: readonly string[] = [
   'route', 'select', 'skip', 'retry', 'escalate',
 ];
+
+/** 合法 CausalType 集合（决策因果边三分类） */
+const VALID_CAUSAL_TYPES: readonly string[] = ['caused', 'influenced', 'precedent_for'];
 
 /**
  * 归一化 why 为 DecisionWhy——纯 string → { text }
@@ -139,6 +149,21 @@ export function emitDecision(input: EmitDecisionInput, dataDir?: string): Decisi
     }
   }
 
+  // 因果边校验：causedBy 字符串数组 + causalType 三分类枚举
+  if (input.causedBy !== undefined) {
+    if (!Array.isArray(input.causedBy)) {
+      throw new DecisionSchemaError('causedBy 必须是字符串数组（目标条目 ts）');
+    }
+    for (let i = 0; i < input.causedBy.length; i++) {
+      if (typeof input.causedBy[i] !== 'string' || input.causedBy[i]!.trim() === '') {
+        throw new DecisionSchemaError(`causedBy[${i}] 必须是非空字符串（目标条目 ts）`);
+      }
+    }
+  }
+  if (input.causalType !== undefined && !VALID_CAUSAL_TYPES.includes(input.causalType)) {
+    throw new DecisionSchemaError(`非法 causalType "${String(input.causalType)}"——必须在 CausalType 枚举内（caused/influenced/precedent_for）`);
+  }
+
   const filePath = getDecisionLogPath(dataDir);
   const dir = dirname(filePath);
 
@@ -181,6 +206,9 @@ export function emitDecision(input: EmitDecisionInput, dataDir?: string): Decisi
     kind: input.kind,
     // v1.3.6 交付⑮：category 可选——传了才落盘（老语义不传 = 无此字段）
     ...(input.category !== undefined ? { category: input.category } : {}),
+    // 因果边可选——传了才落盘并纳入 HMAC 签名（stableStringify 全字段）
+    ...(input.causedBy !== undefined ? { causedBy: input.causedBy } : {}),
+    ...(input.causalType !== undefined ? { causalType: input.causalType } : {}),
     moment: input.moment,
     why: sanitizeWhy(normalizeWhy(input.why)),
     ...(input.specRef ? { specRef: input.specRef } : {}),

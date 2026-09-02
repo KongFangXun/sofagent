@@ -6,7 +6,8 @@
 // 委托 @sofagent/orchestrator 的 registerModel（原子写 + 事件留痕）。
 //
 // 边界：
-//   - 本版只处理 endpoint 型模型；source='local-path' 为 v1.4.3 扩展位预留
+//   - endpoint 型与 local-path 型双支持——local-path 走权重目录规范
+//     （weights_dir 必填，manifest.json 校验通过才注册——供应链完整性）
 //   - endpoint 可以是第三方 router（LiteLLM/OpenRouter）地址——
 //     sofagent 只管「上线了没/灰度到多少/退役了没」，路由由第三方决定
 // ============================================================
@@ -17,14 +18,18 @@ import { getDataDir } from '@sofagent/core';
 export interface ModelRegisterArgs {
   /** 注册名（唯一标识——model_switch 按此切换） */
   name: string;
-  /** 服务地址（endpoint 必填；local-path 型为权重目录占位） */
+  /** 服务地址（endpoint 必填；local-path 型为本地推理端点占位） */
   endpoint: string;
   /** 模型名（传给服务的 model 字段） */
   model: string;
   /** 客户端协议（缺省 ollama；openai-compatible = vLLM/第三方 router） */
   client_type?: 'ollama' | 'openai-compatible';
-  /** 来源类型（缺省 endpoint；local-path = v1.4.1 扩展位预留） */
+  /** 来源类型（缺省 endpoint；local-path = 本地权重部署） */
   source?: 'endpoint' | 'local-path';
+  /** 权重目录（source=local-path 必填——按 manifest.json 目录规范校验） */
+  weights_dir?: string;
+  /** 注册时校验权重哈希（缺省 true——供应链完整性） */
+  verify_hash?: boolean;
   /** 评测分数（评测→注册流程的证据位） */
   eval_score?: number;
   /** 备注 */
@@ -55,7 +60,7 @@ export interface ModelRegisterToolResult {
 }
 
 export async function modelRegister(args: ModelRegisterArgs): Promise<ModelRegisterToolResult> {
-  const { name, endpoint, model, client_type, source, eval_score, comment, profile } = args;
+  const { name, endpoint, model, client_type, source, weights_dir, verify_hash, eval_score, comment, profile } = args;
 
   if (typeof name !== 'string' || name.trim() === '') {
     return {
@@ -92,6 +97,8 @@ export async function modelRegister(args: ModelRegisterArgs): Promise<ModelRegis
         model: model ?? '',
         ...(client_type ? { clientType: client_type } : {}),
         ...(source ? { source } : {}),
+        ...(source === 'local-path' && weights_dir ? { weightsDir: weights_dir } : {}),
+        ...(typeof verify_hash === 'boolean' ? { verifyHash: verify_hash } : {}),
         ...(typeof eval_score === 'number' ? { meta: { evalScore: eval_score, ...(comment ? { notes: comment } : {}) } } : comment ? { meta: { notes: comment } } : {}),
         ...(cleanProfile ? { profile: cleanProfile } : {}),
       },
@@ -115,7 +122,7 @@ export async function modelRegister(args: ModelRegisterArgs): Promise<ModelRegis
         sessionId: `model-register-${Date.now()}`,
         kind: 'CONFIG_CHANGE',
         moment: 'ACT',
-        why: `模型注册：${name}（endpoint=${endpoint}${source === 'local-path' ? '，local-path 扩展位' : ''}）`,
+        why: `模型注册：${name}（endpoint=${endpoint}${source === 'local-path' ? `，local-path 权重目录=${weights_dir ?? ''}` : ''}）`,
         evidence: [`model=${name} endpoint=${endpoint} client_type=${client_type ?? 'ollama'}`],
       });
     } catch {

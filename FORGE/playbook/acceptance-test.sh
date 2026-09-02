@@ -3509,19 +3509,22 @@ ls "$PROJECT_ROOT/engine/orchestrator/src/__tests__/env-anticheat.test.ts" >/dev
 $S347_OK && pass "反作弊基线三防线锚点在位（doctor 体检/缺省全开/白名单外部化/四形态映射+行为级测试在位）" || fail "反作弊基线防线缺失——reward hacking 防线面临回退"
 
 # ─────────────────────────────────────────────────────────────
-# S348 · v1.4.3 第一章：训练监控查询侧三 MCP tools 注册面（76→79 收口锁）
-# registry 79 个 name + 三新 tool 条目 + 头部 SSOT 注释——工具数漂移防复发
+# S348 · v1.4.3 第一章：训练监控查询侧三 MCP tools 注册面（收口锁随版演进）
+# registry name 计数锁（v1.4.3 收口 79；v1.4.4 corpus_export 后 80）+ 三新 tool 条目
+# ——工具数漂移防复发
 # ─────────────────────────────────────────────────────────────
-scenario 348 "v1.4.3 第一章：训练监控三 MCP tools 注册——train_status/train_list/train_diagnose 在位 + registry 79 个 name"; S348_OK=true
+scenario 348 "v1.4.3 第一章：训练监控三 MCP tools 注册——train_status/train_list/train_diagnose 在位 + registry 80 个 name（v1.4.4 corpus_export 后）"; S348_OK=true
 # 引号字面量精确匹配（排除接口类型行 name: string;——对齐 check-test-count 口径）
 S348_COUNT=$(grep -oE "name: '[a-z_]+'" "$PROJECT_ROOT/engine/mcp/src/tool-registry.ts" | sort -u | wc -l | tr -d ' ')
-[ "$S348_COUNT" = "79" ] || S348_OK=false
+[ "$S348_COUNT" = "80" ] || S348_OK=false
+# corpus_export 在位（v1.4.4 新增——第一章三件套 MCP 面）
+grep -q "name: 'corpus_export'" "$PROJECT_ROOT/engine/mcp/src/tool-registry.ts" || S348_OK=false
 grep -q "name: 'train_status'" "$PROJECT_ROOT/engine/mcp/src/tool-registry.ts" || S348_OK=false
 grep -q "name: 'train_list'" "$PROJECT_ROOT/engine/mcp/src/tool-registry.ts" || S348_OK=false
 grep -q "name: 'train_diagnose'" "$PROJECT_ROOT/engine/mcp/src/tool-registry.ts" || S348_OK=false
 # SKILL.md 工具清单同步（对账面：训练域 11 tools 行）
 grep -q "train_status.*train_list.*train_diagnose" "$PROJECT_ROOT/SKILL/SKILL.md" || S348_OK=false
-$S348_OK && pass "训练监控三 tools 注册面完整（registry 79 + SKILL 对账）" || fail "MCP 工具注册面漂移——registry 实数 $S348_COUNT 或三 tools 缺席"
+$S348_OK && pass "训练监控三 tools 注册面完整（registry 80 + corpus_export + SKILL 对账）" || fail "MCP 工具注册面漂移——registry 实数 $S348_COUNT 或 tools 缺席"
 
 # ─────────────────────────────────────────────────────────────
 # S349 · v1.4.3 第三章：训练沙箱三约束行为实测（dist 直调）

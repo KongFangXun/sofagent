@@ -380,3 +380,23 @@
   incrementContinuations,
 } from './slash-commands/goal';
 /* @public */ export type { SessionGoal, LoopSpecGoalExtension } from './slash-commands/goal';
+
+// ── 训练语料导出三件套（方法论 + 脱敏 + 样本聚合）──
+/* @public */ export {
+  METHODOLOGY_KEYS,
+  parseMethodologySections,
+  exportMethodology,
+} from './export/methodology';
+/* @public */ export type {
+  MethodologyKey,
+  MethodologySection,
+  MethodologyCorpus,
+} from './export/methodology';
+/* @public */ export { redact, verifyNoLeak, loadRedactRules } from './export/redactor';
+/* @public */ export type { RedactRulesConfig, RedactResult } from './export/redactor';
+/* @public */ export { aggregateSamples } from './export/sample-aggregator';
+/* @public */ export type {
+  SampleSource,
+  AggregatedSample,
+  AggregationResult,
+} from './export/sample-aggregator';

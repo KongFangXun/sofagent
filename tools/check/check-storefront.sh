@@ -68,7 +68,8 @@ if [ -z "$GH_DESC" ] && [ -z "$GH_HOME" ] && [ -z "$GH_TOPIC_COUNT" ]; then
 fi
 
 # ── 断言 ①：description 工具数 ──
-DESC_TOOLS=$(echo "$GH_DESC" | grep -oE '\(([0-9]+) tools\)' | grep -oE '[0-9]+' || echo "")
+# 匹配「(N tools」形态——括号内可以是「(79 tools)」单声称，也可「(80 tools, 13 plugins)」复合声称
+DESC_TOOLS=$(echo "$GH_DESC" | grep -oE '\(([0-9]+) tools' | grep -oE '[0-9]+' || echo "")
 if [ -z "$DESC_TOOLS" ]; then
   echo "  ❌ [description] 未找到「(N tools)」声称——description 格式漂移或被改写"
   echo "      当前：${GH_DESC}"

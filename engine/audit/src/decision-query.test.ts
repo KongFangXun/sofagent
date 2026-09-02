@@ -7,9 +7,11 @@ import { existsSync, writeFileSync, rmSync, mkdirSync, readFileSync, appendFileS
 import { join } from 'path';
 import { tmpdir } from 'os';
 import { randomBytes } from 'crypto';
-import { emitDecision, type EmitDecisionInput } from './decision-log';
-import { queryByKind, getKindSummary, traceBack, traceFromBehavior } from './decision-query';
+import { emitDecision, type EmitDecisionInput, DecisionSchemaError } from './decision-log';
+import { queryByKind, getKindSummary, traceBack, traceFromBehavior, traceDecisionChain, findSimilarDecisions } from './decision-query';
 import { appendHistory, type AuditHistoryEntry } from './audit-history';
+import { checkDecisionChainDetailed } from './decision-chain';
+import { getDecisionLogPath } from '@sofagent/core';
 
 function tmpDir(): string {
   const dir = join(tmpdir(), `sofagent-decision-query-${Date.now()}-${randomBytes(4).toString('hex')}`);
@@ -132,5 +134,153 @@ describe('decision-query', () => {
     const found = traceFromBehavior(commitSha, testDir);
     expect(found.length).toBe(1);
     expect(found[0]!.artifactRef).toBe(commitSha);
+  });
+});
+
+// ============================================================
+// 因果链查询（决策因果边 + 链回溯 + 先例检索）
+// ============================================================
+
+describe('decision causal chain（因果链）', () => {
+  let testDir: string;
+  let savedKeyPath: string | undefined;
+
+  beforeEach(() => {
+    testDir = tmpDir();
+    savedKeyPath = process.env.SOFAGENT_KEY_PATH;
+    const KEY_PATH = join(testDir, 'test-hmac-key');
+    writeFileSync(KEY_PATH, 'test-hmac-key-0123456789abcdef');
+    process.env.SOFAGENT_KEY_PATH = KEY_PATH;
+  });
+
+  afterEach(() => {
+    try { rmSync(testDir, { recursive: true, force: true }); } catch { /* */ }
+    if (savedKeyPath === undefined) delete process.env.SOFAGENT_KEY_PATH;
+    else process.env.SOFAGENT_KEY_PATH = savedKeyPath;
+  });
+
+  it('旧条目（无 causedBy）写入与链校验不破坏（向后兼容）', () => {
+    // 老格式条目：无 causedBy / causalType
+    const e1 = emitDecision(makeInput({ sessionId: 's1' }), testDir);
+    const e2 = emitDecision(makeInput({ sessionId: 's2' }), testDir);
+    expect(e1.causedBy).toBeUndefined();
+    expect(e2.prevHash).not.toBe('genesis');
+    // 新字段条目接着老条目写——链连续
+    const e3 = emitDecision(makeInput({
+      sessionId: 's3',
+      causedBy: [e1.ts],
+      causalType: 'caused',
+    }), testDir);
+    expect(e3.causedBy).toEqual([e1.ts]);
+    expect(e3.causalType).toBe('caused');
+  });
+
+  it('causedBy 非法值写入被拒（schema 校验）', () => {
+    expect(() => emitDecision(makeInput({
+      sessionId: 's1',
+      causedBy: 'not-an-array' as unknown as string[],
+    }), testDir)).toThrow(DecisionSchemaError);
+    expect(() => emitDecision(makeInput({
+      sessionId: 's1',
+      causalType: 'invalid' as never,
+    }), testDir)).toThrow(DecisionSchemaError);
+  });
+
+  it('HMAC 计算涵盖新字段（篡改 causedBy → 链校验红）', () => {
+    const e1 = emitDecision(makeInput({ sessionId: 's1' }), testDir);
+    const e2 = emitDecision(makeInput({
+      sessionId: 's2',
+      causedBy: [e1.ts],
+      causalType: 'caused',
+    }), testDir);
+    expect(e2.hmacSig).toBeDefined();
+
+    // 篡改：改 causedBy 指向 → HMAC 失配 → checkDecisionChainDetailed 红
+    const logPath = getDecisionLogPath(testDir);
+    const raw = readFileSync(logPath, 'utf-8');
+    const tampered = raw.replace(
+      JSON.stringify([e1.ts]),
+      JSON.stringify(['2099-01-01T00:00:00.000Z']),
+    );
+    expect(tampered).not.toBe(raw); // 确认替换生效
+    writeFileSync(logPath, tampered);
+
+    const check = checkDecisionChainDetailed(testDir);
+    expect(check.status).toBe('tampered');
+  });
+
+  it('traceDecisionChain 多级回溯 + 链式叙事（路由→拦截→上报）', () => {
+    // 因果铤：路由决策 → 导致拦截 → 导致上报人工
+    const route = emitDecision(makeInput({
+      sessionId: 's1', kind: 'ORCHESTRATION', category: 'route',
+      why: { text: '任务派给 executor 档', tags: ['route'] },
+    }), testDir);
+    const block = emitDecision(makeInput({
+      sessionId: 's1', kind: 'TOOL_GATE',
+      why: { text: '拦截写 .env（A1）', tags: ['a1'], triggeredRule: 'A1' },
+      causedBy: [route.ts], causalType: 'caused',
+    }), testDir);
+    const escalate = emitDecision(makeInput({
+      sessionId: 's1', kind: 'ESCALATE_REPORT', category: 'escalate',
+      why: { text: '拦截后升级人工复核' },
+      causedBy: [block.ts], causalType: 'caused',
+    }), testDir);
+
+    const trace = traceDecisionChain(escalate.ts, testDir);
+    expect(trace).toBeDefined();
+    expect(trace!.chain).toHaveLength(3);
+    expect(trace!.chain[0]!.entry.ts).toBe(escalate.ts);   // 起点 depth 0
+    expect(trace!.chain[2]!.entry.ts).toBe(route.ts);       // 根因最深
+    // 叙事：根因在前 + 因果连接词
+    expect(trace!.narrative).toContain('ORCHESTRATION');
+    expect(trace!.narrative).toContain('导致了');
+    expect(trace!.narrative).toContain('TOOL_GATE');
+    expect(trace!.brokenAt).toBeUndefined();
+  });
+
+  it('traceDecisionChain 旧条目（无 causedBy）→ 单节点链不报错', () => {
+    const e = emitDecision(makeInput({ sessionId: 's1' }), testDir);
+    const trace = traceDecisionChain(e.ts, testDir);
+    expect(trace).toBeDefined();
+    expect(trace!.chain).toHaveLength(1);
+  });
+
+  it('traceDecisionChain causedBy 指向不存在条目 → brokenAt 如实标注', () => {
+    emitDecision(makeInput({
+      sessionId: 's1',
+      causedBy: ['2000-01-01T00:00:00.000Z'], // 不存在
+      causalType: 'caused',
+    }), testDir);
+    const entries = queryByKind('TOOL_GATE', {}, testDir);
+    const trace = traceDecisionChain(entries[0]!.ts, testDir);
+    expect(trace!.brokenAt).toContain('不存在');
+  });
+
+  it('findSimilarDecisions 按 tags + triggeredRule 匹配（HITL 先例展示）', () => {
+    // 历史先例：两条 A1 拦截 + 一条无关
+    emitDecision(makeInput({
+      sessionId: 's1',
+      why: { text: '拦截写 .env', tags: ['a1', 'sensitive'], triggeredRule: 'A1' },
+    }), testDir);
+    emitDecision(makeInput({
+      sessionId: 's2',
+      why: { text: '拦截硬编码 key', tags: ['a1'], triggeredRule: 'A1' },
+    }), testDir);
+    emitDecision(makeInput({
+      sessionId: 's3', kind: 'CONFIG_CHANGE',
+      why: { text: '切换模型档位', tags: ['model'] },
+    }), testDir);
+    // HITL 待审决策（查询条件）
+    const hits = findSimilarDecisions(
+      { tags: ['a1', 'sensitive'], triggeredRule: 'A1', kind: 'TOOL_GATE' },
+      {}, testDir,
+    );
+    expect(hits.length).toBe(2);
+    // 第一条命中 tags×2（a1+sensitive）+ rule + kind = 2*2+3+1 = 8 分
+    expect(hits[0]!.score).toBe(8);
+    expect(hits[0]!.matchedOn).toContain('rule:A1');
+    expect(hits[1]!.score).toBe(6); // a1 + rule + kind
+    // 无关条目不进结果
+    expect(hits.every((h) => h.entry.sessionId !== 's3')).toBe(true);
   });
 });

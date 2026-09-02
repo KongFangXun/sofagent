@@ -1,0 +1,9 @@
+# 节点片段（引擎六组装 workflow 用）
+- id: {{nodeId}}
+  # agent: 由 agent-creation 推导
+  task: |
+    节点：{{description}}
+    输入：{{input}}
+    输出：{{output}}
+    痛点：{{bottleneck}}
+  # 自动化标签：{{tag}}

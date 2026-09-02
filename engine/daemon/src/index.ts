@@ -193,6 +193,7 @@
 /* @public */ export {
   writeHealthFile,
   readHealthFile,
+  recordDaemonExit,
   checkDaemonHealth,
   resolveHealthFilePath,
 } from './daemon-health';

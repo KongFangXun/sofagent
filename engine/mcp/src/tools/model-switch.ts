@@ -11,14 +11,16 @@ import { join } from 'path';
 import { getDataDir } from '@sofagent/core';
 
 export interface ModelSwitchArgs {
-  /** 目标模型名（rollback 时可省略） */
+  /** 目标模型名（rollback 可省略；rollback-weights 必填） */
   name?: string;
   /** 档位：executor / pipeline（缺省 executor） */
   lane?: 'executor' | 'pipeline';
   /** 灰度比例 1-99；100/缺省 = 晋升全量（强制人审） */
   percent?: number;
-  /** 动作：switch（默认）/ rollback */
-  action?: 'switch' | 'rollback';
+  /** 动作：switch（默认）/ rollback（模型级）/ rollback-weights（权重版本级） */
+  action?: 'switch' | 'rollback' | 'rollback-weights';
+  /** 权重版本回滚目标（rollback-weights 可选——缺省回拨上一版本） */
+  target_version?: string;
   /** 🔴 人工确认（晋升 percent=100 时必填 true） */
   human_confirmed?: boolean;
   /** 备注（灰度依据 / 回滚原因） */
@@ -40,16 +42,41 @@ export interface ModelSwitchToolResult {
 }
 
 export async function modelSwitch(args: ModelSwitchArgs): Promise<ModelSwitchToolResult> {
-  const { name, lane = 'executor', percent, action = 'switch', human_confirmed, comment } = args;
+  const { name, lane = 'executor', percent, action = 'switch', target_version, human_confirmed, comment } = args;
 
   try {
-    const { switchModel, rollbackModel } = await import('@sofagent/orchestrator');
+    const { switchModel, rollbackModel, rollbackWeightsVersion } = await import('@sofagent/orchestrator');
     const opts = {
       dataDir: getDataDir(),
       actor: 'mcp-model-switch',
       ...(human_confirmed !== undefined ? { humanConfirmed: human_confirmed } : {}),
       ...(comment ? { comment } : {}),
     };
+
+    // 权重版本级回滚（local-path 模型：manifest.current 指针回拨）
+    if (action === 'rollback-weights') {
+      if (typeof name !== 'string' || name.trim() === '') {
+        return {
+          text: '[sofagent] rollback-weights 失败：name 必填（local-path 模型注册名）',
+          data: { isError: true, ok: false, awaitingHuman: false, issues: ['name 必填'], lane },
+        };
+      }
+      const result = rollbackWeightsVersion(name, {
+        ...opts,
+        ...(target_version ? { targetVersion: target_version } : {}),
+      });
+      if (!result.ok) {
+        return {
+          text: `[sofagent] 权重版本回滚失败 ❌：${result.message}`,
+          data: { isError: result.issues.length > 0, ok: false, awaitingHuman: false, issues: result.issues, model: name, lane },
+        };
+      }
+      await emitSwitchDecision(`权重版本回滚：${result.message}`, lane, undefined);
+      return {
+        text: `[sofagent] ${result.message}`,
+        data: { isError: false, ok: true, awaitingHuman: false, issues: [], model: name, lane },
+      };
+    }
 
     // 回滚路径
     if (action === 'rollback') {

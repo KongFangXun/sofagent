@@ -641,6 +641,7 @@
   registerModel,
   switchModel,
   rollbackModel,
+  rollbackWeightsVersion,
   retireModel,
   restoreModel,
   loadRegistry,
@@ -660,6 +661,16 @@
   ModelStatus,
   EndpointProfile,
 } from './model-registry';
+
+// Weights Manifest（本地权重目录规范——local-path 注册/校验/版本回滚的物理载体）
+/* @public */ export {
+  checkWeightsDir,
+  hashDir,
+  appendVersion,
+  manifestPath,
+  WEIGHTS_MANIFEST_SCHEMA_VERSION,
+} from './weights-manifest';
+/* @public */ export type { WeightsManifest, WeightsVersion, ManifestCheck } from './weights-manifest';
 
 // Route Policy（v1.3.6 交付 ⑧ · 路由决策可解释性 Policy 构件）
 /* @public */ export {
@@ -1127,6 +1138,36 @@
   ArtifactFileCheck,
   ArtifactVerifyReport,
 } from './train/artifact-verify';
+
+// ============================================================
+// 训练产物 → 模型注册自动衔接（训练闭环最后一步）
+// ============================================================
+/* @public */ export {
+  registerTrainArtifact,
+} from './train/artifact-register';
+/* @public */ export type {
+  RegisterTrainArtifactInput,
+  ArtifactRegisterResult,
+  ArtifactRegisterAction,
+  MountSuggestion,
+} from './train/artifact-register';
+
+// ============================================================
+// 多基座对比训练（同数据多基座并行 → ROI 排序——选型数据支撑）
+// ============================================================
+/* @public */ export {
+  submitCompareJobs,
+  buildCompareReport,
+} from './train/train-compare';
+/* @public */ export type {
+  CompareBaseSpec,
+  TrainCompareInput,
+  CompareBaseResult,
+  RoiRankEntry,
+  TrainCompareReport,
+  TrainCompareDeps,
+  BuildCompareReportInput,
+} from './train/train-compare';
 
 // ============================================================
 // v1.4.1 块一：训练环境准备（GPU 检测双分支 + 就绪报告）

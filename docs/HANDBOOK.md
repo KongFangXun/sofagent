@@ -471,7 +471,7 @@ jobs:
 
 ### 在 DSH 中使用 sofagent（v1.3.5 · MCP 互通）
 
-sofagent 本身就是一个 MCP server（stdio 传输，bin `sofagent-mcp`，v1.3.6 起 60 个 tool，v1.4.0 为 66 个，v1.4.1 新增 train_submit 后为 67 个，v1.4.2 新增 train_doctor/train_dryrun/train_report + FDE 六引擎（fde_interview/fde_classify/fde_quantify/fde_derive/fde_distill/fde_deploy）后为 76 个，v1.4.3 新增 train_status/train_list/train_diagnose 后为 79 个——工具角色分层，默认全量暴露，`SOFAGENT_MCP_ROLES` 显式收窄专职面）。DSH（DeepSeek Harness）用户不需要等 v1.4.0 的 cordis-plugin——用官方 `@deepseek-ai/dsh-mcp-client` 桥接插件挂上 `sofagent-mcp`，**今天就能在 DSH 会话里调用 sofagent 的全部能力**：审计查询、知识库检索、A/B 实验（`run_ab_test`）、快照时间线（`snapshot_list`）等。
+sofagent 本身就是一个 MCP server（stdio 传输，bin `sofagent-mcp`，v1.3.6 起 60 个 tool，v1.4.0 为 66 个，v1.4.1 新增 train_submit 后为 67 个，v1.4.2 新增 train_doctor/train_dryrun/train_report + FDE 六引擎（fde_interview/fde_classify/fde_quantify/fde_derive/fde_distill/fde_deploy）后为 76 个，v1.4.3 新增 train_status/train_list/train_diagnose 后为 79 个，v1.4.4 新增 corpus_export（训练语料导出三件套）后为 80 个——工具角色分层，默认全量暴露，`SOFAGENT_MCP_ROLES` 显式收窄专职面）。DSH（DeepSeek Harness）用户不需要等 v1.4.0 的 cordis-plugin——用官方 `@deepseek-ai/dsh-mcp-client` 桥接插件挂上 `sofagent-mcp`，**今天就能在 DSH 会话里调用 sofagent 的全部能力**：审计查询、知识库检索、A/B 实验（`run_ab_test`）、快照时间线（`snapshot_list`）等。
 
 #### 配置方法
 
@@ -491,7 +491,7 @@ sofagent 本身就是一个 MCP server（stdio 传输，bin `sofagent-mcp`，v1.
 
 > 字段名以 `@deepseek-ai/dsh-mcp-client@0.1.0-rc.6`（2026-08-15 npm 实测拉包核对 `lib/types/index.d.ts` 的 `StdioConfig`）为准——`transport` / `serverName` / `command` / `args` / `env` / `cwd` / `toolCallTimeoutMs` / `failOnStartupError` / `reconnect`。DSH 尚处 developer preview（rc），后续版本字段可能变化，以 [DSH 官方仓库](https://github.com/deepseek-ai/deepseek-harness) config 文档为最终依据。
 
-挂载后 DSH 侧的模型看到的 tool 名形如 `mcp__sofagent__snapshot_list`（`mcp__<serverName>__<原始名>` 命名契约——与 Claude Code / Codex 同款），79 个 tool 全部可见，与 DSH 原生 tool 走完全相同的执行管道（权限策略、timeout、compaction 行为一致）。
+挂载后 DSH 侧的模型看到的 tool 名形如 `mcp__sofagent__snapshot_list`（`mcp__<serverName>__<原始名>` 命名契约——与 Claude Code / Codex 同款），80 个 tool 全部可见，与 DSH 原生 tool 走完全相同的执行管道（权限策略、timeout、compaction 行为一致）。
 
 **两种 command 写法按部署形态选**：
 

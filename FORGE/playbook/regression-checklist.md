@@ -1482,8 +1482,8 @@ node -e "const fs=require('fs'),p=require('path');let bad=0;for(const f of fs.re
 **背景**：七大块交付的审查面。acceptance S270-S276 做执行级验证，本维度做静态一致性——两者成对构成新功能的完整回归网。
 
 ```bash
-# ① MCP tools 三处口径（SKILL.md / ARCHITECTURE 能力表 / dist 实测）——口径79，勿写死
-grep -q "79 tools" SKILL/SKILL.md || echo "⚠️ SKILL 工具速查漂移（口径79）" # 演进：52→60→61→66→67（train_submit）→79，随 SSOT
+# ① MCP tools 三处口径（SKILL.md / ARCHITECTURE 能力表 / dist 实测）——口径80，勿写死
+grep -q "80 tools" SKILL/SKILL.md || echo "⚠️ SKILL 工具速查漂移（口径80）" # 演进：52→60→61→66→67（train_submit）→79→80（corpus_export），随 SSOT
 node -e "const m=require('./engine/mcp/dist/tool-registry.js');const doc=require('./package.json').version;console.log('✅ TOOLS='+m.TOOLS.length+'（registry 实数，勿写死——发版后人工对 SSOT 口径）')"
 # ② snapshot tool 零 daemon 静态依赖（optionalDependencies 场景会炸）——排除注释行（🔴 import 铁律注释含 @sofagent/daemon；校准：grep -h 去前缀保排除生效）
 grep -hE "@sofagent/daemon" engine/mcp/src/tools/snapshot-list.ts engine/mcp/src/tools/snapshot-restore.ts 2>/dev/null | grep -vE "^[[:space:]]*//" | head -1 | grep -q . && echo "⚠️ snapshot 静态 import daemon 回潮"

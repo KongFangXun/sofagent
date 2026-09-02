@@ -21,6 +21,7 @@
 | 🔴 运行层 | 真实环境配置 | 写进部署清单 |
 
 2. **黄金顺序（铁律）**：先运行层（跑通真实任务）→ Skill 层（抽象为模板）→ 文档层（补人读文档）。禁止直接写 Skill
+   - **spec 引用要求（spec-first）**：动代码前先声明本变更对应的 spec（`spec: <workflow/fde/task 路径>`）；transcript 直出的口头需求须先沉淀为 fde.md / task 书再动代码——commit message 携带 `spec:` 标记或 `no-spec: <理由>` 显式豁免（`tools/check/check-spec-first.mjs` 定期扫描覆盖率）
 3. 产出：「节点→方案对照表」+ 每个节点三层实体
 
 ### §8 部署引导

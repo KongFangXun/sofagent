@@ -224,3 +224,99 @@ describe('doctor Ontology 完整性检查（v1.4.3 十三）', () => {
     expect(out).not.toContain('Ontology 实体');
   });
 });
+
+// ============================================================
+// v1.4.4 #32+47：doctor 感知 daemon 守护死亡
+// 验收（changelog 原文）：「daemon exit 78 可被 doctor 感知（心跳文件 + 检测路径在位）」
+// core 不依赖 daemon 包（依赖方向 daemon → core），doctor 自读同源路径健康文件
+// ============================================================
+describe('doctor daemon 守护感知（v1.4.4 #32+47）', () => {
+  let t: ReturnType<typeof setupOntologyTest>;
+
+  beforeEach(() => { t = setupOntologyTest(); });
+  afterEach(() => { t.cleanup(); });
+
+  /** 在沙箱 DATA_DIR 写 daemon-health.json（doctor 侧同源路径：SOFAGENT_DATA || DATA_DIR） */
+  function writeDaemonHealth(dataDir: string, health: Record<string, unknown>) {
+    mkdirSync(dataDir, { recursive: true });
+    writeFileSync(join(dataDir, 'daemon-health.json'), JSON.stringify(health), 'utf-8');
+  }
+
+  it('exit 78 + 心跳陈旧 → FAIL 报「守护已死亡」并给出重启修复提示', () => {
+    const dataDir = join(t.tmpHome, 'data');
+    writeDaemonHealth(dataDir, {
+      pid: 1234,
+      startTime: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
+      version: '1.4.4',
+      status: 'stopped',
+      lastHeartbeat: new Date(Date.now() - 11 * 60 * 1000).toISOString(), // 心跳陈旧
+      lastExitCode: 78,
+      stoppedReason: 'uncaught-exception',
+      lastPush: null,
+      lastError: 'fatal',
+      uptimeMs: 3600000,
+    });
+    const r = runDoctor(t.tmpHome);
+    expect(r.failCount).toBeGreaterThanOrEqual(1);
+    const out = t.output();
+    expect(out).toContain('daemon 守护已死亡');
+    expect(out).toContain('exit 78');
+    expect(out).toContain('uncaught-exception');
+    expect(out).toContain('sofagent-daemon start');
+  });
+
+  it('daemon 运行中（心跳新鲜）→ OK 零误报', () => {
+    const dataDir = join(t.tmpHome, 'data');
+    writeDaemonHealth(dataDir, {
+      pid: 1234,
+      startTime: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
+      version: '1.4.4',
+      status: 'running',
+      lastHeartbeat: new Date().toISOString(), // 心跳新鲜
+      lastExitCode: 78, // 残留上轮退出码——心跳新鲜不误报
+      lastPush: null,
+      lastError: null,
+      uptimeMs: 300000,
+    });
+    runDoctor(t.tmpHome);
+    const out = t.output();
+    expect(out).toContain('daemon 运行正常');
+    expect(out).not.toContain('守护已死亡');
+  });
+
+  it('正常停止（exit 0，心跳陈旧）→ WARN 停止提示而非 FAIL 死亡', () => {
+    const dataDir = join(t.tmpHome, 'data');
+    writeDaemonHealth(dataDir, {
+      pid: 1234,
+      startTime: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
+      version: '1.4.4',
+      status: 'stopped',
+      lastHeartbeat: new Date(Date.now() - 11 * 60 * 1000).toISOString(),
+      lastExitCode: 0, // 正常停止
+      lastPush: null,
+      lastError: null,
+      uptimeMs: 3600000,
+    });
+    runDoctor(t.tmpHome);
+    const out = t.output();
+    expect(out).toContain('daemon 已停止运行');
+    expect(out).not.toContain('守护已死亡');
+  });
+
+  it('daemon-health.json 不存在 → info 提示从未运行（不告警——审计核心不依赖守护）', () => {
+    runDoctor(t.tmpHome);
+    const out = t.output();
+    expect(out).toContain('daemon 从未运行过');
+    expect(out).not.toContain('守护已死亡');
+  });
+
+  it('健康文件 JSON 损坏 → WARN 解析失败 + 重启覆盖修复提示（不崩 doctor）', () => {
+    const dataDir = join(t.tmpHome, 'data');
+    mkdirSync(dataDir, { recursive: true });
+    writeFileSync(join(dataDir, 'daemon-health.json'), '{corrupted', 'utf-8');
+    runDoctor(t.tmpHome);
+    const out = t.output();
+    expect(out).toContain('daemon-health.json 解析失败');
+    expect(out).toContain('sofagent-daemon start');
+  });
+});

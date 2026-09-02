@@ -22,6 +22,7 @@ import {
   retireModel,
   restoreModel,
   loadRegistry,
+  saveRegistry,
   resolveModelRegistryPath,
   readActiveEndpoints,
 } from '../model-registry';
@@ -75,14 +76,23 @@ describe('模型注册', () => {
     expect(reg.events.length).toBe(2); // 两次 register 事件
   });
 
-  it('local-path 扩展位：可注册（v1.4.1 预留）', () => {
+  it('local-path 注册：缺 weightsDir 拒绝（权重目录规范强制）', () => {
     const result = registerModel(
       { name: 'local-w', endpoint: '/weights/dir', model: 'w', source: 'local-path' },
       { dataDir },
     );
-    expect(result.ok).toBe(true);
-    expect(result.message).toContain('v1.4.1');
-    expect(loadRegistry(dataDir).models['local-w'].source).toBe('local-path');
+    expect(result.ok).toBe(false);
+    expect(result.issues[0]).toContain('weights_dir');
+  });
+
+  it('local-path 注册：无 manifest 的目录拒绝（供应链红线）', () => {
+    const emptyDir = join(dataDir, 'no-manifest');
+    const result = registerModel(
+      { name: 'local-w', endpoint: 'http://localhost:8000', model: 'w', source: 'local-path', weightsDir: emptyDir },
+      { dataDir },
+    );
+    expect(result.ok).toBe(false);
+    expect(result.issues[0]).toContain('manifest.json');
   });
 });
 
@@ -139,11 +149,18 @@ describe('灰度切换与晋升', () => {
     expect(switchModel('cand', 'executor', 10.5, { dataDir }).ok).toBe(false);
   });
 
-  it('local-path 模型不可切换为活动模型', () => {
-    registerModel({ name: 'lw', endpoint: '/w', model: 'w', source: 'local-path' }, { dataDir });
+  it('local-path 模型缺合规权重目录时切换被拦截', () => {
+    // 直接手写注册表条目（绕过注册校验）模拟脏数据——切换时重校验拦截
+    const reg = loadRegistry(dataDir);
+    reg.models['lw'] = {
+      name: 'lw', endpoint: '/w', clientType: 'ollama', model: 'w',
+      source: 'local-path', localWeights: { dir: join(dataDir, 'ghost-weights'), currentVersion: 'v1', versionCount: 1 },
+      status: 'registered', registeredAt: new Date().toISOString(),
+    };
+    saveRegistry(dataDir, reg);
     const result = switchModel('lw', 'executor', 10, { dataDir });
     expect(result.ok).toBe(false);
-    expect(result.issues[0]).toContain('v1.4.1');
+    expect(result.issues[0]).toContain('manifest.json');
   });
 });
 

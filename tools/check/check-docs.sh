@@ -741,6 +741,52 @@ if [ "$REVERSE_FAIL" -gt 0 ]; then
 fi
 
 echo ""
+
+# ── 16. 过期承诺限时检查（「将在 vX.Y.Z 移除」到期盯防 · v1.4.4 第七章·八）──
+# 门禁目的：弃用 shim 的移除承诺只活在注释里，到期无人盯防即静默过期
+#   （v1.4.4 第六章 TODO(v1.4.0) 拖两版本才收口是同款事故）。
+# 规则：扫 engine/ 源码（不含 dist/）的「将在 vX.Y.Z 移除」承诺，解析承诺版本；
+#   承诺版本 ≤ 当前版本 → 到期告警（承诺该兑现了）；承诺版本 > 当前版本 → ✓ 未到期。
+#   「已按计划移除」（grep 不再命中）自然不进本节视野——本节只盯「承诺仍在且已到期」。
+echo "=== 16. 过期承诺限时检查（「将在 vX.Y.Z 移除」到期盯防）==="
+CURRENT_VERSION=$(node -p "require('./package.json').version" 2>/dev/null || echo "0.0.0")
+STALE_PROMISES=$(grep -rn "将在 v[0-9.]* 移除" engine/ --include="*.ts" 2>/dev/null | grep -v "/dist/" || true)
+STALE_FAIL=0
+if [ -n "$STALE_PROMISES" ]; then
+  while IFS= read -r line; do
+    # 抓「将在 vX.Y.Z 移除」紧贴的承诺版本（而非行内首个 vX.Y.Z——那可能是
+    # 「v1.0.8 已弃用的子命令」这类弃用起始版本的历史陈述）
+    PROMISED=$(echo "$line" | grep -oE "将在 v[0-9]+\.[0-9]+\.[0-9]+ 移除" | grep -oE "[0-9]+\.[0-9]+\.[0-9]+" | head -1)
+    if [ -z "$PROMISED" ]; then continue; fi
+    # 版本比较：承诺 ≤ 当前 → 到期
+    EXPIRED=$(node -e "
+const cur = '${CURRENT_VERSION}'.split('.').map(Number);
+const pro = '${PROMISED}'.split('.').map(Number);
+for (let i = 0; i < 3; i++) {
+  const c = cur[i] || 0, p = pro[i] || 0;
+  if (p < c) { console.log('EXPIRED'); process.exit(0); }
+  if (p > c) { process.exit(0); }
+}
+console.log('EXPIRED'); // 相等 = 到期
+" 2>/dev/null || echo "")
+    LOC=$(echo "$line" | cut -d: -f1-2)
+    if [ "$EXPIRED" = "EXPIRED" ]; then
+      echo "  ❌ [到期] ${LOC} 承诺 v${PROMISED} 移除（当前 v${CURRENT_VERSION}）——shim 仍在，兑现移除或改承诺"
+      STALE_FAIL=$((STALE_FAIL + 1))
+    else
+      echo "  ✓ [未到期] ${LOC} 承诺 v${PROMISED} 移除（当前 v${CURRENT_VERSION}）"
+    fi
+  done <<EOF
+$STALE_PROMISES
+EOF
+else
+  echo "  ✓ engine/ 源码无「将在 vX.Y.Z 移除」承诺（无可盯防对象）"
+fi
+if [ "$STALE_FAIL" -gt 0 ]; then
+  ERRORS=$((ERRORS + STALE_FAIL))
+fi
+
+echo ""
 if [ "$ERRORS" -gt 0 ]; then
   echo "发现 ${ERRORS} 个问题"
   exit 1

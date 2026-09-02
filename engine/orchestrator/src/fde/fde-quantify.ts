@@ -14,7 +14,7 @@
 //     ——产物可 submit + activate，复用现有链路）
 // ============================================================
 
-import { mkdirSync } from 'fs';
+import { mkdirSync, readFileSync, existsSync } from 'fs';
 import { join } from 'path';
 import { atomicWriteSync } from '@sofagent/core';
 import {
@@ -186,6 +186,67 @@ export function deriveOntology(
 // 引擎五：fde_distill 三层交付物生成
 // ══════════════════════════════════════
 
+/**
+ * 三层交付模板外置（模板骨架可定制——改模板不改代码）。
+ *
+ * 查找链（三级，对齐 builtin-agents 的 SKILL/agents 定位先例）：
+ *   ① SOFAGENT_REPO_ROOT/FDE/templates/deliverables/
+ *   ② cwd/FDE/templates/deliverables/
+ *   ③ 包相对路径上溯四级到仓库根（monorepo 开发态，见下方 join 实现）
+ * 三级全 miss → 回退内置默认骨架（fail-closed：模板缺失不阻断交付）。
+ */
+export const DELIVERABLES_TEMPLATE_DIR_SEGMENTS = ['FDE', 'templates', 'deliverables'];
+
+/** 模板文件名 → 渲染产物后缀的稳定契约 */
+export const DELIVERABLES_TEMPLATE_FILES = {
+  doc: 'node-manual.md',
+  skill: 'node-skill.md',
+  run: 'node-node.yaml',
+} as const;
+
+/** 逐级查找模板目录——找到即返回（未找到返回 null，调用方走内置回退） */
+function resolveTemplatesDir(): string | null {
+  const candidates: string[] = [];
+  const root = process.env.SOFAGENT_REPO_ROOT;
+  if (root !== undefined && root !== '') candidates.push(join(root, ...DELIVERABLES_TEMPLATE_DIR_SEGMENTS));
+  candidates.push(join(process.cwd(), ...DELIVERABLES_TEMPLATE_DIR_SEGMENTS));
+  // dist/fde/ → 仓库根（monorepo 开发态：__dirname 上溯四级——join 参数见下一行）
+  candidates.push(join(__dirname, '..', '..', '..', '..', ...DELIVERABLES_TEMPLATE_DIR_SEGMENTS));
+  for (const dir of candidates) {
+    if (existsSync(dir)) return dir;
+  }
+  return null;
+}
+
+/**
+ * 渲染模板：`{{key}}` 占位符替换。
+ *
+ * fail-closed 语义：模板缺失 → 返回 null（调用方用内置默认）；
+ * 模板存在但渲染后残留 `{{` → 视为模板坏了，同样回退内置默认。
+ */
+function renderTemplate(templateBody: string, vars: Record<string, string>): string | null {
+  let out = templateBody;
+  for (const [key, value] of Object.entries(vars)) {
+    // split/join 全局替换（$ 等特殊字符安全——join 不走正则替换语义）
+    out = out.split(`{{${key}}}`).join(value);
+  }
+  return out.includes('{{') ? null : out;
+}
+
+/** 加载三层模板（任一缺失/损坏 → 整体回退内置，保证三层风格一致） */
+function loadDeliverablesTemplates(): { doc: string; skill: string; run: string } | null {
+  const dir = resolveTemplatesDir();
+  if (dir === null) return null;
+  try {
+    const doc = readFileSync(join(dir, DELIVERABLES_TEMPLATE_FILES.doc), 'utf-8');
+    const skill = readFileSync(join(dir, DELIVERABLES_TEMPLATE_FILES.skill), 'utf-8');
+    const run = readFileSync(join(dir, DELIVERABLES_TEMPLATE_FILES.run), 'utf-8');
+    return { doc, skill, run };
+  } catch {
+    return null; // 任一模板读失败 → 整体回退（三层不混搭）
+  }
+}
+
 /** 三层交付物（GUIDE 第五章——单节点三实体） */
 export interface ThreeLayerDeliverables {
   nodeId: string;
@@ -221,63 +282,87 @@ export function distillDeliverables(
   const deliverablesDir = join(paths.deliverablesDir);
   mkdirSync(deliverablesDir, { recursive: true });
 
+  // 模板外置：三级查找链命中 → 模板渲染；miss/损坏 → 内置默认（fail-closed）
+  const templates = loadDeliverablesTemplates();
+
   const layers: ThreeLayerDeliverables[] = nodes.map((n) => {
     const tag = plans?.find((p) => p.nodeId === n.nodeId)?.tag ?? 'unknown';
     const tagLabel = tag === 'auto' ? '🔄 自动执行' : tag === 'enhance' ? '⚡ 强化岗位' : '👤 暂不动';
 
-    const docContent = [
-      `# 交付手册 · ${n.nodeId}`,
-      '',
-      `> 节点：${n.description} · 判定：${tagLabel}`,
-      '',
-      '## 现状（五要素）',
-      `- 输入：${n.elements.input}`,
-      `- 输出：${n.elements.output}`,
-      `- 负责人：${n.elements.owner}`,
-      `- 耗时：${n.elements.duration}`,
-      `- 最卡的地方：${n.elements.bottleneck}`,
-      '',
-      '## 作业步骤（六步分解）',
-      ...sixSteps(n),
-      '',
-      '## 验收标准',
-      `- 输出物形态与原人工产出一致（${n.elements.output}）`,
-      '- 处理时长显著低于人工基线',
-      '- 抽检错误率低于人工基线',
-      '',
-      '## 回滚方式',
-      '停用 AI 节点 → 人工按本手册「现状」节恢复原流程。',
-    ].join('\n');
+    // 占位符变量集（模板契约——键名与 FDE/templates/deliverables/README.md 约定一致）
+    const vars: Record<string, string> = {
+      nodeId: n.nodeId,
+      description: n.description,
+      tag,
+      tagLabel,
+      input: n.elements.input,
+      output: n.elements.output,
+      owner: n.elements.owner,
+      duration: n.elements.duration,
+      bottleneck: n.elements.bottleneck,
+      sixSteps: sixSteps(n).join('\n'),
+    };
 
-    const skillContent = [
-      '---',
-      `name: node-${n.nodeId}`,
-      'description: 本 Skill 由 FDE 沉淀引擎自动生成——按交付手册执行节点作业。',
-      '---',
-      '',
-      `# ${n.description}`,
-      '',
-      `## 输入`,
-      `${n.elements.input}`,
-      '',
-      `## 任务`,
-      `${n.elements.bottleneck}`,
-      '',
-      `## 输出`,
-      `${n.elements.output}`,
-    ].join('\n');
+    // 模板渲染（任一层失败 → 该层回退内置默认，其余层不受影响）
+    const docContent =
+      (templates ? renderTemplate(templates.doc, vars) : null) ??
+      [
+        `# 交付手册 · ${n.nodeId}`,
+        '',
+        `> 节点：${n.description} · 判定：${tagLabel}`,
+        '',
+        '## 现状（五要素）',
+        `- 输入：${n.elements.input}`,
+        `- 输出：${n.elements.output}`,
+        `- 负责人：${n.elements.owner}`,
+        `- 耗时：${n.elements.duration}`,
+        `- 最卡的地方：${n.elements.bottleneck}`,
+        '',
+        '## 作业步骤（六步分解）',
+        ...sixSteps(n),
+        '',
+        '## 验收标准',
+        `- 输出物形态与原人工产出一致（${n.elements.output}）`,
+        '- 处理时长显著低于人工基线',
+        '- 抽检错误率低于人工基线',
+        '',
+        '## 回滚方式',
+        '停用 AI 节点 → 人工按本手册「现状」节恢复原流程。',
+      ].join('\n');
 
-    const runContent = [
-      `# 节点片段（引擎六组装 workflow 用）`,
-      `- id: ${n.nodeId}`,
-      `  # agent: 由 agent-creation 推导`,
-      `  task: |`,
-      `    节点：${n.description}`,
-      `    输入：${n.elements.input}`,
-      `    输出：${n.elements.output}`,
-      `    痛点：${n.elements.bottleneck}`,
-      `  # 自动化标签：${tag}`,
-    ].join('\n');
+    const skillContent =
+      (templates ? renderTemplate(templates.skill, vars) : null) ??
+      [
+        '---',
+        `name: node-${n.nodeId}`,
+        'description: 本 Skill 由 FDE 沉淀引擎自动生成——按交付手册执行节点作业。',
+        '---',
+        '',
+        `# ${n.description}`,
+        '',
+        `## 输入`,
+        `${n.elements.input}`,
+        '',
+        `## 任务`,
+        `${n.elements.bottleneck}`,
+        '',
+        `## 输出`,
+        `${n.elements.output}`,
+      ].join('\n');
+
+    const runContent =
+      (templates ? renderTemplate(templates.run, vars) : null) ??
+      [
+        `# 节点片段（引擎六组装 workflow 用）`,
+        `- id: ${n.nodeId}`,
+        `  # agent: 由 agent-creation 推导`,
+        `  task: |`,
+        `    节点：${n.description}`,
+        `    输入：${n.elements.input}`,
+        `    输出：${n.elements.output}`,
+        `    痛点：${n.elements.bottleneck}`,
+        `  # 自动化标签：${tag}`,
+      ].join('\n');
 
     return {
       nodeId: n.nodeId,

@@ -35,4 +35,4 @@ model_instructions_file = "~/.sofagent/skills/sofagent/SKILL.md"
 
 ## 连接 MCP Server
 
-79 个 tool（`run_audit` / `worklog_query` / `snapshot_restore` / `fde_interview` 等）经 MCP 协议面暴露——适配器只依赖 @public API 子集，@internal 破坏性变更不影响本挂载。默认全量暴露，`SOFAGENT_MCP_ROLES` 显式收窄专职面。
+80 个 tool（`run_audit` / `worklog_query` / `snapshot_restore` / `fde_interview` 等）经 MCP 协议面暴露——适配器只依赖 @public API 子集，@internal 破坏性变更不影响本挂载。默认全量暴露，`SOFAGENT_MCP_ROLES` 显式收窄专职面。

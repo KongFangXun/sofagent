@@ -21,7 +21,7 @@ export interface ToolDef {
 }
 
 /**
- * 完整工具清单——79 个 tool（v1.4.3：train_status/train_list/train_diagnose 新增；v1.4.2：fde_interview/fde_classify/fde_quantify/fde_derive/fde_distill/fde_deploy 六引擎 + train_doctor/train_dryrun/train_report 新增；v1.4.1：train_submit 新增；v1.4.0：cost_query + browser 4 新增；v1.3.9：worklog_query 新增；v1.3.6：workflow_submit/ontology_import/model_register/model_switch/model_unregister/train_budget/define_acceptance/check_acceptance；v1.3.5：run_ab_test/promote_ab/snapshot_list/snapshot_restore；v1.3.4：commons_publish/search/invoke/rate/retire/harvest_rule；不含 4 个 resource shortcut）
+ * 完整工具清单——80 个 tool（v1.4.4：corpus_export 新增；v1.4.3：train_status/train_list/train_diagnose 新增；v1.4.2：fde_interview/fde_classify/fde_quantify/fde_derive/fde_distill/fde_deploy 六引擎 + train_doctor/train_dryrun/train_report 新增；v1.4.1：train_submit 新增；v1.4.0：cost_query + browser 4 新增；v1.3.9：worklog_query 新增；v1.3.6：workflow_submit/ontology_import/model_register/model_switch/model_unregister/train_budget/define_acceptance/check_acceptance；v1.3.5：run_ab_test/promote_ab/snapshot_list/snapshot_restore；v1.3.4：commons_publish/search/invoke/rate/retire/harvest_rule；不含 4 个 resource shortcut）
  */
 export const TOOLS: ToolDef[] = [
   {
@@ -822,6 +822,8 @@ export const TOOLS: ToolDef[] = [
         model: { type: 'string', description: '模型名（传给服务的 model 字段）' },
         client_type: { type: 'string', enum: ['ollama', 'openai-compatible'], description: '客户端协议（缺省 ollama；openai-compatible = vLLM/第三方 router）', default: 'ollama' },
         source: { type: 'string', enum: ['endpoint', 'local-path'], description: '来源类型', default: 'endpoint' },
+        weights_dir: { type: 'string', description: '权重目录（source=local-path 必填——按 manifest.json 目录规范校验，校验通过才注册）' },
+        verify_hash: { type: 'boolean', description: '注册时校验权重哈希（缺省 true——供应链完整性）', default: true },
         eval_score: { type: 'number', description: '评测分数' },
         comment: { type: 'string', description: '备注' },
         profile: {
@@ -847,10 +849,11 @@ export const TOOLS: ToolDef[] = [
     inputSchema: {
       type: 'object',
       properties: {
-        name: { type: 'string', description: '目标模型名（action=rollback 时可省略）' },
+        name: { type: 'string', description: '目标模型名（action=rollback 可省略；rollback-weights 必填）' },
         lane: { type: 'string', enum: ['executor', 'pipeline'], description: '档位（缺省 executor）', default: 'executor' },
         percent: { type: 'number', description: '灰度比例 1-99；100/缺省 = 晋升全量（强制人审）' },
-        action: { type: 'string', enum: ['switch', 'rollback'], description: '动作：switch（默认）/ rollback', default: 'switch' },
+        action: { type: 'string', enum: ['switch', 'rollback', 'rollback-weights'], description: '动作：switch（默认）/ rollback（模型级）/ rollback-weights（权重版本级——local-path 模型）', default: 'switch' },
+        target_version: { type: 'string', description: '权重版本回滚目标（rollback-weights 可选——缺省回拨上一版本）' },
         human_confirmed: { type: 'boolean', description: '🔴 人工确认（晋升 percent=100 时必填 true——false/缺省挂起等人审）', default: false },
         comment: { type: 'string', description: '备注（灰度依据 / 回滚原因，写入事件留痕）' },
       },
@@ -918,7 +921,7 @@ export const TOOLS: ToolDef[] = [
     // v1.4.2 (章四)：训练环境体检——CUDA/显存/框架/基座缓存四项只查不装
     name: 'train_doctor',
     roles: ['eval', 'ops'],
-    description: '训练环境体检——CUDA/显存/框架版本/基座模型缓存四项 + 反作弊基线三项（git 禁用/.git 可见性/网络白名单——v1.4.3）结构化报告（只查不装；装环境走 train env init / tools/train-env-init.sh，基座下载走 model-downloader 断点续传）。',
+    description: '训练环境体检——CUDA/显存/框架版本/基座模型缓存四项 + 反作弊基线三项（git 禁用/.git 可见性/网络白名单）结构化报告（只查不装；装环境走 train env init，基座下载走 model-downloader）。',
     inputSchema: {
       type: 'object',
       properties: {
@@ -932,7 +935,7 @@ export const TOOLS: ToolDef[] = [
     // v1.4.2 (章五)：训练 dry-run——失败前预防（管线连通/数据抽样/显存/算力外推）
     name: 'train_dryrun',
     roles: ['eval', 'ops'],
-    description: '训练 dry-run——提交前预检：极小样本管线连通 + 数据质量抽样 + 显存估算（超限提前告警）+ 算力外推（sigmoid 缩放律——ScaleRL 方法，外推成本超预算提交前告警）。',
+    description: '训练 dry-run——提交前预检：极小样本管线连通 + 数据质量抽样 + 显存估算（超限提前告警）+ 算力外推（sigmoid 缩放律外推成本，超预算提交前告警）。',
     inputSchema: {
       type: 'object',
       properties: {
@@ -1011,7 +1014,7 @@ export const TOOLS: ToolDef[] = [
     // v1.4.3 (第一章)：训练进度查询——MCP 客户端长任务轮询入口
     name: 'train_status',
     roles: ['eval', 'ops'],
-    description: '训练进度查询——status/step/loss/reward 曲线/断点/用量快照（长任务轮询；日志尾部走 events.jsonl 事件流）。',
+    description: '训练进度查询——status/step/loss/reward 曲线/断点/用量快照（长任务轮询入口）。',
     inputSchema: {
       type: 'object',
       properties: {
@@ -1043,7 +1046,7 @@ export const TOOLS: ToolDef[] = [
     // v1.4.3 (第二章)：训练失败诊断——七类分类 + 上下文 + 处方
     name: 'train_diagnose',
     roles: ['eval', 'ops'],
-    description: '训练失败诊断——七类分类（OOM/数据格式/超参发散/框架/环境/重复坍塌/精度异常）+ 上下文四源（日志尾部+环境清单+checkpoint+超参）+ 修复处方（MiniMax-M1/ScaleRL 同款），报告落盘 diagnose.json。',
+    description: '训练失败诊断——七类分类（OOM/数据格式/超参发散/框架/环境/重复坍塌/精度异常）+ 上下文四源（日志尾部+环境清单+checkpoint+超参）+ 修复处方，报告落盘 diagnose.json。',
     inputSchema: {
       type: 'object',
       properties: {
@@ -1228,7 +1231,7 @@ export const TOOLS: ToolDef[] = [
     // v1.4.2 (章八·引擎四)：本体推导——五要素 → ontology YAML 草稿
     name: 'fde_derive',
     roles: ['fde'],
-    description: 'FDE 本体推导（引擎四）——五要素+访谈 → 实体/概念/关系 YAML 草稿（复用 compose-interview 推导链路）；机器初稿人工确认后经 ontology_import 导入；超 10 实体或 5 节点提示 needsFullOntology。',
+    description: 'FDE 本体推导（引擎四）——五要素+访谈 → 实体/概念/关系 YAML 草稿；机器初稿人工确认后经 ontology_import 导入；超 10 实体或 5 节点提示 needsFullOntology。',
     inputSchema: {
       type: 'object',
       properties: {
@@ -1326,7 +1329,7 @@ export const TOOLS: ToolDef[] = [
     // v1.4.2 (章八·引擎六)：workflow 组装部署——产物走 submit+activate 现有链路
     name: 'fde_deploy',
     roles: ['fde'],
-    description: 'FDE workflow 组装部署（引擎六）——三层交付物 → deployments/<name>.yml（复用 workflow-draft 生成器，与 fde_compose 同格式）；只产出工件不代激活——激活走 workflow_submit + activate_workflow（人审闸门保留）。',
+    description: 'FDE workflow 组装部署（引擎六）——三层交付物 → deployments/<name>.yml（与 fde_compose 同格式）；只产出工件不代激活——激活走 workflow_submit + activate_workflow（人审闸门保留）。',
     inputSchema: {
       type: 'object',
       properties: {
@@ -1370,6 +1373,21 @@ export const TOOLS: ToolDef[] = [
         },
       },
       required: ['enterprise_id', 'workflow_name', 'nodes'],
+    },
+  },
+  {
+    // 训练语料导出三件套（规则 + 方法论 + 样本）——训练信号机器可读化
+    name: 'corpus_export',
+    roles: ['ops'],
+    description: '训练语料导出三件套——规则（27 编号位含跳号占位 + reward_hint 骨架 + verifiers 三桶清单）+ FDE 方法论（锚点解析）+ 带标签审计样本（五源聚合 + 脱敏）。导出带版本号 + HMAC 签名，导出行为记 corpus_export 审计事件。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        scope: { type: 'string', enum: ['default', 'extended', 'all'], description: '规则导出范围（缺省 all = 27 编号位）' },
+        out_dir: { type: 'string', description: '输出目录（缺省 data/export/corpus/）' },
+        data_dir: { type: 'string', description: '数据根目录（样本聚合源）' },
+        rules_only: { type: 'boolean', description: '只导规则面（跳过样本/方法论）' },
+      },
     },
   },
 ];

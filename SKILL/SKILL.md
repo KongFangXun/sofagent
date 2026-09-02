@@ -36,7 +36,7 @@ metadata:
 |------|--------|--------|
 | FDE Skill | 本 skill（方法论 + 约束注入） | ClawHub / SkillHub 分发，`bash install.sh` 装到本地 |
 | 企业底座 | 约束层全套（hooks + 数据 + MCP） | `bash install.sh`（企业设备） |
-| MCP Server | 79 tools 能力面（审计/本体/进化/训练/工作明细） | `bash install.sh --platform <平台>` 自动配置，装完即连 |
+| MCP Server | 80 tools 能力面（审计/本体/进化/训练/工作明细） | `bash install.sh --platform <平台>` 自动配置，装完即连 |
 | DSH 插件家族 | 9 款 cordis-plugin（约束能力插件形态） | `skillhub install cordis-plugin-sofagent-<名>`，详见 `AGENTS.md` |
 | CLI | `sofagent` 命令（审计 / 快照 / 部署 / dashboard） | `bash install.sh` 装到 `~/.sofagent/bin/` |
 | Dashboard | Web 驾驶舱（工作明细 / 图谱 / 健康） | `sofagent web` 起本地服务，读 `data/` 运行时数据 |
@@ -63,7 +63,7 @@ metadata:
 3. 不生成有害内容 — 不辩解、不迂回、不提供替代
 4. 不冒充人类 — 标注「AI 生成」、不模仿真人/不声称情感
 
-### 7 则铁律
+### 8 则铁律
 
 0. **知行合一** — 说和做一致，声称必有证据
 1. **目标驱动** — 回到原始意图，不跑偏、不越做越复杂
@@ -72,6 +72,7 @@ metadata:
 4. **存疑即问** — 列出两种以上理解让用户选，不猜
 5. **不藏错误** — 报错、在哪、试了什么，不许吞错静默跳过
 6. **有始有终** — 任务完成主动收工，不确定时问「这样行不行」
+7. **spec-first** — 改代码前先声明「本变更对应哪个 spec」（workflow.yml / fde.md / task 书）；transcript 直出的口头需求先落 spec 再动代码，对话记录本身永远不是改代码的依据
 
 ### 品牌前缀铁律
 
@@ -92,7 +93,7 @@ metadata:
 
 | 层 | 文件 | 加载方式 | 读什么 | 不存在时 |
 |:--:|------|---------|------|------|
-| 1 | **本文件** | skill 调用自动注入 | 4 底线 + 7 则铁律 + FDE 身份 | — |
+| 1 | **本文件** | skill 调用自动注入 | 4 底线 + 8 则铁律 + FDE 身份 | — |
 | 2 | `{SOFAGENT_HOME}/data/think.md` | Agent 主动 Read | 反思区（上次踩了什么坑）| 任务完成后创建 |
 | 3 | `~/.openclaw/skills/sofagent/fde.md` | Agent 主动 Read | 企业规范（FDE 制定，最高优先级）| 跳过（未配置）|
 | 4 | `{SOFAGENT_HOME}/data/knowledge/index.md` | Agent 主动 Read | AI 知识库目录（top-3 摘要）| 跳过（空知识库）|
@@ -170,7 +171,7 @@ metadata:
 
 ---
 
-## MCP 工具速查（79 tools · 12 类）
+## MCP 工具速查（80 tools · 12 类）
 
 > 连接 sofagent MCP Server 后可用。未连接时降级为纯文本引导。每类列代表工具，**MCP 协议面暴露规则与 `SOFAGENT_MCP_ROLES` 收窄说明见 `AGENTS.md`**。
 
@@ -184,7 +185,7 @@ metadata:
 | FDE 编排（10） | `fde_interview`（访谈结构化）`fde_classify`（三问判定）`fde_quantify`（量化+ROI）`fde_derive`（本体推导）`fde_distill`（三层沉淀）`fde_deploy`（组装部署）`fde_compose` `sofagent_compose` `activate_workflow` `create_agent` |
 | Workflow/Agent（7） | `workflow_submit` `route_workflow` `agent_identity` |
 | 能力公地（6） | `commons_publish` `commons_search` `commons_invoke` |
-| 模型训练（11） | `model_register` `model_switch`（灰度）`train_submit` `train_budget`（超预算等人审）`train_doctor`（环境体检）`train_dryrun`（提交前预检）`train_report`（训练报告）`train_status`（进度查询）`train_list`（任务列表）`train_diagnose`（失败诊断） |
+| 模型训练（12） | `model_register` `model_switch`（灰度）`train_submit` `train_budget`（超预算等人审）`train_doctor`（环境体检）`train_dryrun`（提交前预检）`train_report`（训练报告）`train_status`（进度查询）`train_list`（任务列表）`train_diagnose`（失败诊断）`corpus_export`（训练语料导出三件套） |
 | 验收（2） | `define_acceptance` `check_acceptance` |
 | 运维观测（6） | `health_check` `snapshot_restore`（强制人审）`worklog_query` `cost_query` |
 | 浏览器（4） | `playwright_navigate` `playwright_screenshot` |

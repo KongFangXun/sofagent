@@ -300,3 +300,144 @@ export function traceFromBehavior(ref: string, dataDir?: string): DecisionLogEnt
     (e) => typeof e.artifactRef === 'string' && e.artifactRef.includes(ref),
   );
 }
+
+// ============================================================
+// 因果链查询（Semantica「决策是一等公民图节点」映射——决策链可追溯）
+// ============================================================
+
+/** 因果链节点（回溯路径上的一条决策） */
+export interface DecisionChainNode {
+  /** 决策条目 */
+  entry: DecisionLogEntry;
+  /** 该节点在链中的深度（起点 =0，沿 causedBy 每上一级 +1） */
+  depth: number;
+}
+
+/** traceDecisionChain 结果 */
+export interface DecisionChainTrace {
+  /** 被追溯的起点条目（ts = 入参 entryId） */
+  root: DecisionLogEntry;
+  /** 回溯路径（从起点到根因，depth 递增） */
+  chain: DecisionChainNode[];
+  /** 链式人类可读叙事（A 导致 B，B 触发 C——按因果序） */
+  narrative: string;
+  /** 回溯中断原因（causedBy 指向不存在的条目时标注——如实呈现不静默） */
+  brokenAt?: string;
+}
+
+/**
+ * 因果链回溯——沿 causedBy 逐级上溯至根因，输出链式叙事。
+ *
+ * 防环：causedBy 理论上只指向更早的决策（时间倒流不可能），但被篡改
+ * 或写入 bug 可能成环——visited 集合拦截，环时在叙事中如实标注。
+ *
+ * 旧条目无 causedBy 字段：chain 只有起点自身（单节点链，不报错——
+ * 向后兼容，老日志照常可查）。
+ *
+ * @param entryId 起点条目 ts
+ * @param dataDir 可选的数据目录覆盖（用于测试）
+ */
+export function traceDecisionChain(entryId: string, dataDir?: string): DecisionChainTrace | undefined {
+  const entries = loadDecisionLog(dataDir);
+  const byTs = new Map(entries.map((e) => [e.ts, e]));
+  const root = byTs.get(entryId);
+  if (!root) return undefined;
+
+  const chain: DecisionChainNode[] = [{ entry: root, depth: 0 }];
+  const visited = new Set<string>([entryId]);
+  let brokenAt: string | undefined;
+
+  // 沿 causedBy 上溯（支持多父——逐父展开，深度取路径最深）
+  const frontier: DecisionChainNode[] = chain.slice();
+  while (frontier.length > 0) {
+    const node = frontier.shift()!;
+    const refs = node.entry.causedBy ?? [];
+    for (const ref of refs) {
+      if (visited.has(ref)) {
+        brokenAt = `因果环：${ref} 已在回溯路径上（疑似写入 bug 或篡改）`;
+        continue;
+      }
+      const parent = byTs.get(ref);
+      if (!parent) {
+        brokenAt = `causedBy 指向的条目不存在：${ref}（可能已被清理或跨日志引用）`;
+        continue;
+      }
+      visited.add(ref);
+      const next: DecisionChainNode = { entry: parent, depth: node.depth + 1 };
+      chain.push(next);
+      frontier.push(next);
+    }
+  }
+
+  // 链式叙事（从根因到起点——因果自然序）
+  const ordered = [...chain].sort((a, b) => b.depth - a.depth); // 根因在前
+  const parts: string[] = [];
+  for (let i = 0; i < ordered.length; i++) {
+    const n = ordered[i]!;
+    const label = `${n.entry.ts.slice(11, 19)} ${n.entry.kind}${n.entry.causalType ? `（${n.entry.causalType}）` : ''}：${n.entry.why.text}`;
+    parts.push(label);
+    if (i < ordered.length - 1) {
+      const next = ordered[i + 1]!;
+      const edge = next.entry.causalType === 'influenced' ? '影响了' : '导致了';
+      parts.push(`　↓ ${edge}`);
+    }
+  }
+  if (brokenAt) parts.push(`⚠ ${brokenAt}`);
+
+  return { root, chain, narrative: parts.join('\n'), ...(brokenAt ? { brokenAt } : {}) };
+}
+
+/** 先例检索结果条目 */
+export interface SimilarDecisionHit {
+  entry: DecisionLogEntry;
+  /** 匹配得分（tags 交集数 ×2 + triggeredRule 命中 ×3——排序依据） */
+  score: number;
+  /** 匹配原因（人读——命中了哪些 tag / 规则） */
+  matchedOn: string[];
+}
+
+/**
+ * 先例检索——按 DecisionWhy.tags + triggeredRule 结构化匹配（不用向量，
+ * 字段已有，零新依赖）。HITL 审批界面展示「历史类似决策 + 结果」。
+ *
+ * 打分：tags 交集每命中 +2；triggeredRule 相同 +3；kind 相同 +1。
+ * 只返回 score > 0 的条目（零分 = 无结构化相似性），降序。
+ *
+ * @param query 查询条件（tags / triggeredRule / kind 至少一项）
+ * @param opts 查询选项（limit 缺省 10——先例列表够用）
+ * @param dataDir 可选的数据目录覆盖（用于测试）
+ */
+export function findSimilarDecisions(
+  query: { tags?: string[]; triggeredRule?: string; kind?: DecisionKind },
+  opts: QueryOptions = {},
+  dataDir?: string,
+): SimilarDecisionHit[] {
+  const limit = opts.limit ?? 10;
+  const queryTags = new Set(query.tags ?? []);
+  const hits: SimilarDecisionHit[] = [];
+
+  for (const entry of loadDecisionLog(dataDir)) {
+    let score = 0;
+    const matchedOn: string[] = [];
+    // tags 交集
+    for (const tag of entry.why?.tags ?? []) {
+      if (queryTags.has(tag)) {
+        score += 2;
+        matchedOn.push(`tag:${tag}`);
+      }
+    }
+    // triggeredRule 精确匹配
+    if (query.triggeredRule && entry.why?.triggeredRule === query.triggeredRule) {
+      score += 3;
+      matchedOn.push(`rule:${query.triggeredRule}`);
+    }
+    // kind 相同（弱信号）
+    if (query.kind && entry.kind === query.kind) {
+      score += 1;
+      matchedOn.push(`kind:${entry.kind}`);
+    }
+    if (score > 0) hits.push({ entry, score, matchedOn });
+  }
+
+  return hits.sort((a, b) => b.score - a.score).slice(0, limit);
+}

@@ -402,6 +402,109 @@ describe('fde-quantify · 引擎五 distill', () => {
     const manual = fs.readFileSync(r.layers[0].docLayer.path, 'utf8');
     expect(manual).toContain('👤 暂不动');
   });
+
+  // ── 模板外置（v1.4.4 第七章·九）：改模板不改代码 ──
+
+  it('test_distillDeliverables_仓库模板渲染与内置默认逐字节等价', () => {
+    // 仓库模板（FDE/templates/deliverables/）与内置默认骨架语义一致——
+    // 渲染产物应逐字节等价（模板外置是「能力外置」不是「行为变更」）
+    const n = makeNode();
+    const prevRoot = process.env.SOFAGENT_REPO_ROOT;
+    process.env.SOFAGENT_REPO_ROOT = join(tmpdir(), 'sofagent-no-such-root');
+    try {
+      const builtin = distillDeliverables(dataDir, 'acme', [n]);
+      const fs = require('fs') as typeof import('fs');
+      const builtinDoc = fs.readFileSync(builtin.layers[0].docLayer.path, 'utf8');
+      const builtinSkill = fs.readFileSync(builtin.layers[0].skillLayer.path, 'utf8');
+      const builtinRun = fs.readFileSync(builtin.layers[0].runLayer.path, 'utf8');
+
+      // cwd 指到仓库根 → 命中仓库模板（测试 cwd 即 monorepo 包目录，向上两级）
+      const prevCwd = process.cwd();
+      process.chdir(join(__dirname, '..', '..', '..', '..'));
+      try {
+        const templated = distillDeliverables(dataDir, 'acme2', [n]);
+        expect(fs.readFileSync(templated.layers[0].docLayer.path, 'utf8')).toBe(builtinDoc);
+        expect(fs.readFileSync(templated.layers[0].skillLayer.path, 'utf8')).toBe(builtinSkill);
+        expect(fs.readFileSync(templated.layers[0].runLayer.path, 'utf8')).toBe(builtinRun);
+      } finally {
+        process.chdir(prevCwd);
+      }
+    } finally {
+      if (prevRoot === undefined) delete process.env.SOFAGENT_REPO_ROOT;
+      else process.env.SOFAGENT_REPO_ROOT = prevRoot;
+    }
+  });
+
+  it('test_distillDeliverables_自定义模板定制生效（改模板不改代码）', () => {
+    const fs = require('fs') as typeof import('fs');
+    // 临时模板目录：只放 doc 层（skill/run 缺 → 整体回退内置——三层不混搭）
+    const tmpTemplates = join(dataDir, 'custom-templates', 'FDE', 'templates', 'deliverables');
+    fs.mkdirSync(tmpTemplates, { recursive: true });
+    fs.writeFileSync(join(tmpTemplates, 'node-manual.md'), '# 定制手册 {{nodeId}}——{{description}}（{{tagLabel}}）');
+    fs.writeFileSync(join(tmpTemplates, 'node-skill.md'), '---\nname: node-{{nodeId}}\ndescription: 定制 Skill。\n---\n# {{description}}');
+    fs.writeFileSync(join(tmpTemplates, 'node-node.yaml'), '# 定制片段 {{nodeId}}');
+
+    const prevRoot = process.env.SOFAGENT_REPO_ROOT;
+    process.env.SOFAGENT_REPO_ROOT = join(dataDir, 'custom-templates');
+    try {
+      const r = distillDeliverables(dataDir, 'acme', [makeNode()]);
+      const manual = fs.readFileSync(r.layers[0].docLayer.path, 'utf8');
+      // plans 为 null → tag 'unknown' → tagLabel 走「暂不动」分支（三态兜底）
+      expect(manual).toBe('# 定制手册 collect-report——汇总各门店日报（👤 暂不动）');
+      const skill = fs.readFileSync(r.layers[0].skillLayer.path, 'utf8');
+      expect(skill).toContain('description: 定制 Skill。');
+      const run = fs.readFileSync(r.layers[0].runLayer.path, 'utf8');
+      expect(run).toBe('# 定制片段 collect-report');
+    } finally {
+      if (prevRoot === undefined) delete process.env.SOFAGENT_REPO_ROOT;
+      else process.env.SOFAGENT_REPO_ROOT = prevRoot;
+    }
+  });
+
+  it('test_distillDeliverables_坏模板failclosed回退内置默认', () => {
+    const fs = require('fs') as typeof import('fs');
+    // 坏模板：占位符写错（渲染后残留 {{）→ 回退内置默认
+    const tmpTemplates = join(dataDir, 'bad-templates', 'FDE', 'templates', 'deliverables');
+    fs.mkdirSync(tmpTemplates, { recursive: true });
+    fs.writeFileSync(join(tmpTemplates, 'node-manual.md'), '# 坏模板 {{nodeId}} {{typo_placeholder}}');
+    fs.writeFileSync(join(tmpTemplates, 'node-skill.md'), '---\nname: node-{{nodeId}}\n---');
+    fs.writeFileSync(join(tmpTemplates, 'node-node.yaml'), '# {{nodeId}}');
+
+    const prevRoot = process.env.SOFAGENT_REPO_ROOT;
+    process.env.SOFAGENT_REPO_ROOT = join(dataDir, 'bad-templates');
+    try {
+      const r = distillDeliverables(dataDir, 'acme', [makeNode()]);
+      const manual = fs.readFileSync(r.layers[0].docLayer.path, 'utf8');
+      // doc 层坏了 → 回退内置默认（含五要素结构），但 skill/run 层正常走模板
+      expect(manual).toContain('## 现状（五要素）');
+      expect(manual).not.toContain('{{typo_placeholder}}');
+      const skill = fs.readFileSync(r.layers[0].skillLayer.path, 'utf8');
+      expect(skill).toContain('---');
+    } finally {
+      if (prevRoot === undefined) delete process.env.SOFAGENT_REPO_ROOT;
+      else process.env.SOFAGENT_REPO_ROOT = prevRoot;
+    }
+  });
+
+  it('test_distillDeliverables_模板文件缺失整体回退（三层不混搭）', () => {
+    const fs = require('fs') as typeof import('fs');
+    // 只有 doc 模板、缺 skill/run → 整体回退内置（保证三层风格一致）
+    const tmpTemplates = join(dataDir, 'partial-templates', 'FDE', 'templates', 'deliverables');
+    fs.mkdirSync(tmpTemplates, { recursive: true });
+    fs.writeFileSync(join(tmpTemplates, 'node-manual.md'), '# 只有这层 {{nodeId}}');
+
+    const prevRoot = process.env.SOFAGENT_REPO_ROOT;
+    process.env.SOFAGENT_REPO_ROOT = join(dataDir, 'partial-templates');
+    try {
+      const r = distillDeliverables(dataDir, 'acme', [makeNode()]);
+      const manual = fs.readFileSync(r.layers[0].docLayer.path, 'utf8');
+      expect(manual).toContain('## 现状（五要素）'); // 未走模板（整体回退）
+      expect(manual).not.toContain('只有这层');
+    } finally {
+      if (prevRoot === undefined) delete process.env.SOFAGENT_REPO_ROOT;
+      else process.env.SOFAGENT_REPO_ROOT = prevRoot;
+    }
+  });
 });
 
 // ──────────────────────────────────────

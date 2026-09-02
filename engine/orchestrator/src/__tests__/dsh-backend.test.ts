@@ -21,6 +21,7 @@ import {
   createArgv1Guard,
   registerSofagentTools,
   ToolBudgetExhaustedError,
+  extractSessionUsage,
   type CordisRuntime,
   type CordisToolDefinition,
   type DshToolsService,
@@ -487,5 +488,117 @@ describe('registerSofagentTools 工具注入', () => {
     // execute 段保 wrapper：注册后的 def.execute 仍调原 invoke
     const def = registered[0].def as { execute: (a: Record<string, unknown>) => unknown };
     expect(def.execute({ k: 1 })).toEqual({ gate: 'ok', k: 1 });
+  });
+});
+
+// ────────────────────────────────────────────────────────────
+// extractSessionUsage 多通道提取（v1.4.4 第七章·十：DSH 内嵌路径 usage 修复）
+//
+// 实测背景（probe 落地结论）：alpha.1 事件流的 usage 在 `assistant/chunk`
+// （chunk.type === 'usage'，camelCase 字段）里，assistant/message 顶层仅
+// role/content/source/id 无 usage 面——老实现只扫 assistant/message 恒返 null，
+// v1.4.3 第六章步三「token 自动计量」在内嵌路径实际失效。
+// ────────────────────────────────────────────────────────────
+
+describe('extractSessionUsage 多通道提取（v1.4.4 第七章·十）', () => {
+  it('通道一（alpha.1 主通道）：assistant/chunk type:usage camelCase 提取', () => {
+    const events = [
+      { seq: 1, type: 'turn/start', data: {} },
+      { seq: 2, type: 'assistant/chunk', data: { chunk: { type: 'block-start', blockType: 'reasoning' } } },
+      {
+        seq: 3,
+        type: 'assistant/chunk',
+        data: { chunk: { type: 'usage', usage: { inputTokens: 5250, outputTokens: 16, totalTokens: 8594, cacheReadTokens: 3328 } } },
+      },
+      { seq: 4, type: 'assistant/message', data: { message: { role: 'assistant', content: [{ type: 'text', text: 'pong' }] } } },
+    ];
+    const u = extractSessionUsage(events, 1);
+    expect(u).toEqual({ prompt_tokens: 5250, completion_tokens: 16, total_tokens: 8594 });
+  });
+
+  it('通道一缺 totalTokens——prompt+completion 求和兜底', () => {
+    const events = [
+      { seq: 1, type: 'assistant/chunk', data: { chunk: { type: 'usage', usage: { inputTokens: 100, outputTokens: 20 } } } },
+    ];
+    const u = extractSessionUsage(events, 1);
+    expect(u).toEqual({ prompt_tokens: 100, completion_tokens: 20, total_tokens: 120 });
+  });
+
+  it('通道二（老形态）：assistant/message 的 message.usage snake_case 提取', () => {
+    const events = [
+      {
+        seq: 1,
+        type: 'assistant/message',
+        data: { message: { usage: { prompt_tokens: 800, completion_tokens: 50, total_tokens: 850 } } },
+      },
+    ];
+    const u = extractSessionUsage(events, 1);
+    expect(u).toEqual({ prompt_tokens: 800, completion_tokens: 50, total_tokens: 850 });
+  });
+
+  it('通道三（LangGraph 命名）：message.usage_metadata input/output_tokens 提取', () => {
+    const events = [
+      {
+        seq: 1,
+        type: 'assistant/message',
+        data: { message: { usage_metadata: { input_tokens: 300, output_tokens: 30, total_tokens: 330 } } },
+      },
+    ];
+    const u = extractSessionUsage(events, 1);
+    expect(u).toEqual({ prompt_tokens: 300, completion_tokens: 30, total_tokens: 330 });
+  });
+
+  it('alpha.1 真实序列回放：chunk 流 + 无 usage 面 assistant/message——从 chunk 通道拿数', () => {
+    // probe4 实测形态：assistant/message 顶层键仅 role/content/source/id
+    const events = [
+      { seq: 4, type: 'turn/start', data: { turn: 1 } },
+      { seq: 15, type: 'assistant/chunk', data: { chunk: { type: 'block-start', index: 0, blockType: 'reasoning' } } },
+      { seq: 47, type: 'assistant/chunk', data: { chunk: { type: 'text-delta', index: 1, text: 'pong' } } },
+      {
+        seq: 50,
+        type: 'assistant/chunk',
+        data: { chunk: { type: 'usage', usage: { inputTokens: 7039, outputTokens: 33, totalTokens: 8608 } } },
+      },
+      { seq: 51, type: 'assistant/chunk', data: { chunk: { type: 'finish', reason: { kind: 'stop' } } } },
+      { seq: 52, type: 'assistant/message', data: { message: { role: 'assistant', content: [{ type: 'reasoning' }, { type: 'text', text: 'pong' }] } } },
+    ];
+    const u = extractSessionUsage(events, 4);
+    expect(u).toEqual({ prompt_tokens: 7039, completion_tokens: 33, total_tokens: 8608 });
+  });
+
+  it('多轮会话取最后一条有效样本（会话累计口径）', () => {
+    const events = [
+      { seq: 1, type: 'assistant/chunk', data: { chunk: { type: 'usage', usage: { inputTokens: 10, outputTokens: 1 } } } },
+      { seq: 2, type: 'assistant/chunk', data: { chunk: { type: 'usage', usage: { inputTokens: 5000, outputTokens: 40, totalTokens: 5040 } } } },
+    ];
+    const u = extractSessionUsage(events, 1);
+    expect(u).toEqual({ prompt_tokens: 5000, completion_tokens: 40, total_tokens: 5040 });
+  });
+
+  it('firstSeq 之前的事件跳过（同 session 复用隔离）', () => {
+    const events = [
+      { seq: 1, type: 'assistant/chunk', data: { chunk: { type: 'usage', usage: { inputTokens: 10, outputTokens: 1 } } } },
+      { seq: 5, type: 'assistant/chunk', data: { chunk: { type: 'usage', usage: { inputTokens: 200, outputTokens: 5 } } } },
+    ];
+    const u = extractSessionUsage(events, 5);
+    expect(u).toEqual({ prompt_tokens: 200, completion_tokens: 5, total_tokens: 205 });
+  });
+
+  it('无任何 usage 面（三通道全 miss）→ null（调用方降级手记）', () => {
+    const events = [
+      { seq: 1, type: 'turn/start', data: {} },
+      { seq: 2, type: 'assistant/message', data: { message: { role: 'assistant', content: [{ type: 'text', text: 'x' }] } } },
+    ];
+    expect(extractSessionUsage(events, 1)).toBeNull();
+  });
+
+  it('chunk 流里非 usage 类型的 chunk 不误判（block-start/text-delta/finish 不产样本）', () => {
+    const events = [
+      { seq: 1, type: 'assistant/chunk', data: { chunk: { type: 'block-start', index: 0, blockType: 'reasoning' } } },
+      { seq: 2, type: 'assistant/chunk', data: { chunk: { type: 'text-delta', index: 1, text: 'hi' } } },
+      { seq: 3, type: 'assistant/chunk', data: { chunk: { type: 'block-end', index: 1, block: { type: 'text', text: 'hi' } } } },
+      { seq: 4, type: 'assistant/chunk', data: { chunk: { type: 'finish', reason: { kind: 'stop' } } } },
+    ];
+    expect(extractSessionUsage(events, 1)).toBeNull();
   });
 });

@@ -106,6 +106,15 @@ export interface RouteReason {
   decisionScore?: number;
 }
 
+/**
+ * 决策因果边类型（Semantica 的 CAUSED / INFLUENCED / PRECEDENT_FOR 三种
+ * 因果边映射）：
+ *   - caused        直接导致（拦截决策引用触发它的路由决策）
+ *   - influenced    影响（HITL 决策引用待审的上游决策）
+ *   - precedent_for 先例（本决策为后续同类决策提供先例）
+ */
+export type CausalType = 'caused' | 'influenced' | 'precedent_for';
+
 /** 决策日志完整条目 schema */
 export interface DecisionLogEntry {
   /** ISO 8601 UTC 时间戳 */
@@ -122,6 +131,17 @@ export interface DecisionLogEntry {
    * 老日志无此字段，查询接口按 undefined 处理（不参与 category 过滤）。
    */
   category?: DecisionCategory;
+  /**
+   * 因果边——引用前序决策（Semantica「决策不是日志行，是一等公民图节点」）。
+   *
+   * 写入时由触发链路带上：拦截决策引用触发它的路由决策（caused）、
+   * HITL 决策引用待审的上游决策（influenced）。值为目标条目的 ts
+   * （决策日志以 ts 为条目标识——traceBack 同语义）。
+   * 老日志无此字段照常校验（向后兼容）。
+   */
+  causedBy?: string[];
+  /** 因果边类型（causedBy 存在时通常有值） */
+  causalType?: CausalType;
   /** 决策发生时刻 */
   moment: LoopPhase;
   /** 决策理由（已脱敏） */
