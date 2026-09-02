@@ -4,7 +4,7 @@
 //
 // 设计（changelog §一 + 开工决议 4）：
 //   SubAgent 可在独立进程运行——本版只做「独立进程」（Agent Protocol 服务端
-//   跑在本机 child_process）；容器与跨机器留 v1.4.3+（依赖 OS 级沙箱与
+//   跑在本机 child_process）；容器与跨机器留 v1.4.4+（依赖 OS 级沙箱与
 //   网络层成熟）。
 //
 //   Agent Protocol 对齐：spawn → task/run → 状态轮询 → 结果取回 的

@@ -1,4 +1,4 @@
-// ── API 分级契约（v1.4.3 四）────────────────────────────
+// ── API 分级契约（v1.4.4 四）────────────────────────────
 // `/* @public */`：公开 API——semver 锁定，变更必须 bump 版本 + CHANGELOG 记录
 //                 （外部依赖方与跨平台适配器只许 import 这一层）
 // `/* @internal */`：内部 API——不承诺稳定性，破坏性变更无需 bump
@@ -7,7 +7,7 @@
 
 // sofagent load-chain hook · OpenClaw 2026.6.x
 // 注入三层加载链到 agent:bootstrap：
-//   L1 core-rules.md（核心铁律 ~30 行，始终注入）+ 按 task type 追加岗位规范（v1.4.3 渐进式加载）
+//   L1 core-rules.md（核心铁律 ~30 行，始终注入）+ 按 task type 追加岗位规范（v1.4.4 渐进式加载）
 //   L2 think.md（反思区）
 //   L3 fde.md（用户规则）
 // 由 DeepSeek V4 Pro 和 GLM-5.2 配合生成。

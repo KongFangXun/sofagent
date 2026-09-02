@@ -1,11 +1,11 @@
-// dataset-version.ts · v1.4.3 章二 · 训练集版本管理（数据可复现）
+// dataset-version.ts · v1.4.4 章二 · 训练集版本管理（数据可复现）
 //
 // 定位：同一份数据反复迭代训练，数据变了训练结果不可比——每次数据管道
 // 产出训练集必须记 dataset_version（hash + 生成时间 + 样本数 + 配置），
 // eval 报告引用该版本（训练前后对比可复现），两版差异可概览
 // （样本数/分布变化——判断「数据变了导致分数变了」）。
 //
-// 与 v1.4.3 train-fingerprint 的分工：fingerprint 冻结的是「一次训练的
+// 与 v1.4.4 train-fingerprint 的分工：fingerprint 冻结的是「一次训练的
 // 全部输入」（含环境/超参/种子，job 维度，不可变）；dataset_version 记录
 // 的是「数据集的血统」（企业维度，append-only 台账，每版一行）——
 // 同一 dataset 多次产出（数据更新）形成版本链。

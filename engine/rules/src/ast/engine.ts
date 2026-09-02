@@ -1,6 +1,6 @@
 // ============================================================
 // engine.ts · AST 规则引擎核心
-// v1.4.3（一）：官方 AST 规则引擎参考实现（sofagent-ruleset-ast）
+// v1.4.4（一）：官方 AST 规则引擎参考实现（sofagent-ruleset-ast）
 //
 // 依赖说明（TypeScript 7 原生端 API 变迁）：
 // TypeScript 7（Go 原生移植）移除了 5.x 的 createSourceFile 同步解析 API，

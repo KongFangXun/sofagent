@@ -1,4 +1,4 @@
-// train-sandbox.ts · v1.4.3 第三章 · 训练沙箱（进程级隔离——扩展 v1.3.7）
+// train-sandbox.ts · v1.4.4 第三章 · 训练沙箱（进程级隔离——扩展 v1.3.7）
 //
 // 定位：联合训练模式「数据不出企业边界」→ 训练子进程在沙箱内运行。
 // 本文件在 v1.3.7 SubAgent 沙箱（network-gateway 白名单 + filesystem

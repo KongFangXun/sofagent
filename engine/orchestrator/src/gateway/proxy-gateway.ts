@@ -2,7 +2,7 @@
 // gateway/proxy-gateway.ts · SubAgent 代理网关硬边界（唯一出入口）
 // v1.3.8 交付一 新增
 //
-// 设计（changelog v1.4.3 §一）：
+// 设计（changelog v1.4.4 §一）：
 //   SubAgent → [代理网关：判定链 + 四防 + WAL + HITL] → 外部服务
 //
 // 判定链（顺序固定，先廉后贵）：

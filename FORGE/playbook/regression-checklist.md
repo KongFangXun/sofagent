@@ -10,7 +10,7 @@
 
 **归并配额（硬门槛）**：新增 N 维 → 本版必须先真实归并 ≥N 维（被并维度检查内容实际移入目标维度，git diff 可查；注释压缩不算）；净增行数 > 警戒线余量 → 继续归并或移下一版——**只调警戒线不归并 = 不合格**。
 
-**行数警戒线（当前值）**：`regression-checklist.md` ≤ 1800 行、`acceptance-test.sh` ≤ 4030 行（3920→4030：run-05 coverage 闭环 S357/S358 两行为场景 + S347 映射锁，三判据①满足——独立行为实测非重复覆盖）；fresh-eyes 警戒线见 04-review-system.md 风格守护段。三条上调铁律：① 三判据全否方可调——(i) 新增非旧维度可扩展子项的独立审查面；(ii) 非既有场景/维度的重复覆盖；(iii) 真实防回归价值非归并压缩可消化；② 连续上调禁令——连续两版已调，本版须先真实归并对销方可再调；同版同侧只调一次（同版二次冻结）；③ **上调只记一行**——`旧值→新值（原因一句话）`，历史上调链不在此处累积（完整过程 git 历史可溯）。
+**行数警戒线（当前值）**：`regression-checklist.md` ≤ 1800 行、`acceptance-test.sh` ≤ 4130 行（4030→4130：v1.4.4 run-01 P0-1 闭环 S362-S370 八场景 + S364 真实归并入 S348 对销 1 处（归并解锁连续上调禁令），净增 +91 ≤ 余量 100）；fresh-eyes 警戒线见 04-review-system.md 风格守护段。三条上调铁律：① 三判据全否方可调——(i) 新增非旧维度可扩展子项的独立审查面；(ii) 非既有场景/维度的重复覆盖；(iii) 真实防回归价值非归并压缩可消化；② 连续上调禁令——连续两版已调，本版须先真实归并对销方可再调；同版同侧只调一次（同版二次冻结）；③ **上调只记一行**——`旧值→新值（原因一句话）`，历史上调链不在此处累积（完整过程 git 历史可溯）。
 
 **维度脚本编写三铁律**（教训——7 个 FAIL 维度中 5 个是脚本自身缺陷而非仓库问题，driver 白跑一轮）：
 
@@ -27,7 +27,7 @@ ACTUAL=$(grep -c "^#### " FORGE/playbook/regression-checklist.md)
 # 行数警戒线自检（越线提醒瘦身，非失败；与 releasing.md 阶段五警戒线一致）
 WC_CHK=$(wc -l < FORGE/playbook/regression-checklist.md); WC_ACC=$(wc -l < FORGE/playbook/acceptance-test.sh)
 [ "$WC_CHK" -le 1800 ] && echo "✅ checklist $WC_CHK (≤1800)" || echo "⚠️ checklist $WC_CHK 超 1800"
-[ "$WC_ACC" -le 4030 ] && echo "✅ acceptance $WC_ACC (≤4030)" || echo "⚠️ acceptance $WC_ACC 超 4030"
+[ "$WC_ACC" -le 4130 ] && echo "✅ acceptance $WC_ACC (≤4130)" || echo "⚠️ acceptance $WC_ACC 超 4130"
 ```
 ## 你的身份
 
@@ -1674,7 +1674,7 @@ grep -q "TrainAuditEventType\|train_job_submitted" engine/orchestrator/src/train
 
 ```bash
 # B2 迁移纪律：复制成功才删源（cp -Rn 吞错+无条件 rm 的丢数据窗口已闭）
-grep -q 'cp -Rn' install.sh && echo "❌ cp -Rn 吞错语义回流" || echo "✅ 迁移无 cp -Rn"
+grep -q 'cp -Rn' install.sh && { echo "❌ cp -Rn 吞错语义回流"; exit 1; } || echo "✅ 迁移无 cp -Rn"
 grep -A2 'cp -R "$old_data"' install.sh | grep -q 'rm -rf "$old_data"' && echo "✅ 删源在复制成功分支内" || echo "❌ 删源脱离成功分支"
 # B3 谎报守卫：ln 调用无「失败仍报 ok」（4 处 sf 全守卫——BSD grep 下 sfn 前缀含 sf，显式计数）
 SF_COUNT=$(grep -E 'ln -sf "' install.sh | grep -vc 'warn\|#' || true); [ "$SF_COUNT" = "4" ] && echo "✅ ln -sf 恰 4 处（均带守卫——多出即需人工核）" || echo "🟡 ln -sf 计数 $SF_COUNT（预期 4），逐处核对守卫"
@@ -1685,7 +1685,7 @@ grep -rq "SOFAGENT_WEBHOOK_ALLOW_LOCALHOST" docs/LIMITATIONS.md && echo "✅ SSR
 # B5 注释数字不失实（LINES 变量并入断言行）
 grep -o '~[0-9]* 行' bootstrap.sh | grep -o '[0-9]*' | awk -v n="$(wc -l < install.sh | tr -d ' ')" '{if ($1 > n * 1.05 || $1 < n * 0.95) exit 1}' && echo "✅ bootstrap 行数注释与实测偏差 <5%" || echo "❌ 注释行数失实"
 # B6 无 untracked 残留（单行收口：状态与列举一次完成）
-[ -z "$(git status --short | grep '^??')" ] && echo "✅ 无 untracked 残留" || echo "❌ 残留：$(git status --short | grep '^??' | head -2)"
+[ -z "$(git status --short | grep '^??')" ] && echo "✅ 无 untracked 残留" || { echo "❌ 残留：$(git status --short | grep '^??' | head -2)"; exit 1; }
 # B9/B10 结构可发现性（两断言并一行收口）
 grep -q "FORGE/SKILL" AGENTS.md && grep -q "releasing/" docs/changelog/releasing.md && head -5 docs/changelog/releasing.md | grep -q "入口" && echo "✅ FORGE/SKILL 区分 + releasing 入口指引在位" || echo "❌ 结构可发现性缺失（FORGE/SKILL 或 releasing 入口）"
 # B11 双 manifest 版本一致（阶段十一 ClawHub 拒收实录：openclaw.plugin.json 从未被 bump 覆盖 4 款全漂移）——命令体见 acceptance S331（#63→S166 同款收口）

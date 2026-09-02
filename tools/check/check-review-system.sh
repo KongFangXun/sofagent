@@ -247,7 +247,7 @@ else
   # 交付章标题核心词（devlog ## N、 标题，去编号/括号注释）+ CHANGELOG 版本行 `**加粗**` 交付短语
   # 纯数字词（测试数/tool 数等计量值）非交付短语，排除——它们本就不该出现在 checklist/acceptance 正文
   DEVLOG_KW=$(grep -E "^## [一二三四五六七八九十]+、" "docs/changelog/v1.${CUR_VER#1.}/v${CUR_VER}.md" 2>/dev/null | sed -E 's/^## [一二三四五六七八九十一点五]+、//; s/（.*//; s/\(.*//' || true)
-  CHANGELOG_KW=$(grep -E "^\- \*\*v${CUR_VER}\*\*" CHANGELOG.md 2>/dev/null | head -1 | grep -oE '\*\*[^*]+\*\*' | sed 's/\*\*//g' | sed -E 's/[（(].*//' | grep -vE '^[0-9]+$' || true)
+  CHANGELOG_KW=$(grep -E "^\- \*\*v${CUR_VER}\*\*" CHANGELOG.md 2>/dev/null | head -1 | grep -oE '\*\*[^*]+\*\*' | sed 's/\*\*//g' | sed -e 's/（.*//' -e 's/(.*//' | grep -vE '^[0-9]+$' || true)
   ALL_KW=$(printf '%s\n%s\n' "$DEVLOG_KW" "$CHANGELOG_KW" | grep -vE '^[[:space:]]*$' | grep -vE '^[0-9]+$' | sort -u || true)
 
   if [ -z "$ALL_KW" ]; then

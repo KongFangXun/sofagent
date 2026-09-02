@@ -1,4 +1,4 @@
-// train-audit.ts · v1.4.3 块三 · 训练任务审计（train_job 事件 + HMAC 链 + 失败回滚）
+// train-audit.ts · v1.4.4 块三 · 训练任务审计（train_job 事件 + HMAC 链 + 失败回滚）
 //
 // 定位：训练本身可审计——「这个模型是怎么训出来的」全程留痕。落盘位置
 // data/train/<enterpriseId>/<trainJobId>/audit.jsonl（append-only），

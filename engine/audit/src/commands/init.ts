@@ -5,7 +5,7 @@
 //   2. 安装 git commit-msg hook
 //   3. 冒烟测试——验证审计引擎可用
 // v1.3.7: 新增仓库状态分类器（gstack 首次运行引导）
-// v1.4.3 daemon 注册改为「确认后注册」——默认不装、非 TTY 不挂起、
+// v1.4.4 daemon 注册改为「确认后注册」——默认不装、非 TTY 不挂起、
 //   已有 plist 询问不静默覆盖、npx 场景如实报错（不生成坏 plist、不打印假成功）、
 //   修正 plist 路径前缀 sofagent/daemon/ → engine/daemon/。
 // v1.2.5 --init 自动生成 HMAC 密钥（~/.sofagent-key，权限 600），

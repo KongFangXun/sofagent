@@ -1,4 +1,4 @@
-// db-source.ts · v1.4.3 章一 · DB / API 数据源适配（只读拉取 → 中间格式）
+// db-source.ts · v1.4.4 章一 · DB / API 数据源适配（只读拉取 → 中间格式）
 //
 // 定位：文件接入之外的第二入口——企业客户的数据常在企业系统里
 // （ERP / 数据库 / REST API），不只文件。本文件把 PostgreSQL / MySQL
