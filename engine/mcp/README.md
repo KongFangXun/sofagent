@@ -49,13 +49,16 @@ MCP Server 通过 stdio 通信（JSON-RPC 2.0）。最小运行时依赖。
 
 ---
 
-## 暴露的 Tools（3 个）
+## 暴露的 Tools（80 个）
+
+> 完整清单（按域分组 + 每工具说明）见 [docs/API.md](../../docs/API.md)——由 tool-registry.ts 生成，门禁对账永不漂移。
 
 | Tool | 说明 |
 |------|------|
 | `run_audit` | 对 git diff 跑全量审计规则（A1-A11、A14-A23 + E1-E2/E4，共 24 条），返回结构化报告 |
 | `get_think` | 读取 think.md 最近 N 条反思条目 |
 | `write_think` | 向 think.md 追加一条反思记录 |
+| `worklog_query` / `cost_query` / `fde_*` / `train_*` / `snapshot_*` / `ontology_*` / … | 其余 77 个——审计/编排/后训/治理/成本/知识各域，见 API.md 分域清单 |
 
 > 注：A12/A13 已在 v0.99.4 合并入 A11（不滥资源），编号不再使用。
 
