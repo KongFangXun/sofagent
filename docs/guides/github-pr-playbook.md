@@ -119,7 +119,7 @@ Single-line change to README.md only.（或双语两文件）
 
 > 活台账：每次巡检/合并后更新本表对应行的状态列与备注（巡检命令：`gh search prs --author KongFangXun --state open`）。自家仓 PR（KongFangXun/sofagent 内部）不入台账。
 
-### 5.1 在投（25 条 open）
+### 5.1 在投（24 条 open）
 
 | # | 仓库 | PR | 节 | 投日 | 状态 | 备注 |
 |---|------|----|----|------|------|------|
@@ -131,23 +131,22 @@ Single-line change to README.md only.（或双语两文件）
 | 6 | ottosulin/awesome-ai-security | [#422](https://github.com/ottosulin/awesome-ai-security/pull/422) | Agent Runtime Security | 08-31 | open | |
 | 7 | scadastrangelove/awesome-ai-security-tools | [#76](https://github.com/scadastrangelove/awesome-ai-security-tools/pull/76) | Runtime Protection | 08-31 | open | |
 | 8 | ccplugins/awesome-claude-code-plugins | [#424](https://github.com/ccplugins/awesome-claude-code-plugins/pull/424) | Security, Compliance & Legal | 08-31 | open | |
-| 9 | agentrust-io/awesome-ai-governance | [#89](https://github.com/agentrust-io/awesome-ai-governance/pull/89) | Governance Frameworks | 08-31 | open | 🔴 真人 review 新进展：AaronRoeF ✅ APPROVED（09-02 巡检发现），imran-siddique 原 CHANGES_REQUESTED 已 DISMISSED——两位维护者信号齐，纯等合并；Policy: Awaiting maintainer review 属待审位非 CI 故障 |
+| 9 | agentrust-io/awesome-ai-governance | [#89](https://github.com/agentrust-io/awesome-ai-governance/pull/89) | Governance Frameworks | 08-31 | open | 🔴 真人 review 新进展：AaronRoeF ✅ APPROVED（09-02 巡检发现），imran-siddique 原 CHANGES_REQUESTED 已 DISMISSED——两位维护者信号齐，纯等合并；09-03 巡检：AaronRoeF 留言「Condition met … Merging.」但 state 仍 OPEN（BLOCKED=维护者审批位），静待执行；Policy: Awaiting maintainer review 属待审位非 CI 故障 |
 | 10 | ai-boost/awesome-harness-engineering ⭐3.9k | [#227](https://github.com/ai-boost/awesome-harness-engineering/pull/227) | Security, Sandbox & Permissions | 08-31 | open | 「Harness Engineering」最对口清单 |
 | 11 | yzhao062/awesome-auditable-ai | [#18](https://github.com/yzhao062/awesome-auditable-ai/pull/18) | Tools | 08-30 | open | 已回 follow-up（本地 check_links 验证） |
 | 12 | OpenFDEAI/OpenFDE | [#1](https://github.com/OpenFDEAI/OpenFDE/pull/1) | 工具地图·可观测/护栏 | 08-31 | open | 该仓**首个 PR** |
 | 13 | global-fde/awesome-fde-resources | [#3](https://github.com/global-fde/awesome-fde-resources/pull/3) | Tools | 08-31 | open | |
-| 14 | 0xsline/awesome-deepseek-harness ⭐961 | [#547](https://github.com/0xsline/awesome-deepseek-harness/pull/547) | Security & Governance（双语） | 09-01 | open | contributing 规范全遵守 |
-| 15 | Anil-matcha/awesome-dsh-plugin ⭐991 | [#122](https://github.com/Anil-matcha/awesome-dsh-plugin/pull/122) | Security & Governance | 09-01 | open | 插节首 |
-| 16 | mahseema/awesome-ai-tools ⭐6.1k | [#2078](https://github.com/mahseema/awesome-ai-tools/pull/2078) | Developer tools | 09-01 | open | PR 模板 checklist 全勾；条目加节尾（模板硬性要求） |
-| 17 | walkinglabs/awesome-harness-engineering ⭐3.9k | [#88](https://github.com/walkinglabs/awesome-harness-engineering/pull/88) | Security, Authorization & Policy | 09-01 | open | 独立仓（非 ai-boost fork），规模同级最大 |
-| 18 | libukai/awesome-deepseek-harness ⭐225 | [#98](https://github.com/libukai/awesome-deepseek-harness/pull/98) | 开发工具（三语） | 09-01 | open | 李不凯深评测风格条目；中英日三 README 同 PR |
-| 19 | TalEliyahu/Awesome-AI-Security ⭐860 | [#140](https://github.com/TalEliyahu/Awesome-AI-Security/pull/140) | Jailbreak & Policy Enforcement (Guardrails) | 09-01 | open | 晚间新投；CC0；星数徽章格式；Guardrails 节尾 |
-| 20 | ProjectRecon/awesome-ai-agents-security ⭐68 | [#109](https://github.com/ProjectRecon/awesome-ai-agents-security/pull/109) | Guardrails & Compliance | 09-01 | open | 晚间新投；「agent 安全活地图」定位最贴 |
-| 21 | Alex-Yanggg/awesome-DSH-plugin ⭐92 | [#108](https://github.com/Alex-Yanggg/awesome-DSH-plugin/pull/108) | Developer tools | 09-01 | open | 晚间新投；catalog/plugins.json+README+中文镜像三文件（generate_readmes --check 过）；描述提 9 个 Cordis 插件坐实 DSH 集成 |
-| 22 | muellerberndt/awesome-ai-security ⭐123 | [#26](https://github.com/muellerberndt/awesome-ai-security/pull/26) | Tools & Frameworks | 09-01 | open | 晚间新投；学习路径型清单；git 通道挂时走 Git Data API 四步兜底 |
-| 23 | DeepSpaceHarbor/Awesome-AI-Security ⭐1668 | [#50](https://github.com/DeepSpaceHarbor/Awesome-AI-Security/pull/50) | Code（表格行） | 09-01 | open | 晚间新投；默认分支 master 非 main；Code 节有 ClawMoat/SkillFortify 工具先例 |
-| 24 | kejixiaoliang/awesome-dsh-plugins ⭐34 | [#56](https://github.com/kejixiaoliang/awesome-dsh-plugins/pull/56) | infrastructure-dev·健康检查/诊断/审计 | 09-02 | open | 09-02 晚投；CONTRIBUTING 规范（分类文件加一行，插 dsh-security-audit 后）；blob+PR body 双回读验证 |
-| 25 | Awesome-AI-Pedia/Awesome-AI-Pedia ⭐318 | [#11](https://github.com/Awesome-AI-Pedia/Awesome-AI-Pedia/pull/11) | deepseek harness plugins（文章制） | 09-02 | open | 09-02 晚投；新建文章 md（格式照现有：定位/核心功能/技术栈），sidebar.ts 自动扫描收侧边栏 |
+| 14 | Anil-matcha/awesome-dsh-plugin ⭐995 | [#122](https://github.com/Anil-matcha/awesome-dsh-plugin/pull/122) | Security & Governance | 09-01 | open | 插节首 |
+| 15 | mahseema/awesome-ai-tools ⭐6.1k | [#2078](https://github.com/mahseema/awesome-ai-tools/pull/2078) | Developer tools | 09-01 | open | PR 模板 checklist 全勾；条目加节尾（模板硬性要求） |
+| 16 | walkinglabs/awesome-harness-engineering ⭐3.9k | [#88](https://github.com/walkinglabs/awesome-harness-engineering/pull/88) | Security, Authorization & Policy | 09-01 | open | 独立仓（非 ai-boost fork），规模同级最大 |
+| 17 | libukai/awesome-deepseek-harness ⭐230 | [#98](https://github.com/libukai/awesome-deepseek-harness/pull/98) | 开发工具（三语） | 09-01 | open | 李不凯深评测风格条目；中英日三 README 同 PR |
+| 18 | TalEliyahu/Awesome-AI-Security ⭐860 | [#140](https://github.com/TalEliyahu/Awesome-AI-Security/pull/140) | Jailbreak & Policy Enforcement (Guardrails) | 09-01 | open | 晚间新投；CC0；星数徽章格式；Guardrails 节尾 |
+| 19 | ProjectRecon/awesome-ai-agents-security ⭐68 | [#109](https://github.com/ProjectRecon/awesome-ai-agents-security/pull/109) | Guardrails & Compliance | 09-01 | open | 晚间新投；「agent 安全活地图」定位最贴 |
+| 20 | Alex-Yanggg/awesome-DSH-plugin ⭐93 | [#108](https://github.com/Alex-Yanggg/awesome-DSH-plugin/pull/108) | Developer tools | 09-01 | open | 晚间新投；catalog/plugins.json+README+中文镜像三文件（generate_readmes --check 过）；描述提 9 个 Cordis 插件坐实 DSH 集成 |
+| 21 | muellerberndt/awesome-ai-security ⭐123 | [#26](https://github.com/muellerberndt/awesome-ai-security/pull/26) | Tools & Frameworks | 09-01 | open | 晚间新投；学习路径型清单；git 通道挂时走 Git Data API 四步兜底 |
+| 22 | DeepSpaceHarbor/Awesome-AI-Security ⭐1668 | [#50](https://github.com/DeepSpaceHarbor/Awesome-AI-Security/pull/50) | Code（表格行） | 09-01 | open | 晚间新投；默认分支 master 非 main；Code 节有 ClawMoat/SkillFortify 工具先例 |
+| 23 | kejixiaoliang/awesome-dsh-plugins ⭐35 | [#56](https://github.com/kejixiaoliang/awesome-dsh-plugins/pull/56) | infrastructure-dev·健康检查/诊断/审计 | 09-02 | open | 09-02 晚投；CONTRIBUTING 规范（分类文件加一行，插 dsh-security-audit 后）；blob+PR body 双回读验证 |
+| 24 | Awesome-AI-Pedia/Awesome-AI-Pedia ⭐327 | [#11](https://github.com/Awesome-AI-Pedia/Awesome-AI-Pedia/pull/11) | deepseek harness plugins（文章制） | 09-02 | open | 09-02 晚投；新建文章 md（格式照现有：定位/核心功能/技术栈），sidebar.ts 自动扫描收侧边栏 |
 
 ### 5.2 已收口
 
@@ -175,9 +174,9 @@ Single-line change to README.md only.（或双语两文件）
 
 | 观测项 | 当前值 | 备注 |
 |---|---|---|
-| views（14 天滚动） | 9/2 基线：308 | 首基线 8/31：28 天 317；9/1：302 |
-| uniques（14 天滚动） | 9/2 基线：71 | 首基线 8/31：66；9/1：74 |
-| 星数 | 9/2 基线：⭐42 | 首基线 8/31 同值 41；9/2 +1（wujiyu115，⭐14k 收录次日） |
+| views（14 天滚动） | 9/3 基线：333 | 首基线 8/31：28 天 317；9/1：302；9/2：308 |
+| uniques（14 天滚动） | 9/3 基线：78 | 首基线 8/31：66；9/1：74；9/2：71 |
+| 星数 | 9/3 基线：⭐42 | 首基线 8/31 同值 41；9/2 +1（wujiyu115，⭐14k 收录次日）；9/3 持平 |
 | 优化动作存档 | 9/1：topics 换血（dsh/dsh-plugin→llm/agent-skills）+ 双语首屏 audit-terminal 实拍图 | 效果看下月同口径复测 |
 
 ## 六、下一步候选（按性价比排序）
@@ -197,6 +196,13 @@ Single-line change to README.md only.（或双语两文件）
 十五、**Zhiyuan-Fan/Awesome-DeepSeek-Harness-Plugins**（⭐547）——🔄 **改判自动索引，不投 PR**：Contributing 明言「加 dsh-plugin topic 让 curator 找到你」+「本地 Codex 定时任务每日复审」——topic 已挂，等抓取收录（巡检顺手核）
 十六、**Awesome-AI-Pedia/Awesome-AI-Pedia**（⭐318）——✅ **已投 #11**（见 5.1 #25）
 十七、**leenkcool/Blue-Whale-Harness**（⭐190）——🔄 **改判自动索引，不投 PR**：README 由 catalog/analyze.mjs 等脚本全自动生成（自动生成于 2026-09-01，人工翻译 merge 层）；PR 改 README 会被下次生成覆盖——正确通道是让上游采集脚本发现（dsh-plugin topic 已挂）
+十八、**caramaschiHG/awesome-ai-agents-2026**（⭐1.8k）——泛 agent 月更大综合，有「Code Review and Security」「Developer Infrastructure」对口细分节，CONTRIBUTING 规范全；⚠️ 近 3 个月未更新（最后 push 6 月中）。**建议投**（落 Code Review and Security 节）
+十九、**rohitg00/awesome-ai-apps**（⭐826）——实弹 demo 型清单（starter/advanced/multi-agent 子目录站结构，无 CONTRIBUTING）；「Advanced Agents」节可挂治理工具。**可投**（低优先——条目需进子目录 README，操作比单文件清单重）
+二十、**Jenqyang/Awesome-AI-Agents**（⭐1.2k）——学术+框架混合清单，有 Tools/Frameworks 节，活跃维护（09-02 有 push）。**可投**（低优先，粒度偏粗同类先例见四）
+二十一、**EvanThomasLuke/Awesome-AI-Security-Skills**（⭐54）——星少但高度对口：专收「AI Security Skills」，有 Rules and Guardrails / Skill Scanners 节，与 sofagent 技能包+审计规则定位最贴。**建议投**（小而准）
+二十二、**jiji262/awesome-harness-engineering**（⭐51）——harness 工程资源合集，有「Reference Implementations & Open Source Tools」实弹节。**可投**（小而对口）
+二十三、**gmh5225/awesome-ai-security**（⭐44）——AI 安全技能向，有「Skills for AI Agents」「Prompt Injection」节。**可投**（小而对口）
+二十四、**Sanqi-normal/dsh-webui-market-plugin**（⭐103）——❌ **不投**：产品仓（DSH Web GUI 插件市场）非清单，收录来自 awesome-dsh-plugin.com 目录站同步，无 PR 通道
 
 ## 七、非清单曝光渠道（中文圈 + 用户网页动作）
 
