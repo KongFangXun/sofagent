@@ -139,7 +139,7 @@ graph TB
 | eval（runEval）⭐ | `eval/history.jsonl` | think（进化模块：passRate 下降→告警） |
 | daemon（health-reporter） | `daemon-health.json` | Dashboard（健康面板） |
 | daemon（dream-cycle） | `knowledge/` | harness 加载链（Skill 知识注入） |
-| FORGE driver（loop） | `forge-runs/`（唯一落点 `~/.sofagent/data/forge-runs/`，仓内 `FORGE/SKILL/*/runs/` 仅占位壳；顶层 `FORGE/runs/` 为历史留档位） | 人类（verdict.md），执行证据查证路径见 [FORGE/README.md](../FORGE/README.md)「runs 目录边界」 |
+| FORGE driver（loop） | `forge-runs/`（唯一落点 `~/.sofagent/data/forge-runs/`，仓内 `FORGE/SKILL/*/runs/` 仅占位壳；顶层 `FORGE/runs/` 历史留档已移出仓） | 人类（verdict.md），执行证据查证路径见 [FORGE/README.md](../FORGE/README.md)「runs 目录边界」 |
 
 **数据流铁律**：生产者只写不读自己的输出，消费者只读不写——单向派生，不可逆。
 

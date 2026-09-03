@@ -143,7 +143,7 @@ FORGE/
 
 > 📏 **LEDGER.md 新条目禁绝对路径**：登记 run 时数据路径一律写 `~/.sofagent/data/forge-runs/...`（展开符），不写 `/Users/<who>/...` 绝对路径——账本会长期更新，他人机器上的绝对路径是纯噪声（2026-08-29 一次性清理 58 处存量后立此规约）。
 
-> 🗂️ **runs 目录边界（看执行证据只看数据目录）**：run 产物**唯一落点是 `~/.sofagent/data/forge-runs/<loop名>/<日期>/run-NN/`**（含 verdict.md / usage.jsonl / findings 等全部证据），数据目录不进 git。仓内 `FORGE/SKILL/*/runs/` 仅是**占位壳**（`.gitignore` 自排除全部内容），无任何历史 run 产物——新 session 查执行证据时若只翻仓内 runs/ 会得出「无运行痕迹」误判，正确姿势：读 `FORGE/LEDGER.md`（跨 run 索引）→ 按索引去数据目录核对原始产物。另注：顶层 `FORGE/runs/` 是**历史留档位**（git 跟踪的实测报告，如 v1.3.9 A/B 实测 `backend-ab-v1.3.9.md`；`fresh-eyes/` 子目录被更深层 .gitignore 覆盖）——新 run 产物一律进数据目录，勿在此新建运行输出。
+> 🗂️ **runs 目录边界（看执行证据只看数据目录）**：run 产物**唯一落点是 `~/.sofagent/data/forge-runs/<loop名>/<日期>/run-NN/`**（含 verdict.md / usage.jsonl / findings 等全部证据），数据目录不进 git。仓内 `FORGE/SKILL/*/runs/` 仅是**占位壳**（`.gitignore` 自排除全部内容），无任何历史 run 产物——新 session 查执行证据时若只翻仓内 runs/ 会得出「无运行痕迹」误判，正确姿势：读 `FORGE/LEDGER.md`（跨 run 索引）→ 按索引去数据目录核对原始产物。另注：顶层 `FORGE/runs/` 历史留档已移出仓——新 run 产物一律进数据目录，勿在仓内新建运行输出。
 
 ### 技术债登记 · 拆分排期
 
