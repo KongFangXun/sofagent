@@ -280,9 +280,10 @@ if [ -f "$DEVLOG_FILE" ]; then
   # v1.3.6 修复：已发布版本的历史 devlog（含「✅ 已开发」状态行）冻结——
   # v1.3.9 bugfix：状态行可能带 markdown 加粗（✅ **已开发**），grep 放宽为 ✅[ *]*已开发 容错——
   # v1.4.0：v1.3.9 状态行措辞为「✅ **已交付。**」——冻结条件放宽为 已开发|已交付
+  # 已发版：v1.4.4 状态行措辞为「✅ **已发版（vX.Y.Z · 日期）。**」——冻结条件纳入 已发版
   # 其测试数是发版时快照，不随后续版本新增测试漂移（v1.3.5 发布后 v1.3.6 bugfix
   # 新增 6 测试致 2286→2292，历史 devlog 被误报 FAIL——已发布文档不回头改）。
-  elif grep -qE '✅[ *]*(已开发|已交付)' "$DEVLOG_FILE" 2>/dev/null; then
+  elif grep -qE '✅[ *]*(已开发|已交付|已发版)' "$DEVLOG_FILE" 2>/dev/null; then
     if [ "$QUIET" = false ]; then
       echo -e "  ${YELLOW}⚠ ${DEVLOG_FILE}：已发布版本（历史冻结），测试数不与当前 SSOT 比对${NC}"
     fi

@@ -28,11 +28,6 @@ sofagent 不造 Agent——执行能力交给成熟宿主（模型 + 工具 + �
   <sub>零配置审计实拍：一行命令审计最近一次 commit，密钥泄漏当场拦截</sub>
 </p>
 
-<p align="center">
-  <img src="docs/assets/audit-defense.png" alt="sofagent 审计三层防线：pre-commit 主防线 → commit-msg 24 条规则兜底 → post-commit 对账告警" width="860" /><br/>
-  <sub>审计三层防线：pre-commit 主防线拦截 → commit-msg 24 条规则兜底 → post-commit 对账告警，宁可 false-retry 不可静默入库</sub>
-</p>
-
 <details>
 <summary>🗺️ 系统架构总览（FDE Harness 五模块编制）</summary>
 

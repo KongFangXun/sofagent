@@ -30,11 +30,6 @@ sofagent does not build its own Agent — execution is delegated to mature hosts
   <sub>Zero-config audit in action: one command audits the latest commit; leaked secrets get blocked on the spot</sub>
 </p>
 
-<p align="center">
-  <img src="docs/assets/audit-defense.png" alt="sofagent three audit defense lines: pre-commit primary line → commit-msg 24-rule fallback → post-commit reconciliation alerts" width="860" /><br/>
-  <sub>Three audit defense lines: pre-commit primary interception → commit-msg 24-rule fallback → post-commit reconciliation alerts — prefer false-retry over silent admission</sub>
-</p>
-
 <details>
 <summary>🗺️ System architecture overview (FDE Harness five-module structure)</summary>
 
