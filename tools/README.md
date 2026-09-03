@@ -43,6 +43,7 @@
 | `gen/gen-perspective-prompts.mjs` | 24 视角 prompt 生成 | fresh-eyes-loop |
 | `gen/gen-weekly-report.mjs` | 周报生成 | 定期 |
 | `gen/gen-draft-lib.mjs` | **公共库**（LLM 配置/调用/降级/参数解析/版本提取，供 gen-* 复用） | 被 import |
+| `gen/gen-api-tools.mjs` | docs/API.md 第二节生成器（从 tool-registry.ts 提取全量 tool 按域分组重写，check-docs 断言「文档数 == registry 实数」） | 新增/变更 MCP tool 后 |
 
 ## 三、dashboard/ — 仪表盘
 
