@@ -1415,7 +1415,7 @@ grep -q "'SAFE' | 'SUSPICIOUS' | 'DANGEROUS'" engine/orchestrator/src/commons/sk
 grep -q "scanForPublish\|scanForInstall" engine/orchestrator/src/commons/skill-scan.ts || echo "⚠️ 双触发缺失"
 grep -q "existsSync" engine/orchestrator/src/commons/skill-scan.ts || echo "⚠️ 存在性前置校验缺失"
 grep -q "scanSkillSafety" engine/orchestrator/src/commons/skill-scan.ts || echo "⚠️ 未复用 scanSkillSafety"
-grep -q "0\.1\.2-alpha\.1" engine/orchestrator/package.json || echo "⚠️ DSH 依赖锁漂移（须为拍板版本 0.1.2-alpha.1——源码构建升级，退出条件=0.1.2 上架 npm）"
+grep -q "0\.1\.2-alpha\.3" engine/orchestrator/package.json || echo "⚠️ DSH 依赖锁漂移（须为拍板版本 0.1.2-alpha.3——npm 上架版，退出条件=0.1.2 上架 npm）"
 grep -qE "正式版发布后自动|rc 期\*\*优先内嵌" engine/orchestrator/src/execution-backend.ts || echo "⚠️ rc 投产决策注释缺失（升正式版时须同步更新此处决策记录）"
 ```
 
