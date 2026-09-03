@@ -8,7 +8,7 @@
 // 复用 v1.4.4 train-env 检测地基——扩展非重建）。
 //
 // 只查不装：本 tool 是体检（环境怎么装走 train env init /
-// tools/train-env-init.sh；基座模型怎么下走 model-downloader）。
+// tools/train/train-env-init.sh；基座模型怎么下走 model-downloader）。
 // ============================================================
 
 import { getDataDir } from '@sofagent/core';
@@ -86,7 +86,7 @@ export async function trainDoctorTool(args: TrainDoctorArgs): Promise<TrainDocto
     }
     const summary = report.ready
       ? `[sofagent] 训练环境体检 ✅ READY（${enterprise_id}）——四项全过：\n  · ${okLines.join('\n  · ')}`
-      : `[sofagent] 训练环境体检 ⚠️ 未就绪（${enterprise_id}）——待处理项：\n  · ${badLines.join('\n  · ')}\n（装环境走 train env init / bash tools/train-env-init.sh；基座模型下载支持断点续传）`;
+      : `[sofagent] 训练环境体检 ⚠️ 未就绪（${enterprise_id}）——待处理项：\n  · ${badLines.join('\n  · ')}\n（装环境走 train env init / bash tools/train/train-env-init.sh；基座模型下载支持断点续传）`;
 
     return {
       text: summary,

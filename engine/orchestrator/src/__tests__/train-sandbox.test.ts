@@ -150,7 +150,7 @@ describe('createTrainSandbox 训练沙箱会话', () => {
 
 describe('package-train-runtime.sh 打包脚本', () => {
   // __tests__ → src → orchestrator → engine → 仓库根
-  const scriptPath = join(__dirname, '..', '..', '..', '..', 'tools', 'package-train-runtime.sh');
+  const scriptPath = join(__dirname, '..', '..', '..', '..', 'tools', 'train', 'package-train-runtime.sh');
 
   it('bash -n 语法检查通过', () => {
     expect(() => execFileSync('bash', ['-n', scriptPath])).not.toThrow();

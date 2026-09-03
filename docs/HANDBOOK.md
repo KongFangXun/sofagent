@@ -449,7 +449,7 @@ jobs:
 
 | 产品线 | 是什么 | 从哪进 | 前置要求 |
 |------|------|------|------|
-| **后训模块**（v1.4.1-1.4.3） | 企业异构数据 → 专属小模型：需求推导 → 模板选型 → 数据管道 → 训练 → eval → 部署 | MCP：`train_doctor`（环境体检）→ `fde_interview`（五要素）→ `train_submit`（提交）；CLI：`sofagent-orchestrator train analyze <nodeId> --enterprise <id>`（需求推导）/ `train templates`（模板库一览）；监控：`train_status` / `train_list` / 失败走 `train_diagnose` | GPU 环境（CUDA/显存/框架）——`bash tools/train-env-init.sh` 一键装；基座模型走 model-downloader；反作弊双防线随 install 默认落盘 |
+| **后训模块**（v1.4.1-1.4.3） | 企业异构数据 → 专属小模型：需求推导 → 模板选型 → 数据管道 → 训练 → eval → 部署 | MCP：`train_doctor`（环境体检）→ `fde_interview`（五要素）→ `train_submit`（提交）；CLI：`sofagent-orchestrator train analyze <nodeId> --enterprise <id>`（需求推导）/ `train templates`（模板库一览）；监控：`train_status` / `train_list` / 失败走 `train_diagnose` | GPU 环境（CUDA/显存/框架）——`bash tools/train/train-env-init.sh` 一键装；基座模型走 model-downloader；反作弊双防线随 install 默认落盘 |
 | **FDE 六引擎**（v1.4.2） | FDE 方法论变成可执行模块：访谈结构化 → 三问判定 → 量化 ROI → 本体推导 → 三层沉淀 → 组装部署 | MCP：`fde_interview`（先跑——五要素采集，`prompts_only: true` 拿访谈话术）→ `fde_classify` → `fde_quantify` → `fde_derive` → `fde_distill` → `fde_deploy`；产物落 `data/fde/<企业>/` | 无环境硬依赖（纯规则引擎——LLM 可选辅助）；企业标识必填（`enterprise_id`） |
 | **IM 桥**（v1.4.2） | IM 群远程指挥 Agent：群里发消息 = 跑任务/查状态/批 HITL | 按 [im-bridge 指南](./guides/im-bridge.md) 配置 IM 机器人 → `sofagent-daemon` 常驻后自动桥接 | IM 平台机器人 token（钉钉/飞书/企微三选一）+ daemon 常驻（`sofagent-daemon start`） |
 

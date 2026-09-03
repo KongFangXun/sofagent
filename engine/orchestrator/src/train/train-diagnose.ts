@@ -227,7 +227,7 @@ export const FAILURE_PRESCRIPTIONS: Readonly<Record<TrainFailureCategory, Failur
       'nvidia-smi 核对 driver/CUDA 版本（CUDA driver version is insufficient → 升驱动）',
       '框架 CUDA 编译版与驱动对齐（cu121/cu124 与 driver 版本矩阵）',
       '重跑 train env init（完整探测链——失败步骤如实报告）',
-      '金属降级环境（Apple Silicon）：确认走 tools/train-env-init.sh 的 npm 分支',
+      '金属降级环境（Apple Silicon）：确认走 tools/train/train-env-init.sh 的 npm 分支',
     ],
     source: 'env-manager trainDoctor 四项体检 + train-env 双分支探测',
   },

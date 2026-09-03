@@ -3499,7 +3499,7 @@ grep -q "anticheat-network-allowlist" "$PROJECT_ROOT/engine/mcp/dist/tools/train
 grep -q "networkAllowlist" "$S347_ORCH/train/env-manager.js" 2>/dev/null || S347_OK=false
 grep -q "gitDisabled" "$S347_ORCH/train/env-manager.js" 2>/dev/null || S347_OK=false
 # ③ 白名单外部化：train-env-init.sh 落默认白名单配置（install 时随装随落）
-grep -q "networkAllowlist" "$PROJECT_ROOT/tools/train-env-init.sh" 2>/dev/null || S347_OK=false
+grep -q "networkAllowlist" "$PROJECT_ROOT/tools/train/train-env-init.sh" 2>/dev/null || S347_OK=false
 # ④ 形态×防线→体检项映射锁（run-05 coverage F-2 闭环）：四形态（git gold commit /
 # wget+curl / pip / urllib）× 双防线（断历史回溯 / 断外联通道）→ 三体检项
 # （git 禁用 + .git 不可见 = 防线一两个检查点；网络白名单生效 = 防线二）——
@@ -3559,8 +3559,8 @@ S349_OUT=$(node -e "
 " 2>/dev/null)
 [ "$S349_OUT" = "0" ] || { echo "  ✗ 沙箱行为断言未过数=$S349_OUT"; S349_OK=false; }
 # 打包交付面：package-train-runtime.sh 语法健康 + setup.sh 入口在位
-bash -n "$PROJECT_ROOT/tools/package-train-runtime.sh" 2>/dev/null || S349_OK=false
-grep -q "setup.sh" "$PROJECT_ROOT/tools/package-train-runtime.sh" || S349_OK=false
+bash -n "$PROJECT_ROOT/tools/train/package-train-runtime.sh" 2>/dev/null || S349_OK=false
+grep -q "setup.sh" "$PROJECT_ROOT/tools/train/package-train-runtime.sh" || S349_OK=false
 $S349_OK && pass "训练沙箱三约束行为实测过（路径三态/代理黑洞/网关判定/打包入口）" || fail "训练沙箱行为回退——见上方 ✗ 行（dist/train-sandbox.js 直调）"
 
 # ─────────────────────────────────────────────────────────────
@@ -3702,7 +3702,7 @@ $S353_OK && pass "train_diagnose 行为实测过（OOM/数据格式命中 + 零�
 scenario 354 "v1.4.3 第九章：入口导览三产品线在 HANDBOOK 可发现 + onboarding 断层走查检查项落 releasing.md + 走查口径行"; S354_OK=true
 # ① 导览表三产品线关键词（文档面的可发现性——HANDBOOK 为入口 SSOT）
 grep -q "新功能入口导览" "$PROJECT_ROOT/docs/HANDBOOK.md" || S354_OK=false
-grep -q "训练引擎" "$PROJECT_ROOT/docs/HANDBOOK.md" || S354_OK=false
+grep -q "后训模块" "$PROJECT_ROOT/docs/HANDBOOK.md" || S354_OK=false
 grep -q "FDE 六引擎" "$PROJECT_ROOT/docs/HANDBOOK.md" || S354_OK=false
 grep -q "IM 桥" "$PROJECT_ROOT/docs/HANDBOOK.md" || S354_OK=false
 # ② 三条线的入口命令真实存在（断层走查核心口径：无断头路）
@@ -3977,7 +3977,7 @@ scenario 365 "v1.4.4 章二：本地权重部署——manifest 双版本注册 +
 S365_OUT=$(node -e "
 (async () => {
   const { appendVersion, hashDir } = await import('$PROJECT_ROOT/engine/orchestrator/dist/weights-manifest.js');
-  const { registerModel } = await import('$PROJECT_ROOT/engine/orchestrator/dist/model-registry.js');
+  const { registerModel, rollbackWeightsVersion } = await import('$PROJECT_ROOT/engine/orchestrator/dist/model-registry.js');
   const fs = await import('fs'); const os = await import('os'); const path = await import('path'); const crypto = await import('crypto');
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 's365-'));
   const wdir = path.join(root, 'weights'); const v1 = path.join(wdir, 'v1');
@@ -3992,12 +3992,23 @@ S365_OUT=$(node -e "
   if (bad1.ok !== false) bad++;                             // 篡改后拒绝
   const noMf = registerModel({ name: 'no-manifest', endpoint: 'http://127.0.0.1:11434', model: 'n:v1', source: 'local-path', weightsDir: path.join(root, 'empty') }, { dataDir: path.join(root, 'd2'), actor: 'test' });
   if (noMf.ok !== false) bad++;                             // 无 manifest 拒绝
+  // 回滚路径哈希直验（37cab2b9 修复——供应链三路径第三环：篡改历史版本目录 → 回滚必拒）
+  const w2 = path.join(root, 'w2'); const vA = path.join(w2, 'vA'); const vB = path.join(w2, 'vB');
+  fs.mkdirSync(vA, { recursive: true }); fs.mkdirSync(vB, { recursive: true });
+  fs.writeFileSync(path.join(vA, 'a.bin'), 'AAA'); fs.writeFileSync(path.join(vB, 'a.bin'), 'BBB');
+  appendVersion(w2, { id: 'vA', files: [], sha256: hashDir(vA) }); appendVersion(w2, { id: 'vB', files: [], sha256: hashDir(vB) });
+  registerModel({ name: 'rb-test', endpoint: 'http://127.0.0.1:11434', model: 'rb:vB', source: 'local-path', weightsDir: w2 }, { dataDir: path.join(root, 'd3'), actor: 'test' });
+  fs.writeFileSync(path.join(vA, 'a.bin'), 'TAMPERED-HISTORICAL');   // 篡改非 current 的历史版本
+  const rbBad = rollbackWeightsVersion('rb-test', { dataDir: path.join(root, 'd3') });
+  if (rbBad.ok !== false || !String(rbBad.message).includes('完整性校验失败')) bad++;  // 回滚目标被篡改 → 拒
+  const rbOk = rollbackWeightsVersion('rb-test', { dataDir: path.join(root, 'd3'), targetVersion: 'vB' });
+  if (rbOk.ok !== false) bad++;                                                               // 目标即 current → 拒（无需回滚）——供应链闭合后合法目标缺失场景不误放
   fs.rmSync(root, { recursive: true, force: true });
   process.stdout.write(String(bad));
 })().catch(e => { process.stderr.write(String(e.message)); process.stdout.write('9999'); });
 " 2>/dev/null)
 [ "$S365_OUT" = "0" ] || { echo "  ✗ 权重部署断言未过数=$S365_OUT"; S365_OK=false; }
-$S365_OK && pass "权重注册绿态 + 篡改拒绝 + 无清单拒绝（供应链红线实测）" || fail "权重部署链回退——哈希/清单校验失守见 ✗ 行"
+$S365_OK && pass "权重注册绿态 + 篡改拒绝 + 无清单拒绝 + 回滚路径哈希直验（供应链红线实测）" || fail "权重部署链回退——哈希/清单/回滚校验失守见 ✗ 行"
 # S366 · v1.4.4 章三：产物注册衔接（双闸 + 挂载建议人审语义；端到端由单测覆盖）
 scenario 366 "v1.4.4 章三：产物注册衔接——artifact-register 模块在位 + 挂载建议强制人审语义"; S366_OK=true
 S366_EXPORT_OK=true
@@ -4024,7 +4035,11 @@ S367_OUT=$(node -e "
 })().catch(e => { process.stderr.write(String(e.message)); process.stdout.write('9999'); });
 " 2>/dev/null)
 [ "$S367_OUT" = "0" ] || { echo "  ✗ 对比训练断言未过数=$S367_OUT"; S367_OK=false; }
-$S367_OK && pass "对比报告 ROI 排序三断言过（降序/∞ 最前/未完成排除）" || fail "train compare 回退——ROI 排序语义见 ✗ 行"
+# CLI 接线 + usage 回填 API（37cab2b9 修复——P0 接线断链防复发：声称命令必须真实装可达）
+grep -q "train compare --data" "$PROJECT_ROOT/engine/orchestrator/src/cli.ts" || S367_OK=false        # CLI 帮助面在册
+grep -q "v1.4.4 交付④：train compare" "$PROJECT_ROOT/engine/orchestrator/src/cli.ts" || S367_OK=false # CLI 分支实装
+grep -q "refreshCompareResults" "$PROJECT_ROOT/engine/orchestrator/src/train/train-compare.ts" || S367_OK=false  # usage/status 回填 API
+$S367_OK && pass "对比报告 ROI 排序三断言 + CLI 接线 + refreshCompareResults 回填 API 过" || fail "train compare 回退——ROI 排序/CLI 接线/回填 API 见 ✗ 行"
 
 # S368 · v1.4.4 章五：决策因果链——三级回溯 + 先例打分 + HMAC 篡改判 tampered
 # （独立子进程 + 固定密钥保证环境指纹稳定）

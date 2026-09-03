@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-# tools/package-train-runtime.sh · v1.4.3 第三章 · 训练运行时打包脚本
+# tools/train/package-train-runtime.sh · v1.4.3 第三章 · 训练运行时打包脚本
 # ============================================================
 #
 # 定位：训练管线（train-submit + 数据管道 + QLoRA 配置模板 + 沙箱）
@@ -11,12 +11,12 @@
 #   1. engine/orchestrator dist（训练编排控制面——train-scheduler 等）
 #   2. engine/core dist（atomicWrite 等基础设施）
 #   3. FDE/templates/post-training（后训练 workflow 模板）
-#   4. tools/train-env-init.sh（环境安装脚本——目标机器首跑）
-#   5. tools/package-train-runtime.sh 自身（解包后 setup 入口）
+#   4. tools/train/train-env-init.sh（环境安装脚本——目标机器首跑）
+#   5. tools/train/package-train-runtime.sh 自身（解包后 setup 入口）
 #   6. 基座模型缓存（可选——MODELS=1 时含 data/models/，U 盘形态默认含）
 #
 # 用法：
-#   bash tools/package-train-runtime.sh [输出目录] [--with-models]
+#   bash tools/train/package-train-runtime.sh [输出目录] [--with-models]
 #   （缺省输出 ./dist-train-runtime/；--with-models 附带基座缓存）
 #
 # 产物：<输出>/sofagent-train-runtime-<date>.tar.gz + setup.sh
@@ -74,7 +74,7 @@ else
 fi
 
 # 3. 环境安装脚本 + 自身
-cp "${REPO_ROOT}/tools/train-env-init.sh" "${STAGE_DIR}/tools/train-env-init.sh"
+cp "${REPO_ROOT}/tools/train/train-env-init.sh" "${STAGE_DIR}/tools/train-env-init.sh"
 chmod +x "${STAGE_DIR}/tools/train-env-init.sh"
 cp "${SCRIPT_DIR}/${BASH_SOURCE[0]##*/}" "${STAGE_DIR}/tools/package-train-runtime.sh" 2>/dev/null || true
 ok "安装脚本已收编（train-env-init.sh）"

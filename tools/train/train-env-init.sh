@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-# tools/train-env-init.sh · v1.4.2 章四 · 训练环境一键安装脚本
+# tools/train/train-env-init.sh · v1.4.2 章四 · 训练环境一键安装脚本
 # ============================================================
 #
 # 定位：train env init 的脚本化形态——可打包进设备、可在装好系统的
@@ -16,7 +16,7 @@
 #   3. 都没有                   → 提示装 Python 3.10+ / CUDA 驱动后重跑
 #
 # 用法：
-#   bash tools/train-env-init.sh [data_dir] [enterprise_id]
+#   bash tools/train/train-env-init.sh [data_dir] [enterprise_id]
 #   （缺省 data_dir=./data，enterprise_id=default——与 train_doctor 同口径）
 #
 # 产物：{data_dir}/train/{enterprise_id}/train-env.json（版本清单——
