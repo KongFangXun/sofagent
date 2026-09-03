@@ -162,7 +162,7 @@ graph TB
 | EXECUTE | 执行 | DAG 运行 + HITL 人工审批 + 审计集成 + 异常兜底 |
 | SUSTAIN | 持续 | wrapToolCall 联动：执行 → 审计 → 反思 → 进化 |
 
-> ⚠️ **旧名兼容**：五能力（注入/审计/回溯/沉淀/进化）中，前四能力即原约束底座/审计引擎/回溯引擎/进化引擎（v1.2.9 统一为「约束层四种能力」），v1.4.4 起新增「沉淀」独立成词、升级为五种能力。「沉淀」承接原「进化」表述中的「经验沉淀」语义与知识蒸馏管线（knowledge/）。历史文档中的四能力与"引擎"表述保留不动（archive/changelog 是历史快照不改）。代码层面的类名 `AuditEngine`、函数名 `runAuditGate`、文件名 `engine/audit` 全是 API，保持不动。
+> ⚠️ **旧名兼容**：五能力（注入/审计/回溯/沉淀/进化）中，前四能力即原约束底座/审计模块/回溯引擎/进化模块（v1.2.9 统一为「约束层四种能力」），v1.4.4 起新增「沉淀」独立成词、升级为五种能力。「沉淀」承接原「进化」表述中的「经验沉淀」语义与知识蒸馏管线（knowledge/）。历史文档中的四能力与"引擎"表述保留不动（archive/changelog 是历史快照不改）。代码层面的类名 `AuditEngine`、函数名 `runAuditGate`、文件名 `engine/audit` 全是 API，保持不动。
 
 > 💬 **交互范式**：sofagent 的核心交互是语言（MCP / IM / CLI），无操作型 GUI——所有能力通过 MCP 协议暴露，用户通过 Agent 对话（LUI）操作：说一句话，它做完告诉你结果在哪。dashboard 是只读监控视图（localhost:3780，详见下文），不承担操作职能。这是架构的根本设计约束：不存在「仅 CLI 可用」或「需要打开页面」的能力。详见 [设计哲学](./PHILOSOPHY.md)。
 
@@ -200,7 +200,7 @@ Agent = **模型 + 上下文 + 工具 + 状态 + 执行控制 + 权限 + 可观�
 | rules | 规则引擎纯函数包（零 git 依赖；fs 仅限 AST 扫描的临时目录——mkdtemp 写入待检源码片段，扫描后即清理），编排层 tool-call 事前拦截 + 审批四模式 | ✅ 已实现 |
 | eval | 质量评估引擎：精确匹配 / 语义相似 / 规则合规 三维评分 | ✅ 已实现 |
 | ab-test | A/B 自进化：current vs candidate 并行对比，连续胜出 + 非退化守卫才晋升 | ✅ 已实现 |
-| orchestrator | 编排引擎：DAG 任务拆解 + LangGraph 闭环 + A/B 调度器 + ToolGate 事前拦截 + Ontology 运行时层 + 并行编排（MergeQueue/ParallelScheduler/波次卡关）+ Durable Execution + Onboard L1-L5 + Benchmark 评测 + agent-creation + FDE 梳理辅助 + Session 隔离 + meta-harness 多 harness 编排 + worklog 工作明细数据层 + 训练引擎地基（train-job 编排/审计/隔离/指纹/签名/回收/恢复/安全 + 数据管道/版本/eval 闭环/环境/dry-run/报告）+ FDE 六引擎工作台 | ✅ 已实现（1697 测试） |
+| orchestrator | 编排模块：DAG 任务拆解 + LangGraph 闭环 + A/B 调度器 + ToolGate 事前拦截 + Ontology 运行时层 + 并行编排（MergeQueue/ParallelScheduler/波次卡关）+ Durable Execution + Onboard L1-L5 + Benchmark 评测 + agent-creation + FDE 梳理辅助 + Session 隔离 + meta-harness 多 harness 编排 + worklog 工作明细数据层 + 后训模块地基（train-job 编排/审计/隔离/指纹/签名/回收/恢复/安全 + 数据管道/版本/eval 闭环/环境/dry-run/报告）+ FDE 六引擎工作台 | ✅ 已实现（1697 测试） |
 | daemon | 守护进程：cron + fs 监听 + 文件级审计 + USB 烧录 + 联邦查询 + Dream Cycle 6 阶段 + 启动 LOOP 续跑检查 + 审计轨迹聚合巡检 + 训练孤儿巡检 | ✅ 已实现（302 测试） |
 | mcp | MCP Server：JSON-RPC 2.0 over stdio，tools + resources（80 tools——v1.4.2 新增 FDE 六引擎 fde_interview/classify/quantify/derive/distill/deploy，v1.4.3 新增 train_status/train_list/train_diagnose，v1.4.4 新增 corpus_export） | ✅ 已实现 |
 | ontology | 领域本体：合并 / 状态 / 视图 / 概念合成，三层 YAML 自动生长 | ✅ 已实现 |
@@ -236,7 +236,7 @@ graph TB
     end
     subgraph D2["二 · 执行与模型（15）——Agent 干活的手臂与大脑"]
         B1["浏览器自动化 ×4"]
-        B2["训练引擎 ×8"]
+        B2["后训模块 ×8"]
         B3["模型注册挂载 ×3"]
     end
     subgraph D3["三 · 审计·治理·运维（17）——约束层的神经系统"]
@@ -303,7 +303,7 @@ graph TB
 | 4 个 Agent Skill（fde/audit/engineer/reviewer）| SubAgent 岗位定义 |
 | HMAC key | 审计记录防篡改 |
 
-> **事前约束（Skill 注入）+ 事后拦截（审计引擎）缺一不可**——只有审计没 Skill = Agent 不知道规则；只有 Skill 没审计 = Agent 知道规则但可以不遵守。install.sh 是这两者的完整闭环。
+> **事前约束（Skill 注入）+ 事后拦截（审计模块）缺一不可**——只有审计没 Skill = Agent 不知道规则；只有 Skill 没审计 = Agent 知道规则但可以不遵守。install.sh 是这两者的完整闭环。
 
 **安装器模式**：
 
@@ -392,6 +392,23 @@ graph LR
 | 约束层（引擎） | 编排 + 审计 + 回溯 + 进化（含质量评估）+ 约束注入链（daemon + CLI） | 按需启动 |
 
 > v1.1.0 将审计拆为独立 npm 包 `@sofagent/audit`，地基（约束注入链）和其余能力（编排/审计/进化）与回溯不受影响。
+
+### 功能编制（引擎=约束层内的功能模块 · 2026-09-03 定谳）
+
+> **定位声明**：对外产品唯一 = **FDE Harness**（约束层，注入·审计·回溯·沉淀·进化五能力）。下表「模块」是约束层内部的功能域编制称呼——**模块不是产品线，无独立入口，所有产出过审计与注册闸门**。「引擎」一词在对外叙事中仅用于描述外部系统（宿主 Agent、LangGraph、商业三层架构中的「引擎层」）。
+
+| 模块 | 职责一句话 | 主要载体 |
+|------|------|------|
+| **编排模块** | 业务流 DAG 拆解、循环执行、Agent 阵型调度 | orchestrator 包（LangGraph） |
+| **审计模块** | 24 条规则 git diff 硬证据判定，每次变更必审 | audit 包 + git hook |
+| **后训模块** | post-training 流水线：审计轨迹→语料导出→训练→模型注册→晋升（模型进化闭环的中段） | orchestrator/train + eval 包 |
+| **治理模块** | 治理 KPI、跨层证据对账、可见性分级 | 规划中（v1.5.0） |
+| **执行模块** | 模型路由、沙箱隔离、凭证 Vault、多实例表决 | 规划中（v1.5.3） |
+
+> 🔒 **编制准入三问**（新功能域进编制表前必过）：
+> ① 挂得上五能力吗（注入/审计/回溯/沉淀/进化至少其一）？
+> ② 产出过审计/注册闸门吗（产物可追溯、可回滚）？
+> ③ 砍掉它 harness 还成立吗（成立=它是增强件，可进；不成立=它是命脉件，必须已在核心叙事里）？
 
 ### 产品架构展望（五层）
 
@@ -499,7 +516,7 @@ graph LR
 
 > a16z 研判：智能体经济瓶颈从「智力」转向「身份」——非人类身份:人类 = 96:1，急需 KYA。审计 + 约束层 = 企业内部轻量版 KYA。v1.2.x 评估引入签名凭证做 Agent 行动的可审计绑定（身份层，**对所有 Agent 适用**）；凭证虚拟 key 中介（host 边界注入真凭证）在 v1.3.7 **仅限自派 SubAgent 沙箱**（v1.3.0 为 middleware 层轻量拦截，无沙箱隔离）。
 
-**审计轨迹的用途谱系正在扩展**——从「回溯问责」（原生用途，已投产）向前延伸出两个外部实践揭示的设计方向：① **量化为优势信号**：[JitRL](https://arxiv.org/abs/2601.18510)（ICML 2026 Spotlight，NUS）将历史轨迹检索为经验、以对数概率调制输出分布，模型权重全程不动，成本约为梯度微调方案的 1/30——其 KL 约束项把策略拴在冻结基座附近，与进化引擎「写保护」的哲学同源（有约束的进化）；② **决策前推演**：[QWM](https://arxiv.org/abs/2608.17163)（Stanford）把轨迹喂给轻量世界模型，在决策时刻对候选动作做树搜索推演——其「Q 搜索显著强于 V 搜索」的发现（评估状态+动作严格优于只评估状态）与按 diff/步骤粒度审计的设计同构。三者构成谱系：**回溯问责 → 优势信号反馈 → 决策前推演**，学习全部发生在模型外、权重不动——与约束层「不碰参数」的定位一致。①为原生能力已投产，②为设计方向、③为远期方向，均非当前实现，是否排期以 [ROADMAP](./ROADMAP.md) 为准。
+**审计轨迹的用途谱系正在扩展**——从「回溯问责」（原生用途，已投产）向前延伸出两个外部实践揭示的设计方向：① **量化为优势信号**：[JitRL](https://arxiv.org/abs/2601.18510)（ICML 2026 Spotlight，NUS）将历史轨迹检索为经验、以对数概率调制输出分布，模型权重全程不动，成本约为梯度微调方案的 1/30——其 KL 约束项把策略拴在冻结基座附近，与进化模块「写保护」的哲学同源（有约束的进化）；② **决策前推演**：[QWM](https://arxiv.org/abs/2608.17163)（Stanford）把轨迹喂给轻量世界模型，在决策时刻对候选动作做树搜索推演——其「Q 搜索显著强于 V 搜索」的发现（评估状态+动作严格优于只评估状态）与按 diff/步骤粒度审计的设计同构。三者构成谱系：**回溯问责 → 优势信号反馈 → 决策前推演**，学习全部发生在模型外、权重不动——与约束层「不碰参数」的定位一致。①为原生能力已投产，②为设计方向、③为远期方向，均非当前实现，是否排期以 [ROADMAP](./ROADMAP.md) 为准。
 
 **谱系外第四方向 · 蒸馏数据源**：审计的 append-only 事件流可直接导出为 SFT 训练样本（DSH 实践：headless 批量运行产生轨迹、fork 产生同前缀对照样本、pre-step 钩子前置过滤）——与 Agent Lightning「审计即训练数据」互证。**注意与前谱系的方向差异**：前三项学习发生在模型外（权重不动），此项进入权重更新，属训练侧衔接（对应商业侧 AIR 后训练管线）——开源约束层仅记录该设计方向、不实施，『审过的每一步都在喂养下一代』的通道在此与商业训练线汇合。远期方向，是否排期以 [ROADMAP](./ROADMAP.md) 为准。
 
@@ -584,7 +601,7 @@ graph LR
 | OBJ-01 | 对象建模要求（实体/概念定义） | CORE-OBJ · ontology/schema/entity.schema.json + concept.schema.json | ✅ 已对齐 |
 | LNK-01 | 关系建模要求（关联方向与基数） | CORE-LNK · ontology/schema/relations.schema.json | ✅ 已对齐 |
 | ACT-01 | 动作/行为建模要求（动作→载体映射） | CORE-ACT · ontology/action-registry.ts | ✅ 已对齐 |
-| STM-01 | 状态建模要求（生命周期状态迁移） | CORE-STM · ontology/contracts.ts 状态机契约 | 🟡 部分对齐（迁移执行引擎待规划） |
+| STM-01 | 状态建模要求（生命周期状态迁移） | CORE-STM · ontology/contracts.ts 状态机契约 | 🟡 部分对齐（迁移执行模块待规划） |
 | META-01 | 元数据/标识要求 | frontmatter name + created_at/updated_at（D4 规则） | ✅ 已对齐 |
 | VAL-01 | 一致性/校验要求 | validateAgainstSchema + 审计 D 规则 | ✅ 已对齐 |
 | VER-01 | 版本/演进要求 | Benchmark revision freeze + Durable checkpoint | 🟡 部分对齐（本体 Schema 版本迁移待 v1.3.6） |
@@ -649,7 +666,7 @@ graph LR
 
 ### 运行时数据层：引擎间数据流全景
 
-约束层（审计/回溯/沉淀/进化）运行时共同往 `data/` 目录读写数据（编排引擎 @sofagent/orchestrator 为内部实现，也读写此目录）。以下是生产者→数据文件→消费者的完整单向数据流（v1.2.1 补全 eval + ab-test 后的全景）：
+约束层（审计/回溯/沉淀/进化）运行时共同往 `data/` 目录读写数据（编排模块 @sofagent/orchestrator 为内部实现，也读写此目录）。以下是生产者→数据文件→消费者的完整单向数据流（v1.2.1 补全 eval + ab-test 后的全景）：
 
 ```
                         写入侧（生产者）                          data/ 目录                          读取侧（消费者）
@@ -664,7 +681,7 @@ graph LR
 │                                          │→ │                      │→ │ @sofagent/daemon（dream-cycle）       │
 │                                          │→ │                      │→ │   extract-facts() → knowledge/       │
 ├─────────────────────────────────────────┤  ├──────────────────────┤  ├─────────────────────────────────────┤
-│ @sofagent/eval（评分引擎）⭐ v1.2.1 补全   │  │ eval/ ⭐              │  │ @sofagent/think（进化引擎）⭐ 接通    │
+│ @sofagent/eval（评分引擎）⭐ v1.2.1 补全   │  │ eval/ ⭐              │  │ @sofagent/think（进化模块）⭐ 接通    │
 │   runEval() 跑 golden set                │→ │   history.jsonl      │→ │   检测 passRate 下降→写 think.md      │
 │   eval-reporter 持久化                    │→ │   reports/*.md       │→ │ Dashboard 质量趋势面板               │
 ├─────────────────────────────────────────┤  ├──────────────────────┤  ├─────────────────────────────────────┤
@@ -786,7 +803,7 @@ River 的载体是 Agent 平台（OpenClaw / WorkBuddy 等）+ sofagent + Channe
 
 > 📖 设计来源：DeepSeek Harness（DSH）「一切皆插件」Cordis 运行时 + sofagent「确定性审计依赖显式图结构」铁律的融合——编排层不换（确定性），执行层可换（灵活性）。
 
-sofagent 的编排引擎从 v1.3.4 起显式分为两层——**编排层不换（确定性），执行层可换（灵活性）**：
+sofagent 的编排模块从 v1.3.4 起显式分为两层——**编排层不换（确定性），执行层可换（灵活性）**：
 
 ```
 编排层（LangGraph StateGraph · 确定性 · 永不替换）
@@ -817,7 +834,7 @@ sofagent 的编排引擎从 v1.3.4 起显式分为两层——**编排层不换�
 
 > ⚠️ **接入门禁状态（2026-08-24 更新）**：早期候选包名（deepseek-harness / @dsh/core 等）曾长期 404，v1.4.0 已改走 **Cordis 内嵌路径**（@deepseek-ai/cordis@4.0.1 stable + @deepseek-ai/dsh@0.1.0-rc.x，rc.2 内嵌已验证可行：boot() + loadProfile() + 注入 cmdlineArgs/appExit + agent.followup 驱动，对照官方 dsh-headless runner 实现）。rc 期**内嵌为主路径**，内嵌执行失败自动 fallback CLI 桥接；LangGraph 作为最终 fallback。决策记录见 ROADMAP（precheck 证据注入保持主路径）。
 
-> 💡 **为什么不把整个编排层也换成 DSH**：DSH 的事件驱动模型（插件 A 触发 B → B 触发 C）没有显式执行路径，运行时才确定——而 sofagent 的审计引擎（git diff 硬证据 + HMAC 链 + 波次审计卡关）全部依赖预先画好的 DAG 图结构。用 DSH 替代 LangGraph 编排 = 放弃确定性审计能力。分层使用 = 两者各取所长。
+> 💡 **为什么不把整个编排层也换成 DSH**：DSH 的事件驱动模型（插件 A 触发 B → B 触发 C）没有显式执行路径，运行时才确定——而 sofagent 的审计模块（git diff 硬证据 + HMAC 链 + 波次审计卡关）全部依赖预先画好的 DAG 图结构。用 DSH 替代 LangGraph 编排 = 放弃确定性审计能力。分层使用 = 两者各取所长。
 
 ### Agent 基础设施层（v1.0.8+）
 
@@ -941,15 +958,15 @@ sofagent 的三层治理与 Karpathy LLM Wiki 的 `raw materials → Wiki entrie
 |------|------|---------|------|
 | **RAG**（固定检索） | 取知识 | 线性流程：提问 → 向量化 → 召回 → 重排 → 注入上下文 | `search_knowledge` 单次检索（sensitivity 分级过滤 + 联邦合并）；FDE 进场时的知识库构建 |
 | **LLM Wiki**（知识组织） | 组织和使用知识 | 知识体系建设：关系 / 来源 / 版本 / 更新 | Ledger-Views-Policy 三层（对照见上表）——面向 Agent 的知识结构，非供人查阅的文档库 |
-| **Agentic RAG**(智能控制) | 管理检索与执行过程 | 动态反馈循环：要不要检索 → 检索哪个源 → 结果够不够 → 拆解问题还是调用工具 → 继续还是收尾 | **编排引擎本身**——ReAct 循环的每个决策点（检索规划 / 多源调用 / 结果评估 / 继续迭代）+ daemon 巡检补位 + A/B 收敛判定 |
+| **Agentic RAG**(智能控制) | 管理检索与执行过程 | 动态反馈循环：要不要检索 → 检索哪个源 → 结果够不够 → 拆解问题还是调用工具 → 继续还是收尾 | **编排模块本身**——ReAct 循环的每个决策点（检索规划 / 多源调用 / 结果评估 / 继续迭代）+ daemon 巡检补位 + A/B 收敛判定 |
 
-> 💡 **为什么这个视角重要**：市面上多数「企业知识库」产品只做到第一层（RAG）或第二层（Wiki），检索决策仍是固定管线——第一次检索不充分也不会换个查询方式再试。sofagent 的编排引擎天然就是第三层（Agentic RAG 的控制循环 = ReAct Agent 的决策循环），且用 ontology 语义底座替代了裸向量检索（召回的是「有治理的实体关系」，不是「相似度碎片」）。**第一层是能力，第二层是资产，第三层是编排**——三层齐了，知识才从「存着」变成「被智能地使用」。
+> 💡 **为什么这个视角重要**：市面上多数「企业知识库」产品只做到第一层（RAG）或第二层（Wiki），检索决策仍是固定管线——第一次检索不充分也不会换个查询方式再试。sofagent 的编排模块天然就是第三层（Agentic RAG 的控制循环 = ReAct Agent 的决策循环），且用 ontology 语义底座替代了裸向量检索（召回的是「有治理的实体关系」，不是「相似度碎片」）。**第一层是能力，第二层是资产，第三层是编排**——三层齐了，知识才从「存着」变成「被智能地使用」。
 
 **每层对现有引擎的调用关系**：
 
 | 层 | 主要读取方 | 主要写入方 | 审计/巡检方 | 现有引擎 |
 |------|------|------|------|------|
-| **Ledger** | 编排引擎 / daemon（lessons-extract）/ Harness 加载链 / 人类 | 审计（git diff 自动反思）+ 主 Agent（write_think）+ FDE/loop 陪跑 | audit 引擎（每次 commit 跑 24 条规则） | `@sofagent/audit` · `@sofagent/core`（memory-contract） |
+| **Ledger** | 编排模块 / daemon（lessons-extract）/ Harness 加载链 / 人类 | 审计（git diff 自动反思）+ 主 Agent（write_think）+ FDE/loop 陪跑 | audit 引擎（每次 commit 跑 24 条规则） | `@sofagent/audit` · `@sofagent/core`（memory-contract） |
 | **Views** | Agent + MCP tools（7 个 knowledge tool） | Dream Cycle 自动派生 | daemon 巡检（`conflict-check` 矛盾/孤儿/死链 · `knowledge-freshness` 新鲜度） | `@sofagent/daemon` · `@sofagent/mcp` |
 | **Policy** | Agent 启动时经 Harness 加载链注入 | 人 + FDE 维护（deploy 初次建 + sustain 每周迭代） | A15 约束验证（Agent 是否违反 SKILL 铁律） | `@sofagent/audit`（rule A15）· `@sofagent/harness`（加载链） |
 
@@ -1010,7 +1027,7 @@ flowchart TD
     A3 -->|HITL interrupt_before| HITL[人工审批节点<br/>高风险操作暂停等人确认]
     A3 -->|审计 hook| AUDIT[审计<br/>每步变更自动审计]
     A3 --> A4[④ SUSTAIN 持续<br/>wrapToolCall 联动<br/>全链路验证]
-    A4 -->|think.md 回写| EVOLVE[进化引擎<br/>执行→审计→反思→进化]
+    A4 -->|think.md 回写| EVOLVE[进化模块<br/>执行→审计→反思→进化]
     EVOLVE -.->|喂下一轮诊断| FDE
 ```
 
@@ -1065,7 +1082,7 @@ audit:
 - **v1.3.x 后期**：完整多设备协同——Agent 独立身份 + 跨设备审计聚合 + 场景驱动权限 + 代理网关硬边界 + SubAgent 沙箱
 - **v2.x**：组织级共享记忆 + 协同层 + **分层模型路由**（Harness 按任务复杂度路由到云端大模型/本地 7B/本地 0.5B，数据主权驱动——敏感数据不出内网）+ **离线 USB 节点**（企业专属模型本地推理 + workflow 烧录合体，依赖 v1.4.4 本地权重部署 + v1.4.7 workflow 烧录底座，2026-08-19 从 v3.x-v4.x 提前）
 - **v3.x-v4.x+**：企业专属小模型精调（`sofagent-model distill` QLoRA）——离线节点本地推理的轻量化（蒸馏到 7B/0.5B）。详见 [ROADMAP · 分层模型架构](./ROADMAP.md#分层模型架构v3x-远景概述)
-- **远期护城河演进方向（非当前能力）**：当前护城河 = 约束层 + 审计能力（模型越强越值钱）。更远的演进方向：把「帮 sofagent 自身进化」的 Harness + 进化引擎能力，泛化为「**自动帮企业部署后训练模型**」的引擎。届时护城河从「约束能力」升维为「**后训练模型的自动化部署能力**」——交付物是部署在企业侧的定制模型（基于企业自有/通用基座后训练，非 sofagent 自制大模型），使用者是企业客户而非 sofagent 自身；ontology 在此既是企业数字孪生（语义层），也是后训练规格来源（每个 workflow 节点 → 一个专精模型）。**此为长期目标蓝图，当前完全不具备该能力**，仅作演进方向记录，不视为现状或近期计划。
+- **远期护城河演进方向（非当前能力）**：当前护城河 = 约束层 + 审计能力（模型越强越值钱）。更远的演进方向：把「帮 sofagent 自身进化」的 Harness + 进化模块能力，泛化为「**自动帮企业部署后训练模型**」的引擎。届时护城河从「约束能力」升维为「**后训练模型的自动化部署能力**」——交付物是部署在企业侧的定制模型（基于企业自有/通用基座后训练，非 sofagent 自制大模型），使用者是企业客户而非 sofagent 自身；ontology 在此既是企业数字孪生（语义层），也是后训练规格来源（每个 workflow 节点 → 一个专精模型）。**此为长期目标蓝图，当前完全不具备该能力**，仅作演进方向记录，不视为现状或近期计划。
 > **远期部署形态与数据逻辑（非当前能力）**：引擎作为**软件**部署在**企业侧信任边界内**（独立控制节点或容器内），由其**驱动训练流水线**——加载企业自带 license/key 的开源基座 + 企业私有数据，训练产出定制模型；全程**数据不出域**、sofagent 不碰原始数据、企业用自有 GPU/key（BYOK）。训练主体是**软件/引擎跑脚本**，模型不"自训练"。此为长期目标蓝图，当前不具备。
 
 > **数据飞轮 = 护城河的正反馈引擎**：企业真正的护城河不在模型或算力，而在**持续沉淀的私有数据资产**。专家对 AI 结果的每一次修正（审计记录的 git diff、fresh-eyes 发现的 finding、Verifier 定义的"什么算合格"）都会生成**独有的垂直数据**——越用越懂自己的业务，形成正反馈闭环（数据飞轮）。sofagent 的「数据主权 / 本地闭环 / BYOK」不只是防守（数据不出域），更是进攻：**每一次使用都在让下一次更好**。这与 PHILOSOPHY「企业把自身 workflow 数据做成领域后训练即护城河」一脉相承。
@@ -1169,7 +1186,7 @@ Action Type = 一个**有身份的变更请求**：携带参数 + 校验 + 权�
 
 Claude Code 之父 Boris Cherny（YC 访谈）给出 Harness 层的代际时钟：**Harness 补丁的保质期约半年**——模型每次代际升级都会吞噬一批「教模型怎么做」的能力补丁，此时正确动作不是加规则而是删除（Claude Code 曾一次砍掉 80% 的 prompt）。对 sofagent 的含义：**能力型规则会过时，约束/审计职能常青**——「哪些行为不允许」不随模型变强而失效，「怎么做得更好」会。
 
-工程落点（规则库健康巡检的「消融删除法」）：每代模型升级后，对 24 条审计规则与四层加载链做一轮消融测试——逐条禁用后跑 golden-set，**无指标退化的条目标记为「代际冗余」候选**，进入人审删除队列（不自动删，删什么由人决策）。这与进化引擎的 Dream Cycle 互补：Dream Cycle 沉淀「该加什么」，消融巡检发现「该删什么」。
+工程落点（规则库健康巡检的「消融删除法」）：每代模型升级后，对 24 条审计规则与四层加载链做一轮消融测试——逐条禁用后跑 golden-set，**无指标退化的条目标记为「代际冗余」候选**，进入人审删除队列（不自动删，删什么由人决策）。这与进化模块的 Dream Cycle 互补：Dream Cycle 沉淀「该加什么」，消融巡检发现「该删什么」。
 
 
 ### 记忆查算分离与冷热分层同构
@@ -1179,7 +1196,7 @@ Claude Code 之父 Boris Cherny（YC 访谈）给出 Harness 层的代际时钟�
 
 ### SHACL 语义契约（跨 Agent 协同的管控层参照）
 
-跨 Agent 协同缺的不是连接而是**统一语义契约**：静态 OWL 本体配 SHACL 形状约束作守门（语义漂移/版本偏移在提交时拦截），相当于「审计引擎的协同版」——单 Agent 场景审计 git diff，多 Agent 协同场景审计本体变更是否符合契约。对 sofagent v1.3.9 meta-harness（多 harness 统一编排）的参照价值：协同层的语义校验不必自研，SHACL 是 W3C 标准化实现路径；本体驱动的工程实践（OAG 方向）显示推理校验可显著提升结果可靠性。
+跨 Agent 协同缺的不是连接而是**统一语义契约**：静态 OWL 本体配 SHACL 形状约束作守门（语义漂移/版本偏移在提交时拦截），相当于「审计模块的协同版」——单 Agent 场景审计 git diff，多 Agent 协同场景审计本体变更是否符合契约。对 sofagent v1.3.9 meta-harness（多 harness 统一编排）的参照价值：协同层的语义校验不必自研，SHACL 是 W3C 标准化实现路径；本体驱动的工程实践（OAG 方向）显示推理校验可显著提升结果可靠性。
 
 
 ---
@@ -1190,11 +1207,11 @@ Claude Code 之父 Boris Cherny（YC 访谈）给出 Harness 层的代际时钟�
 
 | # | 反模式 | 表现 | sofagent 的应对 |
 |:--:|--------|------|----------------|
-| 1 | **不了解工作就先画巨型 Graph** | 在稳定路径出现之前就设计复杂的 DAG/编排 | 编排引擎先做串行版（v1.1），完整 DAG 并行规划在 v1.3+（见 [LIMITATIONS §八](./LIMITATIONS.md#八包依赖与编排局限)） |
+| 1 | **不了解工作就先画巨型 Graph** | 在稳定路径出现之前就设计复杂的 DAG/编排 | 编排模块先做串行版（v1.1），完整 DAG 并行规划在 v1.3+（见 [LIMITATIONS §八](./LIMITATIONS.md#八包依赖与编排局限)） |
 | 2 | **让同一个模型既写又评** | 执行者和审查者用同一个 LLM，自评不客观 | FORGE fresh-eyes-loop 要求 A/B 用不同厂商模型（异构） |
 | 3 | **把「继续尝试」当作 Loop** | 无限重试无新证据，只是费用泄漏 | Loop 围绕「证据」设计——sustain 的 eval 反馈闭环需要明确 passRate 阈值 |
 | 4 | **把 Harness 变成工具垃圾场** | 工具过多增加选择错误，宽泛权限扩大事故范围 | ToolGate 限定了 Agent 工具调用的前置门禁，不是所有工具都能随便调用 |
-| 5 | **用 Graph 掩盖 Harness 缺陷** | 流程图无法修复陈旧数据、不可靠工具和缺少权限控制的问题 | 审计引擎的「硬证据」原则（19/24 条纯 git-diff）不依赖 Agent 意愿——这就是 Harness 的底线 |
+| 5 | **用 Graph 掩盖 Harness 缺陷** | 流程图无法修复陈旧数据、不可靠工具和缺少权限控制的问题 | 审计模块的「硬证据」原则（19/24 条纯 git-diff）不依赖 Agent 意愿——这就是 Harness 的底线 |
 
 > **核心教训**：Architecture complexity should come from observed real needs, not from imagining "advanced agents"。sofagent 的约束层五能力不是同时做的——先有审计（Harness 层），再有 think.md 反思（回溯），知识蒸馏（沉淀），最后才到 skillopt 自优化（进化）。FORGE 工具链是项目自迭代过程中逐步长出来的内部工具。这个顺序本身就是对反模式 1 和 5 的预防。
 
@@ -1227,12 +1244,12 @@ sofagent 的现有架构**天然已是这种混合结构**，只是还没把"谁
 
 1. **铁律：人工认证压顶**——ontology / fde.md 中显式声明的规则（`certified`）在冲突时**强制压过** knowledge/ 中由"被引用次数"隐式加权的自动沉淀条目。对应 Databricks 笔记点名的"认证能否强制压过流行"盲区，须显式闭合。
 2. **自动层只补全、不推翻**——knowledge/ 自动派生物不得反向覆盖 Policy 层认证条目。扩展现有 Ledger→Views 单向不变量为"**Views 自动条目不得覆盖 Policy 认证条目**"。
-3. **权威排序显式化**——进化引擎经验加权当前按"命中次数"隐性加权，与 Databricks PageRank **同构**，存在"高频错误经验挤掉低频正确铁律"风险；须改为 **命中次数 × 来源可信度（certified 权重最高）**。
+3. **权威排序显式化**——进化模块经验加权当前按"命中次数"隐性加权，与 Databricks PageRank **同构**，存在"高频错误经验挤掉低频正确铁律"风险；须改为 **命中次数 × 来源可信度（certified 权重最高）**。
 
 ### 8.4 落到版本的下一步
 
 - **v1.3.0 数据层硬化**：ontology I/O schema 硬化（§七 生长树"根系"工程化）；knowledge/ 条目标注 `certified: true | false` 来源标记；冲突裁决规则（certified 压顶）代码化。
-- **进化引擎加权改造**：经验条目从"纯命中次数"改为"命中次数 × 来源可信度"，`certified` 条目权重视为 ∞（不可被高频非认证条目挤掉）。
+- **进化模块加权改造**：经验条目从"纯命中次数"改为"命中次数 × 来源可信度"，`certified` 条目权重视为 ∞（不可被高频非认证条目挤掉）。
 - **巡检联动**：`conflict-check` 增加"认证条目被高频非认证条目反向影响"的告警维度。
 
 ### 8.5 后续待办的问题

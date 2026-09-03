@@ -15,7 +15,7 @@
 | `skills/skill-template/SKILL.md` | §7-§8 定制 | FDE Harness | 业务流节点 Skill 层（AI 读） |
 | `delivery-report.md` | §5.9 离场时回写 | FDE 工程师 | **FDE 内部经验沉淀**（非给客户）——飞轮闭环数据入口 |
 | `plan-review.md` | 开工前（任何计划） | FDE Harness / 计划负责人 | **计划自梳理**：把商业计划当客户拆——五要素 × 三问 × 五问预检，判定计划能不能开工（真实案例：某商业计划） |
-| `post-training/post-training.yml` | 企业需专属后训练时 | FDE Harness | **后训练 workflow 模板**：企业一句话发起 → 模型选型 → 训练 → 部署（激活链四阶段 + 三 HITL 确认点；依赖训练引擎 v1.4.1-1.4.4） |
+| `post-training/post-training.yml` | 企业需专属后训练时 | FDE Harness | **后训练 workflow 模板**：企业一句话发起 → 模型选型 → 训练 → 部署（激活链四阶段 + 三 HITL 确认点；依赖后训模块 v1.4.1-1.4.4） |
 
 ## 为什么填 sofagent 自己
 

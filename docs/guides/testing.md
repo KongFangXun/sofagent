@@ -26,7 +26,7 @@
 
 ## 用例 2：Loop Agent checkpoint 触发
 
-**目的**：验证编排引擎在复杂任务中正确触发检查点。
+**目的**：验证编排模块在复杂任务中正确触发检查点。
 **步骤**：发 🔴 复杂任务（如重构文件结构）→ 观察子任务间或 60% 预算时是否有 checkpoint 标记（🟢/🟡/🔴）。
 **通过标准**：至少触发 1 次 checkpoint，且内部过程未泄露。
 
@@ -67,11 +67,11 @@
 **步骤**：发 🔴 复杂任务「sofagent 项目文档一致性审查」→ 观察 A0 识别 🔴 → 按语义簇拆解子任务 → checkpoint 检查 → 闭环反思写入 think.md。
 **通过标准**：全链路跑通。⚠️ checkpoint 检查在无外部 Hook 平台靠 Agent 自觉。
 
-## 用例 8：编排引擎（LangGraph createReactAgent）验证
+## 用例 8：编排模块（LangGraph createReactAgent）验证
 
-**目的**：验证编排引擎在复杂任务中正确拆解并执行。
+**目的**：验证编排模块在复杂任务中正确拆解并执行。
 **步骤**：发 🔴 复杂任务（如「扫描 sofagent 项目做文档一致性审查」）→ 观察 `sofagent-orchestrator compose` 是否生成 workflow → 按语义簇拆解子任务 → 执行 → 闭环反思写入 think.md。
-**通过标准**：编排引擎全链路跑通（拆解 → 执行 → checkpoint → 闭环），无 `ao` 残留。
+**通过标准**：编排模块全链路跑通（拆解 → 执行 → checkpoint → 闭环），无 `ao` 残留。
 
 ---
 

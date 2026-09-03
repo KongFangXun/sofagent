@@ -27,7 +27,7 @@ npx -y -p @sofagent/audit sofagent-audit --diff HEAD~1..HEAD
 |------|------|------|
 | `sofagent-audit` | `@sofagent/audit` | 审计 CLI 主入口 |
 | `sofagent-core` | `@sofagent/core` | 核心运行时（含 `verify` / `doctor` 子命令） |
-| `sofagent-orchestrator` | `@sofagent/orchestrator` | 编排引擎 CLI（含 `compose` / `compare` 子命令） |
+| `sofagent-orchestrator` | `@sofagent/orchestrator` | 编排模块 CLI（含 `compose` / `compare` 子命令） |
 
 > 💡 其他常用命令：`sofagent-mcp`（`@sofagent/mcp`，v1.2.0 起拆分为独立包）、`sofagent-daemon`（`@sofagent/daemon`）、`sofagent-think`（`@sofagent/think`）等均为各自独立 npm 包的 bin 命令。MCP 支持请安装 `@sofagent/mcp` 独立包。
 

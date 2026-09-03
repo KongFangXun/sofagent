@@ -31,7 +31,7 @@
 |:--:|------|------|
 | 1 | **单包测试需先 build**——monorepo 未 build 时单包 `npm test` 可能失败（依赖 dist/），需先 `npm run build --workspaces`。 | [四、成熟度与测试局限](#四成熟度与测试局限) |
 | 2 | **默认非 fail-closed**——config.yml 可被 Agent 篡改绕过审计规则。仅当 config 解析失败时走 safeDefaults（fail-closed 强制启用）。 | [三、安全与信任模型局限](#三安全与信任模型局限) |
-| 3 | **编排能力依赖 orchestrator 包 + 模型质量**——LangGraph createReactAgent 驱动，编排效果依赖模型质量。模型降级 → 编排降级。 | [五、审计与工程局限 → 编排引擎稳定性](#五审计与工程局限) |
+| 3 | **编排能力依赖 orchestrator 包 + 模型质量**——LangGraph createReactAgent 驱动，编排效果依赖模型质量。模型降级 → 编排降级。 | [五、审计与工程局限 → 编排模块稳定性](#五审计与工程局限) |
 | 4 | **静态加密接线未启用**——加密能力已实现（crypto-init.ts AES-256-GCM），但激活入口未接入启动路径，审计历史主链与 forge-runs/checkpoint/model-registry 三目录 + task/logs + think.md **当前均为明文（原声称排 v1.3.9 未兑现），全量接线已移排 v1.4.7（G7 数据主权主题）**。 | [三、安全与信任模型局限 → 数据存储安全](#三安全与信任模型局限) |
 | 5 | **单平台场景可能过重**——只用单一 Agent 平台且接受云端审计的用户，平台内置治理比 sofagent 更顺滑。sofagent 的价值在多供应商混用 + 本地留证场景。 | [二、平台与兼容性局限 → 单平台场景](#单平台用户建议) |
 
@@ -107,7 +107,7 @@ v1.0.1 新增 daemon Ingest（自动知识提取）+ loop-evaluate Lint（自动
 
 **SkillOpt 集成状态（v1.0.4）**：管道已接通——daemon 检测 eval.md 阈值（20 条）→ 24h 防抖 → 调用 `sofagent-audit skillopt-run` CLI → `runSkillOpt()` 调 skillopt-sleep → `validateCandidate()` 验证（行数 + 内容变化）→ 备份+替换 SKILL.md。`--doctor` 展示管道状态。前置条件：`pip install skillopt`（v0.2.0+ PyPI wheel 已含 skillopt-sleep CLI）；如需 Claude Code/Codex/Copilot/Devin 集成 shell 或 OpenClaw 适配，改用源码安装 `git clone + pip install -e ".[all]"`。skillopt-sleep 未安装时管道优雅降级——daemon 写提示到 daemon-health.json，不 crash。
 
-> ⚠️ **skillopt-sleep 是临时外部依赖，非核心能力**：skillopt 自进化链路分两段——**检测/触发/验证/回滚**（纯 TypeScript，零外部依赖，核心能力）+ **生成候选 SKILL.md**（调外部 skillopt-sleep CLI，可选依赖）。skillopt-sleep 未安装时，前段照常运行（失败检测、failure-ledger 聚类、Dream Cycle 回灌），只是后段降级为安全扫描，不生成优化候选。**待后训练模型引擎就绪（v1.4.x 训练引擎排期中），"生成候选"这步会由训练好的模型直接完成，届时 skillopt-sleep 外部依赖将被移除**——它是有期限的临时方案，不是长期架构。
+> ⚠️ **skillopt-sleep 是临时外部依赖，非核心能力**：skillopt 自进化链路分两段——**检测/触发/验证/回滚**（纯 TypeScript，零外部依赖，核心能力）+ **生成候选 SKILL.md**（调外部 skillopt-sleep CLI，可选依赖）。skillopt-sleep 未安装时，前段照常运行（失败检测、failure-ledger 聚类、Dream Cycle 回灌），只是后段降级为安全扫描，不生成优化候选。**待后训练模型引擎就绪（v1.4.x 后训模块排期中），"生成候选"这步会由训练好的模型直接完成，届时 skillopt-sleep 外部依赖将被移除**——它是有期限的临时方案，不是长期架构。
 
 **A/B 运行器状态（v1.0.5 → v1.0.6 → v1.0.7）**：v1.0.5 `simulateAgentRun()` 是 mock（直接返回 expected，A/B 永远打平）。v1.0.6 替换为模型 API 直跑（方案 B）——自迭代闭环打通。v1.0.7 升级为 DeepAgents 完整 Agent（方案 C），支持工具调用验证。
 
@@ -136,7 +136,7 @@ PowerShell 脚本（`.ps1`）作为 bash 脚本的平行实现存在，但**功�
 | daemon | 233 | 131 | ~55% |
 | audit | 109 | 77 | ~70% |
 
-**核心审计引擎（@sofagent/audit npm 包）跨平台**——纯 TypeScript，Node.js ≥18 即可运行，不依赖 bash。
+**核心审计模块（@sofagent/audit npm 包）跨平台**——纯 TypeScript，Node.js ≥18 即可运行，不依赖 bash。
 
 **受影响的 Windows 功能**：
 - `verify.ps1` 只跑约 25% 的检查项，大量合规/Hook/daemon 检查缺失
@@ -232,7 +232,7 @@ task/logs 和 think.md 以 Markdown 存储，可能含代码片段、API 响应�
 
 > ⚠️ **quick 模式二进制/超大 diff 盲区（v1.3.5 披露）**：quick 模式**没有**完整引擎对超大 diff 的 5MB 阈值兜底（完整引擎：普通文件 WARN exit 1 / 敏感文件名 FAIL exit 2）。git diff 对二进制文件只输出 `Binary files differ`（无内容行），规则无内容可扫——大体积二进制/超大 diff 在 quick 模式下会全绿通过。这是 git diff 的设计而非 sofagent bug，但对应用户意味着：quick 模式不能替代二进制敏感文件（如密钥库、私有数据集）的防泄漏审查；强合规场景请用完整引擎（`--init` 装 hook）兜底。
 
-> ⚠️ **critical fast-fail：命中后后续层规则跳过（v1.4.3 披露）**：审计引擎按规则分层串行执行——**critical 层（A1 敏感文件 / A2 密钥泄漏 / A9 注入等基线底线）任一 FAIL 后，后续层规则（A3 越界 / A7 盲改 / A16 非授权变更等）不再执行、统一标 SKIPPED**（输出形如「1 违规 · 7 通过 · 9 跳过」）。设计意图是 fail-fast（critical 命中已足以拦截 commit，无需继续跑）。**取证注意**：SKIPPED ≠ 通过——跳过的规则本次未检查，事后取证不能把「N 条跳过」读成「N 条无问题」；攻击者理论上可用显眼但无害的 critical 命中（如 A1 诱饵文件名）制造「审计抓到问题了」的表象，同时掩盖后续层规则未跑的事实。需要完整逐规则结果时，修复 critical 违规后重新审计即可获得全量执行。规则分层见 SECURITY.md「24 条审计规则」与 engine/audit/src/rules/runner.ts fast-fail 段。
+> ⚠️ **critical fast-fail：命中后后续层规则跳过（v1.4.3 披露）**：审计模块按规则分层串行执行——**critical 层（A1 敏感文件 / A2 密钥泄漏 / A9 注入等基线底线）任一 FAIL 后，后续层规则（A3 越界 / A7 盲改 / A16 非授权变更等）不再执行、统一标 SKIPPED**（输出形如「1 违规 · 7 通过 · 9 跳过」）。设计意图是 fail-fast（critical 命中已足以拦截 commit，无需继续跑）。**取证注意**：SKIPPED ≠ 通过——跳过的规则本次未检查，事后取证不能把「N 条跳过」读成「N 条无问题」；攻击者理论上可用显眼但无害的 critical 命中（如 A1 诱饵文件名）制造「审计抓到问题了」的表象，同时掩盖后续层规则未跑的事实。需要完整逐规则结果时，修复 critical 违规后重新审计即可获得全量执行。规则分层见 SECURITY.md「24 条审计规则」与 engine/audit/src/rules/runner.ts fast-fail 段。
 
 > ⚠️ **config-loader 环境变量死开关披露（v1.4.3 P2-g）**：`SofaEnvConfig` 中 `sanitizeEnabled` / `sanitizeIpsEnabled` / `cleanupOnRecord` / `cleanupFrequency` / `auditEnabled` 五字段**加载但无生产消费点**——企业 IT 设 `SOFAGENT_SANITIZE=...`、`SOFAGENT_AUDIT_ENABLED=...` 等**不改变任何行为**（已在 config-loader.ts 标 @deprecated）。实际生效面：脱敏管道常开（不受开关控制）、审计由 config.yml `rules:{...}` 控制（不构成第二通道）、清理走 cleanup.sh（其保留策略读 `SOFAGENT_RETENTION_DAYS`/`SOFAGENT_RETENTION_MAX`，v1.4.3 起认 SOFAGENT_ 新名、SOFA_ 旧名兼容）。
 
@@ -349,7 +349,7 @@ sofagent-audit 实现了完整的六步审计闭环流程（设计文档见 [ARC
 | MCP Server | 仅手动验证 | JSON-RPC 协议边界情况未覆盖。无自动测试。核心逻辑（run_audit/get_think/write_think）调用 audit 包已测方法。 |
 | sofagent-core verify | 部分覆盖 | 约 44-48 项（动态，因环境条件变化）的逻辑分支未穷举 |
 
-缓解：install.sh 和 sofagent-core verify 有约 44-48 项动态检查作为 smoke test，审计引擎核心逻辑已有全面测试。上述模块的测试缺口不会影响审计结果的可靠性。
+缓解：install.sh 和 sofagent-core verify 有约 44-48 项动态检查作为 smoke test，审计模块核心逻辑已有全面测试。上述模块的测试缺口不会影响审计结果的可靠性。
 
 ---
 
@@ -386,13 +386,13 @@ A20 定位为"审计信号"而非"安全屏障"，企业高安全场景应叠加
 
 ---
 
-### 编排引擎稳定性
+### 编排模块稳定性
 
-编排引擎依赖 LangGraph createReactAgent（@langchain/langgraph，npm 包）做任务拆解——本质上是 prompt 驱动，没有确定性 fallback。编排效果完全依赖模型质量：模型换了或者降级了，任务拆解和 Loop 检查就可能失效。Agent 变弱，编排跟着变弱；如果 @langchain/langgraph 停更或 API break，编排层直接不可用。方案 C（完整 LangGraph Agent）超时 5min/次，复杂任务可能超时；multi-step Agent loop 消耗更多 token。
+编排模块依赖 LangGraph createReactAgent（@langchain/langgraph，npm 包）做任务拆解——本质上是 prompt 驱动，没有确定性 fallback。编排效果完全依赖模型质量：模型换了或者降级了，任务拆解和 Loop 检查就可能失效。Agent 变弱，编排跟着变弱；如果 @langchain/langgraph 停更或 API break，编排层直接不可用。方案 C（完整 LangGraph Agent）超时 5min/次，复杂任务可能超时；multi-step Agent loop 消耗更多 token。
 
-缓解：审计层（git diff）不依赖编排层，独立工作。编排层是可选增强——即使编排不可用，核心约束和审计仍然生效。最终解决方案是 v2.x 协同层的确定性编排引擎（计划中，参见 ROADMAP.md）。
+缓解：审计层（git diff）不依赖编排层，独立工作。编排层是可选增强——即使编排不可用，核心约束和审计仍然生效。最终解决方案是 v2.x 协同层的确定性编排模块（计划中，参见 ROADMAP.md）。
 
-> ℹ️ **设计取舍声明**：编排依赖模型质量是 LangGraph createReactAgent 架构选型的代价，非 bug——用「模型可插拔」（v1.3.2 client_type + v1.3.6 model_register）缓解（模型差可换），用「审计层独立」（不依赖编排）兜底。v2.x 确定性编排引擎是根本解但排期较远。
+> ℹ️ **设计取舍声明**：编排依赖模型质量是 LangGraph createReactAgent 架构选型的代价，非 bug——用「模型可插拔」（v1.3.2 client_type + v1.3.6 model_register）缓解（模型差可换），用「审计层独立」（不依赖编排）兜底。v2.x 确定性编排模块是根本解但排期较远。
 
 ---
 
@@ -411,7 +411,7 @@ FDE 完整四阶段十二步部署流程（[FDE/GUIDE.md](../FDE/GUIDE.md)）已
 
 ### 组件间集成测试
 
-**状态：v1.3.2 起有循环级集成验证，无独立 CI 集成测试。** 各组件独立验证通过——daemon 手动验证（Case 014）、MCP Server 本地通过、webhook 推送代码完整、编排引擎 LangGraph createReactAgent compose 通过。**v1.3.2 补全**——Onboard L2-L5 的循环引擎天然跑全链路（编排→审计→定位→修复→再跑），作为验收标准补 smoke test。当前边界：daemon → MCP → webhook → 编排四组件串联行为依赖发版前手动验证（acceptance-test 步骤 2.3），不在日常 CI 集成测试内（见下节「端到端验收测试覆盖」）。
+**状态：v1.3.2 起有循环级集成验证，无独立 CI 集成测试。** 各组件独立验证通过——daemon 手动验证（Case 014）、MCP Server 本地通过、webhook 推送代码完整、编排模块 LangGraph createReactAgent compose 通过。**v1.3.2 补全**——Onboard L2-L5 的循环引擎天然跑全链路（编排→审计→定位→修复→再跑），作为验收标准补 smoke test。当前边界：daemon → MCP → webhook → 编排四组件串联行为依赖发版前手动验证（acceptance-test 步骤 2.3），不在日常 CI 集成测试内（见下节「端到端验收测试覆盖」）。
 
 ---
 

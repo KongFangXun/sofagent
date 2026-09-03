@@ -1,6 +1,6 @@
 # @sofagent/orchestrator
 
-sofagent 编排引擎——多 Agent 协作、业务流调度、prompt 模板。任务拆解 + LangGraph StateGraph 四节点串行状态机（v1.2.0 从 deepagents 迁移至 createReactAgent）。
+sofagent 编排模块——多 Agent 协作、业务流调度、prompt 模板。任务拆解 + LangGraph StateGraph 四节点串行状态机（v1.2.0 从 deepagents 迁移至 createReactAgent）。
 
 ## 安装
 
@@ -19,6 +19,6 @@ npm install -g @sofagent/orchestrator
 
 ## 文档
 
-- [架构总览](../../docs/ARCHITECTURE.md) — 编排引擎在约束层中的位置与数据流
+- [架构总览](../../docs/ARCHITECTURE.md) — 编排模块在约束层中的位置与数据流
 - [使用手册（WIKI）](../../docs/WIKI.md) — 面向 FDE 的完整用法
 - [贡献指南](../../CONTRIBUTING.md) — monorepo 单包开发流程

@@ -11,7 +11,7 @@
 | `@sofagent-fde` | [`agents/fde/`](./agents/fde/) | 前线部署工程师——梳理业务流、识别 AI 节点、构建知识库、交付离场 |
 | `@sofagent-reviewer` | [`agents/reviewer/`](./agents/reviewer/) | 代码审查员——语义审查 + 影响分析 + 铁律合规 |
 
-> 预装 Agent 为 Skill 格式。Skill 是调用入口——第三方 Agent 平台（WorkBuddy/Codex/OpenClaw 等）加载 Skill 后，通过 CLI 命令把任务交给 DeepAgents 编排引擎执行。
+> 预装 Agent 为 Skill 格式。Skill 是调用入口——第三方 Agent 平台（WorkBuddy/Codex/OpenClaw 等）加载 Skill 后，通过 CLI 命令把任务交给 DeepAgents 编排模块执行。
 
 ## Agent 列表
 
@@ -94,7 +94,7 @@ FORGE engineer commit ──→ 自动调用 @sofagent-audit → 验证变更合
 
 | 文件 | 格式 | 作用 | 谁读 |
 |------|------|------|------|
-| `SKILL.md` | Skill 格式（frontmatter + 调用指令 + 角色定义） | **调用入口 + 角色定义**——frontmatter 告诉第三方 Agent 何时触发、用 Bash 跑 `sofagent-orchestrator subagent run <name>`；正文是 Agent 的完整行为规范 | 第三方 Agent 平台（WorkBuddy/Codex）+ DeepAgents 编排引擎 |
+| `SKILL.md` | Skill 格式（frontmatter + 调用指令 + 角色定义） | **调用入口 + 角色定义**——frontmatter 告诉第三方 Agent 何时触发、用 Bash 跑 `sofagent-orchestrator subagent run <name>`；正文是 Agent 的完整行为规范 | 第三方 Agent 平台（WorkBuddy/Codex）+ DeepAgents 编排模块 |
 
 > 注：早期设计曾计划「SKILL.md（调用）+ {role}.md（定义）」双文件分离，当前实现为单文件承载两者（frontmatter = 调用层，正文 = 定义层）。岗位级注入约束见 [`rules/`](./rules/)（core-rules.md + role-*.md，由加载链按 task type 注入主 Agent，与 Sub Agent 定义是两套机制）。
 
@@ -171,7 +171,7 @@ FORGE engineer commit ──→ 自动调用 @sofagent-audit → 验证变更合
 | `fde_derive` | FDE 本体推导引擎——五要素+访谈→ontology YAML 草稿（可导入 ontology_import） |
 | `fde_distill` | FDE 沉淀引擎——三层交付物（文档/Skill/运行层）自动生成 |
 | `fde_deploy` | FDE 部署引擎——交付物→workflow.yml 部署工件（提交/激活走人审闸门） |
-| `sofagent_compose` | 编排引擎——任务描述返回 Sub Agent 编排方案（YAML） |
+| `sofagent_compose` | 编排模块——任务描述返回 Sub Agent 编排方案（YAML） |
 | `activate_workflow` | 读取 FDE 交付物，注册企业 SubAgent |
 | `create_agent` | 一句话需求自动推导 Agent 配置（角色+域规则+think+knowledge） |
 

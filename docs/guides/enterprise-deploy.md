@@ -21,7 +21,7 @@ Agent 检测到后跳过 ClawHub 搜索，Skills 手动放入 `~/.openclaw/skill
 
 ### 3. 编排降级
 
-编排引擎基于 LangGraph createReactAgent（v1.2.0 从 deepagents 迁移，v1.0.7 起 ao 已完全退役）。不可用时手动降级：
+编排模块基于 LangGraph createReactAgent（v1.2.0 从 deepagents 迁移，v1.0.7 起 ao 已完全退役）。不可用时手动降级：
 - 手动拆任务
 - 用 task-record.sh 逐条记录
 - 手动闭环
@@ -209,7 +209,7 @@ sofagent 对 Windows 的支持是**实验性**的：
 | 能力 | macOS/Linux | Windows |
 |------|:-----------:|:-------:|
 | git hook（commit-msg / post-commit） | ✅ 完全支持 | ⚠️ 需 Git Bash（原生 cmd.exe 不支持 bash hook 脚本） |
-| 审计引擎（sofagent-audit） | ✅ 完全支持 | ✅ 支持（Node.js 跨平台） |
+| 审计模块（sofagent-audit） | ✅ 完全支持 | ✅ 支持（Node.js 跨平台） |
 | MCP Server | ✅ | ✅ |
 | daemon 常驻进程 | ✅ | ❌ 不支持（v1.2.9 PM2 守护面向 macOS/Linux，Windows 待排期） |
 | orchestrator 编排 | ✅ | ⚠️ 部分功能依赖 Unix signal |

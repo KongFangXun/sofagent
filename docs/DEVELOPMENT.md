@@ -2,7 +2,7 @@
 
 > 给开发者的内部机制文档。普通用户看 [Handbook](./HANDBOOK.md)，设计决策看 [Architecture](./ARCHITECTURE.md)。
 >
-> **本文档面向开发者。** 这里讲 sofagent 内部怎么跑——Skill 结构、编排引擎、反思闭环、数据架构。sofagent 是一层 FDE Harness（嵌在成熟 Agent 与模型层之间），底层引擎的内部实现在这里展开。
+> **本文档面向开发者。** 这里讲 sofagent 内部怎么跑——Skill 结构、编排模块、反思闭环、数据架构。sofagent 是一层 FDE Harness（嵌在成熟 Agent 与模型层之间），底层引擎的内部实现在这里展开。
 >
 > v1.4.4 · 2026-09-02（UTC）· 孔放勋
 
@@ -37,10 +37,10 @@
 
 | 依赖 | 用途 | 版本 |
 |------|------|:--:|
-| Node.js + TypeScript | 审计引擎、CLI、MCP Server | ≥18（v1.1.0 起纳入） |
-| [@langchain/langgraph](https://github.com/langchain-ai/langgraph) | 编排引擎（createReactAgent）+ Sub Agent 系统 | v1.2.0+（编排引擎迁移史：ao→v1.0.6 DeepAgents→v1.2.0 LangGraph createReactAgent；deepagents 已弃用） |
+| Node.js + TypeScript | 审计模块、CLI、MCP Server | ≥18（v1.1.0 起纳入） |
+| [@langchain/langgraph](https://github.com/langchain-ai/langgraph) | 编排模块（createReactAgent）+ Sub Agent 系统 | v1.2.0+（编排模块迁移史：ao→v1.0.6 DeepAgents→v1.2.0 LangGraph createReactAgent；deepagents 已弃用） |
 | [LangGraph.js](https://github.com/langchain-ai/langgraphjs) | 状态图、条件路由、HITL | v1.0.1+ |
-| Python 3 + `pip install skillopt` | Skill 自进化引擎（通过 CLI subprocess 调用，可选） | v1.0.3+ |
+| Python 3 + `pip install skillopt` | Skill 自进化模块（通过 CLI subprocess 调用，可选） | v1.0.3+ |
 | 无其他外部运行时依赖 | — | — |
 
 ### Windows 开发踩坑（PowerShell 移植必读）
@@ -63,7 +63,7 @@
 | 审计报告生成 | `engine/audit/src/reporter.ts` |
 | think.md 自动生成 | `engine/think/src/think-generator.ts` |
 | Skill 主入口（宪法内联） | `SKILL/SKILL.md` |
-| 编排引擎 | `SKILL/harness/engage.md` |
+| 编排模块 | `SKILL/harness/engage.md` |
 | FDE 场景引导 | `SKILL/harness/engage-fde.md` |
 | 入境/每任务/离境闸门 | `SKILL/harness/entry-gate.md` / `task-aware.md` / `task-closure.md` |
 | 循环检查/评估/退出 | `SKILL/harness/loop-check.md` / `loop-evaluate.md` / `loop-exit.md` |
@@ -98,7 +98,7 @@
 
 > 三层闸门 + 一条回环：入境 → 每任务 → Loop → 离境。四个全走才能保证 `.sofagent/` 数据层被激活。
 
-sofagent **约束层（约束层五种能力）** 各有分工。**审计**只看 git diff（提交时），不依赖 Agent 配合。**编排引擎**在 Workflow 梳理时生成节点定义，之后 Sub Agent 自加载约束执行。两种调用路径：支持 Hook 的平台节点走内部 API，其他节点走 CLI。两者通过 think.md 交汇——审计基于 diff 硬证据自动生成反思，编排引擎读取优化策略。
+sofagent **约束层（约束层五种能力）** 各有分工。**审计**只看 git diff（提交时），不依赖 Agent 配合。**编排模块**在 Workflow 梳理时生成节点定义，之后 Sub Agent 自加载约束执行。两种调用路径：支持 Hook 的平台节点走内部 API，其他节点走 CLI。两者通过 think.md 交汇——审计基于 diff 硬证据自动生成反思，编排模块读取优化策略。
 
 主 Agent 的日常：接活 → 看 `data/eval/` → 看 think.md 反思区 → 看 `orchestrator/` → 干完记入 `task/logs/`。三分架构的设计推理见 [ARCHITECTURE 编排收敛](./ARCHITECTURE.md#编排收敛与-ab-测试)。
 
@@ -112,13 +112,13 @@ Skill 的核心不是写执行步骤，而是划定**决策边界**。一个好 
 | 什么时候绝对不能调用 | 硬排除条件——依赖未就绪/数据过期/权限不足 | "建议不调用"——弱语气 AI 会忽视 |
 | 怎样算完成 | 显式 exit 条件——产出物/验证标准/交付动作 | "任务完成"——太模糊，AI 不知道什么时候停 |
 
-**事实约束三原则**：① 标注哪些内部数据存在过期风险、② 哪些业务动作必须实时核验、③ 查不到确切凭证必须拒答而非脑补。审计引擎的 A9 中文注入检测部分覆盖此方向。
+**事实约束三原则**：① 标注哪些内部数据存在过期风险、② 哪些业务动作必须实时核验、③ 查不到确切凭证必须拒答而非脑补。审计模块的 A9 中文注入检测部分覆盖此方向。
 
 **工具集检查清单**：每个 Skill 的工具集应零重叠、无歧义——两个工具的功能描述不能模糊交叉。当工具数上百时，瓶颈不在模型推理而在工具描述歧义。v1.1.0 daemon 工具注册将做静态重叠检测。
 
 ### Skill 生命力与自进化判据
 
-> 本节为 Skill 治理的判据沉淀，供 `skillopt` 自进化引擎与 FDE 部署 SOP 调用。
+> 本节为 Skill 治理的判据沉淀，供 `skillopt` 自进化模块与 FDE 部署 SOP 调用。
 
 **A1｜Skills 生命力五分类法**（模型越强越要保留的 5 类 Skill）
 
@@ -129,10 +129,10 @@ Skill 的核心不是写执行步骤，而是划定**决策边界**。一个好 
 | 工具操作型 | 模型知目标但不懂本地工具调用规则，打通可靠业务流 | MCP / Hook（外部系统对接层） |
 | 专有方法论型 | 非通用公开知识的自定义判断体系（如七成产业链评估） | fde.md 业务四问 + Ontology 约束（企业专属判断） |
 | 高风险强约束业务流型 | 错误代价极高，严格限定执行规则 | 铁律 4 条 + entry-gate 风险分级（🟢🟡🔴） |
-| 确定性生产型 | 输出须机器可验证固定格式，模型+脚本消除随机性 | discipline-check.sh（焊死的门）+ 审计引擎（git diff 硬证据） |
+| 确定性生产型 | 输出须机器可验证固定格式，模型+脚本消除随机性 | discipline-check.sh（焊死的门）+ 审计模块（git diff 硬证据） |
 | 项目知识与组织协作型 | 团队/项目专属长期约定（命名/目录/交付/归档） | SKILL.md + rules.md + 记忆系统（Ralph 路径外化） |
 
-**保留/淘汰判据（skillopt 自进化引擎直接套用）**：优先保留上述 5 类；主动淘汰「通用角色扮演 / 泛化流程 / 纯提示词教模型成专家」型 Skill。与 Skill Reducer「少即是多」、A7「先做产物后 Skill」同源，但提供**可操作的分类判据**。
+**保留/淘汰判据（skillopt 自进化模块直接套用）**：优先保留上述 5 类；主动淘汰「通用角色扮演 / 泛化流程 / 纯提示词教模型成专家」型 Skill。与 Skill Reducer「少即是多」、A7「先做产物后 Skill」同源，但提供**可操作的分类判据**。
 
 **A2｜Skills 轻量 OS 入口五要素**
 
@@ -144,7 +144,7 @@ Skill 的核心不是写执行步骤，而是划定**决策边界**。一个好 
 | 少量边界规则 | 划定决策边界，不做重约束堆砌 |
 | 按需参考资料 | 重内容外化到 references/，按需加载 |
 | 可执行脚本 | 模型+脚本消除随机性（对应确定性生产型） |
-| 明确验证标准 | 闭环到 pass/fail（对应审计引擎硬证据） |
+| 明确验证标准 | 闭环到 pass/fail（对应审计模块硬证据） |
 
 **A7｜先做产物后做 Skill（黄金顺序）**
 
@@ -168,7 +168,7 @@ FDE 部署 SOP 应遵循此顺序：
 | AI 边界认知 + 代码兜底 | 知道 AI 哪里会出错，用确定性代码兜底 |
 | 产品化思维 | 把经验封装成他人能用的产物 |
 
-**失败清单驱动进化**：Skill 的迭代不是堆功能，是持续记录「这次哪里出了错」→ 形成失败清单 → 下次规避。失败清单是 skillopt 自进化引擎的燃料。
+**失败清单驱动进化**：Skill 的迭代不是堆功能，是持续记录「这次哪里出了错」→ 形成失败清单 → 下次规避。失败清单是 skillopt 自进化模块的燃料。
 
 **失败清单 > 正向评分**：当前 sofagent scoring 只做正向评分，缺「失败清单」反向维度（与 Evil Skill 自验证闭环同方向）。自进化优先级应让失败清单的反向规避高于正向功能堆砌。
 
@@ -208,7 +208,7 @@ FDE 部署 SOP 应遵循此顺序：
 | `install.sh` | 多平台一键安装（7 步） | 手动跑 |
 | `uninstall.sh` | 删约束文件，保留 `.sofagent/` | 手动跑 |
 | `verify.sh` | 装后验证 9 类 24+ 检查项 | 安装完自动跑，也可手动 |
-| `orchestrator-compare.ts` | A/B 对比 + promote + compose（合并了原 task-orchestrate） | 编排引擎定期调用 |
+| `orchestrator-compare.ts` | A/B 对比 + promote + compose（合并了原 task-orchestrate） | 编排模块定期调用 |
 | `task-record.sh` | 收集任务数据 → 拼 Markdown → 追加到 task/logs/ | 闭环时自动调用 |
 
 > 前三个是用户侧工具，后两个是运行时脚本。**设计原则**：确定性操作脚本化——去重、格式校验、文件清理这类即刻运算，脚本比 Agent 更快更省更可靠。
@@ -239,7 +239,7 @@ CLI 入口：`sofagent-daemon create-usb-key --role --target --platform`（写�
 
 #### 两条执行路径与降级链
 
-编排引擎有两条执行路径，新代码应优先走 StateGraph（v1.1.3+，主推）：入口 `runLoopGraph()` / `sofagent-orchestrator loop --task`，LangGraph 四节点状态机 + checkpoint（`.sofagent/checkpoint/`，断点续跑）+ HITL（human_confirm 节点，`loop --resume` 可恢复）。路径一 compose（v1.0.6+，`composeWithDeepAgents()`）保留兼容——v1.2.0 前基于 deepagents，现已迁移至 LangGraph `createReactAgent` 拆任务为 YAML 业务流 DAG，无 checkpoint 无 HITL。对应源码：路径一 `engine/orchestrator/src/composer.ts` + `loop-runner.ts`；路径二 `engine/orchestrator/src/loop/`（state/nodes/graph）。StateGraph 的 engineer/reviewer 节点优先走"工具注入路径"（LangGraph `createReactAgent` + 工具集，systemPrompt 拼装四层约束链）；`SOFAGENT_LLM` 未设置或解析失败时，自动降级到 `spawnSubAgent` 零工具路径（composer）。v1.2.6 起 `resolveLLMModel()` 增加四级回退：`SOFAGENT_LLM`（显式优先）→ `SOFAGENT_LLM_A` → `SOFAGENT_LLM_B` → null，API key 同链回退——FORGE 审查用的 A/B 配置可直接驱动编排主链路。
+编排模块有两条执行路径，新代码应优先走 StateGraph（v1.1.3+，主推）：入口 `runLoopGraph()` / `sofagent-orchestrator loop --task`，LangGraph 四节点状态机 + checkpoint（`.sofagent/checkpoint/`，断点续跑）+ HITL（human_confirm 节点，`loop --resume` 可恢复）。路径一 compose（v1.0.6+，`composeWithDeepAgents()`）保留兼容——v1.2.0 前基于 deepagents，现已迁移至 LangGraph `createReactAgent` 拆任务为 YAML 业务流 DAG，无 checkpoint 无 HITL。对应源码：路径一 `engine/orchestrator/src/composer.ts` + `loop-runner.ts`；路径二 `engine/orchestrator/src/loop/`（state/nodes/graph）。StateGraph 的 engineer/reviewer 节点优先走"工具注入路径"（LangGraph `createReactAgent` + 工具集，systemPrompt 拼装四层约束链）；`SOFAGENT_LLM` 未设置或解析失败时，自动降级到 `spawnSubAgent` 零工具路径（composer）。v1.2.6 起 `resolveLLMModel()` 增加四级回退：`SOFAGENT_LLM`（显式优先）→ `SOFAGENT_LLM_A` → `SOFAGENT_LLM_B` → null，API key 同链回退——FORGE 审查用的 A/B 配置可直接驱动编排主链路。
 #### 测试友好：依赖注入
 
 StateGraph 的流转逻辑通过 `LoopGraphDeps` 接口完全可 mock——`runEngineer / runAudit / runReviewer / confirmHuman / recordBlocked / checkpointer / maxRetries / log` 七个槽位。`defaultDeps()` 给生产实现，测试时整体替换。这让节点流转逻辑可以脱离真实 LLM 单测（v1.1.7 测试堆到 770 case 的前提）。
@@ -316,7 +316,7 @@ Session 边界用百分比（缓存≥50%，token≥70%），子 Agent 不参与
 
 > **Loop 落地前置条件**：① 任务重复发生 ② 支持自动化核验 ③ Token 预算覆盖 ④ AI 具备适配工具。核心原则——**自己不能当自己裁判**：生成与核验的模型必须独立，与 sofagent「审计与编排分离」同源。
 
-> **比收敛更难的，是控制权分配。** 哪一段让模型自由判断（编排引擎 createReactAgent），哪一段必须由代码强制执行（审计引擎 24 条规则），哪一步失败可以重试（b-fix），哪一步必须停下来问人（human_confirm）——sofagent 的确定性与概率性分离，就是对这个问题的工程回答。这也是从 Loop Engineering 走向 Graph Engineering 的核心工程挑战：Graph 的真正难点不是画框连线，而是决定**每条边上的控制权归谁**。
+> **比收敛更难的，是控制权分配。** 哪一段让模型自由判断（编排模块 createReactAgent），哪一段必须由代码强制执行（审计模块 24 条规则），哪一步失败可以重试（b-fix），哪一步必须停下来问人（human_confirm）——sofagent 的确定性与概率性分离，就是对这个问题的工程回答。这也是从 Loop Engineering 走向 Graph Engineering 的核心工程挑战：Graph 的真正难点不是画框连线，而是决定**每条边上的控制权归谁**。
 
 > 一句话锚点：**「翻译官不应该有决策权。」** 模型负责理解（翻译模糊需求→结构化意图），系统负责控制（确认、权限、状态流转）。sofagent 的确定性与概率性分离，就是这条原则的工程落地——审计规则不看模型说什么，只看 diff 改了什么。
 
@@ -383,7 +383,7 @@ LangGraph createReactAgent 拆完任务
 
 > A/B 结果异常时的用户侧处理方法见 [HANDBOOK §排查](./HANDBOOK.md#排查问题)。
 
-`sofagent-orchestrate-compare` 从 task/logs 中提取运行次数、违规率、步数、通过率四项指标做确定性对比。编排引擎定期重出 candidate 方案后与 current 对比——v1.0.7 实现连续胜出自动计数器（连续 2 次胜出 → auto promote + 原子写入），旧方案归档到 history/。
+`sofagent-orchestrate-compare` 从 task/logs 中提取运行次数、违规率、步数、通过率四项指标做确定性对比。编排模块定期重出 candidate 方案后与 current 对比——v1.0.7 实现连续胜出自动计数器（连续 2 次胜出 → auto promote + 原子写入），旧方案归档到 history/。
 
 规则：不主动创造对照组、同类型才比、单次胜出标记候选（连续 2 次需手动二次确认）、再跑 2 次稳定才沉淀、模板可被替换。局限：样本量小（最少 7 次）、LLM 有随机性。完整推理见 [ARCHITECTURE 编排收敛](./ARCHITECTURE.md#编排收敛与-ab-测试)。
 
@@ -407,7 +407,7 @@ LangGraph createReactAgent 拆完任务
 
 ### 轨迹优化闭环：Trajectory Store + LLM-Judge 蒸馏
 
-进化引擎核心机制（行业参考「轨迹优化闭环」）：好轨迹经 LLM-Judge 评分 + Best-of-N 筛选，蒸馏成 Skill 沉淀。
+进化模块核心机制（行业参考「轨迹优化闭环」）：好轨迹经 LLM-Judge 评分 + Best-of-N 筛选，蒸馏成 Skill 沉淀。
 
 - **Trajectory Store**：每条成功任务的全链路轨迹入库
 - **LLM-Judge**：对轨迹打分（质量 / 成本 / 合规）
@@ -415,7 +415,7 @@ LangGraph createReactAgent 拆完任务
 
 案例（成本数字来源待补充）：选品报告 $0.80 / 120s / 92 分 → 蒸馏后 $0.20 / 35s / 91 分。
 
-> 与 sofagent FORGE 进化引擎同源——好轨迹沉淀为 Skill，闭环驱动自迭代。
+> 与 sofagent FORGE 进化模块同源——好轨迹沉淀为 Skill，闭环驱动自迭代。
 
 ### 中间检查点
 
@@ -502,7 +502,7 @@ v1.0.7 预装了两个内置 Agent，v1.0.8 将它们升级为**基础设施 Age
 | 工作记忆 | 当前任务上下文 | 单次会话 | 会话上下文 |
 | 短期记忆 | 近期工作笔记 | 天到周 | think.md（反思）|
 | 长期记忆 | 团队知识 / 历史决策 / 业务规则 | 持久化 | knowledge/ |
-| 操作日志 | 做了什么、为什么、结果 | 审计保留期 | task/logs + 审计引擎 |
+| 操作日志 | 做了什么、为什么、结果 | 审计保留期 | task/logs + 审计模块 |
 
 > 关键：「这不是 RAG。RAG 是『从文档里找答案』，记忆是『我自己经历过，我知道该怎么做』。」数字员工每次完成任务自动把关键决策与踩过的坑写入长期记忆——sofagent 的记忆观不依赖 RAG 式检索作为主记忆机制（knowledge/ 的检索式注入是另一回事），此区分加固反 RAG 立场。
 
@@ -512,13 +512,13 @@ v1.0.7 预装了两个内置 Agent，v1.0.8 将它们升级为**基础设施 Age
 
 | 文件 | 归属引擎 | 干什么 | 加载 |
 |------|---------|------|:--:|
-| `think.md` | **多写入方 / 只追加（Ledger）** | 反思摘要（Ledger 原始数据）。写入方：①审计引擎 git diff 自动反思 ②主 Agent 按模板手动 write_think ③FDE/loop 陪跑期写入；读取方：编排引擎、daemon(Dream Cycle/lessons-extract)、harness 加载链、人类。**只追加，绝不整体覆写/截断**。代码契约见 `@sofagent/core` 的 `getThinkPath()` / `appendThinkEntry()` | 全文 |
-| `task/logs/` | **审计引擎读 / 编排引擎写** | 执行日志。审计 A7/A8 读它；编排引擎闭环时写入 | 日期目录树 |
-| `fde.md` | **编排引擎读** | 企业运行规范，含项目目标、验收标准、风险边界 | 全文 |
-| `task/plans/` | **编排引擎写** | 任务计划，第二轮澄清时生成 | 日期文件名 |
-| `orchestrator/` | **编排引擎核心数据** | 最优拆法决策树 | 树形 |
-| `data/eval/` | **编排引擎辅助数据** | Skill 评分记录，闭环时更新 | 树形 |
-| `IDENTITY.md` | **编排引擎辅助** | 岗位匹配（agency-agents-zh） | 全文 |
+| `think.md` | **多写入方 / 只追加（Ledger）** | 反思摘要（Ledger 原始数据）。写入方：①审计模块 git diff 自动反思 ②主 Agent 按模板手动 write_think ③FDE/loop 陪跑期写入；读取方：编排模块、daemon(Dream Cycle/lessons-extract)、harness 加载链、人类。**只追加，绝不整体覆写/截断**。代码契约见 `@sofagent/core` 的 `getThinkPath()` / `appendThinkEntry()` | 全文 |
+| `task/logs/` | **审计模块读 / 编排模块写** | 执行日志。审计 A7/A8 读它；编排模块闭环时写入 | 日期目录树 |
+| `fde.md` | **编排模块读** | 企业运行规范，含项目目标、验收标准、风险边界 | 全文 |
+| `task/plans/` | **编排模块写** | 任务计划，第二轮澄清时生成 | 日期文件名 |
+| `orchestrator/` | **编排模块核心数据** | 最优拆法决策树 | 树形 |
+| `data/eval/` | **编排模块辅助数据** | Skill 评分记录，闭环时更新 | 树形 |
+| `IDENTITY.md` | **编排模块辅助** | 岗位匹配（agency-agents-zh） | 全文 |
 | `knowledge/` | **数据层（v1.0.1）** | AI 知识库：entities/（实体页）+ concepts/（概念页）+ comparisons/（对比页）+ log.md（变更日志）+ index.md（索引）| 按需注入 top-N |
 | | | **生产者**：daemon Ingest（task/logs → 知识提取）、knowledge-maintain Skill（session 结束时的结构化总结）| |
 | | | **消费者**：加载链第 4 层（上下文注入）、Agent 决策前自主检索 | |
@@ -527,7 +527,7 @@ v1.0.7 预装了两个内置 Agent，v1.0.8 将它们升级为**基础设施 Age
 
 ### 数据流向总结
 
-每次任务闭环：反思进 think.md → 评分更新 data/eval/ → 最优拆法覆写 orchestrator/ → 执行记录追加到 task/logs/（只追加）。task/logs 是所有数据的源头。think.md 由审计引擎基于 git diff 硬证据自动生成。
+每次任务闭环：反思进 think.md → 评分更新 data/eval/ → 最优拆法覆写 orchestrator/ → 执行记录追加到 task/logs/（只追加）。task/logs 是所有数据的源头。think.md 由审计模块基于 git diff 硬证据自动生成。
 
 ### 维护规则
 
@@ -554,7 +554,7 @@ v1.0.7 预装了两个内置 Agent，v1.0.8 将它们升级为**基础设施 Age
 
 ## 八、提交时审计 + 文件系统审计
 
-> 审计引擎的 CLI 使用和 exit code 约定。用户视角见 [HANDBOOK §提交后自动审计](./HANDBOOK.md#提交后自动审计)，CI 集成例子见 [HANDBOOK §CI 集成](./HANDBOOK.md#ci-集成)。
+> 审计模块的 CLI 使用和 exit code 约定。用户视角见 [HANDBOOK §提交后自动审计](./HANDBOOK.md#提交后自动审计)，CI 集成例子见 [HANDBOOK §CI 集成](./HANDBOOK.md#ci-集成)。
 
 sofagent-audit（v1.0.8）是 TypeScript CLI，支持两种审计触发模式：
 
@@ -569,7 +569,7 @@ v1.0.8 自研 git-shadow diff 解析（isomorphic-git **风格**，非 npm 包�
 
 > 📖 **多设备同步**：daemon 的经验产出（knowledge/ + think.md）可跨设备共享——4 种方案见 [多设备同步指南](./guides/multi-device-sync.md)。
 
-> 📐 **最小 Harness 参照**：MicroHoneys 仅 400 行代码实现了完整的 Agent Harness（配置/提示词/工具调度/安全守卫/生命周期/长期记忆），证明 Harness 层不需要庞大的基础设施——核心是边界清晰的分层设计，不是代码量。sofagent 的审计引擎同样追求极简：核心规则 < 2000 行，零外部 API 依赖。
+> 📐 **最小 Harness 参照**：MicroHoneys 仅 400 行代码实现了完整的 Agent Harness（配置/提示词/工具调度/安全守卫/生命周期/长期记忆），证明 Harness 层不需要庞大的基础设施——核心是边界清晰的分层设计，不是代码量。sofagent 的审计模块同样追求极简：核心规则 < 2000 行，零外部 API 依赖。
 
 ### 绿灯路径检测
 
@@ -579,7 +579,7 @@ v1.0.8 自研 git-shadow diff 解析（isomorphic-git **风格**，非 npm 包�
 
 > **架构漂移检测（命名）**：代码与文档长期不一致 → AI 生成逻辑偏向实际代码而非文档 → 长期积累导致架构腐蚀。A4（不删配置）和 A16（非授权文件变更）部分覆盖此方向，未来可作为独立检测维度：对比 `.sofagent/` 中的约束声明与仓库实际结构，检测文档→代码的偏移。
 
-> **落地案例：财务报销沙盒（权责分离）**。员工提交 5800 元报销单备注「经副总裁特批」，大模型抓关键词误判合规直接放款。解法不是加更多 Prompt 规则（关键词匹配易被绕过），而是**物理隔离**：沙盒内预置打款函数 + 硬编码审计红线 → 沙盒独立解析 JSON 提取金额 → 风控雷达扫描超限直接刚性阻断 → 模型连网银接口的「门把手都摸不到」。一句话原则：**只让 AI 干活提建议，绝不让他碰红线**。sofagent 的 A2（不泄密钥）/A15（不盲动）遵循同一原则——模型提建议，审计引擎控执行。
+> **落地案例：财务报销沙盒（权责分离）**。员工提交 5800 元报销单备注「经副总裁特批」，大模型抓关键词误判合规直接放款。解法不是加更多 Prompt 规则（关键词匹配易被绕过），而是**物理隔离**：沙盒内预置打款函数 + 硬编码审计红线 → 沙盒独立解析 JSON 提取金额 → 风控雷达扫描超限直接刚性阻断 → 模型连网银接口的「门把手都摸不到」。一句话原则：**只让 AI 干活提建议，绝不让他碰红线**。sofagent 的 A2（不泄密钥）/A15（不盲动）遵循同一原则——模型提建议，审计模块控执行。
 
 ### 状态账本
 
@@ -609,7 +609,7 @@ Google Research 的 WikiSkill（[arXiv:2608.27454](https://arxiv.org/abs/2608.27
 - **推理时禁查知识库反而更好**（-2.8pt）：训练 rollout 时让 Agent 直接查 Wiki，产出的轨迹对技能开发失去参考价值。反向印证 sofagent「约束层要轻、零 token 运行」——知识供进化者离线消费，不塞执行时上下文。
 - **跨模型技能迁移有负迁移实锤**：4B 模型进化的技能把 Gemini-3.5-Flash 从 50.5% 拉到 18.1%——弱模型的低层 workaround 束缚强模型。sofagent 覆盖 11 供应商多模型，技能应按模型分级门控，不能全局通用投放。
 - **溯源与提案审计**：`PURPOSE.md`（技能回链到所解决的 pattern）与 `skill-impact.md`（每次提案 diff/分数/接受与否程序化落账）两个小机制，与 sofagent 的 LEDGER/审计轨迹理念同源，已列入 ROADMAP 候选。
-- **自进化的开放问题恰是约束层的主场**：技能自进化的公开讨论自认仍缺质量控制、安全审核、版本管理三样——正是 sofagent 审计引擎（规则集）+ 安全审查 + 回滚编排已经在做的事。开发者角色从「写技能」转为「设目标 + 把关」，与 sofagent 约束层哲学（人定规则、AI 执行、审计每次变更）同构，是 FDE 交付叙事的现成参照。
+- **自进化的开放问题恰是约束层的主场**：技能自进化的公开讨论自认仍缺质量控制、安全审核、版本管理三样——正是 sofagent 审计模块（规则集）+ 安全审查 + 回滚编排已经在做的事。开发者角色从「写技能」转为「设目标 + 把关」，与 sofagent 约束层哲学（人定规则、AI 执行、审计每次变更）同构，是 FDE 交付叙事的现成参照。
 
 ## 九C、meta-harness 生态与 sofagent 的定位（2026-06 Meta-Harness Summer 印证）
 

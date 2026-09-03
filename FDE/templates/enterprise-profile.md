@@ -26,7 +26,7 @@
 | # | 岗位名 | 人数 | 主要产出 |
 |---|--------|------|----------|
 | 1 | FDE（Forward Deployed Engineer） | 1 | 企业部署方案 + AI 节点搭建 |
-| 2 | 审计引擎维护 | 1 | TS CLI 代码 + 规则更新 |
+| 2 | 审计模块维护 | 1 | TS CLI 代码 + 规则更新 |
 | 3 | 文档维护 | 1 | README / HANDBOOK / CHANGELOG |
 
 ---
