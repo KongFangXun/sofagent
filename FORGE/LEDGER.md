@@ -303,3 +303,5 @@ release-gate-loop 与 fresh-eyes-loop 共享本文件，通过"循环"列区分�
 2026-09-03     | 20260903-05    | release-gate | 4    | SKIP       | FAIL       | PASS     | FAIL    | /Users/kongfangxun/.sofagent/data/forge-runs/release-gate-loop/2026-09-03/run-05
 
 2026-09-03     | 20260903-06    | release-gate | 4    | SKIP       | PASS       | FAIL     | FAIL    | /Users/kongfangxun/.sofagent/data/forge-runs/release-gate-loop/2026-09-03/run-06
+
+2026-09-03     | 20260903-07    | release-gate | 4    | SKIP       | PASS       | PASS     | PASS    | /Users/kongfangxun/.sofagent/data/forge-runs/release-gate-loop/2026-09-03/run-07
