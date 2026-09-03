@@ -14,7 +14,7 @@
 //   - 路径控制：路径守卫（resolveTarget 判定读写范围）——数据集只读 +
 //     产物目录可写 + 其余拒绝（V8 层实现，沙箱内路径操作全走此处）
 //   - 离线能力：环境自足（venv + 基座缓存随包交付）——train-env-init
-//     的设备打包形态（tools/package-train-runtime.sh）
+//     的设备打包形态（tools/train/package-train-runtime.sh）
 //
 // 测试纪律：路径判定/白名单判定纯函数全注入测试，零真实进程零真实 GPU。
 

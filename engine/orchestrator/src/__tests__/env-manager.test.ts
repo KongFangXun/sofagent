@@ -226,7 +226,7 @@ describe('env-manager · trainEnvInit 降级分支', () => {
     expect(gpuStep?.detail).toContain('降级分支');
     const fwStep = r.steps.find((s) => s.name === 'framework-install');
     expect(fwStep?.status).toBe('skip');
-    expect(fwStep?.detail).toContain('tools/train-env-init.sh');
+    expect(fwStep?.detail).toContain('tools/train/train-env-init.sh');
 
     // manifest：gpu=metal / cudaVersion=null / packageManager=npm
     const m = readManifest('ent-mac');

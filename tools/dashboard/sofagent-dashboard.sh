@@ -109,7 +109,7 @@ if [ "${SOFAGENT_DASHBOARD_LIB_ONLY:-}" != "1" ] && [ "$TREND" != "1" ]; then
     echo "     sofagent-daemon start"
     echo ""
     echo "  ③ 想看训练任务（v1.4.3 新增区块）：先提交一个训练任务"
-    echo "     环境准备：bash tools/train-env-init.sh"
+    echo "     环境准备：bash tools/train/train-env-init.sh"
     echo "     任务提交：MCP train_submit（进度/健康度自动落盘）"
     echo ""
     echo "  指南：docs/HANDBOOK.md「新功能入口导览」表（三条产品线的入口与前置）"

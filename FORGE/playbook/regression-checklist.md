@@ -1703,7 +1703,7 @@ grep -q "fdeWorkbenchPaths" engine/orchestrator/src/fde/fde-workbench.ts && grep
 # b: 三问判定引擎（🔄/⚡/👤 三态 + 六步分解）
 grep -q "classifyAutomation" engine/orchestrator/src/fde/compose-interview.ts && echo "✅ 判定引擎在位" || echo "❌ 缺 classifyAutomation"
 # c: 训练环境双实现判定分支对齐（env-manager.ts 与 train-env-init.sh 同一套判定）
-grep -q "trainEnvInit" engine/orchestrator/src/train/env-manager.ts && test -f tools/train-env-init.sh && echo "✅ 双实现齐备" || echo "❌ 缺一侧"
+grep -q "trainEnvInit" engine/orchestrator/src/train/env-manager.ts && test -f tools/train/train-env-init.sh && echo "✅ 双实现齐备" || echo "❌ 缺一侧"
 # d: 缩放律零依赖纪律（不引 ml 库）
 grep -qE "levenberg|阻尼" engine/orchestrator/src/train/scale-curve.ts && ! grep -qE "from ['\"](ml|tensorflow|@tensorflow)" engine/orchestrator/src/train/scale-curve.ts && echo "✅ 手写拟合零 ml 依赖" || echo "❌ 依赖纪律破"
 # e: IM 桥安全边界文档（凭据本机/命令白名单/可信用户）
@@ -1747,7 +1747,7 @@ grep -q "MiniMax-M1" engine/orchestrator/src/train/train-diagnose.ts && grep -q 
 # d: 审计聚合只读铁律（stats.ts 零写入 history.jsonl——appendFileSync 禁现）
 ! grep -qE "appendFileSync|writeFileSync" engine/audit/src/stats.ts && grep -q "computeAuditStats" engine/audit/src/cli-quick.ts && echo "✅ 聚合只读 + CLI 接线" || echo "❌ 聚合层有写或未接 CLI"
 # e: 反作弊双防线默认化（train-env-init.sh 落 anticheat 节 + doctor 三项体检）
-grep -q "anticheat" tools/train-env-init.sh && grep -q "checkAnticheatBaseline" engine/mcp/src/tools/train-doctor.ts && echo "✅ 双防线默认落盘" || echo "❌ 反作弊基线缺口"
+grep -q "anticheat" tools/train/train-env-init.sh && grep -q "checkAnticheatBaseline" engine/mcp/src/tools/train-doctor.ts && echo "✅ 双防线默认落盘" || echo "❌ 反作弊基线缺口"
 # f: FORGE 步一二三（事件回放 + 全 step dsh + runtimeUsage 自动计量）
 grep -q "replayEventsToStreamHandler" engine/orchestrator/src/execution-backends/dsh-backend.ts && grep -q "runtimeUsage" FORGE/src/fresh-eyes-driver.mjs && grep -q "return 'dsh'" FORGE/src/fresh-eyes-driver.mjs && echo "✅ DSH 三步在位" || echo "❌ DSH 深化缺口"
 # g: onboarding 导览表（HANDBOOK 三线 × 是什么/从哪进/前置 + install 提示分层）
@@ -1777,3 +1777,22 @@ grep -q "escaped" engine/audit/src/permission/checker.ts && grep -q "ReDoS\|灾�
 grep -c "logo-version" tools/dashboard/dashboard.html | grep -qE "^[0-9]+$" && ! grep -q "document.scrollTop" tools/dashboard/dashboard.html && echo "✅ dashboard 版本单源 + 无非法 API" || echo "❌ dashboard 一致性回退"
 ```
 
+
+#### 129. v1.4.4 fresh-eyes 19 项修复防复发——CLI 接线断链 + 供应链回滚路径 + nodeId/YAML 清洗 + 结构性收口（阶段四来源提取 A/B 类一维收口 · 行为面已由单测锁：weights-deploy/fde-workbench/export/corpus-export +9 用例）
+
+> 19 项发现（P0×1 + P1×7 + P2×11，修复批 37cab2b9）防复发锚点。P0「声称命令三面零接线」的机械防线已落 check-docs §13（submitCompareJobs 生产调用 ≥1 断言在册）；行为面（回滚哈希直验/中文 nodeId 清洗/YAML 转义/scope 校验/auditEvent null/enterpriseId 正名）已由四包单测 +9 用例锁定，此处只收 grep 级结构性锚 + 新增声称点对账面。
+
+```bash
+# a: P0 接线断链族——CHANGELOG 声称的命令必须真实装可达（CLI 分支实装 + 帮助面 + 回填 API 三锚）
+grep -q "v1.4.4 交付④：train compare" engine/orchestrator/src/cli.ts && grep -q "refreshCompareResults" engine/orchestrator/src/train/train-compare.ts && echo "✅ train compare CLI 接线 + 回填 API 在位" || echo "❌ compare 接线断链（P0 回潮）"
+grep -q "submitCompareJobs" tools/check/check-docs.sh && echo "✅ §13 接线存在性断言在册（新声称点自动进对账面）" || echo "❌ §13 断言丢失——声称命令脱离门禁保护"
+# b: 供应链回滚路径——三路径（注册/切换/回滚）哈希校验无旁路；止损路径校验强度不得弱于常规路径
+grep -n "verifyHash: true" engine/orchestrator/src/model-registry.ts | grep -q "true" && grep -q "hashDir(targetDir)" engine/orchestrator/src/model-registry.ts && echo "✅ 回滚目标哈希直验在位（第三环闭合）" || echo "❌ 回滚路径校验旁路（供应链红线失守）"
+# c: nodeId/YAML 双清洗——Skill 标识位（frontmatter name/文件名）与 ontology 插值必须走清洗/转义，模板路径与内置默认同一条规则
+grep -q "sanitizeNodeId" engine/orchestrator/src/fde/fde-quantify.ts && grep -q "yamlScalar" engine/orchestrator/src/fde/fde-quantify.ts && echo "✅ 双清洗函数在位" || echo "❌ nodeId/YAML 清洗丢失（中文产物必非法）"
+# d: 结构性 P2 簇——单源委托/跨包互链/fork 适配/死变量清除四锚
+grep -q "return buildVerifiersWithOverrides({})" engine/audit/src/export/reward-mapping.ts && echo "✅ verifiers 单源委托" || echo "❌ 双份维护回潮"
+grep -q "三件套全景" engine/audit/src/export/exporter.ts && echo "✅ 三件套跨包互链" || echo "❌ 导出三件套导航锚点丢失"
+grep -q "GLM_API_KEY" FORGE/models/profile.mjs && echo "✅ fork 适配提示在位" || echo "❌ fork 者无 key 时降级链失效无提示"
+! grep -q "benchRoot" engine/core/src/export/sample-aggregator.ts && echo "✅ benchRoot 死变量已清" || echo "❌ 死变量回潮"
+```

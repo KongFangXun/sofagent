@@ -6,7 +6,7 @@
 //   - v1.4.4 prepareTrainEnv：检测 GPU → 安装框架 → 验证 → 就绪报告（保留不动）
 //   - v1.4.2 本文件新增：
 //       ① trainEnvInit —— 一键安装编排（venv + 框架 + CUDA 校验，脚本化
-//          可打包进设备；对齐 tools/train-env-init.sh 的编排逻辑）
+//          可打包进设备；对齐 tools/train/train-env-init.sh 的编排逻辑）
 //       ② trainDoctor —— 环境体检（CUDA / 显存 / 框架版本 / 基座模型缓存
 //          四项——对齐 v1.3.x doctor 模式的结构化体检报告）
 //       ③ 环境版本清单 —— train-env.json（Python 版本 + 框架版本 + CUDA
@@ -108,7 +108,7 @@ function resolveDeps(userDeps: Partial<EnvManagerDeps>): EnvManagerDeps {
  *   1. Python 版本探测（python3 --version——venv 与框架安装的前置）
  *   2. GPU 检测（复用 v1.4.1 detectCudaGpu / detectMetalGpu 决定分支）
  *   3. 框架安装（cuda-ready → pip3 install verl；metal-degraded → 提示
- *      走 tools/train-env-init.sh 的 npm --prefix 隔离路径——Node 侧编排
+ *      走 tools/train/train-env-init.sh 的 npm --prefix 隔离路径——Node 侧编排
  *      不重复实现 npm 安装，步骤标 skip 并给指引）
  *   4. 框架验证（版本可探测）
  *   5. 产出 train-env.json 版本清单
@@ -193,13 +193,13 @@ export async function trainEnvInit(
       });
     }
   } else if (!cuda.gpu) {
-    // 降级分支：npm --prefix 隔离安装由 tools/train-env-init.sh 承担
+    // 降级分支：npm --prefix 隔离安装由 tools/train/train-env-init.sh 承担
     // （Node 编排不重复实现——单一事实源，指引走脚本）
     packageManager = 'npm';
     steps.push({
       name: 'framework-install',
       status: 'skip',
-      detail: '无 CUDA——降级分支请运行 bash tools/train-env-init.sh（npm --prefix 隔离安装 @mlx-node/trl）',
+      detail: '无 CUDA——降级分支请运行 bash tools/train/train-env-init.sh（npm --prefix 隔离安装 @mlx-node/trl）',
     });
   } else {
     steps.push({
@@ -341,7 +341,7 @@ export async function trainDoctor(
         status: 'fail',
         name: null,
         version: null,
-        detail: '框架未安装或清单缺失——先运行 train env init（或 bash tools/train-env-init.sh）',
+        detail: '框架未安装或清单缺失——先运行 train env init（或 bash tools/train/train-env-init.sh）',
       };
   steps.push({ name: 'framework-check', status: frameworkSection.status, detail: frameworkSection.detail });
 

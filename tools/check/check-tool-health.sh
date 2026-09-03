@@ -11,6 +11,8 @@
 #   ⑤ CI workflows 覆盖的脚本/路径引用有效
 #   ⑥ tools/*.sh 新变量头部初始化守卫（set -u 炸弹防复发——
 #      v1.3.7 run-28 同期 fresh-eyes 实查 test-count.sh FLAKY_PKGS 实案）
+#   ⑦ tools/ README 收录对账（每个 git 追踪的脚本文件名须被
+#      tools/README.md 提到——漂移预警，只提示不阻断）
 #
 # 设计纪律（与 check-review-system.sh 一致）：
 #   - 清单核对器，不判断好坏；0=全绿 / 1=有 FAIL / 2=脚本自身错误
@@ -237,6 +239,37 @@ if [ "$GUARD_VIOL" -eq 0 ]; then
   ok "set -u 脚本无「未初始化自引用」炸弹"
 else
   bad "发现 $GUARD_VIOL 处未初始化自引用（set -u 炸弹模式）" "$GUARD_LIST"
+fi
+
+# ============================================================
+# ⑦ tools/ README 收录对账（只提示不阻断——漂移预警，新机制渐进纪律）
+# ============================================================
+# 原理：tools/ 下每个 git 追踪的脚本/数据文件（.sh/.mjs/.json/.html），
+# tools/README.md 必须提到它的文件名——README 未收录 = 漂移（新脚本
+# 落地没登记，或脚本搬家 README 没跟）。只 WARN 不 FAIL：新机制先
+# 跑观察期，与 spec-first 门禁同款「只提示不阻断」纪律。
+[ "$QUIET" = false ] && echo -e "\n${BOLD}${CYAN}── ⑦ README 收录对账（漂移预警） ──${NC}"
+
+README_MD="tools/README.md"
+[ -f "$README_MD" ] || { echo "❌ 缺 tools/README.md" >&2; exit 2; }
+
+UNLISTED=0
+UNLISTED_LIST=""
+while IFS= read -r _tf; do
+  [ -z "$_tf" ] && continue
+  _base=$(basename "$_tf")
+  # README 提到该文件名即视为已收录（表格条目/正文引用均可）
+  grep -qF "$_base" "$README_MD" || {
+    UNLISTED=$((UNLISTED + 1))
+    UNLISTED_LIST="${UNLISTED_LIST}  $_tf"$'\n'
+  }
+done <<EOF
+$(git ls-files 'tools/*.sh' 'tools/*.mjs' 'tools/*.json' 'tools/*.html' 'tools/*/*.sh' 'tools/*/*.mjs' 'tools/*/*.json' 'tools/*/*.html' | grep -v 'README.md' | grep -v 'audit-questionnaires/' || true)
+EOF
+if [ "$UNLISTED" -eq 0 ]; then
+  ok "tools/ 全部脚本均被 tools/README.md 收录"
+else
+  warn "有 $UNLISTED 个文件未收录进 tools/README.md（漂移预警——不阻断）" "$UNLISTED_LIST"
 fi
 
 # ============================================================
