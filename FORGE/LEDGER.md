@@ -301,3 +301,5 @@ release-gate-loop 与 fresh-eyes-loop 共享本文件，通过"循环"列区分�
 2026-09-03     | 20260903-04    | release-gate | 4    | SKIP       | PASS       | SKIP     | FAIL→PASS | /Users/kongfangxun/.sofagent/data/forge-runs/release-gate-loop/2026-09-03/run-04（BLOCK→PASS 改判：verdict.md 第八节翻转条款执行——12 包 bump 006db13c + 34c 判定核验 + P1-1 映射 a14c7efc + P2-1 锚过时销项；2026-09-03 10:30 driver session 收口）
 
 2026-09-03     | 20260903-05    | release-gate | 4    | SKIP       | FAIL       | PASS     | FAIL    | /Users/kongfangxun/.sofagent/data/forge-runs/release-gate-loop/2026-09-03/run-05
+
+2026-09-03     | 20260903-06    | release-gate | 4    | SKIP       | PASS       | FAIL     | FAIL    | /Users/kongfangxun/.sofagent/data/forge-runs/release-gate-loop/2026-09-03/run-06
