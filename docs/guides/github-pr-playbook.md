@@ -87,7 +87,7 @@ Single-line change to README.md only.（或双语两文件）
 |---|---|---|
 | GitHub Marketplace | ✅ 已上线 | name 冻结 `sofagent`；description ≤125 码点；每版 release 勾 Publish（SOP 阶段十一·二b） |
 | Profile README | ✅ 已上线 | KongFangXun/KongFangXun 特殊仓；Contents API `-X PUT` 上传 |
-| 清单 PR | 25 条在飞 / 已收口 7 | 本手册主体 |
+| 清单 PR | 29 条在飞 / 已收口 8 | 本手册主体 |
 | Discussions 常青帖 | #11 报到帖（自家） | 置顶只留常青帖，版本帖不置顶（SOP 阶段十二·十三） |
 | 外站 Discussions 输出 | ✅ loop-engineering #326 已发 | adopters 合并后 24h 内发实践帖衔接最自然；按楼主模板回帖，不开新帖 |
 | Featured in 区 | ✅ 双语 README | 徽章跟 PR 状态联动（open 橙 / merged 绿） |
@@ -119,7 +119,7 @@ Single-line change to README.md only.（或双语两文件）
 
 > 活台账：每次巡检/合并后更新本表对应行的状态列与备注（巡检命令：`gh search prs --author KongFangXun --state open`）。自家仓 PR（KongFangXun/sofagent 内部）不入台账。
 
-### 5.1 在投（24 条 open）
+### 5.1 在投（29 条 open）
 
 | # | 仓库 | PR | 节 | 投日 | 状态 | 备注 |
 |---|------|----|----|------|------|------|
@@ -147,6 +147,11 @@ Single-line change to README.md only.（或双语两文件）
 | 22 | DeepSpaceHarbor/Awesome-AI-Security ⭐1668 | [#50](https://github.com/DeepSpaceHarbor/Awesome-AI-Security/pull/50) | Code（表格行） | 09-01 | open | 晚间新投；默认分支 master 非 main；Code 节有 ClawMoat/SkillFortify 工具先例 |
 | 23 | kejixiaoliang/awesome-dsh-plugins ⭐35 | [#56](https://github.com/kejixiaoliang/awesome-dsh-plugins/pull/56) | infrastructure-dev·健康检查/诊断/审计 | 09-02 | open | 09-02 晚投；CONTRIBUTING 规范（分类文件加一行，插 dsh-security-audit 后）；blob+PR body 双回读验证 |
 | 24 | Awesome-AI-Pedia/Awesome-AI-Pedia ⭐327 | [#11](https://github.com/Awesome-AI-Pedia/Awesome-AI-Pedia/pull/11) | deepseek harness plugins（文章制） | 09-02 | open | 09-02 晚投；新建文章 md（格式照现有：定位/核心功能/技术栈），sidebar.ts 自动扫描收侧边栏 |
+| 25 | caramaschiHG/awesome-ai-agents-2026 ⭐1.8k | [#550](https://github.com/caramaschiHG/awesome-ai-agents-2026/pull/550) | Code Review and Security（三列表格） | 09-03 | open | 09-03 晚投；表格三列（Agent/Description/Pricing）节尾插行；CONTRIBUTING 要求字母序+事实性描述；git push 通道挂走四步兜底 |
+| 26 | EvanThomasLuke/Awesome-AI-Security-Skills ⭐54 | [#4](https://github.com/EvanThomasLuke/Awesome-AI-Security-Skills/pull/4) | Rules and Guardrails | 09-03 | open | 09-03 晚投；裸 URL 行格式（无 markdown 链接）节尾加行；小而准专收 AI Security Skills |
+| 27 | Jenqyang/Awesome-AI-Agents ⭐1.2k | [#468](https://github.com/Jenqyang/Awesome-AI-Agents/pull/468) | Tools | 09-03 | open | 09-03 晚投；带星徽章列表行节尾；CONTRIBUTING 质量门槛高（OSS 纯度/无营销腔），body 补「MIT/无付费后端/全本地」声明；fork 落 -1 后缀（与 e2b-dev 系同名） |
+| 28 | jiji262/awesome-harness-engineering ⭐51 | [#11](https://github.com/jiji262/awesome-harness-engineering/pull/11) | Coding & Agent Harnesses | 09-03 | open | 09-03 晚投；两行式条目（名字+星数/学习价值一句）；fork 落 -2 后缀（与 ai-boost 系同名，坑位 #11 三次现身） |
+| 29 | gmh5225/awesome-ai-security ⭐44 | [#24](https://github.com/gmh5225/awesome-ai-security/pull/24) | AI Agent Security | 09-03 | open | 09-03 晚投；`- url [描述]` 格式子节尾加行；同节有 NemoClaw/rampart/openguardrails 等强先例；fork 落 -4 后缀（与 ottosulin 系同名） |
 
 ### 5.2 已收口
 
@@ -184,6 +189,7 @@ Single-line change to README.md only.（或双语两文件）
 > 2026-09-01 晚间批量投稿后更新：七/八/十/十一/十二共 5 条已投（见 5.1 第 20~24 行），移出候选池；六/九缓投（原因见下）。
 > 2026-09-02 巡检更新：bruc3van 已自动收录（见七）；十四~十七为当日新检索候选。
 > 2026-09-02 晚拍板「能投的投掉」：十四（kejixiaoliang #56）/ 十六（Awesome-AI-Pedia #11）已投出（移入 5.1 #24/#25）；十五/十七改判**自动索引仓不投**（见各自条目）；machinae/awesome-claws 判定不对口（纯助手框架节无工具分节）。
+> 2026-09-03 晚拍板「建议投+可投全落实」：十八/二十/二十一/二十二/二十三共 5 条投出（移入 5.1 #25~#29，在飞 24→29）；十九 rohitg00 深查改判**不投**（自建 demo 应用合集非收录清单，条目=仓内子目录完整应用，外部工具无落点）。
 
 一、**hesreallyhim/awesome-claude-code**（⭐53k）——等其「legacy 迁移期」结束后再投（README 自述正在重构收录）
 二、**awesome-agent-harness 系（harness 研究综述类）**——Picrew ⭐1.7k / AutoJunjie ⭐515 / Gloriaameng ⭐345 / mahonzhan ⭐270 / RUCAIBox ⭐185：偏论文与综述，投稿前先看是否有「实现/工具」节，纯论文清单不对口
@@ -196,12 +202,12 @@ Single-line change to README.md only.（或双语两文件）
 十五、**Zhiyuan-Fan/Awesome-DeepSeek-Harness-Plugins**（⭐547）——🔄 **改判自动索引，不投 PR**：Contributing 明言「加 dsh-plugin topic 让 curator 找到你」+「本地 Codex 定时任务每日复审」——topic 已挂，等抓取收录（巡检顺手核）
 十六、**Awesome-AI-Pedia/Awesome-AI-Pedia**（⭐318）——✅ **已投 #11**（见 5.1 #25）
 十七、**leenkcool/Blue-Whale-Harness**（⭐190）——🔄 **改判自动索引，不投 PR**：README 由 catalog/analyze.mjs 等脚本全自动生成（自动生成于 2026-09-01，人工翻译 merge 层）；PR 改 README 会被下次生成覆盖——正确通道是让上游采集脚本发现（dsh-plugin topic 已挂）
-十八、**caramaschiHG/awesome-ai-agents-2026**（⭐1.8k）——泛 agent 月更大综合，有「Code Review and Security」「Developer Infrastructure」对口细分节，CONTRIBUTING 规范全；⚠️ 近 3 个月未更新（最后 push 6 月中）。**建议投**（落 Code Review and Security 节）
-十九、**rohitg00/awesome-ai-apps**（⭐826）——实弹 demo 型清单（starter/advanced/multi-agent 子目录站结构，无 CONTRIBUTING）；「Advanced Agents」节可挂治理工具。**可投**（低优先——条目需进子目录 README，操作比单文件清单重）
-二十、**Jenqyang/Awesome-AI-Agents**（⭐1.2k）——学术+框架混合清单，有 Tools/Frameworks 节，活跃维护（09-02 有 push）。**可投**（低优先，粒度偏粗同类先例见四）
-二十一、**EvanThomasLuke/Awesome-AI-Security-Skills**（⭐54）——星少但高度对口：专收「AI Security Skills」，有 Rules and Guardrails / Skill Scanners 节，与 sofagent 技能包+审计规则定位最贴。**建议投**（小而准）
-二十二、**jiji262/awesome-harness-engineering**（⭐51）——harness 工程资源合集，有「Reference Implementations & Open Source Tools」实弹节。**可投**（小而对口）
-二十三、**gmh5225/awesome-ai-security**（⭐44）——AI 安全技能向，有「Skills for AI Agents」「Prompt Injection」节。**可投**（小而对口）
+十八、**caramaschiHG/awesome-ai-agents-2026**（⭐1.8k）——✅ **已投 #550**（见 5.1 #25）
+十九、**rohitg00/awesome-ai-apps**（⭐826）——🔄 **改判不投**（09-03 深查核实）：自建 demo 应用合集非收录清单——每条目 = 仓内子目录的完整示例应用（starter-agents/ai21-studio-chat 等），不收外部工具条目
+二十、**Jenqyang/Awesome-AI-Agents**（⭐1.2k）——✅ **已投 #468**（见 5.1 #27）
+二十一、**EvanThomasLuke/Awesome-AI-Security-Skills**（⭐54）——✅ **已投 #4**（见 5.1 #26）
+二十二、**jiji262/awesome-harness-engineering**（⭐51）——✅ **已投 #11**（见 5.1 #28）
+二十三、**gmh5225/awesome-ai-security**（⭐44）——✅ **已投 #24**（见 5.1 #29）
 二十四、**Sanqi-normal/dsh-webui-market-plugin**（⭐103）——❌ **不投**：产品仓（DSH Web GUI 插件市场）非清单，收录来自 awesome-dsh-plugin.com 目录站同步，无 PR 通道
 
 ## 七、非清单曝光渠道（中文圈 + 用户网页动作）
