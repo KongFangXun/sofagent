@@ -1339,7 +1339,7 @@ if [ "${BASE_ONLY:-0}" = "0" ]; then
   echo -e "  · ${BOLD}sofagent-audit <范围>${NC} 审计一次变更（如 sofagent-audit HEAD~1..HEAD）"
   echo -e "  · ${BOLD}sofagent-audit --stats${NC} 看近 30 天治理 KPI（触发率/阻断率——v1.4.3）"
   echo ""
-  echo -e "  ${BOLD}可选·训练引擎（需要 GPU 环境）：${NC}"
+  echo -e "  ${BOLD}可选·后训模块（需要 GPU 环境）：${NC}"
   echo -e "  · 先体检：${BOLD}bash tools/train/train-env-init.sh${NC} 一键装训练环境（含反作弊双防线默认配置）"
   echo -e "  · 再提任务：MCP train_doctor（体检）→ train_submit（提交）→ train_status（监控）→ train_diagnose（失败诊断）"
   echo -e "  · 前置要求与入口详见 HANDBOOK「新功能入口导览」表"
