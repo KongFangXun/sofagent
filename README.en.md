@@ -11,7 +11,7 @@
 
 <p align="center"><sub>[简体中文](./README.md) | [English](./README.en.md)</sub></p>
 
-> 🚀 **v1.4.4** — Training engine: signal & deployment loop (corpus export trio / local weight deployment / artifact→registry bridge / multi-base compare / decision causal chain / CI supply-chain hardening / legacy upgrades / spec-first mandate / review batch / five-capability narrative). **⏳ Pending release** (development complete; tag/npm synced at release time). See [CHANGELOG](./CHANGELOG.md).
+> 🚀 **v1.4.4** — Training engine: signal & deployment loop (corpus export trio / local weight deployment / artifact→registry bridge / multi-base compare / decision causal chain / CI supply-chain hardening / legacy upgrades / spec-first mandate / review batch / five-capability narrative). ✅ Released (2026-09-03). See [CHANGELOG](./CHANGELOG.md).
 
 ---
 
@@ -29,6 +29,21 @@ sofagent does not build its own Agent — execution is delegated to mature hosts
   <img src="docs/assets/audit-terminal.png" alt="sofagent-audit blocks a .env commit" width="860" /><br/>
   <sub>Zero-config audit in action: one command audits the latest commit; leaked secrets get blocked on the spot</sub>
 </p>
+
+<p align="center">
+  <img src="docs/assets/audit-defense.png" alt="sofagent three audit defense lines: pre-commit primary line → commit-msg 24-rule fallback → post-commit reconciliation alerts" width="860" /><br/>
+  <sub>Three audit defense lines: pre-commit primary interception → commit-msg 24-rule fallback → post-commit reconciliation alerts — prefer false-retry over silent admission</sub>
+</p>
+
+<details>
+<summary>🗺️ System architecture overview (FDE Harness five-module structure)</summary>
+
+<p align="center">
+  <img src="docs/assets/architecture-diagram.png" alt="sofagent architecture: host Agent enters the FDE Harness constraint layer via MCP Server; orchestration / audit / post-training / governance / execution modules" width="860" /><br/>
+  <sub>Constrain Agent behavior · Audit every change · Distill experience (five-module structure; full interactive version in <a href="./docs/ARCHITECTURE.md">ARCHITECTURE</a>)</sub>
+</p>
+
+</details>
 
 > 🏞️ Big tech hands you "water" (foundation models) and "riverbeds" (Agent platforms) — but the water is raw, and you don't dare drink it straight. sofagent is the engineering that makes the river usable for a whole city: dams keep the water from flooding, treatment plants turn raw water into drinking water, and pipe networks deliver it to every faucet. Models supply 90% of the intelligence; sofagent supplies the 10% of reliable execution.
 

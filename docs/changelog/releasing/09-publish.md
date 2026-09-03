@@ -198,6 +198,8 @@ done
 
 > bootstrap.sh 自 v1.4.3 起对下载的 install.sh + 6 个 lib 文件做 sha256 校验（curl | bash 信任模型加固）。**tag 指向新版后哈希必然变化——必须同步更新 bootstrap.sh 内嵌的 7 个哈希，否则用户安装会因校验失败而 fail-closed（好陷阱：宁可不装也不装被劫持的脚本，但会让所有人装不上）。**
 
+**优选路径（v1.4.4 实战）：预计算哈希与 URL bump 同 commit，tag 一次打自洽**——打 tag 前预计算 HEAD 的 install.sh 哈希（`git show HEAD:install.sh | shasum -a 256`）与 tag URL bump、哈希回填全部进同一个 commit，push 后打 tag——tag 内 bootstrap.sh 天然自洽，无需重打。install.sh/lib 自上版零改动时 6 lib 哈希沿用免回填（`git diff <上tag>..HEAD --stat -- engine/scripts/lib/` 输出空即零改动）。验收：`git show vX.Y.Z:bootstrap.sh` 内嵌哈希 == `git show vX.Y.Z:install.sh | shasum -a 256`。
+
 ```bash
 # ── 新 tag 打好后，在 bootstrap.sh 顶部更新两处后提交 ──
 # ① INSTALL_SHA256（install.sh）：

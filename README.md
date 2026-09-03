@@ -9,7 +9,7 @@
 
 <p align="center"><sub>[简体中文](./README.md) | [English](./README.en.md)</sub></p>
 
-> 🚀 **v1.4.4**——后训模块 · 信号与部署闭环（语料导出三件套 / 本地权重部署 / 产物→注册衔接 / 多基座对比 / 决策因果链 / CI 供应链加固 / 存量升级 / spec-first 硬禁令 / 审查收编批 / 五能力叙事）。**⏳ 待发版**（开发完成，tag/npm 发版时同步）。见 [CHANGELOG](./CHANGELOG.md)。
+> 🚀 **v1.4.4**——后训模块 · 信号与部署闭环（语料导出三件套 / 本地权重部署 / 产物→注册衔接 / 多基座对比 / 决策因果链 / CI 供应链加固 / 存量升级 / spec-first 硬禁令 / 审查收编批 / 五能力叙事）。✅ 已发版（2026-09-03）。见 [CHANGELOG](./CHANGELOG.md)。
 
 ---
 
@@ -27,6 +27,21 @@ sofagent 不造 Agent——执行能力交给成熟宿主（模型 + 工具 + �
   <img src="docs/assets/audit-terminal.png" alt="sofagent-audit 拦截 .env 提交" width="860" /><br/>
   <sub>零配置审计实拍：一行命令审计最近一次 commit，密钥泄漏当场拦截</sub>
 </p>
+
+<p align="center">
+  <img src="docs/assets/audit-defense.png" alt="sofagent 审计三层防线：pre-commit 主防线 → commit-msg 24 条规则兜底 → post-commit 对账告警" width="860" /><br/>
+  <sub>审计三层防线：pre-commit 主防线拦截 → commit-msg 24 条规则兜底 → post-commit 对账告警，宁可 false-retry 不可静默入库</sub>
+</p>
+
+<details>
+<summary>🗺️ 系统架构总览（FDE Harness 五模块编制）</summary>
+
+<p align="center">
+  <img src="docs/assets/architecture-diagram.png" alt="sofagent 系统架构：宿主 Agent 经 MCP Server 进入 FDE Harness 约束层，编排/审计/后训/治理/执行五模块协同" width="860" /><br/>
+  <sub>约束 Agent 行为 · 审计每次变更 · 沉淀经验（五模块编制，完整交互版见 <a href="./docs/ARCHITECTURE.md">ARCHITECTURE</a>）</sub>
+</p>
+
+</details>
 
 > 🏞️ 大厂给你"水"（大模型）和"河床"（Agent 平台），但水是原水，你不敢直接喝。sofagent 是帮你把河里的水让整个城市用起来的工程——堤坝不让水泛滥、自来水厂把原水变直饮水、管网把水送到每家每户的水龙头。模型给 90% 的智力，sofagent 补 10% 的可靠执行。
 

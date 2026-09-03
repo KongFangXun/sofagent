@@ -1623,19 +1623,6 @@ GT=FORGE/src/gate-tools.mjs
 grep -qE 'createRequire' "$GT" 2>/dev/null && echo "✅ gate-tools ESM require 桥接" || echo "❌ gate-tools require 桥接回退"
 ```
 
-#### 121. 新功能审查面——双生态插件 + 工作明细 + 成本审计锚点一维收口（阶段四来源提取 A 类 · 参照 113/115/121 历史每版一维）
-
-> 核心交付核心面收口一维（acceptance S320-S322 端到端，此处为分钟级快速 grep 版——审查 session 可跑）。检查命令指向实际实现路径。DSH 插件 9 款 + OpenClaw 插件 4 款 + 工作明细/图谱栏/成本审计为本版主线。
-
-```bash
-grep -q "cost_query" engine/mcp/src/tool-registry.ts 2>/dev/null && echo "✅ 成本审计 MCP" || echo "❌ cost_query"
-grep -q "COST" engine/audit/src/decision-schema.ts 2>/dev/null && echo "✅ COST DecisionKind" || echo "❌ COST"
-[ -d engine/dsh-plugins/cordis-plugin-sofagent-audit ] && [ -d engine/dsh-plugins/cordis-plugin-sofagent-fde ] && echo "✅ DSH 插件家族（9 款 cordis-plugin-sofagent-*）" || echo "❌ DSH 插件"
-[ -f engine/openclaw-plugins/sofagent-inject/openclaw.plugin.json ] && [ -f engine/openclaw-plugins/sofagent-audit/openclaw.plugin.json ] && echo "✅ OpenClaw 插件家族（4 款 code-plugin）" || echo "❌ OpenClaw 插件"
-grep -q "worklog" tools/dashboard/dashboard.html 2>/dev/null && echo "✅ 工作明细/图谱栏" || echo "❌ 工作明细"
-grep -q "before_tool_execute" engine/openclaw-plugins/sofagent-audit/src/index.ts 2>/dev/null && echo "✅ OpenClaw 审计拦截" || echo "❌ OpenClaw 审计"
-```
-
 #### 122. 发版流程防复发——新 workspace 包 lock 同步 + plugin 分发包装 + 限流（阶段十二来源提取 B 类）
 
 > 发版四坑实录：① 新增 9 个 cordis-plugin workspace 包但 lock file 未同步——`npm ci` 严格校验 4 个 CI 工作流全红（pr-check/verify/audit/windows 同根因）；② skillhub 分发 DSH plugin 需 SKILL.md 包装（plugin 目录是 npm 包结构无 SKILL.md）+ 发布限流（连续发布报「发布频率过高」，需 ≥20s 间隔）+ changelog 中文按字节截断炸 UTF-8（0xe5 continuation byte）；③ npm publish E409 staged 状态约 5 分钟自动 finalize（早期记录称需 unpublish，实测等待即可）；④ 本地部署树/绝对路径 overrides 接依赖（pnpm deploy 产物路径 + 72 条 overrides 指向 `/Users/...`）本地 node_modules 在位全绿、CI 无此路径 TS2307 三红——依赖一律走 npm registry 正式版本。
@@ -1668,7 +1655,7 @@ grep -q "train_submit" engine/mcp/src/tool-registry.ts && echo "✅ train_submit
 grep -q "TrainAuditEventType\|train_job_submitted" engine/orchestrator/src/train/train-audit.ts && grep -q "hmacSig" engine/orchestrator/src/train/train-audit.ts && echo "✅ train 审计事件+HMAC 链（事件 union 本文件自持，audit 包无扩展点不动）" || echo "❌ 审计链缺"
 ```
 
-#### 124. 发版防复发——install.sh 迁移/谎报守卫/安全披露/文档状态/双 manifest/bump 通配一维收口（阶段四来源提取 B 类 · 阶段十一/十二回写 B11/B12）
+#### 124. 发版防复发——install.sh 迁移/谎报守卫/安全披露/文档状态/双 manifest/bump 通配一维收口（阶段四来源提取 B 类 · 阶段十一/十二回写 B11/B12 · 归并 #121 入此：插件家族目录/成本审计注册面已由 S331/S347 覆盖，dashboard worklog 弱锚收子项 k）
 
 > 阶段三全链路（fresh-eyes round-02 12 findings + f5430de4 修复 + 独立补审 + 3c61d980 次生修复）+ 阶段十一分发踩坑（B11 双 manifest 漂移 / B12 bump 通配误伤）的防复发锚点。B2/B3 端到端见 acceptance S328/S329；B1/B8 工具化见 check-version 检查项；B11/B12 端到端见 S331/S332；此处收口剩余面的快速 grep。
 
@@ -1690,6 +1677,8 @@ grep -o '~[0-9]* 行' bootstrap.sh | grep -o '[0-9]*' | awk -v n="$(wc -l < inst
 grep -q "FORGE/SKILL" AGENTS.md && grep -q "releasing/" docs/changelog/releasing.md && head -5 docs/changelog/releasing.md | grep -q "入口" && echo "✅ FORGE/SKILL 区分 + releasing 入口指引在位" || echo "❌ 结构可发现性缺失（FORGE/SKILL 或 releasing 入口）"
 # B11 双 manifest 版本一致（阶段十一 ClawHub 拒收实录：openclaw.plugin.json 从未被 bump 覆盖 4 款全漂移）——命令体见 acceptance S331（#63→S166 同款收口）
 # B12 bump 跳过逻辑无通配误伤（阶段十一静默漏 bump 实录：通配误伤 sofagent-audit）——命令体见 acceptance S332
+# k（原 #121）：dashboard 工作明细栏在位——插件目录已由 B11/S331 锁、cost_query 已由 S347/S348 锁
+grep -q "worklog" tools/dashboard/dashboard.html && echo "✅ dashboard 工作明细栏在位" || echo "❌ dashboard worklog 缺失"
 ```
 
 #### 125. 新功能审查面——训练九章+FDE 六引擎+IM 桥+FORGE 步零一维收口（阶段四来源提取 A 类 · 归并 #59 入此：dataDir 传参纪律为 SSOT 子项）
@@ -1777,7 +1766,6 @@ grep -q "escaped" engine/audit/src/permission/checker.ts && grep -q "ReDoS\|灾�
 grep -c "logo-version" tools/dashboard/dashboard.html | grep -qE "^[0-9]+$" && ! grep -q "document.scrollTop" tools/dashboard/dashboard.html && echo "✅ dashboard 版本单源 + 无非法 API" || echo "❌ dashboard 一致性回退"
 ```
 
-
 #### 129. v1.4.4 fresh-eyes 19 项修复防复发——CLI 接线断链 + 供应链回滚路径 + nodeId/YAML 清洗 + 结构性收口（阶段四来源提取 A/B 类一维收口 · 行为面已由单测锁：weights-deploy/fde-workbench/export/corpus-export +9 用例）
 
 > 19 项发现（P0×1 + P1×7 + P2×11，修复批 37cab2b9）防复发锚点。P0「声称命令三面零接线」的机械防线已落 check-docs §13（submitCompareJobs 生产调用 ≥1 断言在册）；行为面（回滚哈希直验/中文 nodeId 清洗/YAML 转义/scope 校验/auditEvent null/enterpriseId 正名）已由四包单测 +9 用例锁定，此处只收 grep 级结构性锚 + 新增声称点对账面。
@@ -1795,4 +1783,18 @@ grep -q "return buildVerifiersWithOverrides({})" engine/audit/src/export/reward-
 grep -q "三件套全景" engine/audit/src/export/exporter.ts && echo "✅ 三件套跨包互链" || echo "❌ 导出三件套导航锚点丢失"
 grep -q "GLM_API_KEY" FORGE/models/profile.mjs && echo "✅ fork 适配提示在位" || echo "❌ fork 者无 key 时降级链失效无提示"
 ! grep -q "benchRoot" engine/core/src/export/sample-aggregator.ts && echo "✅ benchRoot 死变量已清" || echo "❌ 死变量回潮"
+```
+
+#### 130. v1.4.4 发版流程防复发——sha256 预计算时序 + Marketplace 自动延续 + ClawHub 状态快照对照 + 同文件多 Edit 串行
+
+> 发版四坑实录：① bootstrap.sh INSTALL_SHA256 回填走「tag 后算哈希再回填再重打 tag」两次 tag 往返——预计算 HEAD 哈希与 URL bump 同 commit 可让 tag 一次打自洽（install.sh/lib 无改动时 lib 哈希不变免回填）；② GitHub Marketplace listing 勾选自动延续（v1.4.2 起每版勾选后 listing 关联保持），版本页出现新版号即免网页操作；③ ClawHub verify 的 `security.status_not_clean` 可能是既有状态（1.4.3 时代已存在）——发布前先快照对照，新引入才需处置；④ 同一文件多处 Edit 并行调用发生读写竞态（5 处只落 2 处）——同文件多编辑必须串行。
+
+```bash
+# ① sha256 自洽预检：bootstrap 内嵌哈希 == HEAD install.sh 哈希（打 tag 前跑，免重打）
+EMB=$(sed -n 's/^INSTALL_SHA256="\([a-f0-9]*\)".*/\1/p' bootstrap.sh); HEAD_H=$(git show HEAD:install.sh | shasum -a 256 | cut -d' ' -f1); [ "$EMB" = "$HEAD_H" ] && echo "✅ INSTALL_SHA256 与 HEAD 自洽" || echo "❌ 哈希不自洽——回填后须重打 tag"
+# ② 6 lib 哈希稳定性：install.sh/lib 无改动时 LIB_SHA256S 不变（git diff 空 = 免回填）
+git diff v1.4.3..HEAD --stat -- engine/scripts/lib/ | wc -l | grep -q "^0$" && echo "✅ lib 零改动（LIB_SHA256S 沿用）" || echo "🟡 lib 有改动——6 哈希须逐项回填"
+# ③ Marketplace 版本页含本版号即免网页勾选（listing 自动延续）
+curl -s https://github.com/marketplace/actions/sofagent | grep -q "$(node -p "require('./package.json').version")" && echo "✅ marketplace 版本页已含本版" || echo "🟡 版本页未见本版——按 SOP 网页勾选 Publish to Marketplace"
+# ④ ClawHub 状态快照纪律：发布前 verify 落盘，发布后对照——新引入 reasons 才处置（既有状态披露不阻断；快照命令：clawhub skill verify <slug> > /tmp/clawhub-pre.json）
 ```

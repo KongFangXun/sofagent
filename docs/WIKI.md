@@ -232,7 +232,7 @@ graph TB
 
 | 项 | 值 |
 |----|-----|
-| 当前版本 | **v1.4.4**（2026-09-03，⏳ 待发版——tag/npm 发版时同步） |
+| 当前版本 | **v1.4.4**（2026-09-03，✅ 已发版） |
 | 下一版 | v1.4.5（进化模块实证收口，参见 docs/ROADMAP.md） |
 | 测试覆盖 | 3753 测试 / 12 包（统计标准：`tools/check/test-count.sh` 实际执行的 workspace 包；全仓共 26 个 workspace——13 个引擎包发布至 npm `@sofagent` scope，9 个 DSH 插件为 private 随 DSH 分发，4 个 OpenClaw 插件（`engine/openclaw-plugins/`）经根 `npm test --workspaces` 统一执行测试。实测见 `tools/check/test-count.sh`、声称数同步校验见 `tools/check/check-test-count.sh`） |
 | 审计规则 | 24 条（17 默认 + 7 扩展），活跃编号 A1-A11 + A14-A23 + E1/E2/E4，每次 commit 自动跑 |

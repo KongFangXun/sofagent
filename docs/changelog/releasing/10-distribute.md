@@ -12,6 +12,8 @@ head -3 SKILL/SKILL.md   # 期望 slug: sofagent
 
 # ── ClawHub 分发 ──
 # 发布前先查现有版本（同版本号不可覆盖，冲突则递增版本号）
+# 🔴 verify 快照纪律（v1.4.4 实战）：security.status_not_clean 可能是历史版本遗留的既有状态——
+#    发布前先落盘快照（verify 输出存档），发布后对照，新引入 reasons 才处置
 clawhub skill verify sofagent 2>&1 | grep version
 # 清理 .DS_Store（macOS 残留会触发 security 扫描 not_clean）
 find ./SKILL -name '.DS_Store' -delete
@@ -114,8 +116,10 @@ done
 ## 步骤二·b：GitHub Marketplace 分发（v1.4.2 起 · 每版必做）
 
 > **背景**：sofagent 的 GitHub Action 形态（action.yml）已上线 GitHub Marketplace（listing：`github.com/marketplace/actions/sofagent`，Primary=Code review / Secondary=Utilities）。marketplace 版本列表跟随 release——**每次发新版，release 发布时必须勾选 Publish to Marketplace**，否则该版本不出现在 marketplace 版本页。
+>
+> **勾选自动延续核查（v1.4.4 实战）**：v1.4.2 起每版勾选后 listing 关联自动延续——release 发布后先 curl 核查版本页是否已含本版号，含即免网页操作：`curl -s https://github.com/marketplace/actions/sofagent | grep vX.Y.Z`。未含才走下方网页操作。
 
-**操作（release 编辑页，网页操作）**：
+**操作（release 编辑页，网页操作——仅当上方核查未见本版时）**：
 
 1. 打开仓库 Releases 页 → 找到本版 release → 右侧铅笔 **Edit**
 2. 勾选 **「Publish this Action to the GitHub Marketplace」**

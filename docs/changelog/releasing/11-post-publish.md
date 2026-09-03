@@ -8,19 +8,19 @@
 
 | # | 完成 | 步骤 | 产物 |
 |:--:|:--:|------|------|
-| 一 | [x] | **发布后验证**（见下方脚本） | 全绿 |
-| 二 | [x] | CI 全绿检查 | CI 全绿 |
-| 三 | [x] | **审查三文档回写**：发版过程（阶段五~十）暴露的新问题回写到 regression-checklist（新维度）/ fresh-eyes-review（新教训）/ acceptance-test（新场景）。与阶段四分工：阶段四管代码质量（发版前可见），本步骤管发版流程（发版中才暴露——如 CI 失败模式、publish 限制、日期硬编码等）。⚠️ **改了 acceptance 场景数后立即跑 `bash tools/check/check-test-count.sh --scenarios-only`**（秒级轻量守卫——v1.4.3 教训：S361 后 DEVELOPMENT/LIMITATIONS 漂移拖到 pre-push 才暴露，commit 时即可拦截） | 三文档更新 |
-| 四 | [x] | SOP 漏洞吸收：本次迭代暴露的 releasing.md 流程问题直接吸收进对应阶段 | SOP 更新 |
-| 五 | [x] | SOP 数字核对：维度数、检查项数等是否过期 | 数字一致 |
-| 六 | [x] | 生成「下一版本开发 Prompt」到桌面：综合 ROADMAP + CHANGELOG + 下一版本 changelog | `~/Desktop/vX.Y-dev-prompt.md` |
-| 七 | [x] | **开发 Prompt 校验循环**（详见下方——脚本 + checklist 五条自查两步都要过） | prompt 定稿 |
-| 八 | [x] | **下版本内容对话讲解**（详见下方——三问讲完 + 负责人确认优先级，缺任一不算完） | 项目负责人理解下版本方向 |
-| 九 | [x] | **进度追踪清零**：把 `releasing.md` 进度追踪的 11 个 `[x]` 全部改回 `[ ]`，为下一版本新周期做准备 | 进度追踪重置 |
-| 十 | [x] | **releasing 自迭代**（sop 审查自己）：对照本次发版的实际执行体验，检查 11 个阶段文件是否有过时/缺漏/顺序不合理的地方，直接修正。这是 releasing.md 的「Dream Cycle」——每次发版后用它自己的经验喂养它自己 | releasing.md 更新 |
-| 十一 | [x] | **本机 daemon 重载（dogfooding 保活 · 2026-08-18 新增）**：发版后本机守护进程要吃上新代码。launchd 配置 `~/Library/LaunchAgents/local.sofagent-daemon.plist` 指向仓库 dist（非全局 npm 包），一条命令重载：`launchctl kickstart -k gui/$(id -u)/local.sofagent-daemon`，随后 `tail -3 ~/.sofagent/data/daemon-launchd.log` 确认版本号 = 刚发的版本。开机自启已由 plist 的 RunAtLoad+KeepAlive 保证，无需每次处理。⚠️ **重载前先预检 plist node 路径存在性**（`ls "$(grep -o '/[^<]*bin/node' ~/Library/LaunchAgents/local.sofagent-daemon.plist | head -1)"`——v1.4.3 实录：runtime 目录清理致写死的绝对路径失效 → exit 78 EX_CONFIG 崩溃循环，手动跑 CLI 正常即证明是路径问题；改路径须 `bootout`+`bootstrap` 重载，kickstart 不重读 plist） | daemon 跑新版 |
-| 十二 | [x] | **网络恢复收尾（v1.4.0 新增）**：发版全程若用过降级通道（gh api tag / Git Data API push / 剥代理直连），网络恢复后必须做三件事：① `git fetch origin && git status` 确认本地/远端无分叉（有分叉按 09-publish「双 SHA 分叉接回」处理）；② lightweight tag 覆盖为 annotated——`git tag -f -a vX.Y.Z -m "vX.Y.Z · {一句话}" <commit> && git push origin vX.Y.Z --force`（gh api 建的 tag 无 tag object，`git for-each-ref refs/tags` 显示 type blob/commit 即 lightweight）；③ 桌面发布物清理——本版产生的 prompt/body 草稿（`vX.Y.Z-*.md` / `release-note-*.md`）归档或删除，只保留下一版 dev prompt（发布物落盘铁律：统一 `~/Desktop/`，禁仓库内） | 远端/桌面双干净 |
-| 十三 | [x] | **Discussions 置顶轮换（网页操作 · 30 秒）**：新版 release 帖（Announcements 自动生成）**不置顶**——版本帖是流水内容，置顶位只留给常青帖。当前常青帖 = #11「用 sofagent 的都在这报到」。若版本帖曾被误置顶，网页右侧齿轮 → Unpin；若需轮换常青帖，同样路径 Pin。🔴 置顶无 API（GitHub GraphQL Mutation 只有 pinIssue 系，无 pinDiscussion——2026-09-01 实测），只能网页操作（⚠️ GraphQL `pinnedDiscussions { discussion { number title } }` **可只读查询**——v1.4.3 实测置顶位核查不需开网页，仅变更才需要） | 置顶位干净 |
+| 一 | [ ] | **发布后验证**（见下方脚本） | 全绿 |
+| 二 | [ ] | CI 全绿检查 | CI 全绿 |
+| 三 | [ ] | **审查三文档回写**：发版过程（阶段五~十）暴露的新问题回写到 regression-checklist（新维度）/ fresh-eyes-review（新教训）/ acceptance-test（新场景）。与阶段四分工：阶段四管代码质量（发版前可见），本步骤管发版流程（发版中才暴露——如 CI 失败模式、publish 限制、日期硬编码等）。⚠️ **改了 acceptance 场景数后立即跑 `bash tools/check/check-test-count.sh --scenarios-only`**（秒级轻量守卫——v1.4.3 教训：S361 后 DEVELOPMENT/LIMITATIONS 漂移拖到 pre-push 才暴露，commit 时即可拦截） | 三文档更新 |
+| 四 | [ ] | SOP 漏洞吸收：本次迭代暴露的 releasing.md 流程问题直接吸收进对应阶段 | SOP 更新 |
+| 五 | [ ] | SOP 数字核对：维度数、检查项数等是否过期 | 数字一致 |
+| 六 | [ ] | 生成「下一版本开发 Prompt」到桌面：综合 ROADMAP + CHANGELOG + 下一版本 changelog | `~/Desktop/vX.Y-dev-prompt.md` |
+| 七 | [ ] | **开发 Prompt 校验循环**（详见下方——脚本 + checklist 五条自查两步都要过） | prompt 定稿 |
+| 八 | [ ] | **下版本内容对话讲解**（详见下方——三问讲完 + 负责人确认优先级，缺任一不算完） | 项目负责人理解下版本方向 |
+| 九 | [ ] | **进度追踪清零**：把 `releasing.md` 进度追踪的 11 个 `[x]` 全部改回 `[ ]`，为下一版本新周期做准备 | 进度追踪重置 |
+| 十 | [ ] | **releasing 自迭代**（sop 审查自己）：对照本次发版的实际执行体验，检查 11 个阶段文件是否有过时/缺漏/顺序不合理的地方，直接修正。这是 releasing.md 的「Dream Cycle」——每次发版后用它自己的经验喂养它自己 | releasing.md 更新 |
+| 十一 | [ ] | **本机 daemon 重载（dogfooding 保活 · 2026-08-18 新增）**：发版后本机守护进程要吃上新代码。launchd 配置 `~/Library/LaunchAgents/local.sofagent-daemon.plist` 指向仓库 dist（非全局 npm 包），一条命令重载：`launchctl kickstart -k gui/$(id -u)/local.sofagent-daemon`，随后 `tail -3 ~/.sofagent/data/daemon-launchd.log` 确认版本号 = 刚发的版本。开机自启已由 plist 的 RunAtLoad+KeepAlive 保证，无需每次处理。⚠️ **重载前先预检 plist node 路径存在性**（`ls "$(grep -o '/[^<]*bin/node' ~/Library/LaunchAgents/local.sofagent-daemon.plist | head -1)"`——v1.4.3 实录：runtime 目录清理致写死的绝对路径失效 → exit 78 EX_CONFIG 崩溃循环，手动跑 CLI 正常即证明是路径问题；改路径须 `bootout`+`bootstrap` 重载，kickstart 不重读 plist） | daemon 跑新版 |
+| 十二 | [ ] | **网络恢复收尾（v1.4.0 新增）**：发版全程若用过降级通道（gh api tag / Git Data API push / 剥代理直连），网络恢复后必须做三件事：① `git fetch origin && git status` 确认本地/远端无分叉（有分叉按 09-publish「双 SHA 分叉接回」处理）；② lightweight tag 覆盖为 annotated——`git tag -f -a vX.Y.Z -m "vX.Y.Z · {一句话}" <commit> && git push origin vX.Y.Z --force`（gh api 建的 tag 无 tag object，`git for-each-ref refs/tags` 显示 type blob/commit 即 lightweight）；③ 桌面发布物清理——本版产生的 prompt/body 草稿（`vX.Y.Z-*.md` / `release-note-*.md`）归档或删除，只保留下一版 dev prompt（发布物落盘铁律：统一 `~/Desktop/`，禁仓库内） | 远端/桌面双干净 |
+| 十三 | [ ] | **Discussions 置顶轮换（网页操作 · 30 秒）**：新版 release 帖（Announcements 自动生成）**不置顶**——版本帖是流水内容，置顶位只留给常青帖。当前常青帖 = #11「用 sofagent 的都在这报到」。若版本帖曾被误置顶，网页右侧齿轮 → Unpin；若需轮换常青帖，同样路径 Pin。🔴 置顶无 API（GitHub GraphQL Mutation 只有 pinIssue 系，无 pinDiscussion——2026-09-01 实测），只能网页操作（⚠️ GraphQL `pinnedDiscussions { discussion { number title } }` **可只读查询**——v1.4.3 实测置顶位核查不需开网页，仅变更才需要） | 置顶位干净 |
 
 ---
 
@@ -68,6 +68,7 @@ bash tools/check/check-version.sh        # 期望全绿
 | v1.3.9 | ~25h（08-20 15:00 开发完成 → 08-21 16:10 发布，含隔夜） | 3（run-01 FAIL 4 阻塞 / run-10 FAIL 1 coverage / run-13 PASS） | run-01 真实 4 阻塞（mcp bin 权限 / forge-smoke 路径漂移 / 测试数文档漂移 / checklist #119 路径错，主 session 零信任复验修复）+ run-10 coverage 2 零覆盖（ATTRIBUTION/Dream 补 S318/S319）；driver 无债，全人工修复后 run-13 单轮直过 |
 | v1.4.1 | ~3.5h（08-27 08:30 阶段十启动 → 12:00 阶段十二完成） | 0（判断层 PASS 已在发版窗口前凌晨完成，与 v1.4.0 同模式） | CI 红 1 次（sandbox 时间戳双源竞态真 bug——修复+回归锁+8 文档数字同 commit 转绿）；分发期补修双层 manifest 盲区 2 commit（bump 通配误伤 + manifest 层未覆盖） |
 | v1.4.2 | ~4h（08-28 晚放行 → 08-29 00:5x 阶段十二完成，含隔夜） | 0（判断层 PASS 已在发版窗口前完成，与 v1.4.0/1.4.1 同模式） | 网络故障贯穿全程（git push 502 代理死→Git Data API 三推 + ps1 eol 二坑 11 文件分叉→cat-file 重传逐字节一致）；CI 红 1 次（B8 测试隐式依赖全局安装——本地狗粮假绿 CI 纯净环境真红，补 dist fixture 转绿）；双 SHA rebase 对齐悬置（github.com 443 持续断，登记下版收尾） |
+| v1.4.4 | ~7h（09-03 上午阶段六启动 → 18:30 阶段十一过半） | 0（阶段五 run-07 GO 有条件放行，连续第五版同模式） | 网络半瘫再现（github.com 443 断 api.github.com 通——main 走 gitdata-push.mjs + tag 走 gh api 建 annotated object，网络恢复后 rebase 干净接回）；npm skillopt 传播慢触发一次 6×30s 超时（日志判读 + pkg@ver 已入队即信，等 120s 自愈）；release note 工序三对照抓出段落顺序颠倒（质量验证/破坏性变更）；同文件多 Edit 并行竞态实锤（5 处只落 2 处，串行重做） |
 
 ## 开发 Prompt 校验循环（步骤七）
 
@@ -143,7 +144,7 @@ bash tools/check/check-version.sh        # 期望全绿
 
 ## 进度追踪清零（步骤九）
 
-> 本版本发版流程全部完成后，最后一步——把 `releasing.md` 进度追踪的 12 个 `[x]` 全部改回 `[ ]`，为下一版本新周期做准备。
+> 本版本发版流程全部完成后，最后一步——把 `releasing.md` 进度追踪的 11 个 `[x]` 全部改回 `[ ]`，为下一版本新周期做准备。
 
 **为什么要清零**：进度追踪是"当前版本走到哪了"的实时状态。如果不清零，下版本新 session 打开 releasing.md 会看到 11 个全 [x]，误以为"已完成"而不知道该从哪开始。清零后第一个 `[ ]`（阶段一）就是下版本的起点。
 
@@ -278,3 +279,14 @@ sed -i '' 's/- \[x\]/- [ ]/g' docs/changelog/releasing.md
 
 - **SOP 文件拆分/改名时全仓回扫旧引用（新增纪律）**：releasing SOP 拆分（原 10-publish.md 拆为 09-publish.md + 10-distribute.md）时只改活文档未扫历史 changelog——v1.4.2/v1.4.3 Release Notes 段的 `10-publish.md` 链接死链拖了 4 个版本无人发现（b00fe556 修复）。**防御：SOP 文件改名/拆分/移动时，必跑 `grep -rn "<旧文件名>" docs/ README.md` 回扫全仓引用；历史 changelog 内的活链接一并随迁，纯考古叙述（「已写入 10-publish」类）不动**。同时进检查维度二「阶段间引用无断裂」的修法列
 - **对账先跑门禁，不拿记忆当 SSOT**：收敛扫描中曾据记忆判「README 3744 测试」为漂移（记忆里 SSOT=3619）——实跑 check-test-count 后反转：3744 = v1.4.4 真值（3619 引擎 + 125 插件），门禁 11/11 绿。**防御：任何数字对账前先实跑对应门禁脚本拿当前真值；多源口径冲突时列各源原值请裁定，禁止拿历史数字当现值**
+
+**v1.4.4 发版后的自迭代记录**：
+
+- **阶段九·sha256 预计算免重打（新增优选路径）**：「tag 后算哈希→回填→重打 tag」两次往返可免——预计算 HEAD 哈希与 URL bump 同 commit，tag 一次打自洽；lib 零改动时 6 哈希沿用（`git diff <上tag>..HEAD --stat -- engine/scripts/lib/` 空）。已写入 09-publish sha256 段 + checklist #130 ①
+- **阶段九·网络半瘫双通道实战（实录）**：github.com 443 断而 api.github.com 通——main 推送走 gitdata-push.mjs（tree 逐字节一致验收）、tag 走 gh api 建 annotated tag object（`git for-each-ref` type=tag 免覆盖）+ ref；网络恢复后 `git fetch` + rebase --onto 干净接回 + 本地 tag 删重指。v1.4.1/v1.4.2 两次实战的通道组合第三次验证
+- **阶段九·release note 工序三抓段落顺序（实录）**：草稿「质量验证」与「破坏性变更」顺序颠倒——规范钉死核心变更→质量验证→破坏性变更→深入了解，v1.4.3 实际发布物为同构参照（v1.4.2 锚点自身缺质量表，锚点偏差不追随、以 SOP 规范优先）。三道工序再次实证价值
+- **阶段九·同文件多 Edit 并行竞态（🔴 工具纪律）**：同一文件 5 处 Edit 并行调用，仅 2 处落盘——读写竞态实锤。**同文件多处编辑必须串行执行**。已回写 calibration + checklist #130 ④
+- **阶段九·npm 传播延迟判读（更新）**：skillopt 第 6 次 30s 重查仍未到——按「publish 日志 `+ @sofagent/X@ver` 已入队即信」纪律不判失败，等 120s 复查到位。6×30s 循环若尽须人工续等而非报错中断（本轮 think/ab-test 被误中断一次）
+- **阶段十·Marketplace 勾选自动延续（新增核查命令）**：v1.4.2 起每版勾选后 listing 关联保持——curl 版本页含本版号即免网页操作。已写入 10-distribute 步骤二·b
+- **阶段十·ClawHub verify 快照纪律（新增）**：`security.status_not_clean` 可能是历史版本遗留既有状态（1.4.3 时代已存在）——发布前落盘快照、发布后对照，新引入 reasons 才处置。plugin API latestVersion 首查未到勿急判（与 npm 同款传播延迟，复查一次）。已写入 10-distribute + calibration
+- **阶段十一·checklist 归并对销实操（实录）**：1800 警戒线余量 2 行，新增 #130 前先真实归并 #121 入 #124（插件目录锚已由 S331 锁、cost_query 已由 S347/S348 锁，dashboard worklog 弱锚收 124 子项 k）——净增 0 行 1800 压线过 CRS。**警戒线内新增 = 先找已被 acceptance/门禁双重覆盖的旧维度归并**

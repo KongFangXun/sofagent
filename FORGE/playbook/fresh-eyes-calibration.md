@@ -98,6 +98,11 @@
 - 包不在依赖树时 overrides 是惰性死配置（npm 实测永不匹配、不报警），但属地雷：该包一旦进依赖立即生效——残留本地路径 overrides 应清，不因「现在没炸」留
 - publish 对账重查放宽 6×30s：传播延迟常超 3 次重查，publish 日志「+ pkg@ver」已提交即可信，E409 staged 等 5 分钟 finalize
 - bootstrap sha256 随版纪律：哈希从新 tag 的 `git show vX.Y.Z:<file>` 计算，改完哈希重打 tag（delete + re-tag + force push）让哈希入 tag 自洽
+- sha256 预计算免重打：预计算 HEAD 哈希与安装 URL bump 同 commit，tag 一次打自洽；install.sh/lib 零改动时 6 lib 哈希沿用免回填（发版前 `git diff <上tag>..HEAD --stat -- engine/scripts/lib/` 空即免）
+- GitHub Marketplace listing 勾选自动延续：v1.4.2 起每版勾选后关联保持——marketplace 版本页含本版号即免网页操作
+- ClawHub verify `security.status_not_clean` 可能是既有状态：发布前先快照对照（verify 落盘），发布后对照——新引入 reasons 才处置，勿把存量当本版事故
+- ClawHub plugin API latestVersion 同样有传播延迟：CLI 输出「submitted」后首查未到新版勿急判失败，复查一次（与 npm registry 同款机制）
+- 同文件多处 Edit 并行调用有读写竞态（实测 5 处只落 2 处）——同文件多编辑必须串行执行
 
 ### 留档参考（未固化，按需取用）
 
