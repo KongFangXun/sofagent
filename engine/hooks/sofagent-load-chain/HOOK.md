@@ -31,7 +31,7 @@ metadata:
 | **③ Skill 自觉加载** | SKILL.md 随 Agent 调用注入 | **自觉（软约束）** | WorkBuddy / Codex / Claude |
 | **④ harness 代码级拼入** | `buildConstrainedSystemPrompt` 构建 system prompt | **强（代码保证）** | npm API 自建 Agent |
 
-> 约束注入的强度随形态递减，但**审计引擎（git diff 24 规则）在所有形态一样硬**——约束是建议性的，审计是强制性的。
+> 约束注入的强度随形态递减，但**审计模块（git diff 24 规则）在所有形态一样硬**——约束是建议性的，审计是强制性的。
 
 ---
 
@@ -47,7 +47,7 @@ DSH 原生支持 **8 个生命周期 hook，全部为瀑布流（Waterfall）可
 | `agent/request` | 模型请求发出前 | 请求审查 |
 | `agent/request-error` | 请求失败后 | 重试/降级策略 |
 | `agent/turn-stopping` | Turn 结束前 | 停止条件判定 |
-| `tools/pre-execute` | **工具执行前** | **审计引擎接入点（A2 密钥 / A9 注入拦截）** |
+| `tools/pre-execute` | **工具执行前** | **审计模块接入点（A2 密钥 / A9 注入拦截）** |
 | `tools/execute` | 工具执行 | 计时 / 成本计量 |
 | `tools/post-execute` | 工具执行后 | 结果质检 |
 | `tools/result` | 最终结果确定 | 审计留证（history.jsonl） |
@@ -77,7 +77,7 @@ DSH 原生支持 **8 个生命周期 hook，全部为瀑布流（Waterfall）可
 
 **为什么 OpenClaw 是宿主平台之一、而非主战场**：Hook 依赖平台的「会话生命周期事件」机制（`agent:bootstrap`），只有 OpenClaw 暴露了这个事件。它保证「先有规则、后有执行、再有审计」在 OpenClaw 上完整——但当 DSH 成为默认执行后端后，sofagent 自建执行链路里的逐调用约束才是覆盖所有场景的完整形态。
 
-**没有 Hook 的平台怎么办**：靠 Skill 自觉加载约束（软），提交时仍被 git hook + 审计引擎拦截（硬）——约束是建议性的，审计是强制性的。
+**没有 Hook 的平台怎么办**：靠 Skill 自觉加载约束（软），提交时仍被 git hook + 审计模块拦截（硬）——约束是建议性的，审计是强制性的。
 
 ---
 

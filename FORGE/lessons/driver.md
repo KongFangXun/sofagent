@@ -569,7 +569,7 @@ node FORGE/src/fresh-eyes-driver.mjs --target <版本> > /tmp/fresh-eyes.log 2>&
 2. **git add -A 在 monorepo 是核弹**——必须逐文件 add；765 文件进暂存区后审计钩子被规则源码的检测样本触发海量误报，阻断一切 commit
 3. **恢复操作本身是最大风险源**——`cp -R A/. B/` 会静默覆盖 B 的新内容；恢复前必须先确认"哪个是超集"再单向恢复
 
-**救援立功者**：sofagent 自己的回溯引擎 `.sofagent/.git-shadow/snapshots.json`（1370 文件全文快照，commit 钩子自动打点）——1365 文件完整恢复，**审计引擎在审计轨迹本身被毁时救了全场**。Cordis「可撤销效应」的同款价值实证。
+**救援立功者**：sofagent 自己的回溯引擎 `.sofagent/.git-shadow/snapshots.json`（1370 文件全文快照，commit 钩子自动打点）——1365 文件完整恢复，**审计模块在审计轨迹本身被毁时救了全场**。Cordis「可撤销效应」的同款价值实证。
 
 **预防**（下次开发 sub-agent 必须遵守）：
 - sub-agent 的 git 写操作白名单化：只允许 `add <显式路径>` / `commit -- <显式路径>`，**禁止 `init` / `add -A` / 裸 `commit -m`（不带文件清单）/ `reset --hard` / `stash`**（在主仓）

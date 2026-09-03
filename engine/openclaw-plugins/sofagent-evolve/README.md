@@ -50,4 +50,4 @@ clawhub package publish . --family code-plugin --name sofagent-evolve --version 
 
 ## 说明
 
-与 DSH 插件 `cordis-plugin-sofagent-evolve` 同引擎、不同宿主：DSH 挂 `tools/pre-execute` 等生命周期事件，OpenClaw 挂 `before_prompt_build` / `before_tool_execute` 等事件。审计引擎（git diff 24 规则）在所有形态一样硬。
+与 DSH 插件 `cordis-plugin-sofagent-evolve` 同引擎、不同宿主：DSH 挂 `tools/pre-execute` 等生命周期事件，OpenClaw 挂 `before_prompt_build` / `before_tool_execute` 等事件。审计模块（git diff 24 规则）在所有形态一样硬。

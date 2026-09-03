@@ -237,7 +237,7 @@ async function fetchData() {
 ## 📝 审查报告格式
 
 ```markdown
-> **审计引擎**: sofagent-audit · 24 条规则（17 默认 + 7 扩展） | **审查引擎**: sofagent-orchestrator · sofagent-reviewer
+> **审计模块**: sofagent-audit · 24 条规则（17 默认 + 7 扩展） | **审查引擎**: sofagent-orchestrator · sofagent-reviewer
 
 # 代码审查报告
 

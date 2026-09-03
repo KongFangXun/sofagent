@@ -34,7 +34,7 @@
 ### Loop → Harness → Graph
 
 - **[Loop Engineering](https://addyo.substack.com/p/loop-engineering)** · Addy Osmani — 正式命名了 Context → Harness → Loop 三层框架
-- **[From Loop to Graph Engineering](https://engineering.zooz.com/intuitionmachine/from-loop-engineering-to-graph-engineering-d3ebeb08511c)** · Carlos E. Perez — 单闭环四类失效及 Graph 拓扑解法；没 Anchor 的 Graph 只是更贵的 Loop。sofagent 审计引擎即独立审计闭环
+- **[From Loop to Graph Engineering](https://engineering.zooz.com/intuitionmachine/from-loop-engineering-to-graph-engineering-d3ebeb08511c)** · Carlos E. Perez — 单闭环四类失效及 Graph 拓扑解法；没 Anchor 的 Graph 只是更贵的 Loop。sofagent 审计模块即独立审计闭环
 - **[OpenAI Harness Engineering](https://openai.com/index/harness-engineering/)** — Harness 概念的系统化参考
 - **[Anthropic Effective Harnesses](https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents)** · Anthropic — 长时间运行 Agent 的有效治理
 
@@ -54,7 +54,7 @@
 - **[Managed Agents](https://www.anthropic.com/engineering/managed-agents)** · Anthropic — 四层编排架构，验证 OpenClaw（连接+行动）与 DeepAgents（深度思考）分工
 - **[Deep Agents](https://github.com/langchain-ai/deepagentsjs)** · LangChain — LangGraph 状态底座 + Harness 范式 + HITL，验证 v1.x 技术选型（v1.2.0 已迁移至 LangGraph createReactAgent）
 - **[DeepSeek Harness (DSH)](https://github.com/deepseek-ai/deepseek-harness)** · DeepSeek — 「一切皆插件」开源 Agent 运行时（Cordis 微内核：模型/工具/沙箱/UI 全是插件，无特权内核），启发 v1.3.4 编排层与执行层分离（ExecutionBackend 接口，DSH 作为可选执行后端）；其事件即扩展点（会话/Agent/能力三事件域）与可撤销效应是 v1.4.0 反向插件 `@sofagent/cordis-plugin` 的协议基础
-- **[Cordis](https://github.com/cordiverse/cordis)** + **[时空可组合性论文](https://github.com/cordiverse/paper)** · cordiverse — DSH 底层框架：时间可组合性（每次修改记录逆操作，卸载逆序恢复）+ 空间可组合性（依赖声明自动重协调）+ 事务式热重载——「自进化的难点是修改后的可恢复与可协调」为进化引擎补上运行时视角
+- **[Cordis](https://github.com/cordiverse/cordis)** + **[时空可组合性论文](https://github.com/cordiverse/paper)** · cordiverse — DSH 底层框架：时间可组合性（每次修改记录逆操作，卸载逆序恢复）+ 空间可组合性（依赖声明自动重协调）+ 事务式热重载——「自进化的难点是修改后的可恢复与可协调」为进化模块补上运行时视角
 - **[Claude Code Agent Loop](https://docs.anthropic.com/en/docs/claude-code/how-claude-code-works)** · Anthropic — 三阶段循环 + 三档工具权限，与 sofagent HITL 🟢🟡🔴 同构
 - **[Palantir AIP Ontology](https://www.palantir.com/platforms/aip/)** · Palantir — 数据+逻辑+动作+安全四合一的数字孪生层，Harness 定义与 sofagent 一致
 - **The Path to Recursively Self-Improving Harnesses** · 翁荔（Lilian Weng）— 六层 Harness 优化框架（原 lilianweng.github.io/posts/2026-07-04-harness-rsl/ 链接已 404，保留文字引用不链死链）
@@ -79,7 +79,7 @@
 
 - **[A Field Guide to Fable](https://x.com/trq212/article/2073100352921215386)** · Thariq Shihipar — 四类未知框架；模型够强时瓶颈从「能不能做」变成「你能不能说清楚」
 - **[When AI builds itself](https://www.anthropic.com/institute/recursive-self-improvement)** · Anthropic — 代码生成不再是瓶颈，人工审查成为新堵点；sofagent 把审查外置到 git diff
-- **[SkillOpt](https://github.com/microsoft/SkillOpt)** · 微软 — Skill 自进化引擎，为 v1.0.3 闭环提供参考
+- **[SkillOpt](https://github.com/microsoft/SkillOpt)** · 微软 — Skill 自进化模块，为 v1.0.3 闭环提供参考
 - **[Satya Nadella at Microsoft Build](https://pod.wave.co/podcast/latent-space-the-ai-engineer-podcast/satya-nadella-no-priors-x-latent-space-crossover-special-at-microsoft-build)** · Satya Nadella —「Every company will have its own private eval」与 FDE 交付物对应
 
 ---

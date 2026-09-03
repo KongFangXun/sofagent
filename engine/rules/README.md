@@ -1,6 +1,6 @@
 # @sofagent/rules
 
-sofagent 规则引擎纯函数包——从 audit 包抽出，零 fs/git 依赖，供编排引擎 tool call 事前拦截。
+sofagent 规则引擎纯函数包——从 audit 包抽出，零 fs/git 依赖，供编排模块 tool call 事前拦截。
 
 ## 安装
 
@@ -8,7 +8,7 @@ sofagent 规则引擎纯函数包——从 audit 包抽出，零 fs/git 依赖�
 npm install @sofagent/rules
 ```
 
-库包（无 CLI），随编排引擎引用。Node.js 18+。
+库包（无 CLI），随编排模块引用。Node.js 18+。
 
 ## API
 

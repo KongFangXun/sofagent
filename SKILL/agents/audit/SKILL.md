@@ -17,7 +17,7 @@ not_when: [简单闲聊, 代码逻辑审查, 单个文件检查]
 
 ## 调用方式
 
-收到用户任务后，**不要自己执行**——用 Bash tool 把任务交给 DeepAgents 编排引擎：
+收到用户任务后，**不要自己执行**——用 Bash tool 把任务交给 DeepAgents 编排模块：
 
 ```bash
 sofagent-audit subagent run audit --task "<用户的任务描述，原样传入>"

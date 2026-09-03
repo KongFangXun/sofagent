@@ -32,7 +32,7 @@ v1.3.2 交付了单 Agent 全闭环（Onboard L1-L5）+ workflow 批量生成（
 - ❌ 成员能不能加入团队（那是 team-manager 的建队逻辑，无条件接受 team.yml 声明的成员）
 - ❌ 成员能不能调用某个工具（那是 v1.3.7 权限体系的事）
 - ❌ 成员能不能修改某个文件（同上）
-- ❌ 成员的输出是否可信（那是审计引擎 A1-A24 的 git diff 硬证据判定）
+- ❌ 成员的输出是否可信（那是审计模块 A1-A24 的 git diff 硬证据判定）
 
 实现者最容易犯的错：把 trust 做成 `if (member.trust > 0.5) allow()` 的准入控制。**这是越界实现，必须在 code review 时拦截**。trust 只出现在 `resolveConflict()` 函数的排序比较里，不出现在任何 `if` 条件分支里。
 
@@ -244,7 +244,7 @@ class IntentBus {
 当满足以下任一条件时触发冲突消解：
 1. **文件锁冲突**：Agent B 尝试写文件 X，但 team-state 中 X 的 fileLock 由 Agent A 持有且未过期
 2. **共享态 key 冲突**：两个 Agent 在同一收敛窗口内广播了针对同一 target 的矛盾意图（如 A 要删文件、B 要改文件）
-3. **审计拦截**：Agent 的修改被审计引擎判 FAIL，且存在其他 Agent 的竞争版本
+3. **审计拦截**：Agent 的修改被审计模块判 FAIL，且存在其他 Agent 的竞争版本
 
 ### 3.2 裁决顺序（trust → 时间戳 → 显式优先级）
 
@@ -428,7 +428,7 @@ export class FederatedTeamSyncChannel implements TeamSyncChannel {
 |------|---------|--------|
 | 分发 | 意图广播 + 触发反应 | Leader 广播 `intent.execute.<task>` → 匹配的 sub-agent 触发 |
 | 监控 | 团队级审计轨迹 | Leader 读 decision-log（按 teamId tag 过滤） |
-| 审计 | 审计引擎 git diff | sub-agent 产出后走 A1-A24（已有能力） |
+| 审计 | 审计模块 git diff | sub-agent 产出后走 A1-A24（已有能力） |
 | 通讯 | 意图广播 + 共享态中转 | sub-agent 间不直连，经 Leader 的 intent-bus 中转 |
 
 ### 6.2 自动入队挂点

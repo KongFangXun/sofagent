@@ -5,7 +5,7 @@
 > **读者**：人类开发者 & AI Agent 均可阅读。本文档是项目全局索引入口。
 > 如果你是 AI Agent 且需要查找具体实现路径，请直接跳转到"## 五、文件地图"段。
 
-> ⚠️ **术语声明（AI Agent 与人类读者必读）**：sofagent 现行架构术语以 [ARCHITECTURE.md](./ARCHITECTURE.md) 与 [PHILOSOPHY.md](./PHILOSOPHY.md) 为准——**约束层**（一个层五种能力：注入·审计·回溯·沉淀·进化，FORGE 为内部工具）+ **双层架构**（约束层 × 生命周期）。`docs/archive/` 与 `docs/changelog/v1.0/`、`docs/changelog/v1.1/` 为**历史版本快照**，其中"四引擎""认知底座"等旧术语反映当时版本，**不代表现行设计**，请勿据此推断当前架构；`docs/changelog/v1.4/` 为**当前版本目录**（v1.4.0 已发布，内容为各版本变更记录；后续排期内容**不代表已交付能力**）。**训练引擎归属**：工程骨架随开源仓排期交付 + 训练资产商业侧，真相源见 [ROADMAP](./ROADMAP.md) 版本表。
+> ⚠️ **术语声明（AI Agent 与人类读者必读）**：sofagent 现行架构术语以 [ARCHITECTURE.md](./ARCHITECTURE.md) 与 [PHILOSOPHY.md](./PHILOSOPHY.md) 为准——**约束层**（一个层五种能力：注入·审计·回溯·沉淀·进化，FORGE 为内部工具）+ **双层架构**（约束层 × 生命周期）。`docs/archive/` 与 `docs/changelog/v1.0/`、`docs/changelog/v1.1/` 为**历史版本快照**，其中"四引擎""认知底座"等旧术语反映当时版本，**不代表现行设计**，请勿据此推断当前架构；`docs/changelog/v1.4/` 为**当前版本目录**（v1.4.0 已发布，内容为各版本变更记录；后续排期内容**不代表已交付能力**）。**后训模块归属**：工程骨架随开源仓排期交付 + 训练资产商业侧，真相源见 [ROADMAP](./ROADMAP.md) 版本表。
 
 > **3 分钟建立全景理解**：核心文档太长？先看这 5 条：
 > - **[ARCHITECTURE.md](./ARCHITECTURE.md)**：双层架构设计（约束层 × 生命周期）+ 约束层工程三层嵌套（约束层 → Graph → Loop），关键技术决策记录。**3 秒版**：约束层管"做对"（注入·审计·回溯·沉淀·进化）· 激活链四阶段管"跑起来" · Graph 控制图分波次 · Loop 自迭代闭环。
@@ -49,7 +49,7 @@
 
 **FDE 交付**：进场梳理 → 交付**双图谱**——人看的业务图谱（workflow graph）+ 机器读的本体图谱（ontology graph，本体数据的图形化形态）。图谱里每个 AI 节点承担业务流中的职能；节点执行 = workflow 要求 → LangGraph 编排 → DeepSeek Harness 执行（ExecutionBackend 双后端：workflow 以 DAG 形态在所选后端运行）→ 全程约束层审计 + 回溯净化（plugin 功能）。**行业坐标**：两张图谱同属「知识层」（描述业务世界的语义资产），构建·校验·维护实践属「工程层」（图谱工程），详见 [ARCHITECTURE §一](./ARCHITECTURE.md)。
 
-**训练 Agent（内层新 workflow）**：企业 AI 节点要数据主权 → 训练 Agent（受约束）驱动后训练工具：收集企业数据 → 模型后训练 → 私有化部署回节点。这本身是几个新 workflow（数据采集 / 训练 / 部署）。训练引擎**工程骨架**随开源仓排期交付（编排/审计/沙箱，详见 ROADMAP；训练资产走商业侧）；训练也围绕 FDE——怎么让 FDE 更好、怎么让数据飞轮转起来。
+**训练 Agent（内层新 workflow）**：企业 AI 节点要数据主权 → 训练 Agent（受约束）驱动后训练工具：收集企业数据 → 模型后训练 → 私有化部署回节点。这本身是几个新 workflow（数据采集 / 训练 / 部署）。后训模块**工程骨架**随开源仓排期交付（编排/审计/沙箱，详见 ROADMAP；训练资产走商业侧）；训练也围绕 FDE——怎么让 FDE 更好、怎么让数据飞轮转起来。
 
 > **现实预期（产品口径 · 详细边界见 v1.4.1 开发日志）**：后训练分两种——**行为对齐型**（教模型守企业规矩/风格，用自家服务轨迹数据，sofagent 自给自足）与**知识注入型**（教模型懂行业知识，需企业提供业务数据）。最现实起步 = 行为对齐 + 小模型 QLoRA（一张消费级 GPU 即可）；框架安装、算力检测由训练 Agent 自动接管。期望边界：垂直精调（LoRA/QLoRA），不是从零训大模型。
 
@@ -93,7 +93,7 @@ graph TB
 | **本体图谱** | 机器读的语义图谱 = Ontology Graph——FDE 交付的企业全部业务节点和关联关系的全局拓扑（本体数据的图形化呈现） | [ARCHITECTURE §定义表](./ARCHITECTURE.md) |
 | **业务流** | 企业业务流的完整链路 = Workflow，由业务节点（AI 节点 + Human 节点）交替组成 | [ARCHITECTURE §定义表](./ARCHITECTURE.md) |
 | **业务节点** | 业务流中的执行单元 = Node——AI 自动执行（Loop）或 Human 介入（审批/检查/兜底）；AI 节点 = 业务节点中经三问判定法识别为可 AI 化的部分 | [ARCHITECTURE §定义表](./ARCHITECTURE.md) |
-| **审计引擎** | git diff 驱动，24 条规则（17 默认 + 7 扩展），活跃编号 A1-A11 + A14-A23 + E1/E2/E4（A12/A13 已并入 A11，编号不再使用），每次 commit 自动跑 | [24 条完整清单（SECURITY SSOT）](../SECURITY.md#24-条审计规则完整清单文档级-ssot) |
+| **审计模块** | git diff 驱动，24 条规则（17 默认 + 7 扩展），活跃编号 A1-A11 + A14-A23 + E1/E2/E4（A12/A13 已并入 A11，编号不再使用），每次 commit 自动跑 | [24 条完整清单（SECURITY SSOT）](../SECURITY.md#24-条审计规则完整清单文档级-ssot) |
 | **三层治理** | Ledger（原始数据）→ Views（派生视图）→ Policy（约束规则），单向派生、不可逆写 | [PHILOSOPHY §五](./PHILOSOPHY.md) |
 | **FORGE** | 自迭代引擎（内部工具，外部用户可忽略）——通过 Workflow 驱动 Agent 审查/修复/验证自己的代码，核心是 fresh-eyes-loop | [FORGE/README.md](../FORGE/README.md) |
 | **SKILL** | Agent 的行为约束文件系统——三层：SKILL.md（主入口）/ harness/（约束层）/ agents/（Sub Agent） | [SKILL/SKILL.md](../SKILL/SKILL.md) |
@@ -118,7 +118,7 @@ graph TB
 │  └─────────┴─────────┴─────────┴─────────┴─────────┘ │
 │  分发形态：插件 · Skill · MCP · CLI · Dashboard    │
 │  方法论：FDE 四阶段（梳理→构建→部署→离场）         │
-│  内部：编排引擎 @sofagent/orchestrator（LangGraph）│
+│  内部：编排模块 @sofagent/orchestrator（LangGraph）│
 ├─────────────────────────────────────────────────┤
 │  成熟 Agent 宿主（DSH · OpenClaw · WorkBuddy）    │
 │  模型 + 工具 + 会话（执行能力，不替代）            │
@@ -135,7 +135,7 @@ graph TB
 |---|---|---|
 | audit（commit→runRules） | `audit/history.jsonl` | daemon（巡检）、think（反思生成） |
 | think（generateThinkEntry） | `think.md` | harness 加载链（注入上下文） |
-| eval（runEval）⭐ | `eval/history.jsonl` | think（进化引擎：passRate 下降→告警） |
+| eval（runEval）⭐ | `eval/history.jsonl` | think（进化模块：passRate 下降→告警） |
 | daemon（health-reporter） | `daemon-health.json` | Dashboard（健康面板） |
 | daemon（dream-cycle） | `knowledge/` | harness 加载链（Skill 知识注入） |
 | FORGE driver（loop） | `forge-runs/`（唯一落点 `~/.sofagent/data/forge-runs/`，仓内 `FORGE/SKILL/*/runs/` 仅占位壳；顶层 `FORGE/runs/` 为历史留档位） | 人类（verdict.md），执行证据查证路径见 [FORGE/README.md](../FORGE/README.md)「runs 目录边界」 |
@@ -151,7 +151,7 @@ graph TB
 ```
 约束层（工作环境）       Graph（流程拓扑）         Loop（反馈改进）
 ┌─────────────────┐     ┌──────────────────┐      ┌─────────────────────┐
-│ 约束注入链 + 加载链│ ──→ │ 编排引擎（内部）     │ ──→  │ FORGE（fresh-eyes +   │
+│ 约束注入链 + 加载链│ ──→ │ 编排模块（内部）     │ ──→  │ FORGE（fresh-eyes +   │
 │ 审计能力（24规则）│     │ LangGraph ReactAgent│      │ release-gate-loop）+  │
 │ daemon（文件监控） │     │ 多Agent 任务拆解     │      │ sustain（进化能力）    │
 │ data/（状态持久） │     │                     │      │ eval 反馈闭环         │
@@ -204,7 +204,7 @@ graph TB
 
 | 包 | 职责 |
 |----|------|
-| `engine/audit/` | @sofagent/audit — 审计引擎（git diff + 24 条规则） |
+| `engine/audit/` | @sofagent/audit — 审计模块（git diff + 24 条规则） |
 | `engine/core/` | @sofagent/core — 核心类型、HMAC 工具、memory-contract |
 | `engine/orchestrator/` | @sofagent/orchestrator — LangGraph createReactAgent 编排 |
 | `engine/daemon/` | @sofagent/daemon — 后台守护进程（cron 巡检 + 文件监听） |
@@ -232,7 +232,7 @@ graph TB
 | 项 | 值 |
 |----|-----|
 | 当前版本 | **v1.4.4**（2026-09-02，⏳ 待发版——tag/npm 发版时同步） |
-| 下一版 | v1.4.5（进化引擎实证收口，参见 docs/ROADMAP.md） |
+| 下一版 | v1.4.5（进化模块实证收口，参见 docs/ROADMAP.md） |
 | 测试覆盖 | 3744 测试 / 12 包（统计标准：`tools/check/test-count.sh` 实际执行的 workspace 包；全仓共 26 个 workspace——13 个引擎包发布至 npm `@sofagent` scope，9 个 DSH 插件为 private 随 DSH 分发，4 个 OpenClaw 插件（`engine/openclaw-plugins/`）经根 `npm test --workspaces` 统一执行测试。实测见 `tools/check/test-count.sh`、声称数同步校验见 `tools/check/check-test-count.sh`） |
 | 审计规则 | 24 条（17 默认 + 7 扩展），活跃编号 A1-A11 + A14-A23 + E1/E2/E4，每次 commit 自动跑 |
 | FORGE | fresh-eyes-loop + release-gate-loop 运行中 |
@@ -298,7 +298,7 @@ graph TB
 | 运行测试 / 验证效果 | [guides/testing.md](./guides/testing.md) |
 | 开发/维护前端（Dashboard 等） | [guides/frontend-design-standard.md](./guides/frontend-design-standard.md)（设计标准 + 开发指南，改前端前必读） |
 | 用 SDK 接入约束层 | [guides/harness-sdk.md](./guides/harness-sdk.md)（SubAgent 托管 SDK · `harness.wrap` 一行包装） |
-| 了解训练引擎 | [guides/train-stack.md](./guides/train-stack.md)（双栈契约）+ [train-security.md](./guides/train-security.md)（攻击面声明） |
+| 了解后训模块 | [guides/train-stack.md](./guides/train-stack.md)（双栈契约）+ [train-security.md](./guides/train-security.md)（攻击面声明） |
 | 浏览全部专题指南 | [guides/README.md](./guides/README.md)（16 份指南按角色分类索引） |
 | 添加新审计规则 | `engine/audit/src/rules/` → 对照现有规则模式（defaultRules / extendedRules） |
 | 新建 Sub Agent | `SKILL/agents/` → 参照 `agents/engineer/SKILL.md` |

@@ -23,7 +23,7 @@
 | EXECUTE 执行 | pt-data-prep → pt-train-run → pt-eval-gate |
 | SUSTAIN 运转 | pt-deploy（+ 持续后训练扩展） |
 
-## 依赖的训练引擎版本
+## 依赖的后训模块版本
 
 | 节点 | 依赖能力 | 版本 |
 |------|---------|:---:|

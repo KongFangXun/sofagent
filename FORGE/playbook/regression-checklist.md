@@ -53,7 +53,7 @@ grep -c "ARCHITECTURE.md" README.md # 期望: ≥ 1
 # 子项 e: 当前版本条目不含审查元信息（原维度 48e）
 LATEST_VER=$(grep -m1 "^### \[v" CHANGELOG.md | grep -oE 'v[0-9.]+'); sed -n "/^### \[$LATEST_VER\]/,/^### \[v/p" CHANGELOG.md | grep -qE "P[012]×|fresh-eyes|审查轮次" && echo "⚠️ CHANGELOG 当前版本含审查元信息" || true
 # 子项 f: ROADMAP 版本头描述与当前版本一致（原维度 48a）
-sed -n '4p' docs/ROADMAP.md | grep -qE "训练引擎|数据与评估|FDE Harness|六引擎|IM 桥" || echo "⚠️ ROADMAP 版本头描述可能错配" # 关键词须随发版同步更新（口径）
+sed -n '4p' docs/ROADMAP.md | grep -qE "后训模块|数据与评估|FDE Harness|六引擎|IM 桥" || echo "⚠️ ROADMAP 版本头描述可能错配" # 关键词须随发版同步更新（口径）
 # 子项 g: SECURITY.md 旧描述清理（原维度 48d）
 grep -q "不做内容安全校验" SECURITY.md && echo "⚠️ SECURITY.md L86 推辞过时" || true
 # 子项 h: SKILL.md 铁律/底线数标题声称与实际一致（原维度 48g；底线是有序列表 `N. ` 格式）
@@ -149,7 +149,7 @@ grep -c "PASS" engine/audit/src/webhook.ts # 应 > 0
 # 子项 f: CLI stdout 签名一致性（教训—感知层废墟高发区）
 node engine/audit/dist/index.js --version 2>&1 | grep -q "sofagent" && echo "✅ --version 签名存在"
 grep -c "sofagent-audit.*v\|sofagent-audit ·" engine/audit/src/index.ts # 期望：≥ 1
-grep -c "审计引擎.*sofagent-audit\|审计引擎:.*sofagent" engine/audit/src/index.ts # 期望：≥ 1
+grep -c "审计模块.*sofagent-audit\|审计模块:.*sofagent" engine/audit/src/index.ts # 期望：≥ 1
 # 人工跑一次 --doctor 和 --init，确认输出开头带 sofagent
 ```
 
@@ -611,7 +611,7 @@ grep -c "TRUST_ORDER\|trust.*Trust\|official.*internal" engine/core/src/memory-c
 grep -c "wrapUntrusted\|redactForPrompt\|trust.*分级\|isTrustEntryUsable" FORGE/playbook/acceptance-test.sh # ≥4
 ```
 
-#### 42. 编排引擎 dag-runner + compose --run
+#### 42. 编排模块 dag-runner + compose --run
 
 > compose --run 委派 Sub Agent + 同文件冲突检测 WARN。
 
@@ -697,8 +697,8 @@ grep -c "extractControlGraphState\|sanitizeLoopId\|路径穿越" FORGE/playbook/
 # 子项 a: README FDE Harness 叙事收敛（≥1 处，2026-08-27 口径从 FDE Agent 升级）
 FDE_COUNT=$(grep -c "FDE Harness" README.md) && [ "$FDE_COUNT" -ge 1 ] # 通过
 
-# 子项 b: 审计引擎零 token 红线保留
-grep -q "审计引擎零 token" README.md # 命中
+# 子项 b: 审计模块零 token 红线保留
+grep -q "审计模块零 token" README.md # 命中
 
 # 子项 c: 历史已发布标记保留
 grep -q "v1.1.8" README.md # 命中
@@ -713,7 +713,7 @@ SANITIZER_COUNT=$(grep -c "name: '" engine/core/src/security/prompt-sanitizer.ts
 grep -c "MAX_NODES = 20\|MAX_TASK_LENGTH = 2000" engine/orchestrator/src/workflow-parser.ts # ≥2
 
 # 子项 g: 验收场景覆盖（acceptance-test 场景 120-121；品牌口径 2026-08-27 升级为 FDE Harness）
-grep -c "FDE Harness\|审计引擎零 token\|assertSubAgentsNoEmptyTools\|MAX_NODES" FORGE/playbook/acceptance-test.sh # ≥4
+grep -c "FDE Harness\|审计模块零 token\|assertSubAgentsNoEmptyTools\|MAX_NODES" FORGE/playbook/acceptance-test.sh # ≥4
 ```
 
 #### 49. 物理结构大重构——旧路径零残留 + 新结构就位
@@ -827,7 +827,7 @@ grep -rc "SOFAGENT_HOME\|SOFAGENT_DATA" engine/scripts/lib/platform-detect.sh en
 
 #### 56. trust-but-verify——mock 单测全绿 ≠ 真实引擎匹配
 
-> 教训：工程师用 mock 跑 eval 单元测试全绿（IS_PASS: YES），但 QA 跑真实 CLI 端到端通过率仅 14.3%——mock 未经过真实审计引擎校验，未发现 golden set 与 audit 规则不匹配。逐条读 21 个 rule-*.ts 重写后 14.3% → 100%。
+> 教训：工程师用 mock 跑 eval 单元测试全绿（IS_PASS: YES），但 QA 跑真实 CLI 端到端通过率仅 14.3%——mock 未经过真实审计模块校验，未发现 golden set 与 audit 规则不匹配。逐条读 21 个 rule-*.ts 重写后 14.3% → 100%。
 > 🔴 教训（回归审查挖出）：eval CLI 曾崩了 8 个版本没人发现——①cli.ts require 路径错 ②golden-set sha256 改 yaml 未重算 ③3 用例期望过时（规则演进了 golden 没跟）。**根因：本维度的检查结果长期被当"环境问题"跳过**。判定规则：本维度输出异常时先在非沙箱环境复跑（见环境验证铁律），确认非环境后才可跳过；golden set 变更必须同步重算 .sha256。
 
 ```bash
@@ -1651,9 +1651,9 @@ grep -q "createArgv1Guard" engine/orchestrator/src/execution-backends/dsh-backen
 grep -c "dsh-deployed" package-lock.json | grep -q "^0$" && echo "✅ lock 零本地部署树路径" || echo "❌ lock 残留本地部署树 symlink——CI 必红 TS2307"
 ```
 
-#### 123. 新功能审查面——训练引擎地基八大块一维收口（阶段四来源提取 A 类 · 参照 113/115/121 每版一维）
+#### 123. 新功能审查面——后训模块地基八大块一维收口（阶段四来源提取 A 类 · 参照 113/115/121 每版一维）
 
-> 训练引擎 · 地基核心面收口一维（acceptance S323-S327 端到端已断言 doctor/隔离/指纹/签名/安全基线五面，此处为分钟级快速 grep 版）。锚点全部实测存在。阶段 0 Metal 验证（@mlx-node/trl）定位 Mac-only 验证路径不入生产审查面。测试规模口径：workspace 3178 / 全量 3222（含 sandbox 证据链时序竞态回归锁，check-test-count 16/16 对账）。
+> 后训模块 · 地基核心面收口一维（acceptance S323-S327 端到端已断言 doctor/隔离/指纹/签名/安全基线五面，此处为分钟级快速 grep 版）。锚点全部实测存在。阶段 0 Metal 验证（@mlx-node/trl）定位 Mac-only 验证路径不入生产审查面。测试规模口径：workspace 3178 / 全量 3222（含 sandbox 证据链时序竞态回归锁，check-test-count 16/16 对账）。
 
 ```bash
 # 块二 train-job 编排 + 块四隔离 + 块五指纹 + 块六签名 + 块七守卫/恢复 + 块八安全（协议/预算在 #113 ⑥⑦ 已锚）
@@ -1751,7 +1751,7 @@ grep -q "anticheat" tools/train-env-init.sh && grep -q "checkAnticheatBaseline" 
 # f: FORGE 步一二三（事件回放 + 全 step dsh + runtimeUsage 自动计量）
 grep -q "replayEventsToStreamHandler" engine/orchestrator/src/execution-backends/dsh-backend.ts && grep -q "runtimeUsage" FORGE/src/fresh-eyes-driver.mjs && grep -q "return 'dsh'" FORGE/src/fresh-eyes-driver.mjs && echo "✅ DSH 三步在位" || echo "❌ DSH 深化缺口"
 # g: onboarding 导览表（HANDBOOK 三线 × 是什么/从哪进/前置 + install 提示分层）
-grep -q "新功能入口导览" docs/HANDBOOK.md && grep -q "训练引擎（需要 GPU 环境）" install.sh && echo "✅ 导览+分层提示" || echo "❌ onboarding 断层"
+grep -q "新功能入口导览" docs/HANDBOOK.md && grep -q "后训模块（需要 GPU 环境）" install.sh && echo "✅ 导览+分层提示" || echo "❌ onboarding 断层"
 # h: 退役收口治理（清扫二/三——别名句式「将在 v1.5.0 移除」+ fde_compose workflow-only；v1.5.0 移除时本子项同步清）
 grep -q "将在 v1.5.0 移除" engine/orchestrator/src/composer.ts && grep -q "action === 'ontology'" engine/mcp/src/tools/fde-compose.ts && grep -q "fde_derive" engine/mcp/src/tools/fde-compose.ts && echo "✅ 退役治理（别名+收窄）" || echo "❌ 退役收口回潮"
 grep -q "checkHistoryChainIntegrity" CHANGELOG.md && echo "✅ 退役公告在 CHANGELOG 索引" || echo "❌ 公告丢失（v1.5.0 移除前置）"

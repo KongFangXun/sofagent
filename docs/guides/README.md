@@ -1,6 +1,6 @@
 # sofagent 专题指南索引（guides/）
 
-> 本目录收纳 17 份专题指南。按角色找入口：企业 IT / FDE 交付 / 开发者 / 审计与安全 / 训练引擎。全站文档导航见 [WIKI](../WIKI.md)。
+> 本目录收纳 17 份专题指南。按角色找入口：企业 IT / FDE 交付 / 开发者 / 审计与安全 / 后训模块。全站文档导航见 [WIKI](../WIKI.md)。
 
 ## 一、企业落地（IT 负责人 / 管理员）
 
@@ -37,7 +37,7 @@
 | [node-level-audit.md](./node-level-audit.md) | 节点级审计——24 条规则子集在 DSH 事件流上的逐条判定 |
 | [github-action.md](./github-action.md) | GitHub Action——PR 提交时自动审计的 CI 配置 |
 
-## 五、训练引擎（v1.4.1+）
+## 五、后训模块（v1.4.1+）
 
 | 指南 | 讲什么 |
 |------|--------|

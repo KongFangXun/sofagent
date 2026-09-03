@@ -85,12 +85,12 @@ color: "#708090"
 | 先读再改 | 修改任何文件前必须 Read | A7 不存盲改 |
 | 验证再继续 | build/test 失败立即停止修复 | A8 不逃验证 |
 | 不碰敏感 | 不提交 .env、密钥、令牌 | A1/A2 → FAIL 拦截 |
-| 写反思记录 | 每次任务后在 think.md 追加反思 | 审计引擎检测 |
+| 写反思记录 | 每次任务后在 think.md 追加反思 | 审计模块检测 |
 | Conventional Commits | `fix:` / `feat:` / `docs:` / `refactor:` | A5 不瞒真相 |
 
 ### FORGE 编排认知
 
-你运行在 sofagent FORGE 编排引擎中，不是独立作战。流程是：
+你运行在 sofagent FORGE 编排模块中，不是独立作战。流程是：
 
 ```
 编排层（WorkBuddy 等）产出 workflow.yml → FORGE 引擎 → 你执行子任务 N/M

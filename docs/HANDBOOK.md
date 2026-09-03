@@ -68,7 +68,7 @@
 - **🔗 激活链**：FDE 诊断交付后，ontology + workflow.yml + skills/ 不再是一堆静态文件躺在磁盘上——激活链自动读交付物 → 注册企业 SubAgent → 编排成 LangGraph 业务流 → 带人工审批（HITL）和审计地自动跑。从"交给企业一堆文档"变成"交给企业一个会自己跑的系统"（ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN 四阶段完整交付）。详见 [激活链设计文档](./guides/fde-activation-chain.md)。
 - **🔍 引擎纵深**：官方 AST 规则引擎（`sofagent-ruleset-ast`，ASI01 目标劫持 + ASI04 供应链 SBOM 语义检测）；meta-harness 多 harness 统一编排（策略强制下沉基础设施层，跨会话协作）；AI 工作明细数据层（`worklog` 按 Agent/Workflow/周 + 人工介入，`worklog_query` MCP）；API 分级治理（`@public`/`@internal` 1439 符号 + CI 门禁）；MLflow agent 评估（13 指标 + LLM-as-Judge）；Agentic Browser（4 工具 + 视觉降级）；跨平台适配器（Cursor/Codex/Gemini CLI）；ATTRIBUTION 归因引擎 + Dream Sandbox 沙盒审计（强制人审 merge + 路径穿越消毒）；>5MB diff 缝隙修复。明细见 [开发日志](./changelog/v1.3/v1.3.9.md)。
 - **🎓 训练数据与评估**（v1.4.2）：企业异构数据（CSV/Excel/DB/API）经管道进训练集（质量闸门 + 训练入口脱敏）；dataset_version 版本台账（指纹冻结 + 续跑版本锁）；训练中 eval 闭环（阈值外部化 continue/stop）；train env/doctor 环境体检；dry-run 显存估算 + ScaleRL 算力外推；训练报告（客户可读 Markdown + 量化四字段 ROI）。详见 [v1.4.2 开发日志](./changelog/v1.4/v1.4.2.md)。
-- **🧩 FDE 六引擎工作台**（v1.4.2）：fde_interview（访谈结构化）/ fde_classify（三问判定）/ fde_quantify（量化+ROI）/ fde_derive（本体推导）/ fde_distill（三层沉淀）/ fde_deploy（组装部署）——FDE 方法论从文档变成可执行引擎（MCP tool），产物落 `data/fde/` 带独立审计留痕；IM 桥远程指挥（dsh-im）让 FDE 在无头设备上也能干活。
+- **🧩 FDE 六引擎工作台**（v1.4.2）：fde_interview（访谈结构化）/ fde_classify（三问判定）/ fde_quantify（量化+ROI）/ fde_derive（本体推导）/ fde_distill（三层沉淀）/ fde_deploy（组装部署）——FDE 方法论从文档变成可执行模块（MCP tool），产物落 `data/fde/` 带独立审计留痕；IM 桥远程指挥（dsh-im）让 FDE 在无头设备上也能干活。
 - **📡 训练运行与需求**（v1.4.3）：train_status/train_list 查训练进度与历史 + GPU 显存预算队列；train_diagnose 七类失败诊断（每类附修复建议）；训练沙箱（进程隔离/离线可训/设备打包）；train analyze 需求推导 + 模板库（QLoRA/SFT/DPO + RL 配方 grpo/dapo/cispo）；后训练 workflow 模板（七节点 + 三 HITL）。详见 [v1.4.3 开发日志](./changelog/v1.4/v1.4.3.md)。
 - **📊 审计聚合指标 + 反作弊基线**（v1.4.3）：`sofagent-audit --stats` 输出安全边界触发率/阻断率/高危规则 Top5（`--json` 机器可读）——约束层价值变成可汇报的治理 KPI；训练环境反作弊双防线默认化（剥 `.git` 断历史回溯 + 网络白名单默认拦截）。
 
@@ -89,7 +89,7 @@
 - **sofagent 引擎 = 堤坝 + 自来水厂 + 管网 + 水龙头（5 项核心已实现）+ 水表（审计已实现，终端 Dashboard v1.2.3 已落地）**：
   - 🧱 **堤坝（约束层）**——四层加载链，把行为底线焊死在每次对话里
   - 🏭 **自来水厂（沙箱安全）**——让原水变「直饮水」，危险操作隔离在沙箱
-  - 🔧 **管网（审计引擎）**——每次变更过 24 条规则审查
+  - 🔧 **管网（审计模块）**——每次变更过 24 条规则审查
   - 🚰 **水龙头（业务 Sub Agent）**——具体干活的节点，随业务接不同的「水龙头」
   - 📊 **水表（审计）**——每次变更看得见、可回滚（终端 Dashboard v1.2.3 已落地）
 
@@ -105,10 +105,10 @@
 | 角色 | 引擎 | 管什么 | 触发方式 |
 |------|------|------|------|
 | 🧱 底座 | **约束层**（harness） | 四层加载链注入规则，Agent 启动即生效 | 平台 Hook（OpenClaw / WorkBuddy）/ Sub Agent 自加载 |
-| 🔍 引擎① | **审计引擎**（audit） | git diff → 24 条规则硬扫描，违规当场拦 | git commit / daemon 文件变更 |
+| 🔍 引擎① | **审计模块**（audit） | git diff → 24 条规则硬扫描，违规当场拦 | git commit / daemon 文件变更 |
 | 🔄 引擎② | **回溯引擎**（core） | 审计后自动快照，出事一键回滚 | 审计完成后自动 |
 | ⚙️ 内部工具 | **FORGE 工具链**（orchestrator） | LOOP 流水线（项目自迭代用，非对外引擎） | CLI compose tool |
-| 🧬 引擎③ | **进化引擎**（think.md 反思 + Dream Cycle 知识回灌 + skillopt Skill 优化；eval/ab-test 为评估支撑；由 daemon 定时驱动） | 知识沉淀 + 反思 + 自优化，沉淀机制随使用迭代 | daemon cron / 手动触发 |
+| 🧬 引擎③ | **进化模块**（think.md 反思 + Dream Cycle 知识回灌 + skillopt Skill 优化；eval/ab-test 为评估支撑；由 daemon 定时驱动） | 知识沉淀 + 反思 + 自优化，沉淀机制随使用迭代 | daemon cron / 手动触发 |
 
 **层 2 · 生命周期（激活链，v1.2.5+ Phase 1-4 已交付）**：
 
@@ -149,10 +149,10 @@ cd sofagent && bash install.sh
 |------|------|------|------|
 | bash | ≥4 | install.sh / task-record.sh | `bash --version` |
 | git | 任意 | clone + task/logs 追溯 | `git --version` |
-| node | ≥18 | 编排引擎 + 审计 CLI | `node --version` |
-| npm | ≥9 | 安装 @langchain/langgraph（编排引擎） | `npm --version` |
+| node | ≥18 | 编排模块 + 审计 CLI | `node --version` |
+| npm | ≥9 | 安装 @langchain/langgraph（编排模块） | `npm --version` |
 
-> 只用宪法层约束（不跑编排引擎/审计）可不带 node/npm。
+> 只用宪法层约束（不跑编排模块/审计）可不带 node/npm。
 
 | 平台 | install.sh 行为 |
 |------|------|
@@ -169,7 +169,7 @@ cd sofagent && bash install.sh
 | `sofagent-audit: Node.js 未找到` | Node.js 未安装或版本过低 | 安装 Node.js ≥18：`node --version` 确认 |
 | commit 时没有审计输出 | commit-msg hook 未安装 | `sofagent-audit --init` 或 `sofagent-audit --install-hook` |
 | 首次 commit 提示「无需审计」 | 全新仓库首次提交没有前一个版本可对比 | 正常——下次 commit 起审计自动生效 |
-| Windows 上部分检查缺失 | Windows 为实验性支持 | 核心审计引擎可用，PowerShell 脚本覆盖不全，详见 [LIMITATIONS](./LIMITATIONS.md#windows-支持是实验性的) |
+| Windows 上部分检查缺失 | Windows 为实验性支持 | 核心审计模块可用，PowerShell 脚本覆盖不全，详见 [LIMITATIONS](./LIMITATIONS.md#windows-支持是实验性的) |
 | hook 装了但静默跳过 | Node.js 或 sofagent-audit 缺失时 hook 旧版会静默跳过 | v1.0 hook 含无声失败保护，会 exit 1 + 提示；旧 hook 跑 `--init` 更新 |
 | `sofagent-audit --doctor` 报 config 缺失 | 未跑过 `--init` | 跑 `sofagent-audit --init` 生成 config.yml，或用默认配置（默认 17 条（A1–A11 + A18–A23）全启用，扩展 7 条（A14–A17 + E1/E2/E4）需开启，全量 24 条） |
 
@@ -196,7 +196,7 @@ sofagent-verify                     # 同样跑 verify 检查
 
 ### 跨平台能力差异
 
-支持 Hook 注入的平台（OpenClaw / WorkBuddy 等）获得完整能力（Hook 自动注入 + 断路器 + 编排引擎）。其他平台核心约束生效，编排引擎降级。详见 [开发文档 §一](./DEVELOPMENT.md#脚本与文件结构速查)。
+支持 Hook 注入的平台（OpenClaw / WorkBuddy 等）获得完整能力（Hook 自动注入 + 断路器 + 编排模块）。其他平台核心约束生效，编排模块降级。详见 [开发文档 §一](./DEVELOPMENT.md#脚本与文件结构速查)。
 
 ---
 
@@ -356,7 +356,7 @@ sofagent-dashboard --full    # 展开：编排控制图 + FORGE 审查进度 + �
 | 面板 | 看什么 | 数据来源 |
 |------|--------|---------|
 | **数据去哪了**（数据主权） | 敏感数据有没有偷偷发给云端？ | 4 维审计日志（模型/操作/流向/任务） |
-| **AI 犯规了吗**（规则审计） | AI 有没有越权改文件、存数据？ | 审计引擎 24 条规则结果 |
+| **AI 犯规了吗**（规则审计） | AI 有没有越权改文件、存数据？ | 审计模块 24 条规则结果 |
 | **任务跑到哪了**（工作状态） | 后台 daemon 和 sub-agent 是活的还是挂了？ | daemon-health.json |
 
 > 前置依赖：需要 `jq`（`brew install jq` / `apt install jq`）。`--full` 追加编排控制图（Org Graph + Work Graph）、FORGE 审查进度、最近文件变更三个扩展面板。FORGE 是 sofagent 项目的内部开发工具链（非对外引擎），企业用户可忽略 FORGE 审查进度面板。
@@ -426,7 +426,7 @@ jobs:
 | 安全联邦 | v1.1.8 | 两台配对设备互查 knowledge/，AES-256-GCM 全链路加密 + sensitivity 双重过滤 | [FDE/GUIDE.md §5.7 数据主权](../FDE/GUIDE.md#57-数据主权审计为什么重要) |
 | Prompt 注入防护 | v1.1.8 | 8 层纵深防御——外部内容包裹 + 脱敏 + 知识可信分级 | [SECURITY.md](../SECURITY.md) |
 | USB 一键烧录 | v1.1.8 | workflow 烧进 U 盘 → 发给员工 → 插上即用，拔掉零残留 | [常驻：长期自跑与持续优化](#常驻长期自跑与持续优化) |
-| A/B 自动调度 | v1.1.9 | daemon 后台跑探索-利用——当前方案攒数据 → 自动切候选方案对比 → 赢家自动 promote | [ARCHITECTURE 编排引擎](./ARCHITECTURE.md) |
+| A/B 自动调度 | v1.1.9 | daemon 后台跑探索-利用——当前方案攒数据 → 自动切候选方案对比 → 赢家自动 promote | [ARCHITECTURE 编排模块](./ARCHITECTURE.md) |
 | 激活链 | v1.2.5-v1.3.0 | FDE 交付物 → 注册 SubAgent → 编排 → HITL+审计自动跑，交付物从静态文件变自运转系统 | [激活链设计](./guides/fde-activation-chain.md) |
 | 运行时审计 | v1.3.0 | wrapToolCall middleware + tool-gate 动态拦截 + 运行时审计日志 | [v1.3.0 开发日志](./changelog/v1.3/v1.3.0.md) |
 | 并行编排 | v1.3.1 | 波次并发 + MergeQueue，多 Agent 并行执行 | [v1.3.1 开发日志](./changelog/v1.3/v1.3.1.md) |
@@ -439,9 +439,9 @@ jobs:
 | Web 工作明细 + 图谱 | v1.4.0 | Dashboard 工作明细四视角 + 图谱栏（业务图谱 + 本体图谱 + MCP 工具视图 + skill 加载链）+ 随 install.sh 装到用户机 | [v1.4.0 开发日志](./changelog/v1.4/v1.4.0.md) |
 | 成本审计 | v1.4.0 | 超支告警 + `cost_query` MCP + COST DecisionKind（WARN-only 不拦截） | [v1.4.0 开发日志](./changelog/v1.4/v1.4.0.md) |
 | DSH/OpenClaw 插件家族 | v1.4.0 | DSH cordis-plugin 9 款 + OpenClaw code-plugin 4 款 + MCP 工具角色分层（默认 34/66）+ DSH 默认启用 | [v1.4.0 开发日志](./changelog/v1.4/v1.4.0.md) |
-| 训练引擎地基 | v1.4.1 | train-job 编排 + `train_submit`（66→67 tools）+ 审计 HMAC 链 + 隔离/指纹/签名/回收/恢复/安全基线八块 | [v1.4.1 开发日志](./changelog/v1.4/v1.4.1.md) |
+| 后训模块地基 | v1.4.1 | train-job 编排 + `train_submit`（66→67 tools）+ 审计 HMAC 链 + 隔离/指纹/签名/回收/恢复/安全基线八块 | [v1.4.1 开发日志](./changelog/v1.4/v1.4.1.md) |
 | 训练数据与评估 + FDE 六引擎 | v1.4.2 | 企业数据→训练集管道 + dataset_version 版本 + eval 闭环 + train env/doctor + dry-run 算力外推 + 训练报告；FDE 六引擎工作台（fde_interview/classify/quantify/derive/distill/deploy，67→76 tools）+ IM 桥远程指挥 | [v1.4.2 开发日志](./changelog/v1.4/v1.4.2.md) |
-| 训练引擎·运行与需求 | v1.4.3 | 训练需求推导+模板库（train analyze/templates）+ GPU 显存队列 + train_status/train_list/train_diagnose 三 MCP（76→79 tools）+ 训练沙箱与设备打包 + 审计聚合 KPI（--stats）+ 反作弊双防线 | [v1.4.3 开发日志](./changelog/v1.4/v1.4.3.md) |
+| 后训模块·运行与需求 | v1.4.3 | 训练需求推导+模板库（train analyze/templates）+ GPU 显存队列 + train_status/train_list/train_diagnose 三 MCP（76→79 tools）+ 训练沙箱与设备打包 + 审计聚合 KPI（--stats）+ 反作弊双防线 | [v1.4.3 开发日志](./changelog/v1.4/v1.4.3.md) |
 
 ### 新功能入口导览（v1.4.2 起三条新产品线——10 分钟上手各条线）
 
@@ -449,8 +449,8 @@ jobs:
 
 | 产品线 | 是什么 | 从哪进 | 前置要求 |
 |------|------|------|------|
-| **训练引擎**（v1.4.1-1.4.3） | 企业异构数据 → 专属小模型：需求推导 → 模板选型 → 数据管道 → 训练 → eval → 部署 | MCP：`train_doctor`（环境体检）→ `fde_interview`（五要素）→ `train_submit`（提交）；CLI：`sofagent-orchestrator train analyze <nodeId> --enterprise <id>`（需求推导）/ `train templates`（模板库一览）；监控：`train_status` / `train_list` / 失败走 `train_diagnose` | GPU 环境（CUDA/显存/框架）——`bash tools/train-env-init.sh` 一键装；基座模型走 model-downloader；反作弊双防线随 install 默认落盘 |
-| **FDE 六引擎**（v1.4.2） | FDE 方法论变成可执行引擎：访谈结构化 → 三问判定 → 量化 ROI → 本体推导 → 三层沉淀 → 组装部署 | MCP：`fde_interview`（先跑——五要素采集，`prompts_only: true` 拿访谈话术）→ `fde_classify` → `fde_quantify` → `fde_derive` → `fde_distill` → `fde_deploy`；产物落 `data/fde/<企业>/` | 无环境硬依赖（纯规则引擎——LLM 可选辅助）；企业标识必填（`enterprise_id`） |
+| **后训模块**（v1.4.1-1.4.3） | 企业异构数据 → 专属小模型：需求推导 → 模板选型 → 数据管道 → 训练 → eval → 部署 | MCP：`train_doctor`（环境体检）→ `fde_interview`（五要素）→ `train_submit`（提交）；CLI：`sofagent-orchestrator train analyze <nodeId> --enterprise <id>`（需求推导）/ `train templates`（模板库一览）；监控：`train_status` / `train_list` / 失败走 `train_diagnose` | GPU 环境（CUDA/显存/框架）——`bash tools/train-env-init.sh` 一键装；基座模型走 model-downloader；反作弊双防线随 install 默认落盘 |
+| **FDE 六引擎**（v1.4.2） | FDE 方法论变成可执行模块：访谈结构化 → 三问判定 → 量化 ROI → 本体推导 → 三层沉淀 → 组装部署 | MCP：`fde_interview`（先跑——五要素采集，`prompts_only: true` 拿访谈话术）→ `fde_classify` → `fde_quantify` → `fde_derive` → `fde_distill` → `fde_deploy`；产物落 `data/fde/<企业>/` | 无环境硬依赖（纯规则引擎——LLM 可选辅助）；企业标识必填（`enterprise_id`） |
 | **IM 桥**（v1.4.2） | IM 群远程指挥 Agent：群里发消息 = 跑任务/查状态/批 HITL | 按 [im-bridge 指南](./guides/im-bridge.md) 配置 IM 机器人 → `sofagent-daemon` 常驻后自动桥接 | IM 平台机器人 token（钉钉/飞书/企微三选一）+ daemon 常驻（`sofagent-daemon start`） |
 
 > 走查口径：每条线「装 → 找到入口 → 进入第一步」应在 10 分钟内完成——入口命令逐条真实存在（本表经 v1.4.3 第九章 onboarding 断层走查对账，断点即修记录见发版检查清单）。
@@ -463,9 +463,9 @@ jobs:
 
 > 知识库不是数据库，是会「长」的资产。完整治理机制见 [FDE/GUIDE.md §5.6 经验怎么沉淀](../FDE/GUIDE.md#56-经验怎么沉淀)。
 
-### 进化引擎（沉淀机制随使用迭代）
+### 进化模块（沉淀机制随使用迭代）
 
-进化引擎 = eval（三维评分：精确匹配 / 语义相似 / 规则合规）+ ab-test（current vs candidate 并行对比，连续胜出 + 非退化守卫才晋升）+ skillopt（复用审计规则做安全审查与集成优化）+ think（基于 diff + 审计结果自动生成反思条目，append-only）。
+进化模块 = eval（三维评分：精确匹配 / 语义相似 / 规则合规）+ ab-test（current vs candidate 并行对比，连续胜出 + 非退化守卫才晋升）+ skillopt（复用审计规则做安全审查与集成优化）+ think（基于 diff + 审计结果自动生成反思条目，append-only）。
 
 > 📖 **多设备同步**：v1.1.0 起支持轻量多设备——经验共享（knowledge/ + think.md）跨设备同步。4 种方案（iCloud / NAS / Dropbox / git submodule）见 [多设备同步指南](./guides/multi-device-sync.md)。
 
@@ -640,7 +640,7 @@ sofagent-audit subagent run fde --mode sustain --task "巡检所有节点"
 | 理解债 | AI 替你写的代码越多，理解鸿沟越大（理解债） | task/logs 只追加不修改，永远可回溯；think.md 每步记录决策日志 |
 | 认知投降 | 最舒服的状态是不再有自己观点 | fde.md 随时加规则覆盖；编排可回滚；审计独立于 Agent |
 
-> 💡 **反认知投降的三道护栏**：fde.md 规则覆盖（保留人类话语权）、编排可回滚（保留人类否决权）、审计引擎独立于 Agent（保留人类验收权）。这不是技术特性，是制度设计——确保人类永远是最终决策者。详见 [ARCHITECTURE 设计原则](./ARCHITECTURE.md#设计原则) 和 [反认知投降](./ARCHITECTURE.md#反认知投降的制度设计)。
+> 💡 **反认知投降的三道护栏**：fde.md 规则覆盖（保留人类话语权）、编排可回滚（保留人类否决权）、审计模块独立于 Agent（保留人类验收权）。这不是技术特性，是制度设计——确保人类永远是最终决策者。详见 [ARCHITECTURE 设计原则](./ARCHITECTURE.md#设计原则) 和 [反认知投降](./ARCHITECTURE.md#反认知投降的制度设计)。
 
 > "Build a Loop, but build it like an engineer who plans to keep being one." — Osmani。Loop 不是造完就不用管的自动化流水线，是工程师持续维护的工程系统。
 
@@ -689,10 +689,10 @@ sofagent 不是孤立的——它构建于以下成熟项目之上，各司其�
 
 | 技术 | 在 sofagent 中的角色 | 引入版本 |
 |------|------|:--:|
-| [LangChain](https://github.com/langchain-ai/langchainjs) + [LangGraph](https://github.com/langchain-ai/langgraphjs) | 编排引擎——状态图、条件路由、HITL、持久化 | v1.0.1 |
+| [LangChain](https://github.com/langchain-ai/langchainjs) + [LangGraph](https://github.com/langchain-ai/langgraphjs) | 编排模块——状态图、条件路由、HITL、持久化 | v1.0.1 |
 | [@langchain/langgraph](https://github.com/langchain-ai/langgraph) | Sub Agent 系统（createReactAgent）——FDE Sub Agent + Audit Sub Agent | v1.0.1（v1.2.0 从 deepagents 迁移） |
 | [Agency Agents](https://github.com/msitarzewski/agency-agents) | 230+ 岗位模板——Sub Agent 角色定义 | v1.0.3 |
-| [微软 SkillOpt](https://github.com/microsoft/SkillOpt) | Skill 自进化引擎——训练→验证→替换 | v1.0.3 |
+| [微软 SkillOpt](https://github.com/microsoft/SkillOpt) | Skill 自进化模块——训练→验证→替换 | v1.0.3 |
 | [OpenFDE](https://open-fde.com) | 行业定位验证——10 步业务流 + 8 维能力模型 | v1.0 |
 | [Palantir Ontology](https://www.palantir.com/platforms/aip/) | 企业世界模型——实体+关系+动作+约束 | v1.0.1-v1.0.5 |
 

@@ -26,13 +26,13 @@ GB/T 48000.3-2026《标准数字化 第3部分:本体建模要求》（2026-01-2
 | 数据属性（Data Properties） | 实体特征字段 | ⚠️ 隐式（节点 frontmatter 散落） | **GAP：未统一抽取** |
 | 公理（Axioms） | 形式化推理约束 | ⚠️ 由审计规则隐式承担 | **GAP：未显式建模** |
 
-> 多数企业本体只做前三项（GB/T 起草说明亦指出此通病）。sofagent 的短板在数据属性与公理——前者随 v1.0.8 企业画像结构化可补，后者是审计引擎的隐式职责（A 系列规则即公理载体），后续在 Ontology 层显式建模可增强可推理性。
+> 多数企业本体只做前三项（GB/T 起草说明亦指出此通病）。sofagent 的短板在数据属性与公理——前者随 v1.0.8 企业画像结构化可补，后者是审计模块的隐式职责（A 系列规则即公理载体），后续在 Ontology 层显式建模可增强可推理性。
 
 ## 客户 workflow 动作模型：Domain / Range / Action Type
 
 > 这套三元约束描述的是**客户业务 workflow 中的动作**（由 FDE 在梳理客户流程时建立，
 > 落在客户项目的 workflow.yml / entities frontmatter），不是 sofagent 自身的动作。
-> sofagent 审计引擎按此模型校验动作声明是否合规。
+> sofagent 审计模块按此模型校验动作声明是否合规。
 
 `actions.yml` 每个动作声明须含三元约束：
 
@@ -48,7 +48,7 @@ GB/T 48000.3-2026《标准数字化 第3部分:本体建模要求》（2026-01-2
 | 必须阻断 | 越界/高危（删库/外部写） | 审计 FAIL + 阻断 |
 
 > Action Type 是动作风险分级（静态分类，由 FDE 建立），loop-check/evaluate/exit 是执行策略
-> （动态闭环）——二者正交。sofagent 审计引擎先按 Action Type 定级，再走对应 loop 出口。
+> （动态闭环）——二者正交。sofagent 审计模块先按 Action Type 定级，再走对应 loop 出口。
 
 > 注意：Domain/Range 属于 **Ontology 统一层**（主体-动作-对象三元约束），不放入 `entry-gate.md`——entry-gate 管「理解成本 / 能力注册」，权限判定维度不同。企业侧业务本体的 Domain/Range（如 `purchase(客户→商品)`）由 FDE 在 §5 构建。
 
