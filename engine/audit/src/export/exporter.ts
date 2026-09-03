@@ -1,6 +1,11 @@
 // ============================================================
 // exporter.ts · v1.4.4 第一章 · 规则 + 样本序列化导出
 //
+// 训练语料导出三件套全景（跨包互链）：
+//   一、规则语料（本包：exporter + rule-schema + reward-mapping）
+//   二、样本 + 方法论（core 包：export/sample-aggregator + methodology）
+//   三、双入口（mcp 包 corpus_export tool / audit 包 `corpus export` CLI）
+//
 // 职责：
 // 1. 规则语料导出（rule-schema.ts 的格式 → JSON/YAML 双格式落盘）
 // 2. 版本化（schemaVersion + engineVersion 双标记）

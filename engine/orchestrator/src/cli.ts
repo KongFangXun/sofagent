@@ -51,6 +51,9 @@ async function main() {
   console.log('                                   （复用 fde_interview 五要素产出，不重复采集）');
   console.log('  train templates [scenario] [--data-dir <dir>]');
   console.log('                                   v1.4.3 四章: 场景模板库（四场景×QLoRA/SFT/DPO + RL 配方）');
+  console.log('  train compare --data <dir> --bases <m1,m2> --algorithm sft|dpo|grpo');
+  console.log('                                   v1.4.4 交付④: 多基座对比训练——同数据并行提交+ROI 排序');
+  console.log('                                   --report-only 训练完成后生成对比报告');
     process.exit(0);
   }
 
@@ -426,7 +429,7 @@ async function main() {
       // v1.4.1 块七：train 子命令族（doctor 本波实装；cleanup/reproduce/verify 骨架待接线）
       const trainAction = args[1];
       if (!trainAction) {
-        console.error('❌ train 需要子动作: doctor | cleanup | reproduce | verify | analyze | templates');
+        console.error('❌ train 需要子动作: doctor | cleanup | reproduce | verify | analyze | compare | templates');
         process.exit(1);
       }
       if (trainAction === 'doctor') {
@@ -751,7 +754,89 @@ async function main() {
         break;
       }
 
-      console.error(`❌ 不支持的 train 子动作 "${trainAction}"（可用: doctor | cleanup | reproduce | verify | analyze | templates）`);
+      // ── v1.4.4 交付④：train compare（多基座对比训练——提交 + 回填 + 报告）──
+      if (trainAction === 'compare') {
+        // train compare --data <数据集路径> --bases <m1,m2,...> --algorithm sft|dpo|grpo
+        //   [--enterprise <id>] [--gpu-mib <预算>] [--report-only] [--data-dir <dir>]
+        const val = (flag: string): string | undefined => {
+          const i = args.indexOf(flag);
+          return i !== -1 && args[i + 1] ? args[i + 1] : undefined;
+        };
+        const dataPath = val('--data');
+        const basesRaw = val('--bases');
+        const algorithm = val('--algorithm');
+        const enterpriseId = val('--enterprise');
+        const gpuMib = val('--gpu-mib');
+        const reportOnly = args.includes('--report-only');
+        if (!dataPath || !basesRaw || !algorithm) {
+          console.error('❌ 用法: train compare --data <数据集路径> --bases <m1,m2,...> --algorithm sft|dpo|grpo');
+          console.error('        [--enterprise <id>] [--gpu-mib <显存预算>] [--report-only]');
+          console.error('   同一数据多基座并行提交 → 训练完成后 ROI 排序对比报告');
+          process.exit(1);
+        }
+        if (algorithm !== 'sft' && algorithm !== 'dpo' && algorithm !== 'grpo') {
+          console.error(`❌ algorithm 非法：${algorithm}（可选 sft | dpo | grpo）`);
+          process.exit(1);
+        }
+        const { loadEnvConfig } = await import('@sofagent/core');
+        const dataDir = val('--data-dir') ?? loadEnvConfig().dataDir;
+        const ent = enterpriseId ?? 'default';
+        const bases = basesRaw.split(',').map((s) => s.trim()).filter(Boolean).map((baseModel) => ({ baseModel }));
+
+        const { submitCompareJobs, refreshCompareResults, buildCompareReport } = await import('./train/train-compare');
+        const { computeDatasetHash } = await import('./train/train-fingerprint');
+        type CompareBaseResult = import('./train/train-compare').CompareBaseResult;
+
+        if (reportOnly) {
+          // 报告模式：从 job 记录回填（jobId 规约 = compare-<hash8>-<slug>）+ 直接汇总
+          const datasetHash = computeDatasetHash(dataPath);
+          const { loadTrainJobRecord } = await import('./train/train-job');
+          const results = bases.map((b): CompareBaseResult => {
+            const jobId = `compare-${datasetHash.slice(0, 8)}-${b.baseModel.replace(/[^a-zA-Z0-9-_.]/g, '-').toLowerCase()}`;
+            const rec = loadTrainJobRecord(dataDir, ent, jobId);
+            return {
+              baseModel: b.baseModel,
+              trainJobId: jobId,
+              // 记录缺席按 failed 呈现（诚实口径：没有产出 = 该基座没跑成）
+              status: rec?.status ?? 'failed',
+              evalReport: null,
+              usage: rec ? { ...rec.usage } : { elapsedMinutes: 0, steps: 0, cost: 0 },
+            };
+          });
+          const report = buildCompareReport({ results, datasetHash });
+          console.log(`📊 多基座对比报告（${report.compareId}，数据 hash ${datasetHash.slice(0, 12)}…）`);
+          for (const r of report.ranking) {
+            console.log(`   第${r.rank}名  ${r.summary}`);
+          }
+          const unfinished = results.filter((r) => r.status !== 'completed');
+          if (unfinished.length > 0) {
+            console.log(`⚠️  ${unfinished.length} 基座未到终态（${unfinished.map((r) => `${r.baseModel}:${r.status}`).join(', ')}）——不参与 ROI 排序`);
+          }
+          break;
+        }
+
+        // 提交模式：多基座并行提交（GPU 预算内）
+        const submitted = submitCompareJobs({
+          dataDir,
+          enterpriseId: ent,
+          dataPath,
+          bases,
+          algorithm,
+          ...(gpuMib ? { gpuTotalMiB: Number.parseInt(gpuMib, 10) || 0 } : {}),
+        });
+        if (!submitted.ok) {
+          console.error(`❌ 对比提交失败：${submitted.issues.join('；')}`);
+          process.exit(1);
+        }
+        const datasetHash = computeDatasetHash(dataPath);
+        refreshCompareResults({ results: submitted.jobs, dataDir, enterpriseId: ent });
+        console.log(`✅ 已提交 ${submitted.jobs.length} 基座（${submitted.jobs.map((j) => j.baseModel).join(' / ')}）`);
+        console.log(`   GPU 队列：${submitted.gpuSnapshot.mode} 模式，占用 ${submitted.gpuSnapshot.allocatedMiB} MiB / 预算 ${submitted.gpuSnapshot.totalBudgetMiB} MiB`);
+        console.log('   全部基座完成后生成报告：train compare --report-only --data <同路径> --bases <同列表> --algorithm <同算法>');
+        break;
+      }
+
+      console.error(`❌ 不支持的 train 子动作 "${trainAction}"（可用: doctor | cleanup | reproduce | verify | analyze | compare | templates）`);
       process.exit(1);
     }
     default:

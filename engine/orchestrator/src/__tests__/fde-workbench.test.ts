@@ -308,7 +308,7 @@ describe('fde-quantify · 引擎三 quantify', () => {
     const direct = computeQuantification({ annualSalary: 200_000, takeoverRatio: 0.5, aiAnnualCost: 10_000 });
     expect(f.ranked[0].metrics.annualSaving.value).toBe(direct.annualSaving.value); // 100000
     expect(f.ranked[0].metrics.annualSaving.value).toBe(100_000);
-    expect(f.ranked[0].roiScore).toBeCloseTo(100_000 / 5_001, 5); // 分母 invest+1
+    expect(f.ranked[0].roiScore).toBeCloseTo(100_000 / 6_000, 5); // 分母 invest+1000（千元地板防小额失真——fresh-eyes 视角8-1）
     // totals 汇总
     expect(f.totals.totalAnnualSaving).toBe(100_000 + 20_000);
     expect(f.totals.totalOneTimeInvestment).toBe(55_000);

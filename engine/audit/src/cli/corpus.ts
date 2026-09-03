@@ -35,7 +35,12 @@ export function parseCorpusArgs(argv: string[]): CorpusArgs {
     if (a === '--scope' && argv[i + 1]) {
       i++;
       const v = argv[i] as string;
-      if (v === 'default' || v === 'extended' || v === 'all') args.scope = v;
+      if (v === 'default' || v === 'extended' || v === 'all') {
+        args.scope = v;
+      } else {
+        console.error(`❌ --scope 非法值：${v}（可选 default | extended | all）——不静默回落，防打错字扩大导出面`);
+        process.exit(1);
+      }
     } else if (a === '--out' && argv[i + 1]) {
       i++;
       args.outDir = argv[i] as string;

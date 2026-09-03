@@ -200,7 +200,7 @@ describe('ROI 排序', () => {
 // ════════════════════════════════════════
 
 describe('GPU 队列', () => {
-  it('budget 模式：小预算下部分任务排队（不 OOM）', () => {
+  it('budget 模式：单任务超总预算 → 显式拒绝（不提交不 OOM）', () => {
     const r = submitCompareJobs({
       dataDir, enterpriseId: 'battery-factory', dataPath,
       bases: [
@@ -208,12 +208,31 @@ describe('GPU 队列', () => {
         { baseModel: 'Qwen/Qwen3-14B' },
       ],
       algorithm: 'sft',
-      gpuTotalMiB: 9 * 1024, // 9 GiB——8B 全参约 50GiB → 两个都放不下
+      gpuTotalMiB: 9 * 1024, // 9 GiB——8B 全参约 50GiB → 单任务都放不下
     });
+    // 修复语义（fresh-eyes 视角7-2）：acquire 先于 submit，单任务自身超总预算即拒绝
+    // （排到天荒地老也进不去）；「被占排队」是 pump 合法语义不拒。旧静默放行行为已废弃
+    expect(r.ok).toBe(false);
+    if (r.ok) return;
+    expect(r.issues[0]).toContain('GPU 显存预算不足');
+    expect(r.issues[0]).toContain('永远排不进');
+  });
+
+  it('budget 模式：预算够第一任务、第二排队（快照如实呈现）', () => {
+    const r = submitCompareJobs({
+      dataDir, enterpriseId: 'battery-factory', dataPath,
+      bases: [
+        { baseModel: 'tiny-0.5B' },  // 估算 0.5*6+2=5 GiB：第一个放得下
+        { baseModel: 'Qwen/Qwen3-8B' }, // 估算 50 GiB：5+50=55 > 54 预算 → 排队
+      ],
+      algorithm: 'sft',
+      gpuTotalMiB: 54 * 1024, // 54 GiB
+    });
+    // 小预算并发语义：放得下的先放（running 1），放不下的排队（queued 1）
     expect(r.ok).toBe(true);
     if (!r.ok) return;
-    // 串行/budget：两任务显存均超预算 → running ≤ 1（第一个占位后第二个排队）
-    expect(r.gpuSnapshot.queuedCount + r.gpuSnapshot.runningCount).toBe(2);
+    expect(r.gpuSnapshot.runningCount).toBe(1);
+    expect(r.gpuSnapshot.queuedCount).toBe(1);
     expect(r.gpuSnapshot.mode).toBe('budget');
   });
 

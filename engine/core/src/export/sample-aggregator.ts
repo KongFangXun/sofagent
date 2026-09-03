@@ -28,8 +28,10 @@ export interface AggregatedSample {
   origin: string;
   /** 样本标签（PASS/FAIL/HITL/decision/trace——按源形态） */
   label: string;
-  /** ruleId（audit 类源有） */
+  /** ruleId（audit 类源有——语义固定为审计规则编号 A1/E2…，不挪作他用） */
   ruleId?: string;
+  /** 企业标识（fde-session 人工基准源有——溯源用，不占 ruleId 语义位） */
+  enterpriseId?: string;
   /** 严重度（audit 类源有） */
   severity?: string;
   /** token 数（llm-calls/evaluation 源有） */
@@ -122,7 +124,6 @@ function extractLlmCalls(dataDir: string, cfg: RedactRulesConfig): AggregatedSam
 
 function extractEvaluationLogs(dataDir: string, cfg: RedactRulesConfig): AggregatedSample[] {
   const out: AggregatedSample[] = [];
-  const benchRoot = join(dataDir, 'benchmarks');
   // evaluation-log 在 data/<project>/benchmarks/<benchmark_id>/ 下——两级扫描
   const projectsRoot = dataDir;
   if (!existsSync(projectsRoot)) return out;
@@ -148,7 +149,6 @@ function extractEvaluationLogs(dataDir: string, cfg: RedactRulesConfig): Aggrega
       }
     }
   }
-  void benchRoot;
   return out;
 }
 
@@ -195,7 +195,7 @@ function extractFdeSessions(dataDir: string, cfg: RedactRulesConfig): Aggregated
       origin: `fde/sessions/${sid}/`,
       // 人工基准标记（changelog：FDE 梳理 = ground truth）
       label: 'human-fde',
-      ...(meta && typeof meta.enterpriseId === 'string' ? { ruleId: meta.enterpriseId } : {}),
+      ...(meta && typeof meta.enterpriseId === 'string' ? { enterpriseId: meta.enterpriseId } : {}),
       textPattern: redact(toPattern(ctx, 2000), cfg).text,
     });
   }
