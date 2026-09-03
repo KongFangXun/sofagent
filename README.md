@@ -220,6 +220,7 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # 加载安全规�
 | **全局索引**（所有文档一个入口） | [WIKI](./docs/WIKI.md) |
 | 怎么装、怎么用、常见问题 | [HANDBOOK](./docs/HANDBOOK.md) |
 | 架构设计（约束层「对内的技术名字」 · 注入链 · 进化机制 · 24 条规则） | [ARCHITECTURE](./docs/ARCHITECTURE.md) |
+| 接口总览（六大接口面 + 80 MCP tools 清单） | [API](./docs/API.md) |
 | 设计哲学 | [PHILOSOPHY](./docs/PHILOSOPHY.md) |
 | 行业印证与生态定位（与现有工具的差异） | [VALIDATION](./docs/VALIDATION.md) |
 | 版本路线图 | [ROADMAP](./docs/ROADMAP.md) |
@@ -228,7 +229,7 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # 加载安全规�
 | 安全声明 · 已知局限 | [SECURITY](./SECURITY.md) · [LIMITATIONS](./docs/LIMITATIONS.md) |
 | 贡献指南 | [CONTRIBUTING](./CONTRIBUTING.md) |
 
-> 🧪 **工程可信度**：3744 测试 / 13 引擎包 + 13 插件（引擎包 = 12 主包 + 1 load-chain；插件 = 9 DSH + 4 OpenClaw，插件测试经根 `npm test --workspaces` 统一执行）· 24 条审计规则 · fresh-eyes 独立审查持续运行（测试数以 `tools/check/test-count.sh` 判定为准，环境注意事项见 [docs/guides/review-system.md](./docs/guides/review-system.md)。性能数据为单机参考值，跨工具横评排期 v1.4.x 与 Benchmark 集成）。
+> 🧪 **工程可信度**：3753 测试 / 13 引擎包 + 13 插件（引擎包 = 12 主包 + 1 load-chain；插件 = 9 DSH + 4 OpenClaw，插件测试经根 `npm test --workspaces` 统一执行）· 24 条审计规则 · fresh-eyes 独立审查持续运行（测试数以 `tools/check/test-count.sh` 判定为准，环境注意事项见 [docs/guides/review-system.md](./docs/guides/review-system.md)。性能数据为单机参考值，跨工具横评排期 v1.4.x 与 Benchmark 集成）。
 
 ---
 

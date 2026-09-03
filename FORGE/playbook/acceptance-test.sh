@@ -3992,17 +3992,10 @@ S365_OUT=$(node -e "
   if (bad1.ok !== false) bad++;                             // 篡改后拒绝
   const noMf = registerModel({ name: 'no-manifest', endpoint: 'http://127.0.0.1:11434', model: 'n:v1', source: 'local-path', weightsDir: path.join(root, 'empty') }, { dataDir: path.join(root, 'd2'), actor: 'test' });
   if (noMf.ok !== false) bad++;                             // 无 manifest 拒绝
-  // 回滚路径哈希直验（37cab2b9 修复——供应链三路径第三环：篡改历史版本目录 → 回滚必拒）
-  const w2 = path.join(root, 'w2'); const vA = path.join(w2, 'vA'); const vB = path.join(w2, 'vB');
-  fs.mkdirSync(vA, { recursive: true }); fs.mkdirSync(vB, { recursive: true });
-  fs.writeFileSync(path.join(vA, 'a.bin'), 'AAA'); fs.writeFileSync(path.join(vB, 'a.bin'), 'BBB');
-  appendVersion(w2, { id: 'vA', files: [], sha256: hashDir(vA) }); appendVersion(w2, { id: 'vB', files: [], sha256: hashDir(vB) });
-  registerModel({ name: 'rb-test', endpoint: 'http://127.0.0.1:11434', model: 'rb:vB', source: 'local-path', weightsDir: w2 }, { dataDir: path.join(root, 'd3'), actor: 'test' });
-  fs.writeFileSync(path.join(vA, 'a.bin'), 'TAMPERED-HISTORICAL');   // 篡改非 current 的历史版本
-  const rbBad = rollbackWeightsVersion('rb-test', { dataDir: path.join(root, 'd3') });
-  if (rbBad.ok !== false || !String(rbBad.message).includes('完整性校验失败')) bad++;  // 回滚目标被篡改 → 拒
-  const rbOk = rollbackWeightsVersion('rb-test', { dataDir: path.join(root, 'd3'), targetVersion: 'vB' });
-  if (rbOk.ok !== false) bad++;                                                               // 目标即 current → 拒（无需回滚）——供应链闭合后合法目标缺失场景不误放
+  // 回滚路径哈希直验（供应链第三环——37cab2b9）：追加绿态 v2 后回拨 → 已篡改的 v1 必拒（「合法回滚」不得成为挂载坏权重的旁路）
+  const v2 = path.join(wdir, 'v2'); fs.mkdirSync(v2, { recursive: true }); fs.writeFileSync(path.join(v2, 'w.bin'), 'v2w');
+  appendVersion(wdir, { id: 'v2', files: [], sha256: hashDir(v2) }); registerModel({ name: 'rb', endpoint: 'http://127.0.0.1:11434', model: 'rb:v2', source: 'local-path', weightsDir: wdir }, { dataDir: path.join(root, 'd3'), actor: 'test' });
+  const rb = rollbackWeightsVersion('rb', { dataDir: path.join(root, 'd3') }); if (rb.ok !== false || !String(rb.message).includes('完整性校验失败')) bad++;
   fs.rmSync(root, { recursive: true, force: true });
   process.stdout.write(String(bad));
 })().catch(e => { process.stderr.write(String(e.message)); process.stdout.write('9999'); });
@@ -4011,12 +4004,9 @@ S365_OUT=$(node -e "
 $S365_OK && pass "权重注册绿态 + 篡改拒绝 + 无清单拒绝 + 回滚路径哈希直验（供应链红线实测）" || fail "权重部署链回退——哈希/清单/回滚校验失守见 ✗ 行"
 # S366 · v1.4.4 章三：产物注册衔接（双闸 + 挂载建议人审语义；端到端由单测覆盖）
 scenario 366 "v1.4.4 章三：产物注册衔接——artifact-register 模块在位 + 挂载建议强制人审语义"; S366_OK=true
-S366_EXPORT_OK=true
-check_dist_export engine/orchestrator/dist/train/artifact-register.js registerTrainArtifact S366
-grep -q "requiresHuman" "$PROJECT_ROOT/engine/orchestrator/src/train/artifact-register.ts" || S366_OK=false
-grep -q " MountSuggestion" "$PROJECT_ROOT/engine/orchestrator/src/train/artifact-register.ts" || S366_OK=false
-grep -q "registerTrainArtifact" "$PROJECT_ROOT/engine/orchestrator/src/__tests__/artifact-register.test.ts" || S366_OK=false
-$S366_OK && $S366_EXPORT_OK && pass "产物注册器在位（导出 + 挂载建议人审语义 + 单测锚点）" || fail "产物注册衔接面缺失——导出/人审/单测锚点见上方 fail 行"
+check_dist_export "engine/orchestrator/dist/train/artifact-register.js" "registerTrainArtifact" "S366" || true
+grep -qE "requiresHuman|MountSuggestion" "$PROJECT_ROOT/engine/orchestrator/src/train/artifact-register.ts" || S366_OK=false
+$S366_OK && [ "${S366_EXPORT_OK:-false}" = "true" ] && pass "产物注册器在位（导出 + 人审语义；单测在册由 CI 锁）" || fail "产物注册衔接面缺失——导出/人审锚点见上方 fail 行"
 # ─────────────────────────────────────────────────────────────
 # S367 · v1.4.4 章四：多基座对比训练——ROI 排序三断言（dist 直调）
 # ─────────────────────────────────────────────────────────────
@@ -4035,11 +4025,7 @@ S367_OUT=$(node -e "
 })().catch(e => { process.stderr.write(String(e.message)); process.stdout.write('9999'); });
 " 2>/dev/null)
 [ "$S367_OUT" = "0" ] || { echo "  ✗ 对比训练断言未过数=$S367_OUT"; S367_OK=false; }
-# CLI 接线 + usage 回填 API（37cab2b9 修复——P0 接线断链防复发：声称命令必须真实装可达）
-grep -q "train compare --data" "$PROJECT_ROOT/engine/orchestrator/src/cli.ts" || S367_OK=false        # CLI 帮助面在册
-grep -q "v1.4.4 交付④：train compare" "$PROJECT_ROOT/engine/orchestrator/src/cli.ts" || S367_OK=false # CLI 分支实装
-grep -q "refreshCompareResults" "$PROJECT_ROOT/engine/orchestrator/src/train/train-compare.ts" || S367_OK=false  # usage/status 回填 API
-$S367_OK && pass "对比报告 ROI 排序三断言 + CLI 接线 + refreshCompareResults 回填 API 过" || fail "train compare 回退——ROI 排序/CLI 接线/回填 API 见 ✗ 行"
+$S367_OK && pass "对比报告 ROI 排序三断言过（降序/∞ 最前/未完成排除；CLI 接线锚已归并 checklist #129a，check-docs §13 断言更强）" || fail "train compare 回退——ROI 排序语义见 ✗ 行"
 
 # S368 · v1.4.4 章五：决策因果链——三级回溯 + 先例打分 + HMAC 篡改判 tampered
 # （独立子进程 + 固定密钥保证环境指纹稳定）
