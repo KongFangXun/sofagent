@@ -2,7 +2,7 @@
 
 > **sofagent 是一套 FDE 能力——装进你的 Agent（DSH / OpenClaw / WorkBuddy / Codex / Claude Code）后，进场梳理业务流、部署 AI 节点、离场后 7×24 自己跑。** 装完之后，你在自己的 Agent 里说一句话，它就帮你干活——审计每次变更、沉淀每次经验，沉淀机制随使用迭代。下面从装到用到查问题，全流程走一遍。
 >
-> v1.4.4 · 2026-09-02（UTC）· 孔放勋
+> v1.4.4 · 2026-09-03（UTC）· 孔放勋
 
 <img src="assets/sofagent.png" alt="sofagent" width="160" />
 
@@ -69,8 +69,8 @@
 - **🔍 引擎纵深**：官方 AST 规则引擎（`sofagent-ruleset-ast`，ASI01 目标劫持 + ASI04 供应链 SBOM 语义检测）；meta-harness 多 harness 统一编排（策略强制下沉基础设施层，跨会话协作）；AI 工作明细数据层（`worklog` 按 Agent/Workflow/周 + 人工介入，`worklog_query` MCP）；API 分级治理（`@public`/`@internal` 1439 符号 + CI 门禁）；MLflow agent 评估（13 指标 + LLM-as-Judge）；Agentic Browser（4 工具 + 视觉降级）；跨平台适配器（Cursor/Codex/Gemini CLI）；ATTRIBUTION 归因引擎 + Dream Sandbox 沙盒审计（强制人审 merge + 路径穿越消毒）；>5MB diff 缝隙修复。明细见 [开发日志](./changelog/v1.3/v1.3.9.md)。
 - **🎓 训练数据与评估**（v1.4.2）：企业异构数据（CSV/Excel/DB/API）经管道进训练集（质量闸门 + 训练入口脱敏）；dataset_version 版本台账（指纹冻结 + 续跑版本锁）；训练中 eval 闭环（阈值外部化 continue/stop）；train env/doctor 环境体检；dry-run 显存估算 + ScaleRL 算力外推；训练报告（客户可读 Markdown + 量化四字段 ROI）。详见 [v1.4.2 开发日志](./changelog/v1.4/v1.4.2.md)。
 - **🧩 FDE 六引擎工作台**（v1.4.2）：fde_interview（访谈结构化）/ fde_classify（三问判定）/ fde_quantify（量化+ROI）/ fde_derive（本体推导）/ fde_distill（三层沉淀）/ fde_deploy（组装部署）——FDE 方法论从文档变成可执行模块（MCP tool），产物落 `data/fde/` 带独立审计留痕；IM 桥远程指挥（dsh-im）让 FDE 在无头设备上也能干活。
-- **📡 训练运行与需求**（v1.4.3）：train_status/train_list 查训练进度与历史 + GPU 显存预算队列；train_diagnose 七类失败诊断（每类附修复建议）；训练沙箱（进程隔离/离线可训/设备打包）；train analyze 需求推导 + 模板库（QLoRA/SFT/DPO + RL 配方 grpo/dapo/cispo）；后训练 workflow 模板（七节点 + 三 HITL）。详见 [v1.4.3 开发日志](./changelog/v1.4/v1.4.3.md)。
-- **📊 审计聚合指标 + 反作弊基线**（v1.4.3）：`sofagent-audit --stats` 输出安全边界触发率/阻断率/高危规则 Top5（`--json` 机器可读）——约束层价值变成可汇报的治理 KPI；训练环境反作弊双防线默认化（剥 `.git` 断历史回溯 + 网络白名单默认拦截）。
+- **📡 训练信号与部署闭环**（v1.4.4）：`corpus_export` 语料导出三件套（规则/FDE 方法论/带标签样本，27 编号位 + reward 骨架 + 脱敏聚合）；企业专属模型本地权重部署（`model_register source: 'local-path'` + sha256 篡改拒绝 + rollback-weights 版本回滚）；训练产物→注册自动衔接（train done + eval pass → model_register）；`train compare` 多基座 ROI 排序；决策因果链与先例检索（`causedBy` 因果边）；CI 供应链全 SHA 固定 + dashboard 完全离线。详见 [v1.4.4 开发日志](./changelog/v1.4/v1.4.4.md)。
+- **📚 五能力叙事定稿**（v1.4.4）：注入 · 审计 · 回溯 · 沉淀 · 进化——五词定谳全站落位（第五能力英文 Distill），「本体结构」全站改称「本体数据」（ontology）。
 
 > 📌 各版本演进明细见 [CHANGELOG](../CHANGELOG.md)（能力已并入当前版本，不逐版列举）。
 
@@ -442,6 +442,7 @@ jobs:
 | 后训模块地基 | v1.4.1 | train-job 编排 + `train_submit`（66→67 tools）+ 审计 HMAC 链 + 隔离/指纹/签名/回收/恢复/安全基线八块 | [v1.4.1 开发日志](./changelog/v1.4/v1.4.1.md) |
 | 训练数据与评估 + FDE 六引擎 | v1.4.2 | 企业数据→训练集管道 + dataset_version 版本 + eval 闭环 + train env/doctor + dry-run 算力外推 + 训练报告；FDE 六引擎工作台（fde_interview/classify/quantify/derive/distill/deploy，67→76 tools）+ IM 桥远程指挥 | [v1.4.2 开发日志](./changelog/v1.4/v1.4.2.md) |
 | 后训模块·运行与需求 | v1.4.3 | 训练需求推导+模板库（train analyze/templates）+ GPU 显存队列 + train_status/train_list/train_diagnose 三 MCP（76→79 tools）+ 训练沙箱与设备打包 + 审计聚合 KPI（--stats）+ 反作弊双防线 | [v1.4.3 开发日志](./changelog/v1.4/v1.4.3.md) |
+| 后训模块·信号与部署闭环 | v1.4.4 | 训练语料导出三件套（`corpus_export`，79→80 tools）+ 本地权重部署（manifest 清单 + sha256 篡改拒绝 + rollback-weights）+ 训练产物→注册自动衔接 + 多基座对比（train compare ROI 排序）+ 决策因果链与先例检索 + CI 供应链全 SHA 固定 + 五能力叙事定稿 | [v1.4.4 开发日志](./changelog/v1.4/v1.4.4.md) |
 
 ### 新功能入口导览（v1.4.2 起三条新产品线——10 分钟上手各条线）
 

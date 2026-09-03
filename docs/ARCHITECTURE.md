@@ -3,7 +3,7 @@
 > 设计决策记录——从为什么存在、约束层五种能力如何协作，到每个关键决策的工程理由。
 >
 > **产品定位锚定**：本架构服务的产品 = **FDE Harness 层**（sofagent）——不造 Agent，嵌在成熟 Agent（执行体：DSH / OpenClaw / WorkBuddy）与模型层（智力源：通用大模型 + 专属小模型 / 后训练模型）之间做治理：对执行体约束（plugin + skill + MCP + CLI + dashboard 五种形态分发），对智力源治理（注册 / 灰度 / 训练 / 部署全留痕）（产品叙事见 [WIKI §二](./WIKI.md#二产品叙事sofagent-是-fde-harness-层不造-agent嵌在-agent-与模型之间做治理)）。
-> v1.4.4 · 2026-09-02（UTC）
+> v1.4.4 · 2026-09-03（UTC）
 
 <img src="assets/sofagent.png" alt="sofagent" width="160" />
 

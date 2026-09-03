@@ -63,9 +63,9 @@ sofagent 不造 Agent——执行能力交给成熟宿主（模型 + 工具 + �
 
 > 🔄 **自举**：sofagent 给自己做的第一份 FDE，就是 sofagent 自己——项目本身就是一条完整的 FDE 业务流（梳理 → 构建 → 部署 → 离场），这个开源仓库就是那份交付物。
 
-## v1.4.3：训练运行与需求 + 审计聚合指标
+## v1.4.4：训练信号与部署闭环
 
-🚀 让训练**跑得动、找得到问题、出得了交付**——`train_status`/`train_list` 进度查询 + GPU 显存预算队列（并发不 OOM）· `train_diagnose` 七类失败诊断（OOM/数据/发散/框架/环境/重复坍塌/精度异常，每类附修复建议）· 训练沙箱（进程隔离 + 离线可训 + 设备打包）· `train analyze` 需求推导 + 模板库（QLoRA/SFT/DPO + RL 配方 grpo/dapo/cispo 含 ScaleRL 四技巧 + MoE expert 防护）· 后训练 workflow 模板（七节点 DAG + 三 HITL）；`sofagent-audit --stats` 审计聚合指标（安全边界触发率/阻断率——约束层价值变成可汇报的治理 KPI）· 训练反作弊基线默认化（reward hacking 四形态双防线）· doctor 补 Ontology 完整性检查。（版本时点数字：MCP 76→79 tools、测试 3349→3619，见开发日志——当前口径以[核心特性](#核心特性)为准。）完整内容见[开发日志](./docs/changelog/v1.4/v1.4.3.md) · 更早版本见 [CHANGELOG](./CHANGELOG.md)。
+🚀 让训练**信号出得来、部署落得下**——`corpus_export` 训练语料导出三件套（规则/FDE 方法论/带标签样本，27 编号位零遗漏 + reward 骨架 + 脱敏聚合）· `model_register source: 'local-path'` 企业专属模型本地权重部署（manifest 清单 + sha256 篡改拒绝 + `rollback-weights` 版本回滚）· 训练产物→注册自动衔接（train done + eval pass → model_register，双层幂等）· `train compare` 多基座对比训练（ROI 排序，选型不靠拍脑袋）· 决策因果链（`causedBy` 因果边 + 先例检索）· CI 供应链全 SHA 固定 + dashboard 完全离线 · 五能力叙事定稿（注入·审计·回溯·沉淀·进化）。（版本时点数字：MCP 79→80 tools、测试 3619→3753，见开发日志——当前口径以[核心特性](#核心特性)为准。）完整内容见[开发日志](./docs/changelog/v1.4/v1.4.4.md) · 更早版本见 [CHANGELOG](./CHANGELOG.md)。
 
 ## 多平台挂载
 
