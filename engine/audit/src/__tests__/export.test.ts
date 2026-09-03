@@ -9,7 +9,7 @@
 // 6. 五源样本聚合（合成数据源 + 白名单字段）
 // 7. HMAC 签名 + 导出审计事件
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { mkdtempSync, rmSync, writeFileSync, mkdirSync, readFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join, dirname } from 'path';
@@ -343,6 +343,12 @@ describe('五源样本聚合（sample-aggregator）', () => {
     // 人工基准标记（fde-session → human-fde）
     expect(result.humanBaselineCount).toBe(1);
     expect(result.samples.find((s) => s.source === 'fde-session')!.label).toBe('human-fde');
+    // 字段语义正名（fresh-eyes 视角13-1 修复行为锁）：enterpriseId 走专有
+    // 字段，不塞 ruleId（ruleId 语义固定为审计规则编号——下游按 ruleId
+    // 聚合/过滤不得混入企业标识键）
+    const fde = result.samples.find((s) => s.source === 'fde-session')!;
+    expect(fde.enterpriseId).toBe('ent-001');
+    expect(fde.ruleId).toBeUndefined();
 
     // 脱敏贯通：企业专名 0 命中（验收红线）
     expect(result.redactionCheck.clean).toBe(true);
@@ -429,5 +435,32 @@ describe('导出落盘与签名', () => {
     const r = exportRuleCorpus({ dryRun: true });
     expect(r.files).toEqual([]);
     expect(r.body.counts.totalSlots).toBe(27);
+  });
+});
+
+describe('CLI 参数校验（parseCorpusArgs）', () => {
+  it('test_parseCorpusArgs_非法scope显式报错退出（不静默回落all）', async () => {
+    // fresh-eyes 视角4-1 修复行为锁：--scope defaults（复数打错）此前静默
+    // 按 all 导出 27 编号位（比预期多 3 条占位）——非法值必须显式报错退出
+    const { parseCorpusArgs } = await import('../cli/corpus');
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation((() => undefined) as never);
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    try {
+      const args = parseCorpusArgs(['corpus', 'export', '--scope', 'defaults']);
+      // process.exit 被 mock 后代码继续执行——但 scope 绝不能被污染为非法值
+      expect(args.scope === 'defaults').toBe(false);
+      expect(exitSpy).toHaveBeenCalledWith(1); // 显式退出码 1（不是静默回落）
+      expect(String(errSpy.mock.calls[0]?.[0] ?? '')).toContain('非法值');
+    } finally {
+      exitSpy.mockRestore();
+      errSpy.mockRestore();
+    }
+  });
+
+  it('test_parseCorpusArgs_合法scope三值全过', async () => {
+    const { parseCorpusArgs } = await import('../cli/corpus');
+    for (const v of ['default', 'extended', 'all']) {
+      expect(parseCorpusArgs(['corpus', 'export', '--scope', v]).scope).toBe(v);
+    }
   });
 });

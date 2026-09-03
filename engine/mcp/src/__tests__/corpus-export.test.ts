@@ -207,4 +207,24 @@ describe('MCP corpus_export — 训练语料导出三件套（协议面）', () 
     expect(d.ok).toBe(true);
     expect(d.rules.counts.totalSlots).toBe(27);
   });
+
+  it('audit 包缺席降级分支：auditEvent 置 null（源码契约锁——createRequire 绕过 mock，行为面归 e2e）', async () => {
+    // fresh-eyes 视角9-1 修复行为锁：降级分支曾返回字段形态齐全的伪
+    // auditEvent——机器消费方无法区分「降级占位」与「真实事件记录」。
+    // corpusExport 的 audit 包解析走 createRequire(__filename)（绕过 vitest
+    // mock——doMock 无法触达降级分支，这是延迟 require 设计的固有属性），
+    // 故此处锁源码契约：降级分支 auditEvent 必须严格 null，不出现伪事件字段。
+    const fs = await import('fs');
+    const path = await import('path');
+    const src = fs.readFileSync(
+      path.join(__dirname, '..', 'tools', 'corpus-export.ts'),
+      'utf-8',
+    );
+    // 降级返回体：auditEvent: null + isError: true 形态在源码中锁定
+    expect(src).toMatch(/auditEvent:\s*null/);
+    expect(src).toMatch(/isError:\s*true/);
+    // 防伪形态回潮：降级分支不得再出现「event: 'corpus_export'」字面构造
+    const degradedBody = src.slice(src.indexOf('不可用'), src.indexOf('// 一、规则'));
+    expect(degradedBody).not.toMatch(/event:\s*'corpus_export'/);
+  });
 });

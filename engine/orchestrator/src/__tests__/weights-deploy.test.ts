@@ -24,6 +24,7 @@ import {
   rollbackWeightsVersion,
   rollbackModel,
   loadRegistry,
+  saveRegistry,
 } from '../model-registry';
 
 let dataDir: string;
@@ -101,6 +102,64 @@ describe('权重目录规范（weights-manifest）', () => {
     m = JSON.parse(readFileSync(manifestPath(weightsDir), 'utf-8'));
     expect(m.versions).toHaveLength(2); // 不重复
     expect(m.current).toBe('v1');
+  });
+
+  it('appendVersion model 参数（新建清单写入 + 已有清单空值补写）', () => {
+    // fresh-eyes 视角16-2 修复行为锁：manifest.model 此前恒空串无消费校验——
+    // 注册链路传入注册名，下游按 manifest.model 展示/路由不再拿空值
+    const wdir = mkdtempSync(join(tmpdir(), 'sofagent-wm-model-'));
+    try {
+      // 新建清单：opts.model 直接写入
+      const v1 = join(wdir, 'v1');
+      mkdirSync(v1, { recursive: true });
+      writeFileSync(join(v1, 'adapter.safetensors'), 'v1-weights');
+      appendVersion(wdir, { id: 'v1', createdAt: new Date().toISOString(), sha256: hashDir(v1), sizeBytes: 1 }, { setCurrent: true, model: 'battery-lora' });
+      let m = JSON.parse(readFileSync(manifestPath(wdir), 'utf-8'));
+      expect(m.model).toBe('battery-lora');
+      // 已有清单：非空 model 不被覆盖（首个正式登记方定档）
+      const v2 = join(wdir, 'v2');
+      mkdirSync(v2, { recursive: true });
+      writeFileSync(join(v2, 'adapter.safetensors'), 'v2-weights');
+      appendVersion(wdir, { id: 'v2', createdAt: new Date().toISOString(), sha256: hashDir(v2), sizeBytes: 1 }, { setCurrent: true, model: 'other-name' });
+      m = JSON.parse(readFileSync(manifestPath(wdir), 'utf-8'));
+      expect(m.model).toBe('battery-lora');
+      // model 空仅告警不阻断（阻断/告警显式分离——versions 空/current 缺位才是阻断项）
+      m.model = '';
+      const { atomicWriteSync } = require('@sofagent/core') as { atomicWriteSync: (p: string, d: string) => void };
+      atomicWriteSync(manifestPath(wdir), JSON.stringify(m));
+      const check = checkWeightsDir(wdir, { verifyHash: false });
+      expect(check.ok).toBe(true); // 告警不阻断
+      expect(check.issues.join(' ')).toContain('model'); // 告警在案
+    } finally {
+      rmSync(wdir, { recursive: true, force: true });
+    }
+  });
+
+  it('switchModel 空 localWeights.dir 前置判空（准确报错不误导）', () => {
+    // fresh-eyes 视角7-3 修复行为锁：旧条目无 localWeights 字段时 dir=''
+    // 此前报「缺 manifest.json: manifest.json」误导排障——现在前置判空给
+    // 「请重新注册」的准确提示。独立 weightsDir（别的用例可能已篡改共享目录）
+    const wdir = mkdtempSync(join(tmpdir(), 'sofagent-sw-empty-'));
+    try {
+      const v1 = join(wdir, 'v1');
+      mkdirSync(v1, { recursive: true });
+      writeFileSync(join(v1, 'adapter.safetensors'), 'w1');
+      appendVersion(wdir, { id: 'v1', createdAt: new Date().toISOString(), sha256: hashDir(v1), sizeBytes: 1 }, { setCurrent: true });
+      registerModel(
+        { name: 'legacy-weights', endpoint: 'http://localhost:8000', model: 'legacy:v1', source: 'local-path', weightsDir: wdir },
+        { dataDir },
+      );
+      // 手工清空 localWeights.dir 模拟 v1.4.1 扩展位时代的旧条目
+      const reg = loadRegistry(dataDir);
+      reg.models['legacy-weights'].localWeights = { ...reg.models['legacy-weights'].localWeights!, dir: '' };
+      saveRegistry(dataDir, reg);
+      const sw = switchModel('legacy-weights', 'pipeline', 100, { dataDir });
+      expect(sw.ok).toBe(false);
+      expect(sw.message).toContain('重新注册');
+      expect(sw.message).not.toContain('manifest.json: manifest.json'); // 误导提示不再出现
+    } finally {
+      rmSync(wdir, { recursive: true, force: true });
+    }
   });
 
   it('hashDir 确定性（同内容同哈希 / 内容变哈希变）', () => {
@@ -255,6 +314,26 @@ describe('权重版本回滚（rollbackWeightsVersion）', () => {
     const rb = rollbackWeightsVersion('cloud-model', { dataDir });
     expect(rb.ok).toBe(false);
     expect(rb.message).toContain('非 local-path');
+  });
+
+  it('回滚目标版本目录被篡改 → 哈希直验拒绝（供应链三路径无旁路）', () => {
+    // fresh-eyes 视角2-1/7-1 修复行为锁：checkWeightsDir 只验 current 版本，
+    // 回滚恰好指向非 current 历史版本——目标目录必须 hashDir 单独直验，
+    // 被篡改即拒（「合法回滚」不能成为挂载坏权重的旁路）
+    registerVersion('v1');
+    registerVersion('v2');
+    registerModel(
+      { name: 'battery-lora', endpoint: 'http://localhost:8000', model: 'battery-lora-v1', source: 'local-path', weightsDir },
+      { dataDir },
+    );
+    // 篡改历史版本 v1（回滚目标）——current 是 v2，checkWeightsDir 不覆盖它
+    writeFileSync(join(weightsDir, 'v1', 'adapter_model.safetensors'), 'TAMPERED-WEIGHTS');
+    const rb = rollbackWeightsVersion('battery-lora', { dataDir });
+    expect(rb.ok).toBe(false);
+    expect(rb.message).toContain('完整性校验失败');
+    // manifest current 指针未被动（拒绝即无副作用）
+    const m = JSON.parse(readFileSync(manifestPath(weightsDir), 'utf-8'));
+    expect(m.current).toBe('v2');
   });
 });
 

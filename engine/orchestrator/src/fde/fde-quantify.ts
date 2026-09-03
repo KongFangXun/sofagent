@@ -317,8 +317,10 @@ export function distillDeliverables(
     const tagLabel = tag === 'auto' ? '🔄 自动执行' : tag === 'enhance' ? '⚡ 强化岗位' : '👤 暂不动';
 
     // 占位符变量集（模板契约——键名与 FDE/templates/deliverables/README.md 约定一致）
+    // nodeId 走清洗形态（Skill name/文件名安全）：模板路径与内置默认同一条
+    // 清洗规则——原始 nodeId 只用于语义展示位（手册标题等），标识位一律清洗后值
     const vars: Record<string, string> = {
-      nodeId: n.nodeId,
+      nodeId: sanitizeNodeId(n.nodeId),
       description: n.description,
       tag,
       tagLabel,
