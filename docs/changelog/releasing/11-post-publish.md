@@ -166,7 +166,7 @@ sed -i '' 's/- \[x\]/- [ ]/g' docs/changelog/releasing.md
 | # | 检查项 | 怎么查 | 修法 |
 |:--:|--------|--------|------|
 | 一 | **阶段顺序与实际流程一致** | 对比本次实际执行的步骤顺序 vs 阶段文件写的顺序 | 不一致 → 更新阶段文件（以实际为准） |
-| 二 | **阶段间引用无断裂** | grep "阶段 X" 确认引用的阶段号/文件名都存在 | 断裂 → 修正引用 |
+| 二 | **阶段间引用无断裂** | grep "阶段 X" 确认引用的阶段号/文件名都存在 | 断裂 → 修正引用；SOP 文件改名/拆分/移动时额外 `grep -rn "<旧文件名>" docs/ README.md` 全仓回扫（历史 changelog 活链接随迁，纯考古叙述不动） |
 | 三 | **配套文档链接有效** | releasing.md 底部 3 个配套文档链接可访问 | 失效 → 更新路径 |
 | 四 | **本次发版暴露的 SOP 缺口** | 回顾发版过程中「SOP 没写但我踩了坑」的环节 | 缺口 → 吸收进对应阶段 |
 | 五 | **冗余/过时步骤** | 有没有阶段写了但实际从不执行（或已被工具覆盖）的步骤 | 删除或标注「工具已覆盖」 |
@@ -273,3 +273,8 @@ sed -i '' 's/- \[x\]/- [ ]/g' docs/changelog/releasing.md
 - **v1.4.3 发版耗时**：约 3.5h（08-31 16:40 三拍板放行 → 09-01 00:1x 阶段十二过半）；CI 红 1 次（本地部署树 overrides——切 npm alpha.3 转绿）；release-gate 0 轮（run-07 verdict=GO 有条件放行，三项硬性前置发版前闭环，连续第四版同模式）；npm publish 网络中断 2 次（E409 staged 等待自愈 ×2）
 - **阶段十二·步骤十一 daemon exit 78 根因 = plist node 路径失效（新增 · 排障实录）**：kickstart 后仍 exit 78 EX_CONFIG 崩溃循环，手动跑 CLI 完全正常（v1.4.3 横幅 + health ok）——根因是 plist `ProgramArguments` 写死的 node 绝对路径 `versions/22.22.2/bin/node` 已不存在（runtime 目录清理后实际为 `22.22.2-2`），launchd spawn 不出进程即报 EX_CONFIG。**排障链：launchctl print 看 last exit code → 手动前台跑 CLI 排除代码问题 → 查 plist 路径存在性**。修复：备份 plist → sed 改路径 → `bootout` + `bootstrap` 重载（kickstart 不重读 plist）→ 日志 v1.4.3 横幅确认。⚠️ plist 内嵌绝对路径属环境硬编码，runtime 目录升级/清理后必断——重载验证失败先查路径存在性，勿先怀疑 daemon 代码
 - **阶段十二·步骤十三置顶位可 API 核查（口径修正）**：「置顶无 API 只能网页操作」只对**变更**成立（Mutation 确无 pinDiscussion）——**只读核查**走 GraphQL `pinnedDiscussions { discussion { number title } }` 即可（v1.4.3 实测：置顶位仅常青帖 #11、版本帖未误置顶，网页都不用开）。步骤十三从「必做网页动作」降级为「查询确认，异常才需网页干预」
+
+**v1.4.4 收敛扫描批自迭代记录**（发版窗口期补扫，非发版复盘）：
+
+- **SOP 文件拆分/改名时全仓回扫旧引用（新增纪律）**：releasing SOP 拆分（原 10-publish.md 拆为 09-publish.md + 10-distribute.md）时只改活文档未扫历史 changelog——v1.4.2/v1.4.3 Release Notes 段的 `10-publish.md` 链接死链拖了 4 个版本无人发现（b00fe556 修复）。**防御：SOP 文件改名/拆分/移动时，必跑 `grep -rn "<旧文件名>" docs/ README.md` 回扫全仓引用；历史 changelog 内的活链接一并随迁，纯考古叙述（「已写入 10-publish」类）不动**。同时进检查维度二「阶段间引用无断裂」的修法列
+- **对账先跑门禁，不拿记忆当 SSOT**：收敛扫描中曾据记忆判「README 3744 测试」为漂移（记忆里 SSOT=3619）——实跑 check-test-count 后反转：3744 = v1.4.4 真值（3619 引擎 + 125 插件），门禁 11/11 绿。**防御：任何数字对账前先实跑对应门禁脚本拿当前真值；多源口径冲突时列各源原值请裁定，禁止拿历史数字当现值**
