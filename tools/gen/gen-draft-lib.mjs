@@ -183,13 +183,14 @@ export async function callLLM(modelCfg, apiKey, systemPrompt, userPrompt) {
 }
 
 /**
- * v1.4.4 优化六：带自动降级的 LLM 调用——GLM coding 端点对大输入（~25k 字符）
- * 偶发 300s 无响应（run-2026-08-29 实测 3 连败 aborted），自动 fallback 到
- * deepseek-v4-flash 按量通道重试一次。固化当日手工绕行（/tmp/run-draft-deepseek.mjs）
- * 的降级路径——偶发超时不再卡 SOP。
+ * v1.4.4 优化六（2026-09-03 修订）：主端点失败后的重试通道。
+ * 原实现降级到 deepseek-v4-flash 按量通道——用户拍板弃用 DeepSeek（余额 402 且
+ * 全链统一 GLM），改为同一 GLM 模型直连重试一次（端点级重试，非换模型）。
+ * 历史背景：GLM coding 端点对大输入（~25k 字符）偶发 300s 无响应（run-2026-08-29
+ * 实测 3 连败 aborted），重试通道固化当日手工绕行（/tmp/run-draft-deepseek.mjs）。
  *
- * 降级条件：主端点 abort（超时）/ HTTP 5xx / 网络错误，且配置了 DEEPSEEK_API_KEY。
- * 主端点正常返回（含 4xx 业务错误）不降级——那不是端点问题。
+ * 重试条件：主端点 abort（超时）/ HTTP 5xx / 网络错误（与原降级条件一致）。
+ * 主端点正常返回（含 4xx 业务错误）不重试——那不是端点问题。
  */
 export async function callLLMWithFallback(modelCfg, apiKey, systemPrompt, userPrompt) {
   try {
@@ -197,16 +198,9 @@ export async function callLLMWithFallback(modelCfg, apiKey, systemPrompt, userPr
   } catch (err) {
     const isTimeout = err.name === 'AbortError' || /aborted|fetch failed|network/i.test(err.message || '');
     const isServerError = /HTTP 5\d\d/.test(err.message || '');
-    const hasDeepseekKey = !!process.env.DEEPSEEK_API_KEY;
-    if ((isTimeout || isServerError) && hasDeepseekKey) {
-      console.warn(`⚠️  主端点 ${modelCfg.baseURL} 失败（${(err.message || '').slice(0, 120)}）→ 自动降级 deepseek-v4-flash 重试`);
-      const fallbackCfg = {
-        model: 'deepseek-v4-flash',
-        baseURL: 'https://api.deepseek.com/v1',
-        apiKeyEnv: 'DEEPSEEK_API_KEY',
-        temperature: modelCfg.temperature,
-      };
-      return callLLMOnce(fallbackCfg, process.env.DEEPSEEK_API_KEY, systemPrompt, userPrompt);
+    if (isTimeout || isServerError) {
+      console.warn(`⚠️  主端点 ${modelCfg.baseURL} 失败（${(err.message || '').slice(0, 120)}）→ 同模型重试一次（GLM 统一通道，弃用 DeepSeek 降级）`);
+      return callLLMOnce(modelCfg, apiKey, systemPrompt, userPrompt);
     }
     throw err;
   }
