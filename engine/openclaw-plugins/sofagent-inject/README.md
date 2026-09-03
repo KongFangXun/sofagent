@@ -1,6 +1,6 @@
 # sofagent-inject
 
-**约束注入** · sofagent 约束层四能力在 OpenClaw 生态的插件形态（品牌色 #16B8F3）
+**约束注入** · sofagent 约束层五能力在 OpenClaw 生态的插件形态（品牌色 #16B8F3）
 
 before_prompt_build 注入四层加载链（core-rules/think.md/fde.md/knowledge），复用 @sofagent/harness.buildConstrainedSystemPrompt。
 

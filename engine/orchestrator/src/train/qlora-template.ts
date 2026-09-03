@@ -1,4 +1,4 @@
-// qlora-template.ts · v1.4.3 第四章 · QLoRA 配置模板（Oumi 格式）
+// qlora-template.ts · v1.4.4 第四章 · QLoRA 配置模板（Oumi 格式）
 //
 // 定位：训练配置生成的「参数面」——场景模板（train-templates）选定算法族后，
 // 本文件产出 Oumi 格式的训练配置对象（data/model/training/peft/eval 五节）。
@@ -6,7 +6,7 @@
 // 以其 YAML 惯例为骨架：纯对象输出（YAML 序列化由调用方决定——CLI 落盘
 // .yaml 时用 JSON 兼容结构即可）。
 //
-// MoE 基座注意（v1.4.3 第四章拍板）：模板带 base_type: dense/moe 标注；
+// MoE 基座注意（v1.4.4 第四章拍板）：模板带 base_type: dense/moe 标注；
 // moe 基座的 LoRA target_modules 必须显式覆盖 expert 矩阵——校验在
 // train-templates.ts 的 instantiateTrainTemplate（本文件只提供两组
 // 预置 target_modules 常量，单一事实源）。

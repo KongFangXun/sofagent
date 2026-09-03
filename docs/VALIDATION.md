@@ -1,6 +1,6 @@
 # sofagent 行业印证与生态定位 · Validation
 
-> v1.4.3 · 2026-09-01 · 孔放勋
+> v1.4.4 · 2026-09-02 · 孔放勋
 
 > **本文档从四个维度回答一个问题：行业有没有独立验证 sofagent 的直觉？**
 >
@@ -595,7 +595,7 @@ Palantir Foundry 10 年迭代收敛出 Ontology 的 5 块构建块——**Object
 
 **合并检验法**——5 块任意两块都不能无损合并：Object↔Link（Link 依附 Object）、Action↔Function（Action 改状态有事务 / Function 算值不改状态）、Function↔Interface（计算 vs 暴露）、Link↔Action（关系 vs 改动）。再加新块也能被现有 5 块吸收（Metric = Function 输出、Workflow = Action 组合、Notification = Action Side Effect、Version = Global Branching）。
 
-**sofagent 印证**：sofagent 的约束层四种能力遵循同一不可合并原则——审计能力（看 diff 不改状态）与回溯能力（改状态有快照）与进化能力（算值不改状态）各有独立职责，合并任两者都会丧失核心能力。Palantir 的「Action 默认 staged，等人工 review 才 commit」与 sofagent 的 human_confirm 节点（[FORGE 四节点状态机](./guides/loop-development.md#四节点状态机v113)）完全同构——LLM 调用 Action 不能直接写库，必须在沙盒里等审批。
+**sofagent 印证**：sofagent 的约束层五种能力遵循同一不可合并原则——审计能力（看 diff 不改状态）与回溯能力（改状态有快照）与进化能力（算值不改状态）各有独立职责，合并任两者都会丧失核心能力。Palantir 的「Action 默认 staged，等人工 review 才 commit」与 sofagent 的 human_confirm 节点（[FORGE 四节点状态机](./guides/loop-development.md#四节点状态机v113)）完全同构——LLM 调用 Action 不能直接写库，必须在沙盒里等审批。
 
 > 📖 来源：公众号「AI 风起兮」2026-08-01《Ontology 的五大构建块: Object / Link / Action / Function / Interface》（Palantir Ontology 深度拆解 系列第 2 篇）
 
@@ -680,7 +680,7 @@ SaaStr 创始人 Jason Lemkin 算清了 FDE 模式的单位经济账：FDE 年�
 
 | 维度 | 传统外包团队 | 1 个 FDE Harness |
 |------|------|------|
-| 人力 | ~5 人 | 1 FDE（约束层四能力 + FORGE 工具链）|
+| 人力 | ~5 人 | 1 FDE（约束层五能力 + FORGE 工具链）|
 | 周期 | ~3 个月 | ~3 天 |
 | 成本 | ~50 万 | ~500 元 Token |
 

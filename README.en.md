@@ -6,12 +6,12 @@
   <a href="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml"><img src="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml/badge.svg" alt="Verify" /></a>
   <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-brightgreen" alt="License: MIT" /></a>
   <!-- ⚠️ bump version: manually sync this badge version (Version-vX.Y.Z) -->
-  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.4.3-16B8F3" alt="Version" /></a>
+  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.4.4-16B8F3" alt="Version" /></a>
 </p>
 
 <p align="center"><sub>[简体中文](./README.md) | [English](./README.en.md)</sub></p>
 
-> 🚀 **v1.4.3** — Training engine: operations & requirements (monitoring / diagnosis / sandbox / derivation / templates) + audit aggregate metrics + anti-cheat baseline + legacy cleanup. See [CHANGELOG](./CHANGELOG.md).
+> 🚀 **v1.4.4** — Training engine: signal & deployment loop (corpus export trio / local weight deployment / artifact→registry bridge / multi-base compare / decision causal chain / CI supply-chain hardening / legacy upgrades / spec-first mandate / review batch / five-capability narrative). **⏳ Pending release** (development complete; tag/npm synced at release time). See [CHANGELOG](./CHANGELOG.md).
 
 ---
 
@@ -21,7 +21,7 @@
 
 > 💬 **One-sentence version**: every time your AI worker touches code or files, it first passes a security check, leaves a record, and saves a snapshot — traceable and roll-backable when things go wrong. That is what sofagent does.
 
-sofagent does not build its own Agent — execution is delegated to mature hosts (model + tools + sessions). What it delivers is the **FDE Harness layer**. **FDE Harness = FDE methodology × Harness engineering** — the forward-deployed engineer's playbook (map on entry → deploy → depart) baked into a Harness constraint layer (inject · audit · rollback · evolve) that slots into any existing Agent; and it keeps every model (general or bespoke) under control (register / rollout / train / deploy fully audited).
+sofagent does not build its own Agent — execution is delegated to mature hosts (model + tools + sessions). What it delivers is the **FDE Harness layer**. **FDE Harness = FDE methodology × Harness engineering** — the forward-deployed engineer's playbook (map on entry → deploy → depart) baked into a Harness constraint layer (inject · audit · rollback · distill · evolve) that slots into any existing Agent; and it keeps every model (general or bespoke) under control (register / rollout / train / deploy fully audited).
 
 > 🚂 **Why a training engine in a governance repo** (30-second answer): governance is capped by data — what audits uncover (which tasks failed, which outputs were substandard) is exactly training fuel. The training engine closes the loop from "problems found by audits → models that fix those problems", letting governance data feed back into the model layer; training assets themselves ship on the commercial side — this repo keeps only protocols and interfaces (externalized / configurable).
 
@@ -36,7 +36,7 @@ sofagent does not build its own Agent — execution is delegated to mature hosts
 
 | If you are... | Recommendation |
 |---------------|----------------|
-| **Adding discipline to an existing Agent** — you already run DSH / OpenClaw / WorkBuddy and want your AI to behave, leave traces, and stay roll-backable when things go wrong | ✅ **Install now**. The core value is exactly the constraint layer (inject · audit · rollback · evolve) — works right after installation |
+| **Adding discipline to an existing Agent** — you already run DSH / OpenClaw / WorkBuddy and want your AI to behave, leave traces, and stay roll-backable when things go wrong | ✅ **Install now**. The core value is exactly the constraint layer (inject · audit · rollback · distill · evolve) — works right after installation |
 | **A one-person company / SMB landing AI** — no dedicated engineer, you need a "never-quitting FDE" to map your business flow and deploy AI nodes | ✅ **Install now**. The FDE Harness layer is built for this — the full journey from mapping to deployment to post-departure audit |
 | **Looking for a turnkey enterprise Agent platform** — you expect a complete commercial product (multi-tenancy, permission management, billing, SLA) | ⏸️ **Hold off**. sofagent is a governance layer, not a platform product — platform-grade capabilities are out of this open-source repository's scope. Teams with integration capacity can still embed the constraint layer into their own platform as its governance module; if you need pure turnkey, look at platform products elsewhere |
 | **Researching / curious about constraint-layer design** — reading code, studying architecture, borrowing methodology | ✅ **Install now**. Full documentation ([HANDBOOK](./docs/HANDBOOK.md) / [ARCHITECTURE](./docs/ARCHITECTURE.md) / [PHILOSOPHY](./docs/PHILOSOPHY.md)), MIT licensed |
@@ -107,18 +107,19 @@ Deploying an AI node is only the first step — the chapters above cover how to 
 - 📜 **SKILL.md** — the single main entry, loaded by your AI tool: routes to the corresponding sub-Skill by phase, with role norms auto-injected by task type (mapping / audit / orchestration)
 - 🧩 **Phase sub-Skills** — a five-step closed loop of entry → deep-dive → quantify → deliver → depart (01-entry → 05-exit); what to do and what to deliver at each step is defined up front
 - 🔒 **Harness constraint skeleton** — entry-gate / fde-template / engage / loop-check / task-closure… every step from entry to departure has its matching constraint template
-- 🧬 **Experience capture mechanism** — the structured pipeline of think.md reflection + knowledge maintenance is in place; measured data on capture effectiveness under sustained use is still accumulating (see [LIMITATIONS § core-effect measurements](./docs/LIMITATIONS.md#核心效果实测情况))
+- 📚 **Knowledge asset pipeline (Distill)** — the structured pipeline of think.md reflection + knowledge maintenance is in place; measured data on capture effectiveness under sustained use is still accumulating (see [LIMITATIONS § core-effect measurements](./docs/LIMITATIONS.md#核心效果实测情况))
 
 > What gets deployed is not a bare Agent, but an **Agent with a constraint skeleton** — constraints are advisory, auditing is mandatory: the Agent may ignore the constraints, but every change gets audited without exception.
 
 ## Constraint Layer (Harness)
 
-The constraint layer is sofagent's behavioral foundation, with four capabilities:
+The constraint layer is sofagent's behavioral foundation, with five capabilities:
 
 - **Injection** — inject enterprise constraints at Agent startup through the four-layer loading chain; constraints are advisory
 - **Audit** — 24 git-diff hard-evidence rules (quick runs 17 by default, 7 extensions enabled via config) + AgentShield five-face static config scanning; auditing is mandatory — every change gets audited, violations blocked on the spot
 - **Rollback** — auto-archived snapshot after every audit, one-click restore to any snapshot
-- **Evolution** — think.md reflection + Dream Cycle + skillopt, experience auto-captured into the knowledge base (knowledge capture is currently a format-only pipeline; content filling advances as models get wired in — see [LIMITATIONS](./docs/LIMITATIONS.md))
+- **Distillation** — audit trails, think.md reflections, and industry cases distilled into reusable knowledge assets (knowledge/ base + SKILL files; knowledge capture is currently a format-only pipeline; content filling advances as models get wired in — see [LIMITATIONS](./docs/LIMITATIONS.md))
+- **Evolution** — think.md reflection + Dream Cycle + skillopt, consuming distilled knowledge assets to get stronger automatically (knowledge capture is currently a format-only pipeline; content filling advances as models get wired in — see [LIMITATIONS](./docs/LIMITATIONS.md))
 
 ## Installation
 
@@ -173,7 +174,7 @@ More install options (clone install / full npx install / minimal install / enter
 | **`npx -y -p @sofagent/audit sofagent-audit`** | Zero-setup audit of the last commit, results in seconds (first npx ~30s) | Any git repo (temporary) | 30 sec |
 | **`--ruleset` rule marketplace** | Load rulesets like security, or custom JSON rules | Same as above | 1 min |
 | **GitHub Action** | Auto-audit every PR, violations annotated on the diff lines | CI/CD | Set up once |
-| **install.sh full suite** | inject · audit · rollback · evolve + daemon inspection + dashboard — the Agent's complete constraint layer | **Enterprise device** (server/computer running the AI nodes) | FDE residency |
+| **install.sh full suite** | inject · audit · rollback · distill · evolve + daemon inspection + dashboard — the Agent's complete constraint layer | **Enterprise device** (server/computer running the AI nodes) | FDE residency |
 
 **Install-granularity comparison** (same engine, three install styles — pick by scenario):
 

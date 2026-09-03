@@ -1,4 +1,4 @@
-// train-webhook.ts · v1.4.3 第一章 · 训练事件三态推送（复用 v1.2.1 webhook）
+// train-webhook.ts · v1.4.4 第一章 · 训练事件三态推送（复用 v1.2.1 webhook）
 //
 // 定位：训练完成/失败/取消 → IM 推送（钉钉/飞书/企微）。复用 @sofagent/audit
 // 的 pushAuditResult 通道语义（SSRF 防护 + 5s 超时 + fire-and-forget），

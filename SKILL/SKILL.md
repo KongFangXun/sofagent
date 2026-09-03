@@ -1,11 +1,11 @@
 ---
 name: sofagent
 slug: sofagent
-version: 1.4.3
+version: 1.4.4
 displayName: FDE Skill
 description: >
   FDE Skill——帮 FDE（前线部署工程师）更好完成企业 AI 落地的方法论 Skill。约束 Agent 行为、审计每次变更、沉淀经验。
-  底层实现叫约束层——一个层四种能力：注入·审计·回溯·进化。FORGE 自迭代工具链是内部开发工具。
+  底层实现叫约束层——一个层五种能力：注入·审计·回溯·沉淀·进化。FORGE 自迭代工具链是内部开发工具。
   内置持续优化模式（sustain），自动读 audit 报告趋势生成优化报告。
 tags:
   - fde

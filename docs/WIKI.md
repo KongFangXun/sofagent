@@ -1,17 +1,17 @@
 # sofagent 项目导航索引（WIKI）
 
-> v1.4.3 · 2026-09-01 · 孔放勋
+> v1.4.4 · 2026-09-02 · 孔放勋
 
 > **读者**：人类开发者 & AI Agent 均可阅读。本文档是项目全局索引入口。
 > 如果你是 AI Agent 且需要查找具体实现路径，请直接跳转到"## 五、文件地图"段。
 
-> ⚠️ **术语声明（AI Agent 与人类读者必读）**：sofagent 现行架构术语以 [ARCHITECTURE.md](./ARCHITECTURE.md) 与 [PHILOSOPHY.md](./PHILOSOPHY.md) 为准——**约束层**（一个层四种能力：注入·审计·回溯·进化，FORGE 为内部工具）+ **双层架构**（约束层 × 生命周期）。`docs/archive/` 与 `docs/changelog/v1.0/`、`docs/changelog/v1.1/` 为**历史版本快照**，其中"四引擎""认知底座"等旧术语反映当时版本，**不代表现行设计**，请勿据此推断当前架构；`docs/changelog/v1.4/` 为**当前版本目录**（v1.4.0 已发布，内容为各版本变更记录；后续排期内容**不代表已交付能力**）。**训练引擎归属**：工程骨架随开源仓排期交付 + 训练资产商业侧，真相源见 [ROADMAP](./ROADMAP.md) 版本表。
+> ⚠️ **术语声明（AI Agent 与人类读者必读）**：sofagent 现行架构术语以 [ARCHITECTURE.md](./ARCHITECTURE.md) 与 [PHILOSOPHY.md](./PHILOSOPHY.md) 为准——**约束层**（一个层五种能力：注入·审计·回溯·沉淀·进化，FORGE 为内部工具）+ **双层架构**（约束层 × 生命周期）。`docs/archive/` 与 `docs/changelog/v1.0/`、`docs/changelog/v1.1/` 为**历史版本快照**，其中"四引擎""认知底座"等旧术语反映当时版本，**不代表现行设计**，请勿据此推断当前架构；`docs/changelog/v1.4/` 为**当前版本目录**（v1.4.0 已发布，内容为各版本变更记录；后续排期内容**不代表已交付能力**）。**训练引擎归属**：工程骨架随开源仓排期交付 + 训练资产商业侧，真相源见 [ROADMAP](./ROADMAP.md) 版本表。
 
 > **3 分钟建立全景理解**：核心文档太长？先看这 5 条：
-> - **[ARCHITECTURE.md](./ARCHITECTURE.md)**：双层架构设计（约束层 × 生命周期）+ 约束层工程三层嵌套（约束层 → Graph → Loop），关键技术决策记录。**3 秒版**：约束层管"做对"（注入·审计·回溯·进化）· 激活链四阶段管"跑起来" · Graph 控制图分波次 · Loop 自迭代闭环。
+> - **[ARCHITECTURE.md](./ARCHITECTURE.md)**：双层架构设计（约束层 × 生命周期）+ 约束层工程三层嵌套（约束层 → Graph → Loop），关键技术决策记录。**3 秒版**：约束层管"做对"（注入·审计·回溯·沉淀·进化）· 激活链四阶段管"跑起来" · Graph 控制图分波次 · Loop 自迭代闭环。
 > - **[VALIDATION.md](./VALIDATION.md)**：行业印证与生态定位——sofagent 直觉如何被行业验证 + Agent 三层模型 + 架构框架映射。
 > - **[PHILOSOPHY.md](./PHILOSOPHY.md)**：设计哲学与产品方法论（§一~§九）。"不替代 Agent，做 Agent 的控制面"。
-> - **[ROADMAP.md](./ROADMAP.md)**：版本路线图 + 迭代历程。当前 v1.4.3。
+> - **[ROADMAP.md](./ROADMAP.md)**：版本路线图 + 迭代历程。当前 v1.4.4。
 > - **行业坐标**：sofagent = 企业 Neo-Lab 的**智能主权基础设施**——Sovereign AI 四层主权的落点详见 [VALIDATION · 红杉 Neo-Lab](./VALIDATION.md#红杉-neo-lab--sovereign-ai-四层主权)。
 
 > **📋 文档分工一页表**（写内容前先看——什么内容往哪个文档写，防止交叉重复）：
@@ -86,8 +86,8 @@ graph TB
 | 概念 | 一句话 | 详情 |
 |------|--------|------|
 | **FDE Harness** | 对外的产品身份：**FDE 方法论 × Harness 工程**——把前线部署工程师的打法（进场梳理 → 部署 → 离场）固化成约束层，装进成熟 Agent（DSH / OpenClaw / WorkBuddy）；装上它的 Agent 即以 FDE 方式作业，离场后留一套能持续维护的 AI 化资产 | [README · 什么是 FDE Harness](../README.md#什么是-fde-harness) |
-| **约束层** | 对内的技术身份：约束 Agent 行为的「缰绳」——一个层四种能力（注入·审计·回溯·进化），编排（FORGE）为内部工具 | [ARCHITECTURE §二](./ARCHITECTURE.md) |
-| **约束层七维度** | Agent = 模型 + 上下文 + 工具 + 状态 + 执行控制 + 权限 + 可观测性——四种能力各自覆盖其中哪些维度 | [ARCHITECTURE §一 · 约束层七维度](./ARCHITECTURE.md#约束层七维度agent-的构成面)（维度构成以本行为准；四种能力维度分工详见 [PHILOSOPHY §一·四件事的分工](./PHILOSOPHY.md#四件事的分工mcp--skills--ontology--harness)） |
+| **约束层** | 对内的技术身份：约束 Agent 行为的「缰绳」——一个层五种能力（注入·审计·回溯·沉淀·进化），编排（FORGE）为内部工具 | [ARCHITECTURE §二](./ARCHITECTURE.md) |
+| **约束层七维度** | Agent = 模型 + 上下文 + 工具 + 状态 + 执行控制 + 权限 + 可观测性——五种能力各自覆盖其中哪些维度 | [ARCHITECTURE §一 · 约束层七维度](./ARCHITECTURE.md#约束层七维度agent-的构成面)（维度构成以本行为准；五种能力维度分工详见 [PHILOSOPHY §一·四件事的分工](./PHILOSOPHY.md#四件事的分工mcp--skills--ontology--harness)） |
 | **约束层构成（企业视角）** | 黄仁勋定义：企业专属约束层 = 知识 + 记忆 + 工作流 + 权限 + 安全机制 + 运行环境——模型是起点，围绕模型积累的这套专属系统才是核心资产 | [PHILOSOPHY §一·理论锚点](./PHILOSOPHY.md#智能与控制分离sofagent-的理论锚点) |
 | **业务图谱** | 人读的流程图谱 = Workflow Graph——FDE 交付的企业业务流完整拓扑，每条业务链路即一条业务流 | [ARCHITECTURE §定义表](./ARCHITECTURE.md) |
 | **本体图谱** | 机器读的语义图谱 = Ontology Graph——FDE 交付的企业全部业务节点和关联关系的全局拓扑（本体数据的图形化呈现） | [ARCHITECTURE §定义表](./ARCHITECTURE.md) |
@@ -111,11 +111,11 @@ graph TB
 │  （注册 / 灰度 / 训练 / 部署全留痕）              │
 ├─────────────────────────────────────────────────┤
 │             FDE Harness 层（sofagent）            │
-│  ┌─────────┬─────────┬─────────┬─────────┐ │
-│  │ 注入能力 │ 审计能力 │ 回溯能力 │ 进化能力 │ │
-│  │ 约束注入链│ git diff │ HMAC 链 │知识蒸馏 │←约束层引擎│
-│  │ SKILL加载│ 24条规则 │ 防篡改  │sustain  │（四能力）│
-│  └─────────┴─────────┴─────────┴─────────┘ │
+│  ┌─────────┬─────────┬─────────┬─────────┬─────────┐ │
+│  │ 注入能力 │ 审计能力 │ 回溯能力 │ 沉淀能力 │ 进化能力 │ │
+│  │ 约束注入链│ git diff │ HMAC 链 │知识蒸馏 │自迭代  │←约束层引擎│
+│  │ SKILL加载│ 24条规则 │ 防篡改  │knowledge│sustain │（五能力）│
+│  └─────────┴─────────┴─────────┴─────────┴─────────┘ │
 │  分发形态：插件 · Skill · MCP · CLI · Dashboard    │
 │  方法论：FDE 四阶段（梳理→构建→部署→离场）         │
 │  内部：编排引擎 @sofagent/orchestrator（LangGraph）│
@@ -146,7 +146,7 @@ graph TB
 
 > 📌 **本节是三层嵌套架构图的唯一源（SSOT）**——ARCHITECTURE.md 的「补充视角」只做说明引用此处，不重复维护完整图。修改三层结构请改本段。
 
-上述架构全景中，约束层四种能力（注入·审计·回溯·进化）与 FORGE 内部编排不是并列关系——它们按 Agent 工程三层架构嵌套：
+上述架构全景中，约束层五种能力（注入·审计·回溯·沉淀·进化）与 FORGE 内部编排不是并列关系——它们按 Agent 工程三层架构嵌套：
 
 ```
 约束层（工作环境）       Graph（流程拓扑）         Loop（反馈改进）
@@ -189,7 +189,7 @@ graph TB
 | `docs/WIKI.md` | **你正在读的这个**——项目导航索引 |
 | `docs/PHILOSOPHY.md` | 产品哲学九节：为什么做、三层治理、FDE 定义 |
 | `docs/VALIDATION.md` | 行业印证与生态定位：31 篇行业方法论印证、a16z 七法则、Agent 三层模型、架构框架映射 |
-| `docs/ARCHITECTURE.md` | 架构详解：约束层四种能力（注入·审计·回溯·进化）、数据流、部署模式、文件结构（含 Ledger-Views-Policy ↔ LLM Wiki 三层同构对照） |
+| `docs/ARCHITECTURE.md` | 架构详解：约束层五种能力（注入·审计·回溯·沉淀·进化）、数据流、部署模式、文件结构（含 Ledger-Views-Policy ↔ LLM Wiki 三层同构对照） |
 | `docs/DEVELOPMENT.md` | 开发指南：本地环境、包结构、测试、发版流程 |
 | `docs/HANDBOOK.md` | FDE 操作手册：进场流程、节点部署、持续维护 |
 | `docs/guides/fde-activation-chain.md` | 🔗 激活链设计（v1.2.5+）：FDE 交付物 → 企业业务流自动运转（ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN） |
@@ -231,8 +231,8 @@ graph TB
 
 | 项 | 值 |
 |----|-----|
-| 当前版本 | **v1.4.3**（2026-09-01） |
-| 下一版 | v1.4.4（训练引擎 · 信号与部署，规划中，参见 docs/ROADMAP.md） |
+| 当前版本 | **v1.4.4**（2026-09-02，⏳ 待发版——tag/npm 发版时同步） |
+| 下一版 | v1.4.5（进化引擎实证收口，参见 docs/ROADMAP.md） |
 | 测试覆盖 | 3744 测试 / 12 包（统计标准：`tools/check/test-count.sh` 实际执行的 workspace 包；全仓共 26 个 workspace——13 个引擎包发布至 npm `@sofagent` scope，9 个 DSH 插件为 private 随 DSH 分发，4 个 OpenClaw 插件（`engine/openclaw-plugins/`）经根 `npm test --workspaces` 统一执行测试。实测见 `tools/check/test-count.sh`、声称数同步校验见 `tools/check/check-test-count.sh`） |
 | 审计规则 | 24 条（17 默认 + 7 扩展），活跃编号 A1-A11 + A14-A23 + E1/E2/E4，每次 commit 自动跑 |
 | FORGE | fresh-eyes-loop + release-gate-loop 运行中 |
@@ -316,4 +316,4 @@ graph TB
 
 ---
 
-> **维护规则**：本文档由 AI 在每次发版时更新（版本号、文件清单、状态表）。当前版本 v1.4.3 · 孔放勋 · 2026-09-01。
+> **维护规则**：本文档由 AI 在每次发版时更新（版本号、文件清单、状态表）。当前版本 v1.4.4 · 孔放勋 · 2026-09-02。

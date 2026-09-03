@@ -1,9 +1,9 @@
-// env-manager.ts · v1.4.3 章四 · 训练环境管理（train env init / train doctor / 环境版本清单）
+// env-manager.ts · v1.4.4 章四 · 训练环境管理（train env init / train doctor / 环境版本清单）
 //
 // 定位：双栈方案假设「服务器上有一套 Python 环境」——这套环境谁装、
-// 怎么验证、怎么换版本此前没有落点。本文件是 v1.4.3 train-env.ts
+// 怎么验证、怎么换版本此前没有落点。本文件是 v1.4.4 train-env.ts
 // （块一：GPU 检测双分支 + 就绪报告）的**扩展**而非重建：
-//   - v1.4.3 prepareTrainEnv：检测 GPU → 安装框架 → 验证 → 就绪报告（保留不动）
+//   - v1.4.4 prepareTrainEnv：检测 GPU → 安装框架 → 验证 → 就绪报告（保留不动）
 //   - v1.4.2 本文件新增：
 //       ① trainEnvInit —— 一键安装编排（venv + 框架 + CUDA 校验，脚本化
 //          可打包进设备；对齐 tools/train-env-init.sh 的编排逻辑）

@@ -26,7 +26,7 @@
   <rect x="650" y="40" width="250" height="160" rx="12" fill="#FFFFFF" stroke="#D2DAE4" stroke-width="1.5"/>
   <text x="775" y="88" text-anchor="middle" font-size="21" font-weight="600" fill="#2D3238">3. Enterprise</text>
   <text x="775" y="134" text-anchor="middle" font-size="15" fill="#646C78">install.sh on enterprise devices</text>
-  <text x="775" y="164" text-anchor="middle" font-size="15" fill="#646C78">4 capabilities + daemon + 7x24</text>
+  <text x="775" y="164" text-anchor="middle" font-size="15" fill="#646C78">5 capabilities + daemon + 7x24</text>
 
   <line x1="906" y1="120" x2="928" y2="120" stroke="#6A737D" stroke-width="1.8" marker-end="url(#arr2e)"/>
 

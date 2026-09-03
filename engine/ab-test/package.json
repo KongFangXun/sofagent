@@ -1,6 +1,6 @@
 {
   "name": "@sofagent/ab-test",
-  "version": "1.4.3",
+  "version": "1.4.4",
   "engines": {
     "node": ">=18"
   },
@@ -26,10 +26,10 @@
   "author": "KongFangXun",
   "dependencies": {
     "@langchain/langgraph": "^1.4.12",
-    "@sofagent/harness": "1.4.3",
-    "@sofagent/eval": "1.4.3",
-    "@sofagent/core": "1.4.3",
-    "@sofagent/orchestrator": "1.4.3"
+    "@sofagent/harness": "1.4.4",
+    "@sofagent/eval": "1.4.4",
+    "@sofagent/core": "1.4.4",
+    "@sofagent/orchestrator": "1.4.4"
   },
   "exports": {
     ".": {

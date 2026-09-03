@@ -1,35 +1,35 @@
 # sofagent Architecture
 
-> 设计决策记录——从为什么存在、约束层四种能力如何协作，到每个关键决策的工程理由。
+> 设计决策记录——从为什么存在、约束层五种能力如何协作，到每个关键决策的工程理由。
 >
 > **产品定位锚定**：本架构服务的产品 = **FDE Harness 层**（sofagent）——不造 Agent，嵌在成熟 Agent（执行体：DSH / OpenClaw / WorkBuddy）与模型层（智力源：通用大模型 + 专属小模型 / 后训练模型）之间做治理：对执行体约束（plugin + skill + MCP + CLI + dashboard 五种形态分发），对智力源治理（注册 / 灰度 / 训练 / 部署全留痕）（产品叙事见 [WIKI §二](./WIKI.md#二产品叙事sofagent-是-fde-harness-层不造-agent嵌在-agent-与模型之间做治理)）。
-> v1.4.3 · 2026-09-01（UTC）
+> v1.4.4 · 2026-09-02（UTC）
 
 <img src="assets/sofagent.png" alt="sofagent" width="160" />
 
 ## 心智模型（先读这个）
 
-> **sofagent 是一个开源 FDE Harness 层**（MIT）——不造 Agent，嵌在成熟 Agent（DSH / OpenClaw / WorkBuddy）与模型层之间做治理，对外帮你进场梳理业务流、构建本体图谱、部署 AI 节点、离场后 7×24 自己跑。能力底座是一套约束 Agent 行为的约束层，**约束层 × 生命周期**双层架构：层 1 约束层 = 一个层四种能力（注入·审计·回溯·进化）；层 2 生命周期 = 诊断 → 激活 → 编排 → 执行 → 进化。FORGE 自迭代工具链（LOOP 流水线）是项目内部开发工具，保证每次变更可审计、可回滚、可进化。
+> **sofagent 是一个开源 FDE Harness 层**（MIT）——不造 Agent，嵌在成熟 Agent（DSH / OpenClaw / WorkBuddy）与模型层之间做治理，对外帮你进场梳理业务流、构建本体图谱、部署 AI 节点、离场后 7×24 自己跑。能力底座是一套约束 Agent 行为的约束层，**约束层 × 生命周期**双层架构：层 1 约束层 = 一个层五种能力（注入·审计·回溯·沉淀·进化）；层 2 生命周期 = 诊断 → 激活 → 编排 → 执行 → 进化。FORGE 自迭代工具链（LOOP 流水线）是项目内部开发工具，保证每次变更可审计、可回滚、可进化。
 
 ```mermaid
 graph TD
-    A[成熟 Agent 宿主 + 大模型<br/>DSH · OpenClaw · WorkBuddy<br/>90% 智力 · 你自选 · 我们不替代] --> B[约束层<br/>一个层四种能力<br/>约束层 × 生命周期]
+    A[成熟 Agent 宿主 + 大模型<br/>DSH · OpenClaw · WorkBuddy<br/>90% 智力 · 你自选 · 我们不替代] --> B[约束层<br/>一个层五种能力<br/>约束层 × 生命周期]
     B --> C[FDE Harness 层<br/>嵌在 Agent 与模型之间<br/>帮你梳理→部署→离场→AI 节点自己跑]
     C --> D[SMB · OPC 的每个人<br/>成为自己业务的 FDE]
 ```
 
 ### 双层架构：约束层与生命周期（主框架）
 
-**这是理解 sofagent 最关键的一张图**——之前只有"约束层四种能力"（那是**能力视角**：怎么保证做对）。激活链（Activation Chain：FDE 诊断交付物 → 注册企业 SubAgent → 编排成 LangGraph 业务流自动跑，四阶段 ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN）引入后，产品在"治理"之外多了一条**流程视角**（企业 AI 从诊断到自动运行怎么走）：
+**这是理解 sofagent 最关键的一张图**——之前只有"约束层五种能力"（那是**能力视角**：怎么保证做对）。激活链（Activation Chain：FDE 诊断交付物 → 注册企业 SubAgent → 编排成 LangGraph 业务流自动跑，四阶段 ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN）引入后，产品在"治理"之外多了一条**流程视角**（企业 AI 从诊断到自动运行怎么走）：
 
 | 层 | 是什么 | 视角 | 回答什么问题 |
 |----|--------|------|-------------|
-| **层 1 · 约束层** | 一个层四种能力（注入·审计·回溯·进化） | 能力视角 | "怎么保证每次执行都做对" |
+| **层 1 · 约束层** | 一个层五种能力（注入·审计·回溯·沉淀·进化） | 能力视角 | "怎么保证每次执行都做对" |
 | **层 2 · 生命周期** | 诊断 → 激活 → 编排 → 执行 → 进化 | 流程视角 | "企业 AI 从诊断到自运转怎么走" |
 
 ```mermaid
 graph LR
-    subgraph 层2 · 生命周期（流程视角 · v1.4.3+）
+    subgraph 层2 · 生命周期（流程视角 · v1.4.4+）
         D1[诊断<br/>FDE 四阶段] --> D2[激活 ACTIVATE<br/>交付物→SubAgent]
         D2 --> D3[编排 ORCHESTRATE<br/>多 Agent→StateGraph]
         D3 --> D4[执行 EXECUTE<br/>DAG + HITL + 审计]
@@ -40,8 +40,9 @@ graph LR
         C0[📥 注入<br/>约束注入链·开工前]
         C1[🔍 审计<br/>每次变更硬证据]
         C2[🔄 回溯<br/>快照·回滚]
+        C4[📚 沉淀<br/>蒸馏·知识资产]
         C3[🧬 进化<br/>反思·知识·优化]
-        C0 --> C1 --> C2 --> C3
+        C0 --> C1 --> C2 --> C4 --> C3
     end
     D4 -.->|每步审计| C1
     C1 -.->|违规拦截·回滚| C2
@@ -91,7 +92,7 @@ graph TD
 
 ### 四层运行形态：企业 AI 从梳理到专属模型
 
-前两张图分别讲「能力视角」（约束层四种能力）和「流程视角」（激活链五阶段）。这张图是**第三个视角——站在企业/客户看完整运行形态**，回答「装上 sofagent 之后，企业 AI 最终长成什么样」：
+前两张图分别讲「能力视角」（约束层五种能力）和「流程视角」（激活链五阶段）。这张图是**第三个视角——站在企业/客户看完整运行形态**，回答「装上 sofagent 之后，企业 AI 最终长成什么样」：
 
 ```mermaid
 graph TB
@@ -126,7 +127,7 @@ graph TB
 - [术语对照](#术语对照)
 - [能力与状态总览](#能力与状态总览)
 - [一、核心理念与架构全景](#一核心理念与架构全景)
-- [二、约束层（Harness）设计——一个层，四种能力](#二约束层harness设计一个层四种能力)
+- [二、约束层（Harness）设计——一个层，五种能力](#二约束层harness设计一个层五种能力)
 - [三、部署与运行架构](#三部署与运行架构)
 - [四、核心设计决策](#四核心设计决策)
 - [五、激活链架构（v1.2.5+ Phase 1-4 已交付）](#五激活链架构v125-phase-1-4-已交付)
@@ -143,11 +144,12 @@ graph TB
 | 📥 注入 | Constraint Injection | 四层约束注入链，Agent 启动前灌入红线 |
 | 🔍 审计 | Audit | git diff + 文件变更硬证据审计（v1.1.0 拆独立包） |
 | 🔄 回溯 | Restore | 每次审计自动快照，`--revert` 一键回滚 |
+| 📚 沉淀 | Distill | 审计轨迹/反思/案例蒸馏成知识资产——进化吃沉淀的产出 |
 | ⚙️ FORGE 工具链 | FORGE Toolchain | LOOP 流水线（内部自迭代用，非对外能力） |
 | 🧬 进化 | Evolution | FDE 周度巡检 + 自动优化 |
 | 加载链 | Load Chain | Agent 启动时注入的约束文件（又称约束注入链） |
 | FDE | Forward Deployed Engineer（前线部署工程师） | 源自 Palantir 交付纪律：工程师驻场客户，掌握完整上下文、打破岗位边界、对结果负责。sofagent 把 FDE 能力产品化——FDE 进场部署 AI 节点，离场后节点自己跑 |
-| Harness | 约束层 | FDE Harness 层的核心引擎：一个层四种能力（注入·审计·回溯·进化）。对外中文「约束层」、英文「Harness」为 SSOT；「FDE Harness 层」即产品整体（约束层 + FDE 方法论 + 审计），「约束层」即其引擎，两者一体两面不另作区分；「Constraint Layer」为同义英文旧称，不再单独使用 |
+| Harness | 约束层 | FDE Harness 层的核心引擎：一个层五种能力（注入·审计·回溯·沉淀·进化）。对外中文「约束层」、英文「Harness」为 SSOT；「FDE Harness 层」即产品整体（约束层 + FDE 方法论 + 审计），「约束层」即其引擎，两者一体两面不另作区分；「Constraint Layer」为同义英文旧称，不再单独使用 |
 | Gateway | Gateway | 企业级 AI 统一入口（WorkBuddy / OpenClaw 等大厂平台），sofagent 不替代它 |
 | Sub Agent | Sub Agent | 用 LangGraph createReactAgent 搭的专有执行节点 |
 | Ontology | 本体数据 | 企业的业务世界模型——一套「什么实体存在、能做什么动作、受什么约束」的规则书（机器可读），FDE 帮你搭建并持续维护 |
@@ -160,13 +162,15 @@ graph TB
 | EXECUTE | 执行 | DAG 运行 + HITL 人工审批 + 审计集成 + 异常兜底 |
 | SUSTAIN | 持续 | wrapToolCall 联动：执行 → 审计 → 反思 → 进化 |
 
-> ⚠️ **旧名兼容**：注入/审计/回溯/进化即原约束底座/审计引擎/回溯引擎/进化引擎，v1.2.9 起统一为约束层四种能力；「约束底座」「Constraint Layer」均为「约束层」的同义旧称，不再单独使用。历史文档中的"引擎"表述保留不动（archive/changelog 是历史快照不改）。代码层面的类名 `AuditEngine`、函数名 `runAuditGate`、文件名 `engine/audit` 全是 API，保持不动。
+> ⚠️ **旧名兼容**：五能力（注入/审计/回溯/沉淀/进化）中，前四能力即原约束底座/审计引擎/回溯引擎/进化引擎（v1.2.9 统一为「约束层四种能力」），v1.4.4 起新增「沉淀」独立成词、升级为五种能力。「沉淀」承接原「进化」表述中的「经验沉淀」语义与知识蒸馏管线（knowledge/）。历史文档中的四能力与"引擎"表述保留不动（archive/changelog 是历史快照不改）。代码层面的类名 `AuditEngine`、函数名 `runAuditGate`、文件名 `engine/audit` 全是 API，保持不动。
 
 > 💬 **交互范式**：sofagent 的核心交互是语言（MCP / IM / CLI），无操作型 GUI——所有能力通过 MCP 协议暴露，用户通过 Agent 对话（LUI）操作：说一句话，它做完告诉你结果在哪。dashboard 是只读监控视图（localhost:3780，详见下文），不承担操作职能。这是架构的根本设计约束：不存在「仅 CLI 可用」或「需要打开页面」的能力。详见 [设计哲学](./PHILOSOPHY.md)。
 
 ### 约束层七维度（Agent 的构成面）
 
-Agent = **模型 + 上下文 + 工具 + 状态 + 执行控制 + 权限 + 可观测性** 七个维度。约束层四种能力（注入·审计·回溯·进化）各自覆盖其中若干维度，不构成独立架构层——七维度是「Agent 由什么构成」的分析框架，四种能力是「约束层对 Agent 做什么」的生命周期框架，两者正交。
+Agent = **模型 + 上下文 + 工具 + 状态 + 执行控制 + 权限 + 可观测性** 七个维度。约束层五种能力（注入·审计·回溯·沉淀·进化）各自覆盖其中若干维度，不构成独立架构层——七维度是「Agent 由什么构成」的分析框架，五种能力是「约束层对 Agent 做什么」的生命周期框架，两者正交。
+
+> 注：沉淀能力主要作用于上下文（L4 knowledge/ 蒸馏回灌）与可观测性（历史归档/报表），与注入（L1-L4 加载链）的上下文覆盖互补。
 
 | 维度 | 含义 | 主要受约束层哪阶段覆盖 |
 |------|------|----------------------|
@@ -178,13 +182,13 @@ Agent = **模型 + 上下文 + 工具 + 状态 + 执行控制 + 权限 + 可观�
 | 权限 | 能碰什么资源 | 审计（A 类越权规则）+ 回溯（最小权限） |
 | 可观测性 | 日志 / 追溯 / 签名 | 审计（硬证据）+ 进化（趋势反思） |
 
-> 维度构成以 [WIKI 术语表](./WIKI.md) 本行为准；四种能力各自的维度分工详见 [设计哲学 §一·四件事的分工](./PHILOSOPHY.md#四件事的分工mcp--skills--ontology--harness)。
+> 维度构成以 [WIKI 术语表](./WIKI.md) 本行为准；五种能力各自的维度分工详见 [设计哲学 §一·四件事的分工](./PHILOSOPHY.md#四件事的分工mcp--skills--ontology--harness)。
 
 ---
 
 ## 能力与状态总览
 
-> 这份清单是「现在能干什么」的单一索引。约束层内部设计见 [二、约束层（Harness）设计——一个层，四种能力](#二约束层harness设计一个层四种能力)；未来方向见 [六、已知局限与未来方向](#六已知局限与未来方向)。
+> 这份清单是「现在能干什么」的单一索引。约束层内部设计见 [二、约束层（Harness）设计——一个层，五种能力](#二约束层harness设计一个层五种能力)；未来方向见 [六、已知局限与未来方向](#六已知局限与未来方向)。
 
 ### 26 个 workspace 源码包（构成以 package.json workspaces 为准：12 个引擎 @sofagent/* 包 + 1 个工具包 + 9 个 DSH 插件包 cordis-plugin-sofagent-* + 4 个 OpenClaw 插件包（engine/openclaw-plugins/）；其中 13 个发布为 @sofagent npm 包，DSH 插件 9 款经 SkillHub 分发。「12 包」统计口径指有 test script 的引擎包）
 
@@ -338,14 +342,15 @@ sofagent 的架构基因来自 Geoffrey Huntley 的 Ralph 循环——「Agent �
 
 > 理论基础及行业验证见 [THANKS.md](./THANKS.md) 和 [PHILOSOPHY §四 信任模型](./PHILOSOPHY.md#四怎么管信任模型)。
 
-### 治理架构（约束层四种能力）
+### 治理架构（约束层五种能力）
 
 ```mermaid
 graph LR
     A["📥 注入<br/>约束注入链·启动前"] --> B["🔍 审计<br/>24 条规则·拦截违规"]
     B --> C["🔄 回溯<br/>快照存档·一键回滚"]
-    C --> D["🧬 进化<br/>周度巡检·自动优化"]
-    D --> A
+    C --> D["📚 沉淀<br/>蒸馏·知识资产"]
+    D --> E["🧬 进化<br/>周度巡检·自动优化"]
+    E --> A
 ```
 
 | 能力 | 设计原则 | 独立包 |
@@ -353,10 +358,11 @@ graph LR
 | 📥 注入 | 四层约束注入链永远在线 | @sofagent/harness |
 | 🔍 审计 | 只看 git diff 硬证据 | @sofagent/audit |
 | 🔄 回溯 | 事后快照 + `--revert` | @sofagent/core |
+| 📚 沉淀 | 知识蒸馏回灌（knowledge/ + SKILL 文件） | @sofagent/daemon + @sofagent/skillopt（与进化共享） |
 | ⚙️ FORGE 工具链 | StateGraph LOOP 流水线（内部自迭代用） | @sofagent/orchestrator |
 | 🧬 进化 | daemon cron @weekly | @sofagent/daemon + @sofagent/skillopt |
 
-> 约束层四种能力的完整设计哲学见 [PHILOSOPHY §三 架构全景](./PHILOSOPHY.md#三怎么跑架构全景)。
+> 约束层五种能力的完整设计哲学见 [PHILOSOPHY §三 架构全景](./PHILOSOPHY.md#三怎么跑架构全景)。
 
 ### 输出签名机制
 
@@ -399,7 +405,7 @@ graph LR
 
 ---
 
-## 二、约束层（Harness）设计——一个层，四种能力
+## 二、约束层（Harness）设计——一个层，五种能力
 
 ### 📥 注入（约束注入链）
 
@@ -643,7 +649,7 @@ graph LR
 
 ### 运行时数据层：引擎间数据流全景
 
-约束层（审计/回溯/进化）运行时共同往 `data/` 目录读写数据（编排引擎 @sofagent/orchestrator 为内部实现，也读写此目录）。以下是生产者→数据文件→消费者的完整单向数据流（v1.2.1 补全 eval + ab-test 后的全景）：
+约束层（审计/回溯/沉淀/进化）运行时共同往 `data/` 目录读写数据（编排引擎 @sofagent/orchestrator 为内部实现，也读写此目录）。以下是生产者→数据文件→消费者的完整单向数据流（v1.2.1 补全 eval + ab-test 后的全景）：
 
 ```
                         写入侧（生产者）                          data/ 目录                          读取侧（消费者）
@@ -985,7 +991,7 @@ sofagent 的三层治理与 Karpathy LLM Wiki 的 `raw materials → Wiki entrie
 
 ## 五、激活链架构（v1.2.5+ Phase 1-4 已交付）
 
-> **本章是心智模型「层 2 · 生命周期」的架构展开**——层 1 约束层（一个层四种能力）已在第二章详述，这里讲生命周期怎么跑。
+> **本章是心智模型「层 2 · 生命周期」的架构展开**——层 1 约束层（一个层五种能力）已在第二章详述，这里讲生命周期怎么跑。
 >
 > **问题**：FDE 诊断交付了 ontology + workflow.yml + skills/ + nodes/*.md，这些静态文件躺在磁盘上，企业 IT 不知道怎么把它们跑起来。交付物和"业务流自动运行"之间有一道**大断裂带**。
 
@@ -1190,7 +1196,7 @@ Claude Code 之父 Boris Cherny（YC 访谈）给出 Harness 层的代际时钟�
 | 4 | **把 Harness 变成工具垃圾场** | 工具过多增加选择错误，宽泛权限扩大事故范围 | ToolGate 限定了 Agent 工具调用的前置门禁，不是所有工具都能随便调用 |
 | 5 | **用 Graph 掩盖 Harness 缺陷** | 流程图无法修复陈旧数据、不可靠工具和缺少权限控制的问题 | 审计引擎的「硬证据」原则（19/24 条纯 git-diff）不依赖 Agent 意愿——这就是 Harness 的底线 |
 
-> **核心教训**：Architecture complexity should come from observed real needs, not from imagining "advanced agents"。sofagent 的约束层四能力不是同时做的——先有审计（Harness 层），再有 think.md 反思（回溯/进化），最后才到 skillopt 自优化。FORGE 工具链是项目自迭代过程中逐步长出来的内部工具。这个顺序本身就是对反模式 1 和 5 的预防。
+> **核心教训**：Architecture complexity should come from observed real needs, not from imagining "advanced agents"。sofagent 的约束层五能力不是同时做的——先有审计（Harness 层），再有 think.md 反思（回溯），知识蒸馏（沉淀），最后才到 skillopt 自优化（进化）。FORGE 工具链是项目自迭代过程中逐步长出来的内部工具。这个顺序本身就是对反模式 1 和 5 的预防。
 
 ---
 

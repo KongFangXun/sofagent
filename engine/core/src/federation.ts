@@ -1,6 +1,6 @@
 // ============================================================
 // federation.ts · 联邦/巡检共用实现(下沉）
-// v1.4.3 从 @sofagent/daemon 下沉——audit 此前用变量名 + any 动态 import
+// v1.4.4 从 @sofagent/daemon 下沉——audit 此前用变量名 + any 动态 import
 //   daemon 的 checkConflict/mergeFederationResults，失去类型安全、运行时才报错。
 //   现在实现位于 core（零上层依赖底座），audit 静态 import 获得编译期类型。
 //   daemon 侧保留 re-export shim（federation/merge.ts、inspectors/*）保证兼容。

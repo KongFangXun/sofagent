@@ -2,7 +2,7 @@
 
 > **sofagent 是一套 FDE 能力——装进你的 Agent（DSH / OpenClaw / WorkBuddy / Codex / Claude Code）后，进场梳理业务流、部署 AI 节点、离场后 7×24 自己跑。** 装完之后，你在自己的 Agent 里说一句话，它就帮你干活——审计每次变更、沉淀每次经验，沉淀机制随使用迭代。下面从装到用到查问题，全流程走一遍。
 >
-> v1.4.3 · 2026-09-01（UTC）· 孔放勋
+> v1.4.4 · 2026-09-02（UTC）· 孔放勋
 
 <img src="assets/sofagent.png" alt="sofagent" width="160" />
 
@@ -97,10 +97,10 @@
 
 | 层 | 是什么 | 一句话 | 状态 |
 |:--:|------|------|:--:|
-| **层 1 · 约束层** | 约束层四种能力（注入 · 审计 / 回溯 / 进化） | 怎么保证每次执行都做对 | ✅ 已交付 |
+| **层 1 · 约束层** | 约束层五种能力（注入·审计·回溯·沉淀·进化） | 怎么保证每次执行都做对 | ✅ 已交付 |
 | **层 2 · 生命周期（五阶段）** | 诊断 → 激活 → 编排 → 执行 → 持续（激活链四阶段 = 激活→编排→执行→持续 ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN，为五阶段中后四环） | 企业 AI 从诊断到自运转怎么走 | 🔗 Phase 1-4 已交付 |
 
-**层 1 · 约束层（约束层四种能力）**：
+**层 1 · 约束层（约束层五种能力）**：
 
 | 角色 | 引擎 | 管什么 | 触发方式 |
 |------|------|------|------|
@@ -120,7 +120,7 @@
 | ④ | **执行** EXECUTE（v1.2.8-9） | DAG 运行 + 人工审批（HITL）+ 审计集成 |
 | ⑤ | **持续** SUSTAIN（v1.3.0） | 反思 + 回灌，喂下一轮诊断 |
 
-> 约束层（注入）＋ 审计 / 回溯 / 进化 ＝ 全生命周期**可审计、可回滚、可进化**。激活链在此基础上让企业 AI 从"诊断完交付一堆文档"走向"自运转"。FORGE 自迭代工具链是项目内部开发工具。完整设计见 [ARCHITECTURE · 双层架构](./ARCHITECTURE.md#双层架构约束层与生命周期主框架) 和 [激活链设计文档](./guides/fde-activation-chain.md)。
+> 约束层（注入）＋ 审计 / 回溯 / 沉淀 / 进化 ＝ 全生命周期**可审计、可回滚、可积累、可进化**。激活链在此基础上让企业 AI 从"诊断完交付一堆文档"走向"自运转"。FORGE 自迭代工具链是项目内部开发工具。完整设计见 [ARCHITECTURE · 双层架构](./ARCHITECTURE.md#双层架构约束层与生命周期主框架) 和 [激活链设计文档](./guides/fde-activation-chain.md)。
 
 ---
 
@@ -679,7 +679,7 @@ sofagent-audit subagent run fde --mode sustain --task "巡检所有节点"
 
 ### 概念速查
 
-上述术语（Harness 中间件、约束层 × 生命周期双层架构、约束层四种能力（注入·审计·回溯·进化）、激活链四阶段（ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN）、FORGE 内部工具链、铁律、审计规则、Skill、think.md、daemon、Agent 平台（OpenClaw / WorkBuddy 等）、FDE 等）已在上方各幕详述，此处仅作速查索引。加载链正典顺序：**SKILL.md（宪法）→ fde.md（规范）→ think.md（反思）→ knowledge/（知识）**。核心 = **约束层（约束层四能力）× 生命周期（诊断→激活→编排→执行→持续）**。完整概念见 [README](../README.md) 和 [ARCHITECTURE](./ARCHITECTURE.md)。
+上述术语（Harness 中间件、约束层 × 生命周期双层架构、约束层五种能力（注入·审计·回溯·沉淀·进化）、激活链四阶段（ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN）、FORGE 内部工具链、铁律、审计规则、Skill、think.md、daemon、Agent 平台（OpenClaw / WorkBuddy 等）、FDE 等）已在上方各幕详述，此处仅作速查索引。加载链正典顺序：**SKILL.md（宪法）→ fde.md（规范）→ think.md（反思）→ knowledge/（知识）**。核心 = **约束层（约束层五能力）× 生命周期（诊断→激活→编排→执行→持续）**。完整概念见 [README](../README.md) 和 [ARCHITECTURE](./ARCHITECTURE.md)。
 
 ---
 

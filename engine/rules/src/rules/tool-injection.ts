@@ -1,6 +1,6 @@
 // ============================================================
 // tool-injection.ts · 移植 audit rule-a9（prompt injection 检测）
-// v1.4.3：tool 视角——扫 args 里的 prompt injection 模式
+// v1.4.4：tool 视角——扫 args 里的 prompt injection 模式
 // ============================================================
 
 import type { ToolRule, ToolCallContext, InterceptVerdict } from '../types';

@@ -4,12 +4,12 @@
   <a href="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml"><img src="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml/badge.svg" alt="Verify" /></a>
   <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-brightgreen" alt="License: MIT" /></a>
   <!-- ⚠️ bump 版本时手动同步此 badges 版本号（Version-vX.Y.Z） -->
-  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.4.3-16B8F3" alt="Version" /></a>
+  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.4.4-16B8F3" alt="Version" /></a>
 </p>
 
 <p align="center"><sub>[简体中文](./README.md) | [English](./README.en.md)</sub></p>
 
-> 🚀 **v1.4.3**——训练引擎 · 运行与需求（监控/诊断/沙箱/推导/模板）+ 审计聚合指标 + 反作弊基线 + 存量清扫。见 [CHANGELOG](./CHANGELOG.md)。
+> 🚀 **v1.4.4**——训练引擎 · 信号与部署闭环（语料导出三件套 / 本地权重部署 / 产物→注册衔接 / 多基座对比 / 决策因果链 / CI 供应链加固 / 存量升级 / spec-first 硬禁令 / 审查收编批 / 五能力叙事）。**⏳ 待发版**（开发完成，tag/npm 发版时同步）。见 [CHANGELOG](./CHANGELOG.md)。
 
 ---
 
@@ -19,7 +19,7 @@
 
 > 💬 **一句话版本**：你的 AI 员工每次改代码、动文件，都先过一道安检、留一份记录、存一个快照——出事能查、能回滚，这就是 sofagent 干的事。
 
-sofagent 不造 Agent——执行能力交给成熟宿主（模型 + 工具 + 会话），它交付的是 **FDE Harness 层**。**FDE Harness = FDE 方法论 × Harness 工程**——把前线部署工程师的打法（进场梳理 → 部署 → 离场）固化成 Harness 约束层（注入 · 审计 · 回溯 · 进化），装进任何已有 Agent；让任何模型（通用或专属）都被管住（注册/灰度/训练/部署全留痕）。
+sofagent 不造 Agent——执行能力交给成熟宿主（模型 + 工具 + 会话），它交付的是 **FDE Harness 层**。**FDE Harness = FDE 方法论 × Harness 工程**——把前线部署工程师的打法（进场梳理 → 部署 → 离场）固化成 Harness 约束层（注入 · 审计 · 回溯 · 沉淀 · 进化），装进任何已有 Agent；让任何模型（通用或专属）都被管住（注册/灰度/训练/部署全留痕）。
 
 > 🚂 **训练引擎为什么在治理仓里**（30 秒答案）：治理的天花板是数据——审计发现的错误（哪些任务做砸了、哪种输出不合格）正是训练的燃料。训练引擎把「审计出来的问题 → 修复问题的模型」这条闭环接通，让治理数据反哺模型层；训练资产本身走商业侧交付，治理仓只保留协议与接口（外部化 / 可配置）。
 
@@ -34,7 +34,7 @@ sofagent 不造 Agent——执行能力交给成熟宿主（模型 + 工具 + �
 
 | 如果你是… | 建议 |
 |----------|------|
-| **给现有 Agent 加纪律**——已有 DSH / OpenClaw / WorkBuddy，想让 AI 干活时守规矩、留痕、出事能回溯 | ✅ **现在装**。核心价值就是约束层（注入 · 审计 · 回溯 · 进化），装完即用 |
+| **给现有 Agent 加纪律**——已有 DSH / OpenClaw / WorkBuddy，想让 AI 干活时守规矩、留痕、出事能回溯 | ✅ **现在装**。核心价值就是约束层（注入 · 审计 · 回溯 · 沉淀 · 进化），装完即用 |
 | **一人公司 / 小企业想落地 AI**——没有专职工程师，需要一个"不离职的 FDE"帮你梳理业务流、部署 AI 节点 | ✅ **现在装**。FDE Harness 层就是干这个的，从梳理到部署到离场审计全链路 |
 | **要开箱即用的企业级 Agent 平台**——期待完整商业产品（多租户、权限管理、计费、SLA） | ⏸️ **暂缓**。sofagent 是治理层，不是平台产品——平台级能力不在本开源仓库范围内。有集成能力的团队仍可把约束层接入自有平台，作为其中的治理模块；纯开箱需求建议另选平台产品 |
 | **纯研究 / 想看看约束层怎么设计**——读代码、学架构、借鉴方法论 | ✅ **现在装**。文档齐全（[HANDBOOK](./docs/HANDBOOK.md) / [ARCHITECTURE](./docs/ARCHITECTURE.md) / [PHILOSOPHY](./docs/PHILOSOPHY.md)），MIT 协议 |
@@ -105,18 +105,19 @@ sofagent 不造 Agent——执行能力交给成熟宿主（模型 + 工具 + �
 - 📜 **SKILL.md**——唯一主入口，由你的 AI 工具加载：按阶段路由到对应子 Skill，岗位规范按任务类型自动注入（梳理 / 审计 / 编排）
 - 🧩 **阶段子 Skill**——进场 → 深挖 → 量化 → 交付 → 离场五步闭环（01-entry → 05-exit），每一步该做什么、交付什么都定义清楚
 - 🔒 **harness 约束骨架**——entry-gate / fde-template / engage / loop-check / task-closure…，从进场到离场每一步都有对应的约束模板
-- 🧬 **经验沉淀机制**——think.md 反思 + knowledge 维护的结构化管道已就绪；持续使用场景下的沉淀效果实测数据积累中（详见 [LIMITATIONS §核心效果实测情况](./docs/LIMITATIONS.md#核心效果实测情况)）
+- 📚 **知识资产管道（沉淀能力）**——think.md 反思 + knowledge 维护的结构化管道已就绪；持续使用场景下的沉淀效果实测数据积累中（详见 [LIMITATIONS §核心效果实测情况](./docs/LIMITATIONS.md#核心效果实测情况)）
 
 > 部署的不是裸 Agent，是**带约束骨架的 Agent**——约束是建议性的，审计是强制性的：Agent 可以不遵守约束，但每次变更都逃不过审计。
 
 ## 约束层（Harness）
 
-约束层是 sofagent 的行为底座，四种能力：
+约束层是 sofagent 的行为底座，五种能力：
 
 - **注入**——Agent 启动时注入企业约束，四层加载链；约束是建议性的
 - **审计**——24 条 git diff 硬证据规则（quick 零配置默认 17 条，扩展 7 条经 config 启用）+ AgentShield 五类配置面静态扫描；审计是强制性的，每次变更必审，违规当场拦截
 - **回溯**——每次审计后自动快照存档，出事一键回到任意快照
-- **进化**——think.md 反思 + Dream Cycle + skillopt，经验自动沉淀进知识库（知识沉淀当前为格式管道，内容填充随模型接入推进，见 [LIMITATIONS](./docs/LIMITATIONS.md)）
+- **沉淀**——审计轨迹、think.md 反思、行业案例蒸馏成可复用知识资产（knowledge/ 知识库 + SKILL 文件；知识沉淀当前为格式管道，内容填充随模型接入推进，见 [LIMITATIONS](./docs/LIMITATIONS.md)）
+- **进化**——think.md 反思 + Dream Cycle + skillopt，消费沉淀的知识资产自动变强（知识沉淀当前为格式管道，内容填充随模型接入推进，见 [LIMITATIONS](./docs/LIMITATIONS.md)）
 
 ## 安装
 
@@ -171,7 +172,7 @@ sofagent-audit --doctor    # 验证环境（可选）
 | **`npx -y -p @sofagent/audit sofagent-audit`** | 零配置审计最近一次 commit，秒级出结果（首次 npx 约 30 秒） | 任意 git 仓库（临时） | 30 秒 |
 | **`--ruleset` 规则市场** | 加载安全等规则集，或自定义 JSON 规则 | 同上 | 1 分钟 |
 | **GitHub Action** | 每次 PR 自动审计，违规标注在 diff 行上 | CI/CD | 配置一次 |
-| **install.sh 全套** | 注入·审计·回溯·进化四能力 + daemon 巡检 + dashboard——Agent 的完整约束层 | **企业设备**（跑 AI 节点的服务器/电脑） | FDE 驻场安装 |
+| **install.sh 全套** | 注入·审计·回溯·沉淀·进化五能力 + daemon 巡检 + dashboard——Agent 的完整约束层 | **企业设备**（跑 AI 节点的服务器/电脑） | FDE 驻场安装 |
 
 **安装粒度对比**（同一个引擎，三种装法——按场景选）：
 

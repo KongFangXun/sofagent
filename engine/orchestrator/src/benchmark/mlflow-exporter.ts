@@ -1,6 +1,6 @@
 // ============================================================
 // mlflow-exporter.ts · Benchmark 评测结果 MLflow tracking 集成
-// v1.4.3（六）：多维标准化评估——自定义单一分数 → MLflow 标准指标
+// v1.4.4（六）：多维标准化评估——自定义单一分数 → MLflow 标准指标
 //
 // 设计约束：
 // - 零新依赖：MLflow REST API（fetch，Node 18+ 原生）直连 tracking server，

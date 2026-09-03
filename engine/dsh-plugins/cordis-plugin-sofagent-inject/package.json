@@ -1,6 +1,6 @@
 {
   "name": "cordis-plugin-sofagent-inject",
-  "version": "1.4.3",
+  "version": "1.4.4",
   "engines": {
     "node": ">=18"
   },
