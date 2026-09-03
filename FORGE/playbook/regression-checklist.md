@@ -1735,11 +1735,11 @@ grep -n "迷你 dist\|dist/index.js" engine/audit/src/commands/init.test.ts | gr
 
 #### 127. 新功能审查面——训练运行九章+DSH 执行深化+审计聚合+反作弊基线一维收口（阶段四来源提取 A 类 · 归并「旧交付退役收口」入此：composeWithDeepAgents 别名与 fde_compose ontology 收窄为退役治理子项）
 
-> 九章+清扫五件的静态一致性快查（执行级验证单测 138 用例已落 orchestrator/audit，此处分钟级 grep）。子项 h 承接清扫任务二/三的退役收口治理（别名承诺句式 + workflow-only 收窄——v1.5.0 shim 移除的防遗忘锚）。
+> 九章+清扫五件的静态一致性快查（执行级验证单测 138 用例已落 orchestrator/audit，此处分钟级 grep）。子项 h 承接清扫任务二/三的退役收口治理（别名承诺句式 + workflow-only 收窄——v1.5.0 shim 移除的防遗忘锚）。**块级退出码防御**：子项行尾 `|| echo "❌"` 的 echo 恒 0 会吞失败退出码——整块必须包子 shell + tee 落盘 + 尾部 ❌ 扫描定 exit，严禁裸 echo 收尾。
 
 ```bash
-# a: 训练查询侧三 tools（train_status/train_list/train_diagnose 注册 + 分发）
-for t in train_status train_list train_diagnose; do grep -q "name: '$t'" engine/mcp/src/tool-registry.ts && grep -q "case '$t'" engine/mcp/src/mcp-server.ts || echo "❌ $t 未注册/未分发"; done; echo "✅ 三 tools 齐（若上方无 ❌）"
+(# a: 训练查询侧三 tools（train_status/train_list/train_diagnose 注册 + 分发）
+for t in train_status train_list train_diagnose; do grep -q "name: '$t'" engine/mcp/src/tool-registry.ts && grep -q "case '$t'" engine/mcp/src/mcp-server.ts || echo "❌ $t 未注册/未分发"; done
 # b: GPU 队列僵尸收割三判定（终态/无占位 queued/pid 死——防额度悬挂死锁）
 grep -q "reapStaleGpuEntries" engine/orchestrator/src/train/train-scheduler.ts && grep -q "silentRelease" engine/orchestrator/src/train/gpu-queue.ts && echo "✅ 收割链在位" || echo "❌ 僵尸收割缺失"
 # c: 诊断七类处方表（MiniMax-M1/ScaleRL 出处标注——处方口径可审计）
@@ -1754,7 +1754,7 @@ grep -q "replayEventsToStreamHandler" engine/orchestrator/src/execution-backends
 grep -q "新功能入口导览" docs/HANDBOOK.md && grep -q "后训模块（需要 GPU 环境）" install.sh && echo "✅ 导览+分层提示" || echo "❌ onboarding 断层"
 # h: 退役收口治理（清扫二/三——别名句式「将在 v1.5.0 移除」+ fde_compose workflow-only；v1.5.0 移除时本子项同步清）
 grep -q "将在 v1.5.0 移除" engine/orchestrator/src/composer.ts && grep -q "action === 'ontology'" engine/mcp/src/tools/fde-compose.ts && grep -q "fde_derive" engine/mcp/src/tools/fde-compose.ts && echo "✅ 退役治理（别名+收窄）" || echo "❌ 退役收口回潮"
-grep -q "checkHistoryChainIntegrity" CHANGELOG.md && echo "✅ 退役公告在 CHANGELOG 索引" || echo "❌ 公告丢失（v1.5.0 移除前置）"
+grep -q "checkHistoryChainIntegrity" CHANGELOG.md && echo "✅ 退役公告在 CHANGELOG 索引" || echo "❌ 公告丢失（v1.5.0 移除前置）") 2>&1 | tee "/tmp/regress-dim127-$$.log"; grep -q "❌" "/tmp/regress-dim127-$$.log" && { rm -f "/tmp/regress-dim127-$$.log"; echo "维度127收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim127-$$.log"; echo "维度127收口:PASS"
 ```
 
 #### 128. fresh-eyes 60+ 条修复防复发——门禁假红假绿族 + worktree 引用丢失 + 安全面六件 + dashboard 一致性（阶段四来源提取 B 类 · 参照 124/126 B 类一维收口惯例）
