@@ -854,6 +854,18 @@ if [ "$STALE_FAIL" -gt 0 ]; then
 fi
 
 echo ""
+
+# ── 17. API.md 工具数对账（防文档-代码漂移）──
+echo "=== 17. API.md 工具数对账（文档 tool 数 == registry 实数）==="
+REGISTRY_COUNT=$(grep -c "name: '" engine/mcp/src/tool-registry.ts || true)
+API_COUNT=$(grep -c '^| `' docs/API.md || true)
+if [ "$REGISTRY_COUNT" = "$API_COUNT" ]; then
+  echo "  ✓ docs/API.md：${API_COUNT} 个 tool 与 registry（${REGISTRY_COUNT}）一致"
+else
+  echo "  ❌ docs/API.md 工具数漂移：文档 ${API_COUNT} ≠ registry ${REGISTRY_COUNT}——跑 node tools/gen/gen-api-tools.mjs 重生成"
+  ERRORS=$((ERRORS + 1))
+fi
+
 if [ "$ERRORS" -gt 0 ]; then
   echo "发现 ${ERRORS} 个问题"
   exit 1
