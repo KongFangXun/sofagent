@@ -86,7 +86,6 @@ export function manifestPath(weightsDir: string): string {
  *   四、（verifyHash=true 时）当前版本 sha256 与实际文件匹配
  */
 export function checkWeightsDir(weightsDir: string, opts?: { verifyHash?: boolean }): ManifestCheck {
-  const issues: string[] = [];
   const mf = manifestPath(weightsDir);
   if (!existsSync(mf)) {
     return { ok: false, issues: [`权重目录缺 manifest.json：${mf}——按目录规范生成版本清单后再注册`] };
@@ -101,13 +100,18 @@ export function checkWeightsDir(weightsDir: string, opts?: { verifyHash?: boolea
   if (typeof m !== 'object' || m === null || m.schemaVersion !== WEIGHTS_MANIFEST_SCHEMA_VERSION) {
     return { ok: false, issues: [`manifest.json schemaVersion 非法（期望 ${WEIGHTS_MANIFEST_SCHEMA_VERSION}）`] };
   }
+  const blocking: string[] = [];
   if (!Array.isArray(m.versions) || m.versions.length === 0) {
-    issues.push('manifest.versions 为空——至少一个版本才能注册');
+    blocking.push('manifest.versions 为空——至少一个版本才能注册');
   }
   if (typeof m.current !== 'string' || !m.versions.some((v) => v && v.id === m.current)) {
-    issues.push(`manifest.current「${String(m.current)}」不在 versions 列表内`);
+    blocking.push(`manifest.current「${String(m.current)}」不在 versions 列表内`);
   }
-  if (issues.length > 0) return { ok: false, issues };
+  if (blocking.length > 0) return { ok: false, issues: blocking };
+  // model 字段可追溯性（非阻断告警——旧清单可能未写；新登记方 appendVersion 会补）
+  const issues: string[] = (typeof m.model !== 'string' || m.model.trim() === '')
+    ? ['manifest.model 为空（可追溯性弱化）——重新 appendVersion 传入注册名即补全']
+    : [];
 
   const currentPath = join(weightsDir, m.current);
   if (!existsSync(currentPath)) {
@@ -124,7 +128,7 @@ export function checkWeightsDir(weightsDir: string, opts?: { verifyHash?: boolea
     }
   }
 
-  return { ok: true, issues: [], manifest: m, currentPath };
+  return { ok: true, issues, manifest: m, currentPath };
 }
 
 /** 目录级 sha256（按文件名排序逐文件哈希再汇总——确定性） */
@@ -149,12 +153,13 @@ export function hashDir(dir: string): string {
 
 /**
  * 登记新版本——训练产物落盘后调用（artifact-register 消费面）。
- * 现有 manifest 缺失时初始化（v1 起）；重复 id = 更新条目（幂等）。
+ * 现有 manifest 缺失时初始化（v1 起，model 取参数或空——调用方应传）；
+ * 重复 id = 更新条目（幂等）。
  */
 export function appendVersion(
   weightsDir: string,
   version: WeightsVersion,
-  opts?: { setCurrent?: boolean },
+  opts?: { setCurrent?: boolean; model?: string },
 ): WeightsManifest {
   const mf = manifestPath(weightsDir);
   let m: WeightsManifest;
@@ -163,8 +168,10 @@ export function appendVersion(
     const idx = m.versions.findIndex((v) => v.id === version.id);
     if (idx >= 0) m.versions[idx] = version;
     else m.versions.push(version);
+    // 已有清单的空 model 可被补写（首个正式登记方传入注册名）
+    if ((!m.model || m.model === '') && opts?.model) m.model = opts.model;
   } else {
-    m = { schemaVersion: WEIGHTS_MANIFEST_SCHEMA_VERSION, model: '', versions: [version], current: version.id };
+    m = { schemaVersion: WEIGHTS_MANIFEST_SCHEMA_VERSION, model: opts?.model ?? '', versions: [version], current: version.id };
   }
   if (opts?.setCurrent !== false) m.current = version.id;
   // 延迟 require 防循环依赖（atomicWriteSync 来自 core，此处 fs 已直引）

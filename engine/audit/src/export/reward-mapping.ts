@@ -59,32 +59,9 @@ export interface VerifiersManifest {
   hmac: string;
 }
 
-/** 构造 verifiers 清单主体（24 实现 + 3 占位全量分桶） */
+/** 构造 verifiers 清单主体（24 实现 + 3 占位全量分桶——无覆写，委托 overrides 版传空表） */
 export function buildVerifiersManifest(): VerifiersManifestBody {
-  const all = [...defaultRules, ...extendedRules];
-  const entries = allRuleSlots(all);
-  const toEntry = (e: (typeof entries)[number]): VerifierEntry => ({
-    code: e.code,
-    name: e.name,
-    verifiability: e.reward_hint.verifiability,
-    signature: e.reward_hint.signature,
-    severityWeight: e.reward_hint.severityWeight,
-  });
-  const bucketOf = (v: Verifiability) => entries.filter((e) => e.reward_hint.verifiability === v).map(toEntry);
-  return {
-    schemaVersion: 'v1',
-    generatedAt: new Date().toISOString(),
-    buckets: {
-      machineJudgeable: bucketOf('machine-judgeable'),
-      humanReview: bucketOf('human-review'),
-      heuristic: bucketOf('heuristic'),
-    },
-    wiring: {
-      machineJudgeable: '可直接挂进训练循环当 reward 函数（判定输入=工具调用序列/产物文本）',
-      humanReview: '仅作训练后验收基准（golden set）——判定依赖业务语义，机器接线会引入标签噪声',
-      heuristic: '可当弱 reward（低权重）或触发采样人审——阈值敏感，误报率不可忽略',
-    },
-  };
+  return buildVerifiersWithOverrides({});
 }
 
 /** 生成 verifiers.json（签名 + 可选落盘） */
@@ -109,7 +86,11 @@ export function generateVerifiers(outDir?: string): VerifiersManifest & { files:
 /** 可判定性覆写表（code → 覆写值——生成 verifiers.json 前应用） */
 export type VerifiabilityOverride = Record<string, Verifiability>;
 
-/** 应用覆写后再分桶（人工拍板某条规则的实际可判定性时用） */
+/**
+ * 应用覆写后再分桶（人工拍板某条规则的实际可判定性时用）。
+ * 分桶与 wiring 文案的单源实现——buildVerifiersManifest 委托本函数
+ * 传空覆写表，两版本不再双份维护。
+ */
 export function buildVerifiersWithOverrides(overrides: VerifiabilityOverride): VerifiersManifestBody {
   const all = [...defaultRules, ...extendedRules];
   const base = allRuleSlots(all);

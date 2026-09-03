@@ -261,6 +261,8 @@ export function registerTrainArtifact(input: RegisterTrainArtifactInput): Artifa
   } else {
     // 新登记：拷贝产物 → 版本目录 → 哈希 → appendVersion（meta 三件套溯源）
     copyArtifacts(outputDir, versionDir);
+    const modelName0 =
+      input.modelName ?? `${input.enterpriseId}-${sanitizeModelName(record.job.baseModel)}`;
     appendVersion(input.weightsDir, {
       id: versionId,
       createdAt: new Date().toISOString(),
@@ -271,7 +273,7 @@ export function registerTrainArtifact(input: RegisterTrainArtifactInput): Artifa
         evalScore: round1(input.evalReport.averageScore),
         baseModel: record.job.baseModel,
       },
-    }, { setCurrent: true });
+    }, { setCurrent: true, model: modelName0 });
   }
 
   // ── 注册（source: 'local-path'——第二章注册面，verifyHash 强制）──

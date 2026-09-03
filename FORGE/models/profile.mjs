@@ -2,6 +2,10 @@
 // 切换模型：把 import 的模型变量改掉即可，不需要改 driver 代码。
 // API key 会自动跟着模型走——每个模型文件标注了自己用哪个厂商的 key 变量。
 //
+// 🍴 fork 适配提示：当前全链走 GLM Coding Plan 端点（open.bigmodel.cn），
+// 需自备 GLM_API_KEY（env.local.template 里配）。fork 后想换厂商：
+// 复制任一模型文件改 baseURL/model/key 变量名，再在下方 import 即可。
+//
 // 角色说明：
 //   A = 审查者（fresh-eyes-loop，需要最强推理）
 //   B = 工程师（fresh-eyes-loop，侧重代码修复）

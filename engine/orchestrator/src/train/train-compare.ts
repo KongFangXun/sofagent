@@ -20,6 +20,7 @@
 
 import {
   createTrainJob,
+  loadTrainJobRecord,
   type CreateTrainJobResult,
   type TrainJobRecord,
 } from './train-job';
@@ -133,14 +134,18 @@ type CreateTrainJobInputAlias = Parameters<typeof createTrainJob>[0];
  *   一、bases 非空（空列表无对比意义）
  *   二、dataPath 存在（数据路径缺失直接拒——同 hash 前提）
  *
- * 并发控制：GPU 队列（v1.4.3）——estimateTrainVramMiB 估算各基座显存
- * → acquire（预算内立即放行 / 超预算入队 FIFO）→ 全部 job 提交后
- * snapshot 留档。队列生命周期与本次对比绑定（对比结束不残留全局队列）。
+ * 并发控制（诚实口径）：acquire 只做「提交时点的显存账本记账」——
+ * submit 与 acquire 均发生在提交刻，真正的训练进程由训练框架自行
+ * 拉起；队列对象随本函数返回即不再持有（快照留档给监控面）。
+ * 跨任务生命周期的真并发管控在 train-scheduler（release 由任务终态
+ * 触发）——本模块不越权声称。
  *
  * 对比报告的生成分两步（提交与汇总解耦）：
  *   步一 submitCompareJobs：提交全部基座 job（本函数）
  *   步二 buildCompareReport：全部完成后汇总 ROI 排序（独立函数——
  *   eval 结果就绪后调用，避免提交方阻塞等训练）
+ *   中间态（usage / evalReport 回填）：refreshCompareResults（独立函数——
+ *   从 job 记录拉真实用量，防 ROI 恒 ∞/0 失真）
  */
 export function submitCompareJobs(
   input: TrainCompareInput,
@@ -171,6 +176,21 @@ export function submitCompareJobs(
   for (const base of input.bases) {
     const hyperparams = { ...(input.hyperparams ?? {}), ...(base.hyperparamsOverride ?? {}) };
     const jobId = `compare-${datasetHash.slice(0, 8)}-${slugify(base.baseModel)}`;
+    // 提交时点显存记账（acquire 先于 submit——显存超总预算的任务不提交，不放行 OOM 组合）
+    const requiredMiB = estimateTrainVramMiB(base.baseModel, input.algorithm, hyperparams);
+    const acquired = queue.acquire(jobId, requiredMiB);
+    const totalBudget = (input.gpuTotalMiB ?? 0) > 0 ? input.gpuTotalMiB! : null;
+    // 拒绝语义只针对「单任务自身超总预算」——排到天荒地老也进不去；
+    // 「预算够但当前被占」是合法排队（GPU 队列 pump 语义），照常提交
+    if (!acquired && totalBudget !== null && requiredMiB > totalBudget) {
+      return {
+        ok: false,
+        issues: [
+          `GPU 显存预算不足：${base.baseModel}（估算 ${requiredMiB} MiB）超出总预算 ${totalBudget} MiB——该任务永远排不进，调大 gpuTotalMiB 或换小基座`,
+          ...jobs.map((j) => `已提交：${j.baseModel}（${j.trainJobId}）`),
+        ],
+      };
+    }
     const res = submit({
       dataDir: input.dataDir,
       enterpriseId: input.enterpriseId,
@@ -183,9 +203,17 @@ export function submitCompareJobs(
     });
     if (!res.created && res.record.status === 'completed') {
       // 幂等命中已完成的 job——对比重放场景（同数据同基座重提交）
-      // 复用既有 job（train-job 幂等语义），不重复训练
+      // 复用既有 job（train-job 幂等语义），不重复训练。
+      // usage 从既有记录回填（幂等路径不再恒零——ROI 数字保真）
+      jobs.push({
+        baseModel: base.baseModel,
+        trainJobId: jobId,
+        status: res.record.status,
+        evalReport: null,
+        usage: { ...res.record.usage },
+      });
+      continue;
     }
-    queue.acquire(jobId, estimateTrainVramMiB(base.baseModel, input.algorithm, hyperparams));
     jobs.push({
       baseModel: base.baseModel,
       trainJobId: jobId,
@@ -201,6 +229,43 @@ export function submitCompareJobs(
 /** baseModel → jobId 片段（斜杠等非法字符转 -） */
 function slugify(raw: string): string {
   return raw.replace(/[^a-zA-Z0-9-_.]/g, '-').toLowerCase();
+}
+
+// ═════ 中间态回填（步一与步二之间——usage/status 从 job 记录拉真实值）═════
+
+/** refreshCompareResults 入参 */
+export interface RefreshCompareInput {
+  /** 步一返回的基座结果（原地更新——引用语义，便于调用方持同一数组） */
+  results: CompareBaseResult[];
+  /** 数据根 */
+  dataDir: string;
+  /** 企业标识（job 记录分区） */
+  enterpriseId: string;
+  /** job 记录读取（测试注入——缺省 loadTrainJobRecord） */
+  loadRecord?: typeof loadTrainJobRecord;
+}
+
+/**
+ * 中间态回填——从 train job 记录拉真实 usage 与 status。
+ *
+ * 为什么需要：submitCompareJobs 提交刻的 usage 恒零（还没跑）、
+ * buildCompareReport 的 ROI = evalScore / trainCost——不回填则恒 ∞/0，
+ * 对比报告核心数字失真。外部调用方在「全部基座完成后、生成报告前」
+ * 调本函数一次（或轮询调至全部终态）。
+ *
+ * evalReport 不在本函数职责内：eval 报告由 train-eval-loop 产出
+ * （runTrainEval 返回），由调用方按需注入 results[i].evalReport——
+ * 引用语义原地更新，改写即生效。
+ */
+export function refreshCompareResults(input: RefreshCompareInput): CompareBaseResult[] {
+  const load = input.loadRecord ?? loadTrainJobRecord;
+  for (const r of input.results) {
+    const rec = load(input.dataDir, input.enterpriseId, r.trainJobId);
+    if (rec === null) continue; // 记录缺席（被清理）——保留原值如实呈现
+    r.status = rec.status;
+    r.usage = { ...rec.usage };
+  }
+  return input.results;
 }
 
 // ═════ 报告汇总（步二——全部完成后调用）═════

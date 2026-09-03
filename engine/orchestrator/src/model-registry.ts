@@ -20,7 +20,7 @@
 import { existsSync, readFileSync, mkdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { atomicWriteSync } from '@sofagent/core';
-import { checkWeightsDir, type WeightsManifest } from './weights-manifest';
+import { checkWeightsDir, hashDir, type WeightsManifest } from './weights-manifest';
 
 // ============================================================
 // 类型定义
@@ -316,9 +316,14 @@ export function switchModel(
     return { ok: false, awaitingHuman: false, message: `模型「${modelName}」已退役`, issues: ['退役模型不参与路由——先 restore 恢复'] };
   }
   if (entry.source === 'local-path') {
+    // 前置判空：v1.4.1 扩展位时代的旧条目可能缺 localWeights.dir——
+    // 直接落 checkWeightsDir('') 会报误导性的「缺 manifest.json」，先给准确提示
+    if (typeof entry.localWeights?.dir !== 'string' || entry.localWeights.dir.trim() === '') {
+      return { ok: false, awaitingHuman: false, message: `模型「${modelName}」注册条目缺 localWeights.dir（v1.4.4 前旧条目）——请重新注册补全权重目录信息`, issues: ['条目缺 localWeights.dir——重新注册即修复'] };
+    }
     // 本地权重模型：切换前重校验权重目录（当前版本在场 + 哈希一致）——
     // 校验通过即可挂载（加载由 vLLM/Ollama/openai-compatible 本地端点承接）
-    const check = checkWeightsDir(entry.localWeights?.dir ?? '', { verifyHash: true });
+    const check = checkWeightsDir(entry.localWeights.dir, { verifyHash: true });
     if (!check.ok) {
       return { ok: false, awaitingHuman: false, message: `本地权重校验失败：${check.issues.join('；')}`, issues: check.issues };
     }
@@ -445,6 +450,10 @@ export function rollbackModel(lane: 'executor' | 'pipeline', options: ModelRegis
  * 与 rollbackModel（模型级）的分工：模型级回滚换模型条目，版本级回滚换同一模型
  * 的权重版本（新训 v2 不如 v1 时用）。止损语义对齐 rollbackModel：直接生效不要求人审。
  * git snapshot 兜底由上层调用方决定（版本清单本身是回滚依据，文件未动）。
+ *
+ * 供应链红线：回滚目标版本哈希强制校验——checkWeightsDir 只验 current 版本，
+ * 回滚恰好要指向非 current 的历史版本，故对目标版本目录单独 hashDir 直验
+ * （注册/切换/回滚三条版本切换路径全部验哈希，无一旁路）。
  */
 export function rollbackWeightsVersion(
   modelName: string,
@@ -460,7 +469,7 @@ export function rollbackWeightsVersion(
   }
 
   const dir = entry.localWeights.dir;
-  const check = checkWeightsDir(dir, { verifyHash: false });
+  const check = checkWeightsDir(dir, { verifyHash: true });
   if (!check.ok || !check.manifest) {
     return { ok: false, awaitingHuman: false, message: `权重清单读取失败：${check.issues.join('；')}`, issues: check.issues };
   }
@@ -482,6 +491,17 @@ export function rollbackWeightsVersion(
   }
   if (target === manifest.current) {
     return { ok: false, awaitingHuman: false, message: `目标版本「${target}」即当前版本（无需回滚）`, issues: [] };
+  }
+
+  // 回滚目标版本哈希强制校验（供应链红线——目标目录被篡改即拒绝，绝不静默指向坏权重）
+  const targetEntry = manifest.versions.find((v) => v.id === target);
+  const targetDir = require('path').join(dir, target);
+  if (!targetEntry || !require('fs').existsSync(targetDir)) {
+    return { ok: false, awaitingHuman: false, message: `目标版本「${target}」目录缺失：${targetDir}`, issues: [`版本 ${target} 目录不在场——无法回滚`] };
+  }
+  const actualHash = hashDir(targetDir);
+  if (actualHash !== targetEntry.sha256) {
+    return { ok: false, awaitingHuman: false, message: `回滚目标版本「${target}」完整性校验失败：manifest sha256=${targetEntry.sha256.slice(0, 12)}…，实际=${actualHash.slice(0, 12)}…——权重可能被篡改或损坏，拒绝回滚`, issues: [`版本 ${target} 完整性校验失败——供应链红线（哈希不匹配）`] };
   }
 
   const now = new Date().toISOString();

@@ -46,7 +46,13 @@ export interface NodeQuantification {
   nodeId: string;
   tag: NodePlan['tag'] | 'unknown';
   metrics: QuantificationMetrics;
-  /** ROI 排序键 = 年节省 ÷（一次性投入 + 1）——高在前 */
+  /**
+   * ROI 排序键 = 年节省 ÷（一次性投入 + 1000）——分母常数 1000 元是
+   * 「小额投资防除零」的量化地板（非 +1：+1 的量纲是元，invest=0 与
+   * invest=1 元会差一倍，小额排序严重失真；1000 元地板下万元级投入
+   * 排序近乎纯比值，千元级以下按地板平滑）。零投入节点 roiScore =
+   * annualSaving / 1000，仍是「省得多排前」的正确序。
+   */
   roiScore: number;
 }
 
@@ -63,6 +69,27 @@ export interface QuantificationFile {
     totalOneTimeInvestment: number;
     nodeCount: number;
   };
+}
+
+/**
+ * 节点 ID 清洗（Skill frontmatter name / 文件名安全——中文等非 ASCII
+ * 转 ASCII 安全形态；空/全非法字符回退 'node'）。
+ *
+ * 保留可读性策略：ASCII 字母数字与 -_. 保留，其余（含中文）转 -，
+ * 连续 - 压缩、首尾 - 去除——「电池质检-报告」→「-」这类全清洗结果
+ * 回退 'node'（不产生空标识）。产物文件名同用（`${nodeId}-manual.md`）。
+ */
+function sanitizeNodeId(raw: string): string {
+  const cleaned = raw.replace(/[^a-zA-Z0-9-_.]/g, '-').replace(/-+/g, '-').replace(/^-+|-+$/g, '');
+  return cleaned.length > 0 ? cleaned : 'node';
+}
+
+/** YAML 标量安全包裹（含冒号+空格/#/首尾特殊字符时加双引号——ontology_import 机器消费可靠性） */
+function yamlScalar(value: string): string {
+  if (/[:#]/.test(value) || /^[-?[\]{}&*!|>'"%`]|^\s|\s$/.test(value) || value === '') {
+    return `"${value.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
+  }
+  return value;
 }
 
 /**
@@ -97,7 +124,7 @@ export function quantifyNodes(
       nodeId: inp.nodeId,
       tag: tagOf(inp.nodeId),
       metrics,
-      roiScore: metrics.annualSaving.value / (invest + 1),
+      roiScore: metrics.annualSaving.value / (invest + 1000),
     };
   });
   ranked.sort((a, b) => b.roiScore - a.roiScore);
@@ -158,11 +185,11 @@ export function deriveOntology(
     '# FDE 本体推导草稿（机器初稿——人工确认后经 ontology_import 导入）',
     `# 企业：${enterpriseId}`,
     'entities:',
-    ...draft.entities.map((e) => `  - ${e}`),
+    ...draft.entities.map((e) => `  - ${yamlScalar(e)}`),
     'concepts:',
-    ...draft.concepts.map((c) => `  - ${c}`),
+    ...draft.concepts.map((c) => `  - ${yamlScalar(c)}`),
     'relations:',
-    ...draft.relations.map((r) => `  - from: ${r.from}\n    type: ${r.type}\n    to: ${r.to}`),
+    ...draft.relations.map((r) => `  - from: ${yamlScalar(r.from)}\n    type: ${yamlScalar(r.type)}\n    to: ${yamlScalar(r.to)}`),
   ];
   mkdirSync(paths.dir, { recursive: true });
   atomicWriteSync(paths.ontologyDraft, yamlLines.join('\n'));
@@ -334,7 +361,7 @@ export function distillDeliverables(
       (templates ? renderTemplate(templates.skill, vars) : null) ??
       [
         '---',
-        `name: node-${n.nodeId}`,
+        `name: node-${sanitizeNodeId(n.nodeId)}`,
         'description: 本 Skill 由 FDE 沉淀引擎自动生成——按交付手册执行节点作业。',
         '---',
         '',
@@ -366,9 +393,9 @@ export function distillDeliverables(
 
     return {
       nodeId: n.nodeId,
-      docLayer: { path: join(deliverablesDir, `${n.nodeId}-manual.md`), content: docContent },
-      skillLayer: { path: join(deliverablesDir, `${n.nodeId}-skill.md`), content: skillContent },
-      runLayer: { path: join(deliverablesDir, `${n.nodeId}-node.yaml`), content: runContent },
+      docLayer: { path: join(deliverablesDir, `${sanitizeNodeId(n.nodeId)}-manual.md`), content: docContent },
+      skillLayer: { path: join(deliverablesDir, `${sanitizeNodeId(n.nodeId)}-skill.md`), content: skillContent },
+      runLayer: { path: join(deliverablesDir, `${sanitizeNodeId(n.nodeId)}-node.yaml`), content: runContent },
     };
   });
 

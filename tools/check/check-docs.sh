@@ -658,6 +658,7 @@ WIRING_CLAIMS=(
   "SECURITY.md|静态加密（v1.3.8 交付）|initDataEncryption|静态加密（SECURITY.md:50 声称族）"
   "README.md|AgentShield 五类配置面静态扫描|createAgentShield|AgentShield（README 核心能力声称）"
   "README.en.md|AgentShield five-face static config scanning|createAgentShield|AgentShield（README.en 核心能力声称）"
+  "CHANGELOG.md|train compare|submitCompareJobs|多基座对比训练（CHANGELOG v1.4.4 交付④——CLI 接线防断链）"
 )
 for claim in "${WIRING_CLAIMS[@]}"; do
   claim_file="${claim%%|*}"; rest1="${claim#*|}"
