@@ -336,7 +336,11 @@ export function runInit(): void {
     }
     writeConfig(configPath, CONFIG_TEMPLATE);
     console.log(`  → .sofagent/config.yml 已生成（${defaultRules.length} 条规则默认全部启用）`);
-    console.log('  → 这个配置控制哪些审计规则启用，直接编辑 .sofagent/config.yml 即可自定义');
+    // v1.4.5 (R4-P0): 旅程完整性——「直接编辑」必须是含重签名的完整旅程。config.yml
+    // 有 HMAC 签名（fail-closed），手动编辑不重签会被验签拦住，用户会误以为配置坏了。
+    console.log('  → 这个配置控制哪些审计规则启用，可直接编辑 .sofagent/config.yml 自定义');
+    console.log('  → 注意：编辑后需重新签名：sofagent-audit --sign-config（否则签名校验会拒绝启动）');
+    console.log('  → 注意：config.yml 已签名（防篡改）——手动编辑后需重新签名：sofagent-audit --sign-config');
     stepOk++;
   }
 

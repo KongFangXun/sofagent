@@ -30,7 +30,7 @@
 | # | 局限 | 详见 |
 |:--:|------|------|
 | 1 | **单包测试需先 build**——monorepo 未 build 时单包 `npm test` 可能失败（依赖 dist/），需先 `npm run build --workspaces`。 | [四、成熟度与测试局限](#四成熟度与测试局限) |
-| 2 | **默认非 fail-closed**——config.yml 可被 Agent 篡改绕过审计规则。仅当 config 解析失败时走 safeDefaults（fail-closed 强制启用）。 | [三、安全与信任模型局限](#三安全与信任模型局限) |
+| 2 | **默认非 fail-closed**——config.yml 可被 Agent 篡改绕过审计规则。仅当 config 解析失败时走 safeDefaults（fail-closed 强制启用）。**v1.4.5 收紧**：已配置 HMAC 签名的 config.yml 篡改即拒绝启动（fail-closed）；strict/CI 模式下「有规则内容但无签名」同样拒绝启动（防删除式绕过）；普通模式维持 WARN。编辑已签名配置后须 `sofagent-audit --sign-config` 重签（详见 §三）。 | [三、安全与信任模型局限](#三安全与信任模型局限) |
 | 3 | **编排能力依赖 orchestrator 包 + 模型质量**——LangGraph createReactAgent 驱动，编排效果依赖模型质量。模型降级 → 编排降级。 | [五、审计与工程局限 → 编排模块稳定性](#五审计与工程局限) |
 | 4 | **静态加密接线未启用**——加密能力已实现（crypto-init.ts AES-256-GCM），但激活入口未接入启动路径，审计历史主链与 forge-runs/checkpoint/model-registry 三目录 + task/logs + think.md **当前均为明文（原声称排 v1.3.9 未兑现），全量接线已移排 v1.4.7（G7 数据主权主题）**。 | [三、安全与信任模型局限 → 数据存储安全](#三安全与信任模型局限) |
 | 5 | **单平台场景可能过重**——只用单一 Agent 平台且接受云端审计的用户，平台内置治理比 sofagent 更顺滑。sofagent 的价值在多供应商混用 + 本地留证场景。 | [二、平台与兼容性局限 → 单平台场景](#单平台用户建议) |
@@ -202,6 +202,10 @@ sofagent 跑在单个 Agent 里——没有 agent-to-agent 通信，没有多实
 > ```
 
 > **审计日志防篡改检测边界**：`history.jsonl` 的完整性依赖 hash chain（`audit-history.ts`），Agent 可在篡改后重算整条链——hash chain 仅提供事后可追溯性，非强防篡改。v1.1.8 起已支持 HMAC-SHA256 签名（密钥来自 `~/.sofagent-key`），有密钥时强防篡改，无密钥时降级为 SHA-256 hash chain（此时篡改检测是**弱校验**——手改后重算整链即可通过，FAIL 可被抹成 PASS；企业 SOP 应强制配置密钥并周期体检）。`--doctor`（v1.2.0 起）会实际调用 `checkHistoryChainDetailed()` 校验链完整性。当前版本仍依赖「Agent 自觉 + 定期 --doctor」的信任模型。
+
+> ⚠️ **hook 绕过面（v1.4.5 扩充披露）**：`--no-verify` 之外，审计 hook 还有两条静默绕过路径：① **删除 hook 文件**——`rm .git/hooks/commit-msg`（或 hooksPath 配置目录下的同名文件）即审计不触发，无任何残留痕迹；② **core.hooksPath 指向空目录**——仓库配置 `git config core.hooksPath .githooks`（husky 标准布局）后，若 `.githooks/` 内无 sofagent hook（或 hook 被删），git 从该目录找 hook 找不到即静默跳过——审计同样不触发。v1.4.5 起 `--install-hook` / `--init` 与 `--doctor` 均已尊重 core.hooksPath（hook 安装到配置目录、doctor 检查真实路径）；但「hooksPath 配置存在 + 目录被清空」仍是无痕绕过面。缓解：① CI 侧 `sofagent-audit --diff` 独立兜底（hook 可绕 CI 不可绕，见上方集成路径）；② 定期 `--doctor`（hook 缺失会显式告警）；③ 企业 SOP 可将 hooksPath 固定到受控目录（见「本地开发紧急缓解措施」第 2 条）。
+
+> ⚠️ **beforeAfter 字段存量泄漏处置登记（v1.4.5 披露）**：v1.4.4 引入的 `actionGovernance.beforeAfter` 字段在 v1.4.5 之前**未经脱敏管道**直接落盘——diff 新增行中的密钥明文（A2 能拦 commit、拦不住自家 history.jsonl）会进入 `~/.sofagent/data/audit/history.jsonl`，且被 HMAC 链签名固化（防删）。v1.4.5 起构建侧已过 `sanitizeFreeText()`（新增条目零明文），**但 v1.4.4 安装基的存量 history.jsonl 中已落盘的明文条目仍在（HMAC 锁定，不可静默删改）**。处置建议（**待孔老师拍板**，未拍板前不提供自动清理命令）：受影响用户可评估 ① 轮换已泄漏密钥（治本，密钥已视同泄漏）；② 将数据目录整体迁移后重建（`SOFAGENT_HOME` 指向新目录 + 人工复核旧目录后处置）；③ 如已配置 HMAC 密钥，`--verify-chain` 可定位受影响条目范围辅助人工研判。
 
 ### 🔒 数据存储安全
 
