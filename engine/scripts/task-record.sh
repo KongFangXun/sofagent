@@ -261,8 +261,9 @@ fi
 echo "  已记录: ${SANE_TASK_NAME} → ${LOG_FILE}"
 
 # ── 写后概率触发 cleanup.sh ──
-if [ "${SOFA_CLEANUP_ON_RECORD:-}" = "true" ]; then
-  FREQ="${SOFA_CLEANUP_FREQUENCY:-10}"
+# v1.4.5 T4: 读规范名（旧 SOFA_* 兜底）
+if [ "${SOFAGENT_CLEANUP_ON_RECORD:-${SOFA_CLEANUP_ON_RECORD:-}}" = "true" ]; then
+  FREQ="${SOFAGENT_CLEANUP_FREQUENCY:-${SOFA_CLEANUP_FREQUENCY:-10}}"
   if [ "$((RANDOM % FREQ))" -eq 0 ]; then
     CLEANUP_SCRIPT="${SCRIPT_DIR}/cleanup.sh"
     if [ -x "$CLEANUP_SCRIPT" ]; then

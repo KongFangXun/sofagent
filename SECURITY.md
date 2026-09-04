@@ -266,7 +266,7 @@ sofagent 是一套 FDE 能力——底层引擎是纯本地 Harness 中间件（
 
 ### 审计模块安全性（sofagent-audit）
 
-sofagent-audit（v0.92+）是 TypeScript CLI，执行 `execFileSync('git', ...)` 读取 git diff 和文件系统。不使用 eval、不 spawn shell、不执行外部脚本。命令参数使用数组传入（`['diff', '--unified=3', range]`），range 参数经过正则校验 `[a-zA-Z0-9~^.\-]`，无命令注入风险。
+sofagent-audit（v0.92+）是 TypeScript CLI，读取 git diff 和文件系统的主力路径是 `execFileSync('git', ...)`（数组传参、不走 shell）。不使用 eval、不执行外部脚本；git 命令参数以数组传入（`['diff', '--unified=3', range]`），range 参数经过正则校验 `[a-zA-Z0-9~^.\-]`，无命令注入风险。**精确边界（v1.4.5 核实）**：包内存在 7 处 `execSync`（shell 形态）调用，均为静态可信命令串——audit 侧 6 处（webhook.ts 的 `git rev-parse --show-toplevel` / `git rev-parse --short HEAD` / `git config user.name`、init.ts 的 `which/where sofagent-daemon` / `which/where sofagent-audit`、agent-shield.ts 的 `ps aux`）+ core 侧 1 处（audit-history.ts 的 `git rev-parse --git-dir`）——命令体零外部输入插值，插值面仅限「取回输出后 trim」；审计主链（diff 解析/规则执行）不走这些路径。命令注入静态扫（`tools/check/check-shell-injection.sh`）持续覆盖此面。
 
 **数据访问**：审计模块核心不发起网络请求（webhook 为可选功能，需显式配置 URL 后才启用）；写入仅限 `~/.sofagent/data/` 目录（审计历史、session 报告、快照等）。
 
@@ -359,8 +359,6 @@ sanitize() 管道在写入 history.jsonl、think.md、task/logs 等文件前自�
       replacement: "[工资单:REDACTED]"
   ```
 
-> ⚠️ **变更记录（v1.4.5）**：v1.4.4 引入的 `actionGovernance.beforeAfter` 字段（diff 前后行摘要）在 v1.4.5 之前**未过 sanitize 管道**即落盘——diff 新增行中的密钥明文可进入 history.jsonl 并被 HMAC 签名固化。v1.4.5 起该字段构建侧已过 `sanitizeFreeText()`（与 commitMsg/task 同一脱敏管道，先打码再截断），新增条目零明文；**v1.4.4 存量条目处置登记见 docs/LIMITATIONS.md §三「beforeAfter 字段存量泄漏处置登记」**。
-
 > 以上为**掩码（masking）非加密**——原始数据仍在 git diff 中可读。sanitize() 只保护写入 `data/` 的副本，不保护源头。
 
 **文件权限**：`data/` 目录权限建议 700（用户可见运行时数据）；`~/.sofagent/internal/` 目录权限 700（引擎内部状态）。`install.sh` 和 `--init` 自动设置。同一服务器其他非 root 用户无法读取。root 用户可读——如需防 root，建议将 `data/` 放在加密卷上。
@@ -426,7 +424,7 @@ chmod 600 ~/.sofagent/data/audit/history.jsonl.bak-*
 |----------|---------|------|
 | `git commit --no-verify` | ⚠️ post-commit hook 事后对账留痕（不阻断） | `--init` 同时装 pre-commit + commit-msg + post-commit（v1.4.2 三层防线）：绕过 commit-msg 的 commit 会被 post-commit 对账——命中拦截记录时输出「疑似绕过」提示并留痕 history.jsonl；未命中输出 INFO 提示可用 `--verify-commit <SHA>` 复核。定期 `--doctor` 检查未审计的 commit（`git log --grep` 匹配审计签名）；CI 侧 `sofagent-audit --diff HEAD~1..HEAD` 兜底 |
 | `git add -f .sofagent/`（审计数据强制入库） | ✅ v1.4.2 H-01 三层防线拦截——pre-commit 在 commit 对象生成前将 .sofagent/ 移出暂存区（主防线，对当次 commit 直接生效）；commit-msg 阶段再兜一次（护磁盘 index 防后续 commit 卷入）；post-commit 扫 HEAD tree 命中即告警 | pre-commit reset 失败（index.lock 竞态）时 fail-loud 拒绝 commit（宁可 false-retry 不可静默入库）；CI 侧 `--diff` 仍可发现已入库残留 |
-| 删除 commit-msg hook 文件 / core.hooksPath 指向空目录 | ⚠️ `--doctor` 可检测（v1.4.5 起尊重 core.hooksPath——检查配置目录下的真实 hook 路径， husky 布局不再假绿） | daemon 文件监控（fs-watch，v1.3.6 起）可配置监控 .git/hooks/ 目录变化（watch.yml 自定义路径）；hooks 目录监控未内置为默认巡检项（规划中）；CI 侧 `--diff` 独立兜底 |
+| 删除 commit-msg hook 文件 | ⚠️ `--doctor` 可检测 | daemon 文件监控（fs-watch，v1.3.6 起）可配置监控 .git/hooks/ 目录变化（watch.yml 自定义路径）；hooks 目录监控未内置为默认巡检项（规划中） |
 | 伪造 Agent 日志（task/logs） | ❌ 无自动检测 | 人工抽查 + 交叉验证 git log 时间戳 |
 | 绕过 --init 直接手动修改 config.yml | ❌ 无自动检测 | config hash 校验（`--sign-config` 签名 + 验签，篡改时 CLI 拒绝启动 exit 2） |
 | `SOFAGENT_CONFIG` 环境变量指向恶意 config（v1.2.9 起最高优先级配置入口） | ⚠️ `--doctor` 可检测环境变量 | 启动入口用 `env -i` 或显式白名单透传环境变量（见共享服务器缓解建议）；CI 侧用受控 config |
@@ -447,6 +445,12 @@ chmod 600 ~/.sofagent/data/audit/history.jsonl.bak-*
 
 > ⚠️ **影子审计器劫持（v1.2.7 已知风险）**：本地安装的 `engine/audit/dist/index.js` 无完整性校验（dist 目录不随 git 版本控制），恶意 Agent 可替换 dist 绕过所有审计规则——比 `--no-verify` 更隐蔽（hook 仍在运行，看不出绕过）。`--doctor` 已增加 dist 哈希校验（SHA-256 比对 `~/.sofagent/internal/audit-hash.txt`），但根治需代码签名 + 运行时验证（暂未排期，跟踪于 ROADMAP）。**CI 侧 `sofagent-audit --diff` 使用独立安装可缓解**（CI 环境的 dist 不可被开发机 Agent 篡改）。**基线建立指引（v1.4.2）**：装好后立即执行 `sofagent-audit --doctor --baseline` 显式建立基线哈希（信任锚 = 你此刻确认 dist 可信的时刻）；此后 `--doctor` 会校验 dist 与基线一致，基线缺失时将显性报错提醒（不再自动记录——防止把已被篡改的 dist 固化为合法基线）。
 
+> ⚠️ **超大 diff 的 spill 落盘面（v1.3.9 能力 · v1.4.4 补口 · 如实披露）**：单文件 diff 超 5MB 时引擎溢出到磁盘再分块读回（`engine/core/src/diff-parser.ts`）。落盘位置经 `getDataDir()` SSOT 解析链（显式 `SOFAGENT_DATA` > 环境变量 > `~/.sofagent/data/`），**恒在引擎数据目录而非被审仓库内**——v1.4.3 P2-e 已修复旧实现「spill 落 CWD 会被对方仓库 commit 卷入」的跨仓泄漏面；目录权限 0700（spill 可能含密钥类 diff 内容）。读回上限 64MB：以内全量扫描（oversized 不置位，无审计盲区），超限截断置位并注入 WARN，落盘件保留供按需取回。**残余面**：spill 文件含明文 diff 内容（sanitize 管道不覆盖 spill 原文），强合规场景建议将 `~/.sofagent/data/spill/` 纳入加密卷覆盖范围并定期清理。
+
+> ⚠️ **Webhook SSRF——DNS 解析复验与残余 TOCTOU（v1.4.5 T3 披露）**：webhook 推送 URL 经 `isPrivateWebhookUrl` 字面量检查（私网/链路本地/CGN/云元数据/IPv6-mapped IPv4 全段拒绝）之外，新增**DNS 解析复验**（`verifyWebhookDns`，`engine/audit/src/webhook.ts`）：公共域名字面量放行后，实际解析到的 A/AAAA 记录任一落在私网段仍拒绝——堵「域名看着公共、解析结果内网」的 DNS rebinding 式 SSRF。DNS 查询失败按拒绝处理（fail-closed：无法证明安全即不推送）。**残余窗口（如实声明）**：复验与实际 fetch 是两次独立解析，存在微小 TOCTOU 窗口——本防线拦「配置时刻就指向内网」的静态攻击面，动态 rebind 收敛至两次解析窗口内，属纵深防御增量而非绝对边界。
+
+> ⚠️ **history.jsonl 的 beforeAfter 字段脱敏（v1.4.4 交付十三配套 · 端到端验证）**：审计条目的 `actionGovernance.beforeAfter`（变更前/后值摘要，从 diff 提取、截断至 200 字符）是新增落盘面——密钥可能混入。脱敏链路：`buildBeforeAfterSummary` 提取时脱敏 + `appendHistory` 落盘前经 sanitize 管道复扫（`baseSanitized` 之外的专项补面），端到端回归见 `engine/audit/src/before-after-redaction.test.ts`（构造含密钥的 beforeAfter 断言落盘无明文）。边界：脱敏是掩码非加密，密钥模式库未覆盖的自定义格式仍可能以明文入 history——与既有 sanitize 边界一致，强合规场景配合外部加密卷。
+
 ### 详细缓解步骤
 
 1. **CI 侧兜底（推荐）**：在 CI/CD pipeline 中独立运行 `sofagent-audit --diff HEAD~1..HEAD`（审最近一次 commit；审整个分支区间用 `--diff main..HEAD`），
@@ -455,8 +459,8 @@ chmod 600 ~/.sofagent/data/audit/history.jsonl.bak-*
 2. **文件权限加固**：`chmod 444 .sofagent/config.yml` 将配置设为只读。
    注意：此方法不能防止 Agent 以 root/同用户身份强制写入，
    但能防止意外修改。
-3. **完整性校验**：使用 `tools/release/sign-config.mjs`（或 `sofagent-audit --sign-config`）对 config.yml 签名，
-   定期运行 `sofagent-audit --doctor` 检查配置完整性。**注意：已签名的 config.yml 手动编辑后必须重签（`--sign-config`），否则签名校验会拒绝启动（fail-closed）**。
+3. **完整性校验**：使用 `tools/release/sign-config.mjs` 对 config.yml 签名，
+   定期运行 `sofagent-audit --doctor` 检查配置完整性。
 
 > ⚠️ **`--doctor` 退出码语义（CI 场景注意）**：doctor 默认只在 **error** 时返回非零，**warning（如 hook 缺失）仍 exit 0**——CI 只看 exit code 会漏掉 warning 级问题。CI 场景请用 `sofagent-audit --doctor --strict`（warning 也返回非零），人工日常体检用默认模式即可。
 

@@ -178,7 +178,7 @@ FDE 部署 SOP 应遵循此顺序：
 
 **目录结构**：
 - `SKILL/harness/`：纯 MD 规则（平台无关，所有 Agent 平台共用）
-  > 注意：`SKILL/harness/` 是产品层 markdown 闸门规则文本，与 npm 引擎包 `@sofagent/harness`（TypeScript 实现的 Harness 中间件）不是同一个东西——前者是规则，后者是实现。
+  > 注意：`SKILL/harness/` 是产品层 markdown 闸门规则文本，与 npm 模块包 `@sofagent/harness`（TypeScript 实现的 Harness 中间件）不是同一个东西——前者是规则，后者是实现。
   - `SKILL.md`：主入口（宪法内联——4 底线 + 9 则铁律）
   - 子 Skill（9 个 .md）：`entry-gate.md` / `task-aware.md` / `task-closure.md` / `loop-check.md` / `loop-evaluate.md` / `loop-exit.md` / `engage.md` / `engage-fde.md` / `fde.md`
   - `fde.md`：规范文件（企业运行规范，部署时复制到目标项目）
@@ -657,7 +657,7 @@ loop-engineering 社区将 STATE.md 定位为 **"对话外的持久化主干"**�
 
 ### 激活链要解决的工程问题
 
-当前 orchestrator 包（1642 测试，实测见 `tools/check/test-count.sh`）和 registry.ts（v1.0.8 动态注册）已经能跑——但只有开发者手动写 `.sofagent/subagents/*.yml` 才能注册自定义 Agent。激活链做的事：**让 FDE 诊断交付物自动变成 `.sofagent/subagents/*.yml`**，不需要人手写。
+当前 orchestrator 包（1705 测试，实测见 `tools/check/test-count.sh`）和 registry.ts（v1.0.8 动态注册）已经能跑——但只有开发者手动写 `.sofagent/subagents/*.yml` 才能注册自定义 Agent。激活链做的事：**让 FDE 诊断交付物自动变成 `.sofagent/subagents/*.yml`**，不需要人手写。
 
 ### 扩展点
 

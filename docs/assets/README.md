@@ -13,8 +13,8 @@
 | `arch-layers-en.svg` / `usage-path-en.svg` | 上两图的英文版 | README 英文版对应段 |
 | `dashboard.png` | Dashboard 驾驶舱截图 | README 中英版「产品一瞥」段 |
 | `audit-terminal.png` | sofagent-audit 拦截 .env commit 的终端演示图 | README 中英版「快速开始」段 |
-| `architecture-diagram.png` | 系统架构总览图（FDE Harness 五模块编制，14 组件），2080×1544，archify 生成，交互版 HTML 在 `.workbuddy/artifacts/sofagent-architecture.html` | README 中英版「系统架构总览」折叠块 |
-| ~~`audit-defense.png`~~ | 审计三层防线泳道图 | **从未入库**（2026-09-04 拍板不上 README，零消费者不落 assets；源图在 `.workbuddy/artifacts/`） |
+| `architecture-diagram.png` | 系统架构总览图（FDE Harness 五模块编制，14 组件），2080×1544，archify 生成，交互版 HTML 为本地工作档案（不入库） | README 中英版「系统架构总览」折叠块 |
+| ~~`audit-defense.png`~~ | 审计三层防线泳道图 | **v1.4.4 入库后于 2026-09-04 撤出**（拍板不上 README，零消费者不落 assets——git 历史保留入库痕迹，工作区不再保留；源图为本地工作档案，不入库） |
 | `sofagent-social-preview.png` | GitHub 仓库社交预览图（1280×640，GitHub Settings→Social preview 规格母本） | GitHub 仓库 Settings→Social preview（上传用母本存档，页面内不引用） |
 | ~~`favicon.png`~~ | ~~网站图标~~ | ~~HTML Dashboard（`<link rel="icon">`）~~ **已删除（2026-08-16）：声称被 dashboard `<link rel="icon">` 消费，实测 dashboard.html 无此标签，零真实引用** |
 | ~~`fde-training.html`~~ | FDE 训练材料页面（早期内部培训用，v1.3.2 已归档到 `docs/archive/fde-training-2026-07.html`） | 历史参考 |

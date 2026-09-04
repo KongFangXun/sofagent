@@ -68,8 +68,9 @@ if [ -z "$OPERATION" ]; then
 fi
 
 # ── 审计开关检查 ──
-# 仅 SOFA_AUDIT_ENABLED=true 时写入，未配置时静默退出
-if [ "${SOFA_AUDIT_ENABLED:-}" != "true" ]; then
+# 仅 SOFAGENT_AUDIT_ENABLED=true 时写入，未配置时静默退出
+# v1.4.5 T4: 读规范名（旧 SOFA_AUDIT_ENABLED 兜底——lib/config.sh 双导出下两者一致）
+if [ "${SOFAGENT_AUDIT_ENABLED:-${SOFA_AUDIT_ENABLED:-}}" != "true" ]; then
   exit 0
 fi
 

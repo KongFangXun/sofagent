@@ -30,7 +30,7 @@
 | # | 局限 | 详见 |
 |:--:|------|------|
 | 1 | **单包测试需先 build**——monorepo 未 build 时单包 `npm test` 可能失败（依赖 dist/），需先 `npm run build --workspaces`。 | [四、成熟度与测试局限](#四成熟度与测试局限) |
-| 2 | **默认非 fail-closed**——config.yml 可被 Agent 篡改绕过审计规则。仅当 config 解析失败时走 safeDefaults（fail-closed 强制启用）。**v1.4.5 收紧**：已配置 HMAC 签名的 config.yml 篡改即拒绝启动（fail-closed）；strict/CI 模式下「有规则内容但无签名」同样拒绝启动（防删除式绕过）；普通模式维持 WARN。编辑已签名配置后须 `sofagent-audit --sign-config` 重签（详见 §三）。 | [三、安全与信任模型局限](#三安全与信任模型局限) |
+| 2 | **默认非 fail-closed**——config.yml 可被 Agent 篡改绕过审计规则。仅当 config 解析失败时走 safeDefaults（fail-closed 强制启用）。 | [三、安全与信任模型局限](#三安全与信任模型局限) |
 | 3 | **编排能力依赖 orchestrator 包 + 模型质量**——LangGraph createReactAgent 驱动，编排效果依赖模型质量。模型降级 → 编排降级。 | [五、审计与工程局限 → 编排模块稳定性](#五审计与工程局限) |
 | 4 | **静态加密接线未启用**——加密能力已实现（crypto-init.ts AES-256-GCM），但激活入口未接入启动路径，审计历史主链与 forge-runs/checkpoint/model-registry 三目录 + task/logs + think.md **当前均为明文（原声称排 v1.3.9 未兑现），全量接线已移排 v1.4.7（G7 数据主权主题）**。 | [三、安全与信任模型局限 → 数据存储安全](#三安全与信任模型局限) |
 | 5 | **单平台场景可能过重**——只用单一 Agent 平台且接受云端审计的用户，平台内置治理比 sofagent 更顺滑。sofagent 的价值在多供应商混用 + 本地留证场景。 | [二、平台与兼容性局限 → 单平台场景](#单平台用户建议) |
@@ -203,10 +203,6 @@ sofagent 跑在单个 Agent 里——没有 agent-to-agent 通信，没有多实
 
 > **审计日志防篡改检测边界**：`history.jsonl` 的完整性依赖 hash chain（`audit-history.ts`），Agent 可在篡改后重算整条链——hash chain 仅提供事后可追溯性，非强防篡改。v1.1.8 起已支持 HMAC-SHA256 签名（密钥来自 `~/.sofagent-key`），有密钥时强防篡改，无密钥时降级为 SHA-256 hash chain（此时篡改检测是**弱校验**——手改后重算整链即可通过，FAIL 可被抹成 PASS；企业 SOP 应强制配置密钥并周期体检）。`--doctor`（v1.2.0 起）会实际调用 `checkHistoryChainDetailed()` 校验链完整性。当前版本仍依赖「Agent 自觉 + 定期 --doctor」的信任模型。
 
-> ⚠️ **hook 绕过面（v1.4.5 扩充披露）**：`--no-verify` 之外，审计 hook 还有两条静默绕过路径：① **删除 hook 文件**——`rm .git/hooks/commit-msg`（或 hooksPath 配置目录下的同名文件）即审计不触发，无任何残留痕迹；② **core.hooksPath 指向空目录**——仓库配置 `git config core.hooksPath .githooks`（husky 标准布局）后，若 `.githooks/` 内无 sofagent hook（或 hook 被删），git 从该目录找 hook 找不到即静默跳过——审计同样不触发。v1.4.5 起 `--install-hook` / `--init` 与 `--doctor` 均已尊重 core.hooksPath（hook 安装到配置目录、doctor 检查真实路径）；但「hooksPath 配置存在 + 目录被清空」仍是无痕绕过面。缓解：① CI 侧 `sofagent-audit --diff` 独立兜底（hook 可绕 CI 不可绕，见上方集成路径）；② 定期 `--doctor`（hook 缺失会显式告警）；③ 企业 SOP 可将 hooksPath 固定到受控目录（见「本地开发紧急缓解措施」第 2 条）。
-
-> ⚠️ **beforeAfter 字段存量泄漏处置登记（v1.4.5 披露）**：v1.4.4 引入的 `actionGovernance.beforeAfter` 字段在 v1.4.5 之前**未经脱敏管道**直接落盘——diff 新增行中的密钥明文（A2 能拦 commit、拦不住自家 history.jsonl）会进入 `~/.sofagent/data/audit/history.jsonl`，且被 HMAC 链签名固化（防删）。v1.4.5 起构建侧已过 `sanitizeFreeText()`（新增条目零明文），**但 v1.4.4 安装基的存量 history.jsonl 中已落盘的明文条目仍在（HMAC 锁定，不可静默删改）**。处置建议（**待孔老师拍板**，未拍板前不提供自动清理命令）：受影响用户可评估 ① 轮换已泄漏密钥（治本，密钥已视同泄漏）；② 将数据目录整体迁移后重建（`SOFAGENT_HOME` 指向新目录 + 人工复核旧目录后处置）；③ 如已配置 HMAC 密钥，`--verify-chain` 可定位受影响条目范围辅助人工研判。
-
 ### 🔒 数据存储安全
 
 > ℹ️ **审计历史全局共享是设计决策**：审计历史（`history.jsonl` / `decision-log.jsonl`）写入全局 `~/.sofagent/data/audit/`，不做项目级隔离——这是**有意为之**：① HMAC 签名链完整性要求全量连续历史（`--verify-chain` 需要完整链）；② 跨仓库查询审计历史是运维刚需。多项目场景下审计记录会混合存储。**运行时审计日志（`runtime-audit.jsonl`）在 FORGE 自托管 SubAgent 路径已按 git 仓库隔离（`data/audit/runtime/<repo-hash>/`）；引擎侧 data-sovereignty 审计日志仍全局（原声称排 v1.3.9 未兑现，已移排 v1.4.7 复用 FORGE 方案补齐 repo-hash 隔离）**；审计历史保持全局。**临时方案**：使用 `SOFAGENT_HOME` 环境变量为不同项目/Agent 隔离数据目录。
@@ -232,6 +228,13 @@ task/logs 和 think.md 以 Markdown 存储，可能含代码片段、API 响应�
 
 > ⚠️ **边界：空 commit 不审计消息**——empty commit（无文件变更）时审计直接跳过，commit message 中的注入载荷不会被 A9 扫描（A9 的证据面是 diff + 显式传入的 `--commit-msg`）。带文件变更的 commit 消息正常扫描。纯消息攻击需 `--commit-msg` 显式送检。
 
+> ⚠️ **边界：首个 commit 无基线不审计（根 commit 盲区）**——git 仓库的第一个（根）commit 之前不存在任何基线，`HEAD~1` 类 range 引用全部失效，commit hook 审计在该 commit 上不可用——**仓库历史起点的变更不经过 24 条规则扫描**。历史性含义：本仓根 commit（`git rev-list --max-parents=0 HEAD` 所指）创建时尚无审计层在位。**实测可用的补审命令**（对根 commit 做一次性追溯审计）：
+> ```bash
+> # 与 git 空树（4b825dc…）做 diff，等价于「根 commit 相对虚无的全部变更」
+> sofagent-audit --diff 4b825dc642cb6eb9a060e54bf8d69288fbee4904..$(git rev-list --max-parents=0 HEAD)
+> ```
+> 实测记录：该 range 下引擎完整执行 17 项 quick 规则检查（A5 空 msg / A19 msg 质量 / A7 盲改 / A18 垃圾文件等均正常判定），违规照常 exit 2 拦截——根 commit 不是审计盲区，只是缺省不审。新仓库初始化后建议补跑一次该命令，把历史起点纳入审计面。
+
 > ⚠️ **commit msg 注入伪造审计标记——A9 检测为 WARN 不阻断**：commit message 中如伪造 `[sofagent-audit PASS]` 等审计通过标记，A9 会检测到该注入并报 **WARN（exit 1），但不阻断 commit**——commit 仍然成功提交。人工 review 时需注意：commit message 中的审计标记可能是伪造的，**真实审计结果以 `~/.sofagent/data/audit/` 下的审计记录为准**，不要信任 commit message 自带的审计声明。
 
 > ⚠️ **quick 模式二进制/超大 diff 盲区（v1.3.5 披露）**：quick 模式**没有**完整引擎对超大 diff 的 5MB 阈值兜底（完整引擎：普通文件 WARN exit 1 / 敏感文件名 FAIL exit 2）。git diff 对二进制文件只输出 `Binary files differ`（无内容行），规则无内容可扫——大体积二进制/超大 diff 在 quick 模式下会全绿通过。这是 git diff 的设计而非 sofagent bug，但对应用户意味着：quick 模式不能替代二进制敏感文件（如密钥库、私有数据集）的防泄漏审查；强合规场景请用完整引擎（`--init` 装 hook）兜底。
@@ -239,6 +242,10 @@ task/logs 和 think.md 以 Markdown 存储，可能含代码片段、API 响应�
 > ⚠️ **critical fast-fail：命中后后续层规则跳过（v1.4.3 披露）**：审计模块按规则分层串行执行——**critical 层（A1 敏感文件 / A2 密钥泄漏 / A9 注入等基线底线）任一 FAIL 后，后续层规则（A3 越界 / A7 盲改 / A16 非授权变更等）不再执行、统一标 SKIPPED**（输出形如「1 违规 · 7 通过 · 9 跳过」）。设计意图是 fail-fast（critical 命中已足以拦截 commit，无需继续跑）。**取证注意**：SKIPPED ≠ 通过——跳过的规则本次未检查，事后取证不能把「N 条跳过」读成「N 条无问题」；攻击者理论上可用显眼但无害的 critical 命中（如 A1 诱饵文件名）制造「审计抓到问题了」的表象，同时掩盖后续层规则未跑的事实。需要完整逐规则结果时，修复 critical 违规后重新审计即可获得全量执行。规则分层见 SECURITY.md「24 条审计规则」与 engine/audit/src/rules/runner.ts fast-fail 段。
 
 > ⚠️ **config-loader 环境变量死开关披露（v1.4.3 P2-g）**：`SofaEnvConfig` 中 `sanitizeEnabled` / `sanitizeIpsEnabled` / `cleanupOnRecord` / `cleanupFrequency` / `auditEnabled` 五字段**加载但无生产消费点**——企业 IT 设 `SOFAGENT_SANITIZE=...`、`SOFAGENT_AUDIT_ENABLED=...` 等**不改变任何行为**（已在 config-loader.ts 标 @deprecated）。实际生效面：脱敏管道常开（不受开关控制）、审计由 config.yml `rules:{...}` 控制（不构成第二通道）、清理走 cleanup.sh（其保留策略读 `SOFAGENT_RETENTION_DAYS`/`SOFAGENT_RETENTION_MAX`，v1.4.3 起认 SOFAGENT_ 新名、SOFA_ 旧名兼容）。
+
+> ⚠️ **边界：hook 安装位置尊重 git core.hooksPath（v1.4.5 修复披露）**——`--init` / `--install-hook` 安装三层防线时，若仓库配置了 `core.hooksPath`（自定义 hook 目录，如 husky / pre-commit 框架所设），hook 文件安装到该目录而非 `.git/hooks/` 默认位。此为 git 原生语义的正确尊重而非 bug，但两个推论要知道：① 卸载 `core.hooksPath` 指向目录（或切回 `.git/hooks/`）时，此前安装的 sofagent hook 不随之迁移——审计可能静默失效，需重新 `--init`；② `--doctor` 的 hook 完整性检查按 `core.hooksPath` 解析当前生效目录，历史遗留的 `.git/hooks/commit-msg` 旧文件不在检查面内。行为锁见 engine/audit hook-install 测试 T1。
+
+> ⚠️ **边界：审计引擎超时降级是「收敛重跑」不是「抢占中断」（v1.4.5 T5 接线披露）**——审计整轮耗时超阈值（`SOFAGENT_AUDIT_TIMEOUT_MS`，缺省 30s）后自动降一级（full→rules-only→minimal）并用更少规则集**重跑一轮**（minimal 级只保留 A1-A11 核心安全规则）。语义要点：① 超时判定作用于「整轮完成后」，第一轮的结果**已完整产出**（降级不丢首轮证据，报告以降级重跑轮为准并注入 DEGRADATION_NOTICE）；② 已在 minimal 级还超时则不再降级重跑，返回首轮结果并标注；③ 扩展/拐杖规则在降级轮**不执行**——SKIPPED ≠ 通过，事后取证不能把「N 条跳过」读成「N 条无问题」。降级记录供 daemon/orchestrator 消费（audit-timeout 触发器）。
 
 ---
 
@@ -344,7 +351,7 @@ sofagent-audit 实现了完整的六步审计闭环流程（设计文档见 [ARC
 
 ### 测试覆盖范围
 
-当前审计核心 978 个、全 workspace 3753 个测试（v1.4.1 批次 2937→3178 +241，v1.4.2 批 +171（bugfix 批 +24 全部为 audit 包回归用例 878→902（H-01 三层防线 / H-02 密钥四类 / H-03 空白折叠 / G-01 基线 / G-07 webhook 脱敏）+ dev 批 +147（数据管道 53 / eval 闭环与环境 45 / dry-run 与报告 28 / FDE 六引擎 21，orchestrator 1295→1442）+ A2 data-URI 豁免三用例 902→905 + data-sovereignty data-URI 豁免两用例 905→907 + 四轮深挖 core data-paths 五用例 369→374 + orchestrator 占位豁免三用例 1442→1445 + eval 桥接两用例 1445→1447 + v1.4.3 批 +138：audit +12（stats 聚合）/ orchestrator +126（train-analyze 35 + train-monitor 22 + train-diagnose 26 + train-sandbox 14 + post-training-workflow 11 + env-anticheat 18）至 audit 919 / orchestrator 1648）+ 安全回归批 +34（engineer 路径守卫，orchestrator 1573→1607，总数 3507→3541）+ L4 修复器路径守卫批 +41（orchestrator 1607→1648，总数 3541→3582）+ v1.4.4 审查批 #73 占位重写 +12（daemon cron 1→5 / harness constraints 1→4 / think-generator 1→3 / daemon inspectors 1→4，总数 3582→3594）+ v1.4.3 阶段五 run-02 闭环批一 P0-3 +6（doctor Ontology 完整性检查 6 用例，core 374→380，总数 3594→3600）+ 审查修复批 +11（config-loader cost 透传契约 2 用例 core 380→382 + webhook IPv6 SSRF 防护 6 用例 + audit-log 落盘脱敏 3 用例，audit 919→928，总数 3600→3611）+ 出站防护与原子写契约批 +8（daemon webhook 推送 SSRF 守卫 5 用例 + push-target 2 用例 287→294 + eval 原子写契约 1 用例 32→33，总数 3611→3619）+ 同批形式循环依赖清理删除 loop-audit-history.test.ts −6（orchestrator 1648→1642，净 3619 持平）+ v1.4.4 审查批 stats E 系列规则码回归 +1（audit 928→929，总数 3619→3620）+ v1.4.4 审查修复批 +15（quick A9 range 回归 4 用例 + audit-history 降级增强 3 用例 audit 929→936 + verify 三哨兵三态 6 用例 core 382→388 + daemon 错误日志轮转 2 用例 294→296，总数 3620→3635）+ v1.4.4 开发批 +109（audit 936→976：decision-query 因果链与先例检索 6 用例 + 语料导出三件套 34 用例；core 388→393：doctor daemon 守护感知 5 用例；orchestrator 1642→1697：artifact-register 13 用例 + train-compare 11 用例 + 语料导出配套；daemon 296→302：daemon 退出码落盘与 doctor 感知 6 用例；mcp 154→157：corpus-export 协议面 3 用例，总数 3635→3744））；实测见 `tools/check/test-count.sh`，flaky 复跑机制内置，以脚本判定为准，与 pre-push-check 一致），但覆盖范围集中在审计规则和核心逻辑（diff-parser、reporter、config-loader、rules/*.ts）。以下模块没有独立测试：
+当前审计核心 1030 个、全 workspace 3853 个测试（v1.4.1 批次 2937→3178 +241，v1.4.2 批 +171（bugfix 批 +24 全部为 audit 包回归用例 878→902（H-01 三层防线 / H-02 密钥四类 / H-03 空白折叠 / G-01 基线 / G-07 webhook 脱敏）+ dev 批 +147（数据管道 53 / eval 闭环与环境 45 / dry-run 与报告 28 / FDE 六引擎 21，orchestrator 1295→1442）+ A2 data-URI 豁免三用例 902→905 + data-sovereignty data-URI 豁免两用例 905→907 + 四轮深挖 core data-paths 五用例 369→374 + orchestrator 占位豁免三用例 1442→1445 + eval 桥接两用例 1445→1447 + v1.4.3 批 +138：audit +12（stats 聚合）/ orchestrator +126（train-analyze 35 + train-monitor 22 + train-diagnose 26 + train-sandbox 14 + post-training-workflow 11 + env-anticheat 18）至 audit 919 / orchestrator 1648）+ 安全回归批 +34（engineer 路径守卫，orchestrator 1573→1607，总数 3507→3541）+ L4 修复器路径守卫批 +41（orchestrator 1607→1648，总数 3541→3582）+ v1.4.4 审查批 #73 占位重写 +12（daemon cron 1→5 / harness constraints 1→4 / think-generator 1→3 / daemon inspectors 1→4，总数 3582→3594）+ v1.4.3 阶段五 run-02 闭环批一 P0-3 +6（doctor Ontology 完整性检查 6 用例，core 374→380，总数 3594→3600）+ 审查修复批 +11（config-loader cost 透传契约 2 用例 core 380→382 + webhook IPv6 SSRF 防护 6 用例 + audit-log 落盘脱敏 3 用例，audit 919→928，总数 3600→3611）+ 出站防护与原子写契约批 +8（daemon webhook 推送 SSRF 守卫 5 用例 + push-target 2 用例 287→294 + eval 原子写契约 1 用例 32→33，总数 3611→3619）+ 同批形式循环依赖清理删除 loop-audit-history.test.ts −6（orchestrator 1648→1642，净 3619 持平）+ v1.4.4 审查批 stats E 系列规则码回归 +1（audit 928→929，总数 3619→3620）+ v1.4.4 审查修复批 +15（quick A9 range 回归 4 用例 + audit-history 降级增强 3 用例 audit 929→936 + verify 三哨兵三态 6 用例 core 382→388 + daemon 错误日志轮转 2 用例 294→296，总数 3620→3635）+ v1.4.4 开发批 +109（audit 936→976：decision-query 因果链与先例检索 6 用例 + 语料导出三件套 34 用例；core 388→393：doctor daemon 守护感知 5 用例；orchestrator 1642→1697：artifact-register 13 用例 + train-compare 11 用例 + 语料导出配套；daemon 296→302：daemon 退出码落盘与 doctor 感知 6 用例；mcp 154→157：corpus-export 协议面 3 用例，总数 3635→3744）+ v1.4.5 修复批 +109：audit 976→1030（webhook SSRF DNS 复验 / A2 加固 / stats 口径 / AgentShield 等回归与新增 +54）、core 393→416（config 签名旅程 / doctor hooksPath / config-loader 契约 +23）、daemon 302→325（cron 分层巡检接线 / daemon-health 版本 / dream-cycle 守卫 +23）、orchestrator 1697→1705（node-executor 降级假绿 / pluginMeta 版本 +8）、mcp 157→158（+1），总数 3744→3853（OpenClaw 4 插件用例走根 `npm test --workspaces` 统一执行，不计入 12 包口径））；实测见 `tools/check/test-count.sh`，flaky 复跑机制内置，以脚本判定为准，与 pre-push-check 一致），但覆盖范围集中在审计规则和核心逻辑（diff-parser、reporter、config-loader、rules/*.ts）。以下模块没有独立测试：
 
 | 模块 | 测试状态 | 风险 |
 |------|:--:|------|
@@ -362,6 +369,10 @@ sofagent-audit 实现了完整的六步审计闭环流程（设计文档见 [ARC
 sofagent-audit 的全部证据来源是 Agent 自己写的 `~/.sofagent/data/task/logs/*.md` 文件。审计工具的可靠性上限 = Agent 日志的真实性。当前版本提供 `--silent` 模式：只跑纯 git-diff 规则，不依赖 Agent 日志。
 
 企业用户缓解措施：交叉验证（git log 与日志文件列表做时间戳对比）、人工抽查、`--strict` 模式。
+
+> ⚠️ **`--stats` 聚合口径披露（v1.4.3 交付 · v1.4.5 复核）**：`sofagent-audit --stats` 输出审计聚合指标（安全边界触发率等），口径为**触发率 = (WARN 条数 + FAIL 条数) / 变更总数**（exitCode 判定：1=WARN / 2=FAIL；`--json` 机器可读、`--days N` 时间窗口）。两条边界：① 纯聚合零新采集——数据地基是既有 history.jsonl，**只读铁律**（聚合层永不写 history.jsonl，HMAC 链完整性不受聚合影响，聚合前后文件字节级一致可校验）；② 空历史返回 null 降级（不报 0%——避免「无数据」被误读为「零违规」）。quick 模式（`npx` 零配置路径）**不含** stats 面——聚合是完整引擎的 CLI 能力。
+>
+> ⚠️ **`--quick` 与 `--silent` 的关系（文案对齐）**：`--silent` 跳过依赖 Agent 日志的规则（A3/A7/A8/A14 等）走 diff 启发式；`--quick` 是另一维度——verify 侧的快速模式（仅 4 项核心检查）。quick 审计模式（无参 npx 调用）默认 17 条规则、无 `--task` 输入时 A3 标跳过，与 `--silent` 的「跳过面」不同——两者同时用时取并集的保守语义。
 
 ---
 
@@ -421,9 +432,9 @@ FDE 完整四阶段十二步部署流程（[FDE/GUIDE.md](../FDE/GUIDE.md)）已
 
 ### 端到端验收测试覆盖
 
-v1.0 新增 `FORGE/playbook/acceptance-test.sh`（场景数持续扩展，当前 303 个，SSOT 见脚本头部声明）：
+v1.0 新增 `FORGE/playbook/acceptance-test.sh`（场景数持续扩展，当前 304 个，SSOT 见脚本头部声明）：
 
-- **CI 已覆盖**：单元测试审计核心 978 个、全 workspace 3753 个测试（v1.4.1 批次 2937→3178 +241，v1.4.2 批 +171，v1.4.3 批 +138（audit +12 / orchestrator +126）：bugfix 批 +24（audit 878→902）+ dev 批 +147（orchestrator 1295→1442）+ 安全回归批 +34（engineer 路径守卫，orchestrator 1573→1607，总数 3507→3541）+ L4 修复器路径守卫批 +41（orchestrator 1607→1648，总数 3541→3582）+ v1.4.4 审查批 #73 占位重写 +12（总数 3582→3594）+ v1.4.3 阶段五 run-02 闭环批一 P0-3 +6（core 374→380，总数 3594→3600）+ 审查修复批 +11（core 380→382 + audit 919→928，总数 3600→3611）+ 出站防护与原子写契约批 +8（daemon 287→294 + eval 32→33，总数 3611→3619）+ 同批删除 loop-audit-history.test.ts −6（orchestrator 1648→1642，总数 3619 持平）+ v1.4.4 审查修复批 +15（audit 929→936 / core 382→388 / daemon 294→296，总数 3620→3635）+ v1.4.4 开发批 +109（audit 936→976 / core 388→393 / orchestrator 1642→1697 / daemon 296→302 / mcp 154→157，总数 3635→3744））；全绿，详见上方「测试覆盖范围」节，实测见 `tools/check/test-count.sh`，与 pre-push-check 一致）、sofagent-core verify 约 44-48 项（动态）
+- **CI 已覆盖**：单元测试审计核心 1030 个、全 workspace 3853 个测试（v1.4.1 批次 2937→3178 +241，v1.4.2 批 +171，v1.4.3 批 +138（audit +12 / orchestrator +126）：bugfix 批 +24（audit 878→902）+ dev 批 +147（orchestrator 1295→1442）+ 安全回归批 +34（engineer 路径守卫，orchestrator 1573→1607，总数 3507→3541）+ L4 修复器路径守卫批 +41（orchestrator 1607→1648，总数 3541→3582）+ v1.4.4 审查批 #73 占位重写 +12（总数 3582→3594）+ v1.4.3 阶段五 run-02 闭环批一 P0-3 +6（core 374→380，总数 3594→3600）+ 审查修复批 +11（core 380→382 + audit 919→928，总数 3600→3611）+ 出站防护与原子写契约批 +8（daemon 287→294 + eval 32→33，总数 3611→3619）+ 同批删除 loop-audit-history.test.ts −6（orchestrator 1648→1642，总数 3619 持平）+ v1.4.4 审查修复批 +15（audit 929→936 / core 382→388 / daemon 294→296，总数 3620→3635）+ v1.4.4 开发批 +109（audit 936→976 / core 388→393 / orchestrator 1642→1697 / daemon 296→302 / mcp 154→157，总数 3635→3744）+ v1.4.5 修复批 +109（audit 976→1030 / core 393→416 / daemon 302→325 / orchestrator 1697→1705 / mcp 157→158，总数 3744→3853））；全绿，详见上方「测试覆盖范围」节，实测见 `tools/check/test-count.sh`，与 pre-push-check 一致）、sofagent-core verify 约 44-48 项（动态）
 - **发版前手动覆盖**：acceptance-test.sh 304 场景（含子断言，CLI 端到端，步骤 2.3；v1.4.2 阶段三 S333-S339 七场景增量 265→272 + 存量清零 S340 272→273 + 章六补测 S341 273→274 + 章五零覆盖补测 S342/S343 274→276 + 阶段十二回写 S344 276→277 + v1.4.3 bugfix F-03 行为锁 S345 277→278 + v1.4.3 阶段三 S346-S348 三场景增量 278→281：审计聚合 CLI 行为实测/反作弊基线三防线锚点/训练监控三 tools 注册面 + 阶段五 coverage 补测 S349-S351 三场景增量 281→284：训练沙箱三约束行为实测/训练需求推导行为实测/后训练 workflow 模板解析 + v1.4.3 阶段五 run-02 闭环 S352-S355 四场景增量 284→288：DSH 执行深化三步锚点/train_diagnose 行为实测/入口导览与 onboarding 断层走查/存量清扫零残留 + run-04 coverage 闭环 S356 288→289：doctor Ontology 完整性检查锚点，补十三章零覆盖 P0-1 + run-05 coverage 闭环 S357-S358 两场景增量 289→291：审计聚合触发率数值实测/train_status 行为实测，S347 同批补四形态映射锁 + 闸门 run-05 P1 批 S359 291→292：过时承诺排期化/悬空引用补锚点/三态退出码防复发 + 闸门 run-06 误报批 S360 292→293：规则数 24 双口径锚点/维度 9 探针 A+E 全口径/PASS 场景级断言输出/S165 标题去 158 残留 + v1.4.3 阶段十二回写 S361 293→294：lock 零本地部署树路径防复发锚点 + v1.4.4 闸门 run-01 判断层 P0-1 闭环 S362/S363/S365-S370 九场景增量 294→303：v1.4.4 十模块验收——补章九收编锚点 S371——语料导出 27 编号位/方法论三锚点+脱敏闭环/权重部署哈希红线/产物注册人审语义/对比训练 ROI 排序/因果链回溯+先例打分+HMAC 篡改判定/CI 供应链四锚点/章七十收口八锚点（原 S364 corpus_export 双入口对账真实归并入 S348——同版归并对销 1 处解锁 acceptance 警戒线同版上调，断言零删减）+ 闸门 run-06 coverage 闭环 S372 303→304：章十一阶段四 B 类行为锁补测批四测试文件在位锚 + 五代表断言锚）、OpenClaw 验收 63 场景（Agent 端到端，步骤 2.5）
 - **CI 未覆盖**：daemon → MCP → webhook → 编排四组件串联行为（v1.3.2 起由 Onboard 循环引擎跑全链路 smoke test 承接，作为验收标准；日常 CI 无独立集成测试，发版前手动验证兜底）
 - **CI 未覆盖**：多平台兼容性（macOS only verified，Linux/Windows 未验证）

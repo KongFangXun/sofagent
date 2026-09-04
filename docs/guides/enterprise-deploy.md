@@ -237,10 +237,14 @@ sofagent 的审计记录以 JSONL 格式存储在 `data/audit/history.jsonl`，�
 
 ### 日志格式（核心字段）
 
+> ⚠️ **字段以 `AuditHistoryEntry` 真实 schema 为准**（`engine/audit/src/audit-history.ts`，下例为单行精简示意——每行一个完整审计事件对象，规则判定在 `ruleResults` 数组内而非扁平铺开）：
+
 ```jsonl
-{"timestamp":"2026-07-30T10:00:00Z","rule":"A1","status":"PASS","file":"src/main.ts","detail":"no secret found"}
-{"timestamp":"2026-07-30T10:00:01Z","rule":"A3","status":"FAIL","file":"src/utils.ts","detail":"modified files outside scope"}
+{"timestamp":"2026-07-30T10:00:00Z","diffRange":"HEAD~1..HEAD","exitCode":0,"diffFileCount":3,"commitMsg":"feat: add login","ruleResults":[{"name":"secret-leak","number":2,"status":"PASS","details":[]},{"name":"out-of-scope","number":3,"status":"SKIPPED","details":["quick mode: no task input"]}]}
+{"timestamp":"2026-07-30T10:00:01Z","diffRange":"HEAD~2..HEAD~1","exitCode":2,"diffFileCount":5,"commitMsg":"update config","ruleResults":[{"name":"secret-leak","number":2,"status":"FAIL","details":["src/utils.ts:3 leaked AWS AKIA key"]}],"prevHash":"a1b2c3…","engine":"sofagent-audit"}
 ```
+
+关键字段速查：`timestamp`（ISO 8601）/ `diffRange`（审计区间）/ `exitCode`（0=PASS / 1=WARN / 2=FAIL）/ `ruleResults[]`（逐规则 name/number/status/details）/ `diffFileCount`（变更文件数）/ `commitMsg` / `prevHash`（链完整性）/ `engine`（审计引擎标识）。可选字段：`commitSha` / `parentSha` / `commitPhase` / `actionGovernance`（动作溯源组）/ `agentId`（Agent 身份码）。
 
 ### SIEM 对接方案
 
@@ -267,22 +271,23 @@ sofagent 的审计记录以 JSONL 格式存储在 `data/audit/history.jsonl`，�
   chmod 600 ~/.sofagent/federation.token
   ```
 - **安全注意**：文件权限必须收紧为 600（仅当前用户可读写），防止同机其他用户读取
-- **轮换策略**：定期更换 token，配合审计日志中 `federation_id` 字段追溯设备身份
+- **轮换策略**：定期更换 token；设备身份配合审计日志的 `engine`/`timestamp` 字段及设备目录隔离做追溯（`federation_id` 不是 history.jsonl 的真实字段——见下方「审计追溯」）
 
 ### 审计追溯
 
 - 每台设备的审计日志独立存储于本地 `data/audit/history.jsonl`（JSONL，每行一条审计记录）
 - **集中查看**：通过 rsync 等工具汇总各设备日志到中央节点后，用 jq 聚合分析（P1-30 修正：原文档所述聚合命令不存在，实际为 JSONL 文件 + jq）：
   ```bash
-  cat */data/audit/history.jsonl | jq -s '[.[] | select(.exitCode > 0)] | {total: length, fails: length}'
-  cat */data/audit/history.jsonl | jq -r '.[] | [.timestamp, .commitSha, .engine] | @tsv'
+  # 按设备目录汇总统计违规（exitCode 判定：1=WARN / 2=FAIL）
+  cat */data/audit/history.jsonl | jq -s '[.[] | select(.exitCode > 0)] | {total: length}'
+  cat */data/audit/history.jsonl | jq -r '[.timestamp, (.commitSha // .parentSha // "-"), .engine] | @tsv'
   ```
-- **跨设备一致性**：history 条目含 `timestamp`/`commitSha`/`engine` 字段；设备身份靠文件路径（`<device>/data/audit/history.jsonl`）区分——条目本身不存 hostname/federation_id（P1-30 修正：原文档所述字段与实际 JSONL 不符）
+- **跨设备一致性**：history 条目含 `timestamp`/`prevHash`/`engine` 字段；设备身份靠文件路径（`<device>/data/audit/history.jsonl`）区分——条目本身不存 hostname/federation_id（P1-30 修正：原文档所述字段与实际 JSONL 不符）
 
 ### 安全建议
 
 | 措施 | 说明 |
 |------|------|
 | token 最小化 | 每台设备用独立 token，避免单 token 泄露影响全集群 |
-| 定期轮换 | 建议 90 天轮换一次，token 变更后更新各设备环境变量 |
+| 定期轮换 | 建议 90 天轮换一次，token 变更后同步更新各设备的 token 文件 |
 | 日志隔离 | 设备间 audit log 不自动同步——需通过中央管道做聚合，避免单设备被控后污染全量日志 |

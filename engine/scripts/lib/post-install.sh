@@ -87,10 +87,24 @@ print_completion_summary() {  # 安装完成 · 使用说明（按平台）
   echo "  │  下一步                                   │"
   echo "  └──────────────────────────────────────────┘"
   echo ""
-  echo "  1. 验证安装：bash engine/scripts/verify.sh"
-  echo "  2. 在你的 git 项目初始化审计：sofagent-audit --init"
-  echo "  3. 体验效果：cd 你的 git 项目 && git commit（hook 自动触发）"
-  echo "  4. 5 分钟入门：cat docs/HANDBOOK.md"
+  # v1.4.5 (T5/R4): 按安装形态分流指路——原「bash engine/scripts/verify.sh」与
+  # 「cat docs/HANDBOOK.md」是仓库相对路径，仅在 git clone install.sh 形态下成立。
+  # npm 全局安装形态（install.sh 内 npm install -g @sofagent/audit 分支）下
+  # CWD 无 engine/ 与 docs/ 目录，指路断链。判定：安装产物目录里有 verify.sh
+  # 则给仓库内相对路径；否则给全局命令形态（sofagent-core doctor / npm docs）。
+  if [ -f "${SOFAGENT_HOME}/bin/sofagent" ] && command -v sofagent-core >/dev/null 2>&1; then
+    # npm 全局形态：CLI 已入 PATH
+    echo "  1. 验证安装：sofagent-core doctor"
+    echo "  2. 在你的 git 项目初始化审计：sofagent-audit --init"
+    echo "  3. 体验效果：cd 你的 git 项目 && git commit（hook 自动触发）"
+    echo "  4. 5 分钟入门：npm docs @sofagent/audit（或访问仓库 docs/HANDBOOK.md）"
+  else
+    # install.sh 仓库形态：相对路径有效（当前目录 = 仓库根）
+    echo "  1. 验证安装：bash engine/scripts/verify.sh"
+    echo "  2. 在你的 git 项目初始化审计：sofagent-audit --init"
+    echo "  3. 体验效果：cd 你的 git 项目 && git commit（hook 自动触发）"
+    echo "  4. 5 分钟入门：cat docs/HANDBOOK.md"
+  fi
   echo ""
   echo "  如需卸载：删除 ~/.sofagent/、~/.sofagent-key 及 .git/hooks/commit-msg 中的 sofagent hook 即可（保留你的项目数据）"
   echo "  历史拦截：全新安装，审计历史将从第一次提交开始记录。"

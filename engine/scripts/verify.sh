@@ -794,16 +794,18 @@ if [ -f "${VERIFY_SCRIPT_DIR}/lib/config.sh" ]; then
   # shellcheck disable=SC1091
   source "${VERIFY_SCRIPT_DIR}/lib/config.sh" 2>/dev/null || true
 fi
-if [ "${SOFA_SANITIZE:-}" != "true" ] && [ "${SOFA_AUDIT_ENABLED:-}" != "true" ] && [ "${SOFA_CLEANUP_ON_RECORD:-}" != "true" ]; then
+# 10.4 默认关闭确认
+# v1.4.5 T4: 读规范名 SOFAGENT_*（旧 SOFA_* 兜底——lib/config.sh 双导出下两者一致）
+if [ "${SOFAGENT_SANITIZE:-${SOFA_SANITIZE:-}}" != "true" ] && [ "${SOFAGENT_AUDIT_ENABLED:-${SOFA_AUDIT_ENABLED:-}}" != "true" ] && [ "${SOFAGENT_CLEANUP_ON_RECORD:-${SOFA_CLEANUP_ON_RECORD:-}}" != "true" ]; then
   check_pass "默认关闭: 合规功能全部关闭（向后兼容）"
 else
-  if [ "${SOFA_SANITIZE:-}" = "true" ]; then
+  if [ "${SOFAGENT_SANITIZE:-${SOFA_SANITIZE:-}}" = "true" ]; then
     check_warn "脱敏已启用 (log_sanitize=true)"
   fi
-  if [ "${SOFA_AUDIT_ENABLED:-}" = "true" ]; then
+  if [ "${SOFAGENT_AUDIT_ENABLED:-${SOFA_AUDIT_ENABLED:-}}" = "true" ]; then
     check_warn "审计已启用 (audit_enabled=true)"
   fi
-  if [ "${SOFA_CLEANUP_ON_RECORD:-}" = "true" ]; then
+  if [ "${SOFAGENT_CLEANUP_ON_RECORD:-${SOFA_CLEANUP_ON_RECORD:-}}" = "true" ]; then
     check_warn "清理触发已启用 (data_cleanup_on_record=true)"
   fi
 fi

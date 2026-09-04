@@ -248,6 +248,19 @@ fi
 
 > GitHub Release published 后，`.github/workflows/release.yml` 自动触发，publish `@sofagent/audit` 和 `@sofagent/mcp` 两个包到 npm。其余 10 包在步骤八手动 publish。
 
+### 🔴 发版 artifact 四件对账（release create 后立即做，不等收尾）
+
+> 每版发完都出现「Release 发了但某个 artifact 断链」的返工——四件 artifact 在 release create 后**立即逐件核验**，比收尾阶段统一排查省一轮往返：
+
+| # | artifact | 核验命令 | 期望 |
+|---|----------|---------|------|
+| 1 | git tag（远端存在且指向发版 commit） | `gh api repos/KongFangXun/sofagent/git/refs/tags/vX.Y.Z --jq '.object.sha'` 对比 `git rev-parse vX.Y.Z^{commit}` | 两 SHA 一致 |
+| 2 | GitHub Release（title + body 可达） | `gh release view vX.Y.Z --json name,isDraft` | name 匹配、isDraft=false |
+| 3 | npm 13 包（audit + mcp 自动，其余 11 手动后） | `for p in audit mcp core daemon eval harness ontology orchestrator rules skillopt think ab-test; do npm view @sofagent/$p version; done` + `npm view @sofagent/load-chain version` | 13 项全部 = 本版号 |
+| 4 | 安装入口（README 双语 + bootstrap.sh 的 tag URL 可达） | `grep -rn "refs/tags/v" README.md README.en.md bootstrap.sh` + 逐条 `curl -sI` HTTP 200 | 三处 = 本版 tag 且真实可达 |
+
+> 任何一件不满足 = 发版未完成，当场补（重推 tag / 补 publish / 修 URL），不带病进入收尾。
+
 ### Release Note 生成 → 自检 → 上一版结构对照（三道工序 · 步骤七必做）
 
 > 🔴 **release note 必须先过自检 + 上一版结构对照，才允许 gh release create**——「改了再发」的成本是 npm 用户看到的第一个版本就是错的（曾连续多版发布后都发现问题再改）。三道工序缺一不可：

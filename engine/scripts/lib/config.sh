@@ -9,13 +9,13 @@
 #
 # 导出环境变量：
 #   SOFAGENT_DATA          数据目录路径（v0.90 P0-3：统一解析，不再各自硬编码 ${PWD}/.sofagent）
-#   SOFA_SANITIZE         日志脱敏开关（"true" 或 ""）
-#   SOFA_SANITIZE_IPS       内网 IP 脱敏开关（"true" 或 ""）
-#   SOFA_RETENTION_DAYS     日志保留天数（默认 90）
-#   SOFA_RETENTION_MAX      日志最大条数（默认 500）
-#   SOFA_CLEANUP_ON_RECORD  写日志后是否触发清理（"true" 或 ""）
-#   SOFA_CLEANUP_FREQUENCY  清理触发频率（默认 10，即 1/N 概率）
-#   SOFA_AUDIT_ENABLED      审计日志开关（"true" 或 ""）
+#   SOFAGENT_SANITIZE       日志脱敏开关（v1.4.5 T4 规范名；旧名 SOFA_SANITIZE 兼容别名 + deprecation 告警）
+#   SOFAGENT_SANITIZE_IPS   内网 IP 脱敏开关（同上，旧名 SOFA_SANITIZE_IPS）
+#   SOFAGENT_RETENTION_DAYS 日志保留天数（默认 90；旧名 SOFA_RETENTION_DAYS）
+#   SOFAGENT_RETENTION_MAX  日志最大条数（默认 500；旧名 SOFA_RETENTION_MAX）
+#   SOFAGENT_CLEANUP_ON_RECORD 写日志后是否触发清理（旧名 SOFA_CLEANUP_ON_RECORD）
+#   SOFAGENT_CLEANUP_FREQUENCY 清理触发频率（默认 10，即 1/N 概率；旧名 SOFA_CLEANUP_FREQUENCY）
+#   SOFAGENT_AUDIT_ENABLED  审计日志开关（旧名 SOFA_AUDIT_ENABLED）
 # ============================================================
 
 # ── v0.90 P0-3 统一数据目录解析 ──
@@ -123,6 +123,28 @@ _parse_conf() {
 # v0.90 P0-3 连带修复：_parse_conf 在 fde.md 无匹配时返回空值，
 # 会覆盖环境变量（如 SOFA_AUDIT_ENABLED=true 被 fde.md 无配置时清空）。
 # 修复：先读 fde.md，仅在 fde.md 有明确值时覆盖；否则保留已有环境变量。
+#
+# v1.4.5 (T4): 双前缀统一——TS 侧（config-loader loadEnvConfig）自 v1.4.3 起已
+# 迁移到 SOFAGENT_*（旧 SOFA_* 保留为兼容别名），shell 侧现在对齐：每个变量
+# 同时导出 SOFAGENT_*（规范名）与 SOFA_*（兼容别名，含 deprecation 告警）。
+# 读取面（task-record.sh / verify.sh / audit.sh / cleanup.sh）统一改读 SOFAGENT_*，
+# 旧名在过渡期继续生效。参照 cleanup.sh v1.4.3 的「新名优先 + 旧名兜底」先例。
+
+# v1.4.5 (T4): 用户显式设旧名的快照——必须在任何赋值/export 之前采集，
+# 否则下方 fde.md/默认值赋的 SOFA_* 会被误判为「用户设了旧名」（干净环境误告警）。
+for _v in SOFAGENT_SANITIZE SOFAGENT_SANITIZE_IPS SOFAGENT_RETENTION_DAYS \
+          SOFAGENT_RETENTION_MAX SOFAGENT_CLEANUP_ON_RECORD \
+          SOFAGENT_CLEANUP_FREQUENCY SOFAGENT_AUDIT_ENABLED; do
+  _legacy="SOFA_${_v#SOFAGENT_}"
+  _new="${_v}"
+  if [ -n "${!_legacy:-}" ] && [ -z "${!_new:-}" ]; then
+    eval "_LEGACY_SET_${_v}=1"
+    echo "[sofagent] ⚠️ 环境变量 ${_legacy} 已废弃（v1.4.5 起统一为 ${_new}），当前仍生效——请迁移配置" >&2
+  else
+    eval "_LEGACY_SET_${_v}=0"
+  fi
+done
+unset _v _legacy _new
 
 # 日志脱敏
 # P1-16: 数据主权产品的脱敏不应是 opt-in——默认开启
@@ -131,6 +153,8 @@ if [ -n "$(_parse_conf "log_sanitize" "")" ]; then
 fi
 SOFA_SANITIZE="${SOFA_SANITIZE:-true}"
 export SOFA_SANITIZE
+SOFAGENT_SANITIZE="${SOFAGENT_SANITIZE:-$SOFA_SANITIZE}"
+export SOFAGENT_SANITIZE
 
 # 内网 IP 脱敏
 # P1-16: 同上——默认开启
@@ -139,27 +163,39 @@ if [ -n "$(_parse_conf "log_sanitize_ips" "")" ]; then
 fi
 SOFA_SANITIZE_IPS="${SOFA_SANITIZE_IPS:-true}"
 export SOFA_SANITIZE_IPS
+SOFAGENT_SANITIZE_IPS="${SOFAGENT_SANITIZE_IPS:-$SOFA_SANITIZE_IPS}"
+export SOFAGENT_SANITIZE_IPS
 
 # 数据保留天数
 SOFA_RETENTION_DAYS="$(_parse_conf "data_retention_days" "${SOFA_RETENTION_DAYS:-90}")"
 export SOFA_RETENTION_DAYS
+SOFAGENT_RETENTION_DAYS="${SOFAGENT_RETENTION_DAYS:-$SOFA_RETENTION_DAYS}"
+export SOFAGENT_RETENTION_DAYS
 
 # 数据保留最大条数
 SOFA_RETENTION_MAX="$(_parse_conf "data_retention_max_entries" "${SOFA_RETENTION_MAX:-500}")"
 export SOFA_RETENTION_MAX
+SOFAGENT_RETENTION_MAX="${SOFAGENT_RETENTION_MAX:-$SOFA_RETENTION_MAX}"
+export SOFAGENT_RETENTION_MAX
 
 # 写日志后触发清理
 if [ -n "$(_parse_conf "data_cleanup_on_record" "")" ]; then
   SOFA_CLEANUP_ON_RECORD="$(_parse_conf "data_cleanup_on_record" "")"
 fi
 export SOFA_CLEANUP_ON_RECORD
+SOFAGENT_CLEANUP_ON_RECORD="${SOFAGENT_CLEANUP_ON_RECORD:-$SOFA_CLEANUP_ON_RECORD}"
+export SOFAGENT_CLEANUP_ON_RECORD
 
 # 清理触发频率（1/N 概率）
 SOFA_CLEANUP_FREQUENCY="$(_parse_conf "data_cleanup_frequency" "${SOFA_CLEANUP_FREQUENCY:-10}")"
 export SOFA_CLEANUP_FREQUENCY
+SOFAGENT_CLEANUP_FREQUENCY="${SOFAGENT_CLEANUP_FREQUENCY:-$SOFA_CLEANUP_FREQUENCY}"
+export SOFAGENT_CLEANUP_FREQUENCY
 
 # 审计日志开关
 if [ -n "$(_parse_conf "audit_enabled" "")" ]; then
   SOFA_AUDIT_ENABLED="$(_parse_conf "audit_enabled" "")"
 fi
 export SOFA_AUDIT_ENABLED
+SOFAGENT_AUDIT_ENABLED="${SOFAGENT_AUDIT_ENABLED:-$SOFA_AUDIT_ENABLED}"
+export SOFAGENT_AUDIT_ENABLED
