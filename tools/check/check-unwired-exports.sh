@@ -238,5 +238,44 @@ if [ "$FAIL_COUNT" -gt 0 ]; then
   exit 1
 fi
 
+# ============================================================
+# S2 写入字段脱敏策略强制声明断言（v1.4.5）
+# 「先脱敏再签名」从纪律变 CI 不变量的静态面：
+#   ① appendHistory 主链必须调用 deepSanitizeFreeText（运行时兜底在位）
+#   ② 深扫白名单必须含签名/链字段（hmacSig 等——脱敏会破坏验签语义）
+#   ③ 自由文本字段的类型声明必须带 🔐 脱敏策略标注（types.ts）
+# 断言①②防「兜底被顺手删」；断言③防「新自由文本字段裸声明」。
+# （行为面由 audit-history.test.ts 三个 S2 行为锁测试守，此处管静态面。）
+# ============================================================
+S2_FAIL=0
+
+# ① 主链深扫接线在位
+if ! grep -q "deepSanitizeFreeText(baseSanitized" engine/audit/src/audit-history.ts; then
+  echo -e "  ${RED}✗${NC} S2①：appendHistory 主链未调用 deepSanitizeFreeText——嵌套自由文本脱敏兜底缺失（v1.4.5 S2 回退）"
+  S2_FAIL=$((S2_FAIL + 1))
+fi
+
+# ② 白名单含签名/链字段（抽两个锚：hmacSig 与 envFingerprint）
+for anchor in hmacSig envFingerprint; do
+  if ! grep -q "'$anchor'" engine/audit/src/audit-history.ts; then
+    echo -e "  ${RED}✗${NC} S2②：深扫白名单缺「$anchor」——脱敏会破坏验签/链语义（v1.4.5 S2 回退）"
+    S2_FAIL=$((S2_FAIL + 1))
+  fi
+done
+
+# ③ 自由文本字段类型声明带策略标注（context/beforeAfter 两锚；注释块可达 6 行故 -B6）
+for field in context beforeAfter; do
+  if ! grep -B6 "  $field?:" engine/audit/src/rules/types.ts | grep -q "🔐"; then
+    echo -e "  ${RED}✗${NC} S2③：ActionGovernance.$field 类型声明缺 🔐 脱敏策略标注（rules/types.ts）——新字段须显式声明"
+    S2_FAIL=$((S2_FAIL + 1))
+  fi
+done
+
+if [ "$S2_FAIL" -gt 0 ]; then
+  echo -e "${RED}${BOLD}✗ S2 脱敏策略声明门禁 ${S2_FAIL} 项断言失败${NC}"
+  exit 1
+fi
+echo -e "  ${GREEN}✓${NC} S2 脱敏策略声明断言（①深扫接线 ②白名单 ③类型标注）全过"
+
 echo -e "${GREEN}${BOLD}✓ 零接线导出门禁通过（豁免 ${WAIVED_COUNT} 项均在登记表）${NC}"
 exit 0

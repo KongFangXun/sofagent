@@ -99,6 +99,51 @@ export function sanitizeFreeText(text: string | undefined): string | undefined {
 }
 
 /**
+ * 深度脱敏自由文本（S2 写入字段脱敏策略强制声明的运行时守卫）。
+ *
+ * 背景：baseSanitized 的 ...entry 展开只显式处理顶层 commitMsg/task 与
+ * ruleResults——嵌套对象（如 actionGovernance.context）不在展开面内，
+ * 「新字段裸奔」曾是 P0-2 的同类根因（beforeAfter 已在构建侧修，context
+ * 依赖本函数兜底）。策略：递归遍历 entry 全部字符串叶子，凡命中
+ * REDACTION_PATTERNS 的即脱敏——白名单跳过结构化/签名/链字段（脱敏会
+ * 破坏验签或篡改语义）。这是兜底层，字段级显式声明（types.ts 注释）
+ * 仍是第一防线；两层叠加把「先脱敏再签名」从纪律变成机制。
+ *
+ * 白名单原则：只豁免「值不可能含用户自由文本」的字段——
+ *   - hmacSig/envFingerprint/prevHash/hashVersion/hmacAlgo/chainStatus：
+ *     签名与链字段，脱敏即破坏验签语义（它们本就不含明文敏感面）；
+ *   - timestamp/diffRange/exitCode/diffFileCount/engine/commitSha/parentSha/
+ *     commitPhase/agentId：结构化枚举值（SANITIZE N/A）。
+ * 其余字符串叶子（含未来新增字段）一律过管道——新字段未声明策略时
+ * 默认按自由文本处理（fail-safe），命中即脱敏并计数。
+ */
+const SANITIZE_EXEMPT_KEYS = new Set<string>([
+  // 签名/链字段——脱敏破坏验签或链语义
+  'hmacSig', 'envFingerprint', 'prevHash', 'hashVersion', 'hmacAlgo', 'chainStatus',
+  // 结构化枚举值——不含自由文本
+  'timestamp', 'diffRange', 'exitCode', 'diffFileCount', 'engine', 'commitSha',
+  'parentSha', 'commitPhase', 'agentId',
+]);
+
+/** 深扫脱敏：递归处理对象/数组中的字符串叶子，返回 [处理后对象, 命中次数] */
+function deepSanitizeFreeText(node: unknown, hitsRef: { count: number }): unknown {
+  if (typeof node === 'string') {
+    const cleaned = sanitizeFreeText(node);
+    if (cleaned !== node) hitsRef.count++;
+    return cleaned;
+  }
+  if (Array.isArray(node)) return node.map((item) => deepSanitizeFreeText(item, hitsRef));
+  if (node && typeof node === 'object') {
+    const out: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(node as Record<string, unknown>)) {
+      out[key] = SANITIZE_EXEMPT_KEYS.has(key) ? value : deepSanitizeFreeText(value, hitsRef);
+    }
+    return out;
+  }
+  return node;
+}
+
+/**
  * 单条审计历史记录
  */
 export interface AuditHistoryEntry {
@@ -304,9 +349,24 @@ export function appendHistory(entry: AuditHistoryEntry, dataDir?: string): void 
     task: sanitizeFreeText(entry.task),
   };
 
+  // S2 写入字段脱敏策略强制声明——运行时兜底守卫（v1.4.5）：
+  // baseSanitized 显式面只覆盖 ruleResults/commitMsg/task，嵌套对象
+  //（actionGovernance.context 等）靠这一层深扫兜底。签名输入 = 深扫后
+  // 的记录（「先脱敏再签名」语义延伸到嵌套面）；命中计数 >0 说明有
+  // 字段携带了可脱敏内容——字段级声明（types.ts 🔐 注释）漏了，打 WARN
+  // 提示补声明（不阻断写入，与链断裂同取舍：审计可用性优先）。
+  const deepHits = { count: 0 };
+  const deepSanitized = deepSanitizeFreeText(baseSanitized, deepHits) as typeof baseSanitized;
+  if (deepHits.count > 0) {
+    console.warn(
+      `⚠️ [sofagent] appendHistory 深扫脱敏命中 ${deepHits.count} 处（嵌套字段携带可脱敏内容已自动打码）——` +
+      `该字段类型面缺 🔐 脱敏策略声明，请在 AuditHistoryEntry/ActionGovernance（rules/types.ts）补声明`
+    );
+  }
+
   // 签名输入排除 prevHash/hashVersion/hmacSig/hmacAlgo（与读侧 recordForSig 一致）；
   // 用 stableStringify（递归按 key 字典序排序）消除 key 顺序敏感。
-  const recordForSig = { ...baseSanitized, prevHash: undefined, hashVersion: undefined, hmacSig: undefined, hmacAlgo: undefined };
+  const recordForSig = { ...deepSanitized, prevHash: undefined, hashVersion: undefined, hmacSig: undefined, hmacAlgo: undefined };
   // HMAC-SHA256 完整输出 64 hex（256bit），此处 .slice(0, 32) 截断到 128bit。
   // 截断理由：① 每条 history.jsonl 记录都存 hmacSig，截断省约一半存储空间；
   // ② 128bit 防篡改强度充分（伪造需 2^128 次尝试，远超可行算力）；
@@ -316,7 +376,7 @@ export function appendHistory(entry: AuditHistoryEntry, dataDir?: string): void 
     ? createHmac('sha256', hmacKey).update(stableStringify(recordForSig) + '|' + fingerprint).digest('hex').slice(0, 32)
     : undefined;
 
-  const sanitizedEntry = { ...baseSanitized, hmacSig: hmacSig ?? undefined };
+  const sanitizedEntry = { ...deepSanitized, hmacSig: hmacSig ?? undefined };
   // v1.0.5: 使用原子追加（先读+追加+原子写），避免并发写入导致的行交错
   // v1.2.5 atomicAppendSync 已内置文件锁互斥（O_EXCL + 过期回收），
   //   读-改-写跨进程串行化——不再需要 busy-wait 重试循环（原 189-206 行已移除）。

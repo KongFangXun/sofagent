@@ -117,6 +117,7 @@ sofagent 的定位正卡在这个转折点上：审计模块（治理侧）+ Ont
 | **审计范围语义一等公民化（AuditScope 重构）** | 所有规则输入面显式声明取 HEAD 还是 range——引入 `AuditScope{ diffRange, commitMsg, task, actor }` 显式对象，规则从 scope 取输入、不再自己调 git，消灭「规则自己调 git 取错范围」整类 bug（v1.4.4 审查 D-1 quick A9 同类，最小修复已随 12ec0171 落地，根治走重构专项——候选 v1.4.5+，随该版重构窗口评估） |
 | **大文档三档拆分（概念/决策/清单）** | ARCHITECTURE/PHILOSOPHY 类大文档按「概念/决策/清单」三档拆分重组，控制单文档认知负载——归文档优化专项（无版本单元格，触发时机=下一次大规模文档新增时） |
 | **CLI 单入口收敛（叙事收敛批）** | 11 个 `sofagent-*` 二进制命令对用户是 11 个记忆点——长期收口为 `sofagent <域> <动作>` 单入口（`sofagent audit` / `sofagent train` / `sofagent ontology` …），旧命令保留兼容期。动 bin 面与全部文档，候选 v1.5.x 某版评估（与 v1.4.8 依赖方向架构测试同期看） |
+| **透明仓（wild idea · 视角 21）** | evidence/ 实时公开治理原始记录（含误报）——审查 run 的 P0/P1 判定、误报与翻案全过程原样公开，「审查自己也在被审计」。比发版后 cherry-pick 的结论文档更狠的诚实面；误报率够低（当前 <5%）才敢开，先攒 [anti-cases](./evidence/anti-cases/README.md) 与 fresh-eyes 校准档案，无版本单元格、不排期，触发条件=第三方首次独立审查 |
 
 > 📖 DeerFlow / OpenFDE 方法论印证见 [VALIDATION](./VALIDATION.md)。
 

@@ -124,6 +124,73 @@ describe('audit-history', () => {
     expect(content).not.toContain('REDACTED');
   });
 
+  // S2 写入字段脱敏策略强制声明（v1.4.5）：嵌套对象（actionGovernance.context）
+  // 是 baseSanitized 显式面之外的盲区——顶层 commitMsg 打码、同一内容从
+  // context 通道明文落盘曾是实洞。深扫兜底层必须把它拦下。
+  it('appendHistory 对 actionGovernance.context 嵌套自由文本深扫脱敏（S2 兜底）', () => {
+    const leakKey = ['sk-', 'b'.repeat(40)].join('');
+    const entry = makeEntry('2026-01-01T00:00:00.000Z', 0);
+    entry.actionGovernance = {
+      actor: 'test-agent',
+      timestamp: '2026-01-01T00:00:00.000Z',
+      targetEntity: 'src/config.ts',
+      // context 与顶层 commitMsg 同源（args.task || commitMsg）——历史盲区通道
+      context: `部署配置更新，密钥 ${leakKey} 已轮换`,
+      decisionProvenance: {
+        who: 'test-agent',
+        when: '2026-01-01T00:00:00.000Z',
+        whichDataVersion: '',
+        whichApp: 'sofagent-audit',
+      },
+    };
+    appendHistory(entry, testDir);
+
+    const content = readFileSync(getHistoryFilePath(testDir), 'utf-8');
+    // 嵌套通道密钥原文不得落盘（S2 核心断言）
+    expect(content).not.toContain(leakKey);
+    // 走了 REDACTION_PATTERNS 管道（占位符在嵌套字段内）
+    expect(content).toContain('sk-***REDACTED***');
+    // 非密钥文本保留（不误伤嵌套自由文本）
+    expect(content).toContain('部署配置更新');
+  });
+
+  it('appendHistory 深扫不破坏 HMAC 验签（先脱敏再签名语义延伸到嵌套面）', () => {
+    // 深扫结果必须是签名输入——读侧 recordForSig 复算需一致。
+    // 用 checkHistoryChainIntegrity 走一遍：写入两条（一条带嵌套密钥），
+    // 链完整性校验必须通过（写读两侧同一深扫管道 → 验签恒一致）。
+    const leakKey = ['sk-', 'c'.repeat(40)].join('');
+    const e1 = makeEntry('2026-01-01T00:00:00.000Z', 0);
+    e1.actionGovernance = {
+      actor: 'test-agent',
+      timestamp: '2026-01-01T00:00:00.000Z',
+      targetEntity: 'src/a.ts',
+      context: `key ${leakKey}`,
+      decisionProvenance: { who: 'test-agent', when: '2026-01-01T00:00:00.000Z', whichDataVersion: '', whichApp: 'sofagent-audit' },
+    };
+    appendHistory(e1, testDir);
+    appendHistory(makeEntry('2026-01-02T00:00:00.000Z', 0), testDir);
+
+    // 写读两侧脱敏一致 → 链校验通过（不因深扫差异误判篡改）
+    // 契约：checkHistoryChainIntegrity 返回 boolean（非对象）
+    expect(checkHistoryChainIntegrity(testDir)).toBe(true);
+  });
+
+  it('appendHistory 深扫脱敏未知嵌套字段（新字段未声明策略时 fail-safe 默认脱敏）', () => {
+    // S2 守卫语义：未来新增字段没在 types.ts 声明脱敏策略 → 深扫层默认
+    // 按自由文本处理（fail-safe），命中即脱敏——「声明漏了」不等于「裸奔」。
+    const leakKey = ['sk-', 'd'.repeat(40)].join('');
+    const entry = makeEntry('2026-01-01T00:00:00.000Z', 0);
+    // 模拟未来新增的未声明嵌套字段（TS 面外注入，运行时存在）
+    (entry as unknown as Record<string, unknown>).futureField = {
+      note: `新字段携带密钥 ${leakKey}`,
+    };
+    appendHistory(entry, testDir);
+
+    const content = readFileSync(getHistoryFilePath(testDir), 'utf-8');
+    expect(content).not.toContain(leakKey);
+    expect(content).toContain('sk-***REDACTED***');
+  });
+
   it('loadHistory 返回按时间倒序的数组', () => {
     // 验证：加载历史，最新（时间戳最大）的排前面
     appendHistory(makeEntry('2026-01-01T00:00:00.000Z', 0), testDir);

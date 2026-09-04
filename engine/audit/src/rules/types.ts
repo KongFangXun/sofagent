@@ -59,11 +59,23 @@ export interface ActionGovernance {
   actor: string;
   timestamp: string;
   targetEntity: string;
-  /** 变更前后值摘要；v1.4.0 交付十三：index.ts buildBeforeAfterSummary 回填（截断 + 脱敏，diff 原文不进 history.jsonl），按需从 git diff 取 */
+  /**
+   * 变更前后值摘要；v1.4.0 交付十三：index.ts buildBeforeAfterSummary 回填
+   * （截断 + 脱敏，diff 原文不进 history.jsonl），按需从 git diff 取。
+   * 🔐 脱敏策略：FREE_TEXT——构建侧过 sanitizeFreeText（见 index.ts），
+   * appendHistory 深扫层再兜底一道；声明见 S2 写入字段脱敏策略强制声明。
+   */
   beforeAfter?: { before?: string; after?: string };
-  /** 上下文：任务描述 / commit message / workflow */
+  /**
+   * 上下文：任务描述 / commit message / workflow。
+   * 🔐 脱敏策略（写入字段强制声明）：FREE_TEXT——用户可输入自由文本，
+   * 落盘前必须过 sanitizeFreeText（audit-history appendHistory 深度脱敏，
+   * 与顶层 commitMsg/task 同管道；构建侧 buildBeforeAfterSummary 同理）。
+   * 新增含自由文本的落盘字段时必须在此注释声明策略，未声明的嵌套
+   * 自由文本字段会被 appendHistory 的 REDACTION 深扫守卫打 WARN。
+   */
   context?: string;
-  /** 决策溯源组（who / when / which-data-version / which-app） */
+  /** 决策溯源组（who / when / which-data-version / which-app）；结构化枚举值，非自由文本——SANITIZE_N/A */
   decisionProvenance: DecisionProvenance;
 }
 
