@@ -3,9 +3,13 @@
 // 检测临时文件名模式的垃圾文件——如 a.txt / test1.js / new-name.txt
 // evidenceMode: git-diff
 // v1.3.7 新增 · v1.2.0 审查修正（不区分 status，modified 也告警）
+// v1.4.5 T9: git ls-files 命中豁免——正规仓库里 a.txt 可能是长期维护的
+// 真实文件（如依赖清单片段、约定俗成命名）；已在 git 索引中（此前已提交
+// 过）的文件名豁免 WARN，只对「本次新混入」的垃圾文件告警。
 // ============================================================
 
 import { basename } from 'path';
+import { execFileSync } from 'child_process';
 import type { AuditContext, RuleCheck } from './types';
 /**
  * 垃圾文件名模式（basename 级匹配）：
@@ -23,6 +27,7 @@ const JUNK_PATTERNS: { regex: RegExp; label: string }[] = [
  * 豁免规则——以下路径/文件名跳过检测：
  * - 正规测试目录：test/、tests/、__tests__/ 开头
  * - 正规测试文件：*.test.ts、*.spec.ts、*.test.js 结尾
+ * - v1.4.5 T9: git ls-files 已跟踪文件（见 isGitTracked）
  */
 function isExempt(filePath: string): boolean {
   // 测试目录豁免
@@ -30,6 +35,25 @@ function isExempt(filePath: string): boolean {
   // 正规测试文件豁免
   if (/\.(test|spec)\.(ts|js|tsx|jsx)$/i.test(filePath)) return true;
   return false;
+}
+
+/**
+ * v1.4.5 T9: git 索引查询——返回 cwd 下 git 已跟踪文件集合（Set）。
+ * 单次 `git ls-files` 全量拉取（大仓库也是毫秒级索引读取，远快于按文件
+ * 逐个 ls-files --error-unmatch）；非 git 仓库 / git 不可用返回 null
+ * （豁免降级关闭，不影响既有告警行为——fail-closed 于垃圾检测而非崩盘）。
+ */
+function getTrackedFiles(): Set<string> | null {
+  try {
+    const out = execFileSync('git', ['ls-files'], {
+      encoding: 'utf-8',
+      stdio: ['pipe', 'pipe', 'pipe'],
+      maxBuffer: 64 * 1024 * 1024, // 百万级文件仓库兜底（默认 1MB 会炸）
+    });
+    return new Set(out.split('\n').filter(Boolean));
+  } catch {
+    return null;
+  }
 }
 
 export function checkRuleA18(ctx: AuditContext): RuleCheck {
@@ -44,17 +68,26 @@ export function checkRuleA18(ctx: AuditContext): RuleCheck {
 
   const hits: string[] = [];
 
+  // v1.4.5 T9: 惰性拉取 git 索引——仅在存在候选垃圾文件时查询一次
+  let tracked: Set<string> | null | undefined;
   for (const file of ctx.diffFiles) {
     // 豁免规则：正规测试文件/目录跳过
     if (isExempt(file.path)) continue;
 
     const name = basename(file.path);
+    let matched = false;
     for (const { regex, label } of JUNK_PATTERNS) {
       if (regex.test(name)) {
+        // v1.4.5 T9: 命中垃圾模式但 git 已跟踪（此前已提交过的存量文件）→ 豁免。
+        // tracked === null（非 git 环境）时不豁免，保持旧告警行为。
+        if (tracked === undefined) tracked = getTrackedFiles();
+        if (tracked !== null && tracked.has(file.path)) break;
         hits.push(`${file.path}（命中模式：${label}）`);
+        matched = true;
         break; // 同一文件只记录一次
       }
     }
+    if (matched) continue;
   }
 
   if (hits.length > 0) {

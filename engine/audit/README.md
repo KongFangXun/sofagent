@@ -61,7 +61,7 @@ sofagent-audit --diff HEAD~1..HEAD --ci --json
 | `--diff <range>` | git diff 范围 | `HEAD~1..HEAD` |
 | `--task <desc>` | 任务描述（A3 越界检测） | — |
 | `--strict` | 严格模式：无日志时 A7 返回 FAIL 而非 WARN | off |
-| `--silent` | 沉默模式：跳过日志依赖规则，走 diff 启发式 | off |
+| `--silent` | 沉默模式：跳过依赖 Agent 日志的规则（A3/A7/A8/A14 等），走 diff 启发式 | off |
 | `--ci` | CI 模式（= silent，紧凑输出） | off |
 | `--json` | JSON 输出：`{ exitCode, rules }` | off |
 | `--webhook <platform>` | 推送平台：`dingtalk` / `feishu` / `wecom` | — |

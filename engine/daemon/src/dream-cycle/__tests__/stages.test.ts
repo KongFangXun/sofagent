@@ -10,7 +10,7 @@
 //   5. synthesize_concepts：pattern → concept 写入 knowledge/entities/
 //   6. skillopt_backfill：触发 fde.md 优化钩子（mock 验证被调用）
 //   7. embed：产出定长向量
-//   8. RealLLM：构造器抛「本版仅支持 mock，v1.1.8 接入」
+//   8. RealLLM：构造器抛用户可读错（当前仅支持 mock）
 // ============================================================
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
@@ -135,8 +135,8 @@ describe('Dream Cycle 6 阶段', () => {
   });
 
   // 用例 8：RealLLM — 构造器抛用户可读错
-  it('RealLLM：构造器抛「本版仅支持 mock，v1.1.8 接入」', () => {
-    expect(() => new RealLLM()).toThrow(/mock|v1\.1\.8/);
+  it('RealLLM：构造器抛用户可读错（当前仅支持 mock）', () => {
+    expect(() => new RealLLM()).toThrow(/mock/i);
   });
 
   // 用例 9（P2-5）：prompt injection 隔离——think.md 含诱导指令，被当作文本提取而非执行

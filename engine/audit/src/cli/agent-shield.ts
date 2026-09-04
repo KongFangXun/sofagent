@@ -90,7 +90,15 @@ export function discoverAgentConfigs(repoDir: string): string[] {
     join(repoDir, 'CLAUDE.md'), // Claude Code 仓库级
     join(homedir(), '.claude', 'CLAUDE.md'), // Claude Code 用户级
     join(homedir(), '.codex', 'fde.md'), // Codex 工作规则
-    join(homedir(), '.sofagent', 'skills', 'sofagent', 'SKILL.md'), // 已安装 SKILL
+    // v1.4.5 T16: install.sh 实际部署路径补齐——此前只查复数 skills/ 目录，
+    // install.sh:779 实际写 $SOFAGENT_HOME/skill/（单数）+ 平台 symlink
+    // （.{platform}/skills/sofagent → 单数源目录）。旧候选表对默认安装
+    // 完全扫不到 SKILL（agent-config 面对标准安装形同虚设）。
+    join(homedir(), '.sofagent', 'skill', 'SKILL.md'), // install.sh 单数源（默认安装）
+    join(homedir(), '.sofagent', 'skills', 'sofagent', 'SKILL.md'), // 兼容旧版复数目录
+    join(homedir(), '.workbuddy', 'skills', 'sofagent', 'SKILL.md'), // workbuddy 平台 symlink
+    join(homedir(), '.openclaw', 'skills', 'sofagent', 'SKILL.md'), // openclaw 平台 symlink
+    join(homedir(), '.cursor', 'skills', 'sofagent', 'SKILL.md'), // cursor 平台 symlink
   ];
   return candidates.filter(existsSync);
 }

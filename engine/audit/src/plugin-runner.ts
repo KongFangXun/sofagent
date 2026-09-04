@@ -197,10 +197,14 @@ export function runPluginRule(
   try {
     plugin = loadPlugin(config.plugin);
   } catch (err) {
+    // v1.4.5 T13: severity=FAIL 的插件加载失败按 FAIL 输出——
+    // 此前无条件降 WARN：规则集声明该插件为阻断级（FAIL），加载失败
+    // （包未装/被篡改/版本漂移）时静默降 WARN = 阻断线自己给自己放水。
+    // WARN 级插件保持 WARN 降级（插件缺失不该阻断 advisory 检查）。
     return {
       name: config.name,
       number: 0,
-      status: 'WARN',
+      status: config.severity === 'FAIL' ? 'FAIL' : 'WARN',
       details: [
         `插件加载失败 (${config.plugin}): ${err instanceof Error ? err.message : String(err)}`
       ],
@@ -216,10 +220,11 @@ export function runPluginRule(
       options: config.options,
     });
   } catch (err) {
+    // v1.4.5 T13: 同上——severity=FAIL 的插件执行 crash 按 FAIL 输出
     return {
       name: config.name,
       number: 0,
-      status: 'WARN',
+      status: config.severity === 'FAIL' ? 'FAIL' : 'WARN',
       details: [
         `插件执行异常 (${config.plugin}): ${err instanceof Error ? err.message : String(err)}`
       ],

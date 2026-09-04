@@ -44,3 +44,17 @@ describe('sofagent-inject register', () => {
     expect(register).toBeTypeOf('function');
   });
 });
+
+// v1.4.5 (T7/R4) 防复发：pluginMeta.version 必须与 package.json 一致——
+// 此前硬编码 '1.4.0' 落后实际 4 个版本。运行时读取后两者永远同步；
+// 本测试锁定「改回硬编码 + 忘 bump」的回归路径。
+// v1.4.5 T7 注：CJS 编译态无 import.meta——用 require 双态通吃
+// （vitest ESM 转译后 require 可用；tsc CJS 原生可用）
+declare const require: (id: string) => { version?: string };
+describe('pluginMeta.version 运行时同步（T7 防复发）', () => {
+  it('pluginMeta.version === package.json version（不再硬编码漂移）', () => {
+    const pkg = require('../package.json');
+    expect(pluginMeta.version).toBe(pkg.version);
+    expect(pluginMeta.version).not.toBe('0.0.0-unknown'); // 兜底值出现在生产 = 读取路径断了
+  });
+});

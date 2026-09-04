@@ -21,6 +21,8 @@ import { isatty } from 'tty';
 import { CONFIG_TEMPLATE, HOOK_TEMPLATE, VERSION, generateWatchTemplate, resolveKnowledgeDir, resolveDaemonLog } from '@sofagent/core';
 import { writeConfig } from '@sofagent/core';
 import { defaultRules } from '../rules';
+// v1.4.5 T1: hook 落点解析（core.hooksPath 优先）——与 index.ts installHook() 同源
+import { resolveHooksDir } from '../hook-install';
 
 /**
  * 仓库状态分类（v1.0.5 新增）
@@ -450,9 +452,21 @@ export function runInit(): void {
     console.log('╚══════════════════════════════════════════╝');
     process.exit(1);
   } else {
-    const hooksDir = join(gitDir, 'hooks');
+    // v1.4.5 T1: hook 落点改经 resolveHooksDir（core.hooksPath 优先，缺省 $gitDir/hooks）。
+    // 此处必须与 index.ts installHook() 同语义——repo 配 core.hooksPath=.githooks 时
+    // 装到 .git/hooks 等于没装（git 不执行），且 doctor 按 hooksPath 找不到会误报。
+    const hooksResolution = resolveHooksDir(cwd);
+    if (!hooksResolution) {
+      console.log('  → 无法解析 git hook 目录，hook 已跳过');
+      console.log('  ⚠️ 审计引擎在 git 项目中才能运行——配置已生成，但审计不可用');
+      process.exit(1);
+    }
+    const hooksDir = hooksResolution.hooksDir;
     if (!existsSync(hooksDir)) {
       mkdirSync(hooksDir, { recursive: true });
+    }
+    if (hooksResolution.configured) {
+      console.log(`  → 检测到 core.hooksPath=${hooksResolution.configuredValue ?? ''}——hook 将安装到配置目录 ${hooksDir}`);
     }
 
     // v1.4.2 H-01: pre-commit 从「旧版迁移删除对象」升级为三层防线主防线——

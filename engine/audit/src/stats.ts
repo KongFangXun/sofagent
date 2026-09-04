@@ -210,6 +210,9 @@ export function formatStatsReport(report: AuditStatsReport): string {
     rate === null ? '—（无数据）' : `${(rate * 100).toFixed(2)}%`;
   const lines: string[] = [
     '━━━ sofagent 审计聚合报告（治理 KPI）━━━',
+    // v1.4.5 T7: 口径标注——缺省读 ~/.sofagent/data（全局跨仓库混合，不分 repo），
+    // 汇报前必须知道分母混了哪些仓库，否则 KPI 会被误读成单项目口径
+    '口径：~/.sofagent 全局聚合（跨仓库混合，非单项目；数据源 history.jsonl）',
     `统计窗口：近 ${report.windowDays} 天（${report.windowStart.slice(0, 10)} ~ ${report.windowEnd.slice(0, 10)}）`,
     `变更总数：${report.totalChanges}`,
     `判定分布：PASS ${report.distribution.pass} · WARN ${report.distribution.warn} · FAIL ${report.distribution.fail}`,

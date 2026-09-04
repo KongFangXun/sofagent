@@ -15,7 +15,7 @@
 // 注意：post-commit 仅检查存在性——不检查内容是否引用 sofagent
 
 import { existsSync, readFileSync, readdirSync, statSync, mkdirSync, writeFileSync } from 'fs';
-import { join, dirname } from 'path';
+import { join, dirname, isAbsolute, resolve } from 'path';
 import { execFileSync } from 'child_process';
 import { createHash } from 'crypto';
 import { homedir } from 'os';
@@ -236,7 +236,44 @@ export function runDoctor(projectDir: string = process.cwd(), options: { resetBa
   try {
     const gitDirResult = execFileSync('git', ['rev-parse', '--git-dir'], { encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'] }).trim();
     const gitDir = gitDirResult.startsWith('/') ? gitDirResult : join(projectDir, gitDirResult);
-    const hookPath = join(gitDir, 'hooks', 'commit-msg');
+    // v1.4.5 (T14): hook 目录尊重 core.hooksPath——与安装侧（audit 包 hook-install.ts
+    // 的 resolveHooksDir，E1 施工）同一语义。repo 配置 core.hooksPath 时 hook 写进
+    // 该目录，doctor 若仍查 $gitDir/hooks 会假红。解析规则：
+    //   1. git config core.hooksPath 有值 → ~ / $VAR 先展开；相对路径按 repo 顶层
+    //      （--show-toplevel）resolve——git 自身对 core.hooksPath 就是顶层基准语义，
+    //      安装侧同规则，两侧对齐防「装在 A 查在 B」
+    //   2. 未配置 → $gitDir/hooks（git 缺省，v1.4.5 之前的行为）
+    //   3. 任一 git 子命令失败 → 退回 $gitDir/hooks（与未配置同路径，不因此中断检查）
+    let hooksDir = join(gitDir, 'hooks');
+    try {
+      const configured = execFileSync('git', ['config', 'core.hooksPath'], {
+        encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'], cwd: projectDir,
+      }).trim();
+      if (configured) {
+        let expanded = configured;
+        if (expanded.startsWith('~/')) expanded = join(homedir(), expanded.slice(2));
+        else if (expanded.startsWith('~')) expanded = join(homedir(), expanded.slice(1));
+        else {
+          const envMatch = expanded.match(/^\$([A-Za-z_][A-Za-z0-9_]*)(.*)$/);
+          if (envMatch) {
+            const envVal = process.env[envMatch[1] ?? ''] ?? '';
+            expanded = join(envVal, (envMatch[2] ?? '').replace(/^[/\\]/, ''));
+          }
+        }
+        let repoTop = '';
+        try {
+          repoTop = execFileSync('git', ['rev-parse', '--show-toplevel'], {
+            encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'], cwd: projectDir,
+          }).trim();
+        } catch { /* worktree 等场景退化用 .git 父目录 */ }
+        const base = repoTop || dirname(gitDir);
+        hooksDir = isAbsolute(expanded) ? expanded : resolve(base, expanded);
+        info(`core.hooksPath 已配置——hook 目录: ${hooksDir}`);
+      }
+    } catch {
+      // core.hooksPath 未配置或 git config 失败——缺省 $gitDir/hooks
+    }
+    const hookPath = join(hooksDir, 'commit-msg');
     if (existsSync(hookPath)) {
       try {
         const hookContent = readFileSync(hookPath, 'utf-8');
@@ -257,7 +294,8 @@ export function runDoctor(projectDir: string = process.cwd(), options: { resetBa
     }
 
     // v1.4.2 H-01: pre-commit——三层防线主防线（.sofagent/ 永不入库的 staged 清理）
-    const preCommitPath = join(gitDir, 'hooks', 'pre-commit');
+    // v1.4.5 (T14): 路径同 commit-msg——统一走 hooksDir（core.hooksPath 生效时为配置目录）
+    const preCommitPath = join(hooksDir, 'pre-commit');
     if (existsSync(preCommitPath)) {
       try {
         const prcContent = readFileSync(preCommitPath, 'utf-8');
@@ -281,7 +319,8 @@ export function runDoctor(projectDir: string = process.cwd(), options: { resetBa
     }
 
     // post-commit：检查存在性 + 内容是否含审计对账逻辑（v1.3.2 P0-RC3 加强）
-    const postCommitPath = join(gitDir, 'hooks', 'post-commit');
+    // v1.4.5 (T14): 路径同上——统一走 hooksDir（core.hooksPath 生效时为配置目录）
+    const postCommitPath = join(hooksDir, 'post-commit');
     if (existsSync(postCommitPath)) {
       try {
         const pcContent = readFileSync(postCommitPath, 'utf-8');

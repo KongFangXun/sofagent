@@ -33,6 +33,10 @@
     "@sofagent/skillopt": "1.4.4",
     "js-yaml": "^5.3.0"
   },
+  "//optionalDependencies": "v1.4.5 T6 (R4)：inspectors/eval-failures.ts:120 惰性 require('@sofagent/think')（生成反思建议，不可用时跳过该检查），此前未声明——对齐 root package.json F-18 optionalDependencies 先例。daemon src 属另一工程师修改面，此处仅动依赖声明。",
+  "optionalDependencies": {
+    "@sofagent/think": "1.4.4"
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",

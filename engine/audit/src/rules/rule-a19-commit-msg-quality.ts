@@ -13,12 +13,19 @@ import type { AuditContext, RuleCheck } from './types';
  */
 const BLACKLIST = ['add', 'fix', 'test', 'update', 'change', 'wip', 'tmp', 'asdf'];
 
-/** 最小长度要求（字符） */
-const MIN_LENGTH = 8;
+/**
+ * 最小长度要求（有效字符——中文×2 加权）。
+ * v1.4.5 T10: 8 → 6。CJK×2 加权下「改配置」「加注释」这类 3 字精准中文
+ * subject 有效长度恰为 6——旧阈值 8 会把「中文说清了但字少」的正常提交
+ * 误拦为 FAIL（可追溯性目标是「说得清」而非「字数够」）。6 档仍拦得住
+ * 单汉字（2）与两字中文（4）的无信息量提交。
+ */
+const MIN_LENGTH = 6;
 
 /**
  * 计算有效长度——中文字符计 2（中文 commit 天然字符数少，加权后避免误拦）。
  * "修复 bug" = 2 汉字 ×2 + " bug" 4 字符 = 8 ≥ MIN_LENGTH ✓
+ * v1.4.5 T10: "改配置" = 3 汉字 ×2 = 6 ≥ 6（新阈值）✓——三字精准中文不再误拦
  */
 function effectiveLength(msg: string): number {
   let len = 0;

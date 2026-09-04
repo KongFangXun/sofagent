@@ -182,23 +182,22 @@ export async function runCompanionDaily(
       `- #改动范围: think.md（本条）\n` +
       `- #教训: Refine 巡检终态 ${finalState}；如连续 ERROR 请 FDE 介入检查质量规则集\n\n`,
     );
-  } catch {
-    // think.md 写失败不阻断（best-effort）
+  } catch (err) {
+    // v1.4.5 T8：think.md 写失败不阻断（best-effort），但必须可见——
+    // 原空 catch 静默，写入失败无人知晓（磁盘满/权限等部署问题被掩盖）。
+    console.warn(`[sofagent] companion think.md 写入失败（不阻断巡检）: ${err instanceof Error ? err.message : String(err)}`);
   }
 
   // 4. decision-log（kind=ORCHESTRATION，全程审计留痕）
   let decisionLogged = false;
   try {
-    const audit = (await import('@sofagent/audit')) as unknown as {
-      emitDecision: (input: {
-        agentId: string;
-        sessionId: string;
-        kind: string;
-        moment: string;
-        why: string;
-        evidence?: string[];
-      }, dataDir?: string) => unknown;
-    };
+    // v1.4.5 T8：删 `as unknown as` 双重断言——@sofagent/audit 的动态
+    // import 本身强类型（daemon/package.json 已声明依赖）。运行时只做
+    // emitDecision 存在性窄化（防 dist 过旧缺导出），不再绕过类型系统。
+    const audit = await import('@sofagent/audit');
+    if (typeof audit.emitDecision !== 'function') {
+      throw new Error('@sofagent/audit 未导出 emitDecision（dist 过旧——rebuild audit 包）');
+    }
     audit.emitDecision(
       {
         agentId: 'sofagent-companion',
@@ -211,8 +210,10 @@ export async function runCompanionDaily(
       dataDir,
     );
     decisionLogged = true;
-  } catch {
-    // decision-log 写失败不阻断（best-effort——emitDecision 抛错时静默降级）
+  } catch (err) {
+    // v1.4.5 T8：decision-log 失败不阻断（best-effort），但审计留痕丢失
+    // 必须可见——原空 catch 静默，emitDecision 抛错（schema/写盘）无人知晓。
+    console.warn(`[sofagent] companion decision-log 写入失败（审计留痕缺失）: ${err instanceof Error ? err.message : String(err)}`);
   }
 
   return {

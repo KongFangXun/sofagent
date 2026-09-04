@@ -19,7 +19,7 @@
  */
 
 import crypto from 'node:crypto';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { homedir } from 'node:os';
 import {
@@ -31,13 +31,33 @@ import {
 /** 联邦 token 文件路径（~/.sofagent/federation.token，权限 600） */
 export const FEDERATION_TOKEN_PATH = join(homedir(), '.sofagent', 'federation.token');
 
+/** token 文件允许的最大权限位（rw-------，组/其他不允许任何位） */
+const TOKEN_FILE_MODE_MASK = 0o077;
+
 /**
  * 从文件读取联邦 token。
  * 文件不存在或无权限时返回 undefined（由上层处理缺失错误）。
+ *
+ * v1.4.5 (T3): 权限降级告警——读取时发现文件权限宽于 600（组/其他可读）时 WARN。
+ * token 属凭据材料，宽权限 = 本机其他用户/进程可窃读。写入侧（如存在）应 chmod 600；
+ * 读取侧在此兜底告警，doctor 检查项做周期性巡检。
  */
 function readTokenFromFile(): string | undefined {
   try {
     if (existsSync(FEDERATION_TOKEN_PATH)) {
+      // v1.4.5 (T3): 权限巡检——宽于 600 的 token 文件立即告警（仍继续读取，
+      // 不阻断配对——阻断会把存量用户搞崩，告警 + doctor 巡检逐步收紧）
+      try {
+        const mode = statSync(FEDERATION_TOKEN_PATH).mode & 0o777;
+        if ((mode & TOKEN_FILE_MODE_MASK) !== 0) {
+          console.warn(
+            `[sofagent] ⚠️ 联邦 token 文件权限过宽（${mode.toString(8).padStart(3, '0')}，应为 600）: ${FEDERATION_TOKEN_PATH}\n` +
+            `    组/其他用户可读 = 凭据泄露面。修复：chmod 600 ${FEDERATION_TOKEN_PATH}`,
+          );
+        }
+      } catch {
+        // stat 失败不阻断读取——权限检查是尽力而为的加固层
+      }
       return readFileSync(FEDERATION_TOKEN_PATH, 'utf-8').trim();
     }
   } catch {

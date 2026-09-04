@@ -2,7 +2,7 @@
 // rule-a2.test.ts · A2 不泄密钥——密钥泄漏检测测试
 // ============================================================
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { checkRuleA2 } from './rule-a2-secret-leak';
 import type { AuditContext } from './types';
 import type { DiffFile } from '@sofagent/core';
@@ -394,5 +394,70 @@ describe('A2 不泄密钥', () => {
       const ctx = makeCtx([makeDiffFile('src/enc.ts', ['+const s = "YWJjZGVmZ2hpamtsbW5vcA==";'])]);
       expect(checkRuleA2(ctx).status).toBe('PASS');
     });
+  });
+});
+
+// ============================================================
+// v1.4.5 T14: 解码失败 debug 留痕测试
+// ============================================================
+describe('A2 解码失败 debug 留痕（T14）', () => {
+  let originalDebug: string | undefined;
+
+  beforeEach(() => {
+    originalDebug = process.env.SOFAGENT_DEBUG;
+  });
+
+  afterEach(() => {
+    if (originalDebug === undefined) delete process.env.SOFAGENT_DEBUG;
+    else process.env.SOFAGENT_DEBUG = originalDebug;
+  });
+
+  it('SOFAGENT_DEBUG=1 时_解码候选丢弃输出 debug 痕到 stderr（脱敏后）', () => {
+    process.env.SOFAGENT_DEBUG = '1';
+    const stderrWrites: string[] = [];
+    const originalWrite = process.stderr.write.bind(process.stderr);
+    (process.stderr as { write: unknown }).write = ((chunk: string) => {
+      stderrWrites.push(String(chunk));
+      return true;
+    }) as unknown as typeof process.stderr.write;
+
+    try {
+      // charset 通过但解码出纯二进制（不可打印）→ 候选被丢弃 → debug 痕
+      // 构造：合法 base64 字符集、长度 %4==0、≥8——解码为控制字符块。
+      // 候选必须是纯编码形态（无引号/分号）——charset 门槛在引号处即静默
+      // 拒绝（return null 不到解码层），触发不了「解码成功但不可打印」路径
+      const binaryB64 = Buffer.from('\x01\x02\x03\x04\x05\x06\x07\x08').toString('base64');
+      const ctx = makeCtx([makeDiffFile('src/bin.ts', [`+${binaryB64}`])]);
+      checkRuleA2(ctx);
+
+      const debugLines = stderrWrites.filter((w) => w.includes('[sofagent-audit][debug]'));
+      // 至少一条 base64 候选丢弃记录（整行候选——纯编码形态直达解码层）
+      expect(debugLines.length).toBeGreaterThanOrEqual(1);
+      // debug 输出不含原始候选明文的完整形态（截断到 48 字符）
+      for (const line of debugLines) {
+        expect(line.length).toBeLessThan(300); // 截断保护（含前缀与 reason 余量）
+      }
+    } finally {
+      (process.stderr as { write: unknown }).write = originalWrite;
+    }
+  });
+
+  it('SOFAGENT_DEBUG 未设_零 debug 输出（默认零噪声）', () => {
+    delete process.env.SOFAGENT_DEBUG;
+    const stderrWrites: string[] = [];
+    const originalWrite = process.stderr.write.bind(process.stderr);
+    (process.stderr as { write: unknown }).write = ((chunk: string) => {
+      stderrWrites.push(String(chunk));
+      return true;
+    }) as unknown as typeof process.stderr.write;
+
+    try {
+      const binaryB64 = Buffer.from('\x01\x02\x03\x04\x05\x06\x07\x08').toString('base64');
+      const ctx = makeCtx([makeDiffFile('src/bin2.ts', [`+${binaryB64}`])]);
+      checkRuleA2(ctx);
+      expect(stderrWrites.filter((w) => w.includes('[sofagent-audit][debug]'))).toHaveLength(0);
+    } finally {
+      (process.stderr as { write: unknown }).write = originalWrite;
+    }
   });
 });

@@ -290,6 +290,38 @@ mkdir -p "$DATA_ROOT/audit" "$DATA_ROOT/sovereignty" \
 # 引擎内部状态（Q4 决策：internal/，非 .sofagent/，避免双层嵌套）
 mkdir -p "$INTERNAL_ROOT/checkpoint" "$INTERNAL_ROOT/.git-shadow" "$INTERNAL_ROOT/subagents"
 
+# ── Step 1.6: v1.4.5 T1（P0）巡检缺省配置首装注入 ──
+# 背景：分层巡检（L1/L2/L3）与 Dream Cycle 此前「零调度」——runAllLayers /
+#   runDreamCycle 存在但无任何生产调用方，巡检从未真正运行。
+#   cron 调度按 watch.yml 的 inspectors: / dream-cycle: 段驱动（缺省启用），
+#   首装写入缺省段确保开箱即巡检；已存在的 watch.yml 不覆盖（用户语义优先）。
+# 落点：internal/watch.yml（引擎内部状态根，与 checkpoint/ 同级——
+#   daemon 在项目 cwd 下读 .sofagent/watch.yml，项目级配置优先于本全局缺省）。
+if [ ! -f "$INTERNAL_ROOT/watch.yml" ]; then
+  cat > "$INTERNAL_ROOT/watch.yml" << 'WATCHEOF'
+# sofagent 定时任务缺省配置（v1.4.5 首装生成——可按需修改）
+# 项目级配置（${项目根}/.sofagent/watch.yml）存在时优先于本文件
+
+# 分层巡检调度（v1.4.5）：L1 快速健康 / L2 深度巡检 / L3 联邦分析
+# enabled: false 可整体关闭；layers 下可按层覆盖频率
+inspectors:
+  enabled: true
+  layers:
+    L1: "@daily"
+    L2: "@weekly"
+    L3: "@monthly"
+
+# Dream Cycle 知识蒸馏（v1.4.5）：think.md + audit history → concepts/atoms
+# 产物落 data/knowledge/；enabled: false 可关闭
+dream-cycle:
+  enabled: true
+  schedule: "@daily"
+WATCHEOF
+  ok "巡检缺省配置已写入 $INTERNAL_ROOT/watch.yml（inspectors + dream-cycle 默认启用）"
+else
+  info "已存在 internal/watch.yml——保留用户配置（巡检配置未被覆盖）"
+fi
+
 # 写入版本标记
 echo "${VERSION}" > "$SOFAGENT_HOME/VERSION"
 

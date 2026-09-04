@@ -570,13 +570,13 @@ describe('runPluginRule', () => {
     expect(result.status).toBe('PASS');
   });
 
-  it('插件加载失败——降级为 WARN', () => {
+  it('插件加载失败——降级为 WARN（severity=WARN 插件）', () => {
     _setModuleLoader(() => {
       throw new Error('module not found');
     });
 
     const result = runPluginRule(
-      { id: 'p1', name: '失败插件', plugin: '@test/nonexistent-xyz-123', severity: 'FAIL' },
+      { id: 'p1', name: '失败插件', plugin: '@test/nonexistent-xyz-123', severity: 'WARN' },
       []
     );
 
@@ -584,18 +584,64 @@ describe('runPluginRule', () => {
     expect(result.details[0]).toContain('加载失败');
   });
 
-  it('插件执行异常——降级为 WARN', () => {
+  it('插件执行异常——降级为 WARN（severity=WARN 插件）', () => {
     _setModuleLoader(() => () => {
       throw new Error('插件崩溃');
     });
 
     const result = runPluginRule(
-      { id: 'p1', name: '崩溃插件', plugin: '@test/plugin-throws', severity: 'FAIL' },
+      { id: 'p1', name: '崩溃插件', plugin: '@test/plugin-throws', severity: 'WARN' },
       []
     );
 
     expect(result.status).toBe('WARN');
     expect(result.details[0]).toContain('执行异常');
+  });
+
+  // ============================================================
+  // v1.4.5 T13: severity=FAIL 的插件 crash 按 FAIL 输出——
+  // 规则集声明阻断级插件，加载/执行失败不能再静默降 WARN（阻断线放水）
+  // ============================================================
+
+  it('T13: severity=FAIL 插件加载失败_按 FAIL 输出（不降 WARN）', () => {
+    _setModuleLoader(() => {
+      throw new Error('module not found');
+    });
+
+    const result = runPluginRule(
+      { id: 'p1', name: '阻断插件', plugin: '@test/plugin-fail-load', severity: 'FAIL' },
+      []
+    );
+
+    expect(result.status).toBe('FAIL');
+    expect(result.details[0]).toContain('加载失败');
+  });
+
+  it('T13: severity=FAIL 插件执行 crash_按 FAIL 输出（不降 WARN）', () => {
+    _setModuleLoader(() => () => {
+      throw new Error('插件崩溃');
+    });
+
+    const result = runPluginRule(
+      { id: 'p1', name: '阻断插件', plugin: '@test/plugin-fail-crash', severity: 'FAIL' },
+      []
+    );
+
+    expect(result.status).toBe('FAIL');
+    expect(result.details[0]).toContain('执行异常');
+  });
+
+  it('T13: severity=WARN 插件 crash_仍降 WARN（advisory 插件不阻断）', () => {
+    _setModuleLoader(() => () => {
+      throw new Error('插件崩溃');
+    });
+
+    const result = runPluginRule(
+      { id: 'p1', name: '建议插件', plugin: '@test/plugin-warn-crash', severity: 'WARN' },
+      []
+    );
+
+    expect(result.status).toBe('WARN');
   });
 
   it('插件返回无效格式——过滤后可能为空', () => {
@@ -642,5 +688,40 @@ describe('runPluginRule', () => {
     expect(mockFn).toHaveBeenCalledWith(
       expect.objectContaining({ options: { threshold: 100 } })
     );
+  });
+});
+
+// ============================================================
+// v1.4.5 T8: compileSanitizePattern——sanitizePatterns 编译复用 ReDoS 防护
+// ============================================================
+import { compileSanitizePattern, detectReDoSPattern } from './ruleset-loader';
+
+describe('compileSanitizePattern（T8：脱敏正则 ReDoS 防护）', () => {
+  it('正常脱敏正则_编译成功且可替换', () => {
+    const awsDocKey = ['AKIA', 'IOSFODNN7', 'EXAMPLE'].join('');
+    const compiled = compileSanitizePattern('AKIA[0-9A-Z]{16}', 'REDACTED-AKIA');
+    expect(compiled).not.toBeNull();
+    expect(compiled!.pattern.test('key = ' + awsDocKey)).toBe(true);
+    expect(('key = ' + awsDocKey).replace(compiled!.pattern, compiled!.replacement)).toContain('REDACTED-AKIA');
+  });
+
+  it('嵌套量词邪恶pattern_拒绝编译返回null（(a+)+ ReDoS）', () => {
+    expect(compileSanitizePattern('(a+)+$', 'x')).toBeNull();
+  });
+
+  it('重叠交替邪恶pattern_拒绝编译返回null（(a|a)* ReDoS）', () => {
+    expect(compileSanitizePattern('(a|a)*b', 'x')).toBeNull();
+  });
+
+  it('语法无效正则_返回null不抛错', () => {
+    expect(compileSanitizePattern('([unclosed', 'x')).toBeNull();
+  });
+
+  it('detectReDoSPattern_嵌套量词检出', () => {
+    expect(detectReDoSPattern('(a+)+')).toContain('嵌套量词');
+  });
+
+  it('detectReDoSPattern_正常正则返回null', () => {
+    expect(detectReDoSPattern('^[a-z]+$')).toBeNull();
   });
 });

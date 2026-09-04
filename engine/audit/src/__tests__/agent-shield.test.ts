@@ -192,7 +192,37 @@ describe('scanAll 汇总（同一审计出口）', () => {
   });
 });
 
+// ============================================================
+// v1.4.5 T16: discoverAgentConfigs 候选表补 install.sh 实际部署路径
+// ============================================================
+import { readFileSync } from 'fs';
+import { discoverAgentConfigs } from '../cli/agent-shield';
+
+/** 读 agent-shield.ts 源码文本（零 LLM 依赖约束等的源码级断言用） */
 function readFileSyncSource(): string {
-  // 直接读源码文件（相对测试文件的路径）
-  return require('fs').readFileSync(join(__dirname, '..', 'agent-shield.ts'), 'utf-8');
+  return readFileSync(join(__dirname, '..', 'agent-shield.ts'), 'utf-8');
 }
+
+describe('discoverAgentConfigs 候选表（T16）', () => {
+  it('候选源码包含 install.sh 实际部署的五个路径（单数 skill/ + 三平台 symlink + 旧复数兼容）', () => {
+    // 源码级断言：候选表必须含 install.sh L779 起实际写入的路径形态——
+    // ~/.sofagent/skill/SKILL.md（单数源）、.workbuddy/.openclaw/.cursor 平台
+    // symlink 目录，及旧复数 skills/sofagent 兼容项。
+    // 源码里路径是 join 分段写法（'.sofagent', 'skill', 'SKILL.md'），断言
+    // 按分段文本匹配（比连续串更强——同时锁定各段使用常量拼接的事实）
+    const src = readFileSync(join(__dirname, '..', 'cli', 'agent-shield.ts'), 'utf-8');
+    expect(src).toContain("'.sofagent', 'skill', 'SKILL.md'"); // install.sh 单数源
+    expect(src).toContain("'.sofagent', 'skills', 'sofagent', 'SKILL.md'"); // 旧复数兼容
+    expect(src).toContain("'.workbuddy', 'skills', 'sofagent', 'SKILL.md'");
+    expect(src).toContain("'.openclaw', 'skills', 'sofagent', 'SKILL.md'");
+    expect(src).toContain("'.cursor', 'skills', 'sofagent', 'SKILL.md'");
+  });
+
+  it('临时 repo 无任何配置文件时返回空数组（不误报不存在路径）', () => {
+    const d = setup();
+    // 只断言仓库级候选不存在时不崩（用户级路径因机器而异，只验证调用零异常）
+    const configs = discoverAgentConfigs(d);
+    expect(Array.isArray(configs)).toBe(true);
+    cleanup();
+  });
+});

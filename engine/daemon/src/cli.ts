@@ -106,13 +106,30 @@ async function main() {
         break;
       }
 
-      const { startCron } = await import('./cron');
+      const { ensureDefaultInspectorsConfig } = await import('./cron');
       const { startWatching } = await import('./fs-watch');
       const { runFilesystemAudit } = await import('./run-fs-audit');
 
       console.log(`sofagent-daemon v${VERSION} — 启动守护进程`);
       console.log(`  监控目录: ${projectDir}`);
       console.log('');
+
+      // v1.4.5 T1（P0）：首启缺省巡检配置注入——watch.yml 不存在时写入
+      // 含 inspectors: / dream-cycle: 缺省段的模板（已有配置不动）。
+      if (ensureDefaultInspectorsConfig(projectDir)) {
+        console.log('  ✅ 首启已生成 .sofagent/watch.yml 缺省配置（inspectors + dream-cycle）');
+      }
+
+      // v1.4.5 T3：注册内置 slash 命令到全局注册表（/compact /goal——
+      // core 包 registerBuiltinSlashCommands 此前零生产调用）。经 dist 产物
+      // 文件路径动态引入（core barrel 未导出该函数，包 exports 只开放 "."）。
+      try {
+        const { registerBuiltinSlashCommandsFromCore } = await import('./slash-commands-wiring');
+        const registered = await registerBuiltinSlashCommandsFromCore();
+        console.log(`  ✅ slash 命令已注册: ${registered.map((c: string) => `/${c}`).join(' ')}`);
+      } catch (err) {
+        console.warn(`  ⚠️ slash 命令注册失败（不影响 daemon 启动）: ${err instanceof Error ? err.message : String(err)}`);
+      }
 
       // v1.4.4 #32+47：启动即写健康文件（writeHealthFile 此前「诞生即死」——
       // 函数存在但 daemon 主路径零调用，exit 78 死亡无人记录）。心跳每 5min 更新。
@@ -157,9 +174,19 @@ async function main() {
         console.warn(`  ⚠️ LOOP 续跑检查失败（不影响 daemon 启动）: ${err instanceof Error ? err.message : String(err)}`);
       }
 
-      // 启动 cron 定时任务
-      startCron(projectDir);
-      console.log('  ✅ cron 定时任务已启动');
+      // v1.4.5 T4：启动 cron 定时任务——返回实际调度数（0 = 无任何任务被调度，
+      // 不再无条件打 ✅ 假绿）。inspectors/dream-cycle 缺省启用故通常 ≥ 2。
+      const { startCron, loadInspectorsConfig, loadDreamCycleConfig, loadCronConfig } = await import('./cron');
+      const scheduledCount = startCron(projectDir);
+      if (scheduledCount > 0) {
+        console.log(`  ✅ cron 定时任务已启动（${scheduledCount} 项）`);
+      } else {
+        const insp = loadInspectorsConfig(projectDir);
+        const dream = loadDreamCycleConfig(projectDir);
+        const cronJobs = loadCronConfig(projectDir).length;
+        // 全部被显式禁用（inspectors.enabled=false + dream-cycle.enabled=false + cron 空）
+        console.log(`  ℹ️ cron 无任务可调度（inspectors=${insp.enabled ? 'on' : 'off'} · dream-cycle=${dream.enabled ? 'on' : 'off'} · cron 条目=${cronJobs}）`);
+      }
 
       // 启动文件监听（变更后触发审计）
       const watcher = startWatching(projectDir, (changedFiles) => {
@@ -288,6 +315,8 @@ async function main() {
     case 'doctor': {
       // v1.2.5 §8.4：健康自检——读 daemon-health.json 报告 daemon 状态
       // v1.4.4 #32+47：新增 dead 态（exit 78 守护死亡可感知）
+      // v1.4.5 T1：新增巡检调度状态（inspectors 三层 + lastSuccessAt）
+      // v1.4.5 T9：新增 webhook 告警通道健康 + daemon dist 版本戳校验
       const { checkDaemonHealth } = await import('./daemon-health');
       const result = checkDaemonHealth();
       if (result.healthy) {
@@ -319,6 +348,53 @@ async function main() {
           }
         }
         process.exit(1);
+      }
+
+      // ── v1.4.5 T1：巡检调度状态 ──
+      console.log('\n── 巡检调度状态 ──');
+      const { buildInspectorScheduleReport } = await import('./cron');
+      const scheduleReport = buildInspectorScheduleReport(process.cwd());
+      if (!scheduleReport.enabled) {
+        console.log('  ⏸️  分层巡检已禁用（watch.yml inspectors.enabled=false）');
+      } else {
+        for (const layer of scheduleReport.layers) {
+          const lastRun = layer.lastSuccessAt
+            ? new Date(layer.lastSuccessAt).toLocaleString('zh-CN')
+            : '从未执行';
+          const stale = layer.lastSuccessAt === null
+            || (Date.now() - new Date(layer.lastSuccessAt).getTime()) > 2 * 86400_000;
+          const icon = layer.lastSuccessAt === null ? '⚠️' : stale ? '⚠️' : '✅';
+          console.log(`  ${icon} ${layer.layer}: ${layer.schedule}（最后成功: ${lastRun}${layer.lastSuccessAt === null ? '——巡检从未被调度过' : ''}）`);
+        }
+      }
+
+      // ── v1.4.5 T9：webhook 告警通道健康 ──
+      console.log('\n── Webhook 告警通道健康 ──');
+      const { readWebhookChannelHealth } = await import('./webhook/index');
+      const webhookHealth = readWebhookChannelHealth();
+      if (!webhookHealth) {
+        console.log('  ⚠️ 无通道健康记录（daemon 启动后尚无推送，或 daemon 未运行）');
+      } else {
+        const lastOk = webhookHealth.lastSuccessAt
+          ? new Date(webhookHealth.lastSuccessAt).toLocaleString('zh-CN')
+          : '从未成功';
+        console.log(`  ${webhookHealth.lastError ? '⚠️' : '✅'} 最后成功推送: ${lastOk}`);
+        if (webhookHealth.lastError) {
+          console.log(`     最近失败: ${webhookHealth.lastError}`);
+          console.log('     （失败详情见 data/webhook-fallback.log）');
+        }
+      }
+
+      // ── v1.4.5 T9：daemon dist 版本戳校验 ──
+      console.log('\n── daemon 版本戳校验 ──');
+      const { resolveDaemonVersion } = await import('./daemon-health');
+      const runtimeVersion = resolveDaemonVersion();
+      if (runtimeVersion === 'unknown') {
+        console.log('  ⚠️ daemon dist 无法定位 package.json——版本未知（打包异常或文件被裁剪）');
+      } else if (runtimeVersion !== VERSION) {
+        console.log(`  ⚠️ 版本戳漂移：CLI 入口=${VERSION} / dist 运行时=${runtimeVersion}——dist 与入口不同版本，建议 rebuild（npm run build）`);
+      } else {
+        console.log(`  ✅ dist 版本戳一致（${runtimeVersion}）`);
       }
       break;
     }
@@ -360,8 +436,42 @@ async function main() {
         case 'trigger': {
           if (!taskId) { console.error('❌ scheduler trigger 需要 <task-id>'); process.exit(1); }
           try {
-            const run = sched.trigger(taskId, () => ({ exitCode: 0, output: '手动触发完成' }));
-            console.log(`✅ 已触发 (${run.exitCode === 0 ? '成功' : '失败'}): ${run.output}`);
+            // v1.4.5 T4：真实执行——此前硬编码 `() => ({exitCode:0, output:'手动触发完成'})`
+            // 假绿（任务从未运行却报成功）。改为把任务 prompt 经 orchestrator loop
+            // 真跑一次（spawnSync sub-process，与 cron.ts 既有范式一致），exitCode/
+            // output 取真实值。scheduler.trigger 的 runner 是同步签名——先 await
+            // 真实执行完成，再把结果作为同步快照传入（历史记录语义不变）。
+            const task = sched.get(taskId);
+            if (!task) throw new Error(`任务不存在: ${taskId}`);
+
+            console.log(`▶️  执行任务「${task.name}」...`);
+            const { execFileSync } = await import('child_process');
+            const { createRequire } = await import('module');
+            const { join, dirname } = await import('path');
+            const nodeRequire = createRequire(__filename);
+            let exitCode = 0;
+            let output = '';
+            try {
+              // orchestrator CLI 真身在 dist/cli.js（cron.ts 同款解析范式）
+              const orchCli = join(
+                dirname(nodeRequire.resolve('@sofagent/orchestrator/package.json')),
+                'dist', 'cli.js',
+              );
+              output = execFileSync(process.execPath, [
+                orchCli, 'loop', '--legacy', '--task', task.prompt,
+              ], {
+                encoding: 'utf-8',
+                cwd: process.cwd(),
+                timeout: 600000, // 10 分钟超时（手动触发允许长任务）
+              });
+            } catch (err) {
+              // execFileSync 非零退出时 err 含 stdout/stderr
+              const e = err as { status?: number; stdout?: string; stderr?: string; message: string };
+              exitCode = typeof e.status === 'number' ? e.status : 1;
+              output = `${e.stdout ?? ''}${e.stderr ?? e.message}`;
+            }
+            const run = sched.trigger(taskId, () => ({ exitCode, output: output.trim() || '（无输出）' }));
+            console.log(`✅ 已触发 (${run.exitCode === 0 ? '成功' : '失败 exit=' + run.exitCode}): ${run.output.slice(0, 120)}`);
           } catch (err) {
             console.error(`❌ ${(err as Error).message}`);
             process.exit(1);

@@ -453,6 +453,33 @@ function compilePattern(pattern: string, baseFlags: string): RegExp {
 }
 
 /**
+ * v1.4.5 T8: sanitizePatterns 正则编译出口——config.yml 自定义脱敏正则的
+ * 编译复用本模块 ReDoS 双层防护（detectReDoSPattern 静态检测 + 100ms 运行时
+ * 对抗测试），与规则集 pattern 同一防线，不另起副本（单一事实源禁漂移）。
+ *
+ * @returns 编译后的 { pattern, replacement }；无效正则 / ReDoS 风险返回 null（调用方剔除该条）
+ */
+export function compileSanitizePattern(pattern: string, replacement: string): { pattern: RegExp; replacement: string } | null {
+  try {
+    // 复用 compilePattern：内联修饰符剥离 + ReDoS 静态检测（嵌套量词/重叠交替拒绝编译）
+    const regex = compilePattern(pattern, 'g');
+    // 运行时对抗测试：邪恶但绕过静态检测的 pattern 在此超时拦截
+    if (!isPatternReDoSSafe(regex, 'sanitizePatterns')) {
+      return null;
+    }
+    return { pattern: regex, replacement };
+  } catch (err) {
+    const errMsg = err instanceof Error ? err.message : String(err);
+    if (errMsg.includes('ReDoS')) {
+      console.warn(`[sofagent] ⚠️ sanitizePatterns 正则可能导致 ReDoS，已拒绝加载: ${pattern.slice(0, 64)}`);
+    } else {
+      console.warn(`[sofagent] sanitizePatterns 正则无效，已剔除该条: ${errMsg}`);
+    }
+    return null;
+  }
+}
+
+/**
  * v1.3.4 P1-10: ReDoS 静态检测 + 运行时 timeout 包裹
  *
  * 邪恶 pattern 经 catastrophic backtracking 可无限挂死审计进程。

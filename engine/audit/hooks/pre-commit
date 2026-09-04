@@ -1,5 +1,5 @@
 #!/bin/bash
-# sofagent pre-commit hook v1.4.2
+# sofagent pre-commit hook v1.4.4
 # 安装：sofagent-audit --init 或 sofagent-audit --install-hook
 # 三层防线第一层（主防线）：.sofagent/ 永不入库——在 commit 对象生成前
 # 就把 .sofagent/ 条目移出暂存区。
@@ -10,6 +10,9 @@
 #   ② commit-msg：同样逻辑再兜一次 + 24 条规则审计（对 macOS git 内存 index
 #      快照场景，reset 至少清理磁盘 index 防**后续** commit 卷入）；
 #   ③ post-commit：HEAD tree 对账告警（best-effort，永不阻断）。
+#
+# v1.4.4 版本头对齐——内容与 v1.4.2 一致（无逻辑变更），修复版本号停留在
+# 1.4.2 导致 init.ts 幂等检查（要求 ≥1.4.2）行为正常但版本标识漂移。
 #
 # reset 失败（如 index.lock 竞态被并发 git 进程持锁）→ fail-loud 拒绝本次
 # commit（宁可 false-retry 也不可静默入库），与 commit-msg L85-95 行为一致。

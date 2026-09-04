@@ -279,8 +279,8 @@ export function runCliQuick(argv: string[]): number {
   if (argv.includes('--help') || argv.includes('-h')) {
     console.log('sofagent-audit — AI Agent 行为审计\n');
     console.log('用法（quick 只读审计，零安装）：');
-    console.log('  npx -y -p @sofagent/audit sofagent-audit              审计最近一次 commit（官方入口，始终最新）');
-    console.log('  npx -y -p @sofagent/audit sofagent-audit HEAD~3..HEAD   审计指定范围（quick 引擎直接跑，规则覆盖面同 quick）');
+    console.log('  npx -y -p @sofagent/audit sofagent-audit              审计最近一次 commit（官方入口，始终最新；不写 history.jsonl 无留痕，适合临时检查）');
+    console.log('  npx -y -p @sofagent/audit sofagent-audit HEAD~3..HEAD   审计指定范围（quick 引擎直接跑，规则覆盖面同 quick；不写 history.jsonl）');
     console.log('  npx -y -p @sofagent/audit sofagent-audit -v, --version 显示版本号');
     console.log('  npx -y -p @sofagent/audit sofagent-audit -h, --help    显示此帮助\n');
     console.log('  npx -y -p @sofagent/audit sofagent-audit --stats          审计聚合报告（近 30 天治理 KPI——v1.4.3）');
@@ -301,7 +301,7 @@ export function runCliQuick(argv: string[]): number {
     console.log('  --ruleset <name>    加载规则集（sofagent / security / 社区包）');
     console.log('  --ruleset-path <p>  加载自定义 JSON 规则路径');
     console.log('  --list-rulesets     列出可用规则集');
-    console.log('  --silent            静默模式');
+    console.log('  --silent            跳过依赖 Agent 日志的规则（A3/A7/A8/A14 等）');
     console.log('  --ci                CI 模式（输出适合 CI 解析）');
     console.log('  --strict            严格模式（无日志时 WARN 升级为 FAIL）');
     console.log('  --task <subject>    传入任务标题（A3 越界检查用）');

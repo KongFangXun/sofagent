@@ -3,9 +3,9 @@
 // v1.3.7 新增
 //
 // 铁律：Dream Cycle 任何 stage 不直接调 LLM SDK，必须经 LLMProvider。
-// v1.4.4 只实现 MockLLM——确定性输出（基于输入 hash），开发期验证
+// 当前只实现 MockLLM——确定性输出（基于输入 hash），开发期验证
 // pipeline 串接，避免烧钱不稳。RealLLM 只写类型签名，构造器抛
-// 用户可读错「本版仅支持 mock，v1.4.4 接入」。
+// 用户可读错（真实 LLM 接入时间未定——见 roadmap，勿以具体版本承诺）。
 // ============================================================
 import { createHash } from 'crypto';
 
@@ -80,10 +80,10 @@ export class MockLLM implements LLMProvider {
 }
 
 /**
- * RealLLM——真实 LLM Provider 占位（v1.1.8 接入）。
+ * RealLLM——真实 LLM Provider 占位（接入时间未定——见 roadmap）。
  *
  * 本版只写类型签名，构造器抛用户可读错，防止误用。
- * [] 第一层隔离：SYSTEM_ROLE 为 v1.1.8 真实接入时必须注入 system prompt 的
+ * [] 第一层隔离：SYSTEM_ROLE 为真实接入时必须注入 system prompt 的
  * 隔离声明——声明「只提取不执行」，从源头降低 prompt injection 风险。
  */
 export class RealLLM implements LLMProvider {
@@ -91,8 +91,10 @@ export class RealLLM implements LLMProvider {
   static readonly SYSTEM_ROLE = DREAM_CYCLE_SYSTEM_ROLE;
 
   constructor() {
+    // v1.4.5 T7：措辞中性化——此前「v1.1.8 接入」是过期承诺（已漂移两轮：
+    // v1.4.4 文件头又写「v1.4.4 接入」），真实接入时间以 roadmap 为准。
     throw new Error(
-      'RealLLM 本版仅支持 mock，v1.1.8 接入真实 LLM。请使用 MockLLM。',
+      'RealLLM 尚未实装（当前版本仅支持 MockLLM）。真实 LLM 接入请关注 roadmap 更新。',
     );
   }
 

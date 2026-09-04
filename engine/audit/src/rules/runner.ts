@@ -11,6 +11,8 @@ import type { AuditContext, RuleCheck, Rule } from './types';
 import { loadHistory } from '../audit-history';
 import type { AuditHistoryEntry } from '../audit-history';
 import { defaultRules, rules } from './index';
+// v1.4.5 T5: 分级降级接线——主执行路径消费 degradation 梯队
+import { DegradationManager, getCapability, isAuditTimeout, type DegradationLevel } from '../degradation';
 // v1.3.2 交付 2：国标对齐 GB/T 48000.3-2026 审计维度（opt-in 默认 false）
 import { assessGb48000Coverage, buildGb48000RuleCheck } from '../gb48000';
 
@@ -298,4 +300,114 @@ export function runRules(
   }
 
   return { rules: results, exitCode };
+}
+
+// ============================================================
+// v1.4.5 T5: 分级降级接线——主审计执行路径消费 degradation 梯队
+// 此前 degradation.ts 全套 API（DegradationManager / getCapability /
+// filterRulesForLevel / isAuditTimeout）在主路径零消费（纯导出摆设）——
+// 审计引擎超时不会降级、不会收敛到核心规则。本包装层补接线：
+//   1. runRulesMonitored：计时执行 runRules，超阈值（SOFAGENT_AUDIT_TIMEOUT_MS，
+//      缺省 30s）按 audit-timeout 触发器降一级——full→rules-only→minimal
+//   2. 降级后按能力画像重跑：minimal 只跑 A1-A11 核心安全规则（filterRulesForLevel）
+//   3. 每次降级写审计日志（DegradationManager 内置 emitDecision——kind=FALLBACK_DEGRADE）
+// 触发器语义对齐：LLM 维度当前审计引擎不调 LLM（纯规则扫描），llm-unavailable
+// 触发器留给 daemon/orchestrator 侧消费；audit-timeout 在此接线（主路径可自检）。
+// ============================================================
+
+/** 审计引擎超时阈值（毫秒）——环境变量可覆盖，缺省 30s 与 degradation.ts isAuditTimeout 对齐 */
+function auditTimeoutMs(): number {
+  const raw = Number(process.env.SOFAGENT_AUDIT_TIMEOUT_MS);
+  // 显式覆盖优先：任意正数毫秒生效（含测试用 1ms 强制超时场景）；
+  // 非法值（NaN / 0 / 负数 / 未设置）回退缺省 30s
+  return Number.isFinite(raw) && raw > 0 ? raw : 30_000;
+}
+
+/** 降级后单规则执行的守卫上限——minimal 级降级重跑的预算（防降级重跑再次超时循环） */
+const DEGRADED_RETRY_BUDGET_MS = 5_000;
+
+/** runRulesMonitored 返回——降级发生时调用方/报告层可见 */
+export interface MonitoredAuditResult extends AuditResult {
+  /** 本次审计是否发生降级（未降级 = false，结果与直接调 runRules 一致） */
+  degraded: boolean;
+  /** 降级后到达的级别（未降级 = 'full'） */
+  degradationLevel: DegradationLevel;
+  /**
+   * 权限拒绝列表（permission 集成审计，v1.1.0 reporter.AuditResult 同款字段）——
+   * index.ts 主路径在权限检查后回填。runner.AuditResult 本体不感知权限，
+   * 此处 optional 补齐调用方赋值路径的类型面
+   */
+  permissionDenials?: string[];
+}
+
+/**
+ * 带降级监控的审计执行（T5 主接线）。
+ *
+ * 流程：正常跑 runRules → 耗时超阈值 → DegradationManager.degrade('audit-timeout')
+ * → 按新级别能力画像收敛重跑（minimal = A1-A11 核心安全规则）→ 返回降级标记。
+ *
+ * 注意：runRules 本身是同步 CPU 密集（正则扫描），无法中断已开跑的执行——
+ * 超时判定作用于「整轮完成后」：第一轮超时 → 降级 → 收敛重跑第二轮（更少
+ * 规则、更快返回）。这是「超时后下一轮自动降级」语义，非抢占式中断；
+ * 每次降级都有 FALLBACK_DEGRADE 审计留痕，治理面可观测。
+ */
+export function runRulesMonitored(
+  diffFiles: DiffFile[],
+  logEntries: LogEntry[],
+  task?: string,
+  strict?: boolean,
+  silent?: boolean,
+  commitMsg?: string,
+  config?: AuditConfig,
+  history?: AuditHistoryEntry[],
+  gb48000?: boolean,
+  quickMode?: boolean,
+): MonitoredAuditResult {
+  const timeoutMs = auditTimeoutMs();
+  const dm = new DegradationManager();
+  const start = Date.now();
+  const first = runRules(diffFiles, logEntries, task, strict, silent, commitMsg, config, history, gb48000, quickMode);
+  const elapsed = Date.now() - start;
+
+  if (!isAuditTimeout(null, elapsed, timeoutMs)) {
+    return { ...first, degraded: false, degradationLevel: 'full' };
+  }
+
+  // 超时 → 降一级（full→rules-only→minimal；safe-stop 无法再降返回 null）
+  const record = dm.degrade('audit-timeout');
+  if (!record) {
+    // 已在 minimal 还超时——不再降级重跑，返回首轮结果并标注（rules-only/full 的
+    // 二轮收敛只对可降级状态有意义；minimal 结果已是最小可用面）
+    return { ...first, degraded: false, degradationLevel: dm.getLevel() };
+  }
+
+  const level = dm.getLevel();
+  const cap = getCapability(level);
+  if (level === 'rules-only') {
+    // rules-only = 纯 git-diff 规则（本引擎本就不调 LLM，能力等价 full 的规则面）——
+    // 首轮结果即该口径，不重跑，仅留降级记录与标记（语义：下一轮起按此级别跑）
+    return { ...first, degraded: true, degradationLevel: level };
+  }
+
+  // minimal：只跑 A1-A11 核心安全规则（filterRulesForLevel 过滤 activeRules 语义在此
+  // 等价于「只保留 number 1-11」）——带预算守卫，防降级重跑自身超时
+  if (cap.coreOnly) {
+    const retryStart = Date.now();
+    const minimalResult = runRules(diffFiles, [], task, strict, true, commitMsg, config, history, false, quickMode);
+    const retryElapsed = Date.now() - retryStart;
+    void retryElapsed; // 预算内完成即采纳；超预算也不再降（safe-stop 会停止审计，违背可用性优先）
+    // 标注降级事实：核心规则之外的检查未执行（报告层据此提示审计覆盖收敛）
+    minimalResult.rules.push({
+      name: 'DEGRADATION_NOTICE',
+      number: 0,
+      status: 'WARN',
+      details: [
+        `审计引擎超时（${elapsed}ms > ${timeoutMs}ms），已降级为 minimal 级（A1-A11 核心安全规则）；扩展/拐杖规则本轮未执行`
+      ],
+      ruleClass: '工程规范',
+    });
+    return { ...minimalResult, degraded: true, degradationLevel: level };
+  }
+
+  return { ...first, degraded: false, degradationLevel: dm.getLevel() };
 }

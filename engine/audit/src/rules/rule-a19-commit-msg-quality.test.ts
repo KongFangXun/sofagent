@@ -47,11 +47,10 @@ describe('A19 msg 质量', () => {
     expect(result.status).toBe('FAIL');
   });
 
-  it('commitMsg 长度刚好 7（< 8）→ FAIL', () => {
+  it('commitMsg 长度刚好 7（≥ 6，新阈值）→ PASS（v1.4.5 T10: 8→6）', () => {
     const ctx = makeCtx([makeDiffFile('src/index.ts')], { commitMsg: '1234567' });
     const result = checkRuleA19(ctx);
-    expect(result.status).toBe('FAIL');
-    expect(result.details[0]).toContain('长度不足');
+    expect(result.status).toBe('PASS');
   });
 
   it('commitMsg 长度 8 且非黑名单 → PASS', () => {
@@ -66,11 +65,10 @@ describe('A19 msg 质量', () => {
     expect(result.status).toBe('PASS');
   });
 
-  it('commitMsg = "加注释"（中文加权 3×2=6 < 8）→ FAIL', () => {
+  it('commitMsg = "加注释"（中文加权 3×2=6 ≥ 6 新阈值）→ PASS（v1.4.5 T10）', () => {
     const ctx = makeCtx([makeDiffFile('src/index.ts')], { commitMsg: '加注释' });
     const result = checkRuleA19(ctx);
-    expect(result.status).toBe('FAIL');
-    expect(result.details[0]).toContain('长度不足');
+    expect(result.status).toBe('PASS');
   });
 
   it('evidenceMode 标注为 git-diff', () => {

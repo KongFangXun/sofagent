@@ -107,7 +107,7 @@ export interface Embedding {
  *
  * 铁律：任何 stage 不直接调 LLM SDK，必须经 LLMProvider。
  * v1.1.6 只提供 MockLLM（确定性输出，开发期验证 pipeline 串接）；
- * RealLLM 只写类型签名，构造器抛用户可读错（v1.1.8 接入）。
+ * RealLLM 只写类型签名，构造器抛用户可读错（接入时间未定——见 roadmap）。
  */
 export interface LLMProvider {
   /** 从文本提取事实（think.md 段落 / audit 条目 → fact 文本列表） */

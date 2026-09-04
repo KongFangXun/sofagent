@@ -25,6 +25,84 @@ import { isPrivateWebhookUrl } from '@sofagent/audit';
 // 公开类型
 // ────────────────────────────────
 
+/**
+ * v1.4.5 T9：webhook 告警通道健康摘要。
+ *
+ * 问题：webhook 是「告警的通道」，但通道自己挂了没人知道——push 失败只
+ * 降级本地 jsonl，健康面板不感知。告警系统对自身故障静默 = 告警盲区。
+ *
+ * 修复：push 成功/失败后经 daemon-health 的 writeHealthFile 落
+ * lastSuccessAt / lastError 摘要（心跳透传不擦除），健康面板与 doctor 可消费。
+ */
+export interface WebhookChannelHealth {
+  /** 最近一次推送成功时间（ISO 8601） */
+  lastSuccessAt: string | null;
+  /** 最近一次失败摘要（平台 + 错误；null = 无失败记录） */
+  lastError: string | null;
+}
+
+/**
+ * v1.4.5 T9：读取 webhook 通道健康（daemon-health.json 的 webhook 字段）。
+ *
+ * @param dataDir 数据根目录（缺省 SOFAGENT_DATA || DATA_DIR——与 daemon-health 同源）
+ * @returns 健康摘要；文件不存在/无 webhook 字段/损坏 → null
+ */
+export function readWebhookChannelHealth(dataDir?: string): WebhookChannelHealth | null {
+  try {
+    const base = dataDir || process.env.SOFAGENT_DATA || path.join(process.env.SOFAGENT_HOME || path.join(require('os').homedir(), '.sofagent'), 'data');
+    const healthPath = path.join(base, 'daemon-health.json');
+    if (!fs.existsSync(healthPath)) return null;
+    const raw = JSON.parse(fs.readFileSync(healthPath, 'utf-8')) as { webhook?: unknown };
+    if (raw.webhook === null || typeof raw.webhook !== 'object') return null;
+    const w = raw.webhook as Record<string, unknown>;
+    return {
+      lastSuccessAt: typeof w.lastSuccessAt === 'string' ? w.lastSuccessAt : null,
+      lastError: typeof w.lastError === 'string' ? w.lastError : null,
+    };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * v1.4.5 T9：落盘 webhook 通道健康（best-effort——写失败不影响推送流程）。
+ *
+ * 直接读写 daemon-health.json 的 webhook 字段（read-modify-write，保留其他字段），
+ * 与 fatigue.ts 的 writeFatigueReport 同范式（独立维护自己的字段，不经过心跳）。
+ */
+function writeWebhookChannelHealth(patch: Partial<WebhookChannelHealth>): void {
+  try {
+    const base = process.env.SOFAGENT_DATA || path.join(process.env.SOFAGENT_HOME || path.join(require('os').homedir(), '.sofagent'), 'data');
+    const healthPath = path.join(base, 'daemon-health.json');
+    let raw: Record<string, unknown> = {};
+    if (fs.existsSync(healthPath)) {
+      try {
+        raw = JSON.parse(fs.readFileSync(healthPath, 'utf-8')) as Record<string, unknown>;
+      } catch {
+        // 损坏 → 从空对象重建（后续心跳会补全其他字段）
+        raw = {};
+      }
+    }
+    const existing = (raw.webhook !== null && typeof raw.webhook === 'object')
+      ? (raw.webhook as Record<string, unknown>)
+      : {};
+    const next: WebhookChannelHealth = {
+      lastSuccessAt: patch.lastSuccessAt !== undefined
+        ? patch.lastSuccessAt
+        : (typeof existing.lastSuccessAt === 'string' ? existing.lastSuccessAt : null),
+      lastError: patch.lastError !== undefined
+        ? patch.lastError
+        : (typeof existing.lastError === 'string' ? existing.lastError : null),
+    };
+    raw.webhook = next;
+    const dir = path.dirname(healthPath);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(healthPath, JSON.stringify(raw, null, 2), 'utf-8');
+  } catch {
+    // 健康落盘失败不阻断推送主流程（观测性 best-effort）
+  }
+}
+
 /** 支持的企业协同平台 */
 export type WebhookPlatform = 'feishu' | 'dingtalk' | 'wecom';
 
@@ -236,6 +314,10 @@ export function createWebhookPusher(options: WebhookPusherOptions = {}): Webhook
       message,
       error,
     });
+    // v1.4.5 T9：失败落通道健康（平台 + 错误摘要——告警通道自身故障可观测，
+    // 不再静默只留本地 jsonl）。注意：测试注入的 env 对象用于 endpoint 解析，
+    // 健康落盘走真实 SOFAGENT_DATA（与生产语义一致）。
+    writeWebhookChannelHealth({ lastError: `${platform}: ${error}（attempts=${attempts}）` });
     return { success: false, platform, attempts, degraded: true, error };
   };
 
@@ -277,6 +359,8 @@ export function createWebhookPusher(options: WebhookPusherOptions = {}): Webhook
           attempts += 1;
           const outcome = await attemptOnce(endpoint, body, timeoutMs);
           if (outcome.kind === 'success') {
+            // v1.4.5 T9：成功也落通道健康（lastSuccessAt——健康面板可见「通道活着」）
+            writeWebhookChannelHealth({ lastSuccessAt: new Date().toISOString(), lastError: null });
             return { success: true, platform, attempts, degraded: false };
           }
           lastError = outcome.error;

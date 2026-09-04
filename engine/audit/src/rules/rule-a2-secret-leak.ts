@@ -10,7 +10,7 @@
 // ============================================================
 
 import type { AuditContext, RuleCheck } from './types';
-import { SECRET_PATTERNS, stripDataUris } from '@sofagent/core';
+import { SECRET_PATTERNS, stripDataUris, REDACTION_PATTERNS } from '@sofagent/core';
 
 /**
  * 密钥泄漏检测正则模式
@@ -54,7 +54,12 @@ function tryDecodeBase64(s: string): string | null {
     if (cleaned && /[\x20-\x7E\u4e00-\u9fff]/.test(cleaned)) {
       return cleaned;
     }
-  } catch { /* 解码失败忽略 */ }
+    debugLogDecode('base64', s, '解码结果不含可打印文本（剥离 FFFD 后为空/纯二进制）');
+  } catch (e) {
+    // v1.4.5 T14: 解码异常留 debug 痕（SOFAGENT_DEBUG=1 时输出）——
+    // 此前静默吞掉，charset 门槛通过但 Buffer 抛错的真实样本无从排查
+    debugLogDecode('base64', s, e instanceof Error ? e.message : String(e));
+  }
   return null;
 }
 
@@ -70,8 +75,30 @@ function tryDecodeHex(s: string): string | null {
     if (cleaned && /[\x20-\x7E\u4e00-\u9fff]/.test(cleaned)) {
       return cleaned;
     }
-  } catch { /* 解码失败忽略 */ }
+    debugLogDecode('hex', hexStr, '解码结果不含可打印文本（剥离 FFFD 后为空/纯二进制）');
+  } catch (e) {
+    debugLogDecode('hex', hexStr, e instanceof Error ? e.message : String(e));
+  }
   return null;
+}
+
+/**
+ * v1.4.5 T14: 解码路径 debug 留痕——SOFAGENT_DEBUG=1 时向 stderr 输出
+ * 「哪个候选串、走哪条解码路径、为何被丢弃」。候选串本身可能含密钥，
+ * 输出前过 REDACTION_PATTERNS 脱敏（调试信息不能变成新的泄漏面），
+ * 且截断至 48 字符（诊断只需形态不需全文）。默认关闭零噪声。
+ */
+function debugLogDecode(kind: 'base64' | 'hex', candidate: string, reason: string): void {
+  if (process.env.SOFAGENT_DEBUG !== '1') return;
+  try {
+    let safe = candidate.slice(0, 48);
+    for (const { pattern, replacement } of REDACTION_PATTERNS) {
+      safe = safe.replace(pattern, replacement);
+    }
+    process.stderr.write(`[sofagent-audit][debug] A2 ${kind} 候选丢弃（${reason}）: ${safe}\n`);
+  } catch {
+    // debug 留痕自身绝不抛错（诊断面不能反过来破坏审计主流程）
+  }
 }
 
 /**

@@ -132,9 +132,15 @@ describe('A19 QA 边界验证', () => {
     expect(result.status).toBe('FAIL');
   });
 
-  // 测试：长度刚好 7 字符（< 8），非黑名单 → FAIL
-  it('"abcdefg"（长度 7 < 8）→ FAIL', () => {
+  // 测试：长度 7 字符（≥ 6 新阈值），非黑名单 → PASS（v1.4.5 T10: MIN_LENGTH 8→6）
+  it('"abcdefg"（长度 7 ≥ 6）→ PASS', () => {
     const result = checkRuleA19(makeCtx([makeDiffFile('src/x.ts')], { commitMsg: 'abcdefg' }));
+    expect(result.status).toBe('PASS');
+  });
+
+  // 测试：长度 5 字符（< 6 新阈值）→ FAIL
+  it('"abcde"（长度 5 < 6）→ FAIL', () => {
+    const result = checkRuleA19(makeCtx([makeDiffFile('src/x.ts')], { commitMsg: 'abcde' }));
     expect(result.status).toBe('FAIL');
     expect(result.details[0]).toContain('长度不足');
   });

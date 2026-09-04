@@ -209,7 +209,7 @@ export function loadConfig(cwd?: string, strict?: boolean): AuditConfig {
     // 0. v1.2.9: SOFAGENT_CONFIG 环境变量（优先级最高，企业集中管控用）
     const envConfigPath = process.env.SOFAGENT_CONFIG;
     if (envConfigPath) {
-      const envConfig = tryLoadYaml(envConfigPath);
+      const envConfig = tryLoadYaml(envConfigPath, strict);
       if (envConfig) {
         const merged = mergeWithDefaults(envConfig);
         if (strict || merged.strict) {
@@ -221,7 +221,7 @@ export function loadConfig(cwd?: string, strict?: boolean): AuditConfig {
 
     // 1. 尝试 ${cwd}/.sofagent/config.yml
     const projectConfigPath = getConfigFile(baseDir);
-    const projectConfig = tryLoadYaml(projectConfigPath);
+    const projectConfig = tryLoadYaml(projectConfigPath, strict);
     if (projectConfig) {
       const merged = mergeWithDefaults(projectConfig);
       // v1.1.3: config 内 audit.strict 与 CLI --strict 任一为 true 则 fail-closed
@@ -382,7 +382,7 @@ function levenshtein(a: string, b: string): number {
  *     carefulModifyThreshold: 0.2
  *     等等...
  */
-function tryLoadYaml(filePath: string): Partial<AuditConfig> | null {
+function tryLoadYaml(filePath: string, strict?: boolean): Partial<AuditConfig> | null {
   if (!existsSync(filePath)) {
     return null;
   }
@@ -400,8 +400,19 @@ function tryLoadYaml(filePath: string): Partial<AuditConfig> | null {
   let configStrict = false;
   try {
     const parsed = yamlLoad(content) as Record<string, unknown> | null;
+    // v1.4.5 (T1/A1): strict 判定提前到验签之前——「有规则内容但无签名」在
+    // strict/CI 模式下升级 fail-closed，验签函数需要先知道 strict 上下文。
+    // 三来源任一为真：CLI --strict（参数透传）/ config 内 audit.strict / 顶层 strict
+    if (parsed && typeof parsed === 'object') {
+      const auditPeek = parsed['audit'];
+      if (auditPeek && typeof auditPeek === 'object') {
+        configStrict = !!(auditPeek as Record<string, unknown>)['strict'];
+      } else if (typeof parsed['strict'] === 'boolean') {
+        configStrict = parsed['strict'];
+      }
+    }
     // v1.2.0: 可选 signature 字段校验（防 Agent 篡改配置文件）
-    verifyConfigSignature(parsed, filePath);
+    verifyConfigSignature(parsed, filePath, strict || configStrict);
     if (parsed && typeof parsed === 'object') {
       const audit = parsed['audit'];
       // v1.1.5: loop 是顶层独立节，不进 audit 段——单独提取，与 audit 段合并
@@ -471,8 +482,16 @@ function tryLoadYaml(filePath: string): Partial<AuditConfig> | null {
  *
  * 注：完整签名体系（密钥管理 / 签名工具 CLI）属产品决策，本实现仅落地
  *     「加载侧可选校验」分支。
+ *
+ * v1.4.5 (T1/A1): strict 参数——CLI --strict / config audit.strict 任一为真时，
+ * 「有规则内容但无签名」升级 fail-closed（防删除式绕过：删掉签名字段即可
+ * 绕过校验的漏洞）。普通模式维持 WARN。
  */
-function verifyConfigSignature(parsed: Record<string, unknown> | null, filePath: string): void {
+function verifyConfigSignature(
+  parsed: Record<string, unknown> | null,
+  filePath: string,
+  strict?: boolean,
+): void {
   if (!parsed || typeof parsed !== 'object') return;
 
   // DP-3 修复：检测 audit 段（或其它非顶层位置）误放的 signature 字段。
@@ -492,13 +511,32 @@ function verifyConfigSignature(parsed: Record<string, unknown> | null, filePath:
 
   const sig = parsed['signature'];
   if (typeof sig !== 'string' || sig.trim().length === 0) {
-    // (v1.2.7): 签名缺失——fail-open（全新安装无签名是常态），但 WARN 更显眼
-    // 全新安装时无签名是正常的；已有配置但无签名 = 配置可被任意修改且不被发现
+    // v1.2.7→v1.4.5 (T1/A1): 删除式绕过收紧——「无 signature 字段」不再无条件 fail-open。
+    //   判定矩阵：
+    //     a) 空配置（无任何规则内容，即全新安装）→ 豁免（静默，无告警）
+    //     b) 有规则内容 + strict/CI 模式 → fail-closed 拒绝启动（删除签名 = 篡改痕迹）
+    //     c) 有规则内容 + 普通模式 → 维持 v1.2.7 的 WARN（向后兼容，不把存量用户搞崩）
+    //   注意豁免判定基于「规则内容」而非「无签名」——空 config 无需签名，但删除了
+    //   签名字段的有内容 config 在 strict 下视同篡改。
+    const hasRuleContent = configHasRuleContent(parsed);
+    if (!hasRuleContent) {
+      return; // 全新安装/空配置豁免——无内容即无需防护
+    }
+    if (strict) {
+      console.error(`❌ config.yml 含规则内容但无 signature 字段（strict 模式）——拒绝启动: ${filePath}`);
+      console.error(`   strict/CI 场景下删除签名字段视同篡改。确认非篡改后运行: sofagent-audit --sign-config`);
+      throw new ConfigSignatureError(
+        `配置文件含规则内容但缺少防篡改签名（strict 模式 fail-closed）。请运行 sofagent-audit --sign-config 重新签名，或确认配置内容后移除 strict 模式: ${filePath}`,
+        filePath,
+      );
+    }
+    // 普通模式——WARN 维持（v1.2.7 行为），文案更醒目
     console.warn('');
     console.warn('  ╔══════════════════════════════════════════════════════╗');
-    console.warn('  ║  ⚠️  config.yml 无防篡改签名（signature 字段缺失）  ║');
-    console.warn('  ║  配置可被任意修改且不被发现。                          ║');
+    console.warn('  ║  ⚠️  config.yml 含规则内容但无防篡改签名（signature 缺失）  ║');
+    console.warn('  ║  配置可被任意修改（含删除签名）而不被发现。                          ║');
     console.warn('  ║  如需强校验，运行：sofagent-audit --sign-config       ║');
+    console.warn('  ║  strict/CI 模式下将升级为拒绝启动。                    ║');
     console.warn('  ╚══════════════════════════════════════════════════════╝');
     console.warn('');
     return;
@@ -526,10 +564,36 @@ function verifyConfigSignature(parsed: Record<string, unknown> | null, filePath:
   if (!matched) {
     // FIXED(v1.2.2-hotfix): 签名不匹配已升级为 fail-closed 阻断启动。
     //   原为 console.warn 后继续（等于没有防护），现抛 Error 拒绝启动。
-    //   降级方案：删除下方 throw 并恢复 console.warn 即可回到 fail-open。
+    //   降级方案：删除下方 throw 并恢复 console.error 即可回到 fail-open。
     console.error(`❌ config.yml signature 不匹配——内容可能被篡改或密钥不匹配。拒绝启动: ${filePath}`);
-    throw new ConfigSignatureError(`配置文件签名校验失败，拒绝启动。请检查 config.yml 完整性: ${filePath}`, filePath);
+    // v1.4.5 (T1): 报错补逃生通道——用户需知道「确认非篡改后如何恢复启动」。
+    console.error(`   恢复指引：确认内容非篡改后，运行 sofagent-audit --sign-config 重新签名。`);
+    throw new ConfigSignatureError(
+      `配置文件签名校验失败，拒绝启动。请检查 config.yml 完整性，确认非篡改后运行 sofagent-audit --sign-config 重新签名: ${filePath}`,
+      filePath,
+    );
   }
+}
+
+/**
+ * v1.4.5 (T1/A1): 判定 config 顶层对象是否含「规则内容」——用于删除式绕过收紧的
+ * 全新安装豁免判定。规则内容 = 任意已知 AuditConfig 字段（audit 段或顶层）。
+ * 空对象 / 仅含注释性字段的 config 视为无内容（无需签名防护）。
+ */
+function configHasRuleContent(parsed: Record<string, unknown>): boolean {
+  const knownContentKeys = new Set<string>([
+    // audit 段与顶层通用的规则字段
+    'lowRiskPatterns', 'testPatterns', 'carefulModifyThreshold',
+    'extendedRulesEnabled', 'rules', 'loopCheckMaxRounds', 'strict', 'A16', 'A17',
+    'loop', 'webhook', 'toolGate', 'sanitizePatterns', 'memory_backends', 'memory_sync',
+    'cost',
+    // 顶层包装节
+    'audit',
+  ]);
+  for (const key of Object.keys(parsed)) {
+    if (knownContentKeys.has(key)) return true;
+  }
+  return false;
 }
 
 /**
@@ -623,6 +687,35 @@ function mergeWithDefaults(partial: Partial<AuditConfig>): AuditConfig {
     cost: partial.cost,
   };
 
+  // v1.4.5 (T2): 数值字段类型校验——防 YAML 注入字符串（如 carefulModifyThreshold: "0.1 OR 1=1"）
+  // 已知数值字段逐一校验：非法值回退 safeDefaults 并 WARN（fail-safe，不静默使用）
+  merged.carefulModifyThreshold = sanitizeNumericField(
+    'carefulModifyThreshold', merged.carefulModifyThreshold, safeDefaults().carefulModifyThreshold,
+  );
+  merged.loopCheckMaxRounds = sanitizeNumericField(
+    'loopCheckMaxRounds', merged.loopCheckMaxRounds, 20,
+  );
+  if (merged.A17) {
+    merged.A17.bulk_threshold = sanitizeNumericField(
+      'A17.bulk_threshold', merged.A17.bulk_threshold, 50,
+    );
+    merged.A17.bulk_window_ms = sanitizeNumericField(
+      'A17.bulk_window_ms', merged.A17.bulk_window_ms, 300000,
+    );
+  }
+  if (merged.loop?.maxTurns) {
+    if (merged.loop.maxTurns.engineer !== undefined) {
+      merged.loop.maxTurns.engineer = sanitizeNumericField(
+        'loop.maxTurns.engineer', merged.loop.maxTurns.engineer, 20,
+      );
+    }
+    if (merged.loop.maxTurns.reviewer !== undefined) {
+      merged.loop.maxTurns.reviewer = sanitizeNumericField(
+        'loop.maxTurns.reviewer', merged.loop.maxTurns.reviewer, 15,
+      );
+    }
+  }
+
   // 校验 rules key——未知规则名输出警告
   // v1.1.5: 补全 a18/a19（v1.1.4 新增 A18/A19 规则后此处遗漏）
   // 基线规则集合与 runner 统一（共享常量 BASELINE_RULE_KEYS，9 条：a1/a2/a9/a10/a11/a20/a21/a22/a23）
@@ -658,6 +751,35 @@ function mergeWithDefaults(partial: Partial<AuditConfig>): AuditConfig {
 // ============================================================
 // v1.0.5: fail-closed 默认安全
 // ============================================================
+
+/**
+ * v1.4.5 (T2): 数值配置字段清洗——非法值（字符串/NaN/非有限数）回退安全默认值。
+ *
+ * YAML 允许 `carefulModifyThreshold: "0.2 OR 1=1"` 这类字符串值直接进入配置对象。
+ * 若消费侧直接把它当数值用（比较/算术），构成注入面。本函数统一校验：
+ *   - 非有限数值（NaN/Infinity）→ 回退 fallback + WARN
+ *   - 合法 number（含 0/负数）→ 原样放行（调用方语义校验）
+ *
+ * @param fieldPath 字段路径（告警定位用，如 'carefulModifyThreshold'）
+ * @param value 待校验值（来自用户 YAML）
+ * @param fallback 安全回退值
+ * @returns 合法数值或 fallback
+ */
+function sanitizeNumericField(fieldPath: string, value: number | undefined, fallback: number): number {
+  if (value === undefined) {
+    return fallback; // 缺省——走默认值，不算异常
+  }
+  const num = typeof value === 'number' ? value : Number(value);
+  if (!Number.isFinite(num)) {
+    // v1.4.5 (T2): 非法数值类型——回退 safeDefaults 对应字段 + WARN（不静默使用注入值）
+    console.warn(
+      `[sofagent] ⚠️ config.yml: 数值字段 "${fieldPath}" 值非法（${JSON.stringify(value)}），` +
+      `已回退安全默认值 ${fallback}。请检查类型（应为数值，非字符串/NaN）`,
+    );
+    return fallback;
+  }
+  return num;
+}
 
 /**
  * 安全默认值——在无法信任用户配置时（YAML 解析失败等），

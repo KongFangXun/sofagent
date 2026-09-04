@@ -13,6 +13,14 @@ import * as path from 'path';
 import { DATA_DIR } from '@sofagent/core';
 import type { FatigueReport } from './fatigue';
 
+/** v1.4.5 T9：webhook 告警通道健康摘要（推送侧写入，心跳透传） */
+export interface WebhookChannelHealth {
+  /** 最近一次推送成功时间（ISO 8601） */
+  lastSuccessAt: string | null;
+  /** 最近一次失败摘要（平台 + 错误；null = 无失败记录） */
+  lastError: string | null;
+}
+
 /** daemon 健康自检文件结构 */
 export interface DaemonHealthFile {
   /** 进程 PID */
@@ -37,6 +45,26 @@ export interface DaemonHealthFile {
   stoppedReason?: string;
   /** v1.3.6 交付⑬：Agent 疲劳度报告（每小时采集，fatigue.ts 独立写入） */
   fatigue?: FatigueReport;
+  /** v1.4.5 T9：webhook 告警通道自身健康（推送侧写入，心跳不擦除） */
+  webhook?: WebhookChannelHealth;
+}
+
+/**
+ * v1.4.5 T5：运行时读取 daemon 包版本（package.json）。
+ *
+ * 修复：原硬编码 `version: '1.4.3'` 字面量——包已 1.4.4，每次升版必漂移。
+ * 现在从 dist 同级的 package.json 读取；读取失败（打包裁剪等）回退 'unknown'
+ * 而非旧版本号（宁可 unknown 也不说谎）。
+ */
+export function resolveDaemonVersion(): string {
+  try {
+    // daemon-health.js 编译后在 dist/，package.json 在其上一级
+    const pkgPath = path.join(__dirname, '..', 'package.json');
+    const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8')) as { version?: string };
+    return typeof pkg.version === 'string' && pkg.version !== '' ? pkg.version : 'unknown';
+  } catch {
+    return 'unknown';
+  }
 }
 
 /** 健康自检文件路径 */
@@ -57,7 +85,7 @@ export function resolveHealthFilePath(): string {
  */
 export function writeHealthFile(
   event: 'start' | 'heartbeat' | 'push' | 'error' | 'exit',
-  extra?: { lastPush?: string; lastError?: string; exitCode?: number; stoppedReason?: string },
+  extra?: { lastPush?: string; lastError?: string; exitCode?: number; stoppedReason?: string; webhook?: WebhookChannelHealth },
 ): DaemonHealthFile | null {
   const healthPath = resolveHealthFilePath();
   const now = new Date().toISOString();
@@ -69,6 +97,8 @@ export function writeHealthFile(
   let existingLastError: string | null = null;
   // v1.3.6 交付⑬：心跳重写不擦除疲劳度报告（fatigue 由 fatigue.ts 独立维护）
   let existingFatigue: FatigueReport | undefined;
+  // v1.4.5 T9：心跳不擦除 webhook 通道健康（webhook 推送侧独立维护）
+  let existingWebhook: WebhookChannelHealth | undefined;
 
   if (event !== 'start' && fs.existsSync(healthPath)) {
     try {
@@ -79,6 +109,10 @@ export function writeHealthFile(
       // 类型守卫：只透传合法对象（防损坏文件把 null/字符串塞进 fatigue）
       if (raw.fatigue !== null && typeof raw.fatigue === 'object') {
         existingFatigue = raw.fatigue as FatigueReport;
+      }
+      // v1.4.5 T9：webhook 健康同规则透传（类型守卫）
+      if (raw.webhook !== null && typeof raw.webhook === 'object') {
+        existingWebhook = raw.webhook as WebhookChannelHealth;
       }
     } catch {
       // 文件损坏——继续
@@ -112,7 +146,8 @@ export function writeHealthFile(
   const health: DaemonHealthFile = {
     pid: process.pid,
     startTime,
-    version: '1.4.3',
+    // v1.4.5 T5：运行时读 package.json（消灭 '1.4.3' 硬编码漂移）
+    version: resolveDaemonVersion(),
     status,
     lastHeartbeat: now,
     lastPush: extra?.lastPush ?? existingLastPush,
@@ -123,6 +158,9 @@ export function writeHealthFile(
     ...(extra?.stoppedReason !== undefined ? { stoppedReason: extra.stoppedReason } : {}),
     // v1.3.6 交付⑬：透传已有疲劳度报告（fatigue.ts 独立写入，心跳不擦除）
     ...(existingFatigue !== undefined ? { fatigue: existingFatigue } : {}),
+    // v1.4.5 T9：webhook 通道健康（推送侧写入，心跳透传不擦除）
+    ...(extra?.webhook !== undefined ? { webhook: extra.webhook } : {}),
+    ...(extra?.webhook === undefined && existingWebhook !== undefined ? { webhook: existingWebhook } : {}),
   };
 
   try {

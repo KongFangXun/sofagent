@@ -44,7 +44,11 @@ import { ensureGitignore } from './commands/init';
 // v1.4.4 交付 2：国标对齐 GB/T 48000.3-2026（条款映射清单 + 覆盖度评估）
 export { GB48000_CLAUSE_MAP, assessGb48000Coverage, buildGb48000RuleCheck } from './gb48000';
 export type { Gb48000ClauseMapping, Gb48000Status, Gb48000Coverage } from './gb48000';
-import { loadHistory, appendHistory, type AuditHistoryEntry } from './audit-history';
+import { loadHistory, appendHistory, sanitizeFreeText, type AuditHistoryEntry } from './audit-history';
+// v1.4.5 T1/T4: hook 安装核心抽取——core.hooksPath 尊重 + 用户 hook 链式保留
+import { resolveHooksDir, installHooks } from './hook-install';
+// v1.4.5 T8: sanitizePatterns 编译复用 ReDoS 双层防护（静态检测 + 运行时对抗测试）
+import { compileSanitizePattern } from './ruleset-loader';
 
 // Re-export for external consumers —— doctor 等外部调用方需要通过
 // require('@sofagent/audit') 使用 checkHistoryChainIntegrity
@@ -139,9 +143,18 @@ function buildBeforeAfterSummary(diffFiles: DiffFile[]): { before?: string; afte
     if (before.length >= BEFORE_AFTER_MAX_ITEMS && after.length >= BEFORE_AFTER_MAX_ITEMS) break;
   }
   if (before.length === 0 && after.length === 0) return undefined;
-  return {
+  // v1.4.5 T2: 落盘前过 sanitizeFreeText（REDACTION_PATTERNS 管道）——
+  // beforeAfter 从 diff 行原文提取，密钥可混入；audit-history.ts 的
+  // baseSanitized 只覆盖 ruleResults/commitMsg/task，actionGovernance.beforeAfter
+  // 不在其内（嵌套对象未被展开脱敏）——必须在构建侧就打码，否则 diff 里的
+  // sk-xxx/AKIAxxx 明文全文进 history.jsonl，审计工具自身成为第二泄漏点。
+  const raw = {
     ...(before.length > 0 ? { before: before.join('\n') } : {}),
     ...(after.length > 0 ? { after: after.join('\n') } : {}),
+  };
+  return {
+    before: sanitizeFreeText(raw.before) ?? undefined,
+    after: sanitizeFreeText(raw.after) ?? undefined,
   };
 }
 
@@ -379,7 +392,7 @@ function parseArgs(argv: string[]): Args {
       }
       console.log('模式对照表:');
       console.log('  默认模式    全部规则（含 Agent 日志）   exit 0/1/2');
-      console.log('  --silent    只跑 git-diff 规则          exit 0/1/2');
+      console.log('  --silent    跳过依赖 Agent 日志的规则（A3/A7/A8/A14 等）exit 0/1/2');
       console.log('  --strict    任何警告都 exit 2            exit 0/2');
       console.log('  --ci        = --silent（CI 友好输出，无交互提示）     exit 0/1/2');
       console.log('');
@@ -391,7 +404,7 @@ function parseArgs(argv: string[]): Args {
         console.log('  --diff <range>     git diff 范围（默认 HEAD~1..HEAD）');
         console.log('  --task <desc>      任务描述');
         console.log('  --strict           严格模式');
-        console.log('  --silent           静默模式');
+        console.log('  --silent           跳过依赖 Agent 日志的规则（A3/A7/A8/A14 等，无日志环境用）');
         console.log('  --ci               CI 模式（= --silent，CI 友好输出，无交互提示）');
         console.log('  --json             JSON 输出');
         console.log('  --install-hook     安装 pre-commit + commit-msg + post-commit hook');
@@ -449,25 +462,11 @@ function parseArgs(argv: string[]): Args {
  * commit 对象生成前生效，规避 macOS git 内存 index 快照时序问题）。
  */
 function installHook(): void {
-  // 从 cwd 往上查找 .git 目录
-  let currentDir: string = process.cwd();
-  let gitDir: string | null = null;
-
-  while (true) {
-    const candidate = join(currentDir, '.git');
-    if (existsSync(candidate)) {
-      gitDir = candidate;
-      break;
-    }
-    const parent = dirname(currentDir);
-    if (parent === currentDir) {
-      // 到达根目录，未找到
-      break;
-    }
-    currentDir = parent;
-  }
-
-  if (!gitDir) {
+  // v1.4.5 T1: hook 落点改经 resolveHooksDir（core.hooksPath 优先，缺省 .git/hooks）。
+  // 此前硬编码 $gitDir/hooks——repo 配置 core.hooksPath=.githooks 时装到 .git/hooks，
+  // git 根本不会执行（等于没装），且 --doctor 按 hooksPath 找不到还误报未安装。
+  const resolution = resolveHooksDir(process.cwd());
+  if (!resolution) {
     console.error('❌ sofagent 提示：当前目录不是 git 仓库。请在 git 仓库内运行此命令，或先 git init。');
     exit(1);
   }
@@ -475,62 +474,25 @@ function installHook(): void {
   // v1.3.9 B22: 与 --init 路径对齐——装 hook 前确保 .sofagent/ 被 .gitignore 排除，
   // 防止 .sofagent/.git-shadow/ 快照数据被 git add . 卷入用户仓库（幂等，已有条目则跳过）。
   try {
-    ensureGitignore(dirname(gitDir));
+    ensureGitignore(dirname(resolution.gitDir));
   } catch (e) {
     console.warn('[sofagent] 警告：更新 .gitignore 失败，请手动添加 .sofagent/', e instanceof Error ? e.message : String(e));
   }
 
   // 定位 hook 模板（dist/index.js 编译后，模板在 ../../hooks/ 相对于 dist/）
   const hooksTemplateDir = join(__dirname, '..', 'hooks');
-  const preCommitTemplate = join(hooksTemplateDir, 'pre-commit');
-  const commitMsgTemplate = join(hooksTemplateDir, 'commit-msg');
-  const postCommitTemplate = join(hooksTemplateDir, 'post-commit');
 
-  if (!existsSync(commitMsgTemplate) || !existsSync(postCommitTemplate) || !existsSync(preCommitTemplate)) {
-    console.error(`❌ sofagent 内部错误：hook 模板文件缺失——${commitMsgTemplate} / ${postCommitTemplate} / ${preCommitTemplate}`);
+  try {
+    const result = installHooks({ cwd: process.cwd(), templateDir: hooksTemplateDir });
+    if (result.configured) {
+      console.log(`ℹ️ [sofagent] 检测到 core.hooksPath=${result.configuredValue ?? ''}——hook 已安装到配置目录（git 将从该目录执行 hook）`);
+    }
+    console.log('   每次 git commit 时会自动运行 sofagent-audit 检查；pre-commit 拦 .sofagent/ 入库，post-commit 在提交后对账 --no-verify 绕过。');
+    exit(0);
+  } catch (e) {
+    console.error(`❌ sofagent 提示：${e instanceof Error ? e.message : String(e)}`);
     exit(1);
   }
-
-  // 确保目标目录存在
-  const hooksDir = join(gitDir, 'hooks');
-  if (!existsSync(hooksDir)) {
-    mkdirSync(hooksDir, { recursive: true });
-  }
-
-  // v1.4.4 H-01: pre-commit 不再是「旧版迁移对象」而是三层防线主防线——
-  // 旧版（v1.0.5 及更早的 pre-commit 审计 hook）由下方 installOneHook 直接
-  // 覆盖为当前版模板（覆盖前自动备份到 pre-commit.bak），无需单独迁移删除。
-
-  // 安装单个 hook：备份旧文件 → 写入模板 → chmod 755
-  // v1.3.9 P0-RC3: commit-msg 与 post-commit 共用此逻辑，保证两个入口（--init / --install-hook）安装清单一致
-  function installOneHook(hookName: string, templatePath: string, destName: string): void {
-    const destPath = join(hooksDir, destName);
-    // v1.2.9: 覆盖前备份已有 hook（如果有）
-    if (existsSync(destPath)) {
-      const backupPath = join(hooksDir, `${destName}.bak`);
-      try {
-        const existingContent = readFileSync(destPath, 'utf-8');
-        writeFileSync(backupPath, existingContent);
-        console.log(`  → 已备份旧 ${destName} hook 到 ${backupPath}`);
-      } catch (e) {
-        console.warn('[sofagent] 警告：备份旧 hook 失败，继续覆盖', e instanceof Error ? e.message : String(e));
-      }
-    }
-
-    const templateContent = readFileSync(templatePath, 'utf-8');
-    writeFileSync(destPath, templateContent);
-    chmodSync(destPath, 0o755);
-    console.log(`✅ ${hookName} hook 已安装到 ${destPath}`);
-  }
-
-  // v1.4.4 H-01: 三层防线安装顺序——pre-commit（主防线，staged 清理在 commit
-  // 对象生成前生效）→ commit-msg（规则审计 + 二次清理）→ post-commit（对账兜底）
-  installOneHook('pre-commit', preCommitTemplate, 'pre-commit');
-  installOneHook('commit-msg', commitMsgTemplate, 'commit-msg');
-  // v1.3.9 P0-RC3: 补装 post-commit（--no-verify 绕过检测）
-  installOneHook('post-commit', postCommitTemplate, 'post-commit');
-  console.log('   每次 git commit 时会自动运行 sofagent-audit 检查；pre-commit 拦 .sofagent/ 入库，post-commit 在提交后对账 --no-verify 绕过。');
-  exit(0);
 }
 
 /**
@@ -1201,7 +1163,10 @@ async function main(): Promise<void> {
   }
 
   // 5. 运行规则
-  const results = runRules(diffFiles, logEntries, args.task, args.strict, args.silent, commitMsg || undefined, config, undefined, args.gb48000);
+  // v1.4.5 T5: 改经 runRulesMonitored——审计引擎超时自动降级（full→rules-only→minimal），
+  // 降级事实写审计日志（FALLBACK_DEGRADE）并在规则列表注入 DEGRADATION_NOTICE WARN
+  const { runRulesMonitored } = await import('./rules/runner');
+  const results = runRulesMonitored(diffFiles, logEntries, args.task, args.strict, args.silent, commitMsg || undefined, config, undefined, args.gb48000);
 
   // v1.2.9 (⑧-2): --ruleset / --ruleset-path → 运行 JSON 规则集（叠加在内置规则之上）
   if (args.ruleset || args.rulesetPath) {
@@ -1329,11 +1294,15 @@ async function main(): Promise<void> {
   if (webhookPlatform && webhookUrlFinal) {
     try {
       // v1.2.9 编译自定义脱敏正则
+      // v1.4.5 T8: 编译复用 ruleset-loader 的 compileSanitizePattern（含
+      // detectReDoSPattern 静态检测 + 100ms 运行时对抗测试）——此前直接
+      // new RegExp(p.pattern)，config.yml 塞入 (a+)+ 类邪恶 pattern 可让
+      // 每次 webhook 推送的正则替换挂死审计进程（审计工具被配置反杀）。
       const customSanitizePatterns = config.sanitizePatterns
         ? config.sanitizePatterns
             .map((p) => {
-              try { return { pattern: new RegExp(p.pattern, 'g'), replacement: p.replacement }; }
-              catch { return null; } // 用户配置了无效正则——剔除该条，其余规则照常推送
+              const compiled = compileSanitizePattern(p.pattern, p.replacement);
+              return compiled; // null = 无效/ReDoS 风险正则——剔除该条，其余规则照常推送
             })
             .filter((p): p is { pattern: RegExp; replacement: string } => p !== null)
         : undefined;

@@ -108,8 +108,26 @@ export function loadDataKey(sofagentHome: string): Buffer | null {
   try {
     const b64 = readFileSync(kp, 'utf-8').trim();
     const key = Buffer.from(b64, 'base64');
-    return key.length === DATA_KEY_BYTES ? key : null;
+    if (key.length !== DATA_KEY_BYTES) {
+      // v1.4.5 (T3): 密钥损坏降级告警——此前静默 return null，调用方无法区分
+      // 「未初始化」与「已损坏」，排障体验差且损坏可能被长期忽略（静默降级 = 风险累积）。
+      // 仍返回 null（不抛错——保持既有调用方契约），但必须显眼告警 + 指引。
+      console.warn(
+        `[sofagent] ⚠️ 数据密钥内容损坏（长度 ${key.length} 字节，应为 ${DATA_KEY_BYTES}）: ${kp}\n` +
+        `    以损坏密钥继续将解不开任何密文。修复路径：\n` +
+        `    1. 检查是否编辑过该文件（base64 是否被截断/换行）\n` +
+        `    2. 从离线备份恢复后重试\n` +
+        `    3. 确认放弃旧数据后运行 rotateDataKey 生成新密钥`,
+      );
+      return null;
+    }
+    return key;
   } catch {
+    // v1.4.5 (T3): 读失败（IO 错误）同属「密钥不可用但非未初始化」——告警而非静默
+    console.warn(
+      `[sofagent] ⚠️ 数据密钥读取失败（IO 错误，文件存在但不可读）: ${kp}\n` +
+      `    请检查文件权限与磁盘状态。`,
+    );
     return null;
   }
 }

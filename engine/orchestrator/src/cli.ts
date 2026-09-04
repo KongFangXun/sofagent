@@ -354,7 +354,13 @@ async function main() {
           });
 
           if (result.success) {
-            console.log(`  ✅ ${graphNode.id} 完成 (${result.durationMs}ms)`);
+            if (result.degraded) {
+              // v1.4.5 T6：降级成功 = LLM 缺席的模拟输出——WARN 可观测
+              // （原实现 success:true 静默通过，节点级降级无人知晓）
+              console.warn(`  ⚠️ ${graphNode.id} 降级完成（LLM 不可用，输出为模拟） (${result.durationMs}ms)`);
+            } else {
+              console.log(`  ✅ ${graphNode.id} 完成 (${result.durationMs}ms)`);
+            }
           } else {
             console.error(`  ❌ ${graphNode.id} 失败: ${result.error}`);
             allSuccess = false;

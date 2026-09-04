@@ -175,7 +175,7 @@ function appendWeeklyLog(
  *
  * @param projectDir 项目根目录
  * @param opts.fromStage 从指定 stage 续跑（跳过之前的 stage，用于失败重试）
- * @param opts.llm LLMProvider（默认 MockLLM；RealLLM v1.1.8 接入）
+ * @param opts.llm LLMProvider（默认 MockLLM；RealLLM 接入时间未定——见 roadmap）
  * @param opts.ledger 可选 Ledger 注入（测试用；缺省从磁盘读）
  * @param opts.backfillHook 可选 skillopt backfill 钩子注入（测试 mock 验证用）
  */

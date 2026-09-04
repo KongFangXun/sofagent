@@ -24,6 +24,10 @@
     "family": "cordis",
     "seam": "独立调度进程"
   },
+  "//optionalDependencies": "v1.4.5 T6 (R4)：src/index.ts:26 惰性 await import('@sofagent/daemon')（懒加载 + 缺依赖降级不抛），此前未声明任何依赖——对齐 root package.json F-18 optionalDependencies 先例。",
+  "optionalDependencies": {
+    "@sofagent/daemon": "1.4.4"
+  },
   "devDependencies": {
     "typescript": "^7.0.2",
     "vitest": "^4.1.11"

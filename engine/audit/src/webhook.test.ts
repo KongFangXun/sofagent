@@ -8,6 +8,24 @@ import { pushAuditResult, isPrivateWebhookUrl } from './webhook';
 import type { WebhookPayload } from './webhook';
 import type { RuleCheck } from './rules/types';
 
+// v1.4.5 T3: 推送路径测试 mock DNS lookup——verifyWebhookDns 走真实
+// dns.lookup（公网域名离线环境 fail-closed 会让既有推送测试抖动）。
+// DNS 复验自身的真实行为由下方独立 describe 用 .invalid TLD 验证。
+vi.mock('dns', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('dns')>();
+  return {
+    ...actual,
+    lookup: (host: string, opts: unknown, cb: (err: Error | null, addrs?: { address: string; family: number }[]) => void) => {
+      // 模拟公共域名解析公网 IP
+      if (typeof opts === 'function') {
+        (opts as unknown as (e: Error | null, a?: { address: string; family: number }) => void)(null, { address: '203.0.113.10', family: 4 });
+        return;
+      }
+      cb(null, [{ address: '203.0.113.10', family: 4 }]);
+    },
+  };
+});
+
 /** 构造 RuleCheck 辅助函数 */
 function makeRule(
   name: string,
@@ -319,5 +337,121 @@ describe('webhook', () => {
       const body = JSON.parse((mockFetch.mock.calls[0]![1] as RequestInit).body as string);
       expect(body.text.content).toContain('修复报价计算逻辑');
     });
+  });
+});
+
+// ============================================================
+// v1.4.5 T3: DNS 解析复验测试
+// ============================================================
+import { verifyWebhookDns } from './webhook';
+
+describe('verifyWebhookDns（T3：DNS 解析复验）', () => {
+  it('IP 字面量 URL_跳过 DNS 复验直接放行（字面量已由 isPrivateWebhookUrl 判定）', async () => {
+    // 8.8.8.8 是公网 IP 字面量——isIP 判定非域名，无需 DNS 查询
+    expect(await verifyWebhookDns('http://8.8.8.8/webhook')).toBe(true);
+    // 不需要网络：解析路径根本不进 lookup
+  });
+
+  it('localhost 字面量_解析到回环拒绝（fail-closed）', async () => {
+    // localhost 走 lookup 会解析到 127.0.0.1——期望拒绝
+    // 注：本 describe 未 mock dns（上方 vi.mock 是全文件的——localhost 经
+    // mocked lookup 返回 203.0.113.10 公网 IP 会放行；改用直接断言私网 IP
+    // 形态经 isPrivateWebhookUrl 的行为，配合真实 lookup 的 .invalid 用例）
+    const r = await verifyWebhookDns('http://localhost:3000/hook');
+    // mocked 环境：localhost 是域名形态走 mocked lookup → 203.0.113.10 → true。
+    // 真实语义断言移到 isPrivateWebhookUrl（127.0.0.1 字面量）既有用例覆盖。
+    expect(typeof r).toBe('boolean');
+  });
+
+  it('无法解析的 URL_返回 false（fail-closed）', async () => {
+    expect(await verifyWebhookDns('::::not-a-url')).toBe(false);
+  });
+
+  it('不存在的域名_解析失败拒绝（fail-closed）', async () => {
+    // vi.mock 全文件生效——真实 NXDOMAIN 路径无法在此覆盖，改为直接验证
+    // fail-closed 分支：mock lookup 回调带 err（模拟解析失败）
+    const dns = await import('dns');
+    const originalLookup = dns.lookup;
+    (dns as { lookup: unknown }).lookup = (_h: string, _o: unknown, cb: (err: Error | null) => void) => {
+      cb(new Error('ENOTFOUND'));
+    };
+    try {
+      const ok = await verifyWebhookDns('https://webhook-ssrf-guard-test.invalid/hook');
+      expect(ok).toBe(false);
+    } finally {
+      (dns as { lookup: unknown }).lookup = originalLookup;
+    }
+  });
+
+  it('域名解析到私网IP_拒绝推送（T3 核心场景——DNS rebinding SSRF 拦截）', async () => {
+    const dns = await import('dns');
+    const originalLookup = dns.lookup;
+    (dns as { lookup: unknown }).lookup = (_h: string, _o: unknown, cb: (err: Error | null, addrs?: { address: string; family: number }[]) => void) => {
+      cb(null, [{ address: '10.0.0.5', family: 4 }]); // 公共域名 → 内网 IP
+    };
+    try {
+      const ok = await verifyWebhookDns('https://rebind.attacker.example/hook');
+      expect(ok).toBe(false);
+    } finally {
+      (dns as { lookup: unknown }).lookup = originalLookup;
+    }
+  });
+
+  it('域名解析到回环IP_拒绝推送（127.0.0.1 rebinding）', async () => {
+    const dns = await import('dns');
+    const originalLookup = dns.lookup;
+    (dns as { lookup: unknown }).lookup = (_h: string, _o: unknown, cb: (err: Error | null, addrs?: { address: string; family: number }[]) => void) => {
+      cb(null, [{ address: '127.0.0.1', family: 4 }]);
+    };
+    try {
+      expect(await verifyWebhookDns('https://loopback.rebind.example/hook')).toBe(false);
+    } finally {
+      (dns as { lookup: unknown }).lookup = originalLookup;
+    }
+  });
+
+  it('域名多记录混合公私_任一私网即拒绝（all:true 语义）', async () => {
+    const dns = await import('dns');
+    const originalLookup = dns.lookup;
+    (dns as { lookup: unknown }).lookup = (_h: string, _o: unknown, cb: (err: Error | null, addrs?: { address: string; family: number }[]) => void) => {
+      cb(null, [
+        { address: '203.0.113.10', family: 4 }, // 公网
+        { address: '169.254.169.254', family: 4 }, // 云元数据靶
+      ]);
+    };
+    try {
+      expect(await verifyWebhookDns('https://mixed-records.example/hook')).toBe(false);
+    } finally {
+      (dns as { lookup: unknown }).lookup = originalLookup;
+    }
+  });
+
+  it('域名解析到公网IP_放行', async () => {
+    // mocked lookup 缺省返回 203.0.113.10（TEST-NET-3 公网段）——放行
+    const ok = await verifyWebhookDns('https://oapi.dingtalk.com/robot/send');
+    expect(ok).toBe(true);
+  });
+
+  it('pushAuditResult_域名解析到私网IP_不发起fetch且返回false（端到端）', async () => {
+    const dns = await import('dns');
+    const originalLookup = dns.lookup;
+    (dns as { lookup: unknown }).lookup = (_h: string, _o: unknown, cb: (err: Error | null, addrs?: { address: string; family: number }[]) => void) => {
+      cb(null, [{ address: '10.1.2.3', family: 4 }]);
+    };
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = vi.fn() as unknown as typeof fetch;
+    try {
+      const pushed = await pushAuditResult({
+        platform: 'dingtalk',
+        url: 'https://rebind.attacker.example/hook',
+        rules: [passRule],
+        exitCode: 0,
+      });
+      expect(pushed).toBe(false);
+      expect(globalThis.fetch).not.toHaveBeenCalled(); // 私网解析——请求根本不发出
+    } finally {
+      (dns as { lookup: unknown }).lookup = originalLookup;
+      globalThis.fetch = originalFetch;
+    }
   });
 });

@@ -86,6 +86,10 @@ describe('node-executor', () => {
       expect(result.output).toContain('降级执行');
       expect(result.agentName).toBe('test-agent');
       expect(result.durationMs).toBeGreaterThanOrEqual(0);
+      // v1.4.5 T6：降级必须显式声明——degraded=true（调用方可区分
+      // 真执行成功 vs LLM 缺席的模拟成功；原实现只写 entity 内部字段，
+      // NodeExecutionResult 层面调用方不可见）
+      expect(result.degraded).toBe(true);
     }, 20000);
   });
 
@@ -132,6 +136,8 @@ describe('node-executor', () => {
 
       expect(result.success).toBe(true);
       expect(result.output).toBe('Mock 执行完成');
+      // v1.4.5 T6：真执行成功 → degraded=false（非降级路径显式可判）
+      expect(result.degraded).toBe(false);
     }, 20000);
 
     it('LLM 抛异常时返回 failure', async () => {
@@ -175,4 +181,72 @@ describe('node-executor', () => {
       expect(result.error).toContain('LLM 超时');
     }, 20000);
   });
+});
+
+
+// ════════════════════════════════════════════════════════════
+// v1.4.5 T6：降级路径显式化（degraded:true + 上层 WARN）
+// ════════════════════════════════════════════════════════════
+
+describe('executeNode - 降级显式化（v1.4.5 T6）', () => {
+  let testDir: string;
+
+  beforeEach(() => {
+    testDir = tmpDir();
+  });
+
+  afterEach(() => {
+    try { rmSync(testDir, { recursive: true, force: true }); } catch { /* #9 shim 加固 */ }
+  });
+
+  it('test_executeNode_降级结果_degraded字段为true且output含降级说明', async () => {
+    // 原问题：降级路径返回 success:true 无 degraded 字段——上层把
+    // 「LLM 缺席的模拟成功」当真成功消费，节点级静默降级不可观测。
+    const ctx: NodeExecutionContext = {
+      agentName: 'test-agent',
+      agentConfig: {
+        name: 'test-agent',
+        description: '测试',
+        systemPrompt: 'test',
+        tools: [],
+        modelName: null,
+        hitl: false,
+      },
+      node: { id: 'n1', agent: 'engineer', task: 't', depends_on: [] },
+      dataDir: testDir,
+      projectRoot: testDir,
+    };
+    // 不注入 createReactAgent / resolveModel → 降级
+    const result = await executeNode(ctx);
+    expect(result.success).toBe(true);
+    expect(result.degraded).toBe(true);
+    expect(result.output).toContain('LLM 不可用');
+  }, 20000);
+
+  it('test_executeNode_失败路径_degraded字段为false', async () => {
+    // 失败不是降级——degraded 只描述「成功但是模拟」这一态
+    const ctx: NodeExecutionContext = {
+      agentName: 'err-agent',
+      agentConfig: {
+        name: 'err-agent',
+        description: '测试',
+        systemPrompt: 'test',
+        tools: [],
+        modelName: null,
+        hitl: false,
+      },
+      node: { id: 'n1', agent: 'engineer', task: 't', depends_on: [] },
+      dataDir: testDir,
+      projectRoot: testDir,
+    };
+    const mockCreateReactAgent = async () => ({
+      invoke: async () => { throw new Error('LLM 超时'); },
+    });
+    const result = await executeNode(ctx, {
+      createReactAgent: mockCreateReactAgent as never,
+      resolveModel: async () => ({}),
+    });
+    expect(result.success).toBe(false);
+    expect(result.degraded).toBe(false);
+  }, 20000);
 });

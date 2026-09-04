@@ -4,6 +4,7 @@
 // 对应 DSH 插件 cordis-plugin-sofagent-audit 的 OpenClaw 形态（同引擎、不同宿主 hook 事件面）。
 // 品牌色 #16B8F3。API 分级：/* @public */ 导出对 OpenClaw 运行时契约锁定。
 
+
 /* @public */ export interface AuditPluginMeta {
   id: string;
   name: string;
@@ -12,10 +13,17 @@
   brandColor: string;
 }
 
+// v1.4.5 (T7/R4): 版本运行时读取 package.json——此前硬编码 '1.4.0'，发版 bump 后
+// pluginMeta.version 落后 4 个版本（package.json 1.4.4）。tsconfig 无 resolveJsonModule
+// （import json 编译不过），包输出为 CJS（无 type:module）→ 直接用 require 同步读。
+// 路径相对本文件编译产物 dist/index.js → 上溯一级即 package.json。
+// 读不到（打包剥离等）兜底 '0.0.0-unknown'——缺版本比错版本诚实。
+const _pkg: { version?: string } = require('../package.json');
+
 /* @public */ export const pluginMeta: AuditPluginMeta = {
   id: 'sofagent-audit',
   name: 'sofagent 审计',
-  version: '1.4.0',
+  version: _pkg.version ?? '0.0.0-unknown',
   description: '变更机器审阅——24 规则 + git diff 硬证据 + 危险工具拦截（before_tool_execute）',
   brandColor: '#16B8F3',
 };
