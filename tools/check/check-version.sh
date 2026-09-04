@@ -1301,6 +1301,38 @@ else
 fi
 echo ""
 
+echo "=== 27. 发版状态门禁：tag/npm 已发但活文档仍标待发版（F6 · v1.4.5 T10） ==="
+# v1.4.5 (F6)：本地 tag 与 npm registry 任一已达 SSOT 版本 = 「已发版态」。
+# 此态下活文档（ROADMAP「现在在哪」节 / 当前版本行）仍写「待发版」即矛盾——
+# 发版 SOP 阶段十之后忘改状态会漏出去（v1.4.4 曾靠人工记忆）。
+# 历史冻结文档（docs/changelog/vX.Y/ 旧版日志）不在扫描面——只查活文档。
+F6_RELEASED=false
+if git rev-parse "v${SSOT_VERSION}" >/dev/null 2>&1; then
+  F6_RELEASED=true
+  F6_WHY="git tag v${SSOT_VERSION} 已存在"
+fi
+F6_NPM_VER=$(npm view @sofagent/audit version 2>/dev/null | head -1 || true)
+if [ -n "$F6_NPM_VER" ] && [ "$F6_NPM_VER" = "$SSOT_VERSION" ]; then
+  F6_RELEASED=true
+  F6_WHY="npm registry @sofagent/audit@${SSOT_VERSION} 已发布${F6_WHY:+（${F6_WHY}）}"
+fi
+
+if $F6_RELEASED; then
+  F6_PENDING_HITS=$(grep -nE '待发版' "${PROJECT_ROOT}/docs/ROADMAP.md" 2>/dev/null || true)
+  if [ -n "$F6_PENDING_HITS" ]; then
+    echo -e "  ${RED}✗${NC} 已发版态（${F6_WHY}）但 ROADMAP.md 仍有「待发版」标注——发版 SOP 阶段十后忘改状态："
+    echo "$F6_PENDING_HITS" | head -3 | sed 's/^/      /'
+    ERRORS=$((ERRORS + 1))
+  else
+    echo -e "  ${GREEN}✓${NC} 已发版态（${F6_WHY}），ROADMAP 无残留「待发版」标注"
+    CHECKS=$((CHECKS + 1))
+  fi
+else
+  echo -e "  ${GREEN}✓${NC} 开发态（tag/npm 均未达 v${SSOT_VERSION}）——「待发版」标注合法，跳过"
+  CHECKS=$((CHECKS + 1))
+fi
+echo ""
+
 # ── 汇总 ──────────────────────────────────────────────────────
 echo -e "${BOLD}${CYAN}═══════════════════════════════════════════════════════════${NC}"
 if [[ ${ERRORS} -eq 0 ]]; then

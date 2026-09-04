@@ -1254,13 +1254,24 @@ else
   # golden set 存在且有 sha256 校验
   [ -f "$_S144_EVAL/data/golden-set.yaml" ] || S144_OK=false
   [ -f "$_S144_EVAL/data/golden-set.yaml.sha256" ] || S144_OK=false
+  # v1.4.5 (T9/P2)：sha256 名存实亡修复——此前只查 .sha256 文件存在，从未比对
+  # 实际哈希（golden-set.yaml 被改而 sidecar 不更新时场景依然绿）。
+  # 现做真实比对：sidecar 64-hex vs shasum 实算，不一致即 FAIL。
+  if [ -f "$_S144_EVAL/data/golden-set.yaml.sha256" ]; then
+    _S144_EXPECTED=$(tr -d '[:space:]' < "$_S144_EVAL/data/golden-set.yaml.sha256")
+    _S144_ACTUAL=$(shasum -a 256 "$_S144_EVAL/data/golden-set.yaml" 2>/dev/null | awk '{print $1}')
+    if [ "$_S144_EXPECTED" != "$_S144_ACTUAL" ]; then
+      fail "golden-set.yaml sha256 不匹配（sidecar ${_S144_EXPECTED:0:12}… vs 实算 ${_S144_ACTUAL:0:12}…）——数据被改动未更新校验"
+      S144_OK=false
+    fi
+  fi
   # 占位符替换机制存在（A2/A9 fixture 安全）
   grep -q "PLACEHOLDER_MAP\|SK_PREFIX\|INJ_PHRASE" "$_S144_EVAL/src/eval-runner.ts" 2>/dev/null || S144_OK=false
   # core 路径常量声明 EVAL/AB_TEST
   grep -q "EVAL_DIR\|AB_TEST_DIR" "$_S144_CORE" 2>/dev/null || S144_OK=false
   # think 进化引擎接通
   grep -q "generateThinkFromEval" "$PROJECT_ROOT/engine/think/src/think-generator.ts" 2>/dev/null || S144_OK=false
-  if $S144_OK; then pass "eval CLI + golden set + 占位符 + 路径常量 + think 接通全部存在"; else fail "eval/ab-test 补全缺少关键文件（CLI/golden-set/占位符/路径常量/think 接通之一）"; fi
+  if $S144_OK; then pass "eval CLI + golden set（sha256 实测一致）+ 占位符 + 路径常量 + think 接通全部存在"; else fail "eval/ab-test 补全缺少关键文件（CLI/golden-set/哈希比对/占位符/路径常量/think 接通之一）"; fi
 fi
 WIKI="$PROJECT_ROOT/docs/WIKI.md"; S145_OK=true
 [ -f "$WIKI" ] || { fail "WIKI.md 不存在"; S145_OK=false; }

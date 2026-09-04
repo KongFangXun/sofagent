@@ -141,6 +141,37 @@ if [ "$MINIMAL" = false ]; then
 fi
 
 # ════════════════════════════════════════
+# 2b. 零接线导出门禁（check-unwired-exports.sh · v1.4.5 T11/A2）
+# ════════════════════════════════════════
+if [ "$MINIMAL" = false ]; then
+  echo -e "\n${BOLD}── 2b. 零接线导出门禁 ──${NC}"
+  if bash tools/check/check-unwired-exports.sh >/dev/null 2>&1; then
+    check_pass "check-unwired-exports.sh（@public 符号全接线或已登记豁免）"
+  else
+    check_fail "check-unwired-exports.sh 发现零接线导出"
+    bash tools/check/check-unwired-exports.sh 2>&1 | grep "✗" | head -5 | sed 's/^/    /'
+  fi
+fi
+
+# ════════════════════════════════════════
+# 2c. 模板漂移总闸（check-template-drift.sh · v1.4.5 T12/A2 同族）
+#   三断言：hook 部署文件版本 / 插件双 manifest / core dist 编译时效
+#   退出码 2（脚本自身错误）也算 FAIL——检查器失明不得放行
+# ════════════════════════════════════════
+if [ "$MINIMAL" = false ]; then
+  echo -e "\n${BOLD}── 2c. 模板漂移总闸 ──${NC}"
+  _drift_output=$(bash tools/check/check-template-drift.sh 2>&1)
+  _drift_rc=$?
+  if [ "$_drift_rc" -eq 0 ]; then
+    check_pass "check-template-drift.sh（模板三断言 vs SSOT 一致）"
+  else
+    check_fail "check-template-drift.sh 发现模板漂移（rc=${_drift_rc}）"
+    echo "$_drift_output" | grep "✗" | head -5 | sed 's/^/    /'
+  fi
+  unset _drift_output _drift_rc
+fi
+
+# ════════════════════════════════════════
 # 3. 文档检查（check-docs.sh）
 # ════════════════════════════════════════
 if [ "$MINIMAL" = false ]; then

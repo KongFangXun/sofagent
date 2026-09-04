@@ -551,6 +551,36 @@ for pkg in audit core orchestrator daemon; do
   fi
 done
 
+# ── B11 (v1.4.5 T13)：docs/DEVELOPMENT.md orchestrator 测试数对账 ──
+# 背景：DEVELOPMENT.md 激活链段声称「orchestrator 包（NNNN 测试）」却从未被任何门禁
+# 校验——文档写 1642 时实际已 1703（漂移 61 无人发现）。本段把该声称纳入对账：
+#   - 格式：「orchestrator 包（NNNN 测试，实测见 `tools/check/test-count.sh`）」
+#   - 实际值：从 test-count.sh 全量输出（TC_OUT）的逐包明细行提取（与 audit 同源），
+#     避免单独再跑一遍 orchestrator 测试（30s+）。
+#   - grep 未命中 → FAIL（与 README 校验段一致，禁止静默跳过——声称行被改写也要显式暴露）。
+DEV_ORCH_LINE=$(grep -nE 'orchestrator 包（[0-9]+ 测试' docs/DEVELOPMENT.md 2>/dev/null | head -1)
+if [ -n "$DEV_ORCH_LINE" ]; then
+  DEV_ORCH_CLAIMED=$(echo "$DEV_ORCH_LINE" | grep -oE '包（[0-9]+ 测试' | grep -oE '[0-9]+')
+  DEV_ORCH_LINENO=$(echo "$DEV_ORCH_LINE" | cut -d: -f1)
+  DEV_ORCH_ACTUAL=$(echo "$TC_OUT" | sed $'s/\033\[[0-9;]*m//g' | grep "orchestrator:.*passed" | grep -oE '[0-9]+ passed' | grep -oE '[0-9]+' | head -1)
+  [ -z "$DEV_ORCH_ACTUAL" ] && DEV_ORCH_ACTUAL=0
+  if [ "$QUIET" = false ]; then
+    echo -e "  校验 DEVELOPMENT.md orchestrator（行 ${DEV_ORCH_LINENO}）..."
+  fi
+  if [ "$DEV_ORCH_CLAIMED" = "$DEV_ORCH_ACTUAL" ]; then
+    if [ "$QUIET" = false ]; then
+      echo -e "  ${GREEN}✓ DEVELOPMENT.md orchestrator：${DEV_ORCH_CLAIMED}${NC}"
+    fi
+    ((PASS++)) || true
+  else
+    echo -e "  ${RED}✗ DEVELOPMENT.md（行 ${DEV_ORCH_LINENO}）：orchestrator 声称 ${DEV_ORCH_CLAIMED}，实际 ${DEV_ORCH_ACTUAL}——请更新文档或确认测试增量${NC}"
+    ((FAIL++)) || true
+  fi
+else
+  echo -e "  ${RED}✗ docs/DEVELOPMENT.md 未找到「orchestrator 包（N 测试」声明（grep 未命中 → FAIL，禁止静默跳过）${NC}"
+  ((FAIL++)) || true
+fi
+
 
 # LIMITATIONS.md — 多行检查（"审计核心 NNN 个、全 workspace NNN 个" 可能出现多次）
 LIMITATIONS_ALL=$(grep -nE '审计核心 [0-9]+ 个、全 workspace [0-9]+ 个' docs/LIMITATIONS.md 2>/dev/null)
@@ -601,7 +631,21 @@ else
   CL_LINENO=$(echo "$CHANGELOG_LINE" | cut -d: -f1)
   # 防一：锚定行版本核对——锚到旧版本行 = 最新版绕过校验，直接 FAIL（先于数字解析）
   CL_LINE_VER=$(echo "$CHANGELOG_LINE" | grep -oE '\*\*v[0-9]+\.[0-9]+\.[0-9]+\*\*' | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' || echo "")
-  if [ "$CL_LINE_VER" != "$CUR_VERSION" ]; then
+  # 待发版态兼容：CHANGELOG 已收录下一版「⏳ 待发版」条目而 package.json 尚未 bump——
+  # 此为发版流程固有次序（条目先行、版本号发版时统一 bump），非格式漂移。
+  # 判定：锚定行含「待发版」且版本号恰为 CUR_VERSION 的下一补丁位 → 放行（数字照常校验）。
+  CL_PENDING_OK=false
+  if echo "$CHANGELOG_LINE" | grep -q '待发版'; then
+    CUR_PATCH=$(echo "$CUR_VERSION" | cut -d. -f3)
+    PENDING_VER="${CUR_VERSION%.*}.$((CUR_PATCH + 1))"
+    if [ "$CL_LINE_VER" = "$PENDING_VER" ]; then
+      CL_PENDING_OK=true
+      if [ "$QUIET" = false ]; then
+        echo -e "  ${YELLOW}⚠ CHANGELOG 锚定 v${CL_LINE_VER}（待发版态，package.json=${CUR_VERSION}）——放行，数字照常校验${NC}"
+      fi
+    fi
+  fi
+  if [ "$CL_LINE_VER" != "$CUR_VERSION" ] && [ "$CL_PENDING_OK" = false ]; then
     echo -e "  ${RED}✗ CHANGELOG.md（行 ${CL_LINENO}）：锚定到 v${CL_LINE_VER:-未知} 行，但当前版本是 ${CUR_VERSION}——最新版索引行未命中锚定正则（多批构成格式漂移？），旧版行不得替代校验${NC}"
     ((FAIL++)) || true
   else

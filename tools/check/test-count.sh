@@ -56,6 +56,16 @@ NC='\033[0m'
 
 # ── 收集有 test script 的 workspace 包（与 npm test --workspaces --if-present 语义一致）──
 # 注意：macOS /bin/bash 是 3.2，无 mapfile 内建，用 command substitution + herestring 兼容写法
+#
+# v1.4.5 (T8/R3) 口径说明——实测「12 包有 test script」与两处对账口径的关系：
+#   本脚本遍历 engine/ 下「单层有 package.json 且声明 test script」的包，实测 12
+#   个（audit/core/daemon/eval/harness/mcp/ontology/orchestrator/rules/skillopt/
+#   think/ab-test）。check-test-count.sh:214 的「13 引擎包」数的是 package.json
+#   workspaces 数组条目（含无 test script 的 hooks/），两口径不同源但都稳定：
+#   新增 workspace 包时两处同步膨胀，不会一边多算一边少算。
+#   嵌套包（如 engine/dsh-plugins/*/ 或 engine/openclaw-plugins/*/）不经
+#   readdirSync 单层遍历进入本清单——它们的测试由各自包内手动跑，
+#   不进 workspace 门禁汇总。
 PKG_LIST=$(node -e '
   const fs = require("fs"), path = require("path");
   const root = "engine";
