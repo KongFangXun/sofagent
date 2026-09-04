@@ -86,7 +86,7 @@ function listCustomOverrides(dir: string, maxFiles = 4): string[] {
  * 总注入量控制在 ~4000 token 以内。
  *
  * 加载顺序：
- * 1. 宪法层：SKILL.md（5 底线 + 8 铁律）
+ * 1. 宪法层：SKILL.md（4 底线 + 9 铁律）
  * 2. 规范层：fde.md（企业专属规则）
  * 3. 反思层：think.md（历史踩坑）
  * 3.5 用户层：custom/*-overrides.md（v1.2.1 新增——追加在官方规则之后，不是替换）

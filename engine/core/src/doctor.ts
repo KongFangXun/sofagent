@@ -426,6 +426,42 @@ export function runDoctor(projectDir: string = process.cwd(), options: { resetBa
   // v1.3.1 #14: doctor 只校验最近 500 条（而非全量）——大量历史记录时全量校验性能开销大，
   // doctor 是健康检查不应耗时过久。--verify-chain 命令仍全量校验。
   let auditLogOk = true;
+
+  // v1.4.5 (T3): 凭据文件权限巡检——federation.token 与 data.key 是凭据材料，
+  // 宽权限（组/其他可读）= 本机泄露面。文件不存在不告警（未启用联邦/加密是常态）。
+  console.log('\n── 凭据文件权限 [全局 ~/.sofagent/，非当前仓库] ──');
+  const CREDENTIAL_FILE_CHECKS: Array<{ label: string; path: string; repair: string }> = [
+    {
+      label: 'federation.token（联邦配对凭据）',
+      path: join(resolveHomeDir(), 'federation.token'),
+      repair: `chmod 600 ${join(resolveHomeDir(), 'federation.token')}`,
+    },
+    {
+      label: 'keys/data.key（数据加密密钥）',
+      path: join(resolveHomeDir(), 'keys', 'data.key'),
+      repair: `chmod 600 ${join(resolveHomeDir(), 'keys', 'data.key')}`,
+    },
+    {
+      label: '.sofagent-key（HMAC 签名密钥）',
+      path: join(homedir(), '.sofagent-key'),
+      repair: `chmod 600 ${join(homedir(), '.sofagent-key')}`,
+    },
+  ];
+  for (const check of CREDENTIAL_FILE_CHECKS) {
+    if (!existsSync(check.path)) continue; // 未启用该能力是常态，不告警
+    try {
+      const mode = statSync(check.path).mode & 0o777;
+      if ((mode & 0o077) !== 0) {
+        warn(`${check.label} 权限过宽（${mode.toString(8).padStart(3, '0')}，应为 600）——组/其他用户可读 = 凭据泄露面`);
+        repairHint(check.repair);
+      } else {
+        ok(`${check.label} 权限正确（600）`);
+      }
+    } catch {
+      warn(`${check.label} 权限不可读（stat 失败）——请检查文件状态`);
+    }
+  }
+
   try {
     const result = checkHistoryChainDetailed(undefined, 500);
     if (result.status === 'ok') {
@@ -553,8 +589,8 @@ export function runDoctor(projectDir: string = process.cwd(), options: { resetBa
     warn(`Ontology 完整性检查异常（已跳过，不影响其余检查）: ${err instanceof Error ? err.message : String(err)}`);
   }
 
-  // spec 关联覆盖率（纯展示——让「多少代码变更是 spec 驱动的」从不可见变为可运营数字）
-  console.log('\n── spec-first 覆盖率（纯展示）──');
+  // 规范关联覆盖率（纯展示——让「多少代码变更是规范驱动的」从不可见变为可运营数字）
+  console.log('\n── 规范先行覆盖率（纯展示）──');
   try {
     const recent = execFileSync('git', ['log', '-30', '--pretty=format:%H%x09%s'], { cwd: projectDir, encoding: 'utf8' })
       .trim().split('\n').filter((l) => l.length > 0);
@@ -576,7 +612,7 @@ export function runDoctor(projectDir: string = process.cwd(), options: { resetBa
       info('近 30 条 commit 无 engine/*/src 代码变更——spec 覆盖率不适用');
     } else {
       const rate = Math.round(((compliant + exempted) / codeCommits) * 100);
-      ok(`spec 关联覆盖率 ${rate}%（近 30 条：代码提交 ${codeCommits}，spec: 标记 ${compliant}，no-spec: 豁免 ${exempted}，无标记 ${codeCommits - compliant - exempted}）`);
+      ok(`规范关联覆盖率 ${rate}%（近 30 条：代码提交 ${codeCommits}，spec: 标记 ${compliant}，no-spec: 豁免 ${exempted}，无标记 ${codeCommits - compliant - exempted}）`);
     }
   } catch (err) {
     info(`spec 覆盖率统计不可用（非 git 仓库或 git 不可用）：${err instanceof Error ? err.message : String(err)}`);

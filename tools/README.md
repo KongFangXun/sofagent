@@ -25,7 +25,7 @@
 | `check/check-shell-injection.sh` | 命令注入静态扫（engine 源码面：execSync 模板插值/字符串拼接注入形态——v1.4.3 安全修复批防线） | CI |
 | `check/check-action-pins.sh` | GitHub Actions SHA pin 对账（uses: 完整 commit SHA 与行内注释 tag 指向一致性，离线降级 exit 0） | 发版前 / 定期 |
 | `check/check-storefront.sh` | 仓外门面对账（GitHub description/homepage/topics 数字 vs 仓内实数；离线 SKIP 可见不假绿） | 发版 SOP 阶段八/九 |
-| `check/check-spec-first.mjs` | spec-first 硬禁令门禁（engine/*/src 提交须含 `spec:` 关联或 `no-spec:` 豁免——观察期 WARN 不阻断） | 发版 SOP / 定期 |
+| `check/check-spec-first.mjs` | 规范先行硬禁令门禁（engine/*/src 提交须含 `spec:` 关联或 `no-spec:` 豁免——观察期 WARN 不阻断） | 发版 SOP / 定期 |
 | `check/check-deps.sh` | 关键依赖版本检查（npm 包版本对齐） | 发版前 / 定期 |
 | `check/check-dev-prompt.sh` | 开发日志/Dev Prompt 代码引用一致性校验 | 发版 SOP |
 | `check/public-api.mjs` | public API 变更检测门禁（@public 符号集 vs 基线，未 bump 即 FAIL；v1.3.9 四） | CI / 发版前 |

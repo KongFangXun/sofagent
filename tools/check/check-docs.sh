@@ -138,7 +138,7 @@ echo ""
 echo "=== 2. 术语一致性检查 ==="
 # 检查三处关键文件的铁律编号
 # v1.1.4 起仅 A1-A14 / A1-A11 是过时编号（早期规则数）；
-# "5 底线" "8 铁律" 是当前正确结构，不算过时
+# "4 底线" "9 铁律" 是当前正确结构，不算过时
 for file in SKILL/SKILL.md HANDBOOK.md DEVELOPMENT.md; do
   if [ -f "$file" ]; then
     COUNT=$(grep -cE "A1-A14|A1-A11" "$file" 2>/dev/null || true)

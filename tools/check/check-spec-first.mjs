@@ -1,8 +1,8 @@
 #!/usr/bin/env node
-// check-spec-first.mjs — spec-first 硬禁令门禁（只提示不阻断）
+// check-spec-first.mjs — 规范先行硬禁令门禁（只提示不阻断）
 //
 // 单一事实源纪律的工程化：涉及 engine/*/src 的代码提交，commit message
-// 须含 spec 关联标记（`spec: <路径>`）或显式豁免（`no-spec: <理由>`）。
+// 须含规范关联标记（`spec: <路径>`）或显式豁免（`no-spec: <理由>`）。
 // 无标记无豁免 → WARN（新机制渐进纪律，跑一个版本观察误报率再议升级 FAIL）。
 //
 // 识别规则：
@@ -87,7 +87,7 @@ if (violations.length > 0) {
     console.log(`    - ${v.sha.slice(0, 8)} ${v.subject.slice(0, 70)}`);
   }
   if (violations.length > 10) console.log(`    … 其余 ${violations.length - 10} 条省略`);
-  console.log('  ⚠ spec-first 纪律（WARN only · 观察期）：代码提交建议携带 spec: <路径> 或 no-spec: <理由>');
+  console.log('  ⚠ 规范先行纪律（WARN only · 观察期）：代码提交建议携带 spec: <路径> 或 no-spec: <理由>');
 } else {
   const rate = codeCommits > 0 ? 100 : 100;
   console.log(`  ✓ spec 关联覆盖率 ${rate}%（全部合规或豁免）`);

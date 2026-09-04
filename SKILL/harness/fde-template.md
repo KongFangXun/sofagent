@@ -114,7 +114,7 @@
 ### 页面格式
 - frontmatter 必填：`title` / `category` / `created` / `updated` / `sources`
 - 双向链接 `[[页面名]]`，目标不存在则标 TODO 不创建死链
-- 来源标注：`[来源: task/logs 2026-07-11]`
+- 来源标注：`[来源: task/logs YYYY-MM-DD]`
 
 ### Ingest 触发
 - daemon 检测 task/logs 新增 → 等待 30 分钟无新变化 → 触发知识提取 session

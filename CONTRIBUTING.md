@@ -24,7 +24,7 @@
 
 | 顺序 | 文件 | 看什么 | 约几分钟 |
 |:--:|------|------|:--:|
-| 1 | [SKILL.md](./SKILL/SKILL.md) | 5 底线 + 8 则铁律 | 3 min |
+| 1 | [SKILL.md](./SKILL/SKILL.md) | 4 底线 + 9 则铁律 | 3 min |
 | 2 | [CHANGELOG.md](./CHANGELOG.md) | 最新版本的变更 | 5 min |
 | 3 | [LIMITATIONS.md](./docs/LIMITATIONS.md) | 已知局限 | 2 min |
 
