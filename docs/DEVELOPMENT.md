@@ -179,7 +179,7 @@ FDE 部署 SOP 应遵循此顺序：
 **目录结构**：
 - `SKILL/harness/`：纯 MD 规则（平台无关，所有 Agent 平台共用）
   > 注意：`SKILL/harness/` 是产品层 markdown 闸门规则文本，与 npm 引擎包 `@sofagent/harness`（TypeScript 实现的 Harness 中间件）不是同一个东西——前者是规则，后者是实现。
-  - `SKILL.md`：主入口（宪法内联——4 底线 + 7 则铁律）
+  - `SKILL.md`：主入口（宪法内联——5 底线 + 8 则铁律）
   - 子 Skill（9 个 .md）：`entry-gate.md` / `task-aware.md` / `task-closure.md` / `loop-check.md` / `loop-evaluate.md` / `loop-exit.md` / `engage.md` / `engage-fde.md` / `fde.md`
   - `fde.md`：规范文件（企业运行规范，部署时复制到目标项目）
   - `data/`（4 个模板：think.md / orchestrator.md / task.md / fde.md）

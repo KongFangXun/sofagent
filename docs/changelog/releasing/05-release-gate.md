@@ -10,25 +10,25 @@
 | # | 步骤 |
 |:--:|------|
 | 一 | **脚本层直跑（零 LLM）**：acceptance-test.sh + check-version + check-docs + 锚点 + check-review-system + check-tool-health 依次跑，**全绿才进下一步** |
-| 二 | 开新 session 跑**判断层**：driver `--judgment-only` 一次启动四步（regression → coverage → consolidate → verdict），**跳过 acceptance 分片 LLM 复核**（v1.3.8 交付七起不再 --step 四步手工编排） |
+| 二 | 开新 session 跑**判断层**：driver `--judgment-only` 一次启动四步（regression → coverage → consolidate → verdict），**跳过 acceptance 分片 LLM 复核**（不再 --step 四步手工编排） |
 | 三 | verdict=PASS → 过「零信任复验三件套」→ 进阶段六 |
-| 四 | verdict=FAIL → **循环即停**（v1.3.8 交付七起 F 修复链默认关闭，无 f-* 产物）→ 回阶段四修复后重跑（重跑前先过「重跑前置三查」，见下）。显式 `--auto-fix` 才进修复链（最多 3 轮） |
+| 四 | verdict=FAIL → **循环即停**（F 修复链默认关闭，无 f-* 产物）→ 回阶段四修复后重跑（重跑前先过「重跑前置三查」，见下）。显式 `--auto-fix` 才进修复链（最多 3 轮） |
 
-> **为什么分层（run-04 实测 2026-08-19）**：driver 全流程实测 30.7 万 token / 58 分钟，其中 **61%（18.7 万）花在 acceptance 12 分片 LLM 复核**——复核的是脚本 `exit 0 + 303/303 SUMMARY`（v1.3.8 时点断言数，现每版变化）的确定性结果，没有主观判断空间，盲审增值≈0。脚本层零 token 直跑拿到同样保证；driver 只保留有判断空间的 regression 语义审查 + coverage 交叉 + 终裁（约 9 万 token / 20 分钟）。**独立性不伤**：盲审保留在真正需要判断的环节。
+> **为什么分层**：driver 全流程曾实测约 61% token 花在 acceptance 分片 LLM 复核——复核的是脚本 `exit 0 + SUMMARY`（断言数每版变化）的确定性结果，没有主观判断空间，盲审增值≈0。脚本层零 token 直跑拿到同样保证；driver 只保留有判断空间的 regression 语义审查 + coverage 交叉 + 终裁。**独立性不伤**：盲审保留在真正需要判断的环节。
 
 > **为什么开新 session**：阶段三~五在开发 session 做完后，上下文已经很长。判断层需要 15-20 分钟，期间只需执行命令 + 持续轮询 + 汇报——不需要开发 session 的上下文。开一个干净的 session，上下文短、不互相干扰。
 >
-> **为什么必须「持续轮询」而非「等后台通知」（2026-08-20 用户拍板修正）**：v1.3.8 曾一度改为「run_in_background 等自动通知」——但等通知时 session 处于空闲态，**用户在界面上看不到任何进展反馈**，会误以为卡死。**持续轮询的首要目的是 session 可见性**（界面一直显示「在跑」），其次才是顺带发现挂起（心跳冻结 >90s 探活）。token 成本是次要考量——20 分钟约 10 轮轻量 status.json 读取，成本可忽略。判断层与 fresh-eyes-loop 均适用此语义。
+> **为什么必须「持续轮询」而非「等后台通知」**：挂后台等通知时 session 处于空闲态，**用户在界面上看不到任何进展反馈**，会误以为卡死。**持续轮询的首要目的是 session 可见性**（界面一直显示「在跑」），其次才是顺带发现挂起（心跳冻结 >90s 探活）。token 成本是次要考量——20 分钟约 10 轮轻量 status.json 读取，成本可忽略。判断层与 fresh-eyes-loop 均适用此语义。
 
 ---
 
 ## release-gate-loop 新 session Prompt 模板
 
 > AI 输出 prompt 时必须把所有占位符替换为实际值（项目路径、版本号、runDir），不得残留花括号。
-> **交付形式铁律**：交接 prompt **直接在对话中输出可复制的文本块，禁止落盘成文件**（2026-08-30 用户拍板）——用户复制粘贴到新 session 执行，不经过桌面/仓库中转。
+> **交付形式铁律**：交接 prompt **直接在对话中输出可复制的文本块，禁止落盘成文件**——用户复制粘贴到新 session 执行，不经过桌面/仓库中转。
 
 ```
-在 sofagent 项目（/Users/kongfangxun/Workbuddy/sofagent）中，执行 v1.4.2 的 release-gate-loop（发版闸门，脚本层 + 判断层）。
+在 sofagent 项目（/Users/kongfangxun/Workbuddy/sofagent）中，执行 vX.Y.Z 的 release-gate-loop（发版闸门，脚本层 + 判断层）。
 
 先读 `FORGE/SKILL/release-gate-loop/SKILL.md` 拿到完整的「Session 监控协议」，然后按协议执行：
 
@@ -46,9 +46,9 @@
    ③ 报告启动时刻，避开工作日 14:00-18:00 GLM 3 倍价时段
 3. 判断层（driver --judgment-only 一次启动四步，跳过 acceptance 分片 LLM 复核，约 20 分钟）：
    Bash 工具 run_in_background:true + dangerouslyDisableSandbox:true：
-   cd /Users/kongfangxun/Workbuddy/sofagent && source FORGE/env.local && node FORGE/src/release-gate-driver.mjs --judgment-only --target v1.4.2
-   ⚠️ v1.3.8 交付七：--judgment-only 一次进程串行四步（regression → coverage → consolidate → verdict），
-   替代原 --step 四步手工编排（每步一进程）。runDir 由 driver 启动日志打印，全程复用。
+   cd /Users/kongfangxun/Workbuddy/sofagent && source FORGE/env.local && node FORGE/src/release-gate-driver.mjs --judgment-only --target vX.Y.Z
+   ⚠️ --judgment-only 一次进程串行四步（regression → coverage → consolidate → verdict），
+   替代 --step 四步手工编排（每步一进程）。runDir 由 driver 启动日志打印，全程复用。
    ⚠️ verdict=FAIL 时循环即停（F 修复链默认关闭，无 f-* 产物），如实汇报后等主 session 决策。
    ⚠️ 运行期间仓库冻结：driver 运行窗口内不 commit / 不改文件 / 不收编——HEAD 变动会击穿 precheck 快照
    与实际仓库状态的一致性，产出时间差假 FAIL（precheck 拍的修复前一瞬）。
@@ -86,11 +86,11 @@ verdict=FAIL/ERROR 修复后重跑判断层**之前**必查三项，任一跳过
 
 ---
 
-## 🔴 运行期间仓库冻结纪律（v1.3.8 run-03 教训 · 2026-08-20 拍板）
+## 🔴 运行期间仓库冻结纪律
 
 **判断层运行期间（含脚本层直跑），仓库必须冻结**——所有 session 暂停对 sofagent 仓库的任何写入（commit / push / 文档改动 / 收编动作）。
 
-- **事故实证**：run-03 运行窗口（31.5 分钟）内 HEAD 被改了 **8 次**（主 session 5 次提交 + 并发优化 session 3 次）——driver 运行中仓库持续被写，coverage/consolidate/verdict 三个 worker 全部崩溃（exit 1 + 一度 137 OOM），31.5 分钟白跑，verdict 未产出
+- **风险实证**：曾出现运行窗口内 HEAD 被并发 session 多次改写——driver 运行中仓库持续被写，coverage/consolidate/verdict 三个 worker 全部崩溃（exit 1 + OOM），整轮白跑，verdict 未产出
 - **机制**：driver 的 worker 在运行中读工作区文件 + 可能做 git 操作，工作树/HEAD 变化会撞上文件读写竞态；多 worker 并发 + 系统内存压力叠加 → OOM
 - **执行方式**：启动判断层前，主 session 向所有并发 session 声明「仓库冻结 N 分钟」；运行期间只允许读（grep/读文件/gh api），不允许写；verdict 出来后解除冻结
 - **判 FAIL 分诊**：driver 崩了先查「运行窗口内 HEAD 是否被动过」——`git log --since="<启动时间>" --until="<结束时间>"`，改动 >0 即环境问题优先（重跑），0 才排查代码
@@ -102,9 +102,9 @@ verdict=FAIL/ERROR 修复后重跑判断层**之前**必查三项，任一跳过
 | 结果 | 下一步 |
 |------|--------|
 | **verdict = PASS**（regression + coverage 全 PASS，acceptance 已由脚本层保证） | 过「零信任复验三件套」（见下）→ 全过才进阶段六 |
-| **verdict = FAIL** | 循环即停（v1.3.8 起 F 链默认关闭，无 f-* 产物）→ 根据报告定位问题 → **回阶段四** → 修复后重跑本阶段 |
+| **verdict = FAIL** | 循环即停（F 链默认关闭，无 f-* 产物）→ 根据报告定位问题 → **回阶段四** → 修复后重跑本阶段 |
 | **需要 driver 内自动修复** | 显式加 `--auto-fix` 启动（f-diagnose → f-fix → f-audit，最多 3 轮）——默认不开，盲审独立性与修复上下文不混跑 |
-| **driver 反复 FAIL 且复验全为检查器债** | 走「手工裁决路径」（见下）——v1.3.7 实操 run-01/04 两轮 FAIL 均改判检查器债已修，主 session 手工裁决 PASS |
+| **driver 反复 FAIL 且复验全为检查器债** | 走「手工裁决路径」（见下） |
 
 > driver 的 regression 步骤会自动处理「⏰ 待发版」标注的检查项（git tag / npm registry / 全局二进制版本）——这些在检查阶段必然不满足，标 ⏳ 不标 FAIL。
 
@@ -117,15 +117,15 @@ verdict=FAIL/ERROR 修复后重跑判断层**之前**必查三项，任一跳过
 3. **独立复核对冲突**——手工裁决是**有上下文裁决**（主 session 知道自己修了什么），独立性弱于 driver 盲审，必须交给**无上下文 session**（如监控 session）复查关键判定后才生效
 
 **手工裁决内容**（三者全过才算 PASS）：
-- regression 94 维「driver 同款语义亲跑」全绿（维度数每版变化，以 `FORGE/playbook/regression-checklist.md` 头部「当前 N 维」为准——v1.4.0 修正：原写「89 维」是 v1.3.8 时点数，已过时；不是只跑脚本——按维度判定逻辑逐维过）
+- regression 全维度「driver 同款语义亲跑」全绿（维度数每版变化，以 `FORGE/playbook/regression-checklist.md` 头部「当前 N 维」为准；不是只跑脚本——按维度判定逻辑逐维过）
 - coverage 关键词矩阵全命中
-- acceptance 全量 EXIT=0（`bash FORGE/playbook/acceptance-test.sh` 尾部 `SUMMARY: N/N passed`，**断言数每版变化，勿写死历史数字**——v1.4.0 修正：原写「303/303」是 v1.3.8 断言数，已过时）
+- acceptance 全量 EXIT=0（`bash FORGE/playbook/acceptance-test.sh` 尾部 `SUMMARY: N/N passed`，**断言数每版变化，勿写死历史数字**）
 
 **记录纪律**：进度追踪必须写「手工裁决 PASS（driver N 轮 FAIL + 复验改判记录）」，**禁止写成「loop PASS」**——手工裁决与 driver 盲审是两个不同的保证等级，混淆即造假。
 
-## 🔴 PASS 零信任复验三件套（v1.3.6 教训 · driver 自报 PASS 不可直接信）
+## 🔴 PASS 零信任复验三件套（driver 自报 PASS 不可直接信）
 
-> v1.3.6 发版时 release-gate 连续两轮自报 PASS 均为假（f-fix 撞熔断降级零 commit，f-audit 对空 diff 审计必全绿，driver 误判「FAIL→PASS 收敛」）——全靠人工复验抓住。第三重校验（`git rev-list --count` 零 commit 拦截）已在 v1.3.6 代码层根治，但判定防线不依赖单点：
+> 曾出现 driver 连续两轮自报 PASS 均为假（f-fix 撞熔断降级零 commit，f-audit 对空 diff 审计必全绿，driver 误判「FAIL→PASS 收敛」）——全靠人工复验抓住。第三重校验（`git rev-list --count` 零 commit 拦截）已在代码层根治，但判定防线不依赖单点：
 
 ```bash
 # ① verdict.md 主体裁决（不信 status.json，不信 driver 汇报——看产物文件）
@@ -138,11 +138,11 @@ ls <runDir>/f-* 2>/dev/null && git -C <主仓> rev-list --count <基线SHA>..<F�
 
 **任一不过 → 按 FAIL 处理**（回阶段四）。F 链从未触发（无 f-* 产物）时 ③ 跳过——「没进修复链」与「修复链零产出」是两回事，后者才是假 PASS 特征。
 
-## 监控 session 与主 session 的分工协议（v1.3.6 实战模式 SOP 化）
+## 监控 session 与主 session 的分工协议
 
 | 角色 | 职责 | 禁止 |
 |------|------|------|
 | 监控 session（新开） | 启动 driver / **持续轮询（120s/轮，session 可见性）** / 最终 3-5 行汇报 | 不干涉 driver、不改代码、不探索源码 |
 | 主 session | 收到汇报后**零信任复验**：FAIL 清单逐维真跑分辨「仓库问题 vs 检查器问题」（退出码语义与写死签名是检查器误报两大源）；PASS 过三件套 | 不直接采信 run 汇报结论 |
 
-> v1.3.6 三轮循环实证：run-08 的 7 个 FAIL 中 5 个是维度脚本自身缺陷、run-09 的 6 项全是检查基建问题——**逐维复跑这一步发现了全部真问题，跳过它会把检查器 bug 当仓库 bug 修**。
+> 实证：多轮 FAIL 复验中过半是维度脚本自身缺陷/检查基建问题——**逐维复跑这一步发现了全部真问题，跳过它会把检查器 bug 当仓库 bug 修**。

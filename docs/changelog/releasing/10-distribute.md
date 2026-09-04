@@ -12,14 +12,13 @@ head -3 SKILL/SKILL.md   # 期望 slug: sofagent
 
 # ── ClawHub 分发 ──
 # 发布前先查现有版本（同版本号不可覆盖，冲突则递增版本号）
-# 🔴 verify 快照纪律（v1.4.4 实战）：security.status_not_clean 可能是历史版本遗留的既有状态——
+# 🔴 verify 快照纪律：security.status_not_clean 可能是历史版本遗留的既有状态——
 #    发布前先落盘快照（verify 输出存档），发布后对照，新引入 reasons 才处置
 clawhub skill verify sofagent 2>&1 | grep version
 # 清理 .DS_Store（macOS 残留会触发 security 扫描 not_clean）
 find ./SKILL -name '.DS_Store' -delete
 # 发布（必须带 --changelog，否则 ClawHub 默认 1.0.0 自增，不走 SKILL.md version）
-# 🔴 必须带 --name（2026-08-21 教训：缺 --name 时 ClawHub 显示名回退为 "SKILL"，
-#   不读 SKILL.md frontmatter 的 displayName——重发修复见 v1.3.9 发布记录）
+# 🔴 必须带 --name（缺 --name 时 ClawHub 显示名回退为 "SKILL"，不读 SKILL.md frontmatter 的 displayName）
 clawhub skill publish ./SKILL --slug sofagent --name "FDE Skill" --version <版本号> --changelog "vX.Y.Z"
 
 # ── SkillHub 分发 ──
@@ -37,23 +36,23 @@ skillhub publish "$tmpdir/SKILL" --version <版本号> --changelog "vX.Y.Z: 简�
 
 ---
 
-## 步骤二：DSH plugin 分发（v1.4.0 起 · 每版必做）
+## 步骤二：DSH plugin 分发（每版必做）
 
-> **背景（2026-08-21 拍板）**：SkillHub 现已支持 DeepSeek Harness plugin 分发。v1.4.0 起 sofagent 的 DSH plugin 家族（`cordis-plugin-sofagent-*`，**9 个**（v1.4.0 修正：原评估 10 个，实际交付 9 个——audit/rollback/inject/evolve/ontology/commons/gate/daemon/fde），见 v1.4.0 开发日志「DSH 插件家族」）**每版都要在 SkillHub 发布**——与 SKILL 分发并列，是 DSH 生态的发现层补充（npm 发布仍走主线，两者并行不互替）。
+> **背景**：SkillHub 支持 DeepSeek Harness plugin 分发。sofagent 的 DSH plugin 家族（`cordis-plugin-sofagent-*`，**9 个**：audit/rollback/inject/evolve/ontology/commons/gate/daemon/fde）**每版都要在 SkillHub 发布**——与 SKILL 分发并列，是 DSH 生态的发现层补充（npm 发布仍走主线，两者并行不互替）。
 
 ```bash
-# 发布前确认 plugin 家族清单（SSOT = v1.4.0 开发日志 plugin 家族表）
-# 🔴 实际目录是 engine/dsh-plugins/cordis-plugin-sofagent-*（v1.4.0 品牌化改名后，前缀 cordis-plugin-sofagent-）
+# 发布前确认 plugin 家族清单（SSOT = engine/dsh-plugins/ 目录实数 + 各版开发日志 plugin 家族表）
+# 🔴 实际目录是 engine/dsh-plugins/cordis-plugin-sofagent-*（前缀 cordis-plugin-sofagent-）
 PLUGIN_DIRS=$(ls -d engine/dsh-plugins/cordis-plugin-sofagent-* 2>/dev/null || echo "")
 
-# 🔴 v1.4.0 实测坑（发布前必读）：
-#   ① 各 plugin 目录已含静态 SKILL.md（v1.4.0 发版收尾补齐，skillhub 直接读它发布——
-#      不再需要临时目录组装）。⚠️ bump 版本时必须同步 SKILL.md frontmatter 的 version
+# 🔴 发布坑（发布前必读）：
+#   ① 各 plugin 目录已含静态 SKILL.md（skillhub 直接读它发布——不再需要临时目录组装）。
+#      ⚠️ bump 版本时必须同步 SKILL.md frontmatter 的 version
 #      字段（与 package.json 同步——bump-version.sh 覆盖范围内，见检查项）
 #   ② 发布限流：skillhub 连续发布报「发布频率过高」——每次 publish 之间 sleep 20；
-#      偶发仍命中限流时等 60s 补发该款即可（v1.4.1 实测 daemon 款 20s 间隔被限、60s 补发成功）
+#      偶发仍命中限流时等 60s 补发该款即可
 #   ③ changelog 中文禁止按字节截断（head -c 炸 UTF-8 0xe5）——用 node 按码点处理
-# 逐 plugin 发布（版本号与 sofagent 主线版本对齐，见 v1.4.0「版本同步机制」）
+# 逐 plugin 发布（版本号与 sofagent 主线版本对齐）
 for pdir in $PLUGIN_DIRS; do
   name=$(basename "$pdir")
   # 清理 .DS_Store / .png（与 SkillHub SKILL 分发同规矩）
@@ -68,25 +67,25 @@ done
 
 > **DSH plugin 分发铁律**：
 > - 发布源 = 各 cordis-plugin 包目录（`engine/dsh-plugins/cordis-plugin-sofagent-*`，不是 SKILL/，SKILL 是方法论分发，plugin 是引擎能力分发）
-> - 版本号 = 与 sofagent 主线版本对齐（v1.4.0 → 各 plugin v0.1.0 起步；DSH Cordis 协议 breaking change 时 bump major）
+> - 版本号 = 与 sofagent 主线版本对齐（DSH Cordis 协议 breaking change 时 bump major）
 > - 每版发版都要推，与 ClawHub/SkillHub SKILL 分发同等强制
-> - 分发通道真相源（v1.4.1 校准）：**DSH plugin 只走 SkillHub 单通道**——`skillhub install cordis-plugin-sofagent-*` 是唯一安装通道 + 发现层。npm 不发布插件（09-publish 步骤八清单只有 13 个 @sofagent 包，不含插件）——`dsh plugin add` 依赖的 npm 通道未开通，文档一律不得声称 npm 可装
+> - 分发通道真相源：**DSH plugin 只走 SkillHub 单通道**——`skillhub install cordis-plugin-sofagent-*` 是唯一安装通道 + 发现层。npm 不发布插件（09-publish 步骤八清单只有 13 个 @sofagent 包，不含插件）——`dsh plugin add` 依赖的 npm 通道未开通，文档一律不得声称 npm 可装
 
-### 步骤二·a：OpenClaw plugin 分发（v1.4.0 起 · 每版必做）
+### 步骤二·a：OpenClaw plugin 分发（每版必做）
 
-> **背景（2026-08-21 拍板）**：v1.4.0 的 OpenClaw plugin 家族（约束层四能力在 OpenClaw 生态的插件形态，见 v1.4.0 开发日志「OpenClaw plugin 家族」）**每版都要在 ClawHub plugins 发布**——与 DSH plugin 家族（SkillHub）分属两个生态：**ClawHub = OpenClaw 运行时 / SkillHub = DSH 运行时，各发各的**。clawhub CLI 已支持 `package publish`（code-plugin / bundle-plugin）。
+> **背景**：OpenClaw plugin 家族（约束层能力在 OpenClaw 生态的插件形态）**每版都要在 ClawHub plugins 发布**——与 DSH plugin 家族（SkillHub）分属两个生态：**ClawHub = OpenClaw 运行时 / SkillHub = DSH 运行时，各发各的**。clawhub CLI 已支持 `package publish`（code-plugin / bundle-plugin）。
 
-> **前置（v1.4.0 实测补充，缺一不可）**：
+> **前置（缺一不可）**：
 > - 登录态：先 `clawhub whoami` 确认已登录（发布走 ClawHub 账号）
 > - **源码已 push**：ClawHub 发布是 **source-linked 机制**——发布时从 `github:KongFangXun/sofagent@main:<plugin目录>` 拉源码，**必须先 push 到 GitHub 再发布**（dry-run 可验证映射，真实发布依赖远端文件存在）
 > - **`openclaw.build.openclawVersion` 必填**：package.json 的 `openclaw.build.openclawVersion`（= 当前 OpenClaw 版本，`npm view openclaw version` 查）——缺失时 dry-run 报「required for external code plugins」
-> - **双 manifest 版本一致（v1.4.1 实测拒收教训）**：ClawHub 校验 `package.json` 与 `openclaw.plugin.json` 两层 version 必须一致且 = 目标版本——bump 后先跑 `bash tools/check/check-version.sh`（9c 段已覆盖双 manifest），漂移直接被拒
+> - **双 manifest 版本一致**：ClawHub 校验 `package.json` 与 `openclaw.plugin.json` 两层 version 必须一致且 = 目标版本——bump 后先跑 `bash tools/check/check-version.sh`（9c 段已覆盖双 manifest），漂移直接被拒
 > - 先 `--dry-run` 验证格式与 source 映射，再真实发布
 
-> **publish 输出歧义判读（v1.4.1 实测）**：真实发布输出「Fix: Align the plugin version...」是**自动修复提示非拒收**——发布已成功。重试报「Version already exists」也是已发布证据。**定性唯一通道**：API 查证 `clawhub.ai/api/v1/packages/<name>?ownerHandle=<handle>` 的 `latestVersion` + `scanStatus` + `verification.sourceCommit`，勿据 CLI 输出盲改版本号。
+> **publish 输出歧义判读**：真实发布输出「Fix: Align the plugin version...」是**自动修复提示非拒收**——发布已成功。重试报「Version already exists」也是已发布证据。**定性唯一通道**：API 查证 `clawhub.ai/api/v1/packages/<name>?ownerHandle=<handle>` 的 `latestVersion` + `scanStatus` + `verification.sourceCommit`，勿据 CLI 输出盲改版本号。
 
 ```bash
-# 发布前确认 plugin 清单（SSOT = v1.4.0 开发日志 OpenClaw plugin 家族表）
+# 发布前确认 plugin 清单（SSOT = engine/openclaw-plugins/ 目录实数 + 各版开发日志家族表）
 # 🔴 实际目录是 engine/openclaw-plugins/sofagent-*（前缀 sofagent-，不是 openclaw-plugin-）
 OPENCLAW_PLUGIN_DIRS=$(ls -d engine/openclaw-plugins/sofagent-* 2>/dev/null || echo "")
 
@@ -113,11 +112,11 @@ done
 
 ---
 
-## 步骤二·b：GitHub Marketplace 分发（v1.4.2 起 · 每版必做）
+## 步骤二·b：GitHub Marketplace 分发（每版必做）
 
 > **背景**：sofagent 的 GitHub Action 形态（action.yml）已上线 GitHub Marketplace（listing：`github.com/marketplace/actions/sofagent`，Primary=Code review / Secondary=Utilities）。marketplace 版本列表跟随 release——**每次发新版，release 发布时必须勾选 Publish to Marketplace**，否则该版本不出现在 marketplace 版本页。
 >
-> **勾选自动延续核查（v1.4.4 实战）**：v1.4.2 起每版勾选后 listing 关联自动延续——release 发布后先 curl 核查版本页是否已含本版号，含即免网页操作：`curl -s https://github.com/marketplace/actions/sofagent | grep vX.Y.Z`。未含才走下方网页操作。
+> **勾选自动延续核查**：每版勾选后 listing 关联自动延续——release 发布后先 curl 核查版本页是否已含本版号，含即免网页操作：`curl -s https://github.com/marketplace/actions/sofagent | grep vX.Y.Z`。未含才走下方网页操作。
 
 **操作（release 编辑页，网页操作——仅当上方核查未见本版时）**：
 

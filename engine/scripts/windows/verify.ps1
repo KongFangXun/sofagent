@@ -111,7 +111,7 @@ if ($Platform -eq "workbuddy") {
     if ((Test-Path $wbSkill) -and (Get-Item $wbSkill).Length -gt 0) {
         # PS 5.1 Select-String -Path 用系统编码读文件，改用 .NET API 读 UTF-8
         $wbSkillContent = [System.IO.File]::ReadAllText($wbSkill)
-        if ($wbSkillContent -match "4 底线|6 则铁律") { Check-Pass "SKILL.md 已部署且含宪法（4底线+6则铁律内联）" } else { Check-Warn "SKILL.md 已部署但宪法内容缺失" }
+        if ($wbSkillContent -match "5 底线|8 则铁律") { Check-Pass "SKILL.md 已部署且含宪法（5底线+8则铁律内联）" } else { Check-Warn "SKILL.md 已部署但宪法内容缺失" }
     } else { Check-Warn "SKILL.md 未部署到 ~/.workbuddy/skills/sofagent/" }
     $wbRules = "$up\.workbuddy\fde.md"
     if ((Test-Path $wbRules) -and (Get-Item $wbRules).Length -gt 0) { Check-Pass "fde.md 已部署（$(Get-CharCount $wbRules) 字符）" } else { Check-Warn "fde.md 未部署到 ~/.workbuddy/" }
