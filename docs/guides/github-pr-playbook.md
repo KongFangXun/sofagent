@@ -40,6 +40,21 @@
 
 **同一清单内**：先读 README 分节，把条目放进**最窄的对口节**（Security & Governance > 泛 Tools 节）。
 
+### 1.4 贡献角度分类（从「投 PR」到「做贡献」）
+
+> 背景：纯格式型投稿（按格式加一行）多数静默等待；增值型 PR 合并率明显更高——0xsline #547（新增双语 Security & Governance 节）维护者亲合、Dominic789654 #368（既有条目事实修正）获「Verified … factual. Merging」。每个目标仓先诊断仓况，选对角度再动手。
+
+| 角度 | 适用仓况 | 动作 | 先例/依据 | 成本 |
+|---|---|---|---|---|
+| ① 新增缺失节 | 清单缺 Governance/Audit/Sandbox 等节，sofagent 恰好是该节自然首条 | 建「Security & Governance」类新节 + sofagent 为首条目（双语仓两文件同建） | 0xsline #547 ✅ 亲合 | 中 |
+| ② 既有条目增强 | 我们已收录的仓 | 合并后回访：优化描述精度、补 docs 链接、加星徽章 | 待验证 | 低 |
+| ③ 事实修正 | 收录了 sofagent 但描述过时/有误的仓 | 只改描述不动结构，PR 附核实依据 | Dominic #368 ✅ | 低 |
+| ④ 纯社区贡献 | 高价值仓（⭐1k+）想刷信任分 | 补**别人的**缺失知名条目、修 301 改名链（cosmetic 但安全） | — | 中 |
+| ⑤ 内容共创 | 中文指南/教程型仓（有章节结构） | 为其缺的章节（治理/审计）投稿或审校 | whobot 五支柱结构适用 | 高 |
+| ⑥ 纯投稿快车道 | 长尾小仓（⭐<100） | 差异化规则（2.4 节）照走 | 09-04 晚 6 条 | 低 |
+
+**角度选型决策序**：先查上游是否已收 sofagent → 已收走 ③；未收再看清单是否有我们可自然首条的缺失节 → 有走 ①；都不是再看高价值仓走 ④（攒信任分，为后续 sofagent 投稿铺路）；小仓走 ⑥ 快车道。**实证校准**：修死链在这类年轻活跃清单里供给不足（ai-boost 抽 30 链 0 死链），④ 里 301 改名链是低价值搭车项不是主角度。
+
 ---
 
 ## 二、投稿操作 SOP（怎么投）
@@ -183,7 +198,7 @@ Single-line change to README.md only.（或双语两文件）
 | 30 | ARUNAGIRINATHAN-K/awesome-ai-agents-2026 ⭐320 | [#248](https://github.com/ARUNAGIRINATHAN-K/awesome-ai-agents-2026/pull/248) | Safety Guardrails and Observability | 09-04 | open | 09-04 晚投；紧凑条目格式（tier/语言/类型三标签，⭐42<500 取 🔬）；节尾插行（该节条目非严格字母序）；🔴 fork 实名落 -2027 后缀（上游曾用名，坑位 #11 变体——fork 后必须 API 核 parent）；tree 创建 -f 数组传参报 422，改 --input JSON body |
 | 31 | Zijian-Ni/awesome-ai-agents-2026 ⭐244 | [#95](https://github.com/Zijian-Ni/awesome-ai-agents-2026/pull/95) | 🛡️ Agent Security Tools（五列表格） | 09-04 | open | 09-04 晚投；表格行格式（Tool/MCP Scan/Injection Defense/Audit Logs/Self-host/License）；CONTRIBUTING 质量门槛高（declines 串投/要证据源）——body 加 in-repo 可验证声明；描述填 ✅/✅ (HMAC-chained)/✅/MIT；🔴 09-04 晚 Spam Guard 亮 advisory（14 天 36 条 awesome-* PR/16 仓同标题）但明言「maintainer judgement required」，audit check ✅ SUCCESS，巡检盯关单信号（处置预案见 2.4） |
 | 32 | brinhosa/awesome-ai-security ⭐35 | [#39](https://github.com/brinhosa/awesome-ai-security/pull/39) | 🛡️ Defense & Guardrails（三列表格） | 09-04 | open | 09-04 晚投；Name/Author/Description 表格行节尾插行；上游 2026-01 后无 push 收录慢属预期；默认分支 main |
-| 33 | Jiaaqiliu/Awesome-Harness-Engineering ⭐36 | [#10](https://github.com/Jiaaqiliu/Awesome-Harness-Engineering/pull/10) | Guardrail Frameworks（双列表格） | 09-04 | open | 09-04 晚投；Project/Description 表格行节尾插行（Constraints, Guardrails & Safe Autonomy 大节下）；fork 落 -3 后缀 |
+| 33 | Jiaaqiliu/Awesome-Harness-Engineering ⭐36 | [#10](https://github.com/Jiaaqiliu/Awesome-Harness-Engineering/pull/10) | Guardrail Frameworks（双列表格） | 09-04 | open | 09-04 晚投；Project/Description 表格行节尾插行（Constraints, Guardrails & Safe Autonomy 大节下）；fork 落 -3 后缀；该仓 301 改名链 2 条（OpenHands/EvoAgentX 旧名）——合并后可走 1.4 ④角度搭车修 |
 | 34 | whobot-ai/awesome-harness-engineering-zh ⭐25 | [#7](https://github.com/whobot-ai/awesome-harness-engineering-zh/pull/7) | 安全与质量保障（中文三列表格） | 09-04 | open | 09-04 晚投；名称/说明/Stars 表格行节尾（moltis 后）；中文条目含星徽章；中文 body 披露句；blob 回读 diff 中文零损 |
 | 35 | weekend-project-space/awesome-deepseek-harness-top-500 ⭐19 | [#4](https://github.com/weekend-project-space/awesome-deepseek-harness-top-500/pull/4) | 表格第 503 行·工作流与工程 | 09-04 | open | 09-04 晚投；序号顺延 503；描述含「80+ 工具 MCP server」坐实 DSH 集成；已收 502 条规模大竞争小 |
 
