@@ -78,6 +78,7 @@ Single-line change to README.md only.（或双语两文件）
 - **CLA 要求**（e2b 等）：按 bot 指引网页签掉，回帖 `@cla-bot check` 复验
 - **CHANGES_REQUESTED**：逐条改 PR body（`gh pr edit`）+ 评论回复告知——agentrust #89 从 review 到补披露 10 分钟闭环
 - 合并后：linked PR 关闭，交叉链接里的「在审」状态随手更新
+- **Spam Guard advisory（如 Zijian-Ni 系）**：不回帖不申诉（advisory 永久在 PR 上，主动解释反而放大关注），静等维护者判断；被人工关单则隔 2 周换角度单点精投或放弃该仓
 
 ---
 
@@ -112,6 +113,7 @@ Single-line change to README.md only.（或双语两文件）
 | 10 | 插行 anchor 只用链接不含描述 | 原条目被拦腰截断（描述掉到新行尾），门禁报「missing description」 | anchor 必须用完整行；插完自查「新行独立 + 原行完整」 |
 | 11 | 大小写同名 fork 重定向 | git push 按 URL 大小写不敏感重定向到**另一仓的同名旧 fork**（Anil-matcha 系 awesome-dsh-plugin ← Alex-Yanggg 系 awesome-DSH-plugin-2），分支推错仓 + PR 报「No commits between」 | fork 后先看返回的 fork 实名（带 -2/-3 后缀才是新 fork），push 前用 `git remote -v` 核对完整 URL 含大小写后缀；误推立即删分支恢复 |
 | 12 | push 输出接管道吞错（如 2>&1 再截尾行） | push 失败信息被截掉，PR create 报错才发现分支没推上去 | push 单独跑不接管道，或紧跟 echo 输出 exit code 验证 |
+| 13 | 短窗口批量投稿（单日多条/标题雷同） | 清单仓的 Spam Guard bot 标红串投画像（Zijian-Ni 实证：14 天 36 条 awesome-* PR + 16 仓同标题即亮 🚨），影响维护者信任 | ① 单日新投 ≤3 条；② 标题一律「Add sofagent to <节名>」差异化（该仓自带标题惯例的照惯例）；③ body 每仓定制 + 披露句；④ 高门槛仓（declines blast 类）减量或改被动收录 |
 
 ---
 
@@ -153,7 +155,7 @@ Single-line change to README.md only.（或双语两文件）
 | 28 | jiji262/awesome-harness-engineering ⭐51 | [#11](https://github.com/jiji262/awesome-harness-engineering/pull/11) | Coding & Agent Harnesses | 09-03 | open | 09-03 晚投；两行式条目（名字+星数/学习价值一句）；fork 落 -2 后缀（与 ai-boost 系同名，坑位 #11 三次现身） |
 | 29 | gmh5225/awesome-ai-security ⭐44 | [#24](https://github.com/gmh5225/awesome-ai-security/pull/24) | AI Agent Security | 09-03 | open | 09-03 晚投；`- url [描述]` 格式子节尾加行；同节有 NemoClaw/rampart/openguardrails 等强先例；fork 落 -4 后缀（与 ottosulin 系同名） |
 | 30 | ARUNAGIRINATHAN-K/awesome-ai-agents-2026 ⭐320 | [#248](https://github.com/ARUNAGIRINATHAN-K/awesome-ai-agents-2026/pull/248) | Safety Guardrails and Observability | 09-04 | open | 09-04 晚投；紧凑条目格式（tier/语言/类型三标签，⭐42<500 取 🔬）；节尾插行（该节条目非严格字母序）；🔴 fork 实名落 -2027 后缀（上游曾用名，坑位 #11 变体——fork 后必须 API 核 parent）；tree 创建 -f 数组传参报 422，改 --input JSON body |
-| 31 | Zijian-Ni/awesome-ai-agents-2026 ⭐244 | [#95](https://github.com/Zijian-Ni/awesome-ai-agents-2026/pull/95) | 🛡️ Agent Security Tools（五列表格） | 09-04 | open | 09-04 晚投；表格行格式（Tool/MCP Scan/Injection Defense/Audit Logs/Self-host/License）；CONTRIBUTING 质量门槛高（declines 串投/要证据源）——body 加 in-repo 可验证声明；描述填 ✅/✅ (HMAC-chained)/✅/MIT |
+| 31 | Zijian-Ni/awesome-ai-agents-2026 ⭐244 | [#95](https://github.com/Zijian-Ni/awesome-ai-agents-2026/pull/95) | 🛡️ Agent Security Tools（五列表格） | 09-04 | open | 09-04 晚投；表格行格式（Tool/MCP Scan/Injection Defense/Audit Logs/Self-host/License）；CONTRIBUTING 质量门槛高（declines 串投/要证据源）——body 加 in-repo 可验证声明；描述填 ✅/✅ (HMAC-chained)/✅/MIT；🔴 09-04 晚 Spam Guard 亮 advisory（14 天 36 条 awesome-* PR/16 仓同标题）但明言「maintainer judgement required」，audit check ✅ SUCCESS，巡检盯关单信号（处置预案见 2.4） |
 | 32 | brinhosa/awesome-ai-security ⭐35 | [#39](https://github.com/brinhosa/awesome-ai-security/pull/39) | 🛡️ Defense & Guardrails（三列表格） | 09-04 | open | 09-04 晚投；Name/Author/Description 表格行节尾插行；上游 2026-01 后无 push 收录慢属预期；默认分支 main |
 | 33 | Jiaaqiliu/Awesome-Harness-Engineering ⭐36 | [#10](https://github.com/Jiaaqiliu/Awesome-Harness-Engineering/pull/10) | Guardrail Frameworks（双列表格） | 09-04 | open | 09-04 晚投；Project/Description 表格行节尾插行（Constraints, Guardrails & Safe Autonomy 大节下）；fork 落 -3 后缀 |
 | 34 | whobot-ai/awesome-harness-engineering-zh ⭐25 | [#7](https://github.com/whobot-ai/awesome-harness-engineering-zh/pull/7) | 安全与质量保障（中文三列表格） | 09-04 | open | 09-04 晚投；名称/说明/Stars 表格行节尾（moltis 后）；中文条目含星徽章；中文 body 披露句；blob 回读 diff 中文零损 |
@@ -178,6 +180,7 @@ Single-line change to README.md only.（或双语两文件）
 - **关注度监测**（每日）：流量/星数对比基线（见 5.3.1），异动进报告【关注度异动】栏——星数单日 +3、views 翻倍、连续 3 天零增长（冷启动预警）三阈值
 - **门面周检**（每周一）：fresh-eyes 视角 22（GitHub 发现优化审查员）轻量体检——description/topics 失效词、双语首屏一致性、章节漂移；只报告不修改，门面改动由用户拍板
 - **Trending 窗口值守**（每日）：当日有清单 PR merged 即在报告提示 T2 集中发射条件成立（Show HN/V2EX/掘金/知乎同天），由用户拍板执行
+- **Spam Guard 观察**（每日，2026-09-04 起）：盯 Zijian-Ni #95 是否被人工关单（Spam Guard 已亮 advisory：14 天 36 条 awesome-* PR / 16 仓同标题）；顺手核对总在飞量——「36 PR/14 天」滚动窗口停投自然衰减，超 40 条优先靠被动收录消化
 - **每周人工巡检**：发版周检顺手对一次台账；merged 的把行移到 5.2；README「Featured in」徽章状态联动（open 橙 → merged 绿）
 - **命令**：`gh search prs --author KongFangXun --state open` 对表核状态
 
