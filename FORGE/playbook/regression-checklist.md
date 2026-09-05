@@ -10,7 +10,7 @@
 
 **归并配额（硬门槛）**：新增 N 维 → 本版必须先真实归并 ≥N 维（被并维度检查内容实际移入目标维度，git diff 可查；注释压缩不算）；净增行数 > 警戒线余量 → 继续归并或移下一版——**只调警戒线不归并 = 不合格**。
 
-**行数警戒线（当前值）**：`regression-checklist.md` ≤ 1800 行、`acceptance-test.sh` ≤ 4216 行（4130→4216：v1.4.5 第七章二/三 S373/S374 两行为实测场景 + S370 锚点双词化 + S219 阈值校准注释——S265 归并入 S264 对销后净增 +79，含 bbe54dc4 S144 sha256 实测 +12 前账）；fresh-eyes 警戒线见 04-review-system.md 风格守护段。三条上调铁律：① 三判据全否方可调——(i) 新增非旧维度可扩展子项的独立审查面；(ii) 非既有场景/维度的重复覆盖；(iii) 真实防回归价值非归并压缩可消化；② 连续上调禁令——连续两版已调，本版须先真实归并对销方可再调；同版同侧只调一次（同版二次冻结）；③ **上调只记一行**——`旧值→新值（原因一句话）`，历史上调链不在此处累积（完整过程 git 历史可溯）。
+**行数警戒线（当前值）**：`regression-checklist.md` ≤ 1800 行、`acceptance-test.sh` ≤ 4200 行（4130→4216 曾因 S373/S374 场景上调，2026-09-05 孔老师拍板收紧回 4200——S366 归并入 S369（tag/pin 锚归 check-action-pins 门禁）+ 场景壳压缩，断言零删减 + 54 条纯装饰分隔线清除，现值 4170/4200）；fresh-eyes 警戒线见 04-review-system.md 风格守护段。三条上调铁律：① 三判据全否方可调——(i) 新增非旧维度可扩展子项的独立审查面；(ii) 非既有场景/维度的重复覆盖；(iii) 真实防回归价值非归并压缩可消化；② 连续上调禁令——连续两版已调，本版须先真实归并对销方可再调；同版同侧只调一次（同版二次冻结）；③ **上调只记一行**——`旧值→新值（原因一句话）`，历史上调链不在此处累积（完整过程 git 历史可溯）。
 
 **维度脚本编写三铁律**（教训——7 个 FAIL 维度中 5 个是脚本自身缺陷而非仓库问题，driver 白跑一轮）：
 
@@ -27,7 +27,7 @@ ACTUAL=$(grep -c "^#### " FORGE/playbook/regression-checklist.md)
 # 行数警戒线自检（越线提醒瘦身，非失败；与 releasing.md 阶段五警戒线一致）
 WC_CHK=$(wc -l < FORGE/playbook/regression-checklist.md); WC_ACC=$(wc -l < FORGE/playbook/acceptance-test.sh)
 [ "$WC_CHK" -le 1800 ] && echo "✅ checklist $WC_CHK (≤1800)" || echo "⚠️ checklist $WC_CHK 超 1800"
-[ "$WC_ACC" -le 4216 ] && echo "✅ acceptance $WC_ACC (≤4216)" || echo "⚠️ acceptance $WC_ACC 超 4216"
+[ "$WC_ACC" -le 4200 ] && echo "✅ acceptance $WC_ACC (≤4200)" || echo "⚠️ acceptance $WC_ACC 超 4200"
 ```
 ## 你的身份
 

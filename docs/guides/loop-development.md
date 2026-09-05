@@ -155,26 +155,7 @@ try {
 
 ### 3.7 spawnWorker 独立进程模型
 
-每个步骤在独立 `node` 子进程中执行，保证真·零上下文：
-
-```js
-function spawnWorker(step, roundDir, target, round) {
-  return new Promise((resolveP, rejectP) => {
-    const child = spawn(process.execPath, [
-      __filename, '--worker', '--step', step,
-      '--round-dir', roundDir, '--target', target,
-    ], {
-      cwd: REPO_ROOT,
-      stdio: ['pipe', 'inherit', 'inherit'],
-      env: { ...process.env, FORGE_ROUND: String(round) },
-    });
-    child.on('close', (code) => {
-      if (code === 0) resolveP();
-      else rejectP(new Error(`worker ${step} 退出码 ${code}`));
-    });
-  });
-}
-```
+每个步骤在独立 `node` 子进程中执行，保证真·零上下文（完整实现见 `FORGE/src/fresh-eyes-driver.mjs`）。核心模式：`spawn(process.execPath, [__filename, '--worker', '--step', step, ...])`，stdio 继承、`FORGE_ROUND` 环境变量传轮次，`close` 事件里非 0 退出码 reject。
 
 步骤 ①②（双盲独立审查）可并行调用 `spawnParallel`；步骤 ③④⑤ 必须串行（有数据依赖）。
 
@@ -209,18 +190,7 @@ function spawnWorker(step, roundDir, target, round) {
 
 审查类步骤（a-check）用 150 不会 OOM，因为消息增长慢（大量是工具调用结果，短文本）；但 a-consolidate 要读取两份完整的 check 报告 + 产出 findings.md + result.md，单条消息体积大，150 步累积就爆了。
 
-**修复**：
-
-```js
-// 按步骤类型区分 recursionLimit
-const STEP_RECURSION_LIMITS = {
-  'a-check':       150,  // 审查类：需要大量读文件+搜索
-  'b-check':       150,
-  'a-consolidate': 50,   // 文本处理类：合并/格式化，50 步够
-  'b-fix':         60,   // 修复类：需要读写文件，介于两者之间
-  'a-verify':      50,   // 验证类：读 findings + summary 对比
-};
-```
+**修复**：按步骤类型区分 recursionLimit——配置表见 [§3.4](#34-steprecursionlimits按步骤区分)，审查类 150 / 文本处理类 50，不能一刀切。
 
 **经验值参考**：
 
@@ -258,9 +228,7 @@ const STEP_RECURSION_LIMITS = {
 
 **修复**：两个层面——
 
-**层面 1：步骤级 try/catch + 降级函数**（代码见 [§3.6](#36-失败降级机制)）
-
-在 `spawnWorker('a-consolidate', ...)` 外面包 try/catch，catch 里调 `writeFallbackFindings(roundDir)` 写降级产物。降级产物质量不如正常流程，但"有"比"没有"强——一个步骤崩不能拖死整条链。
+**层面 1：步骤级 try/catch + 降级函数**（实现见 [§3.6](#36-失败降级机制)——一个步骤崩不能拖死整条链）
 
 **层面 2：driver catch 块写可见性事件**
 

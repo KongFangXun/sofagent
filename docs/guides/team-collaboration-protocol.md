@@ -113,27 +113,7 @@ interface FeedbackEntry {
 
 ### 1.3 automerge 用法（对齐 core/federation.ts 模式）
 
-```typescript
-// 初始化团队共享态
-let doc = Automerge.init<TeamStateDoc>();
-doc = Automerge.change(doc, (d) => {
-  d.meta = { teamId, name, createdAt: new Date().toISOString() };
-  d.members = {};
-  d.tasks = {};
-  d.fileLocks = {};
-  d.feedback = [];
-});
-
-// 成员加入（更新本地副本）
-doc = Automerge.change(doc, (d) => {
-  d.members[agentId] = { agentId, role, trust, status: 'idle', lastHeartbeat: now };
-});
-
-// 跨设备/跨 Agent 同步：序列化 → 联邦通道传输 → 对端反序列化 → merge
-const binary = Automerge.save(doc);              // 序列化为 Uint8Array
-const remoteDoc = Automerge.load(binary);         // 反序列化
-doc = Automerge.merge(doc, remoteDoc);            // CRDT 自动合并
-```
+初始化走 `Automerge.init<TeamStateDoc>()` + `change()` 写 meta/members/tasks/fileLocks/feedback；成员加入用 `change()` 更新 `members[agentId]`；跨设备/跨 Agent 同步走 `save()` 序列化 → 联邦通道传输 → 对端 `load()` → `merge()`（CRDT 自动合并）。
 
 **与 `core/federation.ts` 的 `mergeFederationResults` 区别**：
 - `mergeFederationResults` 合并的是**知识查询结果**（一次性合并快照，用完即弃）

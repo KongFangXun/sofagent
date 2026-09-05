@@ -191,7 +191,7 @@ sofagent-orchestrator activate
 
 ### activate 内部流程
 
-新增 `engine/orchestrator/src/activate.ts`：
+新增 `engine/orchestrator/src/activate.ts`。核心签名与产出：
 
 ```typescript
 export interface ActivateResult {
@@ -202,60 +202,11 @@ export interface ActivateResult {
 }
 
 export async function activateWorkflow(opts: {
-  dataDir: string;       // .sofagent/data/
-  dryRun: boolean;
-  nodeFilter?: string[];
-}): Promise<ActivateResult> {
-  // Step 1: 读 workflow.yml
-  const workflow = parseWorkflowYaml(join(dataDir, 'workflow.yml'));
-
-  // Step 2: 遍历每个节点，读其 SKILL.md + entity
-  const agents: EnterpriseAgentConfig[] = [];
-  for (const node of workflow.nodes) {
-    if (node.type === '👤') {
-      skipped.push({ name: node.id, reason: '节点标记为暂不动' });
-      continue;
-    }
-
-    const skillContent = readFileSync(join(dataDir, node.skill_ref), 'utf-8');
-    const entityContent = readFileSync(join(dataDir, node.entity_ref), 'utf-8');
-
-    // Step 3: 从 SKILL.md 提取 system prompt + actions
-    const { systemPrompt, actions } = parseSkillMd(skillContent);
-
-    // Step 4: 从 entity 提取 knowledge-domain
-    const knowledgeDomain = parseEntityKnowledgeDomain(entityContent);
-
-    // Step 5: 组装企业 SubAgent 定义
-    agents.push({
-      name: node.id,                        // customer-intake
-      displayName: node.name,               // 客户接单
-      type: node.type === '🔄' ? 'auto' : 'assist',
-      systemPrompt: buildConstrainedPrompt({
-        base: systemPrompt,
-        knowledgeDomain,
-        actions: node.actions ?? actions,
-      }),
-      tools: resolveTools(node.actions ?? actions),
-      modelName: null,                      // 默认用主 Agent 模型
-      hitl: node.hitl ?? false,
-      hitlConfig: node.hitl_config,
-    });
-  }
-
-  // Step 6: 写入 .sofagent/subagents/<node-id>.yml（registry.ts 已支持读）
-  if (!opts.dryRun) {
-    for (const agent of agents) {
-      writeAgentYml(join(dataDir, 'subagents', `${agent.name}.yml`), agent);
-    }
-  }
-
-  // Step 7: 生成 LangGraph 拓扑描述（给 Phase 2 用）
-  const graph = buildTopology(workflow, agents);
-
-  return { registeredAgents: agents.map(a => a.name), workflowGraph: graph, skippedNodes: skipped, hitlNodes: agents.filter(a => a.hitl).map(a => a.name) };
-}
+  dataDir: string; dryRun: boolean; nodeFilter?: string[];
+}): Promise<ActivateResult>
 ```
+
+内部七步（逐步幂等，dryRun 只预览不落盘）：①读 workflow.yml → ②遍历节点（👤 暂不动跳过并记录 reason）→ ③读 SKILL.md 提取 system prompt + actions → ④读 entity 提取 knowledge-domain → ⑤`buildConstrainedPrompt` 组装企业 SubAgent 定义（type 按 🔄/⚡ 映射 auto/assist，携带 hitl/hitlConfig）→ ⑥非 dryRun 时写 `.sofagent/subagents/<node-id>.yml`（registry.ts `loadDefinition()` 已支持读）→ ⑦`buildTopology` 生成 LangGraph 拓扑描述（供 Phase 2）。
 
 ### 企业 SubAgent YML 格式（写入 `.sofagent/subagents/`）
 
