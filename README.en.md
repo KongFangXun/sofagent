@@ -17,7 +17,7 @@
 
 > 🚀 **v1.4.4** — Training engine: signal & deployment loop (corpus export trio / local weight deployment / artifact→registry bridge / multi-base compare / decision causal chain / CI supply-chain hardening / legacy upgrades / spec-first mandate / review batch / five-capability narrative). ✅ Released (2026-09-03). See [CHANGELOG](./CHANGELOG.md).
 
-> 🛡️ **v1.4.5 pending release** — reliability & honesty fix batch + post-training services & continuity (train serve / continuous training / compliance gate / deliverable / quickstart / FDE session memory; 4043 tests). ⏳ Pending release (tag/npm sync at release time). See [CHANGELOG](./CHANGELOG.md).
+> 🛡️ **v1.4.5 pending release** — reliability & honesty fix batch + post-training services & continuity (train serve / continuous training / compliance gate / deliverable / quickstart / FDE session memory; 4045 tests). ⏳ Pending release (tag/npm sync at release time). See [CHANGELOG](./CHANGELOG.md).
 
 ---
 
@@ -246,7 +246,7 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # load the securit
 | Security statement · known limitations | [SECURITY](./SECURITY.md) · [LIMITATIONS](./docs/LIMITATIONS.md) |
 | Contribution guide | [CONTRIBUTING](./CONTRIBUTING.md) |
 
-> 🧪 **Engineering credibility**: 4043 tests / 13 engine packages + 13 plugins (engine packages = 12 main + 1 load-chain; plugins = 9 DSH + 4 OpenClaw; plugin tests run via the root `npm test --workspaces`; "engine packages" is the package-management-scope term — in architecture narrative these are "modules") · 24 audit rules · fresh-eyes independent review continuously running (test counts are determined by `tools/check/test-count.sh`; environmental notes are documented in [docs/guides/review-system.md](./docs/guides/review-system.md). Performance figures are single-machine reference values; cross-tool benchmarking is scheduled for v1.4.x together with Benchmark integration).
+> 🧪 **Engineering credibility**: 4045 tests / 13 engine packages + 13 plugins (engine packages = 12 main + 1 load-chain; plugins = 9 DSH + 4 OpenClaw; plugin tests run via the root `npm test --workspaces`; "engine packages" is the package-management-scope term — in architecture narrative these are "modules") · 24 audit rules · fresh-eyes independent review continuously running (test counts are determined by `tools/check/test-count.sh`; environmental notes are documented in [docs/guides/review-system.md](./docs/guides/review-system.md). Performance figures are single-machine reference values; cross-tool benchmarking is scheduled for v1.4.x together with Benchmark integration).
 
 ---
 
