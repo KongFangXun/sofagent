@@ -258,7 +258,7 @@ fi
 # ② 白名单含签名/链字段（抽两个锚：hmacSig 与 envFingerprint）
 for anchor in hmacSig envFingerprint; do
   if ! grep -q "'$anchor'" engine/audit/src/audit-history.ts; then
-    echo -e "  ${RED}✗${NC} S2②：深扫白名单缺「$anchor」——脱敏会破坏验签/链语义（v1.4.5 S2 回退）"
+    echo -e "  ${RED}✗${NC} S2②：深扫白名单缺「${anchor}」——脱敏会破坏验签/链语义（v1.4.5 S2 回退）"
     S2_FAIL=$((S2_FAIL + 1))
   fi
 done

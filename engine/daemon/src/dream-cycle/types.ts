@@ -150,6 +150,13 @@ export interface DreamCycleResult {
   };
   /** 输入 Ledger 规模（audit history 条数，供周报） */
   auditEntryCount: number;
+  /**
+   * v1.4.5 第七章五：大脑运行状态（'real' = 真 LLM；'mock' = 显式降级）。
+   * 周报与 evolution report 据此带降级标注——「占位符跑 7 天」永不默默发生。
+   */
+  providerStatus?: 'real' | 'mock';
+  /** 降级原因（providerStatus='mock' 时非空） */
+  degradedReason?: string;
   /** 错误信息（失败时填充） */
   error?: string;
 }

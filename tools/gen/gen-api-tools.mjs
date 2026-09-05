@@ -34,7 +34,7 @@ const GROUP_NAMES = {
   ops: '运维与可见性（成本 · 工作明细 · 健康 · 规则 · 能力发现）',
 };
 
-/** tool → 能力域显式映射（80 个 · 新增工具必须在此拍板归组，否则生成器 fail） */
+/** tool → 能力域显式映射（83 个 · 新增工具必须在此拍板归组，否则生成器 fail） */
 const NAME_TO_MODULE = {
   // FDE 六引擎
   fde_interview: 'fde', fde_classify: 'fde', fde_quantify: 'fde',
@@ -58,6 +58,8 @@ const NAME_TO_MODULE = {
   train_budget: 'train', train_submit: 'train', train_doctor: 'train', train_dryrun: 'train',
   train_report: 'train', train_status: 'train', train_list: 'train', train_diagnose: 'train',
   model_register: 'train', model_switch: 'train', model_unregister: 'train',
+  // v1.4.5：推理服务（serve）/ 合规扫描（compliance）/ FDE 交付包（deliverable）
+  train_serve: 'train', train_compliance: 'train', train_deliverable: 'train',
   // 评估与验收
   evaluate: 'eval', evaluate_output: 'eval', eval_suite: 'eval',
   define_acceptance: 'eval', check_acceptance: 'eval',

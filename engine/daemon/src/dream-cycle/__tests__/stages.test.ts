@@ -10,7 +10,7 @@
 //   5. synthesize_concepts：pattern → concept 写入 knowledge/entities/
 //   6. skillopt_backfill：触发 fde.md 优化钩子（mock 验证被调用）
 //   7. embed：产出定长向量
-//   8. RealLLM：构造器抛用户可读错（当前仅支持 mock）
+//   8. RealLLM：v1.4.5 第七章五真脑交付后可构造（占位抛错行为已废止）
 // ============================================================
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
@@ -18,7 +18,8 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 
-import { MockLLM, RealLLM } from '../llm-mock';
+import { MockLLM } from '../llm-mock';
+import { RealLLM } from '../real-provider';
 import { extractFacts } from '../extract-facts';
 import { extractAtoms } from '../extract-atoms';
 import { clusterPatterns } from '../cluster-patterns';
@@ -134,9 +135,11 @@ describe('Dream Cycle 6 阶段', () => {
     expect(embeddings[0]!.vector.every((v) => v >= 0 && v <= 1)).toBe(true);
   });
 
-  // 用例 8：RealLLM — 构造器抛用户可读错
-  it('RealLLM：构造器抛用户可读错（当前仅支持 mock）', () => {
-    expect(() => new RealLLM()).toThrow(/mock/i);
+  // 用例 8：RealLLM — v1.4.5 第七章五真脑交付后可构造（占位时代构造器抛错的行为已废止）
+  it('RealLLM：真脑交付后可无参构造（端点经工厂解析注入，不再抛错）', () => {
+    const provider = new RealLLM(null);
+    expect(provider).toBeInstanceOf(RealLLM);
+    expect(RealLLM.SYSTEM_ROLE).toContain('知识提取器');
   });
 
   // 用例 9（P2-5）：prompt injection 隔离——think.md 含诱导指令，被当作文本提取而非执行

@@ -89,6 +89,8 @@ import { trainStatusTool } from './tools/train-status';
 import { trainListTool } from './tools/train-list';
 // v1.4.3 第二章：训练失败诊断（train_diagnose）
 import { trainDiagnoseTool } from './tools/train-diagnose';
+// v1.4.5 第四章：FDE 训练交付包（train_deliverable generate/verify）
+import { trainDeliverableTool } from './tools/train-deliverable';
 import { fdeInterviewTool, type FdeInterviewArgs } from './tools/fde-interview';
 import { fdeClassifyTool, type FdeClassifyArgs } from './tools/fde-classify';
 import { fdeQuantifyTool, type FdeQuantifyArgs } from './tools/fde-quantify';
@@ -97,6 +99,10 @@ import { fdeDistillTool, type FdeDistillArgs } from './tools/fde-distill';
 import { fdeDeployTool, type FdeDeployArgs } from './tools/fde-deploy';
 // 训练语料导出三件套（corpus_export——规则+方法论+样本）
 import { corpusExport, type CorpusExportArgs } from './tools/corpus-export';
+// v1.4.5 第一章：推理服务生命周期（train_serve——start/stop/restart/status）
+import { trainServeTool } from './tools/train-serve';
+// v1.4.5 第三章：训练数据合规扫描（train_compliance——scan/gate/mark）
+import { trainComplianceTool } from './tools/train-compliance';
 import { defineAcceptance, checkAcceptance } from './tools/acceptance';
 
 // ============================================================
@@ -379,6 +385,8 @@ class McpServer {
         case 'train_list': { if (!args.enterprise_id) { this.sendError(id, -32602, 'Missing required argument: enterprise_id'); break; } const tlr = await trainListTool({ enterprise_id: args.enterprise_id as string, ...(typeof args.status === 'string' ? { status: args.status } : {}), ...(typeof args.base_model === 'string' ? { base_model: args.base_model } : {}), ...(typeof args.last_days === 'number' ? { last_days: args.last_days } : {}), ...(typeof args.limit === 'number' ? { limit: args.limit } : {}) }); this.sendTool(id, tlr, tlr.data.isError); break; }
         // v1.4.3 第二章：训练失败诊断（train_diagnose）
         case 'train_diagnose': { if (!args.train_job_id) { this.sendError(id, -32602, 'Missing required argument: train_job_id'); break; } if (!args.enterprise_id) { this.sendError(id, -32602, 'Missing required argument: enterprise_id'); break; } const tdr2 = await trainDiagnoseTool({ train_job_id: args.train_job_id as string, enterprise_id: args.enterprise_id as string, ...(typeof args.save === 'boolean' ? { save: args.save } : {}) }); this.sendTool(id, tdr2, tdr2.data.isError); break; }
+        // v1.4.5 第四章：FDE 训练交付包（generate 五件聚合打 zip + HMAC / verify 逐项核对 + 环境兼容）
+        case 'train_deliverable': { if (!args.enterprise_id) { this.sendError(id, -32602, 'Missing required argument: enterprise_id'); break; } const tdl = await trainDeliverableTool({ action: args.action === 'verify' ? 'verify' : 'generate', enterprise_id: args.enterprise_id as string, ...(typeof args.train_job_id === 'string' ? { train_job_id: args.train_job_id } : {}), ...(typeof args.dataset_id === 'string' ? { dataset_id: args.dataset_id } : {}), ...(typeof args.contact === 'string' ? { contact: args.contact } : {}), ...(typeof args.zip_path === 'string' ? { zip_path: args.zip_path } : {}) }); this.sendTool(id, tdl, tdl.data.isError); break; }
         // v1.4.2 章八：FDE 六引擎（interview/classify/quantify/derive/distill/deploy）
         case 'fde_interview': { if (!args.enterprise_id) { this.sendError(id, -32602, 'Missing required argument: enterprise_id'); break; } if (!args.prompts_only && (!Array.isArray(args.nodes) || (args.nodes as unknown[]).length === 0)) { this.sendError(id, -32602, 'Missing required argument: nodes'); break; } const fir = await fdeInterviewTool({ enterprise_id: args.enterprise_id as string, ...(args.prompts_only === true ? { prompts_only: true } : {}), ...(Array.isArray(args.nodes) ? { nodes: args.nodes as NonNullable<FdeInterviewArgs['nodes']> } : {}) }); this.sendTool(id, fir, fir.data.isError); break; }
         case 'fde_classify': { if (!args.enterprise_id) { this.sendError(id, -32602, 'Missing required argument: enterprise_id'); break; } if (!Array.isArray(args.nodes) || (args.nodes as unknown[]).length === 0) { this.sendError(id, -32602, 'Missing or empty required argument: nodes'); break; } const fcr = await fdeClassifyTool({ enterprise_id: args.enterprise_id as string, nodes: args.nodes as NonNullable<FdeClassifyArgs['nodes']> }); this.sendTool(id, fcr, fcr.data.isError); break; }
@@ -390,6 +398,10 @@ class McpServer {
         case 'check_acceptance': { if (!args.task_id) { this.sendError(id, -32602, 'Missing required argument: task_id'); break; } const car = await checkAcceptance({ task_id: args.task_id as string, ...(typeof args.project_root === 'string' ? { project_root: args.project_root } : {}) }); this.sendTool(id, car, car.data.isError); break; }
         // 训练语料导出三件套（无必填参数——scope 等全可选）
         case 'corpus_export': { const cer = await corpusExport({ ...(typeof args.scope === 'string' ? { scope: args.scope as CorpusExportArgs['scope'] } : {}), ...(typeof args.out_dir === 'string' ? { outDir: args.out_dir as string } : {}), ...(typeof args.data_dir === 'string' ? { dataDir: args.data_dir as string } : {}), ...(args.rules_only === true ? { rulesOnly: true } : {}) }); this.sendTool(id, cer, cer.data.isError); break; }
+        // v1.4.5 第一章：推理服务生命周期（train_serve——start/stop/restart/status）
+        case 'train_serve': { if (!args.enterprise_id) { this.sendError(id, -32602, 'Missing required argument: enterprise_id'); break; } if (!args.model_name) { this.sendError(id, -32602, 'Missing required argument: model_name'); break; } const action = args.action === 'start' || args.action === 'stop' || args.action === 'restart' ? args.action : 'status'; if ((action === 'start' || action === 'restart') && typeof args.weights_dir !== 'string') { this.sendError(id, -32602, `Missing required argument: weights_dir (action=${action})`); break; } const tvr = await trainServeTool({ enterprise_id: args.enterprise_id as string, model_name: args.model_name as string, action, ...(typeof args.weights_dir === 'string' ? { weights_dir: args.weights_dir } : {}), ...(args.backend === 'vllm' || args.backend === 'ollama' || args.backend === 'openai-compatible' ? { backend: args.backend } : {}), ...(typeof args.host === 'string' ? { host: args.host } : {}), ...(typeof args.port === 'number' ? { port: args.port } : {}), ...(typeof args.model_id === 'string' ? { model_id: args.model_id } : {}), ...(Array.isArray(args.extra_args) ? { extra_args: args.extra_args as string[] } : {}), ...(typeof args.actor === 'string' ? { actor: args.actor } : {}) }); this.sendTool(id, tvr, tvr.data.isError); break; }
+        // v1.4.5 第三章：训练数据合规扫描（train_compliance——scan/gate/mark）
+        case 'train_compliance': { if (!args.enterprise_id) { this.sendError(id, -32602, 'Missing required argument: enterprise_id'); break; } if (!args.dataset_id) { this.sendError(id, -32602, 'Missing required argument: dataset_id'); break; } if (!args.version) { this.sendError(id, -32602, 'Missing required argument: version'); break; } const cAction = args.action === 'gate' || args.action === 'mark' ? args.action : 'scan'; if (cAction === 'mark' && !args.provenance) { this.sendError(id, -32602, 'Missing required argument: provenance (action=mark)'); break; } const tcr = await trainComplianceTool({ enterprise_id: args.enterprise_id as string, dataset_id: args.dataset_id as string, version: args.version as string, action: cAction, ...(args.provenance === 'enterprise' || args.provenance === 'synthetic' || args.provenance === 'public' ? { provenance: args.provenance } : {}) }); this.sendTool(id, tcr, tcr.data.isError); break; }
         default: this.sendError(id, -32602, `Unknown tool: ${toolName}`);
       }
     } catch (err) {

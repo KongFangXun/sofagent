@@ -1,6 +1,6 @@
 # sofagent 项目导航索引（WIKI）
 
-> v1.4.4 · 2026-09-03 · 孔放勋
+> v1.4.4 · 2026-09-03（v1.4.5 开发完成未发版——本批更新 2026-09-05） · 孔放勋
 
 > **读者**：人类开发者 & AI Agent 均可阅读。本文档是项目全局索引入口。
 > 如果你是 AI Agent 且需要查找具体实现路径，请直接跳转到"## 五、文件地图"段。
@@ -24,7 +24,7 @@
 > | 版本路线 / 排期 / 探索方向 | [ROADMAP](./ROADMAP.md) | 参考 | 已交付进「迭代历程」、已排期进「版本规划」、未排期进「探索方向」——三态不混写 |
 > | 版本变更记录（未发布版） | `docs/changelog/vX.Y/vX.Y.Z.md` | 历史 | 排期版日志不进主 [CHANGELOG](../CHANGELOG.md) 索引（纯已发布索引）；发布时才收编 |
 > | 架构决策 / 术语定义 / 数据流 | [ARCHITECTURE](./ARCHITECTURE.md) | 参考 | 行业对标委托 VALIDATION、规则清单委托 SECURITY、路线委托 ROADMAP |
-> | 接口总览 / MCP 工具清单 | [API](./API.md) | 参考 | 六大接口面 + 80 tools 分域清单，由 tool-registry.ts 生成（check-docs §17 对账防漂移） |
+> | 接口总览 / MCP 工具清单 | [API](./API.md) | 参考 | 六大接口面 + 83 tools 分域清单，由 tool-registry.ts 生成（check-docs §17 对账防漂移） |
 > | 已知限制 / 诚实边界 | [LIMITATIONS](./LIMITATIONS.md) | 参考 | 各文档披露「已知风险」时引用 LIMITATIONS，不展开重复 |
 > | 任务流程 / 操作步骤 / 发版 SOP | [SKILL/](../SKILL/) · [changelog/releasing/](./changelog/releasing/) | 任务流程 | 「干什么用什么步骤」——写给执行者（人/Agent）照着做；深度参考链接 docs/，不复制 |
 > | 面向使用者的操作说明 | [README](../README.md) · [HANDBOOK](./HANDBOOK.md) | 用户手册 | 永不含代码库内部细节；开发者向操作说明进 DEVELOPMENT/guides |
@@ -210,7 +210,7 @@ graph TB
 | `engine/orchestrator/` | @sofagent/orchestrator — LangGraph createReactAgent 编排 |
 | `engine/daemon/` | @sofagent/daemon — 后台守护进程（cron 巡检 + 文件监听） |
 | `engine/harness/` | @sofagent/harness — SKILL 加载链（上下文注入） |
-| `engine/mcp/` | @sofagent/mcp — MCP Server（知识库 CRUD tool）· **80 个 MCP tool**（以 `engine/mcp/src/tool-registry.ts` SSOT 为准；v1.4.2 新增 FDE 六引擎 fde_interview/fde_classify/fde_quantify/fde_derive/fde_distill/fde_deploy，插件家族 MCP 面另计） |
+| `engine/mcp/` | @sofagent/mcp — MCP Server（知识库 CRUD tool）· **83 个 MCP tool**（以 `engine/mcp/src/tool-registry.ts` SSOT 为准；v1.4.5 三件 train_serve/train_compliance/train_deliverable 齐；v1.4.2 新增 FDE 六引擎 fde_interview/fde_classify/fde_quantify/fde_derive/fde_distill/fde_deploy，插件家族 MCP 面另计） |
 | `engine/hooks/sofagent-load-chain/` | @sofagent/load-chain — SKILL 加载链 git hook（v1.2.x 新增，第 13 个 workspace） |
 | `engine/scripts/` | 运维脚本集（9 个 .sh + lib/ 模块 + windows/ .ps1 安装与卸载脚本）——安装（install.sh 调用）、卸载、验证（verify.sh）、daemon 管理、运行时审计日志记录等 |
 | `engine/dsh-plugins/` | cordis-plugin-sofagent-* 9 款 DSH 插件（audit · rollback · inject · evolve · ontology · commons · gate · daemon · fde，inventory 可见 + Cursor/Claude hook 拦截） |
@@ -232,9 +232,9 @@ graph TB
 
 | 项 | 值 |
 |----|-----|
-| 当前版本 | **v1.4.4**（2026-09-03，✅ 已发版） |
-| 下一版 | v1.4.5（进化模块实证收口，参见 docs/ROADMAP.md） |
-| 测试覆盖 | 3856 测试 / 12 包（统计标准：`tools/check/test-count.sh` 实际执行的 workspace 包；全仓共 26 个 workspace——13 个模块包发布至 npm `@sofagent` scope，9 个 DSH 插件为 private 随 DSH 分发，4 个 OpenClaw 插件（`engine/openclaw-plugins/`）经根 `npm test --workspaces` 统一执行测试。实测见 `tools/check/test-count.sh`、声称数同步校验见 `tools/check/check-test-count.sh`） |
+| 当前版本 | **v1.4.4**（2026-09-03，✅ 已发版）· v1.4.5 开发完成未发版 |
+| 下一版 | v1.4.6（后训模块 · 分布式与云端，参见 docs/ROADMAP.md） |
+| 测试覆盖 | 4043 测试 / 12 包（统计标准：`tools/check/test-count.sh` 实际执行的 workspace 包；全仓共 26 个 workspace——13 个模块包发布至 npm `@sofagent` scope，9 个 DSH 插件为 private 随 DSH 分发，4 个 OpenClaw 插件（`engine/openclaw-plugins/`）经根 `npm test --workspaces` 统一执行测试。实测见 `tools/check/test-count.sh`、声称数同步校验见 `tools/check/check-test-count.sh`） |
 | 审计规则 | 24 条（17 默认 + 7 扩展），活跃编号 A1-A11 + A14-A23 + E1/E2/E4，每次 commit 自动跑 |
 | FORGE | fresh-eyes-loop + release-gate-loop 运行中 |
 | 数据目录 | **data/**（v1.2.1+ SSOT 运行时数据目录） |
@@ -299,7 +299,7 @@ graph TB
 | 运行测试 / 验证效果 | [guides/testing.md](./guides/testing.md) |
 | 开发/维护前端（Dashboard 等） | [guides/frontend-design-standard.md](./guides/frontend-design-standard.md)（设计标准 + 开发指南，改前端前必读） |
 | 用 SDK 接入约束层 | [guides/harness-sdk.md](./guides/harness-sdk.md)（SubAgent 托管 SDK · `harness.wrap` 一行包装） |
-| 了解后训模块 | [guides/train-stack.md](./guides/train-stack.md)（双栈契约）+ [train-security.md](./guides/train-security.md)（攻击面声明） |
+| 了解后训模块 | [guides/train-stack.md](./guides/train-stack.md)（双栈契约）+ [train-security.md](./guides/train-security.md)（攻击面声明）+ [train-quickstart.md](./guides/train-quickstart.md)（v1.4.5 十步端到端入门） |
 | 浏览全部专题指南 | [guides/README.md](./guides/README.md)（16 份指南按角色分类索引） |
 | 添加新审计规则 | `engine/audit/src/rules/` → 对照现有规则模式（defaultRules / extendedRules） |
 | 新建 Sub Agent | `SKILL/agents/` → 参照 `agents/engineer/SKILL.md` |

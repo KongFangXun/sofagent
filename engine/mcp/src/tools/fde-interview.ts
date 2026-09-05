@@ -99,12 +99,25 @@ export async function fdeInterviewTool(args: FdeInterviewArgs): Promise<FdeInter
 
     const record = orch.recordInterview(dataDir, enterprise_id, nodes);
 
+    // v1.4.5 第八章：首次调用自动初始化进场记忆目录（10 文件结构——幂等）
+    let sessionInitNote = '';
+    try {
+      const init = orch.initFDEClientSession(dataDir, enterprise_id, {
+        initializedBy: 'fde_interview',
+      });
+      if (init.created) {
+        sessionInitNote = `\n  · 进场记忆目录已初始化：data/fde-sessions/${enterprise_id}/（10 文件）`;
+      }
+    } catch {
+      // 初始化失败不阻断访谈落盘主流程（记忆目录是增强件——对齐 load-chain hook 降级纪律）
+    }
+
     const lines = [
       `[sofagent] FDE 访谈已落盘 ✅（${enterprise_id}）`,
       `  · 本轮 ${nodes.length} 节点，累计 ${record.profile.nodeCount} 节点`,
       `  · 岗位分布：${record.profile.roles.join(' / ') || '—'}`,
       `  · 高频痛点：${record.profile.painKeywords.join('、') || '—'}`,
-      `  · 归档：data/fde/${enterprise_id}/interview.json`,
+      `  · 归档：data/fde/${enterprise_id}/interview.json${sessionInitNote}`,
     ];
     return {
       text: lines.join('\n'),

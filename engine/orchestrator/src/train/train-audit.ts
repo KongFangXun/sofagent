@@ -46,7 +46,10 @@ export type TrainAuditEventType =
   | 'train_abnormal_exit' // 块七：进程异常退出（心跳超时 / 孤儿回收）
   | 'artifact_tampered' // 块六：产物完整性校验失败
   | 'train_engine_crash_recover' // 块七：引擎崩溃恢复
-  | 'train_resume_rejected'; // 块七：续跑被拒（数据集版本锁定校验未通过——转人审）
+  | 'train_resume_rejected' // 块七：续跑被拒（数据集版本锁定校验未通过——转人审）
+  // ── v1.4.5 第一章：推理服务生命周期（谁启的/哪个模型/哪个节点在用——
+  //    hyperparams 携带 action/backend/model/endpoint/node/actor/pid）──
+  | 'train_serve';
 
 /** 生命周期事件 ↔ 终态映射（写入侧推导事件类型用） */
 export const STATUS_TO_EVENT: Readonly<Record<TrainJobStatus, TrainAuditEventType>> = {
@@ -151,6 +154,7 @@ const VALID_EVENT_TYPES: readonly string[] = [
   'artifact_tampered',
   'train_engine_crash_recover',
   'train_resume_rejected',
+  'train_serve',
 ];
 
 // ════════════════════════════════════════

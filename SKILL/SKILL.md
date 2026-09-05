@@ -20,6 +20,11 @@ not_when: [简单闲聊, 单步查询, 纯信息检索]
 metadata:
   openclaw:
     requires: {}
+solves:
+  - Agent 行为失控缺约束（运行时约束 + 提交时审计双闸）
+  - 多文件修改无门禁（快照/回滚 + 审计规则集）
+  - 企业 AI 落地无方法论（FDE 四阶段诊断交付）
+  - 经验不沉淀重复踩坑（think.md 反思 + 知识库 + Dream Cycle）
 ---
 
 # FDE Skill · 唯一主入口（引擎底座 + FDE 方法论合一）
@@ -36,7 +41,7 @@ metadata:
 |------|--------|--------|
 | FDE Skill | 本 skill（方法论 + 约束注入） | ClawHub / SkillHub 分发，`bash install.sh` 装到本地 |
 | 企业底座 | 约束层全套（hooks + 数据 + MCP） | `bash install.sh`（企业设备） |
-| MCP Server | 80 tools 能力面（审计/本体/进化/训练/工作明细） | `bash install.sh --platform <平台>` 自动配置，装完即连 |
+| MCP Server | 83 tools 能力面（审计/本体/进化/训练/工作明细） | `bash install.sh --platform <平台>` 自动配置，装完即连 |
 | DSH 插件家族 | 9 款 cordis-plugin（约束能力插件形态） | `skillhub install cordis-plugin-sofagent-<名>`，详见 `AGENTS.md` |
 | CLI | `sofagent` 命令（审计 / 快照 / 部署 / dashboard） | `bash install.sh` 装到 `~/.sofagent/bin/` |
 | Dashboard | Web 驾驶舱（工作明细 / 图谱 / 健康） | `sofagent web` 起本地服务，读 `data/` 运行时数据 |
@@ -172,7 +177,7 @@ metadata:
 
 ---
 
-## MCP 工具速查（80 tools · 12 类）
+## MCP 工具速查（83 tools · 12 类）
 
 > 连接 sofagent MCP Server 后可用。未连接时降级为纯文本引导。每类列代表工具，**MCP 协议面暴露规则与 `SOFAGENT_MCP_ROLES` 收窄说明见 `AGENTS.md`**。
 
@@ -186,7 +191,7 @@ metadata:
 | FDE 编排（10） | `fde_interview`（访谈结构化）`fde_classify`（三问判定）`fde_quantify`（量化+ROI）`fde_derive`（本体推导）`fde_distill`（三层沉淀）`fde_deploy`（组装部署）`fde_compose` `sofagent_compose` `activate_workflow` `create_agent` |
 | Workflow/Agent（7） | `workflow_submit` `route_workflow` `agent_identity` |
 | 能力公地（6） | `commons_publish` `commons_search` `commons_invoke` |
-| 模型训练（12） | `model_register` `model_switch`（灰度）`train_submit` `train_budget`（超预算等人审）`train_doctor`（环境体检）`train_dryrun`（提交前预检）`train_report`（训练报告）`train_status`（进度查询）`train_list`（任务列表）`train_diagnose`（失败诊断）`corpus_export`（训练语料导出三件套） |
+| 模型训练（15） | `model_register` `model_switch`（灰度）`train_submit` `train_budget`（超预算等人审）`train_doctor`（环境体检）`train_dryrun`（提交前预检）`train_report`（训练报告）`train_status`（进度查询）`train_list`（任务列表）`train_diagnose`（失败诊断）`corpus_export`（训练语料导出三件套）`train_serve`（推理服务启停）`train_compliance`（合规扫描闸门）`train_deliverable`（FDE 交付包） |
 | 验收（2） | `define_acceptance` `check_acceptance` |
 | 运维观测（6） | `health_check` `snapshot_restore`（强制人审）`worklog_query` `cost_query` |
 | 浏览器（4） | `playwright_navigate` `playwright_screenshot` |

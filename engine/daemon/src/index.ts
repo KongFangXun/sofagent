@@ -11,8 +11,16 @@
  */
 
 // Cron
-/* @public */ export { startCron } from './cron';
+/* @public */ export { startCron, loadTrainArchiveCronConfig } from './cron';
 /* @public */ export type { CronJob } from './cron';
+
+// v1.4.5 第五章：训练产物归档任务（@weekly 冷存 + 90 天覆写销毁 + 磁盘预警）
+/* @public */ export {
+  DEFAULT_TRAIN_ARCHIVE_CONFIG,
+  loadTrainArchiveConfig,
+  runTrainArchiveTask,
+} from './tasks/train-archive';
+/* @public */ export type { TrainArchiveConfig, TrainArchiveTaskResult } from './tasks/train-archive';
 
 // Scheduler（定时任务 · v1.3.8 交付四：cron 三档糖 @daily/@weekly/@monthly）
 /* @public */ export { createScheduler, nextCronTime, expandCronSugar } from './scheduler';
@@ -56,7 +64,20 @@
 
 // Dream Cycle（v1.1.6 新增：6 阶段流水线替换旧散点周报/经验提取脚本）
 /* @public */ export { runDreamCycle, loadLedger, loadState } from './dream-cycle/state-machine';
-/* @public */ export { MockLLM, RealLLM } from './dream-cycle/llm-mock';
+// v1.4.5 第七章五：RealLLM 真脑迁至 real-provider.ts（MockLLM 降级为测试专用）
+/* @public */ export { MockLLM } from './dream-cycle/llm-mock';
+/* @public */ export {
+  RealLLM,
+  createDefaultProvider,
+  resolveActiveEndpoint,
+} from './dream-cycle/real-provider';
+/* @public */ export type { ProviderStatus, ProviderResolution } from './dream-cycle/real-provider';
+/* @public */ export {
+  validateKnowledgeQuality,
+  mockExtractForDiff,
+  mockSynthesizeForDiff,
+} from './dream-cycle/quality-gate';
+/* @public */ export type { QualityGateResult } from './dream-cycle/quality-gate';
 /* @public */ export type {
   Stage,
   Ledger,
@@ -71,6 +92,30 @@
   DreamCycleResult,
 } from './dream-cycle/types';
 /* @public */ export { DREAM_CYCLE_STAGES } from './dream-cycle/types';
+// v1.4.5 第七章一：持续样本采集（≥7 天采样器——evolution report 数据源）
+/* @public */ export {
+  SAMPLE_TARGET_DAYS,
+  collectDailySample,
+  loadCursor,
+  readAllSamples,
+  summarizeSamples,
+  readDailyEvalStats,
+  countKnowledgeEntities,
+  countCorrectionReflows,
+  collectDailyDetails,
+  evolutionDir,
+  sampleFilePath,
+  cursorFilePath,
+} from './dream-cycle/continuous-sampler';
+/* @public */ export type {
+  DailySample,
+  SamplerCursor,
+  SampleResult,
+  CorrectionBackflow,
+  LowScoreFeedback,
+  RepeatFailure,
+  ToolUsageStat,
+} from './dream-cycle/continuous-sampler';
 
 // Inspectors
 /* @public */ export {

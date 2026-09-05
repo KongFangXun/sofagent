@@ -32,6 +32,8 @@ import { DREAM_CYCLE_STAGES } from './types';
 import { pushKnowledgeSummary } from '../notify';
 import { pushToTarget } from '../push-target';
 import { MockLLM } from './llm-mock';
+import { createDefaultProvider } from './real-provider';
+import type { ProviderStatus } from './real-provider';
 import { extractFacts } from './extract-facts';
 import { extractAtoms } from './extract-atoms';
 import { clusterPatterns } from './cluster-patterns';
@@ -153,20 +155,30 @@ function saveState(projectDir: string, state: DreamCycleState): void {
  * 向 knowledge/log.md 追加 Dream Cycle 周报（LUI A 可感知产物）。
  * log.md 用 appendFileSync（只追加，符合 Ledger-Views 只追加语义）。
  * v1.2.1：knowledge/ 从 .sofagent/ 迁移到 data/
+ * v1.4.5 第七章五：Mock 退化语义——status='mock' 时周报带显式降级标注
+ *（「占位符跑 7 天」永不默默发生）。
  */
 function appendWeeklyLog(
   projectDir: string,
   counts: DreamCycleResult['counts'],
   auditEntryCount: number,
+  providerStatus: ProviderStatus,
+  degradedReason?: string,
 ): void {
   // resolveKnowledgeDir 不传 projectDir——fallback 到 SOFAGENT_HOME（~/.sofagent/data/knowledge/）
   const knowledgeDir = resolveKnowledgeDir();
   mkdirSync(knowledgeDir, { recursive: true });
   const logPath = join(knowledgeDir, 'log.md');
   const now = new Date().toISOString().slice(0, 10);
+  const degradationNote =
+    providerStatus === 'mock'
+      ? `\n\n> ⚠️ **降级标注（status=mock）**：本轮大脑为 MockLLM 测试占位——${degradedReason ?? '模型不可用'}。上述计数不代表真实知识产出，evolution report 同口径标注。\n`
+      : '';
   const entry =
     `\n## ${now} Dream Cycle 周报\n\n` +
-    `本周学 ${counts.concepts} 个 concept / ${counts.atoms} 个 atom，来自 ${auditEntryCount} 条 audit history。\n`;
+    `本周学 ${counts.concepts} 个 concept / ${counts.atoms} 个 atom，来自 ${auditEntryCount} 条 audit history。` +
+    `（大脑：${providerStatus === 'real' ? '真 LLM' : 'MockLLM（降级）'}）\n` +
+    degradationNote;
   appendFileSync(logPath, entry, 'utf-8');
 }
 
@@ -175,7 +187,12 @@ function appendWeeklyLog(
  *
  * @param projectDir 项目根目录
  * @param opts.fromStage 从指定 stage 续跑（跳过之前的 stage，用于失败重试）
- * @param opts.llm LLMProvider（默认 MockLLM；RealLLM 接入时间未定——见 roadmap）
+ * @param opts.llm LLMProvider 注入式大脑：缺省经 createDefaultProvider 解析
+ *   （注册表/环境变量 → 真 LLM；不可用显式降级 MockLLM 并标 status=mock）；
+ *   测试注入 MockLLM / 假真脑（v1.4.5 第七章五：管道六阶段编排不动，只换大脑）
+ * @param opts.providerStatus 大脑状态标注（缺省随 llm 注入与否推断：
+ *   显式注入 → 'real' 语义（测试注入 MockLLM 时仍标 mock 由调用方控制）；
+ *   缺省解析 → 随 createDefaultProvider 结果）
  * @param opts.ledger 可选 Ledger 注入（测试用；缺省从磁盘读）
  * @param opts.backfillHook 可选 skillopt backfill 钩子注入（测试 mock 验证用）
  */
@@ -185,10 +202,26 @@ export async function runDreamCycle(
     fromStage?: Stage;
     ledger?: Ledger;
     llm?: LLMProvider;
+    providerStatus?: ProviderStatus;
+    degradedReason?: string;
     backfillHook?: (concepts: unknown[]) => Promise<void> | void;
   },
 ): Promise<DreamCycleResult> {
-  const llm = opts?.llm ?? new MockLLM();
+  // v1.4.5 第七章五：Provider 注入式——缺省走 createDefaultProvider（真脑优先，
+  // 模型不可用显式降级 MockLLM status='mock'）；测试经 opts.llm 注入。
+  let llm: LLMProvider;
+  let providerStatus: ProviderStatus;
+  let degradedReason: string | undefined;
+  if (opts?.llm) {
+    llm = opts.llm;
+    providerStatus = opts.providerStatus ?? 'real';
+    degradedReason = opts.degradedReason;
+  } else {
+    const resolution = createDefaultProvider(resolveDataDir());
+    llm = resolution.provider;
+    providerStatus = resolution.status;
+    degradedReason = resolution.degradedReason;
+  }
   const ledger = opts?.ledger ?? loadLedger(projectDir);
 
   // 断点游标：fromStage 指定时从它开始，否则读 state.md 续跑
@@ -205,6 +238,9 @@ export async function runDreamCycle(
     failedAt: null,
     counts: { facts: 0, atoms: 0, patterns: 0, concepts: 0, embeddings: 0 },
     auditEntryCount: ledger.auditEntries.length,
+    // v1.4.5 第七章五：大脑状态随结果透出（周报/evolution report 降级标注数据源）
+    providerStatus,
+    degradedReason,
   };
 
   // 中间态在各 stage 间传递（pipeline 数据流）
@@ -267,7 +303,7 @@ export async function runDreamCycle(
     cycleComplete: true,
     lastRunAt: new Date().toISOString(),
   });
-  appendWeeklyLog(projectDir, result.counts, result.auditEntryCount);
+  appendWeeklyLog(projectDir, result.counts, result.auditEntryCount, providerStatus, degradedReason);
   // v1.1.8 新增：cycle_complete 触发知识摘要主动通知（best-effort，失败静默）
   void pushKnowledgeSummary(projectDir, pushToTarget);
   return result;

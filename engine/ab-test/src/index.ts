@@ -22,3 +22,14 @@
 /* @public */ export { runABTest } from './ab-runner';
 // v1.3.5 交付 1：MCP run_ab_test 消费（latest.json 持久化）
 /* @public */ export { persistABTestResult } from './persistence';
+// v1.4.5 第七章一：进化模块 A/B 对照（开/关双跑 + 显著性判定）
+/* @public */ export {
+  runEvolutionAB,
+  defaultEvolutionABConfig,
+  twoProportionZTest,
+  SIGNIFICANCE_Z_THRESHOLD,
+} from './evolution-ab';
+/* @public */ export type {
+  EvolutionABConfig,
+  EvolutionABResult,
+} from './evolution-ab';

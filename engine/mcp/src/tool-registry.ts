@@ -21,7 +21,7 @@ export interface ToolDef {
 }
 
 /**
- * 完整工具清单——80 个 tool（v1.4.4：corpus_export 新增；v1.4.3：train_status/train_list/train_diagnose 新增；v1.4.2：fde_interview/fde_classify/fde_quantify/fde_derive/fde_distill/fde_deploy 六引擎 + train_doctor/train_dryrun/train_report 新增；v1.4.1：train_submit 新增；v1.4.0：cost_query + browser 4 新增；v1.3.9：worklog_query 新增；v1.3.6：workflow_submit/ontology_import/model_register/model_switch/model_unregister/train_budget/define_acceptance/check_acceptance；v1.3.5：run_ab_test/promote_ab/snapshot_list/snapshot_restore；v1.3.4：commons_publish/search/invoke/rate/retire/harvest_rule；不含 4 个 resource shortcut）
+ * 完整工具清单——83 个 tool（v1.4.5：train_serve/train_compliance/train_deliverable 三件齐——80→83，SKILL.md/ARCHITECTURE 等九处 SSOT 同步收口；v1.4.4：corpus_export 新增；v1.4.3：train_status/train_list/train_diagnose 新增；v1.4.2：fde_interview/fde_classify/fde_quantify/fde_derive/fde_distill/fde_deploy 六引擎 + train_doctor/train_dryrun/train_report 新增；v1.4.1：train_submit 新增；v1.4.0：cost_query + browser 4 新增；v1.3.9：worklog_query 新增；v1.3.6：workflow_submit/ontology_import/model_register/model_switch/model_unregister/train_budget/define_acceptance/check_acceptance；v1.3.5：run_ab_test/promote_ab/snapshot_list/snapshot_restore；v1.3.4：commons_publish/search/invoke/rate/retire/harvest_rule；不含 4 个 resource shortcut）
  */
 export const TOOLS: ToolDef[] = [
   {
@@ -1055,6 +1055,63 @@ export const TOOLS: ToolDef[] = [
         save: { type: 'boolean', description: '是否落盘报告（可选——缺省 true，data/train/<企业>/<jobId>/diagnose.json）' },
       },
       required: ['train_job_id', 'enterprise_id'],
+    },
+  },
+  {
+    // v1.4.5 (第四章)：FDE 训练交付包——五件聚合 + manifest + HMAC 签名
+    name: 'train_deliverable',
+    roles: ['eval', 'ops'],
+    description: 'FDE 训练交付包——generate 聚合五件（训练配置模板+数据管道配置+eval基线冻结+运维手册+权重清单含回滚点）打 zip + manifest + HMAC 签名；verify 逐项核对完整性 + 环境兼容性（企业收包侧体检）。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        action: { type: 'string', enum: ['generate', 'verify'], description: '🔴 动作：generate 生成交付包 / verify 校验既有包' },
+        enterprise_id: { type: 'string', description: '🔴 企业标识（隔离分区依赖）' },
+        train_job_id: { type: 'string', description: '血缘任务标识（可选——缺省取最新 completed job）' },
+        dataset_id: { type: 'string', description: '数据集标识（可选——缺省取版本台账最新）' },
+        contact: { type: 'string', description: 'FDE 联系方式（可选——写入运维手册联系方式段）' },
+        zip_path: { type: 'string', description: '待校验交付包路径（verify 必填）' },
+      },
+      required: ['action', 'enterprise_id'],
+    },
+  },
+  {
+    // v1.4.5 (第一章)：推理服务生命周期——从权重目录拉起 vLLM/Ollama/OpenAI 兼容端点
+    name: 'train_serve',
+    roles: ['eval', 'ops'],
+    description: '推理服务生命周期——从权重目录拉起 vLLM/Ollama/OpenAI 兼容端点（/health 就绪探测 + 指数退避重试）+ 启停重启状态四操作；每次启停记 train_serve 审计事件（谁启的/哪个模型/哪个节点）。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        enterprise_id: { type: 'string', description: '🔴 企业标识（serve 状态分区 + 审计隔离依赖）' },
+        model_name: { type: 'string', description: '🔴 注册模型名（定位服务）' },
+        action: { type: 'string', enum: ['start', 'stop', 'restart', 'status'], description: '操作（缺省 status）', default: 'status' },
+        weights_dir: { type: 'string', description: '权重目录（start/restart 必填——weights-manifest 目录规范）' },
+        backend: { type: 'string', enum: ['vllm', 'ollama', 'openai-compatible'], description: '拉起后端（缺省 vllm——三者都暴露 OpenAI 兼容端点）', default: 'vllm' },
+        host: { type: 'string', description: '监听地址（缺省 127.0.0.1）' },
+        port: { type: 'number', description: '端口（缺省 8000）' },
+        model_id: { type: 'string', description: '服务端模型标识（缺省同 model_name）' },
+        extra_args: { type: 'array', items: { type: 'string' }, description: '后端附加参数（透传）' },
+        actor: { type: 'string', description: '操作者（审计留痕——缺省 mcp-train-serve）' },
+      },
+      required: ['enterprise_id', 'model_name'],
+    },
+  },
+  {
+    // v1.4.5 (第三章)：训练数据合规扫描——合规红线代码化（训练闸）
+    name: 'train_compliance',
+    roles: ['eval', 'ops'],
+    description: '训练数据合规扫描——PII（姓名/手机号/身份证）+ 敏感字段（健康/财务）+ 企业专有名词三类风险项（复用 v1.4.4 redactor 红名单检测）；报告（发现项+严重度+处置建议）写训练集版本；严重级发现阻断训练提交；数据来源标记（企业提供/合成/公开语料）。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        enterprise_id: { type: 'string', description: '🔴 企业标识（隔离分区依赖）' },
+        dataset_id: { type: 'string', description: '🔴 数据集标识' },
+        version: { type: 'string', description: '🔴 数据集版本（versions.jsonl 的 version）' },
+        action: { type: 'string', enum: ['scan', 'gate', 'mark'], description: '操作（缺省 scan）：scan 扫描+写版本 / gate 只断言 / mark 来源标记', default: 'scan' },
+        provenance: { type: 'string', enum: ['enterprise', 'synthetic', 'public'], description: '数据来源标记（mark 必填；scan 可选同扫同标）' },
+      },
+      required: ['enterprise_id', 'dataset_id', 'version'],
     },
   },
   {

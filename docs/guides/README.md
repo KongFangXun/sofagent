@@ -1,6 +1,6 @@
 # sofagent 专题指南索引（guides/）
 
-> 本目录收纳 18 份专题指南。按角色找入口：企业 IT / FDE 交付 / 开发者 / 审计与安全 / 后训模块 / 开源运营。全站文档导航见 [WIKI](../WIKI.md)。
+> 本目录收纳 19 份专题指南。按角色找入口：企业 IT / FDE 交付 / 开发者 / 审计与安全 / 后训模块 / 开源运营。全站文档导航见 [WIKI](../WIKI.md)。
 
 ## 一、企业落地（IT 负责人 / 管理员）
 
@@ -47,5 +47,6 @@
 
 | 指南 | 讲什么 |
 |------|--------|
+| [train-quickstart.md](./train-quickstart.md) | 后训模块 Quickstart——10 条 CSV 到推理服务的十步端到端（v1.4.5 · 每步命令/实测输出/排查三件套） |
 | [train-stack.md](./train-stack.md) | 训练双栈契约——决策面 / 计算面 / 资源面分层与接口 |
 | [train-security.md](./train-security.md) | 训练攻击面声明——红队视角的覆盖与不覆盖 |

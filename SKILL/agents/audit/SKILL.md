@@ -13,6 +13,9 @@ image: sofagent-audit.png
 triggers: [合规检查, 审计, 巡检, Workflow检查, 知识库健康度, 铁律覆盖验证]
 scenarios: [需要检查Agent操作是否合规, 需要巡检Workflow节点, 需要验证铁律是否覆盖所有AI节点, 需要检查知识库健康度]
 not_when: [简单闲聊, 代码逻辑审查, 单个文件检查]
+solves:
+  - 部署层合规无巡检（Workflow 巡检 + 铁律覆盖验证 + 知识库健康度检查）
+  - 代码逻辑审查与部署合规审查混淆（本角色只审部署合规性）
 ---
 
 ## 调用方式

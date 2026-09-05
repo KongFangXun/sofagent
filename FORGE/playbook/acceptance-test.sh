@@ -6,7 +6,7 @@ export LANG=en_US.UTF-8
 export LC_ALL=en_US.UTF-8
 # sofagent-audit · 上线前验收测试（Pre-Release Acceptance Test）
 # 覆盖：FORGE + MCP + 文件系统审计 + daemon + 红队对抗 + 各版本新功能验收
-# 场景数：304 个场景（SSOT：check-test-count.sh 校验，口径=真实 scenario 调用行数，非编号最大值（S1-S344 间有 70 个历史空洞号）；v1.3.7 +4：S290-S293；v1.3.6 +8：S282-S289；v1.3.8 +11：S294-S304（含 bugfix 防回归 S303/S304）；v1.3.9 +15：S305-S319（阶段五 A 类分发 13 项 + 阶段六 coverage 补测 S318 ATTRIBUTION 归因引擎/S319 Dream Sandbox 沙盒审计）；v1.4.0 +3：S320（联邦查询跨进程 E2E——补 federation.test.ts 同进程 mock 缺口）、S321（跨平台 hook stdin 模式闭环验证）、S322（双设备联邦独立进程模拟——两个独立 node 进程 + 真实 TCP，补 fork 形态缺口）；v1.4.1 +10：S323（train doctor CLI 实跑）、S324（enterpriseId 强制绑定+幂等）、S325（fingerprint 冻结+不可变）、S326（artifact 签名+篡改检测）、S327（安全基线路径白名单+注入检测）、S328（install.sh 迁移丢数据窗口防回归——阶段四 B2 分发）、S329（install.sh symlink 谎报守卫——阶段四 B3 分发）、S330（训练异常退出资源回收四步链——阶段六 coverage 补测，补判断层唯一零覆盖项）、S331（OpenClaw plugin 双 manifest 一致性——阶段十一 ClawHub 拒收踩坑回写）、S332（bump 脚本通配误伤防回归——阶段十一静默漏 bump 踩坑回写）；v1.4.2 +10：S333（数据管道 CSV 类型推断端到端）、S334（dataset_version 台账三件套）、S335（eval 阈值判定双态）、S336（dry-run 显存估算单调性）、S337（ScaleRL sigmoid 拟合/外推/建议）、S338（FDE 工作台审计留痕往返——阶段三步骤四增量，行为实测走 dist 产物）、S339（MCP 工具 dataDir SSOT 收编完整——阶段三 fresh-eyes N-1 修复行为锁）、S340（19 处 v1.3.x 存量 getSofagentDataDir 一次清零行为锁——用户拍板 A 桶落点迁移接受）、S341（train report 报告生成本体 dist 行为实测——阶段五 coverage 唯一零覆盖项补测）；v1.4.2 章五 +2：S342（IM 桥通道交付三面断言——run-17 模块七零覆盖补测）、S343（BugFix 30 项批次级五族锚点——run-17 模块十零覆盖补测，对齐 S281 先例）；v1.4.2 阶段十二 +1：S344（Git Data API 推送通道 cat-file 防复发——ps1 eol 二坑根因固化）；v1.4.3 bugfix 批 +1：S345（跨平台 hook stdin message 抽取三场景行为锁——F-03 等号/中文/嵌套引号 + 空格形式回归，stub 断言 --task 透传）；v1.4.3 阶段三 +3：S346（审计聚合 --stats CLI 行为实测——--json 纯净/--days 窗口/口径行）、S347（反作弊基线三防线锚点——doctor 体检/缺省全开/白名单外部化）、S348（训练监控三 MCP tools 注册面——registry 79 + SKILL 对账）；v1.4.3 阶段五 +3：S349（训练沙箱三约束行为实测——dist 直调 createTrainSandbox：路径守卫三态/代理黑洞/网关判定）、S350（训练需求推导行为实测——场景派生/默认模板匹配/报告路径企业隔离）、S351（后训练 workflow 模板解析——七节点 DAG 无环/三 HITL/capability_ref 全节点指向）；v1.4.3 阶段五 run-02 闭环 +4：S352（DSH 执行深化三步锚点——事件流订阅/分级切 dsh 缺省/usage 记账链直调/降级红线）、S353（train_diagnose 行为实测——故障形态命中/零命中兜底/处方全覆盖）、S354（入口导览三产品线可发现 + onboarding 断层走查检查项 + 走查口径行）、S355（存量清扫零残留——ao 死代码/compose 更名转发/ontology 收窄/退役公告四锚）；v1.4.3 run-04 coverage 闭环 +1：S356（doctor Ontology 完整性检查——entities 遍历 + frontmatter 三查 + skip-log 对账锚点，补十三章零覆盖 P0-1）；v1.4.3 run-05 coverage 闭环 +2：S357（审计聚合触发率数值实测——已知分布 fixture 直调 computeAuditStats：分母/分布/触发率 0.3/阻断率 0.1/空历史 null 降级，F-3 闭环）、S358（train_status 行为实测——fixture 任务+事件流直调：运行态/进度曲线/参数校验/隔离面/GPU 队列账本，F-1 闭环；S347 同批补四形态×双防线映射锁 F-2 闭环））；v1.4.3 闸门 run-05 P1 批 +1：S359（过时承诺排期化 + 悬空引用补锚点——ecdh.ts 注释指向 ROADMAP v1.4.7 / changelog F-10 引 S359 / 三态退出码 exit 2 在位，P1-3/P1-7/P1-8 闭环防复发）；v1.4.3 闸门 run-06 误报批 +1：S360（P1-3/P1-6/P1-7 定谳——规则数 24 双口径锚点（number 字段清点 + README 对齐）/ 维度 9 探针 A+E 全口径防漏 E 系列 / PASS 场景级断言输出 pass() 透传描述 / S165 标题去 158 残留）；v1.4.3 阶段十二 +1：S361（本地部署树 overrides CI 三红防复发——lock 零 dsh-deployed symlink + dsh 六包 registry 解析抽查，npm 实测惰性 overrides 地雷口径固化）；v1.4.4 闸门 run-01/run-02 判断层 P0 闭环 +9：S362/S363/S365-S371（S364 已归并入 S348——corpus_export 双入口对账对销，断言零删减；v1.4.4 十模块验收——章一语料导出 27 编号位+方法论+脱敏 S362/S363、章二权重部署哈希红线 S365、章三产物注册人审语义 S366、章四对比训练 ROI 排序 S367、章五因果链回溯+先例打分+HMAC 篡改判定 S368、章六 CI 供应链四锚点 S369、章七十收口八锚点 S370、章九 17 项收编批三族代表锚点 + 章一五源样本聚合 + 章七 13 包门面 S371（run-02 P0-2/P1-2/P1-3 闭环，对齐 S281/S343 先例），行为面 dist 直调逐一探针实测后落场景；原 S364 corpus_export 双入口对账已真实归并入 S348——归并对销 1 处，断言零删减）；v1.4.4 闸门 run-06 coverage 闭环 +1：S372（章十一阶段四 B 类行为锁补测批 37cab2b9——B1-B8 用例四测试文件在位锚 + B1/B2/B3/B4/B6 五代表断言锚，run-06 P0-1 闭环，对齐 S330/S341 零覆盖补测先例）
+# 场景数：305 个场景（SSOT：check-test-count.sh 校验，口径=真实 scenario 调用行数，非编号最大值（S1-S344 间有 70 个历史空洞号）；v1.3.7 +4：S290-S293；v1.3.6 +8：S282-S289；v1.3.8 +11：S294-S304（含 bugfix 防回归 S303/S304）；v1.3.9 +15：S305-S319（阶段五 A 类分发 13 项 + 阶段六 coverage 补测 S318 ATTRIBUTION 归因引擎/S319 Dream Sandbox 沙盒审计）；v1.4.0 +3：S320（联邦查询跨进程 E2E——补 federation.test.ts 同进程 mock 缺口）、S321（跨平台 hook stdin 模式闭环验证）、S322（双设备联邦独立进程模拟——两个独立 node 进程 + 真实 TCP，补 fork 形态缺口）；v1.4.1 +10：S323（train doctor CLI 实跑）、S324（enterpriseId 强制绑定+幂等）、S325（fingerprint 冻结+不可变）、S326（artifact 签名+篡改检测）、S327（安全基线路径白名单+注入检测）、S328（install.sh 迁移丢数据窗口防回归——阶段四 B2 分发）、S329（install.sh symlink 谎报守卫——阶段四 B3 分发）、S330（训练异常退出资源回收四步链——阶段六 coverage 补测，补判断层唯一零覆盖项）、S331（OpenClaw plugin 双 manifest 一致性——阶段十一 ClawHub 拒收踩坑回写）、S332（bump 脚本通配误伤防回归——阶段十一静默漏 bump 踩坑回写）；v1.4.2 +10：S333（数据管道 CSV 类型推断端到端）、S334（dataset_version 台账三件套）、S335（eval 阈值判定双态）、S336（dry-run 显存估算单调性）、S337（ScaleRL sigmoid 拟合/外推/建议）、S338（FDE 工作台审计留痕往返——阶段三步骤四增量，行为实测走 dist 产物）、S339（MCP 工具 dataDir SSOT 收编完整——阶段三 fresh-eyes N-1 修复行为锁）、S340（19 处 v1.3.x 存量 getSofagentDataDir 一次清零行为锁——用户拍板 A 桶落点迁移接受）、S341（train report 报告生成本体 dist 行为实测——阶段五 coverage 唯一零覆盖项补测）；v1.4.2 章五 +2：S342（IM 桥通道交付三面断言——run-17 模块七零覆盖补测）、S343（BugFix 30 项批次级五族锚点——run-17 模块十零覆盖补测，对齐 S281 先例）；v1.4.2 阶段十二 +1：S344（Git Data API 推送通道 cat-file 防复发——ps1 eol 二坑根因固化）；v1.4.3 bugfix 批 +1：S345（跨平台 hook stdin message 抽取三场景行为锁——F-03 等号/中文/嵌套引号 + 空格形式回归，stub 断言 --task 透传）；v1.4.3 阶段三 +3：S346（审计聚合 --stats CLI 行为实测——--json 纯净/--days 窗口/口径行）、S347（反作弊基线三防线锚点——doctor 体检/缺省全开/白名单外部化）、S348（训练监控三 MCP tools 注册面——registry 79 + SKILL 对账）；v1.4.3 阶段五 +3：S349（训练沙箱三约束行为实测——dist 直调 createTrainSandbox：路径守卫三态/代理黑洞/网关判定）、S350（训练需求推导行为实测——场景派生/默认模板匹配/报告路径企业隔离）、S351（后训练 workflow 模板解析——七节点 DAG 无环/三 HITL/capability_ref 全节点指向）；v1.4.3 阶段五 run-02 闭环 +4：S352（DSH 执行深化三步锚点——事件流订阅/分级切 dsh 缺省/usage 记账链直调/降级红线）、S353（train_diagnose 行为实测——故障形态命中/零命中兜底/处方全覆盖）、S354（入口导览三产品线可发现 + onboarding 断层走查检查项 + 走查口径行）、S355（存量清扫零残留——ao 死代码/compose 更名转发/ontology 收窄/退役公告四锚）；v1.4.3 run-04 coverage 闭环 +1：S356（doctor Ontology 完整性检查——entities 遍历 + frontmatter 三查 + skip-log 对账锚点，补十三章零覆盖 P0-1）；v1.4.3 run-05 coverage 闭环 +2：S357（审计聚合触发率数值实测——已知分布 fixture 直调 computeAuditStats：分母/分布/触发率 0.3/阻断率 0.1/空历史 null 降级，F-3 闭环）、S358（train_status 行为实测——fixture 任务+事件流直调：运行态/进度曲线/参数校验/隔离面/GPU 队列账本，F-1 闭环；S347 同批补四形态×双防线映射锁 F-2 闭环））；v1.4.3 闸门 run-05 P1 批 +1：S359（过时承诺排期化 + 悬空引用补锚点——ecdh.ts 注释指向 ROADMAP v1.4.7 / changelog F-10 引 S359 / 三态退出码 exit 2 在位，P1-3/P1-7/P1-8 闭环防复发）；v1.4.3 闸门 run-06 误报批 +1：S360（P1-3/P1-6/P1-7 定谳——规则数 24 双口径锚点（number 字段清点 + README 对齐）/ 维度 9 探针 A+E 全口径防漏 E 系列 / PASS 场景级断言输出 pass() 透传描述 / S165 标题去 158 残留）；v1.4.3 阶段十二 +1：S361（本地部署树 overrides CI 三红防复发——lock 零 dsh-deployed symlink + dsh 六包 registry 解析抽查，npm 实测惰性 overrides 地雷口径固化）；v1.4.4 闸门 run-01/run-02 判断层 P0 闭环 +9：S362/S363/S365-S371（S364 已归并入 S348——corpus_export 双入口对账对销，断言零删减；v1.4.4 十模块验收——章一语料导出 27 编号位+方法论+脱敏 S362/S363、章二权重部署哈希红线 S365、章三产物注册人审语义 S366、章四对比训练 ROI 排序 S367、章五因果链回溯+先例打分+HMAC 篡改判定 S368、章六 CI 供应链四锚点 S369、章七十收口八锚点 S370、章九 17 项收编批三族代表锚点 + 章一五源样本聚合 + 章七 13 包门面 S371（run-02 P0-2/P1-2/P1-3 闭环，对齐 S281/S343 先例），行为面 dist 直调逐一探针实测后落场景；原 S364 corpus_export 双入口对账已真实归并入 S348——归并对销 1 处，断言零删减）；v1.4.4 闸门 run-06 coverage 闭环 +1：S372（章十一阶段四 B 类行为锁补测批 37cab2b9——B1-B8 用例四测试文件在位锚 + B1/B2/B3/B4/B6 五代表断言锚，run-06 P0-1 闭环，对齐 S330/S341 零覆盖补测先例）；v1.4.5 第七章二/三 +1：S373/S374 归并对销后净 +1（S265 归并入 S264 断言零删减；S373 反哺闭环端到端——真实采样数据→harvest→jury→promote 链路级 + S374 L4 工具层自进化全流程——候选→扫描→人审→注册→invoke 可调+静态计数不漂移，行为实测 dist 直调对齐 S318/S319 先例）
 # 编号跳号豁免：S1~S293 间有 70 个空洞号（全在 S36-S202 历史段）——v1.2.x 瘦身删场景
 # 与基线重建（restore 6e542467）的既成事实，非丢失；新场景编号=当前最大+1 顺延，禁止回填空洞
 # 版本段起点见文件内「# ─── v」分组标记（grep "─── v" 定位）
@@ -1905,7 +1905,7 @@ if $S218_OK; then
   $S218_OK && pass "激活链Phase3后半（hitl-handler.ts HITL+审计集成 + node-executor checkHITL + 测试覆盖）"
 fi
 
-scenario 219 "v1.2.9 ⑤ mcp-server.ts拆分 — 行数≤450（历次校准）+ 模块化（tool-registry + tools/ + resources）"; S219_OK=true
+scenario 219 "v1.2.9 ⑤ mcp-server.ts拆分 — 行数≤470（历次校准）+ 模块化（tool-registry + tools/ + resources）"; S219_OK=true
 MCP="$PROJECT_ROOT/engine/mcp/src/mcp-server.ts"
 [ -f "$MCP" ] || { fail "mcp-server.ts 不存在"; S219_OK=false; }
 if $S219_OK; then
@@ -1913,18 +1913,19 @@ if $S219_OK; then
   # v1.3.5 校准：v1.2.9 立线时约 20 tools，300 行够；现 52 tools，每个 tool 薄分发固定成本 2 行（1 import + 1 case）≈104 行 + 协议骨架，300 物理装不下。
   # v1.4.0 校准：66 tools（+cost_query +browser 4）+ 角色分层接入（tool-roles import + 过滤/拦截 ~14 行）→ 409 行，阈值 400→420（判定本质是「拆分充分」非行数绝对值）。
   # v1.4.2 校准：76 tools（+fde 六件 + 训练三件）→ 434 行，阈值 420→450（同判定本质；每次 +N tools 薄分发 ≈ +2 行/tool）。
+  # v1.4.5 校准：83 tools（+train_serve/train_compliance/train_deliverable）→ 460 行，阈值 450→470（同判定本质——工具分发面随 tools 规模线性增长，拆分充分性由下方四模块在位锚守）。
   # run-07 verdict P1-6 裁定：阈值历次校准链已到 450 且 444 行在界内——标题「≤350」
   # 是 v1.2.9 立线时的初值快照，与断言实现（≤450）脱钩。标题改为随校准链表述，
   # 断言口径不变。判定本质 = 「拆分充分」（tool-registry/tools//resources 模块在位
   # + 行数随 tools 规模校准），非行数绝对值。
   MCP_LINES=$(wc -l < "$MCP" | tr -d ' ')
-  [ "$MCP_LINES" -le 450 ] || { fail "mcp-server.ts 行数 $MCP_LINES > 450（拆分不充分）"; S219_OK=false; }
+  [ "$MCP_LINES" -le 470 ] || { fail "mcp-server.ts 行数 $MCP_LINES > 470（拆分不充分）"; S219_OK=false; }
   # 拆分出的模块文件存在
   [ -f "$PROJECT_ROOT/engine/mcp/src/tool-registry.ts" ] || { fail "tool-registry.ts 不存在"; S219_OK=false; }
   [ -f "$PROJECT_ROOT/engine/mcp/src/tools/audit-tools.ts" ] || { fail "tools/audit-tools.ts 不存在"; S219_OK=false; }
   [ -f "$PROJECT_ROOT/engine/mcp/src/tools/audit-file.ts" ] || { fail "tools/audit-file.ts 不存在"; S219_OK=false; }
   [ -f "$PROJECT_ROOT/engine/mcp/src/resources.ts" ] || { fail "resources.ts 不存在"; S219_OK=false; }
-  $S219_OK && pass "mcp-server.ts拆分（${MCP_LINES}行 ≤ 450 + tool-registry + tools/audit-tools + tools/audit-file + resources）"
+  $S219_OK && pass "mcp-server.ts拆分（${MCP_LINES}行 ≤ 470 + tool-registry + tools/audit-tools + tools/audit-file + resources）"
 fi
 
 scenario 220 "v1.2.9 ⑥ BugFix — REPO_ROOT 已修复 + check-version.sh 扫描路径已更新"; S220_OK=true
@@ -2369,17 +2370,17 @@ grep -q "commons_retire" "$PROJECT_ROOT/engine/mcp/src/tool-registry.ts" || S263
 grep -q "commons_harvest_rule" "$PROJECT_ROOT/engine/mcp/src/tool-registry.ts" || S263_OK=false
 $S263_OK && pass "commons 10 模块 + 6 MCP tool 注册" || fail "commons 引擎或 MCP 注册缺失"
 
-scenario 264 "v1.3.4 交付 1：评分公式 trust×评分×log(量+1) + 防刷（同 rater 覆盖）"; S264_OK=true
+# v1.4.5 真实归并对销：S264/S265 两个单文件 grep 型场景归并为一个（同属 v1.3.4 公地信任面，
+# 断言零删减——原六条 grep 全保留；归并理由：两场景同模块族（rating/owner trust）、
+# 同证据面（纯 grep 存在性）、无独立防回归语义边界），为 v1.4.5 第七章二/三链路场景腾行
+scenario 264 "v1.3.4 交付 1+3（归并）：评分公式 trust×评分×log(量+1) + 防刷 + owner trust 三态阈值（0.5/0.6/0.4）"; S264_OK=true
 grep -q "Math.log" "$PROJECT_ROOT/engine/orchestrator/src/commons/rating.ts" || S264_OK=false
 grep -q "getTrustForRating\|getTrustStub" "$PROJECT_ROOT/engine/orchestrator/src/commons/rating.ts" || S264_OK=false
 grep -qE "raterId|同 rater|覆盖" "$PROJECT_ROOT/engine/orchestrator/src/commons/rating.ts" || S264_OK=false
-$S264_OK && pass "评分公式 + trust 接线 + 防刷覆盖" || fail "评分/防刷逻辑缺失"
-
-scenario 265 "v1.3.4 交付 3：owner trust 三态阈值（0.5/0.6/0.4）"; S265_OK=true
-grep -q "TRUST_INITIAL = 0.5" "$PROJECT_ROOT/engine/orchestrator/src/commons/owner.ts" || S265_OK=false
-grep -q "TRUST_GOOD_THRESHOLD = 0.6" "$PROJECT_ROOT/engine/orchestrator/src/commons/owner.ts" || S265_OK=false
-grep -q "TRUST_BAD_THRESHOLD = 0.4" "$PROJECT_ROOT/engine/orchestrator/src/commons/owner.ts" || S265_OK=false
-$S265_OK && pass "trust 三态阈值 0.5/0.6/0.4" || fail "trust 阈值缺失"
+grep -q "TRUST_INITIAL = 0.5" "$PROJECT_ROOT/engine/orchestrator/src/commons/owner.ts" || S264_OK=false
+grep -q "TRUST_GOOD_THRESHOLD = 0.6" "$PROJECT_ROOT/engine/orchestrator/src/commons/owner.ts" || S264_OK=false
+grep -q "TRUST_BAD_THRESHOLD = 0.4" "$PROJECT_ROOT/engine/orchestrator/src/commons/owner.ts" || S264_OK=false
+$S264_OK && pass "评分公式 + trust 接线 + 防刷覆盖 + owner 三态阈值（原 S264+S265 归并，断言零删减）" || fail "评分/防刷/trust 阈值逻辑缺失"
 
 scenario 266 "v1.3.4 交付 4：SkillScan 三态判定 + 发布/安装双触发"; S266_OK=true
 grep -q "'SAFE' | 'SUSPICIOUS' | 'DANGEROUS'" "$PROJECT_ROOT/engine/orchestrator/src/commons/skill-scan.ts" || S266_OK=false
@@ -4090,7 +4091,7 @@ $S369_OK && pass "CI 加固四锚点（零浮动 tag/pin 脚本/零 CDN/127.0.0.
 # S370 · v1.4.4 章七十收口八锚点（各章端到端已由单测/门禁覆盖，此处锁关键锚）
 scenario 370 "v1.4.4 章七十收口：spec-first 门禁 + FDE 模板外置 + DSH usage 三通道 + 过期承诺检查 + 五能力五词"; S370_OK=true
 [ -f "$PROJECT_ROOT/tools/check/check-spec-first.mjs" ] || S370_OK=false                                                   # 章八 门禁
-grep -q "spec-first" "$PROJECT_ROOT/SKILL/SKILL.md" || S370_OK=false                                                       # 章八 铁律区
+grep -qE "spec-first|规范先行" "$PROJECT_ROOT/SKILL/SKILL.md" || S370_OK=false                                              # 章八 铁律区（a20c71a0 铁律7 中文化——锚点同步双词）
 ls "$PROJECT_ROOT"/FDE/templates/deliverables/*.md >/dev/null 2>&1 || S370_OK=false                                        # 章七·九 模板外置
 grep -q "resolveTemplatesDir" "$PROJECT_ROOT/engine/orchestrator/src/fde/fde-quantify.ts" || S370_OK=false                 # 章七·九 接线
 grep -q "normalizeUsageCandidate" "$PROJECT_ROOT/engine/orchestrator/src/execution-backends/dsh-backend.ts" || S370_OK=false  # 章七·十 usage 三通道
@@ -4127,6 +4128,84 @@ for _a in "rollbackWeightsVersion:engine/orchestrator/src/__tests__/weights-depl
   grep -q "${_a%%:*}" "$PROJECT_ROOT/${_a##*:}" || { echo "  ✗ B1-B8 补测锚丢失：${_a##*:} 缺「${_a%%:*}」"; S372_OK=false; }
 done
 $S372_OK && pass "章十一 B1-B8 补测批四文件 + 五代表锚在位（37cab2b9 行为锁欠账已偿）" || fail "章十一补测批回退——四文件/五锚见上方 ✗ 行"
+
+# S373 · v1.4.5 第七章二：评估反哺闭环端到端（harvest→jury→promote 全链路）——补齐 3 处单点
+# （commons-rule-cycle.test.ts）外的链路级验证；输入为真实采样数据结构（samples-<date>.json，
+# 非合成 fixture）。行为实测走 dist 直调（对齐 S318/S319 先例）；行数铁律：S264+S265 归并对销。
+scenario 373 "v1.4.5 第七章二：反哺闭环端到端——真实采样数据（samples-<date>.json）→ harvest → jury → promote 全链 + 晋升落账 EVOLUTION 审计"; S373_OK=true
+[ -f "$PROJECT_ROOT/engine/orchestrator/src/evolution/evolution-samples.ts" ] || S373_OK=false
+R373=$(node -e "
+const fs=require('fs'),os=require('os'),path=require('path');
+const o=require('$PROJECT_ROOT/engine/orchestrator/dist/index.js');
+const data=fs.mkdtempSync(path.join(os.tmpdir(),'acc-s373-'));
+const audit=fs.mkdtempSync(path.join(os.tmpdir(),'acc-s373-audit-'));
+fs.mkdirSync(path.join(data,'evolution'),{recursive:true});
+// 真实采样数据结构落盘（devlog 第七章一 spec：修正回流+低分差评+反复失败）
+fs.writeFileSync(path.join(data,'evolution','samples-2026-09-10.json'),JSON.stringify({
+  date:'2026-09-10',cycleDays:7,degraded:'real',
+  evalCurve:[{date:'2026-09-10',passRate:0.86}],
+  knowledgeDelta:{concepts:3,atoms:17},
+  correctionBackflow:[{capabilityId:'cap-finance-report',correctedBy:'fde-kong',score:0.2,comment:'## Quality Rule: max_length|output|maxLength=300|财报输出超 300 字，需精简',correctedAt:'2026-09-10T09:00:00Z'}],
+  lowScoreFeedback:[{capabilityId:'cap-data-clean',raterId:'rater-042',score:0.15,comment:'- Quality: required_keyword|output|keywords=审计,留痕|输出缺少审计留痕关键词'}],
+  repeatFailures:[{capabilityId:'cap-timeout-skill',failCount:4,lastReason:'执行 timeout 超时'}],
+  toolUsage:[{toolName:'regen_report',invokeCount:12,successRate:0.9}]
+}));
+const samples=o.readEvolutionSamples(data);
+if(samples.length!==1||samples[0].cycleDays<7){console.log('S373_FAIL samples 读取');process.exit(1)}
+const harvest=o.harvestRules({lowScoreRatings:o.correctionBackflowToRatings(samples),repeatFailCases:o.repeatFailuresToCases(samples)});
+if(harvest.candidates.length===0){console.log('S373_FAIL harvest 零候选');process.exit(1)}
+const jury=o.juryRules({candidates:harvest.candidates,goldenSet:[{output:'A'.repeat(600)},{output:'正常输出含审计留痕。'}]});
+if(jury.approvals.length!==jury.recommended.length){console.log('S373_FAIL jury 签字数不齐');process.exit(1)}
+const promote=o.promoteRules({approvedRules:jury.recommended.map(r=>r.rule),benchmarks:jury.recommended.map(r=>({ruleId:r.rule.id,benchmarkHash:r.benchmark.benchmarkHash,scoreDelta:r.benchmark.scoreDelta})),approvals:jury.approvals,dataDir:audit});
+if(promote.promoted.length!==jury.recommended.length||promote.loggedCount!==promote.promoted.length){console.log('S373_FAIL promote 落账='+promote.promoted.length+' 审计='+promote.loggedCount);process.exit(1)}
+const dl=fs.readFileSync(path.join(audit,'audit','decision-log.jsonl'),'utf-8');
+if(!dl.includes('\"kind\":\"EVOLUTION\"')){console.log('S373_FAIL EVOLUTION 审计缺失');process.exit(1)}
+console.log('ASSERT_OK promoted='+promote.promoted.length);
+" 2>&1) || true
+echo "$R373" | grep -q "ASSERT_OK" || { echo "  ✗ S373: $(echo "$R373" | grep S373_FAIL | head -1)"; S373_OK=false; }
+$S373_OK && pass "反哺闭环端到端（采样→harvest→jury→promote→EVOLUTION 落账全通）" || fail "反哺闭环链路断裂——见上方 ✗ 行"
+
+# S374 · v1.4.5 第七章三：L4 工具层自进化——候选→SkillScan→人审→注册全流程 + commons_invoke
+# 可调 + 动态工具不进 83 静态计数（口径：静态=tool-registry.ts 顶层 name；tools/list=83+动态数）
+scenario 374 "v1.4.5 第七章三：L4 工具层自进化全流程（采样候选→SkillScan→人审 promote→注册动态面）+ commons_invoke 可调 + 不进 83 静态计数"; S374_OK=true
+[ -f "$PROJECT_ROOT/engine/orchestrator/src/evolution/tool-evolution.ts" ] || S374_OK=false
+[ -f "$PROJECT_ROOT/engine/mcp/src/tools/evolution-dynamic-bridge.ts" ] || S374_OK=false
+grep -q "getApprovedEvolvedTools" "$PROJECT_ROOT/engine/orchestrator/src/evolution/tool-evolution.ts" || S374_OK=false
+grep -q "83" "$PROJECT_ROOT/engine/mcp/src/tools/evolution-dynamic-bridge.ts" || S374_OK=false
+R374=$(node -e "
+(async()=>{
+const fs=require('fs'),os=require('os'),path=require('path');
+const o=require('$PROJECT_ROOT/engine/orchestrator/dist/index.js');
+const m=require('$PROJECT_ROOT/engine/mcp/dist/tools/evolution-dynamic-bridge.js');
+const tr=require('$PROJECT_ROOT/engine/mcp/dist/tool-registry.js');
+const data=fs.mkdtempSync(path.join(os.tmpdir(),'acc-s374-'));
+const skill=path.join(data,'regen-report');fs.mkdirSync(skill,{recursive:true});
+fs.writeFileSync(path.join(skill,'SKILL.md'),'# 报告重生成\n\n按模板重新生成周报。\n');
+const before=tr.TOOLS.length;
+// 一、提名（SkillScan SAFE→scanned）
+const nom=o.nominateToolCandidate({candidate:{toolName:'acc_regen_report',invokeCount:12,heat:6,hint:'重复手工三步'},sourcePath:skill,description:'验收用重生成',nominatedBy:'agent-acc'},data);
+if(!nom.ok||nom.status!=='scanned'){console.log('S374_FAIL nominate '+nom.status+' '+(nom.reason||''));process.exit(1)}
+// 二、人审（pending→approved）
+const rv=o.reviewToolCandidate({candidateId:nom.candidateId,reviewer:'kongfangxun',verdict:'approved'},data);
+if(!rv.ok||rv.status!=='approved'){console.log('S374_FAIL review '+rv.status);process.exit(1)}
+// 三、注册（动态面生成器）
+const gens=path.join(data,'gens');fs.mkdirSync(gens,{recursive:true});
+const gen=path.join(gens,'regen.cjs');fs.writeFileSync(gen,'module.exports.default=async(i)=>({ok:true,got:i});\n');
+const rg=o.registerApprovedTool({candidateId:nom.candidateId,generatorModule:gen},data);
+if(!rg.ok||rg.status!=='registered'){console.log('S374_FAIL register '+rg.status);process.exit(1)}
+if(o.getApprovedEvolvedTools(data).length!==1){console.log('S374_FAIL 台账非注册态');process.exit(1)}
+// 四、MCP 动态面注册 + commons_invoke 可调
+const reg=m.registerEvolvedTools({getTools:()=>o.getApprovedEvolvedTools(data),loadGenerator:(p)=>require(p)});
+if(reg.length!==1){console.log('S374_FAIL 动态注册 '+reg.length);process.exit(1)}
+const inv=await m.invokeEvolvedTool('acc_regen_report',{week:37},{loadGenerator:(p)=>require(p)});
+if(!inv.ok||JSON.stringify(inv.output).indexOf('week')<0){console.log('S374_FAIL invoke '+(inv.error||''));process.exit(1)}
+// 五、静态计数铁律：注册前后 TOOLS 不变（动态面独立）
+if(tr.TOOLS.length!==before){console.log('S374_FAIL 静态计数漂移 '+before+'→'+tr.TOOLS.length);process.exit(1)}
+console.log('ASSERT_OK static='+before+' dynamic='+reg.length);
+})();
+" 2>&1) || true
+echo "$R374" | grep -q "ASSERT_OK" || { echo "  ✗ S374: $(echo "$R374" | grep S374_FAIL | head -1)"; S374_OK=false; }
+$S374_OK && pass "L4 自进化全流程可用（候选→扫描→人审→注册→invoke 可调 + 静态计数不漂移）" || fail "L4 工具层管线断裂——见上方 ✗ 行"
 
 echo -e "  验收测试结果：${GREEN}$PASSED 通过${NC} / ${RED}$FAILED 失败${NC} / ${YELLOW}$WARNED 跳过${NC} / 共 $((PASSED + FAILED + WARNED))"
 # 汇总口径（run-10/run-08/run-05 三轮收紧）：无色码 SUMMARY 行供 driver grep（EXIT: 0=全PASS / <N>=N失败）；

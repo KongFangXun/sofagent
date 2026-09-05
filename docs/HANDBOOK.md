@@ -2,7 +2,7 @@
 
 > **sofagent 是一套 FDE 能力——装进你的 Agent（DSH / OpenClaw / WorkBuddy / Codex / Claude Code）后，进场梳理业务流、部署 AI 节点、离场后 7×24 自己跑。** 装完之后，你在自己的 Agent 里说一句话，它就帮你干活——审计每次变更、沉淀每次经验，沉淀机制随使用迭代。下面从装到用到查问题，全流程走一遍。
 >
-> v1.4.4 · 2026-09-03（UTC）· 孔放勋
+> v1.4.4 · 2026-09-03（UTC）· v1.4.5 开发完成未发版（本批更新 2026-09-05）· 孔放勋
 
 <img src="assets/sofagent.png" alt="sofagent" width="160" />
 
@@ -443,6 +443,7 @@ jobs:
 | 训练数据与评估 + FDE 六引擎 | v1.4.2 | 企业数据→训练集管道 + dataset_version 版本 + eval 闭环 + train env/doctor + dry-run 算力外推 + 训练报告；FDE 六引擎工作台（fde_interview/classify/quantify/derive/distill/deploy，67→76 tools）+ IM 桥远程指挥 | [v1.4.2 开发日志](./changelog/v1.4/v1.4.2.md) |
 | 后训模块·运行与需求 | v1.4.3 | 训练需求推导+模板库（train analyze/templates）+ GPU 显存队列 + train_status/train_list/train_diagnose 三 MCP（76→79 tools）+ 训练沙箱与设备打包 + 审计聚合 KPI（--stats）+ 反作弊双防线 | [v1.4.3 开发日志](./changelog/v1.4/v1.4.3.md) |
 | 后训模块·信号与部署闭环 | v1.4.4 | 训练语料导出三件套（`corpus_export`，79→80 tools）+ 本地权重部署（manifest 清单 + sha256 篡改拒绝 + rollback-weights）+ 训练产物→注册自动衔接 + 多基座对比（train compare ROI 排序）+ 决策因果链与先例检索 + CI 供应链全 SHA 固定 + 五能力叙事定稿 | [v1.4.4 开发日志](./changelog/v1.4/v1.4.4.md) |
+| 后训模块·服务与持续 | v1.4.5（待发版） | 训练推理服务（`train_serve` 拉起 vLLM/Ollama/OpenAI 兼容端点，80→83 tools）+ 合规扫描闸门（`train_compliance`——PII/敏感字段/专有名词）+ 持续后训练（飞轮数据回流 + 三触发 + eval 回退保护）+ FDE 交付包（`train_deliverable`）+ 后训 Quickstart 十步端到端 + FDE 进场记忆目录（10 文件自动初始化）+ 进化模块实证收口 | [v1.4.5 开发日志](./changelog/v1.4/v1.4.5.md) |
 
 ### 新功能入口导览（v1.4.2 起三条新产品线——10 分钟上手各条线）
 
@@ -472,7 +473,7 @@ jobs:
 
 ### 在 DSH 中使用 sofagent（v1.3.5 · MCP 互通）
 
-sofagent 本身就是一个 MCP server（stdio 传输，bin `sofagent-mcp`，v1.3.6 起 60 个 tool，v1.4.0 为 66 个，v1.4.1 新增 train_submit 后为 67 个，v1.4.2 新增 train_doctor/train_dryrun/train_report + FDE 六引擎（fde_interview/fde_classify/fde_quantify/fde_derive/fde_distill/fde_deploy）后为 76 个，v1.4.3 新增 train_status/train_list/train_diagnose 后为 79 个，v1.4.4 新增 corpus_export（训练语料导出三件套）后为 80 个——工具角色分层，默认全量暴露，`SOFAGENT_MCP_ROLES` 显式收窄专职面）。DSH（DeepSeek Harness）用户不需要等 v1.4.0 的 cordis-plugin——用官方 `@deepseek-ai/dsh-mcp-client` 桥接插件挂上 `sofagent-mcp`，**今天就能在 DSH 会话里调用 sofagent 的全部能力**：审计查询、知识库检索、A/B 实验（`run_ab_test`）、快照时间线（`snapshot_list`）等。
+sofagent 本身就是一个 MCP server（stdio 传输，bin `sofagent-mcp`，v1.3.6 起 60 个 tool，v1.4.0 为 66 个，v1.4.1 新增 train_submit 后为 67 个，v1.4.2 新增 train_doctor/train_dryrun/train_report + FDE 六引擎（fde_interview/fde_classify/fde_quantify/fde_derive/fde_distill/fde_deploy）后为 76 个，v1.4.3 新增 train_status/train_list/train_diagnose 后为 79 个，v1.4.4 新增 corpus_export（训练语料导出三件套）后为 80 个，v1.4.5 新增 train_serve/train_compliance/train_deliverable 后为 83 个——工具角色分层，默认全量暴露，`SOFAGENT_MCP_ROLES` 显式收窄专职面）。DSH（DeepSeek Harness）用户不需要等 v1.4.0 的 cordis-plugin——用官方 `@deepseek-ai/dsh-mcp-client` 桥接插件挂上 `sofagent-mcp`，**今天就能在 DSH 会话里调用 sofagent 的全部能力**：审计查询、知识库检索、A/B 实验（`run_ab_test`）、快照时间线（`snapshot_list`）等。
 
 #### 配置方法
 
@@ -492,7 +493,7 @@ sofagent 本身就是一个 MCP server（stdio 传输，bin `sofagent-mcp`，v1.
 
 > 字段名以 `@deepseek-ai/dsh-mcp-client@0.1.0-rc.6`（2026-08-15 npm 实测拉包核对 `lib/types/index.d.ts` 的 `StdioConfig`）为准——`transport` / `serverName` / `command` / `args` / `env` / `cwd` / `toolCallTimeoutMs` / `failOnStartupError` / `reconnect`。DSH 尚处 developer preview（rc），后续版本字段可能变化，以 [DSH 官方仓库](https://github.com/deepseek-ai/deepseek-harness) config 文档为最终依据。
 
-挂载后 DSH 侧的模型看到的 tool 名形如 `mcp__sofagent__snapshot_list`（`mcp__<serverName>__<原始名>` 命名契约——与 Claude Code / Codex 同款），80 个 tool 全部可见，与 DSH 原生 tool 走完全相同的执行管道（权限策略、timeout、compaction 行为一致）。
+挂载后 DSH 侧的模型看到的 tool 名形如 `mcp__sofagent__snapshot_list`（`mcp__<serverName>__<原始名>` 命名契约——与 Claude Code / Codex 同款），83 个 tool 全部可见，与 DSH 原生 tool 走完全相同的执行管道（权限策略、timeout、compaction 行为一致）。
 
 **两种 command 写法按部署形态选**：
 

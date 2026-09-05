@@ -17,7 +17,7 @@
 
 > 🚀 **v1.4.4** — Training engine: signal & deployment loop (corpus export trio / local weight deployment / artifact→registry bridge / multi-base compare / decision causal chain / CI supply-chain hardening / legacy upgrades / spec-first mandate / review batch / five-capability narrative). ✅ Released (2026-09-03). See [CHANGELOG](./CHANGELOG.md).
 
-> 🛡️ **v1.4.5 pending release** — reliability & honesty fix batch (SSRF DNS re-verification / timeout degradation / inspector scheduling wiring / hooksPath respect / 3856 tests). ⏳ Pending release (tag/npm sync at release time). See [CHANGELOG](./CHANGELOG.md).
+> 🛡️ **v1.4.5 pending release** — reliability & honesty fix batch + post-training services & continuity (train serve / continuous training / compliance gate / deliverable / quickstart / FDE session memory; 4043 tests). ⏳ Pending release (tag/npm sync at release time). See [CHANGELOG](./CHANGELOG.md).
 
 ---
 
@@ -63,7 +63,7 @@ sofagent does not build its own Agent — execution is delegated to mature hosts
 - 🤖 **Deploy AI nodes** — three-layer deliverables (documents + Skills + runtime), installed into your existing AI tools; from "you do the work" to "you delegate the work"
 - 🏠 **Stay resident after departure** — the FDE capability remains for inspection, audit, and optimization, 7×24 online guardian (audit triggers on commit); the human leaves, governance doesn't
 - 🔍 **Zero-setup audit** — `npx -y -p @sofagent/audit sofagent-audit`, auditing the latest commit of any git repo in seconds (single-machine measured: quick ~1.1s, 50k-line diff ~6.1s; see [HANDBOOK](./docs/HANDBOOK.md))
-- 🧱 **24 audit rules + 80 MCP tools** — secret leaks, out-of-scope edits, injection defense, privilege red lines; judged on git diff hard evidence, violations blocked on the spot (once a critical-layer rule hits, remaining rules are skipped — fail-fast design); evidence is based on local diffs — trust boundaries and known bypass surfaces in [LIMITATIONS §3](./docs/LIMITATIONS.md) (quick runs 17 by default; full 24 = 17 default + 7 extensions)
+- 🧱 **24 audit rules + 83 MCP tools** — secret leaks, out-of-scope edits, injection defense, privilege red lines; judged on git diff hard evidence, violations blocked on the spot (once a critical-layer rule hits, remaining rules are skipped — fail-fast design); evidence is based on local diffs — trust boundaries and known bypass surfaces in [LIMITATIONS §3](./docs/LIMITATIONS.md) (quick runs 17 by default; full 24 = 17 default + 7 extensions)
 - 🛡️ **Automatic snapshot rollback** — auto-archived after every audit, one-click restore to any snapshot when something breaks
 
 ## What is the FDE Harness
@@ -246,7 +246,7 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # load the securit
 | Security statement · known limitations | [SECURITY](./SECURITY.md) · [LIMITATIONS](./docs/LIMITATIONS.md) |
 | Contribution guide | [CONTRIBUTING](./CONTRIBUTING.md) |
 
-> 🧪 **Engineering credibility**: 3856 tests / 13 engine packages + 13 plugins (engine packages = 12 main + 1 load-chain; plugins = 9 DSH + 4 OpenClaw; plugin tests run via the root `npm test --workspaces`; "engine packages" is the package-management-scope term — in architecture narrative these are "modules") · 24 audit rules · fresh-eyes independent review continuously running (test counts are determined by `tools/check/test-count.sh`; environmental notes are documented in [docs/guides/review-system.md](./docs/guides/review-system.md). Performance figures are single-machine reference values; cross-tool benchmarking is scheduled for v1.4.x together with Benchmark integration).
+> 🧪 **Engineering credibility**: 4043 tests / 13 engine packages + 13 plugins (engine packages = 12 main + 1 load-chain; plugins = 9 DSH + 4 OpenClaw; plugin tests run via the root `npm test --workspaces`; "engine packages" is the package-management-scope term — in architecture narrative these are "modules") · 24 audit rules · fresh-eyes independent review continuously running (test counts are determined by `tools/check/test-count.sh`; environmental notes are documented in [docs/guides/review-system.md](./docs/guides/review-system.md). Performance figures are single-machine reference values; cross-tool benchmarking is scheduled for v1.4.x together with Benchmark integration).
 
 ---
 

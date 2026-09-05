@@ -19,6 +19,10 @@ scenarios: [企业要装sofagent, 需要梳理业务流, 需要识别哪些环�
 not_when: [简单闲聊, 纯代码实现, 单步查询, 纯信息检索]
 emoji: 🎯
 color: "#16B8F3"
+solves:
+  - 企业 AI 落地无进场方法（FDE 四阶段诊断：进场建档→本体数据→量化判定→交付离场）
+  - 业务知识散落访谈记录（梳理业务流→双图谱交付：Workflow Graph + Ontology Graph）
+  - FDE 离场后无人维护（sustain 持续优化模式自动读 audit 趋势）
 ---
 
 # FDE Harness · 前线部署与知识工程（CLI 调用入口）

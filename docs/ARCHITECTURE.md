@@ -3,7 +3,7 @@
 > 设计决策记录——从为什么存在、约束层五种能力如何协作，到每个关键决策的工程理由。
 >
 > **产品定位锚定**：本架构服务的产品 = **FDE Harness 层**（sofagent）——不造 Agent，嵌在成熟 Agent（执行体：DSH / OpenClaw / WorkBuddy）与模型层（智力源：通用大模型 + 专属小模型 / 后训练模型）之间做治理：对执行体约束（plugin + skill + MCP + CLI + dashboard 五种形态分发），对智力源治理（注册 / 灰度 / 训练 / 部署全留痕）（产品叙事见 [WIKI §二](./WIKI.md#二产品叙事sofagent-是-fde-harness-层不造-agent嵌在-agent-与模型之间做治理)）。
-> v1.4.4 · 2026-09-03（UTC）
+> v1.4.4 · 2026-09-03（UTC）· v1.4.5 开发完成未发版（本批更新 2026-09-05）
 
 <img src="assets/sofagent.png" alt="sofagent" width="160" />
 
@@ -200,9 +200,9 @@ Agent = **模型 + 上下文 + 工具 + 状态 + 执行控制 + 权限 + 可观�
 | rules | 规则引擎纯函数包（零 git 依赖；fs 仅限 AST 扫描的临时目录——mkdtemp 写入待检源码片段，扫描后即清理），编排层 tool-call 事前拦截 + 审批四模式 | ✅ 已实现 |
 | eval | 质量评估引擎：精确匹配 / 语义相似 / 规则合规 三维评分 | ✅ 已实现 |
 | ab-test | A/B 自进化：current vs candidate 并行对比，连续胜出 + 非退化守卫才晋升 | ✅ 已实现 |
-| orchestrator | 编排模块：DAG 任务拆解 + LangGraph 闭环 + A/B 调度器 + ToolGate 事前拦截 + Ontology 运行时层 + 并行编排（MergeQueue/ParallelScheduler/波次卡关）+ Durable Execution + Onboard L1-L5 + Benchmark 评测 + agent-creation + FDE 梳理辅助 + Session 隔离 + meta-harness 多 harness 编排 + worklog 工作明细数据层 + 后训模块地基（train-job 编排/审计/隔离/指纹/签名/回收/恢复/安全 + 数据管道/版本/eval 闭环/环境/dry-run/报告）+ FDE 六引擎工作台 | ✅ 已实现（1705 测试） |
-| daemon | 守护进程：cron + fs 监听 + 文件级审计 + USB 烧录 + 联邦查询 + Dream Cycle 6 阶段 + 启动 LOOP 续跑检查 + 审计轨迹聚合巡检 + 训练孤儿巡检 | ✅ 已实现（325 测试） |
-| mcp | MCP Server：JSON-RPC 2.0 over stdio，tools + resources（80 tools——v1.4.2 新增 FDE 六引擎 fde_interview/classify/quantify/derive/distill/deploy，v1.4.3 新增 train_status/train_list/train_diagnose，v1.4.4 新增 corpus_export） | ✅ 已实现 |
+| orchestrator | 编排模块：DAG 任务拆解 + LangGraph 闭环 + A/B 调度器 + ToolGate 事前拦截 + Ontology 运行时层 + 并行编排（MergeQueue/ParallelScheduler/波次卡关）+ Durable Execution + Onboard L1-L5 + Benchmark 评测 + agent-creation + FDE 梳理辅助 + Session 隔离 + meta-harness 多 harness 编排 + worklog 工作明细数据层 + 后训模块地基（train-job 编排/审计/隔离/指纹/签名/回收/恢复/安全 + 数据管道/版本/eval 闭环/环境/dry-run/报告）+ FDE 六引擎工作台 | ✅ 已实现（1842 测试） |
+| daemon | 守护进程：cron + fs 监听 + 文件级审计 + USB 烧录 + 联邦查询 + Dream Cycle 6 阶段 + 启动 LOOP 续跑检查 + 审计轨迹聚合巡检 + 训练孤儿巡检 | ✅ 已实现（363 测试） |
+| mcp | MCP Server：JSON-RPC 2.0 over stdio，tools + resources（83 tools——v1.4.2 新增 FDE 六引擎 fde_interview/classify/quantify/derive/distill/deploy，v1.4.3 新增 train_status/train_list/train_diagnose，v1.4.4 新增 corpus_export，v1.4.5 新增 train_serve/train_compliance/train_deliverable） | ✅ 已实现 |
 | ontology | 领域本体：合并 / 状态 / 视图 / 概念合成，三层 YAML 自动生长 | ✅ 已实现 |
 | skillopt | Skill 优化：复用 audit 规则做安全审查 + 集成优化 + 回填 | ✅ 已实现 |
 | think | 思考链分析：基于 diff + 审计结果自动生成 think.md 反思条目（append-only） | ✅ 已实现（⚠️ 仅 MCP/CLI 路径触发，git hook 路径不自动生成） |
@@ -226,7 +226,7 @@ v1.3.9 起对所有 workspace 包的入口 export 做显式分级，CI 门禁（
 
 > 累计能力表（按版本归组，全部 ✅ 已发布可用；规划中/排期项见下方「已排期」）：
 
-> 🗺️ **80 个 MCP 工具五域一环**（2026-09-02 收编）：工具不是工具箱清单，是一个组织的编制表——五域各司其职，六条箭头构成「执行→审计→沉淀→晋升」的自进化闭环；审计域（域三）是整条飞轮的数据源头，其执法手册即 24 条审计规则。分域依据为 tool-registry 的 roles 角色分层标签（`SOFAGENT_MCP_ROLES` 可按角色收窄暴露面）。
+> 🗺️ **83 个 MCP 工具五域一环**（2026-09-02 收编，v1.4.5 增至 83）：工具不是工具箱清单，是一个组织的编制表——五域各司其职，六条箭头构成「执行→审计→沉淀→晋升」的自进化闭环；审计域（域三）是整条飞轮的数据源头，其执法手册即 24 条审计规则。分域依据为 tool-registry 的 roles 角色分层标签（`SOFAGENT_MCP_ROLES` 可按角色收窄暴露面）。
 
 ```mermaid
 graph TB
@@ -1197,6 +1197,16 @@ Claude Code 之父 Boris Cherny（YC 访谈）给出 Harness 层的代际时钟�
 ### 记忆查算分离与冷热分层同构
 
 模型架构层的「记忆=事实 / 计算=推理」功能解耦（DeepSeek Engram 的查算分离）与 Agent 系统层的外部记忆后端跨层同构：sofagent 的约束层本质是**可独立读写的持久记忆层**（SKILL.md/审计规则/decision-log），与模型参数化能力正交——模型换代会丢能力，不丢这份外部记忆。分层存储（GPU 显存/CPU/NVMe 按成本分级）映射到 sofagent 记忆冷热分级：热层=加载链常驻（SKILL.md 铁律），温层=按需检索（knowledge/ 目录），冷层=归档（日忆沉淀后的 wiki）。
+
+
+### Harness 中层自进化信号（RSI 数据飞轮印证 · 消化重写）
+
+行业自迭代循环（RSI data flywheel）把「让系统自己变好」的中层信号归为六类优化对象：Prompt / Skill / 任务剧本 / 模型路由 / 故障恢复 / 消息解析。逐项对位 sofagent 现状：Prompt 优化＝SKILL.md 加载链与 skillopt（已覆盖）、Skill＝instinct→skill 自动进化 v1.3.5（已覆盖）、任务剧本＝workflow 模板库（已覆盖）、模型路由＝模型注册表 v1.3.6（已覆盖）、故障恢复＝durable execution 断点续跑（已覆盖）、消息解析＝工具审批四模式（部分覆盖）——六项大半已有落点，**不照抄清单**。真正的增量是两条被行业点破但 sofagent 此前未显式命名的机制：
+
+- **空房间错误分流器**：Agent 失败的归因必须先分「客观错误 vs 主观偏好」——客观错误（命令非零退出/断言失败/超时）归 Harness 修复（规则/工具/workflow 层面的确定性修复），主观偏好（答得不够好/风格不符）归记忆与后训（经验沉淀/增量再训）。混淆两者会把「模型不喜欢」误修成「约束加码」——约束层越叠越厚而问题不解决。落到 sofagent：错题本（instinct/failure-log）已按客观错误记录，v1.4.5 台账的 `solves:` 溯源字段把「这条技能解决的是哪类问题」显式化，正是分流器的落点。
+- **进程活着 ≠ 大脑活着**：daemon 心跳只能证明进程在，不能证明认知功能正常——Dream Cycle 跑完六阶段但 LLM 层降级为 MockLLM 时，管道「成功」而知识产出为零（占位符）。v1.4.5 的应对是产出级探测：采样记录 `providerStatus`（real/mock），降级轮在周报与 evolution report 醒目标注且不计入达标天数——「占位符跑 7 天」永不默默发生。这与上文「关键认知：进程活着 ≠ 服务健康」同构，但探测对象从「进程处理消息」深化到「认知管道产出真实知识」。
+
+> 📖 来源：温故知新 2026-09（RSI 数据飞轮行业印证，单源待复核；六优化对象清单经逐项对位防照抄，真增量两点消化重写）
 
 
 ### SHACL 语义契约（跨 Agent 协同的管控层参照）

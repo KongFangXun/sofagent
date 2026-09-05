@@ -4,7 +4,7 @@
 >
 > **本文档面向开发者。** 这里讲 sofagent 内部怎么跑——Skill 结构、编排模块、反思闭环、数据架构。sofagent 是一层 FDE Harness（嵌在成熟 Agent 与模型层之间），底层引擎的内部实现在这里展开。
 >
-> v1.4.4 · 2026-09-03（UTC）· 孔放勋
+> v1.4.4 · 2026-09-03（UTC）· v1.4.5 开发完成未发版（本批更新 2026-09-05）· 孔放勋
 
 <img src="assets/sofagent.png" alt="sofagent" width="160" />
 
@@ -598,7 +598,7 @@ v1.0.8 自研 git-shadow diff 解析（isomorphic-git **风格**，非 npm 包�
 
 行业测评揭示的「防刷分验证法」与 sofagent 验证体系同构：
 
-- **真实代码库 + 真实 PR 当考题**：研报用「已合并 PR + 原 PR 测试用例」当评分标准，规避公开 benchmark 泄漏导致的刷分。对应 sofagent `regression-checklist.md`（98 维）+ `acceptance-test.sh`（304 场景）——用真实修复场景与历史 case 当验收，而非玩具 benchmark。
+- **真实代码库 + 真实 PR 当考题**：研报用「已合并 PR + 原 PR 测试用例」当评分标准，规避公开 benchmark 泄漏导致的刷分。对应 sofagent `regression-checklist.md`（98 维）+ `acceptance-test.sh`（305 场景）——用真实修复场景与历史 case 当验收，而非玩具 benchmark。
 - **上下文精简 = 低成本高通过**：研报发现 Pipe Agent 同模型下比原生工具便宜 1.2–2×、性能差距 <3pt，根因是初始提示 <1500 token（vs Claude Code 20k）。这从量化角度印证 sofagent「Harness 要轻」——约束层零 token 运行（24 条规则 19 条纯 git-diff），把成本压在确定性引擎而非上下文堆料。
 
 ## 九B、经验编译为持久知识（WikiSkill 印证）
@@ -608,7 +608,7 @@ Google Research 的 WikiSkill（[arXiv:2608.27454](https://arxiv.org/abs/2608.27
 - **持久知识层是进化胜负手**：消融拿掉 Wiki 访问，平均分 63.7% → 48.7%（-15.0pt）——比任何方法间差距都大。印证 sofagent 温故知新/lessons/think.md 反思区这一柱的分量：经验沉淀不是锦上添花，是技能进化的前提。
 - **推理时禁查知识库反而更好**（-2.8pt）：训练 rollout 时让 Agent 直接查 Wiki，产出的轨迹对技能开发失去参考价值。反向印证 sofagent「约束层要轻、零 token 运行」——知识供进化者离线消费，不塞执行时上下文。
 - **跨模型技能迁移有负迁移实锤**：4B 模型进化的技能把 Gemini-3.5-Flash 从 50.5% 拉到 18.1%——弱模型的低层 workaround 束缚强模型。sofagent 覆盖 11 供应商多模型，技能应按模型分级门控，不能全局通用投放。
-- **溯源与提案审计**：`PURPOSE.md`（技能回链到所解决的 pattern）与 `skill-impact.md`（每次提案 diff/分数/接受与否程序化落账）两个小机制，与 sofagent 的 LEDGER/审计轨迹理念同源，已列入 ROADMAP 候选。
+- **溯源与提案审计**：`PURPOSE.md`（技能回链到所解决的 pattern）与 `skill-impact.md`（每次提案 diff/分数/接受与否程序化落账）两个小机制，与 sofagent 的 LEDGER/审计轨迹理念同源。**v1.4.5 第七章四已收编落地**：`solves:` frontmatter 溯源字段（SKILL/ 子树 5 个带 frontmatter 的 SKILL.md 补齐——「为什么存在」回链 pattern，改技能先懂设计意图）+ skill-impact 台账（`engine/orchestrator/src/skill-evolution/`——JSONL append-only 程序化落账，被拒提案带原因不丢教训）+ eval 门控（技能变更过 eval 验证集、分数超历史最优才收编，接通 benchmark/evaluation-log 既有闭环）+ 执行/进化上下文隔离（rollout 期禁查进化知识库的运行时守卫——executor 访问即审计告警，对应消融 -2.8pt 实证的工程化防御）。
 - **自进化的开放问题恰是约束层的主场**：技能自进化的公开讨论自认仍缺质量控制、安全审核、版本管理三样——正是 sofagent 审计模块（规则集）+ 安全审查 + 回滚编排已经在做的事。开发者角色从「写技能」转为「设目标 + 把关」，与 sofagent 约束层哲学（人定规则、AI 执行、审计每次变更）同构，是 FDE 交付叙事的现成参照。
 
 ## 九C、meta-harness 生态与 sofagent 的定位（2026-06 Meta-Harness Summer 印证）
@@ -657,7 +657,7 @@ loop-engineering 社区将 STATE.md 定位为 **"对话外的持久化主干"**�
 
 ### 激活链要解决的工程问题
 
-当前 orchestrator 包（1705 测试，实测见 `tools/check/test-count.sh`）和 registry.ts（v1.0.8 动态注册）已经能跑——但只有开发者手动写 `.sofagent/subagents/*.yml` 才能注册自定义 Agent。激活链做的事：**让 FDE 诊断交付物自动变成 `.sofagent/subagents/*.yml`**，不需要人手写。
+当前 orchestrator 包（1842 测试，实测见 `tools/check/test-count.sh`）和 registry.ts（v1.0.8 动态注册）已经能跑——但只有开发者手动写 `.sofagent/subagents/*.yml` 才能注册自定义 Agent。激活链做的事：**让 FDE 诊断交付物自动变成 `.sofagent/subagents/*.yml`**，不需要人手写。
 
 ### 扩展点
 

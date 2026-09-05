@@ -7,6 +7,9 @@
 //      默认 @daily/@weekly/@monthly 接线；enabled:false 可显式关闭。
 // v1.4.5 T2（P0）：dream-cycle: 段 → runDreamCycle 调度
 //   —— 同样零生产调用，默认 @daily 启用，产物落 data/knowledge/。
+// v1.4.5 第五章：train-archive: 段 → runTrainArchiveTask 调度
+//   —— 训练产物归档冷存（压缩不删除）+ 90 天覆写销毁 + 磁盘 80% 预警，
+//      默认 @weekly 启用（企业级磁盘治理标配），task 实现在 tasks/train-archive.ts。
 //
 // 从 .sofagent/watch.yml 读取 cron 配置段，按周期调度 Sub Agent。
 // 默认运行 fde Agent 的 sustain 模式，产出周度巡检报告。
@@ -69,6 +72,7 @@ interface WatchConfig {
   cron?: unknown[];
   inspectors?: unknown;
   'dream-cycle'?: unknown;
+  'train-archive'?: unknown;
 }
 
 /** 巡检调度状态文件路径（lastSuccessAt 持久化——doctor 报告用） */
@@ -180,6 +184,33 @@ export function loadDreamCycleConfig(projectDir: string): DreamCycleConfig {
   }
 }
 
+/**
+ * 读取 watch.yml `train-archive:` 段（v1.4.5 第五章）。
+ *
+ * cron 调度视角的薄适配：段语义本体在 tasks/train-archive.ts 的
+ * loadTrainArchiveConfig（purge/diskCheck 子开关）——本函数只解析
+ * cron 关心的 enabled + schedule 两键（同 loadDreamCycleConfig 模式）。
+ */
+export function loadTrainArchiveCronConfig(
+  projectDir: string,
+): { enabled: boolean; schedule: '@daily' | '@weekly' | '@monthly' } {
+  const defaults = { enabled: true, schedule: '@weekly' as const };
+  const watchYml = join(projectDir, '.sofagent', 'watch.yml');
+  if (!existsSync(watchYml)) return defaults;
+  try {
+    const raw = yamlLoad(readFileSync(watchYml, 'utf-8')) as WatchConfig | null;
+    const section = raw?.['train-archive'];
+    if (!section || typeof section !== 'object') return defaults;
+    const s = section as Record<string, unknown>;
+    const enabled = s.enabled === false ? false : true;
+    const schedule =
+      s.schedule === '@daily' || s.schedule === '@monthly' ? s.schedule : '@weekly';
+    return { enabled, schedule };
+  } catch {
+    return defaults;
+  }
+}
+
 /** 巡检调度状态报告（--doctor 展示用） */
 export interface InspectorScheduleReport {
   /** 总开关 */
@@ -247,6 +278,13 @@ export function ensureDefaultInspectorsConfig(projectDir: string): boolean {
       'dream-cycle:',
       '  enabled: true',
       '  schedule: "@daily"',
+      '',
+      '# 训练产物归档（v1.4.5 第五章）：默认每周归档冷存 + 90 天覆写销毁 + 磁盘预警',
+      'train-archive:',
+      '  enabled: true',
+      '  schedule: "@weekly"',
+      '  purge: true',
+      '  diskCheck: true',
       '',
     ].join('\n'), 'utf-8');
     return true;
@@ -349,6 +387,18 @@ export function startCron(projectDir: string): number {
             } else {
               console.error(`[cron] dream-cycle 中断于 ${result.failedAt ?? 'unknown'}（state.md 已落游标，下轮续跑）`);
             }
+            // v1.4.5 第七章一：Dream Cycle 完成后采集当日进化样本
+            //（eval passRate / 知识库增量 / 修正回流 → data/evolution/samples-<date>.json，
+            //  cursor 跨重启续——evolution report 数据源）。采样失败不阻断调度（best-effort）。
+            const { collectDailySample } = await import('./dream-cycle/continuous-sampler');
+            const dataDir =
+              process.env.SOFAGENT_DATA ||
+              join(process.env.SOFAGENT_HOME || require('os').homedir() + '/.sofagent', 'data');
+            const sample = await collectDailySample(dataDir, { skipDreamCycle: true });
+            console.log(
+              `[cron] evolution 采样完成: ${sample.cursor.daysSampled}/${7} 天` +
+                (sample.cursor.mockDays > 0 ? `（⚠️ 降级轮 ${sample.cursor.mockDays} 天）` : ''),
+            );
           } catch (err) {
             console.error(`[cron] dream-cycle 调度失败:`, (err as Error).message);
           }
@@ -357,6 +407,47 @@ export function startCron(projectDir: string): number {
     }
   } else {
     console.log('[cron] dream-cycle 已禁用（dream-cycle.enabled=false）');
+  }
+
+  // ── v1.4.5 第五章：训练产物归档调度接线（train-archive: 段，缺省 @weekly）──
+  // 归档冷存（压缩不删除）+ 90 天覆写销毁 + 磁盘 80% 预警——retention-policy
+  // 三动作的调度面（对齐 dream-cycle 接线模式：段缺失默认启用）。
+  const trainArchiveConfig = loadTrainArchiveCronConfig(projectDir);
+  if (trainArchiveConfig.enabled) {
+    const intervalMs = scheduleToMs(trainArchiveConfig.schedule);
+    if (intervalMs > 0) {
+      scheduled += 1;
+      console.log(`[cron] ${trainArchiveConfig.schedule} → train-archive（训练产物归档+清理+空间预警）`);
+      setInterval(() => {
+        void (async () => {
+          try {
+            const dataDir = process.env.SOFAGENT_DATA
+              || join(process.env.SOFAGENT_HOME || require('os').homedir() + '/.sofagent', 'data');
+            const { runTrainArchiveTask } = (await import('./tasks/train-archive')) as {
+              runTrainArchiveTask: (
+                dataDir: string,
+                opts?: { config?: unknown },
+              ) => Promise<{
+                archives: Array<{ archived: number; failures: number }>;
+                purges: Array<{ purged: number; failures: number }>;
+                diskWarning: { warning: boolean };
+              }>;
+            };
+            const result = await runTrainArchiveTask(dataDir);
+            const archivedTotal = result.archives.reduce((s, a) => s + a.archived, 0);
+            const purgedTotal = result.purges.reduce((s, p) => s + p.purged, 0);
+            const diskTag = result.diskWarning.warning ? ' ⚠ 磁盘预警已打出' : '';
+            console.log(
+              `[cron] train-archive 完成: 归档 ${archivedTotal} 项 / 清理 ${purgedTotal} 项${diskTag}`,
+            );
+          } catch (err) {
+            console.error(`[cron] train-archive 调度失败:`, (err as Error).message);
+          }
+        })();
+      }, intervalMs);
+    }
+  } else {
+    console.log('[cron] train-archive 已禁用（train-archive.enabled=false）');
   }
 
   const jobs = loadCronConfig(projectDir);
@@ -421,6 +512,29 @@ export function startCron(projectDir: string): number {
             console.log(`[cron] decision-memory 完成: ${Array.isArray(entries) ? entries.length : 0} 条提取`);
           } catch (err) {
             console.error(`[cron] decision-memory 回灌失败:`, (err as Error).message);
+          }
+        })();
+      }, intervalMs);
+      continue;
+    }
+
+    // v1.4.5 第二章：task === 'continuous-training' 走持续后训练分支——
+    // 数据回流（worklog+decision-log+llm-calls）→ 触发判定（阈值/定时）→
+    // 复用 train-job 编排 + 回退保护。编排本体在 orchestrator
+    // train-continuous，daemon 只装配调度入口（对齐 decision-memory 模式）。
+    if (job.task === 'continuous-training') {
+      scheduled += 1;
+      console.log(`[cron] ${job.schedule} → continuous-training（持续后训练飞轮）`);
+      setInterval(() => {
+        void (async () => {
+          try {
+            const { runContinuousTrainingTick } = (await import('./tasks/continuous-training')) as {
+              runContinuousTrainingTick: (dir: string) => Promise<{ executed: boolean; reason: string }>;
+            };
+            const tick = await runContinuousTrainingTick(projectDir);
+            console.log(`[cron] continuous-training: ${tick.executed ? '已执行' : '未执行'}——${tick.reason}`);
+          } catch (err) {
+            console.error(`[cron] continuous-training 失败:`, (err as Error).message);
           }
         })();
       }, intervalMs);

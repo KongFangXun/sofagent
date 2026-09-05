@@ -22,6 +22,26 @@ import { atomicAppendSync } from '@sofagent/core';
 import type { DatasetAlgorithm, ColumnMapping } from './dataset-builder';
 
 // ══════════════════════════════════════
+// v1.4.5 第三章：合规扫描结果 + 数据来源标记（类型扩展——只加可选字段，
+// 旧记录无这两字段照常解析，向后兼容）
+// ══════════════════════════════════════
+
+/** 数据来源三分类（合规可追溯——企业提供 / 合成 / 公开语料） */
+export type DataProvenance = 'enterprise' | 'synthetic' | 'public';
+
+/** 合规扫描结果摘要（写版本记录——完整报告在 train-compliance 侧生成） */
+export interface ComplianceStamp {
+  /** 扫描时间（ISO） */
+  scannedAt: string;
+  /** 闸门结论（true = 无 critical/high 发现，可提交训练） */
+  passed: boolean;
+  /** 发现项计数（按严重度聚合——详细 findings 在合规报告侧） */
+  findingCounts: Record<string, number>;
+  /** 未过闸时的阻断原因（passed=false 时在场） */
+  blockedBy?: string;
+}
+
+// ══════════════════════════════════════
 // dataset_version 数据模型
 // ══════════════════════════════════════
 
@@ -45,6 +65,10 @@ export interface DatasetVersionRecord {
   datasetFile: string;
   /** 生成时间（ISO 8601） */
   createdAt: string;
+  /** 数据来源标记（v1.4.5 第三章——可选，旧记录无此字段按未标记处理） */
+  provenance?: DataProvenance;
+  /** 合规扫描结果（v1.4.5 第三章——可选，最近一次扫描摘要） */
+  compliance?: ComplianceStamp;
 }
 
 /** 记录版本入参（dataset-builder 产出侧组装） */
@@ -59,6 +83,10 @@ export interface RecordDatasetVersionInput {
   datasetFile: string;
   /** 生成时间（缺省当前——测试可注入固定值） */
   createdAt?: string;
+  /** 数据来源标记（v1.4.5 第三章——可选） */
+  provenance?: DataProvenance;
+  /** 合规扫描结果（v1.4.5 第三章——可选） */
+  compliance?: ComplianceStamp;
 }
 
 /** 两版差异概览（章二交付：判断「数据变了导致分数变了」） */
@@ -109,6 +137,8 @@ export function recordDatasetVersion(
     columnMapping: input.columnMapping,
     datasetFile: input.datasetFile,
     createdAt: input.createdAt ?? new Date().toISOString(),
+    ...(input.provenance !== undefined ? { provenance: input.provenance } : {}),
+    ...(input.compliance !== undefined ? { compliance: input.compliance } : {}),
   };
 
   const existing = readDatasetVersions(input.dataDir, input.enterpriseId);
@@ -166,6 +196,53 @@ export function getDatasetVersion(
     readDatasetVersions(dataDir, enterpriseId).find(
       (r) => r.datasetId === datasetId && r.version === version,
     ) ?? null
+  );
+}
+
+// ══════════════════════════════════════
+// v1.4.5 第三章：合规扫描结果写入训练集版本
+// ══════════════════════════════════════
+
+/**
+ * 把合规扫描结果 + 来源标记写入训练集版本（v1.4.5 第三章）。
+ *
+ * 落盘语义（append-only 台账纪律——不改写历史行）：
+ * 以既有版本记录为底，追加一条带 compliance/provenance 的新记录，
+ * version 加后缀 `-c` 区分（同 contentHash 合法重登记——幂等由
+ * recordDatasetVersion 的 (datasetId, version) 查重兜底）。
+ *
+ * @returns 写入后的版本记录（含合规结果与来源标记）
+ * @throws 版本不存在（缺记录无从打标——fail fast）
+ */
+export function stampComplianceOnVersion(
+  dataDir: string,
+  enterpriseId: string,
+  datasetId: string,
+  version: string,
+  stamp: { compliance: ComplianceStamp; provenance?: DataProvenance },
+): DatasetVersionRecord {
+  const existing = getDatasetVersion(dataDir, enterpriseId, datasetId, version);
+  if (existing === null) {
+    throw new Error(
+      `[dataset-version] 版本不存在：${datasetId}@${version}（enterprise=${enterpriseId}）——先构建训练集再写合规结果`,
+    );
+  }
+  // 后缀去重（对已是 -c 后缀的版本重复打标不叠后缀——幂等口径）
+  const baseVersion = version.endsWith('-c') ? version.slice(0, -2) : version;
+  return recordDatasetVersion(
+    {
+      dataDir,
+      enterpriseId,
+      datasetId,
+      contentHash: existing.contentHash,
+      sampleCount: existing.sampleCount,
+      algorithm: existing.algorithm,
+      columnMapping: existing.columnMapping,
+      datasetFile: existing.datasetFile,
+      provenance: stamp.provenance ?? existing.provenance,
+      compliance: stamp.compliance,
+    },
+    `${baseVersion}-c`,
   );
 }
 

@@ -783,6 +783,46 @@
 } from './commons/rule-promote';
 /* @public */ export type { PromoteInput, PromoteResult } from './commons/rule-promote';
 
+// v1.4.5 第七章二/三：进化模块实证收口——采样数据桥 + L4 工具层自进化
+/* @public */ export {
+  readEvolutionSamples,
+  readLatestEvolutionSample,
+  correctionBackflowToRatings,
+  repeatFailuresToCases,
+  toolCandidatesFromSamples,
+  logPromotionsToSkillImpact,
+  resolveEvolutionSamplesDir,
+} from './evolution/evolution-samples';
+/* @public */ export type {
+  EvolutionSampleFile,
+  EvalCurvePoint,
+  CorrectionBackflow,
+  LowScoreFeedback,
+  RepeatFailure,
+  ToolUsageStat,
+  ToolCandidate,
+} from './evolution/evolution-samples';
+/* @public */ export {
+  nominateToolCandidate,
+  reviewToolCandidate,
+  registerApprovedTool,
+  getApprovedEvolvedTools,
+  listToolEvolutionLedger,
+  resolveToolEvolutionLedgerPath,
+  TOOL_STATUS_FLOW,
+} from './evolution/tool-evolution';
+/* @public */ export type {
+  ToolEvolutionEntry,
+  ToolCandidateStatus,
+  EvolvedToolRuntime,
+  NominateInput,
+  NominateResult,
+  ReviewInput,
+  ReviewResult,
+  RegisterInput,
+  RegisterResult,
+} from './evolution/tool-evolution';
+
 // v1.3.4 增量：编排层与执行层分离
 /* @public */ export {
   createExecutionBackend,
@@ -836,6 +876,25 @@
   fdeCurrentSessionPath,
 } from './fde-session';
 /* @public */ export type { FDESessionContext, FDESessionMeta } from './fde-session';
+
+// v1.4.5 第八章：FDE 进场记忆目录工程化（10 文件结构 + session-stop 捕获 + 跨 session 恢复）
+/* @public */ export {
+  FDE_SESSION_TEN_FILES,
+  initFDEClientSession,
+  captureFDEClientSession,
+  restoreFDEClientSession,
+  isFDEClientInitialized,
+  listFDEClients,
+  fdeClientSessionsRoot,
+  fdeClientSessionDir,
+  parseFDEClientContext,
+} from './fde-session-mgr';
+/* @public */ export type {
+  FDEClientMeta,
+  FDEClientContext,
+  FDESessionState,
+  FDERestoreResult,
+} from './fde-session-mgr';
 
 // v1.3.5 交付 5 #4：FDE 节点注册表（yaml schema 解析——daemon 消费方经本出口 import）
 /* @public */ export {
@@ -1361,6 +1420,77 @@
 } from './train/train-eval-loop';
 
 // ============================================================
+// v1.4.5 第一章：训练推理服务（train serve——拉起 vLLM/Ollama/OpenAI 兼容端点）
+// ============================================================
+/* @public */ export {
+  createTrainServeManager,
+  buildServeCommand,
+  serveEndpoint,
+  serveStatePath,
+  computeServeBackoff,
+  linkSwitchToServe,
+} from './train/train-serve';
+/* @public */ export type {
+  ServeBackend,
+  ServeOp,
+  ServeTarget,
+  ServeStatus,
+  TrainServeResult,
+  TrainServeOptions,
+  ServeSpawnFn,
+  HealthProbeFn,
+  SleepFn,
+  SwitchServeLinkResult,
+} from './train/train-serve';
+
+// ============================================================
+// v1.4.5 第三章：训练数据合规扫描（合规闸——PII/敏感字段/专有名词）
+// ============================================================
+/* @public */ export {
+  scanDatasetCompliance,
+  assertComplianceGate,
+  scanAndGate,
+  markProvenance,
+  ComplianceGateError,
+} from './train/train-compliance';
+/* @public */ export type {
+  DataProvenance as TrainDataProvenance,
+  ComplianceSeverity,
+  ComplianceAction,
+  ComplianceFindingKind,
+  ComplianceFinding,
+  ComplianceReport,
+  ScanComplianceInput,
+} from './train/train-compliance';
+
+// ============================================================
+// v1.4.5 第三章（续）：dataset-version 合规打标扩展
+// ============================================================
+/* @public */ export { stampComplianceOnVersion } from './train/dataset-version';
+/* @public */ export type { ComplianceStamp, DataProvenance as DatasetProvenance } from './train/dataset-version';
+
+// ============================================================
+// v1.4.5 第二章：持续后训练（飞轮闭环——数据回流+触发+回退保护）
+// ============================================================
+/* @public */ export {
+  DEFAULT_TRIGGER_POLICY,
+  collectFlywheelSamples,
+  flywheelToIngestRecords,
+  shouldTrigger,
+  runContinuousTraining,
+  continuousStatePath,
+} from './train/train-continuous';
+/* @public */ export type {
+  ContinuousTrigger,
+  TriggerPolicy,
+  FlywheelSnapshot,
+  TriggerDecision,
+  ContinuousRunResult,
+  ContinuousDeps,
+  RunContinuousInput,
+} from './train/train-continuous';
+
+// ============================================================
 // v1.4.2 章四：训练环境管理（train env init / train doctor / 版本清单 / 模型下载）
 // ============================================================
 /* @public */ export {
@@ -1647,3 +1777,90 @@
   TrainReportResult,
   TrainReportJson,
 } from './train/train-report';
+
+// ============================================================
+// v1.4.5 第五章：训练产物归档与保留策略（retention-policy · 磁盘治理）
+// ============================================================
+/* @public */ export {
+  DEFAULT_RETENTION_CONFIG,
+  retentionConfigPath,
+  loadRetentionConfig,
+  saveRetentionConfig,
+  retentionMarkersPath,
+  markRollbackPoint,
+  readRetentionMarkers,
+  queryRetentionDecision,
+  trainArchiveDir,
+  archiveExpired,
+  purgeExpiredArchives,
+  checkDiskPressure,
+} from './train/retention-policy';
+/* @public */ export type {
+  RetentionConfig,
+  RollbackPointRef,
+  RetentionMarker,
+  MarkRollbackPointInput,
+  RetentionItem,
+  RetentionDecision,
+  ArchiveReport,
+  PurgeReport,
+  DiskPressureReport,
+} from './train/retention-policy';
+
+// ============================================================
+// v1.4.5 第四章：FDE 训练交付包（train-deliverable · 五件聚合 + HMAC）
+// ============================================================
+/* @public */ export {
+  TRAIN_DELIVERABLE_GENERATOR_VERSION,
+  deliverablesDir,
+  renderOpsManual,
+  generateTrainDeliverable,
+  verifyTrainDeliverable,
+  TrainDeliverableError,
+} from './train/train-deliverable';
+/* @public */ export type {
+  DeliverableFileEntry,
+  DeliverableManifestBody,
+  DeliverableManifest,
+  GenerateTrainDeliverableInput,
+  DeliverableResult,
+  DeliverableEnvCheck,
+  DeliverableVerifyReport,
+} from './train/train-deliverable';
+
+// ============================================================
+// v1.4.5 第四/五章共用：最小 ZIP 写入器（deflate + CRC32 · 零依赖）
+// ============================================================
+/* @public */ export { buildZip, crc32 } from './train/zip-writer';
+/* @public */ export type { ZipEntryInput, BuildZipOptions } from './train/zip-writer';
+
+// ============================================================
+// v1.4.5 第七章四：技能进化提案审计与溯源（skill-evolution · WikiSkill 收编）
+// ============================================================
+/* @public */ export {
+  skillEvolutionDir,
+  skillImpactLedgerPath,
+  appendSkillImpactEntry,
+  readSkillImpactLedger,
+  historicalBestScore,
+  readRejectedProposals,
+} from './skill-evolution/skill-impact-ledger';
+/* @public */ export type { SkillImpactEntry, ProposalVerdict } from './skill-evolution/skill-impact-ledger';
+/* @public */ export {
+  runEvalGate,
+  evalRecordsForProposal,
+} from './skill-evolution/eval-gate';
+/* @public */ export type { EvalGateInput, EvalGateResult } from './skill-evolution/eval-gate';
+/* @public */ export {
+  isolationViolationsPath,
+  isEvolutionKnowledgePath,
+  guardKnowledgeAccess,
+  readIsolationViolations,
+} from './skill-evolution/isolation-guard';
+/* @public */ export type { ContextRole, IsolationViolation } from './skill-evolution/isolation-guard';
+/* @public */ export {
+  SOLVES_FIELD,
+  parseSolvesField,
+  ensureSolvesField,
+} from './skill-evolution/solves-frontmatter';
+/* @public */ export type { FrontmatterSolves } from './skill-evolution/solves-frontmatter';
