@@ -362,7 +362,20 @@ export function checkHistoryChainDetailed(dataDir?: string, maxEntries?: number)
         // stable 条目（无环境指纹）：HMAC 不匹配 = 内容被改 → tampered（红）
         return { status: 'tampered', index: 0, detail: `创世条目（索引 0）HMAC 签名不匹配（stable 条目，无环境指纹），疑似内容被篡改` };
       }
-      // 其余情况（v2 指纹条目或旧条目）归为不可复验（黄）
+      if (genesisEntry.hmacAlgo === 'stable' && genesisUseFingerprint) {
+        // 与主循环同款判定：用创世条目记录的环境指纹区分「真篡改」与「环境漂移」——
+        // 指纹一致说明运行环境未变，HMAC 不匹配只能是内容在签名后被改 → tampered（红）；
+        // 指纹不一致（密钥轮换 / hostname / dataDir 漂移）或未记录指纹 → 不可复验（黄）
+        const genesisRecordedFingerprint = genesisEntry.envFingerprint;
+        if (
+          typeof genesisRecordedFingerprint === 'string' &&
+          genesisRecordedFingerprint.length > 0 &&
+          genesisRecordedFingerprint === fingerprint
+        ) {
+          return { status: 'tampered', index: 0, detail: `创世条目（索引 0）HMAC 签名不匹配（环境指纹一致，确为内容被篡改）` };
+        }
+      }
+      // 其余情况（指纹漂移 / 旧版 v2 未记录指纹 / 旧算法条目）归为不可复验（黄）
       foundUnverifiable = true;
     }
   }

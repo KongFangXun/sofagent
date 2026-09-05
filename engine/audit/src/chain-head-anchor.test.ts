@@ -152,6 +152,32 @@ describe('审计链尾部截断防护——链头锚点', () => {
     }
   });
 
+  it('test_创世条目被篡改_环境指纹一致_判定tampered', () => {
+    // 创世条目（索引 0）HMAC 校验曾缺环境指纹比对——v2 指纹条目被篡改时误归
+    // 「不可复验（黄）」，与主循环同路径判定不对齐；指纹一致时 HMAC 不匹配
+    // 只能是内容在签名后被改，应判红
+    const dataDir = newDataDir();
+    try {
+      appendHistory(makeEntry('2026-01-01T00:00:00.000Z', 0), dataDir);
+      appendHistory(makeEntry('2026-01-02T00:00:00.000Z', 0), dataDir);
+
+      // 条数不变，改写创世条目（索引 0）的 task 字段——保留其 envFingerprint
+      const filePath = getHistoryFilePath(dataDir);
+      const lines = readFileSync(filePath, 'utf-8').trim().split('\n').filter(Boolean);
+      const tamperedGenesis = JSON.parse(lines[0]!);
+      tamperedGenesis.task = '被篡改的创世条目';
+      lines[0] = JSON.stringify(tamperedGenesis);
+      writeFileSync(filePath, lines.join('\n') + '\n', 'utf-8');
+
+      const result = checkHistoryChainDetailed(dataDir);
+      expect(result.status).toBe('tampered');
+      expect(result.index).toBe(0);
+      expect(result.detail).toContain('创世条目');
+    } finally {
+      rmSync(dataDir, { recursive: true, force: true });
+    }
+  });
+
   it('test_删除锚点文件_链校验ok_向后兼容旧行为', () => {
     const dataDir = newDataDir();
     try {
