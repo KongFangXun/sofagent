@@ -2707,6 +2707,30 @@ function extractFindingsFromCheck(text, source) {
     });
   }
 
+  // ── 路径 C：单行括号格式（[视角] 路径:行号 · 描述 · 优先级(P1)）──
+  // 部分模型在 B 侧摘要中输出此格式；与 A（# 标题）/ B（| 表格）不重叠
+  for (const line of lines) {
+    const bracketMatch = line.match(/^\[([^\]]+)\]\s*(.+)$/);
+    if (!bracketMatch) continue;
+    const tail = bracketMatch[2].trim();
+    if (tail.startsWith('(')) continue; // markdown 链接 [标题](路径)，非 finding 行
+    const prioMatch = tail.match(/·\s*(?:优先级\s*[（(]\s*)?(P[0-3])\s*[）)]?\s*$/);
+    if (!prioMatch) continue;
+    const prio = prioMatch[1];
+    if (prio !== 'P0' && prio !== 'P1') continue;
+    const desc = tail.slice(0, prioMatch.index).replace(/·\s*$/, '').trim();
+    // 从描述中提取文件引用（含可选 :行号）作为修复目标
+    const fileRefs = desc.match(/[A-Za-z0-9_./-]+\.(?:ts|tsx|js|mjs|cjs|md|sh|json|ya?ml|html|css)(?::\d+)?/g);
+    const filePath = fileRefs ? fileRefs[0] : '(文件待确认)';
+    items.push({
+      title: desc.replace(fileRefs ? fileRefs[0] : '', '').replace(/^[\s:：·-]+/, '').slice(0, 80) || bracketMatch[1].trim(),
+      filePath,
+      desc: desc.slice(0, 200),
+      source: `${source}·${bracketMatch[1].trim()}`,
+      prio,
+    });
+  }
+
   return items;
 }
 
@@ -2831,14 +2855,15 @@ function writeFallbackFindings(roundDir) {
       '',
     ].join('\n');
   } else {
-    const p0 = (findingsText.match(/\bP0\b/g) || []).length;
-    const p1 = (findingsText.match(/\bP1\b/g) || []).length;
+    // 防御：禁止用全文正则统计 P0/P1 出现次数——"未发现 P0""无 P0 问题"这类
+    // 否定句同样命中，会产出虚构计数误导后续判停。提取失败时如实报 0 条，
+    // 原始摘要已落盘 findings.md，可人工查阅。
     resultContent = [
       '# 修复结果（降级生成——a-consolidate 失败）',
       '',
       `| # | 发现 | 优先级 | 状态 |`,
       `|---|------|--------|------|`,
-      `| fallback | a-consolidate 失败，findings 由各 perspective 报告摘要拼接 | P0×${p0} P1×${p1} | SKIP |`,
+      `| fallback | a-consolidate 失败，且各 check 报告未提取到 P0/P1 finding（原始摘要见 findings.md） | P0×0 P1×0 | SKIP |`,
       '',
     ].join('\n');
   }

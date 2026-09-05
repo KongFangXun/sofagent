@@ -718,7 +718,11 @@ async function createCordisDriver(
       const selection = defaultModel?.currentSelection?.() ?? { provider: 'deepseek', model: '' };
       const { agent } = await agents.create({
         sessionId: SessionId(`session-${randomUUID()}`),
-        meta: { cwd: process.cwd() },
+        // FORGE 步零对齐：worktree 隔离时 agent cwd 对准副本——DSH 沙箱 workspace-write
+        // 的可写区从 meta.cwd 解析，落在主仓会让 b-fix 对数据树 worktree 的写入全被拒
+        // （run-01 实锤：11 项修复全落主仓工作树未提交，worktree 恒旧态）。CLI 桥接
+        // 路径（execFile cwd=FORGE_WORKTREE_ROOT）已同语义，内嵌路径此处补齐。
+        meta: { cwd: process.env.FORGE_WORKTREE_ROOT || process.cwd() },
         agentOptions: { provider: selection.provider, model: selection.model },
         setup: (agentCtx: unknown) => {
           installModelSelectionFn(agentCtx, { current: selection, assembled: undefined });
