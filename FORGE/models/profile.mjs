@@ -24,17 +24,19 @@
 
 import glm53 from './glm-5.3.mjs';
 import glm53flash from './glm-5.3-flash.mjs';
+import deepseekV4Flash from './deepseek-v4-flash.mjs';
 
 export default {
   // v1.4.2 起：A/B/V/F 统一切到 glm-5.3-flash（用户 2026-08-28 拍板，Coding Plan 额度 3 倍）。
+  // 2026-09-05 用户拍板「GLM 流量不够，全切回 V4 Flash」→ 四角色切 deepseek-v4-flash（GLM 实测 429 余额不足）。
   // 双盲审查独立性仍通过 A/B 不同 prompt 视角保证（a-check.md ≠ b-check.md），不依赖不同模型。
   // 历史注记（勿删）：2026-08-30 晚 flash 端点间歇故障（45s 超时 / 500 code 1234 交替，run-20
   // 全 500 根因），曾临时切 glm-5.3 绕过（cde4ee27），次日凌晨双探确认恢复后切回。
   // run-07 验证 Qwen3.8-max 在工具循环里无法被 stateModifier 约束
   // （thinking-only 模型在工具循环中停不下来）→ 改回 GLM-5.2；GLM-5.2 在审查步骤调 60+ 次工具不收敛、靠软熔断兜底。
   // v1.3.9 曾切 deepseek-v4-flash（按量低成本档），v1.4.1 切 glm-5.3（用户 2026-08-26 拍板）。
-  A: { model: glm53flash, role: 'reviewer' },  // 审查者：glm-5.3-flash → GLM_API_KEY
-  B: { model: glm53flash, role: 'engineer' },  // 工程师：glm-5.3-flash → GLM_API_KEY
-  V: { model: glm53flash, role: 'reviewer' },  // 验证者：glm-5.3-flash → GLM_API_KEY
-  F: { model: glm53flash, role: 'engineer' },  // 修复者：glm-5.3-flash → GLM_API_KEY
+  A: { model: deepseekV4Flash, role: 'reviewer' },  // 审查者：deepseek-v4-flash → DEEPSEEK_API_KEY
+  B: { model: deepseekV4Flash, role: 'engineer' },  // 工程师：deepseek-v4-flash → DEEPSEEK_API_KEY
+  V: { model: deepseekV4Flash, role: 'reviewer' },  // 验证者：deepseek-v4-flash → DEEPSEEK_API_KEY
+  F: { model: deepseekV4Flash, role: 'engineer' },  // 修复者：deepseek-v4-flash → DEEPSEEK_API_KEY
 };
