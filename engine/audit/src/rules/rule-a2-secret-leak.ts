@@ -327,7 +327,10 @@ export function checkRuleA2(ctx: AuditContext): RuleCheck {
             /(?:api[_-]?key|apikey|access[_-]?token|auth[_-]?token|token|secret|passwd|password)\s*[=:]\s*["']?([A-Za-z0-9_\-./+=]{8,})/i;
           const m = candidate.match(ASSIGNMENT_PATTERN);
           const assigned = m?.[1];
-          if (assigned && !/^(REPLACE_ME|YOUR_[A-Z_]+|EXAMPLE|PLACEHOLDER|CHANGE_ME|xxxx+)$/i.test(assigned)) {
+          // env 引用豁免：值以 process.env / os.Getenv 等「运行时读取」开头的是代码引用
+          // 不是硬编码密钥（apiKey: process.env.SOFAGENT_MODEL_API_KEY 同构写法全仓通行）
+          const isEnvReference = /^(process\.env|os\.Getenv|env\.)/i.test(assigned ?? '');
+          if (assigned && !isEnvReference && !/^(REPLACE_ME|YOUR_[A-Z_]+|EXAMPLE|PLACEHOLDER|CHANGE_ME|xxxx+)$/i.test(assigned)) {
             const key = `${file.path}|密钥赋值`;
             const existing = groupedDetections.get(key);
             if (existing) {

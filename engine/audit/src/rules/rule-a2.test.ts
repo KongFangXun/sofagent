@@ -257,6 +257,20 @@ describe('A2 不泄密钥', () => {
       const ctx = makeCtx([makeDiffFile('config.ts', ['+password=abc'])]);
       expect(checkRuleA2(ctx).status).toBe('PASS');
     });
+
+    it('env 引用值（process.env.XXX）→ PASS（不误伤运行时读取）', () => {
+      // v1.4.5 收编时实锤：apiKey: process.env.SOFAGENT_MODEL_API_KEY 同构写法
+      // 全仓通行，值段字符集恰好命中赋值正则——env 引用是代码不是硬编码密钥
+      const ctx = makeCtx([
+        makeDiffFile('provider.ts', ['+      apiKey: process.env.SOFAGENT_MODEL_API_KEY || \'\',']),
+      ]);
+      expect(checkRuleA2(ctx).status).toBe('PASS');
+    });
+
+    it('env 引用变体（const token = os.Getenv）→ PASS', () => {
+      const ctx = makeCtx([makeDiffFile('main.go', ['+token := os.Getenv("GITHUB_TOKEN")'])]);
+      expect(checkRuleA2(ctx).status).toBe('PASS');
+    });
   });
 
   // ── v1.4.1 F-15：base64 函数参数位绕过（报告四红队实锤堵洞）──
