@@ -1,0 +1,20 @@
+{
+  "schemaVersion": "v1",
+  "jobId": "quickstart-demo-job",
+  "dataPath": "quickstart-data.csv",
+  "baseModel": "Qwen3-0.6B",
+  "algorithm": "sft",
+  "hyperparams": {
+    "epochs": 1,
+    "maxSteps": 8,
+    "_note": "@mlx-node/trl 个人 Mac 阶段 0 验证配置——10 条数据 8 步即可跑通链路；生产按 train analyze 的模板补全（如 extraction-qlora 的 loraRank 16 / lr 2e-4 / epochs 3 / maxSeqLen 2048）"
+  },
+  "checkpointPath": "data/train/quickstart-demo/quickstart-demo-job/checkpoints",
+  "outputDir": "data/train/quickstart-demo/quickstart-demo-job/output",
+  "budget": {
+    "maxMinutes": 5,
+    "maxSteps": 8,
+    "_note": "预算三维（时间/步数/成本）——超限 SIGINT 暂停等人审，train_budget resolve 续跑或终止"
+  },
+  "_usage": "最小可跑 job.json 模板（协议 SSOT：engine/orchestrator/src/train/train-protocol.ts · TrainJobSchema v1 · strict 模式——多余字段校验拒绝）。dataPath 相对 data 目录或绝对路径；checkpointPath/outputDir 由 createTrainJob 自动填充绝对路径时以此结构为准"
+}
