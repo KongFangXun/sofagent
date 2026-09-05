@@ -136,11 +136,37 @@ function deepSanitizeFreeText(node: unknown, hitsRef: { count: number }): unknow
   if (node && typeof node === 'object') {
     const out: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(node as Record<string, unknown>)) {
-      out[key] = SANITIZE_EXEMPT_KEYS.has(key) ? value : deepSanitizeFreeText(value, hitsRef);
+      // 豁免只对「字符串叶子」有意义且须值形可证（shouldExempt）——对象/数组值
+      // 不论其 key 是否碰白名单同名，一律继续递归（防「嵌套结构字段同名却持自由文本」）。
+      out[key] = typeof value === 'string' && shouldExempt(key, value)
+        ? value
+        : deepSanitizeFreeText(value, hitsRef);
     }
     return out;
   }
   return node;
+}
+
+/**
+ * 豁免判定收窄为「值维」（path 维静态度不可得，读侧无 schema——递归时只拿到 key×value，
+ * 无运行时可校验的记录 schema）。
+ *
+ * 漏洞形态 (P1)：SANITIZE_EXEMPT_KEYS 用裸 key 名在每一层递归里整键豁免——若某嵌套
+ * 对象的字段恰好与白名单同名（engine/agentId 这些通用短词）却持 secret/自由文本，
+ * 整棵子树被跳过深扫 → 明文被 HMAC 固化。真正要豁免的只是「值确为结构化/短码」的叶子：
+ *   - 非字符串值本就不被字符串脱敏触碰，白名单外也一样递归处理（无泄漏面，恒安全）；
+ *   - 字符串值仅在「是紧致短码 + 经 sanitizeFreeText 无操作」时才豁免——真实
+ *     hmacSig/prevHash/commitSha/envFingerprint 等为紧凑 hex/枚举，脱敏是无操作，
+ *     豁免仅为免去伪命中计数噪声（不损验签：见 deepSanitizeFreeText 头注释）；
+ *   - 含空白（句子/折行）、或超长（sk-/AKIA…/长段落）、或可真命中 REDACTION 任一
+ *     模式的串——即使裸 key 同名也不豁免，走正常脱敏分支被自动打码。
+ */
+function shouldExempt(key: string, value: string): boolean {
+  if (!SANITIZE_EXEMPT_KEYS.has(key)) return false;
+  if (/\s/.test(value)) return false; // 含空白 = 自由文本形态 → 不豁免
+  if (value.length > 64) return false; // 超长 = code 面不可能（secret token 常无空白）→ 不豁免
+  // 紧致短码还需确认不会可真命中脱敏（对真实 hex/enum 是 no-op，豁免只省一次计数器）
+  return sanitizeFreeText(value) === value;
 }
 
 /**

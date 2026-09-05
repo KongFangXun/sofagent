@@ -36,12 +36,13 @@ import {
   mkdirSync,
   readFileSync,
   readdirSync,
+  realpathSync,
   statSync,
   rmSync,
   writeFileSync,
 } from 'fs';
 import { createHash, createHmac } from 'crypto';
-import { join } from 'path';
+import { join, resolve, sep } from 'path';
 import { atomicWriteSync, getEnvFingerprint, getHmacKey, stableStringify } from '@sofagent/core';
 import { trainJobDir, listTrainJobRecords } from './train-job';
 import { wipeFile } from './cleanup';
@@ -289,6 +290,31 @@ function dirSize(dir: string): number {
 }
 
 /**
+ * 回滚点标记 path → 物理绝对路径（统一基址的唯一入口——finding-07）。
+ *
+ * RollbackPointRef 各 kind 的相对登记形态不同（§一 checkpoint 用 `checkpoints/<job>/<name>`
+ * 作对齐键、§四 weights/§五 归档剔除用相对路径），历史上被三处以不同基址内联 join
+ * （有的对 dataDir、有的对 data/train/<ent>/），同一标记解析出不同物理路径 → 归档剔除
+ * 覆盖面错位、回滚点被误归档→后遭 purge 空洞。现收敛到本函数：
+ *   - 绝对 path：原样返回（登记侧显式绝对路径的形态）；
+ *   - checkpoint 相对 `checkpoints/<jobId>/<name>`：映射到物理落点
+ *     data/train/<ent>/<jobId>/checkpoints/<name>（train-job 目录结构）；
+ *   - 其它相对（weights 等）：统一相对 data/train/<ent>/ 解析（RollbackPointRef.path
+ *     注释规定的基址；数据集/权重/checkpoint 物理都在该企业树下）。
+ */
+export function resolvePointPath(dataDir: string, enterpriseId: string, point: RollbackPointRef): string {
+  if (point.path.startsWith('/')) return point.path;
+  if (point.kind === 'checkpoint') {
+    // 登记键形如 checkpoints/<jobId>/<name> → <ent>/<jobId>/checkpoints/<name>
+    const m = /^checkpoints\/([^/]+)\/(.+)$/.exec(point.path);
+    if (m) return join(dataDir, 'train', enterpriseId, m[1]!, 'checkpoints', m[2]!);
+    // 非规范 checkpoint 路径退到企业树根解析（少见——登记侧容错）
+    return join(dataDir, 'train', enterpriseId, point.path);
+  }
+  return join(dataDir, 'train', enterpriseId, point.path);
+}
+
+/**
  * 保留判定（纯查询——不动磁盘）。
  *
  * 判定规则（devlog 第五章交付表逐条）：
@@ -402,9 +428,10 @@ export function queryRetentionDecision(
   // ── 四、回滚点兜底（weights 类标记——不在 checkpoint 集内的直接进 keep）──
   for (const marker of markers) {
     if (marker.point.kind !== 'weights') continue;
-    const abs = marker.point.path.startsWith('/')
-      ? marker.point.path
-      : join(dataDir, marker.point.path);
+    // 相对路径统一经 resolvePointPath（单一基址：data/train/<ent>/）解析成物理路径——
+    // 与 §五归档剔除、归档集 item.path 的物理落点同源，杜绝「一处 join(dataDir)、
+    // 一处 join(dataDir/train/<ent>)」基址错位导致的覆盖面漏判（finding-07）。
+    const abs = resolvePointPath(dataDir, enterpriseId, marker.point);
     if (!existsSync(abs)) continue;
     if (keep.some((k) => k.path === abs) || archive.some((a) => a.path === abs)) continue;
     keep.push({
@@ -416,12 +443,10 @@ export function queryRetentionDecision(
     });
   }
 
-  // 归档集二次剔除（回滚点绝对路径兜底——防相对/绝对两种登记形态穿透）
-  const rollbackAbsPaths = new Set(
-    markers.map((m) =>
-      m.point.path.startsWith('/') ? m.point.path : join(dataDir, 'train', enterpriseId, m.point.path),
-    ),
-  );
+  // 归档集二次剔除（回滚点绝对路径兜底——防相对/绝对两种登记形态穿透）。
+  // rollbackAbsPaths 用与 §一/§四同一的 resolvePointPath 收敛各 kind 标记的物理路径，
+  // checkpoint 标记 `checkpoints/<job>/<name>` 亦能正确对应到归档 item 的物理落点。
+  const rollbackAbsPaths = new Set(markers.map((m) => resolvePointPath(dataDir, enterpriseId, m.point)));
   const filteredArchive = archive.filter((a) => !rollbackAbsPaths.has(a.path));
   const ejected = archive.filter((a) => rollbackAbsPaths.has(a.path));
   for (const e of ejected) {
@@ -507,8 +532,26 @@ export function archiveExpired(
         for (const e of readdirSync(dir, { withFileTypes: true })) {
           const full = join(dir, e.name);
           const rel = prefix === '' ? e.name : `${prefix}/${e.name}`;
-          if (e.isDirectory()) collect(full, rel);
-          else if (e.isFile()) files.push({ name: rel, data: readFileSync(full) });
+          if (e.isDirectory()) {
+            collect(full, rel);
+          } else if (e.isFile()) {
+            files.push({ name: rel, data: readFileSync(full) });
+          } else if (e.isSymbolicLink()) {
+            // 符号链接不是 isDirectory/isFile —— 直接跳过再删源 = 引用的共享权重
+            // 分片内容不进 zip 却先被删（数据丢失）。改为收取其目标内容入档；
+            // 若目标不可解析（悬空链接），升级为 failure 并**拒删源**（宁可不归档也别删）。
+            try {
+              const real = realpathSync(full);
+              const st = statSync(real);
+              if (st.isDirectory()) collect(real, rel);
+              else if (st.isFile()) files.push({ name: rel, data: readFileSync(real) });
+              else throw new Error('链接目标既非文件也非目录');
+            } catch (e) {
+              throw new Error(
+                `${item.path} 内含不可解析的符号链接 ${rel}（${e instanceof Error ? e.message : String(e)}）——拒绝归档并保留源`,
+              );
+            }
+          }
         }
       };
       collect(item.path, '');
@@ -630,14 +673,25 @@ export function purgeExpiredArchives(
   for (const line of lines) {
     let entry: { archiveFile: string; archivedAt: string };
     try {
-      entry = JSON.parse(line) as { archiveFile: string; archivedAt: string };
+      const parsed = JSON.parse(line) as { archiveFile?: unknown; archivedAt?: unknown };
+      if (typeof parsed.archiveFile !== 'string' || parsed.archiveFile === '') {
+        throw new Error('台账行缺 archiveFile（拒绝销毁）');
+      }
+      entry = { archiveFile: parsed.archiveFile, archivedAt: String(parsed.archivedAt) };
     } catch {
-      kept.push(line); // 坏行保留（不因清理丢台账）
+      kept.push(line); // 坏行/无 archiveFile 行保留（不因清理丢台账，也不据其销毁）
       continue;
     }
     const ageMs = now.getTime() - Date.parse(entry.archivedAt);
     if (!Number.isNaN(ageMs) && ageMs > purgeMs) {
       try {
+        // 销毁对象必须落在 archiveDir 规范化前缀内（防台账被注入任意绝对路径后
+        // 由 wipeFile 执行不可逆覆写销毁）。越界一律拒销毁并留台账行。
+        const root = resolve(archiveDir);
+        const target = resolve(entry.archiveFile);
+        if (target !== root && !target.startsWith(root + sep)) {
+          throw new Error(`archiveFile 越出归档目录 ${archiveDir}——拒绝销毁`);
+        }
         if (existsSync(entry.archiveFile)) {
           wipeFile(entry.archiveFile); // v1.4.1 ⑤ 覆写标准（单遍随机+截断+混淆+unlink）
         }
@@ -652,7 +706,7 @@ export function purgeExpiredArchives(
           archiveFile: entry.archiveFile,
           reason: e instanceof Error ? e.message : String(e),
         });
-        kept.push(line); // 销毁失败保留台账行（下轮重试）
+        kept.push(line); // 销毁失败/越界拒绝均保留台账行（下轮重试/审计可见）
       }
     } else {
       kept.push(line);

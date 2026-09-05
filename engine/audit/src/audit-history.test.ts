@@ -191,6 +191,22 @@ describe('audit-history', () => {
     expect(content).toContain('sk-***REDACTED***');
   });
 
+  it('appendHistory 深层字段名碰豁免白名单(engine)但持长secret自由串——不被误豁免仍脱敏（P1值维收窄）', () => {
+    // 回归断言：SANITIZE_EXEMPT_KEYS 曾按裸 key 名在每层整键豁免——若某嵌套对象
+    // 一个字段恰与白名单同名（engine/agentId…通用短词）却持长 secret-ish 自由串，
+    // 整棵子树被跳过深扫 → 明文被 HMAC 固化。收窄后豁免须值形可证：长串不再豁免。
+    const leakKey = ['sk-', 'e'.repeat(60)].join(''); // 长 secret token（无空白但 ≥64 → 非 code 形）
+    const entry = makeEntry('2026-01-01T00:00:00.000Z', 0);
+    (entry as unknown as Record<string, unknown>).actionGovernance = {
+      context: { engine: `密钥 ${leakKey} 由对手字段撞名注入` }, // 该串同时含 long token + 空白
+    };
+    appendHistory(entry, testDir);
+
+    const content = readFileSync(getHistoryFilePath(testDir), 'utf-8');
+    expect(content).not.toContain(leakKey);
+    expect(content).toContain('sk-***REDACTED***');
+  });
+
   it('loadHistory 返回按时间倒序的数组', () => {
     // 验证：加载历史，最新（时间戳最大）的排前面
     appendHistory(makeEntry('2026-01-01T00:00:00.000Z', 0), testDir);

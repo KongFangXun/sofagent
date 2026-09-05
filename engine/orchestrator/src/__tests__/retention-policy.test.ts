@@ -32,10 +32,12 @@ import {
   markRollbackPoint,
   readRetentionMarkers,
   queryRetentionDecision,
+  resolvePointPath,
   archiveExpired,
   purgeExpiredArchives,
   checkDiskPressure,
   trainArchiveDir,
+  type RollbackPointRef,
 } from '../train/retention-policy';
 import { unzipEntries } from '../train/data-ingest';
 import { listTrainJobRecords } from '../train/train-job';
@@ -181,6 +183,50 @@ describe('retention-policy · 归档标记（markRollbackPoint）', () => {
         reason: '',
       }),
     ).toThrow(/reason 必填/);
+  });
+});
+
+describe('retention-policy · 回滚点路径解析（resolvePointPath 统一基址——finding-07）', () => {
+  it('test_resolvePointPath_checkpoint相对登记键映射到物理checkpoint目录', () => {
+    seedJob('job-rp', 1); // 造 data/train/<ent>/job-rp/checkpoints/step-100
+    const point: RollbackPointRef = {
+      kind: 'checkpoint',
+      path: 'checkpoints/job-rp/step-100',
+      trainJobId: 'job-rp',
+      reason: '验收基线',
+      markedAt: '2026-09-05T10:00:00.000Z',
+    };
+    const resolved = resolvePointPath(dataDir, ENT, point);
+    // 与保留判定 §一 归档条目项的物理落点（train-job 结构）一致
+    expect(resolved).toBe(join(dataDir, 'train', ENT, 'job-rp', 'checkpoints', 'step-100'));
+    expect(existsSync(resolved)).toBe(true);
+  });
+
+  it('test_resolvePointPath_weights相对登记基址与企业树一致_不落到dataDir错层', () => {
+    // weights 相对登记按 RollbackPointRef.path 注释 = 相对 data/train/<ent>/
+    // 解析；曾被 §四 join(dataDir, pt.path) 错解到企业树上一层（finding-07 洞）。
+    const point: RollbackPointRef = {
+      kind: 'weights',
+      path: 'job-rp/checkpoints/step-100',
+      reason: '共享权重分片基线',
+      markedAt: '2026-09-05T10:00:00.000Z',
+    };
+    const resolved = resolvePointPath(dataDir, ENT, point);
+    expect(resolved).toBe(join(dataDir, 'train', ENT, 'job-rp', 'checkpoints', 'step-100'));
+    // 三层企业根之外的 dataDir 拼法必须不产生（防基址上移）
+    expect(resolved.startsWith(join(dataDir, 'train', ENT, 'job-rp'))).toBe(true);
+  });
+
+  it('test_resolvePointPath_绝对path原样透传', () => {
+    const abs = join(dataDir, 'train', ENT, 'job-rp', 'checkpoints', 'step-100');
+    seedJob('job-rp', 1);
+    const point: RollbackPointRef = {
+      kind: 'checkpoint',
+      path: abs,
+      reason: '绝对登记形态',
+      markedAt: '2026-09-05T10:00:00.000Z',
+    };
+    expect(resolvePointPath(dataDir, ENT, point)).toBe(abs);
   });
 });
 
