@@ -1704,22 +1704,7 @@ grep -q "先写报告骨架" FORGE/src/fresh-eyes-driver.mjs && echo "✅ A 侧�
 _HITS=$(grep -rn "resolveAuditDir(process\|resolveKnowledgeDir(process\|resolveDataDir(process\|writeSessionReport.*process" engine/ --include="*.ts" | grep -v node_modules | grep -v dist | grep -v __tests__ || true)
 [ -z "$_HITS" ] && echo "✅ 无 process.cwd() 误传" || { echo "$_HITS"; echo "❌ 存在误传"; }
 grep -rn "function getSofagentDataDir" engine/mcp/src/ engine/think/src/ --include="*.ts" | grep -v __tests__ && echo "❌ 本地 dataDir 函数残留（应走 getDataDir SSOT）" || echo "✅ 零本地 dataDir（30 处已清零）"
-```
-
-#### 126. 防复发——H-01 三层防线 install 形态 + dataDir SSOT 机械闸 + 断言校准三同步（阶段四来源提取 B 类）
-
-> 阶段一 H-01（P0 commit 链完整性）与阶段三 N-1（P1 SSOT 分叉）的防复发锚点。执行级回归 audit 包 902 用例已含（init.test +6 / a2 +8 / a9 +4 / webhook +3）；此处收口 install 后形态与机械闸。
-
-```bash
-# a: H-01 三层防线 install 后形态——三 hook 文件齐 + 旧 hook .bak 化（S16 已校准为接管语义）
-test -f .git/hooks/pre-commit && test -f .git/hooks/commit-msg && echo "✅ 双 hook 在位" || echo "❌ hook 缺失（跑 install.sh）"
-ls .git/hooks/*.bak 2>/dev/null | head -1 | grep -q bak && echo "✅ 迁移 .bak 语义保留" || echo "ℹ️ 无旧 hook（首装，正常）"
-# b: dataDir SSOT 机械闸——本版 30 工具全员走 getDataDir（19 处 v1.3.x 存量已同批清零，check-version 9d 零容忍）
-DD_FILES=$(grep -rln "getDataDir" engine/mcp/src/ engine/think/src/ --include="*.ts" 2>/dev/null | grep -v __tests__ | grep -v "\.test\." | wc -l | tr -d ' '); [ "${DD_FILES:-0}" -ge 30 ] && echo "✅ ${DD_FILES} 文件全员 SSOT（30 收编 + 1 mcp-server 引用）" || echo "⚠️ SSOT 文件数 ${DD_FILES:-0} <30 复核"; grep -rn "function getSofagentDataDir" engine/mcp/src/ engine/think/src/ --include="*.ts" 2>/dev/null | grep -v __tests__ && echo "❌ 本地定义残留" || echo "✅ 零本地定义"
-# c: 断言校准三同步纪律（S219 实录：判定改 450 展示仍 420）——校准场景时标题注释/pass 消息/引用三处同步
-grep -n "≤ 450" FORGE/playbook/acceptance-test.sh | grep -q "S219\|450" && echo "✅ S219 三同步示范在位" || echo "❌ S219 展示残留回潮"
-# d: CI 纯净环境防狗粮假绿（发版期实录：B8 本地全绿 CI 红——npm install -g 后 PATH 有 sofagent-audit，测试 repoDir 无 dist 时 hook 静默 exit 0）——新增 hook 对账类测试须自带 dist fixture，本地复跑须纯净 PATH
-grep -n "迷你 dist\|dist/index.js" engine/audit/src/commands/init.test.ts | grep -q "迷你 dist" && echo "✅ B8 fixture 先例在位（照 H-01 describe 同款）" || echo "❌ init.test.ts 迷你 dist fixture 丢失——CI 纯净环境将假红"
+DD_FILES=$(grep -rln "getDataDir" engine/mcp/src/ engine/think/src/ --include="*.ts" 2>/dev/null | grep -v __tests__ | grep -v "\.test\." | wc -l | tr -d ' '); [ "${DD_FILES:-0}" -ge 30 ] && echo "✅ ${DD_FILES} 文件全员 SSOT（原 #126 b 机械闸归并）" || echo "⚠️ SSOT 文件数 ${DD_FILES:-0} <30 复核"
 ```
 
 #### 127. 新功能审查面——训练运行九章+DSH 执行深化+审计聚合+反作弊基线一维收口（阶段四来源提取 A 类 · 归并「旧交付退役收口」入此：composeWithDeepAgents 别名与 fde_compose ontology 收窄为退役治理子项）
@@ -1764,6 +1749,10 @@ grep -q "symlink\|realpath" engine/audit/src/rules/rule-a23-path-traversal.ts &&
 grep -q "escaped" engine/audit/src/permission/checker.ts && grep -q "ReDoS\|灾难性回溯\|正则注入" engine/audit/src/permission/checker.ts && echo "✅ 权限正则元字符转义加固在位" || echo "❌ 权限正则注入/ReDoS 防线丢失"
 # d: dashboard 静态一致性（双版本/缺省态谎报/图例配色/scrollTop 非法 API）
 grep -c "logo-version" tools/dashboard/dashboard.html | grep -qE "^[0-9]+$" && ! grep -q "document.scrollTop" tools/dashboard/dashboard.html && echo "✅ dashboard 版本单源 + 无非法 API" || echo "❌ dashboard 一致性回退"
+# e: H-01 install 后形态（原 #126 a 归并）——双 hook 在位 + 旧 hook .bak 化（S16 接管语义）
+test -f .git/hooks/pre-commit && test -f .git/hooks/commit-msg && echo "✅ 双 hook 在位" || echo "❌ hook 缺失（跑 install.sh）"
+# f: 断言校准三同步 + CI 纯净 fixture（原 #126 c/d 归并）——判定/展示/引用三处同步；hook 对账类测试自带迷你 dist 防 CI 假绿
+grep -q "450" FORGE/playbook/acceptance-test.sh && grep -q "迷你 dist" engine/audit/src/commands/init.test.ts && echo "✅ 三同步示范 + 迷你 dist fixture" || echo "❌ 三同步/fixture 回潮"
 ```
 
 #### 129. v1.4.4 fresh-eyes 19 项修复防复发——CLI 接线断链 + 供应链回滚路径 + nodeId/YAML 清洗 + 结构性收口（阶段四来源提取 A/B 类一维收口 · 行为面已由单测锁：weights-deploy/fde-workbench/export/corpus-export +9 用例）
@@ -1797,4 +1786,15 @@ git diff v1.4.3..HEAD --stat -- engine/scripts/lib/ | wc -l | grep -q "^0$" && e
 # ③ Marketplace 版本页含本版号即免网页勾选（listing 自动延续）
 curl -s https://github.com/marketplace/actions/sofagent | grep -q "$(node -p "require('./package.json').version")" && echo "✅ marketplace 版本页已含本版" || echo "🟡 版本页未见本版——按 SOP 网页勾选 Publish to Marketplace"
 # ④ ClawHub 状态快照纪律：发布前 verify 落盘，发布后对照——新引入 reasons 才处置（既有状态披露不阻断；快照命令：clawhub skill verify <slug> > /tmp/clawhub-pre.json）
+```
+
+#### 131. v1.4.5 后训服务与持续收口批防复发——train 五新面/进化实证/retention 加固/链锚一维收口（阶段四来源提取 A/B 合流 · 行为面已由单测锁：serve 21/compliance 19/deliverable 20/retention 15/session 17+2 用例）
+
+```bash
+# 逐锚语义：a = 交付面存在性（train 五新面/进化实证 sampler cursor + skill-impact 台账/quickstart 双件/fde-session lastCapturedAt/WIKI §数据文件架构指针）+ tools 83 静态 SSOT（动态不进）；b = retention 加固 + 链锚/SANITIZE 值形可证
+MISS=0; for f in train-serve train-compliance train-deliverable retention-policy train-continuous; do test -f "engine/orchestrator/src/train/$f.ts" || MISS=$((MISS+1)); done; [ "$MISS" -eq 0 ] && echo "✅ train 五新面在位" || echo "❌ train 新面缺 $MISS 文件"
+test -f docs/guides/train-quickstart.md && test -f docs/guides/examples/quickstart-data.csv && grep -q "cursor" engine/daemon/src/dream-cycle/continuous-sampler.ts && test -f engine/orchestrator/src/skill-evolution/skill-impact-ledger.ts && grep -q "lastCapturedAt" engine/orchestrator/src/fde-session-mgr/index.ts && echo "✅ 进化实证 + quickstart + 会话时间戳在位" || echo "❌ 交付面缺口"
+grep -q "§数据文件架构" docs/WIKI.md && [ "$(grep -cE "^ {4}name: '" engine/mcp/src/tool-registry.ts)" -eq 83 ] && echo "✅ WIKI 指针 + tools 83 SSOT" || echo "⚠️ WIKI 指针/83 计数漂移——复核"
+grep -q "isSymbolicLink" engine/orchestrator/src/train/retention-policy.ts && grep -q "realpathSync" engine/orchestrator/src/train/retention-policy.ts && [ "$(grep -c "resolvePointPath" engine/orchestrator/src/train/retention-policy.ts)" -ge 4 ] && grep -q "trainArchiveDir" engine/orchestrator/src/train/retention-policy.ts && echo "✅ retention 四词形在位" || echo "❌ retention 加固回潮"
+test -f engine/audit/src/chain-head-anchor.test.ts && grep -q "shouldExempt(key: string, value: string)" engine/audit/src/audit-history.ts && grep -q "sanitizeFreeText(value) === value" engine/audit/src/audit-history.ts && echo "✅ 链锚测试 + SANITIZE 值校验在位" || echo "❌ 链锚/SANITIZE 回潮"
 ```
