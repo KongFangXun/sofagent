@@ -25,7 +25,7 @@
 // ============================================================
 
 import { existsSync, readFileSync } from 'fs';
-import { join } from 'path';
+import { join, dirname } from 'path';
 import { createHash, createHmac } from 'crypto';
 import { hostname, userInfo, homedir } from 'os';
 import { execSync } from 'child_process';
@@ -41,6 +41,28 @@ export function getHistoryFilePath(dataDir?: string): string {
   if (dir) return join(dir, 'audit', 'history.jsonl');
   // v1.2.1：默认路径从 .sofagent/audit/ 迁移到 data/audit/
   return AUDIT_HISTORY;
+}
+
+/**
+ * 获取链头锚点文件路径（finding-02 尾部截断防护）
+ * 解析链与 getHistoryFilePath 完全一致（显式 dataDir 参数 > SOFAGENT_DATA 环境变量 > 默认数据目录），
+ * 与 history.jsonl 同目录：<dir>/audit/history-chain-head。
+ * 由写入侧 appendHistory 维护，读取侧 checkHistoryChainDetailed 校验。
+ * @param dataDir 可选的数据目录覆盖（用于测试）
+ */
+export function getHistoryAnchorFilePath(dataDir?: string): string {
+  const dir = dataDir ?? process.env.SOFAGENT_DATA;
+  if (dir) return join(dir, 'audit', 'history-chain-head');
+  return join(dirname(AUDIT_HISTORY), 'history-chain-head');
+}
+
+/** 链头锚点文件结构——单行 JSON，由写入侧原子写入 */
+interface HistoryChainHeadAnchor {
+  version: number;
+  entryCount: number;
+  headHash: string;
+  envFingerprint?: string;
+  updatedAt?: string;
 }
 
 /**
@@ -172,6 +194,11 @@ export interface ChainCheckResult {
  *   ③ 不可信（insufficient，黄/灰）：history.jsonl 不存在或仅 1 条——无法构成
  *      可验证的防篡改链(删除/单条不再报 ok）。
  *
+ * 锚点校验（finding-02）：history-chain-head 锚点防「静默尾部截断」——剩余链自洽但历史缺失
+ * （纯链校验对部分截断无感知）；锚点文件不存在时跳过，向后兼容。诚实边界：能同时重写
+ * history.jsonl 与锚点文件的攻击者仍可伪造一致状态——锚点属防篡改证据强化而非密码学保证
+ * （与 getEnvFingerprint 既有注释同一口径）。
+ *
  * @param dataDir 可选的数据目录覆盖
  * @returns ChainCheckResult
  */
@@ -225,6 +252,50 @@ export function checkHistoryChainDetailed(dataDir?: string, maxEntries?: number)
       status: 'tampered',
       detail: `检测到 ${malformedLines.length} 行非标准 schema 记录（如: ${malformedLines[0]}），疑似伪造/篡改`,
     };
+  }
+
+  // finding-02 尾部截断防护——链头锚点校验（读侧）。
+  // 用全量 entries（不用 maxEntries 截断切片）——锚点记录的是历史全量位置，
+  // 截断范围内的切片会掩盖「总条数变少」这一截断特征。
+  // 判定顺序：不可读 → unverifiable（黄）；条数不足/锚位哈希不符 → tampered（红）。
+  const anchorPath = getHistoryAnchorFilePath(dataDir);
+  if (existsSync(anchorPath)) {
+    let anchor: HistoryChainHeadAnchor | null = null;
+    try {
+      const parsedAnchor = JSON.parse(readFileSync(anchorPath, 'utf-8')) as HistoryChainHeadAnchor;
+      if (parsedAnchor && parsedAnchor.version === 1) anchor = parsedAnchor;
+    } catch {
+      anchor = null;
+    }
+    if (anchor === null) {
+      // 锚点存在但解析失败 / 版本不识别：无法确认历史未被截断，如实报告（fail-closed）
+      return { status: 'unverifiable', detail: '链头锚点不可读，无法确认历史未被截断' };
+    }
+    if (typeof anchor.entryCount === 'number' && Number.isInteger(anchor.entryCount) && anchor.entryCount >= 1) {
+      if (entries.length < anchor.entryCount) {
+        // 锚点记录的总条数 > 实际条数 = 尾部被砍——剩余链再自洽也是历史缺失
+        return {
+          status: 'tampered',
+          detail: `审计历史被截断：锚点记录 ${anchor.entryCount} 条，实际 ${entries.length} 条，疑似尾部删除`,
+        };
+      }
+      // 用【锚内记录的 envFingerprint】（非当前指纹）重算锚位哈希——
+      // 避免 hostname / git 路径 / 密钥等环境漂移导致历史锚点误报
+      const anchored = entries[anchor.entryCount - 1]!;
+      const anchorFingerprint =
+        typeof anchor.envFingerprint === 'string' ? anchor.envFingerprint : '';
+      const anchorExpectedHeadHash = createHash('sha256')
+        .update(JSON.stringify({ ...anchored, prevHash: undefined, hashVersion: undefined }) + '|' + anchorFingerprint)
+        .digest('hex').slice(0, 16);
+      if (anchorExpectedHeadHash !== anchor.headHash) {
+        // 条数对得上但锚位条目内容不符 = 历史被重写（如改旧条目后重建链）
+        return {
+          status: 'tampered',
+          detail: '锚点位置条目与链头锚点不符，疑似历史重写',
+        };
+      }
+    }
+    // entryCount 非法或 < 1：锚点无可校验位置，跳过（与「无锚点」同行为，fail-open）
   }
 
   // v1.3.1 #14: 大量历史记录时全量校验性能开销大——支持 maxEntries 限制，

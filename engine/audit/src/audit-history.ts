@@ -32,8 +32,8 @@
 // 向后兼容——不做指纹校验，只做链完整性校验。
 // ============================================================
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync, chmodSync, statSync } from 'fs';
-import { dirname } from 'path';
+import { existsSync, mkdirSync, readFileSync, writeFileSync, chmodSync, statSync, renameSync, rmSync } from 'fs';
+import { dirname, join } from 'path';
 import { createHash, createHmac } from 'crypto';
 import { loadEnvConfig, resolveHomeDir } from '@sofagent/core';
 import { atomicAppendSync, atomicWriteSync } from '@sofagent/core';
@@ -54,7 +54,7 @@ import type { RuleCheck, ActionGovernance } from './rules/types';
 // import for internal use (appendHistory/loadHistory/clearHistory still need them),
 // re-export for external backward compat.
 import { getHistoryFilePath, getEnvFingerprint, getHmacKey, stableStringify, validateHmacKey } from '@sofagent/core';
-export { checkHistoryChainIntegrity, checkHistoryChainDetailed, getHistoryFilePath, getHmacKey, validateHmacKey } from '@sofagent/core';
+export { checkHistoryChainIntegrity, checkHistoryChainDetailed, getHistoryFilePath, getHistoryAnchorFilePath, getHmacKey, validateHmacKey } from '@sofagent/core';
 
 /**
  * 对 ruleResult 做脱敏处理——避免审计工具自身成为第二泄漏点。
@@ -417,9 +417,12 @@ export function appendHistory(entry: AuditHistoryEntry, dataDir?: string): void 
   // v1.3.9 修复：加密激活态最后一行是 SOFAGENT-AGE-V1 密文，直接 JSON.parse 必抛异常
   // → 每次写入都假警「读回校验失败」，且校验对象是密文而非明文（校验失效）。
   // 现检测前缀 → 复用同文件 decryptWithAge 先解密再 JSON.parse，读回校验真实校验明文。
+  // finding-02：postAppendEntryCount 同时作为链头锚点的 entryCount 来源（非空行数）。
+  let postAppendEntryCount = 0;
   try {
     const content = readFileSync(filePath, 'utf-8');
     const lines = content.trim().split('\n').filter(Boolean);
+    postAppendEntryCount = lines.length;
     if (lines.length > 0) {
       const lastLine = lines[lines.length - 1]!;
       const lastPlain = isAgePayload(lastLine)
@@ -455,6 +458,38 @@ export function appendHistory(entry: AuditHistoryEntry, dataDir?: string): void 
       // 实际 ≤0o600：false alarm（chmod 语义受限但权限已收紧）——静默放行
     } catch {
       console.error(`[sofagent] 审计历史文件权限设置失败且无法读回验证: ${e instanceof Error ? e.message : String(e)}`);
+    }
+  }
+
+  // finding-02 尾部截断防护——链头锚点（写入侧）：
+  // history.jsonl 的哈希链只能证明「剩余内容自洽」——把文件砍掉尾部 N 条后剩余链
+  // 仍然自洽（整文件删除报 insufficient，部分截断无检测）。锚点文件把「最后一次
+  // 写入时的总条数 + 末条哈希」落在 history.jsonl 之外，读侧 checkHistoryChainDetailed
+  // 据此检测静默尾部截断。headHash 公式与「下一条 appendHistory 计算 prevHash」逐字
+  // 一致：plain JSON.stringify + '|' + fingerprint（非 stableStringify；sanitizedEntry
+  // 内存对象的 key 顺序与落盘 JSON round-trip 后的解析序一致，链公式两侧对齐）。
+  if (postAppendEntryCount > 0) {
+    try {
+      const anchorPath = join(dirname(filePath), 'history-chain-head');
+      const headHash = createHash('sha256')
+        .update(JSON.stringify({ ...sanitizedEntry, prevHash: undefined, hashVersion: undefined }) + '|' + fingerprint)
+        .digest('hex').slice(0, 16);
+      const anchor = {
+        version: 1,
+        entryCount: postAppendEntryCount,
+        headHash,
+        envFingerprint: fingerprint,
+        updatedAt: new Date().toISOString(),
+      };
+      // 临时文件 + renameSync 原子替换——杜绝半写锚点被读侧读到；0600 与 history.jsonl 同级权限
+      const tmpPath = anchorPath + '.tmp';
+      writeFileSync(tmpPath, JSON.stringify(anchor) + '\n', { mode: 0o600 });
+      renameSync(tmpPath, anchorPath);
+      chmodSync(anchorPath, 0o600);
+    } catch (e) {
+      // fail-open：锚点写入失败不阻断审计主链路（与 appendHistory 既有取舍一致），
+      // 仅告警——本次追加后尾部截断检测退化为「无锚点 = 跳过」的旧行为
+      console.warn(`[sofagent] 链头锚点写入失败（尾部截断检测本次不可用）: ${e instanceof Error ? e.message : String(e)}`);
     }
   }
 }
@@ -544,4 +579,15 @@ export function clearHistory(dataDir?: string): void {
   }
 
   writeFileSync(filePath, '', 'utf-8');
+
+  // finding-02：清空 history.jsonl 时同步删除链头锚点——锚点记录的 entryCount/headHash
+  // 已随清空失效，残留会让重建后的链被读侧误判「历史被截断」。存在才删，失败仅告警。
+  try {
+    const anchorPath = join(dirname(filePath), 'history-chain-head');
+    if (existsSync(anchorPath)) {
+      rmSync(anchorPath);
+    }
+  } catch (e) {
+    console.warn(`[sofagent] 链头锚点删除失败（请手动清理，否则可能误报历史截断）: ${e instanceof Error ? e.message : String(e)}`);
+  }
 }
