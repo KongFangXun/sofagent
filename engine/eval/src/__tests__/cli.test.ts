@@ -10,7 +10,6 @@ import { tmpdir } from 'os';
 import { createAuditRunner, convertAuditResult, persistResult } from '../cli';
 import type { EvalResult } from '../types';
 import type { DiffFile } from '@sofagent/core';
-import { EVAL_DIR, EVAL_LATEST, EVAL_HISTORY } from '@sofagent/core';
 
 let tempHome: string;
 
@@ -196,12 +195,23 @@ describe('convertAuditResult', () => {
 });
 
 describe('persistResult', () => {
-  it('写入 latest.json 和 history.jsonl', () => {
-    // 确保测试隔离目录下的 EVAL_DIR 存在
-    if (!existsSync(EVAL_DIR)) {
-      mkdirSync(EVAL_DIR, { recursive: true });
+  // 确定性隔离：三个用例显式传 overrideDataDir（tmp 目录）——不依赖
+  // SOFAGENT_HOME 环境变量与模块加载期常量快照的时序（曾两轮污染生产
+  // history.jsonl：env 继承链上任何一环把 SOFAGENT_HOME 解析回真实
+  // ~/.sofagent，EVAL_HISTORY 常量即指向生产路径）。显式参数 > 一切 env。
+  let isoDir: string;
+  beforeEach(() => {
+    isoDir = mkdtempSync(join(tmpdir(), 'sofagent-eval-persist-iso-'));
+  });
+  afterEach(() => {
+    if (existsSync(isoDir)) {
+      try { rmSync(isoDir, { recursive: true, force: true }); } catch { /* best-effort */ }
     }
+  });
+  const isoLatest = () => join(isoDir, 'eval', 'latest.json');
+  const isoHistory = () => join(isoDir, 'eval', 'history.jsonl');
 
+  it('写入 latest.json 和 history.jsonl', () => {
     const mockResult: EvalResult = {
       total: 3,
       passed: 2,
@@ -237,11 +247,11 @@ describe('persistResult', () => {
       ],
     };
 
-    persistResult(mockResult);
+    persistResult(mockResult, isoDir);
 
-    // 验证 latest.json
-    expect(existsSync(EVAL_LATEST)).toBe(true);
-    const latest = JSON.parse(readFileSync(EVAL_LATEST, 'utf-8'));
+    // 验证 latest.json（隔离目录内）
+    expect(existsSync(isoLatest())).toBe(true);
+    const latest = JSON.parse(readFileSync(isoLatest(), 'utf-8'));
     expect(latest.total).toBe(3);
     expect(latest.passed).toBe(2);
     expect(latest.failed).toBe(1);
@@ -250,8 +260,8 @@ describe('persistResult', () => {
     expect(latest.failures[0].error).toBe('test error');
 
     // 验证 history.jsonl（可能包含多次运行的行，取最后一行）
-    expect(existsSync(EVAL_HISTORY)).toBe(true);
-    const historyContent = readFileSync(EVAL_HISTORY, 'utf-8').trim();
+    expect(existsSync(isoHistory())).toBe(true);
+    const historyContent = readFileSync(isoHistory(), 'utf-8').trim();
     const lines = historyContent.split('\n');
     const lastLine = lines[lines.length - 1]!;
     const historyEntry = JSON.parse(lastLine);
@@ -260,10 +270,6 @@ describe('persistResult', () => {
   });
 
   it('全通过时 failures 为空数组', () => {
-    if (!existsSync(EVAL_DIR)) {
-      mkdirSync(EVAL_DIR, { recursive: true });
-    }
-
     const mockResult: EvalResult = {
       total: 1,
       passed: 1,
@@ -282,9 +288,9 @@ describe('persistResult', () => {
       ],
     };
 
-    persistResult(mockResult);
+    persistResult(mockResult, isoDir);
 
-    const latest = JSON.parse(readFileSync(EVAL_LATEST, 'utf-8'));
+    const latest = JSON.parse(readFileSync(isoLatest(), 'utf-8'));
     expect(latest.failures).toEqual([]);
   });
 
@@ -293,10 +299,6 @@ describe('persistResult', () => {
   // 此用例锁定两个可观测契约：① EVAL_DIR 无 .tmp 中间文件残留；
   // ② history.jsonl 每行都是合法 JSON（行数与有效行数一致，无断行/交错）。
   it('原子写契约_无tmp残留且history每行合法JSON', () => {
-    if (!existsSync(EVAL_DIR)) {
-      mkdirSync(EVAL_DIR, { recursive: true });
-    }
-
     const mockResult: EvalResult = {
       total: 2,
       passed: 2,
@@ -323,14 +325,14 @@ describe('persistResult', () => {
       ],
     };
 
-    persistResult(mockResult);
+    persistResult(mockResult, isoDir);
 
     // 契约 ①：无临时文件残留（rename 成功后 tmp 必然消失）
-    const residue = readdirSync(EVAL_DIR).filter((f) => f.includes('.tmp'));
+    const residue = readdirSync(join(isoDir, 'eval')).filter((f) => f.includes('.tmp'));
     expect(residue).toEqual([]);
 
     // 契约 ②：history 每行合法 JSON（追加语义未被破坏）
-    const lines = readFileSync(EVAL_HISTORY, 'utf-8').split('\n').filter((l) => l.trim() !== '');
+    const lines = readFileSync(isoHistory(), 'utf-8').split('\n').filter((l) => l.trim() !== '');
     expect(lines.length).toBeGreaterThanOrEqual(1);
     for (const line of lines) {
       expect(() => JSON.parse(line)).not.toThrow();

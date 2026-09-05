@@ -271,11 +271,23 @@ for field in context beforeAfter; do
   fi
 done
 
+# ④ eval 测试隔离在位（两轮生产污染防复发）：cli.test persistResult 三用例
+#   必须显式传 overrideDataDir（不依赖 SOFAGENT_HOME 常量快照时序）；
+#   persistResult 函数签名必须含 overrideDataDir 参数
+if ! grep -q "persistResult(mockResult, isoDir)" engine/eval/src/__tests__/cli.test.ts; then
+  echo -e "  ${RED}✗${NC} S2④：eval cli.test persistResult 未显式传 overrideDataDir——生产 history.jsonl 污染防线回退（曾两轮复发）"
+  S2_FAIL=$((S2_FAIL + 1))
+fi
+if ! grep -q "overrideDataDir?: string" engine/eval/src/cli.ts; then
+  echo -e "  ${RED}✗${NC} S2④：persistResult 缺 overrideDataDir 参数——沙箱实跑/测试隔离通道缺失"
+  S2_FAIL=$((S2_FAIL + 1))
+fi
+
 if [ "$S2_FAIL" -gt 0 ]; then
   echo -e "${RED}${BOLD}✗ S2 脱敏策略声明门禁 ${S2_FAIL} 项断言失败${NC}"
   exit 1
 fi
-echo -e "  ${GREEN}✓${NC} S2 脱敏策略声明断言（①深扫接线 ②白名单 ③类型标注）全过"
+echo -e "  ${GREEN}✓${NC} S2 脱敏策略声明断言（①深扫接线 ②白名单 ③类型标注 ④eval 隔离）全过"
 
 echo -e "${GREEN}${BOLD}✓ 零接线导出门禁通过（豁免 ${WAIVED_COUNT} 项均在登记表）${NC}"
 exit 0
