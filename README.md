@@ -218,7 +218,7 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # 加载安全规�
 
 ## 生态与文档索引
 
-**Featured in**（社区收录）：
+**Featured in**（社区收录 · 含收录申请中）：
 
 [![Glama](https://img.shields.io/badge/Glama-indexed-4A90D9)](https://glama.ai/mcp/servers/KongFangXun/sofagent)
 [![awesome-mcp-servers](https://img.shields.io/badge/awesome--mcp--servers-PR%20open-orange)](https://github.com/punkpeye/awesome-mcp-servers/pull/13312)
@@ -236,7 +236,7 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # 加载安全规�
 | **全局索引**（所有文档一个入口） | [WIKI](./docs/WIKI.md) |
 | 怎么装、怎么用、常见问题 | [HANDBOOK](./docs/HANDBOOK.md) |
 | 架构设计（约束层「对内的技术名字」 · 注入链 · 进化机制 · 24 条规则） | [ARCHITECTURE](./docs/ARCHITECTURE.md) |
-| 接口总览（六大接口面 + 80 MCP tools 清单） | [API](./docs/API.md) |
+| 接口总览（六大接口面 + 83 MCP tools 清单） | [API](./docs/API.md) |
 | 设计哲学 | [PHILOSOPHY](./docs/PHILOSOPHY.md) |
 | 行业印证与生态定位（与现有工具的差异） | [VALIDATION](./docs/VALIDATION.md) |
 | 版本路线图 | [ROADMAP](./docs/ROADMAP.md) |

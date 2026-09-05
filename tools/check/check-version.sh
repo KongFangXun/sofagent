@@ -1163,6 +1163,32 @@ else
   echo -e "  ${YELLOW}⚠${NC} tool-registry.ts 工具数解析失败（格式变化？人工确认）"
   WARNINGS=$((WARNINGS + 1))
 fi
+
+# README 双语工具数对账（v1.4.5 fresh-eyes round-1 防复发）：
+# README.md / README.en.md 中所有「N MCP tools」「N 个 MCP tool」声称数逐项与 registry SSOT 核对，
+# 任一处漂移即报错——防「正文已改、表格/附录残留旧值」的局部漏改（本次 80→83 表格漏改即案例）。
+if [[ "${MCP_REG}" =~ ^[0-9]+$ ]] && [[ "${MCP_REG}" -gt 0 ]]; then
+  # -a 强制文本模式：macOS BSD grep 对含中文行做 -o 提取时可能误判 binary（fresh-eyes 实锤），-a 通吃
+  README_CLAIMS=$(grep -hoaE '[0-9]+( 个)? MCP tools?' "${PROJECT_ROOT}/README.md" "${PROJECT_ROOT}/README.en.md" 2>/dev/null | grep -oE '^[0-9]+' || true)
+  README_DRIFT=0
+  README_CLAIM_TOTAL=0
+  while IFS= read -r _claim_num; do
+    [[ -z "${_claim_num}" ]] && continue
+    README_CLAIM_TOTAL=$((README_CLAIM_TOTAL + 1))
+    if [[ "${_claim_num}" != "${MCP_REG}" ]]; then
+      echo -e "  ${RED}✗${NC} README 工具数漂移：声称 ${_claim_num}，registry 实际 ${MCP_REG}——README 双语工具数对账（fresh-eyes round-1 防复发）"
+      ERRORS=$((ERRORS + 1))
+      README_DRIFT=1
+    fi
+  done <<< "${README_CLAIMS}"
+  if [[ "${README_CLAIM_TOTAL}" -eq 0 ]]; then
+    echo -e "  ${YELLOW}⚠${NC} README 未提取到任何工具数声称（格式变化？人工确认）"
+    WARNINGS=$((WARNINGS + 1))
+  elif [[ "${README_DRIFT}" -eq 0 ]]; then
+    echo -e "  ${GREEN}✓${NC} README.md / README.en.md 共 ${README_CLAIM_TOTAL} 处工具数声称与 registry（${MCP_REG}）一致"
+    CHECKS=$((CHECKS + 1))
+  fi
+fi
 echo ""
 
 # ── 23. lock 与 workspace 同步（v1.4.0 发版 CI 4 红防复发 · checklist 维度 122）──

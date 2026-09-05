@@ -42,7 +42,7 @@ task/logs 和 think.md 以明文 Markdown 存储，可能含代码片段和对�
 
 | 检查项 | 状态 | 说明 |
 |------|:--:|------|
-| 数据存储位置 | ✅ 本地 | 不上云，不调外部 API（离线模式） |
+| 数据存储位置 | ✅ 本地 | 不上云，不调外部 API（离线模式；唯一例外：显式配置模型推理端点后，Dream Cycle「真实大脑」反思 / train_serve 推理会把 prompt 上下文发往用户配置的模型 API——opt-in 默认关闭，详见 [SECURITY.md「已知风险」](../../SECURITY.md)） |
 | 数据脱敏 | ✅ | A2/A9 命中行脱敏后存储 |
 | 数据加密 | ❌ 当前明文 | 加密能力已实现（AES-256-GCM + SOFAGENT-AGE-V1）但**接线未启用**（规划 v1.4.7，尚未实现）——审计历史主链与 task/logs、think.md、knowledge/ 当前均为**明文**（脱敏管道仍生效）。强合规场景（GDPR/等保/SOC2）请按「明文存储」评估风险并配 OS 级全盘加密，边界见 LIMITATIONS #4 |
 | 权限控制 | ✅ 700 | install.sh 自动设置 |

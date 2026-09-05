@@ -22,7 +22,7 @@
 
 ## 已知风险（明文存储）
 
-sofagent 是一套 FDE 能力——底层引擎是纯本地 Harness 中间件（约束中间层），**数据不出本机**（除安装时 npm 拉包外运行时不联网；例外：用户主动配置云同步时数据会离开本机，见 [多设备同步指南](./docs/guides/multi-device-sync.md)——该配置等于将 knowledge/ 与 think.md 托管给云盘服务商，属用户自主取舍，与本地数据主权承诺互斥）——但以下数据以**明文 Markdown** 存储，请评估风险：
+sofagent 是一套 FDE 能力——底层引擎是纯本地 Harness 中间件（约束中间层），**数据不出本机**（除安装时 npm 拉包外运行时不联网；例外一：用户主动配置云同步时数据会离开本机，见 [多设备同步指南](./docs/guides/multi-device-sync.md)——该配置等于将 knowledge/ 与 think.md 托管给云盘服务商，属用户自主取舍，与本地数据主权承诺互斥；例外二：用户显式配置模型推理端点后（`SOFAGENT_MODEL_API_KEY` / `SOFAGENT_MODEL_BASE_URL` / `SOFAGENT_MODEL_NAME`，opt-in 默认关闭），Dream Cycle「真实大脑」会话反思与 train_serve 推理会把 prompt 上下文发往用户指定的模型 API——出口为 `engine/core/src/model-client.ts` 的 `callModelAPI`，经 `engine/daemon/src/dream-cycle/real-provider.ts` → `state-machine.ts` 接线；未配置时降级 MockLLM，零外发）——但以下数据以**明文 Markdown** 存储，请评估风险：
 
 > 🏠 **当前定位：单机单用户**——sofagent 当前为单机单用户设计，多 Agent 共享同一知识库/审计历史；**多人/多部门共用需等租户隔离（ROADMAP v1.4.7 G7 多租户抽象层 v0）**。企业 IT 若规划多人共用同一 `~/.sofagent/`，部署前务必评估此边界（详见 [LIMITATIONS「知识库同样全局共享」](./docs/LIMITATIONS.md#三安全与信任模型局限)）。
 
@@ -268,7 +268,7 @@ sofagent 是一套 FDE 能力——底层引擎是纯本地 Harness 中间件（
 
 sofagent-audit（v0.92+）是 TypeScript CLI，读取 git diff 和文件系统的主力路径是 `execFileSync('git', ...)`（数组传参、不走 shell）。不使用 eval、不执行外部脚本；git 命令参数以数组传入（`['diff', '--unified=3', range]`），range 参数经过正则校验 `[a-zA-Z0-9~^.\-]`，无命令注入风险。**精确边界（v1.4.5 核实）**：包内存在 7 处 `execSync`（shell 形态）调用，均为静态可信命令串——audit 侧 6 处（webhook.ts 的 `git rev-parse --show-toplevel` / `git rev-parse --short HEAD` / `git config user.name`、init.ts 的 `which/where sofagent-daemon` / `which/where sofagent-audit`、agent-shield.ts 的 `ps aux`）+ core 侧 1 处（audit-history.ts 的 `git rev-parse --git-dir`）——命令体零外部输入插值，插值面仅限「取回输出后 trim」；审计主链（diff 解析/规则执行）不走这些路径。命令注入静态扫（`tools/check/check-shell-injection.sh`）持续覆盖此面。
 
-**数据访问**：审计模块核心不发起网络请求（webhook 为可选功能，需显式配置 URL 后才启用）；写入仅限 `~/.sofagent/data/` 目录（审计历史、session 报告、快照等）。
+**数据访问**：审计模块核心不发起网络请求（webhook 为可选功能，需显式配置 URL 后才启用；模型推理出口仅 Dream Cycle「真实大脑」/ train_serve——同样 opt-in，需显式配置 `SOFAGENT_MODEL_API_KEY` 等才启用，见「已知风险」例外二）；写入仅限 `~/.sofagent/data/` 目录（审计历史、session 报告、快照等）。
 
 **信任边界**：审计模块本身是确定性的——给定相同的 git diff 和日志，输出相同。但审计 A7/A8 的结果依赖 Agent 日志的真实性（Agent 可以伪造日志）。这不是审计模块的安全漏洞，是架构级别的信任模型选择。详见 [LIMITATIONS.md](./docs/LIMITATIONS.md)（「审计模块信任模型：Agent 自我报告」节）。
 
@@ -478,7 +478,7 @@ sofagent daemon 是本地文件系统监控守护进程，其行为边界如下�
 | 维度 | 说明 |
 |------|------|
 | **监控范围** | 仅 `data/` 工作目录 + 用户显式配置的路径（`config.yml` 中的 `daemon.watchPaths`）。不扫描用户其他文件。 |
-| **数据去向** | 所有数据本地存储（`data/` 目录下），不上传云端，不向外发送网络请求——除非用户显式配置 TencentDB Memory 集成（`install.sh --with-memory`，opt-in）。 |
+| **数据去向** | 所有数据本地存储（`data/` 目录下），不上传云端，不向外发送网络请求——除非用户显式配置 TencentDB Memory 集成（`install.sh --with-memory`，opt-in）或模型推理端点（Dream Cycle「真实大脑」/ train_serve，`SOFAGENT_MODEL_API_KEY` 等，opt-in，见本文[「已知风险」](#已知风险明文存储)例外二）。 |
 | **权限** | 只读监听文件事件（hash 变化检测 + cron 定时巡检）。**不修改用户文件、不删除文件、不外传数据**。审计发现写入 `daemon-health.json` 和 `history.jsonl`。 |
 | **审计结果推送** | **v1.2.1 已支持 Webhook 推送**（飞书/钉钉/企微，`engine/audit/src/webhook.ts` + `engine/daemon/src/notify.ts` + `push-target.ts`）。企业 IT 可配置 `webhook` 字段实现实时告警推送。 |
 
@@ -510,7 +510,7 @@ install.sh 是 sofagent 的一键安装脚本。以下是其完整行为清单�
 
 - ⚠️ 不会交互式提权（不弹密码框）——仅当 symlink 目标目录不可写且 sudo NOPASSWD 已配置时，以非交互 `sudo -n` 注册 CLI 命令（失败则回退 `~/.local/bin`），其余操作在用户权限范围内
 - ❌ 不会改系统文件——不碰 `/etc`、`/System`（`/usr/local/bin` 仅创建一个 symlink）
-- ❌ 除安装时的 npm 依赖拉取（见上表）与 `--remote` 模式的 git clone 外，**运行时不联网**——安装后的审计模块、daemon、MCP server 均不发起网络请求（webhook 为可选功能需显式配置）
+- ❌ 除安装时的 npm 依赖拉取（见上表）与 `--remote` 模式的 git clone 外，**运行时不联网**——安装后的审计模块、daemon、MCP server 均不发起网络请求（webhook 为可选功能需显式配置；模型推理出口仅 Dream Cycle「真实大脑」/ train_serve，同样 opt-in 需显式配置 `SOFAGENT_MODEL_API_KEY` 等，未配置降级 MockLLM 零外发）
 - ❌ 不会执行远程脚本（`--remote` 模式只做 git clone 官方仓库）
 - ❌ 不会收集或上传任何用户数据
 

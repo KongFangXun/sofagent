@@ -219,7 +219,7 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # load the securit
 
 ## Ecosystem & Docs Index
 
-**Featured in** (community listings):
+**Featured in** (community listings, incl. pending PRs):
 
 [![Glama](https://img.shields.io/badge/Glama-indexed-4A90D9)](https://glama.ai/mcp/servers/KongFangXun/sofagent)
 [![awesome-mcp-servers](https://img.shields.io/badge/awesome--mcp--servers-PR%20open-orange)](https://github.com/punkpeye/awesome-mcp-servers/pull/13312)
@@ -237,7 +237,7 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # load the securit
 | **Global index** (one entry to all docs, in Chinese) | [WIKI](./docs/WIKI.md) |
 | How to install, use, FAQ | [HANDBOOK](./docs/HANDBOOK.md) |
 | Architecture (constraint layer · injection chain · evolution · 24 rules) | [ARCHITECTURE](./docs/ARCHITECTURE.md) |
-| API overview (six interface surfaces + 80 MCP tools) | [API](./docs/API.md) |
+| API overview (six interface surfaces + 83 MCP tools) | [API](./docs/API.md) |
 | Design philosophy | [PHILOSOPHY](./docs/PHILOSOPHY.md) |
 | Industry validation & ecosystem positioning (differences from existing tools) | [VALIDATION](./docs/VALIDATION.md) |
 | Version roadmap | [ROADMAP](./docs/ROADMAP.md) |
