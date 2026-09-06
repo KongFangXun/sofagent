@@ -1784,7 +1784,7 @@ EMB=$(sed -n 's/^INSTALL_SHA256="\([a-f0-9]*\)".*/\1/p' bootstrap.sh); HEAD_H=$(
 # ② 6 lib 哈希稳定性：install.sh/lib 无改动时 LIB_SHA256S 不变（git diff 空 = 免回填）
 PREV_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo v1.4.3); git diff "$PREV_TAG"..HEAD --stat -- engine/scripts/lib/ | wc -l | grep -q "^0$" && echo "✅ lib 零改动（LIB_SHA256S 沿用）" || echo "🟡 lib 相对 $PREV_TAG 有改动——6 哈希须逐项回填（排期阶段九 tag 前）"
 # ③ Marketplace 版本页含本版号即免网页勾选（listing 自动延续）
-curl -s https://github.com/marketplace/actions/sofagent | grep -q "$(node -p "require('./package.json').version")" && echo "✅ marketplace 版本页已含本版" || echo "🟡 版本页未见本版——按 SOP 网页勾选 Publish to Marketplace"
+MKT_HTML=$(curl -s --max-time 10 https://github.com/marketplace/actions/sofagent); MKT_RC=$?; if [ $MKT_RC -ne 0 ]; then echo "🟡 网络不可达（curl exit $MKT_RC）——marketplace 对照跳过（网络态非仓库问题，有网时人工复核）"; elif echo "$MKT_HTML" | grep -q "$(node -p "require('./package.json').version")"; then echo "✅ marketplace 版本页已含本版"; else echo "🟡 版本页未见本版——按 SOP 网页勾选 Publish to Marketplace"; fi
 # ④ ClawHub 状态快照纪律：发布前 verify 落盘，发布后对照——新引入 reasons 才处置（既有状态披露不阻断；快照命令：clawhub skill verify <slug> > /tmp/clawhub-pre.json）
 ```
 

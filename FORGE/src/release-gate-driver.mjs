@@ -718,7 +718,7 @@ function resolveChangelogPath(target) {
  * @param {{inputs?: string[], precheck?: boolean}} stepDef 步骤定义
  * @returns {string} 注入文本（非 precheck 步骤返回空串）
  */
-function buildPrecheckEvidence(runDir, stepDef) {
+function buildPrecheckEvidence(runDir, stepDef, target = '') {
   if (!stepDef?.precheck || !Array.isArray(stepDef.inputs)) return '';
 
   const blocks = [];
@@ -738,6 +738,14 @@ function buildPrecheckEvidence(runDir, stepDef) {
       if (data.dims && (data.meta?.dims || typeof data.dims === 'object')) {
         const dims = typeof data.dims === 'object' ? Object.values(data.dims) : data.dims;
         const lines = [`[driver 注入] ${f} 内容（${dims.length} 维度，逐维度判定依据）：`];
+        // run-01/02 连续 P0 误判根因（版本口径）：维度输出里的 npm/tag/ssot/包
+        // 版本号是仓库 SSOT 实测值（上一版），worker 曾以「多维度佐证」压过
+        // userMessage 的口径声明、自称目标=上一版 → consolidate 判「版本错配」
+        // P0。口径警示必须放在证据块头部——worker 读证据第一眼即见，权重
+        // 对等才压得住实证倾向。
+        if (target) {
+          lines.push(`  ⚠️ 版本口径（先读此行再判定）：下列维度输出中的 npm/tag/ssot/包版本号（如上一版号）是仓库 SSOT 实测值，属发版时序正常态（SSOT bump 在 SOP 阶段六，闸门跑在阶段五）；审查对象与报告版本锚点一律 = ${target}。禁止把 SSOT 实测值当作目标版本的「佐证」——引用它们填写目标版本即违反口径。`);
+        }
         let failCount = 0;
         for (const d of dims) {
           // run-05 实证 fail-closed：exitCode=null（超时/异常）也计入失败——
@@ -986,7 +994,7 @@ async function runWorker(step, runDir, target) {
   // 「工具调用结果摘要 0 条」→ 报告永远「证据不足」判 FAIL。
   // 正解：precheck.json 本来就是 driver 预执行生成的证据（方案 A 语义）——**证据内容
   // 由 driver 直接注入 userMessage**，worker 无需任何工具即可判定（DSH/LangGraph 双后端兼容）。
-  const precheckEvidence = buildPrecheckEvidence(runDir, stepDef);
+  const precheckEvidence = buildPrecheckEvidence(runDir, stepDef, target);
   // v1.4.3（run-19 根因）：非 precheck 步骤的上一步产物内容注入——直连模式
   // （无工具）下 verdict/consolidate 的唯一证据面，缺失即「零证据」ERROR。
   const inputsEvidence = buildInputsEvidence(runDir, stepDef);
