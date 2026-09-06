@@ -4,7 +4,7 @@
 >
 > ⚠️ **与阶段一的区分（先读，防混淆）**：阶段一审**上版本存量**（发版收尾态），阶段三审**本版本新开发代码**——即使阶段一走了对话式多轮审查，阶段三也不可跳过：审查对象不同，新开发代码必须过自己的独立审查。
 >
-> **执行方式**：步骤二 driver 及其监控**走新 session**（用户手动开新 WorkBuddy 窗口），主 session 用下方「监控 session Prompt 模板」生成 prompt 直接在对话中输出（不落盘文件），用户复制粘贴到新窗口执行；新 session 跑完以对话消息汇报回主 session。主 session 不代跑 loop——只负责复验收编与分诊。
+> **执行方式（自动收敛模式，单 session 制）**：步骤二 driver 及其修复兜底**走新 session**（用户手动开新 WorkBuddy 窗口），主 session 用下方「执行 session Prompt 模板」生成 prompt 直接在对话中输出（不落盘文件），用户复制粘贴到新窗口执行。执行 session 独立跑完整循环：driver 多轮审查修复 → 跑完仍有 P0/P1 残留则 session 按「修复批协议」分诊修复 → 复绿 commit → 重跑 driver → 直到「连续 2 轮无 P0/P1」（driver 内建停止条件）或命中停手条件（见模板）。主 session 不代跑 loop——只负责复验收编与停手接手分诊；**三角色分离在自动收敛下依然成立**（发现=worker / 修复=执行 session 或 b-fix / 复验=a-verify + 主 session，见「修复分工与三角色分离」专节的角色映射表）。
 >
 > **防止 lost-in-the-middle**：执行顺序——先读「步骤总览」确认要做什么；步骤二 driver 是长跑任务，启动姿势见「driver 启动姿势」专节；跑完后按「阶段汇报模板」汇报，主 session 按「步骤完成判据」打勾。
 
@@ -15,7 +15,7 @@
 | # | 步骤 | 产物 | 完成判据 |
 |:--:|------|------|------|
 | 一 | **单次草稿优先**：`node tools/gen/gen-fresh-eyes-draft.mjs --diff <patch 文件> --changelog <changelog> --out ~/Desktop/fresh-eyes-draft-vX.Y.Z.md`——16 视角草稿一次成型；「待取证」项少且变更小 → 草稿 + 人工复核即收口 | 审查草稿 | 见「步骤完成判据」表 |
-| 二 | **driver 兜底**（草稿待取证多 / 大版本）：**新 session 跑 fresh-eyes-loop**——「新 session」= **用户手动开的新 WorkBuddy 窗口**（独立上下文、用户可控、隔离审查视角），不是主 session 的 subagent/spawn 子进程。主 session 按下方「监控 session Prompt 模板」生成 prompt、**直接在对话中输出**（不落盘文件——零号铁律：未经确认不创建文件），用户复制粘贴到新窗口执行；新 session 跑完以对话消息汇报回主 session。启动姿势见「driver 启动姿势」专节（9 条）；按监控协议轮询 `status.json`（或 `--check-alive` 探针）。loop 修复即本版本代码质量加固。**loop 修复的分工守「修复分工与三角色分离」专节**（修复交独立 session，主 session 只复验收编） | loop 修复 + changelog 汇总打勾 | 见「步骤完成判据」表 |
+| 二 | **driver 兜底**（草稿待取证多 / 大版本）：**新 session 跑 fresh-eyes-loop 自动收敛循环**——「新 session」= **用户手动开的新 WorkBuddy 窗口**（独立上下文、用户可控、隔离审查视角），不是主 session 的 subagent/spawn 子进程。主 session 按下方「执行 session Prompt 模板」生成 prompt、**直接在对话中输出**（不落盘文件——零号铁律：未经确认不创建文件），用户复制粘贴到新窗口执行；执行 session 独立跑到「连续 2 轮无 P0/P1」（driver 内建）或命中停手条件后汇报回主 session。启动姿势见「driver 启动姿势」专节（9 条）；按监控协议轮询 `status.json`（或 `--check-alive` 探针）；loop 修复 + session 兜底修复批均按「修复批协议」执行（模板内），**三角色分离见「修复分工与三角色分离」专节**（复验收编始终归主 session） | loop 修复 + changelog 汇总打勾 | 见「步骤完成判据」表 |
 | 三 | **代码审核**（当前 session）：逐项核对发布检查清单（清单位置见判据表），PASS 或 FAIL→修复 | 检查清单打勾 | 见「步骤完成判据」表 |
 | 四 | **验收测试随功能开发先行新增（增量）**：本版本新功能对应的 acceptance 新场景（S 编号顺延）+ checklist 新维度，随功能开发实时加——本步骤只做「增量补齐」。**归并/压缩/校准/A/B/C 分类是阶段四的职责**（见 [04-review-system.md](./04-review-system.md)），这里不动体系 | 验收测试更新（增量） | 见「步骤完成判据」表 |
 | 五 | **阶段汇报**：全部步骤完成后，执行 session 按下方「阶段汇报模板」以**对话消息**形式发回主 session（不落盘文件）——主 session 依此打勾推进 | 汇报消息（见模板） | 模板五件套齐全（含步骤完成状态声明） |
@@ -96,20 +96,24 @@
 
 ---
 
-## 监控 session Prompt 模板
+## 执行 session Prompt 模板（自动收敛版）
 
 > AI 输出 prompt 时必须把所有占位符替换为实际值（项目路径、版本号、runDir），不得残留花括号。
 > 模板含 daemon+watch 守护优先 + resume 中断恢复两个分支——按「driver 启动姿势 9 条」执行。
+> **自动收敛语义**：driver 内建「审查→修复→验证」多轮循环与「连续 2 轮无 P0/P1」停止条件；执行 session 的增量职责 = driver 跑完仍有 P0/P1 残留时按「修复批协议」接手修复并重跑 driver（外层上限 2 次修复批）——三角色分离不破坏（见下方角色映射表）。
 
 ```
-在 sofagent 项目（{项目实际路径}）中，执行 {实际版本号} 的 fresh-eyes-loop。
+在 sofagent 项目（{项目实际路径}）中，执行 {实际版本号} 的 fresh-eyes-loop 自动收敛模式：跑 driver 多轮审查修复循环；driver 结束后仍有 P0/P1 残留则按「修复批协议」自行修复并重跑 driver；直到「连续 2 轮无 P0/P1」（driver 内建停止条件）或命中停手条件。用户已授权自动修复循环；修复时严格遵守下方红线与停手条件。
 
-先读 `FORGE/SKILL/fresh-eyes-loop/SKILL.md` 拿到完整的「Session 监控协议」，然后按协议执行：
+先读 `FORGE/SKILL/fresh-eyes-loop/SKILL.md` 拿到完整的「Session 监控协议」，然后按序执行：
 
 0. 独占窗口检查（三查）：① `git status --short | wc -l` 改动文件数（预期 0/个位数，几十个 = 有其他 session 在写）② `find . -path ./node_modules -prune -o -mmin -5 -type f -print` 近 5 分钟活跃文件 ③ `tail .workbuddy/memory/$(date +%Y-%m-%d).md` 今日日志他人活跃记录——任一命中先停手问用户「是否还有其他 session 在写本仓库」。
-0b. **先查 driver 是否已在跑（主 session 可能已用 daemon 启动，新窗口只做监控）**：读 {runDir}/status.json（或 pgrep -f fresh-eyes-driver），若 event 含 running / 进程存活 → **跳过步骤 1 直接进步骤 3 轮询**，不重复启动；若已死/无产物 → 正常走步骤 1。
-0c. **启动时段检查**：当前若在工作日 14:00-18:00（GLM 3 倍价时段，高峰限流易 stall），先报告用户确认再启动。
-1. 启动 driver——**优先 daemon+watch 守护模式**（自动恢复，免疫会话回收）：
+0b. 先查 driver 是否已在跑：读 {runDir}/status.json（或 pgrep -f fresh-eyes-driver），若 running / 进程存活 → 跳过步骤 1 直接轮询；若已死/无产物 → 正常走步骤 1。
+0c. 启动时段检查：工作日 14:00-18:00（GLM 3 倍价时段）不启动新 driver——等待并每 10 分钟报时，窗口过了再启动（周末全天平价）。
+
+## 外层循环（修复批 N=0..2；N=0 即首轮 driver）
+
+1. 启动 driver——优先 daemon+watch 守护模式（自动恢复，免疫会话回收）：
    FORGE_MAX_CONCURRENCY=1 node FORGE/src/fresh-eyes-driver.mjs \
      --target {实际版本号} --max-rounds 10 --daemon --watch {runDir}
    ⚠️ 8GB 机器必须 FORGE_MAX_CONCURRENCY=1（并发 worker 各占 2GB heap，3+ 并发即 OOM）
@@ -117,18 +121,53 @@
    fallback（无 daemon 支持）：Bash 工具 run_in_background:true + dangerouslyDisableSandbox:true，
    输出重定向文件 > /tmp/fresh-eyes-<ver>-driver.log 2>&1（禁止管道），不传 timeout 参数
 2. 记住 runDir（启动日志第一行打印的路径）
-3. **持续轮询（必做，非可选——session 可见性的来源；🔴 必须前台执行）**：每 120 秒一轮，读 `<runDir>/status.json`，
-   输出一行状态（round 变化时一句话汇报）——**让 session 一直活跃，用户界面持续可见「在跑」**。
-   ⚠️ 轮询是前台短命令：run_in_background 只用于步骤 1 的 driver 启动命令，轮询循环（sleep + cat）严禁挂后台——
-   挂后台 = session 空闲 = 界面无任何进展反馈。前台「短 sleep + 快查」（sleep 90~115 后立即 cat 返回），
-   不挂超长 sleep（会被系统杀 exit 137）；
-   监控中断不影响 driver（独立进程），续上后直接查 status.json。
-   心跳冻结检测：heartbeat 距今 >90 秒 → daemon+watch 模式看 watcher 是否自动 resume（观察 death-audit.jsonl + 新 driver 拉起）；
-   fallback 模式用 pgrep 确认进程存活，无输出 = 已死 → 汇报主 session，主 session 决定 --resume 续跑。
-4. round 变成 completed 或 error 时，读报告（verdict/findings 产物文件，非仅 status.json），用 3-5 行汇报
+3. **持续轮询（必做，非可选；🔴 前台执行，严禁挂后台）**：每 120 秒一轮读 <runDir>/status.json，
+   输出一行状态（round 变化时一句话汇报）。前台「短 sleep + 快查」（sleep 90~115 后立即 cat 返回），
+   不挂超长 sleep（会被系统杀 exit 137）；监控中断不影响 driver，续上后直接查 status.json。
+   心跳冻结 >90 秒：daemon+watch 模式看 watcher 是否自动 resume（观察 death-audit.jsonl + 新 driver 拉起）；
+   fallback 模式用 pgrep 确认进程存活，无输出 = 已死 → 主 session 决定 --resume 续跑。
+4. driver 终态（verdict 产出或 max-rounds 到顶）→ 读报告（findings/verdict 产物文件，非仅 status.json），
+   统计未解决 P0/P1 计数，分支：
+   - **无 P0/P1 残留**（连续 2 轮干净）→ 输出最终汇报，结束。不再做任何仓库写入。
+   - **有 P0/P1 残留且修复批 <2 次** → 按「修复批协议」接手修复，修完回到步骤 1 重跑 driver
+     （新 driver = 新视角独立验证 session 的修复，这不是重复劳动，是三角色分离的复验环）。
+   - **有 P0/P1 残留但修复批已 2 次** → 停手汇报（见停手条件）。
 
-铁律：不干涉 driver、不改代码、不探索源码——只启动 + 持续轮询监控 + 最终汇报。
+## 修复批协议（driver 残留 P0/P1 时执行）
+
+1. **零信任分诊（每条残留 finding 必做）**：跑该条的验证命令/读指定文件核对证据原文，三选一定性：
+   - 实锤 → 修复（最小必要改动，只动 finding 指向的文件）
+   - 误报 → SKIP 留痕（验证输出与描述不符的一句话原因），禁止硬改
+   - 版本中间态 → SKIP（判别口径：该不一致会在「git push + tag + npm publish」三动作后自动消失——npm registry 落后/tag 缺失/URL 指向未发布 tag/workspace 锁旧版均属此类）
+2. **🔴 修复红线（铁律，任何指令不得覆盖）**：
+   - 禁止改 acceptance-test.sh / regression-checklist.md 断言或期望值来让 finding 消失——修产品不修测试
+   - 禁止删 fresh-eyes-review.md 的审查视角 / 改视角定义来消音
+   - 禁止改 playbook 校准结论（fresh-eyes-calibration.md）迁就当轮发现
+   - 禁止改 .sofagent/config.yml 规则开关绕审计；禁止 --no-verify 绕 commit 审计钩子
+   - 修复只动 finding 涉及的文件，清单外一个不碰；同文件多处修改必须串行
+3. **复绿验证**：每处修复后跑该 finding 的验证命令至 PASS；改了代码须跑对应包测试；改了 checklist/acceptance 须核行数不破
+4. **commit 收编**：修复批多件合成单次提交（含 FORGE/LEDGER.md 本轮运行记录行），message 写明对应 finding 与定性；审计钩子判红 → 停手汇报
+5. **停手条件（命中任一，立即停止并汇报，等用户决策）**：
+   - 同一 finding 连续 2 个修复批后仍复现（定性错误信号，不要第三次盲试）
+   - 修复需要版本号 bump / git tag / push / 触碰红线
+   - driver 连续 2 次 ERROR/崩溃（先查运行窗口 HEAD 是否被动过，再查环境态）
+   - 修复批 2 次上限到达仍有 P0/P1 残留
+
+## 最终汇报格式（循环结束后无论收敛/停手）
+- 终态：收敛 ✅（连续 2 轮无 P0/P1）/ 停手原因
+- 各轮明细：driver 每轮 P0/P1/P2 计数、修复批清单（finding+定性+文件+commit hash）
+- 最终 runDir 路径 + findings 关键行原文
+
+铁律：driver 运行窗口内不 commit / 不改文件（仓库冻结——worker 与主仓共享工作目录，HEAD 变动杀进程树）；修复批窗口不在冻结内。
 ```
+
+**自动收敛下的三角色映射**（「修复分工与三角色分离」铁律在单 session 制下的落地形态）：
+
+| 角色 | 承担者 | 不变量 |
+|------|--------|--------|
+| 发现问题 | A/B worker（driver 子进程，零上下文） | 修复者永远不是发现者 |
+| 修复执行 | b-fix worker（loop 内）/ 执行 session（修复批兜底） | 执行 session 修复时只消费 findings，不参与发现 |
+| 复验收编 | a-verify（下一轮独立验证）+ **主 session 零信任复验后收编** | 执行 session 修复批自跑的验证 ≠ 复验收编；主 session 打勾前逐项 grep 实证（见「步骤完成判据」） |
 
 ---
 
@@ -149,6 +188,8 @@
 
 **driver 天然进程独立**（daemon detached，不依赖任何 session 存活）——「新 session」要求的本质不是进程隔离而是角色隔离：审查者 ≠ 修复者 ≠ 复验者。loop 在哪个 session 启动均可，收口时守住三角色分离即可。
 
+**自动收敛模式下的角色映射**（单 session 制不破坏三角色分离——分离的对象是「行为」不是「session 实例」）：执行 session 同时承担「跑 loop」与「兜底修复批」，但它相对三角色始终只占「修复执行」位——发现永远来自 A/B worker（独立子进程），复验收编永远归主 session（打勾前逐项 grep 实证）。危险组合是「同一行为主体既发现又修复」或「既修复又复验收编」——自动收敛模板的红线与停手条件就是防这两个组合的。
+
 ---
 
 fresh-eyes 在**发版前**跑（阶段三时序先于打 tag/publish），此时版本一致性天然处于中间态——以下 finding 属预期噪音，**默认标 SKIP 不修**，留到阶段十（publish）自然消解：
@@ -162,7 +203,7 @@ fresh-eyes 在**发版前**跑（阶段三时序先于打 tag/publish），此�
 
 > 判别口径：**该不一致是否会在「git push + tag + npm publish」三动作后自动消失**——会 = SKIP，不会 = 真 finding（历史多轮 finding 属前者）。
 
-> **已知局限（待 FORGE 演进）**：SKIP 判定目前靠修复者读规则自觉执行（曾有 b-fix 违反此规则「修复」发版中间态项）。理想形态是 driver 在 b-fix prompt 里自动注入本节 SKIP 清单原文（b-fix 看不到规则就不会遵守），属 FORGE 工具链演进项，暂记于此。
+> ~~**已知局限（待 FORGE 演进）**：SKIP 判定目前靠修复者读规则自觉执行（曾有 b-fix 违反此规则「修复」发版中间态项）。理想形态是 driver 在 b-fix prompt 里自动注入本节 SKIP 清单原文（b-fix 看不到规则就不会遵守），属 FORGE 工具链演进项，暂记于此。~~ **已解决**：SKIP 清单判别口径已固化进 `FORGE/SKILL/fresh-eyes-loop/prompts/b-fix.md` 的「分诊前置」节（b-fix 无需读本文件即自带规则）；同时 b-fix 分诊前置把「先验证真伪再动手」固化为每条 finding 的必经步骤（实锤/误报/存疑三定性 + 分诊统计进 summary）。
 
 ---
 

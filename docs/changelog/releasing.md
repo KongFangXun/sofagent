@@ -20,9 +20,9 @@
 
 - [ ] 一 · 审查上版本（fresh-eyes 独立审查 · 新 session 或对话式多轮）→ [01-review.md](./releasing/01-review.md)
 - [ ] 二 · 开发 + 基础自测（开发收尾即自测）→ [02-dev.md](./releasing/02-dev.md)
-- [ ] 三 · fresh-eyes-loop 质量循环 + 代码审核 + 验收测试（新 session）→ [03-quality-loop.md](./releasing/03-quality-loop.md)
+- [ ] 三 · fresh-eyes-loop 质量循环 + 代码审核 + 验收测试（新 session · 自动收敛循环）→ [03-quality-loop.md](./releasing/03-quality-loop.md)
 - [ ] 四 · 审查体系合并更新 + 最终确认 → [04-review-system.md](./releasing/04-review-system.md)
-- [ ] 五 · release-gate-loop 发版闸门（新 session · 必须 PASS 才继续）→ [05-release-gate.md](./releasing/05-release-gate.md)
+- [ ] 五 · release-gate-loop 发版闸门（新 session · 自动收敛循环 · 必须 PASS 才继续）→ [05-release-gate.md](./releasing/05-release-gate.md)
 - [ ] 六 · 开发日志定稿 + 文档收尾 → [06-doc-finalize.md](./releasing/06-doc-finalize.md)
 - [ ] 七 · 工具脚本健康检查 → [07-tool-health.md](./releasing/07-tool-health.md)
 - [ ] 八 · 发布放行关口（作者一次性放行 + 三拍板）→ [08-confirm.md](./releasing/08-confirm.md)
@@ -30,7 +30,7 @@
 - [ ] 十 · 分发（Skill / DSH plugin / OpenClaw plugin / 设备端安装 · 项目负责人或授权 AI）→ [10-distribute.md](./releasing/10-distribute.md)
 - [ ] 十一 · 发布后（验证 + 三文档回写 + SOP 自迭代 + 下版 prompt）→ [11-post-publish.md](./releasing/11-post-publish.md)
 
-> **铁律**：阶段五 verdict=PASS 前，不进阶段六~八。FAIL 回阶段四修复后重跑。
+> **铁律**：阶段五 verdict=PASS 前，不进阶段六~八。FAIL 由执行 session 按该阶段 SOP 的「修复批协议」自动收敛修复（03/05 均内建循环+红线+停手条件），命中停手条件才回阶段四交主 session 接手。
 
 > **onboarding 走查检查项（多条新产品线同版落地时必走）**：
 > 当一版同时落地 ≥2 条新产品线时，阶段六文档收尾前必走「陌生人视角」入口走查：
