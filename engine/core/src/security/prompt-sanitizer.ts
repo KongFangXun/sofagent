@@ -48,8 +48,10 @@ export function needsUntrustedWrap(trust: Trust): boolean {
  * @returns 包裹后的字符串
  */
 export function wrapUntrusted(content: string, source: UntrustedSource, meta?: UntrustedMeta): string {
-  // 防标签逃逸：内容里的闭合标签先转义
-  const safeContent = content.replace(/<\/untrusted>/gi, '&lt;/untrusted&gt;');
+  // 防标签逃逸：内容里的闭合标签先转义。
+  // 容忍闭合标签内的空白与大小写变体（</untrusted > / </UNTRUSTED\n> / </ untrusted>）——
+  // 只匹配精确字面量时，这些变体对多数 tokenizer/LLM 仍是闭合标签，可逃逸包裹边界。
+  const safeContent = content.replace(/<\/\s*untrusted\s*>/gi, '&lt;/untrusted&gt;');
   const urlAttr = meta?.url ? ` url="${escapeAttr(meta.url)}"` : '';
   return `<untrusted source="${source}"${urlAttr}>\n${safeContent}\n</untrusted>`;
 }

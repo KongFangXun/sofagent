@@ -258,6 +258,42 @@ if [ -f "$OC_CONFIG" ] && command -v jq &>/dev/null; then
   fi
 fi
 
+# ── 回收 git hook（三层防线：pre-commit / commit-msg / post-commit）──
+# 不回收的后果：commit-msg 找不到 sofagent-audit 即 exit 1——此后**每一次 git commit
+# 都被拒绝**，报错还让用户「去安装」。此前本脚本完全不碰 .git/hooks/，
+# 于是「卸载」之后仓库反而进入比安装前更糟的状态（提交被阻断）。
+if git rev-parse --git-dir >/dev/null 2>&1; then
+  GIT_HOOKS_DIR="$(git rev-parse --git-path hooks 2>/dev/null || true)"
+  # 尊重 core.hooksPath（与 engine/audit/src/hook-install.ts 同款口径）
+  _CUSTOM_HP="$(git config --get core.hooksPath 2>/dev/null || true)"
+  if [ -n "$_CUSTOM_HP" ]; then
+    case "$_CUSTOM_HP" in
+      /*) GIT_HOOKS_DIR="$_CUSTOM_HP" ;;
+      *)  GIT_HOOKS_DIR="$(git rev-parse --show-toplevel 2>/dev/null)/$_CUSTOM_HP" ;;
+    esac
+  fi
+  if [ -n "$GIT_HOOKS_DIR" ] && [ -d "$GIT_HOOKS_DIR" ]; then
+    for _gh in pre-commit commit-msg post-commit; do
+      _ghf="${GIT_HOOKS_DIR}/${_gh}"
+      if [ -f "$_ghf" ] && grep -q "sofagent" "$_ghf" 2>/dev/null; then
+        if [ "$LIST_ONLY" = true ]; then
+          info "  $GIT_HOOKS_DIR/$_gh（含 sofagent 调用，卸载后需回收）"
+        else
+          rm -f "$_ghf"
+          # 还原安装时保存的用户自有 hook（hook-install.ts 存为 <hook>.pre-sofagent）
+          if [ -f "${_ghf}.pre-sofagent" ]; then
+            mv "${_ghf}.pre-sofagent" "$_ghf"
+            ok "已还原 ${_gh}（用户自有 hook，来自 .pre-sofagent 备份）"
+          else
+            ok "已回收 ${_gh}（sofagent hook）"
+          fi
+        fi
+        ((removed++)) || true
+      fi
+    done
+  fi
+fi
+
 # ── 删除 / 列出配套脚本 ──
 SCRIPTS_DIR="${OPENCLAW_DIR}/scripts"
 if [ -d "$SCRIPTS_DIR" ]; then

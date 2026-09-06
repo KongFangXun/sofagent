@@ -178,7 +178,7 @@ cd sofagent && bash install.sh
 ```bash
 bash engine/scripts/verify.sh    # 跑 verify 检查，通过即装好可用（--json 可进 CI）
 # 或 npm 安装后直接用
-sofagent-verify                     # 同样跑 verify 检查
+sofagent-core verify                # 同样跑 verify 检查（注：没有 sofagent-verify 这个命令）
 ```
 
 > ⚠️ 不要靠 Agent 回复验证——SKILL.md 闸门要求初始化过程不输出给用户。只信验证脚本的输出。
@@ -197,6 +197,26 @@ sofagent-verify                     # 同样跑 verify 检查
 ### 跨平台能力差异
 
 支持 Hook 注入的平台（OpenClaw / WorkBuddy 等）获得完整能力（Hook 自动注入 + 断路器 + 编排模块）。其他平台核心约束生效，编排模块降级。详见 [开发文档 §一](./DEVELOPMENT.md#脚本与文件结构速查)。
+
+### 卸载（怎么干净地撤掉）
+
+卸载是一等公民——装得上就必须撤得掉。
+
+```bash
+# install.sh 安装态（clone 出来的仓库里）
+bash engine/scripts/uninstall.sh              # 先列出将删除/回收的内容
+bash engine/scripts/uninstall.sh --force      # 跳过确认直接执行
+bash engine/scripts/uninstall.sh --platform openclaw|workbuddy|claude|codex|hermes
+```
+
+**它会回收什么**：宪法与 Skill 文件、加载链 Hook 目录、`openclaw.json` 里的 hook 注册、配套脚本、loopDetection 配置，以及**当前 git 仓库里的三层 hook**（`pre-commit` / `commit-msg` / `post-commit`）。
+
+**它不会动什么**：`.sofagent/` 下的用户数据（审计记录、快照、知识库）默认保留——要连数据一起清，手动删 `~/.sofagent/`（**不可恢复，先确认没有要留的审计证据**）。
+
+> 🔴 **为什么 git hook 必须回收**：`commit-msg` 找不到 `sofagent-audit` 时会 `exit 1`，即**此后每一次 `git commit` 都被拒绝**，报错还会让你「去安装」。卸载不回收 hook，仓库反而会进入比安装前更糟的状态。
+> 若你安装前自己写过 hook，卸载时会从 `<hook>.pre-sofagent` 备份自动还原。
+
+> ⚠️ **npm 安装态**：`npm uninstall -g @sofagent/audit` **不会**回收已装进仓库的 git hook——请在执行前后各跑一次上面的 uninstall 脚本（或手动删除 `.git/hooks/` 下含 `sofagent` 字样的三个文件）。
 
 ---
 

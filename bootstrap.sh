@@ -7,7 +7,7 @@
 set -euo pipefail
 # ERR trap 品牌兜底：崩溃时用户看到产品信息而非裸 bash 报错（v1.3.2 P0-B1/P2-37）
 trap 'echo "❌ sofagent bootstrap 失败（exit $?）——请截图此信息到 GitHub Issues（github.com/KongFangXun/sofagent/issues）"' ERR
-# v1.3.5 #31: 锁定已发布 tag（refs/tags/v1.4.4）——main 浮动导致装到的版本不可复现；
+# v1.3.5 #31: 锁定已发布 tag（当前 refs/tags/v1.4.5）——main 浮动导致装到的版本不可复现；
 #   升级时改此 tag 与 README 安装段同步。
 INSTALL_URL="https://raw.githubusercontent.com/KongFangXun/sofagent/refs/tags/v1.4.5/install.sh"
 # ════════════════════════════════════════════════════════════════════════
@@ -18,6 +18,10 @@ INSTALL_URL="https://raw.githubusercontent.com/KongFangXun/sofagent/refs/tags/v1
 #   计算命令（在新 tag 打好后执行）：
 #     git show vX.Y.Z:install.sh | shasum -a 256
 #     for f in $LIB_FILES; do git show vX.Y.Z:engine/scripts/lib/$f | shasum -a 256; done
+#   🔴 时序陷阱：回填哈希之后**不得再改**任一被钉文件——改了必须重算重填。
+#      （v1.4.5 实锤：回填在前、config.sh 的 set -u 修复在后，主安装路径
+#        fail-closed 100% 装不上，且用户看到的是「可能被劫持」红色告警。）
+#      机器校验见 tools/check/check-version.sh 第 20 项（lib 哈希逐一对账）。
 #   发布清单同步提醒：docs/changelog/releasing/ 09-tag.md（tag 发布阶段）
 # ════════════════════════════════════════════════════════════════════════
 INSTALL_SHA256="65995a5d25b75dc33aa272872ae96b4cbfa2790714b5650da8b0fc34b7842146"  # v1.4.5 tag:install.sh
@@ -32,7 +36,7 @@ dfcb89053f57e794d37a47b369eeff225efccdb0453d4a385fb14ccee5e6cdf3
 e83cf4dc60d929ed7c085b7d5d93beb37e781fd5085eaa1a138d298eb37933b3
 072a39d0590696aad2f456026f8c841d4f4208939ff1a12dce72a346d2d41080
 bec93fd676d2524b11abfb44e1ffa4cb6dd536d13e3a05421aebee5c6bcf6fc2
-10006c31386b99e1166153b3d03975d3a4c442f5000d849e08f1195efcbefb98"
+84980eef59cf25f26541ccad5d80e0bf453edc8ef54334cdca8cb1b61b0674c3"
 
 # sha256 工具兼容（macOS shasum / Linux sha256sum，取输出首段哈希）
 _sha256_of() { # $1=文件路径 → stdout 哈希（失败输出空）

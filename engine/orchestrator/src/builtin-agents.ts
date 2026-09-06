@@ -90,7 +90,9 @@ function loadAgentMd(skillName: string, fallback: string): string {
   }
 
   // 路径 2: 包相对路径/SKILL/agents/<skillName>/SKILL.md
-  const pkgPath = join(__dirname, '..', '..', '..', '..', 'SKILL', 'agents', skillName, 'SKILL.md');
+  // 本文件编译后位于 <repo>/engine/orchestrator/dist/，向上三级 = <repo>
+  // （此前写四级会上溯到仓库根的父目录，恒不可达且静默回退精简版）
+  const pkgPath = join(__dirname, '..', '..', '..', 'SKILL', 'agents', skillName, 'SKILL.md');
   if (existsSync(pkgPath)) {
     return parseSkillMd(readFileSync(pkgPath, 'utf-8'));
   }
@@ -131,13 +133,13 @@ function loadAgentMdFile(name: string, fallback: string): string {
   }
 
   // 路径 3: 包相对路径/FORGE/agents/<name>.md（v1.1.4 新增）
-  const pkgLoopPath = join(__dirname, '..', '..', '..', '..', 'FORGE', 'agents', `${name}.md`);
+  const pkgLoopPath = join(__dirname, '..', '..', '..', 'FORGE', 'agents', `${name}.md`);
   if (existsSync(pkgLoopPath)) {
     return parseSkillMd(readFileSync(pkgLoopPath, 'utf-8'));
   }
 
   // 路径 4: 包相对路径/agents/<name>.md
-  const pkgPath = join(__dirname, '..', '..', '..', '..', 'agents', `${name}.md`);
+  const pkgPath = join(__dirname, '..', '..', '..', 'agents', `${name}.md`);
   if (existsSync(pkgPath)) {
     return parseSkillMd(readFileSync(pkgPath, 'utf-8'));
   }

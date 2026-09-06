@@ -175,10 +175,32 @@ export async function fetchFromPeer(
       limit: query.limit ?? 10,
     });
     const responseFrame = await withTimeout(channel.send({ peerId: peer.peerId, frame }, timeoutMs), timeoutMs);
-    const payload = decodeFrame<{ results?: KnowledgeQueryResult[] }>(peer.sharedKey, responseFrame);
+    // 解密（认证）与 JSON 解析分离——两者失败语义完全不同：
+    // auth tag 不匹配 = 响应被篡改或密钥不一致（安全信号）；JSON 解析失败 = 对端格式异常。
+    // 旧实现把它们与「超时/离线」一起用无差别 catch 吞成 null，
+    // 结果是攻击者持续返回错误 tag 就能让联邦查询永久静默降级为空结果，且篡改事件零记录。
+    let plaintext: Buffer;
+    try {
+      plaintext = decryptPayload(
+        peer.sharedKey,
+        responseFrame.subarray(0, 12),
+        responseFrame.subarray(28),
+        responseFrame.subarray(12, 28),
+      );
+    } catch (err) {
+      markPeerFailure(peer.peerId);
+      // 显式告警而非静默：篡改/密钥失配必须留下可追溯的痕迹
+      console.error(
+        `[federation] ⚠️ peer ${peer.peerId} 响应解密失败（AES-GCM auth tag 不匹配）——`
+        + `可能是传输被篡改或共享密钥不一致，已按失败处理并丢弃该 peer 结果：${(err as Error).message}`,
+      );
+      return null;
+    }
+    const payload = JSON.parse(plaintext.toString('utf-8')) as { results?: KnowledgeQueryResult[] };
     markPeerAlive(peer.peerId);
     return Array.isArray(payload.results) ? payload.results : [];
   } catch {
+    // 超时 / 离线 / 对端格式异常——可用性事件，按离线降级
     markPeerFailure(peer.peerId);
     return null;
   }

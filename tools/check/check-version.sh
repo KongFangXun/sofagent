@@ -1104,6 +1104,70 @@ else
 fi
 echo ""
 
+# ── 20b. bootstrap lib 哈希对账（v1.4.5 P0 防复发）────────────────────────
+# 第 20 项只管「refs/tags/vX.Y.Z 版本号字符串」，管不到「被钉文件的实际内容」。
+# v1.4.5 实锤：INSTALL_SHA256 回填之后又改了 config.sh（set -u 炸弹修复），
+# 主安装路径 fail-closed 100% 装不上（用户看到「可能被劫持」红色告警），
+# 而本脚本当时报全绿——7 个哈希里只有 1 个有验收式。此处逐一对账全部 lib。
+echo "=== 20b. bootstrap lib 哈希对账（钉值 vs tag 实际内容） ==="
+BOOTSTRAP_LIB_MISS=0
+if ! git rev-parse "refs/tags/v${SSOT_VERSION}" >/dev/null 2>&1; then
+  echo -e "  ${YELLOW}⚠${NC} 本地无 tag v${SSOT_VERSION}，跳过 lib 哈希对账（发版后自动生效）"
+  WARNINGS=$((WARNINGS + 1))
+else
+  B_LIB_FILES=$(sed -n 's/^LIB_FILES="\(.*\)"$/\1/p' "${PROJECT_ROOT}/bootstrap.sh" 2>/dev/null | head -1 || true)
+  # 提取 LIB_SHA256S 多行块（首行带 `LIB_SHA256S="` 前缀，末行带 `"` 后缀）
+  B_LIB_HASHES=$(awk '/^LIB_SHA256S="/{f=1} f{line=$0; gsub(/LIB_SHA256S="|"/,"",line); if (line != "") print line} f&&/"$/{exit}' "${PROJECT_ROOT}/bootstrap.sh" 2>/dev/null || true)
+  B_INST_HASH=$(sed -n 's/^INSTALL_SHA256="\([0-9a-f]*\)".*$/\1/p' "${PROJECT_ROOT}/bootstrap.sh" 2>/dev/null | head -1 || true)
+  if [[ -z "$B_LIB_FILES" || -z "$B_LIB_HASHES" ]]; then
+    echo -e "  ${YELLOW}⚠${NC} bootstrap.sh 未解析到 LIB_FILES / LIB_SHA256S（格式变化？人工确认）"
+    WARNINGS=$((WARNINGS + 1))
+  else
+    B_FILE_ARR=()
+    for _lf in $B_LIB_FILES; do B_FILE_ARR+=("$_lf"); done
+    B_HASH_ARR=()
+    while IFS= read -r _lh; do
+      [[ -n "$_lh" ]] && B_HASH_ARR+=("$_lh")
+    done <<< "$B_LIB_HASHES"
+    if [[ ${#B_FILE_ARR[@]} -ne ${#B_HASH_ARR[@]} ]]; then
+      echo -e "  ${RED}✗${NC} LIB_FILES(${#B_FILE_ARR[@]}) 与 LIB_SHA256S(${#B_HASH_ARR[@]}) 数量不等——顺序/条数失配"
+      ERRORS=$((ERRORS + 1))
+    else
+      # install.sh 本体哈希（与 6 个 lib 同一类契约，一并对账）
+      if [[ -n "$B_INST_HASH" ]]; then
+        B_INST_ACTUAL=$(git show "refs/tags/v${SSOT_VERSION}:install.sh" 2>/dev/null | shasum -a 256 | cut -d' ' -f1 || true)
+        if [[ "$B_INST_HASH" == "$B_INST_ACTUAL" ]]; then
+          echo -e "  ${GREEN}✓${NC} install.sh 哈希与 v${SSOT_VERSION} tag 一致"
+          CHECKS=$((CHECKS + 1))
+        else
+          echo -e "  ${RED}✗${NC} install.sh 哈希漂移：钉值 ${B_INST_HASH:0:12}… ≠ tag 实际 ${B_INST_ACTUAL:0:12}…——重算回填（回填后不得再改该文件）"
+          ERRORS=$((ERRORS + 1))
+        fi
+      fi
+      B_IDX=0
+      for _lfname in "${B_FILE_ARR[@]}"; do
+        B_EXPECT="${B_HASH_ARR[$B_IDX]}"
+        B_ACTUAL=$(git show "refs/tags/v${SSOT_VERSION}:engine/scripts/lib/${_lfname}" 2>/dev/null | shasum -a 256 | cut -d' ' -f1 || true)
+        if [[ -z "$B_ACTUAL" ]]; then
+          echo -e "  ${RED}✗${NC} tag v${SSOT_VERSION} 上无 engine/scripts/lib/${_lfname}——钉了不存在的文件"
+          ERRORS=$((ERRORS + 1))
+        elif [[ "$B_EXPECT" == "$B_ACTUAL" ]]; then
+          CHECKS=$((CHECKS + 1))
+        else
+          echo -e "  ${RED}✗${NC} ${_lfname} 哈希漂移：钉值 ${B_EXPECT:0:12}… ≠ tag 实际 ${B_ACTUAL:0:12}…——回填后又改过该文件，重算回填"
+          ERRORS=$((ERRORS + 1))
+          BOOTSTRAP_LIB_MISS=$((BOOTSTRAP_LIB_MISS + 1))
+        fi
+        B_IDX=$((B_IDX + 1))
+      done
+      if [[ $BOOTSTRAP_LIB_MISS -eq 0 ]]; then
+        echo -e "  ${GREEN}✓${NC} ${#B_FILE_ARR[@]} 个 lib 哈希与 v${SSOT_VERSION} tag 全部一致（主安装链完整）"
+      fi
+    fi
+  fi
+fi
+echo ""
+
 # ── 末尾独立断言：env.local 保险（不参与编号段）────────────────
 # FORGE/env.local 含真实 GLM API Key，正常靠 FORGE/.gitignore 挡住。
 # 本断言防两道万一：gitignore 被误改 / git add -f 误提交。

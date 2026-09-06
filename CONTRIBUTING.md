@@ -1,7 +1,7 @@
 # 贡献指南
 
 > 📖 新贡献者？先看 [COMMUNITY.md](./docs/COMMUNITY.md) 了解社区现状和贡献路径。
-> 📌 基于版本 v1.4.1（2026-08-27）修订，目录结构以当前 main 分支为准。
+> 📌 基于版本 v1.4.5（2026-09-06）修订，目录结构以当前 main 分支为准。
 
 欢迎参与 sofagent！这个项目的代码由 AI 模型辅助生成（详见[致谢](./docs/THANKS.md#生成伙伴)），作者做产品决策和终审。你看到的任何技术问题，请直接指出来，不必客气。
 
@@ -34,7 +34,7 @@
 |------|------|:--:|
 | `install.sh` | BSD/macOS 兼容性修复 | ⭐⭐ |
 | `engine/scripts/verify.sh` | 新增检查项（bash 版，安装流程内调用） | ⭐ |
-| `engine/audit/src/verify.ts` | TS 版验证（npm bin `sofagent-verify`） | ⭐ |
+| `engine/audit/src/verify.ts` | TS 版验证（命令为 `sofagent-core verify`；无 `sofagent-verify` 这个 bin） | ⭐ |
 
 **跑 1 条命令验证**：
 

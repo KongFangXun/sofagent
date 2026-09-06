@@ -313,7 +313,17 @@ export function loadCronConfig(projectDir: string): CronJob[] {
   }
 }
 
-/** @weekly 等 alias 转 ms 间隔 */
+/**
+ * Node 定时器延时上限——32 位有符号整数（2_147_483_647 ms ≈ 24.86 天）。
+ *
+ * 超过此值的延时不会报错、不抛异常，而是被运行时**静默置为 1ms**：
+ * 声称「30 天跑一次」的 @monthly 会退化成每秒上千次的热循环
+ * （CPU 打满 + 巡检日志暴涨），而健康检查只看进程存活，判定依旧全绿。
+ * 因此长周期调度必须在此钳制，不能依赖单次定时器跨度。
+ */
+const TIMER_MAX_MS = 2_147_483_647;
+
+/** @weekly 等 alias 转 ms 间隔（超出定时器上限即钳制并显式告警，绝不静默降级为 1ms） */
 function scheduleToMs(alias: string): number {
   const map: Record<string, number> = {
     '@hourly': 3600_000,
@@ -321,7 +331,16 @@ function scheduleToMs(alias: string): number {
     '@weekly': 604800_000,
     '@monthly': 2_592_000_000,
   };
-  return map[alias] || 0;
+  const ms = map[alias] || 0;
+  if (ms > TIMER_MAX_MS) {
+    console.warn(
+      `[cron] 调度 ${alias} = ${ms}ms 超出 Node 定时器上限 ${TIMER_MAX_MS}ms`
+      + `（≈24.86 天）——已钳制，避免静默降级为 1ms 热循环；`
+      + `实际周期略短于名义周期属已知取舍。`,
+    );
+    return TIMER_MAX_MS;
+  }
+  return ms;
 }
 
 /**
