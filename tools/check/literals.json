@@ -1,0 +1,60 @@
+{
+  "$schema": "手填字面量对账注册表（check-literals.sh 消费）",
+  "usage": "bash tools/check/check-literals.sh [--fix] [--slow] [--registry <path>]",
+  "notes": [
+    "每条 = 一个「被手抄两份」的事实：file 里手填的字面量 vs derive 实算的真值。",
+    "extract 必须是带**恰好一个捕获组**的 JS 正则，捕获组即手填字面量；取文件中第一处匹配。",
+    "derive 是 shell 命令，在仓库根执行，stdout 单行即真值（前后空白会被 trim）。",
+    "level=error 不一致时 exit 1；level=warn 只提示不阻断。",
+    "slow=true 的条目默认跳过（真值计算耗时），需显式 --slow 才跑。",
+    "登记纪律（宁缺毋滥）：新增前先确认 ① 真值可机器实算 ② 当前为真 ③ 已有门禁未覆盖。",
+    "制造假阳性比漏检更伤——本表每条都必须长期稳定为真，不稳定就不登记。"
+  ],
+  "checks": [
+    {
+      "id": "dev-prompt-changelog-lines",
+      "file": "~/Desktop/v1.4.6-dev-prompt.md",
+      "extract": "docs/changelog/v1[.]4/v1[.]4[.]6[.]md`（([0-9]+) 行",
+      "derive": "wc -l < docs/changelog/v1.4/v1.4.6.md | tr -d '[:space:]'",
+      "level": "error",
+      "slow": false,
+      "note": "dev prompt 头部的开发日志快照行数（「同步于某日」标记）——日志涨行即漂，漂了说明 prompt 已过期该重读日志"
+    },
+    {
+      "id": "dev-prompt-mcp-tools",
+      "file": "~/Desktop/v1.4.6-dev-prompt.md",
+      "extract": "train_cloud` → ([0-9]+)",
+      "derive": "grep -cE \"^    name: '[a-z_]+'\" engine/mcp/src/tool-registry.ts | tr -d '[:space:]'",
+      "level": "error",
+      "slow": false,
+      "note": "dev prompt 基线快照的「本版目标工具数」（形如 `train_cloud` → 84）。⚠️ 刻意**不锚定基线列的 83**——那是 v1.4.5 发版终态的故意冻结值，与实时值比必然常红，是噪音不是漂移。锚定目标值后：目标 84 == registry 实际登记 84，红即说明「说要加的工具没登记」或「登记了没更新目标」。derive 与 check-version.sh 的 MCP_REG 同源（同一条 grep），保证两处门禁不会给出不同真值"
+    },
+    {
+      "id": "dev-prompt-test-count",
+      "file": "~/Desktop/v1.4.6-dev-prompt.md",
+      "extract": "测试数[^0-9]*([0-9]+)",
+      "derive": "bash tools/check/test-count.sh --quiet 2>/dev/null | grep -oE 'TOTAL_TESTS=[0-9]+' | grep -oE '[0-9]+$'",
+      "level": "warn",
+      "slow": true,
+      "note": "dev prompt 基线快照的测试数。derive 要实跑全量测试（分钟级），故标 slow 默认跳过、且降级为 warn：check-test-count.sh 只扫仓库内文档，扫不到桌面上的 dev prompt，本条是它唯一的补位"
+    },
+    {
+      "id": "readme-default-rule-count",
+      "file": "README.md",
+      "extract": "默认 ([0-9]+) 条",
+      "derive": "awk '/export const defaultRules/{f=1; next} f && /^[[:space:]]*\\{.*name:/{c++} f && /^[[:space:]]*\\];/{exit} END{print c+0}' engine/audit/src/rules/index.ts | tr -d '[:space:]'",
+      "level": "error",
+      "slow": false,
+      "note": "README 声称的 quick 默认规则数（17）。选它的原因：现有门禁只抓「N 条规则」的第一处（=24 完整数），17 这个 quick 模式实际覆盖面无人对账；SSOT = rules/index.ts 的 defaultRules.length"
+    },
+    {
+      "id": "arch-workspace-count",
+      "file": "docs/ARCHITECTURE.md",
+      "extract": "([0-9]+) 个 workspace",
+      "derive": "node -e 'const j=require(\"./package.json\"); process.stdout.write(String(Array.isArray(j.workspaces)?j.workspaces.length:0))'",
+      "level": "error",
+      "slow": false,
+      "note": "ARCHITECTURE 声称的 workspace 总包数（26，L193 与 L322 两处）。文档自己写明「构成以 package.json workspaces 为准」即自认 SSOT；check-test-count.sh 只数「有 test script 的 12 包」和插件目录数，从不对账 26 这个总数——本条是它唯一的补位。extract 会命中 L193/L322 两处，--fix 会一并回填（两处是同一事实，属正确行为）"
+    }
+  ]
+}

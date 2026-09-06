@@ -11,6 +11,7 @@
 #   - sofagent-audit.yml    → sofagent-audit --silent --diff HEAD~1..HEAD
 #   + check-version.sh      → 版本号一致性
 #   + check-docs.sh         → 文档预算+死链+Skill 行数
+#   + check-literals.sh     → 手填字面量对账（真相源 vs 文档手抄件）
 #   + test-count.sh         → 各包测试数汇总（任一包失败即拦截）
 #   + check-test-count.sh   → 文档声称测试数 vs 实际值一致性（P1-3 根治）
 #   + npm run build         → 审计引擎构建
@@ -181,6 +182,24 @@ if [ "$MINIMAL" = false ]; then
   else
     check_fail "check-docs.sh 有问题"
     bash tools/check/check-docs.sh 2>&1 | grep "❌\|⚠️" | head -10
+  fi
+fi
+
+# ════════════════════════════════════════
+# 3c. 手填字面量对账（check-literals.sh · v1.4.6 新增）
+# 同一事实被手抄两份（真相源 + 文档手填字面量）时，抄完容易漂移：
+# bootstrap 7 个 sha256、dev prompt 的日志快照行数、ARCHITECTURE 的 workspace 数
+# 均已实锤漂移过。本门禁按 tools/check/literals.json 注册表逐条比对，
+# 新增字面量只需登记一行、不写新代码。文件不存在/慢速条目自动跳过。
+# ════════════════════════════════════════
+if [ "$MINIMAL" = false ]; then
+  echo -e "\n${BOLD}── 3c. 手填字面量对账 ──${NC}"
+  if bash tools/check/check-literals.sh --quiet >/dev/null 2>&1; then
+    check_pass "check-literals.sh 全部通过（无 error 级字面量漂移）"
+  else
+    check_fail "check-literals.sh 发现手填字面量漂移"
+    bash tools/check/check-literals.sh 2>&1 | grep "❌" | head -10
+    echo "  提示：bash tools/check/check-literals.sh --fix 可自动回填真值"
   fi
 fi
 
