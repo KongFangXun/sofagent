@@ -241,6 +241,42 @@ else
   bad "发现 $GUARD_VIOL 处未初始化自引用（set -u 炸弹模式）" "$GUARD_LIST"
 fi
 
+# ── ⑥b 兜底链引用未初始化变量守卫（发版 CI 实案：config.sh
+#    SOFAGENT_X="${SOFAGENT_X:-$SOFA_X}" 在 SOFA_* 赋值前执行——set -u 下
+#    $SOFA_X unbound 直接崩，daemon 双 CI 红。自引用守卫抓不到「VAR 引用
+#    OTHER」形态，此守卫专抓：「${A:-$B}」且 B 无自身兜底（${B:- / ${B:=
+#    均合法）且 B 此前无显式初始化。若 B 由调用方环境保证，行尾加
+#    「# env-guaranteed」注释豁免。扫描范围含 engine/scripts/（发布链脚本）。──
+
+GUARD2_VIOL=0
+GUARD2_LIST=""
+for _sh in $(find tools engine/scripts -name '*.sh' -type f 2>/dev/null | sort); do
+  [ -f "$_sh" ] || continue
+  grep -qE '^\s*set\s+-.*u' "$_sh" || continue
+  while IFS= read -r _hit; do
+    _lineno=$(echo "$_hit" | grep -oE '^[0-9]+' || echo "0")
+    [ "$_lineno" = "0" ] && continue
+    _body=$(echo "$_hit" | sed 's/^[0-9]*://')
+    echo "$_body" | grep -qF 'env-guaranteed' && continue
+    # 提取「:-$B}」形态的裸兜底引用（B 直接闭合、无 ${B:- 二层兜底）
+    _other=$(echo "$_body" | grep -oE '\$\{[A-Za-z_][A-Za-z_0-9]*:-\$[A-Za-z_][A-Za-z_0-9]*\}' | sed 's/^.*:-\$//;s/}$//' | head -1)
+    [ -z "$_other" ] && continue
+    # B 在此行之前有显式初始化（B= 赋值 / ${B:= / ${B:- 自兜底）即合法
+    _init2=$(head -n $((_lineno - 1)) "$_sh" | grep -cE "^[[:space:]]*(local |declare [-a-zA-Z]+ |export )?${_other}=|\${${_other}:-|\${${_other}:=" || true)
+    if [ "${_init2:-0}" -eq 0 ]; then
+      GUARD2_VIOL=$((GUARD2_VIOL + 1))
+      GUARD2_LIST="${GUARD2_LIST}  $_sh:$_lineno → 兜底链引用未初始化 \$${_other}"$'\n'
+    fi
+  done <<EOF
+$(grep -nE '\$\{[A-Za-z_][A-Za-z_0-9]*:-\$[A-Za-z_][A-Za-z_0-9]*\}' "$_sh" | grep -vE '^[0-9]+:\s*#' || true)
+EOF
+done
+if [ "$GUARD2_VIOL" -eq 0 ]; then
+  ok "兜底链守卫：无「${VAR:-\$OTHER} 引用未初始化」形态"
+else
+  bad "发现 $GUARD2_VIOL 处兜底链引用未初始化（set -u 炸弹第二形态）" "$GUARD2_LIST"
+fi
+
 # ============================================================
 # ⑦ tools/ README 收录对账（只提示不阻断——漂移预警，新机制渐进纪律）
 # ============================================================
