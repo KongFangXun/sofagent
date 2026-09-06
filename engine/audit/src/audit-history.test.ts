@@ -19,6 +19,14 @@ import {
   type AuditHistoryEntry,
 } from './audit-history';
 
+// vitest 5：vi.mock 必须在文件顶层声明（hoist 语义显式化，嵌套声明编译期报错）。
+// 默认透传真实 fs；仅 chmodSync 包为 vi.fn，供个别测试切换「chmod 不可用」行为
+//（见 chmod false alarm 用例），其余测试走真实 fs 不受影响。
+vi.mock('fs', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('fs')>();
+  return { ...actual, chmodSync: vi.fn(actual.chmodSync) };
+});
+
 function tmpDir(): string {
   const dir = join(tmpdir(), `sofagent-history-test-${Date.now()}-${randomBytes(4).toString('hex')}`);
   mkdirSync(dir, { recursive: true });
@@ -642,25 +650,17 @@ describe('audit-history', () => {
       appendHistory(makeEntry('2026-09-01T00:00:00Z', 0), testDir);
       const histPath = getHistoryFilePath(testDir);
 
-      // 正常 append 后权限已被收紧为 0600——vi.mock 'fs' 替换 chmodSync 抛错，
-      // 模拟「chmod 不可用但权限已收紧」的 false alarm 场景（ESSM namespace
-      // 不可 spyOn，vi.mock + importOriginal 是官方路径）。
+      // 正常 append 后权限已被收紧为 0600——通过顶层 fs mock 工厂把 chmodSync
+      // 切换为抛错实现，模拟「chmod 不可用但权限已收紧」的 false alarm 场景
+      //（ESSM namespace 不可 spyOn，顶厂 + vi.mocked 行为切换是 vitest 5 官方路径）。
       const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-      vi.mock('fs', async (importOriginal) => {
-        const actual = await importOriginal<typeof import('fs')>();
-        return {
-          ...actual,
-          chmodSync: () => { throw new Error('chmod EPERM (mock)'); },
-        };
+      vi.mocked(fs.chmodSync).mockImplementation(() => {
+        throw new Error('chmod EPERM (mock)');
       });
-      // vi.mock 是 hoisted 的——需重新 import 被测模块拿新图
-      vi.resetModules();
-      const { appendHistory: appendHistoryFresh } = await import('./audit-history');
       try {
-        appendHistoryFresh(makeEntry('2026-09-01T01:00:00Z', 0), testDir);
+        appendHistory(makeEntry('2026-09-01T01:00:00Z', 0), testDir);
       } finally {
-        vi.doUnmock('fs');
-        vi.resetModules();
+        vi.mocked(fs.chmodSync).mockRestore();
         warnSpy.mockRestore();
       }
 
