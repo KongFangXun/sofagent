@@ -2304,6 +2304,17 @@ async function runCoveragePrecheck(runDir, target) {
   const changelogModules = parseChangelogModules(changelogRel);
   const scenarios = parseAcceptanceScenarios();
 
+  // 豁免清单（FORGE/playbook/.coverage-exempt）：标题命中的 changelog 模块标 exempt——
+  // 非交付性章节（如修复批施工记录）不参与场景对账（与 check-review-system ⑥段同一豁免源）
+  let exemptKeywords = [];
+  const exemptPath = join(process.cwd(), 'FORGE/playbook/.coverage-exempt');
+  if (existsSync(exemptPath)) {
+    exemptKeywords = readFileSync(exemptPath, 'utf-8').split('\n').map((l) => l.trim()).filter((l) => l !== '' && !l.startsWith('#'));
+  }
+  for (const m of changelogModules) {
+    if (exemptKeywords.some((k) => (m.title || '').includes(k))) m.exempt = true;
+  }
+
   const payload = {
     meta: {
       changelogPath: changelogRel,
@@ -2311,6 +2322,7 @@ async function runCoveragePrecheck(runDir, target) {
       scenarios: scenarios.length,
       runAt: new Date().toISOString(),
       note: '由 driver 预执行生成（v1.2.5+ 方案 A）。worker 只读此文件做覆盖交叉判定，禁止重新探索文件。',
+      exempt: { count: exemptKeywords.length, keywords: exemptKeywords, rule: 'changelog 数组中 exempt:true 的模块为非交付性章节（如修复批施工记录），跳过场景对账，coverage.md 中标注 EXEMPT 即可，不计入缺口' },
     },
     changelog: changelogModules,
     scenarios,

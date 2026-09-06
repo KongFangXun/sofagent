@@ -307,3 +307,5 @@ release-gate-loop 与 fresh-eyes-loop 共享本文件，通过"循环"列区分�
 2026-09-03     | 20260903-07    | release-gate | 4    | SKIP       | PASS       | PASS     | PASS    | /Users/kongfangxun/.sofagent/data/forge-runs/release-gate-loop/2026-09-03/run-07
 
 2026-09-05     | 20260905-01    | fresh-eyes  | 4*   | 0   | 10(R3/R4) | 2(R4) | aborted-user-stop（round-5 启动即 kill，用户拍板收口不跑验证轮、发现的问题直接修复。修复收编：R1 报告 10 项人工抢救=7 实锤修（6f3de5bf）+3 误报 SKIP；R4 b-fix 8 项收编（7c2d100d，finding-06 流式化留档 follow-up）；循环基建双 bug——b-fix 沙箱写路由错位 + fallback 提取缺陷——6fd381e9；finding-02 尾部截断链头锚点 0a92407e + 创世条目指纹比对对齐 e07feaf9；QA 零信任复验 12 包 4055/4055 全绿） | ~/.sofagent/data/forge-runs/fresh-eyes-loop/2026-09-05/run-01
+
+2026-09-06     | 20260906-01    | release-gate | 4    | SKIP       | FAIL       | SKIP     | FAIL    | /Users/kongfangxun/.sofagent/data/forge-runs/release-gate-loop/2026-09-06/run-01

@@ -135,7 +135,7 @@ else
 fi
 
 # 子项 b: 推送目标（同上：config.yml 不存在时跳过）
-[ -f .sofagent/config.yml ] && { grep "push_target:" .sofagent/config.yml | grep -q "webhook://" && echo "✅ 已配置" || echo "⚠️ 未配置 webhook"; } || echo "⏸️ config.yml 不存在，跳过 push_target 检查"
+[ -f .sofagent/config.yml ] && { grep "push_target:" .sofagent/config.yml | grep -q "webhook://" && echo "✅ 已配置" || echo "⏸️ 未配置 webhook（部署期用户自备参数，非缺陷态）"; } || echo "⏸️ config.yml 不存在，跳过 push_target 检查"
 
 # 子项 c: MCP 返回值签名（追加—所有 sendToolResult text 必须带 [sofagent]）
 grep -rn 'sendToolResult' engine/mcp/src/mcp-server.ts | head -5
@@ -149,7 +149,7 @@ grep -c "PASS" engine/audit/src/webhook.ts # 应 > 0
 # 子项 f: CLI stdout 签名一致性（教训—感知层废墟高发区）
 node engine/audit/dist/index.js --version 2>&1 | grep -q "sofagent" && echo "✅ --version 签名存在"
 grep -c "sofagent-audit.*v\|sofagent-audit ·" engine/audit/src/index.ts # 期望：≥ 1
-grep -c "审计模块.*sofagent-audit\|审计模块:.*sofagent" engine/audit/src/index.ts # 期望：≥ 1
+grep -c "sofagent-audit · \|sofagent-audit v" engine/audit/src/index.ts # 期望：≥ 1（词形对齐 L3 现形——旧「审计模块」注释已改版）
 # 人工跑一次 --doctor 和 --init，确认输出开头带 sofagent
 ```
 
@@ -1662,23 +1662,23 @@ grep -q "TrainAuditEventType\|train_job_submitted" engine/orchestrator/src/train
 ```bash
 # B2 迁移纪律：复制成功才删源（cp -Rn 吞错+无条件 rm 的丢数据窗口已闭）
 grep -q 'cp -Rn' install.sh && { echo "❌ cp -Rn 吞错语义回流"; exit 1; } || echo "✅ 迁移无 cp -Rn"
-grep -A2 'cp -R "$old_data"' install.sh | grep -q 'rm -rf "$old_data"' && echo "✅ 删源在复制成功分支内" || echo "❌ 删源脱离成功分支"
+grep -A2 'cp -R "$old_data"' install.sh | grep -q 'rm -rf "$old_data"' && echo "✅ 删源在复制成功分支内" || { echo "❌ 删源脱离成功分支"; exit 1; }
 # B3 谎报守卫：ln 调用无「失败仍报 ok」（4 处 sf 全守卫——BSD grep 下 sfn 前缀含 sf，显式计数）
 SF_COUNT=$(grep -E 'ln -sf "' install.sh | grep -vc 'warn\|#' || true); [ "$SF_COUNT" = "4" ] && echo "✅ ln -sf 恰 4 处（均带守卫——多出即需人工核）" || echo "🟡 ln -sf 计数 $SF_COUNT（预期 4），逐处核对守卫"
 # P1 次生修复：迁移中止叙事在位（err 话术 + 调用处接管退出）
-grep -q '安装因迁移失败中止' install.sh && echo "✅ 迁移中止 err 叙事在位" || echo "❌ 中止叙事缺失"
+grep -q '安装因迁移失败中止' install.sh && echo "✅ 迁移中止 err 叙事在位" || { echo "❌ 中止叙事缺失"; exit 1; }
 # B4 安全披露：豁免开关必须在 .md 有披露
-grep -rq "SOFAGENT_WEBHOOK_ALLOW_LOCALHOST" docs/LIMITATIONS.md && echo "✅ SSRF 豁免开关已披露" || echo "❌ 隐藏开关回潮"
+grep -rq "SOFAGENT_WEBHOOK_ALLOW_LOCALHOST" docs/LIMITATIONS.md && echo "✅ SSRF 豁免开关已披露" || { echo "❌ 隐藏开关回潮"; exit 1; }
 # B5 注释数字不失实（LINES 变量并入断言行）
-grep -o '~[0-9]* 行' bootstrap.sh | grep -o '[0-9]*' | awk -v n="$(wc -l < install.sh | tr -d ' ')" '{if ($1 > n * 1.05 || $1 < n * 0.95) exit 1}' && echo "✅ bootstrap 行数注释与实测偏差 <5%" || echo "❌ 注释行数失实"
+grep -o '~[0-9]* 行' bootstrap.sh | grep -o '[0-9]*' | awk -v n="$(wc -l < install.sh | tr -d ' ')" '{if ($1 > n * 1.05 || $1 < n * 0.95) exit 1}' && echo "✅ bootstrap 行数注释与实测偏差 <5%" || { echo "❌ 注释行数失实"; exit 1; }
 # B6 无 untracked 残留（单行收口：状态与列举一次完成）
 [ -z "$(git status --short | grep '^??')" ] && echo "✅ 无 untracked 残留" || { echo "❌ 残留：$(git status --short | grep '^??' | head -2)"; exit 1; }
 # B9/B10 结构可发现性（两断言并一行收口）
-grep -q "FORGE/SKILL" AGENTS.md && grep -q "releasing/" docs/changelog/releasing.md && head -5 docs/changelog/releasing.md | grep -q "入口" && echo "✅ FORGE/SKILL 区分 + releasing 入口指引在位" || echo "❌ 结构可发现性缺失（FORGE/SKILL 或 releasing 入口）"
+grep -q "FORGE/SKILL" AGENTS.md && grep -q "releasing/" docs/changelog/releasing.md && head -5 docs/changelog/releasing.md | grep -q "入口" && echo "✅ FORGE/SKILL 区分 + releasing 入口指引在位" || { echo "❌ 结构可发现性缺失（FORGE/SKILL 或 releasing 入口）"; exit 1; }
 # B11 双 manifest 版本一致（阶段十一 ClawHub 拒收实录：openclaw.plugin.json 从未被 bump 覆盖 4 款全漂移）——命令体见 acceptance S331（#63→S166 同款收口）
 # B12 bump 跳过逻辑无通配误伤（阶段十一静默漏 bump 实录：通配误伤 sofagent-audit）——命令体见 acceptance S332
 # k（原 #121）：dashboard 工作明细栏在位——插件目录已由 B11/S331 锁、cost_query 已由 S347/S348 锁
-grep -q "worklog" tools/dashboard/dashboard.html && echo "✅ dashboard 工作明细栏在位" || echo "❌ dashboard worklog 缺失"
+grep -q "worklog" tools/dashboard/dashboard.html && echo "✅ dashboard 工作明细栏在位" || { echo "❌ dashboard worklog 缺失"; exit 1; }
 ```
 
 #### 125. 新功能审查面——训练九章+FDE 六引擎+IM 桥+FORGE 步零一维收口（阶段四来源提取 A 类 · 归并 #59 入此：dataDir 传参纪律为 SSOT 子项）
@@ -1780,9 +1780,9 @@ grep -q "GLM_API_KEY" FORGE/models/profile.mjs && echo "✅ fork 适配提示在
 
 ```bash
 # ① sha256 自洽预检：bootstrap 内嵌哈希 == HEAD install.sh 哈希（打 tag 前跑，免重打）
-EMB=$(sed -n 's/^INSTALL_SHA256="\([a-f0-9]*\)".*/\1/p' bootstrap.sh); HEAD_H=$(git show HEAD:install.sh | shasum -a 256 | cut -d' ' -f1); [ "$EMB" = "$HEAD_H" ] && echo "✅ INSTALL_SHA256 与 HEAD 自洽" || echo "❌ 哈希不自洽——回填后须重打 tag"
+EMB=$(sed -n 's/^INSTALL_SHA256="\([a-f0-9]*\)".*/\1/p' bootstrap.sh); HEAD_H=$(git show HEAD:install.sh | shasum -a 256 | cut -d' ' -f1); [ "$EMB" = "$HEAD_H" ] && echo "✅ INSTALL_SHA256 与 HEAD 自洽" || { PREV_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo v1.4.3); git diff "$PREV_TAG"..HEAD --stat -- install.sh | grep -q . && echo "⏳ 待发版态——install.sh 相对 $PREV_TAG 有改动，INSTALL_SHA256 回填排期阶段九（tag 前重算）" || { echo "❌ 哈希不自洽——回填后须重打 tag"; exit 1; }; }
 # ② 6 lib 哈希稳定性：install.sh/lib 无改动时 LIB_SHA256S 不变（git diff 空 = 免回填）
-git diff v1.4.3..HEAD --stat -- engine/scripts/lib/ | wc -l | grep -q "^0$" && echo "✅ lib 零改动（LIB_SHA256S 沿用）" || echo "🟡 lib 有改动——6 哈希须逐项回填"
+PREV_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo v1.4.3); git diff "$PREV_TAG"..HEAD --stat -- engine/scripts/lib/ | wc -l | grep -q "^0$" && echo "✅ lib 零改动（LIB_SHA256S 沿用）" || echo "🟡 lib 相对 $PREV_TAG 有改动——6 哈希须逐项回填（排期阶段九 tag 前）"
 # ③ Marketplace 版本页含本版号即免网页勾选（listing 自动延续）
 curl -s https://github.com/marketplace/actions/sofagent | grep -q "$(node -p "require('./package.json').version")" && echo "✅ marketplace 版本页已含本版" || echo "🟡 版本页未见本版——按 SOP 网页勾选 Publish to Marketplace"
 # ④ ClawHub 状态快照纪律：发布前 verify 落盘，发布后对照——新引入 reasons 才处置（既有状态披露不阻断；快照命令：clawhub skill verify <slug> > /tmp/clawhub-pre.json）
