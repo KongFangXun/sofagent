@@ -168,6 +168,7 @@ Single-line change to README.md only.（或双语两文件）
 | 11 | 大小写同名 fork 重定向 | git push 按 URL 大小写不敏感重定向到**另一仓的同名旧 fork**（Anil-matcha 系 awesome-dsh-plugin ← Alex-Yanggg 系 awesome-DSH-plugin-2），分支推错仓 + PR 报「No commits between」 | fork 后先看返回的 fork 实名（带 -2/-3 后缀才是新 fork），push 前用 `git remote -v` 核对完整 URL 含大小写后缀；误推立即删分支恢复 |
 | 12 | push 输出接管道吞错（如 2>&1 再截尾行） | push 失败信息被截掉，PR create 报错才发现分支没推上去 | push 单独跑不接管道，或紧跟 echo 输出 exit code 验证 |
 | 13 | 短窗口批量投稿（单日多条/标题雷同） | 清单仓的 Spam Guard bot 标红串投画像（Zijian-Ni 实证：14 天 36 条 awesome-* PR + 16 仓同标题即亮 🚨），影响维护者信任 | ① 单日新投 ≤3 条；② 标题一律「Add sofagent to <节名>」差异化（该仓自带标题惯例的照惯例）；③ body 每仓定制 + 披露句；④ 高门槛仓（declines blast 类）减量或改被动收录 |
+| 14 | 大 README 下载截断假象（/readme 端点或网络层 512KB 截断） | grep 零命中误判「已收录条目被删」，差点虚开 issue/重投稿（Dominic 09-06 虚惊实录：截断版 512000/926751 字节，cmp 前缀实锤） | 条目存在性判定必须双保险：raw 通道（Accept: application/vnd.github.raw）下载 + wc -c 字节数完整性核对 + 双通道结果一致才下结论；>500KB 文件禁用 JSON base64 通道；单次零命中必须复测再定性 |
 
 ---
 
@@ -222,9 +223,9 @@ Single-line change to README.md only.（或双语两文件）
 | yzhao062/awesome-auditable-ai | #18 | ✅ **merged 09-05** | Tools 节；仓主 yzhao062 亲合（09-05 04:43 UTC）；曾回 follow-up 后合并（09-05 巡检发现） |
 | scadastrangelove/awesome-ai-security-tools | #76 | ✅ **merged 09-04** | Runtime Protection 节；仓主 scadastrangelove 亲合（09-04 19:47 UTC）；09-05 巡检发现 |
 | 0xsline/awesome-deepseek-harness | #547 | ✅ **merged 09-03** | 双语 Security & Governance 节；0xsline 亲合（09-03 11:18 UTC）；09-05 巡检补录（09-03 移行时 5.2 漏落行） |
-| awesome-dsh-plugin/awesome-dsh-plugin ⭐14k | #4101 | ✅ **merged 09-02** | DSH 系最大清单收录（security 节）；fkysly 合并；经两轮 gate 修复（-f 字面量→-F / monorepo 子包 slug）后双绿过审；**主阵地引爆** |
+| awesome-dsh-plugin/awesome-dsh-plugin ⭐14k | #4101 | ✅ **merged 09-02** | DSH 系最大清单收录（security 节）；fkysly 合并；经两轮 gate 修复（-f 字面量→-F / monorepo 子包 slug）后双绿过审；**主阵地引爆**；📝 09-06 巡检：条目「79 tools」已过时（实值 83，AGENTS.md+description 双源），待拍板开 update PR |
 | beancookie/awesome-dsh-plugin ⭐127 | #137 | ✅ **merged 09-02** | 双语两文件；beancookie 亲自合并 |
-| Dominic789654/awesome-deepseek-harness | #368 | ✅ **merged 09-01** | 转既有条目事实修正（FDE Harness/79 tools/HMAC）后被维护者验证合并：「Verified … factual. Merging」 |
+| Dominic789654/awesome-deepseek-harness | #368 | ✅ **merged 09-01** | 转既有条目事实修正（FDE Harness/79 tools/HMAC）后被维护者验证合并：「Verified … factual. Merging」；📝 09-06 巡检：条目「79 tools」已过时（实值 83；9 DSH plugins 经实测仍准确），待拍板开 update PR |
 | imsai-sh/awesome-deepseek-harness-plugins | #301 | ✅ **merged 09-01（当日）** | 目录 JSON 单条目快车道：static-review 自动通过后自动 squash-merge，全程零人工 |
 | cobusgreyling/loop-engineering | #573 | ✅ **merged 08-31** | adopters 名单；仓主亲自合并；解锁 #326 Show your loop 发帖（已发） |
 | punkpeye/awesome-mcp-servers | #13273 | ❌ closed | fork 落后被 bot 误杀（坑位 #1 教材）→ #13312 重投 |
@@ -234,6 +235,7 @@ Single-line change to README.md only.（或双语两文件）
 
 - **每日自动巡检**：晚上 21:00 自动跑（自动化任务「PR 投稿与关注度每日巡检」）：读 5.1 台账 → 核 PR 状态 → 状态变化自动写回台账（merged 移 5.2/closed 记原因/真人评论标 🔴）并 commit 收编，绝不 push；同时跑阵地检索（awesome deepseek harness / agent harness / harness engineering / ai governance / ai security / dsh-plugin topic 等查询词），新发现写入第六节候选（含防重复核查）但不擅自投稿；真人评论/CHANGES_REQUESTED 出回复草稿等确认后当天回
 - **自动索引仓观察**（每日巡检顺手核，不投 PR 靠收录）：① bruc3van/awesome-dsh-plugin ✅ 已收录（09-02）；② Zhiyuan-Fan/Awesome-DeepSeek-Harness-Plugins ⭐547（本地 Codex 每日复审 + topic 抓取）；③ leenkcool/Blue-Whale-Harness ⭐190（catalog 脚本全自动生成 README）——②③ 核法：拉上游 README 搜 `KongFangXun/sofagent`，已收录则在本条目标 ✅ + 日期，连续 7 天未收再评估是否需要人工介入（如开 issue 问维护者）
+- **收录保持监测**（每日，2026-09-06 起）：对 5.2 已收口条目抽查上游收录仍在（raw 通道拉上游 README 搜 KongFangXun/sofagent；>500KB 必须核对 wc -c 完整性防 512KB 截断假阴性；单次零命中换通道复测再定性）——merged ≠ 长期在册，自动扫描型清单可能重构冲掉手动条目；发现真丢失只报告（重提交/联系维护者由用户拍板）
 - **关注度监测**（每日）：流量/星数对比基线（见 5.3.1），异动进报告【关注度异动】栏——星数单日 +3、views 翻倍、连续 3 天零增长（冷启动预警）三阈值
 - **门面周检**（每周一）：fresh-eyes 视角 22（GitHub 发现优化审查员）轻量体检——description/topics 失效词、双语首屏一致性、章节漂移；只报告不修改，门面改动由用户拍板
 - **Trending 窗口值守**（每日）：当日有清单 PR merged 即在报告提示 momentum 成立；⚠️ 外站渠道（Show HN/V2EX/掘金/知乎/Discord）已搁置（2026-09-06 无 VPN 拍板），仅提示 GitHub 内联动（已收录仓回访 1.4 ②/阮一峰 issue 跟进），由用户拍板执行
