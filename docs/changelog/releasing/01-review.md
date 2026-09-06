@@ -42,29 +42,11 @@ B 侧复核模式（v1.3.8 起 driver 内置）：全量跑 driver 时，B 侧 1
 
 ---
 
-## fresh-eyes-loop 新 session Prompt 模板
+## fresh-eyes-loop 执行 session Prompt 模板（自动收敛）
 
-> 阶段一和阶段三都用 fresh-eyes 审查，区别是 target（阶段一审上版本，阶段三审本版本）。AI 输出 prompt 时必须把所有占位符替换为实际值（项目路径、版本号），不得残留花括号。**交付形式**：直接在对话中输出可复制的 prompt 文本块，禁止落盘成文件。
+> 阶段一和阶段三都用 fresh-eyes 审查，区别是 target（阶段一审**上版本**收尾态，阶段三审**本版本**新代码）。**Prompt 模板 SSOT = [03-quality-loop.md「执行 session Prompt 模板（自动收敛版）」](./03-quality-loop.md)**——AI 输出 prompt 时以 03 模板为底稿（占位符替换为实际值，不得残留花括号），追加下方阶段一差异两条后输出；**禁止另起炉灶维护第二份全文**（防双源漂移）。**交付形式**：直接在对话中输出可复制的 prompt 文本块，禁止落盘成文件。
 
-```
-在 sofagent 项目（{项目实际路径}）中，执行 {实际版本号} 的 fresh-eyes-loop。
+阶段一相对 03 模板的差异（生成 prompt 时覆盖/追加）：
 
-先读 `FORGE/SKILL/fresh-eyes-loop/SKILL.md` 拿到完整的「Session 监控协议」，然后按协议执行：
-
-0. 独占窗口检查（三查）：① `git status --short | wc -l` 改动文件数（预期 0/个位数）② `find . -path ./node_modules -prune -o -mmin -5 -type f -print` 近 5 分钟活跃文件 ③ `tail .workbuddy/memory/$(date +%Y-%m-%d).md` 今日日志他人活跃记录——任一命中先停手问用户。
-0b. **先查 driver 是否已在跑（主 session 可能已用 daemon 启动，新窗口只做监控）**：读 {runDir}/status.json（或 pgrep -f fresh-eyes-driver），若在跑 → 跳过步骤 1 直接进步骤 3 轮询；若已死/无产物 → 正常走步骤 1。
-1. 启动 driver——**优先 daemon+watch 守护模式**（自动恢复，免疫会话回收，姿势同 03-quality-loop.md「driver 启动姿势 8 条」）：
-   FORGE_MAX_CONCURRENCY=1 node FORGE/src/fresh-eyes-driver.mjs --target {实际版本号} --max-rounds 10 --daemon --watch {runDir}
-   ⚠️ 8GB 机器必须 FORGE_MAX_CONCURRENCY=1（并发 worker 各占 2GB heap，3+ 并发即 OOM）
-   若为 resume 续跑（上次异常死亡）：命令加 --resume（保留已有产物，不重开）
-   fallback（无 daemon 支持）：Bash 工具 run_in_background:true + dangerouslyDisableSandbox:true，
-   输出重定向文件 > /tmp/fresh-eyes-<ver>-driver.log 2>&1（禁止管道），不传 timeout 参数
-2. 记住 runDir（启动日志第一行打印的路径）
-3. 在 session 内**前台**持续轮询——每 120 秒一个工作周期（run_in_background 只属于步骤 1 的 driver 启动命令，轮询循环严禁挂后台——挂后台 = session 空闲 = 界面无进展反馈）：
-   ① 读 <runDir>/status.json 看 round 变化，变化时一句话汇报
-   ② 读 heartbeat 字段时间戳——距今 > 90 秒则 pgrep 确认进程是否存活，无输出 = 已死，汇报并退出
-   round 不变且 heartbeat 正常 → 继续轮询
-4. round 变成 completed 或 error 时，读报告，用 3-5 行汇报
-
-铁律：不干涉 driver、不改代码、不探索源码——只启动 + 持续轮询监控 + 最终汇报。
-```
+1. **`--target` = 上一版本号**（审查对象是上版本收尾态存量，不是本版本新代码）
+2. **修复对象口径**：loop 产出的 P0/P1/P2 修复即本版本 BugFix 批次主体，修复只 commit 不 push；上版本收尾态的版本类 finding（npm registry 落后/tag 缺失/URL 指向未发布 tag）**全量适用** auto-converge-protocol 的环境态 SKIP 口径——上版本已发布，这些「不一致」是其发版完成态的正常表现，不是缺陷

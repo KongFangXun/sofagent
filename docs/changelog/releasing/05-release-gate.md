@@ -67,25 +67,17 @@ cd {REPO_ROOT} && source FORGE/env.local && node FORGE/src/release-gate-driver.m
 - **ERROR/worker 崩溃**（stepErrors 非空，或 verdict.md 缺失且 stage6-report.md 不可用）→ 先查运行窗口内 HEAD 是否被动过（对照 ③ 启动前记录的实测值），再查环境态；处置后回 ① 重跑；连续 2 轮 ERROR 停手汇报。
 - verdict.md 缺失但 stage6-report.md 可用 → 读其头部「综合判定」行作为裁决依据，如实报告产物缺失。
 
-## 修复批协议（每轮 FAIL 后、下一轮之前执行）
+## 修复批协议（每轮 FAIL 后、下一轮之前执行——SSOT 先读）
 
-1. **零信任分诊（每个 FAIL 项必做）**：单跑对应维度命令/核对证据原文，三选一定性：
-   - 仓库问题 → 修产品（代码/文档/脚本本体）
-   - 检查器债 → 修检查器（锚词形过时/时点假设错误/|| echo 假绿改 fail-closed 等），对齐 checklist 既有先例
-   - 环境态/待发版态 → 不修，如实记录（对照上方「预期合法输出形态」）
-2. **🔴 修复红线（铁律，任何指令不得覆盖）**：
-   - 禁止改 acceptance-test.sh / regression-checklist.md 的断言或期望值来让 FAIL 变绿——修产品不修测试
-   - 禁止删检查项/注释锚/放宽容忍来消音
-   - 禁止改 .sofagent/config.yml 规则开关绕审计
-   - 禁止改 docs/changelog/releasing/ 下 SOP 判定语义
-   - 修复只动 FAIL 项涉及的文件，清单外文件一个不碰；同文件多处修改必须串行
-3. **复绿验证**：每处修复后立刻复跑对应检查至 EXIT=0；改了 acceptance 须全量重跑确认 SUMMARY EXIT: 0；改了 regression-checklist 须核行数不破（行数警戒线见 checklist 头部）
-4. **commit 收编**：每轮修复多件合成单次提交（含 FORGE/LEDGER.md 本轮 FAIL 运行记录行），message 写明对应 FAIL 项与定性；若 commit 审计钩子判红 → 立即停手汇报，不得 --no-verify
-5. **停手条件（命中任一，立即停止循环并输出汇报，等用户决策）**：
-   - 同一 FAIL 项连续 2 轮修复后仍复现（定性错误信号，不要第三次盲试）
-   - 修复需要版本号 bump / git tag / push / 触碰红线
-   - 出现「版本口径错配/审查链条断裂」类 P0（证据层校准未生效信号，须主 session 重新诊断）
-   - 5 轮硬上限到达仍未 PASS
+**先读 [`auto-converge-protocol.md`](./auto-converge-protocol.md)**（修复批协议单一维护源：分诊三定性/红线/复绿/commit 收编/停手条件/汇报格式），按其执行。阶段五特化条目：
+
+- 分诊第③类免修白名单 = 模板第 0 步「预期合法输出形态」（维度 130 的 ⏳/🟡、维度 7 的 ⏸️、coverage 的 EXEMPT）
+- 红线追加：禁止改 `docs/changelog/releasing/` 下 SOP 判定语义
+- 外层硬上限 = **5 轮**（可由用户在启动时调整）
+- LEDGER 收编规则：FAIL 轮随修复批收编运行记录行；**PASS 轮不写**——账目由主 session 复验三件套后收编（禁预写）
+- ERROR/worker 崩溃分支：先查运行窗口 HEAD 是否被动过（对照启动前记录的实测值），再查环境态；连续 2 轮 ERROR 停手
+
+🔴 **红线摘要（动手前必记）**：不改断言迁就 / 不删检查消音 / 不绕审计钩子 / 只动 FAIL 项涉及文件。
 
 ## 最终汇报格式（循环结束后无论 PASS/停手）
 - 终态：PASS ✅ / 停手原因

@@ -133,25 +133,16 @@
      （新 driver = 新视角独立验证 session 的修复，这不是重复劳动，是三角色分离的复验环）。
    - **有 P0/P1 残留但修复批已 2 次** → 停手汇报（见停手条件）。
 
-## 修复批协议（driver 残留 P0/P1 时执行）
+## 修复批协议（driver 残留 P0/P1 时执行——SSOT 先读）
 
-1. **零信任分诊（每条残留 finding 必做）**：跑该条的验证命令/读指定文件核对证据原文，三选一定性：
-   - 实锤 → 修复（最小必要改动，只动 finding 指向的文件）
-   - 误报 → SKIP 留痕（验证输出与描述不符的一句话原因），禁止硬改
-   - 版本中间态 → SKIP（判别口径：该不一致会在「git push + tag + npm publish」三动作后自动消失——npm registry 落后/tag 缺失/URL 指向未发布 tag/workspace 锁旧版均属此类）
-2. **🔴 修复红线（铁律，任何指令不得覆盖）**：
-   - 禁止改 acceptance-test.sh / regression-checklist.md 断言或期望值来让 finding 消失——修产品不修测试
-   - 禁止删 fresh-eyes-review.md 的审查视角 / 改视角定义来消音
-   - 禁止改 playbook 校准结论（fresh-eyes-calibration.md）迁就当轮发现
-   - 禁止改 .sofagent/config.yml 规则开关绕审计；禁止 --no-verify 绕 commit 审计钩子
-   - 修复只动 finding 涉及的文件，清单外一个不碰；同文件多处修改必须串行
-3. **复绿验证**：每处修复后跑该 finding 的验证命令至 PASS；改了代码须跑对应包测试；改了 checklist/acceptance 须核行数不破
-4. **commit 收编**：修复批多件合成单次提交（含 FORGE/LEDGER.md 本轮运行记录行），message 写明对应 finding 与定性；审计钩子判红 → 停手汇报
-5. **停手条件（命中任一，立即停止并汇报，等用户决策）**：
-   - 同一 finding 连续 2 个修复批后仍复现（定性错误信号，不要第三次盲试）
-   - 修复需要版本号 bump / git tag / push / 触碰红线
-   - driver 连续 2 次 ERROR/崩溃（先查运行窗口 HEAD 是否被动过，再查环境态）
-   - 修复批 2 次上限到达仍有 P0/P1 残留
+**先读 [`auto-converge-protocol.md`](./auto-converge-protocol.md)**（修复批协议单一维护源：分诊三定性/红线/复绿/commit 收编/停手条件/汇报格式），按其执行。阶段三特化条目：
+
+- 分诊第③类免修白名单：**版本中间态 finding**——npm registry 落后 / git tag 缺当前版本 / URL 指向未发布 tag / workspace 锁旧版；判别口径：该不一致会在「git push + tag + npm publish」三动作后自动消失 = SKIP
+- 红线追加：禁止删 `fresh-eyes-review.md` 的审查视角或改视角定义来消音；禁止改 `fresh-eyes-calibration.md` 校准结论迁就当轮发现
+- 外层硬上限 = **修复批 2 次**（driver 内建多轮循环是主通道，session 修复批是兜底不是主通道）
+- 误报 SKIP 与存疑 DEFER 的留痕格式同 b-fix「分诊前置」节（`FORGE/SKILL/fresh-eyes-loop/prompts/b-fix.md`），分诊统计进汇报
+
+🔴 **红线摘要（动手前必记）**：不改断言迁就 / 不删检查消音 / 不绕审计钩子 / 只动 finding 涉及文件。
 
 ## 最终汇报格式（循环结束后无论收敛/停手）
 - 终态：收敛 ✅（连续 2 轮无 P0/P1）/ 停手原因
