@@ -32,16 +32,17 @@ rm -f /tmp/fe-verify-bin/sofagent-audit  # 确认不是 symlink
 printf '#!/bin/bash\nexec node %s/engine/audit/dist/cli-quick.js "$@"\n' "$(pwd)" > /tmp/fe-verify-bin/sofagent-audit
 chmod +x /tmp/fe-verify-bin/sofagent-audit
 
-# 2. 新仓库装 hook
+# 2. 新仓库装 hook（🔴 必须显式 console.log 输出——「require('...').HOOK_TEMPLATE」只求值不打印，
+#    会让 hook 文件为空且 exit 0 → fallback 不触发 → 拦截链路静默失效）
 mkdir -p /tmp/hook-test && cd /tmp/hook-test && rm -rf .git && git init
-node -e "require('$(pwd)/../../engine/core/dist/config-template.js').HOOK_TEMPLATE" > .git/hooks/commit-msg 2>/dev/null || \
-  node -e "console.log(require('./engine/core/dist/config-template.js').HOOK_TEMPLATE)" > .git/hooks/commit-msg
+node -e "console.log(require('$(pwd)/../../engine/core/dist/config-template.js').HOOK_TEMPLATE)" > .git/hooks/commit-msg
 chmod +x .git/hooks/commit-msg
+test -s .git/hooks/commit-msg || { echo "❌ hook 模板为空——HOOK_TEMPLATE 导出异常，停手排查"; exit 1; }
 
 # 3. 拦截验证：提交含密钥 .env
 # ⚠️ message 必须够长够具体（≥8 有效字符）——A5 不瞒真相 + A19 msg 质量会拦截，
 #    过短的 message（"test"/"init"）会导致「密钥没测到先被 message 规则拦」的假失败
-export PATH=/tmp/fe-verify-bin:$PATH SOFAGENT_DATA=/tmp/fe-vd SOFAGENT_HOME=/tmp/fe-vh
+export PATH=/tmp/fe-verify-bin:$PATH SOFAGENT_DATA=/tmp/fe-vd SOFAGENT_HOME="$(pwd)/.sofagent-test"
 echo "AWS_SECRET_ACCESS_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY" > .env
 git add -f .env   # ⚠️ 必须 -f——init 自带的 .gitignore 会挡 .env（git 层先拦是双保险，但那样测不到 hook 层）
 git commit -m "chore: add environment config for deployment"  # 期望：A1+A2 拦截 exit 2，.env 未入库
@@ -54,5 +55,7 @@ git commit -m "feat: add hello application entry point"  # 期望：17 规则 PA
 git log --oneline -1 | grep -q "hello application" && echo "✅ 干净提交放行" || echo "❌ 干净提交被拦"
 
 # 5. 清理
-cd - && rm -rf /tmp/hook-test /tmp/fe-verify-bin /tmp/fe-vd /tmp/fe-vh
+cd - && rm -rf /tmp/hook-test /tmp/fe-verify-bin /tmp/fe-vd
 ```
+
+> ⚠️ **SOFAGENT_HOME 越界守卫提示**：v1.4.4 起 data-paths 守卫拒绝 HOME 指向 /tmp 等非允许前缀（回退 ~/.sofagent）——隔离 HOME 请用测试仓库内路径（如上 `$(pwd)/.sofagent-test`），数据面隔离走 `SOFAGENT_DATA=/tmp/fe-vd`（DATA 允许任意路径）。
