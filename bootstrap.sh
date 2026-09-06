@@ -20,7 +20,7 @@ INSTALL_URL="https://raw.githubusercontent.com/KongFangXun/sofagent/refs/tags/v1
 #     for f in $LIB_FILES; do git show vX.Y.Z:engine/scripts/lib/$f | shasum -a 256; done
 #   发布清单同步提醒：docs/changelog/releasing/ 09-tag.md（tag 发布阶段）
 # ════════════════════════════════════════════════════════════════════════
-INSTALL_SHA256="8f922724be0cd86f1392d42c3cbe74e339ffa63f553cd71a85ddf67bc0686995"  # v1.4.5 tag:install.sh
+INSTALL_SHA256="65995a5d25b75dc33aa272872ae96b4cbfa2790714b5650da8b0fc34b7842146"  # v1.4.5 tag:install.sh
 # v1.3.8 P0-1 兜底：install.sh 依赖同目录 engine/scripts/lib/ 下 6 个模块——
 #   此前 bootstrap 只下载孤立 install.sh，source 立即失败（安装链全断根因）。
 #   现在同时下载 lib 全部文件到同目录结构，让 install.sh 的 source 可达。

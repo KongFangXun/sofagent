@@ -464,6 +464,10 @@ WRAPPER_EOF
     info "  执行: npm install -g @sofagent/audit@${VERSION}"
     if npm install -g "@sofagent/audit@${VERSION}" 2>&1 | tail -1; then
       ok "  @sofagent/audit 已全局安装（v${VERSION}）"
+    elif npm install -g "@sofagent/audit@latest" 2>&1 | tail -1; then
+      # 目标版本尚未发布到 registry（发版时序：push→tag→release→publish）——
+      # verify/CI 窗口期降级装 @latest 保安装链完整（integrity check 依赖本包提供 sofagent bin）
+      warn "  v${VERSION} 尚未发布到 npm registry——已降级安装 @latest（发版窗口期占位，发布后重装即对齐）"
     else
       warn "  npm install -g @sofagent/audit 失败（网络/权限问题）"
       warn "  请手动安装: npm install -g @sofagent/audit@${VERSION}"
