@@ -94,7 +94,7 @@ graph TB
 | **本体图谱** | 机器读的语义图谱 = Ontology Graph——FDE 交付的企业全部业务节点和关联关系的全局拓扑（本体数据的图形化呈现） | [ARCHITECTURE §定义表](./ARCHITECTURE.md) |
 | **业务流** | 企业业务流的完整链路 = Workflow，由业务节点（AI 节点 + Human 节点）交替组成 | [ARCHITECTURE §定义表](./ARCHITECTURE.md) |
 | **业务节点** | 业务流中的执行单元 = Node——AI 自动执行（Loop）或 Human 介入（审批/检查/兜底）；AI 节点 = 业务节点中经三问判定法识别为可 AI 化的部分 | [ARCHITECTURE §定义表](./ARCHITECTURE.md) |
-| **审计模块** | git diff 驱动，24 条规则（17 默认 + 7 扩展），活跃编号 A1-A11 + A14-A23 + E1/E2/E4（A12/A13 已并入 A11，编号不再使用），每次 commit 自动跑 | [24 条完整清单（SECURITY SSOT）](../SECURITY.md#24-条审计规则完整清单文档级-ssot) |
+| **审计模块** | git diff 驱动，24 条规则（17 默认 + 7 扩展），活跃编号 A1-A11 + A14-A23 + E1/E2/E4（A12/A13/E3 已并入 A11，编号不再使用），每次 commit 自动跑 | [24 条完整清单（SECURITY SSOT）](../SECURITY.md#24-条审计规则完整清单文档级-ssot) |
 | **三层治理** | Ledger（原始数据）→ Views（派生视图）→ Policy（约束规则），单向派生、不可逆写 | [PHILOSOPHY §五](./PHILOSOPHY.md) |
 | **FORGE** | 自迭代引擎（内部工具，外部用户可忽略）——通过 Workflow 驱动 Agent 审查/修复/验证自己的代码，核心是 fresh-eyes-loop | [FORGE/README.md](../FORGE/README.md) |
 | **SKILL** | Agent 的行为约束文件系统——三层：SKILL.md（主入口）/ harness/（约束层）/ agents/（Sub Agent） | [SKILL/SKILL.md](../SKILL/SKILL.md) |
@@ -235,7 +235,7 @@ graph TB
 | 当前版本 | **v1.4.4**（2026-09-03，✅ 已发版）· v1.4.5 开发完成未发版 |
 | 下一版 | v1.4.6（后训模块 · 分布式与云端，参见 docs/ROADMAP.md） |
 | 测试覆盖 | 4055 测试 / 12 包（统计标准：`tools/check/test-count.sh` 实际执行的 workspace 包；全仓共 26 个 workspace——13 个模块包发布至 npm `@sofagent` scope，9 个 DSH 插件为 private 随 DSH 分发，4 个 OpenClaw 插件（`engine/openclaw-plugins/`）经根 `npm test --workspaces` 统一执行测试。实测见 `tools/check/test-count.sh`、声称数同步校验见 `tools/check/check-test-count.sh`） |
-| 审计规则 | 24 条（17 默认 + 7 扩展），活跃编号 A1-A11 + A14-A23 + E1/E2/E4，每次 commit 自动跑 |
+| 审计规则 | 24 条（17 默认 + 7 扩展），活跃编号 A1-A11 + A14-A23 + E1/E2/E4（A12/A13/E3 已并入 A11，编号不再使用），每次 commit 自动跑 |
 | FORGE | fresh-eyes-loop + release-gate-loop 运行中 |
 | 数据目录 | **data/**（v1.2.1+ SSOT 运行时数据目录） |
 

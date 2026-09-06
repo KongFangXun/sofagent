@@ -32,7 +32,7 @@
 
 | 轴 | 清单类型 | 描述口径重点 |
 |---|---|---|
-| **MCP 生态** | awesome-mcp-servers 系 | MCP server + 80 tools + Glama 已收录 |
+| **MCP 生态** | awesome-mcp-servers 系 | MCP server + 83 tools + Glama 已收录 |
 | **AI 治理/安全** | awesome-ai-governance / llm-security / ai-security | 24 规则 + HMAC 审计链 + commit-time 拦截 |
 | **FDE 生态** | awesome-fde-resources / OpenFDE 工具地图 | FDE 方法论 + 业务流梳理 + 提交时审计护栏 |
 | **DSH 生态** | awesome-deepseek-harness / awesome-dsh-plugin | 9 插件 cordis-plugin 家族 + SkillHub 安装 |

@@ -32,13 +32,13 @@
 | 复制 prompt | 不支持 Skill 的平台 | 把 SKILL.md 内容贴进 system prompt |
 | CLI 直跑 | 任何终端 | `sofagent-orchestrator subagent run fde --task "..."` |
 | DSH 插件通道 | DSH（DeepSeek Harness）用户 | `skillhub install cordis-plugin-sofagent-<名>`（SkillHub 单通道安装 + 发现；每款可独立安装、渐进采用） |
-| MCP 自动配置 | workbuddy/claude/cursor/codex | `bash install.sh --platform <平台>` 自动写 MCP 配置（前三者写 mcp.json JSON、codex 写 config.toml `[mcp_servers.sofagent]` 段），装完即连 80 tools |
+| MCP 自动配置 | workbuddy/claude/cursor/codex | `bash install.sh --platform <平台>` 自动写 MCP 配置（前三者写 mcp.json JSON、codex 写 config.toml `[mcp_servers.sofagent]` 段），装完即连 83 tools |
 
 ---
 
 ## DSH 插件家族（9 款 cordis-plugin）
 
-> sofagent 约束能力在 DSH（DeepSeek Harness）生态的插件形态——每款只干一件事，可独立安装、渐进采用。能力完整面 = MCP Server 80 tools（连接 sofagent MCP 后调用）。随主线版本发布，SkillHub 通道检索。
+> sofagent 约束能力在 DSH（DeepSeek Harness）生态的插件形态——每款只干一件事，可独立安装、渐进采用。能力完整面 = MCP Server 83 tools（连接 sofagent MCP 后调用）。随主线版本发布，SkillHub 通道检索。
 
 | 插件 | 职责（桥接实况） | seam |
 |------|----------------|------|
