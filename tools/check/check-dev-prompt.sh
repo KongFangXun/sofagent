@@ -21,6 +21,7 @@
 #   1. 文件路径引用（反引号包裹的 .ts/.sh/.mjs/.json 路径）
 #   2. 函数名引用（反引号包裹的 functionName()）
 #   3. 目录引用（反引号包裹的 path/ 路径）
+#   4. 快照标记对账（`<file>.md`（N 行）——声明行数 vs 实际 wc -l）
 #
 # 智能标记：
 #   📋 同行含「新建」→ 待新建，不计错误
@@ -138,6 +139,22 @@ lines.forEach(function(line) {
         var planned = isPlannedGlobally(d);
         console.log("D|" + d + "|" + (planned ? "planned" : c));
       }
+    }
+  });
+});
+
+// 快照标记：`<file>.md`（N 行）——dev prompt 头部常声明「派生自 changelog 的哪一版快照」，
+// 该行数是手填字面量，changelog 一改就漂，且原三项检查只管代码路径不管行数 = 零门禁。
+// 此处提取「路径 + 声明行数」，交 bash 侧与实际 wc -l 对账。
+seen = {};
+lines.forEach(function(line) {
+  [...line.matchAll(/`([^`]+)`\s*[（(]\s*(\d+)\s*行/g)].forEach(function(m) {
+    var p = m[1], n = m[2];
+    if (!/\.md$/.test(p)) return;
+    var k = "L|" + p;
+    if (!seen[k]) {
+      seen[k] = 1;
+      console.log("L|" + p + "|" + n);
     }
   });
 });
@@ -284,6 +301,44 @@ while IFS='|' read -r tag ref c || [ -n "$tag" ]; do
     fi
   fi
 done < "$TMPFILE"
+
+echo ""
+
+# ─── 4. 快照标记对账（行数） ───
+echo "--- 4. 快照标记对账（行数）---"
+
+SNAPSHOTS=0
+
+while IFS='|' read -r tag ref n || [ -n "$tag" ]; do
+  [ "$tag" != "L" ] && continue
+  [ -z "${ref:-}" ] && continue
+  clean="${ref#./}"
+  cand="${clean/#\~/$HOME}"
+
+  SNAPSHOTS=$((SNAPSHOTS + 1))
+
+  if [ ! -f "$cand" ]; then
+    printf '  ❌ %s -> 快照文件不存在（声明 %s 行）\n' "$ref" "$n"
+    ERRORS=$((ERRORS + 1))
+    continue
+  fi
+
+  actual=$(wc -l < "$cand")
+  actual="${actual// /}"
+
+  if [ "$actual" = "$n" ]; then
+    printf '  ✅ %s（%s 行 · 一致）\n' "$ref" "$n"
+  else
+    diff=$((actual - n))
+    printf '  ❌ %s -> 声明 %s 行，实际 %s 行（差 %s）——改完日志记得同步这个快照标记\n' \
+      "$ref" "$n" "$actual" "$diff"
+    ERRORS=$((ERRORS + 1))
+  fi
+done < "$TMPFILE"
+
+if [ "$SNAPSHOTS" -eq 0 ]; then
+  echo "  （无快照标记，跳过）"
+fi
 
 echo ""
 
