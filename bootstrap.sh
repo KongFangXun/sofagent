@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # bootstrap.sh · sofagent 一行安装入口（装在企业跑 AI 节点的设备上）
 # 纯新增独立入口——install.sh（~1405 行）不动，零回归面。
-# 用法：curl -fsSL https://raw.githubusercontent.com/KongFangXun/sofagent/refs/tags/v1.4.4/bootstrap.sh -o bootstrap.sh && bash bootstrap.sh
+# 用法：curl -fsSL https://raw.githubusercontent.com/KongFangXun/sofagent/refs/tags/v1.4.5/bootstrap.sh -o bootstrap.sh && bash bootstrap.sh
 # 离线：./bootstrap.sh --local /path/to/install.sh
 # 透传：curl ... | bash -s -- --base-only
 set -euo pipefail
@@ -9,7 +9,7 @@ set -euo pipefail
 trap 'echo "❌ sofagent bootstrap 失败（exit $?）——请截图此信息到 GitHub Issues（github.com/KongFangXun/sofagent/issues）"' ERR
 # v1.3.5 #31: 锁定已发布 tag（refs/tags/v1.4.4）——main 浮动导致装到的版本不可复现；
 #   升级时改此 tag 与 README 安装段同步。
-INSTALL_URL="https://raw.githubusercontent.com/KongFangXun/sofagent/refs/tags/v1.4.4/install.sh"
+INSTALL_URL="https://raw.githubusercontent.com/KongFangXun/sofagent/refs/tags/v1.4.5/install.sh"
 # ════════════════════════════════════════════════════════════════════════
 # v1.4.3 P2-f（F-07）：下载完整性校验（curl | bash 信任模型加固）
 # install.sh 是将被 bash 直接执行的代码——下载通道（HTTPS 上的 raw.githubusercontent）
@@ -20,19 +20,19 @@ INSTALL_URL="https://raw.githubusercontent.com/KongFangXun/sofagent/refs/tags/v1
 #     for f in $LIB_FILES; do git show vX.Y.Z:engine/scripts/lib/$f | shasum -a 256; done
 #   发布清单同步提醒：docs/changelog/releasing/ 09-tag.md（tag 发布阶段）
 # ════════════════════════════════════════════════════════════════════════
-INSTALL_SHA256="098aade48b6be55cfe6c2fdfaa7ce780168089a5c42d03c0010d047c7c7b0819"  # v1.4.4 tag:install.sh
+INSTALL_SHA256="8f922724be0cd86f1392d42c3cbe74e339ffa63f553cd71a85ddf67bc0686995"  # v1.4.5 tag:install.sh
 # v1.3.8 P0-1 兜底：install.sh 依赖同目录 engine/scripts/lib/ 下 6 个模块——
 #   此前 bootstrap 只下载孤立 install.sh，source 立即失败（安装链全断根因）。
 #   现在同时下载 lib 全部文件到同目录结构，让 install.sh 的 source 可达。
-LIB_BASE_URL="https://raw.githubusercontent.com/KongFangXun/sofagent/refs/tags/v1.4.4/engine/scripts/lib"
+LIB_BASE_URL="https://raw.githubusercontent.com/KongFangXun/sofagent/refs/tags/v1.4.5/engine/scripts/lib"
 LIB_FILES="platform-detect.sh file-deploy.sh daemon-register.sh post-install.sh daemon-lib.sh config.sh"
-# lib 文件 sha256（v1.4.4 tag；与 LIB_FILES 顺序一一对应）
+# lib 文件 sha256（v1.4.5 tag；与 LIB_FILES 顺序一一对应）
 LIB_SHA256S="e1a77f47fd92cbae131e88785079184925dbaf548976bc49d14d5c86e824525a
 dfcb89053f57e794d37a47b369eeff225efccdb0453d4a385fb14ccee5e6cdf3
 e83cf4dc60d929ed7c085b7d5d93beb37e781fd5085eaa1a138d298eb37933b3
-ab00287c9ce898658d09168baa9b4650aba675bf5337a20d372c19f5271a8cda
+072a39d0590696aad2f456026f8c841d4f4208939ff1a12dce72a346d2d41080
 bec93fd676d2524b11abfb44e1ffa4cb6dd536d13e3a05421aebee5c6bcf6fc2
-80f55df80d39a97d506ad925c1e099682efde7e482695208e421000fcbbb1128"
+10006c31386b99e1166153b3d03975d3a4c442f5000d849e08f1195efcbefb98"
 
 # sha256 工具兼容（macOS shasum / Linux sha256sum，取输出首段哈希）
 _sha256_of() { # $1=文件路径 → stdout 哈希（失败输出空）
