@@ -299,7 +299,7 @@ done
 echo "$BODY" | grep -qE '\[详细开发日志\]\(\./docs/changelog/' && echo "✅ 尾链" || echo "🔴 缺尾链"
 
 # ⑤ 定位句长度 ≤ 220 字符（N9 铁律）
-POS_LEN=$(echo "$BODY" | head -1 | awk '{print length($0)}')
+POS_LEN=$(node -e "console.log(require('fs').readFileSync(0,'utf8').split('\n')[0].length)")  # 🔴 禁用 awk length——macOS awk 按字节计，中文行会 3 倍误报超限
 [ "$POS_LEN" -le 220 ] && echo "✅ 定位句 $POS_LEN 字符" || echo "🔴 定位句 $POS_LEN 字符超 220 上限——拆 H3 承载"
 
 # ⑥ BugFix 节标题逐字核对（N10——有 bugfix 节时必须带「（上版遗留）」补语）

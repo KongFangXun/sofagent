@@ -114,7 +114,7 @@
 ## Release Notes（GitHub Release 发布用）
 
 > 面向用户的发布说明——开发日志正文给开发者看，Release Notes（本段 + GitHub Release body）给用户看。
-> **标准范本：v1.3.7 实际发布物**——[GitHub v1.3.7 Release](https://github.com/KongFangXun/sofagent/releases/tag/v1.3.7)（定位句 + H2 分节 + 质量验证表 + 尾链）。曾出现发布物漏质量验证表与标题主题短语被作者退回——范本对照不可省。
+> **标准范本：v1.4.4 实际发布物**——[GitHub v1.4.4 Release](https://github.com/KongFangXun/sofagent/releases/tag/v1.4.4)（定位句 + TL;DR (EN) + 五 H2：⚡ Install/Upgrade → 🔨 核心变更 → ✅ 质量验证 → ⚠️ 破坏性变更 → 🔗 深入了解 + 尾链；质量验证表在破坏性变更之前——结构以最新实际发布物为准，v1.3.7 范本数据保留作历史参照）。曾出现发布物漏质量验证表与标题主题短语被作者退回——范本对照不可省。
 > 🔴 **铁律：发布时禁止把 changelog 内嵌段直接复制当 GitHub body**——本段是格式规范源头，GitHub body 由 [09-publish.md 三道工序](./09-publish.md) 生成；两处同源同构，但生成动作在阶段九，此段只定义标准。
 
 ### 格式规范（对照 v1.3.7 逐要素）
