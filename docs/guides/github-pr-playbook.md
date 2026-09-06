@@ -283,6 +283,7 @@ Single-line change to README.md only.（或双语两文件）
 三十、**whobot-ai/awesome-harness-engineering-zh**（⭐25）——✅ **已投 #7**（09-04，见 5.1 #34）：安全与质量保障表格行（中文）
 三十一、**weekend-project-space/awesome-deepseek-harness-top-500**（⭐19）——✅ **已投 #4**（09-04，见 5.1 #35）：表格第 503 行·工作流与工程
 三十二、**Jiaaqiliu/Awesome-Harness-Engineering**（⭐36）——✅ **已投 #10**（09-04，见 5.1 #33）：Guardrail Frameworks 表格行
+三十三、**HKUST-KnowComp/Awesome-Agent-Harness**（⭐63）——🆕 **09-06 新发现，可投（角度 ⑥ 纯投稿，酌情升 ④）**：HKUST 知识计算组维护的学术型 harness 四层架构清单（Execution/Context/Interaction/**Constraints & Guardrails**），「Governance Boundaries」「Agent Injection & Defense」「Skills Security」三个子节与 sofagent 定位直接对口；上游 README 零收录（09-06 核）；以论文条目为主但收工具先例（Anthropic sandbox-runtime 带 Code 徽章）；⚠️ 条目为 HTML `<table>` 格式且带 Author/Year 列——投稿需按 `Title/Author(KongFangXun)/Year(2026)/Description` 四列适配，编辑成本高于普通 markdown 清单；星数 63<100 但属「明显对口」轴，建议与其他投稿错峰单独精投
 
 ## 七、非清单曝光渠道（中文圈 + 用户网页动作）
 
