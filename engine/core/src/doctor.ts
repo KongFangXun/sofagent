@@ -234,7 +234,10 @@ export function runDoctor(projectDir: string = process.cwd(), options: { resetBa
   console.log('\n── Git Hook 状态 ──');
   let hookOk = false;
   try {
-    const gitDirResult = execFileSync('git', ['rev-parse', '--git-dir'], { encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'] }).trim();
+    // 🔴 cwd: projectDir 必传——gitDir 必须基于被检查目录解析，否则在进程 cwd
+    // （如 vitest worker 所在的主仓）解析：主仓装了 hook 时测试假阳性、CI 主仓
+    // 未装时真失败（两环境结果相反的根因）
+    const gitDirResult = execFileSync('git', ['rev-parse', '--git-dir'], { encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'], cwd: projectDir }).trim();
     const gitDir = gitDirResult.startsWith('/') ? gitDirResult : join(projectDir, gitDirResult);
     // v1.4.5 (T14): hook 目录尊重 core.hooksPath——与安装侧（audit 包 hook-install.ts
     // 的 resolveHooksDir，E1 施工）同一语义。repo 配置 core.hooksPath 时 hook 写进
