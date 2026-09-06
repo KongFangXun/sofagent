@@ -1353,6 +1353,36 @@ if $F6_RELEASED; then
     echo -e "  ${GREEN}✓${NC} 已发版态（${F6_WHY}），ROADMAP 无残留「待发版」标注"
     CHECKS=$((CHECKS + 1))
   fi
+  # F6 扩展（v1.4.6 前置 · fresh-eyes P1-1 防复发）：已发版态下，活文档头不得残留
+  # 「开发完成未发版/开发完成待发版」状态标记——发版翻转只覆盖「三件套」（WIKI 状态表/
+  # ROADMAP/HANDBOOK 速览），13 处文档头「未发版」漏翻（v1.4.5 实锤）。扫描面 = docs/ 活文档
+  # （排除 changelog/archive——历史日志的「待发版」是当时正确状态，不报）。
+  F6_DOC_PENDING=$(find "${PROJECT_ROOT}/docs" \
+    -name '*.md' \
+    -not -path '*/changelog/*' \
+    -not -path '*/archive/*' \
+    -type f 2>/dev/null \
+    | xargs grep -lE '开发完成未发版|开发完成待发版' 2>/dev/null || true)
+  if [ -n "$F6_DOC_PENDING" ]; then
+    echo -e "  ${RED}✗${NC} 已发版态（${F6_WHY}）但以下活文档头仍标「开发完成未发版/待发版」——发版翻转遗漏文档头（F6 扩展）："
+    echo "$F6_DOC_PENDING" | sed "s#^#      #" | head -15
+    ERRORS=$((ERRORS + 1))
+  else
+    echo -e "  ${GREEN}✓${NC} 已发版态（${F6_WHY}），活文档头无「开发完成未发版/待发版」残留"
+    CHECKS=$((CHECKS + 1))
+  fi
+  # 当前版本开发日志头「待发版」残留（docs/changelog/vX.Y/vX.Y.Z.md 头部状态行）——
+  # 历史日志的「待发版」是当时正确状态，只有当前 SSOT 版本的日志头需翻转。
+  F6_DEVLOG="${PROJECT_ROOT}/docs/changelog/v${SSOT_2SEG}/v${SSOT_VERSION}.md"
+  if [ -f "$F6_DEVLOG" ]; then
+    if head -10 "$F6_DEVLOG" 2>/dev/null | grep -qE '待发版'; then
+      echo -e "  ${RED}✗${NC} 已发版态（${F6_WHY}）但当前版本开发日志头仍标「待发版」：${F6_DEVLOG#"${PROJECT_ROOT}"/}"
+      ERRORS=$((ERRORS + 1))
+    else
+      echo -e "  ${GREEN}✓${NC} 已发版态，当前版本开发日志头无「待发版」残留"
+      CHECKS=$((CHECKS + 1))
+    fi
+  fi
 else
   echo -e "  ${GREEN}✓${NC} 开发态（tag/npm 均未达 v${SSOT_VERSION}）——「待发版」标注合法，跳过"
   CHECKS=$((CHECKS + 1))

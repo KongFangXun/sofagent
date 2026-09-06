@@ -2,7 +2,7 @@
 
 > sofagent 对外全部能力面的一站式清单——六大接口面 + MCP 83 tools 按域分组。工具清单由 `engine/mcp/src/tool-registry.ts` 生成（scripts/check 门禁对账，文档与代码永不漂移）。
 >
-> 版本：v1.4.5（开发完成待发版）· 83 tools / 6 面
+> 版本：v1.4.5（已发版）· 83 tools / 6 面
 
 ---
 
