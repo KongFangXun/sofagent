@@ -443,7 +443,7 @@ jobs:
 | 训练数据与评估 + FDE 六引擎 | v1.4.2 | 企业数据→训练集管道 + dataset_version 版本 + eval 闭环 + train env/doctor + dry-run 算力外推 + 训练报告；FDE 六引擎工作台（fde_interview/classify/quantify/derive/distill/deploy，67→76 tools）+ IM 桥远程指挥 | [v1.4.2 开发日志](./changelog/v1.4/v1.4.2.md) |
 | 后训模块·运行与需求 | v1.4.3 | 训练需求推导+模板库（train analyze/templates）+ GPU 显存队列 + train_status/train_list/train_diagnose 三 MCP（76→79 tools）+ 训练沙箱与设备打包 + 审计聚合 KPI（--stats）+ 反作弊双防线 | [v1.4.3 开发日志](./changelog/v1.4/v1.4.3.md) |
 | 后训模块·信号与部署闭环 | v1.4.4 | 训练语料导出三件套（`corpus_export`，79→80 tools）+ 本地权重部署（manifest 清单 + sha256 篡改拒绝 + rollback-weights）+ 训练产物→注册自动衔接 + 多基座对比（train compare ROI 排序）+ 决策因果链与先例检索 + CI 供应链全 SHA 固定 + 五能力叙事定稿 | [v1.4.4 开发日志](./changelog/v1.4/v1.4.4.md) |
-| 后训模块·服务与持续 | v1.4.5（待发版） | 训练推理服务（`train_serve` 拉起 vLLM/Ollama/OpenAI 兼容端点，80→83 tools）+ 合规扫描闸门（`train_compliance`——PII/敏感字段/专有名词）+ 持续后训练（飞轮数据回流 + 三触发 + eval 回退保护）+ FDE 交付包（`train_deliverable`）+ 后训 Quickstart 十步端到端 + FDE 进场记忆目录（10 文件自动初始化）+ 进化模块实证收口 | [v1.4.5 开发日志](./changelog/v1.4/v1.4.5.md) |
+| 后训模块·服务与持续 | v1.4.5 | 训练推理服务（`train_serve` 拉起 vLLM/Ollama/OpenAI 兼容端点，80→83 tools）+ 合规扫描闸门（`train_compliance`——PII/敏感字段/专有名词）+ 持续后训练（飞轮数据回流 + 三触发 + eval 回退保护）+ FDE 交付包（`train_deliverable`）+ 后训 Quickstart 十步端到端 + FDE 进场记忆目录（10 文件自动初始化）+ 进化模块实证收口 | [v1.4.5 开发日志](./changelog/v1.4/v1.4.5.md) |
 
 ### 新功能入口导览（v1.4.2 起三条新产品线——10 分钟上手各条线）
 

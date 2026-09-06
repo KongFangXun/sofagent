@@ -15,10 +15,6 @@
 
 <p align="center"><sub>[简体中文](./README.md) | [English](./README.en.md)</sub></p>
 
-> 🚀 **v1.4.4** — Training engine: signal & deployment loop (corpus export trio / local weight deployment / artifact→registry bridge / multi-base compare / decision causal chain / CI supply-chain hardening / legacy upgrades / spec-first mandate / review batch / five-capability narrative). ✅ Released (2026-09-03). See [CHANGELOG](./CHANGELOG.md).
-
-> 🛡️ **v1.4.5 pending release** — reliability & honesty fix batch + post-training services & continuity (train serve / continuous training / compliance gate / deliverable / quickstart / FDE session memory; 4055 tests). ⏳ Pending release (tag/npm sync at release time). See [CHANGELOG](./CHANGELOG.md).
-
 ---
 
 ## What is this

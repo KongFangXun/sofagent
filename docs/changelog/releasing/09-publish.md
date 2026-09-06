@@ -181,6 +181,12 @@ done
 # exit 2 = 还在跑（循环重查） / exit 1 = 有失败（定位 → 修 → push → 重等，禁止打 tag） / exit 0 = 全绿
 ```
 
+> 🔴 **CI 失败三分类处置（先分类再动手——不同类修法完全不同）**：
+> 1. **真回归**（本版改动引入：新脚本 set -u 炸弹 / 新测试环境假设 / 配置兜底链引用未初始化变量）→ 修根因 → 复现验证 → push 重等。识别特征：v上版 tag..HEAD 的 diff 里能定位到引入点。
+> 2. **发版时序固有**（依赖 npm 上已有当前版本，而发布动作在本轮 CI 之后——如 install.sh 按 SSOT 版本从 registry 装 audit）→ 修依赖顺序/降级兜底（如 @latest 占位），不视为 CI 阻塞。
+> 3. **环境特异**（本地绿 CI 红：runner 的 git 配置/并发竞态/进程 cwd 差异）→ 先在本地模拟 CI 姿势复现（env -i 干净 HOME / 全量并发），复现不了再读 CI 日志逐帧对——典型根因：git 子进程调用缺 `cwd`（在进程 cwd 而非被检查目录解析）。
+```
+
 ---
 
 ## 步骤五：安装入口随版同步
@@ -468,6 +474,25 @@ env -u http_proxy -u https_proxy -u HTTP_PROXY -u HTTPS_PROXY -u ALL_PROXY -u al
 ```
 
 > curl 探测代理端口存活：`curl -s -o /dev/null -w "%{http_code}" -x http://127.0.0.1:<端口> https://github.com`——200 = 端口可用（但 git 仍可能因 HTTP/2 失败，直接上 HTTP/1.1）。
+
+### 🔴 重试循环与退出码测量（单次命令不够——网络失败是间歇性的）
+
+单次降级 push 成功≠网络稳定——失败形态会轮换（SSL timeout / Connection reset / Empty reply / lowSpeed 超时），**必须重试循环**（每轮重新评测，成功即退）：
+
+```bash
+for i in 1 2 3 4 5 6; do
+  env -u http_proxy -u https_proxy -u HTTP_PROXY -u HTTPS_PROXY -u ALL_PROXY -u all_proxy \
+    git -c http.proxy= -c https.proxy= -c http.version=HTTP/1.1 \
+    -c http.lowSpeedLimit=1000 -c http.lowSpeedTime=300 \
+    push origin main > /tmp/push-retry.log 2>&1
+  RC=$?
+  [ $RC -eq 0 ] && { echo "✅ 第 $i 次成功"; break; }
+  echo "第 $i 次 RC=$RC: $(tail -1 /tmp/push-retry.log)"
+  sleep 30
+done
+```
+
+> 🔴 **退出码测量禁管道**：`cmd | tail -2; echo $?` 的 `$?` 是 tail 的退出码——push 失败会被误报为成功。测量一律「输出重定向到文件 + 独立 echo $?」，或 `PIPESTATUS` 数组。多 session 并发期尤其要重试循环兜底——并发 session 的 commit 交错合流（无冲突时快进），中间态 HEAD 被推上去无害。
 
 git push 超时时，gh CLI / clawhub / skillhub 走独立 API 通道不受影响：
 

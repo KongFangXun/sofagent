@@ -13,10 +13,6 @@
 
 <p align="center"><sub>[简体中文](./README.md) | [English](./README.en.md)</sub></p>
 
-> 🚀 **v1.4.4**——后训模块 · 信号与部署闭环（语料导出三件套 / 本地权重部署 / 产物→注册衔接 / 多基座对比 / 决策因果链 / CI 供应链加固 / 存量升级 / spec-first 硬禁令 / 审查收编批 / 五能力叙事）。✅ 已发版（2026-09-03）。见 [CHANGELOG](./CHANGELOG.md)。
-
-> 🛡️ **v1.4.5 开发完成待发版**——可靠性与诚实性修复批 + 后训模块 · 服务与持续（train serve 推理服务 / 持续后训 / 合规闸门 / 交付包 / Quickstart / FDE 进场记忆目录；测试 4055）。⏳ 待发版（tag/npm 发版时同步）。见 [CHANGELOG](./CHANGELOG.md)。
-
 ---
 
 ## 这是什么

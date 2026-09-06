@@ -1,11 +1,11 @@
 # 路线图 · Roadmap
 
 > 已经做了什么、未来要去哪、哪些地方需要你的帮助。
-> v1.4.5 · 2026-09-06（UTC）· 开发完成待发版（本批更新 2026-09-06 定稿）· 🚀 后训模块 · 服务与持续（推理服务/持续后训/合规扫描/交付包/进化实证/进场记忆 · release-gate PASS）。此前版本详见 [CHANGELOG](../CHANGELOG.md) 与各版开发日志。
+> v1.4.5 · 2026-09-06（UTC，✅ 已发版）· 🚀 后训模块 · 服务与持续（推理服务/持续后训/合规扫描/交付包/进化实证/进场记忆）。此前版本详见 [CHANGELOG](../CHANGELOG.md) 与各版开发日志。
 
 产品定位详见 [设计哲学](./PHILOSOPHY.md) 和 [README](../README.md)。
 
-## 现在在哪：v1.4.5（开发完成 · 未发版）
+## 现在在哪：v1.4.5（已交付）
 
 > **v1.4.5 开发完成（2026-09-05）**——后训模块 · 服务与持续 八章（训练推理服务 train serve + 持续后训练三触发与回退保护 + 合规扫描闸门 + FDE 交付包 + 保留策略归档 + 后训 Quickstart 十步端到端 + 进化模块实证收口 + FDE 进场记忆目录）+ 可靠性与诚实性修复批 · 测试 3753→4055（12 包 workspace 口径）· acceptance 305 场景（S373/S374/S375 净 +1，S265/S366 归并对销 −2）· MCP 80→83 tools · release-gate run-03 verdict=PASS（2026-09-06）。详见 [v1.4.5 开发日志](./changelog/v1.4/v1.4.5.md)。上一版 v1.4.4（2026-09-03 发版，后训模块 · 信号与部署闭环 十章）详见 [v1.4.4 开发日志](./changelog/v1.4/v1.4.4.md)。
 
@@ -17,7 +17,7 @@
 
 | 版本 | 核心交付 |
 |------|------|
-| **v1.4.5** | **🚀 后训模块 · 服务与持续（开发完成 · 待发版）**：训练推理服务 train_serve + 持续后训练三触发与回退保护 + 合规扫描闸门 train_compliance + FDE 交付包 train_deliverable + 保留策略归档 + 后训 Quickstart 十步 + 进化实证收口（真脑/台账/采样/L4 自进化）+ FDE 进场记忆目录 + 可靠性加固批（webhook SSRF/审计链截断/超时降级）· 测试 3753→4055 · acceptance 304→305 · MCP 80→83（详见 [CHANGELOG](../CHANGELOG.md)） |
+| **v1.4.5** | **🚀 后训模块 · 服务与持续**：训练推理服务 train_serve + 持续后训练三触发与回退保护 + 合规扫描闸门 train_compliance + FDE 交付包 train_deliverable + 保留策略归档 + 后训 Quickstart 十步 + 进化实证收口（真脑/台账/采样/L4 自进化）+ FDE 进场记忆目录 + 可靠性加固批（webhook SSRF/审计链截断/超时降级）· 测试 3753→4055 · acceptance 304→305 · MCP 80→83（详见 [CHANGELOG](../CHANGELOG.md)） |
 | **v1.4.4** | **🚀 后训模块 · 信号与部署闭环**：训练语料导出三件套（corpus_export 79→80 + reward 骨架）+ 企业专属模型本地权重部署（manifest+sha256 篡改拒绝+rollback-weights）+ 训练产物→注册自动衔接 + 多基座对比（train compare ROI 排序）+ 决策因果链与先例检索 + CI 供应链全 SHA 固定 + 五能力叙事定稿 · 测试 3619→3753 · acceptance 294→304 · MCP 79→80（详见 [CHANGELOG](../CHANGELOG.md)） |
 | **v1.4.3** | **🚀 后训模块 · 运行与需求 + 审计聚合指标**：训练监控 + GPU 队列（train_status/train_list）· 失败诊断 train_diagnose 七类 · 训练沙箱 + 设备打包 · 需求推导 + RL 配方模板 · 后训练 workflow 模板 · 审计聚合指标 --stats · 训练反作弊基线 · 存量清扫五件（含 checkHistoryChainIntegrity 退役公告）· doctor 补 Ontology 完整性 · 测试 3349→3619 · acceptance 276→294 · MCP 76→79 |
 | **v1.4.2** | **🚀 后训模块 · 数据与评估 + FDE Harness 层**：数据管道（多源接入 + 质量闸门 + 脱敏）· dataset_version 版本台账 · eval 闭环 · 环境管理 + train_doctor · dry-run 与算力外推 · 训练报告 · FDE 六件（fde_interview/classify/quantify/derive/distill/deploy）· IM 桥 dsh-im · 测试 3202→3349 · acceptance 271→276 · MCP 67→76 |
