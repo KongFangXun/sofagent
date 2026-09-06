@@ -247,7 +247,7 @@ OpenAI 2026-08-19 全面开源 [Codex Harness](https://github.com/openai/codex)�
 
 但两者**范围差一个数量级、且互补**：ChatDemo 的 FDE 是售前 POC 共创工具（Claude Code Skill + localhost 控制台，回合制 start/turn/wrap），散会即结束、无常驻员工；sofagent 的 FDE 是售后常驻部署+治理方法论（四阶段十二步→交付离场→sustain）。它做"漏斗前端"（拿 POC），我们做"漏斗后端"（常驻、可审计、受治理的硅基员工）——定位不冲突。
 
-其**独特点**是可借鉴方向（已登记 [ROADMAP · 行业印证](./ROADMAP.md#行业印证)）:① 回合制协议 + FDE 控节拍（人控 Agent 不抢跑，我们已有同判断、它执行更细）；② **spec-first 硬禁令**（transcript 永不直接驱动代码——补我们"触发直驱工件"的明文铁律，最高优先）；③ **decisions.jsonl 判断时刻日志**（{kind, moment, why, spec_ref} 现场即时记，会后喂 FDE Loop→INDUCE→Judgment Unit——补 A1-A23 缺的"决策理由链"，最高优先）；④ 分级降级梯队（console→TUI、ASR→手敲、dev 挂→走 spec，workflow never stops——为 7×24 常驻员工补分级降级 SOP，最高优先）；⑤ 开源优先阶梯 + 预验证画廊 + 双引擎无状态 + 数据敏感度分层 + 一键启动器品牌化模板。
+其**独特点**是可借鉴方向（已登记 [ROADMAP · 行业印证](./ROADMAP.md#行业印证)）：① 回合制协议 + FDE 控节拍（人控 Agent 不抢跑，我们已有同判断、它执行更细）；② **spec-first 硬禁令**（transcript 永不直接驱动代码——补我们"触发直驱工件"的明文铁律，最高优先）；③ **decisions.jsonl 判断时刻日志**（{kind, moment, why, spec_ref} 现场即时记，会后喂 FDE Loop→INDUCE→Judgment Unit——补 A1-A23 缺的"决策理由链"，最高优先）；④ 分级降级梯队（console→TUI、ASR→手敲、dev 挂→走 spec，workflow never stops——为 7×24 常驻员工补分级降级 SOP，最高优先）；⑤ 开源优先阶梯 + 预验证画廊 + 双引擎无状态 + 数据敏感度分层 + 一键启动器品牌化模板。
 
 **给我们的背书**：① FDE 作为"前线部署工程师"的方法论术语，已被 OpenFDE 以 Forward Deployed Engineer 独立命名并工程化，与我们同源、互为第三方佐证；② "约束 Agent 经受控接口"的同源判断在售前侧也成立（ChatDemo 约束在"何时/权限/来源"）；③ 我们的差异化仍在——ChatDemo **无 A1-A23 运行时行为审计、无 7×24 常驻 FDE Harness 层、无控制平面治理、让 Agent 直接写应用代码**，这些是我们的地盘。
 
@@ -311,7 +311,7 @@ DHH（Rails 之父）的 Omarchy——「有主见」的 Arch Linux 桌面发行
 
 **第一件：SKILL.md 不是小众发明，是正在收敛的 Agent 接口形态。** Omarchy 把带 frontmatter 触发词的 `SKILL.md`（「要编辑 `~/.config/hypr/` 就必须用这个 skill」）随产品安装到用户机器 `/usr/share/omarchy/`，内含安全红线（「`/usr/share/omarchy/` 只读永不编辑」）、命令组速查、决策框架七步——与我们 `SKILL/` 经 install.sh 装到 `~/.sofagent/skills/` 的分发完全同构，且 Claude Code 对 SKILL.md 已是原生支持。当头部开发者的装机量级产品把「约束 AI 别乱改文件」做成随产品分发的 skill，这个形态就从我们的工程选择变成了行业接口。
 
-**第二件：反漂移靠「禁二份」纪律，而非全仓对账。** Omarchy 命令组的权威清单只活在 `bin/omarchy` 的 `GROUP_DESCRIPTIONS` 结构里，AGENTS.md 明文「不要在这里维护第二份清单，以免与路由器漂移」。我们治同一病（工具数声称八处漂移三连发）用的是双招：SSOT 声明 + check-docs §15 全仓扫描对账。两招互补——声明治源头（新文档写前先问权威源在哪），扫描治存量（漂移当场红）。把「任何清单在仓内出现第二处时，一处为权威源、其余必须标注引用」升格为文档分工纪律，成本一行，收益是把「扫出漂移」变成「不产生漂移」。
+**第二件：反漂移靠「禁二份」纪律，而非全仓对账。** Omarchy 命令组的权威清单只活在 `bin/omarchy` 的 `GROUP_DESCRIPTIONS` 结构里，AGENTS.md 明文「不要在这里维护第二份清单，以免与路由器漂移」。我们治同一病（工具数声称曾多次与 registry 实数漂移）用的是双招：SSOT 声明 + check-docs §15 全仓扫描对账。两招互补——声明治源头（新文档写前先问权威源在哪），扫描治存量（漂移当场红）。把「任何清单在仓内出现第二处时，一处为权威源、其余必须标注引用」升格为文档分工纪律，成本一行，收益是把「扫出漂移」变成「不产生漂移」。
 
 **对我们的意义**：三棵文档树（task procedure / reference / user manual，按受众×文体切分）的声明式迁移方向已登记 ROADMAP 探索方向；skill 分发与文档分工纪律两条则即刻可抄——前者已被市场验证，后者已被 35k stars 项目的实践验证。
 
