@@ -53,7 +53,7 @@
 | ⑤ 内容共创 | 中文指南/教程型仓（有章节结构） | 为其缺的章节（治理/审计）投稿或审校 | whobot 五支柱结构适用 | 高 |
 | ⑥ 纯投稿快车道 | 长尾小仓（⭐<100） | 差异化规则（2.4 节）照走 | 09-04 晚 6 条 | 低 |
 
-**角度选型决策序**：先查上游是否已收 sofagent → 已收走 ③；未收再看清单是否有我们可自然首条的缺失节 → 有走 ①；都不是再看高价值仓走 ④（攒信任分，为后续 sofagent 投稿铺路）；小仓走 ⑥ 快车道。**实证校准**：修死链在这类年轻活跃清单里供给不足（ai-boost 抽 30 链 0 死链），④ 里 301 改名链是低价值搭车项不是主角度。
+**角度选型决策序**：先查上游是否已收 sofagent → 已收走 ③；未收再看清单是否有我们可自然首条的缺失节 → 有走 ①；都不是再看高价值仓走 ④（攒信任分，为后续 sofagent 投稿铺路）；小仓走 ⑥ 快车道。**实证校准**：修死链在这类年轻活跃清单里供给不足（ai-boost 抽 30 链 0 死链），④ 里 301 改名链是低价值搭车项不是主角度。**收口时延实证（09-06 复盘）**：小仓/自动管线（imsai-sh 当日、Dominic 事实修正）与增值角度（新增节/复合 PR）1-2 天收口；⭐1k+ 大仓人工审 ≥6 天（punkpeye/mahseema/DeepSpaceHarbor 仍在飞）——大仓投稿按长线管理不追进度，选型优先小仓快车道与增值角度。
 
 ---
 
@@ -142,7 +142,7 @@ Single-line change to README.md only.（或双语两文件）
 |---|---|---|
 | GitHub Marketplace | ✅ 已上线 | name 冻结 `sofagent`；description ≤125 码点；每版 release 勾 Publish（SOP 阶段十一·二b） |
 | Profile README | ✅ 已上线 | KongFangXun/KongFangXun 特殊仓；Contents API `-X PUT` 上传 |
-| 清单 PR | 31 条在飞 / 已收口 14 | 本手册主体 |
+| 清单 PR | 33 条在飞 / 已收口 14 | 本手册主体 |
 | Discussions 常青帖 | #11 报到帖（自家） | 置顶只留常青帖，版本帖不置顶（SOP 阶段十二·十三） |
 | 外站 Discussions 输出 | ✅ loop-engineering #326 已发 | adopters 合并后 24h 内发实践帖衔接最自然；按楼主模板回帖，不开新帖 |
 | Featured in 区 | ✅ 双语 README | 徽章跟 PR 状态联动（open 橙 / merged 绿） |
@@ -176,7 +176,7 @@ Single-line change to README.md only.（或双语两文件）
 
 > 活台账：每次巡检/合并后更新本表对应行的状态列与备注（巡检命令：`gh search prs --author KongFangXun --state open`）。自家仓 PR（KongFangXun/sofagent 内部）不入台账。
 
-### 5.1 在投（31 条 open）
+### 5.1 在投（33 条 open）
 
 | # | 仓库 | PR | 节 | 投日 | 状态 | 备注 |
 |---|------|----|----|------|------|------|
@@ -211,6 +211,8 @@ Single-line change to README.md only.（或双语两文件）
 | 29 | whobot-ai/awesome-harness-engineering-zh ⭐25 | [#7](https://github.com/whobot-ai/awesome-harness-engineering-zh/pull/7) | 安全与质量保障（中文三列表格） | 09-04 | open | 09-04 晚投；名称/说明/Stars 表格行节尾（moltis 后）；中文条目含星徽章；中文 body 披露句；blob 回读 diff 中文零损；✅ 09-06 交叉链接刷新（agentrust #89 → merged 标注回读验证） |
 | 30 | weekend-project-space/awesome-deepseek-harness-top-500 ⭐19 | [#4](https://github.com/weekend-project-space/awesome-deepseek-harness-top-500/pull/4) | 表格第 503 行·工作流与工程 | 09-04 | open | 09-04 晚投；序号顺延 503；描述含「80+ 工具 MCP server」坐实 DSH 集成；已收 502 条规模大竞争小；✅ 09-06 交叉链接刷新（agentrust #89 → merged 标注回读验证） |
 | 31 | HKUST-KnowComp/Awesome-Agent-Harness ⭐63 | [#9](https://github.com/HKUST-KnowComp/Awesome-Agent-Harness/pull/9) | Governance Boundaries（Layer 4 表格行） | 09-06 | open | 09-06 晚投；HTML 表格行照 sandbox-runtime 先例（Title/Author/Year/Description 四列 + Code 徽章）；标题照该仓惯例「KongFangXun: Add …」；该仓拒重复投稿（#6 先例）；上游 2026-05-28 后无 push 收录慢属预期；blob diff+body 双回读验证；主卖点轴=审计链（学术治理语境） |
+| 32 | awesome-dsh-plugin/awesome-dsh-plugin ⭐14.6k | [#4507](https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/pull/4507) | security 节·data YAML 源 | 09-06 | open | 09-06 晚投（1.4 ③ 数字刷新，源自 5.2 #4101 条目）：79→83 MCP tools（YAML en+zh 双行）；⚠️ 该仓 README 是生成的——正确通道=改 data/plugins/*.yml（本次实路线），README 合并后管线自动再生成；标题照该仓 update 惯例「Update <repo> description」；diff 2+/2- 回读过 |
+| 33 | Dominic789654/awesome-deepseek-harness ⭐225 | [#419](https://github.com/Dominic789654/awesome-deepseek-harness/pull/419) | 主列表 sofagent 条目 | 09-06 | open | 09-06 晚投（1.4 ③ 数字刷新，源自 5.2 #368 条目）：双语 README 各一行 79→83（9 DSH plugins 实测仍准）；⚠️ 926KB 大文件走 Git Data API blob 通道单提交（坑位 #14 截断教训的 upload 侧应用：blob 上传无截断风险）；fork 实名 awesome-deepseek-harness-1（parent API 核过） |
 
 ### 5.2 已收口
 
@@ -223,9 +225,9 @@ Single-line change to README.md only.（或双语两文件）
 | yzhao062/awesome-auditable-ai | #18 | ✅ **merged 09-05** | Tools 节；仓主 yzhao062 亲合（09-05 04:43 UTC）；曾回 follow-up 后合并（09-05 巡检发现） |
 | scadastrangelove/awesome-ai-security-tools | #76 | ✅ **merged 09-04** | Runtime Protection 节；仓主 scadastrangelove 亲合（09-04 19:47 UTC）；09-05 巡检发现 |
 | 0xsline/awesome-deepseek-harness | #547 | ✅ **merged 09-03** | 双语 Security & Governance 节；0xsline 亲合（09-03 11:18 UTC）；09-05 巡检补录（09-03 移行时 5.2 漏落行） |
-| awesome-dsh-plugin/awesome-dsh-plugin ⭐14k | #4101 | ✅ **merged 09-02** | DSH 系最大清单收录（security 节）；fkysly 合并；经两轮 gate 修复（-f 字面量→-F / monorepo 子包 slug）后双绿过审；**主阵地引爆**；📝 09-06 巡检：条目「79 tools」已过时（实值 83，AGENTS.md+description 双源），待拍板开 update PR |
+| awesome-dsh-plugin/awesome-dsh-plugin ⭐14k | #4101 | ✅ **merged 09-02** | DSH 系最大清单收录（security 节）；fkysly 合并；经两轮 gate 修复（-f 字面量→-F / monorepo 子包 slug）后双绿过审；**主阵地引爆**；📝 09-06 发现 79→83 过时 → ✅ 当晚已提 update PR [#4507](https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/pull/4507)（只改 data YAML 源 en+zh，README 管线再生成；见 5.1 #32） |
 | beancookie/awesome-dsh-plugin ⭐127 | #137 | ✅ **merged 09-02** | 双语两文件；beancookie 亲自合并 |
-| Dominic789654/awesome-deepseek-harness | #368 | ✅ **merged 09-01** | 转既有条目事实修正（FDE Harness/79 tools/HMAC）后被维护者验证合并：「Verified … factual. Merging」；📝 09-06 巡检：条目「79 tools」已过时（实值 83；9 DSH plugins 经实测仍准确），待拍板开 update PR |
+| Dominic789654/awesome-deepseek-harness | #368 | ✅ **merged 09-01** | 转既有条目事实修正（FDE Harness/79 tools/HMAC）后被维护者验证合并：「Verified … factual. Merging」；📝 09-06 发现 79→83 过时 → ✅ 当晚已提 update PR [#419](https://github.com/Dominic789654/awesome-deepseek-harness/pull/419)（双语 README 各一行，Git Data API 单提交；见 5.1 #33） |
 | imsai-sh/awesome-deepseek-harness-plugins | #301 | ✅ **merged 09-01（当日）** | 目录 JSON 单条目快车道：static-review 自动通过后自动 squash-merge，全程零人工 |
 | cobusgreyling/loop-engineering | #573 | ✅ **merged 08-31** | adopters 名单；仓主亲自合并；解锁 #326 Show your loop 发帖（已发） |
 | punkpeye/awesome-mcp-servers | #13273 | ❌ closed | fork 落后被 bot 误杀（坑位 #1 教材）→ #13312 重投 |
