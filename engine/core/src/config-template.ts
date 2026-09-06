@@ -159,7 +159,7 @@ elif [ -n "$GLOBAL_DIST" ] && [ -f "$GLOBAL_DIST" ] && [ -f "$HASH_RECORD" ]; th
     echo "🔴 [sofagent] 审计引擎完整性校验失败（dist 哈希不匹配）"
     echo "   审计引擎可能被替换（影子审计器劫持风险）。"
     echo "   如需恢复：npm install -g @sofagent/audit@latest"
-    echo "   如为故意重建：sofagent-audit --doctor（会更新基准哈希）"
+    echo "   如为故意重建：sofagent-audit --reset-baseline（--doctor 只体检、不覆盖已存在的基线）"
     exit 1
   fi
 fi

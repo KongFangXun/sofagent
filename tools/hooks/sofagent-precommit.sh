@@ -138,12 +138,42 @@ if [ -n "$REPO_ROOT" ] && [ -f "$AUDIT_DIST" ]; then
   else
     CURRENT_HASH=$(node -e "const c=require('crypto'),f=require('fs');process.stdout.write(c.createHash('sha256').update(f.readFileSync('$AUDIT_DIST')).digest('hex'))" 2>/dev/null)
     RECORDED_HASH=$(cat "$HASH_RECORD" 2>/dev/null | tr -d '[:space:]')
-    if [ -n "$CURRENT_HASH" ] && [ -n "$RECORDED_HASH" ] && [ "$CURRENT_HASH" != "$RECORDED_HASH" ]; then
+
+    # v1.4.6 双信号判定：dist 哈希变化有两种成因（改源码后重建 / 不动源码直接替换
+    # dist），单看 dist 无法区分，只能一律拦截，结果是每次 rebuild 后全仓 commit
+    # 被阻塞。追加「源码指纹」作第二信号即可分离——判定矩阵见
+    # tools/audit-src-fingerprint.mjs 头部注释。
+    # 指纹必须由 dist 之外的代码计算：交给 dist/index.js 算则 dist 被篡改时指纹
+    # 同样可伪造，防线 self-defeating。
+    SRC_CHANGED=0
+    CURRENT_SRC_FP=""
+    RECORDED_SRC_FP=""
+    SRC_RECORD="$SOFAGENT_HOME/internal/audit-src-fingerprint.txt"
+    FP_SCRIPT="$REPO_ROOT/tools/audit-src-fingerprint.mjs"
+    if [ -f "$FP_SCRIPT" ] && [ -f "$SRC_RECORD" ]; then
+      CURRENT_SRC_FP=$(node "$FP_SCRIPT" "$REPO_ROOT" 2>/dev/null)
+      RECORDED_SRC_FP=$(cat "$SRC_RECORD" 2>/dev/null | tr -d '[:space:]')
+      if [ -n "$CURRENT_SRC_FP" ] && [ -n "$RECORDED_SRC_FP" ] && [ "$CURRENT_SRC_FP" != "$RECORDED_SRC_FP" ]; then
+        SRC_CHANGED=1
+      fi
+    fi
+
+    if [ "$SRC_CHANGED" -eq 1 ]; then
+      if [ -n "$CURRENT_HASH" ] && [ -n "$RECORDED_HASH" ] && [ "$CURRENT_HASH" = "$RECORDED_HASH" ]; then
+        echo "⚠️ [sofagent] 审计引擎源码已变更，但 dist 未重建——当前审计跑的是旧代码"
+        echo "   请执行: npm run build --workspace=engine/audit"
+      else
+        echo "ℹ️ [sofagent] 审计引擎源码已变更（src 指纹 ${RECORDED_SRC_FP:0:12}... → ${CURRENT_SRC_FP:0:12}...），dist 随之变化属预期，本次提交放行"
+        echo "   同步信任锚: bash tools/audit-baseline-sync.sh"
+      fi
+    elif [ -n "$CURRENT_HASH" ] && [ -n "$RECORDED_HASH" ] && [ "$CURRENT_HASH" != "$RECORDED_HASH" ]; then
       echo "🔴 [sofagent] 审计引擎完整性校验失败（P1-A2 dist 哈希不匹配）"
       echo "   engine/audit/dist/index.js 可能被替换（影子审计器劫持风险）。"
-      echo "   记录哈希: ${RECORDED_HASH:0: 12}...  当前哈希: ${CURRENT_HASH:0: 12}..."
-      echo "   如需恢复，运行: npm run build --workspace=engine/audit"
-      echo "   如为故意重建 dist，运行: sofagent-audit --doctor（会更新基准哈希）"
+      echo "   源码未变（src 指纹 ${CURRENT_SRC_FP:0:12}...）——dist 变化无法用「改了源码」解释。"
+      echo "   记录哈希: ${RECORDED_HASH:0:12}...  当前哈希: ${CURRENT_HASH:0:12}..."
+      echo "   恢复原始 dist: npm run build --workspace=engine/audit"
+      echo "   确认 dist 可信后重建信任锚: bash tools/audit-baseline-sync.sh"
+      echo "   （注意：sofagent-audit --doctor 只体检、不覆盖已存在的基线，不能用它刷新）"
       exit 1
     fi
   fi
