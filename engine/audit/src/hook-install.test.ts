@@ -5,7 +5,7 @@
 // ============================================================
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { mkdirSync, rmSync, writeFileSync, readFileSync, existsSync, chmodSync, realpathSync } from 'fs';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync, readFileSync, existsSync, chmodSync, realpathSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
 import { execFileSync } from 'child_process';
@@ -27,10 +27,9 @@ function makeRepo(): string {
   return realpathSync(repo);
 }
 
-/** 建三个模板文件 */
-function makeTemplates(dir: string): string {
-  const tpl = join(dir, 'hook-templates');
-  mkdirSync(tpl, { recursive: true });
+/** 建三个模板文件（mkdtemp 唯一目录——固定共享路径在并发测试进程下会互相清场） */
+function makeTemplates(): string {
+  const tpl = mkdtempSync(join(tmpdir(), 'sofagent-hook-tpl-'));
   writeFileSync(join(tpl, 'pre-commit'), '#!/bin/bash\n# sofagent pre-commit hook v1.4.4\nexit 0\n');
   writeFileSync(join(tpl, 'commit-msg'), '#!/bin/bash\n# sofagent commit-msg hook v1.4.4\nexit 0\n');
   writeFileSync(join(tpl, 'post-commit'), '#!/bin/bash\n# sofagent post-commit hook v1.4.4\nexit 0\n');
@@ -70,7 +69,7 @@ describe('resolveHooksDir（T1：core.hooksPath 尊重）', () => {
     // TDD 失败测试还原：repo 配 core.hooksPath=.githooks → 装 hook →
     // 断言 .githooks/pre-commit 存在（而非 .git/hooks/pre-commit）
     execFileSync('git', ['config', 'core.hooksPath', '.githooks'], { cwd: repo, stdio: 'pipe' });
-    const tpl = makeTemplates(tmpdir());
+    const tpl = makeTemplates();
     const logs: string[] = [];
     const result = installHooks({ cwd: repo, templateDir: tpl, log: (m) => logs.push(m) });
 
@@ -90,7 +89,7 @@ describe('resolveHooksDir（T1：core.hooksPath 尊重）', () => {
   });
 
   it('installHooks_未配置hooksPath_保持缺省gitHooks行为（回归保护）', () => {
-    const tpl = makeTemplates(tmpdir());
+    const tpl = makeTemplates();
     const result = installHooks({ cwd: repo, templateDir: tpl, log: () => {} });
     expect(result.configured).toBe(false);
     expect(existsSync(join(repo, '.git', 'hooks', 'commit-msg'))).toBe(true);
@@ -147,7 +146,7 @@ describe('preserveUserHook / buildChainedContent（T4：链式保留）', () => 
 
   it('installHooks_接管用户hook_链式wrapper落盘且原hook保留', () => {
     const repo = makeRepo();
-    const tpl = makeTemplates(tmpdir());
+    const tpl = makeTemplates();
     // 预置用户自有 pre-commit（如 lint-staged）
     const userHook = '#!/bin/sh\necho "user lint"\nexit 0\n';
     mkdirSync(join(repo, '.git', 'hooks'), { recursive: true });
