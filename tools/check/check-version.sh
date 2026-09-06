@@ -32,7 +32,7 @@ export LC_ALL="${LC_ALL:-en_US.UTF-8}"
 #  14. 文档示例版本号占位符（docs/ 下 @sofagent/*@<真实版本> = bug，应用 <LATEST>）
 #  15-24. ROADMAP/WIKI/MCP 工具数/安装入口 tag/构建产物/lock 同步/CHANGELOG 顶版漂移等
 #  25. 待发版窗口三态一致性（B1：CHANGELOG 收录 × 双语 README 状态行 × 安装 URL 配套齐）
-#  26. 工具数全仓口径（B8：六文档工具数叙事必含当前实数，防口径漏改）
+#  26. 工具数全仓口径（B8：11 处活文档工具数叙事必含当前实数，防口径漏改）
 #
 # 排除目录: docs/changelog/, node_modules/, .git/, dist/
 #
@@ -1371,9 +1371,10 @@ echo "=== 26. 工具数口径：全仓文档声称 vs registry SSOT（B8 漏改�
 # 口径：工具数变更时全仓一次全量清点——白名单内每个声称过工具数的文档，当前口径数字
 # （registry 实数）必须至少出现一次；历史双态表述（66/67 并列）不豁免「缺当前数」。
 # 白名单语义：这些文档实际写着工具数叙事，口径必须跟住；叙事删除时应有意识地移白名单，不静默漏。
+# v1.4.6（2026-09-07 拍板）：白名单由 6 处扩至 11 处活文档（补 SKILL/AGENTS.md、docs/API.md、docs/WIKI.md、GEMINI.md、CHANGELOG.md）——不再手数处数，以本白名单为唯一同步面。
 if [[ "${MCP_REG:-0}" =~ ^[0-9]+$ ]] && [[ "${MCP_REG}" -gt 0 ]]; then
   B8_DOC_MISS=0
-  for _td in SKILL/SKILL.md docs/HANDBOOK.md docs/ARCHITECTURE.md AGENTS.md README.md README.en.md; do
+  for _td in SKILL/SKILL.md docs/HANDBOOK.md docs/ARCHITECTURE.md AGENTS.md README.md README.en.md SKILL/AGENTS.md docs/API.md docs/WIKI.md GEMINI.md CHANGELOG.md; do
     [[ -f "${PROJECT_ROOT}/${_td}" ]] || continue
     # 口径：该文档任一含 tool 的行出现当前实数即算口径已跟（双态表述「66→67」天然含 67）
     if grep -i "tool" "${PROJECT_ROOT}/${_td}" 2>/dev/null | grep -qE "(^|[^0-9])${MCP_REG}([^0-9]|$)"; then

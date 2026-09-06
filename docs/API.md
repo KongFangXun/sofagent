@@ -1,12 +1,12 @@
 # 接口总览 · API
 
-> sofagent 对外全部能力面的一站式清单——六大接口面 + MCP 83 tools 按域分组。工具清单由 `engine/mcp/src/tool-registry.ts` 生成（scripts/check 门禁对账，文档与代码永不漂移）。
+> sofagent 对外全部能力面的一站式清单——七大接口面 + MCP 83 tools 按域分组（第七面「标准数据推送接口」v1.4.6 规划中）。工具清单由 `engine/mcp/src/tool-registry.ts` 生成（scripts/check 门禁对账，文档与代码永不漂移）。
 >
-> 版本：v1.4.5（已发版）· 83 tools / 6 面
+> 版本：v1.4.5（已发版）· 83 tools / 7 面（第 7 面 v1.4.6 规划中）
 
 ---
 
-## 一、六大接口面
+## 一、七大接口面
 
 | # | 接口面 | 入口 | 认证 | 典型用途 |
 |---|--------|------|------|---------|
@@ -16,8 +16,9 @@
 | 4 | **平台挂载** | GEMINI.md / .cursor/rules/sofagent.mdc / AGENTS.md | 平台加载链 | 平台 AI 助手直接引用约束 |
 | 5 | **Skill 分发** | ClawHub（`clawhub skill publish`）/ SkillHub | 平台账号 | SKILL/ 目录规则资产发布更新 |
 | 6 | **Webhook 推送** | 飞书/钉钉/企微 webhook URL | 签名 | 审计结果 PASS/WARN/FAIL 三态推送 |
+| 7 | **标准数据推送接口** | 数据推送 API（约定 schema · 分拣闸 + 合规闸双闸） | 企业凭证 | 企业存储/业务系统推送训练语料与知识数据（v1.4.6 规划中） |
 
-各面详细配置见对应文档：MCP 见 [engine/mcp/README.md](../engine/mcp/README.md) · CLI/hook 见 [SECURITY.md](../SECURITY.md) · 平台挂载见 [AGENTS.md](../AGENTS.md) · Skill 分发见 [SKILL/SKILL.md](../SKILL/SKILL.md) · Webhook 见 [SECURITY.md §审计结果推送](../SECURITY.md)。
+各面详细配置见对应文档：MCP 见 [engine/mcp/README.md](../engine/mcp/README.md) · CLI/hook 见 [SECURITY.md](../SECURITY.md) · 平台挂载见 [AGENTS.md](../AGENTS.md) · Skill 分发见 [SKILL/SKILL.md](../SKILL/SKILL.md) · Webhook 见 [SECURITY.md §审计结果推送](../SECURITY.md)。标准数据推送接口（第七面）随 v1.4.6 交付，详见 [v1.4.6 开发日志](./changelog/v1.4/v1.4.6.md)。
 
 ---
 
@@ -173,3 +174,4 @@
 |------|------|
 | 2026-09-03 | 建档——80 tools 首次成清单，六大接口面总表 |
 | 2026-09-05 | v1.4.5 三件收编（train_serve/train_compliance/train_deliverable）80→83 |
+| 2026-09-07 | 接口面六→七：新增「标准数据推送接口」第七面（v1.4.6 规划中，交付时转正） |
