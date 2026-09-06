@@ -475,6 +475,10 @@ env -u http_proxy -u https_proxy -u HTTP_PROXY -u HTTPS_PROXY -u ALL_PROXY -u al
 
 > curl 探测代理端口存活：`curl -s -o /dev/null -w "%{http_code}" -x http://127.0.0.1:<端口> https://github.com`——200 = 端口可用（但 git 仍可能因 HTTP/2 失败，直接上 HTTP/1.1）。
 
+### 🔴 多 session 并发期禁用 git add -A
+
+发布流水线跨多 session（本 session 收尾 + 其他 session 在途）时，`git add -A` 会把**其他 session 的在途改动**一并吞进本任务 commit（曾一次吞 19 文件含他人 package.json 与 2041 行 lock 删除——审计 A3/A11 警告才暴露，若已 push 将污染远端）。**收编一律逐文件 add**（任务清单内的文件显式列出）；审计 A3「不改越界」警告是最后的拦截线——**警告出现即说明混入了清单外文件，必须 reset 拆分重提，禁止带病 push**。
+
 ### 🔴 重试循环与退出码测量（单次命令不够——网络失败是间歇性的）
 
 单次降级 push 成功≠网络稳定——失败形态会轮换（SSL timeout / Connection reset / Empty reply / lowSpeed 超时），**必须重试循环**（每轮重新评测，成功即退）：
