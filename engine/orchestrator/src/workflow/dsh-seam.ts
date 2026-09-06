@@ -2,7 +2,7 @@
 // workflow/dsh-seam.ts · DSH workflow seam 互转契约位（v1.3.7 交付 ①）
 // ============================================================
 //
-// 设计目标（v1.4.4.md 一、DSH workflow seam 互转预留）：
+// 设计目标（v1.4.5.md 一、DSH workflow seam 互转预留）：
 //   sofagent workflow 容器可作为 DSH ctx.workflowEngine 的提供方插件——
 //   「交 YAML，得一张受约束可审计的业务图」。DSH 无声明式 workflow 编译器
 //   （其 workflowEngine 是模型临场写 JS 脚本风格），sofagent 的声明式

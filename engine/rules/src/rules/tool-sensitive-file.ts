@@ -1,6 +1,6 @@
 // ============================================================
 // tool-sensitive-file.ts · 移植 audit rule-a1（敏感文件保护）
-// v1.4.4：tool 视角——校验 args 里的文件路径
+// v1.4.5：tool 视角——校验 args 里的文件路径
 // ============================================================
 
 import type { ToolRule, ToolCallContext, InterceptVerdict } from '../types';

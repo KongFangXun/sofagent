@@ -4,7 +4,7 @@
 //
 // fde_compose({ action, ... })
 //   action=workflow → 从五要素生成 workflow.yml 草稿
-//   action=ontology → ❌ 已收窄（v1.4.4）——与 v1.4.4 六引擎 fde_derive
+//   action=ontology → ❌ 已收窄（v1.4.5）——与 v1.4.5 六引擎 fde_derive
 //   完全重叠（五要素→ontology 草稿同能力且产物落 data/fde/），返回迁移
 //   提示文案（旧交付退役，能力归 fde_derive 主入口）
 // ============================================================

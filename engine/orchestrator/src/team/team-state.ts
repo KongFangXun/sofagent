@@ -3,7 +3,7 @@
 //
 // 团队共享态的 CRDT 文档结构 + 跨设备同步通道接口。
 // v1.3.7 交付 4b：automerge 1.0.1-preview.7 → @automerge/automerge 3.4.1
-// （旧包名废弃，新包 Rust WASM 稳定核心；API 迁移对照见 v1.4.4 dev-prompt）
+// （旧包名废弃，新包 Rust WASM 稳定核心；API 迁移对照见 v1.4.5 dev-prompt）
 //
 // ⚠️ 依赖方向铁律：
 //   orchestrator 定义 TeamSyncChannel 接口（纯类型），提供 LocalTeamSyncChannel

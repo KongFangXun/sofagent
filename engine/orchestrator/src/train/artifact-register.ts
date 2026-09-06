@@ -1,4 +1,4 @@
-// artifact-register.ts · v1.4.4 章三 · 训练产物 → 模型注册自动衔接
+// artifact-register.ts · v1.4.5 章三 · 训练产物 → 模型注册自动衔接
 //
 // 定位：训练闭环的最后一步——train job 完成 + eval 通过之后，权重产物
 // 不会自动进 model_register，差一个自动衔接动作。本模块补上这一环：

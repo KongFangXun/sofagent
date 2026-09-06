@@ -1,5 +1,5 @@
 // ============================================================
-// corpus.ts · v1.4.4 第一章 · CLI 子命令 `sofagent-audit corpus export`
+// corpus.ts · v1.4.5 第一章 · CLI 子命令 `sofagent-audit corpus export`
 //
 // 双入口的 CLI 面（MCP 面 = corpus_export tool）。调用 audit 包导出三件：
 //   1. 规则语料（rule-schema + exporter——JSON/YAML 双格式 + HMAC）

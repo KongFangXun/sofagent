@@ -2,7 +2,7 @@ import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   test: {
-    // D-4 (v1.4.4)：全局测试隔离——SOFAGENT_DATA 预置到 tmp，防测试写真实 HOME
+    // D-4 (v1.4.5)：全局测试隔离——SOFAGENT_DATA 预置到 tmp，防测试写真实 HOME
     setupFiles: ['../../tools/check/vitest-setup.mjs'],
     globals: true,
     // hookTimeout/testTimeout 30s：多个测试文件的 beforeEach 与测试体走

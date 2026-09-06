@@ -10,14 +10,14 @@
   <a href="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml"><img src="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml/badge.svg" alt="Verify" /></a>
   <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-brightgreen" alt="License: MIT" /></a>
   <!-- ⚠️ bump version: manually sync this badge version (Version-vX.Y.Z) -->
-  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.4.4-16B8F3" alt="Version" /></a>
+  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.4.5-16B8F3" alt="Version" /></a>
 </p>
 
 <p align="center"><sub>[简体中文](./README.md) | [English](./README.en.md)</sub></p>
 
 > 🚀 **v1.4.4** — Training engine: signal & deployment loop (corpus export trio / local weight deployment / artifact→registry bridge / multi-base compare / decision causal chain / CI supply-chain hardening / legacy upgrades / spec-first mandate / review batch / five-capability narrative). ✅ Released (2026-09-03). See [CHANGELOG](./CHANGELOG.md).
 
-> 🛡️ **v1.4.5 pending release** — reliability & honesty fix batch + post-training services & continuity (train serve / continuous training / compliance gate / deliverable / quickstart / FDE session memory; 4045 tests). ⏳ Pending release (tag/npm sync at release time). See [CHANGELOG](./CHANGELOG.md).
+> 🛡️ **v1.4.5 pending release** — reliability & honesty fix batch + post-training services & continuity (train serve / continuous training / compliance gate / deliverable / quickstart / FDE session memory; 4055 tests). ⏳ Pending release (tag/npm sync at release time). See [CHANGELOG](./CHANGELOG.md).
 
 ---
 
@@ -81,9 +81,9 @@ sofagent does not build its own Agent — execution is delegated to mature hosts
 
 > 🔄 **Self-bootstrapping**: sofagent's first FDE engagement is sofagent itself — the project is a complete FDE business flow (map → build → deploy → depart), and this open-source repository is that deliverable.
 
-## v1.4.4: Training Signals & Deployment Closure
+## v1.4.5: Post-training Closure & Reliability Hardening
 
-🚀 Make training **signals flow out and deployments land** — `corpus_export` training-corpus triplet (rules / FDE methodology / labeled samples, all 27 rule slots + reward skeleton + sanitized aggregation) · `model_register source: 'local-path'` enterprise-model local weight deployment (manifest + sha256 tamper rejection + `rollback-weights` version rollback) · train-artifact → registry auto-pipeline (train done + eval pass → model_register, double-layer idempotent) · `train compare` multi-base comparison (ROI ranking, no gut-feel model selection) · decision causal chains (`causedBy` edges + precedent retrieval) · CI supply chain fully SHA-pinned + dashboard fully offline · five-capability narrative finalized (Inject · Audit · Rollback · Distill · Evolve). MCP 79→**80** tools, tests 3619→**3753** (workspace 12-package scope; current count 3853 — see devlog). Full details in the [devlog](./docs/changelog/v1.4/v1.4.4.md) · earlier versions in [CHANGELOG](./CHANGELOG.md).
+🛡️ Make training artifacts **runnable, self-sustaining, and compliant** — `train_serve` inference service (spins up vLLM / Ollama / OpenAI-compatible endpoints + model_switch integration) · continuous post-training (threshold / @weekly / manual triggers + eval rollback guard — the "continuity" of the flywheel) · `train_compliance` compliance scan (three-source PII detection + training gate + provenance marking) · `train_deliverable` delivery package (five-piece set + manifest + HMAC tamper rejection) · artifact retention policy (retention-policy + @weekly archiving + 90-day overwrite) · ten-step post-training Quickstart · evolution module empirical closure (Dream Cycle real-LLM Maintainer + skill-impact ledger + L4 tool self-evolution) · FDE session memory directory (10-file auto-init + cross-session restore) · 🔒 reliability hardening (webhook SSRF fail-closed / audit-chain tail truncation guard / audit timeout degradation / L1-L3 cron wiring). (Point-in-time figures: MCP 80→83 tools, tests 3753→4055 — see devlog; current scope under [Core Features](#core-features).) Full details in the [devlog](./docs/changelog/v1.4/v1.4.5.md) · earlier versions in [CHANGELOG](./CHANGELOG.md).
 
 ## Multi-platform Mounting
 

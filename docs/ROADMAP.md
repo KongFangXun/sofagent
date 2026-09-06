@@ -1,13 +1,13 @@
 # 路线图 · Roadmap
 
 > 已经做了什么、未来要去哪、哪些地方需要你的帮助。
-> v1.4.4 · 2026-09-03（UTC）· v1.4.5 开发完成未发版（本批更新 2026-09-05）· 🚀 后训模块 · 服务与持续（推理服务/持续后训/合规扫描/交付包/进化实证/进场记忆 · 开发完成未发版）。此前版本详见 [CHANGELOG](../CHANGELOG.md) 与各版开发日志。
+> v1.4.5 · 2026-09-06（UTC）· 开发完成待发版（本批更新 2026-09-06 定稿）· 🚀 后训模块 · 服务与持续（推理服务/持续后训/合规扫描/交付包/进化实证/进场记忆 · release-gate PASS）。此前版本详见 [CHANGELOG](../CHANGELOG.md) 与各版开发日志。
 
 产品定位详见 [设计哲学](./PHILOSOPHY.md) 和 [README](../README.md)。
 
 ## 现在在哪：v1.4.5（开发完成 · 未发版）
 
-> **v1.4.5 开发完成（2026-09-05）**——后训模块 · 服务与持续 八章（训练推理服务 train serve + 持续后训练三触发与回退保护 + 合规扫描闸门 + FDE 交付包 + 保留策略归档 + 后训 Quickstart 十步端到端 + 进化模块实证收口 + FDE 进场记忆目录）+ 可靠性与诚实性修复批 · 测试 3744→4045（12 包 workspace 口径）· acceptance 304 场景（S373/S374 +1，S265/S366 归并对销 −2）· MCP 80→83 tools。详见 [v1.4.5 开发日志](./changelog/v1.4/v1.4.5.md)。上一版 v1.4.4（2026-09-03 发版，后训模块 · 信号与部署闭环 十章）详见 [v1.4.4 开发日志](./changelog/v1.4/v1.4.4.md)。
+> **v1.4.5 开发完成（2026-09-05）**——后训模块 · 服务与持续 八章（训练推理服务 train serve + 持续后训练三触发与回退保护 + 合规扫描闸门 + FDE 交付包 + 保留策略归档 + 后训 Quickstart 十步端到端 + 进化模块实证收口 + FDE 进场记忆目录）+ 可靠性与诚实性修复批 · 测试 3753→4055（12 包 workspace 口径）· acceptance 305 场景（S373/S374/S375 净 +1，S265/S366 归并对销 −2）· MCP 80→83 tools · release-gate run-03 verdict=PASS（2026-09-06）。详见 [v1.4.5 开发日志](./changelog/v1.4/v1.4.5.md)。上一版 v1.4.4（2026-09-03 发版，后训模块 · 信号与部署闭环 十章）详见 [v1.4.4 开发日志](./changelog/v1.4/v1.4.4.md)。
 
 ---
 
@@ -17,6 +17,8 @@
 
 | 版本 | 核心交付 |
 |------|------|
+| **v1.4.5** | **🚀 后训模块 · 服务与持续（开发完成 · 待发版）**：训练推理服务 train_serve + 持续后训练三触发与回退保护 + 合规扫描闸门 train_compliance + FDE 交付包 train_deliverable + 保留策略归档 + 后训 Quickstart 十步 + 进化实证收口（真脑/台账/采样/L4 自进化）+ FDE 进场记忆目录 + 可靠性加固批（webhook SSRF/审计链截断/超时降级）· 测试 3753→4055 · acceptance 304→305 · MCP 80→83（详见 [CHANGELOG](../CHANGELOG.md)） |
+| **v1.4.4** | **🚀 后训模块 · 信号与部署闭环**：训练语料导出三件套（corpus_export 79→80 + reward 骨架）+ 企业专属模型本地权重部署（manifest+sha256 篡改拒绝+rollback-weights）+ 训练产物→注册自动衔接 + 多基座对比（train compare ROI 排序）+ 决策因果链与先例检索 + CI 供应链全 SHA 固定 + 五能力叙事定稿 · 测试 3619→3753 · acceptance 294→304 · MCP 79→80（详见 [CHANGELOG](../CHANGELOG.md)） |
 | **v1.4.3** | **🚀 后训模块 · 运行与需求 + 审计聚合指标**：训练监控 + GPU 队列（train_status/train_list）· 失败诊断 train_diagnose 七类 · 训练沙箱 + 设备打包 · 需求推导 + RL 配方模板 · 后训练 workflow 模板 · 审计聚合指标 --stats · 训练反作弊基线 · 存量清扫五件（含 checkHistoryChainIntegrity 退役公告）· doctor 补 Ontology 完整性 · 测试 3349→3619 · acceptance 276→294 · MCP 76→79 |
 | **v1.4.2** | **🚀 后训模块 · 数据与评估 + FDE Harness 层**：数据管道（多源接入 + 质量闸门 + 脱敏）· dataset_version 版本台账 · eval 闭环 · 环境管理 + train_doctor · dry-run 与算力外推 · 训练报告 · FDE 六件（fde_interview/classify/quantify/derive/distill/deploy）· IM 桥 dsh-im · 测试 3202→3349 · acceptance 271→276 · MCP 67→76 |
 | **v1.4.1** | 🚂 后训模块 · 地基 八大块（train-job 编排 + train_job 审计 HMAC 链 + enterpriseId 隔离 + 可复现指纹 + 权重 HMAC 签名 + 中断回收 + 崩溃恢复 + 安全基线）+ train_submit + 阶段 0 Metal reward 收敛验证 + 双栈契约/训练安全基线文档 + SKILL 体系重构 · 测试 2981→3222（+241）· MCP 66→67 |
@@ -67,8 +69,6 @@ sofagent 的定位正卡在这个转折点上：审计模块（治理侧）+ Ont
 
 | 版本 | 状态 | 核心交付 | 日志 |
 |------|:--:|------|:--:|
-| **v1.4.4** | ✅ 已发版 | **🚀 后训模块 · 信号与部署闭环**：训练语料导出三件套 + 本地权重部署链路 + 训练产物→注册衔接 + 多基座对比训练 + 决策因果链与先例检索 + CI 供应链加固 + 存量升级审查 + spec-first 硬禁令 + 五能力叙事升级（十章详见开发日志） | [日志](./changelog/v1.4/v1.4.4.md) |
-| **v1.4.5** | 🔶 开发完成 · 未发版 | **🚀 后训模块 · 服务与持续 · 生命周期补全**：训练推理服务（train serve）· 持续后训练（数据回流 + 触发与回退保护；权重级持续学习属商业层）· 训练数据合规扫描（PII + 合规闸门）· FDE 训练交付包 · 训练产物归档与保留策略 · 后训 Quickstart · 进化模块实证收口（自原 v1.5.1 整版前移）· FDE 进场记忆目录工程化（自原 v1.5.3[现 v1.5.2] 第四章前移）· MCP 80→83 tools（train_serve/train_compliance/train_deliverable）· 可靠性与诚实性修复批 | [日志](./changelog/v1.4/v1.4.5.md) |
 | **v1.4.6** | 📋 规划中 | **🚀 后训模块 · 分布式与云端（规模化前置）**：多卡/分布式训练（train multi：verl/DeepSpeed 集群 + GPU 队列多卡拓扑感知 + 分布式失败诊断）· 云端 VM 执行面（train cloud：控制面本地 + 执行面云上 + 云端成本入预算）· **训练数据分拣闸门（上云前置：敏感档拦截留本地走知识库 RAG，脱敏档/公开档才可上云，分拣依据入 train_job 审计链；与 v1.4.5 合规扫描闸分层不合并）+ 保密证书编号挂链 + 标准数据推送接口（深度定制连接器不做，统一走标准接口）**——「全托管」交付模式技术底座；⚠️ 敏感数据不上公有云，走客户机房联合训练 | [日志](./changelog/v1.4/v1.4.6.md) |
 | **v1.4.7** | 📋 规划中 | **🔌 商业平台接口版**：G2 能力缺口查询 · G4 绩效数据导出（orgId 过滤防跨租户）· G6 节点可见性元数据 · G7 多租户数据路径 v0 · workflow 烧进 USB · 审计留痕双层 · 静态加密全量接线 · **G8 首部署 cron job 包（本版最高优先级）** · G13 PR 生命周期接口（含拒绝留痕进 decision-log）· **G1 workflow 模板导出/导入（🔶 候选占位 · 待用户拍板，非定案）** · audit 专职面文档化 + tool 描述四原则化（机制 v1.4.4 已交付，本版补对外门面）；商业侧规划独立于本仓库维护 | [日志](./changelog/v1.4/v1.4.7.md) |
 | **v1.4.8** | 📋 规划中 | **🔌 插件管控与工程效能**：插件来源白名单（Git URL/主机/本地路径 + 托管 hook 独裁）· 应用级工具策略（app×tool 白名单矩阵，fail-closed）· 多 Agent 协作阵型库（六阵型）· 自动上下文压缩（加载链超 3% 预算触发）· shell 提权分级（dangerous 走 HITL）· 成本 quota 事前门禁 · 依赖方向架构测试（13 包边界 + CI 强制）· workflow 节点级模型偏好绑定 · 技能按模型分级门控 · 自研进化 gate 验证器 + skillopt 重构更名 @sofagent/evolve（进化四角色合拢完整自进化循环）· 跨 harness 协作阵型注册表（ACP Registry） | [日志](./changelog/v1.4/v1.4.8.md) |
@@ -81,7 +81,7 @@ sofagent 的定位正卡在这个转折点上：审计模块（治理侧）+ Ont
 
 ### 场景数 SSOT 口径
 
-> **SSOT 口径**：`FORGE/playbook/acceptance-test.sh` 头部「场景数」声明 = 真实 `scenario` 调用行数（非编号最大值、非运行时执行数）。当前值 304（最大场景号 S374，S1-S344 间有历史空洞号；S373/S374 为 v1.4.5 反哺闭环与 L4 自进化链路级场景，S265 归并入 S264 对销）。
+> **SSOT 口径**：`FORGE/playbook/acceptance-test.sh` 头部「场景数」声明 = 真实 `scenario` 调用行数（非编号最大值、非运行时执行数）。当前值 305（最大场景号 S375，S1-S344 间有历史空洞号；S373/S374/S375 为 v1.4.5 反哺闭环、L4 自进化链路级与 train 五新面行为锁场景——S375 两批扩展覆盖模块八/六，S265 归并入 S264 对销）。
 >
 > 后续版本引用场景数一律以 `acceptance-test.sh` 头部声明为准，禁止从其他文档转述。
 
@@ -114,7 +114,7 @@ sofagent 的定位正卡在这个转折点上：审计模块（治理侧）+ Ont
 | **RL 训练治理（Microsoft AGT Agent Lightning 启发）** | 训练期间策略违规惩罚（policy-enforced runners + reward shaping）——v1.4.4 规则→reward 映射已铺路，待 v1.4.6 分布式执行面交付后评估排期（候选 v1.5.x 后段） |
 | **docs 文体归位（三棵树声明式迁移 · Omarchy 启发）** | 文档按受众×文体分三棵树：任务流程（SKILL/、releasing/）/ 参考（ARCHITECTURE、LIMITATIONS 等）/ 用户手册（README、HANDBOOK）——Omarchy 三棵树启发。**不做目录大迁移**（锚点/预算/历史路径破坏大于收益），走声明式：WIKI 分工表已加文体列，新内容按声明落位，旧文档大改时自然毕业。印证见 [VALIDATION · Omarchy](./VALIDATION.md#omarchyskillmd-形态收敛与单一权威源纪律) |
 | **数据 schema 迁移管道（Omarchy migrations/ 启发）** | `~/.sofagent/data/` 数据格式演进的机制兜底：按版本号顺序执行迁移脚本 + 幂等可重跑（`sofagent doctor --migrate` 或升级时自动执行）。**不提前建管道**（无提前抽象纪律）——v1.5.0 trace 新数据源已埋 `schemaVersion` 前置件，首个破坏性 schema 变更真实出现时再触发评估 |
-| **审计范围语义一等公民化（AuditScope 重构）** | 所有规则输入面显式声明取 HEAD 还是 range——引入 `AuditScope{ diffRange, commitMsg, task, actor }` 显式对象，规则从 scope 取输入、不再自己调 git，消灭「规则自己调 git 取错范围」整类 bug（v1.4.4 审查 D-1 quick A9 同类，最小修复已随 12ec0171 落地，根治走重构专项——候选 v1.4.5+，随该版重构窗口评估） |
+| **审计范围语义一等公民化（AuditScope 重构）** | 所有规则输入面显式声明取 HEAD 还是 range——引入 `AuditScope{ diffRange, commitMsg, task, actor }` 显式对象，规则从 scope 取输入、不再自己调 git，消灭「规则自己调 git 取错范围」整类 bug（v1.4.4 审查 D-1 quick A9 同类，最小修复已随 12ec0171 落地，根治走重构专项——v1.4.5 重构窗口已过未排期，候选 v1.5.x 后段） |
 | **大文档三档拆分（概念/决策/清单）** | ARCHITECTURE/PHILOSOPHY 类大文档按「概念/决策/清单」三档拆分重组，控制单文档认知负载——归文档优化专项（无版本单元格，触发时机=下一次大规模文档新增时） |
 | **CLI 单入口收敛（叙事收敛批）** | 11 个 `sofagent-*` 二进制命令对用户是 11 个记忆点——长期收口为 `sofagent <域> <动作>` 单入口（`sofagent audit` / `sofagent train` / `sofagent ontology` …），旧命令保留兼容期。动 bin 面与全部文档，候选 v1.5.x 某版评估（与 v1.4.8 依赖方向架构测试同期看） |
 | **透明仓（wild idea · 视角 21）** | evidence/ 实时公开治理原始记录（含误报）——审查 run 的 P0/P1 判定、误报与翻案全过程原样公开，「审查自己也在被审计」。比发版后 cherry-pick 的结论文档更狠的诚实面；误报率够低（当前 <5%）才敢开，先攒 [anti-cases](./evidence/anti-cases/README.md) 与 fresh-eyes 校准档案，无版本单元格、不排期，触发条件=第三方首次独立审查 |

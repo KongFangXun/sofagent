@@ -1,7 +1,7 @@
 ---
 name: cordis-plugin-sofagent-ontology
 slug: cordis-plugin-sofagent-ontology
-version: 1.4.4
+version: 1.4.5
 displayName: cordis-plugin-sofagent-ontology
 description: >
   共享语义底座 + 知识检索（seam: ontology_* tools + search_knowledge）——桥接 @sofagent/ontology generateOntologyView（sofagent 品牌插件 · 主色 #16B8F3）——DSH（DeepSeek Harness）cordis plugin。sofagent 约束层在 DeepSeek Harness 生态的插件形态。

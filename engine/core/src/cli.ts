@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// core CLI · v1.4.4
+// core CLI · v1.4.5
 
 // flag 别名路由（run-08 P0-1）：--doctor 是用户高频习惯写法（audit CLI 同名 flag
 // 已路由到 runDoctor）——core 此前只认裸词子命令，手滑写 --doctor 会得到

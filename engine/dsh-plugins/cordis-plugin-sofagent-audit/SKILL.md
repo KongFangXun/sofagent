@@ -1,7 +1,7 @@
 ---
 name: cordis-plugin-sofagent-audit
 slug: cordis-plugin-sofagent-audit
-version: 1.4.4
+version: 1.4.5
 displayName: cordis-plugin-sofagent-audit
 description: >
   变更机器审阅——24 规则 + git diff 硬证据 + 节点级审计（seam: tools/result + tools/pre-execute + fs/write-intent）——桥接 @sofagent/audit runRules（sofagent 品牌插件 · 主色 #16B8F3）——DSH（DeepSeek Harness）cordis plugin。sofagent 约束层在 DeepSeek Harness 生态的插件形态。

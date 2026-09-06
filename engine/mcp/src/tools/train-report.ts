@@ -1,12 +1,12 @@
 // ============================================================
-// train-report.ts · MCP tool：train_report（v1.4.4 章六）
+// train-report.ts · MCP tool：train_report（v1.4.5 章六）
 // ============================================================
 //
 // 训练报告生成——客户可读交付物的 MCP 面：数据概况 + 训练配置 +
 // eval 对比 + 产物清单 + 量化四字段（GUIDE §4.3），归档
 // data/dashboard/train-reports/。
 // 委托 @sofagent/orchestrator 的 train-report.generateTrainReport
-// （复用章三 TrainEvalReport / 章二 dataset_version / v1.4.4 train job）。
+// （复用章三 TrainEvalReport / 章二 dataset_version / v1.4.5 train job）。
 // ============================================================
 
 import { getDataDir } from '@sofagent/core';

@@ -1,4 +1,4 @@
-// scale-curve.ts · v1.4.4 章五 · 缩放律拟合（零依赖 sigmoid 拟合 + 外推 + 置信区间）
+// scale-curve.ts · v1.4.5 章五 · 缩放律拟合（零依赖 sigmoid 拟合 + 外推 + 置信区间）
 //
 // 定位：算力-性能遵循 sigmoid 缩放律（ScaleRL，arxiv 2510.13786——
 // 论文公开可复现）。用几个小规模 pilot run 的（算力, 性能）数据点拟合

@@ -1,4 +1,4 @@
-# 节点级审计可行性结论 · v1.4.4 规则子集
+# 节点级审计可行性结论 · v1.4.5 规则子集
 
 > v1.3.6 交付⑤ 产出 · 2026-08-17
 > 依据：DSH Cordis 事件流（turn / step / tool 全链）+ Trajectory 采集 PoC 已跑通（`execution-backends/trajectory.ts`），

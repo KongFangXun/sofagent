@@ -1,6 +1,6 @@
 {
   "name": "sofagent-inject",
-  "version": "1.4.4",
+  "version": "1.4.5",
   "private": true,
   "description": "sofagent 约束注入 OpenClaw 插件——before_prompt_build 注入四层加载链（品牌色 #16B8F3）",
   "main": "dist/index.js",

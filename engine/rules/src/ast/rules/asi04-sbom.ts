@@ -1,6 +1,6 @@
 // ============================================================
 // asi04-sbom.ts · OWASP ASI04 供应链 SBOM 检测
-// v1.4.4（一）：扫描依赖清单（package.json / go.mod）→ 生成 SBOM →
+// v1.4.5（一）：扫描依赖清单（package.json / go.mod）→ 生成 SBOM →
 // 查离线样例漏洞库（fixtures/vuln-db.json，不依赖 CI 联网）
 //
 // Microsoft AGT 启发：受损插件/子 agent 经由依赖清单注入恶意行为——

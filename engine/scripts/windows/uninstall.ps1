@@ -20,7 +20,7 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-$VERSION = "1.4.4"
+$VERSION = "1.4.5"
 
 function Write-Info { param($msg) Write-Host "[sofagent] $msg" -ForegroundColor Cyan }
 function Write-Ok   { param($msg) Write-Host "[OK] $msg" -ForegroundColor Green }

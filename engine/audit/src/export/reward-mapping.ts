@@ -1,5 +1,5 @@
 // ============================================================
-// reward-mapping.ts · v1.4.4 第一章 · reward 骨架 + verifiers 清单
+// reward-mapping.ts · v1.4.5 第一章 · reward 骨架 + verifiers 清单
 //
 // 规则 → reward 映射的最后一公里（2026-08-26 补）：
 // 三件套导出了「什么行为被判 FAIL/PASS」（样本），RL 训练还需要

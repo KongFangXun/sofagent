@@ -3,7 +3,7 @@
 // ============================================================
 // 每个插件干一件事、可独立安装渐进采用——只引对应 @public API 子集。
 // seam 挂载：任务结束 hook
-// 版本同步：sofagent v1.4.4 → 各 plugin v0.1.0（DSH Cordis 协议 breaking change 时 bump major）
+// 版本同步：sofagent v1.4.5 → 各 plugin v0.1.0（DSH Cordis 协议 breaking change 时 bump major）
 
 /** 插件元数据（DSH profile/注册表消费） */
 export const pluginMeta = {

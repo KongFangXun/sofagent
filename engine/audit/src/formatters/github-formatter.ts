@@ -1,6 +1,6 @@
 // ============================================================
 // github-formatter.ts · GitHub Annotations 格式化器
-// v1.4.4 (⑧-3)：将审计结果转为 GitHub Actions Annotation 格式
+// v1.4.5 (⑧-3)：将审计结果转为 GitHub Actions Annotation 格式
 //
 // GitHub Annotations 规范：
 //   ::error file={file},line={line}::{message}

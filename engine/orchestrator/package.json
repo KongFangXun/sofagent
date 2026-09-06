@@ -1,6 +1,6 @@
 {
   "name": "@sofagent/orchestrator",
-  "version": "1.4.4",
+  "version": "1.4.5",
   "engines": {
     "node": ">=18"
   },
@@ -38,17 +38,17 @@
     "@langchain/core": "^1.2.9",
     "@langchain/langgraph": "^1.4.12",
     "@langchain/openai": "^1.5.11",
-    "@sofagent/audit": "1.4.4",
-    "@sofagent/core": "1.4.4",
-    "@sofagent/harness": "1.4.4",
-    "@sofagent/rules": "1.4.4",
-    "@sofagent/skillopt": "1.4.4",
+    "@sofagent/audit": "1.4.5",
+    "@sofagent/core": "1.4.5",
+    "@sofagent/harness": "1.4.5",
+    "@sofagent/rules": "1.4.5",
+    "@sofagent/skillopt": "1.4.5",
     "js-yaml": "^5.3.0",
     "zod": "^4.4.3"
   },
   "//optionalDependencies": "v1.4.5 T6 (R4)：benchmark/case-evaluator.ts:188 惰性 await import('@sofagent/eval')（裁剪安装时回退协议完成度），此前未声明——对齐 root package.json F-18 optionalDependencies 先例（惰性加载的跨 workspace 依赖声明为 optional，裁剪安装不断言）。",
   "optionalDependencies": {
-    "@sofagent/eval": "1.4.4"
+    "@sofagent/eval": "1.4.5"
   },
   "exports": {
     ".": {

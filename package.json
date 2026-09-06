@@ -1,6 +1,6 @@
 {
   "name": "sofagent-monorepo",
-  "version": "1.4.4",
+  "version": "1.4.5",
   "private": true,
   "license": "MIT",
   "engines": {
@@ -46,7 +46,7 @@
   },
   "//dependencies": "B-3 (v1.4.4) 归属说明：@sofagent/rules 是 root 级声明，实测（临时移除跑 npm install --package-lock-only 对比 lock 面）workspace 态下 node_modules/@sofagent/rules 的 link 条目由 engine/audit、engine/orchestrator、engine/mcp 三个 workspace 消费者维持，root 声明本身零增量语义——但保留声明可让根目录脚本直接 require('@sofagent/rules') 开箱可解析，且对齐 workspace 内部依赖版本对齐原则。勿删（先例：optionalDependencies 同款注释保留）。",
   "dependencies": {
-    "@sofagent/rules": "1.4.4"
+    "@sofagent/rules": "1.4.5"
   },
   "devDependencies": {
     "undici": "^8.10.0"

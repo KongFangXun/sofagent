@@ -1,4 +1,4 @@
-// execution-backend.ts · v1.4.4 增量 · 编排层与执行层分离
+// execution-backend.ts · v1.4.5 增量 · 编排层与执行层分离
 //
 // 设计来源：DeepSeek Harness（DSH）「一切皆插件」Cordis 运行时 +
 //           sofagent「确定性审计依赖显式图结构」铁律的融合。

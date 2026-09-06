@@ -1,7 +1,7 @@
 // ============================================================
 // daemon/cron.ts — 定时任务调度
-// v1.4.4: 支持 @weekly / @daily / @hourly 触发 Sub Agent 巡检
-// v1.4.4：迁移至 @sofagent/daemon
+// v1.4.5: 支持 @weekly / @daily / @hourly 触发 Sub Agent 巡检
+// v1.4.5：迁移至 @sofagent/daemon
 // v1.4.5 T1（P0 方案 A接线）：inspectors: 段 → L1/L2/L3 分层巡检调度
 //   —— runAllLayers 此前「诞生即死」（存在但零生产调用），按 LAYER_SCHEDULE
 //      默认 @daily/@weekly/@monthly 接线；enabled:false 可显式关闭。

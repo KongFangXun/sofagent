@@ -2,7 +2,7 @@
   "id": "sofagent-audit",
   "name": "sofagent 审计",
   "description": "变更机器审阅——24 规则 + git diff 硬证据 + 危险工具拦截（before_tool_execute），品牌色 #16B8F3",
-  "version": "1.4.4",
+  "version": "1.4.5",
   "icon": "https://raw.githubusercontent.com/KongFangXun/sofagent/main/assets/logo.png",
   "uiHints": {
     "brandColor": {

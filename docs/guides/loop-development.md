@@ -2,7 +2,7 @@
 
 > **想给 FORGE 加新 loop？这份文档告诉你怎么搭。** 从 driver 脚本结构到三个必踩的坑，每条都来自真实 debug 会话。
 >
-> v1.4.4 · 2026-09-03（UTC）· v1.4.5 开发完成未发版（本批更新 2026-09-05）
+> v1.4.5 · 2026-09-06（UTC）· v1.4.5 开发完成未发版（本批更新 2026-09-05）
 
 <img src="../docs/assets/sofagent.png" alt="sofagent" width="160" />
 
@@ -380,7 +380,7 @@ FORGE/SKILL/fresh-eyes-loop/
 
 ---
 
-# FORGE 内部架构（自 ARCHITECTURE §二 迁入 · v1.4.4）
+# FORGE 内部架构（自 ARCHITECTURE §二 迁入 · v1.4.5）
 
 > 本篇原是 [ARCHITECTURE §二](../../docs/ARCHITECTURE.md) 的「⚙️ FORGE 自迭代工具链」小节——FORGE 是内部工具链，细节归本指南（Loop 开发者读），ARCHITECTURE 保留五种能力的架构概要。锚点 `#四节点状态机v113` 随内容迁至本文件，外部引用已同步更新。
 

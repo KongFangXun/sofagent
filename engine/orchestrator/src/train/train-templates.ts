@@ -1,4 +1,4 @@
-// train-templates.ts · v1.4.4 第四章 · 场景模板库（文本提取/分类/生成/多轮对话 × QLoRA/SFT/DPO + MoE 防护）
+// train-templates.ts · v1.4.5 第四章 · 场景模板库（文本提取/分类/生成/多轮对话 × QLoRA/SFT/DPO + MoE 防护）
 //
 // 定位：训练需求推导（train-analyze）的「选型面」——从 workflow 节点推导出
 // 训练目标后，按场景 × 算法选模板实例化。模板是「参数骨架 + 评估口径 +

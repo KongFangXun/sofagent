@@ -1,4 +1,4 @@
-// dashboard-sink.ts · v1.4.4 第一章 · 训练状态落盘（train-status.json + train-health.json）
+// dashboard-sink.ts · v1.4.5 第一章 · 训练状态落盘（train-status.json + train-health.json）
 //
 // 定位：训练状态查询侧的数据出口——落盘 data/dashboard/train-status.json
 // （供 Dashboard「训练任务」区块读取，对齐 worklog.json 落盘模式）+

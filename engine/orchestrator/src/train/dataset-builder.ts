@@ -1,13 +1,13 @@
-// dataset-builder.ts · v1.4.4 章一+章二 · 中间格式 → 训练集构建（+ dataset_version 落盘）
+// dataset-builder.ts · v1.4.5 章一+章二 · 中间格式 → 训练集构建（+ dataset_version 落盘）
 //
 // 定位：数据管道的出口——IngestRecord 中间格式按算法选型构建训练集：
 //   - sft：instruction 集（instruction + input + output 三元组）
 //   - dpo ：偏好对集（prompt + chosen + rejected 三元组）
 //   - grpo：RL 提示集（prompt + 可选参考答案）
-// 产出物：JSONL 训练集文件（衔接 v1.4.4 语料导出格式）+ dataset_version
+// 产出物：JSONL 训练集文件（衔接 v1.4.5 语料导出格式）+ dataset_version
 // 版本记录（章二——每次产出记 hash + 样本数 + 配置，eval 引用可复现）。
 //
-// 训练入口脱敏（⚠️ 前向依赖注记，devlog §一）：v1.4.4 通用脱敏管线
+// 训练入口脱敏（⚠️ 前向依赖注记，devlog §一）：v1.4.5 通用脱敏管线
 // （redactor）尚未交付——本版先落地最小可用版：复用 core 审计脱敏能力
 // （REDACTION_PATTERNS——与 train-audit.sanitizeDeep 同规则同源），
 // 对全部文本字段先脱敏再入训练集。v1.4.4 通用管线落地后升级对齐

@@ -100,7 +100,7 @@ export interface DeliverableManifest {
 }
 
 /** 生成器版本（发版随 package.json 对齐——此处常量声明，避免循环 import） */
-export const TRAIN_DELIVERABLE_GENERATOR_VERSION = 'v1.4.4';
+export const TRAIN_DELIVERABLE_GENERATOR_VERSION = 'v1.4.5';
 
 // ════════════════════════════════════════
 // 错误类型

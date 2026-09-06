@@ -8,14 +8,14 @@
   <a href="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml"><img src="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml/badge.svg" alt="Verify" /></a>
   <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-brightgreen" alt="License: MIT" /></a>
   <!-- ⚠️ bump 版本时手动同步此 badges 版本号（Version-vX.Y.Z） -->
-  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.4.4-16B8F3" alt="Version" /></a>
+  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.4.5-16B8F3" alt="Version" /></a>
 </p>
 
 <p align="center"><sub>[简体中文](./README.md) | [English](./README.en.md)</sub></p>
 
 > 🚀 **v1.4.4**——后训模块 · 信号与部署闭环（语料导出三件套 / 本地权重部署 / 产物→注册衔接 / 多基座对比 / 决策因果链 / CI 供应链加固 / 存量升级 / spec-first 硬禁令 / 审查收编批 / 五能力叙事）。✅ 已发版（2026-09-03）。见 [CHANGELOG](./CHANGELOG.md)。
 
-> 🛡️ **v1.4.5 开发完成待发版**——可靠性与诚实性修复批 + 后训模块 · 服务与持续（train serve 推理服务 / 持续后训 / 合规闸门 / 交付包 / Quickstart / FDE 进场记忆目录；测试 4045）。⏳ 待发版（tag/npm 发版时同步）。见 [CHANGELOG](./CHANGELOG.md)。
+> 🛡️ **v1.4.5 开发完成待发版**——可靠性与诚实性修复批 + 后训模块 · 服务与持续（train serve 推理服务 / 持续后训 / 合规闸门 / 交付包 / Quickstart / FDE 进场记忆目录；测试 4055）。⏳ 待发版（tag/npm 发版时同步）。见 [CHANGELOG](./CHANGELOG.md)。
 
 ---
 
@@ -79,9 +79,9 @@ sofagent 不造 Agent——执行能力交给成熟宿主（模型 + 工具 + �
 
 > 🔄 **自举**：sofagent 给自己做的第一份 FDE，就是 sofagent 自己——项目本身就是一条完整的 FDE 业务流（梳理 → 构建 → 部署 → 离场），这个开源仓库就是那份交付物。
 
-## v1.4.4：训练信号与部署闭环
+## v1.4.5：后训模块闭环与可靠性加固
 
-🚀 让训练**信号出得来、部署落得下**——`corpus_export` 训练语料导出三件套（规则/FDE 方法论/带标签样本，27 编号位零遗漏 + reward 骨架 + 脱敏聚合）· `model_register source: 'local-path'` 企业专属模型本地权重部署（manifest 清单 + sha256 篡改拒绝 + `rollback-weights` 版本回滚）· 训练产物→注册自动衔接（train done + eval pass → model_register，双层幂等）· `train compare` 多基座对比训练（ROI 排序，选型不靠拍脑袋）· 决策因果链（`causedBy` 因果边 + 先例检索）· CI 供应链全 SHA 固定 + dashboard 完全离线 · 五能力叙事定稿（注入·审计·回溯·沉淀·进化）。（版本时点数字：MCP 79→80 tools、测试 3619→3753，见开发日志——当前口径以[核心特性](#核心特性)为准。）完整内容见[开发日志](./docs/changelog/v1.4/v1.4.4.md) · 更早版本见 [CHANGELOG](./CHANGELOG.md)。
+🛡️ 让训练成果**跑起来、持续转、合规过**——`train_serve` 训练推理服务（vLLM/Ollama/OpenAI 兼容端点拉起 + model_switch 联动，训练到服务不断链）· 持续后训练（数据阈值/@weekly/人工三触发 + eval 回退保护——飞轮闭环的「持续」环）· `train_compliance` 合规扫描（PII 三源检测 + 训练闸门拦截 + 来源标记）· `train_deliverable` 训练交付包（五件套 + manifest + HMAC 篡改拒绝）· 训练产物保留策略（retention-policy + @weekly 归档 + 90 天覆写）· 后训 Quickstart 十步端到端 · 进化模块实证收口（Dream Cycle 真脑 Maintainer + skill-impact 台账 + L4 工具自进化）· FDE 进场记忆目录（10 文件自动初始化 + 跨 session 恢复）· 🔒 可靠性加固（webhook SSRF fail-closed / 审计链尾部截断防护 / 审计超时降级 / L1-L3 巡检 cron 接线）。（版本时点数字：MCP 80→83 tools、测试 3753→4055，见开发日志——当前口径以[核心特性](#核心特性)为准。）完整内容见[开发日志](./docs/changelog/v1.4/v1.4.5.md) · 更早版本见 [CHANGELOG](./CHANGELOG.md)。
 
 ## 多平台挂载
 
@@ -245,7 +245,7 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # 加载安全规�
 | 安全声明 · 已知局限 | [SECURITY](./SECURITY.md) · [LIMITATIONS](./docs/LIMITATIONS.md) |
 | 贡献指南 | [CONTRIBUTING](./CONTRIBUTING.md) |
 
-> 🧪 **工程可信度**：4055 测试 / 13 引擎包 + 13 插件（引擎包 = 12 主包 + 1 load-chain；插件 = 9 DSH + 4 OpenClaw，插件测试经根 `npm test --workspaces` 统一执行；「引擎包」为包管理口径称谓，架构叙事中称「模块」，见 [ARCHITECTURE 功能编制](./docs/ARCHITECTURE.md#功能编制引擎约束层内的功能模块--2026-09-03-定型)）· 24 条审计规则 · fresh-eyes 独立审查持续运行（测试数以 `tools/check/test-count.sh` 判定为准，环境注意事项见 [docs/guides/review-system.md](./docs/guides/review-system.md)。性能数据为单机参考值，跨工具横评排期 v1.4.x 与 Benchmark 集成）。
+> 🧪 **工程可信度**：4055 测试 / 13 引擎包 + 13 插件（引擎包 = 12 主包 + 1 load-chain；插件 = 9 DSH + 4 OpenClaw，插件测试经根 `npm test --workspaces` 统一执行；「引擎包」为包管理口径称谓，架构叙事中称「模块」，见 [ARCHITECTURE 功能编制](./docs/ARCHITECTURE.md#功能编制引擎约束层内的功能模块--2026-09-06-定型)）· 24 条审计规则 · fresh-eyes 独立审查持续运行（测试数以 `tools/check/test-count.sh` 判定为准，环境注意事项见 [docs/guides/review-system.md](./docs/guides/review-system.md)。性能数据为单机参考值，跨工具横评排期 v1.4.x 与 Benchmark 集成）。
 
 ---
 

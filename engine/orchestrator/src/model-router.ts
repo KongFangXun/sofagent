@@ -1,11 +1,11 @@
 // ============================================================
-// model-router.ts · 混合模型路由层（v1.4.4 · P1）
+// model-router.ts · 混合模型路由层（v1.4.5 · P1）
 // ============================================================
 //
 // 按 数据敏感度 × 任务复杂度 把任务路由到：
 //   cloud-strong / cloud-fast / local-executor(7B) / local-pipeline(0.5B)
 //
-// 路由硬规则（dev-prompt §3 L185-1.4.4111：
+// 路由硬规则（dev-prompt §3 L185-1.4.5111：
 //   public      × 任意        → cloud-fast
 //   internal    × 简单        → cloud-fast
 //   internal    × 复杂        → cloud-strong

@@ -1,4 +1,4 @@
-// artifact-verify.ts · v1.4.4 块六 · 训练产物完整性校验（加载前阻断 + 篡改审计）
+// artifact-verify.ts · v1.4.5 块六 · 训练产物完整性校验（加载前阻断 + 篡改审计）
 //
 // 定位：model_register / 部署加载权重前的最后一道完整性闸门——重算逐文件
 // SHA-256 与 artifact-manifest.json 比对，任何产物文件变动（改/删/加）或

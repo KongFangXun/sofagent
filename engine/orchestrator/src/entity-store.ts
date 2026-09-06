@@ -1,8 +1,8 @@
 // ============================================================
-// entity-store.ts · ontology entity 读写工具（v1.4.4 新建）
+// entity-store.ts · ontology entity 读写工具（v1.4.5 新建）
 // 功能 ⑥ 激活链 Phase 2 后半——enterprise-graph 数据流三层架构
 //
-// v1.4.4 代码库 src 中没有现成的 readEntity()/writeEntity() 函数
+// v1.4.5 代码库 src 中没有现成的 readEntity()/writeEntity() 函数
 // （仅在 activate.test.ts 有测试 mock）。ontology entity 读写能力
 // 目前散在 activate.ts（写 entity YML）和 builtin-agents.ts。
 // 本文件提供统一的 read/write API，供 enterprise-graph 使用。

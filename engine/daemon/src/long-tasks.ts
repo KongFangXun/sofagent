@@ -6,7 +6,7 @@
 // FDE 离场后 daemon 按计划自主发起长任务（每周 Benchmark 复测 /
 // 每日知识健康巡检 / 每月审计链校验），不依赖外部触发。
 //
-// 五件能力（changelog v1.4.4 §四）：
+// 五件能力（changelog v1.4.5 §四）：
 //   1. cron 三档糖：@daily/@weekly/@monthly 宏展开为底层 5 段 cron 表达式
 //      （scheduler.ts 已有解析——宏只做展开层，不重复造解析器）
 //   2. 依赖图：dependsOn: string[]——前任务最近一次 run 状态 PASS 才触发

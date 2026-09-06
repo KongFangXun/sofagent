@@ -1,4 +1,4 @@
-// rl-templates.ts · v1.4.4 第四章 · RL 配方模板（grpo / dapo / cispo + ScaleRL 四技巧）
+// rl-templates.ts · v1.4.5 第四章 · RL 配方模板（grpo / dapo / cispo + ScaleRL 四技巧）
 //
 // 定位：模板库的 RL 算法维度（2026-08-26 拍板补齐）——阶段 2 主路线是 RL
 // （v1.4.6 已提 GRPO 大采样组），模板库缺 RL 模板 = 主路线裸奔。三组配方：

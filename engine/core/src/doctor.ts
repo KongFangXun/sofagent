@@ -7,7 +7,7 @@
 // 检查项：
 //   1. 环境检查（Node / git / npm / disk / bash）
 //   2. 配置检查（.sofagent/config.yml 是否存在且有效）
-//   3. 数据目录结构（v1.4.4：data/ 用户可见数据 + .sofagent/ 引擎内部状态）
+//   3. 数据目录结构（v1.4.5：data/ 用户可见数据 + .sofagent/ 引擎内部状态）
 //   4. Hook 状态（commit-msg 是否安装含 sofagent 标识 + post-commit 是否存在）
 //   5. 包完整性（node_modules 依赖）
 //   8. Ontology 完整性（v1.4.3 十三：knowledge/entities/ frontmatter 三查 + skip-log 对账）

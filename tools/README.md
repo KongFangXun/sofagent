@@ -2,7 +2,7 @@
 
 > **边界说明（v1.4.5 对齐 engine/scripts/README）**：`engine/scripts/` 是 install.sh 组装调用的**用户安装链**（task-record / cleanup / audit / lib/config 等随 `deploy_scripts()` 到达用户目标目录的 `scripts/` 下，install / verify / daemon 同理）；`tools/` 面向维护者发版 SOP 与仓库健康检查，不随安装分发。
 >
-> **目录结构（v1.3.9 物理分目录 · v1.4.4 收口）**：按职能分子目录——check/ 门禁与测试统计、gen/ 草稿生成、dashboard/ 仪表盘、release/ 发布与签名（v1.4.0 起含 `pre-push-check.sh` 四门禁聚合入口）、forge/ FORGE 运维、audit/ FDE 进场审计（脚本 + 问卷数据源同目录）、hooks/ 共享 hook 脚本（v1.4.0 交付五）、train/ 训练环境与设备打包（v1.4.4 归位）。**根目录无任何脚本与数据文件**（含 .mjs——vitest-setup 归 check/，训练脚本归 train/）。
+> **目录结构（v1.3.9 物理分目录 · v1.4.5 收口）**：按职能分子目录——check/ 门禁与测试统计、gen/ 草稿生成、dashboard/ 仪表盘、release/ 发布与签名（v1.4.0 起含 `pre-push-check.sh` 四门禁聚合入口）、forge/ FORGE 运维、audit/ FDE 进场审计（脚本 + 问卷数据源同目录）、hooks/ 共享 hook 脚本（v1.4.0 交付五）、train/ 训练环境与设备打包（v1.4.4 归位）。**根目录无任何脚本与数据文件**（含 .mjs——vitest-setup 归 check/，训练脚本归 train/）。
 
 ## 根目录
 
