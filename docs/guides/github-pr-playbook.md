@@ -236,7 +236,7 @@ Single-line change to README.md only.（或双语两文件）
 - **自动索引仓观察**（每日巡检顺手核，不投 PR 靠收录）：① bruc3van/awesome-dsh-plugin ✅ 已收录（09-02）；② Zhiyuan-Fan/Awesome-DeepSeek-Harness-Plugins ⭐547（本地 Codex 每日复审 + topic 抓取）；③ leenkcool/Blue-Whale-Harness ⭐190（catalog 脚本全自动生成 README）——②③ 核法：拉上游 README 搜 `KongFangXun/sofagent`，已收录则在本条目标 ✅ + 日期，连续 7 天未收再评估是否需要人工介入（如开 issue 问维护者）
 - **关注度监测**（每日）：流量/星数对比基线（见 5.3.1），异动进报告【关注度异动】栏——星数单日 +3、views 翻倍、连续 3 天零增长（冷启动预警）三阈值
 - **门面周检**（每周一）：fresh-eyes 视角 22（GitHub 发现优化审查员）轻量体检——description/topics 失效词、双语首屏一致性、章节漂移；只报告不修改，门面改动由用户拍板
-- **Trending 窗口值守**（每日）：当日有清单 PR merged 即在报告提示 T2 集中发射条件成立（Show HN/V2EX/掘金/知乎同天），由用户拍板执行
+- **Trending 窗口值守**（每日）：当日有清单 PR merged 即在报告提示 momentum 成立；⚠️ 外站渠道（Show HN/V2EX/掘金/知乎/Discord）已搁置（2026-09-06 无 VPN 拍板），仅提示 GitHub 内联动（已收录仓回访 1.4 ②/阮一峰 issue 跟进），由用户拍板执行
 - **Spam Guard 观察**（每日，2026-09-04 起）：盯 Zijian-Ni #95 是否被人工关单（Spam Guard 已亮 advisory：14 天 36 条 awesome-* PR / 16 仓同标题）；顺手核对总在飞量——「36 PR/14 天」滚动窗口停投自然衰减，超 40 条优先靠被动收录消化
 - **每周人工巡检**：发版周检顺手对一次台账；merged 的把行移到 5.2；README「Featured in」徽章状态联动（open 橙 → merged 绿）
 - **命令**：`gh search prs --author KongFangXun --state open` 对表核状态
@@ -288,10 +288,12 @@ Single-line change to README.md only.（或双语两文件）
 
 ## 七、非清单曝光渠道（中文圈 + 用户网页动作）
 
+> ⏸ **2026-09-06 用户拍板：GitHub 之外的外站渠道（Show HN/V2EX/掘金/知乎/Discord）整体搁置**（当前无 VPN 无法访问），VPN 恢复后重启；GitHub 内通道（清单 PR/被动收录/阮一峰 issue/repo 设置）不受影响照常运转。Show HN 文案已终稿备存（见 09-06 执行记录），恢复后即可发。
+
 一、**阮一峰周刊**（⭐101k）——✅ **已投 2026-09-01**：[issue #11453](https://github.com/ruanyf/weekly/issues/11453)【项目自荐】格式；每周五出刊，若入选「谁在招人/开源项目」栏预计数千精准点击；巡检时顺手核 issue 状态（closed 无回复 = 未收录，正常现象可隔 2-3 期再投）
-二、**HelloGitHub 月刊**（⭐174k）——**待用户网页投**：主通道是 hellogithub.com/periodical 表单（issue 区非官方通道勿走）；每月 28 号出刊；用户操作指引见 7.1
-三、**Social Preview 卡片**——**待用户网页设置**：repo Settings → General 最底 Social preview → 上传 banner 图；设置后所有 IM 分享为统一品牌卡片（一次性动作）
-四、**DSH 官方社区案例帖**——**待内容排期**：「9 插件实战：给 DSH 加一层审计」纯技术分享；需 Discord/论坛账号登录（AI 无登录态），帖子可先由 AI 起草、用户发
+二、**HelloGitHub 月刊**（⭐174k）——⏸ **搁置（外站渠道暂停，恢复后重启；国内站无需 VPN，可随时单独解禁）**，原指引：主通道是 hellogithub.com/periodical 表单（issue 区非官方通道勿走）；每月 28 号出刊；用户操作指引见 7.1
+三、**Social Preview 卡片**——**待用户网页设置（GitHub 内页面，不受 VPN 搁置影响，可随时做）**：repo Settings → General 最底 Social preview → 上传 banner 图；设置后所有 IM 分享为统一品牌卡片（一次性动作）
+四、**DSH 官方社区案例帖**——⏸ **搁置（Discord 需 VPN，恢复后重启）**，原计划：「9 插件实战：给 DSH 加一层审计」纯技术分享；需 Discord/论坛账号登录（AI 无登录态），帖子可先由 AI 起草、用户发
 
 ### 7.1 HelloGitHub 表单投稿指引（用户网页操作）
 
