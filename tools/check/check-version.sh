@@ -1309,10 +1309,14 @@ console.log('OK:' + '${CHANGELOG_TOP_VERSION}' + ' vs ' + '${PKG_VERSION}');
 fi
 echo ""
 
-echo "=== 25. 待发版窗口三态一致性（B1 防复发：CHANGELOG 收录 × README 状态行 × 安装 URL） ==="
+echo "=== 25. 待发版窗口三态一致性（B1 防复发：CHANGELOG 收录 × badge→CHANGELOG 动线 × 安装 URL） ==="
 # v1.4.1 fresh-eyes F01/B1：开发完成→发版之间，「tag/npm=旧版、代码=新版、文档=待发版标注」
-# 三处状态信号必须配套齐——CHANGELOG 收录了新版但 README 无状态行解释，或安装 URL 已指向
+# 三处状态信号必须配套齐——CHANGELOG 收录了新版但版本动向无解释，或安装 URL 已指向
 # 未打的 tag，都是三态缺角（陌生人视角必误报/安装链必断）。
+# v1.4.6 拍板（2026-09-07）：旧检查要求「README 头部待发版状态行」，与 06-doc-finalize.md
+# 「README 头部禁止版本状态播报行」铁律（2026-09-06 拍板）直接冲突——待发版窗口内门禁红灯
+# 但按铁律不能修，形成死锁。按铁律更新：版本动向不走状态行，走 badge→CHANGELOG 动线，
+# 本项检查相应改为「badge 与 CHANGELOG 链接同排存在」。
 # 前置条件：第 24 项已算出顶版 > SSOT（drift=1）才进入；非待发版窗口三态天然一致，跳过。
 if [[ -n "${CHANGELOG_TOP_VERSION}" ]] && [[ "${CHANGELOG_TOP_VERSION}" != "${PKG_VERSION}" ]]; then
   # a. CHANGELOG 顶版行必须带「待发版」状态标注（索引规则自我一致：收录了就要标）
@@ -1323,19 +1327,20 @@ if [[ -n "${CHANGELOG_TOP_VERSION}" ]] && [[ "${CHANGELOG_TOP_VERSION}" != "${PK
     echo -e "  ${RED}✗${NC} CHANGELOG 顶版 ${CHANGELOG_TOP_VERSION} 已收录但缺「待发版」标注——索引规则与收录条目互斥（B1）"
     ERRORS=$((ERRORS + 1))
   fi
-  # b/c. 双语 README 头部状态行（中间态的对外解释，缺一即陌生人视角版本族误报源）
-  if head -20 "${PROJECT_ROOT}/README.md" 2>/dev/null | grep -q "待发版"; then
-    echo -e "  ${GREEN}✓${NC} README.md 头部状态行含「待发版」"
+  # b/c. 版本动向读者动线（铁律：不走状态行，走 badge→CHANGELOG）——badge（Version-vX.Y）
+  # 与 CHANGELOG 链接必须同排出现（读者循 badge 找到版本历史），双语各查一次。
+  if head -20 "${PROJECT_ROOT}/README.md" 2>/dev/null | grep -qE 'CHANGELOG\.md.*Version-v|Version-v.*CHANGELOG\.md'; then
+    echo -e "  ${GREEN}✓${NC} README.md 版本动线经 badge→CHANGELOG（状态行铁律合规）"
     CHECKS=$((CHECKS + 1))
   else
-    echo -e "  ${RED}✗${NC} README.md 头部 20 行内无「待发版」状态行——三态缺角（B1）"
+    echo -e "  ${RED}✗${NC} README.md 头部缺 badge→CHANGELOG 版本动线（铁律：版本动向走 badge 不走状态行）"
     ERRORS=$((ERRORS + 1))
   fi
-  if head -20 "${PROJECT_ROOT}/README.en.md" 2>/dev/null | grep -qiE "pending release|pre-release"; then
-    echo -e "  ${GREEN}✓${NC} README.en.md 头部状态行含 pending/pre-release"
+  if head -20 "${PROJECT_ROOT}/README.en.md" 2>/dev/null | grep -qE 'CHANGELOG\.md.*Version-v|Version-v.*CHANGELOG\.md'; then
+    echo -e "  ${GREEN}✓${NC} README.en.md 版本动线经 badge→CHANGELOG"
     CHECKS=$((CHECKS + 1))
   else
-    echo -e "  ${RED}✗${NC} README.en.md 头部 20 行内无 pending/pre-release 状态行——双语漂移（B1）"
+    echo -e "  ${RED}✗${NC} README.en.md 头部缺 badge→CHANGELOG 版本动线——双语动线漂移（B1）"
     ERRORS=$((ERRORS + 1))
   fi
   # d. 安装 URL refs/tags 不得指向未发布的新版 tag（指向未来 = 安装链断）
