@@ -8,7 +8,7 @@ import { pluginMeta, capability, invoke } from './index';
 describe('cordis-plugin-sofagent-ontology', () => {
   it('插件元数据完整（id/version/description/seam）', () => {
     expect(pluginMeta.id).toBe('cordis-plugin-sofagent-ontology');
-    expect(pluginMeta.version).toBe('0.1.0');
+    expect(pluginMeta.version).toBe(require('../package.json').version); // SSOT 对齐：版本跟随主版本（读 package.json）
     expect(pluginMeta.description.length).toBeGreaterThan(10);
     expect(pluginMeta.seam.length).toBeGreaterThan(0);
   });
