@@ -300,6 +300,7 @@ done < "$ROWS_TMP"
 if [ "$FIX" = true ] && [ "$FIXED_COUNT" -gt 0 ]; then
   [ "$QUIET" = false ] && echo ""
   [ "$QUIET" = false ] && echo "── --fix 完成，重跑自检确认转绿 ──"
+  # shellcheck disable=SC2046  # 意图性词分割：SLOW=false 展开为空（不传参），true 展开为单词 --slow
   VERIFY_OUT=$(bash "$0" --registry "$REGISTRY" --only "$ONLY" $([ "$SLOW" = true ] && echo --slow) 2>&1)
   VERIFY_RC=$?
   [ "$QUIET" = false ] && echo "$VERIFY_OUT"

@@ -1426,8 +1426,8 @@ if $F6_RELEASED; then
     -name '*.md' \
     -not -path '*/changelog/*' \
     -not -path '*/archive/*' \
-    -type f 2>/dev/null \
-    | xargs grep -lE '开发完成未发版|开发完成待发版' 2>/dev/null || true)
+    -type f -print0 2>/dev/null \
+    | xargs -0 grep -lE '开发完成未发版|开发完成待发版' 2>/dev/null || true)
   if [ -n "$F6_DOC_PENDING" ]; then
     echo -e "  ${RED}✗${NC} 已发版态（${F6_WHY}）但以下活文档头仍标「开发完成未发版/待发版」——发版翻转遗漏文档头（F6 扩展）："
     echo "$F6_DOC_PENDING" | sed "s#^#      #" | head -15
