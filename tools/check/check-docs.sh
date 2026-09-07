@@ -229,8 +229,11 @@ WIKI_NEXT=$(grep -m1 "下一版" docs/WIKI.md 2>/dev/null | sed -E 's/.*下一�
 WIKI_NEXT_V=$(echo "$WIKI_NEXT" | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' | head -1)
 ROADMAP_NEXT_V=$(head -30 docs/ROADMAP.md 2>/dev/null | grep -oE '下一版 v[0-9]+\.[0-9]+\.[0-9]+' | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' | head -1)
 if [ -z "$ROADMAP_NEXT_V" ]; then
-  # fallback：ROADMAP 迭代表第一个「📋 规划中」行（| **vX.Y.Z** | 📋 规划中 |）
-  ROADMAP_NEXT_V=$(grep -m1 -E '^\| \*\*v[0-9]+\.[0-9]+\.[0-9]+\*\* \| 📋 规划中' docs/ROADMAP.md 2>/dev/null | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+  # fallback：ROADMAP 迭代表第一个「📋 规划中」或「✅ 开发完成」行（| **vX.Y.Z** | ... |）
+  # v1.4.6（2026-09-07，fresh-eyes round-01 finding-10）：开发完成的版本停在「规划中」违反
+  # 本文件口径，改为「✅ 开发完成」（「待发版」字样按 F6 门禁只留在 CHANGELOG 索引行）；
+  # fallback 须同步识别该态，否则基准跳到下一行 → 与 WIKI「下一版」误报漂移
+  ROADMAP_NEXT_V=$(grep -m1 -E '^\| \*\*v[0-9]+\.[0-9]+\.[0-9]+\*\* \| (📋 规划中|✅ 开发完成)' docs/ROADMAP.md 2>/dev/null | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' | head -1)
 fi
 if [ -z "$WIKI_NEXT_V" ]; then
   echo "  ${RED}✗ WIKI 状态表未找到「下一版」版本号——人工检查项升为阻断（守卫不得空转）${NC}"
