@@ -33,7 +33,7 @@ Agent 越聪明，企业越不敢让它碰真活——真出事了，谁负责�
 
 **② sofagent 的答案：一套常驻你企业的 FDE Harness，嵌在成熟 Agent 与模型层之间，帮你把业务流梳理成 AI 节点，部署完它自己跑。**
 
-sofagent 不替代大厂 Agent，而是建在它们之上——做河的约束层，不做河本身（River 比喻详见 [README · 这是什么](../README.md#这是什么)）。FDE 进场四阶段：梳理→构建→部署→离场。离场后 AI 节点自己跑。
+sofagent 不替代大厂 Agent，而是建在它们之上——做河的约束层，不做河本身（River 比喻详见 [README · 这是什么](../README.md#这是什么)）。FDE 进场四阶段：梳理→构建→部署→离场。离场后 AI 节点自己跑。**推论：Agent 运行时生态越繁荣，约束层的卡位越值钱**——执行体（DSH / OpenClaw / WorkBuddy / 未来的任何平台）每多一家，可被治理的河就多一条；约束层不与任何运行时竞争，是所有运行时的互补件。
 
 > **🔄 自举（产品哲学的核心）：FDE Harness 层给自己做的第一份 FDE，就是 sofagent 自己。** 我们自己是一家"FDE 公司"——执行「给企业做 AI 落地」这条 workflow 的能力就是 sofagent（嵌在成熟 Agent 与模型之间）。它对自己做 FDE：把项目自身梳理成一条 FDE workflow（梳理 → 节点 → 双图谱交付），确认每个节点全自动（LangGraph 编排 + DeepSeek Harness 执行 + 约束层审计），后训模块也围绕 FDE——怎么让 FDE 更好、怎么让数据飞轮转起来。这是自举循环：**FDE Harness 层对自己做 FDE → 项目更 AI 化 → 更好地服务企业**。产品形态 = FDE Harness 层（不造 Agent：对执行体 DSH / OpenClaw / WorkBuddy 约束、对智力源通用/专属模型治理，plugin + skill + MCP + CLI + dashboard 五种形态分发）。
 
