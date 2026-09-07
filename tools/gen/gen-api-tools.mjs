@@ -59,7 +59,7 @@ const NAME_TO_MODULE = {
   train_report: 'train', train_status: 'train', train_list: 'train', train_diagnose: 'train',
   model_register: 'train', model_switch: 'train', model_unregister: 'train',
   // v1.4.5：推理服务（serve）/ 合规扫描（compliance）/ FDE 交付包（deliverable）
-  train_serve: 'train', train_compliance: 'train', train_deliverable: 'train',
+  train_serve: 'train', train_compliance: 'train', train_deliverable: 'train', train_cloud: 'train',
   // 评估与验收
   evaluate: 'eval', evaluate_output: 'eval', eval_suite: 'eval',
   define_acceptance: 'eval', check_acceptance: 'eval',

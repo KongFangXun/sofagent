@@ -80,10 +80,10 @@ describe('classifyTrainFailure 七类分类', () => {
     { category: 'precision_anomaly', log: 'loss spike 2.1 → 8.7 at step 300 (numerical instability in bf16)', hit: 'loss spike' },
   ];
 
-  it('七类全量定义（id 唯一 + 每类有名称与关键词）', () => {
-    expect(FAILURE_CATEGORIES).toHaveLength(7);
+  it('八类全量定义（id 唯一 + 每类有名称与关键词——v1.4.6 新增分布式通信失败）', () => {
+    expect(FAILURE_CATEGORIES).toHaveLength(8);
     const ids = new Set(FAILURE_CATEGORIES.map((c) => c.id));
-    expect(ids.size).toBe(7);
+    expect(ids.size).toBe(8);
     for (const def of FAILURE_CATEGORIES) {
       expect(def.name.length).toBeGreaterThan(0);
       expect(def.keywords.length).toBeGreaterThan(0);

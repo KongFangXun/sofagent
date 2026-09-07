@@ -37,11 +37,25 @@ export const TrainBudgetSchema = z
   })
   .strict();
 
+/**
+ * GPU 拓扑配置（v1.4.6 schema v2 新增——多卡/多机训练的硬件申报）。
+ * v1 job.json 无此字段（单卡单机），读入后 gpu/nodes 为 undefined，
+ * 行为与 v1.4.5 完全一致（向后兼容）。
+ */
+export const TrainGpuSchema = z
+  .object({
+    /** 卡数（1 = 单卡，8 = 单机八卡） */
+    count: z.number().int().positive(),
+    /** 卡类型（A100/H100/4090 等——拓扑感知队列按类型分池） */
+    type: z.string().min(1).optional(),
+  })
+  .strict();
+
 /** job.json schema——训练任务的完整快照（审计可读） */
 export const TrainJobSchema = z
   .object({
-    /** schema 版本（协议即版本边界——新增字段升版本号） */
-    schemaVersion: z.literal('v1'),
+    /** schema 版本（协议即版本边界——v1.4.6 起 v1/v2 联合；v2 新增 gpu/nodes/cloud 可选字段） */
+    schemaVersion: z.union([z.literal('v1'), z.literal('v2')]),
     /** 训练任务标识（审计关联键） */
     jobId: z.string().min(1),
     /** 数据路径（训练集） */
@@ -65,11 +79,29 @@ export const TrainJobSchema = z
         step: z.number().int().nonnegative(),
       })
       .optional(),
+    // ── v2 新增（v1.4.6 多卡/多机/云端——optional 保证 v1 job.json 仍可读）──
+    /** 多卡拓扑（count/type——多卡分布式训练硬件申报） */
+    gpu: TrainGpuSchema.optional(),
+    /** 多机节点数（1 = 单机，N = N 机分布式） */
+    nodes: z.number().int().positive().optional(),
+    /** 云端 VM 名称（v1.4.6 章二——控制面本地 / 执行面云上；缺省 = 本地训练） */
+    cloud: z.string().min(1).optional(),
   })
   .strict();
 
 export type TrainBudget = z.infer<typeof TrainBudgetSchema>;
 export type TrainJob = z.infer<typeof TrainJobSchema>;
+export type TrainGpu = z.infer<typeof TrainGpuSchema>;
+
+/**
+ * v1.4.6 协议升版规则（红线 6 落地）：
+ *   - **v1 job.json 向后兼容**：schema v2 仅新增 optional 字段（gpu/nodes/cloud），
+ *     v1 存量 job.json 读入后这些字段为 undefined，行为与 v1.4.5 完全一致
+ *     （`train_status` / `train_report` / `train_diagnose` 读历史任务不受影响）。
+ *   - **v2 任务不可降级到旧引擎**：含 gpu/nodes/cloud 的 v2 job.json 在 v1.4.5
+ *     及更早引擎上会因 `.strict()` 拒绝未知字段而解析失败——这是有意为之，
+ *     升级不可逆，降级需重写 job.json 或保留旧引擎副本。
+ */
 
 /** job.json 校验结果（对齐 workflow_submit 的结构化错误模式） */
 export interface TrainJobValidation {

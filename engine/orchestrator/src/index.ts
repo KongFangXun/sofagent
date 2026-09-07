@@ -1864,3 +1864,64 @@
   ensureSolvesField,
 } from './skill-evolution/solves-frontmatter';
 /* @public */ export type { FrontmatterSolves } from './skill-evolution/solves-frontmatter';
+
+// ============================================================
+// v1.4.6 章一：多卡/多机训练编排（train multi）
+// ============================================================
+/* @public */ export {
+  buildMultiGpuLaunch,
+  aggregateMultiGpuProgress,
+} from './train/train-multi';
+/* @public */ export type {
+  MultiGpuLaunch,
+  RankProgress,
+  MultiGpuProgressSummary,
+} from './train/train-multi';
+
+// ============================================================
+// v1.4.6 章二：云端 VM 执行面（train cloud / 分拣闸 / 数据推送）
+// ============================================================
+/* @public */ export {
+  createCloudRegistry,
+} from './train/cloud-registry';
+/* @public */ export type {
+  CloudVmRecord,
+  CloudVmStatus,
+  CloudRegistrySnapshot,
+  CloudRegistry,
+} from './train/cloud-registry';
+/* @public */ export {
+  buildCloudSpawnCommand,
+  buildCloudUploadCommand,
+  buildCloudCleanupCommand,
+  buildCloudStopCommand,
+  isHeartbeatStale,
+  estimateCloudCostUsd,
+  isOverBudget,
+} from './train/train-cloud';
+/* @public */ export type {
+  CloudCommand,
+  HeartbeatVerdict,
+} from './train/train-cloud';
+/* @public */ export {
+  classifyDataForCloud,
+  classifyBatchForCloud,
+  generateConfidentialityRef,
+  SENSITIVE_PATTERNS,
+} from './train/sorting-gate';
+/* @public */ export type {
+  SortingClass,
+  SortingDecision,
+  SensitivePattern,
+} from './train/sorting-gate';
+/* @public */ export {
+  DataPushSchema,
+  validateDataPush,
+  gateDataPush,
+} from './train/data-push';
+/* @public */ export type {
+  DataPushPayload,
+  DataPushValidation,
+  DataPushGateResult,
+  ComplianceCheck,
+} from './train/data-push';

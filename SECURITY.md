@@ -22,7 +22,7 @@
 
 ## 已知风险（明文存储）
 
-sofagent 是一套 FDE 能力——底层引擎是纯本地 Harness 中间件（约束中间层），**数据不出本机**（除安装时 npm 拉包外运行时不联网；例外一：用户主动配置云同步时数据会离开本机，见 [多设备同步指南](./docs/guides/multi-device-sync.md)——该配置等于将 knowledge/ 与 think.md 托管给云盘服务商，属用户自主取舍，与本地数据主权承诺互斥；例外二：用户显式配置模型推理端点后（`SOFAGENT_MODEL_API_KEY` / `SOFAGENT_MODEL_BASE_URL` / `SOFAGENT_MODEL_NAME`，opt-in 默认关闭），Dream Cycle「真实大脑」会话反思与 train_serve 推理会把 prompt 上下文发往用户指定的模型 API——出口为 `engine/core/src/model-client.ts` 的 `callModelAPI`，经 `engine/daemon/src/dream-cycle/real-provider.ts` → `state-machine.ts` 接线；未配置时降级 MockLLM，零外发）——但以下数据以**明文 Markdown** 存储，请评估风险：
+sofagent 是一套 FDE 能力——底层引擎是纯本地 Harness 中间件（约束中间层），**数据不出本机**（除安装时 npm 拉包外运行时不联网；例外一：用户主动配置云同步时数据会离开本机，见 [多设备同步指南](./docs/guides/multi-device-sync.md)——该配置等于将 knowledge/ 与 think.md 托管给云盘服务商，属用户自主取舍，与本地数据主权承诺互斥；例外二：用户显式配置模型推理端点后（`SOFAGENT_MODEL_API_KEY` / `SOFAGENT_MODEL_BASE_URL` / `SOFAGENT_MODEL_NAME`，opt-in 默认关闭），Dream Cycle「真实大脑」会话反思与 train_serve 推理会把 prompt 上下文发往用户指定的模型 API——出口为 `engine/core/src/model-client.ts` 的 `callModelAPI`，经 `engine/daemon/src/dream-cycle/real-provider.ts` → `state-machine.ts` 接线；未配置时降级 MockLLM，零外发；例外三：v1.4.6 云 VM 执行面——`train cloud` 远程训练时，经分拣闸（sorting-gate）放行的非敏感/脱敏训练数据会上传云 VM（ssh 隧道加密传输，敏感档拦截留本地）；云 VM 执行面是「控制面本地、执行面云上」的 opt-in 交付模式，不配置云 VM 则纯本地训练，零外发）——但以下数据以**明文 Markdown** 存储，请评估风险：
 
 > 🏠 **当前定位：单机单用户**——sofagent 当前为单机单用户设计，多 Agent 共享同一知识库/审计历史；**多人/多部门共用需等租户隔离（ROADMAP v1.4.7 G7 多租户抽象层 v0）**。企业 IT 若规划多人共用同一 `~/.sofagent/`，部署前务必评估此边界（详见 [LIMITATIONS「知识库同样全局共享」](./docs/LIMITATIONS.md#三安全与信任模型局限)）。
 
@@ -93,6 +93,8 @@ sofagent 是一套 FDE 能力——底层引擎是纯本地 Harness 中间件（
 | **key 存储** | ECDH(prime256v1) + HKDF-SHA256 派生的 32 字节 AES key **只存内存**，不落盘明文；持久化（OS keychain / age）留 v1.1.9 |
 | **IV/nonce 管理** | 每条消息随机 12 字节 IV，绝不复用；GCM 16 字节认证标签校验失败即拒绝 |
 | **密钥轮换** | 24h 过渡窗口内旧 key 只解不加，过窗口销毁强制重新协商 |
+
+> ⚠️ **配对入口接线状态（v1.4.5 审查校准）**：`engine/core/src/crypto/pairing.ts` 的三条配对路径 API（`pairByCode` / `pairByToken` / `pairByFederationFile`，经 `@sofagent/core` 导出）已完整实现，但**交互式配对 CLI 入口尚未接线**（零生产调用点）。当前实际可用的联邦配对是 **USB 路径**——`daemon/src/usb-detect.ts`（federation.json + HMAC `.sig` sidecar 验签）与 `usb-runtime.ts`（从 U 盘 federation.json 读 AES/HMAC key），其验签逻辑为独立实现、不经过 pairing.ts。三条配对路径的交互式 CLI 接线尚未交付。
 
 ### 🔴 SOFAGENT_FEDERATION_TOKEN 进程可见（高危）— ✅ 已修复 v1.2.3
 
@@ -478,7 +480,7 @@ sofagent daemon 是本地文件系统监控守护进程，其行为边界如下�
 | 维度 | 说明 |
 |------|------|
 | **监控范围** | 仅 `data/` 工作目录 + 用户显式配置的路径（`config.yml` 中的 `daemon.watchPaths`）。不扫描用户其他文件。 |
-| **数据去向** | 所有数据本地存储（`data/` 目录下），不上传云端，不向外发送网络请求——除非用户显式配置 TencentDB Memory 集成（`install.sh --with-memory`，opt-in）或模型推理端点（Dream Cycle「真实大脑」/ train_serve，`SOFAGENT_MODEL_API_KEY` 等，opt-in，见本文[「已知风险」](#已知风险明文存储)例外二）。 |
+| **数据去向** | 所有数据本地存储（`data/` 目录下），不上传云端，不向外发送网络请求——除非用户显式配置 TencentDB Memory 集成（`install.sh --with-memory`，opt-in）或模型推理端点（Dream Cycle「真实大脑」/ train_serve，`SOFAGENT_MODEL_API_KEY` 等，opt-in，见本文[「已知风险」](#已知风险明文存储)例外二）或云 VM 执行面（v1.4.6 `train cloud`，经分拣闸放行的非敏感/脱敏训练数据 ssh 隧道上传云 VM，见例外三）。 |
 | **权限** | 只读监听文件事件（hash 变化检测 + cron 定时巡检）。**不修改用户文件、不删除文件、不外传数据**。审计发现写入 `daemon-health.json` 和 `history.jsonl`。 |
 | **审计结果推送** | **v1.2.1 已支持 Webhook 推送**（飞书/钉钉/企微，`engine/audit/src/webhook.ts` + `engine/daemon/src/notify.ts` + `push-target.ts`）。企业 IT 可配置 `webhook` 字段实现实时告警推送。 |
 

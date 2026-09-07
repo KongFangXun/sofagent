@@ -33,7 +33,7 @@ import { trainEnvManifestPath, type TrainEnvManifest } from './env-manager';
 // 七类失败分类
 // ════════════════════════════════════════
 
-/** 失败分类标识（七类） */
+/** 失败分类标识（七类 → v1.4.6 八类：新增分布式通信失败） */
 export type TrainFailureCategory =
   | 'oom'
   | 'data_format'
@@ -41,7 +41,8 @@ export type TrainFailureCategory =
   | 'framework_error'
   | 'environment_mismatch'
   | 'repetition_collapse'
-  | 'precision_anomaly';
+  | 'precision_anomaly'
+  | 'distributed_comm';
 
 /** 分类定义（id + 人读名 + 判定关键词——诊断报告可读） */
 export interface FailureCategoryDef {
@@ -141,6 +142,25 @@ export const FAILURE_CATEGORIES: readonly FailureCategoryDef[] = [
       'underflow',
       'precision loss',
       'loss jump',
+    ],
+  },
+  {
+    // v1.4.6 章一新增——多卡/多机训练的分布式通信失败
+    id: 'distributed_comm',
+    name: '分布式通信失败（NCCL/节点间）',
+    keywords: [
+      'nccl error',
+      'nccl',
+      'watchdog timeout',
+      'rendezvous',
+      'connection refused',
+      'address already in use',
+      'broken pipe',
+      'nvlink',
+      'infiniBand',
+      'ibv',
+      'connection reset by peer',
+      'handshake failed',
     ],
   },
 ];
@@ -249,6 +269,16 @@ export const FAILURE_PRESCRIPTIONS: Readonly<Record<TrainFailureCategory, Failur
       '仍尖刺：learning_rate ×0.5 + warmup 拉长（warmup_steps_ratio 0.03→0.1）',
     ],
     source: 'MiniMax-M1 + ScaleRL 同款处方（LM head/优化器状态升 FP32）',
+  },
+  distributed_comm: {
+    steps: [
+      '单机多卡：nvidia-smi 确认全部卡可见（8 卡任务缺一卡即 NCCL 初始化失败）',
+      '核对 nccl 版本与 CUDA 对齐（多卡通信失败多为 nccl/cuda 版本漂移）',
+      '降级验证：改用 gloo 后端（NCCL_SHM_DISABLE=1 / backend=gloo）确认是通信面而非训练面',
+      '多机多卡：确认 master_addr/master_port 各节点可达 + 防火墙放行端口 + node_rank 唯一',
+      'IB/NVLink 环境：确认网卡/拓扑可用（nccl 报 ibv/nvlink 即硬件链路问题）',
+    ],
+    source: 'v1.4.6 多卡分布式诊断（NCCL 错误分类 + torchrun rendezvous 排查）',
   },
 };
 

@@ -1,8 +1,8 @@
 # 接口总览 · API
 
-> sofagent 对外全部能力面的一站式清单——七大接口面 + MCP 83 tools 按域分组（第七面「标准数据推送接口」v1.4.6 规划中）。工具清单由 `engine/mcp/src/tool-registry.ts` 生成（scripts/check 门禁对账，文档与代码永不漂移）。
+> sofagent 对外全部能力面的一站式清单——七大接口面 + MCP 84 tools 按域分组（第七面「标准数据推送接口」v1.4.6 规划中）。工具清单由 `engine/mcp/src/tool-registry.ts` 生成（scripts/check 门禁对账，文档与代码永不漂移）。
 >
-> 版本：v1.4.5（已发版）· 83 tools / 7 面（第 7 面 v1.4.6 规划中）
+> 版本：v1.4.5（已发版）· 84 tools / 7 面（第 7 面 v1.4.6 规划中）
 
 ---
 
@@ -22,7 +22,7 @@
 
 ---
 
-## 二、MCP 工具清单（83 · 按产品能力域分组）
+## 二、MCP 工具清单（84 · 按产品能力域分组）
 
 > 十个能力域按「一个组 = 一个可独立讲述的产品能力」划分，与五能力叙事的对应：本节工具承载其中的**审计**（审计与合规）、**回溯**（快照与回溯）、**沉淀**（知识资产与能力市场）、**进化**（后训练流水线与 FDE 沉淀）能力面；**注入**能力走加载链文件（SKILL.md/fde.md/think.md/knowledge/），不经 MCP 暴露。**roles 列保留运行时真值**——`SOFAGENT_MCP_ROLES=audit,ops` 收窄面以 roles 为准（v1.4.0 工具角色分层），分组是文档编制判断。浏览器四件套（playwright_*）归审计域——主叙事是 UI 层审计取证（v1.5.2 UI 审计的执行底座）。
 
@@ -83,7 +83,7 @@
 | `snapshot_list` | ops | 列出审计快照时间线。只读。 |
 | `snapshot_restore` | ops | 恢复工作区到指定快照。🔴 破坏性，必须 human_confirmed:true。 |
 
-### 后训练流水线（数据回流 → 训练 → 模型注册晋升）（14）
+### 后训练流水线（数据回流 → 训练 → 模型注册晋升）（15）
 
 | tool | roles | 说明 |
 |---|---|---|
@@ -100,6 +100,7 @@
 | `train_diagnose` | eval, ops | 训练失败诊断——七类分类（OOM/数据格式/超参发散/框架/环境/重复坍塌/精度异常）+ 上下文四源（日志尾部+环境清单+checkpoint+超参）+ 修复处方，报告落盘 diagnose.json。 |
 | `train_deliverable` | eval, ops | FDE 训练交付包——generate 聚合五件（训练配置模板+数据管道配置+eval基线冻结+运维手册+权重清单含回滚点）打 zip + manifest + HMAC 签名；verify 逐项核对完整性 + 环境兼容性（企业收包侧体检）。 |
 | `train_serve` | eval, ops | 推理服务生命周期——从权重目录拉起 vLLM/Ollama/OpenAI 兼容端点（/health 就绪探测 + 指数退避重试）+ 启停重启状态四操作；每次启停记 train_serve 审计事件（谁启的/哪个模型/哪个节点）。 |
+| `train_cloud` | eval, ops | 云 VM 执行面——注册云 VM（endpoint + 凭据引用走虚拟 key 边界，真实凭据不落明文）/ 列出 / 查状态 / 注销；远程 spawn 训练走 ssh 通道（stdout JSON 回流）+ 分拣闸（敏感档拦上云，依据入审计链）+ 失联止损 + 成本入预算。 |
 | `train_compliance` | eval, ops | 训练数据合规扫描——PII（姓名/手机号/身份证）+ 敏感字段（健康/财务）+ 企业专有名词三类风险项（复用 v1.4.4 redactor 红名单检测）；报告（发现项+严重度+处置建议）写训练集版本；严重级发现阻断训练提交；数据来源标记（企业提供/合成/公开语料）。 |
 
 ### 评估与验收（基准评测 · 验收标准 · A/B 对比）（7）

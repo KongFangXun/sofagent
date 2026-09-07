@@ -1,4 +1,5 @@
 // gpu-queue.ts · v1.4.5 第一章 · GPU 显存预算队列（并发不 OOM）
+// v1.4.6 扩展：多卡拓扑感知——从「单卡显存预算」升级「卡数 × 显存」双轴。
 //
 // 定位：多训练任务并发时 GPU 显存怎么分——一张 4090 同时跑两个任务会 OOM。
 // 本文件按「显存预算」排队：每任务申报所需 MiB，队列按剩余预算决定立即
@@ -12,17 +13,25 @@
 //   - 串行模式（concurrency=1 或预算不可知）：同刻至多一个任务在跑
 //   - 按预算并发：Σ(在跑任务显存) + 新任务 ≤ 总预算 → 放行，否则排队
 //
+// 多卡拓扑（v1.4.6）：卡数维度独立于显存维度——8 卡任务（独占整机）不与
+// 1 卡任务（可插空）抢卡：Σ(在跑卡数) + 新卡数 ≤ 总卡数 才放行。单卡任务
+// 在多卡空闲时立即插空，8 卡任务等整机空出。
+//
 // 测试纪律：纯内存账本零真实 GPU——预算判定可全量注入测试。
 
 // ════════════════════════════════════════
 // 数据模型
 // ════════════════════════════════════════
 
-/** 队列中的任务条目（申报显存 + 入队时间） */
+/** 队列中的任务条目（申报显存 + 卡数 + 入队时间） */
 export interface GpuQueueEntry {
   jobId: string;
   /** 申报显存（MiB——估算口径：模型大小 × 量化系数 + 激活余量） */
   requiredMiB: number;
+  /** 申报卡数（v1.4.6 多卡拓扑——1 = 单卡，8 = 整机；缺省 1 兼容旧调用） */
+  gpuCount: number;
+  /** 卡类型（A100/H100/4090 等——拓扑分池键，缺省 undefined 不参与分型） */
+  gpuType?: string;
   /** 入队时间戳（ms——FIFO 同刻公平） */
   enqueuedAtMs: number;
 }
@@ -39,10 +48,16 @@ export interface GpuQueueSnapshot {
   mode: 'serial' | 'budget';
   /** 总预算（MiB——budget 模式生效） */
   totalBudgetMiB: number;
+  /** 总卡数（v1.4.6 多卡拓扑——budget 模式生效） */
+  totalGpuCount: number;
   /** 已占用（在跑任务 Σ requiredMiB） */
   allocatedMiB: number;
+  /** 已占用卡数（在跑任务 Σ gpuCount） */
+  allocatedGpuCount: number;
   /** 剩余可分配 */
   freeMiB: number;
+  /** 剩余可分配卡数 */
+  freeGpuCount: number;
   /** 在跑任务数 */
   runningCount: number;
   /** 排队任务数 */
@@ -58,6 +73,8 @@ export type GpuSlotRelease = (jobId: string) => void;
 export interface GpuQueueOptions {
   /** 总显存预算（MiB——0 或缺省表示预算不可知 → 串行模式） */
   totalMiB?: number;
+  /** 总卡数（v1.4.6——缺省 0 = 卡数维度不生效，仅按显存；>0 时启用「显存 + 卡数」双轴拓扑感知） */
+  totalGpuCount?: number;
   /** 最大并发数上限（缺省 Infinity——防小任务挤爆进程数） */
   maxConcurrent?: number;
   /** 时钟注入（测试） */
@@ -65,7 +82,7 @@ export interface GpuQueueOptions {
 }
 
 // ════════════════════════════════════════
-// GPU 队列（显存预算账本 + FIFO 放行）
+// GPU 队列（显存 + 卡数双轴账本 + FIFO 放行）
 // ════════════════════════════════════════
 
 /**
@@ -73,7 +90,8 @@ export interface GpuQueueOptions {
  *
  * 放行规则：
  *   - serial 模式：在跑数为 0 才放行（一次一个）
- *   - budget 模式：freeMiB ≥ requiredMiB 且并发数未满 → 立即放行；否则入队
+ *   - budget 模式：freeMiB ≥ requiredMiB 且 freeGpuCount ≥ gpuCount 且并发数未满
+ *     → 立即放行；否则入队
  *   - release 时（任务终态）：队首依序检查——预算够就逐个放行（非只放一个）
  *
  * 回调时序：acquire 立即放行或入队后，release 触发队首获释回调
@@ -82,6 +100,9 @@ export interface GpuQueueOptions {
 export function createGpuQueue(options: GpuQueueOptions = {}) {
   const now = options.now ?? Date.now;
   const totalMiB = options.totalMiB ?? 0;
+  // v1.4.6：缺省 0 = 卡数维度不生效（仅按显存，保持 v1.4.5 单卡队列语义向后兼容）；
+  // 显式传 >0 才启用「显存 + 卡数」双轴拓扑感知（8 卡任务不跟 1 卡任务抢卡）。
+  const totalGpuCount = options.totalGpuCount ?? 0;
   const mode: 'serial' | 'budget' = totalMiB > 0 ? 'budget' : 'serial';
   const maxConcurrent = options.maxConcurrent ?? Number.POSITIVE_INFINITY;
 
@@ -91,19 +112,23 @@ export function createGpuQueue(options: GpuQueueOptions = {}) {
 
   const allocatedMiB = (): number =>
     [...running.values()].reduce((sum, r) => sum + r.requiredMiB, 0);
+  const allocatedGpuCount = (): number =>
+    [...running.values()].reduce((sum, r) => sum + r.gpuCount, 0);
 
   /** 判定新任务能否立即放行 */
-  const canAdmit = (requiredMiB: number): boolean => {
+  const canAdmit = (requiredMiB: number, gpuCount: number): boolean => {
     if (running.size >= maxConcurrent) return false;
     if (mode === 'serial') return running.size === 0;
-    return allocatedMiB() + requiredMiB <= totalMiB;
+    // 双轴（卡数维度仅 totalGpuCount > 0 时生效）：显存够 + 卡数够
+    return allocatedMiB() + requiredMiB <= totalMiB
+      && (totalGpuCount === 0 || allocatedGpuCount() + gpuCount <= totalGpuCount);
   };
 
   /** 队首依序获释（release 后调用——预算够就连放） */
   const pump = (): void => {
     while (queued.length > 0) {
       const head = queued[0]!;
-      if (!canAdmit(head.requiredMiB)) break;
+      if (!canAdmit(head.requiredMiB, head.gpuCount)) break;
       queued.shift();
       running.set(head.jobId, { ...head, startedAtMs: now() });
       for (const cb of releaseCallbacks) cb(head.jobId);
@@ -118,18 +143,20 @@ export function createGpuQueue(options: GpuQueueOptions = {}) {
      * 幂等：同 jobId 已在跑账本（pump 预放行 / 重复 acquire）→ 直接返回 true
      * 不重复占额——否则任务会排在自己后面死锁。
      */
-    acquire(jobId: string, requiredMiB: number): boolean {
+    acquire(jobId: string, requiredMiB: number, gpuCount = 1, gpuType?: string): boolean {
       if (running.has(jobId)) return true; // pump 预放行的获释路径——已占额
-      if (canAdmit(requiredMiB)) {
+      if (canAdmit(requiredMiB, gpuCount)) {
         running.set(jobId, {
           jobId,
           requiredMiB,
+          gpuCount,
+          gpuType,
           enqueuedAtMs: now(),
           startedAtMs: now(),
         });
         return true;
       }
-      queued.push({ jobId, requiredMiB, enqueuedAtMs: now() });
+      queued.push({ jobId, requiredMiB, gpuCount, gpuType, enqueuedAtMs: now() });
       return false;
     },
 
@@ -164,8 +191,11 @@ export function createGpuQueue(options: GpuQueueOptions = {}) {
       return {
         mode,
         totalBudgetMiB: totalMiB,
+        totalGpuCount,
         allocatedMiB: allocatedMiB(),
+        allocatedGpuCount: allocatedGpuCount(),
         freeMiB: mode === 'budget' ? totalMiB - allocatedMiB() : 0,
+        freeGpuCount: mode === 'budget' && totalGpuCount > 0 ? totalGpuCount - allocatedGpuCount() : 0,
         runningCount: running.size,
         queuedCount: queued.length,
         running: [...running.values()],

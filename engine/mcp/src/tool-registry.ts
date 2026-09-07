@@ -1098,6 +1098,21 @@ export const TOOLS: ToolDef[] = [
     },
   },
   {
+    // v1.4.6 (章二)：云 VM 执行面——注册/列表/状态/注销云 VM（控制面本地 / 执行面云上）
+    name: 'train_cloud',
+    roles: ['eval', 'ops'],
+    description: '云 VM 执行面——注册云 VM（endpoint + 凭据引用走虚拟 key 边界，真实凭据不落明文）/ 列出 / 查状态 / 注销；远程 spawn 训练走 ssh 通道（stdout JSON 回流）+ 分拣闸（敏感档拦上云，依据入审计链）+ 失联止损 + 成本入预算。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        action: { type: 'string', enum: ['add', 'list', 'status', 'remove'], description: '操作（缺省 list）', default: 'list' },
+        name: { type: 'string', description: '云 VM 注册名（add/status/remove 必填）' },
+        endpoint: { type: 'string', description: 'endpoint（add 必填——ssh user@host 或云 API endpoint）' },
+        credential_ref: { type: 'string', description: '凭据引用（虚拟 key 引用——真实凭据不落明文）' },
+      },
+    },
+  },
+  {
     // v1.4.5 (第三章)：训练数据合规扫描——合规红线代码化（训练闸）
     name: 'train_compliance',
     roles: ['eval', 'ops'],

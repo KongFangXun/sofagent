@@ -59,7 +59,7 @@ sofagent does not build its own Agent — execution is delegated to mature hosts
 - 🤖 **Deploy AI nodes** — three-layer deliverables (documents + Skills + runtime), installed into your existing AI tools; from "you do the work" to "you delegate the work"
 - 🏠 **Stay resident after departure** — the FDE capability remains for inspection, audit, and optimization, 7×24 online guardian (audit triggers on commit); the human leaves, governance doesn't
 - 🔍 **Zero-setup audit** — `npx -y -p @sofagent/audit sofagent-audit`, auditing the latest commit of any git repo in seconds (single-machine measured: quick ~1.1s, 50k-line diff ~6.1s; see [HANDBOOK](./docs/HANDBOOK.md))
-- 🧱 **24 audit rules + 83 MCP tools** — secret leaks, out-of-scope edits, injection defense, privilege red lines; judged on git diff hard evidence, violations blocked on the spot (once a critical-layer rule hits, remaining rules are skipped — fail-fast design); evidence is based on local diffs — trust boundaries and known bypass surfaces in [LIMITATIONS §3](./docs/LIMITATIONS.md) (quick runs 17 by default; full 24 = 17 default + 7 extensions)
+- 🧱 **24 audit rules + 84 MCP tools** — secret leaks, out-of-scope edits, injection defense, privilege red lines; judged on git diff hard evidence, violations blocked on the spot (once a critical-layer rule hits, remaining rules are skipped — fail-fast design); evidence is based on local diffs — trust boundaries and known bypass surfaces in [LIMITATIONS §3](./docs/LIMITATIONS.md) (quick runs 17 by default; full 24 = 17 default + 7 extensions)
 - 🛡️ **Automatic snapshot rollback** — auto-archived after every audit, one-click restore to any snapshot when something breaks
 
 ## What is the FDE Harness
@@ -233,7 +233,7 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # load the securit
 | **Global index** (one entry to all docs, in Chinese) | [WIKI](./docs/WIKI.md) |
 | How to install, use, FAQ | [HANDBOOK](./docs/HANDBOOK.md) |
 | Architecture (constraint layer · injection chain · evolution · 24 rules) | [ARCHITECTURE](./docs/ARCHITECTURE.md) |
-| API overview (six interface surfaces + 83 MCP tools) | [API](./docs/API.md) |
+| API overview (six interface surfaces + 84 MCP tools) | [API](./docs/API.md) |
 | Design philosophy | [PHILOSOPHY](./docs/PHILOSOPHY.md) |
 | Industry validation & ecosystem positioning (differences from existing tools) | [VALIDATION](./docs/VALIDATION.md) |
 | Version roadmap | [ROADMAP](./docs/ROADMAP.md) |
@@ -242,7 +242,7 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # load the securit
 | Security statement · known limitations | [SECURITY](./SECURITY.md) · [LIMITATIONS](./docs/LIMITATIONS.md) |
 | Contribution guide | [CONTRIBUTING](./CONTRIBUTING.md) |
 
-> 🧪 **Engineering credibility**: 4055 tests / 13 engine packages + 13 plugins (engine packages = 12 main + 1 load-chain; plugins = 9 DSH + 4 OpenClaw; plugin tests run via the root `npm test --workspaces`; "engine packages" is the package-management-scope term — in architecture narrative these are "modules") · 24 audit rules · fresh-eyes independent review continuously running (test counts are determined by `tools/check/test-count.sh`; environmental notes are documented in [docs/guides/review-system.md](./docs/guides/review-system.md). Performance figures are single-machine reference values; cross-tool benchmarking is scheduled for v1.4.x together with Benchmark integration).
+> 🧪 **Engineering credibility**: 4102 tests / 13 engine packages + 13 plugins (engine packages = 12 main + 1 load-chain; plugins = 9 DSH + 4 OpenClaw; plugin tests run via the root `npm test --workspaces`; "engine packages" is the package-management-scope term — in architecture narrative these are "modules") · 24 audit rules · fresh-eyes independent review continuously running (test counts are determined by `tools/check/test-count.sh`; environmental notes are documented in [docs/guides/review-system.md](./docs/guides/review-system.md). Performance figures are single-machine reference values; cross-tool benchmarking is scheduled for v1.4.x together with Benchmark integration).
 
 ---
 

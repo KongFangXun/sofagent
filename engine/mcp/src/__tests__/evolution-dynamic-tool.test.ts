@@ -60,7 +60,7 @@ describe('L4 进化工具 MCP 动态面（第七章三）', () => {
     // 前置锚：当前静态面恰为 83（本版 +train_serve/train_compliance/train_deliverable）
     // ——该断言是「不进 83 静态计数」验收口径的本体（check-version 只数
     // tool-registry.ts 顶层 name，动态面不在其守卫面）。
-    expect(TOOLS.length).toBe(83);
+    expect(TOOLS.length).toBe(84);
 
     const generator = writeGenerator(base, 'regen_report');
     const registered = registerEvolvedTools({
@@ -79,7 +79,7 @@ describe('L4 进化工具 MCP 动态面（第七章三）', () => {
 
     expect(registered).toEqual(['regen_report']);
     // 静态面不变；动态面 +1；tools/list 语义 = 83 + 1
-    expect(TOOLS.length).toBe(83);
+    expect(TOOLS.length).toBe(84);
     expect(getDynamicTools().length).toBe(1);
   });
 
