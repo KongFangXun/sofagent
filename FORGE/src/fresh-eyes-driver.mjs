@@ -172,11 +172,28 @@ function syncWorktreeToMain(runDir) {
   //   到分支，commit 过的历史 reset 不掉，仅 HEAD 指针移动，旧 commit reflog 可达）；
   // ② 审查真相源是 runDir/round-*/ 下的 findings/result/summary 产物（不在 worktree 内）；
   // ③ 下一轮重审时 b-fix 修复若真重要会以新 finding 形态再现（重复率熔断兜底防空转）。
+  // 🔴 dirty 保险丝（run-2026-09-07 round-2→3 实锤）：worker 沙箱 git add 被拦时
+  // （commonjs 仓 .git 主 dir 不在 workspace 内），修复会以 dirty 形态滞留工作区，
+  // 此处 reset --hard 会静默洗掉整轮修复。防线：reset 前先快照 dirty diff 到
+  // roundDir/dirty-snapshot-<N>.patch 并给新 HEAD 打 apply 提示——patch 落盘即
+  // 真相源，永不静默丢失。
   try {
+    const dirty = git('status --porcelain', worktreeDir);
+    const dirtyFiles = dirty.split('\n').filter((l) => l.trim() && !l.startsWith('??'));
+    if (dirtyFiles.length > 0) {
+      const snapPath = join(runDir, `dirty-snapshot-${Date.now()}.patch`);
+      // 直接整树 diff（不加 pathspec）——沙箱 shell 引号转义在 git execSync
+      // 链路上不可靠，整树一次拿最稳；untracked 本就不在 diff 内，无需排除。
+      const diffOut = git('diff HEAD', worktreeDir);
+      if (diffOut.trim()) writeFileSync(snapPath, diffOut, 'utf-8');
+      console.error(`[worktree-sync] ⚠️ reset 前 worktree 有 ${dirtyFiles.length} 个 dirty 文件（疑似沙箱 git add 被拦的滞留修复），diff 已快照至 ${basename(snapPath)}`);
+      out.dirtySnapshot = basename(snapPath);
+      out.dirtyFiles = dirtyFiles.map((l) => l.slice(3));
+    }
     git(`reset --hard ${mainHead}`, worktreeDir);
     lastSyncedHead = mainHead;
     out.synced = true; out.mode = 'reset';
-    out.reason = `merge 冲突已回退 reset --hard ${mainHead.slice(0, 8)}（b-fix 已 commit 的历史保留在分支）`;
+    out.reason = `merge 冲突已回退 reset --hard ${mainHead.slice(0, 8)}（b-fix 已 commit 的历史保留在分支${out.dirtySnapshot ? `；dirty diff 已快照 ${out.dirtySnapshot}` : ''}）`;
     return out;
   } catch (err) {
     out.mode = 'fail'; out.reason = `merge/reset 均失败: ${err.message}`;
