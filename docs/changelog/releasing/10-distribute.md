@@ -158,3 +158,22 @@ bash tools/check/check-version.sh   # 全绿
 ```
 
 ---
+
+## 步骤四：npm 渠道门面检查（每版必做 · v1.4.6 拍板固化）
+
+> **定位**：npm 是实测主分发渠道（`@sofagent/audit` 月下载 4848 vs 43 star，113:1），但门面投入曾全部压在 GitHub——渠道门面错配（v1.4.5 审查实证）。本步骤每版分发时固定巡检 npm / GitHub / 官网三个「被找到」入口。仓内数字断言（description 工具数/插件数/homepage https）由 `bash tools/check/check-storefront.sh` 守护，此处补齐它不覆盖的面：
+
+```bash
+# 1. 裸名守护——期望 E404（未占用）或指向本仓占位包；出现第三方占用 = 渠道被抢，立即处置
+npm view sofagent name 2>&1 | head -2
+# 2. npm 包页 README（@sofagent/audit 的 npm 门面 = 安装者看到的第一屏，须与仓库首屏一致）
+npm view @sofagent/audit readme | head -20
+# 3. GitHub description/topics 品类词（搜索流量入口；拍板口径：可搜索品类词前置，自造词殿后）
+gh repo view --json description,repositoryTopics -q '.description, .repositoryTopics[].name'
+# 4. 官网门面（源码不在本仓 = 仓内门禁盲区）：文档链接可达性人工核查
+#    （v1.4.6 审查实证 3 链接 404：文档已下沉 docs/、FDE.md 实为 GUIDE.md）
+curl -sI https://sofagent.ai | head -1
+```
+
+- **裸名赎回指引**（v1.4.6 实测 E404 = 未占用可注册）：`sofagent` 裸名未被任何一方占用，项目负责人可用 npm 账号（kongfangxun + 2FA）注册占位包（minimal README 指向 `npx -y -p @sofagent/audit sofagent-audit`）——赎回后 `npm i sofagent` 直觉安装路径即通。占位包 description 写品类词，与 GitHub description 口径一致。
+- **官网改版是仓外动作**：官网源码不在本仓，本步骤只能「发现」不能「修复」——发现 404 / 口径漂移后转项目负责人处理仓外源码（v1.4.6 拍板：短期可先下掉官网 about 中失效的描述段，止血优于留死链）。

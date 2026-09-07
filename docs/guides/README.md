@@ -41,7 +41,6 @@
 
 | 指南 | 讲什么 |
 |------|--------|
-| [github-pr-playbook.md](./github-pr-playbook.md) | GitHub PR 投稿运营手册——sofagent 开源曝光实战沉淀（阵地筛选 / PR 模板 / 收录后维护） |
 
 ## 六、后训模块（v1.4.1+）
 

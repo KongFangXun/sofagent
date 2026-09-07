@@ -23,6 +23,7 @@
 | D4 | 版本号状态（changelog 头部标注当前版本号） |
 | D5 | 文档日期（changelog 头部日期已更新） |
 | D6 | 项目文档同步清单（changelog 每个功能点 → 对应文档有覆盖） |
+| D7 | acceptance 场景对账：本版每个新功能交付都有对应 acceptance 新场景（`bash tools/check/check-test-count.sh --scenarios-only` 过 + 场景数增长与新功能数匹配）——场景「顺延」= 行为锁欠账（v1.4.6 S376+ 顺延实锤），交付时欠的账要在本阶段收口 |
 
 ---
 
@@ -32,6 +33,7 @@
 
 | 改了什么 | 必须同步更新 |
 |---------|------------|
+| **新功能交付（任意包）** | **acceptance-test.sh 新场景行为锁**——每个新功能交付当场补对应场景，**禁止「顺延到下版」**（顺延 = 行为锁欠账，v1.4.6 S376+ 顺延实锤：新功能上线时无行为锁，回归只能靠单测）+ 对应包内单测 |
 | 审计规则（engine/audit/src/rules/） | 对应测试 + acceptance-test.sh 场景 + regression-checklist 维度 |
 | MCP tool（engine/mcp/src/tools/） | SKILL.md 工具速查清单 + check-version.sh 工具数校验 |
 | 审计维度数 / 测试数 / 包数 | README + CHANGELOG + ROADMAP + LIMITATIONS + evidence 数字声称 |
