@@ -164,8 +164,8 @@ bash tools/check/check-version.sh   # 全绿
 > **定位**：npm 是实测主分发渠道（`@sofagent/audit` 月下载 4848 vs 43 star，113:1），但门面投入曾全部压在 GitHub——渠道门面错配（v1.4.5 审查实证）。本步骤每版分发时固定巡检 npm / GitHub / 官网三个「被找到」入口。仓内数字断言（description 工具数/插件数/homepage https）由 `bash tools/check/check-storefront.sh` 守护，此处补齐它不覆盖的面：
 
 ```bash
-# 1. 裸名守护——期望 E404（未占用）或指向本仓占位包；出现第三方占用 = 渠道被抢，立即处置
-npm view sofagent name 2>&1 | head -2
+# 1. 裸名守护——期望指向本仓总包 sofagent（engine/umbrella/ 发版物）；版本对账由 check-storefront 断言 ④ 守护
+npm view sofagent name version 2>&1 | head -2
 # 2. npm 包页 README（@sofagent/audit 的 npm 门面 = 安装者看到的第一屏，须与仓库首屏一致）
 npm view @sofagent/audit readme | head -20
 # 3. GitHub description/topics 品类词（搜索流量入口；拍板口径：可搜索品类词前置，自造词殿后）
@@ -175,5 +175,5 @@ gh repo view --json description,repositoryTopics -q '.description, .repositoryTo
 curl -sI https://sofagent.ai | head -1
 ```
 
-- **裸名状态（v1.4.6 已赎回）**：`sofagent@0.0.1` 占位包已由项目负责人账号注册（2026-09-07，占位 README 指向 `npx -y -p @sofagent/audit sofagent-audit`）——直觉安装路径 `npm i sofagent` 已通，装上即获正确 CLI 指引。本步骤的裸名守护转为长期巡检：占位包在位即通过；若未来发布真包（如 sofagent-lite），版本从 0.0.1 之上正常升版覆盖。
+- **裸名状态（v1.4.6 起总包正式态）**：裸名 `sofagent` 升级为聚合安装入口（`engine/umbrella/`，bin `sofagent` 薄转发 @sofagent/audit CLI + dependencies 四功能包 audit/mcp/orchestrator/daemon）——`npm i -g sofagent` 一条命令装齐全功能，与 install.sh 等效。前态 `0.0.1` 占位包（2026-09-07 防抢注壳）无需 unpublish，总包随主线跳版发布后 latest 自动指向本版。每版 publish 后做一次直觉安装冒烟：`npm i -g sofagent` → `sofagent --help` 可跑 → `npm r -g sofagent` 还原。
 - **官网改版是仓外动作**：官网源码不在本仓，本步骤只能「发现」不能「修复」——发现 404 / 口径漂移后转项目负责人处理仓外源码（v1.4.6 拍板：短期可先下掉官网 about 中失效的描述段，止血优于留死链）。

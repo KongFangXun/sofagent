@@ -7,10 +7,14 @@
 #   「66 tools」漂移三版无人拦的根因（v1.4.4 审查第四份 P1 实证）。
 #   一条对外声称 = 一条可执行断言（含仓外元数据）。
 #
-# 对账面（三断言）：
+# 对账面（四断言）：
 #   ① description 工具数 = tool-registry.ts 实数（name: 'xxx' 去重计数）
 #   ② description 插件数 = dsh-plugins + openclaw-plugins 目录实数
 #   ③ homepage = https（非 http），且 package.json version 与发版时点对齐提示
+#   ④ npm 裸名总包 sofagent 对账（v1.4.6）：registry 裸名版本 ≤ SSOT 主线版本
+#      ——相等 = 已发最新 ✅ / 小于 = 未发布（发版中间态 ⏳ 放行，阶段九 publish 后自然消解）
+#      / 大于 = 漂移 ❌（registry 比仓内新 = 仓内 bump 遗漏）
+#      附带：总包 dependencies.@sofagent/audit 版本对账（未发布形态同 ⏳ 放行）
 #
 # 降级语义：gh / npm 不可达（离线/无凭证）→ SKIP 并显著提示，
 #   不静默假绿（门禁三态：PASS / FAIL / SKIP-可见）。
@@ -51,6 +55,40 @@ if [ -z "$TOOL_COUNT" ] || [ "$TOOL_COUNT" = "0" ]; then
   FAILS=$((FAILS + 1))
 fi
 echo "  仓内实数：MCP tools = ${TOOL_COUNT} · 插件 = ${PLUGIN_TOTAL}（DSH ${DSH_COUNT} + OpenClaw ${OC_COUNT}）"
+echo ""
+
+# ── 断言 ④：npm 裸名总包 sofagent 对账（独立于 gh——离线时 npm 侧同样 SKIP，互不吞没）──
+# SSOT = engine/audit/package.json（与 bump-version.sh 同源）；比较用 node（BSD sort 无 -V）
+SSOT_VER=$(node -e "console.log(require('./engine/audit/package.json').version)" 2>/dev/null)
+BARE_VER=$(npm view sofagent version 2>/dev/null)
+if [ -z "$SSOT_VER" ]; then
+  echo "  ⏭️  [npm 裸名] SSOT 版本读取失败——仓内异常，跳过本断言"
+  SKIPS=$((SKIPS + 1))
+elif [ -z "$BARE_VER" ]; then
+  echo "  ⏭️  [npm 裸名] registry 不可达（离线/限流）——npm 渠道本轮未对账，发布前补跑"
+  SKIPS=$((SKIPS + 1))
+else
+  CMP=$(node -e "
+    const [a,b] = process.argv.slice(1).map(v => v.split('.').map(Number));
+    for (let i = 0; i < 3; i++) { if ((a[i]||0) !== (b[i]||0)) { console.log((a[i]||0) > (b[i]||0) ? 'gt' : 'lt'); process.exit(); } }
+    console.log('eq');
+  " "$BARE_VER" "$SSOT_VER")
+  if [ "$CMP" = "eq" ]; then
+    echo "  ✓ [npm 裸名] sofagent@$BARE_VER = SSOT $SSOT_VER（总包已发最新）"
+  elif [ "$CMP" = "lt" ]; then
+    echo "  ⏳ [npm 裸名] sofagent@$BARE_VER < SSOT $SSOT_VER——总包待阶段九 publish（发版中间态，放行）"
+    SKIPS=$((SKIPS + 1))
+  else
+    echo "  ❌ [npm 裸名] sofagent@$BARE_VER > SSOT $SSOT_VER——registry 比仓内新（bump 遗漏/回滚未对齐），发版前必须修正"
+    FAILS=$((FAILS + 1))
+  fi
+  # 附带：总包依赖面对账（audit 版本声明与 SSOT 一致；未发布形态/占位包无此字段 → 放行）
+  BARE_DEP=$(npm view sofagent dependencies --json 2>/dev/null | node -e "let d='';process.stdin.on('data',c=>d+=c).on('end',()=>{try{console.log(JSON.parse(d)['@sofagent/audit']||'')}catch{console.log('')}})")
+  if [ -n "$BARE_DEP" ] && [ "$BARE_DEP" != "$SSOT_VER" ]; then
+    echo "  ❌ [npm 裸名] 总包 dependencies.@sofagent/audit=$BARE_DEP ≠ SSOT $SSOT_VER——聚合依赖版本漂移"
+    FAILS=$((FAILS + 1))
+  fi
+fi
 echo ""
 
 # ── gh 可达性探测（三态门禁的 SKIP 分支）──

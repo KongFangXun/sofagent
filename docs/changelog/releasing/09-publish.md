@@ -275,7 +275,7 @@ fi
 |---|----------|---------|------|
 | 1 | git tag（远端存在且指向发版 commit） | `gh api repos/KongFangXun/sofagent/git/refs/tags/vX.Y.Z --jq '.object.sha'` 对比 `git rev-parse vX.Y.Z^{commit}` | 两 SHA 一致 |
 | 2 | GitHub Release（title + body 可达） | `gh release view vX.Y.Z --json name,isDraft` | name 匹配、isDraft=false |
-| 3 | npm 13 包（audit + mcp 自动，其余 11 手动后） | `for p in audit mcp core daemon eval harness ontology orchestrator rules skillopt think ab-test; do npm view @sofagent/$p version; done` + `npm view @sofagent/load-chain version` | 13 项全部 = 本版号 |
+| 3 | npm 14 包（audit + mcp 自动，其余 12 手动后） | `for p in audit mcp core daemon eval harness ontology orchestrator rules skillopt think ab-test; do npm view @sofagent/$p version; done` + `npm view @sofagent/load-chain version` + `npm view sofagent version` | 14 项全部 = 本版号 |
 | 4 | 安装入口（README 双语 + bootstrap.sh 的 tag URL 可达） | `grep -rn "refs/tags/v" README.md README.en.md bootstrap.sh` + 逐条 `curl -sI` HTTP 200 | 三处 = 本版 tag 且真实可达 |
 
 > 任何一件不满足 = 发版未完成，当场补（重推 tag / 补 publish / 修 URL），不带病进入收尾。
@@ -400,11 +400,13 @@ EOF
 
 ---
 
-## 步骤八：npm 手动 publish 其余 10 包
+## 步骤八：npm 手动 publish 其余 11 包（含裸名总包）
 
-> `npm publish --workspaces` 不支持 workspace 全局发布。release.yml 只 auto-publish audit + mcp（Release 触发），其余 10 包手动 publish。
+> `npm publish --workspaces` 不支持 workspace 全局发布。release.yml 只 auto-publish audit + mcp（Release 触发），其余 11 包手动 publish（12 个 @sofagent scope 包 + 1 个裸名总包）。
 >
-> ⚠️ **@sofagent/load-chain（`engine/hooks/sofagent-load-chain/`）是第 13 个 workspace 包，不在下方循环里**——它不叫 `engine/<pkg>` 布局（在 `engine/hooks/` 下），按「12 包」口径极易漏掉。必须把它加进循环与验证清单，按 13 包口径对账。
+> ⚠️ **@sofagent/load-chain（`engine/hooks/sofagent-load-chain/`）是第 13 个 workspace 包，不在下方循环里**——它不叫 `engine/<pkg>` 布局（在 `engine/hooks/` 下），按「12 包」口径极易漏掉。必须把它加进循环与验证清单。
+>
+> ⚠️ **裸名总包 `sofagent`（`engine/umbrella/`）是第 14 个发布物**——npm 包名是裸名 `sofagent`（无 scope）、目录名是 umbrella，两者都与循环模式不匹配，单独段发布。它是 npm 渠道的聚合安装入口（`npm i -g sofagent` = 全功能四包），v1.4.6 起随主线版本同步发版。
 
 ```bash
 # 等 release.yml 完成（通常 3-5 分钟），确认 audit + mcp 已到 npm
@@ -413,7 +415,7 @@ npm view @sofagent/mcp@vX.Y.Z version    # 期望返回版本号
 
 # 手动 publish 其余 10 包——每包 publish 后立即 npm view 对账 + E409 自动等待重查
 # 🔴 publish 输出严禁接管道过滤（| grep xxx）——报错被过滤吞掉会表面循环跑完实际漏发，
-#    13 包对账时才发现。输出必须全量落盘，失败立即停。
+#    14 包对账时才发现。输出必须全量落盘，失败立即停。
 TARGET_VER=$(node -p "require('./package.json').version")
 for pkg in core daemon eval harness ontology orchestrator rules skillopt think ab-test; do
   echo "--- @sofagent/$pkg ---"
@@ -448,12 +450,37 @@ for pkg in core daemon eval harness ontology orchestrator rules skillopt think a
   [ "$LIVE" = "$TARGET_VER" ] && echo "  ✅ @sofagent/$pkg = $LIVE" || { echo "  🔴 对账失败：期望 $TARGET_VER 实际 $LIVE"; exit 1; }
 done
 
-# @sofagent/load-chain（布局在 engine/hooks/ 下，不进上面的循环——13 包口径，验证逻辑同上）
+# @sofagent/load-chain（布局在 engine/hooks/ 下，不进上面的循环——14 包口径之 13，验证逻辑同上）
 ( cd "engine/hooks/sofagent-load-chain" && npm publish --access public ) > /tmp/publish-load-chain.log 2>&1
 RC=$?
 [ $RC -ne 0 ] && { echo "🔴 load-chain publish 失败："; cat /tmp/publish-load-chain.log; exit 1; }
 LIVE=$(npm view @sofagent/load-chain version 2>/dev/null || true)
 [ "$LIVE" = "$TARGET_VER" ] && echo "✅ @sofagent/load-chain = $LIVE" || echo "🔴 load-chain 对账失败：期望 $TARGET_VER 实际 $LIVE"
+
+# 裸名总包 sofagent（engine/umbrella/——npm 聚合安装入口，包名无 scope 不进上方循环；14 包口径之 14）
+# bin = `sofagent` 薄转发到 @sofagent/audit CLI；dependencies 四功能包（audit/mcp/orchestrator/daemon）
+# 版本随 SSOT 同步（bump-version.sh 步骤 2c 自动覆盖 engine/umbrella/package.json）。
+# 0.0.1 占位包（v1.4.6 前的防抢注壳）无需 unpublish——总包跳版发布后 latest 自动指向本版。
+( cd "engine/umbrella" && npm publish --access public ) > /tmp/publish-umbrella.log 2>&1
+RC=$?
+if [ $RC -ne 0 ] && grep -q "E409\|previously staged" /tmp/publish-umbrella.log; then
+  echo "  ⏳ E409 staged——按上方 E409 段处理"
+  exit 1
+elif [ $RC -ne 0 ]; then
+  echo "  🔴 裸名总包 publish 失败（exit $RC），完整报错："
+  cat /tmp/publish-umbrella.log
+  exit 1
+fi
+LIVE=""
+for i in 1 2 3 4 5 6; do
+  LIVE=$(npm view sofagent version 2>/dev/null || true)
+  [ "$LIVE" = "$TARGET_VER" ] && break
+  echo "  ⏳ registry 传播中（查到 $LIVE），30s 后重查（第 $i 次）"
+  sleep 30
+done
+[ "$LIVE" = "$TARGET_VER" ] && echo "  ✅ sofagent（裸名总包）= $LIVE" || { echo "  🔴 裸名总包对账失败：期望 $TARGET_VER 实际 $LIVE"; exit 1; }
+# 发版后冒烟：裸名直觉安装命令在 dry-run 下解析成功（不真装）
+npm view sofagent dependencies --json | grep -q '"@sofagent/audit"' && echo "  ✅ 总包依赖面在位（audit/mcp/orchestrator/daemon）" || echo "  🔴 总包依赖面缺失——检查 package.json files/dependencies"
 
 > 🔴 **E409「previously staged version」处理**：`npm publish` 网络中断会在 registry 留下 **staged blob**（发布事务中间态，版本号被占位但未 finalize）——同版本重发报 `409 Conflict - Cannot publish over previously staged version "X.Y.Z"`。**staged 版本约 5 分钟内自动 finalize**（多版实证：E409 后等待约 5 分钟，`npm view dist-tags.latest` 即显示新版本，无需 unpublish）。处理顺序：① 先等 5 分钟重查 `npm view <pkg> dist-tags.latest`；② 仍未 finalize 再考虑 `npm unpublish <pkg>@<version> --force`（staged blob 独立于记录，unpublish 后 registry 主节点传播完成即可重发同版本）。⚠️ 与「npm 版本永久锁死」铁律不冲突——E409 staged 是**未 finalize 的占位**，可清除重发；已 published 的版本才不可覆盖。
 
