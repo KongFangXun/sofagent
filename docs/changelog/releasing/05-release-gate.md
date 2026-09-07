@@ -60,6 +60,7 @@ cd {REPO_ROOT} && source FORGE/env.local && node FORGE/src/release-gate-driver.m
 
 ### ④ 持续轮询（必做；🔴 前台执行，严禁挂后台）
 每 120 秒一轮读 <runDir>/status.json，输出一行状态（如「[第 N 轮] step=regression · heartbeat 距今 Xs」）——session 须持续可见「在跑」。前台「短 sleep + 快查」（sleep 90~115 后立即 cat），长 sleep 会被系统杀（exit 137）。heartbeat 距今 >90s → 探活 `node FORGE/src/release-gate-driver.mjs --check-alive <runDir>`（只认心跳不认日志；alive=RC0 / dead=RC1）；dead → 立即停手汇报，不要无限等。
+带 `--watch` 守护启动时（守护 v2）：轮询顺手读 <runDir>/watcher-status.json——其 ts 超 3×interval 未更新 = watcher 也死了，人工重启 watch；发现 watcher-exit.json 且 reason ≠ verdict-done = watcher 有意退出（拉起封顶 RESUME_MAX=5 / 同 phase 快速死亡环 / spawn 失败）——读 death-audit.jsonl 定位根因，不要盲目重启。
 
 ### ⑤ verdict 分支
 - **PASS** → 输出最终汇报（格式见下），立即结束，不再做任何仓库写入（含 LEDGER——PASS 轮账目由主 session 复验后收编）。本轮 runDir 的 resume-point.json 留在原处不动。

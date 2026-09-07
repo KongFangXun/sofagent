@@ -35,6 +35,7 @@ import {
   readFileSync, writeFileSync, mkdirSync, existsSync,
   appendFileSync, readdirSync, renameSync,
   statSync as statSyncReal, fstatSync as fstatSyncReal, unlinkSync, rmSync,
+  openSync, closeSync,
 } from 'fs';
 // preflight 磁盘检查：fs.statfs（Node 18.15+ 的异步版本）——低版本 Node 该导出
 // 为 undefined，runPreflight 内部检测到 undefined 自动跳过磁盘检查（降级不阻塞）。
@@ -1190,6 +1191,270 @@ export function checkDriverLiveness(runDir, opts = {}) {
   }
   return mk(false, status.event ?? null, status.phase ?? null, ageMs,
     `dead\n  heartbeat ${Math.round(ageMs / 1000)}s 未更新（阈值 ${Math.round(thresholdMs / 1000)}s）  最后 event=${status.event ?? '?'}  phase=${status.phase ?? '?'}`);
+}
+
+// ═══════════════════════════════════════════════════════════
+//  v1.4.6 进程守护 v2：watcher 四件套共享 + 三缺口修复
+//  （此前 fresh-eyes/release-gate 各复制一份同构实现——双份维护隐患，收编到 base）
+//  缺口修复：
+//    ① respawn 无上限熔断 → RESUME_MAX（默认 5）封顶，到顶写 watcher-exit.json 退出
+//    ② 环境根因反复死识别不出 → 同 phase 快速死亡环检测（同 phase 死 ≥2 次
+//       且死亡间隔 < QUICK_DEATH_MS）→ 判根因性退出，不再无限重试
+//    ③ watcher 自身无人守护 → watcher 每轮写 watcher-status.json 心跳，
+//       SOP 轮询协议发现 watcher 心跳停即人工重启 watch
+// ═══════════════════════════════════════════════════════════
+
+/** watcher 自动拉起上限（默认 5；env FORGE_RESUME_MAX 可覆盖）。到顶退出防无限空转烧 API */
+export const RESUME_MAX = parseInt(process.env.FORGE_RESUME_MAX || '5', 10);
+
+/** 快速死亡判定窗口（默认 5 分钟）：两次死亡间隔小于此值且同 phase = 环境根因环 */
+export const QUICK_DEATH_MS = parseInt(process.env.FORGE_QUICK_DEATH_MS || String(5 * 60 * 1000), 10);
+
+const watcherSleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+/**
+ * detached spawn 一个 driver 进程（脱离父进程树）。
+ * watcher 拉起 / daemon 模式共用。stdio 绑文件 fd（非 ignore，否则输出全丢）。
+ *
+ * @param {string} driverEntry driver 入口绝对路径（spawn 的 argv[1]）
+ * @param {string[]} args      CLI 参数（不含脚本路径）
+ * @param {string}   logPath   日志文件绝对路径
+ * @param {Object}   env       附加环境变量
+ * @returns {number} 子进程 pid
+ */
+export function spawnDetachedDriverGeneric(driverEntry, args, logPath, env = {}) {
+  mkdirSync(dirname(logPath), { recursive: true });
+  const logFd = openSync(logPath, 'a');
+  try {
+    const child = spawn(process.execPath, [driverEntry, ...args], {
+      detached: true,
+      stdio: ['ignore', logFd, logFd],
+      env: { ...process.env, ...env },
+    });
+    child.unref();
+    return child.pid;
+  } finally {
+    closeSync(logFd); // 父进程关自己的 fd 副本（子进程持继承副本）
+  }
+}
+
+/**
+ * 死因审计——driver 死后证据落盘 runDir/death-audit.jsonl（append）。
+ * verdict = signal-abort（latest.json stopReason='aborted-signal'，SIGTERM 优雅）
+ *         / external-kill（无 stopReason + pidfile 残留 = 非优雅退出，默认）。
+ * @returns {Object} 审计条目（含 ts，同时落盘）
+ */
+export function auditDriverDeath(runDir, liveness) {
+  const entry = {
+    ts: new Date().toISOString(),
+    heartbeatAgeMs: liveness.heartbeatAgeMs ?? null,
+    lastEvent: liveness.lastEvent ?? null,
+    phase: liveness.phase ?? null,
+    pidfile: (() => {
+      try {
+        const p = join(runDir, 'driver.pid');
+        return existsSync(p) ? readFileSync(p, 'utf-8').trim() : null;
+      } catch { return null; }
+    })(),
+    stopReason: null,
+    verdict: 'external-kill',
+  };
+  try {
+    const latestPath = join(runDir, 'latest.json');
+    if (existsSync(latestPath)) {
+      const latest = JSON.parse(readFileSync(latestPath, 'utf-8'));
+      if (latest.stopReason) entry.stopReason = latest.stopReason;
+    }
+  } catch { /* latest.json 读失败不阻断审计 */ }
+  if (entry.stopReason === 'aborted-signal') entry.verdict = 'signal-abort';
+  try {
+    appendFileSync(join(runDir, 'death-audit.jsonl'), JSON.stringify(entry) + '\n');
+  } catch { /* 审计落盘失败不阻断 watcher 主循环 */ }
+  return entry;
+}
+
+/**
+ * 从 runDir 现有元数据构造 resume 参数。
+ * latest.json 优先，resume-point.json 兜底。缺 target 返回 null（无法续跑）。
+ * @param {Function} extractArgs 从元数据 JSON 映射为 spawn 参数数组的函数
+ *        （fresh-eyes 取 target+maxRounds，release-gate 只取 target——差异注入点）
+ */
+export function buildRespawnArgs(runDir, extractArgs) {
+  for (const f of ['latest.json', 'resume-point.json']) {
+    try {
+      const p = join(runDir, f);
+      if (!existsSync(p)) continue;
+      const j = JSON.parse(readFileSync(p, 'utf-8'));
+      const args = extractArgs(j);
+      if (args) return args;
+    } catch { /* 单个源损坏继续尝试下一个 */ }
+  }
+  return null;
+}
+
+/**
+ * 快速死亡环检测（缺口②修复）。
+ * 读 death-audit.jsonl 全量条目，判定本次死亡是否构成「环境根因环」：
+ * 同 phase 的死亡 ≥2 次且最近两次间隔 < QUICK_DEATH_MS。
+ * 识别出的含义：respawn 只回放 target 不修环境——环境类死因（env 缺失/
+ * git 冲突/磁盘满/代码 bug）拉起后必然带着同样死因再死，重试无意义。
+ *
+ * @param {string} runDir      run 目录
+ * @param {string} currentPhase 本次死亡的 phase（可能为 null）
+ * @param {number} nowMs       当前时间戳（ms）——测试可注入
+ * @returns {Object} { isQuickDeathLoop, evidence } —— 环内为 true 且附证据描述
+ */
+export function detectQuickDeathLoop(runDir, currentPhase, nowMs = Date.now()) {
+  const auditPath = join(runDir, 'death-audit.jsonl');
+  let entries = [];
+  try {
+    if (existsSync(auditPath)) {
+      entries = readFileSync(auditPath, 'utf-8').split('\n')
+        .filter((l) => l.trim())
+        .map((l) => JSON.parse(l))
+        .filter((e) => e.ts);
+    }
+  } catch { /* 解析失败按无历史处理——不阻断 respawn */ }
+  if (currentPhase == null || entries.length < 2) {
+    return { isQuickDeathLoop: false, evidence: null };
+  }
+  const samePhase = entries.filter((e) => e.phase === currentPhase)
+    .map((e) => ({ ...e, tsMs: Date.parse(e.ts) }))
+    .filter((e) => Number.isFinite(e.tsMs))
+    .sort((a, b) => a.tsMs - b.tsMs);
+  if (samePhase.length < 2) {
+    return { isQuickDeathLoop: false, evidence: null };
+  }
+  const last = samePhase[samePhase.length - 1];
+  const prev = samePhase[samePhase.length - 2];
+  const gapMs = last.tsMs - prev.tsMs;
+  if (gapMs < QUICK_DEATH_MS) {
+    return {
+      isQuickDeathLoop: true,
+      evidence: `phase=${currentPhase} 死亡 ${samePhase.length} 次，最近两次间隔 ${Math.round(gapMs / 1000)}s < ${Math.round(QUICK_DEATH_MS / 1000)}s`,
+    };
+  }
+  return { isQuickDeathLoop: false, evidence: null };
+}
+
+/**
+ * watcher 退出留痕（缺口①②的退出产物）：写 runDir/watcher-exit.json。
+ * 退出码语义：0=正常（verdict 产出）/ 1=异常退出（拉起耗尽/根因环/spawn 失败）。
+ */
+export function writeWatcherExit(runDir, reason, detail, resumeCount) {
+  try {
+    writeFileSync(join(runDir, 'watcher-exit.json'), JSON.stringify({
+      ts: new Date().toISOString(),
+      reason,       // 'verdict-done' | 'resume-max' | 'quick-death-loop' | 'spawn-fail' | 'no-resume-args'
+      detail,
+      resumeCount,
+    }, null, 2));
+  } catch { /* 留痕失败不阻断退出 */ }
+}
+
+/**
+ * watcher 心跳（缺口③修复）：每轮更新 runDir/watcher-status.json。
+ * SOP 轮询协议读此文件——watcher 心跳停（>3×interval）即人工重启 watch。
+ */
+export function writeWatcherHeartbeat(runDir, phase, resumeCount) {
+  try {
+    writeFileSync(join(runDir, 'watcher-status.json'), JSON.stringify({
+      ts: new Date().toISOString(),
+      pid: process.pid,
+      phase,        // 'monitoring' | 'respawned' | 'exiting'
+      resumeCount,
+    }));
+  } catch { /* 心跳失败不阻断主循环 */ }
+}
+
+/**
+ * watcher 主管主循环（共享版）——Harness 理念：注入（启动规则）→ 审计（死因
+ * 落盘）→ 回溯（--resume 断点续跑）。与 v1.3.9 版差异 = 三缺口修复：
+ *   ① RESUME_MAX 封顶（到顶 watcher-exit.json 留痕退出）
+ *   ② 快速死亡环检测（同 phase 短间隔反复死 → 判根因性退出）
+ *   ③ watcher 心跳（watcher-status.json 每轮更新，SOP 轮询可观测）
+ *
+ * @param {Object} opts
+ * @param {string} opts.driverEntry     driver 入口绝对路径
+ * @param {string} opts.runDir          监控的 run 目录
+ * @param {number} opts.intervalSec     轮询间隔（默认 30）
+ * @param {number} opts.thresholdSec    心跳死亡阈值（默认 90）
+ * @param {Function} opts.extractArgs   resume 参数提取（注入 driver 差异）
+ * @param {Function} [opts.log]         日志函数（默认 console.log 带 [watcher] 前缀）
+ * @param {Function} [opts.liveness]    liveness 探针（默认 checkDriverLiveness——测试注入点）
+ * @param {Function} [opts.spawnImpl]   拉起实现（默认 spawnDetachedDriverGeneric——测试注入点）
+ * @returns {Promise<{rc: number, resumeCount: number, reason: string}>}
+ */
+export async function runWatcherShared(opts) {
+  const {
+    driverEntry,
+    runDir,
+    intervalSec = 30,
+    thresholdSec = 90,
+    extractArgs,
+    log = (msg) => console.log(`[watcher] ${new Date().toISOString()} ${msg}`),
+    liveness = (rd) => checkDriverLiveness(rd, { thresholdMs: thresholdSec * 1000 }),
+    spawnImpl = (args, logPath) => spawnDetachedDriverGeneric(driverEntry, args, logPath, { SOFAGENT_DAEMON_CHILD: '1' }),
+  } = opts;
+  mkdirSync(runDir, { recursive: true });
+  try { writeFileSync(join(runDir, 'watcher.pid'), String(process.pid)); } catch { /* pidfile 失败不阻断 */ }
+  log(`启动 pid=${process.pid} · 盯 ${runDir} · interval=${intervalSec}s threshold=${thresholdSec}s · resumeMax=${RESUME_MAX}`);
+
+  let resumeCount = 0;
+  while (true) {
+    if (existsSync(join(runDir, 'verdict.md'))) {
+      writeWatcherHeartbeat(runDir, 'exiting', resumeCount);
+      writeWatcherExit(runDir, 'verdict-done', 'verdict.md 已产出', resumeCount);
+      log('✅ verdict.md 已产出——主管任务完成，退出');
+      return { rc: 0, resumeCount, reason: 'verdict-done' };
+    }
+    writeWatcherHeartbeat(runDir, 'monitoring', resumeCount);
+    const live = liveness(runDir);
+    if (live.alive) {
+      await watcherSleep(intervalSec * 1000);
+      continue;
+    }
+    const death = auditDriverDeath(runDir, live);
+    log(`🛑 driver 死亡（heartbeat ${Math.round((death.heartbeatAgeMs ?? 0) / 1000)}s 未更新）→ verdict=${death.verdict} phase=${death.phase ?? '?'}`);
+
+    // 缺口②：快速死亡环检测——环境根因（respawn 无法修复的死因）不再重试
+    const loop = detectQuickDeathLoop(runDir, death.phase);
+    if (loop.isQuickDeathLoop) {
+      writeWatcherHeartbeat(runDir, 'exiting', resumeCount);
+      writeWatcherExit(runDir, 'quick-death-loop', loop.evidence, resumeCount);
+      log(`🔁 快速死亡环（${loop.evidence}）——环境根因，respawn 无法修复。主管退出，需人工介入（读 death-audit.jsonl 定位根因）`);
+      return { rc: 1, resumeCount, reason: 'quick-death-loop' };
+    }
+
+    // 缺口①：respawn 封顶——到顶退出防无限空转
+    if (resumeCount >= RESUME_MAX) {
+      writeWatcherHeartbeat(runDir, 'exiting', resumeCount);
+      writeWatcherExit(runDir, 'resume-max', `拉起 ${resumeCount} 次仍死亡`, resumeCount);
+      log(`⛔ 拉起次数达上限 ${RESUME_MAX}——主管退出，需人工介入（读 death-audit.jsonl 定位死因）`);
+      return { rc: 1, resumeCount, reason: 'resume-max' };
+    }
+
+    const respawn = buildRespawnArgs(runDir, extractArgs);
+    if (!respawn) {
+      writeWatcherHeartbeat(runDir, 'exiting', resumeCount);
+      writeWatcherExit(runDir, 'no-resume-args', '缺 target 无法构造 resume 参数', resumeCount);
+      log('⚠️ 无法构造 resume 参数（缺 target）——主管退出，需人工介入');
+      return { rc: 1, resumeCount, reason: 'no-resume-args' };
+    }
+    resumeCount++;
+    writeWatcherHeartbeat(runDir, 'respawned', resumeCount);
+    log(`🔄 自动拉起 driver #${resumeCount}/${RESUME_MAX}：${respawn.args.join(' ')}`);
+    try {
+      spawnImpl(respawn.args, join(runDir, 'driver.log'));
+    } catch (err) {
+      writeWatcherHeartbeat(runDir, 'exiting', resumeCount);
+      writeWatcherExit(runDir, 'spawn-fail', err.message, resumeCount);
+      log(`💥 spawn 失败: ${err.message}——主管退出，需人工介入`);
+      return { rc: 1, resumeCount, reason: 'spawn-fail' };
+    }
+    // 拉起后睡一轮：driver 刚启动 status.json 未生成会被误判 dead 反复拉起
+    await watcherSleep(intervalSec * 1000);
+  }
 }
 
 

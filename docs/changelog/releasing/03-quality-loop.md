@@ -39,7 +39,7 @@
 | ③ | **先验证 round-start 再轮询** | 启动后等 8 秒读 `status.json`：event=round-start / phase=round-1-running 才算真跑起来，否则需重启 |
 | ④ | **不传 timeout 参数** | 后台任务传 `timeout:600000` = 10 分钟上限杀 driver；后台无需 timeout，传了反而被杀 |
 | ⑤ | **中断恢复用 `--resume` 续跑** | 异常死亡 → liveness 探针确认 → 命令加 `--resume`——driver 按产物完整性跳过已完成 worker，**保留已有产物续跑，绝不重开浪费** |
-| ⑥ | **daemon + watch 守护优先** | `--daemon` spawn detached 自脱离进程树（会话结束不影响存活，日志 → runDir/driver.log）；`--watch <runDir>` 主管模式——每 30s 读心跳，心跳停 → 审计死因（death-audit.jsonl）→ **自动 `--resume` 拉起新 driver**，verdict.md 产出后 watcher 退出（`--watch-interval` 默认 30s / `--watch-threshold` 默认 90s）。**daemon+watch 就绪优先用**，裸后台（①~⑤）为 fallback |
+| ⑥ | **daemon + watch 守护优先** | `--daemon` spawn detached 自脱离进程树（会话结束不影响存活，日志 → runDir/driver.log）；`--watch <runDir>` 主管模式——每 30s 读心跳，心跳停 → 审计死因（death-audit.jsonl）→ **自动 `--resume` 拉起新 driver**（守护 v2 三闸：拉起封顶 RESUME_MAX=5 / 同 phase 快速死亡环检测（5min 窗口）判根因性退出 / watcher 自身每轮写 watcher-status.json 心跳），verdict.md 产出后 watcher 退出（`--watch-interval` 默认 30s / `--watch-threshold` 默认 90s）。watcher 退出留痕 runDir/watcher-exit.json（reason=verdict-done ✅ / resume-max・quick-death-loop・spawn-fail ❌ 需人工读 death-audit.jsonl）。**daemon+watch 就绪优先用**，裸后台（①~⑤）为 fallback |
 | ⑦ | **独占窗口检查（三查）** | 启动前确认无其他 session 在写本仓库——一查 `git status --short \| wc -l` 改动文件数（预期 0 或个位数，几十个 = 有其他 session 在写）；二查近 5 分钟 mtime（`find . -path ./node_modules -prune -o -mmin -5 -type f -print`）；三查 `.workbuddy/memory/$(date +%Y-%m-%d).md` 今日日志有无他人活跃记录。**任一命中即停手问用户** |
 | ⑧ | **driver 运行期并行步骤三/四** | driver 后台跑时当前 session 并行执行代码审核 + 验收增量，不空等 |
 | ⑨ | **启动时段选择** | 重型 LLM loop 避开 GLM 3 倍价时段（工作日 14:00-18:00——高峰限流易触发 LLM 流 stall 熔断）；轮询用短命令快查，不挂超长 sleep（会被系统杀 exit 137） |
@@ -125,6 +125,9 @@
    输出一行状态（round 变化时一句话汇报）。前台「短 sleep + 快查」（sleep 90~115 后立即 cat 返回），
    不挂超长 sleep（会被系统杀 exit 137）；监控中断不影响 driver，续上后直接查 status.json。
    心跳冻结 >90 秒：daemon+watch 模式看 watcher 是否自动 resume（观察 death-audit.jsonl + 新 driver 拉起）；
+   watcher 自身观测（守护 v2）：轮询时顺手读 runDir/watcher-status.json——其 ts 超 3×interval 未更新 = watcher 也死了，
+   人工重启 watch（`node FORGE/src/fresh-eyes-driver.mjs --watch <runDir>`）；发现 watcher-exit.json 且 reason ≠ verdict-done
+   = watcher 有意退出（拉起耗尽/快速死亡环/spawn 失败）——读 death-audit.jsonl 定位根因，不要盲目重启；
    fallback 模式用 pgrep 确认进程存活，无输出 = 已死 → 主 session 决定 --resume 续跑。
 4. driver 终态（verdict 产出或 max-rounds 到顶）→ 读报告（findings/verdict 产物文件，非仅 status.json），
    统计未解决 P0/P1 计数，分支：

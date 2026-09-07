@@ -31,7 +31,6 @@ import { createRequire } from 'module';
 import {
   readFileSync, writeFileSync, mkdirSync, existsSync, statSync,
   appendFileSync, readdirSync, copyFileSync, createWriteStream,
-  openSync, closeSync, unlinkSync,
 } from 'fs';
 import { join, resolve, dirname, basename } from 'path';
 import { fileURLToPath } from 'url';
@@ -51,7 +50,7 @@ try {
 } catch { /* undici 不可用（理论不发生——Node 18+ 内置））：维持默认，风险回到修复前 */ }
 
 // v1.2.7 功能⑤：继承 driver-base 公共编排层
-import { createForgeDriverBase, runPreflight, formatPreflightReport, resolveMaxConcurrency, checkDriverLiveness } from './driver-base.mjs';
+import { createForgeDriverBase, runPreflight, formatPreflightReport, resolveMaxConcurrency, checkDriverLiveness, spawnDetachedDriverGeneric, runWatcherShared } from './driver-base.mjs';
 import { createGateTools } from './gate-tools.mjs';
 
 // 可见性：核心层 + 适配器（agent 无关 + 渐进适配）
@@ -2664,119 +2663,33 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
  * （launchd 收养），宿主会话结束不影响存活。日志 stdio 绑文件 fd（非 ignore）。
  */
 function spawnDetachedDriver(args, logPath, env = {}) {
-  mkdirSync(dirname(logPath), { recursive: true });
-  const logFd = openSync(logPath, 'a');
-  try {
-    const child = spawn(process.execPath, [__filename, ...args], {
-      detached: true,
-      stdio: ['ignore', logFd, logFd],
-      env: { ...process.env, ...env },
-    });
-    child.unref();
-    return child.pid;
-  } finally {
-    closeSync(logFd);
-  }
+  return spawnDetachedDriverGeneric(__filename, args, logPath, env);
 }
 
 /**
- * 死因审计——Harness「审计」能力落地。
- * driver 死后把死因证据落盘 runDir/death-audit.jsonl（append）：
- * verdict = signal-abort（latest.json stopReason='aborted-signal'，SIGTERM 优雅）
- *         / external-kill（无 stopReason + driver.pid 残留 = 非优雅退出，默认）。
+ * resume 参数提取（release-gate 特有：单轮 V+F 流程，只取 target——无 maxRounds 概念）。
  */
-function auditDriverDeath(runDir, liveness) {
-  const entry = {
-    ts: new Date().toISOString(),
-    heartbeatAgeMs: liveness.heartbeatAgeMs ?? null,
-    lastEvent: liveness.lastEvent ?? null,
-    phase: liveness.phase ?? null,
-    pidfile: (() => {
-      try {
-        const p = join(runDir, 'driver.pid');
-        return existsSync(p) ? readFileSync(p, 'utf-8').trim() : null;
-      } catch { return null; }
-    })(),
-    stopReason: null,
-    verdict: 'external-kill',
-  };
-  try {
-    const latestPath = join(runDir, 'latest.json');
-    if (existsSync(latestPath)) {
-      const latest = JSON.parse(readFileSync(latestPath, 'utf-8'));
-      if (latest.stopReason) entry.stopReason = latest.stopReason;
-    }
-  } catch { /* latest.json 读失败不阻断审计 */ }
-  if (entry.stopReason === 'aborted-signal') entry.verdict = 'signal-abort';
-  try {
-    appendFileSync(join(runDir, 'death-audit.jsonl'), JSON.stringify(entry) + '\n');
-  } catch { /* 审计落盘失败不阻断 watcher 主循环 */ }
-  return entry;
-}
-
-/**
- * 从 runDir 现有元数据构造 resume 参数（target）。
- * latest.json 优先，resume-point.json 兜底。缺 target 返回 null（无法续跑）。
- * release-gate 无 maxRounds 概念（单轮 V+F 流程），只取 target。
- */
-function buildRespawnArgs(runDir) {
-  for (const f of ['latest.json', 'resume-point.json']) {
-    try {
-      const p = join(runDir, f);
-      if (!existsSync(p)) continue;
-      const j = JSON.parse(readFileSync(p, 'utf-8'));
-      if (j && typeof j.target === 'string' && j.target) {
-        return { target: j.target };
-      }
-    } catch { /* 单个源损坏继续尝试下一个 */ }
+function extractReleaseGateRespawnArgs(j) {
+  if (j && typeof j.target === 'string' && j.target) {
+    return { args: ['--target', j.target, '--resume'] };
   }
   return null;
 }
 
 /**
- * watcher 主管主循环——Harness 理念：注入（启动规则）→ 审计（死因落盘）→
- * 回溯（--resume 断点续跑）。每 intervalSec 读 status.json 心跳；心跳停 →
- * 死因审计 → spawnDetachedDriver --resume 拉起；verdict.md 产出 → watcher 退出。
+ * watcher 适配（--watch 模式入口）——v1.4.6 守护 v2：收编 driver-base 共享循环
+ * （三缺口修复：respawn 封顶 / 快速死亡环检测 / watcher 心跳）+ 差异注入。
  */
 async function runWatcher(runDir, intervalSec, thresholdSec) {
-  const log = (msg) => console.log(`[watcher] ${new Date().toISOString()} ${msg}`);
-  mkdirSync(runDir, { recursive: true });
-  try { writeFileSync(join(runDir, 'watcher.pid'), String(process.pid)); } catch { /* pidfile 失败不阻断 */ }
-  log(`启动 pid=${process.pid} · 盯 ${runDir} · interval=${intervalSec}s threshold=${thresholdSec}s`);
-
-  let resumeCount = 0;
-  while (true) {
-    if (existsSync(join(runDir, 'verdict.md'))) {
-      log('✅ verdict.md 已产出——主管任务完成，退出');
-      return;
-    }
-    const live = checkDriverLiveness(runDir, { thresholdMs: thresholdSec * 1000 });
-    if (live.alive) {
-      await sleep(intervalSec * 1000);
-      continue;
-    }
-    const death = auditDriverDeath(runDir, live);
-    log(`🛑 driver 死亡（heartbeat ${Math.round((death.heartbeatAgeMs ?? 0) / 1000)}s 未更新）→ verdict=${death.verdict} phase=${death.phase ?? '?'}`);
-    const respawn = buildRespawnArgs(runDir);
-    if (!respawn) {
-      log('⚠️ 无法构造 resume 参数（缺 target）——主管退出，需人工介入');
-      return;
-    }
-    resumeCount++;
-    log(`🔄 自动拉起 driver #${resumeCount}：--target ${respawn.target} --resume`);
-    try {
-      spawnDetachedDriver(
-        ['--target', respawn.target, '--resume'],
-        join(runDir, 'driver.log'),
-        { SOFAGENT_DAEMON_CHILD: '1' },
-      );
-    } catch (err) {
-      log(`💥 spawn 失败: ${err.message}——主管退出，需人工介入`);
-      return;
-    }
-    // 拉起后睡眠一轮，避免 driver 刚启动 status.json 未生成被误判 dead 反复拉起
-    await sleep(intervalSec * 1000);
-  }
+  const result = await runWatcherShared({
+    driverEntry: __filename,
+    runDir,
+    intervalSec,
+    thresholdSec,
+    extractArgs: extractReleaseGateRespawnArgs,
+  });
+  // 退出码语义：verdict-done=0（正常）；resume-max/quick-death-loop/spawn-fail=1（需人工）
+  process.exit(result.rc);
 }
 
 /**

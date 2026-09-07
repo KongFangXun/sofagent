@@ -123,6 +123,7 @@ if [ "$LOAD_ONLY" = false ]; then
 
   TEST_FILES=(
     "FORGE/src/driver-base.test.mjs"
+    "FORGE/src/driver-watch.test.mjs"
     "FORGE/src/fresh-eyes-driver.test.mjs"
     "FORGE/src/release-gate-driver.test.mjs"
     "FORGE/src/preflight-check.test.mjs"

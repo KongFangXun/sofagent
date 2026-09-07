@@ -31,14 +31,14 @@ import { createRequire } from 'module';
 import {
   readFileSync, writeFileSync, mkdirSync, existsSync,
   appendFileSync, readdirSync, renameSync, statSync,
-  openSync, closeSync, unlinkSync,
+  unlinkSync,
 } from 'fs';
 import { join, resolve, dirname, relative, sep, basename } from 'path';
 import { fileURLToPath } from 'url';
 import os from 'os';
 
 // v1.2.7 功能⑤：继承 driver-base 公共编排层
-import { createForgeDriverBase, runPreflight, formatPreflightReport, resolveMaxConcurrency, createConcurrencyDegrader, checkDriverLiveness } from './driver-base.mjs';
+import { createForgeDriverBase, runPreflight, formatPreflightReport, resolveMaxConcurrency, createConcurrencyDegrader, checkDriverLiveness, spawnDetachedDriverGeneric, runWatcherShared } from './driver-base.mjs';
 
 // 可见性：核心层 + 适配器（agent 无关 + 渐进适配）
 import { createVisibility, EVENTS } from './visibility.mjs';
@@ -1533,6 +1533,20 @@ ${incrementalFiles.map(f => `- ${f}`).join('\n')}`;
   if (stepDef.outputs.length === 1) {
     const actualOutput = customOutputName || stepDef.outputs[0];
     const outPath = join(roundDir, actualOutput);
+    // v1.4.6 骨架占位门控（run-2026-09-07 实锤）：收敛指令要求「先写报告骨架再回填」，
+    // 部分 perspective worker 写完骨架即提前收工——61~201B 骨架经本通道静默落盘
+    // （completion 仅 689~1692 tokens），下游 a-consolidate 把占位当有效发现合并，
+    // 该视角的发现凭空丢失。门控镜像收敛要求第 4 条（≥500 字符且含 ## 标题）：
+    // 不过门 → 打 [empty-response] 标记抛错，spawnWorker 既有重试通道重启 worker
+    // （最多 2 次，三次仍不过才降级占位）。硬熔断的部分报告已带标记头且宽限窗口
+    // 机制已尽力抢救，不重复拦截（拦截会浪费整轮预算重跑）。
+    if (stepDef.perspective && !hardBreakFlag &&
+        !(text.length >= REPORT_MIN_CHARS && /^#{1,3}\s/m.test(text))) {
+      console.error(`[empty-response] [worker:${step}] 产物 ${text.length} 字符未达报告门控（≥${REPORT_MIN_CHARS} 字符且含 ## 标题）——疑似骨架未回填，触发重试`);
+      const err = new Error(`[worker:${step}] 报告产物未达质量门控（${text.length} 字符，疑似只写骨架未回填终稿）`);
+      err.isEmptyResponseError = true;
+      throw err;
+    }
     writeFileSync(outPath, text, 'utf-8');
     console.log(`[worker:${step}] 产物已写入 ${outPath}`);
   } else {
@@ -3731,147 +3745,36 @@ async function detectReporters() {
 }
 
 // ═══════════════════════════════════════════════════════════
-//  v1.3.9 进程守护：daemon 自脱离 + watcher 主管（Harness 理念）
+//  v1.4.6 进程守护 v2：watcher 四件套收编 driver-base 共享（三缺口修复：
+//  respawn 封顶 / 快速死亡环检测 / watcher 心跳）——本文件只留薄适配层。
 // ═══════════════════════════════════════════════════════════
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-/**
- * detached spawn 本 driver（脱离父进程树）。
- *
- * WorkBuddy run_in_background 的进程挂在 Electron 进程树下，主 session turn
- * 结束时会被整体清理（run-01 两次静默死亡根因：无 .ips、无 stopReason、
- * 心跳戛然而止 = 进程树 SIGKILL）。detached:true 让子进程成为孤儿进程
- * （由 launchd 收养），彻底脱离 WorkBuddy 生命周期。
- *
- * 日志重定向：stdio 直接绑打开的文件 fd（非 'ignore'，否则 console 输出全丢）。
- *
- * @param {string[]} args    传给本 driver 的 CLI 参数（不含脚本路径）
- * @param {string}   logPath 日志文件绝对路径
- * @param {Object}   env     附加环境变量（如 SOFAGENT_DAEMON_CHILD）
- * @returns {number} 子进程 pid
- */
+/** fresh-eyes 的 daemon 拉起（spawn 本 driver detached）——共享版转发 */
 function spawnDetachedDriver(args, logPath, env = {}) {
-  mkdirSync(dirname(logPath), { recursive: true });
-  const logFd = openSync(logPath, 'a');
-  try {
-    const child = spawn(process.execPath, [fileURLToPath(import.meta.url), ...args], {
-      detached: true,
-      stdio: ['ignore', logFd, logFd],
-      env: { ...process.env, ...env },
-    });
-    child.unref();
-    return child.pid;
-  } finally {
-    closeSync(logFd); // 父进程关闭自己的 fd 副本（子进程持有继承副本）
-  }
+  return spawnDetachedDriverGeneric(fileURLToPath(import.meta.url), args, logPath, env);
 }
 
-/**
- * 死因审计——Harness「审计」能力落地。
- *
- * driver 死后把可得的死因证据落盘 runDir/death-audit.jsonl（append）：
- *  - pidfile 残留（driver.pid 没被 SIGTERM handler 删除 = 非优雅退出）
- *  - latest.json stopReason（SIGTERM 优雅终止会写 'aborted-signal'）
- *  - 判定 verdict：signal-abort（SIGTERM 优雅）/ external-kill（外部强制，默认）
- *
- * @returns {Object} 审计条目（同时落盘）
- */
-function auditDriverDeath(runDir, liveness) {
-  const entry = {
-    ts: new Date().toISOString(),
-    heartbeatAgeMs: liveness.heartbeatAgeMs ?? null,
-    lastEvent: liveness.lastEvent ?? null,
-    phase: liveness.phase ?? null,
-    pidfile: (() => {
-      try {
-        const p = join(runDir, 'driver.pid');
-        return existsSync(p) ? readFileSync(p, 'utf-8').trim() : null;
-      } catch { return null; }
-    })(),
-    stopReason: null,
-    verdict: 'external-kill',
-  };
-  // latest.json 的 stopReason：SIGTERM handler 写 'aborted-signal'，SIGKILL 不写
-  try {
-    const latestPath = join(runDir, 'latest.json');
-    if (existsSync(latestPath)) {
-      const latest = JSON.parse(readFileSync(latestPath, 'utf-8'));
-      if (latest.stopReason) entry.stopReason = latest.stopReason;
-    }
-  } catch { /* latest.json 读失败不阻断审计 */ }
-  if (entry.stopReason === 'aborted-signal') entry.verdict = 'signal-abort';
-  try {
-    appendFileSync(join(runDir, 'death-audit.jsonl'), JSON.stringify(entry) + '\n');
-  } catch { /* 审计落盘失败不阻断 watcher 主循环 */ }
-  return entry;
-}
-
-/**
- * 从 runDir 现有元数据构造 resume 参数（target/maxRounds）。
- * latest.json 优先，resume-point.json 兜底。缺 target 返回 null（无法续跑）。
- */
-function buildRespawnArgs(runDir) {
-  for (const f of ['latest.json', 'resume-point.json']) {
-    try {
-      const p = join(runDir, f);
-      if (!existsSync(p)) continue;
-      const j = JSON.parse(readFileSync(p, 'utf-8'));
-      if (j && typeof j.target === 'string' && j.target) {
-        return { target: j.target, maxRounds: j.maxRounds || 10 };
-      }
-    } catch { /* 单个源损坏继续尝试下一个 */ }
+/** resume 参数提取（fresh-eyes 特有：target + maxRounds） */
+function extractFreshEyesRespawnArgs(j) {
+  if (j && typeof j.target === 'string' && j.target) {
+    return { args: ['--target', j.target, '--max-rounds', String(j.maxRounds || 10), '--resume'] };
   }
   return null;
 }
 
-/**
- * watcher 主管主循环——Harness 理念落地：
- *  注入（启动规则）→ 审计（死因落盘）→ 回溯（--resume 断点续跑）。
- *
- * 每 intervalSec 读 status.json 心跳（复用 checkDriverLiveness 判定）；
- * driver 心跳停 → auditDriverDeath 留痕 → spawnDetachedDriver --resume 拉起；
- * verdict.md 产出 → watcher 退出（任务完成）。
- */
+/** watcher 适配（--watch 模式入口）——共享循环 + fresh-eyes 差异注入 */
 async function runWatcher(runDir, intervalSec, thresholdSec) {
-  const log = (msg) => console.log(`[watcher] ${new Date().toISOString()} ${msg}`);
-  mkdirSync(runDir, { recursive: true });
-  try { writeFileSync(join(runDir, 'watcher.pid'), String(process.pid)); } catch { /* pidfile 失败不阻断 */ }
-  log(`启动 pid=${process.pid} · 盯 ${runDir} · interval=${intervalSec}s threshold=${thresholdSec}s`);
-
-  let resumeCount = 0;
-  while (true) {
-    if (existsSync(join(runDir, 'verdict.md'))) {
-      log('✅ verdict.md 已产出——主管任务完成，退出');
-      return;
-    }
-    const live = checkDriverLiveness(runDir, { thresholdMs: thresholdSec * 1000 });
-    if (live.alive) {
-      await sleep(intervalSec * 1000);
-      continue;
-    }
-    const death = auditDriverDeath(runDir, live);
-    log(`🛑 driver 死亡（heartbeat ${Math.round((death.heartbeatAgeMs ?? 0) / 1000)}s 未更新）→ verdict=${death.verdict} phase=${death.phase ?? '?'}`);
-    const respawn = buildRespawnArgs(runDir);
-    if (!respawn) {
-      log('⚠️ 无法构造 resume 参数（缺 target）——主管退出，需人工介入');
-      return;
-    }
-    resumeCount++;
-    log(`🔄 自动拉起 driver #${resumeCount}：--target ${respawn.target} --max-rounds ${respawn.maxRounds} --resume`);
-    try {
-      spawnDetachedDriver(
-        ['--target', respawn.target, '--max-rounds', String(respawn.maxRounds), '--resume'],
-        join(runDir, 'driver.log'),
-        { SOFAGENT_DAEMON_CHILD: '1' },
-      );
-    } catch (err) {
-      log(`💥 spawn 失败: ${err.message}——主管退出，需人工介入`);
-      return;
-    }
-    // 拉起后立即睡眠一轮（避免 driver 刚启动 status.json 尚未生成被误判 dead 反复拉起）
-    await sleep(intervalSec * 1000);
-  }
+  const result = await runWatcherShared({
+    driverEntry: fileURLToPath(import.meta.url),
+    runDir,
+    intervalSec,
+    thresholdSec,
+    extractArgs: extractFreshEyesRespawnArgs,
+  });
+  // 退出码语义：verdict-done=0（正常）；resume-max/quick-death-loop/spawn-fail=1（需人工）
+  process.exit(result.rc);
 }
 
 // ═══════════════════════════════════════════════════════════
