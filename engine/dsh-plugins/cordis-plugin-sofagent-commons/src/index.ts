@@ -3,12 +3,18 @@
 // ============================================================
 // 每个插件干一件事、可独立安装渐进采用——只引对应 @public API 子集。
 // seam 挂载：commons_* tools
-// 版本同步：sofagent v1.4.5 → 各 plugin v0.1.0（DSH Cordis 协议 breaking change 时 bump major）
+// 版本跟随主版本：运行时读取 package.json（v1.4.5 T7/R4，对齐 openclaw 侧修复）。
+// 此前硬编码 '0.1.0' 与 package.json 1.4.5 永久脱节——DSH 注册表读到 0.1.0、
+// npm 生态看到 1.4.5，双版本线无收敛。tsconfig 无 resolveJsonModule（import json
+// 编译不过）、包输出 CJS → 用 require 同步读（路径相对 dist/index.js 上溯一级）。
+// 读不到兜底 '0.0.0-unknown'——缺版本比错版本诚实。
 
 /** 插件元数据（DSH profile/注册表消费） */
+const _pkg: { version?: string } = require('../package.json');
+
 export const pluginMeta = {
   id: 'cordis-plugin-sofagent-commons',
-  version: '0.1.0',
+  version: _pkg.version ?? '0.0.0-unknown',
   description: '能力公地五环——复用 commons_* tool（seam: commons_* tools）',
   seam: 'commons_* tools',
 } as const;

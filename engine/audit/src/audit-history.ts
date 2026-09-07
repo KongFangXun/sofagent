@@ -384,9 +384,11 @@ export function appendHistory(entry: AuditHistoryEntry, dataDir?: string): void 
   const deepHits = { count: 0 };
   const deepSanitized = deepSanitizeFreeText(baseSanitized, deepHits) as typeof baseSanitized;
   if (deepHits.count > 0) {
+    // 用户可见文案：只说「已自动脱敏」这一事实，不暴露「请在 rules/types.ts 补声明」
+    // 的贡献者指令（v1.4.5 审查 P1——内部 TODO 泄漏进 npx 用户终端，用户误以为包坏了）。
+    // 字段级声明遗漏的信号仍保留给维护者：见本文件顶部 S2 注释 + types.ts 🔐 声明约定。
     console.warn(
-      `⚠️ [sofagent] appendHistory 深扫脱敏命中 ${deepHits.count} 处（嵌套字段携带可脱敏内容已自动打码）——` +
-      `该字段类型面缺 🔐 脱敏策略声明，请在 AuditHistoryEntry/ActionGovernance（rules/types.ts）补声明`
+      `⚠️ [sofagent] 审计历史写入时对 ${deepHits.count} 处嵌套字段自动脱敏打码（检测到疑似敏感内容，已自动处理）`
     );
   }
 

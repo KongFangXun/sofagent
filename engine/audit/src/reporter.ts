@@ -149,7 +149,10 @@ export function formatRuleDetails(results: AuditResult): string[] {
 
   for (const rule of problems) {
     const icon = rule.status === 'FAIL' ? '❌' : '⚠️';
-    const ruleId = rule.number >= 200 ? `E${rule.number - 200}` : `A${rule.number}`;
+    const ruleId = rule.number >= 500 ? `R${rule.number - 500}`
+      : rule.number >= 200 ? `E${rule.number - 200}`
+      : rule.number > 0 ? `A${rule.number}`
+      : rule.name;
     const classTag = rule.ruleClass === '业务底线' ? '[底线]'
       : rule.ruleClass === '能力拐杖' ? '[拐杖]'
       : rule.ruleClass === '工程规范' ? '[规范]'

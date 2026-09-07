@@ -75,15 +75,22 @@ type OpenClawApi = any;
             // eslint-disable-next-line @typescript-eslint/no-require-imports
             const m = require('@sofagent/audit');
             const projectRoot = process.cwd();
-            const results = typeof m.runRules === 'function' ? await m.runRules([], { projectRoot }) : null;
+            // v1.4.5 审查 P1 修复：此前 m.runRules([], { projectRoot }) 传空 diff——
+            // 空 diff 无可审内容恒 PASS（假绿），且 { projectRoot } 被误当 logEntries 位置参数。
+            // 现按 scope 取真实 diff：workspace = git diff HEAD（整仓未提交变更），
+            // staged = git diff --cached（仅暂存区；parseDiff 的 range 参数透传给 git diff）。
+            const range = params?.scope === 'staged' ? '--cached' : 'HEAD';
+            const diffFiles = typeof m.parseDiff === 'function' ? m.parseDiff(range, projectRoot) : [];
+            const results = typeof m.runRules === 'function' ? m.runRules({ diffFiles }) : null;
             if (results) {
               const rules = Array.isArray(results.rules) ? results.rules : [];
               const pass = rules.filter((r: { status?: string }) => r.status === 'PASS').length;
               const fail = rules.filter((r: { status?: string }) => r.status === 'FAIL').length;
+              const warn = rules.filter((r: { status?: string }) => r.status === 'WARN').length;
               return {
                 content: [{
                   type: 'text',
-                  text: `sofagent 审计完成：${rules.length} 规则（PASS ${pass} / FAIL ${fail}）\n${JSON.stringify(results).slice(0, 2000)}`,
+                  text: `sofagent 审计完成：${rules.length} 规则（PASS ${pass} / FAIL ${fail} / WARN ${warn}）\n${JSON.stringify(results).slice(0, 2000)}`,
                 }],
               };
             }

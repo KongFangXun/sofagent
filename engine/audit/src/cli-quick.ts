@@ -422,14 +422,37 @@ export function runCliQuick(argv: string[]): number {
       console.log(`🔍 审计指定范围（${diffRange}）`);
       console.log('');
       console.log('✅ 无文件变更——没有需要审计的内容。');
-    } else if (!hasBaseline) {
-      console.log('ℹ️ [sofagent] 首个 commit 无基线不审计——没有前一个版本可对比，下次提交起自动生效。');
+      return 0;
+    }
+    if (!hasBaseline) {
+      // v1.4.5 审查 P1 修复：根 commit 补审——此前「首个 commit 无基线不审计」直接 exit 0，
+      // 是假绿：首次提交（HEAD 存在但无父提交）含密钥/越界内容也放行。现用 git 空树 SHA 作
+      // diff 基准，审计第一个 commit 的全部新增内容，与完整引擎（index.ts）的空树补审对齐。
+      if (commitSha !== null) {
+        const EMPTY_TREE_SHA = '4b825dc642cb6eb9a060e54bf8d69288fbee4904';
+        try {
+          diffFiles = parseDiff(`${EMPTY_TREE_SHA}..HEAD`);
+        } catch {
+          diffFiles = [];
+        }
+        if (diffFiles.length > 0) {
+          console.log(`🔍 审计首个 commit（${commitSha}）——首次提交无父基线，对比空树审计全部新增内容。`);
+          console.log('');
+          // 已有内容，继续下方规则运行（不 return）
+        } else {
+          console.log('✅ 无文件变更——没有需要审计的内容。');
+          return 0;
+        }
+      } else {
+        console.log('ℹ️ [sofagent] 首个 commit 无基线不审计——没有前一个版本可对比，下次提交起自动生效。');
+        return 0;
+      }
     } else {
       console.log(`🔍 审计最近一次 commit（${commitSha}）`);
       console.log('');
       console.log('✅ 无文件变更——没有需要审计的内容。');
+      return 0;
     }
-    return 0;
   }
 
   // 6. 运行审计规则（quick 模式：silent=true，零日志依赖）

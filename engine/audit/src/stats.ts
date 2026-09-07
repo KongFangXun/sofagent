@@ -165,8 +165,11 @@ export function computeAuditStats(options: StatsOptions = {}): AuditStatsReport 
   for (const entry of inWindow) {
     for (const rc of entry.ruleResults as RuleCheck[]) {
       if (!rc || rc.status !== 'WARN' && rc.status !== 'FAIL') continue;
-      // 规则码：A<n> / E<n>（与 reporter.ts 口径一致——E 系列 number=200+序号，200+ 走 E 前缀）
-      const code = rc.number >= 200 ? `E${rc.number - 200}` : `A${rc.number}`;
+      // 规则码：A<n> / E<n> / R<n>（规则集规则 500+ 走 R 前缀，number=0 兜底用规则名）
+      const code = rc.number >= 500 ? `R${rc.number - 500}`
+        : rc.number >= 200 ? `E${rc.number - 200}`
+        : rc.number > 0 ? `A${rc.number}`
+        : rc.name;
       const existing = ruleCounts.get(code) ?? { name: '', count: 0, failCount: 0 };
       existing.count += 1;
       if (rc.status === 'FAIL') existing.failCount += 1;

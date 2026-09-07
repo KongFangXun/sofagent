@@ -1652,7 +1652,10 @@ export function printResults(results: AuditResult, diffFiles: DiffFile[], json: 
   // 规则网格——一行展示全部规则状态
   console.log('');
   const gridParts = results.rules.map((r) => {
-    const num = r.number >= 200 ? `E${r.number - 200}` : `A${r.number}`;
+    const num = r.number >= 500 ? `R${r.number - 500}`
+      : r.number >= 200 ? `E${r.number - 200}`
+      : r.number > 0 ? `A${r.number}`
+      : r.name;
     const icon = r.status === 'PASS' ? '✅' : r.status === 'WARN' ? '⚠️' : r.status === 'SKIPPED' ? '⏭️' : '❌';
     return `${num} ${icon}`;
   });

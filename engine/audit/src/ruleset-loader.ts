@@ -656,10 +656,12 @@ export function runRulesetRules(
 ): RuleCheck[] {
   const results: RuleCheck[] = [];
 
+  let idx = 0;
   for (const rule of ruleset.rules) {
+    let check: RuleCheck;
     if (rule.type === 'pattern') {
-      results.push(runPatternRule(rule, diffFiles));
-    } else if (rule.type === 'plugin') {
+      check = runPatternRule(rule, diffFiles);
+    } else {
       const pluginConfig: PluginRuleConfig = {
         id: rule.id,
         name: rule.name,
@@ -668,8 +670,14 @@ export function runRulesetRules(
         options: rule.options,
         message: rule.message,
       };
-      results.push(runPluginRule(pluginConfig, diffFiles));
+      check = runPluginRule(pluginConfig, diffFiles);
     }
+    // 规则集规则没有内置 A/E 编号——分配独立编号空间（500+，reporter 渲染为 R1/R2/...），
+    // 避免 number=0 被渲染成误导性的 "A0"（v1.4.5 审查 P1 实证：--ruleset 网格 11 个 A0，
+    // 用户无法分辨哪条规则通过/拦截）。规则名仍由 RuleCheck.name 承载。
+    check.number = 500 + idx + 1;
+    idx += 1;
+    results.push(check);
   }
 
   return results;

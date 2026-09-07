@@ -102,13 +102,13 @@
 
 **层 1 · 约束层（约束层五种能力）**：
 
-| 角色 | 引擎 | 管什么 | 触发方式 |
+| 角色 | 模块 | 管什么 | 触发方式 |
 |------|------|------|------|
 | 🧱 底座 | **约束层**（harness） | 四层加载链注入规则，Agent 启动即生效 | 平台 Hook（OpenClaw / WorkBuddy）/ Sub Agent 自加载 |
-| 🔍 引擎① | **审计模块**（audit） | git diff → 24 条规则硬扫描，违规当场拦 | git commit / daemon 文件变更 |
-| 🔄 引擎② | **回溯引擎**（core） | 审计后自动快照，出事一键回滚 | 审计完成后自动 |
-| ⚙️ 内部工具 | **FORGE 工具链**（orchestrator） | LOOP 流水线（项目自迭代用，非对外引擎） | CLI compose tool |
-| 🧬 引擎③ | **进化模块**（think.md 反思 + Dream Cycle 知识回灌 + skillopt Skill 优化；eval/ab-test 为评估支撑；由 daemon 定时驱动） | 知识沉淀 + 反思 + 自优化，沉淀机制随使用迭代 | daemon cron / 手动触发 |
+| 🔍 模块① | **审计模块**（audit） | git diff → 24 条规则硬扫描，违规当场拦 | git commit / daemon 文件变更 |
+| 🔄 模块② | **回溯模块**（core） | 审计后自动快照，出事一键回滚 | 审计完成后自动 |
+| ⚙️ 内部工具 | **FORGE 工具链**（orchestrator） | LOOP 流水线（项目自迭代用，非对外模块） | CLI compose tool |
+| 🧬 模块③ | **进化模块**（think.md 反思 + Dream Cycle 知识回灌 + skillopt Skill 优化；eval/ab-test 为评估支撑；由 daemon 定时驱动） | 知识沉淀 + 反思 + 自优化，沉淀机制随使用迭代 | daemon cron / 手动触发 |
 
 **层 2 · 生命周期（激活链，v1.2.5+ Phase 1-4 已交付）**：
 
@@ -513,7 +513,7 @@ sofagent 本身就是一个 MCP server（stdio 传输，bin `sofagent-mcp`，v1.
 
 > 字段名以 `@deepseek-ai/dsh-mcp-client@0.1.0-rc.6`（2026-08-15 npm 实测拉包核对 `lib/types/index.d.ts` 的 `StdioConfig`）为准——`transport` / `serverName` / `command` / `args` / `env` / `cwd` / `toolCallTimeoutMs` / `failOnStartupError` / `reconnect`。DSH 尚处 developer preview（rc），后续版本字段可能变化，以 [DSH 官方仓库](https://github.com/deepseek-ai/deepseek-harness) config 文档为最终依据。
 
-挂载后 DSH 侧的模型看到的 tool 名形如 `mcp__sofagent__snapshot_list`（`mcp__<serverName>__<原始名>` 命名契约——与 Claude Code / Codex 同款），83 个 tool 全部可见，与 DSH 原生 tool 走完全相同的执行管道（权限策略、timeout、compaction 行为一致）。
+挂载后 DSH 侧的模型看到的 tool 名形如 `mcp__sofagent__snapshot_list`（`mcp__<serverName>__<原始名>` 命名契约——与 Claude Code / Codex 同款），84 个 tool 全部可见，与 DSH 原生 tool 走完全相同的执行管道（权限策略、timeout、compaction 行为一致）。
 
 **两种 command 写法按部署形态选**：
 

@@ -59,7 +59,7 @@ async function main() {
         scoreWeights: DEFAULT_SCORE_WEIGHTS,
       };
 
-      console.log(`sofagent-ab-test v1.1.0 — 运行 A/B 测试`);
+      console.log(`sofagent-ab-test v${require('../package.json').version} — 运行 A/B 测试`);
       console.log(`  Current:   ${config.current}`);
       console.log(`  Candidate: ${config.candidate}`);
       console.log(`  EvalSet:   ${config.evalSet}`);

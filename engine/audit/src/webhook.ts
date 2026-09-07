@@ -214,7 +214,11 @@ function buildContent(payload: WebhookPayload, failedRules: RuleCheck[], isPass:
     lines.push(`任务：${safeTask}`);
   }
   for (const rule of failedRules) {
-    lines.push(`A${rule.number} ${rule.name}：${rule.details.map((d: string) => redactDetail(d, customPatterns)).join('；')}`);
+    const ruleId = rule.number >= 500 ? `R${rule.number - 500}`
+      : rule.number >= 200 ? `E${rule.number - 200}`
+      : rule.number > 0 ? `A${rule.number}`
+      : rule.name;
+    lines.push(`${ruleId} ${rule.name}：${rule.details.map((d: string) => redactDetail(d, customPatterns)).join('；')}`);
   }
   lines.push(`详情：exit code ${payload.exitCode}`);
   lines.push(tracingLine);

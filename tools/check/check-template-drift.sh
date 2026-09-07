@@ -1,7 +1,7 @@
 #!/bin/bash
 # check-template-drift.sh — 模板漂移总闸（A2 同族 · v1.4.5 T12）
 # ============================================================
-# 职责：发版/安装链上的「模板三面」存在三处独立落点，任何一面落后
+# 职责：发版/安装链上的「模板四面」存在四处独立落点，任何一面落后
 # 就构成漂移（v1.4.4 复盘发现 pluginMeta 硬编码落后 4 版的同族风险）：
 #
 #   断言一：HOOK 部署文件 vs HOOK_TEMPLATE
@@ -18,11 +18,16 @@
 #     一致——dist 落后 = 发出去的包带旧模板（npm 包消费者看到的
 #     hook 版本号旧 4 版这种事故的源头）。
 #
+#   断言四：load-chain 双份 handler.ts 同步（部署模板 vs 编译源）
+#     包根 handler.ts 是部署到 ~/.openclaw/hooks/ 的模板，src/handler.ts
+#     是编译源；tsconfig include 仅 src/**，包根那份不被编译——改 src
+#     忘根副本即静默部署旧版（v1.4.5 审查 P1 实证：16 个 check 零覆盖）。
+#
 # 用法：
 #   bash tools/check/check-template-drift.sh
 #   bash tools/check/check-template-drift.sh --quiet   # 只输出 OK/FAIL
 #
-# 退出码：0=三断言全过 / 1=有漂移 / 2=脚本自身错误（SSOT 丢失等）
+# 退出码：0=四断言全过 / 1=有漂移 / 2=脚本自身错误（SSOT 丢失等）
 #
 # 设计纪律（对齐 check-guards.sh / check-unwired-exports.sh 家族）：
 #   - macOS bash 3.2 兼容；BSD grep 兼容（无 \b \s）
@@ -61,24 +66,33 @@ if [ -z "$SSOT_VERSION" ]; then
   exit 2
 fi
 
-[ "$QUIET" = false ] && echo -e "${BOLD}── 模板漂移总闸（T12 · 三断言 vs SSOT v${SSOT_VERSION}）──${NC}"
+[ "$QUIET" = false ] && echo -e "${BOLD}── 模板漂移总闸（T12 · 四断言 vs SSOT v${SSOT_VERSION}）──${NC}"
 
-# ═══ 断言一：HOOK 部署文件头部版本 ═══
-HOOK_FILE="engine/audit/hooks/commit-msg"
-if [ ! -f "$HOOK_FILE" ]; then
-  echo -e "  ${RED}✗${NC} hook 部署文件丢失：${HOOK_FILE}——检查器失明"
-  exit 2
-fi
-HOOK_VER=$(grep -oE 'sofagent commit-msg hook v[0-9]+\.[0-9]+\.[0-9]+' "$HOOK_FILE" 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1 || true)
-if [ -z "$HOOK_VER" ]; then
-  echo -e "  ${RED}✗${NC} 断言一：${HOOK_FILE} 头部无版本签名（格式漂移）"
-  DRIFT=$((DRIFT + 1))
-elif [ "$HOOK_VER" != "$SSOT_VERSION" ]; then
-  echo -e "  ${RED}✗${NC} 断言一：hook 部署文件 v${HOOK_VER} ≠ SSOT v${SSOT_VERSION}——bump 时漏改 ${HOOK_FILE}"
-  DRIFT=$((DRIFT + 1))
-else
-  [ "$QUIET" = false ] && echo -e "  ${GREEN}✓${NC} 断言一：hook 部署文件 v${HOOK_VER} = SSOT"
+# ═══ 断言一：HOOK 部署文件头部版本（三层 hook 全查）═══
+# v1.4.5 审查 P2-4 扩展：此前只查 commit-msg，pre-commit 头 v1.4.4 漂移漏网（长在门禁盲区）。
+HOOK_FILES="pre-commit commit-msg post-commit"
+A1_FAIL=0
+for _hook in $HOOK_FILES; do
+  HOOK_FILE="engine/audit/hooks/${_hook}"
+  if [ ! -f "$HOOK_FILE" ]; then
+    echo -e "  ${RED}✗${NC} 断言一：hook 部署文件丢失：${HOOK_FILE}——检查器失明"
+    exit 2
+  fi
+  HOOK_VER=$(grep -oE "sofagent ${_hook} hook v[0-9]+\.[0-9]+\.[0-9]+" "$HOOK_FILE" 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1 || true)
+  if [ -z "$HOOK_VER" ]; then
+    echo -e "  ${RED}✗${NC} 断言一：${_hook} 头部无版本签名（格式漂移）"
+    A1_FAIL=$((A1_FAIL + 1))
+  elif [ "$HOOK_VER" != "$SSOT_VERSION" ]; then
+    echo -e "  ${RED}✗${NC} 断言一：${_hook} 头 v${HOOK_VER} ≠ SSOT v${SSOT_VERSION}——bump 时漏改"
+    A1_FAIL=$((A1_FAIL + 1))
+  else
+    [ "$QUIET" = false ] && echo -e "  ${GREEN}✓${NC} 断言一：${_hook} 头 v${HOOK_VER} = SSOT"
+  fi
+done
+if [ "$A1_FAIL" -eq 0 ]; then
   OK_COUNT=$((OK_COUNT + 1))
+else
+  DRIFT=$((DRIFT + A1_FAIL))
 fi
 
 # ═══ 断言二：openclaw.plugin.json 家族 vs 同包 package.json ═══
@@ -136,9 +150,26 @@ else
   fi
 fi
 
+# ═══ 断言四：load-chain 双份 handler.ts 同步 ═══
+# 包根 handler.ts 是部署到 ~/.openclaw/hooks/ 的模板，src/handler.ts 是编译源。
+# tsconfig include 仅 src/**，包根那份不被编译——改 src 忘根副本即静默部署旧版。
+LC_ROOT="engine/hooks/sofagent-load-chain/handler.ts"
+LC_SRC="engine/hooks/sofagent-load-chain/src/handler.ts"
+if [ ! -f "$LC_ROOT" ] || [ ! -f "$LC_SRC" ]; then
+  echo -e "  ${RED}✗${NC} 断言四：load-chain 双份 handler 缺一（${LC_ROOT} / ${LC_SRC}）——检查器失明"
+  exit 2
+fi
+if ! diff -q "$LC_ROOT" "$LC_SRC" >/dev/null 2>&1; then
+  echo -e "  ${RED}✗${NC} 断言四：load-chain 双份 handler.ts 漂移（包根部署模板 ≠ src 编译源）——改 src 忘根副本"
+  DRIFT=$((DRIFT + 1))
+else
+  [ "$QUIET" = false ] && echo -e "  ${GREEN}✓${NC} 断言四：load-chain 双份 handler.ts 一致"
+  OK_COUNT=$((OK_COUNT + 1))
+fi
+
 if [ "$DRIFT" -gt 0 ]; then
   echo -e "${RED}${BOLD}FAIL：模板漂移 ${DRIFT} 处${NC}"
   exit 1
 fi
-echo -e "${GREEN}${BOLD}OK：模板三断言全过（${OK_COUNT}/3）${NC}"
+echo -e "${GREEN}${BOLD}OK：模板四断言全过（${OK_COUNT}/4）${NC}"
 exit 0
