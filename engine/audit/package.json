@@ -18,7 +18,7 @@
     "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
     "build": "npm run clean && tsc && npm run copy-assets",
     "postbuild": "node -e \"const fs=require('fs');for(const b of ['dist/cli-quick.js','dist/index.js']){try{fs.chmodSync(require('path').join(__dirname,b),0o755)}catch(e){}}\" && if [ -f ../../tools/audit-baseline-sync.sh ]; then bash ../../tools/audit-baseline-sync.sh --quiet || echo '[postbuild] 信任锚自动同步未成功，请手动执行: bash tools/audit-baseline-sync.sh'; fi",
-    "copy-assets": "mkdir -p dist && cp -r src/rulesets dist/rulesets && node -e \"const fs=require('fs');const n=fs.readdirSync('dist/rulesets').filter(f=>f.endsWith('.json')).length;if(n===0){console.error('[copy-assets] ✗ dist/rulesets 为空——--ruleset/--list-rulesets 将失效');process.exit(1)}console.log('[copy-assets] ✓ rulesets '+n+' 个 json 就位')\"",
+    "copy-assets": "node -e \"const fs=require('fs');fs.mkdirSync('dist/rulesets',{recursive:true});fs.cpSync('src/rulesets','dist/rulesets',{recursive:true});const n=fs.readdirSync('dist/rulesets').filter(f=>f.endsWith('.json')).length;if(n===0){console.error('[copy-assets] ✗ dist/rulesets 为空——--ruleset/--list-rulesets 将失效');process.exit(1)}console.log('[copy-assets] ✓ rulesets '+n+' 个 json 就位')\"",
     "prepublishOnly": "npm run build && find dist -name '*.js.map' -delete && find dist -name '*.d.ts.map' -delete",
     "start": "node dist/index.js",
     "test": "vitest run",
