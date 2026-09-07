@@ -390,7 +390,7 @@ export interface RunCordisAgentOptions {
    * v1.4.3 第六章步一内部钩子：驱动完成时回调 firstSeq + session.events
    * （runCordisAgent 用来做事件流回放与 usage 提取——调用方不传则不捕获）。
    */
-  onSessionCapture?: (firstSeq: number, events: AgentHandle['session']['events']) => void;
+  onSessionCapture?: (firstSeq: number, events: readonly DshSessionEvent[]) => void;
 }
 
 /** 从 session 事件流提取的运行时 usage（v1.4.3 第六章步三——token 自动计量） */
@@ -439,7 +439,7 @@ function normalizeUsageCandidate(u: {
  * 多轮会话取最后一条有效样本（会话累计口径）。导出供单测直接消费。
  */
 export function extractSessionUsage(
-  events: Array<{ seq: number; type: string; data?: unknown }>,
+  events: readonly DshSessionEvent[],
   firstSeq: number,
 ): DshRuntimeUsage | null {
   let last: { prompt: number; completion: number; total: number } | null = null;
@@ -488,7 +488,7 @@ export function extractSessionUsage(
  */
 function replayEventsToStreamHandler(
   streamHandler: NonNullable<RunCordisAgentOptions['streamHandler']>,
-  events: AgentHandle['session']['events'],
+  events: readonly DshSessionEvent[],
   firstSeq: number,
 ): { gotReport: boolean; hardBreak: boolean } {
   let gotReport = false;
@@ -567,11 +567,11 @@ async function runCordisAgent(
 }> {
   // 1. 构造驱动（boot dsh-base + 注入 cmdlineArgs/appExit + 复刻 headless run 逻辑）
   let firstSeq = 0;
-  let capturedEvents: AgentHandle['session']['events'] = [];
+  let capturedEvents: readonly DshSessionEvent[] = [];
   const deliver = await createCordisDriver({
     ...opts,
     /** v1.4.3 第六章步一钩子：驱动内层暴露 firstSeq + events（事件面出口） */
-    onSessionCapture: (seq: number, events: AgentHandle['session']['events']) => {
+    onSessionCapture: (seq: number, events: readonly DshSessionEvent[]) => {
       firstSeq = seq;
       capturedEvents = events;
     },
@@ -739,10 +739,19 @@ async function createCordisDriver(
       await sessions?.flush?.(agent.session);
 
       // v1.4.3 第六章步一：事件面出口——驱动完成时把 firstSeq + events 交给
-      // 上层（runCordisAgent 做事件流回放 + usage 提取；不传钩子则跳过）
-      opts.onSessionCapture?.(firstSeq, agent.session.events);
+      // 上层（runCordisAgent 做事件流回放 + usage 提取；不传钩子则跳过）。
+      // 事件快照经 snapshotSessionEvents 双形态取（rc.1 snapshotEvents() / 旧 events）——
+      // 两形态都缺失 = DSH API 再漂移，快失败（fail-fast），绝不静默传 undefined
+      // 让上层 for-of 崩成 "events is not iterable"（run-01 2026-09-07 全 worker 报废实锤）。
+      const sessionEvents = snapshotSessionEvents(agent.session);
+      if (!sessionEvents) {
+        throw new DshCapabilityMissingError(
+          'session 无 snapshotEvents()/events 面（DSH API 漂移——请核对 @deepseek-ai/dsh 版本与 dsh-backend 的会话事件契约）',
+        );
+      }
+      opts.onSessionCapture?.(firstSeq, sessionEvents);
 
-      return summarizeSession(agent.session.events, firstSeq);
+      return summarizeSession(sessionEvents, firstSeq);
     } finally {
       await (ctx as { fiber?: { dispose?: () => Promise<void> } }).fiber?.dispose?.().catch(() => {});
     }
@@ -753,25 +762,51 @@ async function createCordisDriver(
   };
 }
 
-/** agent 句柄最小契约（rc.2 dsh-agent-loop AgentHandle 面） */
+/** DSH 会话事件最小形状（extractSessionUsage / summarizeSession / 回放共用） */
+export interface DshSessionEvent {
+  seq: number;
+  type: string;
+  data?: unknown;
+}
+
+/**
+ * 统一取事件快照——兼容 rc.1 前后的 session API 形态：
+ * - rc.1 起：`snapshotEvents()` 方法（无参 = 全量冻结快照）
+ * - rc.1 前：`events` 数组属性
+ * 两个形态都探测，取第一个命中。都缺失时返回 undefined（由调用方的能力守卫拦截）。
+ */
+export function snapshotSessionEvents(session: unknown): readonly DshSessionEvent[] | undefined {
+  const s = session as {
+    snapshotEvents?: () => readonly DshSessionEvent[];
+    events?: readonly DshSessionEvent[];
+  } | null;
+  if (s && typeof s.snapshotEvents === 'function') {
+    try {
+      return s.snapshotEvents();
+    } catch {
+      return undefined;
+    }
+  }
+  if (Array.isArray(s?.events)) return s.events;
+  return undefined;
+}
+
+/** agent 句柄最小契约（dsh-agent-loop AgentHandle 面——session 事件访问经 snapshotSessionEvents 双形态兼容） */
 interface AgentHandle {
   whenIdle(): Promise<unknown>;
   followup(msg: unknown): unknown;
   session: {
     seq: number;
-    events: Array<{
-      seq: number;
-      type: string;
-      data?: unknown;
-    }>;
+    snapshotEvents?: () => readonly DshSessionEvent[];
+    events?: readonly DshSessionEvent[];
   };
 }
 
 /** 从 session 事件流聚合最终 assistant 文本（对照 dsh-headless summarize） */
-function summarizeSession(events: AgentHandle['session']['events'], firstSeq: number): string {
+function summarizeSession(events: readonly DshSessionEvent[] | undefined, firstSeq: number): string {
   let started = false;
   let text = '';
-  for (const event of events) {
+  for (const event of events ?? []) {
     if (event.seq < firstSeq) continue;
     if (event.type === 'turn/start') { started = true; continue; }
     if (!started) continue;

@@ -3577,6 +3577,21 @@ async function runRound(roundNum, runDir, target, dryRun, opts = {}) {
     }
 
     // 降级：perspective worker 崩溃时写部分报告占位，让后续步骤能继续。
+    // 🔴 系统性失败熔断（run-01 2026-09-07 实锤）：DSH API 漂移让 24 个
+    // perspective worker 全崩（"events is not iterable"），逐个降级占位后
+    // 循环照常推进——2 小时 token 全烧在必废 worker 上。系统性故障 ≠ 个别
+    // worker 抖动：失败率 ≥ 2/3 且 ≥ 5 个（阈值双门）= 环境级问题，占位降级
+    // 失去意义（合并步骤拿不到任何真报告），立即中止 run 交人工修环境。
+    const totalWorkers = batchWorkers.length;
+    const failCount = checkFailures.length;
+    if (totalWorkers >= 5 && failCount >= Math.ceil(totalWorkers * 2 / 3)) {
+      const sampleReason = checkFailures[0]?.reason?.message || String(checkFailures[0]?.reason || 'unknown');
+      throw new Error(
+        `[systemic-failure] ${failCount}/${totalWorkers} perspective worker 失败（≥2/3 且 ≥5）——` +
+        `疑似环境级故障（API 漂移/网络/后端崩溃），中止 run 修环境后再跑。` +
+        `首个失败样本: ${sampleReason}`
+      );
+    }
     for (const f of checkFailures) {
       console.warn(`\n  ⚠️  ${f.step} 失败: ${f.reason?.message || f.reason}`);
       const outFile = f.step.startsWith('a-check')

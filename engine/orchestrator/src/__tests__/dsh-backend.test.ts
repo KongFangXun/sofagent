@@ -602,3 +602,49 @@ describe('extractSessionUsage 多通道提取（v1.4.4 第七章·十）', () =>
     expect(extractSessionUsage(events, 1)).toBeNull();
   });
 });
+
+describe('snapshotSessionEvents 双形态兼容（DSH rc.1 API 漂移防御）', () => {
+  // run-01 2026-09-07 实锤：dsh 0.1.2-alpha.3→rc.1 移除 Session.events 属性改
+  // snapshotEvents() 方法，dsh-backend 拿 undefined 进 for-of 崩
+  // "events is not iterable"，24 worker 全报废但 driver 静默降级烧完 2h。
+  // 此组测试锁住双形态兼容 + 两形态全缺失时的 fail-fast 守卫。
+
+  it('rc.1 形态：snapshotEvents() 方法优先命中', async () => {
+    const { snapshotSessionEvents } = await import('../execution-backends/dsh-backend');
+    const frozen = Object.freeze([{ seq: 1, type: 'turn/start' }]);
+    const session = { seq: 1, snapshotEvents: () => frozen };
+    expect(snapshotSessionEvents(session)).toBe(frozen);
+  });
+
+  it('旧形态（rc.1 前）：events 数组属性兜底命中', async () => {
+    const { snapshotSessionEvents } = await import('../execution-backends/dsh-backend');
+    const events = [{ seq: 1, type: 'turn/start' }];
+    const session = { seq: 1, events };
+    expect(snapshotSessionEvents(session)).toBe(events);
+  });
+
+  it('rc.1 形态优先于旧形态（两个都存在时）', async () => {
+    const { snapshotSessionEvents } = await import('../execution-backends/dsh-backend');
+    const viaMethod = [{ seq: 2, type: 'x' }];
+    const viaProp = [{ seq: 1, type: 'y' }];
+    const session = { seq: 2, snapshotEvents: () => viaMethod, events: viaProp };
+    expect(snapshotSessionEvents(session)).toBe(viaMethod);
+  });
+
+  it('两形态全缺失 → undefined（调用方 DshCapabilityMissingError fail-fast，绝不静默传 undefined）', async () => {
+    const { snapshotSessionEvents } = await import('../execution-backends/dsh-backend');
+    expect(snapshotSessionEvents({ seq: 3 })).toBeUndefined();
+    expect(snapshotSessionEvents(null)).toBeUndefined();
+  });
+
+  it('snapshotEvents() 抛错 → undefined（异常不外泄，交由守卫统一拦截）', async () => {
+    const { snapshotSessionEvents } = await import('../execution-backends/dsh-backend');
+    const session = { seq: 1, snapshotEvents: () => { throw new Error('boom'); } };
+    expect(snapshotSessionEvents(session)).toBeUndefined();
+  });
+
+  it('events 非数组（形态异常）→ undefined', async () => {
+    const { snapshotSessionEvents } = await import('../execution-backends/dsh-backend');
+    expect(snapshotSessionEvents({ seq: 1, events: 'not-array' })).toBeUndefined();
+  });
+});
