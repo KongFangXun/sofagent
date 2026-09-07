@@ -175,5 +175,5 @@ gh repo view --json description,repositoryTopics -q '.description, .repositoryTo
 curl -sI https://sofagent.ai | head -1
 ```
 
-- **裸名赎回指引**（v1.4.6 实测 E404 = 未占用可注册）：`sofagent` 裸名未被任何一方占用，项目负责人可用 npm 账号（kongfangxun + 2FA）注册占位包（minimal README 指向 `npx -y -p @sofagent/audit sofagent-audit`）——赎回后 `npm i sofagent` 直觉安装路径即通。占位包 description 写品类词，与 GitHub description 口径一致。
+- **裸名状态（v1.4.6 已赎回）**：`sofagent@0.0.1` 占位包已由项目负责人账号注册（2026-09-07，占位 README 指向 `npx -y -p @sofagent/audit sofagent-audit`）——直觉安装路径 `npm i sofagent` 已通，装上即获正确 CLI 指引。本步骤的裸名守护转为长期巡检：占位包在位即通过；若未来发布真包（如 sofagent-lite），版本从 0.0.1 之上正常升版覆盖。
 - **官网改版是仓外动作**：官网源码不在本仓，本步骤只能「发现」不能「修复」——发现 404 / 口径漂移后转项目负责人处理仓外源码（v1.4.6 拍板：短期可先下掉官网 about 中失效的描述段，止血优于留死链）。
