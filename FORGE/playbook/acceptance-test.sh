@@ -6,7 +6,7 @@ export LANG=en_US.UTF-8
 export LC_ALL=en_US.UTF-8
 # sofagent-audit · 上线前验收测试（Pre-Release Acceptance Test）
 # 覆盖：FORGE + MCP + 文件系统审计 + daemon + 红队对抗 + 各版本新功能验收
-# 场景数：305 个场景（SSOT：check-test-count.sh 校验，口径=真实 scenario 调用行数，非编号最大值（S1-S344 间有 70 个历史空洞号）；v1.3.7 +4：S290-S293；v1.3.6 +8：S282-S289；v1.3.8 +11：S294-S304（含 bugfix 防回归 S303/S304）；v1.3.9 +15：S305-S319（阶段五 A 类分发 13 项 + 阶段六 coverage 补测 S318 ATTRIBUTION 归因引擎/S319 Dream Sandbox 沙盒审计）；v1.4.0 +3：S320（联邦查询跨进程 E2E——补 federation.test.ts 同进程 mock 缺口）、S321（跨平台 hook stdin 模式闭环验证）、S322（双设备联邦独立进程模拟——两个独立 node 进程 + 真实 TCP，补 fork 形态缺口）；v1.4.1 +10：S323（train doctor CLI 实跑）、S324（enterpriseId 强制绑定+幂等）、S325（fingerprint 冻结+不可变）、S326（artifact 签名+篡改检测）、S327（安全基线路径白名单+注入检测）、S328（install.sh 迁移丢数据窗口防回归——阶段四 B2 分发）、S329（install.sh symlink 谎报守卫——阶段四 B3 分发）、S330（训练异常退出资源回收四步链——阶段六 coverage 补测，补判断层唯一零覆盖项）、S331（OpenClaw plugin 双 manifest 一致性——阶段十一 ClawHub 拒收踩坑回写）、S332（bump 脚本通配误伤防回归——阶段十一静默漏 bump 踩坑回写）；v1.4.2 +10：S333（数据管道 CSV 类型推断端到端）、S334（dataset_version 台账三件套）、S335（eval 阈值判定双态）、S336（dry-run 显存估算单调性）、S337（ScaleRL sigmoid 拟合/外推/建议）、S338（FDE 工作台审计留痕往返——阶段三步骤四增量，行为实测走 dist 产物）、S339（MCP 工具 dataDir SSOT 收编完整——阶段三 fresh-eyes N-1 修复行为锁）、S340（19 处 v1.3.x 存量 getSofagentDataDir 一次清零行为锁——用户拍板 A 桶落点迁移接受）、S341（train report 报告生成本体 dist 行为实测——阶段五 coverage 唯一零覆盖项补测）；v1.4.2 章五 +2：S342（IM 桥通道交付三面断言——run-17 模块七零覆盖补测）、S343（BugFix 30 项批次级五族锚点——run-17 模块十零覆盖补测，对齐 S281 先例）；v1.4.2 阶段十二 +1：S344（Git Data API 推送通道 cat-file 防复发——ps1 eol 二坑根因固化）；v1.4.3 bugfix 批 +1：S345（跨平台 hook stdin message 抽取三场景行为锁——F-03 等号/中文/嵌套引号 + 空格形式回归，stub 断言 --task 透传）；v1.4.3 阶段三 +3：S346（审计聚合 --stats CLI 行为实测——--json 纯净/--days 窗口/口径行）、S347（反作弊基线三防线锚点——doctor 体检/缺省全开/白名单外部化）、S348（训练监控三 MCP tools 注册面——registry 79 + SKILL 对账）；v1.4.3 阶段五 +3：S349（训练沙箱三约束行为实测——dist 直调 createTrainSandbox：路径守卫三态/代理黑洞/网关判定）、S350（训练需求推导行为实测——场景派生/默认模板匹配/报告路径企业隔离）、S351（后训练 workflow 模板解析——七节点 DAG 无环/三 HITL/capability_ref 全节点指向）；v1.4.3 阶段五 run-02 闭环 +4：S352（DSH 执行深化三步锚点——事件流订阅/分级切 dsh 缺省/usage 记账链直调/降级红线）、S353（train_diagnose 行为实测——故障形态命中/零命中兜底/处方全覆盖）、S354（入口导览三产品线可发现 + onboarding 断层走查检查项 + 走查口径行）、S355（存量清扫零残留——ao 死代码/compose 更名转发/ontology 收窄/退役公告四锚）；v1.4.3 run-04 coverage 闭环 +1：S356（doctor Ontology 完整性检查——entities 遍历 + frontmatter 三查 + skip-log 对账锚点，补十三章零覆盖 P0-1）；v1.4.3 run-05 coverage 闭环 +2：S357（审计聚合触发率数值实测——已知分布 fixture 直调 computeAuditStats：分母/分布/触发率 0.3/阻断率 0.1/空历史 null 降级，F-3 闭环）、S358（train_status 行为实测——fixture 任务+事件流直调：运行态/进度曲线/参数校验/隔离面/GPU 队列账本，F-1 闭环；S347 同批补四形态×双防线映射锁 F-2 闭环））；v1.4.3 闸门 run-05 P1 批 +1：S359（过时承诺排期化 + 悬空引用补锚点——ecdh.ts 注释指向 ROADMAP v1.4.7 / changelog F-10 引 S359 / 三态退出码 exit 2 在位，P1-3/P1-7/P1-8 闭环防复发）；v1.4.3 闸门 run-06 误报批 +1：S360（P1-3/P1-6/P1-7 定谳——规则数 24 双口径锚点（number 字段清点 + README 对齐）/ 维度 9 探针 A+E 全口径防漏 E 系列 / PASS 场景级断言输出 pass() 透传描述 / S165 标题去 158 残留）；v1.4.3 阶段十二 +1：S361（本地部署树 overrides CI 三红防复发——lock 零 dsh-deployed symlink + dsh 六包 registry 解析抽查，npm 实测惰性 overrides 地雷口径固化）；v1.4.4 闸门 run-01/run-02 判断层 P0 闭环 +9：S362/S363/S365-S371（S364 已归并入 S348——corpus_export 双入口对账对销，断言零删减；v1.4.4 十模块验收——章一语料导出 27 编号位+方法论+脱敏 S362/S363、章二权重部署哈希红线 S365、章三产物注册人审语义 S366、章四对比训练 ROI 排序 S367、章五因果链回溯+先例打分+HMAC 篡改判定 S368、章六 CI 供应链四锚点 S369、章七十收口八锚点 S370、章九 17 项收编批三族代表锚点 + 章一五源样本聚合 + 章七 13 包门面 S371（run-02 P0-2/P1-2/P1-3 闭环，对齐 S281/S343 先例），行为面 dist 直调逐一探针实测后落场景；原 S364 corpus_export 双入口对账已真实归并入 S348——归并对销 1 处，断言零删减）；v1.4.4 闸门 run-06 coverage 闭环 +1：S372（章十一阶段四 B 类行为锁补测批 37cab2b9——B1-B8 用例四测试文件在位锚 + B1/B2/B3/B4/B6 五代表断言锚，run-06 P0-1 闭环，对齐 S330/S341 零覆盖补测先例）；v1.4.5 第七章二/三 +1：S373/S374 归并对销后净 +1（S265 归并入 S264 断言零删减；S373 反哺闭环端到端——真实采样数据→harvest→jury→promote 链路级 + S374 L4 工具层自进化全流程——候选→扫描→人审→注册→invoke 可调+静态计数不漂移，行为实测 dist 直调对齐 S318/S319 先例）；v1.4.5 阶段四 +1：S375（train 五新面行为实测——deliverable 打包+HMAC verify 篡改拒绝/compliance PII findings+provenance 台账/retention symlink 拒绝保留源/serve 三 tools 注册面，SOFAGENT_DATA/KEY_PATH 隔离 dist 直调对齐 S368 手法；阶段五分诊补测——S375 扩展覆盖模块八 FDE 进场记忆目录（coverage D-1 缺口闭环，多模块共场景先例对齐 S373/S374，场景数 305 不变））；v1.4.5 阶段五批二：S375 再扩展覆盖模块六 Quickstart 交付物三件（coverage 缺口闭环第二批，多模块共场景先例对齐 S373/S374，场景数 305 不变）
+# 场景数：307 个场景（SSOT：check-test-count.sh 校验，口径=真实 scenario 调用行数，非编号最大值（S1-S344 间有 70 个历史空洞号）；v1.3.7 +4：S290-S293；v1.3.6 +8：S282-S289；v1.3.8 +11：S294-S304（含 bugfix 防回归 S303/S304）；v1.3.9 +15：S305-S319（阶段五 A 类分发 13 项 + 阶段六 coverage 补测 S318 ATTRIBUTION 归因引擎/S319 Dream Sandbox 沙盒审计）；v1.4.0 +3：S320（联邦查询跨进程 E2E——补 federation.test.ts 同进程 mock 缺口）、S321（跨平台 hook stdin 模式闭环验证）、S322（双设备联邦独立进程模拟——两个独立 node 进程 + 真实 TCP，补 fork 形态缺口）；v1.4.1 +10：S323（train doctor CLI 实跑）、S324（enterpriseId 强制绑定+幂等）、S325（fingerprint 冻结+不可变）、S326（artifact 签名+篡改检测）、S327（安全基线路径白名单+注入检测）、S328（install.sh 迁移丢数据窗口防回归——阶段四 B2 分发）、S329（install.sh symlink 谎报守卫——阶段四 B3 分发）、S330（训练异常退出资源回收四步链——阶段六 coverage 补测，补判断层唯一零覆盖项）、S331（OpenClaw plugin 双 manifest 一致性——阶段十一 ClawHub 拒收踩坑回写）、S332（bump 脚本通配误伤防回归——阶段十一静默漏 bump 踩坑回写）；v1.4.2 +10：S333（数据管道 CSV 类型推断端到端）、S334（dataset_version 台账三件套）、S335（eval 阈值判定双态）、S336（dry-run 显存估算单调性）、S337（ScaleRL sigmoid 拟合/外推/建议）、S338（FDE 工作台审计留痕往返——阶段三步骤四增量，行为实测走 dist 产物）、S339（MCP 工具 dataDir SSOT 收编完整——阶段三 fresh-eyes N-1 修复行为锁）、S340（19 处 v1.3.x 存量 getSofagentDataDir 一次清零行为锁——用户拍板 A 桶落点迁移接受）、S341（train report 报告生成本体 dist 行为实测——阶段五 coverage 唯一零覆盖项补测）；v1.4.2 章五 +2：S342（IM 桥通道交付三面断言——run-17 模块七零覆盖补测）、S343（BugFix 30 项批次级五族锚点——run-17 模块十零覆盖补测，对齐 S281 先例）；v1.4.2 阶段十二 +1：S344（Git Data API 推送通道 cat-file 防复发——ps1 eol 二坑根因固化）；v1.4.3 bugfix 批 +1：S345（跨平台 hook stdin message 抽取三场景行为锁——F-03 等号/中文/嵌套引号 + 空格形式回归，stub 断言 --task 透传）；v1.4.3 阶段三 +3：S346（审计聚合 --stats CLI 行为实测——--json 纯净/--days 窗口/口径行）、S347（反作弊基线三防线锚点——doctor 体检/缺省全开/白名单外部化）、S348（训练监控三 MCP tools 注册面——registry 79 + SKILL 对账）；v1.4.3 阶段五 +3：S349（训练沙箱三约束行为实测——dist 直调 createTrainSandbox：路径守卫三态/代理黑洞/网关判定）、S350（训练需求推导行为实测——场景派生/默认模板匹配/报告路径企业隔离）、S351（后训练 workflow 模板解析——七节点 DAG 无环/三 HITL/capability_ref 全节点指向）；v1.4.3 阶段五 run-02 闭环 +4：S352（DSH 执行深化三步锚点——事件流订阅/分级切 dsh 缺省/usage 记账链直调/降级红线）、S353（train_diagnose 行为实测——故障形态命中/零命中兜底/处方全覆盖）、S354（入口导览三产品线可发现 + onboarding 断层走查检查项 + 走查口径行）、S355（存量清扫零残留——ao 死代码/compose 更名转发/ontology 收窄/退役公告四锚）；v1.4.3 run-04 coverage 闭环 +1：S356（doctor Ontology 完整性检查——entities 遍历 + frontmatter 三查 + skip-log 对账锚点，补十三章零覆盖 P0-1）；v1.4.3 run-05 coverage 闭环 +2：S357（审计聚合触发率数值实测——已知分布 fixture 直调 computeAuditStats：分母/分布/触发率 0.3/阻断率 0.1/空历史 null 降级，F-3 闭环）、S358（train_status 行为实测——fixture 任务+事件流直调：运行态/进度曲线/参数校验/隔离面/GPU 队列账本，F-1 闭环；S347 同批补四形态×双防线映射锁 F-2 闭环））；v1.4.3 闸门 run-05 P1 批 +1：S359（过时承诺排期化 + 悬空引用补锚点——ecdh.ts 注释指向 ROADMAP v1.4.7 / changelog F-10 引 S359 / 三态退出码 exit 2 在位，P1-3/P1-7/P1-8 闭环防复发）；v1.4.3 闸门 run-06 误报批 +1：S360（P1-3/P1-6/P1-7 定谳——规则数 24 双口径锚点（number 字段清点 + README 对齐）/ 维度 9 探针 A+E 全口径防漏 E 系列 / PASS 场景级断言输出 pass() 透传描述 / S165 标题去 158 残留）；v1.4.3 阶段十二 +1：S361（本地部署树 overrides CI 三红防复发——lock 零 dsh-deployed symlink + dsh 六包 registry 解析抽查，npm 实测惰性 overrides 地雷口径固化）；v1.4.4 闸门 run-01/run-02 判断层 P0 闭环 +9：S362/S363/S365-S371（S364 已归并入 S348——corpus_export 双入口对账对销，断言零删减；v1.4.4 十模块验收——章一语料导出 27 编号位+方法论+脱敏 S362/S363、章二权重部署哈希红线 S365、章三产物注册人审语义 S366、章四对比训练 ROI 排序 S367、章五因果链回溯+先例打分+HMAC 篡改判定 S368、章六 CI 供应链四锚点 S369、章七十收口八锚点 S370、章九 17 项收编批三族代表锚点 + 章一五源样本聚合 + 章七 13 包门面 S371（run-02 P0-2/P1-2/P1-3 闭环，对齐 S281/S343 先例），行为面 dist 直调逐一探针实测后落场景；原 S364 corpus_export 双入口对账已真实归并入 S348——归并对销 1 处，断言零删减）；v1.4.4 闸门 run-06 coverage 闭环 +1：S372（章十一阶段四 B 类行为锁补测批 37cab2b9——B1-B8 用例四测试文件在位锚 + B1/B2/B3/B4/B6 五代表断言锚，run-06 P0-1 闭环，对齐 S330/S341 零覆盖补测先例）；v1.4.5 第七章二/三 +1：S373/S374 归并对销后净 +1（S265 归并入 S264 断言零删减；S373 反哺闭环端到端——真实采样数据→harvest→jury→promote 链路级 + S374 L4 工具层自进化全流程——候选→扫描→人审→注册→invoke 可调+静态计数不漂移，行为实测 dist 直调对齐 S318/S319 先例）；v1.4.5 阶段四 +1：S375（train 五新面行为实测——deliverable 打包+HMAC verify 篡改拒绝/compliance PII findings+provenance 台账/retention symlink 拒绝保留源/serve 三 tools 注册面，SOFAGENT_DATA/KEY_PATH 隔离 dist 直调对齐 S368 手法；阶段五分诊补测——S375 扩展覆盖模块八 FDE 进场记忆目录（coverage D-1 缺口闭环，多模块共场景先例对齐 S373/S374，场景数 305 不变））；v1.4.5 阶段五批二：S375 再扩展覆盖模块六 Quickstart 交付物三件（coverage 缺口闭环第二批，多模块共场景先例对齐 S373/S374，场景数 305 不变）；v1.4.6 阶段三步骤四增量 +2：S376/S377（章一 train multi 行为锁——多卡命令构造/rank 汇总最慢决定/schema v2 兼容 v1 拒未知/GPU 队列双轴拓扑/NCCL 第八类；章二 train cloud 行为锁——分拣三档宁拦勿漏/批量整批拦截/双闸入库合规先/schema strict/注册表幂等/失联止损 5min/成本向上取整，dist 直调对齐 S375 手法）305→307
 # 编号跳号豁免：S1~S293 间有 70 个空洞号（全在 S36-S202 历史段）——v1.2.x 瘦身删场景
 # 与基线重建（restore 6e542467）的既成事实，非丢失；新场景编号=当前最大+1 顺延，禁止回填空洞
 # 版本段起点见文件内「# ─── v」分组标记（grep "─── v" 定位）
@@ -4190,6 +4190,108 @@ S375_OUT=$(cd "$S375_TMP" && env SOFAGENT_DATA="$S375_TMP/data" SOFAGENT_KEY_PAT
 rm -rf "$S375_TMP"
 $S375_OK && pass "交付面行为锁（deliverable verify 篡改拒绝 + compliance PII+provenance + retention symlink 拒绝保留源 + serve 注册面 + 进场记忆目录 10 文件/捕获/恢复）" || fail "train 五新面行为回退——见上方 ✗ 行"
 S375Q_OK=true; [ -f "$PROJECT_ROOT/docs/guides/train-quickstart.md" ] || { echo "  ✗ S375: quickstart 文档缺失"; S375Q_OK=false; }; [ -f "$PROJECT_ROOT/docs/guides/examples/quickstart-data.csv" ] || { echo "  ✗ S375: quickstart 示例数据缺失"; S375Q_OK=false; }; [ -f "$PROJECT_ROOT/docs/guides/examples/quickstart-job.json" ] || { echo "  ✗ S375: quickstart 示例配置缺失"; S375Q_OK=false; }; head -1 "$PROJECT_ROOT/docs/guides/examples/quickstart-data.csv" | grep -q '^instruction,output$' || { echo "  ✗ S375: CSV 表头漂移"; S375Q_OK=false; }; [ "$(wc -l < "$PROJECT_ROOT/docs/guides/examples/quickstart-data.csv" | tr -d ' ')" -eq 11 ] || { echo "  ✗ S375: CSV 行数漂移（应 1 表头 + 10 数据 = 11 行）"; S375Q_OK=false; }; node -e "const j=JSON.parse(require('fs').readFileSync('$PROJECT_ROOT/docs/guides/examples/quickstart-job.json','utf8'));if(j.schemaVersion!=='v1'||j.jobId!=='quickstart-demo-job'||j.baseModel!=='Qwen3-0.6B'||j.algorithm!=='sft'||!j.budget||j.budget.maxSteps!==8)process.exit(1)" || { echo "  ✗ S375: job.json 关键字段漂移（schemaVersion/jobId/baseModel/algorithm/budget.maxSteps）"; S375Q_OK=false; }; grep -q '## 二、环境准备（train env init）' "$PROJECT_ROOT/docs/guides/train-quickstart.md" && grep -q '## 四、训练预检（train dry-run）' "$PROJECT_ROOT/docs/guides/train-quickstart.md" && grep -q '## 十、推理服务（train serve）' "$PROJECT_ROOT/docs/guides/train-quickstart.md" || { echo "  ✗ S375: quickstart 十步关键步骤锚点缺失"; S375Q_OK=false; }; $S375Q_OK && pass "模块六 Quickstart 交付物三件在位（quickstart.md 十步锚 + CSV 表头/行数 + job.json schema 字段）" || fail "Quickstart 交付物缺位/漂移——见上方 ✗ 行"
+
+scenario 376 "v1.4.6 章一 train multi 行为锁：多卡启动命令构造（单卡直通/多卡 torchrun/多机 master 参数/verl 入口）+ rank 事件汇总（最慢 rank 决定进度/loss-reward 均值/空集零）+ job.json schema v2（gpu/nodes/cloud 新字段 + v1 向后兼容 + strict 拒未知）+ GPU 队列双轴拓扑感知（卡数维度生效/队首泵放行/serial 向后兼容）+ NCCL 分布式诊断第八类"; S376_OK=true
+S376_TMP=$(mktemp -d /tmp/sofagent-s376-XXXX)
+cat > "$S376_TMP/w.mjs" << S376EOF
+const o = await import('$PROJECT_ROOT/engine/orchestrator/dist/index.js');
+const bad = [];
+// 一、多卡启动命令构造（train-multi.buildMultiGpuLaunch）
+const job1 = { schemaVersion: 'v1', jobId: 'j1', dataPath: '/d', baseModel: 'Qwen3-0.6B', algorithm: 'sft', hyperparams: {}, checkpointPath: '/c', outputDir: '/o' };
+const single = o.buildMultiGpuLaunch(job1, 'job.json'); // gpu/nodes 缺省 = 单卡直通
+if (single.launcher !== 'torchrun' || single.topology !== 'single-1x1' || JSON.stringify(single.args) !== JSON.stringify(['train.py','--config','job.json'])) bad.push('multi:single-pass');
+const m8 = o.buildMultiGpuLaunch({ ...job1, schemaVersion: 'v2', gpu: { count: 8 } }, 'job.json'); // 单机八卡
+if (m8.topology !== 'multi-8x1' || JSON.stringify(m8.args) !== JSON.stringify(['torchrun','--nproc_per_node','8','train.py','--config','job.json'])) bad.push('multi:torchrun-8gpu');
+const m8x2 = o.buildMultiGpuLaunch({ ...job1, schemaVersion: 'v2', gpu: { count: 8 }, nodes: 2 }, 'job.json', { nodeRank: 1, masterAddr: '10.0.0.1', masterPort: 29500 }); // 双机十六卡
+if (m8x2.topology !== 'multi-8x2' || !m8x2.args.includes('--nnodes') || !m8x2.args.includes('--node_rank') || !m8x2.args.includes('--master_addr') || !m8x2.args.includes('--master_port')) bad.push('multi:multinode-master');
+const mv = o.buildMultiGpuLaunch({ ...job1, schemaVersion: 'v2', gpu: { count: 8 }, hyperparams: { launcher: 'verl' } }, 'job.json'); // verl 集群入口
+if (mv.launcher !== 'verl' || !mv.args.includes('verl') || mv.args.includes('torchrun')) bad.push('multi:verl-entry');
+// 二、rank 事件汇总（train-multi.aggregateMultiGpuProgress）
+const agg = o.aggregateMultiGpuProgress([{rank:0,step:100,loss:1.5},{rank:1,step:80,loss:2.5},{rank:2,step:100}]);
+if (agg.latestStep !== 80 || agg.meanLoss !== 2.0 || agg.meanReward !== null || agg.rankCount !== 3) bad.push('multi:agg-min-step-mean-loss'); // 最慢 rank 决定进度，无 reward 的 rank 不参与
+const aggEmpty = o.aggregateMultiGpuProgress([]);
+if (aggEmpty.latestStep !== 0 || aggEmpty.meanLoss !== null || aggEmpty.rankCount !== 0) bad.push('multi:agg-empty');
+// 三、job.json schema v2（train-protocol.validateTrainJob）
+const v1ok = o.validateTrainJob(job1); // v1 job（无 gpu/nodes/cloud）在 v1/v2 联合 schema 下合法 = 向后兼容
+if (!v1ok.valid) bad.push('schema:v1-compat');
+const v2ok = o.validateTrainJob({ ...job1, schemaVersion: 'v2', gpu: { count: 4, type: 'A100' }, nodes: 1, cloud: 'vm-a' });
+if (!v2ok.valid || v2ok.job.gpu.count !== 4 || v2ok.job.gpu.type !== 'A100' || v2ok.job.cloud !== 'vm-a') bad.push('schema:v2-fields');
+const v2bad = o.validateTrainJob({ ...job1, gpus: { count: 4 } }); // strict：拼错字段名拒收
+if (v2bad.valid) bad.push('schema:strict-reject');
+// 四、GPU 队列双轴拓扑感知（gpu-queue.createGpuQueue：显存 + 卡数）
+const q = o.createGpuQueue({ totalMiB: 100, totalGpuCount: 8 });
+if (q.acquire('a', 50, 7) !== true) bad.push('queue:7gpu-admit');
+if (q.acquire('b', 50, 2) !== false) bad.push('queue:card-axis-block'); // 显存 50+50<=100 够但卡数 7+2>8 → 拦（卡数维度生效）
+q.release('a');
+if (q.acquire('c', 50, 6) !== true || q.acquire('d', 50, 1) !== false) bad.push('queue:pump-release'); // release(a) 泵入队首 b(2卡)；c(6卡) 2+6<=8 放行；d 显存 100+50>100 拦
+const qs = o.createGpuQueue({}); // 缺省 = serial（v1.4.5 单卡队列语义向后兼容）
+if (qs.acquire('s1', 0) !== true || qs.acquire('s2', 0) !== false) bad.push('queue:serial-compat');
+qs.release('s1');
+if (qs.acquire('s3', 0) !== false) bad.push('queue:serial-pump'); // s2 被泵入 → s3 仍排队
+// 五、NCCL 分布式诊断第八类（train-diagnose.classifyTrainFailure）
+const nccl = o.classifyTrainFailure('RuntimeError: NCCL error ... watchdog timeout (send) via nvlink');
+if (nccl.category !== 'distributed_comm' || nccl.matchedKeywords.length === 0) bad.push('diag:nccl-cat8');
+const noDiag = o.classifyTrainFailure('一切正常');
+if (noDiag.category !== null) bad.push('diag:no-match-null');
+process.stdout.write(bad.length===0 ? 'ASSERT_OK' : 'S376_FAIL:'+bad.join('|'));
+S376EOF
+S376_OUT=$(cd "$S376_TMP" && node "$S376_TMP/w.mjs" 2>/dev/null) || S376_OUT="S376_FAIL:crash"; echo "$S376_OUT" | grep -q "ASSERT_OK" || { echo "  ✗ S376: $(echo "$S376_OUT" | head -1)"; S376_OK=false; }
+rm -rf "$S376_TMP"
+$S376_OK && pass "train multi 行为锁（单卡直通/torchrun 多卡/多机 master/verl 入口 + rank 汇总最慢决定 + schema v2 兼容 v1 拒未知 + GPU 队列双轴拓扑 + NCCL 第八类诊断）" || fail "train multi 行为回退——见上方 ✗ 行"
+
+scenario 377 "v1.4.6 章二 train cloud 行为锁：分拣闸三档判定（敏感拦上云含保密证书编号/脱敏放行/公开放行/宁拦勿漏优先级）+ 批量分拣整批拦截 + data-push 双闸入库（合规先拒/分拣标记本地放行/双闸全过）+ schema strict 拒未知 + 云 VM 注册表 + 失联止损（5 分钟阈值/从未心跳不算失联）+ 成本核算（向上取整美分/超预算判定）+ train_cloud MCP 注册面"; S377_OK=true
+S377_TMP=$(mktemp -d /tmp/sofagent-s377-XXXX)
+cat > "$S377_TMP/w.mjs" << S377EOF
+const o = await import('$PROJECT_ROOT/engine/orchestrator/dist/index.js'); const tr = await import('$PROJECT_ROOT/engine/mcp/dist/tool-registry.js');
+const bad = [];
+// 一、分拣闸三档（sorting-gate.classifyDataForCloud）
+const sens = o.classifyDataForCloud('客户张三 13800138000 购买金额 ¥12000');
+if (sens.classification !== 'sensitive' || sens.allowCloud !== false || !sens.matchedPatterns.includes('手机号') || !sens.matchedPatterns.includes('金额') || !(sens.confidentialityRef ?? '').startsWith('CONF-')) bad.push('sort:sensitive-block');
+const masked = o.classifyDataForCloud('客户 [REDACTED] 138****1234'); // 掩码手机号不命中敏感模式 + 含脱敏特征 → 脱敏档放行
+if (masked.classification !== 'desensitized' || masked.allowCloud !== true) bad.push('sort:masked-desensitized');
+const mixed = o.classifyDataForCloud('已脱敏处理 客户 [REDACTED] 证件 110101199003074258'); // 宁拦勿漏：含脱敏特征但残留真实身份证 → 敏感优先
+if (mixed.classification !== 'sensitive' || mixed.allowCloud !== false) bad.push('sort:sensitive-over-desensitized');
+const pub = o.classifyDataForCloud('今天天气很好');
+if (pub.classification !== 'public' || pub.allowCloud !== true) bad.push('sort:public-pass');
+// 二、批量分拣（classifyBatchForCloud：任一敏感 → 整批拦截）
+const batch = o.classifyBatchForCloud(['普通文本', '证件 110101199003074258', '公开内容']);
+if (batch.allAllowed !== false || batch.decisions.length !== 3 || !batch.decisions.some(d => d.classification === 'sensitive')) bad.push('sort:batch-block');
+// 三、data-push 双闸（gateDataPush：合规先拒 → 分拣标记本地放行 → 双闸全过）
+const payload = { kind: 'training_corpus', enterpriseId: 'e1', source: 'crm', samples: ['普通样本'] };
+const okGate = o.gateDataPush(payload, () => ({ allowed: true, reason: 'ok' }));
+if (okGate.accepted !== true || okGate.sorting.allAllowed !== true || okGate.reason.indexOf('双闸全过') === -1) bad.push('push:double-pass');
+const sensGate = o.gateDataPush({ ...payload, samples: ['李四 13800138000'] }, () => ({ allowed: true, reason: 'ok' }));
+if (sensGate.accepted !== true || sensGate.sorting.allAllowed !== false || !sensGate.sorting.decisions.some(d => d.classification === 'sensitive') || sensGate.reason.indexOf('上云需先脱敏') === -1) bad.push('push:sensitive-local-ingest'); // 本地入库放行、上云拦截
+const compGate = o.gateDataPush(payload, () => ({ allowed: false, reason: '数据集未登记' }));
+if (compGate.accepted !== false || compGate.reason.indexOf('合规闸拦截') === -1) bad.push('push:compliance-first');
+// 四、data-push schema（validateDataPush：strict 拒未知字段）
+const vsch = o.validateDataPush(payload);
+if (!vsch.valid) bad.push('schema:push-valid');
+const vschBad = o.validateDataPush({ ...payload, extra: 1 });
+if (vschBad.valid || !vschBad.issues.length) bad.push('schema:push-strict-reject');
+// 五、云 VM 注册表 + 失联止损（cloud-registry + train-cloud.isHeartbeatStale）
+const reg = o.createCloudRegistry({ now: () => 1000000 });
+const vm = reg.register({ name: 'vm-a', endpoint: 'root@1.2.3.4', credentialRef: 'vk-1' });
+if (vm.status !== 'unknown' || vm.credentialRef !== 'vk-1') bad.push('cloud:register');
+const reReg = reg.register({ name: 'vm-a', endpoint: 'root@5.6.7.8' });
+if (reReg.registeredAt !== vm.registeredAt) bad.push('cloud:register-idempotent'); // 幂等覆盖刷新 endpoint 但保留注册时间
+if (o.isHeartbeatStale(vm, 1000000).stale !== false) bad.push('cloud:never-hb-ok'); // 从未心跳不算失联
+const hb = o.isHeartbeatStale({ ...vm, lastHeartbeatAt: new Date(1000000 - 4*60_000).toISOString() }, 1000000);
+if (hb.stale !== false) bad.push('cloud:4min-ok');
+const hbStale = o.isHeartbeatStale({ ...vm, lastHeartbeatAt: new Date(1000000 - 6*60_000).toISOString() }, 1000000);
+if (hbStale.stale !== true || hbStale.elapsedMs !== 6*60_000) bad.push('cloud:6min-stale'); // 超过 5 分钟阈值判失联
+// 六、成本核算（estimateCloudCostUsd：向上取整到美分 + isOverBudget 等于不算超）
+if (o.estimateCloudCostUsd(2.0, 90, 1) !== 3.0) bad.push('cost:90min');
+if (o.estimateCloudCostUsd(0.333, 60, 1) !== 0.34) bad.push('cost:ceil-cent');
+if (o.estimateCloudCostUsd(1.5, 60, 3) !== 4.5) bad.push('cost:nodes-mult');
+if (o.isOverBudget(3.01, 3.0) !== true || o.isOverBudget(3.0, 3.0) !== false) bad.push('cost:over-budget');
+// 七、MCP 注册面（train_cloud 在 TOOLS）
+if (!tr.TOOLS.find(t => t.name === 'train_cloud')) bad.push('tools:train_cloud');
+process.stdout.write(bad.length===0 ? 'ASSERT_OK' : 'S377_FAIL:'+bad.join('|'));
+S377EOF
+S377_OUT=$(cd "$S377_TMP" && node "$S377_TMP/w.mjs" 2>/dev/null) || S377_OUT="S377_FAIL:crash"; echo "$S377_OUT" | grep -q "ASSERT_OK" || { echo "  ✗ S377: $(echo "$S377_OUT" | head -1)"; S377_OK=false; }
+rm -rf "$S377_TMP"
+$S377_OK && pass "train cloud 行为锁（分拣三档+宁拦勿漏 + 批量整批拦截 + 双闸入库合规先 + schema strict + 注册表幂等 + 失联止损 5min + 成本向上取整+超预算 + train_cloud 注册面）" || fail "train cloud 行为回退——见上方 ✗ 行"
 
 echo -e "  验收测试结果：${GREEN}$PASSED 通过${NC} / ${RED}$FAILED 失败${NC} / ${YELLOW}$WARNED 跳过${NC} / 共 $((PASSED + FAILED + WARNED))"
 # 汇总口径（run-10/run-08/run-05 三轮收紧）：无色码 SUMMARY 行供 driver grep（EXIT: 0=全PASS / <N>=N失败）；
