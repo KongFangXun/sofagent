@@ -18,8 +18,8 @@
 
 > 每次新 session 或新阶段开始时，先读这 11 行确认进度。打勾的 = 已完成，第一个未打勾的 = 当前要做。
 
-- [ ] 一 · 审查上版本（fresh-eyes 独立审查 · 新 session 或对话式多轮）→ [01-review.md](./releasing/01-review.md)
-- [ ] 二 · 开发 + 基础自测（开发收尾即自测）→ [02-dev.md](./releasing/02-dev.md)
+- [x] 一 · 审查上版本（fresh-eyes 独立审查 · 新 session 或对话式多轮）→ [01-review.md](./releasing/01-review.md)
+- [x] 二 · 开发 + 基础自测（开发收尾即自测）→ [02-dev.md](./releasing/02-dev.md)
 - [ ] 三 · fresh-eyes-loop 质量循环 + 代码审核 + 验收测试（新 session · 自动收敛循环）→ [03-quality-loop.md](./releasing/03-quality-loop.md)
 - [ ] 四 · 审查体系合并更新 + 最终确认 → [04-review-system.md](./releasing/04-review-system.md)
 - [ ] 五 · release-gate-loop 发版闸门（新 session · 自动收敛循环 · 必须 PASS 才继续）→ [05-release-gate.md](./releasing/05-release-gate.md)
