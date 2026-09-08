@@ -1,6 +1,6 @@
 #!/bin/bash
 # check-cjk-var.sh — shell 变量定界守卫
-# 检测 tools/ 下所有 .sh（含子目录）中 $VAR 后紧跟 CJK 全角标点的模式。
+# 检测 tools/ 下所有 .sh（含子目录）中 $VAR 后紧跟非 ASCII 字符的模式。
 #
 # 根因：bash 在 UTF-8 locale 下把 $TEST_RC， 解析成变量名 "TEST_RC，"
 # （全角逗号 U+FF0C 被拼进变量名），set -u 下报 unbound variable 崩溃。
@@ -12,21 +12,30 @@
 # 等子目录，本守卫 glob 仍扫 tools/*.sh 顶层——19 个子目录脚本全部漏扫，
 # 622 行违规因此未被拦截。改为 find 递归 + SELF 路径同步 + \s 改 POSIX 类。
 #
-# 规则：变量后接 CJK 标点必须写成 ${VAR} 显式定界。
+# 规则：变量后接非 ASCII 字符必须写成 ${VAR} 显式定界。
 # 用法：bash tools/check/check-cjk-var.sh  →  输出违规清单，exit 0=全绿 / 1=有违规
 
 set -uo pipefail
 cd "$(dirname "$0")/../.." || exit 1
 
-# CJK 标点集：，）。（：；！？、—、「」『』
-# 收录判据：bash 在 UTF-8 locale 下会把紧跟变量名的多字节标点首字节拼进变量名，
-# 变量静默展开为空（无 set -u 时不报错，只在输出里丢值）。已实证 U+2014（— EM DASH）
-# 同属此类——只收全角标点会漏掉破折号；此类地雷常藏在「仅失败分支触发」的输出行里，
-# 日常全绿时掩盖，一旦触发恰好在最该显示数字的地方丢数字。凡 $VAR 后紧跟本集内标点，
-# 一律改写为 ${VAR}。
-# 注意：用 perl 而非 grep -P（BSD grep 无 -P）；排除注释行与双引号内误报优先级低——
-# 本守卫宁可误报（人工复核）也不漏报（潜伏地雷代价更高）
-PATTERN='\$[A-Za-z_][A-Za-z_0-9]*[，）。：；！？、—]'
+# 判据：$VAR 后紧跟【非 ASCII 字符】即违规，一律改写为 ${VAR} 显式定界。
+# 为什么不列一张「全角标点表」：实测 bash 在 UTF-8 locale 下会把紧跟变量名的
+#   **任何**非 ASCII 字符拼进变量名——全角标点、全角字母数字、CJK 汉字、假名、
+#   谚文、emoji、组合音标、不换行空格、制表符线、★✓ 等符号，无一例外（跨平面
+#   抽检 18 个，仅希伯来字母因书写方向未被本探针复现）。逐个枚举永远补不全，
+#   真正的边界是「ASCII / 非 ASCII」，不是「标点 / 非标点」。
+# 危害形态：变量静默展开为空（无 set -u 时不报错，只在输出里丢值）；且常藏在
+#   「仅失败分支触发」的输出行里，日常全绿时掩盖，一旦触发恰好在最该显示数字的
+#   地方丢数字。该 bug 在 US-ASCII locale 与 zsh 下都不复现，随手一测极易被
+#   误判成误报——判定时必须先确认 locale 与 shell 是 UTF-8 + bash。
+# 修法：$VAR → ${VAR}。已定界的 ${VAR}、引号闭合后的 "$VAR"、后接空格的 $VAR
+#   均不误报。
+# 已知误报面：单引号内的 '$VAR中' 不参与展开，本守卫仍会报——本守卫宁可误报
+#   （人工复核）也不漏报（潜伏地雷代价更高）。
+# 注意：用 perl 而非 grep -P（BSD grep 无 -P）；且必须 -Mutf8 -CSD，否则字符类
+#   按**字节**匹配——覆盖面取决于各字符首字节是否碰巧撞进集合，是随机且不可
+#   预测的漏检（曾出现「（」只因与「）」共享前两字节才被命中的假覆盖）。
+PATTERN='\$[A-Za-z_][A-Za-z_0-9]*[^\x00-\x7F]'
 SELF="tools/check/check-cjk-var.sh"
 
 VIOLATIONS=0
@@ -45,7 +54,7 @@ for f in $ALL_SH; do
   #   **过滤后流**里的行号而非文件行号——check-storefront.sh 一处违规被报成
   #   「49:」而实际在第 77 行，排查时按 49 行看到的是完全无关的代码，已实际
   #   造成一次误判。改为 perl 直接读原文件、在正则里排注释行，$. 即真实行号。
-  MATCHES=$(perl -ne "print \"\$.: \$_\" if /$PATTERN/ && !/^\\s*#/" "$f" 2>/dev/null)
+  MATCHES=$(perl -Mutf8 -CSD -ne "print \"\$.: \$_\" if /$PATTERN/ && !/^\\s*#/" "$f" 2>/dev/null)
   if [ -n "$MATCHES" ]; then
     echo "✗ $f"
     echo "$MATCHES" | sed 's/^/    /'
@@ -62,9 +71,9 @@ fi
 
 echo ""
 if [ "$VIOLATIONS" -gt 0 ]; then
-  echo "✗ ${VIOLATIONS} 处 CJK 标点紧跟 \$VAR（${FILES} 个文件扫描）——改为 \${VAR} 定界后重跑"
+  echo "✗ ${VIOLATIONS} 处非 ASCII 字符紧跟 \$VAR（${FILES} 个文件扫描）——改为 \${VAR} 定界后重跑"
   exit 1
 else
-  echo "✓ $FILES 个 shell 脚本无 CJK 标点变量定界违规"
+  echo "✓ $FILES 个 shell 脚本无非 ASCII 字符紧跟 \$VAR 的定界违规"
   exit 0
 fi
