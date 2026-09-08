@@ -57,7 +57,7 @@ A/B 由 **Node driver**（`FORGE/src/fresh-eyes-driver.mjs`）驱动——每个
 2. `git status --porcelain | head -5`——大量未预期改动 = 有并发写，暂停启动
 3. 确认无人动 git 后再启动 driver
 
-> git worktree 隔离（v1.3.6 交付 8）落地后本检查降级为提醒项——worker 届时跑在隔离副本上，主仓并发写不再致命。
+> git worktree 隔离落地后本检查降级为提醒项——worker 届时跑在隔离副本上，主仓并发写不再致命。
 
 ### 执行方式
 
@@ -65,7 +65,7 @@ A/B 由 **Node driver**（`FORGE/src/fresh-eyes-driver.mjs`）驱动——每个
 1. Bash（⚠️ 必须加 run_in_background: true + dangerouslyDisableSandbox: true，否则三层进程嵌套会被 sandbox SIGKILL）:
    node FORGE/src/fresh-eyes-driver.mjs --target <版本号> --max-rounds 10
 
-   并发自适应（v1.3.7 ⑦）：未显式设置 FORGE_MAX_CONCURRENCY 时 driver 自动
+   并发自适应：未显式设置 FORGE_MAX_CONCURRENCY 时 driver 自动
    探测物理内存取并发（<12GB→1 / 12-23GB→2 / 24-47GB→4 / ≥48GB→6）——
    8GB 机器自动取 1（防 OOM），无需手动设。运行中 worker OOM（SIGKILL）
    自动熔断降级（本批剩余串行，连续 2 批回退 1，不中止 run）。
@@ -104,33 +104,15 @@ pgrep -f "fresh-eyes-driver"  # 有输出=活着，无输出=已死
 
 ### 🔴 产物真实性抽验（防占位报告冒充进度）
 
-报告数量增长 ≠ 有效产出。两类占位报告历史上都出现过，监控时必须抽验：
-
-| 类型 | 特征 | 成因 |
-|------|------|------|
-| 崩溃降级占位 | 含「崩溃（降级占位）」或「（待回填）」字样 | worker 异常终止后 driver 写的占位 |
-| 骨架未回填 | 几十~二百字节、只有「先写报告骨架」一句话 | worker 收敛指令「先写骨架后回填」，写完骨架就提前收工 |
-
-抽验方法（每几批做一次）：
-
-```
-find <roundDir> -name 'check-*.md' -size -1k   # 1KB 以下 = 疑似占位
-```
-
-命中即 `cat` 验内容。若收口时骨架仍未回填：该视角的发现已丢失，a-consolidate
-拿到的只是空壳——按修复批协议补跑对应视角的 check worker（不必全量重跑）。
+报告数量增长 ≠ 有效产出。占位报告（崩溃降级占位、骨架未回填）历史上出现过，监控时用一条命令抽验：`find <roundDir> -name 'check-*.md' -size -1k`（1KB 以下 = 疑似占位），命中即 `cat` 验内容。若收口时骨架仍未回填，该视角发现已丢失——按修复批协议补跑对应视角的 check worker（不必全量重跑）。
 
 ### 🔴 中止 run 的 LEDGER 归档铁律
 
-**任何原因中止的 run（进程死亡 / 人工 kill / 环境冲突）也必须在 LEDGER 留一行**——「没有终态记录」的 run 是审计黑洞，事后只能靠时间线推理死因。
-
-监控端在确认 driver 死亡后人工补行：
+**任何原因中止的 run（进程死亡 / 人工 kill / 环境冲突）也必须在 LEDGER 留一行**——「没有终态记录」的 run 是审计黑洞，事后只能靠时间线推理死因。监控端在确认 driver 死亡后人工补行（driver 侧 SIGTERM handler 兜底归档属 FORGE 隔离加固范围；落地前靠监控端人工补行，本节即 SOP）：
 
 ```
 日期 | <runId> | fresh-eyes | <实际轮数>* | <P0> | <P1> | <P2> | aborted-<死因简述>（有效产出说明） | <runDir 绝对路径>
 ```
-
-> driver 侧 SIGTERM handler 兜底归档属 FORGE 隔离加固范围；落地前靠监控端人工补行（本节即 SOP）。
 
 ### 汇报规则
 
