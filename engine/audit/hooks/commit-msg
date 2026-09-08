@@ -1,7 +1,9 @@
 #!/bin/bash
-# sofagent commit-msg hook v1.4.5
+# sofagent commit-msg hook v1.4.6
 # 安装：sofagent-audit --init 或 sofagent-audit --install-hook
 # commit-msg hook 接收 $1 = commit message 文件路径
+# v1.4.6 变更：空提交同样发起引擎调用（message 类规则 A5/A9/A19 照常执行）；
+#             新增 fresh-eyes run 冻结窗口锁检查（run 进行中阻断 driver 源码提交）
 
 # 0. 读取 commit message（commit-msg hook 独有优势）
 #    - subject（第一行）：A3 越界检查依赖此参数
@@ -162,6 +164,30 @@ if git diff --cached --name-only -- .sofagent/ 2>/dev/null | grep -q .; then
   if ! git reset -q -- .sofagent/ 2>/dev/null; then
     echo "❌ [sofagent] 无法将 .sofagent/ 移出暂存区（index 可能被占用）。请稍后重试 commit。" >&2
     exit 1
+  fi
+fi
+
+# 2.6 冻结窗口锁：fresh-eyes run 进行中不得提交 driver 源码改动。
+#     锁由 driver 启动时写入（runId + 源码指纹 + PID），run 正常结束/SIGTERM 时删除。
+#     锁在且 PID 存活且本次提交命中 FORGE/src/fresh-eyes-driver.mjs → 阻断
+#     （主进程内存步骤表派发旧步骤名而磁盘代码已变，worker 会「未知步骤」全灭——
+#     提交时阻断比事后 fail-closed 更早止损；与引擎 exit 86 运行时门禁两层兜底）。
+#     PID 已死 = 锁滞留（历史残留）→ WARN 放行，不误伤。
+#     空提交不命中 driver 源码 → 天然放行（锁只管源码变更）。
+RUN_LOCK="$HOME/.sofagent/internal/fresh-eyes-run.lock"
+if [ -f "$RUN_LOCK" ]; then
+  _lock_info=$(node -e "try{const l=JSON.parse(require('fs').readFileSync(process.argv[1],'utf8'));process.stdout.write((l.pid||'')+' '+(l.runId||''))}catch{}" "$RUN_LOCK" 2>/dev/null || true)
+  LOCK_PID="${_lock_info%% *}"
+  LOCK_RUN="${_lock_info#* }"
+  if [ -n "$LOCK_PID" ] && kill -0 "$LOCK_PID" 2>/dev/null; then
+    if git diff --cached --name-only HEAD 2>/dev/null | grep -q "FORGE/src/fresh-eyes-driver.mjs"; then
+      echo "🔴 [sofagent] fresh-eyes run ${LOCK_RUN} 进行中（pid=${LOCK_PID}）——冻结窗口内不得修改 driver 源码"
+      echo "   run 进行中收编 driver 改动会导致主进程与磁盘步骤表错位，worker 分片全灭。"
+      echo "   处置：等 run 收口后提交，或先停 run（产物保留，--resume 可续跑）再改再重启。"
+      exit 1
+    fi
+  else
+    echo "⚠️ [sofagent] fresh-eyes run 锁滞留（PID ${LOCK_PID:-未知} 已退出）——放行本次提交；确认无 run 后可删除: $RUN_LOCK"
   fi
 fi
 

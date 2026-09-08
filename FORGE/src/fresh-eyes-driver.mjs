@@ -261,6 +261,30 @@ const DRIVER_START_FINGERPRINT = createHash('sha256')
   .digest('hex')
   .slice(0, 16);
 
+// ─── 冻结窗口锁（提交时防线，与 exit 86 运行时防线两层兜底不互削）───
+// 问题：run 进行中任何 session 收编改动 driver 源码 → 主进程内存步骤表与
+// 磁盘代码错位 → 派发旧步骤名 worker 全灭。exit 86 指纹门禁是错位**发生后**
+// 的 fail-closed 兜底；本锁是错位**发生前**的提交时阻断（commit-msg hook
+// 消费）——SOP 条款只约束执行 session 自己，约束不到收编方，所以要上机制。
+// 锁内容：runId + 启动指纹 + PID + 启动时间。锁写失败不阻断 run（86 仍兜底）；
+// PID 已死（锁滞留）时 hook 侧 WARN 放行，不误伤历史残留。
+const RUN_LOCK_PATH = join(os.homedir(), '.sofagent', 'internal', 'fresh-eyes-run.lock');
+function acquireRunLock(runId) {
+  try {
+    mkdirSync(dirname(RUN_LOCK_PATH), { recursive: true });
+    writeFileSync(RUN_LOCK_PATH, JSON.stringify({
+      runId,
+      fingerprint: DRIVER_START_FINGERPRINT,
+      pid: process.pid,
+      startedAt: new Date().toISOString(),
+    }, null, 2) + '\n');
+    return true;
+  } catch { return false; } // 锁失败不阻断 run——运行时 86 门禁仍是兜底
+}
+function releaseRunLock() {
+  try { unlinkSync(RUN_LOCK_PATH); } catch { /* 无锁或已清——正常 */ }
+}
+
 function assertDriverCodeFingerprint(context) {
   // worker 子进程不做校验（它就是被主进程校验的对象）；dry-run 无长驻风险也跳过
   if (process.env.FORGE_DRIVER_MODE !== 'driver') return;
@@ -4328,6 +4352,8 @@ async function main() {
       // v1.3.9 pidfile：SIGTERM 优雅终止时删除——watcher 审计死因时，
       // pidfile 残留 = 非优雅退出（SIGKILL/进程树清理），佐证 external-kill。
       try { unlinkSync(join(runDir, 'driver.pid')); } catch { /* 无 pidfile 正常 */ }
+      // 冻结窗口锁同步清理（run 终止即解除冻结）
+      releaseRunLock();
       try {
         updateLatestPointer(runDir, {
           round: preservedActualRounds,
@@ -4365,6 +4391,11 @@ async function main() {
 
     // v1.3.9 pidfile：写 driver.pid 供 watcher 审计死因（SIGTERM 时 cleanup 删除）
     try { writeFileSync(join(runDir, 'driver.pid'), String(process.pid)); } catch { /* pidfile 失败不阻断 */ }
+    // 冻结窗口锁：commit-msg hook 据此阻断「run 进行中改 driver 源码」的提交
+    // （与 pidfile 同生命周期：SIGTERM cleanup / 正常结束两路都会删）
+    if (!acquireRunLock(runId)) {
+      console.warn('   ⚠️ 冻结窗口锁写入失败（提交时防线未生效——运行时指纹门禁仍兜底）');
+    }
   }
 
   console.log(`\n🔍 fresh-eyes-loop 启动`);
@@ -4716,6 +4747,9 @@ async function main() {
   // v1.3.9 补丁：正常结束也删除 pidfile（此前仅 SIGTERM 路径删——正常结束残留 driver.pid，
   // watcher 审计不误判（stopReason=completed）但产物留脏；与 SIGTERM handler 同款 try/catch）
   try { unlinkSync(join(runDir, 'driver.pid')); } catch { /* 无 pidfile 正常 */ }
+
+  // 冻结窗口锁：正常结束清理（run 收口即解除冻结——后续提交恢复自由）
+  releaseRunLock();
 
   // v1.3.6 交付⑩：正常结束清理 worktree（run 结束 worktree 清理 + LEDGER 留行）
   safeTeardownWorktree();
