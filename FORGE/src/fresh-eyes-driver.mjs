@@ -33,6 +33,7 @@ import {
   appendFileSync, readdirSync, renameSync, statSync,
   unlinkSync,
 } from 'fs';
+import { createHash } from 'crypto';
 import { join, resolve, dirname, relative, sep, basename } from 'path';
 import { fileURLToPath } from 'url';
 import os from 'os';
@@ -143,6 +144,24 @@ function syncWorktreeToMain(runDir) {
     return out;
   }
 
+  // 🔴 主仓 dirty 隔离（并行 session 污染事故实锤）：sync 只看 HEAD 不看工作区，
+  // 主仓若有未收编改动（并行 session 残留），worktree merge 会因「本地改动将被
+  // 覆盖」冲突 → 回退 reset --hard → 把 worktree 里 b-fix 修复连带洗掉。防线：
+  // 主仓工作区 dirty 非空时跳过本轮 re-sync（保持上轮 HEAD，审查照常进行），
+  // 留 warning 给用户收编后下轮自动追平——审查基线略滞后优于修复被静默洗掉。
+  try {
+    const mainDirty = git('status --porcelain', REPO_ROOT)
+      .split('\n')
+      .filter((l) => l.trim() && !l.startsWith('??'));
+    if (mainDirty.length > 0) {
+      lastSyncedHead = mainHead; // 视为已对齐：下轮 HEAD 再前进时才重试 sync
+      out.mode = 'skip';
+      out.reason = `主仓工作区有 ${mainDirty.length} 个未收编文件（${mainDirty.slice(0, 3).map((l) => l.slice(3)).join(', ')}${mainDirty.length > 3 ? '…' : ''}），跳过 re-sync 防止 merge 冲突回退洗掉 b-fix 修复；请收编后下轮自动追平`;
+      console.error(`[worktree-sync] ⚠️ ${out.reason}`);
+      return out;
+    }
+  } catch { /* status 查询失败不阻断——沿用原 sync 逻辑 */ }
+
   // worktree 目录健全性：损坏（被外部清理/磁盘问题）直接重建
   try {
     git('rev-parse --git-dir', worktreeDir);
@@ -230,6 +249,36 @@ function resyncRebuildWorktree(runDir, targetHead) {
 const __filename = fileURLToPath(import.meta.url);
 const __dirname  = dirname(__filename);
 const REPO_ROOT  = resolve(__dirname, '../..');
+
+// ─── 版本指纹门禁（run 中途改 driver 代码事故防御）────────────
+// 事故形态：driver 主进程常驻数小时，worker 子进程每次 spawn 用 __filename
+// 从磁盘重读源码——运行中 commit 改动 driver 会让主进程内存步骤表与子进程
+// 磁盘步骤表错位（派发旧步骤名 → 子进程「未知步骤」exit 1 全灭，verify
+// 分片整轮报废）。防线：driver 模式启动时记指纹，spawn 前比对，不一致
+// fail-closed 立即退出（patch 已跑的轮次产物在 runDir 不丢，重启即可续跑）。
+const DRIVER_START_FINGERPRINT = createHash('sha256')
+  .update(readFileSync(__filename, 'utf-8'))
+  .digest('hex')
+  .slice(0, 16);
+
+function assertDriverCodeFingerprint(context) {
+  // worker 子进程不做校验（它就是被主进程校验的对象）；dry-run 无长驻风险也跳过
+  if (process.env.FORGE_DRIVER_MODE !== 'driver') return;
+  const current = createHash('sha256')
+    .update(readFileSync(__filename, 'utf-8'))
+    .digest('hex')
+    .slice(0, 16);
+  if (current !== DRIVER_START_FINGERPRINT) {
+    console.error('');
+    console.error('🔴 [版本指纹门禁] driver 源码在运行期间被修改——主进程内存代码与磁盘代码已错位！');
+    console.error(`   启动指纹 ${DRIVER_START_FINGERPRINT} ≠ 磁盘指纹 ${current}（校验点: ${context}）`);
+    console.error('   继续跑会产生「未知步骤」类全灭故障。请：');
+    console.error('   ① 停止本 run（已完成的轮次产物在 runDir 内不丢）');
+    console.error('   ② 用新代码重启 driver（--resume 可续跑断点）');
+    console.error('   ③ 需要改 driver 行为时，先停 run 再改再重启');
+    process.exit(86); // 专用退出码：代码指纹错位（watcher 可识别此码自动提示）
+  }
+}
 
 // CJS interop — dist 产物是 CommonJS，.mjs 里用 createRequire 导入
 const require = createRequire(import.meta.url);
@@ -2539,6 +2588,13 @@ const STALL_OVERRIDE = {
 };
 
 function spawnWorker(step, roundDir, target, round, options = {}) {
+  // 🔴 版本指纹门禁（run 中途改 driver 代码事故实锤）：worker 子进程每次 spawn
+  // 都从磁盘重读 driver 源码——若主进程启动后磁盘代码被换（并行 session commit /
+  // 热修复），主进程内存步骤表与子进程磁盘步骤表错位，派发旧步骤名会命中子进程
+  // 「未知步骤」全灭。防线：spawn 前比对磁盘 sha256 与启动指纹，不一致立即
+  // fatal（fail-closed），绝不让半旧半新的混血 loop 继续烧轮次。
+  assertDriverCodeFingerprint(step);
+
   /** 单次执行 worker 子进程 */
   function runOnce() {
     return new Promise((resolveP, rejectP) => {
@@ -2947,14 +3003,48 @@ function writeFallbackFindings(roundDir) {
     }
   }
 
+  // 🔴 fallback 去重器（降级链 findings 逐轮放大事故实锤）：降级提取不认识
+  // 「多视角报同一问题」——A/B 双盲同题各报一次、相近措辞各算一条，findings
+  // 8→16→20 逐轮滚雪球，b-fix 每轮修重复项。防线：按「文件路径 + 描述指纹」
+  // 去重——描述去空白/标点后做前缀匹配（视角间对同一问题的表述在文件锚点相同
+  // 时高度重合，常见形态是同题 + 一方多带补充尾巴；固定截断 slice(0,40) 对
+  // 短于 40 字符的描述不生效），一方是另一方前缀且公共部分 ≥20 字符即合并：
+  // 保留首条，来源追加标注，修复批工作量按去重后条数计。
+  const MIN_PREFIX_LEN = 20; // 公共前缀下限：防短指纹（如「版本号未更新」）过合并
+  const seenByFile = new Map(); // filePath → [{ normDesc, item }]
+  const deduped = [];
+  for (const it of extracted) {
+    const normDesc = (it.desc || '').replace(/[\s\p{P}\p{S}]+/gu, '');
+    let group = seenByFile.get(it.filePath);
+    if (!group) { group = []; seenByFile.set(it.filePath, group); }
+    const hit = group.find((prev) =>
+      Math.min(prev.normDesc.length, normDesc.length) >= MIN_PREFIX_LEN
+      && (normDesc.startsWith(prev.normDesc) || prev.normDesc.startsWith(normDesc)));
+    if (hit) {
+      const first = hit.item;
+      if (!first.dupSources) first.dupSources = [first.source];
+      first.dupSources.push(it.source);
+      continue;
+    }
+    group.push({ normDesc, item: it });
+    deduped.push(it);
+  }
+  if (deduped.length < extracted.length) {
+    console.log(`     [fallback 去重] ${extracted.length} → ${deduped.length} 条（合并 ${extracted.length - deduped.length} 条跨视角同题）`);
+  }
+  const finalExtracted = deduped;
+
   let resultContent;
-  if (extracted.length > 0) {
-    const findingBlocks = extracted.map((it, i) => {
+  if (finalExtracted.length > 0) {
+    const findingBlocks = finalExtracted.map((it, i) => {
       const seq = String(i + 1).padStart(2, '0');
+      const dupNote = it.dupSources
+        ? `（跨视角同题合并：${it.dupSources.join(' / ')}）`
+        : '';
       return [
         `### finding-${seq}: ${it.title}`,
         '',
-        `**来源**: ${it.source}（fallback 从 check 报告提取，请 b-fix 核实后再改）`,
+        `**来源**: ${it.source}（fallback 从 check 报告提取，请 b-fix 核实后再改）${dupNote}`,
         '',
         `**优先级**: ${it.prio}`,
         '',
@@ -2970,7 +3060,7 @@ function writeFallbackFindings(roundDir) {
     resultContent = [
       '# 修复结果（降级生成——a-consolidate 产物解析失败，由 check 报告提取）',
       '',
-      `> ⚠️ 降级生成——a-consolidate 失败。以下 ${extracted.length} 条 finding 由各 check 报告提取，优先级基于原文标记。`,
+      `> ⚠️ 降级生成——a-consolidate 失败。以下 ${finalExtracted.length} 条 finding 由各 check 报告提取（已跨视角去重），优先级基于原文标记。`,
       '',
       ...findingBlocks,
       '',
@@ -2997,10 +3087,10 @@ function writeFallbackFindings(roundDir) {
   // parseStopCondition 优先查 flag；文本标记匹配保留做旧 run 数据兼容。
   const degradedFlag = join(roundDir, 'degraded.flag');
   writeFileSync(degradedFlag,
-    `fallback-rebuild\nreason: a-consolidate 产物解析失败，由 check 报告降级重建\ntime: ${new Date().toISOString()}\nfindings: ${extracted.length}\n`,
+    `fallback-rebuild\nreason: a-consolidate 产物解析失败，由 check 报告降级重建\ntime: ${new Date().toISOString()}\nfindings: ${finalExtracted.length}\n`,
     'utf-8');
 
-  console.log(`     降级 findings.md 已写入（check 提取 ${extracted.length} 条可修 finding，degraded.flag 已标记）`);
+  console.log(`     降级 findings.md 已写入（check 提取 ${finalExtracted.length} 条可修 finding（去重后），degraded.flag 已标记）`);
 }
 
 /**
@@ -3987,6 +4077,9 @@ async function main() {
   }
 
   // ─── Driver 模式 ───
+  // 版本指纹门禁标记：本进程是长驻 driver 主进程（spawnWorker 内的
+  // assertDriverCodeFingerprint 只在 driver 模式做磁盘比对）。
+  process.env.FORGE_DRIVER_MODE = 'driver';
 
   // ─── v1.2.8 功能⑦：断点续跑（--resume）───
   // driver 被杀后已完成轮的产物全部有效；--resume 从断点继续，不重跑已完成轮。
