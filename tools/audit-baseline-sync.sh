@@ -2,9 +2,17 @@
 # ============================================================
 # audit-baseline-sync.sh · 审计引擎信任锚同步（「谁重建谁刷新」的绑定实现）
 # ============================================================
-# 同步两个信任锚文件到 ~/.sofagent/internal/：
-#   1. audit-hash.txt            —— dist/index.js 的 SHA-256（原有，格式不变）
-#   2. audit-src-fingerprint.txt —— engine/audit/src 的源码指纹（新增，第二个信号）
+# 同步三个信任锚文件到 ~/.sofagent/internal/：
+#   1. audit-hash.txt            —— dist/index.js 的 SHA-256（兼容锚，格式不变）
+#   2. audit-src-fingerprint.txt —— engine/audit/src 的源码指纹（第二个信号）
+#   3. audit-dist-hash.txt       —— dist/**/*.js 的多入口聚合哈希（主锚，hook 拦截判定用）
+#
+# 为什么加第 3 个：dist 有多个可执行入口（index.js 与 cli-quick.js 都是 bin，
+# agent-shield.js / cli/agent-shield.js 各自独立），而 index.js 的 import 图覆盖不到
+# 那三个。只锚 index.js 时「只改 cli-quick.ts 并重建」观测不到，hook 会误报
+# 「dist 未重建」；只覆写 cli-quick.js 这类劫持同样发现不了。聚合后两个方向都闭合。
+# audit-hash.txt 之所以保留：@sofagent/core 的 runDoctor 按「整文件 == 一个 index.js
+# 哈希」读它，改成聚合会让它恒判不匹配，故不动其语义，只继续维护。
 #
 # 为什么需要第二个信号：
 #   dist 哈希变化有两种成因——「改了源码并重建」（合法、高频）与「不动源码、
@@ -48,8 +56,10 @@ SOFAGENT_HOME="${SOFAGENT_HOME:-$HOME/.sofagent}"
 INTERNAL_DIR="$SOFAGENT_HOME/internal"
 DIST="$REPO_ROOT/engine/audit/dist/index.js"
 HASH_RECORD="$INTERNAL_DIR/audit-hash.txt"
+DIST_AGG_RECORD="$INTERNAL_DIR/audit-dist-hash.txt"
 SRC_RECORD="$INTERNAL_DIR/audit-src-fingerprint.txt"
 FP_SCRIPT="$REPO_ROOT/tools/audit-src-fingerprint.mjs"
+DIST_AGG_SCRIPT="$REPO_ROOT/tools/audit-dist-hash.mjs"
 
 if [ ! -f "$DIST" ]; then
   echo "❌ dist 不存在: $DIST"
@@ -62,7 +72,13 @@ if [ ! -f "$FP_SCRIPT" ]; then
   exit 1
 fi
 
+if [ ! -f "$DIST_AGG_SCRIPT" ]; then
+  echo "❌ dist 聚合哈希脚本不存在: $DIST_AGG_SCRIPT"
+  exit 1
+fi
+
 DIST_HASH=$(shasum -a 256 "$DIST" 2>/dev/null | cut -d' ' -f1)
+DIST_AGG=$(node "$DIST_AGG_SCRIPT" "$REPO_ROOT" 2>/dev/null)
 SRC_FP=$(node "$FP_SCRIPT" "$REPO_ROOT" 2>/dev/null)
 
 if [ -z "$DIST_HASH" ]; then
@@ -73,13 +89,22 @@ if [ -z "$SRC_FP" ]; then
   echo "❌ 源码指纹计算失败（不在 monorepo 内？）: $REPO_ROOT"
   exit 1
 fi
+if [ -z "$DIST_AGG" ]; then
+  echo "❌ dist 聚合哈希计算失败（dist 不存在或为空？）: $REPO_ROOT/engine/audit/dist"
+  exit 1
+fi
 
 if [ "$CHECK_ONLY" -eq 1 ]; then
   RECORDED_DIST=$(cat "$HASH_RECORD" 2>/dev/null | tr -d '[:space:]')
+  RECORDED_AGG=$(cat "$DIST_AGG_RECORD" 2>/dev/null | tr -d '[:space:]')
   RECORDED_SRC=$(cat "$SRC_RECORD" 2>/dev/null | tr -d '[:space:]')
   DRIFT=0
   if [ "$RECORDED_DIST" != "$DIST_HASH" ]; then
-    echo "⚠️  dist 哈希漂移：记录 ${RECORDED_DIST:0:12}… 当前 ${DIST_HASH:0:12}…"
+    echo "⚠️  dist/index.js 哈希漂移：记录 ${RECORDED_DIST:0:12}… 当前 ${DIST_HASH:0:12}…"
+    DRIFT=1
+  fi
+  if [ "$RECORDED_AGG" != "$DIST_AGG" ]; then
+    echo "⚠️  dist 聚合哈希漂移：记录 ${RECORDED_AGG:0:12}… 当前 ${DIST_AGG:0:12}…"
     DRIFT=1
   fi
   if [ "$RECORDED_SRC" != "$SRC_FP" ]; then
@@ -96,12 +121,14 @@ fi
 
 mkdir -p "$INTERNAL_DIR"
 printf '%s\n' "$DIST_HASH" > "$HASH_RECORD" || { echo "❌ 写入失败: $HASH_RECORD"; exit 1; }
+printf '%s\n' "$DIST_AGG" > "$DIST_AGG_RECORD" || { echo "❌ 写入失败: $DIST_AGG_RECORD"; exit 1; }
 printf '%s\n' "$SRC_FP" > "$SRC_RECORD" || { echo "❌ 写入失败: $SRC_RECORD"; exit 1; }
-chmod 600 "$HASH_RECORD" "$SRC_RECORD" 2>/dev/null || true
+chmod 600 "$HASH_RECORD" "$DIST_AGG_RECORD" "$SRC_RECORD" 2>/dev/null || true
 
 if [ "$QUIET" -eq 0 ]; then
   echo "✅ 审计信任锚已同步"
-  echo "   dist = ${DIST_HASH:0:12}…  ($HASH_RECORD)"
-  echo "   src  = ${SRC_FP:0:12}…  ($SRC_RECORD)"
+  echo "   dist 聚合 = ${DIST_AGG:0:12}…  ($DIST_AGG_RECORD)"
+  echo "   dist/index.js = ${DIST_HASH:0:12}…  (${HASH_RECORD}，兼容锚)"
+  echo "   src        = ${SRC_FP:0:12}…  ($SRC_RECORD)"
 fi
 exit 0

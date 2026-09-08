@@ -14,9 +14,16 @@ if [ -f "$COMMIT_MSG_FILE" ]; then
   COMMIT_FULL_MSG=$(cat "$COMMIT_MSG_FILE")
 fi
 
+# 空 diff（典型是 git commit --allow-empty）**不再整体 early return**。
+#   此前这里直接 exit 0，2.1 的 dist 完整性校验一并没跑——想躲开引擎完整性
+#   校验，把改动拆成空提交即可，这是可利用的口子：防线存在但根本没执行。
+#   现改为置位 NO_STAGED_FILES：
+#     - 不依赖 diff 的校验（dist 完整性、.gitignore 兜底）照常执行；
+#     - 文件级审计不调用引擎（没有文件可供引擎审计，调用只会输出「没有文件变更」）。
 DIFF=$(git diff --cached --name-only)
+NO_STAGED_FILES=0
 if [ -z "$DIFF" ]; then
-  exit 0
+  NO_STAGED_FILES=1
 fi
 
 # 1. Node.js 检测
@@ -38,28 +45,50 @@ else
 fi
 
 # 2.1 P1-A2: dist 完整性校验——防止本地覆写 dist 致审计失效
-#     比对 engine/audit/dist/index.js 的 SHA-256 与安装时记录的基准哈希。
-#     基准哈希存储在 ~/.sofagent/internal/audit-hash.txt（install.sh 首装或 --doctor 首次运行时记录）。
+#     比对 engine/audit/dist 的**多入口聚合哈希**与记录的基准哈希。
+#     为什么用聚合而不是 dist/index.js 单文件：dist 有多个可执行入口
+#     （index.js 与 cli-quick.js 都是 bin，agent-shield.js / cli/agent-shield.js
+#     各自独立），而 index.js 的 import 图覆盖不到那三个（实测从 index.js 出发
+#     可达 17 个模块，均不含它们）。后果是双向的：
+#       - 误报：只改 cli-quick.ts 并重建后 index.js 逐字节不变 → 报「dist 未重建」；
+#       - 漏防：攻击者只覆写 cli-quick.js，单文件哈希同样发现不了。
+#     聚合全部 dist/**/*.js（排序后逐个取内容哈希再聚合）后两个方向都闭合。
+#     基准哈希存储在 ~/.sofagent/internal/audit-dist-hash.txt。
+#     计算必须由 dist 之外的代码完成：若交给 dist/index.js 算，dist 被篡改时
+#     哈希同样可伪造，防线 self-defeating。故用 tools/ 下的独立脚本。
 #     v1.4.0 P1-A3：基准缺失时 FAIL 而非跳过——此前 if [ -f ] 缺基准即静默放行，
 #     首次部署窗口内可植入冒牌引擎（基准仅 --doctor 生成而首装不生成，空窗被利用）。
 if [ -f "engine/audit/dist/index.js" ]; then
   SOFAGENT_HOME="${SOFAGENT_HOME:-$HOME/.sofagent}"
-  HASH_RECORD="$SOFAGENT_HOME/internal/audit-hash.txt"
-  if [ ! -f "$HASH_RECORD" ]; then
+  # 主锚：全部 dist/**/*.js 的聚合哈希（任一入口变化都可观测），本 hook 的拦截判定只看它
+  HASH_RECORD="$SOFAGENT_HOME/internal/audit-dist-hash.txt"
+  # 兼容锚：仅 index.js 的哈希。@sofagent/core 的 runDoctor 按「整文件 == 一个
+  # index.js 哈希」读它，语义不能改（换成聚合会让它恒判不匹配），故本 hook 只在其
+  # 缺失时补生成，不再用它做拦截判定。
+  LEGACY_RECORD="$SOFAGENT_HOME/internal/audit-hash.txt"
+  DIST_HASH_SCRIPT="tools/audit-dist-hash.mjs"
+  CURRENT_HASH=$(node "$DIST_HASH_SCRIPT" "$(pwd)" 2>/dev/null)
+  # 兼容锚缺失时顺手补上——runDoctor 依赖它，补不上也只影响体检、不阻断本次提交
+  if [ ! -f "$LEGACY_RECORD" ]; then
+    node -e "const c=require('crypto'),f=require('fs');process.stdout.write(c.createHash('sha256').update(f.readFileSync('engine/audit/dist/index.js')).digest('hex'))" > "$LEGACY_RECORD" 2>/dev/null && chmod 600 "$LEGACY_RECORD" 2>/dev/null || true
+  fi
+  if [ -z "$CURRENT_HASH" ]; then
+    # 算不出来 ≠ 一致。静默放行会让「完整性校验」变成摆设，必须让人看见没跑。
+    echo "⚠️ [sofagent] dist 聚合哈希计算失败（$DIST_HASH_SCRIPT 缺失或 dist 为空）——本次完整性校验未执行"
+  elif [ ! -f "$HASH_RECORD" ]; then
     # 基准缺失 = 完整性校验形同虚设 → fail-closed：先补生成基准再放行本次，
     # 让后续每次 commit 都有可比对的锚点（与 install.sh 首装生成策略闭环）
-    echo "⚠️ [sofagent] 审计引擎哈希基准缺失——正在补生成..."
+    echo "⚠️ [sofagent] 审计引擎 dist 基准缺失——正在补生成..."
     mkdir -p "$SOFAGENT_HOME/internal"
-    if node -e "const c=require('crypto'),f=require('fs');process.stdout.write(c.createHash('sha256').update(f.readFileSync('engine/audit/dist/index.js')).digest('hex'))" > "$HASH_RECORD" 2>/dev/null && [ -s "$HASH_RECORD" ]; then
+    if printf '%s\n' "$CURRENT_HASH" > "$HASH_RECORD" 2>/dev/null && [ -s "$HASH_RECORD" ]; then
       chmod 600 "$HASH_RECORD" 2>/dev/null || true
-      echo "ℹ️ [sofagent] 基准哈希已记录（后续 commit 将比对完整性）"
+      echo "ℹ️ [sofagent] dist 基准已记录（后续 commit 将比对完整性）"
     else
-      echo "🔴 [sofagent] 基准哈希生成失败——无法保证审计引擎未被替换，本次提交终止"
-      echo "   请运行: sofagent-audit --doctor（自动记录基准）后重试"
+      echo "🔴 [sofagent] dist 基准生成失败——无法保证审计引擎未被替换，本次提交终止"
+      echo "   请运行: bash tools/audit-baseline-sync.sh"
       exit 1
     fi
   else
-    CURRENT_HASH=$(node -e "const c=require('crypto'),f=require('fs');process.stdout.write(c.createHash('sha256').update(f.readFileSync('engine/audit/dist/index.js')).digest('hex'))" 2>/dev/null)
     RECORDED_HASH=$(cat "$HASH_RECORD" 2>/dev/null | tr -d '[:space:]')
 
     # v1.4.6 双信号判定：dist 哈希变化有两种成因，单看 dist 无法区分，
@@ -92,10 +121,11 @@ if [ -f "engine/audit/dist/index.js" ]; then
         echo "   同步信任锚: bash tools/audit-baseline-sync.sh"
       fi
     elif [ -n "$CURRENT_HASH" ] && [ -n "$RECORDED_HASH" ] && [ "$CURRENT_HASH" != "$RECORDED_HASH" ]; then
-      echo "🔴 [sofagent] 审计引擎完整性校验失败（P1-A2 dist 哈希不匹配）"
-      echo "   engine/audit/dist/index.js 可能被替换（影子审计器劫持风险）。"
+      echo "🔴 [sofagent] 审计引擎完整性校验失败（P1-A2 dist 聚合哈希不匹配）"
+      echo "   engine/audit/dist 下某个 .js 可能被替换（影子审计器劫持风险）。"
       echo "   源码未变（src 指纹 ${CURRENT_SRC_FP:0:12}...）——dist 变化无法用「改了源码」解释。"
       echo "   记录哈希: ${RECORDED_HASH:0:12}...  当前哈希: ${CURRENT_HASH:0:12}..."
+      echo "   定位到具体文件: bash tools/audit-baseline-sync.sh --check"
       echo "   恢复原始 dist: npm run build --workspace=engine/audit"
       echo "   确认 dist 可信后重建信任锚: bash tools/audit-baseline-sync.sh"
       echo "   （注意：sofagent-audit --doctor 只体检、不覆盖已存在的基线，不能用它刷新）"
@@ -153,7 +183,16 @@ AUDIT_DIFF_ARG="--cached"
 # --task 传 subject（A3 越界检查用）
 # --commit-msg 传完整 message（A9 注入检查用）——两个参数都传
 # AUDIT_CMD 用 bash 数组——仓库路径含空格时（如 /Users/foo/my repo/）不炸
-if [ -n "$COMMIT_SUBJECT" ]; then
+if [ "$NO_STAGED_FILES" -eq 1 ]; then
+  # 无文件可审（典型是 --allow-empty）。引擎会在读 commit message 之前就因
+  # diff 为空而 exit 0（index.ts 的 diffFiles.length === 0 短路），调用它只会
+  # 输出「没有文件变更」，故此处不发起调用以省一次 node 启动开销。
+  # ⚠️ 已知残留缺口：A3 越界 / A9 注入同属引擎内规则，空提交下同样不执行；
+  #    要闭合需改引擎短路位置（动 engine/audit/src + 重建 + 全量测试），
+  #    不属本次修复范围，未解决。
+  echo "ℹ️ [sofagent] 无暂存文件变更——引擎无文件可审，未发起文件级审计调用（dist 完整性等校验已照常执行）"
+  EXIT_CODE=0
+elif [ -n "$COMMIT_SUBJECT" ]; then
   "${AUDIT_CMD[@]}" --diff "$AUDIT_DIFF_ARG" --silent --ci --task "$COMMIT_SUBJECT" --commit-msg "$COMMIT_FULL_MSG"
 else
   "${AUDIT_CMD[@]}" --diff "$AUDIT_DIFF_ARG" --silent --ci
