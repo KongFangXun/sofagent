@@ -112,6 +112,7 @@ verdict=FAIL/ERROR 修复后重跑判断层**之前**必查三项，任一跳过
 - **机制**：driver 的 worker 在运行中读工作区文件 + 可能做 git 操作，工作树/HEAD 变化会撞上文件读写竞态；多 worker 并发 + 系统内存压力叠加 → OOM
 - **执行方式**：启动判断层前，执行 session 向所有并发 session 声明「仓库冻结 N 分钟」；运行期间只允许读（grep/读文件/gh api），不允许写；verdict 出来后解除冻结（修复批窗口不在冻结内）
 - **判 FAIL 分诊**：driver 崩了先查「运行窗口内 HEAD 是否被动过」——`git log --since="<启动时间>" --until="<结束时间>"`，改动 >0 即环境问题优先（重跑），0 才排查代码
+- **机制锁已上（对最高危形态）**：fresh-eyes driver 的 commit-msg hook 冻结窗口锁（run 进行中 + 提交命中 driver 源码 → exit 1 阻断；PID 死 = 锁滞留 WARN 放行）+ 源码指纹门禁（spawn 前比对启动指纹，错位 exit 86 fail-closed）。release-gate driver 同款指纹门禁在路径上（详见 [FORGE/lessons/driver.md 四章](../../../FORGE/lessons/driver.md)）——**纪律声明冻结、机制兜底最高危**，两者不可互替
 
 ---
 
@@ -124,6 +125,7 @@ verdict=FAIL/ERROR 修复后重跑判断层**之前**必查三项，任一跳过
 | **命中停手条件** | 停手汇报 → 主 session 接手分诊（回阶段四语义）；修复后可重新走本阶段或交还执行 session |
 | **需要 driver 内自动修复** | 显式加 `--auto-fix` 启动（f-diagnose → f-fix → f-audit，最多 3 轮）——默认不开，盲审独立性与修复上下文不混跑；与 session 级修复批是两条机制，不混用 |
 | **driver 反复 FAIL 且复验全为检查器债** | 走「手工裁决路径」（见下） |
+| **环境级故障（worker 系统性失败）** | driver 内建系统性失败熔断：失败率 ≥2/3 且绝对数 ≥5（双门阈值）= 环境级故障中止 run——不是单点降级占位继续跑。处置：读 death-audit.jsonl / sub-progress-*.jsonl 定位根因（常见：依赖 API 漂移 / DSH rc 包形态变化），修复依赖后 `--resume` 续跑 |
 
 > driver 的 regression 步骤会自动处理「⏰ 待发版」标注的检查项（git tag / npm registry / 全局二进制版本）——这些在检查阶段必然不满足，标 ⏳ 不标 FAIL。
 > 待发版中间态的预期合法形态（⏳/🟡/⏸️/EXEMPT）已写入 Prompt 模板第 0 步与判断层 prompt/证据注入层——worker 若仍误判为 FAIL，按停手条件「版本口径类 P0」处理，交主 session 重新诊断。
@@ -165,3 +167,20 @@ ls <runDir>/f-* 2>/dev/null && git -C <主仓> rev-list --count <基线SHA>..<F�
 |------|------|------|
 | 执行 session（新开，跑自动收敛循环） | 脚本层直跑 / 判断层启动 / 持续轮询 / FAIL 修复批（分诊→修复→复绿→commit）/ 重跑直到 PASS 或停手 / 最终汇报 | 触碰修复红线；PASS 后预写 LEDGER；停手条件命中后继续硬跑；--no-verify 绕审计钩子 |
 | 主 session | PASS 后零信任复验（三件套 + 逐轮修复 commit 抽查）；PASS 轮 LEDGER 收编；停手后接手分诊 | 不直接采信执行 session 的汇报结论 |
+
+## 循环事故的 lessons 回写（run 收口后触发）
+
+> **为什么有这一节**：loop 运行事故（run 中止/全灭/假 PASS/资产丢失）的修复是一次性的，但教训若不回写 lessons，换个 session 还会踩同款——曾出现四连事故隔数日后靠用户提醒才启动沉淀。回写触发器挂在本阶段收口，把「想起来回写」变成 SOP 固定动作。
+
+**触发条件（任一命中即回写）**：
+- run 终态非 PASS（aborted-* / ERROR / FAIL 到顶停手）
+- PASS 但零信任复验推翻（假 PASS）
+- 收口核对发现资产异常（bfix 快照分支有未收编 commit / 对账脚本报红）
+
+**回写动作**：
+1. 按 `FORGE/lessons/index.md` 的格式规范落笔——教训只写「问题 + 解决方案」，不带日期/run 编号/版本号（零考古铁律）
+2. 落点：事故叙事进 `FORGE/lessons/driver.md` 对应章节（与既有事故实录体例对齐）；可复用坑位进 index.md「引擎/工具开发通用坑位」表；同步更新 index.md 章节索引与历史坑位索引
+3. 写完扫 U+FFFD（`perl -CSD` 检查替换符）+ 跑 check-anchors 确认锚点有效
+4. 与当轮修复同批或紧随 commit（`docs(forge-lessons):` 前缀）
+
+**红线**：事故回写是复盘不是追责——写「什么形态的失误会产生这个事故、机制怎么防」，不写「谁在哪轮犯了错」；同一根因已沉淀过的不重复建条（合并或引用）。
