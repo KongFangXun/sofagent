@@ -21,7 +21,7 @@ export interface ToolDef {
 }
 
 /**
- * 完整工具清单——83 个 tool（v1.4.5：train_serve/train_compliance/train_deliverable 三件齐——80→83，SKILL.md/ARCHITECTURE 等九处 SSOT 同步收口；v1.4.4：corpus_export 新增；v1.4.3：train_status/train_list/train_diagnose 新增；v1.4.2：fde_interview/fde_classify/fde_quantify/fde_derive/fde_distill/fde_deploy 六引擎 + train_doctor/train_dryrun/train_report 新增；v1.4.1：train_submit 新增；v1.4.0：cost_query + browser 4 新增；v1.3.9：worklog_query 新增；v1.3.6：workflow_submit/ontology_import/model_register/model_switch/model_unregister/train_budget/define_acceptance/check_acceptance；v1.3.5：run_ab_test/promote_ab/snapshot_list/snapshot_restore；v1.3.4：commons_publish/search/invoke/rate/retire/harvest_rule；不含 4 个 resource shortcut）
+ * 完整工具清单——84 个 tool（v1.4.6：train_cloud 新增——83→84，云 VM 执行面控制工具；v1.4.5：train_serve/train_compliance/train_deliverable 三件齐——80→83，SKILL.md/ARCHITECTURE 等九处 SSOT 同步收口；v1.4.4：corpus_export 新增；v1.4.3：train_status/train_list/train_diagnose 新增；v1.4.2：fde_interview/fde_classify/fde_quantify/fde_derive/fde_distill/fde_deploy 六引擎 + train_doctor/train_dryrun/train_report 新增；v1.4.1：train_submit 新增；v1.4.0：cost_query + browser 4 新增；v1.3.9：worklog_query 新增；v1.3.6：workflow_submit/ontology_import/model_register/model_switch/model_unregister/train_budget/define_acceptance/check_acceptance；v1.3.5：run_ab_test/promote_ab/snapshot_list/snapshot_restore；v1.3.4：commons_publish/search/invoke/rate/retire/harvest_rule；不含 4 个 resource shortcut）
  */
 export const TOOLS: ToolDef[] = [
   {
