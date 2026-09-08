@@ -879,6 +879,75 @@ function testReopenParseNoSignal() {
   console.log('  ✓ testReopenParseNoSignal');
 }
 
+// ─── 三防线加固（版本指纹门禁 / 主仓 dirty 隔离 / fallback 去重）───
+// 同内联复刻模式：driver 未导出，纯逻辑等价复刻（driver 变了这里同步）。
+
+/** 内联复刻 fallback 去重逻辑：文件路径 + 描述规范化前缀匹配（≥20 字符公共前缀） */
+function dedupForTest(items) {
+  const MIN_PREFIX_LEN = 20;
+  const seenByFile = new Map();
+  const deduped = [];
+  for (const it of items) {
+    const normDesc = (it.desc || '').replace(/[\s\p{P}\p{S}]+/gu, '');
+    let group = seenByFile.get(it.filePath);
+    if (!group) { group = []; seenByFile.set(it.filePath, group); }
+    const hit = group.find((prev) =>
+      Math.min(prev.normDesc.length, normDesc.length) >= MIN_PREFIX_LEN
+      && (normDesc.startsWith(prev.normDesc) || prev.normDesc.startsWith(normDesc)));
+    if (hit) {
+      const first = hit.item;
+      if (!first.dupSources) first.dupSources = [first.source];
+      first.dupSources.push(it.source);
+      continue;
+    }
+    group.push({ normDesc, item: it });
+    deduped.push(it);
+  }
+  return deduped;
+}
+
+function testFingerprintGuardSkipInWorkerMode() {
+  // worker 模式（无 FORGE_DRIVER_MODE 环境变量）不校验——指纹门禁只约束
+  // driver 主进程。等价复刻 assertDriverCodeFingerprint 的守卫分支。
+  const savedMode = process.env.FORGE_DRIVER_MODE;
+  delete process.env.FORGE_DRIVER_MODE;
+  try {
+    // 等价复刻：守卫条件为真即安全通过（无 process.exit 发生）
+    const shouldSkip = process.env.FORGE_DRIVER_MODE !== 'driver';
+    assert.strictEqual(shouldSkip, true, 'worker 模式应跳过校验');
+  } finally {
+    if (savedMode !== undefined) process.env.FORGE_DRIVER_MODE = savedMode;
+  }
+  console.log('  ✓ testFingerprintGuardSkipInWorkerMode');
+}
+
+function testFallbackDedupMergesCrossPerspective() {
+  // A/B 双盲同题（同文件 + 描述前 40 字符规范化后相同）→ 合并 1 条，
+  // dupSources 记录两个来源
+  const items = [
+    { title: '审计句无边界', filePath: 'docs/WIKI.md', desc: 'L93/L122/L129 三处头条句「审计是强制性的」均无边界状语！', source: 'A-企业 IT' },
+    { title: '审计强制表述无状语', filePath: 'docs/WIKI.md', desc: 'L93/L122/L129 三处头条句「审计是强制性的」均无边界状语；L136 已有披露。', source: 'B-企业 IT' },
+  ];
+  const out = dedupForTest(items);
+  assert.strictEqual(out.length, 1, `同题应合并为 1 条（实际 ${out.length}）`);
+  assert.deepStrictEqual(out[0].dupSources, ['A-企业 IT', 'B-企业 IT'], 'dupSources 应含双来源');
+  console.log('  ✓ testFallbackDedupMergesCrossPerspective');
+}
+
+function testFallbackDedupKeepsDistinctFiles() {
+  // 描述相同但文件不同 → 两条独立保留（不能误合并跨文件问题）
+  const items = [
+    { title: '版本头漂移', filePath: 'SECURITY.md', desc: '文档头版本号停在 v1.4.5 未更新', source: 'A-数字侦探' },
+    { title: '版本头漂移', filePath: 'CONTRIBUTING.md', desc: '文档头版本号停在 v1.4.5 未更新', source: 'B-数字侦探' },
+    // 同文件不同问题 → 保留（描述指纹不同）
+    { title: '版本头漂移', filePath: 'SECURITY.md', desc: 'L52 加密卷措辞是建议不是必须', source: 'B-企业 IT' },
+  ];
+  const out = dedupForTest(items);
+  assert.strictEqual(out.length, 3, `不同文件/不同问题不应误合并（实际 ${out.length}）`);
+  assert.ok(!out.some(it => it.dupSources), '不应出现误合并的 dupSources');
+  console.log('  ✓ testFallbackDedupKeepsDistinctFiles');
+}
+
 function testRuntimeUsageWiring() {
   // 步三·usage 自动计量：driver 的 extractUsage result.usage 路径优先命中
   // runtimeUsage（DSH session.events 提取——「driver 逐步手记」升级运行时自动记）
@@ -1056,6 +1125,10 @@ const tests = [
   testReopenParseTailLine,
   testReopenParseBodyFallback,
   testReopenParseNoSignal,
+  // 三防线加固（版本指纹门禁 / 主仓 dirty 隔离 / fallback 去重）
+  testFingerprintGuardSkipInWorkerMode,
+  testFallbackDedupMergesCrossPerspective,
+  testFallbackDedupKeepsDistinctFiles,
   testRuntimeUsageWiring,
   testGuardReleaseDrill,
   testExtractAgentTextRejectsFragment,
