@@ -125,7 +125,9 @@ while IFS= read -r _b; do
   if [ -n "${_files}" ]; then
     echo "$_files" | while IFS= read -r _f; do
       [ -z "${_f}" ] && continue
-      _mc=$(git log -1 --format='%h %s' -- "${_f}" 2>/dev/null | head -c 80)
+      # 字符级截断防 UTF-8 多字节腰斩——head -c 是字节截断，中文 subject 中间切断产 U+FFFD
+      # Char-level truncation: head -c is byte-wise and splits CJK chars mid-sequence
+      _mc=$(git log -1 --format='%h %s' -- "${_f}" 2>/dev/null | perl -CSD -ne 'print substr($_,0,40)')
       echo "      - ${_f}（main 最后改动：${_mc:-（main 无此文件）}）"
     done
   else
