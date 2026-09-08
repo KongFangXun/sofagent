@@ -11,7 +11,7 @@
   <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.4.5-16B8F3" alt="Version" /></a>
 </p>
 
-<p align="center"><sub><a href="./README.md">简体中文</a> | <a href="./README.en.md">English</a></sub></p>
+<p align="center"><sub>简体中文 | <a href="./README.en.md">English</a></sub></p>
 
 ---
 
