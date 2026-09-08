@@ -190,7 +190,7 @@ Agent = **模型 + 上下文 + 工具 + 状态 + 执行控制 + 权限 + 可观�
 
 > 这份清单是「现在能干什么」的单一索引。约束层内部设计见 [二、约束层（Harness）设计——一个层，五种能力](#二约束层harness设计一个层五种能力)；未来方向见 [六、已知局限与未来方向](#六已知局限与未来方向)。
 
-### 26 个 workspace 源码包（构成以 package.json workspaces 为准：12 个 @sofagent/* 模块包 + 1 个工具包 + 9 个 DSH 插件包 cordis-plugin-sofagent-* + 4 个 OpenClaw 插件包（engine/openclaw-plugins/）；其中 13 个发布为 @sofagent npm 包，DSH 插件 9 款经 SkillHub 分发。「12 包」统计口径指有 test script 的模块包——「引擎」一词对外仅用于描述外部系统，见下方「功能编制」定位声明）
+### 27 个 workspace 源码包（构成以 package.json workspaces 为准：12 个 @sofagent/* 模块包 + 1 个工具包 + 9 个 DSH 插件包 cordis-plugin-sofagent-* + 4 个 OpenClaw 插件包（engine/openclaw-plugins/）+ 1 个 npm 裸名总包 engine/umbrella（包名 `sofagent`，v1.4.6 新增聚合安装入口，821bb85f 引入——不属引擎包也不属插件，故两个旧口径都不计）；其中 13 个发布为 @sofagent npm 包，DSH 插件 9 款经 SkillHub 分发。「12 包」统计口径指有 test script 的模块包——「引擎」一词对外仅用于描述外部系统，见下方「功能编制」定位声明）
 
 | 包 | 职责 | 状态 |
 |---|---|---|
@@ -319,7 +319,7 @@ graph TB
 >
 > ⚠️ **dashboard 是单机监控面板**——每台装了 sofagent 的设备一个 dashboard，盯本机 Agent。多设备聚合是企业级需求，走商业侧平台（不在开源范围）。
 
-> 最小可用：只装 `@sofagent/audit` 就有纯审计（24 条规则，17 默认启用 + 7 扩展 opt-in + 快照 + 回滚）；全量形态为 26 个 workspace（13 引擎包 = 12 主包 + 1 load-chain，13 插件 = 9 款 DSH + 4 款 OpenClaw），全装才是完整约束层。
+> 最小可用：只装 `@sofagent/audit` 就有纯审计（24 条规则，17 默认启用 + 7 扩展 opt-in + 快照 + 回滚）；全量形态为 27 个 workspace（13 引擎包 = 12 主包 + 1 load-chain，13 插件 = 9 款 DSH + 4 款 OpenClaw，+ 1 个 npm 裸名总包 engine/umbrella），全装才是完整约束层。
 
 ### 已排期（开发中或即将开发，详见 ROADMAP）
 
