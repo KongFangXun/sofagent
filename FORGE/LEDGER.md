@@ -316,3 +316,5 @@ release-gate-loop 与 fresh-eyes-loop 共享本文件，通过"循环"列区分�
 2026-09-07      | 20260907-01    | fresh-eyes | 1*   | -  | -  | -  | aborted-DSH-rc.1-API 漂移（session.events→snapshotEvents，24 perspective worker 全崩「events is not iterable」，报告全为降级占位；修复 commit 473f0ea6 双形态兼容+系统性失败熔断；有效产出=零，token 白烧 ~2h） | ~/.sofagent/data/forge-runs/fresh-eyes-loop/2026-09-07/run-01
 
 2026-09-09     | 20260909-01    | release-gate | 4    | SKIP       | FAIL       | SKIP     | FAIL    | /Users/kongfangxun/.sofagent/data/forge-runs/release-gate-loop/2026-09-09/run-01
+
+2026-09-09     | 20260909-02    | release-gate | 4    | SKIP       | PASS       | PASS     | PASS    | /Users/kongfangxun/.sofagent/data/forge-runs/release-gate-loop/2026-09-09/run-02
