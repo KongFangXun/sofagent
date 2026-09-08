@@ -14,17 +14,10 @@ if [ -f "$COMMIT_MSG_FILE" ]; then
   COMMIT_FULL_MSG=$(cat "$COMMIT_MSG_FILE")
 fi
 
-# 空 diff（典型是 git commit --allow-empty）**不再整体 early return**。
-#   此前这里直接 exit 0，2.1 的 dist 完整性校验一并没跑——想躲开引擎完整性
-#   校验，把改动拆成空提交即可，这是可利用的口子：防线存在但根本没执行。
-#   现改为置位 NO_STAGED_FILES：
-#     - 不依赖 diff 的校验（dist 完整性、.gitignore 兜底）照常执行；
-#     - 文件级审计不调用引擎（没有文件可供引擎审计，调用只会输出「没有文件变更」）。
-DIFF=$(git diff --cached --name-only)
-NO_STAGED_FILES=0
-if [ -z "$DIFF" ]; then
-  NO_STAGED_FILES=1
-fi
+# 空 diff（典型是 git commit --allow-empty）**不再整体 early return**：
+#   - 不依赖 diff 的校验（dist 完整性、.gitignore 兜底）照常执行；
+#   - 引擎调用照常发起——引擎空 diff 短路已升级为 message 类规则照常执行
+#     （A5/A9/A19），空提交不再是无审计盲区（详见下方第 4 步）。
 
 # 1. Node.js 检测
 if ! command -v node &>/dev/null; then
@@ -183,16 +176,10 @@ AUDIT_DIFF_ARG="--cached"
 # --task 传 subject（A3 越界检查用）
 # --commit-msg 传完整 message（A9 注入检查用）——两个参数都传
 # AUDIT_CMD 用 bash 数组——仓库路径含空格时（如 /Users/foo/my repo/）不炸
-if [ "$NO_STAGED_FILES" -eq 1 ]; then
-  # 无文件可审（典型是 --allow-empty）。引擎会在读 commit message 之前就因
-  # diff 为空而 exit 0（index.ts 的 diffFiles.length === 0 短路），调用它只会
-  # 输出「没有文件变更」，故此处不发起调用以省一次 node 启动开销。
-  # ⚠️ 已知残留缺口：A3 越界 / A9 注入同属引擎内规则，空提交下同样不执行；
-  #    要闭合需改引擎短路位置（动 engine/audit/src + 重建 + 全量测试），
-  #    不属本次修复范围，未解决。
-  echo "ℹ️ [sofagent] 无暂存文件变更——引擎无文件可审，未发起文件级审计调用（dist 完整性等校验已照常执行）"
-  EXIT_CODE=0
-elif [ -n "$COMMIT_SUBJECT" ]; then
+# 空提交（--allow-empty，NO_STAGED_FILES=1）同样发起引擎调用：引擎的空 diff
+# 短路已升级为「message 类规则照常执行」（A5 空 message / A9 注入 / A19 质量
+# 只消费 commit message、不依赖 diff 内容），空提交不再是无审计盲区。
+if [ -n "$COMMIT_SUBJECT" ]; then
   "${AUDIT_CMD[@]}" --diff "$AUDIT_DIFF_ARG" --silent --ci --task "$COMMIT_SUBJECT" --commit-msg "$COMMIT_FULL_MSG"
 else
   "${AUDIT_CMD[@]}" --diff "$AUDIT_DIFF_ARG" --silent --ci

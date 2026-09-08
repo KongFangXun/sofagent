@@ -105,8 +105,13 @@ import { runVerifyChain, runVerifyCommit } from './commands/verify';
 import { formatSuggestions } from './config-suggestion';
 import { runRegression, type DiffSnapshot } from './audit-regression';
 import { defaultRules, extendedRules } from './rules';
+// 空提交 message 类审计：A5/A9/A19 只消费 commit message、不依赖 diff 内容
+// ——空 diff 短路前仍须执行（详见 runEmptyDiffMessageAudit）
+import { checkRuleA5 } from './rules/rule-a5-honest-report';
+import { checkRuleA9 } from './rules/rule-a9-no-injection';
+import { checkRuleA19 } from './rules/rule-a19-commit-msg-quality';
+import type { AuditContext, RuleCheck } from './rules/types';
 import { scanWorkspace, formatWorkspaceScan } from './workspace-scan';
-import type { RuleCheck } from './rules/types';
 import { pushAuditResult, type WebhookPlatform } from './webhook';
 import { getFixSuggestion } from './fix-suggestions';
 import { buildSessionReport, writeSessionReport } from './session-report';
@@ -681,6 +686,62 @@ function checkVersionConsistency(): void {
   }
 }
 
+/**
+ * 空提交 message 类审计（空 diff 短路前置件）。
+ *
+ * 问题：空 diff 短路位于 commit message 读取之前——想绕过 message 类规则
+ * （A5 空 message / A9 注入 / A19 msg 质量），把内容拆成空提交
+ * （git commit --allow-empty）即可，防线存在但对空提交不执行。
+ *
+ * 防御：空 diff 时仍执行 message 类规则——它们只消费 commit message、
+ * 不依赖 diff 内容（A9 的 diff 内容段在空 diffFiles 下自然空转，message 段照跑）。
+ * 此处不加载 config：mini 审计只跑默认启用的安全底线与质量规则，比主路径
+ * 更严不更松（config 关闭规则在主路径有篡改告警，此处强制执行不放宽）。
+ *
+ * 返回 null = 无 message 可审（非提交场景，如纯查询调用）→ 走原短路行为；
+ * 返回 RuleCheck[] = 已执行 message 类审计，按结果决定放行/拦截。
+ */
+function runEmptyDiffMessageAudit(args: Args): RuleCheck[] | null {
+  // commit message 获取链（与主路径同款优先级，紧凑版）：
+  // --commit-msg 完整消息 > --task subject > COMMIT_EDITMSG > git log HEAD > 无
+  let commitMsg = args.commitMsgArg || args.task || '';
+  if (!commitMsg) {
+    try {
+      const gitDirResult = execFileSync('git', ['rev-parse', '--git-dir'], { encoding: 'utf-8' }).trim();
+      const gitDir = gitDirResult.startsWith('/') ? gitDirResult : join(process.cwd(), gitDirResult);
+      const editMsgPath = join(gitDir, 'COMMIT_EDITMSG');
+      if (existsSync(editMsgPath)) {
+        commitMsg = readFileSync(editMsgPath, 'utf-8').trim();
+      }
+    } catch {
+      // 非 git 仓库——留空
+    }
+  }
+  if (!commitMsg) {
+    try {
+      commitMsg = execFileSync('git', ['log', '-1', '--pretty=%B'], { encoding: 'utf-8' }).trim();
+    } catch {
+      // 无 HEAD（空仓库）——留空
+    }
+  }
+  // 无 message 可审 → 非提交场景，交回原短路行为
+  if (!commitMsg) return null;
+
+  // ANSI 转义过滤（与主路径同款防御——防注入审计报告输出）
+  // eslint-disable-next-line no-control-regex
+  commitMsg = commitMsg.replace(/\x1b\[[0-9;]*[a-zA-Z]/g, '');
+
+  const ctx: AuditContext = {
+    diffFiles: [],
+    logEntries: [],
+    task: args.task,
+    strict: args.strict,
+    silent: args.silent,
+    commitMsg,
+  };
+  return [checkRuleA5(ctx), checkRuleA9(ctx), checkRuleA19(ctx)];
+}
+
 async function main(): Promise<void> {
   // DP-1: 版本一致性自检（轻量、不阻断）
   checkVersionConsistency();
@@ -1021,8 +1082,30 @@ async function main(): Promise<void> {
   }
 
   if (diffFiles.length === 0) {
+    // 空提交不再是无审计盲区：message 类规则（A5/A9/A19）只消费 commit message、
+    // 不依赖 diff 内容——空 diff 下照常执行（防「拆成空提交绕过注入检测」）。
+    // 非提交场景（无 message 可审）保持原行为。
+    const messageRuleChecks = runEmptyDiffMessageAudit(args);
+    const failedChecks = (messageRuleChecks ?? []).filter((r) => r.status === 'FAIL');
+    if (messageRuleChecks !== null && failedChecks.length > 0) {
+      if (args.json) {
+        console.log(JSON.stringify({ exitCode: 1, rules: messageRuleChecks }, null, 2));
+      } else {
+        console.error(`❌ 空提交审计未过（${failedChecks.length} 条 message 类规则 FAIL）：`);
+        for (const r of messageRuleChecks) {
+          if (r.status !== 'PASS') {
+            const mark = r.status === 'FAIL' ? '✗' : '⚠';
+            console.error(`  ${mark} ${r.name}: ${r.details.join('；')}`);
+          }
+        }
+        console.error('   请修复 commit message 后重新提交（空提交不再绕过 message 类审计）。');
+      }
+      exit(1);
+    }
     if (args.json) {
-      console.log(JSON.stringify({ exitCode: 0, rules: [] }, null, 2));
+      console.log(JSON.stringify({ exitCode: 0, rules: messageRuleChecks ?? [] }, null, 2));
+    } else if (messageRuleChecks !== null) {
+      console.log('✅ 没有文件变更；commit message 已过 message 类规则审计（A5/A9/A19）。');
     } else {
       console.log('✅ 没有文件变更，无需审计。');
     }
