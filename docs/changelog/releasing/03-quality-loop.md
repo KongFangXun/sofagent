@@ -152,13 +152,17 @@
 - 各轮明细：driver 每轮 P0/P1/P2 计数、修复批清单（finding+定性+文件+commit hash）
 - 最终 runDir 路径 + findings 关键行原文
 
-铁律（三条，违反即 run 报废级别事故）：
+铁律（五条，违反即 run 报废级别事故）：
 
 一、**冻结窗口对所有 session 生效**——driver 运行窗口内不 commit / 不改文件（仓库冻结：worker 与主仓共享工作目录，HEAD 变动杀进程树）。**任何** session 都受约束，不止执行 session 自己——主 session「顺手收编」同样炸 run；收编与 run 窗口必须错峰（等 run 收口，或先停 run 再收编再 `--resume` 续跑）。机制兜底已上（对最高危形态）：commit-msg hook 冻结窗口锁在「run 进行中 + 提交命中 driver 源码」时阻断提交——机制拦最高危（步骤表错位全灭），纪律管其余（HEAD 变动杀进程树）。
 
 二、**exit 86 = 运行中换码**——看到 86（driver 源码指纹错位）处置口诀：停止本 run（已跑轮次产物在 runDir 不丢）→ 用新代码重启 driver（`--resume` 可续跑断点）→ 需要改 driver 行为时，先停 run 再改再重启。不要带病续跑。
 
 三、**收编即标记**——把 FORGE 工作分支（forge/*）的内容收编进 main 后，必须当场打标记（`git tag forge-merged-<分支名 / 换 ->`）；未标记分支由 `tools/check/check-forge-branches.sh` 对账列出（INFO 不阻断）。禁止用 `git log main..<分支>` 或 `git cherry` 判「已收编」——逐文件 apply 收编下前者恒非空、后者假阳性（均实测）。收编方法红线：禁整包 cherry-pick、禁 `git checkout <分支> -- <文件>`，必须逐文件 diff apply 并验证零丢失。
+
+四、**环境级故障熔断不要逐个降级**——worker 失败呈系统性比例（≥2/3 且绝对数 ≥5，双门阈值）时是**环境级故障**（依赖 API 漂移 / DSH rc 包形态变化 / 内存不足 OOM），driver 系统性失败熔断会中止 run。执行 session 看到全片同款死法（统一 TypeError / 全部降级占位）不要判「N 个单点失败逐个修」——先停手读 death-audit.jsonl / sub-progress-*.jsonl 定根因，修好依赖再 `--resume` 续跑。「逐个降级占位继续跑」是环境故障的损失放大器（曾整轮白烧两小时才发现 24 worker 全灭）。
+
+五、**run 收口后两动作**——① **worktree 收编核对**：`git log main..forge/fresh-eyes/<run>` 及各轮 bfix 快照分支，非空即逐 commit 核对是否已收编（分支头被 re-sync/reset 回退时修复会**静默丢失**，无任何告警，对账脚本是唯一防线）；② **lessons 回写**：run 终态非 PASS / 复验推翻 / 收口核对发现资产异常，任一命中即按 [05 的 lessons 回写节](./05-release-gate.md) 执行（问题+解决方案零考古，事故叙事进 driver.md 对应章节）——事故教训不当天回写，换个 session 还会踩同款。
 
 修复批窗口不在冻结内（修复批由执行 session 在轮间窗口执行，run 侧 driver 已进入下一轮前空闲；但修复批同样不得触碰 driver 源码）。
 ```
