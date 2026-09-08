@@ -83,7 +83,7 @@
 - [ ] **result.md 必须用 finding-NN 结构**（分类段落 `### 🔴 P0 阻塞项` 切 0 finding 假绿；兜底 prompt 强制 + 检测扩展）（[四·产物完整性校验](./driver.md#-产物完整性校验防假成功)）
 - [ ] **worker 写完产物必须显式 process.exit(0)**（残留句柄让事件循环不清空 → 进程不退出 → driver 永久 await；心跳正常≠流程在走）（[四·worker 不退出](./driver.md#-worker-写完产物不退出--driver-永久-await)）
 - [ ] **spawn 子进程必须配超时兜底**（30 分钟 SIGKILL + resolve 124，防任何 worker hang 卡死 driver）（[四·worker 不退出](./driver.md#-worker-写完产物不退出--driver-永久-await)）
-- [ ] **降级状态独立持久化**（degraded.flag，勿放会被下游覆盖的产物里——a-verify 覆盖 result.md 抹掉标记致假绿）（[四·产物完整性校验](./driver.md#-产物完整性校验防假成功)）
+- [ ] **降级状态独立持久化**（degraded.flag，勿放会被下游覆盖的产物里——验证步骤（现 c-verify）覆盖 result.md 抹掉标记致假绿）（[四·产物完整性校验](./driver.md#-产物完整性校验防假成功)）
 - [ ] **确定性判定优先**（能用正则/确定性规则判定的结果不让 LLM 解读——日志总结行是权威；解析脚本日志先剥离 ANSI 颜色码）（[四·确定性判定](./driver.md#-确定性判定优先别让-llm-解读能确定性解析的日志)）
 - [ ] **driver 状态变量变化要回写权威产物**（F 链收敛 PASS 必须同步 verdict.md，否则文件与 status 矛盾）（[四·F 链收敛](./driver.md#-f-链收敛要回写权威产物verdictmd-同步)）
 - [ ] **命令从 LLM 剥离要贯彻到底——证据也剥离**（worker 无工具面时（DSH CLI 桥接）precheck 证据由 driver 直接注入 userMessage，不依赖 worker 读文件；DSH/LangGraph 双后端兼容）（[四·DSH 证据注入](./driver.md#dsh-cli-桥接worker-无工具面--precheck-证据必须由-driver-注入-prompt实录)）
@@ -172,7 +172,7 @@
 | 26 | 并行 tool_call 让硬熔断超发（45 实际撞 48-60）+ 必读文件多须步骤级预算 | 四·并行超发 |
 | 27 | result.md 分类段落格式（### 🔴 P0 阻塞项）切 0 finding 假绿 | 四·产物完整性校验 |
 | 28 | worker 写完产物不退出（残留句柄）→ driver 永久 await，心跳正常≠流程在走 | 四·worker 不退出 |
-| 29 | a-verify 覆盖 result.md 抹掉降级标记 → 降级轮假绿 | 四·产物完整性校验（degraded.flag） |
+| 29 | 验证步骤（现 c-verify）覆盖 result.md 抹掉降级标记 → 降级轮假绿 | 四·产物完整性校验（degraded.flag） |
 | 30 | LLM 解读日志误判——grep exit code 幻觉 / 不懂非连续编号 / WARN 当 FAIL | 四·确定性判定优先 |
 | 31 | ANSI 颜色码插入文本导致正则匹配失败 | 四·确定性判定优先（剥离 \x1b[...m） |
 | 32 | F 链收敛状态未回写 verdict.md → 文件与 status 矛盾 | 四·F 链收敛回写权威产物 |

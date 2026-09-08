@@ -22,7 +22,9 @@ fresh-eyes-loop 和 release-gate-loop **共用同一套模型配置**——只�
 
 | 角色 | 职责 | 模型 | 行为指令 | 工具集 |
 |:--:|------|------|------|------|
-| **A**（审查者） | 12 视角审查 + 合并 + 验证 | qwen3.8-max | `prompts/a-check.md` / `a-consolidate.md` / `a-verify.md` | `REVIEWER_TOOLS`（只读） |
+| **A**（审查者） | 12 视角单盲审查 + 合并 | glm-5.3-flash | `prompts/a-check-perspective-*.md` / `a-consolidate.md` | `REVIEWER_TOOLS`（只读） |
+| **C**（验收者） | 逐条实测验收 B 的修复 | glm-5.3-flash | `prompts/c-verify.md` | `REVIEWER_TOOLS`（只读） |
+| **D**（复核者） | 对抗裁决 P0/P1（CONFIRM/DOWNGRADE/REOPEN） | glm-5.3-flash | `prompts/d-review.md` | `REVIEWER_TOOLS`（只读） |
 | **B**（工程师） | 修复缺陷 | glm-5.2 | `prompts/b-check.md` / `b-fix.md` | `ENGINEER_TOOLS`（含写工具） |
 | **V**（验证者） | release-gate 全流程 | glm-5.2 | `prompts/*.md` | `REVIEWER_TOOLS`（只读） |
 
@@ -119,7 +121,8 @@ a-check       → A（审查角色）独立跑 12 视角审查，输出 check-a.
 b-check       → B（工程师角色）独立跑 12 视角审查，输出 check-b.md
 a-consolidate → A 合并 A+B findings，去重排序，输出 findings.md + result.md
 b-fix         → B 按 result.md 修复，输出 summary.md
-a-verify      → A 验证修复结果，判定本轮是否 PASS
+c-verify      → C 独立验收修复结果（逐条实测）
+d-review      → D 对抗复核 P0/P1，REOPEN 打回重修
               → 连续 2 轮无 P0/P1 → 停止
 ```
 
