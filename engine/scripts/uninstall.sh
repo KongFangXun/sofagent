@@ -5,7 +5,7 @@
 # 删除 sofagent 约束文件，但保留 .sofagent/ 用户数据。
 # 由 DeepSeek V4 Pro 和 GLM-5.2 配合生成。
 #
-# 用法：./uninstall.sh [--platform openclaw|workbuddy|claude|codex|hermes]
+# 用法：./uninstall.sh [--platform openclaw|workbuddy|claude|codex|hermes|cursor|gemini]
 #       ./uninstall.sh --force   跳过确认，直接删除
 #       ./uninstall.sh --help    显示帮助
 # ============================================================
@@ -40,7 +40,7 @@ while [[ $# -gt 0 ]]; do
     --platform) PLATFORM="$2"; shift 2 ;;
     --platform=*) PLATFORM="${1#*=}"; shift ;;
     --help)
-      echo "sofagent uninstall [--platform openclaw|workbuddy|claude|codex|hermes]"
+      echo "sofagent uninstall [--platform openclaw|workbuddy|claude|codex|hermes|cursor|gemini]"
       echo "  正常模式 交互确认后删除约束文件"
       echo "  --force  跳过确认，直接删除"
       echo "  --list   仅列出会被删除的文件，不执行"
@@ -61,6 +61,8 @@ if [ -z "$PLATFORM" ]; then
   elif [ -d "$HOME/.claude" ]; then      PLATFORM="claude"
   elif [ -d "$HOME/.codex" ]; then       PLATFORM="codex"
   elif [ -d "$HOME/.hermes" ]; then      PLATFORM="hermes"
+  elif [ -d "$HOME/.cursor" ]; then      PLATFORM="cursor"
+  elif [ -d "$HOME/.gemini" ]; then      PLATFORM="gemini"
   else                                   PLATFORM="openclaw"
   fi
 fi
@@ -137,6 +139,8 @@ case "$PLATFORM" in
   claude)   TARGET="$HOME/.claude" ;;
   codex)    TARGET="$HOME/.codex" ;;
   hermes)   TARGET="$HOME/.hermes" ;;
+  cursor)   TARGET="$HOME/.cursor" ;;
+  gemini)   TARGET="$HOME/.gemini" ;;
   *)        TARGET="${OPENCLAW_STATE_DIR:-$HOME/.openclaw}" ;;
 esac
 
@@ -229,6 +233,46 @@ if [ -d "$SKILLS_DIR" ]; then
     ok "已删除 skills/ 目录（${skill_count} 个文件）"
   fi
   ((removed++)) || true
+fi
+
+# ── cursor/gemini 薄挂载产物回收（对应 install.sh cursor/gemini 写入面）──
+# cursor: ~/.cursor/rules/sofagent.mdc（复制）+ ~/.cursor/hooks.json（sofagent hook 配置）
+# gemini: ~/.gemini/GEMINI.md（复制）；skills/sofagent 目录已由上方 SKILLS_DIR 清理。
+# hooks.json 仅在含 sofagent 特征时回收——不碰用户自有的 hooks.json。
+if [ "$PLATFORM" = "cursor" ]; then
+  CUR_MDC="$HOME/.cursor/rules/sofagent.mdc"
+  if [ -f "$CUR_MDC" ]; then
+    if [ "$LIST_ONLY" = true ]; then
+      info "  $CUR_MDC"
+    else
+      rm -f "$CUR_MDC"
+      rmdir "$HOME/.cursor/rules" 2>/dev/null || true
+      ok "已删除: ~/.cursor/rules/sofagent.mdc"
+    fi
+    ((removed++)) || true
+  fi
+  CUR_HOOKS="$HOME/.cursor/hooks.json"
+  if [ -f "$CUR_HOOKS" ] && grep -q "sofagent" "$CUR_HOOKS" 2>/dev/null; then
+    if [ "$LIST_ONLY" = true ]; then
+      info "  $CUR_HOOKS（sofagent hook 配置）"
+    else
+      rm -f "$CUR_HOOKS"
+      ok "已删除: ~/.cursor/hooks.json（sofagent hook 配置）"
+    fi
+    ((removed++)) || true
+  fi
+fi
+if [ "$PLATFORM" = "gemini" ]; then
+  GEM_MD="$HOME/.gemini/GEMINI.md"
+  if [ -f "$GEM_MD" ]; then
+    if [ "$LIST_ONLY" = true ]; then
+      info "  $GEM_MD"
+    else
+      rm -f "$GEM_MD"
+      ok "已删除: ~/.gemini/GEMINI.md"
+    fi
+    ((removed++)) || true
+  fi
 fi
 
 # ── 删除 / 列出加载链 Hook（2026.6.x 内部 hook 目录）──
