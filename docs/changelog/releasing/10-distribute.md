@@ -134,6 +134,8 @@ done
 - 引用方 workflow 钉 tag（`KongFangXun/sofagent@vX.Y.Z`），新版不改变已有用户行为
 - 发版时 action.yml 内 `npx -p @sofagent/audit@X.Y.Z` 版本号同步 bump（既有铁律，见文件头注释）
 
+**Release Notes 升级注意事项（每版检查一次）**：git hook（commit-msg/post-commit）是**拷贝**而非软链——本版 hook 行为有变更时（查 engine/audit/hooks/ 头部版本号是否 bump），release notes 须加一条「**升级后需重装 git hook**：`sofagent-audit --install-hook`（每个装过 hook 的仓库逐个重装）」。install.sh 升级路径有版本落后提示，但用户不重跑安装脚本就感知不到——release notes 是最后一块告知面。
+
 ---
 
 ## 步骤三：设备端安装

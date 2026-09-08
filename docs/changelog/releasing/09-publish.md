@@ -130,6 +130,12 @@ done
 echo "npm 包洁净度 + 类型检查完成"
 ```
 
+### 空提交审计缺口（已闭合）
+
+> 历史缺口：引擎空 diff 短路位于 commit message 读取之前——拆成空提交（`--allow-empty`）可绕过 message 类规则（A5/A9/A19），注入措辞的 commit message 不会被拦。**已闭合**：引擎空 diff 短路升级为 message 类规则照常执行（防回归场景 S381——注入措辞空提交必命中 A9），hook 空提交场景恢复引擎调用。
+>
+> 缓解条款（保留）：发布相关 commit 不使用 `--allow-empty`——发布序列的 commit 均有实质内容（版本 bump/文档），空提交在此场景无正当用途，禁用可消除一类混淆。
+
 ---
 
 ## 步骤三：push 前置检查（双 SHA 分叉防御）

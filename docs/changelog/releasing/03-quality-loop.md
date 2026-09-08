@@ -152,7 +152,15 @@
 - 各轮明细：driver 每轮 P0/P1/P2 计数、修复批清单（finding+定性+文件+commit hash）
 - 最终 runDir 路径 + findings 关键行原文
 
-铁律：driver 运行窗口内不 commit / 不改文件（仓库冻结——worker 与主仓共享工作目录，HEAD 变动杀进程树）；修复批窗口不在冻结内。
+铁律（三条，违反即 run 报废级别事故）：
+
+一、**冻结窗口对所有 session 生效**——driver 运行窗口内不 commit / 不改文件（仓库冻结：worker 与主仓共享工作目录，HEAD 变动杀进程树）。**任何** session 都受约束，不止执行 session 自己——主 session「顺手收编」同样炸 run；收编与 run 窗口必须错峰（等 run 收口，或先停 run 再收编再 `--resume` 续跑）。机制兜底已上（对最高危形态）：commit-msg hook 冻结窗口锁在「run 进行中 + 提交命中 driver 源码」时阻断提交——机制拦最高危（步骤表错位全灭），纪律管其余（HEAD 变动杀进程树）。
+
+二、**exit 86 = 运行中换码**——看到 86（driver 源码指纹错位）处置口诀：停止本 run（已跑轮次产物在 runDir 不丢）→ 用新代码重启 driver（`--resume` 可续跑断点）→ 需要改 driver 行为时，先停 run 再改再重启。不要带病续跑。
+
+三、**收编即标记**——把 FORGE 工作分支（forge/*）的内容收编进 main 后，必须当场打标记（`git tag forge-merged-<分支名 / 换 ->`）；未标记分支由 `tools/check/check-forge-branches.sh` 对账列出（INFO 不阻断）。禁止用 `git log main..<分支>` 或 `git cherry` 判「已收编」——逐文件 apply 收编下前者恒非空、后者假阳性（均实测）。收编方法红线：禁整包 cherry-pick、禁 `git checkout <分支> -- <文件>`，必须逐文件 diff apply 并验证零丢失。
+
+修复批窗口不在冻结内（修复批由执行 session 在轮间窗口执行，run 侧 driver 已进入下一轮前空闲；但修复批同样不得触碰 driver 源码）。
 ```
 
 **自动收敛下的四角色映射**（「修复分工与角色分离」铁律在单 session 制下的落地形态；单盲四角色流水线 = A 审 → B 修 → C 验 → D 复核）：
@@ -217,3 +225,16 @@ driver 异常中止（进程死亡/环境冲突）的 run **也必须留 LEDGER 
 2. **修复前对照「版本类 finding 处理规则」（本文件上方）**——会在 push+tag+publish 后自动消失的项判 SKIP，不修
 3. **报告里的 `file:line` 引用先解析归属再采信**——审查报告每条发现都带行号，行号只证明「这一行存在」，不证明「这一段在说什么」；段落级结论先跑 `bash tools/check/resolve-section.sh <file> <line> [--chain]` 解析归属标题，对不上结论的引用打回重核（曾出现复核称段落完整、行号实属另一视角）。排障工具非门禁：不接入 check-guards/CI
 4. 分工：监控 session 管跑与报，主 session 管验与修（完整协议见 [05 的分工协议](./05-release-gate.md)）
+
+## 快照对账 warn 级原则（跨阶段通用）
+
+> 落点理由：本原则的范例（`dev-prompt-changelog-lines`）就是本阶段检查项，且「对账」语境与本文件的复验/收编一脉相承，故收在 03 而非独立小节。
+
+对账检查的**级别**按对账对象定，不按检查者心情定：
+
+| 对账对象 | 级别 | 理由 |
+|------|:--:|------|
+| 硬事实（计数 / 路径 / 版本号 / hash） | error | 错了就是错了，无解释空间 |
+| **人工维护的易变快照**（行数声明 / 「最新」指针 / 摘要转述） | **warn** | 快照滞后是演化的常态，error 级会把「正常前进」当事故 |
+
+范例：`dev-prompt-changelog-lines`（dev prompt 头部声明的 changelog 行数 vs 实际行数）已按此降为 warn——日志涨行是演化不是错误。新增对账检查时先问一句：**对账对象是硬事实还是易变快照？** 前者 error 后者 warn，不混用。
