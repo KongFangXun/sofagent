@@ -7,7 +7,7 @@
 //
 //   审查类（a-check/b-check）   → 200 行（只读摘要）
 //   修复类（b-fix/f-fix）       → 100 行（精确定位）
-//   验证类（a-verify）          → 50 行（最严格）
+//   验证类（c-verify/a-verify） → 50 行（最严格）
 //   合并类（a-consolidate）     → 500 行（需要全局视角）
 //   默认                        → 200 行
 //
@@ -34,7 +34,13 @@ export const STEP_BUDGETS = {
   'b-fix':         100,
   'f-fix':         100,
   // 验证类：最严格，只看关键输出
+  // （a-verify 为 legacy 双盲链历史名，保留兼容旧 run；单盲四角色链用 c-verify）
   'a-verify':      50,
+  // 单盲四角色（A审→B修→C验→D复核）：
+  //   c-verify 验收类——同 a-verify 最严格档（逐条实测只看关键输出）
+  //   d-review 复核类——裁决 P0/P1 需读证据片段，50 够用
+  'c-verify':      50,
+  'd-review':      50,
   // release-gate V 步骤——run-05 实证统一对齐 800（regression 先例同根因）：
   // V 是「证据审读」角色，读的全部是 driver 产物报告（acceptance 分片/汇总、
   // coverage.md+场景矩阵、consolidate 合并稿、verdict 上游证据），200/100/500
