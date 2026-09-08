@@ -253,9 +253,15 @@ export function runCliQuick(argv: string[]): number {
     // 后被静默忽略继续跑（EXIT=0），用户以为严格模式生效实际没有。加入清单后
     // 遇之自动路由完整引擎（本仓内）或提示转完整安装（npx 态）。
     '--strict'];
+  // v1.4.6 finding-12: 子命令同样需要完整引擎——此前只拦 flag 不拦子命令，
+  // npx 主入口敲 `sofagent-audit agent-shield`（或 ontology/conflict-check/
+  // federation-distill/corpus）时子命令落进下方位置参数 diffRange 分支，
+  // parseDiff('agent-shield') 抛「diff 解析失败」exit 3（误导性错误）。
+  // 清单与 index.ts SUBCOMMANDS 保持对齐。
+  const FULL_ONLY_SUBCOMMANDS = ['ontology', 'conflict-check', 'federation-distill', 'agent-shield', 'corpus'];
 
   for (const arg of argv.slice(2)) {
-    if (FULL_ONLY_FLAGS.includes(arg)) {
+    if (FULL_ONLY_FLAGS.includes(arg) || FULL_ONLY_SUBCOMMANDS.includes(arg)) {
       // 路由到完整引擎（dist/index.js）
       const indexPath = join(__dirname, 'index.js');
       try {

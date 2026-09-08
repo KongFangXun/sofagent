@@ -269,11 +269,7 @@ export function createAgentShield(options: ShieldOptions = {}) {
       for (const s of paths.secretTargets || []) findings.push(...this.scanSecrets(s));
       if (paths.repoDir) findings.push(...this.scanShadowAi(paths.repoDir));
 
-      const byCat = new Map<string, number>();
-      for (const f of findings) byCat.set(f.category, (byCat.get(f.category) || 0) + 1);
-      const stats: ShieldScanResult['stats'] = [...byCat.entries()].map(([category, count]) => ({ category: category as ShieldFinding['category'], count }));
-      stats.push({ category: 'total', count: findings.length });
-      return { findings, stats };
+      return { findings, stats: computeShieldStats(findings) };
     },
 
     /** 白名单（供外部查询/扩展） */
@@ -284,3 +280,18 @@ export function createAgentShield(options: ShieldOptions = {}) {
 }
 
 export type AgentShield = ReturnType<typeof createAgentShield>;
+
+/**
+ * 按 findings 汇总统计（每类别计数 + total）。
+ * v1.4.6 finding-11: 从 scanAll 内抽出——CLI（cli/agent-shield.ts）因 scanAll
+ * 只收单个 mcpConfig，在 scanAll 返回后追加 MCP findings，事后必须用同一
+ * 口径重算 stats，否则 --json 的 stats.total 与 findings.length 不一致、
+ * category 统计缺 mcp-risk 项。
+ */
+export function computeShieldStats(findings: ShieldFinding[]): ShieldScanResult['stats'] {
+  const byCat = new Map<string, number>();
+  for (const f of findings) byCat.set(f.category, (byCat.get(f.category) || 0) + 1);
+  const stats: ShieldScanResult['stats'] = [...byCat.entries()].map(([category, count]) => ({ category: category as ShieldFinding['category'], count }));
+  stats.push({ category: 'total', count: findings.length });
+  return stats;
+}

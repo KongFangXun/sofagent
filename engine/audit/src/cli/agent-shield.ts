@@ -21,7 +21,7 @@
 import { existsSync } from 'fs';
 import { join } from 'path';
 import { homedir } from 'os';
-import { createAgentShield, DEFAULT_KNOWN_AGENTS } from '../agent-shield';
+import { createAgentShield, DEFAULT_KNOWN_AGENTS, computeShieldStats } from '../agent-shield';
 import type { ShieldFinding, ShieldScanResult } from '../agent-shield';
 
 /** agent-shield 子命令参数 */
@@ -142,6 +142,10 @@ export function runAgentShieldCli(args: AgentShieldArgs): number {
     repoDir: args.repoDir,
   });
   for (const c of mcpConfigs) result.findings.push(...shield.scanMcpConfig(c));
+  // v1.4.6 finding-11: stats 已在 scanAll 内部先行计算，不含上面追加的 MCP
+  // findings——用同一口径重算，保证 stats.total = findings.length、category
+  // 统计含 mcp-risk 项。
+  result.stats = computeShieldStats(result.findings);
 
   if (args.json) {
     console.log(JSON.stringify({
