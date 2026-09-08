@@ -27,7 +27,7 @@
 | 一·架构设计 | [./architecture.md](./architecture.md) | **执行后端三层（DSH CLI 桥接 → createReactAgent fallback → 禁 createDeepAgent）** · Driver-Worker 编排 · 步骤定义 · 目录架构 |
 | 二·模型配置 | [./models.md](./models.md) | MODEL_CONFIGS · **A/B/V/F 统一 deepseek-v4-flash** · 步骤级 maxTokens · 计费模式 |
 | 三·性能优化 | [./performance.md](./performance.md) | 三层上下文裁剪（截断+stateModifier+preModelHook）· 效率铁律 · stream |
-| 四·Driver 编排 | [./driver.md](./driver.md) | **preflight-check 跑前自检** · recursionLimit · **三层熔断死循环防护** · **零信任复核（FAIL≠真实 bug）** · **DSH 桥接证据注入（无工具面）** · 失败容错 · 分片 · 停止条件 · 外部脚本 spawn · --step |
+| 四·Driver 编排 | [./driver.md](./driver.md) | **preflight-check 跑前自检** · recursionLimit · **三层熔断死循环防护** · **零信任复核（FAIL≠真实 bug）** · **守卫 fail-loud（PASS 更不可信）** · **冻结窗口锁（防并行会话误改）** · **DSH 桥接证据注入（无工具面）** · 失败容错 · 分片 · 停止条件 · 外部脚本 spawn · --step |
 | 五~八·Stream/Prompt/工具/可观测 | [./stream-prompt-tools.md](./stream-prompt-tools.md) | stream 迁移 P0 铁律 · BSD 约束 · 工具格式转换 · 两层可观测 |
 
 ---
@@ -98,6 +98,8 @@
 - [ ] **停止条件只数标记不做语义判断**（[四·停止条件](./driver.md#停止条件判定)）
 - [ ] **spawn 外部脚本时流式写入日志**（[四·外部脚本](./driver.md#外部脚本-spawn-生存规范)）
 - [ ] **FAIL 判定必须零信任复核**（亲手实跑检查命令，FAIL≠真实 bug；命令缺陷修 checklist 不修产品代码）（[四·零信任复核](./driver.md#-零信任复核worker-的-fail-判定不可全信)）
+- [ ] **守卫脚本 fail-loud**（任何执行路径的失败必须非 0 退出；上线配故障注入自检——PATH 前置假 perl 验证 crash/silent 双路都能抓住）（[四·守卫 fail-loud](./driver.md#-守卫-fail-loud静默失败是最危险的失败模式)）
+- [ ] **长循环 driver 加冻结窗口锁**（pidfile 双信号：活锁+命中 driver 源码→阻断 commit；PID 死=锁滞留→WARN 放行）（[四·冻结窗口锁](./driver.md#-冻结窗口锁driver-跑循环期间防并行会话误改)）
 - [ ] **child.on('close') 处理 signal 参数**（被 kill 时 code=null）（[四·外部脚本](./driver.md#外部脚本-spawn-生存规范)）
 - [ ] **shell 脚本中禁用 `| head -N`**（pipefail + SIGPIPE）（[四·外部脚本](./driver.md#外部脚本-spawn-生存规范)）
 - [ ] **长脚本每 30s 输出 progress 日志**（[四·外部脚本](./driver.md#外部脚本-spawn-生存规范)）
@@ -178,6 +180,14 @@
 | 32 | F 链收敛状态未回写 verdict.md → 文件与 status 矛盾 | 四·F 链收敛回写权威产物 |
 | 33 | 长循环跑到一半环境崩溃——缺跑前自检（preflight-check 六项检查） | 四·preflight-check |
 | 34 | 并发 1 下整轮 60-75 分钟太慢——瓶颈在 LLM 生成非工具；降 worker heap 1024 + 默认并发 2 换 ~2 倍吞吐 | 三·worker heap 降半 + 默认并发 2 |
+| 35 | 嵌套 `$()` 拼接注入样本只拼前半段 → 假 PASS | 引擎/工具通用坑位 #15 |
+| 36 | head -c 字节截断产 U+FFFD（264 处实测） | 引擎/工具通用坑位 #16 |
+| 37 | SSOT 链式总数批量替换改坏历史链（新值自指） | 引擎/工具通用坑位 #17 |
+| 38 | hook 头预写未发版号被 check-template-drift 拦截 + hook 拷贝需本机重装 | 引擎/工具通用坑位 #18 |
+| 39 | 注入样本字面量自触发 + 恒真比较 SC2050 | 引擎/工具通用坑位 #19 |
+| 40 | 空 diff 提交绕过 message 审计 | 引擎/工具通用坑位 #20 |
+| 41 | `git log main..`/`git cherry` 判收编不可靠 → 收编即标记 | 引擎/工具通用坑位 #21 |
+| 42 | 守卫引擎故障静默报绿（两份真相无自动对账） | 引擎/工具通用坑位 #22 |
 
 ### 关键设计决策速查
 
@@ -240,6 +250,19 @@
 | 12 | **rc.8 headless 无工具面**——headless profile 只挂 dsh-base+dsh-headless（无 dsh-tool-*） | headless 定位是纯文本单轮问答 | 能力边界诚实标注：tools 传入 WARN 不生效；预算熔断退化外层超时；工具支持排正式版（Cordis 内嵌自动升级） | createDshCliBackend |
 | 13 | **CJS 编译目标下 `import.meta` 不可用**（TS1343）——orchestrator module=commonjs | TS 模块配置限制 | `createRequire(__filename)` 替代 `createRequire(import.meta.url)`；类型：modelConfig 是 `Record<string, unknown>` 须 `String()` 转义再当 env 索引 | dsh-backend |
 | 14 | **release-gate worker 无工具面 → 永远「0 条工具结果」判 FAIL**（连续失败实录）——worker prompt 要求「读 precheck.json（1 次 tool call）」，但 DSH CLI 桥接无法注入 task.tools，worker 读不到 → 报告「证据不足 P2 待证实」 | 只剥离了「命令执行」没剥离「证据读取」——方案 A 贯彻不彻底 | **precheck 证据内容由 driver 直接注入 userMessage**（buildPrecheckEvidence）+ 兜底函数也带 precheckEvidence（两层兜底都要证据）；覆盖 252 场景全量注入实测仅 14.8KB 不用截断 | release-gate-driver |
+
+### 流程加固批沉淀（复审+门禁工具层）
+
+| # | 坑位 | 根因 | 修复/铁律 | 涉及模块 |
+|---|------|------|----------|------|
+| 15 | **嵌套 `$(printf "A"$(printf "B")"C")` 只拼出前半段**——注入样本用嵌套命令替换拼接，实测产物只有前半句，注入词残缺自然不命中检测规则，形成假 PASS | bash 对嵌套命令替换的展开顺序限制 | **注入样本拼接禁嵌套 `$()`**——用变量分步拼（先 `A=$(printf ...)` 再 `PAYLOAD="${A}${B}"`）或 heredoc 干净传参 | 审计复审脚本 / acceptance-test |
+| 16 | **`head -c N` 字节级截断切断 UTF-8 中文多字节字符产 U+FFFD**——分支对账脚本输出实测 264 处替换符 | head -c 按字节截断，中文字符多字节，截断点落在字符中间 | **字符级截断用 perl**：`perl -CSD -ne 'print substr($_,0,40)'`；输出可能含中文的工具脚本一律禁 head -c | tools/check/ 输出截断 |
+| 17 | **SSOT 链式总数批量替换改坏历史链**——批量替换把历史批次中间值一并替换，历史段变成「新值→新值」自指 | 批量替换不区分「历史事实段」与「链尾待更新段」 | **链式总数更新只在链尾追加新批次段，保留历史中间值**（正确写法：`批次A +47（4055→4102）+ 批次B +6（4102→4108）`） | 测试数 SSOT / docs/LIMITATIONS.md |
+| 18 | **hook 头版本号预写未发版号被门禁拦截**——commit-msg hook 头写成下一版号，check-template-drift 断言一红（SSOT 是当前版） | 「顺手预写下版号」违反 SSOT 单源 | **hook 头版本号必须等于 SSOT 当前值**，bump 时随 SSOT 一起改；改完 hook 必须 `cp` 到 `.git/hooks/` 重装生效（hook 是拷贝非软链） | engine/audit/hooks/ / check-template-drift |
+| 19 | **注入样本防自触发+过 shellcheck 的拼接手法**——样本里字面量注入词会触发检测器自检（检测词出现在检查脚本自身），恒真比较又触发 SC2050 | 样本与检测器同文件共存 | 参数扩展替换：`A="Xgnore"; A="${A/X/n}"`——产物逐字节等价、无字面量、无恒真比较 | acceptance-test / 注入样本 |
+| 20 | **空 diff 提交绕过 message 审计**——无文件变更的提交让审计引擎短路，直接跳过 message 类规则（A5/A9/A19 只消费 message 不依赖 diff） | 空 diff 短路逻辑设计时只考虑了 diff 类规则 | 空 diff 仍跑 message 类规则：构造只带 message 的 ctx；FAIL 判 exit 2（对齐主路径业务底线语义；hook 语义 1=警告放行 2=阻断） | engine/audit/src/index.ts |
+| 21 | **收编即标记：`git log main..<分支>` 与 `git cherry` 皆不可靠**——逐文件 apply 收编下前者恒非空（历史里永远找得到对应 commit），拆分/合并收编下后者 patch-id 假阳性 | git 原生命令语义与「收编状态」不匹配 | **判「已收编」唯一依据＝标记存在**（tag `forge-merged-*` 或分支改名 `-merged-YYYYMMDD`）；对账脚本 diff 分支清单与标记清单自动报红 | check-forge-branches / FORGE 分支治理 |
+| 22 | **守卫引擎故障静默报绿**——守卫内部变量未定义，检测循环遍历空集，稳定输出「0 处违规」通过 | 两份真相（守卫输出 vs 仓库实态）间无自动对账 | **fail-loud + 故障注入自检**：PATH 前置假 perl（crash/silent 两行为）验证门禁双路都能抓住；详见 [四·守卫 fail-loud](./driver.md#-守卫-fail-loud静默失败是最危险的失败模式) | check-guard-fail-loud / 守卫门禁设计 |
 
 ### DSH Cordis 内嵌可行性验证（四·DSH 证据注入姊妹篇）
 

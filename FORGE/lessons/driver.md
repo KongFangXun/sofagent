@@ -527,6 +527,33 @@ node FORGE/src/fresh-eyes-driver.mjs --target <版本> > /tmp/fresh-eyes.log 2>&
 
 ---
 
+### 🔴 守卫 fail-loud：静默失败是最危险的失败模式
+
+**背景**：循环事故复盘发现守卫脚本的「静默死亡」模式——守卫内部变量名拼写错误，检测循环遍历空集，守卫稳定输出「0 处违规」绿通过；同期「修复静默丢失」「分片全灭仍报成功」同根因：**两份真相（守卫输出 vs 实际仓库状态）之间没有自动对账**——人工核对纪律会漏，门禁不会。
+
+**铁律**：
+1. **守卫脚本任何执行路径的失败必须非 0 退出（fail-loud）**——依赖工具（perl/node）缺失、语法错误、内部变量未定义，全部要变成显式失败，禁止吞错后 exit 0
+2. **守卫上线必须配故障注入自检**——在 PATH 前置一个假 perl（行为一：crash exit 3；行为二：silent exit 0），验证门禁两种情况都能抓住：crash 时门禁 exit 1，silent 时门禁对「守卫没在看」报警
+3. **「0 处违规」的可信前提是「守卫活着」**——PASS 比 FAIL 更需要怀疑（FAIL 顶多空跑一轮修复链，PASS 会放过真实违规）
+4. 人工纪律（SOP 条文「记得核对」）升级为自动对账（脚本 diff 两份清单），是消除此类事故的根本路径
+
+> 与「零信任复核」互为镜像：零信任说 **FAIL 不可全信**（检查命令自身可能有缺陷），fail-loud 说 **PASS 尤其不可全信**（守卫本身可能已死）。两个方向都堵上，门禁才可信。
+
+---
+
+### 🔴 冻结窗口锁：driver 跑循环期间防并行会话误改
+
+**背景**：并行会话在 driver 跑 fresh-eyes 循环期间向主仓 commit，会污染「基线快照 vs 当前状态」的对账前提——run 内的快照与实际 HEAD 漂移，守卫与复盘全部失真。
+
+**方案**（pidfile 双信号判定）：
+- driver 开跑 `acquireRunLock(runId)` 写 `~/.sofagent/internal/fresh-eyes-run.lock`（runId + 指纹 + PID），SIGTERM 与正常结束双挂点 `releaseRunLock()`
+- commit-msg hook 读锁：**活锁（PID 存活）且本次 commit 命中 driver 源码路径 → exit 1 阻断**；PID 已死 = 锁滞留 → WARN 放行（锁不成为新的单点故障）
+- 新 loop 需要同款保护时参照 fresh-eyes-driver 的锁挂点实现，勿复制粘贴路径常量
+
+**铁律**：锁的语义是「冻结对账前提」不是「禁一切 commit」——只拦命中循环自身源码的提交；锁滞留必须降级放行，避免一次崩溃把仓库永久锁死。
+
+---
+
 ### 🔴 确定性判定优先：别让 LLM 解读能确定性解析的日志
 
 > **来源**（实录）：acceptance 实际 PASS（241/0/241，exit 0），但 acceptance-consolidate worker 误判 FAIL，F 修复链对假 FAIL 空跑一轮。
