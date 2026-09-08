@@ -18,10 +18,14 @@
 set -uo pipefail
 cd "$(dirname "$0")/../.." || exit 1
 
-# 全角标点集：，）。（：；！？、「」『』
+# 全角标点集：，）。（：；！？、—、「」『』
+# v1.4.6 补 U+2014（— EM DASH）：此前字符集只有全角标点，漏掉破折号，导致
+#   check-version.sh:1220 的「实际 $MCP_REG——活文档数字漂移」同类地雷未被检出
+#   （该行只在「文档与 registry 不一致」的错误分支触发，日常全绿掩盖）。
+#   已实证 bash 在 UTF-8 locale 下同样把 U+2014 拼进变量名。
 # 注意：用 perl 而非 grep -P（BSD grep 无 -P）；排除注释行与双引号内误报优先级低——
 # 本守卫宁可误报（人工复核）也不漏报（潜伏地雷代价更高）
-PATTERN='\$[A-Za-z_][A-Za-z_0-9]*[，）。：；！？、]'
+PATTERN='\$[A-Za-z_][A-Za-z_0-9]*[，）。：；！？、—]'
 SELF="tools/check/check-cjk-var.sh"
 
 VIOLATIONS=0
@@ -36,7 +40,11 @@ for f in $ALL_SH; do
   [ "$f" = "$SELF" ] && continue
   FILES=$((FILES + 1))
   # 跳过纯注释行（行首 # 后的 $VAr 讲解不违规）
-  MATCHES=$(grep -vE '^[[:space:]]*#' "$f" | perl -ne "print \"$.: \$_\" if /$PATTERN/" 2>/dev/null)
+  # v1.4.6 修报号错位：此前先 `grep -v` 剔注释再交给 perl，perl 的 $. 取的是
+  #   **过滤后流**里的行号而非文件行号——check-storefront.sh 一处违规被报成
+  #   「49:」而实际在第 77 行，排查时按 49 行看到的是完全无关的代码，已实际
+  #   造成一次误判。改为 perl 直接读原文件、在正则里排注释行，$. 即真实行号。
+  MATCHES=$(perl -ne "print \"\$.: \$_\" if /$PATTERN/ && !/^\\s*#/" "$f" 2>/dev/null)
   if [ -n "$MATCHES" ]; then
     echo "✗ $f"
     echo "$MATCHES" | sed 's/^/    /'

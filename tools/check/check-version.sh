@@ -1217,7 +1217,7 @@ if [[ "${MCP_REG}" =~ ^[0-9]+$ ]] && [[ "${MCP_REG}" -gt 0 ]]; then
   # 文档声称数（DEVELOPMENT.md 的「当前 N 个 MCP tools」表述）
   DOC_MCP=$(grep -oE '当前 [0-9]+ 个 MCP tools' "${PROJECT_ROOT}/docs/DEVELOPMENT.md" 2>/dev/null | grep -oE '[0-9]+' | head -1 || true)
   if [[ -n "$DOC_MCP" ]] && [[ "$DOC_MCP" != "$MCP_REG" ]]; then
-    echo -e "  ${RED}✗${NC} DEVELOPMENT.md 声称 $DOC_MCP 个 MCP tools，实际 $MCP_REG——活文档数字漂移（F-05 防复发）"
+    echo -e "  ${RED}✗${NC} DEVELOPMENT.md 声称 $DOC_MCP 个 MCP tools，实际 ${MCP_REG}——活文档数字漂移（F-05 防复发）"
     ERRORS=$((ERRORS + 1))
   else
     echo -e "  ${GREEN}✓${NC} DEVELOPMENT.md MCP 数一致"
