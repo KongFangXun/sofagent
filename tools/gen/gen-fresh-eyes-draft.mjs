@@ -19,6 +19,7 @@
 // ============================================================
 
 import { join } from 'node:path';
+import { readFileSync } from 'node:fs';
 import {
   REPO_ROOT, loadModelConfig, parseArgs, resolveVersion,
   resolveApiKey, writeDegraded, loadSources, readChangelogLine,
@@ -72,11 +73,42 @@ if (!opts.changelog) {
 // 边界说明：草稿是单次 LLM 读 diff+changelog 的静态审查，动态面 17-19（需
 // build/实跑取证）与深度专项 20-21（全仓体检向）不在材料可达范围；22 发现面
 // 属门面专项。边界以 playbook 分层表为准——playbook 调整分层时此处同步。
+// 对账防御：下方硬编码清单与 playbook 权威源（fresh-eyes-review.md 视角标题）
+// 漂移时启动即报错——防「playbook 改名、草稿工具仍审旧视角」的静默分叉。
 const PERSPECTIVES_16 = [
   '1 陌生人', '2 企业 IT', '3 竞品维护者', '4 npm 用户', '5 开源审查员', '6 用户旅程',
   '7 红队', '8 数字侦探', '9 感知层', '10 文档一致性', '11 代码审读者', '12 文件结构陌生人',
   '13 技术编辑', '14 对外形象分析师', '15 外部开发者通读', '16 资深架构师',
 ];
+
+// playbook 视角标题对账：### 👔 视角二 [2]：企业 IT → 提取「编号 名称」对
+function assertPerspectivesMatchPlaybook() {
+  const playbookPath = join(REPO_ROOT, 'FORGE', 'playbook', 'fresh-eyes-review.md');
+  let text;
+  try {
+    text = readFileSync(playbookPath, 'utf-8');
+  } catch {
+    return; // playbook 不可读（如独立分发态）——跳过对账，不阻断草稿生成
+  }
+  const re = /视角[一二三四五六七八九十]+ \[(\d+)\]：(.+)$/gm;
+  const playbookMap = new Map();
+  for (const m of text.matchAll(re)) playbookMap.set(Number(m[1]), m[2].trim());
+  const drift = [];
+  for (const p of PERSPECTIVES_16) {
+    const num = Number(p.split(' ')[0]);
+    const name = p.split(' ').slice(1).join(' ');
+    const pbName = playbookMap.get(num);
+    if (pbName !== undefined && pbName !== name) drift.push(`视角${num}：本表「${name}」vs playbook「${pbName}」`);
+  }
+  if (drift.length > 0) {
+    console.error('❌ PERSPECTIVES_16 与 playbook 视角清单漂移（维护者需同步两处）：');
+    for (const d of drift) console.error(`   ${d}`);
+    console.error('   权威源：FORGE/playbook/fresh-eyes-review.md（视角标题节）');
+    process.exit(1);
+  }
+}
+assertPerspectivesMatchPlaybook();
+
 
 const SYSTEM_PROMPT = `你是 sofagent 项目的独立审查员。任务：从 16 个视角对本次变更生成审查草稿，供人工复核与 driver 兜底取证。
 
