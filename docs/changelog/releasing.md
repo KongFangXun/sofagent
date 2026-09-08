@@ -20,7 +20,7 @@
 
 - [x] 一 · 审查上版本（fresh-eyes 独立审查 · 新 session 或对话式多轮）→ [01-review.md](./releasing/01-review.md)
 - [x] 二 · 开发 + 基础自测（开发收尾即自测）→ [02-dev.md](./releasing/02-dev.md)
-- [ ] 三 · fresh-eyes-loop 质量循环 + 代码审核 + 验收测试（新 session · 自动收敛循环）→ [03-quality-loop.md](./releasing/03-quality-loop.md)
+- [x] 三 · fresh-eyes-loop 质量循环 + 代码审核 + 验收测试（新 session · 自动收敛循环）→ [03-quality-loop.md](./releasing/03-quality-loop.md)（v1.4.6 走对话式多轮审查等价形态：22 视角分层取用 + 零信任复验通过，2026-09-08）
 - [ ] 四 · 审查体系合并更新 + 最终确认 → [04-review-system.md](./releasing/04-review-system.md)
 - [ ] 五 · release-gate-loop 发版闸门（新 session · 自动收敛循环 · 必须 PASS 才继续）→ [05-release-gate.md](./releasing/05-release-gate.md)
 - [ ] 六 · 开发日志定稿 + 文档收尾 → [06-doc-finalize.md](./releasing/06-doc-finalize.md)
