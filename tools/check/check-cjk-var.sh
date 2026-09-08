@@ -70,8 +70,14 @@ if [ "$PERL_ALIVE" != "HIT" ]; then
 fi
 
 echo ""
-if [ "$VIOLATIONS" -gt 0 ]; then
-  echo "✗ ${VIOLATIONS} 处非 ASCII 字符紧跟 \$VAR（${FILES} 个文件扫描）——改为 \${VAR} 定界后重跑"
+# 失明必须失声：引擎自身故障与真违规同样阻断——否则「零违规」可能只是「引擎瞎了」，
+# 防线失明时却假装还在岗，比没有这条防线更危险。
+if [ "$VIOLATIONS" -gt 0 ] || [ "$GUARDS_VIOL" -ne 0 ]; then
+  if [ "$VIOLATIONS" -gt 0 ]; then
+    echo "✗ ${VIOLATIONS} 处非 ASCII 字符紧跟 \$VAR（${FILES} 个文件扫描）——改为 \${VAR} 定界后重跑"
+  else
+    echo "✗ 0 处违规但守卫自身失明——上述引擎故障必须先修复，本次按违规处理"
+  fi
   exit 1
 else
   echo "✓ $FILES 个 shell 脚本无非 ASCII 字符紧跟 \$VAR 的定界违规"
