@@ -9,6 +9,8 @@
 // 角色说明：
 //   A = 审查者（fresh-eyes-loop，需要最强推理）
 //   B = 工程师（fresh-eyes-loop，侧重代码修复）
+//   C = 验收者（fresh-eyes-loop 单盲改造：独立验收 B 的修复，取代 A 兼任 a-verify）
+//   D = 复核者（fresh-eyes-loop 单盲改造：对抗性复核 P0/P1，裁决 CONFIRM/DOWNGRADE/REOPEN）
 //   V = 验证者（release-gate-loop，跑测试+裁决）
 //   F = 修复者（release-gate-loop v1.2.8，V FAIL 后读 verdict → 改代码 → 跑 audit）
 //
@@ -38,6 +40,10 @@ export default {
   // v1.3.9 曾切 deepseek-v4-flash（按量低成本档），v1.4.1 切 glm-5.3（用户 2026-08-26 拍板）。
   A: { model: glm53flash, role: 'reviewer' },  // 审查者：glm-5.3-flash → GLM_API_KEY（Coding Plan）
   B: { model: glm53flash, role: 'engineer' },  // 工程师：glm-5.3-flash → GLM_API_KEY（Coding Plan）
+  // 单盲四角色流水线（A审→B修→C验→D复核）：C/D 与 A 同模型档，
+  // 独立性靠「不同 worker 进程 + 零上下文 + 不同 prompt」保证，不依赖换模型。
+  C: { model: glm53flash, role: 'reviewer' },  // 验收者：独立验收 B 的修复（每条亲手实测）
+  D: { model: glm53flash, role: 'reviewer' },  // 复核者：对抗裁决 P0/P1（CONFIRM/DOWNGRADE/REOPEN）
   V: { model: glm53flash, role: 'reviewer' },  // 验证者：glm-5.3-flash → GLM_API_KEY（Coding Plan）
   F: { model: glm53flash, role: 'engineer' },  // 修复者：glm-5.3-flash → GLM_API_KEY（Coding Plan）
 };
