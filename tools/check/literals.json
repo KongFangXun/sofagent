@@ -16,9 +16,9 @@
       "file": "~/Desktop/v1.4.6-dev-prompt.md",
       "extract": "docs/changelog/v1[.]4/v1[.]4[.]6[.]md`（([0-9]+) 行",
       "derive": "wc -l < docs/changelog/v1.4/v1.4.6.md | tr -d '[:space:]'",
-      "level": "error",
+      "level": "warn",
       "slow": false,
-      "note": "dev prompt 头部的开发日志快照行数（「同步于某日」标记）——日志涨行即漂，漂了说明 prompt 已过期该重读日志"
+      "note": "dev prompt 头部的开发日志快照行数（「同步于某日」标记）——日志涨行即漂，漂了说明 prompt 已过期该重读日志。⚠️ 刻意不设 error：它记的是「某天同步时的日志行数」，日志每加一行就漂，属**正常演化**而非文档错误；常态红会把真漂移（arch-workspace-count 那种构成口径错）淹没在同一片红里，反而失去信号。降 warn 后语义归位：这是「该重读日志了」的提醒，不是「文档写错了」的阻断"
     },
     {
       "id": "dev-prompt-mcp-tools",
