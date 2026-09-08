@@ -1,6 +1,6 @@
 # fresh-eyes-loop · 循环 SOP
 
-> 本文件定义质量循环的**运行协议**。A/B 的具体行为指令在 `prompts/`，12 视角定义在 `FORGE/playbook/fresh-eyes-review.md`（playbook 另有 13-16 草稿层与 17-19 手动层视角，不在本循环内）。
+> 本文件定义质量循环的**运行协议**。A/B 的具体行为指令在 `prompts/`，12 视角定义在 `FORGE/playbook/fresh-eyes-review.md`（playbook 共 22 视角六层：1-12 driver 循环标准配置；13-16 文档治理/通读、17-19 动态面（需 build/实跑取证）、20-21 深度专项、22 发现面均不在本循环内——边界以 playbook 分层表为准）。
 
 ## 核心原则
 

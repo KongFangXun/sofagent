@@ -1,6 +1,6 @@
 ---
 name: fresh-eyes-loop
-description: 发布后独立质量循环——A/B 双盲 12 视角 fresh-eyes 审查 + 修复 + 验证，每轮新 session 保证零上下文，连续 2 轮无 P0/P1 即停。
+description: 发布后独立质量循环——单盲四角色流水线（A 审 12 视角 → B 修 → C 验 → D 复核），每轮新 session 保证零上下文，连续 2 轮无 P0/P1 即停。
 emoji: 🔍
 color: "#16B8F3"
 version: 1.4.5
@@ -14,16 +14,18 @@ version: 1.4.5
 
 ## 这是什么
 
-一套可复用的质量循环定义。它描述：谁来做（A / B 两个 subagent）、每一轮怎么走（审查 → 合并 → 修复 → 验证）、什么时候停（连续 2 轮无 P0/P1）、产物放哪（`runs/YYYY/MM/DD/run-NN/`）。
+一套可复用的质量循环定义。它描述：谁来做（单盲四角色：A 审 / B 修 / C 验 / D 复核）、每一轮怎么走（审查 → 修复 → 验证 → 复核）、什么时候停（连续 2 轮无 P0/P1）、产物放哪（`runs/YYYY/MM/DD/run-NN/`）。
 
-- **A** = 审查者 / QA：独立跑 12 视角审查、合并 A/B 两份报告、验证 B 的修复。
-- **B** = 工程师：独立跑 12 视角审查、执行合并后的修复。
-- **driver（编排进程，非 agent）**：在 A/B 之间中转、维护 `runs/` 文件、判定停止条件。由**用户手动新开的执行 session** 启动（见下「执行载体铁律」）。
+- **A** = 审查者（单盲）：独立跑 12 视角审查；发现的质量由下游 C 验收 / D 复核把关（legacy 双盲 B 并行审查走 `FORGE_ENABLE_B_CHECK=1` 逃生门）。
+- **B** = 工程师：执行修复（现行 B 侧为复核模式——独立复核 A 的 P0/P1，可推翻可补充）。
+- **C** = 验收者：逐条实测验收，不采信修复自报。
+- **D** = 复核者：对 P0/P1 裁决 CONFIRM / DOWNGRADE / REOPEN。
+- **driver（编排进程，非 agent）**：在角色间中转、维护 `runs/` 文件、判定停止条件。由**用户手动新开的执行 session** 启动（见下「执行载体铁律」）。
 
 ## 怎么用
 
 1. 读 `loop.md` 拿到完整 SOP（角色 / 轮次协议 / 产物 schema / 停止条件）。
-2. 12 视角的定义见 `FORGE/playbook/fresh-eyes-review.md`（两个 subagent 都按它跑）。playbook 共 19 视角三层分工：1-12 driver 循环、13-16 草稿工具承接、17-19 手动层（跨组件契约/构建产物/执行证据——需跨包追踪或 build/实跑取证，发版审查建议手动追加）。
+2. 12 视角的定义见 `FORGE/playbook/fresh-eyes-review.md`（A 按它跑）。playbook 共 **22 视角六层**：1-12 常规发版（driver 循环标准配置）、13-14 文档治理（手动）、15-16 全文档通读（手动/草稿工具）、**17-19 动态面**（跨组件契约/构建产物/执行证据——需跨包追踪或 build/实跑取证，DSH worker 无工具面暂不纳入 driver，发版审查建议手动追加）、20-21 深度专项（季度全仓体检）、22 发现面（门面改动时）。**loop 与工具的视角边界以 playbook 分层表为准——playbook 演进（如新增视角/调整分层）时，本文件与下游工具同步对齐**。
 3. 四角色的行为指令在 `prompts/`（a-check / a-consolidate / b-fix / b-audit / c-verify / d-review；b-check 为 legacy 双盲逃生门 `FORGE_ENABLE_B_CHECK=1` 时启用）。
 4. **b-audit** 步骤：b-fix 改完代码后 driver 自动跑 `sofagent-audit --diff`——审计每次变更，dogfooding 铁律。audit FAIL（exit 2）打回 b-fix 重修，不进 c-verify。
 5. 跨 run 的永久索引在 `FORGE/LEDGER.md`（被 git 跟踪）；每轮正文在 `runs/`（不进 git）。
@@ -36,7 +38,7 @@ A/B 由 **Node driver**（`FORGE/src/fresh-eyes-driver.mjs`）驱动——每个
 
 **fresh-eyes driver 的执行 session 必须是用户手动新开的独立 session**（与主 session 平行、互不嵌套），不是主 session 里 spawn 的 subagent。
 
-原因（与 release-gate-loop 实证同机理）：主 session 内子代理 → 后台 shell → driver 三层嵌套，**用户打断主 session 时级联 SIGTERM 会杀掉整棵进程树**——fresh-eyes 一轮 4 轮 16 视角跑 1-2 小时，中途被级联中止的代价更大。此外子代理自带 token 开销与误诊风险。
+原因（与 release-gate-loop 实证同机理）：主 session 内子代理 → 后台 shell → driver 三层嵌套，**用户打断主 session 时级联 SIGTERM 会杀掉整棵进程树**——fresh-eyes 一轮多轮循环跑 1-2 小时，中途被级联中止的代价更大。此外子代理自带 token 开销与误诊风险。
 
 **正确分工**：
 - 主 session（审查/决策 session）：三查 → 修复环境问题 → 产出「交接 prompt」交给用户（**直接在对话中输出可复制的 prompt 文本块，禁止落盘成文件**——2026-08-30 用户拍板） → 用户在新 session 粘贴执行 → 等回报 → 零信任复验。主 session 全程不 spawn driver。
