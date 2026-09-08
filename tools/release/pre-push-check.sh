@@ -500,6 +500,20 @@ else
 fi
 
 # ════════════════════════════════════════
+echo -e "\n${BOLD}── 13. 防线失明自检（故障注入 fail-loud）──${NC}"
+# 守卫依赖的检测引擎故障时必须报红而非假绿——「0 处违规但根本没在看」
+# 比没有防线更坏。本步用 PATH 劫持假引擎实测守卫的 fail-loud 行为。
+if [ -f tools/check/check-guard-fail-loud.sh ]; then
+  if bash tools/check/check-guard-fail-loud.sh; then
+    check_pass "check-guard-fail-loud.sh（守卫失明必失声）"
+  else
+    check_fail "check-guard-fail-loud.sh 发现失明不自知的守卫（引擎故障下仍 exit 0）"
+  fi
+else
+  check_warn "tools/check/check-guard-fail-loud.sh 不存在（失明自检缺失）"
+fi
+
+# ════════════════════════════════════════
 # 总结
 # ════════════════════════════════════════
 TOTAL=$((PASS + FAIL + WARN))
