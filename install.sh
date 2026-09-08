@@ -526,6 +526,22 @@ if command -v sofagent-audit >/dev/null 2>&1 && git rev-parse --git-dir >/dev/nu
   else
     warn "  git hook 安装失败，请手动运行 sofagent-audit --init"
   fi
+  # hook 版本对账提示（只提示不阻断——升级感知，防「引擎已升级、仓库跑旧 hook」）
+  # 设计理由：hook 是**拷贝**而非软链（core.hooksPath 未设置），引擎仓库的
+  # engine/audit/hooks/ 更新不随 git pull 同步到各仓库的 .git/hooks/——协作者
+  # 拉新代码后，本地仓库与所有装过本 hook 的项目仓库仍跑旧行为（如空提交
+  # 审计、冻结窗口锁缺失）而无人知晓。
+  # 版本标记方式：hook 源头部注释行「# sofagent commit-msg hook vX.Y.Z」
+  # （随引擎版本演进，维护在 engine/audit/hooks/commit-msg 首行）。
+  _hook_src="engine/audit/hooks/commit-msg"
+  if [ -f "$_hook_src" ] && [ -f ".git/hooks/commit-msg" ]; then
+    _src_ver=$(head -2 "$_hook_src" | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+    _dst_ver=$(head -2 ".git/hooks/commit-msg" | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+    if [ -n "$_src_ver" ] && [ -n "$_dst_ver" ] && [ "$_src_ver" != "$_dst_ver" ]; then
+      warn "  已装 hook 版本（${_dst_ver}）落后于引擎源（${_src_ver}）——行为差异以引擎源为准"
+      warn "  重装命令: sofagent-audit --install-hook（其他装过本 hook 的仓库需逐个重装）"
+    fi
+  fi
 fi
 
 # Step 6.6: v1.3.8 P1-A3 审计引擎哈希基准首装生成（堵首次部署窗口）
