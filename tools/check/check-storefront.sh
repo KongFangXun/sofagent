@@ -74,18 +74,18 @@ else
     console.log('eq');
   " "$BARE_VER" "$SSOT_VER")
   if [ "$CMP" = "eq" ]; then
-    echo "  ✓ [npm 裸名] sofagent@$BARE_VER = SSOT $SSOT_VER（总包已发最新）"
+    echo "  ✓ [npm 裸名] sofagent@$BARE_VER = SSOT ${SSOT_VER}（总包已发最新）"
   elif [ "$CMP" = "lt" ]; then
-    echo "  ⏳ [npm 裸名] sofagent@$BARE_VER < SSOT $SSOT_VER——总包待阶段九 publish（发版中间态，放行）"
+    echo "  ⏳ [npm 裸名] sofagent@$BARE_VER < SSOT ${SSOT_VER}——总包待阶段九 publish（发版中间态，放行）"
     SKIPS=$((SKIPS + 1))
   else
-    echo "  ❌ [npm 裸名] sofagent@$BARE_VER > SSOT $SSOT_VER——registry 比仓内新（bump 遗漏/回滚未对齐），发版前必须修正"
+    echo "  ❌ [npm 裸名] sofagent@$BARE_VER > SSOT ${SSOT_VER}——registry 比仓内新（bump 遗漏/回滚未对齐），发版前必须修正"
     FAILS=$((FAILS + 1))
   fi
   # 附带：总包依赖面对账（audit 版本声明与 SSOT 一致；未发布形态/占位包无此字段 → 放行）
   BARE_DEP=$(npm view sofagent dependencies --json 2>/dev/null | node -e "let d='';process.stdin.on('data',c=>d+=c).on('end',()=>{try{console.log(JSON.parse(d)['@sofagent/audit']||'')}catch{console.log('')}})")
   if [ -n "$BARE_DEP" ] && [ "$BARE_DEP" != "$SSOT_VER" ]; then
-    echo "  ❌ [npm 裸名] 总包 dependencies.@sofagent/audit=$BARE_DEP ≠ SSOT $SSOT_VER——聚合依赖版本漂移"
+    echo "  ❌ [npm 裸名] 总包 dependencies.@sofagent/audit=$BARE_DEP ≠ SSOT ${SSOT_VER}——聚合依赖版本漂移"
     FAILS=$((FAILS + 1))
   fi
 fi

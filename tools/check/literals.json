@@ -54,7 +54,7 @@
       "derive": "node -e 'const j=require(\"./package.json\"); process.stdout.write(String(Array.isArray(j.workspaces)?j.workspaces.length:0))'",
       "level": "error",
       "slow": false,
-      "note": "ARCHITECTURE 声称的 workspace 总包数（26，L193 与 L322 两处）。文档自己写明「构成以 package.json workspaces 为准」即自认 SSOT；check-test-count.sh 只数「有 test script 的 12 包」和插件目录数，从不对账 26 这个总数——本条是它唯一的补位。extract 会命中 L193/L322 两处，--fix 会一并回填（两处是同一事实，属正确行为）"
+      "note": "ARCHITECTURE 声称的 workspace 总包数（27，L193 与 L322 两处）。文档自己写明「构成以 package.json workspaces 为准」即自认 SSOT；check-test-count.sh 只数「有 test script 的 12 包」和插件目录数，从不对账 27 这个总数——本条是它唯一的补位。extract 会命中 L193/L322 两处，--fix 会一并回填（两处是同一事实，属正确行为）"
     }
   ]
 }
