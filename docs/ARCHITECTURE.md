@@ -621,7 +621,7 @@ graph LR
 `engine/rules/`（tool-level 规则，3 条）和 `engine/audit/src/rules/`（git-diff 规则，24 条）
 均包含 secret-leak 检测功能。历史上两者并行维护，存在行为不一致风险。
 
-> ✅ **v1.3.0 已部分收敛**——规则正则模式（如 secret-leak 检测 pattern）已共享至 `@sofagent/core`，避免两套各自维护同一正则；但**规则引擎仍是 `rules`/`audit` 两套**（触发时机不同：tool-level 在调用前拦截、audit 在 commit 后审计，统一 `ruleType` 字段后在两种触发模式下复用同一套规则定义）。**统一为单一规则引擎排期见 ROADMAP**。详见 [ROADMAP v1.3.0](./ROADMAP.md)。
+> ✅ **v1.3.0 已部分收敛**——规则正则模式（如 secret-leak 检测 pattern）已共享至 `@sofagent/core`，避免两套各自维护同一正则；但**规则引擎仍是 `rules`/`audit` 两套**（触发时机不同：tool-level 在调用前拦截、audit 在 commit 后审计，统一 `ruleType` 字段后在两种触发模式下复用同一套规则定义）。**统一为单一规则引擎已排期 [v1.5.2 第九章](../docs/changelog/v1.5/v1.5.2.md)（2026-09-08 补排——此前本段指向 ROADMAP 但无对应单元格，属悬空承诺）**。详见 [ROADMAP v1.3.0](./ROADMAP.md) 与 [v1.5.2 开发日志](./changelog/v1.5/v1.5.2.md)。
 
 ### 🔄 回溯能力（自研同构 Git 引擎 · 一键回滚）
 
