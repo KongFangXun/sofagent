@@ -689,8 +689,8 @@ function checkVersionConsistency(): void {
 /**
  * 空提交 message 类审计（空 diff 短路前置件）。
  *
- * 问题：空 diff 短路位于 commit message 读取之前——想绕过 message 类规则
- * （A5 空 message / A9 注入 / A19 msg 质量），把内容拆成空提交
+ * 问题：空 diff 短路位于 commit message 读取之前——message 类规则
+ * （A5 空 message / A9 注入 / A19 msg 质量）对空提交不生效，拆成空提交即可使其失效
  * （git commit --allow-empty）即可，防线存在但对空提交不执行。
  *
  * 防御：空 diff 时仍执行 message 类规则——它们只消费 commit message、
@@ -1083,7 +1083,7 @@ async function main(): Promise<void> {
 
   if (diffFiles.length === 0) {
     // 空提交不再是无审计盲区：message 类规则（A5/A9/A19）只消费 commit message、
-    // 不依赖 diff 内容——空 diff 下照常执行（防「拆成空提交绕过注入检测」）。
+    // 不依赖 diff 内容——空 diff 下照常执行（空提交不再使注入检测失效）。
     // 非提交场景（无 message 可审）保持原行为。
     const messageRuleChecks = runEmptyDiffMessageAudit(args);
     const failedChecks = (messageRuleChecks ?? []).filter((r) => r.status === 'FAIL');
@@ -1098,7 +1098,7 @@ async function main(): Promise<void> {
             console.error(`  ${mark} ${r.name}: ${r.details.join('；')}`);
           }
         }
-        console.error('   请修复 commit message 后重新提交（空提交不再绕过 message 类审计）。');
+        console.error('   请修复 commit message 后重新提交（空提交同样接受 message 类审计）。');
       }
       exit(1);
     }
