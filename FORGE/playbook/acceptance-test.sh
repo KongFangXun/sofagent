@@ -6,9 +6,10 @@ export LANG=en_US.UTF-8
 export LC_ALL=en_US.UTF-8
 # sofagent-audit · 上线前验收测试（Pre-Release Acceptance Test）
 # 覆盖：FORGE + MCP + 文件系统审计 + daemon + 红队对抗 + 各版本新功能验收
-# 场景数：312 个场景（SSOT：check-test-count.sh 校验，口径=真实 scenario 调用行数，非编号最大值（S1-S344 间有 70 个历史空洞号）；v1.3.7 +4：S290-S293；v1.3.6 +8：S282-S289；v1.3.8 +11：S294-S304（含 bugfix 防回归 S303/S304）；v1.3.9 +15：S305-S319（阶段五 A 类分发 13 项 + 阶段六 coverage 补测 S318 ATTRIBUTION 归因引擎/S319 Dream Sandbox 沙盒审计）；v1.4.0 +3：S320（联邦查询跨进程 E2E——补 federation.test.ts 同进程 mock 缺口）、S321（跨平台 hook stdin 模式闭环验证）、S322（双设备联邦独立进程模拟——两个独立 node 进程 + 真实 TCP，补 fork 形态缺口）；v1.4.1 +10：S323（train doctor CLI 实跑）、S324（enterpriseId 强制绑定+幂等）、S325（fingerprint 冻结+不可变）、S326（artifact 签名+篡改检测）、S327（安全基线路径白名单+注入检测）、S328（install.sh 迁移丢数据窗口防回归——阶段四 B2 分发）、S329（install.sh symlink 谎报守卫——阶段四 B3 分发）、S330（训练异常退出资源回收四步链——阶段六 coverage 补测，补判断层唯一零覆盖项）、S331（OpenClaw plugin 双 manifest 一致性——阶段十一 ClawHub 拒收踩坑回写）、S332（bump 脚本通配误伤防回归——阶段十一静默漏 bump 踩坑回写）；v1.4.2 +10：S333（数据管道 CSV 类型推断端到端）、S334（dataset_version 台账三件套）、S335（eval 阈值判定双态）、S336（dry-run 显存估算单调性）、S337（ScaleRL sigmoid 拟合/外推/建议）、S338（FDE 工作台审计留痕往返——阶段三步骤四增量，行为实测走 dist 产物）、S339（MCP 工具 dataDir SSOT 收编完整——阶段三 fresh-eyes N-1 修复行为锁）、S340（19 处 v1.3.x 存量 getSofagentDataDir 一次清零行为锁——用户拍板 A 桶落点迁移接受）、S341（train report 报告生成本体 dist 行为实测——阶段五 coverage 唯一零覆盖项补测）；v1.4.2 章五 +2：S342（IM 桥通道交付三面断言——run-17 模块七零覆盖补测）、S343（BugFix 30 项批次级五族锚点——run-17 模块十零覆盖补测，对齐 S281 先例）；v1.4.2 阶段十二 +1：S344（Git Data API 推送通道 cat-file 防复发——ps1 eol 二坑根因固化）；v1.4.3 bugfix 批 +1：S345（跨平台 hook stdin message 抽取三场景行为锁——F-03 等号/中文/嵌套引号 + 空格形式回归，stub 断言 --task 透传）；v1.4.3 阶段三 +3：S346（审计聚合 --stats CLI 行为实测——--json 纯净/--days 窗口/口径行）、S347（反作弊基线三防线锚点——doctor 体检/缺省全开/白名单外部化）、S348（训练监控三 MCP tools 注册面——registry 79 + SKILL 对账）；v1.4.3 阶段五 +3：S349（训练沙箱三约束行为实测——dist 直调 createTrainSandbox：路径守卫三态/代理黑洞/网关判定）、S350（训练需求推导行为实测——场景派生/默认模板匹配/报告路径企业隔离）、S351（后训练 workflow 模板解析——七节点 DAG 无环/三 HITL/capability_ref 全节点指向）；v1.4.3 阶段五 run-02 闭环 +4：S352（DSH 执行深化三步锚点——事件流订阅/分级切 dsh 缺省/usage 记账链直调/降级红线）、S353（train_diagnose 行为实测——故障形态命中/零命中兜底/处方全覆盖）、S354（入口导览三产品线可发现 + onboarding 断层走查检查项 + 走查口径行）、S355（存量清扫零残留——ao 死代码/compose 更名转发/ontology 收窄/退役公告四锚）；v1.4.3 run-04 coverage 闭环 +1：S356（doctor Ontology 完整性检查——entities 遍历 + frontmatter 三查 + skip-log 对账锚点，补十三章零覆盖 P0-1）；v1.4.3 run-05 coverage 闭环 +2：S357（审计聚合触发率数值实测——已知分布 fixture 直调 computeAuditStats：分母/分布/触发率 0.3/阻断率 0.1/空历史 null 降级，F-3 闭环）、S358（train_status 行为实测——fixture 任务+事件流直调：运行态/进度曲线/参数校验/隔离面/GPU 队列账本，F-1 闭环；S347 同批补四形态×双防线映射锁 F-2 闭环））；v1.4.3 闸门 run-05 P1 批 +1：S359（过时承诺排期化 + 悬空引用补锚点——ecdh.ts 注释指向 ROADMAP v1.4.7 / changelog F-10 引 S359 / 三态退出码 exit 2 在位，P1-3/P1-7/P1-8 闭环防复发）；v1.4.3 闸门 run-06 误报批 +1：S360（P1-3/P1-6/P1-7 定谳——规则数 24 双口径锚点（number 字段清点 + README 对齐）/ 维度 9 探针 A+E 全口径防漏 E 系列 / PASS 场景级断言输出 pass() 透传描述 / S165 标题去 158 残留）；v1.4.3 阶段十二 +1：S361（本地部署树 overrides CI 三红防复发——lock 零 dsh-deployed symlink + dsh 六包 registry 解析抽查，npm 实测惰性 overrides 地雷口径固化）；v1.4.4 闸门 run-01/run-02 判断层 P0 闭环 +9：S362/S363/S365-S371（S364 已归并入 S348——corpus_export 双入口对账对销，断言零删减；v1.4.4 十模块验收——章一语料导出 27 编号位+方法论+脱敏 S362/S363、章二权重部署哈希红线 S365、章三产物注册人审语义 S366、章四对比训练 ROI 排序 S367、章五因果链回溯+先例打分+HMAC 篡改判定 S368、章六 CI 供应链四锚点 S369、章七十收口八锚点 S370、章九 17 项收编批三族代表锚点 + 章一五源样本聚合 + 章七 13 包门面 S371（run-02 P0-2/P1-2/P1-3 闭环，对齐 S281/S343 先例），行为面 dist 直调逐一探针实测后落场景；原 S364 corpus_export 双入口对账已真实归并入 S348——归并对销 1 处，断言零删减）；v1.4.4 闸门 run-06 coverage 闭环 +1：S372（章十一阶段四 B 类行为锁补测批 37cab2b9——B1-B8 用例四测试文件在位锚 + B1/B2/B3/B4/B6 五代表断言锚，run-06 P0-1 闭环，对齐 S330/S341 零覆盖补测先例）；v1.4.5 第七章二/三 +1：S373/S374 归并对销后净 +1（S265 归并入 S264 断言零删减；S373 反哺闭环端到端——真实采样数据→harvest→jury→promote 链路级 + S374 L4 工具层自进化全流程——候选→扫描→人审→注册→invoke 可调+静态计数不漂移，行为实测 dist 直调对齐 S318/S319 先例）；v1.4.5 阶段四 +1：S375（train 五新面行为实测——deliverable 打包+HMAC verify 篡改拒绝/compliance PII findings+provenance 台账/retention symlink 拒绝保留源/serve 三 tools 注册面，SOFAGENT_DATA/KEY_PATH 隔离 dist 直调对齐 S368 手法；阶段五分诊补测——S375 扩展覆盖模块八 FDE 进场记忆目录（coverage D-1 缺口闭环，多模块共场景先例对齐 S373/S374，场景数 305 不变））；v1.4.5 阶段五批二：S375 再扩展覆盖模块六 Quickstart 交付物三件（coverage 缺口闭环第二批，多模块共场景先例对齐 S373/S374，场景数 305 不变）；v1.4.6 阶段三步骤四增量 +2：S376/S377（章一 train multi 行为锁——多卡命令构造/rank 汇总最慢决定/schema v2 兼容 v1 拒未知/GPU 队列双轴拓扑/NCCL 第八类；章二 train cloud 行为锁——分拣三档宁拦勿漏/批量整批拦截/双闸入库合规先/schema strict/注册表幂等/失联止损 5min/成本向上取整，dist 直调对齐 S375 手法）305→307；v1.4.6 追加交付 +1：S378（npm 裸名总包 umbrella 行为锁——SSOT 对账/四依赖逐一核对/workspaces 收编/bin 转发活体实测/bump dry-run 覆盖面零写盘）307→308；流程加固批 +4：S379-S382（防线失明自检故障注入双守卫非 0+门禁自身 fail-loud / 分支收编标记对账双形态+INFO 四要素+输出稳定 / 引擎空 diff message 类审计三形态 exit 2 阻断语义 / driver 冻结窗口锁三态 HOME 隔离实测）308→312
+# 场景数：310 个场景（SSOT：check-test-count.sh 校验，口径=真实 scenario 调用行数，非编号最大值（S1-S344 + S332 归并共 72 个历史空洞号）；v1.3.7 +4：S290-S293；v1.3.6 +8：S282-S289；v1.3.8 +11：S294-S304（含 bugfix 防回归 S303/S304）；v1.3.9 +15：S305-S319（阶段五 A 类分发 13 项 + 阶段六 coverage 补测 S318 ATTRIBUTION 归因引擎/S319 Dream Sandbox 沙盒审计）；v1.4.0 +3：S320（联邦查询跨进程 E2E——补 federation.test.ts 同进程 mock 缺口）、S321（跨平台 hook stdin 模式闭环验证）、S322（双设备联邦独立进程模拟——两个独立 node 进程 + 真实 TCP，补 fork 形态缺口）；v1.4.1 +10：S323（train doctor CLI 实跑）、S324（enterpriseId 强制绑定+幂等）、S325（fingerprint 冻结+不可变）、S326（artifact 签名+篡改检测）、S327（安全基线路径白名单+注入检测）、S328（install.sh 迁移丢数据窗口防回归——阶段四 B2 分发）、S329（install.sh symlink 谎报守卫——阶段四 B3 分发）、S330（训练异常退出资源回收四步链——阶段六 coverage 补测，补判断层唯一零覆盖项）、S331（OpenClaw plugin 双 manifest 一致性——阶段十一 ClawHub 拒收踩坑回写）、S332（bump 脚本通配误伤防回归——阶段十一静默漏 bump 踩坑回写）；v1.4.2 +10：S333（数据管道 CSV 类型推断端到端）、S334（dataset_version 台账三件套）、S335（eval 阈值判定双态）、S336（dry-run 显存估算单调性）、S337（ScaleRL sigmoid 拟合/外推/建议）、S338（FDE 工作台审计留痕往返——阶段三步骤四增量，行为实测走 dist 产物）、S339（MCP 工具 dataDir SSOT 收编完整——阶段三 fresh-eyes N-1 修复行为锁）、S340（19 处 v1.3.x 存量 getSofagentDataDir 一次清零行为锁——用户拍板 A 桶落点迁移接受）、S341（train report 报告生成本体 dist 行为实测——阶段五 coverage 唯一零覆盖项补测）；v1.4.2 章五 +2：S342（IM 桥通道交付三面断言——run-17 模块七零覆盖补测）、S343（BugFix 30 项批次级五族锚点——run-17 模块十零覆盖补测，对齐 S281 先例）；v1.4.2 阶段十二 +1：S344（Git Data API 推送通道 cat-file 防复发——ps1 eol 二坑根因固化）；v1.4.3 bugfix 批 +1：S345（跨平台 hook stdin message 抽取三场景行为锁——F-03 等号/中文/嵌套引号 + 空格形式回归，stub 断言 --task 透传）；v1.4.3 阶段三 +3：S346（审计聚合 --stats CLI 行为实测——--json 纯净/--days 窗口/口径行）、S347（反作弊基线三防线锚点——doctor 体检/缺省全开/白名单外部化）、S348（训练监控三 MCP tools 注册面——registry 79 + SKILL 对账）；v1.4.3 阶段五 +3：S349（训练沙箱三约束行为实测——dist 直调 createTrainSandbox：路径守卫三态/代理黑洞/网关判定）、S350（训练需求推导行为实测——场景派生/默认模板匹配/报告路径企业隔离）、S351（后训练 workflow 模板解析——七节点 DAG 无环/三 HITL/capability_ref 全节点指向）；v1.4.3 阶段五 run-02 闭环 +4：S352（DSH 执行深化三步锚点——事件流订阅/分级切 dsh 缺省/usage 记账链直调/降级红线）、S353（train_diagnose 行为实测——故障形态命中/零命中兜底/处方全覆盖）、S354（入口导览三产品线可发现 + onboarding 断层走查检查项 + 走查口径行）、S355（存量清扫零残留——ao 死代码/compose 更名转发/ontology 收窄/退役公告四锚）；v1.4.3 run-04 coverage 闭环 +1：S356（doctor Ontology 完整性检查——entities 遍历 + frontmatter 三查 + skip-log 对账锚点，补十三章零覆盖 P0-1）；v1.4.3 run-05 coverage 闭环 +2：S357（审计聚合触发率数值实测——已知分布 fixture 直调 computeAuditStats：分母/分布/触发率 0.3/阻断率 0.1/空历史 null 降级，F-3 闭环）、S358（train_status 行为实测——fixture 任务+事件流直调：运行态/进度曲线/参数校验/隔离面/GPU 队列账本，F-1 闭环；S347 同批补四形态×双防线映射锁 F-2 闭环））；v1.4.3 闸门 run-05 P1 批 +1：S359（过时承诺排期化 + 悬空引用补锚点——ecdh.ts 注释指向 ROADMAP v1.4.7 / changelog F-10 引 S359 / 三态退出码 exit 2 在位，P1-3/P1-7/P1-8 闭环防复发）；v1.4.3 闸门 run-06 误报批 +1：S360（P1-3/P1-6/P1-7 定谳——规则数 24 双口径锚点（number 字段清点 + README 对齐）/ 维度 9 探针 A+E 全口径防漏 E 系列 / PASS 场景级断言输出 pass() 透传描述 / S165 标题去 158 残留）；v1.4.3 阶段十二 +1：S361（本地部署树 overrides CI 三红防复发——lock 零 dsh-deployed symlink + dsh 六包 registry 解析抽查，npm 实测惰性 overrides 地雷口径固化）；v1.4.4 闸门 run-01/run-02 判断层 P0 闭环 +9：S362/S363/S365-S371（S364 已归并入 S348——corpus_export 双入口对账对销，断言零删减；v1.4.4 十模块验收——章一语料导出 27 编号位+方法论+脱敏 S362/S363、章二权重部署哈希红线 S365、章三产物注册人审语义 S366、章四对比训练 ROI 排序 S367、章五因果链回溯+先例打分+HMAC 篡改判定 S368、章六 CI 供应链四锚点 S369、章七十收口八锚点 S370、章九 17 项收编批三族代表锚点 + 章一五源样本聚合 + 章七 13 包门面 S371（run-02 P0-2/P1-2/P1-3 闭环，对齐 S281/S343 先例），行为面 dist 直调逐一探针实测后落场景；原 S364 corpus_export 双入口对账已真实归并入 S348——归并对销 1 处，断言零删减）；v1.4.4 闸门 run-06 coverage 闭环 +1：S372（章十一阶段四 B 类行为锁补测批 37cab2b9——B1-B8 用例四测试文件在位锚 + B1/B2/B3/B4/B6 五代表断言锚，run-06 P0-1 闭环，对齐 S330/S341 零覆盖补测先例）；v1.4.5 第七章二/三 +1：S373/S374 归并对销后净 +1（S265 归并入 S264 断言零删减；S373 反哺闭环端到端——真实采样数据→harvest→jury→promote 链路级 + S374 L4 工具层自进化全流程——候选→扫描→人审→注册→invoke 可调+静态计数不漂移，行为实测 dist 直调对齐 S318/S319 先例）；v1.4.5 阶段四 +1：S375（train 五新面行为实测——deliverable 打包+HMAC verify 篡改拒绝/compliance PII findings+provenance 台账/retention symlink 拒绝保留源/serve 三 tools 注册面，SOFAGENT_DATA/KEY_PATH 隔离 dist 直调对齐 S368 手法；阶段五分诊补测——S375 扩展覆盖模块八 FDE 进场记忆目录（coverage D-1 缺口闭环，多模块共场景先例对齐 S373/S374，场景数 305 不变））；v1.4.5 阶段五批二：S375 再扩展覆盖模块六 Quickstart 交付物三件（coverage 缺口闭环第二批，多模块共场景先例对齐 S373/S374，场景数 305 不变）；v1.4.6 阶段三步骤四增量 +2：S376/S377（章一 train multi 行为锁——多卡命令构造/rank 汇总最慢决定/schema v2 兼容 v1 拒未知/GPU 队列双轴拓扑/NCCL 第八类；章二 train cloud 行为锁——分拣三档宁拦勿漏/批量整批拦截/双闸入库合规先/schema strict/注册表幂等/失联止损 5min/成本向上取整，dist 直调对齐 S375 手法）305→307；v1.4.6 追加交付 +1：S378（npm 裸名总包 umbrella 行为锁——SSOT 对账/四依赖逐一核对/workspaces 收编/bin 转发活体实测/bump dry-run 覆盖面零写盘）307→308；流程加固批 +4：S379-S382（防线失明自检故障注入双守卫非 0+门禁自身 fail-loud / 分支收编标记对账双形态+INFO 四要素+输出稳定 / 引擎空 diff message 类审计三形态 exit 2 阻断语义 / driver 冻结窗口锁三态 HOME 隔离实测）308→312；v1.4.6 阶段四防膨胀批 −1：S367 归并入 S369（章四对比三断言整体移入，断言零删减——训练管线族场景壳合并）+ S222 扩根 commit 空树补审锚（v1.4.6 bugfix 组二防回归，场景数不变）312→311
 # 编号跳号豁免：S1~S293 间有 70 个空洞号（全在 S36-S202 历史段）——v1.2.x 瘦身删场景
-# 与基线重建（restore 6e542467）的既成事实，非丢失；新场景编号=当前最大+1 顺延，禁止回填空洞
+# 与基线重建（restore 6e542467）的既成事实，非丢失；
+# 新场景编号=当前最大+1 顺延，禁止回填空洞
 # 版本段起点见文件内「# ─── v」分组标记（grep "─── v" 定位）
 # 口径注意：底部「$PASSED 通过」是断言通过数（≠场景数，含跳过场景），勿混用
 # 用法：bash FORGE/playbook/acceptance-test.sh  退出码 = 失败场景数（0 = 全部通过）
@@ -33,6 +34,7 @@ TMP_REPO=""; FAILED=0; PASSED=0; WARNED=0; CURRENT_SCEN=""  # CURRENT_SCEN：P1-
 # 🔴 bash 3.2 陷阱（v1.4.1 阶段五实证）：set -u 崩溃（如 ${VAR}（ 全角字符紧贴变量名）时，
 # trap 函数自身的成功返回会覆盖原退出码 → 崩溃假报 exit 0。
 # 修复：cleanup 首行捕获 $?，末尾以保存的退出码退出（trap 不吞退出码）。
+
 cleanup() { local _rc=$?; cd "$ORIG_DIR" 2>/dev/null || true; [ -n "$TMP_REPO" ] && [ -d "$TMP_REPO" ] && rm -rf "$TMP_REPO"; [ -n "$WRAPPER_CLEANUP" ] && [ -d "$WRAPPER_CLEANUP" ] && rm -rf "$WRAPPER_CLEANUP"; exit $_rc; }
 trap cleanup EXIT
 WRAPPER_DIR=$(mktemp -d /tmp/sofagent-wrapper-XXXX)
@@ -46,24 +48,17 @@ scenario() {
   CURRENT_SCEN="S$1"  # P1-7：记录当前场景号——warn 带场景定位（PASS 描述由调用点透传）
   echo ""; echo -e "${CYAN}━━━ 场景 $1: $2 ━━━${NC}"
 }
-# P1-37(补充): --init 在真实 HOME 跑会写 ~/.sofagent-key（P1-24 自动生成）与
-# ~/Library/LaunchAgents（daemon 注册）——用临时 HOME 隔离，不碰真实 HOME。
+# P1-37(补充): --init 在真实 HOME 跑会写 ~/.sofagent-key（P1-24 自动生成）与 ~/Library/LaunchAgents（daemon 注册）——用临时 HOME 隔离，不碰真实 HOME。
 init_isolated() { # 用法: init_isolated <command...>
   local iso_home; iso_home=$(mktemp -d /tmp/sofagent-init-home-XXXX)
   HOME="$iso_home" "$@"
   rm -rf "$iso_home"
 }
 git_log_has() { set +o pipefail; git log --oneline 2>/dev/null | grep -q "$1"; local rc=$?; set -o pipefail; return $rc; }
-# P1-7（run-06 verdict）修复：PASS 场景缺场景级断言输出——弱证据链，难逐场景
-# 溯源。调用点形态 `$Sxx_OK && pass "描述"` 本就携带描述，原实现丢弃参数只打
-# 裸 PASS 标记。现在透传描述 → 每场景在日志中留下专属断言结论行，PASS 证据
-# 可逐场景回放（driver 分片按场景头行切段，描述行自动进对应段，无解析影响）。
+# pass 透传描述：`$Sxx_OK && pass "描述"` 形态携带场景级结论——每场景在日志留专属断言行，PASS 证据可逐场景回放。
 pass() { echo -e "${GREEN}  ✅ PASS${1:+: $1}${NC}"; PASSED=$((PASSED + 1)); }
 fail() { echo -e "${RED}  ❌ FAIL: $1${NC}"; FAILED=$((FAILED + 1)); }
-# WARN 计数（run-08 P0-1 harness 修）：warn 语义 = 环境依赖跳过（dist 未构建/工具
-# 未装），非产品失败——但必须进「共 N」分母且汇总行可见，否则出现「WARN 场景
-# 与 368/368 全部通过并存」的自相矛盾汇总（run-08 s1 分片实证：场景 28 WARN
-# 后汇总仍称全部通过）。跳过场景应显式披露，不应静默蒸发。
+# WARN 计数：warn=环境依赖跳过（dist 未构建/工具未装）非产品失败，但必须进「共 N」分母且汇总行可见—— 跳过场景应显式披露，不应静默蒸发（否则「WARN 与全部通过并存」自相矛盾）。
 warn() { echo -e "${YELLOW}  ⚠️  WARN: ${CURRENT_SCEN:+[${CURRENT_SCEN}] }$1${NC}"; WARNED=$((WARNED + 1)); }
 mktmp_repo() { local d; d=$(mktemp -d /tmp/sofagent-e2e-XXXXXX); git -C "$d" init --quiet 2>/dev/null; git -C "$d" config user.email "test@test.com" 2>/dev/null; git -C "$d" config user.name "Test" 2>/dev/null; echo "$d"; }
 cleanup_tmp() { local d="$1"; [ -n "$d" ] && [ -d "$d" ] && case "$d" in /tmp/sofagent-*|/tmp/s[0-9]*) rm -rf "$d";; esac; }
@@ -79,9 +74,8 @@ assert_grep() { grep -q "$1" "$2" 2>/dev/null && return 0 || { fail "grep 零命
 exit_of() { set +e; "$@" >/dev/null 2>&1; local rc=$?; set -e; echo "$rc"; }
 write_config() { printf 'audit:\n  rules: {}\n' > "$TMP_REPO/.sofagent/config.yml"; }
 wh_config() { printf 'audit:\n  rules: {}\n  webhook:\n    url: "%s"\n    platform: "feishu"\n' "$WEBHOOK_URL" > "$TMP_REPO/.sofagent/config.yml"; }
-# v1.3.7 修复：--init 自动签名 config（P1-A10，密钥来自 init_isolated 的临时 HOME K1），
-# 后续场景用真实 HOME 密钥 K2 验签 → 必然不匹配 → d1882231 fail-closed 正确拒启。
-# 场景 3 后调用 write_config 重置为无签名版（fail-open 常态），消除 K1/K2 错配。
+# v1.3.7 修复：--init 自动签名 config（P1-A10，密钥来自 init_isolated 的临时 HOME K1）， 后续场景用真实 HOME 密钥 K2 验签 → 必然不匹配 → d1882231 fail-closed 正确拒启。 场景 3 后调用 write_config 重置为无签名版（fail-open 常态），消除 K1/K2 错配。
+
 reset_config_unsigned() { printf 'audit:\n  rules: {}\n' > "$TMP_REPO/.sofagent/config.yml"; }
 check_dist_export() {
   local dist_rel="$1" export_name="$2" prefix="$3"
@@ -96,10 +90,8 @@ check_dist_export() {
   fi
 }
 scenario 1 "Fresh install（--install-hook）"
-# run-09 P0-3 修：开头注入主仓真实基线锚——场景输出里会出现大量 TMP_REPO 的
-# 自建测试 commit（如场景 41 的 "fast-fail test"，git reset 回显其 SHA），
-# 无主仓锚时审查者会把测试 commit 误读为「被测基线」（run-09 P0-3 实证：
-# 2d35cc4 被三层报告当成发版候选）。此锚声明唯一被测基线 = 主仓 HEAD。
+# run-09 P0-3 修：开头注入主仓真实基线锚— —场景输出里会出现大量 TMP_REPO 的 自建测试 commit（如场景 41 的 "fast-fail test"，git reset 回显其 SHA），
+# 无主仓锚时审查者会把测试 commit 误读为「被测基线」（run-09 P0-3 实证： 2d35cc4 被三层报告当成发版候选）。此锚声明唯一被测基线 = 主仓 HEAD。
 echo "═══ 被测基线（唯一，主仓检出树）═══"
 echo "  主仓 HEAD: $(git -C "$PROJECT_ROOT" rev-parse HEAD 2>/dev/null || echo '未知')"
 echo "  主仓版本: $(node -e "console.log(require('$PROJECT_ROOT/package.json').version)" 2>/dev/null || echo '未知')"
@@ -110,8 +102,7 @@ TMP_REPO=$(mktmp_repo); cd "$TMP_REPO"
 $CLI --install-hook > /dev/null 2>&1
 [ -f "$TMP_REPO/.git/hooks/commit-msg" ] && [ -x "$TMP_REPO/.git/hooks/commit-msg" ] && pass || fail "commit-msg hook 未安装或不可执行"
 scenario 2 "--init 一键初始化"
-# 注意：不用 | head -10——管道关闭会 SIGPIPE node 进程，在 set -o pipefail 下可能导致脚本退出
-# 改为静默运行 + 文件检查（--init 的输出不重要，重要的是文件是否生成）
+# 注意：不用 | head -10——管道关闭会 SIGPIPE node 进程，在 set -o pipefail 下可能导致脚本退出 改为静默运行 + 文件检查（--init 的输出不重要，重要的是文件是否生成）
 init_isolated $CLI --init > /dev/null 2>&1 || true
 INIT_OK=true; [ ! -f "$TMP_REPO/.sofagent/config.yml" ] && INIT_OK=false && fail ".sofagent/config.yml 未生成"
 [ ! -f "$TMP_REPO/.git/hooks/commit-msg" ] && INIT_OK=false && fail "commit-msg hook 未安装"
@@ -217,9 +208,8 @@ printf '#!/bin/bash\n# sofagent pre-commit hook v1.0\necho "old sofagent hook"\n
 chmod +x "$TMP_REPO/.git/hooks/pre-commit"
 $CLI --install-hook > /dev/null 2>&1
 MIGRATION_PASS=true
-# v1.4.2 H-01 三层防线（2c47cb52）：pre-commit 重新装回当主防线（staged 清理前置到
-# commit 对象生成前）——迁移语义从「删旧 pre-commit」变为「旧 hook 被接管（转 .bak
-# 备份），新 pre-commit 是 sofagent 三层防线主防线」
+# v1.4.2 H-01 三层防线（2c47cb52）：pre-commit 重新装回当主防线（staged 清理前置到 commit 对象生成前）——迁移语义从「删旧 pre-commit」变为「旧 hook 被接管（转 .bak 备份），新 pre-commit 是 sofagent 三层防线主防线」
+
 if [ -f "$TMP_REPO/.git/hooks/pre-commit" ] && ! head -3 "$TMP_REPO/.git/hooks/pre-commit" 2>/dev/null | grep -q "sofagent.*pre-commit hook v1.0$"; then
   # pre-commit 存在但内容还是旧版 v1.0 echo 壳 → 未被接管
   head -3 "$TMP_REPO/.git/hooks/pre-commit" | grep -q 'echo "old sofagent hook"' && MIGRATION_PASS=false
@@ -276,11 +266,7 @@ mv "$HISTORY.bak" "$HISTORY" 2>/dev/null || true
 if $CHAIN_OK && $TAMPER_DETECTED; then pass
 elif ! $CHAIN_OK; then fail "混合格式误报链断裂"
 else fail "篡改 v2 条目 hash 未被 doctor 检出"; fi
-# run-05 verdict P1-1 根因修复：S18 fixture（61 天前时间戳）残留 repo-local
-# history.jsonl，后续场景（S24-S26/S41 等）commit 时 S17 的 stub post-commit
-# （v1.0.8 旧时间窗逻辑）读到陈旧 fixture 报「可能未经过审计」误报噪音。
-# 断言完成后清掉 fixture，斩断跨场景污染链。产品真实 post-commit v1.4.2 用
-# parentSha+主题消歧对账（不靠时间窗），不受此影响。
+# S18 fixture 残留会污染后续场景（stub post-commit 读陈旧 fixture 报误报噪音）——断言后清掉，斩断跨场景污染链。 产品真实 post-commit 用 parentSha+主题消歧对账（不靠时间窗），不受此影响。
 rm -f "$HISTORY" "$HISTORY.bak"
 scenario 19 "A5 commit message 与实际改动不符"
 write_config
@@ -347,10 +333,9 @@ if $EXT_OK; then pass; else
 fi
 write_config
 scenario 25 "history.jsonl 审计历史写入"
-# v1.2.1 路径修正（run-06 全量复跑暴露的存量断言缺陷）：产品 SSOT 路径 =
-# ${SOFAGENT_DATA}/audit/history.jsonl（SOFAGENT_DATA 缺省时 ~/.sofagent/data/），
-# 旧断言查 repo-local .sofagent/audit/ 是 v1.2.1 前旧路径，必空——对齐 S100 先例，
-# 用 SOFAGENT_DATA 隔离到临时目录，不污染真实 HOME，也不断言错误路径。
+# v1.2.1 路径修正（run-06 全量复跑暴露的存量断言缺陷）：产品 SSOT 路径 = ${SOFAGENT_DATA}/audit/history.jsonl（SOFAGENT_DATA 缺省时 ~/.sofagent/data/），
+# 旧断言查 repo-local .sofagent/audit/ 是 v1.2.1 前旧路径，必空——对齐 S100 先例， 用 SOFAGENT_DATA 隔离到临时目录，不污染真实 HOME，也不断言错误路径。
+
 S25_DATA=$(mktemp -d /tmp/sofagent-acc-hist25-XXXX)
 echo "# history test" >> README.md; git add README.md
 SOFAGENT_DATA="$S25_DATA" GIT_EDITOR=true git commit --quiet -m "history test" 2>&1 || true
@@ -379,10 +364,8 @@ else fail "post-commit hook 不存在"; fi
 scenario 28 "--doctor 检测 post-commit 丢失"
 rm -f "$TMP_REPO/.git/hooks/post-commit"
 DOCTOR_NO_POST=$($CORE_CLI --doctor 2>&1 || true)
-# 断言失败即 FAIL（run-08 P0-1 harness 修）：本场景断言的是产品检测能力——
-# 输出无 post-commit 字样 = 断言不满足 = FAIL（fail-closed），不再降级 warn。
-# （run-08 曾因此 WARN：core CLI 不认 --doctor flag → Unknown subcommand 无
-# post-commit 字样 → warn 蒸发 → 汇总自相矛盾。产品侧已在 cli.ts 加 flag 别名。）
+# 断言失败即 FAIL（run-08 P0-1 harness 修）：本场景断言的是产品检测能力—— 输出无 post-commit 字样 = 断言不满足 = FAIL（fail-closed），不再降级 warn。
+# （run-08 曾因此 WARN：core CLI 不认 --doctor flag → Unknown subcommand 无 post-commit 字样 → warn 蒸发 → 汇总自相矛盾。产品侧已在 cli.ts 加 flag 别名。）
 if echo "$DOCTOR_NO_POST" | grep -qi "post-commit\|post_commit\|post commit"; then pass
 elif echo "$DOCTOR_NO_POST" | grep -qi "❌\|hook.*缺\|hook.*miss"; then pass
 else fail "--doctor 未检测到 post-commit hook 丢失"; fi
@@ -436,8 +419,7 @@ if echo "$SIG_FAIL_OUT" | grep -q "审计引擎: sofagent-audit" && echo "$SIG_F
 else fail "FAIL/WARN 场景签名行不正确"; fi
 git reset HEAD . 2>/dev/null || true; rm -f .env
 rm -f /tmp/sofagent-wh.*.log 2>/dev/null || true
-# 测试豁免：webhook 场景 34/34b/34c 用 localhost mock server 接收推送，
-# 需显式开启豁免开关绕过产品代码的 SSRF 内网拦截（默认生产行为不受影响）
+# 测试豁免：webhook 场景 34/34b/34c 用 localhost mock server 接收推送， 需显式开启豁免开关绕过产品代码的 SSRF 内网拦截（默认生产行为不受影响）
 export SOFAGENT_WEBHOOK_ALLOW_LOCALHOST=1
 WEBHOOK_LOG=$(mktemp /tmp/sofagent-wh.XXXXXXXX.log)
 WEBHOOK_PORT=$(( (RANDOM % 8000) + 12000 ))
@@ -615,8 +597,7 @@ scenario 57 "fresh-eyes-loop Skill 定义完整性（frontmatter + 无 releaser 
 F_SKILL="$PROJECT_ROOT/FORGE/SKILL/fresh-eyes-loop/SKILL.md"; F_OK=true
 [ ! -f "$F_SKILL" ] && { F_OK=false; fail "fresh-eyes-loop/SKILL.md 不存在"; }
 if $F_OK; then
-  # v1.3.5 校准 100→120（独占窗口检查段 +12）→ v1.4.3 校准 120→130：执行载体铁律段
-  # （run-10/11 子代理代跑两级联杀教训）+ 交接 prompt 交付形式铁律（936799f6）属必要安全内容
+  #   v1.3.5 校准 100→120（独占窗口检查段 +12）→ v1.4.3 校准 120→130：执行载体铁律段 （run-10/11 子代理代跑两级联杀教训）+ 交接 prompt 交付形式铁律（936799f6）属必要安全内容
   LINE_COUNT=$(wc -l < "$F_SKILL"); [ "$LINE_COUNT" -gt 130 ] && { F_OK=false; fail "行数 $LINE_COUNT > 130"; }
   FRONTMATTER=$(head -10 "$F_SKILL")
   for field in "^name:" "^description:" "^emoji:" "^color:"; do echo "$FRONTMATTER" | grep -qE "$field" || { F_OK=false; fail "frontmatter 缺 $field"; }; done
@@ -850,9 +831,8 @@ echo "console.log('$(echo "$L_B64" | base64 -d)')" > leet-test.js; git add leet-
 set +e; $CLI --diff --cached --silent >/dev/null 2>&1; rc_leet=$?; set -e
 [ "$rc_unicode" = "2" ] && [ "$rc_leet" = "2" ] && pass || fail "A9 未检出 unicode(rc=$rc_unicode)/leet(rc=$rc_leet) 注入"
 git rm --cached -f unicode-test.js leet-test.js >/dev/null 2>&1 || true; rm -f unicode-test.js leet-test.js
-# S90 同款路径修正（与 S25 同根因，run-06 全量复跑暴露）：损坏行测试改
-# SOFAGENT_DATA 隔离——旧断言查 repo-local 旧路径（v1.2.1 前），产品 SSOT 写
-# ${SOFAGENT_DATA}/audit/，旧路径必不生成 → 恒 SKIP（证据面不完整）。
+# S90 同款路径修正（与 S25 同根因）：损坏行测试改 SOFAGENT_DATA 隔离——旧断言查 repo-local 旧路径（v1.2.1 前）必空，产品 SSOT 写 ${SOFAGENT_DATA}/audit/
+
 S90_DATA=$(mktemp -d /tmp/sofagent-acc-hist90-XXXX)
 cd "$TMP_REPO"
 echo "test" > normal.txt && git add normal.txt
@@ -926,23 +906,16 @@ fi
 $S99_OK && pass
 S100_OK=true; S100_REPO=$(mktemp -d /tmp/sofagent-s100-XXXXXX); cd "$S100_REPO"
 git init --quiet; git config user.email "s100@test.com"; git config user.name "S100"
-# run-03 P0-01 根因修：--init 与 --diff 必须共享同一隔离 HOME——原实现 --init 走
-# init_isolated（临时 HOME 的 K1 密钥给 config 签名），--diff 只隔离 SOFAGENT_DATA
-# 而读真实 HOME 的 K2 验签 → K2 验 K1 必不匹配 → fail-closed 拒启 → history.jsonl
-# 无产出（场景环境泄漏假失败，非产品写入链断裂——本地无 config 污染时写入链实测正常）。
+# --init 与 --diff 必须共享同一隔离 HOME：若 --init 用临时 HOME 的 K1 签名而 --diff 读真实 HOME 的 K2 验签 → 必不匹配 → fail-closed 拒启（场景环境泄漏假失败，非产品写入链断裂）。
 S100_HOME=$(mktemp -d /tmp/sofagent-s100-home-XXXXXX)
 S100_DATA=$(mktemp -d /tmp/sofagent-s100-data-XXXXXX)
 HOME="$S100_HOME" SOFAGENT_DATA="$S100_DATA" node "$AUDIT_DIR/dist/index.js" --init > /dev/null 2>&1
 echo "# base" > README.md; git add README.md
-# commit 也必须在同一隔离 HOME 下——commit-msg hook 会调 audit CLI 验签 config，
-# 真实 HOME 的密钥验隔离 K1 的签名必不匹配 → commit 被拦（HEAD~1 无法生成）
+# commit 也必须在同一隔离 HOME 下——commit-msg hook 会调 audit CLI 验签 config， 真实 HOME 的密钥验隔离 K1 的签名必不匹配 → commit 被拦（HEAD~1 无法生成）
 HOME="$S100_HOME" GIT_EDITOR=true git commit --quiet -m "base commit for action governance test" 2>&1 || true
 echo "# modified content" > README.md; git add README.md
 HOME="$S100_HOME" GIT_EDITOR=true git commit --quiet -m "fix: action governance scenario test" 2>&1 || true
-# run-09 P0-2 修：history.jsonl 落点是 SSOT 路径 ${SOFAGENT_DATA}/audit/history.jsonl
-# （v1.2.2 起默认 ~/.sofagent/data/audit/，repo 本地 .sofagent/audit/ 不再生成——
-# 旧断言查 repo 本地路径必 SKIP）。用 SOFAGENT_DATA 隔离到临时目录：不污染真实
-# 全局 history，断言查隔离路径——隔离下无家可写 ≠ 环境依赖，是真失败。
+# history.jsonl 落点 = ${SOFAGENT_DATA}/audit/history.jsonl（repo 本地 .sofagent/audit/ 不再生成）。 用 SOFAGENT_DATA 隔离到临时目录：不污染真实全局 history，断言查隔离路径。
 S100_HISTORY="$S100_DATA/audit/history.jsonl"
 S100_AUDIT=$(HOME="$S100_HOME" SOFAGENT_DATA="$S100_DATA" node "$AUDIT_DIR/dist/index.js" --diff HEAD~1..HEAD --task "action governance scenario test" 2>&1 || true)
 if [ -f "$S100_HISTORY" ]; then
@@ -1043,8 +1016,7 @@ grep -qE '(约束层|Harness)' "$README" || { fail "README 缺 '约束层/Harnes
 grep -qE '(审计|audit)' "$README" || { fail "README 缺 '审计' 身份描述"; S120_OK=false; }
 # v1.2.9 技术描述移入 ARCHITECTURE.md，改为检查 ARCHITECTURE（措辞已从 README 的"审计引擎核心规则零 token"改为 ARCHITECTURE 的"19 条纯 git-diff 零 token"）
 grep -qE '(纯\s*git-diff|零\s*token|不调\s*LLM)' "$PROJECT_ROOT/docs/ARCHITECTURE.md" || { fail "ARCHITECTURE 缺 '零 token' 审计描述"; S120_OK=false; }
-# v1.3.0 README 不再列历史版本号，检查当前版本标记即可
-# v1.4.1 校准：原写死 'v1\.3\.|v1\.2\.9' 在版本演进后必然漂移——改动态对账根 package.json SSOT 2 段版本
+# v1.3.0 README 不再列历史版本号，检查当前版本标记即可 v1.4.1 校准：原写死 'v1\.3\.|v1\.2\.9' 在版本演进后必然漂移——改动态对账根 package.json SSOT 2 段版本
 README_VER_MARK=$(node -p "require('$PROJECT_ROOT/package.json').version.split('.').slice(0,2).join('.')")
 grep -qE "v${README_VER_MARK}\." "$README" || { fail "README 缺当前版本标记（v${README_VER_MARK}）"; S120_OK=false; }
 $S120_OK && pass
@@ -1180,10 +1152,7 @@ else
   { set +euo pipefail; bash -c "exit $_S137_FAKE_EXIT" > /dev/null 2>&1 || _S137_CAPTURED=$?; set -euo pipefail; }
   if [ "${_S137_CAPTURED:-1}" = "$_S137_FAKE_EXIT" ]; then pass; else fail "退出码捕获失败: 期望 $_S137_FAKE_EXIT, 实际 ${_S137_CAPTURED:-unset}"; fi
 fi
-# run-09 P0-2 修：data/ 目录语义 = SOFAGENT_HOME/data（v1.2.2 起，全局安装态
-# 运行时自动创建），非仓库根 ./data（v1.2.1 老语义）。断言改查 SSOT 语义——
-# SOFAGENT_DATA 环境变量可指定 data 根即视为链路在位；仓库根 data/ 仅开发模式
-# （SOFAGENT_HOME=.）存在，不作验收前提。
+# run-09 P0-2 修：data/ 目录语义 = SOFAGENT_HOME/data（v1.2.2 起，全局安装态 运行时自动创建），非仓库根 ./data（v1.2.1 老语义）。断言改查 SSOT 语义— — SOFAGENT_DATA 环境变量可指定 data 根即视为链路在位；仓库根 data/ 仅开发模式 （SOFAGENT_HOME=.）存在，不作验收前提。
 if [ -z "${SOFAGENT_DATA:-}" ] && [ ! -d "${HOME:-/root}/.sofagent/data" ]; then
   fail "数据目录链路断裂：SOFAGENT_DATA 未设且 ~/.sofagent/data 不存在（安装/初始化未跑）"
 else pass; fi
@@ -1334,11 +1303,9 @@ S152_OUT=$(node "$SCRIPT_DIR/acceptance-node-probes.js" s152 2>&1) || true
 echo "$S152_OUT" | grep -q "^OK" || { fail "P4 Graph Engine 端到端失败: $S152_OUT"; S152_OK=false; }
 $S152_OK && pass "P4 Graph Engine 端到端完整（Planner 解析+降级+降级链四路径+decide/execute 分离）"
 scenario 153 "v1.2.3 权限加固——core 包所有 mkdirSync 必须带 mode: 0o700"
-# fresh-eyes P0「数据明文存储」过渡防线：目录默认 755 时同机其他用户可读审计数据，
-# 收紧为 0o700（仅属主可访问），age 加密（v1.3.8）落地前的纵深防御。
+# fresh-eyes P0「数据明文存储」过渡防线：目录默认 755 时同机其他用户可读审计数据， 收紧为 0o700（仅属主可访问），age 加密（v1.3.8）落地前的纵深防御。
 S153_OK=true
-# 断言 1：无 mode 的 mkdirSync 调用必须零命中（排除 import 行 + 测试文件）
-# v1.2.3 修复：0o700 加固后 grep -v "mode:" 过滤掉全部行 → 退出码 1 → pipefail 炸脚本，用 { ||true; } 兜底
+# 断言 1：无 mode 的 mkdirSync 调用必须零命中（排除 import 行 + 测试文件） v1.2.3 修复：0o700 加固后 grep -v "mode:" 过滤掉全部行 → 退出码 1 → pipefail 炸脚本，用 { ||true; } 兜底
 S153_NOMODE=$({ grep -rn "mkdirSync(" "$PROJECT_ROOT/engine/core/src/" --include="*.ts" 2>/dev/null | grep -v "__tests__" | grep -v "mode:" || true; } | wc -l | tr -d ' ')
 [ "$S153_NOMODE" = "0" ] || { fail "core 包有 $S153_NOMODE 处 mkdirSync 未带 mode（期望 0）"; S153_OK=false; }
 # 断言 2：带 0o700 的 mkdirSync 至少 5 处（compress-memory/config-loader/isomorphic-git×2/memory-sync）
@@ -1451,8 +1418,7 @@ fi
 scenario 162 "v1.2.3 Fresh-Eyes-Loop 移至阶段一——releasing.md 阶段一由 fresh-eyes 审查驱动（v1.4.2 校准）"; S162_OK=true
 grep -q "阶段一" "$PROJECT_ROOT/docs/changelog/releasing.md" || { fail "releasing.md 缺少阶段一章节"; S162_OK=false; }
 grep -q "fresh-eyes" "$PROJECT_ROOT/docs/changelog/releasing.md" || { fail "releasing.md 未提及 fresh-eyes"; S162_OK=false; }
-# v1.4.2 SOP 优化：阶段一措辞「自动化审查循环」→「fresh-eyes 独立审查」（对话式多轮
-# 形态合法化）——语义不变（阶段一由独立审查驱动），措辞校准对齐现状
+# v1.4.2 SOP 优化：阶段一措辞「自动化审查循环」→「fresh-eyes 独立审查」（对话式多轮 形态合法化）——语义不变（阶段一由独立审查驱动），措辞校准对齐现状
 grep -q "独立审查" "$PROJECT_ROOT/docs/changelog/releasing.md" || { fail "releasing.md 阶段一未标注独立审查驱动"; S162_OK=false; }
 $S162_OK && pass "Fresh-Eyes 审查位于阶段一（releasing.md 阶段一 = 独立审查驱动）"
 scenario 163 "v1.2.3 术语统一——WIKI.md + ARCHITECTURE.md 行业标准术语对齐"; S163_OK=true
@@ -1466,8 +1432,7 @@ $S164_OK && pass "文档链接可达性（代码路径存在 + 跨文件链接�
 scenario 165 "关键数字跨文档一致性——测试数 / 规则数 24 / acceptance 场景数动态对账"; S165_OK=true
 TEST_COUNT=""
 if [ -f "$PROJECT_ROOT/tools/check/test-count.sh" ]; then
-  # 解析 TOTAL_TESTS= 行取真值——不能取「输出第一个数字」：test-count.sh 首行是
-  # 序列化提示（物理内存 8GB ≤ 8GB），首数字=8 是垃圾值（曾致本场景假红/假绿）
+  #   解析 TOTAL_TESTS= 行取真值——不能取「输出第一个数字」：test-count.sh 首行是 序列化提示（物理内存 8GB ≤ 8GB），首数字=8 是垃圾值（曾致本场景假红/假绿）
   TEST_COUNT=$(bash "$PROJECT_ROOT/tools/check/test-count.sh" 2>/dev/null | grep -oE 'TOTAL_TESTS=[0-9]+' | head -1 | cut -d= -f2 || echo "")
 fi
 if [ -n "$TEST_COUNT" ] && [ "$TEST_COUNT" -gt 0 ] 2>/dev/null; then
@@ -1481,25 +1446,19 @@ for f in docs/DEVELOPMENT.md docs/LIMITATIONS.md; do grep -q "$S165_SCEN_COUNT" 
 $S165_OK && pass "关键数字跨文档一致（${TEST_COUNT:-N/A} / 24 / ${S165_SCEN_COUNT}）"
 scenario 166 "Markdown 格式完整性——代码块闭合 + 活跃文档无 U+FFFD"; S166_OK=true
 node -e "const fs=require('fs');const{execSync}=require('child_process');const files=execSync('git ls-files \"*.md\"').toString().split('\n').filter(f=>f&&!/archive|node_modules/.test(f));let bad=[];for(const f of files){try{if(fs.readFileSync(f,'utf8').includes('\uFFFD'))bad.push(f);}catch(e){}}process.exit(bad.length?(console.log('U+FFFD:',bad.join(',')),1):0);" >/dev/null 2>&1 || { fail "活跃文档存在 U+FFFD 编码污染"; S166_OK=false; }
-# v1.4.2 修复（run-11 场景 166 实测两层坑）：
-# ① grep -c 无匹配时打印 0 且 exit 1 → set -e + pipefail 直接杀脚本；
-# ② || echo 0 兜底时输出变两行 "0\n0" → $(( )) 报 syntax error。
-# 双防：grep 失败兜底单行 0（防①），head -1 + tr 只留数字（防②）。
+# grep -c 双坑：① 无匹配时打印 0 且 exit 1 → set -e + pipefail 直接杀脚本；② || echo 0 兜底时 输出变两行 → $(( )) 报 syntax error。双防：兜底单行 0（防①）+ head -1 + tr 只留数字（防②）。
 for f in docs/changelog/releasing.md README.md docs/ARCHITECTURE.md; do N=$( { grep -c '^\`\`\`' "$PROJECT_ROOT/$f" 2>/dev/null || true; } | head -1 | tr -cd '0-9'); N=${N:-0}; [ $((N % 2)) -eq 0 ] || { fail "$f 代码围栏未闭合（$N 个 fence 为奇数）"; S166_OK=false; }; done
 $S166_OK && pass "Markdown 格式完整（无 U+FFFD + 代码块闭合）"
 scenario 167a "v1.2.4 P0 分层巡检——inspector-layers 三层调度器存在 + L1/L2/L3 名称列表"; S167A_OK=true
 [ -f "$PROJECT_ROOT/engine/daemon/dist/inspector-layers.js" ] || { fail "inspector-layers.js 不存在"; S167A_OK=false; }
 node -e "const m=require('$PROJECT_ROOT/engine/daemon/dist/inspector-layers.js');const l1=m.getLayerInspectorNames('L1');const l2=m.getLayerInspectorNames('L2');const l3=m.getLayerInspectorNames('L3');if(!l1.includes('audit-history')||!l1.includes('eval-failures')||!l1.includes('daily-snapshot')){console.log('L1 缺少 inspector');process.exit(1);}if(!l2.includes('skillopt-trigger')||!l2.includes('trend-aggregator')){console.log('L2 缺少 inspector');process.exit(1);}if(!l3.includes('federation-distillation')||!l3.includes('failure-pattern')||!l3.includes('ontology-coverage')){console.log('L3 缺少 inspector');process.exit(1);}console.log('OK');" >/dev/null 2>&1 || { fail "分层巡检 inspector 列表不完整"; S167A_OK=false; }
 $S167A_OK && pass "分层巡检 L1/L2/L3 三层调度器完整（含 eval-failures/daily-snapshot/skillopt-trigger/trend-aggregator/L3 三新）"
-
 scenario 167b "v1.2.4 P0 修复预存 bug——runInspectors 含 data-sovereignty 三档"; S167B_OK=true
 node -e "const m=require('$PROJECT_ROOT/engine/daemon/dist/inspectors/index.js');const src=require('fs').readFileSync('$PROJECT_ROOT/engine/daemon/src/inspectors/index.ts','utf8');if(!src.includes('generateDataSovereigntyDaily(projectDir)')||!src.includes('generateDataSovereigntyWeekly(projectDir)')||!src.includes('generateDataSovereigntyMonthly(projectDir)')){console.log('runInspectors 未调 data-sovereignty');process.exit(1);}console.log('OK');" >/dev/null 2>&1 || { fail "runInspectors 未修复 data-sovereignty 漏调"; S167B_OK=false; }
 $S167B_OK && pass "runInspectors 修复 data-sovereignty 三档漏调（v1.2.4 P0 预存 bug）"
-
 scenario 168 "v1.2.4 P1 skillopt optimize() API 存在 + failure-ledger 导出"; S168_OK=true
 node -e "const m=require('$PROJECT_ROOT/engine/skillopt/dist/index.js');if(typeof m.optimize!=='function'){console.log('optimize 不存在');process.exit(1);}if(typeof m.recordFailure!=='function'){console.log('recordFailure 不存在');process.exit(1);}if(typeof m.getFailurePatterns!=='function'){console.log('getFailurePatterns 不存在');process.exit(1);}if(typeof m.getRepeatedFailures!=='function'){console.log('getRepeatedFailures 不存在');process.exit(1);}if(m.AUTO_TRIGGER_THRESHOLD!==3){console.log('阈值不对');process.exit(1);}console.log('OK');" >/dev/null 2>&1 || { fail "skillopt optimize()/failure-ledger API 不完整"; S168_OK=false; }
 $S168_OK && pass "skillopt optimize() + failure-ledger API 完整（optimize/recordFailure/getRepeatedFailures/阈值=3）"
-
 scenario 169 "v1.2.4 P1b Dashboard --trend 模式——参数解析 + trend 渲染函数"; S169_OK=true
 DASH169="$PROJECT_ROOT/tools/dashboard/sofagent-dashboard.sh"
 grep -q '\-\-trend' "$DASH169" || { fail "sofagent-dashboard.sh 缺少 --trend 参数"; S169_OK=false; }
@@ -1510,48 +1469,37 @@ S169_OUT=$(SOFAGENT_HOME="$S169_HOME" bash "$DASH169" --trend 2>&1) || true
 rm -rf "$S169_HOME"
 echo "$S169_OUT" | grep -q "趋势" || { fail "Dashboard --trend 未输出趋势内容"; S169_OK=false; }
 $S169_OK && pass "Dashboard --trend 模式（参数解析 + 渲染 + 优雅降级空数据）"
-
 scenario 170 "v1.2.4 P2 conflict-check + federation-distill CLI 子命令注册"; S170_OK=true
 node -e "const m=require('$PROJECT_ROOT/engine/audit/dist/cli/conflict-check.js');if(typeof m.runConflictCheckCli!=='function'){console.log('runConflictCheckCli 不存在');process.exit(1);}if(typeof m.parseConflictCheckArgs!=='function'){console.log('parseConflictCheckArgs 不存在');process.exit(1);}console.log('OK');" >/dev/null 2>&1 || { fail "conflict-check CLI 不完整"; S170_OK=false; }
 node -e "const m=require('$PROJECT_ROOT/engine/audit/dist/cli/federation-distill.js');if(typeof m.runFederationDistillCli!=='function'){console.log('runFederationDistillCli 不存在');process.exit(1);}if(typeof m.parseFederationDistillArgs!=='function'){console.log('parseFederationDistillArgs 不存在');process.exit(1);}console.log('OK');" >/dev/null 2>&1 || { fail "federation-distill CLI 不完整"; S170_OK=false; }
 $S170_OK && pass "conflict-check + federation-distill CLI 子命令完整（参数注入分层边界）"
-
 scenario 171 "v1.2.4 P2b Checker 三节点——graph.ts 含 checker 节点 + routeAfterAudit PASS→checker"; S171_OK=true
 node -e "const m=require('$PROJECT_ROOT/engine/orchestrator/dist/loop/checker-nodes.js');if(typeof m.makeCheckerNode!=='function'){console.log('makeCheckerNode 不存在');process.exit(1);}if(typeof m.makeFormatCheckerNode!=='function'){console.log('makeFormatCheckerNode 不存在');process.exit(1);}if(typeof m.makeFactCheckerNode!=='function'){console.log('makeFactCheckerNode 不存在');process.exit(1);}if(typeof m.makeSourceValidatorNode!=='function'){console.log('makeSourceValidatorNode 不存在');process.exit(1);}if(typeof m.resolveLoopMode!=='function'){console.log('resolveLoopMode 不存在');process.exit(1);}console.log('OK');" >/dev/null 2>&1 || { fail "Checker 三节点不完整"; S171_OK=false; }
 # routeAfterAudit PASS → checker（非 reviewer）
 node -e "const{routeAfterAudit}=require('$PROJECT_ROOT/engine/orchestrator/dist/loop/graph.js');if(routeAfterAudit({auditResult:'PASS',retryCount:0,degradationLevel:0,finalStatus:'running'})!=='checker'){console.log('PASS 未路由到 checker');process.exit(1);}console.log('OK');" >/dev/null 2>&1 || { fail "routeAfterAudit PASS 未路由到 checker"; S171_OK=false; }
 $S171_OK && pass "Checker 三节点完整（format/fact/source + makeCheckerNode + routeAfterAudit PASS→checker）"
-
 # v1.2.4 P3 Skill × MCP 集成验收（S2/S4/S5）
-
 scenario 172 "v1.2.4 P3 S2 — MCP tools/list 返回 22 个 tools"
-# v1.2.9 功能⑤：mcp-server.ts 已拆分，tool 定义移至 tool-registry.ts + tools/*.ts + resources.ts
-# 递归扫描 engine/mcp/src/ 全目录（含拆分后的模块）
+# v1.2.9 功能⑤：mcp-server.ts 已拆分，tool 定义移至 tool-registry.ts + tools/*.ts + resources.ts 递归扫描 engine/mcp/src/ 全目录（含拆分后的模块）
 MCP_REGISTERED=$(grep -roE "name:[[:space:]]*'[^']+'" "$PROJECT_ROOT/engine/mcp/src/" 2>/dev/null | sort -u | wc -l | tr -d ' ')
 [ "${MCP_REGISTERED:-0}" -ge 22 ] && pass "MCP tools/list 注册数 ≥22（实测 ${MCP_REGISTERED}）" || fail "MCP tools/list 注册数不足（${MCP_REGISTERED} < 22）"
-
 scenario 173 "v1.2.4 P3 S2 — 新增 6 个 tool handler 文件存在"; S173_OK=true
 for f in create-entity.ts create-concept.ts validate-ontology.ts evaluate-output.ts optimize-skill.ts health-check.ts; do
   [ -f "$PROJECT_ROOT/engine/mcp/src/tools/$f" ] || { fail "缺失 tool handler: $f"; S173_OK=false; }
 done
 $S173_OK && pass "6 个 S2 tool handler 文件全部存在"
-
 scenario 174 "v1.2.4 P3 S4 — data-diff.ts D1-D5 规则引擎存在 + diffDataChange/runDataRules 可调用"; S174_OK=true
 node -e "const m=require('$PROJECT_ROOT/engine/core/dist/data-diff.js');if(typeof m.diffDataChange!=='function'){console.log('diffDataChange missing');process.exit(1);}if(typeof m.runDataRules!=='function'){console.log('runDataRules missing');process.exit(1);}const dc=m.diffDataChange('entity','test',{a:1},{a:2});if(dc.action!=='update'){console.log('action wrong: '+dc.action);process.exit(1);}const r=m.runDataRules([dc]);if(typeof r.hasFail==='undefined'){console.log('result malformed');process.exit(1);}console.log('OK');" >/dev/null 2>&1 || { fail "data-diff D1-D5 引擎不可用"; S174_OK=false; }
 $S174_OK && pass "data-diff.ts D1-D5 引擎完整（diffDataChange + runDataRules）"
-
 scenario 175 "v1.2.4 P3 S4 — audit-data-change + generateDataThink 存在"; S175_OK=true
 [ -f "$PROJECT_ROOT/engine/mcp/src/tools/audit-data-change.ts" ] || { fail "缺失 audit-data-change.ts"; S175_OK=false; }
 node -e "const m=require('$PROJECT_ROOT/engine/think/dist/think-generator.js');if(typeof m.generateDataThink!=='function'){console.log('generateDataThink missing');process.exit(1);}console.log('OK');" >/dev/null 2>&1 || { fail "generateDataThink 不存在"; S175_OK=false; }
 $S175_OK && pass "S4 数据审计闭环完整（audit-data-change tool + generateDataThink 回溯）"
-
 scenario 176 "v1.2.4 P3 S5 — notify-session tool 返回 [sofagent] 前缀"; S176_OK=true
 node -e "const m=require('$PROJECT_ROOT/engine/mcp/dist/tools/notify-session.js');const r=m.notifySession({audit_type:'code',verdict:'PASS',summary:'test pass'});if(!r.text.startsWith('[sofagent]')){console.log('no prefix: '+r.text.substring(0,20));process.exit(1);}console.log('OK');" >/dev/null 2>&1 || { fail "notify-session 返回值无 [sofagent] 前缀"; S176_OK=false; }
 $S176_OK && pass "notify_session 返回值首行含 [sofagent] 前缀"
-
 scenario 177 "v1.2.4 P3 S5 L3 — isError 标记：run_audit FAIL 时 isError=true"; S177_OK=true
-# v1.2.9 功能⑤：mcp-server.ts 拆分后，run_audit 的 isError 逻辑移至 tools/audit-tools.ts
-# 同时检查 mcp-server.ts（可能保留 sendTool 通用 isError）和 tools/audit-tools.ts（verdict 逻辑）
+# v1.2.9 功能⑤：mcp-server.ts 拆分后，run_audit 的 isError 逻辑移至 tools/audit-tools.ts 同时检查 mcp-server.ts（可能保留 sendTool 通用 isError）和 tools/audit-tools.ts（verdict 逻辑）
 S177_AUDIT="$PROJECT_ROOT/engine/mcp/src/tools/audit-tools.ts"
 grep -q "isError.*verdict.*FAIL\|isError.*FAIL\|verdict === 'FAIL'" "$S177_AUDIT" 2>/dev/null || { fail "tools/audit-tools.ts 中 run_audit 未设 isError 标记"; S177_OK=false; }
 # 检查 create-entity 含 isError
@@ -1559,25 +1507,20 @@ grep -q "isError" "$PROJECT_ROOT/engine/mcp/src/tools/create-entity.ts" 2>/dev/n
 # 检查 audit-data-change 含 isError
 grep -q "isError" "$PROJECT_ROOT/engine/mcp/src/tools/audit-data-change.ts" 2>/dev/null || { fail "audit-data-change.ts 未含 isError"; S177_OK=false; }
 $S177_OK && pass "S5 L3 isError 协议标记完整（run_audit / create_entity / audit_data_change）"
-
 scenario 178 "v1.2.4 P3 S5 — SKILL/skills/04-deliver.md 审计结果展示铁律段落存在"
 grep -q "审计结果展示铁律" "$PROJECT_ROOT/SKILL/skills/04-deliver.md" 2>/dev/null && pass "SKILL/skills/04-deliver.md 含审计结果展示铁律段落" || fail "SKILL/skills/04-deliver.md 缺失审计结果展示铁律段落"
-
 scenario 179 "v1.2.4 P3 S5 — SKILL/SKILL.md MCP tool 引用 ≥7 处"
 MCP_REFS=$(grep -oE '\b(run_audit|get_think|write_think|audit_file|search_knowledge|read_entity|read_concept|list_entities|read_lessons|read_think_md|stats|list_capabilities|data_sovereignty_report|create_entity|create_concept|validate_ontology|evaluate_output|optimize_skill|health_check|audit_data_change|notify_session)\b' "$PROJECT_ROOT/SKILL/SKILL.md" 2>/dev/null | sort -u | wc -l | tr -d ' ')
 [ "$MCP_REFS" -ge 7 ] && pass "SKILL/SKILL.md MCP tool 引用 ≥7（实测 $MCP_REFS 个独立 tool）" || fail "SKILL/SKILL.md MCP tool 引用不足（$MCP_REFS < 7）"
-
 scenario 180 "v1.2.4 P3 S5 — SKILL/SKILL.md 行数 ≤200（v1.4.1 上调 180→200：FDE Harness 叙事收编 +DSH 生态速查表，真实新内容不删）"
 SKILL_LINES=$(wc -l < "$PROJECT_ROOT/SKILL/SKILL.md" | tr -d ' ')
 [ "$SKILL_LINES" -le 200 ] && pass "SKILL/SKILL.md 行数达标（$SKILL_LINES ≤ 200）" || fail "SKILL/SKILL.md 行数超标（$SKILL_LINES > 200）"
-
 scenario 181 "v1.2.4 P4 R1-R2 — FDE/README.md ≤80 行 + FDE/GUIDE.md 存在"; S181_OK=true
 [ -f "$PROJECT_ROOT/FDE/README.md" ] || { fail "FDE/README.md 不存在"; S181_OK=false; }
 README_LINES=$(wc -l < "$PROJECT_ROOT/FDE/README.md" 2>/dev/null | tr -d ' ')
 [ "$README_LINES" -le 80 ] || { fail "FDE/README.md 行数超标（$README_LINES > 80）"; S181_OK=false; }
 [ -f "$PROJECT_ROOT/FDE/GUIDE.md" ] || { fail "FDE/GUIDE.md 不存在"; S181_OK=false; }
 $S181_OK && pass "FDE 人读门面完整（README $README_LINES 行 + GUIDE 存在）"
-
 scenario 182 "v1.2.4 P4 R3-R4 — SKILL/SKILL.md 主入口 + 子 Skill 01-05 完整"; S182_OK=true
 SKILL_MD="$PROJECT_ROOT/SKILL/SKILL.md"
 [ -f "$SKILL_MD" ] || { fail "SKILL/SKILL.md 不存在"; S182_OK=false; }
@@ -1585,93 +1528,73 @@ for f in 01-entry.md 02-discovery.md 03-quantify.md 04-deliver.md 05-exit.md; do
   [ -f "$PROJECT_ROOT/SKILL/skills/$f" ] || { fail "SKILL/skills/$f 不存在"; S182_OK=false; }
 done
 $S182_OK && pass "SKILL/SKILL.md 主入口 + 5 个子 Skill 完整（01-entry ~ 05-exit）"
-
 scenario 183 "v1.2.4 P4 R5 — FDE/SKILL.md 已删除（内容合并到 SKILL/SKILL.md）"
 [ -f "$PROJECT_ROOT/FDE/SKILL.md" ] && fail "FDE/SKILL.md 应已删除（R5 收敛）" || pass "FDE/SKILL.md 已删除，发布源切换到 ./SKILL"
-
 scenario 184 "v1.2.4 P0 预存 bug — data-sovereignty×3 补入分层执行列表"
 node -e "const m=require('$PROJECT_ROOT/engine/daemon/dist/inspector-layers.js');const l1=m.getLayerInspectorNames('L1');const l2=m.getLayerInspectorNames('L2');const l3=m.getLayerInspectorNames('L3');if(!l1.includes('data-sovereignty-daily')){console.log('L1 缺 data-sovereignty-daily');process.exit(1);}if(!l2.includes('data-sovereignty-weekly')){console.log('L2 缺 data-sovereignty-weekly');process.exit(1);}if(!l3.includes('data-sovereignty-monthly')){console.log('L3 缺 data-sovereignty-monthly');process.exit(1);}console.log('OK');" >/dev/null 2>&1 && pass "data-sovereignty×3 已补入 L1/L2/L3 执行列表" || fail "data-sovereignty×3 未补入分层执行列表（预存 bug 未修复）"
-
 scenario 185 "v1.2.5 主线A — activate.ts 存在且导出 activateWorkflow"
 check_dist_export "engine/orchestrator/dist/activate.js" "activateWorkflow" "ACTIVATE" || true
 if [ "${ACTIVATE_EXPORT_OK:-false}" = "true" ]; then pass "activate.ts 导出 activateWorkflow"; else fail "activate.ts 未导出 activateWorkflow"; fi
-
 scenario 186 "v1.2.5 主线B — A20-A23 四条新规则文件存在 + runner AUDIT_PRIORITY 注册"
 A20_OK=true
 for r in rule-a20-network-exfiltration rule-a21-persistence rule-a22-privilege-escalation rule-a23-path-traversal; do
   [ -f "$PROJECT_ROOT/engine/audit/src/rules/${r}.ts" ] || { A20_OK=false; fail "$r.ts 不存在"; }
 done
 node -e "const m=require('$PROJECT_ROOT/engine/audit/dist/rules/runner.js');const c=m.AUDIT_PRIORITY.critical;if(!c.includes('A20')||!c.includes('A21')||!c.includes('A22')||!c.includes('A23')){console.log('AUDIT_PRIORITY.critical 缺 A20-A23');process.exit(1);}console.log('OK');" >/dev/null 2>&1 && pass "A20-A23 文件 + AUDIT_PRIORITY critical 注册" || { [ "$A20_OK" = "true" ] && fail "AUDIT_PRIORITY.critical 未含 A20-A23"; }
-
 scenario 187 "v1.2.5 主线B — BASELINE_RULE_KEYS 扩展到 9 条（含 a20-a23）"
 node -e "const m=require('$PROJECT_ROOT/engine/core/dist/shared/rule-constants.js');const k=m.BASELINE_RULE_KEYS;if(k.length!==9){console.log('BASELINE_RULE_KEYS 长度='+k.length+'（期望 9）');process.exit(1);}for(const x of ['a20','a21','a22','a23']){if(!k.includes(x)){console.log('缺 '+x);process.exit(1);}}console.log('OK');" >/dev/null 2>&1 && pass "BASELINE_RULE_KEYS=9 条（a1/a2/a9/a10/a11/a20/a21/a22/a23）" || fail "BASELINE_RULE_KEYS 未扩展到 9 条"
-
 scenario 188 "v1.2.5 主线B — E3 已从 extendedRules 移除"
 node -e "const m=require('$PROJECT_ROOT/engine/audit/dist/rules/index.js');const ext=m.extendedRules;if(ext.some(r=>r.number===203)){console.log('E3(number=203) 仍在 extendedRules');process.exit(1);}console.log('OK');" >/dev/null 2>&1 && pass "E3 已移除（extendedRules 无 number=203）" || fail "E3 未从 extendedRules 移除"
-
 scenario 189 "v1.2.5 主线C — with-retry + daemon-health dist 产物存在"
 check_dist_export "engine/daemon/dist/with-retry.js" "withRetry" "RETRY" || true
 check_dist_export "engine/daemon/dist/daemon-health.js" "writeHealthFile" "HEALTH" || true
 if [ "${RETRY_EXPORT_OK:-false}" = "true" ] && [ "${HEALTH_EXPORT_OK:-false}" = "true" ]; then pass "with-retry 导出 withRetry + daemon-health 导出 writeHealthFile"; else fail "daemon 可靠性模块导出缺失"; fi
-
 scenario 190 "v1.2.5 副线 — agent-identity 身份码 + audit-trail 审计轨迹"
 check_dist_export "engine/core/dist/agent-identity.js" "generateAgentIdentity" "IDENTITY" || true
 check_dist_export "engine/audit/dist/audit-trail.js" "appendAuditTrail" "TRAIL" || true
 if [ "${IDENTITY_EXPORT_OK:-false}" = "true" ] && [ "${TRAIL_EXPORT_OK:-false}" = "true" ]; then pass "agent-identity 导出 generateAgentIdentity + audit-trail 导出 appendAuditTrail"; else fail "多设备前置模块导出缺失"; fi
-
 scenario 191 "v1.2.5 副线 — protocol-neutrality 协议中立声明"
 check_dist_export "engine/audit/dist/protocol-neutrality.js" "assertProtocolNeutrality" "PROTONEUT" || true
 if [ "${PROTONEUT_EXPORT_OK:-false}" = "true" ]; then pass "protocol-neutrality 导出 assertProtocolNeutrality"; else fail "protocol-neutrality 导出缺失"; fi
-
 scenario 192 "v1.2.6 MCP — 4 个新 tool handler 文件存在 + tool-registry.ts 注册"; S192_OK=true
 for f in daemon-status.ts list-agents.ts list-concepts.ts hitl-resolve.ts; do
   [ -f "$PROJECT_ROOT/engine/mcp/src/tools/$f" ] || { fail "缺失 v1.2.6 tool handler: $f"; S192_OK=false; }
 done
-# v1.4.0 校准：v1.4.0 MCP 重构后工具统一注册在 tool-registry.ts 的 TOOLS 数组（mcp-server.ts 只留协议分发），
-# 原「mcp-server.ts import + case 三处注册」断言过时——改查 registry 内 4 tool 存在。
+# MCP 重构后工具统一注册 tool-registry.ts TOOLS 数组（mcp-server.ts 只留协议分发）；计数动态对账——源码 SSOT 为基准，dist 与源码不一致即构建漂移（禁写死计数）
 MCP_V126_REG=$(grep -cE "'(daemon_status|list_agents|list_concepts|hitl_resolve)'" "$PROJECT_ROOT/engine/mcp/src/tool-registry.ts" 2>/dev/null || true); MCP_V126_REG=${MCP_V126_REG:-0}
 [ "$MCP_V126_REG" -ge 4 ] || { fail "tool-registry.ts 注册点不足（registry=${MCP_V126_REG}，期望 ≥4）"; S192_OK=false; }
 $S192_OK && pass "v1.2.6 MCP 4 tool 完整（handler 文件 + import + case dispatch）"
-
 scenario 193 "v1.2.6 激活链 Phase 2 — resolveAgent 支持 enterprise 类型动态查找"; S193_OK=true
 grep -q "export function resolveAgent" "$PROJECT_ROOT/engine/orchestrator/src/workflow-parser.ts" 2>/dev/null || { fail "resolveAgent 函数不存在"; S193_OK=false; }
 grep -q "enterprise" "$PROJECT_ROOT/engine/orchestrator/src/workflow-parser.ts" 2>/dev/null || { fail "workflow-parser.ts 缺少 enterprise 类型支持"; S193_OK=false; }
 grep -q "listAgents" "$PROJECT_ROOT/engine/orchestrator/src/workflow-parser.ts" 2>/dev/null || { fail "resolveAgent 未调 listAgents 动态查找"; S193_OK=false; }
 $S193_OK && pass "resolveAgent 支持 enterprise 类型（listAgents 动态查找，不静默降级）"
-
 scenario 194 "v1.2.6 激活链 Phase 2 — registry SubAgentDefinition 扩展 hitl/hitlConfig/knowledgeDomain"; S194_OK=true
 for field in hitl hitlConfig knowledgeDomain; do
   grep -q "$field" "$PROJECT_ROOT/engine/orchestrator/src/registry.ts" 2>/dev/null || { fail "registry.ts 缺少字段: $field"; S194_OK=false; }
 done
 $S194_OK && pass "registry SubAgentDefinition 扩展 hitl/hitlConfig/knowledgeDomain 三字段"
-
 scenario 195 "v1.2.6 2A — activate.ts 嵌套/平铺 workflow.yml 格式兼容"; S195_OK=true
 grep -q "\['workflow'\]" "$PROJECT_ROOT/engine/orchestrator/src/activate.ts" 2>/dev/null || { fail "activate.ts 缺少嵌套格式兼容（['workflow'] 键查找）"; S195_OK=false; }
 $S195_OK && pass "activate.ts 支持嵌套 + 平铺双格式（const root = doc['workflow'] ?? doc）"
-
 scenario 196 "v1.2.6 2B — SOFAGENT_LLM 环境变量四级回退链"; S196_OK=true
 grep -q "SOFAGENT_LLM_A" "$PROJECT_ROOT/engine/orchestrator/src/loop/nodes.ts" 2>/dev/null || { fail "nodes.ts 缺少 SOFAGENT_LLM_A 回退"; S196_OK=false; }
 grep -q "SOFAGENT_LLM_B" "$PROJECT_ROOT/engine/orchestrator/src/loop/nodes.ts" 2>/dev/null || { fail "nodes.ts 缺少 SOFAGENT_LLM_B 回退"; S196_OK=false; }
 $S196_OK && pass "resolveLLMModel/resolveApiKey 四级回退（SOFAGENT_LLM → _ROLE → _A → _B）"
-
 # S197 已归并至 S164（全项目 .md 死链检测已覆盖 docs/ 子集）
 pass "S197 归并至 S164（全项目死链检测）"
-
 # ─── v1.2.7 新增场景（S198-S207）───
-
 scenario 198 "v1.2.7 ① Session Goals — /goal 命令注册 + goal_eval 路由节点"; S198_OK=true
 [ -f "$PROJECT_ROOT/engine/core/src/slash-commands/goal.ts" ] || { fail "goal.ts 不存在"; S198_OK=false; }
 assert_grep "GoalCommand\|register.*goal\|name:.*['\"]goal" "$PROJECT_ROOT/engine/core/src/slash-commands/goal.ts" || S198_OK=false
 assert_grep "goal_eval" "$PROJECT_ROOT/engine/orchestrator/src/loop/graph.ts" || S198_OK=false
 assert_grep "SessionGoalState\|goal:" "$PROJECT_ROOT/engine/orchestrator/src/loop/state.ts" || S198_OK=false
 $S198_OK && pass "Session Goals（/goal 命令 + goal_eval 路由节点存在）"
-
 scenario 199 "v1.2.7 ② 手动上下文压缩 — /compact 命令注册 + 摘要生成"; S199_OK=true
 [ -f "$PROJECT_ROOT/engine/core/src/slash-commands/compact.ts" ] || { fail "compact.ts 不存在"; S199_OK=false; }
 assert_grep "CompactCommand\|name:.*['\"]compact" "$PROJECT_ROOT/engine/core/src/slash-commands/compact.ts" || S199_OK=false
 assert_grep "compact\|CompactCommand" "$PROJECT_ROOT/engine/core/src/slash-registry.ts" || S199_OK=false
 $S199_OK && pass "手动上下文压缩（/compact 命令注册）"
-
 scenario 200 "v1.2.7 ③ + v1.3.8 Skill 渐进式加载 — rules/ 下 core-rules.md + role-*.md 分层"; S200_OK=true
 [ -f "$PROJECT_ROOT/SKILL/rules/core-rules.md" ] || { fail "rules/core-rules.md 不存在"; S200_OK=false; }
 [ -f "$PROJECT_ROOT/SKILL/rules/role-audit.md" ] || { fail "rules/role-audit.md 不存在"; S200_OK=false; }
@@ -1679,47 +1602,35 @@ scenario 200 "v1.2.7 ③ + v1.3.8 Skill 渐进式加载 — rules/ 下 core-rule
 [ -f "$PROJECT_ROOT/SKILL/rules/role-orchestrate.md" ] || { fail "rules/role-orchestrate.md 不存在"; S200_OK=false; }
 assert_grep "core-rules\|role-audit\|role-fde\|role-orchestrate" "$PROJECT_ROOT/engine/hooks/sofagent-load-chain/src/handler.ts" || S200_OK=false
 $S200_OK && pass "Skill 渐进式加载（rules/ 下 core-rules + role-*.md 四文件 + handler 映射）"
-
 scenario 201 "v1.2.7 ④ --doctor 修复提示 + --repair 模式（合并 201+202）"; S201_OK=true
 assert_grep "repairHint\|repairCommand\|修复.*命令\|如何修复\|安装命令" "$PROJECT_ROOT/engine/core/src/doctor.ts" || S201_OK=false
 assert_grep "repair\|--repair\|isRepair" "$PROJECT_ROOT/engine/core/src/cli.ts" || S201_OK=false
 assert_grep "runDoctorWithRepair\|repair.*doctor\|doctor.*repair" "$PROJECT_ROOT/engine/core/src/cli.ts" || S201_OK=false
 $S201_OK && pass "--doctor 修复提示 + --repair 模式（repairHint 字段 + cli.ts --repair 参数）"
-
 scenario 203 "v1.2.7 ⑤ FORGE driver 三方抽象 — driver-base.mjs 存在 + 公共函数"; S203_OK=true
 [ -f "$PROJECT_ROOT/FORGE/src/driver-base.mjs" ] || { fail "driver-base.mjs 不存在"; S203_OK=false; }
 assert_grep "createForgeDriverBase\|parseDriverArgs\|spawnWorkerStep\|createCircuitBreaker" "$PROJECT_ROOT/FORGE/src/driver-base.mjs" || S203_OK=false
 $S203_OK && pass "FORGE driver 三方抽象（driver-base.mjs + 公共工具函数导出）"
-
 scenario 204 "v1.2.7 ⑥ enterprise-graph — composeEnterpriseWorkflow + StateGraph 构建"; S204_OK=true
 [ -f "$PROJECT_ROOT/engine/orchestrator/src/enterprise-graph.ts" ] || { fail "enterprise-graph.ts 不存在"; S204_OK=false; }
 [ -f "$PROJECT_ROOT/engine/orchestrator/src/entity-store.ts" ] || { fail "entity-store.ts 不存在"; S204_OK=false; }
 assert_grep "composeEnterpriseWorkflow" "$PROJECT_ROOT/engine/orchestrator/src/composer.ts" || S204_OK=false
 assert_grep "buildEnterpriseStateGraph\|buildStateGraphConfig" "$PROJECT_ROOT/engine/orchestrator/src/enterprise-graph.ts" || S204_OK=false
 $S204_OK && pass "enterprise-graph（composeEnterpriseWorkflow + StateGraph 构建函数）"
-
 scenario 205 "v1.2.7 ⑦ --support-bundle — 诊断信息一键打包 + 脱敏"; S205_OK=true
 [ -f "$PROJECT_ROOT/engine/audit/src/support-bundle.ts" ] || { fail "support-bundle.ts 不存在"; S205_OK=false; }
 assert_grep "generateSupportBundle\|support-bundle\|supportBundle" "$PROJECT_ROOT/engine/audit/src/index.ts" || S205_OK=false
 assert_grep "sanitize\|脱敏\|mask.*key\|redact" "$PROJECT_ROOT/engine/audit/src/support-bundle.ts" || S205_OK=false
 assert_grep "archiver" "$PROJECT_ROOT/engine/audit/package.json" || S205_OK=false
 $S205_OK && pass "--support-bundle（generateSupportBundle + 脱敏 + archiver 依赖）"
-
 scenario 206 "v1.2.7 ⑧ One-Line Agent Setup — bootstrap.sh 存在 + 轻量入口"; S206_OK=true
 [ -f "$PROJECT_ROOT/bootstrap.sh" ] || { fail "bootstrap.sh 不存在"; S206_OK=false; }
 BOOTSTRAP_LINES=$(wc -l < "$PROJECT_ROOT/bootstrap.sh" 2>/dev/null || echo 999)
 [ "$BOOTSTRAP_LINES" -lt 140 ] || { fail "bootstrap.sh 超过 140 行（$BOOTSTRAP_LINES 行）"; S206_OK=false; }
-# 阈值 50→90（v1.3.8 P0-1）：安装链修复后 bootstrap 同时下载 lib 六文件（+21 行安全兜底）——
-# 「轻量入口」的语义是「一行安装」而非行数本身，90 仍远小于下载完整仓库方案
-# 阈值 90→140（v1.4.3 bugfix P2-f，2026-08-29）：bootstrap.sh 加 install.sh/lib sha256 完整性校验
-#   （七哈希常量 + _sha256_of/_verify_or_die 两函数 + 校验挂点）+55 行（71→126）——
-#   curl|bash 入口的下载被劫持即任意代码执行，校验逻辑有存在价值不精简（项目铁律
-#   「上调预算不删内容」）；「轻量入口」语义不变（仍是一行安装，140 远小于完整仓库方案）。
-#   修后重跑 --cli-only 全量确认（355/355 EXIT=0），后批破坏前批绿灯的教训：
-#   改可执行面时必须重跑 acceptance 而非依赖前批绿灯快照。
+# 阈值沿革 50→90→140：安装链安全兜底（lib 六文件下载 + install/lib sha256 完整性校验）逐批累加—— 「轻量入口」语义=「一行安装」非行数；curl|bash 下载被劫持即任意代码执行，校验逻辑有存在价值 不精简（铁律「上调预算不删内容」）。改可执行面必须重跑 acceptance，不依赖前批绿灯快照。
+
 assert_grep "curl\|bash\|install" "$PROJECT_ROOT/bootstrap.sh" || S206_OK=false
 $S206_OK && pass "One-Line Agent Setup（bootstrap.sh 存在 + ${BOOTSTRAP_LINES} 行 + curl|bash 入口）"
-
 scenario 207 "v1.2.7 ⑨ Agent Mailbox — 邮箱模块 + 节点注入"; S207_OK=true
 [ -f "$PROJECT_ROOT/engine/orchestrator/src/mailbox/mailbox.ts" ] || { fail "mailbox.ts 不存在"; S207_OK=false; }
 [ -f "$PROJECT_ROOT/engine/orchestrator/src/mailbox/message-injector.ts" ] || { fail "message-injector.ts 不存在"; S207_OK=false; }
@@ -1728,9 +1639,7 @@ assert_grep "MailboxStore\|send\|readUnread\|markRead" "$PROJECT_ROOT/engine/orc
 assert_grep "MessageInjector\|injectMessages" "$PROJECT_ROOT/engine/orchestrator/src/mailbox/message-injector.ts" || S207_OK=false
 assert_grep "mailbox\|MailboxInjector\|injectMessages" "$PROJECT_ROOT/engine/orchestrator/src/loop/nodes.ts" || S207_OK=false
 $S207_OK && pass "Agent Mailbox（mailbox.ts + message-injector.ts + nodes.ts 注入逻辑）"
-
 # ─── v1.2.8 场景（208-214：memory-store/scheduler/tool-budget/node-executor/F角色/checkpoint）───
-
 scenario 208 "v1.2.8 ① memory-store — createMemoryStore 导出 + CRUD + 分层目录"
 S208_OK=true; require_dist "engine/core/dist/memory-store.js" || S208_OK=false
 if $S208_OK; then
@@ -1759,7 +1668,6 @@ if $S208_OK; then
     ok(results.length >= 1, 'search 应返回 >=1 条');" && pass
   rm -rf "$S208_DIR"
 fi
-
 scenario 209 "v1.2.8 ② Scheduled Tasks MVP — createScheduler + ScheduledTask 结构 + cron 解析"
 S209_OK=true; require_dist "engine/daemon/dist/scheduler.js" || S209_OK=false
 if $S209_OK; then
@@ -1777,7 +1685,6 @@ if $S209_OK; then
     ok(sched && typeof sched === 'object', 'createScheduler 应返回对象');" && pass
   rm -rf "$S209_DIR"
 fi
-
 scenario 210 "v1.2.8 ③ ToolOutputBudget — DEFAULT_BUDGET + getStepBudget + truncateToolOutput"; S210_OK=true
 [ -f "$PROJECT_ROOT/FORGE/src/tool-output-budget.mjs" ] || { fail "tool-output-budget.mjs 不存在"; S210_OK=false; }
 if $S210_OK; then
@@ -1798,7 +1705,6 @@ if $S210_OK; then
   echo "$S210_OUT" | grep -q "^OK " || { fail "ToolOutputBudget 验证失败: $S210_OUT"; S210_OK=false; }
 fi
 $S210_OK && pass "ToolOutputBudget（DEFAULT_BUDGET=200 + getStepBudget + truncateToolOutput + middleware 工厂）"
-
 scenario 211 "v1.2.8 ④ node-executor + HITL — checkHITL + executeNode + resolveEnterpriseAgent"
 S211_OK=true; require_dist "engine/orchestrator/dist/node-executor.js" || S211_OK=false
 if $S211_OK; then
@@ -1808,7 +1714,6 @@ if $S211_OK; then
     ok(typeof m.executeNode === 'function', 'executeNode 应为函数');
     ok(typeof m.resolveEnterpriseAgent === 'function', 'resolveEnterpriseAgent 应为函数');" && pass
 fi
-
 scenario 212 "v1.2.8 ⑤ release-gate F 角色 — f-diagnose/f-fix/f-audit 步骤定义 + V+F 循环"; S212_OK=true
 RG_DRIVER="$PROJECT_ROOT/FORGE/src/release-gate-driver.mjs"
 [ -f "$RG_DRIVER" ] || { fail "release-gate-driver.mjs 不存在"; S212_OK=false; }
@@ -1822,7 +1727,6 @@ if $S212_OK; then
   assert_grep "f-diagnose|f-fix|f-audit" "$RG_DRIVER" || S212_OK=false
   $S212_OK && pass "release-gate F 角色（f-diagnose/f-fix/f-audit + V+F 循环 + --step 支持）"
 fi
-
 scenario 213 "v1.2.8 ⑥ FORGE audit dogfooding — runAuditGate driver 步骤 + engine/audit dist 引用"; S213_OK=true
 [ -f "$PROJECT_ROOT/FORGE/src/driver-base.mjs" ] || { fail "driver-base.mjs 不存在"; S213_OK=false; }
 if $S213_OK; then
@@ -1834,7 +1738,6 @@ if $S213_OK; then
   require_dist "engine/audit/dist/index.js" || S213_OK=false
   $S213_OK && pass "FORGE audit dogfooding（runAuditGate + audit dist 引用 + role:null driver 步骤）"
 fi
-
 scenario 214 "v1.2.8 ⑦ Checkpoint/Resume — saveResumePoint + loadResumePoint + --resume CLI"; S214_OK=true
 DB="$PROJECT_ROOT/FORGE/src/driver-base.mjs"
 [ -f "$DB" ] || { fail "driver-base.mjs 不存在"; S214_OK=false; }
@@ -1849,9 +1752,7 @@ if $S214_OK; then
   assert_grep "renameSync\|renameSync(tmpPath\|writeFileSync.*tmp" "$DB" || S214_OK=false
   $S214_OK && pass "Checkpoint/Resume（saveResumePoint + loadResumePoint + --resume + 原子写）"
 fi
-
 # ─── v1.2.9 场景（215-224：短任务化/checkpoint/PM2/激活链Phase3/mcp拆分/BugFix/叙事/cli-quick）───
-
 scenario 215 "v1.2.9 ① 短任务化 — fresh-eyes 12 独立视角 prompt + perspective 关键词"; S215_OK=true
 # 12 个独立视角 prompt 文件（a-check-perspective-1.md ~ -12.md）
 for _i in $(seq 1 12); do
@@ -1862,7 +1763,6 @@ if $S215_OK; then
   assert_grep "perspective" "$PROJECT_ROOT/FORGE/src/fresh-eyes-driver.mjs" || S215_OK=false
   $S215_OK && pass "短任务化（12 个独立视角 prompt + driver perspective 关键词）"
 fi
-
 scenario 216 "v1.2.9 ② Checkpoint/Resume worker级 — completedWorkers 追踪"; S216_OK=true
 DB="$PROJECT_ROOT/FORGE/src/driver-base.mjs"
 FED="$PROJECT_ROOT/FORGE/src/fresh-eyes-driver.mjs"
@@ -1874,7 +1774,6 @@ if $S216_OK; then
   assert_grep "completedWorkers\|pendingWorkers" "$FED" || S216_OK=false
   $S216_OK && pass "Checkpoint/Resume worker级（driver-base completedWorkers + fresh-eyes driver worker 追踪）"
 fi
-
 scenario 217 "v1.2.9 ③ PM2守护 — ecosystem.config.mjs + forge-pm2-start.sh"; S217_OK=true
 ECO="$PROJECT_ROOT/FORGE/ecosystem.config.mjs"
 [ -f "$ECO" ] || { fail "ecosystem.config.mjs 不存在"; S217_OK=false; }
@@ -1888,7 +1787,6 @@ if $S217_OK; then
   assert_grep "restart_delay" "$ECO" || S217_OK=false
   $S217_OK && pass "PM2守护（ecosystem.config.mjs 含 fresh-eyes/release-gate + autorestart/restart_delay + start 脚本）"
 fi
-
 scenario 218 "v1.2.9 ④ 激活链Phase3后半 — HITL handler + 审计集成"; S218_OK=true
 HITL="$PROJECT_ROOT/engine/orchestrator/src/hitl-handler.ts"
 NE="$PROJECT_ROOT/engine/orchestrator/src/node-executor.ts"
@@ -1904,20 +1802,13 @@ if $S218_OK; then
   assert_grep "audit\|checkHITL\|审计" "$NE" || S218_OK=false
   $S218_OK && pass "激活链Phase3后半（hitl-handler.ts HITL+审计集成 + node-executor checkHITL + 测试覆盖）"
 fi
-
 scenario 219 "v1.2.9 ⑤ mcp-server.ts拆分 — 行数≤470（历次校准）+ 模块化（tool-registry + tools/ + resources）"; S219_OK=true
 MCP="$PROJECT_ROOT/engine/mcp/src/mcp-server.ts"
 [ -f "$MCP" ] || { fail "mcp-server.ts 不存在"; S219_OK=false; }
 if $S219_OK; then
-  # 行数 ≤ 450（拆分后应瘦身）。
-  # v1.3.5 校准：v1.2.9 立线时约 20 tools，300 行够；现 52 tools，每个 tool 薄分发固定成本 2 行（1 import + 1 case）≈104 行 + 协议骨架，300 物理装不下。
-  # v1.4.0 校准：66 tools（+cost_query +browser 4）+ 角色分层接入（tool-roles import + 过滤/拦截 ~14 行）→ 409 行，阈值 400→420（判定本质是「拆分充分」非行数绝对值）。
-  # v1.4.2 校准：76 tools（+fde 六件 + 训练三件）→ 434 行，阈值 420→450（同判定本质；每次 +N tools 薄分发 ≈ +2 行/tool）。
-  # v1.4.5 校准：83 tools（+train_serve/train_compliance/train_deliverable）→ 460 行，阈值 450→470（同判定本质——工具分发面随 tools 规模线性增长，拆分充分性由下方四模块在位锚守）。
-  # run-07 verdict P1-6 裁定：阈值历次校准链已到 450 且 444 行在界内——标题「≤350」
-  # 是 v1.2.9 立线时的初值快照，与断言实现（≤450）脱钩。标题改为随校准链表述，
-  # 断言口径不变。判定本质 = 「拆分充分」（tool-registry/tools//resources 模块在位
-  # + 行数随 tools 规模校准），非行数绝对值。
+  # 阈值随 tools 规模线性校准（300→420→450→470）：每 tool 薄分发固定成本 ≈2 行（1 import + 1 case），
+  # 判定本质=「拆分充分」（tool-registry/tools//resources 模块在位 + 行数随 tools 数校准），非行数绝对值。
+  # 标题同步表述校准链，不锁死初值快照。
   MCP_LINES=$(wc -l < "$MCP" | tr -d ' ')
   [ "$MCP_LINES" -le 470 ] || { fail "mcp-server.ts 行数 $MCP_LINES > 470（拆分不充分）"; S219_OK=false; }
   # 拆分出的模块文件存在
@@ -1927,7 +1818,6 @@ if $S219_OK; then
   [ -f "$PROJECT_ROOT/engine/mcp/src/resources.ts" ] || { fail "resources.ts 不存在"; S219_OK=false; }
   $S219_OK && pass "mcp-server.ts拆分（${MCP_LINES}行 ≤ 470 + tool-registry + tools/audit-tools + tools/audit-file + resources）"
 fi
-
 scenario 220 "v1.2.9 ⑥ BugFix — REPO_ROOT 已修复 + check-version.sh 扫描路径已更新"; S220_OK=true
 DB="$PROJECT_ROOT/FORGE/src/driver-base.mjs"
 [ -f "$DB" ] || { fail "driver-base.mjs 不存在"; S220_OK=false; }
@@ -1939,7 +1829,6 @@ if $S220_OK; then
   assert_grep "resources.ts" "$PROJECT_ROOT/tools/check/check-version.sh" || S220_OK=false
   $S220_OK && pass "BugFix（driver-base.mjs 无 REPO_ROOT + check-version.sh 扫描 tool-registry/resources 路径）"
 fi
-
 scenario 221 "v1.2.9 ⑦ 约束层叙事重构 — ARCHITECTURE + README + SKILL 统一术语"; S221_OK=true
 # docs/ARCHITECTURE.md 含「约束层」
 assert_grep "约束层" "$PROJECT_ROOT/docs/ARCHITECTURE.md" || S221_OK=false
@@ -1948,17 +1837,18 @@ assert_grep "约束层" "$PROJECT_ROOT/README.md" || S221_OK=false
 # SKILL/SKILL.md 含「约束层」
 assert_grep "约束层" "$PROJECT_ROOT/SKILL/SKILL.md" || S221_OK=false
 $S221_OK && pass "约束层叙事重构（ARCHITECTURE.md + README.md + SKILL/SKILL.md 均含「约束层」）"
-
-scenario 222 "v1.2.9 ⑧-1 cli-quick零配置CLI — cli-quick.ts + bin + dist"; S222_OK=true
+scenario 222 "v1.2.9 ⑧-1 cli-quick零配置CLI — cli-quick.ts + bin + dist + 首commit空树补审"; S222_OK=true
 [ -f "$PROJECT_ROOT/engine/audit/src/cli-quick.ts" ] || { fail "cli-quick.ts 不存在"; S222_OK=false; }
 # package.json bin 含 sofagent-audit（零配置 CLI 入口）
 assert_grep "sofagent-audit" "$PROJECT_ROOT/engine/audit/package.json" || S222_OK=false
 # dist 产物存在
 require_dist "engine/audit/dist/cli-quick.js" || S222_OK=false
+# 首个 commit 补审（v1.4.6 bugfix 组二防回归）：根 commit 无父提交时不得「无基线不审计」 放行——cli-quick.ts 须用 git 空树 SHA 作 diff 基准审计全部新增内容（实测曾放行 sk-ant-api03 密钥）
+assert_grep "4b825dc642cb6eb9a060e54bf8d69288fbee4904" "$PROJECT_ROOT/engine/audit/src/cli-quick.ts" || S222_OK=false
+assert_grep "hasParentCommit" "$PROJECT_ROOT/engine/audit/src/cli-quick.ts" || S222_OK=false
 if $S222_OK; then
-  $S222_OK && pass "cli-quick零配置CLI（cli-quick.ts + package.json bin sofagent-audit + dist 产物）"
+  $S222_OK && pass "cli-quick零配置CLI（cli-quick.ts + bin sofagent-audit + dist + 根commit空树补审）"
 fi
-
 scenario 223 "v1.2.9 ⑧-2 ruleset + plugin接口 — ruleset-loader + plugin-runner + 规则集 JSON"; S223_OK=true
 RL="$PROJECT_ROOT/engine/audit/src/ruleset-loader.ts"
 PR="$PROJECT_ROOT/engine/audit/src/plugin-runner.ts"
@@ -1976,7 +1866,6 @@ if $S223_OK; then
   [ -f "$PROJECT_ROOT/engine/audit/src/rulesets/security.json" ] || { fail "rulesets/security.json 不存在"; S223_OK=false; }
   $S223_OK && pass "ruleset + plugin接口（loadRuleset/compilePattern + runPluginRule/loadPlugin + sofagent/security 规则集）"
 fi
-
 scenario 224 "v1.2.9 ⑧-3 GitHub Action — action.yml + github-formatter + Annotations 格式"; S224_OK=true
 [ -f "$PROJECT_ROOT/action.yml" ] || { fail "action.yml 不存在"; S224_OK=false; }
 GF="$PROJECT_ROOT/engine/audit/src/formatters/github-formatter.ts"
@@ -1988,9 +1877,7 @@ if $S224_OK; then
   assert_grep "::error\|::warning" "$GF" || S224_OK=false
   $S224_OK && pass "GitHub Action（action.yml node runtime + github-formatter.ts ::error/::warning Annotations）"
 fi
-
 # ── v1.3.0 场景（S225-S228：运行时审计 + 决策审计 + list_rules + 双规则统一） ──
-
 # ─── v1.3.0 新增场景（S225-S230：分层巡检/审计wrapper/HMAC链/记忆ACL）───
 scenario 225 "v1.3.0 交付 1 tool wrapper 拦截（audit-middleware FAIL 拦截）"; S225_OK=true
 AMW="$PROJECT_ROOT/FORGE/src/audit-middleware.mjs"
@@ -2005,7 +1892,6 @@ if $S225_OK; then
   assert_grep "auditMw" "$PROJECT_ROOT/FORGE/src/fresh-eyes-driver.mjs" || S225_OK=false
   $S225_OK && pass "tool wrapper（audit-middleware.mjs + fresh-eyes-driver 接线 + FAIL 拦截消息）"
 fi
-
 scenario 226 "v1.3.0 交付 6 emitDecision 决策日志写入"; S226_OK=true
 [ -f "$PROJECT_ROOT/engine/audit/src/decision-log.ts" ] || { fail "decision-log.ts 不存在"; S226_OK=false; }
 [ -f "$PROJECT_ROOT/engine/audit/src/decision-schema.ts" ] || { fail "decision-schema.ts 不存在"; S226_OK=false; }
@@ -2021,7 +1907,6 @@ if $S226_OK; then
   assert_grep "traceBack" "$PROJECT_ROOT/engine/audit/src/decision-query.ts" || S226_OK=false
   $S226_OK && pass "决策审计（emitDecision + schema + sanitizeWhy + query 层）"
 fi
-
 scenario 227 "v1.3.0 交付 4 list_rules MCP tool 响应"; S227_OK=true
 [ -f "$PROJECT_ROOT/engine/mcp/src/tools/list-rules.ts" ] || { fail "list-rules.ts 不存在"; S227_OK=false; }
 if $S227_OK; then
@@ -2034,7 +1919,6 @@ if $S227_OK; then
   assert_grep "tool.*diff.*all\|'tool' | 'diff' | 'all'" "$PROJECT_ROOT/engine/mcp/src/tools/list-rules.ts" || S227_OK=false
   $S227_OK && pass "list_rules（注册 + case 分发 + 只读清单 + type 参数）"
 fi
-
 scenario 228 "v1.3.0 交付 7 双规则系统统一（ruleType 字段）"; S228_OK=true
 # tool 规则带 ruleType:'tool'
 grep -q "ruleType: 'tool'" "$PROJECT_ROOT/engine/rules/src/rules/tool-sensitive-file.ts" || S228_OK=false
@@ -2045,7 +1929,6 @@ grep -q "ruleType: 'diff'" "$PROJECT_ROOT/engine/audit/src/rules/index.ts" || S2
 # 共享检测逻辑（SECRET_PATTERNS 统一来源）
 grep -q "SECRET_PATTERNS" "$PROJECT_ROOT/engine/core/src/shared/secret-patterns.ts" || S228_OK=false
 $S228_OK && pass "双规则统一（tool 3 条 ruleType + diff 24 条 ruleType + SECRET_PATTERNS 共享）"
-
 scenario 229 "v1.3.0 交付 2 shouldAllow 拦截 API（InterceptVerdict + requireApproval）"; S229_OK=true
 # shouldAllow 函数存在
 grep -q "export function shouldAllow" "$PROJECT_ROOT/engine/rules/src/should-allow.ts" || S229_OK=false
@@ -2054,17 +1937,14 @@ grep -q "allow" "$PROJECT_ROOT/engine/rules/src/should-allow.ts" || S229_OK=fals
 grep -q "reason" "$PROJECT_ROOT/engine/rules/src/should-allow.ts" || S229_OK=false
 grep -q "requireApproval" "$PROJECT_ROOT/engine/rules/src/should-allow.ts" || S229_OK=false
 $S229_OK && pass "shouldAllow API（函数存在 + InterceptVerdict 三字段）"
-
 scenario 230 "运行时审计日志仓库隔离（repo-hash 行为验证 · FORGE 内部）"; S230_OK=true
-# 行为验证（非字符串 grep——字符串 grep 只证明注释/代码里出现过字样，属假绿机制）：
-# ① 在 git 仓库内 computeRepoHash 返回 12 位 hex（sha256 前 12 位）
+# 行为验证（非字符串 grep——字符串 grep 只证明注释/代码里出现过字样，属假绿机制）： ① 在 git 仓库内 computeRepoHash 返回 12 位 hex（sha256 前 12 位）
 REPO_HASH=$(cd "$PROJECT_ROOT" && node --input-type=module -e 'import { computeRepoHash } from "./FORGE/src/audit-middleware.mjs"; process.stdout.write(computeRepoHash(process.cwd()));' 2>/dev/null) || true
 echo "$REPO_HASH" | grep -qE '^[0-9a-f]{12}$' || { fail "computeRepoHash 未返回 12 位 hex（实际：${REPO_HASH}）"; S230_OK=false; }
 # ② 实际写入路径组装为 data/audit/runtime/<repo-hash>/runtime-audit.jsonl（含 repo-hash 目录）
 PATH_RUN=$(cd "$PROJECT_ROOT" && node --input-type=module -e 'import { resolveRuntimeAuditPath } from "./FORGE/src/audit-middleware.mjs"; process.stdout.write(resolveRuntimeAuditPath(process.cwd()));' 2>/dev/null) || true
 echo "$PATH_RUN" | grep -qE "audit/runtime/${REPO_HASH}/runtime-audit\.jsonl$" || { fail "写入路径未含 repo-hash 目录（实际：${PATH_RUN}）"; S230_OK=false; }
 $S230_OK && pass "运行时审计仓库隔离（repo-hash 行为验证：computeRepoHash 12 位 hex + resolveRuntimeAuditPath 含 hash 目录）"
-
 scenario 231 "v1.3.1 交付 1 Ontology Action 校验（validator 三态 + 注册表）"; S231_OK=true
 # Action 注册表存在
 [ -f "$PROJECT_ROOT/engine/orchestrator/src/ontology/action-registry.ts" ] || S231_OK=false
@@ -2075,7 +1955,6 @@ grep -q "ontology-action" "$PROJECT_ROOT/engine/orchestrator/src/ontology/valida
 # wrapToolsWithGate 可选集成（不传 = 零变化）
 grep -q "ontologyValidator?: OntologyValidator" "$PROJECT_ROOT/engine/orchestrator/src/tools.ts" || S231_OK=false
 $S231_OK && pass "Ontology Action 注册表 + validator 三态 + wrapToolsWithGate 可选集成"
-
 scenario 232 "v1.3.1 交付 3 并行编排审计卡关（全 PASS 合并 / 任一 FAIL 丢弃）"; S232_OK=true
 [ -f "$PROJECT_ROOT/engine/orchestrator/src/loop/parallel-scheduler.ts" ] || S232_OK=false
 [ -f "$PROJECT_ROOT/engine/orchestrator/src/loop/merge-gate.ts" ] || S232_OK=false
@@ -2086,7 +1965,6 @@ grep -q "runMergeGate" "$PROJECT_ROOT/engine/orchestrator/src/loop/merge-gate.ts
 # graph.ts 并行可选路径（默认串行）
 grep -q "parallel_wave" "$PROJECT_ROOT/engine/orchestrator/src/loop/graph.ts" || S232_OK=false
 $S232_OK && pass "并行编排（ParallelScheduler + 波次卡关 + graph 并行可选路径）"
-
 scenario 233 "v1.3.1 交付 13 MergeQueue 并发合并（到达序 + 原始序重排 + 配对）"; S233_OK=true
 [ -f "$PROJECT_ROOT/engine/orchestrator/src/loop/merge-queue.ts" ] || S233_OK=false
 # 到达序 yield
@@ -2096,7 +1974,6 @@ grep -q "reordered" "$PROJECT_ROOT/engine/orchestrator/src/loop/merge-queue.ts" 
 # taskId 配对保证（重复 push 拒绝）
 grep -q "duplicatePolicy" "$PROJECT_ROOT/engine/orchestrator/src/loop/merge-queue.ts" || S233_OK=false
 $S233_OK && pass "MergeQueue 并发合并（到达序 yield + 原始序重排 + 配对保证）"
-
 scenario 234 "v1.3.1 交付 4 Durable Execution checkpoint 恢复（L1 续跑）"; S234_OK=true
 [ -f "$PROJECT_ROOT/engine/orchestrator/src/durable/resume.ts" ] || S234_OK=false
 [ -f "$PROJECT_ROOT/engine/orchestrator/src/durable/checkpoint-manager.ts" ] || S234_OK=false
@@ -2109,7 +1986,6 @@ grep -q "DEFAULT_CHECKPOINT_RETENTION_DAYS = 7" "$PROJECT_ROOT/engine/orchestrat
 # daemon 启动续跑接线
 grep -q "resumePendingLoops" "$PROJECT_ROOT/engine/daemon/src/cli.ts" || S234_OK=false
 $S234_OK && pass "Durable L1（checkpoint 扫描/恢复/清理 + daemon 启动续跑）"
-
 scenario 235 "v1.3.1 交付 6 Agent 身份码 Ed25519 签名验证"; S235_OK=true
 grep -q "ed25519\|Ed25519" "$PROJECT_ROOT/engine/core/src/agent-identity.ts" || S235_OK=false
 # 签发 + 验证
@@ -2120,7 +1996,6 @@ grep -q "verify" "$PROJECT_ROOT/engine/core/src/agent-identity.ts" || S235_OK=fa
 # MCP agent_identity 工具
 grep -q "agent_identity" "$PROJECT_ROOT/engine/mcp/src/tool-registry.ts" || S235_OK=false
 $S235_OK && pass "Agent 身份码 Ed25519（签发/验证 + 注册表 + MCP agent_identity）"
-
 scenario 236 "v1.3.1 交付 8 Onboard Agent L1 循环（judge 三态 + driver）"; S236_OK=true
 [ -f "$PROJECT_ROOT/engine/orchestrator/src/loop-agent/judge.ts" ] || S236_OK=false
 [ -f "$PROJECT_ROOT/engine/orchestrator/src/loop-agent/driver.ts" ] || S236_OK=false
@@ -2134,7 +2009,6 @@ grep -q "convergeToolError" "$PROJECT_ROOT/engine/orchestrator/src/loop-agent/dr
 # MCP loop_debug
 grep -q "loop_debug" "$PROJECT_ROOT/engine/mcp/src/tool-registry.ts" || S236_OK=false
 $S236_OK && pass "Onboard L1 循环（judge 三态 + driver + loop_debug）"
-
 scenario 237 "v1.3.1 交付 9 Benchmark 评测隔离执行（statement/rubric 物理分离 + read-only）"; S237_OK=true
 [ -f "$PROJECT_ROOT/engine/orchestrator/src/benchmark/benchmark-designer.ts" ] || S237_OK=false
 [ -f "$PROJECT_ROOT/engine/orchestrator/src/benchmark/case-evaluator.ts" ] || S237_OK=false
@@ -2151,7 +2025,6 @@ grep -q "hmacSig" "$PROJECT_ROOT/engine/orchestrator/src/benchmark/evaluation-lo
 # MCP evaluate
 grep -q "evaluate" "$PROJECT_ROOT/engine/mcp/src/tool-registry.ts" || S237_OK=false
 $S237_OK && pass "Benchmark 评测（物理分离 + read-only + 失败码 + HMAC 链 + evaluate）"
-
 scenario 238 "v1.3.1 交付 10 工具审批四模式（approval-mode）"; S238_OK=true
 [ -f "$PROJECT_ROOT/engine/rules/src/approval-mode.ts" ] || S238_OK=false
 # 四模式
@@ -2164,7 +2037,6 @@ grep -q "read-only 拦截读写" "$PROJECT_ROOT/engine/rules/src/approval-mode.t
 # audit-middleware 审批分支（approval_decision 事件）
 grep -q "approval_decision" "$PROJECT_ROOT/FORGE/src/audit-middleware.mjs" || S238_OK=false
 $S238_OK && pass "工具审批四模式（approval-mode + 保守拒绝 + approval_decision 审计）"
-
 scenario 239 "v1.3.1 交付 11 LLM 调用 Trace 写入（HMAC 链 + 白名单脱敏）"; S239_OK=true
 [ -f "$PROJECT_ROOT/engine/core/src/llm-call-trace.ts" ] || S239_OK=false
 # append-only 写入入口
@@ -2177,7 +2049,6 @@ grep -q "sanitizeTraceInput" "$PROJECT_ROOT/engine/core/src/llm-call-trace.ts" |
 # stopReason 写入（交付 12 联动）
 grep -q "stopReason" "$PROJECT_ROOT/engine/core/src/llm-call-trace.ts" || S239_OK=false
 $S239_OK && pass "LLM 调用 Trace（append + HMAC 链 + 脱敏 + stopReason）"
-
 scenario 240 "v1.3.1 交付 12 错误处理（stop_reason 六值 + auth 永不重试 + 收敛）"; S240_OK=true
 [ -f "$PROJECT_ROOT/engine/core/src/stop-reason.ts" ] || S240_OK=false
 # 六值分类
@@ -2191,7 +2062,6 @@ grep -q "BACKOFF_SCHEDULE_MS" "$PROJECT_ROOT/engine/core/src/stop-reason.ts" || 
 # 工具失败收敛为消息（不 throw）
 grep -q "convergeToolError" "$PROJECT_ROOT/engine/core/src/model-client.ts" || S240_OK=false
 $S240_OK && pass "错误处理升级（stop_reason 六值 + auth 不重试 + 退避 + 收敛）"
-
 # ─── v1.3.1 新增场景（S241-S244：国标/CRUD/审计聚合/L4；S201/202 已归并）───
 scenario 241 "v1.3.1 交付 2 国标对齐 GB/T 48000.3-2026（--gb48000 opt-in）"; S241_OK=true
 [ -f "$PROJECT_ROOT/engine/audit/src/gb48000.ts" ] || S241_OK=false
@@ -2202,7 +2072,6 @@ grep -q "部分对齐" "$PROJECT_ROOT/engine/audit/src/gb48000.ts" || S241_OK=fa
 grep -q "gb48000" "$PROJECT_ROOT/engine/audit/src/index.ts" || S241_OK=false
 grep -q "gb48000: false" "$PROJECT_ROOT/engine/audit/src/index.ts" || S241_OK=false
 $S241_OK && pass "国标对齐 GB/T 48000.3-2026（--gb48000 opt-in）"
-
 scenario 242 "v1.3.1 交付 5 Ontology CRUD 补全（字段级更新 + 强制人审）"; S242_OK=true
 [ -f "$PROJECT_ROOT/engine/mcp/src/tools/update-entity.ts" ] || S242_OK=false
 [ -f "$PROJECT_ROOT/engine/mcp/src/tools/delete-entity.ts" ] || S242_OK=false
@@ -2212,7 +2081,6 @@ grep -q "confirmed" "$PROJECT_ROOT/engine/mcp/src/tools/delete-entity.ts" || S24
 # D1-D5 审计留痕
 grep -q "D1-D5\|diffDataChange" "$PROJECT_ROOT/engine/mcp/src/tools/update-entity.ts" || S242_OK=false
 $S242_OK && pass "Ontology CRUD 补全（字段级更新 + 强制人审 + D1-D5）"
-
 scenario 243 "v1.3.1 交付 7 跨设备审计轨迹聚合（HMAC 验签 + TRUST_ORDER 裁决）"; S243_OK=true
 [ -f "$PROJECT_ROOT/engine/daemon/src/federation/audit-merge.ts" ] || S243_OK=false
 [ -f "$PROJECT_ROOT/engine/daemon/src/inspectors/audit-trail.ts" ] || S243_OK=false
@@ -2224,7 +2092,6 @@ grep -q "getHmacKey\|stableStringify" "$PROJECT_ROOT/engine/daemon/src/federatio
 # MCP audit_trail 注册
 grep -q "audit_trail" "$PROJECT_ROOT/engine/mcp/src/tool-registry.ts" || S243_OK=false
 $S243_OK && pass "跨设备审计轨迹聚合（HMAC 验签 + TRUST_ORDER + MCP audit_trail）"
-
 scenario 244 "v1.3.1 交付 14 L4 经验层渐进加载（热点全文 + 索引摘要）"; S244_OK=true
 [ -f "$PROJECT_ROOT/engine/harness/src/knowledge-index.ts" ] || S244_OK=false
 # 热点全文 + 索引摘要注入逻辑
@@ -2233,7 +2100,6 @@ grep -q "knowledge-index\|knowledgeIndex" "$PROJECT_ROOT/engine/harness/src/inde
 # 索引每条 ≤150 字符（摘要截断）
 grep -q "150" "$PROJECT_ROOT/engine/harness/src/knowledge-index.ts" || S244_OK=false
 $S244_OK && pass "L4 经验层渐进加载（热点全文 + 索引摘要 ≤150 字符）"
-
 # ─── v1.3.2 新增场景（S245-S255：L2-L5/agent-creation/eval-suite/session-isolation）───
 scenario 245 "v1.3.2 交付 1 L2 语义判定——diff-report 三类 mismatch"; S245_OK=true
 [ -f "$PROJECT_ROOT/engine/orchestrator/src/loop-agent/diff-report.ts" ] || S245_OK=false
@@ -2241,19 +2107,16 @@ scenario 245 "v1.3.2 交付 1 L2 语义判定——diff-report 三类 mismatch";
 [ -f "$PROJECT_ROOT/engine/orchestrator/src/loop-agent/ontology-comparator.ts" ] || S245_OK=false
 grep -q "field_missing\|value_error\|relation_broken" "$PROJECT_ROOT/engine/orchestrator/src/loop-agent/diff-report.ts" || S245_OK=false
 $S245_OK && pass "L2 语义判定（diff-report 三类 mismatch + ontology-comparator + output-extractor）"
-
 scenario 246 "v1.3.2 交付 2-3 L3 自动定位 + L4 自动修复"; S246_OK=true
 [ -f "$PROJECT_ROOT/engine/orchestrator/src/loop-agent/error-localizer.ts" ] || S246_OK=false
 [ -f "$PROJECT_ROOT/engine/orchestrator/src/loop-agent/fix-applier.ts" ] || S246_OK=false
 grep -q "skill.*ontology.*prompt.*knowledge" "$PROJECT_ROOT/engine/orchestrator/src/loop-agent/error-localizer.ts" || S246_OK=false
 grep -q "FixProposal" "$PROJECT_ROOT/engine/orchestrator/src/loop-agent/fix-applier.ts" || S246_OK=false
 $S246_OK && pass "L3 自动定位（四类错误源）+ L4 自动修复（FixProposal + 审计兜底）"
-
 scenario 247 "v1.3.2 交付 4 L5 循环收敛"; S247_OK=true
 grep -q "convergeThreshold\|divergeThreshold" "$PROJECT_ROOT/engine/orchestrator/src/loop-agent/driver.ts" || S247_OK=false
 grep -q "converged\|diverged" "$PROJECT_ROOT/engine/orchestrator/src/loop-agent/driver.ts" || S247_OK=false
 $S247_OK && pass "L5 循环收敛（连续 3 轮 PASS 收敛 / 连续 5 轮 FAIL 发散）"
-
 scenario 248 "v1.3.2 交付 5 agent-creation"; S248_OK=true
 [ -f "$PROJECT_ROOT/engine/orchestrator/src/onboard/agent-creator.ts" ] || S248_OK=false
 [ -f "$PROJECT_ROOT/engine/orchestrator/src/onboard/creation-validator.ts" ] || S248_OK=false
@@ -2261,47 +2124,39 @@ scenario 248 "v1.3.2 交付 5 agent-creation"; S248_OK=true
 grep -q "deriveAgentFromRequirement" "$PROJECT_ROOT/engine/orchestrator/src/onboard/agent-creator.ts" || S248_OK=false
 grep -q "thinkingLevel" "$PROJECT_ROOT/engine/orchestrator/src/onboard/agent-creator.ts" || S248_OK=false
 $S248_OK && pass "agent-creation（一句话需求推导 + 不持久化 model_id）"
-
 scenario 249 "v1.3.2 交付 5 workflow-parser 节点类型动态解析链"; S249_OK=true
 grep -q "agent-creator\|deriveAgentFromRequirement" "$PROJECT_ROOT/engine/orchestrator/src/workflow-parser.ts" || S249_OK=false
 $S249_OK && pass "workflow-parser registry 动态查找 + agent-creation 兜底"
-
 scenario 250 "v1.3.2 交付 6 企业专属 eval 套件"; S250_OK=true
 [ -f "$PROJECT_ROOT/engine/orchestrator/src/loop-agent/eval-suite.ts" ] || S250_OK=false
 [ -f "$PROJECT_ROOT/FDE/templates/eval-suite/finance.json" ] || S250_OK=false
 grep -q "freezeEvalBaseline\|freezeBenchmark" "$PROJECT_ROOT/engine/orchestrator/src/loop-agent/eval-suite.ts" || S250_OK=false
 $S250_OK && pass "企业 eval 套件（行业模板 + 基线冻结）"
-
 scenario 251 "v1.3.2 交付 7 模型接入插槽 client_type"; S251_OK=true
 grep -q "client_type" "$PROJECT_ROOT/engine/orchestrator/src/model-router-config.ts" || S251_OK=false
 grep -q "ollama.*openai-compatible" "$PROJECT_ROOT/engine/orchestrator/src/model-router-config.ts" || S251_OK=false
 grep -q "endpointConfig\|LocalEndpointConfig" "$PROJECT_ROOT/engine/core/src/model-client.ts" || S251_OK=false
 $S251_OK && pass "模型接入插槽 client_type（ollama | openai-compatible）"
-
 scenario 252 "v1.3.2 交付 7右半+10 FDE 梳理辅助 + Ontology 咨询式生成"; S252_OK=true
 [ -f "$PROJECT_ROOT/engine/orchestrator/src/fde/compose-interview.ts" ] || S252_OK=false
 [ -f "$PROJECT_ROOT/engine/orchestrator/src/fde/workflow-draft.ts" ] || S252_OK=false
 [ -f "$PROJECT_ROOT/engine/orchestrator/src/fde/ontology-draft.ts" ] || S252_OK=false
 grep -q "data/ontology/drafts" "$PROJECT_ROOT/engine/orchestrator/src/fde/ontology-draft.ts" || S252_OK=false
 $S252_OK && pass "FDE 梳理辅助 + Ontology 咨询式生成（草稿落盘不注册）"
-
 scenario 253 "v1.3.2 交付 8 LLM Trace rawResponse 字段"; S253_OK=true
 grep -q "rawResponse" "$PROJECT_ROOT/engine/core/src/llm-call-trace.ts" || S253_OK=false
 grep -q "rawResponse" "$PROJECT_ROOT/engine/core/src/model-client.ts" || S253_OK=false
 $S253_OK && pass "LLM Trace rawResponse（provider 透传原始响应）"
-
 scenario 254 "v1.3.2 交付 9 Session 级隔离"; S254_OK=true
 [ -f "$PROJECT_ROOT/engine/orchestrator/src/session-isolator.ts" ] || S254_OK=false
 grep -q "runInIsolatedSession\|spawn" "$PROJECT_ROOT/engine/orchestrator/src/session-isolator.ts" || S254_OK=false
 grep -q "handoffSessionData\|appendEvaluationRecord" "$PROJECT_ROOT/engine/orchestrator/src/session-isolator.ts" || S254_OK=false
 $S254_OK && pass "Session 级隔离（Builder vs Optimizer 分离 + evaluation-log 传递）"
-
 scenario 255 "v1.3.2 交付 11 LLM Trace 任务级轨迹视图"; S255_OK=true
 [ -f "$PROJECT_ROOT/engine/orchestrator/src/trace/trajectory.ts" ] || S255_OK=false
 grep -q "aggregateTrajectory\|TaskTrajectory" "$PROJECT_ROOT/engine/orchestrator/src/trace/trajectory.ts" || S255_OK=false
 grep -q "exportTrajectoryForRL" "$PROJECT_ROOT/engine/orchestrator/src/trace/trajectory.ts" || S255_OK=false
 $S255_OK && pass "LLM Trace 任务级轨迹视图（按 taskId 聚合 + RL 训练导出）"
-
 # ─── v1.3.3 新增场景（S256-S262：L2五大机制/联邦通道/主agent编排/Refine/evidence）───
 scenario 256 "v1.3.3 交付 1 L2 团队协作协议——五大机制 + 建队机制"; S256_OK=true
 for f in protocol team-manager team-state intent-bus; do
@@ -2312,24 +2167,20 @@ grep -q "amplifyFeedback" "$PROJECT_ROOT/engine/orchestrator/src/team/protocol.t
 grep -q "parseTeamYaml" "$PROJECT_ROOT/engine/orchestrator/src/team/team-manager.ts" || S256_OK=false
 grep -q "Automerge" "$PROJECT_ROOT/engine/orchestrator/src/team/team-state.ts" || S256_OK=false
 $S256_OK && pass "L2 五大机制（共享态/广播/触发/消解/放大）+ team.yml 建队" || fail "L2 团队协作协议核心缺失"
-
 scenario 257 "v1.3.3 交付 1b 团队联邦通道——daemon FederatedTeamSyncChannel"; S257_OK=true
 [ -f "$PROJECT_ROOT/engine/daemon/src/federation/team-channel.ts" ] || S257_OK=false
 grep -q "FederatedTeamSyncChannel\|TeamSyncChannel" "$PROJECT_ROOT/engine/daemon/src/federation/team-channel.ts" || S257_OK=false
 $S257_OK && pass "daemon FederatedTeamSyncChannel（复用 v1.1.8 加密链路）" || fail "团队联邦通道缺失"
-
 scenario 258 "v1.3.3 交付 2 主 agent 编排——四合一角色 + 自动入队"; S258_OK=true
 grep -q "enqueueSubAgent\|EnqueueSubAgentInput" "$PROJECT_ROOT/engine/orchestrator/src/team/team-manager.ts" || S258_OK=false
 grep -q "deriveAgentFromRequirement" "$PROJECT_ROOT/engine/orchestrator/src/workflow-parser.ts" || S258_OK=false
 $S258_OK && pass "主 agent 编排（分发/监控/审计/通讯 + sub-agent 自动入队）" || fail "主 agent 编排挂点缺失"
-
 scenario 259 "v1.3.3 交付 3 入口路由——route_workflow MCP tool + workflow 节点 type"; S259_OK=true
 [ -f "$PROJECT_ROOT/engine/orchestrator/src/route/route-request.ts" ] || S259_OK=false
 [ -f "$PROJECT_ROOT/engine/mcp/src/tools/route-workflow.ts" ] || S259_OK=false
 grep -q "route: 'workflow'\|route: 'fallback'" "$PROJECT_ROOT/engine/orchestrator/src/route/route-request.ts" || S259_OK=false
 grep -q "type: 'loop' | 'auto' | 'manual'" "$PROJECT_ROOT/engine/orchestrator/src/workflow-parser.ts" || S259_OK=false
 $S259_OK && pass "route_workflow（命中 workflow / 不命中 fallback + 节点 type 机器化）" || fail "入口路由缺失"
-
 scenario 260 "v1.3.3 交付 4 Refine Agent——复用 loop-agent 换 L2 判据"; S260_OK=true
 for f in refine-driver quality-rule-set quality-judge; do
   [ -f "$PROJECT_ROOT/engine/orchestrator/src/refine-agent/${f}.ts" ] || S260_OK=false
@@ -2338,7 +2189,6 @@ grep -q "onConverged" "$PROJECT_ROOT/engine/orchestrator/src/loop-agent/driver.t
 grep -q "qualityJudge\|QualityJudge" "$PROJECT_ROOT/engine/orchestrator/src/refine-agent/refine-driver.ts" || S260_OK=false
 [ -f "$PROJECT_ROOT/engine/mcp/src/tools/refine.ts" ] || S260_OK=false
 $S260_OK && pass "Refine Agent（复用 Onboard 引擎 + 质量规则集 + onConverged 自动触发）" || fail "Refine Agent 缺失"
-
 scenario 261 "v1.3.3 交付 5 进化闭环——Benchmark 驱动 + 范围白名单（只动经验层）"; S261_OK=true
 for f in optimization-loop snapshot-manager contamination-guard; do
   [ -f "$PROJECT_ROOT/engine/orchestrator/src/refine-agent/${f}.ts" ] || S261_OK=false
@@ -2347,17 +2197,13 @@ grep -q "runOptimizationLoop" "$PROJECT_ROOT/engine/orchestrator/src/refine-agen
 grep -q "SKILL\.md\|审计规则\|git snapshot" "$PROJECT_ROOT/engine/orchestrator/src/refine-agent/optimization-loop.ts" || S261_OK=false
 grep -q "checkContamination\|assertNoContamination" "$PROJECT_ROOT/engine/orchestrator/src/refine-agent/contamination-guard.ts" || S261_OK=false
 $S261_OK && pass "进化闭环（evidence→hypothesis→Candidate→eval→accept/rollback + 范围白名单 + 污染检测）" || fail "进化闭环缺失或范围白名单未落地"
-
 scenario 262 "v1.3.3 交付 6 evidence 字段 + DecisionKind 扩展（EVOLUTION/TEAM）"; S262_OK=true
 grep -q "evidence" "$PROJECT_ROOT/engine/audit/src/decision-schema.ts" || S262_OK=false
 grep -q "'EVOLUTION'" "$PROJECT_ROOT/engine/audit/src/decision-schema.ts" || S262_OK=false
 grep -q "'TEAM'" "$PROJECT_ROOT/engine/audit/src/decision-schema.ts" || S262_OK=false
 grep -q "EVOLUTION\|TEAM" "$PROJECT_ROOT/engine/audit/src/decision-log.ts" || S262_OK=false
 $S262_OK && pass "evidence 字段 + DecisionKind 加 EVOLUTION/TEAM" || fail "审计留痕字段缺失"
-
-# ─── v1.3.4 新增场景 S263-S269（L3 组织能力市场 + SkillScan + MARKET 审计 + DSH 编排分离）───
-# 注：v1.3.6 更名 market_*→commons_*（能力公地），断言路径已同步
-
+# ─── v1.3.4 新增场景 S263-S269（L3 组织能力市场 + SkillScan + MARKET 审计 + DSH 编排分离）─── 注：v1.3.6 更名 market_*→commons_*（能力公地），断言路径已同步
 scenario 263 "v1.3.4 交付 1+2：能力公地引擎 10 模块 + MCP 6 tool 注册（v1.3.6 更名 market_*→commons_*）"; S263_OK=true
 for f in publisher catalog invoker rating owner retire skill-scan rule-harvest rule-jury rule-promote; do
   [ -f "$PROJECT_ROOT/engine/orchestrator/src/commons/$f.ts" ] || S263_OK=false
@@ -2369,10 +2215,7 @@ grep -q "commons_rate" "$PROJECT_ROOT/engine/mcp/src/tool-registry.ts" || S263_O
 grep -q "commons_retire" "$PROJECT_ROOT/engine/mcp/src/tool-registry.ts" || S263_OK=false
 grep -q "commons_harvest_rule" "$PROJECT_ROOT/engine/mcp/src/tool-registry.ts" || S263_OK=false
 $S263_OK && pass "commons 10 模块 + 6 MCP tool 注册" || fail "commons 引擎或 MCP 注册缺失"
-
-# v1.4.5 真实归并对销：S264/S265 两个单文件 grep 型场景归并为一个（同属 v1.3.4 公地信任面，
-# 断言零删减——原六条 grep 全保留；归并理由：两场景同模块族（rating/owner trust）、
-# 同证据面（纯 grep 存在性）、无独立防回归语义边界），为 v1.4.5 第七章二/三链路场景腾行
+# S264/S265 真实归并对销：同模块族（rating/owner trust）+ 同证据面（纯 grep）+ 无独立语义边界——六条 grep 断言零删减全保留
 scenario 264 "v1.3.4 交付 1+3（归并）：评分公式 trust×评分×log(量+1) + 防刷 + owner trust 三态阈值（0.5/0.6/0.4）"; S264_OK=true
 grep -q "Math.log" "$PROJECT_ROOT/engine/orchestrator/src/commons/rating.ts" || S264_OK=false
 grep -q "getTrustForRating\|getTrustStub" "$PROJECT_ROOT/engine/orchestrator/src/commons/rating.ts" || S264_OK=false
@@ -2381,14 +2224,12 @@ grep -q "TRUST_INITIAL = 0.5" "$PROJECT_ROOT/engine/orchestrator/src/commons/own
 grep -q "TRUST_GOOD_THRESHOLD = 0.6" "$PROJECT_ROOT/engine/orchestrator/src/commons/owner.ts" || S264_OK=false
 grep -q "TRUST_BAD_THRESHOLD = 0.4" "$PROJECT_ROOT/engine/orchestrator/src/commons/owner.ts" || S264_OK=false
 $S264_OK && pass "评分公式 + trust 接线 + 防刷覆盖 + owner 三态阈值（原 S264+S265 归并，断言零删减）" || fail "评分/防刷/trust 阈值逻辑缺失"
-
 scenario 266 "v1.3.4 交付 4：SkillScan 三态判定 + 发布/安装双触发"; S266_OK=true
 grep -q "'SAFE' | 'SUSPICIOUS' | 'DANGEROUS'" "$PROJECT_ROOT/engine/orchestrator/src/commons/skill-scan.ts" || S266_OK=false
 grep -q "scanForPublish" "$PROJECT_ROOT/engine/orchestrator/src/commons/skill-scan.ts" || S266_OK=false
 grep -q "scanForInstall" "$PROJECT_ROOT/engine/orchestrator/src/commons/skill-scan.ts" || S266_OK=false
 grep -q "existsSync" "$PROJECT_ROOT/engine/orchestrator/src/commons/skill-scan.ts" || S266_OK=false
 $S266_OK && pass "SkillScan 三态 + 双触发 + 前置存在性校验" || fail "SkillScan 判定链缺失"
-
 scenario 267 "v1.3.4 dsh 增量：编排/执行层分离（ExecutionBackend 接口 + 工厂 + rc 守卫 + FORGE 迁移）"; S267_OK=true
 [ -f "$PROJECT_ROOT/engine/orchestrator/src/execution-backend.ts" ] || S267_OK=false
 [ -f "$PROJECT_ROOT/engine/orchestrator/src/execution-backends/dsh-backend.ts" ] || S267_OK=false
@@ -2399,22 +2240,18 @@ grep -qE "rc|beta|alpha|pre" "$PROJECT_ROOT/engine/orchestrator/src/execution-ba
 grep -q "createExecutionBackend" "$PROJECT_ROOT/FORGE/src/fresh-eyes-driver.mjs" || S267_OK=false
 grep -q "createExecutionBackend" "$PROJECT_ROOT/FORGE/src/release-gate-driver.mjs" || S267_OK=false
 $S267_OK && pass "ExecutionBackend 接口 + 工厂 + rc 守卫 + FORGE 两 driver 迁移" || fail "编排/执行分离缺失"
-
 scenario 268 "v1.3.4 交付 2：DecisionKind.COMMONS 审计留痕（公地动作专用 kind · v1.3.6 更名自 MARKET）"; S268_OK=true
 grep -q "'COMMONS'" "$PROJECT_ROOT/engine/audit/src/decision-schema.ts" || S268_OK=false
 grep -q "COMMONS" "$PROJECT_ROOT/engine/audit/src/decision-log.ts" || S268_OK=false
 grep -q "EVOLUTION" "$PROJECT_ROOT/engine/orchestrator/src/commons/retire.ts" || S268_OK=false
 $S268_OK && pass "DecisionKind.COMMONS + 退役走 EVOLUTION" || fail "公地审计 kind 缺失"
-
 scenario 269 "v1.3.4 交付 1：daemon 公地巡检双注册（L1 目录日更 + L2 健康周检 · v1.3.6 更名自 market）"; S269_OK=true
 grep -q "commons-catalog-daily" "$PROJECT_ROOT/engine/daemon/src/inspector-layers.ts" || S269_OK=false
 grep -q "commons-health" "$PROJECT_ROOT/engine/daemon/src/inspector-layers.ts" || S269_OK=false
 grep -q "runCommonsCatalogDaily" "$PROJECT_ROOT/engine/daemon/src/inspectors/index.ts" || S269_OK=false
 grep -q "runCommonsHealth" "$PROJECT_ROOT/engine/daemon/src/inspectors/index.ts" || S269_OK=false
 $S269_OK && pass "公地巡检 inspector 三步注册（L1+L2）" || fail "inspector 注册缺失"
-
 # ─── v1.3.5 新增场景 S270-S276（MCP 自进化+运维闭环 + instinct + FDE 运维五件 + DSH 互通）───
-
 scenario 270 "v1.3.5 交付 1+2：MCP 四 tool 注册（TOOLS=61 → v1.4.0 66）+ 三步注册齐"; S270_OK=true
 for t in run_ab_test promote_ab snapshot_list snapshot_restore; do
   grep -q "'$t'" "$PROJECT_ROOT/engine/mcp/src/tool-registry.ts" || S270_OK=false
@@ -2425,20 +2262,17 @@ done
 S270_SRC_COUNT=$(grep -cE "^    name: '[a-z_]+'" "$PROJECT_ROOT/engine/mcp/src/tool-registry.ts" | tr -d ' ')
 node -e "const m=require('$PROJECT_ROOT/engine/mcp/dist/tool-registry.js');process.exit(m.TOOLS.length===$S270_SRC_COUNT?0:1)" || S270_OK=false
 $S270_OK && pass "四 tool 注册 + dist TOOLS=源码 ${S270_SRC_COUNT}（无构建漂移）" || fail "MCP 四 tool 注册缺失或 dist 与源码计数漂移（源码 ${S270_SRC_COUNT}）"
-
 scenario 271 "v1.3.5 交付 1+2：破坏性 tool 人审语义（human_confirmed 门控）"; S271_OK=true
 grep -q "human_confirmed" "$PROJECT_ROOT/engine/mcp/src/tools/promote-ab.ts" || S271_OK=false
 grep -q "human_confirmed" "$PROJECT_ROOT/engine/mcp/src/tools/snapshot-restore.ts" || S271_OK=false
 grep -q "executed: false" "$PROJECT_ROOT/engine/mcp/src/tools/promote-ab.ts" || S271_OK=false
 $S271_OK && pass "promote_ab/snapshot_restore 人审门控（未确认 executed:false）" || fail "人审语义缺失——无人审确认即执行"
-
 scenario 272 "v1.3.5 交付 3：instinct 引擎四模块 + 单测存在"; S272_OK=true
 for f in extractor scorer evolver failure-log; do
   [ -f "$PROJECT_ROOT/engine/orchestrator/src/instinct/$f.ts" ] || S272_OK=false
 done
 grep -q "skill/custom" "$PROJECT_ROOT/engine/orchestrator/src/instinct/evolver.ts" || S272_OK=false  # 写运行时目录非仓库 SKILL/
 $S272_OK && pass "instinct 四模块 + evolver 写运行时目录" || fail "instinct 引擎缺失或写错目录（污染发布源）"
-
 scenario 273 "v1.3.5 交付 5：FDE 运维四件（companion/fde-session/fde-registry/问卷）"; S273_OK=true
 [ -f "$PROJECT_ROOT/engine/daemon/src/companion.ts" ] || S273_OK=false
 [ -d "$PROJECT_ROOT/engine/orchestrator/src/fde-session" ] || S273_OK=false
@@ -2447,60 +2281,49 @@ scenario 273 "v1.3.5 交付 5：FDE 运维四件（companion/fde-session/fde-reg
 [ "$(ls "$PROJECT_ROOT/tools/audit/audit-questionnaires/" 2>/dev/null | wc -l | tr -d ' ')" = "7" ] || S273_OK=false
 node "$PROJECT_ROOT/tools/audit/client-audit.mjs" --industry 通用 2>/dev/null | grep -q "审计问卷" || S273_OK=false
 $S273_OK && pass "FDE 五件齐 + 问卷 7 行业可执行" || fail "FDE 运维件缺失"
-
 scenario 274 "v1.3.5 交付 2 附带：doctor --reset-baseline 双形态路由"; S274_OK=true
 grep -q "reset-baseline" "$PROJECT_ROOT/engine/audit/src/index.ts" || S274_OK=false
 node "$PROJECT_ROOT/engine/audit/dist/index.js" --reset-baseline 2>/dev/null | grep -q "基准哈希已重置" || S274_OK=false
 $S274_OK && pass "--reset-baseline 独立 flag + 自动路由" || fail "基线重置 flag 失效（rebuild 后 hook 拦截无法自愈）"
-
 scenario 275 "v1.3.5 交付 6：DSH MCP 互通（HANDBOOK 配置节 + rc 诚实标注）"; S275_OK=true
 grep -q "dsh-mcp-client" "$PROJECT_ROOT/docs/HANDBOOK.md" || S275_OK=false
 grep -q "rc" "$PROJECT_ROOT/docs/HANDBOOK.md" || S275_OK=false  # rc 字段不确定性诚实标注
 $S275_OK && pass "DSH 互通配置节 + rc 标注" || fail "HANDBOOK DSH 节缺失"
-
 scenario 276 "v1.3.5 交付 4c：依赖安全（npm audit 清零 + automerge 新包名）"; S276_OK=true
 grep -q '"@automerge/automerge"' "$PROJECT_ROOT/engine/orchestrator/package.json" || S276_OK=false
 grep -rn '"automerge"' "$PROJECT_ROOT"/engine/*/package.json 2>/dev/null | grep -v "@automerge" | grep -q . && S276_OK=false  # 旧包名零残留
 $S276_OK && pass "automerge 3.x 包名切换完成" || fail "automerge 旧包名残留（依赖树混乱）"
-
 # ─── v1.3.5 run-07 coverage 补覆盖 S277-S281（ab-test P0 / daemon 快照 / bugfix38 / 工作区扫描）───
-
 scenario 277 "v1.3.5 交付 1：A/B 实验闭环——run_ab_test tool + runABTest 引擎 + decidePromotion 决策器"; S277_OK=true
 grep -q "run_ab_test" "$PROJECT_ROOT/engine/mcp/src/tool-registry.ts" || S277_OK=false
 grep -q "export async function runABTest" "$PROJECT_ROOT/engine/ab-test/src/ab-runner.ts" || S277_OK=false
 grep -q "decidePromotion" "$PROJECT_ROOT/engine/ab-test/src/ab-promoter.ts" || S277_OK=false
 grep -q "persistABTestResult" "$PROJECT_ROOT/engine/ab-test/src/persistence.ts" || S277_OK=false
 $S277_OK && pass "A/B 实验闭环四件（MCP tool/引擎/决策器/持久化）" || fail "ab-test 闭环缺件——P0 自进化交付不完整"
-
 scenario 278 "v1.3.5 交付 1：A/B 归属溯源——身份码经调用 Trace 落链（v1.3.1 前置依赖兑现）"; S278_OK=true
 grep -q "callModelAPI" "$PROJECT_ROOT/engine/ab-test/src/ab-runner.ts" || S278_OK=false
 grep -q "agentId" "$PROJECT_ROOT/engine/core/src/model-client.ts" || S278_OK=false
 grep -q "appendLlmCallRecord" "$PROJECT_ROOT/engine/core/src/model-client.ts" || S278_OK=false
 grep -q "SOFAGENT_AGENT_ID" "$PROJECT_ROOT/engine/mcp/src/tools/agent-identity.ts" || S278_OK=false
 $S278_OK && pass "A/B 归属链（runTestCase→callModelAPI(agentId)→LLM Trace→身份注册表）" || fail "A/B 无身份码关联——溯源断链"
-
 scenario 279 "v1.3.5 交付 2：daemon 快照双 tool 后端——snapshot_list/restore 数据源走 core"; S279_OK=true
 grep -q "@sofagent/core" "$PROJECT_ROOT/engine/mcp/src/tools/snapshot-list.ts" || S279_OK=false
 grep -q "@sofagent/core" "$PROJECT_ROOT/engine/mcp/src/tools/snapshot-restore.ts" || S279_OK=false
 grep -q "snapshot" "$PROJECT_ROOT/engine/core/src/snapshot-helpers.ts" 2>/dev/null || S279_OK=false
 $S279_OK && pass "快照数据链（MCP tool→core 管理器，daemon 只做巡检）" || fail "快照 tool 数据源断链"
-
 scenario 280 "v1.3.5 收编：workspace-scan 工作区卫生扫描接线 + 4 单测"; S280_OK=true
 [ -f "$PROJECT_ROOT/engine/audit/src/workspace-scan.ts" ] || S280_OK=false
 grep -q "scanWorkspace" "$PROJECT_ROOT/engine/audit/src/index.ts" || S280_OK=false
 [ -f "$PROJECT_ROOT/engine/audit/src/__tests__/workspace-scan.test.ts" ] || S280_OK=false
 grep -q "v1.3.5" "$PROJECT_ROOT/engine/audit/src/workspace-scan.ts" || S280_OK=false  # 版本头匹配 SSOT（run-01 维度78 教训）
 $S280_OK && pass "workspace-scan 收编完整（模块+接线+测试+版本头）" || fail "工作区扫描收编缺件"
-
 scenario 281 "v1.3.5 BugFix 38 项防复发锚点——门禁假绿族守卫"; S281_OK=true
 grep -q "head -15\|head -20" "$PROJECT_ROOT/tools/check/check-test-count.sh" || S281_OK=false  # #5 守卫复活（SSOT 扫描窗口已扩）
 grep -c "exitCode" "$PROJECT_ROOT/engine/audit/hooks/post-commit" >/dev/null 2>&1 || S281_OK=false  # #2 绕过检测逻辑
 grep -q "audit-hash" "$PROJECT_ROOT/engine/core/src/doctor.ts" || S281_OK=false  # #18 影子审计器基线
 [ -x "$PROJECT_ROOT/engine/audit/dist/cli-quick.js" ] || S281_OK=false  # run-01 维度17 bin 权限
 $S281_OK && pass "BugFix 防复发五锚点在位（守卫/绕过检测/影子审计器/bin权限）" || fail "防复发锚点丢失——38 项修复面临回退"
-
 # ─── v1.3.6 交付八面（S282-S289 · 阶段四步骤 3 补充）───
-
 scenario 282 "v1.3.6 交付①：Workflow 标准格式 + 运行容器——schema 单一事实源 + MCP 提交入口 + 沙箱宿主位"; S282_OK=true
 [ -f "$PROJECT_ROOT/engine/orchestrator/src/workflow/schema/workflow.schema.json" ] || S282_OK=false
 [ -f "$PROJECT_ROOT/engine/orchestrator/src/workflow/container.ts" ] || S282_OK=false
@@ -2510,7 +2333,6 @@ grep -q "v1.3.7 沙箱宿主位\|ContainerDeps" "$PROJECT_ROOT/engine/orchestrat
 grep -q "schema" "$PROJECT_ROOT/engine/orchestrator/src/workflow-parser.ts" 2>/dev/null || true  # parser 走 schema 单一事实源（文件名以实际为准）
 compgen -G "$PROJECT_ROOT/engine/orchestrator/src/__tests__/workflow-container*" > /dev/null || S282_OK=false  # SC2010：glob 替代 ls|grep
 $S282_OK && pass "Workflow 容器完整（schema+审阅协议+容器+MCP+沙箱宿主位+单测）" || fail "Workflow 容器交付缺件"
-
 scenario 283 "v1.3.6 交付②：Ontology 注册接口——MCP 注入 + D1-D5 审计留痕 + 可回滚"; S283_OK=true
 [ -f "$PROJECT_ROOT/engine/mcp/src/tools/ontology-import.ts" ] || S283_OK=false
 grep -q "ontology_import" "$PROJECT_ROOT/engine/mcp/src/tools/ontology-import.ts" || S283_OK=false
@@ -2518,7 +2340,6 @@ grep -q "D1-D5" "$PROJECT_ROOT/engine/orchestrator/src/ontology/import-pipeline.
 grep -q "回滚" "$PROJECT_ROOT/engine/orchestrator/src/ontology/import-pipeline.ts" || S283_OK=false  # 中途失败自动还原
 grep -q "importOntology" "$PROJECT_ROOT/engine/orchestrator/src/ontology/index.ts" || S283_OK=false  # 管线导出接线
 $S283_OK && pass "Ontology 注入管线完整（MCP+D1-D5 留痕+回滚+导出）" || fail "Ontology 注册接口缺件"
-
 scenario 284 "v1.3.6 交付③：SubAgent 托管 SDK——harness.wrap 双形态 + 默认审批 + registry 构建器"; S284_OK=true
 [ -f "$PROJECT_ROOT/engine/orchestrator/src/harness-sdk/wrap.ts" ] || S284_OK=false
 grep -q "createReactAgent" "$PROJECT_ROOT/engine/orchestrator/src/harness-sdk/wrap.ts" || S284_OK=false  # 形态①
@@ -2528,7 +2349,6 @@ grep -q "allow-with-audit" "$PROJECT_ROOT/engine/orchestrator/src/harness-sdk/wr
 [ -f "$PROJECT_ROOT/docs/guides/harness-sdk.md" ] || S284_OK=false  # 开发者文档
 grep -q "sandbox" "$PROJECT_ROOT/engine/orchestrator/src/harness-sdk/types.ts" 2>/dev/null || true  # sandbox 选项留空（v1.3.8 启用）
 $S284_OK && pass "托管 SDK 完整（双形态+默认审批+构建器注册+文档）" || fail "harness.wrap 交付缺件"
-
 scenario 285 "v1.3.6 交付④⑧：模型注册灰度三 tool + routeReason 决策可解释性"; S285_OK=true
 for _t in model-register model-switch model-unregister; do
   [ -f "$PROJECT_ROOT/engine/mcp/src/tools/${_t}.ts" ] || S285_OK=false
@@ -2538,7 +2358,6 @@ grep -q "人审\|humanReview\|require.*approval\|confirm" "$PROJECT_ROOT/engine/
 grep -q "routeReason" "$PROJECT_ROOT/engine/audit/src/decision-schema.ts" || S285_OK=false  # 路由决策可解释性
 [ -f "$PROJECT_ROOT/engine/orchestrator/src/route-policy.ts" ] || S285_OK=false
 $S285_OK && pass "模型注册灰度闭环+路由可解释（3 tool+注册表+人审+routeReason+policy）" || fail "模型上线流程缺件"
-
 scenario 286 "v1.3.6 交付⑥⑦：训练协议三约定 + 预算控制——双栈契约完整"; S286_OK=true
 [ -f "$PROJECT_ROOT/engine/orchestrator/src/train/train-protocol.ts" ] || S286_OK=false
 [ -f "$PROJECT_ROOT/engine/orchestrator/src/train/train-budget.ts" ] || S286_OK=false
@@ -2547,14 +2366,12 @@ grep -q "SIGINT\|SIGKILL" "$PROJECT_ROOT/engine/orchestrator/src/train/train-pro
 grep -q "progress\|checkpoint" "$PROJECT_ROOT/engine/orchestrator/src/train/train-protocol.ts" || S286_OK=false  # stdout JSON 事件约定②
 grep -q "train_budget_exceeded" "$PROJECT_ROOT/engine/orchestrator/src/train/train-budget.ts" || S286_OK=false  # 超预算审计
 $S286_OK && pass "训练协议+预算完整（契约三约定+超限审计+MCP tool）" || fail "训练双栈契约缺件"
-
 scenario 287 "v1.3.6 交付⑨：验收 MCP tool 先行版——define/check_acceptance 复用 Benchmark 判定引擎"; S287_OK=true
 [ -f "$PROJECT_ROOT/engine/mcp/src/tools/acceptance.ts" ] || S287_OK=false
 grep -q "define_acceptance" "$PROJECT_ROOT/engine/mcp/src/tools/acceptance.ts" || S287_OK=false
 grep -q "check_acceptance" "$PROJECT_ROOT/engine/mcp/src/tools/acceptance.ts" || S287_OK=false
 grep -q "benchmark\|Benchmark\|判定" "$PROJECT_ROOT/engine/mcp/src/tools/acceptance.ts" 2>/dev/null || S287_OK=false  # 复用判定引擎
 $S287_OK && pass "验收 tool 双件在位（define/check+判定引擎复用）" || fail "验收 MCP tool 缺件"
-
 scenario 288 "v1.3.6 交付⑬⑭：Agent 疲劳度 + 分级降级梯队——运维闭环健康件"; S288_OK=true
 [ -f "$PROJECT_ROOT/engine/daemon/src/fatigue.ts" ] || S288_OK=false
 grep -c "连续失败\|窗口占用\|相似度\|consecutive\|window\|similarity" "$PROJECT_ROOT/engine/daemon/src/fatigue.ts" >/dev/null 2>&1 || S288_OK=false  # 三信号
@@ -2562,7 +2379,6 @@ grep -c "连续失败\|窗口占用\|相似度\|consecutive\|window\|similarity"
 grep -q "safe-stop" "$PROJECT_ROOT/engine/audit/src/degradation.ts" || S288_OK=false  # 四级降级终态
 grep -q "full\|rules-only\|minimal" "$PROJECT_ROOT/engine/audit/src/degradation.ts" || S288_OK=false
 $S288_OK && pass "疲劳三信号+四级降级在位" || fail "运维健康件缺件"
-
 scenario 289 "v1.3.6 交付⑫⑮ + run-03 修复：postToolCall 双闸 + decisions 五分类 + prompt 脱敏 sk_live_ + worktree 信号清理"; S289_OK=true
 grep -q "postToolCall" "$PROJECT_ROOT/engine/orchestrator/src/middleware/dual-gate-mw.ts" || S289_OK=false  # 双闸
 grep -q "sk_(live|test)" "$PROJECT_ROOT/engine/core/src/security/prompt-sanitizer.ts" 2>/dev/null || grep -q "sk_live_\|stripe" "$PROJECT_ROOT/engine/core/src/security/prompt-sanitizer.ts" || S289_OK=false  # run-03 finding-02
@@ -2572,7 +2388,6 @@ grep -q "Security Advisory" "$PROJECT_ROOT/SECURITY.md" || S289_OK=false  # run-
 grep -q "DecisionCategory" "$PROJECT_ROOT/engine/audit/src/decision-schema.ts" || S289_OK=false  # 交付⑮ 五分类（route/select/skip/retry/escalate）
 grep -q "queryByCategory\|category" "$PROJECT_ROOT/engine/audit/src/decision-log.ts" 2>/dev/null || true  # 多维查询（既有 queryByKind 扩展）
 $S289_OK && pass "双闸+decisions五分类+脱敏补丁+信号清理+安全渠道五锚点在位" || fail "run-03 修复面+交付⑮缺件"
-
 
 scenario 290 "v1.3.7 交付①②：SubAgent 沙箱五件套 + 场景驱动权限——fail-closed 三道防线"; S290_OK=true
 [ -f "$PROJECT_ROOT/engine/orchestrator/src/sandbox/filesystem-backend.ts" ] || S290_OK=false
@@ -2587,7 +2402,6 @@ grep -q "tmp.*rename\|原子" "$PROJECT_ROOT/engine/orchestrator/src/sandbox/fil
 [ -f "$PROJECT_ROOT/engine/orchestrator/src/sandbox/ATTACK-SURFACE.md" ] || S290_OK=false  # 攻击面声明
 grep -q "fail-closed\|身份\|场景" "$PROJECT_ROOT/engine/orchestrator/src/permission/scenario-router.ts" || S290_OK=false  # ②三道防线
 $S290_OK && pass "沙箱五件套+攻击面声明+场景权限路由在位" || fail "v1.3.7 沙箱/权限交付缺件"
-
 scenario 291 "v1.3.7 交付③④⑤：AgentShield 五类扫描 + 行业 overlay 四套 + 断路器行为监控"; S291_OK=true
 [ -f "$PROJECT_ROOT/engine/audit/src/agent-shield.ts" ] || S291_OK=false
 grep -q "Shadow" "$PROJECT_ROOT/engine/audit/src/agent-shield.ts" || S291_OK=false  # Shadow AI 三源
@@ -2598,7 +2412,6 @@ grep -q "medical" "$PROJECT_ROOT/engine/audit/src/industry-overlay.ts" || S291_O
 grep -q "half-open\|冷却" "$PROJECT_ROOT/engine/orchestrator/src/sandbox/circuit-breaker.ts" || S291_OK=false  # ASI08 恢复路径
 grep -q "canAcceptTask" "$PROJECT_ROOT/engine/orchestrator/src/sandbox/circuit-breaker.ts" || S291_OK=false  # ASI10 隔离与沙箱联动
 $S291_OK && pass "Shield 五类+overlay 四套+断路器双指标在位" || fail "v1.3.7 Shield/overlay/断路器缺件"
-
 scenario 292 "v1.3.7 交付⑥⑨：ontology lifecycle+OKF 三件套 + memory-sync 三级来源通用化"; S292_OK=true
 grep -q "migrateToTrunk" "$PROJECT_ROOT/engine/ontology/src/merge-engine.ts" || S292_OK=false  # branch→trunk 审阅门
 grep -q "stale_after" "$PROJECT_ROOT/engine/ontology/src/merge-engine.ts" || S292_OK=false  # OKF② 时效字段（spec 名非 valid_after）
@@ -2607,7 +2420,6 @@ grep -q "resolvePersonaSources" "$PROJECT_ROOT/engine/core/src/filesystem/memory
 grep -q "SOFAGENT_PERSONA_SOURCE" "$PROJECT_ROOT/engine/core/src/filesystem/memory-sync.ts" || S292_OK=false  # env 最高优先
 grep -q "resolveMaxConcurrency" "$PROJECT_ROOT/FORGE/src/driver-base.mjs" || S292_OK=false  # ⑦自适应并发（顺带锚点）
 $S292_OK && pass "lifecycle 审阅门+OKF 三件套+memory-sync 通用化+自适应并发在位" || fail "v1.3.7 ontology/OKF/memory-sync 缺件"
-
 scenario 293 "v1.3.7 阶段四基建加固——FORGE driver LLM 超时 + resume 轮次守卫 + rm-rf 口径同源（run-27/28/29 三死教训）"; S293_OK=true
 # LLM 超时四文件（注意：不用 awk 管道——driver bash -c 注入场景 \$ 转义会炸，用逐文件 grep -q 链无转义依赖）
 grep -q 'timeout: 600_000' "$PROJECT_ROOT/FORGE/src/driver-base.mjs" || S293_OK=false
@@ -2619,7 +2431,6 @@ grep -q '(?!tmp|home' "$PROJECT_ROOT/engine/audit/src/rules/skill-safety-rules.t
 grep -q '(?!tmp|home' "$PROJECT_ROOT/engine/audit/src/agent-shield.ts" || S293_OK=false  # rm-rf 豁免（shield 侧）
 grep -q "仅需 Node.js" "$PROJECT_ROOT/docs/VALIDATION.md" || S293_OK=false  # finding-04 措辞修复
 $S293_OK && pass "driver 超时+resume 守卫+rm-rf 同源+VALIDATION 措辞在位" || fail "阶段四基建加固缺件"
-
 scenario 294 "v1.3.8 交付①：ProxyGateway + 权限上界单调守卫（只减不增）——fail-closed 越界 deny"; S294_OK=true
 [ -f "$PROJECT_ROOT/engine/orchestrator/src/gateway/permission-ceiling.ts" ] || S294_OK=false
 [ -f "$PROJECT_ROOT/engine/orchestrator/src/gateway/proxy-gateway.ts" ] || S294_OK=false
@@ -2628,7 +2439,6 @@ grep -q "越界" "$PROJECT_ROOT/engine/orchestrator/src/gateway/permission-ceili
 grep -q "deny" "$PROJECT_ROOT/engine/orchestrator/src/gateway/permission-ceiling.ts" || S294_OK=false       # 越界 deny
 grep -q "createPermissionCeiling" "$PROJECT_ROOT/engine/orchestrator/src/gateway/proxy-gateway.ts" || S294_OK=false  # 网关接入上界
 $S294_OK && pass "权限上界单调守卫+网关接入在位" || fail "v1.3.8 交付①缺件"
-
 scenario 295 "v1.3.8 交付②：age 静态加密（纯 TS · AES-256-GCM）——encryptWithAge/decryptWithAge 往返 + 明文兼容"; S295_OK=true
 [ -f "$PROJECT_ROOT/engine/core/src/crypto/age-wrapper.ts" ] || S295_OK=false
 grep -q "AES-256-GCM" "$PROJECT_ROOT/engine/core/src/crypto/age-wrapper.ts" || S295_OK=false       # 纯 TS 内建 AES-256-GCM
@@ -2636,7 +2446,6 @@ grep -q "encryptWithAge" "$PROJECT_ROOT/engine/core/src/crypto/age-wrapper.ts" |
 grep -q "decryptWithAge" "$PROJECT_ROOT/engine/core/src/crypto/age-wrapper.ts" || S295_OK=false    # 解密入口
 grep -q "明文旧格式解析\|明文兼容" "$PROJECT_ROOT/engine/core/src/crypto/age-wrapper.ts" || S295_OK=false  # 明文兼容回退
 $S295_OK && pass "age 纯 TS AES-256-GCM 加密+明文兼容在位" || fail "v1.3.8 交付②缺件"
-
 scenario 296 "v1.3.8 交付③：Durable L3 WAL——recoverWAL 三态（committed/aborted/incomplete）+ undo 回滚"; S296_OK=true
 [ -f "$PROJECT_ROOT/engine/orchestrator/src/durable/wal-recovery.ts" ] || S296_OK=false
 grep -q "WalTrxState" "$PROJECT_ROOT/engine/orchestrator/src/durable/wal-recovery.ts" || S296_OK=false       # 三态枚举
@@ -2645,7 +2454,6 @@ grep -q "aborted" "$PROJECT_ROOT/engine/orchestrator/src/durable/wal-recovery.ts
 grep -q "recoverWAL" "$PROJECT_ROOT/engine/orchestrator/src/durable/wal-recovery.ts" || S296_OK=false       # 恢复入口
 grep -q "undoRegistry\|rolled-back" "$PROJECT_ROOT/engine/orchestrator/src/durable/wal-recovery.ts" || S296_OK=false  # undo 回滚
 $S296_OK && pass "WAL 三态恢复+undo 回滚在位" || fail "v1.3.8 交付③缺件"
-
 scenario 297 "v1.3.8 交付④：异步长任务防死循环——trackNoProgress + 阈值 6 次无变化触发 replan（sha256 指纹）"; S297_OK=true
 [ -f "$PROJECT_ROOT/engine/daemon/src/long-tasks.ts" ] || S297_OK=false
 grep -q "DEFAULT_MAX_NO_CHANGE_RUNS = 6" "$PROJECT_ROOT/engine/daemon/src/long-tasks.ts" || S297_OK=false  # 阈值=6
@@ -2653,7 +2461,6 @@ grep -q "trackNoProgress" "$PROJECT_ROOT/engine/daemon/src/long-tasks.ts" || S29
 grep -q "action: 'replan'" "$PROJECT_ROOT/engine/daemon/src/long-tasks.ts" || S297_OK=false  # 触发 replan
 grep -q "sha256" "$PROJECT_ROOT/engine/daemon/src/long-tasks.ts" || S297_OK=false            # 指定 sha256 指纹
 $S297_OK && pass "长任务阈值6次无变化触发replan+sha256指纹在位" || fail "v1.3.8 交付④缺件"
-
 scenario 298 "v1.3.8 交付⑤：保活三件套——pm2 托管 + --check-alive 探针 + resume 断点自动续跑（双 driver）"; S298_OK=true
 [ -f "$PROJECT_ROOT/tools/forge/forge-pm2-start.sh" ] || S298_OK=false
 grep -q "pm2 start" "$PROJECT_ROOT/tools/forge/forge-pm2-start.sh" || S298_OK=false  # pm2 托管
@@ -2664,14 +2471,12 @@ grep -q "交付五\|--check-alive" "$PROJECT_ROOT/FORGE/src/fresh-eyes-driver.mj
 grep -q "resume" "$PROJECT_ROOT/FORGE/src/release-gate-driver.mjs" || S298_OK=false                # 断点续跑
 grep -q "resume" "$PROJECT_ROOT/FORGE/src/fresh-eyes-driver.mjs" || S298_OK=false
 $S298_OK && pass "pm2托管+双driver探针+resume续跑在位" || fail "v1.3.8 交付⑤缺件"
-
 scenario 299 "v1.3.8 交付⑥：SDK 沙箱 wiring——sandbox:true 启用 + 未注册工具 fail-closed deny"; S299_OK=true
 [ -f "$PROJECT_ROOT/engine/orchestrator/src/harness-sdk/wrap.ts" ] || S299_OK=false
 grep -q "sandbox: true" "$PROJECT_ROOT/engine/orchestrator/src/harness-sdk/wrap.ts" || S299_OK=false  # 沙箱启用
 grep -q "未注册" "$PROJECT_ROOT/engine/orchestrator/src/harness-sdk/wrap.ts" || S299_OK=false        # 未注册路径
 grep -q "fail-closed\|denied" "$PROJECT_ROOT/engine/orchestrator/src/harness-sdk/wrap.ts" || S299_OK=false  # fail-closed deny
 $S299_OK && pass "SDK sandbox:true+未注册fail-closed deny在位" || fail "v1.3.8 交付⑥缺件"
-
 scenario 300 "v1.3.8 交付⑦：release-gate --judgment-only 瘦身——判断层直达跳过 acceptance 分片"; S300_OK=true
 [ -f "$PROJECT_ROOT/FORGE/src/release-gate-driver.mjs" ] || S300_OK=false
 grep -q "judgmentOnly" "$PROJECT_ROOT/FORGE/src/release-gate-driver.mjs" || S300_OK=false  # 标志位
@@ -2679,23 +2484,19 @@ grep -q "\-\-judgment-only" "$PROJECT_ROOT/FORGE/src/release-gate-driver.mjs" ||
 grep -q "交付七" "$PROJECT_ROOT/FORGE/src/release-gate-driver.mjs" || S300_OK=false          # 交付锚点
 grep -q "跳过 acceptance\|判断层四步" "$PROJECT_ROOT/FORGE/src/release-gate-driver.mjs" || S300_OK=false  # 跳过 acceptance 分片
 $S300_OK && pass "release-gate --judgment-only 判断层瘦身在位" || fail "v1.3.8 交付⑦缺件"
-
 scenario 301 "v1.3.8 交付⑧：fresh-eyes usage.jsonl 计量——recordUsage 落盘 + _summary 全量摘要"; S301_OK=true
 [ -f "$PROJECT_ROOT/FORGE/src/fresh-eyes-driver.mjs" ] || S301_OK=false
 grep -q "usage.jsonl" "$PROJECT_ROOT/FORGE/src/fresh-eyes-driver.mjs" || S301_OK=false   # 计量文件
 grep -q "recordUsage" "$PROJECT_ROOT/FORGE/src/fresh-eyes-driver.mjs" || S301_OK=false    # 落盘函数
 grep -q "_summary" "$PROJECT_ROOT/FORGE/src/fresh-eyes-driver.mjs" || S301_OK=false       # 全量摘要
 $S301_OK && pass "fresh-eyes usage.jsonl 计量+_summary 摘要在位" || fail "v1.3.8 交付⑧缺件"
-
 scenario 302 "v1.3.8 交付⑨：快照加固——atomicWriteSync 原子写入 + rollbackToSnapshot 回滚 + verifyVersionMonotonic 版本单调"; S302_OK=true
 [ -f "$PROJECT_ROOT/engine/orchestrator/src/refine-agent/snapshot-manager.ts" ] || S302_OK=false
 grep -q "atomicWriteSync" "$PROJECT_ROOT/engine/orchestrator/src/refine-agent/snapshot-manager.ts" || S302_OK=false  # 原子写入
 grep -q "rollbackToSnapshot" "$PROJECT_ROOT/engine/orchestrator/src/refine-agent/snapshot-manager.ts" || S302_OK=false  # 回滚
 grep -q "verifyVersionMonotonic" "$PROJECT_ROOT/engine/orchestrator/src/refine-agent/snapshot-manager.ts" || S302_OK=false  # 版本单调校验
 $S302_OK && pass "快照原子写入+回滚+版本单调校验在位" || fail "v1.3.8 交付⑨缺件"
-
 # ── v1.3.8 bugfix 批防回归（阶段五来源提取 B 类 · 四 P0 安全修复的端到端防复发）──
-
 scenario 303 "v1.3.8 bugfix P0-1：A1 敏感文件后缀绕过防回归——settings.env 等后缀式 .env 必须被拦截"; S303_OK=true
 A1_RULE="$PROJECT_ROOT/engine/audit/src/rules/rule-a1-sensitive-files.ts"
 [ -f "$A1_RULE" ] || S303_OK=false
@@ -2717,7 +2518,6 @@ if (bad.length) { console.log("FAIL:", bad.join(",")); process.exit(1); }
 console.log("OK: 10 文件名全数正确判定");
 ' "$A1_RULE" || S303_OK=false
 $S303_OK && pass "A1 后缀绕过防回归在位（10 文件名实测全对）" || fail "A1 后缀式 .env 防回归缺件"
-
 scenario 304 "v1.3.8 bugfix P0-2：A2 FFFD 短路绕过防回归——非法 UTF-8 污染的 base64 密钥必须被检测"; S304_OK=true
 A2_RULE="$PROJECT_ROOT/engine/audit/src/rules/rule-a2-secret-leak.ts"
 [ -f "$A2_RULE" ] || S304_OK=false
@@ -2732,94 +2532,76 @@ if (shortCircuit && !strips) { console.log("FAIL: FFFD 短路守卫回归（含 
 console.log("OK: FFFD 处理为剥离/降权形态，非整体短路");
 ' "$A2_RULE" || S304_OK=false
 $S304_OK && pass "A2 FFFD 短路绕过防回归在位" || fail "A2 FFFD 处理形态回归"
-
-# ═══════════════════════════════════════════════════════════════
-# v1.3.9 交付验收场景（S305-S317 · 阶段五 A 类分发）
-# ═══════════════════════════════════════════════════════════════
-
+# ── v1.3.9 交付验收场景（S305-S317 · 阶段五 A 类分发）──
 scenario 305 "v1.3.9 交付一：官方 AST 规则引擎（sofagent-ruleset-ast）——引擎+规则注册+ASI 规则集可用"; S305_OK=true
 [ -d "$PROJECT_ROOT/engine/rules/src/ast" ] || S305_OK=false
 [ -f "$PROJECT_ROOT/engine/rules/src/ast/engine.ts" ] || S305_OK=false
 grep -q "asi01-prompt-injection\|asi04-sbom" "$PROJECT_ROOT/engine/rules/src/ast/rules/index.ts" 2>/dev/null || S305_OK=false
 $S305_OK && pass "AST 引擎+ASI 规则集在位" || fail "AST 规则引擎缺失"
-
 scenario 306 "v1.3.9 交付一·ASI01：prompt 注入检测——三类模式+归一化防御（零宽/全角/折叠）"; S306_OK=true
 A01_RULE="$PROJECT_ROOT/engine/rules/src/ast/rules/asi01-prompt-injection.ts"
 [ -f "$A01_RULE" ] || S306_OK=false
 grep -q "normalize" "$A01_RULE" || S306_OK=false
 grep -q "指令覆盖\|角色劫持\|结构伪装" "$A01_RULE" || S306_OK=false
 $S306_OK && pass "ASI01 三类模式+归一化在位" || fail "ASI01 注入检测缺失/无归一化"
-
 scenario 307 "v1.3.9 交付一·ASI04：SBOM 离线漏洞匹配——lockfile 优先精确版本"; S307_OK=true
 A04_RULE="$PROJECT_ROOT/engine/rules/src/ast/rules/asi04-sbom.ts"
 [ -f "$A04_RULE" ] || S307_OK=false
 grep -q "parsePackageLock\|package-lock" "$A04_RULE" || S307_OK=false
 grep -q "inRange" "$A04_RULE" || S307_OK=false
 $S307_OK && pass "ASI04 lockfile 优先+semver 区间在位" || fail "ASI04 SBOM 扫描缺失"
-
 scenario 308 "v1.3.9 交付二：meta-harness 多 harness 统一编排——注册/提交/等待/投递 API + 19 测试"; S308_OK=true
 MH="$PROJECT_ROOT/engine/orchestrator/src/meta-harness"
 [ -d "$MH" ] || S308_OK=false
 grep -qE "register|installProfile|submitTask|reportDelivery|waitForDelivery|onDelivery" "$MH"/*.ts 2>/dev/null || S308_OK=false
 [ -f "$PROJECT_ROOT/engine/orchestrator/src/__tests__/meta-harness.test.ts" ] || S308_OK=false
 $S308_OK && pass "meta-harness API+测试在位" || fail "meta-harness 缺失"
-
 scenario 309 "v1.3.9 交付三：worklog 数据层——聚合器+worklog_query 工具注册（tools 60→61）"; S309_OK=true
 [ -f "$PROJECT_ROOT/engine/orchestrator/src/worklog/aggregator.ts" ] || S309_OK=false
 [ -f "$PROJECT_ROOT/engine/orchestrator/src/__tests__/worklog.test.ts" ] || S309_OK=false
 grep -q "worklog_query" "$PROJECT_ROOT/engine/mcp/src/tool-registry.ts" 2>/dev/null || S309_OK=false
 $S309_OK && pass "worklog 聚合器+工具注册在位" || fail "worklog 数据层缺失"
-
 scenario 310 "v1.3.9 交付四：API 分级 @public/@internal——12 包入口双层导出 + public-api 门禁"; S310_OK=true
 [ -f "$PROJECT_ROOT/tools/check/public-api.mjs" ] || S310_OK=false
 grep -q "@public" "$PROJECT_ROOT/engine/orchestrator/src/index.ts" 2>/dev/null || S310_OK=false
 # public-api.mjs 依赖 cwd 定位仓库根（resolveVersion）——显式 cd 再跑（v1.3.9 阶段五：场景内 cwd 是 playbook，直接跑会路径漂移）
 ( cd "$PROJECT_ROOT" && node tools/check/public-api.mjs >/dev/null 2>&1 ) || S310_OK=false
 $S310_OK && pass "public-api 门禁实测通过" || fail "API 分级门禁异常"
-
 scenario 311 "v1.3.9 交付五：DSH 执行后端——execution-backend 显式选择 + CLI 桥接 + 降级保留"; S311_OK=true
 EB="$PROJECT_ROOT/engine/orchestrator/src/execution-backend.ts"
 [ -f "$EB" ] || S311_OK=false
 grep -q "preferred" "$EB" || S311_OK=false
-# v1.4.1 校准：v1.4.0「DSH 默认启用」机制换代——SOFAGENT_FORCE_DSH 显式放行已废弃（v1.4.0 devlog 实锤），
-# 改为 SOFAGENT_EXECUTION_BACKEND 环境变量（缺省 DSH 默认 + 失败自动降级）。断言跟住现行机制。
+# v1.4.1 校准：v1.4.0「DSH 默认启用」机制换代——SOFAGENT_FORCE_DSH 显式放行已废弃（v1.4.0 devlog 实锤）， 改为 SOFAGENT_EXECUTION_BACKEND 环境变量（缺省 DSH 默认 + 失败自动降级）。断言跟住现行机制。
 grep -q "SOFAGENT_EXECUTION_BACKEND" "$EB" || S311_OK=false
 grep -q "createDshCliBackend" "$PROJECT_ROOT/engine/orchestrator/src/execution-backends/dsh-backend.ts" || S311_OK=false
 $S311_OK && pass "DSH 后端选择（EXECUTION_BACKEND）+CLI 桥接+降级在位" || fail "DSH 执行后端缺失"
-
 scenario 312 "v1.3.9 交付六：MLflow agent 评估集成——13 指标映射 + LLM-as-Judge 降级"; S312_OK=true
 [ -f "$PROJECT_ROOT/engine/orchestrator/src/benchmark/mlflow-exporter.ts" ] || S312_OK=false
 grep -q "SCORE\|RATIONALE\|0..100\|clamp" "$PROJECT_ROOT/engine/orchestrator/src/benchmark/mlflow-exporter.ts" 2>/dev/null || S312_OK=false
 $S312_OK && pass "MLflow 导出器在位" || fail "MLflow 集成缺失"
-
 scenario 313 "v1.3.9 交付七：Agentic Browser / Playwright——4 工具 + 视觉降级"; S313_OK=true
 [ -f "$PROJECT_ROOT/engine/orchestrator/src/refine-agent/browser-tools.ts" ] || S313_OK=false
 grep -qE "navigate|click|screenshot|evaluate" "$PROJECT_ROOT/engine/orchestrator/src/refine-agent/browser-tools.ts" 2>/dev/null || S313_OK=false
 $S313_OK && pass "Browser 工具在位" || fail "Agentic Browser 缺失"
-
 scenario 314 "v1.3.9 交付八：跨平台适配器（Cursor/Codex/Gemini CLI）——3 薄挂载"; S314_OK=true
 [ -f "$PROJECT_ROOT/.cursor/rules/sofagent.mdc" ] || S314_OK=false
 [ -f "$PROJECT_ROOT/AGENTS.md" ] || S314_OK=false
 [ -f "$PROJECT_ROOT/GEMINI.md" ] || S314_OK=false
 grep -q "cursor\|gemini" "$PROJECT_ROOT/install.sh" 2>/dev/null || S314_OK=false
 $S314_OK && pass "跨平台适配器 3 挂载在位" || fail "跨平台适配器缺失"
-
 scenario 315 "v1.3.9 交付九：tools/ 物理分子目录——check/gen/dashboard/release/forge/audit 6 子目录"; S315_OK=true
 for d in check gen dashboard release forge audit; do [ -d "$PROJECT_ROOT/tools/$d" ] || S315_OK=false; done
 [ -f "$PROJECT_ROOT/tools/check/check-version.sh" ] || S315_OK=false
 $S315_OK && pass "tools 6 子目录在位" || fail "tools 分子目录不完整"
-
 scenario 316 "v1.3.9 交付十三：FORGE driver 进程守护——daemon 自脱离 + watcher 自动 resume"; S316_OK=true
 grep -q -- "--daemon" "$PROJECT_ROOT/FORGE/src/fresh-eyes-driver.mjs" || S316_OK=false
 grep -q -- "--watch" "$PROJECT_ROOT/FORGE/src/fresh-eyes-driver.mjs" || S316_OK=false
 grep -q -- "--resume" "$PROJECT_ROOT/FORGE/src/fresh-eyes-driver.mjs" || S316_OK=false
 $S316_OK && pass "driver 进程守护（daemon/watch/resume）在位" || fail "driver 进程守护缺失"
-
 scenario 317 "v1.3.9 交付十二：>5MB diff 缝隙修复——spill 落盘 + 64MB 读回 + 截断 locator"; S317_OK=true
 grep -q "spill\|oversized" "$PROJECT_ROOT/engine/core/src/diff-parser.ts" 2>/dev/null || S317_OK=false
 grep -rn "diff-parser-oversized\|oversized" "$PROJECT_ROOT/engine/core/src/__tests__/" 2>/dev/null | head -1 >/dev/null || S317_OK=false
 $S317_OK && pass "超大 diff spill 处理在位" || fail "5MB diff 缝隙修复缺失"
-
 scenario 318 "v1.3.9 交付十：ATTRIBUTION 归因引擎——决策归因落盘 + 三维查询 + byAgent 联结（P2 库级验收）"; S318_OK=true
 R318=$(node -e "
 const fs=require('fs'),os=require('os'),path=require('path');
@@ -2841,7 +2623,6 @@ console.log('ASSERT_OK');
 " 2>&1) || true
 echo "$R318" | grep -q "ASSERT_OK" || S318_OK=false
 $S318_OK && pass "ATTRIBUTION 归因引擎端到端可用" || fail "ATTRIBUTION 归因引擎验收失败"
-
 scenario 319 "v1.3.9 交付十一：Dream Sandbox 沙盒审计——stage 隔离 + 强制人审 merge + 路径穿越消毒（P2 库级验收）"; S319_OK=true
 R319=$(node -e "
 const fs=require('fs'),os=require('os'),path=require('path');
@@ -2860,12 +2641,10 @@ console.log('ASSERT_OK');
 " 2>&1) || true
 echo "$R319" | grep -q "ASSERT_OK" || S319_OK=false
 $S319_OK && pass "Dream Sandbox 沙盒审计端到端可用" || fail "Dream Sandbox 沙盒审计验收失败"
-
 scenario 320 "v1.4.0 前置：联邦查询跨进程 E2E——配对协商/加密查询/篡改检测/离线降级/trust 白名单（真实 fork+TCP，补 federation.test.ts 同进程 mock 缺口）"; S320_OK=true
 R320=$(SOFAGENT_REPO="$PROJECT_ROOT" node "$PROJECT_ROOT/FORGE/playbook/federation-e2e.mjs" 2>&1 || true)
 echo "$R320" | grep -q "结果：10 PASS / 0 FAIL" || S320_OK=false
 $S320_OK && pass "联邦查询跨进程 E2E 全绿（10 断言：配对协商/加密查询/篡改检测/离线降级/trust 白名单）" || fail "联邦查询跨进程 E2E 失败: $(echo "$R320" | grep -E '❌|异常' | head -3 || true)"
-
 # ─── v1.4.0：平台 hook stdin 模式（Cursor/Claude Code/千问办公）闭环验证 ───
 scenario 321 "v1.4.0 前置：跨平台 hook 共享脚本 stdin 模式——模拟 Cursor/Claude Code 触发 commit 审计（拦截违规 + 放行正常 + 非commit 不误伤）"; S321_OK=true
 S321_REPO=$(mktmp_repo)
@@ -2873,9 +2652,7 @@ HOOK_SH="$PROJECT_ROOT/tools/hooks/sofagent-precommit.sh"
 cd "$S321_REPO"
 git config user.email "test@test.com" 2>/dev/null; git config user.name "Test" 2>/dev/null
 echo "# base" > base.md; git add base.md; git commit -qm base 2>/dev/null || true
-# v1.4.0 修复：base commit 原写 `git commit -q -`（stdin 读 message）——`-` 是非法 pathspec 致 base 提交失败，
-# README.md 变成首次提交（对比空树）被审计误判违规。改为 -m 显式 message。
-# ① 违规 commit：staged 含 .env + message 含敏感词 → 期望拦截（exit 1），且仓库无此 commit
+# base commit 用 -m 显式 message（stdin `git commit -q -` 的 `-` 是非法 pathspec，base 失败后 README 变首次提交被误判违规）。① 违规 commit：staged .env + 敏感词 → 拦截 exit 1，仓库无此 commit
 echo "DATABASE_URL=postgres://x@localhost/db" > .env; git add -f .env
 # v1.4.0 修复：捕获 hook 真实退出码（原 `|| true` 吞码致 S321_V_EXIT 恒 0，拦截判定失效）
 set +e
@@ -2888,8 +2665,7 @@ else
   fail "违规 commit 未被拦截（exit=${S321_V_EXIT}；git_log=$(git log --oneline | grep 'add env' || echo none)）"; S321_OK=false
 fi
 git reset -q -- .env 2>/dev/null || true; rm -f .env 2>/dev/null || true
-# ② 正常 commit → 期望放行（exit 0）。平台模式下脚本只做审计不放行 commit，
-#    真正的 git commit 由平台在收到 exit 0 后执行（脚本职责边界：审计，不替平台 commit）
+# ② 正常 commit → 期望放行（exit 0）。平台模式下脚本只做审计不放行 commit，    真正的 git commit 由平台在收到 exit 0 后执行（脚本职责边界：审计，不替平台 commit）
 echo "# readme" > README.md; git add README.md
 set +e
 S321_OKC=$(echo '{"tool_name":"Bash","tool_input":{"command":"git commit -m \"fix: update readme\""}}' | bash "$HOOK_SH" 2>&1)
@@ -2914,20 +2690,17 @@ else
 fi
 cleanup_tmp "$S321_REPO"
 $S321_OK && pass "跨平台 hook stdin 模式闭环（拦截违规/放行正常/非commit 不误伤）" || fail "跨平台 hook stdin 模式验证失败"
-
 # ─── v1.4.0：双设备联邦独立进程模拟（两个独立 node 进程 + 真实 TCP）───
 scenario 322 "v1.4.0：双设备联邦独立进程模拟——配对/跨设备查询/篡改检测/离线降级（两个独立 node 进程，补 federation-e2e.mjs fork 形态缺口）"; S322_OK=true
 R322=$(SOFAGENT_REPO="$PROJECT_ROOT" node "$PROJECT_ROOT/FORGE/playbook/dual-device-federation.mjs" 2>&1 || true)
 echo "$R322" | grep -q "结果：双进程联邦链路完成" || S322_OK=false
 $S322_OK && pass "双设备联邦独立进程模拟全绿（配对/跨设备查询/篡改检测/离线降级 4 场景）" || fail "双设备联邦独立进程模拟失败: $(echo "$R322" | grep -E '❌|失败' | head -3 || true)"
-
 # ─── v1.4.1：训练引擎地基（S323-S327 · 八大块可执行面验收）───
 scenario 323 "v1.4.1 块七：train doctor 子命令——CLI 真实可跑（无训练任务环境返回体检通过，不误报假活）"; S323_OK=true
 R323=$(cd "$PROJECT_ROOT" && node engine/orchestrator/dist/cli.js train doctor 2>&1 || true)
 echo "$R323" | grep -q "训练环境体检通过" || S323_OK=false
 echo "$R323" | grep -q "假活 0" || S323_OK=false
 $S323_OK && pass "train doctor 实跑通过（运行中 0 / 假活 0 / 体检通过）" || fail "train doctor 失败: $(echo "$R323" | head -3 || true)"
-
 scenario 324 "v1.4.1 块三：enterpriseId 隔离——train-job 数据模型强制绑定（缺失拒绝创建）+ 合法创建全链路标记"; S324_OK=true
 S324_TMP=$(mktemp -d)
 R324=$(cd "$PROJECT_ROOT" && SOFAGENT_TEST_TMP="$S324_TMP" node -e "
@@ -2952,7 +2725,6 @@ echo "$R324" | grep -q "bound: true" || S324_OK=false
 echo "$R324" | grep -q "idempotent: true" || S324_OK=false
 rm -rf "$S324_TMP"
 $S324_OK && pass "train-job enterpriseId 强制绑定 + 全链路标记 + 幂等" || fail "enterpriseId 隔离失败: $(echo "$R324" | grep -v '^$' | head -3 || true)"
-
 scenario 325 "v1.4.1 块五：可复现指纹——freezeTrainFingerprint 冻结（datasetHash + HMAC + datasetVersion）+ 不可变重冻结拒绝"; S325_OK=true
 S325_TMP=$(mktemp -d)
 R325=$(cd "$PROJECT_ROOT" && SOFAGENT_TEST_TMP="$S325_TMP" node -e "
@@ -2979,7 +2751,6 @@ echo "$R325" | grep -q "has-dataset-hash: true" || S325_OK=false
 echo "$R325" | grep -q "immutable-refreeze-rejected: true" || S325_OK=false
 rm -rf "$S325_TMP"
 $S325_OK && pass "fingerprint 冻结（datasetHash+HMAC）+ 不可变重冻结拒绝" || fail "fingerprint 失败: $(echo "$R325" | grep -v '^$' | head -3 || true)"
-
 scenario 326 "v1.4.1 块六：产物签名——signArtifacts manifest 逐文件 SHA-256 + 汇总 HMAC + 篡改检测"; S326_OK=true
 S326_TMP=$(mktemp -d)
 R326=$(cd "$PROJECT_ROOT" && SOFAGENT_TEST_TMP="$S326_TMP" node -e "
@@ -3019,7 +2790,6 @@ echo "$R326" | grep -q "manifest-hmac: true" || S326_OK=false
 echo "$R326" | grep -q "tamper-detected: true" || S326_OK=false
 rm -rf "$S326_TMP"
 $S326_OK && pass "artifact manifest（2 文件 SHA-256+HMAC）+ 篡改检测" || fail "artifact 签名失败: $(echo "$R326" | grep -v '^$' | head -3 || true)"
-
 scenario 327 "v1.4.1 块九：安全基线——路径白名单（data/train/ 内放行/绝对路径拒/逃逸拒）+ 注入元字符检测"; S327_OK=true
 R327=$(cd "$PROJECT_ROOT" && node -e "
 const { validateTrainPath, containsShellMetachars } = require('./engine/orchestrator/dist/train/security-baseline.js');
@@ -3037,7 +2807,6 @@ echo "$R327" | grep -q "absolute-rejected: true" || S327_OK=false
 echo "$R327" | grep -q "escape-rejected: true" || S327_OK=false
 echo "$R327" | grep -q "injection-detected: true" || S327_OK=false
 $S327_OK && pass "安全基线四断言（白名单/绝对路径拒/逃逸拒/注入检测）" || fail "安全基线失败: $(echo "$R327" | grep -v '^$' | head -4 || true)"
-
 scenario 328 "v1.4.1 阶段四 B2：install.sh 迁移丢数据窗口防回归——复制失败保留源目录 + err 中止叙事（源码断言 + 隔离行为实测）"; S328_OK=true
 # ① 源码断言：cp -Rn 吞错语义零残留 + 删源在复制成功分支 + 调用处接管退出（3c61d980）
 grep -q "cp -Rn" "$PROJECT_ROOT/install.sh" && { fail "install.sh 存在 cp -Rn 吞错语义"; S328_OK=false; }
@@ -3061,7 +2830,6 @@ echo "$S328_RC" | grep -q "rc=1" || { fail "失败场景未以非零退出（set
 [ -f "$S328_TMP/src-repo/data/x.jsonl" ] || { fail "复制失败后源数据被删——丢数据窗口回归"; S328_OK=false; }
 rm -rf "$S328_TMP" "$S328_TARGET_HOME" 2>/dev/null || true
 $S328_OK && pass "迁移丢数据窗口已闭（err 叙事 + exit 1 + 源保留）" || true
-
 scenario 329 "v1.4.1 阶段四 B3：install.sh symlink 谎报守卫——ln -sf 全守卫 + fallback 失败 warn（源码断言）"; S329_OK=true
 # ① 全文件 ln -sf 恰 4 处且均带 if 守卫（sudo 分支 1 + 普通分支 2 + dashboard 1——多出即需人工核）
 S329_SF=$(grep -E 'ln -sf "' "$PROJECT_ROOT/install.sh" | grep -vc 'warn\|echo\|#' || true)
@@ -3077,7 +2845,6 @@ S329_SFN=$(grep -c 'ln -sfn "' "$PROJECT_ROOT/install.sh" || true)
 S329_GUARDED=$(grep -A2 'ln -sfn "' "$PROJECT_ROOT/install.sh" | grep -c 'if \[ -L\|if \[ ! -L\|\[ -L "' || true)
 [ "$S329_GUARDED" -ge 5 ] 2>/dev/null || { grep -A2 'ln -sfn "' "$PROJECT_ROOT/install.sh" | head -30; fail "sfn 降级守卫不足（$S329_GUARDED/${S329_SFN}）"; S329_OK=false; }
 $S329_OK && pass "symlink 谎报守卫（sf 4 处全守卫 + sfn 降级全覆盖）" || true
-
 scenario 330 "v1.4.1 阶段六 coverage 补测：训练任务异常退出→资源回收四步链——卡死检测 + abnormalReclaim（kill/gpu-notify/tmp-cleanup/audit）+ 审计入链（注入观察器零真实进程 · A2 纪律）"; S330_OK=true
 S330_TMP=$(mktemp -d)
 R330=$(cd "$PROJECT_ROOT" && SOFAGENT_TEST_TMP="$S330_TMP" node -e "
@@ -3119,12 +2886,8 @@ echo "$R330" | grep -q "audit-chained: true" || S330_OK=false
 echo "$R330" | grep -q "gpu-degraded-ok: true" || S330_OK=false
 rm -rf "$S330_TMP"
 $S330_OK && pass "异常退出回收四步链（卡死检测 + kill/gpu/tmp/audit + 审计入链）" || fail "训练异常回收失败: $(echo "$R330" | grep -v '^$' | head -3 || true)"
-
-# S331 · v1.4.1 阶段十一踩坑回写：OpenClaw plugin 双 manifest 版本一致性
-# 根因：openclaw.plugin.json 从 v1.4.0 创建起未被任何 bump 覆盖——4 款全漂移 1.4.0，
-# ClawHub package publish 以「manifest version drift」全拒。本场景守 check-version 9c
-# 双 manifest 覆盖真在工作（4 款 × 2 层 manifest 全部 = SSOT 版本）
-scenario 331 "v1.4.1 阶段十一回写：OpenClaw plugin 双 manifest 一致性——package.json + openclaw.plugin.json 8 层全部 = SSOT（ClawHub manifest drift 拒收防回归）"; S331_OK=true
+# S331+S332 合族（v1.4.1 阶段十一版本一致性防漂移）· S332 并入：manifest 曾全漂移（ClawHub 全拒）+ *audit 通配曾误伤 sofagent-audit 漏 bump。双面守：8 层 manifest = SSOT + bump 精确路径
+scenario 331 "v1.4.1 阶段十一回写：版本一致性双面——plugin 双 manifest 8 层全=SSOT（manifest drift 拒收防回归）+ bump 脚本跳过逻辑精确路径匹配（*audit 通配误伤 sofagent-audit 静默漏 bump 防回归，S332 并入）"; S331_OK=true
 S331_SSOT=$(node -p "require('$PROJECT_ROOT/package.json').version" 2>/dev/null || echo "")
 [ -n "$S331_SSOT" ] || { S331_OK=false; echo "  无法读取 SSOT 版本（package.json）"; }
 for _pdir in "$PROJECT_ROOT"/engine/openclaw-plugins/*/; do
@@ -3139,28 +2902,17 @@ for _pdir in "$PROJECT_ROOT"/engine/openclaw-plugins/*/; do
     fi
   done
 done
-$S331_OK && pass "OpenClaw plugin 双 manifest 一致（8 层 = ${S331_SSOT}）" || fail "plugin manifest 版本漂移（上方列出）"
-
-# S332 · v1.4.1 阶段十一踩坑回写：bump 脚本通配误伤防回归
-# 根因：bump-version.sh 旧跳过逻辑 *audit/package.json 通配匹配了
-# openclaw-plugins/sofagent-audit/package.json——阶段六 bump 静默漏改 1 款。
-# 本场景静态断言 bump 脚本用精确路径匹配（不再出现 *audit/package.json 通配）
-scenario 332 "v1.4.1 阶段十一回写：bump 脚本跳过逻辑精确匹配——通配 *audit/package.json 误伤 sofagent-audit 静默漏 bump 防回归（静态断言）"; S332_OK=true
-# 断言执行行（非注释）：跳过必须用精确路径。旧形态「[[ "$ws_pkg" == *audit/package.json ]]」通配
-# 会误伤 openclaw-plugins/sofagent-audit——grep 模式锚定 [[ 开头（^[[）排除注释行
+# 原 S332 断言体（归并，断言零删减）：跳过必须用精确路径——旧形态「[[ "$ws_pkg" == *audit/package.json ]]」通配会误伤 openclaw-plugins/sofagent-audit；grep 模式锚定 [[ 开头（^[[）排除注释行
 if grep -qE '^\s*\[\[ "\$ws_pkg" == \*audit' "$PROJECT_ROOT/tools/release/bump-version.sh" 2>/dev/null; then
-  S332_OK=false
+  S331_OK=false
   echo "  bump-version.sh 执行行仍含通配 *audit 跳过（会误伤 sofagent-audit）"
 fi
 if ! grep -qF '[[ "$ws_pkg" == "$PROJECT_ROOT/engine/audit/package.json" ]] && continue' "$PROJECT_ROOT/tools/release/bump-version.sh" 2>/dev/null; then
-  S332_OK=false
+  S331_OK=false
   echo "  bump-version.sh 缺精确路径跳过（engine/audit/package.json）"
 fi
-$S332_OK && pass "bump 脚本跳过逻辑为精确路径匹配" || fail "bump 脚本跳过逻辑回退到通配形态（上方列出）"
-
-# S333 · v1.4.2 章一：数据管道 CSV 解析与类型推断端到端（行为实测）
-# 企业异构数据进训练集的入口——parseCsv/ingestCsv 空标记/类型推断
-# 用编译产物直接跑（比静态断言硬），A2 纪律：无真实外部数据
+$S331_OK && pass "版本一致性双面（8 层 manifest = ${S331_SSOT} + bump 精确路径匹配）" || fail "plugin manifest 漂移或 bump 通配回退（上方列出）"
+# S333 · 数据管道 CSV 解析与类型推断端到端（行为实测）：parseCsv/ingestCsv 空标记/类型推断，dist 直跑（A2 纪律：无真实外部数据）
 scenario 333 "v1.4.2 章一：数据管道 CSV 解析——空标记过滤 + 类型推断（数字/布尔/字符串）端到端"; S333_OK=true
 S333_OUT=$(node -e "
 const { ingestCsv } = require('$PROJECT_ROOT/engine/orchestrator/dist/train/data-ingest.js');
@@ -3177,10 +2929,7 @@ console.log('OK:' + r.records.length + '-records-types-ok');
 " 2>&1) || S333_OK=false
 echo "$S333_OUT" | grep -q "^OK:" || S333_OK=false
 $S333_OK && pass "数据管道 CSV 解析含类型推断（number/boolean/string 三类型齐）" || fail "数据管道 CSV 解析异常：$S333_OUT"
-
-# S334 · v1.4.2 章二：dataset_version 台账——记录/读取/diff 三件套（行为实测）
-# 数据可复现的机制面：recordDatasetVersion + listDatasetVersions + diffDatasetVersions
-# 隔离 tmp 目录（不碰 data/），用完清理
+# S334 · dataset_version 台账三件套（行为实测）：record/list/diff，隔离 tmp 目录（不碰 data/），用完清理
 scenario 334 "v1.4.2 章二：dataset_version 版本台账——记录/列表/两版 diff 含 hash 与样本数"; S334_OK=true
 S334_TMP=$(mktemp -d)
 S334_OUT=$(node -e "
@@ -3202,9 +2951,7 @@ console.log('OK:2-vers-diff-' + dstr.length + '-bytes');
 rm -rf "$S334_TMP"
 echo "$S334_OUT" | grep -q "^OK:2-vers" || S334_OK=false
 $S334_OK && pass "dataset_version 台账三件套（记录/列表/diff）含 hash 样本数" || fail "dataset_version 异常：$S334_OUT"
-
-# S335 · v1.4.2 章三：eval 闭环阈值判定——continue/stop 双态（行为实测）
-# 训练连评估的决策面：decideFromScores 按阈值外部化判定
+# S335 · v1.4.2 章三：eval 闭环阈值判定——continue/stop 双态（行为实测） 训练连评估的决策面：decideFromScores 按阈值外部化判定
 scenario 335 "v1.4.2 章三：eval 闭环阈值判定——达标 stop / 未达标 continue 双态决策"; S335_OK=true
 S335_OUT=$(node -e "
 const te = require('$PROJECT_ROOT/engine/orchestrator/dist/train/train-eval-loop.js');
@@ -3221,9 +2968,7 @@ console.log('OK:hi-stop-lo-continue');
 " 2>&1) || S335_OK=false
 echo "$S335_OUT" | grep -q "^OK:hi-stop-lo-continue" || S335_OK=false
 $S335_OK && pass "eval 阈值判定双态（达标 stop / 未达标 continue）含 reason" || fail "eval 阈值判定异常：$S335_OUT"
-
-# S336 · v1.4.2 章五：dry-run 显存估算——参数量单调性（行为实测）
-# 投之前先算：estimateVram 随参数量增大显存预算单调增（外推合理性）
+# S336 · v1.4.2 章五：dry-run 显存估算——参数量单调性（行为实测） 投之前先算：estimateVram 随参数量增大显存预算单调增（外推合理性）
 scenario 336 "v1.4.2 章五：dry-run 显存估算——同配置下参数量翻倍显存单调增"; S336_OK=true
 S336_OUT=$(node -e "
 const td = require('$PROJECT_ROOT/engine/orchestrator/dist/train/train-dryrun.js');
@@ -3236,9 +2981,7 @@ console.log('OK:mono-' + s.totalGiB.toFixed(1) + '-' + b.totalGiB.toFixed(1));
 " 2>&1) || S336_OK=false
 echo "$S336_OUT" | grep -q "^OK:mono-" || S336_OK=false
 $S336_OK && pass "dry-run 显存估算参数量单调（${S336_OUT#OK:mono-} GiB）" || fail "dry-run 显存估算异常：$S336_OUT"
-
-# S337 · v1.4.2 章五：ScaleRL sigmoid 缩放律外推——拟合与建议（行为实测）
-# 算力外推预检：fitSigmoid + extrapolate + suggestNextPilotCompute 三件套
+# S337 · v1.4.2 章五：ScaleRL sigmoid 缩放律外推——拟合与建议（行为实测） 算力外推预检：fitSigmoid + extrapolate + suggestNextPilotCompute 三件套
 scenario 337 "v1.4.2 章五：ScaleRL sigmoid 缩放律——小 run 拟合 + 大 run 外推 + 下一步建议"; S337_OK=true
 S337_OUT=$(node -e "
 const sc = require('$PROJECT_ROOT/engine/orchestrator/dist/train/scale-curve.js');
@@ -3258,10 +3001,7 @@ console.log('OK:fit-rmse-' + fit.quality.rmse.toFixed(3) + '-ext-' + ext.project
 " 2>&1) || S337_OK=false
 echo "$S337_OUT" | grep -q "^OK:fit-rmse-" || S337_OK=false
 $S337_OK && pass "sigmoid 缩放律拟合（RMSE<5）/外推（域内合理）/建议三件套" || fail "scale-curve 异常：$S337_OUT"
-
-# S338 · v1.4.2 章八：FDE 工作台审计链——emitFdeAudit + readFdeAudit 往返（行为实测）
-# fde-audit HMAC 留痕机制面：落盘 + 读回 + 往返一致
-# 隔离 tmp 目录（不碰 data/），用完清理
+# S338 · FDE 工作台审计链往返（行为实测）：emitFdeAudit 落盘 + readFdeAudit 读回一致，隔离 tmp（不碰 data/）
 scenario 338 "v1.4.2 章八：FDE 工作台审计留痕——emitFdeAudit 落盘 readFdeAudit 读回往返一致"; S338_OK=true
 S338_TMP=$(mktemp -d)
 S338_OUT=$(node -e "
@@ -3280,7 +3020,6 @@ console.log('OK:roundtrip-' + back.length + '-entry');
 rm -rf "$S338_TMP"
 echo "$S338_OUT" | grep -q "^OK:roundtrip" || S338_OK=false
 $S338_OK && pass "FDE 工作台审计留痕往返一致（fde_* 事件域）" || fail "FDE 审计留痕异常：$S338_OUT"
-
 scenario 339 "v1.4.2 阶段三 N-1：MCP 工具 dataDir 全员走 getDataDir SSOT——SOFAGENT_HOME 定制下 11 工具与 cost-query 落点一致"; S339_OK=true
 S339_TMP=$(mktemp -d)
 S339_OUT=$(node -e "
@@ -3306,7 +3045,6 @@ console.log('OK:ssot-11tools-' + imported + '-explicit-arg-pass');
 rm -rf "$S339_TMP"
 echo "$S339_OUT" | grep -q "^OK:ssot-11tools-11" || S339_OK=false
 $S339_OK && pass "MCP 工具 dataDir SSOT 收编完整（11 工具 + SSOT 优先级链）" || fail "dataDir SSOT 收编异常：$S339_OUT"
-
 # ─── v1.4.2 存量清零 ───
 scenario 340 "v1.4.2 存量清零：19 处 v1.3.x 本地 getSofagentDataDir 一次收编——mcp+think 全域零残留行为锁"; S340_OK=true
 # ① engine 全域（mcp + think）零本地定义（故障注入对照：任何残留此断言必挂）
@@ -3324,7 +3062,6 @@ console.log('OK');
 " 2>&1) || S340_OK=false
 echo "$S340_THINK" | grep -q "^OK$" || S340_OK=false
 $S340_OK && pass "存量清零行为锁（19 处收编 + 全域零残留 + think 包同批）" || fail "存量清零异常：$S340_RESIDUAL / count=$S340_COUNT / $S340_THINK"
-
 scenario 341 "v1.4.2 章六补测：train report 报告生成本体真实可跑——dist 行为实测五段结构与归档落盘（补判断层唯一零覆盖项，对齐 S330 先例）"; S341_OK=true
 # ① dist 产物 generateTrainReport 真实可跑（隔离 dataDir，零真实训练）
 S341_RES=$(node -e "
@@ -3354,11 +3091,7 @@ console.log('OK');
 " 2>&1) || S341_OK=false
 echo "$S341_RES" | grep -q "^OK$" || S341_OK=false
 $S341_OK && pass "train report 五段生成 + 双格式归档（章六零覆盖补测）" || fail "train report 异常：$S341_RES"
-
-# S342 · v1.4.2 章五补测：IM 桥远程指挥通道交付断言（run-17 零覆盖项一）
-# 模块七 changelog 声称收编 @xmanrui/dsh-im，但无场景直证。本场景静态
-# 断言三面交付：①指南文档（含命令白名单+安全审计附录）②安装器可选分支
-# 三纪律（默认不装/失败不阻断/flag 预扫描）③红线（不写 IM 协议代码）
+# S342 · v1.4.2 章五补测：IM 桥通道交付断言（run-17 零覆盖项一）——三面：①指南（白名单+审计附录）②安装可选分支三纪律（默认不装/失败不阻断/flag 预扫描）③红线（不写 IM 协议代码）
 scenario 342 "v1.4.2 章五补测：IM 桥通道交付三面断言——指南文档+安装器可选分支三纪律+红线（run-17 模块七零覆盖，对齐 S330 先例）"; S342_OK=true
 # ① 指南文档存在且含安装命令、命令白名单、安全审计附录三关键节
 [ -f "$PROJECT_ROOT/docs/guides/im-bridge.md" ] || S342_OK=false
@@ -3373,11 +3106,7 @@ grep -q "不代装 DSH 本体\|已跳过" "$PROJECT_ROOT/install.sh" || S342_OK=
 # ③ 红线：sofagent 仓库不写 IM 协议代码（接入一律走插件层）
 grep -q "不写任何 IM 协议代码" "$PROJECT_ROOT/docs/guides/im-bridge.md" || S342_OK=false
 $S342_OK && pass "IM 桥通道交付三面在位（指南/安装分支三纪律/协议红线）" || fail "IM 桥交付面缺失——模块七收编声称无实证"
-
-# S343 · v1.4.2 章五补测：BugFix 30 项批次级防复发锚点（run-17 零覆盖项二）
-# 模块十 changelog 声称 30 项全修收编（F/G/H/J/P2 五族），但无批次级锚点
-# （S281 为 v1.3.5 旧批）。本场景从五族各挑代表修复，静态断言锚点在位。
-# 对齐 S281 批次锚点形态 + S332 静态断言形态。
+# S343 · v1.4.2 章五补测：BugFix 30 项批次级防复发锚点（run-17 零覆盖项二；S281 为 v1.3.5 旧批）——五族各挑代表修复静态锚点，对齐 S281 批次锚点 + S331 静态断言形态
 scenario 343 "v1.4.2 章五补测：BugFix 批（阶段一 30 项）五族代表锚点在位——H-01 三层防线/H-02 密钥四类/G-01 基线显性报错/G-05 SSOT 收编/章九数据流三债（run-17 模块十零覆盖，对齐 S281 先例）"; S343_OK=true
 # H-01 commit 链完整性：pre-commit 主防线装载检查 + post-commit HEAD tree 对账兜底
 grep -q "v1.4.2 H-01: pre-commit——三层防线主防线" "$PROJECT_ROOT/engine/core/src/doctor.ts" || S343_OK=false  # 主防线装载体检
@@ -3393,24 +3122,14 @@ grep -rq "normalizeLine" "$PROJECT_ROOT/engine/audit/src/rules/rule-a9-no-inject
 # 章九步零 数据流三债：worktree 逐轮 re-sync（钉死基线修复）落 fresh-eyes-driver
 grep -q "re-sync\|resync" "$PROJECT_ROOT/FORGE/src/fresh-eyes-driver.mjs" || S343_OK=false
 $S343_OK && pass "BugFix 30 项五族代表锚点在位（防线/密钥/基线/SSOT/数据流）" || fail "BugFix 批代表锚点丢失——30 项修复面临回退"
-
-# S344 · v1.4.2 阶段十二回写：Git Data API 推送通道树对账防复发
-# v1.4.2 阶段十实录：git push 网络全断走 gitdata-push.mjs（blobs→trees→commits→refs），
-# 脚本读工作区文件上传致 .ps1 CRLF/LF sha 分叉（11 文件）——修复=改读 git cat-file 规范内容。
-# 本场景锚点：推送脚本存在 + 读规范内容（cat-file）在位 + .gitattributes ps1 规则在位。
-# 对齐 S331/S332 静态断言形态。
+# S344 · v1.4.2 阶段十二回写：Git Data API 推送通道树对账防复发——脚本读工作区文件上传致 .ps1 CRLF/LF sha 分叉（11 文件），修复=改读 git cat-file 规范内容。锚点：脚本存在 + cat-file 在位 + .gitattributes ps1 规则在位
 scenario 344 "v1.4.2 阶段十二回写：Git Data API 推送通道读规范内容——cat-file 在位 + ps1 eol 规则在位 + 树对账输出在位（ps1 eol 二坑防复发）"; S344_OK=true
 [ -f "$PROJECT_ROOT/tools/release/gitdata-push.mjs" ] || S344_OK=false  # 推送通道本体
 grep -q "cat-file" "$PROJECT_ROOT/tools/release/gitdata-push.mjs" || S344_OK=false  # 读规范内容而非工作区（ps1 eol 二坑根因修复）
 grep -qE 'eol=lf|text.*crlf|\*\.ps1' "$PROJECT_ROOT/.gitattributes" || S344_OK=false  # eol 规则声明在位
 grep -q "tree 不一致\|tree 一致\|ls-tree" "$PROJECT_ROOT/tools/release/gitdata-push.mjs" || S344_OK=false  # 树对账自检输出
 $S344_OK && pass "Git Data API 推送通道防复发锚点在位（cat-file/eol 规则/树对账）" || fail "推送通道防复发锚点丢失——ps1 eol 分叉坑面临复发"
-
-# S345 · v1.4.3 bugfix 批 F-03：平台 hook stdin message 抽取三场景行为锁
-# 第四轮报告 + 第五轮复测修正：--message= 等号形式抽取为空（真问题）、嵌套引号
-# （it's）被闭引 sed 截断、中文 message 抽取。修复=hook §0 双级抽取（node JSON
-# 解析主路径 + grep 等号分支 fallback）。本场景在临时仓库实测 hook 全链：
-# stdin 注入 JSON → hook 抽取 COMMIT_SUBJECT → 转发 --task 给审计入口（stub 捕获）。
+# S345 · hook stdin message 抽取三形态行为锁（等号空抽取/嵌套引号截断/中文）——修复=hook §0 双级抽取（node JSON 主路径 + grep 等号 fallback），stub 断言 --task 透传
 scenario 345 "v1.4.3 bugfix F-03：跨平台 hook stdin message 抽取三场景——等号形式（--message=/-m=）+ 中文 + 引号嵌套，经 stub 审计入口断言 --task 透传"; S345_OK=true
 S345_REPO=$(mktmp_repo)
 S345_HOOK="$PROJECT_ROOT/tools/hooks/sofagent-precommit.sh"
@@ -3450,10 +3169,7 @@ S345_D=$(s345_run '{"tool_name":"Bash","tool_input":{"command":"git commit -m '"
 [ "$S345_D" = "fix: update" ] || { echo "  ✗ 回归单引号：[$S345_D]"; S345_OK=false; }
 cleanup_tmp "$S345_REPO"; rm -rf "$S345_STUB"
 $S345_OK && pass "F-03 三场景 + 回归全过（等号/中文/嵌套引号/空格形式 --task 全透传）" || fail "F-03 message 抽取行为回退——见上方 ✗ 行"
-
-# S346 · v1.4.3 第七章：审计聚合 --stats CLI 行为实测（治理 KPI 出口）
-# --stats 人读报告 + --days 窗口 + --json 纯净机器可读——零人类可读混行。
-# 行为实测走 dist 产物（对齐 S338/S341 先例）；真实 history.jsonl 只读消费。
+# S346 · 审计聚合 --stats CLI 行为实测：人读报告 + --days 窗口 + --json 纯净（零人类可读混行）；dist 产物，history 只读消费
 scenario 346 "v1.4.3 第七章：审计聚合 --stats 行为实测——人读报告 + --json 纯净 + --days 窗口生效"; S346_OK=true
 S346_JSON=$(node "$PROJECT_ROOT/engine/audit/dist/cli-quick.js" --stats --days 7 --json 2>/dev/null) || S346_OK=false
 # ① --json 纯净：整段输出必须是合法 JSON（零人类可读混行——CLI 纪律）
@@ -3470,10 +3186,7 @@ S346_HUMAN=$(node "$PROJECT_ROOT/engine/audit/dist/cli-quick.js" --stats --days 
 echo "$S346_HUMAN" | grep -q "安全边界触发率" || S346_OK=false
 echo "$S346_HUMAN" | grep -q "阻断率" || S346_OK=false
 $S346_OK && pass "审计聚合 CLI 三参数行为实测过（--stats/--days/--json 纯净）" || fail "审计聚合 CLI 行为回退——检查 stats.ts/dist 构建与口径行"
-
-# S347 · v1.4.3 第八章：反作弊基线三防线默认化（dist 行为锚点）
-# doctor 三项体检接线（anticheat-git-disabled/visibility/network-allowlist）
-# + env-manager 缺省配置全开（anticheat.gitDisabled=true / networkAllowlist 默认端点）
+# S347 · 反作弊基线三防线默认化（dist 行为锚）：doctor 三项体检接线 + env-manager 缺省配置全开
 scenario 347 "v1.4.3 第八章：反作弊基线双防线——doctor 三项体检在位 + 缺省配置全开 + 白名单外部化字段 + 四形态×双防线映射锁"; S347_OK=true
 S347_ORCH="$PROJECT_ROOT/engine/orchestrator/dist"
 # ① doctor 接线：train-doctor dist 产物含三项体检名
@@ -3484,17 +3197,12 @@ grep -q "networkAllowlist" "$S347_ORCH/train/env-manager.js" 2>/dev/null || S347
 grep -q "gitDisabled" "$S347_ORCH/train/env-manager.js" 2>/dev/null || S347_OK=false
 # ③ 白名单外部化：train-env-init.sh 落默认白名单配置（install 时随装随落）
 grep -q "networkAllowlist" "$PROJECT_ROOT/tools/train/train-env-init.sh" 2>/dev/null || S347_OK=false
-# ④ 形态×防线→体检项映射锁（run-05 coverage F-2 闭环）：四形态（git gold commit /
-# wget+curl / pip / urllib）× 双防线（断历史回溯 / 断外联通道）→ 三体检项
-# （git 禁用 + .git 不可见 = 防线一两个检查点；网络白名单生效 = 防线二）——
-# 映射完整非宣称虚标；行为级锚点 = env-anticheat.test.ts（.git 剥离/git 禁用/白名单分支 19 用例）
+# ④ 形态×防线→体检项映射锁（run-05 coverage F-2 闭环）：四形态（git gold commit / wget+curl / pip / urllib）× 双防线（断历史回溯 / 断外联通道）→ 三体检项 （git 禁用 + .git 不可见 = 防线一两个检查点；
+# 网络白名单生效 = 防线二）—— 映射完整非宣称虚标；行为级锚点 = env-anticheat.test.ts（.git 剥离/git 禁用/白名单分支 19 用例）
 grep -q "四形态" "$PROJECT_ROOT/docs/changelog/v1.4/v1.4.3.md" || S347_OK=false
 ls "$PROJECT_ROOT/engine/orchestrator/src/__tests__/env-anticheat.test.ts" >/dev/null 2>&1 || S347_OK=false
 $S347_OK && pass "反作弊基线三防线锚点在位（doctor 体检/缺省全开/白名单外部化/四形态映射+行为级测试在位）" || fail "反作弊基线防线缺失——reward hacking 防线面临回退"
-
-# S348 · v1.4.3 第一章：训练监控三 MCP tools 注册面（动态对账——SSOT =
-# tool-registry.ts 引号字面量实数，check-test-count 同口径；版本演进 +N 不假红）
-# v1.4.4 归并：S364 corpus_export 双入口对账并入本场景（MCP 锚 + SKILL 锚）。
+# S348 · 训练监控 MCP tools 注册面（动态对账：tool-registry 实数，+N 不假红）；S364 corpus_export 已并入（MCP+SKILL 锚）
 scenario 348 "v1.4.3 第一章：训练监控三 MCP tools 注册——train_status/train_list/train_diagnose/corpus_export 在位 + registry 计数与 SKILL 对账（动态对账口径）"; S348_OK=true
 # 引号字面量精确匹配（排除接口类型行 name: string;——对齐 check-test-count 口径）
 S348_COUNT=$(grep -oE "name: '[a-z_]+'" "$PROJECT_ROOT/engine/mcp/src/tool-registry.ts" | sort -u | wc -l | tr -d ' ')
@@ -3505,12 +3213,10 @@ grep -q "name: 'corpus_export'" "$PROJECT_ROOT/engine/mcp/src/tool-registry.ts" 
 grep -q "name: 'train_status'" "$PROJECT_ROOT/engine/mcp/src/tool-registry.ts" || S348_OK=false
 grep -q "name: 'train_list'" "$PROJECT_ROOT/engine/mcp/src/tool-registry.ts" || S348_OK=false
 grep -q "name: 'train_diagnose'" "$PROJECT_ROOT/engine/mcp/src/tool-registry.ts" || S348_OK=false
-# SKILL.md 工具清单同步（对账面：训练域 tools 行 + corpus_export 双入口登记——
-# v1.4.4 归并：原 S364 corpus_export 双入口对账并入本场景，MCP 注册锚 L3525 已覆盖）
+# SKILL.md 工具清单同步（对账面：训练域 tools 行 + corpus_export 双入口登记—— v1.4.4 归并：原 S364 corpus_export 双入口对账并入本场景，MCP 注册锚 L3525 已覆盖）
 grep -q "train_status.*train_list.*train_diagnose" "$PROJECT_ROOT/SKILL/SKILL.md" || S348_OK=false
 grep -q "corpus_export" "$PROJECT_ROOT/SKILL/SKILL.md" || S348_OK=false
 $S348_OK && pass "训练监控 tools 注册面完整（registry ${S348_COUNT}≥80 动态对账 + 四 tool + SKILL 对账含 corpus_export）" || fail "MCP 工具注册面漂移——registry 实数 $S348_COUNT 或 tools 缺席"
-
 # S349 · v1.4.3 第三章：训练沙箱三约束行为实测（dist 直调——路径三态/代理黑洞/网关判定）
 scenario 349 "v1.4.3 第三章：训练沙箱三约束——路径守卫读写拒三态 + spawn env 代理黑洞 + 网关 deny/allow 判定 + 沙箱标记"; S349_OK=true
 S349_OUT=$(node -e "
@@ -3542,7 +3248,6 @@ S349_OUT=$(node -e "
 bash -n "$PROJECT_ROOT/tools/train/package-train-runtime.sh" 2>/dev/null || S349_OK=false
 grep -q "setup.sh" "$PROJECT_ROOT/tools/train/package-train-runtime.sh" || S349_OK=false
 $S349_OK && pass "训练沙箱三约束行为实测过（路径三态/代理黑洞/网关判定/打包入口）" || fail "训练沙箱行为回退——见上方 ✗ 行（dist/train-sandbox.js 直调）"
-
 # S350 · v1.4.3 第四章：训练需求推导行为实测（dist 直调——场景派生/模板匹配/企业隔离）
 scenario 350 "v1.4.3 第四章：训练需求推导——workflow 节点派生训练场景 + 默认模板匹配 + 报告路径企业隔离"; S350_OK=true
 S350_OUT=$(node -e "
@@ -3565,10 +3270,7 @@ S350_OUT=$(node -e "
 # 模板库文件面：qlora/rl 两族模板在位
 ls "$PROJECT_ROOT/engine/orchestrator/src/train/qlora-template.ts" "$PROJECT_ROOT/engine/orchestrator/src/train/rl-templates.ts" >/dev/null 2>&1 || S350_OK=false
 $S350_OK && pass "训练需求推导行为实测过（场景派生/模板匹配/报告路径/两族模板）" || fail "训练需求推导行为回退——见上方 ✗ 行（dist/train-analyze.js 直调）"
-
-# S351 · v1.4.3 第五章：后训练 workflow 模板可解析 + 七节点 DAG 完整性（dist 直调）
-# parseWorkflowYaml 真实解析 FDE 模板——七节点/依赖无悬空/三 HITL（hitl 字段）
-# /Kahn 拓扑无环 + capability_ref 七节点版本指向（原文对照）。
+# S351 · 后训练 workflow 模板解析 + 七节点 DAG 完整性（dist 直调）：依赖无悬空/三 HITL/Kahn 无环/capability_ref 指向
 scenario 351 "v1.4.3 第五章：后训练 workflow 模板——workflow-parser 真实解析 + 七节点 DAG 无环 + 三 HITL + capability_ref 全节点指向"; S351_OK=true
 S351_OUT=$(node -e "
 (async () => {
@@ -3603,7 +3305,6 @@ S351_OUT=$(node -e "
 " 2>/dev/null)
 [ "$S351_OUT" = "0" ] || { echo "  ✗ 后训练 workflow 断言未过数=$S351_OUT（9999=解析失败）"; S351_OK=false; }
 $S351_OK && pass "后训练 workflow 模板解析过（七节点/无悬空/三 HITL/DAG 无环/版本指向）" || fail "后训练 workflow 模板回退——见上方 ✗ 行（dist/workflow-parser.js 真实解析）"
-
 # S352 · v1.4.3 第六章：DSH 执行深化三步（事件流面 + 分级切 + usage 记账行为实测 + 降级红线）
 scenario 352 "v1.4.3 第六章：DSH 执行深化——事件流订阅在位 + 分级切 dsh 缺省/langgraph 回退 + usage 记账链直调落盘 + 降级红线"; S352_OK=true
 # 步一静态锚点：事件流订阅消费 notify_session + 联调痕迹（dsh-events.mjs）
@@ -3633,12 +3334,10 @@ fs.rmSync(runDir, { recursive: true, force: true });
 process.stdout.write(String(bad));
 " 2>/dev/null)
 [ "$S352_OUT" = "0" ] || { echo "  ✗ usage 记账链断言未过数=$S352_OUT"; S352_OK=false; }
-# 红线静态锚点：LangGraph fallback 保留——execution-backend.ts 层 1 守卫
-# （DSH 包未安装 → fallback LangGraph；dsh-backend 能力缺失 → 消费方降级）
+# 红线静态锚点：LangGraph fallback 保留——execution-backend.ts 层 1 守卫 （DSH 包未安装 → fallback LangGraph；dsh-backend 能力缺失 → 消费方降级）
 grep -q "LangGraph 保留为 fallback" "$PROJECT_ROOT/engine/orchestrator/src/execution-backend.ts" || S352_OK=false
 grep -q "langgraph-backend" "$PROJECT_ROOT/engine/orchestrator/src/execution-backend.ts" || S352_OK=false
 $S352_OK && pass "DSH 执行深化三步锚点过（事件流/分级切/usage 记账链直调/降级红线）" || fail "DSH 执行深化锚点回退——见上方 ✗ 行（静态锚点+行为混合，对齐 S331/S344 先例）"
-
 # S353 · v1.4.3 第二章：train_diagnose 行为实测（dist 直调——七类命中 + 处方表全类覆盖）
 scenario 353 "v1.4.3 第二章：train_diagnose 行为实测——七类分类注入已知故障形态命中 + 处方表全类覆盖"; S353_OK=true
 S353_OUT=$(node -e "
@@ -3667,7 +3366,6 @@ S353_OUT=$(node -e "
 # 注册面复核（与 S348 呼应）：registry 中 train_diagnose 在位
 grep -q "name: 'train_diagnose'" "$PROJECT_ROOT/engine/mcp/src/tool-registry.ts" || S353_OK=false
 $S353_OK && pass "train_diagnose 行为实测过（OOM/数据格式命中 + 零命中兜底 + 处方全类覆盖）" || fail "train_diagnose 行为回退——见上方 ✗ 行（dist/train-diagnose.js 直调）"
-
 # S354 · v1.4.3 第九章：入口导览三产品线可发现 + onboarding 断层走查产物在位
 scenario 354 "v1.4.3 第九章：入口导览三产品线在 HANDBOOK 可发现 + onboarding 断层走查检查项落 releasing.md + 走查口径行"; S354_OK=true
 # ① 导览表三产品线关键词（文档面的可发现性——HANDBOOK 为入口 SSOT）
@@ -3684,7 +3382,6 @@ grep -q "onboarding 走查" "$PROJECT_ROOT/docs/changelog/releasing.md" || S354_
 # ④ 走查口径行固化（对账口径声明）
 grep -q "onboarding 走查对账口径" "$PROJECT_ROOT/docs/HANDBOOK.md" || S354_OK=false
 $S354_OK && pass "入口导览 + 断层走查产物齐（三线可发现/入口命令实存/SOP 检查项在位）" || fail "入口导览断层——见上方 ✗ 行（HANDBOOK 导览表 + releasing.md 检查项）"
-
 # S355 · v1.4.3 第十一章：存量清扫零残留（对齐 S340 形态——grep 全库旧标识）
 scenario 355 "v1.4.3 第十一章：存量清扫零残留——ao 探测死代码删除 + compose 更名转发 + fde_compose 收窄 + 退役公告标记"; S355_OK=true
 # ① 清扫一：run-envs 无 ao 探测残留（探测数组字面量不得出现在非注释行——清扫注记注释豁免）
@@ -3700,7 +3397,6 @@ grep -q "fde_derive" "$PROJECT_ROOT/engine/mcp/src/tools/fde-compose.ts" || S355
 # ④ 清扫四：checkHistoryChainIntegrity @deprecated 标记在位（移除归 v1.5.0——公告先行的证据）
 grep -B3 "export function checkHistoryChainIntegrity" "$PROJECT_ROOT/engine/core/src/audit-history.ts" 2>/dev/null | grep -q "@deprecated" || S355_OK=false
 $S355_OK && pass "存量清扫零残留过（ao 死代码/更名转发/ontology 收窄/退役公告四锚）" || fail "存量清扫残留——见上方 ✗ 行（grep 全库旧标识，对齐 S340 形态）"
-
 # S356 · v1.4.3 第十三章：doctor Ontology 完整性检查（run-04 coverage 零覆盖补测）
 scenario 356 "v1.4.3 第十三章：doctor Ontology 完整性检查——entities 遍历 + frontmatter 三查 + skip-log 对账锚点"; S356_OK=true
 DOCTOR_SRC="$PROJECT_ROOT/engine/core/src/doctor.ts"
@@ -3721,9 +3417,7 @@ grep -q "skip-log.json" "$DOCTOR_SRC" || S356_OK=false
 # ⑤ doctor.test.ts 用例侧防删（6 新用例随批一交付）
 grep -q "Ontology" "$PROJECT_ROOT/engine/core/src/__tests__/doctor.test.ts" 2>/dev/null || S356_OK=false
 $S356_OK && pass "doctor Ontology 完整性检查锚点全过（三查/五合法键/WARN 可见/对账/测试防删）" || fail "doctor Ontology 锚点缺失——见上方 ✗ 行（changelog 十三章行为声明，run-04 coverage P0-1 闭环）"
-
-# S357 · v1.4.3 第七章：审计聚合触发率数值实测（run-05 coverage F-3 闭环——
-# S346 锁输出形态，本场景锁数值本体，防「指标算错而格式正确」假绿）
+# S357 · v1.4.3 第七章：审计聚合触发率数值实测（run-05 coverage F-3 闭环—— S346 锁输出形态，本场景锁数值本体，防「指标算错而格式正确」假绿）
 scenario 357 "v1.4.3 第七章：审计聚合触发率数值实测——已知分布 fixture 走 CLI --json + 空历史 null 降级"; S357_OK=true
 S357_TMP=$(mktemp -d)
 mkdir -p "$S357_TMP/audit"
@@ -3766,9 +3460,7 @@ process.stdin.on('end', () => {
 " || S357_OK=false
 rm -rf "$S357_TMP" "$S357_EMPTY" 2>/dev/null
 $S357_OK && pass "审计聚合数值实测过（分母/分布/触发率 0.3/阻断率 0.1/空历史 null 降级）" || fail "触发率数值断言失败——「指标算错而格式正确」假绿路径（run-05 coverage F-3 闭环）"
-
-# S358 · v1.4.3 第一章：train_status 行为实测（run-05 coverage F-1 闭环——
-# S348 锁注册面，本场景锁行为本体 + GPU 队列快照）
+# S358 · v1.4.3 第一章：train_status 行为实测（run-05 coverage F-1 闭环—— S348 锁注册面，本场景锁行为本体 + GPU 队列快照）
 scenario 358 "v1.4.3 第一章：train_status 行为实测——fixture 任务+事件流直调（状态/进度/校验/隔离）+ GPU 队列快照"; S358_OK=true
 S358_OUT=$(SOFAGENT_DATA="$(mktemp -d)" node -e "
 (async () => {
@@ -3815,10 +3507,7 @@ S358_OUT=$(SOFAGENT_DATA="$(mktemp -d)" node -e "
 " 2>/dev/null)
 [ "$S358_OUT" = "0" ] || { echo "  ✗ train_status 行为断言未过数=$S358_OUT"; S358_OK=false; }
 $S358_OK && pass "train_status 行为实测过（运行态查询/进度曲线/参数校验/隔离面/GPU 队列账本）" || fail "train_status 行为回退——见上方 ✗ 行（run-05 coverage F-1 闭环，注册级→行为级）"
-
-# S359 · v1.4.3 闸门 run-05 verdict P1 批闭环：过时承诺与悬空引用防复发
-# 四组静态断言：①安全代码承诺排期化 ②changelog 悬空引用补 S359 锚点
-# ③F-10 行映射表处置在位 ④exit 2 三态语义在位。对齐 S343 静态断言形态。
+# S359 · 过时承诺与悬空引用防复发四组静态断言：①安全代码承诺排期化 ②changelog 悬空引用补 S359 锚点 ③F-10 行映射表处置在位 ④exit 2 三态语义在位。对齐 S343 静态断言形态。
 scenario 359 "v1.4.3 闸门 run-05 P1 批闭环：过时承诺排期化 + 悬空引用补锚点——ecdh 注释指向 ROADMAP/changelog F-10 引 S359/三态退出码在位"; S359_OK=true
 # P1-7：ecdh.ts 文件头不再写死「留 v1.2.0」过时版本承诺，改指 ROADMAP v1.4.7
 grep -q "排期见 ROADMAP v1.4.7" "$PROJECT_ROOT/engine/core/src/crypto/ecdh.ts" || S359_OK=false  # 承诺排期化
@@ -3826,15 +3515,12 @@ grep -q "持久化留 v1.2.0" "$PROJECT_ROOT/engine/core/src/crypto/ecdh.ts" && 
 # P1-8：changelog 模块十「F-10 定谳」标题补 S359 锚点（悬空引用闭合）
 grep -q "S359" "$PROJECT_ROOT/docs/changelog/v1.4/v1.4.3.md" || S359_OK=false  # 锚点落点
 grep -q "F-10 定谳（S359" "$PROJECT_ROOT/docs/changelog/v1.4/v1.4.3.md" || S359_OK=false  # 锚点格式先例对齐
-# P1-3 同批：三态退出码在位（SKIP>0 → exit 2，防 EXIT 0 掩盖跳过）
-# 🔴 BRE 字符类陷阱（run-06 S359 现场失败根因）：pattern 含 [ "$WARNED" ... ]，
-# BSD grep BRE 把 [ ] 解释为字符类（匹配单字符）——必须用 grep -F 字面匹配。
+# P1-3 同批：三态退出码在位（SKIP>0 → exit 2，防 EXIT 0 掩盖跳过） 🔴 BRE 字符类陷阱（run-06 S359 现场失败根因）：pattern 含 [ "$WARNED" ... ]， BSD grep BRE 把 [ ] 解释为字符类（匹配单字符）——必须用 grep -F 字面匹配。
+
 grep -Fq 'elif [ "$WARNED" -gt 0 ]; then echo -e "${YELLOW}⚠️  有 $WARNED 个场景因环境依赖跳过（证据面不完整），放行前补跑${NC}"; exit 2' "$PROJECT_ROOT/FORGE/playbook/acceptance-test.sh" || S359_OK=false  # elif 分支整行在位
 $S359_OK && pass "run-05 P1 批闭环锚点在位（承诺排期化/悬空引用补锚/三态退出码）" || fail "P1 批闭环锚点丢失——verdict HOLD 项面临回退"
-
 scenario 360 "v1.4.3 闸门 run-06 verdict P1 误报批定谳——规则数 24 双口径锚点 + 维度 9 探针 A+E 全口径 + PASS 场景级断言输出"
-# run-06 定谳：① P1-3 误报——README「24 条」正确（A21+E3），探针漏 E 系列已修
-# ② P1-6 半误报——四文档 158 已零命中，仅 S165 标题残留（已改）③ P1-7 已修——pass() 透传描述
+# 定谳背景：①规则数「24 条」正确（探针漏 E 系列的误报已修）②158 残留已清（仅标题遗留已改）③pass() 已透传描述
 S360_OK=true
 # 规则数 24：代码 SSOT（number 字段计数）与文档声称对齐
 S360_NUMS=$(grep -oE "number: [0-9]+" "$PROJECT_ROOT/engine/audit/src/rules/index.ts" | grep -oE "[0-9]+" | wc -l | tr -d ' ')
@@ -3843,28 +3529,20 @@ grep -q "24 条审计规则\|24 条规则" "$PROJECT_ROOT/README.md" || S360_OK=
 # 维度 9 探针全口径：A+E 合计应 24（修后回归锚点，防探针再漏 E 系列）
 S360_PROBE=$(grep -oE "name:[[:space:]]*'[AE][0-9]+" "$PROJECT_ROOT/engine/audit/src/rules/index.ts" | wc -l | tr -d ' ')
 [ "$S360_PROBE" = "24" ] || S360_OK=false  # 探针 pattern 含 A+E 双系列
-# 🔴 BRE 转义陷阱二阶（run-07 冒烟实测）：\[ 在 BSD grep BRE 里不是字面 [，
-# 仍是字符类括号——「转义写法」的 pattern 反而匹配未转义普通文本，断言语义
-# 写反（匹配新形态=自毙）。凡字面匹配含方括号的文本必须 grep -F + 变量拼接。
+# 🔴 BRE 转义陷阱二阶（run-07 冒烟实测）：\[ 在 BSD grep BRE 里不是字面 [， 仍是字符类括号——「转义写法」的 pattern 反而匹配未转义普通文本，断言语义 写反（匹配新形态=自毙）。凡字面匹配含方括号的文本必须 grep -F + 变量拼接。
+
 S360_OLDPROBE="name:[[:space:]]*'A[0-9]+"
 S360_OLDPROBE="SSOT_TOTAL=\$(grep -cE \"${S360_OLDPROBE}\" engine/audit/src/rules/index.ts)"
 grep -Fq "$S360_OLDPROBE" "$PROJECT_ROOT/FORGE/playbook/regression-checklist.md" && S360_OK=false  # 旧 A-only 探针形态不得回潮
 # P1-7 防复发：pass() 透传描述在位
 grep -q 'PASS\${1' "$PROJECT_ROOT/FORGE/playbook/acceptance-test.sh" || S360_OK=false  # pass 打印场景级描述
-# P1-6 防复发：S165 标题不再硬编码过时场景数。断言 pattern 从变量拼接（避免
-# 字面量出现在本文件被自身断言匹配）；grep -F 见 S359 BRE 教训。
+# P1-6 防复发：S165 标题不再硬编码过时场景数。断言 pattern 从变量拼接（避免 字面量出现在本文件被自身断言匹配）；grep -F 见 S359 BRE 教训。
 S360_OLD158="acceptance 158"
 S360_OLD158="关键数字跨文档一致性——测试数 / 规则数 24 / ${S360_OLD158}"
 grep -Fq "$S360_OLD158" "$SCRIPT_DIR/acceptance-test.sh" && S360_OK=false  # 过时标题形态不得回潮
 $S360_OK && pass "run-06 误报批闭环（规则数 24 双口径/探针全口径/PASS 证据链/标题去残留）" || fail "run-06 误报批锚点丢失——README 规则数或探针口径回退"
-
-# S361 · v1.4.3 阶段十二回写：本地部署树 overrides CI 三红防复发
-# 发版实录：本地 node_modules symlink 在位全绿，开源 CI npm ci 恢复 symlink
-# 指向不存在路径 → TS2307 三红；包不在依赖树时 overrides 惰性不匹配，一旦进
-# 依赖立即生效——本地路径 overrides 是地雷应清。对齐 S344 静态锚点形态。
-# v1.4.4 补面：原只守 lock（产物面）恒绿，根 package.json overrides 写死
-# /Users/ 绝对路径随 v1.4.3 泄漏发布——防复发锚必须连声明面一起守，
-# 双关键字同查（dsh-deployed 本例 + /Users/ 换名变体通杀）。
+# S361 · 本地部署树 overrides CI 三红防复发：本地 symlink 全绿但 CI npm ci 恢复 symlink 指向不存
+# 在路径→TS2307 三红。守声明+产物双面（package.json 零 /Users/ 绝对路径 + lock 零 dsh-deployed），对齐 S344 锚点形态
 scenario 361 "v1.4.3 阶段十二：package.json + lock 双文件零本地部署树路径——overrides 绝对路径地雷防复发（CI TS2307 三红根因固化）"; S361_OK=true; S361_PKG_OK=true
 # 🔴 set -e + $(cmd) 静默杀手：grep -c 零命中 exit 1 会杀整个脚本——命令替换必须 || true
 S361_DSH=$(grep -c "dsh-deployed" "$PROJECT_ROOT/package-lock.json" 2>/dev/null || true)
@@ -3880,9 +3558,7 @@ for _s361_p in dsh dsh-app-boot dsh-llm dsh-session dsh-agent dsh-home-paths; do
 done
 $S361_OK && pass "lock 零本地部署树路径（dsh 六包 registry 解析齐）" || fail "本地部署树路径回潮——CI 将 TS2307 三红（对照 8c8517b5 根因修复）"
 $S361_PKG_OK && pass "package.json 零本地路径（dsh-deployed 0 + /Users/ 0）" || fail "package.json 本地部署树路径回潮——红线 2（依赖零本地路径）失守：清除 overrides 段内 /Users/ 绝对路径"
-
-# v1.4.4 十模块验收场景（S362-S370 · run-01 P0-1 闭环，对齐 S330/S341 零覆盖补测先例；行为面 dist 直调实跑后落场景，静态面 grep 锚点）
-# S362 · v1.4.4 章一①：训练语料导出——27 编号位 + 占位三件 + reward_hint 三件套
+# v1.4.4 十模块验收场景（S362-S370 · run-01 P0-1 闭环，对齐 S330/S341 零覆盖补测先例；行为面 dist 直调实跑后落场景，静态面 grep 锚点） S362 · v1.4.4 章一①：训练语料导出——27 编号位 + 占位三件 + reward_hint 三件套
 scenario 362 "v1.4.4 章一：训练语料导出——规则 27 编号位（24 实现 + A12/A13/E3 占位 merged-into-A11）+ 逐规则 reward_hint（signature/severityWeight/verifiability）"; S362_OK=true
 S362_OUT=$(node -e "
 (async () => {
@@ -3924,9 +3600,7 @@ S363_OUT=$(node -e "
 " 2>/dev/null)
 [ "$S363_OUT" = "0" ] || { echo "  ✗ 方法论/脱敏断言未过数=$S363_OUT"; S363_OK=false; }
 $S363_OK && pass "方法论三锚点 + 脱敏闭环（替换/剥离/验漏）行为实测过" || fail "方法论导出或脱敏管线回退——见 ✗ 行"
-
 # S364（corpus_export 双入口对账）已真实并入 S348——v1.4.4 归并对销，断言零删减。
-
 scenario 365 "v1.4.4 章二：本地权重部署——manifest 双版本注册 + 哈希校验篡改拒绝（供应链红线）"; S365_OK=true
 S365_OUT=$(node -e "
 (async () => {
@@ -3956,9 +3630,10 @@ S365_OUT=$(node -e "
 " 2>/dev/null)
 [ "$S365_OUT" = "0" ] || { echo "  ✗ 权重部署断言未过数=$S365_OUT"; S365_OK=false; }
 $S365_OK && pass "权重注册绿态 + 篡改拒绝 + 无清单拒绝 + 回滚路径哈希直验（供应链红线实测）" || fail "权重部署链回退——哈希/清单/回滚校验失守见 ✗ 行"
-# S367 · v1.4.4 章四：多基座对比训练——ROI 排序三断言（dist 直调）
-scenario 367 "v1.4.4 章四：train compare——ROI 排序降序 + 零成本 ∞ 最前 + 未完成基座排除"; S367_OK=true
-S367_OUT=$(node -e "
+# S369 归并沿革：S366（人审语义）已并入本场景；S367（章四对比三断言）2026-09-08 防膨胀批并入——三章同属 v1.4.4 训练管线交付面防回归，场景壳合并、断言零删减。tag/pin 归 check-action-pins 门禁（更强断言），本场景只守 dashboard 三锚 + 对比断言
+scenario 369 "v1.4.4 章三+四+六合并：产物注册衔接人审语义 + train compare ROI 排序 + CI 供应链 dashboard 三锚（tag/pin 面归 check-action-pins 门禁；S367 并入）"; S369_OK=true
+# S367 断言体（归并自章四：buildCompareReport 三断言原样保留）
+S369_CMP=$(node -e "
 (async () => {
   const { buildCompareReport } = await import('$PROJECT_ROOT/engine/orchestrator/dist/train/train-compare.js');
   const mk = (base, score, cost, status) => ({ baseModel: base, trainJobId: 'job-' + base, status: status || 'completed', evalReport: score === null ? null : { averageScore: score }, usage: { elapsedMinutes: cost * 6, steps: cost * 100, cost } });
@@ -3971,24 +3646,14 @@ S367_OUT=$(node -e "
   process.stdout.write(String(bad));
 })().catch(e => { process.stderr.write(String(e.message)); process.stdout.write('9999'); });
 " 2>/dev/null)
-[ "$S367_OUT" = "0" ] || { echo "  ✗ 对比训练断言未过数=$S367_OUT"; S367_OK=false; }
-$S367_OK && pass "对比报告 ROI 排序三断言过（降序/∞ 最前/未完成排除；CLI 接线锚已归并 checklist #129a，check-docs §13 断言更强）" || fail "train compare 回退——ROI 排序语义见 ✗ 行"
-
-
-# S369+S366 归并（2026-09-05 收紧批）：S369 原「零浮动 tag/pin 脚本」两锚由 check-action-pins.sh 门禁
-# 常驻覆盖（更强断言：40 位 SHA + tag 注释全量对账），S369 仅保留门禁不覆盖的 dashboard 三锚
-# （零 CDN/127.0.0.1/DASHBOARD_HOST 落档）；S366 人审语义锚并入本场景（产物注册衔接同族证据面，
-# dist 导出断言保留独立 check_dist_export 调用）。断言零删减——归并只去场景壳，不去检查面。
-scenario 369 "v1.4.4 章三+章六合并：产物注册衔接人审语义 + CI 供应链 dashboard 三锚（tag/pin 面归 check-action-pins 门禁）"; S369_OK=true
+[ "$S369_CMP" = "0" ] || { echo "  ✗ 对比训练断言未过数=$S369_CMP"; S369_OK=false; }
 grep -qE "requiresHuman|MountSuggestion" "$PROJECT_ROOT/engine/orchestrator/src/train/artifact-register.ts" || S369_OK=false   # 原 S366 人审语义
 grep -qE "jsdelivr|cdn\." "$PROJECT_ROOT/tools/dashboard/dashboard.html" 2>/dev/null && S369_OK=false            # 零 CDN 引用
 grep -q "127.0.0.1" "$PROJECT_ROOT/tools/dashboard/serve-dashboard.mjs" || S369_OK=false                         # 默认本机绑定
 grep -q "DASHBOARD_HOST" "$PROJECT_ROOT/docs/LIMITATIONS.md" || S369_OK=false                                    # 自查结论落档
 check_dist_export "engine/orchestrator/dist/train/artifact-register.js" "registerTrainArtifact" "S369" || true   # 原 S366 导出
 $S369_OK && [ "${S369_EXPORT_OK:-false}" = "true" ] && pass "章三人审+章六 dashboard 三锚过（tag/pin 归门禁；导出在位）" || fail "产物注册/CI 面回退——见上方 fail 定位"
-
-# S368 · v1.4.4 章五：决策因果链——三级回溯 + 先例打分 + HMAC 篡改判 tampered
-# （独立子进程 + 固定密钥保证环境指纹稳定）
+# S368 · v1.4.4 章五：决策因果链——三级回溯 + 先例打分 + HMAC 篡改判 tampered （独立子进程 + 固定密钥保证环境指纹稳定）
 scenario 368 "v1.4.4 章五：决策因果链——trace 三级回溯 + 先例检索打分 + HMAC 篡改判 tampered"; S368_OK=true
 S368_TMP=$(mktemp -d /tmp/sofagent-s368-XXXX)
 printf 'fixed-test-key-123' > "$S368_TMP/test.key"
@@ -4045,12 +3710,9 @@ grep -q "将在 v" "$PROJECT_ROOT/tools/check/check-docs.sh" || S370_OK=false   
 grep -q "注入·审计·回溯·沉淀·进化" "$PROJECT_ROOT/README.md" || S370_OK=false                                               # 章十 五能力五词
 grep -q "五能力" "$PROJECT_ROOT/tools/check/check-docs.sh" || S370_OK=false                                                 # 章十 门禁机械化
 $S370_OK && pass "章七十收口八锚点（spec-first/模板外置/usage 三通道/过期承诺/五能力）" || fail "章七十锚点缺失——见上方 fail 定位"
-
 # S371 · v1.4.4 章九审查收编批 + 章一样本聚合 + 章七门面锚点（run-02 P0-2/P1-2/P1-3 闭环，对齐 S281/S343 先例）
 scenario 371 "v1.4.4 章九：六轮审查 17 项收编批代表锚点 + 章一五源样本聚合 + 章七 13 包门面（A 文档/B 代码/C 顺手三族代表 + 样本聚合本体，run-02 P0-2 闭环，对齐 S281/S343 先例）"; S371_OK=true
-# 章九 B 批代码族（d6907083）：#2 cost 透传 / #58 IPv6 剥方括号 / #42 audit.md 脱敏 / #59 退出码白名单；
-# A 批文档族代表：#24 退役 API / #3 环境变量披露 / #36 automerge 实态 / #48 幽灵依赖 / #61 幽灵旗标；
-# #32+47 守护死亡告警（daemon-health 退出码 + doctor 死亡态）；章一样本聚合（P1-2）；章七 13 包门面（P1-3）
+# 章九收编代表锚：B 批代码族（cost 透传/IPv6 剥方括号/audit.md 脱敏/退出码白名单）+ A 批文档族（退役 API/ 环境变量披露/automerge 实态/幽灵依赖/幽灵旗标）+ 守护死亡告警；章一样本聚合（P1-2）；章七 13 包门面（P1-3）
 for _a in "cost 配置透传:engine/core/src/config-loader.ts" "parsed.hostname.replace:engine/audit/src/webhook.ts" \
   "sanitizeFreeText:engine/audit/src/audit-log.ts" "白名单\|fail-closed:tools/hooks/sofagent-precommit.sh" \
   "checkHistoryChainDetailed:SECURITY.md" "SOFAGENT_KEY_PATH:SECURITY.md" "automerge@^3.4.1:SECURITY.md" \
@@ -4062,9 +3724,7 @@ done
 CNT_ENGINES=$(grep -l '"engines"' "$PROJECT_ROOT"/engine/*/package.json 2>/dev/null | wc -l | tr -d ' ')
 [ "$CNT_ENGINES" -ge 12 ] || S371_OK=false
 $S371_OK && pass "章九 17 项三族代表锚点 + 章一样本聚合 + 章七门面在位" || fail "收编锚点丢失——17 项修复面临回退（见上方注释定位）"
-
-# S372 · v1.4.4 章十一：阶段四 B 类行为锁补测批（37cab2b9）——run-06 P0-1 闭环（零映射补测，
-# 对齐 S330/S341 先例）：B1-B8 用例本体在单元层（四测试文件），本场景锁四文件在位 + 五代表断言锚
+# S372 · v1.4.4 章十一：阶段四 B 类行为锁补测批（37cab2b9）——run-06 P0-1 闭环（零映射补测， 对齐 S330/S341 先例）：B1-B8 用例本体在单元层（四测试文件），本场景锁四文件在位 + 五代表断言锚
 scenario 372 "v1.4.4 章十一：阶段四 B 类行为锁补测批（37cab2b9）——B1-B8 用例四测试文件在位 + 代表断言锚（回滚哈希/nodeId 清洗/YAML 转义/scope 报错/降级 null）"; S372_OK=true
 for _a in "rollbackWeightsVersion:engine/orchestrator/src/__tests__/weights-deploy.test.ts" \
           "中文nodeId清洗:engine/orchestrator/src/__tests__/fde-workbench.test.ts" \
@@ -4074,10 +3734,7 @@ for _a in "rollbackWeightsVersion:engine/orchestrator/src/__tests__/weights-depl
   grep -q "${_a%%:*}" "$PROJECT_ROOT/${_a##*:}" || { echo "  ✗ B1-B8 补测锚丢失：${_a##*:} 缺「${_a%%:*}」"; S372_OK=false; }
 done
 $S372_OK && pass "章十一 B1-B8 补测批四文件 + 五代表锚在位（37cab2b9 行为锁欠账已偿）" || fail "章十一补测批回退——四文件/五锚见上方 ✗ 行"
-
-# S373 · v1.4.5 第七章二：评估反哺闭环端到端（harvest→jury→promote 全链路）——补齐 3 处单点
-# （commons-rule-cycle.test.ts）外的链路级验证；输入为真实采样数据结构（samples-<date>.json，
-# 非合成 fixture）。行为实测走 dist 直调（对齐 S318/S319 先例）；行数铁律：S264+S265 归并对销。
+# S373 · 评估反哺闭环端到端（harvest→jury→promote 全链）：真实采样数据结构（samples-<date>.json 非合成 fixture），dist 直调对齐 S318/S319 先例；S264+S265 归并对销。
 scenario 373 "v1.4.5 第七章二：反哺闭环端到端——真实采样数据（samples-<date>.json）→ harvest → jury → promote 全链 + 晋升落账 EVOLUTION 审计"; S373_OK=true
 [ -f "$PROJECT_ROOT/engine/orchestrator/src/evolution/evolution-samples.ts" ] || S373_OK=false
 R373=$(node -e "
@@ -4110,9 +3767,7 @@ console.log('ASSERT_OK promoted='+promote.promoted.length);
 " 2>&1) || true
 echo "$R373" | grep -q "ASSERT_OK" || { echo "  ✗ S373: $(echo "$R373" | grep S373_FAIL | head -1)"; S373_OK=false; }
 $S373_OK && pass "反哺闭环端到端（采样→harvest→jury→promote→EVOLUTION 落账全通）" || fail "反哺闭环链路断裂——见上方 ✗ 行"
-
-# S374 · v1.4.5 第七章三：L4 工具层自进化——候选→SkillScan→人审→注册全流程 + commons_invoke
-# 可调 + 动态工具不进 83 静态计数（口径：静态=tool-registry.ts 顶层 name；tools/list=83+动态数）
+# S374 · v1.4.5 第七章三：L4 工具层自进化——候选→SkillScan→人审→注册全流程 + commons_invoke 可调 + 动态工具不进 83 静态计数（口径：静态=tool-registry.ts 顶层 name；tools/list=83+动态数）
 scenario 374 "v1.4.5 第七章三：L4 工具层自进化全流程（采样候选→SkillScan→人审 promote→注册动态面）+ commons_invoke 可调 + 不进 83 静态计数"; S374_OK=true
 [ -f "$PROJECT_ROOT/engine/orchestrator/src/evolution/tool-evolution.ts" ] || S374_OK=false
 [ -f "$PROJECT_ROOT/engine/mcp/src/tools/evolution-dynamic-bridge.ts" ] || S374_OK=false
@@ -4152,7 +3807,6 @@ console.log('ASSERT_OK static='+before+' dynamic='+reg.length);
 " 2>&1) || true
 echo "$R374" | grep -q "ASSERT_OK" || { echo "  ✗ S374: $(echo "$R374" | grep S374_FAIL | head -1)"; S374_OK=false; }
 $S374_OK && pass "L4 自进化全流程可用（候选→扫描→人审→注册→invoke 可调 + 静态计数不漂移）" || fail "L4 工具层管线断裂——见上方 ✗ 行"
-
 scenario 375 "v1.4.5 交付面行为锁：train deliverable 打包+HMAC verify 篡改拒绝 + compliance PII findings+provenance + retention symlink 拒绝保留源 + serve 三 tools 注册面 + 模块八 FDE 进场记忆目录（10 文件/捕获/恢复）+ 模块六 Quickstart 交付物（文档/数据/配置三件）"; S375_OK=true
 S375_TMP=$(mktemp -d /tmp/sofagent-s375-XXXX)
 printf 'fixed-test-key-123' > "$S375_TMP/test.key"; mkdir -p "$S375_TMP/data"
@@ -4190,7 +3844,6 @@ S375_OUT=$(cd "$S375_TMP" && env SOFAGENT_DATA="$S375_TMP/data" SOFAGENT_KEY_PAT
 rm -rf "$S375_TMP"
 $S375_OK && pass "交付面行为锁（deliverable verify 篡改拒绝 + compliance PII+provenance + retention symlink 拒绝保留源 + serve 注册面 + 进场记忆目录 10 文件/捕获/恢复）" || fail "train 五新面行为回退——见上方 ✗ 行"
 S375Q_OK=true; [ -f "$PROJECT_ROOT/docs/guides/train-quickstart.md" ] || { echo "  ✗ S375: quickstart 文档缺失"; S375Q_OK=false; }; [ -f "$PROJECT_ROOT/docs/guides/examples/quickstart-data.csv" ] || { echo "  ✗ S375: quickstart 示例数据缺失"; S375Q_OK=false; }; [ -f "$PROJECT_ROOT/docs/guides/examples/quickstart-job.json" ] || { echo "  ✗ S375: quickstart 示例配置缺失"; S375Q_OK=false; }; head -1 "$PROJECT_ROOT/docs/guides/examples/quickstart-data.csv" | grep -q '^instruction,output$' || { echo "  ✗ S375: CSV 表头漂移"; S375Q_OK=false; }; [ "$(wc -l < "$PROJECT_ROOT/docs/guides/examples/quickstart-data.csv" | tr -d ' ')" -eq 11 ] || { echo "  ✗ S375: CSV 行数漂移（应 1 表头 + 10 数据 = 11 行）"; S375Q_OK=false; }; node -e "const j=JSON.parse(require('fs').readFileSync('$PROJECT_ROOT/docs/guides/examples/quickstart-job.json','utf8'));if(j.schemaVersion!=='v1'||j.jobId!=='quickstart-demo-job'||j.baseModel!=='Qwen3-0.6B'||j.algorithm!=='sft'||!j.budget||j.budget.maxSteps!==8)process.exit(1)" || { echo "  ✗ S375: job.json 关键字段漂移（schemaVersion/jobId/baseModel/algorithm/budget.maxSteps）"; S375Q_OK=false; }; grep -q '## 二、环境准备（train env init）' "$PROJECT_ROOT/docs/guides/train-quickstart.md" && grep -q '## 四、训练预检（train dry-run）' "$PROJECT_ROOT/docs/guides/train-quickstart.md" && grep -q '## 十、推理服务（train serve）' "$PROJECT_ROOT/docs/guides/train-quickstart.md" || { echo "  ✗ S375: quickstart 十步关键步骤锚点缺失"; S375Q_OK=false; }; $S375Q_OK && pass "模块六 Quickstart 交付物三件在位（quickstart.md 十步锚 + CSV 表头/行数 + job.json schema 字段）" || fail "Quickstart 交付物缺位/漂移——见上方 ✗ 行"
-
 scenario 376 "v1.4.6 章一 train multi 行为锁：多卡启动命令构造（单卡直通/多卡 torchrun/多机 master 参数/verl 入口）+ rank 事件汇总（最慢 rank 决定进度/loss-reward 均值/空集零）+ job.json schema v2（gpu/nodes/cloud 新字段 + v1 向后兼容 + strict 拒未知）+ GPU 队列双轴拓扑感知（卡数维度生效/队首泵放行/serial 向后兼容）+ NCCL 分布式诊断第八类"; S376_OK=true
 S376_TMP=$(mktemp -d /tmp/sofagent-s376-XXXX)
 cat > "$S376_TMP/w.mjs" << S376EOF
@@ -4238,7 +3891,6 @@ S376EOF
 S376_OUT=$(cd "$S376_TMP" && node "$S376_TMP/w.mjs" 2>/dev/null) || S376_OUT="S376_FAIL:crash"; echo "$S376_OUT" | grep -q "ASSERT_OK" || { echo "  ✗ S376: $(echo "$S376_OUT" | head -1)"; S376_OK=false; }
 rm -rf "$S376_TMP"
 $S376_OK && pass "train multi 行为锁（单卡直通/torchrun 多卡/多机 master/verl 入口 + rank 汇总最慢决定 + schema v2 兼容 v1 拒未知 + GPU 队列双轴拓扑 + NCCL 第八类诊断）" || fail "train multi 行为回退——见上方 ✗ 行"
-
 scenario 377 "v1.4.6 章二 train cloud 行为锁：分拣闸三档判定（敏感拦上云含保密证书编号/脱敏放行/公开放行/宁拦勿漏优先级）+ 批量分拣整批拦截 + data-push 双闸入库（合规先拒/分拣标记本地放行/双闸全过）+ schema strict 拒未知 + 云 VM 注册表 + 失联止损（5 分钟阈值/从未心跳不算失联）+ 成本核算（向上取整美分/超预算判定）+ train_cloud MCP 注册面"; S377_OK=true
 S377_TMP=$(mktemp -d /tmp/sofagent-s377-XXXX)
 cat > "$S377_TMP/w.mjs" << S377EOF
@@ -4292,7 +3944,6 @@ S377EOF
 S377_OUT=$(cd "$S377_TMP" && node "$S377_TMP/w.mjs" 2>/dev/null) || S377_OUT="S377_FAIL:crash"; echo "$S377_OUT" | grep -q "ASSERT_OK" || { echo "  ✗ S377: $(echo "$S377_OUT" | head -1)"; S377_OK=false; }
 rm -rf "$S377_TMP"
 $S377_OK && pass "train cloud 行为锁（分拣三档+宁拦勿漏 + 批量整批拦截 + 双闸入库合规先 + schema strict + 注册表幂等 + 失联止损 5min + 成本向上取整+超预算 + train_cloud 注册面）" || fail "train cloud 行为回退——见上方 ✗ 行"
-
 scenario 378 "v1.4.6 追加交付 npm 裸名总包（umbrella）行为锁：SSOT 版本对账（umbrella=audit + 裸名非 private）+ 四功能包依赖版本逐一对账（audit/mcp/orchestrator/daemon）+ 根 workspaces 收编 + bin 转发链路活体实测（spawnSync --help exit 0 非空输出）+ bump 覆盖面（--dry-run 含 umbrella 路径且零写盘）"; S378_OK=true
 S378_TMP=$(mktemp -d /tmp/sofagent-s378-XXXX)
 cp "$PROJECT_ROOT/engine/umbrella/package.json" "$S378_TMP/umbrella.before.json"
@@ -4336,13 +3987,11 @@ cmp -s "$S378_TMP/umbrella.before.json" "$PROJECT_ROOT/engine/umbrella/package.j
 cmp -s "$S378_TMP/root.before.json" "$PROJECT_ROOT/package.json" || { echo "  ✗ S378: bump dry-run 写盘根 package.json"; S378_OK=false; }
 rm -rf "$S378_TMP"
 $S378_OK && pass "npm 裸名总包行为锁（umbrella=audit SSOT + 四依赖逐一对账 + workspaces 收编 + bin 转发活体实测 + bump 覆盖面零写盘）" || fail "npm 裸名总包回退——见上方 ✗ 行"
-
 scenario 379 "流程加固批 防线失明自检行为锁：故障注入矩阵活体实测（PATH 前置假 perl 崩溃型/空响应型 × cjk-var/guards 双守卫 → 目标守卫非 0 退出——0 处违规但没在看必须报红）+ 自检脚本正常态 exit 0 + 自检脚本自身 fail-loud（劫持真 perl 后自身非 0）"; S379_OK=true
 # 回主仓根（前面场景可能把 cwd 留在已清理的临时仓——本场景全部相对路径调用依赖主仓根）
 cd "$PROJECT_ROOT"
 S379_TMP=$(mktemp -d /tmp/sofagent-s379-XXXX)
-# 一、故障注入活体实测（不重跑完整门禁——直接复刻其注入矩阵核心一步：假 perl + PATH 前置，
-#     对双守卫各跑一遍崩溃型，断言非 0）。注入自证与门禁同款：command -v 解析路径须落假目录。
+# 一、故障注入活体实测（不重跑完整门禁——直接复刻其注入矩阵核心一步：假 perl + PATH 前置，     对双守卫各跑一遍崩溃型，断言非 0）。注入自证与门禁同款：command -v 解析路径须落假目录。
 S379_FAKE=$(mktemp -d "${TMPDIR:-/tmp}/s379-fake.XXXX")
 printf '#!/bin/sh\nexit 3\n' > "$S379_FAKE/perl" && chmod +x "$S379_FAKE/perl"
 S379_RESOLVED=$(PATH="$S379_FAKE:$PATH" command -v perl 2>/dev/null || true)
@@ -4367,16 +4016,10 @@ if PATH="$S379_HIJACK:$PATH" bash tools/check/check-guard-fail-loud.sh > /dev/nu
 [ "$S379_HIJACK_RC" -ne 0 ] || { echo "  ✗ S379: 劫持真 perl 后自检脚本仍 exit 0——门禁自身失明"; S379_OK=false; }
 rm -rf "$S379_HIJACK" "$S379_TMP"
 $S379_OK && pass "防线失明自检行为锁（crash 型注入双守卫非 0 + 正常态门禁 exit 0 + 门禁自身 fail-loud）" || fail "防线失明自检回退——见上方 ✗ 行"
-
 scenario 380 "流程加固批 分支收编标记对账行为锁：主仓实测——已标记分支（tag forge-merged-* 实存）不出现在未标记清单（判定命中）/ 未标记分支 INFO 列出含分支名+独有 commit 数+涉及文件+处置命令（四要素）/ 存在未标记分支时 exit 0（INFO 级不阻断）/ 对当前历史同输入两次运行汇总行一致（输出稳定可复现）"; S380_OK=true
 S380_TMP=$(mktemp -d /tmp/sofagent-s380-XXXX)
-# 判定语义前提说明：check-forge-branches.sh 自带 cd "$(dirname $0)/../.."（假定
-# 仓=脚本所在仓），无法对临时仓对账——本场景在主仓实测其真实判定行为
-# （临时仓形态见 is_marked 双形态判定的 tag 存在性锚，亦在主仓验证）。
-# 🔴 SIGPIPE 坑（对齐 git_log_has 先例）：本场景捕获输出约 80KB，echo 大变量 |
-# grep -q 时 grep 命中即提前退出，echo 收 SIGPIPE(141) 被 pipefail 传播为整管道
-# 失败——断言全灭。场景内临时关 pipefail，断言完恢复。
-# 回主仓根（git tag / git branch 对账依赖主仓 cwd——前面场景可能悬空）
+# 前提：check-forge-branches.sh 自带 cd（假定仓=脚本所在仓），无法对临时仓对账——本场景在主仓实测。 🔴 SIGPIPE 坑（对齐 git_log_has 先例）：捕获输出约 80KB，
+# echo 大变量 | grep -q 命中即退出收 SIGPIPE(141) 被 pipefail 传播为断言全灭——场景内临时关 pipefail，断言完恢复。 回主仓根（git tag / git branch 对账依赖主仓 cwd——前面场景可能悬空）
 cd "$PROJECT_ROOT"
 set +o pipefail
 # 一、INFO 四要素 + exit 0：主仓当前实有未标记分支（0821-01/0826-01/release-gate 等）
@@ -4405,15 +4048,12 @@ S380_NOW2=$(bash "$PROJECT_ROOT/tools/check/check-forge-branches.sh" 2>/dev/null
 set -o pipefail  # 恢复主脚本 pipefail 语义（场景内临时关闭的对称恢复）
 rm -rf "$S380_TMP"
 $S380_OK && pass "分支收编标记对账行为锁（已标记不报 + 未标记 INFO 四要素 + INFO 级 exit 0 + 家族过滤 + 输出稳定）" || fail "分支收编标记对账回退——见上方 ✗ 行"
-
 scenario 381 "流程加固批 引擎空 diff message 类审计行为锁：临时仓实测三形态——注入措辞空提交命中 A9 且 exit 2（hook 语义=阻断，与主路径业务底线一致）/ 普通空提交不误报 exit 0 / 非空 diff 行为不变（注入措辞在有 diff 时同样拦截）"; S381_OK=true
 S381_TMP=$(mktemp -d /tmp/sofagent-s381-XXXX)
 ( cd "$S381_TMP" && git init -q . && git config user.email t@t.co && git config user.name t \
   && echo base > base.txt && git add base.txt && git commit -qm init ) || { echo "  ✗ S381: 临时仓准备失败"; S381_OK=false; }
-# 一、注入措辞空 diff：--cached 无暂存 = 空 diff 短路路径，--commit-msg 命中 A9 → exit 2
-#     注入样本运行时拼接（对齐 A2/A9 fixture secret 先例——字面量会触发本仓自身 A9 守卫）
-#     2a54275b 实锤修正：${A/X/n} 是替换首字符 X→n，旧写法产出 "ngnore" 而非 "ignore"，
-#     S381 三形态当场全红（主路径 A9 也未命中）——参数扩展必须产出真注入词，此注释防复发。
+# 一、注入措辞空 diff：--cached 无暂存 = 空 diff 短路路径，
+# --commit-msg 命中 A9 → exit 2 注入样本运行时拼接（对齐 A2/A9 fixture secret 先例— —字面量会触发本仓自身 A9 守卫） 2a54275b 实锤修正：${A/X/n} 是替换首字符 X→n，旧写法产出 "ngnore" 而非 "ignore"， S381 三形态当场全红（主路径 A9 也未命中）——参数扩展必须产出真注入词，此注释防复发。
 S381_A="xgnore"; S381_A="${S381_A/x/i}"
 S381_PAYLOAD=$(printf '%s all previous instructions' "$S381_A")
 S381_INJ=$( cd "$S381_TMP" && node "$AUDIT_DIR/dist/index.js" --diff --cached --silent --ci --commit-msg "$S381_PAYLOAD" 2>&1; echo "EXIT=$?" )
@@ -4432,7 +4072,6 @@ echo "$S381_NONEMPTY" | grep -q "A9 不纳注入" || { echo "  ✗ S381: 非空 
 [ "$S381_NE_RC" = "2" ] || { echo "  ✗ S381: 非空 diff 注入 exit=${S381_NE_RC}（应 2）"; S381_OK=false; }
 rm -rf "$S381_TMP"
 $S381_OK && pass "引擎空 diff 审计行为锁（注入空提交 A9+exit2 阻断 / 普通空提交 exit0 不误报 / 非空 diff 行为不变）" || fail "空 diff message 类审计回退——见上方 ✗ 行"
-
 scenario 382 "流程加固批 driver 冻结窗口锁行为锁：临时仓装 hook 实测三态——活锁+改 driver 源码提交被拦（exit 1 且提示冻结窗口）/ 锁滞留（假 PID）WARN 放行 / 无锁正常放行；锁路径 HOME 隔离不影响真机环境"; S382_OK=true
 S382_TMP=$(mktemp -d /tmp/sofagent-s382-XXXX)
 S382_HOME=$(mktemp -d /tmp/sofagent-s382home-XXXX)
@@ -4447,8 +4086,7 @@ mkdir -p "$S382_HOME/.sofagent/internal"
   && echo "// driver stub" > FORGE/src/fresh-eyes-driver.mjs && git add . && git commit -qm stubs ) || { echo "  ✗ S382: 临时仓准备失败"; S382_OK=false; }
 cp "$PROJECT_ROOT/engine/audit/hooks/commit-msg" "$S382_TMP/.git/hooks/commit-msg" && chmod +x "$S382_TMP/.git/hooks/commit-msg"
 echo "// driver stub v2" >> "$S382_TMP/FORGE/src/fresh-eyes-driver.mjs"
-# 一、活锁 + 改 driver：锁写当前 shell PID（必活）→ hook 须 exit 1 拦截且提示冻结窗口
-#     （hook 必然非 0——if 守卫承接退出码，防 set -e 杀死整个 acceptance）
+# 一、活锁 + 改 driver：锁写当前 shell PID（必活）→ hook 须 exit 1 拦截且提示冻结窗口     （hook 必然非 0——if 守卫承接退出码，防 set -e 杀死整个 acceptance）
 printf '{"runId":"s382-test","pid":%s,"fingerprint":"fp","startedAt":"2026-09-08T00:00:00Z"}' "$$" > "$S382_HOME/.sofagent/internal/fresh-eyes-run.lock"
 if ( cd "$S382_TMP" && git add FORGE/src/fresh-eyes-driver.mjs && HOME="$S382_HOME" bash .git/hooks/commit-msg "$(mktemp "$S382_TMP/msg-XXXX")" ) > "$S382_TMP/case1.out" 2>&1; then S382_C1=0; else S382_C1=$?; fi
 grep -q "冻结窗口内不得修改 driver 源码" "$S382_TMP/case1.out" || { echo "  ✗ S382: 活锁+改 driver 未提示冻结窗口（输出：$(head -3 "$S382_TMP/case1.out")）"; S382_OK=false; }
@@ -4469,8 +4107,7 @@ rm -rf "$S382_TMP" "$S382_HOME"
 $S382_OK && pass "driver 冻结窗口锁行为锁（活锁改 driver 拦截 + 锁滞留 WARN 放行 + 无锁正常）" || fail "driver 冻结窗口锁回退——见上方 ✗ 行"
 
 echo -e "  验收测试结果：${GREEN}$PASSED 通过${NC} / ${RED}$FAILED 失败${NC} / ${YELLOW}$WARNED 跳过${NC} / 共 $((PASSED + FAILED + WARNED))"
-# 汇总口径（run-10/run-08/run-05 三轮收紧）：无色码 SUMMARY 行供 driver grep（EXIT: 0=全PASS / <N>=N失败）；
-# 跳过 = 证据面缺失与失败同为闸门关注面（WARNED=0 才可称全过）；退出码三态：0=全过 / 2=有跳过（放行前补跑）/ N=失败数
+# 汇总口径（run-10/run-08/run-05 三轮收紧）：无色码 SUMMARY 行供 driver grep（EXIT: 0=全PASS / <N>=N失败）； 跳过 = 证据面缺失与失败同为闸门关注面（WARNED=0 才可称全过）；退出码三态：0=全过 / 2=有跳过（放行前补跑）/ N=失败数
 echo "SUMMARY: ${PASSED}/$((PASSED + FAILED + WARNED)) passed · SKIP: ${WARNED} · EXIT: ${FAILED}"
 if [ "$FAILED" -gt 0 ]; then echo -e "${RED}❌ 有 $FAILED 个场景失败，请修复后再发版${NC}"; exit "$FAILED"
 elif [ "$WARNED" -gt 0 ]; then echo -e "${YELLOW}⚠️  有 $WARNED 个场景因环境依赖跳过（证据面不完整），放行前补跑${NC}"; exit 2

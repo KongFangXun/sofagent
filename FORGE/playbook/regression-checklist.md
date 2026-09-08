@@ -2,7 +2,7 @@
 
 > **用途**：每次发版前跑一遍，确认之前修过的问题没有回退。发现新问题用 [fresh-eyes-review](./fresh-eyes-review.md)。审查范围：全仓库状态检查（不是只看增量）。
 > **编号规则**：归并项直接删除、编号不复用；维度演进与归并的完整历史 `git log -p` 可溯，本清单只维护当前状态。
-> **当前 99 维 · 编号 1-129 · 30 个编号已归并删除**。维度流连续不中断，分组导航：基线组 → 审查约束组 → 环境敏感组（前置 vitest/沙箱铁律）。
+> **当前 100 维 · 编号 1-132 · 31 个编号已归并删除**。维度流连续不中断，分组导航：基线组 → 审查约束组 → 环境敏感组（前置 vitest/沙箱铁律）。
 
 ## 🔒 维护公约（防膨胀铁律）
 
@@ -33,7 +33,7 @@ WC_CHK=$(wc -l < FORGE/playbook/regression-checklist.md); WC_ACC=$(wc -l < FORGE
 
 你是**回归测试工程师**——确认已知的修复没有回退，不是发现新问题。逐项核对，全 PASS 即通过。⏰ 时序：回归检查在阶段六跑，git tag/npm registry 未到位的项标 ⏳。🔍 维度 7f/17a-b/20 依赖真实环境（npm/git/OpenClaw），AI 审查标 `⏸️ 需人工环境`。
 
-## 审查维度（99 维 · 编号规则见头部）
+## 审查维度（100 维 · 编号规则见头部）
 
 ### 审查维度正文（#1-128 · 维度流连续不中断）
 
@@ -56,8 +56,7 @@ LATEST_VER=$(grep -m1 "^### \[v" CHANGELOG.md | grep -oE 'v[0-9.]+'); sed -n "/^
 sed -n '4p' docs/ROADMAP.md | grep -qE "后训模块|数据与评估|FDE Harness|六引擎|IM 桥" || echo "⚠️ ROADMAP 版本头描述可能错配" # 关键词须随发版同步更新（口径）
 # 子项 g: SECURITY.md 旧描述清理（原维度 48d）
 grep -q "不做内容安全校验" SECURITY.md && echo "⚠️ SECURITY.md L86 推辞过时" || true
-# 子项 h: SKILL.md 铁律/底线数标题声称与实际一致（原维度 48g；底线是有序列表 `N. ` 格式）
-# 防御（定谳尾判假）：`[ ] && echo ⚠️` 在健康态（相等）时 `[ ]` 返 1 → 整维度 exit=1 假红，改显式 if、健康态显式 exit 0
+# 子项 h: SKILL.md 铁律/底线数标题声称与实际一致（原维度 48g；底线是有序列表 `N. ` 格式） 防御（定谳尾判假）：`[ ] && echo ⚠️` 在健康态（相等）时 `[ ]` 返 1 → 整维度 exit=1 假红，改显式 if、健康态显式 exit 0
 SKILL_BC=$(grep -oE "### ([0-9]+) 底线" SKILL/SKILL.md | grep -oE "[0-9]+" || echo 0); SKILL_BA=$(sed -n '/^### [0-9] 底线/,/^### /p' SKILL/SKILL.md | grep -cE "^[0-9]+\. " || echo 0); if [ "$SKILL_BC" != "$SKILL_BA" ]; then echo "⚠️ SKILL.md 底线数 $SKILL_BC vs $SKILL_BA"; exit 1; fi; echo "✅ SKILL.md 底线数一致 ($SKILL_BC)"
 # 注：echo 变量插值禁全角括号——macOS bash 3.2 多字节展开 bug 吞「）」首字节+变量值（FFFD），半角安全
 ```
@@ -65,9 +64,7 @@ SKILL_BC=$(grep -oE "### ([0-9]+) 底线" SKILL/SKILL.md | grep -oE "[0-9]+" || 
 #### 3. 文档规范源与归属一致性
 
 ```bash
-# 子项 a: think.md 始终为 Ledger/source（非 Views/派生视图）
-# 注意：grep 须精确匹配"think.md 被标为 Views"，而非"think.md 和 Views 出现在同一行"
-# 正确模式：think.md 后跟 Views/派生（think.md = Views）→ 误标；think.md 后跟 Ledger/source → 正确
+# 子项 a: think.md 始终为 Ledger/source（非 Views/派生视图） 注意：grep 须精确匹配"think.md 被标为 Views"，而非"think.md 和 Views 出现在同一行" 正确模式：think.md 后跟 Views/派生（think.md = Views）→ 误标；think.md 后跟 Ledger/source → 正确
 grep -rn "think\.md.* Views\|think\.md.*派生视图\|think\.md（Views" docs/ARCHITECTURE.md docs/PHILOSOPHY.md docs/DEVELOPMENT.md FDE/GUIDE.md # 期望：无匹配
 
 # 子项 b: canonical source 一致性
@@ -97,9 +94,7 @@ grep -A5 "'A4\|name.*不删配置" engine/audit/src/rules/index.ts | grep "ruleC
 grep "name:" engine/audit/src/rules/index.ts | wc -l # 期望 24
 grep "A6.*能力拐杖\|A11.*业务底线" engine/audit/README.md | wc -l # 期望 2
 
-# 子项 d: ruleClass SSOT ↔ README 逐条比对（盲区 重写）
-# 注：旧版用 `diff <(index.ts 代码) <(README 表格行)`——两种文本格式天生不同，永远报差异（误报 12 行）。
-# 改为两侧归一化成「A编号 ruleClass」再比对，才是真正检查"每条规则分级两边一致"。
+# 子项 d: ruleClass SSOT ↔ README 逐条比对（盲区 重写） 注：旧版用 `diff <(index.ts 代码) <(README 表格行)`——两种文本格式天生不同，永远报差异（误报 12 行）。 改为两侧归一化成「A编号 ruleClass」再比对，才是真正检查"每条规则分级两边一致"。
 diff <(grep -E "name: 'A[0-9]+" engine/audit/src/rules/index.ts | sed -E "s/.*name: '(A[0-9]+)[^']*'.*ruleClass: '([^']+)'.*/\1 \2/" | sort) \
  <(grep -E "^\| A[0-9]+ " engine/audit/README.md | awk -F'|' '{n=split($2,arr," "); id=arr[1]; cls=$(NF-1); gsub(/^[ \t]+|[ \t]+$/,"",id); gsub(/^[ \t]+|[ \t]+$/,"",cls); print id, cls}' | sort) # 零差异
 
@@ -110,8 +105,7 @@ TABLE=$(grep -cE "^\| A[0-9]+ |^\| E[0-9]+ " engine/audit/README.md)
 echo "index=$INDEX / README表=$TABLE（期望 TABLE≥INDEX）" # 注：A18/A19 漏更新
 grep "rulesCount" engine/mcp/src/tools/report-tools.ts | head -1 # MCP 数字动态化（拆分后非硬编码）|| true
 
-# 子项 h: 口径一致性硬断言（校准：17/21/24 三口径并存防复发）——
-# 注册数 = 默认数 + 扩展数 = 24，且横幅签名已统一「N 项检查 · M 条规则」口径
+# 子项 h: 口径一致性硬断言（校准：17/21/24 三口径并存防复发）—— 注册数 = 默认数 + 扩展数 = 24，且横幅签名已统一「N 项检查 · M 条规则」口径
 RULE_CNT_OK=$(node -e "
 const src = require('fs').readFileSync('engine/audit/src/rules/index.ts', 'utf8');
 const cnt = (re) => { const m = src.match(re); if (!m) return -1; return (m[0].match(/name:\s*'(A|E)[0-9]+/g) || []).length; };
@@ -126,8 +120,7 @@ echo "✅ 规则口径一致：17 默认 + 7 扩展 = 24 注册，签名口径�
 #### 7. 感知层配置与推送链路
 
 ```bash
-# 子项 a: 配置完整性（勘误：perception 段已随维度 42 移除——全代码库零读取点，
-# config.yml 里只剩移除说明注释。本检查改为「移除说明在位」防 perception 借尸还魂 + audit.webhook 配置项健康）
+# 子项 a: 配置完整性（勘误：perception 段已随维度 42 移除——全代码库零读取点， config.yml 里只剩移除说明注释。本检查改为「移除说明在位」防 perception 借尸还魂 + audit.webhook 配置项健康）
 if [ -f .sofagent/config.yml ]; then
  grep -q "perception" .sofagent/config.yml && grep -q "已移除" .sofagent/config.yml && echo "✅ perception 移除说明在位（防死配置回流）" || echo "⚠️ config.yml 无 perception 移除说明（可能是旧版配置残留，重跑 --init 刷新）"
 else
@@ -241,8 +234,7 @@ node engine/audit/dist/index.js --version 2>&1 | grep -q "sofagent" && echo "✓
 grep -n "nodesWithActions.length === 0\|nodesWithActions.length === 0" engine/audit/src/rules/rule-a15-action-constraint.ts
 grep -A2 "nodesWithActions.length === 0" engine/audit/src/rules/rule-a15-action-constraint.ts | grep -c "FAIL" # 期望：≥ 1
 
-# 子项 b: ~/.sofagent/ 目录权限 700 + install.sh chmod 700（路径迁移：.sofagent/ → ~/.sofagent/）
-# 检查 1：install.sh 是否有 chmod 700 SOFAGENT_HOME
+# 子项 b: ~/.sofagent/ 目录权限 700 + install.sh chmod 700（路径迁移：.sofagent/ → ~/.sofagent/） 检查 1：install.sh 是否有 chmod 700 SOFAGENT_HOME
 grep -c 'chmod 700.*SOFAGENT_HOME' install.sh # 期望：≥ 1
 # 检查 2：已安装环境的 ~/.sofagent/ 权限（仅在本机已安装时检查）
 ls -ld ~/.sofagent 2>/dev/null | grep -c 'drwx------' # 期望：1（700）
@@ -251,9 +243,7 @@ ls -ld ~/.sofagent 2>/dev/null | grep -c 'drwx------' # 期望：1（700）
 grep -n "overallImprovement\|decidePromotion" engine/ab-test/src/*.ts 2>/dev/null
 # 人工检查：decidePromotion() 必须有 overallImprovement > 0 守卫
 
-# 子项 d: core 包 mkdirSync 权限加固——所有数据目录创建必须带 mode: 0o700
-# 注意：fresh-eyes P0「数据明文存储」过渡防线——目录默认 755 时同机其他用户可读审计数据
-# 注意：grep 须排除 import 行（import { mkdirSync } 也含关键词但非调用）
+# 子项 d: core 包 mkdirSync 权限加固——所有数据目录创建必须带 mode: 0o700 注意：fresh-eyes P0「数据明文存储」过渡防线——目录默认 755 时同机其他用户可读审计数据 注意：grep 须排除 import 行（import { mkdirSync } 也含关键词但非调用）
 grep -rn "mkdirSync(" engine/core/src/ --include="*.ts" | grep -v "__tests__" | grep -v "mode:" # 期望：零命中（所有 mkdirSync( 调用都带 mode）
 grep -rc "mkdirSync(.*mode: 0o700" engine/core/src/ --include="*.ts" | grep -v ":0" # 期望：≥ 5 处
 ```
@@ -299,9 +289,7 @@ grep "A18" engine/audit/src/rules/runner.ts # extended 优先级 A18 排在 A17 
 #### 20. daemon plist + watch.yml 正确性 + --init 覆盖防护（归并 20+22）
 
 ```bash
-# 子项 a: plist 内容正确（原维度 20）
-# 修复（定谳假绿）：plist/daemon.log 缺失时 grep 报错但脚本继续 → exit 由后续命令决定，
-# 无 daemon 环境静默记绿。改显式守卫：缺失即 ⏸️ 跳过标记（对照维度 7 规范），有 daemon 才检查内容。
+# 子项 a: plist 内容正确（原维度 20） 修复（定谳假绿）：plist/daemon.log 缺失时 grep 报错但脚本继续 → exit 由后续命令决定， 无 daemon 环境静默记绿。改显式守卫：缺失即 ⏸️ 跳过标记（对照维度 7 规范），有 daemon 才检查内容。
 PLIST=~/Library/LaunchAgents/com.sofagent.daemon.plist
 if [ -f "$PLIST" ]; then
  grep "sofagent-daemon" "$PLIST" # ProgramArguments
@@ -721,12 +709,10 @@ grep -c "FDE Harness\|审计模块零 token\|assertSubAgentsNoEmptyTools\|MAX_NO
 > ⚠️ 本维度 10 个子项（a–j）为 node 全树扫描，单机实测累计 **<1 秒**（实测验证）。若 worker 报「命令超时 120s exitCode=null」→ 是 worker 运行环境负载问题（大上下文加载/系统繁忙），**非检查本身慢**——人工复跑本维度命令即可确认。
 
 ```bash
-# 子项 a: /sofagent/ 目录残留（node 扫描绕开 BSD grep 中文误判）
-# 豁免：archive/changelog 为历史文档目录；`.sofagent/skill/`（含 ~/.sofagent/skill/）是用户 HOME 部署路径，非仓库旧路径
+# 子项 a: /sofagent/ 目录残留（node 扫描绕开 BSD grep 中文误判） 豁免：archive/changelog 为历史文档目录；`.sofagent/skill/`（含 ~/.sofagent/skill/）是用户 HOME 部署路径，非仓库旧路径
 node -e "const fs=require('fs');const dirs=['engine','LOOP','FDE','SKILL','docs','tools','.github'];let hits=[];dirs.forEach(d=>{if(!fs.existsSync(d))return;function walk(dir){for(const e of fs.readdirSync(dir,{withFileTypes:true})){if(['node_modules','dist','target','archive','changelog'].includes(e.name))continue;const f=dir+'/'+e.name;if(e.isDirectory())walk(f);else if(e.name.endsWith('.md')||e.name.endsWith('.ts')||e.name.endsWith('.sh')){const c=fs.readFileSync(f,'utf8');c.split('\n').forEach((l,i)=>{if(l.includes('sofagent/skill/')&&!l.includes('.sofagent/skill/')&&!l.includes('已')&&!l.includes('旧')&&!l.includes('→')&&!l.includes('历史'))hits.push(f+':'+(i+1))})}}}walk(d)});['install.sh','SECURITY.md','README.md'].forEach(f=>{if(!fs.existsSync(f))return;const c=fs.readFileSync(f,'utf8');c.split('\n').forEach((l,i)=>{if(l.includes('sofagent/skill/')&&!l.includes('.sofagent/skill/')&&!l.includes('已')&&!l.includes('旧')&&!l.includes('→')&&!l.includes('历史'))hits.push(f+':'+(i+1))})});console.log(hits.length===0?'✅ sofagent/skill/ 零残留':'❌ FOUND '+hits.length);hits.forEach(h=>console.log(' '+h))"
 
-# 子项 b: agents/SKILL/ 旧路径残留（应零命中，排除 changelog 历史 + acceptance-test 反向断言）
-# 清理：engine/src + LOOP 目录 重构后已删除，从扫描数组移除
+# 子项 b: agents/SKILL/ 旧路径残留（应零命中，排除 changelog 历史 + acceptance-test 反向断言） 清理：engine/src + LOOP 目录 重构后已删除，从扫描数组移除
 node -e "const fs=require('fs');const dirs=['engine/orchestrator/src','engine/rules/src','FDE','SKILL','docs','tools'];let hits=[];dirs.forEach(d=>{if(!fs.existsSync(d))return;function walk(dir){for(const e of fs.readdirSync(dir,{withFileTypes:true})){if(['node_modules','dist'].includes(e.name))continue;const f=dir+'/'+e.name;if(e.isDirectory())walk(f);else if(e.name.endsWith('.md')||e.name.endsWith('.ts')||e.name.endsWith('.sh')){const c=fs.readFileSync(f,'utf8');c.split('\n').forEach((l,i)=>{if(l.includes('agents/SKILL')&&!f.includes('changelog/')&&!(f.includes('acceptance-test')&&l.includes('! -d')))hits.push(f+':'+(i+1))})}}}walk(d)});console.log(hits.length===0?'✅ agents/SKILL/ 零残留':'❌ FOUND '+hits.length);hits.forEach(h=>console.log(' '+h))"
 
 # 子项 c: SECURITY.md Dengine/ 残留（应零命中）
@@ -782,8 +768,7 @@ node -e "const fs=require('fs'),path=require('path');const dirs=['docs','SKILL',
 # a: HMAC 写读对称（写入侧先 sanitize 再签名）
 grep -n "stableStringify\|sanitize\|脱敏" engine/core/src/audit-history.ts | grep -i "sign\|hmac\|签" && echo "✅ HMAC 写读对称" || echo "❌ HMAC 写读不对称"
 grep -n "stableStringify\|sanitize" engine/audit/src/audit-history.ts | grep -i "sign\|hmac\|verify" && echo "✅ audit 包 HMAC 对称" || echo "⚠️ 检查 audit 包 HMAC"
-# b: doctor 三态（ok/tampered/unverifiable）+ 使用 detailed 版本
-# 注：unverifiable 枚举定义在 audit-history.ts（L132 ChainCheckStatus），doctor.ts 用 else 分支处理（L242），不含字面串——改查定义侧
+# b: doctor 三态（ok/tampered/unverifiable）+ 使用 detailed 版本 注：unverifiable 枚举定义在 audit-history.ts（L132 ChainCheckStatus），doctor.ts 用 else 分支处理（L242），不含字面串——改查定义侧
 grep -q "tampered" engine/core/src/doctor.ts && grep -q "'unverifiable'" engine/core/src/audit-history.ts && echo "✅ 三态判定存在（doctor 消费 + audit-history 定义）" || echo "❌ 缺少三态判定"
 grep -q "checkHistoryChainDetailed" engine/core/src/doctor.ts && echo "✅ detailed 版本" || echo "❌ 未使用 detailed 版本"
 # c: config 签名（audit 段误放检测 + verifyConfigSignature）
@@ -809,8 +794,7 @@ grep -qi "png" engine/core/src/__tests__/isomorphic-git-v2.test.ts && echo "✅ 
 grep -rn "join(.*'data'" engine/ --include="*.ts" | grep -v "data-paths.ts" | grep -v "\.test\." | grep -v "__tests__" | grep -v "// " | grep -v "新的路径"
 # 期望：零命中或仅注释（注释需说明"原...迁移到..."）
 
-# 防复发锚点：doctor.ts 全局路径读取收口 SSOT——直读 process.env.SOFAGENT_HOME 会绕过 sanitizeSofagentHome 白名单防护（path-traversal 面）
-# 改走 resolveHomeDir() 后不得回潮
+# 防复发锚点：doctor.ts 全局路径读取收口 SSOT——直读 process.env.SOFAGENT_HOME 会绕过 sanitizeSofagentHome 白名单防护（path-traversal 面） 改走 resolveHomeDir() 后不得回潮
 grep -c "process.env.SOFAGENT_HOME ||" engine/core/src/doctor.ts # 期望：0（直读形态清零）
 grep -c "resolveHomeDir" engine/core/src/doctor.ts # 期望：≥3（L107/L362/L606 三处收口）
 
@@ -831,12 +815,9 @@ grep -rc "SOFAGENT_HOME\|SOFAGENT_DATA" engine/scripts/lib/platform-detect.sh en
 > 🔴 教训（回归审查挖出）：eval CLI 曾崩了 8 个版本没人发现——①cli.ts require 路径错 ②golden-set sha256 改 yaml 未重算 ③3 用例期望过时（规则演进了 golden 没跟）。**根因：本维度的检查结果长期被当"环境问题"跳过**。判定规则：本维度输出异常时先在非沙箱环境复跑（见环境验证铁律），确认非环境后才可跳过；golden set 变更必须同步重算 .sha256。
 
 ```bash
-# mock 单测全绿后，必须额外跑真实 CLI 端到端
-# eval 包
+# mock 单测全绿后，必须额外跑真实 CLI 端到端 eval 包
 (cd engine/eval && node dist/cli.js run 2>&1 | grep -E "passRate|通过率")
-# 期望：passRate 100%，任何低于 100% 都说明 golden set 与真实规则不匹配
-# ab-test 包（修正：--golden-set 参数已移除，CLI 现要求 --current/--candidate；
-# 无参 run 报参数缺失 exit 1——健康态改用 --help 可达性验证，对比实验属运行时功能由单测覆盖）
+# 期望：passRate 100%，任何低于 100% 都说明 golden set 与真实规则不匹配 ab-test 包（修正：--golden-set 参数已移除，CLI 现要求 --current/--candidate； 无参 run 报参数缺失 exit 1——健康态改用 --help 可达性验证，对比实验属运行时功能由单测覆盖）
 (cd engine/ab-test && node dist/cli.js --help 2>&1 | grep -q "Subcommands" && echo "✅ ab-test CLI 可用")
 ```
 
@@ -851,9 +832,7 @@ grep -rnE 'sk-[a-zA-Z0-9]{20,}' engine/eval/data/ engine/ab-test/src/__tests__/ 
 grep -rn "$(echo SWdub3JlIHByZXZpb3VzIGluc3RydWN0aW9ucw== | base64 -d)" engine/eval/data/golden-set.yaml 2>/dev/null # 期望零命中
 # 3. 占位符替换机制存在
 grep -c 'PLACEHOLDER_MAP\|SK_PREFIX\|INJ_PHRASE' engine/eval/src/eval-runner.ts # ≥3
-# 4. A2 规则正则边界变体回归（原 #121 并入）——编码/大小写/前缀变体用例防正则漂移
-# 路径勘误（定谳）：原锚 engine/audit/src/__tests__/a2-secret-leak.test.ts 不存在（实际
-# 文件在 rules/ 下与实现同目录）——死路径 grep 静默通过 = 假绿，与本维度 #1 子项勘误同模式。
+# 4. A2 规则正则边界变体回归（原 #121 并入）——编码/大小写/前缀变体用例防正则漂移 路径勘误（定谳）：原锚 engine/audit/src/__tests__/a2-secret-leak.test.ts 不存在（实际 文件在 rules/ 下与实现同目录）——死路径 grep 静默通过 = 假绿，与本维度 #1 子项勘误同模式。
 grep -qE '变体|variant|大小写|case|FFFD|base64' engine/audit/src/rules/rule-a2.test.ts 2>/dev/null && echo "✅ A2 边界变体用例在位" || echo "⚠️ A2 边界变体用例缺失（engine/audit/src/rules/rule-a2.test.ts）"
 ```
 
@@ -930,8 +909,7 @@ grep -q "SKIP_ANCHOR_SCAN" tools/check/check-docs.sh || echo "⚠️ 降级开�
 > ⚠️ **判定规则（CRITICAL — 防误报）**：先检查 `package.json` 的 `exports` 字段——如果 `exports['.']` 已路由到 `public-api.ts`，则所有导出已对消费者暴露，**不需要在 index.ts 中重复 re-export**。`index.ts` 通常是 CLI 入口（含 `require.main === module`）。仅当 exports 指向 index.ts 且缺失 public-api.ts 导出时才算 FAIL。
 
 ```bash
-# 显式判定版（校准：裸 grep 健康态语义 exit=1 被 driver 归一化旁路，改显式 if）
-# 注：echo 变量插值处用半角括号（bash 3.2 全角吞字节 bug）；grep -c 配 || true + ${VAR:-0} 守卫
+# 显式判定版（校准：裸 grep 健康态语义 exit=1 被 driver 归一化旁路，改显式 if） 注：echo 变量插值处用半角括号（bash 3.2 全角吞字节 bug）；grep -c 配 || true + ${VAR:-0} 守卫
 ENTRY=$(node -e "const p=require('./engine/audit/package.json'); console.log(p.exports?.['.']?.types || p.types || 'NOT_FOUND')")
 if [ "$ENTRY" = "NOT_FOUND" ]; then echo "⚠️ audit package.json 无 exports/types 入口"; exit 1; fi
 if echo "$ENTRY" | grep -q "public-api"; then echo "✅ exports 路由 public-api.ts，全导出已对消费者暴露"; exit 0; fi
@@ -982,8 +960,7 @@ echo "✅ 裁决解析健壮性四锚全过 (fragile=0 window≥1 fence≥1)"
 > 教训：7 处断链全因 GitHub 渲染剥除标题特殊字符——emoji 被整段剥除、`+` 被剥后相邻空格合并为双连字符 `--`、`/`/括号/冒号被剥除。链接作者按"看到的标题"写锚点，渲染后锚点不同→死链。**断言链接时须按 GitHub 规则推算锚点，不能照抄标题。**
 
 ```bash
-# 子项 a: 扫描跨文档 markdown 链接的锚点，对照目标文件实际标题推算渲染锚点
-# 规则：转小写→剥 emoji/标点→空格转连字符→连续连字符保留（剥除产生的双连字符不合并）
+# 子项 a: 扫描跨文档 markdown 链接的锚点，对照目标文件实际标题推算渲染锚点 规则：转小写→剥 emoji/标点→空格转连字符→连续连字符保留（剥除产生的双连字符不合并）
 grep -rn '\]\(\./\?[A-Za-z0-9_/.-]*\.md#' docs/ README.md SECURITY.md LIMITATIONS.md --include="*.md" 2>/dev/null | grep -v changelog | grep -v archive # 人工核对：每条 # 后锚点 = 目标标题按 GitHub 规则渲染结果（docs/ 已含 ROADMAP.md）
 
 # 子项 b: 标题含 emoji/+///括号/冒号 的高危锚点目标——这类标题最易产生断链
@@ -1246,8 +1223,7 @@ grep -c "engine/\*/src/\*\*/\*.js" .gitignore # ≥1
 **背景**：A3 ruleClass 在 index.ts（注册中心）/ rule-a3-*.ts（规则实现）/ README（文档）三处声明，版本演进时容易只改一处忘记其他——审查捕获 A3 在 index.ts 标"能力拐杖"、rule-a3-*.ts 标"业务底线"的不一致。
 
 ```bash
-# 每条规则的 ruleClass 在 index.ts 和 rule-*.ts 必须一致
-# 修复（校准：误报）：旧脚本 for 空格分词 + rule_name 恒空全报 ⚠️ → 改按 number 定位对比。
+# 每条规则的 ruleClass 在 index.ts 和 rule-*.ts 必须一致 修复（校准：误报）：旧脚本 for 空格分词 + rule_name 恒空全报 ⚠️ → 改按 number 定位对比。
 for n in $(grep -oE "number: [0-9]+" engine/audit/src/rules/index.ts | grep -oE "[0-9]+" | sort -un); do
  idx=$(grep -E "number: $n" engine/audit/src/rules/index.ts | grep -oE "ruleClass: '[^']+'" | head -1)
  impl=$(grep -hoE "ruleClass: '[^']+'" engine/audit/src/rules/rule-a${n}-*.ts 2>/dev/null | head -1)
@@ -1262,8 +1238,7 @@ done
 **背景**：release-gate sandbox 默认 LANG=C，acceptance-test.sh 中文输出 ANSI 乱码 + 日志末尾截断，driver 无法解析结果。本地（LANG=en_US.UTF-8）无法复现——只在 CI/sandbox 暴露。
 
 ```bash
-# 含中文输出的 shell 脚本必须头部 export LANG/LC_ALL
-# 修复正则放宽匹配 `${LANG:-en_US.UTF-8}` 变量默认值写法（校准：误报根因——旧正则只匹配裸 `LANG=en_US.UTF-8`）
+# 含中文输出的 shell 脚本必须头部 export LANG/LC_ALL 修复正则放宽匹配 `${LANG:-en_US.UTF-8}` 变量默认值写法（校准：误报根因——旧正则只匹配裸 `LANG=en_US.UTF-8`）
 for f in FORGE/playbook/acceptance-test.sh tools/check/check-version.sh tools/check/check-docs.sh; do
  head -10 "$f" | grep -qE "LANG=.*en_US\.UTF-8|LC_ALL=.*en_US\.UTF-8" || echo "⚠️ $f 缺 locale export"
 done
@@ -1289,8 +1264,7 @@ grep -qE 'echo "SUMMARY:' FORGE/playbook/acceptance-test.sh && echo "✓ 有纯�
 grep -oE 'engine/[a-zA-Z_/]+\.ts' FORGE/playbook/regression-checklist.md | sort -u | while read f; do
  [ -f "$f" ] || echo "⚠️ 路径失效: $f（架构迁移后未更新检查命令）"
 done
-# 期望：无 ⚠️ 输出（所有引用路径有效）
-# 🔴 每次架构迁移（文件改名/目录调整）后必须跑此元检查
+# 期望：无 ⚠️ 输出（所有引用路径有效） 🔴 每次架构迁移（文件改名/目录调整）后必须跑此元检查
 ```
 
 #### 94. bash 3.2 兼容性——空数组 + set -u + 尾行条件
@@ -1303,8 +1277,7 @@ done
 # 新增 shell 脚本在 macOS 默认 bash 3.2 下测过（人工操作指引，<script.sh> 换成实际文件名）
 /bin/bash --version | head -1 # 确认 3.2
 /bin/bash <script.sh> --help 2>&1; echo "EXIT=$?" # 占位示例——实际文件名替换
-# 期望：EXIT=0
-# 危险模式：${arr[@]} + set -u / [[ ]] && + set -e
+# 期望：EXIT=0 危险模式：${arr[@]} + set -u / [[ ]] && + set -e
 ```
 
 #### 95. check-version 工具健康四盲区——语言覆盖/路径跟随/排除测试/日期动态提取（渐次暴露）
@@ -1385,9 +1358,7 @@ rm -f /tmp/cct-test.sh
 **背景**：阶段八内容增强（FDE 方法论/职业道德/评估体系）导致 B 层（开发者参考）行数从 8302→8437，超 LIMIT_B=8400，CI pr-check 失败。发版过程中才发现——本地 check-docs.sh 在 WorkBuddy 环境下超时跑不完，CI 上才暴露。
 
 ```bash
-# CI 模拟：只跑 B 层行数检查（不跑锚点段避免超时）
-# 修复：LIMIT_B 解析只抓「等号后第一个数字」——旧写法会把注释里的版本号/行数全抓出，
-# 多片段含换行致 integer expression expected（实测误报）。head -1 不管用（按行不按片段）。
+# CI 模拟：只跑 B 层行数检查（不跑锚点段避免超时） 修复：LIMIT_B 解析只抓「等号后第一个数字」——旧写法会把注释里的版本号/行数全抓出， 多片段含换行致 integer expression expected（实测误报）。head -1 不管用（按行不按片段）。
 LIMIT_VAL=$(grep -oE '^LIMIT_B=[0-9]+' tools/check/check-docs.sh | head -1 | cut -d= -f2 || true)
 LIMIT_VAL=${LIMIT_VAL:-0}
 AB=$(cat docs/ARCHITECTURE.md docs/DEVELOPMENT.md docs/HANDBOOK.md docs/PHILOSOPHY.md docs/WIKI.md SECURITY.md docs/VALIDATION.md docs/THANKS.md docs/ROADMAP.md docs/LIMITATIONS.md FDE/GUIDE.md FDE/README.md 2>/dev/null | wc -l)
@@ -1491,8 +1462,7 @@ grep -hE "@sofagent/daemon" engine/mcp/src/tools/snapshot-list.ts engine/mcp/src
 grep -qE "join\(REPO|join\(process\.cwd|['\"]\.?/?SKILL/['\"]" engine/orchestrator/src/instinct/evolver.ts && echo "⚠️ evolver 触达仓库 SKILL/" || echo "✅ evolver 只写 SOFAGENT_HOME/skill/custom（join(dir,'SKILL.md') 是合法 custom 文件名）" # 注：正则收窄——原 join.*SKILL 误伤 custom skill 的 SKILL.md 文件名
 # ④ companion/fde-registry 的 daemon inspector 三步注册
 grep -q "fde-companion-daily\|fde-registry" engine/daemon/src/inspector-layers.ts 2>/dev/null || grep -rq "runFdeCompanionDaily" engine/daemon/src/inspectors/ || echo "⚠️ FDE 巡检未注册 inspector"
-# ⑤ 文档同步四件套（tools 数/测试数/新版 changelog 段/CHANGELOG 索引行）
-# 教训（审查误报）：写死测试数必漂（2903→2937→3177）——改从 test-count.sh SSOT 读实际数对账，不写死。
+# ⑤ 文档同步四件套（tools 数/测试数/新版 changelog 段/CHANGELOG 索引行） 教训（审查误报）：写死测试数必漂（2903→2937→3177）——改从 test-count.sh SSOT 读实际数对账，不写死。
 TC=$(bash tools/check/test-count.sh 2>/dev/null | grep -oE 'TOTAL_TESTS=[0-9]+' | cut -d= -f2)
 grep -q "$TC" README.md || echo "⚠️ README 测试数漂移（期望 $TC，见 tools/check/test-count.sh）" # 漂移实录：2903→2937→3177（12 包实测）
 grep -q "\*\*v1.3.5\*\*" CHANGELOG.md || echo "⚠️ CHANGELOG 索引缺 v1.3.5"
@@ -1560,8 +1530,7 @@ grep -q "tampered" engine/audit/src/commands/verify.ts && echo "✅ 追加伪造
 grep -qE "\.bin|Binary files" engine/audit/src/rules/rule-a2-secret-leak.ts && echo "✅ 二进制边界 WARN" || echo "❌ blob 绕过回开"
 # rm -rf 正则口径统一：两扫描器豁免必须同源
 grep -q '(?!tmp|home' engine/audit/src/rules/skill-safety-rules.ts && grep -q '(?!tmp|home' engine/audit/src/agent-shield.ts && echo "✅ rm-rf 豁免同源" || echo "❌ 口径漂移回退"
-# FORGE driver LLM 超时：四文件实例化点缺一即挂死风险回植
-# （注意：不用 awk 管道——driver bash -c 注入场景 \$ 转义会炸，改用逐文件 grep -q 链，无转义依赖）
+# FORGE driver LLM 超时：四文件实例化点缺一即挂死风险回植 （注意：不用 awk 管道——driver bash -c 注入场景 \$ 转义会炸，改用逐文件 grep -q 链，无转义依赖）
 grep -q 'timeout: 600_000' FORGE/src/driver-base.mjs && grep -q 'timeout: 600_000' FORGE/src/fresh-eyes-driver.mjs && grep -q 'timeout: 600_000' FORGE/src/release-gate-driver.mjs && grep -q 'timeout: 600_000' FORGE/src/tool-output-budget.mjs && echo "✅ LLM 超时四文件全覆盖" || echo "❌ 超时保护缺失"
 # FORGE resume 越轮泄漏 + S146 cwd 漂移 + check-version 溯源豁免（三实录防复发）
 grep -q 'round === resumeState?.round' FORGE/src/fresh-eyes-driver.mjs && echo "✅ resume 守卫" || echo "❌ 越轮泄漏回植"
@@ -1675,8 +1644,8 @@ grep -o '~[0-9]* 行' bootstrap.sh | grep -o '[0-9]*' | awk -v n="$(wc -l < inst
 [ -z "$(git status --short | grep '^??')" ] && echo "✅ 无 untracked 残留" || { echo "❌ 残留：$(git status --short | grep '^??' | head -2)"; exit 1; }
 # B9/B10 结构可发现性（两断言并一行收口）
 grep -q "FORGE/SKILL" AGENTS.md && grep -q "releasing/" docs/changelog/releasing.md && head -5 docs/changelog/releasing.md | grep -q "入口" && echo "✅ FORGE/SKILL 区分 + releasing 入口指引在位" || { echo "❌ 结构可发现性缺失（FORGE/SKILL 或 releasing 入口）"; exit 1; }
-# B11 双 manifest 版本一致（阶段十一 ClawHub 拒收实录：openclaw.plugin.json 从未被 bump 覆盖 4 款全漂移）——命令体见 acceptance S331（#63→S166 同款收口）
-# B12 bump 跳过逻辑无通配误伤（阶段十一静默漏 bump 实录：通配误伤 sofagent-audit）——命令体见 acceptance S332
+# B11 双 manifest 版本一致（阶段十一 ClawHub 拒收实录：openclaw.plugin.json 从未被 bump 覆盖 4 款全漂移）——命令体见 acceptance S331
+# B12 bump 跳过逻辑无通配误伤（阶段十一静默漏 bump 实录：通配误伤 sofagent-audit）——命令体见 acceptance S331（S332 已于 v1.4.6 防膨胀批合族并入）
 # k（原 #121）：dashboard 工作明细栏在位——插件目录已由 B11/S331 锁、cost_query 已由 S347/S348 锁
 grep -q "worklog" tools/dashboard/dashboard.html && echo "✅ dashboard 工作明细栏在位" || { echo "❌ dashboard worklog 缺失"; exit 1; }
 ```
@@ -1738,8 +1707,7 @@ grep -q "checkHistoryChainIntegrity" CHANGELOG.md && echo "✅ 退役公告在 C
 ```bash
 # a: 门禁正则跨平台健壮性——\s 在 BSD/部分 grep 语义不稳（实测：本机 2.6.0-FreeBSD 支持 \s，但 test-count 曾因 ANSI 前缀恒 0 假红、\s 组合加剧解析脆性）；shell 活代码一律 POSIX 类——注释行与 Node 内嵌 JS 行（matchAll/test/inFence 上下文）合法
 grep -rn '\\\\s' tools/check/check-docs.sh tools/check/check-review-system.sh tools/check/check-test-count.sh tools/check/check-dev-prompt.sh tools/check/check-version.sh 2>/dev/null | grep -vE "^[^:]+:[0-9]+:#" | grep -vE "(matchAll|\.test\(|inFence|node -e)" | grep -q . && echo "❌ 门禁 shell 活代码残留 \\\\s（跨平台假红隐患）" || echo "✅ 门禁 shell 活代码无 \\\\s 残留"
-# 防御：正则只锚定审计命令形态——行首（忽略缩进）npx/node 调用 sofagent-audit 且同行挂 || true，才是「退出码被清 0」真假绿
-# 宽匹配 `sofagent-audit.*|| true` 会误中 gh label 装饰行（描述字符串含产品名）；label 写操作挂 || true 是 fork PR 只读令牌的设计降级，非假绿
+# 防御：正则只锚定审计命令形态——行首（忽略缩进）npx/node 调用 sofagent-audit 且同行挂 || true，才是「退出码被清 0」真假绿 宽匹配 `sofagent-audit.*|| true` 会误中 gh label 装饰行（描述字符串含产品名）；label 写操作挂 || true 是 fork PR 只读令牌的设计降级，非假绿
 grep -rnE '^[[:space:]]*(npx|node.*)sofagent-audit.*\|\| true' .github/workflows/ 2>/dev/null | grep -vE "^[^:]+:[0-9]+:#" | grep -q . && echo "❌ CI 审计门禁残留 || true 假绿（exit_code 被清 0，FAIL 永不阻断）" || echo "✅ CI 审计无 || true 假绿"
 # b: worktree 引用丢失防线（悬挂 commit 根因 80c94f64 + LEDGER worktree 副本蒸发）——teardown 固化 tip + driver 产物主仓落盘
 grep -q "branch -f" FORGE/src/driver-base.mjs && echo "✅ teardown 固化分支 tip 在位" || echo "❌ teardown 前未固化 tip（悬挂 commit 回潮）"
@@ -1797,4 +1765,21 @@ test -f docs/guides/train-quickstart.md && test -f docs/guides/examples/quicksta
 grep -q "§数据文件架构" docs/WIKI.md && [ "$(grep -cE "^ {4}name: '" engine/mcp/src/tool-registry.ts)" -eq 83 ] && echo "✅ WIKI 指针 + tools 83 SSOT" || echo "⚠️ WIKI 指针/83 计数漂移——复核"
 grep -q "isSymbolicLink" engine/orchestrator/src/train/retention-policy.ts && grep -q "realpathSync" engine/orchestrator/src/train/retention-policy.ts && [ "$(grep -c "resolvePointPath" engine/orchestrator/src/train/retention-policy.ts)" -ge 4 ] && grep -q "trainArchiveDir" engine/orchestrator/src/train/retention-policy.ts && echo "✅ retention 四词形在位" || echo "❌ retention 加固回潮"
 test -f engine/audit/src/chain-head-anchor.test.ts && grep -q "shouldExempt(key: string, value: string)" engine/audit/src/audit-history.ts && grep -q "sanitizeFreeText(value) === value" engine/audit/src/audit-history.ts && echo "✅ 链锚测试 + SANITIZE 值校验在位" || echo "❌ 链锚/SANITIZE 回潮"
+```
+
+#### 132. v1.4.6 bugfix 批与流程加固防复发——ruleset 渲染/版本动态读/空 diff 审计/uninstall 配对/PERSPECTIVES 对账一维收口（阶段四来源提取 B 类 · 行为面 S381 空 diff 三形态已锁 · B3 根 commit 补审归 S222 空树锚）
+
+> v1.4.6 阶段三 8 finding + bugfix 29 文件的轻量锚。B1 ruleset A0 渲染、B2 版本硬编码双批、B4 openclaw 空 diff、B5 uninstall 漏平台、B6 双清单漂移——全部 grep 型快速检查，端到端行为面由 acceptance S381（空 diff 审计三形态）/S222（根 commit 空树补审）锁定。
+
+```bash
+# B1: ruleset 汇总行规则编号渲染（A0 乱显修复）——500+ 独立编号空间 + 四渲染面分支在位
+grep -q "R1" engine/audit/src/ruleset-loader.ts && grep -c "rulePrefix\|R-prefix\|ruleNumber" engine/audit/src/ruleset-loader.ts | grep -qv "^0$" && echo "✅ ruleset R 前缀渲染分支在位" || echo "❌ ruleset A0 渲染回潮（汇总行规则无编号）"
+# B2: 版本动态读 ×10（ab-test CLI + 9 dsh 插件 pluginMeta 均不硬编码版本）
+DYN=$(grep -rl "require('../package.json').version\|require(\"../package.json\").version" ab-test/src/cli.ts dsh-plugins/*/src/index.ts 2>/dev/null | wc -l | tr -d ' '); [ "$DYN" -ge 10 ] && echo "✅ 版本动态读 ${DYN} 文件在位" || echo "❌ 版本硬编码回潮（动态读仅 ${DYN}/10）"
+# B4: openclaw execute 空数组绕过修复——按 scope 取真实 diff 非 runRules([])
+grep -q "parseDiff" engine/openclaw-plugins/*/index.ts 2>/dev/null || grep -rq "parseDiff" engine/openclaw-plugins/ && echo "✅ openclaw execute 取真实 diff 在位" || echo "❌ execute 传空数组绕过回潮"
+# B5: uninstall 回收清单与 install 支持面配对（cursor/gemini 不漏）
+grep -q "cursor" install.sh && grep -q "cursor" uninstall.sh && grep -q "gemini" install.sh && grep -q "gemini" uninstall.sh && echo "✅ uninstall 平台清单配对（cursor/gemini 在册）" || echo "❌ uninstall 漏平台（装得上卸不掉）"
+# B6: PERSPECTIVES 双清单启动对账在位（漂移 exit 1 自检内建）
+grep -q "assertPerspectivesMatchPlaybook" FORGE/src/gen-fresh-eyes-draft.mjs && echo "✅ PERSPECTIVES 双清单对账自检在位" || echo "❌ 16 视角双清单漂移防线丢失"
 ```
