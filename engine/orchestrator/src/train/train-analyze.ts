@@ -22,7 +22,7 @@ import { atomicWriteSync } from '@sofagent/core';
 import type { NodeInterview } from '../fde/compose-interview';
 import { fdeWorkbenchPaths } from '../fde/fde-workbench';
 import {
-  TRAIN_SCENARIO_TEMPLATES,
+  SCENARIO_MATCH_HINTS,
   findTrainTemplate,
   instantiateTrainTemplate,
   instantiateRlTemplate,
@@ -114,9 +114,11 @@ const FALLBACK_SCENARIO: TrainScenario = 'extraction';
 /**
  * 从节点文本（描述+输出+最卡处）推导训练场景。
  *
- * 规则：对四场景的 matchHints 逐组计数命中（拼接 描述+输出+最卡的地方
- * 三段文本），最高分组胜出；并列或零命中 → 兜底 extraction 且
- * confident=false（报告标注需人确认）。
+ * 规则：对四场景的场景级关键词（SCENARIO_MATCH_HINTS 常量）逐组计数命中
+ * （拼接 描述+输出+最卡的地方 三段文本），最高分组胜出；并列或零命中 →
+ * 兜底 extraction 且 confident=false（报告标注需人确认）。判定用常量、
+ * 实例化才查模板——场景判定语义不依赖模板集完整性（外部配方目录缺某
+ * 场景模板时推导语义零塌缩）。
  */
 export function deriveTrainScenario(node: {
   description: string;
@@ -125,11 +127,10 @@ export function deriveTrainScenario(node: {
 }): ScenarioMatch {
   const text = `${node.description} ${node.output} ${node.bottleneck}`;
   const scores = new Map<TrainScenario, string[]>();
-  for (const template of TRAIN_SCENARIO_TEMPLATES) {
-    const hints = template.matchHints.filter((kw) => text.includes(kw));
+  for (const scenario of Object.keys(SCENARIO_MATCH_HINTS) as TrainScenario[]) {
+    const hints = SCENARIO_MATCH_HINTS[scenario].filter((kw) => text.includes(kw));
     if (hints.length > 0) {
-      const list = scores.get(template.scenario) ?? [];
-      scores.set(template.scenario, [...list, ...hints]);
+      scores.set(scenario, hints);
     }
   }
   if (scores.size === 0) {

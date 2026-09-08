@@ -1545,8 +1545,10 @@
 } from './train/train-analyze';
 /* @public */ export {
   TRAIN_SCENARIO_TEMPLATES,
+  SCENARIO_MATCH_HINTS,
   findTrainTemplate,
   listTrainTemplates,
+  loadExternalRecipes,
   instantiateTrainTemplate,
   validateMoeTargetModules,
   MOE_REQUIRED_EXPERT_MODULES,
@@ -1562,11 +1564,13 @@
   MoeValidationResult,
   MoeValidationError,
   MoeValidationOk,
+  LoadExternalRecipesResult,
 } from './train/train-templates';
 /* @public */ export {
   instantiateRlTemplate,
   findRlTemplate,
-  RL_TEMPLATES,
+  listRlTemplates,
+  registerRlRecipes,
   SCALE_ADVANTAGE_NORMALIZATION,
   SCALE_CISPO_CLIP_EPS,
   SCALE_SKIP_ZERO_VARIANCE,

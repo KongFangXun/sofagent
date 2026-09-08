@@ -77,7 +77,7 @@ const r = analyzeTrainNeed(dataDir, 'quickstart-demo', 'weekly-report');
 // submitHint: train_submit（algorithm=sft，hyperparams 含 qlora.oumi 配置——base_type=dense）
 ```
 
-报告落 `data/train/quickstart-demo/analyze/weekly-report.json`。模板库全景：`node engine/orchestrator/dist/cli.js train templates`（四场景 × QLoRA/SFT/DPO + RL 配置）。**注意**：模板要求数据 ≥500 条，quickstart 10 条仅验证链路——真训练请按 dataRequirement 补样。
+报告落 `data/train/quickstart-demo/analyze/weekly-report.json`。模板库全景：`node engine/orchestrator/dist/cli.js train templates`（四场景参考模板 + RL 配方，全量配方经 `--recipes <dir>` 装载外部配方目录）。**注意**：模板要求数据 ≥500 条，quickstart 10 条仅验证链路——真训练请按 dataRequirement 补样。
 
 ## 六、提交（train_submit）
 

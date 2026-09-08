@@ -1,13 +1,18 @@
-// rl-templates.ts · v1.4.5 第四章 · RL 配方模板（grpo / dapo / cispo + ScaleRL 四技巧）
+// rl-templates.ts · v1.4.6 边界收缩 · RL 配方装载面（参考配方 + 外部装载 + ScaleRL 对齐参数）
 //
-// 定位：模板库的 RL 算法维度（2026-08-26 拍板补齐）——阶段 2 主路线是 RL
-// （v1.4.6 已提 GRPO 大采样组），模板库缺 RL 模板 = 主路线裸奔。三组配方：
+// 定位：模板库的 RL 算法维度——阶段 2 主路线是 RL（v1.4.6 已提 GRPO 大
+// 采样组），模板库缺 RL 模板 = 主路线裸奔。三组配方：
 //   - grpo：组相对策略优化（Group Relative Policy Optimization）——
 //     无 value model，同 prompt 组内 reward 归一化做 advantage
 //   - dapo：解耦 clip + 动态采样（Decoupled Alignment Policy Optimization）——
 //     clip-higher 放宽高概率 token、过采样补偿全对/全错组
 //   - cispo：截断重要性采样策略优化（Clipped Importance Sampling Policy
 //     Optimization）——完整 token 级 clip，超长响应不整条丢弃
+//
+// 边界收缩拍板（训练资产归商业侧）：本文件只留 grpo 参考配方（schema
+// 活样例）+ SCALE_* 缩放律对齐参数（缰绳面——与 scale-curve 同族）+
+// 实例化构造器；dapo/cispo 全量配方迁商业仓经 loadExternalRecipes 的
+// rl/*.json 装载（registerRlRecipes 注册——同 id 覆盖，幂等）。
 //
 // ScaleRL 四技巧参数（arxiv 2510.13786 论文配方可复现——注释级标注）：
 //   ① batch 级 advantage 归一化（advantage_estimator: grpo + batch 归一窗口）
@@ -41,12 +46,12 @@ export const SCALE_WARMUP_RATIO = 0.03 as const;
 // RL 配方模板
 // ════════════════════════════════════════
 
-/** RL 配方标识（grpo / dapo / cispo） */
+/** RL 配方标识（grpo / dapo / cispo——外部装载可扩展） */
 export type RlRecipeId = 'grpo' | 'dapo' | 'cispo';
 
 /** RL 配方模板（描述 + 默认超参骨架——实例化时按场景覆盖） */
 export interface RlTemplate {
-  id: RlRecipeId;
+  id: RlRecipeId | string;
   /** 配方名（人读） */
   name: string;
   /** 适用场景（引导选型——推导产物引用） */
@@ -60,12 +65,11 @@ export interface RlTemplate {
 }
 
 /**
- * RL 配方模板库（三配方全量——`train templates list` 的 RL 维度数据源）。
+ * RL 参考配方（grpo——schema 活样例与缺省演示）。
  *
- * hyperparams 键命名对齐 verl `algorithm.adv_estimator` 与 slime
- * `--advantage-estimator` 惯例：advantage_estimator / clip_eps /
- * skip_zero_variance_groups / warmup_steps_ratio 为 ScaleRL 四技巧的
- * 标准落点，其余为配方专属参数。
+ * dapo/cispo 全量配方是训练资产，归商业侧外部配方目录（经
+ * loadExternalRecipes 的 rl/*.json 装载）。保留 grpo 参考配方保证：
+ * RL 通道实例化缺省可用、`train templates` RL 维度非空、schema 有活样例。
  */
 export const RL_TEMPLATES: readonly RlTemplate[] = [
   {
@@ -81,7 +85,7 @@ export const RL_TEMPLATES: readonly RlTemplate[] = [
       skip_zero_variance_groups: SCALE_SKIP_ZERO_VARIANCE,
       // ScaleRL 技巧 ④：LR warmup
       warmup_steps_ratio: SCALE_WARMUP_RATIO,
-      clip_eps: 0.2,
+      clip_eps: SCALE_CISPO_CLIP_EPS,
       group_size: 8,
       beta: 0.04,
       max_prompt_len: 512,
@@ -93,67 +97,41 @@ export const RL_TEMPLATES: readonly RlTemplate[] = [
       '技巧④ LR warmup：warmup_steps_ratio=0.03',
     ],
   },
-  {
-    id: 'dapo',
-    name: 'DAPO 解耦 clip + 动态采样',
-    scenarios: ['长响应生成（clip-higher 放宽高概率 token）', '全对/全错组过采样补偿'],
-    base_type: 'dense',
-    hyperparams: {
-      advantage_estimator: 'grpo',
-      advantage_normalization: SCALE_ADVANTAGE_NORMALIZATION,
-      skip_zero_variance_groups: SCALE_SKIP_ZERO_VARIANCE,
-      warmup_steps_ratio: SCALE_WARMUP_RATIO,
-      // DAPO 专属：解耦 clip（高概率 token 放宽——clip-higher）
-      clip_eps_high: 0.28,
-      clip_eps_low: 0.2,
-      // DAPO 专属：动态采样（全对/全错组过采样补偿）
-      dynamic_sampling: 'resample',
-      group_size: 16,
-      beta: 0.0,
-      max_prompt_len: 512,
-      max_response_len: 2048,
-    },
-    scalerlNotes: [
-      '技巧① batch 级 advantage 归一化：advantage_normalization=batch',
-      '技巧② CISPO clip ε 解耦：clip_eps_high=0.28 / clip_eps_low=0.2（clip-higher）',
-      '技巧③ 零方差组跳过 + 动态采样补偿：dynamic_sampling=resample',
-      '技巧④ LR warmup：warmup_steps_ratio=0.03',
-    ],
-  },
-  {
-    id: 'cispo',
-    name: 'CISPO 截断重要性采样策略优化',
-    scenarios: ['超长响应任务（完整 token 级 clip，不整条丢弃）', '推理链长输出稳定性'],
-    base_type: 'dense',
-    hyperparams: {
-      advantage_estimator: 'cispo',
-      advantage_normalization: SCALE_ADVANTAGE_NORMALIZATION,
-      // ScaleRL 技巧 ②：CISPO clip ε（token 级截断）
-      clip_eps: SCALE_CISPO_CLIP_EPS,
-      skip_zero_variance_groups: SCALE_SKIP_ZERO_VARIANCE,
-      warmup_steps_ratio: SCALE_WARMUP_RATIO,
-      group_size: 8,
-      beta: 0.0,
-      max_prompt_len: 512,
-      max_response_len: 4096,
-    },
-    scalerlNotes: [
-      '技巧① batch 级 advantage 归一化：advantage_normalization=batch',
-      '技巧② CISPO clip ε：clip_eps=0.2（完整 token 级截断）',
-      '技巧③ 零方差组跳过：skip_zero_variance_groups=true',
-      '技巧④ LR warmup：warmup_steps_ratio=0.03',
-    ],
-  },
 ];
 
-/** 按配方 id 查模板（list 查询 + 实例化入口——未知名返回 null） */
+// ════════════════════════════════════════
+// 外部配方装载面（loadExternalRecipes 消费——商业侧配方经此注册）
+// ════════════════════════════════════════
+
+/** 已注册的外部 RL 配方（registerRlRecipes——同 id 覆盖，幂等） */
+const loadedRlRecipes: RlTemplate[] = [];
+
+/** 按配方 id 查（含外部装载——未知名返回 null） */
 export function findRlTemplate(id: string): RlTemplate | null {
-  return RL_TEMPLATES.find((t) => t.id === id) ?? null;
+  return [...loadedRlRecipes, ...RL_TEMPLATES].find((t) => t.id === id) ?? null;
 }
+
+/** 列出全部 RL 配方（外部装载在前——同 id 外部覆盖参考） */
+export function listRlTemplates(): RlTemplate[] {
+  return [...loadedRlRecipes, ...RL_TEMPLATES];
+}
+
+/** 注册外部 RL 配方（loadExternalRecipes 调用——同 id 覆盖，幂等） */
+export function registerRlRecipes(recipes: RlTemplate[]): void {
+  for (const r of recipes) {
+    const i = loadedRlRecipes.findIndex((x) => x.id === r.id);
+    if (i >= 0) loadedRlRecipes[i] = r;
+    else loadedRlRecipes.push(r);
+  }
+}
+
+// ════════════════════════════════════════
+// RL 模板实例化
+// ════════════════════════════════════════
 
 /** RL 模板实例化输入 */
 export interface RlTemplateInstantiateInput {
-  /** 配方 id（grpo/dapo/cispo） */
+  /** 配方 id（grpo/dapo/cispo——含外部装载配方） */
   recipe: RlRecipeId | string;
   /** 基座模型名 */
   baseModel: string;
@@ -173,7 +151,7 @@ export interface RlTemplateInstance {
   recipe: RlRecipeId;
   /** 基座类型标注 */
   base_type: 'dense' | 'moe';
-  /** train_submit 算法字段（RL 三配方均映射 grpo 算法通道） */
+  /** train_submit 算法字段（RL 配方均映射 grpo 算法通道） */
   algorithm: 'grpo';
   baseModel: string;
   dataPath: string;
@@ -197,13 +175,13 @@ export function instantiateRlTemplate(input: RlTemplateInstantiateInput): RlTemp
   const template = findRlTemplate(input.recipe);
   if (!template) {
     throw new Error(
-      `[rl-templates] 未知 RL 配方：${input.recipe}（可选：grpo / dapo / cispo）`,
+      `[rl-templates] 未知 RL 配方：${input.recipe}（可选：grpo / dapo / cispo 或经 loadExternalRecipes 装载的外部配方）`,
     );
   }
   const hyperparams = { ...template.hyperparams, ...(input.overrides ?? {}) };
   return {
     schemaVersion: 'v1',
-    recipe: template.id,
+    recipe: template.id as RlRecipeId,
     base_type: input.baseType,
     algorithm: 'grpo',
     baseModel: input.baseModel,

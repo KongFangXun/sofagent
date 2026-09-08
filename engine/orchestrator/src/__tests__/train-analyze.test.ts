@@ -22,10 +22,11 @@ import {
   pickDefaultTemplate,
   saveTrainAnalyzeReport,
   trainAnalyzeReportPath,
-  type TrainAnalyzeOptions,
 } from '../train/train-analyze';
 import {
   TRAIN_SCENARIO_TEMPLATES,
+  SCENARIO_MATCH_HINTS,
+  loadExternalRecipes,
   findTrainTemplate,
   instantiateTrainTemplate,
   listTrainTemplates,
@@ -37,7 +38,7 @@ import {
   buildQloraTemplate,
   DENSE_TARGET_MODULES as QLORA_DENSE,
 } from '../train/qlora-template';
-import { instantiateRlTemplate, findRlTemplate, RL_TEMPLATES } from '../train/rl-templates';
+import { instantiateRlTemplate, findRlTemplate, RL_TEMPLATES, listRlTemplates } from '../train/rl-templates';
 
 // ── 测试基建：tmpdir 生命周期 ──
 let dataDir: string;
@@ -148,8 +149,8 @@ describe('deriveTrainScenario 场景推导', () => {
 // ════════════════════════════════════════
 
 describe('train templates list 模板库', () => {
-  it('全量含四场景 × QLoRA/SFT/DPO（≥ 8 个模板）', () => {
-    expect(TRAIN_SCENARIO_TEMPLATES.length).toBeGreaterThanOrEqual(8);
+  it('参考模板四场景各 1（≥ 4 个 QLoRA——schema 活样例）', () => {
+    expect(TRAIN_SCENARIO_TEMPLATES.length).toBeGreaterThanOrEqual(4);
     const scenarios = new Set(TRAIN_SCENARIO_TEMPLATES.map((t) => t.scenario));
     expect(scenarios.has('extraction')).toBe(true);
     expect(scenarios.has('classification')).toBe(true);
@@ -157,12 +158,10 @@ describe('train templates list 模板库', () => {
     expect(scenarios.has('dialogue')).toBe(true);
     const methods = new Set(TRAIN_SCENARIO_TEMPLATES.map((t) => t.method));
     expect(methods.has('qlora')).toBe(true);
-    expect(methods.has('sft')).toBe(true);
-    expect(methods.has('dpo')).toBe(true);
   });
 
   it('listTrainTemplates 按场景过滤（scenario 省略 = 全量）', () => {
-    expect(listTrainTemplates().length).toBe(TRAIN_SCENARIO_TEMPLATES.length);
+    expect(listTrainTemplates().length).toBeGreaterThanOrEqual(TRAIN_SCENARIO_TEMPLATES.length);
     const dialogue = listTrainTemplates('dialogue');
     expect(dialogue.length).toBeGreaterThan(0);
     expect(dialogue.every((t) => t.scenario === 'dialogue')).toBe(true);
@@ -176,6 +175,132 @@ describe('train templates list 模板库', () => {
 
   it('findTrainTemplate 未知名返回 null', () => {
     expect(findTrainTemplate('nonexistent')).toBeNull();
+  });
+});
+
+// ════════════════════════════════════════
+// 二·五、外部配方装载（训练资产在商业侧——装载面缰绳验证）
+// ════════════════════════════════════════
+
+describe('loadExternalRecipes 外部配方装载', () => {
+  it('装载场景模板 + RL 配方（schema 校验通过 → 注册进查找面，可实例化）', () => {
+    // 模拟商业侧外部配方目录结构：scenarios/*.json + rl/*.json
+    const recipeDir = join(dataDir, 'recipes');
+    mkdirSync(join(recipeDir, 'scenarios'), { recursive: true });
+    mkdirSync(join(recipeDir, 'rl'), { recursive: true });
+    // generation-dpo 原配方（v1.4.6 边界收缩迁商业仓的资产形态）
+    writeFileSync(
+      join(recipeDir, 'scenarios', 'generation.json'),
+      JSON.stringify([
+        {
+          id: 'generation-dpo',
+          scenario: 'generation',
+          method: 'dpo',
+          name: '文本生成 · DPO 偏好对齐',
+          base_type: 'dense',
+          goal: '在企业偏好上对齐生成风格（chosen/rejected 偏好对）',
+          dataRequirement: {
+            minSamples: 800,
+            format: 'JSONL（prompt + chosen + rejected 三字段）',
+            note: '偏好对必须同题成对——历史 A/B 评审记录是现成来源',
+          },
+          evalCriteria: { metric: 'win_rate', threshold: '≥ 0.60', note: '与基座对比胜率——盲评口径' },
+          defaults: { learningRate: 5e-7, epochs: 1, beta: 0.1 },
+        },
+      ]),
+      'utf-8',
+    );
+    // dapo 原配方
+    writeFileSync(
+      join(recipeDir, 'rl', 'dapo.json'),
+      JSON.stringify({
+        id: 'dapo',
+        name: 'DAPO 解耦 clip + 动态采样',
+        scenarios: ['长响应生成（clip-higher 放宽高概率 token）', '全对/全错组过采样补偿'],
+        base_type: 'dense',
+        hyperparams: {
+          advantage_estimator: 'grpo',
+          advantage_normalization: 'batch',
+          skip_zero_variance_groups: true,
+          warmup_steps_ratio: 0.03,
+          clip_eps_high: 0.28,
+          clip_eps_low: 0.2,
+          dynamic_sampling: 'resample',
+          group_size: 16,
+          beta: 0.0,
+          max_prompt_len: 512,
+          max_response_len: 2048,
+        },
+        scalerlNotes: [
+          '技巧① batch 级 advantage 归一化：advantage_normalization=batch',
+          '技巧② CISPO clip ε 解耦：clip_eps_high=0.28 / clip_eps_low=0.2（clip-higher）',
+        ],
+      }),
+      'utf-8',
+    );
+
+    const result = loadExternalRecipes(recipeDir);
+    expect(result.scenarioTemplatesLoaded).toBe(1);
+    expect(result.rlRecipesLoaded).toBe(1);
+    expect(result.skipped).toEqual([]);
+
+    // 装载后可查找、可实例化（查找面统一——train-analyze 六符号调用链同源）
+    const dpo = findTrainTemplate('generation-dpo');
+    expect(dpo).not.toBeNull();
+    expect(dpo?.method).toBe('dpo');
+    const inst = instantiateTrainTemplate({
+      templateId: 'generation-dpo',
+      baseModel: 'Qwen3-8B',
+      baseType: 'dense',
+      dataPath: '/data/pairs.jsonl',
+    });
+    expect(inst.algorithm).toBe('dpo');
+    if ('hyperparams' in inst) {
+      expect(typeof inst.hyperparams.learningRate).toBe('number');
+      expect(typeof inst.hyperparams.beta).toBe('number');
+    } else {
+      throw new Error('dpo 模板实例化应产出 hyperparams');
+    }
+
+    // RL 装载：findRlTemplate 命中外部的 dapo
+    expect(findRlTemplate('dapo')).not.toBeNull();
+    expect(listRlTemplates().map((t) => t.id)).toContain('dapo');
+    const rlInst = instantiateRlTemplate({
+      recipe: 'dapo',
+      baseModel: 'Qwen3-8B',
+      baseType: 'dense',
+      dataPath: '/data/rl-prompts.jsonl',
+    });
+    expect(rlInst.hyperparams.clip_eps_high).toBeGreaterThan(
+      rlInst.hyperparams.clip_eps_low as number,
+    );
+    expect(rlInst.hyperparams.dynamic_sampling).toBe('resample');
+  });
+
+  it('schema 不符逐条跳过（坏资产不炸好资产——skipped 记原因）', () => {
+    const recipeDir = join(dataDir, 'bad-recipes');
+    mkdirSync(join(recipeDir, 'scenarios'), { recursive: true });
+    writeFileSync(
+      join(recipeDir, 'scenarios', 'broken.json'),
+      JSON.stringify([
+        { id: 'ok-template', scenario: 'classification', method: 'qlora', name: 'OK', base_type: 'dense', goal: 'g', dataRequirement: { minSamples: 100, format: 'JSONL（messages 格式）', note: 'n' }, evalCriteria: { metric: 'exact_match', threshold: '≥ 0.9', note: 'n' }, defaults: { loraRank: 16 } },
+        { id: 'bad-scenario', scenario: 'nonexistent-scenario', method: 'qlora', name: 'Bad', base_type: 'dense', goal: 'g', dataRequirement: { minSamples: 100, format: 'f', note: 'n' }, evalCriteria: { metric: 'm', threshold: 't', note: 'n' }, defaults: {} },
+      ]),
+      'utf-8',
+    );
+    const result = loadExternalRecipes(recipeDir);
+    expect(result.scenarioTemplatesLoaded).toBe(1);
+    expect(result.skipped.length).toBe(1);
+    expect(result.skipped[0].reason).toContain('scenario 非法');
+    expect(findTrainTemplate('ok-template')).not.toBeNull();
+    expect(findTrainTemplate('bad-scenario')).toBeNull();
+  });
+
+  it('目录不存在返回零装载（不抛错——缺省路径不空转）', () => {
+    const result = loadExternalRecipes(join(dataDir, 'no-such-dir'));
+    expect(result.scenarioTemplatesLoaded).toBe(0);
+    expect(result.rlRecipesLoaded).toBe(0);
+    expect(result.skipped).toEqual([]);
   });
 });
 
@@ -203,6 +328,29 @@ describe('instantiateTrainTemplate 模板实例化', () => {
   });
 
   it('SFT/DPO 模板产出 hyperparams 骨架（可被 train_submit 消费）', () => {
+    // generation-dpo 已迁商业仓——用例内装载外部配方（测试自隔离）
+    const recipeDir = join(dataDir, 'recipes-gen-dpo');
+    mkdirSync(join(recipeDir, 'scenarios'), { recursive: true });
+    writeFileSync(
+      join(recipeDir, 'scenarios', 'generation-dpo.json'),
+      JSON.stringify({
+        id: 'generation-dpo',
+        scenario: 'generation',
+        method: 'dpo',
+        name: '文本生成 · DPO 偏好对齐',
+        base_type: 'dense',
+        goal: '在企业偏好上对齐生成风格（chosen/rejected 偏好对）',
+        dataRequirement: {
+          minSamples: 800,
+          format: 'JSONL（prompt + chosen + rejected 三字段）',
+          note: '偏好对必须同题成对——历史 A/B 评审记录是现成来源',
+        },
+        evalCriteria: { metric: 'win_rate', threshold: '≥ 0.60', note: '与基座对比胜率——盲评口径' },
+        defaults: { learningRate: 5e-7, epochs: 1, beta: 0.1 },
+      }),
+      'utf-8',
+    );
+    loadExternalRecipes(recipeDir);
     const dpo = instantiateTrainTemplate({
       templateId: 'generation-dpo',
       baseModel: 'Qwen3-8B',
@@ -320,8 +468,8 @@ describe('MoE 模板防护', () => {
 // ════════════════════════════════════════
 
 describe('RL 配方模板', () => {
-  it('三配方全量（grpo/dapo/cispo）', () => {
-    expect(RL_TEMPLATES.map((t) => t.id).sort()).toEqual(['cispo', 'dapo', 'grpo']);
+  it('参考配方 grpo 在位（dapo/cispo 归商业侧外部装载）', () => {
+    expect(RL_TEMPLATES.map((t) => t.id)).toEqual(['grpo']);
     expect(findRlTemplate('grpo')).not.toBeNull();
     expect(findRlTemplate('nonexistent')).toBeNull();
   });
@@ -345,45 +493,30 @@ describe('RL 配方模板', () => {
     expect(inst.scalerlNotes.length).toBeGreaterThan(0);
   });
 
-  it('dapo 实例化：技巧② clip ε 解耦（clip_eps_high > clip_eps_low）', () => {
-    const inst = instantiateRlTemplate({
-      recipe: 'dapo',
-      baseModel: 'Qwen3-8B',
-      baseType: 'dense',
-      dataPath: '/data/rl-prompts.jsonl',
-    });
-    expect(inst.hyperparams.advantage_estimator).toBe('grpo');
-    expect(inst.hyperparams.clip_eps_high).toBeGreaterThan(
-      inst.hyperparams.clip_eps_low as number,
-    );
-    expect(inst.hyperparams.dynamic_sampling).toBe('resample');
+  it('dapo 实例化（外部装载路径——见 loadExternalRecipes describe 装载用例）', () => {
+    // dapo/cispo 配方已迁商业仓（v1.4.6 边界收缩）——数据专属用例的
+    // 实例化行为断言移至「loadExternalRecipes 外部配方装载」describe：
+    // 装载 dapo.json 后 instantiateRlTemplate 断言 clip ε 解耦 + 动态采样。
+    expect(findRlTemplate('grpo')).not.toBeNull();
   });
 
-  it('cispo 实例化：技巧② CISPO clip ε 显式（token 级截断）', () => {
-    const inst = instantiateRlTemplate({
-      recipe: 'cispo',
-      baseModel: 'Qwen3-8B',
-      baseType: 'dense',
-      dataPath: '/data/rl-prompts.jsonl',
-    });
-    expect(inst.hyperparams.advantage_estimator).toBe('cispo');
-    expect(inst.hyperparams.clip_eps).toBe(0.2);
-    expect(inst.recipe).toBe('cispo');
+  it('cispo 归商业侧外部装载（开源参考面只有 grpo）', () => {
+    // cispo 配方已迁商业仓——开源侧不内置其数据；装载路径断言见
+    // 「loadExternalRecipes 外部配方装载」describe（schema 校验 + 注册 + 实例化）。
+    expect(RL_TEMPLATES.map((t) => t.id)).not.toContain('cispo');
   });
 
   it('RL 实例化可被 train_submit 消费（algorithm 枚举合法 + hyperparams 可透传）', () => {
-    for (const recipe of ['grpo', 'dapo', 'cispo'] as const) {
-      const inst = instantiateRlTemplate({
-        recipe,
-        baseModel: 'Qwen3-8B',
-        baseType: 'dense',
-        dataPath: '/data/rl-prompts.jsonl',
-      });
-      // 协议 algorithm 枚举三值——RL 全走 grpo 通道
-      expect(['sft', 'dpo', 'grpo']).toContain(inst.algorithm);
-      expect(typeof inst.hyperparams).toBe('object');
-      expect(inst.hyperparams).not.toBeNull();
-    }
+    const inst = instantiateRlTemplate({
+      recipe: 'grpo',
+      baseModel: 'Qwen3-8B',
+      baseType: 'dense',
+      dataPath: '/data/rl-prompts.jsonl',
+    });
+    // 协议 algorithm 枚举三值——RL 全走 grpo 通道
+    expect(['sft', 'dpo', 'grpo']).toContain(inst.algorithm);
+    expect(typeof inst.hyperparams).toBe('object');
+    expect(inst.hyperparams).not.toBeNull();
   });
 
   it('未知配方抛错（快速失败）', () => {

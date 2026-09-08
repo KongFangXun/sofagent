@@ -737,8 +737,20 @@ async function main() {
 
       // ── v1.4.3 第四章：train templates（场景模板库 list——含 RL 配方维度）──
       if (trainAction === 'templates') {
-        // train templates [scenario] [--data-dir <dir>]
-        const { listTrainTemplates, RL_TEMPLATES } = await import('./train/train-templates');
+        // train templates [scenario] [--data-dir <dir>] [--recipes <外部配方目录>]
+        const { listTrainTemplates, listRlTemplates, loadExternalRecipes } = await import('./train/train-templates');
+        const recipeDir = ((): string | undefined => {
+          const idx = args.indexOf('--recipes');
+          return idx !== -1 && args[idx + 1] ? args[idx + 1] : undefined;
+        })();
+        if (recipeDir !== undefined) {
+          const loadResult = loadExternalRecipes(recipeDir);
+          console.log(`📂 外部配方装载：${loadResult.dir}`);
+          console.log(`   场景模板 +${loadResult.scenarioTemplatesLoaded} · RL 配方 +${loadResult.rlRecipesLoaded}${loadResult.skipped.length > 0 ? ` · 跳过 ${loadResult.skipped.length} 条（schema 不符）` : ''}`);
+          for (const s of loadResult.skipped) {
+            console.log(`   ⚠️ ${s.file}：${s.reason}`);
+          }
+        }
         const scenarioArg = args[2] && !args[2].startsWith('--') ? args[2] : undefined;
         if (scenarioArg !== undefined) {
           const valid = ['extraction', 'classification', 'generation', 'dialogue'];
@@ -748,15 +760,16 @@ async function main() {
           }
         }
         const templates = listTrainTemplates(scenarioArg);
-        console.log('📚 场景模板库（四场景 × QLoRA/SFT/DPO）');
+        console.log('📚 场景模板库（四场景参考模板 + 外部装载配方）');
         for (const t of templates) {
           console.log(`   ${t.id}`);
           console.log(`      ${t.name} · base_type=${t.base_type} · 数据 ≥ ${t.dataRequirement.minSamples} 条 · 评估 ${t.evalCriteria.metric} ${t.evalCriteria.threshold}`);
         }
-        console.log('📚 RL 配方模板（grpo/dapo/cispo + ScaleRL 四技巧）');
-        for (const t of RL_TEMPLATES) {
+        console.log('📚 RL 配方模板（grpo 参考配方 + 外部装载清单）');
+        for (const t of listRlTemplates()) {
           console.log(`   ${t.id}——${t.name}（${t.scenarios[0]}）`);
         }
+        console.log('   💡 全量配方（SFT/DPO 变体 + dapo/cispo）经 --recipes <dir> 装载外部配方目录');
         break;
       }
 
