@@ -1,8 +1,8 @@
 #!/bin/bash
-# sofagent commit-msg hook v1.4.6
+# sofagent commit-msg hook v1.4.5
 # 安装：sofagent-audit --init 或 sofagent-audit --install-hook
 # commit-msg hook 接收 $1 = commit message 文件路径
-# v1.4.6 变更：空提交同样发起引擎调用（message 类规则 A5/A9/A19 照常执行）；
+# 变更：空提交同样发起引擎调用（message 类规则 A5/A9/A19 照常执行）；
 #             新增 fresh-eyes run 冻结窗口锁检查（run 进行中阻断 driver 源码提交）
 
 # 0. 读取 commit message（commit-msg hook 独有优势）
@@ -86,7 +86,7 @@ if [ -f "engine/audit/dist/index.js" ]; then
   else
     RECORDED_HASH=$(cat "$HASH_RECORD" 2>/dev/null | tr -d '[:space:]')
 
-    # v1.4.6 双信号判定：dist 哈希变化有两种成因，单看 dist 无法区分，
+    # 双信号判定：dist 哈希变化有两种成因，单看 dist 无法区分，
     # 只能一律拦截，结果是每次 rebuild 后全仓 commit 被阻塞。追加「源码指纹」
     # 作为第二个信号即可分离：
     #   src 变 + dist 变 → 改过源码并重建，属预期 → 放行
