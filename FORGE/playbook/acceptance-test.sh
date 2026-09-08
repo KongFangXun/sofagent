@@ -4338,6 +4338,8 @@ rm -rf "$S378_TMP"
 $S378_OK && pass "npm 裸名总包行为锁（umbrella=audit SSOT + 四依赖逐一对账 + workspaces 收编 + bin 转发活体实测 + bump 覆盖面零写盘）" || fail "npm 裸名总包回退——见上方 ✗ 行"
 
 scenario 379 "流程加固批 防线失明自检行为锁：故障注入矩阵活体实测（PATH 前置假 perl 崩溃型/空响应型 × cjk-var/guards 双守卫 → 目标守卫非 0 退出——0 处违规但没在看必须报红）+ 自检脚本正常态 exit 0 + 自检脚本自身 fail-loud（劫持真 perl 后自身非 0）"; S379_OK=true
+# 回主仓根（前面场景可能把 cwd 留在已清理的临时仓——本场景全部相对路径调用依赖主仓根）
+cd "$PROJECT_ROOT"
 S379_TMP=$(mktemp -d /tmp/sofagent-s379-XXXX)
 # 一、故障注入活体实测（不重跑完整门禁——直接复刻其注入矩阵核心一步：假 perl + PATH 前置，
 #     对双守卫各跑一遍崩溃型，断言非 0）。注入自证与门禁同款：command -v 解析路径须落假目录。
@@ -4374,6 +4376,8 @@ S380_TMP=$(mktemp -d /tmp/sofagent-s380-XXXX)
 # 🔴 SIGPIPE 坑（对齐 git_log_has 先例）：本场景捕获输出约 80KB，echo 大变量 |
 # grep -q 时 grep 命中即提前退出，echo 收 SIGPIPE(141) 被 pipefail 传播为整管道
 # 失败——断言全灭。场景内临时关 pipefail，断言完恢复。
+# 回主仓根（git tag / git branch 对账依赖主仓 cwd——前面场景可能悬空）
+cd "$PROJECT_ROOT"
 set +o pipefail
 # 一、INFO 四要素 + exit 0：主仓当前实有未标记分支（0821-01/0826-01/release-gate 等）
 S380_OUT1=$( bash "$PROJECT_ROOT/tools/check/check-forge-branches.sh" 2>/dev/null; echo "EXIT=$?" )
