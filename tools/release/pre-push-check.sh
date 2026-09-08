@@ -173,6 +173,24 @@ if [ "$MINIMAL" = false ]; then
 fi
 
 # ════════════════════════════════════════
+# 2d. 开源边界守卫（check-open-boundary.sh · 对标 wemux public-boundary）
+#   全仓 tracked 扫描补 check-docs §2c 活文档白名单外的源码盲区；
+#   push 前是最后一道本地拦截。三态语义同 storefront（PASS/FAIL/SKIP-可见）
+# ════════════════════════════════════════
+if [ "$MINIMAL" = false ]; then
+  echo -e "\n${BOLD}── 2d. 开源边界守卫 ──${NC}"
+  _ob_output=$(bash tools/check/check-open-boundary.sh 2>&1)
+  _ob_rc=$?
+  if [ "$_ob_rc" -eq 0 ]; then
+    check_pass "check-open-boundary.sh（全仓商业名零泄漏）"
+  else
+    check_fail "check-open-boundary.sh 发现商业名泄漏（rc=${_ob_rc}）"
+    echo "$_ob_output" | grep "❌\|❌" | head -5 | sed 's/^/    /'
+  fi
+  unset _ob_output _ob_rc
+fi
+
+# ════════════════════════════════════════
 # 3. 文档检查（check-docs.sh）
 # ════════════════════════════════════════
 if [ "$MINIMAL" = false ]; then

@@ -36,6 +36,12 @@ jobs:
       # 跨行模板插值本脚本逐行扫会漏检，降级为 WARN 提示人工确认。
       - name: check-shell-injection.sh
         run: bash tools/check/check-shell-injection.sh
+      # 开源/商业边界守卫：商业产品名不得进入开源仓（pattern 见脚本内）。
+      # check-docs §2c 只扫 45 个活文档白名单；本守卫补全仓 tracked 文件扫描
+      # （1480+，含全部源码）——对标 wemux public-boundary.mjs 的全量边界思路。
+      # 守卫脚本自身与 CHANGELOG 历史档案豁免（pattern 字面量/事实记录不是泄漏）。
+      - name: check-open-boundary.sh
+        run: bash tools/check/check-open-boundary.sh
 
   # v1.3.9（四）：public API 变更检测——@public 符号集变化必须 semver bump + CHANGELOG。
   # 不装依赖直接跑（AST 引擎不可用时自动回退正则解析，门禁语义不变）。
