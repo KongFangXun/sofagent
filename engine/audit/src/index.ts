@@ -1088,10 +1088,14 @@ async function main(): Promise<void> {
     const messageRuleChecks = runEmptyDiffMessageAudit(args);
     const failedChecks = (messageRuleChecks ?? []).filter((r) => r.status === 'FAIL');
     if (messageRuleChecks !== null && failedChecks.length > 0) {
+      // 退出码与主路径语义对齐：message 类规则 FAIL = 审计拦截（exit 2 阻断），
+      // 不是 WARN。A5/A9 属「业务底线」、A19 属「工程规范」，主路径 FAIL 同样
+      // 判 exit 2（runRules 汇总段）；hook 语义 1=警告放行 2=阻断——若此处用
+      // exit 1，注入措辞的空提交只会被警告、仍能进入历史，防御形同虚设。
       if (args.json) {
-        console.log(JSON.stringify({ exitCode: 1, rules: messageRuleChecks }, null, 2));
+        console.log(JSON.stringify({ exitCode: 2, rules: messageRuleChecks }, null, 2));
       } else {
-        console.error(`❌ 空提交审计未过（${failedChecks.length} 条 message 类规则 FAIL）：`);
+        console.error(`❌ 空提交审计拦截（${failedChecks.length} 条 message 类规则 FAIL）：`);
         for (const r of messageRuleChecks) {
           if (r.status !== 'PASS') {
             const mark = r.status === 'FAIL' ? '✗' : '⚠';
@@ -1100,7 +1104,7 @@ async function main(): Promise<void> {
         }
         console.error('   请修复 commit message 后重新提交（空提交同样接受 message 类审计）。');
       }
-      exit(1);
+      exit(2);
     }
     if (args.json) {
       console.log(JSON.stringify({ exitCode: 0, rules: messageRuleChecks ?? [] }, null, 2));
