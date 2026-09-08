@@ -174,7 +174,7 @@ grep -c "defaultRules\.length\|defaultRules\[.length\]" engine/audit/src/command
 
 # 子项 g: acceptance-test.sh 绝不能与 npm run build 并发（build 首步 rm -rf dist 清产物，acceptance-test 读 dist/*.js 误报 6-7 个「文件不存在」假失败）——自测须串行：build 完成→dist 稳定→单独跑
 # 「并发」无法单条 grep 干净断言（2>&1 / & 会误报），主体人工巡检铁律；下行只自动查 nohup/后台显式并发拉起
-grep -rnE "nohup.*(build|acceptance-test)|npm run build[^&]*&[[:space:]]*$" tools/ .github/workflows/ 2>/dev/null # 期望：零命中 || true # 零命中=无并发隐患=PASS（grep exit 1 语义反转防误报）
+grep -rnE "nohup.*(build|acceptance-test)|npm run build[^&]*&[[:space:]]*$" tools/ .github/workflows/ 2>/dev/null || true # 期望：零命中=无并发隐患=PASS；🔴 || true 必须在命令部分（注释里的 || true 不生效——零命中 grep exit 1 会把代码块整体判 FAIL）
 ```
 
 #### 9. 动态规则禁用逻辑 + 文档侧规则数声称一致性
@@ -1379,14 +1379,14 @@ grep -q "runCommonsHealth" engine/daemon/src/inspector-layers.ts || echo "⚠️
 
 #### 103. SkillScan 三态链 + 版本守卫——DANGEROUS 拦截 / rc 投产决策落点
 
-**背景**：SkillScan 安全门。两个高危点：① 文件不存在时必须判 DANGEROUS 不能默认 SAFE（扫描不到 ≠ 安全）；② DSH 候选包 rc 版本原须拦截——**拍板「DSH rc 直接投产」后语义反转**：依赖锁是刻意决策（npm 无正式版，预发布期内嵌路径已验证），守卫从「拦截预发布」改为「锁定已知可用版本 + 正式版发布后自动升级」。版本口径（当前锁定 0.1.2-alpha.1，源码构建部署链验证 11/11；退出条件 = 0.1.2 正式版上架 npm）。**升级版本时须同步本 grep 锚与 package.json。**
+**背景**：SkillScan 安全门。两个高危点：① 文件不存在时必须判 DANGEROUS 不能默认 SAFE（扫描不到 ≠ 安全）；② DSH 候选包 rc 版本原须拦截——**拍板「DSH rc 直接投产」后语义反转**：依赖锁是刻意决策（npm 无正式版，预发布期内嵌路径已验证），守卫从「拦截预发布」改为「锁定已知可用版本 + 正式版发布后自动升级」。版本口径（当前锁定 0.1.2-rc.1 = npm latest，退出条件 = 0.1.2 正式版上架 npm）。**升级版本时须同步本 grep 锚与 package.json。**
 
 ```bash
 grep -q "'SAFE' | 'SUSPICIOUS' | 'DANGEROUS'" engine/orchestrator/src/commons/skill-scan.ts || echo "⚠️ 三态枚举缺失"
 grep -q "scanForPublish\|scanForInstall" engine/orchestrator/src/commons/skill-scan.ts || echo "⚠️ 双触发缺失"
 grep -q "existsSync" engine/orchestrator/src/commons/skill-scan.ts || echo "⚠️ 存在性前置校验缺失"
 grep -q "scanSkillSafety" engine/orchestrator/src/commons/skill-scan.ts || echo "⚠️ 未复用 scanSkillSafety"
-grep -q "0\.1\.2-alpha\.3" engine/orchestrator/package.json || echo "⚠️ DSH 依赖锁漂移（须为拍板版本 0.1.2-alpha.3——npm 上架版，退出条件=0.1.2 上架 npm）"
+grep -q "0\.1\.2-rc\.1" engine/orchestrator/package.json || echo "⚠️ DSH 依赖锁漂移（须为 0.1.2-rc.1——npm latest，d24dc15a 显式升级；退出条件=0.1.2 正式版上架 npm）"
 grep -qE "正式版发布后自动|rc 期\*\*优先内嵌" engine/orchestrator/src/execution-backend.ts || echo "⚠️ rc 投产决策注释缺失（升正式版时须同步更新此处决策记录）"
 ```
 
@@ -1453,8 +1453,8 @@ node -e "const fs=require('fs'),p=require('path');let bad=0;for(const f of fs.re
 **背景**：七大块交付的审查面。acceptance S270-S276 做执行级验证，本维度做静态一致性——两者成对构成新功能的完整回归网。
 
 ```bash
-# ① MCP tools 三处口径（SKILL.md / ARCHITECTURE 能力表 / dist 实测）——口径80，勿写死
-grep -q "80 tools" SKILL/SKILL.md || echo "⚠️ SKILL 工具速查漂移（口径80）" # 演进：52→60→61→66→67（train_submit）→79→80（corpus_export），随 SSOT
+# ① MCP tools 三处口径（SKILL.md / ARCHITECTURE 能力表 / dist 实测）——口径84，勿写死
+grep -q "84 tools" SKILL/SKILL.md || echo "⚠️ SKILL 工具速查漂移（口径84）" # 演进：52→60→61→66→67（train_submit）→79→80（corpus_export）→84，随 SSOT；锚词与 SKILL.md §MCP 工具速查同步升级
 node -e "const m=require('./engine/mcp/dist/tool-registry.js');const doc=require('./package.json').version;console.log('✅ TOOLS='+m.TOOLS.length+'（registry 实数，勿写死——发版后人工对 SSOT 口径）')"
 # ② snapshot tool 零 daemon 静态依赖（optionalDependencies 场景会炸）——排除注释行（🔴 import 铁律注释含 @sofagent/daemon；校准：grep -h 去前缀保排除生效）
 grep -hE "@sofagent/daemon" engine/mcp/src/tools/snapshot-list.ts engine/mcp/src/tools/snapshot-restore.ts 2>/dev/null | grep -vE "^[[:space:]]*//" | head -1 | grep -q . && echo "⚠️ snapshot 静态 import daemon 回潮"
@@ -1773,13 +1773,14 @@ test -f engine/audit/src/chain-head-anchor.test.ts && grep -q "shouldExempt(key:
 
 ```bash
 # B1: ruleset 汇总行规则编号渲染（A0 乱显修复）——500+ 独立编号空间 + 四渲染面分支在位
-grep -q "R1" engine/audit/src/ruleset-loader.ts && grep -c "rulePrefix\|R-prefix\|ruleNumber" engine/audit/src/ruleset-loader.ts | grep -qv "^0$" && echo "✅ ruleset R 前缀渲染分支在位" || echo "❌ ruleset A0 渲染回潮（汇总行规则无编号）"
-# B2: 版本动态读 ×10（ab-test CLI + 9 dsh 插件 pluginMeta 均不硬编码版本）
-DYN=$(grep -rl "require('../package.json').version\|require(\"../package.json\").version" ab-test/src/cli.ts dsh-plugins/*/src/index.ts 2>/dev/null | wc -l | tr -d ' '); [ "$DYN" -ge 10 ] && echo "✅ 版本动态读 ${DYN} 文件在位" || echo "❌ 版本硬编码回潮（动态读仅 ${DYN}/10）"
+# 渲染分支真实位置 = index/reporter/stats/webhook 四文件（ruleset-loader.ts:675 仅分配 500+ 编号，渲染在 reporter 渲染为 R1/R2）
+grep -q "R1" engine/audit/src/ruleset-loader.ts && RCOUNT=$(grep -l "number - 500\|number>=500\|number >= 500" engine/audit/src/index.ts engine/audit/src/reporter.ts engine/audit/src/stats.ts engine/audit/src/webhook.ts 2>/dev/null | wc -l | tr -d ' '); [ "${RCOUNT:-0}" -ge 4 ] && echo "✅ ruleset R 前缀渲染分支在位（四渲染面 ${RCOUNT}/4）" || echo "❌ ruleset A0 渲染回潮（渲染面仅 ${RCOUNT:-0}/4）"
+# B2: 版本动态读 ×10（engine/ab-test CLI + 9 dsh 插件 pluginMeta 均不硬编码版本）——插件为 _pkg.version 间接形态，锚词覆盖两种写法
+DYN=$(grep -rlE "require\('\.\./package\.json'\)" engine/ab-test/src/cli.ts engine/dsh-plugins/*/src/index.ts 2>/dev/null | wc -l | tr -d ' '); [ "${DYN:-0}" -ge 10 ] && echo "✅ 版本动态读 ${DYN} 文件在位" || echo "❌ 版本硬编码回潮（动态读仅 ${DYN:-0}/10）"
 # B4: openclaw execute 空数组绕过修复——按 scope 取真实 diff 非 runRules([])
 grep -q "parseDiff" engine/openclaw-plugins/*/index.ts 2>/dev/null || grep -rq "parseDiff" engine/openclaw-plugins/ && echo "✅ openclaw execute 取真实 diff 在位" || echo "❌ execute 传空数组绕过回潮"
-# B5: uninstall 回收清单与 install 支持面配对（cursor/gemini 不漏）
-grep -q "cursor" install.sh && grep -q "cursor" uninstall.sh && grep -q "gemini" install.sh && grep -q "gemini" uninstall.sh && echo "✅ uninstall 平台清单配对（cursor/gemini 在册）" || echo "❌ uninstall 漏平台（装得上卸不掉）"
-# B6: PERSPECTIVES 双清单启动对账在位（漂移 exit 1 自检内建）
-grep -q "assertPerspectivesMatchPlaybook" FORGE/src/gen-fresh-eyes-draft.mjs && echo "✅ PERSPECTIVES 双清单对账自检在位" || echo "❌ 16 视角双清单漂移防线丢失"
+# B5: uninstall 回收清单与 install 支持面配对（cursor/gemini 不漏）——脚本在 engine/scripts/ 非仓库根
+grep -q "cursor" install.sh && grep -q "cursor" engine/scripts/uninstall.sh && grep -q "gemini" install.sh && grep -q "gemini" engine/scripts/uninstall.sh && echo "✅ uninstall 平台清单配对（cursor/gemini 在册）" || echo "❌ uninstall 漏平台（装得上卸不掉）"
+# B6: PERSPECTIVES 双清单启动对账在位（漂移 exit 1 自检内建）——脚本在 tools/gen/ 非 FORGE/src/
+grep -q "assertPerspectivesMatchPlaybook" tools/gen/gen-fresh-eyes-draft.mjs && echo "✅ PERSPECTIVES 双清单对账自检在位" || echo "❌ 16 视角双清单漂移防线丢失"
 ```
