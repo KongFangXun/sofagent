@@ -316,6 +316,11 @@ mkdir -p "$DATA_ROOT/audit" "$DATA_ROOT/sovereignty" \
 # 引擎内部状态（Q4 决策：internal/，非 .sofagent/，避免双层嵌套）
 mkdir -p "$INTERNAL_ROOT/checkpoint" "$INTERNAL_ROOT/.git-shadow" "$INTERNAL_ROOT/subagents"
 
+# v1.4.7 批次 M P2-12：keys/ 目录创建——与 SECURITY.md 目录树承诺对齐（密钥设计存
+# ~/.sofagent/keys/ 0600；静态加密激活仍排期后续版本，此处只建目录不改激活状态）
+mkdir -p "$SOFAGENT_HOME/keys"
+chmod 700 "$SOFAGENT_HOME/keys" 2>/dev/null || true
+
 # ── Step 1.6: v1.4.5 T1（P0）巡检缺省配置首装注入 ──
 # 背景：分层巡检（L1/L2/L3）与 Dream Cycle 此前「零调度」——runAllLayers /
 #   runDreamCycle 存在但无任何生产调用方，巡检从未真正运行。
