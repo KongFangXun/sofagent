@@ -1,4 +1,4 @@
-// zip-writer.ts · v1.4.5 第五章/第四章共用 · 最小 ZIP 写入器（deflate 压缩 + CRC32）
+// zip-writer.ts · v1.4.6 第五章/第四章共用 · 最小 ZIP 写入器（deflate 压缩 + CRC32）
 //
 // 定位：为两处「打包」需求提供同一实现，避免两份手写 ZIP 各自漂移：
 //   一、第五章保留策略——归档冷存（checkpoint/旧训练集目录 → data/train/archive/ 的 .zip）

@@ -1,4 +1,4 @@
-<!-- role-orchestrate.md · 编排岗位规范 · v1.4.5 -->
+<!-- role-orchestrate.md · 编排岗位规范 · v1.4.6 -->
 <!-- 按需加载：task type = orchestrate 时注入 -->
 
 # ⛓️ 编排岗位规范（role-orchestrate）

@@ -1,5 +1,5 @@
 // ============================================================
-// evolution/tool-evolution.ts · L4 工具层自进化管线（v1.4.5 第七章三）
+// evolution/tool-evolution.ts · L4 工具层自进化管线（v1.4.6 第七章三）
 //
 // 五层谱系（PHILOSOPHY §五）中唯一空白层 L4 的落地：
 //   Agent 自写工具 → SkillScan 安全门 → 人审 promote → 注册进工具箱

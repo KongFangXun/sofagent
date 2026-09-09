@@ -3,7 +3,7 @@
 // v1.3.7 新增 · v1.4.5 第七章五降级为测试专用
 //
 // 铁律：Dream Cycle 任何 stage 不直接调 LLM SDK，必须经 LLMProvider。
-// MockLLM——确定性输出（基于输入 hash），v1.4.5 真脑（real-provider.ts
+// MockLLM——确定性输出（基于输入 hash），v1.4.6 真脑（real-provider.ts
 // RealLLM）交付后降级为测试专用；生产路径模型不可用时由
 // createDefaultProvider 显式降级（status 标 'mock' 进周报），
 // 绝不默默以占位符充当知识产出。

@@ -1,5 +1,5 @@
 // ============================================================
-// evolution-dynamic-bridge.ts · L4 进化工具动态面桥（v1.4.5 第七章三）
+// evolution-dynamic-bridge.ts · L4 进化工具动态面桥（v1.4.6 第七章三）
 //
 // MCP 侧消费 orchestrator 的 L4 工具进化台账（tool-evolution.ts）：
 //   1. registerEvolvedTools()：读注册态候选 → 注册进 getDynamicTools()
@@ -7,7 +7,7 @@
 //   2. invokeEvolvedTool()：按工具名调用生成器（commons_invoke 的
 //      L4 分发出口——动态工具面被 commons_invoke 命中时走这里）
 //
-// 🔴 工具数口径（v1.4.5 第七章三验收铁律）：
+// 🔴 工具数口径（v1.4.6 第七章三验收铁律）：
 //   - 静态计数 = tool-registry.ts TOOLS 顶层 name 数 = 83（本版
 //     +train_serve/train_compliance/train_deliverable 三件）；
 //   - L4 进化工具**不进 83 静态计数**——check-version.sh 只数

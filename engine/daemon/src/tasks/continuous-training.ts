@@ -1,5 +1,5 @@
 // ============================================================
-// tasks/continuous-training.ts · v1.4.5 第二章 · 持续后训练 daemon 定时任务
+// tasks/continuous-training.ts · v1.4.6 第二章 · 持续后训练 daemon 定时任务
 //
 // daemon 侧调度入口（对齐 decision-memory @daily 模式——cron.ts 里
 // task === 'continuous-training' 分支消费本模块的 runContinuousTrainingTick）。

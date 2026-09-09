@@ -1,5 +1,5 @@
 // ============================================================
-// evolution/evolution-samples.ts · 进化模块持续采样数据桥（v1.4.5 第七章二/三）
+// evolution/evolution-samples.ts · 进化模块持续采样数据桥（v1.4.6 第七章二/三）
 //
 // 定位：章八（devlog 第七章一）continuous-sampler 每日落盘
 // `data/evolution/samples-<date>.json`（Dream Cycle ≥7 天连续运行的

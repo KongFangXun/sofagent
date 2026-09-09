@@ -1,13 +1,13 @@
 // ============================================================
 // daemon/cron.ts — 定时任务调度
-// v1.4.5: 支持 @weekly / @daily / @hourly 触发 Sub Agent 巡检
-// v1.4.5：迁移至 @sofagent/daemon
-// v1.4.5 T1（P0 方案 A接线）：inspectors: 段 → L1/L2/L3 分层巡检调度
+// v1.4.6: 支持 @weekly / @daily / @hourly 触发 Sub Agent 巡检
+// v1.4.6：迁移至 @sofagent/daemon
+// v1.4.6 T1（P0 方案 A接线）：inspectors: 段 → L1/L2/L3 分层巡检调度
 //   —— runAllLayers 此前「诞生即死」（存在但零生产调用），按 LAYER_SCHEDULE
 //      默认 @daily/@weekly/@monthly 接线；enabled:false 可显式关闭。
-// v1.4.5 T2（P0）：dream-cycle: 段 → runDreamCycle 调度
+// v1.4.6 T2（P0）：dream-cycle: 段 → runDreamCycle 调度
 //   —— 同样零生产调用，默认 @daily 启用，产物落 data/knowledge/。
-// v1.4.5 第五章：train-archive: 段 → runTrainArchiveTask 调度
+// v1.4.6 第五章：train-archive: 段 → runTrainArchiveTask 调度
 //   —— 训练产物归档冷存（压缩不删除）+ 90 天覆写销毁 + 磁盘 80% 预警，
 //      默认 @weekly 启用（企业级磁盘治理标配），task 实现在 tasks/train-archive.ts。
 //

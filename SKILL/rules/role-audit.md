@@ -1,4 +1,4 @@
-<!-- role-audit.md · 审计岗位规范 · v1.4.5 -->
+<!-- role-audit.md · 审计岗位规范 · v1.4.6 -->
 <!-- 按需加载：task type = audit 时注入 -->
 
 # 🔍 审计岗位规范（role-audit）

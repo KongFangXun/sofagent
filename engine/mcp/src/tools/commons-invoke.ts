@@ -7,7 +7,7 @@
 // 复用 @sofagent/orchestrator 的 commons/invoker.ts。
 // executor 注入——MCP 层默认返回 dry-run 结果（真实执行由 Agent runtime 接入）。
 //
-// v1.4.5 第七章三扩展：capability_id 命中 L4 进化工具（动态注册面）
+// v1.4.6 第七章三扩展：capability_id 命中 L4 进化工具（动态注册面）
 // 时优先走进化动态桥分发（invokeEvolvedTool）——L4 注册的工具可被
 // commons_invoke 调用（devlog 第七章三验收标准）。
 // ============================================================

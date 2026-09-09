@@ -1,4 +1,4 @@
-// train-deliverable.ts · v1.4.5 第四章 · FDE 训练交付包（五件聚合 + zip + manifest + HMAC）
+// train-deliverable.ts · v1.4.6 第四章 · FDE 训练交付包（五件聚合 + zip + manifest + HMAC）
 //
 // 定位：FDE 离场交的「训练运维包」——给了引擎但没给说明书，企业自己跑不起
 // 来（devlog 第四章定位段）。本文件把散落各版本的交付物收口成一个标准包：
@@ -100,7 +100,7 @@ export interface DeliverableManifest {
 }
 
 /** 生成器版本（发版随 package.json 对齐——此处常量声明，避免循环 import） */
-export const TRAIN_DELIVERABLE_GENERATOR_VERSION = 'v1.4.5';
+export const TRAIN_DELIVERABLE_GENERATOR_VERSION = 'v1.4.6';
 
 // ════════════════════════════════════════
 // 错误类型

@@ -1,11 +1,11 @@
 // ============================================================
-// train-compliance.ts · MCP tool：train_compliance（v1.4.5 第三章）
+// train-compliance.ts · MCP tool：train_compliance（v1.4.6 第三章）
 // ============================================================
 //
 // 训练数据合规扫描的 MCP 面——委托 @sofagent/orchestrator 的
 // train-compliance：
 //   - scan：扫描训练集三类风险项（PII/敏感字段/企业专有名词——复用
-//     v1.4.5 redactor 红名单检测）+ 报告写训练集版本
+//     v1.4.6 redactor 红名单检测）+ 报告写训练集版本
 //   - gate：合规闸门断言（严重级发现 → 阻断训练提交的结构化错误）
 //   - mark：数据来源标记（企业提供/合成/公开语料——合规可追溯）
 //
