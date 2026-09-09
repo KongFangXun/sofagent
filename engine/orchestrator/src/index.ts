@@ -1024,6 +1024,15 @@
   ResumeTrainJobResult,
   ResumeTrainJobOutcome,
 } from './train/train-scheduler';
+// v1.4.6 批次 D：进程执行面（TrainExecutor 窄接口——scheduler 消费，
+// v1.4.7 章十一 TrainChannel 将实现云端通道形态）
+/* @public */ export { createLocalSpawnExecutor } from './train/train-executor';
+/* @public */ export type {
+  TrainExecutor,
+  TrainExecutorHooks,
+  SpawnFn as ExecutorSpawnFn,
+  ChildProcess as TrainChildProcess,
+} from './train/train-executor';
 
 // ============================================================
 // v1.4.3 第一章：训练监控与 GPU 队列（gpu-queue · webhook 推送 · dashboard 落盘）

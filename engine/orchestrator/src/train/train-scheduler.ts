@@ -18,21 +18,28 @@
 //
 // 测试纪律：spawn/信号/心跳全部可注入（零真实进程——对齐 SignalController 模式）。
 
-import { spawn, type ChildProcess } from 'child_process';
 import { existsSync, mkdirSync, readdirSync } from 'fs';
 import { join } from 'path';
 import { atomicWriteSync } from '@sofagent/core';
 import {
   buildTrainSpawnArgs,
-  parseTrainEvent,
-  createSignalController,
   validateTrainJob,
   type TrainBudget,
   type TrainEvent,
   type SignalAction,
-  type SignalController,
   type SignalControllerOptions,
 } from './train-protocol';
+// v1.4.6 批次 D：进程执行面收口 train-executor（spawn/stdout 解析/信号编排
+// 全部下沉——本文件不再 import Node 子进程模块；SpawnFn 类型经此 re-export 保
+// 既有导入路径）。SpawnFn / ChildProcess 类型源 = train-executor.ts。
+export { type SpawnFn } from './train-executor';
+import {
+  createLocalSpawnExecutor,
+  type ChildProcess,
+  type SpawnFn,
+  type TrainExecutor,
+  type TrainExecutorHooks,
+} from './train-executor';
 import {
   createTrainBudgetMonitor,
   checkBudget,
@@ -100,13 +107,6 @@ import { flushTrainDashboard } from './dashboard-sink';
  */
 export type RegisterHeartbeat = (pid: number, jobId: string) => void;
 
-/** 可注入的 spawn 函数（测试用假子进程替换——零真实进程） */
-export type SpawnFn = (
-  command: string,
-  args: string[],
-  options: { cwd?: string; stdio?: ('ignore' | 'pipe')[] },
-) => ChildProcess;
-
 /** 调度器选项（全注入点集中——signal/spawn/heartbeat/时间均可替换） */
 export interface TrainSchedulerOptions {
   /** 数据目录（job 状态持久化根） */
@@ -119,7 +119,7 @@ export interface TrainSchedulerOptions {
   trainScript?: string;
   /** spawn 工作目录（缺省 cwd） */
   spawnCwd?: string;
-  /** spawn 注入（测试——零真实进程） */
+  /** spawn 注入（测试——零真实进程；透传 LocalSpawnExecutor） */
   spawnFn?: SpawnFn;
   /** 信号控制器注入（测试——对齐 SignalControllerOptions 模式） */
   signalOptions?: SignalControllerOptions;
@@ -285,7 +285,15 @@ export function createTrainScheduler(opts: TrainSchedulerOptions) {
     sigintTimeoutMs = 30_000,
     now = Date.now,
   } = opts;
-  const spawnFn: SpawnFn = opts.spawnFn ?? ((cmd, args, options) => spawn(cmd, args, options));
+  // v1.4.6 批次 D：进程执行半边收口 executor（spawn/stdout 解析/信号编排
+  // 下沉——本调度器只见 TrainExecutor 窄接口，不直接触碰子进程模块）
+  const executor: TrainExecutor = createLocalSpawnExecutor({
+    ...(opts.spawnFn ? { spawnFn: opts.spawnFn } : {}),
+    signalOptions: {
+      ...signalOptions,
+      sigintTimeoutMs: signalOptions?.sigintTimeoutMs ?? sigintTimeoutMs,
+    },
+  });
 
   // ── 块七挂线①：进程守卫（心跳 + 崩溃扫描）──
   const guard: ProcessGuard = opts.processGuard ?? createProcessGuard({ staleThresholdMs: opts.staleThresholdMs });
@@ -489,17 +497,13 @@ export function createTrainScheduler(opts: TrainSchedulerOptions) {
     return out;
   };
 
-  // ── 内部：优雅停子进程（约定③——SIGINT 超时升级 SIGKILL） ──
+  // ── 内部：优雅停子进程（约定③——SIGINT 超时升级 SIGKILL，经 executor） ──
   const gracefulStopChild = async (jobId: string): Promise<SignalAction> => {
-    const controller: SignalController = createSignalController({
-      ...signalOptions,
-      sigintTimeoutMs: signalOptions?.sigintTimeoutMs ?? sigintTimeoutMs,
-    });
     const run = runs.get(jobId);
     if (!run || run.child.pid === undefined) {
       return { action: 'noop' }; // 无进程（崩溃残留/未 spawn）——状态机直接收尾
     }
-    return controller.gracefulStop(run.child.pid);
+    return executor.stop(jobId);
   };
 
   // ── 内部：协议事件 → 状态推进 + 事件回流 + 预算检查 ──
@@ -725,121 +729,110 @@ export function createTrainScheduler(opts: TrainSchedulerOptions) {
 
     // 状态机：→ running（queued/checkpointing 均可进入）
     const running = applyTrainJobTransition(record, 'running');
-    const child = spawnFn(pythonBin, buildTrainSpawnArgs(jobFile, trainScript), {
-      ...(spawnCwd ? { cwd: spawnCwd } : {}),
-      stdio: ['ignore', 'pipe', 'pipe'],
-    });
-    const current: TrainJobRecord = {
-      ...running,
-      pid: child.pid,
-      startedAtMs: record.startedAtMs ?? now(),
-      updatedAt: new Date().toISOString(),
-    };
-    saveTrainJobRecord(dataDir, current);
-    // 审计：启动（→ running——train_job_started 事件）
-    audit(current, { fromStatus: record.status, toStatus: 'running' });
-
-    // 心跳注册钩子（块七 process-guard 实装——本块只接线）
-    if (registerHeartbeat && typeof child.pid === 'number') {
-      registerHeartbeat(child.pid, record.jobId);
-    }
-
     // 预算监控器（从事件流累计消耗）
     const monitor = createTrainBudgetMonitor({ jobId: record.jobId, budget: record.job.budget });
 
-    let latest = current;
-
+    let latest!: TrainJobRecord;
+    let spawned!: ChildProcess;
     const done = new Promise<TrainJobRecord>((resolve) => {
-      // 约定②：stdout 逐行解析（只认 JSON 行——坏行静默容忍不崩溃）
-      let stdoutBuf = '';
-      child.stdout?.on('data', (chunk: Buffer | string) => {
-        stdoutBuf += chunk.toString();
-        const lines = stdoutBuf.split('\n');
-        stdoutBuf = lines.pop() ?? '';
-        for (const line of lines) {
-          if (line.trim() === '') continue;
-          const parsed = parseTrainEvent(line);
-          if (parsed.event) {
-            latest = consumeEvent(latest, monitor, parsed.event);
+      // v1.4.6 批次 D：spawn + stdout 逐行解析 + close/error 生命周期经
+      // executor（执行面）——状态机/审计/GPU 回收等缰绳动作在回调内完成。
+      // onStarted 挂监听前同步调（保真原时序：spawn → 落盘/审计/心跳 → 事件流）。
+      const hooks: TrainExecutorHooks = {
+        onStarted: (child) => {
+          const current: TrainJobRecord = {
+            ...running,
+            pid: child.pid,
+            startedAtMs: record.startedAtMs ?? now(),
+            updatedAt: new Date().toISOString(),
+          };
+          latest = current;
+          saveTrainJobRecord(dataDir, current);
+          // 审计：启动（→ running——train_job_started 事件）
+          audit(current, { fromStatus: record.status, toStatus: 'running' });
+          // 心跳注册钩子（块七 process-guard 实装——本块只接线）
+          if (registerHeartbeat && typeof child.pid === 'number') {
+            registerHeartbeat(child.pid, record.jobId);
           }
-        }
-      });
-
-      // stderr：日志留痕（不解析——协议只认 stdout）
-      let stderrTail = '';
-      child.stderr?.on('data', (chunk: Buffer | string) => {
-        stderrTail = (stderrTail + chunk.toString()).slice(-2000);
-      });
-
-      child.on('close', (code) => {
-        runs.delete(record.jobId);
-        // 块七挂线①：进程退出即注销心跳（防守卫表膨胀 + 防已死 pid 被误回收）
-        if (typeof child.pid === 'number') guard.unregisterHeartbeat(child.pid);
-        // v1.4.3 第一章：进程退出即释放 GPU 额度（终态事件已 release 的幂等）
-        gpuQueue.release(record.jobId);
-        const fresh = loadTrainJobRecord(dataDir, enterpriseId, record.jobId) ?? latest;
-        if (isTerminalStatus(fresh.status)) {
-          resolve(fresh); // 事件流已收尾（done/failed/取消）——幂等不重复迁移
-          return;
-        }
-        if (code === 0) {
-          // 退出码 0 + 未收尾 → 协议③存档暂停（SIGINT 优雅退出的正常落点）
-          const paused = applyTrainJobTransition(fresh, 'checkpointing', {
+        },
+        onEvent: (event) => {
+          latest = consumeEvent(latest, monitor, event);
+        },
+        onClose: ({ code, child, stderrTail }) => {
+          runs.delete(record.jobId);
+          // 块七挂线①：进程退出即注销心跳（防守卫表膨胀 + 防已死 pid 被误回收）
+          if (typeof child.pid === 'number') guard.unregisterHeartbeat(child.pid);
+          // v1.4.3 第一章：进程退出即释放 GPU 额度（终态事件已 release 的幂等）
+          gpuQueue.release(record.jobId);
+          const fresh = loadTrainJobRecord(dataDir, enterpriseId, record.jobId) ?? latest;
+          if (isTerminalStatus(fresh.status)) {
+            resolve(fresh); // 事件流已收尾（done/failed/取消）——幂等不重复迁移
+            return;
+          }
+          if (code === 0) {
+            // 退出码 0 + 未收尾 → 协议③存档暂停（SIGINT 优雅退出的正常落点）
+            const paused = applyTrainJobTransition(fresh, 'checkpointing', {
+              pid: undefined,
+              usage: monitor.usage(),
+            });
+            saveTrainJobRecord(dataDir, paused);
+            // 审计：存档暂停（→ checkpointing——SIGINT 优雅退出正常落点）
+            audit(paused, {
+              fromStatus: fresh.status,
+              toStatus: 'checkpointing',
+              reason: 'Python 退出码 0（SIGINT 存档 / 优雅退出）',
+            });
+            resolve(paused);
+            return;
+          }
+          const failReason = `python 退出码 ${code}${stderrTail ? `：${stderrTail.slice(-500)}` : ''}`;
+          const failed = applyTrainJobTransition(fresh, 'failed', {
             pid: undefined,
+            reason: failReason,
             usage: monitor.usage(),
           });
-          saveTrainJobRecord(dataDir, paused);
-          // 审计：存档暂停（→ checkpointing——SIGINT 优雅退出正常落点）
-          audit(paused, {
-            fromStatus: fresh.status,
-            toStatus: 'checkpointing',
-            reason: 'Python 退出码 0（SIGINT 存档 / 优雅退出）',
+          // 失败回滚（半成品隔离 + 现场封存 + rollback 审计）
+          runFailureRollback(failed, failReason);
+          saveTrainJobRecord(dataDir, failed);
+          audit(failed, { fromStatus: fresh.status, toStatus: 'failed', reason: failReason });
+          // v1.4.3 第一章：失败终态推送 + Dashboard 落盘（close 兜底路径——
+          // spawn 崩溃等不经事件流的失败也推）
+          notifyTerminal(failed);
+          resolve(failed);
+        },
+        onError: ({ err, child }) => {
+          runs.delete(record.jobId);
+          // 块七挂线①：spawn 失败同样注销心跳（注册先于 error——防表残留）
+          if (typeof child.pid === 'number') guard.unregisterHeartbeat(child.pid);
+          // v1.4.3 第一章：spawn 失败同样释放 GPU 额度
+          gpuQueue.release(record.jobId);
+          const fresh = loadTrainJobRecord(dataDir, enterpriseId, record.jobId) ?? latest;
+          if (isTerminalStatus(fresh.status)) {
+            resolve(fresh);
+            return;
+          }
+          const failReason = `spawn 失败：${err.message}`;
+          const failedRecord = applyTrainJobTransition(fresh, 'failed', {
+            pid: undefined,
+            reason: failReason,
           });
-          resolve(paused);
-          return;
-        }
-        const failReason = `python 退出码 ${code}${stderrTail ? `：${stderrTail.slice(-500)}` : ''}`;
-        const failed = applyTrainJobTransition(fresh, 'failed', {
-          pid: undefined,
-          reason: failReason,
-          usage: monitor.usage(),
-        });
-        // 失败回滚（半成品隔离 + 现场封存 + rollback 审计）
-        runFailureRollback(failed, failReason);
-        saveTrainJobRecord(dataDir, failed);
-        audit(failed, { fromStatus: fresh.status, toStatus: 'failed', reason: failReason });
-        // v1.4.3 第一章：失败终态推送 + Dashboard 落盘（close 兜底路径——
-        // spawn 崩溃等不经事件流的失败也推）
-        notifyTerminal(failed);
-        resolve(failed);
-      });
-
-      child.on('error', (err) => {
-        runs.delete(record.jobId);
-        // 块七挂线①：spawn 失败同样注销心跳（注册先于 error——防表残留）
-        if (typeof child.pid === 'number') guard.unregisterHeartbeat(child.pid);
-        // v1.4.3 第一章：spawn 失败同样释放 GPU 额度
-        gpuQueue.release(record.jobId);
-        const fresh = loadTrainJobRecord(dataDir, enterpriseId, record.jobId) ?? latest;
-        if (isTerminalStatus(fresh.status)) {
-          resolve(fresh);
-          return;
-        }
-        const failReason = `spawn 失败：${err.message}`;
-        const failedRecord = applyTrainJobTransition(fresh, 'failed', {
-          pid: undefined,
-          reason: failReason,
-        });
-        runFailureRollback(failedRecord, failReason);
-        saveTrainJobRecord(dataDir, failedRecord);
-        audit(failedRecord, { fromStatus: fresh.status, toStatus: 'failed', reason: failReason });
-        notifyTerminal(failedRecord);
-        resolve(failedRecord);
+          runFailureRollback(failedRecord, failReason);
+          saveTrainJobRecord(dataDir, failedRecord);
+          audit(failedRecord, { fromStatus: fresh.status, toStatus: 'failed', reason: failReason });
+          notifyTerminal(failedRecord);
+          resolve(failedRecord);
+        },
+      };
+      spawned = executor.start(record.jobId, pythonBin, buildTrainSpawnArgs(jobFile, trainScript), {
+        ...(spawnCwd ? { cwd: spawnCwd } : {}),
+        hooks,
       });
     });
 
-    const handle: TrainRunHandle = { jobId: record.jobId, child, done };
-    runs.set(record.jobId, { child, monitor, done });
+    // v1.4.6 批次 D：runs.set 保持原时序（spawn 同步返回后立即入册——
+    // 测试假子进程同步 emit 事件，事件回流即心跳路径须已可查到 runs 条目）
+    const handle: TrainRunHandle = { jobId: record.jobId, child: spawned, done };
+    runs.set(record.jobId, { child: spawned, monitor, done });
     return handle;
   };
 
