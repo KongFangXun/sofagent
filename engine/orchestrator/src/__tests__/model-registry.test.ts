@@ -3,9 +3,9 @@
 //
 // 覆盖验收标准：
 //   ① registerModel 写入注册表（原子写 + 事件留痕）
-//   ② switchModel 灰度比例生效（percent<100 → canary）
+//   ② switchModel 灰度比例生效（percent<100 → canary，只灰度不动 active——v1.4.7 模型接管链堵断）
 //   ③ 晋升强制人审（percent=100 无人审挂起，对齐 v1.3.5 promote_ab）
-//   ④ 切换可回滚（rollback 恢复上一活动模型）
+//   ④ 切换可回滚（rollback 恢复上一活动模型；🔴 强制人审——与 snapshot_restore 同强度）
 //   ⑤ retireModel 退役标记生效（不参与路由，可恢复；强制人审）
 //   ⑥ 每次操作事件留痕（register/switch/promote/rollback/retire/restore）
 //   ⑦ local-path 扩展位预留（可注册，不可切换）
@@ -102,15 +102,31 @@ describe('灰度切换与晋升', () => {
     registerModel({ name: 'cand', endpoint: 'http://cand', model: 'cand' }, { dataDir });
   });
 
-  it('灰度切换（percent=10）直接生效 → canary 状态', () => {
+  it('灰度切换（percent=10）直接生效 → canary 状态，active 不被灰度污染', () => {
+    // 先晋升 base 为活动模型（灰度相对活动档位进行）
+    switchModel('base', 'executor', 100, { dataDir, humanConfirmed: true });
     const result = switchModel('cand', 'executor', 10, { dataDir });
     expect(result.ok).toBe(true);
     expect(result.awaitingHuman).toBe(false);
     const reg = loadRegistry(dataDir);
-    expect(reg.active.executor).toBe('cand');
+    // v1.4.7 模型接管链堵断：灰度只写 canaryPercent，不动 registry.active
+    expect(reg.active.executor).toBe('base');
     expect(reg.models['cand'].status).toBe('canary');
     expect(reg.models['cand'].canaryPercent).toBe(10);
     expect(reg.events.at(-1).op).toBe('switch');
+    expect(reg.events.at(-1).humanConfirmed).toBe(false);
+  });
+
+  it('🔴 模型接管链堵断：percent=99 无人审不得写 active（漏洞行为回归锁）', () => {
+    // 历史漏洞：pct === 100 才触发人审 → percent=99 绕开门控后无条件写 active
+    switchModel('base', 'executor', 100, { dataDir, humanConfirmed: true });
+    const result = switchModel('cand', 'executor', 99, { dataDir });
+    expect(result.ok).toBe(true);
+    expect(result.awaitingHuman).toBe(false);
+    const reg = loadRegistry(dataDir);
+    expect(reg.active.executor).toBe('base'); // ← 修复前是 'cand'（接管成功）
+    expect(reg.models['cand'].status).toBe('canary');
+    expect(reg.models['cand'].canaryPercent).toBe(99);
   });
 
   it('晋升（percent=100）🔴 强制人审——无确认挂起不执行', () => {
@@ -172,15 +188,25 @@ describe('回滚', () => {
     switchModel('new', 'executor', 100, { dataDir, humanConfirmed: true });
   });
 
-  it('回滚恢复上一活动模型（止损直接生效，不要求人审）', () => {
+  it('🔴 回滚强制人审——无确认挂起不执行（模型接管链堵断，对齐 snapshot_restore 强度）', () => {
     const result = rollbackModel('executor', { dataDir });
     expect(result.ok).toBe(true);
+    expect(result.awaitingHuman).toBe(true);
+    // 未执行：活动模型仍是 new
+    expect(loadRegistry(dataDir).active.executor).toBe('new');
+  });
+
+  it('回滚确认（humanConfirmed=true）→ 恢复上一活动模型', () => {
+    const result = rollbackModel('executor', { dataDir, humanConfirmed: true });
+    expect(result.ok).toBe(true);
+    expect(result.awaitingHuman).toBe(false);
     expect(result.message).toContain('old');
     const reg = loadRegistry(dataDir);
     expect(reg.active.executor).toBe('old');
     expect(reg.models['old'].status).toBe('active');
     expect(reg.models['new'].status).toBe('registered');
     expect(reg.events.at(-1).op).toBe('rollback');
+    expect(reg.events.at(-1).humanConfirmed).toBe(true);
   });
 
   it('无历史 → 回滚失败有明确提示', () => {

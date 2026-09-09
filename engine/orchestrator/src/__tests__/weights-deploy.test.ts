@@ -227,13 +227,14 @@ describe('local-path 模型切换（限制解除）', () => {
       { name: 'battery-lora', endpoint: 'http://localhost:8000', model: 'battery-lora-qwen3-8b', source: 'local-path', weightsDir: weightsDir, clientType: 'openai-compatible' },
       { dataDir },
     );
-    // 灰度 20%（可逆运维——直接生效）
+    // 灰度 20%（可逆运维——直接生效；v1.4.7 接管链堵断后：灰度只写 canary 不动 active）
     const sw = switchModel('battery-lora', 'executor', 20, { dataDir });
     expect(sw.ok).toBe(true);
     expect(sw.awaitingHuman).toBe(false);
     const reg = loadRegistry(dataDir);
     expect(reg.models['battery-lora'].status).toBe('canary');
-    expect(reg.active.executor).toBe('battery-lora');
+    expect(reg.models['battery-lora'].canaryPercent).toBe(20);
+    expect(reg.active.executor).toBeUndefined(); // 灰度不写活动模型——active 仅 percent=100 晋升路径可写
   });
 
   it('晋升 percent=100 仍强制人审（local-path 不豁免）', () => {

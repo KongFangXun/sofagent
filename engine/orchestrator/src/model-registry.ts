@@ -101,6 +101,8 @@ export interface ModelRegistryEvent {
   percent?: number;
   /** 变更前活动模型（switch/promote/rollback 时有值——回滚依据） */
   previousModel?: string;
+  /** 是否经人工确认（true=人工确认执行 / false=无确认——v1.4.7 接管链审计可追溯） */
+  humanConfirmed?: boolean;
   /** 操作备注 */
   comment?: string;
 }
@@ -347,11 +349,16 @@ export function switchModel(
     };
   }
 
-  registry.active[lane] = modelName;
+  // v1.4.7 模型接管链堵断（方案 A）：灰度（percent<100）只写 canaryPercent 不动
+  // registry.active——active 切换仅发生在 percent=100 晋升路径（人审门控保持）。
+  // 历史漏洞：门控只在 pct===100 触发，percent=99 绕开后无条件写 active——
+  // 两次调用（99 灰度 + rollback）即可零人审完成模型接管。灰度归灰度，active
+  // 不被灰度污染；灰度路由消费 canaryPercent 决策。
   if (pct < 100) {
     entry.status = 'canary';
     entry.canaryPercent = pct;
   } else {
+    registry.active[lane] = modelName;
     entry.status = 'active';
     entry.canaryPercent = undefined;
     // 被替换的原活动模型降回 registered（退役除外）
@@ -368,6 +375,7 @@ export function switchModel(
     model: modelName,
     lane,
     percent: pct,
+    humanConfirmed: options.humanConfirmed === true,
     ...(previousModel && previousModel !== modelName ? { previousModel } : {}),
     ...(options.comment ? { comment: options.comment } : {}),
   };
@@ -379,7 +387,7 @@ export function switchModel(
     awaitingHuman: false,
     message: pct === 100
       ? `「${modelName}」已晋升为 ${lane} 全量活动模型${previousModel && previousModel !== modelName ? `（替换 ${previousModel}）` : ''}`
-      : `「${modelName}」进入 ${lane} 灰度（${pct}% 流量）`,
+      : `「${modelName}」进入 ${lane} 灰度（${pct}% 流量，活动模型不变）`,
     event,
     issues: [],
   };
@@ -387,7 +395,11 @@ export function switchModel(
 
 /**
  * 回滚——把档位活动模型恢复为上一个（从事件历史找最近一次 switch/promote 的 previousModel）。
- * 回滚本身是止损操作，直接生效（不要求人审——对齐「异常 → 一键回滚」语义）。
+ * 🔴 v1.4.7 模型接管链堵断：回滚改为强制人审（human_confirmed=true 才执行）——
+ * 与 snapshot_restore 同强度。历史语义「止损直接生效不要求人审」是接管链的一环
+ * （percent=99 写 active + rollback 翻转 = 两次调用零人审完成模型接管）；
+ * 实勘全仓无 daemon 内部自动回滚调用点（唯一生产调用方是 MCP model_switch），
+ * 故一刀切全人审，无内部白名单旁路。止损紧急度由人审响应速度承担，不由校验降级承担。
  */
 export function rollbackModel(lane: 'executor' | 'pipeline', options: ModelRegistryOpOptions): ModelRegistryOpResult {
   const registry = loadRegistry(options.dataDir);
@@ -414,6 +426,16 @@ export function rollbackModel(lane: 'executor' | 'pipeline', options: ModelRegis
     return { ok: false, awaitingHuman: false, message: `回滚目标「${target}」不存在或已退役`, issues: [] };
   }
 
+  // 🔴 强制人审——回滚翻转会改变活动模型，与晋升同强度（human_confirmed=true 才执行）
+  if (options.humanConfirmed !== true) {
+    return {
+      ok: true,
+      awaitingHuman: true,
+      message: `回滚 ${lane}（${current} → ${target}）需人工确认（human_confirmed=true 才执行）——确认止损目标无误？`,
+      issues: [],
+    };
+  }
+
   const now = new Date().toISOString();
   registry.active[lane] = target;
   targetEntry.status = 'active';
@@ -430,6 +452,7 @@ export function rollbackModel(lane: 'executor' | 'pipeline', options: ModelRegis
     model: target,
     lane,
     previousModel: current,
+    humanConfirmed: options.humanConfirmed === true,
     ...(options.comment ? { comment: options.comment } : {}),
   };
   registry.events.push(event);

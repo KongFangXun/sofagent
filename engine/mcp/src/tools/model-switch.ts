@@ -3,9 +3,9 @@
 // ============================================================
 //
 // 灰度切换 / 晋升 / 回滚入口。委托 @sofagent/orchestrator：
-//   - percent < 100 → canary 灰度（可逆运维操作直接生效）
+//   - percent < 100 → canary 灰度（只写灰度比例，活动模型不变——v1.4.7 接管链堵断）
 //   - percent = 100 / 缺省 → 晋升全量 🔴 强制人审（对齐 v1.3.5 promote_ab）
-//   - action='rollback' → 一键回滚到上一活动模型（止损不要求人审）
+//   - action='rollback' → 回滚到上一活动模型 🔴 强制人审（与 snapshot_restore 同强度）
 // ============================================================
 import { join } from 'path';
 import { getDataDir } from '@sofagent/core';
@@ -21,7 +21,7 @@ export interface ModelSwitchArgs {
   action?: 'switch' | 'rollback' | 'rollback-weights';
   /** 权重版本回滚目标（rollback-weights 可选——缺省回拨上一版本） */
   target_version?: string;
-  /** 🔴 人工确认（晋升 percent=100 时必填 true） */
+  /** 🔴 人工确认（晋升 percent=100 与 rollback 时必填 true） */
   human_confirmed?: boolean;
   /** 备注（灰度依据 / 回滚原因） */
   comment?: string;
@@ -78,13 +78,19 @@ export async function modelSwitch(args: ModelSwitchArgs): Promise<ModelSwitchToo
       };
     }
 
-    // 回滚路径
+    // 回滚路径（🔴 强制人审——human_confirmed=true 才执行）
     if (action === 'rollback') {
       const result = rollbackModel(lane, opts);
       if (!result.ok) {
         return {
           text: `[sofagent] 回滚失败 ❌：${result.message}`,
           data: { isError: result.issues.length > 0, ok: false, awaitingHuman: false, issues: result.issues, lane },
+        };
+      }
+      if (result.awaitingHuman) {
+        return {
+          text: `[sofagent] ⏸ ${result.message}`,
+          data: { isError: false, ok: true, awaitingHuman: true, issues: [], lane },
         };
       }
       await emitSwitchDecision(`模型回滚：${result.message}`, lane, undefined);

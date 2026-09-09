@@ -88,7 +88,7 @@
 | tool | roles | 说明 |
 |---|---|---|
 | `model_register` | ops | 模型注册——注册训练后模型 endpoint（name+endpoint+model）。 |
-| `model_switch` | ops | 模型灰度切换——按档位切换活动模型（percent<100 灰度，100 强制人审）。 |
+| `model_switch` | ops | 模型灰度切换——按档位切灰度/活动模型（percent<100 只写灰度比例不动活动模型；100 晋升与 rollback 回滚均 🔴 强制人审）。 |
 | `model_unregister` | ops | 模型退役——标记退役（可恢复），强制人审。 |
 | `train_budget` | eval, ops | 训练预算控制——查预算状态 / 超预算人审续跑或终止。 |
 | `train_submit` | eval, ops | 训练任务提交——数据+基座+算法(sft/dpo/grpo)+超参+预算 → 生成 trainJobId（同 id 重复提交幂等）。 |
