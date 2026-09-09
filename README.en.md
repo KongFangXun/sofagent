@@ -229,9 +229,12 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # load the securit
 **Featured in** (community listings, incl. pending PRs):
 
 [![Glama](https://img.shields.io/badge/Glama-indexed-4A90D9)](https://glama.ai/mcp/servers/KongFangXun/sofagent)
+[![awesome-dsh-plugin](https://img.shields.io/badge/awesome--dsh--plugin-listed-brightgreen)](https://github.com/awesome-dsh-plugin/awesome-dsh-plugin)
+[![awesome-ai-agents (Jenqyang)](https://img.shields.io/badge/awesome--ai--agents-listed-brightgreen)](https://github.com/Jenqyang/Awesome-AI-Agents)
+[![dsh-plugin-radar](https://img.shields.io/badge/dsh--plugin--radar-listed-brightgreen)](https://github.com/AdamPlatin123/dsh-plugin-radar/blob/main/PLUGINS.md)
 [![awesome-mcp-servers](https://img.shields.io/badge/awesome--mcp--servers-PR%20open-orange)](https://github.com/punkpeye/awesome-mcp-servers/pull/13312)
 [![awesome-harness-engineering](https://img.shields.io/badge/awesome--harness--engineering-PR%20open-orange)](https://github.com/ai-boost/awesome-harness-engineering/pull/227)
-[![awesome-ai-agents](https://img.shields.io/badge/awesome--ai--agents-PR%20open-orange)](https://github.com/e2b-dev/awesome-ai-agents/pull/1471)
+[![awesome-ai-agents (e2b)](https://img.shields.io/badge/awesome--ai--agents%20%28e2b%29-PR%20open-orange)](https://github.com/e2b-dev/awesome-ai-agents/pull/1471)
 
 **Upstream & plugin entries**:
 
