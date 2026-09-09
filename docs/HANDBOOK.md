@@ -428,7 +428,7 @@ jobs:
 | 严格 | `--strict` | 任何警告都 exit 2 | 0/2 |
 | CI | `--ci` | = `--silent`（CI 友好输出，无交互提示） | 0/1/2 |
 
-模式可叠加——CI 流水线需零容忍时用 `--diff HEAD --ci --strict`（v1.0.5 起 `--ci` 不再隐含 `--strict`）。
+模式可叠加——CI 流水线需零容忍时用 `--diff HEAD --ci --strict`（v1.0.5 起 `--ci` 不再隐含 `--strict`）。未知参数处置：可能承载安全语义的拼错形态（如 `--rulesets` 复数、`--ruleset=security` 等号写法）会 **exit 2 直接中断**（用法错误，非审计发现——对齐三态退出码语义）；纯未知 flag 仅告警不中断，合法参数表见 `--help`。
 
 ---
 

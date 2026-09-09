@@ -368,14 +368,26 @@ export function runCliQuick(argv: string[]): number {
 
   // v1.3.1 #12: 未知 flag 检测——quick 模式支持的参数有限，
   // 不在此列表中的 `-` 开头参数会被静默忽略，用户误以为审计已覆盖。
+  // v1.4.7 批次 M：fail-loud 分级——可能承载安全语义的拼错形态（--ruleset* / --config*
+  // / --task* 等）升级 exit 2（对齐 S359 三态退出码：exit 2 = 用法错误，非审计发现）：
+  // 用户想加载规则集却敲错拼写（--rulesets 复数 / --ruleset=security 等号），拿到绿灯
+  // 且无中断 = CI 假绿直通车。纯未知 flag 保留 warn（未来兼容噪声）。
   const QUICK_KNOWN_FLAGS = new Set([
     '--help', '-h', '--version', '-v',
     // v1.4.3 第七章：聚合指标参数组（--stats 主入口 + --days/--json 修饰）
     '--stats', '--days', '--json',
   ]);
+  // 承载安全语义的参数前缀——拼错即用法错误（exit 2），不静默放行
+  const SEMANTIC_FLAG_PREFIXES = ['--ruleset', '--config', '--task', '--au', '--exclud', '--includ'];
   const warnedFlags = new Set<string>();
   for (const arg of argv.slice(2)) {
     if (arg.startsWith('-') && !FULL_ONLY_FLAGS.includes(arg) && !QUICK_KNOWN_FLAGS.has(arg)) {
+      // 语义前缀命中（含等号/复数拼错形态）：exit 2 fail-loud
+      const base = arg.split('=')[0] ?? arg;
+      if (SEMANTIC_FLAG_PREFIXES.some((p) => base.startsWith(p))) {
+        console.error(`❌ 未知参数: ${arg}——该形态可能承载安全语义（规则集/配置/任务范围），拼错即用法错误；请核对 --help 合法参数表`);
+        process.exit(2);
+      }
       if (!warnedFlags.has(arg)) {
         console.warn(`⚠️  未知参数: ${arg}，请检查 --help`);
         warnedFlags.add(arg);
