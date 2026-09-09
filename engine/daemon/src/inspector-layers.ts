@@ -1,5 +1,5 @@
 // ============================================================
-// inspector-layers.ts · L1/L2/L3 分层巡检调度器（v1.4.6 · P0）
+// inspector-layers.ts · L1/L2/L3 分层巡检调度器（v1.2.4）
 // ============================================================
 //
 // 将扁平的 inspector 执行改为三级分层调度：
@@ -121,8 +121,12 @@ export interface LayeredInspectionResult {
 export function runLayeredInspection(
   projectDir: string,
   layer: InspectorLayer,
+  source: 'scheduled' | 'manual' = 'manual',
 ): LayeredInspectionResult {
   const inspectors = LAYER_INSPECTORS[layer];
+  console.log(
+    `[inspector] 层 ${layer} 开始执行（${inspectors.length} 个 inspector · 触发源 ${source}）`,
+  );
   const results: InspectorResult[] = [];
 
   for (const { name, fn } of inspectors) {

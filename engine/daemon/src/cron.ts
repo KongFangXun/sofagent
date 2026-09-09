@@ -1,13 +1,13 @@
 // ============================================================
 // daemon/cron.ts — 定时任务调度
-// v1.4.6: 支持 @weekly / @daily / @hourly 触发 Sub Agent 巡检
-// v1.4.6：迁移至 @sofagent/daemon
-// v1.4.6 T1（P0 方案 A接线）：inspectors: 段 → L1/L2/L3 分层巡检调度
+// v1.0.9: 支持 @weekly / @daily / @hourly 触发 Sub Agent 巡检
+// v1.1.0：迁移至 @sofagent/daemon
+// v1.4.5 T1（P0 方案 A接线）：inspectors: 段 → L1/L2/L3 分层巡检调度
 //   —— runAllLayers 此前「诞生即死」（存在但零生产调用），按 LAYER_SCHEDULE
 //      默认 @daily/@weekly/@monthly 接线；enabled:false 可显式关闭。
-// v1.4.6 T2（P0）：dream-cycle: 段 → runDreamCycle 调度
+// v1.4.5 T2（P0）：dream-cycle: 段 → runDreamCycle 调度
 //   —— 同样零生产调用，默认 @daily 启用，产物落 data/knowledge/。
-// v1.4.6 第五章：train-archive: 段 → runTrainArchiveTask 调度
+// v1.4.5 第五章：train-archive: 段 → runTrainArchiveTask 调度
 //   —— 训练产物归档冷存（压缩不删除）+ 90 天覆写销毁 + 磁盘 80% 预警，
 //      默认 @weekly 启用（企业级磁盘治理标配），task 实现在 tasks/train-archive.ts。
 //
@@ -112,8 +112,10 @@ export function recordInspectorSuccess(_projectDir: string, layer: InspectorLaye
       require('fs').mkdirSync(dir, { recursive: true });
     }
     writeFileSync(p, JSON.stringify(state, null, 2) + '\n', 'utf-8');
-  } catch {
-    // 状态落盘失败不阻断巡检主流程（观测性 best-effort）
+  } catch (err) {
+    // 状态落盘失败不阻断巡检主流程（观测性 best-effort），但失败必须留痕——
+    // 此前空 catch 静默吞错，lastSuccessAt 长期缺失无从排查（doctor 误报「从未巡检」）。
+    console.error('[inspector-schedule] 落盘失败:', err instanceof Error ? err.message : String(err));
   }
 }
 
@@ -368,7 +370,7 @@ export function startCron(projectDir: string): number {
           // 局部 require 避免循环依赖：inspector-layers 侧无 cron 引用，
           // 但保持与其他分支一致的延迟加载风格（daemon 启动不拖重）。
           const { runLayeredInspection } = require('./inspector-layers') as typeof import('./inspector-layers');
-          const result = runLayeredInspection(projectDir, layer);
+          const result = runLayeredInspection(projectDir, layer, 'scheduled');
           recordInspectorSuccess(projectDir, layer);
           const failures = result.results.filter((r) => r.triggered && r.severity === 'warning' || r.severity === 'critical');
           console.log(`[cron] 巡检层 ${layer} 完成: ${result.results.length} 项，告警 ${failures.length} 项`);
