@@ -17,7 +17,7 @@
 
 | 版本 | 核心交付 |
 |------|------|
-| **v1.4.6** | **🚀 后训模块 · 分布式与云端**：多卡/多机训练（gpu.count/nodes + schema v2 存量兼容 + GPU 双轴拓扑 + NCCL 第八类诊断）+ 云 VM 执行面（train_cloud 注册/体检/远程 spawn + 分拣三档宁拦勿漏 + 失联止损 5min + 成本入预算）+ 标准数据推送接口（双闸，入口接线 v1.4.7）+ 边界收缩（配方外部装载/trainEnvInit 归 shell/model-downloader 删除/TrainExecutor 隔离，约 −1.2k 行）· 测试 4055→4088 · acceptance 310→311 · MCP 83→84（详见 [CHANGELOG](../CHANGELOG.md)） |
+| **v1.4.6** | **🚀 后训模块 · 分布式与云端**：多卡/多机训练（gpu.count/nodes + schema v2 存量兼容 + GPU 双轴拓扑 + NCCL 第八类诊断）+ 云 VM 执行面（train_cloud 注册/体检/远程 spawn + 分拣三档宁拦勿漏 + 失联止损 5min + 成本入预算）+ 标准数据推送接口（双闸，入口接线 v1.4.7）+ 边界收缩（配方外部装载/trainEnvInit 归 shell/model-downloader 删除/TrainExecutor 隔离，约 −1.2k 行）· 测试 4055→4088 · acceptance 305→311 · MCP 83→84（详见 [CHANGELOG](../CHANGELOG.md)） |
 | **v1.4.5** | **🚀 后训模块 · 服务与持续**：训练推理服务 train_serve + 持续后训练三触发与回退保护 + 合规扫描闸门 train_compliance + FDE 交付包 train_deliverable + 保留策略归档 + 后训 Quickstart 十步 + 进化实证收口（真脑/台账/采样/L4 自进化）+ FDE 进场记忆目录 + 可靠性加固批（webhook SSRF/审计链截断/超时降级）· 测试 3753→4055 · acceptance 304→305 · MCP 80→83（详见 [CHANGELOG](../CHANGELOG.md)） |
 | **v1.4.4** | **🚀 后训模块 · 信号与部署闭环**：训练语料导出三件套（corpus_export 79→80 + reward 骨架）+ 企业专属模型本地权重部署（manifest+sha256 篡改拒绝+rollback-weights）+ 训练产物→注册自动衔接 + 多基座对比（train compare ROI 排序）+ 决策因果链与先例检索 + CI 供应链全 SHA 固定 + 五能力叙事定稿 · 测试 3619→3753 · acceptance 294→304 · MCP 79→80（详见 [CHANGELOG](../CHANGELOG.md)） |
 | **v1.4.3** | **🚀 后训模块 · 运行与需求 + 审计聚合指标**：训练监控 + GPU 队列（train_status/train_list）· 失败诊断 train_diagnose 七类 · 训练沙箱 + 设备打包 · 需求推导 + RL 配方模板 · 后训练 workflow 模板 · 审计聚合指标 --stats · 训练反作弊基线 · 存量清扫五件（含 checkHistoryChainIntegrity 退役公告）· doctor 补 Ontology 完整性 · 测试 3349→3619 · acceptance 276→294 · MCP 76→79 |
