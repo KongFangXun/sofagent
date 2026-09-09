@@ -1,6 +1,8 @@
 # 阶段十：分发（Skill / DSH plugin / OpenClaw plugin / GitHub Marketplace / 设备端）
 
 > **项目负责人亲手执行，或授权 AI 代执行。npm 发布流水线（本阶段前置）见 [09-publish.md](./09-publish.md) 步骤一~八。**
+>
+> **授权粒度**：阶段八放行的「Skill 分发」拍板即覆盖本阶段全部分发渠道（Skill 双平台 / DSH plugin 家族 / OpenClaw plugin 家族 / Marketplace / 设备端 / npm 门面巡检）——按步骤顺序一次走完，只在报错或渠道前置不满足（如 source-linked 未 push）时停下报告。分发不含不可逆撤回风险（同版本不可覆盖但可递增），一揽子走完的粒度与 09-publish 对齐。
 
 ---
 
