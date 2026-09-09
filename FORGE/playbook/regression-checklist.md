@@ -1759,10 +1759,10 @@ MKT_HTML=$(curl -s --max-time 10 https://github.com/marketplace/actions/sofagent
 #### 131. v1.4.5 后训服务与持续收口批防复发——train 五新面/进化实证/retention 加固/链锚一维收口（阶段四来源提取 A/B 合流 · 行为面已由单测锁：serve 21/compliance 19/deliverable 20/retention 15/session 17+2 用例）
 
 ```bash
-# 逐锚语义：a = 交付面存在性（train 五新面/进化实证 sampler cursor + skill-impact 台账/quickstart 双件/fde-session lastCapturedAt/WIKI §数据文件架构指针）+ tools 83 静态 SSOT（动态不进）；b = retention 加固 + 链锚/SANITIZE 值形可证
+# 逐锚语义：a = 交付面存在性（train 五新面/进化实证 sampler cursor + skill-impact 台账/quickstart 双件/fde-session lastCapturedAt/WIKI §数据文件架构指针）+ tools 84 静态 SSOT（动态不进；83→84 为 v1.4.6 阶段六对齐 registry 实测实数——与维度 111 同款口径）；b = retention 加固 + 链锚/SANITIZE 值形可证
 MISS=0; for f in train-serve train-compliance train-deliverable retention-policy train-continuous; do test -f "engine/orchestrator/src/train/$f.ts" || MISS=$((MISS+1)); done; [ "$MISS" -eq 0 ] && echo "✅ train 五新面在位" || echo "❌ train 新面缺 $MISS 文件"
 test -f docs/guides/train-quickstart.md && test -f docs/guides/examples/quickstart-data.csv && grep -q "cursor" engine/daemon/src/dream-cycle/continuous-sampler.ts && test -f engine/orchestrator/src/skill-evolution/skill-impact-ledger.ts && grep -q "lastCapturedAt" engine/orchestrator/src/fde-session-mgr/index.ts && echo "✅ 进化实证 + quickstart + 会话时间戳在位" || echo "❌ 交付面缺口"
-grep -q "§数据文件架构" docs/WIKI.md && [ "$(grep -cE "^ {4}name: '" engine/mcp/src/tool-registry.ts)" -eq 83 ] && echo "✅ WIKI 指针 + tools 83 SSOT" || echo "⚠️ WIKI 指针/83 计数漂移——复核"
+grep -q "§数据文件架构" docs/WIKI.md && [ "$(grep -cE "^ {4}name: '" engine/mcp/src/tool-registry.ts)" -eq 84 ] && echo "✅ WIKI 指针 + tools 84 SSOT" || echo "⚠️ WIKI 指针/84 计数漂移——复核"
 grep -q "isSymbolicLink" engine/orchestrator/src/train/retention-policy.ts && grep -q "realpathSync" engine/orchestrator/src/train/retention-policy.ts && [ "$(grep -c "resolvePointPath" engine/orchestrator/src/train/retention-policy.ts)" -ge 4 ] && grep -q "trainArchiveDir" engine/orchestrator/src/train/retention-policy.ts && echo "✅ retention 四词形在位" || echo "❌ retention 加固回潮"
 test -f engine/audit/src/chain-head-anchor.test.ts && grep -q "shouldExempt(key: string, value: string)" engine/audit/src/audit-history.ts && grep -q "sanitizeFreeText(value) === value" engine/audit/src/audit-history.ts && echo "✅ 链锚测试 + SANITIZE 值校验在位" || echo "❌ 链锚/SANITIZE 回潮"
 ```
