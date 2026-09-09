@@ -10,7 +10,7 @@
 
 | # | 完成 | 步骤 | 产物 |
 |:--:|:--:|------|------|
-| 一 | [ ] | **发布后验证**（见下方脚本）——含**文档头发版状态翻转**（活文档头「开发完成未发版/待发版」→「已发版」+ 当前版本开发日志头「⏳ 待发版」→「✅ 已发版」，翻转后 `check-version` F6 全绿才过关） | 全绿 |
+| 一 | [ ] | **发布后验证**（见下方脚本）——含**文档头发版状态翻转**（活文档头「待发版」语义族→「已发版」+ 当前版本开发日志头「⏳ 待发版」→「✅ 已发版」+ 翻转后**双零残留复核**，翻转后 `check-version` F6 全绿才过关） | 全绿 |
 | 二 | [ ] | CI 全绿检查 | CI 全绿 |
 | — | [ ] | **Release Notes 范本快照更新**：本版 gh release 发布后，把 body 的实际结构（H2 骨架/新要素）回写 [06](./06-doc-finalize.md)「Release Notes」范本段的「已知结构基线」行——上一版实际发布物是下一版生成的结构 SSOT，发版后不回写 = 下一版按旧结构生成（漂移链条的根因闭环点） | 06 范本段基线行与本版 body 一致 |
 | 三 | [ ] | **审查三文档回写**：发版过程（阶段五~十）暴露的新问题回写到 regression-checklist（新维度）/ fresh-eyes-review（新教训）/ acceptance-test（新场景）。与阶段四分工：阶段四管代码质量（发版前可见），本步骤管发版流程（发版中才暴露——如 CI 失败模式、publish 限制、日期硬编码等）。⚠️ **改了 acceptance 场景数后立即跑 `bash tools/check/check-test-count.sh --scenarios-only`**（秒级轻量守卫——场景数改后立即拦截 DEVELOPMENT/LIMITATIONS 漂移，勿拖到 pre-push 才暴露） | 三文档更新 |
@@ -51,15 +51,26 @@ sofagent-audit --version           # 期望 vX.Y.Z
 sofagent-audit --doctor            # 期望与当前版本 doctor 项数一致
 sofagent-core --doctor             # 期望全部通过
 
-# 文档头发版状态翻转（「开发完成未发版/待发版」→「已发版」）——check-version F6 已扩展拦截，
-# 此翻转必须在下方 check-version 全绿验收之前做，否则 F6 报文档头残留红灯（v1.4.5 曾 13 处漏翻）。
+# 文档头发版状态翻转（「待发版」语义族 →「已发版」）——check-version F6 已锚定「待发版」
+# 三字拦截（措辞变体不可穷举，v1.4.5 漏 13 份、v1.4.6 漏 8+2 份连续复发后收口），
+# 此翻转必须在下方 check-version 全绿验收之前做，否则 F6 报文档头残留红灯。
 # 只翻转活文档头，历史 changelog/archive 的「待发版」是当时正确状态不动。
-grep -rlE '开发完成未发版|开发完成待发版' --include="*.md" docs/ \
+grep -rlE '待发版' --include="*.md" docs/ \
   | grep -v "docs/changelog/" \
   | grep -v "docs/archive/" \
-  | xargs sed -i '' 's/开发完成未发版/已发版/g; s/开发完成待发版/已发版/g' 2>/dev/null || true
+  | xargs sed -i '' 's/⏳ 定稿待发版——本批更新/✅ 已发版——本批更新/g; s/⏳ 定稿待发版（本批更新/✅ 已发版（本批更新/g; s/开发完成未发版/已发版/g; s/开发完成待发版/已发版/g' 2>/dev/null || true
 # 当前版本开发日志头「⏳ 待发版」→「✅ 已发版」（路径替换为当前版本 vX.Y/vX.Y.Z.md）
 sed -i '' 's/⏳ 待发版（tag\/npm 发版时同步）/✅ 已发版（YYYY-MM-DD）/g' "docs/changelog/vX.Y/vX.Y.Z.md"
+# 翻转后双零残留复核（v1.4.7 批次 B 新增）：「待发版」字样与版本头≠SSOT 必须双零命中，
+# 非零即 fail——翻转脚本自身不再静默漏翻（F6 门禁是最后防线，此复核是第一防线）。
+_REMAIN=$(grep -rlE '待发版' --include="*.md" docs/ | grep -v "docs/changelog/" | grep -v "docs/archive/" || true)
+if [ -n "$_REMAIN" ]; then echo "❌ 翻转后仍残留待发版："; echo "$_REMAIN"; exit 1; fi
+_SSOT=$(node -p "require('./package.json').version")
+for _f in $(find docs -name '*.md' -not -path '*/changelog/*' -not -path '*/archive/*'); do
+  _v=$(head -8 "$_f" | grep -E '^> *v1\.4\.[0-9]+ *·|^> *版本[：:] *v1\.4\.[0-9]+' | grep -oE 'v1\.4\.[0-9]+' | head -1)
+  if [ -n "$_v" ] && [ "$_v" != "v${_SSOT}" ]; then echo "❌ 版本头滞后：$_f: $_v ≠ v${_SSOT}"; exit 1; fi
+done
+echo "✅ 双零复核通过（待发版零残留 + 版本头全对齐）"
 
 # 最终版本号一致性验证（文档头状态已翻转，F6 应全绿）
 bash tools/check/check-version.sh        # 期望全绿
