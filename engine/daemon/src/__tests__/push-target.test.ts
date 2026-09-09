@@ -11,6 +11,9 @@
 // ============================================================
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import * as fs from 'fs';
+import * as os from 'os';
+import { join } from 'path';
 import { pushToTarget } from '../push-target';
 
 describe('push-target webhook SSRF 防护', () => {
@@ -71,5 +74,74 @@ describe('push-target webhook SSRF 防护', () => {
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(result).toBe(true);
+  });
+});
+
+// ────────────────────────────────────────────────────────────
+// v1.4.7 批次 G-2：im-outbox 排水行为锁——「只写不删」断链的兜底闭环
+// ────────────────────────────────────────────────────────────
+
+describe('drainOutbox im-outbox 排水（v1.4.7 G-2）', () => {
+  let testDir: string;
+  const savedDataDir = process.env.SOFAGENT_DATA;
+
+  beforeEach(() => {
+    testDir = fs.mkdtempSync(join(os.tmpdir(), 'sofagent-drain-test-'));
+    process.env.SOFAGENT_DATA = testDir;
+  });
+
+  afterEach(() => {
+    process.env.SOFAGENT_DATA = savedDataDir;
+    try { fs.rmSync(testDir, { recursive: true, force: true }); } catch { /* #9 shim 加固 */ }
+  });
+
+  it('超龄文件被移入 failed/（排水留档）', async () => {
+    const { drainOutbox } = await import('../push-target');
+    const outbox = join(testDir, 'im-outbox');
+    fs.mkdirSync(outbox, { recursive: true });
+    const old = join(outbox, 'old-msg.md');
+    fs.writeFileSync(old, '# 旧消息\n');
+    const eightDaysAgo = Date.now() - 8 * 24 * 3600 * 1000;
+    fs.utimesSync(old, new Date(eightDaysAgo), new Date(eightDaysAgo));
+
+    const drained = drainOutbox();
+    expect(drained).toBe(1);
+    expect(fs.existsSync(old)).toBe(false);
+    expect(fs.existsSync(join(outbox, 'failed', 'old-msg.md'))).toBe(true);
+  });
+
+  it('保留期内的文件不动（OpenClaw 可能还要拉取）', async () => {
+    const { drainOutbox } = await import('../push-target');
+    const outbox = join(testDir, 'im-outbox');
+    fs.mkdirSync(outbox, { recursive: true });
+    fs.writeFileSync(join(outbox, 'fresh-msg.md'), '# 新消息\n');
+
+    expect(drainOutbox()).toBe(0);
+    expect(fs.existsSync(join(outbox, 'fresh-msg.md'))).toBe(true);
+  });
+
+  it('outbox 目录不存在时空转无害', async () => {
+    const { drainOutbox } = await import('../push-target');
+    expect(drainOutbox()).toBe(0);
+  });
+
+  it('推送成功语义 deleteOutboxFile 删除源文件', async () => {
+    const { deleteOutboxFile } = await import('../push-target');
+    const outbox = join(testDir, 'im-outbox');
+    fs.mkdirSync(outbox, { recursive: true });
+    fs.writeFileSync(join(outbox, 'to-delete.md'), '# 删我\n');
+
+    expect(deleteOutboxFile('to-delete.md')).toBe(true);
+    expect(fs.existsSync(join(outbox, 'to-delete.md'))).toBe(false);
+  });
+
+  it('推送失败语义 moveOutboxToFailed 移入 failed/', async () => {
+    const { moveOutboxToFailed } = await import('../push-target');
+    const outbox = join(testDir, 'im-outbox');
+    fs.mkdirSync(outbox, { recursive: true });
+    fs.writeFileSync(join(outbox, 'to-fail.md'), '# 失败\n');
+
+    expect(moveOutboxToFailed('to-fail.md')).toBe(true);
+    expect(fs.existsSync(join(outbox, 'failed', 'to-fail.md'))).toBe(true);
   });
 });

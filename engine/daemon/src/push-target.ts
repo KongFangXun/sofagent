@@ -258,6 +258,55 @@ export function cleanupFailedOutbox(): number {
   return cleaned;
 }
 
+/**
+ * 排水 im-outbox 主目录：超过保留期的未拉取文件移入 failed/（v1.4.7 批次 G-2）。
+ *
+ * §8.5 设计的「推送成功→deleteOutboxFile / 失败→moveOutboxToFailed」依赖 OpenClaw 端
+ * 拉取后回执——但 OpenClaw 拉取是外部行为，daemon 侧无从感知成功与否，两个生命周期
+ * 函数自 v1.2.5 交付起零生产调用（实测积压 519 封）。本函数 = daemon 侧兜底排水：
+ * 超过保留期（7 天）仍在主目录的文件视为「OpenClaw 已拉取或已放弃」，移入 failed/
+ * 留档（可追溯），随后由 cleanupFailedOutbox 按同保留期统一清理。
+ *
+ * 由 daemon start 启动时 + cron @daily 周期调用。
+ *
+ * @returns 移入 failed/ 的文件数
+ */
+export function drainOutbox(): number {
+  const fs = require('fs');
+  const { join } = require('path');
+  const dataDir = process.env.SOFAGENT_DATA || DATA_DIR;
+  const outboxDir = join(dataDir, 'im-outbox');
+  if (!fs.existsSync(outboxDir)) return 0;
+
+  const now = Date.now();
+  const retentionMs = OUTBOX_RETENTION_DAYS * 24 * 3600 * 1000;
+  let drained = 0;
+
+  try {
+    const files = (fs.readdirSync(outboxDir) as string[]).filter(
+      (f) => f.endsWith('.md') && fs.statSync(join(outboxDir, f)).isFile(),
+    );
+    for (const f of files) {
+      try {
+        const st = fs.statSync(join(outboxDir, f));
+        if (now - st.mtimeMs > retentionMs) {
+          // 复用 moveOutboxToFailed 的移动语义（建 failed/ + rename + notify）
+          if (moveOutboxToFailed(f)) drained++;
+        }
+      } catch {
+        // 单个文件读不了不影响排水流程
+      }
+    }
+  } catch {
+    // 目录读取失败忽略
+  }
+
+  if (drained > 0) {
+    notify(`im-outbox 排水 ${drained} 个超龄文件至 failed/（OpenClaw 未回执兜底）`, { source: 'push-target', level: 'info' });
+  }
+  return drained;
+}
+
 async function pushOpenClawIM(title: string, message: string): Promise<boolean> {
   // OpenClaw IM channel——通过本地 socket / 配置文件桥接
   // v1.1.5 最小实现：写入 im-outbox/ 由 OpenClaw 端拉取

@@ -247,6 +247,7 @@
   deleteOutboxFile,
   moveOutboxToFailed,
   cleanupFailedOutbox,
+  drainOutbox,
 } from './push-target';
 
 // v1.3.6 交付⑬：Agent 疲劳度检测（3 信号采集 → 评分 → daemon-health.json）

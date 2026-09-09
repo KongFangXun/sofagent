@@ -514,6 +514,29 @@ export function startCron(projectDir: string): number {
     }, 5 * 60_000);
   }
 
+  // ── v1.4.7 批次 G-2：im-outbox 排水 + failed 清理（每日）──
+  // §8.5 生命周期（deleteOutboxFile/moveOutboxToFailed）依赖 OpenClaw 回执，daemon 侧
+  // 无从感知——超龄未拉取文件由 drainOutbox 兜底移 failed/ 留档，cleanupFailedOutbox
+  // 按同保留期统一清理。启动时先跑一次（即时排水），此后每日巡检。
+  {
+    scheduled += 1;
+    console.log('[cron] daily → im-outbox 排水 + failed 清理');
+    const runOutboxMaintenance = (): void => {
+      try {
+        const { drainOutbox, cleanupFailedOutbox } = require('./push-target') as typeof import('./push-target');
+        const drained = drainOutbox();
+        const cleaned = cleanupFailedOutbox();
+        if (drained > 0 || cleaned > 0) {
+          console.log(`[cron] im-outbox 维护完成: 排水 ${drained} / 清理 ${cleaned}`);
+        }
+      } catch (err) {
+        console.error('[cron] im-outbox 维护失败:', (err as Error).message);
+      }
+    };
+    runOutboxMaintenance();
+    setInterval(runOutboxMaintenance, 24 * 3600_000);
+  }
+
   const jobs = loadCronConfig(projectDir);
   if (jobs.length === 0) return scheduled;
 
