@@ -1424,21 +1424,57 @@ if $F6_RELEASED; then
     CHECKS=$((CHECKS + 1))
   fi
   # F6 扩展（v1.4.6 前置 · fresh-eyes P1-1 防复发）：已发版态下，活文档头不得残留
-  # 「开发完成未发版/开发完成待发版」状态标记——发版翻转只覆盖「三件套」（WIKI 状态表/
-  # ROADMAP/HANDBOOK 速览），13 处文档头「未发版」漏翻（v1.4.5 实锤）。扫描面 = docs/ 活文档
-  # （排除 changelog/archive——历史日志的「待发版」是当时正确状态，不报）。
+  # 「待发版」状态标记——发版翻转只覆盖「三件套」（WIKI 状态表/ROADMAP/HANDBOOK 速览），
+  # v1.4.5 漏 13 份、v1.4.6 又漏 8+2 份（措辞换成「定稿待发版」即双双失守）。扫描面 =
+  # docs/ 活文档（排除 changelog/archive——历史日志的「待发版」是当时正确状态，不报）。
+  # 设计理由（v1.4.7 批次 B 收口）：措辞变体不可穷举，门禁锚定「待发版」语义三字；
+  # 历史日志白名单靠排除 docs/changelog/ 与 docs/archive/ 目录实现，不依赖措辞。
   F6_DOC_PENDING=$(find "${PROJECT_ROOT}/docs" \
     -name '*.md' \
     -not -path '*/changelog/*' \
     -not -path '*/archive/*' \
     -type f -print0 2>/dev/null \
-    | xargs -0 grep -lE '开发完成未发版|开发完成待发版' 2>/dev/null || true)
+    | xargs -0 grep -lE '待发版' 2>/dev/null || true)
   if [ -n "$F6_DOC_PENDING" ]; then
-    echo -e "  ${RED}✗${NC} 已发版态（${F6_WHY}）但以下活文档头仍标「开发完成未发版/待发版」——发版翻转遗漏文档头（F6 扩展）："
+    echo -e "  ${RED}✗${NC} 已发版态（${F6_WHY}）但以下活文档仍含「待发版」字样——发版翻转遗漏（F6 扩展·语义锚定）："
     echo "$F6_DOC_PENDING" | sed "s#^#      #" | head -15
     ERRORS=$((ERRORS + 1))
   else
-    echo -e "  ${GREEN}✓${NC} 已发版态（${F6_WHY}），活文档头无「开发完成未发版/待发版」残留"
+    echo -e "  ${GREEN}✓${NC} 已发版态（${F6_WHY}），活文档无「待发版」残留"
+    CHECKS=$((CHECKS + 1))
+  fi
+  # F6 子断言（v1.4.7 批次 B：版本头 SSOT 对齐）：活文档「版本头行」的版本号必须等于
+  # package.json version。版本头行形态 = 头部 8 行内的 `> v1.4.X · …`（发版状态头）或
+  # `> 版本：v1.4.X …`（版本声明头）。只匹配这两种元数据行——正文叙事性的版本引用
+  # （如「v1.4.1 块一定稿」「入口接线 v1.4.7 交付」前瞻）不属于发版状态头，不在此断言
+  # 范围（误伤叙事是设计缺陷，v1.4.6 API.md「版本：v1.4.5」滞后形态才是本断言要堵的）。
+  # 扫描面 = docs/ 活文档（排除 changelog/archive）+ 根级 SECURITY.md/CONTRIBUTING.md
+  # + tools/README.md。
+  F6_HDR_FILES=$(find "${PROJECT_ROOT}/docs" \
+    -name '*.md' \
+    -not -path '*/changelog/*' \
+    -not -path '*/archive/*' \
+    -type f 2>/dev/null; \
+    echo "${PROJECT_ROOT}/SECURITY.md"; \
+    echo "${PROJECT_ROOT}/CONTRIBUTING.md"; \
+    echo "${PROJECT_ROOT}/tools/README.md")
+  F6_HDR_MISMATCH=""
+  for _f in $F6_HDR_FILES; do
+    [ -f "$_f" ] || continue
+    _hdr_ver=$(head -8 "$_f" | grep -E '^> *v1\.4\.[0-9]+ *·|^> *版本[：:] *v1\.4\.[0-9]+' \
+      | grep -oE 'v1\.4\.[0-9]+' | head -1)
+    [ -n "$_hdr_ver" ] || continue
+    if [ "$_hdr_ver" != "v${SSOT_VERSION}" ]; then
+      F6_HDR_MISMATCH="${F6_HDR_MISMATCH}$(basename "$_f"):头标 ${_hdr_ver} ≠ SSOT v${SSOT_VERSION}
+"
+    fi
+  done
+  if [ -n "$F6_HDR_MISMATCH" ]; then
+    echo -e "  ${RED}✗${NC} 活文档版本头与 SSOT 漂移（F6 子断言·版本头 SSOT 对齐）："
+    echo "$F6_HDR_MISMATCH" | sed '/^$/d' | sed "s#^#      #"
+    ERRORS=$((ERRORS + 1))
+  else
+    echo -e "  ${GREEN}✓${NC} 活文档版本头全部对齐 SSOT v${SSOT_VERSION}"
     CHECKS=$((CHECKS + 1))
   fi
   # 当前版本开发日志头「待发版」残留（docs/changelog/vX.Y/vX.Y.Z.md 头部状态行）——
