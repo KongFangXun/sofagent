@@ -149,7 +149,7 @@ graph TB
 | 🧬 进化 | Evolution | FDE 周度巡检 + 自动优化 |
 | 加载链 | Load Chain | Agent 启动时注入的约束文件（又称约束注入链） |
 | FDE | Forward Deployed Engineer（前线部署工程师） | 源自 Palantir 交付纪律：工程师驻场客户，掌握完整上下文、打破岗位边界、对结果负责。sofagent 把 FDE 能力产品化——FDE 进场部署 AI 节点，离场后节点自己跑 |
-| Harness | 约束层 | FDE Harness 层的核心引擎：一个层五种能力（注入·审计·回溯·沉淀·进化）。对外中文「约束层」、英文「Harness」为 SSOT；「FDE Harness 层」即产品整体（约束层 + FDE 方法论 + 审计），「约束层」即其引擎，两者一体两面不另作区分；「Constraint Layer」为同义英文旧称，不再单独使用 |
+| Harness | 约束层 | FDE Harness 层的核心引擎：一个层五种能力（注入·审计·回溯·沉淀·进化）。对外中文「约束层」、英文「Harness」为 SSOT；「FDE Harness 层」即产品整体（约束层 + FDE 方法论 + 审计），「约束层」即其引擎，两者一体两面不另作区分；两者的咬合机制（两相位）：FDE 是判断力的**生成相位**（进场时把「该不该上 AI / 做好标准 / 谁拍板 / 何时跑」判断出来并冻结成交付物），约束层是判断力的**驻留相位**（离场后 7×24 按冻结的判断执行并产生反馈信号），交接物 = workflow.yml + ontology + MD（FDE 写入、约束层读写、持续进化——是共享状态不是一次性交付）；「Constraint Layer」为同义英文旧称，不再单独使用 |
 | Gateway | Gateway | 企业级 AI 统一入口（WorkBuddy / OpenClaw 等大厂平台），sofagent 不替代它 |
 | Sub Agent | Sub Agent | 用 LangGraph createReactAgent 搭的专有执行节点 |
 | Ontology | 本体数据 | 企业的业务世界模型——一套「什么实体存在、能做什么动作、受什么约束」的规则书（机器可读），FDE 帮你搭建并持续维护 |
