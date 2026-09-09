@@ -216,6 +216,100 @@ describe('scheduler', () => {
       expect(existsSync(join(testDir, 'scheduler', 'tasks.json'))).toBe(true);
     });
   });
+
+  // v1.4.7 G8 执行链闭合：create → 到期 → 主循环消费 → history 全链路行为锁
+  //（runDueTasks 此前为零生产调用的断点——任务能存不能跑，本测试锁消费语义）
+  describe('runDueTasks 全链路（v1.4.7 G8）', () => {
+    it('create → 到期 → 消费 → history 闭环', () => {
+      const sched = createScheduler(testDir);
+      // once 任务 schedule=过去时点 → 创建即到期
+      const task = sched.create({
+        name: 'due-now',
+        type: 'once',
+        schedule: new Date(Date.now() - 60_000).toISOString(),
+        prompt: 'test-prompt',
+      });
+      expect(sched.getDueTasks().length).toBe(1);
+
+      const executed: string[] = [];
+      const consumed = sched.runDueTasks((t) => {
+        executed.push(t.prompt);
+        return { exitCode: 0, output: `ran:${t.name}` };
+      });
+      expect(consumed).toBe(1);
+      expect(executed).toEqual(['test-prompt']);
+
+      // 消费后：历史落账 + once 任务 nextRun 清空（不再到期）
+      const runs = sched.history(task.id);
+      expect(runs.length).toBe(1);
+      expect(runs[0]!.exitCode).toBe(0);
+      expect(runs[0]!.output).toBe('ran:due-now');
+      expect(sched.getDueTasks().length).toBe(0);
+    });
+
+    it('单任务 runner 异常不阻断同批其他任务（exit=1 落账）', () => {
+      const sched = createScheduler(testDir);
+      sched.create({
+        name: 'boom',
+        type: 'once',
+        schedule: new Date(Date.now() - 60_000).toISOString(),
+        prompt: 'first',
+      });
+      sched.create({
+        name: 'ok',
+        type: 'once',
+        schedule: new Date(Date.now() - 30_000).toISOString(),
+        prompt: 'second',
+      });
+
+      const executed: string[] = [];
+      const consumed = sched.runDueTasks((t) => {
+        executed.push(t.prompt);
+        if (t.prompt === 'first') throw new Error('runner crash');
+        return { exitCode: 0, output: 'fine' };
+      });
+      // 两个都轮询到，异常捕获后继续
+      expect(consumed).toBe(2);
+      expect(executed).toEqual(['first', 'second']);
+
+      // 异常任务也留 exit=1 历史（trigger 内 update 失败不重抛——appendHistory 已落）
+      const all = sched.list();
+      expect(all.length).toBe(2);
+    });
+
+    it('cron 任务消费后 nextRun 推进（不再立即到期）', () => {
+      const sched = createScheduler(testDir);
+      // @daily 宏 → 每天 00:00；手动把 nextRun 拨到过去模拟到期
+      const task = sched.create({
+        name: 'cron-due',
+        type: 'cron',
+        schedule: '@daily',
+        prompt: 'everyday',
+      });
+      sched.update(task.id, { nextRun: new Date(Date.now() - 3_600_000).toISOString() });
+      expect(sched.getDueTasks().length).toBe(1);
+
+      const consumed = sched.runDueTasks(() => ({ exitCode: 0, output: 'ok' }));
+      expect(consumed).toBe(1);
+
+      const after = sched.get(task.id)!;
+      expect(after.lastRun).toBeTruthy();
+      // nextRun 推进到未来（明天 00:00 UTC）——不再立即到期
+      expect(new Date(after.nextRun!).getTime()).toBeGreaterThan(Date.now());
+      expect(sched.getDueTasks().length).toBe(0);
+    });
+
+    it('无到期任务时消费返回 0（空转无害）', () => {
+      const sched = createScheduler(testDir);
+      sched.create({
+        name: 'future',
+        type: 'once',
+        schedule: new Date(Date.now() + 3_600_000).toISOString(),
+        prompt: 'later',
+      });
+      expect(sched.runDueTasks(() => ({ exitCode: 0, output: '' }))).toBe(0);
+    });
+  });
 });
 
 describe('nextCronTime', () => {

@@ -42,7 +42,7 @@ async function main() {
     console.log('  snapshot list                列出所有快照');
     console.log('  snapshot restore <sha>       恢复到指定快照');
     console.log('  knowledge status             聚合知识库状态（Dream Cycle / 健康 / sensitivity）');
-    console.log('  scheduler <list|pause|resume|trigger|history|delete>  定时任务管理（v1.2.9）');
+    console.log('  scheduler <create|list|pause|resume|trigger|history|delete>  定时任务管理（v1.2.9 · create v1.4.7）');
     console.log('  doctor                       检查 daemon 健康状态（v1.2.5 §8.4）');
     process.exit(0);
   }
@@ -406,6 +406,64 @@ async function main() {
       const sched = createScheduler();
 
       switch (action) {
+        case 'create': {
+          // v1.4.7 G8（第一层断点）：create 此前只在 scheduler.ts API 层存在，CLI
+          // 无入口（帮助文本六个子命令无 create）——用户经 CLI 创建不了任务。
+          // 参数形态：scheduler create --name <名> --schedule <cron|ISO> --prompt <任务>
+          // [--type cron|once（缺省按 schedule 形态推断：@宏/5 段=cron，ISO=once）]
+          // [--template daily-health|weekly-report（预置 prompt 便捷面）]
+          const flags: Record<string, string> = {};
+          for (let i = 2; i < args.length - 1; i += 2) {
+            const k = args[i];
+            if (k && k.startsWith('--')) flags[k.slice(2)] = args[i + 1] ?? '';
+          }
+          const name = flags['name'];
+          const schedule = flags['schedule'];
+          let prompt = flags['prompt'] ?? '';
+          const typeFlag = flags['type'];
+          const template = flags['template'];
+          if (!name || !schedule) {
+            console.error('❌ scheduler create 需要 --name 与 --schedule');
+            console.error('   用法: scheduler create --name <名> --schedule <@daily|cron|ISO> [--prompt <任务>] [--type cron|once] [--template daily-health|weekly-report]');
+            process.exit(1);
+          }
+          // 模板便捷面：预置 prompt（显式 --prompt 优先）
+          const TEMPLATES: Record<string, string> = {
+            'daily-health': '每日健康巡检：检查 daemon 状态、审计历史增量、WARN 累积并汇总日报',
+            'weekly-report': '每周巡检报告：L2 深度巡检全量执行并输出周报（知识矛盾/孤儿/死链/新鲜度）',
+          };
+          if (!prompt && template) {
+            if (!(template in TEMPLATES)) {
+              console.error(`❌ 未知模板: ${template}（可用: ${Object.keys(TEMPLATES).join(' / ')}）`);
+              process.exit(1);
+            }
+            prompt = TEMPLATES[template]!;
+          }
+          if (!prompt) {
+            console.error('❌ scheduler create 需要 --prompt 或 --template（任务执行内容不能为空）');
+            process.exit(1);
+          }
+          // type 推断：显式 > schedule 形态（@宏或 5 段表达式 → cron；ISO datetime → once）
+          const isCronForm = /^@|^[\d*,\-/]+\s+[\d*,\-/]+\s+[\d*,\-/]+\s+[\d*,\-/]+\s+[\d*,\-/]+$/.test(schedule);
+          const type = (typeFlag === 'cron' || typeFlag === 'once')
+            ? (typeFlag as 'cron' | 'once')
+            : (isCronForm ? 'cron' : 'once');
+          if (type === 'once' && isNaN(Date.parse(schedule))) {
+            console.error(`❌ once 类型 schedule 须为 ISO 8601 datetime，得到: ${schedule}`);
+            process.exit(1);
+          }
+          try {
+            const task = sched.create({ name, type, schedule, prompt });
+            console.log(`✅ 已创建: ${task.id}`);
+            console.log(`   ${task.name}  [${task.type}]  ${task.schedule}`);
+            console.log(`   next=${task.nextRun ? new Date(task.nextRun).toLocaleString('zh-CN') : '—'}`);
+            console.log('   （daemon start 后每 5 分钟轮询消费到期任务）');
+          } catch (err) {
+            console.error(`❌ 创建失败: ${(err as Error).message}`);
+            process.exit(1);
+          }
+          break;
+        }
         case 'list': {
           const tasks = sched.list();
           if (tasks.length === 0) {
@@ -500,7 +558,7 @@ async function main() {
         }
         default:
           console.error('❌ 未知 scheduler 子命令: ' + (action || ''));
-          console.error('   用法: sofagent-daemon scheduler <list|pause|resume|trigger|history|delete> [task-id]');
+          console.error('   用法: sofagent-daemon scheduler <create|list|pause|resume|trigger|history|delete> [task-id]');
           process.exit(1);
       }
       break;

@@ -471,6 +471,49 @@ export function startCron(projectDir: string): number {
     console.log('[cron] train-archive 已禁用（train-archive.enabled=false）');
   }
 
+  // ── v1.4.7 G8（第二层断点）：scheduler tasks.json 周期消费 ──
+  // CLI scheduler create 写入的任务此前「能存不能跑」（getDueTasks 排除测试零生产
+  // 调用，daemon start 主循环不轮询 tasks.json）。此处每 5 分钟轮询 getDueTasks
+  // 并经 orchestrator loop 真跑到期任务（trigger 内含历史落账 + lastRun/nextRun
+  // 推进）。与 watch.yml cron: 段解耦——scheduler 是独立持久化面，不依赖用户配置。
+  {
+    scheduled += 1;
+    console.log('[cron] @5min → scheduler-consume（scheduler tasks.json 到期消费）');
+    setInterval(() => {
+      try {
+        const { createScheduler } = require('./scheduler') as typeof import('./scheduler');
+        const sched = createScheduler();
+        const consumed = sched.runDueTasks((task) => {
+          let exitCode = 0;
+          let output = '';
+          try {
+            const orchCli = join(
+              dirname(nodeRequire.resolve('@sofagent/orchestrator/package.json')),
+              'dist', 'cli.js',
+            );
+            output = execFileSync(process.execPath, [
+              orchCli, 'loop', '--legacy', '--task', task.prompt,
+            ], {
+              encoding: 'utf-8',
+              cwd: projectDir,
+              timeout: 600000,
+            });
+          } catch (err) {
+            const e = err as { status?: number; stdout?: string; stderr?: string; message: string };
+            exitCode = typeof e.status === 'number' ? e.status : 1;
+            output = `${e.stdout ?? ''}${e.stderr ?? e.message}`;
+          }
+          return { exitCode, output: output.trim() || '（无输出）' };
+        });
+        if (consumed > 0) {
+          console.log(`[cron] scheduler-consume 完成: 消费 ${consumed} 个到期任务`);
+        }
+      } catch (err) {
+        console.error('[cron] scheduler-consume 失败:', (err as Error).message);
+      }
+    }, 5 * 60_000);
+  }
+
   const jobs = loadCronConfig(projectDir);
   if (jobs.length === 0) return scheduled;
 

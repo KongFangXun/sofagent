@@ -377,5 +377,36 @@ export function createScheduler(dataBase?: string) {
         return new Date(t.nextRun) <= current;
       });
     },
+
+    /**
+     * 消费全部到期任务（daemon 主循环周期调用）。
+     *
+     * v1.4.7 G8 执行链闭合：getDueTasks 此前「诞生即死」（排除测试零生产调用）——
+     * 任务能 create 能持久化，但 daemon start 主循环从不轮询 tasks.json，
+     * 到期任务永远躺在盘上不执行。本方法 = 主循环消费入口：逐个到期任务调
+     * runner 真跑（trigger 内部含历史落账 + lastRun/nextRun 推进），单任务失败
+     * 不阻断同批其他任务（异常捕获记 exit=1 历史）。
+     *
+     * @param runner 任务执行器（cli/daemon 侧注入 orchestrator loop 真跑）
+     * @returns 本轮消费的任务数（0 = 无到期任务）
+     */
+    runDueTasks(runner: (task: ScheduledTask) => { exitCode: number; output: string }): number {
+      const due = this.getDueTasks();
+      for (const task of due) {
+        try {
+          this.trigger(task.id, runner);
+        } catch (err) {
+          // 单任务失败落账不阻断同批（exit=1 历史可查）
+          appendHistory(task.id, {
+            taskId: task.id,
+            startedAt: new Date().toISOString(),
+            finishedAt: new Date().toISOString(),
+            exitCode: 1,
+            output: `调度消费异常: ${err instanceof Error ? err.message : String(err)}`,
+          }, dataBase);
+        }
+      }
+      return due.length;
+    },
   };
 }
