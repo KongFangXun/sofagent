@@ -36,8 +36,8 @@ sofagent does not build its own Agent — execution is delegated to mature hosts
 <summary>🗺️ System architecture overview (FDE Harness five-module structure)</summary>
 
 <p align="center">
-  <img src="docs/assets/architecture-diagram.png" alt="sofagent architecture: host Agent enters the FDE Harness constraint layer via MCP Server; orchestration / audit / post-training / governance / execution modules" width="860" /><br/>
-  <sub>Constrain Agent behavior · Audit every change · Distill experience (five-module structure; full interactive version in <a href="./docs/ARCHITECTURE.md">ARCHITECTURE</a>)</sub>
+  <img src="docs/assets/architecture-diagram.png" alt="sofagent architecture: host Agent enters the FDE Harness constraint layer via MCP Server; orchestration / audit / post-training / governance / execution modules (governance & execution modules planned)" width="860" /><br/>
+  <sub>Constrain Agent behavior · Audit every change · Distill experience (five-module structure, governance & execution modules planned; full interactive version in <a href="./docs/ARCHITECTURE.md">ARCHITECTURE</a>)</sub>
 </p>
 
 </details>
@@ -246,7 +246,7 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # load the securit
 
 | You want to know | Where |
 |:---------|:--------|
-| **Global index** (one entry to all docs, in Chinese) | [WIKI](./docs/WIKI.md) |
+| **Global index** (one entry to all docs, in Chinese) | [WIKI](./docs/WIKI.md) — EN summary: one-liner & product story · core concepts · architecture overview · file map · current status · glossary · intent-based navigation |
 | How to install, use, FAQ | [HANDBOOK](./docs/HANDBOOK.md) |
 | Architecture (constraint layer · injection chain · evolution · 24 rules) | [ARCHITECTURE](./docs/ARCHITECTURE.md) |
 | API overview (seven interface surfaces + 84 MCP tools) | [API](./docs/API.md) |

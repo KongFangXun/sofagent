@@ -34,8 +34,8 @@ sofagent 不造 Agent——执行能力交给成熟宿主（模型 + 工具 + �
 <summary>🗺️ 系统架构总览（FDE Harness 五模块编制）</summary>
 
 <p align="center">
-  <img src="docs/assets/architecture-diagram.png" alt="sofagent 系统架构：宿主 Agent 经 MCP Server 进入 FDE Harness 约束层，编排/审计/后训/治理/执行五模块协同" width="860" /><br/>
-  <sub>约束 Agent 行为 · 审计每次变更 · 沉淀经验（五模块编制，完整交互版见 <a href="./docs/ARCHITECTURE.md">ARCHITECTURE</a>）</sub>
+  <img src="docs/assets/architecture-diagram.png" alt="sofagent 系统架构：宿主 Agent 经 MCP Server 进入 FDE Harness 约束层，编排/审计/后训/治理/执行五模块编制（治理/执行模块规划中）" width="860" /><br/>
+  <sub>约束 Agent 行为 · 审计每次变更 · 沉淀经验（五模块编制，治理/执行模块规划中；完整交互版见 <a href="./docs/ARCHITECTURE.md">ARCHITECTURE</a>）</sub>
 </p>
 
 </details>
@@ -206,6 +206,8 @@ sofagent-audit --doctor    # 验证环境（可选）
 | npx 临时 | `npx -y -p @sofagent/audit sofagent-audit` | 用完即走，每次重新下载 | 任意仓库快速审计、CI 外的一次性检查 |
 | npm 项目内 | `npm install @sofagent/audit`（项目 devDependency） | 随项目安装，版本锁进 package-lock | 固定依赖的团队项目、可复现审计 |
 | npm 全局 | `npm install -g @sofagent/audit` | 装一次到处用 | 跨仓库日常审计、daemon 常驻 |
+
+> ⚠️ **不要裸装 `npm i sofagent-audit`**——npm 上存在 OpenClaw 插件同名包（`sofagent-audit`，见 [engine/openclaw-plugins/sofagent-audit/](./engine/openclaw-plugins/sofagent-audit/)），那不是本 CLI。CLI 的正式包名是 `@sofagent/audit`（带 scope），CLI 安装统一走 bootstrap.sh / install.sh / `@sofagent/audit`。
 
 **规则市场**——社区规则集以 `sofagent-ruleset-*` npm 包发布、`--ruleset-path` 手动加载（也支持指向你自己的 JSON 规则）：
 
