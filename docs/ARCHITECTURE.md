@@ -547,6 +547,10 @@ graph LR
 
 **谱系外第四方向 · 蒸馏数据源**：审计的 append-only 事件流可直接导出为 SFT 训练样本（DSH 实践：headless 批量运行产生轨迹、fork 产生同前缀对照样本、pre-step 钩子前置过滤）——与 Agent Lightning「审计即训练数据」互证。**注意与前谱系的方向差异**：前三项学习发生在模型外（权重不动），此项进入权重更新，属训练侧衔接（对应商业侧 AIR 后训练管线）——开源约束层仅记录该设计方向、不实施，『审过的每一步都在喂养下一代』的通道在此与商业训练线汇合。远期方向，是否排期以 [ROADMAP](./ROADMAP.md) 为准。
 
+**自评判的实验警示（为什么审计必须外置的实验证据）**：[S³Gym](https://arxiv.org/abs/2608.31100)（字节 Seed，2026-08）用 7 个文字游戏、11.6 万条转移实测「自测试→自评判→自改进」三环耦合：自评判与环境真值的一致率可达 0.88，但价值估计误差同样高达 0.88（NMAE）——模型知道动作"看起来有用"，却严重估错其价值；更关键的是**评判准确度与下一步改进几乎零相关**（run 级 r=-0.23），"认得出好动作"不能保证"把反馈变成好策略"。这为「审计外置、只看 git diff 硬证据、不依赖 Agent 自我报告」提供了 benchmark 级证明：自我评分组织经验可以保留（think.md），但保留/晋升判定必须交给模型外信号。
+
+> 📖 来源：[S³Gym: Can LLMs Turn Self-Testing and Self-Judging into Self-Improvement?](https://arxiv.org/abs/2608.31100)（arXiv 2608.31100，2026-08-31 核实）
+
 #### 运行时审计 tool wrapper
 
 v1.3.0 把「提交时审计（git diff）」扩展为「运行时拦截 + 留证」——在 `createReactAgent` 的工具定义层包一层 tool wrapper（`FORGE/src/audit-middleware.mjs` 的 `createAuditMiddleware`，对标 `progressMw.wrapToolCall` 模式）：
@@ -690,6 +694,12 @@ graph LR
 ```
 
 **经验蒸馏要在写入端控预算，别等膨胀再清理**。SkillZip（阿里×浙大×杜克，arXiv 2608.11079）的持续压缩实验给了一个反直觉的教训：从第 1 轮就启用压缩的技能，长度全程钉在 1.6-1.9 倍；拖到第 8 轮才清理的，已经涨到 2.6 倍追不回来——冗余一旦写入并被持续引用，事后清理比写入时合并更难。对进化能力（think.md → knowledge/ 的经验蒸馏）的启示：蒸馏应在写入端带预算控制（单条经验长度上限 + 引用代替复述），而不是攒多了再统一清理。
+
+**进化的两处积累与保留判据（行业锚点）**。[HarnessDev](https://arxiv.org/abs/2609.01437)（字节 Seed，2026-09）实测：同一 GPT-5 权重仅更换 harness，Terminal-Bench 成绩从 35.2% 变 49.6%——**harness 对能力的影响可超过模型换代**；其结论「模型权重是智能积累的一个地方，harness 是另一个——显式、可检查、可测试、可复用」与约束层五能力叙事同构。同团队 [Aspire](https://arxiv.org/abs/2608.31111)（2026-08）进一步给出保留判据：模糊目标下训练闭环执行熟练但增益保留稀有（24 个 run 仅 1/12 超基线，**继续训练会抹掉此前的改进**）。三篇共用一条保留哲学——**进化的保留判定必须使用 Agent 控制不了的外部信号**（隐藏评测 / held-out 任务 / 固定执行者），反馈集上的涨分可能只是适应反馈集本身（HarnessDev：反馈集 +13.9、held-out 仅剩 +1.43）。落到约束层：进化闭环的保留判据挂在 eval passRate、审计趋势、release-gate held-out 验收这些模型外信号上，不挂在 dream-cycle 自分析上；权重侧的对应机制即后训模块的 eval 回退保护（增量 eval ≥ 基线才晋升，否则回滚旧权重）——正是 Aspire 失败模式（training loop 关得上、capability loop 关不上）的工程解药。
+
+**蒸馏的精度门槛：合理而粗糙的建议，不如不给**。S³Gym 对 Summary Memory 的逐对比较给出一个蒸馏纪律的硬边界：经验能压缩成可复用策略规则的场景（博弈结构、可总结流程），蒸馏优于原始历史；依赖局部精确细节的场景（几何导航、状态敏感操作），"方向全对但缺精度"的总结反而有害（正例：GPT-5.5/Trust 的策略总结 ΔNABA +66.9；反例：GPT-4o/Snake 的"朝食物移动避开墙"ΔNABA -22.0）。对 think.md → knowledge/ 的启示：**蒸馏前先判经验的可压缩性**——能提炼为「条件 → 动作」规则的才进 knowledge/，依赖具体上下文细节的留在 think.md 原始轨迹层，宁可不清蒸馏，不可清错。
+
+> 📖 来源：[HarnessDev: Can LLMs Create and Evolve Their Own Agent Harness?](https://arxiv.org/abs/2609.01437) · [Aspire: Can Models Self-Evolve from Vague Goals?](https://arxiv.org/abs/2608.31111) · [S³Gym](https://arxiv.org/abs/2608.31100)（字节 Seed 自进化系列，self-developing-agents.github.io，2026-09-09 核实）
 
 ### 运行时数据层：引擎间数据流全景
 
