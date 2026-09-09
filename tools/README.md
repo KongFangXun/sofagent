@@ -31,6 +31,9 @@
 | `check/check-shell-injection.sh` | 命令注入静态扫（engine 源码面：execSync 模板插值/字符串拼接注入形态——v1.4.3 安全修复批防线） | CI |
 | `check/check-action-pins.sh` | GitHub Actions SHA pin 对账（uses: 完整 commit SHA 与行内注释 tag 指向一致性，离线降级 exit 0） | 发版前 / 定期 |
 | `check/check-storefront.sh` | 仓外门面对账（GitHub description/homepage/topics 数字 vs 仓内实数；离线 SKIP 可见不假绿） | 发版 SOP 阶段八/九 |
+| `check/check-forge-branches.sh` | 分支收编标记对账（tag `forge-merged-*` / 分支名 `-merged-YYYYMMDD` 双形态判定；未标记分支 INFO 四要素列出供人工确认，输出字符级截断防 U+FFFD） | 发版 SOP / 定期 |
+| `check/check-literals.sh` | 保密字面量静态扫（`check/literals.json` 词表驱动——仓内源码与文档敏感字面量检测，SKIP 可见不假绿） | CI |
+| `check/check-open-boundary.sh` | 开源边界守卫（商业名/内部路径/未脱敏标识不得进入开源仓库——脱敏三层纪律的结构防线） | CI |
 | `check/check-spec-first.mjs` | 规范先行硬禁令门禁（engine/*/src 提交须含 `spec:` 关联或 `no-spec:` 豁免——观察期 WARN 不阻断） | 发版 SOP / 定期 |
 | `check/check-deps.sh` | 关键依赖版本检查（npm 包版本对齐） | 发版前 / 定期 |
 | `check/check-dev-prompt.sh` | 开发日志/Dev Prompt 代码引用一致性校验 | 发版 SOP |
@@ -84,6 +87,9 @@
 |------|------|
 | `audit/client-audit.mjs` | FDE 进场审计问卷脚本（按行业输出 Markdown），问卷数据源同目录 |
 | `audit/audit-questionnaires/*.json` | 7 个行业审计问卷（finance/generic/government/healthcare/manufacturing/retail/supplychain），每行业 15-20 题，三段式（审计现状/痛点定位/合规要求），`client-audit.mjs` 数据源 |
+| `audit-baseline-sync.sh` | dist 聚合哈希基线同步（rebuild 后重置 `~/.sofagent/internal/audit-dist-hash.txt` 基线——不跑则 P1-A2 影子审计器拦 commit） | 发版 SOP 阶段七 |
+| `audit-dist-hash.mjs` | dist 多入口聚合哈希计算（排序逐文件哈希再聚合——P1-A2 判定的数据源） | 随 baseline-sync 调用 |
+| `audit-src-fingerprint.mjs` | 审计引擎源码指纹（driver 冻结窗口锁的源码基准） | FORGE 内部 |
 
 ## 七、hooks/ — 共享 hook 脚本
 
