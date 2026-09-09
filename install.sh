@@ -116,12 +116,35 @@ ensure_repo_integrity() {
 
   warn "检测到运行时依赖缺失（${LIB_DIR}）——当前是孤立 install.sh 场景（如 curl 单文件下载）"
   info "正在自救：git clone 完整仓库后重新进入安装..."
+  # v1.4.7 批次 M P1-2：clone 自救必须钉定发版 tag——此前拉 main HEAD（未校验），
+  # 用户走了 bootstrap 的 sha256 校验通道，实际执行的却是未校验的 main HEAD
+  # install.sh（「被校验的 ≠ 被执行的」）。现按本文件 VERSION 钉 tag，并对外层
+  # 哈希钉定做自锚定校验（SOFAGENT_INSTALL_SHA256 由 bootstrap.sh 注入）。
+  local pinned_tag="v${VERSION}"
   if command -v git &>/dev/null; then
     local rescue_tmp
     rescue_tmp="$(mktemp -d /tmp/sofagent-rescue-XXXXXX)"
     # URL 硬编码官方仓库（与 --remote 分支一致，不接受外部输入）
-    if git clone --depth 1 https://github.com/KongFangXun/sofagent.git "$rescue_tmp" 2>/dev/null; then
-      ok "完整仓库已克隆到: $rescue_tmp"
+    # 🔴 --branch 钉 tag + 克隆内文件须真正存在（annotated tag 被删/未推时 clone 失败进 fail-closed 兜底）
+    if git clone --depth 1 --branch "$pinned_tag" https://github.com/KongFangXun/sofagent.git "$rescue_tmp" 2>/dev/null \
+      && [ -f "$rescue_tmp/install.sh" ]; then
+      ok "完整仓库已克隆到: $rescue_tmp（钉定 ${pinned_tag}）"
+      # v1.4.7 批次 M P1-2：哈希自锚定——bootstrap 通道下外层已校验 install.sh
+      # sha256 并以环境变量传入，这里对克隆树的 install.sh 重算比对（fail-closed）：
+      # tag 被移走/重打（内容变了）时在此拦截，而不是执行一份没人校验过的代码。
+      if [ -n "${SOFAGENT_INSTALL_SHA256:-}" ]; then
+        local clone_hash
+        clone_hash=$(node -e "const c=require('crypto'),f=require('fs');process.stdout.write(c.createHash('sha256').update(f.readFileSync(process.argv[1])).digest('hex'))" "$rescue_tmp/install.sh" 2>/dev/null \
+          || shasum -a 256 "$rescue_tmp/install.sh" 2>/dev/null | cut -d' ' -f1 \
+          || sha256sum "$rescue_tmp/install.sh" 2>/dev/null | cut -d' ' -f1)
+        if [ -n "$clone_hash" ] && [ "$clone_hash" != "${SOFAGENT_INSTALL_SHA256}" ]; then
+          err "克隆树 install.sh 哈希与外层钉定不一致——tag 内容与发版不符，拒绝执行（fail-closed）"
+          err "  外层钉定: ${SOFAGENT_INSTALL_SHA256}"
+          err "  克隆实际: ${clone_hash}"
+          rm -rf "$rescue_tmp" 2>/dev/null || true
+          exit 1
+        fi
+      fi
       # 重入完整仓库的 install.sh（透传除 --remote 外的参数——仓库已新鲜克隆，无需二次 clone；
       # 克隆内 lib 完整，不会再触发本自检。bash 3.2 兼容：空数组先判长度再展开，避免传空串参数）
       local pass_args=()
@@ -214,10 +237,13 @@ fi
 # 安全说明：remote 模式仅从 GitHub 官方域名（github.com/KongFangXun/sofagent）git clone，URL 硬编码，不接受外部输入
 if [ "${REMOTE_MODE}" = "1" ]; then
   info "远程安装模式——克隆仓库..."
+  # v1.4.7 批次 M P1-2：与 clone 自救同构钉定发版 tag——此前拉 main HEAD 未校验
   REMOTE_TMP="$(mktemp -d /tmp/sofagent-remote-XXXXXX)"
   if command -v git &>/dev/null; then
-    git clone https://github.com/KongFangXun/sofagent.git "$REMOTE_TMP" 2>/dev/null || { err "git clone 失败，请检查网络或手动 git clone"; exit 1; }
-    ok "仓库已克隆到: $REMOTE_TMP"; cd "$REMOTE_TMP"
+    if ! git clone --depth 1 --branch "v${VERSION}" https://github.com/KongFangXun/sofagent.git "$REMOTE_TMP" 2>/dev/null || [ ! -f "$REMOTE_TMP/install.sh" ]; then
+      err "git clone 失败（tag v${VERSION}），请检查网络或手动 git clone"; exit 1
+    fi
+    ok "仓库已克隆到: $REMOTE_TMP（钉定 v${VERSION}）"; cd "$REMOTE_TMP"
     REMAINING_ARGS=""
     for _arg in "${ORIGINAL_ARGS[@]}"; do [ "$_arg" = "--remote" ] && continue; REMAINING_ARGS="$REMAINING_ARGS $_arg"; done
     exec bash install.sh "${REMAINING_ARGS# }"
@@ -557,6 +583,16 @@ if command -v node >/dev/null 2>&1; then
   elif command -v sofagent-audit >/dev/null 2>&1; then
     # 全局安装场景：解析 sofagent-audit wrapper 指向的真实 dist
     HASH_SOURCE=$(node -e "try{const p=require('path');const idx=require.resolve('sofagent-audit');const d=p.dirname(p.dirname(idx));process.stdout.write(p.join(d,'dist','index.js'))}catch{process.stdout.write('')}" 2>/dev/null || echo "")
+    # v1.4.7 批次 M P1-3：解析结果大小防线——require.resolve('sofagent-audit') 可能
+    # 命中 OpenClaw 插件同名包（~5KB，engine/openclaw-plugins/sofagent-audit）而非
+    # 真实审计引擎（~98KB）。把 5KB 插件哈希写成基准 = 后续真实引擎每次校验都报
+    # 「被替换」假警报（基准错锚）。<30KB 视为插件误命中：warn 且不写基准（fail-closed）。
+    if [ -n "$HASH_SOURCE" ] && [ -f "$HASH_SOURCE" ] \
+      && [ "$(wc -c < "$HASH_SOURCE" | tr -d ' ')" -lt 30720 ]; then
+      warn "  解析到的 sofagent-audit dist 异常偏小（$(wc -c < "$HASH_SOURCE" | tr -d ' ') 字节 < 30KB）——疑似 OpenClaw 插件同名包误命中，不写哈希基准（fail-closed）"
+      warn "  处置：在仓库根重跑安装（本地 dist 优先分支），或手动 sofagent-audit --doctor --baseline 建立正确基准"
+      HASH_SOURCE=""
+    fi
   fi
   if [ -n "$HASH_SOURCE" ] && [ -f "$HASH_SOURCE" ]; then
     if [ ! -f "$HASH_RECORD" ]; then

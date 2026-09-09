@@ -93,8 +93,7 @@ else
   # bash 3.2 兼容：用 set -- 展开列表拿文件个数（不用 declare -A / mapfile）
   set -- $LIB_FILES
   echo "📥 下载运行时依赖 engine/scripts/lib/（$# 个文件）..."
-  LIB_FAIL=0
-  # bash 3.2 兼容：并行遍历文件名与哈希列表（LIB_SHA256S 按行对应 LIB_FILES 顺序）
+  # v1.4.7 批次 M P1-2：任一 lib 下载/校验失败立即 fail-closed（不再引导 clone 自救）
   _expected_list="$LIB_SHA256S"
   for _lib in $LIB_FILES; do
     _expected=$(printf '%s\n' "$_expected_list" | head -1)
@@ -103,15 +102,18 @@ else
       # v1.4.3 P2-f：lib 文件同样校验（同是可执行载荷）
       _verify_or_die "${LIB_TMP_DIR}/${_lib}" "$_expected" "lib/${_lib}"
     else
-      LIB_FAIL=1
-      echo "⚠️  lib/${_lib} 下载失败（install.sh 将尝试 git clone 自救）"
+      echo "⚠️  lib/${_lib} 下载失败——bootstrap 拒绝继续（fail-closed），请重试或到 GitHub Issues 反馈"
+      exit 1
     fi
   done
-  if [ "$LIB_FAIL" = "0" ]; then
-    echo "✅ 运行时依赖下载完成"
-  fi
+  echo "✅ 运行时依赖下载完成"
   SCRIPT="$TMP_FILE"
 fi
+# v1.4.7 批次 M P1-2：向 install.sh 注入已校验的 install.sh 哈希（自锚定链）——
+#   install.sh 内部 clone 自救重入时，对克隆树 install.sh 重算比对（fail-closed），
+#   保证「被校验的 = 被执行的」贯穿整条链（外层校验 → 自救重入 → 二次校验）。
+export SOFAGENT_INSTALL_SHA256="$INSTALL_SHA256"
+
 echo "🚀 启动 sofagent 安装..."
 # v1.3.4 交付 1-E（P0 假绿修复）：`|| INSTALL_RC=$?` 捕获 install.sh 退出码（set -e 下 || 短路
 # 不立即退出），失败打 ❌ 透传退出码，只有 exit 0 才打 ✅。bash 3.2 兼容：空数组先判长度再展开。
