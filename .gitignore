@@ -69,11 +69,13 @@ pnpm-lock.yaml
 pnpm-workspace.yaml
 
 # fresh-eyes worker 测试 fixture（run-07 教训：红队 worker 会创建这些文件测规则拦截）
+# ⚠️ 裸名规则会吞掉未来同名真实文件——新增同名文件前先核对本段；发版前定期审读本段是否可收窄为锚定路径
 config.js
 config.local
 f.txt
 
 # 测试残留物防护（2026-08-16 根目录垃圾事件 + FORGE 教训；首现于 pnpm 防护段，此处为带事故出处的主声明）
+# ⚠️ 同上：裸名规则（t/ b.ts c.txt 等）会吞掉未来同名真实文件——新增前先核对本段
 sofagent-npm-test/
 npm-p4-test/
 p4npx/
