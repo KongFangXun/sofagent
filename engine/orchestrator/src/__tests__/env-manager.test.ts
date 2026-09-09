@@ -2,9 +2,7 @@
 // env-manager.test.ts · v1.4.2 章四 · 训练环境管理测试
 //
 // 覆盖：
-//   - trainEnvInit 一键安装编排（python 探测 / GPU 双分支检测 /
 //     pip3 装 verl 生产分支 / Metal 降级分支走脚本指引 / manifest 落盘）
-//   - trainEnvInit 失败容错（python 不可用 / pip3 失败——ok=false 如实报告）
 //   - trainDoctor 四项体检（CUDA / 显存 / 框架清单引用 / 基座模型缓存）
 //   - Metal 降级环境 ready 判定（darwin + metal manifest → CUDA fail 是预期）
 //   - train-env.json 清单模型（TrainEnvManifest 字段口径）
@@ -19,7 +17,6 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 
 import {
-  trainEnvInit,
   trainDoctor,
   trainEnvManifestPath,
   TRAIN_ENV_MANIFEST_FILE,
@@ -92,168 +89,6 @@ function readManifest(enterpriseId: string): TrainEnvManifest {
   expect(existsSync(p)).toBe(true);
   return JSON.parse(readFileSync(p, 'utf-8')) as TrainEnvManifest;
 }
-
-// ──────────────────────────────────────
-// trainEnvInit · 生产分支（Linux + CUDA）
-// ──────────────────────────────────────
-
-describe('env-manager · trainEnvInit 生产分支', () => {
-  it('test_trainEnvInit_cuda生产分支_pip3装verl并写manifest', async () => {
-    const calls: Array<{ cmd: string; args: string[] }> = [];
-    const exec: ExecFn = async (cmd, args) => {
-      calls.push({ cmd, args });
-      if (cmd === 'nvidia-smi' && args.length === 0) return ok(NVIDIA_SMI_TABLE);
-      if (cmd === 'nvidia-smi' && args[0]?.startsWith('--query-gpu')) return ok(NVIDIA_SMI_QUERY_CSV);
-      if (cmd === 'python3' && args[0] === '--version') return ok('Python 3.11.4');
-      if (cmd === 'pip3') return ok('Successfully installed verl-0.4.0');
-      if (cmd === 'python3' && args[0] === '-c') return ok('0.4.0');
-      return Promise.reject(new Error(`spawn ${cmd} ENOENT`));
-    };
-    const r = await trainEnvInit(dataDir, 'ent-prod', { exec, platform: LINUX, now: FIXED_NOW });
-
-    // 全步骤成功 → ok=true
-    expect(r.ok).toBe(true);
-    expect(r.steps.map((s) => s.name)).toEqual([
-      'python-detect',
-      'gpu-detect',
-      'framework-install',
-      'framework-verify',
-    ]);
-
-    // 生产分支走 pip3 install verl
-    expect(calls.some((c) => c.cmd === 'pip3' && c.args[0] === 'install' && c.args[1] === 'verl')).toBe(true);
-
-    // manifest 落盘：Python/框架/CUDA 版本 + cuda gpu + pip3
-    const m = readManifest('ent-prod');
-    expect(m.schemaVersion).toBe('v1');
-    expect(m.pythonVersion).toBe('3.11.4');
-    expect(m.framework).toEqual({ name: 'verl', version: '0.4.0' });
-    expect(m.cudaVersion).toBe('12.4');
-    expect(m.gpu?.kind).toBe('cuda');
-    expect(m.gpu?.name).toBe('NVIDIA A100-SXM4-80GB');
-    expect(m.packageManager).toBe('pip3');
-    expect(m.platform).toBe(LINUX);
-    expect(m.generatedAt).toBe(new Date(FIXED_NOW()).toISOString());
-
-    // 返回值与落盘一致
-    expect(r.manifest).toEqual(m);
-  });
-
-  it('test_trainEnvInit_python不可用_步骤fail_ok为false但manifest仍落盘', async () => {
-    const exec: ExecFn = async (cmd, args) => {
-      if (cmd === 'nvidia-smi' && args.length === 0) return ok(NVIDIA_SMI_TABLE);
-      if (cmd === 'nvidia-smi') return ok(NVIDIA_SMI_QUERY_CSV);
-      if (cmd === 'python3') return Promise.reject(new Error('spawn python3 ENOENT'));
-      return Promise.reject(new Error(`spawn ${cmd} ENOENT`));
-    };
-
-    const r = await trainEnvInit(dataDir, 'ent-nopy', { exec, platform: LINUX, now: FIXED_NOW });
-
-    expect(r.ok).toBe(false);
-    const pyStep = r.steps.find((s) => s.name === 'python-detect');
-    expect(pyStep?.status).toBe('fail');
-    expect(pyStep?.detail).toContain('python3 不可用');
-
-    // 有 CUDA 但 Python 不可用 → 框架安装 skip（指引先装 Python）
-    const fwStep = r.steps.find((s) => s.name === 'framework-install');
-    expect(fwStep?.status).toBe('skip');
-    expect(fwStep?.detail).toContain('Python 不可用');
-
-    // manifest 仍落盘（快照语义——失败也要留现场）
-    const m = readManifest('ent-nopy');
-    expect(m.pythonVersion).toBeNull();
-    expect(m.framework).toBeNull();
-    expect(m.gpu?.kind).toBe('cuda'); // GPU 照探照记
-  });
-
-  it('test_trainEnvInit_pip3安装失败_步骤fail_不抛错', async () => {
-    const exec: ExecFn = async (cmd) => {
-      if (cmd === 'nvidia-smi') return ok(NVIDIA_SMI_TABLE + '\n' + NVIDIA_SMI_QUERY_CSV);
-      if (cmd === 'python3') return ok('Python 3.11.4');
-      if (cmd === 'pip3') return Promise.reject(new Error('network unreachable'));
-      return Promise.reject(new Error(`spawn ${cmd} ENOENT`));
-    };
-
-    const r = await trainEnvInit(dataDir, 'ent-badnet', { exec, platform: LINUX, now: FIXED_NOW });
-
-    // 安装器语义：如实报告不抛错
-    expect(r.ok).toBe(false);
-    const fwStep = r.steps.find((s) => s.name === 'framework-install');
-    expect(fwStep?.status).toBe('fail');
-    expect(fwStep?.detail).toContain('pip3 install verl 失败');
-    expect(r.manifest.framework).toBeNull();
-  });
-
-  it('test_trainEnvInit_框架装完但验证失败_fail如实报告', async () => {
-    const exec: ExecFn = async (cmd, args) => {
-      if (cmd === 'nvidia-smi' && args.length === 0) return ok(NVIDIA_SMI_TABLE);
-      if (cmd === 'nvidia-smi') return ok(NVIDIA_SMI_QUERY_CSV);
-      if (cmd === 'python3' && args[0] === '--version') return ok('Python 3.11.4');
-      if (cmd === 'pip3') return ok('Successfully installed verl-0.4.0');
-      if (cmd === 'python3' && args[0] === '-c') return Promise.reject(new Error('ModuleNotFoundError'));
-      return Promise.reject(new Error(`spawn ${cmd} ENOENT`));
-    };
-
-    const r = await trainEnvInit(dataDir, 'ent-verify-fail', { exec, platform: LINUX, now: FIXED_NOW });
-
-    expect(r.ok).toBe(false);
-    const vStep = r.steps.find((s) => s.name === 'framework-verify');
-    expect(vStep?.status).toBe('fail');
-    expect(vStep?.detail).toContain('版本探测失败');
-    expect(r.manifest.framework).toBeNull();
-  });
-});
-
-// ──────────────────────────────────────
-// trainEnvInit · 降级分支（Mac / 无 CUDA）
-// ──────────────────────────────────────
-
-describe('env-manager · trainEnvInit 降级分支', () => {
-  it('test_trainEnvInit_metal降级分支_指引脚本_包管理器npm', async () => {
-    const exec: ExecFn = async (cmd) => {
-      if (cmd === 'python3') return ok('Python 3.12.1');
-      if (cmd === 'nvidia-smi') return Promise.reject(new Error('spawn nvidia-smi ENOENT'));
-      if (cmd === 'system_profiler') return ok(SP_DISPLAYS_METAL);
-      return Promise.reject(new Error(`spawn ${cmd} ENOENT`));
-    };
-
-    const r = await trainEnvInit(dataDir, 'ent-mac', { exec, platform: DARWIN, now: FIXED_NOW });
-
-    // 降级分支：Python 探测 ok / GPU metal ok / 框架 skip（指引脚本）
-    expect(r.ok).toBe(true); // skip 不算 fail
-    const gpuStep = r.steps.find((s) => s.name === 'gpu-detect');
-    expect(gpuStep?.status).toBe('ok');
-    expect(gpuStep?.detail).toContain('降级分支');
-    const fwStep = r.steps.find((s) => s.name === 'framework-install');
-    expect(fwStep?.status).toBe('skip');
-    expect(fwStep?.detail).toContain('tools/train/train-env-init.sh');
-
-    // manifest：gpu=metal / cudaVersion=null / packageManager=npm
-    const m = readManifest('ent-mac');
-    expect(m.gpu?.kind).toBe('metal');
-    expect(m.gpu?.name).toBe('Apple M3 Max');
-    expect(m.gpu?.metalSupport).toBe('Metal 3');
-    expect(m.cudaVersion).toBeNull();
-    expect(m.packageManager).toBe('npm');
-  });
-
-  it('test_trainEnvInit_无GPU无Metal_gpu步骤skip', async () => {
-    const exec: ExecFn = async (cmd) => {
-      if (cmd === 'python3') return ok('Python 3.11.4');
-      return Promise.reject(new Error(`spawn ${cmd} ENOENT`)); // nvidia-smi / system_profiler 均不可用
-    };
-
-    const r = await trainEnvInit(dataDir, 'ent-cpu', { exec, platform: LINUX, now: FIXED_NOW });
-
-    expect(r.steps.find((s) => s.name === 'gpu-detect')?.status).toBe('skip');
-    const fwStep = r.steps.find((s) => s.name === 'framework-install');
-    expect(fwStep?.status).toBe('skip');
-    expect(fwStep?.detail).toContain('train-env-init.sh');
-    expect(r.manifest.gpu).toBeNull();
-    expect(r.manifest.packageManager).toBe('npm');
-    expect(r.ok).toBe(true); // CPU-only 也是合法环境（走降级栈）
-  });
-});
 
 // ──────────────────────────────────────
 // trainDoctor · 四项体检
@@ -346,7 +181,7 @@ describe('env-manager · trainDoctor 四项体检', () => {
   });
 
   it('test_trainDoctor_metal降级环境_cudaFail是预期_ready可达', async () => {
-    // Mac + metal manifest（trainEnvInit 降级分支产出的清单）→ CUDA fail 是预期
+    // Mac + metal manifest（train-env-init.sh 降级分支产出的清单）→ CUDA fail 是预期
     const manifestFile = trainEnvManifestPath(dataDir, 'ent-macdoc');
     mkdirSync(join(manifestFile, '..'), { recursive: true });
     const manifest: TrainEnvManifest = {

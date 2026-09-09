@@ -1660,8 +1660,8 @@ for t in fde_interview fde_classify fde_quantify fde_derive fde_distill fde_depl
 grep -q "fdeWorkbenchPaths" engine/orchestrator/src/fde/fde-workbench.ts && grep -q "emitFdeAudit" engine/orchestrator/src/fde/fde-workbench.ts && echo "✅ 工作台数据层" || echo "❌ 缺工作台"
 # b: 三问判定引擎（🔄/⚡/👤 三态 + 六步分解）
 grep -q "classifyAutomation" engine/orchestrator/src/fde/compose-interview.ts && echo "✅ 判定引擎在位" || echo "❌ 缺 classifyAutomation"
-# c: 训练环境双实现判定分支对齐（env-manager.ts 与 train-env-init.sh 同一套判定）
-grep -q "trainEnvInit" engine/orchestrator/src/train/env-manager.ts && test -f tools/train/train-env-init.sh && echo "✅ 双实现齐备" || echo "❌ 缺一侧"
+# c: 训练环境执行面在位（shell 安装脚本 + TS 探测/体检面——v1.4.6 边界收缩后口径）
+grep -q "trainDoctor" engine/orchestrator/src/train/env-manager.ts && test -f tools/train/train-env-init.sh && echo "✅ shell 安装 + TS 探测面齐备" || echo "❌ 缺一侧"
 # d: 缩放律零依赖纪律（不引 ml 库）
 grep -qE "levenberg|阻尼" engine/orchestrator/src/train/scale-curve.ts && ! grep -qE "from ['\"](ml|tensorflow|@tensorflow)" engine/orchestrator/src/train/scale-curve.ts && echo "✅ 手写拟合零 ml 依赖" || echo "❌ 依赖纪律破"
 # e: IM 桥安全边界文档（凭据本机/命令白名单/可信用户）

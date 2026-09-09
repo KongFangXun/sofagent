@@ -1,23 +1,28 @@
-// env-manager.ts · v1.4.5 章四 · 训练环境管理（train env init / train doctor / 环境版本清单）
+// env-manager.ts · 训练环境管理（train doctor / 环境版本清单 / 反作弊基线）
 //
 // 定位：双栈方案假设「服务器上有一套 Python 环境」——这套环境谁装、
 // 怎么验证、怎么换版本此前没有落点。本文件是 v1.4.5 train-env.ts
-// （块一：GPU 检测双分支 + 就绪报告）的**扩展**而非重建：
+// （块一：GPU 检测双分支 + 就绪报告）的扩展而非重建：
 //   - v1.4.5 prepareTrainEnv：检测 GPU → 安装框架 → 验证 → 就绪报告（保留不动）
-//   - v1.4.2 本文件新增：
-//       ① trainEnvInit —— 一键安装编排（venv + 框架 + CUDA 校验，脚本化
-//          可打包进设备；对齐 tools/train/train-env-init.sh 的编排逻辑）
-//       ② trainDoctor —— 环境体检（CUDA / 显存 / 框架版本 / 基座模型缓存
+//   - v1.4.2 起本文件承载：
+//       ① trainDoctor —— 环境体检（CUDA / 显存 / 框架版本 / 基座模型缓存
 //          四项——对齐 v1.3.x doctor 模式的结构化体检报告）
-//       ③ 环境版本清单 —— train-env.json（Python 版本 + 框架版本 + CUDA
+//       ② 环境版本清单 —— train-env.json（Python 版本 + 框架版本 + CUDA
 //          版本——train job 记录用的环境版本，训练可复现口径）
+//       ③ v1.4.3 第八章反作弊基线（网络白名单 / .git 剥离 / 沙箱 git 禁用）
+//
+// 边界收缩拍板（v1.4.6）：环境安装编排（v1.4.2 的 TS 一键安装实现——
+// pip3 install verl 安装动作的 Node 编排）整删——quickstart 与对外指引
+// 统一走 tools/train/train-env-init.sh shell 脚本（单一事实源）；本文件只留
+// 探测/体检/清单/反作弊（只查不装的缰绳面）。安装目标判断逻辑与探测
+// 同体的 prepareTrainEnv（含注入式安装动作）保留——依赖注入可覆写不
+// 执行真安装，train reproduce 与 scheduler 指纹冻结消费其产物。
 //
 // 复用来源：
 //   - train-env.ts：detectCudaGpu / detectMetalGpu / prepareTrainEnv /
 //     ExecFn 依赖注入模式（本文件同款注入）
 //   - train-fingerprint.ts EnvSnapshot：环境版本清单与其对齐（train job
 //     冻结指纹时引用同一口径）
-//   - data-paths getDataDir：数据目录一律走它（禁止硬编码 HOME 回退）
 //
 // 可测试性：全部 IO（exec / 落盘）依赖注入——单测零真实进程零真实安装。
 
@@ -65,23 +70,14 @@ export function trainEnvManifestPath(dataDir: string, enterpriseId: string): str
 }
 
 // ══════════════════════════════════════
-// train env init（一键安装编排）
+// train doctor（环境体检——只查不装）
 // ══════════════════════════════════════
 
-/** env init 步骤记录（审计留痕——init 与 doctor 共用步骤模型） */
+/** doctor 体检步骤记录（审计留痕——结构化报告的逐步明细） */
 export interface EnvCheckStep {
   name: string;
   status: 'ok' | 'skip' | 'fail';
   detail?: string;
-}
-
-/** env init 结果 */
-export interface TrainEnvInitResult {
-  /** 安装是否全部成功（Python 探测 + 框架安装 + 验证） */
-  ok: boolean;
-  steps: EnvCheckStep[];
-  /** 安装后产出的环境版本清单（失败步骤字段为 null） */
-  manifest: TrainEnvManifest;
 }
 
 /** 可注入依赖（单测零真实进程） */
@@ -103,134 +99,6 @@ function resolveDeps(userDeps: Partial<EnvManagerDeps>): EnvManagerDeps {
   };
 }
 
-/**
- * train env init 一键安装编排：
- *   1. Python 版本探测（python3 --version——venv 与框架安装的前置）
- *   2. GPU 检测（复用 v1.4.1 detectCudaGpu / detectMetalGpu 决定分支）
- *   3. 框架安装（cuda-ready → pip3 install verl；metal-degraded → 提示
- *      走 tools/train/train-env-init.sh 的 npm --prefix 隔离路径——Node 侧编排
- *      不重复实现 npm 安装，步骤标 skip 并给指引）
- *   4. 框架验证（版本可探测）
- *   5. 产出 train-env.json 版本清单
- *
- * 失败不抛错（安装器语义 = 如实报告每步结果，ok=false 由调用方处置）。
- */
-export async function trainEnvInit(
-  dataDir: string,
-  enterpriseId: string,
-  userDeps: Partial<EnvManagerDeps> = {},
-): Promise<TrainEnvInitResult> {
-  const deps = resolveDeps(userDeps);
-  const steps: EnvCheckStep[] = [];
-  const platform = deps.platform ?? process.platform;
-
-  // ── 1. Python 探测 ──
-  let pythonVersion: string | null = null;
-  try {
-    const out = await deps.exec('python3', ['--version']);
-    pythonVersion = /Python\s+(\S+)/.exec(out.stdout)?.[1] ?? null;
-    steps.push({
-      name: 'python-detect',
-      status: pythonVersion ? 'ok' : 'fail',
-      detail: pythonVersion ?? 'python3 存在但版本解析失败',
-    });
-  } catch (err) {
-    steps.push({
-      name: 'python-detect',
-      status: 'fail',
-      detail: `python3 不可用：${err instanceof Error ? err.message : String(err)}`,
-    });
-  }
-
-  // ── 2. GPU 检测（复用 v1.4.1——双分支判定） ──
-  const cuda = await detectCudaGpu(deps.exec);
-  let gpu: GpuInfo | null = null;
-  if (cuda.gpu) {
-    gpu = cuda.gpu;
-    steps.push({
-      name: 'gpu-detect',
-      status: 'ok',
-      detail: `${gpu.name} · CUDA ${gpu.cudaVersion} · 余量 ${cuda.freeVramMiB ?? '?'} MiB`,
-    });
-  } else {
-    const metal = await detectMetalGpu(deps.exec, platform);
-    if (metal) {
-      gpu = metal;
-      steps.push({
-        name: 'gpu-detect',
-        status: 'ok',
-        detail: `${metal.name} · ${metal.metalSupport}（降级分支）`,
-      });
-    } else {
-      steps.push({ name: 'gpu-detect', status: 'skip', detail: '未检测到可用 GPU' });
-    }
-  }
-
-  // ── 3+4. 框架安装 + 验证 ──
-  let framework: { name: string; version: string } | null = null;
-  let packageManager: 'pip3' | 'npm' = 'pip3';
-  if (cuda.gpu && pythonVersion) {
-    // 生产分支：pip3 装 verl（DEFAULT_CUDA_FRAMEWORK 同名约定）
-    try {
-      await deps.exec('pip3', ['install', 'verl']);
-      steps.push({ name: 'framework-install', status: 'ok', detail: 'pip3 install verl' });
-      try {
-        const vOut = await deps.exec('python3', ['-c', 'import verl; print(verl.__version__)']);
-        framework = { name: 'verl', version: vOut.stdout.trim() };
-        steps.push({ name: 'framework-verify', status: 'ok', detail: `verl@${framework.version}` });
-      } catch (err) {
-        steps.push({
-          name: 'framework-verify',
-          status: 'fail',
-          detail: `版本探测失败：${err instanceof Error ? err.message : String(err)}`,
-        });
-      }
-    } catch (err) {
-      steps.push({
-        name: 'framework-install',
-        status: 'fail',
-        detail: `pip3 install verl 失败：${err instanceof Error ? err.message : String(err)}`,
-      });
-    }
-  } else if (!cuda.gpu) {
-    // 降级分支：npm --prefix 隔离安装由 tools/train/train-env-init.sh 承担
-    // （Node 编排不重复实现——单一事实源，指引走脚本）
-    packageManager = 'npm';
-    steps.push({
-      name: 'framework-install',
-      status: 'skip',
-      detail: '无 CUDA——降级分支请运行 bash tools/train/train-env-init.sh（npm --prefix 隔离安装 @mlx-node/trl）',
-    });
-  } else {
-    steps.push({
-      name: 'framework-install',
-      status: 'skip',
-      detail: '有 CUDA 但 Python 不可用——先装 Python 3.10+ 再重跑 train env init',
-    });
-  }
-
-  // ── 5. 版本清单产出（train-env.json——无论成败都落盘快照） ──
-  const manifest: TrainEnvManifest = {
-    schemaVersion: 'v1',
-    pythonVersion,
-    framework,
-    cudaVersion: gpu?.kind === 'cuda' ? (gpu.cudaVersion ?? null) : null,
-    gpu,
-    packageManager,
-    platform,
-    generatedAt: new Date(deps.now ? deps.now() : Date.now()).toISOString(),
-  };
-  const manifestFile = trainEnvManifestPath(dataDir, enterpriseId);
-  const dir = join(manifestFile, '..');
-  if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
-  atomicWriteSync(manifestFile, JSON.stringify(manifest, null, 2));
-
-  const ok = steps.every((s) => s.status !== 'fail');
-  return { ok, steps, manifest };
-}
-
-// ══════════════════════════════════════
-// train doctor（环境体检——只查不装）
 // ══════════════════════════════════════
 
 /** 基座模型缓存条目（体检四项之四——目录存在即缓存命中） */

@@ -92,7 +92,7 @@
 | `model_unregister` | ops | 模型退役——标记退役（可恢复），强制人审。 |
 | `train_budget` | eval, ops | 训练预算控制——查预算状态 / 超预算人审续跑或终止。 |
 | `train_submit` | eval, ops | 训练任务提交——数据+基座+算法(sft/dpo/grpo)+超参+预算 → 生成 trainJobId（同 id 重复提交幂等）。 |
-| `train_doctor` | eval, ops | 训练环境体检——CUDA/显存/框架版本/基座模型缓存四项 + 反作弊基线三项（git 禁用/.git 可见性/网络白名单）结构化报告（只查不装；装环境走 train env init，基座下载走 model-downloader）。 |
+| `train_doctor` | eval, ops | 训练环境体检——CUDA/显存/框架版本/基座模型缓存四项 + 反作弊基线三项（git 禁用/.git 可见性/网络白名单）结构化报告（只查不装；装环境走 `bash tools/train/train-env-init.sh`，基座模型手动放置或推理服务拉取）。 |
 | `train_dryrun` | eval, ops | 训练 dry-run——提交前预检：极小样本管线连通 + 数据质量抽样 + 显存估算（超限提前告警）+ 算力外推（sigmoid 缩放律外推成本，超预算提交前告警）。 |
 | `train_report` | eval, ops | 训练报告生成——数据概况+配置+eval对比+产物清单+量化四字段（GUIDE §4.3：年节省=岗位年薪×AI接管工时占比），markdown+JSON 归档 data/dashboard/train-reports/。 |
 | `train_status` | eval, ops | 训练进度查询——status/step/loss/reward 曲线/断点/用量快照（长任务轮询入口）。 |

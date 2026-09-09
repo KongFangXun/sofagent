@@ -1499,14 +1499,12 @@
 /* @public */ export {
   TRAIN_ENV_MANIFEST_FILE,
   trainEnvManifestPath,
-  trainEnvInit,
   trainDoctor,
   DEFAULT_BASE_MODEL_CANDIDATES,
 } from './train/env-manager';
 /* @public */ export type {
   TrainEnvManifest,
   EnvCheckStep,
-  TrainEnvInitResult,
   EnvManagerDeps,
   TrainDoctorReport,
   ModelCacheEntry,
