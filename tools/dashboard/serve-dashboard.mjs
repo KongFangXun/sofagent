@@ -693,6 +693,20 @@ async function main() {
     console.log('');
     console.log('  数据源：' + SOFAGENT_DATA);
     console.log('  页面源：' + DOCS_DIR);
+    // v1.4.7 批次 M P2-14：安装态无条件优先时，若同仓存在仓库态页面且两者不一致，
+    // 打一行可观测提示——开发者改了仓库态页面却看到旧安装态时能立刻定位（不改判定逻辑）
+    if (IS_INSTALL_MODE) {
+      const repoHtml = join(__dirname, 'dashboard.html');
+      try {
+        if (statSync(repoHtml).isFile()) {
+          const repoBuf = readFileSync(repoHtml);
+          const instBuf = readFileSync(INSTALL_WEB_HTML);
+          if (!repoBuf.equals(instBuf)) {
+            console.log('  ⚠️ 仓库态 dashboard.html 存在但当前服务安装态副本——开发者调试请 SOFAGENT_HOME= node tools/dashboard/serve-dashboard.mjs');
+          }
+        }
+      } catch {}
+    }
     console.log('  API：/api/summary（复用 bash dashboard jq 口径）');
     console.log('');
     console.log('  Ctrl+C 停止');
