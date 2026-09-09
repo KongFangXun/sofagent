@@ -134,15 +134,15 @@ export interface TrainDoctorReport {
   checkedAt: string;
 }
 
-/** 基座模型缓存的默认候选清单（十数 GB 级——只查不下载，下载走 model-downloader） */
+/** 基座模型缓存的默认候选清单（十数 GB 级——只查不装，获取归推理服务与云端通道） */
 export const DEFAULT_BASE_MODEL_CANDIDATES: readonly string[] = ['Qwen3-8B', 'Qwen3-14B'];
 
 /**
  * train doctor 环境体检：CUDA / 显存 / 框架版本 / 基座模型缓存四项
  * （只查不装——对齐 v1.3.x doctor 模式：结构化报告 + ready 汇总结论）。
  *
- * 模型缓存查找路径：{dataDir}/models/<name>/（model-downloader 的统一
- * 落点——doctor 只查缓存，「没有时怎么拿到」是 downloader 的职责边界）。
+ * 模型缓存查找路径：{dataDir}/models/<name>/（约定路径——doctor 只查
+ * 缓存，「没有时怎么拿到」是推理服务/云端通道的职责边界）。
  */
 export async function trainDoctor(
   dataDir: string,
@@ -225,7 +225,7 @@ export async function trainDoctor(
     detail:
       cachedCount > 0
         ? `${cachedCount}/${entries.length} 个基座模型已缓存（${entries.filter((e) => e.cached).map((e) => e.name).join(', ')}）`
-        : `基座模型缓存为空（候选：${candidates.join(', ')}）——用 model-downloader 下载（断点续传）`,
+        : `基座模型缓存为空（候选：${candidates.join(', ')}）——手动放置到 {dataDir}/models/<name>/ 或走推理服务拉取（ollama pull 等）`,
   };
   steps.push({ name: 'model-cache-check', status: modelCacheSection.status, detail: modelCacheSection.detail });
 

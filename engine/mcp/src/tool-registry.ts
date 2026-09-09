@@ -921,7 +921,7 @@ export const TOOLS: ToolDef[] = [
     // v1.4.2 (章四)：训练环境体检——CUDA/显存/框架/基座缓存四项只查不装
     name: 'train_doctor',
     roles: ['eval', 'ops'],
-    description: '训练环境体检——CUDA/显存/框架版本/基座模型缓存四项 + 反作弊基线三项（git 禁用/.git 可见性/网络白名单）结构化报告（只查不装；装环境走 train env init，基座下载走 model-downloader）。',
+    description: '训练环境体检——CUDA/显存/框架版本/基座模型缓存四项 + 反作弊基线三项（git 禁用/.git 可见性/网络白名单）结构化报告（只查不装；装环境走 bash tools/train/train-env-init.sh，基座模型手动放置或推理服务拉取）。',
     inputSchema: {
       type: 'object',
       properties: {

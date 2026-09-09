@@ -152,14 +152,14 @@ describe('env-manager · trainDoctor 四项体检', () => {
     expect(r.manifest).toBeNull();
   });
 
-  it('test_trainDoctor_缓存为空_modelCache_fail_指引downloader', async () => {
+  it('test_trainDoctor_缓存为空_modelCache_fail_指引手动放置或推理服务', async () => {
     primeManifest('ent-nocache');
 
     const r = await trainDoctor(dataDir, 'ent-nocache', { exec: cudaExec, platform: LINUX, now: FIXED_NOW });
 
     expect(r.ready).toBe(false);
     expect(r.modelCache.status).toBe('fail');
-    expect(r.modelCache.detail).toContain('model-downloader');
+    expect(r.modelCache.detail).toContain('推理服务拉取');
     expect(r.modelCache.entries).toHaveLength(DEFAULT_BASE_MODEL_CANDIDATES.length);
   });
 

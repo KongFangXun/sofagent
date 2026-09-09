@@ -85,7 +85,7 @@ if [[ ${WITH_MODELS} -eq 1 ]]; then
     cp -R "${REPO_ROOT}/data/models" "${STAGE_DIR}/data/models"
     ok "基座模型缓存已收编（$(ls "${REPO_ROOT}/data/models" 2>/dev/null | wc -l | tr -d ' ') 个模型）"
   else
-    warn "data/models 不存在——目标机器需手动放置基座（或 model-downloader 预下载）"
+    warn "data/models 不存在——目标机器需手动放置基座（或推理服务拉取，如 ollama pull）"
   fi
 fi
 

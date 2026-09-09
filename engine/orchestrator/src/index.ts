@@ -1624,28 +1624,6 @@
   TrainSandbox,
   TrainSandboxProfile,
 } from './train/train-sandbox';
-/* @public */ export {
-  DEFAULT_CHUNK_BYTES,
-  makeDefaultFetchRange,
-  defaultFreeSpace,
-  modelDir,
-  modelFilePath,
-  modelManifestPath,
-  partPaths,
-  readPartMeta,
-  preflightDiskSpace,
-  downloadModel,
-} from './train/model-downloader';
-/* @public */ export type {
-  RangeResponse,
-  FetchRangeFn,
-  FreeSpaceFn,
-  ModelManifest,
-  PartMeta,
-  DiskPreflightResult,
-  DownloadModelInput,
-  DownloadModelResult,
-} from './train/model-downloader';
 
 // ============================================================
 // v1.3.6 交付⑨：验收条件定义与执行（机器可判定验收 · 软约束先行）

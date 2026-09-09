@@ -8,7 +8,7 @@
 // 复用 v1.4.5 train-env 检测地基——扩展非重建）。
 //
 // 只查不装：本 tool 是体检（环境怎么装走 train env init /
-// tools/train/train-env-init.sh；基座模型怎么下走 model-downloader）。
+// tools/train/train-env-init.sh；基座模型手动放置或走推理服务拉取）。
 // ============================================================
 
 import { getDataDir } from '@sofagent/core';

@@ -51,7 +51,7 @@ node engine/orchestrator/dist/cli.js train doctor
 
 四项细查走 MCP `train_doctor`（CUDA/显存/框架/基座缓存 + 反作弊三项），Mac 实测：cuda=fail（无 nvidia-smi，预期）、framework=fail（mlx 未装，见第二步限制）、modelCache=fail（候选 Qwen3-8B/14B 未下载，预期——只查不装）。
 
-**排查**：CUDA 机器 cuda 仍 fail → 检查 `nvidia-smi` 可执行；modelCache fail → 走 model-downloader 下载（断点续传）。
+**排查**：CUDA 机器 cuda 仍 fail → 检查 `nvidia-smi` 可执行；modelCache fail → 手动放置基座到 `data/models/<name>/`，或走推理服务拉取（`ollama pull <model>`，拉取后按推理服务方式使用）。
 
 ## 四、训练预检（train dry-run）
 
