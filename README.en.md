@@ -55,8 +55,14 @@ sofagent does not build its own Agent — execution is delegated to mature hosts
 
 ## Core Features
 
+**On entry · generate judgment** (the FDE stage — deciding where AI belongs and what it's worth, frozen into deliverables):
+
 - 🧭 **Map the business flow on entry** — five-element deep-dive + three-question triage, capturing every role's process steps and pricing out what each AI node is worth
 - 🤖 **Deploy AI nodes** — three-layer deliverables (documents + Skills + runtime), installed into your existing AI tools; from "you do the work" to "you delegate the work"
+- 📦 **Judgment frozen into deliverables** — every node carries "what counts as done (merge_criteria) · who signs off (approver)", machine-checkable and shared across both stages
+
+**After departure · retain judgment** (the Harness stage — executing against the deliverables 24/7, writing back as it evolves):
+
 - 🏠 **Stay resident after departure** — the FDE capability remains for inspection, audit, and optimization, 7×24 online guardian (audit triggers on commit); the human leaves, governance doesn't
 - 🔍 **Zero-setup audit** — `npx -y -p @sofagent/audit sofagent-audit`, auditing the latest commit of any git repo in seconds (single-machine measured: quick ~1.1s, 50k-line diff ~6.1s; see [HANDBOOK](./docs/HANDBOOK.md))
 - 🧱 **24 audit rules + 84 MCP tools** — secret leaks, out-of-scope edits, injection defense, privilege red lines; judged on git diff hard evidence, violations blocked on the spot (once a critical-layer rule hits, remaining rules are skipped — fail-fast design); evidence is based on local diffs — trust boundaries and known bypass surfaces in [LIMITATIONS §3](./docs/LIMITATIONS.md) (quick runs 17 by default; full 24 = 17 default + 7 extensions)
@@ -103,7 +109,7 @@ One command selects your mounting tier: `bash install.sh --platform <platform-na
 
 ## FDE Methodology
 
-Many companies adopt AI the wrong way around — they pick models, build platforms, and buy Agents first, only to find nobody uses them. The problem isn't the technology; it's that **they haven't figured out their own business processes before handing them to AI**.
+**The first half of the two stages.** Many companies adopt AI the wrong way around — they pick models, build platforms, and buy Agents first, only to find nobody uses them. The problem isn't the technology; it's that **they haven't figured out their own business processes before handing them to AI**.
 
 Most tools teach you how to build Agents; sofagent first answers **where AI should go** — turning that judgment from guesswork into a repeatable methodology:
 
@@ -119,7 +125,7 @@ Full methodology (four phases, twelve steps) in [FDE/GUIDE.md](./FDE/GUIDE.md) �
 
 ## FDE Skill System
 
-Deploying an AI node is only the first step — the chapters above cover how to map the flow and where to put it; this one covers how to keep it behaving every single time. The FDE Skill System, loaded together with the node, answers that:
+**The seam of the two stages** — on-entry judgment is frozen into Skills loaded alongside the node, and after departure the constraint layer executes against them. Deploying an AI node is only the first step: the chapters above cover how to map the flow and where to put it; this one covers how to keep it behaving every single time. The FDE Skill System answers that:
 
 - 📜 **SKILL.md** — the single main entry, loaded by your AI tool: routes to the corresponding sub-Skill by phase, with role norms auto-injected by task type (mapping / audit / orchestration)
 - 🧩 **Phase sub-Skills** — a five-step closed loop of entry → deep-dive → quantify → deliver → depart (01-entry → 05-exit); what to do and what to deliver at each step is defined up front
@@ -130,7 +136,7 @@ Deploying an AI node is only the first step — the chapters above cover how to 
 
 ## Constraint Layer (Harness)
 
-The constraint layer is sofagent's behavioral foundation, with five capabilities:
+**The second half of the two stages.** The judgment generated on entry (merge_criteria / approver / trigger) is retained and enforced here — this is the half that keeps FDE judgment alive after the engineer leaves. The constraint layer is sofagent's behavioral foundation, with five capabilities:
 
 - **Injection** — inject enterprise constraints at Agent startup through the four-layer loading chain; constraints are advisory
 - **Audit** — 24 git-diff hard-evidence rules (quick runs 17 by default, 7 extensions enabled via config) + AgentShield five-face static config scanning; auditing is mandatory — every change gets audited, violations blocked on the spot
