@@ -318,3 +318,5 @@ release-gate-loop 与 fresh-eyes-loop 共享本文件，通过"循环"列区分�
 2026-09-09     | 20260909-01    | release-gate | 4    | SKIP       | FAIL       | SKIP     | FAIL    | /Users/kongfangxun/.sofagent/data/forge-runs/release-gate-loop/2026-09-09/run-01
 
 2026-09-09     | 20260909-02    | release-gate | 4    | SKIP       | PASS       | PASS     | PASS    | /Users/kongfangxun/.sofagent/data/forge-runs/release-gate-loop/2026-09-09/run-02
+
+2026-09-09     | 20260909-03    | release-gate | manual（主 session 手动收敛版判断层，不启动 driver——GLM 三倍价窗口绕行：verdict=PASS）。执行链：run-02 PASS（基线 92f56607）后仓库前进多 commit（边界收缩+修复批+P1-1 闭环+S383 coverage 闭环），手动补齐判断层——regression checklist 100 维度 0 失败（precheck 语义，/tmp/run-regression-precheck.mjs 自制执行器注入 PROJECT_ROOT）+ acceptance 392/392 SKIP 0 EXIT 0（S383 新 dist 实跑）+ 五门禁全绿 + 场景数 SSOT 311 四处同步。PASS 轮主 session 收编 | 基线 e902aeba（无 run 目录，证据链=本 session 判断层输出）
