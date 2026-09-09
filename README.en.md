@@ -103,9 +103,9 @@ Sits between the Agents you already use and the model layer — it doesn't repla
 
 One command selects your mounting tier: `bash install.sh --platform <platform-name>` (all platforms and differences in [HANDBOOK](./docs/HANDBOOK.md))
 
-## v1.4.5: Post-training Closure & Reliability Hardening
+## v1.4.6: Multi-GPU Distributed & Cloud Training Execution
 
-🛡️ Make training artifacts **runnable, self-sustaining, and compliant** — `train_serve` inference service (spins up vLLM / Ollama / OpenAI-compatible endpoints + model_switch integration) · continuous post-training (threshold / @weekly / manual triggers + eval rollback guard — the "continuity" of the flywheel) · `train_compliance` compliance scan (three-source PII detection + training gate + provenance marking) · `train_deliverable` delivery package (five-piece set + manifest + HMAC tamper rejection) · artifact retention policy (retention-policy + @weekly archiving + 90-day overwrite) · ten-step post-training Quickstart · evolution module empirical closure (Dream Cycle real-LLM Maintainer + skill-impact ledger + L4 tool self-evolution) · FDE session memory directory (10-file auto-init + cross-session restore) · 🔒 reliability hardening (webhook SSRF fail-closed / audit-chain tail truncation guard / audit timeout degradation / L1-L3 cron wiring). (Point-in-time figures: MCP 80→83 tools, tests 3753→4055 — see devlog; current scope under [Core Features](#core-features).) Full details in the [devlog](./docs/changelog/v1.4/v1.4.5.md) · earlier versions in [CHANGELOG](./CHANGELOG.md).
+🚀 Training moves from "single box, single run" to **multi-GPU parallel + supervised cloud-VM execution** — and with the luggage that never belonged to a harness unloaded, the reins actually got tighter. `train submit` accepts `gpu.count`/`nodes` multi-GPU multi-node configs (job.json schema v2, backward-compatible with v1) · GPU queue dual-axis topology awareness (an 8-GPU job no longer fights a 1-GPU job for cards) · NCCL distributed failure diagnosis (8th class) · `train_cloud` cloud-VM execution plane (register / health-check / remote spawn; three-tier data triage "block-first" + compliance gate before ingestion + 5-min lost-VM cutoff + cost into budget) · standard data-push interface (schema validation + triage/compliance dual gate; entry wiring lands in v1.4.7) · boundary slimming ≈ −1.2k lines (training recipes to external loading via `--recipes` / env setup to shell scripts / self-built model-downloader removed / local spawn isolated behind a `TrainExecutor` interface). (Point-in-time figures: MCP 83→84 tools, tests 4055→4088 — see devlog; current scope under [Core Features](#core-features).) Full details in the [devlog](./docs/changelog/v1.4/v1.4.6.md) · earlier versions in [CHANGELOG](./CHANGELOG.md).
 
 ## FDE Methodology
 
@@ -244,7 +244,7 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # load the securit
 | **Global index** (one entry to all docs, in Chinese) | [WIKI](./docs/WIKI.md) |
 | How to install, use, FAQ | [HANDBOOK](./docs/HANDBOOK.md) |
 | Architecture (constraint layer · injection chain · evolution · 24 rules) | [ARCHITECTURE](./docs/ARCHITECTURE.md) |
-| API overview (six interface surfaces + 84 MCP tools) | [API](./docs/API.md) |
+| API overview (seven interface surfaces + 84 MCP tools) | [API](./docs/API.md) |
 | Design philosophy | [PHILOSOPHY](./docs/PHILOSOPHY.md) |
 | Industry validation & ecosystem positioning (differences from existing tools) | [VALIDATION](./docs/VALIDATION.md) |
 | Version roadmap | [ROADMAP](./docs/ROADMAP.md) |

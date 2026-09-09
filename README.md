@@ -101,9 +101,9 @@ sofagent 不造 Agent——执行能力交给成熟宿主（模型 + 工具 + �
 
 一条命令选定挂载档位：`bash install.sh --platform <平台名>`（全部平台与差异见 [HANDBOOK](./docs/HANDBOOK.md)）
 
-## v1.4.5：后训模块闭环与可靠性加固
+## v1.4.6：多卡分布式与云端训练执行面
 
-🛡️ 让训练成果**跑起来、持续转、合规过**——`train_serve` 训练推理服务（vLLM/Ollama/OpenAI 兼容端点拉起 + model_switch 联动，训练到服务不断链）· 持续后训练（数据阈值/@weekly/人工三触发 + eval 回退保护——飞轮闭环的「持续」环）· `train_compliance` 合规扫描（PII 三源检测 + 训练闸门拦截 + 来源标记）· `train_deliverable` 训练交付包（五件套 + manifest + HMAC 篡改拒绝）· 训练产物保留策略（retention-policy + @weekly 归档 + 90 天覆写）· 后训 Quickstart 十步端到端 · 进化模块实证收口（Dream Cycle 真脑 Maintainer + skill-impact 台账 + L4 工具自进化）· FDE 进场记忆目录（10 文件自动初始化 + 跨 session 恢复）· 🔒 可靠性加固（webhook SSRF fail-closed / 审计链尾部截断防护 / 审计超时降级 / L1-L3 巡检 cron 接线）。（版本时点数字：MCP 80→83 tools、测试 3753→4055，见开发日志——当前口径以[核心特性](#核心特性)为准。）完整内容见[开发日志](./docs/changelog/v1.4/v1.4.5.md) · 更早版本见 [CHANGELOG](./CHANGELOG.md)。
+🚀 训练从「单机跑一跑」走到「多卡并行 + 云端 VM 受监督执行」，同时把不属于约束层的行李卸到仓外——卸下负担之后，缰绳反而更紧了。`train submit` 支持 `gpu.count`/`nodes` 多卡多机配置（job.json schema v2，v1 存量向后兼容）· GPU 队列双轴拓扑感知（8 卡任务不跟 1 卡任务抢卡）· NCCL 分布式故障诊断第八类 · `train_cloud` 云 VM 执行面（注册/体检/远程 spawn，数据分拣三档「宁拦勿漏」+ 合规闸先于入库 + 失联止损 5min + 成本入预算）· 标准数据推送接口（schema 校验 + 分拣/合规双闸，入口接线 v1.4.7）· 边界收缩约 −1.2k 行（训练配方迁外部装载 `--recipes` / 环境安装归 shell 脚本 / 删除自建 model-downloader / `TrainExecutor` 接口隔离本地 spawn）。（版本时点数字：MCP 83→84 tools、测试 4055→4088，见开发日志——当前口径以[核心特性](#核心特性)为准。）完整内容见[开发日志](./docs/changelog/v1.4/v1.4.6.md) · 更早版本见 [CHANGELOG](./CHANGELOG.md)。
 
 ## FDE 方法论
 
@@ -243,7 +243,7 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # 加载安全规�
 | **全局索引**（所有文档一个入口） | [WIKI](./docs/WIKI.md) |
 | 怎么装、怎么用、常见问题 | [HANDBOOK](./docs/HANDBOOK.md) |
 | 架构设计（约束层「对内的技术名字」 · 注入链 · 进化机制 · 24 条规则） | [ARCHITECTURE](./docs/ARCHITECTURE.md) |
-| 接口总览（六大接口面 + 84 MCP tools 清单） | [API](./docs/API.md) |
+| 接口总览（七大接口面 + 84 MCP tools 清单） | [API](./docs/API.md) |
 | 设计哲学 | [PHILOSOPHY](./docs/PHILOSOPHY.md) |
 | 行业印证与生态定位（与现有工具的差异） | [VALIDATION](./docs/VALIDATION.md) |
 | 版本路线图 | [ROADMAP](./docs/ROADMAP.md) |

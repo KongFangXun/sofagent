@@ -1,13 +1,13 @@
 # 路线图 · Roadmap
 
 > 已经做了什么、未来要去哪、哪些地方需要你的帮助。
-> v1.4.6 · 2026-09-09（UTC，✅ 已发版）· 🚀 后训模块 · 服务与持续（推理服务/持续后训/合规扫描/交付包/进化实证/进场记忆）。此前版本详见 [CHANGELOG](../CHANGELOG.md) 与各版开发日志。
+> v1.4.6 · 2026-09-09（UTC，⏳ 定稿待发版）· 🚀 后训模块 · 分布式与云端（多卡训练/云 VM 执行面/边界收缩）。此前版本详见 [CHANGELOG](../CHANGELOG.md) 与各版开发日志。
 
 产品定位详见 [设计哲学](./PHILOSOPHY.md) 和 [README](../README.md)。
 
 ## 现在在哪：v1.4.6（已交付）
 
-> **v1.4.5 开发完成（2026-09-05）**——后训模块 · 服务与持续 八章（训练推理服务 train serve + 持续后训练三触发与回退保护 + 合规扫描闸门 + FDE 交付包 + 保留策略归档 + 后训 Quickstart 十步端到端 + 进化模块实证收口 + FDE 进场记忆目录）+ 可靠性与诚实性修复批 · 测试 3753→4055（12 包 workspace 口径）· acceptance 305 场景（S373/S374/S375 净 +1，S265/S366 归并对销 −2）· MCP 80→83 tools · release-gate run-03 verdict=PASS（2026-09-06）。详见 [v1.4.5 开发日志](./changelog/v1.4/v1.4.5.md)。上一版 v1.4.4（2026-09-03 发版，后训模块 · 信号与部署闭环 十章）详见 [v1.4.4 开发日志](./changelog/v1.4/v1.4.4.md)。
+> **v1.4.6 开发完成（2026-09-07）**——后训模块 · 分布式与云端（多卡/多机训练 train_multi + 云 VM 执行面 train_cloud + 边界收缩约 −1.2k 行）· 测试 4055→4088（12 包 workspace 口径）· acceptance 311 场景 / 392 断言（S376-S382 新增 + S383 边界收缩行为锁）· MCP 83→84 tools · release-gate verdict=PASS（run-02 + 2026-09-09 手动收敛版判断层补齐，LEDGER 20260909-03）。详见 [v1.4.6 开发日志](./changelog/v1.4/v1.4.6.md)。下一版 v1.4.7（商业平台接口版，G8 cron job 包 + 云训练执行接线收口 + G14 workflow 工具面）见[版本规划](#版本规划)。
 
 ---
 
@@ -17,6 +17,7 @@
 
 | 版本 | 核心交付 |
 |------|------|
+| **v1.4.6** | **🚀 后训模块 · 分布式与云端**：多卡/多机训练（gpu.count/nodes + schema v2 存量兼容 + GPU 双轴拓扑 + NCCL 第八类诊断）+ 云 VM 执行面（train_cloud 注册/体检/远程 spawn + 分拣三档宁拦勿漏 + 失联止损 5min + 成本入预算）+ 标准数据推送接口（双闸，入口接线 v1.4.7）+ 边界收缩（配方外部装载/trainEnvInit 归 shell/model-downloader 删除/TrainExecutor 隔离，约 −1.2k 行）· 测试 4055→4088 · acceptance 310→311 · MCP 83→84（详见 [CHANGELOG](../CHANGELOG.md)） |
 | **v1.4.5** | **🚀 后训模块 · 服务与持续**：训练推理服务 train_serve + 持续后训练三触发与回退保护 + 合规扫描闸门 train_compliance + FDE 交付包 train_deliverable + 保留策略归档 + 后训 Quickstart 十步 + 进化实证收口（真脑/台账/采样/L4 自进化）+ FDE 进场记忆目录 + 可靠性加固批（webhook SSRF/审计链截断/超时降级）· 测试 3753→4055 · acceptance 304→305 · MCP 80→83（详见 [CHANGELOG](../CHANGELOG.md)） |
 | **v1.4.4** | **🚀 后训模块 · 信号与部署闭环**：训练语料导出三件套（corpus_export 79→80 + reward 骨架）+ 企业专属模型本地权重部署（manifest+sha256 篡改拒绝+rollback-weights）+ 训练产物→注册自动衔接 + 多基座对比（train compare ROI 排序）+ 决策因果链与先例检索 + CI 供应链全 SHA 固定 + 五能力叙事定稿 · 测试 3619→3753 · acceptance 294→304 · MCP 79→80（详见 [CHANGELOG](../CHANGELOG.md)） |
 | **v1.4.3** | **🚀 后训模块 · 运行与需求 + 审计聚合指标**：训练监控 + GPU 队列（train_status/train_list）· 失败诊断 train_diagnose 七类 · 训练沙箱 + 设备打包 · 需求推导 + RL 配方模板 · 后训练 workflow 模板 · 审计聚合指标 --stats · 训练反作弊基线 · 存量清扫五件（含 checkHistoryChainIntegrity 退役公告）· doctor 补 Ontology 完整性 · 测试 3349→3619 · acceptance 276→294 · MCP 76→79 |
@@ -69,7 +70,6 @@ sofagent 的定位正卡在这个转折点上：审计模块（治理侧）+ Ont
 
 | 版本 | 状态 | 核心交付 | 日志 |
 |------|:--:|------|:--:|
-| **v1.4.6** | 📋 规划中 | **🚀 后训模块 · 分布式与云端（规模化前置）**：多卡/分布式训练（train multi：verl/DeepSpeed 集群 + GPU 队列多卡拓扑感知 + 分布式失败诊断）· 云端 VM 执行面（train cloud：控制面本地 + 执行面云上 + 云端成本入预算）· **训练数据分拣闸门（上云前置：敏感档拦截留本地走知识库 RAG，脱敏档/公开档才可上云，分拣依据入 train_job 审计链；与 v1.4.5 合规扫描闸分层不合并）+ 保密证书编号挂链 + 标准数据推送接口（深度定制连接器不做，统一走标准接口）**——「全托管」交付模式技术底座；⚠️ 敏感数据不上公有云，走客户机房联合训练 | [日志](./changelog/v1.4/v1.4.6.md) |
 | **v1.4.7** | 📋 规划中 | **🔌 商业平台接口版**：G2 能力缺口查询 · G4 绩效数据导出（orgId 过滤防跨租户）· G6 节点可见性元数据 · G7 多租户数据路径 v0 · workflow 烧进 USB · 审计留痕双层 · 静态加密全量接线 · **G8 首部署 cron job 包（本版最高优先级）** · G13 PR 生命周期接口（含拒绝留痕进 decision-log）· **G1 workflow 模板导出/导入（🔶 候选占位 · 待定，非定案）** · 上岗 prompt 生成器（裸装节点开箱即用的岗位 prompt 生成，与 G14 工具面同批）· **G14 workflow CRUD + LUI Agent 工具面（四 tools + schema 校验门内嵌 + `trigger.schedule` 节点级定时字段，「平台零 GUI」的引擎侧地基）** · G13 PR 触发绑定 confidence 两态（suggested/confirmed 三铁律）· audit 专职面文档化 + tool 描述四原则化（机制 v1.4.4 已交付，本版补对外门面）· **云训练执行接线收口（daemon 真实 ssh 执行 + `TrainChannel` 标准接口与适配规范——不预设用户云厂商，托管微调 API 由用户按规范对接，引擎出 ssh 通道与参考示例 + 云端事件回流审计链 + 失联止损 + 端到端 demo）**；商业侧规划独立于本仓库维护 | [日志](./changelog/v1.4/v1.4.7.md) |
 | **v1.4.8** | 📋 规划中 | **🔌 插件管控与工程效能**：插件来源白名单（Git URL/主机/本地路径 + 托管 hook 独裁）· 应用级工具策略（app×tool 白名单矩阵，fail-closed）· 多 Agent 协作阵型库（六阵型）· 自动上下文压缩（加载链超 3% 预算触发）· shell 提权分级（dangerous 走 HITL）· 成本 quota 事前门禁 · 依赖方向架构测试（13 包边界 + CI 强制）· workflow 节点级模型偏好绑定 · 技能按模型分级门控 · 自研进化 gate 验证器 + skillopt 重构更名 @sofagent/evolve（进化四角色合拢完整自进化循环）· 跨 harness 协作阵型注册表（ACP Registry）· **执行机制纪律批（商业平台机制对账：调度判定双层纯函数主判 / Git 能力降级矩阵三态×两隔离 / 多 Agent 并发 Git 纪律 / 作用域显名禁裸 id）** | [日志](./changelog/v1.4/v1.4.8.md) |
 | **v1.4.9** | 📋 规划中 | **📟 设备接入与数据承接版（多设备 Harness 中间层 + router 伴生数据面）**：G9 设备注册/发现与心跳（Ed25519 身份码 + 验签 fail-closed）· G10 设备侧数据面授权读取（目录白名单默认空 opt-in + 脱敏联动 + 读取审计入 HMAC 链）· G11 数据上行通道（采集声明 opt-in → WAL 暂存 → 断点续传 → 加密上行）· installer skill（prompt 驱动裸机自动安装）· 任务下发通道一期——心跳捎带 · 在线才派单 / 掉线改派语义（G9 验收标准补全）· 跨设备任务路由评估（依赖 v1.5.1 事件总线，评估不实做）· **session 承接与 router 伴生（自 v1.5.3 前移改写：router 基于开源自建、引擎不自研 router 本体，交付伴生 exporter 协议——过站 session 多轮样本模型 + 蒸馏偏好对构造 + 工作产物采集五源→六源 + usage 入 cost 台账 + key 维度 harness 四件：按 key 计量/审计挂链/异常检测/处置建议）**· **敏感识别升级（自 v1.5.3 前移 + 三层检测器新编排：L0 内置正则 / L1 企业专名词典（最高优先级·零模型）/ L2 外挂 NER（含一体机本地模型适配器）+ Presidio 实体类型 schema 对齐；敏感度分类器与脱敏共用插槽 + 置信度三层 fail-closed）**· **权重灰度发布 AB（自 v1.5.3 前移：新旧 LoRA 按流量比例灰度 + 劣化自动回退）**——一体机数据飞轮（session→分拣→脱敏→数据集→训练→灰度上线）在 v1.5.0 前整链成型；「平台不直连设备，数据一律过约束层」；**设备侧 /health 健康巡检端点（三态分层）+ 会话作用域续接五元组（宁可不续走摘要交接）+ 执行侧模型清单上报 + 执行时 skill 快照（打包/清理/审计锚点）**；商业侧规划独立于本仓库维护 | [日志](./changelog/v1.4/v1.4.9.md) |

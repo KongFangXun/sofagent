@@ -2,7 +2,7 @@
 
 > **sofagent 是一套 FDE 能力——装进你的 Agent（DSH / OpenClaw / WorkBuddy / Codex / Claude Code）后，进场梳理业务流、部署 AI 节点、离场后 7×24 自己跑。** 装完之后，你在自己的 Agent 里说一句话，它就帮你干活——审计每次变更、沉淀每次经验，沉淀机制随使用迭代。下面从装到用到查问题，全流程走一遍。
 >
-> v1.4.6 · 2026-09-09（UTC）· v1.4.6 已发版（本批更新 2026-09-05）· 孔放勋
+> v1.4.6 · 2026-09-09（UTC）· ⏳ 定稿待发版（本批更新 2026-09-09）· 孔放勋
 
 <img src="assets/sofagent.png" alt="sofagent" width="160" />
 
@@ -74,7 +74,7 @@
 
 > 📌 各版本演进明细见 [CHANGELOG](../CHANGELOG.md)（能力已并入当前版本，不逐版列举）。
 
-**现在还干不了的事（已排期，暂无代码）**：本地推理小模型、云 VM 多租户执行面——路线见 [ROADMAP](./ROADMAP.md)。
+**现在还干不了的事（已排期，暂无代码）**：本地推理小模型、云 VM 多租户数据路径（v1.4.6 已交付单租户受监督云执行面 `train_cloud`，多租户隔离排期 v1.4.7）——路线见 [ROADMAP](./ROADMAP.md)。
 
 ---
 
@@ -464,6 +464,7 @@ jobs:
 | 后训模块·运行与需求 | v1.4.3 | 训练需求推导+模板库（train analyze/templates）+ GPU 显存队列 + train_status/train_list/train_diagnose 三 MCP（76→79 tools）+ 训练沙箱与设备打包 + 审计聚合 KPI（--stats）+ 反作弊双防线 | [v1.4.3 开发日志](./changelog/v1.4/v1.4.3.md) |
 | 后训模块·信号与部署闭环 | v1.4.4 | 训练语料导出三件套（`corpus_export`，79→80 tools）+ 本地权重部署（manifest 清单 + sha256 篡改拒绝 + rollback-weights）+ 训练产物→注册自动衔接 + 多基座对比（train compare ROI 排序）+ 决策因果链与先例检索 + CI 供应链全 SHA 固定 + 五能力叙事定稿 | [v1.4.4 开发日志](./changelog/v1.4/v1.4.4.md) |
 | 后训模块·服务与持续 | v1.4.5 | 训练推理服务（`train_serve` 拉起 vLLM/Ollama/OpenAI 兼容端点，80→83 tools）+ 合规扫描闸门（`train_compliance`——PII/敏感字段/专有名词）+ 持续后训练（飞轮数据回流 + 三触发 + eval 回退保护）+ FDE 交付包（`train_deliverable`）+ 后训 Quickstart 十步端到端 + FDE 进场记忆目录（10 文件自动初始化）+ 进化模块实证收口 | [v1.4.5 开发日志](./changelog/v1.4/v1.4.5.md) |
+| 后训模块·分布式与云端 | v1.4.6 | 多卡/多机训练（`gpu.count`/`nodes` + schema v2 存量兼容 + GPU 双轴拓扑 + NCCL 第八类诊断，83→84 tools）+ 云 VM 执行面（`train_cloud` 注册/体检/远程 spawn + 分拣三档宁拦勿漏 + 失联止损 5min + 成本入预算）+ 标准数据推送接口（双闸，入口接线 v1.4.7）+ 边界收缩（配方外部装载 `--recipes` / model-downloader 删除 / `TrainExecutor` 隔离） | [v1.4.6 开发日志](./changelog/v1.4/v1.4.6.md) |
 
 ### 新功能入口导览（v1.4.2 起三条新产品线——10 分钟上手各条线）
 
@@ -493,7 +494,7 @@ jobs:
 
 ### 在 DSH 中使用 sofagent（v1.3.5 · MCP 互通）
 
-sofagent 本身就是一个 MCP server（stdio 传输，bin `sofagent-mcp`，v1.3.6 起 60 个 tool，v1.4.0 为 66 个，v1.4.1 新增 train_submit 后为 67 个，v1.4.2 新增 train_doctor/train_dryrun/train_report + FDE 六引擎（fde_interview/fde_classify/fde_quantify/fde_derive/fde_distill/fde_deploy）后为 76 个，v1.4.3 新增 train_status/train_list/train_diagnose 后为 79 个，v1.4.4 新增 corpus_export（训练语料导出三件套）后为 80 个，v1.4.5 新增 train_serve/train_compliance/train_deliverable 后为 83 个——工具角色分层，默认全量暴露，`SOFAGENT_MCP_ROLES` 显式收窄专职面）。DSH（DeepSeek Harness）用户不需要等 v1.4.0 的 cordis-plugin——用官方 `@deepseek-ai/dsh-mcp-client` 桥接插件挂上 `sofagent-mcp`，**今天就能在 DSH 会话里调用 sofagent 的全部能力**：审计查询、知识库检索、A/B 实验（`run_ab_test`）、快照时间线（`snapshot_list`）等。
+sofagent 本身就是一个 MCP server（stdio 传输，bin `sofagent-mcp`，v1.3.6 起 60 个 tool，v1.4.0 为 66 个，v1.4.1 新增 train_submit 后为 67 个，v1.4.2 新增 train_doctor/train_dryrun/train_report + FDE 六引擎（fde_interview/fde_classify/fde_quantify/fde_derive/fde_distill/fde_deploy）后为 76 个，v1.4.3 新增 train_status/train_list/train_diagnose 后为 79 个，v1.4.4 新增 corpus_export（训练语料导出三件套）后为 80 个，v1.4.5 新增 train_serve/train_compliance/train_deliverable 后为 83 个，v1.4.6 新增 train_cloud 后为 84 个——工具角色分层，默认全量暴露，`SOFAGENT_MCP_ROLES` 显式收窄专职面）。DSH（DeepSeek Harness）用户不需要等 v1.4.0 的 cordis-plugin——用官方 `@deepseek-ai/dsh-mcp-client` 桥接插件挂上 `sofagent-mcp`，**今天就能在 DSH 会话里调用 sofagent 的全部能力**：审计查询、知识库检索、A/B 实验（`run_ab_test`）、快照时间线（`snapshot_list`）等。
 
 #### 配置方法
 
