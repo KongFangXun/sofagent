@@ -451,6 +451,7 @@ webhook_assert "FAIL"; git reset HEAD . 2>/dev/null || true; rm -f .env
 kill "$WEBHOOK_PID" 2>/dev/null || true
 unset SOFAGENT_WEBHOOK_ALLOW_LOCALHOST
 write_config
+# 编号空洞 S36 归并注：原 S36（loop-runner.ts 存在 + CLI loop 子命令）v1.2.3 归并本场景——loop-runner 存在性/maxIterations 守护/loop 子命令断言全部保留在本场景断言体内（git log -S 逐字可溯）
 scenario 35 "BUILTIN_AGENTS 4 Agent + loop-runner"
 ORCH_CLI="$PROJECT_ROOT/engine/orchestrator/dist/cli.js"
 ORCH_INDEX="$PROJECT_ROOT/engine/orchestrator/dist/index.js"
@@ -667,6 +668,7 @@ DAEMON_DIST="$PROJECT_ROOT/engine/daemon/dist"
 AUDIT_RULES_INDEX="$PROJECT_ROOT/engine/audit/src/rules/index.ts"
 AUDIT_RULES_TYPES="$PROJECT_ROOT/engine/audit/src/rules/types.ts"
 DEEPAGENTS_MODULES="${SOFAGENT_DEEPAGENTS_MODULES:-$(npm root 2>/dev/null || echo /usr/local/lib/node_modules)}"
+# 编号空洞 S65 归并注：原 S65（skillopt-sleep CLI 可调用验证）已归并本场景族——CLI smoke 断言由本场景第三合一承载（--help usage 输出校验同款），外部 Python 可选依赖未装走 warn 降级（git log -S 逐字可溯）
 scenario 63 "SkillOpt 三合一（可用性 + validateCandidate + CLI smoke）"
 S63_OK=true; require_dist "engine/skillopt/dist/skillopt-integration.js" || S63_OK=false
 if $S63_OK; then
