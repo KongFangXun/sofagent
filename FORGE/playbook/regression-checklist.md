@@ -1321,6 +1321,11 @@ for pkg in audit core daemon eval harness ontology orchestrator rules skillopt t
  echo " @sofagent/$pkg: $V"
 done
 # 期望：全部 = 当前版本号；未到 → cd engine/<pkg> && npm publish --access public
+# 🔴 对账口径（大包 CDN 传播坑）：大包（如 orchestrator 410 文件）publish 后 CDN 传播可超 6×30s 轮询窗口——
+# `npm view <pkg> version` 走缓存路径可报旧值造成「假失败」。判据：
+# ① publish 日志含 `+ <pkg>@<版本>` 即已提交成功，勿按 view 超时判失败；
+# ② 对账改查 `npm view <pkg> dist-tags --json` 的 latest 字段（registry 主记录先行于 CDN）；
+# ③ 同版本重发会 E409——传播等待期内禁止重发；E409 staged 态约 5 分钟自动 finalize（见发版四坑实录③）。
 ```
 
 #### 98. post-commit hook 对账逻辑——parentSha vs COMMIT_SHA 父子 SHA 不等
@@ -1754,6 +1759,7 @@ PREV_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo v1.4.3); git diff 
 # ③ Marketplace 版本页含本版号即免网页勾选（listing 自动延续）
 MKT_HTML=$(curl -s --max-time 10 https://github.com/marketplace/actions/sofagent); MKT_RC=$?; if [ $MKT_RC -ne 0 ]; then echo "🟡 网络不可达（curl exit $MKT_RC）——marketplace 对照跳过（网络态非仓库问题，有网时人工复核）"; elif echo "$MKT_HTML" | grep -q "$(node -p "require('./package.json').version")"; then echo "✅ marketplace 版本页已含本版"; else echo "🟡 版本页未见本版——按 SOP 网页勾选 Publish to Marketplace"; fi
 # ④ ClawHub 状态快照纪律：发布前 verify 落盘，发布后对照——新引入 reasons 才处置（既有状态披露不阻断；快照命令：clawhub skill verify <slug> > /tmp/clawhub-pre.json）
+# ④b ClawHub publish 后 pending scan 态：verify 显示旧版本 + security suspicious ≠ 发布失败——scan 进行中态，等 1-2 分钟复查转正；转正判据走 API（clawhub.ai/api/v1/packages/<name>?ownerHandle=<handle> 的 package.latestVersion）而非 CLI 输出（v1.4.6 OpenClaw×4 实录：4/4 均先显旧版后转正）
 ```
 
 #### 131. v1.4.5 后训服务与持续收口批防复发——train 五新面/进化实证/retention 加固/链锚一维收口（阶段四来源提取 A/B 合流 · 行为面已由单测锁：serve 21/compliance 19/deliverable 20/retention 15/session 17+2 用例）
