@@ -86,10 +86,6 @@ sofagent 不造 Agent——执行能力交给成熟宿主（模型 + 工具 + �
 
 > 🔄 **自举**：sofagent 给自己做的第一份 FDE，就是 sofagent 自己——项目本身就是一条完整的 FDE 业务流（梳理 → 构建 → 部署 → 离场），这个开源仓库就是那份交付物。
 
-## v1.4.5：后训模块闭环与可靠性加固
-
-🛡️ 让训练成果**跑起来、持续转、合规过**——`train_serve` 训练推理服务（vLLM/Ollama/OpenAI 兼容端点拉起 + model_switch 联动，训练到服务不断链）· 持续后训练（数据阈值/@weekly/人工三触发 + eval 回退保护——飞轮闭环的「持续」环）· `train_compliance` 合规扫描（PII 三源检测 + 训练闸门拦截 + 来源标记）· `train_deliverable` 训练交付包（五件套 + manifest + HMAC 篡改拒绝）· 训练产物保留策略（retention-policy + @weekly 归档 + 90 天覆写）· 后训 Quickstart 十步端到端 · 进化模块实证收口（Dream Cycle 真脑 Maintainer + skill-impact 台账 + L4 工具自进化）· FDE 进场记忆目录（10 文件自动初始化 + 跨 session 恢复）· 🔒 可靠性加固（webhook SSRF fail-closed / 审计链尾部截断防护 / 审计超时降级 / L1-L3 巡检 cron 接线）。（版本时点数字：MCP 80→83 tools、测试 3753→4055，见开发日志——当前口径以[核心特性](#核心特性)为准。）完整内容见[开发日志](./docs/changelog/v1.4/v1.4.5.md) · 更早版本见 [CHANGELOG](./CHANGELOG.md)。
-
 ## 多平台挂载
 
 横跨你已有的 Agent、纵贯模型层，不替代模型，只补可靠执行——**FDE Harness 层平台无关**（插件 / Skill / MCP / CLI / Dashboard 五种形态按宿主能力分发），方法论跟着业务走，不跟着平台走：
@@ -104,6 +100,10 @@ sofagent 不造 Agent——执行能力交给成熟宿主（模型 + 工具 + �
 - **审计兜底平台无关**——`sofagent-audit --install-hook` 走 git hook，任何档位每次 commit 都过 24 条审计，违规硬拦截。约束是建议性的，审计是强制性的
 
 一条命令选定挂载档位：`bash install.sh --platform <平台名>`（全部平台与差异见 [HANDBOOK](./docs/HANDBOOK.md)）
+
+## v1.4.5：后训模块闭环与可靠性加固
+
+🛡️ 让训练成果**跑起来、持续转、合规过**——`train_serve` 训练推理服务（vLLM/Ollama/OpenAI 兼容端点拉起 + model_switch 联动，训练到服务不断链）· 持续后训练（数据阈值/@weekly/人工三触发 + eval 回退保护——飞轮闭环的「持续」环）· `train_compliance` 合规扫描（PII 三源检测 + 训练闸门拦截 + 来源标记）· `train_deliverable` 训练交付包（五件套 + manifest + HMAC 篡改拒绝）· 训练产物保留策略（retention-policy + @weekly 归档 + 90 天覆写）· 后训 Quickstart 十步端到端 · 进化模块实证收口（Dream Cycle 真脑 Maintainer + skill-impact 台账 + L4 工具自进化）· FDE 进场记忆目录（10 文件自动初始化 + 跨 session 恢复）· 🔒 可靠性加固（webhook SSRF fail-closed / 审计链尾部截断防护 / 审计超时降级 / L1-L3 巡检 cron 接线）。（版本时点数字：MCP 80→83 tools、测试 3753→4055，见开发日志——当前口径以[核心特性](#核心特性)为准。）完整内容见[开发日志](./docs/changelog/v1.4/v1.4.5.md) · 更早版本见 [CHANGELOG](./CHANGELOG.md)。
 
 ## FDE 方法论
 

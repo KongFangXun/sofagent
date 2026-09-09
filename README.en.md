@@ -88,10 +88,6 @@ sofagent does not build its own Agent — execution is delegated to mature hosts
 
 > 🔄 **Self-bootstrapping**: sofagent's first FDE engagement is sofagent itself — the project is a complete FDE business flow (map → build → deploy → depart), and this open-source repository is that deliverable.
 
-## v1.4.5: Post-training Closure & Reliability Hardening
-
-🛡️ Make training artifacts **runnable, self-sustaining, and compliant** — `train_serve` inference service (spins up vLLM / Ollama / OpenAI-compatible endpoints + model_switch integration) · continuous post-training (threshold / @weekly / manual triggers + eval rollback guard — the "continuity" of the flywheel) · `train_compliance` compliance scan (three-source PII detection + training gate + provenance marking) · `train_deliverable` delivery package (five-piece set + manifest + HMAC tamper rejection) · artifact retention policy (retention-policy + @weekly archiving + 90-day overwrite) · ten-step post-training Quickstart · evolution module empirical closure (Dream Cycle real-LLM Maintainer + skill-impact ledger + L4 tool self-evolution) · FDE session memory directory (10-file auto-init + cross-session restore) · 🔒 reliability hardening (webhook SSRF fail-closed / audit-chain tail truncation guard / audit timeout degradation / L1-L3 cron wiring). (Point-in-time figures: MCP 80→83 tools, tests 3753→4055 — see devlog; current scope under [Core Features](#core-features).) Full details in the [devlog](./docs/changelog/v1.4/v1.4.5.md) · earlier versions in [CHANGELOG](./CHANGELOG.md).
-
 ## Multi-platform Mounting
 
 Sits between the Agents you already use and the model layer — it doesn't replace the model, only adds reliable execution. **The FDE Harness layer is platform-agnostic** (five forms — plugin / Skill / MCP / CLI / Dashboard — distributed by host capability); the methodology follows the business, not the platform:
@@ -106,6 +102,10 @@ Sits between the Agents you already use and the model layer — it doesn't repla
 - **Audit fallback is platform-agnostic** — `sofagent-audit --install-hook` runs as a git hook; at every tier, every commit passes through all 24 audit rules, violations hard-blocked. Constraints are advisory; auditing is mandatory
 
 One command selects your mounting tier: `bash install.sh --platform <platform-name>` (all platforms and differences in [HANDBOOK](./docs/HANDBOOK.md))
+
+## v1.4.5: Post-training Closure & Reliability Hardening
+
+🛡️ Make training artifacts **runnable, self-sustaining, and compliant** — `train_serve` inference service (spins up vLLM / Ollama / OpenAI-compatible endpoints + model_switch integration) · continuous post-training (threshold / @weekly / manual triggers + eval rollback guard — the "continuity" of the flywheel) · `train_compliance` compliance scan (three-source PII detection + training gate + provenance marking) · `train_deliverable` delivery package (five-piece set + manifest + HMAC tamper rejection) · artifact retention policy (retention-policy + @weekly archiving + 90-day overwrite) · ten-step post-training Quickstart · evolution module empirical closure (Dream Cycle real-LLM Maintainer + skill-impact ledger + L4 tool self-evolution) · FDE session memory directory (10-file auto-init + cross-session restore) · 🔒 reliability hardening (webhook SSRF fail-closed / audit-chain tail truncation guard / audit timeout degradation / L1-L3 cron wiring). (Point-in-time figures: MCP 80→83 tools, tests 3753→4055 — see devlog; current scope under [Core Features](#core-features).) Full details in the [devlog](./docs/changelog/v1.4/v1.4.5.md) · earlier versions in [CHANGELOG](./CHANGELOG.md).
 
 ## FDE Methodology
 
@@ -253,7 +253,7 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # load the securit
 | Security statement · known limitations | [SECURITY](./SECURITY.md) · [LIMITATIONS](./docs/LIMITATIONS.md) |
 | Contribution guide | [CONTRIBUTING](./CONTRIBUTING.md) |
 
-> 🧪 **Engineering credibility**: 4108 tests / 13 engine packages + 13 plugins (engine packages = 12 main + 1 load-chain; plugins = 9 DSH + 4 OpenClaw; plugin tests run via the root `npm test --workspaces`; "engine packages" is the package-management-scope term — in architecture narrative these are "modules") · 24 audit rules · fresh-eyes independent review continuously running (test counts are determined by `tools/check/test-count.sh`; environmental notes are documented in [docs/guides/review-system.md](./docs/guides/review-system.md). Performance figures are single-machine reference values; cross-tool benchmarking is scheduled for v1.4.x together with Benchmark integration).
+> 🧪 **Engineering credibility**: 4088 tests / 13 engine packages + 13 plugins (engine packages = 12 main + 1 load-chain; plugins = 9 DSH + 4 OpenClaw; plugin tests run via the root `npm test --workspaces`; "engine packages" is the package-management-scope term — in architecture narrative these are "modules") · 24 audit rules · fresh-eyes independent review continuously running (test counts are determined by `tools/check/test-count.sh`; environmental notes are documented in [docs/guides/review-system.md](./docs/guides/review-system.md). Performance figures are single-machine reference values; cross-tool benchmarking is scheduled for v1.4.x together with Benchmark integration).
 
 ---
 
