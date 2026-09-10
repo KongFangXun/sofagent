@@ -202,7 +202,7 @@ Agent = **模型 + 上下文 + 工具 + 状态 + 执行控制 + 权限 + 可观�
 | ab-test | A/B 自进化：current vs candidate 并行对比，连续胜出 + 非退化守卫才晋升 | ✅ 已实现 |
 | orchestrator | 编排模块：DAG 任务拆解 + LangGraph 闭环 + A/B 调度器 + ToolGate 事前拦截 + Ontology 运行时层 + 并行编排（MergeQueue/ParallelScheduler/波次卡关）+ Durable Execution + Onboard L1-L5 + Benchmark 评测 + agent-creation + FDE 梳理辅助 + Session 隔离 + meta-harness 多 harness 编排 + worklog 工作明细数据层 + 后训模块地基（train-job 编排/审计/隔离/指纹/签名/回收/恢复/安全 + 数据管道/版本/eval 闭环/环境/dry-run/报告）+ FDE 六引擎工作台 | ✅ 已实现（1928 测试） |
 | daemon | 守护进程：cron + fs 监听 + 文件级审计 + USB 烧录 + 联邦查询 + Dream Cycle 6 阶段 + 启动 LOOP 续跑检查 + 审计轨迹聚合巡检 + 训练孤儿巡检 | ✅ 已实现（404 测试） |
-| mcp | MCP Server：JSON-RPC 2.0 over stdio，tools + resources（95 tools——v1.4.2 新增 FDE 六引擎 fde_interview/classify/quantify/derive/distill/deploy，v1.4.3 新增 train_status/train_list/train_diagnose，v1.4.4 新增 corpus_export，v1.4.5 新增 train_serve/train_compliance/train_deliverable） | ✅ 已实现 |
+| mcp | MCP Server：JSON-RPC 2.0 over stdio，tools + resources（95 tools）——v1.4.2 新增 FDE 六引擎 fde_interview/classify/quantify/derive/distill/deploy，v1.4.3 新增 train_status/train_list/train_diagnose，v1.4.4 新增 corpus_export，v1.4.5 新增 train_serve/train_compliance/train_deliverable | ✅ 已实现 |
 | ontology | 领域本体：合并 / 状态 / 视图 / 概念合成，三层 YAML 自动生长 | ✅ 已实现 |
 | skillopt | Skill 优化：复用 audit 规则做安全审查 + 集成优化 + 回填 | ✅ 已实现 |
 | think | 思考链分析：基于 diff + 审计结果自动生成 think.md 反思条目（append-only） | ✅ 已实现（⚠️ 仅 MCP/CLI 路径触发，git hook 路径不自动生成） |
@@ -213,7 +213,7 @@ Agent = **模型 + 上下文 + 工具 + 状态 + 执行控制 + 权限 + 可观�
 v1.3.9 起对所有 workspace 包的入口 export 做显式分级，CI 门禁（[tools/check/public-api.mjs](./../tools/check/public-api.mjs)）拦截未 bump 版本的 `@public` 破坏性变更。
 
 **为什么是这个粒度**：
-- 基线覆盖 **12 个含 test script 的包**（hooks 包 `load-chain` 为纯 hook 安装器，无 `@public` 符号，不计入分级基线）——当前 12 包共 **2168 个 @public 符号**（以 `public-api.mjs` AST 解析为权威口径，非 grep 计数；v1.4.6 后训模块/审计面/核心库扩面后全量重估——v1.4.0 时点 1456 已随版本演进失效，本值以门禁 baseline 对齐为准）。
+- 基线覆盖 **12 个含 test script 的包**（hooks 包 `load-chain` 为纯 hook 安装器，无 `@public` 符号，不计入分级基线）——当前 12 包共 **2240 个 @public 符号**（以 `public-api.mjs` AST 解析为权威口径，非 grep 计数；v1.4.7 商业平台接口批新增 72 符号后全量重估——历史值 v1.4.0 时点 1456 / v1.4.6 时点 2168 已随版本演进失效，本值以门禁 baseline 对齐为准）。
 - 未标记的导出**默认视为 @public**（保守默认：宁可多承诺不可漏承诺），`@internal` 需显式标注。
 
 **为什么 @internal 破坏性变更不影响适配层**：
@@ -226,7 +226,7 @@ v1.3.9 起对所有 workspace 包的入口 export 做显式分级，CI 门禁（
 
 > 累计能力表（按版本归组，全部 ✅ 已发布可用；规划中/排期项见下方「已排期」）：
 
-> 🗺️ **95 个 MCP 工具五域一环**（五域一环组织法 2026-09-02 收编；工具数 v1.4.5 增至 83，v1.4.6 增 train_cloud 至 84，v1.4.7 增 11 个至 95）：工具不是工具箱清单，是一个组织的编制表——五域各司其职，六条箭头构成「执行→审计→沉淀→晋升」的自进化闭环；审计域（域三）是整条飞轮的数据源头，其执法手册即 24 条审计规则。
+> 🗺️ **MCP 工具五域一环（95 tools）**（五域一环组织法 2026-09-02 收编；工具数 v1.4.5 增至 83，v1.4.6 增 train_cloud 至 84，v1.4.7 增 11 个至 95）：工具不是工具箱清单，是一个组织的编制表——五域各司其职，六条箭头构成「执行→审计→沉淀→晋升」的自进化闭环；审计域（域三）是整条飞轮的数据源头，其执法手册即 24 条审计规则。
 >
 > ⚠️ **两套标签不要混用**：五域按**业务职能**划分（本图组织法）；`tool-registry` 的 `roles` 是**使用场景标签**（7 面：audit/fde/eval/agent/ops/commons/browser），服务于 `SOFAGENT_MCP_ROLES` 按角色收窄暴露面。二者用途不同，域的条目数与 roles 分布数不相等属预期。
 

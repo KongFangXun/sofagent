@@ -223,7 +223,7 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # 加载安全规�
 
 ## 常见问题
 
-- **能上生产吗？** 当前为单机单用户设计，多 Agent 共享同一知识库 / 审计历史，多租户隔离见 [ROADMAP](./docs/ROADMAP.md)；当前 task/logs 为明文——数据静态加密接线未启用（排期 v1.4.7），且接线范围暂不覆盖 task/logs（该目录在审计历史主链之外，见 [LIMITATIONS §三](./docs/LIMITATIONS.md#三安全与信任模型局限)）。企业部署前读 [SECURITY](./SECURITY.md) · [LIMITATIONS](./docs/LIMITATIONS.md)。`config.yml` 默认非 fail-closed，强合规场景建议 CI 兜底 + 文件权限锁。
+- **能上生产吗？** 当前为单机单用户设计，多 Agent 共享同一知识库 / 审计历史，多租户隔离见 [ROADMAP](./docs/ROADMAP.md)；数据静态加密已接线 daemon 启动路径（v1.4.7 收口——密钥就绪后审计历史主链密文落盘，附链目录仍明文，权威清单见 [LIMITATIONS](./docs/LIMITATIONS.md)），且接线范围暂不覆盖 task/logs（该目录在审计历史主链之外，见 [LIMITATIONS §三](./docs/LIMITATIONS.md#三安全与信任模型局限)）。企业部署前读 [SECURITY](./SECURITY.md) · [LIMITATIONS](./docs/LIMITATIONS.md)。`config.yml` 默认非 fail-closed，强合规场景建议 CI 兜底 + 文件权限锁。
 - **收集我的数据吗？** 缺省全量本地。可选联邦查询 = 你主动配置才出本机（见 SECURITY）。
 - **和 gitleaks 这类扫描器什么关系？** 互补不互替——扫描器做全量历史扫描、模式库更广；sofagent 专注当前 diff 硬证据 + Agent 行为审计（越界 / 注入 / 权限维度），建议强密钥合规场景并用。
 
