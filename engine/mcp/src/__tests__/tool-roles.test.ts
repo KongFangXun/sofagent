@@ -72,7 +72,7 @@ describe('isToolExposed 单工具判定', () => {
 describe('filterToolsByRoles 清单过滤', () => {
   it('全量模式 → 返回原清单', () => {
     const filtered = filterToolsByRoles(TOOLS, null);
-    // v1.4.7 G14+G2+章八+G13：84→93（workflow CRUD 四 tool + workflow_gaps + onboard_prompt + PR 三 tool 落位）
+    // v1.4.7 G14+G2+章八+G13+G4：84→94（workflow CRUD 四 tool + workflow_gaps + onboard_prompt + PR 三 tool + contribution_query 落位）
     expect(filtered).toHaveLength(94);
   });
 
@@ -111,6 +111,27 @@ describe('filterToolsByRoles 清单过滤', () => {
     const filtered = filterToolsByRoles(TOOLS, ['audit']);
     const names = filtered.map((t) => t.name);
     expect(names).toContain('list_capabilities');
+  });
+
+  it('章十一：audit 专职面清单与 README 逐项一致（9 tools 防漂移）', () => {
+    const filtered = filterToolsByRoles(TOOLS, ['audit']);
+    const names = filtered.filter((t) => t.roles).map((t) => t.name).sort();
+    // engine/mcp/README.md「audit 专职面（9 tools）」表逐项对齐
+    expect(names).toEqual([
+      'audit_data_change',
+      'audit_file',
+      'audit_trail',
+      'data_sovereignty_report',
+      'list_rules',
+      'notify_session',
+      'read_lessons',
+      'run_audit',
+      'search_knowledge',
+    ]);
+    // 本版新增 tool 不在 audit 面（roles 打标复核——G2/G4/G13/G14 均非 audit）
+    expect(names).not.toContain('contribution_query');
+    expect(names).not.toContain('pr_submit');
+    expect(names).not.toContain('workflow_gaps');
   });
 
   it('所有工具 roles 值均属于合法 ROLES', () => {
