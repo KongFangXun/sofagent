@@ -1303,7 +1303,7 @@ export const TOOLS: ToolDef[] = [
     // v1.4.7 (章七 G13)：PR 生命周期——提交（open 态 + 贡献者登记 + triggerBinding 两态）
     name: 'pr_submit',
     roles: ['agent'],
-    description: '提交 workflow 变更提案（PR）——open 态入库 + 贡献者登记（人/数字员工同标准权重）+ 可选 triggerBinding（启发式=suggested / 显式=confirmed，显式不被启发式覆盖）。',
+    description: '提交 workflow 变更提案（PR）——open 态入库 + 贡献者登记（人/数字员工同标准权重，weight 须 0-1 数值、声明 ≤10 条）+ 可选 triggerBinding（启发式=suggested / 显式=confirmed，显式不被启发式覆盖）。',
     inputSchema: {
       type: 'object',
       properties: {
@@ -1311,8 +1311,8 @@ export const TOOLS: ToolDef[] = [
         workflow_id: { type: 'string', description: '目标 workflow' },
         title: { type: 'string', description: '变更描述' },
         submitter: { type: 'string', description: '提交者（贡献者之一，权重 1.0）' },
-        contributors: { type: 'array', items: { type: 'object' }, description: '额外贡献者（[{contributor_id, weight}]）' },
-        merge_criteria: { type: 'array', items: { type: 'object' }, description: '验收条件（继承 workflow 或 PR 自带）' },
+        contributors: { type: 'array', items: { type: 'object' }, description: '额外贡献者（[{contributor_id, weight}]，weight 0-1，≤10 条）' },
+        merge_criteria: { type: 'array', items: { type: 'object' }, description: '验收条件（内置 kind：approver-review / confidence-min(如 detail:"gte:0.7")；未知 kind 判不过走 HITL）' },
         trigger: { type: 'object', description: '触发绑定 {source, confidence: suggested|confirmed}' },
         data_dir: { type: 'string', description: '数据根目录（缺省走 getDataDir 解析链）' },
       },
@@ -1323,13 +1323,13 @@ export const TOOLS: ToolDef[] = [
     // v1.4.7 (章七 G13)：PR 审阅（approve → reviewed / reject → rejected + 负样本留痕）
     name: 'pr_review',
     roles: ['agent'],
-    description: '审阅 PR——approve 进 reviewed（可合并）；reject 终态 rejected（拒因进 decision-log 负样本训练信号）。',
+    description: '审阅 PR——approve 进 reviewed（可合并）；reject 终态 rejected（拒因进 decision-log 负样本训练信号）。提交者不可自审（利益冲突拒绝）；verdict 精确匹配 approve/reject（大小写敏感）。',
     inputSchema: {
       type: 'object',
       properties: {
         pr_id: { type: 'string', description: 'PR 标识' },
-        reviewer: { type: 'string', description: '审阅者' },
-        verdict: { type: 'string', enum: ['approve', 'reject'], description: '审阅结论' },
+        reviewer: { type: 'string', description: '审阅者（不可为 submitter）' },
+        verdict: { type: 'string', enum: ['approve', 'reject'], description: '审阅结论（精确匹配，区分大小写）' },
         note: { type: 'string', description: '审阅意见（reject 时即拒因）' },
         data_dir: { type: 'string', description: '数据根目录' },
       },
@@ -1337,10 +1337,10 @@ export const TOOLS: ToolDef[] = [
     },
   },
   {
-    // v1.4.7 (章七 G13)：PR 合并（criteria 全过自动 / 未过 HITL 人审门）
+    // v1.4.7 (章七 G13)：PR 合并（criteria 真判定 fail-closed / 未过 HITL 人审门 / branch→trunk 写回）
     name: 'pr_merge',
     roles: ['agent'],
-    description: '合并 PR——merge_criteria 全过自动合并；未过挂起 HITL（human_confirmed=true 强制合并，痕迹保留）。合并写回 workflow 基线（branch→trunk 联动）。',
+    description: '合并 PR——merge_criteria 真判定（approver-review：reviewer 非 submitter；confidence-min：confirmed=1.0/suggested=0.5/无=0 ≥ detail 阈值；未知 kind 或 detail 畸形判不过）fail-closed，未过挂起 HITL（human_confirmed=true 强制合并）。PR 的 workflow 存在 branch-{submitter} 时联动写回 trunk（version+1+删 branch，mergedVersion 回填；写回失败 PR 回退 open）。',
     inputSchema: {
       type: 'object',
       properties: {

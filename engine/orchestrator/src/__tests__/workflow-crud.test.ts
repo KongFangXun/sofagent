@@ -2,7 +2,7 @@
 // 覆盖：schema-gate 校验拒绝（字段路径）/ cron 语法边界 / create→diff→update→node_add
 // 全链（含 owner 分流）/ version+1 账链 / diff 零副作用 / 审计挂链
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { mkdirSync, rmSync, existsSync, readFileSync } from 'fs';
+import { mkdirSync, rmSync, existsSync, readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
 
@@ -10,7 +10,7 @@ const ISO_DIR = join(tmpdir(), `sofagent-orch-crud-test-${process.pid}`);
 process.env.SOFAGENT_DATA = ISO_DIR;
 
 // 环境变量设置后再 import 被测模块
-const { workflowCreate, workflowUpdate, workflowNodeAdd, workflowDiffPreview } = await import(
+const { workflowCreate, workflowUpdate, workflowNodeAdd, workflowDiffPreview, workflowMergeBranch } = await import(
   '../crud/workflow-store'
 );
 const { validateCronSchedule, gateOrThrow, SchemaGateError, workflowCreateSchema } = await import(
@@ -253,5 +253,72 @@ describe('G14 四 tool 全链（create → diff → update → node_add）', () 
     } catch (err) {
       expect(err).toBeInstanceOf(SchemaGateError);
     }
+  });
+});
+
+describe('v1.4.7 修复批：workflowMergeBranch（branch→trunk 写回）', () => {
+  beforeEach(() => {
+    rmSync(ISO_DIR, { recursive: true, force: true });
+    mkdirSync(storeDir, { recursive: true });
+  });
+  afterEach(() => {
+    rmSync(ISO_DIR, { recursive: true, force: true });
+  });
+
+  it('branch 合并：trunk 内容替换 + version+1 + owner 不变 + branch 文件删除', async () => {
+    await workflowCreate({ workflow: baseDoc, owner: 'alice' }, ISO_DIR);
+    // bob（非 owner）写 branch
+    await workflowUpdate(
+      { workflow_id: 'release-flow', workflow: { ...baseDoc, description: 'bob 的改动' }, actor: 'bob' },
+      ISO_DIR,
+    );
+    expect(existsSync(join(storeDir, 'release-flow.branch-bob.json'))).toBe(true);
+
+    const r = await workflowMergeBranch(
+      { workflow_id: 'release-flow', branch_actor: 'bob', merge_actor: 'carol' },
+      ISO_DIR,
+    );
+    expect(r.data.isError).toBe(false);
+    expect(r.data.version).toBe(2); // trunk v1 → v2
+
+    const trunk = JSON.parse(readFileSync(join(storeDir, 'release-flow.json'), 'utf-8'));
+    expect(trunk.version).toBe(2);
+    expect(trunk.workflow.description).toBe('bob 的改动'); // 内容替换
+    expect(trunk.owner).toBe('alice'); // owner 不变
+    expect(existsSync(join(storeDir, 'release-flow.branch-bob.json'))).toBe(false); // branch 删除
+  });
+
+  it('branch 不存在 → notFound 结构化错误（MCP 层判定无 branch 场景）', async () => {
+    await workflowCreate({ workflow: baseDoc, owner: 'alice' }, ISO_DIR);
+    const r = await workflowMergeBranch(
+      { workflow_id: 'release-flow', branch_actor: 'ghost', merge_actor: 'carol' },
+      ISO_DIR,
+    );
+    expect(r.data.isError).toBe(true);
+    expect(r.data.issues?.[0]).toContain('不存在');
+  });
+
+  it('trunk 不存在 → notFound；缺参 → 用法错误', async () => {
+    const nf = await workflowMergeBranch(
+      { workflow_id: 'ghost-flow', branch_actor: 'bob', merge_actor: 'carol' },
+      ISO_DIR,
+    );
+    expect(nf.data.isError).toBe(true);
+    expect(nf.data.issues?.[0]).toContain('不存在');
+
+    const miss = await workflowMergeBranch({ workflow_id: '', branch_actor: '', merge_actor: '' }, ISO_DIR);
+    expect(miss.data.isError).toBe(true);
+    expect(miss.data.issues?.[0]).toContain('缺必填参数');
+  });
+
+  it('branch 损坏 JSON → fail-loud 抛错（PR 域回滚依据）', async () => {
+    await workflowCreate({ workflow: baseDoc, owner: 'alice' }, ISO_DIR);
+    writeFileSync(join(storeDir, 'release-flow.branch-bob.json'), '{corrupted!!!');
+    await expect(
+      workflowMergeBranch({ workflow_id: 'release-flow', branch_actor: 'bob', merge_actor: 'carol' }, ISO_DIR),
+    ).rejects.toThrow(/损坏/);
+    // trunk 未被污染
+    const trunk = JSON.parse(readFileSync(join(storeDir, 'release-flow.json'), 'utf-8'));
+    expect(trunk.version).toBe(1);
   });
 });

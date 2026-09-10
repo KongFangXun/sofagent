@@ -49,9 +49,10 @@
   workflowUpdate,
   workflowNodeAdd,
   workflowDiffPreview,
+  workflowMergeBranch,
   diffLines,
 } from './crud/workflow-store';
-/* @public */ export type { StoredWorkflow, CrudResult } from './crud/workflow-store';
+/* @public */ export type { StoredWorkflow, CrudResult, WorkflowMergeBranchInput } from './crud/workflow-store';
 /* @public */ export {
   gateOrThrow,
   SchemaGateError,

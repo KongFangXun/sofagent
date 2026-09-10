@@ -12,13 +12,14 @@
 //   version/lifecycle 联动（对齐 ontology v1.3.7 trunk/branch 语义）：
 //     - owner（创建者）直改 trunk，每次写 version+1
 //     - 非 owner 不动 trunk——写到 branch-{actor}，等审阅合并回 trunk
-//     - branch 合并（owner 拉取）= trunk 内容替换 + version+1 + audit
+//     - branch 合并（workflowMergeBranch，PR merge 写回联动）= trunk 内容
+//       替换 + version+1 + 删 branch 文件 + audit
 //
 //   审计：每次落库动作挂 decision-log（kind=ARTIFACT_EDIT——workflow
 //   对象属制品；emitDecision 是 @sofagent/audit 受控写唯一入口，HMAC 链）
 // ============================================================
 
-import { existsSync, readFileSync, mkdirSync } from 'fs';
+import { existsSync, readFileSync, mkdirSync, rmSync } from 'fs';
 import { join } from 'path';
 import { atomicWriteSync } from '@sofagent/core';
 import {
@@ -474,6 +475,106 @@ export async function workflowDiffPreview(
       added: diff.filter((l) => l.startsWith('+')).length,
       removed: diff.filter((l) => l.startsWith('-')).length,
       auditLogged: false, // 只读操作不产审计事件（挂链在写路径）
+    },
+  };
+}
+
+// ────────────────────────────────────────────────────────────
+// branch→trunk 合并（PR 域写回联动——MCP pr_merge 编排消费面）
+// ────────────────────────────────────────────────────────────
+
+export interface WorkflowMergeBranchInput {
+  workflow_id: string;
+  /** branch 持有者（branch-{actor} 文件名成分） */
+  branch_actor: string;
+  /** 执行合并的操作者（审计留痕） */
+  merge_actor: string;
+}
+
+/**
+ * workflow_merge_branch——branch 内容替换 trunk + version+1 + 删 branch。
+ *
+ * PR merge 写回联动的编排原语：读 branch-{branch_actor} → 内容替换 trunk
+ * （version = trunk.version + 1，owner 不变，updatedAt 刷新）→ 删 branch 文件。
+ * branch 不存在 → notFound 结构化错误（MCP 层据此判定「无 branch 改动」场景）。
+ */
+export async function workflowMergeBranch(
+  input: WorkflowMergeBranchInput,
+  dataDir: string,
+): Promise<CrudResult> {
+  if (!input.workflow_id || !input.branch_actor || !input.merge_actor) {
+    return {
+      text: '[sofagent] workflow merge_branch 失败：缺必填参数（workflow_id/branch_actor/merge_actor）',
+      data: {
+        isError: true,
+        action: 'merge_branch',
+        workflowId: input.workflow_id ?? '',
+        issues: ['缺必填参数（workflow_id/branch_actor/merge_actor）'],
+        auditLogged: false,
+      },
+    };
+  }
+  assertWorkflowId(input.workflow_id);
+
+  // trunk 必须存在（合并不创建对象）
+  const trunk = readStored(trunkPath(dataDir, input.workflow_id), input.workflow_id);
+  if (trunk === null) {
+    return notFound(input.workflow_id, 'merge_branch');
+  }
+
+  // 读 branch（损坏 JSON 会在 readStored 抛 SchemaGateError——fail-loud）
+  const branch = readStored(
+    branchPath(dataDir, input.workflow_id, input.branch_actor),
+    `${input.workflow_id}.branch-${input.branch_actor}`,
+  );
+  if (branch === null) {
+    return {
+      text: `[sofagent] workflow merge_branch 失败：workflow「${input.workflow_id}」无 branch-${input.branch_actor}（PR 不带 branch 改动或已合并）`,
+      data: {
+        isError: true,
+        action: 'merge_branch',
+        workflowId: input.workflow_id,
+        issues: [`branch-${input.branch_actor} 不存在`],
+        auditLogged: false,
+      },
+    };
+  }
+
+  // 内容替换 trunk：version = trunk.version + 1，owner 不变
+  const now = new Date().toISOString();
+  const merged: StoredWorkflow = {
+    ...branch,
+    id: trunk.id,
+    owner: trunk.owner,
+    version: trunk.version + 1,
+    createdAt: trunk.createdAt,
+    updatedAt: now,
+  };
+  writeStored(dataDir, merged, null);
+
+  // 删 branch 文件（trunk 已原子落盘后才删——中途失败可重跑合并）
+  rmSync(branchPath(dataDir, input.workflow_id, input.branch_actor));
+
+  const auditLogged = await auditLog(
+    'merge_branch',
+    input.workflow_id,
+    `branch-${input.branch_actor} → trunk（v${trunk.version}→v${merged.version}，branch actor=${input.branch_actor}，merge actor=${input.merge_actor}）`,
+    input.merge_actor,
+    [
+      `trunk version ${trunk.version} → ${merged.version}`,
+      `branch=${input.branch_actor} merged by ${input.merge_actor}`,
+      `nodes=${merged.workflow.nodes.length}`,
+    ],
+  );
+
+  return {
+    text: `[sofagent] ✅ workflow「${input.workflow_id}」branch-${input.branch_actor} 已合并回 trunk（v${trunk.version}→v${merged.version} · merge actor=${input.merge_actor}）`,
+    data: {
+      isError: false,
+      action: 'merge_branch',
+      workflowId: input.workflow_id,
+      version: merged.version,
+      auditLogged,
     },
   };
 }

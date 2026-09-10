@@ -133,6 +133,8 @@
   listPrs,
   upsertTriggerBinding,
   isHeuristicallyBlocked,
+  prRecordMergedVersion,
+  prRevertToOpen,
 } from './pr-store';
 /* @public */ export type {
   PrStatus,
