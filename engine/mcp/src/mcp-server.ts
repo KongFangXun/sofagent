@@ -120,6 +120,8 @@ import { onboardPrompt } from './tools/onboard-prompt';
 import { prSubmit, prReview, prMerge } from './tools/pr-tools';
 // v1.4.7 章六 G4：绩效数据导出
 import { contributionQuery } from './tools/contribution-query';
+// v1.4.7 章十三：标准数据推送入口
+import { dataPush } from './tools/data-push-tool';
 
 // ============================================================
 // 常量
@@ -435,6 +437,8 @@ class McpServer {
         case 'pr_merge': { if (!args.pr_id || !args.actor) { this.sendError(id, -32602, 'Missing required arguments: pr_id and actor'); break; } const pmr = await prMerge(args); this.sendTool(id, pmr, pmr.data.isError); break; }
         // v1.4.7 章六 G4：绩效数据导出——人/数字员工同标准贡献度聚合（纯读零写入）
         case 'contribution_query': { const cqr = await contributionQuery(args); this.sendTool(id, cqr, cqr.data.isError); break; }
+        // v1.4.7 章十三：标准数据推送入口（v1.4.6 gateDataPush 双闸接线）
+        case 'data_push': { if (!args.kind || !args.enterprise_id || !args.source || !args.samples) { this.sendError(id, -32602, 'Missing required arguments: kind, enterprise_id, source, and samples'); break; } const dpr = await dataPush(args); this.sendTool(id, dpr, dpr.data.isError); break; }
         default: this.sendError(id, -32602, `Unknown tool: ${toolName}`);
       }
     } catch (err) {
