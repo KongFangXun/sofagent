@@ -2,7 +2,7 @@
 
 > **用途**：每次发版前跑一遍，确认之前修过的问题没有回退。发现新问题用 [fresh-eyes-review](./fresh-eyes-review.md)。审查范围：全仓库状态检查（不是只看增量）。
 > **编号规则**：归并项直接删除、编号不复用；维度演进与归并的完整历史 `git log -p` 可溯，本清单只维护当前状态。
-> **当前 100 维 · 编号 1-132 · 31 个编号已归并删除**。维度流连续不中断，分组导航：基线组 → 审查约束组 → 环境敏感组（前置 vitest/沙箱铁律）。
+> **当前 98 维 · 编号 1-134 · 35 个编号已归并删除**。维度流连续不中断，分组导航：基线组 → 审查约束组 → 环境敏感组（前置 vitest/沙箱铁律）。
 
 ## 🔒 维护公约（防膨胀铁律）
 
@@ -33,9 +33,9 @@ WC_CHK=$(wc -l < FORGE/playbook/regression-checklist.md); WC_ACC=$(wc -l < FORGE
 
 你是**回归测试工程师**——确认已知的修复没有回退，不是发现新问题。逐项核对，全 PASS 即通过。⏰ 时序：回归检查在阶段六跑，git tag/npm registry 未到位的项标 ⏳。🔍 维度 7f/17a-b/20 依赖真实环境（npm/git/OpenClaw），AI 审查标 `⏸️ 需人工环境`。
 
-## 审查维度（100 维 · 编号规则见头部）
+## 审查维度（98 维 · 编号规则见头部）
 
-### 审查维度正文（#1-128 · 维度流连续不中断）
+### 审查维度正文（#1-134 · 维度流连续不中断）
 
 版本号全量一致 · 铁律措辞清零 · Skill 行数 ≤100 · 测试数一致（维度 13 SSOT 反查） · git status 零未提交修改
 
@@ -1426,7 +1426,7 @@ bash tools/check/check-test-count.sh --quiet # 期望 OK / EXIT=0
 # 原则：新增/删除测试 = 必须同步文档声称数，check-test-count 不绿不算开发完成
 ```
 
-#### 110. bugfix 防复发五件——门禁盲区+假绿族+路径隔离（B 类防回归 · 四份审查 38 项的浓缩）
+#### 110. bugfix 批防复发（多版汇总）——门禁盲区+假绿族+路径隔离+verify-commit/test-count/hook（B 类防回归 · 多版 38+26 项浓缩 · 归并 #116 入此：verify-commit 路径②收紧 + test-count 双层防御 + hook 成功回声）
 
 **背景**：fresh-eyes 四份审查 38 项的防复发浓缩。三条核心防线：①守卫「找不到就跳过」= 空转四个版本无人知（#5）；②`| tail || true` 双保险吞退出码（#19）；③路径解析环境变量口径分裂污染真实数据（#38）。
 
@@ -1451,9 +1451,21 @@ grep -q "getHistoryFilePath" engine/audit/src/index.ts || echo "⚠️ rule_disa
 diff <(grep -c "exitCode" engine/audit/hooks/post-commit) <(grep -c "exitCode" .git/hooks/post-commit 2>/dev/null) 2>/dev/null || echo "⚠️ post-commit 新旧副本逻辑不一致（模板改后未重装验证）"
 # ⑦ archive 断链模式（防 #34）：压平迁移后引用路径必须跟着改
 node -e "const fs=require('fs'),p=require('path');let bad=0;for(const f of fs.readdirSync('docs/archive/changelog-experimental')){if(!f.endsWith('.md'))continue;const c=fs.readFileSync(p.join('docs/archive/changelog-experimental',f),'utf8');for(const m of c.matchAll(/\]\((\.[^)]+)\)/g)){const t=p.resolve('docs/archive/changelog-experimental',m[1]);if(!fs.existsSync(t))bad++}}if(bad)console.log('⚠️ archive 断链 '+bad+' 处（迁移没跟引用）')"
+# 原 #116 并入（阶段一 26 项 bugfix P0-P1 级锚点——P0-1 路径②收紧 / P0-3 test-count 双层 / P1 hook 成功回声 / 红队四项 / 三实录防复发）
+grep -q "selfMatched" engine/audit/src/commands/verify.ts && grep -q "process.exit(1)" engine/audit/src/commands/verify.ts && echo "✅ 洗白链已堵" || echo "❌ 归因歧义回退"
+grep -q 'FLAKY_PKGS=""' tools/check/test-count.sh && echo "✅ set -u 初始化" || echo "❌ unbound 炸弹回植"
+grep -q "漏收集" tools/check/test-count.sh && echo "✅ 漏收集防御" || echo "❌ 静默变小回退"
+grep -q "审计通过" engine/core/src/config-template.ts && echo "✅ 成功回声在位" || echo "❌ 静默保护回退"
+grep -q "tampered" engine/audit/src/commands/verify.ts && echo "✅ 追加伪造拦截" || echo "❌ legacy 容忍回退"
+grep -qE "\.bin|Binary files" engine/audit/src/rules/rule-a2-secret-leak.ts && echo "✅ 二进制边界 WARN" || echo "❌ blob 绕过回开"
+grep -q '(?!tmp|home' engine/audit/src/rules/skill-safety-rules.ts && grep -q '(?!tmp|home' engine/audit/src/agent-shield.ts && echo "✅ rm-rf 豁免同源" || echo "❌ 口径漂移回退"
+grep -q 'timeout: 600_000' FORGE/src/driver-base.mjs && grep -q 'timeout: 600_000' FORGE/src/fresh-eyes-driver.mjs && grep -q 'timeout: 600_000' FORGE/src/release-gate-driver.mjs && grep -q 'timeout: 600_000' FORGE/src/tool-output-budget.mjs && echo "✅ LLM 超时四文件全覆盖" || echo "❌ 超时保护缺失"
+grep -q 'round === resumeState?.round' FORGE/src/fresh-eyes-driver.mjs && echo "✅ resume 守卫" || echo "❌ 越轮泄漏回植"
+grep -q 'cd "\$PROJECT_ROOT" && NODE_OPTIONS' FORGE/playbook/acceptance-test.sh && echo "✅ S146 cwd 回位" || echo "❌ 漂移回植"
+grep -q 'ver == SSOT' tools/check/check-version.sh && grep -q '新增|增强' tools/release/bump-version.sh && echo "✅ 溯源豁免" || echo "❌ 溯源误报回植"
 ```
 
-#### 111. 新功能审查面——MCP 自进化+instinct+FDE 运维
+#### 111. 新功能审查面——MCP 自进化+instinct+FDE 运维+沙箱/权限/并发/OKF（A 类 · 归并 #115 入此：沙箱五件套/权限三防线/并发三级来源/OKF 三件套为同版配套面）
 
 **背景**：七大块交付的审查面。acceptance S270-S276 做执行级验证，本维度做静态一致性——两者成对构成新功能的完整回归网。
 
@@ -1471,6 +1483,19 @@ grep -q "fde-companion-daily\|fde-registry" engine/daemon/src/inspector-layers.t
 TC=$(bash tools/check/test-count.sh 2>/dev/null | grep -oE 'TOTAL_TESTS=[0-9]+' | cut -d= -f2)
 grep -q "$TC" README.md || echo "⚠️ README 测试数漂移（期望 $TC，见 tools/check/test-count.sh）" # 漂移实录：2903→2937→3177（12 包实测）
 grep -q "\*\*v1.3.5\*\*" CHANGELOG.md || echo "⚠️ CHANGELOG 索引缺 v1.3.5"
+# 原 #115 并入（沙箱五件套 / 场景权限三防线 / 并发三级来源 / OKF 三件套——同版配套面，acceptance S290-S292 同面端到端）
+grep -q "dns.lookup\|dns\.resolve" engine/orchestrator/src/sandbox/network-gateway.ts && echo "✅ DNS 隧道拦截" || echo "❌ 网关漏 DNS"
+grep -q "未注册" engine/orchestrator/src/sandbox/tool-gate.ts && echo "✅ 工具门 fail-closed" || echo "❌ 未注册放行"
+grep -q "mask" engine/orchestrator/src/sandbox/virtual-key.ts && echo "✅ 虚拟 key 脱敏" || echo "❌ key 明文泄露面"
+[ -f engine/orchestrator/src/sandbox/ATTACK-SURFACE.md ] && echo "✅ 攻击面声明在位" || echo "❌ 声明缺失"
+grep -q "fail-closed" engine/orchestrator/src/permission/scenario-router.ts && echo "✅ 权限 fail-closed" || echo "❌ 权限开放默认"
+grep -q "Shadow" engine/audit/src/agent-shield.ts && echo "✅ Shadow AI 三源" || echo "❌ 影子 agent 盲区"
+grep -q "canAcceptTask" engine/orchestrator/src/sandbox/circuit-breaker.ts && echo "✅ ASI10 隔离联动" || echo "❌ 断路器孤立"
+grep -q "migrateToTrunk" engine/ontology/src/merge-engine.ts && echo "✅ trunk 审阅门" || echo "❌ 直通 trunk"
+grep -q "stale_after" engine/ontology/src/merge-engine.ts && echo "✅ OKF 时效字段" || echo "❌ 字段名漂移"
+grep -rn "okfViolation" engine/mcp/src/tools/create-entity.ts > /dev/null && echo "✅ type 必填拒绝" || echo "❌ OKF① 缺失"
+grep -q "resolveMaxConcurrency" FORGE/src/driver-base.mjs && echo "✅ 自适应并发" || echo "❌ ⑦ 未接线"
+grep -q "SOFAGENT_PERSONA_SOURCE" engine/core/src/filesystem/memory-sync.ts && echo "✅ persona env 优先" || echo "❌ ⑨ 路径写死回退"
 ```
 
 #### 113. 新功能审查面——八交付锚点一维收口（阶段五来源提取 A 类 · 归并 #114 入此：修复防复发三锚点为同版配套面）
@@ -1493,54 +1518,6 @@ grep -q "DecisionCategory" engine/audit/src/decision-schema.ts && echo "✅ ⑮d
 grep -q "SHARED_REDACTION_SAMPLES" engine/core/src/security/prompt-sanitizer.ts && echo "✅ 脱敏两层漂移断言在位" || echo "❌ 防漂移断言丢失"
 grep -q "Security Advisory" SECURITY.md && ! grep -q "noreply.*备选" SECURITY.md && echo "✅ 漏洞渠道单通道" || echo "❌ 摆设渠道回潮"
 grep -q "registerSignalCleanup" FORGE/src/driver-base.mjs && grep -q "registerSignalCleanup\|cleanupStaleWorktrees" FORGE/src/fresh-eyes-driver.mjs && grep -q "registerSignalCleanup\|cleanupStaleWorktrees" FORGE/src/release-gate-driver.mjs && echo "✅ 信号清理双 driver" || echo "❌ 镜像漂移回退"
-```
-
-#### 115. 新功能审查面——沙箱五件套/权限三防线/并发三级来源/OKF 三件套（阶段四来源提取 A 类）
-
-> 八项硬交付的核心锚点一维收口（acceptance S290-S292 同面端到端，分层同 113/282 先例）。⑧ TDAI 触发器型零动作不设锚点（条件未到）。
-
-```bash
-# ① 沙箱五件套：DNS+raw socket 全拦 / fail-closed / key 脱敏 / 原子合并 / 攻击面声明
-grep -q "dns.lookup\|dns\.resolve" engine/orchestrator/src/sandbox/network-gateway.ts && echo "✅ DNS 隧道拦截" || echo "❌ 网关漏 DNS"
-grep -q "未注册" engine/orchestrator/src/sandbox/tool-gate.ts && echo "✅ 工具门 fail-closed" || echo "❌ 未注册放行"
-grep -q "mask" engine/orchestrator/src/sandbox/virtual-key.ts && echo "✅ 虚拟 key 脱敏" || echo "❌ key 明文泄露面"
-[ -f engine/orchestrator/src/sandbox/ATTACK-SURFACE.md ] && echo "✅ 攻击面声明在位" || echo "❌ 声明缺失"
-# ② 场景权限三道防线 + ③④⑤ Shield/overlay/断路器
-grep -q "fail-closed" engine/orchestrator/src/permission/scenario-router.ts && echo "✅ 权限 fail-closed" || echo "❌ 权限开放默认"
-grep -q "Shadow" engine/audit/src/agent-shield.ts && echo "✅ Shadow AI 三源" || echo "❌ 影子 agent 盲区"
-grep -q "canAcceptTask" engine/orchestrator/src/sandbox/circuit-breaker.ts && echo "✅ ASI10 隔离联动" || echo "❌ 断路器孤立"
-# ⑥ lifecycle 审阅门 + OKF（spec 字段名 stale_after 非 valid_after）
-grep -q "migrateToTrunk" engine/ontology/src/merge-engine.ts && echo "✅ trunk 审阅门" || echo "❌ 直通 trunk"
-grep -q "stale_after" engine/ontology/src/merge-engine.ts && echo "✅ OKF 时效字段" || echo "❌ 字段名漂移"
-grep -rn "okfViolation" engine/mcp/src/tools/create-entity.ts > /dev/null && echo "✅ type 必填拒绝" || echo "❌ OKF① 缺失"
-# ⑦ 并发三级来源（CLI>env>adaptive>fallback 后写者胜）+ ⑨ persona 三级
-grep -q "resolveMaxConcurrency" FORGE/src/driver-base.mjs && echo "✅ 自适应并发" || echo "❌ ⑦ 未接线"
-grep -q "SOFAGENT_PERSONA_SOURCE" engine/core/src/filesystem/memory-sync.ts && echo "✅ persona env 优先" || echo "❌ ⑨ 路径写死回退"
-```
-
-#### 116. bugfix 批防复发——verify-commit 路径②收紧 + test-count 双层防御 + hook 成功回声
-
-> 阶段一 26 项 bugfix 的 P0 级锚点（其余文档类由 check-version/check-docs 覆盖）。
-
-```bash
-# P0-1：路径②（selfMatched）必须 ⚠️ EXIT=1 不放绿灯
-grep -q "selfMatched" engine/audit/src/commands/verify.ts && grep -q "process.exit(1)" engine/audit/src/commands/verify.ts && echo "✅ 洗白链已堵" || echo "❌ 归因歧义回退"
-# P0-3：FLAKY_PKGS 头部初始化 + Test Files 漏收集拒采
-grep -q 'FLAKY_PKGS=""' tools/check/test-count.sh && echo "✅ set -u 初始化" || echo "❌ unbound 炸弹回植"
-grep -q "漏收集" tools/check/test-count.sh && echo "✅ 漏收集防御" || echo "❌ 静默变小回退"
-# P1：HOOK_TEMPLATE 成功回声（可感知性）
-grep -q "审计通过" engine/core/src/config-template.ts && echo "✅ 成功回声在位" || echo "❌ 静默保护回退"
-# 红队四项：追加伪造判篡改 + A2 二进制 WARN
-grep -q "tampered" engine/audit/src/commands/verify.ts && echo "✅ 追加伪造拦截" || echo "❌ legacy 容忍回退"
-grep -qE "\.bin|Binary files" engine/audit/src/rules/rule-a2-secret-leak.ts && echo "✅ 二进制边界 WARN" || echo "❌ blob 绕过回开"
-# rm -rf 正则口径统一：两扫描器豁免必须同源
-grep -q '(?!tmp|home' engine/audit/src/rules/skill-safety-rules.ts && grep -q '(?!tmp|home' engine/audit/src/agent-shield.ts && echo "✅ rm-rf 豁免同源" || echo "❌ 口径漂移回退"
-# FORGE driver LLM 超时：四文件实例化点缺一即挂死风险回植 （注意：不用 awk 管道——driver bash -c 注入场景 \$ 转义会炸，改用逐文件 grep -q 链，无转义依赖）
-grep -q 'timeout: 600_000' FORGE/src/driver-base.mjs && grep -q 'timeout: 600_000' FORGE/src/fresh-eyes-driver.mjs && grep -q 'timeout: 600_000' FORGE/src/release-gate-driver.mjs && grep -q 'timeout: 600_000' FORGE/src/tool-output-budget.mjs && echo "✅ LLM 超时四文件全覆盖" || echo "❌ 超时保护缺失"
-# FORGE resume 越轮泄漏 + S146 cwd 漂移 + check-version 溯源豁免（三实录防复发）
-grep -q 'round === resumeState?.round' FORGE/src/fresh-eyes-driver.mjs && echo "✅ resume 守卫" || echo "❌ 越轮泄漏回植"
-grep -q 'cd "\$PROJECT_ROOT" && NODE_OPTIONS' FORGE/playbook/acceptance-test.sh && echo "✅ S146 cwd 回位" || echo "❌ 漂移回植"
-grep -q 'ver == SSOT' tools/check/check-version.sh && grep -q '新增|增强' tools/release/bump-version.sh && echo "✅ 溯源豁免" || echo "❌ 溯源误报回植"
 ```
 
 #### 117. 新功能审查面——代理网关攻击面四项核对（阶段五来源提取 A 类）
@@ -1569,7 +1546,7 @@ AU=engine/audit/src/audit-history.ts
 grep -qE '串行|serialize' "$AU" && echo "✅ 审计历史跨进程串行写" || echo "❌ 串行写回退"
 ```
 
-#### 119. 开发坑防复发——TS7 snapshot 缓存污染 + meta-harness deliveryPromise 形态（阶段五来源提取 B 类 · B1+B2+B3 归并）
+#### 119. 开发坑防复发——TS7 snapshot 缓存污染 + meta-harness deliveryPromise 形态 + DSH 适配（阶段五来源提取 B 类 · 归并 #120 入此：纯 CLI 包桥接 + pnpm 安装 + ESM require 桥接）
 
 > ① TS7 对同一路径已打开的临时文件缓存首次内容——AST 引擎 extractExports 多次调用会串读；② meta-harness `new Promise(entry.resolve)` 把 resolve 当值立即 fulfilled，waitForDelivery 被提前唤醒。修复：AST 引擎唯一临时路径（${seq}-${path}）+ deliveryPromise 本体等待（orchestrator.ts）。public-api 无临时文件（固定 BASELINE 每次现读，不缓存内容）。
 
@@ -1582,34 +1559,10 @@ grep -qE 'readFileSync\(BASELINE|BASELINE' "$PUB" 2>/dev/null && grep -qE 'write
 MH=engine/orchestrator/src/meta-harness/orchestrator.ts
 [ -f "$MH" ] || { echo "❌ meta-harness/orchestrator.ts 缺失"; exit 1; }
 grep -qE 'deliveryPromise|new Promise\(res' "$MH" && echo "✅ deliveryPromise 本体等待" || echo "❌ promise 形态回退"
-```
-
-#### 120. DSH 适配防复发——纯 CLI 包桥接 + pnpm 安装 + ESM require 桥接（阶段五来源提取 B 类 · B4+B5+B6 归并）
-
-> DSH rc.8 三坑：纯 CLI 包（无库入口→spawn CLI 桥接）/ npm 大依赖树 8GB OOM（→pnpm）/ ESM require 不可用（→createRequire 桥接）。
-
-```bash
-EB=engine/orchestrator/src/execution-backends/dsh-backend.ts
-[ -f "$EB" ] || { echo "❌ dsh-backend.ts 缺失"; exit 1; }
-grep -qE 'createDshCliBackend|resolveDshCliBin|headless' "$EB" && echo "✅ DSH CLI 桥接在位" || echo "❌ CLI 桥接回退"
-grep -qE 'createRequire' "$EB" && echo "✅ ESM require 桥接" || echo "❌ require 桥接回退"
-GT=FORGE/src/gate-tools.mjs
-grep -qE 'createRequire' "$GT" 2>/dev/null && echo "✅ gate-tools ESM require 桥接" || echo "❌ gate-tools require 桥接回退"
-```
-
-#### 122. 发版流程防复发——新 workspace 包 lock 同步 + plugin 分发包装 + 限流（阶段十二来源提取 B 类）
-
-> 发版四坑实录：① 新增 9 个 cordis-plugin workspace 包但 lock file 未同步——`npm ci` 严格校验 4 个 CI 工作流全红（pr-check/verify/audit/windows 同根因）；② skillhub 分发 DSH plugin 需 SKILL.md 包装（plugin 目录是 npm 包结构无 SKILL.md）+ 发布限流（连续发布报「发布频率过高」，需 ≥20s 间隔）+ changelog 中文按字节截断炸 UTF-8（0xe5 continuation byte）；③ npm publish E409 staged 状态约 5 分钟自动 finalize（早期记录称需 unpublish，实测等待即可）；④ 本地部署树/绝对路径 overrides 接依赖（pnpm deploy 产物路径 + 72 条 overrides 指向 `/Users/...`）本地 node_modules 在位全绿、CI 无此路径 TS2307 三红——依赖一律走 npm registry 正式版本。
-
-```bash
-# ① 新增 workspace 包后 lock 必须同步：本地 npm ci --dry-run 零 Missing 即 CI 不会红
-cd "$REPO_ROOT" && npm ci --dry-run 2>&1 | grep -c "^npm error Missing" | grep -q "^0$" && echo "✅ lock 与 workspace 同步" || echo "❌ lock 缺条目——npm install --package-lock-only 补齐"
-# ② lock 中 workspace 条目存在性抽查（防悬空引用）
-node -e "const l=require('./package-lock.json');const p=JSON.parse(require('fs').readFileSync('package.json','utf8'));const miss=p.workspaces.flat().filter(w=>!l.packages[w]);if(miss.length){console.error('❌ lock 缺:',miss.join(','));process.exit(1)}console.log('✅ 全部 workspace 在 lock')"
-# ③ argv 守卫（Cordis 内嵌收编）在位
-grep -q "createArgv1Guard" engine/orchestrator/src/execution-backends/dsh-backend.ts && echo "✅ argv 守卫在位" || echo "❌ argv 守卫回退"
-# ④ lock 零本地部署树路径（发版实录：workspace 传递依赖 + 绝对路径 overrides → npm ci 恢复成指本机的 symlink，CI 无此路径 TS2307 三红；本地 node_modules 在位时全绿不可信）。package.json 中不被任何依赖引用的本地路径 overrides 是惰性死配置（npm 实测：包不在依赖树则 override 永不匹配），但属地雷——该包一旦进依赖立即生效，应清
-grep -c "dsh-deployed" package-lock.json | grep -q "^0$" && echo "✅ lock 零本地部署树路径" || echo "❌ lock 残留本地部署树 symlink——CI 必红 TS2307"
+# 原 #120 并入（DSH rc.8 三坑——纯 CLI 包桥接 / npm 大依赖树 8GB OOM 走 pnpm / ESM require 桥接）
+grep -qE 'createDshCliBackend|resolveDshCliBin|headless' engine/orchestrator/src/execution-backends/dsh-backend.ts && echo "✅ DSH CLI 桥接在位" || echo "❌ CLI 桥接回退"
+grep -qE 'createRequire' engine/orchestrator/src/execution-backends/dsh-backend.ts && echo "✅ ESM require 桥接" || echo "❌ require 桥接回退"
+grep -qE 'createRequire' FORGE/src/gate-tools.mjs 2>/dev/null && echo "✅ gate-tools ESM require 桥接" || echo "❌ gate-tools require 桥接回退"
 ```
 
 #### 123. 新功能审查面——后训模块地基八大块一维收口（阶段四来源提取 A 类 · 参照 113/115/121 每版一维）
@@ -1629,7 +1582,7 @@ grep -q "train_submit" engine/mcp/src/tool-registry.ts && echo "✅ train_submit
 grep -q "TrainAuditEventType\|train_job_submitted" engine/orchestrator/src/train/train-audit.ts && grep -q "hmacSig" engine/orchestrator/src/train/train-audit.ts && echo "✅ train 审计事件+HMAC 链（事件 union 本文件自持，audit 包无扩展点不动）" || echo "❌ 审计链缺"
 ```
 
-#### 124. 发版防复发——install.sh 迁移/谎报守卫/安全披露/文档状态/双 manifest/bump 通配一维收口（阶段四来源提取 B 类 · 阶段十一/十二回写 B11/B12 · 归并 #121 入此：插件家族目录/成本审计注册面已由 S331/S347 覆盖，dashboard worklog 弱锚收子项 k）
+#### 124. 发版防复发——install.sh 迁移/谎报守卫/安全披露/文档状态/双 manifest/bump 通配/新包 lock 同步一维收口（阶段四来源提取 B 类 · 阶段十一/十二回写 B11/B12 · 归并 #121 入此：插件家族目录/成本审计注册面已由 S331/S347 覆盖，dashboard worklog 弱锚收子项 k · 归并 #122 入此：workspace lock 同步 + DSH plugin 分发包装 + 限流）
 
 > 阶段三全链路（fresh-eyes round-02 12 findings + f5430de4 修复 + 独立补审 + 3c61d980 次生修复）+ 阶段十一分发踩坑（B11 双 manifest 漂移 / B12 bump 通配误伤）的防复发锚点。B2/B3 端到端见 acceptance S328/S329；B1/B8 工具化见 check-version 检查项；B11/B12 端到端见 S331/S332；此处收口剩余面的快速 grep。
 
@@ -1653,6 +1606,11 @@ grep -q "FORGE/SKILL" AGENTS.md && grep -q "releasing/" docs/changelog/releasing
 # B12 bump 跳过逻辑无通配误伤（阶段十一静默漏 bump 实录：通配误伤 sofagent-audit）——命令体见 acceptance S331（S332 已于 v1.4.6 防膨胀批合族并入）
 # k（原 #121）：dashboard 工作明细栏在位——插件目录已由 B11/S331 锁、cost_query 已由 S347/S348 锁
 grep -q "worklog" tools/dashboard/dashboard.html && echo "✅ dashboard 工作明细栏在位" || { echo "❌ dashboard worklog 缺失"; exit 1; }
+# 原 #122 并入（发版流程防复发——新 workspace 包 lock 同步 / DSH plugin 分发包装 / npm publish staged 等待 / lock 零本地部署树路径）
+cd "$REPO_ROOT" && npm ci --dry-run 2>&1 | grep -c "^npm error Missing" | grep -q "^0$" && echo "✅ lock 与 workspace 同步" || echo "❌ lock 缺条目——npm install --package-lock-only 补齐"
+node -e "const l=require('./package-lock.json');const p=JSON.parse(require('fs').readFileSync('package.json','utf8'));const miss=p.workspaces.flat().filter(w=>!l.packages[w]);if(miss.length){console.error('❌ lock 缺:',miss.join(','));process.exit(1)}console.log('✅ 全部 workspace 在 lock')"
+grep -q "createArgv1Guard" engine/orchestrator/src/execution-backends/dsh-backend.ts && echo "✅ argv 守卫在位" || echo "❌ argv 守卫回退"
+grep -c "dsh-deployed" package-lock.json | grep -q "^0$" && echo "✅ lock 零本地部署树路径" || echo "❌ lock 残留本地部署树 symlink——CI 必红 TS2307"
 ```
 
 #### 125. 新功能审查面——训练九章+FDE 六引擎+IM 桥+FORGE 步零一维收口（阶段四来源提取 A 类 · 归并 #59 入此：dataDir 传参纪律为 SSOT 子项）
@@ -1789,4 +1747,52 @@ grep -q "parseDiff" engine/openclaw-plugins/*/index.ts 2>/dev/null || grep -rq "
 grep -q "cursor" install.sh && grep -q "cursor" engine/scripts/uninstall.sh && grep -q "gemini" install.sh && grep -q "gemini" engine/scripts/uninstall.sh && echo "✅ uninstall 平台清单配对（cursor/gemini 在册）" || echo "❌ uninstall 漏平台（装得上卸不掉）"
 # B6: PERSPECTIVES 双清单启动对账在位（漂移 exit 1 自检内建）——脚本在 tools/gen/ 非 FORGE/src/
 grep -q "assertPerspectivesMatchPlaybook" tools/gen/gen-fresh-eyes-draft.mjs && echo "✅ PERSPECTIVES 双清单对账自检在位" || echo "❌ 16 视角双清单漂移防线丢失"
+```
+
+#### 133. v1.4.7 新功能审查面——商业平台接口版交付锚点一维收口（阶段四来源提取 A 类 · 46 锚点十组）
+
+> 商业平台接口版十组交付的静态一致性快查（执行级验证已由包内单测锁：gap-analyzer / pr-store / visibility / workflow-container / train-channel / cloud-train / data-paths / audit-reducer / onboard-prompt；此处分钟级 grep）。**块级退出码防御**：子项行尾 `|| echo "❌"` 的 echo 恒 0 吞失败——整块包子 shell + tee 落盘 + 尾部 ❌ 扫描定 exit。
+
+```bash
+(# a: 能力缺口查询 + 绩效数据导出（G2/G4 · tool 注册 + orgId 语义分层并存；CHANGELOG「能力缺口与绩效」）
+for t in workflow_gaps contribution_query; do grep -q "name: '$t'" engine/mcp/src/tool-registry.ts || echo "❌ $t 未注册"; done; grep -q "orgId" engine/core/src/agent-identity.ts && grep -q "enterpriseId" engine/core/src/agent-identity.ts && grep -q "orgId" engine/mcp/src/tools/contribution-query.ts && echo "✅ G2/G4 + orgId 过滤（enterpriseId 并存）" || echo "❌ 缺口/绩效字段缺失"
+# b: 节点级可见性元数据 + 多租户抽象层（G6 三级枚举 + 审阅门 / G7 租户路径隔离 fail-loud；CHANGELOG「可见性与多租户 v0」）
+grep -q "validateVisibility" engine/orchestrator/src/workflow/container.ts && grep -q "resolveTenantDataDir" engine/core/src/data-paths.ts && grep -q "SOFAGENT_TENANT" engine/core/src/data-paths.ts && echo "✅ G6/G7（审阅门 + 租户隔离）" || echo "❌ 可见性/租户隔离缺失"
+# c: PR 生命周期接口（G13 三 tool + 合并门真判定 + branch→trunk 写回编排）
+for t in pr_submit pr_review pr_merge; do grep -q "name: '$t'" engine/mcp/src/tool-registry.ts || echo "❌ $t 未注册"; done; grep -q "evaluateCriterion" engine/audit/src/pr-store.ts && grep -q "prRecordMergedVersion" engine/mcp/src/tools/pr-tools.ts && echo "✅ G13 三 tool + 真判定 + 写回" || echo "❌ PR 域缺口（恒真门/写回断链）"
+# d: G14 workflow CRUD（四 tool + 校验门 + 变更留痕）
+for t in workflow_create workflow_update workflow_node_add workflow_diff_preview; do grep -q "name: '$t'" engine/mcp/src/tool-registry.ts || echo "❌ $t 未注册"; done; git grep -q "ARTIFACT_EDIT" -- engine/ && echo "✅ G14 四 tool + ARTIFACT_EDIT 留痕" || echo "❌ G14 缺口"
+# e: FDE 交付三件（workflow 烧进 USB + 首部署确定性 cron job 包 + 上岗 prompt 生成器）
+git grep -q "create-usb-key" -- engine/ install.sh && grep -q "runDueTasks" engine/daemon/src/cron.ts && grep -q "with-first-deploy-cron" install.sh && test -f engine/daemon/src/templates.ts && test -f engine/daemon/src/billing.ts && test -f engine/mcp/src/tools/onboard-prompt.ts && echo "✅ FDE 三件齐备" || echo "❌ FDE 交付缺口"
+# f: 云训练执行接线收口（TrainChannel 契约/ssh 适配/双通道归一/托管规范/daemon 真实消费；CHANGELOG「云训练执行收口」）
+grep -q "interface TrainChannel" engine/orchestrator/src/train/train-channel.ts && grep -q "createSshTrainChannel" engine/daemon/src/cloud-exec.ts && grep -q "chainDualChannelEvent" engine/daemon/src/cloud-events.ts && test -f docs/guides/train-channel-spec.md && test -f engine/daemon/src/tasks/cloud-train.ts && echo "✅ 云通道五面齐备" || echo "❌ 云通道缺口（零调用回潮）"
+# g: 静态加密全量接线 + data_push 入口接线（daemon 接线收口批：生产调用点 + 双闸消费）
+grep -q "initDataEncryption" engine/daemon/src/cli.ts && grep -q "name: 'data_push'" engine/mcp/src/tool-registry.ts && echo "✅ 双接线收口（加密 + data_push）" || echo "❌ 接线回退（零调用）"
+# h: 运行时审计引擎侧 repo-hash 隔离（引擎化 + 审计侧消费 + commit 级主链全局不动）
+grep -q "computeRepoHash" engine/core/src/repo-hash.ts && grep -q "computeRepoHash" engine/audit/src/data-sovereignty.ts && grep -q "history.jsonl" engine/audit/src/audit-history.ts && echo "✅ repo-hash 引擎化 + 隔离消费（主链全局不动）" || echo "❌ 隔离缺口"
+# i: audit 专职面文档化 + 审计留痕双层（角色配置文档 + 规约层过滤 + PROV-O 出口）
+git grep -q "SOFAGENT_MCP_ROLES" -- docs/API.md && grep -q "reduceAuditHistory" engine/audit/src/audit-reducer.ts && grep -q "exportProvTurtle" engine/audit/src/audit-reducer.ts && echo "✅ 专职面 + 留痕双层" || echo "❌ audit 面缺失"
+# j: 接线登记机制（新接线符号须在监控表——不登记=交付未完成）
+for s in createSshTrainChannel chainDualChannelEvent gateDataPush; do grep -q "$s" tools/check/check-unwired-exports.sh || echo "❌ $s 未登记监控表"; done; echo "✅ 接线登记机制（上方零失败）") 2>&1 | tee "/tmp/regress-dim133-$$.log"; grep -q "❌" "/tmp/regress-dim133-$$.log" && { rm -f "/tmp/regress-dim133-$$.log"; echo "维度133收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim133-$$.log"; echo "维度133收口:PASS"
+```
+
+#### 134. v1.4.7 修复批防复发——bugfix 30 commit + 质量循环 6 commit 一维收口（阶段四来源提取 B 类 · 与 #133 同源十组已合流不重复）
+
+> 两批修复的防复发锚点。与 #133 同源的十组（PR 域写回/真判定/权限/上界、云通道登记、G8 执行链、npm 双源、tenantId 口径、stop() 止损）已合流计一次；行为面由包内单测锁。
+
+```bash
+(# a: 质量循环修复批行为面单测可达性（PR 域/云通道/可见性/上岗 prompt/租户）
+for f in engine/audit/src/__tests__/pr-store.test.ts engine/daemon/src/__tests__/cloud-train.test.ts engine/orchestrator/src/__tests__/visibility.test.ts engine/mcp/src/__tests__/onboard-prompt.test.ts engine/core/src/__tests__/data-paths.test.ts; do test -f "$f" || echo "❌ $f 缺失"; done; echo "✅ 质量批单测在位（上方零失败）"
+# b: 门禁含故障注入自检 + AR 基线门禁在位（防门禁假绿）
+grep -q "inject" tools/check/check-guards.sh && git grep -q "public-api-baseline" -- tools/check/ && echo "✅ 门禁注入自检 + AR 基线门禁" || echo "❌ 门禁有效性防线缺失"
+# c: 安装链钉定 + 克隆树哈希自锚（bootstrap 完整性）
+grep -q "SOFAGENT_INSTALL_SHA256" bootstrap.sh && grep -qE 'clone --depth 1 --branch' install.sh && echo "✅ 安装链钉定 + 自锚" || echo "❌ 完整性链断（tag 与执行面脱钩）"
+# d: 执行面收口三件 + L2 巡检观测性收口（outbox 兜底排水 + 巡检落账不静默）
+git grep -q "drainOutbox" -- engine/ && git grep -q "recordInspectorSuccess" -- engine/ && echo "✅ 排水 + 巡检落痕在位" || echo "❌ 执行链/落痕缺口"
+# e: 杂项收口十二项（共享模块收口——原子写不再各处私有复制）
+git grep -q "atomicWriteSync" -- engine/core/src/ && echo "✅ atomicWriteSync 收口 core" || echo "❌ 原子写私有复制回潮"
+# f: 翻牌全文扫描（发版前口径收口——v1.4.7 翻牌五文档核心两处零残留；HANDBOOK/ROADMAP 状态行属阶段六同步范围）
+git grep -nE "排期 v1\.4\.7" -- SECURITY.md LIMITATIONS.md | grep -q . && echo "❌ 翻牌残留（排期 v1.4.7 未清）" || echo "✅ 翻牌无同义残留"
+# g: 跨版账链注明（测试数换基可追溯）
+grep -qE "4107\s*=\s*4088|4088\s*\+\s*19" docs/changelog/v1.4/v1.4.7.md && echo "✅ 跨版账链注明" || echo "❌ 跨版基线未注明") 2>&1 | tee "/tmp/regress-dim134-$$.log"; grep -q "❌" "/tmp/regress-dim134-$$.log" && { rm -f "/tmp/regress-dim134-$$.log"; echo "维度134收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim134-$$.log"; echo "维度134收口:PASS"
 ```
