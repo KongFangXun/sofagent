@@ -21,7 +21,7 @@ export interface ToolDef {
 }
 
 /**
- * 完整工具清单——90 个 tool（v1.4.7：onboard_prompt 新增——上岗 prompt 生成器（89→90）；workflow_gaps 新增——G2 能力缺口查询（88→89）；workflow_create/workflow_update/workflow_node_add/workflow_diff_preview 四 tool 新增——G14 workflow 对象化 CRUD（84→88，本版其余新增随对应章节逐个落位至终值 95）；v1.4.6：train_cloud 新增——83→84，云 VM 执行面控制工具；v1.4.5：train_serve/train_compliance/train_deliverable 三件齐——80→83，SKILL.md/ARCHITECTURE 等九处 SSOT 同步收口；v1.4.4：corpus_export 新增；v1.4.3：train_status/train_list/train_diagnose 新增；v1.4.2：fde_interview/fde_classify/fde_quantify/fde_derive/fde_distill/fde_deploy 六引擎 + train_doctor/train_dryrun/train_report 新增；v1.4.1：train_submit 新增；v1.4.0：cost_query + browser 4 新增；v1.3.9：worklog_query 新增；v1.3.6：workflow_submit/ontology_import/model_register/model_switch/model_unregister/train_budget/define_acceptance/check_acceptance；v1.3.5：run_ab_test/promote_ab/snapshot_list/snapshot_restore；v1.3.4：commons_publish/search/invoke/rate/retire/harvest_rule；不含 4 个 resource shortcut）
+ * 完整工具清单——93 个 tool（v1.4.7：pr_submit/pr_review/pr_merge 三 tool 新增——G13 PR 生命周期（90→93）；onboard_prompt 新增——上岗 prompt 生成器（89→90）；workflow_gaps 新增——G2 能力缺口查询（88→89）；workflow_create/workflow_update/workflow_node_add/workflow_diff_preview 四 tool 新增——G14 workflow 对象化 CRUD（84→88，本版其余新增随对应章节逐个落位至终值 95）；v1.4.6：train_cloud 新增——83→84，云 VM 执行面控制工具；v1.4.5：train_serve/train_compliance/train_deliverable 三件齐——80→83，SKILL.md/ARCHITECTURE 等九处 SSOT 同步收口；v1.4.4：corpus_export 新增；v1.4.3：train_status/train_list/train_diagnose 新增；v1.4.2：fde_interview/fde_classify/fde_quantify/fde_derive/fde_distill/fde_deploy 六引擎 + train_doctor/train_dryrun/train_report 新增；v1.4.1：train_submit 新增；v1.4.0：cost_query + browser 4 新增；v1.3.9：worklog_query 新增；v1.3.6：workflow_submit/ontology_import/model_register/model_switch/model_unregister/train_budget/define_acceptance/check_acceptance；v1.3.5：run_ab_test/promote_ab/snapshot_list/snapshot_restore；v1.3.4：commons_publish/search/invoke/rate/retire/harvest_rule；不含 4 个 resource shortcut）
  */
 export const TOOLS: ToolDef[] = [
   {
@@ -1297,6 +1297,59 @@ export const TOOLS: ToolDef[] = [
         window_days: { type: 'number', description: '统计窗口天数（缺省 30）' },
         data_dir: { type: 'string', description: '数据根目录（缺省走 getDataDir 解析链）' },
       },
+    },
+  },
+  {
+    // v1.4.7 (章七 G13)：PR 生命周期——提交（open 态 + 贡献者登记 + triggerBinding 两态）
+    name: 'pr_submit',
+    roles: ['agent'],
+    description: '提交 workflow 变更提案（PR）——open 态入库 + 贡献者登记（人/数字员工同标准权重）+ 可选 triggerBinding（启发式=suggested / 显式=confirmed，显式不被启发式覆盖）。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        pr_id: { type: 'string', description: 'PR 标识' },
+        workflow_id: { type: 'string', description: '目标 workflow' },
+        title: { type: 'string', description: '变更描述' },
+        submitter: { type: 'string', description: '提交者（贡献者之一，权重 1.0）' },
+        contributors: { type: 'array', items: { type: 'object' }, description: '额外贡献者（[{contributor_id, weight}]）' },
+        merge_criteria: { type: 'array', items: { type: 'object' }, description: '验收条件（继承 workflow 或 PR 自带）' },
+        trigger: { type: 'object', description: '触发绑定 {source, confidence: suggested|confirmed}' },
+        data_dir: { type: 'string', description: '数据根目录（缺省走 getDataDir 解析链）' },
+      },
+      required: ['pr_id', 'workflow_id', 'title', 'submitter'],
+    },
+  },
+  {
+    // v1.4.7 (章七 G13)：PR 审阅（approve → reviewed / reject → rejected + 负样本留痕）
+    name: 'pr_review',
+    roles: ['agent'],
+    description: '审阅 PR——approve 进 reviewed（可合并）；reject 终态 rejected（拒因进 decision-log 负样本训练信号）。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        pr_id: { type: 'string', description: 'PR 标识' },
+        reviewer: { type: 'string', description: '审阅者' },
+        verdict: { type: 'string', enum: ['approve', 'reject'], description: '审阅结论' },
+        note: { type: 'string', description: '审阅意见（reject 时即拒因）' },
+        data_dir: { type: 'string', description: '数据根目录' },
+      },
+      required: ['pr_id', 'reviewer', 'verdict'],
+    },
+  },
+  {
+    // v1.4.7 (章七 G13)：PR 合并（criteria 全过自动 / 未过 HITL 人审门）
+    name: 'pr_merge',
+    roles: ['agent'],
+    description: '合并 PR——merge_criteria 全过自动合并；未过挂起 HITL（human_confirmed=true 强制合并，痕迹保留）。合并写回 workflow 基线（branch→trunk 联动）。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        pr_id: { type: 'string', description: 'PR 标识' },
+        actor: { type: 'string', description: '操作者' },
+        human_confirmed: { type: 'boolean', description: 'HITL 人审确认（criteria 未过时须显式 true 才合并）' },
+        data_dir: { type: 'string', description: '数据根目录' },
+      },
+      required: ['pr_id', 'actor'],
     },
   },
   {

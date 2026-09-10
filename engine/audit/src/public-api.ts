@@ -124,3 +124,24 @@
 /* @public */ export { exportRuleCorpus, generateVerifiers, buildRuleCorpusBody, signBody, jsonToYaml } from './export/exporter';
 /* @public */ export { buildVerifiersManifest, buildVerifiersWithOverrides } from './export/reward-mapping';
 /* @public */ export type { RuleExportEntry, RuleCorpusBody, RuleCorpusExport, Verifiability, RewardHint } from './export/rule-schema';
+
+// ── PR 生命周期（G13 · workflow 变更提案状态机——MCP pr_submit/pr_review/pr_merge 消费面）──
+/* @public */ export {
+  prSubmit,
+  prReview,
+  prMerge,
+  listPrs,
+  upsertTriggerBinding,
+  isHeuristicallyBlocked,
+} from './pr-store';
+/* @public */ export type {
+  PrStatus,
+  TriggerConfidence,
+  TriggerBinding,
+  PrContributor,
+  StoredPr,
+  PrResult,
+  PrSubmitInput,
+  PrReviewInput,
+  PrMergeInput,
+} from './pr-store';

@@ -116,6 +116,8 @@ import {
 import { workflowGaps } from './tools/workflow-gaps';
 // v1.4.7 章八：上岗 prompt 生成器
 import { onboardPrompt } from './tools/onboard-prompt';
+// v1.4.7 章七 G13：PR 生命周期三 tool
+import { prSubmit, prReview, prMerge } from './tools/pr-tools';
 
 // ============================================================
 // 常量
@@ -425,6 +427,10 @@ class McpServer {
         case 'workflow_gaps': { const wgr = await workflowGaps(args); this.sendTool(id, wgr, wgr.data.isError); break; }
         // v1.4.7 章八：上岗 prompt 生成器
         case 'onboard_prompt': { if (!args.role_description) { this.sendError(id, -32602, 'Missing required argument: role_description'); break; } const opr = await onboardPrompt({ role_description: args.role_description as string, ...(typeof args.agent_name === 'string' ? { agent_name: args.agent_name } : {}), ...(typeof args.role === 'string' ? { role: args.role } : {}) }); this.sendTool(id, opr, opr.data.isError); break; }
+        // v1.4.7 章七 G13：PR 生命周期三 tool（状态机 open → reviewed → merged/rejected）
+        case 'pr_submit': { if (!args.pr_id || !args.workflow_id || !args.title || !args.submitter) { this.sendError(id, -32602, 'Missing required arguments: pr_id, workflow_id, title, and submitter'); break; } const psr = await prSubmit(args); this.sendTool(id, psr, psr.data.isError); break; }
+        case 'pr_review': { if (!args.pr_id || !args.reviewer || !args.verdict) { this.sendError(id, -32602, 'Missing required arguments: pr_id, reviewer, and verdict'); break; } const prr = await prReview(args); this.sendTool(id, prr, prr.data.isError); break; }
+        case 'pr_merge': { if (!args.pr_id || !args.actor) { this.sendError(id, -32602, 'Missing required arguments: pr_id and actor'); break; } const pmr = await prMerge(args); this.sendTool(id, pmr, pmr.data.isError); break; }
         default: this.sendError(id, -32602, `Unknown tool: ${toolName}`);
       }
     } catch (err) {

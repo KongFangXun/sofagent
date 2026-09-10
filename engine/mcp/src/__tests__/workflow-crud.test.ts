@@ -50,8 +50,8 @@ describe('G14 四 tool registry 登记四段（tools/ 实现 + mcp-server 派发
     expect(registrySource).toContain(`case '${name}'`);
   });
 
-  it('工具数 84→90（G14 四 tool + G2 workflow_gaps + 章八 onboard_prompt 落位）', () => {
-    expect(TOOLS.length).toBe(90);
+  it('工具数 84→93（G14 四 tool + G2 + 章八 + G13 PR 三 tool 落位）', () => {
+    expect(TOOLS.length).toBe(93);
   });
 });
 
