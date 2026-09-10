@@ -105,7 +105,7 @@ sofagent 不造 Agent——执行能力交给成熟宿主（模型 + 工具 + �
 
 ## v1.4.7：商业平台接口版
 
-🔌 给商业平台预留的全部数据与动作接口一次到位——组织看得见（能力缺口/绩效）、协作转得动（PR 生命周期/workflow 对象化）、数据进得来（data_push 双闸）。`workflow_gaps` 能力缺口查询（缺人/缺能力/待升级三类，可转悬赏 PR）· `contribution_query` 绩效导出（PR 权重+决策留痕+审计变更三源聚合，人与数字员工同标准，org 租户过滤）· `pr_submit/pr_review/pr_merge` PR 生命周期三 tool（状态机+confidence 两态，branch→trunk 合并联动）· workflow 对象化 CRUD 四 tool（owner 直改 trunk/非 owner 开 branch，`trigger.schedule` 定时触发）· G7 多租户 v0（`data/<tenant>/` 路径地基+orgId 归属字段）· `onboard_prompt` 上岗 prompt 生成器 · USB 烧录 workflow（验签后自动加载）· audit 留痕双层（规约聚合+PROV-O 导出）· TrainChannel 云训练标准接口（托管云按规范对接，ssh 通道引擎自研）· `data_push` 标准数据推送入口（schema 校验 + 敏感分拣双闸；企业合规拦截策略预留扩展）· 静态加密 daemon 接线收口（密钥就绪即密文落盘）· 运行时审计 repo-hash 隔离（llm-calls/data-sovereignty 按 git 仓分目录，旧历史原地可读）。（版本时点数字：MCP 84→95 tools、测试 4107→4249，见开发日志——当前口径以[核心特性](#核心特性)为准。）完整内容见[开发日志](./docs/changelog/v1.4/v1.4.7.md) · 更早版本见 [CHANGELOG](./CHANGELOG.md)。
+🔌 给商业平台预留的全部数据与动作接口一次到位——组织看得见（能力缺口/绩效）、协作转得动（PR 生命周期/workflow 对象化）、数据进得来（data_push 双闸）。`workflow_gaps` 能力缺口查询（缺人/缺能力/待升级三类，可转悬赏 PR）· `contribution_query` 绩效导出（PR 权重+决策留痕+审计变更三源聚合，人与数字员工同标准，org 租户过滤）· `pr_submit/pr_review/pr_merge` PR 生命周期三 tool（状态机+confidence 两态，branch→trunk 合并联动）· workflow 对象化 CRUD 四 tool（owner 直改 trunk/非 owner 开 branch，`trigger.schedule` 定时触发）· G7 多租户 v0（`data/<tenant>/` 路径地基+orgId 归属字段）· `onboard_prompt` 上岗 prompt 生成器 · USB 烧录 workflow（验签后自动加载）· audit 留痕双层（规约聚合+PROV-O 导出）· TrainChannel 云训练标准接口（托管云按规范对接，ssh 通道引擎自研）· `data_push` 标准数据推送入口（schema 校验 + 敏感分拣双闸；企业合规拦截策略预留扩展）· 静态加密 daemon 接线收口（密钥就绪即密文落盘）· 运行时审计 repo-hash 隔离（llm-calls/data-sovereignty 按 git 仓分目录，旧历史原地可读）。（版本时点数字：MCP 84→95 tools、测试 4107→4279，见开发日志——当前口径以[核心特性](#核心特性)为准。）完整内容见[开发日志](./docs/changelog/v1.4/v1.4.7.md) · 更早版本见 [CHANGELOG](./CHANGELOG.md)。
 
 ## FDE 方法论
 
@@ -259,7 +259,7 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # 加载安全规�
 | 安全声明 · 已知局限 | [SECURITY](./SECURITY.md) · [LIMITATIONS](./docs/LIMITATIONS.md) |
 | 贡献指南 | [CONTRIBUTING](./CONTRIBUTING.md) |
 
-> 🧪 **工程可信度**：4249 测试 / 13 引擎包 + 13 插件（引擎包 = 12 主包 + 1 load-chain；插件 = 9 DSH + 4 OpenClaw，插件测试经根 `npm test --workspaces` 统一执行；「引擎包」为包管理口径称谓，架构叙事中称「模块」，见 [ARCHITECTURE 功能编制](./docs/ARCHITECTURE.md#功能编制引擎约束层内的功能模块--2026-09-06-定型)）· 24 条审计规则 · fresh-eyes 独立审查持续运行（测试数以 `tools/check/test-count.sh` 判定为准，环境注意事项见 [docs/guides/review-system.md](./docs/guides/review-system.md)。性能数据为单机参考值，跨工具横评排期 v1.4.x 与 Benchmark 集成）。
+> 🧪 **工程可信度**：4279 测试 / 13 引擎包 + 13 插件（引擎包 = 12 主包 + 1 load-chain；插件 = 9 DSH + 4 OpenClaw，插件测试经根 `npm test --workspaces` 统一执行；「引擎包」为包管理口径称谓，架构叙事中称「模块」，见 [ARCHITECTURE 功能编制](./docs/ARCHITECTURE.md#功能编制引擎约束层内的功能模块--2026-09-06-定型)）· 24 条审计规则 · fresh-eyes 独立审查持续运行（测试数以 `tools/check/test-count.sh` 判定为准，环境注意事项见 [docs/guides/review-system.md](./docs/guides/review-system.md)。性能数据为单机参考值，跨工具横评排期 v1.4.x 与 Benchmark 集成）。
 
 ---
 
