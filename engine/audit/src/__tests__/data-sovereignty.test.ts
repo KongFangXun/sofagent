@@ -6,7 +6,7 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { existsSync, readFileSync, writeFileSync, rmSync, mkdirSync } from 'fs';
-import { join } from 'path';
+import { join, dirname } from 'path';
 import { tmpdir, homedir } from 'os';
 import { randomBytes } from 'crypto';
 // vi.mock 会被 vitest hoist 到所有 import 之前，确保 CI 环境也生效
@@ -95,21 +95,21 @@ describe('resolveSovereigntyLogPath', () => {
     try { rmSync(tmpHome, { recursive: true, force: true }); } catch { /* */ }
   });
 
-  it('字符串日期：拼接为 {base}/{年}/{月}/YYYY-MM-DD.jsonl', () => {
-    // 测试：传入 ISO 日期字符串，路径应按年/月/日三级嵌套
-    const path = resolveSovereigntyLogPath('2026-07-28', tmpHome);
-    expect(path).toBe(join(tmpHome, 'data', 'audit', 'data-sovereignty', '2026', '07', '2026-07-28.jsonl'));
+  it('字符串日期：拼接为 {base}/<repo-hash>/{年}/{月}/YYYY-MM-DD.jsonl', () => {
+    // 测试：传入 ISO 日期字符串 + 固定 repoHash，路径按 repo-hash/年/月/日四级嵌套
+    const path = resolveSovereigntyLogPath('2026-07-28', tmpHome, 'abc123def456');
+    expect(path).toBe(join(tmpHome, 'data', 'audit', 'data-sovereignty', 'abc123def456', '2026', '07', '2026-07-28.jsonl'));
   });
 
   it('Date 对象：从 Date 提取年月日', () => {
     // 测试：传入 Date 对象时也能正确提取 year/month/day
-    const path = resolveSovereigntyLogPath(new Date('2026-01-05T00:00:00Z'), tmpHome);
+    const path = resolveSovereigntyLogPath(new Date('2026-01-05T00:00:00Z'), tmpHome, 'abc123def456');
     expect(path).toContain(join('2026', '01', '2026-01-05.jsonl'));
   });
 
   it('月份和日期不足两位时补零', () => {
     // 测试：单数月/日应 padStart 到两位（01、05）
-    const path = resolveSovereigntyLogPath('2026-1-5', tmpHome);
+    const path = resolveSovereigntyLogPath('2026-1-5', tmpHome, 'abc123def456');
     expect(path).toContain('2026');
     expect(path).toMatch(/01/);
     expect(path).toMatch(/05/);
@@ -504,7 +504,7 @@ describe('DataSovereigntyLogger', () => {
     // 测试：包含 API key 的记录写入后，文件内容不含原始 key
     // 运行时拼接避免 A2 扫描（不可写字面量）
     const secret = ['sk-abcdef', '1234567890', 'abcdef1234567890'].join('');
-    const logger = new DataSovereigntyLogger(tmpHome);
+    const logger = new DataSovereigntyLogger(tmpHome, 'abc123def456');
     logger.append(makeRecord({
       dataFlow: {
         direction: 'outbound',
@@ -515,9 +515,105 @@ describe('DataSovereigntyLogger', () => {
       },
     }));
 
-    const filePath = resolveSovereigntyLogPath('2026-07-28', tmpHome);
+    const filePath = resolveSovereigntyLogPath('2026-07-28', tmpHome, 'abc123def456');
     const raw = readFileSync(filePath, 'utf-8');
     expect(raw).not.toContain(secret);
     expect(raw).toContain('[REDACTED:');
+  });
+});
+
+// ============================================================
+// repo-hash 隔离（读写双路径语义）
+// ============================================================
+
+describe('DataSovereigntyLogger repo-hash 隔离', () => {
+  let tmpHome: string;
+
+  beforeEach(() => {
+    tmpHome = makeTmpDir();
+  });
+
+  afterEach(() => {
+    try { rmSync(tmpHome, { recursive: true, force: true }); } catch { /* */ }
+  });
+
+  it('不同 repo-hash 写入不同段目录（互不串流）', () => {
+    // 测试：两个仓库标识各写一条——文件落各自的 <repo-hash>/{年}/{月}/ 段
+    const loggerA = new DataSovereigntyLogger(tmpHome, 'aaaaaaaaaaaa');
+    const loggerB = new DataSovereigntyLogger(tmpHome, 'bbbbbbbbbbbb');
+    loggerA.append(makeRecord({ taskContext: { taskId: 'task-A', userIntent: 'A 仓任务', agentRole: 'engineer' } }));
+    loggerB.append(makeRecord({ taskContext: { taskId: 'task-B', userIntent: 'B 仓任务', agentRole: 'engineer' } }));
+
+    const pathA = resolveSovereigntyLogPath('2026-07-28', tmpHome, 'aaaaaaaaaaaa');
+    const pathB = resolveSovereigntyLogPath('2026-07-28', tmpHome, 'bbbbbbbbbbbb');
+    expect(existsSync(pathA)).toBe(true);
+    expect(existsSync(pathB)).toBe(true);
+
+    // 互不可见：A 的 logger 读不到 B 的记录
+    const recordsA = loggerA.queryRecent({ date: '2026-07-28' });
+    expect(recordsA.length).toBe(1);
+    expect(recordsA[0]!.taskContext.taskId).toBe('task-A');
+
+    const recordsB = loggerB.queryRecent({ date: '2026-07-28' });
+    expect(recordsB.length).toBe(1);
+    expect(recordsB[0]!.taskContext.taskId).toBe('task-B');
+  });
+
+  it('queryRange 只扫当前 repo-hash 段——他仓记录不可见', () => {
+    // 测试：A/B 两段各写一条，A 的 queryRange 只聚合 A 段
+    const loggerA = new DataSovereigntyLogger(tmpHome, 'aaaaaaaaaaaa');
+    const loggerB = new DataSovereigntyLogger(tmpHome, 'bbbbbbbbbbbb');
+    const ts = '2026-07-28T10:00:00.000Z';
+    loggerA.append(makeRecord({ cloudCall: { timestamp: ts, provider: 'openai', model: 'gpt-4o', endpoint: 'x', tokenCount: { input: 1, output: 1 }, purpose: 'p' }, taskContext: { taskId: 'task-A', userIntent: 'A', agentRole: 'engineer' } }));
+    loggerB.append(makeRecord({ cloudCall: { timestamp: ts, provider: 'openai', model: 'gpt-4o', endpoint: 'x', tokenCount: { input: 2, output: 2 }, purpose: 'p' }, taskContext: { taskId: 'task-B', userIntent: 'B', agentRole: 'engineer' } }));
+
+    const rangeA = loggerA.queryRange('2026-07-28', '2026-07-28');
+    expect(rangeA.length).toBe(1);
+    expect(rangeA[0]!.taskContext.taskId).toBe('task-A');
+  });
+
+  it('旧版无段路径的历史记录 queryRecent 仍可读（fallback）', () => {
+    // 测试：手工在旧结构 {base}/2026/07/ 放一条历史记录——
+    // 新 logger（带段）读侧 fallback 能取回
+    const legacyPath = join(tmpHome, 'data', 'audit', 'data-sovereignty', '2026', '07', '2026-07-28.jsonl');
+    mkdirSync(dirname(legacyPath), { recursive: true });
+    const legacyRecord = makeRecord({ taskContext: { taskId: 'legacy-task', userIntent: '旧版历史', agentRole: 'engineer' } });
+    writeFileSync(legacyPath, JSON.stringify(legacyRecord) + '\n', 'utf-8');
+
+    const logger = new DataSovereigntyLogger(tmpHome, 'aaaaaaaaaaaa');
+    const records = logger.queryRecent({ date: '2026-07-28' });
+    expect(records.length).toBe(1);
+    expect(records[0]!.taskContext.taskId).toBe('legacy-task');
+  });
+
+  it('旧版历史 + 新段写入合并读取（新旧并存）', () => {
+    // 测试：旧路径一条历史 + 新段写一条——queryRecent 双读合并为 2 条
+    const legacyPath = join(tmpHome, 'data', 'audit', 'data-sovereignty', '2026', '07', '2026-07-28.jsonl');
+    mkdirSync(dirname(legacyPath), { recursive: true });
+    const legacyRecord = makeRecord({
+      cloudCall: { timestamp: '2026-07-28T08:00:00.000Z', provider: 'openai', model: 'gpt-4o', endpoint: 'x', tokenCount: { input: 1, output: 1 }, purpose: 'p' },
+      taskContext: { taskId: 'legacy-task', userIntent: '旧版历史', agentRole: 'engineer' },
+    });
+    writeFileSync(legacyPath, JSON.stringify(legacyRecord) + '\n', 'utf-8');
+
+    const logger = new DataSovereigntyLogger(tmpHome, 'aaaaaaaaaaaa');
+    logger.append(makeRecord()); // 默认 timestamp 2026-07-28T10:00 → 新段
+
+    const records = logger.queryRecent({ date: '2026-07-28' });
+    expect(records.length).toBe(2);
+    // 按时间正序：旧记录（08:00）在前
+    expect(records[0]!.taskContext.taskId).toBe('legacy-task');
+  });
+
+  it('queryRange 同样兼容旧无段结构（双根扫描）', () => {
+    // 测试：仅旧结构有数据（无新段）——queryRange 扫 base 根取回
+    const legacyPath = join(tmpHome, 'data', 'audit', 'data-sovereignty', '2026', '07', '2026-07-28.jsonl');
+    mkdirSync(dirname(legacyPath), { recursive: true });
+    const legacyRecord = makeRecord();
+    writeFileSync(legacyPath, JSON.stringify(legacyRecord) + '\n', 'utf-8');
+
+    const logger = new DataSovereigntyLogger(tmpHome, 'aaaaaaaaaaaa');
+    const records = logger.queryRange('2026-07-28', '2026-07-28');
+    expect(records.length).toBe(1);
   });
 });

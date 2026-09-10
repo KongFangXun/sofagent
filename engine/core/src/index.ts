@@ -63,8 +63,18 @@
   readLlmCallTrace,
   verifyLlmCallChain,
   getLlmCallTracePath,
+  getLegacyLlmCallTracePath,
+  listLlmCallTraceFiles,
 } from './llm-call-trace';
 /* @public */ export type { LlmCallTraceInput, LlmCallRecord, LlmCallTraceFilter } from './llm-call-trace';
+
+// ── 仓库标识 hash（运行时审计 repo-hash 隔离）──
+/* @public */ export {
+  computeRepoHash,
+  clearRepoHashCache,
+  REPO_HASH_PATTERN,
+} from './repo-hash';
+/* @public */ export type { RepoHashExecFn } from './repo-hash';
 
 // ── 环境变量统一读取（SOFAGENT_* 主名 + 旧名别名兜底）──
 /* @public */ export { resolveEnvVar, resolveEnvBool, resolveEnvNumber } from './shared/env';

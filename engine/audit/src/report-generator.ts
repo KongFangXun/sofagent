@@ -2,8 +2,8 @@
 // report-generator.ts · 数据主权审计报告生成器（v1.4.6 · P0）
 // ============================================================
 //
-// 从 data/audit/data-sovereignty/{年}/{月}/*.jsonl 聚合记录，
-// 生成 6-section Markdown 报告（日/周/月三档）。
+// 从 data/audit/data-sovereignty/<repo-hash>/{年}/{月}/*.jsonl 聚合记录，
+// 生成 6-section Markdown 报告（日/周/月三档；旧版无段历史读侧 fallback 可读）。
 //
 // 报告双写：
 //   1. 返回值给调用方（daemon inspector / MCP tool）

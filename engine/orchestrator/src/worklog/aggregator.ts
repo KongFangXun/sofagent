@@ -25,7 +25,7 @@ import { readFileSync, existsSync, mkdirSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import type { AuditHistoryEntry } from '@sofagent/audit';
 import type { LlmCallRecord } from '@sofagent/core';
-import { getDataDir } from '@sofagent/core';
+import { getDataDir, listLlmCallTraceFiles } from '@sofagent/core';
 
 // ── 类型定义 ──────────────────────────────────────────────
 
@@ -201,7 +201,8 @@ export class WorklogAggregator {
   }
 
   private readLlmTrace(): LlmCallRecord[] {
-    return readJsonl<LlmCallRecord>(join(this.dataDir, 'audit', 'runtime', 'llm-calls.jsonl'));
+    // repo-hash 段隔离后聚合读侧走枚举（旧平铺 + 各段全量）
+    return listLlmCallTraceFiles(this.dataDir).flatMap((f) => readJsonl<LlmCallRecord>(f));
   }
 
   private readAbLatest(): { winner: string; consecutiveWins: number; margin: number } | null {

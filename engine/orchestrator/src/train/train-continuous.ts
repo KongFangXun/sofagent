@@ -51,6 +51,7 @@
 
 import { existsSync, readFileSync, mkdirSync, writeFileSync } from 'fs';
 import { join } from 'path';
+import { listLlmCallTraceFiles } from '@sofagent/core';
 import { buildAndPersistDataset } from './dataset-builder';
 import type { IngestRecord } from './data-ingest';
 import { scanAndGate, ComplianceGateError, type DataProvenance } from './train-compliance';
@@ -160,8 +161,8 @@ export function collectFlywheelSamples(
   });
   sources['decision-log'] = decisionsNew.length;
 
-  // 二、llm-calls（调用轨迹——rawResponse 含输入输出对）
-  const llmCalls = readJsonl(join(dataDir, 'audit', 'runtime', 'llm-calls.jsonl'));
+  // 二、llm-calls（调用轨迹——rawResponse 含输入输出对；repo-hash 段隔离后聚合读侧走枚举）
+  const llmCalls = listLlmCallTraceFiles(dataDir).flatMap((f) => readJsonl(f));
   const llmNew = llmCalls.filter((c) => {
     const ts = typeof c.ts === 'string' ? new Date(c.ts).getTime() : NaN;
     return Number.isFinite(ts) && ts >= sinceMs;
@@ -218,8 +219,9 @@ export function flywheelToIngestRecords(
       fields: { instruction, output: String(d.kind ?? ''), input: String(d.agentId ?? '') },
     });
   }
-  // llm-calls →（instruction=模型+终止原因上下文，output=原始响应摘要）
-  for (const c of readJsonl(join(dataDir, 'audit', 'runtime', 'llm-calls.jsonl'))) {
+  // llm-calls →（instruction=模型+终止原因上下文，output=原始响应摘要；段隔离后走枚举）
+  for (const f of listLlmCallTraceFiles(dataDir)) {
+    for (const c of readJsonl(f)) {
     const ts = typeof c.ts === 'string' ? new Date(c.ts).getTime() : NaN;
     if (!Number.isFinite(ts) || ts < sinceMs) continue;
     const raw = typeof c.rawResponse === 'string' ? c.rawResponse.slice(0, 2000) : '';
@@ -233,6 +235,7 @@ export function flywheelToIngestRecords(
         input: '',
       },
     });
+    }
   }
   return { records, columns: ['instruction', 'input', 'output'] };
 }

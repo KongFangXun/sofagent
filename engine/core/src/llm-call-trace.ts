@@ -15,7 +15,7 @@
 //     hmacAlgo, envFingerprint }
 // ============================================================
 
-import { existsSync, readFileSync, mkdirSync, chmodSync } from 'fs';
+import { existsSync, readFileSync, mkdirSync, chmodSync, readdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { createHash, createHmac } from 'crypto';
 import { getEnvFingerprint, getHmacKey, stableStringify } from './audit-history';
@@ -23,6 +23,7 @@ import type { ChainCheckResult } from './audit-history';
 import { resolveAuditDir } from './data-paths';
 import { atomicAppendSync } from './shared/atomic-write';
 import { REDACTION_PATTERNS } from './shared/secret-patterns';
+import { computeRepoHash } from './repo-hash';
 
 /** LLM 调用记录写入输入（脱敏白名单字段） */
 export interface LlmCallTraceInput {
@@ -153,11 +154,42 @@ function sanitizeTraceInput(input: LlmCallTraceInput): {
 }
 
 /**
- * LLM 调用 Trace 文件路径：data/audit/runtime/llm-calls.jsonl
- * （走 resolveAuditDir，SOFAGENT_HOME 可被环境变量覆盖——测试隔离用）
+ * LLM 调用 Trace 文件路径：data/audit/runtime/<repo-hash>/llm-calls.jsonl
+ * （走 resolveAuditDir，SOFAGENT_HOME 可被环境变量覆盖——测试隔离用；
+ *   repo-hash 段按 git 仓库隔离——不同 git 仓互不可见，非 git 回退 nogit-hash）
  */
-export function getLlmCallTracePath(overrideHome?: string): string {
+export function getLlmCallTracePath(overrideHome?: string, repoHash?: string): string {
+  const segment = repoHash ?? computeRepoHash();
+  return join(resolveAuditDir(overrideHome), 'runtime', segment, 'llm-calls.jsonl');
+}
+
+/** 旧版无 repo-hash 段的 Trace 路径（v1.4.7 前写入，读侧 fallback 用） */
+export function getLegacyLlmCallTracePath(overrideHome?: string): string {
   return join(resolveAuditDir(overrideHome), 'runtime', 'llm-calls.jsonl');
+}
+
+/**
+ * 枚举 data/audit/runtime/ 下所有 llm-calls.jsonl 文件（聚合读侧用）。
+ *
+ * 返回：旧平铺路径（若存在）+ 各 repo-hash 段内文件（若存在）。
+ * 聚合消费方（dashboard / 训练语料 / worklog 聚合）按「全量统计」语义
+ * 读所有仓的数据；隔离是写侧防混流，聚合读侧不受隔离边界约束。
+ * @param dataDir 数据根目录（调用方各自的 dataDir 解析口径）
+ */
+export function listLlmCallTraceFiles(dataDir: string): string[] {
+  const runtimeRoot = join(dataDir, 'audit', 'runtime');
+  const out: string[] = [];
+  const legacy = join(runtimeRoot, 'llm-calls.jsonl');
+  if (existsSync(legacy)) out.push(legacy);
+  try {
+    for (const name of readdirSync(runtimeRoot)) {
+      const candidate = join(runtimeRoot, name, 'llm-calls.jsonl');
+      if (name !== 'llm-calls.jsonl' && existsSync(candidate)) out.push(candidate);
+    }
+  } catch {
+    // runtime/ 不存在或不可读——返回已收集部分
+  }
+  return out;
 }
 
 /** 读取文件最后一行并解析为对象（不存在/为空/解析失败返回 null） */
@@ -238,24 +270,34 @@ export function appendLlmCallRecord(input: LlmCallTraceInput, overrideHome?: str
  * @returns 按写入顺序排列的记录数组
  */
 export function readLlmCallTrace(filter: LlmCallTraceFilter = {}): LlmCallRecord[] {
-  const filePath = getLlmCallTracePath(filter.overrideHome);
-  if (!existsSync(filePath)) return [];
-
-  let content: string;
-  try {
-    content = readFileSync(filePath, 'utf-8');
-  } catch {
-    return [];
-  }
+  // 读侧双读：新路径（repo-hash 段）优先 + 旧路径（v1.4.7 前无段平铺）fallback——
+  // 升级后既有历史原地可读（不迁移不回填），两侧记录合并
+  const paths = [
+    getLlmCallTracePath(filter.overrideHome),
+    getLegacyLlmCallTracePath(filter.overrideHome),
+  ];
+  const contents = paths
+    .filter((p) => existsSync(p))
+    .map((p) => {
+      try {
+        return readFileSync(p, 'utf-8');
+      } catch {
+        return null;
+      }
+    })
+    .filter((c): c is string => c !== null);
+  if (contents.length === 0) return [];
 
   const records: LlmCallRecord[] = [];
-  for (const line of content.split('\n')) {
-    const trimmed = line.trim();
-    if (trimmed === '') continue;
-    try {
-      records.push(JSON.parse(trimmed) as LlmCallRecord);
-    } catch {
-      // 损坏行跳过（校验由 verifyLlmCallChain 负责报告）
+  for (const content of contents) {
+    for (const line of content.split('\n')) {
+      const trimmed = line.trim();
+      if (trimmed === '') continue;
+      try {
+        records.push(JSON.parse(trimmed) as LlmCallRecord);
+      } catch {
+        // 损坏行跳过（校验由 verifyLlmCallChain 负责报告）
+      }
     }
   }
 
@@ -290,6 +332,10 @@ function verifyRecordHmac(
 /**
  * 验证 llm-calls.jsonl 的 HMAC 链完整性。
  *
+ * 双文件语义：新路径（repo-hash 段）与旧路径（v1.4.7 前平铺）是**两条
+ * 独立的链**（各自由 genesis 起）——分别校验后聚合判定。任一文件
+ * tampered 即整体 tampered；两条均 insufficient 即整体 insufficient。
+ *
  * 判定语义与 core/audit-history.ts checkHistoryChainDetailed 对齐：
  *   ok / tampered / unverifiable / insufficient。
  *
@@ -297,11 +343,35 @@ function verifyRecordHmac(
  * @returns ChainCheckResult
  */
 export function verifyLlmCallChain(overrideHome?: string): ChainCheckResult {
-  const filePath = getLlmCallTracePath(overrideHome);
-  if (!existsSync(filePath)) {
+  // 两侧文件都在 → 分别验链后聚合；只存在一侧 → 单链校验
+  const currentPath = getLlmCallTracePath(overrideHome);
+  const legacyPath = getLegacyLlmCallTracePath(overrideHome);
+  const hasCurrent = existsSync(currentPath);
+  const hasLegacy = existsSync(legacyPath);
+
+  if (!hasCurrent && !hasLegacy) {
     return { status: 'insufficient', detail: 'LLM 调用 Trace 文件不存在，无法验证防篡改链' };
   }
 
+  const results: ChainCheckResult[] = [];
+  if (hasCurrent) results.push(verifySingleChain(currentPath));
+  if (hasLegacy) results.push(verifySingleChain(legacyPath));
+
+  // 聚合：tampered > unverifiable > insufficient > ok（最坏优先）
+  if (results.some((r) => r.status === 'tampered')) {
+    return results.find((r) => r.status === 'tampered')!;
+  }
+  if (results.some((r) => r.status === 'unverifiable')) {
+    return results.find((r) => r.status === 'unverifiable')!;
+  }
+  if (results.every((r) => r.status === 'insufficient')) {
+    return { status: 'insufficient', detail: 'LLM 调用 Trace 不足 2 条，无法构成可验证的防篡改链' };
+  }
+  return { status: 'ok' };
+}
+
+/** 校验单个链文件的完整性 */
+function verifySingleChain(filePath: string): ChainCheckResult {
   let content: string;
   try {
     content = readFileSync(filePath, 'utf-8');

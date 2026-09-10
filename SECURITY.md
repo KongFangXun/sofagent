@@ -43,8 +43,8 @@ sofagent 是一套 FDE 能力——底层引擎是纯本地 Harness 中间件（
 
 | 数据面 | 存储位置 | 隔离粒度 | 防线时序 | 边界与排期 |
 |------|------|------|------|------|
-| `runtime-audit.jsonl`（运行时审计日志） | `data/audit/runtime/<repo-hash>/` | **按 git 仓库隔离**（repo-hash；非 git 回退 nogit-hash） | 事中（审计中间件随每次工具调用落盘） | FORGE 自托管路径已交付；引擎侧同构隔离排 v1.4.7（§四详述） |
-| data-sovereignty 审计日志 | `data/audit/data-sovereignty/{年}/{月}/` | 全局单文件（多项目记录混合） | 事后可追溯 | repo-hash 隔离已移排 v1.4.7（复用 FORGE 方案）；临时方案 `SOFAGENT_HOME` 按项目分目录 |
+| `runtime-audit.jsonl`（运行时审计日志） | `data/audit/runtime/<repo-hash>/` | **按 git 仓库隔离**（repo-hash；非 git 回退 nogit-hash） | 事中（审计中间件随每次工具调用落盘） | FORGE 自托管路径已交付；引擎侧同构隔离已落地（§四详述） |
+| data-sovereignty 审计日志 | `data/audit/data-sovereignty/<repo-hash>/{年}/{月}/` | **按 git 仓库隔离**（repo-hash；非 git 回退 nogit-hash；旧版无段历史读侧 fallback 原地可读） | 事后可追溯 | 引擎侧 repo-hash 隔离已落地（复用 FORGE 方案）；多项目仍需 `SOFAGENT_HOME` 按项目分目录时可用 |
 | `history.jsonl`（commit 级审计历史） | `~/.sofagent/data/audit/`（全局） | 全局 append-only（HMAC 签名链要求全量连续，跨仓查询是运维刚需） | 事后（HMAC 链 + `--doctor` 校验；锚点防尾部截断） | 全局共享是设计决策；无密钥时退化为弱校验 hash chain（同用户进程可重算，见 §四 HMAC 段） |
 | `knowledge/`（知识沉淀） | `data/knowledge/` | 全局共享（无租户/项目维度，多域数据会串） | sensitivity 分级是**分级标注非门禁**（L0-L3 分层脱敏管道事前打码） | 多租户抽象层 v0 排 v1.4.7（G7）；当前定位单机单用户 |
 | `task/logs/` 与 `think.md` | `data/task/logs/`、`data/think.md` | 全局明文 | 事前脱敏（sanitize() 写入前打码，脱敏是**掩码非加密**） | 附链目录不在加密范围（加密仅覆盖审计历史主链）；强合规场景建议外部加密卷 |
@@ -254,7 +254,7 @@ sofagent 是一套 FDE 能力——底层引擎是纯本地 Harness 中间件（
 
 ## 四、审计与存储安全
 
-> 🔒 **运行时审计日志按 git 仓库隔离（FORGE 自托管路径已交付 · 引擎侧移排 v1.4.7）**：运行时审计日志（`runtime-audit.jsonl`）在 FORGE 自托管 SubAgent 路径已按 `data/audit/runtime/<repo-hash>/` 隔离存储（`git rev-parse --show-toplevel` hash；非 git 回退 `nogit-<cwd-hash>`，见 `FORGE/src/audit-middleware.mjs`）。**引擎侧 data-sovereignty 审计日志（`data/audit/data-sovereignty/{年}/{月}/`）仍为全局单文件存储，与 commit 级审计历史 `history.jsonl`（全局）一致，多项目场景下记录混合——原声称排 v1.3.9 未兑现，已移排 v1.4.7 复用 FORGE 方案补齐引擎侧 repo-hash 隔离。**
+> 🔒 **运行时审计日志按 git 仓库隔离（FORGE 自托管路径 + 引擎侧均已交付）**：运行时审计日志在 FORGE 自托管 SubAgent 路径已按 `data/audit/runtime/<repo-hash>/` 隔离存储（`git rev-parse --show-toplevel` hash；非 git 回退 `nogit-<cwd-hash>`，见 `FORGE/src/audit-middleware.mjs`）。**引擎侧 data-sovereignty 审计日志与 LLM 调用 Trace（`llm-calls.jsonl`）同样已按 repo-hash 隔离存储（`data/audit/data-sovereignty/<repo-hash>/{年}/{月}/` 与 `data/audit/runtime/<repo-hash>/llm-calls.jsonl`）——旧版无段结构的既有历史读侧 fallback 原地可读（不迁移不回填）；commit 级审计历史 `history.jsonl` 保持全局（HMAC 链要求全量连续，跨仓查询是运维刚需）。**
 
 ```
 ~/.sofagent/
@@ -645,7 +645,7 @@ grep -i "api_key\|apikey\|sk-" runs/*/usage.jsonl   # 应无结果
 本节聚焦与安全策略直接相关的三条：
 
 1. **数据的主权属于客户**——在客户现场看到的数据，一个字节都不应该出现在不该出现的地方：不进 AI 训练数据（除非合同明确授权）、不进案例素材（除非客户书面同意）。sofagent 工程呼应：数据不出本机（§已知风险）+ 联邦查询可选（§一传输安全）+ sensitivity 分级（§二知识安全）+ 最小权限原则。
-2. **诚实报告结果，包括坏消息**——按结果收费的模式里最大的道德风险是粉饰结果。sofagent 工程呼应：审计模块 git diff 硬证据（24 条规则零 token 纯静态判定，不靠模型「自评」）+ HMAC 链防篡改（§四审计与存储安全）+ 运行时审计日志按 git 仓库隔离（**FORGE 自托管路径已交付** repo-hash 隔离；引擎侧 data-sovereignty 仍全局——已移排 v1.4.7；commit 级 history.jsonl 全局存储，见 §四）。
+2. **诚实报告结果，包括坏消息**——按结果收费的模式里最大的道德风险是粉饰结果。sofagent 工程呼应：审计模块 git diff 硬证据（24 条规则零 token 纯静态判定，不靠模型「自评」）+ HMAC 链防篡改（§四审计与存储安全）+ 运行时审计日志按 git 仓库隔离（FORGE 自托管路径与引擎侧 data-sovereignty / llm-calls 均已按 repo-hash 隔离；commit 级 history.jsonl 保持全局存储，见 §四）。
 3. **不制造依赖，不贩卖恐惧**——不故意把系统做成黑箱让客户永远离不开你；不夸大「不用 AI 就会死」的恐慌促成交易。sofagent 工程呼应：MIT 开源（客户可自主审计代码）+ 交付物（ontology/workflow/skills）客户可自主维护 + FDE 离场机制（§五工程安全 install.sh 行为说明：只写入 `~/.sofagent/`，不锁死客户环境）。
 
 > 其余三条（把被替代的人当回事 / 对不该做的事说不 / 记住你代表技术本身）属 FDE 个人职业操守范畴，非安全工程范畴，详见 FDE/GUIDE.md。

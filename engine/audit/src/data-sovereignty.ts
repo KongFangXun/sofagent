@@ -3,7 +3,9 @@
 // ============================================================
 //
 // 每次 LLM 调用 / 工具调用生成一条 DataSovereigntyRecord（4 维），
-// 追加写入 data/audit/data-sovereignty/{年}/{月}/YYYY-MM-DD.jsonl（append-only）。
+// 追加写入 data/audit/data-sovereignty/<repo-hash>/{年}/{月}/YYYY-MM-DD.jsonl（append-only）。
+// repo-hash 段 = git 仓库标识（不同 git 仓互不可见；非 git 回退 nogit-<hash>）；
+// 旧版无段结构的既有历史读侧 fallback 原地可读（不迁移不回填）。
 //
 // 安全模式复用 audit-history.ts 的 HMAC 哈希链：
 //   1. 先脱敏（dataFlow.fields / taskContext.userIntent 中的敏感串不原文落盘）
@@ -25,6 +27,7 @@ import {
   stableStringify,
   atomicAppendSync,
   DATA_URI_PATTERN,
+  computeRepoHash,
 } from '@sofagent/core';
 
 // ============================================================
@@ -178,11 +181,29 @@ function dateParts(iso: string): { year: string; month: string; day: string } {
 
 /**
  * 解析某日的 JSONL 日志文件路径
- * 结构：data/audit/data-sovereignty/{年}/{月}/YYYY-MM-DD.jsonl
+ * 结构：data/audit/data-sovereignty/<repo-hash>/{年}/{月}/YYYY-MM-DD.jsonl
  * @param isoDate ISO 日期（如 2026-07-28），或 Date 对象
  * @param overrideHome 测试隔离用 fake home
+ * @param repoHash 仓库标识（缺省 computeRepoHash() 实时计算；测试可传固定值）
  */
 export function resolveSovereigntyLogPath(
+  isoDate: string | Date,
+  overrideHome?: string,
+  repoHash?: string,
+): string {
+  const d = typeof isoDate === 'string' ? new Date(isoDate) : isoDate;
+  const year = String(d.getFullYear());
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  const base = overrideHome
+    ? join(resolveAuditDir(overrideHome), 'data-sovereignty')
+    : SOVEREIGNTY_DIR;
+  const segment = repoHash ?? computeRepoHash();
+  return join(base, segment, year, month, `${year}-${month}-${day}.jsonl`);
+}
+
+/** 旧版无 repo-hash 段的日志路径（v1.4.7 之前写入，读侧 fallback 用） */
+export function resolveLegacySovereigntyLogPath(
   isoDate: string | Date,
   overrideHome?: string,
 ): string {
@@ -210,9 +231,17 @@ export function resolveSovereigntyLogPath(
  */
 export class DataSovereigntyLogger {
   private readonly overrideHome?: string;
+  /** 仓库标识段（缺省实时计算；测试可注入固定值） */
+  private readonly repoHash?: string;
 
-  constructor(overrideHome?: string) {
+  constructor(overrideHome?: string, repoHash?: string) {
     this.overrideHome = overrideHome;
+    this.repoHash = repoHash;
+  }
+
+  /** 本 logger 实例生效的 repo-hash 段（缺省实时计算） */
+  private hashSegment(): string {
+    return this.repoHash ?? computeRepoHash();
   }
 
   /**
@@ -222,7 +251,7 @@ export class DataSovereigntyLogger {
    */
   append(record: DataSovereigntyRecord): void {
     try {
-      const filePath = resolveSovereigntyLogPath(record.cloudCall.timestamp, this.overrideHome);
+      const filePath = resolveSovereigntyLogPath(record.cloudCall.timestamp, this.overrideHome, this.hashSegment());
       const dir = dirname(filePath);
       const fileExists = existsSync(filePath);
       if (!existsSync(dir)) {
@@ -291,35 +320,48 @@ export class DataSovereigntyLogger {
   queryRecent(opts: { date?: string; limit?: number } = {}): DataSovereigntyRecord[] {
     const limit = opts.limit ?? 100;
     const dateStr = resolveDateArg(opts.date ?? 'today');
-    const filePath = resolveSovereigntyLogPath(dateStr, this.overrideHome);
-    if (!existsSync(filePath)) return [];
-
-    let content: string;
-    try {
-      content = readFileSync(filePath, 'utf-8');
-    } catch (err) {
-      // [sofagent] 审计辅助通道：读取失败不阻断业务，但记录告警
-      console.error('[sofagent] data-sovereignty: 读取历史记录失败:', err instanceof Error ? err.message : String(err));
-      return [];
-    }
+    // 读侧双读：新路径（repo-hash 段）优先 + 旧路径（v1.4.7 前无段结构）fallback——
+    // 升级后既有明文历史原地可读（不迁移不回填），两侧记录合并后排序
+    const filePath = resolveSovereigntyLogPath(dateStr, this.overrideHome, this.hashSegment());
+    const legacyPath = resolveLegacySovereigntyLogPath(dateStr, this.overrideHome);
+    const contents = [filePath, legacyPath]
+      .filter((p) => existsSync(p))
+      .map((p) => this.safeRead(p))
+      .filter((c): c is string => c !== null);
+    if (contents.length === 0) return [];
 
     const entries: DataSovereigntyRecord[] = [];
-    for (const line of content.split('\n')) {
-      const trimmed = line.trim();
-      if (!trimmed) continue;
-      try {
-        entries.push(JSON.parse(trimmed) as DataSovereigntyRecord);
-      } catch (err) {
-        console.error('[sofagent] data-sovereignty: 日志行解析失败:', err instanceof Error ? err.message : String(err));
+    for (const content of contents) {
+      for (const line of content.split('\n')) {
+        const trimmed = line.trim();
+        if (!trimmed) continue;
+        try {
+          entries.push(JSON.parse(trimmed) as DataSovereigntyRecord);
+        } catch (err) {
+          console.error('[sofagent] data-sovereignty: 日志行解析失败:', err instanceof Error ? err.message : String(err));
+        }
       }
     }
     entries.sort((a, b) => a.cloudCall.timestamp.localeCompare(b.cloudCall.timestamp));
     return entries.slice(-limit);
   }
 
+  /** 读文件（失败告警返回 null——与既有容错语义一致） */
+  private safeRead(filePath: string): string | null {
+    try {
+      return readFileSync(filePath, 'utf-8');
+    } catch (err) {
+      console.error('[sofagent] data-sovereignty: 读取历史记录失败:', err instanceof Error ? err.message : String(err));
+      return null;
+    }
+  }
+
   /**
    * 查询日期区间内的所有记录（周/月报用）
    * 扫描目录结构，聚合区间内所有日文件。
+   *
+   * 隔离边界：只扫当前 repo-hash 段 + 旧版无段结构（v1.4.7 前历史
+   * 原地可读）——**其他仓库的段目录不读**（不同 git 仓互不可见）。
    * @param startISO 起始日期（含）
    * @param endISO 结束日期（含）
    */
@@ -333,16 +375,30 @@ export class DataSovereigntyLogger {
     const end = new Date(endISO).getTime();
     const out: DataSovereigntyRecord[] = [];
 
+    // 双根扫描：当前 repo-hash 段（新结构）+ base 本身（旧结构年/月目录直挂 base）
+    const roots = [join(base, this.hashSegment()), base];
+
+    for (const scanRoot of roots) {
+      if (!existsSync(scanRoot)) continue;
+      this.collectRangeFromRoot(scanRoot, start, end, out);
+    }
+
+    out.sort((a, b) => a.cloudCall.timestamp.localeCompare(b.cloudCall.timestamp));
+    return out;
+  }
+
+  /** 从单个根目录聚合区间内记录（年/月/日三级结构扫描） */
+  private collectRangeFromRoot(root: string, start: number, end: number, out: DataSovereigntyRecord[]): void {
     let years: string[] = [];
     try {
-      years = readdirSync(base).filter((f) => /^\d{4}$/.test(f));
+      years = readdirSync(root).filter((f) => /^\d{4}$/.test(f));
     } catch (err) {
       console.error('[sofagent] data-sovereignty: 读取年份目录失败:', err instanceof Error ? err.message : String(err));
-      return [];
+      return;
     }
 
     for (const year of years) {
-      const yearDir = join(base, year);
+      const yearDir = join(root, year);
       let months: string[] = [];
       try {
         months = readdirSync(yearDir).filter((f) => /^\d{2}$/.test(f));
@@ -380,9 +436,6 @@ export class DataSovereigntyLogger {
         }
       }
     }
-
-    out.sort((a, b) => a.cloudCall.timestamp.localeCompare(b.cloudCall.timestamp));
-    return out;
   }
 }
 
