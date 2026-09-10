@@ -7,6 +7,7 @@
 ## 目录
 
 - [已知风险（明文存储）](#已知风险明文存储)
+  - [数据隔离与防线时序对照](#数据隔离与防线时序对照)
 - [一、传输安全](#一传输安全)
 - [二、知识安全](#二知识安全)
 - [三、编排安全](#三编排安全)
@@ -35,6 +36,20 @@ sofagent 是一套 FDE 能力——底层引擎是纯本地 Harness 中间件（
 ├── bin/           ← CLI 入口
 └── skill/         ← Skill 文件
 ```
+
+### 数据隔离与防线时序对照
+
+企业 IT 采购视角的单页速查：哪些数据按什么粒度隔离、防线发生在事前还是事后。内容逐行取自本文件与 [LIMITATIONS](./docs/LIMITATIONS.md) 既有披露，无新增声称。
+
+| 数据面 | 存储位置 | 隔离粒度 | 防线时序 | 边界与排期 |
+|------|------|------|------|------|
+| `runtime-audit.jsonl`（运行时审计日志） | `data/audit/runtime/<repo-hash>/` | **按 git 仓库隔离**（repo-hash；非 git 回退 nogit-hash） | 事中（审计中间件随每次工具调用落盘） | FORGE 自托管路径已交付；引擎侧同构隔离排 v1.4.7（§四详述） |
+| data-sovereignty 审计日志 | `data/audit/data-sovereignty/{年}/{月}/` | 全局单文件（多项目记录混合） | 事后可追溯 | repo-hash 隔离已移排 v1.4.7（复用 FORGE 方案）；临时方案 `SOFAGENT_HOME` 按项目分目录 |
+| `history.jsonl`（commit 级审计历史） | `~/.sofagent/data/audit/`（全局） | 全局 append-only（HMAC 签名链要求全量连续，跨仓查询是运维刚需） | 事后（HMAC 链 + `--doctor` 校验；锚点防尾部截断） | 全局共享是设计决策；无密钥时退化为弱校验 hash chain（同用户进程可重算，见 §四 HMAC 段） |
+| `knowledge/`（知识沉淀） | `data/knowledge/` | 全局共享（无租户/项目维度，多域数据会串） | sensitivity 分级是**分级标注非门禁**（L0-L3 分层脱敏管道事前打码） | 多租户抽象层 v0 排 v1.4.7（G7）；当前定位单机单用户 |
+| `task/logs/` 与 `think.md` | `data/task/logs/`、`data/think.md` | 全局明文 | 事前脱敏（sanitize() 写入前打码，脱敏是**掩码非加密**） | 静态加密能力已实现未接线（排 v1.4.7）；强合规场景建议外部加密卷 |
+
+> 排期项详见 [docs/ROADMAP.md](./docs/ROADMAP.md)；各数据面的攻击面与信任模型细节见 [docs/LIMITATIONS.md](./docs/LIMITATIONS.md)。
 
 
 | 文件 | 位置 | 可能含 |
