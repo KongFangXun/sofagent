@@ -103,6 +103,12 @@ export function getIdentity(agentId: string, overrideHome?: string): IdentityRec
 export interface ListIdentitiesOptions {
   /** true = 只返回已撤销；false = 只返回未撤销；缺省 = 全部 */
   includeRevoked?: boolean;
+  /**
+   * v1.4.7 G7：按部门级组织归属过滤（orgId）。
+   * 命中语义：identity.orgId === orgId，或两边都缺省（'default' === 'default'）。
+   * 缺省不过滤（返回全部——既有调用方零改动）。
+   */
+  orgId?: string;
 }
 
 /**
@@ -122,6 +128,11 @@ export function listIdentities(
     records = records.filter((r) => r.revoked);
   } else if (options.includeRevoked === false) {
     records = records.filter((r) => !r.revoked);
+  }
+  // v1.4.7 G7：org 过滤——缺省 orgId 视为 'default'（与注册侧缺省语义对齐）
+  if (options.orgId !== undefined) {
+    const want = options.orgId;
+    records = records.filter((r) => (r.identity.orgId ?? 'default') === want);
   }
   return records.sort((a, b) => a.registeredAt.localeCompare(b.registeredAt));
 }

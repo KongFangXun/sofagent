@@ -222,3 +222,53 @@ export function resolveDaemonJson(overrideHome?: string): string {
 export function getDataDir(explicitBase?: string): string {
   return explicitBase || process.env.SOFAGENT_DATA || resolveDataDir();
 }
+
+// ═══════════════════════════════════════════════════════════
+// G7 多租户抽象层 v0（v1.4.7）——路径与身份地基
+//
+// v0 能力边界：只做「路径命名空间 + 身份归属字段」——
+//   data/<tenant>/ 是数据落点隔离（不同租户的数据文件互不可见）；
+//   不做租户级鉴权/配额/跨租户策略引擎（属 v2.x，翻牌禁照抄）。
+//
+// 语义：
+//   - tenant 经 SOFAGENT_TENANT 环境变量或显式参数传入；
+//   - 缺省 'default'：resolveTenantDataDir() === getDataDir()，
+//     单租户部署零感知零迁移（既有调用方不动即兼容）；
+//   - 非法租户名（路径穿越/空串/斜杠）→ 抛错（fail-loud，
+//     不静默降级 default——静默降级会把 A 租户数据写进 B 的坑）。
+// ═══════════════════════════════════════════════════════════
+
+/** 租户 ID 校验：非空、无路径分隔符、无 .. 穿越、可打印 ASCII 词法 */
+export const TENANT_PATTERN = /^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/;
+
+/** 缺省租户名（单租户部署的隐式命名空间） */
+export const DEFAULT_TENANT = 'default';
+
+/**
+ * 校验并规范化租户 ID。
+ * @throws 名字非法时抛错（fail-loud——不静默降级，防跨租户数据误写）
+ */
+export function validateTenantId(tenant: string): string {
+  if (!TENANT_PATTERN.test(tenant)) {
+    throw new Error(
+      `validateTenantId: 非法租户 ID "${tenant}"——须为 1-64 位字母数字开头、可含 - _ 的标识符（禁路径分隔符/穿越）`,
+    );
+  }
+  return tenant;
+}
+
+/**
+ * G7 v0：解析租户数据目录——data/<tenant>/。
+ *
+ * @param tenant 租户 ID（缺省读 SOFAGENT_TENANT，再缺省 'default'）
+ * @param explicitBase 显式数据根（测试隔离；缺省走 getDataDir 优先级链）
+ * @returns data/<tenant>/ 绝对路径；tenant='default' 时返回 data/ 本身
+ *          （缺省租户零迁移——data/default/ 不物化，旧数据原地可读）
+ */
+export function resolveTenantDataDir(tenant?: string, explicitBase?: string): string {
+  const t = tenant ?? process.env.SOFAGENT_TENANT ?? DEFAULT_TENANT;
+  validateTenantId(t);
+  const base = getDataDir(explicitBase);
+  if (t === DEFAULT_TENANT) return base;
+  return path.join(base, t);
+}

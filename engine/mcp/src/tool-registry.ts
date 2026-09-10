@@ -21,7 +21,7 @@ export interface ToolDef {
 }
 
 /**
- * 完整工具清单——84 个 tool（v1.4.6：train_cloud 新增——83→84，云 VM 执行面控制工具；v1.4.5：train_serve/train_compliance/train_deliverable 三件齐——80→83，SKILL.md/ARCHITECTURE 等九处 SSOT 同步收口；v1.4.4：corpus_export 新增；v1.4.3：train_status/train_list/train_diagnose 新增；v1.4.2：fde_interview/fde_classify/fde_quantify/fde_derive/fde_distill/fde_deploy 六引擎 + train_doctor/train_dryrun/train_report 新增；v1.4.1：train_submit 新增；v1.4.0：cost_query + browser 4 新增；v1.3.9：worklog_query 新增；v1.3.6：workflow_submit/ontology_import/model_register/model_switch/model_unregister/train_budget/define_acceptance/check_acceptance；v1.3.5：run_ab_test/promote_ab/snapshot_list/snapshot_restore；v1.3.4：commons_publish/search/invoke/rate/retire/harvest_rule；不含 4 个 resource shortcut）
+ * 完整工具清单——88 个 tool（v1.4.7：workflow_create/workflow_update/workflow_node_add/workflow_diff_preview 四 tool 新增——G14 workflow 对象化 CRUD（84→88，本版其余新增随对应章节逐个落位至终值 95）；v1.4.6：train_cloud 新增——83→84，云 VM 执行面控制工具；v1.4.5：train_serve/train_compliance/train_deliverable 三件齐——80→83，SKILL.md/ARCHITECTURE 等九处 SSOT 同步收口；v1.4.4：corpus_export 新增；v1.4.3：train_status/train_list/train_diagnose 新增；v1.4.2：fde_interview/fde_classify/fde_quantify/fde_derive/fde_distill/fde_deploy 六引擎 + train_doctor/train_dryrun/train_report 新增；v1.4.1：train_submit 新增；v1.4.0：cost_query + browser 4 新增；v1.3.9：worklog_query 新增；v1.3.6：workflow_submit/ontology_import/model_register/model_switch/model_unregister/train_budget/define_acceptance/check_acceptance；v1.3.5：run_ab_test/promote_ab/snapshot_list/snapshot_restore；v1.3.4：commons_publish/search/invoke/rate/retire/harvest_rule；不含 4 个 resource shortcut）
  */
 export const TOOLS: ToolDef[] = [
   {
@@ -1172,6 +1172,118 @@ export const TOOLS: ToolDef[] = [
         project_root: { type: 'string', description: '项目根（验收命令执行工作目录；缺省 cwd）' },
       },
       required: ['task_id'],
+    },
+  },
+  {
+    // v1.4.7 (章三 G14)：workflow 对象化 CRUD——LUI Agent 读写入口（四 tool 之一）
+    name: 'workflow_create',
+    roles: ['agent'],
+    description: '新建 workflow 对象——schema-gate 校验（结构 + cron 语法）后落库 version=1，owner 持有 trunk 直改权；每次落库挂 decision-log 审计。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        workflow: {
+          type: 'object',
+          description: 'workflow 文档（name/nodes 必填；节点支持 trigger.schedule 定时触发 + visibility 三级可见性）',
+          properties: {
+            name: { type: 'string', description: 'workflow 名称（兼作存储主键 id）' },
+            description: { type: 'string', description: 'workflow 描述' },
+            nodes: {
+              type: 'array',
+              description: '节点列表（至少 1 个）',
+              items: {
+                type: 'object',
+                properties: {
+                  id: { type: 'string', description: '节点唯一标识' },
+                  agent: { type: 'string', description: 'Agent 类型（内置 4 类 / registry / agent-creation 兜底）' },
+                  task: { type: 'string', description: '节点任务描述' },
+                  depends_on: { type: 'array', items: { type: 'string' }, description: '上游节点 id' },
+                  type: { type: 'string', enum: ['loop', 'auto', 'manual'], description: '节点类型（缺省 auto）' },
+                  hitl: { type: 'boolean', description: '是否人工确认' },
+                  trigger: {
+                    type: 'object',
+                    properties: { schedule: { type: 'string', description: '定时触发周期——糖宏（@daily/@weekly/@monthly）或五段 cron；非法 cron 拒绝' } },
+                  },
+                  visibility: { type: 'string', enum: ['open', 'private', 'result-only'], description: '节点可见性（缺省 open）' },
+                },
+                required: ['id', 'agent', 'task'],
+              },
+            },
+            merge_criteria: { type: 'array', items: { type: 'object' }, description: '审阅协议：可叠加验收条件' },
+            approver: { type: 'object', description: '审阅协议：审阅批准者' },
+          },
+          required: ['name', 'nodes'],
+        },
+        owner: { type: 'string', description: '创建者标识（trunk 直改权持有人）' },
+        description: { type: 'string', description: 'workflow 描述（可选）' },
+        data_dir: { type: 'string', description: '数据根目录（缺省走 getDataDir 解析链）' },
+      },
+      required: ['workflow', 'owner'],
+    },
+  },
+  {
+    // v1.4.7 (章三 G14)：workflow 全量更新——owner 直改 trunk / 非 owner 开 branch
+    name: 'workflow_update',
+    roles: ['agent'],
+    description: '全量替换 workflow 文档——owner 直改 trunk（version+1）；非 owner 写 branch-{actor}（trunk 不动，等审阅合并）。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        workflow_id: { type: 'string', description: 'workflow 标识' },
+        workflow: { type: 'object', description: 'workflow 文档（与 workflow_create 同构，name 必填）' },
+        actor: { type: 'string', description: '操作者（=owner 直改 trunk；否则开 branch）' },
+        data_dir: { type: 'string', description: '数据根目录（缺省走 getDataDir 解析链）' },
+      },
+      required: ['workflow_id', 'workflow', 'actor'],
+    },
+  },
+  {
+    // v1.4.7 (章三 G14)：workflow 追加单节点——上岗 prompt 产物落点（与 onboard_prompt 闭环）
+    name: 'workflow_node_add',
+    roles: ['agent'],
+    description: '向既有 workflow 追加单节点（增量改）——节点 id 重复/depends_on 悬空/cron 非法拒绝；owner 直改 trunk，非 owner 写 branch。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        workflow_id: { type: 'string', description: 'workflow 标识' },
+        node: {
+          type: 'object',
+          description: '追加节点（id/agent/task 必填；可选 trigger.schedule / visibility）',
+          properties: {
+            id: { type: 'string', description: '节点唯一标识' },
+            agent: { type: 'string', description: 'Agent 类型' },
+            task: { type: 'string', description: '节点任务描述' },
+            depends_on: { type: 'array', items: { type: 'string' }, description: '上游节点 id（须已存在）' },
+            type: { type: 'string', enum: ['loop', 'auto', 'manual'], description: '节点类型（缺省 auto）' },
+            hitl: { type: 'boolean', description: '是否人工确认' },
+            trigger: {
+              type: 'object',
+              properties: { schedule: { type: 'string', description: '定时触发周期（糖宏或五段 cron）' } },
+            },
+            visibility: { type: 'string', enum: ['open', 'private', 'result-only'], description: '节点可见性（缺省 open）' },
+          },
+          required: ['id', 'agent', 'task'],
+        },
+        actor: { type: 'string', description: '操作者（=owner 直改 trunk；否则开 branch）' },
+        data_dir: { type: 'string', description: '数据根目录（缺省走 getDataDir 解析链）' },
+      },
+      required: ['workflow_id', 'node', 'actor'],
+    },
+  },
+  {
+    // v1.4.7 (章三 G14)：workflow 变更预览——只读零副作用
+    name: 'workflow_diff_preview',
+    roles: ['agent'],
+    description: '对比传入文档与 trunk 当前的行级差异（unified 风格 + 增删行数）——只读零副作用，落库前先预览。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        workflow_id: { type: 'string', description: 'workflow 标识' },
+        workflow: { type: 'object', description: '待对比 workflow 文档（与 workflow_create 同构）' },
+        actor: { type: 'string', description: '操作者' },
+        data_dir: { type: 'string', description: '数据根目录（缺省走 getDataDir 解析链）' },
+      },
+      required: ['workflow_id', 'workflow', 'actor'],
     },
   },
   {

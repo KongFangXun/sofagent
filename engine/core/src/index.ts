@@ -152,6 +152,11 @@
   resolveDaemonJson,
   getConfigFile,
   getDataDir,
+  // G7 多租户 v0：路径命名空间 + 租户校验（fail-loud）
+  validateTenantId,
+  resolveTenantDataDir,
+  TENANT_PATTERN,
+  DEFAULT_TENANT,
 } from './data-paths';
 
 // ── 配置模板 ──

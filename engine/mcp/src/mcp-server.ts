@@ -105,6 +105,13 @@ import { trainServeTool } from './tools/train-serve';
 import { trainComplianceTool } from './tools/train-compliance';
 import { trainCloud } from './tools/train-cloud';
 import { defineAcceptance, checkAcceptance } from './tools/acceptance';
+// v1.4.7 章三 G14：workflow 对象化 CRUD 四 tool
+import {
+  workflowCreate as workflowCreateTool,
+  workflowUpdate as workflowUpdateTool,
+  workflowNodeAdd as workflowNodeAddTool,
+  workflowDiffPreview as workflowDiffPreviewTool,
+} from './tools/workflow-crud';
 
 // ============================================================
 // 常量
@@ -405,6 +412,11 @@ class McpServer {
         case 'train_cloud': { const tcAction = args.action === 'add' || args.action === 'status' || args.action === 'remove' ? args.action : 'list'; if ((tcAction === 'add' || tcAction === 'status' || tcAction === 'remove') && typeof args.name !== 'string') { this.sendError(id, -32602, `Missing required argument: name (action=${tcAction})`); break; } if (tcAction === 'add' && typeof args.endpoint !== 'string') { this.sendError(id, -32602, 'Missing required argument: endpoint (action=add)'); break; } const tcr = await trainCloud({ action: tcAction, ...(typeof args.name === 'string' ? { name: args.name } : {}), ...(typeof args.endpoint === 'string' ? { endpoint: args.endpoint } : {}), ...(typeof args.credential_ref === 'string' ? { credential_ref: args.credential_ref } : {}) }); this.sendTool(id, tcr, tcr.data.isError); break; }
         // v1.4.5 第三章：训练数据合规扫描（train_compliance——scan/gate/mark）
         case 'train_compliance': { if (!args.enterprise_id) { this.sendError(id, -32602, 'Missing required argument: enterprise_id'); break; } if (!args.dataset_id) { this.sendError(id, -32602, 'Missing required argument: dataset_id'); break; } if (!args.version) { this.sendError(id, -32602, 'Missing required argument: version'); break; } const cAction = args.action === 'gate' || args.action === 'mark' ? args.action : 'scan'; if (cAction === 'mark' && !args.provenance) { this.sendError(id, -32602, 'Missing required argument: provenance (action=mark)'); break; } const tcr = await trainComplianceTool({ enterprise_id: args.enterprise_id as string, dataset_id: args.dataset_id as string, version: args.version as string, action: cAction, ...(args.provenance === 'enterprise' || args.provenance === 'synthetic' || args.provenance === 'public' ? { provenance: args.provenance } : {}) }); this.sendTool(id, tcr, tcr.data.isError); break; }
+        // v1.4.7 章三 G14：workflow 对象化 CRUD 四 tool（薄委托 orchestrator crud/workflow-store）
+        case 'workflow_create': { if (!args.workflow || !args.owner) { this.sendError(id, -32602, 'Missing required arguments: workflow and owner'); break; } const wcr = await workflowCreateTool(args); this.sendTool(id, wcr, wcr.data.isError); break; }
+        case 'workflow_update': { if (!args.workflow_id || !args.workflow || !args.actor) { this.sendError(id, -32602, 'Missing required arguments: workflow_id, workflow, and actor'); break; } const wur = await workflowUpdateTool(args); this.sendTool(id, wur, wur.data.isError); break; }
+        case 'workflow_node_add': { if (!args.workflow_id || !args.node || !args.actor) { this.sendError(id, -32602, 'Missing required arguments: workflow_id, node, and actor'); break; } const wnr = await workflowNodeAddTool(args); this.sendTool(id, wnr, wnr.data.isError); break; }
+        case 'workflow_diff_preview': { if (!args.workflow_id || !args.workflow || !args.actor) { this.sendError(id, -32602, 'Missing required arguments: workflow_id, workflow, and actor'); break; } const wdr = await workflowDiffPreviewTool(args); this.sendTool(id, wdr, wdr.data.isError); break; }
         default: this.sendError(id, -32602, `Unknown tool: ${toolName}`);
       }
     } catch (err) {

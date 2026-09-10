@@ -56,11 +56,12 @@ describe('L4 进化工具 MCP 动态面（第七章三）', () => {
     clearDynamicTools();
   });
 
-  it('静态计数口径铁律：TOOLS 静态数=83（tool-registry 顶层 name）+ 1 动态（evolution-dynamic-bridge 运行时注册）= 84，L4 注册后静态数不变（动态面独立计数）', () => {
-    // 前置锚：静态数=83（tool-registry TOOLS 顶层 name）+ 1 动态（evolution-dynamic-bridge 运行时注册）= 84
-    // ——该断言是「不进 83 静态计数」验收口径的本体（check-version 只数
+  it('静态计数口径铁律：TOOLS 静态数=88（tool-registry 顶层 name）+ 1 动态（evolution-dynamic-bridge 运行时注册）= 89，L4 注册后静态数不变（动态面独立计数）', () => {
+    // 前置锚：静态数=88（v1.4.7 G14 workflow CRUD 四 tool 落位 84→88；tool-registry TOOLS 顶层 name）
+    // + 1 动态（evolution-dynamic-bridge 运行时注册）= 89
+    // ——该断言是「不进静态计数」验收口径的本体（check-version 只数
     // tool-registry.ts 顶层 name，动态面不在其守卫面）。
-    expect(TOOLS.length).toBe(84);
+    expect(TOOLS.length).toBe(88);
 
     const generator = writeGenerator(base, 'regen_report');
     const registered = registerEvolvedTools({
@@ -78,8 +79,8 @@ describe('L4 进化工具 MCP 动态面（第七章三）', () => {
     });
 
     expect(registered).toEqual(['regen_report']);
-    // 静态面不变；动态面 +1；tools/list 语义 = 83 + 1
-    expect(TOOLS.length).toBe(84);
+    // 静态面不变；动态面 +1；tools/list 语义 = 88 + 1（v1.4.7 G14 后静态基线 88）
+    expect(TOOLS.length).toBe(88);
     expect(getDynamicTools().length).toBe(1);
   });
 

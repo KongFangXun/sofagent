@@ -9,7 +9,12 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { mkdirSync, mkdtempSync, writeFileSync, rmSync, existsSync } from 'fs';
 import { join, dirname } from 'path';
 import { tmpdir } from 'os';
-import { getConfigFile } from '../data-paths';
+import {
+  getConfigFile,
+  resolveTenantDataDir,
+  validateTenantId,
+  DEFAULT_TENANT,
+} from '../data-paths';
 
 let tmp: string;
 
@@ -70,5 +75,62 @@ describe('getConfigFile 向上遍历查找', () => {
     const found = getConfigFile(proj);
     expect(found).toBe(join(proj, '.sofagent', 'config.yml'));
     expect(dirname(found)).not.toContain(process.cwd());
+  });
+});
+
+// ═══════════════════════════════════════════════════════════
+// G7 多租户 v0（v1.4.7）：租户路径隔离 + 默认兼容
+// ═══════════════════════════════════════════════════════════
+describe('G7 resolveTenantDataDir 租户路径隔离', () => {
+  it('缺省租户返回 data/ 本身——单租户零迁移（data/default/ 不物化）', () => {
+    const base = mkdtempSync(join(tmpdir(), 'g7-default-'));
+    try {
+      expect(resolveTenantDataDir(DEFAULT_TENANT, base)).toBe(base);
+      expect(resolveTenantDataDir(undefined, base)).toBe(base); // 缺省链 → default
+    } finally {
+      rmSync(base, { recursive: true, force: true });
+    }
+  });
+
+  it('具名租户落在 data/<tenant>/——路径隔离 v0', () => {
+    const base = mkdtempSync(join(tmpdir(), 'g7-named-'));
+    try {
+      expect(resolveTenantDataDir('acme', base)).toBe(join(base, 'acme'));
+      expect(resolveTenantDataDir('org-42', base)).toBe(join(base, 'org-42'));
+      // 两租户路径互不包含
+      const a = resolveTenantDataDir('acme', base);
+      const b = resolveTenantDataDir('beta', base);
+      expect(a).not.toBe(b);
+      expect(a.startsWith(b)).toBe(false);
+    } finally {
+      rmSync(base, { recursive: true, force: true });
+    }
+  });
+
+  it('路径穿越/非法租户名 fail-loud 抛错（不静默降级 default）', () => {
+    const base = mkdtempSync(join(tmpdir(), 'g7-bad-'));
+    try {
+      expect(() => resolveTenantDataDir('../escape', base)).toThrow();
+      expect(() => resolveTenantDataDir('a/b', base)).toThrow();
+      expect(() => resolveTenantDataDir('', base)).toThrow();
+      expect(() => resolveTenantDataDir('.hidden', base)).toThrow(); // 点开头拒绝
+      expect(() => validateTenantId('ok-name_1')).not.toThrow();
+    } finally {
+      rmSync(base, { recursive: true, force: true });
+    }
+  });
+
+  it('SOFAGENT_TENANT 环境变量生效（显式参数优先）', () => {
+    const base = mkdtempSync(join(tmpdir(), 'g7-env-'));
+    const prev = process.env.SOFAGENT_TENANT;
+    try {
+      process.env.SOFAGENT_TENANT = 'from-env';
+      expect(resolveTenantDataDir(undefined, base)).toBe(join(base, 'from-env'));
+      expect(resolveTenantDataDir('explicit-wins', base)).toBe(join(base, 'explicit-wins'));
+    } finally {
+      if (prev === undefined) delete process.env.SOFAGENT_TENANT;
+      else process.env.SOFAGENT_TENANT = prev;
+      rmSync(base, { recursive: true, force: true });
+    }
   });
 });

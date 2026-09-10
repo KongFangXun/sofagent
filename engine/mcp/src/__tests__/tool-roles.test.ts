@@ -72,8 +72,8 @@ describe('isToolExposed 单工具判定', () => {
 describe('filterToolsByRoles 清单过滤', () => {
   it('全量模式 → 返回原清单', () => {
     const filtered = filterToolsByRoles(TOOLS, null);
-    // v1.4.5 第一批+第二批：80→83（train_serve/train_compliance/train_deliverable 三件齐）
-    expect(filtered).toHaveLength(84);
+    // v1.4.7 G14：84→88（workflow_create/update/node_add/diff_preview 四 tool 落位）
+    expect(filtered).toHaveLength(88);
   });
 
   it('显式 fde+audit+agent 三面 → 只暴露这三面（不含 browser/ops/commons 独占工具）', () => {

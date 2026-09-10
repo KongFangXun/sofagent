@@ -60,6 +60,13 @@ export interface AgentIdentity {
   constraintVersion?: number;
   /** v1.3.1 新增：责任声明（该 Agent 的责任边界描述） */
   responsibility?: string;
+  /**
+   * v1.4.7 G7 新增：部门级组织归属（orgId）。
+   * 语义分层（已定案）：enterpriseId/principal = 企业级主键（既有，不动）；
+   * orgId = 部门级归属新字段——两者并存不合并不改名。
+   * 缺省 'default'（未启用多租户时零感知）。
+   */
+  orgId?: string;
 }
 
 /** 责任声明默认文案 */

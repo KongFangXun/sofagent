@@ -95,15 +95,22 @@ function listCustomOverrides(dir: string, maxFiles = 4): string[] {
  *
  * @param projectRoot 项目根目录
  * @param opts.skillDir 约束文件子目录名（默认 ".sofagent"），相对于 projectRoot
+ * @param opts.tenantId 租户标识（v1.4.7 G7——注入「身份上下文」段，Agent 可感知归属；缺省不注入）
  * @returns 拼接后的 system prompt 字符串
  */
 /* @public */ export function buildConstrainedSystemPrompt(
   projectRoot: string,
-  opts?: { skillDir?: string },
+  opts?: { skillDir?: string; tenantId?: string },
 ): string {
   const skillDir = path.join(projectRoot, opts?.skillDir ?? '.sofagent');
   const parts: string[] = [];
   const MAX_PARTS = 20;
+
+  // 0. 身份上下文（v1.4.7 G7）：租户归属声明——先于约束层注入，
+  //    Agent 从第一条 prompt 起知道自己在哪个租户边界内行动。
+  if (opts?.tenantId) {
+    parts.push(`# 身份上下文（tenant）\n当前租户：${opts.tenantId}\n行为边界与数据归属以该租户为限——跨租户数据不可见。`);
+  }
 
   // 1. 宪法层：SKILL.md
   const skillContent = tryRead(path.join(skillDir, 'SKILL.md'));

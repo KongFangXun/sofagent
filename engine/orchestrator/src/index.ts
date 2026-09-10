@@ -35,12 +35,39 @@
   WorkflowSubmitError,
   validateMergeCriteria,
   validateApprover,
+  validateVisibility,
   WORKFLOW_SCHEMA,
 } from './workflow/container';
 /* @public */ export type { WorkflowSubmitInput, WorkflowContainerHandle } from './workflow/container';
 // DSH workflow seam 互转契约位（v1.3.6 交付 ①——真实互转待 DSH 正式版）
 /* @public */ export { createDshSeamConverter, DSH_SEAM_FIELD_MAPPINGS } from './workflow/dsh-seam';
 /* @public */ export type { DshSeamConverter, DshSeamFieldMapping } from './workflow/dsh-seam';
+
+// Workflow CRUD（对象化读写 + version/lifecycle 联动 · G14）
+/* @public */ export {
+  workflowCreate,
+  workflowUpdate,
+  workflowNodeAdd,
+  workflowDiffPreview,
+  diffLines,
+} from './crud/workflow-store';
+/* @public */ export type { StoredWorkflow, CrudResult } from './crud/workflow-store';
+/* @public */ export {
+  gateOrThrow,
+  SchemaGateError,
+  validateCronSchedule,
+  validateWorkflowCrons,
+  workflowCreateSchema,
+  workflowUpdateSchema,
+  workflowNodeAddSchema,
+  workflowDiffPreviewSchema,
+} from './crud/schema-gate';
+/* @public */ export type {
+  WorkflowCreateInput,
+  WorkflowUpdateInput,
+  WorkflowNodeAddInput,
+  WorkflowDiffPreviewInput,
+} from './crud/schema-gate';
 
 // Ontology 运行时层（v1.3.6 交付 ②——Action 注册表 / Schema 校验 / 注入管线）
 /* @public */ export {

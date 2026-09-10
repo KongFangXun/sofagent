@@ -51,6 +51,19 @@ export interface WorkflowNode {
    * 缺省值 false。
    */
   hitl?: boolean;
+  /**
+   * 节点级触发器（可选）——trigger.schedule 定时触发周期。
+   * 三档糖宏（@daily/@weekly/@monthly）或五段 cron；非 cron 形态视为
+   * 自然语言周期由消费端解析。非法 cron 在 schema-gate 校验拒绝。
+   */
+  trigger?: { schedule: string };
+  /**
+   * 节点级可见性（可选，缺省 open）：
+   * - open：产出与过程公开
+   * - private：仅 owner 可审（过程+产出均不进公开上下文）
+   * - result-only：完成者不见底层数据（仅产出摘要公开）
+   */
+  visibility?: 'open' | 'private' | 'result-only';
 }
 
 // ────────────────────────────────────────────────────────────
@@ -363,6 +376,29 @@ export function parseWorkflowYaml(workflowYaml: string): ParsedWorkflow {
       hitl = true; // manual 节点强制 HITL
     }
 
+    // ── trigger / visibility 字段解析（G14/G6 节点级扩展——原样穿透，语义校验在 schema-gate）──
+    // trigger：可选对象 { schedule: string }——结构非法 fail-loud（静默丢弃会让
+    // 定时触发悄悄失效）；schedule 内容合法性（cron 语法）在 schema-gate 收口
+    let trigger: { schedule: string } | undefined;
+    if (n.trigger !== undefined) {
+      const t = n.trigger as Record<string, unknown>;
+      if (typeof t !== 'object' || t === null || typeof t.schedule !== 'string' || t.schedule.trim() === '') {
+        throw new WorkflowParseError(`节点 ${n.id} 的 trigger 非法（必须为 { schedule: 非空字符串 }）`);
+      }
+      trigger = { schedule: t.schedule.trim() };
+    }
+
+    // visibility：可选枚举三态——非法值 fail-loud（拼错静默降级 open 等于越权放开）
+    let visibility: WorkflowNode['visibility'];
+    if (n.visibility !== undefined) {
+      if (n.visibility !== 'open' && n.visibility !== 'private' && n.visibility !== 'result-only') {
+        throw new WorkflowParseError(
+          `节点 ${n.id} 的 visibility 非法（${String(n.visibility)}），必须为 open|private|result-only`,
+        );
+      }
+      visibility = n.visibility;
+    }
+
     return {
       id: n.id.trim(),
       agent: n.agent.trim(),
@@ -370,6 +406,8 @@ export function parseWorkflowYaml(workflowYaml: string): ParsedWorkflow {
       depends_on: (deps as unknown[] | undefined)?.map((d) => String(d)) ?? [],
       type: nodeType,
       hitl,
+      ...(trigger !== undefined ? { trigger } : {}),
+      ...(visibility !== undefined ? { visibility } : {}),
     };
   });
 

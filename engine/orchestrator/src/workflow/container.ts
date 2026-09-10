@@ -123,6 +123,36 @@ export function validateApprover(approver: unknown): string[] {
 }
 
 /**
+ * 对节点级 visibility 做语义校验（G6 三级可见性——实仓收口点）。
+ *
+ * 三级语义（merge 时按级执行审阅门）：
+ *   open       产出与过程公开（缺省——向后兼容）
+ *   private    仅 owner 可审（过程+产出均不进公开上下文）
+ *   result-only 完成者不见底层数据（仅产出摘要公开）
+ *
+ * 语义约束：private / result-only 节点必须声明 approver（审阅门没有
+ * 执行人就等于「仅 owner 可审」却没人能审——fail-loud 拒绝而非静默放行）。
+ *
+ * @param parsed 解析后的 workflow
+ * @returns 违规项列表（空数组 = 通过）
+ */
+export function validateVisibility(parsed: ParsedWorkflow): string[] {
+  const issues: string[] = [];
+  const restricted = parsed.nodes.filter(
+    (n) => n.visibility === 'private' || n.visibility === 'result-only',
+  );
+  if (restricted.length === 0) return issues;
+  if (parsed.approver === undefined) {
+    issues.push(
+      `visibility: 存在 ${restricted.length} 个 private/result-only 节点（${restricted
+        .map((n) => n.id)
+        .join('/')}）但未声明 approver——受限可见节点的审阅门必须指定执行人`,
+    );
+  }
+  return issues;
+}
+
+/**
  * 运行容器——外部提交 → schema 校验 → parser 解析 →（run 时）dag-runner 执行。
  *
  * @param input 提交入参（workflow 文本 + 可选 runner 注入）
@@ -151,11 +181,12 @@ export function submitWorkflow(input: WorkflowSubmitInput): WorkflowContainerHan
   const schemaDoc = parsedToSchemaDoc(parsed);
   const schemaResult = validateAgainstSchema(schemaDoc, WORKFLOW_SCHEMA);
 
-  // 3. 审阅协议语义校验（merge_criteria / approver——schema 只校结构）
+  // 3. 审阅协议语义校验（merge_criteria / approver / visibility——schema 只校结构）
   const criteriaIssues = validateMergeCriteria(parsed.mergeCriteria);
   const approverIssues = validateApprover(parsed.approver);
+  const visibilityIssues = validateVisibility(parsed);
 
-  const allIssues = [...schemaResult.errors, ...criteriaIssues, ...approverIssues];
+  const allIssues = [...schemaResult.errors, ...criteriaIssues, ...approverIssues, ...visibilityIssues];
   if (allIssues.length > 0) {
     throw new WorkflowSubmitError(
       `workflow 校验未通过（${allIssues.length} 项）：${allIssues[0]}`,
@@ -198,6 +229,8 @@ function parsedToSchemaDoc(parsed: ParsedWorkflow): Record<string, unknown> {
         ...(n.depends_on.length > 0 ? { depends_on: n.depends_on } : {}),
         type: n.type,
         ...(n.hitl !== undefined ? { hitl: n.hitl } : {}),
+        ...(n.trigger !== undefined ? { trigger: n.trigger } : {}),
+        ...(n.visibility !== undefined ? { visibility: n.visibility } : {}),
       })),
       ...(parsed.mergeCriteria !== undefined ? { merge_criteria: parsed.mergeCriteria } : {}),
       ...(parsed.approver !== undefined ? { approver: parsed.approver } : {}),

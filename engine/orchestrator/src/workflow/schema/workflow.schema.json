@@ -67,6 +67,21 @@
         "hitl": {
           "type": "boolean",
           "description": "是否需要人工确认（type=manual 时隐含 true）"
+        },
+        "trigger": {
+          "type": "object",
+          "properties": {
+            "schedule": {
+              "type": "string",
+              "description": "定时触发周期——三档糖宏（@daily/@weekly/@monthly）或五段 cron（分 时 日 月 周）；非 cron 形态视为自然语言周期（如「每天早上九点」），由消费端解析。非法 cron 表达式在 schema-gate 拒绝"
+            }
+          },
+          "description": "节点级触发器（可选）——trigger.schedule 定时触发进 worklog 可溯源"
+        },
+        "visibility": {
+          "type": "string",
+          "enum": ["open", "private", "result-only"],
+          "description": "节点级可见性（可选，缺省 open）：open=产出与过程公开 / private=仅 owner 可审（过程+产出均不进公开上下文）/ result-only=完成者不见底层数据（仅产出摘要公开）"
         }
       }
     },
