@@ -103,9 +103,9 @@ sofagent 不造 Agent——执行能力交给成熟宿主（模型 + 工具 + �
 
 一条命令选定挂载档位：`bash install.sh --platform <平台名>`（全部平台与差异见 [HANDBOOK](./docs/HANDBOOK.md)）
 
-## v1.4.6：多卡分布式与云端训练执行面
+## v1.4.7：商业平台接口版
 
-🚀 训练从「单机跑一跑」走到「多卡并行 + 云端 VM 受监督执行」，同时把不属于约束层的行李卸到仓外——卸下负担之后，缰绳反而更紧了。`train submit` 支持 `gpu.count`/`nodes` 多卡多机配置（job.json schema v2，v1 存量向后兼容）· GPU 队列双轴拓扑感知（8 卡任务不跟 1 卡任务抢卡）· NCCL 分布式故障诊断第八类 · `train_cloud` 云 VM 执行面（注册/体检/远程 spawn 命令构造，数据分拣三档「宁拦勿漏」+ 合规闸先于入库 + 失联止损判定 + 成本入预算；daemon 真实 ssh 执行接线 v1.4.7）· 标准数据推送接口（schema 校验 + 分拣/合规双闸，入口接线 v1.4.7）· 边界收缩约 −1.2k 行（训练配方迁外部装载 `--recipes` / 环境安装归 shell 脚本 / 删除自建 model-downloader / `TrainExecutor` 接口隔离本地 spawn）。（版本时点数字：MCP 83→84 tools、测试 4055→4088，见开发日志——当前口径以[核心特性](#核心特性)为准。）完整内容见[开发日志](./docs/changelog/v1.4/v1.4.6.md) · 更早版本见 [CHANGELOG](./CHANGELOG.md)。
+🔌 给商业平台预留的全部数据与动作接口一次到位——组织看得见（能力缺口/绩效）、协作转得动（PR 生命周期/workflow 对象化）、数据进得来（data_push 双闸）。`workflow_gaps` 能力缺口查询（缺人/缺能力/待升级三类，可转悬赏 PR）· `contribution_query` 绩效导出（PR 权重+决策留痕+审计变更三源聚合，人与数字员工同标准，org 租户过滤）· `pr_submit/pr_review/pr_merge` PR 生命周期三 tool（状态机+confidence 两态，branch→trunk 合并联动）· workflow 对象化 CRUD 四 tool（owner 直改 trunk/非 owner 开 branch，`trigger.schedule` 定时触发）· G7 多租户 v0（`data/<tenant>/` 路径地基+orgId 归属字段）· `onboard_prompt` 上岗 prompt 生成器 · USB 烧录 workflow（验签后自动加载）· audit 留痕双层（规约聚合+PROV-O 导出）· TrainChannel 云训练标准接口（托管云按规范对接，ssh 通道引擎自研）· `data_push` 标准数据推送入口（schema+分拣/合规双闸）· 静态加密 daemon 接线收口（密钥就绪即密文落盘）· 运行时审计 repo-hash 隔离（llm-calls/data-sovereignty 按 git 仓分目录，旧历史原地可读）。（版本时点数字：MCP 84→95 tools、测试 4107→4249，见开发日志——当前口径以[核心特性](#核心特性)为准。）完整内容见[开发日志](./docs/changelog/v1.4/v1.4.7.md) · 更早版本见 [CHANGELOG](./CHANGELOG.md)。
 
 ## FDE 方法论
 
