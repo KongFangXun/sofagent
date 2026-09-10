@@ -1,5 +1,5 @@
 // ============================================================
-// E2 不空标记（扩展层 · 能力拐杖）
+// E2 TODO 未声明（扩展层 · 能力拐杖）
 // diff 新增代码含 TODO/FIXME 但 commit message 没提 → WARN
 // evidenceMode: git-diff（纯 diff 判定，不依赖日志）
 // ============================================================
@@ -10,7 +10,7 @@ const TODO_PATTERN = /\b(TODO|FIXME)\b/;
 
 export function checkRuleE2(ctx: AuditContext): RuleCheck {
   const rule: RuleCheck = {
-    name: 'E2 不空标记',
+    name: 'E2 TODO 未声明',
     number: 202,
     status: 'PASS',
     details: [],

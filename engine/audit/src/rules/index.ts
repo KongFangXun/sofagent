@@ -71,7 +71,7 @@ export const defaultRules: Rule[] = [
  * v1.3.3 #11: priority 统一为 'extended'（扩展规则层） */
 export const extendedRules: Rule[] = [
   { name: 'E1 不落测试', number: 201, evidenceMode: 'git-diff', ruleClass: '能力拐杖', priority: 'extended', ruleType: 'diff', check: checkRuleE1, examples: { match: ["src/production/some.test.ts"], notMatch: ["tests/some.test.ts"] }, justification: '测试文件被提交到生产目录' },
-  { name: 'E2 不空标记', number: 202, evidenceMode: 'git-diff', ruleClass: '能力拐杖', priority: 'extended', ruleType: 'diff', check: checkRuleE2, examples: { match: ["新增 TODO 未在任务中声明"], notMatch: ["TODO 已在任务中声明"] }, justification: '新增 TODO 未声明——遗留未完成项' },
+  { name: 'E2 TODO 未声明', number: 202, evidenceMode: 'git-diff', ruleClass: '能力拐杖', priority: 'extended', ruleType: 'diff', check: checkRuleE2, examples: { match: ["新增 TODO 未在任务中声明"], notMatch: ["TODO 已在任务中声明"] }, justification: '新增 TODO 未声明——遗留未完成项' },
   // E3 已在 v1.2.5 并入 A11（行数维度），编号跳号
   { name: 'E4 不低注释', number: 204, evidenceMode: 'git-diff', ruleClass: '能力拐杖', priority: 'extended', ruleType: 'diff', check: checkRuleE4, examples: { match: ["新增 300 行注释率 <5%"], notMatch: ["新增 100 行注释率正常"] }, justification: '新增大量代码注释率过低——维护性差' },
   { name: 'A14 知识库越权', number: 14, evidenceMode: 'hybrid', ruleClass: '能力拐杖', priority: 'extended', ruleType: 'diff', check: checkRuleA14, examples: { match: ["访问工作流声明范围外的知识页面"], notMatch: ["访问声明范围内的知识页面"] }, justification: '知识库访问超出工作流声明范围' },

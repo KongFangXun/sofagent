@@ -1,5 +1,5 @@
 // ============================================================
-// rule-e2.test.ts · E2 不空标记——TODO 未声明检测测试
+// rule-e2.test.ts · E2 TODO 未声明——检测测试
 // ============================================================
 
 import { describe, it, expect } from 'vitest';
@@ -8,7 +8,7 @@ import type { AuditContext } from './types';
 import type { DiffFile } from '@sofagent/core';
 import { makeDiffFile, makeCtx } from '../test-utils';
 
-describe('E2 不空标记', () => {
+describe('E2 TODO 未声明', () => {
   it('diff 含 TODO + commitMsg 提了 todo → PASS', () => {
     const ctx = makeCtx(
       [makeDiffFile('src/index.ts', ['+// TODO: fix this later'])],

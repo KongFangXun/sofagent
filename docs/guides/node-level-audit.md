@@ -62,7 +62,7 @@
 | A18 垃圾文件 | 垃圾文件判定看产物内容/命名，是 diff 层 |
 | A19 msg 质量 | commit message 质量，提交层判定 |
 | E1 不落测试 | 测试文件是否落盘，是 diff 层 |
-| E2 不空标记 | TODO 空标记在代码内容里，是 diff 层 |
+| E2 TODO 未声明 | TODO 空标记在代码内容里，是 diff 层 |
 | E4 不低注释 | 注释率是代码内容度量，是 diff 层 |
 
 ## v1.4.0 cordis-plugin 规则子集

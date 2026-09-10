@@ -31,7 +31,7 @@ const FIX_SUGGESTIONS: Record<string, string> = {
   // 判定 hasTestFiles=false 才 WARN）——旧文案「分离到 dev 分支或加 .gitignore」
   // 与规则意图相反（按文案操作会加剧测试缺失）。改为补测试导向。
   'E1 不落测试': 'src/ 源码变更应伴随测试：为变更的源码文件补充 *.test.ts（同目录或 tests/），随本次提交一并纳入',
-  'E2 不空标记': 'TODO 必须关联 issue 编号（如 TODO(#123)）或直接解决',
+  'E2 TODO 未声明': 'TODO 必须关联 issue 编号（如 TODO(#123)）或直接解决',
   'E3 不滥删除': '确认删除范围，使用保守修剪原则：只删纯 UI，保留结构性模块',
   'E4 不低注释': '补充函数注释，目标注释率 >= 10%',
   'A14 知识库越权': '检查 workflow.yml 的 knowledge-domain 配置，确认节点只访问授权范围内的知识页面',
