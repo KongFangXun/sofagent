@@ -105,7 +105,7 @@ sofagent 不造 Agent——执行能力交给成熟宿主（模型 + 工具 + �
 
 ## v1.4.6：多卡分布式与云端训练执行面
 
-🚀 训练从「单机跑一跑」走到「多卡并行 + 云端 VM 受监督执行」，同时把不属于约束层的行李卸到仓外——卸下负担之后，缰绳反而更紧了。`train submit` 支持 `gpu.count`/`nodes` 多卡多机配置（job.json schema v2，v1 存量向后兼容）· GPU 队列双轴拓扑感知（8 卡任务不跟 1 卡任务抢卡）· NCCL 分布式故障诊断第八类 · `train_cloud` 云 VM 执行面（注册/体检/远程 spawn，数据分拣三档「宁拦勿漏」+ 合规闸先于入库 + 失联止损 5min + 成本入预算）· 标准数据推送接口（schema 校验 + 分拣/合规双闸，入口接线 v1.4.7）· 边界收缩约 −1.2k 行（训练配方迁外部装载 `--recipes` / 环境安装归 shell 脚本 / 删除自建 model-downloader / `TrainExecutor` 接口隔离本地 spawn）。（版本时点数字：MCP 83→84 tools、测试 4055→4088，见开发日志——当前口径以[核心特性](#核心特性)为准。）完整内容见[开发日志](./docs/changelog/v1.4/v1.4.6.md) · 更早版本见 [CHANGELOG](./CHANGELOG.md)。
+🚀 训练从「单机跑一跑」走到「多卡并行 + 云端 VM 受监督执行」，同时把不属于约束层的行李卸到仓外——卸下负担之后，缰绳反而更紧了。`train submit` 支持 `gpu.count`/`nodes` 多卡多机配置（job.json schema v2，v1 存量向后兼容）· GPU 队列双轴拓扑感知（8 卡任务不跟 1 卡任务抢卡）· NCCL 分布式故障诊断第八类 · `train_cloud` 云 VM 执行面（注册/体检/远程 spawn 命令构造，数据分拣三档「宁拦勿漏」+ 合规闸先于入库 + 失联止损判定 + 成本入预算；daemon 真实 ssh 执行接线 v1.4.7）· 标准数据推送接口（schema 校验 + 分拣/合规双闸，入口接线 v1.4.7）· 边界收缩约 −1.2k 行（训练配方迁外部装载 `--recipes` / 环境安装归 shell 脚本 / 删除自建 model-downloader / `TrainExecutor` 接口隔离本地 spawn）。（版本时点数字：MCP 83→84 tools、测试 4055→4088，见开发日志——当前口径以[核心特性](#核心特性)为准。）完整内容见[开发日志](./docs/changelog/v1.4/v1.4.6.md) · 更早版本见 [CHANGELOG](./CHANGELOG.md)。
 
 ## FDE 方法论
 
