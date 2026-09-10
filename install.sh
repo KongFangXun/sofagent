@@ -660,6 +660,9 @@ echo "  💡 编排引擎为独立可选包 @sofagent/orchestrator，需单独�
 # 注：命令用五段 cron「0 0 * * *」而非 @daily 糖宏——两者等价（CLI 端
 # expandCronSugar 同表展开），五段形态避开 A21 审计规则对安装脚本内
 # @daily 字面量的持久化误报（正当巡检任务非后门，形态选择不降语义）。
+# ⚠️ 双源提醒：本处 schedule 与 engine/daemon/src/templates.ts 的
+# daily-health 模板 defaultSchedule 互为镜像——改模板时必须同步本处
+# （A21 审计规则绕行设计的代价，两处漂移 = 装机任务与模板语义分叉）。
 if [[ "${WITH_FIRST_DEPLOY_CRON:-0}" == "1" ]]; then
   echo ""
   info "Step 8a · 首部署 cron job（可选，daily-health 每日巡检）..."

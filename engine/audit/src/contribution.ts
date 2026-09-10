@@ -121,6 +121,8 @@ export function aggregateContributions(
 
   // ── 数据源 ②③：decision-log + audit history ──
   const decisions = loadDecisionLog(dataDir).filter((e) => withinWindow(e.ts, sinceMs));
+  // 窗口=30 天（缺省）且 loadHistory 默认 100 条封顶——超出的早期条目静默截断，
+  // 聚合基数可能偏小（见 devlog 章二已知局限）。
   const histories = loadHistory(undefined, dataDir).filter((e) => withinWindow(e.timestamp, sinceMs));
 
   // 按贡献者聚合（同标准——userId/agentId 同字段位）

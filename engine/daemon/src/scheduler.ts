@@ -387,6 +387,10 @@ export function createScheduler(dataBase?: string) {
      * runner 真跑（trigger 内部含历史落账 + lastRun/nextRun 推进），单任务失败
      * 不阻断同批其他任务（异常捕获记 exit=1 历史）。
      *
+     * 时序前提：当前消费安全依赖单进程 setInterval 回调不重入语义（JS 事件循环
+     * 单线程——同步 runner 阻塞期间下一轮 tick 排队不并发，同一任务不会被双跑）。
+     * 若 runner 改异步（提前返回 Promise）或多 daemon 并存，须先推进 nextRun
+     * 再执行（领取-推进时序反转做互斥），否则存在重叠消费窗口。
      * @param runner 任务执行器（cli/daemon 侧注入 orchestrator loop 真跑）
      * @returns 本轮消费的任务数（0 = 无到期任务）
      */

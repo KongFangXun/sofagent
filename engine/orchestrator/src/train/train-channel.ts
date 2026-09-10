@@ -200,6 +200,13 @@ export function channelAsExecutor(
         clearInterval(timer);
         timers.delete(jobId);
       }
+      // 幂等止损兑现（stop 语义 = 停轮询 + 停远端任务——cancel 对已终态 job
+      // 返回终态不重复动作；本桥转生产路径后此调用成为失联止损的远端半边）
+      try {
+        await channel.cancel(jobId, 'executor stop（channelAsExecutor）');
+      } catch {
+        // cancel 失败不阻断本地停轮询（远端已死/网络不可达时 noop 即可）
+      }
       return { action: 'noop' };
     },
   };
