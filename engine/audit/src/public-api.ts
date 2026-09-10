@@ -149,3 +149,7 @@
 // ── 贡献度聚合（G4 · 人/数字员工同标准——MCP contribution_query 消费面）──
 /* @public */ export { aggregateContributions, prOverview } from './contribution';
 /* @public */ export type { ContributorRow, WorkflowRow, ContributionReport } from './contribution';
+
+// ── 审计留痕规约层 + PROV-O 导出（章十 · audit_query 查询面）──
+/* @public */ export { reduceAuditHistory, exportProvTurtle, exportProvJsonLd } from './audit-reducer';
+/* @public */ export type { AuditQueryFilter, AuditReducedReport, AgentRollupRow, RuleRollupRow } from './audit-reducer';
