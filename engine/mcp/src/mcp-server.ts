@@ -118,6 +118,8 @@ import { workflowGaps } from './tools/workflow-gaps';
 import { onboardPrompt } from './tools/onboard-prompt';
 // v1.4.7 章七 G13：PR 生命周期三 tool
 import { prSubmit, prReview, prMerge } from './tools/pr-tools';
+// v1.4.7 章六 G4：绩效数据导出
+import { contributionQuery } from './tools/contribution-query';
 
 // ============================================================
 // 常量
@@ -431,6 +433,8 @@ class McpServer {
         case 'pr_submit': { if (!args.pr_id || !args.workflow_id || !args.title || !args.submitter) { this.sendError(id, -32602, 'Missing required arguments: pr_id, workflow_id, title, and submitter'); break; } const psr = await prSubmit(args); this.sendTool(id, psr, psr.data.isError); break; }
         case 'pr_review': { if (!args.pr_id || !args.reviewer || !args.verdict) { this.sendError(id, -32602, 'Missing required arguments: pr_id, reviewer, and verdict'); break; } const prr = await prReview(args); this.sendTool(id, prr, prr.data.isError); break; }
         case 'pr_merge': { if (!args.pr_id || !args.actor) { this.sendError(id, -32602, 'Missing required arguments: pr_id and actor'); break; } const pmr = await prMerge(args); this.sendTool(id, pmr, pmr.data.isError); break; }
+        // v1.4.7 章六 G4：绩效数据导出——人/数字员工同标准贡献度聚合（纯读零写入）
+        case 'contribution_query': { const cqr = await contributionQuery(args); this.sendTool(id, cqr, cqr.data.isError); break; }
         default: this.sendError(id, -32602, `Unknown tool: ${toolName}`);
       }
     } catch (err) {

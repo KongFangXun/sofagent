@@ -145,3 +145,7 @@
   PrReviewInput,
   PrMergeInput,
 } from './pr-store';
+
+// ── 贡献度聚合（G4 · 人/数字员工同标准——MCP contribution_query 消费面）──
+/* @public */ export { aggregateContributions, prOverview } from './contribution';
+/* @public */ export type { ContributorRow, WorkflowRow, ContributionReport } from './contribution';

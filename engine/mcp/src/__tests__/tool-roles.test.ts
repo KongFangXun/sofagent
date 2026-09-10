@@ -73,7 +73,7 @@ describe('filterToolsByRoles 清单过滤', () => {
   it('全量模式 → 返回原清单', () => {
     const filtered = filterToolsByRoles(TOOLS, null);
     // v1.4.7 G14+G2+章八+G13：84→93（workflow CRUD 四 tool + workflow_gaps + onboard_prompt + PR 三 tool 落位）
-    expect(filtered).toHaveLength(93);
+    expect(filtered).toHaveLength(94);
   });
 
   it('显式 fde+audit+agent 三面 → 只暴露这三面（不含 browser/ops/commons 独占工具）', () => {
