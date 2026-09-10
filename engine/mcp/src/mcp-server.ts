@@ -114,6 +114,8 @@ import {
 } from './tools/workflow-crud';
 // v1.4.7 章五 G2：能力缺口查询
 import { workflowGaps } from './tools/workflow-gaps';
+// v1.4.7 章八：上岗 prompt 生成器
+import { onboardPrompt } from './tools/onboard-prompt';
 
 // ============================================================
 // 常量
@@ -421,6 +423,8 @@ class McpServer {
         case 'workflow_diff_preview': { if (!args.workflow_id || !args.workflow || !args.actor) { this.sendError(id, -32602, 'Missing required arguments: workflow_id, workflow, and actor'); break; } const wdr = await workflowDiffPreviewTool(args); this.sendTool(id, wdr, wdr.data.isError); break; }
         // v1.4.7 章五 G2：能力缺口查询（纯读零写入）
         case 'workflow_gaps': { const wgr = await workflowGaps(args); this.sendTool(id, wgr, wgr.data.isError); break; }
+        // v1.4.7 章八：上岗 prompt 生成器
+        case 'onboard_prompt': { if (!args.role_description) { this.sendError(id, -32602, 'Missing required argument: role_description'); break; } const opr = await onboardPrompt({ role_description: args.role_description as string, ...(typeof args.agent_name === 'string' ? { agent_name: args.agent_name } : {}), ...(typeof args.role === 'string' ? { role: args.role } : {}) }); this.sendTool(id, opr, opr.data.isError); break; }
         default: this.sendError(id, -32602, `Unknown tool: ${toolName}`);
       }
     } catch (err) {
