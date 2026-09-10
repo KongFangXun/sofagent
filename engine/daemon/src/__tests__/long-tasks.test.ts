@@ -11,7 +11,7 @@
 // ============================================================
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { mkdirSync, rmSync, existsSync, writeFileSync, readFileSync } from 'fs';
+import { mkdirSync, rmSync, existsSync, writeFileSync, readFileSync, readdirSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
 import { randomBytes } from 'crypto';
@@ -138,6 +138,25 @@ describe('long-tasks · 注册表（.sofagent/long-tasks.yml）', () => {
     mkdirSync(p, { recursive: true });
     writeFileSync(join(p, 'long-tasks.yml'), '{{{not yaml', 'utf-8');
     expect(loadLongTaskRegistry(dir).tasks).toEqual([]);
+  });
+
+  it('损坏 YAML → 备份 .corrupt 留证（两态可辨）', () => {
+    const p = join(dir, '.sofagent');
+    mkdirSync(p, { recursive: true });
+    const regPath = join(p, 'long-tasks.yml');
+    writeFileSync(regPath, '{{{not yaml', 'utf-8');
+    loadLongTaskRegistry(dir);
+    // v1.4.7 批次 I：损坏文件改名留证，原路径已腾空供重建
+    const bak = readdirSync(p).find((f) => f.startsWith('long-tasks.yml.corrupt-') && f.endsWith('.bak'));
+    expect(bak).toBeDefined();
+    expect(readFileSync(join(p, bak!), 'utf-8')).toBe('{{{not yaml');
+  });
+
+  it('注册表不存在 → 首次初始化（无备份产生）', () => {
+    const p = join(dir, '.sofagent');
+    mkdirSync(p, { recursive: true });
+    expect(loadLongTaskRegistry(dir).tasks).toEqual([]);
+    expect(readdirSync(p).filter((f) => f.includes('.corrupt-'))).toEqual([]);
   });
 });
 

@@ -94,12 +94,16 @@ async function runMinimalAgent(
   skillPath: string
 ): Promise<Record<string, unknown>> {
   // 1. 读 Skill 文件内容作为 system prompt
+  // v1.4.7 批次 I：fail-loud——skill 读不到时不再静默换通用 prompt（A/B 评审的
+  // 语义被无声明替换为通用 assistant，评审报告不标注降级 = 结果不可信还装可信）
   let skillContent: string;
   try {
     skillContent = readFileSync(skillPath, 'utf-8');
-  } catch {
-    // Skill 文件不存在时，使用空 system prompt
-    skillContent = 'You are a helpful assistant.';
+  } catch (err) {
+    throw new Error(
+      `A/B 评审基线 skill 缺失: ${skillPath}——评审结果不可信，中止而非降级` +
+        `（读取失败: ${err instanceof Error ? err.message : String(err)}）`,
+    );
   }
 
   // 2. 组装消息

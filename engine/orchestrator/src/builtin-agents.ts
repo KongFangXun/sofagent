@@ -97,6 +97,12 @@ function loadAgentMd(skillName: string, fallback: string): string {
     return parseSkillMd(readFileSync(pkgPath, 'utf-8'));
   }
 
+  // v1.4.7 批次 I：三条路径全部不可达（npm 全局安装且未设 SOFAGENT_REPO_ROOT 的
+  // 安装态大概率如此）——回退精简版显性化，不再静默
+  console.warn(
+    `[builtin-agents] SKILL/agents 不可达（安装态精简版回退）: ${skillName}——` +
+      `已试 ${repoRoot() ?? '(未设 SOFAGENT_REPO_ROOT)'}、${join(process.cwd(), 'SKILL', 'agents')}、${pkgPath}`,
+  );
   return fallback;
 }
 

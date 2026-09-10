@@ -12,7 +12,7 @@
 // 必须落盘才能跨调用存活）。
 // ============================================================
 
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
+import { readFileSync, writeFileSync, existsSync, mkdirSync, renameSync } from 'fs';
 import { join } from 'path';
 import { getDataDir, atomicWriteSync } from '@sofagent/core';
 import { createCloudRegistry, type CloudVmRecord } from '@sofagent/orchestrator';
@@ -47,14 +47,24 @@ function registryPath(): string {
   return join(getDataDir(), 'train', 'cloud', 'registry.json');
 }
 
-/** 读落盘注册表（不存在返回空） */
+/** 读落盘注册表（不存在返回空；损坏 WARN + 备份留证后重建——两态可辨） */
 function loadRegistry(): CloudVmRecord[] {
   const file = registryPath();
   if (!existsSync(file)) return [];
   try {
     const parsed = JSON.parse(readFileSync(file, 'utf-8')) as unknown;
     return Array.isArray(parsed) ? (parsed as CloudVmRecord[]) : [];
-  } catch {
+  } catch (err) {
+    // v1.4.7 批次 I：损坏与首次运行两态可辨——损坏时 WARN + 备份留证后重建空表
+    // （此前静默返回空表 = 云 VM 注册记录损坏即静默丢失）
+    console.warn(
+      `[train-cloud] 注册表损坏（${file}）：${err instanceof Error ? err.message : String(err)}——已备份为 .corrupt 留证，返回空表重建`,
+    );
+    try {
+      renameSync(file, `${file}.corrupt-${Date.now()}.bak`);
+    } catch {
+      /* 备份失败不阻断——原文件留在原地供人工取证 */
+    }
     return [];
   }
 }

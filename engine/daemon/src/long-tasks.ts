@@ -28,6 +28,7 @@ import {
   readFileSync,
   writeFileSync,
   mkdirSync,
+  renameSync,
 } from 'fs';
 import { join } from 'path';
 import { load as yamlLoad, dump as yamlDump } from 'js-yaml';
@@ -171,8 +172,23 @@ export function longTasksRegistryPath(projectDir: string): string {
 export function loadLongTaskRegistry(projectDir: string): LongTaskRegistry {
   const path = longTasksRegistryPath(projectDir);
   if (!existsSync(path)) return { version: 1, tasks: [] };
+  let raw: Partial<LongTaskRegistry> | null;
   try {
-    const raw = yamlLoad(readFileSync(path, 'utf-8')) as Partial<LongTaskRegistry> | null;
+    raw = yamlLoad(readFileSync(path, 'utf-8')) as Partial<LongTaskRegistry> | null;
+  } catch (err) {
+    // v1.4.7 批次 I：损坏与首次运行两态可辨——损坏时 WARN + 备份留证后重建空表
+    // （此前静默返回空表 = 损坏即静默数据丢失）
+    console.warn(
+      `[long-tasks] 注册表损坏（${path}）：${err instanceof Error ? err.message : String(err)}——已备份为 .corrupt 留证，返回空表重建`,
+    );
+    try {
+      renameSync(path, `${path}.corrupt-${Date.now()}.bak`);
+    } catch {
+      /* 备份失败不阻断——原文件留在原地供人工取证 */
+    }
+    return { version: 1, tasks: [] };
+  }
+  try {
     if (!raw || !Array.isArray(raw.tasks)) return { version: 1, tasks: [] };
     // 运行时校验：每条至少含 name + schedule + prompt（坏条目过滤，不整表丢弃）
     const tasks = raw.tasks.filter((t): t is LongTaskSpec => {

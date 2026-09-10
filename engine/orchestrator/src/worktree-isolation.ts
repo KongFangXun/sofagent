@@ -91,8 +91,9 @@ export function appendWorktreeRegistry(registryPath: string, entry: WorktreeRegi
   try {
     mkdirSync(dirname(registryPath), { recursive: true });
     appendFileSync(registryPath, `${JSON.stringify(entry)}\n`);
-  } catch {
-    // 注册表写入失败静默——不阻断 worktree 主流程
+  } catch (err) {
+    // 注册表写入失败不阻断 worktree 主流程——补观测（v1.4.7 批次 I：静默降级可观测化）
+    console.debug(`[worktree-isolation] 注册表写入失败（幂等继续）: ${err instanceof Error ? err.message : String(err)}`);
   }
 }
 
@@ -105,8 +106,9 @@ export function readWorktreeRegistry(registryPath: string): WorktreeRegistryEntr
     if (!trimmed) continue;
     try {
       entries.push(JSON.parse(trimmed) as WorktreeRegistryEntry);
-    } catch {
-      // 跳过坏行
+    } catch (err) {
+      // 跳过坏行（进程崩溃可能写了一半——幂等）
+      console.debug(`[worktree-isolation] 注册表坏行跳过（幂等继续）: ${trimmed.slice(0, 80)} (${err instanceof Error ? err.message : String(err)})`);
     }
   }
   return entries;
@@ -150,7 +152,8 @@ async function branchExists(repoRoot: string, branch: string): Promise<boolean> 
   try {
     await git(['rev-parse', '--verify', '--quiet', branch], repoRoot);
     return true;
-  } catch {
+  } catch (err) {
+    console.debug(`[worktree-isolation] branchExists 探测失败（按不存在继续）: ${branch} (${err instanceof Error ? err.message : String(err)})`);
     return false;
   }
 }
@@ -162,23 +165,27 @@ async function branchExists(repoRoot: string, branch: string): Promise<boolean> 
 async function forceRemoveWorktree(repoRoot: string, wtPath: string, branch: string): Promise<void> {
   try {
     await git(['worktree', 'remove', '--force', wtPath], repoRoot);
-  } catch {
+  } catch (err) {
     // 降级路径：手动删目录 + worktree prune 清理元数据
+    console.debug(`[worktree-isolation] worktree remove 失败，降级手动清理（幂等继续）: ${err instanceof Error ? err.message : String(err)}`);
     try {
       rmSync(wtPath, { recursive: true, force: true });
-    } catch {
+    } catch (err2) {
       // 目录不存在——幂等
+      console.debug(`[worktree-isolation] 手动删目录失败（幂等继续）: ${err2 instanceof Error ? err2.message : String(err2)}`);
     }
     try {
       await git(['worktree', 'prune'], repoRoot);
-    } catch {
+    } catch (err2) {
       // 非 git 环境——忽略
+      console.debug(`[worktree-isolation] worktree prune 失败（非 git 环境，忽略）: ${err2 instanceof Error ? err2.message : String(err2)}`);
     }
   }
   try {
     await git(['branch', '-D', branch], repoRoot);
-  } catch {
+  } catch (err) {
     // 分支不存在——幂等
+    console.debug(`[worktree-isolation] 分支删除失败（幂等继续）: ${branch} (${err instanceof Error ? err.message : String(err)})`);
   }
 }
 
@@ -201,8 +208,9 @@ async function ensureGitExclude(repoRoot: string): Promise<void> {
       const needNewline = existing.length > 0 && !existing.endsWith('\n');
       appendFileSync(excludePath, `${needNewline ? '\n' : ''}${line}\n`);
     }
-  } catch {
-    // exclude 写入失败静默
+  } catch (err) {
+    // exclude 写入失败不阻断创建（仅影响 git status 整洁度）——补观测
+    console.debug(`[worktree-isolation] .git/info/exclude 写入失败（幂等继续）: ${err instanceof Error ? err.message : String(err)}`);
   }
 }
 
@@ -298,8 +306,9 @@ class GitWorktreeHandle implements WorktreeHandle {
     } else if (await branchExists(this.repoRoot, this.branch)) {
       try {
         await git(['branch', '-D', this.branch], this.repoRoot);
-      } catch {
+      } catch (err) {
         // 分支删除失败不阻断——后续 worktree add -b 会报出真实错误
+        console.debug(`[worktree-isolation] 残留分支删除失败（幂等继续）: ${this.branch} (${err instanceof Error ? err.message : String(err)})`);
       }
     }
 
