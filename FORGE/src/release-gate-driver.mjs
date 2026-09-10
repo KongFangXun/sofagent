@@ -777,7 +777,7 @@ function buildPrecheckEvidence(runDir, stepDef, target = '') {
         if (Array.isArray(data.scenarios)) {
           lines.push(`  - 场景索引（${data.scenarios.length}，全量）:`);
           for (const s of data.scenarios) {
-            lines.push(`    * S${s.num} ${s.title ?? ''}`);
+            lines.push(`    * S${s.label ?? s.num} ${s.title ?? ''}`);
           }
         }
         blocks.push(lines.join('\n'));
@@ -2253,12 +2253,12 @@ function parseAcceptanceScenarios() {
   // v1.4.0 修复（run-22 coverage P1-1 误报根因）：场景**内容字符串**里可能出现
   // 「...A19 scenario 48...」字样（echo 文案）——旧正则无行首锚定会误匹配为场景声明
   // （S48 title='>'）。要求 scenario 前是行首/换行（(^|\n)\s*）。
-  const re = /(^|\n)\s*scenario\s+(\d+)\s*(?:\([^)]*\))?\s*"([^"]{0,120})/g;
+  const re = /(^|\n)\s*scenario\s+(\d+[a-z]?)\s*(?:\([^)]*\))?\s*"([^"]{0,120})/g;
   let m;
   while ((m = re.exec(src)) !== null) {
     const title = m[3].trim();
     if (title.length > 0) {
-      scenarios.push({ num: parseInt(m[2], 10), title });
+      scenarios.push({ num: parseInt(m[2], 10), label: m[2], title });
     }
   }
   return scenarios;
