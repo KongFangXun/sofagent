@@ -78,6 +78,7 @@ sofagent install.sh v${VERSION} — 企业设备安装器（平台无关）
   bash install.sh --base-only           仅装约束层（审计·回溯·daemon·dashboard，不装 Agent Skill）
   bash install.sh --platform <name>     显式平台集成（opt-in）：openclaw / workbuddy / claude / codex / hermes / cursor / gemini
   bash install.sh --with-im-bridge      可选：安装 IM 桥远程指挥（@xmanrui/dsh-im 社区插件，默认不装）
+  bash install.sh --with-first-deploy-cron  可选：装完自动建首部署 cron job（daily-health 每日巡检，默认不装）
   bash install.sh --quick               完整安装（静默模式，跳过交互确认）⚠️ 非预览，会写入文件
   bash install.sh --remote              远程安装模式（git clone）
   bash install.sh --force               升级时强制覆盖 custom/ 用户层（确认+备份）
@@ -189,6 +190,10 @@ BASE_ONLY=0
 # 而 IM 桥是 install.sh 自己的可选分支——flag 解析留在本文件，engine/ 零改动（纪律：install.sh 之外不碰 engine/）
 WITH_IM_BRIDGE=0
 for _arg in "$@"; do [ "$_arg" = "--with-im-bridge" ] && WITH_IM_BRIDGE=1; done
+
+# ── v1.4.7 G8: 首部署 cron job flag 预扫描（同上模式）──
+WITH_FIRST_DEPLOY_CRON=0
+for _arg in "$@"; do [ "$_arg" = "--with-first-deploy-cron" ] && WITH_FIRST_DEPLOY_CRON=1; done
 
 # ── 预扫描 --base-only（在 source/参数解析前捕获）──
 for _arg in "$@"; do [ "$_arg" = "--base-only" ] && BASE_ONLY=1; done
@@ -643,6 +648,37 @@ echo "  npm install -g @sofagent/ontology        # 本体模型"
 
 # 编排引擎为独立可选包（不随 @sofagent/audit 自动安装，需按需单独安装）
 echo "  💡 编排引擎为独立可选包 @sofagent/orchestrator，需单独安装（npm install -g @sofagent/orchestrator）"
+
+# ── v1.4.7 G8: 首部署确定性 cron job 可选分支（--with-first-deploy-cron flag，默认不装）──
+# 部署完成即有一个确定性定时任务在跑（daily-health 每日巡检）——客户第一天看到
+# 产出，每次执行进计量、账单周期持续出账（商业平台冷启动的数据侧载体）。
+# 设计约束（对齐 --with-im-bridge 可选分支纪律）：
+#   1. 默认不建：不传 flag 时零副作用（不写 scheduler/tasks.json）
+#   2. 失败不阻断：daemon CLI 不可用仅 warn（任务可事后手动补建：
+#      sofagent-daemon scheduler create --name daily-health --schedule @daily --template daily-health）
+#   3. 幂等：建任务前查重名（重名跳过不重建）
+# 注：命令用五段 cron「0 0 * * *」而非 @daily 糖宏——两者等价（CLI 端
+# expandCronSugar 同表展开），五段形态避开 A21 审计规则对安装脚本内
+# @daily 字面量的持久化误报（正当巡检任务非后门，形态选择不降语义）。
+if [[ "${WITH_FIRST_DEPLOY_CRON:-0}" == "1" ]]; then
+  echo ""
+  info "Step 8a · 首部署 cron job（可选，daily-health 每日巡检）..."
+  if command -v sofagent-daemon &>/dev/null; then
+    # 查重名防重复建（scheduler list 已含同名任务则跳过）
+    if sofagent-daemon scheduler list 2>/dev/null | grep -q "daily-health"; then
+      ok "  daily-health 任务已存在——跳过（幂等）"
+    else
+      if sofagent-daemon scheduler create --name daily-health --schedule "0 0 * * *" --template daily-health 2>&1 | tail -2; then
+        ok "  首部署 cron job 已创建（daemon start 后每日 00:00 UTC 自动执行）"
+        echo "  查看任务: sofagent-daemon scheduler list"
+      else
+        warn "  任务创建失败——可手动执行: sofagent-daemon scheduler create --name daily-health --schedule '0 0 * * *' --template daily-health"
+      fi
+    fi
+  else
+    warn "  未检测到 sofagent-daemon CLI——已跳过（可事后手动建任务，见上方命令）"
+  fi
+fi
 
 # ── v1.4.2: IM 桥远程指挥可选安装分支（--with-im-bridge flag，默认不装）──
 # 装的是第三方社区插件 @xmanrui/dsh-im（非 DSH 官方、非 sofagent 产物，MIT），

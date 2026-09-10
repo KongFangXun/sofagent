@@ -42,6 +42,8 @@ async function main() {
     console.log('  snapshot list                列出所有快照');
     console.log('  snapshot restore <sha>       恢复到指定快照');
     console.log('  knowledge status             聚合知识库状态（Dream Cycle / 健康 / sensitivity）');
+    console.log('  worklog                      工作明细视图（v1.4.0 交付七）');
+    console.log('  billing                      账单周期聚合——agent × 自然月月结（v1.4.7 G8）');
     console.log('  scheduler <create|list|pause|resume|trigger|history|delete>  定时任务管理（v1.2.9 · create v1.4.7）');
     console.log('  doctor                       检查 daemon 健康状态（v1.2.5 §8.4）');
     process.exit(0);
@@ -53,6 +55,19 @@ async function main() {
       const { renderWorklogView } = await import('./dashboard/worklog-view');
       const dataDir = process.env.SOFAGENT_DATA || (process.env.SOFAGENT_HOME || require('os').homedir()) + '/.sofagent/data';
       console.log(renderWorklogView(dataDir + '/dashboard/worklog.json'));
+      break;
+    }
+    case 'billing': {
+      // v1.4.7 G8：账单周期聚合（worklog.json → agent × 自然月月结口径）
+      const { buildBillingReport, renderBilling } = await import('./billing');
+      const { getDataDir } = await import('@sofagent/core');
+      const dataDir = getDataDir();
+      const report = buildBillingReport(dataDir);
+      if (!report) {
+        console.log(`[sofagent] 未找到或无法解析 ${dataDir}/dashboard/worklog.json——先运行聚合落盘（WorklogAggregator.writeWorklogJson）`);
+        process.exit(1);
+      }
+      console.log(renderBilling(report));
       break;
     }
     case 'decision-tree': {
@@ -427,17 +442,16 @@ async function main() {
             console.error('   用法: scheduler create --name <名> --schedule <@daily|cron|ISO> [--prompt <任务>] [--type cron|once] [--template daily-health|weekly-report]');
             process.exit(1);
           }
-          // 模板便捷面：预置 prompt（显式 --prompt 优先）
-          const TEMPLATES: Record<string, string> = {
-            'daily-health': '每日健康巡检：检查 daemon 状态、审计历史增量、WARN 累积并汇总日报',
-            'weekly-report': '每周巡检报告：L2 深度巡检全量执行并输出周报（知识矛盾/孤儿/死链/新鲜度）',
-          };
+          // 模板便捷面：预置 prompt（显式 --prompt 优先）——
+          // v1.4.7 G8：内联表抽为独立模块 engine/daemon/src/templates.ts（模板增多不撑爆入口）
           if (!prompt && template) {
-            if (!(template in TEMPLATES)) {
-              console.error(`❌ 未知模板: ${template}（可用: ${Object.keys(TEMPLATES).join(' / ')}）`);
+            const { getTemplate, templateIds } = await import('./templates');
+            const tpl = getTemplate(template);
+            if (!tpl) {
+              console.error(`❌ 未知模板: ${template}（可用: ${templateIds()}）`);
               process.exit(1);
             }
-            prompt = TEMPLATES[template]!;
+            prompt = tpl.prompt;
           }
           if (!prompt) {
             console.error('❌ scheduler create 需要 --prompt 或 --template（任务执行内容不能为空）');
