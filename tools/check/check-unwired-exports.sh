@@ -64,7 +64,9 @@ SYMBOLS="runInspectors:engine/daemon/src/inspectors/index.ts:via=analyzeAuditHis
 runAllLayers:engine/daemon/src/inspector-layers.ts:via=runLayeredInspection
 runDreamCycle:engine/daemon/src/dream-cycle/state-machine.ts
 registerBuiltinSlashCommands:engine/core/src/slash-commands/index.ts
-gateDataPush:engine/orchestrator/src/train/data-push.ts"
+gateDataPush:engine/orchestrator/src/train/data-push.ts
+createSshTrainChannel:engine/daemon/src/cloud-exec.ts
+chainDualChannelEvent:engine/daemon/src/cloud-events.ts"
 
 # ── 已知待接线豁免（--known-pending 覆盖此默认值）──
 # v1.4.5 daemon 批完工后撤空——四符号已接线（runDreamCycle→cron.ts:346 直调；

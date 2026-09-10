@@ -124,6 +124,14 @@ export interface TrainSchedulerOptions {
   /** 信号控制器注入（测试——对齐 SignalControllerOptions 模式） */
   signalOptions?: SignalControllerOptions;
   /**
+   * 执行器实例注入（v1.4.7 批次 B）——云通道执行注入
+   * （channelAsExecutor(createSshTrainChannel(...))，daemon tasks/cloud-train
+   * 装配消费）；缺省本地 spawn（createLocalSpawnExecutor——零行为变化，
+   * 既有调用方不受影响）。注入时整体替换执行面 start/stop，spawnFn /
+   * signalOptions 仅缺省路径生效。
+   */
+  executor?: Pick<TrainExecutor, 'start' | 'stop'>;
+  /**
    * 心跳注册钩子（块七已实装——缺省自动创建进程内 process-guard）。
    * 注入自定义钩子时接管心跳注册（guard 仍由本块自建用于刷新/注销）。
    */
@@ -286,14 +294,18 @@ export function createTrainScheduler(opts: TrainSchedulerOptions) {
     now = Date.now,
   } = opts;
   // v1.4.6 批次 D：进程执行半边收口 executor（spawn/stdout 解析/信号编排
-  // 下沉——本调度器只见 TrainExecutor 窄接口，不直接触碰子进程模块）
-  const executor: TrainExecutor = createLocalSpawnExecutor({
-    ...(opts.spawnFn ? { spawnFn: opts.spawnFn } : {}),
-    signalOptions: {
-      ...signalOptions,
-      sigintTimeoutMs: signalOptions?.sigintTimeoutMs ?? sigintTimeoutMs,
-    },
-  });
+  // 下沉——本调度器只见 TrainExecutor 窄接口，不直接触碰子进程模块）。
+  // v1.4.7 批次 B：executor 实例注入口——云通道经 channelAsExecutor 桥注入
+  // （daemon tasks/cloud-train 装配）；缺省维持本地 spawn（零行为变化）。
+  const executor: Pick<TrainExecutor, 'start' | 'stop'> =
+    opts.executor ??
+    createLocalSpawnExecutor({
+      ...(opts.spawnFn ? { spawnFn: opts.spawnFn } : {}),
+      signalOptions: {
+        ...signalOptions,
+        sigintTimeoutMs: signalOptions?.sigintTimeoutMs ?? sigintTimeoutMs,
+      },
+    });
 
   // ── 块七挂线①：进程守卫（心跳 + 崩溃扫描）──
   const guard: ProcessGuard = opts.processGuard ?? createProcessGuard({ staleThresholdMs: opts.staleThresholdMs });

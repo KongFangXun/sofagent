@@ -39,6 +39,7 @@
 | 审计维度数 / 测试数 / 包数 | README + CHANGELOG + ROADMAP + LIMITATIONS + evidence 数字声称 |
 | bump-version / check-version / pre-push-check 脚本 | 三脚本覆盖范围一致性（check 能查的 bump 必须能改） |
 | CI workflow（.github/workflows/） | 本地 pre-push-check 覆盖范围与 CI 对齐 |
+| **接线收口类交付**（devlog 章出现「接线/消费/挂链」字样） | **check-unwired-exports SYMBOLS 监控表同步登记**——交付涉及的 @public 导出（符号:定义文件）必须进表，不登记 = 交付未完成（接线后门禁在册防回退——v1.4.7 批次 B 定则） |
 
 ---
 

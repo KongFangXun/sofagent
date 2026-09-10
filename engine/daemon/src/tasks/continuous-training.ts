@@ -19,6 +19,8 @@
 import { readFileSync, existsSync, mkdirSync, appendFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { load as yamlLoad } from 'js-yaml';
+// v1.4.7 批次 B：云通道接线（executor 注入 + 双通道事件挂链——同包静态引入）
+import { buildCloudSchedulerOptions } from './cloud-train';
 
 /** 持续后训练调度配置（watch.yml `continuous-training:` 段） */
 export interface ContinuousTrainingConfig {
@@ -116,6 +118,29 @@ function appendRunLog(dataDir: string, entry: ContinuousRunTickResult): void {
 }
 
 /**
+ * 云通道接线缝合（v1.4.7 批次 B）——scheduler 选项经 buildCloudSchedulerOptions
+ * 装配：有可用云 VM 时注入 executor（channelAsExecutor(createSshTrainChannel)）+
+ * onEvent（chainDualChannelEvent 双通道挂链）；无 VM 返回原选项（本地执行，
+ * 零行为变化）。装配失败降级本地（daemon 纪律——云路径故障不阻断训练主链）。
+ */
+function applyCloudWiring(
+  base: { dataDir: string; enterpriseId: string; crashRecoveryScan?: boolean },
+): { dataDir: string; enterpriseId: string; crashRecoveryScan?: boolean } {
+  try {
+    // scheduler 透传段：crashRecoveryScan 等基础字段保真（云/本地两路径
+    // 同构——装配不吞调用方已设选项）
+    const wiring = buildCloudSchedulerOptions({
+      dataDir: base.dataDir,
+      enterpriseId: base.enterpriseId,
+      scheduler: { crashRecoveryScan: base.crashRecoveryScan },
+    });
+    return wiring.schedulerOptions;
+  } catch {
+    return base; // 接线装配失败降级本地（观测在 tick 台账 reason——不 crash daemon）
+  }
+}
+
+/**
  * 持续后训练单轮 tick（daemon cron 的 @weekly / @daily 分支调用）。
  *
  * 装配链（全部复用既有模块——本文件零新编排逻辑）：
@@ -180,11 +205,13 @@ export async function runContinuousTrainingTick(projectDir: string): Promise<Con
       }>;
     };
 
-    const scheduler = orch.createTrainScheduler({
-      dataDir,
-      enterpriseId: config.enterpriseId,
-      crashRecoveryScan: false, // daemon 周期任务不重复扫（scheduler 常驻实例职责）
-    });
+    const scheduler = orch.createTrainScheduler(
+      applyCloudWiring({
+        dataDir,
+        enterpriseId: config.enterpriseId,
+        crashRecoveryScan: false, // daemon 周期任务不重复扫（scheduler 常驻实例职责）
+      }),
+    );
 
     const run = await orch.runContinuousTraining({
       dataDir,
