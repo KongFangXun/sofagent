@@ -416,6 +416,8 @@ export function runCliQuick(argv: string[]): number {
 
   // v1.3.4 P2-15: SHA 为 null 时输出显著警告（而非静默用 'unknown' 填充）
   // v1.3.8 P1-B5: 提示语产品化——不透传 git 原始报错（fatal: Needed a single revision）
+  // 现行行为（v1.4.5 起根 commit 补审）：有 SHA 无父提交 → 对比空树 SHA 补审全部新增内容
+  // （见下方 diffFiles.length === 0 分支）；无 SHA 时提示不审计，不静默填充。
   if (commitSha === null) {
     console.log('⚠️ [sofagent] 无法获取 commit SHA（仓库可能尚无提交记录），审计记录将不含 commit 关联。');
   }
@@ -433,8 +435,7 @@ export function runCliQuick(argv: string[]): number {
     // v1.3.8 P1-B1：首次 commit 输出矛盾修复——此前三行并存：
     //   ①「首次提交，无需审计」（parseDiff 内打印）②「审计最近一次 commit（SHA）」
     //   ③「无文件变更」——「无需审计」与「正在审计」互相打架。
-    // 规则：无 SHA 或无父提交（= 无 diff 基线）时明说「首个 commit 无基线不审计」；
-    //   有基线但 diff 为空才称「无文件变更」。
+    // 规则：有基线但 diff 为空称「无文件变更」；根 commit 补审见下方 hasBaseline 分支。
     const hasBaseline = commitSha !== null && hasParentCommit();
     if (diffRange !== 'HEAD~1..HEAD') {
       console.log(`🔍 审计指定范围（${diffRange}）`);

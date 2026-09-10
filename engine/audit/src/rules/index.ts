@@ -32,7 +32,10 @@ import { checkRuleE2 } from './rule-e2-todo-undeclared';
 // E3 已在 v1.2.5 并入 A11（行数维度），不再独立存在
 import { checkRuleE4 } from './rule-e4-low-comment-ratio';
 
-/** 默认规则（A1-A11 + A18/A19）——始终生效
+/** 默认规则（A1-A11 + A18-A23 = 17 条）——始终生效（实测口径，与 HANDBOOK 对齐）
+ * 归属说明：A14-A17 不在默认规则——A14 知识库越权 / A15 不盲动 / A16 非授权文件变更 /
+ *      A17 异常批量变更按实注册归 extendedRules（扩展 7 条 = A14-A17 + E1/E2/E4，共 24 条）。
+ *      A12（供应链安全）/ A13（文件权限）已永久跳号（并入 A11），编号不复用。
  * v1.1.5: A18 从 extendedRules 提升为 defaultRules
  *        评估：在 sofagent 自身仓库根目录跑 A18（排除 node_modules/.git/dist/.workbuddy/docs/archive）
  *        扫描 513 个文件 → 误报 0 个 < 阈值 3 → 提升为基线能力

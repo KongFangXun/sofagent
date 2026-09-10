@@ -56,8 +56,8 @@ describe('L4 进化工具 MCP 动态面（第七章三）', () => {
     clearDynamicTools();
   });
 
-  it('静态计数口径铁律：TOOLS 静态数=83 且 L4 注册后不变（动态面独立计数）', () => {
-    // 前置锚：当前静态面恰为 83（本版 +train_serve/train_compliance/train_deliverable）
+  it('静态计数口径铁律：TOOLS 静态数=83（tool-registry 顶层 name）+ 1 动态（evolution-dynamic-bridge 运行时注册）= 84，L4 注册后静态数不变（动态面独立计数）', () => {
+    // 前置锚：静态数=83（tool-registry TOOLS 顶层 name）+ 1 动态（evolution-dynamic-bridge 运行时注册）= 84
     // ——该断言是「不进 83 静态计数」验收口径的本体（check-version 只数
     // tool-registry.ts 顶层 name，动态面不在其守卫面）。
     expect(TOOLS.length).toBe(84);

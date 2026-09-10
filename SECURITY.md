@@ -189,7 +189,7 @@ sofagent 是一套 FDE 能力——底层引擎是纯本地 Harness 中间件（
 
 > 引入版本：v1.1.8。
 
-`core/src/security/trust-grading.ts` 的 `resolveTrust` 缺省 internal；`TRUST_ORDER` official>internal>user>web；web+restricted 组合直接丢弃；RAG 召回 sortByTrust。
+`core/src/memory-contract.ts` 的 `resolveTrust` 缺省 internal；`TRUST_ORDER` official>internal>user>web；web+restricted 组合直接丢弃；RAG 召回 sortByTrust。
 
 ### Dream Cycle LLM 安全边界
 
@@ -225,7 +225,7 @@ sofagent 是一套 FDE 能力——底层引擎是纯本地 Harness 中间件（
 | 2 | 工具动态最小权限 | Sub Agent 工具集零重叠设计 | ✅ 已有 |
 | 3 | 工具参数后端强制校验 | 审计模块 git diff 硬证据 | ✅ 已有 |
 | 4 | 敏感数据不进 prompt——脱敏 | `prompt-sanitizer.ts` `redactForPrompt()`（sk-\*\*\*/AKIA\*\*\*/手机号/邮箱/GitHub token/PEM 私钥；restricted 占位兜底，与 v1.1.6 `isSensitivityVisible` 过滤双保险） | ✅ v1.1.8 补齐 |
-| 5 | RAG 召回可信分级 | `core/src/security/trust-grading.ts`（`resolveTrust` 缺省 internal；official>internal>user>web；web+restricted 丢弃；sortByTrust） | ✅ v1.1.8 补齐 |
+| 5 | RAG 召回可信分级 | `core/src/memory-contract.ts` 的 `resolveTrust`（缺省 internal；official>internal>user>web；web+restricted 丢弃）+ `trust-grading.ts` 的 `sortByTrust` | ✅ v1.1.8 补齐 |
 | 6 | 输出结构化 + 执行前审核 | entry-gate 风险分级 + HITL | ✅ 已有 |
 | 7 | 高危动作强制人工确认 | entry-gate 🔴 高风险审批 | ✅ 已有 |
 | 8 | 全链路日志 + 红队测试 | 审计 history.jsonl + daemon WARN 累积；联邦查询 `federation_query` 审计条目 | ✅ 已有 |

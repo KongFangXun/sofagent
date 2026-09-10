@@ -5,7 +5,7 @@
 // 职责：读 worklog 聚合数据 + 预算配置 → 判定超支 → 产出 WARN 级发现。
 // 约束（铁律 12）：
 //   - WARN only，不拦截任务执行（除非 --warn-as-error 由调用方升级）
-//   - 不进 A1-A23 规则体系（不进 rules/index.ts，TOTAL_RULES_COUNT=24 不变）——正交新维度
+//   - 不进 A1-A23 规则体系（不进 rules/index.ts，规则注册总数 24 不变——实注册数）——正交新维度
 //   - opt-in：不配 budget 不审计成本
 // 数据源：data/dashboard/worklog.json（v1.4.6 worklog 聚合落盘）
 // 预算源：workflow.yml 可选 `budget: { maxTokensPerRun, maxCostPerDay }`

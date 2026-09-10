@@ -529,7 +529,7 @@ sofagent 本身就是一个 MCP server（stdio 传输，bin `sofagent-mcp`，v1.
 
 互通只是新通道，不是新权限模型——sofagent 的安全语义在 DSH 通道下**完全不降级**：
 
-- **破坏性 tool 强制人审**：`promote_ab`（A/B 晋升）和 `snapshot_restore`（快照恢复）要求显式 `human_confirmed: true` 参数——不确认就只返回决策依据挂起，绝不执行。DSH 的模型无法绕过这道门（语义在 sofagent 服务端实现，与调用方无关）
+- **破坏性 tool 强制人审**：`promote_ab`（A/B 晋升）和 `snapshot_restore`（快照恢复）要求显式 `human_confirmed: true` 参数——不确认就只返回决策依据挂起，绝不执行。DSH 的模型绕过这道门会被审计链捕获（语义在 sofagent 服务端实现，与调用方无关）
 - **只读 tool 即开即用**：`snapshot_list` / `run_audit` / `search_knowledge` 等查询类无副作用
 - **进程控制不开放**：daemon start/stop 类操作不暴露为 MCP tool（changelog 安全边界第 2 条）
 
