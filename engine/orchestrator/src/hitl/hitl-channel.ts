@@ -29,6 +29,7 @@ import {
 } from 'fs';
 import { join } from 'path';
 import { randomBytes } from 'crypto';
+import { atomicWriteSync } from '@sofagent/core';
 
 // ────────────────────────────────
 // 类型定义
@@ -103,23 +104,6 @@ export function shouldUseAsyncHITL(dataDir: string): boolean {
 // ────────────────────────────────
 // 原子写入（沿用 checkpoint.ts 的 tmp+rename 范式）
 // ────────────────────────────────
-
-function atomicWriteSync(filePath: string, content: string): void {
-  const tmp = `${filePath}.tmp.${process.pid}.${randomBytes(4).toString('hex')}`;
-  writeFileSync(tmp, content, 'utf-8');
-  try {
-    renameSync(tmp, filePath);
-  } catch (err: unknown) {
-    const code = (err as NodeJS.ErrnoException).code;
-    if (code === 'EXDEV') {
-      // 跨设备场景降级为 copy+unlink
-      copyFileSync(tmp, filePath);
-      unlinkSync(tmp);
-    } else {
-      throw err;
-    }
-  }
-}
 
 // ────────────────────────────────
 // 请求/响应读写

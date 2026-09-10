@@ -8,9 +8,7 @@
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync, renameSync, copyFileSync, unlinkSync, readdirSync, statSync } from 'fs';
 import { join, dirname } from 'path';
-import { randomBytes } from 'crypto';
-import { loadEnvConfig } from '@sofagent/core';
-import { getPersonaContent } from '@sofagent/core';
+import { loadEnvConfig, getPersonaContent, atomicWriteSync } from '@sofagent/core';
 import type { SubAgentDefinition } from './registry';
 import { resolveLLMModel } from './loop/nodes';
 
@@ -57,21 +55,6 @@ function getRuntimePath(): string {
  * 原子写入——先写临时文件，再 rename 覆盖目标。
  * rename 在同文件系统上是原子操作，防止并发写脏读。
  */
-function atomicWriteSync(filePath: string, content: string): void {
-  const tmp = `${filePath}.tmp.${process.pid}.${randomBytes(4).toString('hex')}`;
-  writeFileSync(tmp, content, 'utf-8');
-  try {
-    renameSync(tmp, filePath);
-  } catch (err: any) {
-    if (err.code === 'EXDEV') {
-      copyFileSync(tmp, filePath);
-      unlinkSync(tmp);
-    } else {
-      throw err;
-    }
-  }
-}
-
 /**
  * 读取 runtime.json，不存在时返回空状态
  */

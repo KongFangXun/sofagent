@@ -16,8 +16,8 @@
 
 import { existsSync, readFileSync, mkdirSync, readdirSync, writeFileSync, renameSync, copyFileSync, unlinkSync } from 'fs';
 import { join, dirname } from 'path';
-import { randomBytes } from 'crypto';
 import { load as yamlLoad } from 'js-yaml';
+import { atomicWriteSync } from '@sofagent/core';
 import {
   type OntologyObject,
   type OntologyAction,
@@ -26,28 +26,13 @@ import {
 } from './types';
 
 // ============================================================
-// 内联 atomicWriteSync（叶子包不依赖 @sofagent/core）
+// atomicWriteSync 收口至 @sofagent/core 共享实现（v1.4.7 批次 K：五处私有复制防漂移）
 // ============================================================
 
 /**
  * 原子写入——先写临时文件，再 rename 覆盖目标。
  * rename 在同文件系统上是原子操作，防止并发写脏读。
  */
-function atomicWriteSync(filePath: string, content: string): void {
-  const tmp = `${filePath}.tmp.${process.pid}.${randomBytes(4).toString('hex')}`;
-  writeFileSync(tmp, content, 'utf-8');
-  try {
-    renameSync(tmp, filePath);
-  } catch (err: any) {
-    if (err.code === 'EXDEV') {
-      copyFileSync(tmp, filePath);
-      unlinkSync(tmp);
-    } else {
-      throw err;
-    }
-  }
-}
-
 // ============================================================
 // 1. 扫描 entities/ 的 frontmatter relations
 // ============================================================

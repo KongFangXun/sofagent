@@ -14,6 +14,7 @@ import { execFileSync } from 'child_process';
 import { existsSync, readdirSync, readFileSync, statSync, mkdirSync, writeFileSync, copyFileSync, renameSync, rmSync } from 'fs';
 import { join, resolve, dirname } from 'path';
 import { createHash } from 'crypto';
+import { atomicWriteSync } from '@sofagent/core';
 import { composeWithReactAgent, compose, type ComposeVariant } from './composer';
 import { runDAG } from './dag-runner';
 import { DATA_DIR, ORCHESTRATOR_DIR } from '@sofagent/core';
@@ -64,21 +65,6 @@ function readAbState(statePath: string): AbState {
     }
   } catch { /* ignore corrupt file */ }
   return { candidateSkill: '', currentSkill: '', consecutiveWins: 0, lastComparedAt: '' };
-}
-
-function atomicWriteSync(filePath: string, content: string): void {
-  const tmp = `${filePath}.tmp.${process.pid}`;
-  writeFileSync(tmp, content, 'utf-8');
-  try {
-    renameSync(tmp, filePath);
-  } catch (e: any) {
-    if (e.code === 'EXDEV') {
-      copyFileSync(tmp, filePath);
-      try { require('fs').unlinkSync(tmp); } catch { /* */ }
-    } else {
-      throw e;
-    }
-  }
 }
 
 interface CompareResult {

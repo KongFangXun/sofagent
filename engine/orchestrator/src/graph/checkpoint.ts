@@ -35,6 +35,7 @@ import {
 } from 'fs';
 import { join, dirname } from 'path';
 import { randomBytes } from 'crypto';
+import { atomicWriteSync } from '@sofagent/core';
 
 /** checkpoint 中保存的最小状态接口——与 CheckpointState 兼容 */
 export interface CheckpointState {
@@ -89,21 +90,6 @@ function sleepSync(ms: number): void {
 /**
  * 原子写入——先写临时文件，再 rename 覆盖目标（launcher.ts 同款范式）。
  */
-function atomicWriteSync(filePath: string, content: string): void {
-  const tmp = `${filePath}.tmp.${process.pid}.${randomBytes(4).toString('hex')}`;
-  writeFileSync(tmp, content, 'utf-8');
-  try {
-    renameSync(tmp, filePath);
-  } catch (err: any) {
-    if (err.code === 'EXDEV') {
-      copyFileSync(tmp, filePath);
-      unlinkSync(tmp);
-    } else {
-      throw err;
-    }
-  }
-}
-
 /**
  * 文件 Checkpointer——本地文件存储，与 daemon 共享 .sofagent/checkpoint/ 路径。
  */
