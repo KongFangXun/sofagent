@@ -32,13 +32,13 @@
 | 复制 prompt | 不支持 Skill 的平台 | 把 SKILL.md 内容贴进 system prompt |
 | CLI 直跑 | 任何终端 | `sofagent-orchestrator subagent run fde --task "..."` |
 | DSH 插件通道 | DSH（DeepSeek Harness）用户 | `skillhub install cordis-plugin-sofagent-<名>`（SkillHub 单通道安装 + 发现；每款可独立安装、渐进采用） |
-| MCP 自动配置 | workbuddy/claude/cursor/codex | `bash install.sh --platform <平台>` 自动写 MCP 配置（前三者写 mcp.json JSON、codex 写 config.toml `[mcp_servers.sofagent]` 段），装完即连 84 tools |
+| MCP 自动配置 | workbuddy/claude/cursor/codex | `bash install.sh --platform <平台>` 自动写 MCP 配置（前三者写 mcp.json JSON、codex 写 config.toml `[mcp_servers.sofagent]` 段），装完即连 95 tools |
 
 ---
 
 ## DSH 插件家族（9 款 cordis-plugin）
 
-> sofagent 约束能力在 DSH（DeepSeek Harness）生态的插件形态——每款只干一件事，可独立安装、渐进采用。能力完整面 = MCP Server 84 tools（连接 sofagent MCP 后调用）。随主线版本发布，SkillHub 通道检索。
+> sofagent 约束能力在 DSH（DeepSeek Harness）生态的插件形态——每款只干一件事，可独立安装、渐进采用。能力完整面 = MCP Server 95 tools（连接 sofagent MCP 后调用）。随主线版本发布，SkillHub 通道检索。
 
 | 插件 | 职责（桥接实况） | seam |
 |------|----------------|------|
@@ -102,11 +102,11 @@ FORGE engineer commit ──→ 自动调用 @sofagent-audit → 验证变更合
 
 ---
 
-## MCP 全量工具表（84 tools · 12 类）
+## MCP 全量工具表（95 tools · 13 类）
 
 > 与 `engine/mcp/src/tool-registry.ts` 一一对应（check-docs 第 12 节门禁校验双向差集为空）。主入口 `SKILL.md` 只列每类代表工具，本表为全量。🔴 = 破坏性操作（强制人审/confirmed）。
 
-### 审计合规（8）
+### 审计合规（9）
 
 | 工具 | 说明 |
 |------|------|
@@ -118,6 +118,7 @@ FORGE engineer commit ──→ 自动调用 @sofagent-audit → 验证变更合
 | `data_sovereignty_report` | 数据主权审计报告摘要（云端调用/本地执行/数据流出率） |
 | `notify_session` | 向当前 session 推送审计结果摘要 |
 | `hitl_resolve` | 对挂起等人工确认的 checkpoint 提交决策（approve/reject/aborted） |
+| `data_push` | 标准数据推送入口——schema 校验 + 分拣/合规双闸（gateDataPush）；拒绝留痕进决策日志 |
 
 ### 反思沉淀（3）
 
@@ -160,7 +161,7 @@ FORGE engineer commit ──→ 自动调用 @sofagent-audit → 验证变更合
 | `refine` | Refine 质量优化循环 |
 | `loop_debug` | Onboard Agent 调试循环（activate→run→judge→fix） |
 
-### FDE 编排（10）
+### FDE 编排（11）
 
 | 工具 | 说明 |
 |------|------|
@@ -174,17 +175,31 @@ FORGE engineer commit ──→ 自动调用 @sofagent-audit → 验证变更合
 | `sofagent_compose` | 编排模块——任务描述返回 Sub Agent 编排方案（YAML） |
 | `activate_workflow` | 读取 FDE 交付物，注册企业 SubAgent |
 | `create_agent` | 一句话需求自动推导 Agent 配置（角色+域规则+think+knowledge） |
+| `onboard_prompt` | 上岗 prompt 生成器——岗位描述→职责/边界/工具面三段，产物可经 workflow_node_add 落节点 |
 
-### Workflow / Agent（7）
+### Workflow / Agent（12）
 
 | 工具 | 说明 |
 |------|------|
 | `workflow_submit` | Workflow 提交（schema 校验 + 解析执行） |
+| `workflow_create` | Workflow 对象化创建（schema-gate 校验；owner 建 trunk、非 owner 开 branch） |
+| `workflow_update` | Workflow 版本化更新（version+1 + 审计留痕） |
+| `workflow_node_add` | 节点追加（可挂 trigger.schedule 定时触发，非法 cron 拒绝） |
+| `workflow_diff_preview` | 变更 diff 预览（零副作用，不入版本） |
+| `workflow_gaps` | 能力缺口查询——缺人/缺能力/待升级三类，缺口清单可转悬赏 PR |
 | `route_workflow` | 入口路由——task + workflow 返回命中节点或 fallback |
 | `agent_identity` | 查询 Agent 身份码（不含私钥） |
 | `team_create` / `team_broadcast` | 创建团队 / 意图广播到团队意图总线 |
 | `list_agents` | 列出已注册 Agent（内置 + 企业 SubAgent） |
 | `list_capabilities` | MCP 能力清单 |
+
+### PR 协同（3）
+
+| 工具 | 说明 |
+|------|------|
+| `pr_submit` | 提交 PR（open → reviewed → merged/rejected 状态机入口；审计留痕） |
+| `pr_review` | 审阅 PR（approve/reject；suggested 置信态启发式产物，显式决策不被启发式覆盖） |
+| `pr_merge` | 🔴 合并 PR（merge_criteria 全过自动合并，未过走 HITL；branch→trunk 联动写回基线） |
 
 ### 能力公地（6）
 
@@ -225,7 +240,7 @@ FORGE engineer commit ──→ 自动调用 @sofagent-audit → 验证变更合
 | `define_acceptance` | 任务附机器可判定验收条件（test/build/grep-absent/schema） |
 | `check_acceptance` | 跑登记的条件，返回结构化结果 |
 
-### 运维观测（6）
+### 运维观测（7）
 
 | 工具 | 说明 |
 |------|------|
@@ -234,6 +249,7 @@ FORGE engineer commit ──→ 自动调用 @sofagent-audit → 验证变更合
 | `worklog_query` | 按 Agent/Workflow/周趋势查 AI 工作明细 + 进化四维趋势 |
 | `cost_query` | 成本审计——预算/各 Agent 实际消耗/超限记录 |
 | `daemon_status` | daemon 运行状态（PID/心跳，只读） |
+| `contribution_query` | 绩效数据导出——PR 权重 + 决策留痕 + 审计变更三源聚合，人/数字员工同标准，按 org 过滤（租户隔离） |
 
 ### 浏览器（4）
 

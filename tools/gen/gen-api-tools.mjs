@@ -79,6 +79,18 @@ const NAME_TO_MODULE = {
   stats: 'ops', cost_query: 'ops', worklog_query: 'ops',
   daemon_status: 'ops', health_check: 'ops', list_rules: 'ops',
   data_sovereignty_report: 'ops', list_capabilities: 'ops',
+  // v1.4.7：workflow 对象化 CRUD（workflow）/ PR 生命周期（workflow——写接口动作面）
+  workflow_create: 'workflow', workflow_update: 'workflow',
+  workflow_node_add: 'workflow', workflow_diff_preview: 'workflow',
+  pr_submit: 'workflow', pr_review: 'workflow', pr_merge: 'workflow',
+  // v1.4.7：能力缺口（workflow——业务流健康度查询）
+  workflow_gaps: 'workflow',
+  // v1.4.7：上岗 prompt 生成（fde）
+  onboard_prompt: 'fde',
+  // v1.4.7：绩效数据导出（ops——可见性数据面）
+  contribution_query: 'ops',
+  // v1.4.7：标准数据推送入口（audit——合规双闸）
+  data_push: 'audit',
 };
 
 const src = readFileSync(REGISTRY, 'utf8');

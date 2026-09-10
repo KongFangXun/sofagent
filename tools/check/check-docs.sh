@@ -787,11 +787,13 @@ echo "=== 13b. 声称限定词反向断言（v1.4.4 D-2 · 「能力交付」级
 # 规则：凡被查文档出现「能力交付」字面 + 同行不含「接线未启用」限定词 → FAIL。
 #   grep -F 锚定字面量组合判定，避免正则复杂化；v1.4.7 真接线时本节随 §13 同步改
 #   （接线完成后「能力交付」措辞应升级为「已交付」，届时本节条目同步移除）。
+# 状态：静态加密 daemon 接线已于 v1.4.7 落地（daemon start 调 initDataEncryption，
+#   v1.3.8 行措辞已升级「daemon 接线 v1.4.7 收口」）——条目移除，断言关闭。
+# 若未来出现新的「能力交付级」声称，按同款模式登记条目 + 限定词断言。
 REVERSE_FAIL=0
-REVERSE_CLAIMS=(
-  "CHANGELOG.md|静态加密|CHANGELOG v1.3.8 行"
-  "docs/ARCHITECTURE.md|静态加密|ARCHITECTURE v1.3.8 行"
-)
+REVERSE_CLAIMS=()
+# 空数组守卫（set -u 下空数组展开 unbound）——当前无登记条目时直接零通过
+if [ "${#REVERSE_CLAIMS[@]}" -gt 0 ]; then
 for rclaim in "${REVERSE_CLAIMS[@]}"; do
   r_file="${rclaim%%|*}"; r_rest="${rclaim#*|}"
   r_lit="${r_rest%%|*}"; r_desc="${r_rest#*|}"
@@ -806,6 +808,7 @@ for rclaim in "${REVERSE_CLAIMS[@]}"; do
     echo "  ✓ [${r_desc}] ${r_file} 全部「${r_lit}」声称均带「接线未启用」限定（与 SECURITY 口径一致）"
   fi
 done
+fi
 if [ "$REVERSE_FAIL" -gt 0 ]; then
   ERRORS=$((ERRORS + REVERSE_FAIL))
 fi

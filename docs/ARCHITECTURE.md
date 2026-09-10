@@ -194,15 +194,15 @@ Agent = **模型 + 上下文 + 工具 + 状态 + 执行控制 + 权限 + 可观�
 
 | 包 | 职责 | 状态 |
 |---|---|---|
-| audit | 提交时审计，24 条规则（17 默认 + 7 扩展，[完整清单见 SECURITY](../SECURITY.md#24-条审计规则完整清单文档级-ssot)）硬证据扫描 + 快照/回滚/webhook + 本体建模要求对齐维度（`runRules({gb48000:true})` opt-in） | ✅ 已实现（1046 测试） |
-| core | 核心运行时：git diff 解析、shadow-repo 快照、AES-256-GCM/ECDH、think.md 契约、doctor、LLM 调用 Trace、stop_reason 分类、身份码 Ed25519 | ✅ 已实现（416 测试） |
+| audit | 提交时审计，24 条规则（17 默认 + 7 扩展，[完整清单见 SECURITY](../SECURITY.md#24-条审计规则完整清单文档级-ssot)）硬证据扫描 + 快照/回滚/webhook + 本体建模要求对齐维度（`runRules({gb48000:true})` opt-in） | ✅ 已实现（1079 测试） |
+| core | 核心运行时：git diff 解析、shadow-repo 快照、AES-256-GCM/ECDH、think.md 契约、doctor、LLM 调用 Trace、stop_reason 分类、身份码 Ed25519 | ✅ 已实现（429 测试） |
 | harness | 四层约束加载链 `buildConstrainedSystemPrompt()` + L4 渐进加载（热点全文 + 索引） | ✅ 已实现 |
 | rules | 规则引擎纯函数包（零 git 依赖；fs 仅限 AST 扫描的临时目录——mkdtemp 写入待检源码片段，扫描后即清理），编排层 tool-call 事前拦截 + 审批四模式 | ✅ 已实现 |
 | eval | 质量评估引擎：精确匹配 / 语义相似 / 规则合规 三维评分 | ✅ 已实现 |
 | ab-test | A/B 自进化：current vs candidate 并行对比，连续胜出 + 非退化守卫才晋升 | ✅ 已实现 |
-| orchestrator | 编排模块：DAG 任务拆解 + LangGraph 闭环 + A/B 调度器 + ToolGate 事前拦截 + Ontology 运行时层 + 并行编排（MergeQueue/ParallelScheduler/波次卡关）+ Durable Execution + Onboard L1-L5 + Benchmark 评测 + agent-creation + FDE 梳理辅助 + Session 隔离 + meta-harness 多 harness 编排 + worklog 工作明细数据层 + 后训模块地基（train-job 编排/审计/隔离/指纹/签名/回收/恢复/安全 + 数据管道/版本/eval 闭环/环境/dry-run/报告）+ FDE 六引擎工作台 | ✅ 已实现（1880 测试） |
-| daemon | 守护进程：cron + fs 监听 + 文件级审计 + USB 烧录 + 联邦查询 + Dream Cycle 6 阶段 + 启动 LOOP 续跑检查 + 审计轨迹聚合巡检 + 训练孤儿巡检 | ✅ 已实现（374 测试） |
-| mcp | MCP Server：JSON-RPC 2.0 over stdio，tools + resources（84 tools——v1.4.2 新增 FDE 六引擎 fde_interview/classify/quantify/derive/distill/deploy，v1.4.3 新增 train_status/train_list/train_diagnose，v1.4.4 新增 corpus_export，v1.4.5 新增 train_serve/train_compliance/train_deliverable） | ✅ 已实现 |
+| orchestrator | 编排模块：DAG 任务拆解 + LangGraph 闭环 + A/B 调度器 + ToolGate 事前拦截 + Ontology 运行时层 + 并行编排（MergeQueue/ParallelScheduler/波次卡关）+ Durable Execution + Onboard L1-L5 + Benchmark 评测 + agent-creation + FDE 梳理辅助 + Session 隔离 + meta-harness 多 harness 编排 + worklog 工作明细数据层 + 后训模块地基（train-job 编排/审计/隔离/指纹/签名/回收/恢复/安全 + 数据管道/版本/eval 闭环/环境/dry-run/报告）+ FDE 六引擎工作台 | ✅ 已实现（1928 测试） |
+| daemon | 守护进程：cron + fs 监听 + 文件级审计 + USB 烧录 + 联邦查询 + Dream Cycle 6 阶段 + 启动 LOOP 续跑检查 + 审计轨迹聚合巡检 + 训练孤儿巡检 | ✅ 已实现（404 测试） |
+| mcp | MCP Server：JSON-RPC 2.0 over stdio，tools + resources（95 tools——v1.4.2 新增 FDE 六引擎 fde_interview/classify/quantify/derive/distill/deploy，v1.4.3 新增 train_status/train_list/train_diagnose，v1.4.4 新增 corpus_export，v1.4.5 新增 train_serve/train_compliance/train_deliverable） | ✅ 已实现 |
 | ontology | 领域本体：合并 / 状态 / 视图 / 概念合成，三层 YAML 自动生长 | ✅ 已实现 |
 | skillopt | Skill 优化：复用 audit 规则做安全审查 + 集成优化 + 回填 | ✅ 已实现 |
 | think | 思考链分析：基于 diff + 审计结果自动生成 think.md 反思条目（append-only） | ✅ 已实现（⚠️ 仅 MCP/CLI 路径触发，git hook 路径不自动生成） |
@@ -226,7 +226,7 @@ v1.3.9 起对所有 workspace 包的入口 export 做显式分级，CI 门禁（
 
 > 累计能力表（按版本归组，全部 ✅ 已发布可用；规划中/排期项见下方「已排期」）：
 
-> 🗺️ **84 个 MCP 工具五域一环**（五域一环组织法 2026-09-02 收编；工具数 v1.4.5 增至 83，v1.4.6 增 train_cloud 至 84）：工具不是工具箱清单，是一个组织的编制表——五域各司其职，六条箭头构成「执行→审计→沉淀→晋升」的自进化闭环；审计域（域三）是整条飞轮的数据源头，其执法手册即 24 条审计规则。
+> 🗺️ **95 个 MCP 工具五域一环**（五域一环组织法 2026-09-02 收编；工具数 v1.4.5 增至 83，v1.4.6 增 train_cloud 至 84，v1.4.7 增 11 个至 95）：工具不是工具箱清单，是一个组织的编制表——五域各司其职，六条箭头构成「执行→审计→沉淀→晋升」的自进化闭环；审计域（域三）是整条飞轮的数据源头，其执法手册即 24 条审计规则。
 >
 > ⚠️ **两套标签不要混用**：五域按**业务职能**划分（本图组织法）；`tool-registry` 的 `roles` 是**使用场景标签**（7 面：audit/fde/eval/agent/ops/commons/browser），服务于 `SOFAGENT_MCP_ROLES` 按角色收窄暴露面。二者用途不同，域的条目数与 roles 分布数不相等属预期。
 
@@ -276,7 +276,7 @@ graph TB
 | **v1.3.5** | MCP 自进化+运维闭环（A/B 实验 run_ab_test / promote_ab 人审晋升 + 快照 snapshot_list / snapshot_restore 人审恢复）+ instinct→skill 自动进化（三源提取 + 置信度评分 + /evolve 聚合）+ FDE 运维五件 + DSH MCP 互通 |
 | **v1.3.6** | 引擎接口外化——Workflow 标准格式 + 运行容器（`workflow_submit`）/ Ontology Schema 注册（`ontology_import` D1-D5 留痕）/ 模型注册 + 灰度切换（`model_register` / `model_switch`）/ SubAgent 托管 SDK（`harness.wrap` 双形态）/ 训练协议三约定 + 预算控制（`train_budget`）/ 机器可判定验收（`define_acceptance` / `check_acceptance`）/ 路由决策可解释性（EndpointProfile + route-policy + routeReason）/ 可靠性五件（worktree 隔离 + 双闸验证 + 疲劳度检测 + 分级降级 + decisions.jsonl 完整版）· MCP 60 tools |
 | **v1.3.7** | SubAgent 完整沙箱（虚拟 FS / 网络白名单 / 工具中介 / 虚拟 key / 独立进程 / A-B 双跑）· 场景驱动权限 · AgentShield 五类扫描 · 行业 overlay 四套 · 断路器行为监控 · ontology 生命周期 |
-| **v1.3.8** | 代理网关硬边界（唯一出入口 + 风险分级 + 权限单调守卫 + HITL 审批队列）· 数据静态加密（能力交付：纯 TS AES-256-GCM；daemon 接线后续版本收口——见 SECURITY）· Durable Execution L3（WAL 三态恢复 + undo 三档回滚）· 异步长任务自治 · FORGE driver 保活三件套 · 托管 SDK `sandbox:true` 启用 · release-gate 瘦身 · fresh-eyes 成本重构 · 快照写路径加固 |
+| **v1.3.8** | 代理网关硬边界（唯一出入口 + 风险分级 + 权限单调守卫 + HITL 审批队列）· 数据静态加密（能力交付：纯 TS AES-256-GCM，daemon 接线 v1.4.7 收口——密钥就绪后审计历史密文落盘 SOFAGENT-AGE-V1）· Durable Execution L3（WAL 三态恢复 + undo 三档回滚）· 异步长任务自治 · FORGE driver 保活三件套 · 托管 SDK `sandbox:true` 启用 · release-gate 瘦身 · fresh-eyes 成本重构 · 快照写路径加固 |
 
 > **v1.2.0 审计链安全加固**（BugFix 批次）：`--doctor` hash chain 三态判定（ok / tampered / unverifiable，`checkHistoryChainDetailed`）· HMAC key ≥16 字节强校验（`validateHmacKey`）· HMAC 签名改为基于脱敏记录（先 sanitize 再签名，写读一致）· config 可选签名校验（`verifyConfigSignature` + `signConfig` CLI）· CLI 版本一致性自检（`checkVersionConsistency`）。详见 `engine/core/src/audit-history.ts`、`engine/core/src/config-loader.ts`。
 

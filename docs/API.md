@@ -22,14 +22,15 @@
 
 ---
 
-## 二、MCP 工具清单（84 · 按产品能力域分组）
+## 二、MCP 工具清单（95 · 按产品能力域分组）
 
 > 十个能力域按「一个组 = 一个可独立讲述的产品能力」划分，与五能力叙事的对应：本节工具承载其中的**审计**（审计与合规）、**回溯**（快照与回溯）、**沉淀**（知识资产与能力市场）、**进化**（后训练流水线与 FDE 沉淀）能力面；**注入**能力走加载链文件（SKILL.md/fde.md/think.md/knowledge/），不经 MCP 暴露。**roles 列保留运行时真值**——`SOFAGENT_MCP_ROLES=audit,ops` 收窄面以 roles 为准（v1.4.0 工具角色分层），分组是文档编制判断。浏览器四件套（playwright_*）归审计域——主叙事是 UI 层审计取证（v1.5.2 UI 审计的执行底座）。
 
-### FDE 进场 · 六引擎（访谈 → 分类 → 量化 → 推导 → 沉淀 → 部署）（6）
+### FDE 进场 · 六引擎（访谈 → 分类 → 量化 → 推导 → 沉淀 → 部署）（7）
 
 | tool | roles | 说明 |
 |---|---|---|
+| `onboard_prompt` | agent | 上岗 prompt 生成器——岗位描述 → 三段结构（职责/边界/工具面），产物经 workflow_node_add 落进节点配置（与 workflow CRUD 闭环）。 |
 | `fde_interview` | fde | FDE 访谈结构化落盘（引擎一）——五要素逐节点收集，多轮追加按 nodeId 幂等合并，自动重算企业画像（节点数/岗位分布/高频痛点）；prompts_only=true 返回六条追问话术（五要素 + 实际流程）。 |
 | `fde_classify` | fde | FDE 三问判定 → 节点方案（引擎二）——classifyAutomation SSOT 判定（🔄自动/⚡强化/👤暂不动）+ 六步分解最小工作单元（GUIDE §3.2）+ executor 映射，落 nodes.json。 |
 | `fde_quantify` | fde | FDE 量化四字段 + ROI 排序（引擎三）——年节省=岗位年薪×AI接管工时占比（GUIDE §4.3，与 train_report 同公式同源）；ROI=年节省÷(投入+1) 降序，落 quantification.json（若引擎二已跑自动关联判定标签）。 |
@@ -37,7 +38,7 @@
 | `fde_distill` | fde | FDE 三层交付物生成（引擎五）——跑通过程沉淀：文档层手册（人读：现状/六步/验收/回滚）+ Skill 层模板（Agent 可执行）+ 运行层 yaml 片段（引擎六组装用），归档 deliverables/ 带 README 索引。 |
 | `fde_deploy` | fde | FDE workflow 组装部署（引擎六）——三层交付物 → deployments/<name>.yml（与 fde_compose 同格式）；只产出工件不代激活——激活走 workflow_submit + activate_workflow（人审闸门保留）。 |
 
-### 审计与合规（代码 / 轨迹 / 数据审计 · 浏览器取证 · 语料导出）（9）
+### 审计与合规（代码 / 轨迹 / 数据审计 · 浏览器取证 · 语料导出）（10）
 
 | tool | roles | 说明 |
 |---|---|---|
@@ -49,9 +50,10 @@
 | `audit_file` | audit | 单文件变更即时审计——Agent 编辑文件时调用，跑单文件适用规则，返回结构化结果（不阻断）。 |
 | `audit_data_change` | audit | 对知识库结构化数据变更跑数据审计（D1-D5）。 |
 | `audit_trail` | audit | 跨设备审计轨迹查询——按 agent_id 查完整轨迹（HMAC 验签）。 |
+| `data_push` | ops | 标准数据推送入口——企业存储按约定 schema 推送训练语料/知识数据，经分拣闸（敏感档标记）+ 合规闸（拦截违规）双闸入库，拒绝留痕进审计链。 |
 | `corpus_export` | ops | 训练语料导出三件套——规则（27 编号位含跳号占位 + reward_hint 骨架 + verifiers 三桶清单）+ FDE 方法论（锚点解析）+ 带标签审计样本（五源聚合 + 脱敏）。导出带版本号 + HMAC 签名，导出行为记 corpus_export 审计事件。 |
 
-### 业务流编排（workflow DAG · 循环执行与优化）（8）
+### 业务流编排（workflow DAG · 循环执行与优化）（16）
 
 | tool | roles | 说明 |
 |---|---|---|
@@ -63,6 +65,14 @@
 | `route_workflow` | agent | 入口路由——传 task + workflow 返回命中节点或 fallback。 |
 | `refine` | eval | Refine 质量优化循环——针对 Agent 产出做质量优化。 |
 | `workflow_submit` | agent | Workflow 提交——schema 校验 + 解析（validate/run）。 |
+| `workflow_create` | agent | 新建 workflow 对象——schema-gate 校验（结构 + cron 语法）后落库 version=1，owner 持有 trunk 直改权；每次落库挂 decision-log 审计。 |
+| `workflow_update` | agent | 全量替换 workflow 文档——owner 直改 trunk（version+1）；非 owner 写 branch-{actor}（trunk 不动，等审阅合并）。 |
+| `workflow_node_add` | agent | 向既有 workflow 追加单节点（增量改）——节点 id 重复/depends_on 悬空/cron 非法拒绝；owner 直改 trunk，非 owner 写 branch。 |
+| `workflow_diff_preview` | agent | 对比传入文档与 trunk 当前的行级差异（unified 风格 + 增删行数）——只读零副作用，落库前先预览。 |
+| `workflow_gaps` | ops | workflow 能力缺口分析——扫描 workflow-store 声明节点 vs worklog 实际执行，产出三类缺口清单（缺人/缺能力/待升级），可被商业平台消费转悬赏。纯读零写入。 |
+| `pr_submit` | agent | 提交 workflow 变更提案（PR）——open 态入库 + 贡献者登记（人/数字员工同标准权重）+ 可选 triggerBinding（启发式=suggested / 显式=confirmed，显式不被启发式覆盖）。 |
+| `pr_review` | agent | 审阅 PR——approve 进 reviewed（可合并）；reject 终态 rejected（拒因进 decision-log 负样本训练信号）。 |
+| `pr_merge` | agent | 合并 PR——merge_criteria 全过自动合并；未过挂起 HITL（human_confirmed=true 强制合并，痕迹保留）。合并写回 workflow 基线（branch→trunk 联动）。 |
 
 ### Agent 组织与协作（数字员工 · 团队阵型 · HITL 人工介入）（7）
 
@@ -88,11 +98,11 @@
 | tool | roles | 说明 |
 |---|---|---|
 | `model_register` | ops | 模型注册——注册训练后模型 endpoint（name+endpoint+model）。 |
-| `model_switch` | ops | 模型灰度切换——按档位切灰度/活动模型（percent<100 只写灰度比例不动活动模型；100 晋升与 rollback 回滚均 🔴 强制人审）。 |
+| `model_switch` | ops | 模型灰度切换——按档位切换活动模型（percent<100 灰度，100 强制人审）。 |
 | `model_unregister` | ops | 模型退役——标记退役（可恢复），强制人审。 |
 | `train_budget` | eval, ops | 训练预算控制——查预算状态 / 超预算人审续跑或终止。 |
 | `train_submit` | eval, ops | 训练任务提交——数据+基座+算法(sft/dpo/grpo)+超参+预算 → 生成 trainJobId（同 id 重复提交幂等）。 |
-| `train_doctor` | eval, ops | 训练环境体检——CUDA/显存/框架版本/基座模型缓存四项 + 反作弊基线三项（git 禁用/.git 可见性/网络白名单）结构化报告（只查不装；装环境走 `bash tools/train/train-env-init.sh`，基座模型手动放置或推理服务拉取）。 |
+| `train_doctor` | eval, ops | 训练环境体检——CUDA/显存/框架版本/基座模型缓存四项 + 反作弊基线三项（git 禁用/.git 可见性/网络白名单）结构化报告（只查不装；装环境走 bash tools/train/train-env-init.sh，基座模型手动放置或推理服务拉取）。 |
 | `train_dryrun` | eval, ops | 训练 dry-run——提交前预检：极小样本管线连通 + 数据质量抽样 + 显存估算（超限提前告警）+ 算力外推（sigmoid 缩放律外推成本，超预算提交前告警）。 |
 | `train_report` | eval, ops | 训练报告生成——数据概况+配置+eval对比+产物清单+量化四字段（GUIDE §4.3：年节省=岗位年薪×AI接管工时占比），markdown+JSON 归档 data/dashboard/train-reports/。 |
 | `train_status` | eval, ops | 训练进度查询——status/step/loss/reward 曲线/断点/用量快照（长任务轮询入口）。 |
@@ -147,7 +157,7 @@
 | `commons_retire` | commons | 能力退役/恢复——标记退役（不删除，可恢复），强制 owner 确认。 |
 | `commons_harvest_rule` | commons | 从公地调用日志 + Refine 循环提炼质量规则候选。 |
 
-### 运维与可见性（成本 · 工作明细 · 健康 · 规则 · 能力发现）（8）
+### 运维与可见性（成本 · 工作明细 · 健康 · 规则 · 能力发现）（9）
 
 | tool | roles | 说明 |
 |---|---|---|
@@ -159,6 +169,7 @@
 | `health_check` | ops | 运行环境健康检查（环境/配置/数据目录/Hook/依赖）。 |
 | `daemon_status` | ops | 查询 daemon 运行状态（PID/启动时间/心跳）。只读。 |
 | `list_rules` | audit | 列出所有审计规则清单（只读，不暴露实现）。 |
+| `contribution_query` | ops | 贡献度报表——人/数字员工同标准聚合（PR 权重分 + 决策留痕 + 审计变更规模 → 综合贡献分），按人/按 workflow 两维度输出，org_id 跨租户过滤（G7 联动）。纯读零写入。 |
 
 ---
 
