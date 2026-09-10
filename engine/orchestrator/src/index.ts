@@ -69,6 +69,10 @@
   WorkflowDiffPreviewInput,
 } from './crud/schema-gate';
 
+// G2 能力缺口分析（商业平台悬赏数据源）
+/* @public */ export { analyzeWorkflowGaps, DEFAULT_THRESHOLDS } from './gap-analyzer';
+/* @public */ export type { WorkflowGap, GapKind, GapAnalysisResult, GapThresholds } from './gap-analyzer';
+
 // Ontology 运行时层（v1.3.6 交付 ②——Action 注册表 / Schema 校验 / 注入管线）
 /* @public */ export {
   ActionRegistry,
