@@ -239,9 +239,16 @@ function s148() {
   const mm = String(now.getMonth() + 1).padStart(2, '0');
   const dd = String(now.getDate()).padStart(2, '0');
   const todayDateStr = yyyy + '-' + mm + '-' + dd;
-  const logPath = path.join(tmpDir, 'data', 'audit', 'data-sovereignty', yyyy, mm, todayDateStr + '.jsonl');
-  const logExists = fs.existsSync(logPath);
-  const logContent = logExists ? fs.readFileSync(logPath, 'utf-8').trim() : '';
+  // v1.4.7 章十五：落盘路径插 repo-hash 段——data/audit/data-sovereignty/<repo-hash>/{年}/{月}/
+  // 探针用 glob 找当日 jsonl（不硬编码 repo-hash——探针 cwd 可能非 git 仓，hash 形态随环境）
+  const dsRoot = path.join(tmpDir, 'data', 'audit', 'data-sovereignty');
+  const { execSync } = require('child_process');
+  let logPath = null;
+  try {
+    logPath = execSync(`find ${JSON.stringify(dsRoot)} -name ${JSON.stringify(todayDateStr + '.jsonl')} 2>/dev/null`, { encoding: 'utf-8' }).trim().split('\n')[0] || null;
+  } catch { logPath = null; }
+  const logExists = !!logPath && fs.existsSync(logPath);
+  const logContent = logExists && logPath ? fs.readFileSync(logPath, 'utf-8').trim() : '';
   if (!logExists || !logContent.includes('test-148')) { console.log('JSONL 记录写入/读取失败'); process.exit(1); }
   const records = logContent.split('\n').map(l => JSON.parse(l));
   const stats = aggregateStats(records);
