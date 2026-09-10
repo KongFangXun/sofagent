@@ -146,6 +146,21 @@ async function main() {
         console.warn(`  ⚠️ slash 命令注册失败（不影响 daemon 启动）: ${err instanceof Error ? err.message : String(err)}`);
       }
 
+      // 章十四（静态加密全量接线）：首启数据加密引导——密钥就绪后审计历史
+      // 以 SOFAGENT-AGE-V1 密文落盘；无密钥非交互 WARN 不 FAIL（明文兼容）。
+      // initDataEncryption 幂等（已有密钥直接 ok），交互环境走指纹+备份确认引导。
+      try {
+        const { initDataEncryption } = await import('./crypto-init');
+        const { resolveHomeDir } = await import('@sofagent/core');
+        const cryptoResult = initDataEncryption(resolveHomeDir());
+        if (cryptoResult.status === 'ok') {
+          console.log(`  ✅ ${cryptoResult.message}`);
+        }
+        // warn 态已由 initDataEncryption 内部 console.warn（CI 不红）
+      } catch (err) {
+        console.warn(`  ⚠️ 数据加密引导失败（不影响 daemon 启动——明文兼容）: ${err instanceof Error ? err.message : String(err)}`);
+      }
+
       // v1.4.4 #32+47：启动即写健康文件（writeHealthFile 此前「诞生即死」——
       // 函数存在但 daemon 主路径零调用，exit 78 死亡无人记录）。心跳每 5min 更新。
       const { writeHealthFile, recordDaemonExit } = await import('./daemon-health');

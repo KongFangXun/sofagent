@@ -32,7 +32,7 @@ sofagent 是一套 FDE 能力——底层引擎是纯本地 Harness 中间件（
 ~/.sofagent/
 ├── data/          ← 用户可见运行时数据（审计/知识库/反思/任务日志）
 ├── internal/      ← 引擎内部状态（checkpoint / .git-shadow / watch.yml）
-├── keys/          ← 静态加密密钥（0600，v1.3.8 能力 · 激活排期 v1.4.7）
+├── keys/          ← 静态加密密钥（0600，v1.3.8 能力 · daemon 启动已接线）
 ├── bin/           ← CLI 入口
 └── skill/         ← Skill 文件
 ```
@@ -47,7 +47,7 @@ sofagent 是一套 FDE 能力——底层引擎是纯本地 Harness 中间件（
 | data-sovereignty 审计日志 | `data/audit/data-sovereignty/{年}/{月}/` | 全局单文件（多项目记录混合） | 事后可追溯 | repo-hash 隔离已移排 v1.4.7（复用 FORGE 方案）；临时方案 `SOFAGENT_HOME` 按项目分目录 |
 | `history.jsonl`（commit 级审计历史） | `~/.sofagent/data/audit/`（全局） | 全局 append-only（HMAC 签名链要求全量连续，跨仓查询是运维刚需） | 事后（HMAC 链 + `--doctor` 校验；锚点防尾部截断） | 全局共享是设计决策；无密钥时退化为弱校验 hash chain（同用户进程可重算，见 §四 HMAC 段） |
 | `knowledge/`（知识沉淀） | `data/knowledge/` | 全局共享（无租户/项目维度，多域数据会串） | sensitivity 分级是**分级标注非门禁**（L0-L3 分层脱敏管道事前打码） | 多租户抽象层 v0 排 v1.4.7（G7）；当前定位单机单用户 |
-| `task/logs/` 与 `think.md` | `data/task/logs/`、`data/think.md` | 全局明文 | 事前脱敏（sanitize() 写入前打码，脱敏是**掩码非加密**） | 静态加密能力已实现未接线（排 v1.4.7）；强合规场景建议外部加密卷 |
+| `task/logs/` 与 `think.md` | `data/task/logs/`、`data/think.md` | 全局明文 | 事前脱敏（sanitize() 写入前打码，脱敏是**掩码非加密**） | 附链目录不在加密范围（加密仅覆盖审计历史主链）；强合规场景建议外部加密卷 |
 
 > 排期项详见 [docs/ROADMAP.md](./docs/ROADMAP.md)；各数据面的攻击面与信任模型细节见 [docs/LIMITATIONS.md](./docs/LIMITATIONS.md)。
 
@@ -63,8 +63,8 @@ sofagent 是一套 FDE 能力——底层引擎是纯本地 Harness 中间件（
 - ✅ 脱敏：sanitize() 管道扫描 API Key / 密码 / 手机号，写入前自动打码
 - ✅ 数据保留：cleanup.sh 支持 --purge --before 定时清理 + tar.gz 归档
 - ✅ 审计日志：task-record.sh 独立审计日志 + task/logs 追溯双通道
-- ⏳ 静态加密（能力已实现，接线未启用）：加密能力已在 `crypto-init.ts` 实现（纯 TS AES-256-GCM，`SOFAGENT-AGE-V1` 格式，密钥设计存 `~/.sofagent/keys/` 0600 + 指纹强制备份），但激活入口 `initDataEncryption()` 尚未接入 daemon 启动路径——当前审计历史落盘为明文 JSONL（脱敏管道仍生效，见 enterprise-deploy.md）。接线排期 v1.4.7（见 [ROADMAP](./docs/ROADMAP.md)）
-- ⚠️ **当前限制**：LLM 自评无外部基准。GDPR / 等保 / SOC2 场景仍需额外措施（静态加密接线未启用——审计历史主链与 forge-runs/checkpoint/model-registry 三目录当前均为明文，全量接线已移排 v1.4.7）。合规审查员请注意：**当前版本强合规场景仍建议配合外部加密卷（gpg / disk encryption）**。
+- ✅ 静态加密已接线（daemon start 路径）：`initDataEncryption()` 已接入 daemon 启动路径（交互环境引导生成密钥 + 指纹确认 + 备份确认；非交互 WARN 不 FAIL 明文兼容）。密钥就绪后审计历史主链以 `SOFAGENT-AGE-V1` 密文落盘（AES-256-GCM，密钥 `~/.sofagent/keys/` 0600 + 指纹强制备份）；既有明文历史读侧 auto-detect 可读不回填。附链目录（forge-runs/checkpoint/model-registry/task/logs/think.md/knowledge）仍为明文，见 LIMITATIONS 权威清单
+- ⚠️ **当前限制**：LLM 自评无外部基准。GDPR / 等保 / SOC2 场景仍需额外措施（静态加密已覆盖审计历史主链，但 forge-runs/checkpoint/model-registry 三目录与 task/logs/think.md 附链仍为明文，见 LIMITATIONS 权威清单）。合规审查员请注意：**强合规场景仍建议配合外部加密卷（gpg / disk encryption）覆盖附链目录**。
 
 ### 纵深防御（静态加密之外的额外措施，持续建议）
 
@@ -260,7 +260,7 @@ sofagent 是一套 FDE 能力——底层引擎是纯本地 Harness 中间件（
 ~/.sofagent/
 ├── data/          ← 用户可见运行时数据（审计/知识库/反思/任务日志）
 ├── internal/      ← 引擎内部状态（checkpoint / .git-shadow / watch.yml）
-├── keys/          ← 静态加密密钥（0600，v1.3.8 能力 · 激活排期 v1.4.7）
+├── keys/          ← 静态加密密钥（0600，v1.3.8 能力 · daemon 启动已接线）
 ├── bin/           ← CLI 入口
 └── skill/         ← Skill 文件
 ```

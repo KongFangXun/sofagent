@@ -276,7 +276,7 @@ graph TB
 | **v1.3.5** | MCP 自进化+运维闭环（A/B 实验 run_ab_test / promote_ab 人审晋升 + 快照 snapshot_list / snapshot_restore 人审恢复）+ instinct→skill 自动进化（三源提取 + 置信度评分 + /evolve 聚合）+ FDE 运维五件 + DSH MCP 互通 |
 | **v1.3.6** | 引擎接口外化——Workflow 标准格式 + 运行容器（`workflow_submit`）/ Ontology Schema 注册（`ontology_import` D1-D5 留痕）/ 模型注册 + 灰度切换（`model_register` / `model_switch`）/ SubAgent 托管 SDK（`harness.wrap` 双形态）/ 训练协议三约定 + 预算控制（`train_budget`）/ 机器可判定验收（`define_acceptance` / `check_acceptance`）/ 路由决策可解释性（EndpointProfile + route-policy + routeReason）/ 可靠性五件（worktree 隔离 + 双闸验证 + 疲劳度检测 + 分级降级 + decisions.jsonl 完整版）· MCP 60 tools |
 | **v1.3.7** | SubAgent 完整沙箱（虚拟 FS / 网络白名单 / 工具中介 / 虚拟 key / 独立进程 / A-B 双跑）· 场景驱动权限 · AgentShield 五类扫描 · 行业 overlay 四套 · 断路器行为监控 · ontology 生命周期 |
-| **v1.3.8** | 代理网关硬边界（唯一出入口 + 风险分级 + 权限单调守卫 + HITL 审批队列）· 数据静态加密（能力交付：纯 TS AES-256-GCM；daemon 接线未启用，排期 v1.4.7——见 SECURITY）· Durable Execution L3（WAL 三态恢复 + undo 三档回滚）· 异步长任务自治 · FORGE driver 保活三件套 · 托管 SDK `sandbox:true` 启用 · release-gate 瘦身 · fresh-eyes 成本重构 · 快照写路径加固 |
+| **v1.3.8** | 代理网关硬边界（唯一出入口 + 风险分级 + 权限单调守卫 + HITL 审批队列）· 数据静态加密（能力交付：纯 TS AES-256-GCM；daemon 接线后续版本收口——见 SECURITY）· Durable Execution L3（WAL 三态恢复 + undo 三档回滚）· 异步长任务自治 · FORGE driver 保活三件套 · 托管 SDK `sandbox:true` 启用 · release-gate 瘦身 · fresh-eyes 成本重构 · 快照写路径加固 |
 
 > **v1.2.0 审计链安全加固**（BugFix 批次）：`--doctor` hash chain 三态判定（ok / tampered / unverifiable，`checkHistoryChainDetailed`）· HMAC key ≥16 字节强校验（`validateHmacKey`）· HMAC 签名改为基于脱敏记录（先 sanitize 再签名，写读一致）· config 可选签名校验（`verifyConfigSignature` + `signConfig` CLI）· CLI 版本一致性自检（`checkVersionConsistency`）。详见 `engine/core/src/audit-history.ts`、`engine/core/src/config-loader.ts`。
 

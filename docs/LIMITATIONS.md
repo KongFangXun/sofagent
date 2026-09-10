@@ -32,7 +32,7 @@
 | 1 | **单包测试需先 build**——monorepo 未 build 时单包 `npm test` 可能失败（依赖 dist/），需先 `npm run build --workspaces`。 | [四、成熟度与测试局限](#四成熟度与测试局限) |
 | 2 | **默认非 fail-closed**——config.yml 可被 Agent 篡改绕过审计规则。仅当 config 解析失败时走 safeDefaults（fail-closed 强制启用）。 | [三、安全与信任模型局限](#三安全与信任模型局限) |
 | 3 | **编排能力依赖 orchestrator 包 + 模型质量**——LangGraph createReactAgent 驱动，编排效果依赖模型质量。模型降级 → 编排降级。 | [五、审计与工程局限 → 编排模块稳定性](#五审计与工程局限) |
-| 4 | **静态加密接线未启用**——加密能力已实现（crypto-init.ts AES-256-GCM），但激活入口未接入启动路径，审计历史主链与 forge-runs/checkpoint/model-registry 三目录 + task/logs + think.md **当前均为明文（原声称排 v1.3.9 未兑现），全量接线已移排 v1.4.7（G7 数据主权主题）**。 | [三、安全与信任模型局限 → 数据存储安全](#三安全与信任模型局限) |
+| 4 | **静态加密覆盖主链、附链仍明文（权威清单）**——daemon start 已接线（交互引导生成密钥，非交互 WARN 明文兼容），密钥就绪后审计历史主链（history.jsonl/decision-log.jsonl）密文落盘；**附链目录仍明文**：forge-runs/checkpoint/model-registry 三目录 + task/logs + think.md + knowledge/（脱敏管道仍生效）。强合规场景附链建议外部加密卷。 | [三、安全与信任模型局限 → 数据存储安全](#三安全与信任模型局限) |
 | 5 | **单平台场景可能过重**——只用单一 Agent 平台且接受云端审计的用户，平台内置治理比 sofagent 更顺滑。sofagent 的价值在多供应商混用 + 本地留证场景。 | [二、平台与兼容性局限 → 单平台场景](#单平台用户建议) |
 
 > ✅ **已解决的历史问题**（v1.3.2 移出 Key Limitations，不再计入当前边界）：
@@ -213,7 +213,7 @@ sofagent 跑在单个 Agent 里——没有 agent-to-agent 通信，没有多实
 
 > ⚠️ **`.sofagent/.git-shadow/` 在被审计仓库内创建**：sofagent 审计时会在被审计的 git 仓库根目录创建 `.sofagent/.git-shadow/` 目录存放审计快照——设计意图是按 git 仓库隔离快照（不同仓库的快照不能串，否则回溯到错误仓库）。快照内容**已 sanitize 脱敏**（API key / 密码 / 手机号打码，v1.3.4 起），位于仓库内便于 git worktree 隔离。经 `--init` 或 `--install-hook` 安装时，自动写入 .gitignore（v1.3.6 起两路径行为一致），且 v1.4.2 起三层 hook 防线兜底（pre-commit 在 commit 前将 .sofagent/ 移出暂存区 + commit-msg 二次清理 + post-commit HEAD tree 对账告警），`git add -f` 强制暂存也会被移出（reset 失败则 fail-loud 拒绝 commit）；该目录不进 git 提交，但用户 `ls -a` 可见。可安全删除（重新审计会重建）。改存储位置是 v1.4 架构决策，当前版本只披露。
 
-task/logs 和 think.md 以 Markdown 存储，可能含代码片段、API 响应、用户对话摘要。LLM 提炼反思时可能无意写入敏感信息。静态加密能力已实现（crypto-init.ts AES-256-GCM + SOFAGENT-AGE-V1 格式），但接线未启用（原声称排 v1.3.9 未兑现，现排 v1.4.7）——审计历史主链与 task/logs、think.md、forge-runs/checkpoint/model-registry 当前均为明文（脱敏管道仍生效），见 [ROADMAP](./ROADMAP.md) 和 [SECURITY](../SECURITY.md)。
+task/logs 和 think.md 以 Markdown 存储，可能含代码片段、API 响应、用户对话摘要。LLM 提炼反思时可能无意写入敏感信息。静态加密已接线 daemon 启动路径（crypto-init.ts AES-256-GCM + SOFAGENT-AGE-V1 格式）——密钥就绪后审计历史主链密文落盘；但 task/logs、think.md 与 forge-runs/checkpoint/model-registry、knowledge/ 属附链目录仍为明文（脱敏管道仍生效，权威清单见 Key Limitations #4），见 [ROADMAP](./ROADMAP.md) 和 [SECURITY](../SECURITY.md)。
 - history.jsonl 存审计判定详情，A2/A9 已脱敏，其他规则 details 可能含代码片段或文件路径，敏感场景请配合外部加密卷
 - **v1.3.1 #44 披露：审计历史并发写入无文件锁**——appendFileSync 在 POSIX 上对小于 PIPE_BUF (4KB) 的写入是原子的，审计历史条目通常 < 1KB，单次写入安全。但多进程同时写入（daemon 文件监控 + Agent commit）可能导致行交错，产生损坏行触发 hash chain 完整性校验失败。概率极低（审计触发频率 < 1次/分钟），但损坏会导致校验失败。**v1.3.8 解决**——WAL 写在网关层，天然单 writer 模式（所有工具调用经网关串行写入，消除并发写入）。
 - **写链两处「降级继续」是设计取舍（v1.4.4 D-5 披露）**：① 上一行解密/JSON 解析失败时 prevHash 置 `'unknown'` 继续写入（条目带 `chainStatus:'broken'` 显式标记，连续 ≥2 条断裂升级告警）；② chmod 0o600 失败时读回实际权限验证——真实宽松才告警，写入照常。两处均**不阻断审计写入**：审计写入被阻断 = 审计本身失效，比链断或权限宽更危险（fail-open 取舍，审计可用性 > 链完整性严格性）。攻防注意：能反复损坏 history.jsonl 最后一行的攻击者可让链持续断裂而不被写入侧拦截——发现连续断裂告警时应立即 `--doctor` 全链校验并排查文件篡改来源。
