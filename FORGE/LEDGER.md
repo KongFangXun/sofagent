@@ -321,3 +321,7 @@ release-gate-loop 与 fresh-eyes-loop 共享本文件，通过"循环"列区分�
 
 2026-09-09     | 20260909-03    | release-gate | manual（主 session 手动收敛版判断层，不启动 driver——GLM 三倍价窗口绕行：verdict=PASS）。执行链：run-02 PASS（基线 92f56607）后仓库前进多 commit（边界收缩+修复批+P1-1 闭环+S383 coverage 闭环），手动补齐判断层——regression checklist 100 维度 0 失败（precheck 语义，/tmp/run-regression-precheck.mjs 自制执行器注入 PROJECT_ROOT）+ acceptance 392/392 SKIP 0 EXIT 0（S383 新 dist 实跑）+ 五门禁全绿 + 场景数 SSOT 311 四处同步。PASS 轮主 session 收编 | 基线 e902aeba（无 run 目录，证据链=本 session 判断层输出）
 2026-09-11     | 20260911-01    | release-gate | 1（ERROR：主进程 SIGPIPE——执行 session 启动命令带 `| head -20` 管道，driver stdout 消费 20 行后触发 SIGPIPE 杀主进程；两 worker 孤儿完成 regression.md（FAIL·P0×1 维度124行数失实 + P1×2 锚词84）与 coverage.md（FAIL·P0×1 四修复批零锚点，P1-2 处截断 1658 字符不完整不采信）后自然退出；无 consolidate/verdict/latest。环境态非仓库问题，HEAD 未被外 session 动过）| – | – | – | aborted-sigpipe-启动管道失误 | ~/.sofagent/data/forge-runs/release-gate-loop/2026-09-11/run-01
+
+2026-09-11     | 20260911-02    | release-gate | 4    | SKIP       | PASS       | SKIP     | FAIL    | /Users/kongfangxun/.sofagent/data/forge-runs/release-gate-loop/2026-09-11/run-02
+
+2026-09-11     | 20260911-02    | release-gate | 17   | SKIP       | PASS       | SKIP     | FAIL    | /Users/kongfangxun/.sofagent/data/forge-runs/release-gate-loop/2026-09-11/run-02
