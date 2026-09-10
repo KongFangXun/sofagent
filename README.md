@@ -105,7 +105,7 @@ sofagent 不造 Agent——执行能力交给成熟宿主（模型 + 工具 + �
 
 ## v1.4.7：商业平台接口版
 
-🔌 给商业平台预留的全部数据与动作接口一次到位——组织看得见（能力缺口/绩效）、协作转得动（PR 生命周期/workflow 对象化）、数据进得来（data_push 双闸）。`workflow_gaps` 能力缺口查询（缺人/缺能力/待升级三类，可转悬赏 PR）· `contribution_query` 绩效导出（PR 权重+决策留痕+审计变更三源聚合，人与数字员工同标准，org 租户过滤）· `pr_submit/pr_review/pr_merge` PR 生命周期三 tool（状态机+confidence 两态，branch→trunk 合并联动）· workflow 对象化 CRUD 四 tool（owner 直改 trunk/非 owner 开 branch，`trigger.schedule` 定时触发）· G7 多租户 v0（`data/<tenant>/` 路径地基+orgId 归属字段）· `onboard_prompt` 上岗 prompt 生成器 · USB 烧录 workflow（验签后自动加载）· audit 留痕双层（规约聚合+PROV-O 导出）· TrainChannel 云训练标准接口（托管云按规范对接，ssh 通道引擎自研）· `data_push` 标准数据推送入口（schema+分拣/合规双闸）· 静态加密 daemon 接线收口（密钥就绪即密文落盘）· 运行时审计 repo-hash 隔离（llm-calls/data-sovereignty 按 git 仓分目录，旧历史原地可读）。（版本时点数字：MCP 84→95 tools、测试 4107→4249，见开发日志——当前口径以[核心特性](#核心特性)为准。）完整内容见[开发日志](./docs/changelog/v1.4/v1.4.7.md) · 更早版本见 [CHANGELOG](./CHANGELOG.md)。
+🔌 给商业平台预留的全部数据与动作接口一次到位——组织看得见（能力缺口/绩效）、协作转得动（PR 生命周期/workflow 对象化）、数据进得来（data_push 双闸）。`workflow_gaps` 能力缺口查询（缺人/缺能力/待升级三类，可转悬赏 PR）· `contribution_query` 绩效导出（PR 权重+决策留痕+审计变更三源聚合，人与数字员工同标准，org 租户过滤）· `pr_submit/pr_review/pr_merge` PR 生命周期三 tool（状态机+confidence 两态，branch→trunk 合并联动）· workflow 对象化 CRUD 四 tool（owner 直改 trunk/非 owner 开 branch，`trigger.schedule` 定时触发）· G7 多租户 v0（`data/<tenant>/` 路径地基+orgId 归属字段）· `onboard_prompt` 上岗 prompt 生成器 · USB 烧录 workflow（验签后自动加载）· audit 留痕双层（规约聚合+PROV-O 导出）· TrainChannel 云训练标准接口（托管云按规范对接，ssh 通道引擎自研）· `data_push` 标准数据推送入口（schema 校验 + 敏感分拣双闸；企业合规拦截策略预留扩展）· 静态加密 daemon 接线收口（密钥就绪即密文落盘）· 运行时审计 repo-hash 隔离（llm-calls/data-sovereignty 按 git 仓分目录，旧历史原地可读）。（版本时点数字：MCP 84→95 tools、测试 4107→4249，见开发日志——当前口径以[核心特性](#核心特性)为准。）完整内容见[开发日志](./docs/changelog/v1.4/v1.4.7.md) · 更早版本见 [CHANGELOG](./CHANGELOG.md)。
 
 ## FDE 方法论
 

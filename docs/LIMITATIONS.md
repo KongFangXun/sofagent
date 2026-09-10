@@ -207,7 +207,7 @@ sofagent 跑在单个 Agent 里——没有 agent-to-agent 通信，没有多实
 
 > ℹ️ **审计历史全局共享是设计决策**：审计历史（`history.jsonl` / `decision-log.jsonl`）写入全局 `~/.sofagent/data/audit/`，不做项目级隔离——这是**有意为之**：① HMAC 签名链完整性要求全量连续历史（`--verify-chain` 需要完整链）；② 跨仓库查询审计历史是运维刚需。多项目场景下审计记录会混合存储。**运行时审计日志已按 git 仓库隔离：`runtime-audit.jsonl`（FORGE 自托管路径）与引擎侧 data-sovereignty 审计日志 / llm-calls Trace 均落 `data/audit/<…>/<repo-hash>/` 段目录（非 git 回退 nogit-hash；旧版无段结构的既有历史读侧 fallback 原地可读，不迁移不回填）**；commit 级审计历史（history.jsonl / decision-log.jsonl）保持全局。**多项目整目录隔离**：使用 `SOFAGENT_HOME` 环境变量为不同项目/Agent 隔离数据目录。
 
-> ⚠️ **知识库同样全局共享（当前单机单用户设计）**：`~/.sofagent/data/knowledge/` 单目录遍历、无租户/项目维度隔离——多项目、多 Agent 的知识沉淀（entities/concepts/comparisons/summaries）混合存储，查询时全局命中。财务与人事等不同域 Agent 的数据会串。**当前定位为单机单用户**：多 Agent 共享同一知识库/审计历史——多人/多部门共用需等租户隔离（ROADMAP v1.4.7 G7 多租户抽象层 v0）。**临时方案**：使用 `SOFAGENT_HOME` 环境变量为不同项目/Agent 隔离数据目录（见 [企业部署指南](./guides/enterprise-deploy.md#多项目数据隔离v128)）。
+> ⚠️ **知识库同样全局共享（当前单机单用户设计）**：`~/.sofagent/data/knowledge/` 单目录遍历、无租户/项目维度隔离——多项目、多 Agent 的知识沉淀（entities/concepts/comparisons/summaries）混合存储，查询时全局命中。财务与人事等不同域 Agent 的数据会串。**当前定位为单机单用户**：多 Agent 共享同一知识库/审计历史——多人/多部门共用需等租户隔离（ROADMAP v1.4.7 G7 多租户抽象层 v0：v0 为查询侧隔离（orgId 过滤 + `data/<tenant>/` 路径地基），PR/审计数据的**写入侧仍为全局分区**，写入隔离随 v1.4.9 session 承接版收口）。**临时方案**：使用 `SOFAGENT_HOME` 环境变量为不同项目/Agent 隔离数据目录（见 [企业部署指南](./guides/enterprise-deploy.md#多项目数据隔离v128)）。
 
 > ⚠️ **云 VM 执行面（v1.4.6）数据上云边界**：`train cloud` 远程训练时，经分拣闸（sorting-gate）放行的非敏感/脱敏训练数据会上传云 VM（ssh 隧道加密传输，传输层加密；与静态加密 AES-256-GCM 的落盘加密是两层不同防护，见 SECURITY 例外三）。分拣闸是三档判定（敏感/脱敏/公开）——敏感档（客户名单/具体价格/财务数字）拦截留本地，但分拣是规则驱动、**非零漏判**：脱敏不彻底的数据可能误放行上云，强合规场景须人审分拣结果。云 VM 失联止损（心跳超时 → 强制 stop + 清理）防止 VM 按「时薪 × 时长」空烧，但止损依赖心跳可达——控制面与云 VM 网络断连时止损命令无法送达，VM 可能继续计费（成本口径见 train-cloud 预算注释）。
 

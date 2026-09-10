@@ -43,8 +43,11 @@ export async function dataPush(args: Record<string, unknown>): Promise<DataPushR
     };
   }
 
-  // 合规闸谓词：schema 已保证 enterpriseId 非空——策略位预留（strict 扩展点）
-  const compliance = () => ({ allowed: true, reason: '企业标识在位（schema 校验通过）' });
+  // 合规闸谓词：schema 已保证 enterpriseId 非空——此处仅「标识在位」核查；
+  // 企业合规拦截策略为预留扩展点（compliance_policy 随商业版接入），当前
+  // 生效闸 = schema 校验（validateDataPush）+ 敏感分拣闸（gateDataPush 内
+  // sorting-gate 三档判定），「合规闸」不承载拦截语义。
+  const compliance = () => ({ allowed: true, reason: '企业标识在位（schema 校验通过；合规拦截策略预留扩展）' });
   const gated = gateDataPush(validation.payload!, compliance);
 
   // 拒绝留痕进 decision-log（负样本语义同 PR reject）

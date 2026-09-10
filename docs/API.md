@@ -16,7 +16,7 @@
 | 4 | **平台挂载** | GEMINI.md / .cursor/rules/sofagent.mdc / AGENTS.md | 平台加载链 | 平台 AI 助手直接引用约束 |
 | 5 | **Skill 分发** | ClawHub（`clawhub skill publish`）/ SkillHub | 平台账号 | SKILL/ 目录规则资产发布更新 |
 | 6 | **Webhook 推送** | 飞书/钉钉/企微 webhook URL | 签名 | 审计结果 PASS/WARN/FAIL 三态推送 |
-| 7 | **标准数据推送接口** | 数据推送 API（约定 schema · 分拣闸 + 合规闸双闸）——MCP tool `data_push` 入口已接线（v1.4.7） | 企业凭证 | 企业存储/业务系统推送训练语料与知识数据 |
+| 7 | **标准数据推送接口** | 数据推送 API（约定 schema · schema 校验 + 敏感分拣双闸，企业合规拦截策略预留扩展）——MCP tool `data_push` 入口已接线（v1.4.7） | 企业凭证 | 企业存储/业务系统推送训练语料与知识数据 |
 
 各面详细配置见对应文档：MCP 见 [engine/mcp/README.md](../engine/mcp/README.md) · CLI/hook 见 [SECURITY.md](../SECURITY.md) · 平台挂载见 [AGENTS.md](../AGENTS.md) · Skill 分发见 [SKILL/SKILL.md](../SKILL/SKILL.md) · Webhook 见 [SECURITY.md §审计结果推送](../SECURITY.md)。标准数据推送接口（第七面）`data_push` 入口已接线（v1.4.7），详见 [v1.4.7 开发日志](./changelog/v1.4/v1.4.7.md)。
 
@@ -50,7 +50,7 @@
 | `audit_file` | audit | 单文件变更即时审计——Agent 编辑文件时调用，跑单文件适用规则，返回结构化结果（不阻断）。 |
 | `audit_data_change` | audit | 对知识库结构化数据变更跑数据审计（D1-D5）。 |
 | `audit_trail` | audit | 跨设备审计轨迹查询——按 agent_id 查完整轨迹（HMAC 验签）。 |
-| `data_push` | ops | 标准数据推送入口——企业存储按约定 schema 推送训练语料/知识数据，经分拣闸（敏感档标记）+ 合规闸（拦截违规）双闸入库，拒绝留痕进审计链。 |
+| `data_push` | ops | 标准数据推送入口——企业存储按约定 schema 推送训练语料/知识数据，经 schema 校验 + 敏感分拣双闸入库（企业合规拦截策略预留扩展），拒绝留痕进审计链。 |
 | `corpus_export` | ops | 训练语料导出三件套——规则（27 编号位含跳号占位 + reward_hint 骨架 + verifiers 三桶清单）+ FDE 方法论（锚点解析）+ 带标签审计样本（五源聚合 + 脱敏）。导出带版本号 + HMAC 签名，导出行为记 corpus_export 审计事件。 |
 
 ### 业务流编排（workflow DAG · 循环执行与优化）（16）

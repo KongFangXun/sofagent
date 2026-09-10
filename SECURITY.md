@@ -63,12 +63,12 @@ sofagent 是一套 FDE 能力——底层引擎是纯本地 Harness 中间件（
 - ✅ 脱敏：sanitize() 管道扫描 API Key / 密码 / 手机号，写入前自动打码
 - ✅ 数据保留：cleanup.sh 支持 --purge --before 定时清理 + tar.gz 归档
 - ✅ 审计日志：task-record.sh 独立审计日志 + task/logs 追溯双通道
-- ✅ 静态加密已接线（daemon start 路径）：`initDataEncryption()` 已接入 daemon 启动路径（交互环境引导生成密钥 + 指纹确认 + 备份确认；非交互 WARN 不 FAIL 明文兼容）。密钥就绪后审计历史主链以 `SOFAGENT-AGE-V1` 密文落盘（AES-256-GCM，密钥 `~/.sofagent/keys/` 0600 + 指纹强制备份）；既有明文历史读侧 auto-detect 可读不回填。附链目录（forge-runs/checkpoint/model-registry/task/logs/think.md/knowledge）仍为明文，见 LIMITATIONS 权威清单
+- ✅ 静态加密已接线（daemon start 路径）：`initDataEncryption()` 已接入 daemon 启动路径（交互环境引导生成密钥 + 指纹确认 + 备份确认；非交互 WARN 不 FAIL 明文兼容）。密钥就绪后审计历史主链以 `SOFAGENT-AGE-V1` 密文落盘（AES-256-GCM，密钥 `~/.sofagent/keys/` 0600 + 指纹强制备份）；既有明文历史读侧 auto-detect 可读不回填。附链目录（forge-runs/checkpoint/model-registry/task/logs/think.md/knowledge）仍为明文，见 LIMITATIONS 权威清单。激活口径：交互首启确认后生效；无头部署需一次性交互确认（或等价激活路径），非交互 WARN 明文兼容。验证命令：启用后 `head -1 ~/.sofagent/data/audit/history.jsonl` 应见 `SOFAGENT-AGE-V1` 前缀
 - ⚠️ **当前限制**：LLM 自评无外部基准。GDPR / 等保 / SOC2 场景仍需额外措施（静态加密已覆盖审计历史主链，但 forge-runs/checkpoint/model-registry 三目录与 task/logs/think.md 附链仍为明文，见 LIMITATIONS 权威清单）。合规审查员请注意：**强合规场景仍建议配合外部加密卷（gpg / disk encryption）覆盖附链目录**。
 
 ### 纵深防御（静态加密之外的额外措施，持续建议）
 
-在静态加密（当前未启用，见上方 ⏳ 项）之外，仍建议：
+在静态加密（已接线，密钥就绪后主链密文落盘；附链目录仍明文，见上方说明）之外，仍建议：
 1. **设置 `~/.sofagent/data/` 目录权限为 700**：`chmod 700 ~/.sofagent/data/`（用户可见运行时数据；`~/.sofagent/internal/` 引擎内部状态同样 700）
 2. **将 `~/.sofagent/` 父目录放在加密文件系统上**（如 macOS APFS 加密卷）
 3. **定期轮换 `~/.sofagent/data/` 中的历史审计数据**
