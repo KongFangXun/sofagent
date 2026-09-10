@@ -68,17 +68,17 @@ export interface GapAnalysisResult {
   };
 }
 
-/** 判定阈值（可调参——默认值对齐「明显异常」口径，不做细粒度调优） */
+/** 判定阈值（可调参——默认值对齐「明显异常」口径，不做细粒度调优；逐字段可选覆盖 DEFAULT_THRESHOLDS） */
 export interface GapThresholds {
-  /** 人工介入占比 ≥ 此值判 low_capability（0-1） */
-  humanInterventionRate: number;
-  /** 首次通过率 < 此值判 needs_upgrade（0-1） */
-  firstPassRate: number;
+  /** 人工介入占比 ≥ 此值判 low_capability（0-1；缺省 0.3） */
+  humanInterventionRate?: number;
+  /** 首次通过率 < 此值判 needs_upgrade（0-1；缺省 0.5） */
+  firstPassRate?: number;
   /** 统计窗口天数（缺省 30） */
-  windowDays: number;
+  windowDays?: number;
 }
 
-export const DEFAULT_THRESHOLDS: GapThresholds = {
+export const DEFAULT_THRESHOLDS: Required<GapThresholds> = {
   humanInterventionRate: 0.3,
   firstPassRate: 0.5,
   windowDays: 30,
@@ -98,7 +98,8 @@ export function analyzeWorkflowGaps(
   dataDir: string,
   thresholds: GapThresholds = DEFAULT_THRESHOLDS,
 ): GapAnalysisResult {
-  const t = { ...DEFAULT_THRESHOLDS, ...thresholds };
+  // 合并阈值（显式覆盖优先）——展开后所有字段必填（供下游无 undefined 访问）
+  const t: Required<GapThresholds> = { ...DEFAULT_THRESHOLDS, ...thresholds };
   const gaps: Array<WorkflowGap & Record<string, unknown>> = [];
 
   // ── 数据面 1：workflow-store（声明的节点面）──

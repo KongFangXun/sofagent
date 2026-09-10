@@ -1,5 +1,7 @@
 // workflow-gaps.ts · MCP tool：workflow_gaps（G2 能力缺口查询）
 // 商业平台悬赏数据源——委托 @sofagent/orchestrator 的 analyzeWorkflowGaps
+
+
 export interface WorkflowGapsResult {
   text: string;
   data: {
@@ -24,5 +26,5 @@ export async function workflowGaps(args: Record<string, unknown>): Promise<Workf
   }
 
   const { analyzeWorkflowGaps } = await import('@sofagent/orchestrator');
-  return analyzeWorkflowGaps(dataDir, windowDays !== undefined ? { windowDays } : {});
+  return analyzeWorkflowGaps(dataDir, windowDays !== undefined ? { windowDays } : undefined);
 }
