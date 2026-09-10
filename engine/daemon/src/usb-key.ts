@@ -59,6 +59,13 @@ export interface CreateUsbKeyOpts {
   /** sofagent 产物来源目录（含 daemon/orchestrator/core 子目录的 monorepo 根）；
    *  缺省从本模块所在包向上推断（daemon/../.. = sofagent/ 目录） */
   sofagentSourceDir?: string;
+  /**
+   * workflow 产物源目录（章九 · workflow 烧进 USB）——{dataDir}/workflow-store
+   * 形态（内含 {id}.json trunk 文件）。缺省走 {SOFAGENT_DATA}/workflow-store；
+   * 空目录/不存在则跳过烧录（纯引擎 USB 兼容）。复制到 <U盘>/workflow/，
+   * 启动时经 usb-runtime 自动 submitWorkflow 加载。
+   */
+  workflowSourceDir?: string;
 }
 
 /** createUsbKey 结果 */
@@ -73,6 +80,11 @@ export interface UsbKeyResult {
   signatureFile: string;
   /** knowledge/ 是否已加密落盘 */
   knowledgeEncrypted: boolean;
+  /**
+   * workflow 烧录结果（章九）——null = 源目录无 workflow（纯引擎 USB）；
+   * 有值 = { copied: 复制 trunk 文件数 }
+   */
+  workflowsBurned: { copied: number } | null;
   /** 非致命警告（如 Node 二进制平台不匹配提示、可选文件缺失） */
   warnings: string[];
 }
@@ -183,6 +195,10 @@ export async function createUsbKey(opts: CreateUsbKeyOpts): Promise<UsbKeyResult
   const encryptedExtra = encryptPlaintextKnowledgeInPlace(knowledgeDir, aesKey);
   filesWritten += encryptedExtra;
 
+  // ── Step 5.5: workflow 烧录（章九 · workflow 烧进 USB） ──────
+  const workflowsBurned = burnWorkflowsToUsb(usbRoot, opts, warnings);
+  filesWritten += workflowsBurned ? workflowsBurned.copied : 0;
+
   // ── Step 6: 全量 HMAC 签名 ──────────────────────────────────
   const files = collectFiles(usbRoot);
   const manifest = writeSignatureManifest(usbRoot, hmacKey, files);
@@ -199,6 +215,7 @@ export async function createUsbKey(opts: CreateUsbKeyOpts): Promise<UsbKeyResult
     filesWritten,
     signatureFile: path.join(usbRoot, '.sofagent-signature'),
     knowledgeEncrypted: true,
+    workflowsBurned,
     warnings,
   };
 }
@@ -311,7 +328,7 @@ function resolveFederationConfig(opts: CreateUsbKeyOpts): UsbFederationConfig {
 
 /**
  * 加密 knowledge/ 下所有明文文件为 .enc（原地删除明文）。
- * 幂等：已有 .enc 文件跳过。
+ * 幂等：已有 .enc 文件 文件跳过。
  * @returns 新加密的文件数
  */
 export function encryptPlaintextKnowledgeInPlace(knowledgeDir: string, aesKey: Buffer): number {
@@ -329,6 +346,49 @@ export function encryptPlaintextKnowledgeInPlace(knowledgeDir: string, aesKey: B
     encrypted++;
   }
   return encrypted;
+}
+
+// ============================================================
+// workflow 烧录（章九 · workflow 烧进 USB）
+// ============================================================
+
+/**
+ * 复制 workflow-store trunk 文件到 U 盘 workflow/ 目录。
+ *
+ * 源形态：{dataDir}/workflow-store/{id}.json（G14 trunk 权威版）——
+ * 仅复制 trunk（{id}.json），branch 文件（{id}.branch-{actor}.json）
+ * 不烧录（未合并提案不入 U 盘基线）。
+ * 目标：<U盘>/workflow/{id}.json（明文 JSON，进全量 HMAC 签名清单）。
+ *
+ * 兼容语义：源目录不存在 / 无 trunk 文件 → 返回 null（纯引擎 USB，
+ * 启动侧跳过 workflow 加载——不破坏既有行为）。
+ */
+export function burnWorkflowsToUsb(
+  usbRoot: string,
+  opts: CreateUsbKeyOpts,
+  warnings: string[],
+): { copied: number } | null {
+  const sourceDir =
+    opts.workflowSourceDir ?? path.join(process.env.SOFAGENT_DATA ?? path.join(os.homedir(), '.sofagent'), 'workflow-store');
+  if (!fs.existsSync(sourceDir)) return null;
+
+  const trunks = fs
+    .readdirSync(sourceDir)
+    .filter((name) => name.endsWith('.json') && !name.includes('.branch-'));
+  if (trunks.length === 0) return null;
+
+  const destDir = path.join(usbRoot, 'workflow');
+  fs.mkdirSync(destDir, { recursive: true });
+  let copied = 0;
+  for (const name of trunks) {
+    try {
+      fs.copyFileSync(path.join(sourceDir, name), path.join(destDir, name));
+      copied++;
+    } catch (err) {
+      warnings.push(`workflow 烧录失败（${name}）: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  }
+  return copied > 0 ? { copied } : null;
 }
 
 // ============================================================

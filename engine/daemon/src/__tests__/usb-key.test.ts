@@ -385,3 +385,107 @@ describe('core/crypto 复用一致性', () => {
     expect(ciphertext.length).toBeGreaterThan(0);
   });
 });
+
+// ── 章九 · workflow 烧进 USB（烧录 + 启动加载） ──
+describe('章九：workflow 烧录（createUsbKey + workflow/）', () => {
+  /** 造一个 workflow-store 源目录（G14 trunk 形态） */
+  function makeWorkflowSource(): string {
+    const wsDir = fs.mkdtempSync(path.join(os.tmpdir(), 'sofagent-wf-src-'));
+    // 合法最小 workflow 文档（G14 StoredWorkflow 形态——节点须 agent+task）
+    const storedWf = {
+      id: 'release-flow',
+      workflow: {
+        name: 'release-flow',
+        version: 1,
+        nodes: [
+          { id: 'audit', agent: 'auditor-agent', task: '跑全量审计并出报告' },
+        ],
+      },
+      version: 1,
+      owner: 'alice',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    fs.writeFileSync(path.join(wsDir, 'release-flow.json'), JSON.stringify(storedWf, null, 2));
+    // 一个 branch 文件（不应被烧录）
+    fs.writeFileSync(
+      path.join(wsDir, 'release-flow.branch-bob.json'),
+      JSON.stringify({ ...storedWf, version: 2 }),
+    );
+    return wsDir;
+  }
+
+  it('烧录成功：trunk 复制到 <U盘>/workflow/，branch 不烧录', async () => {
+    const wfSrc = makeWorkflowSource();
+    try {
+      const result = await createUsbKey({
+        role: '审计节点',
+        target: usbRoot,
+        platform: 'macos',
+        nodeBinaryPath: fakeNodeBin,
+        sofagentSourceDir: fakeSrcDir,
+        federationConfig: { version: 1, nodes: [], notes: 'test' },
+        workflowSourceDir: wfSrc,
+      });
+      expect(result.workflowsBurned).toEqual({ copied: 1 });
+      expect(fs.existsSync(path.join(usbRoot, 'workflow', 'release-flow.json'))).toBe(true);
+      expect(fs.existsSync(path.join(usbRoot, 'workflow', 'release-flow.branch-bob.json'))).toBe(false);
+      // 烧录文件进全量签名清单（篡改即验签失败）
+      const { hmacKey } = readUsbKeys(usbRoot);
+      expect(verifyUsbSignature(usbRoot, hmacKey).ok).toBe(true);
+      fs.appendFileSync(path.join(usbRoot, 'workflow', 'release-flow.json'), 'tamper');
+      expect(verifyUsbSignature(usbRoot, hmacKey).ok).toBe(false);
+    } finally {
+      fs.rmSync(wfSrc, { recursive: true, force: true });
+    }
+  });
+
+  it('纯引擎 USB 兼容：无 workflow 源 → workflowsBurned=null 不破坏', async () => {
+    const result = await makeUsb();
+    expect(result.workflowsBurned).toBeNull();
+    expect(fs.existsSync(path.join(usbRoot, 'workflow'))).toBe(false);
+    const { hmacKey } = readUsbKeys(usbRoot);
+    expect(verifyUsbSignature(usbRoot, hmacKey).ok).toBe(true);
+  });
+
+  it('启动加载：loadBurnedWorkflows 读 <U盘>/workflow/ → submitWorkflow validate', async () => {
+    const { loadBurnedWorkflows } = await import('../usb-runtime');
+    const wfSrc = makeWorkflowSource();
+    try {
+      await createUsbKey({
+        role: '审计节点',
+        target: usbRoot,
+        platform: 'macos',
+        nodeBinaryPath: fakeNodeBin,
+        sofagentSourceDir: fakeSrcDir,
+        federationConfig: { version: 1, nodes: [], notes: 'test' },
+        workflowSourceDir: wfSrc,
+      });
+      // @sofagent/orchestrator 在 daemon 测试环境解析到 workspace 真包——
+      // 合法 workflow 应 validate 通过（loaded=1）
+      const result = loadBurnedWorkflows(usbRoot);
+      expect(result.loaded).toBe(1);
+      expect(result.failed).toEqual([]);
+    } finally {
+      fs.rmSync(wfSrc, { recursive: true, force: true });
+    }
+  });
+
+  it('启动加载：schema 不合规文件 fail-soft（failed 清单不 crash）', async () => {
+    const { loadBurnedWorkflows } = await import('../usb-runtime');
+    fs.mkdirSync(path.join(usbRoot, 'workflow'), { recursive: true });
+    // 缺 workflow 字段的坏文件
+    fs.writeFileSync(path.join(usbRoot, 'workflow', 'bad.json'), JSON.stringify({ id: 'bad' }));
+    const result = loadBurnedWorkflows(usbRoot);
+    expect(result.loaded).toBe(0);
+    expect(result.failed.length).toBe(1);
+    expect(result.failed[0]).toContain('bad.json');
+  });
+
+  it('启动加载：无 workflow 目录 → 空结果（纯引擎 USB）', async () => {
+    const { loadBurnedWorkflows } = await import('../usb-runtime');
+    const result = loadBurnedWorkflows(usbRoot);
+    expect(result.loaded).toBe(0);
+    expect(result.failed).toEqual([]);
+  });
+});

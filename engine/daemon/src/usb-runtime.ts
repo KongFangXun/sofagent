@@ -95,6 +95,12 @@ export async function startUsbRuntime(usbRoot: string, projectDir?: string): Pro
   // ── Step 4: 便携化 env（必须先于任何 daemon 子系统初始化） ───
   setupPortableEnv(root);
 
+  // ── Step 4.5: workflow 自动加载（章九 · workflow 烧进 USB） ──
+  // 验签已过 → <U盘>/workflow/*.json 经 submitWorkflow 加载进
+  // {SOFAGENT_DATA(=U盘)/.sofagent}/workflow-store。目录不存在或
+  // 为空 = 纯引擎 USB——跳过（兼容不破坏）。
+  const workflowsLoaded = loadBurnedWorkflows(root);
+
   // ── Step 5: 退出清零钩子（零残留） ───────────────────────────
   installExitHook();
 
@@ -105,6 +111,13 @@ export async function startUsbRuntime(usbRoot: string, projectDir?: string): Pro
   const { runFilesystemAudit } = await import('./run-fs-audit');
 
   console.log(`  ✅ U 盘验签通过（${knowledgeView.size} 个 knowledge 文件已内存解密）`);
+  if (workflowsLoaded.loaded > 0) {
+    console.log(`  ✅ workflow 已加载 ${workflowsLoaded.loaded} 个（USB 烧录基线）`);
+  }
+  if (workflowsLoaded.failed.length > 0) {
+    console.warn(`  ⚠️  ${workflowsLoaded.failed.length} 个 workflow 加载失败（schema 不合规——详见错误）`);
+    for (const f of workflowsLoaded.failed) console.warn(`     · ${f}`);
+  }
   startCron(workDir);
   console.log('  ✅ cron 定时任务已启动（USB 便携模式）');
 
@@ -182,6 +195,61 @@ export function setupPortableEnv(usbRoot: string): void {
   fs.mkdirSync(openclawHome, { recursive: true });
   process.env.SOFAGENT_DATA = sofagentData;
   process.env.OPENCLAW_HOME = openclawHome;
+}
+
+// ============================================================
+// workflow 自动加载（章九 · workflow 烧进 USB）
+// ============================================================
+
+/** workflow 加载结果 */
+export interface WorkflowsLoadResult {
+  /** 成功 submitWorkflow 的 workflow 数 */
+  loaded: number;
+  /** 加载失败的文件名清单（schema 不合规等） */
+  failed: string[];
+}
+
+/**
+ * 加载 U 盘烧录的 workflow 基线（<U盘>/workflow/*.json）。
+ *
+ * 每个文件是 G14 workflow-store 的 StoredWorkflow 形态（trunk），
+ * 提取其 .workflow 文档经 submitWorkflow（与 MCP workflow_submit
+ * 同入口，validate 模式不执行）做 schema 全链校验。单文件失败
+ * 不阻塞其余加载（fail-soft 聚合进 failed 清单）。
+ */
+export function loadBurnedWorkflows(usbRoot: string): WorkflowsLoadResult {
+  const result: WorkflowsLoadResult = { loaded: 0, failed: [] };
+  const wfDir = path.join(usbRoot, 'workflow');
+  if (!fs.existsSync(wfDir)) return result;
+
+  // submitWorkflow 是同步 throw 型 API（workflow/container.ts）
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { submitWorkflow } = require('@sofagent/orchestrator') as {
+    submitWorkflow: (input: { workflow: string; mode?: 'run' | 'validate' }) => unknown;
+  };
+
+  for (const name of fs.readdirSync(wfDir)) {
+    if (!name.endsWith('.json')) continue;
+    const absPath = path.join(wfDir, name);
+    if (!fs.statSync(absPath).isFile()) continue;
+    try {
+      const stored = JSON.parse(fs.readFileSync(absPath, 'utf-8')) as {
+        workflow?: unknown;
+      };
+      if (!stored.workflow || typeof stored.workflow !== 'object') {
+        result.failed.push(`${name}（无 workflow 文档字段）`);
+        continue;
+      }
+      // StoredWorkflow.workflow 即 G14 CRUD 的「nodes 形态」文档——
+      // submitWorkflow 期望顶层包裹 {workflow: {...}}，此处包一层再校验
+      const wrapped = { workflow: stored.workflow };
+      submitWorkflow({ workflow: JSON.stringify(wrapped), mode: 'validate' });
+      result.loaded++;
+    } catch (err) {
+      result.failed.push(`${name}（${err instanceof Error ? err.message : String(err)}）`);
+    }
+  }
+  return result;
 }
 
 /**
