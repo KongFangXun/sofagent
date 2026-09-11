@@ -198,6 +198,10 @@ done
 > 1. **真回归**（本版改动引入：新脚本 set -u 炸弹 / 新测试环境假设 / 配置兜底链引用未初始化变量）→ 修根因 → 复现验证 → push 重等。识别特征：v上版 tag..HEAD 的 diff 里能定位到引入点。
 > 2. **发版时序固有**（依赖 npm 上已有当前版本，而发布动作在本轮 CI 之后——如 install.sh 按 SSOT 版本从 registry 装 audit）→ 修依赖顺序/降级兜底（如 @latest 占位），不视为 CI 阻塞。
 > 3. **环境特异**（本地绿 CI 红：runner 的 git 配置/并发竞态/进程 cwd 差异）→ 先在本地模拟 CI 姿势复现（env -i 干净 HOME / 全量并发），复现不了再读 CI 日志逐帧对——典型根因：git 子进程调用缺 `cwd`（在进程 cwd 而非被检查目录解析）。
+>    🔴 **「本地绿 CI 红」三类高频根因**（排查按此序优先试）：
+>    ① **构建产物残留掩盖**——本地 `engine/*/dist` 等产物存在，CI 干净环境没有；TS2307 类「依赖找不到」报错而本地全绿时，先 `rm -rf engine/*/dist && npm run build` 模拟 CI 干净态重建复现。同类还有 build 脚本拓扑序倒置（本地 dist 残留按依赖序缓存掩盖了乱序）——干净态重建 exit 0 即证新序自洽。
+>    ② **宿主环境依赖**——测试依赖 `~/.sofagent-key` 等本机运行时文件，本地有 CI 无（或反之）；复现法：`SOFAGENT_KEY_PATH=/tmp/nonexistent` 等隔离 env 重跑，失败姿势与 CI 一致即锁定。
+>    ③ **CI job 缺前置**——job 刻意「不装依赖直接跑」时，构建产物类依赖（如 AST 引擎 `engine/rules/dist/`）缺失致工具降级路径被静默触发，口径分歧报误报；修 job steps 补依赖+build，工具降级分支必须有 fail-loud 警告。
 ```
 
 ---
@@ -288,7 +292,7 @@ fi
 |---|----------|---------|------|
 | 1 | git tag（远端存在且指向发版 commit） | `gh api repos/KongFangXun/sofagent/git/refs/tags/vX.Y.Z --jq '.object.sha'` 对比 `git rev-parse vX.Y.Z^{commit}` | 两 SHA 一致 |
 | 2 | GitHub Release（title + body 可达） | `gh release view vX.Y.Z --json name,isDraft` | name 匹配、isDraft=false |
-| 3 | npm 14 包（audit + mcp 自动，其余 12 手动后） | `for p in audit mcp core daemon eval harness ontology orchestrator rules skillopt think ab-test; do npm view @sofagent/$p version; done` + `npm view @sofagent/load-chain version` + `npm view sofagent version` | 14 项全部 = 本版号 |
+| 3 | npm 14 包（audit + mcp 自动，其余 12 手动后） | `for p in audit mcp core daemon eval harness ontology orchestrator rules skillopt think ab-test; do npm view @sofagent/$p version --prefer-online; done` + `npm view @sofagent/load-chain version --prefer-online` + `npm view sofagent version --prefer-online` | 14 项全部 = 本版号（🔴 必加 --prefer-online——裸查询吃缓存会误报漏发） |
 | 4 | 安装入口（README 双语 + bootstrap.sh 的 tag URL 可达） | `grep -rn "refs/tags/v" README.md README.en.md bootstrap.sh` + 逐条 `curl -sI` HTTP 200 | 三处 = 本版 tag 且真实可达 |
 
 > 任何一件不满足 = 发版未完成，当场补（重推 tag / 补 publish / 修 URL），不带病进入收尾。
@@ -423,12 +427,15 @@ EOF
 
 ```bash
 # 等 release.yml 完成（通常 3-5 分钟），确认 audit + mcp 已到 npm
-npm view @sofagent/audit@vX.Y.Z version  # 期望返回版本号
-npm view @sofagent/mcp@vX.Y.Z version    # 期望返回版本号
+npm view @sofagent/audit@vX.Y.Z version --prefer-online  # 期望返回版本号
+npm view @sofagent/mcp@vX.Y.Z version --prefer-online    # 期望返回版本号
 
 # 手动 publish 其余 10 包——每包 publish 后立即 npm view 对账 + E409 自动等待重查
 # 🔴 publish 输出严禁接管道过滤（| grep xxx）——报错被过滤吞掉会表面循环跑完实际漏发，
 #    14 包对账时才发现。输出必须全量落盘，失败立即停。
+# 🔴 npm view 对账必须加 --prefer-online——裸查询吃本地缓存，刚 publish 完会误报
+#    「失败实已发布」（发版 session 本地缓存里还是上版）。大包（≥800KB）registry 侧
+#    收录延迟可达 3+ 分钟，对账窗口预留足够，勿据一次裸查询判定失败。
 TARGET_VER=$(node -p "require('./package.json').version")
 for pkg in core daemon eval harness ontology orchestrator rules skillopt think ab-test; do
   echo "--- @sofagent/$pkg ---"
@@ -438,7 +445,7 @@ for pkg in core daemon eval harness ontology orchestrator rules skillopt think a
     # E409 staged：registry 侧版本占位未 finalize，约 5 分钟自动完成（见下方 E409 段）
     echo "  ⏳ E409 staged——等 300s 自动 finalize 后重查"
     sleep 300
-    LIVE=$(npm view "@sofagent/$pkg" dist-tags.latest 2>/dev/null || true)
+    LIVE=$(npm view "@sofagent/$pkg" dist-tags.latest --prefer-online 2>/dev/null || true)
     if [ "$LIVE" = "$TARGET_VER" ]; then
       echo "  ✅ staged 已自动 finalize 为 $LIVE"
     else

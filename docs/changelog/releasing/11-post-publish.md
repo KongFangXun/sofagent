@@ -40,10 +40,10 @@ gh release view vX.Y.Z
 gh release view vX.Y.Z --json isDraft,body -q '.body | length'  # 期望 > 100
 gh release view vX.Y.Z --json body -q '.body | contains("](./docs/changelog/")'  # 期望 true
 
-# npm 版本验证
-npm view @sofagent/audit version   # 期望 vX.Y.Z
-npm view @sofagent/mcp version     # 期望 vX.Y.Z
-npm view @sofagent/audit readme    # 期望有内容（非空）
+# npm 版本验证（🔴 必加 --prefer-online——裸查询吃本地缓存，发版 session 内误报上版号）
+npm view @sofagent/audit version --prefer-online   # 期望 vX.Y.Z
+npm view @sofagent/mcp version --prefer-online     # 期望 vX.Y.Z
+npm view @sofagent/audit readme --prefer-online    # 期望有内容（非空）
 
 # 全局安装更新（registry 已更新，本地仍是旧版本）
 npm install -g @sofagent/audit@latest @sofagent/core@latest
