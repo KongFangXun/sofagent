@@ -1796,3 +1796,18 @@ git grep -nE "排期 v1\.4\.7" -- SECURITY.md LIMITATIONS.md | grep -q . && echo
 # g: 跨版账链注明（测试数换基可追溯）
 grep -qE "4107\s*=\s*4088|4088\s*\+\s*19" docs/changelog/v1.4/v1.4.7.md && echo "✅ 跨版账链注明" || echo "❌ 跨版基线未注明") 2>&1 | tee "/tmp/regress-dim134-$$.log"; grep -q "❌" "/tmp/regress-dim134-$$.log" && { rm -f "/tmp/regress-dim134-$$.log"; echo "维度134收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim134-$$.log"; echo "维度134收口:PASS"
 ```
+
+#### 135. 发版域教训——npm view 对账缓存误报 + 本地绿 CI 红三类根因（阶段九来源 · v1.4.7 首推三红实证）
+
+> 发版过程教训归位：CI 失败分类与修法已吸收进 SOP 09-publish（三分类 + 环境特异三类根因细化）；此处只留防复发锚点。
+
+```bash
+(# a: 发版对账命令带 --prefer-online（09/11 SOP 命令守卫——裸查询吃缓存误报漏发）
+grep -q "prefer-online" docs/changelog/releasing/09-publish.md && grep -q "prefer-online" docs/changelog/releasing/11-post-publish.md && echo "✅ SOP 对账命令守卫在位" || echo "❌ SOP 对账命令退化为裸查询"
+# b: 构建拓扑序干净态自洽（本地 dist 残留会掩盖乱序——13 包依赖拓扑序是 build 序列硬约束）
+node -e "const s=require('./package.json').scripts.build; const order=['harness','core','ontology','rules','audit','eval','think','skillopt','orchestrator','daemon','ab-test','mcp','sofagent-load-chain']; let i=-1; for(const seg of s.split(' && ')){const m=seg.match(/--workspace=([^\s]+)/); if(!m) continue; const short=m[1].replace(/^engine\//,'').replace(/^hooks\//,''); const idx=order.indexOf(short); if(idx<0||idx<=i){console.error('❌ 拓扑序倒置或未知包: '+m[1]); process.exit(1);} i=idx;}" && echo "✅ build 序列满足 13 包拓扑序"
+# c: 疑似环境特异失败先模拟 CI 干净态再定位（方法论锚点——dist 残留/宿主密钥/job 缺前置三类排查序）
+grep -q "rm -rf engine/\*/dist" docs/changelog/releasing/09-publish.md && echo "✅ 干净态排查法已写入 SOP" || echo "❌ 干净态排查法从 SOP 丢失"
+# d: 工具降级分支 fail-loud（public-api 降级正则曾致口径误报——降级必须可见）
+git grep -q "regexWarned" -- tools/check/public-api.mjs && echo "✅ 降级 fail-loud 在位" || echo "❌ 降级静默") 2>&1 | tee "/tmp/regress-dim135-$$.log"; grep -q "❌" "/tmp/regress-dim135-$$.log" && { rm -f "/tmp/regress-dim135-$$.log"; echo "维度135收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim135-$$.log"; echo "维度135收口:PASS"
+```

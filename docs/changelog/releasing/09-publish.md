@@ -417,9 +417,9 @@ EOF
 
 ---
 
-## 步骤八：npm 手动 publish 其余 11 包（含裸名总包）
+## 步骤八：npm 手动 publish 其余 12 包（含裸名总包）
 
-> `npm publish --workspaces` 不支持 workspace 全局发布。release.yml 只 auto-publish audit + mcp（Release 触发），其余 11 包手动 publish（12 个 @sofagent scope 包 + 1 个裸名总包）。
+> `npm publish --workspaces` 不支持 workspace 全局发布。release.yml 只 auto-publish audit + mcp（Release 触发），其余 12 包手动 publish（11 个 `engine/<pkg>` scope 包 + load-chain + 1 个裸名总包，合计补齐 14 包）。
 >
 > ⚠️ **@sofagent/load-chain（`engine/hooks/sofagent-load-chain/`）是第 13 个 workspace 包，不在下方循环里**——它不叫 `engine/<pkg>` 布局（在 `engine/hooks/` 下），按「12 包」口径极易漏掉。必须把它加进循环与验证清单。
 >
