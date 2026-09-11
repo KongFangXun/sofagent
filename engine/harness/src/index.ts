@@ -202,3 +202,13 @@ function listCustomOverrides(dir: string, maxFiles = 4): string[] {
 
   return parts.join('\n\n---\n\n');
 }
+
+// ============================================================
+// v1.4.8 第四章：加载链预算 + 自动压缩（npm API 形态）
+// ⚠️ OpenClaw hook 形态（engine/hooks/sofagent-load-chain）本版不消费
+// compactor（out of scope 裁定——双实现同步纪律，见开发日志第四章）。
+// ============================================================
+/* @public */ export { checkBudget, estimateTokens } from './load-chain/budget';
+/* @public */ export type { LoadChainBudget, BudgetVerdict } from './load-chain/budget';
+/* @public */ export { compactIfNeeded, COMPACT_START_MARKER, COMPACT_END_MARKER } from './load-chain/compactor';
+/* @public */ export type { CompactResult, OnCompactCallback } from './load-chain/compactor';
