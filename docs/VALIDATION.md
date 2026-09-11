@@ -119,7 +119,7 @@ Harness 的另一价值点是**「不依赖 AI 也能守门」**。当 LLM 不�
 
 ### 测量者转型：从「月底审计报表」到「每次 AI 行动留日志」（Cloudflare 实证）
 
-> 📖 来源：Cloudflare CEO Matthew Prince《How I Choose Which Cloudflare Employees to Replace With AI》（WSJ，2026-06）
+> 📖 来源：Cloudflare CEO Matthew Prince《How I Choose Which Cloudflare Employees to Replace With AI》（WSJ 一手访谈，2026-06）
 
 Cloudflare 2026-05 裁撤超 1100 人（约 20%）并转向「agentic AI-first operating model」——CEO Matthew Prince 不按部门分人，而把工作角色分成三类：
 
@@ -605,7 +605,7 @@ Palantir Foundry 10 年迭代收敛出 Ontology 的 5 块构建块——**Object
 
 ### Palantir 落地路径：Red Loop、KLM 范式与「能换模型的对象层」
 
-> 📖 来源：Palantir 官方架构文档（AIP / Foundry / Apollo 三套集成平台）+ 中国企业落地路径拆解（2026-08）。官方事实，非转写。
+> 📖 来源：Palantir 官方架构文档（AIP / Foundry / Apollo 三套集成平台）。官方事实，非转写。
 
 - **Ontology = 可运行的业务契约，不是知识图谱**——官方原话「表达企业彼此关联的复杂**决定**，而不是数据」（决定二字官方斜体强调）；整合 Data + Logic + Action + Security 四维度；核心价值 = **定义业务里有什么、现在是什么状态、人和 Agent 分别可以做什么**（库存不足能不能发起调拨？采购金额超多少必须二次审批？排产修改后哪些下游对象要一起更新？）。**企业学习要点：对象定义必须和动作一起做**——只统一名词、不定义状态/变化/权限/写回，得到的是漂亮标签，不是生产级。
 - **KLM 范式（不用什么智能都压在大模型上）**——一个决定可以同时调用业务规则、预测模型、优化器和 LLM function：缺料判断主要靠库存计算 + 约束优化，大模型只负责读供应商邮件、解释方案。**企业架构假设：从第一天就假设会同时用多个模型，并且随时能替换任何一个 → 把规则、动作、边界放在模型外边**。
@@ -706,8 +706,6 @@ SMB 断层解释了"为什么需要中间件"，产品化四条回答"中间件�
 - **中国资本市场视角**：中信证券研报《OpenAI 与 Anthropic 加速布局企业级 AI 市场》从券商研究视角研判 FDE 驱动的企业 AI 布局，是前文美国 VC 视角之外新增的「中国机构级分析」角度。印证方向：中国一/二级市场机构已开始用 FDE 框架重估企业 AI 价值，与 sofagent「企业级 AI 治理控制平面」定位的本土资本共识正在形成。
 - **政策双信号：本体入国家级清单，FDE 入地方产业政策**：国家数据局《行业高质量数据集建设实施方案》（国数科基〔2026〕25 号）首次将知识库、知识图谱、本体三件套并列写入国家级行动清单——六专项行动中本体承担三重角色（基础设施点名、语义标注依据、AI-Ready 结构化支撑），行业高质量数据集的瓶颈被明确定位在「语义不可机读」而非数据量。同一时期，《上海市支持先进制造业转型升级三年行动方案》首次将「培育前沿部署工程师（FDE）队伍」写入地方产业政策——FDE 从企业岗位命名进入政府政策语汇；国务院发文首次明确「支持采购大模型、Agent 服务」，叠加工信部等八部门「AI+制造」专项，企业级 AI 在中国从试点期进入政府采购与规模放量阶段。对 sofagent 的意义有二：①「先约束后智能」路线获得政策层背书——政策承认没有语义地基（本体三件套）的模型应用是沙上建塔，与 sofagent 本体数据先行、先约束后执行的架构顺序同构；② 政府采购 Agent 服务必然要求合规与审计归属——「约束 Agent 行为」正从工程实践变成采购语境的隐含刚需，与「按结果付费」条目的两道硬门槛（可靠性 + 归因）在政府采购场景汇合。
 
-> 📖 来源：[《2026中国FDE人才白皮书》解读](https://zhuanlan.zhihu.com/p/2045876225479123453)（zhuanlan.zhihu.com，2026）· [中信证券：OpenAI 与 Anthropic 加速布局企业级 AI 市场](https://finance.sina.com.cn/stock/t/2026-05-15/doc-inhxxspq8174672.shtml)（finance.sina.com.cn，2026）· 按结果付费条目：机器之心 2026-09 报道（转述级，数字未独立核验，机制层面参考）
-
 ### FDE 组织机制的四件事（OpenAI 实践，2026-09）
 
 OpenAI FDE 负责人 Colin Jarvis 总结过四件「反人性」的事，用来防止 FDE 滑向外包/咨询的「堕落惯性」——客户默认你是外包、业绩压力逼你靠方案文档拿单、规模扩大会稀释能力、没有产品牵引沉淀不下经验。这四件事对 FDE Harness 的组织机制有直接参照价值：
@@ -717,17 +715,9 @@ OpenAI FDE 负责人 Colin Jarvis 总结过四件「反人性」的事，用来�
 3. **双向收敛**：FDE 必须有两个引力源——向客户交付价值 + 向自身产品沉淀通用能力（field notes 知识库、产品化通道）。国内 FDE 常见的偏差是缺后者：交付能力沉淀在个人身上而非组织资产里。sofagent 的约束层正是「第二个引力源」的机制化——think.md 反思库与 LEDGER 承担 field notes 角色，Skill 沉淀即产品化通道。
 4. **只做难题**：对边缘场景的大单说不——凑合的预算招凑合的人交付凑合的结果，是能力的死循环。
 
-> 📖 来源：温故知新 2026-09-01（OpenAI FDE 实践解读，机制层面参考；数字为转述未独立核验；互证：FDE 田野调查、ABC Legal 案例、OpenAI Deployment Company 验收权分析 2026-08-15）
-
-### 角色契约六要素与岗位五缺口（2026-09）
-
-行业产品观察：数字员工形态被用户实证可行后，行业产品单位正从 Task 转向 Role——「能当队友」到「能当员工」差的是组织基础设施。角色契约六要素（职责范围/完成标准/状态范围/行动权限/验证证据/升级与接管条件）是「给 Agent 发工牌」最完整的行业版本；对照「角色 vs 岗位」的五缺口（身份/权限/完成/状态/进化），其中权限、状态、进化三项正是审计层主战场。另一条实证判断：Templates 让能力资产可分发，而组织资产（业务数据/流程适配/人际信任）不可迁移只能自长——「你等得起模型，等不起数据」：审计轨迹即组织数据资产的原始积累。
-
-> 📖 来源：温故知新 2026-09-04（hugozhu 角色契约分析，机制层面参考；互证：本节上方 OpenAI FDE 四件事之「双向收敛」——交付能力沉淀为组织资产而非留在个人身上）
-
 ### Ontology 赛道开源竞品格局（2026-08 二次深挖）
 
-**Semantica 真身定位——「问责层」而非全栈**：国内独立评测（新浪科技/老刘说智能）拆穿其「开源 Palantir」营销话术——它本质是「AI Agent 的可审计记忆层」：双时态 + PROV-O 溯源 + 决策即节点是 Palantir 没有的独特性，但**无 Action 行动闭环**（只能看不能动手）、规模差数量级、形态是库不是操作系统。对 sofagent 的启示：**不必追全栈 DataOS——「问责层 + 行动闭环（workflow Action）」的组合恰是 sofagent 已有布局**（审计模块 + workflow 节点），赛道分工上 sofagent 卡住了 Semantica 缺的那一半。
+**Semantica 真身定位——「问责层」而非全栈**：国内独立评测拆穿其「开源 Palantir」营销话术——它本质是「AI Agent 的可审计记忆层」：双时态 + PROV-O 溯源 + 决策即节点是 Palantir 没有的独特性，但**无 Action 行动闭环**（只能看不能动手）、规模差数量级、形态是库不是操作系统。对 sofagent 的启示：**不必追全栈 DataOS——「问责层 + 行动闭环（workflow Action）」的组合恰是 sofagent 已有布局**（审计模块 + workflow 节点），赛道分工上 sofagent 卡住了 Semantica 缺的那一半。
 
 **Palantir 范式开源复刻代表**：OpenBKN（三层架构：业务语义层/业务动力层/治理与证据链层，Go 后端，自称「首个企业级开源本体平台」）与 ontology-driven-platform（六原语闭环：Object/Link/Action/Logic/Governance/Provenance，OWL2 对齐）——两者验证「Ontology 即控制平面 + Agent 跑在 OS 上」范式已被开源复刻，但共识是**差的不是方向是厚度**（connector 广度/治理生产验证/大规模韧性三缺），且「最稀缺的不是本体库是行动闭环——多数项目停在 catalog 或 KG 底座」。这印证 sofagent 的两件不可外包资产：本体建模方法论（FDE 六引擎）+ Action 治理（审计模块）。
 
@@ -735,7 +725,7 @@ OpenAI FDE 负责人 Colin Jarvis 总结过四件「反人性」的事，用来�
 
 **Harness 工程赛道补充（首轮扫描收尾）**：AutoHarness（北卡 UNC AIMING Lab，6/8/14 步治理管线三档 + shadow mode 观察期模式）验证「决策引擎跑在模型上下文之外——提示注入无法覆盖 deny」的工程共识，其 shadow mode（只观察不阻断的灰度上线）与 sofagent「只提示不阻断」审计哲学同源；harness-kit（约束 YAML + doom loop 检测 + 上下文预算 <40% 利用率）的循环检测与 FORGE 重复率熔断同源。两者均为轻量 CLI 形态，与企业级 FDE 部署面无正面重叠。
 
-> 📖 来源：[Semantica 与 Palantir 的技术定位对比](https://www.sina.cn/news/detail/5332269013143443.html)（sina.cn，2026-08）· 老刘说智能《Palantir Ontology+Agent 开源生态盘点》（含 OpenBKN/ontology-driven-platform 评测）· [Semantica GitHub](https://github.com/semantica-agi/semantica)（MIT）· AutoHarness（UNC AIMING Lab，MIT）· [harness-kit](https://github.com/BoxiYu/harness-kit)（MIT）
+> 📖 来源：[Semantica GitHub](https://github.com/semantica-agi/semantica)（MIT）· AutoHarness（UNC AIMING Lab，MIT）· [harness-kit](https://github.com/BoxiYu/harness-kit)（MIT）
 
 ### FDE 是「全环节 AI 化」的入口（软印证）
 

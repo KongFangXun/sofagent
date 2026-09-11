@@ -47,7 +47,6 @@
 - **[A Global Workspace in Language Models](https://www.anthropic.com/research/global-workspace)** · Anthropic — 模型输出前已形成未表达判断，为「审计必须外置」提供底层论证
 
 - **[Claude Opus 5 / 上下文工程](https://claude.com/blog/the-new-rules-of-context-engineering-for-claude-5-generation-models)** · Anthropic（Thariq Shihipar）— 指令从 800 词精简至 164 词后性能反升，宣告提示词工程时代终结。底层逻辑转向「上下文工程」——设计信息架构（什么该给 / 何时给）。与 sofagent「约束进代码层而非 prompt 层」判断同源。
-- **FDE 的 20 个问题，不该由人一个一个问** · hugozhu（朱鸿）— 评 FDE 中国社区「20 问」清单：discovery 是组织上下文的采集协议，「知识一旦被写成清单，下一步必然是被写成代码」。证据等级三分法（系统可核验/一线判断/目标愿望）与名义流程 vs 实际流程辨析已吸收进 FDE/GUIDE §2.3（微信 · hugozhu.site，2026-08）
 
 ### 编排与架构
 
@@ -71,7 +70,6 @@
 - **[Agent Client Protocol (ACP)](https://github.com/Agent-Client-Protocol/spec)** — LSP 式开放协议，未来接入层可对齐而非自造
 - **[DataFlow](https://github.com/OpenDCAI/DataFlow)** · 北京大学 DCAI — 独立用「Harness」命名 Agent 约束层，sofagent「Harness 品类」的第三方佐证
 - **[ChatDemo](https://github.com/OpenFDEAI/ChatDemo)** · OpenFDEAI — 以 Forward Deployed Engineer 命名售前业务流，印证 FDE 术语同源
-- **[钉钉 CTO 一粟](https://mp.weixin.qq.com/s/ljBRFFAdFHkyAiJnpkAewQ)（微信公众号：hugozhu.site）** — 数字员工、MoA 四层编排、Agent 权限治理等洞见，为 sofagent 信任模型与自主级别提供了产业一线的操作性验证
 - **[PenguinHarness](https://github.com/Prism-Shadow/penguin-harness)** · Yaowei Zheng（LlamaFactory 作者）— 开源 Agent 自我进化平台（Apache-2.0），Benchmark 评测与工具审批四模式方法论为 v1.3.x 提供设计参考
 - **[prime-agent](https://github.com/PrimeIntellect-ai/prime-agent)** · Prime Intellect — 开源 RLM 持续运行 Agent（MIT）。Continual Harness 的跨进程写保护与 RefinementEvent 证据记录，为 v1.3.3 进化链路可靠性提供设计参考
 
