@@ -2,7 +2,7 @@
 
 > sofagent 对外全部能力面的一站式清单——七大接口面 + MCP 95 tools 按域分组（第七面「标准数据推送接口」入口已接线：MCP tool `data_push` 双闸入库）。工具清单由 `engine/mcp/src/tool-registry.ts` 生成（scripts/check 门禁对账，文档与代码永不漂移）。
 >
-> 版本：v1.4.6（已发版）· 84 tools / 7 面（第 7 面 v1.4.6 交付）
+> 版本：v1.4.7（已发版）· 95 tools / 7 面（第 7 面 v1.4.6 交付；v1.4.7 新增 11 tool 归入既有面）
 
 ---
 

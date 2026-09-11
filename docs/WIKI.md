@@ -1,6 +1,6 @@
 # sofagent 项目导航索引（WIKI）
 
-> v1.4.7 · 2026-09-11（⏳ 待发版——本批更新 2026-09-11） · 孔放勋
+> v1.4.7 · 2026-09-11（✅ 已发版——本批更新 2026-09-11） · 孔放勋
 
 > **读者**：人类开发者 & AI Agent 均可阅读。本文档是项目全局索引入口。
 > 如果你是 AI Agent 且需要查找具体实现路径，请直接跳转到"## 五、文件地图"段。
@@ -233,7 +233,7 @@ graph TB
 
 | 项 | 值 |
 |----|-----|
-| 当前版本 | **v1.4.7**（2026-09-11，⏳ 待发版）· 上一版 v1.4.6（2026-09-09） |
+| 当前版本 | **v1.4.7**（2026-09-11，✅ 已发版）· 上一版 v1.4.6（2026-09-09） |
 | 下一版 | v1.4.8（见 docs/ROADMAP.md 规划表） |
 | 测试覆盖 | 4279 测试 / 12 包（统计标准：`tools/check/test-count.sh` 实际执行的 workspace 包；全仓共 27 个 workspace——12 个 @sofagent/* 模块包 + 1 个工具包 load-chain + 9 个 DSH 插件（private，随 DSH 分发）+ 4 个 OpenClaw 插件（`engine/openclaw-plugins/`）+ 1 个 npm 裸名总包 umbrella，其中 13 个模块包发布至 npm `@sofagent` scope；OpenClaw 插件经根 `npm test --workspaces` 统一执行测试。实测见 `tools/check/test-count.sh`、声称数同步校验见 `tools/check/check-test-count.sh`） |
 | 审计规则 | 24 条（17 默认 + 7 扩展），活跃编号 A1-A11 + A14-A23 + E1/E2/E4（A12/A13/E3 已并入 A11，编号不再使用），每次 commit 自动跑 |

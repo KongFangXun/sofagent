@@ -1,7 +1,7 @@
 # 路线图 · Roadmap
 
 > 已经做了什么、未来要去哪、哪些地方需要你的帮助。
-> v1.4.7 · 2026-09-11（UTC，⏳ 待发版）· 🔌 商业平台接口版（G2/G4/G6/G7 平台接口 + G13 PR 生命周期 + G14 workflow CRUD + 云训练执行收口 + daemon 接线收口批）。此前版本详见 [CHANGELOG](../CHANGELOG.md) 与各版开发日志。
+> v1.4.7 · 2026-09-11（UTC，✅ 已发版）· 🔌 商业平台接口版（G2/G4/G6/G7 平台接口 + G13 PR 生命周期 + G14 workflow CRUD + 云训练执行收口 + daemon 接线收口批）。此前版本详见 [CHANGELOG](../CHANGELOG.md) 与各版开发日志。
 
 产品定位详见 [设计哲学](./PHILOSOPHY.md) 和 [README](../README.md)。
 
