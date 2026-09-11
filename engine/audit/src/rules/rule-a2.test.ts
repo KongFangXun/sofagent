@@ -37,6 +37,39 @@ describe('A2 不泄密钥', () => {
     expect(result.status).toBe('FAIL');
   });
 
+  // v1.4.8 fresh-eyes（finding-10）：非 web 资源 mime 的 data URI 不再整段豁免——
+  // `data:application/octet-stream;base64,<标准b64>` 载荷曾被静默删除后放行
+  it('非资源 mime data URI 内嵌 base64 密钥 → FAIL（finding-10 收口）', () => {
+    const awsLike = ['AK', 'IAIOSFODNN7EXAMPLE'].join(''); // fixture secret 运行时拼接
+    const payload = Buffer.from(awsLike).toString('base64');
+    const ctx = makeCtx([
+      makeDiffFile('src/payload.ts', [`+const blob = "data:application/octet-stream;base64,${payload}";`]),
+    ]);
+    const result = checkRuleA2(ctx);
+    expect(result.status).toBe('FAIL');
+  });
+
+  it('非资源 mime data URI 内嵌 URL-safe base64 密钥 → FAIL（finding-10 收口）', () => {
+    const skLike = ['sk', '-live0123456789abcdef0123456789ab'].join(''); // fixture secret 运行时拼接
+    const payload = Buffer.from(skLike).toString('base64').replace(/\+/g, '-').replace(/\//g, '_');
+    const ctx = makeCtx([
+      makeDiffFile('src/payload.ts', [`+const blob = "data:application/octet-stream;base64,${payload}";`]),
+    ]);
+    const result = checkRuleA2(ctx);
+    expect(result.status).toBe('FAIL');
+  });
+
+  // v1.4.8 fresh-eyes（finding-11）：测试文件豁免不再静默——命中降级 WARN 人工确认
+  it('测试文件内密钥形态 → WARN（豁免不再静默全绿）', () => {
+    const skLike = ['sk', '-live0123456789abcdef0123456789ab'].join(''); // fixture secret 运行时拼接
+    const ctx = makeCtx([
+      makeDiffFile('src/payload.test.ts', [`+const apiKey = "${skLike}";`]),
+    ]);
+    const result = checkRuleA2(ctx);
+    expect(result.status).toBe('WARN');
+    expect(result.details.join('; ')).toContain('测试文件豁免命中');
+  });
+
   it('SVG data URI（图标内嵌）→ PASS', () => {
     const svg = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4 6a2 2 0 1 1 0 4'/%3E%3C/svg%3E";
     const ctx = makeCtx([makeDiffFile('web/app.html', [`+<i class="bi bi-x" style="background:url("${svg}")">`])]);

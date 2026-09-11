@@ -378,6 +378,10 @@ export function checkHistoryChainDetailed(dataDir?: string, maxEntries?: number)
       // 其余情况（指纹漂移 / 旧版 v2 未记录指纹 / 旧算法条目）归为不可复验（黄）
       foundUnverifiable = true;
     }
+  } else if (genesisEntry && keyAvailable && hmacKey) {
+    // 密钥在场但创世条目无签名：签名被剥离（攻击者无需密钥即可剥掉 hmacSig 重写链）
+    // 或 legacy 未签名——无法证明完整性 → 不可复验（黄），不再静默跳过
+    foundUnverifiable = true;
   }
 
   for (let i = 1; i < entriesToCheck.length; i++) {
@@ -420,7 +424,7 @@ export function checkHistoryChainDetailed(dataDir?: string, maxEntries?: number)
       continue;
     }
 
-    // 2) HMAC 验签（仅当条目带 hmacSig 且有密钥时）
+    // 2) HMAC 验签（条目带 hmacSig 且有密钥时验签；密钥在场但条目无签名 → 黄，见下方分支）
     // v1.2.1: hmacAlgo==='stable' 的条目用 stableStringify 签名，读侧可正确复现。
     // (2026-08-02 复核修正)：HMAC 不匹配时先用「条目记录的环境指纹」与当前指纹比对——
     //   fingerprint 一致但 HMAC 不匹配 = 真篡改（红）；fingerprint 不一致（环境漂移） = 不可复验（黄）。
@@ -462,13 +466,17 @@ export function checkHistoryChainDetailed(dataDir?: string, maxEntries?: number)
           foundUnverifiable = true;
         }
       }
+    } else if (keyAvailable && hmacKey && !curr.hmacSig) {
+      // 密钥在场但条目无签名：签名被整链剥离伪装 legacy / legacy 未签名条目
+      // ——无法证明完整性 → 不可复验（黄），不再静默放行（防签名剥离攻击）
+      foundUnverifiable = true;
     }
   }
 
   if (foundUnverifiable) {
     return {
       status: 'unverifiable',
-      detail: '部分历史段无法复验（含无 prevHash 的 legacy 条目 / v2 含环境指纹条目因 ~/.sofagent-key 或环境指纹漂移），属历史证据不可复验，非篡改',
+      detail: '部分历史段无法复验（含无 prevHash 的 legacy 条目 / 密钥在场但条目无签名（疑似签名剥离或 legacy 条目）/ v2 含环境指纹条目因 ~/.sofagent-key 或环境指纹漂移），属历史证据不可复验，非篡改',
     };
   }
 

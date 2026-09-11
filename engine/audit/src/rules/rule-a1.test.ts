@@ -24,6 +24,17 @@ describe('A1 不碰敏感', () => {
     expect(result.status).toBe('FAIL');
   });
 
+  // v1.4.8 fresh-eyes（finding-12）：<prefix>.env.<suffix> 夹心形态不再绕过两条旧锚定
+  it('config.env.production → FAIL（finding-12 夹心形态收口）', () => {
+    const result = checkRuleA1(makeCtx([makeDiffFile('config/config.env.production')]));
+    expect(result.status).toBe('FAIL');
+  });
+
+  it('shared.env.backup → FAIL（finding-12 夹心形态收口）', () => {
+    const result = checkRuleA1(makeCtx([makeDiffFile('deploy/shared.env.backup')]));
+    expect(result.status).toBe('FAIL');
+  });
+
   it('id_rsa → FAIL', () => {
     const result = checkRuleA1(makeCtx([makeDiffFile('id_rsa')]));
     expect(result.status).toBe('FAIL');

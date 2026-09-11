@@ -43,6 +43,7 @@ async function main() {
     console.log('  snapshot restore <sha>       恢复到指定快照');
     console.log('  knowledge status             聚合知识库状态（Dream Cycle / 健康 / sensitivity）');
     console.log('  worklog                      工作明细视图（v1.4.0 交付七）');
+    console.log('  decision-tree                对话分支回溯视图（v1.4.0 交付七）');
     console.log('  billing                      账单周期聚合——agent × 自然月月结（v1.4.7 G8）');
     console.log('  scheduler <create|list|pause|resume|trigger|history|delete>  定时任务管理（v1.2.9 · create v1.4.7）');
     console.log('  doctor                       检查 daemon 健康状态（v1.2.5 §8.4）');

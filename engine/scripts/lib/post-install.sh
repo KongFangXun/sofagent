@@ -99,11 +99,20 @@ print_completion_summary() {  # 安装完成 · 使用说明（按平台）
     echo "  3. 体验效果：cd 你的 git 项目 && git commit（hook 自动触发）"
     echo "  4. 5 分钟入门：npm docs @sofagent/audit（或访问仓库 docs/HANDBOOK.md）"
   else
-    # install.sh 仓库形态：相对路径有效（当前目录 = 仓库根）
-    echo "  1. 验证安装：bash engine/scripts/verify.sh"
-    echo "  2. 在你的 git 项目初始化审计：sofagent-audit --init"
-    echo "  3. 体验效果：cd 你的 git 项目 && git commit（hook 自动触发）"
-    echo "  4. 5 分钟入门：cat docs/HANDBOOK.md"
+    # 仓库形态兜底：git clone 形态（SCRIPT_DIR = 仓库根）给绝对路径，任何 CWD 均有效；
+    # bootstrap（curl | bash）形态磁盘上无 engine/（临时目录只有 install.sh + lib），
+    # 相对路径必断链，按 verify.sh 存在性分流，改指全局命令 + PATH 修复提示（v1.4.8 修复）
+    if [ -f "${SCRIPT_DIR:-}/engine/scripts/verify.sh" ]; then
+      echo "  1. 验证安装：bash ${SCRIPT_DIR}/engine/scripts/verify.sh"
+      echo "  2. 在你的 git 项目初始化审计：sofagent-audit --init"
+      echo "  3. 体验效果：cd 你的 git 项目 && git commit（hook 自动触发）"
+      echo "  4. 5 分钟入门：cat ${SCRIPT_DIR}/docs/HANDBOOK.md"
+    else
+      echo '  1. 验证安装：若 sofagent-core 未找到，先 export PATH="$HOME/.local/bin:$PATH"，再跑 sofagent-core verify'
+      echo "  2. 在你的 git 项目初始化审计：sofagent-audit --init"
+      echo "  3. 体验效果：cd 你的 git 项目 && git commit（hook 自动触发）"
+      echo "  4. 5 分钟入门：npm docs @sofagent/audit（或访问仓库 docs/HANDBOOK.md）"
+    fi
   fi
   echo ""
   echo "  如需卸载：删除 ~/.sofagent/、~/.sofagent-key 及 .git/hooks/commit-msg 中的 sofagent hook 即可（保留你的项目数据）"
