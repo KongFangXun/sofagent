@@ -44,18 +44,35 @@ export interface ToolCallEvent {
   risk: ToolRisk;
   verdict: 'allow' | 'deny' | 'human-approval';
   reason?: string;
+  /** v1.4.8 第二章：调用方所属 app 名（app_tool_policy 判定用；未声明则无） */
+  appName?: string;
+  /** v1.4.8 第二章：策略来源（app_tool_policy——拦截记录可追溯） */
+  policySource?: string;
 }
 
 export interface ToolGateOptions {
   /** 高危工具拦截规则（risk → 动作）覆盖表 */
   riskPolicy?: Partial<Record<ToolRisk, 'allow' | 'deny' | 'human-approval'>>;
+  /**
+   * v1.4.8 第二章：应用级工具策略（app → 允许 tool 白名单）。
+   * fail-closed：配置后未声明的 app（或 app 未列的 tool）默认拒绝；
+   * 未配置时行为与现版一致（单机不破坏）。策略数据结构与
+   * @sofagent/audit plugin-gate AppToolPolicy 对齐（此处内联定义避免
+   * orchestrator→audit 新增依赖边——audit 已是 orchestrator 依赖，
+   * 但策略判定是纯数据消费，内联防类型漂移即可）。
+   */
+  appToolPolicy?: { apps: Record<string, string[]> };
 }
 
 export interface ToolGate {
   /** 注册工具——返回唯一 ID（后续调用必须带此 ID） */
   register(name: string, risk: ToolRisk, opts?: { requiresApproval?: boolean }): ToolId;
-  /** 前置判定（守卫先于事件分发）——工具执行前调用 */
-  check(toolId: ToolId): GateVerdict;
+  /**
+   * 前置判定（守卫先于事件分发）——工具执行前调用。
+   * v1.4.8 第二章：appName 可选——提供且配置了 appToolPolicy 时先过
+   * app×tool 策略（fail-closed），策略拒绝优先于风险判定。
+   */
+  check(toolId: ToolId, appName?: string): GateVerdict;
   /** 记录审批结果（human-approval 通过后放行一次） */
   markApproved(toolId: ToolId): void;
   /** 事件导出（审计出口） */
@@ -84,13 +101,15 @@ export function createToolGate(options: ToolGateOptions = {}): ToolGate {
     ...(options.riskPolicy || {}),
   };
 
-  function record(tool: RegisteredTool, verdict: GateVerdict): void {
+  function record(tool: RegisteredTool, verdict: GateVerdict, appName?: string, policySource?: string): void {
     events.push({
       ts: new Date().toISOString(),
       toolName: tool.name,
       risk: tool.risk,
       verdict: verdict.action,
       reason: 'reason' in verdict ? verdict.reason : undefined,
+      ...(appName !== undefined ? { appName } : {}),
+      ...(policySource !== undefined ? { policySource } : {}),
     });
   }
 
@@ -101,7 +120,7 @@ export function createToolGate(options: ToolGateOptions = {}): ToolGate {
       return id;
     },
 
-    check(toolId) {
+    check(toolId, appName) {
       const tool = registry.get(toolId);
       // fail-closed：未注册 ID（伪造/漂移）一律 deny
       if (!tool) {
@@ -110,11 +129,34 @@ export function createToolGate(options: ToolGateOptions = {}): ToolGate {
         return verdict;
       }
 
+      // v1.4.8 第二章：app×tool 策略判定（fail-closed，先于风险判定）——
+      // 拦截记 DecisionKind.TOOL_GATE 语义（事件流 exportEvents 由调用方
+      // 落 decision-log 时映射 TOOL_GATE 分型；此处事件带 appName+policySource 可追溯）
+      const appPolicy = options.appToolPolicy;
+      if (appPolicy && Object.keys(appPolicy.apps ?? {}).length > 0) {
+        if (appName === undefined) {
+          const verdict: GateVerdict = { action: 'deny', reason: '调用未声明所属 app（app_tool_policy 已配置，fail-closed 拒绝无归属调用）' };
+          record(tool, verdict, appName, 'app_tool_policy');
+          return verdict;
+        }
+        const allowedTools = appPolicy.apps[appName];
+        if (!allowedTools) {
+          const verdict: GateVerdict = { action: 'deny', reason: `app「${appName}」未在 app_tool_policy 中声明（fail-closed 默认拒绝）` };
+          record(tool, verdict, appName, 'app_tool_policy');
+          return verdict;
+        }
+        if (!allowedTools.includes(tool.name)) {
+          const verdict: GateVerdict = { action: 'deny', reason: `app「${appName}」未声明调用 tool「${tool.name}」（fail-closed 默认拒绝）` };
+          record(tool, verdict, appName, 'app_tool_policy');
+          return verdict;
+        }
+      }
+
       // 一次性审批已通过 → 放行并消耗
       if (approvedOnce.has(toolId)) {
         approvedOnce.delete(toolId);
         const verdict: GateVerdict = { action: 'allow' };
-        record(tool, verdict);
+        record(tool, verdict, appName, appName !== undefined ? 'app_tool_policy' : undefined);
         return verdict;
       }
 
@@ -124,7 +166,7 @@ export function createToolGate(options: ToolGateOptions = {}): ToolGate {
         : action === 'deny'
           ? { action: 'deny', reason: `风险等级 ${tool.risk} 按策略拒绝` }
           : { action: 'human-approval', reason: `高危工具（${tool.risk}）需人工批准` };
-      record(tool, verdict);
+      record(tool, verdict, appName, appName !== undefined ? 'app_tool_policy' : undefined);
       return verdict;
     },
 

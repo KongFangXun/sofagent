@@ -255,3 +255,95 @@ describe('ToolGate · nodes.ts 运行时接线（v1.2.1 验收标准）', () => 
     expect(hits.length).toBeGreaterThanOrEqual(2);
   });
 });
+
+// ════════════════════════════════════════
+// v1.4.8 第二章：app_tool_policy 策略维度（双实现同步——sandbox 中介版 + tools.ts 规则接线版）
+// ════════════════════════════════════════
+
+import { createToolGate as createSandboxGate } from '../sandbox/tool-gate';
+
+describe('ToolGate · app_tool_policy（v1.4.8 第二章 · sandbox 中介版）', () => {
+  const APP_POLICY = {
+    apps: {
+      'clawhub-plugin-a': ['run_audit', 'get_think'],
+    },
+  };
+
+  it('策略声明的 app×tool → allow，事件带 appName + policySource', () => {
+    const gate = createSandboxGate({ appToolPolicy: APP_POLICY });
+    const id = gate.register('run_audit', 'low');
+    const v = gate.check(id, 'clawhub-plugin-a');
+    expect(v.action).toBe('allow');
+    const ev = gate.exportEvents().find((e) => e.toolName === 'run_audit');
+    expect(ev?.appName).toBe('clawhub-plugin-a');
+    expect(ev?.policySource).toBe('app_tool_policy');
+  });
+
+  it('策略外的 tool（app 声明但 tool 未列）→ deny，reason 可追溯', () => {
+    const gate = createSandboxGate({ appToolPolicy: APP_POLICY });
+    const id = gate.register('write_think', 'low'); // low 风险本会 allow——策略优先拦截
+    const v = gate.check(id, 'clawhub-plugin-a');
+    expect(v.action).toBe('deny');
+    if (v.action === 'deny') expect(v.reason).toContain('未声明调用 tool「write_think」');
+  });
+
+  it('未声明的 app → deny（fail-closed）', () => {
+    const gate = createSandboxGate({ appToolPolicy: APP_POLICY });
+    const id = gate.register('run_audit', 'low');
+    const v = gate.check(id, 'unknown-app');
+    expect(v.action).toBe('deny');
+    if (v.action === 'deny') expect(v.reason).toContain('未在 app_tool_policy 中声明');
+  });
+
+  it('配置策略但调用未声明 app → deny（fail-closed 拒无归属调用）', () => {
+    const gate = createSandboxGate({ appToolPolicy: APP_POLICY });
+    const id = gate.register('run_audit', 'low');
+    const v = gate.check(id); // 不带 appName
+    expect(v.action).toBe('deny');
+  });
+
+  it('未配置 appToolPolicy（单机默认）→ 行为与现版一致', () => {
+    const gate = createSandboxGate(); // 无策略
+    const id = gate.register('run_audit', 'low');
+    expect(gate.check(id).action).toBe('allow');
+    expect(gate.check(id, 'any-app').action).toBe('allow');
+    // 无归属事件不带 appName 字段
+    const ev = gate.exportEvents()[0]!;
+    expect(ev.appName).toBeUndefined();
+  });
+});
+
+describe('ToolGate · app_tool_policy（v1.4.8 第二章 · tools.ts 规则接线版）', () => {
+  const APP_POLICY = {
+    apps: {
+      'clawhub-plugin-a': ['sf_read'],
+    },
+  };
+
+  it('策略声明 tool → 规则引擎照常判定（allow 路径）', () => {
+    const gate = createToolGate({ appToolPolicy: APP_POLICY, appName: 'clawhub-plugin-a' });
+    const v = gate('sf_read', { path: '/tmp/any.txt' });
+    expect(v.allowed).toBe(true);
+  });
+
+  it('策略外 tool → deny，reason 带 app+tool+策略来源', () => {
+    const gate = createToolGate({ appToolPolicy: APP_POLICY, appName: 'clawhub-plugin-a' });
+    const v = gate('sf_write', { path: '/tmp/x.txt', content: 'y' });
+    expect(v.allowed).toBe(false);
+    expect(v.reason).toContain('[app_tool_policy]');
+    expect(v.reason).toContain('clawhub-plugin-a');
+    expect(v.reason).toContain('sf_write');
+  });
+
+  it('未声明 app → deny（fail-closed）', () => {
+    const gate = createToolGate({ appToolPolicy: APP_POLICY, appName: 'unknown-app' });
+    const v = gate('sf_read', { path: '/tmp/a' });
+    expect(v.allowed).toBe(false);
+    expect(v.reason).toContain('未在策略中声明');
+  });
+
+  it('未配置 appToolPolicy → 行为与现版一致', () => {
+    const gate = createToolGate(); // 无策略
+    expect(gate('sf_read', { path: '/tmp/a' }).allowed).toBe(true);
+  });
+});

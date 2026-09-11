@@ -270,6 +270,36 @@ parse_args "$@"
 auto_detect_platform
 resolve_data_dir
 
+# ════════════════════════════════════════
+# v1.4.8 第一章：--policy 企业策略校验（插件来源白名单 + 托管 hook 独裁）
+# fail-closed：--policy 指定但校验器不可用（fresh clone 无 dist）→ 拒绝安装退出非零。
+# ════════════════════════════════════════
+if [ -n "${POLICY_FILE:-}" ]; then
+  if [ ! -f "$POLICY_FILE" ]; then
+    echo "❌ [policy] 策略文件不存在: $POLICY_FILE——安装中止（fail-closed）" >&2
+    exit 1
+  fi
+  POLICY_GATE="engine/audit/dist/cli/plugin-gate.js"
+  if [ ! -f "$POLICY_GATE" ]; then
+    # fresh clone 无 dist：找全局安装版
+    GATE_RESOLVED=$(node -e "try{process.stdout.write(require.resolve('@sofagent/audit/dist/cli/plugin-gate.js'))}catch{process.stdout.write('')}" 2>/dev/null)
+    if [ -n "$GATE_RESOLVED" ] && [ -f "$GATE_RESOLVED" ]; then
+      POLICY_GATE="$GATE_RESOLVED"
+    else
+      echo "❌ [policy] 校验器不可用（本地无 dist 且无全局安装 @sofagent/audit）——管控能力不得静默降级，安装中止" >&2
+      echo "   先 npm install && npm run build，或 npm install -g @sofagent/audit 后重试" >&2
+      exit 1
+    fi
+  fi
+  # 校验策略文件可解析（yaml）且段结构合法——解析失败同样 fail-closed
+  if ! node "$POLICY_GATE" --lint "$POLICY_FILE" 2>/dev/null; then
+    echo "❌ [policy] 策略文件解析/校验失败: $POLICY_FILE——安装中止（fail-closed）" >&2
+    exit 1
+  fi
+  # 策略生效标记——后续插件安装步骤（SkillHub/ClawHub 通道）经 --check-source 调校验器比对白名单
+  info "[policy] 企业策略已加载: $POLICY_FILE（插件来源白名单 + $(node "$POLICY_GATE" --summary "$POLICY_FILE" 2>/dev/null || echo '策略段')）"
+fi
+
 # ── 历史注入残留检测（平台无关重构加分项）──
 # 仅检测 + 提示，不自动清理（避免误删用户自己的配置）
 detect_legacy_injections() {

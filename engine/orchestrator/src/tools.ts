@@ -533,6 +533,18 @@ export interface ToolGateOptions {
   taskDesc?: string;
   /** 工作目录（默认 process.cwd()） */
   cwd?: string;
+  /**
+   * v1.4.8 第二章：应用级工具策略（app → 允许 tool 白名单）。
+   * fail-closed：配置后未声明的 app（或 app 未列的 tool）默认拒绝；
+   * 未配置时行为与现版一致。判定先于规则引擎（策略是硬边界）。
+   * 与 sandbox/tool-gate.ts 的 appToolPolicy 同构（双实现同步纪律）。
+   */
+  appToolPolicy?: { apps: Record<string, string[]> };
+  /**
+   * v1.4.8 第二章：本次调用的所属 app 名（appToolPolicy 判定键）。
+   * gate 包装层经 setAppContext 注入，或调用方显式传入。
+   */
+  appName?: string;
 }
 
 /**
@@ -556,11 +568,27 @@ export function createToolGate(options: ToolGateOptions = {}) {
   const agentName = options.agentName ?? 'engineer';
   const taskDesc = options.taskDesc ?? '';
   const cwd = options.cwd ?? process.cwd();
+  // v1.4.8 第二章：app×tool 策略（fail-closed 先于规则引擎；拦截 reason 带
+  // app 名 + tool 名 + 策略来源可追溯——与 sandbox/tool-gate.ts 事件字段对齐）
+  const appPolicy = options.appToolPolicy;
+  let currentApp = options.appName;
 
-  return function gate(
+  const gate = function (
     toolName: string,
     args: Record<string, unknown>,
   ): { allowed: boolean; reason?: string } {
+    if (appPolicy && Object.keys(appPolicy.apps ?? {}).length > 0) {
+      if (currentApp === undefined) {
+        return { allowed: false, reason: '[app_tool_policy] 调用未声明所属 app（fail-closed 拒绝无归属调用）' };
+      }
+      const allowedTools = appPolicy.apps[currentApp];
+      if (!allowedTools) {
+        return { allowed: false, reason: `[app_tool_policy] app「${currentApp}」未在策略中声明（fail-closed 默认拒绝）` };
+      }
+      if (!allowedTools.includes(toolName)) {
+        return { allowed: false, reason: `[app_tool_policy] app「${currentApp}」未声明调用 tool「${toolName}」（fail-closed 默认拒绝）` };
+      }
+    }
     const ctx: ToolCallContext = { toolName, args, agentName, taskDesc, cwd };
     const verdicts = engine.check(ctx);
     const result = engine.aggregate(verdicts);
@@ -581,6 +609,12 @@ export function createToolGate(options: ToolGateOptions = {}) {
 
     return { allowed: true };
   };
+
+  // v1.4.8 第二章：运行时 app 归属注入（包装层按调用方 app 设置上下文）
+  (gate as unknown as { setAppContext: (app: string | undefined) => void }).setAppContext = (app: string | undefined) => {
+    currentApp = app;
+  };
+  return gate;
 }
 
 /**
