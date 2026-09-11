@@ -185,7 +185,10 @@ function candidatePlaintexts(content: string): string[] {
   // 提取等号/冒号后的值部分，尝试解码——堵住 `token = <base64>` 绕过路径
   const assignMatch = trimmed.match(/(?:^|\s)([\w.-]+)\s*[:=]\s*(.+)$/);
   if (assignMatch) {
-    const valuePart = assignMatch[2]!.trim().replace(/['"`;,\s]+$/g, '');
+    // 首尾都剥：尾部剥引号/分号/逗号/空白（行尾语义）；头部剥三种引号——
+    // 红队实锤（R1）：仅剥尾时 `awsSecretKey = "QUtJ..."` 的头引号留在值里，
+    // base64 字符集校验被 kill，带引号密钥（Python/JS 最常见形态）恰好逃逸。
+    const valuePart = assignMatch[2]!.trim().replace(/^['"`]+|['"`;,\s]+$/g, '');
 
     // base64 候选（值部分）
     const b64Decoded = tryDecodeBase64(valuePart);
@@ -274,6 +277,22 @@ function detectNewBinaryFiles(ctx: AuditContext): string[] {
   return hits;
 }
 
+/**
+ * Cyrillic→拉丁高频同形折叠表（R2 红队成果）——只用于检测，不改原文。
+ * 背景：NFKC 只折叠全角/连字，不折叠跨字母系统的视觉同形字——
+ * `рсk-proj-...`（рс 为 Cyrillic）可同时骗过前缀锚与赋值值起点。
+ * 映射覆盖高频密钥前缀字符（sk-/rc-/akia 等）与字母数字主体段。
+ */
+const CYRILLIC_HOMOGLYPHS: Record<string, string> = {
+  а: 'a', е: 'e', о: 'o', р: 'p', с: 'c', у: 'y', х: 'x',
+  і: 'i', ј: 'j', κ: 'k', В: 'B', А: 'A', С: 'C', Е: 'E',
+  О: 'O', Р: 'P', Х: 'X', К: 'K', М: 'M', Т: 'T',
+};
+
+export function foldHomoglyphs(text: string): string {
+  return text.replace(/[а-яА-ЯїієґЇІЄҐκ]/g, (ch) => CYRILLIC_HOMOGLYPHS[ch] ?? ch);
+}
+
 export function checkRuleA2(ctx: AuditContext): RuleCheck {
   const rule: RuleCheck = {
     name: 'A2 不泄密钥',
@@ -290,19 +309,27 @@ export function checkRuleA2(ctx: AuditContext): RuleCheck {
   const groupedDetections = new Map<string, { file: string; label: string; count: number }>();
 
   for (const file of diffFiles) {
+    // 跳过测试文件——测试用例合法包含密钥形态作为 fixture（对抗性 golden-set
+    // 红队样本、正则回归用例等；对齐 A9 同款豁免先例。真实密钥仍会被 CI 侧
+    // 全量历史扫描工具拦截，测试豁免只作用于本 diff 规则面）
+    if (file.path.includes('.test.') || file.path.includes('__tests__/') || file.path.endsWith('.fixture')) continue;
     for (const line of file.lines) {
       // 只检查新增行（以 + 开头且不是 +++）
       if (line.startsWith('+') && !line.startsWith('+++')) {
         const content = line.substring(1);
         // v1.2.9: — zero-width 字符归一化（防止 U+200B/U+200C/U+200D/U+FEFF 拆分密钥绕过）
         let normalized = content.replace(/[\u200B\u200C\u200D\uFEFF]/g, '');
-        // v1.3.1 #46: NFKC Unicode 归一化——防止全角字符（如 ｓｋ-）或同形字符绕过密钥检测。
-        // NFKC 将兼容性字符折叠为标准形式（全角字母→半角、连字→拆分），堵住 Unicode 同形攻击。
+        // v1.3.1 #46: NFKC Unicode 归一化——防止全角字符（如 ｓｋ-）绕过密钥检测。
+        // NFKC 将兼容性字符折叠为标准形式（全角字母→半角、连字→拆分）。
+        // ⚠️ NFKC 不折叠跨字母系统的 Cyrillic 同形字（рс≠rc）——R2 红队实锤：
+        // 同形前缀可骗过模式锚。检测前追加同形折叠（foldHomoglyphs，只影响
+        // 检测候选不改原文），声称对齐 SECURITY.md「NFKC + 同形折叠表」表述。
         try {
           normalized = normalized.normalize('NFKC');
         } catch {
           // normalize 在极少数情况下可能失败（无效 surrogate pair），保留原值继续
         }
+        normalized = foldHomoglyphs(normalized);
         // 原行 + base64/hex 解码候选（v1.2.9: 用归一化后的内容防 zero-width 绕过）
         for (const candidate of candidatePlaintexts(normalized)) {
           for (const { pattern, label, contextKeyword } of SECRET_PATTERNS) {

@@ -101,9 +101,24 @@ try {
     }
   }
   // 未找到任何匹配——降级为 INFO 提示（避免狼来了）。真绕过仍由 --verify-commit 复核。
+  // v1.4.8 R3: 对账未命中时检测 commit-msg hook 是否在位——hook 缺失（卸甲）时
+  // 升级为 WARN：INFO 在 hook 被删场景下是误导性安心（mv .git/hooks/commit-msg
+  // 后明文密钥可落库，唯一信号只是一行可忽略的 INFO）。仍 exit 0 不阻断。
   console.log("");
-  console.log("  ℹ️ [sofagent] 未确认审计记录（post-commit 对账未命中）。");
-  console.log("  如未使用 --no-verify 可忽略；如需确认运行 sofagent-audit --verify-commit " + COMMIT_SHA);
+  var hookPath = ".git/hooks/commit-msg";
+  var hookMissing = false;
+  try {
+    fs.readFileSync(hookPath, "utf-8");
+    hookMissing = false;
+  } catch {
+    hookMissing = true;
+  }
+  if (hookMissing) {
+    console.log("  ⚠️ [sofagent] 未确认审计记录，且 commit-msg hook 不在位（防线已卸甲）——建议重新安装：sofagent-audit --init");
+  } else {
+    console.log("  ℹ️ [sofagent] 未确认审计记录（post-commit 对账未命中）。");
+    console.log("  如未使用 --no-verify 可忽略；如需确认运行 sofagent-audit --verify-commit " + COMMIT_SHA);
+  }
 } catch { process.exit(0); }
 ' 2>/dev/null
 fi

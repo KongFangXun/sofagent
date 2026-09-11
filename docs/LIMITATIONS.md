@@ -262,7 +262,7 @@ task/logs 和 think.md 以 Markdown 存储，可能含代码片段、API 响应�
 
 > **二进制文件盲区（红队实测）**——git 对二进制文件只输出 `Binary files ... differ`，无内容行可扫：约 5KB 随机字节夹带密钥的 blob 可完全绕过 A2 内容扫描（无论密钥是明文还是嵌入二进制段）。缓解：A2 对**新增**二进制扩展名文件（.bin/.exe/.dll/.so/.dylib 等）及 diff 标记 `Binary files differ` 的新增文件（含 NUL 字节）输出 WARN「二进制文件不扫内容，请人工确认」——WARN 不拦截提交，最终防线是人工复核 + CI 侧二进制感知扫描工具。
 
-> **v1.3.1 披露：>5MB diff 残余缝隙**——diff-parser 对单个文件 diff 超过 5MB（maxBuffer）时置 `oversized` 标记，A2 无法扫描其内容。audit/index.ts 已对此注入 WARN（安全敏感文件名升级为 FAIL），但内容本身仍跳过——攻击者可故意构造超大 diff 藏密钥。A2 归一化已补 NFKC Unicode 处理（v1.3.1 #46），sk-* 正则已扩展连字符/下划线支持。**v1.3.9 评估覆盖**——AST 规则引擎走流式解析（不 maxBuffer），超大 diff 不再跳过内容。
+> **v1.3.1 披露：>5MB diff 残余缝隙**——diff-parser 对单个文件 diff 超过 5MB（maxBuffer）时置 `oversized` 标记，A2 无法扫描其内容。audit/index.ts 已对此注入 WARN（安全敏感文件名升级为 FAIL），但内容本身仍跳过——攻击者可故意构造超大 diff 藏密钥。A2 归一化已补 NFKC Unicode 处理（v1.3.1 #46；NFKC 折叠全角/连字，**v1.4.8 起附加 Cyrillic 同形折叠表防跨字母系统同形绕过**——NFKC 本身不折叠 Cyrillic→拉丁同形字），sk-* 正则已扩展连字符/下划线支持。**v1.3.9 评估覆盖**——AST 规则引擎走流式解析（不 maxBuffer），超大 diff 不再跳过内容。
 
 ---
 
