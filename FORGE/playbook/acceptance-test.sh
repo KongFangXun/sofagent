@@ -2916,109 +2916,35 @@ fi
 $S331_OK && pass "版本一致性双面（8 层 manifest = ${S331_SSOT} + bump 精确路径匹配）" || fail "plugin manifest 漂移或 bump 通配回退（上方列出）"
 # S333 · 数据管道 CSV 解析与类型推断端到端（行为实测）：parseCsv/ingestCsv 空标记/类型推断，dist 直跑（A2 纪律：无真实外部数据）
 scenario 333 "v1.4.2 章一：数据管道 CSV 解析——空标记过滤 + 类型推断（数字/布尔/字符串）端到端"; S333_OK=true
-S333_OUT=$(node -e "
-const { ingestCsv } = require('$PROJECT_ROOT/engine/orchestrator/dist/train/data-ingest.js');
-const csv = 'name,age,ok\\nali,30,true\\nbo,,false\\n,25,TRUE';
-const r = ingestCsv(csv);
-// 真实结构：records[] 每条 { id, fields }，fields 内类型推断
-if (!r || !Array.isArray(r.records) || r.records.length === 0) { console.log('FAIL:no-records'); process.exit(1); }
-const allFields = r.records.map(x => x.fields || {});
-const flat = allFields.flatMap(Object.values);
-if (!flat.some(v => typeof v === 'number')) { console.log('FAIL:no-number-type'); process.exit(1); }
-if (!flat.some(v => typeof v === 'boolean')) { console.log('FAIL:no-boolean-type'); process.exit(1); }
-if (!flat.some(v => typeof v === 'string')) { console.log('FAIL:no-string-type'); process.exit(1); }
-console.log('OK:' + r.records.length + '-records-types-ok');
-" 2>&1) || S333_OK=false
+S333_OUT=$(node -e "const { ingestCsv } = require('$PROJECT_ROOT/engine/orchestrator/dist/train/data-ingest.js'); const csv = 'name,age,ok\\nali,30,true\\nbo,,false\\n,25,TRUE'; const r = ingestCsv(csv); if (!r || !Array.isArray(r.records) || r.records.length === 0) { console.log('FAIL:no-records'); process.exit(1); } const allFields = r.records.map(x => x.fields || {}); const flat = allFields.flatMap(Object.values); if (!flat.some(v => typeof v === 'number')) { console.log('FAIL:no-number-type'); process.exit(1); } if (!flat.some(v => typeof v === 'boolean')) { console.log('FAIL:no-boolean-type'); process.exit(1); } if (!flat.some(v => typeof v === 'string')) { console.log('FAIL:no-string-type'); process.exit(1); } console.log('OK:' + r.records.length + '-records-types-ok');" 2>&1) || S333_OK=false
 echo "$S333_OUT" | grep -q "^OK:" || S333_OK=false
 $S333_OK && pass "数据管道 CSV 解析含类型推断（number/boolean/string 三类型齐）" || fail "数据管道 CSV 解析异常：$S333_OUT"
 # S334 · dataset_version 台账三件套（行为实测）：record/list/diff，隔离 tmp 目录（不碰 data/），用完清理
 scenario 334 "v1.4.2 章二：dataset_version 版本台账——记录/列表/两版 diff 含 hash 与样本数"; S334_OK=true
 S334_TMP=$(mktemp -d)
-S334_OUT=$(node -e "
-const dv = require('$PROJECT_ROOT/engine/orchestrator/dist/train/dataset-version.js');
-const dir = '$S334_TMP';
-// 真实入参：dataDir/enterpriseId/datasetId/contentHash/sampleCount/algorithm/columnMapping/datasetFile
-const base = { dataDir: dir, enterpriseId: 'e2e', datasetId: 'ds1', algorithm: 'sft', columnMapping: { instruction: 'q', output: 'a' }, datasetFile: 'ds.jsonl' };
-dv.recordDatasetVersion({ ...base, contentHash: 'aaaa1111', sampleCount: 100, createdAt: '2026-08-28T01:00:00Z' });
-dv.recordDatasetVersion({ ...base, contentHash: 'bbbb2222', sampleCount: 150, createdAt: '2026-08-28T02:00:00Z' });
-const list = dv.listDatasetVersions(dir, 'e2e', 'ds1');
-if (!Array.isArray(list) || list.length < 2) { console.log('FAIL:list-' + (list ? list.length : 'null')); process.exit(1); }
-if (!list[0].contentHash || !list[0].version) { console.log('FAIL:record-shape-' + JSON.stringify(list[0]).slice(0,80)); process.exit(1); }
-const d = dv.diffDatasetVersions(list[0], list[1]);
-if (!d) { console.log('FAIL:diff-null'); process.exit(1); }
-const dstr = JSON.stringify(d);
-if (!dstr.includes('sampleCount')) { console.log('FAIL:diff-no-samples-' + dstr.slice(0,90)); process.exit(1); }
-console.log('OK:2-vers-diff-' + dstr.length + '-bytes');
-" 2>&1) || S334_OK=false
+S334_OUT=$(node -e "const dv = require('$PROJECT_ROOT/engine/orchestrator/dist/train/dataset-version.js'); const dir = '$S334_TMP'; const base = { dataDir: dir, enterpriseId: 'e2e', datasetId: 'ds1', algorithm: 'sft', columnMapping: { instruction: 'q', output: 'a' }, datasetFile: 'ds.jsonl' }; dv.recordDatasetVersion({ ...base, contentHash: 'aaaa1111', sampleCount: 100, createdAt: '2026-08-28T01:00:00Z' }); dv.recordDatasetVersion({ ...base, contentHash: 'bbbb2222', sampleCount: 150, createdAt: '2026-08-28T02:00:00Z' }); const list = dv.listDatasetVersions(dir, 'e2e', 'ds1'); if (!Array.isArray(list) || list.length < 2) { console.log('FAIL:list-' + (list ? list.length : 'null')); process.exit(1); } if (!list[0].contentHash || !list[0].version) { console.log('FAIL:record-shape-' + JSON.stringify(list[0]).slice(0,80)); process.exit(1); } const d = dv.diffDatasetVersions(list[0], list[1]); if (!d) { console.log('FAIL:diff-null'); process.exit(1); } const dstr = JSON.stringify(d); if (!dstr.includes('sampleCount')) { console.log('FAIL:diff-no-samples-' + dstr.slice(0,90)); process.exit(1); } console.log('OK:2-vers-diff-' + dstr.length + '-bytes');" 2>&1) || S334_OK=false
 rm -rf "$S334_TMP"
 echo "$S334_OUT" | grep -q "^OK:2-vers" || S334_OK=false
 $S334_OK && pass "dataset_version 台账三件套（记录/列表/diff）含 hash 样本数" || fail "dataset_version 异常：$S334_OUT"
 # S335 · v1.4.2 章三：eval 闭环阈值判定——continue/stop 双态（行为实测） 训练连评估的决策面：decideFromScores 按阈值外部化判定
 scenario 335 "v1.4.2 章三：eval 闭环阈值判定——达标 stop / 未达标 continue 双态决策"; S335_OK=true
-S335_OUT=$(node -e "
-const te = require('$PROJECT_ROOT/engine/orchestrator/dist/train/train-eval-loop.js');
-// 真实链路：computeScoreStats(CaseEvaluation[]) → decideFromScores(stats, thresholds)
-// CaseEvaluation 形状：{ score, failureCode }（0-100 量表，targetScore 默认 80）
-const hi = te.computeScoreStats([{ score: 90, failureCode: null }, { score: 92, failureCode: null }, { score: 88, failureCode: null }]);
-const lo = te.computeScoreStats([{ score: 30, failureCode: null }, { score: 28, failureCode: null }, { score: 32, failureCode: null }]);
-const dHi = te.decideFromScores(hi, te.DEFAULT_EVAL_THRESHOLDS);
-const dLo = te.decideFromScores(lo, te.DEFAULT_EVAL_THRESHOLDS);
-if (dHi.decision !== 'stop') { console.log('FAIL:hi=' + dHi.decision); process.exit(1); }
-if (dLo.decision !== 'continue') { console.log('FAIL:lo=' + dLo.decision); process.exit(1); }
-if (!dHi.reason || !dLo.reason) { console.log('FAIL:no-reason'); process.exit(1); }
-console.log('OK:hi-stop-lo-continue');
-" 2>&1) || S335_OK=false
+S335_OUT=$(node -e "const te = require('$PROJECT_ROOT/engine/orchestrator/dist/train/train-eval-loop.js'); const hi = te.computeScoreStats([{ score: 90, failureCode: null }, { score: 92, failureCode: null }, { score: 88, failureCode: null }]); const lo = te.computeScoreStats([{ score: 30, failureCode: null }, { score: 28, failureCode: null }, { score: 32, failureCode: null }]); const dHi = te.decideFromScores(hi, te.DEFAULT_EVAL_THRESHOLDS); const dLo = te.decideFromScores(lo, te.DEFAULT_EVAL_THRESHOLDS); if (dHi.decision !== 'stop') { console.log('FAIL:hi=' + dHi.decision); process.exit(1); } if (dLo.decision !== 'continue') { console.log('FAIL:lo=' + dLo.decision); process.exit(1); } if (!dHi.reason || !dLo.reason) { console.log('FAIL:no-reason'); process.exit(1); } console.log('OK:hi-stop-lo-continue');" 2>&1) || S335_OK=false
 echo "$S335_OUT" | grep -q "^OK:hi-stop-lo-continue" || S335_OK=false
 $S335_OK && pass "eval 阈值判定双态（达标 stop / 未达标 continue）含 reason" || fail "eval 阈值判定异常：$S335_OUT"
 # S336 · v1.4.2 章五：dry-run 显存估算——参数量单调性（行为实测） 投之前先算：estimateVram 随参数量增大显存预算单调增（外推合理性）
 scenario 336 "v1.4.2 章五：dry-run 显存估算——同配置下参数量翻倍显存单调增"; S336_OK=true
-S336_OUT=$(node -e "
-const td = require('$PROJECT_ROOT/engine/orchestrator/dist/train/train-dryrun.js');
-// 真实入参：paramsBillions（十亿参数）、batchSize、sequenceLength、bytesPerParam
-const s = td.estimateVram({ paramsBillions: 1, batchSize: 2, sequenceLength: 2048, bytesPerParam: 4 });
-const b = td.estimateVram({ paramsBillions: 2, batchSize: 2, sequenceLength: 2048, bytesPerParam: 4 });
-if (!s || typeof s.totalGiB !== 'number' || !isFinite(s.totalGiB)) { console.log('FAIL:shape-' + JSON.stringify(s).slice(0,100)); process.exit(1); }
-if (!(b.totalGiB > s.totalGiB)) { console.log('FAIL:not-monotonic-' + s.totalGiB + '-' + b.totalGiB); process.exit(1); }
-console.log('OK:mono-' + s.totalGiB.toFixed(1) + '-' + b.totalGiB.toFixed(1));
-" 2>&1) || S336_OK=false
+S336_OUT=$(node -e "const td = require('$PROJECT_ROOT/engine/orchestrator/dist/train/train-dryrun.js'); const s = td.estimateVram({ paramsBillions: 1, batchSize: 2, sequenceLength: 2048, bytesPerParam: 4 }); const b = td.estimateVram({ paramsBillions: 2, batchSize: 2, sequenceLength: 2048, bytesPerParam: 4 }); if (!s || typeof s.totalGiB !== 'number' || !isFinite(s.totalGiB)) { console.log('FAIL:shape-' + JSON.stringify(s).slice(0,100)); process.exit(1); } if (!(b.totalGiB > s.totalGiB)) { console.log('FAIL:not-monotonic-' + s.totalGiB + '-' + b.totalGiB); process.exit(1); } console.log('OK:mono-' + s.totalGiB.toFixed(1) + '-' + b.totalGiB.toFixed(1));" 2>&1) || S336_OK=false
 echo "$S336_OUT" | grep -q "^OK:mono-" || S336_OK=false
 $S336_OK && pass "dry-run 显存估算参数量单调（${S336_OUT#OK:mono-} GiB）" || fail "dry-run 显存估算异常：$S336_OUT"
 # S337 · v1.4.2 章五：ScaleRL sigmoid 缩放律外推——拟合与建议（行为实测） 算力外推预检：fitSigmoid + extrapolate + suggestNextPilotCompute 三件套
 scenario 337 "v1.4.2 章五：ScaleRL sigmoid 缩放律——小 run 拟合 + 大 run 外推 + 下一步建议"; S337_OK=true
-S337_OUT=$(node -e "
-const sc = require('$PROJECT_ROOT/engine/orchestrator/dist/train/scale-curve.js');
-// 真实口径：performance 0..100（与 Benchmark 协议化评分同源）
-const pts = [{ compute: 1, performance: 20 }, { compute: 4, performance: 50 }, { compute: 16, performance: 85 }];
-const fit = sc.fitSigmoid(pts);
-if (!fit || !fit.params || !fit.quality) { console.log('FAIL:fit-' + JSON.stringify(fit).slice(0,80)); process.exit(1); }
-if (!(fit.quality.rmse < 5)) { console.log('FAIL:rmse-' + fit.quality.rmse); process.exit(1); }
-// extrapolate(points, targetCompute)——外推到 2 倍观测域（真实字段 projectedPerformance/ceiling/confidence）
-const ext = sc.extrapolate(pts, 32);
-if (!ext || typeof ext.projectedPerformance !== 'number' || !isFinite(ext.projectedPerformance)) { console.log('FAIL:ext-' + JSON.stringify(ext).slice(0,90)); process.exit(1); }
-if (!(ext.projectedPerformance >= 80 && ext.projectedPerformance <= 100)) { console.log('FAIL:ext-range-' + ext.projectedPerformance); process.exit(1); }
-if (!ext.confidence) { console.log('FAIL:ext-no-confidence'); process.exit(1); }
-const sug = sc.suggestNextPilotCompute(pts);
-if (typeof sug !== 'number' || sug < 1 || sug > 64) { console.log('FAIL:sug-' + sug); process.exit(1); }
-console.log('OK:fit-rmse-' + fit.quality.rmse.toFixed(3) + '-ext-' + ext.projectedPerformance.toFixed(1) + '-sug-' + sug);
-" 2>&1) || S337_OK=false
+S337_OUT=$(node -e "const sc = require('$PROJECT_ROOT/engine/orchestrator/dist/train/scale-curve.js'); const pts = [{ compute: 1, performance: 20 }, { compute: 4, performance: 50 }, { compute: 16, performance: 85 }]; const fit = sc.fitSigmoid(pts); if (!fit || !fit.params || !fit.quality) { console.log('FAIL:fit-' + JSON.stringify(fit).slice(0,80)); process.exit(1); } if (!(fit.quality.rmse < 5)) { console.log('FAIL:rmse-' + fit.quality.rmse); process.exit(1); } const ext = sc.extrapolate(pts, 32); if (!ext || typeof ext.projectedPerformance !== 'number' || !isFinite(ext.projectedPerformance)) { console.log('FAIL:ext-' + JSON.stringify(ext).slice(0,90)); process.exit(1); } if (!(ext.projectedPerformance >= 80 && ext.projectedPerformance <= 100)) { console.log('FAIL:ext-range-' + ext.projectedPerformance); process.exit(1); } if (!ext.confidence) { console.log('FAIL:ext-no-confidence'); process.exit(1); } const sug = sc.suggestNextPilotCompute(pts); if (typeof sug !== 'number' || sug < 1 || sug > 64) { console.log('FAIL:sug-' + sug); process.exit(1); } console.log('OK:fit-rmse-' + fit.quality.rmse.toFixed(3) + '-ext-' + ext.projectedPerformance.toFixed(1) + '-sug-' + sug);" 2>&1) || S337_OK=false
 echo "$S337_OUT" | grep -q "^OK:fit-rmse-" || S337_OK=false
 $S337_OK && pass "sigmoid 缩放律拟合（RMSE<5）/外推（域内合理）/建议三件套" || fail "scale-curve 异常：$S337_OUT"
 # S338 · FDE 工作台审计链往返（行为实测）：emitFdeAudit 落盘 + readFdeAudit 读回一致，隔离 tmp（不碰 data/）
 scenario 338 "v1.4.2 章八：FDE 工作台审计留痕——emitFdeAudit 落盘 readFdeAudit 读回往返一致"; S338_OK=true
 S338_TMP=$(mktemp -d)
-S338_OUT=$(node -e "
-const fw = require('$PROJECT_ROOT/engine/orchestrator/dist/fde/fde-workbench.js');
-const dir = '$S338_TMP';
-// 真实入参：type 限 fde_* 六事件域，enterpriseId/artifact/reason
-const e = fw.emitFdeAudit({ type: 'fde_interview', enterpriseId: 'e2e', artifact: 'data/fde/e2e/interview.md', reason: 's338-e2e 往返校验' }, dir);
-if (!e || !e.ts) { console.log('FAIL:emit-' + JSON.stringify(e).slice(0,80)); process.exit(1); }
-if (e.type !== 'fde_interview') { console.log('FAIL:type-' + e.type); process.exit(1); }
-if (!e.hmacSig || e.prevHash !== 'genesis') { console.log('FAIL:hmac-chain-' + e.prevHash); process.exit(1); }
-const back = fw.readFdeAudit(dir, 'e2e');
-if (!Array.isArray(back) || back.length < 1) { console.log('FAIL:read-' + (back ? back.length : 'null')); process.exit(1); }
-if (back[0].type !== 'fde_interview' || back[0].enterpriseId !== 'e2e') { console.log('FAIL:mismatch-' + JSON.stringify(back[0]).slice(0,80)); process.exit(1); }
-console.log('OK:roundtrip-' + back.length + '-entry');
-" 2>&1) || S338_OK=false
+S338_OUT=$(node -e "const fw = require('$PROJECT_ROOT/engine/orchestrator/dist/fde/fde-workbench.js'); const dir = '$S338_TMP'; const e = fw.emitFdeAudit({ type: 'fde_interview', enterpriseId: 'e2e', artifact: 'data/fde/e2e/interview.md', reason: 's338-e2e 往返校验' }, dir); if (!e || !e.ts) { console.log('FAIL:emit-' + JSON.stringify(e).slice(0,80)); process.exit(1); } if (e.type !== 'fde_interview') { console.log('FAIL:type-' + e.type); process.exit(1); } if (!e.hmacSig || e.prevHash !== 'genesis') { console.log('FAIL:hmac-chain-' + e.prevHash); process.exit(1); } const back = fw.readFdeAudit(dir, 'e2e'); if (!Array.isArray(back) || back.length < 1) { console.log('FAIL:read-' + (back ? back.length : 'null')); process.exit(1); } if (back[0].type !== 'fde_interview' || back[0].enterpriseId !== 'e2e') { console.log('FAIL:mismatch-' + JSON.stringify(back[0]).slice(0,80)); process.exit(1); } console.log('OK:roundtrip-' + back.length + '-entry');" 2>&1) || S338_OK=false
 rm -rf "$S338_TMP"
 echo "$S338_OUT" | grep -q "^OK:roundtrip" || S338_OK=false
 $S338_OK && pass "FDE 工作台审计留痕往返一致（fde_* 事件域）" || fail "FDE 审计留痕异常：$S338_OUT"

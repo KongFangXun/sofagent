@@ -10,7 +10,7 @@
 
 **归并配额（硬门槛）**：新增 N 维 → 本版必须先真实归并 ≥N 维（被并维度检查内容实际移入目标维度，git diff 可查；注释压缩不算）；净增行数 > 警戒线余量 → 继续归并或移下一版——**只调警戒线不归并 = 不合格**。
 
-**行数警戒线（当前值）**：`regression-checklist.md` ≤ 1800 行、`acceptance-test.sh` ≤ 4250 行（4200→4240→4250 同版同侧二次上调冻结例外：v1.4.7 release-gate 四轮 coverage 闭环补 18 场景 S384-S400——同版同侧只调一次铁律下，第二次 +6 行（S399/S400 批 G/批 O 锚点）属 RC 收口必要增量，与首调同 commit 批次合并记录）；fresh-eyes 警戒线见 04-review-system.md 风格守护段。三条上调铁律：① 三判据全否方可调——(i) 新增非旧维度可扩展子项的独立审查面；(ii) 非既有场景/维度的重复覆盖；(iii) 真实防回归价值非归并压缩可消化；② 连续上调禁令——连续两版已调，本版须先真实归并对销方可再调；同版同侧只调一次（同版二次冻结）；③ **上调只记一行**——`旧值→新值（原因一句话）`，历史上调链不在此处累积（完整过程 git 历史可溯）。
+**行数警戒线（当前值）**：`regression-checklist.md` ≤ 1800 行、`acceptance-test.sh` ≤ 4200 行（4250→4200 收紧回调：同版二次上调后的真实瘦身消化——S333-S338 六场景块 JS 单行紧凑化（断言零删减），对销 S384-S400 增量后回到整数关口；v1.4.7 release-gate 期间的 4200→4240→4250 上调链已由本回调终止，不再适用）；fresh-eyes 警戒线见 04-review-system.md 风格守护段。三条上调铁律：① 三判据全否方可调——(i) 新增非旧维度可扩展子项的独立审查面；(ii) 非既有场景/维度的重复覆盖；(iii) 真实防回归价值非归并压缩可消化；② 连续上调禁令——连续两版已调，本版须先真实归并对销方可再调；同版同侧只调一次（同版二次冻结）；③ **上调只记一行**——`旧值→新值（原因一句话）`，历史上调链不在此处累积（完整过程 git 历史可溯）。
 
 **维度脚本编写三铁律**（教训——7 个 FAIL 维度中 5 个是脚本自身缺陷而非仓库问题，driver 白跑一轮）：
 
@@ -27,7 +27,7 @@ ACTUAL=$(grep -c "^#### " FORGE/playbook/regression-checklist.md)
 # 行数警戒线自检（越线提醒瘦身，非失败；与 releasing.md 阶段五警戒线一致）
 WC_CHK=$(wc -l < FORGE/playbook/regression-checklist.md); WC_ACC=$(wc -l < FORGE/playbook/acceptance-test.sh)
 [ "$WC_CHK" -le 1800 ] && echo "✅ checklist $WC_CHK (≤1800)" || echo "⚠️ checklist $WC_CHK 超 1800"
-[ "$WC_ACC" -le 4250 ] && echo "✅ acceptance $WC_ACC (≤4250)" || echo "⚠️ acceptance $WC_ACC 超 4250"
+[ "$WC_ACC" -le 4200 ] && echo "✅ acceptance $WC_ACC (≤4200)" || echo "⚠️ acceptance $WC_ACC 超 4200"
 ```
 ## 你的身份
 
