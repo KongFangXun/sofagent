@@ -53,6 +53,10 @@ jobs:
       - name: check-silent-catch.mjs
         run: node tools/check/check-silent-catch.mjs
 
+      # v1.4.8 第七章：依赖方向架构测试——13 包边界（核心←约束←适配←CLI/展示）。
+      - name: dependency-direction.sh
+        run: bash tools/check/dependency-direction.sh
+
   # v1.3.9（四）：public API 变更检测——@public 符号集变化必须 semver bump + CHANGELOG。
   # v1.4.7：装依赖跑（口径统一到 AST）——此前「不装依赖直接跑」会因无 typescript 静默
   # 回退正则解析，与基线/文档声称值的 AST 口径分歧（实测差 8 符号：2236 vs 2244）导致

@@ -1,0 +1,86 @@
+# dependency-direction.yml · 包边界清单（依赖方向 SSOT）
+# ============================================================
+# v1.4.8 第七章/第〇批交付——build 序列 13 包的允许依赖方向（核心层 ← 约束层 ← 适配层 ← CLI/展示层）。
+#
+# 🔴 口径裁定（写进清单头部，避免与既有门禁混写——各口径全表见开发 Prompt「包计数术语表」SSOT）：
+#   ① 本清单覆盖 **build 序列 13 包** = 12 引擎包 + engine/hooks/sofagent-load-chain（**不含 engine/umbrella**）。
+#      workspace 实为 27 项——另含 13 个 DSH/OpenClaw 插件家族与 engine/umbrella，
+#      属适配层/分发层叶子，不在 npm 包依赖面边界清单范围。
+#   ② 引擎包 13（含 umbrella）与 build 序列 13（不含 umbrella）在此统一取 **build 序列口径**
+#      （load-chain 是构建拓扑序末位、umbrella 不参与依赖图）。
+#   ③ 测试口径 12 包（engine/umbrella 无独立 test workspace）、check-version.sh 循环 11 包
+#      （含 mcp）、public-api-baseline.json 12 包（含 rules/load-chain、不含 mcp）——
+#      既有门禁口径各异，本门禁只断言 build 序列 13 包的依赖方向，不重述其它口径。
+#
+# 层级（自下而上；包只允许依赖**同层或更低层**）：
+#   L0 核心层   harness / core（全仓仅 harness 为零依赖；core 不依赖任何 @sofagent 包）
+#   L1 领域层   ontology / rules（依赖 core）
+#   L2 约束层   audit / eval / think / skillopt（audit=ont+core+rules；eval=audit+core；think=core+eval；skillopt=ont+core+audit）
+#   L3 编排层   orchestrator / daemon（orch=audit+core+harness+rules+skillopt；daemon=audit+core+ont+orch+skillopt）
+#   L4 展示层   ab-test / mcp / hooks/sofagent-load-chain（ab-test=harness+eval+core+orch；mcp=ab+audit+core+eval+ont+orch+rules+skillopt+think；load-chain=零）
+#
+# ⑩-2 更名联动：skillopt → evolve 后本清单 package 名与层级同步改。
+# ============================================================
+
+packages:
+  # ── L0 核心层（零 @sofagent 依赖）──
+  harness:
+    path: engine/harness
+    layer: 0
+    allow: []
+  core:
+    path: engine/core
+    layer: 0
+    allow: []
+
+  # ── L1 领域层 ──
+  ontology:
+    path: engine/ontology
+    layer: 1
+    allow: [core]
+  rules:
+    path: engine/rules
+    layer: 1
+    allow: [core]
+
+  # ── L2 约束层 ──
+  audit:
+    path: engine/audit
+    layer: 2
+    allow: [core, ontology, rules]
+  eval:
+    path: engine/eval
+    layer: 2
+    allow: [core, audit]
+  think:
+    path: engine/think
+    layer: 2
+    allow: [core, eval]
+  skillopt:
+    path: engine/skillopt
+    layer: 2
+    allow: [core, ontology, audit]
+
+  # ── L3 编排层 ──
+  orchestrator:
+    path: engine/orchestrator
+    layer: 3
+    allow: [harness, core, rules, audit, skillopt]
+  daemon:
+    path: engine/daemon
+    layer: 3
+    allow: [core, ontology, audit, orchestrator, skillopt]
+
+  # ── L4 展示/CLI 层 ──
+  ab-test:
+    path: engine/ab-test
+    layer: 4
+    allow: [harness, core, eval, orchestrator]
+  mcp:
+    path: engine/mcp
+    layer: 4
+    allow: [core, ontology, rules, audit, eval, think, skillopt, orchestrator, ab-test]
+  load-chain:
+    path: engine/hooks/sofagent-load-chain
+    layer: 4
+    allow: []

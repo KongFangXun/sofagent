@@ -16,6 +16,7 @@
 #   + check-test-count.sh   → 文档声称测试数 vs 实际值一致性（P1-3 根治）
 #   + check-review-system.sh → 审查体系一致性（维度数/警戒线/S 编号对账 · v1.4.8 接入）
 #   + check-silent-catch.mjs → 静默吞错门禁（只拦新增 · v1.4.8 接入）
+#   + dependency-direction.sh → 依赖方向架构测试（13 包边界 · v1.4.8 第七章）
 #   + npm run build         → 审计引擎构建
 #
 # 用法:
@@ -263,6 +264,20 @@ if [ "$MINIMAL" = false ]; then
   else
     check_fail "check-silent-catch.mjs 发现新增静默吞错"
     node tools/check/check-silent-catch.mjs 2>&1 | grep -E "❌|^  " | head -10
+  fi
+fi
+
+# ════════════════════════════════════════
+# 3e. 依赖方向架构测试（dependency-direction.sh · v1.4.8 第七章）
+# build 序列 13 包依赖方向：核心层 ← 约束层 ← 适配层 ← CLI/展示层。
+# ════════════════════════════════════════
+if [ "$MINIMAL" = false ]; then
+  echo -e "\n${BOLD}── 3e. 依赖方向架构测试 ──${NC}"
+  if bash tools/check/dependency-direction.sh >/dev/null 2>&1; then
+    check_pass "dependency-direction.sh 通过（13 包方向合法）"
+  else
+    check_fail "dependency-direction.sh 发现违规依赖边"
+    bash tools/check/dependency-direction.sh 2>&1 | grep -E "❌" | head -10
   fi
 fi
 
