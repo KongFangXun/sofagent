@@ -155,3 +155,8 @@
 // ── 审计留痕规约层 + PROV-O 导出（章十 · audit_query 查询面）──
 /* @public */ export { reduceAuditHistory, exportProvTurtle, exportProvJsonLd } from './audit-reducer';
 /* @public */ export type { AuditQueryFilter, AuditReducedReport, AgentRollupRow, RuleRollupRow } from './audit-reducer';
+
+// ============================================================
+// v1.4.8 扩展三：并发 Git 纪律守卫（orchestrator/daemon 执行侧消费）
+// ============================================================
+/* @public */ export { checkPathspecDiscipline, detectForeignStaged, snapshotForTurn, verifyNoConcurrentWrite } from './concurrent-git-discipline';

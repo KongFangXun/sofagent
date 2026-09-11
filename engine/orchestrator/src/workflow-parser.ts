@@ -64,6 +64,17 @@ export interface WorkflowNode {
    * - result-only：完成者不见底层数据（仅产出摘要公开）
    */
   visibility?: 'open' | 'private' | 'result-only';
+  /**
+   * 节点级模型偏好（可选，v1.4.8 第八章）：provider/model/priority——
+   * 同 workflow 不同节点可绑不同模型（默认省钱、复杂节点旗舰）。
+   * 解析层只承接字段；执行层经 model-resolver 对 v1.3.6 模型注册表
+   * 解析（未注册报错不静默降级）。实际使用模型进审计记录。
+   */
+  modelPreference?: {
+    provider?: string;
+    model: string;
+    priority?: 'preferred' | 'required';
+  };
 }
 
 // ────────────────────────────────────────────────────────────
@@ -399,6 +410,24 @@ export function parseWorkflowYaml(workflowYaml: string): ParsedWorkflow {
       visibility = n.visibility;
     }
 
+    // modelPreference：可选对象（v1.4.8 第八章）——结构非法 fail-loud
+    // （拼错静默丢弃会让节点绑定悄悄失效）；解析到注册表的校验在 model-resolver
+    let modelPreference: WorkflowNode['modelPreference'];
+    if (n.modelPreference !== undefined) {
+      const mp = n.modelPreference as Record<string, unknown>;
+      if (typeof mp !== 'object' || mp === null || typeof mp.model !== 'string' || mp.model.trim() === '') {
+        throw new WorkflowParseError(`节点 ${n.id} 的 modelPreference 非法（必须含非空 model 字段）`);
+      }
+      if (mp.priority !== undefined && mp.priority !== 'preferred' && mp.priority !== 'required') {
+        throw new WorkflowParseError(`节点 ${n.id} 的 modelPreference.priority 非法（${String(mp.priority)}），必须为 preferred|required`);
+      }
+      modelPreference = {
+        ...(typeof mp.provider === 'string' ? { provider: mp.provider } : {}),
+        model: mp.model.trim(),
+        ...(mp.priority !== undefined ? { priority: mp.priority as 'preferred' | 'required' } : {}),
+      };
+    }
+
     return {
       id: n.id.trim(),
       agent: n.agent.trim(),
@@ -408,6 +437,7 @@ export function parseWorkflowYaml(workflowYaml: string): ParsedWorkflow {
       hitl,
       ...(trigger !== undefined ? { trigger } : {}),
       ...(visibility !== undefined ? { visibility } : {}),
+      ...(modelPreference !== undefined ? { modelPreference } : {}),
     };
   });
 

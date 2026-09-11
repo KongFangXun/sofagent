@@ -228,6 +228,8 @@
 /* @public */ export type { ClassifiedCommand, ClassifierOverrides, EscalationLevel } from './escalation/classifier';
 /* @public */ export { routeEscalation } from './escalation/policy';
 /* @public */ export type { EscalationDecision, EscalationPolicyOptions, EscalationScenarioPolicy, EscalationVerdict } from './escalation/policy';
+/* @public */ export { validateScopedName, assertScopedName } from './scope-names';
+/* @public */ export type { ScopeKind, ScopedName, ScopeVerdict } from './scope-names';
 
 // ── 内存压缩 ──
 /* @public */ export {

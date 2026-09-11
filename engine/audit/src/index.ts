@@ -34,6 +34,8 @@ import { VERSION } from '@sofagent/core';
 import { BASELINE_RULE_KEYS } from '@sofagent/core';
 import { checkConflict, mergeFederationResults } from '@sofagent/core';
 import { verifyEvidence } from '@sofagent/core';
+// v1.4.8 扩展三：并发 Git 纪律守卫（orchestrator/daemon 执行侧消费）
+export { checkPathspecDiscipline, detectForeignStaged, snapshotForTurn, verifyNoConcurrentWrite } from './concurrent-git-discipline';
 import { generateOntologyView } from '@sofagent/ontology';
 import { resolveDiffEndpoint } from './diff-ref';
 import { checkLogs } from '@sofagent/core';
