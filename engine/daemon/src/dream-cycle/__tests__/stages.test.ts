@@ -8,7 +8,7 @@
 //   3. extract_atoms：单条 fact → 至少 1 条 atom
 //   4. cluster_patterns：多条 atom → 聚成少于原数的 pattern（M < N）
 //   5. synthesize_concepts：pattern → concept 写入 knowledge/entities/
-//   6. skillopt_backfill：触发 fde.md 优化钩子（mock 验证被调用）
+//   6. evolve_backfill：触发 fde.md 优化钩子（mock 验证被调用）
 //   7. embed：产出定长向量
 //   8. RealLLM：v1.4.5 第七章五真脑交付后可构造（占位抛错行为已废止）
 // ============================================================
@@ -24,7 +24,7 @@ import { extractFacts } from '../extract-facts';
 import { extractAtoms } from '../extract-atoms';
 import { clusterPatterns } from '../cluster-patterns';
 import { synthesizeConcepts } from '../synthesize-concepts';
-import { skilloptBackfill } from '../skillopt-backfill';
+import { evolveBackfill } from '../evolve-backfill';
 import { embedConcepts } from '../embed';
 import { validateExtractOutput, scanInjection } from '../injection-guard';
 import type { Ledger, LLMProvider } from '../types';
@@ -109,14 +109,14 @@ describe('Dream Cycle 6 阶段', () => {
     expect(content).toContain('sensitivity: internal');
   });
 
-  // 用例 6：skillopt_backfill — mock 钩子被调用
-  it('skillopt_backfill：触发 fde.md 优化钩子（mock 验证被调用）', async () => {
+  // 用例 6：evolve_backfill — mock 钩子被调用
+  it('evolve_backfill：触发 fde.md 优化钩子（mock 验证被调用）', async () => {
     const concepts = [
       { slug: 'c1', title: 'T1', body: 'B1', source: 'dream-cycle:p', sensitivity: 'internal' as const },
     ];
     let called = 0;
     let received: unknown[] = [];
-    await skilloptBackfill(concepts, llm, (cs) => {
+    await evolveBackfill(concepts, llm, (cs) => {
       called += 1;
       received = cs;
     });

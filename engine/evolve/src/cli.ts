@@ -1,16 +1,16 @@
 #!/usr/bin/env node
-// skillopt CLI · v1.4.7
+// evolve CLI · v1.4.7
 
 const args = process.argv.slice(2);
 const subcommand = args[0];
 
 async function main() {
   if (!subcommand || subcommand === '--help') {
-    console.log('sofagent-skillopt — Skill 质量分析 / 优化建议 / 自动重构');
-    console.log('Usage: sofagent-skillopt <subcommand> [options]');
+    console.log('sofagent-evolve — Skill 质量分析 / 优化建议 / 自动重构');
+    console.log('Usage: sofagent-evolve <subcommand> [options]');
     console.log('');
     console.log('Subcommands:');
-    console.log('  run <path>     运行 Skill 优化（调用 skillopt-sleep CLI）');
+    console.log('  run <path>     运行 Skill 优化（调用 evolve-gate（v1.4.8 自研） CLI）');
     console.log('  check <path>   扫描 Skill 文件安全性');
     process.exit(0);
   }
@@ -20,26 +20,26 @@ async function main() {
       const targetPath = args[1];
       if (!targetPath) {
         console.error('❌ run 需要 <path> 参数');
-        console.error('   用法: sofagent-skillopt run <skill-file-path>');
+        console.error('   用法: sofagent-evolve run <skill-file-path>');
         process.exit(1);
       }
-      const { runSkillOpt, validateCandidate, isSkillOptAvailable } = await import('./skillopt-integration');
+      const { runEvolve, validateCandidate, isEvolveAvailable } = await import('./evolve-integration');
 
-      if (!isSkillOptAvailable()) {
-        console.error('❌ skillopt-sleep CLI 不可用。请安装：pip install skillopt（v0.2.0+ 已含 skillopt-sleep CLI）。');
+      if (!isEvolveAvailable()) {
+        console.error('❌ evolve-gate（v1.4.8 自研） CLI 不可用。请安装：pip install evolve（v0.2.0+ 已含 evolve-gate（v1.4.8 自研） CLI）。');
         process.exit(1);
       }
 
-      console.log(`sofagent-skillopt v${require('../../package.json').version} — 运行 Skill 优化`);
+      console.log(`sofagent-evolve v${require('../../package.json').version} — 运行 Skill 优化`);
       console.log(`  目标: ${targetPath}`);
 
-      const result = runSkillOpt(targetPath);
+      const result = runEvolve(targetPath);
       if (!result.success) {
-        console.error(`❌ SkillOpt 运行失败: ${result.error}`);
+        console.error(`❌ Evolve 运行失败: ${result.error}`);
         process.exit(1);
       }
 
-      console.log(`✅ SkillOpt 完成`);
+      console.log(`✅ Evolve 完成`);
       if (result.candidatePath) {
         const validation = validateCandidate(result.candidatePath, targetPath);
         console.log(`  候选文件: ${result.candidatePath}`);
@@ -55,13 +55,13 @@ async function main() {
       const targetPath = args[1];
       if (!targetPath) {
         console.error('❌ check 需要 <path> 参数');
-        console.error('   用法: sofagent-skillopt check <skill-file-or-dir>');
+        console.error('   用法: sofagent-evolve check <skill-file-or-dir>');
         process.exit(1);
       }
       const { scanSkillSafety } = await import('./skill-safety-check');
 
       const mode = args.includes('--json') ? 'json' : args.includes('--quiet') ? 'quiet' : 'terminal';
-      console.log(`sofagent-skillopt v${require('../../package.json').version} — Skill 安全扫描`);
+      console.log(`sofagent-evolve v${require('../../package.json').version} — Skill 安全扫描`);
       console.log(`  目标: ${targetPath}`);
       console.log('');
 
@@ -77,7 +77,7 @@ async function main() {
     }
     default:
       console.error(`Unknown subcommand: ${subcommand}`);
-      console.error('Usage: sofagent-skillopt <run|check>');
+      console.error('Usage: sofagent-evolve <run|check>');
       process.exit(1);
   }
 }

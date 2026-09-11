@@ -401,7 +401,7 @@ done # 期望：每个 SKILL.md 命中 9 个必需字段
 
 ```bash
 # 子项 a: 6 阶段文件全部存在
-for stage in extract-facts extract-atoms cluster-patterns synthesize-concepts skillopt-backfill embed; do
+for stage in extract-facts extract-atoms cluster-patterns synthesize-concepts evolve-backfill embed; do
  test -f "engine/daemon/src/dream-cycle/${stage}.ts" && echo "✅ ${stage}.ts" || echo "❌ 缺失: ${stage}.ts"
 done
 
@@ -416,7 +416,7 @@ grep -n "writeFile\|writeFileSync\|unlink\|rmSync" engine/daemon/src/dream-cycle
 grep -rn "weekly-report\|lessons-extract" --include="*.ts" engine/daemon/src/ | grep -v node_modules | grep -v "memory-contract.ts" | grep -v "\.test\.\|__tests__" # 期望：零命中
 
 # 子项 e: 6 阶段定义与 types.ts 一致
-grep -c "extract_facts\|extract_atoms\|cluster_patterns\|synthesize_concepts\|skillopt_backfill\|embed" engine/daemon/src/dream-cycle/types.ts # ≥6
+grep -c "extract_facts\|extract_atoms\|cluster_patterns\|synthesize_concepts\|evolve_backfill\|embed" engine/daemon/src/dream-cycle/types.ts # ≥6
 ```
 #### 30. sensitivity frontmatter + 联邦过滤
 
@@ -1315,7 +1315,7 @@ HARDCODED=$(grep -nE '(checklist|acceptance|fresh-eyes)[^0-9]{0,4}≤ ?1[0-9]{3}
 
 ```bash
 # 发版后验证 12 包全部到 npm
-for pkg in audit core daemon eval harness ontology orchestrator rules skillopt think ab-test mcp; do
+for pkg in audit core daemon eval harness ontology orchestrator rules evolve think ab-test mcp; do
  V=$(npm view @sofagent/$pkg version 2>/dev/null || echo "❌ 未发布")
  echo " @sofagent/$pkg: $V"
 done
@@ -1716,7 +1716,7 @@ MKT_HTML=$(curl -s --max-time 10 https://github.com/marketplace/actions/sofagent
 # ④ ClawHub 快照纪律：发布前 verify 落盘（clawhub skill verify <slug> > /tmp/clawhub-pre.json）对照处置；④b pending scan 显旧版+suspicious≠失败，转正判据走 API（clawhub.ai/api/v1/packages/<name>?ownerHandle=<handle>）
 grep -q "prefer-online" docs/changelog/releasing/09-publish.md && grep -q "prefer-online" docs/changelog/releasing/11-post-publish.md && echo "✅ SOP 对账命令守卫在位" || echo "❌ SOP 对账命令退化为裸查询"  # ⑤ npm 对账带 --prefer-online（裸查询吃缓存误报漏发）
 # ⑥ 构建拓扑序干净态自洽（本地 dist 残留会掩盖乱序）⑦ 环境特异失败先模拟 CI 干净态（三类排查序）⑧ 工具降级分支 fail-loud（降级必须可见）
-node -e "const s=require('./package.json').scripts.build; const order=['harness','core','ontology','rules','audit','eval','think','skillopt','orchestrator','daemon','ab-test','mcp','sofagent-load-chain']; let i=-1; for(const seg of s.split(' && ')){const m=seg.match(/--workspace=([^\s]+)/); if(!m) continue; const short=m[1].replace(/^engine\//,'').replace(/^hooks\//,''); const idx=order.indexOf(short); if(idx<0||idx<=i){console.error('❌ 拓扑序倒置或未知包: '+m[1]); process.exit(1);} i=idx;}" && echo "✅ build 序列满足 13 包拓扑序"
+node -e "const s=require('./package.json').scripts.build; const order=['harness','core','ontology','rules','audit','eval','think','evolve','orchestrator','daemon','ab-test','mcp','sofagent-load-chain']; let i=-1; for(const seg of s.split(' && ')){const m=seg.match(/--workspace=([^\s]+)/); if(!m) continue; const short=m[1].replace(/^engine\//,'').replace(/^hooks\//,''); const idx=order.indexOf(short); if(idx<0||idx<=i){console.error('❌ 拓扑序倒置或未知包: '+m[1]); process.exit(1);} i=idx;}" && echo "✅ build 序列满足 13 包拓扑序"
 grep -q "rm -rf engine/\*/dist" docs/changelog/releasing/09-publish.md && echo "✅ 干净态排查法已写入 SOP" || echo "❌ 干净态排查法从 SOP 丢失"
 git grep -q "regexWarned" -- tools/check/public-api.mjs && echo "✅ 降级 fail-loud 在位" || echo "❌ 降级静默"
 ```

@@ -1,13 +1,13 @@
 // ============================================================
-// skillopt/backfill.ts · Dream Cycle skillopt_backfill 钩子
+// evolve/backfill.ts · Dream Cycle evolve_backfill 钩子
 // v1.3.7 新增
 //
 // 供 @sofagent/daemon Dream Cycle Stage 5 调用：把合成出的 Concept
-// 回灌给 skillopt 自进化引擎，触发 fde.md 优化钩子。
+// 回灌给 evolve 自进化引擎，触发 fde.md 优化钩子。
 //
 // 本版设计：backfill 是「记录待优化线索」的轻量钩子——把 concept 的
-// 来源/标题登记到进程内队列，供 skillopt 后续优化周期消费。真正的
-// fde.md 改写仍走 skillopt-integration 的 runSkillOpt（就地演化 +
+// 来源/标题登记到进程内队列，供 evolve 后续优化周期消费。真正的
+// fde.md 改写仍走 evolve-integration 的 runEvolve（就地演化 +
 // validateCandidate 校验），本钩子不直接改任何 live 文件。
 // ============================================================
 
@@ -23,7 +23,7 @@ export interface BackfillConcept {
   sensitivity?: 'public' | 'internal' | 'restricted';
 }
 
-/** 回灌队列条目（待 skillopt 优化周期消费的线索） */
+/** 回灌队列条目（待 evolve 优化周期消费的线索） */
 export interface BackfillEntry {
   /** 概念 slug */
   slug: string;

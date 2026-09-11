@@ -48,8 +48,8 @@
       "@sofagent/think": [
         "engine/think/src"
       ],
-      "@sofagent/skillopt": [
-        "engine/skillopt/src"
+      "@sofagent/evolve": [
+        "engine/evolve/src"
       ],
       "@sofagent/rules": [
         "engine/rules/src"

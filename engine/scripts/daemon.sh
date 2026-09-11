@@ -203,10 +203,10 @@ _main_loop() {
       _write_notice_if_stale "Ingest 触发——请运行 knowledge-maintain 提取最新 task/logs 中的知识"
     fi
 
-    # 7. SkillOpt 自进化调度（v1.0.4 → P0-7 管道接通）
-    # 读 eval.md → 阈值检测 → 24h 防抖 → 调 skillopt-run
-    _trigger_skillopt() {
-      # TODO-v1.3.0: eval.md 已在 v1.2.1 删除，SkillOpt 评分数据源待重新设计
+    # 7. Evolve 自进化调度（v1.0.4 → P0-7 管道接通）
+    # 读 eval.md → 阈值检测 → 24h 防抖 → 调 evolve-run
+    _trigger_evolve() {
+      # TODO-v1.3.0: eval.md 已在 v1.2.1 删除，Evolve 评分数据源待重新设计
       # 读取 eval.md，检查累积评分条目数是否到阈值
       local scoring_file="${REPO_ROOT}/SKILL/harness/data/eval.md"
       local threshold=20  # 累积 20 条评分后触发
@@ -220,7 +220,7 @@ _main_loop() {
       fi
 
       # 检查上次触发时间（24h 内不重复触发）
-      local last_trigger="${SOFAGENT_DATA}/.skillopt-last-run"
+      local last_trigger="${SOFAGENT_DATA}/.evolve-last-run"
       if [ -f "$last_trigger" ]; then
         local last_time
         last_time=$(cat "$last_trigger" 2>/dev/null || echo 0)
@@ -232,20 +232,20 @@ _main_loop() {
         fi
       fi
 
-      # 检测 skillopt-sleep 是否可用
-      if ! command -v skillopt-sleep &>/dev/null; then
+      # 检测 evolve-sleep 是否可用
+      if ! command -v evolve-sleep &>/dev/null; then
         # v1.2.1：不再追加到 daemon-notice.md，改写 daemon.log（健康报告由 health-reporter.ts 生成 JSON）
-        daemon_log "SkillOpt: skillopt-sleep 未安装（需 pip install skillopt，v0.2.0+ 已含 sleep CLI）。eval.md 已积累 ${score_count} 条，触发条件已满足但引擎不可用。"
+        daemon_log "Evolve: evolve-sleep 未安装（需 pip install evolve，v0.2.0+ 已含 sleep CLI）。eval.md 已积累 ${score_count} 条，触发条件已满足但引擎不可用。"
         return
       fi
 
-      # 真正调用——通过 npx @sofagent/audit skillopt-run
+      # 真正调用——通过 npx @sofagent/audit evolve-run
       # v1.2.1：不再追加到 daemon-notice.md，改写 daemon.log
-      daemon_log "SkillOpt: eval.md 累积 ${score_count} 条，触发自进化"
-      npx @sofagent/audit skillopt-run --input "${REPO_ROOT}/SKILL/SKILL.md" --output "${SOFAGENT_DATA}/skill-candidate.md" --scoring "$scoring_file" 2>>"$DAEMON_LOG"
+      daemon_log "Evolve: eval.md 累积 ${score_count} 条，触发自进化"
+      npx @sofagent/audit evolve-run --input "${REPO_ROOT}/SKILL/SKILL.md" --output "${SOFAGENT_DATA}/skill-candidate.md" --scoring "$scoring_file" 2>>"$DAEMON_LOG"
       date +%s > "$last_trigger"
     }
-    _trigger_skillopt
+    _trigger_evolve
 
     sleep 30
   done

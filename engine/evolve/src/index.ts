@@ -5,7 +5,7 @@
 // 未标记的导出视为 @public（保守默认：宁可多承诺不可漏承诺）
 // ────────────────────────────────────────────────────────
 /**
- * @sofagent/skillopt
+ * @sofagent/evolve
  *
  * Skill 优化 — Skill 质量分析 / 优化建议 / 自动重构
  */
@@ -25,16 +25,16 @@
   SafetyResult,
 } from '@sofagent/audit';
 
-// ── SkillOpt 集成 ──
+// ── Evolve 集成 ──
 /* @public */ export {
-  runSkillOpt,
+  runEvolve,
   validateCandidate,
-  isSkillOptAvailable,
-} from './skillopt-integration';
+  isEvolveAvailable,
+} from './evolve-integration';
 /* @public */ export type {
-  SkillOptResult,
+  EvolveResult,
   ValidationResult,
-} from './skillopt-integration';
+} from './evolve-integration';
 
 // ── Dream Cycle backfill 钩子（v1.1.6 新增）──
 /* @public */ export { backfill, getBackfillQueue, clearBackfillQueue } from './backfill';
@@ -57,3 +57,11 @@
   AUTO_TRIGGER_THRESHOLD,
 } from './auto-trigger';
 /* @public */ export type { OptimizeInput, OptimizeResult } from './auto-trigger';
+
+// ============================================================
+// v1.4.8 ⑩/⑩-2：自研 gate 验证器 + Skill Proposer（四角色合拢）
+// ============================================================
+/* @public */ export { runNativeGate } from './native-gate';
+/* @public */ export type { GateHistory, GateVerdict, NativeGateOptions } from './native-gate';
+/* @public */ export { buildProposerPrompt, parseProposalWithSafety, loadImpactLedger, loadFailureLedger } from './proposer';
+/* @public */ export type { ProposerInput, SkillProposal, ProposalWithSafety } from './proposer';

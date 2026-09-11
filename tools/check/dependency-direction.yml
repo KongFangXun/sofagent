@@ -15,11 +15,11 @@
 # 层级（自下而上；包只允许依赖**同层或更低层**）：
 #   L0 核心层   harness / core（全仓仅 harness 为零依赖；core 不依赖任何 @sofagent 包）
 #   L1 领域层   ontology / rules（依赖 core）
-#   L2 约束层   audit / eval / think / skillopt（audit=ont+core+rules；eval=audit+core；think=core+eval；skillopt=ont+core+audit）
-#   L3 编排层   orchestrator / daemon（orch=audit+core+harness+rules+skillopt；daemon=audit+core+ont+orch+skillopt）
-#   L4 展示层   ab-test / mcp / hooks/sofagent-load-chain（ab-test=harness+eval+core+orch；mcp=ab+audit+core+eval+ont+orch+rules+skillopt+think；load-chain=零）
+#   L2 约束层   audit / eval / think / evolve（audit=ont+core+rules；eval=audit+core；think=core+eval；evolve=ont+core+audit）
+#   L3 编排层   orchestrator / daemon（orch=audit+core+harness+rules+evolve；daemon=audit+core+ont+orch+evolve）
+#   L4 展示层   ab-test / mcp / hooks/sofagent-load-chain（ab-test=harness+eval+core+orch；mcp=ab+audit+core+eval+ont+orch+rules+evolve+think；load-chain=零）
 #
-# ⑩-2 更名联动：skillopt → evolve 后本清单 package 名与层级同步改。
+# ⑩-2 更名联动：evolve → evolve 后本清单 package 名与层级同步改。
 # ============================================================
 
 packages:
@@ -56,8 +56,8 @@ packages:
     path: engine/think
     layer: 2
     allow: [core, eval]
-  skillopt:
-    path: engine/skillopt
+  evolve:
+    path: engine/evolve
     layer: 2
     allow: [core, ontology, audit]
 
@@ -65,11 +65,11 @@ packages:
   orchestrator:
     path: engine/orchestrator
     layer: 3
-    allow: [harness, core, rules, audit, skillopt]
+    allow: [harness, core, rules, audit, evolve]
   daemon:
     path: engine/daemon
     layer: 3
-    allow: [core, ontology, audit, orchestrator, skillopt]
+    allow: [core, ontology, audit, orchestrator, evolve]
 
   # ── L4 展示/CLI 层 ──
   ab-test:
@@ -79,7 +79,7 @@ packages:
   mcp:
     path: engine/mcp
     layer: 4
-    allow: [core, ontology, rules, audit, eval, think, skillopt, orchestrator, ab-test]
+    allow: [core, ontology, rules, audit, eval, think, evolve, orchestrator, ab-test]
   load-chain:
     path: engine/hooks/sofagent-load-chain
     layer: 4

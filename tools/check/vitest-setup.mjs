@@ -8,7 +8,7 @@
 //
 // 挂载点：engine 下 5 个既有 vitest.config.ts（audit/core/mcp/
 // daemon/orchestrator）各 1 行 setupFiles 引用本文件。
-// 其余 7 包（harness/eval/think/skillopt/ontology/rules/ab-test）
+// 其余 7 包（harness/eval/think/evolve/ontology/rules/ab-test）
 // 经查无 SOFAGENT_DATA/DATA_DIR 写入面或测试已自带 mkdtemp 隔离。
 //
 // 语义：仅当测试未显式设置 SOFAGENT_DATA 时才预置（beforeEach 检查），

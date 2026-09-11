@@ -157,7 +157,7 @@ Full methodology (four phases, twelve steps) in [FDE/GUIDE.md](./FDE/GUIDE.md) �
 - **Audit** — 24 git-diff hard-evidence rules (quick runs 17 by default, 7 extensions enabled via config) + AgentShield five-face static config scanning; auditing is mandatory — every change gets audited, violations blocked on the spot
 - **Rollback** — auto-archived snapshot after every audit, one-click restore to any snapshot
 - **Distillation** — audit trails, think.md reflections, and industry cases distilled into reusable knowledge assets (knowledge/ base + SKILL files; knowledge capture is currently a format-only pipeline; content filling advances as models get wired in — see [LIMITATIONS](./docs/LIMITATIONS.md))
-- **Evolution** — think.md reflection + Dream Cycle + skillopt, consuming distilled knowledge assets to get stronger automatically (knowledge capture is currently a format-only pipeline; content filling advances as models get wired in — see [LIMITATIONS](./docs/LIMITATIONS.md))
+- **Evolution** — think.md reflection + Dream Cycle + evolve, consuming distilled knowledge assets to get stronger automatically (knowledge capture is currently a format-only pipeline; content filling advances as models get wired in — see [LIMITATIONS](./docs/LIMITATIONS.md))
 
 ## Installation
 

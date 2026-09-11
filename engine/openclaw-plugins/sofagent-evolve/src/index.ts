@@ -24,7 +24,7 @@ const _pkg: { version?: string } = require('../package.json');
   id: 'sofagent-evolve',
   name: 'sofagent 进化',
   version: _pkg.version ?? '0.0.0-unknown',
-  description: '经验沉淀——think.md 反思条目生成 + 反思区注入（Dream Cycle + skillopt 数据源）',
+  description: '经验沉淀——think.md 反思条目生成 + 反思区注入（Dream Cycle + evolve 数据源）',
   brandColor: '#16B8F3',
 };
 

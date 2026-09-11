@@ -4,7 +4,7 @@
 //
 // 将扁平的 inspector 执行改为三级分层调度：
 //   L1 快速健康 (@daily)：审计历史 / daemon 状态 / WARN 累积 / 数据主权日报 / workspace 摘要 / daily 快照
-//   L2 深度巡检 (@weekly)：知识矛盾 / 孤儿 / 死链 / 新鲜度 / Skill 陈旧度 / 数据主权周报 / 趋势聚合 / skillopt 触发
+//   L2 深度巡检 (@weekly)：知识矛盾 / 孤儿 / 死链 / 新鲜度 / Skill 陈旧度 / 数据主权周报 / 趋势聚合 / evolve 触发
 //   L3 联邦分析 (@monthly)：跨设备蒸馏 / 失败模式聚类 / Ontology 覆盖度 / 数据主权月报
 //
 // 各层独立调度，由 cron 节拍或手动触发指定层级。
@@ -29,7 +29,7 @@ import { runFederationDistillation } from './inspectors/federation-distillation'
 import { runFailurePattern } from './inspectors/failure-pattern';
 import { runOntologyCoverage } from './inspectors/ontology-coverage';
 import { runEvalFailuresCheck } from './inspectors/eval-failures';
-import { runSkilloptTrigger } from './inspectors/skillopt-trigger';
+import { runSkilloptTrigger } from './inspectors/evolve-trigger';
 import { runDailySnapshot } from './inspectors/daily-snapshot';
 import { runTrendAggregator } from './inspectors/trend-aggregator';
 import { runTaskStats } from './inspectors/task-stats';
@@ -86,8 +86,8 @@ const LAYER_INSPECTORS: Record<InspectorLayer, { name: string; fn: InspectorFn }
     { name: 'knowledge-health', fn: checkKnowledgeHealth },
     { name: 'skill-staleness', fn: checkSkillStaleness },
     { name: 'data-sovereignty-weekly', fn: generateDataSovereigntyWeekly },
-    // v1.2.4 P1：失败模式 → skillopt 自动触发
-    { name: 'skillopt-trigger', fn: runSkilloptTrigger },
+    // v1.2.4 P1：失败模式 → evolve 自动触发
+    { name: 'evolve-trigger', fn: runSkilloptTrigger },
     // v1.2.4 P1b：历史趋势聚合
     { name: 'trend-aggregator', fn: runTrendAggregator },
     // v1.3.4 交付 3：公地健康周检（@weekly——退役候选/评分异常/目录完整性）

@@ -149,8 +149,8 @@
 // v1.2.4 P0b：eval 失败检测（进化引擎核心闭环）
 /* @public */ export { runEvalFailuresCheck } from './inspectors/eval-failures';
 
-// v1.2.4 P1：skillopt 自动触发 inspector
-/* @public */ export { runSkilloptTrigger } from './inspectors/skillopt-trigger';
+// v1.2.4 P1：evolve 自动触发 inspector
+/* @public */ export { runSkilloptTrigger } from './inspectors/evolve-trigger';
 
 // v1.2.4 P1b：Dashboard 历史趋势 + 任务统计
 /* @public */ export { runDailySnapshot } from './inspectors/daily-snapshot';

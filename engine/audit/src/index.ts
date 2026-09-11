@@ -3,7 +3,7 @@
 // sofagent-audit · 提交时审计 CLI 入口
 // v1.4.7 · 审计闭环六步（检测+分类+根因+改进+回归+上线）
 // v1.0.8 精简（历史）：compose→orchestrator, subagent→orchestrator,
-//          skillopt-run→skillopt, ab-test→ab-test,
+//          evolve-run→evolve, ab-test→ab-test,
 //          daemon→daemon, doctor/verify→core (deprecation shim)
 // ============================================================
 // 扫描 git diff，检查 Agent 是否遵守审计规则。
@@ -77,7 +77,7 @@ export type {
   Verifiability,
 } from './export/rule-schema';
 
-// v1.3.9: re-export P0 数据主权 + skill 安全审查，供 daemon/mcp/orchestrator/skillopt 消费
+// v1.3.9: re-export P0 数据主权 + skill 安全审查，供 daemon/mcp/orchestrator/evolve 消费
 export { DataSovereigntyLogger, resolveSovereigntyLogPath, resolveDateArg, sanitizeRecord } from './data-sovereignty';
 export type { DataSovereigntyRecord, SovereigntyLogEntry } from './data-sovereignty';
 export { generateDailyReport, generateWeeklyReport, generateMonthlyReport, generateReport, aggregateStats } from './report-generator';
@@ -405,7 +405,7 @@ function parseArgs(argv: string[]): Args {
         console.log('v1.0.8 已弃用的子命令（将在 v1.5.0 移除，请尽快迁移）:');
         console.log('  compose      → sofagent-orchestrator compose');
         console.log('  subagent run → sofagent-orchestrator subagent run');
-        console.log('  skillopt-run → sofagent-skillopt');
+        console.log('  evolve-run → sofagent-evolve');
         console.log('  ab-test      → sofagent-ab-test');
         console.log('  daemon       → sofagent-daemon');
         console.log('  doctor/verify → sofagent-core（npm install -g @sofagent/core）');

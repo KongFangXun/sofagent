@@ -1,12 +1,12 @@
 // ============================================================
-// skillopt/failure-ledger.ts · 失败清单管理（v1.4.7 · P1）
+// evolve/failure-ledger.ts · 失败清单管理（v1.4.7 · P1）
 // ============================================================
 //
 // 失败清单：记录每次 Skill 执行失败的场景 + 原因 + 正确做法。
 // 核心假设：**失败清单 > 正向评分**——负面样本的信息量更大。
 //
 // 数据结构：
-//   - 持久化到 {data}/skillopt/failure-ledger.jsonl（append-only JSONL）
+//   - 持久化到 {data}/evolve/failure-ledger.jsonl（append-only JSONL）
 //   - 进程内缓存 Map<skillId, FailureEntry[]>
 //
 // 消费者：
@@ -65,7 +65,7 @@ const patternCache = new Map<string, FailurePattern>();
 /** 获取 failure-ledger 文件路径 */
 export function resolveFailureLedgerPath(): string {
   const env = loadEnvConfig();
-  return join(env.dataDir, 'skillopt', 'failure-ledger.jsonl');
+  return join(env.dataDir, 'evolve', 'failure-ledger.jsonl');
 }
 
 /**

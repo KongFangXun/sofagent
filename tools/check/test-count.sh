@@ -59,7 +59,7 @@ NC='\033[0m'
 #
 # v1.4.5 (T8/R3) 口径说明——实测「12 包有 test script」与两处对账口径的关系：
 #   本脚本遍历 engine/ 下「单层有 package.json 且声明 test script」的包，实测 12
-#   个（audit/core/daemon/eval/harness/mcp/ontology/orchestrator/rules/skillopt/
+#   个（audit/core/daemon/eval/harness/mcp/ontology/orchestrator/rules/evolve/
 #   think/ab-test）。check-test-count.sh:214 的「13 引擎包」数的是 package.json
 #   workspaces 数组条目（含无 test script 的 hooks/），两口径不同源但都稳定：
 #   新增 workspace 包时两处同步膨胀，不会一边多算一边少算。

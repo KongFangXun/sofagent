@@ -5,7 +5,7 @@
 // Dream Cycle 是 gbrain 21 阶段的精简版——对约束沉淀真正有用的前半段：
 //   extract_facts → extract_atoms → cluster_patterns
 //                → synthesize_concepts（喂 @sofagent/ontology）
-//                → skillopt_backfill（回灌自进化）
+//                → evolve_backfill（回灌自进化）
 //                → embed（向量化，供未来检索）
 //
 // 数据流：
@@ -21,7 +21,7 @@ export const DREAM_CYCLE_STAGES = [
   'extract_atoms',
   'cluster_patterns',
   'synthesize_concepts',
-  'skillopt_backfill',
+  'evolve_backfill',
   'embed',
 ] as const;
 

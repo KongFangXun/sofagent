@@ -15,7 +15,7 @@ const _pkg: { version?: string } = require('../package.json');
 export const pluginMeta = {
   id: 'cordis-plugin-sofagent-evolve',
   version: _pkg.version ?? '0.0.0-unknown',
-  description: '经验沉淀——think.md 反思 + Dream Cycle + skillopt + instinct→skill + refine（seam: 任务结束 hook）',
+  description: '经验沉淀——think.md 反思 + Dream Cycle + evolve + instinct→skill + refine（seam: 任务结束 hook）',
   seam: '任务结束 hook',
 } as const;
 
@@ -65,12 +65,12 @@ export default {
       if (runner && typeof runner.define === 'function') {
         const res = runner.define({
           name: 'sofagent-evolve',
-          purpose: '经验沉淀——think.md 反思 + Dream Cycle + skillopt（品牌色 #16B8F3）',
+          purpose: '经验沉淀——think.md 反思 + Dream Cycle + evolve（品牌色 #16B8F3）',
           code: {
             host: [
               'module.exports = {',
               '  async main(ctx, args) {',
-              '    return { ok: true, source: "sofagent-evolve", message: "经验沉淀——think.md 反思 + Dream Cycle + skillopt" };',
+              '    return { ok: true, source: "sofagent-evolve", message: "经验沉淀——think.md 反思 + Dream Cycle + evolve" };',
               '  }',
               '};',
             ].join('\n'),

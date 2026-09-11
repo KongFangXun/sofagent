@@ -660,13 +660,13 @@ print_completion_summary
 install_daemon
 log_install_audit
 
-# SkillOpt 自进化引擎（可选）
-# v0.2.0 起 PyPI wheel 已包含 skillopt-sleep CLI（pyproject.toml [project.scripts] 声明）
-# 直装即可：pip install skillopt
+# Evolve 自进化引擎（可选）
+# v0.2.0 起 PyPI wheel 已包含 evolve-sleep CLI（pyproject.toml [project.scripts] 声明）
+# 直装即可：pip install evolve
 # 如需 Claude Code/Codex/Copilot/Devin 集成 shell 或 OpenClaw 适配（仅仓库 plugins/ 目录）：
-#   git clone https://github.com/microsoft/SkillOpt.git ~/SkillOpt
-#   cd ~/SkillOpt && pip install -e ".[all]"
-echo "ℹ️ SkillOpt 自进化引擎（可选）：pip install skillopt（v0.2.0+ 已含 skillopt-sleep CLI）"
+#   git clone https://github.com/microsoft/Evolve.git ~/Evolve
+#   cd ~/Evolve && pip install -e ".[all]"
+echo "ℹ️ Evolve 自进化引擎（可选）：pip install evolve（v0.2.0+ 已含 evolve-sleep CLI）"
 
 # ── v1.1.0: 可选包提示（这些不在自动安装范围内，仅提示）──
 echo ""

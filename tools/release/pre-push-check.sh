@@ -336,7 +336,7 @@ fi
 # 5. sofagent-audit（对应 sofagent-audit.yml）
 # ════════════════════════════════════════
 echo -e "\n${BOLD}── 7. CLI 二进制验证 ──${NC}"
-for bin_name in sofagent-audit sofagent-orchestrator sofagent-daemon sofagent-ontology sofagent-ab-test sofagent-think sofagent-skillopt sofagent-core; do
+for bin_name in sofagent-audit sofagent-orchestrator sofagent-daemon sofagent-ontology sofagent-ab-test sofagent-think sofagent-evolve sofagent-core; do
   pkg=$(echo "$bin_name" | sed 's/sofagent-//')
   if [ -f "engine/$pkg/dist/cli.js" ]; then
     node "engine/$pkg/dist/cli.js" --help >/dev/null 2>&1 && check_pass "$bin_name --help" || check_fail "$bin_name --help"

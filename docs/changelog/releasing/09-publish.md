@@ -292,7 +292,7 @@ fi
 |---|----------|---------|------|
 | 1 | git tag（远端存在且指向发版 commit） | `gh api repos/KongFangXun/sofagent/git/refs/tags/vX.Y.Z --jq '.object.sha'` 对比 `git rev-parse vX.Y.Z^{commit}` | 两 SHA 一致 |
 | 2 | GitHub Release（title + body 可达） | `gh release view vX.Y.Z --json name,isDraft` | name 匹配、isDraft=false |
-| 3 | npm 14 包（audit + mcp 自动，其余 12 手动后） | `for p in audit mcp core daemon eval harness ontology orchestrator rules skillopt think ab-test; do npm view @sofagent/$p version --prefer-online; done` + `npm view @sofagent/load-chain version --prefer-online` + `npm view sofagent version --prefer-online` | 14 项全部 = 本版号（🔴 必加 --prefer-online——裸查询吃缓存会误报漏发） |
+| 3 | npm 14 包（audit + mcp 自动，其余 12 手动后） | `for p in audit mcp core daemon eval harness ontology orchestrator rules evolve think ab-test; do npm view @sofagent/$p version --prefer-online; done` + `npm view @sofagent/load-chain version --prefer-online` + `npm view sofagent version --prefer-online` | 14 项全部 = 本版号（🔴 必加 --prefer-online——裸查询吃缓存会误报漏发） |
 | 4 | 安装入口（README 双语 + bootstrap.sh 的 tag URL 可达） | `grep -rn "refs/tags/v" README.md README.en.md bootstrap.sh` + 逐条 `curl -sI` HTTP 200 | 三处 = 本版 tag 且真实可达 |
 
 > 任何一件不满足 = 发版未完成，当场补（重推 tag / 补 publish / 修 URL），不带病进入收尾。
@@ -437,7 +437,7 @@ npm view @sofagent/mcp@vX.Y.Z version --prefer-online    # 期望返回版本号
 #    「失败实已发布」（发版 session 本地缓存里还是上版）。大包（≥800KB）registry 侧
 #    收录延迟可达 3+ 分钟，对账窗口预留足够，勿据一次裸查询判定失败。
 TARGET_VER=$(node -p "require('./package.json').version")
-for pkg in core daemon eval harness ontology orchestrator rules skillopt think ab-test; do
+for pkg in core daemon eval harness ontology orchestrator rules evolve think ab-test; do
   echo "--- @sofagent/$pkg ---"
   ( cd "engine/$pkg" && npm publish --access public ) > "/tmp/publish-$pkg.log" 2>&1
   RC=$?

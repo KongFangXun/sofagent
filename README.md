@@ -155,7 +155,7 @@ sofagent 不造 Agent——执行能力交给成熟宿主（模型 + 工具 + �
 - **审计**——24 条 git diff 硬证据规则（quick 零配置默认 17 条，扩展 7 条经 config 启用）+ AgentShield 五类配置面静态扫描；审计是强制性的，每次变更必审，违规当场拦截
 - **回溯**——每次审计后自动快照存档，出事一键回到任意快照
 - **沉淀**——审计轨迹、think.md 反思、行业案例蒸馏成可复用知识资产（knowledge/ 知识库 + SKILL 文件；知识沉淀当前为格式管道，内容填充随模型接入推进，见 [LIMITATIONS](./docs/LIMITATIONS.md)）
-- **进化**——think.md 反思 + Dream Cycle + skillopt，消费沉淀的知识资产自动变强（知识沉淀当前为格式管道，内容填充随模型接入推进，见 [LIMITATIONS](./docs/LIMITATIONS.md)）
+- **进化**——think.md 反思 + Dream Cycle + evolve，消费沉淀的知识资产自动变强（知识沉淀当前为格式管道，内容填充随模型接入推进，见 [LIMITATIONS](./docs/LIMITATIONS.md)）
 
 ## 安装
 

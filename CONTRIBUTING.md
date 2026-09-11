@@ -51,7 +51,7 @@ bash install.sh && bash engine/scripts/verify.sh
 
 | 目录 | 内容 |
 |------|------|
-| `engine/` | 13 个 @sofagent/* npm 发布包（`audit` 审计模块 / `core` 底座 / `daemon` 守护 / `orchestrator` 编排 / `mcp` / `rules` / `eval` / `think` / `skillopt` / `ontology` / `harness` / `ab-test` / `hooks/sofagent-load-chain` 加载链 Hook）——全部发布到 npm，12 个含 test script；另有 2 个插件族：`dsh-plugins/`（cordis-plugin-sofagent-* 9 款 DSH 插件）+ `openclaw-plugins/`（OpenClaw code-plugin 4 款） |
+| `engine/` | 13 个 @sofagent/* npm 发布包（`audit` 审计模块 / `core` 底座 / `daemon` 守护 / `orchestrator` 编排 / `mcp` / `rules` / `eval` / `think` / `evolve` / `ontology` / `harness` / `ab-test` / `hooks/sofagent-load-chain` 加载链 Hook）——全部发布到 npm，12 个含 test script；另有 2 个插件族：`dsh-plugins/`（cordis-plugin-sofagent-* 9 款 DSH 插件）+ `openclaw-plugins/`（OpenClaw code-plugin 4 款） |
 | `engine/audit/src/rules/` | 审计规则实现（`rule-a*.ts` A1-A23 + `skill-safety-engine.ts`）；A20 网络外传 / A21 持久化后门 / A22 权限提升 / A23 路径穿越 |
 | `engine/audit/src/` | 审计核心：`audit-trail.ts` 审计轨迹聚合 + `protocol-neutrality.ts` 协议中立声明 |
 | `engine/audit/src/permission/` | 权限配置加载与检查 |

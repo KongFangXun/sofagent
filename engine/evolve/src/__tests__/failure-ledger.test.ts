@@ -83,7 +83,7 @@ describe('failure-ledger', () => {
       expect(lines.length).toBe(3);
     });
 
-    it('自动创建 skillopt 子目录', () => {
+    it('自动创建 evolve 子目录', () => {
       recordFailure(makeRecord('skill-x', 'mode-x'));
       const dir = path.dirname(resolveFailureLedgerPath());
       expect(fs.existsSync(dir)).toBe(true);

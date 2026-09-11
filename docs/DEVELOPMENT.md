@@ -40,7 +40,7 @@
 | Node.js + TypeScript | 审计模块、CLI、MCP Server | ≥18（v1.1.0 起纳入） |
 | [@langchain/langgraph](https://github.com/langchain-ai/langgraph) | 编排模块（createReactAgent）+ Sub Agent 系统 | v1.2.0+（编排模块迁移史：ao→v1.0.6 DeepAgents→v1.2.0 LangGraph createReactAgent；deepagents 已弃用） |
 | [LangGraph.js](https://github.com/langchain-ai/langgraphjs) | 状态图、条件路由、HITL | v1.0.1+ |
-| Python 3 + `pip install skillopt` | Skill 自进化模块（通过 CLI subprocess 调用，可选） | v1.0.3+ |
+| ~~Python 3 + pip install skillopt~~ | 已移除（v1.4.8 起自研 gate 验证器零 Python 依赖，SOFAGENT_EVOLVE_GATE=cli 可回退外部兼容层） | v1.0.3–v1.4.7 |
 | 无其他外部运行时依赖 | — | — |
 
 ### Windows 开发踩坑（PowerShell 移植必读）
@@ -118,7 +118,7 @@ Skill 的核心不是写执行步骤，而是划定**决策边界**。一个好 
 
 ### Skill 生命力与自进化判据
 
-> 本节为 Skill 治理的判据沉淀，供 `skillopt` 自进化模块与 FDE 部署 SOP 调用。
+> 本节为 Skill 治理的判据沉淀，供 `evolve` 自进化模块与 FDE 部署 SOP 调用。
 
 **A1｜Skills 生命力五分类法**（模型越强越要保留的 5 类 Skill）
 
@@ -132,7 +132,7 @@ Skill 的核心不是写执行步骤，而是划定**决策边界**。一个好 
 | 确定性生产型 | 输出须机器可验证固定格式，模型+脚本消除随机性 | discipline-check.sh（焊死的门）+ 审计模块（git diff 硬证据） |
 | 项目知识与组织协作型 | 团队/项目专属长期约定（命名/目录/交付/归档） | SKILL.md + rules.md + 记忆系统（Ralph 路径外化） |
 
-**保留/淘汰判据（skillopt 自进化模块直接套用）**：优先保留上述 5 类；主动淘汰「通用角色扮演 / 泛化流程 / 纯提示词教模型成专家」型 Skill。与 Skill Reducer「少即是多」、A7「先做产物后 Skill」同源，但提供**可操作的分类判据**。
+**保留/淘汰判据（evolve 自进化模块直接套用）**：优先保留上述 5 类；主动淘汰「通用角色扮演 / 泛化流程 / 纯提示词教模型成专家」型 Skill。与 Skill Reducer「少即是多」、A7「先做产物后 Skill」同源，但提供**可操作的分类判据**。
 
 **A2｜Skills 轻量 OS 入口五要素**
 
@@ -160,7 +160,7 @@ FDE 部署 SOP 应遵循此顺序：
 
 **A8｜Skill 质量三维度 + 失败清单**
 
-质量三维度（可补入 skillopt 评分框架）：
+质量三维度（可补入 evolve 评分框架）：
 
 | 维度 | 含义 |
 |------|------|
@@ -168,7 +168,7 @@ FDE 部署 SOP 应遵循此顺序：
 | AI 边界认知 + 代码兜底 | 知道 AI 哪里会出错，用确定性代码兜底 |
 | 产品化思维 | 把经验封装成他人能用的产物 |
 
-**失败清单驱动进化**：Skill 的迭代不是堆功能，是持续记录「这次哪里出了错」→ 形成失败清单 → 下次规避。失败清单是 skillopt 自进化模块的燃料。
+**失败清单驱动进化**：Skill 的迭代不是堆功能，是持续记录「这次哪里出了错」→ 形成失败清单 → 下次规避。失败清单是 evolve 自进化模块的燃料。
 
 **失败清单 > 正向评分**：当前 sofagent scoring 只做正向评分，缺「失败清单」反向维度（与 Evil Skill 自验证闭环同方向）。自进化优先级应让失败清单的反向规避高于正向功能堆砌。
 

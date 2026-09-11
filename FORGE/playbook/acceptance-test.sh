@@ -385,7 +385,7 @@ echo "$AUDIT_OUT" | grep -qE "audit|Audit|deepagents|not found|不可用|启动�
 SUSTAIN_OUT=$(node "$ORCH_CLI_29" subagent run fde --mode sustain --task "echo hello" 2>&1) || true
 echo "$SUSTAIN_OUT" | grep -qE "fde|FDE|sustain|deepagents|not found|不可用|启动失败|未返回结果|已接收任务" && pass "FDE sustain mode 接受了 --mode sustain 参数" || fail "FDE sustain mode 无任何输出: $SUSTAIN_OUT"
 scenario 31 "新包 CLI 烟测（orchestrator/daemon/core/ontology/...）"
-NEW_PKG_OK=true; for pkg in orchestrator daemon core ontology ab-test think skillopt; do
+NEW_PKG_OK=true; for pkg in orchestrator daemon core ontology ab-test think evolve; do
   CLI_JS="engine/$pkg/dist/cli.js"
   if [ -f "$PROJECT_ROOT/$CLI_JS" ]; then
     if node "$PROJECT_ROOT/$CLI_JS" --help >/dev/null 2>&1; then echo "  ✅ sofagent-$pkg --help"
@@ -662,35 +662,35 @@ if $MODE_OK && [ -f "$ORCH_CLI_62" ]; then
   echo "$NO_TASK_OUT" | grep -q "\-\-task\|任务\|task" || { MODE_OK=false; fail "subagent run 缺 --task 未报错"; }
 fi
 $MODE_OK && pass
-SKILLOPT_DIST="$PROJECT_ROOT/engine/skillopt/dist/skillopt-integration.js"
-SKILLOPT_VENV_BIN="${SOFAGENT_SKILLOPT_VENV:-$(dirname "$(which skillopt-cli 2>/dev/null || echo /usr/local/bin/skillopt-cli)")}"
+EVOLVE_DIST="$PROJECT_ROOT/engine/evolve/dist/evolve-integration.js"
+EVOLVE_VENV_BIN="${SOFAGENT_SKILLOPT_VENV:-$(dirname "$(which evolve-cli 2>/dev/null || echo /usr/local/bin/evolve-cli)")}"
 DAEMON_DIST="$PROJECT_ROOT/engine/daemon/dist"
 AUDIT_RULES_INDEX="$PROJECT_ROOT/engine/audit/src/rules/index.ts"
 AUDIT_RULES_TYPES="$PROJECT_ROOT/engine/audit/src/rules/types.ts"
 DEEPAGENTS_MODULES="${SOFAGENT_DEEPAGENTS_MODULES:-$(npm root 2>/dev/null || echo /usr/local/lib/node_modules)}"
-# 编号空洞 S65 归并注：原 S65（skillopt-sleep CLI 可调用验证）已归并本场景族——CLI smoke 断言由本场景第三合一承载（--help usage 输出校验同款），外部 Python 可选依赖未装走 warn 降级（git log -S 逐字可溯）
-scenario 63 "SkillOpt 三合一（可用性 + validateCandidate + CLI smoke）"
-S63_OK=true; require_dist "engine/skillopt/dist/skillopt-integration.js" || S63_OK=false
+# 编号空洞 S65 归并注：原 S65（evolve-sleep CLI 可调用验证）已归并本场景族——CLI smoke 断言由本场景第三合一承载（--help usage 输出校验同款），外部 Python 可选依赖未装走 warn 降级（git log -S 逐字可溯）
+scenario 63 "Evolve 三合一（可用性 + validateCandidate + CLI smoke）"
+S63_OK=true; require_dist "engine/evolve/dist/evolve-integration.js" || S63_OK=false
 if $S63_OK; then
-  export PATH="$SKILLOPT_VENV_BIN:$PATH"
-  S63_RESULT=$(node -e "const { isSkillOptAvailable } = require('$SKILLOPT_DIST'); console.log('typeof:' + typeof isSkillOptAvailable() + '|value:' + isSkillOptAvailable());" 2>&1 || true)
-  echo "$S63_RESULT" | grep -q "typeof:boolean" || { fail "isSkillOptAvailable 未返回 boolean"; S63_OK=false; }
+  export PATH="$EVOLVE_VENV_BIN:$PATH"
+  S63_RESULT=$(node -e "const { isEvolveAvailable } = require('$EVOLVE_DIST'); console.log('typeof:' + typeof isEvolveAvailable() + '|value:' + isEvolveAvailable());" 2>&1 || true)
+  echo "$S63_RESULT" | grep -q "typeof:boolean" || { fail "isEvolveAvailable 未返回 boolean"; S63_OK=false; }
 fi
 $S63_OK && pass
-S64_OK=true; require_dist "engine/skillopt/dist/skillopt-integration.js" || S64_OK=false
+S64_OK=true; require_dist "engine/evolve/dist/evolve-integration.js" || S64_OK=false
 if $S64_OK; then
   ORIG_64=$(mktemp /tmp/s64-orig-XXXX.md); CAND_64=$(mktemp /tmp/s64-cand-XXXX.md)
   node -e "const fs=require('fs'); fs.writeFileSync('$ORIG_64', Array.from({length:10},(_,i)=>'Line '+(i+1)).join('\n')+'\n'); fs.writeFileSync('$CAND_64', Array.from({length:12},(_,i)=>'Line '+(i+1)+(i===0?' modified':'')).join('\n')+'\n');"
-  S64_RESULT=$(node -e "const { validateCandidate } = require('$SKILLOPT_DIST'); console.log(JSON.stringify(validateCandidate('$CAND_64', '$ORIG_64')));" 2>&1 || true)
+  S64_RESULT=$(node -e "const { validateCandidate } = require('$EVOLVE_DIST'); console.log(JSON.stringify(validateCandidate('$CAND_64', '$ORIG_64')));" 2>&1 || true)
   rm -f "$ORIG_64" "$CAND_64"
   echo "$S64_RESULT" | grep -q '"canReplace"' || { fail "validateCandidate 未返回 canReplace 字段"; S64_OK=false; }
 fi
 $S64_OK && pass
-S65_OK=true; export PATH="$SKILLOPT_VENV_BIN:$PATH"
-if command -v skillopt-sleep >/dev/null 2>&1; then
-  S65_HELP=$(skillopt-sleep --help 2>&1 || true)
-  echo "$S65_HELP" | grep -qi "usage\|usage:" || { fail "skillopt-sleep --help 无 usage 输出"; S65_OK=false; }
-else warn "skillopt-sleep 未安装"; fi
+S65_OK=true; export PATH="$EVOLVE_VENV_BIN:$PATH"
+if command -v evolve-sleep >/dev/null 2>&1; then
+  S65_HELP=$(evolve-sleep --help 2>&1 || true)
+  echo "$S65_HELP" | grep -qi "usage\|usage:" || { fail "evolve-sleep --help 无 usage 输出"; S65_OK=false; }
+else warn "evolve-sleep 未安装"; fi
 $S65_OK && pass
 scenario 66 "DeepAgents + runtime.json"
 S66_OK=true; S66_RESULT=$(NODE_PATH="$DEEPAGENTS_MODULES" node -e "try { console.log('resolved:' + require.resolve('deepagents')); } catch (e) { console.log('NOT installed'); }" 2>&1 || true)
@@ -862,15 +862,15 @@ NONGIT=$(mktemp -d /tmp/sofagent-nongit-XXXX); cd "$NONGIT"
 set +e; OUT=$(node "$AUDIT_DIR/dist/index.js" --doctor 2>&1 || true); rc=$?; set -e
 echo "$OUT" | grep -qi "git\|仓库\|repository\|不是.*git\|not a git" || [ "$rc" = "1" ] && pass || fail "非 git 目录未友好报错（rc=${rc}）"
 cd "$PROJECT_ROOT"; rm -rf "$NONGIT"
-scenario 96 "skillopt CLI + sensitivity + knowledge + ActionGovernance"
-SKILLOPT_CLI="$PROJECT_ROOT/engine/skillopt/dist/cli.js"
+scenario 96 "evolve CLI + sensitivity + knowledge + ActionGovernance"
+SKILLOPT_CLI="$PROJECT_ROOT/engine/evolve/dist/cli.js"
 if [ -f "$SKILLOPT_CLI" ]; then
-  SKDIR=$(mktemp -d /tmp/sofagent-skillopt-XXXX)
+  SKDIR=$(mktemp -d /tmp/sofagent-evolve-XXXX)
   printf -- '---\nname: test-skill\ndescription: a test skill\n---\n# Test\n' > "$SKDIR/SKILL.md"
   set +e; OUT=$(node "$SKILLOPT_CLI" check "$SKDIR" 2>&1 || true); rc=$?; set -e
-  [ "$rc" = "0" ] && pass || fail "skillopt check 异常（rc=${rc}）"
+  [ "$rc" = "0" ] && pass || fail "evolve check 异常（rc=${rc}）"
   rm -rf "$SKDIR"
-else warn "skillopt dist 未构建，跳过 skillopt CLI 回归锁"; fi
+else warn "evolve dist 未构建，跳过 evolve CLI 回归锁"; fi
 S97_OK=true; require_dist "engine/core/dist/memory-contract.js" || S97_OK=false
 if $S97_OK; then
   assert_js engine/core/dist/memory-contract.js '
@@ -1035,7 +1035,7 @@ scenario 122 "v1.2.0 物理结构五合一"
 S122_OK=true; [ -d "$PROJECT_ROOT/engine" ] || { fail "engine/ 目录不存在"; S122_OK=false; }
 [ ! -d "$PROJECT_ROOT/sofagent" ] || { fail "sofagent/ 目录仍存在"; S122_OK=false; }
 if $S122_OK; then
-  S122_RESIDUAL=$(grep -rn "sofagent/audit/src\|sofagent/daemon/src\|sofagent/orchestrator/src\|sofagent/core/src\|sofagent/mcp/src\|sofagent/think/src\|sofagent/harness/src\|sofagent/eval/src\|sofagent/ontology/src\|sofagent/rules-engine\|sofagent/ab-test\|sofagent/skillopt" \
+  S122_RESIDUAL=$(grep -rn "sofagent/audit/src\|sofagent/daemon/src\|sofagent/orchestrator/src\|sofagent/core/src\|sofagent/mcp/src\|sofagent/think/src\|sofagent/harness/src\|sofagent/eval/src\|sofagent/ontology/src\|sofagent/rules-engine\|sofagent/ab-test\|sofagent/evolve" \
     "$PROJECT_ROOT" --include="*.ts" --include="*.sh" --include="*.md" --include="*.ps1" --include="*.json" \
     2>/dev/null | grep -v node_modules | grep -v ".workbuddy/" | grep -v "docs/changelog/" | grep -v "docs/archive/" | grep -v "@sofagent/" | grep -v ".sofagent/" | head -5 || true)
   [ -z "$S122_RESIDUAL" ] || { fail "旧路径残留: $S122_RESIDUAL"; S122_OK=false; }
@@ -1453,14 +1453,14 @@ for f in docs/changelog/releasing.md README.md docs/ARCHITECTURE.md; do N=$( { g
 $S166_OK && pass "Markdown 格式完整（无 U+FFFD + 代码块闭合）"
 scenario 167a "v1.2.4 P0 分层巡检——inspector-layers 三层调度器存在 + L1/L2/L3 名称列表"; S167A_OK=true
 [ -f "$PROJECT_ROOT/engine/daemon/dist/inspector-layers.js" ] || { fail "inspector-layers.js 不存在"; S167A_OK=false; }
-node -e "const m=require('$PROJECT_ROOT/engine/daemon/dist/inspector-layers.js');const l1=m.getLayerInspectorNames('L1');const l2=m.getLayerInspectorNames('L2');const l3=m.getLayerInspectorNames('L3');if(!l1.includes('audit-history')||!l1.includes('eval-failures')||!l1.includes('daily-snapshot')){console.log('L1 缺少 inspector');process.exit(1);}if(!l2.includes('skillopt-trigger')||!l2.includes('trend-aggregator')){console.log('L2 缺少 inspector');process.exit(1);}if(!l3.includes('federation-distillation')||!l3.includes('failure-pattern')||!l3.includes('ontology-coverage')){console.log('L3 缺少 inspector');process.exit(1);}console.log('OK');" >/dev/null 2>&1 || { fail "分层巡检 inspector 列表不完整"; S167A_OK=false; }
-$S167A_OK && pass "分层巡检 L1/L2/L3 三层调度器完整（含 eval-failures/daily-snapshot/skillopt-trigger/trend-aggregator/L3 三新）"
+node -e "const m=require('$PROJECT_ROOT/engine/daemon/dist/inspector-layers.js');const l1=m.getLayerInspectorNames('L1');const l2=m.getLayerInspectorNames('L2');const l3=m.getLayerInspectorNames('L3');if(!l1.includes('audit-history')||!l1.includes('eval-failures')||!l1.includes('daily-snapshot')){console.log('L1 缺少 inspector');process.exit(1);}if(!l2.includes('evolve-trigger')||!l2.includes('trend-aggregator')){console.log('L2 缺少 inspector');process.exit(1);}if(!l3.includes('federation-distillation')||!l3.includes('failure-pattern')||!l3.includes('ontology-coverage')){console.log('L3 缺少 inspector');process.exit(1);}console.log('OK');" >/dev/null 2>&1 || { fail "分层巡检 inspector 列表不完整"; S167A_OK=false; }
+$S167A_OK && pass "分层巡检 L1/L2/L3 三层调度器完整（含 eval-failures/daily-snapshot/evolve-trigger/trend-aggregator/L3 三新）"
 scenario 167b "v1.2.4 P0 修复预存 bug——runInspectors 含 data-sovereignty 三档"; S167B_OK=true
 node -e "const m=require('$PROJECT_ROOT/engine/daemon/dist/inspectors/index.js');const src=require('fs').readFileSync('$PROJECT_ROOT/engine/daemon/src/inspectors/index.ts','utf8');if(!src.includes('generateDataSovereigntyDaily(projectDir)')||!src.includes('generateDataSovereigntyWeekly(projectDir)')||!src.includes('generateDataSovereigntyMonthly(projectDir)')){console.log('runInspectors 未调 data-sovereignty');process.exit(1);}console.log('OK');" >/dev/null 2>&1 || { fail "runInspectors 未修复 data-sovereignty 漏调"; S167B_OK=false; }
 $S167B_OK && pass "runInspectors 修复 data-sovereignty 三档漏调（v1.2.4 P0 预存 bug）"
-scenario 168 "v1.2.4 P1 skillopt optimize() API 存在 + failure-ledger 导出"; S168_OK=true
-node -e "const m=require('$PROJECT_ROOT/engine/skillopt/dist/index.js');if(typeof m.optimize!=='function'){console.log('optimize 不存在');process.exit(1);}if(typeof m.recordFailure!=='function'){console.log('recordFailure 不存在');process.exit(1);}if(typeof m.getFailurePatterns!=='function'){console.log('getFailurePatterns 不存在');process.exit(1);}if(typeof m.getRepeatedFailures!=='function'){console.log('getRepeatedFailures 不存在');process.exit(1);}if(m.AUTO_TRIGGER_THRESHOLD!==3){console.log('阈值不对');process.exit(1);}console.log('OK');" >/dev/null 2>&1 || { fail "skillopt optimize()/failure-ledger API 不完整"; S168_OK=false; }
-$S168_OK && pass "skillopt optimize() + failure-ledger API 完整（optimize/recordFailure/getRepeatedFailures/阈值=3）"
+scenario 168 "v1.2.4 P1 evolve optimize() API 存在 + failure-ledger 导出"; S168_OK=true
+node -e "const m=require('$PROJECT_ROOT/engine/evolve/dist/index.js');if(typeof m.optimize!=='function'){console.log('optimize 不存在');process.exit(1);}if(typeof m.recordFailure!=='function'){console.log('recordFailure 不存在');process.exit(1);}if(typeof m.getFailurePatterns!=='function'){console.log('getFailurePatterns 不存在');process.exit(1);}if(typeof m.getRepeatedFailures!=='function'){console.log('getRepeatedFailures 不存在');process.exit(1);}if(m.AUTO_TRIGGER_THRESHOLD!==3){console.log('阈值不对');process.exit(1);}console.log('OK');" >/dev/null 2>&1 || { fail "evolve optimize()/failure-ledger API 不完整"; S168_OK=false; }
+$S168_OK && pass "evolve optimize() + failure-ledger API 完整（optimize/recordFailure/getRepeatedFailures/阈值=3）"
 scenario 169 "v1.2.4 P1b Dashboard --trend 模式——参数解析 + trend 渲染函数"; S169_OK=true
 DASH169="$PROJECT_ROOT/tools/dashboard/sofagent-dashboard.sh"
 grep -q '\-\-trend' "$DASH169" || { fail "sofagent-dashboard.sh 缺少 --trend 参数"; S169_OK=false; }

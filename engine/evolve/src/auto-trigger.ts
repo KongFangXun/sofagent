@@ -1,16 +1,16 @@
 // ============================================================
-// skillopt/auto-trigger.ts · 失败模式监测 + 自动触发优化（v1.4.7 · P1）
+// evolve/auto-trigger.ts · 失败模式监测 + 自动触发优化（v1.4.7 · P1）
 // ============================================================
 //
-// 核心逻辑：连续 ≥3 次同类失败 → 自动触发 skillopt 优化。
+// 核心逻辑：连续 ≥3 次同类失败 → 自动触发 evolve 优化。
 //
 // 优化路径：
 //   1. 从 failure-ledger 获取失败聚类
-//   2. count ≥ 3 → 调用 runSkillOpt（就地演化）
+//   2. count ≥ 3 → 调用 runEvolve（就地演化）
 //   3. validateCandidate 校验候选 Skill
 //   4. 返回优化结果
 //
-// optimize() 是本版本新建的核心 API（skillopt 之前无此函数）。
+// optimize() 是本版本新建的核心 API（evolve 之前无此函数）。
 // ============================================================
 
 import {
@@ -21,12 +21,12 @@ import {
   type FailurePattern,
 } from './failure-ledger';
 import {
-  runSkillOpt,
+  runEvolve,
   validateCandidate,
-  isSkillOptAvailable,
-  type SkillOptResult,
+  isEvolveAvailable,
+  type EvolveResult,
   type ValidationResult,
-} from './skillopt-integration';
+} from './evolve-integration';
 
 /** 自动触发阈值：连续同类失败次数 ≥ 此值 */
 export const AUTO_TRIGGER_THRESHOLD = 3;
@@ -53,8 +53,8 @@ export interface OptimizeResult {
   skillId: string;
   /** 失败模式 */
   failureMode: string;
-  /** SkillOpt 运行结果（如果触发） */
-  skillOptResult?: SkillOptResult;
+  /** Evolve 运行结果（如果触发） */
+  skillOptResult?: EvolveResult;
   /** 验证结果（如果触发） */
   validationResult?: ValidationResult;
   /** 跳过原因（未触发时） */
@@ -64,7 +64,7 @@ export interface OptimizeResult {
 /**
  * 新建的核心 API：基于失败清单驱动 Skill 优化
  *
- * 记录失败 → 查连续次数 → ≥3 次自动触发 runSkillOpt → validateCandidate
+ * 记录失败 → 查连续次数 → ≥3 次自动触发 runEvolve → validateCandidate
  *
  * @param input 优化输入
  * @returns 优化结果
@@ -99,22 +99,22 @@ export async function optimize(input: OptimizeInput): Promise<OptimizeResult> {
     };
   }
 
-  // 4. 达到阈值 → 检查 skillopt-sleep 可用性
-  if (!isSkillOptAvailable()) {
+  // 4. 达到阈值 → 检查 evolve-gate（v1.4.8 自研） 可用性
+  if (!isEvolveAvailable()) {
     return {
       triggered: false,
       skillId: input.skillId,
       failureMode: input.failureMode,
-      skipReason: 'skillopt-sleep CLI 不可用（未安装或不在 PATH 中）',
+      skipReason: 'evolve-gate（v1.4.8 自研） CLI 不可用（未安装或不在 PATH 中）',
     };
   }
 
-  // 5. 运行 SkillOpt（就地演化）
+  // 5. 运行 Evolve（就地演化）
   const skillPath = input.skillId.includes('/')
     ? input.skillId
     : `${input.skillId}/SKILL.md`;
 
-  const skillOptResult = runSkillOpt(skillPath);
+  const skillOptResult = runEvolve(skillPath);
 
   if (!skillOptResult.success) {
     return {
@@ -122,7 +122,7 @@ export async function optimize(input: OptimizeInput): Promise<OptimizeResult> {
       skillId: input.skillId,
       failureMode: input.failureMode,
       skillOptResult,
-      skipReason: `SkillOpt 运行失败：${skillOptResult.error ?? '未知错误'}`,
+      skipReason: `Evolve 运行失败：${skillOptResult.error ?? '未知错误'}`,
     };
   }
 
@@ -133,7 +133,7 @@ export async function optimize(input: OptimizeInput): Promise<OptimizeResult> {
     // 此处只验证候选存在性 + 大小合理
     validationResult = {
       canReplace: true,
-      reason: 'SkillOpt 就地演化完成，候选已写入',
+      reason: 'Evolve 就地演化完成，候选已写入',
     };
   }
 
@@ -149,7 +149,7 @@ export async function optimize(input: OptimizeInput): Promise<OptimizeResult> {
 /**
  * 批量检查所有失败聚类，对 ≥ 阈值的逐个触发 optimize
  *
- * 供 daemon @weekly inspector（skillopt-trigger）调用。
+ * 供 daemon @weekly inspector（evolve-trigger）调用。
  *
  * @returns 所有触发的优化结果
  */

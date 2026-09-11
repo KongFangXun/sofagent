@@ -47,7 +47,7 @@
 } from '@sofagent/core';
 /* @public */ export type { SnapshotEntry } from '@sofagent/core';
 
-// ── Skill 安全审查（v1.1.3: 供 @sofagent/skillopt 等外部包使用） ──
+// ── Skill 安全审查（v1.1.3: 供 @sofagent/evolve 等外部包使用） ──
 /* @public */ export { findFiles, scanFile } from './rules/skill-safety-engine';
 /* @public */ export { COMPILED_RULES, SCANNABLE_EXTENSIONS, VERSION as SKILL_SAFETY_VERSION } from './rules/skill-safety-rules';
 /* @public */ export type { SafetyHit, SafetyRule, SafetyResult } from './rules/skill-safety-rules';

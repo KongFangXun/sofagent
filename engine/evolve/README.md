@@ -1,14 +1,14 @@
-# @sofagent/skillopt
+# @sofagent/evolve
 
 sofagent Skill 优化引擎——Skill 质量分析、安全审查、优化建议、自动重构。
 
 ## 安装
 
 ```bash
-npm install -g @sofagent/skillopt
+npm install -g @sofagent/evolve
 ```
 
-安装后获得 `sofagent-skillopt` 命令。Node.js 18+。
+安装后获得 `sofagent-evolve` 命令。Node.js 18+。
 
 ## API
 
@@ -18,5 +18,5 @@ npm install -g @sofagent/skillopt
 
 ## 文档
 
-- [架构总览](../../docs/ARCHITECTURE.md) — skillopt 在约束层中的位置
+- [架构总览](../../docs/ARCHITECTURE.md) — evolve 在约束层中的位置
 - [使用手册（WIKI）](../../docs/WIKI.md) — 面向 FDE 的完整用法

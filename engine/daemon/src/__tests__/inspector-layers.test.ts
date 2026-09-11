@@ -81,7 +81,7 @@ describe('inspector-layers', () => {
 
     it('L2 包含 v1.2.4 新增 inspector', () => {
       const names = getLayerInspectorNames('L2');
-      expect(names).toContain('skillopt-trigger');
+      expect(names).toContain('evolve-trigger');
       expect(names).toContain('trend-aggregator');
     });
 

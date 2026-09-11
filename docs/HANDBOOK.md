@@ -107,7 +107,7 @@
 | 🔍 模块① | **审计模块**（audit） | git diff → 24 条规则硬扫描，违规当场拦 | git commit / daemon 文件变更 |
 | 🔄 模块② | **回溯模块**（core） | 审计后自动快照，出事一键回滚 | 审计完成后自动 |
 | ⚙️ 内部工具 | **FORGE 工具链**（orchestrator） | LOOP 流水线（项目自迭代用，非对外模块） | CLI compose tool |
-| 🧬 模块③ | **进化模块**（think.md 反思 + Dream Cycle 知识回灌 + skillopt Skill 优化；eval/ab-test 为评估支撑；由 daemon 定时驱动） | 知识沉淀 + 反思 + 自优化，沉淀机制随使用迭代 | daemon cron / 手动触发 |
+| 🧬 模块③ | **进化模块**（think.md 反思 + Dream Cycle 知识回灌 + evolve Skill 优化；eval/ab-test 为评估支撑；由 daemon 定时驱动） | 知识沉淀 + 反思 + 自优化，沉淀机制随使用迭代 | daemon cron / 手动触发 |
 
 **层 2 · 生命周期（激活链，v1.2.5+ Phase 1-4 已交付）**：
 
@@ -714,7 +714,7 @@ sofagent 不是孤立的——它构建于以下成熟项目之上，各司其�
 | [LangChain](https://github.com/langchain-ai/langchainjs) + [LangGraph](https://github.com/langchain-ai/langgraphjs) | 编排模块——状态图、条件路由、HITL、持久化 | v1.0.1 |
 | [@langchain/langgraph](https://github.com/langchain-ai/langgraph) | Sub Agent 系统（createReactAgent）——FDE Sub Agent + Audit Sub Agent | v1.0.1（v1.2.0 从 deepagents 迁移） |
 | [Agency Agents](https://github.com/msitarzewski/agency-agents) | 230+ 岗位模板——Sub Agent 角色定义 | v1.0.3 |
-| [微软 SkillOpt](https://github.com/microsoft/SkillOpt) | Skill 自进化模块——训练→验证→替换 | v1.0.3 |
+| ~~微软 SkillOpt~~（v1.4.8 起摘除） | 历史依赖——自研 gate 验证器替代（@sofagent/evolve） | v1.0.3–v1.4.7 |
 | [OpenFDE](https://open-fde.com) | 行业定位验证——10 步业务流 + 8 维能力模型 | v1.0 |
 | [Palantir Ontology](https://www.palantir.com/platforms/aip/) | 企业世界模型——实体+关系+动作+约束 | v1.0.1-v1.0.5 |
 

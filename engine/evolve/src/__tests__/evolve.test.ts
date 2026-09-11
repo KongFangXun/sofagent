@@ -1,5 +1,5 @@
 // ============================================================
-// skillopt.test.ts · SkillOpt 集成测试
+// evolve.test.ts · Evolve 集成测试
 // v1.1.0 新增
 // ============================================================
 
@@ -9,13 +9,13 @@ import * as path from 'path';
 import * as os from 'os';
 import { scanSkillSafety } from '../skill-safety-check';
 import { findFiles } from '@sofagent/audit';
-import { isSkillOptAvailable } from '../skillopt-integration';
+import { isEvolveAvailable } from '../evolve-integration';
 
 describe('scanSkillSafety', () => {
   let tmpDir: string;
 
   beforeEach(() => {
-    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'sofagent-skillopt-'));
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'sofagent-evolve-'));
   });
 
   afterEach(() => {
@@ -63,7 +63,7 @@ describe('findFiles', () => {
   let tmpDir: string;
 
   beforeEach(() => {
-    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'sofagent-skillopt-'));
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'sofagent-evolve-'));
   });
 
   afterEach(() => {
@@ -80,9 +80,9 @@ describe('findFiles', () => {
   });
 });
 
-describe('isSkillOptAvailable', () => {
+describe('isEvolveAvailable', () => {
   it('返回 boolean', () => {
-    const result = isSkillOptAvailable();
+    const result = isEvolveAvailable();
     expect(typeof result).toBe('boolean');
   });
 });

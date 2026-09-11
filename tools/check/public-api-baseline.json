@@ -566,7 +566,7 @@
         "runEval"
       ]
     },
-    "@sofagent/skillopt": {
+    "@sofagent/evolve": {
       "version": "1.4.6",
       "symbols": [
         "AUTO_TRIGGER_THRESHOLD",

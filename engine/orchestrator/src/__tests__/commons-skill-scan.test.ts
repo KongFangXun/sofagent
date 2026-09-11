@@ -18,7 +18,7 @@ import {
   scanForInstall,
   mapSafetyResult,
 } from '../commons/skill-scan';
-import type { SafetyResult } from '@sofagent/skillopt';
+import type { SafetyResult } from '@sofagent/evolve';
 
 function tmpDir(): string {
   const dir = join(tmpdir(), `sofagent-skillscan-test-${Date.now()}-${randomBytes(4).toString('hex')}`);

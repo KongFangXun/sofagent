@@ -6,10 +6,10 @@
 //   - 读 {data}/audit/history.jsonl
 //   - 提取近 30 天 exitCode=2（FAIL）+ engine=loop-graph-blocked 的记录
 //   - 按 task 中的关键词（skillId / 规则编号 / 文件路径）聚类
-//   - 重复出现 ≥3 次的聚类 → warning（P1 skillopt 的输入）
+//   - 重复出现 ≥3 次的聚类 → warning（P1 evolve 的输入）
 //
 // 产出格式：返回 InspectorResult，message 含聚类摘要。
-// P1 的 skillopt-trigger inspector 会消费本 inspector 的聚类数据。
+// P1 的 evolve-trigger inspector 会消费本 inspector 的聚类数据。
 // ============================================================
 
 import { existsSync, readFileSync } from 'fs';
@@ -123,7 +123,7 @@ export function runFailurePattern(projectDir: string): InspectorResult {
   // 排序：次数降序
   const sortedClusters = [...clusters.values()].sort((a, b) => b.count - a.count);
 
-  // 重复 ≥3 次的聚类（P1 skillopt 的输入）
+  // 重复 ≥3 次的聚类（P1 evolve 的输入）
   const repeated = sortedClusters.filter((c) => c.count >= 3);
   const triggered = repeated.length > 0;
 
@@ -138,7 +138,7 @@ export function runFailurePattern(projectDir: string): InspectorResult {
     message:
       `失败模式聚类（近 30 天）：${clusters.size} 种模式` +
       (repeated.length > 0
-        ? ` · 重复 ≥3 次 ${repeated.length} 种（skillopt 候选）：${repeated.map((c) => c.key).join(', ')}`
+        ? ` · 重复 ≥3 次 ${repeated.length} 种（evolve 候选）：${repeated.map((c) => c.key).join(', ')}`
         : '') +
       ` · TOP: ${topPatterns}`,
     severity: triggered ? 'warning' : 'info',
@@ -146,7 +146,7 @@ export function runFailurePattern(projectDir: string): InspectorResult {
 }
 
 /**
- * 导出失败聚类数据（供 P1 skillopt-trigger inspector 消费）
+ * 导出失败聚类数据（供 P1 evolve-trigger inspector 消费）
  */
 export function getFailureClusters(projectDir: string): FailureCluster[] {
   const result = runFailurePattern(projectDir);

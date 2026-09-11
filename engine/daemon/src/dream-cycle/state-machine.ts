@@ -38,7 +38,7 @@ import { extractFacts } from './extract-facts';
 import { extractAtoms } from './extract-atoms';
 import { clusterPatterns } from './cluster-patterns';
 import { synthesizeConcepts } from './synthesize-concepts';
-import { skilloptBackfill } from './skillopt-backfill';
+import { evolveBackfill } from './evolve-backfill';
 import { embedConcepts } from './embed';
 
 /** state.md 文件名（断点游标持久化） */
@@ -194,7 +194,7 @@ function appendWeeklyLog(
  *   显式注入 → 'real' 语义（测试注入 MockLLM 时仍标 mock 由调用方控制）；
  *   缺省解析 → 随 createDefaultProvider 结果）
  * @param opts.ledger 可选 Ledger 注入（测试用；缺省从磁盘读）
- * @param opts.backfillHook 可选 skillopt backfill 钩子注入（测试 mock 验证用）
+ * @param opts.backfillHook 可选 evolve backfill 钩子注入（测试 mock 验证用）
  */
 export async function runDreamCycle(
   projectDir: string,
@@ -270,8 +270,8 @@ export async function runDreamCycle(
           concepts = await synthesizeConcepts(patterns, atoms, llm, projectDir);
           result.counts.concepts = concepts.length;
           break;
-        case 'skillopt_backfill':
-          await skilloptBackfill(concepts, llm, opts?.backfillHook);
+        case 'evolve_backfill':
+          await evolveBackfill(concepts, llm, opts?.backfillHook);
           break;
         case 'embed':
           embeddings = await embedConcepts(concepts, llm);

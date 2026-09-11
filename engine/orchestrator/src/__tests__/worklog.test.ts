@@ -29,7 +29,7 @@ describe('WorklogAggregator · 三源聚合', () => {
 
   beforeEach(() => {
     dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'sofagent-worklog-'));
-    // skillopt failure-ledger 的数据目录也走 SOFAGENT_DATA——一并隔离（防读到仓库真实 ledger）
+    // evolve failure-ledger 的数据目录也走 SOFAGENT_DATA——一并隔离（防读到仓库真实 ledger）
     prevDataEnv = process.env.SOFAGENT_DATA;
     process.env.SOFAGENT_DATA = dataDir;
     const auditDir = path.join(dataDir, 'audit');

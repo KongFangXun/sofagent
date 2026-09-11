@@ -11,7 +11,7 @@
 // ③ LLM trace llm-calls.jsonl——模型调用级：ts/agentId/taskId/tokenInput/
 //    tokenOutput/durationMs（HMAC 链）
 //    → 消费面：模型调用耗时、token、成本估算
-// ④ failure-ledger.jsonl（skillopt）——错题复发率
+// ④ failure-ledger.jsonl（evolve）——错题复发率
 // ⑤ ab-test latest.json——AB 胜负（曲线历史有限，latest + 旧 ab-history.jsonl 兼容读）
 //
 // 节点耗时口径（如实标注，两种）：
@@ -434,16 +434,16 @@ export class WorklogAggregator {
     let repeatedPatterns = 0;
     let totalPatterns = 0;
     try {
-      // 动态 require 避免包间循环依赖（orchestrator 不依赖 skillopt）
+      // 动态 require 避免包间循环依赖（orchestrator 不依赖 evolve）
       // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const skillopt = require('@sofagent/skillopt') as {
+      const evolve = require('@sofagent/evolve') as {
         getFailurePatterns?: () => Array<{ occurrenceCount?: number }>;
       };
-      const patterns = skillopt.getFailurePatterns?.() ?? [];
+      const patterns = evolve.getFailurePatterns?.() ?? [];
       totalPatterns = patterns.length;
       repeatedPatterns = patterns.filter((p) => (p.occurrenceCount ?? 0) >= 3).length;
     } catch {
-      // skillopt 不可用（数据目录缺失等）——复发率 null，不臆造
+      // evolve 不可用（数据目录缺失等）——复发率 null，不臆造
     }
 
     // 三、AB 胜负曲线（latest.json）

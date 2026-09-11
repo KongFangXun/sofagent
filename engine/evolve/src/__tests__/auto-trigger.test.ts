@@ -5,8 +5,8 @@
 // 覆盖：
 // - AUTO_TRIGGER_THRESHOLD 常量值 = 3
 // - optimize()：失败 < 3 次不触发（返回 skipReason）
-// - optimize()：失败 >= 3 次尝试触发（检查 isSkillOptAvailable）
-// - optimize()：skillopt-sleep 不可用时跳过
+// - optimize()：失败 >= 3 次尝试触发（检查 isEvolveAvailable）
+// - optimize()：evolve-gate（v1.4.8 自研） 不可用时跳过
 // - getPendingTriggerCount：统计待触发聚类数
 // ============================================================
 
@@ -15,10 +15,10 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 
-// Mock skillopt-integration（隔离 CLI subprocess 调用）
-vi.mock('../skillopt-integration', () => ({
-  isSkillOptAvailable: vi.fn(() => false),
-  runSkillOpt: vi.fn(() => ({ success: false, error: 'mocked' })),
+// Mock evolve-integration（隔离 CLI subprocess 调用）
+vi.mock('../evolve-integration', () => ({
+  isEvolveAvailable: vi.fn(() => false),
+  runEvolve: vi.fn(() => ({ success: false, error: 'mocked' })),
   validateCandidate: vi.fn(() => ({ canReplace: false, reason: 'mocked' })),
 }));
 
@@ -31,7 +31,7 @@ import {
   recordFailure,
   clearFailureCache,
 } from '../failure-ledger';
-import { isSkillOptAvailable } from '../skillopt-integration';
+import { isEvolveAvailable } from '../evolve-integration';
 
 describe('auto-trigger', () => {
   let tmpDir: string;
@@ -42,7 +42,7 @@ describe('auto-trigger', () => {
     originalData = process.env.SOFAGENT_DATA;
     vi.stubEnv('SOFAGENT_DATA', tmpDir);
     clearFailureCache();
-    vi.mocked(isSkillOptAvailable).mockReturnValue(false);
+    vi.mocked(isEvolveAvailable).mockReturnValue(false);
   });
 
   afterEach(() => {
@@ -97,7 +97,7 @@ describe('auto-trigger', () => {
   });
 
   // ════════════════════════════════════════
-  // optimize() — 达到阈值但 skillopt 不可用
+  // optimize() — 达到阈值但 evolve 不可用
   // ════════════════════════════════════════
 
   describe('optimize — 达阈值但 CLI 不可用', () => {
@@ -113,7 +113,7 @@ describe('auto-trigger', () => {
         });
       }
       // optimize 记录第 3 次 → 达到阈值
-      vi.mocked(isSkillOptAvailable).mockReturnValue(false);
+      vi.mocked(isEvolveAvailable).mockReturnValue(false);
 
       const result = await optimize({
         skillId: 'skill-a',
@@ -140,9 +140,9 @@ describe('auto-trigger', () => {
         });
       }
 
-      vi.mocked(isSkillOptAvailable).mockReturnValue(true);
-      const { runSkillOpt } = await import('../skillopt-integration');
-      vi.mocked(runSkillOpt).mockReturnValue({
+      vi.mocked(isEvolveAvailable).mockReturnValue(true);
+      const { runEvolve } = await import('../evolve-integration');
+      vi.mocked(runEvolve).mockReturnValue({
         success: true,
         candidatePath: '/tmp/candidate.md',
       });
@@ -156,7 +156,7 @@ describe('auto-trigger', () => {
       expect(result.skillOptResult?.success).toBe(true);
     });
 
-    it('CLI 可用但 runSkillOpt 失败：triggered=true 但含 skipReason', async () => {
+    it('CLI 可用但 runEvolve 失败：triggered=true 但含 skipReason', async () => {
       for (let i = 0; i < 2; i++) {
         recordFailure({
           timestamp: `2025-01-0${i + 1}T00:00:00Z`,
@@ -167,9 +167,9 @@ describe('auto-trigger', () => {
         });
       }
 
-      vi.mocked(isSkillOptAvailable).mockReturnValue(true);
-      const { runSkillOpt } = await import('../skillopt-integration');
-      vi.mocked(runSkillOpt).mockReturnValue({
+      vi.mocked(isEvolveAvailable).mockReturnValue(true);
+      const { runEvolve } = await import('../evolve-integration');
+      vi.mocked(runEvolve).mockReturnValue({
         success: false,
         error: 'CLI crash',
       });
