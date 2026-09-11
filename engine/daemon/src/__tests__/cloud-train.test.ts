@@ -24,13 +24,23 @@ import type { TrainChannel, ChannelStatusResult } from '@sofagent/orchestrator';
 
 // ── 测试基建 ──
 let dataDir: string;
+let savedKeyPath: string | undefined;
 
 beforeEach(() => {
   dataDir = mkdtempSync(join(tmpdir(), 'sofagent-cloud-train-'));
+  // HMAC 密钥纪律（对齐 retention-policy.test.ts 惯例）：SOFAGENT_KEY_PATH 指向
+  // 临时密钥——audit 链条目的 hmacSig 仅在 getHmacKey() 非空时写入，若不设则本测试
+  // 依赖宿主环境的 ~/.sofagent-key（干净 CI 无密钥 → hmacSig undefined → 假失败）。
+  // 绝不触碰真实 ~/.sofagent-key；A2 纪律：测试值全中性占位。
+  savedKeyPath = process.env.SOFAGENT_KEY_PATH;
+  process.env.SOFAGENT_KEY_PATH = join(dataDir, 'test-hmac-key');
+  writeFileSync(process.env.SOFAGENT_KEY_PATH, 'test-cloud-train-key-0123456789abcdef');
 });
 
 afterEach(() => {
   rmSync(dataDir, { recursive: true, force: true });
+  if (savedKeyPath === undefined) delete process.env.SOFAGENT_KEY_PATH;
+  else process.env.SOFAGENT_KEY_PATH = savedKeyPath;
 });
 
 /** fake channel：脚本化状态序列（零真实网络） */
