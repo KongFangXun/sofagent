@@ -2,7 +2,7 @@
 
 > **用途**：每次发版前跑一遍，确认之前修过的问题没有回退。发现新问题用 [fresh-eyes-review](./fresh-eyes-review.md)。审查范围：全仓库状态检查（不是只看增量）。
 > **编号规则**：归并项直接删除、编号不复用；维度演进与归并的完整历史 `git log -p` 可溯，本清单只维护当前状态。
-> **当前 98 维 · 编号 1-135 · 36 个编号已归并删除**。维度流连续不中断，分组导航：基线组 → 审查约束组 → 环境敏感组（前置 vitest/沙箱铁律）。
+> **当前 98 维 · 编号 1-136 · 37 个编号已归并删除**。维度流连续不中断，分组导航：基线组 → 审查约束组 → 环境敏感组（前置 vitest/沙箱铁律）。
 
 ## 🔒 维护公约（防膨胀铁律）
 
@@ -1750,7 +1750,7 @@ grep -q "cursor" install.sh && grep -q "cursor" engine/scripts/uninstall.sh && g
 grep -q "assertPerspectivesMatchPlaybook" tools/gen/gen-fresh-eyes-draft.mjs && echo "✅ PERSPECTIVES 双清单对账自检在位" || echo "❌ 16 视角双清单漂移防线丢失"
 ```
 
-#### 133. v1.4.7 新功能审查面——商业平台接口版交付锚点一维收口（阶段四来源提取 A 类 · 46 锚点十组）
+#### 133. v1.4.7 审查面与修复批一维收口——新功能 46 锚点 + bugfix/质量循环防复发（阶段四来源 A 类 + #134 归并：断言零删减，git log -p 可溯）十组）
 
 > 商业平台接口版十组交付的静态一致性快查（执行级验证已由包内单测锁：gap-analyzer / pr-store / visibility / workflow-container / train-channel / cloud-train / data-paths / audit-reducer / onboard-prompt；此处分钟级 grep）。**块级退出码防御**：子项行尾 `|| echo "❌"` 的 echo 恒 0 吞失败——整块包子 shell + tee 落盘 + 尾部 ❌ 扫描定 exit。
 
@@ -1777,23 +1777,12 @@ git grep -q "SOFAGENT_MCP_ROLES" -- docs/API.md && grep -q "reduceAuditHistory" 
 for s in createSshTrainChannel chainDualChannelEvent gateDataPush; do grep -q "$s" tools/check/check-unwired-exports.sh || echo "❌ $s 未登记监控表"; done; echo "✅ 接线登记机制（上方零失败）") 2>&1 | tee "/tmp/regress-dim133-$$.log"; grep -q "❌" "/tmp/regress-dim133-$$.log" && { rm -f "/tmp/regress-dim133-$$.log"; echo "维度133收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim133-$$.log"; echo "维度133收口:PASS"
 ```
 
-#### 134. v1.4.7 修复批防复发——bugfix 30 commit + 质量循环 6 commit 一维收口（阶段四来源提取 B 类 · 与 #133 同源十组已合流不重复）
 
-> 两批修复的防复发锚点。与 #133 同源的十组（PR 域写回/真判定/权限/上界、云通道登记、G8 执行链、npm 双源、tenantId 口径、stop() 止损）已合流计一次；行为面由包内单测锁。
+#### 136. 依赖方向架构测试防复发——13 包边界清单 + 注入自测三态（v1.4.8 第七章）
+
+> build 序列 13 包五层（核心 harness/core ← 领域 ont/rules ← 约束 audit/eval/think/evolve ← 编排 orch/daemon ← 展示 ab/mcp/load-chain）。三态实测：干净绿 / 注入 core→orchestrator 红 / 还原绿。
 
 ```bash
-(# a: 质量循环修复批行为面单测可达性（PR 域/云通道/可见性/上岗 prompt/租户）
-for f in engine/audit/src/__tests__/pr-store.test.ts engine/daemon/src/__tests__/cloud-train.test.ts engine/orchestrator/src/__tests__/visibility.test.ts engine/mcp/src/__tests__/onboard-prompt.test.ts engine/core/src/__tests__/data-paths.test.ts; do test -f "$f" || echo "❌ $f 缺失"; done; echo "✅ 质量批单测在位（上方零失败）"
-# b: 门禁含故障注入自检 + AR 基线门禁在位（防门禁假绿）
-grep -q "inject" tools/check/check-guards.sh && git grep -q "public-api-baseline" -- tools/check/ && echo "✅ 门禁注入自检 + AR 基线门禁" || echo "❌ 门禁有效性防线缺失"
-# c: 安装链钉定 + 克隆树哈希自锚（bootstrap 完整性）
-grep -q "SOFAGENT_INSTALL_SHA256" bootstrap.sh && grep -qE 'clone --depth 1 --branch' install.sh && echo "✅ 安装链钉定 + 自锚" || echo "❌ 完整性链断（tag 与执行面脱钩）"
-# d: 执行面收口三件 + L2 巡检观测性收口（outbox 兜底排水 + 巡检落账不静默）
-git grep -q "drainOutbox" -- engine/ && git grep -q "recordInspectorSuccess" -- engine/ && echo "✅ 排水 + 巡检落痕在位" || echo "❌ 执行链/落痕缺口"
-# e: 杂项收口十二项（共享模块收口——原子写不再各处私有复制）
-git grep -q "atomicWriteSync" -- engine/core/src/ && echo "✅ atomicWriteSync 收口 core" || echo "❌ 原子写私有复制回潮"
-# f: 翻牌全文扫描（发版前口径收口——v1.4.7 翻牌五文档核心两处零残留；HANDBOOK/ROADMAP 状态行属阶段六同步范围）
-git grep -nE "排期 v1\.4\.7" -- SECURITY.md LIMITATIONS.md | grep -q . && echo "❌ 翻牌残留（排期 v1.4.7 未清）" || echo "✅ 翻牌无同义残留"
-# g: 跨版账链注明（测试数换基可追溯）
-grep -qE "4107\s*=\s*4088|4088\s*\+\s*19" docs/changelog/v1.4/v1.4.7.md && echo "✅ 跨版账链注明" || echo "❌ 跨版基线未注明") 2>&1 | tee "/tmp/regress-dim134-$$.log"; grep -q "❌" "/tmp/regress-dim134-$$.log" && { rm -f "/tmp/regress-dim134-$$.log"; echo "维度134收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim134-$$.log"; echo "维度134收口:PASS"
+bash tools/check/dependency-direction.sh > /dev/null 2>&1 && echo "✅ 13 包方向合法" || echo "❌ 有违规边"  # a: 门禁干净态
+[ -f tools/check/dependency-direction.yml ] && grep -q "dependency-direction" tools/release/pre-push-check.sh && grep -q "dependency-direction" .github/workflows/pr-check.yml && echo "✅ 清单+3e+CI 在位" || echo "❌ 清单或接线缺失"  # b+c
 ```
