@@ -238,6 +238,12 @@ fi
 [ "$QUIET" = false ] && echo -e "\n${BOLD}${CYAN}── ⑥ 交付关键词覆盖率（阶段五零遗漏） ──${NC}"
 
 CUR_VER=$(node -p "require('./engine/audit/package.json').version" 2>/dev/null || echo "")
+# v1.4.7 修正：版本源滞后——原只取 package.json（SSOT bump 在阶段九、安装入口 bump commit），
+# 待发版期 package.json 仍是上一版，本段校验的便是上一版 devlog，本版交付关键词从未被覆盖校验。
+# 改为优先 CHANGELOG 索引顶行版本（已开发完成即入索引并标「待发版」，发版后两者一致无副作用），
+# 回退 package.json 兜底。CHANGELOG 顶行格式：`- **vX.Y.Z** — ...`。
+CL_TOP_VER=$(grep -oE '^\- \*\*v[0-9]+\.[0-9]+\.[0-9]+\*\*' CHANGELOG.md 2>/dev/null | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
+[ -n "$CL_TOP_VER" ] && CUR_VER="$CL_TOP_VER"
 EXEMPT_FILE="FORGE/playbook/.coverage-exempt"
 EXEMPTED=$(cat "$EXEMPT_FILE" 2>/dev/null || echo "")
 

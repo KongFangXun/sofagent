@@ -213,7 +213,7 @@
 | 二 | **CHANGELOG 索引**：根 CHANGELOG.md 新增本版本索引条目（目录非详情） | 索引条目存在 |
 | 三 | **发版日期同步**（详见下方脚本） | `bash tools/check/check-version.sh` 全绿 |
 | 四 | **测试数一致性**：`bash tools/check/check-test-count.sh --quiet` 确认声称数与实际一致。**禁止手动报数——必须跑脚本** | 全绿 |
-| 五 | **ROADMAP 同步**（详见下方「ROADMAP 同步手册」）：本版移出规划表→进迭代表；探索方向表清理已交付/已排期条目；版本号+日期更新；迭代表瘦身（老版本合并）；发版后体检 | ROADMAP 更新 |
+| 五 | **ROADMAP 同步**（详见下方「ROADMAP 同步手册」）：本版移出规划表→进迭代表；探索方向表清理已交付/已排期条目；版本号+日期更新；迭代表瘦身（老版本合并）；发版后体检。🔴 **时序口径（v1.4.7 定谳）**：ROADMAP 多处依赖新版本号（「现在在哪」标题受 check-version §10c 约束必须 == SSOT），而 SSOT bump 归**阶段九步骤五**——故五步同步**整体挂账 bump 后同批执行**；阶段六只做版本无关核对（规划表本版行内容准确性 / 探索方向清理判断），标题与顶栏改版本号会撞 check-version FAIL | ROADMAP 更新 |
 | 六 | **全项目版本号扫描**：所有 package.json + 文档头版本号一致。🔴 **bump 中断恢复清单**：`bump-version.sh` 可能 EXIT 137 中断（后置步骤被杀），核心版本号已改但部分位置残留——**bump 后必须跑 check-version.sh 抓残留，命中后按以下清单补漏**：① 全量扫 `package.json`（根 + engine/* + FDE + FORGE）的 **4 个 section**（dependencies/devDependencies/peerDependencies/**optionalDependencies**——脚本只扫 3 个，optional 段易漏）② `action.yml` 的 npm 包@版本格式（`@sofagent/audit@X.Y.Z`，正则 `@sofagent/[a-z-]*@[0-9]`）③ 文档头日期批量同步（bump 只改版本不改日期）④ WIKI 状态表/尾部维护规则 + FORGE/FDE 文档日期 ⑤ package-lock.json version 字段 | check-version.sh 全绿 |
 | 七 | **文档同步闭环**：changelog 每个功能点 → 对应项目文档有覆盖（详见下方按需文档表） | D6 清单零遗漏 |
 | 八 | **changelog 文件命名一致性**：`ls docs/changelog/*/v*.md \| grep -v -E 'v[0-9]+\.[0-9]+\.[0-9]+\.md'` 期望无输出（全三段式）——**限定版本日志目录**（`docs/changelog/**/*.md` 会把 releasing/ 子目录的 SOP 文件误报为不合规，版本日志才是检查对象） | 无输出 |
@@ -305,7 +305,9 @@ ls docs/changelog/*/v*.md | grep -v -E 'v[0-9]+\.[0-9]+\.[0-9]+\.md'
 
 ## ROADMAP 同步手册（步骤五）
 
-> **定位**：每次发版后 ROADMAP 必须同步更新，随阶段六步骤五一同执行、同 commit 收编——无独立 pass/fail 闸门（阶段五 release-gate 是闸门，本节是手册）。
+> **定位**：每次发版 ROADMAP 必须同步更新，**随 SSOT bump 后同批执行、同 commit 收编**——无独立 pass/fail 闸门（阶段五 release-gate 是闸门，本节是手册）。
+>
+> 🔴 **时序说明（v1.4.7 定谳）**：本节动作依赖新版本号——「现在在哪」标题 `## 现在在哪：vX.Y.Z` 受 check-version §10c 校验（必须 == SSOT），而 SSOT bump 归**阶段九步骤五**（安装入口 bump commit）。故阶段六（开发日志定稿）**只做版本无关核对**（规划表本版行内容准确性 / 探索方向清理判断），**五步本体挂账 bump 后同批执行**——在阶段六改标题版本号必然撞 FAIL。
 
 ### 两条核心纪律
 
