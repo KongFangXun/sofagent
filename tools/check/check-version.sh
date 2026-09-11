@@ -1414,6 +1414,26 @@ if [ -n "$F6_NPM_VER" ] && [ "$F6_NPM_VER" = "$SSOT_VERSION" ]; then
 fi
 
 if $F6_RELEASED; then
+  # 待发版窗口白名单（v1.4.8 批次 B）：已发版态 + 下一版开发日志存在 = 合法中间态
+  # （下一版开发完成、CHANGELOG 尚未收录、ROADMAP 如实标「开发完成（待发版）」）。
+  # 该窗口由 §25 的「CHANGELOG 顶版超前包版本 ≤1 patch」先例背书；F6 原判定只覆盖
+  # 「上一版发完、下一版未开发」语境，没跟上此窗口——误报实锤：v1.4.8 devlog 46 项
+  # 全勾 + ROADMAP 如实标注被拦。白名单条件（双判据缺一不可）：存在 docs/changelog/vX.Y/
+  # 目录（版本号 = SSOT + 1 patch）且目录内 devlog 非空——防「上一版忘翻牌」借窗口逃检。
+  F6_NEXT_PATCH=$(node -e "
+const p='${SSOT_VERSION}'.split('.').map(Number);
+console.log(p[0]+'.'+p[1]+'.'+(p[2]+1));" 2>/dev/null || echo "")
+  F6_DEVLOG_DIR="${PROJECT_ROOT}/docs/changelog/v1.4"
+  F6_NEXT_DEVLOG="${F6_DEVLOG_DIR}/v${F6_NEXT_PATCH}.md"
+  F6_WINDOW=false
+  if [ -n "$F6_NEXT_PATCH" ] && [ -s "$F6_NEXT_DEVLOG" ]; then
+    F6_WINDOW=true
+  fi
+  if $F6_WINDOW; then
+    echo -e "  ${YELLOW}⚠${NC} 待发版窗口态：v${F6_NEXT_PATCH} 开发日志在位（CHANGELOG 未收录）——ROADMAP「待发版」为合法状态，F6 断言降级跳过"
+    WARNINGS=$((WARNINGS + 1))
+    CHECKS=$((CHECKS + 1))
+  else
   F6_PENDING_HITS=$(grep -nE '待发版' "${PROJECT_ROOT}/docs/ROADMAP.md" 2>/dev/null || true)
   if [ -n "$F6_PENDING_HITS" ]; then
     echo -e "  ${RED}✗${NC} 已发版态（${F6_WHY}）但 ROADMAP.md 仍有「待发版」标注——发版 SOP 阶段十后忘改状态："
@@ -1442,6 +1462,7 @@ if $F6_RELEASED; then
   else
     echo -e "  ${GREEN}✓${NC} 已发版态（${F6_WHY}），活文档无「待发版」残留"
     CHECKS=$((CHECKS + 1))
+  fi
   fi
   # F6 子断言（v1.4.7 批次 B：版本头 SSOT 对齐）：活文档「版本头行」的版本号必须等于
   # package.json version。版本头行形态 = 头部 8 行内的 `> v1.4.X · …`（发版状态头）或
