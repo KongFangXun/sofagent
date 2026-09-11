@@ -122,7 +122,7 @@ const SANITIZE_EXEMPT_KEYS = new Set<string>([
   'hmacSig', 'envFingerprint', 'prevHash', 'hashVersion', 'hmacAlgo', 'chainStatus',
   // 结构化枚举值——不含自由文本
   'timestamp', 'diffRange', 'exitCode', 'diffFileCount', 'engine', 'commitSha',
-  'parentSha', 'commitPhase', 'agentId',
+  'parentSha', 'commitPhase', 'agentId', 'treeSha',
 ]);
 
 /** 深扫脱敏：递归处理对象/数组中的字符串叶子，返回 [处理后对象, 命中次数] */
@@ -198,6 +198,14 @@ export interface AuditHistoryEntry {
    * 旧记录无此字段时 fallback 不生效（向后兼容）。
    */
   parentSha?: string;
+  /**
+   * v1.4.8 F-16：对账键内容指纹——审计时 HEAD 的 tree SHA。
+   * pre-commit 记录记 parentSha 对应的 treeSha；post-commit 对账在
+   * parentSha + subject 匹配后叠加 HEAD^{tree} 比对——soft-reset 换料
+   * 后 treeSha 必变，假绿回声消失（对账不命中走 INFO/WARN 路径，不阻断）。
+   * 旧记录无此字段时跳过 tree 校验（向后兼容）。
+   */
+  treeSha?: string;
   /**
    * v1.2.9 审计所处阶段标记。'pre-commit' = commit-msg hook 场景
    * （审计在 commit 对象生成前运行，commitSha 未知，仅记 parentSha）。

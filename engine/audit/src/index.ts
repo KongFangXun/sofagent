@@ -1443,6 +1443,17 @@ async function main(): Promise<void> {
       commitSha = undefined;
     }
 
+    // v1.4.8 F-16: 对账键加内容指纹——记审计时 HEAD 的 tree SHA。
+    // post-commit 对账在 parentSha + subject 命中后叠加 HEAD^{tree} 比对：
+    // soft-reset 换料（同 message 不同内容）后 treeSha 必变，假绿回声消失。
+    // 非 hook 场景（手动 --diff）也记（对账侧按需消费，向后兼容旧记录）。
+    let treeSha: string | undefined;
+    try {
+      treeSha = execFileSync('git', ['rev-parse', 'HEAD^{tree}'], { encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'] }).trim();
+    } catch {
+      treeSha = undefined; // unborn HEAD 等场景——不伪造
+    }
+
     // A4 研读落地：Action Governance 审计 5 字段 schema + 决策溯源组
     // 发起方 = git 提交作者；非 git 环境 / 文件系统审计下退化为 unknown（不伪造）
     // v1.3.9 B9 修复：git log -1 在 unborn HEAD（首次 commit，hook 运行于 commit 对象生成前）
@@ -1482,6 +1493,8 @@ async function main(): Promise<void> {
       // v1.2.9 pre-commit 阶段记录父提交 SHA（= 审计时 HEAD），
       // --verify-commit / post-commit 对账按此 fallback 匹配。旧记录无此字段。
       parentSha,
+      // v1.4.8 F-16: 内容指纹（HEAD^{tree}）——post-commit 对账三重键之一
+      treeSha,
       commitPhase: isPreCommitPhase ? 'pre-commit' : undefined,
       engine: `sofagent-audit v${VERSION}`,
       actionGovernance: {

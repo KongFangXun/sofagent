@@ -40,9 +40,27 @@ PARENT_SHA=$(git rev-parse HEAD^ 2>/dev/null)
 # 来自 commit message 主题行）须与本 commit 主题一致才认领。
 COMMIT_SUBJECT=$(git log -1 --pretty=%s HEAD 2>/dev/null)
 
+# v1.4.8 F-16: 对账键第三重——HEAD tree 哈希。parentSha+subject 命中后叠加 treeSha
+# 比对：干净 commit 过审计后 soft-reset 换料（同 message 不同内容）提交，treeSha 必变，
+# 对账不命中走 INFO/WARN 路径——假绿回声消失（post-commit 永不阻断铁律不变）。
+# 旧审计记录无 treeSha 字段时跳过此重校验（向后兼容）。
+COMMIT_TREE=$(git rev-parse HEAD^{tree} 2>/dev/null)
+
 # 检查 history.jsonl：SHA 精确匹配 + parentSha 匹配
-# 路径动态获取用户级 data 目录（与 data-paths.ts 的 SOFAGENT_HOME 解析链对齐）
-HISTORY_FILE="${SOFAGENT_HOME:-$HOME/.sofagent}/data/audit/history.jsonl"
+# 路径动态获取用户级 data 目录（与 data-paths.ts 的解析链对齐——v1.4.8 F-17：
+# 读侧与写侧同链：先 SOFAGENT_DATA，再 SOFAGENT_HOME/data，再默认 ~/.sofagent/data。
+# 此前只认 SOFAGENT_HOME——企业集中数据目录（SOFAGENT_DATA）场景下对账第二道
+# 防线整体静默失明（文件不存在静默 exit 0））
+if [ -n "$SOFAGENT_DATA" ]; then
+  HISTORY_FILE="$SOFAGENT_DATA/audit/history.jsonl"
+elif [ -n "$SOFAGENT_HOME" ]; then
+  HISTORY_FILE="$SOFAGENT_HOME/data/audit/history.jsonl"
+else
+  HISTORY_FILE="$HOME/.sofagent/data/audit/history.jsonl"
+fi
+if [ ! -f "$HISTORY_FILE" ] && [ -n "$SOFAGENT_DATA" ]; then
+  echo "  ⚠️ [sofagent] SOFAGENT_DATA 已设置但 $HISTORY_FILE 不存在——审计对账数据缺失，请检查数据目录配置。"
+fi
 if [ -f "$HISTORY_FILE" ]; then
   # v1.3.5 #2: 假阳性回声修复——对账命中 pre-commit 记录时校验审计结果。
   # 旧逻辑（grep -q parentSha）会命中**被拦截**的审计记录（exit 2）：
@@ -51,11 +69,12 @@ if [ -f "$HISTORY_FILE" ]; then
   # 改为 node 解析：只有 commitSha 匹配、或 pre-commit 记录 parentSha 匹配
   # **且 exitCode === 0** 才静默退出（真回声）；命中失败记录输出疑似绕过提示。
   # post-commit 永远 exit 0（不阻断任何操作）。
-  COMMIT_SHA="$CURRENT_SHA" PARENT_SHA="$PARENT_SHA" COMMIT_SUBJECT="$COMMIT_SUBJECT" HISTORY_FILE="$HISTORY_FILE" node -e '
+  COMMIT_SHA="$CURRENT_SHA" PARENT_SHA="$PARENT_SHA" COMMIT_SUBJECT="$COMMIT_SUBJECT" COMMIT_TREE="$COMMIT_TREE" HISTORY_FILE="$HISTORY_FILE" node -e '
 const fs = require("fs");
 const COMMIT_SHA = process.env.COMMIT_SHA;
 const PARENT_SHA = process.env.PARENT_SHA;
 const COMMIT_SUBJECT = (process.env.COMMIT_SUBJECT || "").trim();
+const COMMIT_TREE = (process.env.COMMIT_TREE || "").trim();
 const HISTORY_FILE = process.env.HISTORY_FILE;
 if (!HISTORY_FILE) process.exit(0);
 let lines;
@@ -79,6 +98,13 @@ try {
         : (typeof entry.commitMsg === "string" ? (entry.commitMsg.split("\n")[0] || "") : "")
       ).trim();
       if (COMMIT_SUBJECT && recordSubject && recordSubject !== COMMIT_SUBJECT) {
+        continue;
+      }
+      // v1.4.8 F-16: 第三重对账——treeSha 内容指纹。记录含 treeSha 且与本 commit
+      // HEAD tree 不一致 → 审计后内容被换（soft-reset 换料同 message 重提），
+      // 不认领（继续找；找不到走未命中提示路径）——假绿回声消失。
+      if (typeof entry.treeSha === "string" && entry.treeSha.trim() !== ""
+          && COMMIT_TREE && entry.treeSha.trim() !== COMMIT_TREE) {
         continue;
       }
       // v1.3.5 #2: 校验该次审计的结果——exitCode 三档分流（v1.3.6 B8 修正）：

@@ -478,7 +478,7 @@ export function runInit(): void {
     // 直接生效的防线（commit-msg 阶段 git 主进程持内存 index 快照，reset 只能
     // 清理磁盘 index 防后续 commit 卷入）。
     const PRE_COMMIT_TEMPLATE = `#!/bin/bash
-# sofagent pre-commit hook v\${VERSION}
+# sofagent pre-commit hook v${VERSION}
 # 安装：sofagent-audit --init 或 sofagent-audit --install-hook
 # 三层防线第一层（主防线）：.sofagent/ 永不入库——在 commit 对象生成前
 # 就把 .sofagent/ 条目移出暂存区。
@@ -631,8 +631,18 @@ else
 fi
 
 # v1.2.8: 读全局 history 路径（不再读仓库相对路径 data/audit/history.jsonl）
-SOFAGENT_HOME="\${SOFAGENT_HOME:-\$HOME/.sofagent}"
-HISTORY_FILE="$SOFAGENT_HOME/data/audit/history.jsonl"
+# v1.4.8 F-17: 读侧与写侧同链——先 SOFAGENT_DATA、再 SOFAGENT_HOME/data、再默认。
+# 此前只认 SOFAGENT_HOME，企业集中数据目录场景对账防线静默失明。
+if [ -n "$SOFAGENT_DATA" ]; then
+  HISTORY_FILE="$SOFAGENT_DATA/audit/history.jsonl"
+elif [ -n "$SOFAGENT_HOME" ]; then
+  HISTORY_FILE="$SOFAGENT_HOME/data/audit/history.jsonl"
+else
+  HISTORY_FILE="$HOME/.sofagent/data/audit/history.jsonl"
+fi
+if [ ! -f "$HISTORY_FILE" ] && [ -n "$SOFAGENT_DATA" ]; then
+  echo "  ⚠️ [sofagent] SOFAGENT_DATA 已设置但 $HISTORY_FILE 不存在——审计对账数据缺失，请检查数据目录配置。"
+fi
 if [ ! -f "$HISTORY_FILE" ]; then exit 0; fi
 
 # 当前 commit SHA（= 已创建的新提交自身）
@@ -658,13 +668,18 @@ fi
 # 来自 commit message 主题行）须与本 commit 主题一致才认领。
 COMMIT_SUBJECT=$(git log -1 --pretty=%s HEAD 2>/dev/null)
 
+# v1.4.8 F-16: 对账键第三重——HEAD tree 哈希（内容指纹）：soft-reset 换料同 message 重提后 treeSha 必变，
+# 假绿回声消失（记录无 treeSha 时跳过此重校验，向后兼容）。
+COMMIT_TREE=$(git rev-parse HEAD^{tree} 2>/dev/null)
+
 # v1.3.3 #17E: SHA / 路径通过 process.env 传入 node -e，不再字符串拼接（命令注入加固）
 # commit hash 对账：检查当前 commit 是否在审计记录中有对应条目
-COMMIT_SHA="$COMMIT_SHA" PARENT_SHA="$PARENT_SHA" COMMIT_SUBJECT="$COMMIT_SUBJECT" HISTORY_FILE="$HISTORY_FILE" node -e '
+COMMIT_SHA="$COMMIT_SHA" PARENT_SHA="$PARENT_SHA" COMMIT_SUBJECT="$COMMIT_SUBJECT" COMMIT_TREE="$COMMIT_TREE" HISTORY_FILE="$HISTORY_FILE" node -e '
 const fs = require("fs");
 const COMMIT_SHA = process.env.COMMIT_SHA;
 const PARENT_SHA = process.env.PARENT_SHA;
 const COMMIT_SUBJECT = (process.env.COMMIT_SUBJECT || "").trim();
+const COMMIT_TREE = (process.env.COMMIT_TREE || "").trim();
 const HISTORY_FILE = process.env.HISTORY_FILE;
 if (!HISTORY_FILE) process.exit(0);
 const lines = fs.readFileSync(HISTORY_FILE, "utf-8").trim().split("\\n").filter(Boolean);
@@ -695,6 +710,11 @@ try {
         : (typeof entry.commitMsg === "string" ? (entry.commitMsg.split("\\n")[0] || "") : "")
       ).trim();
       if (COMMIT_SUBJECT && recordSubject && recordSubject !== COMMIT_SUBJECT) {
+        continue;
+      }
+      // v1.4.8 F-16: 第三重对账——treeSha 内容指纹不一致（审计后内容被换）→ 不认领，继续找。
+      if (typeof entry.treeSha === "string" && entry.treeSha.trim() !== ""
+          && COMMIT_TREE && entry.treeSha.trim() !== COMMIT_TREE) {
         continue;
       }
       // v1.3.5 #2: 假阳性回声修复——命中 pre-commit 记录时必须校验该次审计的结果。

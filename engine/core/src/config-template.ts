@@ -124,8 +124,11 @@ fi
 
 # 2. sofagent-audit 检测（v1.2.8: 只加载全局安装，不读仓库本地 dist——审计工具不能被审计对象篡改）
 # v1.3.4 P1-7: 无 dist + 无全局安装时输出显著提示（不静默 exit），告知用户如何修复
-if command -v sofagent-audit &>/dev/null; then
-  AUDIT_CMD=(sofagent-audit)
+# v1.4.8 F-15: 执行面不再 \`command -v\`（PATH 前置假 binary 可绕过），改与 2.1 校验面
+# 同源的 require.resolve 绝对路径——node_modules 解析链不受 PATH 摆布，校验哪个文件就执行哪个文件。
+RESOLVED_ENTRY=\$(node -e "try{process.stdout.write(require.resolve('sofagent-audit'))}catch{process.stdout.write('')}" 2>/dev/null)
+if [ -n "\$RESOLVED_ENTRY" ] && [ -f "\$RESOLVED_ENTRY" ]; then
+  AUDIT_CMD=(node "\$RESOLVED_ENTRY")
 else
   # v1.3.4 P1-7: clone 用户没 build dist 也没全局安装——显著提示而非只报错
   echo ""

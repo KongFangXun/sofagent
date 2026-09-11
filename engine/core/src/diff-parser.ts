@@ -54,6 +54,25 @@ const SPILL_READ_CAP = 64 * 1024 * 1024;
 const SPILL_CHUNK = 8 * 1024 * 1024;
 
 /**
+ * v1.4.8 F-14：审计 diff 调用的统一前缀（命令级 -c 清场）——锁死仓库本地配置对
+ * diff 输出的摆布。⚠️ flag 位置两段式：-c 必须在 `git` 与 `diff` 子命令之间
+ * （global 前置区），--no-textconv/--no-ext-diff 必须在 `diff` 之后（子命令 flag 区，
+ * 前置区会报 unknown option）。
+ * - `-c core.quotePath=false`：非 ASCII 路径不转义（既有行为，保持）
+ * - `-c diff.external=` / `-c core.attributesfile=`：命令级清场 ext-diff 驱动与
+ *   外部 attributesfile（覆盖仓库/全局配置，不写回用户配置）
+ * - `--no-textconv --no-ext-diff`：阻断 .gitattributes textconv 过滤器与
+ *   diff.external 对内容 diff 的改写——攻击者提交 `.gitattributes` 标记 textconv 后，
+ *   密钥文件的 diff 内容会被替换成过滤器输出（凭空消失），A2 无内容可扫即假绿 PASS。
+ */
+const GIT_AUDIT_C_FLAGS: readonly string[] = [
+  '-c', 'core.quotePath=false',
+  '-c', 'diff.external=',
+  '-c', 'core.attributesfile=',
+];
+const GIT_AUDIT_DIFF_FLAGS: readonly string[] = ['--no-textconv', '--no-ext-diff'];
+
+/**
  * spill 落盘目录：显式 SOFAGENT_DATA 环境变量 > ~/.sofagent/data/（引擎 home）
  *
  * v1.4.3 P2-e 修复（跨仓密钥泄漏面）：旧实现 `join(process.env.SOFAGENT_DATA ?? 'data', 'spill')`
@@ -269,7 +288,11 @@ export function parseDiff(range: string, cwd?: string): DiffFile[] {
     // v1.0.5: 加 --find-renames 避免重命名+修改文件漏检
     // v1.3.8 P1-B5：stdio pipe stderr——非法 refspec 时 git 的 raw stderr
     // （fatal: ambiguous argument ...）不再直接透传到用户终端，由 catch 统一产品化提示
-    const output = execFileSync('git', ['-c', 'core.quotePath=false', 'diff', '--find-renames', '--name-status', range], {
+    // v1.4.8 F-14: 审计信任地基锁死——--no-textconv/--no-ext-diff 阻断仓库本地
+    // .gitattributes（textconv 过滤器）与 diff.external（ext-diff 驱动）对 diff 输出的
+    // 摆布（攻击者提交 .gitattributes 后密钥 diff 凭空消失、审计假绿）；命令级
+    // -c diff.external= -c core.attributesfile= 覆盖清场（不碰用户全局配置）。
+    const output = execFileSync('git', GIT_AUDIT_C_FLAGS.concat(['diff', ...GIT_AUDIT_DIFF_FLAGS, '--find-renames', '--name-status', range]), {
       encoding: 'utf-8',
       cwd,
       maxBuffer: 10 * 1024 * 1024,
@@ -326,7 +349,8 @@ export function parseDiff(range: string, cwd?: string): DiffFile[] {
         // 否则 git 无法配对 rename，R100 纯改名会被当成全新文件输出全量 diff
         // v1.3.9（十二）：溢出走 spill 落盘读回——内容不跳过，A2 密钥检测全量覆盖
         const pathspec = (status === 'renamed' && oldPath) ? [oldPath, path] : [path];
-        const gitArgs = ['-c', 'core.quotePath=false', 'diff', range, '--', ...pathspec];
+        // v1.4.8 F-14: 内容 diff 同样锁死 textconv/ext-diff（GIT_AUDIT 两段式 flags）
+        const gitArgs = GIT_AUDIT_C_FLAGS.concat(['diff', ...GIT_AUDIT_DIFF_FLAGS, range, '--', ...pathspec]);
         const { lines: diffLines, oversized, spillFile } = readDiffLines(gitArgs, cwd, path);
 
         files.push({ path, status, oldPath, lines: diffLines, ...(oversized ? { oversized: true } : {}), ...(spillFile ? { spillFile } : {}) });
@@ -358,8 +382,8 @@ export function parseStagedDiff(): DiffFile[] {
   }
 
   try {
-    // 获取 staged 文件列表
-    const output = execFileSync('git', ['-c', 'core.quotePath=false', 'diff', '--cached', '--name-status'], {
+    // 获取 staged 文件列表（v1.4.8 F-14: GIT_AUDIT 两段式 flags 锁死 textconv/ext-diff）
+    const output = execFileSync('git', GIT_AUDIT_C_FLAGS.concat(['diff', ...GIT_AUDIT_DIFF_FLAGS, '--cached', '--name-status']), {
       encoding: 'utf-8',
       maxBuffer: 10 * 1024 * 1024,
     });
@@ -409,7 +433,8 @@ export function parseStagedDiff(): DiffFile[] {
         // 否则 git 无法配对 rename，R100 纯改名会被当成全新文件输出全量 diff
         // v1.3.9（十二）：溢出走 spill 落盘读回——内容不跳过（与 parseDiff 同机制）
         const pathspec = (status === 'renamed' && oldPath) ? [oldPath, path] : [path];
-        const gitArgs = ['-c', 'core.quotePath=false', 'diff', '--cached', '--', ...pathspec];
+        // v1.4.8 F-14: staged 内容 diff 同样走 GIT_AUDIT 两段式 flags
+        const gitArgs = GIT_AUDIT_C_FLAGS.concat(['diff', ...GIT_AUDIT_DIFF_FLAGS, '--cached', '--', ...pathspec]);
         // parseStagedDiff 不收 cwd（沿用 v1.3.8 前行为：在当前目录跑 git）
         const { lines: diffLines, oversized, spillFile } = readDiffLines(gitArgs, undefined, path);
 

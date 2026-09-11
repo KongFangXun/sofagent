@@ -22,7 +22,7 @@ import { homedir } from 'os';
 import { checkEnv } from './env-check';
 import { VERSION } from './shared/constants';
 import { load as yamlLoad, YAMLException } from 'js-yaml';
-import { checkHistoryChainDetailed, validateHmacKey } from './audit-history';
+import { checkHistoryChainDetailed, validateHmacKey, getHistoryFilePath } from './audit-history';
 import { DATA_DIR, getConfigFile, resolveDataDir, resolveHomeDir, resolveKnowledgeDir } from './data-paths';
 
 function ok(msg: string) { console.log(`  ✅ ${msg}`); }
@@ -530,6 +530,61 @@ export function runDoctor(projectDir: string = process.cwd(), options: { resetBa
     // 不再静默吞掉（P1-B-iv：空 catch 会掩盖内部错误并误报「通过」）
     warn(`审计日志 hash chain 校验异常，已跳过（不影响其余检查）: ${chainErr instanceof Error ? chainErr.message : String(chainErr)}`);
     auditLogOk = true;
+  }
+
+  // 7b. 未审计 commit 扫描（v1.4.8 F-18——SECURITY.md「二级防御」声称落地）
+  // 原理：git log --grep 匹配审计签名（sofagent 审计通过的 commit message 由
+  // hook 之外的历史记录覆盖——history.jsonl 的 commitSha/parentSha 集合才是
+  // 审计事实源）；对最近 N=50 个 commit 的 SHA 集合与 history 记录的
+  // commitSha/parentSha 集合做差，差集 = 未审计 commit → 逐条 WARN。
+  console.log('\n── 未审计 commit 扫描 [最近 50 个] ──');
+  try {
+    const logFmt = execFileSync('git', ['log', '-50', '--pretty=format:%H%x09%h%x09%s'], { cwd: projectDir, encoding: 'utf8' }).toString();
+    const commitLines = logFmt.trim().split('\n').filter((l) => l.includes('\t'));
+    if (commitLines.length === 0) {
+      info('无 commit 历史（空仓库），跳过未审计扫描');
+    } else {
+      // history.jsonl 审计事实集合（loadHistory 在 audit-history.ts，doctor 已 import 链内）
+      const histPath = getHistoryFilePath();
+      const auditedShas = new Set<string>();
+      if (existsSync(histPath)) {
+        try {
+          const histLines = readFileSync(histPath, 'utf-8').trim().split('\n').filter(Boolean);
+          // 只取最近 500 条（对齐 v1.3.1 #14 doctor 只校验最近 500 条的性能先例）
+          for (const line of histLines.slice(-500)) {
+            try {
+              const entry = JSON.parse(line) as { commitSha?: string; parentSha?: string };
+              if (entry.commitSha) auditedShas.add(entry.commitSha);
+              // parentSha 记录的是审计时 HEAD——它对应的 commit 本身也被审计覆盖
+              if (entry.parentSha) auditedShas.add(entry.parentSha);
+            } catch { /* 损坏行跳过——链完整性检查另行报告 */ }
+          }
+        } catch { /* 读失败按空集处理——下方 diff 为全量时自然提示 */ }
+      }
+      if (auditedShas.size === 0) {
+        warn(`history.jsonl 无可用审计记录（${histPath}）——未审计扫描退化为「全部待核」，请先运行一次审计或 --init`);
+      } else {
+        const missing: string[] = [];
+        for (const line of commitLines) {
+          const [fullSha, shortSha, ...rest] = line.split('\t');
+          if (!fullSha) continue;
+          if (!auditedShas.has(fullSha)) {
+            missing.push(`${shortSha ?? fullSha.slice(0, 7)} ${rest.join('\t').slice(0, 50)}`);
+          }
+        }
+        if (missing.length === 0) {
+          ok(`最近 ${commitLines.length} 个 commit 均有审计记录覆盖`);
+        } else {
+          warn(`检测到 ${missing.length} 个未审计 commit（可能 --no-verify 绕过或 hook 安装前提交）：`);
+          for (const m of missing.slice(0, 10)) console.log(`     ${m}`);
+          if (missing.length > 10) console.log(`     ... 共 ${missing.length} 个`);
+          repairHint('sofagent-audit --verify-commit <SHA> 逐个复核；确认无风险后可忽略（hook 安装前的历史 commit 属预期）');
+        }
+      }
+    }
+  } catch (err) {
+    // 非 git 仓库 / git 不可用——doctor 主流程已有环境检查兜底，这里不重复告警
+    info(`未审计 commit 扫描跳过（git 不可用或非 git 仓库）: ${err instanceof Error ? err.message.split('\n')[0] : ''}`);
   }
 
   // 8. Ontology 完整性检查（v1.4.3 十三）

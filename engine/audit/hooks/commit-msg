@@ -29,14 +29,20 @@ if ! command -v node &>/dev/null; then
 fi
 
 # 2. sofagent-audit 检测（优先用仓库本地 engine/audit/dist/，避免全局旧版版本漂移）
+# v1.4.8 F-15: 全局回退分支不再 `command -v`（PATH 解析可被前置假 binary 完全
+# 绕过——执行面与校验面路径错位），改与 2.1 校验面同源的 require.resolve 绝对
+# 路径：node_modules 解析链不受 PATH 摆布，校验哪个文件就执行哪个文件。
 if [ -f "engine/audit/dist/index.js" ]; then
   AUDIT_CMD=(node "engine/audit/dist/index.js")
-elif command -v sofagent-audit &>/dev/null; then
-  AUDIT_CMD=(sofagent-audit)
 else
-  echo "❌ sofagent-audit 未安装，审计未运行"
-  echo "   请运行: npm install -g @sofagent/audit"
-  exit 1
+  RESOLVED_ENTRY=$(node -e "try{process.stdout.write(require.resolve('sofagent-audit'))}catch{process.stdout.write('')}" 2>/dev/null)
+  if [ -n "$RESOLVED_ENTRY" ] && [ -f "$RESOLVED_ENTRY" ]; then
+    AUDIT_CMD=(node "$RESOLVED_ENTRY")
+  else
+    echo "❌ sofagent-audit 未安装，审计未运行"
+    echo "   请运行: npm install -g @sofagent/audit"
+    exit 1
+  fi
 fi
 
 # 2.1 P1-A2: dist 完整性校验——防止本地覆写 dist 致审计失效
