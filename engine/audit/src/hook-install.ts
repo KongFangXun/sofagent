@@ -1,5 +1,5 @@
 // ============================================================
-// hook-install.ts · git hook 安装核心（v1.4.6 T1/T4 抽取）
+// hook-install.ts · git hook 安装核心（v1.4.7 T1/T4 抽取）
 // 从 index.ts installHook 与 commands/init.ts 抽出的共享安装逻辑：
 //   - resolveHooksDir：尊重 core.hooksPath（T1——此前硬编码 .git/hooks，
 //     repo 配置了自定义 hooks 目录时装到 .git/hooks，git 根本不会执行，

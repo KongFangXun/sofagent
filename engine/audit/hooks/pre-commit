@@ -1,5 +1,5 @@
 #!/bin/bash
-# sofagent pre-commit hook v1.4.6
+# sofagent pre-commit hook v1.4.7
 # 安装：sofagent-audit --init 或 sofagent-audit --install-hook
 # 三层防线第一层（主防线）：.sofagent/ 永不入库——在 commit 对象生成前
 # 就把 .sofagent/ 条目移出暂存区。

@@ -5,7 +5,7 @@
 // 四动作（submit/status/artifacts/cancel），经通道注册表挂进
 // train-scheduler 消费面——scheduler 只见 TrainExecutor 形态。
 //
-// 与 train-executor.ts 的关系：TrainExecutor（v1.4.6 批次 D）是本地
+// 与 train-executor.ts 的关系：TrainExecutor（v1.4.7 批次 D）是本地
 // spawn 执行器接口；TrainChannel 是其云端通道形态扩展——同一 job
 // 既可 LocalSpawnExecutor 跑（执行者互换测试），也可任意 TrainChannel
 // 实现跑（ssh 适配器 / 托管 API 适配器），事件流协议②不变。

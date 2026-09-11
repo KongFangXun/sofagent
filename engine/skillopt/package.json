@@ -1,6 +1,6 @@
 {
   "name": "@sofagent/skillopt",
-  "version": "1.4.6",
+  "version": "1.4.7",
   "engines": {
     "node": ">=18"
   },
@@ -25,9 +25,9 @@
   "license": "MIT",
   "author": "KongFangXun",
   "dependencies": {
-    "@sofagent/ontology": "1.4.6",
-    "@sofagent/core": "1.4.6",
-    "@sofagent/audit": "1.4.6"
+    "@sofagent/ontology": "1.4.7",
+    "@sofagent/core": "1.4.7",
+    "@sofagent/audit": "1.4.7"
   },
   "exports": {
     ".": {

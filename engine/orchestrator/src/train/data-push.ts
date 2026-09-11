@@ -1,4 +1,4 @@
-// data-push.ts · v1.4.6 章二 · 标准数据推送接口（schema 校验 + 分拣/合规双闸入库）
+// data-push.ts · v1.4.7 章二 · 标准数据推送接口（schema 校验 + 分拣/合规双闸入库）
 //
 // 定位：企业存储/业务系统按标准格式（约定 schema）向引擎推送训练语料与知识
 // 数据——经分拣闸（sorting-gate）+ 合规闸（train-compliance）双闸入库。

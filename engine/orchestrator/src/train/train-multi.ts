@@ -1,4 +1,4 @@
-// train-multi.ts · v1.4.6 章一 · 多卡/多机训练编排（分布式 spawn + rank 事件汇总）
+// train-multi.ts · v1.4.7 章一 · 多卡/多机训练编排（分布式 spawn + rank 事件汇总）
 //
 // 定位：从单机单卡升级到多卡/多机。Node 控制面构造分布式启动命令
 // （torchrun / verl 集群入口），Python 执行面按约定②打事件——每个 rank 的

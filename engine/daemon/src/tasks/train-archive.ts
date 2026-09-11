@@ -1,5 +1,5 @@
 // ============================================================
-// train-archive.ts · v1.4.6 第五章 · daemon 定时归档任务（@weekly）
+// train-archive.ts · v1.4.7 第五章 · daemon 定时归档任务（@weekly）
 //
 // 保留策略的调度面：engine/orchestrator retention-policy.ts 的
 // archiveExpired（归档冷存）+ purgeExpiredArchives（90 天覆写销毁）+

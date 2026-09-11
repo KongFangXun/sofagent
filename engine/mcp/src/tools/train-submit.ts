@@ -1,5 +1,5 @@
 // ============================================================
-// train-submit.ts · MCP tool：train_submit（v1.4.6 块二）
+// train-submit.ts · MCP tool：train_submit（v1.4.7 块二）
 // ============================================================
 //
 // 训练任务提交——dataPath + baseModel + algorithm（sft/dpo/grpo）+

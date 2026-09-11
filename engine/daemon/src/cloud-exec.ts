@@ -1,6 +1,6 @@
 // cloud-exec.ts · 章十二 ssh 通道适配器（daemon 接线批）
 //
-// 消费 v1.4.6 train-cloud 命令构造器产物（CloudCommand）真实执行——
+// 消费 v1.4.7 train-cloud 命令构造器产物（CloudCommand）真实执行——
 // execFile 数组参数防注入（构造器已保证 args 数组形态，本层不拼 shell）。
 //
 // 四类命令：spawn / upload / cleanup / stop——映射 TrainChannel 四动作：

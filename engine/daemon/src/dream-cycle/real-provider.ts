@@ -1,5 +1,5 @@
 // ============================================================
-// dream-cycle/real-provider.ts · 真 LLM Provider（v1.4.6 第七章五 · Maintainer 真脑）
+// dream-cycle/real-provider.ts · 真 LLM Provider（v1.4.7 第七章五 · Maintainer 真脑）
 // ============================================================
 //
 // 依赖缺口收编（arXiv:2608.27454 · 2026-09-03 用户拍板）：

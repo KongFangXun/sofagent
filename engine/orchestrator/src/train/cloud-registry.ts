@@ -1,4 +1,4 @@
-// cloud-registry.ts · v1.4.6 章二 · 云 VM 注册表（endpoint / 凭据引用 / 状态）
+// cloud-registry.ts · v1.4.7 章二 · 云 VM 注册表（endpoint / 凭据引用 / 状态）
 //
 // 定位：租云 GPU VM 做多卡/分布式训练前，先把 VM 注册进来——endpoint（ssh 或
 // 云 API）+ 凭据引用 + 心跳状态。注册表是 train-cloud 的「VM 地址簿」。

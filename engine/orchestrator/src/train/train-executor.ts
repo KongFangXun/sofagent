@@ -1,6 +1,6 @@
-// train-executor.ts · v1.4.6 批次 D · 训练进程执行器（spawn / 事件流解析 / 信号控制的执行面收口）
+// train-executor.ts · v1.4.7 批次 D · 训练进程执行器（spawn / 事件流解析 / 信号控制的执行面收口）
 //
-// 定位：v1.4.6 边界收缩把「进程操作」从 scheduler（缰绳面）拆进 executor
+// 定位：v1.4.7 边界收缩把「进程操作」从 scheduler（缰绳面）拆进 executor
 // （执行面）。scheduler 只保留提交/事件归一/状态机/审计/GPU 回收——child_process
 // 的全部触碰（spawn 缺省实现、stdout 逐行解析、stderr 留痕、SignalController
 // 编排）收敛到本文件的 LocalSpawnExecutor。v1.4.7 章十一 TrainChannel 将实现

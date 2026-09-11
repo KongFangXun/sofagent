@@ -3,9 +3,9 @@
 // ============================================================
 // 每个插件干一件事、可独立安装渐进采用——只引对应 @public API 子集。
 // seam 挂载：ontology_* tools + search_knowledge
-// 版本跟随主版本：运行时读取 package.json（v1.4.6 T7/R4，对齐 openclaw 侧修复）。
-// 此前硬编码 '0.1.0' 与 package.json 1.4.6 永久脱节——DSH 注册表读到 0.1.0、
-// npm 生态看到 1.4.6，双版本线无收敛。tsconfig 无 resolveJsonModule（import json
+// 版本跟随主版本：运行时读取 package.json（v1.4.7 T7/R4，对齐 openclaw 侧修复）。
+// 此前硬编码 '0.1.0' 与 package.json 1.4.7 永久脱节——DSH 注册表读到 0.1.0、
+// npm 生态看到 1.4.7，双版本线无收敛。tsconfig 无 resolveJsonModule（import json
 // 编译不过）、包输出 CJS → 用 require 同步读（路径相对 dist/index.js 上溯一级）。
 // 读不到兜底 '0.0.0-unknown'——缺版本比错版本诚实。
 

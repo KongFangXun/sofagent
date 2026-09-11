@@ -1,5 +1,5 @@
 // ============================================================
-// corpus-export.ts · v1.4.6 第一章 · MCP tool: corpus_export
+// corpus-export.ts · v1.4.7 第一章 · MCP tool: corpus_export
 //
 // 训练语料导出三件套的 MCP 面（CLI 面 = sofagent-audit corpus export）。
 // 双入口同源：本 tool 延迟 import audit 包的导出实现 + core 包的

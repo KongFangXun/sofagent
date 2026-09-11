@@ -2,7 +2,7 @@
 
 > **sofagent 是一套 FDE 能力——装进你的 Agent（DSH / OpenClaw / WorkBuddy / Codex / Claude Code）后，进场梳理业务流、部署 AI 节点、离场后 7×24 自己跑。** 装完之后，你在自己的 Agent 里说一句话，它就帮你干活——审计每次变更、沉淀每次经验，沉淀机制随使用迭代。下面从装到用到查问题，全流程走一遍。
 >
-> v1.4.6 · 2026-09-09（UTC）· ✅ 已发版（本批更新 2026-09-09）· 孔放勋
+> v1.4.7 · 2026-09-11（UTC）· ⏳ 待发版（本批更新 2026-09-11）· 孔放勋
 
 <img src="assets/sofagent.png" alt="sofagent" width="160" />
 
@@ -465,6 +465,7 @@ jobs:
 | 后训模块·信号与部署闭环 | v1.4.4 | 训练语料导出三件套（`corpus_export`，79→80 tools）+ 本地权重部署（manifest 清单 + sha256 篡改拒绝 + rollback-weights）+ 训练产物→注册自动衔接 + 多基座对比（train compare ROI 排序）+ 决策因果链与先例检索 + CI 供应链全 SHA 固定 + 五能力叙事定稿 | [v1.4.4 开发日志](./changelog/v1.4/v1.4.4.md) |
 | 后训模块·服务与持续 | v1.4.5 | 训练推理服务（`train_serve` 拉起 vLLM/Ollama/OpenAI 兼容端点，80→83 tools）+ 合规扫描闸门（`train_compliance`——PII/敏感字段/专有名词）+ 持续后训练（飞轮数据回流 + 三触发 + eval 回退保护）+ FDE 交付包（`train_deliverable`）+ 后训 Quickstart 十步端到端 + FDE 进场记忆目录（10 文件自动初始化）+ 进化模块实证收口 | [v1.4.5 开发日志](./changelog/v1.4/v1.4.5.md) |
 | 后训模块·分布式与云端 | v1.4.6 | 多卡/多机训练（`gpu.count`/`nodes` + schema v2 存量兼容 + GPU 双轴拓扑 + NCCL 第八类诊断，83→84 tools）+ 云 VM 执行面（`train_cloud` 注册/体检/远程 spawn + 分拣三档宁拦勿漏 + 失联止损 5min + 成本入预算）+ 标准数据推送接口（双闸，入口接线 v1.4.7）+ 边界收缩（配方外部装载 `--recipes` / model-downloader 删除 / `TrainExecutor` 隔离） | [v1.4.6 开发日志](./changelog/v1.4/v1.4.6.md) |
+| 商业平台接口版 | v1.4.7 | 商业平台接口一次到位——读接口（G2 能力缺口 `workflow_gaps` / G4 绩效 `contribution_query` / G6 节点 `visibility` / G7 多租户 v0 `data/<tenant>/`）+ 写接口（G13 PR 生命周期三 tool + G14 workflow CRUD 四 tool + `trigger.schedule` 定时）+ 交付三件（workflow 烧进 USB / G8 首部署 cron / 上岗 prompt）+ 云训练执行收口（`TrainChannel` 标准接口 + ssh 通道 + 双通道事件挂链）+ 三接线（静态加密 / audit repo-hash / `data_push`）（11 新 tool，84→95） | [v1.4.7 开发日志](./changelog/v1.4/v1.4.7.md) |
 
 ### 新功能入口导览（v1.4.2 起三条新产品线——10 分钟上手各条线）
 

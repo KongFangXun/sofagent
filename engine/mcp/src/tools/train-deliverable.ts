@@ -1,5 +1,5 @@
 // ============================================================
-// train-deliverable.ts · MCP tool：train_deliverable（v1.4.6 第四章）
+// train-deliverable.ts · MCP tool：train_deliverable（v1.4.7 第四章）
 //
 // FDE 训练交付包的 MCP 面：generate（五件聚合 → zip + manifest + HMAC）
 // / verify（manifest 逐项核对 + 环境兼容性）双动作。

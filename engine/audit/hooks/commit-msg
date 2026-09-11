@@ -1,5 +1,5 @@
 #!/bin/bash
-# sofagent commit-msg hook v1.4.6
+# sofagent commit-msg hook v1.4.7
 # 安装：sofagent-audit --init 或 sofagent-audit --install-hook
 # commit-msg hook 接收 $1 = commit message 文件路径
 # 变更：空提交同样发起引擎调用（message 类规则 A5/A9/A19 照常执行）；
