@@ -33,6 +33,7 @@ import { loadConfig, ConfigLoadError, ConfigParseError, ConfigSignatureError } f
 import { VERSION } from '@sofagent/core';
 import { BASELINE_RULE_KEYS } from '@sofagent/core';
 import { checkConflict, mergeFederationResults } from '@sofagent/core';
+import { verifyEvidence } from '@sofagent/core';
 import { generateOntologyView } from '@sofagent/ontology';
 import { resolveDiffEndpoint } from './diff-ref';
 import { checkLogs } from '@sofagent/core';
@@ -328,6 +329,18 @@ function parseArgs(argv: string[]): Args {
       // init.ts 通过 process.argv.includes('--no-daemon') 消费，
       // 此处仅注册为已知 flag，避免 parseArgs 误报「不支持的参数」。
       // 值由 init 流程直接从 process.argv 读取，不存入 args。
+    } else if (argv[i] === '--verify-evidence') {
+      // v1.4.8 F2: 断链接线——daemon.sh:172 自 v0.82 起调用本参数，但 CLI 从未
+      // 注册（2>/dev/null 吞错 → last_evidence_score 恒 unverified）。
+      // verifyEvidence 函数在 @sofagent/core 在册（@public），此处补 CLI 出口。
+      // 可选跟随一个日志文件路径参数（缺省扫 data/task/logs/<月>/<日>.md）。
+      let vePath: string | undefined;
+      if (argv[i + 1] && !argv[i + 1]!.startsWith('-')) {
+        i++;
+        vePath = argv[i] as string;
+      }
+      // verifyEvidence 返回 0（已验证）/ 1（未验证）——audit CLI 三档退出码的子集
+      process.exit(verifyEvidence(vePath, false));
     } else if (argv[i] === '--format' && argv[i + 1]) {
       i++;
       args.format = argv[i] as string;

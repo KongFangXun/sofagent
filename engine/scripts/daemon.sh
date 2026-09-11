@@ -166,10 +166,13 @@ _main_loop() {
     set_json_field "last_check" "$now"
 
     # 5. 最小可信验证：跑 verify-evidence TS 版，结果写入 daemon.json
+    # v1.4.8 F2: 去 2>/dev/null 吞错——此前 CLI 未注册 --verify-evidence，报错被
+    # 吞成恒 unverified 存活 14+ 版本。现在 CLI 已接线（audit index.ts），错误
+    # 显式落 daemon.log 一行 WARN（score 保持 unknown，不中断巡检）。
     local evidence_score="unknown"
     local AUDIT_DIST="${SCRIPT_DIR}/../audit/dist/index.js"
     if [ -f "$AUDIT_DIST" ]; then
-      evidence_score=$(node "$AUDIT_DIST" --verify-evidence 2>/dev/null && echo "verified" || echo "unverified")
+      evidence_score=$(node "$AUDIT_DIST" --verify-evidence 2>>"$DAEMON_LOG" && echo "verified" || echo "unverified")
     fi
     set_json_field "last_evidence_score" "$evidence_score"
 

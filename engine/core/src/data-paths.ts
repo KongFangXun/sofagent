@@ -36,8 +36,7 @@ import fs from 'fs';
 //   （冒号分隔，企业场景可显式扩展）。
 function sanitizeSofagentHome(raw: string | undefined): string {
   const userHome = os.homedir();
-  const fallback = path.join(userHome, '.sofagent');
-  if (raw === undefined || raw === '') return fallback;
+  if (raw === undefined || raw === '') return path.join(userHome, '.sofagent');
   const resolved = path.resolve(raw);
   const allowedPrefixes: string[] = [userHome, '/opt/sofagent', '/var/lib/sofagent'];
   const extra = process.env.SOFAGENT_HOME_ALLOWED_PREFIXES;
@@ -51,8 +50,16 @@ function sanitizeSofagentHome(raw: string | undefined): string {
     (prefix) => resolved === prefix || resolved.startsWith(prefix + path.sep)
   );
   if (!inAllowed) {
-    console.error(`⚠️ SOFAGENT_HOME 越界：${resolved} 不在允许前缀内，回退到 ${fallback}`);
-    return fallback;
+    // v1.4.8 R6: 越界回退 fail-loud——此前静默回退真实 ~/.sofagent，隔离测试
+    // （SOFAGENT_HOME=/tmp/...）会越界写进真实数据目录（「hook test leak」实锤：
+    // 一条测试记录进 46MB 真实 history.jsonl）。回退方向是「静默收窄隔离」而非
+    // 报错，违反 fail-loud 纪律。改抛错：测试/CI 场景立刻暴露配置缺口；确需
+    // 自定义根目录的企业场景用 SOFAGENT_HOME_ALLOWED_PREFIXES 显式放行（既有通道）。
+    throw new Error(
+      `SOFAGENT_HOME 越界：${resolved} 不在允许前缀内（fail-loud，不再静默回退）。` +
+      `如确需该根目录，请设置 SOFAGENT_HOME_ALLOWED_PREFIXES 显式放行（冒号分隔多前缀）。` +
+      `允许前缀：${allowedPrefixes.join(':')}`,
+    );
   }
   return resolved;
 }
