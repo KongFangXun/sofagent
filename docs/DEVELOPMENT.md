@@ -621,7 +621,7 @@ Google Research 的 WikiSkill（[arXiv:2608.27454](https://arxiv.org/abs/2608.27
 | 安全隔离（沙箱 + 策略管权限） | SubAgent 沙箱 + PolicyLayer 四内置策略（file-lock/concurrency-cap/profile-allowlist/sensitive-tool） |
 | 调度编排（多 agent 协作收敛） | 协作阵型库（规划中：commander&crews/cross-review/bake-off 等六阵型） |
 | 可观测审计（谁改了什么可回溯） | AuditAggregator + worklog 工作明细 + decision-log 因果边 |
-| 状态恢复（会话可持久可恢复） | FDE 进场记忆目录（session 目录 + 跨 session 恢复，规划中） |
+| 状态恢复（会话可持久可恢复） | FDE 进场记忆目录（session 目录 + 跨 session 恢复，✅ v1.4.5 已交付，S375 场景在册） |
 
 **定位警示**：sofagent 不是「又一个 meta-harness」——meta-harness 解决「让一堆 agent 一起干活」，sofagent 解决「管住每一次变更」（约束层/审计层，平台无关）。对外叙事用「FDE Harness」借力 harness 概念普及时，防定位错置稀释差异化。另：斯坦福 IRIS Lab 同名论文走纵向路线（外循环搜索更优 harness 代码），与自迭代工具链思路同构，技能门控与提案审计机制已在 WikiSkill 收编中覆盖同类问题。
 
