@@ -222,6 +222,12 @@
   isColdStart,
 } from './cost-baseline';
 /* @public */ export type { Baseline, TaskLogEntry } from './cost-baseline';
+/* @public */ export { checkQuota, shouldRecordSpend } from './cost/quota-gate';
+/* @public */ export type { QuotaConfig, QuotaPeriod, QuotaUsage, QuotaVerdict } from './cost/quota-gate';
+/* @public */ export { classifyCommand } from './escalation/classifier';
+/* @public */ export type { ClassifiedCommand, ClassifierOverrides, EscalationLevel } from './escalation/classifier';
+/* @public */ export { routeEscalation } from './escalation/policy';
+/* @public */ export type { EscalationDecision, EscalationPolicyOptions, EscalationScenarioPolicy, EscalationVerdict } from './escalation/policy';
 
 // ── 内存压缩 ──
 /* @public */ export {

@@ -9,7 +9,7 @@
 // ============================================================
 
 import { runCostAudit, loadWorklogSlice, type CostBudget } from '@sofagent/audit';
-import { getDataDir } from '@sofagent/core';
+import { getDataDir, checkQuota, type QuotaConfig } from '@sofagent/core';
 
 /** 成本显示统一人民币：引擎 costUsd 按美元计费，展示 ×7.2 估算汇率换算（与 dashboard fmtCost 同口径） */
 const USD_CNY = 7.2;
@@ -38,6 +38,22 @@ export async function costQuery(params: { budget?: CostBudget } = {}): Promise<C
   try {
     const dataDir = resolveDataDir();
     const worklog = loadWorklogSlice(dataDir);
+    // v1.4.8 第六章：quota 状态——从 worklog 聚合当前周期已用 token（无 quota 配置时为 null 不破坏单机）
+    const totalUsed = (worklog?.agents ?? []).reduce((sum, a) => {
+      const t = a.totals?.tokens;
+      return sum + (t?.input || 0) + (t?.output || 0);
+    }, 0);
+    const quotaCfg: QuotaConfig | null = (params as { quota?: QuotaConfig }).quota ?? null;
+    const quotaVerdict = checkQuota(quotaCfg, { usedTokens: totalUsed, periodStart: new Date().toISOString() });
+    const quotaStatus = quotaCfg
+      ? {
+          period: 'period' in quotaVerdict ? quotaVerdict.period : 'daily',
+          usedTokens: quotaVerdict.usedTokens,
+          maxTokens: Number.isFinite(quotaVerdict.maxTokens) ? quotaVerdict.maxTokens : null,
+          remaining: Number.isFinite(quotaVerdict.remaining) ? quotaVerdict.remaining : null,
+          status: quotaVerdict.action,
+        }
+      : null;
     const budget: CostBudget | null = params.budget ?? null;
     const findings = runCostAudit({ worklog, budget });
 
@@ -73,6 +89,8 @@ export async function costQuery(params: { budget?: CostBudget } = {}): Promise<C
         budget: budget ?? undefined,
         worklog: worklog ?? undefined,
         findings,
+        // v1.4.8 第六章：quota 状态三字段（余量/已用/周期——事前门禁的查询面）
+        quota: quotaStatus,
       },
     };
   } catch (err) {
