@@ -52,8 +52,11 @@ async function main() {
   switch (subcommand) {
     case 'worklog': {
       // v1.4.0 交付七：TUI 工作明细视图（worklog.json ASCII 渲染）
+      // v1.4.8 F-19: 路径改走 core getDataDir SSOT——旧写法在显式设 SOFAGENT_HOME
+      // 时多拼一层 /.sofagent（双拼）静默读空目录（billing 分支先例照抄）
       const { renderWorklogView } = await import('./dashboard/worklog-view');
-      const dataDir = process.env.SOFAGENT_DATA || (process.env.SOFAGENT_HOME || require('os').homedir()) + '/.sofagent/data';
+      const { getDataDir } = await import('@sofagent/core');
+      const dataDir = getDataDir();
       console.log(renderWorklogView(dataDir + '/dashboard/worklog.json'));
       break;
     }
@@ -72,8 +75,10 @@ async function main() {
     }
     case 'decision-tree': {
       // v1.4.0 交付七：对话分支回溯（decisions.jsonl 分支树）
+      // v1.4.8 F-19: 路径改走 core getDataDir SSOT（同 worklog 分支）
       const { renderDecisionTree } = await import('./dashboard/decision-tree');
-      const dataDir = process.env.SOFAGENT_DATA || (process.env.SOFAGENT_HOME || require('os').homedir()) + '/.sofagent/data';
+      const { getDataDir } = await import('@sofagent/core');
+      const dataDir = getDataDir();
       console.log(renderDecisionTree(dataDir + '/audit/decision-log.jsonl'));
       break;
     }

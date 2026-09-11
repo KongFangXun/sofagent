@@ -132,8 +132,12 @@ export async function prMerge(args: Record<string, unknown>): Promise<PrResult> 
   }
 
   if (branchResult.data.isError) {
-    // branch 不存在 → 不算失败（PR 不带 branch 改动场景），返回省略 mergedVersion
-    if (branchResult.data.issues?.some((i) => i.includes('不存在'))) {
+    // v1.4.8 F-21: 按 audit 侧 pr-store→workflowMergeBranch 的结构化 code 分流——
+    // 此前 `includes('不存在')` 匹配自然语言文案：branch-x 不存在（良性——PR 不带
+    // branch 改动）与 workflow「id」不存在（trunk 缺失，严重）文案同含「不存在」
+    // 命中同一分支，trunk 丢失被误判良性、状态机假成功。
+    if (branchResult.data.code === 'branch-x-missing') {
+      // branch 不存在 → 不算失败（PR 不带 branch 改动场景），返回省略 mergedVersion
       return merged;
     }
     // 其他结构化错误（trunk 缺失等）→ 回退 PR + 报错

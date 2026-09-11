@@ -26,8 +26,8 @@ import {
 export interface CryptoInitResult {
   /** ok = 密钥就绪；warn = 跳过（非交互无密钥——不 FAIL） */
   status: 'ok' | 'warn';
-  /** generated = 本次生成 / already-initialized = 已就绪 / skipped-non-interactive = 跳过 */
-  action: 'generated' | 'already-initialized' | 'skipped-non-interactive';
+  /** generated = 本次生成 / already-initialized = 已就绪 / skipped-non-interactive = 非交互跳过 / skipped-unconfirmed = 确认未通过（超时/拒绝/无效 env） */
+  action: 'generated' | 'already-initialized' | 'skipped-non-interactive' | 'skipped-unconfirmed';
   /** 密钥指纹前 16 位（核对备份用；skipped 时无） */
   fingerprint?: string;
   /** 人读消息（daemon 日志输出） */
@@ -40,6 +40,11 @@ export interface CryptoInitOptions {
    * 默认按 process.stdout.isTTY 判定；测试可显式注入。
    */
   interactive?: boolean;
+  /**
+   * v1.4.8 F-20: 确认回调注入点——缺省走真实 stdin 交互；测试注入 () => true
+   * 模拟用户确认（无 stdin 的自动化环境不挂起）。回调返回 true = 已确认备份。
+   */
+  confirmBackupInput?: () => boolean;
 }
 
 /**
@@ -74,6 +79,26 @@ export function initDataEncryption(
     };
   }
 
+  if (process.env.SOFAGENT_CONFIRM_BACKUP === '1') {
+    const generated = generateDataKey(sofagentHome, { confirmBackup: true });
+    writeInitializedMarker(sofagentHome);
+    console.log(`🔐 [crypto-init] 数据加密密钥已生成（SOFAGENT_CONFIRM_BACKUP=1 显式确认）`);
+    console.log(`    指纹（SHA-256 前 16 位）：${generated.fingerprint}`);
+    console.log(`    ⚠️ 请立即离线备份该密钥（丢失后加密数据永久不可读）：见 keys/data.key`);
+    return {
+      status: 'ok',
+      action: 'generated',
+      fingerprint: generated.fingerprint,
+      message: `数据加密密钥已生成（指纹 ${generated.fingerprint}）——env 显式确认通道`,
+    };
+  }
+  if (process.env.SOFAGENT_CONFIRM_BACKUP !== undefined && process.env.SOFAGENT_CONFIRM_BACKUP !== '1') {
+    const message =
+      '数据加密未初始化——SOFAGENT_CONFIRM_BACKUP 已设置但值非 "1"（不视为有效确认）。' +
+      '密钥生成需显式确认备份（SOFAGENT_CONFIRM_BACKUP=1），或在本机交互运行引导。';
+    console.warn(`⚠️  [crypto-init] ${message}`);
+    return { status: 'warn', action: 'skipped-unconfirmed', message };
+  }
   // 2) 无密钥 + 非交互——WARN 跳过（CI 不红）
   if (!interactive) {
     const message =
@@ -84,8 +109,26 @@ export function initDataEncryption(
   }
 
   // 3) 无密钥 + 交互——引导生成。
-  //    交互路径已向用户展示指纹并取得备份确认（daemon 首启引导话术），
-  //    此处以 confirmBackup=true 落盘（key-manager 的强制备份门由本调用方负责满足）。
+  //    v1.4.8 F-20: 真实确认门落地——此前注释假设「daemon 首启话术已取得确认」
+  //    直接 confirmBackup=true 断言架空强制备份门（密钥先落盘、指纹后打印、
+  //    全程零交互；用户丢机 = 加密数据永久不可读）。现在：
+  //      - 交互 TTY：先打印指纹预览不可行（密钥未生成）——改为生成前显式
+  //        readline 等待用户输入确认「我已理解密钥须离线备份」；
+  //      - 非交互 + SOFAGENT_CONFIRM_BACKUP=1：无头部署显式确认通道
+  //        （enterprise-deploy.md 批量激活 SOP 引用本 env）；
+  //      - 非交互 + 未设 env：保持 WARN 跳过（上方分支，措辞已含风险）。
+  // 交互 TTY：同步等待用户确认（30s 超时降级 WARN——无人应答不落盘）；
+  // 测试/自动化注入 confirmBackupInput 通道优先
+  const confirmed = options.confirmBackupInput
+    ? options.confirmBackupInput()
+    : awaitInteractiveBackupConfirm(sofagentHome);
+  if (!confirmed) {
+    const message =
+      '数据加密未初始化（备份确认超时/被拒）——密钥未生成。' +
+      `重新运行 daemon start 并确认，或无头环境设 SOFAGENT_CONFIRM_BACKUP=1`;
+    console.warn(`⚠️  [crypto-init] ${message}`);
+    return { status: 'warn', action: 'skipped-unconfirmed', message };
+  }
   const generated = generateDataKey(sofagentHome, { confirmBackup: true });
   writeInitializedMarker(sofagentHome);
   console.log(`🔐 [crypto-init] 数据加密密钥已生成`);
@@ -97,4 +140,48 @@ export function initDataEncryption(
     fingerprint: generated.fingerprint,
     message: `数据加密密钥已生成（指纹 ${generated.fingerprint}）——请确认已离线备份`,
   };
+}
+
+
+// ============================================================
+// v1.4.8 F-20: 交互备份确认门——同步 readline + 30s 超时降级
+// ============================================================
+
+/**
+ * 交互 TTY 下等待用户确认「已理解密钥须离线备份」。
+ * 任何输入以 y/yes/是 开头视为确认；其余（含超时静默）视为拒绝。
+ * 非真实 TTY 直接返回 false（防脚本管道里 readFileSync(0) 挂死）。
+ */
+function awaitInteractiveBackupConfirm(sofagentHome: string): boolean {
+  const { createInterface } = require('readline') as typeof import('readline');
+  console.log(`🔐 [crypto-init] 即将生成数据加密密钥（落盘 ${sofagentHome}/keys/data.key）`);
+  console.log('    ⚠️ 密钥丢失 = 加密数据永久不可读——生成前请确认你已理解须离线备份。');
+  const rl = createInterface({ input: process.stdin, output: process.stdout });
+  let answered = false;
+  let confirmed = false;
+  const timer = setTimeout(() => {
+    if (!answered) {
+      rl.close();
+    }
+  }, 30_000);
+  try {
+    // execSync 形态的单问题同步等待——daemon 启动路径不能改异步签名（调用方为同步流）
+    const { execSync } = require('child_process') as typeof import('child_process');
+    let answer = '';
+    try {
+      answer = execSync('head -1 /dev/stdin', {
+        input: undefined,
+        timeout: 30_000,
+        stdio: ['inherit', 'pipe', 'pipe'],
+      }).toString().trim();
+    } catch {
+      return false;
+    }
+    answered = true;
+    confirmed = /^(y|yes|是)/i.test(answer);
+  } finally {
+    clearTimeout(timer);
+    try { rl.close(); } catch { /* 已关 */ }
+  }
+  return confirmed;
 }

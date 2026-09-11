@@ -17,7 +17,9 @@ import * as path from 'path';
 const tmpHome = fs.mkdtempSync(path.join(os.tmpdir(), 'sofagent-crypto-cli-'));
 
 // 隔离环境：SOFAGENT_HOME 指向 tmp（resolveHomeDir 消费此 env）
+// v1.4.8 R6 连锁：越界回退已 fail-loud——tmp 隔离属测试合法场景，显式放行前缀
 process.env.SOFAGENT_HOME = tmpHome;
+process.env.SOFAGENT_HOME_ALLOWED_PREFIXES = os.tmpdir();
 
 const { initDataEncryption } = await import('../crypto-init');
 const { generateDataKey, loadDataKey, isInitialized } = await import('@sofagent/core');
@@ -34,7 +36,7 @@ afterEach(() => {
 
 describe('章十四：daemon start 加密引导接线（initDataEncryption）', () => {
   it('① 交互环境 → 生成密钥 + initialized 标记 + ok', () => {
-    const r = initDataEncryption(tmpHome, { interactive: true });
+    const r = initDataEncryption(tmpHome, { interactive: true, confirmBackupInput: () => true });
     expect(r.status).toBe('ok');
     expect(r.action).toBe('generated');
     expect(r.fingerprint).toMatch(/^[0-9a-f]{16}$/);
@@ -53,15 +55,15 @@ describe('章十四：daemon start 加密引导接线（initDataEncryption）', 
   });
 
   it('③ 幂等：已有密钥再调 → already-initialized ok', () => {
-    initDataEncryption(tmpHome, { interactive: true });
-    const again = initDataEncryption(tmpHome, { interactive: true });
+    initDataEncryption(tmpHome, { interactive: true, confirmBackupInput: () => true });
+    const again = initDataEncryption(tmpHome, { interactive: true, confirmBackupInput: () => true });
     expect(again.status).toBe('ok');
     expect(again.action).toBe('already-initialized');
   });
 
   it('④ 密钥就绪后 appendHistory 密文落盘（SOFAGENT-AGE-V1 前缀）', async () => {
     // 生成密钥（激活加密）
-    initDataEncryption(tmpHome, { interactive: true });
+    initDataEncryption(tmpHome, { interactive: true, confirmBackupInput: () => true });
     const { appendHistory } = await import('@sofagent/audit');
     const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'sofagent-crypto-data-'));
     try {
@@ -85,7 +87,7 @@ describe('章十四：daemon start 加密引导接线（initDataEncryption）', 
   });
 
   it('⑤ 既有明文历史可读（读侧 auto-detect 不回填）', async () => {
-    initDataEncryption(tmpHome, { interactive: true });
+    initDataEncryption(tmpHome, { interactive: true, confirmBackupInput: () => true });
     const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'sofagent-crypto-plain-'));
     try {
       // 先写一条明文历史（模拟加密激活前的旧记录）

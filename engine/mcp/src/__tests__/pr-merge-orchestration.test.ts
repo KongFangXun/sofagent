@@ -77,6 +77,19 @@ describe('MCP pr_merge 编排态：branch→trunk 写回联动', () => {
     expect(pr.mergedVersion).toBe(2);
   });
 
+  it('v1.4.8 F-21: trunk 缺失（workflow 不存在）→ 不假成功：isError + 回退 open（非良性跳过）', async () => {
+    // 只建 PR，不建 workflow（trunk 缺失场景）——旧代码按文案 includes('不存在')
+    // 匹配会把 trunk 缺失误判为「branch 不存在」良性分支 → 状态机假成功 merged
+    const { prSubmit, prReview } = await import('../tools/pr-tools');
+    await prSubmit({ pr_id: 'pr-trunk-missing', workflow_id: 'ghost-flow', title: 't', submitter: 'bob', data_dir: ISO_DIR });
+    await prReview({ pr_id: 'pr-trunk-missing', reviewer: 'carol', verdict: 'approve', data_dir: ISO_DIR });
+
+    const r = await prMerge({ pr_id: 'pr-trunk-missing', actor: 'carol', data_dir: ISO_DIR });
+    expect(r.data.isError).toBe(true);          // trunk 缺失 = 严重错误，不省略 mergedVersion 装成功
+    expect(r.data.status).toBe('open');         // PR 回退 open（走 prRevertToOpen）
+    expect(r.data.issues?.[0]).toContain('branch→trunk 写回失败');
+  });
+
   it('branch 不存在：不算失败，mergedVersion 省略（PR 不带 branch 改动场景）', async () => {
     const { workflowCreate } = await import('@sofagent/orchestrator');
     await workflowCreate({ workflow: baseDoc, owner: 'alice' }, ISO_DIR);

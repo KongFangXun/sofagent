@@ -110,6 +110,29 @@ describe('G4 贡献度聚合：核心正确性', () => {
     expect(alice.negative_signals).toBe(1); // ESCALATE_REPORT = 负样本
   });
 
+  it('v1.4.8 F-22: 系统簿记 agent（pr-store）decisions 不计但负样本照计', () => {
+    makeMergedPr('pr-1', 'wf-a', 'alice');
+    // 模拟真实链路：PR reject 后 pr-store 以系统 agentId 写 reject 留痕（负样本）
+    const auditDir = join(ISO_DIR, 'audit');
+    mkdirSync(auditDir, { recursive: true });
+    const now = new Date().toISOString();
+    writeFileSync(
+      join(auditDir, 'decision-log.jsonl'),
+      [
+        // 系统簿记的正常决策——decisions 不计、negative_signals 不计
+        JSON.stringify({ ts: now, agentId: 'sofagent-pr-store-abc', sessionId: 's', kind: 'ARTIFACT_EDIT', moment: 'ACT', why: 'PR reject 落库' }),
+        // 系统簿记的 reject 负样本——negative_signals 照计（修复前：isSystemAgent 过滤整行丢弃 = 恒 0 死分支）
+        JSON.stringify({ ts: now, agentId: 'sofagent-pr-store-abc', sessionId: 's', kind: 'ORCHESTRATION', moment: 'ACT', why: 'PR review reject: pr-9——负样本训练信号' }),
+        JSON.stringify({ ts: now, agentId: 'sofagent-pr-store-abc', sessionId: 's', kind: 'ESCALATE_REPORT', moment: 'ACT', why: '升级复核' }),
+      ].join('\n') + '\n',
+      'utf-8',
+    );
+    const r = aggregateContributions(ISO_DIR);
+    const sysRow = r.byContributor.find((c) => c.contributor_id === 'sofagent-pr-store-abc')!;
+    expect(sysRow.decisions).toBe(0);        // 簿记不是贡献
+    expect(sysRow.negative_signals).toBe(2); // reject 负样本（ORCHESTRATION+标记）+ ESCALATE_REPORT
+  });
+
   it('audit history 变更规模计入 audit_files', () => {
     makeMergedPr('pr-1', 'wf-a', 'alice');
     const auditDir = join(ISO_DIR, 'audit');

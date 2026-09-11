@@ -79,6 +79,12 @@ export interface CrudResult {
     removed?: number;
     /** 结构化错误清单（isError=true 时机器可读） */
     issues?: string[];
+    /**
+     * v1.4.8 F-21: 结构化错误码（isError=true 时）——MCP 层按 code 分流，
+     * 不再对自然语言文案做 includes 匹配（branch-x-missing 良性跳过 vs
+     * workflow-missing trunk 缺失严重回退，两者文案都含「不存在」曾走同一分支）。
+     */
+    code?: 'branch-x-missing' | 'workflow-missing' | 'invalid-input' | 'cron-invalid';
     /** 审计留痕是否成功 */
     auditLogged: boolean;
   };
@@ -510,6 +516,7 @@ export async function workflowMergeBranch(
         action: 'merge_branch',
         workflowId: input.workflow_id ?? '',
         issues: ['缺必填参数（workflow_id/branch_actor/merge_actor）'],
+        code: 'invalid-input',
         auditLogged: false,
       },
     };
@@ -535,6 +542,7 @@ export async function workflowMergeBranch(
         action: 'merge_branch',
         workflowId: input.workflow_id,
         issues: [`branch-${input.branch_actor} 不存在`],
+        code: 'branch-x-missing',
         auditLogged: false,
       },
     };
@@ -591,6 +599,7 @@ function notFound(workflowId: string, action: string): CrudResult {
       action,
       workflowId,
       issues: [`workflow「${workflowId}」不存在`],
+      code: 'workflow-missing',
       auditLogged: false,
     },
   };

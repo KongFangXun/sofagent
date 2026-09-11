@@ -152,7 +152,16 @@ export function aggregateContributions(
     }
   }
   for (const d of decisions) {
-    if (isSystemAgent(d.agentId)) continue; // 系统簿记不计贡献
+    // v1.4.8 F-22: 系统簿记 agent 的 decisions 不计（簿记不是贡献），但
+    // **负样本信号照计**——PR reject 留痕正是训练信号（pr-store 写
+    // agentId=sofagent-pr-store-* 的 reject 记录此前在 isSystemAgent 过滤
+    // 后整行丢弃，negative_signals 对 reject 恒 0 = 统计死分支）。
+    if (isSystemAgent(d.agentId)) {
+      if (isNegativeSignal(d)) {
+        ensure(d.agentId).negative_signals += 1;
+      }
+      continue;
+    }
     const row = ensure(d.agentId);
     row.decisions += 1;
     if (isNegativeSignal(d)) row.negative_signals += 1;

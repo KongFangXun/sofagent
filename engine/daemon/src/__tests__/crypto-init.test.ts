@@ -34,7 +34,7 @@ describe('交付二 · crypto-init（daemon 首启引导）', () => {
   afterEach(() => rmDir(home));
 
   it('首次运行 + 交互环境 → 引导生成密钥 + initialized 标记 + status ok', () => {
-    const result = initDataEncryption(home, { interactive: true });
+    const result = initDataEncryption(home, { interactive: true, confirmBackupInput: () => true });
     expect(result.status).toBe('ok');
     expect(result.action).toBe('generated');
     expect(fs.existsSync(dataKeyPath(home))).toBe(true);
@@ -54,17 +54,17 @@ describe('交付二 · crypto-init（daemon 首启引导）', () => {
   });
 
   it('已有密钥 → 直接 ok（幂等，不重复生成，不覆盖指纹）', () => {
-    const first = initDataEncryption(home, { interactive: true });
-    const second = initDataEncryption(home, { interactive: true });
+    const first = initDataEncryption(home, { interactive: true, confirmBackupInput: () => true });
+    const second = initDataEncryption(home, { interactive: true, confirmBackupInput: () => true });
     expect(second.status).toBe('ok');
     expect(second.action).toBe('already-initialized');
     expect(second.fingerprint).toBe(first.fingerprint); // 同一密钥
   });
 
   it('已生成但未写标记（异常残留）→ 补写标记并 ok', () => {
-    initDataEncryption(home, { interactive: true });
+    initDataEncryption(home, { interactive: true, confirmBackupInput: () => true });
     fs.unlinkSync(initializedMarkerPath(home)); // 模拟半程中断
-    const result = initDataEncryption(home, { interactive: true });
+    const result = initDataEncryption(home, { interactive: true, confirmBackupInput: () => true });
     expect(result.status).toBe('ok');
     expect(fs.existsSync(initializedMarkerPath(home))).toBe(true);
   });
