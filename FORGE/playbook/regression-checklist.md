@@ -2,7 +2,7 @@
 
 > **用途**：每次发版前跑一遍，确认之前修过的问题没有回退。发现新问题用 [fresh-eyes-review](./fresh-eyes-review.md)。审查范围：全仓库状态检查（不是只看增量）。
 > **编号规则**：归并项直接删除、编号不复用；维度演进与归并的完整历史 `git log -p` 可溯，本清单只维护当前状态。
-> **当前 98 维 · 编号 1-134 · 35 个编号已归并删除**。维度流连续不中断，分组导航：基线组 → 审查约束组 → 环境敏感组（前置 vitest/沙箱铁律）。
+> **当前 98 维 · 编号 1-135 · 36 个编号已归并删除**。维度流连续不中断，分组导航：基线组 → 审查约束组 → 环境敏感组（前置 vitest/沙箱铁律）。
 
 ## 🔒 维护公约（防膨胀铁律）
 
@@ -24,10 +24,9 @@ HEAD_VAL=$(grep -oE '当前 [0-9]+ 维' FORGE/playbook/regression-checklist.md |
 ACTUAL=$(grep -c "^#### " FORGE/playbook/regression-checklist.md)
 [ "$HEAD_VAL" = "$ACTUAL" ] && echo "✅ 维度数一致 ($HEAD_VAL)" || echo "❌ 头部声称 $HEAD_VAL ≠ 实际 $ACTUAL"
 
-# 行数警戒线自检（越线提醒瘦身，非失败；与 releasing.md 阶段五警戒线一致）
+# 行数警戒线自检（越线即 FAIL——与 check-review-system.sh §1d 同口径；本段是速览，门禁是权威）
 WC_CHK=$(wc -l < FORGE/playbook/regression-checklist.md); WC_ACC=$(wc -l < FORGE/playbook/acceptance-test.sh)
-[ "$WC_CHK" -le 1800 ] && echo "✅ checklist $WC_CHK (≤1800)" || echo "⚠️ checklist $WC_CHK 超 1800"
-[ "$WC_ACC" -le 4200 ] && echo "✅ acceptance $WC_ACC (≤4200)" || echo "⚠️ acceptance $WC_ACC 超 4200"
+[ "$WC_CHK" -le 1800 ] && echo "✅ checklist $WC_CHK (≤1800)" || { echo "❌ checklist $WC_CHK 超 1800（check-review-system 判 FAIL——走归并，不走上调）"; RC=1; }; [ "$WC_ACC" -le 4200 ] && echo "✅ acceptance $WC_ACC (≤4200)" || { echo "❌ acceptance $WC_ACC 超 4200（同上）"; RC=1; }; exit ${RC:-0}  # 超线非零退出（人工执行可注释掉末行——防误伤终端后续命令）
 ```
 ## 你的身份
 
@@ -1705,19 +1704,21 @@ grep -q "GLM_API_KEY" FORGE/models/profile.mjs && echo "✅ fork 适配提示在
 ! grep -q "benchRoot" engine/core/src/export/sample-aggregator.ts && echo "✅ benchRoot 死变量已清" || echo "❌ 死变量回潮"
 ```
 
-#### 130. v1.4.4 发版流程防复发——sha256 预计算时序 + Marketplace 自动延续 + ClawHub 状态快照对照 + 同文件多 Edit 串行
+#### 130. 发版流程与发版域教训防复发——sha256 预计算 + Marketplace 延续 + ClawHub 快照 + Edit 串行 + npm 对账缓存 + 干净态排查
 
 > 发版四坑实录：① bootstrap.sh INSTALL_SHA256 回填走「tag 后算哈希再回填再重打 tag」两次 tag 往返——预计算 HEAD 哈希与 URL bump 同 commit 可让 tag 一次打自洽（install.sh/lib 无改动时 lib 哈希不变免回填）；② GitHub Marketplace listing 勾选自动延续（v1.4.2 起每版勾选后 listing 关联保持），版本页出现新版号即免网页操作；③ ClawHub verify 的 `security.status_not_clean` 可能是既有状态（1.4.3 时代已存在）——发布前先快照对照，新引入才需处置；④ 同一文件多处 Edit 并行调用发生读写竞态（5 处只落 2 处）——同文件多编辑必须串行。
 
 ```bash
-# ① sha256 自洽预检：bootstrap 内嵌哈希 == HEAD install.sh 哈希（打 tag 前跑，免重打）
+# v1.4.8 bugfix 批归并：原 #135 发版域教训四锚点整体并入（git log -p 可溯，断言零删减）；① sha256 自洽预检：bootstrap 内嵌哈希 == HEAD install.sh 哈希（打 tag 前跑，免重打）
 EMB=$(sed -n 's/^INSTALL_SHA256="\([a-f0-9]*\)".*/\1/p' bootstrap.sh); HEAD_H=$(git show HEAD:install.sh | shasum -a 256 | cut -d' ' -f1); [ "$EMB" = "$HEAD_H" ] && echo "✅ INSTALL_SHA256 与 HEAD 自洽" || { PREV_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo v1.4.3); git diff "$PREV_TAG"..HEAD --stat -- install.sh | grep -q . && echo "⏳ 待发版态——install.sh 相对 $PREV_TAG 有改动，INSTALL_SHA256 回填排期阶段九（tag 前重算）" || { echo "❌ 哈希不自洽——回填后须重打 tag"; exit 1; }; }
-# ② 6 lib 哈希稳定性：install.sh/lib 无改动时 LIB_SHA256S 不变（git diff 空 = 免回填）
-PREV_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo v1.4.3); git diff "$PREV_TAG"..HEAD --stat -- engine/scripts/lib/ | wc -l | grep -q "^0$" && echo "✅ lib 零改动（LIB_SHA256S 沿用）" || echo "🟡 lib 相对 $PREV_TAG 有改动——6 哈希须逐项回填（排期阶段九 tag 前）"
-# ③ Marketplace 版本页含本版号即免网页勾选（listing 自动延续）
-MKT_HTML=$(curl -s --max-time 10 https://github.com/marketplace/actions/sofagent); MKT_RC=$?; if [ $MKT_RC -ne 0 ]; then echo "🟡 网络不可达（curl exit $MKT_RC）——marketplace 对照跳过（网络态非仓库问题，有网时人工复核）"; elif echo "$MKT_HTML" | grep -q "$(node -p "require('./package.json').version")"; then echo "✅ marketplace 版本页已含本版"; else echo "🟡 版本页未见本版——按 SOP 网页勾选 Publish to Marketplace"; fi
-# ④ ClawHub 状态快照纪律：发布前 verify 落盘，发布后对照——新引入 reasons 才处置（既有状态披露不阻断；快照命令：clawhub skill verify <slug> > /tmp/clawhub-pre.json）
-# ④b ClawHub publish 后 pending scan 态：verify 显示旧版本 + security suspicious ≠ 发布失败——scan 进行中态，等 1-2 分钟复查转正；转正判据走 API（clawhub.ai/api/v1/packages/<name>?ownerHandle=<handle> 的 package.latestVersion）而非 CLI 输出（v1.4.6 OpenClaw×4 实录：4/4 均先显旧版后转正）
+PREV_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo v1.4.3); git diff "$PREV_TAG"..HEAD --stat -- engine/scripts/lib/ | wc -l | grep -q "^0$" && echo "✅ lib 零改动（LIB_SHA256S 沿用）" || echo "🟡 lib 相对 $PREV_TAG 有改动——6 哈希须逐项回填（排期阶段九 tag 前）"  # ② 6 lib 哈希稳定：lib 无改动免回填
+MKT_HTML=$(curl -s --max-time 10 https://github.com/marketplace/actions/sofagent); MKT_RC=$?; if [ $MKT_RC -ne 0 ]; then echo "🟡 网络不可达（curl exit $MKT_RC）——marketplace 对照跳过（网络态非仓库问题，有网时人工复核）"; elif echo "$MKT_HTML" | grep -q "$(node -p "require('./package.json').version")"; then echo "✅ marketplace 版本页已含本版"; else echo "🟡 版本页未见本版——按 SOP 网页勾选 Publish to Marketplace"; fi  # ③ Marketplace 版本页含本版号即免网页勾选（自动延续）
+# ④ ClawHub 快照纪律：发布前 verify 落盘（clawhub skill verify <slug> > /tmp/clawhub-pre.json）对照处置；④b pending scan 显旧版+suspicious≠失败，转正判据走 API（clawhub.ai/api/v1/packages/<name>?ownerHandle=<handle>）
+grep -q "prefer-online" docs/changelog/releasing/09-publish.md && grep -q "prefer-online" docs/changelog/releasing/11-post-publish.md && echo "✅ SOP 对账命令守卫在位" || echo "❌ SOP 对账命令退化为裸查询"  # ⑤ npm 对账带 --prefer-online（裸查询吃缓存误报漏发）
+# ⑥ 构建拓扑序干净态自洽（本地 dist 残留会掩盖乱序）⑦ 环境特异失败先模拟 CI 干净态（三类排查序）⑧ 工具降级分支 fail-loud（降级必须可见）
+node -e "const s=require('./package.json').scripts.build; const order=['harness','core','ontology','rules','audit','eval','think','skillopt','orchestrator','daemon','ab-test','mcp','sofagent-load-chain']; let i=-1; for(const seg of s.split(' && ')){const m=seg.match(/--workspace=([^\s]+)/); if(!m) continue; const short=m[1].replace(/^engine\//,'').replace(/^hooks\//,''); const idx=order.indexOf(short); if(idx<0||idx<=i){console.error('❌ 拓扑序倒置或未知包: '+m[1]); process.exit(1);} i=idx;}" && echo "✅ build 序列满足 13 包拓扑序"
+grep -q "rm -rf engine/\*/dist" docs/changelog/releasing/09-publish.md && echo "✅ 干净态排查法已写入 SOP" || echo "❌ 干净态排查法从 SOP 丢失"
+git grep -q "regexWarned" -- tools/check/public-api.mjs && echo "✅ 降级 fail-loud 在位" || echo "❌ 降级静默"
 ```
 
 #### 131. v1.4.5 后训服务与持续收口批防复发——train 五新面/进化实证/retention 加固/链锚一维收口（阶段四来源提取 A/B 合流 · 行为面已由单测锁：serve 21/compliance 19/deliverable 20/retention 15/session 17+2 用例）
@@ -1795,19 +1796,4 @@ git grep -q "atomicWriteSync" -- engine/core/src/ && echo "✅ atomicWriteSync �
 git grep -nE "排期 v1\.4\.7" -- SECURITY.md LIMITATIONS.md | grep -q . && echo "❌ 翻牌残留（排期 v1.4.7 未清）" || echo "✅ 翻牌无同义残留"
 # g: 跨版账链注明（测试数换基可追溯）
 grep -qE "4107\s*=\s*4088|4088\s*\+\s*19" docs/changelog/v1.4/v1.4.7.md && echo "✅ 跨版账链注明" || echo "❌ 跨版基线未注明") 2>&1 | tee "/tmp/regress-dim134-$$.log"; grep -q "❌" "/tmp/regress-dim134-$$.log" && { rm -f "/tmp/regress-dim134-$$.log"; echo "维度134收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim134-$$.log"; echo "维度134收口:PASS"
-```
-
-#### 135. 发版域教训——npm view 对账缓存误报 + 本地绿 CI 红三类根因（阶段九来源 · v1.4.7 首推三红实证）
-
-> 发版过程教训归位：CI 失败分类与修法已吸收进 SOP 09-publish（三分类 + 环境特异三类根因细化）；此处只留防复发锚点。
-
-```bash
-(# a: 发版对账命令带 --prefer-online（09/11 SOP 命令守卫——裸查询吃缓存误报漏发）
-grep -q "prefer-online" docs/changelog/releasing/09-publish.md && grep -q "prefer-online" docs/changelog/releasing/11-post-publish.md && echo "✅ SOP 对账命令守卫在位" || echo "❌ SOP 对账命令退化为裸查询"
-# b: 构建拓扑序干净态自洽（本地 dist 残留会掩盖乱序——13 包依赖拓扑序是 build 序列硬约束）
-node -e "const s=require('./package.json').scripts.build; const order=['harness','core','ontology','rules','audit','eval','think','skillopt','orchestrator','daemon','ab-test','mcp','sofagent-load-chain']; let i=-1; for(const seg of s.split(' && ')){const m=seg.match(/--workspace=([^\s]+)/); if(!m) continue; const short=m[1].replace(/^engine\//,'').replace(/^hooks\//,''); const idx=order.indexOf(short); if(idx<0||idx<=i){console.error('❌ 拓扑序倒置或未知包: '+m[1]); process.exit(1);} i=idx;}" && echo "✅ build 序列满足 13 包拓扑序"
-# c: 疑似环境特异失败先模拟 CI 干净态再定位（方法论锚点——dist 残留/宿主密钥/job 缺前置三类排查序）
-grep -q "rm -rf engine/\*/dist" docs/changelog/releasing/09-publish.md && echo "✅ 干净态排查法已写入 SOP" || echo "❌ 干净态排查法从 SOP 丢失"
-# d: 工具降级分支 fail-loud（public-api 降级正则曾致口径误报——降级必须可见）
-git grep -q "regexWarned" -- tools/check/public-api.mjs && echo "✅ 降级 fail-loud 在位" || echo "❌ 降级静默") 2>&1 | tee "/tmp/regress-dim135-$$.log"; grep -q "❌" "/tmp/regress-dim135-$$.log" && { rm -f "/tmp/regress-dim135-$$.log"; echo "维度135收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim135-$$.log"; echo "维度135收口:PASS"
 ```
