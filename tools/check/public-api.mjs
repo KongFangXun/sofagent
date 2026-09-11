@@ -47,6 +47,7 @@ const PACKAGES = [
 // ── AST 语义解析（复用官方 AST 规则引擎；不可用回退正则）──
 
 let astEngine = null;
+let regexWarned = false;
 function getAstEngine() {
   if (astEngine !== null) return astEngine;
   try {
@@ -105,6 +106,14 @@ function extractPublicSymbols(entryPath) {
     exports = engine.extractExports(entryPath.split('/').pop(), src);
     basis = 'ast';
   } else {
+    // 降级 fail-loud：正则口径与 AST 存在差量（实测 ~8 符号），静默降级会让
+    // 「文档声称符号数校验」以错误口径误报——一次性显著提示失败原因与修复命令。
+    if (!regexWarned) {
+      regexWarned = true;
+      console.warn('⚠️  AST 引擎不可用（engine/rules/dist/ast/engine.js 缺失）——已回退正则解析：');
+      console.warn('    正则口径与 AST 存在差量，「文档声称符号数校验」可能误报（口径分歧）。');
+      console.warn('    修复：npm ci && npm run build --workspace=engine/core && npm run build --workspace=engine/rules');
+    }
     exports = extractExportsRegex(src).map((name) => ({ name, line: 0 }));
     basis = 'regex';
   }
