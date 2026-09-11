@@ -198,6 +198,8 @@
 | 46 | rc 依赖 API 属性改方法 → 24 worker 全灭 token 白烧（放大器=逐个降级占位） | 四·fresh-eyes 四连事故④ |
 | 47 | 环境级故障逐个降级占位继续跑 = 损失放大器（系统性失败熔断缺失） | 四·fresh-eyes 四连事故④ |
 | 48 | 事故教训不及时回写 lessons，换 session 重踩同款 | 四·四连事故横向教训⑤ |
+| 49 | driver resume 断点劫持新 run（旧断点接管新意图，白跑一轮） | 引擎/工具通用坑位 #23 |
+| 50 | `$(cmd | head -1)` 无匹配 pipefail 杀整脚本 | 引擎/工具通用坑位 #24 |
 
 ### 关键设计决策速查
 
@@ -273,6 +275,8 @@
 | 20 | **空 diff 提交绕过 message 审计**——无文件变更的提交让审计引擎短路，直接跳过 message 类规则（A5/A9/A19 只消费 message 不依赖 diff） | 空 diff 短路逻辑设计时只考虑了 diff 类规则 | 空 diff 仍跑 message 类规则：构造只带 message 的 ctx；FAIL 判 exit 2（对齐主路径业务底线语义；hook 语义 1=警告放行 2=阻断） | engine/audit/src/index.ts |
 | 21 | **收编即标记：`git log main..<分支>` 与 `git cherry` 皆不可靠**——逐文件 apply 收编下前者恒非空（历史里永远找得到对应 commit），拆分/合并收编下后者 patch-id 假阳性 | git 原生命令语义与「收编状态」不匹配 | **判「已收编」唯一依据＝标记存在**（tag `forge-merged-*` 或分支改名 `-merged-YYYYMMDD`）；对账脚本 diff 分支清单与标记清单自动报红 | check-forge-branches / FORGE 分支治理 |
 | 22 | **守卫引擎故障静默报绿**——守卫内部变量未定义，检测循环遍历空集，稳定输出「0 处违规」通过 | 两份真相（守卫输出 vs 仓库实态）间无自动对账 | **fail-loud + 故障注入自检**：PATH 前置假 perl（crash/silent 两行为）验证门禁双路都能抓住；详见 [四·守卫 fail-loud](./driver.md#-守卫-fail-loud静默失败是最危险的失败模式) | check-guard-fail-loud / 守卫门禁设计 |
+| 23 | **driver resume 断点劫持新 run**——上一轮 verdict≠PASS 的 `resume-point.json` 残留时，新启动的 run 被旧断点接管（跳过 V 阶段直接进 F 链或立即退出），白跑一轮 | driver 启动时自动扫最近 run 的断点文件，存在即消费，不区分「上一轮」与「本次新意图」 | **每轮重跑前归档断点**：`mv <旧runDir>/resume-point.json <旧runDir>/resume-point.json.consumed`；归档动作写进循环模板每轮 ① 固定步骤（文件在位即必做，不存在跳过不算错） | release-gate-driver / 循环模板 |
+| 24 | **`VAR=$(cmd | head -1)` 无匹配杀整脚本**——`set -euo pipefail` 下 grep 无匹配返回 1，管道传递给命令替换整体，新增场景含 `mktemp -d` 时直接中断全量 acceptance | head -1 只截取不兜底退出码；pipefail 把最右非零当整体失败 | `VAR=$(cmd | head -1 \|\| true)` 收口；新增场景模板里 grep 取值一律带 `\|\| true`，见「坑位 38 同族」标注 | acceptance-test.sh / 循环模板 |
 
 ### DSH Cordis 内嵌可行性验证（四·DSH 证据注入姊妹篇）
 
