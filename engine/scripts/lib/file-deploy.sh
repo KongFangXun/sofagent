@@ -25,7 +25,10 @@ deploy_constitution() {
     fi
     warn "$HOME/.openclaw/fde.md 保留为用户自定义文件，不会被覆盖"
   else
-    local f src dst; f="fde.md"; src="${SCRIPT_DIR}/../${f}"; dst="${TARGET}/${f}"
+    # v1.4.8 F-29: 源路径化石修正——旧写法 src=${SCRIPT_DIR}/../fde.md 指向仓库外
+    # （v0.98 布局），该分支活了 7 个大版本永远走不到源（err 红错误分支）。
+    # 真源与 install.sh:434 RULES_SRC 同一：SKILL/harness/fde-template.md
+    local f src dst; f="fde.md"; src="${SCRIPT_DIR}/SKILL/harness/fde-template.md"; dst="${TARGET}/${f}"
     if [ -f "$src" ]; then
       if [ -f "$dst" ]; then
         if cmp -s "$src" "$dst" 2>/dev/null; then ok "$f — 已存在且内容相同，跳过"

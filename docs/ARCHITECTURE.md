@@ -55,7 +55,7 @@ graph LR
 
 ### 补充视角：约束层内部分层与业务概念嵌套
 
-> 以下两个视角是对双层架构内部结构的补充展开，不是独立的架构框架——**双层架构是唯一主框架**。
+> 以下两个视角是对双层架构内部结构的补充展开，不是独立的架构框架——**双层架构是唯一主框架**。**何时需要哪张图**：读产品定位 → 上方双层架构图；改引擎内部组织/排查能力归属 → 下方引擎工程视角；给企业用户讲解业务概念 → 下方业务概念视角；看企业落地终态 → 下文四层运行形态图。**生命周期五段（诊断→激活→编排→执行→进化）与激活链四阶段对照**：诊断=进场审计（FDE 交付物产出前的梳理），激活=ACTIVATE，编排=ORCHESTRATE，执行=EXECUTE，进化=SUSTAIN（五段的"诊断"是 FDE 进场动作，四阶段是产品化的生命周期主线）。
 
 **引擎工程视角**——约束层内部按「环境 → 流程 → 反馈」组织：
 
@@ -190,7 +190,7 @@ Agent = **模型 + 上下文 + 工具 + 状态 + 执行控制 + 权限 + 可观�
 
 > 这份清单是「现在能干什么」的单一索引。约束层内部设计见 [二、约束层（Harness）设计——一个层，五种能力](#二约束层harness设计一个层五种能力)；未来方向见 [六、已知局限与未来方向](#六已知局限与未来方向)。
 
-### 27 个 workspace 源码包（构成以 package.json workspaces 为准：12 个 @sofagent/* 模块包 + 1 个工具包 + 9 个 DSH 插件包 cordis-plugin-sofagent-* + 4 个 OpenClaw 插件包（engine/openclaw-plugins/）+ 1 个 npm 裸名总包 engine/umbrella（包名 `sofagent`，v1.4.6 新增聚合安装入口，821bb85f 引入——不属引擎包也不属插件，故两个旧口径都不计）；其中 13 个发布为 @sofagent npm 包，DSH 插件 9 款经 SkillHub 分发。「12 包」统计口径指有 test script 的模块包——「引擎」一词对外仅用于描述外部系统，见下方「功能编制」定位声明）
+### 27 个 workspace 源码包（构成以 package.json workspaces 为准：12 个 @sofagent/* 模块包 + 1 个工具包 + 9 个 DSH 插件包 cordis-plugin-sofagent-* + 4 个 OpenClaw 插件包（engine/openclaw-plugins/）+ 1 个 npm 裸名总包 engine/umbrella（包名 `sofagent`，v1.4.6 新增聚合安装入口，821bb85f 引入——不属引擎包也不属插件，故两个旧口径都不计）；其中 13 个发布为 @sofagent npm 包，DSH 插件 9 款经 SkillHub 分发。统计口径与包数构成见 [WIKI](./WIKI.md)）
 
 | 包 | 职责 | 状态 |
 |---|---|---|
@@ -319,7 +319,7 @@ graph TB
 >
 > ⚠️ **dashboard 是单机监控面板**——每台装了 sofagent 的设备一个 dashboard，盯本机 Agent。多设备聚合是企业级需求，走商业侧平台（不在开源范围）。
 
-> 最小可用：只装 `@sofagent/audit` 就有纯审计（24 条规则，17 默认启用 + 7 扩展 opt-in + 快照 + 回滚）；全量形态为 27 个 workspace（13 引擎包 = 12 主包 + 1 load-chain，13 插件 = 9 款 DSH + 4 款 OpenClaw，+ 1 个 npm 裸名总包 engine/umbrella），全装才是完整约束层。
+> 最小可用：只装 `@sofagent/audit` 就有纯审计（24 条规则，17 默认启用 + 7 扩展 opt-in + 快照 + 回滚）；全量形态为 27 个 workspace（包数构成权威表述见 [WIKI](./WIKI.md)），全装才是完整约束层。
 
 ### 已排期（开发中或即将开发，详见 ROADMAP）
 
@@ -1299,7 +1299,7 @@ sofagent 的现有架构**天然已是这种混合结构**，只是还没把"谁
 
 ### 8.4 落到版本的下一步
 
-- **v1.3.0 数据层硬化**：ontology I/O schema 硬化（§七 生长树"根系"工程化）；knowledge/ 条目标注 `certified: true | false` 来源标记；冲突裁决规则（certified 压顶）代码化。
+- **数据层硬化（已评估未实施）**：ontology I/O schema 硬化与 knowledge/ 条目 `certified: true | false` 来源标记曾排在 v1.3.0——**certified 语义未落地**（引擎源码零实现），冲突裁决代码化随之未做；若需要见 ROADMAP 认知域再排期，不再挂已过期的版本锚点。
 - **进化模块加权改造**：经验条目从"纯命中次数"改为"命中次数 × 来源可信度"，`certified` 条目权重视为 ∞（不可被高频非认证条目挤掉）。
 - **巡检联动**：`conflict-check` 增加"认证条目被高频非认证条目反向影响"的告警维度。
 

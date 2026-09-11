@@ -365,7 +365,9 @@ export function startCron(projectDir: string): number {
       if (intervalMs === 0) continue;
       scheduled += 1;
       console.log(`[cron] ${inspectorsConfig.layers[layer]} → 巡检层 ${layer}（分层巡检）`);
-      setInterval(() => {
+      // v1.4.8 F-58: 抽出巡检函数——setInterval 周期调度 + 启动即首跑
+      //（此前重启后首个周期内不巡检，重启日首日巡检空窗）。
+      const runInspectorTick = (): void => {
         try {
           // 局部 require 避免循环依赖：inspector-layers 侧无 cron 引用，
           // 但保持与其他分支一致的延迟加载风格（daemon 启动不拖重）。
@@ -377,7 +379,9 @@ export function startCron(projectDir: string): number {
         } catch (err) {
           console.error(`[cron] 巡检层 ${layer} 失败:`, (err as Error).message);
         }
-      }, intervalMs);
+      };
+      setInterval(runInspectorTick, intervalMs);
+      setTimeout(runInspectorTick, 0);  // 启动即首跑
     }
   } else {
     console.log('[cron] 分层巡检已禁用（inspectors.enabled=false）');

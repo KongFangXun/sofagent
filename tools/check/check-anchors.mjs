@@ -62,6 +62,12 @@ const EXCLUDE_PATTERNS = [
  * 按GitHub规则从标题文本生成锚点。
  * @param {string} title 标题文本（不含前导 #）
  * @returns {string} 锚点（不含 # 前缀）
+ *
+ * v1.4.8 F-45 扩面实测确认（防后人误报「未覆盖」）：
+ *   - emoji 前缀标题「🧪 工程可信度」→ emoji 被清除 + 尾随空格成连字符被去
+ *     → 锚点「工程可信度」（本仓锚点引用零 emoji 存量，实测 0 命中）；
+ *   - 全角引号「」（含『』）按标点清除 → 「审计日志」的边界 → 审计日志的边界；
+ *   - 上述两类形态均被 [^\p{L}\p{N}\s-] 清除规则覆盖（2026-09-11 实测）。
  */
 function githubAnchor(title) {
   let s = title

@@ -23,7 +23,7 @@
 
 **An open-source FDE Harness layer.** The AI-deployment engineer for one-person companies and SMBs — never sleeps, never leaves, and carries its own auditor. It sits **between mature Agents (executors: DSH / OpenClaw / WorkBuddy) and the model layer (intelligence sources: general LLMs + bespoke/small post-trained models)**, governing both sides. Shipped as **FDE plugins + Skill + MCP + CLI + Dashboard**: on entry, map the business flow clearly, build the ontology graph, deploy the AI nodes in place; on departure, audit every change and keep optimizing.
 
-sofagent does not build its own Agent — execution is delegated to mature hosts (model + tools + sessions). What it delivers is the **FDE Harness layer**: FDE methodology × Harness engineering, two stages of one job — **on entry, generate judgment** (where AI belongs, written down as machine-checkable files), **after departure, retain judgment** (execute against those files 24/7, audit every change). The five constraint-layer capabilities: inject · audit · rollback · distill · evolve — slots into any existing Agent; and it keeps every model (general or bespoke) under control (register / rollout / train / deploy fully audited). How the two stages interlock, and why they cannot be pulled apart, is covered in [the dedicated chapter below](#what-is-the-fde-harness).
+sofagent does not build its own Agent — execution is delegated to mature hosts (model + tools + sessions). What it delivers is the **FDE Harness layer**: FDE methodology × Harness engineering, two stages of one job — **on entry, generate judgment** (where AI belongs, written down as machine-checkable files), **after departure, retain judgment** (execute against those files 24/7, audit every change). The five Harness capabilities: inject · audit · rollback · distill · evolve — slots into any existing Agent; and it keeps every model (general or bespoke) under control (register / rollout / train / deploy fully audited). How the two stages interlock, and why they cannot be pulled apart, is covered in [the dedicated chapter below](#what-is-the-fde-harness).
 
 > 🚂 **Why a training engine in a governance repo** (30-second answer): governance is capped by data — what audits uncover (which tasks failed, which outputs were substandard) is exactly training fuel. The training engine closes the loop from "problems found by audits → models that fix those problems", letting governance data feed back into the model layer; training assets themselves ship on the commercial side — this repo keeps only protocols and interfaces (externalized / configurable).
 
@@ -243,6 +243,8 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # load the securit
 
 ## Ecosystem & Docs Index
 
+> 🌏 Note: the linked docs (LIMITATIONS / ARCHITECTURE / PHILOSOPHY / WIKI / SECURITY …) are Chinese-first — English readers can rely on this README plus the EN summary at the top of [WIKI](./docs/WIKI.md); full doc translation is tracked in issue #8.
+
 **Featured in** (community listings, incl. pending PRs):
 
 [![Glama](https://img.shields.io/badge/Glama-indexed-4A90D9)](https://glama.ai/mcp/servers/KongFangXun/sofagent)
@@ -273,7 +275,7 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # load the securit
 | Security statement · known limitations | [SECURITY](./SECURITY.md) · [LIMITATIONS](./docs/LIMITATIONS.md) |
 | Contribution guide | [CONTRIBUTING](./CONTRIBUTING.md) |
 
-> 🧪 **Engineering credibility**: 4289 tests / 13 engine packages + 13 plugins (4289 = 12-engine-package scope, per the check-test-count gate; full 13-package and plugin counts in that script output) (engine packages = 12 main + 1 load-chain; plugins = 9 DSH + 4 OpenClaw; plugin tests run via the root `npm test --workspaces`; "engine packages" is the package-management-scope term — in architecture narrative these are "modules") · 24 audit rules · fresh-eyes independent review continuously running (test counts are determined by `tools/check/test-count.sh`; environmental notes are documented in [docs/guides/review-system.md](./docs/guides/review-system.md). Performance figures are single-machine reference values; cross-tool benchmarking is scheduled for v1.4.x together with Benchmark integration).
+> 🧪 **Engineering credibility**: 4289 tests / 13 engine packages + 13 plugins (4289 = 12-main-package scope, per the check-test-count gate; authoritative package-count breakdown in [WIKI](./docs/WIKI.md)) · 24 audit rules · fresh-eyes independent review continuously running (test counts are determined by `tools/check/test-count.sh`; environmental notes are documented in [docs/guides/review-system.md](./docs/guides/review-system.md). Performance figures are single-machine reference values; cross-tool benchmarking is scheduled for v1.4.x together with Benchmark integration).
 
 ---
 

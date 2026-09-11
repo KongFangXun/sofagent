@@ -185,7 +185,12 @@ export function startWatching(projectDir: string, onChange: ChangeCallback): Fil
     }
   }
 
-  console.log(`[fs-watch] 监控已启动（${watchers.length} 个目录，防抖 ${config.debounceMs}ms）`);
+  // v1.4.8 F-31: 0 目录从 ✅ 改 ⚠️——监控面空转必须可见
+  if (watchers.length === 0) {
+    console.warn(`[fs-watch] ⚠️ 监控 0 个目录（paths 全部不存在）——fs 审计触发面为空，请在 .sofagent/watch.yml 配置有效路径`);
+  } else {
+    console.log(`[fs-watch] 监控已启动（${watchers.length} 个目录，防抖 ${config.debounceMs}ms）`);
+  }
 
   return {
     config,

@@ -919,10 +919,17 @@ function resolveDataDir(home: string): string {
     return process.env.SOFAGENT_DATA;
   }
 
-  // 2. 当前目录有 .sofagent/
-  const cwdData = join(process.cwd(), '.sofagent');
-  if (existsSync(cwdData)) {
-    return cwdData;
+  // 2. v1.4.8 F-30: cwd 有 .sofagent/ 改显式 opt-in——此前仓库内跑 daemon 会
+  //    优先吃仓库内 .sofagent/（gitignore 产物、无真实数据），连续产出全零 daily
+  //    文件且全链路绿灯（dashboard daily 趋势实质死亡——真实 history 在用户级
+  //    data 目录）。现在只有显式设 SOFAGENT_REPO_LOCAL=1 才走 cwd 根；未 opt-in
+  //    时跳到标记文件/默认链（与 data-paths SSOT 一致）。
+  if (process.env.SOFAGENT_REPO_LOCAL === '1') {
+    const cwdData = join(process.cwd(), '.sofagent');
+    if (existsSync(cwdData)) {
+      return cwdData;
+    }
+    console.warn('[config-loader] SOFAGENT_REPO_LOCAL=1 但 cwd 无 .sofagent/ 目录——回退默认数据目录解析链');
   }
 
   // 3. 标记文件
@@ -942,7 +949,7 @@ function resolveDataDir(home: string): string {
   }
 
   // 4. fallback
-  return join(process.cwd(), '.sofagent');
+  return join(home, '.sofagent', 'data');
 }
 
 // 布尔/数字环境变量读取统一走 shared/env（SOFAGENT_* 主名 + SOFA_* 别名兜底）

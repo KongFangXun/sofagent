@@ -43,9 +43,11 @@ export interface WatchConfig {
   cron?: CronJob[];
 }
 
-/** 默认 watch 配置 */
+/** 默认 watch 配置（v1.4.8 F-31: paths 从写死的 src/ 等改为 '.'——旧默认在无 src/ 目录的
+ * 仓库（如本仓）下「监控 0 个目录」仍打 ✅，fs 审计触发面整体空转；监控根目录 + ignore
+ * 排除法对任意 git 仓库形态都有效） */
 export const DEFAULT_WATCH_CONFIG: WatchConfig = {
-  paths: ['src/', 'agents/', '.sofagent/'],
+  paths: ['.'],
   ignore: ['node_modules/', '.git/', 'dist/', '*.map', '*.d.ts'],
   debounceMs: 5000,
   mode: 'all',
@@ -155,11 +157,9 @@ export function generateWatchTemplate(): string {
     '# 由 daemon/fs-watch 在启动时读取',
     '',
     'watch:',
-    '  # 要监控的路径（相对于项目根目录）',
+    '  # 要监控的路径（相对于项目根目录；默认监控根目录，按需收窄）',
     '  paths:',
-    '    - src/',
-    '    - agents/',
-    '    - .sofagent/',
+    '    - .',
     '',
     '  # 忽略模式（glob 风格）',
     '  ignore:',
