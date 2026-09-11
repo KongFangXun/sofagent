@@ -1,7 +1,7 @@
 # 阶段六：开发日志定稿 + 文档收尾
 
 > 🔴 **前置闸门（防跳阶段）**：阶段六开工前必须确认**阶段三~五已按 SOP 完成**——
-> - 阶段三（fresh-eyes-loop 质量循环）：草稿产物存在 / driver verdict 产出（若应跑）——见 [03-quality-loop.md](./03-quality-loop.md) 步骤完成判据
+> - 阶段三（fresh-eyes-loop 质量循环）：按入口裁定跑法收口——A 草稿产物存在 / B driver verdict 产出（或环境豁免留痕）——见 [03-quality-loop.md](./03-quality-loop.md) 主 session 收口协议
 > - 阶段四（审查体系合并更新）：本轮 finding 已按 A/B/C 分类并入四份审查文档——见 [04-review-system.md](./04-review-system.md)
 > - 阶段五（release-gate 闸门）：**verdict=PASS**——见 [05-release-gate.md](./05-release-gate.md)
 >

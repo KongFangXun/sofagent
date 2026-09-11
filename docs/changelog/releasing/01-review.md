@@ -44,7 +44,7 @@ B 侧复核模式（v1.3.8 起 driver 内置）：全量跑 driver 时，B 侧 1
 
 ## fresh-eyes-loop 执行 session Prompt 模板（自动收敛）
 
-> 阶段一和阶段三都用 fresh-eyes 审查，区别是 target（阶段一审**上版本**收尾态，阶段三审**本版本**新代码）。**Prompt 模板 SSOT = [03-quality-loop.md「执行 session Prompt 模板（自动收敛版）」](./03-quality-loop.md)**——AI 输出 prompt 时以 03 模板为底稿（占位符替换为实际值，不得残留花括号），追加下方阶段一差异两条后输出；**禁止另起炉灶维护第二份全文**（防双源漂移）。**交付形式**：直接在对话中输出可复制的 prompt 文本块，禁止落盘成文件。
+> 阶段一和阶段三都用 fresh-eyes 审查，区别是 target（阶段一审**上版本**收尾态，阶段三审**本版本**新代码）。**Prompt 模板 SSOT = [03-quality-loop.md「执行 session Prompt 模板（自动收敛版 · 复制即跑）」](./03-quality-loop.md)**——AI 输出 prompt 时以 03 模板为底稿（占位符替换为实际值，不得残留花括号），追加下方阶段一差异两条后输出；**禁止另起炉灶维护第二份全文**（防双源漂移）。**交付形式**：直接在对话中输出可复制的 prompt 文本块，禁止落盘成文件。
 
 阶段一相对 03 模板的差异（生成 prompt 时覆盖/追加）：
 
