@@ -51,7 +51,6 @@ sofagent 是一套 FDE 能力——底层引擎是纯本地 Harness 中间件（
 
 > 排期项详见 [docs/ROADMAP.md](./docs/ROADMAP.md)；各数据面的攻击面与信任模型细节见 [docs/LIMITATIONS.md](./docs/LIMITATIONS.md)。
 
-
 | 文件 | 位置 | 可能含 |
 |------|------|------|
 | `task/logs/` | `data/task/logs/YYYY-MM/YYYY-MM-DD.md` | 任务摘要、代码片段、API 响应摘要、对话摘要 |

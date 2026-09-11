@@ -480,7 +480,6 @@ A16 的 `evidenceMode: git-diff` 依赖 git diff 获取变更文件列表；daem
 
 ---
 
-
 ## 七、历史遗留与迁移说明
 
 > 定时触发已解决（见「✅ 已解决的历史问题」区）；Windows 平台差异见 §二「🪟 Windows 支持是实验性的」。

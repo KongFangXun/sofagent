@@ -296,6 +296,7 @@ export function runCliQuick(argv: string[]): number {
     // 却无处查边界，这里显式并列 quick flag 集 vs 完整引擎 flag 集 + 升级命令。
     console.log('双模式边界：');
     console.log('  quick 模式（本入口，零安装只读审计）仅支持：[diff 范围参数] + -h/--help + -v/--version + --stats/--days/--json；');
+    console.log('  （--ruleset 等完整引擎 flag 传入时 quick 会自动路由完整引擎不报错——见下方 flag 清单）');
     console.log('  完整引擎（--init/--doctor/--diff/--cached/--ruleset/--task/--commit-msg 等）需 --init 装 hook 或全局安装；');
     console.log('  从 quick 升级到完整：npm install -g @sofagent/audit（或 npx -y -p @sofagent/audit sofagent-audit-full）\n');
     console.log('以下 flag 需完整引擎（sofagent-audit-full 或全局安装），quick 模式会自动路由或提示安装：');

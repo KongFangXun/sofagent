@@ -762,6 +762,9 @@ shift 2>/dev/null || true
 case "$COMMAND" in
   status)
     # 快速状态：版本 + daemon 运行状态 + 今日审计概览
+    # v1.4.8 F-55: registry/umbrella 态不含 git 审计语义——status 是安装态查询非
+    # 仓库审计，语义上不需要 git；为防与仓库内 sofagent-audit CLI 的 status
+    # 语义混淆，显式提示 registry 态用法（audit 引擎的仓库状态用 core CLI）。
     echo "sofagent $(cat "$SOFAGENT_HOME/VERSION" 2>/dev/null || echo 'unknown')"
     if [ -f "$SOFAGENT_HOME/data/daemon.json" ]; then
       echo "daemon: $(node -e 'const d=require(process.argv[1]);console.log(d.mode||"stopped")' "$SOFAGENT_HOME/data/daemon.json" 2>/dev/null || echo 'unknown')"
@@ -769,6 +772,7 @@ case "$COMMAND" in
       echo "daemon: not initialized"
     fi
     echo "data: $SOFAGENT_HOME/data/"
+    echo "note: registry 态不含仓库审计命令——仓库审计用 sofagent-audit（npx -p @sofagent/audit sofagent-audit）"
     ;;
   where)
     # 安装位置

@@ -51,6 +51,17 @@ sofagent 不造 Agent——执行能力交给成熟宿主（模型 + 工具 + �
 | **要开箱即用的企业级 Agent 平台**——期待完整商业产品（多租户、权限管理、计费、SLA） | ⏸️ **暂缓**。sofagent 是治理层，不是平台产品——平台级能力不在本开源仓库范围内。有集成能力的团队仍可把约束层接入自有平台，作为其中的治理模块；纯开箱需求建议另选平台产品 |
 | **纯研究 / 想看看约束层怎么设计**——读代码、学架构、借鉴方法论 | ✅ **现在装**。文档齐全（[HANDBOOK](./docs/HANDBOOK.md) / [ARCHITECTURE](./docs/ARCHITECTURE.md) / [PHILOSOPHY](./docs/PHILOSOPHY.md)），MIT 协议 |
 
+**和 gitleaks / pre-commit 这类工具什么关系？**（互补不互替）
+
+| | gitleaks 等扫描器 | pre-commit 等钩子 | sofagent |
+|---|---|---|---|
+| 定位 | 密钥全量历史扫描 | 通用提交钩子框架 | Agent 行为审计约束层 |
+| 证据面 | 仓库文本模式 | 自定义脚本 | git diff 硬证据 + Agent 日志 + 决策留痕 |
+| 覆盖维度 | 密钥泄漏 | 任意（自己写） | 24 条规则：密钥/越界/注入/权限/后门 |
+| 建议 | 强密钥合规必配 | 已有体系可保留 | 与前两者并用，专注 Agent 治理维度 |
+
+**10 分钟轻量试用**：`npx -y -p @sofagent/audit sofagent-audit`（任意 git 仓库，密钥泄漏当场拦截）。
+
 ## 核心特性
 
 **进场 · 生成判断**（FDE 相位——把「该不该上 AI、值多少钱」判断出来，冻结成交付物）：
@@ -63,7 +74,7 @@ sofagent 不造 Agent——执行能力交给成熟宿主（模型 + 工具 + �
 
 - 🏠 **离场后常驻**——FDE 能力留下巡检、审计、优化，7×24 在线守护（commit 时触发审计），人离场治理不离开
 - 🔍 **零配置审计**——`npx -y -p @sofagent/audit sofagent-audit`，任何 git 仓库秒级审计最近一次 commit（单机实测：quick 约 1.1s、5 万行 diff 约 6.1s，口径见 [HANDBOOK](./docs/HANDBOOK.md)）
-- 🧱 **24 条审计规则 + 95 个 MCP tool**——密钥泄漏、越界编辑、注入防御、权限红线，git diff 硬证据判定，违规当场拦截（critical 层命中后其余规则跳过——fail-fast 设计）；证据基于本地 diff，信任边界与已知绕过面见 [LIMITATIONS §三](./docs/LIMITATIONS.md#三安全与信任模型局限)（quick 默认 17 条，完整 24 条 = 17 默认 + 7 扩展）
+- 🧱 **24 条审计规则 + 95 个 MCP tool**——密钥泄漏、越界编辑、注入防御、权限红线，违规当场拦截（critical 层命中后其余规则跳过——fail-fast 设计）。**证据两档**：24 条中 19 条基于 git diff 硬证据（本地即生效）+ 4 条混合（diff + Agent 日志，Agent 接入后生效）+ 1 条文件系统扫描；A7/A8 等日志规则在无 Agent 日志时跳过（信任边界详见 [LIMITATIONS §三](./docs/LIMITATIONS.md#三安全与信任模型局限)）
 - 🛡️ **自动快照回溯**——每次审计后自动存档，出事一键回到任意快照
 
 ## 什么是 FDE Harness
@@ -71,7 +82,7 @@ sofagent 不造 Agent——执行能力交给成熟宿主（模型 + 工具 + �
 **FDE = Forward Deployed Engineer（前线部署工程师）**——把模型塞进企业真实业务里的人。sofagent 把这个角色做成开源 FDE Harness 层，嵌在你的 Agent（DSH / OpenClaw / WorkBuddy）与模型层之间。一个 FDE Harness 的完整业务流分两个阶段，**中间的交接物把它们缝成一件事**：
 
 - **进场 · 生成判断**：四步走完——**梳理业务流 → 构建双图谱 → 判定 AI 节点 → 部署**。双图谱 = 业务图谱（系统边界、数据流向，人读）+ 本体图谱（共享语义底座，AI 读），把企业变成机器可读的结构；每个 AI 节点的「做好标准（merge_criteria）· 谁拍板（approver）· 何时跑（trigger）」在这一步被判断出来，冻结进交付物（workflow.yml + 本体数据 + skills）。
-- **离场 · 驻留判断**：FDE 走，判断留下——审计在 commit 等变更事件时按冻结的标准自动触发，24 条规则看 git diff 硬证据；daemon 7×24 巡检、快照可回滚、经验持续沉淀。人离场，治理不离开。
+- **离场 · 驻留判断**：FDE 走，判断留下——审计在 commit 等变更事件时按冻结的标准自动触发（证据分档见「核心特性」首条）；daemon 7×24 巡检、快照可回滚、经验持续沉淀。人离场，治理不离开。
 
 > 🔗 **为什么必须一体**：交付物是两个阶段共享的活状态——进场时写入、离场后执行时读、进化时写回（试验分支晋升基线、反思蒸馏回流）。没有 FDE，约束层没有判据可执行；没有约束层，FDE 的判断随人离场蒸发。这正是「FDE Harness」名字的由来——不是 FDE 功能 + Harness 功能的拼盘，是同一件事的两个阶段。
 >
@@ -146,7 +157,7 @@ sofagent 不造 Agent——执行能力交给成熟宿主（模型 + 工具 + �
 
 ## 安装
 
-> ⚠️ **企业用户先读** [LIMITATIONS §三](./docs/LIMITATIONS.md#三安全与信任模型局限)——`config.yml` 默认**非 fail-closed**（规则可被 Agent 篡改绕过），多租户隔离尚未落地。强合规场景建议 CI 兜底 + 文件权限锁（`chmod 444 .sofagent/config.yml`），不要用单机默认配置直接上生产。
+> ⚠️ **企业用户先读** [LIMITATIONS §三](./docs/LIMITATIONS.md#三安全与信任模型局限)——`config.yml` 默认**非 fail-closed**（规则可被 Agent 篡改绕过），多租户**写入侧**隔离尚未落地（v0 已交付查询侧隔离：orgId 过滤 + data/<tenant>/ 路径地基，见 LIMITATIONS）。强合规场景建议 CI 兜底 + 文件权限锁（`chmod 444 .sofagent/config.yml`），不要用单机默认配置直接上生产。
 
 **30 秒，零配置**——在任何 git 仓库跑一次审计：
 
@@ -164,6 +175,11 @@ npx -y -p @sofagent/audit sofagent-audit
 curl -fsSL https://raw.githubusercontent.com/KongFangXun/sofagent/refs/tags/v1.4.7/bootstrap.sh -o bootstrap.sh
 less bootstrap.sh          # 先看一眼脚本内容，确认安全
 bash bootstrap.sh && rm bootstrap.sh
+```
+
+> 🔒 供应链信任链：tag 钉定 + sha256 校验 + fail-closed + 自锚定哈希重入二次校验（详见 [SECURITY.md](SECURITY.md) 远程安装节）；⚠️ 审计日志默认明文落盘——企业部署建议开启静态加密。
+
+```bash
 sofagent-audit --init      # 装 git hook，之后每次 commit 自动审计
 sofagent-audit --doctor    # 验证环境（可选）
 ```
@@ -223,9 +239,8 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # 加载安全规�
 
 ## 常见问题
 
-- **能上生产吗？** 当前为单机单用户设计，多 Agent 共享同一知识库 / 审计历史，多租户隔离见 [ROADMAP](./docs/ROADMAP.md)；数据静态加密已接线 daemon 启动路径（v1.4.7 收口——密钥就绪后审计历史主链密文落盘，附链目录仍明文，权威清单见 [LIMITATIONS](./docs/LIMITATIONS.md)），且接线范围暂不覆盖 task/logs（该目录在审计历史主链之外，见 [LIMITATIONS §三](./docs/LIMITATIONS.md#三安全与信任模型局限)）。企业部署前读 [SECURITY](./SECURITY.md) · [LIMITATIONS](./docs/LIMITATIONS.md)。`config.yml` 默认非 fail-closed，强合规场景建议 CI 兜底 + 文件权限锁。
+- **能上生产吗？** 当前为单机单用户设计（多租户见 [ROADMAP](./docs/ROADMAP.md)；静态加密与边界见 [LIMITATIONS](./docs/LIMITATIONS.md)——企业部署前必读 [SECURITY](./SECURITY.md)）。
 - **收集我的数据吗？** 缺省全量本地。可选联邦查询 = 你主动配置才出本机（见 SECURITY）。
-- **和 gitleaks 这类扫描器什么关系？** 互补不互替——扫描器做全量历史扫描、模式库更广；sofagent 专注当前 diff 硬证据 + Agent 行为审计（越界 / 注入 / 权限维度），建议强密钥合规场景并用。
 
 ## 生态与文档索引
 

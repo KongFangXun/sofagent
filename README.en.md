@@ -53,6 +53,17 @@ sofagent does not build its own Agent — execution is delegated to mature hosts
 | **Looking for a turnkey enterprise Agent platform** — you expect a complete commercial product (multi-tenancy, permission management, billing, SLA) | ⏸️ **Hold off**. sofagent is a governance layer, not a platform product — platform-grade capabilities are out of this open-source repository's scope. Teams with integration capacity can still embed the constraint layer into their own platform as its governance module; if you need pure turnkey, look at platform products elsewhere |
 | **Researching / curious about constraint-layer design** — reading code, studying architecture, borrowing methodology | ✅ **Install now**. Full documentation ([HANDBOOK](./docs/HANDBOOK.md) / [ARCHITECTURE](./docs/ARCHITECTURE.md) / [PHILOSOPHY](./docs/PHILOSOPHY.md)), MIT licensed |
 
+**How does it relate to gitleaks / pre-commit?** (complementary, not substitutes)
+
+| | gitleaks-style scanners | pre-commit hooks | sofagent |
+|---|---|---|---|
+| Positioning | full-history secret scanning | generic commit-hook framework | Agent behavior audit harness |
+| Evidence | repo text patterns | your own scripts | git-diff hard evidence + Agent logs + decision trail |
+| Coverage | secret leaks | anything (DIY) | 24 rules: secrets / scope / injection / privilege / backdoors |
+| Advice | a must for strict secret compliance | keep if you have one | use alongside both — focused on Agent governance |
+
+**10-minute lightweight trial**: `npx -y -p @sofagent/audit sofagent-audit` (any git repo; secret leaks blocked on the spot).
+
 ## Core Features
 
 **On entry · generate judgment** (the FDE stage — deciding where AI belongs and what it's worth, frozen into deliverables):
@@ -65,7 +76,7 @@ sofagent does not build its own Agent — execution is delegated to mature hosts
 
 - 🏠 **Stay resident after departure** — the FDE capability remains for inspection, audit, and optimization, 7×24 online guardian (audit triggers on commit); the human leaves, governance doesn't
 - 🔍 **Zero-setup audit** — `npx -y -p @sofagent/audit sofagent-audit`, auditing the latest commit of any git repo in seconds (single-machine measured: quick ~1.1s, 50k-line diff ~6.1s; see [HANDBOOK](./docs/HANDBOOK.md))
-- 🧱 **24 audit rules + 95 MCP tools** — secret leaks, out-of-scope edits, injection defense, privilege red lines; judged on git diff hard evidence, violations blocked on the spot (once a critical-layer rule hits, remaining rules are skipped — fail-fast design); evidence is based on local diffs — trust boundaries and known bypass surfaces in [LIMITATIONS §3](./docs/LIMITATIONS.md) (quick runs 17 by default; full 24 = 17 default + 7 extensions)
+- 🧱 **24 audit rules + 95 MCP tools** — secret leaks, out-of-scope edits, injection defense, privilege red lines; judged on two evidence tiers: 19 of the 24 rules run on git-diff hard evidence (effective locally), 4 hybrid (diff + Agent logs, active once an Agent is connected), 1 filesystem scan; log-based rules such as A7/A8 are skipped when no Agent logs exist, violations blocked on the spot (once a critical-layer rule hits, remaining rules are skipped — fail-fast design); evidence is based on local diffs — trust boundaries and known bypass surfaces in [LIMITATIONS §3](./docs/LIMITATIONS.md) (quick runs 17 by default; full 24 = 17 default + 7 extensions)
 - 🛡️ **Automatic snapshot rollback** — auto-archived after every audit, one-click restore to any snapshot when something breaks
 
 ## What is the FDE Harness
@@ -148,7 +159,7 @@ Full methodology (four phases, twelve steps) in [FDE/GUIDE.md](./FDE/GUIDE.md) �
 
 ## Installation
 
-> ⚠️ **Enterprise users read first** [LIMITATIONS §3](./docs/LIMITATIONS.md) — `config.yml` is **non-fail-closed by default** (rules can be bypassed by Agent tampering), and multi-tenant isolation is not yet landed. For strict-compliance scenarios use CI fallback + file-permission lock (`chmod 444 .sofagent/config.yml`); do not put the single-machine default config directly into production.
+> ⚠️ **Enterprise users read first** [LIMITATIONS §3](./docs/LIMITATIONS.md) — `config.yml` is **non-fail-closed by default** (rules can be bypassed by Agent tampering), and **write-side** multi-tenant isolation is not yet landed (v0 delivered query-side isolation: orgId filtering + the data/<tenant>/ path foundation — see LIMITATIONS). For strict-compliance scenarios use CI fallback + file-permission lock (`chmod 444 .sofagent/config.yml`); do not put the single-machine default config directly into production.
 
 **30 seconds, zero setup** — run an audit in any git repo:
 
@@ -166,6 +177,11 @@ Here's what it looks like when a known-format secret leak is blocked (real outpu
 curl -fsSL https://raw.githubusercontent.com/KongFangXun/sofagent/refs/tags/v1.4.7/bootstrap.sh -o bootstrap.sh
 less bootstrap.sh          # review the script first, confirm it's safe
 bash bootstrap.sh && rm bootstrap.sh
+```
+
+> 🔒 Supply-chain trust: tag pinning + sha256 verification + fail-closed + self-anchored hash re-verification (see [SECURITY.md](SECURITY.md), remote-install section); ⚠️ audit logs are plaintext on disk by default — enterprise deployments should enable encryption-at-rest.
+
+```bash
 sofagent-audit --init      # install the git hook — every commit is audited from now on
 sofagent-audit --doctor    # verify the environment (optional)
 ```
@@ -222,9 +238,8 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # load the securit
 - **Tooling path** (Node.js ≥ 18): after the FDE installs the constraint layer on the enterprise device via install.sh, tell your own AI tool "run an FDE diagnosis for me" — the Agent guides you from entry onward
 ## FAQ
 
-- **Is it production-ready?** Currently a single-machine, single-user design — multiple Agents share one knowledge base / audit history (tenant isolation is on the [ROADMAP](./docs/ROADMAP.md)); at-rest encryption is now wired into the daemon startup path (closed out in v1.4.7 — the main audit-history chain lands as ciphertext once the key is ready; side-chain directories remain plaintext, authoritative list in [LIMITATIONS](./docs/LIMITATIONS.md)), and its coverage still excludes task/logs (the directory sits outside the main audit-history chain, see [LIMITATIONS §三](./docs/LIMITATIONS.md)). Read [SECURITY](./SECURITY.md) · [LIMITATIONS](./docs/LIMITATIONS.md) before enterprise deployment. `config.yml` is non-fail-closed by default; for strict-compliance scenarios use CI fallback + file-permission lock.
+- **Is it production-ready?** Currently single-machine, single-user (tenancy on the [ROADMAP](./docs/ROADMAP.md); encryption-at-rest and boundaries in [LIMITATIONS](./docs/LIMITATIONS.md) — read [SECURITY](./SECURITY.md) before enterprise deployment).
 - **Does it collect my data?** Fully local by default. Optional federation queries leave your machine only when you configure them yourself (see SECURITY).
-- **How does it relate to scanners like gitleaks?** Complementary, not substitutes — scanners do full-history scans with broader pattern libraries; sofagent focuses on hard evidence from the current diff + Agent behavior auditing (out-of-scope / injection / privilege dimensions). For strict secret compliance, use both together.
 
 ## Ecosystem & Docs Index
 
