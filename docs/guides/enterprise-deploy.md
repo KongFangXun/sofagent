@@ -135,6 +135,50 @@ jobs:
 
 > `--ci` 模式：WARN 不阻断（exit 1），FAIL 阻断（exit 2），紧凑输出。
 
+### ④ 静态加密批量激活（20 台级无头部署）
+
+静态加密（AES-256-GCM，密钥落 `~/.sofagent/keys/` 0600）默认交互确认——批量部署时逐台交互不可行，用 env 通道显式确认：
+
+**第 1 步 · 生成一次密钥并分发**（密钥同源，跨机可恢复）：
+
+```bash
+# 管理机生成（交互确认一次，记下指纹）
+sofagent-daemon crypto --init
+# 指纹核对：sofagent-daemon crypto --fingerprint
+
+# 预共享分发到 20 台目标机（scp + 0600 权限）
+for host in $(cat hosts.txt); do
+  ssh "$host" 'mkdir -p ~/.sofagent/keys && chmod 700 ~/.sofagent/keys'
+  scp ~/.sofagent/keys/master.key "$host":~/.sofagent/keys/master.key
+  ssh "$host" 'chmod 600 ~/.sofagent/keys/master.key'
+done
+```
+
+**第 2 步 · 无头激活**（env 显式确认，替代交互 readline）：
+
+```bash
+# 每台目标机：env 通道确认备份后启动 daemon 即激活
+SOFAGENT_CONFIRM_BACKUP=1 sofagent-daemon start
+# 验证：密文前缀在位即激活成功
+head -1 ~/.sofagent/data/audit/history.jsonl | grep -c "SOFAGENT-AGE-V1"   # 期望 1
+```
+
+**第 3 步 · 批量样例脚本**（三步合一）：
+
+```bash
+#!/usr/bin/env bash
+# fleet-crypto-activate.sh · 20 台批量激活静态加密
+set -euo pipefail
+while IFS= read -r host; do
+  ssh "$host" 'mkdir -p ~/.sofagent/keys && chmod 700 ~/.sofagent/keys'
+  scp -q ~/.sofagent/keys/master.key "$host":~/.sofagent/keys/master.key
+  ssh "$host" 'chmod 600 ~/.sofagent/keys/master.key && SOFAGENT_CONFIRM_BACKUP=1 sofagent-daemon start' \
+    && echo "✅ $host 激活" || echo "❌ $host 失败（查 daemon 日志）"
+done < hosts.txt
+```
+
+> ⚠️ 安全边界：master.key 是全 fleet 同源密钥——单机失窃即全 fleet 密文暴露，强隔离场景应逐机生成（去掉分发步，每台各自 `crypto --init` + 本机确认）；备份指纹记录务必离线保管，密钥丢失 = 加密数据永久不可读（见 [SECURITY](../../SECURITY.md) 静态加密节）。
+
 ### 其他方案
 
 - **Git submodule**：`git submodule add git@github.com:your-org/sofagent-shared-config.git ~/.sofagent/shared`
