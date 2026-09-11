@@ -120,7 +120,11 @@ function logPromotion(state: AbState): void {
       writeFileSync(noticePath, `# 编排引擎通知\n${entry}`);
     }
     warn('A/B promote 已记录到 daemon-notice.md');
-  } catch { /* notice 写入失败不影响主流程 */ }
+  } catch (err) {
+    // v1.4.8 F-10: 静默吞错改降级可见——「不阻断主流程」的原设计意图不变，但
+    // 失败必须留痕（用户看不到 promote 通知，也不知道「通知没送达」这件事本身）。
+    warn(`daemon-notice 写入失败: ${err instanceof Error ? err.message : String(err)}（promote 已生效，仅通知未落盘）`);
+  }
 }
 
 // ════════════════════════════════════════

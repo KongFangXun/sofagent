@@ -1,7 +1,6 @@
 # sofagent Handbook
 
 > **sofagent 是一套 FDE 能力——装进你的 Agent（DSH / OpenClaw / WorkBuddy / Codex / Claude Code）后，进场梳理业务流、部署 AI 节点、离场后 7×24 自己跑。** 装完之后，你在自己的 Agent 里说一句话，它就帮你干活——审计每次变更、沉淀每次经验，沉淀机制随使用迭代。下面从装到用到查问题，全流程走一遍。
->
 > v1.4.7 · 2026-09-11（UTC）· ✅ 已发版（本批更新 2026-09-11）· 孔放勋
 
 <img src="assets/sofagent.png" alt="sofagent" width="160" />
@@ -549,7 +548,6 @@ sofagent 本身就是一个 MCP server（stdio 传输，bin `sofagent-mcp`，v1.
 没有 sofagent，梳理的 workflow 就是一份 PPT。引擎装到设备上，AI 节点才有纪律和审计。完整引擎对照表与部署步骤见 [FDE/GUIDE.md §5.3 部署流程](../FDE/GUIDE.md#53-部署流程人怎么看懂)。
 
 > 📋 **部署文档导航**：sofagent 的部署文档按场景分散在三处，各归各位，按需选读：
->
 > | 文档 | 定位 | 给谁 |
 > |------|------|------|
 > | **本文档（HANDBOOK）** | 操作手册——部署规模参考、资源消耗、数据存储、USB 烧录、持续维护 | 所有人（先看这个） |
@@ -572,7 +570,7 @@ sofagent 本身就是一个 MCP server（stdio 传输，bin `sofagent-mcp`，v1.
 
 > **性能口径**（README 首屏数字出处）：测量方法 = `time sofagent-audit`（quick 模式计时，含 Node.js 启动；全量模式对 5 万行 diff 计时）；环境 = 单机 macOS（Apple Silicon）。单机实测：quick 约 **1.1s**、5 万行 diff 约 **6.1s**。以上为单机参考值，非跨机器基准——跨工具横评排期 v1.4.x 与 Benchmark 集成。
 
-⚠️ **数据存储说明**：当前版本将审计数据以 Markdown 明文存储在 `~/.sofagent/data/`。内置加密（age）已排 v1.3.8。生产环境使用前建议将 `~/.sofagent/` 放在加密卷中。详见 [SECURITY.md](../SECURITY.md)。
+⚠️ **数据存储说明**：用户级审计数据在 `~/.sofagent/data/`（明文 Markdown 为主，静态加密见 SECURITY）。**例外**：子包在仓库内运行时会在各子包根生成 `.sofagent/` 运行时目录（已 gitignore，不入库）——与用户级数据不冲突；仓库内跑 daemon 的数据根行为见 `SOFAGENT_REPO_LOCAL` 说明。
 
 > ⚠️ **被审计仓库会生成 `.sofagent/` 隐藏目录**：sofagent 审计时会在被审计的 git 仓库根目录创建 `.sofagent/` 隐藏目录，存放审计快照（`.git-shadow/`）、运行时审计日志、dashboard 缓存等。该目录**已默认加入 `.gitignore`**，不会进入 git 提交，但 `ls -a` 可以看到。企业 IT 看到 `.sofagent/` 无需紧张——这是运行时产物，**可安全删除**（重新审计会自动重建，不影响功能）。
 

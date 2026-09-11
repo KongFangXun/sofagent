@@ -43,6 +43,16 @@ jobs:
       - name: check-open-boundary.sh
         run: bash tools/check/check-open-boundary.sh
 
+      # v1.4.8 bugfix 批接入：审查体系一致性——维度数/行数警戒线/S 编号闭环对账。
+      # 此前只在发版 SOP 阶段五/七人工跑，post-release 文档 commit 可带着红门禁
+      # 推上远端（v1.4.7+4 实锤：#135 新增未同步头部，3 FAIL 存活 4 commit 无人拦）。
+      - name: check-review-system.sh
+        run: bash tools/check/check-review-system.sh
+
+      # v1.4.8 F-10 门禁前移：静默吞错（关键路径 catch 空块）只拦新增，存量基线豁免。
+      - name: check-silent-catch.mjs
+        run: node tools/check/check-silent-catch.mjs
+
   # v1.3.9（四）：public API 变更检测——@public 符号集变化必须 semver bump + CHANGELOG。
   # v1.4.7：装依赖跑（口径统一到 AST）——此前「不装依赖直接跑」会因无 typescript 静默
   # 回退正则解析，与基线/文档声称值的 AST 口径分歧（实测差 8 符号：2236 vs 2244）导致

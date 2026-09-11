@@ -14,6 +14,8 @@
 #   + check-literals.sh     → 手填字面量对账（真相源 vs 文档手抄件）
 #   + test-count.sh         → 各包测试数汇总（任一包失败即拦截）
 #   + check-test-count.sh   → 文档声称测试数 vs 实际值一致性（P1-3 根治）
+#   + check-review-system.sh → 审查体系一致性（维度数/警戒线/S 编号对账 · v1.4.8 接入）
+#   + check-silent-catch.mjs → 静默吞错门禁（只拦新增 · v1.4.8 接入）
 #   + npm run build         → 审计引擎构建
 #
 # 用法:
@@ -232,6 +234,35 @@ if [ "$MINIMAL" = false ]; then
     check_fail "check-anchors.mjs 发现锚点过时"
     node tools/check/check-anchors.mjs 2>&1 | grep "✗" | head -10
     echo "  提示：node tools/check/check-anchors.mjs --fix 可自动修复"
+  fi
+fi
+
+# ════════════════════════════════════════
+# 3c. 审查体系一致性（check-review-system.sh · v1.4.8 bugfix 批接入）
+# 根因：此前该门禁只在发版 SOP 阶段五/七人工触发——post-release 文档
+# commit 可带着红门禁推上远端（v1.4.7+4 实锤：维度数漂移存活 4 commit）。
+# ════════════════════════════════════════
+if [ "$MINIMAL" = false ]; then
+  echo -e "\n${BOLD}── 3c. 审查体系一致性 ──${NC}"
+  if bash tools/check/check-review-system.sh >/dev/null 2>&1; then
+    check_pass "check-review-system.sh 全部通过"
+  else
+    check_fail "check-review-system.sh 有 FAIL"
+    bash tools/check/check-review-system.sh 2>&1 | grep "❌" | head -10
+  fi
+fi
+
+# ════════════════════════════════════════
+# 3d. 静默吞错门禁（check-silent-catch.mjs · v1.4.8 F-10 门禁前移）
+# 只拦新增（存量基线豁免）——关键路径 catch 空块不再无痕增长。
+# ════════════════════════════════════════
+if [ "$MINIMAL" = false ]; then
+  echo -e "\n${BOLD}── 3d. 静默吞错检查 ──${NC}"
+  if node tools/check/check-silent-catch.mjs >/dev/null 2>&1; then
+    check_pass "check-silent-catch.mjs 通过（无新增静默吞错）"
+  else
+    check_fail "check-silent-catch.mjs 发现新增静默吞错"
+    node tools/check/check-silent-catch.mjs 2>&1 | grep -E "❌|^  " | head -10
   fi
 fi
 

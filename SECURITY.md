@@ -169,9 +169,7 @@ sofagent 是一套 FDE 能力——底层引擎是纯本地 Harness 中间件（
 | 整盘格式化重写 | `.sofagent-signature` 签名文件随盘消失 → `signature-missing` | daemon 检测不到签名 → fail-closed 拒绝启动 |
 
 > ⚠️ **密钥模型边界**（U2 决策）：AES key 明文存 U 盘 `federation.json`——拿到 U 盘的人可读出 key 再解密 knowledge/。「拿到盘也解不开」需 PBKDF2/Argon2 密码派生（启动时输入密码），与「双击 start 3 秒联邦在线」体验冲突，v1.1.9 保持简单模型，v1.2.x 再评估密码保护。
->
 > ⚠️ **签名排除项**：`runtime/`（Node 便携版二进制，各平台不同）不纳入 HMAC 签名——被替换的 runtime 二进制在签名保护之外，企业 IT 应通过官方渠道制作 U 盘并核对 Node 版本。`.sofagent-signature` 自身亦排除。
->
 > ⚠️ **HMAC 密钥双轨制**（U3 决策）：本机场景复用 `~/.sofagent/usb-secret.key`；U 盘运行时从 U 盘 `federation.json` 的 `hmacKey` 字段读取（便携化要求）。两个密钥源按 `startUsbRuntime` vs 本机 daemon 场景切换，v1.2.x 再评估统一。
 
 ---
@@ -454,7 +452,6 @@ chmod 600 ~/.sofagent/data/audit/history.jsonl.bak-*
 > ⚠️ 以上绕过路径均依赖 Agent 的"自觉"——这是 sofagent 架构级别的信任模型选择：审计模块是**协助**人类监督，不是**替代**人类监督。已知绕过路径详见 LIMITATIONS 已有信任模型描述。
 
 > ⚠️ **企业高安全场景**：`config.yml` 篡改可绕过审计规则（如关闭规则、放宽阈值）。建议：① CI 侧独立校验 config 完整性（`sofagent-audit --diff` 兜底，hook 可绕 CI 不可绕）；② 文件权限锁（`chmod 600 .sofagent/config.yml`，仅受信用户可写）。与已有 `--no-verify` CI 兜底建议呼应。
->
 > ⚠️ **企业高安全默认**：基线规则（A1/A2/A9/A10/A11/A20-A23）有强制保护不可禁用，但**非基线规则（A3-A8、A14-A19）可经 `rules:{x:false}` 关闭**。高安全场景建议显式锁定所有规则：`extendedRulesEnabled: true` + 在 config 中对全部非基线规则显式 `rules:{a3:true, a4:true, ...}`（禁止依赖默认值），并配合 `chmod 444 .sofagent/config.yml` 只读锁定。
 >
 > 💡 **`hardenedMode` 配置项尚未实现**（代码中不存在此字段）——一键全规则基线化的便捷配置排入 ROADMAP 评估，当前需手动按上述方式逐条锁定。
