@@ -238,9 +238,13 @@ describe('post-commit 对账 exitCode 三档分流 (B8)', () => {
   function runHook(historyContent: string): string {
     writeFileSync(join(sofagentHome, 'data/audit/history.jsonl'), historyContent);
     try {
+      // v1.4.8 F-17：post-commit 读侧与写侧 SSOT 同链——SOFAGENT_DATA 优先于
+      // SOFAGENT_HOME。全局 vitest-setup 预置了 SOFAGENT_DATA（隔离 tmp），
+      // fixture 必须显式同时设置两者并指向同一目录，防读侧命中全局隔离目录
+      // （空 history → 对账静默失败，B8 三档断言全灭）。
       return execFileSync('bash', [hookPath], {
         cwd: repoDir,
-        env: { ...process.env, SOFAGENT_HOME: sofagentHome },
+        env: { ...process.env, SOFAGENT_HOME: sofagentHome, SOFAGENT_DATA: join(sofagentHome, 'data') },
         encoding: 'utf-8',
       });
     } catch {
