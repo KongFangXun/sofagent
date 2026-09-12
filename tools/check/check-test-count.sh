@@ -625,6 +625,12 @@ if [ -n "$LIMITATIONS_ALL" ]; then
       ((FAIL++)) || true
     fi
   done <<< "$LIMITATIONS_ALL"
+else
+  # v1.4.8 假绿扫描（形态 B）：上游 docs/LIMITATIONS.md 的「审计核心 NNNN 个、全 workspace NNNN 个」
+  # 是测试数的权威声明之一（同 README「工程可信度」行）——**本应总有值**。grep 未命中即静默跳过
+  # 会让校验整块消失而输出照旧 ✓ = 假绿。与上方 DEV_ORCH_LINE 同范式：未命中即 FAIL。
+  echo -e "  ${RED}✗ docs/LIMITATIONS.md 未找到「审计核心 NNNN 个、全 workspace NNNN 个」声明（grep 未命中 → FAIL，禁止静默跳过）${NC}"
+  ((FAIL++)) || true
 fi
 
 # ── CHANGELOG 索引行测试数校验（v1.4.1 F-06：补盲区；锚定三防升级）──
