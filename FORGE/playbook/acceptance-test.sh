@@ -509,7 +509,10 @@ STRICT_CODE=$(echo "$STRICT_OUT" | grep -o 'EXIT:[0-9]*' | cut -d: -f2)
 git reset HEAD . 2>/dev/null || true; rm -f .env src/token.ts
 [ "$STRICT_CODE" = "2" ] && pass || fail "A1/A2 违规 strict exit code = ${STRICT_CODE}（期望 2）"
 MCP_OK=true; [ -f "$PROJECT_ROOT/engine/mcp/src/mcp-server.ts" ] || MCP_OK=false
-grep -c "compose" "$PROJECT_ROOT/engine/mcp/src/mcp-server.ts" > /dev/null 2>&1 || MCP_OK=false
+# 锚点迁移注记（深模块批）：tool 注册迁到 tool-registry.ts 的 TOOLS 表（mcp-server 动态分发）。
+# 原写法 `grep -c ... > /dev/null` 在零匹配时 grep 返回 exit 1 会被 || 误判为缺失——改 grep -q 直判。
+grep -q "compose" "$PROJECT_ROOT/engine/mcp/src/tool-registry.ts" || MCP_OK=false
+grep -q "TOOLS" "$PROJECT_ROOT/engine/mcp/src/mcp-server.ts" || MCP_OK=false
 $MCP_OK && pass || fail "MCP server 或 compose tool 缺失"
 scenario 43 "ConfigParseError + PASS 签名行"
 TMP_BADCFG_DIR=$(mktemp -d); mkdir -p "$TMP_BADCFG_DIR/.sofagent"; echo "invalid: [}" > "$TMP_BADCFG_DIR/.sofagent/config.yml"
@@ -573,11 +576,17 @@ echo "$A18_EXEMPT_OUT" | grep -q "A18\|垃圾文件" && fail "A18 误报正规�
 cd "$PROJECT_ROOT" && rm -rf "$A18_EXEMPT_DIR"
 scenario 53 "LOOP 工具注入（maxTurns=20 + ENGINEER/REVIEWER_TOOLS）"
 F="$PROJECT_ROOT/engine/orchestrator/src/loop/nodes.ts"; T="$PROJECT_ROOT/engine/orchestrator/src/tools.ts"
-if [ -f "$F" ] && [ -f "$T" ]; then
-  assert_grep "DEFAULT_ENGINEER_MAX_TURNS = 20" "$F" && assert_grep "DEFAULT_REVIEWER_MAX_TURNS = 15" "$F" && \
-  assert_grep "ENGINEER_TOOLS" "$F" && assert_grep "REVIEWER_TOOLS" "$F" && assert_grep "recursionLimit: resolveMaxTurns" "$F" && \
-  assert_grep "checkDangerousCommand" "$T" && assert_grep "recordLoopAuditHistory" "$F" && pass || true
-else fail "loop/nodes.ts 或 tools.ts 不存在"; fi
+D="$PROJECT_ROOT/engine/orchestrator/src/loop/deps-defaults.ts"
+AR="$PROJECT_ROOT/engine/orchestrator/src/loop/agent-runner.ts"
+# 锚点迁移注记（深模块批）：maxTurns 常量与 recordLoopAuditHistory 已从 nodes.ts 抽到
+# loop/deps-defaults.ts；ENGINEER_TOOLS/REVIEWER_TOOLS 定义在 tools.ts；recursionLimit
+# 注入点迁到 loop/agent-runner.ts（`recursionLimit: resolveMaxTurns(spec.role) * 2`）。
+# 断言指向新位置，覆盖面不变（常量值 + 工具集存在 + 注入链三面）。
+if [ -f "$F" ] && [ -f "$T" ] && [ -f "$D" ] && [ -f "$AR" ]; then
+  assert_grep "DEFAULT_ENGINEER_MAX_TURNS = 20" "$D" && assert_grep "DEFAULT_REVIEWER_MAX_TURNS = 15" "$D" && \
+  assert_grep "ENGINEER_TOOLS" "$T" && assert_grep "REVIEWER_TOOLS" "$T" && assert_grep "recursionLimit: resolveMaxTurns" "$AR" && \
+  assert_grep "checkDangerousCommand" "$T" && assert_grep "recordLoopAuditHistory" "$D" && pass || true
+else fail "loop/nodes.ts 或 tools.ts 或 deps-defaults.ts 或 agent-runner.ts 不存在"; fi
 scenario 54 "warn-accumulator 连续性语义（遇 PASS/FAIL 中断）"
 WARN_ACC="$PROJECT_ROOT/engine/daemon/src/inspectors/warn-accumulator.ts"
 if [ -f "$WARN_ACC" ]; then
@@ -792,7 +801,14 @@ fi
 $S83_OK && pass
 [ ! -f "$PROJECT_ROOT/docs/llm-wiki-mapping.md" ] && pass || fail "llm-wiki-mapping.md 应已合并到 ARCHITECTURE.md 并删除"
 INSPECTOR_INDEX="$PROJECT_ROOT/engine/daemon/src/inspectors/index.ts"; S85_OK=true
-grep -q "'conflict-check'.*'@weekly'" "$INSPECTOR_INDEX" || { fail "DEFAULT_INSPECTOR_CONFIG 缺 conflict-check @weekly"; S85_OK=false; }
+# 锚点迁移注记（深模块批）：巡检配置改表驱动——INSPECTORS 单源在 registry.ts，
+# schedule 由 inspector-layers.ts 的 LAYER_SCHEDULE 按 layer 映射；index.ts 的
+# DEFAULT_INSPECTOR_CONFIG 只是 Object.fromEntries 组合，不再有字面条目。
+# 断言随之指向两处单源，覆盖面不变（巡检项注册 + 调度映射 + 导出链）。
+S85_REGISTRY="$PROJECT_ROOT/engine/daemon/src/inspectors/registry.ts"
+S85_LAYERS="$PROJECT_ROOT/engine/daemon/src/inspector-layers.ts"
+grep -q "'conflict-check'" "$S85_REGISTRY" || { fail "registry.ts 缺 conflict-check 巡检项"; S85_OK=false; }
+grep -q "LAYER_SCHEDULE" "$INSPECTOR_INDEX" && grep -q "@weekly" "$S85_LAYERS" || { fail "调度映射缺 @weekly（LAYER_SCHEDULE）"; S85_OK=false; }
 grep -q "export.*checkConflict\|from.*conflict-check" "$INSPECTOR_INDEX" || { fail "export 列表缺 checkConflict"; S85_OK=false; }
 $S85_OK && pass
 scenario 86 "pre-push-check + SKILL.md frontmatter"
@@ -1456,7 +1472,10 @@ scenario 167a "v1.2.4 P0 分层巡检——inspector-layers 三层调度器存�
 node -e "const m=require('$PROJECT_ROOT/engine/daemon/dist/inspector-layers.js');const l1=m.getLayerInspectorNames('L1');const l2=m.getLayerInspectorNames('L2');const l3=m.getLayerInspectorNames('L3');if(!l1.includes('audit-history')||!l1.includes('eval-failures')||!l1.includes('daily-snapshot')){console.log('L1 缺少 inspector');process.exit(1);}if(!l2.includes('evolve-trigger')||!l2.includes('trend-aggregator')){console.log('L2 缺少 inspector');process.exit(1);}if(!l3.includes('federation-distillation')||!l3.includes('failure-pattern')||!l3.includes('ontology-coverage')){console.log('L3 缺少 inspector');process.exit(1);}console.log('OK');" >/dev/null 2>&1 || { fail "分层巡检 inspector 列表不完整"; S167A_OK=false; }
 $S167A_OK && pass "分层巡检 L1/L2/L3 三层调度器完整（含 eval-failures/daily-snapshot/evolve-trigger/trend-aggregator/L3 三新）"
 scenario 167b "v1.2.4 P0 修复预存 bug——runInspectors 含 data-sovereignty 三档"; S167B_OK=true
-node -e "const m=require('$PROJECT_ROOT/engine/daemon/dist/inspectors/index.js');const src=require('fs').readFileSync('$PROJECT_ROOT/engine/daemon/src/inspectors/index.ts','utf8');if(!src.includes('generateDataSovereigntyDaily(projectDir)')||!src.includes('generateDataSovereigntyWeekly(projectDir)')||!src.includes('generateDataSovereigntyMonthly(projectDir)')){console.log('runInspectors 未调 data-sovereignty');process.exit(1);}console.log('OK');" >/dev/null 2>&1 || { fail "runInspectors 未修复 data-sovereignty 漏调"; S167B_OK=false; }
+# 锚点迁移注记（深模块批）：runInspectors 改为委托 registry.ts 的 runAll，三档
+# data-sovereignty 巡检项在 INSPECTORS 表注册（fn 指向 generateDataSovereignty*）。
+# 断言随之指向注册表，覆盖面不变（三档仍在 L1/L2 调度体系内）。
+node -e "const fs=require('fs');const src=fs.readFileSync('$PROJECT_ROOT/engine/daemon/src/inspectors/registry.ts','utf8');for(const k of ['data-sovereignty-daily','data-sovereignty-weekly','data-sovereignty-monthly']){if(!src.includes(k)){console.log('registry 缺 '+k);process.exit(1);}}for(const f of ['generateDataSovereigntyDaily','generateDataSovereigntyWeekly','generateDataSovereigntyMonthly']){if(!src.includes(f)){console.log('registry 缺 '+f);process.exit(1);}}console.log('OK');" >/dev/null 2>&1 || { fail "registry 缺 data-sovereignty 三档注册"; S167B_OK=false; }
 $S167B_OK && pass "runInspectors 修复 data-sovereignty 三档漏调（v1.2.4 P0 预存 bug）"
 scenario 168 "v1.2.4 P1 evolve optimize() API 存在 + failure-ledger 导出"; S168_OK=true
 node -e "const m=require('$PROJECT_ROOT/engine/evolve/dist/index.js');if(typeof m.optimize!=='function'){console.log('optimize 不存在');process.exit(1);}if(typeof m.recordFailure!=='function'){console.log('recordFailure 不存在');process.exit(1);}if(typeof m.getFailurePatterns!=='function'){console.log('getFailurePatterns 不存在');process.exit(1);}if(typeof m.getRepeatedFailures!=='function'){console.log('getRepeatedFailures 不存在');process.exit(1);}if(m.AUTO_TRIGGER_THRESHOLD!==3){console.log('阈值不对');process.exit(1);}console.log('OK');" >/dev/null 2>&1 || { fail "evolve optimize()/failure-ledger API 不完整"; S168_OK=false; }
@@ -1580,8 +1599,11 @@ scenario 195 "v1.2.6 2A — activate.ts 嵌套/平铺 workflow.yml 格式兼容"
 grep -q "\['workflow'\]" "$PROJECT_ROOT/engine/orchestrator/src/activate.ts" 2>/dev/null || { fail "activate.ts 缺少嵌套格式兼容（['workflow'] 键查找）"; S195_OK=false; }
 $S195_OK && pass "activate.ts 支持嵌套 + 平铺双格式（const root = doc['workflow'] ?? doc）"
 scenario 196 "v1.2.6 2B — SOFAGENT_LLM 环境变量四级回退链"; S196_OK=true
-grep -q "SOFAGENT_LLM_A" "$PROJECT_ROOT/engine/orchestrator/src/loop/nodes.ts" 2>/dev/null || { fail "nodes.ts 缺少 SOFAGENT_LLM_A 回退"; S196_OK=false; }
-grep -q "SOFAGENT_LLM_B" "$PROJECT_ROOT/engine/orchestrator/src/loop/nodes.ts" 2>/dev/null || { fail "nodes.ts 缺少 SOFAGENT_LLM_B 回退"; S196_OK=false; }
+# 锚点迁移注记（深模块批）：LLM 解析已从 nodes.ts 抽为独立模块 loop/llm-model-resolver.ts
+# （resolveApiKey / resolveLLMModel），四级回退链语义不变，断言随之指向新位置。
+LR="$PROJECT_ROOT/engine/orchestrator/src/loop/llm-model-resolver.ts"
+grep -q "SOFAGENT_LLM_A" "$LR" 2>/dev/null || { fail "llm-model-resolver.ts 缺少 SOFAGENT_LLM_A 回退"; S196_OK=false; }
+grep -q "SOFAGENT_LLM_B" "$LR" 2>/dev/null || { fail "llm-model-resolver.ts 缺少 SOFAGENT_LLM_B 回退"; S196_OK=false; }
 $S196_OK && pass "resolveLLMModel/resolveApiKey 四级回退（SOFAGENT_LLM → _ROLE → _A → _B）"
 # S197 已归并至 S164（全项目 .md 死链检测已覆盖 docs/ 子集）
 pass "S197 归并至 S164（全项目死链检测）"
@@ -1633,14 +1655,15 @@ BOOTSTRAP_LINES=$(wc -l < "$PROJECT_ROOT/bootstrap.sh" 2>/dev/null || echo 999)
 
 assert_grep "curl\|bash\|install" "$PROJECT_ROOT/bootstrap.sh" || S206_OK=false
 $S206_OK && pass "One-Line Agent Setup（bootstrap.sh 存在 + ${BOOTSTRAP_LINES} 行 + curl|bash 入口）"
-scenario 207 "v1.2.7 ⑨ Agent Mailbox — 邮箱模块 + 节点注入"; S207_OK=true
-[ -f "$PROJECT_ROOT/engine/orchestrator/src/mailbox/mailbox.ts" ] || { fail "mailbox.ts 不存在"; S207_OK=false; }
-[ -f "$PROJECT_ROOT/engine/orchestrator/src/mailbox/message-injector.ts" ] || { fail "message-injector.ts 不存在"; S207_OK=false; }
-[ -f "$PROJECT_ROOT/engine/orchestrator/src/mailbox/index.ts" ] || { fail "mailbox/index.ts 不存在"; S207_OK=false; }
-assert_grep "MailboxStore\|send\|readUnread\|markRead" "$PROJECT_ROOT/engine/orchestrator/src/mailbox/mailbox.ts" || S207_OK=false
-assert_grep "MessageInjector\|injectMessages" "$PROJECT_ROOT/engine/orchestrator/src/mailbox/message-injector.ts" || S207_OK=false
-assert_grep "mailbox\|MailboxInjector\|injectMessages" "$PROJECT_ROOT/engine/orchestrator/src/loop/nodes.ts" || S207_OK=false
-$S207_OK && pass "Agent Mailbox（mailbox.ts + message-injector.ts + nodes.ts 注入逻辑）"
+scenario 207 "Agent Mailbox 退场契约（整块退役）"; S207_OK=true
+# 语义反转注记（深模块批）：Agent Mailbox 自引入起无生产者无消费者（节点侧零
+# .injectMessages 调用），已整块退场——mailbox-retirement.test.ts 把「模块目录不存在」
+# 固化为显式契约（防幽灵缝：挡住日后只加类型又当交付）。本场景随之从「模块必须存在」
+# 反转为「必须不存在」，覆盖面不变。
+MB_DIR="$PROJECT_ROOT/engine/orchestrator/src/mailbox"
+[ ! -d "$MB_DIR" ] || { fail "mailbox 模块目录仍存在（退场契约要求不存在）"; S207_OK=false; }
+grep -q "mailbox\|MailboxInjector\|injectMessages" "$PROJECT_ROOT/engine/orchestrator/src/loop/nodes.ts" 2>/dev/null && { fail "nodes.ts 仍含 mailbox 注入残留"; S207_OK=false; }
+$S207_OK && pass "Agent Mailbox 退场契约（目录不存在 + nodes.ts 无注入残留）"
 # ─── v1.2.8 场景（208-214：memory-store/scheduler/tool-budget/node-executor/F角色/checkpoint）───
 scenario 208 "v1.2.8 ① memory-store — createMemoryStore 导出 + CRUD + 分层目录"
 S208_OK=true; require_dist "engine/core/dist/memory-store.js" || S208_OK=false
@@ -1912,9 +1935,11 @@ fi
 scenario 227 "v1.3.0 交付 4 list_rules MCP tool 响应"; S227_OK=true
 [ -f "$PROJECT_ROOT/engine/mcp/src/tools/list-rules.ts" ] || { fail "list-rules.ts 不存在"; S227_OK=false; }
 if $S227_OK; then
-  # 注册到 tool-registry + mcp-server case 分支
+  # 注册到 tool-registry + 经 TOOLS 表在 mcp-server 分发
+  # 锚点迁移注记（深模块批）：mcp-server 改为消费 tool-registry 的 TOOLS 注册表
+  # 动态分发（不再逐 tool 写 case 分支）——断言随之检查分发链而非字面 tool 名，覆盖面不变。
   assert_grep "list_rules" "$PROJECT_ROOT/engine/mcp/src/tool-registry.ts" || S227_OK=false
-  assert_grep "list_rules" "$PROJECT_ROOT/engine/mcp/src/mcp-server.ts" || S227_OK=false
+  assert_grep "TOOLS" "$PROJECT_ROOT/engine/mcp/src/mcp-server.ts" || S227_OK=false
   # 只读不暴露实现（无 check 函数字段）
   assert_grep "不暴露规则实现逻辑\|不暴露实现" "$PROJECT_ROOT/engine/mcp/src/tools/list-rules.ts" || S227_OK=false
   # 支持 type 参数（tool/diff/all）
@@ -2248,8 +2273,11 @@ grep -q "COMMONS" "$PROJECT_ROOT/engine/audit/src/decision-log.ts" || S268_OK=fa
 grep -q "EVOLUTION" "$PROJECT_ROOT/engine/orchestrator/src/commons/retire.ts" || S268_OK=false
 $S268_OK && pass "DecisionKind.COMMONS + 退役走 EVOLUTION" || fail "公地审计 kind 缺失"
 scenario 269 "v1.3.4 交付 1：daemon 公地巡检双注册（L1 目录日更 + L2 健康周检 · v1.3.6 更名自 market）"; S269_OK=true
-grep -q "commons-catalog-daily" "$PROJECT_ROOT/engine/daemon/src/inspector-layers.ts" || S269_OK=false
-grep -q "commons-health" "$PROJECT_ROOT/engine/daemon/src/inspector-layers.ts" || S269_OK=false
+# 锚点迁移注记（深模块批）：巡检项名注册迁到 registry.ts 的 INSPECTORS 单源
+# （inspector-layers.ts 只保留 layer 划分与调度映射）。断言指向注册表，覆盖面不变。
+S269_REG="$PROJECT_ROOT/engine/daemon/src/inspectors/registry.ts"
+grep -q "commons-catalog-daily" "$S269_REG" || S269_OK=false
+grep -q "commons-health" "$S269_REG" || S269_OK=false
 grep -q "runCommonsCatalogDaily" "$PROJECT_ROOT/engine/daemon/src/inspectors/index.ts" || S269_OK=false
 grep -q "runCommonsHealth" "$PROJECT_ROOT/engine/daemon/src/inspectors/index.ts" || S269_OK=false
 $S269_OK && pass "公地巡检 inspector 三步注册（L1+L2）" || fail "inspector 注册缺失"
@@ -3953,10 +3981,18 @@ set +o pipefail
 # 一、INFO 四要素 + exit 0：主仓当前实有未标记分支（0821-01/0826-01/release-gate 等）
 S380_OUT1=$( bash "$PROJECT_ROOT/tools/check/check-forge-branches.sh" 2>/dev/null; echo "EXIT=$?" )
 S380_RC1=$(echo "$S380_OUT1" | grep -oE 'EXIT=[0-9]+' | head -1 | cut -d= -f2)
-echo "$S380_OUT1" | grep -qE "forge/\* 分支共 [0-9]+ 个：已标记（收编完成）[0-9]+ · 未标记（待人工确认）[0-9]+" || { echo "  ✗ S380: 汇总行形态不符"; S380_OK=false; }
-echo "$S380_OUT1" | grep -q "◇ forge/fresh-eyes/20260821-01（main 领先视角独有 commit：121）" || { echo "  ✗ S380: 未标记分支缺「分支名+独有 commit 数」行"; S380_OK=false; }
-echo "$S380_OUT1" | grep -q "（main 最后改动" || { echo "  ✗ S380: 未标记分支缺涉及文件行（main 最后改动）"; S380_OK=false; }
-echo "$S380_OUT1" | grep -q "处置：确认已收编 → git tag forge-merged-" || { echo "  ✗ S380: 处置命令行缺失"; S380_OK=false; }
+# 状态自适应注记（流程加固批）：forge/* 分支为 0（收编清理后的正常态）时，脚本合法
+# 输出「✓ 无 forge/* 分支——无可对账对象」；此时按该形态断言，有分支时验四要素。
+# 同时把原硬编码分支名/commit 数 121 改为泛化正则（分支动态变化，字面断言必然失配）。
+S380_HAS_BRANCH=$(git branch --list 'forge/*' --format='%(refname:short)' 2>/dev/null | wc -l | tr -d ' ')
+if [ "$S380_HAS_BRANCH" = "0" ]; then
+  echo "$S380_OUT1" | grep -q "无 forge/\* 分支" || { echo "  ✗ S380: 无分支时应输出「无 forge/* 分支」提示"; S380_OK=false; }
+else
+  echo "$S380_OUT1" | grep -qE "forge/\* 分支共 [0-9]+ 个：已标记（收编完成）[0-9]+ · 未标记（待人工确认）[0-9]+" || { echo "  ✗ S380: 汇总行形态不符"; S380_OK=false; }
+  echo "$S380_OUT1" | grep -qE "◇ forge/[^（]+（main 领先视角独有 commit：[0-9]+）" || { echo "  ✗ S380: 未标记分支缺「分支名+独有 commit 数」行"; S380_OK=false; }
+  echo "$S380_OUT1" | grep -q "（main 最后改动" || { echo "  ✗ S380: 未标记分支缺涉及文件行（main 最后改动）"; S380_OK=false; }
+  echo "$S380_OUT1" | grep -q "处置：确认已收编 → git tag forge-merged-" || { echo "  ✗ S380: 处置命令行缺失"; S380_OK=false; }
+fi
 [ "$S380_RC1" = "0" ] || { echo "  ✗ S380: 存在未标记分支时退出码应 0（INFO 级不阻断），实测 ${S380_RC1}"; S380_OK=false; }
 # 二、已标记不进未标记清单：5 个 forge-merged-* tag 实存，且对应分支名不出现在「◇」明细行
 S380_TAGS=$(git tag -l 'forge-merged-*' | wc -l | tr -d ' ')
@@ -3970,8 +4006,10 @@ S380_FAM=$( bash "$PROJECT_ROOT/tools/check/check-forge-branches.sh" --family=fr
 echo "$S380_FAM" | grep -q "◇ forge/release-gate/" && { echo "  ✗ S380: fresh-eyes 家族过滤失效（出现 release-gate 分支）"; S380_OK=false; }
 echo "$S380_FAM" | grep -q "EXIT=0" || { echo "  ✗ S380: 家族过滤态退出码非 0"; S380_OK=false; }
 # 四、输出稳定可复现：同输入两跑，forge 分支汇总行一致
-S380_NOW1=$(bash "$PROJECT_ROOT/tools/check/check-forge-branches.sh" 2>/dev/null | grep '分支共' | head -1)
-S380_NOW2=$(bash "$PROJECT_ROOT/tools/check/check-forge-branches.sh" 2>/dev/null | grep '分支共' | head -1)
+# 状态自适应（同前三处）：有分支时取「分支共」汇总行；无分支（收编清理后正常态）时取
+# 「无 forge/* 分支」提示行——两态都是合法稳定输出，原实现只认前者，取空即误判抖动。
+S380_NOW1=$(bash "$PROJECT_ROOT/tools/check/check-forge-branches.sh" 2>/dev/null | grep -E '分支共|无 forge/\* 分支' | head -1)
+S380_NOW2=$(bash "$PROJECT_ROOT/tools/check/check-forge-branches.sh" 2>/dev/null | grep -E '分支共|无 forge/\* 分支' | head -1)
 [ -n "$S380_NOW1" ] && [ "$S380_NOW1" = "$S380_NOW2" ] || { echo "  ✗ S380: 当前历史两跑汇总行不一致（输出抖动）"; S380_OK=false; }
 set -o pipefail  # 恢复主脚本 pipefail 语义（场景内临时关闭的对称恢复）
 rm -rf "$S380_TMP"
