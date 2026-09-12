@@ -309,7 +309,11 @@ DIM_TITLES_CLEAN=$(grep -E "^#### " "$CHECKLIST" | sed 's/^#### [0-9]*\. //; s/�
 # 不经 shell 变量中转（调试实录：命令替换捕获值偶发含上游残留，机制未定位，
 # 数据流单向化根治）。展示循环只读文件，变量全部独立前缀。
 CLUSTER_TMP=$(mktemp /tmp/crs-cluster-XXXX)
-printf '%s\n' "$DIM_TITLES_CLEAN" | LC_ALL="${LC_ALL_UTF8:-en_US.UTF-8}" perl -CSD -ne 'while (/([\p{Han}]{2,}|[A-Za-z]{4,})/g) { my $w = $1; next if $w =~ /^[vV]\d/; print "$w\n" }' 2>/dev/null | sort | uniq -c | sort -rn | awk -v min="$CLUSTER_MIN" '$1 >= min {print $1, $2}' > "$CLUSTER_TMP" || true
+CLUSTER_ALL=$(mktemp /tmp/crs-all-XXXX)
+# 判据分离：原始词表（CLUSTER_ALL）空 = perl 提取失败（真故障）；原始词表非空但过滤后（CLUSTER_TMP）空
+# = 干净态（无 ≥min 聚簇，低信号正是本检查该有的行为）。两态共用空结果 = 旧版把干净态误报成故障的根因。
+printf '%s\n' "$DIM_TITLES_CLEAN" | LC_ALL="${LC_ALL_UTF8:-en_US.UTF-8}" perl -CSD -ne 'while (/([\p{Han}]{2,}|[A-Za-z]{4,})/g) { my $w = $1; next if $w =~ /^[vV]\d/; print "$w\n" }' 2>/dev/null > "$CLUSTER_ALL" || true
+sort "$CLUSTER_ALL" | uniq -c | sort -rn | awk -v min="$CLUSTER_MIN" '$1 >= min {print $1, $2}' > "$CLUSTER_TMP" || true
 
 if [ -s "$CLUSTER_TMP" ]; then
   while IFS= read -r c7_line; do
@@ -329,14 +333,14 @@ if [ -s "$CLUSTER_TMP" ]; then
     [ "$QUIET" = false ] && echo -e "  ↳ 提示非 FAIL：聚簇=归并候选（三判据②），归并/保留人工裁决；「tool/完整性」类通用词多为假信号"
   fi
 else
-  if [ -n "$DIM_TITLES_CLEAN" ]; then
-    # 标题非空但聚簇结果空 = perl 提取失败（如 C locale 退化），不误报"干净"
+  if [ ! -s "$CLUSTER_ALL" ]; then
+    # 原始词表为空 = perl 提取失败（locale 退化 / perl 缺失），不误报"干净"
     warn "聚簇提取结果为空但维度标题非空——perl 提取可能失败（locale？），人工确认"
   else
-    ok "无 ≥${CLUSTER_MIN} 维同主题聚簇（暂无归并候选）"
+    ok "无 ≥${CLUSTER_MIN} 维同主题聚簇（暂无归并候选——干净态低信号，正常）"
   fi
 fi
-rm -f "$CLUSTER_TMP"
+rm -f "$CLUSTER_TMP" "$CLUSTER_ALL"
 
 # ============================================================
 # 汇总
