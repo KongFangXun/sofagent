@@ -3990,7 +3990,10 @@ if [ "$S380_HAS_BRANCH" = "0" ]; then
 else
   echo "$S380_OUT1" | grep -qE "forge/\* 分支共 [0-9]+ 个：已标记（收编完成）[0-9]+ · 未标记（待人工确认）[0-9]+" || { echo "  ✗ S380: 汇总行形态不符"; S380_OK=false; }
   echo "$S380_OUT1" | grep -qE "◇ forge/[^（]+（main 领先视角独有 commit：[0-9]+）" || { echo "  ✗ S380: 未标记分支缺「分支名+独有 commit 数」行"; S380_OK=false; }
-  echo "$S380_OUT1" | grep -q "（main 最后改动" || { echo "  ✗ S380: 未标记分支缺涉及文件行（main 最后改动）"; S380_OK=false; }
+  # 涉及文件行两态自适应（对齐 check-forge-branches 实际输出形态）：
+  #   分支有改动 → 「（main 最后改动 …）」；独有 commit 为 0 / 纯快进 → 「（相对 merge-base 无文件改动…）」。
+  # 后者常见于 FORGE worktree 分支（driver 跑完未产生 commit 时），旧断言只认前者会误红。
+  echo "$S380_OUT1" | grep -qE "（main 最后改动|相对 merge-base 无文件改动" || { echo "  ✗ S380: 未标记分支缺涉及文件行（两态均未命中）"; S380_OK=false; }
   echo "$S380_OUT1" | grep -q "处置：确认已收编 → git tag forge-merged-" || { echo "  ✗ S380: 处置命令行缺失"; S380_OK=false; }
 fi
 [ "$S380_RC1" = "0" ] || { echo "  ✗ S380: 存在未标记分支时退出码应 0（INFO 级不阻断），实测 ${S380_RC1}"; S380_OK=false; }
