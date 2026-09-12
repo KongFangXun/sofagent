@@ -1882,6 +1882,16 @@ grep -q "SOFAGENT_EVOLVE_GATE ?? 'native'" engine/evolve/src/evolve-integration.
 #    package.json / 锁文件 / node_modules（后两面原缺：extraneous 残留由此存活一整版，见 dependency-direction.sh ⑵）
 { grep -rq "@sofagent/skillopt" package.json engine/*/package.json FORGE/package.json package-lock.json 2>/dev/null \
   || [ -e node_modules/@sofagent/skillopt ]; } && { echo "❌ 旧包名残留（package.json / 锁文件 / node_modules 任一面）"; FAIL=1; } || echo "✅ 旧名清零（三面齐查）"
+
+# c2: 宿主 profile 悬空软链（改名 / 删包后残留——bulk 改名类改动的收尾检查）
+#     悬空链不影响加载（bundles 只引当前名）但属残留噪音，且 pnpm install 遇它可能报错；
+#     实证：聚合插件改名（-harness → -suite）后 web profile 留 2 条（本次改名残留 + 更早遗留）
+if [ -d "$HOME/.dsh/profiles" ]; then
+  _nh=$(find "$HOME/.dsh/profiles"/*/node_modules -maxdepth 1 -type l ! -exec test -e {} \; -print 2>/dev/null | wc -l | tr -d ' ')
+  [ "$_nh" = "0" ] && echo "✅ 宿主 profile 无悬空软链" || { echo "❌ 宿主 profile 有 $_nh 条悬空软链——确认该名不在其 bundles/dependencies 后删除"; FAIL=1; }
+else
+  echo "⚠️ 无 ~/.dsh/profiles（非宿主环境）——跳过 c2"
+fi
 # d: loop 概念归位与弃用承诺（深模块批条目 10）——三形态定位边界互不重叠声明在位（**明确不合并**：
 #    loop/ 对错门禁 · loop-agent/ 工程级崩溃判定 · refine-agent/ 质量好坏判据，两两判据与状态机不同）；
 #    optimization-loop 撤公开承诺但实现保留（撤承诺 ≠ 删实现）；loop --legacy 弃用标记双面（help 标注 + stderr 告警），
