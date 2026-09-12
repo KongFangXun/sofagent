@@ -9,7 +9,7 @@
 // 安全约束：本 tool 只读。
 // ============================================================
 
-import { WorklogAggregator } from '@sofagent/orchestrator';
+import { WorklogAggregator } from '@sofagent/orchestrator/worklog';
 
 /** 成本显示统一人民币：引擎 costUsd 按美元计费，展示 ×7.2 估算汇率换算（与 dashboard fmtCost 同口径） */
 const USD_CNY = 7.2;

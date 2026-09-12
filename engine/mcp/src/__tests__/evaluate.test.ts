@@ -23,7 +23,7 @@ import {
   freezeBenchmark,
   writeBenchmarkLayout,
   benchmarksRoot,
-} from '@sofagent/orchestrator';
+} from '@sofagent/orchestrator/benchmark';
 import { loadEnvConfig } from '@sofagent/core';
 
 describe('evaluate · Benchmark 评测（v1.3.1 交付 9）', () => {

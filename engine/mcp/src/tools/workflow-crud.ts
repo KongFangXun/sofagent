@@ -16,7 +16,7 @@
 //   - dataDir 解析链：显式入参 > SOFAGENT_DATA > SOFAGENT_HOME/data > ~/.sofagent/data
 // ============================================================
 
-import type { CrudResult } from '@sofagent/orchestrator';
+import type { CrudResult } from '@sofagent/orchestrator/workflow';
 
 /** dataDir 解析（显式入参优先——与 tools/ 既有 tool 同款纪律） */
 async function resolveDataDir(explicit?: string): Promise<string> {
@@ -29,21 +29,21 @@ async function resolveDataDir(explicit?: string): Promise<string> {
 // ────────────────────────────────────────────────────────────
 
 export async function workflowCreate(args: Record<string, unknown>): Promise<CrudResult> {
-  const { workflowCreate } = await import('@sofagent/orchestrator');
+  const { workflowCreate } = await import('@sofagent/orchestrator/workflow');
   return workflowCreate(args, await resolveDataDir(args.data_dir as string | undefined));
 }
 
 export async function workflowUpdate(args: Record<string, unknown>): Promise<CrudResult> {
-  const { workflowUpdate } = await import('@sofagent/orchestrator');
+  const { workflowUpdate } = await import('@sofagent/orchestrator/workflow');
   return workflowUpdate(args, await resolveDataDir(args.data_dir as string | undefined));
 }
 
 export async function workflowNodeAdd(args: Record<string, unknown>): Promise<CrudResult> {
-  const { workflowNodeAdd } = await import('@sofagent/orchestrator');
+  const { workflowNodeAdd } = await import('@sofagent/orchestrator/workflow');
   return workflowNodeAdd(args, await resolveDataDir(args.data_dir as string | undefined));
 }
 
 export async function workflowDiffPreview(args: Record<string, unknown>): Promise<CrudResult> {
-  const { workflowDiffPreview } = await import('@sofagent/orchestrator');
+  const { workflowDiffPreview } = await import('@sofagent/orchestrator/workflow');
   return workflowDiffPreview(args, await resolveDataDir(args.data_dir as string | undefined));
 }

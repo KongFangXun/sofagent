@@ -76,6 +76,26 @@
       "types": "./dist/team/team-state.d.ts",
       "require": "./dist/team/team-state.js",
       "default": "./dist/team/team-state.js"
+    },
+    "./workflow": {
+      "types": "./dist/workflow/index.d.ts",
+      "require": "./dist/workflow/index.js",
+      "default": "./dist/workflow/index.js"
+    },
+    "./fde-compose": {
+      "types": "./dist/fde-compose/index.d.ts",
+      "require": "./dist/fde-compose/index.js",
+      "default": "./dist/fde-compose/index.js"
+    },
+    "./worklog": {
+      "types": "./dist/worklog/aggregator.d.ts",
+      "require": "./dist/worklog/aggregator.js",
+      "default": "./dist/worklog/aggregator.js"
+    },
+    "./benchmark": {
+      "types": "./dist/benchmark/benchmark-designer.d.ts",
+      "require": "./dist/benchmark/benchmark-designer.js",
+      "default": "./dist/benchmark/benchmark-designer.js"
     }
   },
   "files": [

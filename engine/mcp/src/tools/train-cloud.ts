@@ -15,7 +15,7 @@
 import { readFileSync, writeFileSync, existsSync, mkdirSync, renameSync } from 'fs';
 import { join } from 'path';
 import { getDataDir, atomicWriteSync } from '@sofagent/core';
-import { createCloudRegistry, type CloudVmRecord } from '@sofagent/orchestrator';
+import { createCloudRegistry, type CloudVmRecord } from '@sofagent/orchestrator/train';
 
 /** train_cloud tool 入参 */
 export interface TrainCloudArgs {

@@ -45,4 +45,7 @@ export {
   buildCloudStopCommand,
 } from './train-cloud';
 export type { CloudCommand } from './train-cloud';
+// 云注册表（mcp tools/train-cloud.ts 消费）
+export { createCloudRegistry } from './cloud-registry';
+export type { CloudVmRecord } from './cloud-registry';
 

@@ -10,9 +10,9 @@
 // ============================================================
 
 // 运行时值导入（routeRequest 是函数，运行时需要）
-import { routeRequest } from '@sofagent/orchestrator';
+import { routeRequest } from '@sofagent/orchestrator/workflow';
 // 类型导入（RouteResult / ParsedWorkflow 是类型，仅编译期——不可运行时解构）
-import type { RouteResult, ParsedWorkflow } from '@sofagent/orchestrator';
+import type { RouteResult, ParsedWorkflow } from '@sofagent/orchestrator/workflow';
 // 审计写入（emitDecision 是函数，运行时需要）
 import { emitDecision } from '@sofagent/audit';
 // 类型导入（RouteReason 是类型，仅编译期——v1.3.6 交付⑧）
