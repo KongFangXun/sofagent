@@ -73,7 +73,11 @@ bash tools/check/check-version.sh 2>&1 | grep "TS 文件头" | grep -q "✓" && 
 ```bash
 (
 # 子项 a: think.md 始终为 Ledger/source（非 Views/派生视图） 注意：grep 须精确匹配"think.md 被标为 Views"，而非"think.md 和 Views 出现在同一行" 正确模式：think.md 后跟 Views/派生（think.md = Views）→ 误标；think.md 后跟 Ledger/source → 正确
-grep -rn "think\.md.* Views\|think\.md.*派生视图\|think\.md（Views" docs/ARCHITECTURE.md docs/PHILOSOPHY.md docs/DEVELOPMENT.md FDE/GUIDE.md # 期望：无匹配
+grep -rnE "think\.md *= *(Views|派生视图)|think\.md（Views" docs/ARCHITECTURE.md docs/PHILOSOPHY.md docs/DEVELOPMENT.md FDE/GUIDE.md; # 期望：无匹配
+# 正则收紧（run-02 实证）：原 `think\.md.* Views` 会跨语义单元误命中——正解行写的是
+# 「task/logs + think.md = Ledger → knowledge/ = Views」，同行后续出现 Views 即被误判。
+# 本注释上方原有「正确模式：think.md 后跟 Views/派生」的说明，正则却未按该意图实现，
+# 属实现与注释不符，现按注释收紧为「think.md 紧邻 = Views/派生视图」形态。
 
 # 子项 b: canonical source 一致性
 grep -rn "Ledger-Views-Policy" docs/ARCHITECTURE.md docs/PHILOSOPHY.md docs/DEVELOPMENT.md | head # 期望：各文档描述一致
