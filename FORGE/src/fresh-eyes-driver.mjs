@@ -3758,7 +3758,11 @@ async function runRound(roundNum, runDir, target, dryRun, opts = {}) {
   //   省 B 侧约一半 token。视角独立性保留：B 仍以自己的视角身份评判，
   //   A 报错的地方 B 可推翻，A 漏报的地方 B 兜底补充（prompt 明示）。
   //   复核指令经 FORGE_B_REVIEW_MODE 环境变量注入 worker（prompt 构造处拼接）。
-  console.log('\n  [步骤 ①②] A 全量审查（单盲 ' + (enableBCheck ? '+ B 双盲（legacy）' : '12 视角') + '，' + allPerspectiveWorkers.length + ' perspective worker，并发=' + MAX_CONCURRENCY + '，来源=' + CONCURRENCY_RESOLVED.source + '）...');
+  // TDZ 修复：enableBCheck 原声明在本函数下方（原 L3776），首次使用却在此处
+  // ——const 暂时性死区，Round 1 启动即 ReferenceError 致命退出（20260912-01）。
+  // 注意：步骤①②日志（引用 allPerspectiveWorkers）也一并下移到声明之后——
+  // 它同时引用了尚未声明的 allPerspectiveWorkers，先修一个还会炸下一个。
+  const enableBCheck = process.env.FORGE_ENABLE_B_CHECK === '1';
 
   // v1.2.9 功能②：worker 级断点——跳过已完成的 perspective worker（resume 模式）
   const resumeCompletedWorkers = resumeStateForRound?.completedWorkers || [];
@@ -3772,12 +3776,12 @@ async function runRound(roundNum, runDir, target, dryRun, opts = {}) {
     console.log(`\n  [全量模式] 12 视角（单盲 A 侧${enableBCheck ? ' + B 双盲 legacy' : ''}：round-1 / 确认轮 / 增量边界不可用）`);
   }
   const activePerspectives = roundScope.perspectives;
-  // 单盲改造：b-check worker 仅 legacy 逃生门（FORGE_ENABLE_B_CHECK=1）生成
-  const enableBCheck = process.env.FORGE_ENABLE_B_CHECK === '1';
+  // enableBCheck 声明已上移至首次使用前（TDZ 修复，20260912-01）——此处不再重复声明
   const allPerspectiveWorkers = activePerspectives.flatMap(p => [
     [`a-check-p${p.id}`, roundDir, target],
     ...(enableBCheck ? [[`b-check-p${p.id}`, roundDir, target]] : []),
   ]);
+  console.log('\n  [步骤 ①②] A 全量审查（单盲 ' + (enableBCheck ? '+ B 双盲（legacy）' : '12 视角') + '，' + allPerspectiveWorkers.length + ' perspective worker，并发=' + MAX_CONCURRENCY + '，来源=' + CONCURRENCY_RESOLVED.source + '）...');
   // 过滤掉已完成的 worker（resume 模式跳过）
   const pendingWorkers = allPerspectiveWorkers.filter(
     ([step]) => !resumeCompletedWorkers.includes(step)
