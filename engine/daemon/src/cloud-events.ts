@@ -11,8 +11,8 @@ import {
   emitTrainAudit,
   type TrainAuditEventType,
   type EmitTrainAuditInput,
-} from '@sofagent/orchestrator/train';
-import type { TrainEvent } from '@sofagent/orchestrator/train';
+} from '@sofagent/train';
+import type { TrainEvent } from '@sofagent/train';
 
 /** 归一输入事件（本地协议② 或云通道事件） */
 export type DualChannelEvent =

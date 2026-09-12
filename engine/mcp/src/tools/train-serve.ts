@@ -96,7 +96,8 @@ export async function trainServeTool(args: TrainServeArgs): Promise<TrainServeTo
   }
 
   try {
-    const { createTrainServeManager } = await import('@sofagent/orchestrator');
+    // v1.4.8 第 7 批（train 拆包）：train-serve 随 train 迁至 @sofagent/train
+    const { createTrainServeManager } = await import('@sofagent/train');
     const manager = createTrainServeManager({ dataDir: getDataDir() });
 
     if (action === 'status') {

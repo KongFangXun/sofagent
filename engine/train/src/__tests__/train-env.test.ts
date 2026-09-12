@@ -23,7 +23,7 @@ import {
   type ExecFn,
   type ExecResult,
   type TrainEnvReport,
-} from '../train/train-env';
+} from '../train-env';
 
 // ──────────────────────────────────────
 // mock 工厂：按命令名路由的假 exec（nvidia-smi / system_profiler / pip3 / npm / python3 / node）

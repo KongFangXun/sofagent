@@ -4,7 +4,7 @@
   "engines": {
     "node": ">=18"
   },
-  "description": "启动注入企业约束——四层加载链（seam: apply(ctx)）——桥接 @sofagent/harness buildConstrainedSystemPrompt（sofagent 品牌插件 · 主色 #16B8F3）",
+  "description": "启动注入企业约束——四层加载链（seam: agent/pre-step）——桥接 @sofagent/harness buildConstrainedSystemPrompt（sofagent 品牌插件 · 主色 #16B8F3）",
   "private": true,
   "license": "MIT",
   "author": "KongFangXun",
@@ -22,9 +22,10 @@
   "sofagent": {
     "type": "dsh-plugin",
     "family": "cordis",
-    "seam": "apply(ctx"
+    "seam": "agent/pre-step",
+    "seamSemantics": "模型看到输入前注入四层加载链约束"
   },
-  "//optionalDependencies": "v1.4.5 T6 (R4)：src/index.ts:26 惰性 await import('@sofagent/harness')（懒加载 + 缺依赖降级不抛），此前未声明任何依赖——对齐 root package.json F-18 optionalDependencies 先例。",
+  "//optionalDependencies": "v1.4.5 T6 (R4)：src/index.ts 惰性 await import('@sofagent/harness')（懒加载 + 缺依赖降级不抛；v1.4.8 起该样板由 @sofagent/dsh-plugin-kit 统一封装），此前未声明任何依赖——对齐 root package.json F-18 optionalDependencies 先例。",
   "optionalDependencies": {
     "@sofagent/harness": "1.4.7"
   },

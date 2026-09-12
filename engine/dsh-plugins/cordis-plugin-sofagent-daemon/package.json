@@ -4,7 +4,7 @@
   "engines": {
     "node": ">=18"
   },
-  "description": "7×24 巡检 + 健康监测 + webhook 推送（seam: 独立调度进程）——桥接 @sofagent/daemon startCron（sofagent 品牌插件 · 主色 #16B8F3）",
+  "description": "7×24 巡检 + 健康监测 + webhook 推送（seam: non-seam:host-process）——桥接 @sofagent/daemon startCron（sofagent 品牌插件 · 主色 #16B8F3）",
   "private": true,
   "license": "MIT",
   "author": "KongFangXun",
@@ -22,9 +22,10 @@
   "sofagent": {
     "type": "dsh-plugin",
     "family": "cordis",
-    "seam": "独立调度进程"
+    "seam": "non-seam:host-process",
+    "seamSemantics": "非宿主事件接入（独立调度进程）——7×24 巡检不走宿主事件循环"
   },
-  "//optionalDependencies": "v1.4.5 T6 (R4)：src/index.ts:26 惰性 await import('@sofagent/daemon')（懒加载 + 缺依赖降级不抛），此前未声明任何依赖——对齐 root package.json F-18 optionalDependencies 先例。",
+  "//optionalDependencies": "v1.4.5 T6 (R4)：src/index.ts 惰性 await import('@sofagent/daemon')（懒加载 + 缺依赖降级不抛；v1.4.8 起该样板由 @sofagent/dsh-plugin-kit 统一封装），此前未声明任何依赖——对齐 root package.json F-18 optionalDependencies 先例。",
   "optionalDependencies": {
     "@sofagent/daemon": "1.4.7"
   },

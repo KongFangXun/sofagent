@@ -19,7 +19,7 @@ import {
   createTrainNetworkGate,
   checkAnticheatBaseline,
   type DatasetMountSource,
-} from '../train/env-manager';
+} from '../env-manager';
 
 // ── 测试基建 ──
 let dataDir: string;

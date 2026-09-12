@@ -25,9 +25,9 @@ import {
   linkSwitchToServe,
   type ServeTarget,
   type ServeSpawnFn,
-} from '../train/train-serve';
-import { readTrainAudit } from '../train/train-audit';
-import { registerModel } from '../model-registry';
+} from '../train-serve';
+import { readTrainAudit } from '../train-audit';
+import { registerModel } from '@sofagent/orchestrator/model-registry';
 
 // ── 测试基建 ──
 let dataDir: string;
@@ -353,7 +353,7 @@ describe('model_switch 联动（linkSwitchToServe）', () => {
   it('test_linkSwitchToServe_localPath模型_自动拉起新权重服务', async () => {
     const weightsDir = makeWeightsDir('linked-weights');
     // 注册 local-path 模型（registerModel 校验 manifest——手工造合法 manifest）
-    const { appendVersion, hashDir } = await import('../weights-manifest');
+    const { appendVersion, hashDir } = await import('@sofagent/orchestrator/weights-manifest');
     const versionDir = join(weightsDir, 'v1');
     mkdirSync(versionDir, { recursive: true });
     writeFileSync(join(versionDir, 'model.safetensors'), 'fake-weights-bytes');

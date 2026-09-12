@@ -27,9 +27,9 @@ import {
   detectTrainOrphans,
   type KillFn,
   type ExecFn,
-} from '../train/process-guard';
-import { createTrainJob } from '../train/train-job';
-import { checkTrainAuditChain } from '../train/train-audit';
+} from '../process-guard';
+import { createTrainJob } from '../train-job';
+import { checkTrainAuditChain } from '../train-audit';
 
 describe('process-guard · 心跳监听', () => {
   it('test_registerHeartbeat_注册后立即可检测_不判卡死', () => {

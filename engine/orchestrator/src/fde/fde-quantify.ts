@@ -26,7 +26,7 @@ import {
 } from './fde-workbench';
 import { deriveOntologyDraft, type ComposeSession, type NodeInterview } from './compose-interview';
 import { generateWorkflowDraft } from './workflow-draft';
-import { computeQuantification, type QuantificationMetrics, type QuantifyInput } from '../train/train-report';
+import { computeQuantification, type QuantificationMetrics, type QuantifyInput } from './quantify-core';
 
 // ══════════════════════════════════════
 // 引擎三：fde_quantify 量化 + ROI 排序

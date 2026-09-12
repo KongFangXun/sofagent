@@ -6,20 +6,23 @@
 // - 观测台账 continuous-runs.jsonl 落盘
 //
 // 测试纪律：SOFAGENT_DATA 指向 tmp（观测台账不落真实 HOME）；
-// orchestrator 经 vi.mock 打桩（零真实训练进程）。
+// @sofagent/train（v1.4.8 第 7 批前为 @sofagent/orchestrator）经 vi.mock 打桩（零真实训练进程）。
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { mkdtempSync, rmSync, mkdirSync, writeFileSync, readFileSync, existsSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 
-// ── Mock @sofagent/orchestrator（tick 装配链——零真实编排）──
+// ── Mock @sofagent/train（tick 装配链——零真实编排）──
+// v1.4.8 第 7 批（train 拆包）：train-continuous / train-scheduler 随 train 迁至
+// @sofagent/train，tasks/continuous-training.ts 的装载源已同步改口——本桩须跟着改，
+// 否则 mock 打不中真实加载路径（曾致 2 用例假失败：mock 未被调用 / 错误未捕获）。
 const runContinuousTrainingMock = vi.fn(async () => ({
   trigger: 'schedule',
   decided: 'skip',
   reason: '样本 0/50 未达阈值（mock）',
 }));
-vi.mock('@sofagent/orchestrator', () => ({
+vi.mock('@sofagent/train', () => ({
   createTrainScheduler: vi.fn(() => ({
     submitTrainJob: vi.fn(() => ({ result: { record: { jobId: 'job-mock' } }, handle: null })),
   })),

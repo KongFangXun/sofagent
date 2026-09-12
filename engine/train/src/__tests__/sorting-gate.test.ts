@@ -11,8 +11,8 @@ import {
   classifyDataForCloud,
   classifyBatchForCloud,
   generateConfidentialityRef,
-} from '../train/sorting-gate';
-import { gateDataPush, validateDataPush } from '../train/data-push';
+} from '../sorting-gate';
+import { gateDataPush, validateDataPush } from '../data-push';
 
 // ────────────────────────────────────────────────────────────
 // 一、分拣三档判定

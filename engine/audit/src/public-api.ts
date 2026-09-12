@@ -91,6 +91,12 @@
 /* @public */ export { sanitizeWhy } from './decision-schema';
 /* @public */ export type { DecisionKind, DecisionCategory, LoopPhase, DecisionWhy, RouteReason, CausalType } from './decision-schema';
 
+// ── HMAC 审计链协议内核（v1.4.8 第〇批收口——复刻收口为单一事实源）──
+// @internal：跨引擎包内部接缝（orchestrator/train-audit 消费）——不承诺 semver 稳定性，
+// 按 tools/check/public-api.mjs 的 @internal 语义不计入 public API 基线。
+/* @internal */ export { appendChained, verifyChain, ChainKernelError } from './chain-kernel';
+/* @internal */ export type { AppendChainedOptions, VerifyChainOptions, ChainCheckStatus, ChainCheckResult, ChainFields } from './chain-kernel';
+
 // ── 决策审计查询（v1.3.0 交付 6 T04；v1.3.6 交付⑮ 补 moment/agent/category/组合查询）──
 /* @public */ export {
   queryByKind,

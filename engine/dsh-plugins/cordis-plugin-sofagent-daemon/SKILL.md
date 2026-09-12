@@ -4,12 +4,12 @@ slug: cordis-plugin-sofagent-daemon
 version: 1.4.7
 displayName: cordis-plugin-sofagent-daemon
 description: >
-  7×24 巡检 + 健康监测 + webhook 推送（seam: 独立调度进程）——桥接 @sofagent/daemon startCron（sofagent 品牌插件 · 主色 #16B8F3）——DSH（DeepSeek Harness）cordis plugin。sofagent 约束层在 DeepSeek Harness 生态的插件形态。
+  7×24 巡检 + 健康监测 + webhook 推送（seam: non-seam:host-process）——桥接 @sofagent/daemon startCron（sofagent 品牌插件 · 主色 #16B8F3）——DSH（DeepSeek Harness）cordis plugin。sofagent 约束层在 DeepSeek Harness 生态的插件形态。
 ---
 
 # cordis-plugin-sofagent-daemon
 
-7×24 巡检 + 健康监测 + webhook 推送（seam: 独立调度进程）——桥接 @sofagent/daemon startCron（sofagent 品牌插件 · 主色 #16B8F3）
+7×24 巡检 + 健康监测 + webhook 推送（seam: non-seam:host-process）——桥接 @sofagent/daemon startCron（sofagent 品牌插件 · 主色 #16B8F3）
 
 ## 用途
 

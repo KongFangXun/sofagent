@@ -71,7 +71,7 @@ export async function trainStatusTool(args: TrainStatusArgs): Promise<TrainStatu
   }
 
   try {
-    const orch = await import('@sofagent/orchestrator');
+    const orch = await import('@sofagent/train');
     const dataDir = getDataDir();
 
     // 受守卫读取（跨企业拒绝——train-job 的隔离面）

@@ -1,0 +1,20 @@
+{
+  "name": "@sofagent/dsh-plugin-kit",
+  "version": "1.4.7",
+  "engines": {
+    "node": ">=18"
+  },
+  "description": "DSH 适配层基座——把 9 个 cordis-plugin-sofagent-* 的 98 行样板收敛成 createSofagentPlugin() 一次调用（私有包：不发布、不登记为 workspace 成员，插件用相对路径 import）",
+  "private": true,
+  "license": "MIT",
+  "author": "KongFangXun",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc"
+  },
+  "//notWorkspace": "刻意不登记进根 package.json 的 workspaces：check-version.sh §9e 断言「rhythm 段必须覆盖全部 workspace 项」，而 rhythm 段在 tools/check/dependency-direction.yml（本批禁改）→ 登记即 §9e 报红。9 个插件改用它作为相对路径依赖（'../../plugin-kit/dist/index.js'），无需 node_modules 解析。",
+  "devDependencies": {
+    "typescript": "^7.0.2"
+  }
+}

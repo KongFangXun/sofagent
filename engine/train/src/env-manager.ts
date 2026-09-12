@@ -260,7 +260,7 @@ export async function trainDoctor(
 //   ④ urllib 网络库抓源码 → 防线二
 // ══════════════════════════════════════
 
-import { createNetworkGateway } from '../sandbox/network-gateway';
+import { createNetworkGateway } from '@sofagent/orchestrator/sandbox-network-gateway';
 
 /** 反作弊白名单默认端点（仅模型/pip 镜像——生产可经 train-env.json.networkAllowlist 覆盖） */
 export const DEFAULT_NETWORK_ALLOWLIST: readonly string[] = [

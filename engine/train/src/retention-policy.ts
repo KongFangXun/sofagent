@@ -48,7 +48,7 @@ import { trainJobDir, listTrainJobRecords } from './train-job';
 import { wipeFile } from './cleanup';
 import { buildZip } from './zip-writer';
 import { readDatasetVersions } from './dataset-version';
-import { loadRegistry } from '../model-registry';
+import { loadRegistry } from '@sofagent/orchestrator/model-registry';
 
 // ════════════════════════════════════════
 // 配置模型（train-retention.json）

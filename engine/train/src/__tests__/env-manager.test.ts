@@ -23,8 +23,8 @@ import {
   DEFAULT_BASE_MODEL_CANDIDATES,
   type EnvManagerDeps,
   type TrainEnvManifest,
-} from '../train/env-manager';
-import type { ExecFn, ExecResult } from '../train/train-env';
+} from '../env-manager';
+import type { ExecFn, ExecResult } from '../train-env';
 
 // ──────────────────────────────────────
 // mock 工厂（对齐 train-env.test.ts 模式——按命令路由的假 exec）

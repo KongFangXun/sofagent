@@ -22,9 +22,10 @@
   "sofagent": {
     "type": "dsh-plugin",
     "family": "cordis",
-    "seam": "agent/turn-stopping"
+    "seam": "agent/turn-stopping",
+    "seamSemantics": "Turn 结束前停止条件判定——验收不过不放行"
   },
-  "//optionalDependencies": "v1.4.5 T6 (R4)：src/index.ts:26 惰性 await import('@sofagent/audit')（懒加载 + 缺依赖降级不抛），此前未声明任何依赖——对齐 root package.json F-18 optionalDependencies 先例。",
+  "//optionalDependencies": "v1.4.5 T6 (R4)：src/index.ts 惰性 await import('@sofagent/audit')（懒加载 + 缺依赖降级不抛；v1.4.8 起该样板由 @sofagent/dsh-plugin-kit 统一封装），此前未声明任何依赖——对齐 root package.json F-18 optionalDependencies 先例。",
   "optionalDependencies": {
     "@sofagent/audit": "1.4.7"
   },

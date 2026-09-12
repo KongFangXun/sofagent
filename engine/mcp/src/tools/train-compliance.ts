@@ -92,7 +92,7 @@ export async function trainComplianceTool(args: TrainComplianceArgs): Promise<Tr
   }
 
   try {
-    const orch = await import('@sofagent/orchestrator');
+    const orch = await import('@sofagent/train');
     const dataDir = getDataDir();
 
     // ── mark：来源标记（独立操作——不扫描）──

@@ -112,7 +112,7 @@ describe('A21 不植后门', () => {
 });
 
   // v1.3.6 B15 补漏：审查清单文档（教人 grep 检查 plist）不应被误判后门
-  it('FORGE/playbook/ 审查清单文档含 plist 路径 → PASS（文档豁免）', () => {
+  it('FORGE/playbook/ 历史仓路径前缀的审查清单文档含 plist 路径 → PASS（文档豁免，旧前缀兼容）', () => {
     const ctx = makeCtx([
       makeDiffFile('FORGE/playbook/regression-checklist.md', [
         '+grep -F "$REPO" ~/Library/LaunchAgents/com.sofagent.daemon.plist   # WorkingDirectory',
@@ -120,4 +120,26 @@ describe('A21 不植后门', () => {
     ]);
     const result = scanA21(ctx);
     expect(result.status).toBe('PASS');
+  });
+
+  // A21 文档豁免不变量：审查清单文档的两种前缀（playbook/ 与 FORGE/playbook/）都须认
+  it('playbook/ 审查清单文档含 plist 路径 → PASS（文档豁免，现行落点）', () => {
+    const ctx = makeCtx([
+      makeDiffFile('playbook/regression-checklist.md', [
+        '+grep -F "$REPO" ~/Library/LaunchAgents/com.sofagent.daemon.plist   # WorkingDirectory',
+      ]),
+    ]);
+    const result = scanA21(ctx);
+    expect(result.status).toBe('PASS');
+  });
+
+  // 反向断言：playbook/ 下的可执行文件不受 .md 文档豁免保护（豁免不放大）
+  it('playbook/ 下的 .sh 含 plist 写入 → 仍 FAIL（豁免不放大到非 .md）', () => {
+    const ctx = makeCtx([
+      makeDiffFile('playbook/release-gate-orchestrator.sh', [
+        '+cp evil.plist ~/Library/LaunchAgents/com.evil.plist',
+      ]),
+    ]);
+    const result = scanA21(ctx);
+    expect(result.status).toBe('FAIL');
   });

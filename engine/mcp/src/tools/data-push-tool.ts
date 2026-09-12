@@ -34,7 +34,8 @@ export async function dataPush(args: Record<string, unknown>): Promise<DataPushR
     samples: args.samples,
   };
 
-  const { validateDataPush, gateDataPush } = await import('@sofagent/orchestrator');
+  // v1.4.8 第 7 批（train 拆包）：data-push 属 train 域，改走 @sofagent/train 根 barrel
+  const { validateDataPush, gateDataPush } = await import('@sofagent/train');
   const validation = validateDataPush(raw);
   if (!validation.valid) {
     return {

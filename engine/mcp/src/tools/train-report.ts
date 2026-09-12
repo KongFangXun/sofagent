@@ -63,10 +63,13 @@ export async function trainReportTool(args: TrainReportArgs): Promise<TrainRepor
   }
 
   try {
+    // v1.4.8 第 7 批（train 拆包）：generateTrainReport 随 train 迁至 @sofagent/train；
+    // computeQuantification 是 FDE 侧 ROI 公式（fde/quantify-core），仍在 orchestrator 根 barrel。
     const orch = await import('@sofagent/orchestrator');
+    const train = await import('@sofagent/train');
     const dataDir = getDataDir();
 
-    const result = orch.generateTrainReport({
+    const result = train.generateTrainReport({
       dataDir,
       enterpriseId: enterprise_id,
       trainJobId: train_job_id,

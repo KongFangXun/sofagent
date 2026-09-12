@@ -178,7 +178,7 @@ export async function runContinuousTrainingTick(projectDir: string): Promise<Con
   try {
     // 经 dist 动态引入（对齐 cron.ts ab-schedule 模式——orchestrator 导出面
     // 随 dist 重建生效，daemon 不静态依赖编译时序）
-    const orch = (await import('@sofagent/orchestrator')) as unknown as {
+    const orch = (await import('@sofagent/train')) as unknown as {
       createTrainScheduler: (opts: {
         dataDir: string;
         enterpriseId: string;

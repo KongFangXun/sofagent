@@ -23,22 +23,22 @@ import {
   estimateVram,
   runDryrun,
   type DryrunCheck,
-} from '../train/train-dryrun';
+} from '../train-dryrun';
 import {
   fitSigmoid,
   extrapolate,
   sigmoid,
   suggestNextPilotCompute,
   type ScaleCurvePoint,
-} from '../train/scale-curve';
+} from '../scale-curve';
 import {
   computeQuantification,
   generateTrainReport,
   trainReportPaths,
   trainReportsDir,
-} from '../train/train-report';
-import type { TrainEvalReport } from '../train/train-eval-loop';
-import type { DatasetVersionRecord } from '../train/dataset-version';
+} from '../train-report';
+import type { TrainEvalReport } from '../train-eval-loop';
+import type { DatasetVersionRecord } from '../dataset-version';
 
 let dataDir: string;
 

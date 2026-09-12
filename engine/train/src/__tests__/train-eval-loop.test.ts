@@ -26,11 +26,11 @@ import {
   compareEvalReports,
   DEFAULT_EVAL_THRESHOLDS,
   type TrainEvalReport,
-} from '../train/train-eval-loop';
-import { recordDatasetVersion } from '../train/dataset-version';
-import type { CaseEvaluation, EvaluateCaseInput } from '../benchmark/case-evaluator';
-import type { EvaluationLogInput } from '../benchmark/evaluation-log';
-import type { BenchmarkDefinition } from '../benchmark/benchmark-designer';
+} from '../train-eval-loop';
+import { recordDatasetVersion } from '../dataset-version';
+import type { CaseEvaluation, EvaluateCaseInput } from '@sofagent/orchestrator/benchmark-eval';
+import type { EvaluationLogInput } from '@sofagent/orchestrator/benchmark-eval';
+import type { BenchmarkDefinition } from '@sofagent/orchestrator/benchmark';
 
 // ──────────────────────────────────────
 // 夹具

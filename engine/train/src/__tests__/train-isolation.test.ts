@@ -20,18 +20,18 @@ import {
   isSafePathSegment,
   isPathInside,
   resolveEnterpriseDir,
-} from '../train/isolation-guard';
+} from '../isolation-guard';
 import {
   cleanupEnterpriseTrainData,
   wipeFile,
-} from '../train/cleanup';
+} from '../cleanup';
 import {
   createTrainJob,
   appendTrainEventLine,
   getJobGuarded,
   readTrainEventsGuarded,
   listJobsGuarded,
-} from '../train/train-job';
+} from '../train-job';
 
 // ──────────────────────────────────────
 // 测试基建

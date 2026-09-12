@@ -19,7 +19,7 @@
 // 测试纪律：路径判定/白名单判定纯函数全注入测试，零真实进程零真实 GPU。
 
 import { join, resolve, sep } from 'path';
-import { createNetworkGateway, type NetworkGateway, type NetworkVerdict } from '../sandbox/network-gateway';
+import { createNetworkGateway, type NetworkGateway, type NetworkVerdict } from '@sofagent/orchestrator/sandbox-network-gateway';
 
 // ════════════════════════════════════════
 // 训练沙箱配置与路径守卫

@@ -86,7 +86,7 @@ export async function trainSubmit(args: TrainSubmitArgs): Promise<TrainSubmitToo
   }
 
   try {
-    const orch = await import('@sofagent/orchestrator');
+    const orch = await import('@sofagent/train');
     const dataDir = getDataDir();
 
     // 委托编排层：createTrainJob（协议校验 + enterpriseId 必填 + 幂等）

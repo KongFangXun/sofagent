@@ -50,4 +50,4 @@ clawhub package publish . --family code-plugin --name sofagent-evolve --version 
 
 ## 说明
 
-与 DSH 插件 `cordis-plugin-sofagent-evolve` 同引擎、不同宿主：DSH 挂 `tools/pre-execute` 等生命周期事件，OpenClaw 挂 `before_prompt_build` / `before_tool_execute` 等事件。审计模块（git diff 24 规则）在所有形态一样硬。
+与 DSH 插件 `cordis-plugin-sofagent-evolve` 同引擎、不同宿主：DSH 侧挂 `turn/end`（Turn 收尾时沉淀经验），OpenClaw 侧挂 `before_prompt_build`（会话起始处挂载反思区提示）。两侧共用同一份 think.md 反思存储：OpenClaw 侧的实际条目由 `sofagent_evolve` 工具写入，hook 只让模型知道反思区已挂载，不注入条目正文。

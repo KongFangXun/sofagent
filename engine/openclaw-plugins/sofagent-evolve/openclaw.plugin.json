@@ -3,6 +3,8 @@
   "name": "sofagent 进化",
   "description": "经验沉淀——think.md 反思条目生成 + 反思区注入（Dream Cycle + evolve 数据源），品牌色 #16B8F3",
   "version": "1.4.7",
+  "seam": "before_prompt_build",
+  "seamSemantics": "模型调用前注入 think.md 反思区（进化闭环上下文）",
   "icon": "https://raw.githubusercontent.com/KongFangXun/sofagent/main/assets/logo.png",
   "uiHints": {
     "brandColor": {

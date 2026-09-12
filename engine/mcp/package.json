@@ -45,6 +45,7 @@
     "@sofagent/eval": "1.4.7",
     "@sofagent/ontology": "1.4.7",
     "@sofagent/orchestrator": "1.4.7",
+    "@sofagent/train": "1.4.7",
     "@sofagent/rules": "1.4.7",
     "@sofagent/evolve": "1.4.7",
     "@sofagent/think": "1.4.7",

@@ -14,7 +14,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { mkdtempSync, rmSync, writeFileSync, mkdirSync, readFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
-import type { NodeInterview } from '../../fde/compose-interview';
+import type { NodeInterview } from '@sofagent/orchestrator/fde-compose';
 import {
   analyzeTrainNeed,
   deriveTrainScenario,
@@ -22,7 +22,7 @@ import {
   pickDefaultTemplate,
   saveTrainAnalyzeReport,
   trainAnalyzeReportPath,
-} from '../train/train-analyze';
+} from '../train-analyze';
 import {
   TRAIN_SCENARIO_TEMPLATES,
   SCENARIO_MATCH_HINTS,
@@ -33,12 +33,12 @@ import {
   validateMoeTargetModules,
   MOE_TARGET_MODULES,
   DENSE_TARGET_MODULES,
-} from '../train/train-templates';
+} from '../train-templates';
 import {
   buildQloraTemplate,
   DENSE_TARGET_MODULES as QLORA_DENSE,
-} from '../train/qlora-template';
-import { instantiateRlTemplate, findRlTemplate, RL_TEMPLATES, listRlTemplates } from '../train/rl-templates';
+} from '../qlora-template';
+import { instantiateRlTemplate, findRlTemplate, RL_TEMPLATES, listRlTemplates } from '../rl-templates';
 
 // ── 测试基建：tmpdir 生命周期 ──
 let dataDir: string;

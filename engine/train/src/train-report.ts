@@ -30,62 +30,16 @@ import { loadTrainJobRecord, type TrainJobRecord } from './train-job';
 import { compareEvalReports, type TrainEvalReport } from './train-eval-loop';
 import type { DatasetVersionRecord } from './dataset-version';
 
-// ══════════════════════════════════════
-// 量化四字段（GUIDE §4.3——绩效量化引擎输入）
-// ══════════════════════════════════════
-
-/** 量化四字段（年节省 = 岗位真实市场年薪 × AI 接管工时占比） */
-export interface QuantificationMetrics {
-  /** 当前成本（人工程伴年成本口径——人读金额 + 数值双形态） */
-  currentCost: { value: number; unit: string; display: string };
-  /** AI 后成本（AI 方案年运行成本） */
-  aiCost: { value: number; unit: string; display: string };
-  /** 年节省（currentCost − aiCost；或按 GUIDE 公式独立填报） */
-  annualSaving: { value: number; unit: string; display: string };
-  /** 回本周期（投入 ÷ 年节省——月/年） */
-  paybackPeriod: { value: number; unit: string; display: string };
-}
-
-/** 量化计算入参（岗位口径——GUIDE §4.3 公式） */
-export interface QuantifyInput {
-  /** 岗位真实市场年薪（元/年——追问真实数，不用平均工资拍脑袋） */
-  annualSalary: number;
-  /** AI 接管工时占比（0..1——如每天 2.7h/8h ≈ 0.3375） */
-  takeoverRatio: number;
-  /** AI 方案年运行成本（元/年——算力+订阅+运维） */
-  aiAnnualCost: number;
-  /** 一次性投入（元——训练成本/实施费；缺省 0 → 回本周期按无一次性投入计） */
-  oneTimeInvestment?: number;
-}
-
-/**
- * 量化四字段计算器（GUIDE §4.3）：
- *   年节省 = 岗位真实市场年薪 × AI 接管工时占比
- *   回本周期 = 一次性投入 ÷ 年节省（年节省 ≤ 0 → 不适用）
- */
-export function computeQuantification(input: QuantifyInput): QuantificationMetrics {
-  const saving = input.annualSalary * input.takeoverRatio;
-  const invest = input.oneTimeInvestment ?? 0;
-  const paybackYears = saving > 0 ? invest / saving : Number.POSITIVE_INFINITY;
-  const fmt = (n: number): string => {
-    if (n >= 10_000) return `${(n / 10_000).toFixed(1)} 万元`;
-    return `${n.toFixed(0)} 元`;
-  };
-  return {
-    currentCost: { value: input.annualSalary, unit: '元/年', display: fmt(input.annualSalary) },
-    aiCost: { value: input.aiAnnualCost, unit: '元/年', display: fmt(input.aiAnnualCost) },
-    annualSaving: { value: saving, unit: '元/年', display: fmt(saving) },
-    paybackPeriod: {
-      value: Number.isFinite(paybackYears) ? paybackYears : -1,
-      unit: '年',
-      display: Number.isFinite(paybackYears)
-        ? paybackYears >= 1
-          ? `${paybackYears.toFixed(1)} 年`
-          : `${(paybackYears * 12).toFixed(0)} 个月`
-        : '不适用（年节省 ≤ 0）',
-    },
-  };
-}
+// ── 量化四字段已搬至 fde/quantify-core（v1.4.8 · 第 7 批拆包解环）──
+// 搬出理由：该计算器是 FDE 侧 ROI 公式，被 fde/fde-quantify.ts 反向消费，
+// 放在 train/ 下构成 train ⇄ fde 依赖环。此处 re-export（而非删除）保持
+// train-report 对外面不变——仓内旧 import 路径与 @sofagent/train 公开面继续可用。
+export {
+  computeQuantification,
+  type QuantificationMetrics,
+  type QuantifyInput,
+} from '@sofagent/orchestrator/fde-quantify-core';
+import type { QuantificationMetrics } from '@sofagent/orchestrator/fde-quantify-core';
 
 // ══════════════════════════════════════
 // 报告模型与生成

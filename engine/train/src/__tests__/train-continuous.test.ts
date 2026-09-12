@@ -23,8 +23,8 @@ import {
   DEFAULT_TRIGGER_POLICY,
   type ContinuousDeps,
   type FlywheelSnapshot,
-} from '../train/train-continuous';
-import type { TrainEvalReport } from '../train/train-eval-loop';
+} from '../train-continuous';
+import type { TrainEvalReport } from '../train-eval-loop';
 
 // ── 测试基建 ──
 let dataDir: string;
@@ -427,7 +427,7 @@ describe('复用验证（不重复实现）', () => {
     });
     expect(result.decided).toBe('train');
     // dataset_version 台账有记录（buildAndPersistDataset 复用的证据）
-    const { readDatasetVersions } = await import('../train/dataset-version');
+    const { readDatasetVersions } = await import('../dataset-version');
     const versions = readDatasetVersions(dataDir, ENTERPRISE);
     expect(versions.length).toBeGreaterThanOrEqual(1);
     expect(versions.some((v) => v.datasetId.startsWith('continuous-'))).toBe(true);

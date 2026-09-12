@@ -1,0 +1,8 @@
+# sofagent cordis-plugin-sofagent-harness bundle patch v1.4.7——sofagent 品牌插件，注册为 DSH profile layer
+- insert:
+    - id: sofagent-harness
+      name: 'cordis-plugin-sofagent-harness'
+      inject: [settings, dynamicCordisRunner]
+      config:
+        seam: "non-seam:plugin-suite"    # 语义：非宿主事件接入（插件聚合）——一次 apply 逐个挂载 9 个原子插件；能力仍由各原子插件 provide，聚合层自身不挂任何生命周期
+        description: "一次挂载 sofagent 全套能力（聚合编排层，只编排不重实现）——一次性挂载 9 个原子插件（sofagent 品牌 · #16B8F3）"

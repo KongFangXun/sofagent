@@ -35,11 +35,33 @@ describe('sofagent-audit pluginMeta', () => {
 });
 
 describe('sofagent-audit register', () => {
-  it('应注册 before_tool_execute hook（危险工具拦截）', () => {
+  it('应注册 before_tool_call hook（危险工具拦截）', () => {
     const api = createMockApi();
     register(api as never);
-    expect(api.on).toHaveBeenCalledWith('before_tool_execute', expect.any(Function), expect.objectContaining({ priority: 100 }));
-    expect(api.hooks['before_tool_execute']?.length).toBe(1);
+    expect(api.on).toHaveBeenCalledWith('before_tool_call', expect.any(Function), expect.objectContaining({ priority: 100 }));
+    expect(api.hooks['before_tool_call']?.length).toBe(1);
+  });
+
+  // 防复发（双缺陷：幽灵事件名 + 错误的返回值契约）：
+  // 旧实现挂 `before_tool_execute`（宿主 0 命中，2026.5.20 / 2026.6.1 均无此事件），
+  // 且返回 DSH/cordis 形状 `{ allowed: false }`——宿主 hook-runner 只读 `.block`，
+  // `allowed` 被静默忽略。名字与形状各错一次，合起来让「危险工具拦截」永不生效。
+  // 本用例锁死 OpenClaw 契约：拦停必须是 `{ block: true, blockReason }`。
+  it('危险工具应返回 { block: true, blockReason }（宿主可拦停），而非 allowed 形状', () => {
+    const api = createMockApi();
+    register(api as never);
+    const entry = api.hooks['before_tool_call']?.[0] as { handler: (event: unknown) => unknown };
+    const blocked = entry.handler({ toolName: 'rm', params: {} }) as { block?: boolean; blockReason?: string };
+    expect(blocked?.block).toBe(true);
+    expect(typeof blocked?.blockReason).toBe('string');
+    expect(blocked?.blockReason).toContain('rm');
+  });
+
+  it('非危险工具应返回 void（明确「无意见」放行，不伪造 allowed 形状）', () => {
+    const api = createMockApi();
+    register(api as never);
+    const entry = api.hooks['before_tool_call']?.[0] as { handler: (event: unknown) => unknown };
+    expect(entry.handler({ toolName: 'read_file', params: {} })).toBeUndefined();
   });
 
   it('应注册 sofagent_audit 工具', () => {

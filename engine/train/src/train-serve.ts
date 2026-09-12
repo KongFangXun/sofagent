@@ -585,7 +585,7 @@ export async function linkSwitchToServe(
   let entry: { source?: string; localWeights?: { dir: string } } | null = null;
   try {
     // 局部引入防循环依赖（model-registry 不反向依赖本模块）
-    const { loadRegistry } = await import('../model-registry');
+    const { loadRegistry } = await import('@sofagent/orchestrator/model-registry');
     const registry = loadRegistry(opts.registryDataDir ?? dataDir);
     entry = registry.models[modelName] ?? null;
   } catch {

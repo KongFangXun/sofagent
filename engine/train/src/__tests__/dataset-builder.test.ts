@@ -35,7 +35,7 @@ import {
   parseSheetXml,
   ingestExcel,
   type IngestRecord,
-} from '../train/data-ingest';
+} from '../data-ingest';
 import {
   isReadonlySql,
   pullFromDb,
@@ -45,14 +45,14 @@ import {
   type QueryFn,
   type FetchFn,
   type DbQueryResult,
-} from '../train/db-source';
+} from '../db-source';
 import {
   buildDataset,
   buildAndPersistDataset,
   inferColumnMapping,
   sanitizeCell,
   datasetDir,
-} from '../train/dataset-builder';
+} from '../dataset-builder';
 import {
   recordDatasetVersion,
   readDatasetVersions,
@@ -60,12 +60,12 @@ import {
   getDatasetVersion,
   diffDatasetVersions,
   datasetVersionsPath,
-} from '../train/dataset-version';
+} from '../dataset-version';
 import {
   validateDataset,
   requiredFieldsOf,
   computeLabelDistribution,
-} from '../train/dataset-validator';
+} from '../dataset-validator';
 
 // ──────────────────────────────────────
 // 测试夹具

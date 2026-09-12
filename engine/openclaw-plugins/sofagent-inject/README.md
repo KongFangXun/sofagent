@@ -50,4 +50,4 @@ clawhub package publish . --family code-plugin --name sofagent-inject --version 
 
 ## 说明
 
-与 DSH 插件 `cordis-plugin-sofagent-inject` 同引擎、不同宿主：DSH 挂 `tools/pre-execute` 等生命周期事件，OpenClaw 挂 `before_prompt_build` / `before_tool_execute` 等事件。审计模块（git diff 24 规则）在所有形态一样硬。
+与 DSH 插件 `cordis-plugin-sofagent-inject` 同引擎、不同宿主：DSH 侧挂 `agent/pre-step`，OpenClaw 侧挂 `before_prompt_build`——两侧都在模型读到本轮输入之前，把四层加载链（core-rules / think.md / fde.md / knowledge）拼成 `prependSystemContext` 注入，数据源取 `config.projectRoot`。

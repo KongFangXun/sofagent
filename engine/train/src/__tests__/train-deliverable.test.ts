@@ -32,10 +32,10 @@ import {
   deliverablesDir,
   renderOpsManual,
   TrainDeliverableError,
-} from '../train/train-deliverable';
-import { markRollbackPoint } from '../train/retention-policy';
-import { buildZip, type ZipEntryInput } from '../train/zip-writer';
-import { unzipEntries } from '../train/data-ingest';
+} from '../train-deliverable';
+import { markRollbackPoint } from '../retention-policy';
+import { buildZip, type ZipEntryInput } from '../zip-writer';
+import { unzipEntries } from '../data-ingest';
 
 /** 重打包快捷方式（篡改用例——替换条目内容后重新打 zip） */
 function repack(zipPath: string, mutate: (files: ZipEntryInput[]) => ZipEntryInput[]): void {

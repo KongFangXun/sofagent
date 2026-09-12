@@ -73,7 +73,7 @@ export async function trainDryrunTool(args: TrainDryrunArgs): Promise<TrainDryru
   }
 
   try {
-    const orch = await import('@sofagent/orchestrator');
+    const orch = await import('@sofagent/train');
     // 相对路径按 data 目录解析（对齐 train_submit 的 data_path 口径）
     const resolvedPath = data_path.startsWith('/')
       ? data_path

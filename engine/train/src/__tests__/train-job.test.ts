@@ -31,8 +31,8 @@ import {
   appendTrainEventLine,
   readTrainEvents,
   listTrainJobRecords,
-} from '../train/train-job';
-import { createTrainScheduler, type SpawnFn } from '../train/train-scheduler';
+} from '../train-job';
+import { createTrainScheduler, type SpawnFn } from '../train-scheduler';
 
 // ── 测试基建：tmpdir 生命周期 ──
 let dataDir: string;

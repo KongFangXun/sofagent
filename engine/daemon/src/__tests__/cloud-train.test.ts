@@ -20,7 +20,7 @@ import {
   loadCloudVms,
   pickCloudVm,
 } from '../tasks/cloud-train';
-import type { TrainChannel, ChannelStatusResult } from '@sofagent/orchestrator/train';
+import type { TrainChannel, ChannelStatusResult } from '@sofagent/train';
 
 // ── 测试基建 ──
 let dataDir: string;
@@ -165,7 +165,7 @@ describe('批次 B：fake channel 全链（submit → 事件 → 挂链落账）
     expect(wired.wired).toBe(true);
 
     // 真 scheduler + 注入 executor（对齐 continuous-training 装配形态）
-    const { createTrainScheduler } = (await import('@sofagent/orchestrator/train')) as typeof import('@sofagent/orchestrator/train');
+    const { createTrainScheduler } = (await import('@sofagent/train')) as typeof import('@sofagent/train');
     const scheduler = createTrainScheduler({
       ...(wired.schedulerOptions as Parameters<typeof createTrainScheduler>[0]),
       crashRecoveryScan: false,
@@ -213,7 +213,7 @@ describe('批次 B：fake channel 全链（submit → 事件 → 挂链落账）
     const cloudChained = entries.filter((e) => typeof e.reason === 'string' && e.reason.includes('云通道'));
     expect(cloudChained.length).toBeGreaterThanOrEqual(1);
     expect(cloudChained[0]!.type).toBe('train_job_completed');
-    const { checkTrainAuditChain } = (await import('@sofagent/orchestrator/train')) as typeof import('@sofagent/orchestrator/train');
+    const { checkTrainAuditChain } = (await import('@sofagent/train')) as typeof import('@sofagent/train');
     const chain = checkTrainAuditChain(dataDir, 'ent-1', record.jobId);
     expect(['ok', 'insufficient']).toContain(chain.status); // 链完整（ok）或历史不足（灰）
   });
@@ -226,7 +226,7 @@ describe('批次 B：fake channel 全链（submit → 事件 → 挂链落账）
       vms: [{ name: 'vm-b', endpoint: 'u@5.6.7.8', status: 'reachable', registeredAt: 't' }],
       channel,
     });
-    const { createTrainScheduler } = (await import('@sofagent/orchestrator/train')) as typeof import('@sofagent/orchestrator/train');
+    const { createTrainScheduler } = (await import('@sofagent/train')) as typeof import('@sofagent/train');
     const scheduler = createTrainScheduler({
       ...(wired.schedulerOptions as Parameters<typeof createTrainScheduler>[0]),
       crashRecoveryScan: false,
@@ -258,7 +258,7 @@ describe('批次 B：scheduler executor 注入口行为锁', () => {
     const calls: Array<{ jobId: string; command: string; args: string[] }> = [];
     const startedEvents: string[] = [];
     let closeHook: ((code: number | null) => void) | null = null;
-    const { createTrainScheduler } = (await import('@sofagent/orchestrator/train')) as typeof import('@sofagent/orchestrator/train');
+    const { createTrainScheduler } = (await import('@sofagent/train')) as typeof import('@sofagent/train');
     const scheduler = createTrainScheduler({
       dataDir,
       enterpriseId: 'ent-3',
@@ -318,14 +318,14 @@ describe('批次 B：scheduler executor 注入口行为锁', () => {
       children.push(augmented);
       return proc;
     }) as unknown as () => ReturnType<typeof spawnFn>;
-    const { createTrainScheduler } = (await import('@sofagent/orchestrator/train')) as typeof import('@sofagent/orchestrator/train') & {
+    const { createTrainScheduler } = (await import('@sofagent/train')) as typeof import('@sofagent/train') & {
       SpawnFn: unknown;
     };
     const scheduler = createTrainScheduler({
       dataDir,
       enterpriseId: 'ent-4',
       crashRecoveryScan: false,
-      spawnFn: spawnFn as import('@sofagent/orchestrator/train').SpawnFn,
+      spawnFn: spawnFn as import('@sofagent/train').SpawnFn,
     });
     const submitted = scheduler.submitTrainJob({ dataPath: '/d.jsonl', baseModel: 'Qwen3-8B', algorithm: 'sft' });
     expect(children).toHaveLength(1); // spawnFn 被本地执行器消费（缺省路径未变）

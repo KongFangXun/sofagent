@@ -45,8 +45,8 @@ import { buildZip, type ZipEntryInput } from './zip-writer';
 import { listTrainJobRecords, trainJobDir } from './train-job';
 import { readDatasetVersions } from './dataset-version';
 import { readRetentionMarkers, queryRetentionDecision } from './retention-policy';
-import { loadRegistry } from '../model-registry';
-import { manifestPath as weightsManifestPath, type WeightsManifest } from '../weights-manifest';
+import { loadRegistry } from '@sofagent/orchestrator/model-registry';
+import { manifestPath as weightsManifestPath, type WeightsManifest } from '@sofagent/orchestrator/weights-manifest';
 
 // ════════════════════════════════════════
 // manifest 模型（五件内容 + 签名）

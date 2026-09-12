@@ -38,9 +38,9 @@ import {
   checkDiskPressure,
   trainArchiveDir,
   type RollbackPointRef,
-} from '../train/retention-policy';
-import { unzipEntries } from '../train/data-ingest';
-import { listTrainJobRecords } from '../train/train-job';
+} from '../retention-policy';
+import { unzipEntries } from '../data-ingest';
+import { listTrainJobRecords } from '../train-job';
 
 // ── 测试基建 ──
 const ENT = 'ent-ret';

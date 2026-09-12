@@ -26,7 +26,7 @@ import {
   TrainFingerprintError,
   type EnvSnapshot,
   type TrainFingerprint,
-} from '../train/train-fingerprint';
+} from '../train-fingerprint';
 
 // ── 测试基建 ──
 let dataDir: string;
@@ -468,7 +468,7 @@ describe('调度器完成时冻结指纹', () => {
       child.emit('close', code);
     };
 
-    const { createTrainScheduler } = await import('../train/train-scheduler');
+    const { createTrainScheduler } = await import('../train-scheduler');
     const scheduler = createTrainScheduler({
       dataDir,
       enterpriseId: 'ent-alpha',
@@ -508,7 +508,7 @@ describe('调度器完成时冻结指纹', () => {
       (child.stdout as EventEmitter).emit('data', Buffer.from(line + '\n'));
     };
 
-    const { createTrainScheduler } = await import('../train/train-scheduler');
+    const { createTrainScheduler } = await import('../train-scheduler');
     const scheduler = createTrainScheduler({
       dataDir,
       enterpriseId: 'ent-alpha',
@@ -526,7 +526,7 @@ describe('调度器完成时冻结指纹', () => {
 
     // 无指纹文件（跳过），但任务正常完成（不阻断）
     expect(existsSync(trainFingerprintPath(dataDir, 'ent-alpha', result.record.jobId))).toBe(false);
-    const { loadTrainJobRecord } = await import('../train/train-job');
+    const { loadTrainJobRecord } = await import('../train-job');
     expect(loadTrainJobRecord(dataDir, 'ent-alpha', result.record.jobId)?.status).toBe('completed');
   });
 
@@ -541,7 +541,7 @@ describe('调度器完成时冻结指纹', () => {
       (child.stdout as EventEmitter).emit('data', Buffer.from(line + '\n'));
     };
 
-    const { createTrainScheduler } = await import('../train/train-scheduler');
+    const { createTrainScheduler } = await import('../train-scheduler');
     const scheduler = createTrainScheduler({
       dataDir,
       enterpriseId: 'ent-alpha',

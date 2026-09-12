@@ -123,9 +123,9 @@ export async function runTrainArchiveTask(
   if (!config.enabled) return result;
 
   // 延迟 import（daemon→orchestrator ✓ 依赖方向；缺包降级空跑）
-  let orch: typeof import('@sofagent/orchestrator');
+  let orch: typeof import('@sofagent/train');
   try {
-    orch = (await import('@sofagent/orchestrator')) as typeof import('@sofagent/orchestrator');
+    orch = (await import('@sofagent/train')) as typeof import('@sofagent/train');
   } catch {
     console.warn('[train-archive] @sofagent/orchestrator 不可用——本轮归档跳过（裁剪安装形态）');
     return result;

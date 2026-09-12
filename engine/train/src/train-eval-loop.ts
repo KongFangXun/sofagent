@@ -20,17 +20,17 @@
 // 依赖注入：评测函数（evalCaseFn）/ 记录函数（logRecordFn）/ 时钟（now）
 // 全部可注入——单测零 LLM 调用、零真实落盘（对齐 train-env ExecFn 模式）。
 
-import { evaluateCase, type EvaluateCaseInput, type CaseEvaluation } from '../benchmark/case-evaluator';
+import { evaluateCase, type EvaluateCaseInput, type CaseEvaluation } from '@sofagent/orchestrator/benchmark-eval';
 import {
   appendEvaluationRecord,
   type EvaluationLogInput,
   type EvaluationLogRecord,
-} from '../benchmark/evaluation-log';
+} from '@sofagent/orchestrator/benchmark-eval';
 import {
   readBenchmarkLayout,
   benchmarksRoot,
   type BenchmarkDefinition,
-} from '../benchmark/benchmark-designer';
+} from '@sofagent/orchestrator/benchmark';
 import { getDatasetVersion, type DatasetVersionRecord } from './dataset-version';
 
 // ══════════════════════════════════════

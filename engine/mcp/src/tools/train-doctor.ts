@@ -63,7 +63,7 @@ export async function trainDoctorTool(args: TrainDoctorArgs): Promise<TrainDocto
   }
 
   try {
-    const orch = await import('@sofagent/orchestrator');
+    const orch = await import('@sofagent/train');
     const dataDir = getDataDir();
     // deps 缺省 → env-manager 内部走 makeDefaultExecFn（execFile 封装）——
     // MCP 调用方无需构造；测试经 orchestrator 单测的注入路径覆盖。

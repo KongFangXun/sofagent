@@ -12,11 +12,8 @@
 //   3. atomicAppendSync 抛错 → 抛 DecisionWriteError，绝不静默丢弃
 // ============================================================
 
-import { existsSync, mkdirSync, readFileSync, chmodSync } from 'fs';
-import { dirname } from 'path';
-import { createHash, createHmac } from 'crypto';
-import { getDecisionLogPath, getEnvFingerprint, getHmacKey, stableStringify } from '@sofagent/core';
-import { atomicAppendSync } from '@sofagent/core';
+import { getDecisionLogPath, getEnvFingerprint, getHmacKey } from '@sofagent/core';
+import { appendChained, type ChainFields } from './chain-kernel';
 import { sanitizeWhy, type DecisionKind, type DecisionCategory, type CausalType, type DecisionLogEntry, type DecisionWhy, type LoopPhase } from './decision-schema';
 
 // Re-export schema 类型——public-api 从 decision-log 统一导出（与 appendHistory 模式一致）
@@ -103,27 +100,31 @@ function normalizeWhy(why: DecisionWhy | string): DecisionWhy {
 }
 
 /**
+ * 业务字段（不含链字段）——写入侧构造，链字段由 chain-kernel 生成。
+ * Business fields only; chain fields are produced by chain-kernel.
+ */
+type DecisionBusinessEntry = Omit<DecisionLogEntry, keyof ChainFields>;
+
+/**
  * 追加一条决策记录到 decision-log.jsonl（受控写唯一入口）。
  *
- * 签名顺序（逐字对齐 appendHistory）：
+ * 链协议已收口至 chain-kernel.appendChained（单一事实源）：
  *   1. prevHash：读末行 → sha256(JSON.stringify(lastRecordForHash) + '|' + fingerprint).slice(0,16)
- *   2. baseSanitized = { ...entry, prevHash, hashVersion:2, envFingerprint, hmacAlgo, why: sanitizeWhy(why) }
- *   3. 铁律：先脱敏再签名
- *   4. recordForSig = { ...baseSanitized, prevHash/hashVersion/hmacSig/hmacAlgo: undefined }
- *   5. hmacSig = createHmac('sha256', key).update(stableStringify(recordForSig) + '|' + fingerprint).digest('hex').slice(0,32)
- *   6. atomicAppendSync + 每次写入后 chmodSync 0o600
+ *   2. 铁律：先脱敏再签名（why → sanitizeWhy，在本函数内先于签名完成）
+ *   3. recordForSig 排除链字段（prevHash/hashVersion/hmacSig/hmacAlgo）
+ *   4. hmacSig = HMAC-SHA256(key, stableStringify(recordForSig) + '|' + fingerprint).slice(0,32)
+ *   5. atomicAppendSync + 每次写入后 chmodSync 0o600
+ * kind 白名单（VALID_KINDS）经 validKinds 传入内核——决策侧自持扩展性不变。
  *
  * @param input 决策输入
  * @param dataDir 可选的数据目录覆盖（用于测试）
  * @returns 落盘的完整条目（含链字段）
- * @throws DecisionSchemaError 校验失败（不写文件）
+ * @throws DecisionSchemaError 校验失败（不写文件；含 kind 非法——由内核 kind 门抛出）
  * @throws DecisionWriteError 写入失败（向上传播）
  */
 export function emitDecision(input: EmitDecisionInput, dataDir?: string): DecisionLogEntry {
   // ── 校验（写前）──
-  if (!VALID_KINDS.includes(input.kind)) {
-    throw new DecisionSchemaError(`非法 kind "${String(input.kind)}"——必须在 DecisionKind 枚举内`);
-  }
+  // 注：kind 合法性由链内核的 kind 门判定（validKinds=VALID_KINDS）——本函数不再重复。
   if (!VALID_MOMENTS.includes(input.moment)) {
     throw new DecisionSchemaError(`非法 moment "${String(input.moment)}"——必须在 LoopPhase 枚举内`);
   }
@@ -165,41 +166,11 @@ export function emitDecision(input: EmitDecisionInput, dataDir?: string): Decisi
   }
 
   const filePath = getDecisionLogPath(dataDir);
-  const dir = dirname(filePath);
-
-  try {
-    if (!existsSync(dir)) {
-      // 权限收紧为 0o700（与 history.jsonl 一致）
-      mkdirSync(dir, { recursive: true, mode: 0o700 });
-    }
-  } catch (err) {
-    throw new DecisionWriteError(`创建目录失败 ${dir}`, err);
-  }
-
   const fingerprint = getEnvFingerprint(dataDir);
-
-  // ── 1. prevHash（读末行）──
-  let prevHash = 'genesis';
-  if (existsSync(filePath)) {
-    try {
-      const lines = readFileSync(filePath, 'utf-8').trim().split('\n').filter(Boolean);
-      if (lines.length > 0) {
-        const lastLine = lines[lines.length - 1]!;
-        const lastEntry = JSON.parse(lastLine) as DecisionLogEntry;
-        const lastRecordForHash = { ...lastEntry, prevHash: undefined, hashVersion: undefined };
-        prevHash = createHash('sha256')
-          .update(JSON.stringify(lastRecordForHash) + '|' + fingerprint)
-          .digest('hex').slice(0, 16);
-      }
-    } catch (err) {
-      // 末行解析失败——无法建立链，保守置 'unknown'（与 appendHistory 同语义）
-      prevHash = 'unknown';
-    }
-  }
-
-  // ── 2-3. 先脱敏再签名（铁律）──
   const hmacKey = getHmacKey();
-  const baseSanitized: DecisionLogEntry = {
+
+  // ── 2-3. 先脱敏再签名（铁律）——业务字段（不含链字段）──
+  const baseSanitized: DecisionBusinessEntry = {
     ts: new Date().toISOString(),
     agentId: input.agentId,
     sessionId: input.sessionId,
@@ -214,33 +185,18 @@ export function emitDecision(input: EmitDecisionInput, dataDir?: string): Decisi
     ...(input.specRef ? { specRef: input.specRef } : {}),
     ...(input.artifactRef ? { artifactRef: input.artifactRef } : {}),
     ...(input.evidence !== undefined ? { evidence: input.evidence } : {}),
-    prevHash,
-    hashVersion: 2,
-    envFingerprint: fingerprint,
-    hmacAlgo: hmacKey ? 'stable' : undefined,
     engine: input.engine ?? 'sofagent-audit',
   };
 
-  // ── 4-5. 签名输入排除链字段 + HMAC ──
-  const recordForSig = { ...baseSanitized, prevHash: undefined, hashVersion: undefined, hmacSig: undefined, hmacAlgo: undefined };
-  const hmacSig = hmacKey
-    ? createHmac('sha256', hmacKey).update(stableStringify(recordForSig) + '|' + fingerprint).digest('hex').slice(0, 32)
-    : undefined;
-
-  const finalEntry: DecisionLogEntry = { ...baseSanitized, hmacSig: hmacSig ?? undefined };
-
-  // ── 6. 原子追加 + 每次写入后收紧权限 ──
-  try {
-    atomicAppendSync(filePath, JSON.stringify(finalEntry));
-  } catch (err) {
-    throw new DecisionWriteError(`atomicAppendSync 失败 ${filePath}`, err);
-  }
-  try {
-    chmodSync(filePath, 0o600);
-  } catch (err) {
-    // 权限设置失败不阻断写入（与 appendHistory 同语义，仅告警）
-    console.error(`[decision-log] 决策日志文件权限设置失败: ${err instanceof Error ? err.message : String(err)}`);
-  }
-
-  return finalEntry;
+  // ── 1/4/5. 链字段生成 + HMAC 签名 + 原子追加 + 收紧权限（全部由 chain-kernel 承载）──
+  return appendChained(baseSanitized, {
+    filePath,
+    validKinds: VALID_KINDS,
+    key: hmacKey,
+    fingerprint,
+    onInvalidKind: (kind) =>
+      new DecisionSchemaError(`非法 kind "${String(kind)}"——必须在 DecisionKind 枚举内`),
+    onWriteError: (message, cause) => new DecisionWriteError(message, cause),
+    logLabel: '[decision-log]',
+  });
 }

@@ -59,7 +59,8 @@ export async function trainBudget(args: TrainBudgetArgs): Promise<TrainBudgetToo
   }
 
   try {
-    const budgetMod = await import('@sofagent/orchestrator');
+    // v1.4.8 第 7 批（train 拆包）：train-budget 持久化层随 train 迁至 @sofagent/train
+    const budgetMod = await import('@sofagent/train');
     const dataDir = getDataDir();
     const job = budgetMod.findTrainJob(dataDir, job_id);
 

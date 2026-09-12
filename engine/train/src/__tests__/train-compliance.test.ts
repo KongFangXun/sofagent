@@ -22,10 +22,10 @@ import {
   scanAndGate,
   markProvenance,
   ComplianceGateError,
-} from '../train/train-compliance';
-import { stampComplianceOnVersion, getDatasetVersion, recordDatasetVersion } from '../train/dataset-version';
-import { buildAndPersistDataset } from '../train/dataset-builder';
-import type { IngestRecord } from '../train/data-ingest';
+} from '../train-compliance';
+import { stampComplianceOnVersion, getDatasetVersion, recordDatasetVersion } from '../dataset-version';
+import { buildAndPersistDataset } from '../dataset-builder';
+import type { IngestRecord } from '../data-ingest';
 
 // ── 测试基建 ──
 let dataDir: string;

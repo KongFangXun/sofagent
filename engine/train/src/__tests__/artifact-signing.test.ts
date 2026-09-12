@@ -32,20 +32,20 @@ import {
   hashArtifactFile,
   ArtifactSigningError,
   type ArtifactManifest,
-} from '../train/artifact-signing';
+} from '../artifact-signing';
 import {
   verifyArtifacts,
   verifyManifestIntegrity,
   type ArtifactVerifyReport,
-} from '../train/artifact-verify';
+} from '../artifact-verify';
 import {
   freezeTrainFingerprint,
   trainFingerprintPath,
   type EnvSnapshot,
   type TrainFingerprint,
-} from '../train/train-fingerprint';
-import { readTrainAudit, type TrainAuditEntry } from '../train/train-audit';
-import { trainJobDir } from '../train/train-job';
+} from '../train-fingerprint';
+import { readTrainAudit, type TrainAuditEntry } from '../train-audit';
+import { trainJobDir } from '../train-job';
 
 // ── 测试基建 ──
 const ENT = 'ent-alpha';

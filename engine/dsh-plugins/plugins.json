@@ -1,0 +1,106 @@
+{
+  "//": "DSH 插件清单 · 唯一手写源（v1.4.8 第5批 · 适配层标准化 A；第8批新增聚合型条目）。tools/gen/gen-plugin-manifests.mjs 据此生成每个插件的 cordis.patch.yml 与 package.json 的 description / sofagent / dsh / //optionalDependencies / optionalDependencies 段。⚠️ 手改生成物 = 下一次生成即被覆盖——要改就改这里。⚠️ seam 字段仍须与各插件 src/index.ts 的字面量 seam 一致（check-seam-contract.mjs 正向检查读 src；生成器 --check 会对账两者，不一致即报红）。条目两类：kind 缺省/bridge = 桥接单个 @sofagent/* 能力包（bridgePkg+bridgeApi 必填）；kind=suite = 聚合型（bridgePkg/bridgeApi 语义不适用——它不桥接任何单个能力包，改用 suite 声明挂哪些兄弟插件，optionalDependencies 随之展开为 9 个兄弟插件）。",
+  "schemaVersion": 1,
+  "plugins": [
+    {
+      "id": "cordis-plugin-sofagent-audit",
+      "seam": "tools/result + tools/pre-execute + fs/write-intent",
+      "seamSemantics": "工具结果留证 + 工具执行前拦截 + 文件写入意图拦截",
+      "capability": "审计模块（git diff 硬证据 + 24 规则）",
+      "bridgePkg": "@sofagent/audit",
+      "bridgeApi": "runRules",
+      "description": "变更机器审阅——24 规则 + git diff 硬证据 + 节点级审计"
+    },
+    {
+      "id": "cordis-plugin-sofagent-commons",
+      "seam": "non-seam:tool-set",
+      "seamSemantics": "非宿主事件接入（tool 集）——能力公地五环按需调用",
+      "capability": "能力公地（发布/发现/调用/评价/养护）",
+      "bridgePkg": "@sofagent/audit",
+      "bridgeApi": "loadConfig",
+      "description": "能力公地五环——发布/发现/调用/评价/养护"
+    },
+    {
+      "id": "cordis-plugin-sofagent-daemon",
+      "seam": "non-seam:host-process",
+      "seamSemantics": "非宿主事件接入（独立调度进程）——7×24 巡检不走宿主事件循环",
+      "capability": "养护（7×24 巡检 + 健康监测）",
+      "bridgePkg": "@sofagent/daemon",
+      "bridgeApi": "startCron",
+      "description": "7×24 巡检 + 健康监测 + webhook 推送"
+    },
+    {
+      "id": "cordis-plugin-sofagent-evolve",
+      "seam": "turn/end",
+      "seamSemantics": "Turn 结束（任务收尾）→ 经验沉淀（think.md 反思）",
+      "capability": "进化能力（经验自动沉淀）",
+      "bridgePkg": "@sofagent/think",
+      "bridgeApi": "generateThinkEntry",
+      "description": "经验沉淀——think.md 反思 + Dream Cycle + evolve + instinct→skill + refine"
+    },
+    {
+      "id": "cordis-plugin-sofagent-fde",
+      "seam": "non-seam:tool-set",
+      "seamSemantics": "非宿主事件接入（tool 集）——FDE 六 tool 按需调用",
+      "capability": "FDE 进场方法论（梳理/判定/量化/派生/蒸馏/部署）",
+      "bridgePkg": "@sofagent/ontology",
+      "bridgeApi": "generateOntologyView",
+      "description": "FDE 进场方法论桥接——本体数据视图生成（fde_* 六 tool 已交付）"
+    },
+    {
+      "id": "cordis-plugin-sofagent-gate",
+      "seam": "agent/turn-stopping",
+      "seamSemantics": "Turn 结束前停止条件判定——验收不过不放行",
+      "capability": "验收硬门禁（define_acceptance 机器可判定）",
+      "bridgePkg": "@sofagent/audit",
+      "bridgeApi": "runRules",
+      "description": "验收不过不放行——机器可判定验收 + 人审"
+    },
+    {
+      "id": "cordis-plugin-sofagent-harness",
+      "kind": "suite",
+      "seam": "non-seam:plugin-suite",
+      "seamSemantics": "非宿主事件接入（插件聚合）——一次 apply 逐个挂载 9 个原子插件；能力仍由各原子插件 provide，聚合层自身不挂任何生命周期",
+      "capability": "一次挂载 sofagent 全套能力（9 项）",
+      "description": "一次挂载 sofagent 全套能力（聚合编排层，只编排不重实现）",
+      "suite": [
+        "cordis-plugin-sofagent-inject",
+        "cordis-plugin-sofagent-audit",
+        "cordis-plugin-sofagent-gate",
+        "cordis-plugin-sofagent-ontology",
+        "cordis-plugin-sofagent-commons",
+        "cordis-plugin-sofagent-evolve",
+        "cordis-plugin-sofagent-rollback",
+        "cordis-plugin-sofagent-daemon",
+        "cordis-plugin-sofagent-fde"
+      ]
+    },
+    {
+      "id": "cordis-plugin-sofagent-inject",
+      "seam": "agent/pre-step",
+      "seamSemantics": "模型看到输入前注入四层加载链约束",
+      "capability": "约束注入链（SKILL→fde→think→knowledge）",
+      "bridgePkg": "@sofagent/harness",
+      "bridgeApi": "buildConstrainedSystemPrompt",
+      "description": "启动注入企业约束——四层加载链"
+    },
+    {
+      "id": "cordis-plugin-sofagent-ontology",
+      "seam": "non-seam:tool-set",
+      "seamSemantics": "非宿主事件接入（tool 集）——本体查询 / 知识检索按需调用",
+      "capability": "本体数据（业务语义底座）",
+      "bridgePkg": "@sofagent/ontology",
+      "bridgeApi": "generateOntologyView",
+      "description": "共享语义底座 + 知识检索"
+    },
+    {
+      "id": "cordis-plugin-sofagent-rollback",
+      "seam": "agent/error",
+      "seamSemantics": "Agent 出错 → git snapshot 逆序撤销",
+      "capability": "快照回溯（出事一键回滚）",
+      "bridgePkg": "@sofagent/core",
+      "bridgeApi": "getHistoryFilePath",
+      "description": "出错逆序撤销——git snapshot → effect disposer"
+    }
+  ]
+}

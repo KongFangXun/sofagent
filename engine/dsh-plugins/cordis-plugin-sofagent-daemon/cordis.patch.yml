@@ -1,8 +1,8 @@
-# sofagent cordis-plugin-sofagent-daemon bundle patch——sofagent 品牌插件，注册为 DSH profile layer
+# sofagent cordis-plugin-sofagent-daemon bundle patch v1.4.7——sofagent 品牌插件，注册为 DSH profile layer
 - insert:
     - id: sofagent-daemon
       name: 'cordis-plugin-sofagent-daemon'
       inject: [settings, dynamicCordisRunner]
       config:
-        seam: "独立调度进程"
+        seam: "non-seam:host-process"    # 语义：非宿主事件接入（独立调度进程）——7×24 巡检不走宿主事件循环
         description: "7×24 巡检 + 健康监测 + webhook 推送——桥接 @sofagent/daemon startCron（sofagent 品牌 · #16B8F3）"

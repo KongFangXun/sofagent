@@ -4,24 +4,25 @@
 // data/train/<enterpriseId>/<trainJobId>/audit.jsonl（append-only），
 // 与 events.jsonl 分开：events 是训练进度曲线（协议②），audit 是治理留痕。
 //
-// HMAC 链与 engine/audit/src/decision-log.ts 的 emitDecision 同模式
-// （同密钥 ~/.sofagent-key、同签名算法、同环境指纹、同原子追加）：
+// HMAC 链协议已收口至 @sofagent/audit 的 chain-kernel（单一事实源）——与
+// engine/audit/src/decision-log.ts 的 emitDecision 共用同一实现（收口前是复刻）：
 //   1. prevHash：读末行 → sha256(JSON.stringify(lastRecordForHash) + '|' + fingerprint).slice(0,16)
 //   2. 铁律：先脱敏再签名（hyperparams / reason 里的密钥文本先过 REDACTION_PATTERNS）
 //   3. recordForSig 排除链字段（prevHash/hashVersion/hmacSig/hmacAlgo）
-//   4. hmacSig = createHmac('sha256', key).update(stableStringify(recordForSig) + '|' + fingerprint).digest('hex').slice(0,32)
+//   4. hmacSig = HMAC-SHA256(key, stableStringify(recordForSig) + '|' + fingerprint).slice(0,32)
 //   5. atomicAppendSync（@sofagent/core）→ chmodSync 0o600（权限失败告警不阻断）
 //
-// ⚠️ train_job 事件类型在本文件自持（audit 包无 writer.ts 扩展点，不动 engine/audit
-// 任何现有文件）——union 开放扩展，后续块新增：train_abnormal_exit（块七）、
+// ⚠️ train_job 事件类型仍在本文件自持——经 validKinds 传入内核（kindField='type'），
+// 内核不硬编码白名单；union 开放扩展，后续块新增：train_abnormal_exit（块七）、
 // artifact_tampered（块六）、train_engine_crash_recover（块七）。
 //
 // enterpriseId 强制：审计事件缺 enterpriseId 拒绝写入（块四隔离的审计规则，
 // eng-env 的 isolation-guard 消费此约束）。
 
-import { existsSync, mkdirSync, readFileSync, chmodSync, openSync, readSync, closeSync, statSync, readdirSync, renameSync, rmSync } from 'fs';
-import { createHash, createHmac } from 'crypto';
-import { getEnvFingerprint, getHmacKey, stableStringify, atomicAppendSync, REDACTION_PATTERNS } from '@sofagent/core';
+import { existsSync, mkdirSync, readFileSync, openSync, readSync, closeSync, statSync, readdirSync, renameSync, rmSync } from 'fs';
+import { createHash } from 'crypto';
+import { getEnvFingerprint, getHmacKey, REDACTION_PATTERNS } from '@sofagent/core';
+import { appendChained, verifyChain, type ChainFields, type ChainCheckStatus } from '@sofagent/audit';
 import type { TrainJobStatus } from './train-job';
 
 // ════════════════════════════════════════
@@ -233,25 +234,28 @@ export function trainAuditPath(dataDir: string, enterpriseId: string, trainJobId
 }
 
 /**
+ * 业务字段（不含链字段）——写入侧构造，链字段由 @sofagent/audit chain-kernel 生成。
+ * Business fields only; chain fields are produced by the shared chain-kernel.
+ */
+type TrainAuditBusinessEntry = Omit<TrainAuditEntry, keyof ChainFields>;
+
+/**
  * 追加一条训练审计记录到 audit.jsonl（受控写唯一入口）。
  *
- * 签名顺序（逐字对齐 decision-log.emitDecision）：
+ * 链协议收口至 chain-kernel.appendChained（与 decision-log.emitDecision 同一实现）：
  *   1. prevHash：读末行 → sha256(JSON.stringify(lastRecordForHash) + '|' + fingerprint).slice(0,16)
  *   2. 先脱敏再签名（hyperparams / reason → sanitizeDeep）
  *   3. recordForSig 排除链字段
- *   4. hmacSig = createHmac('sha256', key).update(stableStringify(recordForSig) + '|' + fingerprint).digest('hex').slice(0,32)
+ *   4. hmacSig = HMAC-SHA256(key, stableStringify(recordForSig) + '|' + fingerprint).slice(0,32)
  *   5. atomicAppendSync → chmodSync 0o600（失败告警不阻断）
+ * 事件类型白名单（VALID_EVENT_TYPES）经 validKinds 传入内核——本轮自持扩展性不变。
  *
- * @throws TrainAuditSchemaError 校验失败（含 enterpriseId 缺失——不写文件）
+ * @throws TrainAuditSchemaError 校验失败（含 enterpriseId 缺失、事件类型非法——不写文件）
  * @throws TrainAuditWriteError 写入失败（向上传播）
  */
 export function emitTrainAudit(input: EmitTrainAuditInput, dataDir: string): TrainAuditEntry {
   // ── 校验（写前——enterpriseId 缺失拒绝写入是块四的审计规则）──
-  if (!VALID_EVENT_TYPES.includes(input.type)) {
-    throw new TrainAuditSchemaError(
-      `非法事件类型 "${String(input.type)}"——必须在 TrainAuditEventType 枚举内`,
-    );
-  }
+  // 注：type 合法性由链内核 kind 门判定（kindField='type'，validKinds=VALID_EVENT_TYPES）。
   if (typeof input.trainJobId !== 'string' || input.trainJobId.trim() === '') {
     throw new TrainAuditSchemaError('trainJobId 必填且不能为空');
   }
@@ -263,42 +267,11 @@ export function emitTrainAudit(input: EmitTrainAuditInput, dataDir: string): Tra
   }
 
   const filePath = trainAuditPath(dataDir, input.enterpriseId, input.trainJobId);
-  const dir = filePath.slice(0, filePath.lastIndexOf('/'));
-
-  try {
-    if (!existsSync(dir)) {
-      // 权限收紧 0o700（与 decision-log 目录语义一致）
-      mkdirSync(dir, { recursive: true, mode: 0o700 });
-    }
-  } catch (err) {
-    throw new TrainAuditWriteError(`创建目录失败 ${dir}`, err);
-  }
-
   const fingerprint = getEnvFingerprint(dataDir);
-
-  // ── 1. prevHash（读末行）──
-  let prevHash = 'genesis';
-  if (existsSync(filePath)) {
-    try {
-      const lines = readFileSync(filePath, 'utf-8').trim().split('\n').filter(Boolean);
-      if (lines.length > 0) {
-        const lastLine = lines[lines.length - 1]!;
-        const lastEntry = JSON.parse(lastLine) as TrainAuditEntry;
-        const lastRecordForHash = { ...lastEntry, prevHash: undefined, hashVersion: undefined };
-        prevHash = createHash('sha256')
-          .update(JSON.stringify(lastRecordForHash) + '|' + fingerprint)
-          .digest('hex')
-          .slice(0, 16);
-      }
-    } catch {
-      // 末行解析失败——无法建立链，保守置 'unknown'（与 emitDecision 同语义）
-      prevHash = 'unknown';
-    }
-  }
-
-  // ── 2-3. 先脱敏再签名（铁律）──
   const hmacKey = getHmacKey();
-  const baseSanitized: TrainAuditEntry = {
+
+  // ── 2-3. 先脱敏再签名（铁律）——业务字段（不含链字段）──
+  const baseSanitized: TrainAuditBusinessEntry = {
     ts: new Date().toISOString(),
     type: input.type,
     trainJobId: input.trainJobId,
@@ -318,46 +291,21 @@ export function emitTrainAudit(input: EmitTrainAuditInput, dataDir: string): Tra
           },
         }
       : {}),
-    prevHash,
-    hashVersion: 2,
-    envFingerprint: fingerprint,
-    hmacAlgo: hmacKey ? 'stable' : undefined,
     engine: 'sofagent-train-audit',
   };
 
-  // ── 4-5. 签名输入排除链字段 + HMAC ──
-  const recordForSig = {
-    ...baseSanitized,
-    prevHash: undefined,
-    hashVersion: undefined,
-    hmacSig: undefined,
-    hmacAlgo: undefined,
-  };
-  const hmacSig = hmacKey
-    ? createHmac('sha256', hmacKey)
-        .update(stableStringify(recordForSig) + '|' + fingerprint)
-        .digest('hex')
-        .slice(0, 32)
-    : undefined;
-
-  const finalEntry: TrainAuditEntry = { ...baseSanitized, hmacSig: hmacSig ?? undefined };
-
-  // ── 6. 原子追加 + 收紧权限 ──
-  try {
-    atomicAppendSync(filePath, JSON.stringify(finalEntry));
-  } catch (err) {
-    throw new TrainAuditWriteError(`atomicAppendSync 失败 ${filePath}`, err);
-  }
-  try {
-    chmodSync(filePath, 0o600);
-  } catch (err) {
-    // 权限失败告警不阻断（与 emitDecision 同语义）
-    console.error(
-      `[train-audit] 审计文件权限设置失败: ${err instanceof Error ? err.message : String(err)}`,
-    );
-  }
-
-  return finalEntry;
+  // ── 1/4/5. 链字段生成 + HMAC 签名 + 原子追加 + 收紧权限（全部由 chain-kernel 承载）──
+  return appendChained(baseSanitized, {
+    filePath,
+    validKinds: VALID_EVENT_TYPES,
+    kindField: 'type',
+    key: hmacKey,
+    fingerprint,
+    onInvalidKind: (kind) =>
+      new TrainAuditSchemaError(`非法事件类型 "${String(kind)}"——必须在 TrainAuditEventType 枚举内`),
+    onWriteError: (message, cause) => new TrainAuditWriteError(message, cause),
+    logLabel: '[train-audit]',
+  });
 }
 
 /** 读取 job 的全部审计条目（坏行跳过——查询侧容错） */
@@ -385,7 +333,7 @@ export function readTrainAudit(
 // 链完整性校验（mirror decision-chain.ts 三态判定）
 // ════════════════════════════════════════
 
-export type TrainAuditChainStatus = 'ok' | 'tampered' | 'unverifiable' | 'insufficient';
+export type TrainAuditChainStatus = ChainCheckStatus;
 
 export interface TrainAuditChainResult {
   status: TrainAuditChainStatus;
@@ -394,9 +342,10 @@ export interface TrainAuditChainResult {
 }
 
 /**
- * 校验 audit.jsonl 的 HMAC 链完整性（与 checkDecisionChainDetailed 完全同构）。
+ * 校验 audit.jsonl 的 HMAC 链完整性（判定逻辑收口至 @sofagent/audit chain-kernel）。
  * 三类异常：'tampered' 真篡改（红：指纹一致但签名不匹配）/ 'unverifiable'
  * 环境漂移（黄：密钥轮换或指纹变化）/ 'insufficient' 历史不足（灰：不足 2 条）。
+ * 与 checkDecisionChainDetailed 现共用同一 verifyChain 实现（历史复刻已消除）。
  */
 export function checkTrainAuditChain(
   dataDir: string,
@@ -416,137 +365,23 @@ export function checkTrainAuditChain(
     return { status: 'tampered', detail: 'audit.jsonl 读取失败（疑似权限/损坏）' };
   }
 
-  const entries: TrainAuditEntry[] = [];
+  const entries: unknown[] = [];
   for (const line of content.split('\n')) {
     const trimmed = line.trim();
     if (trimmed === '') continue;
     try {
-      entries.push(JSON.parse(trimmed) as TrainAuditEntry);
+      entries.push(JSON.parse(trimmed));
     } catch (err) {
       console.error('[train-audit] 解析审计条目 JSON 失败:', err);
     }
   }
 
-  if (entries.length <= 1) {
-    return { status: 'insufficient', detail: '审计记录不足 2 条，无法构成可验证的防篡改链' };
-  }
-
-  const fingerprint = getEnvFingerprint(dataDir);
-  const hmacKey = getHmacKey();
-  const keyAvailable = hmacKey !== null;
-  let foundUnverifiable = false;
-
-  // 创世条目独立验签（与 decision-chain 一致）
-  const genesisEntry = entries[0]!;
-  if (
-    genesisEntry &&
-    typeof genesisEntry.hmacSig === 'string' &&
-    genesisEntry.hmacSig &&
-    keyAvailable &&
-    hmacKey
-  ) {
-    const genesisUseFingerprint = genesisEntry.hashVersion === 2;
-    const genesisRecordForSig = {
-      ...genesisEntry,
-      prevHash: undefined,
-      hashVersion: undefined,
-      hmacSig: undefined,
-      hmacAlgo: undefined,
-    };
-    const genesisHashInput = genesisUseFingerprint
-      ? stableStringify(genesisRecordForSig) + '|' + fingerprint
-      : stableStringify(genesisRecordForSig);
-    const genesisExpectedHmac = createHmac('sha256', hmacKey)
-      .update(genesisHashInput)
-      .digest('hex')
-      .slice(0, 32);
-    if (genesisEntry.hmacSig !== genesisExpectedHmac) {
-      if (genesisEntry.hmacAlgo === 'stable' && !genesisUseFingerprint) {
-        return {
-          status: 'tampered',
-          index: 0,
-          detail: '审计创世条目（索引 0）HMAC 签名不匹配（stable 条目，无环境指纹），疑似内容被篡改',
-        };
-      }
-      foundUnverifiable = true;
-    }
-  }
-
-  for (let i = 1; i < entries.length; i++) {
-    const prev = entries[i - 1]!;
-    const curr = entries[i]!;
-    const currUseFingerprint = curr.hashVersion === 2;
-
-    // 1) prevHash 链校验
-    if (curr.prevHash == null || curr.prevHash === 'unknown') continue;
-    const recordForHash = { ...prev, prevHash: undefined, hashVersion: undefined };
-    const hashInput = currUseFingerprint
-      ? JSON.stringify(recordForHash) + '|' + fingerprint
-      : JSON.stringify(recordForHash);
-    const expectedPrevHash = createHash('sha256').update(hashInput).digest('hex').slice(0, 16);
-    if (curr.prevHash !== expectedPrevHash) {
-      if (currUseFingerprint) {
-        foundUnverifiable = true;
-      } else {
-        return {
-          status: 'tampered',
-          index: i,
-          detail: `审计条目 ${i} prevHash 不匹配（旧算法，环境无关），疑似内容被篡改`,
-        };
-      }
-      continue;
-    }
-
-    // 2) HMAC 验签
-    if (curr.hmacSig && keyAvailable && hmacKey) {
-      const recordForSig = {
-        ...curr,
-        prevHash: undefined,
-        hashVersion: undefined,
-        hmacSig: undefined,
-        hmacAlgo: undefined,
-      };
-      const expectedHmac = createHmac('sha256', hmacKey)
-        .update(stableStringify(recordForSig) + '|' + fingerprint)
-        .digest('hex')
-        .slice(0, 32);
-      if (curr.hmacSig !== expectedHmac) {
-        if (curr.hmacAlgo === 'stable') {
-          if (currUseFingerprint) {
-            const recordedFingerprint = curr.envFingerprint;
-            if (typeof recordedFingerprint === 'string' && recordedFingerprint.length > 0) {
-              if (recordedFingerprint === fingerprint) {
-                return {
-                  status: 'tampered',
-                  index: i,
-                  detail: `审计条目 ${i} HMAC 签名不匹配（环境指纹一致，确为内容被篡改）`,
-                };
-              }
-              foundUnverifiable = true;
-            } else {
-              foundUnverifiable = true;
-            }
-          } else {
-            return {
-              status: 'tampered',
-              index: i,
-              detail: `审计条目 ${i} HMAC 签名不匹配（stable 条目，无环境指纹），疑似内容被篡改`,
-            };
-          }
-        } else {
-          foundUnverifiable = true;
-        }
-      }
-    }
-  }
-
-  if (foundUnverifiable) {
-    return {
-      status: 'unverifiable',
-      detail: '部分审计段（v2 含环境指纹条目）因密钥或环境指纹漂移无法复验，属历史证据不可复验，非篡改',
-    };
-  }
-  return { status: 'ok' };
+  // subject='审计' → detail 文案与收口前逐字一致
+  return verifyChain(entries, {
+    key: getHmacKey(),
+    fingerprint: getEnvFingerprint(dataDir),
+    subject: '审计',
+  });
 }
 
 // ════════════════════════════════════════

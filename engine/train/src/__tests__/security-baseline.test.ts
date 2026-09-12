@@ -20,7 +20,7 @@ import {
   maskCredentials,
   MASKED_VALUE,
   runSandboxSelfCheck,
-} from '../train/security-baseline';
+} from '../security-baseline';
 
 // ──────────────────────────────────────
 // 一、路径白名单（validateTrainPath）

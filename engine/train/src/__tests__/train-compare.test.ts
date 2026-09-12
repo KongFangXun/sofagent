@@ -20,8 +20,8 @@ import {
   submitCompareJobs,
   buildCompareReport,
   type CompareBaseResult,
-} from '../train/train-compare';
-import { computeDatasetHash } from '../train/train-fingerprint';
+} from '../train-compare';
+import { computeDatasetHash } from '../train-fingerprint';
 import type { TrainEvalReport } from '../train-eval-loop';
 
 let dataDir: string;

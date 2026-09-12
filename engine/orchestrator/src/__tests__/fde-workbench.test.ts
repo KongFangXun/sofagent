@@ -43,7 +43,9 @@ import {
   deployWorkflow,
   type NodeQuantifyInput,
 } from '../fde/fde-quantify';
-import { computeQuantification } from '../train/train-report';
+// v1.4.8 第 7 批（train 拆包）：量化四字段已随解环搬至 fde/quantify-core——
+// 本测试测的是 FDE 侧 ROI 公式，与 train 包无耦合，故仍留在 orchestrator 测试目录。
+import { computeQuantification } from '../fde/quantify-core';
 import type { NodeInterview, ComposeSession } from '../fde/compose-interview';
 
 let dataDir: string;

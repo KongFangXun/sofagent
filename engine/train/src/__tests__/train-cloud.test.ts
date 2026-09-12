@@ -7,7 +7,7 @@
 // - 成本核算（时薪 × 时长 × 节点数 → 美元，向上取整美分）· 超预算暂停判定
 
 import { describe, it, expect } from 'vitest';
-import { createCloudRegistry } from '../train/cloud-registry';
+import { createCloudRegistry } from '../cloud-registry';
 import {
   buildCloudSpawnCommand,
   buildCloudUploadCommand,
@@ -16,7 +16,7 @@ import {
   isHeartbeatStale,
   estimateCloudCostUsd,
   isOverBudget,
-} from '../train/train-cloud';
+} from '../train-cloud';
 
 // ────────────────────────────────────────────────────────────
 // 一、云 VM 注册表

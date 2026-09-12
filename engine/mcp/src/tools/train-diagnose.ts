@@ -68,7 +68,7 @@ export async function trainDiagnoseTool(args: TrainDiagnoseArgs): Promise<TrainD
   }
 
   try {
-    const orch = await import('@sofagent/orchestrator');
+    const orch = await import('@sofagent/train');
     const dataDir = getDataDir();
     const report = orch.diagnoseTrainFailure(dataDir, enterprise_id, train_job_id);
 

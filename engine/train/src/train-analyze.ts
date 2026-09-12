@@ -19,8 +19,8 @@
 import { existsSync, mkdirSync, readFileSync } from 'fs';
 import { join } from 'path';
 import { atomicWriteSync } from '@sofagent/core';
-import type { NodeInterview } from '../fde/compose-interview';
-import { fdeWorkbenchPaths } from '../fde/fde-workbench';
+import type { NodeInterview } from '@sofagent/orchestrator/fde-compose';
+import { fdeWorkbenchPaths } from '@sofagent/orchestrator/fde-compose';
 import {
   SCENARIO_MATCH_HINTS,
   findTrainTemplate,

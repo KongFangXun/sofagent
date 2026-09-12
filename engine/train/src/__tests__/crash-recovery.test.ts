@@ -26,8 +26,8 @@ import {
   checkpointManifestPath,
   type ProbeFn,
   type EngineCrashLogEntry,
-} from '../train/crash-recovery';
-import { createTrainJob, loadTrainJobRecord, transitionTrainJob } from '../train/train-job';
+} from '../crash-recovery';
+import { createTrainJob, loadTrainJobRecord, transitionTrainJob } from '../train-job';
 
 /** 造一个 running + pid 的 job（走真实状态机路径） */
 function seedRunningJob(dataDir: string, enterpriseId: string, pid: number, jobId?: string): string {

@@ -18,8 +18,8 @@ import {
   FAILURE_CATEGORIES,
   FAILURE_PRESCRIPTIONS,
   type TrainFailureCategory,
-} from '../train/train-diagnose';
-import type { TrainJobRecord } from '../train/train-job';
+} from '../train-diagnose';
+import type { TrainJobRecord } from '../train-job';
 
 // ── 测试基建 ──
 let dataDir: string;

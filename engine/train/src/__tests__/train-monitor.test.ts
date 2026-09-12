@@ -15,23 +15,23 @@ import type { ChildProcess } from 'child_process';
 import {
   createGpuQueue,
   estimateTrainVramMiB,
-} from '../train/gpu-queue';
+} from '../gpu-queue';
 import {
   buildTrainStatusBoard,
   buildTrainHealthReport,
   flushTrainDashboard,
   trainStatusSinkPath,
   trainHealthSinkPath,
-} from '../train/dashboard-sink';
+} from '../dashboard-sink';
 import {
   buildTrainEventMessage,
   extractPayloadFromRecord,
   pushTrainEvent,
   type TrainEventPayload,
   type TrainWebhookTarget,
-} from '../train/train-webhook';
-import { createTrainScheduler, type SpawnFn } from '../train/train-scheduler';
-import type { TrainJobRecord } from '../train/train-job';
+} from '../train-webhook';
+import { createTrainScheduler, type SpawnFn } from '../train-scheduler';
+import type { TrainJobRecord } from '../train-job';
 
 // ── 测试基建 ──
 let dataDir: string;

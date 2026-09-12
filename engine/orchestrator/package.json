@@ -57,11 +57,6 @@
       "default": "./dist/index.js"
     },
     "./package.json": "./package.json",
-    "./train": {
-      "types": "./dist/train/index.d.ts",
-      "require": "./dist/train/index.js",
-      "default": "./dist/train/index.js"
-    },
     "./loop": {
       "types": "./dist/loop/index.d.ts",
       "require": "./dist/loop/index.js",
@@ -96,6 +91,26 @@
       "types": "./dist/benchmark/benchmark-designer.d.ts",
       "require": "./dist/benchmark/benchmark-designer.js",
       "default": "./dist/benchmark/benchmark-designer.js"
+    },
+    "./benchmark-eval": {
+      "types": "./dist/benchmark-eval.d.ts",
+      "require": "./dist/benchmark-eval.js",
+      "default": "./dist/benchmark-eval.js"
+    },
+    "./fde-quantify-core": {
+      "types": "./dist/fde/quantify-core.d.ts",
+      "require": "./dist/fde/quantify-core.js",
+      "default": "./dist/fde/quantify-core.js"
+    },
+    "./weights-manifest": {
+      "types": "./dist/weights-manifest.d.ts",
+      "require": "./dist/weights-manifest.js",
+      "default": "./dist/weights-manifest.js"
+    },
+    "./sandbox-network-gateway": {
+      "types": "./dist/sandbox/network-gateway.d.ts",
+      "require": "./dist/sandbox/network-gateway.js",
+      "default": "./dist/sandbox/network-gateway.js"
     }
   },
   "files": [

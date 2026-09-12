@@ -35,8 +35,8 @@ import {
   manifestPath,
   type WeightsManifest,
   type WeightsVersion,
-} from '../weights-manifest';
-import { loadRegistry, registerModel, type ModelRegistryOpResult } from '../model-registry';
+} from '@sofagent/orchestrator/weights-manifest';
+import { loadRegistry, registerModel, type ModelRegistryOpResult } from '@sofagent/orchestrator/model-registry';
 
 // ══════════════════════════════════════
 // 数据模型

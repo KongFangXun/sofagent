@@ -91,7 +91,7 @@ export async function trainDeliverableTool(
   }
 
   try {
-    const orch = await import('@sofagent/orchestrator');
+    const orch = await import('@sofagent/train');
     const dataDir = getDataDir();
 
     if (action === 'generate') {

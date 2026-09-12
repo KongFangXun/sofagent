@@ -7,6 +7,33 @@
 
 import { join } from 'path';
 
+// ── 训练模块（v1.4.8 第 7 批 · train 拆包）────────────────────────
+// train 已迁至独立包 @sofagent/train（源码 engine/train/）。orchestrator 对它是
+// **运行期按需加载**、非构建期依赖——若声明为依赖，则 train 依赖本包
+// 的 /fde-compose 窄入口会构成**包级循环**，build 拓扑序无解。
+// 故此处用**非字面量** specifier（模板串）：tsc 不做模块解析（结果 any），
+// 运行时才 resolve。未安装 @sofagent/train 时由运行期抛 MODULE_NOT_FOUND
+// 明确报错，而非静默降级。
+// 类型面：本地声明所需最小结构类型，不从 train 包取（同上避免构建期耦合）。
+const TRAIN_PKG = '@sofagent/train';
+
+/** train 指纹（cli 只消费这四个字段；完整结构由 @sofagent/train 的 schema 兜底校验） */
+type TrainFingerprint = {
+  randomSeed: number;
+  hyperparams: unknown;
+  trainJobId: string;
+  datasetVersion: string;
+};
+
+/** 多基座对比单基座结果（cli 只消费 baseModel/status；完整结构见 @sofagent/train） */
+type CompareBaseResult = {
+  baseModel: string;
+  trainJobId: string;
+  status: string;
+  evalReport: unknown;
+  usage: Record<string, unknown>;
+};
+
 const args = process.argv.slice(2);
 const subcommand = args[0];
 async function main() {
@@ -443,9 +470,9 @@ async function main() {
       }
       if (trainAction === 'doctor') {
         const wantGpu = args.includes('--gpu');
-        const { snapshotGpuMemory } = await import('./train/process-guard');
+        const { snapshotGpuMemory } = await import(`${TRAIN_PKG}/process-guard`);
         const { loadEnvConfig } = await import('@sofagent/core');
-        const { listTrainJobRecords } = await import('./train/train-job');
+        const { listTrainJobRecords } = await import(`${TRAIN_PKG}/train-job`);
         const { existsSync, readdirSync } = await import('fs');
         const { join } = await import('path');
 
@@ -458,7 +485,7 @@ async function main() {
             console.log(`ℹ️ GPU 显存核对：unsupported（${gpu.note}）`);
           } else {
             const used = gpu.perGpuUsedMiB ?? [];
-            const total = used.reduce((a, b) => a + b, 0);
+            const total = (used as number[]).reduce((a, b) => a + b, 0);
             console.log(`🎮 GPU 显存：${gpu.note}，已用 ${used.join(' / ')} MiB（合计 ${total} MiB）`);
           }
         }
@@ -511,8 +538,8 @@ async function main() {
         }
         const dataDirIdx = args.indexOf('--data-dir');
         const passesIdx = args.indexOf('--passes');
-        const { cleanupEnterpriseTrainData } = await import('./train/cleanup');
-        const { EnterpriseAccessDeniedError } = await import('./train/isolation-guard');
+        const { cleanupEnterpriseTrainData } = await import(`${TRAIN_PKG}/cleanup`);
+        const { EnterpriseAccessDeniedError } = await import(`${TRAIN_PKG}/isolation-guard`);
         const { loadEnvConfig } = await import('@sofagent/core');
         const cleanupDataDir = dataDirIdx !== -1 && args[dataDirIdx + 1] ? args[dataDirIdx + 1]! : loadEnvConfig().dataDir;
         const passes = passesIdx !== -1 ? parseInt(args[passesIdx + 1]!, 10) : undefined;
@@ -539,7 +566,7 @@ async function main() {
           process.exit(report.fullyCleaned ? 0 : 1);
         } catch (err) {
           if (err instanceof EnterpriseAccessDeniedError) {
-            console.error(`❌ 企业隔离拒绝：${err.message}`);
+            console.error(`❌ 企业隔离拒绝：${(err as Error).message}`);
           } else {
             console.error(`❌ cleanup 失败: ${(err as Error).message}`);
           }
@@ -563,12 +590,16 @@ async function main() {
           process.exit(1);
         }
         // 指纹解析（TrainFingerprintSchema 校验——坏文件明确报错）
-        const { TrainFingerprintSchema } = await import('./train/train-fingerprint');
-        let fingerprint: import('./train/train-fingerprint').TrainFingerprint;
+        const { TrainFingerprintSchema } = await import(`${TRAIN_PKG}/train-fingerprint`);
+        let fingerprint: TrainFingerprint;
         try {
           const parsed = TrainFingerprintSchema.safeParse(JSON.parse(readFileSync(fingerprintFile, 'utf-8')));
           if (!parsed.success) {
-            throw new Error(parsed.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('；'));
+            throw new Error(
+              parsed.error.issues
+                .map((i: { path: (string | number)[]; message: string }) => `${i.path.join('.')}: ${i.message}`)
+                .join('；'),
+            );
           }
           fingerprint = parsed.data;
         } catch (err) {
@@ -581,11 +612,11 @@ async function main() {
           console.error('❌ train reproduce 需要 --data <当前数据目录>（现场重算 hash 的比对对象）');
           process.exit(1);
         }
-        const { prepareTrainEnv } = await import('./train/train-env');
+        const { prepareTrainEnv } = await import(`${TRAIN_PKG}/train-env`);
         const envReport = await prepareTrainEnv();
         const seedIdx = args.indexOf('--seed');
         const seed = seedIdx !== -1 ? parseInt(args[seedIdx + 1]!, 10) : fingerprint.randomSeed;
-        const { reproduceCheck } = await import('./train/train-fingerprint');
+        const { reproduceCheck } = await import(`${TRAIN_PKG}/train-fingerprint`);
         const result = reproduceCheck(fingerprint, {
           datasetDir,
           envSnapshot: {
@@ -649,7 +680,7 @@ async function main() {
           }
           enterpriseId = candidates[0]!;
         }
-        const { verifyArtifacts } = await import('./train/artifact-verify');
+        const { verifyArtifacts } = await import(`${TRAIN_PKG}/artifact-verify`);
         const report = await verifyArtifacts({ dataDir: verifyDataDir, enterpriseId, trainJobId });
         console.log(`🔐 产物完整性校验（${report.enterpriseId}/${report.trainJobId}）`);
         console.log(`   manifest 完整性: ${report.manifestIntegrity}`);
@@ -703,7 +734,7 @@ async function main() {
         }
         const { loadEnvConfig } = await import('@sofagent/core');
         const analyzeDataDir = flag('--data-dir') ?? loadEnvConfig().dataDir;
-        const { analyzeTrainNeed, saveTrainAnalyzeReport } = await import('./train/train-analyze');
+        const { analyzeTrainNeed, saveTrainAnalyzeReport } = await import(`${TRAIN_PKG}/train-analyze`);
         try {
           const report = analyzeTrainNeed(analyzeDataDir, enterpriseId, nodeId, {
             ...(flag('--base-model') !== undefined ? { baseModel: flag('--base-model') } : {}),
@@ -741,7 +772,7 @@ async function main() {
       // ── v1.4.3 第四章：train templates（场景模板库 list——含 RL 配方维度）──
       if (trainAction === 'templates') {
         // train templates [scenario] [--data-dir <dir>] [--recipes <外部配方目录>]
-        const { listTrainTemplates, listRlTemplates, loadExternalRecipes } = await import('./train/train-templates');
+        const { listTrainTemplates, listRlTemplates, loadExternalRecipes } = await import(`${TRAIN_PKG}/train-templates`);
         const recipeDir = ((): string | undefined => {
           const idx = args.indexOf('--recipes');
           return idx !== -1 && args[idx + 1] ? args[idx + 1] : undefined;
@@ -805,14 +836,13 @@ async function main() {
         const ent = enterpriseId ?? 'default';
         const bases = basesRaw.split(',').map((s) => s.trim()).filter(Boolean).map((baseModel) => ({ baseModel }));
 
-        const { submitCompareJobs, refreshCompareResults, buildCompareReport } = await import('./train/train-compare');
-        const { computeDatasetHash } = await import('./train/train-fingerprint');
-        type CompareBaseResult = import('./train/train-compare').CompareBaseResult;
+        const { submitCompareJobs, refreshCompareResults, buildCompareReport } = await import(`${TRAIN_PKG}/train-compare`);
+        const { computeDatasetHash } = await import(`${TRAIN_PKG}/train-fingerprint`);
 
         if (reportOnly) {
           // 报告模式：从 job 记录回填（jobId 规约 = compare-<hash8>-<slug>）+ 直接汇总
           const datasetHash = computeDatasetHash(dataPath);
-          const { loadTrainJobRecord } = await import('./train/train-job');
+          const { loadTrainJobRecord } = await import(`${TRAIN_PKG}/train-job`);
           const results = bases.map((b): CompareBaseResult => {
             const jobId = `compare-${datasetHash.slice(0, 8)}-${b.baseModel.replace(/[^a-zA-Z0-9-_.]/g, '-').toLowerCase()}`;
             const rec = loadTrainJobRecord(dataDir, ent, jobId);
@@ -852,7 +882,7 @@ async function main() {
         }
         const datasetHash = computeDatasetHash(dataPath);
         refreshCompareResults({ results: submitted.jobs, dataDir, enterpriseId: ent });
-        console.log(`✅ 已提交 ${submitted.jobs.length} 基座（${submitted.jobs.map((j) => j.baseModel).join(' / ')}）`);
+        console.log(`✅ 已提交 ${submitted.jobs.length} 基座（${submitted.jobs.map((j: { baseModel: string }) => j.baseModel).join(' / ')}）`);
         console.log(`   GPU 队列：${submitted.gpuSnapshot.mode} 模式，占用 ${submitted.gpuSnapshot.allocatedMiB} MiB / 预算 ${submitted.gpuSnapshot.totalBudgetMiB} MiB`);
         console.log('   全部基座完成后生成报告：train compare --report-only --data <同路径> --bases <同列表> --algorithm <同算法>');
         break;

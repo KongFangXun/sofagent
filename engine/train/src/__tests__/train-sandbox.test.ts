@@ -14,7 +14,7 @@ import {
   createTrainSandbox,
   createTrainPathGuard,
   trainSandboxOutputDir,
-} from '../train/train-sandbox';
+} from '../train-sandbox';
 
 // ── 测试基建 ──
 let dataDir: string;

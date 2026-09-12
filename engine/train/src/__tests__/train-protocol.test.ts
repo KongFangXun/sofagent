@@ -12,7 +12,7 @@ import {
   parseTrainEvent,
   parseTrainEventStream,
   createSignalController,
-} from '../train/train-protocol';
+} from '../train-protocol';
 
 // ────────────────────────────────────────────────────────────
 // 约定①：job.json schema

@@ -50,4 +50,4 @@ clawhub package publish . --family code-plugin --name sofagent-rollback --versio
 
 ## 说明
 
-与 DSH 插件 `cordis-plugin-sofagent-rollback` 同引擎、不同宿主：DSH 挂 `tools/pre-execute` 等生命周期事件，OpenClaw 挂 `before_prompt_build` / `before_tool_execute` 等事件。审计模块（git diff 24 规则）在所有形态一样硬。
+与 DSH 插件 `cordis-plugin-sofagent-rollback` 同引擎、不同宿主：DSH 侧挂 `agent/error`（Agent 出错时自动逆序撤销），OpenClaw 侧不挂宿主事件（`seam: non-seam:tool-set`）——只注册 `sofagent_rollback` 工具（snapshot / rollback / list）与 `sofagent-rollback` CLI，快照与回滚由调用方显式触发。

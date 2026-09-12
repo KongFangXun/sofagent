@@ -1,5 +1,5 @@
 // sofagent-audit · OpenClaw 原生插件（code-plugin）
-// 变更机器审阅：before_tool_execute 拦截危险工具（rm -rf / git push / git reset --hard 等）
+// 变更机器审阅：before_tool_call 拦截危险工具（rm -rf / git push / git reset --hard 等）
 // + sofagent_audit 工具跑 24 规则 + git diff 硬证据审计（复用 @sofagent/audit 模块，平台无关零重写）。
 // 对应 DSH 插件 cordis-plugin-sofagent-audit 的 OpenClaw 形态（同引擎、不同宿主 hook 事件面）。
 // 品牌色 #16B8F3。API 分级：/* @public */ 导出对 OpenClaw 运行时契约锁定。
@@ -24,7 +24,7 @@ const _pkg: { version?: string } = require('../package.json');
   id: 'sofagent-audit',
   name: 'sofagent 审计',
   version: _pkg.version ?? '0.0.0-unknown',
-  description: '变更机器审阅——24 规则 + git diff 硬证据 + 危险工具拦截（before_tool_execute）',
+  description: '变更机器审阅——24 规则 + git diff 硬证据 + 危险工具拦截（before_tool_call）',
   brandColor: '#16B8F3',
 };
 
@@ -40,18 +40,26 @@ type OpenClawApi = any;
 /* @public */ export function register(api: OpenClawApi): void {
   const logger = api?.logger ?? console;
 
-  // 1) before_tool_execute：危险工具拦截（对应 DSH tools/pre-execute，审计硬约束）
+  // 1) before_tool_call：危险工具拦截（对应 DSH tools/pre-execute，审计硬约束）
+  // 🔴 OpenClaw 拦截契约（宿主 PluginHookBeforeToolCallResult）：拦停 = 返回
+  //    `{ block: true, blockReason }`。宿主 hook-runner 对 `block` 取 sticky-true、
+  //    并在 `block === true` 时短路后续 handler，tool 调用随即被拒（kind:"veto"）。
+  //    ⚠️ 不能返回 `{ allowed: false }`——那是 DSH/cordis 的契约形状，OpenClaw
+  //    只读 `.block`，`allowed` 被静默忽略 = 拦截永不生效的能力静默失效。
+  //    Blocking contract: return `{ block: true, blockReason }`; the host reads only
+  //    `.block`. `{ allowed: false }` (the DSH/cordis shape) is silently ignored.
+  //    放行 = 返回 void（runner 会跳过 undefined 结果 = 明确「无意见」）。
   try {
-    api.on?.('before_tool_execute', (event: any) => {
+    api.on?.('before_tool_call', (event: any) => {
       const toolName = String(event?.toolName ?? event?.tool ?? '');
       if (DANGEROUS_TOOLS.includes(toolName)) {
         logger.warn?.('[sofagent-audit] 拦截危险工具:', toolName);
-        return { allowed: false, reason: `sofagent 审计拦截：工具 ${toolName} 属高危操作，请改用受审计通道（sofagent_audit 先行评估）` };
+        return { block: true, blockReason: `sofagent 审计拦截：工具 ${toolName} 属高危操作，请改用受审计通道（sofagent_audit 先行评估）` };
       }
-      return { allowed: true };
+      return;
     }, { priority: 100 });
   } catch (err) {
-    logger.error?.('[sofagent-audit] before_tool_execute 注册失败:', err instanceof Error ? err.message : String(err));
+    logger.error?.('[sofagent-audit] before_tool_call 注册失败:', err instanceof Error ? err.message : String(err));
   }
 
   // 2) registerTool：sofagent_audit——跑 24 规则 + git diff 审计

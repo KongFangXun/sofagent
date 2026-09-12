@@ -27,9 +27,9 @@ import {
   failTrainJobWithRollback,
   TrainAuditSchemaError,
   type EmitTrainAuditInput,
-} from '../train/train-audit';
-import { createTrainScheduler, type SpawnFn } from '../train/train-scheduler';
-import { createTrainJob, loadTrainJobRecord, trainJobFilePaths } from '../train/train-job';
+} from '../train-audit';
+import { createTrainScheduler, type SpawnFn } from '../train-scheduler';
+import { createTrainJob, loadTrainJobRecord, trainJobFilePaths } from '../train-job';
 
 // ── 测试基建 ──
 let dataDir: string;
@@ -310,6 +310,31 @@ describe('HMAC 链完整性', () => {
     expect(raw).toContain('REDACTED'); // 脱敏占位可见
     // 脱敏后内容签名——链校验仍通过（证明 HMAC 基于脱敏后内容）
     expect(checkTrainAuditChain(dataDir, 'ent-alpha', 'job-audit-001').status).toBe('ok');
+  });
+
+  it('test_checkTrainAuditChain_与共享verifyChain同源_判定一致', async () => {
+    // v1.4.8 第〇批收口：train 侧链校验已委派 @sofagent/audit 的 chain-kernel.verifyChain
+    // （收口前是与 decision-chain 各自复刻的两份独立 verifier）。此处证明委派关系。
+    const { verifyChain } = await import('@sofagent/audit');
+    const { getEnvFingerprint, getHmacKey } = await import('@sofagent/core');
+    emitTrainAudit(auditInput({ type: 'train_job_submitted' }), dataDir);
+    emitTrainAudit(auditInput({ type: 'train_job_started' }), dataDir);
+
+    const filePath = trainAuditPath(dataDir, 'ent-alpha', 'job-audit-001');
+    const parsed = readFileSync(filePath, 'utf-8')
+      .trim()
+      .split('\n')
+      .filter(Boolean)
+      .map((l) => JSON.parse(l) as Record<string, unknown>);
+
+    const viaKernel = verifyChain(parsed, {
+      key: getHmacKey(),
+      fingerprint: getEnvFingerprint(dataDir),
+      subject: '审计',
+    });
+    const viaWrapper = checkTrainAuditChain(dataDir, 'ent-alpha', 'job-audit-001');
+    expect(viaWrapper.status).toBe(viaKernel.status);
+    expect(viaKernel.status).toBe('ok');
   });
 });
 

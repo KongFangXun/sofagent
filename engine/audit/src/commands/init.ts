@@ -72,7 +72,7 @@ function classifyRepo(): { state: RepoState; hint: string } {
   if (!hasCommits) {
     return {
       state: 'greenfield',
-      hint: '📋 新仓库——sofagent 会从第一次 commit 开始审计。建议先跑 FORGE/playbook/acceptance-test.sh 验证安装。',
+      hint: '📋 新仓库——sofagent 会从第一次 commit 开始审计。建议先跑 playbook/acceptance-test.sh 验证安装。',
     };
   }
 
@@ -93,7 +93,7 @@ function classifyRepo(): { state: RepoState; hint: string } {
     if (files.trim().length === 0) {
       return {
         state: 'greenfield',
-        hint: '📋 新仓库——sofagent 会从第一次 commit 开始审计。建议先跑 FORGE/playbook/acceptance-test.sh 验证安装。',
+        hint: '📋 新仓库——sofagent 会从第一次 commit 开始审计。建议先跑 playbook/acceptance-test.sh 验证安装。',
       };
     }
   } catch { /* */ }

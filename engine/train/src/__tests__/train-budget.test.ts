@@ -16,7 +16,7 @@ import {
   loadTrainJobs,
   upsertTrainJob,
   findTrainJob,
-} from '../train/train-budget';
+} from '../train-budget';
 
 describe('checkBudget 三维度判定', () => {
   it('未设预算 → 不限制（within=true）', () => {

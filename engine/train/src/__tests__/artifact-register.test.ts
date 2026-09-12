@@ -19,16 +19,16 @@ import {
 import { tmpdir } from 'os';
 import { join } from 'path';
 
-import { registerTrainArtifact } from '../train/artifact-register';
+import { registerTrainArtifact } from '../artifact-register';
 import type { TrainEvalReport } from '../train-eval-loop';
 import {
   createTrainJob,
   transitionTrainJob,
   loadTrainJobRecord,
   type TrainJobRecord,
-} from '../train/train-job';
-import { manifestPath } from '../weights-manifest';
-import { loadRegistry } from '../model-registry';
+} from '../train-job';
+import { manifestPath } from '@sofagent/orchestrator/weights-manifest';
+import { loadRegistry } from '@sofagent/orchestrator/model-registry';
 
 let dataDir: string;
 let weightsDir: string;

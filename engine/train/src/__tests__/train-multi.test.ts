@@ -8,10 +8,10 @@
 // - 分布式通信失败诊断（NCCL 错误分类）
 
 import { describe, it, expect } from 'vitest';
-import { validateTrainJob } from '../train/train-protocol';
-import { createGpuQueue } from '../train/gpu-queue';
-import { buildMultiGpuLaunch, aggregateMultiGpuProgress } from '../train/train-multi';
-import { classifyTrainFailure } from '../train/train-diagnose';
+import { validateTrainJob } from '../train-protocol';
+import { createGpuQueue } from '../gpu-queue';
+import { buildMultiGpuLaunch, aggregateMultiGpuProgress } from '../train-multi';
+import { classifyTrainFailure } from '../train-diagnose';
 
 // ────────────────────────────────────────────────────────────
 // 一、job.json schema v2（红线 6：v1 向后兼容）

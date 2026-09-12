@@ -18,7 +18,7 @@ import {
   buildCloudCleanupCommand,
   buildCloudStopCommand,
   type CloudCommand,
-} from '@sofagent/orchestrator/train';
+} from '@sofagent/train';
 import type {
   TrainChannel,
   ChannelJobSpec,
@@ -26,7 +26,7 @@ import type {
   ChannelStatusResult,
   ChannelStatus,
   ChannelArtifact,
-} from '@sofagent/orchestrator/train';
+} from '@sofagent/train';
 
 /** 可注入执行函数（测试 fake——零真实网络） */
 export type ExecFn = (cmd: string, args: string[]) => Promise<{ stdout: string; stderr: string }>;

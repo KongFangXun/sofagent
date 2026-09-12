@@ -1,0 +1,15 @@
+{
+  "//": "DSH 插件族共享编译基座（v1.4.8 第5批 · 适配层标准化；第8批新增聚合插件 harness 后为 10 个插件）：10 个 cordis-plugin-sofagent-* 与 plugin-kit 的 tsconfig.json 全部 extends 本文件（实测 11 份 md5 全同 = 1 个唯一 hash），把此前 9 份逐字重复的 compilerOptions 收敛成 1 份。⚠️ rootDir / outDir 刻意留在各包自己的 tsconfig.json 里：TS 的路径类 compilerOptions 相对**声明它的那个文件**解析，写在本文件里会被解析成 engine/dsh-plugins/src（而不是各插件的 src），产物层级会错。",
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "node16",
+    "moduleResolution": "node16",
+    "declaration": true,
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "types": [
+      "node"
+    ]
+  }
+}
