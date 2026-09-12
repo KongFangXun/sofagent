@@ -56,7 +56,27 @@
       "require": "./dist/index.js",
       "default": "./dist/index.js"
     },
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./train": {
+      "types": "./dist/train/index.d.ts",
+      "require": "./dist/train/index.js",
+      "default": "./dist/train/index.js"
+    },
+    "./loop": {
+      "types": "./dist/loop/index.d.ts",
+      "require": "./dist/loop/index.js",
+      "default": "./dist/loop/index.js"
+    },
+    "./model-registry": {
+      "types": "./dist/model-registry.d.ts",
+      "require": "./dist/model-registry.js",
+      "default": "./dist/model-registry.js"
+    },
+    "./team-state": {
+      "types": "./dist/team/team-state.d.ts",
+      "require": "./dist/team/team-state.js",
+      "default": "./dist/team/team-state.js"
+    }
   },
   "files": [
     "dist/",

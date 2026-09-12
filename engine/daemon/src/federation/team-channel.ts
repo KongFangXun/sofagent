@@ -9,7 +9,7 @@
 // orchestrator 绝不反向 import daemon——依赖注入模式（协议设计 §5.3）。
 // ============================================================
 
-import type { TeamSyncChannel } from '@sofagent/orchestrator';
+import type { TeamSyncChannel } from '@sofagent/orchestrator/team-state';
 import type { FederationChannel } from './channel';
 
 /**

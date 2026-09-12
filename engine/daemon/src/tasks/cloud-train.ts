@@ -32,7 +32,7 @@ import {
   type TrainEvent,
   type TrainExecutor,
   type TrainExecutorHooks,
-} from '@sofagent/orchestrator';
+} from '@sofagent/orchestrator/train';
 import { createSshTrainChannel, type SshChannelOptions } from '../cloud-exec';
 import { chainDualChannelEvent } from '../cloud-events';
 

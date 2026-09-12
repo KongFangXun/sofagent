@@ -33,7 +33,7 @@
 
 import { callModelAPI } from '@sofagent/core';
 import type { ModelMessage } from '@sofagent/core';
-import { loadRegistry } from '@sofagent/orchestrator';
+import { loadRegistry } from '@sofagent/orchestrator/model-registry';
 
 import type { LLMProvider } from './types';
 import { DREAM_CYCLE_SYSTEM_ROLE, validateExtractOutput } from './injection-guard';
