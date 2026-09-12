@@ -184,7 +184,6 @@ export const TOOLS: ToolDef[] = [
       properties: {
         url: { type: 'string', description: '目标 URL' },
       },
-      required: ['url'],
     },
     // v1.4.8 条目 5 首批迁移：查表分发
     handler: (args, _ctx?) => browserNavigate(args.url as string),
@@ -198,7 +197,6 @@ export const TOOLS: ToolDef[] = [
       properties: {
         selector: { type: 'string', description: 'CSS 选择器' },
       },
-      required: ['selector'],
     },
     // v1.4.8 条目 5 首批迁移：查表分发
     handler: (args, _ctx?) => browserClick(args.selector as string),
@@ -225,7 +223,6 @@ export const TOOLS: ToolDef[] = [
       properties: {
         condition: { type: 'string', description: '断言条件（如元素可见/文本存在）' },
       },
-      required: ['condition'],
     },
     // v1.4.8 条目 5 迁移：查表分发
     handler: (args) => browserAssert(args.condition as string),
@@ -471,6 +468,8 @@ export const TOOLS: ToolDef[] = [
         name: { type: 'string', description: 'entity 名称（不含 .md 后缀）' },
         confirmed: { type: 'boolean', description: '人工确认标志——必须显式 true 才执行删除' },
       },
+      // v1.4.8 条目 5 勘误固化：confirmed 刻意保留在 required（破坏性操作的显式声明），
+      // 但 dispatch 不强制它——confirmed !== true 走「需人工确认」提示的非错误路径（human-confirmed 语义）。
       required: ['name', 'confirmed'],
     },
     // v1.4.8 条目 5 迁移：查表分发
@@ -487,6 +486,8 @@ export const TOOLS: ToolDef[] = [
         name: { type: 'string', description: 'concept 名称（不含 .md 后缀）' },
         confirmed: { type: 'boolean', description: '人工确认标志——必须显式 true 才执行删除' },
       },
+      // v1.4.8 条目 5 勘误固化：confirmed 刻意保留在 required（破坏性操作的显式声明），
+      // 但 dispatch 不强制它——confirmed !== true 走「需人工确认」提示的非错误路径（human-confirmed 语义）。
       required: ['name', 'confirmed'],
     },
     // v1.4.8 条目 5 迁移：查表分发
@@ -630,7 +631,6 @@ export const TOOLS: ToolDef[] = [
         decision: { type: 'string', enum: ['approve', 'reject', 'aborted'], description: '人工决策（必填）' },
         comment: { type: 'string', description: '可选备注（如驳回原因）' },
       },
-      required: ['checkpoint_id', 'decision'],
     },
     // v1.4.8 条目 5 迁移：查表分发
     handler: (args) => hitlResolve({ checkpoint_id: args.checkpoint_id as string, decision: args.decision as 'approve' | 'reject' | 'aborted', ...(args.comment ? { comment: args.comment as string } : {}) }),
@@ -1076,7 +1076,7 @@ export const TOOLS: ToolDef[] = [
           },
         },
       },
-      required: ['name', 'endpoint', 'model'],
+      required: ['name'],
     },
     // v1.4.8 条目 5 迁移：查表分发
     handler: async (args) => { if (!args.name) { return { error: 'Missing required argument: name' }; } const mrr = await modelRegister({ name: args.name as string, endpoint: (args.endpoint as string) ?? '', model: (args.model as string) ?? '', ...(args.client_type === 'openai-compatible' || args.client_type === 'ollama' ? { client_type: args.client_type } : {}), ...(args.source === 'endpoint' || args.source === 'local-path' ? { source: args.source } : {}), ...(typeof args.weights_dir === 'string' ? { weights_dir: args.weights_dir } : {}), ...(typeof args.verify_hash === 'boolean' ? { verify_hash: args.verify_hash } : {}), ...(typeof args.eval_score === 'number' ? { eval_score: args.eval_score } : {}), ...(typeof args.comment === 'string' ? { comment: args.comment } : {}), ...(args.profile !== undefined ? { profile: args.profile as ModelRegisterArgs['profile'] } : {}) }); return { ...mrr, isError: mrr.data.isError }; },
@@ -1332,7 +1332,7 @@ export const TOOLS: ToolDef[] = [
         contact: { type: 'string', description: 'FDE 联系方式（可选——写入运维手册联系方式段）' },
         zip_path: { type: 'string', description: '待校验交付包路径（verify 必填）' },
       },
-      required: ['action', 'enterprise_id'],
+      required: ['enterprise_id'],
     },
     // v1.4.8 条目 5 迁移：查表分发
     handler: async (args) => { if (!args.enterprise_id) { return { error: 'Missing required argument: enterprise_id' }; } const tdl = await trainDeliverableTool({ action: args.action === 'verify' ? 'verify' : 'generate', enterprise_id: args.enterprise_id as string, ...(typeof args.train_job_id === 'string' ? { train_job_id: args.train_job_id } : {}), ...(typeof args.dataset_id === 'string' ? { dataset_id: args.dataset_id } : {}), ...(typeof args.contact === 'string' ? { contact: args.contact } : {}), ...(typeof args.zip_path === 'string' ? { zip_path: args.zip_path } : {}) }); return { ...tdl, isError: tdl.data.isError }; },
