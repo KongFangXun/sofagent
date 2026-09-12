@@ -119,7 +119,7 @@ function appendRunLog(dataDir: string, entry: ContinuousRunTickResult): void {
 
 /**
  * 云通道接线缝合（v1.4.7 批次 B）——scheduler 选项经 buildCloudSchedulerOptions
- * 装配：有可用云 VM 时注入 executor（channelAsExecutor(createSshTrainChannel)）+
+ * 装配：有可用云 VM 时注入 executor（channelAsExecutor 桥——四参签名直出 executor，jobDirOf 注入企业布局）+
  * onEvent（chainDualChannelEvent 双通道挂链）；无 VM 返回原选项（本地执行，
  * 零行为变化）。装配失败降级本地（daemon 纪律——云路径故障不阻断训练主链）。
  */

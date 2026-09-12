@@ -1925,7 +1925,7 @@
   HeartbeatVerdict,
 } from './train/train-cloud';
 // 章十二：TrainChannel 接口 + 通道注册表（云端微调标准接口——daemon cloud-exec 消费面）
-/* @public */ export { ChannelRegistry, channelAsExecutor } from './train/train-channel';
+/* @public */ export { channelAsExecutor } from './train/train-channel';
 /* @public */ export type {
   TrainChannel,
   ChannelJobSpec,

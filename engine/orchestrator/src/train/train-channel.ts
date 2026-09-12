@@ -13,7 +13,7 @@
 // 测试纪律：零真实网络——所有实现注入 fake；参考适配示例见
 // tools/train/examples/hosted-channel.example.mjs（非引擎核心依赖）。
 
-import type { TrainExecutorHooks } from './train-executor';
+import type { TrainExecutorHooks, TrainExecutor } from './train-executor';
 import type { TrainEvent } from './train-protocol';
 
 // ════════════════════════════════════════
@@ -112,27 +112,6 @@ export interface ChannelJobSpec {
 }
 
 // ════════════════════════════════════════
-// 通道注册表
-// ════════════════════════════════════════
-
-/** 通道注册表——train submit 的 channel 字段解析面 */
-export class ChannelRegistry {
-  private channels = new Map<string, TrainChannel>();
-
-  register(channel: TrainChannel): void {
-    this.channels.set(channel.name, channel);
-  }
-
-  get(name: string): TrainChannel | undefined {
-    return this.channels.get(name);
-  }
-
-  list(): string[] {
-    return [...this.channels.keys()];
-  }
-}
-
-// ════════════════════════════════════════
 // TrainExecutor 适配桥（通道 → executor 形态）
 // ════════════════════════════════════════
 
@@ -145,9 +124,12 @@ export class ChannelRegistry {
  */
 export function channelAsExecutor(
   channel: TrainChannel,
-  opts: { pollIntervalMs?: number } = {},
-): { start: (jobId: string, hooks: TrainExecutorHooks) => unknown; stop: (jobId: string) => Promise<{ action: string }> } {
+  opts: { pollIntervalMs?: number; jobDirOf?: (jobId: string) => string } = {},
+): Pick<TrainExecutor, 'start' | 'stop'> {
   const interval = opts.pollIntervalMs ?? 100;
+  // v1.4.8 深模块条目 3：jobDir 推导收进缝内（调用方注入企业布局——不再假设
+  // ./train-jobs 常规落点；缺省保留旧行为）
+  const jobDirOf = opts.jobDirOf ?? ((jobId: string) => `./train-jobs/${jobId}`);
   const timers = new Map<string, ReturnType<typeof setInterval>>();
 
   /** ChannelEvent → 协议② TrainEvent 映射 */
@@ -161,12 +143,15 @@ export function channelAsExecutor(
   }
 
   return {
-    start(jobId, hooks) {
+    // v1.4.8 条目 3：签名对齐调度面（jobId, command, args, { hooks }）——
+    // command/args 对云通道无意义（job.json 经 submit 上传），显式 _ 前缀声明忽略。
+    start(jobId: string, _command: string, _args: string[], options: { hooks: TrainExecutorHooks }) {
+      const hooks = options.hooks;
       // 异步驱动（桥形态——哑对象代替 child 引用，close/error 经 hooks 回流）
       const dummy = { pid: undefined } as unknown as import('child_process').ChildProcess;
       void (async () => {
         try {
-          const submit = await channel.submit(jobDir(jobId), {
+          const submit = await channel.submit(jobDirOf(jobId), {
             jobId,
             jobJsonSha256: 'bridge',
           });
@@ -212,7 +197,4 @@ export function channelAsExecutor(
   };
 }
 
-/** jobDir 推导（桥内部——job.json 常规落点） */
-function jobDir(jobId: string): string {
-  return `./train-jobs/${jobId}`;
-}
+

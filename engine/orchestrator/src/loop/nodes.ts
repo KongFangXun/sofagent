@@ -17,6 +17,7 @@ import { execSync } from 'child_process';
 import { createInterface } from 'readline';
 import { ENGINEER_AGENT, REVIEWER_AGENT } from '../builtin-agents';
 import { spawnSubAgent } from '../launcher';
+import { makeAgentRunner } from './agent-runner';
 import { ENGINEER_TOOLS, REVIEWER_TOOLS, createToolGate, wrapToolsWithGate, convertToLangGraphTools, type ExecutableTool } from '../tools';
 import { buildConstrainedSystemPrompt } from '@sofagent/harness';
 import { loadConfig, loadEnvConfig, resolveDataDir } from '@sofagent/core';
@@ -352,13 +353,7 @@ export function getLoopProgressMw(): ProgressMiddleware {
   return sharedProgressMw;
 }
 
-/** 测试注入：替换 router/mw（用 null 重置） */
-export function setLoopRouterForTest(router: ModelRouter | null): void {
-  sharedRouter = router;
-}
-export function setLoopSovereigntyMwForTest(mw: DataSovereigntyMiddleware | null): void {
-  sharedSovereigntyMw = mw;
-}
+/** 测试注入：进度遥测 mw（progress-mw.test 消费——保留）；router/sovereignty 的 setter 已随条目 4 删除（零消费者，测试改注入式 AgentRunnerDeps） */
 export function setLoopProgressMwForTest(mw: ProgressMiddleware | null): void {
   sharedProgressMw = mw;
 }
@@ -403,108 +398,6 @@ function routeAndLog(role: 'engineer' | 'reviewer', task: string): {
  * 降级兜底：如果 createReactAgent import 失败，降级回 spawnSubAgent
  * （composer 零工具路径），并在输出前加 `[降级运行] ` 标注。
  */
-async function defaultRunEngineer(task: string, feedback: string): Promise<string> {
-  const fullTask = [
-    '# LOOP 任务',
-    task,
-    '',
-    '# 执行纪律',
-    '1. 先读再改：修改前先 Read 目标文件',
-    '2. 最小变更：只触碰任务要求的内容',
-    '3. 验证再继续：完成后确认 build 通过',
-    ...(feedback
-      ? ['', '# 上一轮反馈（audit/review 未通过原因，只修复标记的问题）', feedback.slice(0, 2000)]
-      : []),
-  ].join('\n');
-
-  // v1.2.2 P1：ModelRouter 路由 + 敏感度评估
-  const { sensitivity, routeSummary } = routeAndLog('engineer', task);
-  const sovereigntyMw = getLoopSovereigntyMw();
-  // v1.2.2 P2b：进度遥测——node-start（失败静默，不阻断 LOOP）
-  const progressMw = getLoopProgressMw();
-  const nodeStartedAt = Date.now();
-  progressMw.nodeStart('engineer', task.slice(0, 120));
-
-  // v1.2.2 P4：decide/execute 分层——decide（LLM 决策）→ execute（确定性执行）
-  // decide 成功：决策摘要拼入 agent 上下文；decide 失败：静默跳过走原路径
-  let decideSummary = '';
-  try {
-    const decideResult = await engineerDecide(
-      { task, feedback: feedback || undefined },
-      { callLLM: defaultDecideCallLLM, router: getLoopRouter(), log: () => {} },
-    );
-    if (decideResult) {
-      decideSummary = [
-        '[decide] 结构化决策（经 ModelRouter 路由）：',
-        `rationale: ${decideResult.decide.rationale.slice(0, 200)}`,
-        ...decideResult.decide.changes.map((c) => `- ${c.action} ${c.file}: ${c.description.slice(0, 60)}`),
-      ].join('\n');
-      // execute 层：dryRun=false 真实执行（git 不可用时内部降级，不 throw）
-      const execResult = await engineerExecute(decideResult.decide, {
-        cwd: process.cwd(),
-        dryRun: false,
-        log: () => {},
-      });
-      decideSummary += `\n[execute] ${execResult.summary.split('\n')[0] ?? ''}`;
-    }
-  } catch (err) {
-    // decide/execute 异常时降级走 createReactAgent 路径——工具可用性降级需 warn
-    console.warn('[sofagent] engineer decide/execute 失败，降级走 createReactAgent:', err instanceof Error ? err.message : String(err));
-  }
-
-  // v1.1.4：工具注入路径——createReactAgent + ENGINEER_TOOLS
-  // SOFAGENT_LLM 未设置或解析失败时自动降级到 spawnSubAgent 零工具路径
-  try {
-    const resolved = await resolveLLMModelFor('engineer');
-    if (!resolved || !resolved.model) throw new Error('SOFAGENT_LLM 未设置，无法确定模型 provider');
-
-    // v1.3.6 交付⑤：调用点迁移到 ExecutionBackend——经 resolveAgentFactory 解析
-    // （LangGraph 直连优先零行为变化；不可用时 DSH 后端 invoke 兼容代理）
-    const { resolveAgentFactory } = await import('../agent-factory.js');
-    const agentFactory = await resolveAgentFactory();
-    if (!agentFactory.factory) throw new Error('agent 工厂不可用（LangGraph 与 DSH 均未就绪）');
-    const constrainedPrompt = buildConstrainedSystemPrompt(process.cwd());
-    const systemPrompt = `${constrainedPrompt}\n\n${ENGINEER_AGENT.systemPrompt}\n\n${routeSummary}${decideSummary ? `\n\n${decideSummary}` : ''}`;
-    // v1.2.0: ToolGate 事前拦截——每个 tool call 前过 @sofagent/rules 检查
-    const gate = createToolGate({ agentName: 'engineer', taskDesc: task.slice(0, 500) });
-    const gatedTools = wrapToolsWithGate(ENGINEER_TOOLS, gate);
-    const langGraphTools = convertToLangGraphTools(gatedTools);
-    const agent = (agentFactory.factory as unknown as (params: {
-      llm: unknown;
-      tools: unknown[];
-      prompt: string;
-    }) => { invoke: (input: unknown, config?: { recursionLimit?: number }) => Promise<unknown> })({
-      llm: resolved.model,
-      tools: langGraphTools,
-      prompt: systemPrompt,
-    });
-    // v1.2.2 P2b：LLM 调用期间发心跳（3s 节流，Dashboard 心跳检测数据源）
-    progressMw.heartbeat('engineer');
-    // v1.2.2 P0：数据主权 middleware 包裹模型调用
-    const result = await sovereigntyMw.wrapModelCall(
-      {
-        provider: process.env.SOFAGENT_LLM?.split(':')[0] ?? 'unknown',
-        model: process.env.SOFAGENT_LLM?.split(':')[1] ?? 'unknown',
-        endpoint: 'loop-engineer',
-        purpose: 'engineer-loop',
-      },
-      () => agent.invoke(
-        { messages: [{ role: 'user', content: fullTask }] },
-        { recursionLimit: resolveMaxTurns('engineer') * 2 },
-      ),
-      { agentRole: 'engineer', userIntent: task.slice(0, 200), sensitivity },
-    );
-    const output = extractAgentText(result);
-    progressMw.nodeEnd('engineer', { durationMs: Date.now() - nodeStartedAt, success: true });
-    return output || '[降级运行] createReactAgent 未返回内容，已回退';
-  } catch (err) {
-    // 模型解析失败/createReactAgent import 失败 → spawnSubAgent 零工具路径（工具可用性降级）
-    console.warn('[sofagent] engineer createReactAgent 失败，降级到 spawnSubAgent:', err instanceof Error ? err.message : String(err));
-    progressMw.nodeEnd('engineer', { durationMs: Date.now() - nodeStartedAt, success: false });
-    const fallback = await spawnSubAgent(ENGINEER_AGENT, fullTask);
-    return `[降级运行] ${fallback}`;
-  }
-}
 
 /**
  * 默认 audit 实现——程序化调用 @sofagent/audit（比 CLI 子进程侵入更小：
@@ -598,86 +491,6 @@ function recordLoopAuditHistory(
  *
  * 降级兜底：同 engineer，失败时降级回 spawnSubAgent。
  */
-async function defaultRunReviewer(artifacts: LoopArtifacts): Promise<string> {
-  const reviewTask = [
-    '# 审查任务',
-    '审查以下 Engineer 的产出：',
-    '',
-    '```',
-    artifacts.engineerOutput.slice(0, 4000),
-    '```',
-    '',
-    '# 审计报告（供参考）',
-    artifacts.auditReport.slice(0, 2000),
-    '',
-    '# 审查要求',
-    '1. 按 🔴🟡💭 分级标注问题',
-    '2. 检查是否满足原始任务要求',
-    '3. 检查是否有范围蔓延（做了任务不需要的改动）',
-    '4. 输出判定：IS_PASS: YES 或 IS_PASS: NO',
-  ].join('\n');
-
-  // v1.2.2 P1：ModelRouter 路由 + 敏感度评估
-  const { sensitivity, routeSummary } = routeAndLog('reviewer', reviewTask);
-  const sovereigntyMw = getLoopSovereigntyMw();
-  // v1.2.2 P2b：进度遥测——node-start（失败静默，不阻断 LOOP）
-  const progressMw = getLoopProgressMw();
-  const nodeStartedAt = Date.now();
-  progressMw.nodeStart('reviewer', 'code review');
-
-  // v1.1.4：工具注入路径——createReactAgent + REVIEWER_TOOLS
-  // SOFAGENT_LLM 未设置或解析失败时自动降级到 spawnSubAgent 零工具路径
-  try {
-    const resolved = await resolveLLMModelFor('reviewer');
-    if (!resolved || !resolved.model) throw new Error('SOFAGENT_LLM 未设置，无法确定模型 provider');
-
-    // v1.3.6 交付⑤：调用点迁移到 ExecutionBackend——经 resolveAgentFactory 解析
-    // （LangGraph 直连优先零行为变化；不可用时 DSH 后端 invoke 兼容代理）
-    const { resolveAgentFactory } = await import('../agent-factory.js');
-    const agentFactory = await resolveAgentFactory();
-    if (!agentFactory.factory) throw new Error('agent 工厂不可用（LangGraph 与 DSH 均未就绪）');
-    const constrainedPrompt = buildConstrainedSystemPrompt(process.cwd());
-    const systemPrompt = `${constrainedPrompt}\n\n${REVIEWER_AGENT.systemPrompt}\n\n${routeSummary}`;
-    // v1.2.0: ToolGate 事前拦截——reviewer 工具也过 gate（只读工具通常 PASS，但保持一致性）
-    const gate = createToolGate({ agentName: 'reviewer', taskDesc: 'code review'.slice(0, 500) });
-    const gatedTools = wrapToolsWithGate(REVIEWER_TOOLS, gate);
-    const langGraphTools = convertToLangGraphTools(gatedTools);
-    const agent = (agentFactory.factory as unknown as (params: {
-      llm: unknown;
-      tools: unknown[];
-      prompt: string;
-    }) => { invoke: (input: unknown, config?: { recursionLimit?: number }) => Promise<unknown> })({
-      llm: resolved.model,
-      tools: langGraphTools,
-      prompt: systemPrompt,
-    });
-    // v1.2.2 P2b：LLM 调用期间发心跳（3s 节流，Dashboard 心跳检测数据源）
-    progressMw.heartbeat('reviewer');
-    // v1.2.2 P0：数据主权 middleware 包裹模型调用
-    const result = await sovereigntyMw.wrapModelCall(
-      {
-        provider: process.env.SOFAGENT_LLM?.split(':')[0] ?? 'unknown',
-        model: process.env.SOFAGENT_LLM?.split(':')[1] ?? 'unknown',
-        endpoint: 'loop-reviewer',
-        purpose: 'reviewer-loop',
-      },
-      () => agent.invoke(
-        { messages: [{ role: 'user', content: reviewTask }] },
-        { recursionLimit: resolveMaxTurns('reviewer') * 2 },
-      ),
-      { agentRole: 'reviewer', userIntent: reviewTask.slice(0, 200), sensitivity },
-    );
-    const output = extractAgentText(result);
-    progressMw.nodeEnd('reviewer', { durationMs: Date.now() - nodeStartedAt, success: true });
-    return output || '[降级运行] createReactAgent 未返回内容，已回退';
-  } catch (err) {
-    // reviewer 模型解析失败/createReactAgent import 失败 → spawnSubAgent 零工具路径
-    console.warn('[sofagent] reviewer createReactAgent 失败，降级到 spawnSubAgent:', err instanceof Error ? err.message : String(err));
-    progressMw.nodeEnd('reviewer', { durationMs: Date.now() - nodeStartedAt, success: false });
-    const fallback = await spawnSubAgent(REVIEWER_AGENT, reviewTask);
-    return `[降级运行] ${fallback}`;
-  }
-}
 
 /**
  * 从 reviewer 审查报告中提取 IS_PASS 判定。
@@ -799,10 +612,63 @@ async function defaultRecordBlocked(state: LoopGraphState): Promise<void> {
  * 构建默认依赖集
  */
 export function defaultDeps(checkpointer: FileCheckpointer, silent = false): LoopGraphDeps {
+  // v1.4.8 深模块条目 4：角色 runner 经 makeAgentRunner 装配（骨架收编——
+  // LLM 解析/gate 三段/心跳/主权包裹/文本提取/降级路径单源；角色差异在 spec）
+  const engineerRunner = makeAgentRunner(
+    {
+      role: 'engineer',
+      tools: ENGINEER_TOOLS,
+      agentDef: ENGINEER_AGENT,
+      buildTask: () => '',
+      endpoints: { endpoint: 'loop-engineer', purpose: 'engineer-loop' },
+      progressTitle: 'engineer work',
+      gateTaskDesc: 'engineer task',
+    },
+    { sovereigntyMw: getLoopSovereigntyMw(), progressMw: getLoopProgressMw() },
+  );
+  const reviewerRunner = makeAgentRunner(
+    {
+      role: 'reviewer',
+      tools: REVIEWER_TOOLS,
+      agentDef: REVIEWER_AGENT,
+      buildTask: () => '',
+      endpoints: { endpoint: 'loop-reviewer', purpose: 'reviewer-loop' },
+      progressTitle: 'code review',
+      gateTaskDesc: 'code review',
+    },
+    { sovereigntyMw: getLoopSovereigntyMw(), progressMw: getLoopProgressMw() },
+  );
   return {
-    runEngineer: defaultRunEngineer,
+    runEngineer: (task: string, feedback: string) =>
+      engineerRunner([
+        '# LOOP 任务',
+        task,
+        '',
+        '# 执行纪律',
+        '1. 先读再改：修改前先 Read 目标文件',
+        '2. 最小变更：只触碰任务要求的内容',
+        '3. 验证再继续：完成后确认 build 通过',
+        ...(feedback ? ['', '# 上一轮反馈（audit/review 未通过原因，只修复标记的问题）', feedback.slice(0, 2000)] : []),
+      ].join('\n')),
     runAudit: defaultRunAudit,
-    runReviewer: defaultRunReviewer,
+    runReviewer: (artifacts: LoopArtifacts) =>
+      reviewerRunner([
+        '# 审查任务',
+        '审查以下 Engineer 的产出：',
+        '',
+        '```',
+        artifacts.engineerOutput.slice(0, 4000),
+        '```',
+        '',
+        '# 审计报告（供参考）',
+        artifacts.auditReport.slice(0, 2000),
+        '',
+        '# 审查要求',
+        '1. 按 🔴🟡💭 分级标注问题',
+        '2. 检查是否满足原始任务要求',
+        '3. 检查是否有范围蔓延（做了任务不需要的改动）',
+        '4. 输出判定：IS_PASS: YES 或 IS_PASS: NO',
+      ].join('\n')),
     confirmHuman: defaultConfirmHuman,
     recordBlocked: defaultRecordBlocked,
     checkpointer,

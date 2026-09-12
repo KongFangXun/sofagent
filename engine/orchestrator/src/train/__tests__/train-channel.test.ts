@@ -1,7 +1,6 @@
 // train-channel.test.ts · 章十二 TrainChannel 接口 + 通道注册表 + 执行者互换测试
 import { describe, it, expect } from 'vitest';
 import {
-  ChannelRegistry,
   channelAsExecutor,
   type TrainChannel,
   type ChannelStatusResult,
@@ -41,14 +40,6 @@ function makeMockChannel(script: ChannelStatusResult['status'][]): TrainChannel 
 }
 
 describe('章十二：TrainChannel 接口 + 通道注册表', () => {
-  it('注册表 register/get/list', () => {
-    const reg = new ChannelRegistry();
-    const ch = makeMockChannel(['succeeded']);
-    reg.register(ch);
-    expect(reg.get('mock-cloud')).toBe(ch);
-    expect(reg.get('nope')).toBeUndefined();
-    expect(reg.list()).toEqual(['mock-cloud']);
-  });
 
   it('mock 通道四动作契约（submit/status/artifacts/cancel）', async () => {
     const ch = makeMockChannel(['pending', 'succeeded']);
@@ -85,7 +76,7 @@ describe('章十二：执行者互换测试（同一 job 双执行面）', () =>
     const ch = makeMockChannel(['running', 'succeeded']);
     const exec = channelAsExecutor(ch, { pollIntervalMs: 10 });
     const col = makeCollector();
-    exec.start('job-x', col.hooks);
+    exec.start('job-x', 'train', [], { hooks: col.hooks });
     await new Promise((r) => setTimeout(r, 120));
     expect(col.events).toContain('started');
     expect(col.isClosed()).toBe(true);
@@ -106,7 +97,7 @@ describe('章十二：执行者互换测试（同一 job 双执行面）', () =>
     // 云通道：mock 脚本 pending → succeeded
     const cloud = channelAsExecutor(makeMockChannel(['running', 'succeeded']), { pollIntervalMs: 10 });
     const colCloud = makeCollector();
-    cloud.start('job-cloud', colCloud.hooks);
+    cloud.start('job-cloud', 'train', [], { hooks: colCloud.hooks });
 
     // 双面等收敛
     await new Promise((r) => setTimeout(r, 200));
@@ -126,7 +117,7 @@ describe('章十二：执行者互换测试（同一 job 双执行面）', () =>
     // failed 时 recentEvents 期望带 error 事件——mock 直接给 failed 状态
     const exec = channelAsExecutor(ch, { pollIntervalMs: 10 });
     const col = makeCollector();
-    exec.start('job-f', col.hooks);
+    exec.start('job-f', 'train', [], { hooks: col.hooks });
     await new Promise((r) => setTimeout(r, 80));
     expect(col.isClosed()).toBe(true);
     expect(col.closeCode()).toBe(1);

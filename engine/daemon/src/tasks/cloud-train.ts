@@ -172,17 +172,12 @@ export function buildCloudSchedulerOptions(
   };
 
   // ② 通道 → executor 形态（channelAsExecutor 桥——submit + 轮询 + 事件回流）
-  const bridged = channelAsExecutor(channel, { pollIntervalMs: 5_000 });
-
-  // 签名桥接：桥的 start(jobId, hooks) 与 scheduler 调用面 start(jobId,
-  // command, args, { hooks }) 不同构（桥自称测试/演示形态）。适配后整体呈现
-  // Pick<TrainExecutor, 'start' | 'stop'>——command/args 对云通道无意义（job.json
-  // 经 submit 上传），忽略。
-  const executor: Pick<TrainExecutor, 'start' | 'stop'> = {
-    start: ((jobId: string, _command: string, _args: string[], options: { hooks: TrainExecutorHooks }) =>
-      bridged.start(jobId, options.hooks)) as TrainExecutor['start'],
-    stop: (jobId: string) => bridged.stop(jobId) as Promise<SignalAction>,
-  };
+  // v1.4.8 深模块条目 3：桥签名已对齐调度面（四参 + jobDirOf 收缝内）——
+  // 手工包装与 as 断言全部移除，直接产出 executor。
+  const executor: Pick<TrainExecutor, 'start' | 'stop'> = channelAsExecutor(channel, {
+    pollIntervalMs: 5_000,
+    jobDirOf: (jobId) => join(opts.dataDir, 'train', opts.enterpriseId, jobId),
+  });
 
   // ③ 双通道事件挂链（onEvent → chainDualChannelEvent → emitTrainAudit）。
   // progress 心跳在归一层即被过滤（chained=false 不写链）——高频轮询不刷链。
