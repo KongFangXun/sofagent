@@ -21,7 +21,9 @@ description: >
 2. **逐个降级，不整挂失败** —— 缺任一个原子插件只记入 `failed` 数组（含包名与原因），其余 8 个照常加载；
 3. **不替代细粒度插件** —— 9 个原子插件全部保留，本插件是**新增的整装选项**，按需二选一。
 
-本插件随 sofagent 主线版本发布（SkillHub 通道：`skillhub install cordis-plugin-sofagent-harness` 安装与检索；npm 通道未开通）。版本号与 sofagent 主线对齐。
+本插件随 sofagent 主线版本发布，走**宿主挂载通道**：`skillhub install cordis-plugin-sofagent-harness`。⚠️ **本插件不在 npm 通道**——14 款插件（10 DSH + 4 OpenClaw）均为 `private`，npm 装不到；npm 侧另有**库通道** `npm i -g sofagent`（总包 `engine/umbrella`，聚合 `@sofagent/audit` / `mcp` / `orchestrator` / `daemon` 四个能力包，**不含本插件**）。两条通道按所在环境二选一，互不依赖、互不为前置。版本号与 sofagent 主线对齐。
+
+本插件是**宿主挂载入口**；**npm 安装入口见伞包** —— 两个入口互不引用为前置，按使用场景各取其一。
 
 ## 相关链接
 
