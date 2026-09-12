@@ -28,7 +28,7 @@ fi
 #   规则审计  $SOFAGENT_HOME/data/audit/history.jsonl
 #   工作状态  $SOFAGENT_HOME/data/audit/sub-progress-*.jsonl（自动发现）
 #            $SOFAGENT_HOME/data/dashboard/daemon-health.json
-#   Graph引擎 $SOFAGENT_HOME/data/dashboard/graph-state.json（v1.2.3 完整控制图）
+#   编排控制图 $SOFAGENT_HOME/data/dashboard/graph-state.json（v1.2.3 完整控制图）
 #   FORGE    $SOFAGENT_HOME/data/forge-runs/fresh-eyes-loop/latest.json（交付三）
 #   最近变更  $SOFAGENT_HOME/data/dashboard/workspace-changes.jsonl（交付五）
 #   最近报告  $SOFAGENT_HOME/data/{企业名}/审计报告/（fde-profile.json 定企业名）
