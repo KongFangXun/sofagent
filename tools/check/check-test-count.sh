@@ -63,7 +63,7 @@ FAIL=0
 run_scenario_guard() {
   SCEN_PASS=0
   SCEN_FAIL=0
-  ACCEPTANCE_ACTUAL=$(head -20 FORGE/playbook/acceptance-test.sh 2>/dev/null | grep -oE '[0-9]+ 个场景' | head -1 | grep -oE '[0-9]+' || echo "")
+  ACCEPTANCE_ACTUAL=$(head -20 playbook/acceptance-test.sh 2>/dev/null | grep -oE '[0-9]+ 个场景' | head -1 | grep -oE '[0-9]+' || echo "")
   if [ -z "$ACCEPTANCE_ACTUAL" ]; then
     echo -e "  ${RED}✗ acceptance-test.sh 头部（前 20 行）未找到「NNN 个场景」声明——场景守卫 FAIL（不再静默跳过）${NC}"
     echo -e "    守卫空转比没有守卫更危险：请在脚本头部补 SSOT 声明「# 场景数：NNN 个场景」"
@@ -80,7 +80,7 @@ run_scenario_guard() {
   # 数出脏数 100/105 仍一路骗绿。精确口径：'scenario N "'（数字后紧跟空格+引号），
   # 真实场景调用恒为此格式；echo 探针为 'scenario 48"'（引号紧贴数字、前有空格），天然可区分。
   # v1.2.5: 正则扩展支持字母后缀（34b/34c/167a/167b），[0-9]+ → [0-9]+[a-z]?
-  SCENARIO_REAL=$(grep -oE 'scenario [0-9]+[a-z]? "' FORGE/playbook/acceptance-test.sh 2>/dev/null | wc -l | tr -d ' ')
+  SCENARIO_REAL=$(grep -oE 'scenario [0-9]+[a-z]? "' playbook/acceptance-test.sh 2>/dev/null | wc -l | tr -d ' ')
   if [ "$SCENARIO_REAL" = "$ACCEPTANCE_ACTUAL" ]; then
     if [ "$QUIET" = false ]; then
       echo -e "  ${GREEN}✓ acceptance-test.sh 实测 ${SCENARIO_REAL} 个真实场景调用，与 SSOT 声明一致${NC}"
@@ -88,7 +88,7 @@ run_scenario_guard() {
     SCEN_PASS=$((SCEN_PASS + 1))
   else
     echo -e "  ${RED}✗ acceptance-test.sh 实测 ${SCENARIO_REAL} 个真实场景调用，SSOT 声明 ${ACCEPTANCE_ACTUAL} —— 头部数字与文件实际不符${NC}"
-    echo -e "    计数命令：grep -oE 'scenario [0-9]+[a-z]? \"' FORGE/playbook/acceptance-test.sh | wc -l"
+    echo -e "    计数命令：grep -oE 'scenario [0-9]+[a-z]? \"' playbook/acceptance-test.sh | wc -l"
     echo -e "    提示：勿用裸 grep 'scenario [0-9]+'（会把 echo 探针文本误算进去）"
     SCEN_FAIL=$((SCEN_FAIL + 1))
   fi
@@ -210,17 +210,34 @@ fi
 PKG_COUNT=$(echo "$TC_OUT" | sed $'s/\033\[[0-9;]*m//g' | grep -oE 'PKGS=[0-9]+' | grep -oE '[0-9]+' | head -1 || echo "0")
 [ -z "$PKG_COUNT" ] && PKG_COUNT=0
 
-# B13: workspace 总包数（package.json workspaces 数组条目数，README 声称「13 包」对账用）
-# v1.4.0：只数 13 个发布到 npm 的引擎包——engine/dsh-plugins/ 下 9 个插件包为 private（不发布），不计入
+# B13: 引擎包数（README 声称「13 引擎包」对账用）
+# v1.4.0：只数发布到 npm 的 13 个 @sofagent/* 引擎模块包——engine/dsh-plugins/ 下 10 个
+#   插件包为 private（不发布）、engine/umbrella 是 npm 裸名总包（走 [README] 另一个口径：
+#   「14 个模块包发布至 npm @sofagent scope」= 13 模块 + umbrella）、
+#   engine/hooks/sofagent-load-chain 是构建序列末位的工具包（见 docs/WIKI.md §六 口径表），三者均不计入。
 # 兜底用 || true 而非 || echo "0"：grep -c 零匹配已自行输出单行 0，|| echo 0 追加第二行成双零
-WORKSPACE_COUNT=$(grep -cE '^[[:space:]]*"engine/(harness|ontology|eval|core|think|audit|orchestrator|daemon|ab-test|evolve|mcp|rules|hooks/)' package.json || true)
+# v1.4.8 第 7 批（train 拆包）：本清单同步 +train（第 13 个模块包），并**去掉 hooks/**——
+#   原清单 12 模块 + hooks/ 恰好也是 13，数值未变但语义不对（把 load-chain 当引擎包数）。
+#   现值 = 12 模块 + train = 13，与 README「13 引擎包」/ WIKI「13 个 @sofagent/* 模块包」对齐。
+WORKSPACE_COUNT=$(grep -cE '^[[:space:]]*"engine/(harness|ontology|eval|core|think|audit|orchestrator|train|daemon|ab-test|evolve|mcp|rules)"' package.json || true)
 [ -z "$WORKSPACE_COUNT" ] && WORKSPACE_COUNT=0
 
-# 任务八方案A（2026-08-29）：README 包数口径升级为双口径「13 引擎包 + 13 插件（9 DSH + 4 OpenClaw）」。
-# 插件数 SSOT = 插件目录数（每目录一份 package.json），与 README 声称对账；引擎包 SSOT 仍为 WORKSPACE_COUNT。
-DSH_PLUGIN_COUNT=$(find engine/dsh-plugins -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l | tr -d ' ')
+# 任务八方案A（2026-08-29）：README 包数口径升级为双口径「13 引擎包 + 14 插件（10 DSH + 4 OpenClaw）」。
+# 插件数 SSOT = 结构性判据（插件命名前缀），**非目录计数**——
+# engine/dsh-plugins/ 下还存放基座包 plugin-kit 与非插件资产，数目录会把非插件多计进来。
+# 本判据与 tools/check/check-storefront.sh:44 的 `for d in engine/dsh-plugins/cordis-plugin-sofagent-*`
+# 同源同口径（一个口径两处消费，避免各数各的）；引擎包 SSOT 仍为 WORKSPACE_COUNT。
+# v1.4.8 第 7 批：DSH 插件 9→10（engine/dsh-plugins/cordis-plugin-sofagent-harness 入列），
+#   插件合计 13→14——README/README.en.md 的「14 插件 / 14 plugins」同批更新。
+DSH_PLUGIN_COUNT=0
+for d in engine/dsh-plugins/cordis-plugin-sofagent-*; do
+  [ -d "$d" ] && DSH_PLUGIN_COUNT=$((DSH_PLUGIN_COUNT + 1))
+done
 DSH_PLUGIN_COUNT=${DSH_PLUGIN_COUNT:-0}
-OPENCLAW_PLUGIN_COUNT=$(find engine/openclaw-plugins -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l | tr -d ' ')
+OPENCLAW_PLUGIN_COUNT=0
+for d in engine/openclaw-plugins/sofagent-*; do
+  [ -d "$d" ] && OPENCLAW_PLUGIN_COUNT=$((OPENCLAW_PLUGIN_COUNT + 1))
+done
 OPENCLAW_PLUGIN_COUNT=${OPENCLAW_PLUGIN_COUNT:-0}
 PLUGIN_TOTAL=$(( DSH_PLUGIN_COUNT + OPENCLAW_PLUGIN_COUNT ))
 
@@ -736,8 +753,8 @@ if [ "$FAIL" -gt 0 ]; then
     echo "FAIL"
   else
     echo -e "  ${RED}✗ ${FAIL} 处文档测试数漂移${NC}"
-    echo -e "  ${YELLOW}修法：跑 bash tools/test-count.sh 拿实际数，手动更新上述文件的声称值${NC}"
-    echo -e "  ${YELLOW}或更好：让文档引用 tools/test-count.sh 动态值，不硬编码${NC}"
+    echo -e "  ${YELLOW}修法：跑 bash tools/check/test-count.sh 拿实际数，手动更新上述文件的声称值${NC}"
+    echo -e "  ${YELLOW}或更好：让文档引用 tools/check/test-count.sh 动态值，不硬编码${NC}"
   fi
   exit 1
 else

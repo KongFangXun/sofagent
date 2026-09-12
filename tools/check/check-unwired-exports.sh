@@ -64,7 +64,7 @@ SYMBOLS="runInspectors:engine/daemon/src/inspectors/index.ts:via=analyzeAuditHis
 runAllLayers:engine/daemon/src/inspector-layers.ts:via=runLayeredInspection
 runDreamCycle:engine/daemon/src/dream-cycle/state-machine.ts
 registerBuiltinSlashCommands:engine/core/src/slash-commands/index.ts
-gateDataPush:engine/orchestrator/src/train/data-push.ts
+gateDataPush:engine/train/src/data-push.ts
 createSshTrainChannel:engine/daemon/src/cloud-exec.ts
 chainDualChannelEvent:engine/daemon/src/cloud-events.ts"
 

@@ -3,6 +3,13 @@
   "version": "1.4.7",
   "private": true,
   "license": "MIT",
+  "files": [
+    "README.md",
+    "README.en.md",
+    "LICENSE",
+    "package.json"
+  ],
+  "//files": "根包打包边界（v1.4.7 收面批）：private:true 只拦得住 npm publish，拦不住 npm pack / --dry-run。此前既无 files 也无 .npmignore → npm 回退用 .gitignore 排除 → 排除不到 → 实测打过 1621 文件 / 17.3 MB 解包，平铺含 FORGE/ docs/ engine/ tools/ SKILL/ FDE/ .claude/ .cursor/（把内部施工面连同一份含凭证路径说明的配置一起打进 tarball）。本字段把根 pack 收敛到根级必要文件。⚠️ 不影响 @sofagent/* 各 workspace 包（各自 files 独立限定，如 engine/umbrella 恒为 3 文件）；也不影响 install.sh（走 git clone 钉发版 tag，不走 npm pack）。⚠️ 维护注意：根 pack 只用于边界收口，无任何发布/安装链路依赖它——新增根级文件如确需随包分发再显式登记。",
   "engines": {
     "node": ">=18"
   },
@@ -14,6 +21,7 @@
     "engine/think",
     "engine/audit",
     "engine/orchestrator",
+    "engine/train",
     "engine/daemon",
     "engine/ab-test",
     "engine/evolve",
@@ -28,6 +36,7 @@
     "engine/dsh-plugins/cordis-plugin-sofagent-ontology",
     "engine/dsh-plugins/cordis-plugin-sofagent-commons",
     "engine/dsh-plugins/cordis-plugin-sofagent-gate",
+    "engine/dsh-plugins/cordis-plugin-sofagent-harness",
     "engine/dsh-plugins/cordis-plugin-sofagent-daemon",
     "engine/dsh-plugins/cordis-plugin-sofagent-fde",
     "engine/openclaw-plugins/sofagent-audit",
@@ -38,7 +47,7 @@
   "scripts": {
     "test": "npm test --workspaces --if-present && bash tools/dashboard/sofagent-dashboard.test.sh",
     "test:count": "bash tools/check/check-test-count.sh",
-    "build": "npm run build --workspace=engine/harness && npm run build --workspace=engine/core && npm run build --workspace=engine/ontology && npm run build --workspace=engine/rules && npm run build --workspace=engine/audit && npm run build --workspace=engine/eval && npm run build --workspace=engine/think && npm run build --workspace=engine/evolve && npm run build --workspace=engine/orchestrator && npm run build --workspace=engine/daemon && npm run build --workspace=engine/ab-test && npm run build --workspace=engine/mcp && npm run build --workspace=engine/hooks/sofagent-load-chain",
+    "build": "npm run build --workspace=engine/harness && npm run build --workspace=engine/core && npm run build --workspace=engine/ontology && npm run build --workspace=engine/rules && npm run build --workspace=engine/audit && npm run build --workspace=engine/eval && npm run build --workspace=engine/think && npm run build --workspace=engine/evolve && npm run build --workspace=engine/orchestrator && npm run build --workspace=engine/train && npm run build --workspace=engine/daemon && npm run build --workspace=engine/ab-test && npm run build --workspace=engine/mcp && npm run build --workspace=engine/hooks/sofagent-load-chain && npm --prefix engine/dsh-plugins/plugin-kit run build && npm run build --workspace=engine/dsh-plugins/cordis-plugin-sofagent-audit && npm run build --workspace=engine/dsh-plugins/cordis-plugin-sofagent-rollback && npm run build --workspace=engine/dsh-plugins/cordis-plugin-sofagent-inject && npm run build --workspace=engine/dsh-plugins/cordis-plugin-sofagent-evolve && npm run build --workspace=engine/dsh-plugins/cordis-plugin-sofagent-ontology && npm run build --workspace=engine/dsh-plugins/cordis-plugin-sofagent-commons && npm run build --workspace=engine/dsh-plugins/cordis-plugin-sofagent-gate && npm run build --workspace=engine/dsh-plugins/cordis-plugin-sofagent-harness && npm run build --workspace=engine/dsh-plugins/cordis-plugin-sofagent-daemon && npm run build --workspace=engine/dsh-plugins/cordis-plugin-sofagent-fde",
     "postbuild": "node -e \"const fs=require('fs');const dirs=['engine/ab-test','engine/audit','engine/core','engine/daemon','engine/eval','engine/mcp','engine/ontology','engine/orchestrator','engine/evolve','engine/think'];for(const d of dirs){const p=require('path').join(d,'dist');if(fs.existsSync(p)){fs.readdirSync(p).forEach(f=>{if(f.endsWith('.js')){try{fs.chmodSync(require('path').join(p,f),0o755)}catch(e){}}})}}\""
   },
   "//postbuild": "chmod 覆盖面说明（v1.4.7 批次 J-5 核对）：hooks/sofagent-load-chain 与 umbrella 两包不在 dirs 列表——hooks 无 bin 入口（handler.js 是 require 消费不需可执行位）；umbrella 的 bin/sofagent.js 是源码级入口非 dist 产物，git 已带 755 可执行位（100755，npm 安装保留 git mode），不经 postbuild。",

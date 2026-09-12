@@ -49,13 +49,13 @@ WARNINGS=0
 SELF="tools/check/check-guards.sh"
 
 # ── 扫描范围（守卫的守卫必须覆盖全部检查器脚本，不能只扫 tools/）──
-# 实案：FORGE/playbook/acceptance-test.sh 存在 9 处 `grep -c ... || echo 0` 双零陷阱，
+# 实案：playbook/acceptance-test.sh 存在 9 处 `grep -c ... || echo 0` 双零陷阱，
 # 本脚本原先只 `find tools -name "*.sh"`，导致该漏检长期存在。范围在此集中定义，
 # 目录重组后只改这一处，避免 ①② 两处 find 各自漂移。
 # 可用环境变量覆盖：GUARD_SCAN_PATHS / GUARD_SCAN_FILES。
 # 注：④ 段刻意不复用本函数——它对账的是 check-cjk-var.sh 自身的扫描范围，
 # 期望值必须与对方实际范围一致，否则永久假红。
-GUARD_SCAN_PATHS="${GUARD_SCAN_PATHS:-tools FORGE/playbook engine/scripts}"
+GUARD_SCAN_PATHS="${GUARD_SCAN_PATHS:-tools playbook engine/scripts}"
 GUARD_SCAN_FILES="${GUARD_SCAN_FILES:-install.sh bootstrap.sh}"
 # shellcheck disable=SC2206
 GUARD_SCAN_PATHS_ARR=(${GUARD_SCAN_PATHS})
@@ -158,7 +158,7 @@ GLOB_ACCOUNT_FAIL=0
 # 期望值 = find 总数 - 1：check-cjk-var 自排除自身（SELF 豁免），属正常扣减而非失明
 # 注意：此处刻意保持 tools/ 原范围，不复用 guard_scan_files——本段对账的是
 # check-cjk-var.sh 自己报告的扫描数，期望值必须等于对方的实际范围，否则永久假红。
-# 若将来把 check-cjk-var.sh 的扫描面也扩到 FORGE/playbook、engine/scripts，此处同步扩。
+# 若将来把 check-cjk-var.sh 的扫描面也扩到 playbook、engine/scripts，此处同步扩。
 _cjk_expect=$(find tools -name "*.sh" -type f | grep -v "check-cjk-var.sh" | wc -l | tr -d ' ')
 # check-cjk-var 的输出两种格式：成功「N 个 shell 脚本无违规」/ 失败「N 个文件扫描」
 _cjk_report=$(bash tools/check/check-cjk-var.sh 2>/dev/null | grep -oE '[0-9]+ 个 (shell 脚本|文件)' | grep -oE '^[0-9]+' | head -1 || true)
@@ -179,9 +179,11 @@ if [ "$MODE" = "inject" ]; then
   echo "════════════════════════════════════════════"
   echo "── --inject 注入实测 ──"
   echo "════════════════════════════════════════════"
-  # 前置：注入目标文件必须干净（注入还原用 git checkout -- <file>，只还原注入
-  # 时触碰的那几个文件；并行 session 在其他文件上的工作不受影响。检查收窄到
-  # 文件级而非全仓级——全仓检查会让并行协作期间永远无法跑 --inject）
+  # 前置：注入目标文件必须干净。还原自 v1.4.8 第2批起改为 **cp 备份副本**
+  # （原先用 `git checkout -- <file>` 还原：目标文件若带未提交改动，还原会把
+  #   它们整片抹掉——实测发生过一次误伤并行 session 的事故，故彻底弃用 git 还原）。
+  # 「不干净即拒绝」语义保留：cp 还原能保住注入前的字节，但注入窗口内若有并行
+  # 写入仍会被覆盖，故仍拒绝在他人未提交改动上开窗口。
   INJECT_TARGETS="tools/check/check-action-pins.sh README.md tools/check/check-deps.sh"
   _dirty_targets=""
   for _t in $INJECT_TARGETS; do
@@ -190,10 +192,34 @@ if [ "$MODE" = "inject" ]; then
     fi
   done
   if [ -n "$_dirty_targets" ]; then
-    echo "❌ 注入目标文件不干净：${_dirty_targets}——还原步骤（git checkout --）会吞掉这些改动，拒绝执行"
-    echo "   先 commit/stash 上述文件后再跑 --inject"
+    echo "❌ 注入目标文件不干净：${_dirty_targets}——注入窗口内会覆盖并行 session 的未提交改动，拒绝执行"
+    echo "   先 commit 上述文件后再跑 --inject"
     exit 1
   fi
+
+  # 备份副本：注入前逐字节快照，还原 = cp 回写（全程不调用 git，零误伤面）
+  GUARDS_BACKUP_DIR="$(mktemp -d 2>/dev/null || echo "/tmp/guards-inject-backup-$$")"
+  mkdir -p "${GUARDS_BACKUP_DIR}" || { echo "❌ 无法创建备份目录 ${GUARDS_BACKUP_DIR}"; exit 2; }
+  for _t in $INJECT_TARGETS; do
+    cp "$_t" "${GUARDS_BACKUP_DIR}/$(echo "$_t" | tr '/' '_')" || {
+      echo "❌ 备份失败：$_t —— 拒绝在无备份的情况下注入"
+      exit 2
+    }
+  done
+  # 还原函数：cp 备份回写（备份缺失 = fail-loud，不静默跳过）
+  # 注：用 local 避免覆盖调用方循环变量（本脚本多处用 _t 作循环变量）
+  guards_restore() {
+    local _t="$1"
+    local _bak
+    _bak="${GUARDS_BACKUP_DIR}/$(echo "$_t" | tr '/' '_')"
+    if [ ! -f "${_bak}" ]; then
+      echo "❌ 还原失败：备份缺失 ${_bak}（注入产物可能残留，请手工核对 ${_t}）"
+      return 1
+    fi
+    cp "${_bak}" "$_t"
+  }
+  # 退出时清理备份目录（含异常路径——不让 /tmp 残留快照）
+  trap 'rm -rf "${GUARDS_BACKUP_DIR}"' EXIT
 
   INJECT_FAIL=0
 
@@ -210,7 +236,7 @@ if [ "$MODE" = "inject" ]; then
     echo "  ❌ 坏样本未红——check-cjk-var 是装饰品！"
     INJECT_FAIL=$((INJECT_FAIL + 1))
   fi
-  git checkout -- tools/check/check-action-pins.sh
+  guards_restore tools/check/check-action-pins.sh
   if bash tools/check/check-cjk-var.sh > /dev/null 2>&1; then echo "  ✓ 还原后必绿"; else echo "  ❌ 还原后未绿——注入未清干净"; INJECT_FAIL=$((INJECT_FAIL + 1)); fi
 
   # ── 注入用例二：check-docs 死链扫描 ──
@@ -227,7 +253,7 @@ if [ "$MODE" = "inject" ]; then
     echo "  ❌ 坏样本未红或未点名——check-docs 死链扫描可疑（exit=${_rc}，点名 ${_hit} 次）"
     INJECT_FAIL=$((INJECT_FAIL + 1))
   fi
-  git checkout -- README.md
+  guards_restore README.md
   rm -f /tmp/guards-inject-docs.log
 
   # ── 注入用例三：check-version 版本漂移 ──
@@ -245,7 +271,7 @@ if [ "$MODE" = "inject" ]; then
       echo "  ❌ badge 版本漂移未红——check-version 装饰品警报"
       INJECT_FAIL=$((INJECT_FAIL + 1))
     fi
-    git checkout -- README.md
+    guards_restore README.md
     rm -f /tmp/guards-inject-version.log
   else
     echo "  ⚠ 未找到 README version badge——跳过本用例"
@@ -265,7 +291,7 @@ if [ "$MODE" = "inject" ]; then
     echo "  ❌ 自检失败——③ 的 || echo 0 扫描抓不住注入样本（exit=${_rc}，点名 ${_hit} 次）"
     INJECT_FAIL=$((INJECT_FAIL + 1))
   fi
-  git checkout -- tools/check/check-deps.sh
+  guards_restore tools/check/check-deps.sh
   rm -f /tmp/guards-self-test.log
 
   # 收尾：注入目标文件必须还原干净（文件级检查——只看注入触碰过的文件）
@@ -277,7 +303,7 @@ if [ "$MODE" = "inject" ]; then
     fi
   done
   if [ -n "$_after" ]; then
-    echo "❌ 注入后目标文件残留：${_after}——检查 git checkout 还原逻辑"
+    echo "❌ 注入后目标文件残留：${_after}——检查 guards_restore 还原逻辑"
     exit 1
   fi
   if [ "$INJECT_FAIL" -gt 0 ]; then

@@ -1,23 +1,26 @@
 # dependency-direction.yml · 包边界清单（依赖方向 SSOT）
 # ============================================================
-# v1.4.8 第七章/第〇批交付——build 序列 13 包的允许依赖方向（核心层 ← 约束层 ← 适配层 ← CLI/展示层）。
+# v1.4.8 第七章/第〇批交付——build 序列 14 包的允许依赖方向（核心层 ← 约束层 ← 适配层 ← CLI/展示层）。
+#   第 7 批（train 拆包）后：13 引擎包 + engine/hooks/sofagent-load-chain。
 #
 # 🔴 口径裁定（写进清单头部，避免与既有门禁混写——各口径全表见开发 Prompt「包计数术语表」SSOT）：
-#   ① 本清单覆盖 **build 序列 13 包** = 12 引擎包 + engine/hooks/sofagent-load-chain（**不含 engine/umbrella**）。
-#      workspace 实为 27 项——另含 13 个 DSH/OpenClaw 插件家族与 engine/umbrella，
+#   ① 本清单覆盖 **build 序列 14 包** = 13 引擎包 + engine/hooks/sofagent-load-chain（**不含 engine/umbrella**）。
+#      workspace 实为 29 项——另含 14 个 DSH/OpenClaw 插件家族与 engine/umbrella，
 #      属适配层/分发层叶子，不在 npm 包依赖面边界清单范围。
-#   ② 引擎包 13（含 umbrella）与 build 序列 13（不含 umbrella）在此统一取 **build 序列口径**
+#   ② 引擎包 14（含 umbrella）与 build 序列 14（不含 umbrella）在此统一取 **build 序列口径**
 #      （load-chain 是构建拓扑序末位、umbrella 不参与依赖图）。
-#   ③ 测试口径 12 包（engine/umbrella 无独立 test workspace）、check-version.sh 循环 11 包
-#      （含 mcp）、public-api-baseline.json 12 包（含 rules/load-chain、不含 mcp）——
-#      既有门禁口径各异，本门禁只断言 build 序列 13 包的依赖方向，不重述其它口径。
+#   ③ 测试口径 13 包（engine/umbrella 无独立 test workspace）、check-version.sh §1/§2 硬编码
+#      循环 12 包（含 mcp + train；该脚本 §9b/§12b 已由本文件 rhythm.sync 驱动，15 包）、
+#      public-api-baseline.json 13 包
+#      （含 rules/load-chain/train、不含 mcp）——
+#      既有门禁口径各异，本门禁只断言 build 序列 14 包的依赖方向，不重述其它口径。
 #
 # 层级（自下而上；包只允许依赖**同层或更低层**）：
 #   L0 核心层   harness / core（全仓仅 harness 为零依赖；core 不依赖任何 @sofagent 包）
 #   L1 领域层   ontology / rules（依赖 core）
 #   L2 约束层   audit / eval / think / evolve（audit=ont+core+rules；eval=audit+core；think=core+eval；evolve=ont+core+audit）
-#   L3 编排层   orchestrator / daemon（orch=audit+core+harness+rules+evolve；daemon=audit+core+ont+orch+evolve）
-#   L4 展示层   ab-test / mcp / hooks/sofagent-load-chain（ab-test=harness+eval+core+orch；mcp=ab+audit+core+eval+ont+orch+rules+evolve+think；load-chain=零）
+#   L3 编排层   orchestrator / train / daemon（orch=audit+core+harness+rules+evolve；train=core+audit+orch（窄入口）；daemon=audit+core+ont+orch+evolve+train）
+#   L4 展示层   ab-test / mcp / hooks/sofagent-load-chain（ab-test=harness+eval+core+orch；mcp=ab+audit+core+eval+ont+orch+rules+evolve+think+train；load-chain=零）
 #
 # ⑩-2 更名联动：evolve → evolve 后本清单 package 名与层级同步改。
 # ============================================================
@@ -69,7 +72,15 @@ packages:
   daemon:
     path: engine/daemon
     layer: 3
-    allow: [core, ontology, audit, orchestrator, evolve]
+    allow: [core, ontology, audit, orchestrator, evolve, train]
+  # v1.4.8 第 7 批（train 拆包）：train 自 engine/orchestrator/src/train/ 迁出独立成包。
+  # 层号必须 3（与 orchestrator/daemon 同层）——daemon(L3) 与 mcp(L4) 都消费 train，
+  # 规则「只允许依赖同层或更低层」下，放 L4 会让 daemon→train 违规。
+  # orchestrator 不反向依赖 train（CLI 侧走运行期惰性解析），故单向、无包级循环。
+  train:
+    path: engine/train
+    layer: 3
+    allow: [core, audit, orchestrator]
 
   # ── L4 展示/CLI 层 ──
   ab-test:
@@ -79,8 +90,59 @@ packages:
   mcp:
     path: engine/mcp
     layer: 4
-    allow: [core, ontology, rules, audit, eval, think, evolve, orchestrator, ab-test]
+    allow: [core, ontology, rules, audit, eval, think, evolve, orchestrator, ab-test, train]
   load-chain:
     path: engine/hooks/sofagent-load-chain
     layer: 4
     allow: []
+
+# ============================================================
+# rhythm · 版本节奏段（v1.4.8 第七章/第〇批）
+# ============================================================
+# 「不同频」自本段起**在技术上可行但必须声明**——本段是版本节奏 SSOT：
+#   · sync        版本必须**精确 == SSOT**（check-version.sh §9b 由本段驱动，脚本内不再硬编码包清单）
+#   · independent 各有发布通道，版本**可**不同步（check-version.sh §12b 内部依赖精确校验对其豁免）
+#   · detached    完全脱离发行物，不随任何发行物发版（同上豁免）
+# 覆盖不变量（由 check-version.sh §9e 断言，防漏登记）：
+#   sync ∪ independent ∪ detached 必须覆盖**全部 workspace 项**（实为 29 项）
+#     = 14 个 engine 包（13 个 build 序列包 + umbrella）
+#       + engine/hooks/sofagent-load-chain + 10 个 DSH 插件 + 4 个 OpenClaw 插件
+#   ⚠️ 枚举源必须是 package.json 的 workspaces 字段——`ls -d engine/*/` 只得 19 个目录，会漏 10 项。
+#   ⚠️ detached 段的 FORGE/ 是内部工具、**不属于** workspace，不计入这 29 项。
+rhythm:
+  # ── 严格同频：版本必须精确 == SSOT ──
+  # 15 包 = check-version.sh §9b 原硬编码的 11 包（harness ontology eval core audit mcp
+  #         orchestrator daemon ab-test think evolve）
+  #       + rules（§9b 历史漏登记，packages 段早已收录）
+  #       + umbrella（第 13 个 engine 包；npm 名 sofagent，随主线发布的聚合包）
+  #       + engine/hooks/sofagent-load-chain（build 序列末位构建钩子）
+  #       + train（第 7 批拆包新增；必须精确同频，故 §9b/§12b 自动纳入其校验）
+  # 实测五者当前同为 1.4.7——本段把「隐式全同频」改写为「显式声明同频」。
+  sync:
+    - harness
+    - ontology
+    - eval
+    - core
+    - audit
+    - mcp
+    - orchestrator
+    - train
+    - daemon
+    - ab-test
+    - think
+    - evolve
+    - rules
+    - umbrella
+    - load-chain
+
+  # ── 独立节奏：各有发布通道，版本可不同步 ──
+  # ⚠️ 现存张力（本批未动）：§9c 仍断言 openclaw-plugins 双 manifest 版本 == SSOT
+  #    （ClawHub package publish 校验硬要求），故本段对 OpenClaw 表达的是「发布通道独立」，
+  #    版本自由度需 §9c 一并放开后才真正生效。
+  independent:
+    - path: engine/dsh-plugins/*        # 走 SkillHub（DSH 插件家族 10 个）
+    - path: engine/openclaw-plugins/*   # 走 ClawHub（OpenClaw 插件家族 4 个）
+
+  # ── 完全脱离：内部工具，不随任何发行物 ──
+  detached:
+    - path: FORGE                       # FORGE 自迭代工具链（非 workspace，不计入 29 项）

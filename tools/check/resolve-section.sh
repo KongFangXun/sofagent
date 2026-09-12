@@ -23,6 +23,12 @@
 #     删掉的那一类。Deliberately NOT a gate: an automated version of this
 #     would silently pass on an empty scan, the exact dead-branch pattern
 #     removed from check-review-system.sh in v1.4.4.
+#   - 登记（v1.4.8 第2批补）：用途与「为何不接 CI」已登记于
+#     `tools/README.md` §十「不接 CI 的工具」，防「不登记的新脚本过几版就没人
+#     知道为什么存在」；挂载点为 docs/changelog/releasing/03-quality-loop.md /
+#     04-review-system.md（用法）与 07-tool-health.md（以本脚本为例讲「新增排障
+#     工具须登记」纪律，按路径引用）。保留在 tools/check/ 而非退役：**三处**发布
+#     SOP 文档按路径引用它，删除会造成文档死链。
 #   - bash 3.2 兼容（macOS 自带）：不用 declare -A / mapfile / ${var^^}。
 
 set -uo pipefail

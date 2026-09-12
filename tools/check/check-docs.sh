@@ -16,12 +16,42 @@ cd "$(dirname "$0")/../.." || exit 1
 
 # v1.3.6 B11: 并发防护——mkdir 原子锁（macOS/Linux 兼容）。已有实例运行时第二个实例
 # 报错退出，防止双实例互相覆盖日志（审查期间曾实测发现双残留实例）。
-LOCK_DIR="/tmp/check-docs.lock"
+#
+# 锁粒度 = 本仓库根。早先锁名硬编码 /tmp/check-docs.lock，导致**同一台机上不同副本
+# 互相阻塞**——实测多副本并行验证（如 /tmp 下的隔离副本）时第二个副本被误判为
+# 「already running」（exit 2），把并发环境问题伪装成门禁红。现把仓库根路径净化后
+# 拼进锁名：同一副本内仍严格串行，不同副本互不干扰。
+# 陈旧锁自愈：锁目录内记持锁 PID，进程已退出即回收（防崩溃留下永久锁）。
+#
+# 退出码：0 = 全部通过 · 1 = 有检查项失败 · 2 = 另一实例正在运行（锁被占且持锁进程存活）
+REPO_ROOT_FOR_LOCK=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
+LOCK_TAG=$(printf '%s' "${REPO_ROOT_FOR_LOCK}" | tr -c 'A-Za-z0-9' '_')
+TMP_BASE="${TMPDIR:-/tmp}"
+TMP_BASE="${TMP_BASE%/}"
+LOCK_DIR="${TMP_BASE}/check-docs${LOCK_TAG}.lock"
+LOCK_PID_FILE="${LOCK_DIR}/pid"
+LOCK_ACQUIRED=false
 if mkdir "${LOCK_DIR}" 2>/dev/null; then
-  trap 'rmdir "${LOCK_DIR}" 2>/dev/null || true' EXIT
+  LOCK_ACQUIRED=true
 else
-  echo "[ERROR] check-docs.sh already running (lock ${LOCK_DIR}) - wait for previous instance"
-  exit 2
+  HELD_PID=$(cat "${LOCK_PID_FILE}" 2>/dev/null || echo "")
+  if [ -n "${HELD_PID}" ] && kill -0 "${HELD_PID}" 2>/dev/null; then
+    echo "[ERROR] check-docs.sh already running (lock ${LOCK_DIR}, holder pid ${HELD_PID}) - wait for previous instance"
+    exit 2
+  fi
+  # 陈旧锁：持锁进程已不在（或未记录 PID）→ 回收后重试一次
+  rm -f "${LOCK_PID_FILE}" 2>/dev/null || true
+  rmdir "${LOCK_DIR}" 2>/dev/null || true
+  if mkdir "${LOCK_DIR}" 2>/dev/null; then
+    LOCK_ACQUIRED=true
+  else
+    echo "[ERROR] check-docs.sh lock contention (lock ${LOCK_DIR}) - another instance raced us; retry"
+    exit 2
+  fi
+fi
+if [ "${LOCK_ACQUIRED}" = true ]; then
+  printf '%s' "$$" > "${LOCK_PID_FILE}"
+  trap 'rm -f "${LOCK_PID_FILE}" 2>/dev/null || true; rmdir "${LOCK_DIR}" 2>/dev/null || true' EXIT
 fi
 
 ERRORS=0
@@ -282,9 +312,19 @@ count_md() {
 }
 
 # A 层：用户文档（根目录 *.md + docs/ 主文档）
-# 排除：B/C/D/E 层目录 + 公共排除
+# 排除：B/E 层目录 + 公共排除（C/D 层已退役，见下方各层说明；原 C/D 层排除项已同步清理）
 # v1.3.9+ 分层修正（2026-08-22）：engine/*/README.md + tools/README.md 是包级开发者文档，
-# 从 A 层（用户文档）移出——由 F 软检查（只提示不阻断）约束，不再占用户文档预算
+# 从 A 层（用户文档）移出，不再占用户文档预算（见下方对应 -not -path 排除项）。
+# 承接约束 = 本脚本 §4 尾部的 **F 软检查**（只提示不阻断、不计 ERRORS）：
+#   「F-pkg 包级 README 合计」= find ./engine ./tools -name README.md，>1500 行软警戒——
+#   与上面移出的两个位置**逐一对上**（原注释写「由 F 软检查约束」是对的）。
+# ⚠️ 收面批复核记录：本条曾被误判为「悬空承诺（写了 F 软检查却无实现）」，复核结论是
+#   **实现确实存在**（§4 尾部 F-lessons / F-pkg 两段在脚本内实跑并打印）。误判成因：按
+#   「F 层 / LAYER_F / F 软」等字样检索，而该段标题写作「F 检查」、输出前缀写作
+#   F-lessons / F-pkg，字样对不上 → 检索式比代码更早下结论。故把指针写进本注释，
+#   下次直接对照，不再靠字样猜（这是本批「承诺↔落地物」核对的一个反例教训）。
+# 另：tools/README.md 的**收录完整性**（工具是否漏登记）由 tools/check/check-tool-health.sh
+#   单独对账，与本处行数预算属两个面。
 LAYER_A=$(find . -name "*.md" \
   -not -path "*/node_modules/*" \
   -not -path "*/.workbuddy/*" \
@@ -294,9 +334,8 @@ LAYER_A=$(find . -name "*.md" \
   -not -path "*/SKILL/*" \
   -not -path "*/FDE/*" \
   -not -path "*/FORGE/*" \
+  -not -path "*/playbook/*" \
   -not -path "*/docs/guides/*" \
-  -not -path "*/docs/architecture/*" \
-  -not -path "*/docs/prd/*" \
   -not -path "*/agents/*" \
   -not -path "*/.github/*" \
   -not -path "*/engine/hooks/*" \
@@ -309,54 +348,71 @@ LAYER_A=$(find . -name "*.md" \
   -print0 2>/dev/null | xargs -0 wc -l 2>/dev/null | tail -1 | awk '{print $1+0}')
 LAYER_A=${LAYER_A:-0}
 
-# B 层：开发者参考（FORGE/ + agents/ + .github/ + hooks/HOOK.md + DEVELOPMENT.md）
+# B 层：开发者参考（playbook/ + FORGE/ + agents/ + .github/ + hooks/HOOK.md + DEVELOPMENT.md）
 # v1.2.1: 排除 fresh-eyes runs/ 运行时产物（check/findings/result.md 是审查轮输出，
 # 已被 .gitignore 忽略，不是开发者参考文档——不计入文档预算）
 # v1.2.1: 排除 data/forge-runs/（同属审查轮运行时产物，数据重构后从 .sofagent/ 迁来）
 # v1.3.9+ 分层修正（2026-08-22）：FORGE/lessons/ 是内部经验沉淀（每轮审查持续增长，
 # 设硬上限不合理）——移出 B 层预算，由 F 软检查（只提示不阻断）触发定期整理
-# ⚠️ 排除理由（明确化，非静默漏洞）：FORGE/playbook/vendor/ 是第三方 vendored 上游原文
+# ⚠️ 排除理由（明确化，非静默漏洞）：playbook/vendor/ 是第三方 vendored 上游原文
 # （MIT，钉 commit，路径 1:1 保留供 diff -r 升级，清单见
 # vendor/improve-codebase-architecture/PROVENANCE.md）。预算约束的是「自研文档」体量——
 # 把第三方原文计入，会让「换 pin 升级」直接撞预算墙而被迫删上游内容，把升级能力和预算
 # 变成互斥项。自研侧不因此脱管：适配层 deep-module-review.md 留在 playbook/ 根下正常计账，
 # 上游 pin 由 PROVENANCE 单独管，不靠行数预算兜。
-LAYER_B=$(find ./FORGE ./agents ./.github ./engine/hooks ./docs/DEVELOPMENT.md \
+# 🔴 playbook/ 归 B 层：它与 FORGE/ 同属开发者参考面（证据与门禁文档），故与 FORGE/ 一并
+# 计入 B 层预算，LIMIT_B 覆盖二者合计。反向必查：A 层 find 是全仓扫，必须显式排除
+# */playbook/*，否则 playbook/ 下的 *.md 会被 A 层二次计账。两层互斥：既无重复计账，
+# 也无覆盖盲区。
+LAYER_B=$(find ./FORGE ./playbook ./agents ./.github ./engine/hooks ./docs/DEVELOPMENT.md \
   -name "*.md" \
   -not -path "*/node_modules/*" \
   -not -path "*/fresh-eyes-loop/runs/*" \
   -not -path "*/FORGE/lessons/*" \
-  -not -path "*/FORGE/playbook/vendor/*" \
+  -not -path "*/playbook/vendor/*" \
   -print0 2>/dev/null | xargs -0 wc -l 2>/dev/null | tail -1 | awk '{print $1+0}')
 LAYER_B=${LAYER_B:-0}
 
-# C 层：审查体系（FORGE/playbook/，原 FORGE/releaser/ 已拆散）
-LAYER_C=$(find ./FORGE/SKILL/fresh-eyes-loop/specs -name "*.md" -print0 2>/dev/null | xargs -0 wc -l 2>/dev/null | tail -1 | awk '{print $1+0}')
-LAYER_C=${LAYER_C:-0}
+# 🔴 C 层已删除（2026-09-12 收面批）：原 find 指向 ./FORGE/SKILL/fresh-eyes-loop/specs，
+# 该目录在仓库中不存在（find 全仓无 specs 目录）且无替代物 → 该层恒为「0 / 6300」，
+# 是永不触发的免费绿灯（假绿）。层本体与 LIMIT_C 上限一并移除，不留空转预算。
+# 审查体系文档的去向：playbook/*.md 已被 B 层（find ./FORGE ./playbook）正常计账，
+# 体系一致性另有 tools/check/check-review-system.sh 维度对账——不存在检查盲区。
 
-# D 层：设计文档（docs/architecture/ + docs/prd/）
-# 注：部分子目录可能暂不存在，find 会报错但 stderr 已抑制；用 `{ ...; } 2>/dev/null || true` 防止 pipefail 传播
-LAYER_D=$({ find ./docs/architecture ./docs/prd -name "*.md" -print0 2>/dev/null | xargs -0 wc -l 2>/dev/null | tail -1 | awk '{print $1+0}'; } || true)
-LAYER_D=${LAYER_D:-0}
+# 🔴 D 层已删除（2026-09-12 收面批，与 C 层同款缺陷族第二实例）：原 find 指向
+# ./docs/architecture 与 ./docs/prd，两个目录在当前仓库**均不存在** → 该层恒为
+# 「0 / 2000」，是永不触发的免费绿灯（假绿），层本体与 LIMIT_D 一并移除。
+# 【原口径】LIMIT_D 注释记载：v1.1.9 把 docs/architecture（设计 876 行）+ docs/prd
+# （193 行）从 A 层移入 D 层，形成「工程文档 vs 设计文档」的分层。
+# 【内容去向·删层前提（已核验，非猜测）】
+#   ① 设计文档现收敛为单文件 docs/ARCHITECTURE.md（1313 行）——已被 A 层真实计入：
+#      它出现在 LAYER_A 的 find 结果中，且 LAYER_A 实算值与 §4 输出逐数吻合，
+#      数学闭合 → 删 D 层不丢覆盖（B 层 find 目录列表不含它，无重复计账）。
+#   ② docs/prd/ 的 193 行 PRD 内容在当前仓库**不存在任何形态**（无 docs/prd/、
+#      无 docs/PRD.md、无其它 *prd* 文件；git 全历史 2851 提交内两条路径零命中）
+#      → 无内容可丢，不存在「删掉就丢覆盖」的风险。
+# 【后人若要重建 D 层】find 路径必须指向**真实存在**的目录，并同步登记 LIMIT_D；
+#   不得再指向 docs/architecture/ / docs/prd/ 这两个历史路径。
+# 【配套清理·已处置】LAYER_A 里原为本次「A→D 拆分」而设、现已空转的两条排除项
+#   `-not -path "*/docs/architecture/*"` 与 `-not -path "*/docs/prd/*"` **已一并删除**
+#   （no-op 自证：删前/删后 A 层实算值均为 7120，差值 0——两目录不存在，排除零文件）。
+#   保留它们的唯一后果是陷阱：将来谁重建同名目录，内容会被静默挤出 A 层且不进任何层，
+#   正是本批要消灭的「覆盖盲区」缺陷。通道已清，重建 D 层时不会有残留排除项干扰。
 
 # E 层：运维指南（docs/guides/）
 LAYER_E=$(find ./docs/guides -name "*.md" -print0 2>/dev/null | xargs -0 wc -l 2>/dev/null | tail -1 | awk '{print $1+0}')
 LAYER_E=${LAYER_E:-0}
 
 # 上限定义
-LIMIT_A=7020  # v1.4.7 后知识库落盘批（7015>7000+15：ARCHITECTURE 新增「约束同源：一份定义，多端消费」节——四源行业印证+双规则引擎 v1.5.2 内部对位，系知识库 P1 落盘真实内容；另含并行 README 批 +1；按铁律超标上调不删内容） # v1.3.9 行业笔记落盘（6936>6900+36：VALIDATION 新增 4 节——947 测量者转型/红杉专家判断力工程化/Palantir Red Loop+KLMLoop Engineering 四层循环，均系行业印证真实内容；按铁律超标上调不删内容）  # v1.3.9 bugfix 67 项文档批：A 层 6761>6650 正当上调——诚实边界声明（task/logs 明文+单机单用户定位）/术语表 4 条/导读句/论证表等均系独立审查修复要求新增，非冗余；此前 v1.3.8 轮询语义修正 6642>6600 上调至 6650
+LIMIT_A=7200  # seam 契约批新增 engine/dsh-plugins/SEAMS.md（182 行：宿主真实挂载点词汇表 + 非 seam 接入形态登记）+ 9 个 DSH 插件 SKILL.md 措辞同步；LAYER_A 的排除项未含 engine/dsh-plugins/** 故这批内容计入本层——按铁律超标上调不删内容 7020→7200 # v1.4.7 后知识库落盘批（7015>7000+15：ARCHITECTURE 新增「约束同源：一份定义，多端消费」节——四源行业印证+双规则引擎 v1.5.2 内部对位，系知识库 P1 落盘真实内容；另含并行 README 批 +1；按铁律超标上调不删内容） # v1.3.9 行业笔记落盘（6936>6900+36：VALIDATION 新增 4 节——947 测量者转型/红杉专家判断力工程化/Palantir Red Loop+KLMLoop Engineering 四层循环，均系行业印证真实内容；按铁律超标上调不删内容）  # v1.3.9 bugfix 67 项文档批：A 层 6761>6650 正当上调——诚实边界声明（task/logs 明文+单机单用户定位）/术语表 4 条/导读句/论证表等均系独立审查修复要求新增，非冗余；此前 v1.3.8 轮询语义修正 6642>6600 上调至 6650
 LIMIT_B=9500  # v1.3.9 发版后审查批（9434>9400+34：2026-08-22 审查轮新增——VALIDATION 行业笔记 4 节/PHILOSOPHY 拆章节/v1.4.0 排期 4 件收口（MLflow+Browser+联邦E2E+bash3.2）117 行/6+1 文档优化/WIKI 规划目录说明；按铁律超标上调不删内容）；此前 9400（9269>9220+49：A/B/C/D/E 文档批新增 79 行——meta-harness 19/MLflow 13/agentic-browser 18/tools 分目录 22/SKILL.md 工具表+1/banner 重生成说明+6；按铁律超标上调不删内容） ⚠️ 三项修复：checklist 49/94/101 注释 +9 行（run-06 零信任复验——dim49 环境误报标注/dim94 人工核对语义/dim101 LIMIT 解析 bug 根因记录，检查器侧修正非删内容）；此前 rules/ 收敛重构 +26→9190；v1.3.9 阶段十一发布前（9363>9300+63：阶段八文档收尾 B 层新增——ROADMAP v1.3.9 迭代表行+现在在哪段+13 行/HANDBOOK v1.3.9 能力 bullet/README 双语新能力段等；铁律超标上调不删内容）
 # v1.3.7: B 层 8945（交付⑥⑨测试数对账+memory_sync 文档），铁律上调 8940→8950；v1.3.6: 8901（累计 8880→8910→8940）
-LIMIT_C=6300  # v1.1.3: 审查体系维度固化 + Harness 可见性视角 + releasing.md tag 门禁；内容增长上调 5800→6300 + 5% 余量
-LIMIT_D=2000  # v1.1.9: D 层纳入口径修正——docs/architecture（v1.1.9 设计 876 行）+ docs/prd（193 行）从 A 层归入 D 层（工程文档与设计文档同语义），700→2000 容纳
 LIMIT_E=4000  # v1.2.5: E 层 2905 行（新增 dashboard-html-dev.md 219 行 + enterprise-deploy 扩展），上调 2700→3100 留余量；v1.4.0: multi-device-sync 补远程 API 通道 → 3110>3100，按铁律超标上调不删内容 3100→3200 留余量；v1.4.1: 后训模块地基新增 train-stack.md（双栈契约）+ train-security.md（安全基线），先压缩旧指南 3327→3252 后仍超 → 2026-08-25 拍板上调 3200→3300（不放宽到 3400）；v1.4.2: ARCHITECTURE §二 FORGE 段 193 行迁入 loop-development.md（E 层 3300→3484）→ 按铁律超标上调不删内容 3300→3600；v1.4.3: 新增 github-pr-playbook.md 157 行（三轮实战 15 条 PR 经验沉淀）+ 四指南微调 → 3725>3600，按铁律超标上调不删内容 3600→3800；v1.4.4: github-pr-playbook 台账扩容（在投 20→29 条 + 坑位 2 条 + 流量基线 5.3.1 + 第七节曝光渠道）→ 3811>3800，按铁律超标上调不删内容 3800→3900；v1.4.5: 新增 train-quickstart.md 153 行 → 4047>3900 曾上调 3900→4200，2026-09-05 孔老师拍板回收紧 4200→4000——三大指南纯冗余压缩 101 行（loop-development 坑1/坑3 与 §3.4/§3.6 重复代码块改交叉引用、spawnWorker 全码块收为一行模式引用；fde-activation-chain activate 七步伪码收为签名+步骤摘要；team-collaboration automerge 三段样板收为一句）后 3947/4000，零信息删除；v1.4.6: github-pr-playbook.md 移出公开仓（星数博弈内容对开源形象损害大于收益，四轮审查 P1-⑨ 拍板）→ E 层回落
 LIMIT_TOTAL=16500  # v1.3.9 发版后审查批（A+B 16423>16400+23 随 B 层上调——2026-08-22 审查轮新增，见 LIMIT_B 记录；铁律超标上调不删内容）  # v1.3.9 行业笔记落盘（A+B 16301>16300+1 随 A 层上调——VALIDATION 新增 4 节；铁律超标上调不删内容）  # v1.3.9 bugfix 67 项文档批：A+B 15968>15860 随 A 层上调（B 层 9207<9220 未超）；此前 v1.3.8 regression 修复连带 15830→15860；v1.3.9 阶段十一发布前（A+B 16208>16200 随 B 层上调——阶段八文档收尾新增，见 LIMIT_B 记录）
 
 # 输出各层
 echo "  A 用户文档:     ${LAYER_A} 行 / ${LIMIT_A} 上限"
 echo "  B 开发者参考:   ${LAYER_B} 行 / ${LIMIT_B} 上限"
-echo "  C 审查体系:     ${LAYER_C} 行 / ${LIMIT_C} 上限"
-echo "  D 设计文档:     ${LAYER_D} 行 / ${LIMIT_D} 上限"
 echo "  E 运维指南:     ${LAYER_E} 行 / ${LIMIT_E} 上限"
 
 # F 检查（软提示非阻断 · v1.3.9+ 分层修正配套）：lessons 经验沉淀 + 包级 README
@@ -391,8 +447,6 @@ check_layer() {
 
 check_layer "A 用户文档" "$LAYER_A" "$LIMIT_A"
 check_layer "B 开发者参考" "$LAYER_B" "$LIMIT_B"
-check_layer "C 审查体系" "$LAYER_C" "$LIMIT_C"
-check_layer "D 设计文档" "$LAYER_D" "$LIMIT_D"
 check_layer "E 运维指南" "$LAYER_E" "$LIMIT_E"
 check_layer "A+B 合计" "$AB_TOTAL" "$LIMIT_TOTAL"
 

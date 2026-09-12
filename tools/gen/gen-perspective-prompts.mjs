@@ -3,7 +3,7 @@
 // tools/gen-perspective-prompts.mjs
 // v1.2.9 功能①：生成 24 个 perspective prompt 文件
 //
-// 读取 FORGE/playbook/fresh-eyes-review.md 的 12 个视角定义，
+// 读取 playbook/fresh-eyes-review.md 的 12 个视角定义，
 // 为每个视角生成 A 版和 B 版两个 prompt 文件（a-check-perspective-N.md / b-check-perspective-N.md）。
 //
 // A/B 双盲保证：A 和 B 的 prompt 在以下维度有差异：
@@ -21,7 +21,7 @@ const __dirname  = dirname(__filename);
 const REPO_ROOT  = join(__dirname, '../..');
 
 const PROMPTS_DIR = join(REPO_ROOT, 'FORGE/SKILL/fresh-eyes-loop/prompts');
-const PLAYBOOK_PATH = join(REPO_ROOT, 'FORGE/playbook/fresh-eyes-review.md');
+const PLAYBOOK_PATH = join(REPO_ROOT, 'playbook/fresh-eyes-review.md');
 
 const PERSPECTIVES = [
   { id: 1,  name: 'stranger',        label: '陌生人',           emoji: '🧑‍💻' },
@@ -110,7 +110,7 @@ function generatePrompt(role, perspective) {
 
 ${perspective.emoji} **视角${perspective.id}：${perspective.label}**
 
-## 审查纪律（来自 FORGE/playbook/fresh-eyes-review.md）
+## 审查纪律（来自 playbook/fresh-eyes-review.md）
 
 1. **零上下文**：忘掉"上一个版本修过 X"。你只看当前交付物本身。
 2. **相信直觉**：第一反应"不对劲"就是信号——先记下来，后面再验证。
@@ -137,7 +137,7 @@ ${toolStrategy.map(s => `- ${s}`).join('\n')}
 
 **${perspective.label}视角的审查方向**（来自 playbook，举例不是清单——你的直觉比清单值钱）：
 
-请参考 \`FORGE/playbook/fresh-eyes-review.md\` 中"视角${perspective.id}：${perspective.label}"章节的具体指引。
+请参考 \`playbook/fresh-eyes-review.md\` 中"视角${perspective.id}：${perspective.label}"章节的具体指引。
 
 ## 🔴 铁律：完整报告必须进最终回复（否则发现永久丢失）
 

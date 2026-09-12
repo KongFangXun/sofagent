@@ -39,9 +39,9 @@ done
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; BOLD='\033[1m'; CYAN='\033[0;36m'; NC='\033[0m'
 
 # ── 检查对象 ──
-CHECKLIST="FORGE/playbook/regression-checklist.md"
-ACCEPTANCE="FORGE/playbook/acceptance-test.sh"
-FRESH_EYES="FORGE/playbook/fresh-eyes-review.md"
+CHECKLIST="playbook/regression-checklist.md"
+ACCEPTANCE="playbook/acceptance-test.sh"
+FRESH_EYES="playbook/fresh-eyes-review.md"
 RELEASING5="docs/changelog/releasing/04-review-system.md"
 
 for _f in "$CHECKLIST" "$ACCEPTANCE" "$FRESH_EYES" "$RELEASING5"; do
@@ -234,7 +234,7 @@ fi
 # 目标：每个交付关键词在 checklist / acceptance 至少出现一次（SOP 阶段五
 # 步骤 3「grep 确认 CHANGELOG 每个交付关键词在审查文档中至少出现一次」）
 # 词形差异（如 devlog「SubAgent 完整沙箱」vs checklist「沙箱五件套」）由
-# 豁免清单处理：FORGE/playbook/.coverage-exempt 每行一个关键词，命中的不报
+# 豁免清单处理：playbook/.coverage-exempt 每行一个关键词，命中的不报
 [ "$QUIET" = false ] && echo -e "\n${BOLD}${CYAN}── ⑥ 交付关键词覆盖率（阶段五零遗漏） ──${NC}"
 
 CUR_VER=$(node -p "require('./engine/audit/package.json').version" 2>/dev/null || echo "")
@@ -244,7 +244,7 @@ CUR_VER=$(node -p "require('./engine/audit/package.json').version" 2>/dev/null |
 # 回退 package.json 兜底。CHANGELOG 顶行格式：`- **vX.Y.Z** — ...`。
 CL_TOP_VER=$(grep -oE '^\- \*\*v[0-9]+\.[0-9]+\.[0-9]+\*\*' CHANGELOG.md 2>/dev/null | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
 [ -n "$CL_TOP_VER" ] && CUR_VER="$CL_TOP_VER"
-EXEMPT_FILE="FORGE/playbook/.coverage-exempt"
+EXEMPT_FILE="playbook/.coverage-exempt"
 EXEMPTED=$(cat "$EXEMPT_FILE" 2>/dev/null || echo "")
 
 if [ -z "$CUR_VER" ]; then

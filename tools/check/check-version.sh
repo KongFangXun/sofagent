@@ -148,11 +148,48 @@ extract_version() {
   echo "$1" | grep -oE '[0-9]+\.[0-9]+(\.[0-9]+)?' | head -1
 }
 
+# ── rhythm 段读取辅助（v1.4.8 第七章/第〇批）─────────────────────
+# tools/check/dependency-direction.yml 的 rhythm 段 = 版本节奏 SSOT（sync/independent/detached）。
+# 读 YAML 沿用本仓既有手法：node + 根 node_modules/js-yaml（见 tools/check/dependency-direction.sh），
+# 不引入 yq/jq 等外部依赖、不新增解析器。
+DD_YML="${PROJECT_ROOT}/tools/check/dependency-direction.yml"
+
+# rhythm_dump → 逐行打印 CSV 风格行（制表符分隔）：
+#   "SYNC<TAB>包名<TAB>包路径"   —— 严格同频包（§9b 据此生成校验清单）
+#   "GLOB<TAB>段名<TAB>路径glob" —— independent / detached 段路径 glob（§9e 覆盖判定用）
+# 包路径解析：优先取 packages 段的 path（load-chain → engine/hooks/sofagent-load-chain），
+# 缺省回退 "engine/<包名>"（umbrella）。SSOT 缺失/解析失败时输出为空，由调用方 fail-loud。
+rhythm_dump() {
+  node -e '
+    const fs = require("fs");
+    const path = require("path");
+    let yaml;
+    try { yaml = require("js-yaml"); }
+    catch { yaml = require(path.join(process.argv[1], "node_modules/js-yaml")); }
+    const spec = yaml.load(fs.readFileSync(process.argv[2], "utf8")) || {};
+    const rhythm = spec.rhythm || {};
+    const pkgs = spec.packages || {};
+    const asPath = (e) => (typeof e === "string" ? e : (e && e.path) || "");
+    for (const name of rhythm.sync || []) {
+      const p = (pkgs[name] && pkgs[name].path) || "engine/" + name;
+      console.log(["SYNC", name, p].join("\t"));
+    }
+    for (const seg of ["independent", "detached"]) {
+      for (const entry of rhythm[seg] || []) {
+        console.log(["GLOB", seg, asPath(entry)].join("\t"));
+      }
+    }
+  ' "${PROJECT_ROOT}" "${DD_YML}" 2>/dev/null || true
+}
+
 # ── 2. 检查 .ts 文件 const VERSION = 'X.Y'（动态扫描，不硬编码文件列表）
 echo -e "${BOLD}── [1/14] TypeScript 常量 ──${NC}"
-# 动态扫描 12 个子包目录（v1.1.0 多包结构）
+# 动态扫描 12 个子包目录（v1.1.0 多包结构；v1.4.8 修正：原注释误写「12 个」，实测曾为 11 项；
+#   v1.4.8 第 7 批 train 拆包后为 12 项 = 原 11 项 + train。train 含
+#   train-deliverable.ts 的 TRAIN_DELIVERABLE_GENERATOR_VERSION——不纳入会**丢失既有覆盖**。）
+# ⚠️ 残留：本处清单与 §9b（已由 rhythm.sync 驱动）仍是两处硬编码，未随本批收编（避免越界重构）。
 SCAN_DIRS=()
-for pkg in harness ontology eval core audit mcp orchestrator daemon ab-test think evolve; do
+for pkg in harness ontology eval core audit mcp orchestrator train daemon ab-test think evolve; do
   PKG_SRC="${PROJECT_ROOT}/engine/${pkg}/src"
   if [[ -d "${PKG_SRC}" ]]; then
     SCAN_DIRS+=("${PKG_SRC}")
@@ -182,9 +219,9 @@ done < <(grep -rl "const [A-Z_]*VERSION = '" \
   2>/dev/null || true)
 echo ""
 
-# ── 3. 检查 index.ts vOLD 引用（12 子包遍历）────────────────
+# ── 3. 检查 index.ts vOLD 引用（13 子包遍历）────────────────
 echo -e "${BOLD}── [2/14] index.ts 版本引用 ──${NC}"
-for pkg in harness ontology eval core audit mcp orchestrator daemon ab-test think evolve; do
+for pkg in harness ontology eval core audit mcp orchestrator train daemon ab-test think evolve; do
   INDEX_TS="${PROJECT_ROOT}/engine/${pkg}/src/index.ts"
   if [[ ! -f "${INDEX_TS}" ]]; then
     continue
@@ -433,23 +470,39 @@ else
 fi
 echo ""
 
-# ── 9b. 检查 12 个子包 package.json version 与 SSOT 一致 ─
+# ── 9b. 检查 rhythm.sync 段内子包 package.json version 与 SSOT 一致（v1.4.8：清单由 SSOT 驱动）──
+# v1.4.8 第七章/第〇批：原**硬编码**包清单改为读 tools/check/dependency-direction.yml 的
+#   rhythm.sync 段生成清单——「同频」由隐式（全同频）改为**显式声明**，本处不再持有任何包清单。
+# 既有 bug 修正：原注释写「检查 12 个子包」，实际循环仅 11 项（harness ontology eval core audit
+#   mcp orchestrator daemon ab-test think evolve）——已随本批把该注释修正为真实值；
+#   v1.4.8 第 7 批 train 拆包后 §1/§2 的硬编码循环为 **12 项**（+ train）。
+#   rhythm.sync 现为 15 包 = 原 11 包 + rules（原漏登记）+ umbrella（第 13 个 engine 包）
+#   + engine/hooks/sofagent-load-chain（build 序列末位）+ train（第 7 批拆包），五者实测同为 SSOT 版本。
+# 覆盖不变量（rhythm ⊇ workspace 29 项）由 §9e 断言；清单声明了却不存在的包在此 fail-loud。
 echo -e "${BOLD}── [9/14] 子包版本号一致性 ──${NC}"
-for pkg in harness ontology eval core audit mcp orchestrator daemon ab-test think evolve; do
-  PKG_JSON="${PROJECT_ROOT}/engine/${pkg}/package.json"
-  if [[ ! -f "${PKG_JSON}" ]]; then
-    continue
-  fi
-  pkg_ver=$(grep -o '"version": "[^"]*"' "${PKG_JSON}" | head -1 | sed 's/"version": "//;s/"//')
-  if [[ -z "${pkg_ver}" ]]; then
-    continue
-  fi
-  if [[ "${pkg_ver}" != "${SSOT_VERSION}" ]]; then
-    report_error "engine/${pkg}/package.json" "version: ${pkg_ver}" "version: ${SSOT_VERSION}"
-  else
-    report_ok "engine/${pkg}/package.json" "${pkg_ver}"
-  fi
-done
+RHYTHM_SYNC_9B="$(rhythm_dump | awk -F'\t' '$1=="SYNC"{print $2"\t"$3}')"
+if [[ -z "${RHYTHM_SYNC_9B}" ]]; then
+  report_error "tools/check/dependency-direction.yml" "rhythm.sync 段缺失或解析失败" "非空 rhythm.sync 包清单"
+else
+  while IFS=$'\t' read -r sync_pkg sync_path; do
+    [[ -z "${sync_pkg}" ]] && continue
+    PKG_JSON="${PROJECT_ROOT}/${sync_path}/package.json"
+    if [[ ! -f "${PKG_JSON}" ]]; then
+      # v1.4.8：原实现对缺文件静默 continue（漏包不报）→ 改 fail-loud（SSOT 声明了却不存在 = 真错）
+      report_error "${sync_path}/package.json" "文件缺失（rhythm.sync 已声明 ${sync_pkg}）" "version: ${SSOT_VERSION}"
+      continue
+    fi
+    pkg_ver=$(grep -o '"version": "[^"]*"' "${PKG_JSON}" | head -1 | sed 's/"version": "//;s/"//')
+    if [[ -z "${pkg_ver}" ]]; then
+      continue
+    fi
+    if [[ "${pkg_ver}" != "${SSOT_VERSION}" ]]; then
+      report_error "${sync_path}/package.json" "version: ${pkg_ver}" "version: ${SSOT_VERSION}"
+    else
+      report_ok "${sync_path}/package.json" "${pkg_ver}"
+    fi
+  done <<< "${RHYTHM_SYNC_9B}"
+fi
 echo ""
 
 # ── 9c. 检查 OpenClaw plugin 家族 version 与 SSOT 一致（v1.4.1 补漏：sofagent-audit 漏 bump 教训）──
@@ -483,6 +536,56 @@ if [[ -n "${DD_HITS}" ]]; then
   report_error "engine/mcp+think" "本地 dataDir 函数残留:${DD_NAMES}" "import { getDataDir } from '@sofagent/core'（SSOT）"
 else
   report_ok "engine dataDir SSOT" "零本地定义（mcp+think 全域清零，v1.4.2 收编 30 处）"
+fi
+echo ""
+
+# ── 9e. rhythm 段覆盖全部 workspace 项（防漏登记 · v1.4.8 第七章/第〇批）──
+# 不变量：rhythm.sync ∪ independent ∪ detached 必须覆盖**全部 workspace 项**（实为 29 项）。
+# 枚举源：package.json 的 workspaces 字段——**不得**用 `ls -d engine/*/`
+#   （那只得 19 个目录，漏 10 项：engine/hooks/sofagent-load-chain + 插件家族更深一层目录）。
+# 命中规则：sync 段按「包路径精确相等」命中；independent / detached 段按「路径 glob」命中。
+# 与 §9b（读 rhythm.sync 生成清单）、§12b（按 rhythm 分段过滤）同源，故并入本脚本一处审阅。
+echo -e "${BOLD}── 检查 rhythm 段覆盖全部 workspace 项（防漏登记）──${NC}"
+RHYTHM_DUMP_9E="$(rhythm_dump)"
+WS_LIST_9E="$(node -e 'process.stdout.write(((require(process.argv[1]).workspaces) || []).join("\n"))' "${PROJECT_ROOT}/package.json" 2>/dev/null || true)"
+SYNC_PATHS_9E="$(printf '%s\n' "${RHYTHM_DUMP_9E}" | awk -F'\t' '$1=="SYNC"{print $3}')"
+GLOBS_9E="$(printf '%s\n' "${RHYTHM_DUMP_9E}" | awk -F'\t' '$1=="GLOB"{print $3}')"
+
+if [[ -z "${RHYTHM_DUMP_9E}" ]]; then
+  report_error "tools/check/dependency-direction.yml" "rhythm 段缺失或解析失败" "含 rhythm.sync / independent / detached 三段"
+elif [[ -z "${WS_LIST_9E}" ]]; then
+  report_error "package.json" "workspaces 为空或解析失败" "非空 workspaces 列表（枚举源）"
+else
+  RHYTHM_UNCOVERED=0
+  RHYTHM_WS_TOTAL=0
+  while IFS= read -r ws; do
+    [[ -z "${ws}" ]] && continue
+    RHYTHM_WS_TOTAL=$((RHYTHM_WS_TOTAL + 1))
+    covered=false
+    while IFS= read -r sp; do
+      [[ -z "${sp}" ]] && continue
+      if [[ "${ws}" == "${sp}" ]]; then covered=true; break; fi
+    done <<< "${SYNC_PATHS_9E}"
+    if [[ "${covered}" == "false" ]]; then
+      while IFS= read -r glob; do
+        [[ -z "${glob}" ]] && continue
+        # shellcheck disable=SC2053  # 故意不给 RHS 加引号：这里要的正是 glob 匹配（如 engine/dsh-plugins/*）
+        if [[ "${ws}" == ${glob} ]]; then covered=true; break; fi
+      done <<< "${GLOBS_9E}"
+    fi
+    if [[ "${covered}" == "false" ]]; then
+      report_error "${ws}" "未被 rhythm 任何段覆盖" "登记进 rhythm.sync / independent / detached"
+      RHYTHM_UNCOVERED=$((RHYTHM_UNCOVERED + 1))
+    fi
+  done <<< "${WS_LIST_9E}"
+
+  if [[ "${RHYTHM_UNCOVERED}" -eq 0 ]]; then
+    RHYTHM_N_SYNC=$(printf '%s\n' "${SYNC_PATHS_9E}" | grep -c . || true)
+    RHYTHM_N_GLOB=$(printf '%s\n' "${GLOBS_9E}" | grep -c . || true)
+    report_ok "rhythm 覆盖率" "全部 ${RHYTHM_WS_TOTAL} 个 workspace 项已声明（sync ${RHYTHM_N_SYNC} 包 + independent/detached ${RHYTHM_N_GLOB} 条 glob）"
+  else
+    echo -e "    ${RED}rhythm 段漏登记 ${RHYTHM_UNCOVERED}/${RHYTHM_WS_TOTAL} 项 workspace——「不同频」必须先显式声明节奏归属${NC}"
+  fi
 fi
 echo ""
 
@@ -708,13 +811,28 @@ echo ""
 #   ② 原结构 `done < <(find ...) | while read` 管道使 while 在子 shell 执行，
 #      INTERNAL_DEPS_OK=false 传不回父 shell → 改用命令替换收集输出后统一判定
 #   ③ node stderr 被 2>/dev/null 吞掉 → 改 2>&1 保留报错信息
+# v1.4.8 第七章/第〇批：按 rhythm 分段过滤——只有 rhythm.sync 段内的包参与**精确校验**；
+#   independent（DSH/OpenClaw 插件家族）/ detached（FORGE，非 workspace）段豁免，
+#   即「独立节奏 / 完全脱离」的声明同时解除其内部依赖的精确版本约束（各走各的发布通道）。
 echo -e "${BOLD}── 检查子包内部依赖版本 ──${NC}"
 INTERNAL_DEPS_OK=true
 
-# 收集所有 workspace package.json 中的版本不一致（含 node stderr，不再吞）
+# rhythm SSOT → sync 段包路径集合（逐行一条；供 node 侧过滤）。
+# ROOT 经环境变量传入，避免污染 node -e 的 argv（argv[1] 已用于传 package.json 路径）。
+RHYTHM_SYNC_PATHS_12B="$(rhythm_dump | awk -F'\t' '$1=="SYNC"{print $3}')"
+export SOFAGENT_RHYTHM_ROOT="${PROJECT_ROOT}"
+export SOFAGENT_RHYTHM_SYNC="${RHYTHM_SYNC_PATHS_12B}"
+echo -e "  ${CYAN}·${NC} 精确校验范围：rhythm.sync 段 $(printf '%s\n' "${RHYTHM_SYNC_PATHS_12B}" | grep -c . || true) 包（independent / detached 段豁免）"
+
+# 收集 sync 段内各 workspace package.json 中的版本不一致（含 node stderr，不再吞）
 MISMATCHES=$(while IFS= read -r -d '' pkg_json; do
   node -e "
     const fs = require('fs');
+    const path = require('path');
+    // v1.4.8：非 rhythm.sync 段（independent / detached）跳过精确校验
+    const rel = path.relative(process.env.SOFAGENT_RHYTHM_ROOT, path.dirname(process.argv[1])).split(path.sep).join('/');
+    const syncPaths = (process.env.SOFAGENT_RHYTHM_SYNC || '').split('\n').filter(Boolean);
+    if (!syncPaths.includes(rel)) { process.exit(0); }
     const pkg = JSON.parse(fs.readFileSync(process.argv[1], 'utf-8'));
     const pkgName = pkg.name;
     for (const field of ['dependencies', 'optionalDependencies']) {
@@ -1169,8 +1287,8 @@ fi
 echo ""
 
 # ── 末尾独立断言：env.local 保险（不参与编号段）────────────────
-# FORGE/env.local 含真实 GLM API Key，正常靠 FORGE/.gitignore 挡住。
-# 本断言防两道万一：gitignore 被误改 / git add -f 误提交。
+# 真实 key 文件已移出仓库目录（现为 ~/.sofagent/env.local，2026-09-12 收面批）。
+# 本断言防两道万一：文件被误放回仓内 / git add -f 误提交。
 # 注意：env.local.template 是模板（不含真实 key），必须排除——
 # 精确匹配「以 env.local 结尾且非 template」的已跟踪文件。
 echo "=== 断言. env.local 未入库（真实 key 防误提交）==="

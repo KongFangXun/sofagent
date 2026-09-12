@@ -103,7 +103,7 @@ function assertPerspectivesMatchPlaybook() {
   if (drift.length > 0) {
     console.error('❌ PERSPECTIVES_16 与 playbook 视角清单漂移（维护者需同步两处）：');
     for (const d of drift) console.error(`   ${d}`);
-    console.error('   权威源：FORGE/playbook/fresh-eyes-review.md（视角标题节）');
+    console.error('   权威源：playbook/fresh-eyes-review.md（视角标题节）');
     process.exit(1);
   }
 }
@@ -112,7 +112,7 @@ assertPerspectivesMatchPlaybook();
 
 const SYSTEM_PROMPT = `你是 sofagent 项目的独立审查员。任务：从 16 个视角对本次变更生成审查草稿，供人工复核与 driver 兜底取证。
 
-16 视角（完整清单，一个不减——详细指引见 FORGE/playbook/fresh-eyes-review.md）：
+16 视角（完整清单，一个不减——详细指引见 playbook/fresh-eyes-review.md）：
 ${PERSPECTIVES_16.map(p => `  视角${p}`).join('\n')}
 
 每个视角的输出要求：

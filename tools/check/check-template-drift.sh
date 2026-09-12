@@ -66,7 +66,7 @@ if [ -z "$SSOT_VERSION" ]; then
   exit 2
 fi
 
-[ "$QUIET" = false ] && echo -e "${BOLD}── 模板漂移总闸（T12 · 四断言 vs SSOT v${SSOT_VERSION}）──${NC}"
+[ "$QUIET" = false ] && echo -e "${BOLD}── 模板漂移总闸（T12 · 六断言 vs SSOT v${SSOT_VERSION}）──${NC}"
 
 # ═══ 断言一：HOOK 部署文件头部版本（三层 hook 全查）═══
 # v1.4.5 审查 P2-4 扩展：此前只查 commit-msg，pre-commit 头 v1.4.4 漂移漏网（长在门禁盲区）。
@@ -167,9 +167,63 @@ else
   OK_COUNT=$((OK_COUNT + 1))
 fi
 
+# ═══ 断言五（v1.4.8 第5批）：DSH 侧 cordis.patch.yml 头部版本 vs SSOT ═══
+# 与断言一同族：版本落在文件头部注释（不往 DSH patch schema 塞自造字段）。
+# cordis.patch.yml 是 DSH profile layer 的「同包第二份 manifest」——bump 漏改即漂移。
+DSH_PLUGIN_DIR="engine/dsh-plugins"
+if [ ! -d "$DSH_PLUGIN_DIR" ]; then
+  echo -e "  ${RED}✗${NC} 断言五：${DSH_PLUGIN_DIR} 不存在——检查器失明"
+  exit 2
+fi
+A5_FAIL=0
+A5_TOTAL=0
+for _patch in "$DSH_PLUGIN_DIR"/cordis-plugin-sofagent-*/cordis.patch.yml; do
+  [ -f "$_patch" ] || continue
+  A5_TOTAL=$((A5_TOTAL + 1))
+  _plug=$(basename "$(dirname "$_patch")")
+  # BSD grep 兼容：先取含版本号的行，再抽三段式数字
+  PATCH_VER=$(grep -oE 'bundle patch v[0-9]+\.[0-9]+\.[0-9]+' "$_patch" 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1 || true)
+  if [ -z "$PATCH_VER" ]; then
+    echo -e "  ${RED}✗${NC} 断言五：${_plug}/cordis.patch.yml 头部无版本签名（格式漂移）"
+    A5_FAIL=$((A5_FAIL + 1))
+  elif [ "$PATCH_VER" != "$SSOT_VERSION" ]; then
+    echo -e "  ${RED}✗${NC} 断言五：${_plug} cordis.patch.yml v${PATCH_VER} ≠ SSOT v${SSOT_VERSION}——bump 时漏改（跑 tools/gen/gen-plugin-manifests.mjs 重新生成）"
+    A5_FAIL=$((A5_FAIL + 1))
+  else
+    [ "$QUIET" = false ] && echo -e "  ${GREEN}✓${NC} 断言五：${_plug} cordis.patch.yml v${PATCH_VER} = SSOT"
+  fi
+done
+if [ "$A5_TOTAL" -eq 0 ]; then
+  echo -e "  ${RED}✗${NC} 断言五：${DSH_PLUGIN_DIR} 下找不到任何 cordis-plugin-sofagent-*/cordis.patch.yml——搜索面为空，拒绝假绿"
+  exit 2
+fi
+if [ "$A5_FAIL" -eq 0 ]; then
+  OK_COUNT=$((OK_COUNT + 1))
+else
+  DRIFT=$((DRIFT + A5_FAIL))
+fi
+
+# ═══ 断言六（v1.4.8 第5批）：插件清单生成式幂等 ═══
+# 生成器 --check 只比对不落盘：落盘内容必须与 plugins.json 的生成结果逐字节一致
+# （等价于「再生成一次，git diff 必须为空」）；顺带对账各插件 src/index.ts 的
+# 字面量 seam 与清单一致——「只改 plugins.json 忘改 src」在此变成硬红。
+GEN="tools/gen/gen-plugin-manifests.mjs"
+if [ ! -f "$GEN" ]; then
+  echo -e "  ${RED}✗${NC} 断言六：生成器缺失 ${GEN}——检查器失明"
+  exit 2
+fi
+if GEN_OUT=$(node "$GEN" --check 2>&1); then
+  [ "$QUIET" = false ] && echo -e "  ${GREEN}✓${NC} 断言六：$(printf '%s\n' "$GEN_OUT" | tail -1)"
+  OK_COUNT=$((OK_COUNT + 1))
+else
+  echo -e "  ${RED}✗${NC} 断言六：生成式漂移——落盘内容与 plugins.json 的生成结果不一致（或 src 字面量 seam 与清单不一致）"
+  printf '%s\n' "$GEN_OUT" | sed 's/^/      /'
+  DRIFT=$((DRIFT + 1))
+fi
+
 if [ "$DRIFT" -gt 0 ]; then
   echo -e "${RED}${BOLD}FAIL：模板漂移 ${DRIFT} 处${NC}"
   exit 1
 fi
-echo -e "${GREEN}${BOLD}OK：模板四断言全过（${OK_COUNT}/4）${NC}"
+echo -e "${GREEN}${BOLD}OK：模板六断言全过（${OK_COUNT}/6）${NC}"
 exit 0

@@ -8,7 +8,9 @@
 # 的 dependencies/devDependencies，比对实际依赖边是否在允许清单内。
 # 违规 FAIL 并列出违规边（包 → 非法依赖）。
 #
-# 口径：只断言 build 序列 13 包（不含 umbrella/插件家族）——见 yml 头注。
+# 口径：只断言 build 序列包（不含 umbrella/插件家族）——见 yml 头注。
+# 包数由 yml 的 packages 段长度动态得出（v1.4.8 第 7 批：原写死「13 包」文案，
+# train 拆包后失真——改为动态，防下次加包再漂）。
 #
 # 退出码: 0 = 全部合法 / 1 = 有违规边 / 2 = 清单或 package.json 解析失败
 # ============================================================
@@ -56,7 +58,7 @@ for (const [key, info] of Object.entries(pkgs)) {
   }
 }
 if (violations > 0) { console.error(`\n共 ${violations} 条违规依赖边`); process.exit(1); }
-console.log(`  ✓ 13 包依赖方向全部合法（清单: tools/check/dependency-direction.yml）`);
+console.log(`  ✓ ${Object.keys(pkgs).length} 包依赖方向全部合法（清单: tools/check/dependency-direction.yml）`);
 ' "$ROOT" "$YML"
 EXIT=$?
 if [ $EXIT -ne 0 ]; then

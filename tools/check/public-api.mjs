@@ -37,6 +37,7 @@ const PACKAGES = [
   ['@sofagent/eval', 'engine/eval/src/index.ts'],
   ['@sofagent/evolve', 'engine/evolve/src/index.ts'],
   ['@sofagent/orchestrator', 'engine/orchestrator/src/index.ts'],
+  ['@sofagent/train', 'engine/train/src/index.ts'],
   ['@sofagent/daemon', 'engine/daemon/src/index.ts'],
   ['@sofagent/ab-test', 'engine/ab-test/src/index.ts'],
   ['@sofagent/load-chain', 'engine/hooks/sofagent-load-chain/src/handler.ts'],

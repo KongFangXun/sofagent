@@ -12,7 +12,7 @@
 #   ⑥ tools/*.sh 新变量头部初始化守卫（set -u 炸弹防复发——
 #      v1.3.7 run-28 同期 fresh-eyes 实查 test-count.sh FLAKY_PKGS 实案）
 #   ⑦ tools/ README 收录对账（每个 git 追踪的脚本文件名须被
-#      tools/README.md 提到——漂移预警，只提示不阻断）
+#      tools/README.md 提到——漂移阻断，v1.4.8 第2批由观察期 WARN 升级 FAIL）
 #
 # 设计纪律（与 check-review-system.sh 一致）：
 #   - 清单核对器，不判断好坏；0=全绿 / 1=有 FAIL / 2=脚本自身错误
@@ -44,14 +44,16 @@ WARN=0
 
 ok()   { [ "$QUIET" = false ] && echo -e "  ${GREEN}✅${NC} $1"; PASS=$((PASS + 1)); return 0; }
 bad()  { echo -e "  ${RED}❌${NC} $1"; [ -n "${2:-}" ] && echo -e "    $2"; FAIL=$((FAIL + 1)); return 0; }
-warn() { [ "$QUIET" = false ] && echo -e "  ${YELLOW}⚠️${NC} $1"; WARN=$((WARN + 1)); return 0; }
+# warn 第二参数与 bad 同款：告警必须**列出可操作清单**（门禁报警却不给信息 =
+# 把排查成本全留给人工；v1.4.8 第2批修：此前 warn 只打印第一参数，明细被静默丢弃）
+warn() { [ "$QUIET" = false ] && echo -e "  ${YELLOW}⚠️${NC} $1"; [ -n "${2:-}" ] && [ "$QUIET" = false ] && echo -e "    $2"; WARN=$((WARN + 1)); return 0; }
 
 # ============================================================
 # ① 审查文档路径活性
 # ============================================================
 [ "$QUIET" = false ] && echo -e "\n${BOLD}${CYAN}── ① 审查文档路径活性 ──${NC}"
 
-DOC_SOURCES="FORGE/playbook/regression-checklist.md FORGE/playbook/fresh-eyes-review.md docs/changelog/releasing/07-tool-health.md docs/changelog/releasing/04-review-system.md"
+DOC_SOURCES="playbook/regression-checklist.md playbook/fresh-eyes-review.md docs/changelog/releasing/07-tool-health.md docs/changelog/releasing/04-review-system.md"
 
 DEAD_LINKS=0
 DEAD_LIST=""
@@ -64,7 +66,7 @@ for _doc in $DOC_SOURCES; do
     echo "$_p" | grep -qE '[*?{}<>\$]|^/' && continue
     # 跳过「历史教训正文」里的不存在路径示例——上下文带「不存在/误指向/断链」字样的引用是
     # 在讲这个路径曾经错了，不是活引用（fresh-eyes-review 教训段大量此形态）
-    if [ "$_doc" = "FORGE/playbook/fresh-eyes-review.md" ]; then
+    if [ "$_doc" = "playbook/fresh-eyes-review.md" ]; then
       _ctx=$(grep -B1 -A1 "\`$_p\`" "$_doc" | grep -cE '不存在|误指向|断链|不存在的|已废弃|指向不' || true)
       [ "${_ctx:-0}" -gt 0 ] && continue
     fi
@@ -278,13 +280,17 @@ else
 fi
 
 # ============================================================
-# ⑦ tools/ README 收录对账（只提示不阻断——漂移预警，新机制渐进纪律）
+# ⑦ tools/ README 收录对账（v1.4.8 第2批：由「不阻断警告」升级为阻断）
 # ============================================================
 # 原理：tools/ 下每个 git 追踪的脚本/数据文件（.sh/.mjs/.json/.html），
 # tools/README.md 必须提到它的文件名——README 未收录 = 漂移（新脚本
-# 落地没登记，或脚本搬家 README 没跟）。只 WARN 不 FAIL：新机制先
-# 跑观察期，与 spec-first 门禁同款「只提示不阻断」纪律。
-[ "$QUIET" = false ] && echo -e "\n${BOLD}${CYAN}── ⑦ README 收录对账（漂移预警） ──${NC}"
+# 落地没登记，或脚本搬家 README 没跟）。
+# v1.4.8 第2批升级阻断：观察期内 3 个文件长期漂移无人修（dependency-direction.sh /
+# check-silent-catch.mjs / silent-catch-baseline.json），「只提示」= 无人处理。
+# 升级前已完成前置：① 3 个文件全部补录进 tools/README.md ② 复跑确认 exit 0。
+# 告警输出必须列出**具体未收录文件路径**（bad 第二参数）——只说「有 3 个未收录」
+# 等于把排查成本全留给人工。
+[ "$QUIET" = false ] && echo -e "\n${BOLD}${CYAN}── ⑦ README 收录对账 ──${NC}"
 
 README_MD="tools/README.md"
 [ -f "$README_MD" ] || { echo "❌ 缺 tools/README.md" >&2; exit 2; }
@@ -305,7 +311,7 @@ EOF
 if [ "$UNLISTED" -eq 0 ]; then
   ok "tools/ 全部脚本均被 tools/README.md 收录"
 else
-  warn "有 $UNLISTED 个文件未收录进 tools/README.md（漂移预警——不阻断）" "$UNLISTED_LIST"
+  bad "有 $UNLISTED 个文件未收录进 tools/README.md（漂移——补录后方可绿）" "$UNLISTED_LIST"
 fi
 
 # ============================================================
@@ -314,14 +320,17 @@ fi
 # 原理：守卫依赖的检测引擎（perl 等）故障时，守卫必须报红而非把空输出
 # 当「零违规」产出假绿——「0 处违规但根本没在看」比没有防线更坏。
 # 本步调度专用门禁：PATH 劫持假引擎实测守卫 fail-loud 行为，详见脚本头。
+# 🔴 v1.4.8 第2批修：本段原先调用未定义的 `fail`（只有 bad）——失败分支一旦走到，
+#    只打印 "fail: command not found"，FAIL 计数不增 → exit 0 假绿。
+#    「防线失明自检」自己在失败路径上失明，正好是它要防的那类 bug。
 if [ -f tools/check/check-guard-fail-loud.sh ]; then
   if bash tools/check/check-guard-fail-loud.sh > /dev/null 2>&1; then
     ok "防线失明自检：引擎故障注入下守卫全部报红（fail-loud）"
   else
-    fail "防线失明自检未过——存在引擎故障下仍 exit 0 的守卫（失明不自知）"
+    bad "防线失明自检未过——存在引擎故障下仍 exit 0 的守卫（失明不自知）"
   fi
 else
-  fail "tools/check/check-guard-fail-loud.sh 缺失（失明自检门禁未落地）"
+  bad "tools/check/check-guard-fail-loud.sh 缺失（失明自检门禁未落地）"
 fi
 
 # ============================================================

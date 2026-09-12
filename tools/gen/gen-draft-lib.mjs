@@ -116,7 +116,7 @@ export function resolveApiKey(opts) {
   const apiKey = process.env[keyEnv] || opts['api-key'] || '';
   if (!apiKey) {
     writeDegraded(opts.__out, `${keyEnv} 未设置`, opts.__prompts);
-    console.error(`    用法：source FORGE/env.local 后重跑，或把 prompt 粘给任意 AI session`);
+    console.error(`    用法：source ~/.sofagent/env.local 后重跑，或把 prompt 粘给任意 AI session`);
     process.exit(2);
   }
   return apiKey;
