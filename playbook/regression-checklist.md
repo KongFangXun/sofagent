@@ -1872,8 +1872,10 @@ FAIL=0
 node -e "const m=require('./engine/orchestrator/dist/model-resolver.js');const fs=require('fs');const bad=[];if(typeof m.ModelPreferenceError!=='function')bad.push('缺 ModelPreferenceError');const src=fs.readFileSync('engine/orchestrator/src/model-resolver.ts','utf8');if(!/required/.test(src))bad.push('缺 required 语义');if(bad.length){console.log(bad.join('|'));process.exit(1)};console.log('模型偏好显式失败语义在位')" || { echo "❌ 模型偏好语义缺失"; FAIL=1; }
 # b: 进化模块自研 gate 默认 native（零 Python 触点）
 grep -q "SOFAGENT_EVOLVE_GATE ?? 'native'" engine/evolve/src/evolve-integration.ts && ! grep -rqE "python3?( |$)|spawnSync\('py" engine/evolve/src/ --include="*.ts" && echo "✅ native 默认 + 零 Python" || { echo "❌ evolve gate 默认值/Python 触点异常"; FAIL=1; }
-# c: 旧包名 @sofagent/skillopt 零残留（更名 73 文件联动）
-grep -rq "@sofagent/skillopt" package.json engine/*/package.json FORGE/package.json 2>/dev/null && { echo "❌ 旧包名残留"; FAIL=1; } || echo "✅ 旧名清零"
+# c: 旧包名 @sofagent/skillopt 零残留（更名 73 文件联动）——**三面齐查**：
+#    package.json / 锁文件 / node_modules（后两面原缺：extraneous 残留由此存活一整版，见 dependency-direction.sh ⑵）
+{ grep -rq "@sofagent/skillopt" package.json engine/*/package.json FORGE/package.json package-lock.json 2>/dev/null \
+  || [ -e node_modules/@sofagent/skillopt ]; } && { echo "❌ 旧包名残留（package.json / 锁文件 / node_modules 任一面）"; FAIL=1; } || echo "✅ 旧名清零（三面齐查）"
 # d: loop 概念归位与弃用承诺（深模块批条目 10）——三形态定位边界互不重叠声明在位（**明确不合并**：
 #    loop/ 对错门禁 · loop-agent/ 工程级崩溃判定 · refine-agent/ 质量好坏判据，两两判据与状态机不同）；
 #    optimization-loop 撤公开承诺但实现保留（撤承诺 ≠ 删实现）；loop --legacy 弃用标记双面（help 标注 + stderr 告警），
