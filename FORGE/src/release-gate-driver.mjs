@@ -298,7 +298,7 @@ function parseArgs(argv) {
                  worker: false, step: null, runDir: null,
                  skipAcceptance: false, help: false,
                  resume: false, checkAlive: null,
-                 judgmentOnly: false, acceptanceRange: null, autoFix: false,
+                 judgmentOnly: false, acceptanceRange: null, autoFix: true,   // F 链默认启用（loop 自主收敛）；--no-auto-fix 关闭
                  daemon: false, watch: null, watchInterval: 30, watchThreshold: 90 };
   for (let i = 2; i < argv.length; i++) {
     const a = argv[i];
@@ -316,8 +316,11 @@ function parseArgs(argv) {
     // v1.3.8 交付七：判断层瘦身——一次启动直达四步，跳过 acceptance 分片
     else if (a === '--judgment-only')    args.judgmentOnly    = true;
     else if (a === '--acceptance-range') args.acceptanceRange = argv[++i];
-    // v1.3.8 交付七：F 修复链默认关闭，显式开关才进
+    // F 修复链**默认启用**（loop 自主收敛：verdict FAIL → f-diagnose → f-fix → f-audit → 下一轮 V，
+    // 最多 MAX_FIX_ROUNDS 轮）。原 v1.3.8 的「默认关闭、修复责任交回主 session」设计使每轮 FAIL 都要
+    // 人工介入修复再复跑，loop 无法一次跑到底——现改为默认开，保留 --auto-fix（幂等）与 --no-auto-fix。
     else if (a === '--auto-fix')    args.autoFix        = true;
+    else if (a === '--no-auto-fix') args.autoFix        = false;
     // v1.3.9 进程守护：--daemon 自脱离进程树；--watch 主管模式（心跳监控+死因审计+自动 resume）
     else if (a === '--daemon')      args.daemon    = true;
     else if (a === '--watch')       args.watch     = argv[++i];
@@ -2852,9 +2855,11 @@ release-gate-driver.mjs - FORGE release-gate-loop Driver
   --acceptance-range <S-S>  [v1.3.8 交付七] acceptance 分片抽查化——全流程模式下只跑
                             指定场景区间（如 --acceptance-range S294-S310，本版新增
                             场景），不跑全量 12 分片。与 --judgment-only 互斥使用
-  --auto-fix                [v1.3.8 交付七] 显式开启 F 修复链。默认关闭——verdict
-                            FAIL 即 loop-end，无 f-diagnose/f-fix/f-audit 产物，
-                            修复责任交回主 session（阶段四）
+  --auto-fix                开启 F 修复链（**默认已开**，此处为幂等显式声明）。
+                            verdict FAIL → f-diagnose → f-fix → f-audit → 下一轮 V，
+                            最多 MAX_FIX_ROUNDS 轮自动收敛，无需人工介入。
+  --no-auto-fix             关闭 F 修复链——verdict FAIL 即 loop-end，无 f-* 产物，
+                            修复责任交回主 session（仅在需要人工判断修复范围时使用）
   --check-alive <runDir>    [v1.3.8 交付五] liveness 探针——只认 status.json 心跳
                             不认日志（LLM 长窗口日志冻结 ≠ 死亡）。心跳 <90s →
                             RC=0 输出 alive；超时 → RC=1 输出 dead + 最后 event/phase
@@ -3681,7 +3686,7 @@ async function main() {
   //  流程：verdict FAIL → f-diagnose → f-fix → f-audit → 回到 verdict 判定
   //  最多 MAX_FIX_ROUNDS 轮，每轮独立诊断+修复+审计
   // ═══════════════════════════════════════════════════════════
-  const MAX_FIX_ROUNDS = 3;
+  const MAX_FIX_ROUNDS = 5;   // 五轮上线口径：F 链自动修复上限 5 轮（原先 3 轮）
   const F_STEPS = ['f-diagnose', 'f-fix', 'f-audit'];
   // run-01 假 PASS 修复：f-audit 真实结果跨迭代传递（保守判定，见下方收敛逻辑）
   let lastAuditGateResult = null;

@@ -39,7 +39,7 @@ V 由 **Node driver**（`FORGE/src/release-gate-driver.mjs`）驱动——每个
 - 主 session（审查/决策 session）：三查 → 修复环境问题 → 产出「交接 prompt」交给用户 → 用户在新 session 粘贴执行 → 等新 session 回报 verdict → 零信任复验。主 session 全程不 spawn driver。
 - 执行 session（用户新开）：粘贴交接 prompt → 按下方「Session 监控协议」启动 driver 并轮询到 verdict → 回报六项终态数据。
 
-**交接 prompt 必含要素**（主 session 生成，自包含）：目标版本号、启动 commit（预期干净树）、启动命令行（含 source env.local）、监控协议要点（120s 轮询 / heartbeat 死亡检测 / 已知降级信号不处理清单）、verdict 产出后的六项回报清单（verdict+stopReason / 四步产物存在性 / usage token 总量 / verdict.md 头 50 行 / status.json 全文 / driver 日志尾 30 行）、异常处置（启动即崩回报不修 / 卡死 15 分钟查 pid）。**交付形式**：直接在对话中输出可复制的 prompt 文本块，禁止落盘成文件——用户复制粘贴到新 session 执行（2026-08-30 用户拍板）。
+**交接 prompt 必含要素**（主 session 生成，自包含）：目标版本号、启动 commit（预期干净树）、启动命令行（含 source ~/.sofagent/env.local）、监控协议要点（120s 轮询 / heartbeat 死亡检测 / 已知降级信号不处理清单）、verdict 产出后的六项回报清单（verdict+stopReason / 四步产物存在性 / usage token 总量 / verdict.md 头 50 行 / status.json 全文 / driver 日志尾 30 行）、异常处置（启动即崩回报不修 / 卡死 15 分钟查 pid）。**交付形式**：直接在对话中输出可复制的 prompt 文本块，禁止落盘成文件——用户复制粘贴到新 session 执行（2026-08-30 用户拍板）。
 
 ## Session 监控协议（CRITICAL · 适用于执行 session）
 
@@ -91,8 +91,12 @@ V 由 **Node driver**（`FORGE/src/release-gate-driver.mjs`）驱动——每个
    # 有判断空间的 regression 语义审查 + 终裁。
    # v1.3.8 交付七：--judgment-only 替代原「--step 四步手工编排」——一次进程串行四步，
    # 无需外层脚本逐步调用。旧 --step 单步模式仍可用于单步调试。
-   # verdict=FAIL 时循环即停（v1.3.8 起 F 修复链默认关闭，无 f-* 产物）；
-   # 修复责任回阶段四主 session。显式 --auto-fix 才进修复链（最多 3 轮）。
+   # verdict=FAIL 时**自动进 F 修复链**（默认启用，无需人工介入）——f-diagnose → f-fix →
+   # f-audit → 下一轮 V，最多 MAX_FIX_ROUNDS 轮，loop 一次跑到底直至收敛。
+   # 🔴 停手边界（唯一需要主 session 介入的两类）：① 修复涉及**对外动作**（版本 bump / git tag /
+   # npm publish）——按对外动作铁律须动作前显式请示；② 需**人裁定口径**（判定标准/范围有分歧）。
+   # 除这两类外一切内部修复（改代码 / 改文档 / 修检查器 / 补场景）由 F 链自主完成，不得停手。
+   # 显式 --no-auto-fix 可关闭自动修复（FAIL 即 loop-end，修复责任回主 session）。
 
    # 全流程模式的 acceptance 抽查化（v1.3.8 交付七）——只审本版新增场景区间：
    node FORGE/src/release-gate-driver.mjs --target <版本号> --acceptance-range S294-S310

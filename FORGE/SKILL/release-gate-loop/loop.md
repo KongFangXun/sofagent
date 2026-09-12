@@ -64,8 +64,16 @@
 
 ```
 verdict = PASS → 出 loop，可以发版 ✅
-verdict = FAIL 且 round < 3 → 触发 F 步骤链 → round N+1
-verdict = FAIL 且 round ≥ 3 → 输出"需人工介入"报告 ❌ → 出 loop
+verdict = FAIL 且 round < MAX_FIX_ROUNDS → **自动**触发 F 步骤链（默认启用，无需人工）
+                                        → f-diagnose → f-fix → f-audit → round N+1
+verdict = FAIL 且 round ≥ MAX_FIX_ROUNDS → 输出"轮次耗尽"报告 ❌ → 出 loop
+
+**停手边界**（唯一需要主 session 介入的两类，其余一律自主修复）：
+1. 修复涉及**对外动作**——版本 bump / git tag / npm publish（按对外动作铁律须动作前显式请示）；
+2. 需**人裁定口径**——判定标准、范围、豁免是否成立存在分歧。
+
+除这两类外的全部内部修复（改代码 / 改文档 / 修检查器 / 补场景 / 对齐锚点）由 F 链自主完成，
+**不得停手等人工**——「每轮 FAIL 都停下来交主 session 修」会使 loop 无法一次跑到底。
 ```
 
 ## 产物 Schema
