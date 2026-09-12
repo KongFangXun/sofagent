@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-12T04:32:56.506Z",
+  "generatedAt": "2026-09-12T05:00:51.924Z",
   "packages": {
     "@sofagent/harness": {
       "version": "1.4.7",
@@ -731,7 +731,6 @@
         "ChannelArtifact",
         "ChannelEvent",
         "ChannelJobSpec",
-        "ChannelRegistry",
         "ChannelStatus",
         "ChannelStatusResult",
         "ChannelSubmitResult",

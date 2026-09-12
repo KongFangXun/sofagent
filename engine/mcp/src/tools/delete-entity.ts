@@ -11,6 +11,7 @@
 // ============================================================
 
 import { existsSync, readFileSync, appendFileSync, mkdirSync, rmSync } from 'fs';
+import { parseFrontmatter, appendDataChangeLog } from './knowledge-page';
 import { join } from 'path';
 import { load as yamlLoad } from 'js-yaml';
 import {type DataChange,
@@ -55,43 +56,7 @@ function getKnowledgeDir(): string {
 }
 
 /** 获取数据根目录 */
-/**
- * 从 Markdown 内容中解析 frontmatter
- */
-function parseFrontmatter(content: string): Record<string, unknown> | null {
-  const normalized = content.replace(/^\uFEFF/, '').replace(/\r\n/g, '\n');
-  const match = normalized.match(/^---\n([\s\S]*?)\n---/);
-  if (!match || !match[1]) return null;
-  try {
-    return yamlLoad(match[1]) as Record<string, unknown>;
-  } catch {
-    return null;
-  }
-}
 
-/**
- * 追加数据变更日志到 data/audit/data-change-log.jsonl
- */
-function appendDataChangeLog(change: DataChange, auditResult: DataAuditResult): void {
-  const logDir = join(getDataDir(), 'audit');
-  if (!existsSync(logDir)) {
-    mkdirSync(logDir, { recursive: true });
-  }
-  const logPath = join(logDir, 'data-change-log.jsonl');
-  const entry = {
-    timestamp: change.timestamp,
-    type: change.type,
-    name: change.name,
-    action: change.action,
-    auditVerdict: auditResult.hasFail ? 'FAIL' : auditResult.hasWarn ? 'WARN' : 'PASS',
-    violations: auditResult.violations.map((v) => ({ rule: v.rule, detail: v.detail })),
-  };
-  try {
-    appendFileSync(logPath, JSON.stringify(entry) + '\n', 'utf-8');
-  } catch {
-    // 非致命
-  }
-}
 
 // ============================================================
 // 主函数

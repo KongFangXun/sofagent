@@ -24,6 +24,7 @@
 // ============================================================
 
 import { execFileSync } from 'child_process';
+import { AUDIT_SUBCOMMANDS } from './cli/flag-table';
 import { existsSync, readFileSync, writeFileSync, mkdirSync, chmodSync, readdirSync, statSync } from 'fs';
 import { join, dirname } from 'path';
 import { homedir } from 'os';
@@ -230,7 +231,8 @@ interface Args {
  * 顶层子命令白名单（v1.4.7 补 agent-shield）。
  * 位置参数必须是其中之一；否则按「未知子命令」报错。
  */
-const SUBCOMMANDS = ['ontology', 'conflict-check', 'federation-distill', 'agent-shield', 'corpus'];
+// v1.4.8 深模块条目 8：子命令单源（cli/flag-table.ts）
+const SUBCOMMANDS: readonly string[] = AUDIT_SUBCOMMANDS;
 
 function parseArgs(argv: string[]): Args {
   const args: Args = { diffRange: 'HEAD~1..HEAD', strict: false, silent: false, ci: false, installHook: false, json: false, rootCause: false, verifyChain: false, webhookUrl: process.env.SOFAGENT_WEBHOOK_URL, mcp: false, init: false, signConfig: false, cached: false, noSession: false, conflictCheckCommand: false, federationDistillCommand: false, agentShieldCommand: false, supportBundle: false, format: undefined, ruleset: undefined, rulesetPath: undefined, listRulesets: false, warnAsError: false, warnAsInfo: false, gb48000: false };

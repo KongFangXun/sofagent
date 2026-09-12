@@ -255,6 +255,15 @@ class McpServer {
         return;
       }
 
+      // v1.4.8 深模块条目 5：查表分发优先——registry 有 handler 直接执行；
+      // 无 handler 回退下方 switch（批一骨架零行为变化；迁移完成后删 switch）
+      const tableHit = TOOLS.find((t) => t.name === toolName && typeof t.handler === 'function');
+      if (tableHit?.handler) {
+        const r = await tableHit.handler(args, { pushAuditWebhook: this.pushAuditWebhook.bind(this) } as Parameters<NonNullable<typeof tableHit.handler>>[1]);
+        this.sendTool(id, r, r.isError);
+        return;
+      }
+
       switch (toolName) {
         case 'run_audit': { const r = runAudit(args, this.pushAuditWebhook.bind(this)); this.sendTool(id, r); break; }
         case 'get_think': { const r = getThink(args); this.sendTool(id, r); break; }

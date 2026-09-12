@@ -28,6 +28,7 @@
 // ============================================================
 
 import { execFileSync, spawnSync } from 'child_process';
+import { FULL_ONLY_FLAGS as FULL_ONLY_FLAGS_SRC, AUDIT_SUBCOMMANDS as AUDIT_SUBCOMMANDS_SRC } from './cli/flag-table';
 import { existsSync } from 'fs';
 import { join } from 'path';
 import { parseDiff, isInGitRepo, type DiffFile } from '@sofagent/core';
@@ -242,23 +243,15 @@ export function runCliQuick(argv: string[]): number {
   //    - 删除 '--repair'（完整版不存在该 flag）
   //    - 删除 '--verify'（不是 flag；verify 子命令是弃用 shim，走子命令路径即可）
   //    - 新增 '--verify-commit'（v1.2.9 新增 flag，需要完整引擎，否则会被 quick 吞掉）
-  const FULL_ONLY_FLAGS = ['--init', '--doctor', '--install-hook',
-    '--list-rulesets', '--ruleset', '--ruleset-path',
-    '--support-bundle', '--sign-config', '--verify-chain', '--verify-commit',
-    // v1.3.1 #1: 以下参数需要完整引擎——quick 模式不审计暂存区/commit-msg，
-    // 会静默吞掉这些参数导致 hook 审计滞后。
-    '--diff', '--cached', '--silent', '--ci', '--task', '--commit-msg',
-    // v1.4.3 F-12 (bugfix 批): --strict 需要完整引擎（WARN 升级为 FAIL 的判定在
-    // 完整引擎 runner 内）——此前不在清单，quick 态传 --strict 得「⚠️ 未知参数」
-    // 后被静默忽略继续跑（EXIT=0），用户以为严格模式生效实际没有。加入清单后
-    // 遇之自动路由完整引擎（本仓内）或提示转完整安装（npx 态）。
-    '--strict'];
+  // v1.4.8 深模块条目 8：flag/子命令单源——从 cli/flag-table.ts 派生
+  // （历史 F-12/F-13 两次漂移均因两处手工同步；各成员的收录理由注释见 flag-table）
+  const FULL_ONLY_FLAGS = [...FULL_ONLY_FLAGS_SRC];
   // v1.4.6 finding-12: 子命令同样需要完整引擎——此前只拦 flag 不拦子命令，
   // npx 主入口敲 `sofagent-audit agent-shield`（或 ontology/conflict-check/
   // federation-distill/corpus）时子命令落进下方位置参数 diffRange 分支，
   // parseDiff('agent-shield') 抛「diff 解析失败」exit 3（误导性错误）。
   // 清单与 index.ts SUBCOMMANDS 保持对齐。
-  const FULL_ONLY_SUBCOMMANDS = ['ontology', 'conflict-check', 'federation-distill', 'agent-shield', 'corpus'];
+  const FULL_ONLY_SUBCOMMANDS = [...AUDIT_SUBCOMMANDS_SRC];
 
   for (const arg of argv.slice(2)) {
     if (FULL_ONLY_FLAGS.includes(arg) || FULL_ONLY_SUBCOMMANDS.includes(arg)) {

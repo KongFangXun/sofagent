@@ -4,6 +4,11 @@
 // ============================================================
 
 import { VERSION } from '@sofagent/audit';
+// v1.4.8 深模块条目 5 首批迁移 handler 的实现 import（查表分发目标）
+import { readLessons, readThinkMd } from './tools/think-tools';
+import { stats } from './tools/knowledge-tools';
+import { listCapabilities } from './tools/report-tools';
+import { browserNavigate, browserClick, browserScreenshot } from './tools/browser-tools';
 
 /**
  * 工具定义（MCP tools/list 返回的 schema）
@@ -18,7 +23,30 @@ export interface ToolDef {
   };
   /** v1.4.0：角色分层标签——工具所属角色面（一个工具可多面）。缺省 = 始终暴露（动态工具未打标）。 */
   roles?: string[];
+  /**
+   * v1.4.8 深模块条目 5：执行 handler（查表分发目标）。
+   * 🔴 文本 SSOT 硬约束：check-version/check-storefront/check-docs/gen-api-tools
+   * 四个解析器按「name → [roles] → description → inputSchema」正则读本文件，
+   * handler 只能追加在此顺序之后，字段顺序不可变。
+   * ctx 参数（pushAuditWebhook 等）经 rest 传递（需要 ctx 的工具声明双参）。批一骨架阶段可选——无 handler 的工具回退 mcp-server switch（零行为变化）；
+   * 迁移完成后设必填并删除 switch。
+   */
+  handler?: ToolHandler;
 }
+
+/** 工具结果（handler 产出——与 mcp-server sendTool 消费面同构；data 形态对齐 tools/audit-tools 既有 ToolResult 的 unknown 宽面） */
+export interface ToolResult {
+  text: string;
+  data: unknown;
+  /** isError 标记（sendTool 第三参） */
+  isError?: boolean;
+}
+
+/** 工具执行 handler 类型（v1.4.8 条目 5——ctx 可选：无副作用工具免声明） */
+export type ToolHandler = (
+  args: Record<string, unknown>,
+  ctx?: { pushAuditWebhook: (verdict: string, task: string | undefined, results: unknown) => Promise<void> },
+) => ToolResult | Promise<ToolResult>;
 
 /**
  * 完整工具清单——95 个 tool（v1.4.7：data_push 新增——标准数据推送入口（94→95 终值）；contribution_query 新增——G4 绩效数据导出（93→94）；pr_submit/pr_review/pr_merge 三 tool 新增——G13 PR 生命周期（90→93）；onboard_prompt 新增——上岗 prompt 生成器（89→90）；workflow_gaps 新增——G2 能力缺口查询（88→89）；workflow_create/workflow_update/workflow_node_add/workflow_diff_preview 四 tool 新增——G14 workflow 对象化 CRUD（84→88）；v1.4.6：train_cloud 新增——83→84，云 VM 执行面控制工具；v1.4.5：train_serve/train_compliance/train_deliverable 三件齐——80→83，SKILL.md/ARCHITECTURE 等九处 SSOT 同步收口；v1.4.4：corpus_export 新增；v1.4.3：train_status/train_list/train_diagnose 新增；v1.4.2：fde_interview/fde_classify/fde_quantify/fde_derive/fde_distill/fde_deploy 六引擎 + train_doctor/train_dryrun/train_report 新增；v1.4.1：train_submit 新增；v1.4.0：cost_query + browser 4 新增；v1.3.9：worklog_query 新增；v1.3.6：workflow_submit/ontology_import/model_register/model_switch/model_unregister/train_budget/define_acceptance/check_acceptance；v1.3.5：run_ab_test/promote_ab/snapshot_list/snapshot_restore；v1.3.4：commons_publish/search/invoke/rate/retire/harvest_rule；不含 4 个 resource shortcut）
@@ -64,6 +92,8 @@ export const TOOLS: ToolDef[] = [
       },
       required: ['url'],
     },
+    // v1.4.8 条目 5 首批迁移：查表分发
+    handler: (args, _ctx?) => browserNavigate(args.url as string),
   },
   {
     name: 'playwright_click',
@@ -76,6 +106,8 @@ export const TOOLS: ToolDef[] = [
       },
       required: ['selector'],
     },
+    // v1.4.8 条目 5 首批迁移：查表分发
+    handler: (args, _ctx?) => browserClick(args.selector as string),
   },
   {
     name: 'playwright_screenshot',
@@ -87,6 +119,8 @@ export const TOOLS: ToolDef[] = [
         name: { type: 'string', description: '截图文件名（可选）' },
       },
     },
+    // v1.4.8 条目 5 首批迁移：查表分发
+    handler: (args, _ctx?) => browserScreenshot(args.name as string | undefined),
   },
   {
     name: 'playwright_assert',
@@ -219,18 +253,24 @@ export const TOOLS: ToolDef[] = [
     roles: ['fde', 'eval', 'audit'],
     description: '读取踩坑记录（lessons-missteps.md）。',
     inputSchema: { type: 'object', properties: {} },
+    // v1.4.8 条目 5 首批迁移：查表分发
+    handler: (_args, _ctx?) => readLessons(),
   },
   {
     name: 'read_think_md',
     roles: ['fde', 'eval'],
     description: '读取 think.md 完整内容。',
     inputSchema: { type: 'object', properties: {} },
+    // v1.4.8 条目 5 首批迁移：查表分发
+    handler: (_args, _ctx?) => readThinkMd(),
   },
   {
     name: 'stats',
     roles: ['ops'],
     description: '知识库统计（entities/concepts 数 + 最后更新时间）。',
     inputSchema: { type: 'object', properties: {} },
+    // v1.4.8 条目 5 首批迁移：查表分发
+    handler: (_args, _ctx?) => stats(),
   },
   {
     name: 'list_capabilities',
@@ -238,6 +278,8 @@ export const TOOLS: ToolDef[] = [
     // Agent 首次连接拿不到能力地图——S59 回归抓出）。未打标 = 始终暴露（同动态工具机制）。
     description: '返回完整能力清单（tools + resources）——Agent 首次连上时获取能力地图。',
     inputSchema: { type: 'object', properties: {} },
+    // v1.4.8 条目 5 首批迁移：查表分发
+    handler: (_args, _ctx?) => listCapabilities(),
   },
   {
     name: 'data_sovereignty_report',
