@@ -10,7 +10,7 @@ import { mkdirSync, rmSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
 import { execFileSync } from 'child_process';
-import { checkRuleA18 } from './rule-a18-junk-file';
+import { scanA18 } from './rule-a18-junk-file';
 import { checkRuleA19 } from './rule-a19-commit-msg-quality';
 import { checkRuleA11 } from './rule-a11-no-abuse';
 import { makeDiffFile, makeCtx } from '../test-utils';
@@ -43,21 +43,21 @@ describe('A18 git ls-files 豁免（T9）', () => {
 
   it('git已跟踪的a.txt_修改时不再WARN（存量文件豁免）', () => {
     const ctx = makeCtx([makeDiffFile('a.txt', ['+updated content'])]);
-    const result = checkRuleA18(ctx);
+    const result = scanA18(ctx);
     expect(result.status).toBe('PASS');
   });
 
   it('git未跟踪的新混入a.txt_仍WARN（本次新垃圾文件）', () => {
     // b.md 不在 git 索引——新混入的单字母文件仍要告警
     const ctx = makeCtx([makeDiffFile('b.md', ['+junk'])]);
-    const result = checkRuleA18(ctx);
+    const result = scanA18(ctx);
     expect(result.status).toBe('WARN');
     expect(result.details[0]).toContain('b.md');
   });
 
   it('未跟踪的test1.js_WARN保持既有行为', () => {
     const ctx = makeCtx([makeDiffFile('test1.js', ['+tmp'])]);
-    const result = checkRuleA18(ctx);
+    const result = scanA18(ctx);
     expect(result.status).toBe('WARN');
   });
 });

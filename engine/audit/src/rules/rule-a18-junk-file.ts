@@ -9,7 +9,7 @@
 // ============================================================
 import { basename } from 'path';
 import { execFileSync } from 'child_process';
-import type { AuditContext, RuleCheck } from './types';
+import type { AuditContext, RuleScan } from './types';
 /**
  * 垃圾文件名模式（basename 级匹配）：
  * - 单字母文件名：a.txt / b.md / c.js
@@ -55,16 +55,8 @@ function getTrackedFiles(): Set<string> | null {
   }
 }
 
-export function checkRuleA18(ctx: AuditContext): RuleCheck {
-  const rule: RuleCheck = {
-    name: 'A18 垃圾文件',
-    number: 18,
-    status: 'PASS',
-    details: [],
-    evidenceMode: 'git-diff',
-    ruleClass: '能力拐杖',
-  };
-
+/** 规则判定本体（v1.4.8 条目 7）：只产出 status/details——前置块由 assembleCheck 装配 */
+export function scanA18(ctx: AuditContext): RuleScan {
   const hits: string[] = [];
 
   // v1.4.5 T9: 惰性拉取 git 索引——仅在存在候选垃圾文件时查询一次
@@ -90,9 +82,11 @@ export function checkRuleA18(ctx: AuditContext): RuleCheck {
   }
 
   if (hits.length > 0) {
-    rule.status = 'WARN';
-    rule.details.push(`检测到 ${hits.length} 个疑似垃圾文件：${hits.join('；')}`);
+    return {
+      status: 'WARN',
+      details: [`检测到 ${hits.length} 个疑似垃圾文件：${hits.join('；')}`],
+    };
   }
 
-  return rule;
+  return { status: 'PASS', details: [] };
 }

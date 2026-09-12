@@ -6,9 +6,8 @@
 import { describe, it, expect } from 'vitest';
 import { checkRuleA7 } from './rules/rule-a7-read-before-write';
 import { checkRuleA8 } from './rules/rule-a8-verify-before-continue';
-import { checkRuleA3 } from './rules/rule-a3-careful-modify';
-import { checkRuleA1 } from './rules/rule-a1-sensitive-files';
 import { rules } from './rules';
+import { runRuleCheck } from './rules/assemble';
 import type { AuditContext } from './rules/types';
 import type { DiffFile } from '@sofagent/core';
 import type { LogEntry } from '@sofagent/core';
@@ -170,7 +169,8 @@ describe('evidenceMode 双路径切换', () => {
         diffFiles: [makeDiffFile('.env')],
         logEntries: [],
       };
-      const result = checkRuleA1(ctx);
+      // v1.4.8 条目 7：走注册表装配路径（meta 单源），不再直连规则文件自装配入口
+      const result = runRuleCheck(rules.find((r) => r.id === 'A1')!, ctx);
       expect(result.evidenceMode).toBe('git-diff');
     });
 
@@ -181,7 +181,8 @@ describe('evidenceMode 双路径切换', () => {
         logEntries: [],
         task: 'login',
       };
-      const result = checkRuleA3(ctx);
+      // v1.4.8 条目 7：走注册表装配路径
+      const result = runRuleCheck(rules.find((r) => r.id === 'A3')!, ctx);
       expect(result.evidenceMode).toBe('git-diff');
     });
   });

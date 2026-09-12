@@ -5,7 +5,7 @@
 // ============================================================
 
 import { basename } from 'path';
-import type { AuditContext, RuleCheck } from './types';
+import type { AuditContext, RuleScan } from './types';
 
 /** 敏感文件匹配模式（匹配 basename） */
 const SENSITIVE_PATTERNS = [
@@ -64,16 +64,11 @@ function isSensitiveFile(filePath: string): boolean {
   return SENSITIVE_PATTERNS.some((pattern) => pattern.test(name) || pattern.test(filePath));
 }
 
-export function checkRuleA1(ctx: AuditContext): RuleCheck {
-  const rule: RuleCheck = {
-    name: 'A1 不碰敏感',
-    number: 1,
-    status: 'PASS',
-    details: [],
-    evidenceMode: 'git-diff',
-    ruleClass: '业务底线',
-  };
-
+/**
+ * 规则判定本体（v1.4.8 条目 7）：只产出 status/details——
+ * 前置块（name/number/evidenceMode/ruleClass）由 assembleCheck 从注册表 meta 装配。
+ */
+export function scanA1(ctx: AuditContext): RuleScan {
   const { diffFiles } = ctx;
 
   const sensitiveFiles: string[] = [];
@@ -89,11 +84,13 @@ export function checkRuleA1(ctx: AuditContext): RuleCheck {
   }
 
   if (sensitiveFiles.length > 0) {
-    rule.status = 'FAIL';
-    rule.details.push(
-      `检测到敏感文件变更: ${sensitiveFiles.join(', ')}。密钥/凭据文件不应提交到版本控制。`
-    );
+    return {
+      status: 'FAIL',
+      details: [
+        `检测到敏感文件变更: ${sensitiveFiles.join(', ')}。密钥/凭据文件不应提交到版本控制。`,
+      ],
+    };
   }
 
-  return rule;
+  return { status: 'PASS', details: [] };
 }

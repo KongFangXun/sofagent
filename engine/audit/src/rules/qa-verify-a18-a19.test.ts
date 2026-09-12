@@ -4,7 +4,7 @@
 // ============================================================
 
 import { describe, it, expect } from 'vitest';
-import { checkRuleA18 } from './rule-a18-junk-file';
+import { scanA18 } from './rule-a18-junk-file';
 import { checkRuleA19 } from './rule-a19-commit-msg-quality';
 import { makeDiffFile, makeCtx } from '../test-utils';
 
@@ -14,67 +14,67 @@ import { makeDiffFile, makeCtx } from '../test-utils';
 describe('A18 QA 边界验证', () => {
   // 测试：a.ts 单字母文件名应命中垃圾模式 → WARN
   it('a.ts（单字母 + .ts）→ WARN', () => {
-    const result = checkRuleA18(makeCtx([makeDiffFile('a.ts')]));
+    const result = scanA18(makeCtx([makeDiffFile('a.ts')]));
     expect(result.status).toBe('WARN');
   });
 
   // 测试：test.txt 临时前缀应命中 → WARN
   it('test.txt（临时前缀）→ WARN', () => {
-    const result = checkRuleA18(makeCtx([makeDiffFile('test.txt')]));
+    const result = scanA18(makeCtx([makeDiffFile('test.txt')]));
     expect(result.status).toBe('WARN');
   });
 
   // 测试：双重豁免——tests/ 目录 + .test.ts 后缀都命中豁免 → PASS
   it('tests/foo.test.ts（双重豁免）→ PASS', () => {
-    const result = checkRuleA18(makeCtx([makeDiffFile('tests/foo.test.ts')]));
+    const result = scanA18(makeCtx([makeDiffFile('tests/foo.test.ts')]));
     expect(result.status).toBe('PASS');
   });
 
   // 测试：正规源码文件不应误报 → PASS
   it('src/index.ts（正规文件）→ PASS', () => {
-    const result = checkRuleA18(makeCtx([makeDiffFile('src/index.ts')]));
+    const result = scanA18(makeCtx([makeDiffFile('src/index.ts')]));
     expect(result.status).toBe('PASS');
   });
 
   // 测试：README.md 不在垃圾模式中 → PASS
   it('README.md（非垃圾模式）→ PASS', () => {
-    const result = checkRuleA18(makeCtx([makeDiffFile('README.md')]));
+    const result = scanA18(makeCtx([makeDiffFile('README.md')]));
     expect(result.status).toBe('PASS');
   });
 
   // 测试：b.md 单字母文件名应命中 → WARN
   it('b.md（单字母 + .md）→ WARN', () => {
-    const result = checkRuleA18(makeCtx([makeDiffFile('b.md')]));
+    const result = scanA18(makeCtx([makeDiffFile('b.md')]));
     expect(result.status).toBe('WARN');
   });
 
   // 测试：old-name.txt 可疑命名应命中 → WARN
   it('old-name.txt（可疑命名）→ WARN', () => {
-    const result = checkRuleA18(makeCtx([makeDiffFile('old-name.txt')]));
+    const result = scanA18(makeCtx([makeDiffFile('old-name.txt')]));
     expect(result.status).toBe('WARN');
   });
 
   // 测试：foo123.js 临时前缀 + 数字应命中 → WARN
   it('foo123.js（临时前缀 + 数字）→ WARN', () => {
-    const result = checkRuleA18(makeCtx([makeDiffFile('foo123.js')]));
+    const result = scanA18(makeCtx([makeDiffFile('foo123.js')]));
     expect(result.status).toBe('WARN');
   });
 
   // 测试：test/ 目录豁免 → PASS
   it('test/helper.ts（test/ 目录豁免）→ PASS', () => {
-    const result = checkRuleA18(makeCtx([makeDiffFile('test/helper.ts')]));
+    const result = scanA18(makeCtx([makeDiffFile('test/helper.ts')]));
     expect(result.status).toBe('PASS');
   });
 
   // 测试：__tests__/ 目录豁免 → PASS
   it('__tests__/unit.spec.ts（目录 + spec 双豁免）→ PASS', () => {
-    const result = checkRuleA18(makeCtx([makeDiffFile('__tests__/unit.spec.ts')]));
+    const result = scanA18(makeCtx([makeDiffFile('__tests__/unit.spec.ts')]));
     expect(result.status).toBe('PASS');
   });
 
   // 测试：A18 永远不产生 FAIL，只产生 WARN
   it('即使命中垃圾文件也不产生 FAIL', () => {
-    const result = checkRuleA18(makeCtx([makeDiffFile('a.txt'), makeDiffFile('b.js')]));
+    const result = scanA18(makeCtx([makeDiffFile('a.txt'), makeDiffFile('b.js')]));
     expect(result.status).toBe('WARN');
     expect(result.status).not.toBe('FAIL');
   });

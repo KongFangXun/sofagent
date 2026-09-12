@@ -5,12 +5,12 @@
 
 import { describe, it, expect } from 'vitest';
 import { checkRuleA3 } from './rules/rule-a3-careful-modify';
-import { checkRuleE1 } from './rules/rule-e1-no-test-files';
+import { scanE1 } from './rules/rule-e1-no-test-files';
 import { checkRuleE2 } from './rules/rule-e2-todo-undeclared';
 // v1.2.9: E3 已并入 A11，不再独立存在
 import { checkRuleA11 } from './rules/rule-a11-no-abuse';
 import { checkRuleA5 } from './rules/rule-a5-honest-report';
-import { checkRuleA1 } from './rules/rule-a1-sensitive-files';
+import { scanA1 } from './rules/rule-a1-sensitive-files';
 import { checkRuleE4 } from './rules/rule-e4-low-comment-ratio';
 import type { AuditContext } from './rules/types';
 import type { DiffFile } from '@sofagent/core';
@@ -54,7 +54,7 @@ describe('沉默审计模式 · 7 条纯 diff 规则', () => {
         makeDiffFile('src/index.ts'),
         makeDiffFile('src/index.test.ts'),
       ]);
-      const result = checkRuleE1(ctx);
+      const result = scanE1(ctx);
       expect(result.status).toBe('PASS');
     });
 
@@ -63,7 +63,7 @@ describe('沉默审计模式 · 7 条纯 diff 规则', () => {
         makeDiffFile('src/index.ts'),
         makeDiffFile('src/config.ts'),
       ]);
-      const result = checkRuleE1(ctx);
+      const result = scanE1(ctx);
       expect(result.status).toBe('WARN');
       expect(result.details[0]).toContain('测试文件');
     });
@@ -73,7 +73,7 @@ describe('沉默审计模式 · 7 条纯 diff 规则', () => {
         makeDiffFile('README.md'),
         makeDiffFile('package.json'),
       ]);
-      const result = checkRuleE1(ctx);
+      const result = scanE1(ctx);
       expect(result.status).toBe('PASS');
     });
 
@@ -82,7 +82,7 @@ describe('沉默审计模式 · 7 条纯 diff 规则', () => {
         makeDiffFile('src/utils.js'),
         makeDiffFile('src/utils.spec.js'),
       ]);
-      const result = checkRuleE1(ctx);
+      const result = scanE1(ctx);
       expect(result.status).toBe('PASS');
     });
   });
@@ -206,26 +206,26 @@ describe('沉默审计模式 · 7 条纯 diff 规则', () => {
   describe('R11 敏感文件', () => {
     it('diff 含 .env → FAIL', () => {
       const ctx = makeCtx([makeDiffFile('.env')]);
-      const result = checkRuleA1(ctx);
+      const result = scanA1(ctx);
       expect(result.status).toBe('FAIL');
       expect(result.details[0]).toContain('敏感文件');
     });
 
     it('diff 含 id_rsa → FAIL', () => {
       const ctx = makeCtx([makeDiffFile('id_rsa')]);
-      const result = checkRuleA1(ctx);
+      const result = scanA1(ctx);
       expect(result.status).toBe('FAIL');
     });
 
     it('diff 含 credentials.json → FAIL', () => {
       const ctx = makeCtx([makeDiffFile('credentials.json')]);
-      const result = checkRuleA1(ctx);
+      const result = scanA1(ctx);
       expect(result.status).toBe('FAIL');
     });
 
     it('diff 含 *.pem → FAIL', () => {
       const ctx = makeCtx([makeDiffFile('cert/server.pem')]);
-      const result = checkRuleA1(ctx);
+      const result = scanA1(ctx);
       expect(result.status).toBe('FAIL');
     });
 
@@ -234,32 +234,32 @@ describe('沉默审计模式 · 7 条纯 diff 规则', () => {
         makeDiffFile('src/index.ts'),
         makeDiffFile('README.md'),
       ]);
-      const result = checkRuleA1(ctx);
+      const result = scanA1(ctx);
       expect(result.status).toBe('PASS');
     });
 
     it('不需要 --task 也能触发 FAIL', () => {
       const ctx = makeCtx([makeDiffFile('.env.local')]);
       // 不传 task
-      const result = checkRuleA1(ctx);
+      const result = scanA1(ctx);
       expect(result.status).toBe('FAIL');
     });
 
     it('diff 含 .env.production → FAIL', () => {
       const ctx = makeCtx([makeDiffFile('.env.production')]);
-      const result = checkRuleA1(ctx);
+      const result = scanA1(ctx);
       expect(result.status).toBe('FAIL');
     });
 
     it('diff 含 *.key → FAIL', () => {
       const ctx = makeCtx([makeDiffFile('ssl/private.key')]);
-      const result = checkRuleA1(ctx);
+      const result = scanA1(ctx);
       expect(result.status).toBe('FAIL');
     });
 
     it('diff 含 id_ed25519 → FAIL', () => {
       const ctx = makeCtx([makeDiffFile('id_ed25519')]);
-      const result = checkRuleA1(ctx);
+      const result = scanA1(ctx);
       expect(result.status).toBe('FAIL');
     });
   });

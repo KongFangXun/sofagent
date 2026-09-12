@@ -11,6 +11,8 @@
 // 边界：本模块是叶子——只依赖 ./types，不 import 注册表（rules/index.ts），无循环。
 // ============================================================
 
+import type { AuditContext, Rule, RuleCheck } from './types';
+
 /**
  * 规则编号 → 展示码（全工程唯一实现）。
  *
@@ -25,4 +27,37 @@ export function ruleCode(number: number, name: string): string {
   if (number >= 200) return `E${number - 200}`;
   if (number > 0) return `A${number}`;
   return name;
+}
+
+/**
+ * 前置块装配：注册表 meta + scan 产出 → RuleCheck（仅装配路径）。
+ *
+ * 🔴 只装配前置块（id/name/number/evidenceMode/ruleClass）——verdict（status/details）
+ *    由规则自身的 scan 判定；各规则的 WARN / FAIL 分支属业务本体，本函数不介入。
+ */
+export function assembleCheck(rule: Rule, ctx: AuditContext): RuleCheck {
+  const scan = rule.scan;
+  if (!scan) {
+    throw new Error(`[assembleCheck] 规则 ${rule.id} 未声明 scan——装配路径要求 scan 必填`);
+  }
+  const { status, details } = scan(ctx);
+  return {
+    id: rule.id,
+    name: rule.name,
+    number: rule.number,
+    status,
+    details,
+    evidenceMode: rule.evidenceMode,
+    ruleClass: rule.ruleClass,
+  };
+}
+
+/**
+ * 双轨分发（条目 7 批二~批三过渡期）：迁移中的规则走 assembleCheck（scan 装配），
+ * 未迁移的规则走旧 check 自装配。批四删除本分发器，调用方直接 assembleCheck。
+ */
+export function runRuleCheck(rule: Rule, ctx: AuditContext): RuleCheck {
+  if (rule.scan) return assembleCheck(rule, ctx);
+  if (rule.check) return rule.check(ctx);
+  throw new Error(`[runRuleCheck] 规则 ${rule.id} 既无 scan 也无 check——注册表条目不完整`);
 }

@@ -80,12 +80,22 @@ export interface ActionGovernance {
 }
 
 /**
+ * 规则判定状态（RuleCheck.status / RuleScan.status 共用）
+ */
+export type RuleStatus = 'PASS' | 'WARN' | 'FAIL' | 'SKIPPED';
+
+/**
  * 单条规则的检查结果
  */
 export interface RuleCheck {
+  /**
+   * v1.4.8 深模块条目 7：规范编号（装配路径由 assembleCheck 从 Rule.id 带入）。
+   * 旧路径（插件/规则集/未迁移规则）不填——消费方以 ruleCode 回退推导。
+   */
+  id?: string;
   name: string;
   number: number;
-  status: 'PASS' | 'WARN' | 'FAIL' | 'SKIPPED';
+  status: RuleStatus;
   details: string[];
   /** 证据模式标注（用于输出显示） */
   evidenceMode?: EvidenceMode;
@@ -118,6 +128,18 @@ export interface AuditContext {
   history?: { timestamp: string; diffFileCount: number }[];
   /** v1.3.3 #8: quick 模式标记（cli-quick 零配置审计）——A3 见到跳过越界检查（无任务描述必然误报） */
   quickMode?: boolean;
+}
+
+/**
+ * 规则 scan 产出（v1.4.8 深模块条目 7）
+ *
+ * 规则文件只负责「判」——status（PASS/WARN/FAIL）与 details；
+ * 前置块（id/name/number/evidenceMode/ruleClass）由 assembleCheck 从注册表 meta 装配。
+ * 🔴 不模板化 verdict：各规则的 WARN / FAIL 分支属业务本体，各自保留。
+ */
+export interface RuleScan {
+  status: RuleStatus;
+  details: string[];
 }
 
 /**
@@ -161,5 +183,15 @@ export interface Rule {
   };
   /** v1.4.0 交付四①：人类可读拦截理由（reporter 输出层渲染，替代笼统「违规」） */
   justification?: string;
-  check(ctx: AuditContext): RuleCheck;
+  /**
+   * v1.4.8 深模块条目 7（双轨过渡期）：规则判定本体——只返回 status/details，
+   * 前置块由 assembleCheck 装配。迁移完成的规则填本字段，未迁移的填 check。
+   * 批四移除双轨后本字段为唯一执行入口（必填）。
+   */
+  scan?: (ctx: AuditContext) => RuleScan;
+  /**
+   * 规则自装配入口（旧路径——规则文件内自建前置块）。
+   * 条目 7 批四移除；过渡期未迁移规则仍走此路径。
+   */
+  check?(ctx: AuditContext): RuleCheck;
 }

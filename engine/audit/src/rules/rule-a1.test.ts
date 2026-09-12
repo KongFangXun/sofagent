@@ -3,90 +3,85 @@
 // ============================================================
 
 import { describe, it, expect } from 'vitest';
-import { checkRuleA1 } from './rule-a1-sensitive-files';
+import { scanA1 } from './rule-a1-sensitive-files';
 import type { AuditContext } from './types';
 import type { DiffFile } from '@sofagent/core';
 import { makeDiffFile, makeCtx } from '../test-utils';
 
 describe('A1 不碰敏感', () => {
   it('.env → FAIL', () => {
-    const result = checkRuleA1(makeCtx([makeDiffFile('.env')]));
+    const result = scanA1(makeCtx([makeDiffFile('.env')]));
     expect(result.status).toBe('FAIL');
   });
 
   it('.env.local → FAIL', () => {
-    const result = checkRuleA1(makeCtx([makeDiffFile('.env.local')]));
+    const result = scanA1(makeCtx([makeDiffFile('.env.local')]));
     expect(result.status).toBe('FAIL');
   });
 
   it('.env.production → FAIL', () => {
-    const result = checkRuleA1(makeCtx([makeDiffFile('.env.production')]));
+    const result = scanA1(makeCtx([makeDiffFile('.env.production')]));
     expect(result.status).toBe('FAIL');
   });
 
   // v1.4.8 fresh-eyes（finding-12）：<prefix>.env.<suffix> 夹心形态不再绕过两条旧锚定
   it('config.env.production → FAIL（finding-12 夹心形态收口）', () => {
-    const result = checkRuleA1(makeCtx([makeDiffFile('config/config.env.production')]));
+    const result = scanA1(makeCtx([makeDiffFile('config/config.env.production')]));
     expect(result.status).toBe('FAIL');
   });
 
   it('shared.env.backup → FAIL（finding-12 夹心形态收口）', () => {
-    const result = checkRuleA1(makeCtx([makeDiffFile('deploy/shared.env.backup')]));
+    const result = scanA1(makeCtx([makeDiffFile('deploy/shared.env.backup')]));
     expect(result.status).toBe('FAIL');
   });
 
   it('id_rsa → FAIL', () => {
-    const result = checkRuleA1(makeCtx([makeDiffFile('id_rsa')]));
+    const result = scanA1(makeCtx([makeDiffFile('id_rsa')]));
     expect(result.status).toBe('FAIL');
   });
 
   it('id_ed25519 → FAIL', () => {
-    const result = checkRuleA1(makeCtx([makeDiffFile('id_ed25519')]));
+    const result = scanA1(makeCtx([makeDiffFile('id_ed25519')]));
     expect(result.status).toBe('FAIL');
   });
 
   it('credentials.json → FAIL', () => {
-    const result = checkRuleA1(makeCtx([makeDiffFile('credentials.json')]));
+    const result = scanA1(makeCtx([makeDiffFile('credentials.json')]));
     expect(result.status).toBe('FAIL');
   });
 
   it('*.pem → FAIL', () => {
-    const result = checkRuleA1(makeCtx([makeDiffFile('cert/server.pem')]));
+    const result = scanA1(makeCtx([makeDiffFile('cert/server.pem')]));
     expect(result.status).toBe('FAIL');
   });
 
   it('*.key → FAIL', () => {
-    const result = checkRuleA1(makeCtx([makeDiffFile('ssl/private.key')]));
+    const result = scanA1(makeCtx([makeDiffFile('ssl/private.key')]));
     expect(result.status).toBe('FAIL');
   });
 
   it('普通文件 → PASS', () => {
-    const result = checkRuleA1(makeCtx([makeDiffFile('src/index.ts')]));
+    const result = scanA1(makeCtx([makeDiffFile('src/index.ts')]));
     expect(result.status).toBe('PASS');
   });
 
-  it('evidenceMode 标注为 git-diff', () => {
-    const result = checkRuleA1(makeCtx([makeDiffFile('.env')]));
-    expect(result.evidenceMode).toBe('git-diff');
-  });
-
   it('.env_backup → FAIL（下划线后缀）', () => {
-    const result = checkRuleA1(makeCtx([makeDiffFile('.env_backup')]));
+    const result = scanA1(makeCtx([makeDiffFile('.env_backup')]));
     expect(result.status).toBe('FAIL');
   });
 
   it('.env-backup → FAIL（连字符后缀）', () => {
-    const result = checkRuleA1(makeCtx([makeDiffFile('.env-backup')]));
+    const result = scanA1(makeCtx([makeDiffFile('.env-backup')]));
     expect(result.status).toBe('FAIL');
   });
 
   it('.env2 → FAIL（数字后缀）', () => {
-    const result = checkRuleA1(makeCtx([makeDiffFile('.env2')]));
+    const result = scanA1(makeCtx([makeDiffFile('.env2')]));
     expect(result.status).toBe('FAIL');
   });
 
   it('.еnv（西里尔同形字）→ FAIL（ASCII-only 检查）', () => {
-    const result = checkRuleA1(makeCtx([makeDiffFile('.\u0435nv')]));
+    const result = scanA1(makeCtx([makeDiffFile('.\u0435nv')]));
     expect(result.status).toBe('FAIL');
   });
 
@@ -97,18 +92,18 @@ describe('A1 不碰敏感', () => {
     const suffixCases = ['settings.env', 'production.env', 'config.env', '财务.env', 'deploy/prod.env'];
 
     it.each(suffixCases)('%s → FAIL（后缀式 .env 不再绕过）', (path) => {
-      const result = checkRuleA1(makeCtx([makeDiffFile(path)]));
+      const result = scanA1(makeCtx([makeDiffFile(path)]));
       expect(result.status).toBe('FAIL');
     });
 
     it('普通非 .env 文件不误报：env-sample.md → PASS', () => {
       // .env 必须是结尾后缀，env-sample.md / environments.ts 这类词中含 env 的不受影响
-      const result = checkRuleA1(makeCtx([makeDiffFile('docs/env-sample.md')]));
+      const result = scanA1(makeCtx([makeDiffFile('docs/env-sample.md')]));
       expect(result.status).toBe('PASS');
     });
 
     it('前缀式 .env.local 仍 FAIL（原模式无回归）', () => {
-      const result = checkRuleA1(makeCtx([makeDiffFile('.env.local')]));
+      const result = scanA1(makeCtx([makeDiffFile('.env.local')]));
       expect(result.status).toBe('FAIL');
     });
   });
@@ -124,13 +119,13 @@ describe('A1 不碰敏感', () => {
     ];
 
     it.each(negativeCases)('%s → PASS（不命中）', (path) => {
-      const result = checkRuleA1(makeCtx([makeDiffFile(path)]));
+      const result = scanA1(makeCtx([makeDiffFile(path)]));
       expect(result.status).toBe('PASS');
     });
 
     it('finding-12 夹心形态收口不回退：config.env.production / shared.env.backup 仍 FAIL', () => {
-      expect(checkRuleA1(makeCtx([makeDiffFile('config/config.env.production')])).status).toBe('FAIL');
-      expect(checkRuleA1(makeCtx([makeDiffFile('deploy/shared.env.backup')])).status).toBe('FAIL');
+      expect(scanA1(makeCtx([makeDiffFile('config/config.env.production')])).status).toBe('FAIL');
+      expect(scanA1(makeCtx([makeDiffFile('deploy/shared.env.backup')])).status).toBe('FAIL');
     });
   });
 
@@ -146,7 +141,7 @@ describe('A1 不碰敏感', () => {
     ];
 
     it.each(dataContainerCases)('%s → FAIL（json/ya?ml/toml/md 数据容器臂已剔除）', (path) => {
-      expect(checkRuleA1(makeCtx([makeDiffFile(path)])).status).toBe('FAIL');
+      expect(scanA1(makeCtx([makeDiffFile(path)])).status).toBe('FAIL');
     });
 
     const testSpecBypassCases = [
@@ -157,7 +152,7 @@ describe('A1 不碰敏感', () => {
     ];
 
     it.each(testSpecBypassCases)('%s → FAIL（.test./.spec. 尾锚定 + 仅 basename 判定）', (path) => {
-      expect(checkRuleA1(makeCtx([makeDiffFile(path)])).status).toBe('FAIL');
+      expect(scanA1(makeCtx([makeDiffFile(path)])).status).toBe('FAIL');
     });
 
     // round-3 finding-08：basename 以 .env 开头者不进 allowlist——.env.test.js 旧版
@@ -171,17 +166,17 @@ describe('A1 不碰敏感', () => {
     ];
 
     it.each(envPrefixAllowlistCases)('%s → FAIL（finding-08：.env 开头 basename 不进 allowlist）', (path) => {
-      expect(checkRuleA1(makeCtx([makeDiffFile(path)])).status).toBe('FAIL');
+      expect(scanA1(makeCtx([makeDiffFile(path)])).status).toBe('FAIL');
     });
 
     it('finding-08 不误伤：config.env.test.js 等前缀形态仍 PASS', () => {
-      expect(checkRuleA1(makeCtx([makeDiffFile('config/config.env.test.js')])).status).toBe('PASS');
-      expect(checkRuleA1(makeCtx([makeDiffFile('src/config.env.ts')])).status).toBe('PASS');
+      expect(scanA1(makeCtx([makeDiffFile('config/config.env.test.js')])).status).toBe('PASS');
+      expect(scanA1(makeCtx([makeDiffFile('src/config.env.ts')])).status).toBe('PASS');
     });
 
     it('锚定后的良性 test/spec 源码命名仍 PASS', () => {
-      expect(checkRuleA1(makeCtx([makeDiffFile('utils/math.test.ts')])).status).toBe('PASS');
-      expect(checkRuleA1(makeCtx([makeDiffFile('components/Button.spec.tsx')])).status).toBe('PASS');
+      expect(scanA1(makeCtx([makeDiffFile('utils/math.test.ts')])).status).toBe('PASS');
+      expect(scanA1(makeCtx([makeDiffFile('components/Button.spec.tsx')])).status).toBe('PASS');
     });
   });
 });

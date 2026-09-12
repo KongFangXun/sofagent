@@ -4,11 +4,12 @@
 // ============================================================
 
 import { describe, it, expect } from 'vitest';
-import { checkRuleA1 } from './rules/rule-a1-sensitive-files';
+import { scanA1 } from './rules/rule-a1-sensitive-files';
 import { checkRuleE4 } from './rules/rule-e4-low-comment-ratio';
 import { checkRuleA3 } from './rules/rule-a3-careful-modify';
 import { checkRuleA5 } from './rules/rule-a5-honest-report';
 import { rules } from './rules';
+import { runRuleCheck } from './rules/assemble';
 import { defaultRules } from './rules';
 import type { AuditContext } from './rules/types';
 import type { DiffFile } from '@sofagent/core';
@@ -16,32 +17,32 @@ import { makeDiffFile, makeCtx } from './test-utils';
 
 describe('QA 边界验证 · R11 敏感文件', () => {
   it('.env → FAIL（不需 task/silent/logs）', () => {
-    const result = checkRuleA1(makeCtx([makeDiffFile('.env')]));
+    const result = scanA1(makeCtx([makeDiffFile('.env')]));
     expect(result.status).toBe('FAIL');
   });
   it('.env.local → FAIL', () => {
-    expect(checkRuleA1(makeCtx([makeDiffFile('.env.local')])).status).toBe('FAIL');
+    expect(scanA1(makeCtx([makeDiffFile('.env.local')])).status).toBe('FAIL');
   });
   it('.env.production → FAIL', () => {
-    expect(checkRuleA1(makeCtx([makeDiffFile('.env.production')])).status).toBe('FAIL');
+    expect(scanA1(makeCtx([makeDiffFile('.env.production')])).status).toBe('FAIL');
   });
   it('id_rsa → FAIL', () => {
-    expect(checkRuleA1(makeCtx([makeDiffFile('id_rsa')])).status).toBe('FAIL');
+    expect(scanA1(makeCtx([makeDiffFile('id_rsa')])).status).toBe('FAIL');
   });
   it('id_ed25519 → FAIL', () => {
-    expect(checkRuleA1(makeCtx([makeDiffFile('id_ed25519')])).status).toBe('FAIL');
+    expect(scanA1(makeCtx([makeDiffFile('id_ed25519')])).status).toBe('FAIL');
   });
   it('credentials.json → FAIL', () => {
-    expect(checkRuleA1(makeCtx([makeDiffFile('credentials.json')])).status).toBe('FAIL');
+    expect(scanA1(makeCtx([makeDiffFile('credentials.json')])).status).toBe('FAIL');
   });
   it('server.pem → FAIL', () => {
-    expect(checkRuleA1(makeCtx([makeDiffFile('cert/server.pem')])).status).toBe('FAIL');
+    expect(scanA1(makeCtx([makeDiffFile('cert/server.pem')])).status).toBe('FAIL');
   });
   it('private.key → FAIL', () => {
-    expect(checkRuleA1(makeCtx([makeDiffFile('ssl/private.key')])).status).toBe('FAIL');
+    expect(scanA1(makeCtx([makeDiffFile('ssl/private.key')])).status).toBe('FAIL');
   });
   it('src/index.ts → PASS（普通文件不触发）', () => {
-    expect(checkRuleA1(makeCtx([makeDiffFile('src/index.ts')])).status).toBe('PASS');
+    expect(scanA1(makeCtx([makeDiffFile('src/index.ts')])).status).toBe('PASS');
   });
 });
 
@@ -87,7 +88,7 @@ describe('QA 边界验证 · evidenceMode 标注完整性', () => {
       commitMsg: 'fix login bug',
     };
     for (const rule of rules) {
-      const result = rule.check(ctx);
+      const result = runRuleCheck(rule, ctx);
       expect(result.evidenceMode, `${rule.name} should have evidenceMode`).toBeDefined();
     }
   });

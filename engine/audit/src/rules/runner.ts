@@ -11,7 +11,7 @@ import type { AuditContext, RuleCheck, Rule } from './types';
 import { loadHistory } from '../audit-history';
 import type { AuditHistoryEntry } from '../audit-history';
 import { defaultRules, rules } from './index';
-import { ruleCode } from './assemble';
+import { ruleCode, runRuleCheck } from './assemble';
 // v1.4.5 T5: 分级降级接线——主执行路径消费 degradation 梯队
 import { DegradationManager, getCapability, isAuditTimeout, type DegradationLevel } from '../degradation';
 // v1.3.2 交付 2：国标对齐 GB/T 48000.3-2026 审计维度（opt-in 默认 false）
@@ -200,7 +200,7 @@ export function runRules(
     if (priority === 'critical') {
       // critical 层：全部跑完，收集所有 FAIL
       for (const rule of groupRules) {
-        const result = rule.check(ctx);
+        const result = runRuleCheck(rule, ctx);
         results.push(result);
 
         if (result.status === 'FAIL') {
@@ -244,7 +244,7 @@ export function runRules(
 
     // warning/crutch/extended 层：原有逻辑不变
     for (const rule of groupRules) {
-      const result = rule.check(ctx);
+      const result = runRuleCheck(rule, ctx);
       results.push(result);
     }
   }

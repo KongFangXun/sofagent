@@ -21,6 +21,7 @@ import type { LogEntry } from '@sofagent/core';
 import type { Rule } from './rules/types';
 import { runRules } from './reporter';
 import type { RuleCheck } from './rules/types';
+import { runRuleCheck } from './rules/assemble';
 
 /**
  * 历史 diff 快照——包含已解析的 diff 和日志
@@ -100,7 +101,7 @@ export function runRegression(
         commitMsg: undefined,
         config: undefined,
       };
-      newResults.push(rule.check(ctx));
+      newResults.push(runRuleCheck(rule, ctx));
     }
 
     // 对比新旧结果
