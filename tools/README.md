@@ -58,6 +58,7 @@
 | `gen/gen-weekly-report.mjs` | 周报生成 | 定期 |
 | `gen/gen-draft-lib.mjs` | **公共库**（LLM 配置/调用/降级/参数解析/版本提取，供 gen-* 复用） | 被 import |
 | `gen/gen-api-tools.mjs` | docs/API.md 第二节生成器（从 tool-registry.ts 提取全量 tool 按域分组重写，check-docs 断言「文档数 == registry 实数」） | 新增/变更 MCP tool 后 |
+| `gen/gen-plugin-manifests.mjs` | 插件 manifest 生成器（从 `engine/dsh-plugins/plugins.json` 单一手写源生成 20 个生成物——`cordis.patch.yml` + package.json 的 sofagent/dsh 段；`--check` 逐字节对账，check-template-drift 断言五/六守护） | 新增/变更 DSH 插件或 seam 后 |
 
 ## 三、dashboard/ — 仪表盘
 
