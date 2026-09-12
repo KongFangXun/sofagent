@@ -107,7 +107,7 @@ sofagent 不造 Agent——执行能力交给成熟宿主（模型 + 工具 + �
 
 | 档位 | 平台 | 约束注入 | 挂载方式 |
 |------|------|---------|---------|
-| **深度结合** | DeepSeek Harness | ✅ 插件级 | 9 款 `cordis-plugin-sofagent-*` 挂载进运行时（见上章） |
+| **深度结合** | DeepSeek Harness | ✅ 插件级 | 9 款原子 `cordis-plugin-sofagent-*` 挂载进运行时（另有 1 款聚合插件可选，见上章） |
 | **完整挂载** | OpenClaw / WorkBuddy | ✅ 自动 | Hook 注入四层约束 + 断路器 |
 | **薄挂载** | Claude Code / Codex / Cursor / Gemini CLI | ⚠️ 半自动 | Skill 目录 symlink / AGENTS.md 种子指令 + git hook 审计 |
 
@@ -134,7 +134,7 @@ sofagent 不造 Agent——执行能力交给成熟宿主（模型 + 工具 + �
 
 完整方法论（四阶段十二步）见 [FDE/GUIDE.md](./FDE/GUIDE.md)——半天精读，读完能独立做 FDE。
 
-> 💾 **部署完别急着走**：单个节点的 workflow 经 DeepSeek Harness 执行后端直接「烧」进 U 盘——U 盘就变成一个节点、一把 key，插到哪台机器哪台就能跑（拔掉零残留）。开源 9 款插件已挂载进 DSH，烧录即用。
+> 💾 **部署完别急着走**：单个节点的 workflow 经 DeepSeek Harness 执行后端直接「烧」进 U 盘——U 盘就变成一个节点、一把 key，插到哪台机器哪台就能跑（拔掉零残留）。开源 9 款原子插件已挂载进 DSH（另有 1 款聚合插件可选），烧录即用。
 
 ## FDE Skill 体系
 
@@ -260,7 +260,7 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # 加载安全规�
 
 - DeepSeek Harness（DSH 上游仓库）：<https://github.com/deepseek-ai/deepseek-harness>
 - Cordis 运行时：<https://github.com/cordiverse/cordis>
-- 9 款 `cordis-plugin-sofagent-*` 插件源码：[`engine/dsh-plugins/`](./engine/dsh-plugins/)
+- 10 款 `cordis-plugin-sofagent-*` 插件源码（9 款原子 + 1 款聚合）：[`engine/dsh-plugins/`](./engine/dsh-plugins/)
 
 | 你想了解 | 看哪里 |
 |:---------|:--------|

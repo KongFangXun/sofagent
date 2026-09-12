@@ -109,7 +109,7 @@ Sits between the Agents you already use and the model layer — it doesn't repla
 
 | Tier | Platform | Constraint injection | Mounting method |
 |------|----------|---------------------|-----------------|
-| **Deep integration** | DeepSeek Harness | ✅ Plugin-level | 9 `cordis-plugin-sofagent-*` mounted into the runtime (previous chapter) |
+| **Deep integration** | DeepSeek Harness | ✅ Plugin-level | 9 atomic `cordis-plugin-sofagent-*` mounted into the runtime (1 optional aggregate plugin also available; previous chapter) |
 | **Full mounting** | OpenClaw / WorkBuddy | ✅ Automatic | Hook-injected four-layer constraints + circuit breaker |
 | **Thin mounting** | Claude Code / Codex / Cursor / Gemini CLI | ⚠️ Semi-auto | Skills-directory symlink / AGENTS.md seed directives + git-hook audit |
 
@@ -136,7 +136,7 @@ Most tools teach you how to build Agents; sofagent first answers **where AI shou
 
 Full methodology (four phases, twelve steps) in [FDE/GUIDE.md](./FDE/GUIDE.md) — a half-day read, enough to run FDE independently afterwards.
 
-> 💾 **Don't rush off after deployment**: each node's workflow is "burned" onto a USB drive through the DeepSeek Harness execution backend — the drive becomes one node, one key: plug it into any machine and it runs there (unplug, zero residue). The 9 open-source plugins are already mounted into DSH — burn and go.
+> 💾 **Don't rush off after deployment**: each node's workflow is "burned" onto a USB drive through the DeepSeek Harness execution backend — the drive becomes one node, one key: plug it into any machine and it runs there (unplug, zero residue). The 9 open-source atomic plugins are already mounted into DSH (1 aggregate plugin also available) — burn and go.
 
 ## FDE Skill System
 
@@ -261,7 +261,7 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # load the securit
 
 - DeepSeek Harness (upstream repository): <https://github.com/deepseek-ai/deepseek-harness>
 - Cordis runtime: <https://github.com/cordiverse/cordis>
-- 9 `cordis-plugin-sofagent-*` plugin sources: [`engine/dsh-plugins/`](./engine/dsh-plugins/)
+- 10 `cordis-plugin-sofagent-*` plugin sources (9 atomic + 1 aggregate): [`engine/dsh-plugins/`](./engine/dsh-plugins/)
 
 | You want to know | Where |
 |:---------|:--------|
