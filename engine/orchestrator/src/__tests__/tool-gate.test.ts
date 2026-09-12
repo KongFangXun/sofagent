@@ -226,32 +226,32 @@ describe('ToolGate · wrapToolsWithGate 拦截语义（v1.2.1 P0）', () => {
 
 // ════════════════════════════════════════
 // 运行时接线验证（v1.2.1 半闭环修复的核心验收）
+// v1.4.8 深模块条目 4：gate 接线从 loop/nodes.ts 收编到
+//   loop/middleware-registry.ts（公共接线入口 gateToolsForRole）
+//   + loop/agent-runner.ts（engineer/reviewer 两角色执行骨架各自接线）
+// 断言强度不变，仅跟随符号落点更新扫描目标。
 // ════════════════════════════════════════
 
-describe('ToolGate · nodes.ts 运行时接线（v1.2.1 验收标准）', () => {
-  // 测试：engineer + reviewer 两个 LOOP 节点都必须接入 gate——
-  //       静态验证 loop/nodes.ts 源码中 wrapToolsWithGate 出现 ≥4 次。
-  // 依据：changelog v1.2.1 质量验证表——"grep wrapToolsWithGate 在 nodes.ts 有 4 处命中"
-  //       （import × 1 + engineer 节点调用 + reviewer 节点调用，双节点各自完整接线）。
-  // 🔴 当前实测仅 3 处（import + engineer + reviewer），此用例预期 FAIL，
-  //    工程师完成 v1.2.1 接线补全后转绿。
-  it('testNodesTsWiring_engineerAndReviewer_atLeast4WrapToolsWithGateHits', () => {
-    const nodesPath = path.resolve(__dirname, '..', 'loop', 'nodes.ts');
-    const source = fs.readFileSync(nodesPath, 'utf-8');
+describe('ToolGate · LOOP gate 运行时接线（v1.2.1 验收标准）', () => {
+  const wiringSources = ['middleware-registry.ts', 'agent-runner.ts']
+    .map((f) => fs.readFileSync(path.resolve(__dirname, '..', 'loop', f), 'utf-8'))
+    .join('\n');
 
-    const hits = source.match(/wrapToolsWithGate/g) ?? [];
+  // 测试：engineer + reviewer 两个 LOOP 角色都必须接入 gate——
+  //       静态验证接线源中 wrapToolsWithGate 出现 ≥4 次。
+  // 依据：changelog v1.2.1 质量验证表——"grep wrapToolsWithGate 在接线源有 4 处命中"
+  //       （每个接线位点：import × 1 + 调用 + 接线模式注释）。
+  it('testLoopGateWiring_wrapToolsWithGate_atLeast4Hits', () => {
+    const hits = wiringSources.match(/wrapToolsWithGate/g) ?? [];
     expect(hits.length).toBeGreaterThanOrEqual(4);
   });
 
-  // 测试：engineer 与 reviewer 两个节点各自创建独立 gate——
-  //       静态验证 nodes.ts 中 createToolGate 至少被调用 2 次（每节点一个 gate 实例）。
+  // 测试：engineer 与 reviewer 各自创建独立 gate——
+  //       静态验证接线源中 createToolGate 至少被调用 2 次（每角色一个 gate 实例）。
   // 依据：changelog v1.2.1 修复表——"defaultRunEngineer + defaultRunReviewer 均调用
   //       createToolGate() 创建 gate → wrapToolsWithGate() 包装工具集"。
-  it('testNodesTsWiring_createToolGate_calledAtLeastTwice', () => {
-    const nodesPath = path.resolve(__dirname, '..', 'loop', 'nodes.ts');
-    const source = fs.readFileSync(nodesPath, 'utf-8');
-
-    const hits = source.match(/createToolGate\(/g) ?? [];
+  it('testLoopGateWiring_createToolGate_calledAtLeastTwice', () => {
+    const hits = wiringSources.match(/createToolGate\(/g) ?? [];
     expect(hits.length).toBeGreaterThanOrEqual(2);
   });
 });
