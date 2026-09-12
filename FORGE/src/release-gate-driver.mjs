@@ -1320,13 +1320,24 @@ async function runWorker(step, runDir, target) {
     //   ③ 裸 LLM 流式路径（run-16 修复②）已产出高质量判定书（regression
     //      4310 字符，P0/P1 结构完整，还能反向抓门禁假绿）。
     // 逃生舱：FORGE_WORKER=dsh 显式要求时仍走完整 worker（DSH 链路诊断用）。
-    if (process.env.FORGE_WORKER !== 'dsh') {
+    // 🔴 v1.4.8（run-06/07 双轮实证）：**F 步骤必须走完整 worker**——直连模式是
+    // `generateReportWithoutTools`（messages: []，零工具，且 role 参数硬编码 'V'），
+    // f-diagnose / f-fix 在直连下**物理上无法改代码**：5+2 轮全部产出「审查报告」、
+    // F 分支零 commit → 被 driver 零 commit 校验逐轮拦截 → 轮次耗尽（闸门白跑）。
+    // 判据：role === 'F' 的步骤（需 bash/fs 工具改代码 + engineer 角色提示）不得走直连；
+    // V 步骤（读证据写判定，工具零增益）继续走直连以省 token/时间。
+    const needsTools = stepDef.role === 'F';
+    if (process.env.FORGE_WORKER !== 'dsh' && !needsTools) {
       console.log('[worker] 判断层直连模式（裸 LLM 流式，跳过 DSH 桥接空转）——FORGE_WORKER=dsh 可启用完整 worker');
       // v1.4.3（run-19 根因）：直连模式下证据面 = precheck 证据 + 上一步产物
       // （verdict/consolidate 无 precheck，inputs 产物是其唯一判定依据）
       // + run-07 P0-V1：acceptance 分片的日志分段证据
-      const bare = await generateReportWithoutTools(model, [], step, 'V', stepDef, [precheckEvidence, inputsEvidence, shardEvidence].filter(Boolean).join('\n\n'));
+      const bare = await generateReportWithoutTools(model, [], step, stepDef.role ?? 'V', stepDef, [precheckEvidence, inputsEvidence, shardEvidence].filter(Boolean).join('\n\n'));
       return { messages: [], content: bare ?? '', hardBreak: false, usage: undefined };
+    }
+
+    if (needsTools) {
+      console.log(`[worker] F 步骤（${step}）强制完整 worker（带工具链）——直连模式无工具，改不了代码`);
     }
 
     // v1.3.4 增量：通过 ExecutionBackend 调用 agent
