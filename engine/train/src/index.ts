@@ -12,8 +12,8 @@
 //   import { createTrainJob } from '@sofagent/orchestrator';   ← 移除
 //   import { createTrainJob } from '@sofagent/train';          ← 本包
 //
-// 原 train/index.ts（v1.4.8 深模块条目 9 建的 29 符号窄入口）已被本文件
-// 取代——其符号集是本文件子集（实测 29 ⊆ 562），故无遗漏。
+// 公开面完整性：本 barrel 覆盖 train 域全部 @public 符号；29 符号窄入口
+// 为本集合的子集（实测 29 ⊆ 562），无遗漏。
 // ============================================================
 
 /* @public */ export {

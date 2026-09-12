@@ -1,7 +1,7 @@
 # dependency-direction.yml · 包边界清单（依赖方向 SSOT）
 # ============================================================
 # v1.4.8 第七章/第〇批交付——build 序列 14 包的允许依赖方向（核心层 ← 约束层 ← 适配层 ← CLI/展示层）。
-#   第 7 批（train 拆包）后：13 模块包 + engine/hooks/sofagent-load-chain。
+#   覆盖范围：13 模块包 + engine/hooks/sofagent-load-chain。
 #
 # 🔴 口径裁定（写进清单头部，避免与既有门禁混写——各口径全表见开发 Prompt「包计数术语表」SSOT）：
 #   ① 本清单覆盖 **build 序列 14 包** = 13 模块包 + engine/hooks/sofagent-load-chain（**不含 engine/umbrella**）。
@@ -115,7 +115,7 @@ rhythm:
   #       + rules（§9b 历史漏登记，packages 段早已收录）
   #       + umbrella（第 13 个 engine 包；npm 名 sofagent，随主线发布的聚合包）
   #       + engine/hooks/sofagent-load-chain（build 序列末位构建钩子）
-  #       + train（第 7 批拆包新增；必须精确同频，故 §9b/§12b 自动纳入其校验）
+  #       + train（必须精确同频，故 §9b/§12b 自动纳入其校验）
   # 实测五者当前同为 1.4.7——本段把「隐式全同频」改写为「显式声明同频」。
   sync:
     - harness
