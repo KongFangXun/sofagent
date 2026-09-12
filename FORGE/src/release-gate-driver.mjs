@@ -145,7 +145,7 @@ function safeTeardownWorktree() {
 // v1.3.0 修复：场景数硬编码 148 → 动态从 acceptance-test.sh 提取（与 check-test-count.sh 同口径），
 // 防场景数增长后（S149+）超出分片范围导致新场景零分析。
 const ACCEPTANCE_TOTAL_SCENARIOS = (() => {
-  const scriptPath = join(__dirname, '../../FORGE/playbook/acceptance-test.sh');
+  const scriptPath = join(__dirname, '../../playbook/acceptance-test.sh');
   try {
     const s = readFileSync(scriptPath, 'utf8');
     const m = s.match(/^scenario (\d+)[a-z]? "/gm);
@@ -235,6 +235,11 @@ const STEP_RECURSION_LIMITS = {
   'coverage':    40,
   'consolidate': 80,
   'verdict':     50,
+  // v1.4.8（run-09 实证）：F 步骤原先落默认 50 步（≈25 次工具），而 f-fix 实测需读 fix-plan
+  // + 逐文件读改（92 次工具调用仍在「读」阶段就被熔断）→ 从未走到「修改+提交」。
+  // F 步骤是**写操作密集**任务，给足预算：f-diagnose 80 / f-fix 200。
+  'f-diagnose': 80,
+  'f-fix':      200,
 };
 
 // ═══════════════════════════════════════════════════════════
@@ -1242,7 +1247,7 @@ async function runWorker(step, runDir, target) {
   //    stream 循环逻辑（toolCallCount / hardBreak / gotReport / graceWindow）作为
   //    streamHandler 回调传入——backend 在每个 chunk 调 streamHandler，返回
   //    { hardBreak: true } 时中断 stream 并返回已累积的消息。
-  console.log(`[worker:${step}] 开始执行（role=V, model=${cfg.model}）`);
+  console.log(`[worker:${step}] 开始执行（role=${stepDef.role ?? 'V'}, model=${cfg.model}）`);
   const t0 = Date.now();
 
   const recursionLimit = STEP_RECURSION_LIMITS[step] ?? stepDef.recursionLimit ?? 50;
@@ -1279,7 +1284,7 @@ async function runWorker(step, runDir, target) {
         if (msg?._getType?.() === 'ai' && msg.tool_calls?.length > 0) {
           for (const tc of msg.tool_calls) {
             streamToolCallCount++;
-            console.log(`  → [${step}#V] tool #${streamToolCallCount}: ${tc.name}`);
+            console.log(`  → [${step}#${stepDef.role ?? 'V'}] tool #${streamToolCallCount}: ${tc.name}`);
           }
         }
       }
@@ -1918,7 +1923,7 @@ function runCommand(command, cwd, timeoutMs) {
  */
 async function runAcceptanceTestDirectly(runDir) {
   const logPath = join(runDir, 'acceptance-raw.log');
-  const scriptPath = join(REPO_ROOT, 'FORGE/playbook/acceptance-test.sh');
+  const scriptPath = join(REPO_ROOT, 'playbook/acceptance-test.sh');
 
   // 第 1 步：构建审计包（acceptance-test.sh 依赖 dist 产物）
   // 优化：dist/index.js 已存在时跳过 build，减少 driver 被 sandbox kill 的窗口
@@ -2030,7 +2035,7 @@ async function runAcceptanceTestDirectly(runDir) {
  * @returns {Array<{ num: number, title: string, script: string }>}
  */
 function parseRegressionDimensions() {
-  const checklistPath = join(REPO_ROOT, 'FORGE/playbook/regression-checklist.md');
+  const checklistPath = join(REPO_ROOT, 'playbook/regression-checklist.md');
   const md = readFileSync(checklistPath, 'utf-8');
   const lines = md.split('\n');
 
@@ -2147,7 +2152,7 @@ async function execRegressionDim(script, timeoutMs = 60_000) {
  *
  * 文件格式：
  * {
- *   "meta": { "source": "FORGE/playbook/regression-checklist.md", "dims": 49, "runAt": "..." },
+ *   "meta": { "source": "playbook/regression-checklist.md", "dims": 49, "runAt": "..." },
  *   "dims": {
  *     "1": { "num": 1, "title": "CHANGELOG 纯度与完整性", "exitCode": 0, "output": "..." },
  *     ...
@@ -2166,7 +2171,7 @@ async function runRegressionPrecheck(runDir) {
 
   const payload = {
     meta: {
-      source: 'FORGE/playbook/regression-checklist.md',
+      source: 'playbook/regression-checklist.md',
       dims: dims.length,
       runAt: new Date().toISOString(),
       note: '由 driver 预执行生成（v1.2.5+ 方案 A）。worker 只读此文件判定，禁止重新执行命令。',
@@ -2279,7 +2284,7 @@ async function runRegressionPrecheck(runDir) {
  * @returns {Array<{ num: number, title: string }>}
  */
 function parseAcceptanceScenarios() {
-  const accPath = join(REPO_ROOT, 'FORGE/playbook/acceptance-test.sh');
+  const accPath = join(REPO_ROOT, 'playbook/acceptance-test.sh');
   const src = readFileSync(accPath, 'utf-8');
   const scenarios = [];
   // 匹配 scenario <num> "<title>..."> 或 scenario <num> 换行 "<title>"
@@ -2394,10 +2399,10 @@ async function runCoveragePrecheck(runDir, target) {
   const changelogModules = parseChangelogModules(changelogRel);
   const scenarios = parseAcceptanceScenarios();
 
-  // 豁免清单（FORGE/playbook/.coverage-exempt）：标题命中的 changelog 模块标 exempt——
+  // 豁免清单（playbook/.coverage-exempt）：标题命中的 changelog 模块标 exempt——
   // 非交付性章节（如修复批施工记录）不参与场景对账（与 check-review-system ⑥段同一豁免源）
   let exemptKeywords = [];
-  const exemptPath = join(process.cwd(), 'FORGE/playbook/.coverage-exempt');
+  const exemptPath = join(process.cwd(), 'playbook/.coverage-exempt');
   if (existsSync(exemptPath)) {
     exemptKeywords = readFileSync(exemptPath, 'utf-8').split('\n').map((l) => l.trim()).filter((l) => l !== '' && !l.startsWith('#'));
   }
@@ -2818,7 +2823,7 @@ async function ensureAcceptancePreRun(args, runDir) {
       console.log(`  [driver] --skip-acceptance 已从 ${externalLog} 复制预跑日志到 runDir`);
     } else {
       console.log('  [driver] --skip-acceptance 已指定，但未找到预跑日志');
-      console.log(`  [driver] 请先手动预跑：bash FORGE/playbook/acceptance-test.sh > ${externalLog} 2>&1`);
+      console.log(`  [driver] 请先手动预跑：bash playbook/acceptance-test.sh > ${externalLog} 2>&1`);
       writeFileSync(preRunLog,
         '--skip-acceptance 模式：未预跑 acceptance-test.sh。\n' +
         `请手动预跑后把日志放到 ${externalLog}（driver 会自动复制），\n` +
@@ -3526,7 +3531,7 @@ async function main() {
       console.log('[driver] --judgment-only：未找到脚本层预跑日志，主动执行 acceptance-test.sh（一次性）...');
       const { execSync } = await import('node:child_process');
       try {
-        const raw = execSync('bash FORGE/playbook/acceptance-test.sh', {
+        const raw = execSync('bash playbook/acceptance-test.sh', {
           cwd: REPO_ROOT,
           encoding: 'utf-8',
           timeout: 600_000, // 10 分钟上限（314 场景实测约 1.5 分钟）
