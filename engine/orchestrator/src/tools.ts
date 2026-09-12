@@ -531,7 +531,7 @@ export interface ToolGateOptions {
   agentName?: string;
   /** 当前任务描述（默认空字符串） */
   taskDesc?: string;
-  /** 工作目录（默认 process.cwd()） */
+  /** 工作目录（默认 FORGE_WORKTREE_ROOT，未设则 process.cwd()） */
   cwd?: string;
   /**
    * v1.4.8 第二章：应用级工具策略（app → 允许 tool 白名单）。
@@ -567,7 +567,12 @@ export function createToolGate(options: ToolGateOptions = {}) {
   const engine = new RulesEngine(defaultToolRules);
   const agentName = options.agentName ?? 'engineer';
   const taskDesc = options.taskDesc ?? '';
-  const cwd = options.cwd ?? process.cwd();
+  // 🔴 v1.4.8（run-09 实证）：默认 cwd 优先读 FORGE_WORKTREE_ROOT——FORGE 的 worktree
+  // 隔离（spawnWorker 注入该 env）此前只有 dsh-backend 显式对准副本（见其 execFile cwd），
+  // langgraph-backend 不传 options.cwd → 工具全部落在**主仓**：F 链的 f-fix 改的是主仓
+  // 工作区、worktree 恒零 commit，被 driver 零 commit 校验逐轮拦截（run-09 实证：主仓出现
+  // 313 文件批量改动而 F 分支 commit=0）。语义与 dsh-backend 对齐：该 env 未设时行为不变。
+  const cwd = options.cwd ?? process.env.FORGE_WORKTREE_ROOT ?? process.cwd();
   // v1.4.8 第二章：app×tool 策略（fail-closed 先于规则引擎；拦截 reason 带
   // app 名 + tool 名 + 策略来源可追溯——与 sandbox/tool-gate.ts 事件字段对齐）
   const appPolicy = options.appToolPolicy;
