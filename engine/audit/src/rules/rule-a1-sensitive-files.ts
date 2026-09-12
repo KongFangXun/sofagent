@@ -23,9 +23,12 @@ const SENSITIVE_PATTERNS = [
 ];
 
 // round-2 finding-01: 模板/测试/类型声明/代码源文件形态不视为敏感 env 文件（保留夹心形态收口）。
-// .env 后跟代码扩展名（ts/js 等）是合法源码命名（config.env.ts），仅 .example/.sample/
-// .d.ts/.test.<代码扩展名>/.spec.<代码扩展名> 或 .env.<代码扩展名> 结尾的放行；
+// 仅 .example/.sample/.d.ts/.test.<代码扩展名>/.spec.<代码扩展名> 或 .env.<代码扩展名> 结尾的放行；
 // .env.local/.env.production 等仍 FAIL。
+// ⚠️ 豁免口径以 isSensitiveFile 内守卫为准（allowlist 是必要非充分条件）：
+// basename 以 .env 开头者（.env.example/.env.sample/.env.test.js 等）**不进豁免**，
+// 一律走 SENSITIVE_PATTERNS 匹配（finding-08：豁免面叠加曾把 .env.test.js 从
+// 拦截变放行）；schema.env.example 等非 .env 开头的模板名正常放行。
 // round-3 finding-01/02/03：收窄两处绕过面——
 // ① 剔除 json/ya?ml/toml/md 数据容器臂：serverless.env.yml（Serverless Framework 经典
 //    密钥文件）、.env.json/.env.yaml 等 env dump 标准载体曾被静默放行，仅剩 A2 内容兜底；
