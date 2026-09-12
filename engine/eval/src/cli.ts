@@ -4,7 +4,7 @@
 // v1.3.7 新增
 //
 // 组装 audit runner 适配器 → runEval → 持久化 → 报告
-// CLI 层耦合 @sofagent/audit，eval 核心模块保持引擎中立
+// CLI 层耦合 @sofagent/audit，eval 核心模块保持中立
 // ============================================================
 
 import { existsSync, mkdirSync } from 'fs';
@@ -250,7 +250,7 @@ export async function main(cliArgs?: string[]): Promise<void> {
   const subcommand = args[0];
 
   if (!subcommand || subcommand === '--help' || subcommand === '-h') {
-    console.log('sofagent-eval — 质量评估引擎');
+    console.log('sofagent-eval — 质量评估模块');
     console.log('');
     console.log('Usage: sofagent-eval run [options]');
     console.log('');

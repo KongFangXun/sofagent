@@ -412,7 +412,7 @@ migrate_to_install_dir() {
       err "数据迁移失败，安装中止——源目录未删除、数据安全，请检查磁盘/权限后重跑 install.sh"
       return 1
     fi
-    # 同步迁移引擎内部状态（.sofagent/ → internal/）
+    # 同步迁移内部状态（.sofagent/ → internal/）
     local old_internal="${SCRIPT_DIR}/.sofagent"
     local new_internal="$SOFAGENT_HOME/internal"
     if [ -d "$old_internal" ]; then
@@ -794,7 +794,7 @@ case "$COMMAND" in
     # 快速状态：版本 + daemon 运行状态 + 今日审计概览
     # v1.4.8 F-55: registry/umbrella 态不含 git 审计语义——status 是安装态查询非
     # 仓库审计，语义上不需要 git；为防与仓库内 sofagent-audit CLI 的 status
-    # 语义混淆，显式提示 registry 态用法（audit 引擎的仓库状态用 core CLI）。
+    # 语义混淆，显式提示 registry 态用法（audit 模块的仓库状态用 core CLI）。
     echo "sofagent $(cat "$SOFAGENT_HOME/VERSION" 2>/dev/null || echo 'unknown')"
     if [ -f "$SOFAGENT_HOME/data/daemon.json" ]; then
       echo "daemon: $(node -e 'const d=require(process.argv[1]);console.log(d.mode||"stopped")' "$SOFAGENT_HOME/data/daemon.json" 2>/dev/null || echo 'unknown')"

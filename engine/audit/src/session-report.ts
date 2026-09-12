@@ -136,7 +136,7 @@ function renderMarkdown(report: SessionReport): string {
   lines.push('');
   lines.push(`${icon} **${statusLine}**`);
   lines.push('');
-  lines.push(`- 引擎：${report.engine}`);
+  lines.push(`- 模块：${report.engine}`);
   lines.push(
     `- 检查数：${report.ruleCount}（通过 ${report.passCount} · 警告 ${report.warnCount} · 违规 ${report.failCount} · 跳过 ${report.skipCount}）`
   );

@@ -2,7 +2,7 @@
 // refine-agent/refine-driver.ts · Refine 循环驱动（v1.3.7 交付 T04）
 // ============================================================
 //
-// Refine Agent = "从能用到好用"——复用 loop-agent 引擎，换 L2 判据。
+// Refine Agent = "从能用到好用"——复用 loop-agent，换 L2 判据。
 //
 // 与 Onboard 的差异（协议设计 §7.1）：
 //   |          | Onboard Agent（v1.4.7）       | Refine Agent（本版）          |
@@ -11,7 +11,7 @@
 //   | 判据     | Ontology 本体数据（对错）     | 质量规则集（好坏）            |
 //   | FORGE    | release-gate-loop（发版门禁） | fresh-eyes-loop（新鲜眼审查） |
 //   | 触发     | activate 后立即               | Onboard 收敛 PASS 后          |
-//   | L1/L3/L4 | 自建                          | **复用 loop-agent 引擎**      |
+//   | L1/L3/L4 | 自建                          | **复用 loop-agent**      |
 //
 // 复用策略：
 //   - L1 judge：直接 import loop-agent/judge.ts 的 judgeRunResult

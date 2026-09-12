@@ -2,7 +2,7 @@
 //
 // 定位：后训练阶段 2 的选型前置——Qwen3 vs R1-Distill、7B vs 14B 这类
 // 对比实验，手动跑既慢又不可复现。本模块把「同一数据多基座并行提交 →
-// 对比报告」做成引擎能力：
+// 对比报告」做成模块能力：
 //
 //   trainCompare({ dataPath, bases: ['qwen3-8b', 'r1-distill-7b'] })
 //     → 同一数据 hash（computeDatasetHash——可复现性锚点）

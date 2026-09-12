@@ -87,7 +87,7 @@ function hasParentCommit(): boolean {
  * range 的终点（`git log -1 <ref>`），而非字面 HEAD。此前 `git log -1`
  * 写死 HEAD，range 审计 HEAD~3..HEAD 时 A9 被字面 HEAD 的 commitMsg
  * 污染（误报面），且被审计历史 commit 自带的注入 payload 完全漏检（漏报面）。
- * 复用 full 引擎现成件 resolveDiffEndpoint()（diff-ref.ts），与 full 引擎
+ * 复用 full 模式现成件 resolveDiffEndpoint()（diff-ref.ts），与 full 模式
  * commitMsg 语义对齐：含 `..` 取终点、普通 ref 原样、空回退 HEAD。
  *
  * @param ref 读取 commit message 的 git ref（默认 'HEAD'，语义与旧行为等价）
@@ -279,7 +279,7 @@ export function runCliQuick(argv: string[]): number {
     console.log('sofagent-audit — AI Agent 行为审计\n');
     console.log('用法（quick 只读审计，零安装）：');
     console.log('  npx -y -p @sofagent/audit sofagent-audit              审计最近一次 commit（官方入口，始终最新；不写 history.jsonl 无留痕，适合临时检查）');
-    console.log('  npx -y -p @sofagent/audit sofagent-audit HEAD~3..HEAD   审计指定范围（quick 引擎直接跑，规则覆盖面同 quick；不写 history.jsonl）');
+    console.log('  npx -y -p @sofagent/audit sofagent-audit HEAD~3..HEAD   审计指定范围（quick 模式直接跑，规则覆盖面同 quick；不写 history.jsonl）');
     console.log('  npx -y -p @sofagent/audit sofagent-audit -v, --version 显示版本号');
     console.log('  npx -y -p @sofagent/audit sofagent-audit -h, --help    显示此帮助\n');
     console.log('  npx -y -p @sofagent/audit sofagent-audit --stats          审计聚合报告（近 30 天治理 KPI——v1.4.3）');
@@ -472,7 +472,7 @@ export function runCliQuick(argv: string[]): number {
   // v1.3.3 #8: quickMode=true 标记——A3（不改越界）见到跳过：quick 模式无真实任务描述，
   // task='quick-audit' 与任何文件都不匹配，必然 100% 误报越界 WARN。
   // v1.3.8 P1-B2: 传入真实 commitMsg（git log -1 取）——此前第 6 参恒 undefined，
-  // A9（prompt 注入检测）在 quick 模式无输入假绿；commitMsg 取不到时 A9 由引擎按
+  // A9（prompt 注入检测）在 quick 模式无输入假绿；commitMsg 取不到时 A9 按
   // 无输入处理（输出标「跳过」），不再假绿。
   // v1.3.8 P1-B4: 改用对象参数签名（十位置参数四布尔陷阱重构）。
   // v1.4.4 D-1: commitMsg 取被审计 range 终点（resolveDiffEndpoint）——

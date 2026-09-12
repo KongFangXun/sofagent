@@ -161,7 +161,7 @@ export interface DecisionLogEntry {
   hmacAlgo?: 'stable';
   /** ⚠️ 必加——读侧 checkDecisionChainDetailed 靠它区分「真篡改 vs 环境漂移」 */
   envFingerprint?: string;
-  /** 决策引擎标识（缺省 'sofagent-audit'） */
+  /** 决策记录来源标识（缺省 'sofagent-audit'） */
   engine?: string;
   /** 触发证据链（字符串数组，可空）—— v1.3.3 新增
    *

@@ -1,6 +1,6 @@
 # @sofagent/evolve
 
-sofagent Skill 优化引擎——Skill 质量分析、安全审查、优化建议、自动重构。
+sofagent Skill 优化模块——Skill 质量分析、安全审查、优化建议、自动重构。
 
 ## 安装
 

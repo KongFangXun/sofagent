@@ -1086,7 +1086,7 @@ S125_OK=true; [ -f "$PROJECT_ROOT/install.sh" ] || { fail "根目录 install.sh 
 $S125_OK && pass
 S126_OK=true; RULES_DIST="$PROJECT_ROOT/engine/rules/dist/index.js"
 [ -f "$RULES_DIST" ] || { fail "engine/rules/dist/index.js 不存在"; S126_OK=false; }
-if $S126_OK; then S126_RESULT=$(RULES="$RULES_DIST" node -e "const m = require(process.env.RULES); if (!m || typeof m !== 'object') { console.log('导出非 object'); process.exit(1); } const fns = Object.keys(m).filter(k => typeof m[k] === 'function'); if (fns.length < 1) { console.log('无函数导出'); process.exit(1); } console.log('OK exports=' + fns.length); " 2>&1) || true; echo "$S126_RESULT" | grep -q "^OK " || { fail "rules 引擎导出验证失败: $S126_RESULT"; S126_OK=false; }; fi
+if $S126_OK; then S126_RESULT=$(RULES="$RULES_DIST" node -e "const m = require(process.env.RULES); if (!m || typeof m !== 'object') { console.log('导出非 object'); process.exit(1); } const fns = Object.keys(m).filter(k => typeof m[k] === 'function'); if (fns.length < 1) { console.log('无函数导出'); process.exit(1); } console.log('OK exports=' + fns.length); " 2>&1) || true; echo "$S126_RESULT" | grep -q "^OK " || { fail "rules 模块导出验证失败: $S126_RESULT"; S126_OK=false; }; fi
 $S126_OK && pass
 scenario 127 "v1.2.0 FDE 交付物 + DP-1 版本自检 + DP-2 签名 CLI"
 S127_OK=true; [ -f "$PROJECT_ROOT/FDE/templates/enterprise-profile.md" ] || { fail "FDE/templates/enterprise-profile.md 不存在"; S127_OK=false; }
@@ -2235,7 +2235,7 @@ grep -q "'TEAM'" "$PROJECT_ROOT/engine/audit/src/decision-schema.ts" || S262_OK=
 grep -q "EVOLUTION\|TEAM" "$PROJECT_ROOT/engine/audit/src/decision-log.ts" || S262_OK=false
 $S262_OK && pass "evidence 字段 + DecisionKind 加 EVOLUTION/TEAM" || fail "审计留痕字段缺失"
 # ─── v1.3.4 新增场景 S263-S269（L3 组织能力市场 + SkillScan + MARKET 审计 + DSH 编排分离）─── 注：v1.3.6 更名 market_*→commons_*（能力公地），断言路径已同步
-scenario 263 "v1.3.4 交付 1+2：能力公地引擎 10 模块 + MCP 6 tool 注册（v1.3.6 更名 market_*→commons_*）"; S263_OK=true
+scenario 263 "v1.3.4 交付 1+2：能力公地 10 模块 + MCP 6 tool 注册（v1.3.6 更名 market_*→commons_*）"; S263_OK=true
 for f in publisher catalog invoker rating owner retire skill-scan rule-harvest rule-jury rule-promote; do
   [ -f "$PROJECT_ROOT/engine/orchestrator/src/commons/$f.ts" ] || S263_OK=false
 done
@@ -2245,7 +2245,7 @@ grep -q "commons_invoke" "$PROJECT_ROOT/engine/mcp/src/tool-registry.ts" || S263
 grep -q "commons_rate" "$PROJECT_ROOT/engine/mcp/src/tool-registry.ts" || S263_OK=false
 grep -q "commons_retire" "$PROJECT_ROOT/engine/mcp/src/tool-registry.ts" || S263_OK=false
 grep -q "commons_harvest_rule" "$PROJECT_ROOT/engine/mcp/src/tool-registry.ts" || S263_OK=false
-$S263_OK && pass "commons 10 模块 + 6 MCP tool 注册" || fail "commons 引擎或 MCP 注册缺失"
+$S263_OK && pass "commons 10 模块 + 6 MCP tool 注册" || fail "commons 模块或 MCP 注册缺失"
 # S264/S265 真实归并对销：同模块族（rating/owner trust）+ 同证据面（纯 grep）+ 无独立语义边界——六条 grep 断言零删减全保留
 scenario 264 "v1.3.4 交付 1+3（归并）：评分公式 trust×评分×log(量+1) + 防刷 + owner trust 三态阈值（0.5/0.6/0.4）"; S264_OK=true
 grep -q "Math.log" "$PROJECT_ROOT/engine/orchestrator/src/commons/rating.ts" || S264_OK=false
@@ -2301,12 +2301,12 @@ grep -q "human_confirmed" "$PROJECT_ROOT/engine/mcp/src/tools/promote-ab.ts" || 
 grep -q "human_confirmed" "$PROJECT_ROOT/engine/mcp/src/tools/snapshot-restore.ts" || S271_OK=false
 grep -q "executed: false" "$PROJECT_ROOT/engine/mcp/src/tools/promote-ab.ts" || S271_OK=false
 $S271_OK && pass "promote_ab/snapshot_restore 人审门控（未确认 executed:false）" || fail "人审语义缺失——无人审确认即执行"
-scenario 272 "v1.3.5 交付 3：instinct 引擎四模块 + 单测存在"; S272_OK=true
+scenario 272 "v1.3.5 交付 3：instinct 模块四模块 + 单测存在"; S272_OK=true
 for f in extractor scorer evolver failure-log; do
   [ -f "$PROJECT_ROOT/engine/orchestrator/src/instinct/$f.ts" ] || S272_OK=false
 done
 grep -q "skill/custom" "$PROJECT_ROOT/engine/orchestrator/src/instinct/evolver.ts" || S272_OK=false  # 写运行时目录非仓库 SKILL/
-$S272_OK && pass "instinct 四模块 + evolver 写运行时目录" || fail "instinct 引擎缺失或写错目录（污染发布源）"
+$S272_OK && pass "instinct 四模块 + evolver 写运行时目录" || fail "instinct 模块缺失或写错目录（污染发布源）"
 scenario 273 "v1.3.5 交付 5：FDE 运维四件（companion/fde-session/fde-registry/问卷）"; S273_OK=true
 [ -f "$PROJECT_ROOT/engine/daemon/src/companion.ts" ] || S273_OK=false
 [ -d "$PROJECT_ROOT/engine/orchestrator/src/fde-session" ] || S273_OK=false
@@ -2328,12 +2328,12 @@ grep -q '"@automerge/automerge"' "$PROJECT_ROOT/engine/orchestrator/package.json
 grep -rn '"automerge"' "$PROJECT_ROOT"/engine/*/package.json 2>/dev/null | grep -v "@automerge" | grep -q . && S276_OK=false  # 旧包名零残留
 $S276_OK && pass "automerge 3.x 包名切换完成" || fail "automerge 旧包名残留（依赖树混乱）"
 # ─── v1.3.5 run-07 coverage 补覆盖 S277-S281（ab-test P0 / daemon 快照 / bugfix38 / 工作区扫描）───
-scenario 277 "v1.3.5 交付 1：A/B 实验闭环——run_ab_test tool + runABTest 引擎 + decidePromotion 决策器"; S277_OK=true
+scenario 277 "v1.3.5 交付 1：A/B 实验闭环——run_ab_test tool + runABTest 模块 + decidePromotion 决策器"; S277_OK=true
 grep -q "run_ab_test" "$PROJECT_ROOT/engine/mcp/src/tool-registry.ts" || S277_OK=false
 grep -q "export async function runABTest" "$PROJECT_ROOT/engine/ab-test/src/ab-runner.ts" || S277_OK=false
 grep -q "decidePromotion" "$PROJECT_ROOT/engine/ab-test/src/ab-promoter.ts" || S277_OK=false
 grep -q "persistABTestResult" "$PROJECT_ROOT/engine/ab-test/src/persistence.ts" || S277_OK=false
-$S277_OK && pass "A/B 实验闭环四件（MCP tool/引擎/决策器/持久化）" || fail "ab-test 闭环缺件——P0 自进化交付不完整"
+$S277_OK && pass "A/B 实验闭环四件（MCP tool/模块/决策器/持久化）" || fail "ab-test 闭环缺件——P0 自进化交付不完整"
 scenario 278 "v1.3.5 交付 1：A/B 归属溯源——身份码经调用 Trace 落链（v1.3.1 前置依赖兑现）"; S278_OK=true
 grep -q "callModelAPI" "$PROJECT_ROOT/engine/ab-test/src/ab-runner.ts" || S278_OK=false
 grep -q "agentId" "$PROJECT_ROOT/engine/core/src/model-client.ts" || S278_OK=false

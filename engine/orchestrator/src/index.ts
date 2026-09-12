@@ -396,7 +396,7 @@
 /* @public */ export { DEFAULT_L5_CONFIG } from './loop-agent/driver';
 /* @public */ export type { ConvergenceState, L5ConvergenceConfig } from './loop-agent/driver';
 
-// v1.3.3 交付 T04：Refine Agent（质量循环——复用 loop-agent 引擎，换 L2 质量判据）
+// v1.3.3 交付 T04：Refine Agent（质量循环——复用 loop-agent，换 L2 质量判据）
 /* @public */ export { runRefineLoop, createRefineOnConvergedCallback } from './refine-agent/refine-driver';
 /* @public */ export type { RefineDriverOptions, RefineLoopResult, RefineTriggerConfig, OnboardConvergedContext } from './refine-agent/refine-driver';
 /* @public */ export { judgeQuality, qualityFeedbackText, QUALITY_TARGET_FIELDS } from './refine-agent/quality-judge';

@@ -1,5 +1,5 @@
 // ============================================================
-// permission/scenario-router.ts · 场景匹配引擎
+// permission/scenario-router.ts · 场景匹配模块
 // v1.3.7 · v1.3.7 开发② 新增
 //
 // 判定链第 2 环：身份（v1.3.1 身份码）→ 【场景匹配】 → 风险等级 → 放行/deny/人工批准
@@ -103,7 +103,7 @@ export interface ScenarioRouter {
 }
 
 /**
- * 创建场景匹配引擎。
+ * 创建场景匹配模块。
  */
 export function createScenarioRouter(options: ScenarioRouterOptions = {}): ScenarioRouter {
   const scenarios = [...BUILTIN_SCENARIOS, ...(options.extraScenarios || [])];

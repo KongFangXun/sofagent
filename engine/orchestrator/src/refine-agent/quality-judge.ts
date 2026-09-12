@@ -55,10 +55,10 @@ export interface QualityJudgeOptions {
  *   1. 从运行产出提取目标字段（output / skill_description / skill_few_shot）
  *   2. 对字段跑质量规则集（matchQualityRules）
  *   3. 把质量检查结果转译为 DiffReport 的三类 mismatch
- *   4. 汇总为 DiffReport（给 L3 定位器用——复用 loop-agent 引擎）
+ *   4. 汇总为 DiffReport（给 L3 定位器用——复用 loop-agent）
  *
  * 接口对齐 loop-agent/ontology-comparator 的 compareWithOntology，
- * 输出统一为 DiffReport，这样 Refine 的 L3-L5 可以直接复用 loop-agent 引擎。
+ * 输出统一为 DiffReport，这样 Refine 的 L3-L5 可以直接复用 loop-agent。
  *
  * @param outcome 运行产出（取 outcome.output 作为主要检查对象）
  * @param taskId 任务 ID（可从 outcome 传入，也可单独传）

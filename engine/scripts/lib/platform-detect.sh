@@ -45,7 +45,7 @@ parse_args() {
 
 模式说明：
   默认模式         平台无关安装（只写 ~/.sofagent/）+ FDE Skill（企业部署能力）
-  --base-only      仅安装约束底座 + 四引擎（不装 FDE Skill）
+  --base-only      仅安装约束引擎（不装 FDE Skill）
 
 平台说明（默认不探测、不枚举任何平台——平台集成为显式 opt-in）：
   （不传）    通用安装：只写 sofagent 自己的目录 ~/.sofagent/，不碰任何第三方平台目录

@@ -104,7 +104,7 @@ export interface TrainAuditEntry {
   envFingerprint: string;
   hmacAlgo?: 'stable';
   hmacSig?: string;
-  /** 写入引擎标识 */
+  /** 写入来源标识 */
   engine: string;
 }
 

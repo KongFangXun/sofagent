@@ -1,5 +1,5 @@
 // ============================================================
-// permission/policy-engine.ts · 策略引擎（放行/deny/人工批准）
+// permission/policy-engine.ts · 策略模块（放行/deny/人工批准）
 // v1.3.7 · v1.3.7 开发② 新增
 //
 // 判定链完整闭环：身份 → 场景匹配 → 风险等级 → 【放行/deny/人工批准】
@@ -101,7 +101,7 @@ export interface PolicyEngine {
 }
 
 /**
- * 创建策略引擎。
+ * 创建策略模块。
  */
 export function createPolicyEngine(options: PolicyEngineOptions = {}): PolicyEngine {
   const router = options.scenarioRouter || createScenarioRouter();

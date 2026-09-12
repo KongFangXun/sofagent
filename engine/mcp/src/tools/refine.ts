@@ -4,7 +4,7 @@
 //
 // 触发质量循环 + 查结果：
 //   refine({ action: 'trigger', task, agent_id })
-//     → 触发 Refine 循环（复用 loop-agent 引擎，换 L2 质量判据）
+//     → 触发 Refine 循环（复用 loop-agent，换 L2 质量判据）
 //   refine({ action: 'query' })
 //     → 查询上次 Refine 循环的结果摘要
 //   refine({ action: 'trigger', task, agent_id, team_id })

@@ -1,6 +1,6 @@
 // sofagent-audit · OpenClaw 原生插件（code-plugin）
 // 变更机器审阅：before_tool_execute 拦截危险工具（rm -rf / git push / git reset --hard 等）
-// + sofagent_audit 工具跑 24 规则 + git diff 硬证据审计（复用 @sofagent/audit 引擎，平台无关零重写）。
+// + sofagent_audit 工具跑 24 规则 + git diff 硬证据审计（复用 @sofagent/audit 模块，平台无关零重写）。
 // 对应 DSH 插件 cordis-plugin-sofagent-audit 的 OpenClaw 形态（同引擎、不同宿主 hook 事件面）。
 // 品牌色 #16B8F3。API 分级：/* @public */ 导出对 OpenClaw 运行时契约锁定。
 

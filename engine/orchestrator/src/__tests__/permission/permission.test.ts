@@ -29,7 +29,7 @@ function req(partial: Partial<PermissionRequest>): PermissionRequest {
   };
 }
 
-describe('场景匹配引擎（scenario-router）', () => {
+describe('场景匹配模块（scenario-router）', () => {
   it('三维度预设场景 ≥3 任务类型 × 各自数据域（验收 2）', () => {
     expect(BUILTIN_SCENARIOS.length).toBeGreaterThanOrEqual(6);
     const taskTypes = new Set(BUILTIN_SCENARIOS.map(s => s.taskType));
@@ -101,7 +101,7 @@ describe('风险等级分类器（risk-classifier）', () => {
   });
 });
 
-describe('策略引擎（policy-engine）判定链', () => {
+describe('策略模块（policy-engine）判定链', () => {
   it('判定链完整：身份→场景→风险→放行，decision-log 全链留痕（验收 1）', () => {
     const engine = createPolicyEngine();
     const { action, log: entry } = engine.decide(req({}));

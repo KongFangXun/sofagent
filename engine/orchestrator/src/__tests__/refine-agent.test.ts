@@ -282,7 +282,7 @@ describe('L2 质量判定器（judgeQuality → DiffReport）', () => {
 });
 
 // ────────────────────────────────────────────────────────────
-// L3-L5：Refine 循环驱动（复用 loop-agent 引擎）
+// L3-L5：Refine 循环驱动（复用 loop-agent）
 // ────────────────────────────────────────────────────────────
 
 describe('Refine 循环驱动（runRefineLoop）', () => {

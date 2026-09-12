@@ -429,7 +429,7 @@ parseWorkflowToSubAgents()
 
 ## 7. Refine Agent 与协议的衔接
 
-### 7.1 复用 loop-agent 引擎
+### 7.1 复用 loop-agent
 
 Refine Agent 复用 v1.3.2 loop-agent 的 L1/L3/L4/L5，只替换 L2 判据：
 

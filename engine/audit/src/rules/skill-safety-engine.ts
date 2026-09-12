@@ -1,5 +1,5 @@
 // ============================================================
-// skill-safety-engine.ts · Skill 安全审查——文件扫描引擎
+// skill-safety-engine.ts · Skill 安全审查——文件扫描逻辑
 // ============================================================
 
 import { readFileSync, existsSync, readdirSync, statSync } from 'fs';

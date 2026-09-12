@@ -224,9 +224,9 @@ task/logs 和 think.md 以 Markdown 存储，可能含代码片段、API 响应�
 
 > ⚠️ **A9 注入检测局限——编码绕过**：A9 正则检测覆盖常见中文"忽略类"指令、英文"ignore 类"指令，以及 leet speak 变体（`1gn0r3` → `ignore`，通过 normalizeLine() 反转 + ×0.8 降权匹配）。但不覆盖：① Unicode 同形字替换（西里尔字母 `а` 替换拉丁 `a`）；② Base64/hex 编码后的注入 payload。这些绕过手法依赖语义分析（非纯正则可覆盖），**v1.3.2 评估覆盖**——L3 自动定位（LLM 推理）可检测正则覆盖不了的语义级注入。
 
-> ⚠️ **A9 commit msg 检测 quick 模式已生效（v1.3.8 修复）**：quick 模式（`npx sofagent-audit`，零配置审计最近一次 commit）**自动读取最近一次 commit 的 message**（`git log -1`），A9 commit msg 注入检测生效；commit msg 取不到时（如空仓库 / git 不可用）A9 由引擎按无输入处理（标跳过）。同理 A3（不改越界）依赖任务描述，quick 模式无此输入 → v1.3.3 起 quick 模式跳过 A3（避免占位 task 'quick-audit' 100% 误报越界）。A3 越界检查需 `--init` 安装 git hook 走完整引擎，或手动 `sofagent-audit --diff <range> --commit-msg <msg>`。
+> ⚠️ **A9 commit msg 检测 quick 模式已生效（v1.3.8 修复）**：quick 模式（`npx sofagent-audit`，零配置审计最近一次 commit）**自动读取最近一次 commit 的 message**（`git log -1`），A9 commit msg 注入检测生效；commit msg 取不到时（如空仓库 / git 不可用）A9 按无输入处理（标跳过）。同理 A3（不改越界）依赖任务描述，quick 模式无此输入 → v1.3.3 起 quick 模式跳过 A3（避免占位 task 'quick-audit' 100% 误报越界）。A3 越界检查需 `--init` 安装 git hook 走完整引擎，或手动 `sofagent-audit --diff <range> --commit-msg <msg>`。
 >
-> ℹ️ **range 模式 commitMsg 取范围终点（v1.4.4 修复）**：此前 quick 引擎 range 审计（`sofagent-audit HEAD~3..HEAD` 类调用）的 commitMsg 输入面写死字面 HEAD，与被审计 range 脱钩——终点携带注入载荷漏检、HEAD 的 message 污染在审区间误报。现 commitMsg 经 `resolveDiffEndpoint()` 取 range 终点（与 diff 面同源），回归测试见 engine/audit/src/cli-quick-range.test.ts。
+> ℹ️ **range 模式 commitMsg 取范围终点（v1.4.4 修复）**：此前 quick 模式 range 审计（`sofagent-audit HEAD~3..HEAD` 类调用）的 commitMsg 输入面写死字面 HEAD，与被审计 range 脱钩——终点携带注入载荷漏检、HEAD 的 message 污染在审区间误报。现 commitMsg 经 `resolveDiffEndpoint()` 取 range 终点（与 diff 面同源），回归测试见 engine/audit/src/cli-quick-range.test.ts。
 
 > ⚠️ **边界：空 commit 不审计消息**——empty commit（无文件变更）时审计直接跳过，commit message 中的注入载荷不会被 A9 扫描（A9 的证据面是 diff + 显式传入的 `--commit-msg`）。带文件变更的 commit 消息正常扫描。纯消息攻击需 `--commit-msg` 显式送检。
 

@@ -457,7 +457,7 @@ Link Type 定义业务对象之间**可解释、可治理、可追踪的关系**
 > 3. **用户拍板**：每个 entity/concept/relations 用户可改、可否定——「合同 belongs_to 订单」对不对只有用户知道
 > 4. **确认后写入**：用户确认 → 落盘 `knowledge/entities/` + `knowledge/concepts/` → `validate_ontology` 校验 → D1-D5 审计
 >
-> **为什么必须咨询**：ontology 是**企业业务知识的结构化表达**——只有用户自己知道业务关系是不是真的。模型只能当「建议引擎」，不能替代用户确认。这也保证了**没有模型也能生成 ontology**（FDE 的咨询能力，不是模型能力）。
+> **为什么必须咨询**：ontology 是**企业业务知识的结构化表达**——只有用户自己知道业务关系是不是真的。模型只能当「建议来源」，不能替代用户确认。这也保证了**没有模型也能生成 ontology**（FDE 的咨询能力，不是模型能力）。
 
 ### 3.6 entity / concept / relations 怎么建
 
