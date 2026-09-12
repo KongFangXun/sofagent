@@ -178,15 +178,15 @@ describe('buildConstrainedSystemPrompt', () => {
 
   it('约束内容被 Agent 可见且不被截断丢失（P1-18 行为断言）', () => {
     // 验证较长的 SKILL.md 内容能完整注入——截断会丢失铁律，导致约束失效
-    const longRule = '禁止修改审计引擎自身代码（A1 铁律）'.repeat(10);
+    const longRule = '禁止修改审计模块自身代码（A1 铁律）'.repeat(10);
     writeSkill(`# 规则\n${longRule}`);
     const result = buildConstrainedSystemPrompt(tmpDir);
 
     // 行为断言：关键约束文本完整注入，未截断
     expect(result).toContain('# 规则');
-    expect(result).toContain('禁止修改审计引擎自身代码（A1 铁律）');
+    expect(result).toContain('禁止修改审计模块自身代码（A1 铁律）');
     // 重复 10 次的内容应至少出现（验证未被意外截断）
-    const matchCount = (result.match(/禁止修改审计引擎自身代码/g) || []).length;
+    const matchCount = (result.match(/禁止修改审计模块自身代码/g) || []).length;
     expect(matchCount).toBeGreaterThanOrEqual(10);
   });
 });

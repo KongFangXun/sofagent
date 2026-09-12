@@ -239,8 +239,8 @@ describe('A3 不改越界', () => {
     const ctx = makeCtx(
       [makeDiffFile('FORGE/FORGE.md')],
       {
-        task: 'docs: orchestrator 编排引擎实现原理补全',
-        commitMsg: 'docs: orchestrator 编排引擎实现原理补全\n\n- FORGE/FORGE.md: 删"计划中"段\n- ARCHITECTURE.md: +5 子节',
+        task: 'docs: orchestrator 编排模块实现原理补全',
+        commitMsg: 'docs: orchestrator 编排模块实现原理补全\n\n- FORGE/FORGE.md: 删"计划中"段\n- ARCHITECTURE.md: +5 子节',
       }
     );
     const result = scanA3(ctx);

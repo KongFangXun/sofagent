@@ -123,7 +123,7 @@ async function runTestCase(
  * 生产环境可替换为实际 Agent 调用
  */
 export async function defaultRunFunction(input: Record<string, unknown>): Promise<Record<string, unknown>> {
-  // 模拟审计引擎执行：简单解析 diff 内容
+  // 模拟审计模块执行：简单解析 diff 内容
   const result: Record<string, unknown> = {
     result: 'PASS',
     rules_triggered: [] as string[],

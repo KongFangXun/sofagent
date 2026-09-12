@@ -250,7 +250,7 @@ async function main() {
 
   // ── 场景五：validateRemoteResult 本地 trust 白名单 ──────────────────
   // 注意：AKIA 密钥串按 sofagent 规范运行时拼接（A2 fixture secret 铁律）——
-  // 完整形态硬编码会被审计引擎 A2 规则静态扫出误报泄漏。
+  // 完整形态硬编码会被审计模块 A2 规则静态扫出误报泄漏。
   console.log('── 场景五：trust 白名单（不采信 peer 自报，本地覆盖）──');
   const suspicious = { id: 'x', title: 'x', content: 'secret=AKIA' + 'IOSFODNN7EXAMPLE', sensitivity: 'public', trust: 'internal', mtime: 1 };
   const v = validateRemoteResult(peerView.peerId, suspicious, 'user');

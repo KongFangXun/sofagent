@@ -1,5 +1,5 @@
 // ============================================================
-// attribution.ts · ATTRIBUTION 归因引擎（P2 · v1.4.7 十）
+// attribution.ts · ATTRIBUTION 归因（P2 · v1.4.7 十）
 // ============================================================
 // 审计决策 → 业务指标的因果链追踪。
 // 依赖：v1.3.1 跨设备审计聚合（decision-log 的 agentId 归因）+
@@ -39,7 +39,7 @@ export interface AttributionQuery {
 }
 
 /**
- * 归因引擎——因果链登记 + 查询 + 周报 Top 5。
+ * 归因——因果链登记 + 查询 + 周报 Top 5。
  * 落盘 data/dashboard/attribution.jsonl（append-only，与 worklog.json 同目录）。
  */
 export class AttributionEngine {

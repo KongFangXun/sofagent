@@ -4,7 +4,7 @@
   "engines": {
     "node": ">=18"
   },
-  "description": "sofagent 编排引擎 — 多 Agent 协作 / 工作流调度 / prompt 模板",
+  "description": "sofagent 编排模块 — 多 Agent 协作 / 工作流调度 / prompt 模板",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {

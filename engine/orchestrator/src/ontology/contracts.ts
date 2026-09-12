@@ -68,14 +68,14 @@ export interface StateMachineContract {
   transitions: Record<string, string[]>;
 }
 
-/** 状态机注册表——CORE-STM 本版只提供注册/查询接口，不实现迁移执行引擎 */
+/** 状态机注册表——CORE-STM 本版只提供注册/查询接口，不实现迁移执行逻辑 */
 const stateMachineRegistry = new Map<string, StateMachineContract>();
 
 /**
  * 注册一个状态机契约（CORE-STM 框架）。
  *
  * 校验最小骨架约束：initialState 必须 ∈ states；transitions 的 from/to 必须 ∈ states。
- * 完整迁移执行引擎（迁移前钩子 / 审计 / 非法迁移拦截）留 v1.4.0 补全。
+ * 完整迁移执行逻辑（迁移前钩子 / 审计 / 非法迁移拦截）留 v1.4.0 补全。
  *
  * @param contract 状态机契约定义
  * @throws 骨架约束校验失败（initialState/transitions 引用未知状态）

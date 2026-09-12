@@ -345,11 +345,11 @@ export async function spawnSubAgent(
     const { composeWithReactAgent } = await import('./composer');
     // composeTask 自带 agent 名称信息
     const result = await composeWithReactAgent(prompt);
-    return result ?? `Agent "${agent.name}" 已接收任务，但编排引擎未返回结果。`;
+    return result ?? `Agent "${agent.name}" 已接收任务，但编排模块未返回结果。`;
   } catch {
-    // 编排引擎不可用时返回提示
+    // 编排模块不可用时返回提示
     return [
-      `⚠️ sofagent 提示：编排引擎未安装，Agent "${agent.name}" 的 prompt 已生成，可手动执行：`,
+      `⚠️ sofagent 提示：编排模块未安装，Agent "${agent.name}" 的 prompt 已生成，可手动执行：`,
       '',
       '```yaml',
       `agent: ${agent.name}`,

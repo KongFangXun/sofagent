@@ -20,7 +20,7 @@ export const pluginMeta = {
 } as const;
 
 /** 依赖的 sofagent 能力说明（供 DSH skill 引导链展示） */
-export const capability = '审计引擎（git diff 硬证据 + 24 规则）';
+export const capability = '审计模块（git diff 硬证据 + 24 规则）';
 
 /**
  * 调用对应的 sofagent @public API（懒加载 + 降级不抛）。

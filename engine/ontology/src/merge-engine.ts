@@ -1,5 +1,5 @@
 // ============================================================
-// ontology/merge-engine.ts · Ontology 合并引擎
+// ontology/merge-engine.ts · Ontology 合并逻辑
 // v1.4.7 从 sofagent/audit/src/ontology/merge-engine.ts 迁出
 //
 // 数据源：
@@ -496,7 +496,7 @@ export interface LifecycleMigrationResult {
 /**
  * branch → trunk 状态迁移（审阅门）。
  *
- * 审阅门语义（对齐 v1.3.6 workflow approver + 审计引擎硬证据）：
+ * 审阅门语义（对齐 v1.3.6 workflow approver + 审计模块硬证据）：
  *   - approver 必填（空审阅人 = 非法迁移）
  *   - 仅 branch 态可迁移（trunk → trunk 幂等拒绝；未知实体拒绝）
  *   - 迁移在 frontmatter 写入 lifecycle: trunk + verified 追加记录

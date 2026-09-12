@@ -17,7 +17,7 @@
 #   + check-review-system.sh → 审查体系一致性（维度数/警戒线/S 编号对账 · v1.4.8 接入）
 #   + check-silent-catch.mjs → 静默吞错门禁（只拦新增 · v1.4.8 接入）
 #   + dependency-direction.sh → 依赖方向架构测试（13 包边界 · v1.4.8 第七章）
-#   + npm run build         → 审计引擎构建
+#   + npm run build         → 审计模块构建
 #
 # 用法:
 #   ./tools/release/pre-push-check.sh   # 全量检查（v1.4.0 移入 release/：四门禁聚合入口）
@@ -282,10 +282,10 @@ if [ "$MINIMAL" = false ]; then
 fi
 
 # ════════════════════════════════════════
-# 4. 审计引擎构建 + 测试数汇总（对应 verify.yml + test-count.sh 门禁）
+# 4. 审计模块构建 + 测试数汇总（对应 verify.yml + test-count.sh 门禁）
 # ════════════════════════════════════════
 if [ "$MINIMAL" = false ] && [ "$QUICK" = false ]; then
-  echo -e "\n${BOLD}── 5. 审计引擎构建 + 测试数汇总 ──${NC}"
+  echo -e "\n${BOLD}── 5. 审计模块构建 + 测试数汇总 ──${NC}"
   echo "  构建中..."
   if (npm run build >/dev/null 2>&1); then
     check_pass "npm run build (workspace 拓扑序)"

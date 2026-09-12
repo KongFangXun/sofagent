@@ -36,8 +36,8 @@ export interface WorkflowNode {
   task: string;
   depends_on: string[];
   /**
-   * 节点类型——控制执行引擎选择（v1.3.3 新增）
-   * - 'loop'：循环引擎（Onboard/Refine Agent），需迭代收敛
+   * 节点类型——控制执行模块选择（v1.3.3 新增）
+   * - 'loop'：循环机制（Onboard/Refine Agent），需迭代收敛
    * - 'auto'：自动执行（默认值），一次性产出
    * - 'manual'：人工节点（HITL 确认）
    *
@@ -83,13 +83,13 @@ export interface WorkflowNode {
 
 /**
  * merge_criteria 单条验收条件——机器可判定（复用 ⑨ define_acceptance
- * 的 Benchmark 判定引擎结构）。三类可叠加「组织宪法」：
+ * 的 Benchmark 判定结构）。三类可叠加「组织宪法」：
  *   技术验收：test_pass / build_success / grep_absent / schema_valid
  *   业务审批规则：business_approval（如「财务节点产出必须 CFO 批准」）
  *   数据合规规则：data_compliance（如「涉及用户数据必须 DPO 签字」）
  *
  * 语义来源：workflow 从「步骤列表」升级为「变更提案的审阅协议」——
- * 每个 AI 节点 = 一根待审阅的枝条，审计引擎（git diff 硬证据）
+ * 每个 AI 节点 = 一根待审阅的枝条，审计模块（git diff 硬证据）
  * 就是 merge_criteria 的执行器，无需新增审计逻辑。
  */
 export interface MergeCriterion {

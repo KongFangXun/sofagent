@@ -693,7 +693,7 @@ render_graph_engine() {
   emit "${C_BOLD}${C_BLUE}▌ 编排状态（工作流控制图）${C_RESET}"
 
   if [ ! -f "$GRAPH_STATE" ]; then
-    emit "  ${C_DIM}控制图数据不可用（编排引擎未运行）${C_RESET}"
+    emit "  ${C_DIM}控制图数据不可用（编排模块未运行）${C_RESET}"
     return 0
   fi
 

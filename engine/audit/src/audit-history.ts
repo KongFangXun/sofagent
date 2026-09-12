@@ -224,7 +224,7 @@ export interface AuditHistoryEntry {
   hmacSig?: string;
   /** v1.2.5 写入时记录的环境指纹——读侧 HMAC 不匹配时用它区分「真篡改（指纹一致）」与「环境漂移（指纹不一致）」 */
   envFingerprint?: string;
-  /** v1.1.3+: 审计引擎标识，用于追溯记录来源 */
+  /** v1.1.3+: 审计模块标识，用于追溯记录来源 */
   engine?: string;
   /**
    * v1.3.1 交付 6: 审计记录关联的 Agent 身份码（AgentIdentity.agentId）。

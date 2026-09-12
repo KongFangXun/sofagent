@@ -1,5 +1,5 @@
 // ============================================================
-// audit-log.ts · 审计日志引擎
+// audit-log.ts · 审计日志
 // v0.97: 从 audit.sh 迁移到 TS，最小运行时依赖：仅 js-yaml
 // ============================================================
 // 功能：追加审计日志到 MD 表格。
@@ -149,7 +149,7 @@ function main(): void {
 
   if (args.includes('--help')) {
     log.info(`sofagent audit-log v${VERSION}`);
-    log.info('  审计日志引擎——从 task/logs 提取关键字段追加到 audit.md');
+    log.info('  审计日志——从 task/logs 提取关键字段追加到 audit.md');
     log.info('');
     log.info('  用法:');
     log.info('    node audit-log.js --operation install --target "开始" --result "成功"');

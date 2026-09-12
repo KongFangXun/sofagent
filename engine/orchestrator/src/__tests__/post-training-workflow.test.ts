@@ -135,7 +135,7 @@ describe('capability_ref 版本指向', () => {
     expect(refs.length).toBe(7);
   });
 
-  it('关键节点版本指向正确（训练引擎能力映射）', () => {
+  it('关键节点版本指向正确（后训模块能力映射）', () => {
     // 需求采集/选型 → v1.4.3（需求推导+模板库）；环境 → v1.4.2；
     // 训练执行 → v1.4.1（train-job 编排）；eval → v1.4.2（eval 闭环）
     expect(templateRaw).toMatch(/id: pt-need-collect[\s\S]*?capability_ref: "v1\.4\.3 训练需求推导/);

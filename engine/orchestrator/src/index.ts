@@ -7,7 +7,7 @@
 /**
  * @sofagent/orchestrator
  *
- * 编排引擎 — 多 Agent 协作 / 工作流调度 / prompt 模板
+ * 编排模块 — 多 Agent 协作 / 工作流调度 / prompt 模板
  */
 
 // Composer

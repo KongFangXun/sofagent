@@ -126,7 +126,7 @@ assert_contains "控制图：降级等级 L1 + 人类可读说明" "$OUT" "L1（
 
 mv "$DATA_ROOT_TEST/dashboard/graph-state.json" "$TEST_ROOT/graph-state.bak"
 OUT="$(render_to render_graph_engine 100)"
-assert_contains "graph-state 缺失：兜底文本" "$OUT" "控制图数据不可用（编排引擎未运行）"
+assert_contains "graph-state 缺失：兜底文本" "$OUT" "控制图数据不可用（编排模块未运行）"
 mv "$TEST_ROOT/graph-state.bak" "$DATA_ROOT_TEST/dashboard/graph-state.json"
 
 # ════════════════════════════════════════

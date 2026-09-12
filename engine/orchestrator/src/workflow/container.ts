@@ -83,7 +83,7 @@ export function validateMergeCriteria(criteria: unknown): string[] {
       return;
     }
     const kind = criterion.kind;
-    // kind 专属必填字段（Benchmark 判定引擎结构对齐）
+    // kind 专属必填字段（Benchmark 判定结构对齐）
     if (kind === 'grep_absent' && typeof criterion.pattern !== 'string') {
       issues.push(`merge_criteria[${idx}] (grep_absent): 缺少 pattern（不得出现的模式）`);
     }

@@ -1,6 +1,6 @@
 // security-baseline.ts · v1.4.7 块八 · 训练安全基线（攻击面的代码侧覆盖）
 //
-// 红队视角定位：训练引擎的四个可代码化攻击面——
+// 红队视角定位：后训模块的四个可代码化攻击面——
 //   一、job.json 路径注入（dataPath/checkpointPath/outputDir 带 ../ 逃逸
 //       分区、绝对路径劫持、NUL 截断）→ 路径白名单 validateTrainPath；
 //   二、hyperparams 经 spawn 环境外泄为 shell 注入（; | & $ ` 等元字符）

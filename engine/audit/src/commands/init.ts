@@ -3,7 +3,7 @@
 // v1.3 新增：一条命令完成 3 步
 //   1. 生成 .sofagent/config.yml 配置模板
 //   2. 安装 git commit-msg hook
-//   3. 冒烟测试——验证审计引擎可用
+//   3. 冒烟测试——验证审计模块可用
 // v1.3.7: 新增仓库状态分类器（gstack 首次运行引导）
 // v1.4.4 daemon 注册改为「确认后注册」——默认不装、非 TTY 不挂起、
 //   已有 plist 询问不静默覆盖、npx 场景如实报错（不生成坏 plist、不打印假成功）、
@@ -419,7 +419,7 @@ export function runInit(): void {
 
   if (!gitDir) {
     console.log('  → 当前目录不在 git 仓库内，hook 已跳过');
-    console.log('  ⚠️ 审计引擎在 git 项目中才能运行——配置已生成，但审计不可用');
+    console.log('  ⚠️ 审计模块在 git 项目中才能运行——配置已生成，但审计不可用');
     console.log('  → 初始化 git 仓库后重新跑: git init && sofagent-audit --init');
     // P1-C4: 非 git 目录残留清理——删除刚创建的 .sofagent/ 目录
     try {
@@ -458,7 +458,7 @@ export function runInit(): void {
     const hooksResolution = resolveHooksDir(cwd);
     if (!hooksResolution) {
       console.log('  → 无法解析 git hook 目录，hook 已跳过');
-      console.log('  ⚠️ 审计引擎在 git 项目中才能运行——配置已生成，但审计不可用');
+      console.log('  ⚠️ 审计模块在 git 项目中才能运行——配置已生成，但审计不可用');
       process.exit(1);
     }
     const hooksDir = hooksResolution.hooksDir;
@@ -611,7 +611,7 @@ if [ ! -f "$COMMIT_MSG_HOOK" ]; then
   echo ""
   echo "  ╔══════════════════════════════════════════════╗"
   echo "  ║  🔴 [sofagent] commit-msg hook 不存在！       ║"
-  echo "  ║  审计引擎未运行——所有提交都不受审计约束      ║"
+  echo "  ║  审计模块未运行——所有提交都不受审计约束      ║"
   echo "  ║  运行 sofagent-audit --init 重新安装          ║"
   echo "  ╚══════════════════════════════════════════════╝"
   echo ""
@@ -879,15 +879,15 @@ exit 0
     smokeOk = false;
   }
 
-  // 审计引擎可用检测——尝试跑一次空 diff
+  // 审计模块可用检测——尝试跑一次空 diff
   try {
     execFileSync('git', ['rev-parse', '--is-inside-work-tree'], {
       encoding: 'utf-8',
       stdio: ['pipe', 'pipe', 'pipe'],
     });
-    console.log('  ✅ 审计引擎可用');
+    console.log('  ✅ 审计模块可用');
   } catch {
-    console.log('  ⚠️ 非 git 仓库，审计引擎在 git 项目中才能运行');
+    console.log('  ⚠️ 非 git 仓库，审计模块在 git 项目中才能运行');
   }
 
   if (smokeOk) stepOk++;
@@ -925,9 +925,9 @@ exit 0
   console.log('║  git commit 审计已就绪                   ║');
   console.log('╚══════════════════════════════════════════╝');
   console.log('');
-  console.log('  💡 审计已就绪——改个文件试试 git commit，你会看到审计引擎在提交前自动扫描。');
+  console.log('  💡 审计已就绪——改个文件试试 git commit，你会看到审计模块在提交前自动扫描。');
   console.log('  下一步：');
-  console.log('    1. 改个文件，试试 git commit——你会看到审计引擎在提交前自动扫描');
+  console.log('    1. 改个文件，试试 git commit——你会看到审计模块在提交前自动扫描');
   console.log('    2. 想测试拦截？echo "API_KEY=test" > .env && git add -f .env && git commit -m "test"');
   console.log('       （用 -f 强制添加以便演示拦截——.env 通常被 .gitignore 忽略）');
   console.log('    3. 想看全部命令？sofagent-audit --help');

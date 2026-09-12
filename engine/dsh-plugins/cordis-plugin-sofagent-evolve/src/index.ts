@@ -20,7 +20,7 @@ export const pluginMeta = {
 } as const;
 
 /** 依赖的 sofagent 能力说明（供 DSH skill 引导链展示） */
-export const capability = '进化引擎（经验自动沉淀）';
+export const capability = '进化能力（经验自动沉淀）';
 
 /**
  * 调用对应的 sofagent @public API（懒加载 + 降级不抛）。

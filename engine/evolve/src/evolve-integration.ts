@@ -1,5 +1,5 @@
 // ============================================================
-// evolve-integration.ts · Evolve 自进化引擎集成
+// evolve-integration.ts · Evolve 自进化能力集成
 // v1.3.7 新增：通过 CLI subprocess 调用 evolve-gate（v1.4.8 自研），验证 candidate skill
 // v1.4.7：迁移至 @sofagent/evolve
 //

@@ -31,7 +31,7 @@
         },
         "merge_criteria": {
           "$ref": "#/definitions/mergeCriteria",
-          "description": "审阅协议：什么证据算通过——机器可判定验收条件（复用 ⑨ define_acceptance 的 Benchmark 判定引擎结构）。三类可叠加：技术验收 / 业务审批规则 / 数据合规规则。审计引擎（git diff 硬证据）即执行器"
+          "description": "审阅协议：什么证据算通过——机器可判定验收条件（复用 ⑨ define_acceptance 的 Benchmark 判定结构）。三类可叠加：技术验收 / 业务审批规则 / 数据合规规则。审计模块（git diff 硬证据）即执行器"
         },
         "approver": {
           "$ref": "#/definitions/approver",
@@ -78,7 +78,7 @@
             "auto",
             "manual"
           ],
-          "description": "节点类型（缺省 auto）：loop=循环引擎 / auto=一次性产出 / manual=人工节点（隐含 HITL）"
+          "description": "节点类型（缺省 auto）：loop=循环机制 / auto=一次性产出 / manual=人工节点（隐含 HITL）"
         },
         "hitl": {
           "type": "boolean",
@@ -155,7 +155,7 @@
             "business_approval",
             "data_compliance"
           ],
-          "description": "验收条件类型：前 4 类=技术验收（Benchmark 判定引擎结构）；business_approval=业务审批规则（如「财务节点产出必须 CFO 批准」）；data_compliance=数据合规规则（如「涉及用户数据必须 DPO 签字」）"
+          "description": "验收条件类型：前 4 类=技术验收（Benchmark 判定结构）；business_approval=业务审批规则（如「财务节点产出必须 CFO 批准」）；data_compliance=数据合规规则（如「涉及用户数据必须 DPO 签字」）"
         },
         "detail": {
           "type": "string",

@@ -147,7 +147,7 @@
 /* @public */ export type { FailureCluster } from './inspectors/failure-pattern';
 /* @public */ export { runOntologyCoverage } from './inspectors/ontology-coverage';
 
-// v1.2.4 P0b：eval 失败检测（进化引擎核心闭环）
+// v1.2.4 P0b：eval 失败检测（进化能力核心闭环）
 /* @public */ export { runEvalFailuresCheck } from './inspectors/eval-failures';
 
 // v1.2.4 P1：evolve 自动触发 inspector

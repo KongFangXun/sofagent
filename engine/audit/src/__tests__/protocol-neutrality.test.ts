@@ -101,7 +101,7 @@ describe('§3.3 协议中立审计', () => {
       expect(result.violations[0]).toContain('不存在');
     });
 
-    it('审计引擎自身 src 目录 → neutral=true', () => {
+    it('审计模块自身 src 目录 → neutral=true', () => {
       // 扫描本模块所在的 src/ 目录
       const result = verifyProtocolNeutrality(__dirname + '/..');
       // 审计核心层不应有平台专属 SDK

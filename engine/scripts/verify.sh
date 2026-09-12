@@ -40,7 +40,7 @@ while [[ $# -gt 0 ]]; do
       echo "  2. think.md 可写性"
       echo "  3. fde.md 可写性"
       echo "  4. task/logs/ 目录可写"
-      echo "  5. 审计引擎可执行"
+      echo "  5. 审计模块可执行"
       echo "  6. MCP server 可执行"
       echo "  7. daemon 配置文件"
       echo "  8. 安装版本一致性"

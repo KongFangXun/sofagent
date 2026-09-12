@@ -2,10 +2,10 @@
 // loop-agent/fix-applier.ts · L4 自动修复器（v1.3.7 交付 3）
 // ============================================================
 //
-// L3 定位 → LLM 生成修复方案（FixProposal）→ 应用 → 审计引擎卡关
+// L3 定位 → LLM 生成修复方案（FixProposal）→ 应用 → 审计模块卡关
 // （调 @sofagent/audit runRules 跑 24 条规则）→ PASS 进 L5 / FAIL 回滚。
 //
-// 安全网：改错了不致命——审计引擎用 git diff 硬证据拦。
+// 安全网：改错了不致命——审计模块用 git diff 硬证据拦。
 // FAIL 回滚用 git checkout（Agent 目录是 git 管理的）。
 //
 // FixProposal 严格按 dev-prompt interface：

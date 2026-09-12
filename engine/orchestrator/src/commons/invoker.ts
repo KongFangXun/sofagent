@@ -283,7 +283,7 @@ function logAndAudit(
     dataDir,
   );
 
-  // 审计（kind=COMMONS——公地调用走审计引擎）
+  // 审计（kind=COMMONS——公地调用走审计模块）
   try {
     emitDecision({
       agentId: callerAgentId,

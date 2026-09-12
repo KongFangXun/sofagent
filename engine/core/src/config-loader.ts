@@ -869,7 +869,7 @@ export interface SofaEnvConfig {
   cleanupFrequency: number;
   /**
    * 审计日志开关
-   * @deprecated v1.4.3 P2-g 披露：无生产消费点——审计引擎实际由 config.yml 的
+   * @deprecated v1.4.3 P2-g 披露：无生产消费点——审计模块实际由 config.yml 的
    *   rules:{...} 控制（见 SECURITY.md 企业高安全默认段），本开关不构成第二通道。
    */
   auditEnabled: boolean;

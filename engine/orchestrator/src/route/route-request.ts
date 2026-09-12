@@ -10,7 +10,7 @@
 //
 // 节点 emoji 约定（来自 compose 产出的 workflow YAML）：
 //   ⚡（auto）→ 自动执行节点，可路由进 workflow
-//   🔄（loop）→ 循环引擎节点，可路由进 workflow
+//   🔄（loop）→ 循环机制节点，可路由进 workflow
 //   👤（manual）→ 人工节点（HITL），走 fallback（人工确认不走自动编排）
 // ============================================================
 

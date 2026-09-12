@@ -66,7 +66,7 @@ if ($Help) {
     Write-Host ""
     Write-Host "平台说明:"
     Write-Host "  workbuddy  部署 Skill + 数据目录（宪法内联在 SKILL.md）"
-    Write-Host "  openclaw   完整部署（Skill + Hook + 断路器 + ao 编排引擎）"
+    Write-Host "  openclaw   完整部署（Skill + Hook + 断路器 + ao 编排模块）"
     Write-Host "  claude/codex/hermes  部署宪法 + 写入种子指令（CLAUDE.md/AGENTS.md/SOUL.md）"
     Write-Host ""
     Write-Host "环境区分:"
@@ -392,7 +392,7 @@ if (-not (Test-Path $SOFAGENT_DATA)) {
 
 # ════════════════════════════════════════
 # Step 5a（已移除 · P1-32）：agency-orchestrator 已退役
-# install.sh v1.0.7 已删除 ao 安装逻辑，install.ps1 同步移除（原装已退役的编排引擎包）。
+# install.sh v1.0.7 已删除 ao 安装逻辑，install.ps1 同步移除（原装已退役的编排模块包）。
 # 保留 -NoAO 参数仅为兼容旧脚本调用（无害 no-op）。
 # ════════════════════════════════════════
 
@@ -518,7 +518,7 @@ if ($Lite) {
     Write-Host "  +======================================+"
     Write-Host ""
     Write-Host "  已部署：宪法（SKILL.md）+ 反思区（think.md）+ 规则（fde.md）"
-    Write-Host "  跳过：编排引擎 / Hook / 断路器 / daemon / 配套脚本"
+    Write-Host "  跳过：编排模块 / Hook / 断路器 / daemon / 配套脚本"
     Write-Host ""
     Write-Host "  降 80% 复杂度，保 60% 价值。"
     Write-Host "  非交互式平台推荐先用 Lite 体验核心约束。"

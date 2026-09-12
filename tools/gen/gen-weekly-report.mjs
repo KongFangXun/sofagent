@@ -6,7 +6,7 @@
 // 用途：daemon 未跑过 @daily/@weekly 巡检时，手动从审计历史生成
 //   daily-YYYY-MM-DD.json（历史回填）+ weekly-YYYY-WNN.json（周报）
 //
-// 数据源：{data}/audit/history.jsonl（审计引擎自动写入，5186+ 条真实记录）
+// 数据源：{data}/audit/history.jsonl（审计模块自动写入，5186+ 条真实记录）
 // 产出：  {data}/dashboard/daily-*.json + weekly-YYYY-WNN.json
 //
 // schema 与 engine/daemon/src/inspectors/{daily-snapshot,trend-aggregator}.ts 完全一致

@@ -98,7 +98,7 @@ if ($Quick) {
     $skillQuickContent = if ($skillQuick) { [System.IO.File]::ReadAllText($skillQuick) } else { "" }
     if ($skillQuick -and ($skillQuickContent -match "4.*底线|6.*铁律")) { Check-Pass "SKILL.md 存在且含宪法（4底线+6则铁律）" } else { Check-Fail "SKILL.md 缺失或宪法关键词不全" }
     if (Test-Path $sofagentData) { Check-Pass ".sofagent/ 数据目录存在" } else { Check-Warn ".sofagent/ 数据目录不存在（首次使用会自动创建）" }
-    if (Get-Command sofagent-audit -ErrorAction SilentlyContinue) { Check-Pass "sofagent-audit 可用 — v$(sofagent-audit --version 2>$null)" } else { Check-Warn "sofagent-audit 不可用——审计引擎降级" }
+    if (Get-Command sofagent-audit -ErrorAction SilentlyContinue) { Check-Pass "sofagent-audit 可用 — v$(sofagent-audit --version 2>$null)" } else { Check-Warn "sofagent-audit 不可用——审计模块降级" }
     $rulesQuick = @("$OPENCLAW_DIR\skills\sofagent\fde.md", "$up\.workbuddy\skills\sofagent\fde.md", "$up\.openclaw\fde.md") | Where-Object { Test-Path $_ } | Select-Object -First 1
     if ($rulesQuick) { Check-Pass "fde.md 可读 — $rulesQuick" } else { Check-Warn "fde.md 未找到或不可读" }
     Write-Summary; exit $(if ($script:fail -gt 0) { 1 } else { 0 })

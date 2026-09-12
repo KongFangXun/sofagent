@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // sofagent-orchestrate-compare · 编排方案 A/B 对比 + 任务编排 CLI
 //
-// v1.4.7: ao 完全退役，createReactAgent 为唯一编排引擎。
+// v1.4.7: ao 完全退役，createReactAgent 为唯一编排模块。
 // 新增连续胜出计数器（CONSECUTIVE_WINS_REQUIRED = 2）+ ab-state.json 持久化。
 // v1.4.7：迁移至 @sofagent/orchestrator，import → 同包内 composer
 //
@@ -117,7 +117,7 @@ function logPromotion(state: AbState): void {
       const existing = readFileSync(noticePath, 'utf-8');
       writeFileSync(noticePath, existing + entry);
     } else {
-      writeFileSync(noticePath, `# 编排引擎通知\n${entry}`);
+      writeFileSync(noticePath, `# 编排模块通知\n${entry}`);
     }
     warn('A/B promote 已记录到 daemon-notice.md');
   } catch (err) {
@@ -471,7 +471,7 @@ export async function composeTask(args: string[]): Promise<void> {
   console.log('');
   info('Step 3/3 · 执行编排...');
 
-  // v1.0.7: createReactAgent 是唯一编排引擎，直接输出方案
+  // v1.0.7: createReactAgent 是唯一编排模块，直接输出方案
   const executeFile = existsSync(workflowFile) ? workflowFile : '';
   if (executeFile) {
     ok('编排方案已就绪');

@@ -39,7 +39,7 @@ export interface DecisionProvenance {
   when: string;
   /** 知识 / 本体数据版本；v1.4.0 交付十三：契约已就位（index.ts actionGovernance 回填点），FDE 知识库版本化未就绪时留空不报错 */
   whichDataVersion?: string;
-  /** 决策发生的 app / Agent 身份；当前填审计引擎标识 */
+  /** 决策发生的 app / Agent 身份；当前填审计模块标识 */
   whichApp?: string;
 }
 

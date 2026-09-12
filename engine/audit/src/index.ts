@@ -377,7 +377,7 @@ function parseArgs(argv: string[]): Args {
       break;
     } else if (argv[i] === '--help' || argv[i] === '-h') {
       const verbose = argv.includes('--verbose');
-      console.log(`sofagent-audit v${VERSION} · FDE Harness 的审计引擎\n`);
+      console.log(`sofagent-audit v${VERSION} · FDE Harness 的审计模块\n`);
       console.log('快速开始:');
       console.log('  安装    npm install -g @sofagent/audit && sofagent-audit --init');
       console.log('  试用    sofagent-audit --diff HEAD~1..HEAD');
@@ -826,7 +826,7 @@ async function main(): Promise<void> {
   // P1-A9: 无参数运行静默写库——用户无意识触发真实审计并写入全局数据。
   // 无参数时（argv 仅含 node + 脚本路径，无任何 flag），改为输出 help 而非默认执行审计。
   if (process.argv.slice(2).length === 0) {
-    console.log(`sofagent-audit v${VERSION} · FDE Harness 的审计引擎\n`);
+    console.log(`sofagent-audit v${VERSION} · FDE Harness 的审计模块\n`);
     console.log('⚠️  无参数运行不会执行审计。请指定要执行的操作：\n');
     console.log('常用命令:');
     console.log('  sofagent-audit --init                           一键初始化（配置+hook+冒烟）');
@@ -1272,7 +1272,7 @@ async function main(): Promise<void> {
   }
 
   // 5. 运行规则
-  // v1.4.7 T5: 改经 runRulesMonitored——审计引擎超时自动降级（full→rules-only→minimal），
+  // v1.4.7 T5: 改经 runRulesMonitored——审计模块超时自动降级（full→rules-only→minimal），
   // 降级事实写审计日志（FALLBACK_DEGRADE）并在规则列表注入 DEGRADATION_NOTICE WARN
   const { runRulesMonitored } = await import('./rules/runner');
   const results = runRulesMonitored(diffFiles, logEntries, args.task, args.strict, args.silent, commitMsg || undefined, config, undefined, args.gb48000);
@@ -1806,7 +1806,7 @@ export function printResults(results: AuditResult, diffFiles: DiffFile[], json: 
   const ruleSummary = exitCode === 0
     ? `${results.rules.length} 条规则全部通过`
     : `${results.rules.length} 条规则已完成检测`;
-  console.log(`  审计引擎: sofagent-audit v${VERSION} · ${ruleSummary}`);
+  console.log(`  审计模块: sofagent-audit v${VERSION} · ${ruleSummary}`);
 
   // v1.0.8: PASS 时向 stderr 输出轻量签名行（防遗忘装了 sofagent）
   if (exitCode === 0) {
@@ -1816,7 +1816,7 @@ export function printResults(results: AuditResult, diffFiles: DiffFile[], json: 
   }
 
   // 失败时输出"下一步"指引
-  // 移除「git commit --no-verify」教程式绕过提示——审计引擎不应教用户关掉自己。
+  // 移除「git commit --no-verify」教程式提示——审计模块不应教用户关掉自己。
   // 如需临时跳过请咨询安全管理员并在 CI 侧补审。
   if (exitCode > 0) {
     console.log('');

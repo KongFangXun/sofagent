@@ -1,7 +1,7 @@
 // ============================================================
 // workspace-summary.ts · Workspace 变更摘要（v1.3.7 · 交付五）
 //
-// daemon 在编排引擎运行结束后，自动记录创建/修改/删除的文件清单，
+// daemon 在编排模块运行结束后，自动记录创建/修改/删除的文件清单，
 // 写入 data/dashboard/workspace-changes.jsonl（只记文件路径列表，
 // 不记 diff 内容；保留最近 100 条）。
 //
@@ -91,7 +91,7 @@ function resolveCheckpointDir(opts: WorkspaceSummaryOptions): string {
  * 采集当前 workspace 的文件变更清单。
  *
  * 数据源：git status --porcelain（未提交的工作区/暂存区状态）——
- * 编排引擎运行结束后 SubAgent 留下的全部未提交痕迹。
+ * 编排模块运行结束后 SubAgent 留下的全部未提交痕迹。
  * core.quotepath=false：CJK 文件名不转义（保持可读路径）。
  *
  * 分类映射：

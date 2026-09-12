@@ -1,6 +1,6 @@
 // ============================================================
 // runner-degradation.test.ts · v1.4.5 T5 测试
-// runRulesMonitored：审计引擎超时 → 降级 → minimal 收敛重跑
+// runRulesMonitored：审计模块超时 → 降级 → minimal 收敛重跑
 // ============================================================
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';

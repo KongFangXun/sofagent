@@ -61,11 +61,11 @@ export function runQuickChecks(
     v.checkWarn('data/ 数据目录不存在（首次使用会自动创建）');
   }
 
-  // 3. createReactAgent 编排引擎可用
+  // 3. createReactAgent 编排模块可用
   if (commandAvailable('node')) {
-    v.checkPass('Node.js 可用——编排引擎就绪（createReactAgent）');
+    v.checkPass('Node.js 可用——编排模块就绪（createReactAgent）');
   } else {
-    v.checkWarn('Node.js 不可用——编排引擎降级');
+    v.checkWarn('Node.js 不可用——编排模块降级');
   }
 
   // 4. fde.md 可读
@@ -378,10 +378,10 @@ export function runAllChecks(
   // ════════════════════════════════════════
   v.section('外部依赖');
 
-  // v1.0.7: createReactAgent 为正式编排引擎（ao 已退役）
+  // v1.0.7: createReactAgent 为正式编排模块（ao 已退役）
   if (commandAvailable('node')) {
     const nodeVer = tryExec('node', ['--version']) || '?';
-    v.checkPass(`Node.js ${nodeVer}（编排引擎: createReactAgent）`);
+    v.checkPass(`Node.js ${nodeVer}（编排模块: createReactAgent）`);
   } else {
     v.checkFail('Node.js 不可用');
   }

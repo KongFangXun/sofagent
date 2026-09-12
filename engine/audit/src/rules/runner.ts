@@ -296,16 +296,16 @@ export function runRules(
 // v1.4.5 T5: 分级降级接线——主审计执行路径消费 degradation 梯队
 // 此前 degradation.ts 全套 API（DegradationManager / getCapability /
 // filterRulesForLevel / isAuditTimeout）在主路径零消费（纯导出摆设）——
-// 审计引擎超时不会降级、不会收敛到核心规则。本包装层补接线：
+// 审计模块超时不会降级、不会收敛到核心规则。本包装层补接线：
 //   1. runRulesMonitored：计时执行 runRules，超阈值（SOFAGENT_AUDIT_TIMEOUT_MS，
 //      缺省 30s）按 audit-timeout 触发器降一级——full→rules-only→minimal
 //   2. 降级后按能力画像重跑：minimal 只跑 A1-A11 核心安全规则（filterRulesForLevel）
 //   3. 每次降级写审计日志（DegradationManager 内置 emitDecision——kind=FALLBACK_DEGRADE）
-// 触发器语义对齐：LLM 维度当前审计引擎不调 LLM（纯规则扫描），llm-unavailable
+// 触发器语义对齐：LLM 维度当前审计模块不调 LLM（纯规则扫描），llm-unavailable
 // 触发器留给 daemon/orchestrator 侧消费；audit-timeout 在此接线（主路径可自检）。
 // ============================================================
 
-/** 审计引擎超时阈值（毫秒）——环境变量可覆盖，缺省 30s 与 degradation.ts isAuditTimeout 对齐 */
+/** 审计模块超时阈值（毫秒）——环境变量可覆盖，缺省 30s 与 degradation.ts isAuditTimeout 对齐 */
 function auditTimeoutMs(): number {
   const raw = Number(process.env.SOFAGENT_AUDIT_TIMEOUT_MS);
   // 显式覆盖优先：任意正数毫秒生效（含测试用 1ms 强制超时场景）；
@@ -392,7 +392,7 @@ export function runRulesMonitored(
       number: 0,
       status: 'WARN',
       details: [
-        `审计引擎超时（${elapsed}ms > ${timeoutMs}ms），已降级为 minimal 级（A1-A11 核心安全规则）；扩展/拐杖规则本轮未执行`
+        `审计模块超时（${elapsed}ms > ${timeoutMs}ms），已降级为 minimal 级（A1-A11 核心安全规则）；扩展/拐杖规则本轮未执行`
       ],
       ruleClass: '工程规范',
     });

@@ -1,8 +1,8 @@
 # 后训练 workflow 模板（post-training.yml）
 # 用途：FDE 交付时实例化——企业需要做专属后训练小模型时，用本模板搭「一句话 → 模型选型 → 训练 → 部署」的完整链路。
-# 对齐：workflow-parser 格式（workflow 根节点 + id / agent / task / depends_on）+ 激活链四阶段（ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN）+ 训练引擎能力（v1.4.1-1.4.5）。
+# 对齐：workflow-parser 格式（workflow 根节点 + id / agent / task / depends_on）+ 激活链四阶段（ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN）+ 后训模块能力（v1.4.1-1.4.5）。
 # 机器可读：本文件是 workflow.yml 的合法实例，可直接被 dag-runner 加载执行（字段对齐 fde-activation-chain.md §workflow.yml 示例；v1.4.3 第五章补 workflow: 根节点——此前缺根不可解析）。
-# 注意：agent: train-engine 是训练引擎托管 Agent（v1.4.1 交付的 harness.wrap 托管形态）；各节点依赖的训练能力版本见 capability_ref。
+# 注意：agent: train-engine 是后训模块托管 Agent（v1.4.1 交付的 harness.wrap 托管形态）；各节点依赖的训练能力版本见 capability_ref。
 
 workflow:
   name: 企业专属后训练

@@ -126,7 +126,7 @@ describe('audit FAIL → 拒绝合并', () => {
     expect(reject).toBeDefined();
     expect(reject!.detail).toContain('A1');
 
-    // 编排引擎收到重试通知
+    // 编排模块收到重试通知
     expect(retries).toHaveLength(1);
     expect(retries[0]!.agentId).toBe('eng-fail');
     expect(retries[0]!.reason).toContain('A1');

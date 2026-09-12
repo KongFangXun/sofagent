@@ -588,7 +588,7 @@ export function runDoctor(projectDir: string = process.cwd(), options: { resetBa
   }
 
   // 8. Ontology 完整性检查（v1.4.3 十三）
-  // 背景：LIMITATIONS §七多年披露——entities/ frontmatter 格式不规范时实体被合并引擎
+  // 背景：LIMITATIONS §七多年披露——entities/ frontmatter 格式不规范时实体被合并逻辑
   // 静默跳过，Ontology 缺失对象用户无法自动发现。本段把静默跳过变成 doctor 可见信号：
   //   ① 遍历 <dataDir>/knowledge/entities/*.md，逐文件 frontmatter 三查：
   //      `---` 分隔符存在 / YAML 可解析 / relations 字段名合法
@@ -620,7 +620,7 @@ export function runDoctor(projectDir: string = process.cwd(), options: { resetBa
         const normalized = content.replace(/^\uFEFF/, '').replace(/\r\n/g, '\n');
         const fmMatch = normalized.match(/^---\n([\s\S]*?)\n---/);
         if (!fmMatch || !fmMatch[1]) {
-          warn(`Ontology 实体缺少 frontmatter（--- 分隔符）: ${filePath}——该实体已被合并引擎跳过，Ontology 缺失此对象`);
+          warn(`Ontology 实体缺少 frontmatter（--- 分隔符）: ${filePath}——该实体已被合并逻辑跳过，Ontology 缺失此对象`);
           repairHint('在文件开头补 frontmatter，模板：---\\ntitle: 实体名\\ntype: entity\\nrelations:\\n  has_many: [其他实体]\\n---（字段说明见 CHANGELOG v1.0.1「页面 frontmatter」节）');
           warnReported++;
           continue;
@@ -631,7 +631,7 @@ export function runDoctor(projectDir: string = process.cwd(), options: { resetBa
           fm = yamlLoad(fmMatch[1]) as Record<string, unknown>;
         } catch (yamlErr) {
           const line = yamlErr instanceof YAMLException && yamlErr.mark?.line != null ? yamlErr.mark.line + 1 : '?';
-          warn(`Ontology 实体 frontmatter YAML 语法错误: ${filePath}（第 ${line} 行附近）——该实体已被合并引擎跳过`);
+          warn(`Ontology 实体 frontmatter YAML 语法错误: ${filePath}（第 ${line} 行附近）——该实体已被合并逻辑跳过`);
           repairHint('修正 frontmatter YAML 语法（冒号后补空格 / 引号包裹特殊字符），字段说明见 CHANGELOG v1.0.1「页面 frontmatter」节');
           warnReported++;
           continue;
@@ -640,7 +640,7 @@ export function runDoctor(projectDir: string = process.cwd(), options: { resetBa
         if (fm && typeof fm === 'object' && fm['relations'] !== undefined) {
           const rel = fm['relations'];
           if (rel === null || typeof rel !== 'object' || Array.isArray(rel)) {
-            warn(`Ontology 实体 relations 字段类型错误（应为映射对象）: ${filePath}——关联信息被合并引擎忽略`);
+            warn(`Ontology 实体 relations 字段类型错误（应为映射对象）: ${filePath}——关联信息被合并逻辑忽略`);
             repairHint('relations 应为映射：relations:\\n  has_many: [其他实体]\\n  belongs_to: [父实体]，合法键：has_many / belongs_to / depends_on / produces / consumes');
             warnReported++;
           } else {
@@ -668,9 +668,9 @@ export function runDoctor(projectDir: string = process.cwd(), options: { resetBa
         const skipLog = JSON.parse(readFileSync(skipLogPath, 'utf-8')) as { mergedAt?: string; scanned?: number; skipped?: Array<{ file?: string; reason?: string }> };
         const skipCount = Array.isArray(skipLog.skipped) ? skipLog.skipped.length : 0;
         if (skipCount === warnReported) {
-          ok(`跳过对账一致（合并引擎跳过 ${skipCount} = doctor 报告 ${warnReported}）`);
+          ok(`跳过对账一致（合并逻辑跳过 ${skipCount} = doctor 报告 ${warnReported}）`);
         } else {
-          warn(`跳过对账不一致：合并引擎 skip-log.json 记录 ${skipCount} 条跳过，doctor 本次报告 ${warnReported} 条——两次读取之间文件可能已变化，或合并引擎未重跑（运行 sofagent-ontology merge 刷新）`);
+          warn(`跳过对账不一致：合并逻辑 skip-log.json 记录 ${skipCount} 条跳过，doctor 本次报告 ${warnReported} 条——两次读取之间文件可能已变化，或合并逻辑未重跑（运行 sofagent-ontology merge 刷新）`);
           repairHint('sofagent-ontology merge');
         }
       } catch (err) {

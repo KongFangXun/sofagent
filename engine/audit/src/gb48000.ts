@@ -65,7 +65,7 @@ export const GB48000_CLAUSE_MAP: readonly Gb48000ClauseMapping[] = [
     title: '状态建模要求（生命周期状态迁移）',
     mappedTo: 'CORE-STM · ontology/contracts.ts 状态机契约',
     status: '部分对齐',
-    note: '状态机契约注册/查询 + 骨架校验（initialState/transitions ∈ states）已落地；完整迁移执行引擎（迁移前钩子/审计/非法迁移拦截）留 v1.4.0',
+    note: '状态机契约注册/查询 + 骨架校验（initialState/transitions ∈ states）已落地；完整迁移执行逻辑（迁移前钩子/审计/非法迁移拦截）留 v1.4.0',
   },
   {
     clause: 'META-01',

@@ -1,7 +1,7 @@
 // ============================================================
 // worktree-isolation.ts · git worktree 隔离原语（v1.3.7 · 交付一）
 //
-// 为未来并行 SubAgent 提供文件级隔离底座——不是替换编排引擎，
+// 为未来并行 SubAgent 提供文件级隔离底座——不是替换编排模块，
 // 是加一层 worktree 隔离原语（AD-4：只交付三原语 + 单测 +
 // LoopGraphDeps 可选注点，默认不激活；并行调度接 graph.ts 留 v1.4.7）。
 //
@@ -405,7 +405,7 @@ export interface SweepResult {
  * 启动清扫：读取注册表，回收所有状态为 active 但进程已死的 worktree。
  *
  * 场景：SubAgent 进程被杀（kill -9 / 崩溃 / OOM）后，worktree 目录与
- * 分支残留。下次编排引擎启动时调用本函数回收。
+ * 分支残留。下次编排模块启动时调用本函数回收。
  *
  * 死活判定：注册表 create 记录中的 pid + kill(pid, 0)。
  * 回收动作 = forceRemoveWorktree + 写 sweep 记录。

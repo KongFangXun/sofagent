@@ -2,7 +2,7 @@
 // acceptance/acceptance.ts · 验收条件定义与执行（v1.3.7 交付⑨）
 //
 // 收敛鸿沟的直接解——任务创建时附机器可判定的验收条件，修改后
-// 跑验收返回结构化结果。四类条件（复用 Benchmark 判定引擎的判定
+// 跑验收返回结构化结果。四类条件（复用 Benchmark 判定的判定
 // 结构：测试通过 / build 成功 / grep 无 X / schema 校验）：
 //   - test         测试通过（spawnSync command，默认 npm test）
 //   - build        build 成功（spawnSync command，默认 npm run build）

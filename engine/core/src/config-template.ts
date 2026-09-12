@@ -139,7 +139,7 @@ else
   # v1.3.4 P1-7: clone 用户没 build dist 也没全局安装——显著提示而非只报错
   echo ""
   echo "  ╔════════════════════════════════════════════════════╗"
-  echo "  ║  ⚠️ [sofagent] 审计引擎未找到                       ║"
+  echo "  ║  ⚠️ [sofagent] 审计模块未找到                       ║"
   echo "  ║  未检测到 dist 构建产物且未全局安装 sofagent-audit  ║"
   echo "  ╠════════════════════════════════════════════════════╣"
   echo "  ║  解决方案（任选其一）：                              ║"
@@ -147,12 +147,12 @@ else
   echo "  ║  2. 全局安装：npm install -g @sofagent/audit        ║"
   echo "  ╚════════════════════════════════════════════════════╝"
   echo ""
-  echo "  ❌ commit 已阻止——请安装审计引擎后重新提交。"
+  echo "  ❌ commit 已阻止——请安装审计模块后重新提交。"
   exit 1
 fi
 
 # 2.1 P1-A2: dist 完整性校验——防止本地覆写 dist 致审计失效
-#     比对本 hook 实际要执行的审计引擎 dist 的 SHA-256 与安装时记录的基准哈希——
+#     比对本 hook 实际要执行的审计模块 dist 的 SHA-256 与安装时记录的基准哈希——
 #     与上方 RESOLVED_ENTRY 同源（校验哪个文件就执行哪个文件），不再独立解析一次
 #     （原写法用 bin 名解析，必然解析失败 → 校验被静默跳过，防线形同虚设）。
 #     基准哈希存储在 ~/.sofagent/internal/audit-hash.txt（--doctor 首次运行时记录）。
@@ -167,8 +167,8 @@ elif [ -n "$GLOBAL_DIST" ] && [ -f "$GLOBAL_DIST" ] && [ -f "$HASH_RECORD" ]; th
   CURRENT_HASH=$(node -e "const c=require('crypto'),f=require('fs');process.stdout.write(c.createHash('sha256').update(f.readFileSync(process.argv[1])).digest('hex'))" "$GLOBAL_DIST" 2>/dev/null)
   RECORDED_HASH=$(cat "$HASH_RECORD" 2>/dev/null | tr -d '[:space:]')
   if [ -n "$CURRENT_HASH" ] && [ -n "$RECORDED_HASH" ] && [ "$CURRENT_HASH" != "$RECORDED_HASH" ]; then
-    echo "🔴 [sofagent] 审计引擎完整性校验失败（dist 哈希不匹配）"
-    echo "   审计引擎可能被替换（影子审计器劫持风险）。"
+    echo "🔴 [sofagent] 审计模块完整性校验失败（dist 哈希不匹配）"
+    echo "   审计模块可能被替换（影子审计器劫持风险）。"
     echo "   如需恢复：npm install -g @sofagent/audit@latest"
     echo "   如为故意重建：sofagent-audit --reset-baseline（--doctor 只体检、不覆盖已存在的基线）"
     exit 1
@@ -200,7 +200,7 @@ if git diff --cached --name-only -- .sofagent/ 2>/dev/null | grep -q .; then
 fi
 
 # 3. 用 --cached 只审计暂存区（避免扫到工作树未 staged 的改动导致 A3 误报）
-# 统一用 --cached——审计引擎自带首次提交空 HEAD 兼容
+# 统一用 --cached——审计模块自带首次提交空 HEAD 兼容
 AUDIT_DIFF_ARG="--cached"
 
 # 4. 正常运行审计

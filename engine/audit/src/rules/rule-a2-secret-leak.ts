@@ -419,7 +419,7 @@ export function scanA2(ctx: AuditContext): RuleScan {
   // .gitattributes -diff 绕过检测（v1.3.8 P1-A2 升级为 FAIL）
   // 红队实测两步隐身：第一步提交 .gitattributes 标记 secrets.js -diff（此处仅 WARN 放行），
   // 第二步提交密钥文件——git diff 不输出内容行，A2 无内容可扫静默全绿。
-  // -diff 标记对审计引擎是「结构性隐藏证据」，合法场景（真正的二进制产物如 .png/.lock）
+  // -diff 标记对审计模块是「结构性隐藏证据」，合法场景（真正的二进制产物如 .png/.lock）
   // 极少需要 -diff；按 fail-closed 原则升级 FAIL，用户确属误报可用 --ruleset 自定义豁免。
   const attrHiddenTargets = detectGitattributesDiffHidden(ctx);
   if (attrHiddenTargets.length > 0) {

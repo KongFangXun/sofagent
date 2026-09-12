@@ -43,7 +43,7 @@ async function s102() {
   }
 }
 
-// ── S106 · v1.1.8 编排引擎——compose DAG 调度（detectFileConflicts 同文件冲突检测）──
+// ── S106 · v1.1.8 编排模块——compose DAG 调度（detectFileConflicts 同文件冲突检测）──
 function s106() {
   const { detectFileConflicts } = require(process.env.ORCH_DIR + '/dag-runner.js');
   const conflictParsed = {

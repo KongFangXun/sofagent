@@ -36,7 +36,7 @@ import { registerRlRecipes, type RlTemplate } from './rl-templates';
 // 场景模板数据模型
 // ════════════════════════════════════════
 
-/** 训练场景类型（workflow 节点映射——推导引擎的输出维度） */
+/** 训练场景类型（workflow 节点映射——推导的输出维度） */
 export type TrainScenario = 'extraction' | 'classification' | 'generation' | 'dialogue';
 
 /** 训练方法族（QLoRA 参数高效微调 / SFT 全参监督微调 / DPO 偏好优化） */

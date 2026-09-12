@@ -3,7 +3,7 @@
 //
 // 目标：多设备审计历史可追溯（配合身份码，轻量版）。
 //
-// 写入：审计引擎运行后，向 ~/.sofagent/data/audit-trail.jsonl 追加一条 entry
+// 写入：审计模块运行后，向 ~/.sofagent/data/audit-trail.jsonl 追加一条 entry
 // 聚合：按 agentId / ruleId / deviceFingerprint 分组统计
 // ============================================================
 

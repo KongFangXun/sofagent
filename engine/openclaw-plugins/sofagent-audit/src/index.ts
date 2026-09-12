@@ -28,7 +28,7 @@ const _pkg: { version?: string } = require('../package.json');
   brandColor: '#16B8F3',
 };
 
-// 危险工具黑名单：拦截高破坏性命令（与审计引擎 A2/A9 等规则同向）
+// 危险工具黑名单：拦截高破坏性命令（与审计模块 A2/A9 等规则同向）
 /* @public */ export const DANGEROUS_TOOLS: ReadonlyArray<string> = [
   'rm', 'rmdir', 'git_push', 'git_reset', 'git_reset_hard', 'git_clean', 'git_checkout', 'git_revert',
   'delete_file', 'force_delete', 'fs_delete', 'fs_remove', 'drop_table', 'drop_database',

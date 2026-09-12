@@ -61,15 +61,15 @@ describe('A16 非授权文件变更', () => {
     expect(result.status).toBe('PASS');
   });
 
-  // v1.2.5 §4.9.3: 审计引擎源码自保护
-  it('diff 修改 engine/audit/src/rules/runner.ts → WARN（审计引擎源码）', () => {
+  // v1.2.5 §4.9.3: 审计模块源码自保护
+  it('diff 修改 engine/audit/src/rules/runner.ts → WARN（审计模块源码）', () => {
     const ctx = makeCtx(
       [makeDiffFile('engine/audit/src/rules/runner.ts', ['+const x = 1;'], 'modified')],
       { config: defaultConfig as any }
     );
     const result = scanA16(ctx);
     expect(result.status).toBe('WARN');
-    expect(result.details[0]).toContain('审计引擎源码被修改');
+    expect(result.details[0]).toContain('审计模块源码被修改');
   });
 
   it('diff 修改 rule-a1-sensitive-files.ts → WARN', () => {

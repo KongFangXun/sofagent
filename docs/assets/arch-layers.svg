@@ -9,7 +9,7 @@
   <!-- 层 1：模型层 -->
   <rect x="80" y="24" width="1020" height="102" rx="14" fill="#F9FAFC" stroke="#D2DAE4" stroke-width="1.5"/>
   <text x="590" y="66" text-anchor="middle" font-size="25" font-weight="600" fill="#2D3238">模型层（智力源）</text>
-  <text x="590" y="102" text-anchor="middle" font-size="16" fill="#646C78">通用大模型 · 专属小模型 / 后训练模型（v1.4.x 训练引擎 · 本地权重）</text>
+  <text x="590" y="102" text-anchor="middle" font-size="16" fill="#646C78">通用大模型 · 专属小模型 / 后训练模型（v1.4.x 后训模块 · 本地权重）</text>
 
   <!-- 箭头 1 -->
   <line x1="590" y1="126" x2="590" y2="168" stroke="#6A737D" stroke-width="1.8" marker-end="url(#arr)"/>

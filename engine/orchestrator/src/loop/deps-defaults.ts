@@ -60,7 +60,7 @@ export function resolveMaxTurns(role: 'engineer' | 'reviewer', cwd?: string): nu
  * 无需假设二进制安装路径，且类型安全）。
  *
  * 流程：git diff HEAD（工作区未提交变更）→ parseDiff → runRules。
- * 审计引擎不可用（如 git 环境缺失）时降级 WARN 并在报告注明——
+ * 审计模块不可用（如 git 环境缺失）时降级 WARN 并在报告注明——
  * 不直接 FAIL 以免烧穿重试次数，由 reviewer + human_confirm 兜底把关。
  */
 async function defaultRunAudit(artifacts: LoopArtifacts): Promise<AuditOutcome> {
@@ -98,9 +98,9 @@ async function defaultRunAudit(artifacts: LoopArtifacts): Promise<AuditOutcome> 
     const msg = err instanceof Error ? err.message : String(err);
     const degradedOutcome: AuditOutcome = {
       verdict: 'WARN',
-      report: `审计提示：审计引擎不可用（${msg}）——降级 WARN，由 reviewer 与人工确认兜底。`,
+      report: `审计提示：审计模块不可用（${msg}）——降级 WARN，由 reviewer 与人工确认兜底。`,
     };
-    // 审计引擎不可用时也尝试写 history（engine 字段标 loop-graph-degraded 便于追溯）
+    // 审计模块不可用时也尝试写 history（engine 字段标 loop-graph-degraded 便于追溯）
     try {
       const audit = await import('@sofagent/audit');
       recordLoopAuditHistory(audit, degradedOutcome, artifacts.task, { engine: 'loop-graph-degraded' });

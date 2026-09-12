@@ -1,5 +1,5 @@
 // ============================================================
-// attribution.test.ts · ATTRIBUTION 归因引擎测试（P2 · v1.3.9 十）
+// attribution.test.ts · ATTRIBUTION 归因测试（P2 · v1.3.9 十）
 // ============================================================
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
@@ -8,7 +8,7 @@ import * as path from 'path';
 import * as os from 'os';
 import { AttributionEngine } from '../worklog/attribution';
 
-describe('AttributionEngine · 归因引擎', () => {
+describe('AttributionEngine · 归因', () => {
   let dataDir: string;
 
   beforeEach(() => {

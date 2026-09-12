@@ -108,7 +108,7 @@ export function detectTools(): Record<string, { available: boolean; version?: st
     ['git', 'git version 2.39'],
     ['node', 'v22.0.0'],
     ['npm', '10.0.0'],
-    // v1.4.3 清扫任务一：删除 ['ao', '0.7.5'] 探测——ao 编排引擎已于 v1.0.7
+    // v1.4.3 清扫任务一：删除 ['ao', '0.7.5'] 探测——ao 编排模块已于 v1.0.7
     // 退役，探测是死代码（detectTools 输出不再含 ao 条目）
     ['docker', 'Docker version 27'],
     ['python3', 'Python 3.12'],

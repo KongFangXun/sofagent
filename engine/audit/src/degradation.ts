@@ -5,13 +5,13 @@
 // 梯队——当某个能力不可用时，逐级降级而非整盘崩溃：
 //   full（全部规则 + LLM 审计）
 //     → rules-only（纯 git-diff 规则，LLM 不可用时）
-//     → minimal（只跑 A1-A11 核心安全规则，审计引擎超时时）
+//     → minimal（只跑 A1-A11 核心安全规则，审计模块超时时）
 //     → safe-stop（全部规则都跑不动时，安全停止不破坏）
 // workflow never stops = 总有一级能兜底。
 //
 // 三个降级触发器（可检测）：
 //   llm-unavailable  LLM 不可用（连接拒绝 / API 宕机 / 鉴权失败 / 超时）
-//   audit-timeout    审计引擎超时（runRules 超过阈值未返回）
+//   audit-timeout    审计模块超时（runRules 超过阈值未返回）
 //   daemon-crash     daemon 崩溃（health 心跳停滞 / status=stopped）
 //
 // ⚠️ 铁律：
@@ -70,7 +70,7 @@ export interface LevelCapability {
 /** 触发器 → 默认降级原因文案 */
 const DEFAULT_REASONS: Record<DegradationTrigger, string> = {
   'llm-unavailable': 'LLM 不可用——降级为纯 git-diff 规则审计',
-  'audit-timeout': '审计引擎超时——降级为只跑核心安全规则',
+  'audit-timeout': '审计模块超时——降级为只跑核心安全规则',
   'daemon-crash': 'daemon 崩溃——安全停止，不破坏已有数据',
 };
 
@@ -121,7 +121,7 @@ export function isLlmUnavailable(err: unknown): boolean {
 }
 
 /**
- * 检测审计引擎超时——错误指明超时，或耗时超过阈值。
+ * 检测审计模块超时——错误指明超时，或耗时超过阈值。
  * @param err runRules 抛出的错误（可选）
  * @param elapsedMs 实际耗时（可选，与 timeoutMs 比较）
  * @param timeoutMs 超时阈值（默认 30s）

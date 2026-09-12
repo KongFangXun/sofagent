@@ -33,7 +33,7 @@
 # 平台无关重构：默认安装不探测/不枚举任何平台，只写 sofagent 自己的目录 ~/.sofagent/；
 # 平台集成改为显式 opt-in：--platform openclaw（完整）/ workbuddy / claude / codex / hermes / cursor / gemini（v1.4.4）
 # 约束层五种能力：注入 / 审计 / 回溯 / 沉淀 / 进化（FORGE 是内部开发工具，非交付引擎）。
-# 编排引擎为独立可选包 @sofagent/orchestrator，需单独安装（npm install -g @sofagent/orchestrator）。
+# 编排模块为独立可选包 @sofagent/orchestrator，需单独安装（npm install -g @sofagent/orchestrator）。
 #
 # ── 调用契约（v1.2.0）──
 # FDE 通过以下方式调用本脚本安装底座：
@@ -482,7 +482,7 @@ if command -v node &>/dev/null; then
     exit 1
   fi
 else
-  err "Node.js 未安装。审计引擎（@sofagent/audit）需要 Node.js >= 18"
+  err "Node.js 未安装。审计模块（@sofagent/audit）需要 Node.js >= 18"
   err "请先安装 Node.js: https://nodejs.org/"
   exit 1
 fi
@@ -497,9 +497,9 @@ if command -v npm &>/dev/null; then
 else warn "npm 未安装"; fi
 
 # ════════════════════════════════════════
-# Step 3: 审计引擎（@sofagent/audit）
+# Step 3: 审计模块（@sofagent/audit）
 # ════════════════════════════════════════
-info "Step 3 · 审计引擎: @sofagent/audit（约束层审计能力）"
+info "Step 3 · 审计模块: @sofagent/audit（约束层审计能力）"
 # 优先使用仓库本地的 engine/audit/dist/（避免 npm @latest 版本漂移）
 # 仓库本地版本与用户 clone 的版本一致，npm registry 可能滞后
 LOCAL_AUDIT_DIST="$PROJECT_ROOT/engine/audit/dist/index.js"
@@ -610,7 +610,7 @@ if command -v sofagent-audit >/dev/null 2>&1 && git rev-parse --git-dir >/dev/nu
   fi
 fi
 
-# Step 6.6: v1.3.8 P1-A3 审计引擎哈希基准首装生成（堵首次部署窗口）
+# Step 6.6: v1.3.8 P1-A3 审计模块哈希基准首装生成（堵首次部署窗口）
 # 此前基准哈希仅 --doctor 首次运行时记录——install.sh 首装后到用户跑 doctor 之前是空窗：
 # 攻击者可植入冒牌 engine/audit/dist，hook 的 if [ -f audit-hash.txt ] 跳过校验。
 # 首装即写基准（本地 dist 优先，全局安装 fallback），后续 hook 每次比对。
@@ -625,7 +625,7 @@ if command -v node >/dev/null 2>&1; then
     HASH_SOURCE=$(node -e "try{const p=require('path');const idx=require.resolve('sofagent-audit');const d=p.dirname(p.dirname(idx));process.stdout.write(p.join(d,'dist','index.js'))}catch{process.stdout.write('')}" 2>/dev/null || echo "")
     # v1.4.7 批次 M P1-3：解析结果大小防线——require.resolve('sofagent-audit') 可能
     # 命中 OpenClaw 插件同名包（~5KB，engine/openclaw-plugins/sofagent-audit）而非
-    # 真实审计引擎（~98KB）。把 5KB 插件哈希写成基准 = 后续真实引擎每次校验都报
+    # 真实审计模块（~98KB）。把 5KB 插件哈希写成基准 = 后续真实引擎每次校验都报
     # 「被替换」假警报（基准错锚）。<30KB 视为插件误命中：warn 且不写基准（fail-closed）。
     if [ -n "$HASH_SOURCE" ] && [ -f "$HASH_SOURCE" ] \
       && [ "$(wc -c < "$HASH_SOURCE" | tr -d ' ')" -lt 30720 ]; then
@@ -639,14 +639,14 @@ if command -v node >/dev/null 2>&1; then
       mkdir -p "$HASH_BASE_DIR"
       if node -e "const c=require('crypto'),f=require('fs');process.stdout.write(c.createHash('sha256').update(f.readFileSync(process.argv[1])).digest('hex'))" "$HASH_SOURCE" > "$HASH_RECORD" 2>/dev/null; then
         chmod 600 "$HASH_RECORD" 2>/dev/null || true
-        ok "  审计引擎哈希基准已生成（$(basename "$HASH_SOURCE")，供 hook 完整性校验）"
+        ok "  审计模块哈希基准已生成（$(basename "$HASH_SOURCE")，供 hook 完整性校验）"
       else
         rm -f "$HASH_RECORD"
-        warn "  审计引擎哈希基准生成失败（可运行 sofagent-audit --doctor 补生成）"
+        warn "  审计模块哈希基准生成失败（可运行 sofagent-audit --doctor 补生成）"
       fi
     fi
   else
-    warn "  审计引擎 dist 未找到——哈希基准未生成（安装 @sofagent/audit 后运行 sofagent-audit --doctor 补生成）"
+    warn "  审计模块 dist 未找到——哈希基准未生成（安装 @sofagent/audit 后运行 sofagent-audit --doctor 补生成）"
   fi
 fi
 
@@ -660,24 +660,24 @@ print_completion_summary
 install_daemon
 log_install_audit
 
-# Evolve 自进化引擎（可选）
+# Evolve 自进化能力（可选）
 # v0.2.0 起 PyPI wheel 已包含 evolve-sleep CLI（pyproject.toml [project.scripts] 声明）
 # 直装即可：pip install evolve
 # 如需 Claude Code/Codex/Copilot/Devin 集成 shell 或 OpenClaw 适配（仅仓库 plugins/ 目录）：
 #   git clone https://github.com/microsoft/Evolve.git ~/Evolve
 #   cd ~/Evolve && pip install -e ".[all]"
-echo "ℹ️ Evolve 自进化引擎（可选）：pip install evolve（v0.2.0+ 已含 evolve-sleep CLI）"
+echo "ℹ️ Evolve 自进化能力（可选）：pip install evolve（v0.2.0+ 已含 evolve-sleep CLI）"
 
 # ── v1.1.0: 可选包提示（这些不在自动安装范围内，仅提示）──
 echo ""
 echo "可选 npm 包（上述未自动安装，按需运行）："
-echo "  npm install -g @sofagent/orchestrator   # 独立编排引擎"
+echo "  npm install -g @sofagent/orchestrator   # 独立编排模块"
 echo "  npm install -g @sofagent/daemon          # 守护进程"
 echo "  npm install -g @sofagent/core            # 基础设施（doctor/verify）"
 echo "  npm install -g @sofagent/ontology        # 本体模型"
 
-# 编排引擎为独立可选包（不随 @sofagent/audit 自动安装，需按需单独安装）
-echo "  💡 编排引擎为独立可选包 @sofagent/orchestrator，需单独安装（npm install -g @sofagent/orchestrator）"
+# 编排模块为独立可选包（不随 @sofagent/audit 自动安装，需按需单独安装）
+echo "  💡 编排模块为独立可选包 @sofagent/orchestrator，需单独安装（npm install -g @sofagent/orchestrator）"
 
 # ── v1.4.7 G8: 首部署确定性 cron job 可选分支（--with-first-deploy-cron flag，默认不装）──
 # 部署完成即有一个确定性定时任务在跑（daily-health 每日巡检）——客户第一天看到

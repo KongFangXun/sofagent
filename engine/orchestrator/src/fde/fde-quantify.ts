@@ -364,7 +364,7 @@ export function distillDeliverables(
       [
         '---',
         `name: node-${sanitizeNodeId(n.nodeId)}`,
-        'description: 本 Skill 由 FDE 沉淀引擎自动生成——按交付手册执行节点作业。',
+        'description: 本 Skill 由 FDE 沉淀能力自动生成——按交付手册执行节点作业。',
         '---',
         '',
         `# ${n.description}`,

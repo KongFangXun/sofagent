@@ -5,7 +5,7 @@
 //   worktree.diff() → audit diff（复用 @sofagent/audit 现有规则，不新写）
 //     → PASS/WARN → git merge --no-ff 合并回主分支（保留分支历史，
 //                    merge commit 可追溯到是哪个 SubAgent 做的）
-//     → FAIL      → 丢弃 worktree + 记录拒绝原因 + 通知编排引擎重试
+//     → FAIL      → 丢弃 worktree + 记录拒绝原因 + 通知编排模块重试
 //
 // git merge 文本冲突（不是 audit FAIL，是 git merge 冲突）由
 // conflict-resolver.ts 仲裁：
@@ -89,7 +89,7 @@ export interface MergeGateOptions {
   conflictsPath?: string;
   /** 主分支侧冲突方信息覆盖（默认 agentId='main'，无 scope） */
   incumbent?: Partial<ConflictParty>;
-  /** 编排引擎重试通知（audit FAIL / 冲突让步时触发） */
+  /** 编排模块重试通知（audit FAIL / 冲突让步时触发） */
   notifyRetry?: (agentId: string, reason: string) => void | Promise<void>;
   /** HITL 通知（scope 重叠冲突时触发；v1.2.3 仅通知不阻塞） */
   notifyHuman?: (record: ConflictRecord) => void | Promise<void>;

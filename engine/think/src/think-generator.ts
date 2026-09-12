@@ -1,6 +1,6 @@
 // ============================================================
 // think-generator.ts · 基于 git diff 自动生成 think.md 条目
-// v0.98 方案 A：审计引擎基于 diff 硬证据自动生成反思记录
+// v0.98 方案 A：审计模块基于 diff 硬证据自动生成反思记录
 // v1.4.7 迁移到 @sofagent/think
 // ============================================================
 
@@ -24,7 +24,7 @@ export interface ThinkEntryOptions {
  * 幂等：同一 task + 同一分钟内不重复写入
  *
  * @param diffFiles git diff 解析出的文件变更
- * @param results 审计引擎运行结果
+ * @param results 审计模块运行结果
  * @param task 任务描述（--task 参数）
  * @param opts 可选配置
  */

@@ -2,7 +2,7 @@
 //
 // 定位：训练状态查询侧的数据出口——落盘 data/dashboard/train-status.json
 // （供 Dashboard「训练任务」区块读取，对齐 worklog.json 落盘模式）+
-// train-health.json（训练引擎健康度聚合：成功率/平均耗时/失败 top 原因/
+// train-health.json（后训模块健康度聚合：成功率/平均耗时/失败 top 原因/
 // GPU 利用率——供 Dashboard 聚合 + 外部监控系统消费）。
 //
 // 只读聚合：数据源是 train-job 的 state.json / events.jsonl（既有落盘），
@@ -155,7 +155,7 @@ export function buildTrainStatusBoard(
 }
 
 // ════════════════════════════════════════
-// train-health.json（训练引擎健康度聚合）
+// train-health.json（后训模块健康度聚合）
 // ════════════════════════════════════════
 
 /** 失败原因 Top 条目 */

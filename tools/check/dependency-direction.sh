@@ -21,7 +21,7 @@ RED='\033[0;31m'; GREEN='\033[0;32m'; NC='\033[0m'
 
 [ -f "$YML" ] || { echo -e "${RED}❌ 边界清单缺失: $YML${NC}"; exit 2; }
 
-# 用 node 解析 yml（js-yaml 在根 node_modules——审计引擎既有依赖）+ 逐包读 package.json
+# 用 node 解析 yml（js-yaml 在根 node_modules——审计模块既有依赖）+ 逐包读 package.json
 node -e '
 const fs = require("fs");
 const path = require("path");

@@ -4,7 +4,7 @@
 //
 // 验收 MCP tool 先行版——收敛鸿沟的直接解。任务创建时附机器可判定
 // 的验收条件（define_acceptance），修改后跑验收返回结构化结果
-// （check_acceptance）。四类条件复用 Benchmark 判定引擎结构：
+// （check_acceptance）。四类条件复用 Benchmark 判定结构：
 //   test / build / grep-absent / schema
 //
 // 定位：通用 MCP tool（任何宿主可调）。DSH Agent 经 v1.3.5 MCP 互通

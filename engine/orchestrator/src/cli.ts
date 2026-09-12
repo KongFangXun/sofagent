@@ -83,7 +83,7 @@ async function main() {
       if (result) {
         console.log(result);
       } else {
-        console.error('❌ sofagent 提示：编排引擎未安装，编排功能暂不可用');
+        console.error('❌ sofagent 提示：编排模块未安装，编排功能暂不可用');
         console.error('   如需使用编排，请确认 @langchain/langgraph 已安装（详见 ARCHITECTURE.md）');
         process.exit(1);
       }

@@ -129,7 +129,7 @@ describe('doctor 审计日志链完整性校验', () => {
 // ============================================================
 // v1.4.3 十三：Ontology 完整性检查
 // 验收（changelog 原文）：坏样本三件逐一 WARN 病因准确 / 正常目录零误报 /
-// 跳过对账一致（合并引擎跳过数与检查报告数一致）
+// 跳过对账一致（合并逻辑跳过数与检查报告数一致）
 // ============================================================
 describe('doctor Ontology 完整性检查（v1.4.3 十三）', () => {
   let t: ReturnType<typeof setupOntologyTest>;
@@ -155,7 +155,7 @@ describe('doctor Ontology 完整性检查（v1.4.3 十三）', () => {
     expect(out).toContain('title:');
     expect(out).toContain('CHANGELOG v1.0.1');
     // 跳过对账一致（1 = 1）
-    expect(out).toContain('跳过对账一致（合并引擎跳过 1 = doctor 报告 1）');
+    expect(out).toContain('跳过对账一致（合并逻辑跳过 1 = doctor 报告 1）');
   });
 
   it('坏样本② frontmatter YAML 语法错误 → WARN 病因含「YAML 语法错误」', () => {
@@ -167,7 +167,7 @@ describe('doctor Ontology 完整性检查（v1.4.3 十三）', () => {
     const out = t.output();
     expect(out).toContain('YAML 语法错误');
     expect(out).toContain(join(t.entitiesDir, 'bad-yaml.md'));
-    expect(out).toContain('跳过对账一致（合并引擎跳过 1 = doctor 报告 1）');
+    expect(out).toContain('跳过对账一致（合并逻辑跳过 1 = doctor 报告 1）');
   });
 
   it('坏样本③ relations 字段拼写错 → WARN 病因含「非法字段名」并列出非法键', () => {
@@ -178,7 +178,7 @@ describe('doctor Ontology 完整性检查（v1.4.3 十三）', () => {
       '---\ntitle: 测试实体\ntype: entity\nrelations:\n  hasMany: [其他实体]\n---\n正文\n',
       'utf-8',
     );
-    writeSkipLog([]); // YAML 合法 → 合并引擎不跳过此文件
+    writeSkipLog([]); // YAML 合法 → 合并逻辑不跳过此文件
     runDoctor(t.tmpHome);
     const out = t.output();
     expect(out).toContain('非法字段名');
@@ -201,13 +201,13 @@ describe('doctor Ontology 完整性检查（v1.4.3 十三）', () => {
     expect(out).not.toContain('非法字段名');
     expect(out).not.toContain('缺少 frontmatter');
     expect(out).not.toContain('YAML 语法错误');
-    expect(out).toContain('跳过对账一致（合并引擎跳过 0 = doctor 报告 0）');
+    expect(out).toContain('跳过对账一致（合并逻辑跳过 0 = doctor 报告 0）');
   });
 
   it('对账不一致 → WARN 指向重新合并（跳过数 vs 报告数脱钩可发现）', () => {
     mkdirSync(t.entitiesDir, { recursive: true });
     writeFileSync(join(t.entitiesDir, 'x.md'), '---\ntitle: X\n---\n正文\n', 'utf-8');
-    // 合并引擎记了 2 条跳过，但 doctor 侧当前目录零问题 → 不一致
+    // 合并逻辑记了 2 条跳过，但 doctor 侧当前目录零问题 → 不一致
     writeSkipLog([{ file: 'gone-a.md', reason: 'yaml-error' }, { file: 'gone-b.md', reason: 'no-frontmatter' }]);
     runDoctor(t.tmpHome);
     const out = t.output();

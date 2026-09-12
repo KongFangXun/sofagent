@@ -322,7 +322,7 @@ function renderMarkdown(json: TrainReportJson, evalSummary: string | null): stri
   lines.push('');
   lines.push('---');
   lines.push('');
-  lines.push('*本报告由 sofagent 训练引擎自动生成（v1.4.2 章六）——归档于 data/dashboard/train-reports/。*');
+  lines.push('*本报告由 sofagent 后训模块自动生成（v1.4.2 章六）——归档于 data/dashboard/train-reports/。*');
 
   return lines.join('\n');
 }

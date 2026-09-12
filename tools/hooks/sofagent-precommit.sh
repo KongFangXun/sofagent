@@ -3,7 +3,7 @@
 # sofagent-precommit.sh · 跨平台 commit 审计拦截（共享入口）
 # v1.4.0 新增：Cursor / Claude Code / 千问办公 / git 原生 hook 共用此脚本
 #
-# 设计原则：复用 engine/audit 的成熟审计引擎，不重写审计逻辑。
+# 设计原则：复用 engine/audit 的成熟审计模块，不重写审计逻辑。
 #   本脚本只做「适配层」——把不同平台的调用方式归一化后，转发给 sofagent-audit。
 #
 # 支持的调用来源：
@@ -132,7 +132,7 @@ if [ -n "$REPO_ROOT" ] && [ -f "$AUDIT_DIST" ]; then
     # v1.4.3 F-04 修复（对齐 SECURITY.md:437 声称）：基线缺失 fail-loud exit 1，
     # 不再「正在补生成...」自动记录——防止把已被篡改的 dist 固化为合法基线
     # （信任锚必须是用户显式确认的时刻，不是 hook 顺手拍快照）。
-    echo "🔴 [sofagent] 审计引擎哈希基准缺失（$HASH_RECORD 不存在）——无法保证审计引擎未被替换，本次提交终止"
+    echo "🔴 [sofagent] 审计模块哈希基准缺失（$HASH_RECORD 不存在）——无法保证审计模块未被替换，本次提交终止"
     echo "   请运行: sofagent-audit --doctor --baseline 显式建立基线（在你确认 dist 可信的时刻）"
     exit 1
   else
@@ -160,14 +160,14 @@ if [ -n "$REPO_ROOT" ] && [ -f "$AUDIT_DIST" ]; then
 
     if [ "$SRC_CHANGED" -eq 1 ]; then
       if [ -n "$CURRENT_HASH" ] && [ -n "$RECORDED_HASH" ] && [ "$CURRENT_HASH" = "$RECORDED_HASH" ]; then
-        echo "⚠️ [sofagent] 审计引擎源码已变更，但 dist 未重建——当前审计跑的是旧代码"
+        echo "⚠️ [sofagent] 审计模块源码已变更，但 dist 未重建——当前审计跑的是旧代码"
         echo "   请执行: npm run build --workspace=engine/audit"
       else
-        echo "ℹ️ [sofagent] 审计引擎源码已变更（src 指纹 ${RECORDED_SRC_FP:0:12}... → ${CURRENT_SRC_FP:0:12}...），dist 随之变化属预期，本次提交放行"
+        echo "ℹ️ [sofagent] 审计模块源码已变更（src 指纹 ${RECORDED_SRC_FP:0:12}... → ${CURRENT_SRC_FP:0:12}...），dist 随之变化属预期，本次提交放行"
         echo "   同步信任锚: bash tools/audit-baseline-sync.sh"
       fi
     elif [ -n "$CURRENT_HASH" ] && [ -n "$RECORDED_HASH" ] && [ "$CURRENT_HASH" != "$RECORDED_HASH" ]; then
-      echo "🔴 [sofagent] 审计引擎完整性校验失败（P1-A2 dist 哈希不匹配）"
+      echo "🔴 [sofagent] 审计模块完整性校验失败（P1-A2 dist 哈希不匹配）"
       echo "   engine/audit/dist/index.js 可能被替换（影子审计器劫持风险）。"
       echo "   源码未变（src 指纹 ${CURRENT_SRC_FP:0:12}...）——dist 变化无法用「改了源码」解释。"
       echo "   记录哈希: ${RECORDED_HASH:0:12}...  当前哈希: ${CURRENT_HASH:0:12}..."
@@ -207,7 +207,7 @@ EXIT_CODE=$?
 
 # 退出码白名单 fail-closed：0=PASS 放行 / 1=WARN 警告放行 / 2=FAIL 拦截。
 # 白名单外的退出码（OOM 137 / 段错误 139 / 命令缺失 126/127 等信号级杀死）
-# 一律拒绝 commit——审计引擎崩溃不能被静默转译为「审计通过」（fail-open）。
+# 一律拒绝 commit——审计模块崩溃不能被静默转译为「审计通过」（fail-open）。
 case $EXIT_CODE in
   2)
     echo ""
@@ -224,7 +224,7 @@ case $EXIT_CODE in
     ;;
   *)
     echo ""
-    echo "🔴 [sofagent] 审计引擎异常退出（exit ${EXIT_CODE}，白名单外）——无法确认审计通过，commit 终止"
+    echo "🔴 [sofagent] 审计模块异常退出（exit ${EXIT_CODE}，白名单外）——无法确认审计通过，commit 终止"
     echo "   可能原因：进程被信号杀死（137=OOM / 139=段错误）或命令缺失（126/127）。"
     echo "   请单独运行: node engine/audit/dist/index.js --diff --cached 排查引擎状态；"
     echo "   确认为引擎自身故障并修复后重新提交。"

@@ -11,12 +11,12 @@
 // 2. think.md 是 **append-only（只追加）**：所有反思写入方只能追加新条目，
 //    绝不允许整体覆写 / 截断 / 就地改写历史条目。
 // 3. **多写入方（multi-writer）是设计原意**，允许的写入方：
-//    - 审计引擎：git diff → 自动反思（generateThinkEntry）
+//    - 审计模块：git diff → 自动反思（generateThinkEntry）
 //    - 主 Agent：按模板手动写（write_think 工具）
 //    - FDE / loop 陪跑期：人工或陪跑 Agent 写入
 // 4. **派生方向严格单向**：think.md（Ledger）→ knowledge/（Views）。
 //    knowledge/ 是唯一派生层；任何代码都不得把 knowledge/ 的内容反向写回 think.md。
-// 5. 读取方（readers）：编排引擎、daemon（Dream Cycle / lessons-extract）、
+// 5. 读取方（readers）：编排模块、daemon（Dream Cycle / lessons-extract）、
 //    harness 加载链、人类。读取方只消费，不修改。
 //
 // 说明：compress-memory 的归档 / 压缩是**授权的生命周期运维操作**
@@ -54,7 +54,7 @@ export function getThinkPath(dataBase?: string): string {
 /**
  * 向 think.md **追加**一条反思条目（契约强制的只追加写入点）。
  *
- * 所有反思写入方（审计引擎自动反思、主 Agent 手动 write_think、FDE 陪跑）
+ * 所有反思写入方（审计模块自动反思、主 Agent 手动 write_think、FDE 陪跑）
  * 都应经此函数写入，从代码层面保证 append-only 不变量：
  * 内部使用 appendFileSync，永不 writeFileSync / truncate / 就地改写。
  *

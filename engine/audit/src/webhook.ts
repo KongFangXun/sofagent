@@ -133,7 +133,7 @@ export async function verifyWebhookDns(rawUrl: string): Promise<boolean> {
 
 /**
  * v1.2.6: 脱敏辅助——webhook 推送到第三方平台前，对审计详情做敏感信息脱敏。
- * 复用 @sofagent/core 的 REDACTION_PATTERNS（与审计引擎内部脱敏口径一致）。
+ * 复用 @sofagent/core 的 REDACTION_PATTERNS（与审计模块内部脱敏口径一致）。
  */
 /**
  * v1.2.9 支持自定义脱敏正则（config.yml sanitizePatterns）
@@ -204,7 +204,7 @@ function buildContent(payload: WebhookPayload, failedRules: RuleCheck[], isPass:
     }
     lines.push(`扫描 ${payload.rules.length} 条规则全部通过`);
     lines.push(tracingLine);
-    lines.push(`审计引擎: sofagent-audit v${version}`);
+    lines.push(`审计模块: sofagent-audit v${version}`);
     return lines.join('\n');
   }
 
@@ -220,7 +220,7 @@ function buildContent(payload: WebhookPayload, failedRules: RuleCheck[], isPass:
   }
   lines.push(`详情：exit code ${payload.exitCode}`);
   lines.push(tracingLine);
-  lines.push(`审计引擎: sofagent-audit v${version}`);
+  lines.push(`审计模块: sofagent-audit v${version}`);
   return lines.join('\n');
 }
 

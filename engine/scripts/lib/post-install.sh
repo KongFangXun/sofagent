@@ -34,7 +34,7 @@ print_completion_summary() {  # 安装完成 · 使用说明（按平台）
     echo "  ║  sofagent Lite · 安装完成！              ║"
     echo "  ╚══════════════════════════════════════════╝"; echo ""
     echo "  已部署：宪法（SKILL.md）+ 反思区（think.md）+ 规则（fde.md）"
-    echo "  跳过：编排引擎 / Hook / 断路器 / daemon / 配套脚本"; echo ""
+    echo "  跳过：编排模块 / Hook / 断路器 / daemon / 配套脚本"; echo ""
     echo "  降 80% 复杂度，保 60% 价值。非交互式平台推荐先用 Lite 体验核心约束。"; echo ""; exit 0
   fi
   echo ""; echo "  ╔══════════════════════════════════════════╗"
@@ -62,7 +62,7 @@ print_completion_summary() {  # 安装完成 · 使用说明（按平台）
       echo "  ┌──────────────────────────────────────────┐"
       echo "  │  OpenClaw: 完整就绪                       │"
       echo "  │  三层加载链自动注入 + Hook 强制加载        │"
-      echo "  │  + 编排引擎 + 脚本 + 断路器，全部可用      │"
+      echo "  │  + 编排模块 + 脚本 + 断路器，全部可用      │"
       echo "  └──────────────────────────────────────────┘" ;;
     claude|codex|hermes)
       echo "  已部署文件："

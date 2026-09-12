@@ -274,7 +274,7 @@ export const TOOLS: ToolDef[] = [
   {
     name: 'sofagent_compose',
     roles: ['fde'],
-    description: '编排引擎——传入任务描述，返回 Sub Agent 编排方案（YAML）。',
+    description: '编排模块——传入任务描述，返回 Sub Agent 编排方案（YAML）。',
     inputSchema: {
       type: 'object',
       properties: {
