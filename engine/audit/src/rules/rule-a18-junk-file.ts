@@ -3,9 +3,11 @@
 // 检测临时文件名模式的垃圾文件——如 a.txt / test1.js / new-name.txt
 // evidenceMode: git-diff
 // v1.3.7 新增 · v1.2.0 审查修正（不区分 status，modified 也告警）
-// v1.4.7 T9: git ls-files 命中豁免——正规仓库里 a.txt 可能是长期维护的
-// 真实文件（如依赖清单片段、约定俗成命名）；已在 git 索引中（此前已提交
-// 过）的文件名豁免 WARN，只对「本次新混入」的垃圾文件告警。
+// v1.4.8 修复（P0-02 · S51）: 豁免基线由「当前 git 索引（git ls-files）」收窄
+// 为「HEAD 提交树（git ls-tree HEAD）」——正规仓库里 a.txt 可能是长期维护的
+// 真实文件（如依赖清单片段、约定俗成命名），仅当其已存在于 HEAD 基线时豁免
+// WARN；本次新 `git add` 混入、尚未进入 HEAD 的垃圾文件必须告警，避免索引
+// 命中吞掉本应告警的场景（正是 S51 漏报根因）。
 // ============================================================
 import { basename } from 'path';
 import { execFileSync } from 'child_process';
@@ -26,7 +28,7 @@ const JUNK_PATTERNS: { regex: RegExp; label: string }[] = [
  * 豁免规则——以下路径/文件名跳过检测：
  * - 正规测试目录：test/、tests/、__tests__/ 开头
  * - 正规测试文件：*.test.ts、*.spec.ts、*.test.js 结尾
- * - v1.4.5 T9: git ls-files 已跟踪文件（见 isGitTracked）
+ * - v1.4.8: HEAD 提交树中已存在的文件（见 getTrackedFiles）
  */
 function isExempt(filePath: string): boolean {
   // 测试目录豁免
@@ -37,14 +39,15 @@ function isExempt(filePath: string): boolean {
 }
 
 /**
- * v1.4.5 T9: git 索引查询——返回 cwd 下 git 已跟踪文件集合（Set）。
- * 单次 `git ls-files` 全量拉取（大仓库也是毫秒级索引读取，远快于按文件
- * 逐个 ls-files --error-unmatch）；非 git 仓库 / git 不可用返回 null
- * （豁免降级关闭，不影响既有告警行为——fail-closed 于垃圾检测而非崩盘）。
+ * v1.4.8（P0-02）: HEAD 提交树查询——返回 cwd 下 HEAD 基线中的文件集合（Set）。
+ * 单次 `git ls-tree -r HEAD` 全量拉取（大仓库也是毫秒级读取，远快于按文件逐个
+ * 查询）；非 git 仓库 / HEAD 未诞生（首次提交 unborn）/ git 不可用返回 null——
+ * 豁免降级关闭，保持既有告警行为（fail-closed 于垃圾检测而非崩盘）：未进入
+ * HEAD 的新混入文件一律告警。
  */
 function getTrackedFiles(): Set<string> | null {
   try {
-    const out = execFileSync('git', ['ls-files'], {
+    const out = execFileSync('git', ['ls-tree', '-r', '--name-only', 'HEAD'], {
       encoding: 'utf-8',
       stdio: ['pipe', 'pipe', 'pipe'],
       maxBuffer: 64 * 1024 * 1024, // 百万级文件仓库兜底（默认 1MB 会炸）
@@ -59,7 +62,7 @@ function getTrackedFiles(): Set<string> | null {
 export function scanA18(ctx: AuditContext): RuleScan {
   const hits: string[] = [];
 
-  // v1.4.5 T9: 惰性拉取 git 索引——仅在存在候选垃圾文件时查询一次
+  // v1.4.8（P0-02）: 惰性拉取 HEAD 基线——仅在存在候选垃圾文件时查询一次
   let tracked: Set<string> | null | undefined;
   for (const file of ctx.diffFiles) {
     // 豁免规则：正规测试文件/目录跳过
@@ -69,8 +72,8 @@ export function scanA18(ctx: AuditContext): RuleScan {
     let matched = false;
     for (const { regex, label } of JUNK_PATTERNS) {
       if (regex.test(name)) {
-        // v1.4.5 T9: 命中垃圾模式但 git 已跟踪（此前已提交过的存量文件）→ 豁免。
-        // tracked === null（非 git 环境）时不豁免，保持旧告警行为。
+        // v1.4.8（P0-02）: 命中垃圾模式但已存在于 HEAD 基线（存量文件）→ 豁免。
+        // tracked === null（非 git 环境 / 首次提交 HEAD 未诞生）时不豁免，保持旧告警行为。
         if (tracked === undefined) tracked = getTrackedFiles();
         if (tracked !== null && tracked.has(file.path)) break;
         hits.push(`${file.path}（命中模式：${label}）`);
