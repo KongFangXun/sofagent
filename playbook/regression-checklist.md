@@ -204,6 +204,37 @@ grep -c "defaultRules\.length\|defaultRules\[.length\]" engine/audit/src/command
 # 子项 g: acceptance-test.sh 绝不能与 npm run build 并发（build 首步 rm -rf dist 清产物，acceptance-test 读 dist/*.js 误报 6-7 个「文件不存在」假失败）——自测须串行：build 完成→dist 稳定→单独跑
 # 「并发」无法单条 grep 干净断言（2>&1 / & 会误报），主体人工巡检铁律；下行只自动查 nohup/后台显式并发拉起
 grep -rnE "nohup.*(build|acceptance-test)|npm run build[^&]*&[[:space:]]*$" tools/ .github/workflows/ 2>/dev/null || true # 期望：零命中=无并发隐患=PASS；🔴 || true 必须在命令部分（注释里的 || true 不生效——零命中 grep exit 1 会把代码块整体判 FAIL）
+
+# 子项 h: 假绿 / 空转六形态扫描（v1.4.8 假绿专项）——判据**收窄到真坑形态**，宽口径会满屏误报，勿扩
+# 六形态与判定：
+#   A 管尾恒 0 命令判退出码 —— 判据见子项 a（同源）
+#   B 空值守卫静默跳过 —— 判据见下方脚本（**本轮唯一真坑形态**）
+#   C find 字面量路径不存在（免费绿灯）—— 本轮扫 6 条字面量路径全部存在；LAYER_C/D 已退役（check-docs.sh 有退役注释）
+#   D `grep -c ... || FAIL=1` 零匹配误用 —— 本轮 66 处命中均为「命令替换取输出 + || true 兜底 set -e」正确用法
+#   E `|| true` 掩盖断言 —— 本轮 21 处可疑全为 ((FAIL++)) || true（set -e 标准写法，非掩盖）
+#   F 宿主 profile 悬空软链 —— 判据见子项 c2
+# 实证（本版）：B 形态真坑 = **1 处** → tools/check/check-test-count.sh 的 LIMITATIONS_ALL
+#   （docs/LIMITATIONS.md 的「审计核心 N 个、全 workspace N 个」声明缺失时，整块校验静默消失而输出照旧 ✓ = 假绿）
+#   → 已补 else「grep 未命中 → FAIL，禁止静默跳过」（与同文件 DEV_ORCH_LINE 同范式）。
+#   反测：注入声明缺失 → EXIT=1 且报红；还原 → 「12 处校验通过 / EXIT=0」。
+python3 - <<'PY'
+import re, glob
+bad = []
+for f in sorted(glob.glob('tools/check/*.sh')) + ['playbook/acceptance-test.sh']:
+    try:
+        lines = open(f, encoding='utf-8', errors='replace').read().split('\n')
+    except OSError:
+        continue
+    for i, l in enumerate(lines):
+        m = re.search(r'if \[ -n "\$([A-Za-z_]+)" \]', l)
+        if not m or l.strip().startswith('#'):
+            continue
+        blk = '\n'.join(lines[i:i + 25])
+        # 真坑 = 块内含断言 且 无 else 分支（有 else = 已显式处置，不判）
+        if re.search(r'FAIL=1|\(\(FAIL\+\+\)\)', blk) and not re.search(r'^\s*else\b', blk, re.M):
+            bad.append(f"{f}:{i + 1} ${m.group(1)}")
+print('\n'.join(bad) if bad else '✅ 无空值守卫静默跳过（真坑形态 B）')
+PY
 ```
 
 #### 9. 动态规则禁用逻辑 + 文档侧规则数声称一致性
