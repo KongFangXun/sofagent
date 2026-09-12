@@ -2219,7 +2219,7 @@ done
 grep -q "onConverged" "$PROJECT_ROOT/engine/orchestrator/src/loop-agent/driver.ts" || S260_OK=false
 grep -q "qualityJudge\|QualityJudge" "$PROJECT_ROOT/engine/orchestrator/src/refine-agent/refine-driver.ts" || S260_OK=false
 [ -f "$PROJECT_ROOT/engine/mcp/src/tools/refine.ts" ] || S260_OK=false
-$S260_OK && pass "Refine Agent（复用 Onboard 引擎 + 质量规则集 + onConverged 自动触发）" || fail "Refine Agent 缺失"
+$S260_OK && pass "Refine Agent（复用 Onboard + 质量规则集 + onConverged 自动触发）" || fail "Refine Agent 缺失"
 scenario 261 "v1.3.3 交付 5 进化闭环——Benchmark 驱动 + 范围白名单（只动经验层）"; S261_OK=true
 for f in optimization-loop snapshot-manager contamination-guard; do
   [ -f "$PROJECT_ROOT/engine/orchestrator/src/refine-agent/${f}.ts" ] || S261_OK=false
