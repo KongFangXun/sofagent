@@ -700,7 +700,10 @@ else
   # ② 双口径对齐（历史快照语义）：CHANGELOG 最新版本行是发版时点快照（同开发日志
   #    「历史冻结」），不与当前 TOTAL_TESTS 比对（发版后新增测试属正常漂移）。
   #    只校验「workspace 口径 NNNN」标注与同版本开发日志快照一致——开发日志才是
-  #    该版本测试数的 SSOT。双口径换算式写死防漂移：全量 = workspace + 27(DSH) + 17(OpenClaw)。
+  #    该版本测试数的 SSOT。
+  #    v1.4.8 修正：删除原「再叠 27(DSH)+17(OpenClaw) 得全量口径」的换算式——它与
+  #    CHANGELOG 实际写法不符（索引行的数字本身即 workspace 口径，实测 4429 = 开发日志
+  #    快照 4429）；保留会让校验一旦被标注激活就必红（4429 ≠ 4429+44）。
   CL_WS_MARK=$(echo "$CHANGELOG_LINE" | grep -oE 'workspace 口径 [0-9]+' | grep -oE '[0-9]+' || echo "")
   if [ -n "$CL_WS_MARK" ]; then
     # 找同版本开发日志的 workspace 快照（「NNNN tests across NN packages」或「workspace NNNN」）
@@ -722,14 +725,13 @@ else
         echo -e "  ${RED}✗ CHANGELOG.md（行 ${CL_LINENO}）：workspace 口径声称 ${CL_WS_MARK}，开发日志快照 ${DEVLOG_SNAPSHOT}（${CL_DEVLOG}）${NC}"
         cl_fail=1
       fi
-      # 全量口径 = workspace + DSH 插件 27 + OpenClaw 插件 17（换算式写死，防口径漂移）
-      # ⚠️ 插件包（engine/dsh-plugins/、engine/openclaw-plugins/ 嵌套二级目录）不在 test-count
-      #    的 12 包扫描内（只扫 engine/ 一级），workspace 快照永远不含插件测试——一律叠加 27+17
-      CL_FULL_EXPECT=$((DEVLOG_SNAPSHOT + 27 + 17))
-      if [ "$CL_CUR" -ne "$CL_FULL_EXPECT" ]; then
-        echo -e "  ${RED}✗ CHANGELOG.md（行 ${CL_LINENO}）：全量口径 ${CL_CUR} ≠ workspace ${DEVLOG_SNAPSHOT} + 27(DSH) + 17(OpenClaw) = ${CL_FULL_EXPECT}（开发日志快照换算）${NC}"
-        cl_fail=1
-      fi
+    fi
+  else
+    # v1.4.8 修正：原实现「无标注即整块静默跳过」属**守卫空转**（看着有校验、实际不校验，
+    # 输出仍显示 ✓）。现改为**显式声明本次跳过**——不判红（部分版本行确无该标注），
+    # 但让「未校验」这件事可见、可被审计发现。
+    if [ "$QUIET" = false ]; then
+      echo -e "  ${YELLOW}⚠ CHANGELOG.md 索引行未带「workspace 口径 NNNN」标注——双口径对齐校验本次跳过（非失败）${NC}"
     fi
   fi
   if [ "$cl_fail" = "0" ]; then

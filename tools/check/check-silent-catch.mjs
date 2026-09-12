@@ -7,6 +7,8 @@
 // 扫描 engine 各子包 src 下的「catch 后空块或仅注释块」，且所在文件
 // 含 audit / persist / notice / daemon / history / write / snapshot
 // 关键词（关键持久化路径）的，输出 ❌ 清单。
+// 扫描面（v1.4.8 起）：engine/ 一级包 src **＋** engine/dsh-plugins/*/src 与
+// engine/openclaw-plugins/*/src（嵌套二级插件，此前为覆盖盲区）——共 28 个包。
 //
 // 实现说明：仓库 typescript 为 6.x（package exports 只开 ./lib/version.cjs
 // 与 unstable API 面，无经典 createSourceFile 走线）——正则轻扫替代 AST：
@@ -56,11 +58,23 @@ function collectSources(dir, out = []) {
 }
 
 const findings = [];
+// v1.4.8 补面：原实现只取 engine/ 一级（`engine/<pkg>/src`），dsh-plugins/ 与
+// openclaw-plugins/ 下的插件 src **完全不经此门禁**（覆盖盲区，见审查报告 6.2）。
+// 现补扫这两族的嵌套二级目录——注意 `.map(e => e.name)` 与下方 `pkgName` 的成对改动。
 const packages = fs.readdirSync(ENGINE, { withFileTypes: true })
-  .filter(e => e.isDirectory() && fs.existsSync(path.join(ENGINE, e.name, 'src')));
+  .filter(e => e.isDirectory() && fs.existsSync(path.join(ENGINE, e.name, 'src')))
+  .map(e => e.name);
+for (const nested of ['dsh-plugins', 'openclaw-plugins']) {
+  const nestedDir = path.join(ENGINE, nested);
+  if (!fs.existsSync(nestedDir)) continue;
+  for (const e of fs.readdirSync(nestedDir, { withFileTypes: true })) {
+    const relDir = `${nested}/${e.name}`;
+    if (e.isDirectory() && fs.existsSync(path.join(ENGINE, relDir, 'src'))) packages.push(relDir);
+  }
+}
 
-for (const pkg of packages) {
-  const srcDir = path.join(ENGINE, pkg.name, 'src');
+for (const pkgName of packages) {
+  const srcDir = path.join(ENGINE, pkgName, 'src');
   for (const file of collectSources(srcDir)) {
     const rel = path.relative(ROOT, file);
     const content = fs.readFileSync(file, 'utf8');
