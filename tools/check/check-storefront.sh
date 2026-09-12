@@ -91,6 +91,28 @@ else
 fi
 echo ""
 
+# ── 断言 ⑤：umbrella README 的 MCP tool 数对账（仓内文件，但属对外门面）──
+# 背景：umbrella 的 package.json files 含 README.md → 该数字直接出现在 npm 页面；
+# 曾长期停在历史值（v1.4.6 的 84）无人拦——check-docs 不扫包 README，本脚本原只锚 GitHub description。
+# 🔴 守卫不得空转：提取为空必须 FAIL（否则文件被删/格式变形后本断言静默跳过，等于没有）。
+UMB_README="engine/umbrella/README.md"
+if [ ! -f "$UMB_README" ]; then
+  echo "  ⏭️  [umbrella README] 文件不存在——跳过本断言"
+  SKIPS=$((SKIPS + 1))
+else
+  UMB_TOOLS=$(grep -oE '[0-9]+ tools' "$UMB_README" 2>/dev/null | grep -oE '[0-9]+' | head -1 || echo "")
+  if [ -z "$UMB_TOOLS" ]; then
+    echo "  ❌ [umbrella README] 未找到「N tools」声称——格式漂移或被改写，无法对账（该文件进 npm 发行面）"
+    FAILS=$((FAILS + 1))
+  elif [ "$UMB_TOOLS" != "$TOOL_COUNT" ]; then
+    echo "  ❌ [umbrella README] tool 数 ${UMB_TOOLS} ≠ 实数 ${TOOL_COUNT}——npm 页面将显示错误工具数"
+    FAILS=$((FAILS + 1))
+  else
+    echo "  ✓ [umbrella README] tool 数 ${UMB_TOOLS} = 实数 ${TOOL_COUNT}"
+  fi
+fi
+echo ""
+
 # ── gh 可达性探测（三态门禁的 SKIP 分支）──
 GH_DESC=$(gh api repos/KongFangXun/sofagent --jq .description 2>/dev/null)
 GH_HOME=$(gh api repos/KongFangXun/sofagent --jq .homepage 2>/dev/null)
