@@ -10,9 +10,9 @@
 //   ✅ 离线降级（对端进程终止 → fetch 返回 null / withOfflineFallback 落本地）
 //
 // 运行方式（在 sofagent 仓库根目录）：
-//   node FORGE/playbook/federation-e2e.mjs
+//   node playbook/federation-e2e.mjs
 // 或：
-//   SOFAGENT_REPO=/Users/kongfangxun/WorkBuddy/sofagent node FORGE/playbook/federation-e2e.mjs
+//   SOFAGENT_REPO=/Users/kongfangxun/WorkBuddy/sofagent node playbook/federation-e2e.mjs
 //
 // 判定：全部场景 PASS → exit 0；任一 FAIL → exit 1。
 // 已被 acceptance-test.sh 场景 320 调用（v1.4.0 纳入验收体系）。

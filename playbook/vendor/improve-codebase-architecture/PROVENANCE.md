@@ -44,7 +44,7 @@
 校验：
 
 ```bash
-cd FORGE/playbook/vendor/improve-codebase-architecture/upstream && shasum -a 256 $(find . -type f -name '*.md' | sort)
+cd playbook/vendor/improve-codebase-architecture/upstream && shasum -a 256 $(find . -type f -name '*.md' | sort)
 ```
 
 **依赖闭包为何含这四个目录**：`improve-codebase-architecture` 的流程以 `Skill tool` 按名调用
@@ -85,7 +85,7 @@ diff -r <上游检出>/skills/engineering ./upstream
 **升级后必跑门禁**：`bash tools/check/check-docs.sh`。
 
 - §1b 全仓死链扫描**有意覆盖 `upstream/`**——它顺带验证闭包完整性：上游若新增指向闭包外文件的相对链接，门禁会报死链，此时要么补齐 vendoring，要么在本清单记下该链接为何可从缺。
-- §4 文档预算：`FORGE/playbook/vendor/` 已从 B 层排除（第三方原文不计入自研预算，理由见 `tools/check/check-docs.sh` LAYER_B 段注释）。
+- §4 文档预算：`playbook/vendor/` 已从 B 层排除（第三方原文不计入自研预算，理由见 `tools/check/check-docs.sh` LAYER_B 段注释）。
 
 ## 六、挂载点（两处，同一 pin）
 

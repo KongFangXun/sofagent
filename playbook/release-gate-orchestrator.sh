@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-# FORGE/playbook/release-gate-orchestrator.sh
+# playbook/release-gate-orchestrator.sh
 #
 # release-gate-loop 外层编排脚本（方案 A+C 组合）。
 #
@@ -10,15 +10,15 @@
 # 支持断点续跑：如果某步的产物已存在（之前跑成功过），跳过该步。
 #
 # 用法：
-#   bash FORGE/playbook/release-gate-orchestrator.sh <version> [--skip-acceptance]
-#   bash FORGE/playbook/release-gate-orchestrator.sh v1.2.4
-#   bash FORGE/playbook/release-gate-orchestrator.sh v1.2.4 --skip-acceptance
+#   bash playbook/release-gate-orchestrator.sh <version> [--skip-acceptance]
+#   bash playbook/release-gate-orchestrator.sh v1.2.4
+#   bash playbook/release-gate-orchestrator.sh v1.2.4 --skip-acceptance
 # ============================================================
 
 set -euo pipefail
 
 # ─── 项目路径 ────────────────────────────────────────────────
-REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"  # 仓根 = 脚本所在目录的上一层（脚本位于仓根下的 playbook/ 内）
 DRIVER="${REPO_ROOT}/FORGE/src/release-gate-driver.mjs"
 
 # ─── run 目录基础路径（与 driver 的 resolveRunDir 逻辑一致）──

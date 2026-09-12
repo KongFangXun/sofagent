@@ -10,7 +10,7 @@
 
 **归并配额（硬门槛）**：新增 N 维 → 本版必须先真实归并 ≥N 维（被并维度检查内容实际移入目标维度，git diff 可查；注释压缩不算）；净增行数 > 警戒线余量 → 继续归并或移下一版——**只调警戒线不归并 = 不合格**。
 
-**行数警戒线（当前值）**：`regression-checklist.md` ≤ 1800 行、`acceptance-test.sh` ≤ 4200 行（4250→4200 收紧回调：同版二次上调后的真实瘦身消化——S333-S338 六场景块 JS 单行紧凑化（断言零删减），对销 S384-S400 增量后回到整数关口；v1.4.7 release-gate 期间的 4200→4240→4250 上调链已由本回调终止，不再适用）；fresh-eyes 警戒线见 04-review-system.md 风格守护段。三条上调铁律：① 三判据全否方可调——(i) 新增非旧维度可扩展子项的独立审查面；(ii) 非既有场景/维度的重复覆盖；(iii) 真实防回归价值非归并压缩可消化；② 连续上调禁令——连续两版已调，本版须先真实归并对销方可再调；同版同侧只调一次（同版二次冻结）；③ **上调只记一行**——`旧值→新值（原因一句话）`，历史上调链不在此处累积（完整过程 git 历史可溯）。
+**行数警戒线（当前值）**：`regression-checklist.md` ≤ 1950 行、`acceptance-test.sh` ≤ 4300 行（1800→1950 / 4200→4300：v1.4.8 阶段四 A 类分发 + 深模块批的真实内容增长——checklist 新增 6 维（#137-#142）并以归并对销 10 处后仍净增（审查面为新增非重复覆盖，非归并可消化），acceptance 新增 S401-S409 九场景（九新面各 1 行为锚）；按铁律超标上调不删内容，未做任何断言/场景删减）；fresh-eyes 警戒线见 04-review-system.md 风格守护段。三条上调铁律：① 三判据全否方可调——(i) 新增非旧维度可扩展子项的独立审查面；(ii) 非既有场景/维度的重复覆盖；(iii) 真实防回归价值非归并压缩可消化；② 连续上调禁令——连续两版已调，本版须先真实归并对销方可再调；同版同侧只调一次（同版二次冻结）；③ **上调只记一行**——`旧值→新值（原因一句话）`，历史上调链不在此处累积（完整过程 git 历史可溯）。
 
 **维度脚本编写三铁律**（教训——7 个 FAIL 维度中 5 个是脚本自身缺陷而非仓库问题，driver 白跑一轮）：
 
@@ -21,13 +21,13 @@
 **清单自身健康度自校验**（每次修改后跑）：
 ```bash
 (
-HEAD_VAL=$(grep -oE '当前 [0-9]+ 维' FORGE/playbook/regression-checklist.md | grep -oE '[0-9]+' | head -1)
-ACTUAL=$(grep -c "^#### " FORGE/playbook/regression-checklist.md)
+HEAD_VAL=$(grep -oE '当前 [0-9]+ 维' playbook/regression-checklist.md | grep -oE '[0-9]+' | head -1)
+ACTUAL=$(grep -c "^#### " playbook/regression-checklist.md)
 [ "$HEAD_VAL" = "$ACTUAL" ] && echo "✅ 维度数一致 ($HEAD_VAL)" || echo "❌ 头部声称 $HEAD_VAL ≠ 实际 $ACTUAL"
 
 # 行数警戒线自检（越线即 FAIL——与 check-review-system.sh §1d 同口径；本段是速览，门禁是权威）
-WC_CHK=$(wc -l < FORGE/playbook/regression-checklist.md); WC_ACC=$(wc -l < FORGE/playbook/acceptance-test.sh)
-[ "$WC_CHK" -le 1800 ] && echo "✅ checklist $WC_CHK (≤1800)" || { echo "❌ checklist $WC_CHK 超 1800（check-review-system 判 FAIL——走归并，不走上调）"; RC=1; }; [ "$WC_ACC" -le 4200 ] && echo "✅ acceptance $WC_ACC (≤4200)" || { echo "❌ acceptance $WC_ACC 超 4200（同上）"; RC=1; }; exit ${RC:-0}  # 超线非零退出（人工执行可注释掉末行——防误伤终端后续命令）
+WC_CHK=$(wc -l < playbook/regression-checklist.md); WC_ACC=$(wc -l < playbook/acceptance-test.sh)
+[ "$WC_CHK" -le 1950 ] && echo "✅ checklist $WC_CHK (≤1950)" || { echo "❌ checklist $WC_CHK 超 1950（check-review-system 判 FAIL——走归并，不走上调）"; RC=1; }; [ "$WC_ACC" -le 4300 ] && echo "✅ acceptance $WC_ACC (≤4300)" || { echo "❌ acceptance $WC_ACC 超 4300（同上）"; RC=1; }; exit ${RC:-0}  # 超线非零退出（人工执行可注释掉末行——防误伤终端后续命令）
 ) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -qE "^[[:space:]]{0,2}❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true
 ```
 ## 你的身份
@@ -166,14 +166,14 @@ grep -c "sofagent-audit · \|sofagent-audit v" engine/audit/src/index.ts # 期�
 
 ```bash
 # 子项 a: 管道 pipefail 保护
-grep -n 'grep.*|.*head\|grep.*|.*wc' FORGE/playbook/acceptance-test.sh | grep -v '|| true' | grep -v '|| echo' | grep -vE '^[0-9]+:(#|.*grep -q ")' || echo '✅ 无未保护管道' # 期望：✅ 行（收窄|| echo 兜底的命令替换与 grep -q 字符串引用非真管道风险）
+grep -n 'grep.*|.*head\|grep.*|.*wc' playbook/acceptance-test.sh | grep -v '|| true' | grep -v '|| echo' | grep -vE '^[0-9]+:(#|.*grep -q ")' || echo '✅ 无未保护管道' # 期望：✅ 行（收窄|| echo 兜底的命令替换与 grep -q 字符串引用非真管道风险）
 
 # 子项 b: 场景间清理
-grep -c "git rm --cached -f .env" FORGE/playbook/acceptance-test.sh # 期望：≥ 2
+grep -c "git rm --cached -f .env" playbook/acceptance-test.sh # 期望：≥ 2
 
 # 子项 c: --init 烟测期望值与实际对齐（教训）
 DEFAULT_COUNT=$(grep -cE "name:[[:space:]]*'A[0-9]" engine/audit/src/rules/index.ts | head -1)
-grep -nE "期望.*[0-9]+[[:space:]]*项\|期望.*[0-9]+[[:space:]]*条\|expected.*[0-9]+" FORGE/playbook/acceptance-test.sh | head
+grep -nE "期望.*[0-9]+[[:space:]]*项\|期望.*[0-9]+[[:space:]]*条\|expected.*[0-9]+" playbook/acceptance-test.sh | head
 # 人工检查：acceptance-test 里所有"期望 N 项/条"的硬编码 N 是否与 index.ts 注册数一致
 
 # 子项 d: check-version 文案扫描 baseline（教训—工具自身 SSOT 标签误导）
@@ -182,7 +182,7 @@ REPORTED_DEFAULT=$(bash tools/check/check-version.sh 2>&1 | grep -oE "defaultRul
 echo "期望=$EXPECTED_DEFAULT 报告=$REPORTED_DEFAULT" # 期望：两者相等
 
 # 子项 e: acceptance-test.sh JSON 输出不被 stderr 污染（教训）
-grep -E "\-\-json.*2>&1|2>&1.*\-\-json" FORGE/playbook/acceptance-test.sh # 期望：零命中
+grep -E "\-\-json.*2>&1|2>&1.*\-\-json" playbook/acceptance-test.sh # 期望：零命中
 
 # 子项 f: init.ts 禁止硬编码规则条数常量（教训）
 grep -nE "expectedDefaultRules[[:space:]]*=[[:space:]]*[0-9]+|expectedDefault[[:space:]]*=[[:space:]]*[0-9]+" engine/audit/src/commands/init.ts # 期望：零命中
@@ -577,7 +577,7 @@ grep -c "pairByCode\|pairByToken\|pairByFederationFile\|rotateKey" engine/core/s
 grep -r "sharedKey.*Buffer\|只存内存\|不落盘" engine/core/src/crypto/*.ts # ≥1
 
 # 子项 e: 验收场景覆盖（acceptance-test 场景 101-102）
-grep -c "AES-256-GCM\|ECDH.*配对\|pairByToken" FORGE/playbook/acceptance-test.sh # ≥3
+grep -c "AES-256-GCM\|ECDH.*配对\|pairByToken" playbook/acceptance-test.sh # ≥3
 ```
 
 #### 40. OpenClaw channel 联邦查询
@@ -601,7 +601,7 @@ grep -c "isSensitivityVisible\|restricted.*不泄露\|sensitivity.*过滤" engin
 grep -c "offline\|fallback\|降级" engine/daemon/src/federation/offline-fallback.ts # ≥1
 
 # 子项 f: 验收场景覆盖（acceptance-test 场景 103）
-grep -c "联邦.*sensitivity\|federation\|broadcastQuery" FORGE/playbook/acceptance-test.sh # ≥2
+grep -c "联邦.*sensitivity\|federation\|broadcastQuery" playbook/acceptance-test.sh # ≥2
 ```
 
 #### 41. Prompt 注入 8 层防护（层 1 + 层 4 + 层 5）
@@ -622,7 +622,7 @@ grep -c "isTrustEntryUsable\|sortByTrust\|web.*restricted" engine/core/src/secur
 grep -c "TRUST_ORDER\|trust.*Trust\|official.*internal" engine/core/src/memory-contract.ts # ≥1
 
 # 子项 e: 验收场景覆盖（acceptance-test 场景 104-105）
-grep -c "wrapUntrusted\|redactForPrompt\|trust.*分级\|isTrustEntryUsable" FORGE/playbook/acceptance-test.sh # ≥4
+grep -c "wrapUntrusted\|redactForPrompt\|trust.*分级\|isTrustEntryUsable" playbook/acceptance-test.sh # ≥4
 ```
 
 #### 42. 编排模块 dag-runner + compose --run
@@ -646,7 +646,7 @@ grep -c "variants\|variant\|VARIANT" engine/orchestrator/src/composer.ts # ≥2
 grep -c "buildConstrainedSystemPrompt\|约束.*加载链" engine/orchestrator/src/dag-runner.ts # ≥1
 
 # 子项 f: 验收场景覆盖（acceptance-test 场景 106）
-grep -c "dag-runner\|detectFileConflicts\|compose.*DAG" FORGE/playbook/acceptance-test.sh # ≥2
+grep -c "dag-runner\|detectFileConflicts\|compose.*DAG" playbook/acceptance-test.sh # ≥2
 ```
 
 #### 44. USB 完整运行时——HMAC 签名 + AES-256 加密 + fail-closed 验签
@@ -680,7 +680,7 @@ grep -c "create-usb-key\|usb-root\|createUsbKey\|startUsbRuntime" engine/daemon/
 test -x engine/daemon/usb/start.command && test -x engine/daemon/usb/start.sh && test -f engine/daemon/usb/start.bat # 全部通过
 
 # 子项 h: 验收场景覆盖（acceptance-test 场景 108-113）
-grep -c "usb-signature\|usb-key\|createUsbKey\|verifyUsbSignature" FORGE/playbook/acceptance-test.sh # ≥4
+grep -c "usb-signature\|usb-key\|createUsbKey\|verifyUsbSignature" playbook/acceptance-test.sh # ≥4
 ```
 
 #### 45. 编排状态机 + 控制图——A/B 调度器 + 状态抽取 + 路径穿越防护（归并 45+46）
@@ -693,7 +693,7 @@ grep -c "DEFAULT_PROMOTE_THRESHOLD\|promoteThreshold" engine/orchestrator/src/ab
 grep -c "appendMetrics\|aggregateRecent\|truncateToLastK\|HISTORY_MAX_ENTRIES" engine/orchestrator/src/ab-history.ts # ≥4
 grep -c "ab-schedule\|runABScheduledTask" engine/daemon/src/cron.ts # ≥2
 grep -c "executePlan\|writeGraphState\|ABSchedulerDeps" engine/orchestrator/src/ab-scheduler.ts # ≥3
-grep -c "ab-scheduler\|ab-history\|judgeAndPromote\|ab-schedule" FORGE/playbook/acceptance-test.sh # ≥4
+grep -c "ab-scheduler\|ab-history\|judgeAndPromote\|ab-schedule" playbook/acceptance-test.sh # ≥4
 
 # 子项 h-n: 控制图状态抽取 + 路径穿越安全（原维度 46）
 grep -c "extractControlGraphState\|writeControlGraphState\|CONTROL_GRAPH_SCHEMA_VERSION" engine/orchestrator/src/loop-state-extractor.ts # ≥3
@@ -702,7 +702,7 @@ grep -c "sanitizeLoopId\|createHash.*sha256.*slice.*0.*8\|sanitized.*===.*loopId
 grep -c "assertWithinDir\|resolved.*startsWith\|路径穿越" engine/orchestrator/src/loop-state-extractor.ts # ≥3
 grep -c "writeControlGraphState\|writeGraphState" engine/orchestrator/src/ab-scheduler.ts # ≥2
 grep -c "splitWaves\|mapNodeStates\|buildEvidenceChain" engine/orchestrator/src/loop-state-extractor.ts # ≥3
-grep -c "extractControlGraphState\|sanitizeLoopId\|路径穿越" FORGE/playbook/acceptance-test.sh # ≥3
+grep -c "extractControlGraphState\|sanitizeLoopId\|路径穿越" playbook/acceptance-test.sh # ≥3
 ```
 
 #### 47. 产品叙事收敛红线 + BugFix 42 项核心回归锁
@@ -727,7 +727,7 @@ SANITIZER_COUNT=$(grep -c "name: '" engine/core/src/security/prompt-sanitizer.ts
 grep -c "MAX_NODES = 20\|MAX_TASK_LENGTH = 2000" engine/orchestrator/src/workflow-parser.ts # ≥2
 
 # 子项 g: 验收场景覆盖（acceptance-test 场景 120-121；品牌口径 2026-08-27 升级为 FDE Harness）
-grep -c "FDE Harness\|审计模块零 token\|assertSubAgentsNoEmptyTools\|MAX_NODES" FORGE/playbook/acceptance-test.sh # ≥4
+grep -c "FDE Harness\|审计模块零 token\|assertSubAgentsNoEmptyTools\|MAX_NODES" playbook/acceptance-test.sh # ≥4
 ```
 
 #### 49. 物理结构大重构——旧路径零残留 + 新结构就位
@@ -1223,12 +1223,12 @@ node -e "const m=require('./engine/audit/dist/rules/runner.js');const c=m.AUDIT_
 
 ```bash
 # 含中文输出的 shell 脚本必须头部 export LANG/LC_ALL 修复正则放宽匹配 `${LANG:-en_US.UTF-8}` 变量默认值写法（校准：误报根因——旧正则只匹配裸 `LANG=en_US.UTF-8`）
-for f in FORGE/playbook/acceptance-test.sh tools/check/check-version.sh tools/check/check-docs.sh; do
+for f in playbook/acceptance-test.sh tools/check/check-version.sh tools/check/check-docs.sh; do
  head -10 "$f" | grep -qE "LANG=.*en_US\.UTF-8|LC_ALL=.*en_US\.UTF-8" || echo "⚠️ $f 缺 locale export"
 done
 # 期望：无 ⚠️ 输出
 # 人读/机器输出分离（归并原维度 91——ANSI 色码夹在文本中间会破坏 driver grep）
-grep -qE 'echo "SUMMARY:' FORGE/playbook/acceptance-test.sh && echo "✅ 机器可解析 SUMMARY 在位" || echo "⚠️ 缺 ANSI-stripped 汇总行"
+grep -qE 'echo "SUMMARY:' playbook/acceptance-test.sh && echo "✅ 机器可解析 SUMMARY 在位" || echo "⚠️ 缺 ANSI-stripped 汇总行"
 # b: bash 3.2 兼容模式（归并原维度 94——空数组+set -u = unbound；尾行 [[ ]] && + set -e = 成功也 exit 1）※ 新增脚本人工核对项
 /bin/bash --version | head -1 # 确认为 3.2；危险模式：${arr[@]} 无守卫 / 尾行条件裸用
 grep -rn 'declare -A' install.sh tools/ engine/scripts/ --include="*.sh" 2>/dev/null | grep -vE '^\S+:[0-9]+:\s*#' || true # 期望：零命中（bash 3.2 无关联数组）
@@ -1240,7 +1240,7 @@ grep -rn 'declare -A' install.sh tools/ engine/scripts/ --include="*.sh" 2>/dev/
 
 ```bash
 # 元检查：regression-checklist 中引用的 engine/ 路径是否都还存在
-grep -oE 'engine/[a-zA-Z_/]+\.ts' FORGE/playbook/regression-checklist.md | sort -u | while read f; do
+grep -oE 'engine/[a-zA-Z_/]+\.ts' playbook/regression-checklist.md | sort -u | while read f; do
  [ -f "$f" ] || echo "⚠️ 路径失效: $f（架构迁移后未更新检查命令）"
 done
 # 期望：无 ⚠️ 输出（所有引用路径有效） 🔴 每次架构迁移（文件改名/目录调整）后必须跑此元检查
@@ -1270,7 +1270,7 @@ grep "$(node -p "require('./package.json').version")" CHANGELOG.md | grep -oE "2
 ```bash
 (
 # SSOT 声明完整性：checklist 头部必须有两条 ≤ 声明（门禁提取源，丢失 = warn 提示人工确认）
-grep -oE '(regression-checklist\.md|acceptance-test\.sh)`? ≤ ?[0-9]+' FORGE/playbook/regression-checklist.md | sort -u
+grep -oE '(regression-checklist\.md|acceptance-test\.sh)`? ≤ ?[0-9]+' playbook/regression-checklist.md | sort -u
 # 期望恰好 2 行（checklist + acceptance 各一条）；非 2 行 = SSOT 声明被破坏，门禁将 warn
 
 # 引用一致性：非 SSOT 文档不得写死警戒线数值（只许「见 checklist 头部」式引用 + 历史上调记录）
@@ -1428,7 +1428,7 @@ grep -qE "\.bin|Binary files" engine/audit/src/rules/rule-a2-secret-leak.ts && e
 grep -q '(?!tmp|home' engine/audit/src/rules/skill-safety-rules.ts && grep -q '(?!tmp|home' engine/audit/src/agent-shield.ts && echo "✅ rm-rf 豁免同源" || echo "❌ 口径漂移回退"
 grep -q 'timeout: 600_000' FORGE/src/driver-base.mjs && grep -q 'timeout: 600_000' FORGE/src/fresh-eyes-driver.mjs && grep -q 'timeout: 600_000' FORGE/src/release-gate-driver.mjs && grep -q 'timeout: 600_000' FORGE/src/tool-output-budget.mjs && echo "✅ LLM 超时四文件全覆盖" || echo "❌ 超时保护缺失"
 grep -q 'round === resumeState?.round' FORGE/src/fresh-eyes-driver.mjs && echo "✅ resume 守卫" || echo "❌ 越轮泄漏回植"
-grep -q 'cd "\$PROJECT_ROOT" && NODE_OPTIONS' FORGE/playbook/acceptance-test.sh && echo "✅ S146 cwd 回位" || echo "❌ 漂移回植"
+grep -q 'cd "\$PROJECT_ROOT" && NODE_OPTIONS' playbook/acceptance-test.sh && echo "✅ S146 cwd 回位" || echo "❌ 漂移回植"
 grep -q 'ver == SSOT' tools/check/check-version.sh && grep -q '新增|增强' tools/release/bump-version.sh && echo "✅ 溯源豁免" || echo "❌ 溯源误报回植"
 # ⑧ 门禁失败路径注入自测（归并原维度 100——set -u 下 $? 赋值曾判 unbound 崩溃，CI 常绿无感）
 sed 's|bash tools/check/test-count.sh|bash /nonexistent/test-count.sh|' tools/check/check-test-count.sh > /tmp/cct-t.sh; bash /tmp/cct-t.sh >/dev/null 2>&1; [ $? -eq 1 ] && echo "✅ 失败路径正确报红" || echo "⚠️ 失败路径崩溃或假绿"; rm -f /tmp/cct-t.sh
@@ -1482,7 +1482,7 @@ test -f engine/orchestrator/src/ontology/import-pipeline.ts && grep -q "D1-D5" e
 grep -q "allow-with-audit" engine/orchestrator/src/harness-sdk/wrap.ts && test -f engine/orchestrator/src/harness-sdk/builder-registry.ts && echo "✅ ③托管SDK" || echo "❌ ③缺"
 test -f engine/orchestrator/src/model-registry.ts && grep -q "routeReason" engine/audit/src/decision-schema.ts && echo "✅ ④模型注册+路由可解释" || echo "❌ ④缺"
 # 训练与验收
-grep -q "SIGINT" engine/orchestrator/src/train/train-protocol.ts && grep -q "train_budget_exceeded" engine/orchestrator/src/train/train-budget.ts && echo "✅ ⑥⑦训练契约+预算" || echo "❌ ⑥⑦缺"
+grep -q "SIGINT" engine/train/src/train-protocol.ts && grep -q "train_budget_exceeded" engine/train/src/train-budget.ts && echo "✅ ⑥⑦训练契约+预算" || echo "❌ ⑥⑦缺"
 grep -q "define_acceptance" engine/mcp/src/tools/acceptance.ts && echo "✅ ⑨验收tool" || echo "❌ ⑨缺"
 # 可靠性件
 grep -q "postToolCall" engine/orchestrator/src/middleware/dual-gate-mw.ts && test -f engine/daemon/src/fatigue.ts && grep -q "safe-stop" engine/audit/src/degradation.ts && echo "✅ ⑫⑬⑭双闸+疲劳+降级" || echo "❌ 可靠性缺"
@@ -1552,15 +1552,15 @@ grep -qE 'createRequire' FORGE/src/gate-tools.mjs 2>/dev/null && echo "✅ gate-
 ```bash
 (
 # 块二 train-job 编排 + 块四隔离 + 块五指纹 + 块六签名 + 块七守卫/恢复 + 块八安全（协议/预算在 #113 ⑥⑦ 已锚）
-test -f engine/orchestrator/src/train/train-scheduler.ts && grep -q "spawn" engine/orchestrator/src/train/train-scheduler.ts && echo "✅ 编排 spawn 在位" || echo "❌ scheduler 缺"
-grep -q "assertEnterpriseAccess" engine/orchestrator/src/train/isolation-guard.ts && grep -q "assertSafePathSegment" engine/orchestrator/src/train/isolation-guard.ts && echo "✅ 企业隔离两级原语" || echo "❌ 隔离守卫缺"
-grep -q "freezeTrainFingerprint" engine/orchestrator/src/train/train-fingerprint.ts && grep -q "datasetVersion" engine/orchestrator/src/train/train-fingerprint.ts && echo "✅ 指纹冻结+续跑版本锁" || echo "❌ 指纹缺"
-grep -q "signArtifacts" engine/orchestrator/src/train/artifact-signing.ts && grep -q "manifestHmac" engine/orchestrator/src/train/artifact-signing.ts && grep -q "artifact_tampered\|tampered" engine/orchestrator/src/train/artifact-verify.ts && echo "✅ 签名+加载阻断" || echo "❌ 签名链缺"
-grep -q "lastBeatMs" engine/orchestrator/src/train/process-guard.ts && grep -q "120_000\|120000" engine/orchestrator/src/train/process-guard.ts && echo "✅ 心跳回收（120s 阈值）" || echo "❌ 心跳守卫缺"
-grep -q "resumeTrainJob" engine/orchestrator/src/train/crash-recovery.ts && echo "✅ 崩溃恢复三选项（checkpoint 续跑前置）" || echo "❌ 恢复缺"
-grep -q "validateTrainPath" engine/orchestrator/src/train/security-baseline.ts && grep -q "sanitizeHyperparamsForSpawn" engine/orchestrator/src/train/security-baseline.ts && grep -q "maskCredentials" engine/orchestrator/src/train/security-baseline.ts && echo "✅ 安全基线三件" || echo "❌ 安全基线缺"
+test -f engine/train/src/train-scheduler.ts && grep -q "spawn" engine/train/src/train-scheduler.ts && echo "✅ 编排 spawn 在位" || echo "❌ scheduler 缺"
+grep -q "assertEnterpriseAccess" engine/train/src/isolation-guard.ts && grep -q "assertSafePathSegment" engine/train/src/isolation-guard.ts && echo "✅ 企业隔离两级原语" || echo "❌ 隔离守卫缺"
+grep -q "freezeTrainFingerprint" engine/train/src/train-fingerprint.ts && grep -q "datasetVersion" engine/train/src/train-fingerprint.ts && echo "✅ 指纹冻结+续跑版本锁" || echo "❌ 指纹缺"
+grep -q "signArtifacts" engine/train/src/artifact-signing.ts && grep -q "manifestHmac" engine/train/src/artifact-signing.ts && grep -q "artifact_tampered\|tampered" engine/train/src/artifact-verify.ts && echo "✅ 签名+加载阻断" || echo "❌ 签名链缺"
+grep -q "lastBeatMs" engine/train/src/process-guard.ts && grep -q "120_000\|120000" engine/train/src/process-guard.ts && echo "✅ 心跳回收（120s 阈值）" || echo "❌ 心跳守卫缺"
+grep -q "resumeTrainJob" engine/train/src/crash-recovery.ts && echo "✅ 崩溃恢复三选项（checkpoint 续跑前置）" || echo "❌ 恢复缺"
+grep -q "validateTrainPath" engine/train/src/security-baseline.ts && grep -q "sanitizeHyperparamsForSpawn" engine/train/src/security-baseline.ts && grep -q "maskCredentials" engine/train/src/security-baseline.ts && echo "✅ 安全基线三件" || echo "❌ 安全基线缺"
 grep -q "train_submit" engine/mcp/src/tool-registry.ts && echo "✅ train_submit MCP 注册（66→67）" || echo "❌ train_submit 未注册"
-grep -q "TrainAuditEventType\|train_job_submitted" engine/orchestrator/src/train/train-audit.ts && grep -q "hmacSig" engine/orchestrator/src/train/train-audit.ts && echo "✅ train 审计事件+HMAC 链（事件 union 本文件自持，audit 包无扩展点不动）" || echo "❌ 审计链缺"
+grep -q "TrainAuditEventType\|train_job_submitted" engine/train/src/train-audit.ts && grep -q "hmacSig" engine/train/src/train-audit.ts && echo "✅ train 审计事件+HMAC 链（事件 union 本文件自持，audit 包无扩展点不动）" || echo "❌ 审计链缺"
 ) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -qE "^[[:space:]]{0,2}❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true
 ```
 
@@ -1609,9 +1609,9 @@ grep -q "fdeWorkbenchPaths" engine/orchestrator/src/fde/fde-workbench.ts && grep
 # b: 三问判定（🔄/⚡/👤 三态 + 六步分解）
 grep -q "classifyAutomation" engine/orchestrator/src/fde/compose-interview.ts && echo "✅ 判定能力在位" || echo "❌ 缺 classifyAutomation"
 # c: 训练环境执行面在位（shell 安装脚本 + TS 探测/体检面——v1.4.6 边界收缩后口径）
-grep -q "trainDoctor" engine/orchestrator/src/train/env-manager.ts && test -f tools/train/train-env-init.sh && echo "✅ shell 安装 + TS 探测面齐备" || echo "❌ 缺一侧"
+grep -q "trainDoctor" engine/train/src/env-manager.ts && test -f tools/train/train-env-init.sh && echo "✅ shell 安装 + TS 探测面齐备" || echo "❌ 缺一侧"
 # d: 缩放律零依赖纪律（不引 ml 库）
-grep -qE "levenberg|阻尼" engine/orchestrator/src/train/scale-curve.ts && ! grep -qE "from ['\"](ml|tensorflow|@tensorflow)" engine/orchestrator/src/train/scale-curve.ts && echo "✅ 手写拟合零 ml 依赖" || echo "❌ 依赖纪律破"
+grep -qE "levenberg|阻尼" engine/train/src/scale-curve.ts && ! grep -qE "from ['\"](ml|tensorflow|@tensorflow)" engine/train/src/scale-curve.ts && echo "✅ 手写拟合零 ml 依赖" || echo "❌ 依赖纪律破"
 # e: IM 桥安全边界文档（凭据本机/命令白名单/可信用户）
 grep -qE "白名单|凭据" docs/guides/im-bridge.md && echo "✅ 安全边界在档" || echo "❌ im-bridge.md 缺安全边界"
 # f: FORGE 步零——worktree re-sync 三级降级 + 重复率熔断 + A 侧骨架先行
@@ -1640,9 +1640,9 @@ grep -q "dashboard.html" tools/check/check-version.sh && echo "✅ dashboard 版
 # 「注册表声明 + 动态分发链」双锚，覆盖面不变（注册面 + 分发面各一）。
 for t in train_status train_list train_diagnose; do grep -q "name: '$t'" engine/mcp/src/tool-registry.ts && grep -q "TOOLS.find" engine/mcp/src/mcp-server.ts || echo "❌ $t 未注册/未分发"; done
 # b: GPU 队列僵尸收割三判定（终态/无占位 queued/pid 死——防额度悬挂死锁）
-grep -q "reapStaleGpuEntries" engine/orchestrator/src/train/train-scheduler.ts && grep -q "silentRelease" engine/orchestrator/src/train/gpu-queue.ts && echo "✅ 收割链在位" || echo "❌ 僵尸收割缺失"
+grep -q "reapStaleGpuEntries" engine/train/src/train-scheduler.ts && grep -q "silentRelease" engine/train/src/gpu-queue.ts && echo "✅ 收割链在位" || echo "❌ 僵尸收割缺失"
 # c: 诊断七类处方表（MiniMax-M1/ScaleRL 出处标注——处方口径可审计）
-grep -q "MiniMax-M1" engine/orchestrator/src/train/train-diagnose.ts && grep -q "ScaleRL" engine/orchestrator/src/train/train-diagnose.ts && echo "✅ 处方出处标注" || echo "❌ 处方出处缺失"
+grep -q "MiniMax-M1" engine/train/src/train-diagnose.ts && grep -q "ScaleRL" engine/train/src/train-diagnose.ts && echo "✅ 处方出处标注" || echo "❌ 处方出处缺失"
 # d: 审计聚合只读铁律（stats.ts 零写入 history.jsonl——appendFileSync 禁现）
 ! grep -qE "appendFileSync|writeFileSync" engine/audit/src/stats.ts && grep -q "computeAuditStats" engine/audit/src/cli-quick.ts && echo "✅ 聚合只读 + CLI 接线" || echo "❌ 聚合层有写或未接 CLI"
 # e: 反作弊双防线默认化（train-env-init.sh 落 anticheat 节 + doctor 三项体检）
@@ -1677,7 +1677,7 @@ grep -c "logo-version" tools/dashboard/dashboard.html | grep -qE "^[0-9]+$" && !
 # e: H-01 install 后形态（原 #126 a 归并）——双 hook 在位 + 旧 hook .bak 化（S16 接管语义）
 test -f .git/hooks/pre-commit && test -f .git/hooks/commit-msg && echo "✅ 双 hook 在位" || echo "❌ hook 缺失（跑 install.sh）"
 # f: 断言校准三同步 + CI 纯净 fixture（原 #126 c/d 归并）——判定/展示/引用三处同步；hook 对账类测试自带迷你 dist 防 CI 假绿
-grep -q "450" FORGE/playbook/acceptance-test.sh && grep -q "迷你 dist" engine/audit/src/commands/init.test.ts && echo "✅ 三同步示范 + 迷你 dist fixture" || echo "❌ 三同步/fixture 回潮"
+grep -q "450" playbook/acceptance-test.sh && grep -q "迷你 dist" engine/audit/src/commands/init.test.ts && echo "✅ 三同步示范 + 迷你 dist fixture" || echo "❌ 三同步/fixture 回潮"
 ) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -qE "^[[:space:]]{0,2}❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true
 ```
 
@@ -1688,7 +1688,7 @@ grep -q "450" FORGE/playbook/acceptance-test.sh && grep -q "迷你 dist" engine/
 ```bash
 (
 # a: P0 接线断链族——CHANGELOG 声称的命令必须真实装可达（CLI 分支实装 + 帮助面 + 回填 API 三锚）
-grep -q "v1.4.4 交付④：train compare" engine/orchestrator/src/cli.ts && grep -q "refreshCompareResults" engine/orchestrator/src/train/train-compare.ts && echo "✅ train compare CLI 接线 + 回填 API 在位" || echo "❌ compare 接线断链（P0 回潮）"
+grep -q "v1.4.4 交付④：train compare" engine/orchestrator/src/cli.ts && grep -q "refreshCompareResults" engine/train/src/train-compare.ts && echo "✅ train compare CLI 接线 + 回填 API 在位" || echo "❌ compare 接线断链（P0 回潮）"
 grep -q "submitCompareJobs" tools/check/check-docs.sh && echo "✅ §13 接线存在性断言在册（新声称点自动进对账面）" || echo "❌ §13 断言丢失——声称命令脱离门禁保护"
 # b: 供应链回滚路径——三路径（注册/切换/回滚）哈希校验无旁路；止损路径校验强度不得弱于常规路径
 grep -n "verifyHash: true" engine/orchestrator/src/model-registry.ts | grep -q "true" && grep -q "hashDir(targetDir)" engine/orchestrator/src/model-registry.ts && echo "✅ 回滚目标哈希直验在位（第三环闭合）" || echo "❌ 回滚路径校验旁路（供应链红线失守）"
@@ -1737,10 +1737,10 @@ git grep -q "regexWarned" -- tools/check/public-api.mjs && echo "✅ 降级 fail
 ```bash
 (
 # 逐锚语义：a = 交付面存在性（train 五新面/进化实证 sampler cursor + skill-impact 台账/quickstart 双件/fde-session lastCapturedAt/WIKI §数据文件架构指针）+ tools 84 静态 SSOT（动态不进；83→84 为 v1.4.6 阶段六对齐 registry 实测实数——与维度 111 同款口径）；b = retention 加固 + 链锚/SANITIZE 值形可证
-MISS=0; for f in train-serve train-compliance train-deliverable retention-policy train-continuous; do test -f "engine/orchestrator/src/train/$f.ts" || MISS=$((MISS+1)); done; [ "$MISS" -eq 0 ] && echo "✅ train 五新面在位" || echo "❌ train 新面缺 $MISS 文件"
+MISS=0; for f in train-serve train-compliance train-deliverable retention-policy train-continuous; do test -f "engine/train/src/$f.ts" || MISS=$((MISS+1)); done; [ "$MISS" -eq 0 ] && echo "✅ train 五新面在位" || echo "❌ train 新面缺 $MISS 文件"
 test -f docs/guides/train-quickstart.md && test -f docs/guides/examples/quickstart-data.csv && grep -q "cursor" engine/daemon/src/dream-cycle/continuous-sampler.ts && test -f engine/orchestrator/src/skill-evolution/skill-impact-ledger.ts && grep -q "lastCapturedAt" engine/orchestrator/src/fde-session-mgr/index.ts && echo "✅ 进化实证 + quickstart + 会话时间戳在位" || echo "❌ 交付面缺口"
 grep -q "§数据文件架构" docs/WIKI.md && [ "$(grep -cE "^ {4}name: '" engine/mcp/src/tool-registry.ts)" -eq 95 ] && echo "✅ WIKI 指针 + tools 95 SSOT" || echo "⚠️ WIKI 指针/95 计数漂移——复核"
-grep -q "isSymbolicLink" engine/orchestrator/src/train/retention-policy.ts && grep -q "realpathSync" engine/orchestrator/src/train/retention-policy.ts && [ "$(grep -c "resolvePointPath" engine/orchestrator/src/train/retention-policy.ts)" -ge 4 ] && grep -q "trainArchiveDir" engine/orchestrator/src/train/retention-policy.ts && echo "✅ retention 四词形在位" || echo "❌ retention 加固回潮"
+grep -q "isSymbolicLink" engine/train/src/retention-policy.ts && grep -q "realpathSync" engine/train/src/retention-policy.ts && [ "$(grep -c "resolvePointPath" engine/train/src/retention-policy.ts)" -ge 4 ] && grep -q "trainArchiveDir" engine/train/src/retention-policy.ts && echo "✅ retention 四词形在位" || echo "❌ retention 加固回潮"
 test -f engine/audit/src/chain-head-anchor.test.ts && grep -q "shouldExempt(key: string, value: string)" engine/audit/src/audit-history.ts && grep -q "sanitizeFreeText(value) === value" engine/audit/src/audit-history.ts && echo "✅ 链锚测试 + SANITIZE 值校验在位" || echo "❌ 链锚/SANITIZE 回潮"
 ) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -qE "^[[:space:]]{0,2}❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true
 ```
@@ -1785,7 +1785,7 @@ for t in workflow_create workflow_update workflow_node_add workflow_diff_preview
 # e: FDE 交付三件（workflow 烧进 USB + 首部署确定性 cron job 包 + 上岗 prompt 生成器）
 git grep -q "create-usb-key" -- engine/ install.sh && grep -q "runDueTasks" engine/daemon/src/cron.ts && grep -q "with-first-deploy-cron" install.sh && test -f engine/daemon/src/templates.ts && test -f engine/daemon/src/billing.ts && test -f engine/mcp/src/tools/onboard-prompt.ts && echo "✅ FDE 三件齐备" || echo "❌ FDE 交付缺口"
 # f: 云训练执行接线收口（TrainChannel 契约/ssh 适配/双通道归一/托管规范/daemon 真实消费；CHANGELOG「云训练执行收口」）
-grep -q "interface TrainChannel" engine/orchestrator/src/train/train-channel.ts && grep -q "createSshTrainChannel" engine/daemon/src/cloud-exec.ts && grep -q "chainDualChannelEvent" engine/daemon/src/cloud-events.ts && test -f docs/guides/train-channel-spec.md && test -f engine/daemon/src/tasks/cloud-train.ts && echo "✅ 云通道五面齐备" || echo "❌ 云通道缺口（零调用回潮）"
+grep -q "interface TrainChannel" engine/train/src/train-channel.ts && grep -q "createSshTrainChannel" engine/daemon/src/cloud-exec.ts && grep -q "chainDualChannelEvent" engine/daemon/src/cloud-events.ts && test -f docs/guides/train-channel-spec.md && test -f engine/daemon/src/tasks/cloud-train.ts && echo "✅ 云通道五面齐备" || echo "❌ 云通道缺口（零调用回潮）"
 # g: 静态加密全量接线 + data_push 入口接线（daemon 接线收口批：生产调用点 + 双闸消费）
 grep -q "initDataEncryption" engine/daemon/src/cli.ts && grep -q "name: 'data_push'" engine/mcp/src/tool-registry.ts && echo "✅ 双接线收口（加密 + data_push）" || echo "❌ 接线回退（零调用）"
 # h: 运行时审计约束层侧 repo-hash 隔离（引擎化 + 审计侧消费 + commit 级主链全局不动）
@@ -1868,6 +1868,13 @@ node -e "const m=require('./engine/orchestrator/dist/model-resolver.js');const f
 grep -q "SOFAGENT_EVOLVE_GATE ?? 'native'" engine/evolve/src/evolve-integration.ts && ! grep -rqE "python3?( |$)|spawnSync\('py" engine/evolve/src/ --include="*.ts" && echo "✅ native 默认 + 零 Python" || { echo "❌ evolve gate 默认值/Python 触点异常"; FAIL=1; }
 # c: 旧包名 @sofagent/skillopt 零残留（更名 73 文件联动）
 grep -rq "@sofagent/skillopt" package.json engine/*/package.json FORGE/package.json 2>/dev/null && { echo "❌ 旧包名残留"; FAIL=1; } || echo "✅ 旧名清零"
+# d: loop 概念归位与弃用承诺（深模块批条目 10）——三形态定位边界互不重叠声明在位（**明确不合并**：
+#    loop/ 对错门禁 · loop-agent/ 工程级崩溃判定 · refine-agent/ 质量好坏判据，两两判据与状态机不同）；
+#    optimization-loop 撤公开承诺但实现保留（撤承诺 ≠ 删实现）；loop --legacy 弃用标记双面（help 标注 + stderr 告警），
+#    **移除版本 v1.5.0、兼容期一个大版本**——本批不执行移除，v1.5.0 实际移除时本子项同步清
+for f in engine/orchestrator/src/loop/index.ts engine/orchestrator/src/loop-agent/driver.ts engine/orchestrator/src/refine-agent/refine-driver.ts; do grep -q "定位边界（v1.4.8 条目 10）" "$f" && grep -q "不合并" "$f" || { echo "❌ 三形态定位边界声明缺失: $f"; FAIL=1; }; done
+grep -q "runOptimizationLoop" engine/orchestrator/src/refine-agent/optimization-loop.ts && echo "✅ optimization-loop 实现保留（撤公开承诺 ≠ 删实现）" || { echo "❌ optimization-loop 实现被误删"; FAIL=1; }
+grep -q "已弃用（将于 v1.5.0 移除）" engine/orchestrator/src/cli.ts && grep -q "loop --legacy 路径已弃用，将于 v1.5.0 移除（兼容期一个大版本）" engine/orchestrator/src/cli.ts && echo "✅ loop --legacy 弃用双面（help 标注 + stderr 告警）" || { echo "❌ loop --legacy 弃用标记回退"; FAIL=1; }
 [ "${FAIL:-0}" = "1" ] && { echo "维度140:FAIL"; exit 1; }; echo "维度140:PASS"
 ) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -qE "^[[:space:]]{0,2}❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true
 ```

@@ -23,10 +23,10 @@
 ```bash
 # 在 sofagent 仓库根目录运行（脚本自动定位仓库）
 cd /Users/kongfangxun/WorkBuddy/sofagent
-node FORGE/playbook/federation-e2e.mjs
+node playbook/federation-e2e.mjs
 
 # 或显式指定仓库路径
-SOFAGENT_REPO=/Users/kongfangxun/WorkBuddy/sofagent node FORGE/playbook/federation-e2e.mjs
+SOFAGENT_REPO=/Users/kongfangxun/WorkBuddy/sofagent node playbook/federation-e2e.mjs
 ```
 
 无需管理员权限、无需网络外连（全程 127.0.0.1 loopback）、无需双设备。

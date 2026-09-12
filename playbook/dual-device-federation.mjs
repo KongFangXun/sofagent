@@ -1,11 +1,11 @@
-// sofagent 双设备联邦本机模拟（v1.4.0 资产 · FORGE/playbook）
+// sofagent 双设备联邦本机模拟（v1.4.0 资产 · playbook）
 // 两个完全独立的 node 进程（spawn，非 fork）模拟设备 A / 设备 B：
 //   配对 = 文件交换公钥（模拟配对码人工确认，pairByCode 指纹锚点）
 //   查询 = localhost TCP 加密帧（AES-256-GCM + ECDH 共享密钥，复用 core/daemon 联邦协议）
 // 与 federation-e2e.mjs（fork 子进程版）互补：本脚本验证「两个独立进程」形态，
 // 更接近真实双设备（真实网络栈 + 独立 PID）；桌面双设备测试用例留给真人跨机实测。
 // 判定：配对/查询/篡改/离线 4 场景全 PASS → exit 0；任一 FAIL → exit 1。
-// 用法：node FORGE/playbook/dual-device-federation.mjs
+// 用法：node playbook/dual-device-federation.mjs
 // 配对 = 文件交换公钥（模拟配对码人工确认，pairByCode 指纹锚点）
 // 查询 = localhost TCP 加密帧（AES-256-GCM + ECDH 共享密钥）
 // 用法：node /tmp/dual-device-federation.mjs   （主控 spawn A + B）
