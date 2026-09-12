@@ -20,6 +20,7 @@
 
 **清单自身健康度自校验**（每次修改后跑）：
 ```bash
+(
 HEAD_VAL=$(grep -oE '当前 [0-9]+ 维' FORGE/playbook/regression-checklist.md | grep -oE '[0-9]+' | head -1)
 ACTUAL=$(grep -c "^#### " FORGE/playbook/regression-checklist.md)
 [ "$HEAD_VAL" = "$ACTUAL" ] && echo "✅ 维度数一致 ($HEAD_VAL)" || echo "❌ 头部声称 $HEAD_VAL ≠ 实际 $ACTUAL"
@@ -27,6 +28,7 @@ ACTUAL=$(grep -c "^#### " FORGE/playbook/regression-checklist.md)
 # 行数警戒线自检（越线即 FAIL——与 check-review-system.sh §1d 同口径；本段是速览，门禁是权威）
 WC_CHK=$(wc -l < FORGE/playbook/regression-checklist.md); WC_ACC=$(wc -l < FORGE/playbook/acceptance-test.sh)
 [ "$WC_CHK" -le 1800 ] && echo "✅ checklist $WC_CHK (≤1800)" || { echo "❌ checklist $WC_CHK 超 1800（check-review-system 判 FAIL——走归并，不走上调）"; RC=1; }; [ "$WC_ACC" -le 4200 ] && echo "✅ acceptance $WC_ACC (≤4200)" || { echo "❌ acceptance $WC_ACC 超 4200（同上）"; RC=1; }; exit ${RC:-0}  # 超线非零退出（人工执行可注释掉末行——防误伤终端后续命令）
+) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -q "❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true
 ```
 ## 你的身份
 
@@ -69,6 +71,7 @@ bash tools/check/check-version.sh 2>&1 | grep "TS 文件头" | grep -q "✓" && 
 #### 3. 文档规范源与归属一致性
 
 ```bash
+(
 # 子项 a: think.md 始终为 Ledger/source（非 Views/派生视图） 注意：grep 须精确匹配"think.md 被标为 Views"，而非"think.md 和 Views 出现在同一行" 正确模式：think.md 后跟 Views/派生（think.md = Views）→ 误标；think.md 后跟 Ledger/source → 正确
 grep -rn "think\.md.* Views\|think\.md.*派生视图\|think\.md（Views" docs/ARCHITECTURE.md docs/PHILOSOPHY.md docs/DEVELOPMENT.md FDE/GUIDE.md # 期望：无匹配
 
@@ -89,6 +92,7 @@ grep -rn "v1\.[0-9]\.[0-9]" docs/ SECURITY.md LIMITATIONS.md README.md --include
 
 # 子项 i: 被引用权威源自含性——所有"见 ROADMAP"引用的 feature，ROADMAP 自身须含该项（教训：引用处写 age 但 ROADMAP 权威表缺此条）
 grep -rn "见.*ROADMAP\|详见.*ROADMAP" docs/ SECURITY.md LIMITATIONS.md --include="*.md" 2>/dev/null | grep -v changelog # 人工核对：ROADMAP 含对应条目
+) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -q "❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true
 ```
 
 #### 4. 审计规则分级与 ruleClass 一致性
@@ -210,11 +214,13 @@ grep -cE "evidenceMode:" engine/audit/src/rules/index.ts # 期望 24
 #### 14. enterprise-deploy 完整性
 
 ```bash
+(
 for section in "批量安装" "集中下发" "CI 集成" "已落地"; do
  grep -q "$section" docs/guides/enterprise-deploy.md && echo "✅ $section" || echo "❌ 缺失: $section"
 done
 grep "enterprise-deploy" SECURITY.md | head -1
 test -f docs/guides/enterprise-deploy.md && echo "✅ 文件存在"
+) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -q "❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true
 ```
 
 #### 15. Agent 身份感知有效性
@@ -256,6 +262,7 @@ grep -rc "mkdirSync(.*mode: 0o700" engine/core/src/ --include="*.ts" | grep -v "
 #### 17. npm 产物 + bin 权限 + tag commit message
 
 ```bash
+(
 SSOT_VER=$(node -e "console.log(require('./engine/audit/package.json').version)")
 
 # 子项 a: bin 文件执行权限
@@ -272,6 +279,7 @@ TAG_VER=$(git describe --tags --abbrev=0 2>/dev/null | sed 's/^v//')
 echo "npm=$NPM_VER ssot=$SSOT_VER tag=$TAG_VER" # 期望：发版完成后三者一致（闸门期允许滞后一步）
 
 # 子项 c/d/e: tag commit message 含版本号 + 工作树 clean — 被 tools/release/pre-push-check.sh 步骤 7 全量覆盖，不再重复
+) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -q "❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true
 ```
 
 #### 18. 扩展审计规则源码回归锁——A19 commit 质量 + A18 垃圾文件（归并 18+19）
@@ -406,6 +414,7 @@ done # 期望：每个 SKILL.md 命中 9 个必需字段
 > Dream Cycle 是知识生成管道的核心——6 阶段缺一不可，think.md（Ledger）必须只读
 
 ```bash
+(
 # 子项 a: 6 阶段文件全部存在
 for stage in extract-facts extract-atoms cluster-patterns synthesize-concepts evolve-backfill embed; do
  test -f "engine/daemon/src/dream-cycle/${stage}.ts" && echo "✅ ${stage}.ts" || echo "❌ 缺失: ${stage}.ts"
@@ -423,6 +432,7 @@ grep -rn "weekly-report\|lessons-extract" --include="*.ts" engine/daemon/src/ | 
 
 # 子项 e: 6 阶段定义与 types.ts 一致
 grep -c "extract_facts\|extract_atoms\|cluster_patterns\|synthesize_concepts\|evolve_backfill\|embed" engine/daemon/src/dream-cycle/types.ts # ≥6
+) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -q "❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true
 ```
 #### 30. sensitivity frontmatter + 联邦过滤
 
@@ -469,6 +479,7 @@ grep -c "health-report" engine/daemon/src/inspectors/knowledge-health.ts # ≥1
 > 聚合命令自身必须只读，且不泄露 restricted 条目
 
 ```bash
+(
 # 子项 a: 命令文件存在
 test -f engine/daemon/src/commands/knowledge-status.ts && echo "✅ 存在" || echo "❌ 缺失"
 
@@ -483,6 +494,7 @@ grep -c " it(" engine/daemon/src/commands/__tests__/knowledge-status.test.ts # �
 
 # 子项 e: 输出含受限条目不泄露提示（sensitivity 集成）
 grep -c "restricted\|sensitivity\|隐藏\|不可见" engine/daemon/src/commands/knowledge-status.ts # ≥1
+) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -q "❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true
 ```
 #### 33. ActionGovernance schema 完整性 + 向后兼容
 
@@ -513,6 +525,7 @@ grep -c " it(" engine/audit/src/audit-history.test.ts # ≥11
 > SECURITY.md 必须诚实标注 daemon 审计推送的现状
 
 ```bash
+(
 SSOT_VER=$(node -e "console.log(require('./package.json').version)")
 
 # 子项 a: SECURITY.md 有 filebeat/logstash workaround（大小写不敏感，文档中可能是 Filebeat/Logstash）
@@ -536,6 +549,7 @@ for feat in "${SECURITY_REQUIRED_FEATURES[@]}"; do
  count=$(grep -ci "$feat" SECURITY.md)
  [ "$count" -ge 1 ] && echo "✅ SECURITY.md 覆盖 '$feat'" || echo "❌ SECURITY.md 缺 '$feat' 安全声明"
 done
+) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -q "❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true
 ```
 
 #### 39. AES-256-GCM 加密 + ECDH 配对
@@ -770,6 +784,7 @@ node -e "const fs=require('fs'),path=require('path');const dirs=['docs','SKILL',
 #### 51. 审计链安全加固回归——HMAC 写读一致 + doctor 三态 + config 签名 + 版本自检 + key 强度
 
 ```bash
+(
 # a: HMAC 写读对称（写入侧先 sanitize 再签名）
 grep -n "stableStringify\|sanitize\|脱敏" engine/core/src/audit-history.ts | grep -i "sign\|hmac\|签" && echo "✅ HMAC 写读对称" || echo "❌ HMAC 写读不对称"
 grep -n "stableStringify\|sanitize" engine/audit/src/audit-history.ts | grep -i "sign\|hmac\|verify" && echo "✅ audit 包 HMAC 对称" || echo "⚠️ 检查 audit 包 HMAC"
@@ -791,6 +806,7 @@ grep -qi "png" engine/core/src/__tests__/isomorphic-git-v2.test.ts && echo "✅ 
 # g: HMAC key 熵检测用 Shannon 熵（归并原维度 87——唯一字符占比对 hex 天然误报：16 字符集重复度 75%）
 grep -c "shannonEntropy" engine/core/src/audit-history.ts | grep -qvE "^0$" && echo "✅ Shannon 熵在位" || echo "⚠️ 熵检测回退到重复度占比"
 grep -q "shannonEntropy < 3" engine/core/src/audit-history.ts && echo "✅ 阈值 3.0 bit/char" || echo "⚠️ 熵阈值缺失"
+) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -q "❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true
 ```
 
 #### 53. SSOT 零硬编码——产品代码不得绕过 data-paths.ts 拼路径
@@ -1032,6 +1048,7 @@ node -e "const fs=require('fs'),raw=fs.readFileSync('FORGE/src/fresh-eyes-driver
 > 教训（归并原 73+74）：FORGE/ 不在 npm workspaces → `npm test` 从不执行 FORGE/ 下的 `.test.mjs`。曾出过 `DEFAULT_BUDGET` 缺 `export` 关键字导致 3 个 driver 启动即崩溃的 P0 bug。补建 `tools/forge/forge-smoke-test.sh` 做 6 模块加载 + 3 测试文件烟测，集成到 pre-push-check（修正：脚本已迁 `tools/release/pre-push-check.sh`，tools/ 根下旧位置已不存在）。
 
 ```bash
+(
 # 确认 forge-smoke-test.sh 存在且集成到 pre-push
 test -f tools/forge/forge-smoke-test.sh && echo "✅ smoke test 存在" || echo "❌ 缺失"
 grep -q "forge-smoke-test" tools/release/pre-push-check.sh && echo "✅ 已集成" || echo "❌ 未集成"
@@ -1040,6 +1057,7 @@ bash tools/forge/forge-smoke-test.sh > /tmp/forge-smoke.out 2>&1; SMOKE_RC=$?
 [ "$SMOKE_RC" -eq 0 ] && echo "✅ 烟测全绿" || { echo "❌ 烟测失败（exit=$SMOKE_RC）："; tail -5 /tmp/forge-smoke.out; }
 # ESM named export 检查（被 import 引用的符号须有 export 声明）
 node -e "const fs=require('fs');const files=fs.readdirSync('FORGE/src').filter(f=>f.endsWith('.mjs'));let issues=[];for(const f of files){const s=fs.readFileSync('FORGE/src/'+f,'utf8');const exp=new Set([...s.matchAll(/export\s+(?:const|function|class)\s+(\w+)/g)].map(m=>m[1]));for(const f2 of files){if(f2===f)continue;const s2=fs.readFileSync('FORGE/src/'+f2,'utf8');const imp=[...s2.matchAll(/import\s*\{([^}]+)\}\s*from\s*['\"]\.\/([\w.-]+)['\"]/g)];for(const i of imp){if(i[2].replace('.mjs','')===f.replace('.m','')){for(const n of i[1].split(',').map(x=>x.trim().split(/\s+as\s+/)[0])){if(n&&!exp.has(n)&&n!=='default')issues.push(f2+' imports {'+n+'} from '+f);}}}}}console.log(issues.length?'ISSUE: '+issues.join('; '):'OK')" 2>/dev/null
+) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -q "❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true
 ```
 
 #### 76. JS RegExp 不支持 grep 风格 (?i) 内联修饰符（新盲区）
@@ -1047,10 +1065,12 @@ node -e "const fs=require('fs');const files=fs.readdirSync('FORGE/src').filter(f
 > 教训：JSON ruleset 的 pattern 字段用 grep 风格 `(?i)` 前缀做大小写不敏感匹配，但 JS RegExp 原生不支持内联修饰符语法——`new RegExp('(?i)foo')` 不报错也不匹配，**13 条规则静默失效，形同虚设**。compilePattern() 在编译层统一剥离前导修饰符并转为 JS flags。
 
 ```bash
+(
 # 确认 ruleset-loader.ts 含 compilePattern（(?i) → JS flags 转换器）
 grep -q 'compilePattern' engine/audit/src/ruleset-loader.ts && echo "✅ compilePattern 存在" || echo "❌ 缺失"
 # 确认 compilePattern 处理 (?i) 修饰符
 grep -q '?i' engine/audit/src/ruleset-loader.ts && echo "✅ 处理 (?i)" || echo "❌ 未处理"
+) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -q "❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true
 ```
 
 #### 79. 运行时审计 tool wrapper——gate 拦截优先于 progress 埋点
@@ -1224,6 +1244,7 @@ done
 > 四次盲区教训：① 多语言文档的版本号检查须覆盖所有语言声明模式 ② 文件拆分时依赖该文件的检查脚本必须同步扫描路径 ③ 漂移扫描必须排除 `.test.` 文件 ④ EXPECTED_DOC_DATE 从 CHANGELOG 动态提取（禁硬编码发版日期）
 
 ```bash
+(
 # 子项 a: 英文版正文版本号检查（盲区）
 grep -q "Current version" tools/check/check-version.sh && echo "✅ 英文检查" || echo "✗ 缺英文检查"
 # 子项 b: MCP 计数扫描拆分后定义文件（盲区）
@@ -1233,12 +1254,14 @@ grep 'grep.*条规则' tools/check/check-version.sh | grep -q '\.test\.' && echo
 # 子项 d: EXPECTED_DOC_DATE 动态提取，与 CHANGELOG 发版日期一致（盲区）
 grep "EXPECTED_DOC_DATE" tools/check/check-version.sh
 grep "$(node -p "require('./package.json').version")" CHANGELOG.md | grep -oE "2026-[0-9]{2}-[0-9]{2}"
+) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -q "❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true
 ```
 #### 96. 警戒线声明多处同步——单一 SSOT 引用
 
 **背景**：acceptance 警戒线 2050→2250 时需同步改 4 处，漏改任一处导致 SOP 与实际不一致——复盘实锤：SOP 表格（1660）与 guides（1500 系）双双落后于 checklist 头部（1690），多处声明必然漂移。**收口**：警戒线数值只在 checklist 头部声明一处（SSOT，check-review-system.sh 动态提取校验），其余文档一律引用不写死。
 
 ```bash
+(
 # SSOT 声明完整性：checklist 头部必须有两条 ≤ 声明（门禁提取源，丢失 = warn 提示人工确认）
 grep -oE '(regression-checklist\.md|acceptance-test\.sh)`? ≤ ?[0-9]+' FORGE/playbook/regression-checklist.md | sort -u
 # 期望恰好 2 行（checklist + acceptance 各一条）；非 2 行 = SSOT 声明被破坏，门禁将 warn
@@ -1247,6 +1270,7 @@ grep -oE '(regression-checklist\.md|acceptance-test\.sh)`? ≤ ?[0-9]+' FORGE/pl
 HARDCODED=$(grep -nE '(checklist|acceptance|fresh-eyes)[^0-9]{0,4}≤ ?1[0-9]{3}' docs/changelog/releasing/04-review-system.md docs/guides/review-system.md 2>/dev/null || true)
 [ -z "$HARDCODED" ] && echo "✅ 非 SSOT 文档零写死警戒线" || { echo "❌ 写死值："; echo "$HARDCODED"; }
 # 例外：头部/表格中的「历史上调记录」（如 1620→1660 箭头式演进）不算写死——箭头左值是历史事实
+) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -q "❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true
 ```
 
 #### 97. npm publish workspace 限制——12 包分两批发布
@@ -1254,6 +1278,7 @@ HARDCODED=$(grep -nE '(checklist|acceptance|fresh-eyes)[^0-9]{0,4}≤ ?1[0-9]{3}
 **背景**：release.yml 只 auto-publish @sofagent/audit + @sofagent/mcp（Release 触发）；其余 10 包需手动 `cd engine/<pkg> && npm publish`。`npm publish --workspaces` 不支持 workspace 全局发布。
 
 ```bash
+(
 # 发版后验证 12 包全部到 npm
 for pkg in audit core daemon eval harness ontology orchestrator rules evolve think ab-test mcp; do
  V=$(npm view @sofagent/$pkg version 2>/dev/null || echo "❌ 未发布")
@@ -1265,6 +1290,7 @@ done
 # ① publish 日志含 `+ <pkg>@<版本>` 即已提交成功，勿按 view 超时判失败；
 # ② 对账改查 `npm view <pkg> dist-tags --json` 的 latest 字段（registry 主记录先行于 CDN）；
 # ③ 同版本重发会 E409——传播等待期内禁止重发；E409 staged 态约 5 分钟自动 finalize（见发版四坑实录③）。
+) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -q "❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true
 ```
 
 #### 98. post-commit hook 对账逻辑——parentSha vs COMMIT_SHA 父子 SHA 不等
@@ -1299,7 +1325,9 @@ echo "B 层: $AB 行（LIMIT_B=$LIMIT_VAL）"
 for f in publisher catalog invoker rating owner retire skill-scan rule-harvest rule-jury rule-promote; do [ -f "engine/orchestrator/src/commons/$f.ts" ] || echo "⚠️ commons/$f.ts 缺失"; done
 for t in commons_publish commons_search commons_invoke commons_rate commons_retire commons_harvest_rule; do grep -q "'$t'" engine/mcp/src/tool-registry.ts || echo "⚠️ $t 未注册"; done # 补：market→commons 更名同步（阶段五漏改本维）
 grep -q "runCommonsCatalogDaily" engine/daemon/src/inspectors/index.ts || echo "⚠️ 目录日更未注册" # 更名同步
-grep -q "runCommonsHealth" engine/daemon/src/inspector-layers.ts || echo "⚠️ 健康周检未挂载" # 更名同步
+# 锚点修正（深模块批）：巡检项注册迁到 inspectors/registry.ts 的 INSPECTORS 单源
+# （inspector-layers.ts 只保留 layer 划分与调度映射）——与 acceptance S269 同源重构。
+grep -q "runCommonsHealth" engine/daemon/src/inspectors/registry.ts || echo "⚠️ 健康周检未挂载" # 更名同步
 ```
 
 #### 103. SkillScan 三态链 + 版本守卫——DANGEROUS 拦截 / rc 投产决策落点
@@ -1351,6 +1379,7 @@ bash tools/check/check-test-count.sh --quiet # 期望 OK / EXIT=0
 **背景**：fresh-eyes 四份审查 38 项的防复发浓缩。三条核心防线：①守卫「找不到就跳过」= 空转四个版本无人知（#5）；②`| tail || true` 双保险吞退出码（#19）；③路径解析环境变量口径分裂污染真实数据（#38）。
 
 ```bash
+(
 # ① quick 规则数声称对账（防 #1）：README 声称与 dist 实测一致
 README_N=$(grep -oE '17 条默认规则' README.md | head -1); [ -n "$README_N" ] || echo "⚠️ README quick 规则数口径漂移"
 node -e "const m=require('./engine/audit/dist/rules/index.js');const d=m.defaultRules.length,x=m.extendedRules.length;if(d!==17||d+x!==24)process.exit(1)" || echo "⚠️ dist 规则数非 17/24，README 同步"
@@ -1385,6 +1414,7 @@ grep -q 'cd "\$PROJECT_ROOT" && NODE_OPTIONS' FORGE/playbook/acceptance-test.sh 
 grep -q 'ver == SSOT' tools/check/check-version.sh && grep -q '新增|增强' tools/release/bump-version.sh && echo "✅ 溯源豁免" || echo "❌ 溯源误报回植"
 # ⑧ 门禁失败路径注入自测（归并原维度 100——set -u 下 $? 赋值曾判 unbound 崩溃，CI 常绿无感）
 sed 's|bash tools/check/test-count.sh|bash /nonexistent/test-count.sh|' tools/check/check-test-count.sh > /tmp/cct-t.sh; bash /tmp/cct-t.sh >/dev/null 2>&1; [ $? -eq 1 ] && echo "✅ 失败路径正确报红" || echo "⚠️ 失败路径崩溃或假绿"; rm -f /tmp/cct-t.sh
+) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -q "❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true
 ```
 
 #### 111. 新功能审查面——MCP 自进化+instinct+FDE 运维+沙箱/权限/并发/OKF（A 类 · 归并 #115 入此：沙箱五件套/权限三防线/并发三级来源/OKF 三件套为同版配套面）
@@ -1392,6 +1422,7 @@ sed 's|bash tools/check/test-count.sh|bash /nonexistent/test-count.sh|' tools/ch
 **背景**：七大块交付的审查面。acceptance S270-S276 做执行级验证，本维度做静态一致性——两者成对构成新功能的完整回归网。
 
 ```bash
+(
 # ① MCP tools 三处口径（SKILL.md / ARCHITECTURE 能力表 / dist 实测）——口径84，勿写死
 grep -q "95 tools" SKILL/SKILL.md || echo "⚠️ SKILL 工具速查漂移（口径95）" # 演进：52→60→61→66→67（train_submit）→79→80（corpus_export）→84→95（v1.4.7 商业平台接口版 +11），随 SSOT；锚词与 SKILL.md §MCP 工具速查同步升级
 node -e "const m=require('./engine/mcp/dist/tool-registry.js');const doc=require('./package.json').version;console.log('✅ TOOLS='+m.TOOLS.length+'（registry 实数，勿写死——发版后人工对 SSOT 口径）')"
@@ -1418,6 +1449,7 @@ grep -q "stale_after" engine/ontology/src/merge-engine.ts && echo "✅ OKF 时�
 grep -rn "okfViolation" engine/mcp/src/tools/create-entity.ts > /dev/null && echo "✅ type 必填拒绝" || echo "❌ OKF① 缺失"
 grep -q "resolveMaxConcurrency" FORGE/src/driver-base.mjs && echo "✅ 自适应并发" || echo "❌ ⑦ 未接线"
 grep -q "SOFAGENT_PERSONA_SOURCE" engine/core/src/filesystem/memory-sync.ts && echo "✅ persona env 优先" || echo "❌ ⑨ 路径写死回退"
+) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -q "❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true
 ```
 
 #### 113. 新功能审查面——八交付锚点一维收口（阶段五来源提取 A 类 · 归并 #114 入此：修复防复发三锚点为同版配套面）
@@ -1425,6 +1457,7 @@ grep -q "SOFAGENT_PERSONA_SOURCE" engine/core/src/filesystem/memory-sync.ts && e
 > 十六项交付的核心面收口为一维（acceptance S282-S289 已有端到端断言，此处是快速 grep 版——审查 session 分钟级可跑）。检查命令全部指向**实际实现路径**（changelog 的涉及文件表是开发前预估，ontology 管线实际在 `import-pipeline.ts` 非 `writer.ts`——S283 初版就错在这）。**归并**：原 #114（修复防复发——脱敏两层同源 + 安全渠道 + worktree 信号清理）为同版配套修复面，三锚点并入本维（归并配额对销记录：#114 → #113，净减 13 行）。
 
 ```bash
+(
 # 引擎接口外化四件
 test -f engine/orchestrator/src/workflow/container.ts && grep -q "ContainerDeps" engine/orchestrator/src/workflow/container.ts && echo "✅ ①容器+沙箱宿主位" || echo "❌ ①缺"
 test -f engine/orchestrator/src/ontology/import-pipeline.ts && grep -q "D1-D5" engine/orchestrator/src/ontology/import-pipeline.ts && echo "✅ ②注入管线" || echo "❌ ②缺"
@@ -1440,6 +1473,7 @@ grep -q "DecisionCategory" engine/audit/src/decision-schema.ts && echo "✅ ⑮d
 grep -q "SHARED_REDACTION_SAMPLES" engine/core/src/security/prompt-sanitizer.ts && echo "✅ 脱敏两层漂移断言在位" || echo "❌ 防漂移断言丢失"
 grep -q "Security Advisory" SECURITY.md && ! grep -q "noreply.*备选" SECURITY.md && echo "✅ 漏洞渠道单通道" || echo "❌ 摆设渠道回潮"
 grep -q "registerSignalCleanup" FORGE/src/driver-base.mjs && grep -q "registerSignalCleanup\|cleanupStaleWorktrees" FORGE/src/fresh-eyes-driver.mjs && grep -q "registerSignalCleanup\|cleanupStaleWorktrees" FORGE/src/release-gate-driver.mjs && echo "✅ 信号清理双 driver" || echo "❌ 镜像漂移回退"
+) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -q "❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true
 ```
 
 #### 117. 新功能审查面——代理网关攻击面四项核对（阶段五来源提取 A 类）
@@ -1447,12 +1481,14 @@ grep -q "registerSignalCleanup" FORGE/src/driver-base.mjs && grep -q "registerSi
 > 交付①代理网关硬边界：唯一出入口须同时守住四项攻击面，缺一项即留绕过口。
 
 ```bash
+(
 GATE=engine/orchestrator/src/gateway/proxy-gateway.ts
 [ -f "$GATE" ] || { echo "❌ proxy-gateway.ts 缺失"; exit 1; }
 grep -qE '白名单|allow|deny' "$GATE" && echo "✅ 绕过防护（强制路由+白名单）" || echo "❌ 绕过防护回退"
 grep -qE '限速|rateLimit|rate' "$GATE" && echo "✅ DDoS 限速" || echo "❌ 限速回退"
 grep -qE '身份|agentId|identity|sign' "$GATE" && echo "✅ 请求伪造校验" || echo "❌ 身份校验回退"
 grep -qE 'sanitize|append-only|append' "$GATE" && echo "✅ 日志注入防护" || echo "❌ 日志防护回退"
+) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -q "❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true
 ```
 
 #### 118. bugfix 批防复发——原子写与单 writer 加固（阶段五来源提取 B 类 · B1+B2+B3 归并）
@@ -1460,12 +1496,14 @@ grep -qE 'sanitize|append-only|append' "$GATE" && echo "✅ 日志注入防护" 
 > 交付⑨快照写路径加固 + 审计并发写入：原子写（rename 切换）/ 跨进程串行写两道，缺一则留半恢复或行交错。
 
 ```bash
+(
 SNAP=engine/orchestrator/src/refine-agent/snapshot-manager.ts
 [ -f "$SNAP" ] || { echo "❌ snapshot-manager.ts 缺失"; exit 1; }
 grep -qE 'atomicWriteSync' "$SNAP" && echo "✅ 快照/回滚原子写" || echo "❌ 原子写回退"
 AU=engine/audit/src/audit-history.ts
 [ -f "$AU" ] || { echo "❌ audit-history.ts 缺失"; exit 1; }
 grep -qE '串行|serialize' "$AU" && echo "✅ 审计历史跨进程串行写" || echo "❌ 串行写回退"
+) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -q "❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true
 ```
 
 #### 119. 开发坑防复发——TS7 snapshot 缓存污染 + meta-harness deliveryPromise 形态 + DSH 适配（阶段五来源提取 B 类 · 归并 #120 入此：纯 CLI 包桥接 + pnpm 安装 + ESM require 桥接）
@@ -1473,6 +1511,7 @@ grep -qE '串行|serialize' "$AU" && echo "✅ 审计历史跨进程串行写" |
 > ① TS7 对同一路径已打开的临时文件缓存首次内容——AST 引擎 extractExports 多次调用会串读；② meta-harness `new Promise(entry.resolve)` 把 resolve 当值立即 fulfilled，waitForDelivery 被提前唤醒。修复：AST 引擎唯一临时路径（${seq}-${path}）+ deliveryPromise 本体等待（orchestrator.ts）。public-api 无临时文件（固定 BASELINE 每次现读，不缓存内容）。
 
 ```bash
+(
 ASTE=engine/rules/src/ast/engine.ts
 [ -f "$ASTE" ] || { echo "❌ ast/engine.ts 缺失"; exit 1; }
 grep -qE 'seq|unique|uuid' "$ASTE" && echo "✅ AST 引擎唯一临时路径" || echo "❌ 临时路径复用风险"
@@ -1485,6 +1524,7 @@ grep -qE 'deliveryPromise|new Promise\(res' "$MH" && echo "✅ deliveryPromise �
 grep -qE 'createDshCliBackend|resolveDshCliBin|headless' engine/orchestrator/src/execution-backends/dsh-backend.ts && echo "✅ DSH CLI 桥接在位" || echo "❌ CLI 桥接回退"
 grep -qE 'createRequire' engine/orchestrator/src/execution-backends/dsh-backend.ts && echo "✅ ESM require 桥接" || echo "❌ require 桥接回退"
 grep -qE 'createRequire' FORGE/src/gate-tools.mjs 2>/dev/null && echo "✅ gate-tools ESM require 桥接" || echo "❌ gate-tools require 桥接回退"
+) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -q "❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true
 ```
 
 #### 123. 新功能审查面——后训模块地基八大块一维收口（阶段四来源提取 A 类 · 参照 113/115/121 每版一维）
@@ -1492,6 +1532,7 @@ grep -qE 'createRequire' FORGE/src/gate-tools.mjs 2>/dev/null && echo "✅ gate-
 > 后训模块 · 地基核心面收口一维（acceptance S323-S327 端到端已断言 doctor/隔离/指纹/签名/安全基线五面，此处为分钟级快速 grep 版）。锚点全部实测存在。阶段 0 Metal 验证（@mlx-node/trl）定位 Mac-only 验证路径不入生产审查面。测试规模口径：workspace 3178 / 全量 3222（含 sandbox 证据链时序竞态回归锁，check-test-count 16/16 对账）。
 
 ```bash
+(
 # 块二 train-job 编排 + 块四隔离 + 块五指纹 + 块六签名 + 块七守卫/恢复 + 块八安全（协议/预算在 #113 ⑥⑦ 已锚）
 test -f engine/orchestrator/src/train/train-scheduler.ts && grep -q "spawn" engine/orchestrator/src/train/train-scheduler.ts && echo "✅ 编排 spawn 在位" || echo "❌ scheduler 缺"
 grep -q "assertEnterpriseAccess" engine/orchestrator/src/train/isolation-guard.ts && grep -q "assertSafePathSegment" engine/orchestrator/src/train/isolation-guard.ts && echo "✅ 企业隔离两级原语" || echo "❌ 隔离守卫缺"
@@ -1502,6 +1543,7 @@ grep -q "resumeTrainJob" engine/orchestrator/src/train/crash-recovery.ts && echo
 grep -q "validateTrainPath" engine/orchestrator/src/train/security-baseline.ts && grep -q "sanitizeHyperparamsForSpawn" engine/orchestrator/src/train/security-baseline.ts && grep -q "maskCredentials" engine/orchestrator/src/train/security-baseline.ts && echo "✅ 安全基线三件" || echo "❌ 安全基线缺"
 grep -q "train_submit" engine/mcp/src/tool-registry.ts && echo "✅ train_submit MCP 注册（66→67）" || echo "❌ train_submit 未注册"
 grep -q "TrainAuditEventType\|train_job_submitted" engine/orchestrator/src/train/train-audit.ts && grep -q "hmacSig" engine/orchestrator/src/train/train-audit.ts && echo "✅ train 审计事件+HMAC 链（事件 union 本文件自持，audit 包无扩展点不动）" || echo "❌ 审计链缺"
+) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -q "❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true
 ```
 
 #### 124. 发版防复发——install.sh 迁移/谎报守卫/安全披露/文档状态/双 manifest/bump 通配/新包 lock 同步一维收口（阶段四来源提取 B 类 · 阶段十一/十二回写 B11/B12 · 归并 #121 入此：插件家族目录/成本审计注册面已由 S331/S347 覆盖，dashboard worklog 弱锚收子项 k · 归并 #122 入此：workspace lock 同步 + DSH plugin 分发包装 + 限流）
@@ -1509,6 +1551,7 @@ grep -q "TrainAuditEventType\|train_job_submitted" engine/orchestrator/src/train
 > 阶段三全链路（fresh-eyes round-02 12 findings + f5430de4 修复 + 独立补审 + 3c61d980 次生修复）+ 阶段十一分发踩坑（B11 双 manifest 漂移 / B12 bump 通配误伤）的防复发锚点。B2/B3 端到端见 acceptance S328/S329；B1/B8 工具化见 check-version 检查项；B11/B12 端到端见 S331/S332；此处收口剩余面的快速 grep。
 
 ```bash
+(
 # B2 迁移纪律：复制成功才删源（cp -Rn 吞错+无条件 rm 的丢数据窗口已闭）
 grep -q 'cp -Rn' install.sh && { echo "❌ cp -Rn 吞错语义回流"; exit 1; } || echo "✅ 迁移无 cp -Rn"
 grep -A2 'cp -R "$old_data"' install.sh | grep -q 'rm -rf "$old_data"' && echo "✅ 删源在复制成功分支内" || { echo "❌ 删源脱离成功分支"; exit 1; }
@@ -1533,6 +1576,7 @@ cd "$REPO_ROOT" && npm ci --dry-run 2>&1 | grep -c "^npm error Missing" | grep -
 node -e "const l=require('./package-lock.json');const p=JSON.parse(require('fs').readFileSync('package.json','utf8'));const miss=p.workspaces.flat().filter(w=>!l.packages[w]);if(miss.length){console.error('❌ lock 缺:',miss.join(','));process.exit(1)}console.log('✅ 全部 workspace 在 lock')"
 grep -q "createArgv1Guard" engine/orchestrator/src/execution-backends/dsh-backend.ts && echo "✅ argv 守卫在位" || echo "❌ argv 守卫回退"
 grep -c "dsh-deployed" package-lock.json | grep -q "^0$" && echo "✅ lock 零本地部署树路径" || echo "❌ lock 残留本地部署树 symlink——CI 必红 TS2307"
+) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -q "❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true
 ```
 
 #### 125. 新功能审查面——训练九章+FDE 六引擎+IM 桥+FORGE 步零一维收口（阶段四来源提取 A 类 · 归并 #59 入此：dataDir 传参纪律为 SSOT 子项）
@@ -1540,6 +1584,7 @@ grep -c "dsh-deployed" package-lock.json | grep -q "^0$" && echo "✅ lock 零�
 > 九大交付的静态一致性快查（执行级验证 acceptance S333-S339 已落，此处分钟级 grep）。子项 g 承接原 #59（resolve*Dir 传参纪律——与 N-1 dataDir SSOT 同主题族 归并）。
 
 ```bash
+(
 # a: FDE 六引擎 registry 注册 + 工作台数据层（S338 端到端的静态面）
 for t in fde_interview fde_classify fde_quantify fde_derive fde_distill fde_deploy; do grep -q "name: '$t'" engine/mcp/src/tool-registry.ts || echo "❌ $t 未注册"; done; echo "✅ 六引擎注册（若上方无 ❌）"
 grep -q "fdeWorkbenchPaths" engine/orchestrator/src/fde/fde-workbench.ts && grep -q "emitFdeAudit" engine/orchestrator/src/fde/fde-workbench.ts && echo "✅ 工作台数据层" || echo "❌ 缺工作台"
@@ -1562,6 +1607,7 @@ DD_FILES=$(grep -rln "getDataDir" engine/mcp/src/ engine/think/src/ --include="*
 # h: 卸载还原与面板版本口径（v1.4.8 B 类安装卸载族并入）——卸载须备份且保留用户数据（只删 sofagent 产物）+ dashboard 版本活引用对账
 grep -q "工作区数据" engine/scripts/uninstall.sh && grep -qE "备份|backup" engine/scripts/uninstall.sh && echo "✅ 卸载备份 + 用户数据保留" || echo "❌ 卸载语义缺失（误删用户数据风险）"
 grep -q "dashboard.html" tools/check/check-version.sh && echo "✅ dashboard 版本对账在位" || echo "❌ dashboard 版本口径失守"
+) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -q "❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true
 ```
 
 #### 127. 新功能审查面——训练运行九章+DSH 执行深化+审计聚合+反作弊基线一维收口（阶段四来源提取 A 类 · 归并「旧交付退役收口」入此：composeWithDeepAgents 别名与 fde_compose ontology 收窄为退役治理子项）
@@ -1570,7 +1616,11 @@ grep -q "dashboard.html" tools/check/check-version.sh && echo "✅ dashboard 版
 
 ```bash
 (# a: 训练查询侧三 tools（train_status/train_list/train_diagnose 注册 + 分发）
-for t in train_status train_list train_diagnose; do grep -q "name: '$t'" engine/mcp/src/tool-registry.ts && grep -q "case '$t'" engine/mcp/src/mcp-server.ts || echo "❌ $t 未注册/未分发"; done
+# 分发面锚点修正（深模块批）：mcp-server 已由「逐 tool case 分支」改为消费 tool-registry
+# 的 TOOLS 表动态分发（tools/list 与 tools/call 均走 TOOLS.find）。原 `case '$t'` 断言基于
+# 旧实现——实测三 tool 均在 TOOLS（95 项）内且经 TOOLS.find 可达，故锚点改为
+# 「注册表声明 + 动态分发链」双锚，覆盖面不变（注册面 + 分发面各一）。
+for t in train_status train_list train_diagnose; do grep -q "name: '$t'" engine/mcp/src/tool-registry.ts && grep -q "TOOLS.find" engine/mcp/src/mcp-server.ts || echo "❌ $t 未注册/未分发"; done
 # b: GPU 队列僵尸收割三判定（终态/无占位 queued/pid 死——防额度悬挂死锁）
 grep -q "reapStaleGpuEntries" engine/orchestrator/src/train/train-scheduler.ts && grep -q "silentRelease" engine/orchestrator/src/train/gpu-queue.ts && echo "✅ 收割链在位" || echo "❌ 僵尸收割缺失"
 # c: 诊断七类处方表（MiniMax-M1/ScaleRL 出处标注——处方口径可审计）
@@ -1593,6 +1643,7 @@ grep -q "checkHistoryChainIntegrity" CHANGELOG.md && echo "✅ 退役公告在 C
 > 五轮审查（weighted-convergence 终态 0 P0/0 P1/1 P2 SKIP）修复的防复发锚点。文档数字面/npm 面已被 check-docs/check-version 工具覆盖不重复建维；vitest 并行假红/超时层已被 #110 覆盖。
 
 ```bash
+(
 # a: 门禁正则跨平台健壮性——\s 在 BSD/部分 grep 语义不稳（实测：本机 2.6.0-FreeBSD 支持 \s，但 test-count 曾因 ANSI 前缀恒 0 假红、\s 组合加剧解析脆性）；shell 活代码一律 POSIX 类——注释行与 Node 内嵌 JS 行（matchAll/test/inFence 上下文）合法
 grep -rn '\\\\s' tools/check/check-docs.sh tools/check/check-review-system.sh tools/check/check-test-count.sh tools/check/check-dev-prompt.sh tools/check/check-version.sh 2>/dev/null | grep -vE "^[^:]+:[0-9]+:#" | grep -vE "(matchAll|\.test\(|inFence|node -e)" | grep -q . && echo "❌ 门禁 shell 活代码残留 \\\\s（跨平台假红隐患）" || echo "✅ 门禁 shell 活代码无 \\\\s 残留"
 # 防御：正则只锚定审计命令形态——行首（忽略缩进）npx/node 调用 sofagent-audit 且同行挂 || true，才是「退出码被清 0」真假绿 宽匹配 `sofagent-audit.*|| true` 会误中 gh label 装饰行（描述字符串含产品名）；label 写操作挂 || true 是 fork PR 只读令牌的设计降级，非假绿
@@ -1609,6 +1660,7 @@ grep -c "logo-version" tools/dashboard/dashboard.html | grep -qE "^[0-9]+$" && !
 test -f .git/hooks/pre-commit && test -f .git/hooks/commit-msg && echo "✅ 双 hook 在位" || echo "❌ hook 缺失（跑 install.sh）"
 # f: 断言校准三同步 + CI 纯净 fixture（原 #126 c/d 归并）——判定/展示/引用三处同步；hook 对账类测试自带迷你 dist 防 CI 假绿
 grep -q "450" FORGE/playbook/acceptance-test.sh && grep -q "迷你 dist" engine/audit/src/commands/init.test.ts && echo "✅ 三同步示范 + 迷你 dist fixture" || echo "❌ 三同步/fixture 回潮"
+) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -q "❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true
 ```
 
 #### 129. v1.4.4 fresh-eyes 19 项修复防复发——CLI 接线断链 + 供应链回滚路径 + nodeId/YAML 清洗 + 结构性收口（阶段四来源提取 A/B 类一维收口 · 行为面已由单测锁：weights-deploy/fde-workbench/export/corpus-export +9 用例）
@@ -1616,6 +1668,7 @@ grep -q "450" FORGE/playbook/acceptance-test.sh && grep -q "迷你 dist" engine/
 > 19 项发现（P0×1 + P1×7 + P2×11，修复批 37cab2b9）防复发锚点。P0「声称命令三面零接线」的机械防线已落 check-docs §13（submitCompareJobs 生产调用 ≥1 断言在册）；行为面（回滚哈希直验/中文 nodeId 清洗/YAML 转义/scope 校验/auditEvent null/enterpriseId 正名）已由四包单测 +9 用例锁定，此处只收 grep 级结构性锚 + 新增声称点对账面。
 
 ```bash
+(
 # a: P0 接线断链族——CHANGELOG 声称的命令必须真实装可达（CLI 分支实装 + 帮助面 + 回填 API 三锚）
 grep -q "v1.4.4 交付④：train compare" engine/orchestrator/src/cli.ts && grep -q "refreshCompareResults" engine/orchestrator/src/train/train-compare.ts && echo "✅ train compare CLI 接线 + 回填 API 在位" || echo "❌ compare 接线断链（P0 回潮）"
 grep -q "submitCompareJobs" tools/check/check-docs.sh && echo "✅ §13 接线存在性断言在册（新声称点自动进对账面）" || echo "❌ §13 断言丢失——声称命令脱离门禁保护"
@@ -1628,6 +1681,7 @@ grep -q "return buildVerifiersWithOverrides({})" engine/audit/src/export/reward-
 grep -q "三件套全景" engine/audit/src/export/exporter.ts && echo "✅ 三件套跨包互链" || echo "❌ 导出三件套导航锚点丢失"
 grep -q "GLM_API_KEY" FORGE/models/profile.mjs && echo "✅ fork 适配提示在位" || echo "❌ fork 者无 key 时降级链失效无提示"
 ! grep -q "benchRoot" engine/core/src/export/sample-aggregator.ts && echo "✅ benchRoot 死变量已清" || echo "❌ 死变量回潮"
+) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -q "❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true
 ```
 
 #### 130. 发版流程与发版域教训防复发——sha256 预计算 + Marketplace 延续 + ClawHub 快照 + Edit 串行 + npm 对账缓存 + 干净态排查
@@ -1635,8 +1689,20 @@ grep -q "GLM_API_KEY" FORGE/models/profile.mjs && echo "✅ fork 适配提示在
 > 发版四坑实录：① bootstrap.sh INSTALL_SHA256 回填走「tag 后算哈希再回填再重打 tag」两次 tag 往返——预计算 HEAD 哈希与 URL bump 同 commit 可让 tag 一次打自洽（install.sh/lib 无改动时 lib 哈希不变免回填）；② GitHub Marketplace listing 勾选自动延续（v1.4.2 起每版勾选后 listing 关联保持），版本页出现新版号即免网页操作；③ ClawHub verify 的 `security.status_not_clean` 可能是既有状态（1.4.3 时代已存在）——发布前先快照对照，新引入才需处置；④ 同一文件多处 Edit 并行调用发生读写竞态（5 处只落 2 处）——同文件多编辑必须串行。
 
 ```bash
+(
 # v1.4.8 bugfix 批归并：原 #135 发版域教训四锚点整体并入（git log -p 可溯，断言零删减）；① sha256 自洽预检：bootstrap 内嵌哈希 == HEAD install.sh 哈希（打 tag 前跑，免重打）
-EMB=$(sed -n 's/^INSTALL_SHA256="\([a-f0-9]*\)".*/\1/p' bootstrap.sh); HEAD_H=$(git show HEAD:install.sh | shasum -a 256 | cut -d' ' -f1); [ "$EMB" = "$HEAD_H" ] && echo "✅ INSTALL_SHA256 与 HEAD 自洽" || { PREV_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo v1.4.3); git diff "$PREV_TAG"..HEAD --stat -- install.sh | grep -q . && echo "⏳ 待发版态——install.sh 相对 $PREV_TAG 有改动，INSTALL_SHA256 回填排期阶段九（tag 前重算）" || { echo "❌ 哈希不自洽——回填后须重打 tag"; exit 1; }; }
+EMB=$(sed -n 's/^INSTALL_SHA256="\([a-f0-9]*\)".*/\1/p' bootstrap.sh); HEAD_H=$(git show HEAD:install.sh | shasum -a 256 | cut -d' ' -f1)
+if [ "$EMB" = "$HEAD_H" ]; then echo "✅ sha256 自洽（钉值 == HEAD install.sh 哈希）"
+else
+  # 待发版窗口态（对齐 check-version F6 既有判据）：CHANGELOG 版本条目带「⏳ 待发版」标记时，
+  # install.sh 已随开发改动、钉值仍指向上一已发版 tag 属预期——回填与打 tag 同步于阶段九。
+  # 硬判 FAIL 会把「阶段五正常态」误报为 P0 阻塞（run-01 实证）。
+  if grep -qE "v1\.4\.8.*⏳|v1\.4\.8.*待发版" CHANGELOG.md 2>/dev/null; then
+    echo "⏳ 待发版态：钉值 ${EMB:0:12}… ≠ HEAD 哈希 ${HEAD_H:0:12}…（install.sh 已随 v1.4.8 开发改动）——回填+打 tag 属阶段九，非阻塞"
+  else
+    echo "❌ sha256 不自洽（已发版态：钉值应等于 HEAD install.sh 哈希）"
+  fi
+fi
 PREV_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo v1.4.3); git diff "$PREV_TAG"..HEAD --stat -- engine/scripts/lib/ | wc -l | grep -q "^0$" && echo "✅ lib 零改动（LIB_SHA256S 沿用）" || echo "🟡 lib 相对 $PREV_TAG 有改动——6 哈希须逐项回填（排期阶段九 tag 前）"  # ② 6 lib 哈希稳定：lib 无改动免回填
 MKT_HTML=$(curl -s --max-time 10 https://github.com/marketplace/actions/sofagent); MKT_RC=$?; if [ $MKT_RC -ne 0 ]; then echo "🟡 网络不可达（curl exit $MKT_RC）——marketplace 对照跳过（网络态非仓库问题，有网时人工复核）"; elif echo "$MKT_HTML" | grep -q "$(node -p "require('./package.json').version")"; then echo "✅ marketplace 版本页已含本版"; else echo "🟡 版本页未见本版——按 SOP 网页勾选 Publish to Marketplace"; fi  # ③ Marketplace 版本页含本版号即免网页勾选（自动延续）
 # ④ ClawHub 快照纪律：发布前 verify 落盘（clawhub skill verify <slug> > /tmp/clawhub-pre.json）对照处置；④b pending scan 显旧版+suspicious≠失败，转正判据走 API（clawhub.ai/api/v1/packages/<name>?ownerHandle=<handle>）
@@ -1645,17 +1711,20 @@ grep -q "prefer-online" docs/changelog/releasing/09-publish.md && grep -q "prefe
 node -e "const s=require('./package.json').scripts.build; const order=['harness','core','ontology','rules','audit','eval','think','evolve','orchestrator','daemon','ab-test','mcp','sofagent-load-chain']; let i=-1; for(const seg of s.split(' && ')){const m=seg.match(/--workspace=([^\s]+)/); if(!m) continue; const short=m[1].replace(/^engine\//,'').replace(/^hooks\//,''); const idx=order.indexOf(short); if(idx<0||idx<=i){console.error('❌ 拓扑序倒置或未知包: '+m[1]); process.exit(1);} i=idx;}" && echo "✅ build 序列满足 13 包拓扑序"
 grep -q "rm -rf engine/\*/dist" docs/changelog/releasing/09-publish.md && echo "✅ 干净态排查法已写入 SOP" || echo "❌ 干净态排查法从 SOP 丢失"
 git grep -q "regexWarned" -- tools/check/public-api.mjs && echo "✅ 降级 fail-loud 在位" || echo "❌ 降级静默"
+) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -q "❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true
 ```
 
 #### 131. v1.4.5 后训服务与持续收口批防复发——train 五新面/进化实证/retention 加固/链锚一维收口（阶段四来源提取 A/B 合流 · 行为面已由单测锁：serve 21/compliance 19/deliverable 20/retention 15/session 17+2 用例）
 
 ```bash
+(
 # 逐锚语义：a = 交付面存在性（train 五新面/进化实证 sampler cursor + skill-impact 台账/quickstart 双件/fde-session lastCapturedAt/WIKI §数据文件架构指针）+ tools 84 静态 SSOT（动态不进；83→84 为 v1.4.6 阶段六对齐 registry 实测实数——与维度 111 同款口径）；b = retention 加固 + 链锚/SANITIZE 值形可证
 MISS=0; for f in train-serve train-compliance train-deliverable retention-policy train-continuous; do test -f "engine/orchestrator/src/train/$f.ts" || MISS=$((MISS+1)); done; [ "$MISS" -eq 0 ] && echo "✅ train 五新面在位" || echo "❌ train 新面缺 $MISS 文件"
 test -f docs/guides/train-quickstart.md && test -f docs/guides/examples/quickstart-data.csv && grep -q "cursor" engine/daemon/src/dream-cycle/continuous-sampler.ts && test -f engine/orchestrator/src/skill-evolution/skill-impact-ledger.ts && grep -q "lastCapturedAt" engine/orchestrator/src/fde-session-mgr/index.ts && echo "✅ 进化实证 + quickstart + 会话时间戳在位" || echo "❌ 交付面缺口"
 grep -q "§数据文件架构" docs/WIKI.md && [ "$(grep -cE "^ {4}name: '" engine/mcp/src/tool-registry.ts)" -eq 95 ] && echo "✅ WIKI 指针 + tools 95 SSOT" || echo "⚠️ WIKI 指针/95 计数漂移——复核"
 grep -q "isSymbolicLink" engine/orchestrator/src/train/retention-policy.ts && grep -q "realpathSync" engine/orchestrator/src/train/retention-policy.ts && [ "$(grep -c "resolvePointPath" engine/orchestrator/src/train/retention-policy.ts)" -ge 4 ] && grep -q "trainArchiveDir" engine/orchestrator/src/train/retention-policy.ts && echo "✅ retention 四词形在位" || echo "❌ retention 加固回潮"
 test -f engine/audit/src/chain-head-anchor.test.ts && grep -q "shouldExempt(key: string, value: string)" engine/audit/src/audit-history.ts && grep -q "sanitizeFreeText(value) === value" engine/audit/src/audit-history.ts && echo "✅ 链锚测试 + SANITIZE 值校验在位" || echo "❌ 链锚/SANITIZE 回潮"
+) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -q "❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true
 ```
 
 #### 132. v1.4.6 bugfix 批与流程加固防复发——ruleset 渲染/版本动态读/空 diff 审计/uninstall 配对/PERSPECTIVES 对账一维收口（阶段四来源提取 B 类 · 行为面 S381 空 diff 三形态已锁 · B3 根 commit 补审归 S222 空树锚）
@@ -1663,9 +1732,14 @@ test -f engine/audit/src/chain-head-anchor.test.ts && grep -q "shouldExempt(key:
 > v1.4.6 阶段三 8 finding + bugfix 29 文件的轻量锚。B1 ruleset A0 渲染、B2 版本硬编码双批、B4 openclaw 空 diff、B5 uninstall 漏平台、B6 双清单漂移——全部 grep 型快速检查，端到端行为面由 acceptance S381（空 diff 审计三形态）/S222（根 commit 空树补审）锁定。
 
 ```bash
+(
 # B1: ruleset 汇总行规则编号渲染（A0 乱显修复）——500+ 独立编号空间 + 四渲染面分支在位
 # 渲染分支真实位置 = index/reporter/stats/webhook 四文件（ruleset-loader.ts:675 仅分配 500+ 编号，渲染在 reporter 渲染为 R1/R2）
-grep -q "R1" engine/audit/src/ruleset-loader.ts && RCOUNT=$(grep -l "number - 500\|number>=500\|number >= 500" engine/audit/src/index.ts engine/audit/src/reporter.ts engine/audit/src/stats.ts engine/audit/src/webhook.ts 2>/dev/null | wc -l | tr -d ' '); [ "${RCOUNT:-0}" -ge 4 ] && echo "✅ ruleset R 前缀渲染分支在位（四渲染面 ${RCOUNT}/4）" || echo "❌ ruleset A0 渲染回潮（渲染面仅 ${RCOUNT:-0}/4）"
+# 渲染面锚点修正（深模块批）：R/E/A 三前缀渲染已从四文件内联 `number - 500` 比较重构为
+# 单一函数 ruleCode()（engine/audit/src/rules/assemble.ts:25；注释明示「与历史多处逐字一致，
+# 零行为变化」）。锚点改为「ruleCode 三前缀分支在位 + 四渲染面均消费 ruleCode」双锚——
+# 覆盖面不变且更强（收敛为单一 SSOT，杜绝四份副本漂移）。
+grep -q "R1" engine/audit/src/ruleset-loader.ts && grep -q "number >= 500" engine/audit/src/rules/assemble.ts && RCOUNT=$(grep -l "ruleCode(" engine/audit/src/index.ts engine/audit/src/reporter.ts engine/audit/src/stats.ts engine/audit/src/webhook.ts 2>/dev/null | wc -l | tr -d ' '); [ "${RCOUNT:-0}" -ge 4 ] && echo "✅ ruleset R 前缀渲染（ruleCode SSOT + 四渲染面 ${RCOUNT}/4）" || echo "❌ ruleset A0 渲染回潮（ruleCode SSOT 缺失或渲染面仅 ${RCOUNT:-0}/4）"
 # B2: 版本动态读 ×10（engine/ab-test CLI + 9 dsh 插件 pluginMeta 均不硬编码版本）——插件为 _pkg.version 间接形态，锚词覆盖两种写法
 DYN=$(grep -rlE "require\('\.\./package\.json'\)" engine/ab-test/src/cli.ts engine/dsh-plugins/*/src/index.ts 2>/dev/null | wc -l | tr -d ' '); [ "${DYN:-0}" -ge 10 ] && echo "✅ 版本动态读 ${DYN} 文件在位" || echo "❌ 版本硬编码回潮（动态读仅 ${DYN:-0}/10）"
 # B4: openclaw execute 空数组绕过修复——按 scope 取真实 diff 非 runRules([])
@@ -1674,6 +1748,7 @@ grep -q "parseDiff" engine/openclaw-plugins/*/index.ts 2>/dev/null || grep -rq "
 grep -q "cursor" install.sh && grep -q "cursor" engine/scripts/uninstall.sh && grep -q "gemini" install.sh && grep -q "gemini" engine/scripts/uninstall.sh && echo "✅ uninstall 平台清单配对（cursor/gemini 在册）" || echo "❌ uninstall 漏平台（装得上卸不掉）"
 # B6: PERSPECTIVES 双清单启动对账在位（漂移 exit 1 自检内建）——脚本在 tools/gen/ 非 FORGE/src/
 grep -q "assertPerspectivesMatchPlaybook" tools/gen/gen-fresh-eyes-draft.mjs && echo "✅ PERSPECTIVES 双清单对账自检在位" || echo "❌ 16 视角双清单漂移防线丢失"
+) 2>&1 | tee "/tmp/regress-dim132-$$.log"; grep -q "❌" "/tmp/regress-dim132-$$.log" && { rm -f "/tmp/regress-dim132-$$.log"; echo "维度132收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim132-$$.log"; echo "维度132收口:PASS"
 ```
 
 #### 133. v1.4.7 审查面与修复批一维收口——新功能 46 锚点 + bugfix/质量循环防复发（阶段四来源 A 类 + #134 归并：断言零删减，git log -p 可溯）十组）
@@ -1709,8 +1784,10 @@ for s in createSshTrainChannel chainDualChannelEvent gateDataPush; do grep -q "$
 > build 序列 13 包五层（核心 harness/core ← 领域 ont/rules ← 约束 audit/eval/think/evolve ← 编排 orch/daemon ← 展示 ab/mcp/load-chain）。三态实测：干净绿 / 注入 core→orchestrator 红 / 还原绿。
 
 ```bash
+(
 bash tools/check/dependency-direction.sh > /dev/null 2>&1 && echo "✅ 13 包方向合法" || echo "❌ 有违规边"  # a: 门禁干净态
 [ -f tools/check/dependency-direction.yml ] && grep -q "dependency-direction" tools/release/pre-push-check.sh && grep -q "dependency-direction" .github/workflows/pr-check.yml && echo "✅ 清单+3e+CI 在位" || echo "❌ 清单或接线缺失"  # b+c
+) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -q "❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true
 ```
 
 #### 137. v1.4.8 审查面 A 类——策略门族（插件来源白名单 + 应用级工具策略）
@@ -1718,6 +1795,7 @@ bash tools/check/dependency-direction.sh > /dev/null 2>&1 && echo "✅ 13 包方
 > 来源：devlog 一/二章（阶段四 A 类收拢——族内两臂同为「未声明即拒绝」fail-closed 语义）。
 
 ```bash
+(
 FAIL=0
 # a: 三类来源分类（git-url / host / local-path）——误分类即白名单绕过
 node -e "const m=require('./engine/audit/dist/cli/plugin-gate.js');const k=[['https://github.com/org/*','git-url'],['github.com','host'],['/opt/plugins/*','local-path']];const bad=k.filter(p=>m.classifySource(p[0]).kind!==p[1]);if(bad.length){console.log('分类漂移',JSON.stringify(bad));process.exit(1)};console.log('三类来源分类正确')" || { echo "❌ 来源分类漂移"; FAIL=1; }
@@ -1726,6 +1804,7 @@ grep -q "安装中止（fail-closed）" install.sh && grep -q "校验器不可�
 # c: app×tool 白名单未声明即拒绝（ToolGate 语义锚 + 单测在位）
 grep -q "未出现在本表" engine/audit/src/cli/plugin-gate.ts && grep -rq "app_tool_policy" engine/audit/src/__tests__/ && echo "✅ 白名单矩阵语义在位" || { echo "❌ ToolGate 语义缺失"; FAIL=1; }
 [ "${FAIL:-0}" = "1" ] && { echo "维度137:FAIL"; exit 1; }; echo "维度137:PASS"
+) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -q "❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true
 ```
 
 #### 138. v1.4.8 审查面 A 类——行为分级族（协作阵型库 + shell 提权分级）
@@ -1733,12 +1812,14 @@ grep -q "未出现在本表" engine/audit/src/cli/plugin-gate.ts && grep -rq "ap
 > 来源：devlog 三/五章（阶段四 A 类收拢——「未识别即拒」与「dangerous 未批不放行」同为收敛语义）。
 
 ```bash
+(
 FAIL=0
 # a: 六阵型合法值 + 未识别阵型拒绝（schema 值域漂移 = 静默放行未知阵型）
 node -e "const m=require('./engine/orchestrator/dist/formations/schema.js');const bad=[];if(m.FORMATION_NAMES.length!==6)bad.push('阵型数='+m.FORMATION_NAMES.length);const v=m.validateFormation({formation:'no-such-formation',members:[{id:'m1',role:'r'}],edges:[]});if(v.valid)bad.push('未识别阵型被放行');if(bad.length){console.log('阵型 schema 异常',bad.join('|'));process.exit(1)};console.log('六阵型 + 拒绝语义正确')" || { echo "❌ 阵型 schema 漂移"; FAIL=1; }
 # b: 提权三态 action 值齐备（safe=allow / risky=require-approval / dangerous=forbid-until-approved）
 grep -q "forbid-until-approved" engine/core/src/escalation/policy.ts && grep -q "require-approval" engine/core/src/escalation/policy.ts && grep -q "'allow'" engine/core/src/escalation/policy.ts && echo "✅ 三态 action 值齐备" || { echo "❌ 三态语义缺失"; FAIL=1; }
 [ "${FAIL:-0}" = "1" ] && { echo "维度138:FAIL"; exit 1; }; echo "维度138:PASS"
+) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -q "❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true
 ```
 
 #### 139. v1.4.8 审查面 A 类——成本与压缩族（自动上下文压缩 + 成本 quota 事前门禁）
@@ -1746,12 +1827,14 @@ grep -q "forbid-until-approved" engine/core/src/escalation/policy.ts && grep -q 
 > 来源：devlog 四/六章（阶段四 A 类收拢——压缩须可事后识别、配额须事前问路）。
 
 ```bash
+(
 FAIL=0
 # a: 3% 预算检测 + 压缩 start/end 标记 + 回调出口 + 零依赖（压缩器不得 import audit 包）
 node -e "const b=require('./engine/harness/dist/load-chain/budget.js');const c=require('./engine/harness/dist/load-chain/compactor.js');const fs=require('fs');const bad=[];if(typeof b.checkBudget!=='function')bad.push('缺 checkBudget');if(!c.COMPACT_START_MARKER||!c.COMPACT_END_MARKER)bad.push('缺压缩标记');const src=fs.readFileSync('engine/harness/src/load-chain/compactor.ts','utf8');if(/from\s+.[^.]*audit/.test(src))bad.push('压缩器耦审计包');if(bad.length){console.log(bad.join('|'));process.exit(1)};console.log('预算+标记+零依赖正确')" || { echo "❌ 压缩族锚点漂移"; FAIL=1; }
 # b: quota WARN/HARD 双模式 + cost_query 三字段（余量/已用/周期）
 grep -qE "'WARN' \| 'HARD'|WARN（放行" engine/core/src/cost/quota-gate.ts && grep -q "remaining" engine/mcp/src/tools/cost-query.ts && grep -qE "usedTokens|period" engine/mcp/src/tools/cost-query.ts && echo "✅ 双模式 + 三字段在位" || { echo "❌ quota 面缺失"; FAIL=1; }
 [ "${FAIL:-0}" = "1" ] && { echo "维度139:FAIL"; exit 1; }; echo "维度139:PASS"
+) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -q "❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true
 ```
 
 #### 140. v1.4.8 审查面 A 类——模型与进化族（节点级模型偏好 + 进化模块重构）
@@ -1759,6 +1842,7 @@ grep -qE "'WARN' \| 'HARD'|WARN（放行" engine/core/src/cost/quota-gate.ts && 
 > 来源：devlog 八/九章与第九章重构（阶段四 A 类收拢——「未注册不静默降级」与「自研 gate 默认」同为显式失败语义）。
 
 ```bash
+(
 FAIL=0
 # a: required 未注册 → 抛 ModelPreferenceError（静默降级 = 模型漂移无感）
 node -e "const m=require('./engine/orchestrator/dist/model-resolver.js');const fs=require('fs');const bad=[];if(typeof m.ModelPreferenceError!=='function')bad.push('缺 ModelPreferenceError');const src=fs.readFileSync('engine/orchestrator/src/model-resolver.ts','utf8');if(!/required/.test(src))bad.push('缺 required 语义');if(bad.length){console.log(bad.join('|'));process.exit(1)};console.log('模型偏好显式失败语义在位')" || { echo "❌ 模型偏好语义缺失"; FAIL=1; }
@@ -1767,6 +1851,7 @@ grep -q "SOFAGENT_EVOLVE_GATE ?? 'native'" engine/evolve/src/evolve-integration.
 # c: 旧包名 @sofagent/skillopt 零残留（更名 73 文件联动）
 grep -rq "@sofagent/skillopt" package.json engine/*/package.json FORGE/package.json 2>/dev/null && { echo "❌ 旧包名残留"; FAIL=1; } || echo "✅ 旧名清零"
 [ "${FAIL:-0}" = "1" ] && { echo "维度140:FAIL"; exit 1; }; echo "维度140:PASS"
+) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -q "❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true
 ```
 
 #### 141. v1.4.8 审查面 A 类——执行机制纪律族（意图分类主判 + Git 能力矩阵 + 作用域显名）
@@ -1774,12 +1859,14 @@ grep -rq "@sofagent/skillopt" package.json engine/*/package.json FORGE/package.j
 > 来源：devlog 第十章（阶段四 A 类收拢——裸 id 结构化拒绝与并发 Git 纪律同属「机制约束先生效」）。
 
 ```bash
+(
 FAIL=0
 # a: 裸 id 结构化拒绝（SOFAGENT_SCOPE_REQUIRED——多实体系统撞名必然）
 node -e "const m=require('./engine/core/dist/scope-names.js');const r=m.validateScopedName('bare-id-without-scope');if(r.valid){console.log('裸 id 被放行');process.exit(1)};if(r.error&&!/作用域显名/.test(r.error)){console.log('拒绝原因非显名语义');process.exit(1)};console.log('裸 id 结构化拒绝正确')" || { echo "❌ 作用域显名语义漂移"; FAIL=1; }
 # b: Git 能力三态×两隔离矩阵 + 意图分类纯函数主判在位（「靠 LLM 判定等于没判定」）
 grep -q "planExecution" engine/orchestrator/src/exec/git-capability.ts && grep -qE "'none' \| 'local' \| 'remote'" engine/orchestrator/src/exec/git-capability.ts && grep -q "classifyIntentByRules" engine/orchestrator/src/dispatch/intent-classifier.ts && echo "✅ 三态×两隔离 + 纯函数主判在位" || { echo "❌ 纪律批缺失"; FAIL=1; }
 [ "${FAIL:-0}" = "1" ] && { echo "维度141:FAIL"; exit 1; }; echo "维度141:PASS"
+) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -q "❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true
 ```
 
 #### 142. fresh-eyes 修复批安全豁免面防复发——A1 豁免组合矩阵 + A2 转义对抗链（v1.4.8 B 类）
@@ -1787,6 +1874,7 @@ grep -q "planExecution" engine/orchestrator/src/exec/git-capability.ts && grep -
 > 来源：run-02 b-fix 批（A1 数据容器臂 / 扩展名尾锚定 / .env 前缀豁免叠加 / A2 转义链）。核心方法论：任何新增豁免必须回答「与既有豁免叠加后最坏形态的阻断等级」。
 
 ```bash
+(
 FAIL=0
 # a: 数据容器臂剔除（.env.json/.env.yaml/.env.yml 等 env dump 载体不得静默 PASS——豁免面组合矩阵实锤）
 grep -qE "\.env\.json|\.env\.yaml|serverless\.env" engine/audit/src/rules/rule-a1-sensitive-files.ts && echo "✅ 数据容器臂已剔除" || { echo "❌ env dump 载体仍可逃逸"; FAIL=1; }
@@ -1795,4 +1883,5 @@ grep -qE "代码扩展名尾锚定|尾锚定" engine/audit/src/rules/rule-a1-sen
 # c: A2 尾剥离/转义对抗回归样本在位（B 自报已修须有可复演样本——hex 转义还原 + 用例数不缩水）
 grep -q "restoreHexEscapes" engine/audit/src/rules/rule-a2-secret-leak.ts && [ "$(grep -c 'it(' engine/audit/src/rules/rule-a2.test.ts)" -ge 10 ] && echo "✅ A2 转义还原 + 对抗用例在位" || { echo "❌ A2 对抗样本缺失"; FAIL=1; }
 [ "${FAIL:-0}" = "1" ] && { echo "维度142:FAIL"; exit 1; }; echo "维度142:PASS"
+) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -q "❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true
 ```

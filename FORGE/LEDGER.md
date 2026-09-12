@@ -337,3 +337,5 @@ release-gate-loop 与 fresh-eyes-loop 共享本文件，通过"循环"列区分�
 2026-09-12     | 20260912-02    | fresh-eyes  | 3    | 0   | 0   | 1   | weighted-convergence | /Users/kongfangxun/.sofagent/data/forge-runs/fresh-eyes-loop/2026-09-12/run-02
 
 2026-09-12     | 20260912-rg01   | release-gate | 1（脚本层） | 1   | 17  | –   | script-gate-blocked-scenario-debt | （driver 未启动·脚本层直跑，无 runDir；P0=hook 解析 bug 已修；17 项为检查器债待维护批）
+
+2026-09-12     | 20260912-01    | release-gate | 4    | SKIP       | FAIL       | FAIL     | FAIL    | /Users/kongfangxun/.sofagent/data/forge-runs/release-gate-loop/2026-09-12/run-01
