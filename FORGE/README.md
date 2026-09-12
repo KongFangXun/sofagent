@@ -125,8 +125,9 @@ FORGE/
   playbook/                     ← 证据工具（外环闸门 + 内环验证）
     acceptance-test.sh           ← A5-d3 闸门证据
     regression-checklist.md      ← 回归检查维度
-    fresh-eyes-review.md         ← 留白式直觉审查（12 视角）
-    deep-module-review.md        ← 设计熵勘测（深模块/浅模块 + 删除测试，只报告不修复）
+    fresh-eyes-review.md         ← 留白式直觉审查（六层 22 视角，发版走常规 1-12）
+    deep-module-review.md        ← 设计熵勘测**适配层**（方法论本体挂载上游，输出走对话不落文件）
+    vendor/improve-codebase-architecture/   ← vendored 上游技能闭包（MIT，钉 commit，只读不改；升级流程见其 PROVENANCE.md）
     dev-prompt-checklist.md      ← A0 闸门人脑补充层（check-dev-prompt.sh 拦不住的软错误）
     acceptance-node-probes.js    ← release-gate-loop 探针
     version-bump.md / doc-sync.md

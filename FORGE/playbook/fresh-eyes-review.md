@@ -48,7 +48,9 @@ sofagent（https://github.com/KongFangXun/sofagent）。不管当前处于什么
 
 **体系外挂（不在上表序列内）**：设计熵勘测走 `playbook/deep-module-review.md`——它审的是**模块形状**（该深不深、缝的真假、注册漂移），不是交付物对错。它与视角二十（死代码猎人：管存亡）、视角二十一（未来架构师：管方向）分工互补——本审查管「对不对」，它管「好不好改」。
 
-挂载进本审查时，它扫出的形状问题**直接并入本次审查报告**（与其它视角 findings 同载体），**不另出独立文档**；去留由人裁定：转版本条目施工，不在发版窗口内即兴重构。
+**方法论的源头在别处**：`deep-module-review.md` 是**适配层**，只写本地差异与编排；方法论本体是上游开源技能 `improve-codebase-architecture` 及其依赖闭包，vendored 在 `playbook/vendor/improve-codebase-architecture/upstream/`。执行前按其 §二「读取顺序」读 vendored 原文，**不凭记忆复述方法论**——复述即开第二条真相源。
+
+挂载进本审查时，它扫出的形状问题**直接并入本次审查报告**（与其它视角 findings 同载体），**不另出独立文档**，**也不落 HTML**（上游默认输出 HTML，本地覆盖为对话直出）；去留由人裁定：转版本条目施工，不在发版窗口内即兴重构。
 
 ---
 

@@ -315,11 +315,18 @@ LAYER_A=${LAYER_A:-0}
 # v1.2.1: 排除 data/forge-runs/（同属审查轮运行时产物，数据重构后从 .sofagent/ 迁来）
 # v1.3.9+ 分层修正（2026-08-22）：FORGE/lessons/ 是内部经验沉淀（每轮审查持续增长，
 # 设硬上限不合理）——移出 B 层预算，由 F 软检查（只提示不阻断）触发定期整理
+# ⚠️ 排除理由（明确化，非静默漏洞）：FORGE/playbook/vendor/ 是第三方 vendored 上游原文
+# （MIT，钉 commit，路径 1:1 保留供 diff -r 升级，清单见
+# vendor/improve-codebase-architecture/PROVENANCE.md）。预算约束的是「自研文档」体量——
+# 把第三方原文计入，会让「换 pin 升级」直接撞预算墙而被迫删上游内容，把升级能力和预算
+# 变成互斥项。自研侧不因此脱管：适配层 deep-module-review.md 留在 playbook/ 根下正常计账，
+# 上游 pin 由 PROVENANCE 单独管，不靠行数预算兜。
 LAYER_B=$(find ./FORGE ./agents ./.github ./engine/hooks ./docs/DEVELOPMENT.md \
   -name "*.md" \
   -not -path "*/node_modules/*" \
   -not -path "*/fresh-eyes-loop/runs/*" \
   -not -path "*/FORGE/lessons/*" \
+  -not -path "*/FORGE/playbook/vendor/*" \
   -print0 2>/dev/null | xargs -0 wc -l 2>/dev/null | tail -1 | awk '{print $1+0}')
 LAYER_B=${LAYER_B:-0}
 
