@@ -22,6 +22,12 @@
 //
 // 这意味着 Refine 不重写循环骨架——它复用 runOnboardLoop，
 // 只是把 l2Judge 换成 qualityJudge，把 fixer 换成 qualityFixer。
+//
+// ── 定位边界（v1.4.8 条目 10）──
+// 本域 = Refine L2 质量判据循环：判据 = 质量规则集（好坏，替代 Ontology 对错），
+// 状态机复用 loop-agent/driver.ts 的循环骨架（同形，仅替换 l2Judge/fixer）。
+// 与 loop/（对错门禁）、loop-agent/（工程级崩溃判定）的判据不同——三者各自独立，
+// 不合并（复用骨架属正确复用，非合并）。
 // ============================================================
 
 import type { OnboardRunOutcome, OnboardDriverOptions, OnboardLoopResult } from '../loop-agent/driver';

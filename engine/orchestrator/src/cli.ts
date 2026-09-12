@@ -26,7 +26,7 @@ async function main() {
     console.log('       --resolve <checkpointId> --decision approve|reject|aborted');
     console.log('                                  对 awaiting_human 挂起的 HITL 写入人工决策并续跑');
     console.log('       --data-dir <dir>             HITL pending/resolved 根路径（默认 {SOFAGENT_DATA}）');
-    console.log('       --legacy                     使用旧版串行路径（v1.1.3 兼容）');
+    console.log('       --legacy                     ⚠️ 已弃用（将于 v1.5.0 移除）：旧版串行路径，请迁移到默认循环');
     console.log('  compare                          编排方案 A/B 对比');
     console.log('  activate [--dry-run] [--node-filter id1,id2]');
     console.log('                                   激活 FDE 交付物 → 注册企业 SubAgent');
@@ -127,6 +127,9 @@ async function main() {
 
       if (legacyMode) {
         // 旧版兼容路径
+        // v1.4.8 条目 10：弃用告警——写 stderr，不污染 stdout 结果输出
+        console.error('⚠️ [弃用告警] loop --legacy 路径已弃用，将于 v1.5.0 移除（兼容期一个大版本）。');
+        console.error('   请迁移到默认循环：sofagent-orchestrator loop --task <描述>');
         const taskIdx = args.indexOf('--task');
         const taskDesc = taskIdx !== -1 ? args[taskIdx + 1] : undefined;
         if (!taskDesc && !resumeMode) {

@@ -425,8 +425,10 @@
 } from './refine-agent/quality-rule-set';
 
 // v1.3.3 交付 T05：进化闭环（Benchmark 驱动 Dream Cycle）
-/* @public */ export { runOptimizationLoop } from './refine-agent/optimization-loop';
-/* @public */ export type {
+// v1.4.8 条目 10：降 @internal（§一-1 裁定——GitHub 全网 code search 对本包
+// 命中全部落本仓，无仓外 adopter；9 条测试与代码保留，仅撤公开承诺）。
+/* @internal */ export { runOptimizationLoop } from './refine-agent/optimization-loop';
+/* @internal */ export type {
   OptimizationLoopOptions,
   OptimizationIteration,
   OptimizationLoopResult,

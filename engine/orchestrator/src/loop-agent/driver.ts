@@ -15,6 +15,13 @@
 // 交付 6/7 协同：调试记录带 agentId（跨设备审计聚合可追溯）。
 //
 // 零新依赖——复用 dag-runner / @sofagent/core / @sofagent/think 等既有包。
+//
+// ── 定位边界（v1.4.8 条目 10）──
+// 本域 = Onboard L1 工程级判定循环：状态机为
+// activate → run → judge → fix → re-run，判据 = crash/error/超时三态
+// （工程级，不判语义对错——L2-L5 的事）。
+// 与 loop/（对错门禁）、refine-agent/（质量好坏判据）的判据与状态机均不同——
+// 三者各自独立，不合并（refine-agent 复用本域循环骨架属正确复用，非合并）。
 // ============================================================
 
 import { appendFileSync, existsSync, mkdirSync, readFileSync } from 'fs';
