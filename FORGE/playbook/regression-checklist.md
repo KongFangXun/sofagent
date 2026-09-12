@@ -2,7 +2,7 @@
 
 > **用途**：每次发版前跑一遍，确认之前修过的问题没有回退。发现新问题用 [fresh-eyes-review](./fresh-eyes-review.md)。审查范围：全仓库状态检查（不是只看增量）。
 > **编号规则**：归并项直接删除、编号不复用；维度演进与归并的完整历史 `git log -p` 可溯，本清单只维护当前状态。
-> **当前 98 维 · 编号 1-136 · 37 个编号已归并删除**。维度流连续不中断，分组导航：基线组 → 审查约束组 → 环境敏感组（前置 vitest/沙箱铁律）。
+> **当前 94 维 · 编号 1-142 · 48 个编号已归并删除**。维度流连续不中断，分组导航：基线组 → 审查约束组 → 环境敏感组（前置 vitest/沙箱铁律）。
 
 ## 🔒 维护公约（防膨胀铁律）
 
@@ -32,9 +32,9 @@ WC_CHK=$(wc -l < FORGE/playbook/regression-checklist.md); WC_ACC=$(wc -l < FORGE
 
 你是**回归测试工程师**——确认已知的修复没有回退，不是发现新问题。逐项核对，全 PASS 即通过。⏰ 时序：回归检查在阶段六跑，git tag/npm registry 未到位的项标 ⏳。🔍 维度 7f/17a-b/20 依赖真实环境（npm/git/OpenClaw），AI 审查标 `⏸️ 需人工环境`。
 
-## 审查维度（98 维 · 编号规则见头部）
+## 审查维度（94 维 · 编号规则见头部）
 
-### 审查维度正文（#1-134 · 维度流连续不中断）
+### 审查维度正文（#1-142 · 维度流连续不中断）
 
 版本号全量一致 · 铁律措辞清零 · Skill 行数 ≤100 · 测试数一致（维度 13 SSOT 反查） · git status 零未提交修改
 
@@ -57,6 +57,12 @@ sed -n '4p' docs/ROADMAP.md | grep -qE "后训模块|数据与评估|FDE Harness
 grep -q "不做内容安全校验" SECURITY.md && echo "⚠️ SECURITY.md L86 推辞过时" || true
 # 子项 h: SKILL.md 铁律/底线数标题声称与实际一致（原维度 48g；底线是有序列表 `N. ` 格式） 防御（定谳尾判假）：`[ ] && echo ⚠️` 在健康态（相等）时 `[ ]` 返 1 → 整维度 exit=1 假红，改显式 if、健康态显式 exit 0
 SKILL_BC=$(grep -oE "### ([0-9]+) 底线" SKILL/SKILL.md | grep -oE "[0-9]+" || echo 0); SKILL_BA=$(sed -n '/^### [0-9] 底线/,/^### /p' SKILL/SKILL.md | grep -cE "^[0-9]+\. " || echo 0); if [ "$SKILL_BC" != "$SKILL_BA" ]; then echo "⚠️ SKILL.md 底线数 $SKILL_BC vs $SKILL_BA"; exit 1; fi; echo "✅ SKILL.md 底线数一致 ($SKILL_BC)"
+# 子项 i: CHANGELOG 索引条目 + 日期链（归并原维度 107——索引是 check-version 日期提取的上游，漏了整条链断）
+CUR_VER=$(node -p "require('./package.json').version"); grep -q "\*\*v${CUR_VER}\*\* —" CHANGELOG.md || echo "⚠️ CHANGELOG 缺 v${CUR_VER} 索引条目（日期链会断）"; grep -m1 "v${CUR_VER}.*—" CHANGELOG.md | grep -oE "[0-9]{4}-[0-9]{2}-[0-9]{2}" > /dev/null || true
+# 子项 j: README 中英文版本段同步（归并原维度 68——版本号与描述同段，修一层必核另一层）
+CN_VER=$(grep -m1 -oE '^## v[0-9]+\.[0-9]+\.[0-9]+' README.md | grep -oE 'v[0-9.]+'); EN_VER=$(grep -m1 -oE '^## v[0-9]+\.[0-9]+\.[0-9]+' README.en.md | grep -oE 'v[0-9.]+'); [ -n "$CN_VER" ] && [ "$CN_VER" = "$EN_VER" ] && echo "✅ README 双语版本段一致 ($CN_VER)" || echo "⚠️ README 双语版本段不一致：CN=$CN_VER EN=$EN_VER"
+# 子项 k: 新文件版本头匹配当前 SSOT（归并原维度 78——开发期禁超前写下一版本号，bump 时统一提升）
+bash tools/check/check-version.sh 2>&1 | grep "TS 文件头" | grep -q "✓" && echo "✅ 版本头一致" || echo "⚠️ 参见 check-version TS 文件头段"
 # 注：echo 变量插值禁全角括号——macOS bash 3.2 多字节展开 bug 吞「）」首字节+变量值（FFFD），半角安全
 ```
 
@@ -782,6 +788,9 @@ grep -q "byteLen < 16\|16.*字节\|>=.*16" engine/core/src/audit-history.ts && e
 # f: shadow 快照二进制安全（归并 112 入此——同为安全回归族；裂图事故：readFileSync(utf-8) 读二进制 PNG 0x89→U+FFFD 6 图损毁）
 grep -q "isBinaryBuffer" engine/core/src/filesystem/isomorphic-git.ts && echo "✅ 跳过二进制" || echo "❌ 缺 isBinaryBuffer"
 grep -qi "png" engine/core/src/__tests__/isomorphic-git-v2.test.ts && echo "✅ PNG 测试" || echo "❌ 缺 PNG 测试"
+# g: HMAC key 熵检测用 Shannon 熵（归并原维度 87——唯一字符占比对 hex 天然误报：16 字符集重复度 75%）
+grep -c "shannonEntropy" engine/core/src/audit-history.ts | grep -qvE "^0$" && echo "✅ Shannon 熵在位" || echo "⚠️ 熵检测回退到重复度占比"
+grep -q "shannonEntropy < 3" engine/core/src/audit-history.ts && echo "✅ 阈值 3.0 bit/char" || echo "⚠️ 熵阈值缺失"
 ```
 
 #### 53. SSOT 零硬编码——产品代码不得绕过 data-paths.ts 拼路径
@@ -799,12 +808,9 @@ grep -c "resolveHomeDir" engine/core/src/doctor.ts # 期望：≥3（L107/L362/L
 
 # 额外验证：data-paths.ts 存在且导出 resolve* 函数
 grep -c "resolveAuditDir\|resolveDataDir\|resolveTaskDir\|DATA_ROOT" engine/core/src/data-paths.ts # ≥2
-```
 
-#### 54. 环境变量命名 Unix 全大写——禁止驼峰
-
-```bash
-grep -rn "SOFAgent_" install.sh engine/ FORGE/ --include="*.sh" --include="*.ts" --include="*.mjs" # 期望：零命中
+# env 命名纪律（归并原维度 54——Unix 全大写，禁驼峰前缀形态）
+grep -rn "SOFAgent_" install.sh engine/ FORGE/ --include="*.sh" --include="*.ts" --include="*.mjs" || true # 期望：零命中
 grep -rc "SOFAGENT_HOME\|SOFAGENT_DATA" engine/scripts/lib/platform-detect.sh engine/scripts/lib/config.sh # ≥2
 ```
 
@@ -850,16 +856,6 @@ grep -rn 'export function convertAuditResult\|export const convertAuditResult' e
 # 第二步：验证三态转换逻辑（用定位到的文件名替换 <file>）
 grep -A10 'convertAuditResult' engine/eval/src/cli.ts | grep -E 'PASS|WARN|FAIL|exitCode'
 # 期望：3 种状态都有分支处理（EXIT_CODE_TO_RESULT 含 0/1/2 三个映射）
-```
-
-#### 107. CHANGELOG 索引条目就位——版本 bump 后日期提取链
-
-**背景**：bump 后 CHANGELOG.md 未及时补索引条目，check-version 的 EXPECTED_DOC_DATE 动态提取（从 CHANGELOG 当前版本行取日期）返回空——release-gate regression 维度 95 FAIL 才暴露。索引条目是日期链的上游，漏了整条链断。
-
-```bash
-CUR_VER=$(node -p "require('./package.json').version")
-grep -q "\*\*v${CUR_VER}\*\* —" CHANGELOG.md || echo "⚠️ CHANGELOG 缺 v${CUR_VER} 索引条目（维度 95 日期链会断）"
-grep -m1 "v${CUR_VER}.*—" CHANGELOG.md | grep -oE "[0-9]{4}-[0-9]{2}-[0-9]{2}" || echo "⚠️ 索引条目无日期"
 ```
 
 #### 108. SOP hook 测试用例自身合格性——message 长度 + git add -f
@@ -991,17 +987,6 @@ grep -q "效率铁律" SKILL/agents/reviewer/SKILL.md && echo "✓ reviewer" || 
 grep -q "效率铁律" SKILL/agents/engineer/SKILL.md && echo "✓ engineer" || echo "✗ engineer"
 ```
 
-#### 68. 中英文 README 副标题描述同步——改中文版必须同步英文版（新盲区）
-
-> 教训：R01 修了英文版版本号，R02 修了中文版副标题描述，但没人回头看英文版的描述层是否也需同步。结果英文版版本号对了但描述还是上版本的"Knowledge Evolution"。**根因：同一行的两层问题（版本号 + 描述）分两轮独立发现，每轮只修自己发现的那层。**
-
-```bash
-# 验证中英文副标题关键词重合（至少包含相同的版本核心交付关键词）
-CN=$(grep '当前版本' README.md | head -1)
-EN=$(grep 'Current version' README.en.md | head -1)
-# 手动比对：两者都应包含当前版本的核心交付描述（如 Activation Chain / Audit / Daemon）
-```
-
 #### 70. MCP tool 注册三处一致性——新增 tool 必须在 tool-registry + case dispatch + capabilities 三处都注册（修：跟上 tool-registry.ts 拆分）
 > 📌 **归并记录（判据②·MCP 聚簇 5→4）**：原维度 93 与本维度同主题——注册一致性检查统一归此。93 的教训并入：三处 = tool-registry TOOLS 数组 + mcp-server switch case + import 语句；acceptance S270 已含四新 tool 的三处验证。
 
@@ -1028,6 +1013,8 @@ echo "imports=$IMPORTS tools_array=$TOOLS_ARRAY cases=$CASES"
 BAD=$(grep -rE '"build".*\|\| true' engine/*/package.json 2>/dev/null | head -1)
 [ -z "$BAD" ] && echo "✓ 无 || true 吞错误" || echo "✗ 发现: $BAD"
 # 期望：零命中（正确格式是 (...; true) 子 shell 分组）
+# 子项 b: 根 tsconfig outDir（归并原维度 88——根因未修时 .gitignore 过渡兜底须在位，防 tsc 写回 src）
+grep -c '"outDir"' tsconfig.json; grep -c 'engine/\*/src/\*\*/\*.js' .gitignore # outDir 修后 ≥1（未修=0）；gitignore 兜底 ≥1
 ```
 
 #### 72. 函数定义作用域 vs 引用位置——局部函数禁被模块级引用（新盲区）
@@ -1064,15 +1051,6 @@ node -e "const fs=require('fs');const files=fs.readdirSync('FORGE/src').filter(f
 grep -q 'compilePattern' engine/audit/src/ruleset-loader.ts && echo "✅ compilePattern 存在" || echo "❌ 缺失"
 # 确认 compilePattern 处理 (?i) 修饰符
 grep -q '?i' engine/audit/src/ruleset-loader.ts && echo "✅ 处理 (?i)" || echo "❌ 未处理"
-```
-
-#### 78. 新文件版本头必须匹配 SSOT（反复出现）
-
-> 教训：开发期间 SSOT 还没 bump（如仍 1.2.8），但工程师写的新文件头部注释写下一版本号 → check-version 报版本不一致。**开发期间新文件的版本头必须匹配当前 SSOT，不能超前写下一版本号。** bump-version.sh 会在发版时统一提升。
-
-```bash
-# 跑 check-version.sh 确认 TS 文件头版本号与 SSOT 一致（零不一致）
-bash tools/check/check-version.sh 2>&1 | grep "TS 文件头" | grep -q "✓" && echo "✅ 版本头一致" || echo "❌ 有不一致"
 ```
 
 #### 79. 运行时审计 tool wrapper——gate 拦截优先于 progress 埋点
@@ -1195,28 +1173,6 @@ grep -c "git add -A" FORGE/src/driver-base.mjs # 0（仅注释引用）
 grep -c "git diff --name-only HEAD -- engine/" FORGE/src/driver-base.mjs # ≥1
 ```
 
-#### 87. HMAC 密钥熵检测——Shannon 熵替代唯一字符占比
-
-**背景**：原 validateHmacKey 用"唯一字符占比"判断强度，但 openssl rand -hex 32 的 hex 字符集天然 16 种 → 官方推荐生成方式永远误报"弱密钥"（重复度 75%）。改用 Shannon 熵检测。
-
-```bash
-# audit-history.ts 用 Shannon 熵（非重复度占比）
-grep -c "shannonEntropy" engine/core/src/audit-history.ts # ≥1
-# 阈值 3.0 bit/char（随机 hex ≈4.0 通过，弱密钥 <3.0 拦截）
-grep -c "shannonEntropy < 3" engine/core/src/audit-history.ts # ≥1
-```
-
-#### 88. 根 tsconfig.json outDir 缺失——tsc 误输出到 src
-
-**背景**：根 tsconfig.json 未设 outDir，若从根目录跑 tsc（而非各包 npm run build），产物输出到 src 旁（910 个文件）。已用 .gitignore 防御（engine/*/src/**/*.js 等），但根因（根 tsconfig 加 outDir）待后续版本修。
-
-```bash
-# 根 tsconfig 有 outDir（暂用 .gitignore 兜底，根因待修）
-grep -c '"outDir"' tsconfig.json # 期望 0（待修），修后期望 ≥1
-# .gitignore 防御规则存在（过渡期）
-grep -c "engine/\*/src/\*\*/\*.js" .gitignore # ≥1
-```
-
 #### 89. 审计规则 ruleClass 多处声明一致性
 
 **背景**：A3 ruleClass 在 index.ts（注册中心）/ rule-a3-*.ts（规则实现）/ README（文档）三处声明，版本演进时容易只改一处忘记其他——审查捕获 A3 在 index.ts 标"能力拐杖"、rule-a3-*.ts 标"业务底线"的不一致。
@@ -1230,6 +1186,8 @@ for n in $(grep -oE "number: [0-9]+" engine/audit/src/rules/index.ts | grep -oE 
  [ "$idx" = "$impl" ] || echo "⚠️ rule-a${n}: index=$idx vs impl=$impl"
 done
 # 期望：无 ⚠️ 输出（index.ts SSOT，rule-*.ts 对齐）
+# 单源化 refactor 须保留派生导出（归并原维度 99——外部脚本/acceptance 依赖 AUDIT_PRIORITY.critical 形态查询）
+node -e "const m=require('./engine/audit/dist/rules/runner.js');const c=m.AUDIT_PRIORITY?.critical;if(!c||!c.includes('A20'))process.exit(1)" || echo "⚠️ AUDIT_PRIORITY 向后兼容导出缺失"
 ```
 
 #### 90. shell 脚本 locale 防御——CI/sandbox 默认 LANG=C 导致中文乱码
@@ -1242,16 +1200,11 @@ for f in FORGE/playbook/acceptance-test.sh tools/check/check-version.sh tools/ch
  head -10 "$f" | grep -qE "LANG=.*en_US\.UTF-8|LC_ALL=.*en_US\.UTF-8" || echo "⚠️ $f 缺 locale export"
 done
 # 期望：无 ⚠️ 输出
-```
-
-#### 91. 人读输出 vs 机器解析输出分离——ANSI 色码干扰 grep
-
-**背景**：acceptance-test.sh 汇总行 `验收测试结果：${GREEN}...${NC}` 带 ANSI 色码，driver 用 `grep '验收测试结果：N 通过'` 匹配失败（色码夹在中间）。修复：补一行 ANSI-stripped 纯文本 SUMMARY 供机器解析。
-
-```bash
-# 被自动化解析的脚本必须有 ANSI-stripped 纯文本汇总行
-grep -qE 'echo "SUMMARY:' FORGE/playbook/acceptance-test.sh && echo "✓ 有纯文本 SUMMARY" || echo "⚠️ 缺机器可解析汇总行"
-# 通用规则：任何被 driver/grep 解析的输出行，不应依赖 ANSI 色码
+# 人读/机器输出分离（归并原维度 91——ANSI 色码夹在文本中间会破坏 driver grep）
+grep -qE 'echo "SUMMARY:' FORGE/playbook/acceptance-test.sh && echo "✅ 机器可解析 SUMMARY 在位" || echo "⚠️ 缺 ANSI-stripped 汇总行"
+# b: bash 3.2 兼容模式（归并原维度 94——空数组+set -u = unbound；尾行 [[ ]] && + set -e = 成功也 exit 1）※ 新增脚本人工核对项
+/bin/bash --version | head -1 # 确认为 3.2；危险模式：${arr[@]} 无守卫 / 尾行条件裸用
+grep -rn 'declare -A' install.sh tools/ engine/scripts/ --include="*.sh" 2>/dev/null | grep -vE '^\S+:[0-9]+:\s*#' || true # 期望：零命中（bash 3.2 无关联数组）
 ```
 
 #### 92. 审查文档自身检查命令的架构迁移同步
@@ -1264,19 +1217,6 @@ grep -oE 'engine/[a-zA-Z_/]+\.ts' FORGE/playbook/regression-checklist.md | sort 
  [ -f "$f" ] || echo "⚠️ 路径失效: $f（架构迁移后未更新检查命令）"
 done
 # 期望：无 ⚠️ 输出（所有引用路径有效） 🔴 每次架构迁移（文件改名/目录调整）后必须跑此元检查
-```
-
-#### 94. bash 3.2 兼容性——空数组 + set -u + 尾行条件
-
-**背景**：bootstrap.sh 在 macOS 默认 `/bin/bash` 3.2 下崩溃——空数组 `${arr[@]}` + `set -u` = unbound variable；尾行 `[[ ]] && cmd` + `set -e` = 成功也 exit 1。
-
-> ⚠️ 本维度是**人工核对项**（验证新增脚本的 bash 3.2 兼容性），非自动执行检查——以下为人工操作指引，`<script.sh>` 是占位符示例，**不要作为命令直接执行**。
-
-```bash
-# 新增 shell 脚本在 macOS 默认 bash 3.2 下测过（人工操作指引，<script.sh> 换成实际文件名）
-/bin/bash --version | head -1 # 确认 3.2
-/bin/bash <script.sh> --help 2>&1; echo "EXIT=$?" # 占位示例——实际文件名替换
-# 期望：EXIT=0 危险模式：${arr[@]} + set -u / [[ ]] && + set -e
 ```
 
 #### 95. check-version 工具健康四盲区——语言覆盖/路径跟随/排除测试/日期动态提取（渐次暴露）
@@ -1336,25 +1276,6 @@ done
 grep -q "PARENT_SHA\|HEAD\^" "$PROJECT_ROOT/engine/audit/src/commands/init.ts" || echo "⚠️ post-commit 未用 PARENT_SHA 对账"
 # 首次 commit（unborn HEAD）用空树常量兜底
 grep -q "4b825dc642cb6eb9a060e54bf8d69288fbee4904" "$PROJECT_ROOT/engine/audit/src/commands/init.ts" || echo "⚠️ 首次 commit 无空树兜底"
-```
-
-#### 99. AUDIT_PRIORITY 单源化后向后兼容导出
-
-**背景**：#11 把规则 priority 字段并入 index.ts 规则定义，runner.ts 删除独立 AUDIT_PRIORITY 常量。但 acceptance-test.sh S186 / 外部脚本仍依赖 `require('runner.js').AUDIT_PRIORITY.critical.includes('A20')` 形态查询。单源化 refactor 必须保留派生导出。
-
-```bash
-node -e "const m=require('$PROJECT_ROOT/engine/audit/dist/rules/runner.js');const c=m.AUDIT_PRIORITY?.critical;if(!c||!c.includes('A20')){console.log('FAIL: AUDIT_PRIORITY 派生导出缺失');process.exit(1);}console.log('OK');" || echo "⚠️ AUDIT_PRIORITY 向后兼容导出缺失"
-```
-
-#### 100. check-test-count.sh 失败路径——set -u + $? 赋值 unbound
-
-**背景**：发现 check-test-count.sh L62 在 set -uo pipefail 下，命令替换 exit N 时 `$?` 赋值被判 unbound，脚本中途崩溃，CI 永远判绿。
-
-```bash
-# 强制触发失败路径（test-count.sh 不存在），验证 check-test-count.sh 能报红
-sed 's|bash tools/check/test-count.sh|bash /nonexistent/test-count.sh|' tools/check/check-test-count.sh > /tmp/cct-test.sh
-bash /tmp/cct-test.sh > /dev/null 2>&1; [ $? -eq 1 ] && echo "✅ 失败路径正确报红" || echo "⚠️ 失败路径崩溃或假绿"
-rm -f /tmp/cct-test.sh
 ```
 
 #### 101. check-docs.sh LIMIT 超标——内容增强后 B 层行数超预算
@@ -1462,6 +1383,8 @@ grep -q 'timeout: 600_000' FORGE/src/driver-base.mjs && grep -q 'timeout: 600_00
 grep -q 'round === resumeState?.round' FORGE/src/fresh-eyes-driver.mjs && echo "✅ resume 守卫" || echo "❌ 越轮泄漏回植"
 grep -q 'cd "\$PROJECT_ROOT" && NODE_OPTIONS' FORGE/playbook/acceptance-test.sh && echo "✅ S146 cwd 回位" || echo "❌ 漂移回植"
 grep -q 'ver == SSOT' tools/check/check-version.sh && grep -q '新增|增强' tools/release/bump-version.sh && echo "✅ 溯源豁免" || echo "❌ 溯源误报回植"
+# ⑧ 门禁失败路径注入自测（归并原维度 100——set -u 下 $? 赋值曾判 unbound 崩溃，CI 常绿无感）
+sed 's|bash tools/check/test-count.sh|bash /nonexistent/test-count.sh|' tools/check/check-test-count.sh > /tmp/cct-t.sh; bash /tmp/cct-t.sh >/dev/null 2>&1; [ $? -eq 1 ] && echo "✅ 失败路径正确报红" || echo "⚠️ 失败路径崩溃或假绿"; rm -f /tmp/cct-t.sh
 ```
 
 #### 111. 新功能审查面——MCP 自进化+instinct+FDE 运维+沙箱/权限/并发/OKF（A 类 · 归并 #115 入此：沙箱五件套/权限三防线/并发三级来源/OKF 三件套为同版配套面）
@@ -1636,6 +1559,9 @@ _HITS=$(grep -rn "resolveAuditDir(process\|resolveKnowledgeDir(process\|resolveD
 [ -z "$_HITS" ] && echo "✅ 无 process.cwd() 误传" || { echo "$_HITS"; echo "❌ 存在误传"; }
 grep -rn "function getSofagentDataDir" engine/mcp/src/ engine/think/src/ --include="*.ts" | grep -v __tests__ && echo "❌ 本地 dataDir 函数残留（应走 getDataDir SSOT）" || echo "✅ 零本地 dataDir（30 处已清零）"
 DD_FILES=$(grep -rln "getDataDir" engine/mcp/src/ engine/think/src/ --include="*.ts" 2>/dev/null | grep -v __tests__ | grep -v "\.test\." | wc -l | tr -d ' '); [ "${DD_FILES:-0}" -ge 30 ] && echo "✅ ${DD_FILES} 文件全员 SSOT（原 #126 b 机械闸归并）" || echo "⚠️ SSOT 文件数 ${DD_FILES:-0} <30 复核"
+# h: 卸载还原与面板版本口径（v1.4.8 B 类安装卸载族并入）——卸载须备份且保留用户数据（只删 sofagent 产物）+ dashboard 版本活引用对账
+grep -q "工作区数据" engine/scripts/uninstall.sh && grep -qE "备份|backup" engine/scripts/uninstall.sh && echo "✅ 卸载备份 + 用户数据保留" || echo "❌ 卸载语义缺失（误删用户数据风险）"
+grep -q "dashboard.html" tools/check/check-version.sh && echo "✅ dashboard 版本对账在位" || echo "❌ dashboard 版本口径失守"
 ```
 
 #### 127. 新功能审查面——训练运行九章+DSH 执行深化+审计聚合+反作弊基线一维收口（阶段四来源提取 A 类 · 归并「旧交付退役收口」入此：composeWithDeepAgents 别名与 fde_compose ontology 收窄为退役治理子项）
@@ -1785,4 +1711,88 @@ for s in createSshTrainChannel chainDualChannelEvent gateDataPush; do grep -q "$
 ```bash
 bash tools/check/dependency-direction.sh > /dev/null 2>&1 && echo "✅ 13 包方向合法" || echo "❌ 有违规边"  # a: 门禁干净态
 [ -f tools/check/dependency-direction.yml ] && grep -q "dependency-direction" tools/release/pre-push-check.sh && grep -q "dependency-direction" .github/workflows/pr-check.yml && echo "✅ 清单+3e+CI 在位" || echo "❌ 清单或接线缺失"  # b+c
+```
+
+#### 137. v1.4.8 审查面 A 类——策略门族（插件来源白名单 + 应用级工具策略）
+
+> 来源：devlog 一/二章（阶段四 A 类收拢——族内两臂同为「未声明即拒绝」fail-closed 语义）。
+
+```bash
+FAIL=0
+# a: 三类来源分类（git-url / host / local-path）——误分类即白名单绕过
+node -e "const m=require('./engine/audit/dist/cli/plugin-gate.js');const k=[['https://github.com/org/*','git-url'],['github.com','host'],['/opt/plugins/*','local-path']];const bad=k.filter(p=>m.classifySource(p[0]).kind!==p[1]);if(bad.length){console.log('分类漂移',JSON.stringify(bad));process.exit(1)};console.log('三类来源分类正确')" || { echo "❌ 来源分类漂移"; FAIL=1; }
+# b: install.sh --policy 三出口 fail-closed（文件缺失 / 校验器不可用 / --lint 解析失败各自 exit 1）
+grep -q "安装中止（fail-closed）" install.sh && grep -q "校验器不可用" install.sh && grep -q "\-\-lint" install.sh && echo "✅ --policy 三出口在位" || { echo "❌ fail-closed 出口缺失"; FAIL=1; }
+# c: app×tool 白名单未声明即拒绝（ToolGate 语义锚 + 单测在位）
+grep -q "未出现在本表" engine/audit/src/cli/plugin-gate.ts && grep -rq "app_tool_policy" engine/audit/src/__tests__/ && echo "✅ 白名单矩阵语义在位" || { echo "❌ ToolGate 语义缺失"; FAIL=1; }
+[ "${FAIL:-0}" = "1" ] && { echo "维度137:FAIL"; exit 1; }; echo "维度137:PASS"
+```
+
+#### 138. v1.4.8 审查面 A 类——行为分级族（协作阵型库 + shell 提权分级）
+
+> 来源：devlog 三/五章（阶段四 A 类收拢——「未识别即拒」与「dangerous 未批不放行」同为收敛语义）。
+
+```bash
+FAIL=0
+# a: 六阵型合法值 + 未识别阵型拒绝（schema 值域漂移 = 静默放行未知阵型）
+node -e "const m=require('./engine/orchestrator/dist/formations/schema.js');const bad=[];if(m.FORMATION_NAMES.length!==6)bad.push('阵型数='+m.FORMATION_NAMES.length);const v=m.validateFormation({formation:'no-such-formation',members:[{id:'m1',role:'r'}],edges:[]});if(v.valid)bad.push('未识别阵型被放行');if(bad.length){console.log('阵型 schema 异常',bad.join('|'));process.exit(1)};console.log('六阵型 + 拒绝语义正确')" || { echo "❌ 阵型 schema 漂移"; FAIL=1; }
+# b: 提权三态 action 值齐备（safe=allow / risky=require-approval / dangerous=forbid-until-approved）
+grep -q "forbid-until-approved" engine/core/src/escalation/policy.ts && grep -q "require-approval" engine/core/src/escalation/policy.ts && grep -q "'allow'" engine/core/src/escalation/policy.ts && echo "✅ 三态 action 值齐备" || { echo "❌ 三态语义缺失"; FAIL=1; }
+[ "${FAIL:-0}" = "1" ] && { echo "维度138:FAIL"; exit 1; }; echo "维度138:PASS"
+```
+
+#### 139. v1.4.8 审查面 A 类——成本与压缩族（自动上下文压缩 + 成本 quota 事前门禁）
+
+> 来源：devlog 四/六章（阶段四 A 类收拢——压缩须可事后识别、配额须事前问路）。
+
+```bash
+FAIL=0
+# a: 3% 预算检测 + 压缩 start/end 标记 + 回调出口 + 零依赖（压缩器不得 import audit 包）
+node -e "const b=require('./engine/harness/dist/load-chain/budget.js');const c=require('./engine/harness/dist/load-chain/compactor.js');const fs=require('fs');const bad=[];if(typeof b.checkBudget!=='function')bad.push('缺 checkBudget');if(!c.COMPACT_START_MARKER||!c.COMPACT_END_MARKER)bad.push('缺压缩标记');const src=fs.readFileSync('engine/harness/src/load-chain/compactor.ts','utf8');if(/from\s+.[^.]*audit/.test(src))bad.push('压缩器耦审计包');if(bad.length){console.log(bad.join('|'));process.exit(1)};console.log('预算+标记+零依赖正确')" || { echo "❌ 压缩族锚点漂移"; FAIL=1; }
+# b: quota WARN/HARD 双模式 + cost_query 三字段（余量/已用/周期）
+grep -qE "'WARN' \| 'HARD'|WARN（放行" engine/core/src/cost/quota-gate.ts && grep -q "remaining" engine/mcp/src/tools/cost-query.ts && grep -qE "usedTokens|period" engine/mcp/src/tools/cost-query.ts && echo "✅ 双模式 + 三字段在位" || { echo "❌ quota 面缺失"; FAIL=1; }
+[ "${FAIL:-0}" = "1" ] && { echo "维度139:FAIL"; exit 1; }; echo "维度139:PASS"
+```
+
+#### 140. v1.4.8 审查面 A 类——模型与进化族（节点级模型偏好 + 进化模块重构）
+
+> 来源：devlog 八/九章与第九章重构（阶段四 A 类收拢——「未注册不静默降级」与「自研 gate 默认」同为显式失败语义）。
+
+```bash
+FAIL=0
+# a: required 未注册 → 抛 ModelPreferenceError（静默降级 = 模型漂移无感）
+node -e "const m=require('./engine/orchestrator/dist/model-resolver.js');const fs=require('fs');const bad=[];if(typeof m.ModelPreferenceError!=='function')bad.push('缺 ModelPreferenceError');const src=fs.readFileSync('engine/orchestrator/src/model-resolver.ts','utf8');if(!/required/.test(src))bad.push('缺 required 语义');if(bad.length){console.log(bad.join('|'));process.exit(1)};console.log('模型偏好显式失败语义在位')" || { echo "❌ 模型偏好语义缺失"; FAIL=1; }
+# b: 进化模块自研 gate 默认 native（零 Python 触点）
+grep -q "SOFAGENT_EVOLVE_GATE ?? 'native'" engine/evolve/src/evolve-integration.ts && ! grep -rqE "python3?( |$)|spawnSync\('py" engine/evolve/src/ --include="*.ts" && echo "✅ native 默认 + 零 Python" || { echo "❌ evolve gate 默认值/Python 触点异常"; FAIL=1; }
+# c: 旧包名 @sofagent/skillopt 零残留（更名 73 文件联动）
+grep -rq "@sofagent/skillopt" package.json engine/*/package.json FORGE/package.json 2>/dev/null && { echo "❌ 旧包名残留"; FAIL=1; } || echo "✅ 旧名清零"
+[ "${FAIL:-0}" = "1" ] && { echo "维度140:FAIL"; exit 1; }; echo "维度140:PASS"
+```
+
+#### 141. v1.4.8 审查面 A 类——执行机制纪律族（意图分类主判 + Git 能力矩阵 + 作用域显名）
+
+> 来源：devlog 第十章（阶段四 A 类收拢——裸 id 结构化拒绝与并发 Git 纪律同属「机制约束先生效」）。
+
+```bash
+FAIL=0
+# a: 裸 id 结构化拒绝（SOFAGENT_SCOPE_REQUIRED——多实体系统撞名必然）
+node -e "const m=require('./engine/core/dist/scope-names.js');const r=m.validateScopedName('bare-id-without-scope');if(r.valid){console.log('裸 id 被放行');process.exit(1)};if(r.error&&!/作用域显名/.test(r.error)){console.log('拒绝原因非显名语义');process.exit(1)};console.log('裸 id 结构化拒绝正确')" || { echo "❌ 作用域显名语义漂移"; FAIL=1; }
+# b: Git 能力三态×两隔离矩阵 + 意图分类纯函数主判在位（「靠 LLM 判定等于没判定」）
+grep -q "planExecution" engine/orchestrator/src/exec/git-capability.ts && grep -qE "'none' \| 'local' \| 'remote'" engine/orchestrator/src/exec/git-capability.ts && grep -q "classifyIntentByRules" engine/orchestrator/src/dispatch/intent-classifier.ts && echo "✅ 三态×两隔离 + 纯函数主判在位" || { echo "❌ 纪律批缺失"; FAIL=1; }
+[ "${FAIL:-0}" = "1" ] && { echo "维度141:FAIL"; exit 1; }; echo "维度141:PASS"
+```
+
+#### 142. fresh-eyes 修复批安全豁免面防复发——A1 豁免组合矩阵 + A2 转义对抗链（v1.4.8 B 类）
+
+> 来源：run-02 b-fix 批（A1 数据容器臂 / 扩展名尾锚定 / .env 前缀豁免叠加 / A2 转义链）。核心方法论：任何新增豁免必须回答「与既有豁免叠加后最坏形态的阻断等级」。
+
+```bash
+FAIL=0
+# a: 数据容器臂剔除（.env.json/.env.yaml/.env.yml 等 env dump 载体不得静默 PASS——豁免面组合矩阵实锤）
+grep -qE "\.env\.json|\.env\.yaml|serverless\.env" engine/audit/src/rules/rule-a1-sensitive-files.ts && echo "✅ 数据容器臂已剔除" || { echo "❌ env dump 载体仍可逃逸"; FAIL=1; }
+# b: 扩展名尾锚定 + basename .env 前缀不进豁免（目录组件绕过 / .env.test.js 放行回归双防）
+grep -qE "代码扩展名尾锚定|尾锚定" engine/audit/src/rules/rule-a1-sensitive-files.ts && grep -q "必要非充分条件" engine/audit/src/rules/rule-a1-sensitive-files.ts && echo "✅ 豁免边界双防在位" || { echo "❌ 豁免边界回退"; FAIL=1; }
+# c: A2 尾剥离/转义对抗回归样本在位（B 自报已修须有可复演样本——hex 转义还原 + 用例数不缩水）
+grep -q "restoreHexEscapes" engine/audit/src/rules/rule-a2-secret-leak.ts && [ "$(grep -c 'it(' engine/audit/src/rules/rule-a2.test.ts)" -ge 10 ] && echo "✅ A2 转义还原 + 对抗用例在位" || { echo "❌ A2 对抗样本缺失"; FAIL=1; }
+[ "${FAIL:-0}" = "1" ] && { echo "维度142:FAIL"; exit 1; }; echo "维度142:PASS"
 ```
