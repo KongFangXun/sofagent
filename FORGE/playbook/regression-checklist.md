@@ -1606,8 +1606,8 @@ grep -c "dsh-deployed" package-lock.json | grep -q "^0$" && echo "✅ lock 零�
 # a: FDE 六引擎 registry 注册 + 工作台数据层（S338 端到端的静态面）
 for t in fde_interview fde_classify fde_quantify fde_derive fde_distill fde_deploy; do grep -q "name: '$t'" engine/mcp/src/tool-registry.ts || echo "❌ $t 未注册"; done; echo "✅ 六引擎注册（若上方无失败项）"
 grep -q "fdeWorkbenchPaths" engine/orchestrator/src/fde/fde-workbench.ts && grep -q "emitFdeAudit" engine/orchestrator/src/fde/fde-workbench.ts && echo "✅ 工作台数据层" || echo "❌ 缺工作台"
-# b: 三问判定引擎（🔄/⚡/👤 三态 + 六步分解）
-grep -q "classifyAutomation" engine/orchestrator/src/fde/compose-interview.ts && echo "✅ 判定引擎在位" || echo "❌ 缺 classifyAutomation"
+# b: 三问判定（🔄/⚡/👤 三态 + 六步分解）
+grep -q "classifyAutomation" engine/orchestrator/src/fde/compose-interview.ts && echo "✅ 判定能力在位" || echo "❌ 缺 classifyAutomation"
 # c: 训练环境执行面在位（shell 安装脚本 + TS 探测/体检面——v1.4.6 边界收缩后口径）
 grep -q "trainDoctor" engine/orchestrator/src/train/env-manager.ts && test -f tools/train/train-env-init.sh && echo "✅ shell 安装 + TS 探测面齐备" || echo "❌ 缺一侧"
 # d: 缩放律零依赖纪律（不引 ml 库）

@@ -288,7 +288,7 @@ sofagent 的审计记录以 JSONL 格式存储在 `data/audit/history.jsonl`，�
 {"timestamp":"2026-07-30T10:00:01Z","diffRange":"HEAD~2..HEAD~1","exitCode":2,"diffFileCount":5,"commitMsg":"update config","ruleResults":[{"name":"secret-leak","number":2,"status":"FAIL","details":["src/utils.ts:3 leaked AWS AKIA key"]}],"prevHash":"a1b2c3…","engine":"sofagent-audit"}
 ```
 
-关键字段速查：`timestamp`（ISO 8601）/ `diffRange`（审计区间）/ `exitCode`（0=PASS / 1=WARN / 2=FAIL）/ `ruleResults[]`（逐规则 name/number/status/details）/ `diffFileCount`（变更文件数）/ `commitMsg` / `prevHash`（链完整性）/ `engine`（审计引擎标识）。可选字段：`commitSha` / `parentSha` / `commitPhase` / `actionGovernance`（动作溯源组）/ `agentId`（Agent 身份码）。
+关键字段速查：`timestamp`（ISO 8601）/ `diffRange`（审计区间）/ `exitCode`（0=PASS / 1=WARN / 2=FAIL）/ `ruleResults[]`（逐规则 name/number/status/details）/ `diffFileCount`（变更文件数）/ `commitMsg` / `prevHash`（链完整性）/ `engine`（审计模块标识）。可选字段：`commitSha` / `parentSha` / `commitPhase` / `actionGovernance`（动作溯源组）/ `agentId`（Agent 身份码）。
 
 ### SIEM 对接方案
 

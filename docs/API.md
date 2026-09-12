@@ -57,7 +57,7 @@
 
 | tool | roles | 说明 |
 |---|---|---|
-| `sofagent_compose` | fde | 编排引擎——传入任务描述，返回 Sub Agent 编排方案（YAML）。 |
+| `sofagent_compose` | fde | 编排模块——传入任务描述，返回 Sub Agent 编排方案（YAML）。 |
 | `optimize_skill` | eval | 优化指定 Skill 文件，生成优化建议。 |
 | `activate_workflow` | agent, fde | 读取 FDE 交付物，注册企业 SubAgent。 |
 | `loop_debug` | eval | Onboard Agent 调试循环——传 task 触发 activate→run→judge→fix 循环；不传查记录。 |

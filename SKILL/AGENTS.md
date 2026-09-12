@@ -166,12 +166,12 @@ FORGE engineer commit ──→ 自动调用 @sofagent-audit → 验证变更合
 | 工具 | 说明 |
 |------|------|
 | `fde_compose` | FDE 梳理辅助——五要素引导生成 workflow 或 ontology 草稿 |
-| `fde_interview` | FDE 访谈引擎——五要素结构化落盘 data/fde/，企业画像自动生成 |
-| `fde_classify` | FDE 判定引擎——三问判定（🔄自动/⚡强化/👤暂不动）+ 六步分解→nodes.json |
-| `fde_quantify` | FDE 量化引擎——年节省=岗位年薪×接管工时占比，ROI 排序→quantification.json |
-| `fde_derive` | FDE 本体推导引擎——五要素+访谈→ontology YAML 草稿（可导入 ontology_import） |
-| `fde_distill` | FDE 沉淀引擎——三层交付物（文档/Skill/运行层）自动生成 |
-| `fde_deploy` | FDE 部署引擎——交付物→workflow.yml 部署工件（提交/激活走人审闸门） |
+| `fde_interview` | FDE 访谈——五要素结构化落盘 data/fde/，企业画像自动生成 |
+| `fde_classify` | FDE 判定——三问判定（🔄自动/⚡强化/👤暂不动）+ 六步分解→nodes.json |
+| `fde_quantify` | FDE 量化——年节省=岗位年薪×接管工时占比，ROI 排序→quantification.json |
+| `fde_derive` | FDE 本体推导——五要素+访谈→ontology YAML 草稿（可导入 ontology_import） |
+| `fde_distill` | FDE 沉淀能力——三层交付物（文档/Skill/运行层）自动生成 |
+| `fde_deploy` | FDE 部署——交付物→workflow.yml 部署工件（提交/激活走人审闸门） |
 | `sofagent_compose` | 编排模块——任务描述返回 Sub Agent 编排方案（YAML） |
 | `activate_workflow` | 读取 FDE 交付物，注册企业 SubAgent |
 | `create_agent` | 一句话需求自动推导 Agent 配置（角色+域规则+think+knowledge） |

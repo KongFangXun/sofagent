@@ -198,7 +198,7 @@ Agent = **模型 + 上下文 + 工具 + 状态 + 执行控制 + 权限 + 可观�
 | core | 核心运行时：git diff 解析、shadow-repo 快照、AES-256-GCM/ECDH、think.md 契约、doctor、LLM 调用 Trace、stop_reason 分类、身份码 Ed25519 | ✅ 已实现（448 测试） |
 | harness | 四层约束加载链 `buildConstrainedSystemPrompt()` + L4 渐进加载（热点全文 + 索引） | ✅ 已实现 |
 | rules | 规则引擎纯函数包（零 git 依赖；fs 仅限 AST 扫描的临时目录——mkdtemp 写入待检源码片段，扫描后即清理），编排层 tool-call 事前拦截 + 审批四模式 | ✅ 已实现 |
-| eval | 质量评估引擎：精确匹配 / 语义相似 / 规则合规 三维评分 | ✅ 已实现 |
+| eval | 质量评估模块：精确匹配 / 语义相似 / 规则合规 三维评分 | ✅ 已实现 |
 | ab-test | A/B 自进化：current vs candidate 并行对比，连续胜出 + 非退化守卫才晋升 | ✅ 已实现 |
 | orchestrator | 编排模块：DAG 任务拆解 + LangGraph 闭环 + A/B 调度器 + ToolGate 事前拦截 + Ontology 运行时层 + 并行编排（MergeQueue/ParallelScheduler/波次卡关）+ Durable Execution + Onboard L1-L5 + Benchmark 评测 + agent-creation + FDE 梳理辅助 + Session 隔离 + meta-harness 多 harness 编排 + worklog 工作明细数据层 + 后训模块地基（train-job 编排/审计/隔离/指纹/签名/回收/恢复/安全 + 数据管道/版本/eval 闭环/环境/dry-run/报告）+ FDE 六引擎工作台 | ✅ 已实现（1977 测试） |
 | daemon | 守护进程：cron + fs 监听 + 文件级审计 + USB 烧录 + 联邦查询 + Dream Cycle 6 阶段 + 启动 LOOP 续跑检查 + 审计轨迹聚合巡检 + 训练孤儿巡检 | ✅ 已实现（420 测试） |
@@ -379,7 +379,7 @@ graph LR
 | 层级 | 机制 | 用户如何感知 |
 |------|------|------------|
 | 审计输出 | CLI / Webhook / MCP 所有返回值以 `[sofagent]` 开头 | 看到 `✅ sofagent 审计通过` 而非 `✅ PASS` |
-| 能力清单 | `list_capabilities` description 标注引擎来源 | Agent 转述能力时附带"谁在做、怎么做的" |
+| 能力清单 | `list_capabilities` description 标注模块来源 | Agent 转述能力时附带"谁在做、怎么做的" |
 | 审查报告 | FORGE 审查报告顶部标注审计来源 | 报告中体现 `sofagent` 标识 |
 
 签名不修改审计逻辑、不加速度开关——约束层不允许关掉自己的存在感。
@@ -629,7 +629,7 @@ graph LR
 | 3 | 对哪个对象 | 改了哪个文件 / 哪条记录 | ✅ git diff 文件路径 |
 | 4 | 执行了什么 | 动作类型 + 参数 | 🟡 部分覆盖（diff 可推断） |
 | 5 | 改前改后值 | 对比才能判断影响 | 🟡 v1.4.4 补齐（`actionGovernance.beforeAfter` 结构化摘要——从 diff 提取、截断 200 字符、落盘前脱敏） |
-| 6 | 是否可回滚 | 有回滚路径才能撤销 | 🟡 回溯引擎有，日志未显式标记（排期中） |
+| 6 | 是否可回滚 | 有回滚路径才能撤销 | 🟡 回溯能力有，日志未显式标记（排期中） |
 
 字段 6 是当前缺口——回滚路径存在（快照 + `--revert`）但审计日志未显式标记可回滚性；字段 5 自 v1.4.4 起以 `beforeAfter` 结构化摘要落盘（差异快照级完整还原仍靠 WAL 与快照体系，见上表）。字段 6 补齐后排期覆盖完整六项。离开 Foundry 这类平台的统一权限模型后，这六项必留痕是不可省的工程门槛——平台原生留痕通常只含时点、数据版本、经手应用三项，不含操作主体、改前改后值与回滚标记。
 
@@ -732,7 +732,7 @@ graph LR
 │                                          │→ │                      │→ │ @sofagent/daemon（dream-cycle）       │
 │                                          │→ │                      │→ │   extract-facts() → knowledge/       │
 ├─────────────────────────────────────────┤  ├──────────────────────┤  ├─────────────────────────────────────┤
-│ @sofagent/eval（评分引擎）⭐ v1.2.1 补全   │  │ eval/ ⭐              │  │ @sofagent/think（进化模块）⭐ 接通    │
+│ @sofagent/eval（评分模块）⭐ v1.2.1 补全   │  │ eval/ ⭐              │  │ @sofagent/think（进化模块）⭐ 接通    │
 │   runEval() 跑 golden set                │→ │   history.jsonl      │→ │   检测 passRate 下降→写 think.md      │
 │   eval-reporter 持久化                    │→ │   reports/*.md       │→ │ Dashboard 质量趋势面板               │
 ├─────────────────────────────────────────┤  ├──────────────────────┤  ├─────────────────────────────────────┤
@@ -1089,7 +1089,7 @@ flowchart TD
 | ① ACTIVATE | `activate.ts` + MCP `activate_workflow` tool + workflow.yml 扩展 | registry.ts 动态注册 + MCP Server |
 | ② ORCHESTRATE | workflow-parser 扩展 + `composeEnterpriseWorkflow()` + StateGraph 构建 | orchestrator + LangGraph StateGraph |
 | ③ EXECUTE | dag-runner node-executor + HITL interrupt + 审计集成 + 异常兜底 | audit + daemon 文件监控 |
-| ④ SUSTAIN | 全链路验证 + `wrapToolCall` 联动 | think（反思引擎）+ eval + evolve |
+| ④ SUSTAIN | 全链路验证 + `wrapToolCall` 联动 | think（反思模块）+ eval + evolve |
 
 > **关键认知**：底座（引擎）已经全绿（测试数量以 `tools/check/test-count.sh` 实测为准），激活链不是造新引擎，是往已有引擎上放车厢——"轨道从早期就铺好了，一直没人往上面放车厢"。
 

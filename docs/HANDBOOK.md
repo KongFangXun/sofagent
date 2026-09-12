@@ -65,7 +65,7 @@
 - **平台无关、即挂即用**：嵌在你自选的大厂 Agent（Claude Code / Codex / WorkBuddy / 扣子 / OpenClaw）与模型层之间，不替代模型，只补「可靠执行」——对 Agent 约束、对模型治理。（Cursor 社区验证中）
 - **能带走、能协同**：USB 一键烧录（插上即用、拔掉零残留）；多设备加密联邦互查；内置 `@sofagent-fde` + `@sofagent-audit` 双 Agent。
 - **🔗 激活链**：FDE 诊断交付后，ontology + workflow.yml + skills/ 不再是一堆静态文件躺在磁盘上——激活链自动读交付物 → 注册企业 SubAgent → 编排成 LangGraph 业务流 → 带人工审批（HITL）和审计地自动跑。从"交给企业一堆文档"变成"交给企业一个会自己跑的系统"（ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN 四阶段完整交付）。详见 [激活链设计文档](./guides/fde-activation-chain.md)。
-- **🔍 引擎纵深**：官方 AST 规则引擎（`sofagent-ruleset-ast`，ASI01 目标劫持 + ASI04 供应链 SBOM 语义检测）；meta-harness 多 harness 统一编排（策略强制下沉基础设施层，跨会话协作）；AI 工作明细数据层（`worklog` 按 Agent/Workflow/周 + 人工介入，`worklog_query` MCP）；API 分级治理（`@public`/`@internal` 1439 符号 + CI 门禁）；MLflow agent 评估（13 指标 + LLM-as-Judge）；Agentic Browser（4 工具 + 视觉降级）；跨平台适配器（Cursor/Codex/Gemini CLI）；ATTRIBUTION 归因引擎 + Dream Sandbox 沙盒审计（强制人审 merge + 路径穿越消毒）；>5MB diff 缝隙修复。明细见 [开发日志](./changelog/v1.3/v1.3.9.md)。
+- **🔍 引擎纵深**：官方 AST 规则引擎（`sofagent-ruleset-ast`，ASI01 目标劫持 + ASI04 供应链 SBOM 语义检测）；meta-harness 多 harness 统一编排（策略强制下沉基础设施层，跨会话协作）；AI 工作明细数据层（`worklog` 按 Agent/Workflow/周 + 人工介入，`worklog_query` MCP）；API 分级治理（`@public`/`@internal` 1439 符号 + CI 门禁）；MLflow agent 评估（13 指标 + LLM-as-Judge）；Agentic Browser（4 工具 + 视觉降级）；跨平台适配器（Cursor/Codex/Gemini CLI）；ATTRIBUTION 归因 + Dream Sandbox 沙盒审计（强制人审 merge + 路径穿越消毒）；>5MB diff 缝隙修复。明细见 [开发日志](./changelog/v1.3/v1.3.9.md)。
 - **🎓 训练数据与评估**（v1.4.2）：企业异构数据（CSV/Excel/DB/API）经管道进训练集（质量闸门 + 训练入口脱敏）；dataset_version 版本台账（指纹冻结 + 续跑版本锁）；训练中 eval 闭环（阈值外部化 continue/stop）；train env/doctor 环境体检；dry-run 显存估算 + ScaleRL 算力外推；训练报告（客户可读 Markdown + 量化四字段 ROI）。详见 [v1.4.2 开发日志](./changelog/v1.4/v1.4.2.md)。
 - **🧩 FDE 六引擎工作台**（v1.4.2）：fde_interview（访谈结构化）/ fde_classify（三问判定）/ fde_quantify（量化+ROI）/ fde_derive（本体推导）/ fde_distill（三层沉淀）/ fde_deploy（组装部署）——FDE 方法论从文档变成可执行模块（MCP tool），产物落 `data/fde/` 带独立审计留痕；IM 桥远程指挥（dsh-im）让 FDE 在无头设备上也能干活。
 - **📡 训练信号与部署闭环**（v1.4.4）：`corpus_export` 语料导出三件套（规则/FDE 方法论/带标签样本，27 编号位 + reward 骨架 + 脱敏聚合）；企业专属模型本地权重部署（`model_register source: 'local-path'` + sha256 篡改拒绝 + rollback-weights 版本回滚）；训练产物→注册自动衔接（train done + eval pass → model_register）；`train compare` 多基座 ROI 排序；决策因果链与先例检索（`causedBy` 因果边）；CI 供应链全 SHA 固定 + dashboard 完全离线。详见 [v1.4.4 开发日志](./changelog/v1.4/v1.4.4.md)。
@@ -131,7 +131,7 @@
 
 ### 两种装法（v1.2.0）
 
-**全量安装**（`bash install.sh`）：底座 + 编排 + FDE + daemon，企业驻场部署用。**底座 only**（`install.sh --base-only`）：仅审计 + 回溯核心引擎，开发者 CI 集成用。详见 [ARCHITECTURE §安装包边界](./ARCHITECTURE.md#安装包边界与部署架构v132-定位校准)。
+**全量安装**（`bash install.sh`）：底座 + 编排 + FDE + daemon，企业驻场部署用。**底座 only**（`install.sh --base-only`）：仅审计 + 回溯核心，开发者 CI 集成用。详见 [ARCHITECTURE §安装包边界](./ARCHITECTURE.md#安装包边界与部署架构v132-定位校准)。
 
 ### 安装
 
@@ -360,7 +360,7 @@ sofagent-audit --timeline             # 查看审计时间线快照
 sofagent-audit --revert <sha>         # 回滚到某次审计前
 ```
 
-Webhook 在 `.sofagent/config.yml` 配置，不配也能用。详见 [ARCHITECTURE 回溯引擎](./ARCHITECTURE.md#回溯能力自研同构-git-引擎--一键回滚)。
+Webhook 在 `.sofagent/config.yml` 配置，不配也能用。详见 [ARCHITECTURE 回溯能力](./ARCHITECTURE.md#回溯能力自研同构-git-引擎--一键回滚)。
 
 ### 终端 Dashboard：一眼看清 AI 在干什么
 

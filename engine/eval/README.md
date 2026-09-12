@@ -1,6 +1,6 @@
 # @sofagent/eval
 
-sofagent 质量评估引擎——量化指标、评分逻辑、evals 接口。v1.2.0 从 audit 包迁出。
+sofagent 质量评估模块——量化指标、评分逻辑、evals 接口。v1.2.0 从 audit 包迁出。
 
 ## CLI
 

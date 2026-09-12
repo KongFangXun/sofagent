@@ -118,7 +118,7 @@ git submodule add ~/sofagent-shared .sofagent/knowledge
 
 设备 B clone 时加 `--recurse-submodules`。
 
-**冲突处理**：`git merge`（人工 resolve）。`relations` 字段冲突由 ontology 合并引擎自动处理。
+**冲突处理**：`git merge`（人工 resolve）。`relations` 字段冲突由 ontology 合并逻辑自动处理。
 
 ## 同步内容清单
 

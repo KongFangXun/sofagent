@@ -70,8 +70,8 @@ sofagent-audit --diff HEAD~1..HEAD --ci --json
 | `--regression <dir>` | 对指定目录跑回归验证 | — |
 | `--install-hook` | 安装 git commit-msg hook | — |
 | `--mcp` | 启动 MCP Server 模式 | — |
-| `--revert <snapshot-sha>` | 恢复到指定快照（回溯引擎） | — |
-| `--timeline [N]` | 查看快照时间线（回溯引擎，N 为显示条数） | 10 |
+| `--revert <snapshot-sha>` | 恢复到指定快照（回溯能力） | — |
+| `--timeline [N]` | 查看快照时间线（回溯能力，N 为显示条数） | 10 |
 | `ontology view` | 本体人类可读视图 | — |
 | `--version` | 版本号 | — |
 | `--help` | 帮助 | — |
