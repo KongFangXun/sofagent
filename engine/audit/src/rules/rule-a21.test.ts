@@ -3,7 +3,7 @@
 // ============================================================
 
 import { describe, it, expect } from 'vitest';
-import { checkRuleA21 } from './rule-a21-persistence';
+import { scanA21 } from './rule-a21-persistence';
 import { makeDiffFile, makeCtx } from '../test-utils';
 
 describe('A21 不植后门', () => {
@@ -13,7 +13,7 @@ describe('A21 不植后门', () => {
         '+cp evil.plist ~/Library/LaunchAgents/com.evil.plist',
       ]),
     ]);
-    const result = checkRuleA21(ctx);
+    const result = scanA21(ctx);
     expect(result.status).toBe('FAIL');
   });
 
@@ -23,7 +23,7 @@ describe('A21 不植后门', () => {
         '+<key>KeepAlive</key>',
       ]),
     ]);
-    const result = checkRuleA21(ctx);
+    const result = scanA21(ctx);
     expect(result.status).toBe('FAIL');
   });
 
@@ -35,7 +35,7 @@ describe('A21 不植后门', () => {
         '+WantedBy=multi-user.target',
       ]),
     ]);
-    const result = checkRuleA21(ctx);
+    const result = scanA21(ctx);
     expect(result.status).toBe('FAIL');
   });
 
@@ -45,7 +45,7 @@ describe('A21 不植后门', () => {
         '+(crontab -e) 2>/dev/null',
       ]),
     ]);
-    const result = checkRuleA21(ctx);
+    const result = scanA21(ctx);
     expect(result.status).toBe('FAIL');
   });
 
@@ -55,7 +55,7 @@ describe('A21 不植后门', () => {
         '+reg add HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run /v Evil /t REG_SZ /d evil.exe',
       ]),
     ]);
-    const result = checkRuleA21(ctx);
+    const result = scanA21(ctx);
     expect(result.status).toBe('FAIL');
   });
 
@@ -65,16 +65,8 @@ describe('A21 不植后门', () => {
         '+const x = 1;',
       ]),
     ]);
-    const result = checkRuleA21(ctx);
+    const result = scanA21(ctx);
     expect(result.status).toBe('PASS');
-  });
-
-  it('evidenceMode 标注为 git-diff', () => {
-    const ctx = makeCtx([
-      makeDiffFile('src/index.ts', ['+const x = 1;']),
-    ]);
-    const result = checkRuleA21(ctx);
-    expect(result.evidenceMode).toBe('git-diff');
   });
 
   it('@reboot 定时任务 → FAIL', () => {
@@ -83,7 +75,7 @@ describe('A21 不植后门', () => {
         '+@reboot /usr/local/bin/evil-agent',
       ]),
     ]);
-    const result = checkRuleA21(ctx);
+    const result = scanA21(ctx);
     expect(result.status).toBe('FAIL');
   });
 
@@ -94,7 +86,7 @@ describe('A21 不植后门', () => {
         '+// daily-snapshot.ts · @daily 结构化快照生成器（v1.2.5）',
       ]),
     ]);
-    const result = checkRuleA21(ctx);
+    const result = scanA21(ctx);
     expect(result.status).toBe('PASS');
   });
 
@@ -104,7 +96,7 @@ describe('A21 不植后门', () => {
         '+# @reboot 说明：本工具不注册自启，仅文档示例',
       ]),
     ]);
-    const result = checkRuleA21(ctx);
+    const result = scanA21(ctx);
     expect(result.status).toBe('PASS');
   });
 
@@ -114,7 +106,7 @@ describe('A21 不植后门', () => {
         '+echo "@daily /usr/local/bin/evil" >> /tmp/crontab',
       ]),
     ]);
-    const result = checkRuleA21(ctx);
+    const result = scanA21(ctx);
     expect(result.status).toBe('FAIL');
   });
 });
@@ -126,6 +118,6 @@ describe('A21 不植后门', () => {
         '+grep -F "$REPO" ~/Library/LaunchAgents/com.sofagent.daemon.plist   # WorkingDirectory',
       ]),
     ]);
-    const result = checkRuleA21(ctx);
+    const result = scanA21(ctx);
     expect(result.status).toBe('PASS');
   });

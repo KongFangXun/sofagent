@@ -5,20 +5,14 @@
 // v1.3.7 新增
 // ============================================================
 
-import type { AuditContext, RuleCheck } from './types';
+import type { AuditContext, RuleScan, RuleStatus } from './types';
 
-export function checkRuleA17(ctx: AuditContext): RuleCheck {
-  const rule: RuleCheck = {
-    name: 'A17 异常批量变更',
-    number: 17,
-    status: 'PASS',
-    details: [],
-    evidenceMode: 'filesystem',
-    ruleClass: '工程规范',
-  };
+export function scanA17(ctx: AuditContext): RuleScan {
+  let status: RuleStatus = 'PASS';
+  const details: string[] = [];
 
   const config = ctx.config?.A17;
-  if (!config?.enabled) return rule;
+  if (!config?.enabled) return { status, details };
 
   const threshold: number = config.bulk_threshold || 50;
   const windowMs: number = config.bulk_window_ms || 300000;
@@ -32,11 +26,11 @@ export function checkRuleA17(ctx: AuditContext): RuleCheck {
   const totalChangedFiles = currentFiles + historyFiles;
 
   if (totalChangedFiles >= threshold) {
-    rule.status = 'WARN';
-    rule.details.push(
+    status = 'WARN';
+    details.push(
       `批量变更告警：窗口（${windowMs / 1000}s）内累计变更 ${totalChangedFiles} 个文件（阈值 ${threshold}）。本次 ${currentFiles} + 历史 ${historyFiles}。可能是 Agent 失控或注入攻击，建议人工检查。`
     );
   }
 
-  return rule;
+  return { status, details };
 }

@@ -8,7 +8,7 @@
 // 配置：LOW_RISK_PATTERNS 和阈值从 ctx.config 取值（三级 fallback）
 // ============================================================
 import { basename } from 'path';
-import type { AuditContext, RuleCheck } from './types';
+import type { AuditContext, RuleScan, RuleStatus } from './types';
 import type { AuditConfig } from '@sofagent/core';
 import { DEFAULT_CONFIG } from '@sofagent/core';
 
@@ -124,22 +124,16 @@ function isFileRelatedToTask(
   return false;
 }
 
-export function checkRuleA3(ctx: AuditContext): RuleCheck {
+export function scanA3(ctx: AuditContext): RuleScan {
   const { diffFiles, task, commitMsg, config } = ctx;
-  const rule: RuleCheck = {
-    name: 'A3 不改越界',
-    number: 3,
-    status: 'PASS',
-    details: [],
-    evidenceMode: 'git-diff',
-    ruleClass: '能力拐杖',  // v1.3.1 修：与 index.ts SSOT 对齐（启发式检测误报率高，WARN 不硬拦）
-  };
+  let status: RuleStatus = 'PASS';
+  const details: string[] = [];
 
   // v1.3.3 #8: quick 模式（cli-quick 零配置审计）无真实任务描述，task 占位值
   // 与任何文件都不匹配，越界检查必然 100% 误报 → 直接跳过。
   if (ctx.quickMode) {
-    rule.details.push('quick 模式跳过越界检查（无真实任务描述，需 --init 安装 hook 走完整审计）');
-    return rule;
+    details.push('quick 模式跳过越界检查（无真实任务描述，需 --init 安装 hook 走完整审计）');
+    return { status, details };
   }
 
   // 确定低风险模式和阈值——优先用 config，fallback 到硬编码默认值
@@ -152,9 +146,9 @@ export function checkRuleA3(ctx: AuditContext): RuleCheck {
   if (!task) {
     // 没有提供任务描述——降级为仅检查文件路径是否在越界列表内
     // 不依赖 task 语义，只检查低风险白名单之外的文件变更
-    rule.details.push('未提供 --task 参数，跳过任务关联检查。仅检查文件路径。');
+    details.push('未提供 --task 参数，跳过任务关联检查。仅检查文件路径。');
     // 注意：不设为 WARN/PASS——无 task 时 A3 保持 PASS（降级模式，不做越界判断）
-    return rule;
+    return { status, details };
   }
 
   // 组合搜索源：task（subject）+ commitMsg（完整 message，含 body）
@@ -218,11 +212,11 @@ export function checkRuleA3(ctx: AuditContext): RuleCheck {
   }).length;
 
   if (!isShortChineseTask && totalFiles > 0 && unexpectedFiles.length > totalFiles * threshold) {
-    rule.status = 'WARN';
-    rule.details.push(
+    status = 'WARN';
+    details.push(
       `${unexpectedFiles.length}/${totalFiles} 个文件不在任务描述 ("${task}") 范围内: ${unexpectedFiles.slice(0, 3).join(', ')}${unexpectedFiles.length > 3 ? ` 等` : ''}`
     );
   }
 
-  return rule;
+  return { status, details };
 }

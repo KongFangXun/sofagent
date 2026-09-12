@@ -3,7 +3,7 @@
 // ============================================================
 
 import { describe, it, expect } from 'vitest';
-import { checkRuleA7 } from './rule-a7-read-before-write';
+import { scanA7 } from './rule-a7-read-before-write';
 import type { AuditContext } from './types';
 import type { DiffFile } from '@sofagent/core';
 import type { LogEntry } from '@sofagent/core';
@@ -24,7 +24,7 @@ describe('A7 不存盲改', () => {
       [makeDiffFile('src/config.ts')],
       { logEntries: [makeReadEntry('src/config.ts')] }
     );
-    const result = checkRuleA7(ctx);
+    const result = scanA7(ctx);
     expect(result.status).toBe('PASS');
   });
 
@@ -33,7 +33,7 @@ describe('A7 不存盲改', () => {
       [makeDiffFile('src/config.ts')],
       { logEntries: [makeReadEntry('src/other.ts')] }
     );
-    const result = checkRuleA7(ctx);
+    const result = scanA7(ctx);
     expect(result.status).toBe('FAIL');
     expect(result.details.length).toBeGreaterThan(0);
   });
@@ -43,7 +43,7 @@ describe('A7 不存盲改', () => {
       [makeDiffFile('src/config.ts')],
       { logEntries: [makeReadEntry('tsconfig.json')] }
     );
-    const result = checkRuleA7(ctx);
+    const result = scanA7(ctx);
     expect(result.status).toBe('FAIL');
   });
 
@@ -52,7 +52,7 @@ describe('A7 不存盲改', () => {
       [makeDiffFile('src/utils/config.ts')],
       { logEntries: [makeReadEntry('lib/utils/config.ts')] }
     );
-    const result = checkRuleA7(ctx);
+    const result = scanA7(ctx);
     // v1.2.2: 改用相对路径匹配——src/utils/config.ts ≠ lib/utils/config.ts，应 FAIL
     expect(result.status).toBe('FAIL');
   });
@@ -62,7 +62,7 @@ describe('A7 不存盲改', () => {
       [makeDiffFile('Makefile')],
       { logEntries: [makeReadEntry('Makefile')] }
     );
-    const result = checkRuleA7(ctx);
+    const result = scanA7(ctx);
     expect(result.status).toBe('PASS');
   });
 
@@ -71,7 +71,7 @@ describe('A7 不存盲改', () => {
       [makeDiffFile('Dockerfile')],
       { logEntries: [makeReadEntry('Dockerfile')] }
     );
-    const result = checkRuleA7(ctx);
+    const result = scanA7(ctx);
     expect(result.status).toBe('PASS');
   });
 
@@ -80,7 +80,7 @@ describe('A7 不存盲改', () => {
       [makeDiffFile('src/index.ts')],
       { logEntries: [] }
     );
-    const result = checkRuleA7(ctx);
+    const result = scanA7(ctx);
     expect(result.status).toBe('WARN');
     expect(result.details[0]).toContain('未找到');
   });
@@ -90,7 +90,7 @@ describe('A7 不存盲改', () => {
       [makeDiffFile('src/a.ts'), makeDiffFile('src/b.ts'), makeDiffFile('src/c.ts')],
       { logEntries: [makeReadEntry('src/a.ts')] }
     );
-    const result = checkRuleA7(ctx);
+    const result = scanA7(ctx);
     expect(result.status).toBe('FAIL');
     expect(result.details[0]).toContain('2 个文件');
   });
@@ -106,7 +106,7 @@ describe('A7 不存盲改', () => {
       [makeDiffFile('src/config.ts')],
       { logEntries: [writeEntry] }
     );
-    const result = checkRuleA7(ctx);
+    const result = scanA7(ctx);
     expect(result.status).toBe('FAIL');
   });
 
@@ -115,7 +115,7 @@ describe('A7 不存盲改', () => {
       [makeDiffFile('src/deleted.ts', [], 'deleted')],
       { logEntries: [] }
     );
-    const result = checkRuleA7(ctx);
+    const result = scanA7(ctx);
     expect(result.status).toBe('PASS');
   });
 
@@ -125,7 +125,7 @@ describe('A7 不存盲改', () => {
       logEntries: [],
       strict: true,
     };
-    const result = checkRuleA7(ctx);
+    const result = scanA7(ctx);
     expect(result.status).toBe('FAIL');
   });
 
@@ -134,7 +134,7 @@ describe('A7 不存盲改', () => {
       [makeDiffFile('src/index.ts')],
       { logEntries: [] }
     );
-    const result = checkRuleA7(ctx);
+    const result = scanA7(ctx);
     expect(result.status).toBe('WARN');
   });
 
@@ -143,7 +143,7 @@ describe('A7 不存盲改', () => {
       [makeDiffFile('src/deleted.ts', [], 'deleted'), makeDiffFile('src/config.ts')],
       { logEntries: [makeReadEntry('src/config.ts')] }
     );
-    const result = checkRuleA7(ctx);
+    const result = scanA7(ctx);
     expect(result.status).toBe('PASS');
   });
 });

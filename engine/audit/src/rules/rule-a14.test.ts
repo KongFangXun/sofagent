@@ -4,7 +4,7 @@
 // ============================================================
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { checkRuleA14 } from './rule-a14-kb-cross-domain';
+import { scanA14 } from './rule-a14-kb-cross-domain';
 import type { AuditContext } from './types';
 import type { DiffFile } from '@sofagent/core';
 import type { LogEntry } from '@sofagent/core';
@@ -48,7 +48,7 @@ afterEach(() => {
 describe('A14 知识库越权', () => {
   it('空日志 → 跳过（hybrid 降级）', () => {
     const ctx = makeCtx([makeDiffFile('src/main.ts')], { logEntries: [] });
-    const result = checkRuleA14(ctx);
+    const result = scanA14(ctx);
     expect(result.status).toBe('PASS');
     expect(result.details[0]).toContain('跳过');
   });
@@ -59,7 +59,7 @@ describe('A14 知识库越权', () => {
       { logEntries: [makeKbEntry('entities/user.md')] }
     );
     // tempDataDir 存在但无 workflow.yml
-    const result = checkRuleA14(ctx);
+    const result = scanA14(ctx);
     expect(result.status).toBe('PASS');
     expect(result.details[0]).toContain('跳过');
   });
@@ -74,7 +74,7 @@ nodes:
       [makeDiffFile('src/main.ts')],
       { logEntries: [makeKbEntry('entities/user.md')] }
     );
-    const result = checkRuleA14(ctx);
+    const result = scanA14(ctx);
     expect(result.status).toBe('PASS');
     expect(result.details[0]).toContain('跳过');
   });
@@ -94,7 +94,7 @@ nodes:
       [makeDiffFile('src/main.ts')],
       { logEntries: [makeKbEntry('entities/user.md')] }
     );
-    const result = checkRuleA14(ctx);
+    const result = scanA14(ctx);
     expect(result.status).toBe('WARN');
     expect(result.details[0]).toContain('越权');
   });
@@ -112,7 +112,7 @@ nodes:
       [makeDiffFile('src/main.ts')],
       { logEntries: [makeKbEntry('concepts/architecture.md')] }
     );
-    const result = checkRuleA14(ctx);
+    const result = scanA14(ctx);
     expect(result.status).toBe('PASS');
   });
 
@@ -131,7 +131,7 @@ nodes:
       [makeDiffFile('src/main.ts')],
       { logEntries: [makeKbEntry('concepts/test.md')] }
     );
-    const result = checkRuleA14(ctx);
+    const result = scanA14(ctx);
     expect(result.status).toBe('PASS');
   });
 
@@ -157,21 +157,9 @@ nodes:
         ],
       }
     );
-    const result = checkRuleA14(ctx);
+    const result = scanA14(ctx);
     expect(result.status).toBe('WARN');
     expect(result.details[0]).toContain('越权');
-  });
-
-  it('evidenceMode 标注为 hybrid', () => {
-    const ctx = makeCtx([makeDiffFile('src/main.ts')], { logEntries: [] });
-    const result = checkRuleA14(ctx);
-    expect(result.evidenceMode).toBe('hybrid');
-  });
-
-  it('ruleClass 标注为 能力拐杖', () => {
-    const ctx = makeCtx([makeDiffFile('src/main.ts')], { logEntries: [] });
-    const result = checkRuleA14(ctx);
-    expect(result.ruleClass).toBe('能力拐杖');
   });
 
   it('日志中无 knowledge/ 路径引用 → PASS', () => {
@@ -194,7 +182,7 @@ nodes:
       [makeDiffFile('src/main.ts')],
       { logEntries: [normalEntry] }
     );
-    const result = checkRuleA14(ctx);
+    const result = scanA14(ctx);
     expect(result.status).toBe('PASS');
   });
 });

@@ -9,7 +9,7 @@
 
 import { getAddedLines } from '@sofagent/core';
 import { DANGEROUS_SCRIPT_CMDS } from '@sofagent/core';
-import type { AuditContext, RuleCheck } from './types';
+import type { AuditContext, RuleScan, RuleStatus } from './types';
 
 /** 需要扫描的依赖文件名 */
 const DEPENDENCY_FILES = new Set([
@@ -186,15 +186,9 @@ function checkPostinstallHook(line: string): { hit: boolean; detail: string } {
   return { hit: false, detail: '' };
 }
 
-export function checkRuleA10(ctx: AuditContext): RuleCheck {
-  const rule: RuleCheck = {
-    name: 'A10 不引毒源',
-    number: 10,
-    status: 'PASS',
-    details: [],
-    evidenceMode: 'git-diff',
-    ruleClass: '业务底线',
-  };
+export function scanA10(ctx: AuditContext): RuleScan {
+  let status: RuleStatus = 'PASS';
+  const details: string[] = [];
 
   const { diffFiles } = ctx;
 
@@ -241,16 +235,16 @@ export function checkRuleA10(ctx: AuditContext): RuleCheck {
 
   // 汇总——非官方源 + postinstall 注入 → FAIL（安全红线）
   if (hits.length > 0) {
-    rule.status = 'FAIL';
-    rule.details.push(
+    status = 'FAIL';
+    details.push(
       `检测到 ${hits.length} 处非官方源依赖: ` +
       hits.map((h) => `${h.file}: "${h.line}" (${h.pattern})`).join('; ')
     );
   }
 
   if (postinstallHits.length > 0) {
-    rule.status = 'FAIL';
-    rule.details.push(
+    status = 'FAIL';
+    details.push(
       `检测到 ${postinstallHits.length} 处 postinstall/preinstall 脚本注入: ` +
       postinstallHits.map((h) => `${h.file}: ${h.detail}`).join('; ')
     );
@@ -258,12 +252,12 @@ export function checkRuleA10(ctx: AuditContext): RuleCheck {
 
   // typosquatting → FAIL（供应链安全红线）
   if (typoHits.length > 0) {
-    rule.status = 'FAIL';
-    rule.details.push(
+    status = 'FAIL';
+    details.push(
       `检测到 ${typoHits.length} 处疑似 typosquatting 包名: ` +
       typoHits.map((h) => `${h.file}: "${h.pkg}" (疑似仿冒 ${h.similar})`).join('; ')
     );
   }
 
-  return rule;
+  return { status, details };
 }

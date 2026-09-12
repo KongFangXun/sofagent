@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { AuditContext } from '../rules/types';
-import { checkRuleA2 } from '../rules/rule-a2-secret-leak';
+import { scanA2 } from '../rules/rule-a2-secret-leak';
 
 /**
  * A2 对抗性 golden-set（v1.4.8 bugfix 批 · 红队成果固化）
@@ -22,7 +22,7 @@ function ctxWith(lines: string[]): AuditContext {
 
 describe('A2 对抗性 golden-set（R1/R2 红队成果固化）', () => {
   it('R1: 带头引号 base64 AWS Secret Key 被拦截（修复前逃逸）', () => {
-    const rule = checkRuleA2(
+    const rule = scanA2(
       ctxWith(['+awsSecretKey = "QUtJQVc5WEFNUExFS0VZMTIzNDU2"']),
     );
     expect(rule.status).toBe('FAIL');
@@ -30,45 +30,45 @@ describe('A2 对抗性 golden-set（R1/R2 红队成果固化）', () => {
   });
 
   it('R1: 单引号与反引号形态同样被拦截', () => {
-    const single = checkRuleA2(ctxWith(["+awsSecretKey = 'QUtJQVc5WEFNUExFS0VZMTIzNDU2'"]));
+    const single = scanA2(ctxWith(["+awsSecretKey = 'QUtJQVc5WEFNUExFS0VZMTIzNDU2'"]));
     expect(single.status).toBe('FAIL');
-    const backtick = checkRuleA2(ctxWith(['+awsSecretKey = `QUtJQVc5WEFNUExFS0VZMTIzNDU2`']));
+    const backtick = scanA2(ctxWith(['+awsSecretKey = `QUtJQVc5WEFNUExFS0VZMTIzNDU2`']));
     expect(backtick.status).toBe('FAIL');
   });
 
   it('R1: 无引号裸值形态保持被拦截（回归防倒退）', () => {
-    const rule = checkRuleA2(ctxWith(['+awsSecretKey = QUtJQVc5WEFNUExFS0VZMTIzNDU2']));
+    const rule = scanA2(ctxWith(['+awsSecretKey = QUtJQVc5WEFNUExFS0VZMTIzNDU2']));
     expect(rule.status).toBe('FAIL');
   });
 
   it('R2: Cyrillic 同形前缀 рсk-proj- 被拦截（NFKC 不折叠跨字母同形）', () => {
-    const rule = checkRuleA2(
+    const rule = scanA2(
       ctxWith(['+api_key = "рсk-proj-abcdefghij0123456789ABCDEFGHIJ"']),
     );
     expect(rule.status).toBe('FAIL');
   });
 
   it('R2: 同形字混入 sk- 前缀主体被拦截', () => {
-    const rule = checkRuleA2(
+    const rule = scanA2(
       ctxWith(['+apiKey = "sk-рrоj-abcdefghij0123456789ABCDEFGHIJ"']),
     );
     expect(rule.status).toBe('FAIL');
   });
 
   it('R2+R1 混合：头引号 + Cyrillic 同形组合逃逸被拦截', () => {
-    const rule = checkRuleA2(
+    const rule = scanA2(
       ctxWith(['+secret = "рсk-proj-QUtJQVc5WEFNUExFS0VZMTIzNDU2"']),
     );
     expect(rule.status).toBe('FAIL');
   });
 
   it('对照组: 普通注释文本含 Cyrillic 同形字不误报', () => {
-    const rule = checkRuleA2(ctxWith(['+note = "рсk 示例文本，非密钥形态"']));
+    const rule = scanA2(ctxWith(['+note = "рсk 示例文本，非密钥形态"']));
     expect(rule.status).toBe('PASS');
   });
 
   it('对照组: 短占位值与 env 引用不误报', () => {
-    const rule = checkRuleA2(ctxWith(['+token = "short"']));
+    const rule = scanA2(ctxWith(['+token = "short"']));
     expect(rule.status).toBe('PASS');
   });
 });

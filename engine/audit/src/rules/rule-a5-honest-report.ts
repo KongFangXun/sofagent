@@ -6,7 +6,7 @@
 // ============================================================
 
 import { execFileSync } from 'child_process';
-import type { AuditContext, RuleCheck } from './types';
+import type { AuditContext, RuleScan, RuleStatus } from './types';
 
 const PLACEHOLDER_PATTERNS = [
   /^(fix|update|wip|test|chore|doc|refactor)$/i,
@@ -16,15 +16,9 @@ const PLACEHOLDER_PATTERNS = [
   /^tmp/i,
 ];
 
-export function checkRuleA5(ctx: AuditContext): RuleCheck {
-  const rule: RuleCheck = {
-    name: 'A5 不瞒真相',
-    number: 5,
-    status: 'PASS',
-    details: [],
-    evidenceMode: 'git-diff',
-    ruleClass: '业务底线',
-  };
+export function scanA5(ctx: AuditContext): RuleScan {
+  let status: RuleStatus = 'PASS';
+  const details: string[] = [];
 
   // 优先使用 ctx.commitMsg——只有当 ctx.commitMsg 为 undefined（未传入）时才 fallback 到 git
   let message: string;
@@ -35,33 +29,33 @@ export function checkRuleA5(ctx: AuditContext): RuleCheck {
     try {
       message = execFileSync('git', ['log', '-1', '--pretty=%B'], { encoding: 'utf-8' }).trim();
     } catch (err) {
-      rule.status = 'FAIL';
-      rule.details.push('无法读取 commit message: ' + (err as Error).message);
-      return rule;
+      status = 'FAIL';
+      details.push('无法读取 commit message: ' + (err as Error).message);
+      return { status, details };
     }
   }
 
   if (!message) {
-    rule.status = 'FAIL';
-    rule.details.push('commit message 为空。');
-    return rule;
+    status = 'FAIL';
+    details.push('commit message 为空。');
+    return { status, details };
   }
 
   const firstLine = (message.split('\n')[0] ?? '').trim();
 
   for (const pattern of PLACEHOLDER_PATTERNS) {
     if (pattern.test(firstLine)) {
-      rule.status = 'WARN';
-      rule.details.push(`commit message 疑似占位符: "${firstLine}"。建议改为描述具体改了什么。`);
-      return rule;
+      status = 'WARN';
+      details.push(`commit message 疑似占位符: "${firstLine}"。建议改为描述具体改了什么。`);
+      return { status, details };
     }
   }
 
   // 太短的 commit message
   if (firstLine.length < 5) {
-    rule.status = 'WARN';
-    rule.details.push(`commit message 太短 (${firstLine.length} 字符): "${firstLine}"。`);
+    status = 'WARN';
+    details.push(`commit message 太短 (${firstLine.length} 字符): "${firstLine}"。`);
   }
 
-  return rule;
+  return { status, details };
 }

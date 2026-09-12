@@ -3,7 +3,7 @@
 // ============================================================
 
 import { describe, it, expect } from 'vitest';
-import { checkRuleA23 } from './rule-a23-path-traversal';
+import { scanA23 } from './rule-a23-path-traversal';
 import { makeDiffFile, makeCtx } from '../test-utils';
 
 describe('A23 不逃路径', () => {
@@ -13,7 +13,7 @@ describe('A23 不逃路径', () => {
         "+fs.readFileSync('../../../etc/passwd')",
       ]),
     ]);
-    const result = checkRuleA23(ctx);
+    const result = scanA23(ctx);
     expect(result.status).toBe('FAIL');
   });
 
@@ -23,7 +23,7 @@ describe('A23 不逃路径', () => {
         "+fs.readFileSync('../../.ssh/id_rsa')",
       ]),
     ]);
-    const result = checkRuleA23(ctx);
+    const result = scanA23(ctx);
     expect(result.status).toBe('FAIL');
   });
 
@@ -33,7 +33,7 @@ describe('A23 不逃路径', () => {
         '+ln -s /etc/passwd ./link',
       ]),
     ]);
-    const result = checkRuleA23(ctx);
+    const result = scanA23(ctx);
     expect(result.status).toBe('FAIL');
   });
 
@@ -43,7 +43,7 @@ describe('A23 不逃路径', () => {
         "+import { foo } from './src/index'",
       ]),
     ]);
-    const result = checkRuleA23(ctx);
+    const result = scanA23(ctx);
     expect(result.status).toBe('PASS');
   });
 
@@ -53,7 +53,7 @@ describe('A23 不逃路径', () => {
         "+const nodePath = '/usr/local/bin/node'",
       ]),
     ]);
-    const result = checkRuleA23(ctx);
+    const result = scanA23(ctx);
     expect(result.status).toBe('PASS');
   });
 
@@ -63,16 +63,8 @@ describe('A23 不逃路径', () => {
         "+const path = '../../../../some/dir'",
       ]),
     ]);
-    const result = checkRuleA23(ctx);
+    const result = scanA23(ctx);
     expect(result.status).toBe('FAIL');
-  });
-
-  it('evidenceMode 标注为 git-diff', () => {
-    const ctx = makeCtx([
-      makeDiffFile('src/index.ts', ['+const x = 1;']),
-    ]);
-    const result = checkRuleA23(ctx);
-    expect(result.evidenceMode).toBe('git-diff');
   });
 
   it('路径穿越到 .env → FAIL', () => {
@@ -81,7 +73,7 @@ describe('A23 不逃路径', () => {
         "+fs.readFileSync('../../../.env')",
       ]),
     ]);
-    const result = checkRuleA23(ctx);
+    const result = scanA23(ctx);
     expect(result.status).toBe('FAIL');
   });
 
@@ -96,7 +88,7 @@ describe('A23 不逃路径', () => {
         '+/etc/passwd',
       ]),
     ]);
-    const result = checkRuleA23(ctx);
+    const result = scanA23(ctx);
     expect(result.status).toBe('FAIL');
     expect(result.details[0]).toContain('symlink');
   });
@@ -110,7 +102,7 @@ describe('A23 不逃路径', () => {
         '+/home/user/.ssh/id_rsa',
       ]),
     ]);
-    const result = checkRuleA23(ctx);
+    const result = scanA23(ctx);
     expect(result.status).toBe('FAIL');
   });
 
@@ -123,7 +115,7 @@ describe('A23 不逃路径', () => {
         '+./config/default.yml',
       ]),
     ]);
-    const result = checkRuleA23(ctx);
+    const result = scanA23(ctx);
     expect(result.status).toBe('PASS');
   });
 
@@ -134,7 +126,7 @@ describe('A23 不逃路径', () => {
         "+fs.readFileSync('../../../etc/passwd')",
       ]),
     ]);
-    const result = checkRuleA23(ctx);
+    const result = scanA23(ctx);
     expect(result.status).toBe('WARN');
     expect(result.details.join('; ')).toContain('测试文件豁免命中');
   });

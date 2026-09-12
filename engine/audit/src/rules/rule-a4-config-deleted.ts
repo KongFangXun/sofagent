@@ -5,7 +5,7 @@
 // ============================================================
 
 import { basename } from 'path';
-import type { AuditContext, RuleCheck } from './types';
+import type { AuditContext, RuleScan, RuleStatus } from './types';
 
 /** 精确匹配的关键配置文件 */
 const EXACT_CONFIG_FILES = new Set([
@@ -20,15 +20,9 @@ const EXACT_CONFIG_FILES = new Set([
   '.env.example',
 ]);
 
-export function checkRuleA4(ctx: AuditContext): RuleCheck {
-  const rule: RuleCheck = {
-    name: 'A4 不删配置',
-    number: 4,
-    status: 'PASS',
-    details: [],
-    evidenceMode: 'git-diff',
-    ruleClass: '业务底线',  // v1.3.4 对齐 index.ts SSOT
-  };
+export function scanA4(ctx: AuditContext): RuleScan {
+  let status: RuleStatus = 'PASS';
+  const details: string[] = [];
 
   const { diffFiles } = ctx;
 
@@ -54,11 +48,11 @@ export function checkRuleA4(ctx: AuditContext): RuleCheck {
   }
 
   if (deletedConfigs.length > 0) {
-    rule.status = 'WARN';
-    rule.details.push(
+    status = 'WARN';
+    details.push(
       `检测到配置/lock 文件被删除: ${deletedConfigs.join(', ')}。配置文件删除可能影响项目构建和部署。`
     );
   }
 
-  return rule;
+  return { status, details };
 }

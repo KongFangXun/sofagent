@@ -3,7 +3,7 @@
 // ============================================================
 
 import { describe, it, expect } from 'vitest';
-import { checkRuleA8 } from './rule-a8-verify-before-continue';
+import { scanA8 } from './rule-a8-verify-before-continue';
 import { hasTestOrBuildExecution } from '@sofagent/core';
 import type { AuditContext } from './types';
 import type { DiffFile } from '@sofagent/core';
@@ -16,7 +16,7 @@ describe('A8 不逃验证', () => {
       [makeDiffFile('src/index.ts')],
       { logEntries: [] }
     );
-    const result = checkRuleA8(ctx);
+    const result = scanA8(ctx);
     expect(result.status).toBe('PASS');
   });
 
@@ -30,7 +30,7 @@ describe('A8 不逃验证', () => {
       [makeDiffFile('package.json')],
       { logEntries: [execEntry] }
     );
-    const result = checkRuleA8(ctx);
+    const result = scanA8(ctx);
     expect(result.status).toBe('PASS');
   });
 
@@ -39,7 +39,7 @@ describe('A8 不逃验证', () => {
       [makeDiffFile('package.json')],
       { logEntries: [] }
     );
-    const result = checkRuleA8(ctx);
+    const result = scanA8(ctx);
     expect(result.status).toBe('WARN');
   });
 
@@ -53,7 +53,7 @@ describe('A8 不逃验证', () => {
       [makeDiffFile('package.json')],
       { logEntries: [readEntry] }
     );
-    const result = checkRuleA8(ctx);
+    const result = scanA8(ctx);
     expect(result.status).toBe('FAIL');
   });
 
@@ -67,7 +67,7 @@ describe('A8 不逃验证', () => {
       [makeDiffFile('Dockerfile')],
       { logEntries: [execEntry] }
     );
-    const result = checkRuleA8(ctx);
+    const result = scanA8(ctx);
     expect(result.status).toBe('PASS');
   });
 
@@ -81,7 +81,7 @@ describe('A8 不逃验证', () => {
       [makeDiffFile('docker-compose.yml')],
       { logEntries: [execEntry] }
     );
-    const result = checkRuleA8(ctx);
+    const result = scanA8(ctx);
     expect(result.status).toBe('PASS');
   });
 
@@ -95,7 +95,7 @@ describe('A8 不逃验证', () => {
       [makeDiffFile('Makefile')],
       { logEntries: [execEntry] }
     );
-    const result = checkRuleA8(ctx);
+    const result = scanA8(ctx);
     expect(result.status).toBe('PASS');
   });
 
@@ -109,7 +109,7 @@ describe('A8 不逃验证', () => {
       [makeDiffFile('.env.example')],
       { logEntries: [execEntry] }
     );
-    const result = checkRuleA8(ctx);
+    const result = scanA8(ctx);
     expect(result.status).toBe('PASS');
   });
 
@@ -123,7 +123,7 @@ describe('A8 不逃验证', () => {
       [makeDiffFile('tsconfig.json')],
       { logEntries: [execEntry] }
     );
-    const result = checkRuleA8(ctx);
+    const result = scanA8(ctx);
     expect(result.status).toBe('PASS');
   });
 
@@ -137,7 +137,7 @@ describe('A8 不逃验证', () => {
       [makeDiffFile('vite.config.ts')],
       { logEntries: [execEntry] }
     );
-    const result = checkRuleA8(ctx);
+    const result = scanA8(ctx);
     expect(result.status).toBe('PASS');
   });
 });

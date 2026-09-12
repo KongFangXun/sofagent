@@ -11,8 +11,8 @@ import { join } from 'path';
 import { tmpdir } from 'os';
 import { execFileSync } from 'child_process';
 import { scanA18 } from './rule-a18-junk-file';
-import { checkRuleA19 } from './rule-a19-commit-msg-quality';
-import { checkRuleA11 } from './rule-a11-no-abuse';
+import { scanA19 } from './rule-a19-commit-msg-quality';
+import { scanA11 } from './rule-a11-no-abuse';
 import { makeDiffFile, makeCtx } from '../test-utils';
 
 // ============================================================
@@ -68,19 +68,19 @@ describe('A18 git ls-files 豁免（T9）', () => {
 describe('A19 中文短 subject 阈值（T10）', () => {
   it('「改配置」3字×2=6_不再误拦_PASS', () => {
     const ctx = makeCtx([makeDiffFile('src/config.ts')], { commitMsg: '改配置' });
-    const result = checkRuleA19(ctx);
+    const result = scanA19(ctx);
     expect(result.status).toBe('PASS');
   });
 
   it('「加注释」3字×2=6_不再误拦_PASS', () => {
     const ctx = makeCtx([makeDiffFile('src/x.ts')], { commitMsg: '加注释' });
-    const result = checkRuleA19(ctx);
+    const result = scanA19(ctx);
     expect(result.status).toBe('PASS');
   });
 
   it('「修复」2字×2=4_仍FAIL（无信息量短消息拦住）', () => {
     const ctx = makeCtx([makeDiffFile('src/x.ts')], { commitMsg: '修复' });
-    const result = checkRuleA19(ctx);
+    const result = scanA19(ctx);
     expect(result.status).toBe('FAIL');
     expect(result.details[0]).toContain('长度不足');
   });
@@ -88,16 +88,16 @@ describe('A19 中文短 subject 阈值（T10）', () => {
   it('纯英文7字符_仍FAIL（7 < 8 但阈值6下 6字符放行——英文口径不放宽）', () => {
     // 英文字符 ×1：6 字符 = 6 ≥ 6 放行；7 字符同样放行（阈值统一为 6）
     const ctx7 = makeCtx([makeDiffFile('src/x.ts')], { commitMsg: 'abcdefg' });
-    expect(checkRuleA19(ctx7).status).toBe('PASS');
+    expect(scanA19(ctx7).status).toBe('PASS');
     const ctx6 = makeCtx([makeDiffFile('src/x.ts')], { commitMsg: 'abcdef' });
-    expect(checkRuleA19(ctx6).status).toBe('PASS');
+    expect(scanA19(ctx6).status).toBe('PASS');
     const ctx5 = makeCtx([makeDiffFile('src/x.ts')], { commitMsg: 'abcde' });
-    expect(checkRuleA19(ctx5).status).toBe('FAIL');
+    expect(scanA19(ctx5).status).toBe('FAIL');
   });
 
   it('黑名单词不受阈值影响_add仍FAIL', () => {
     const ctx = makeCtx([makeDiffFile('src/x.ts')], { commitMsg: 'add' });
-    const result = checkRuleA19(ctx);
+    const result = scanA19(ctx);
     expect(result.status).toBe('FAIL');
     expect(result.details[0]).toContain('黑名单');
   });
@@ -114,7 +114,7 @@ describe('A11 超长单行折算（T15）', () => {
     const ctx = makeCtx([
       makeDiffFile('dist/bundle.min.js', [`+${longLine}`, `+${longLine}`, `+${longLine}`]),
     ]);
-    const result = checkRuleA11(ctx);
+    const result = scanA11(ctx);
     expect(result.status).toBe('WARN');
     expect(result.details[0]).toContain('有效 15000 行');
     expect(result.details[0]).toContain('实际仅 3 行');
@@ -124,7 +124,7 @@ describe('A11 超长单行折算（T15）', () => {
   it('普通多行代码_不受折算影响（10000行普通行_仍WARN）', () => {
     const lines = Array.from({ length: 10001 }, (_, i) => `+const v${i} = ${i};`);
     const ctx = makeCtx([makeDiffFile('src/huge.ts', lines)]);
-    const result = checkRuleA11(ctx);
+    const result = scanA11(ctx);
     expect(result.status).toBe('WARN');
   });
 
@@ -132,7 +132,7 @@ describe('A11 超长单行折算（T15）', () => {
     const ctx = makeCtx([
       makeDiffFile('src/a.ts', Array.from({ length: 100 }, (_, i) => `+line ${i}`)),
     ]);
-    const result = checkRuleA11(ctx);
+    const result = scanA11(ctx);
     expect(result.status).toBe('PASS');
   });
 
@@ -140,7 +140,7 @@ describe('A11 超长单行折算（T15）', () => {
     // 3 行 × 200 字符 = 3 有效行——无折算增量
     const line = 'b'.repeat(200);
     const ctx = makeCtx([makeDiffFile('src/x.ts', [`+${line}`, `+${line}`, `+${line}`])]);
-    const result = checkRuleA11(ctx);
+    const result = scanA11(ctx);
     expect(result.status).toBe('PASS');
   });
 });

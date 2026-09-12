@@ -5,7 +5,7 @@
 // ============================================================
 
 import { getAddedLines } from '@sofagent/core';
-import type { AuditContext, RuleCheck } from './types';
+import type { AuditContext, RuleScan, RuleStatus } from './types';
 
 /** 持久化模式（不用 g 标志——避免 lastIndex 状态问题） */
 const PERSISTENCE_PATTERNS: { pattern: RegExp; name: string }[] = [
@@ -34,15 +34,9 @@ const PERSISTENCE_PATTERNS: { pattern: RegExp; name: string }[] = [
   { pattern: /\bat\b\s+\d|at\s+now\s*\+/i, name: 'at 定时执行' },
 ];
 
-export function checkRuleA21(ctx: AuditContext): RuleCheck {
-  const rule: RuleCheck = {
-    name: 'A21 不植后门',
-    number: 21,
-    status: 'PASS',
-    details: [],
-    evidenceMode: 'git-diff',
-    ruleClass: '业务底线',
-  };
+export function scanA21(ctx: AuditContext): RuleScan {
+  let status: RuleStatus = 'PASS';
+  const details: string[] = [];
 
   const { diffFiles } = ctx;
 
@@ -96,12 +90,12 @@ export function checkRuleA21(ctx: AuditContext): RuleCheck {
   }
 
   if (hits.length > 0) {
-    rule.status = 'FAIL';
-    rule.details.push(
+    status = 'FAIL';
+    details.push(
       `检测到 ${hits.length} 处持久化后门模式: ` +
       hits.map(h => `${h.file}: "${h.line}" (${h.pattern})`).join('; ')
     );
   }
 
-  return rule;
+  return { status, details };
 }

@@ -8,7 +8,7 @@
 // ============================================================
 
 import { getAddedLines } from '@sofagent/core';
-import type { AuditContext, RuleCheck } from './types';
+import type { AuditContext, RuleScan, RuleStatus } from './types';
 
 /**
  * 脱敏 A9 details 中的命中行——防止密钥外泄。
@@ -182,7 +182,7 @@ export function scoreLineHighOnly(line: string, wasTransformed: boolean): number
 
 /**
  * 代码/正文上下文评分：完整模式（HIGH + MEDIUM）。
- * 与改动前 checkRuleA9 对单行的评分语义保持一致。
+ * 与改动前 scanA9 对单行的评分语义保持一致。
  */
 export function scoreFullContext(s: string): number {
   const norm = normalizeLine(s);
@@ -241,15 +241,9 @@ export function splitCodeContext(line: string): { code: string; literals: string
   return { code, literals, comments };
 }
 
-export function checkRuleA9(ctx: AuditContext): RuleCheck {
-  const rule: RuleCheck = {
-    name: 'A9 不纳注入',
-    number: 9,
-    status: 'PASS',
-    details: [],
-    evidenceMode: 'git-diff',
-    ruleClass: '业务底线',
-  };
+export function scanA9(ctx: AuditContext): RuleScan {
+  let status: RuleStatus = 'PASS';
+  const details: string[] = [];
 
   const { diffFiles } = ctx;
 
@@ -336,8 +330,8 @@ export function checkRuleA9(ctx: AuditContext): RuleCheck {
     }
   }
   if (forgedAuditMsgs.length > 0) {
-    if (rule.status === 'PASS') rule.status = 'WARN';
-    rule.details.push(
+    if (status === 'PASS') status = 'WARN';
+    details.push(
       `检测到 commit message 含伪造审计签名模式（"${forgedAuditMsgs[0]}"）：commit message 不可自证审计结果，以 hook 输出为准。`
     );
   }
@@ -354,8 +348,8 @@ export function checkRuleA9(ctx: AuditContext): RuleCheck {
 
   // v1.4.8 fresh-eyes（finding-11）：测试文件豁免命中降级 WARN——非静默放行
   if (testFileHits.length > 0) {
-    if (rule.status === 'PASS') rule.status = 'WARN';
-    rule.details.push(
+    if (status === 'PASS') status = 'WARN';
+    details.push(
       `测试文件豁免命中（不 FAIL 但需人工确认）: ` +
       testFileHits.slice(0, 5).map((h) => `${h.file}: "${sanitizeDetailLine(h.line)}" (${h.pattern})`).join('; ') +
       (testFileHits.length > 5 ? ` 等 ${testFileHits.length} 处` : '') +
@@ -364,21 +358,21 @@ export function checkRuleA9(ctx: AuditContext): RuleCheck {
   }
 
   if (failHits.length > 0) {
-    rule.status = 'FAIL';
-    rule.details.push(
+    status = 'FAIL';
+    details.push(
       `检测到 ${failHits.length} 处高置信度 prompt injection 模式: ` +
       failHits.map((h) => `${h.file}: "${sanitizeDetailLine(h.line)}" (${h.pattern}, score=${h.score.toFixed(1)})`).join('; ')
     );
   }
-  if (warnHits.length > 0 && rule.status === 'PASS') {
-    rule.status = 'WARN';
-    rule.details.push(
+  if (warnHits.length > 0 && status === 'PASS') {
+    status = 'WARN';
+    details.push(
       `检测到 ${warnHits.length} 处可疑注入模式（建议人工审查）: ` +
       warnHits.map((h) => `${h.file}: "${sanitizeDetailLine(h.line)}" (${h.pattern}, score=${h.score.toFixed(1)})`).join('; ')
     );
   } else if (warnHits.length > 0) {
     // 已有 FAIL，WARN 追加为详情
-    rule.details.push(
+    details.push(
       `另有 ${warnHits.length} 处可疑注入模式（建议人工审查）: ` +
       warnHits.map((h) => `${h.file}: "${sanitizeDetailLine(h.line)}" (${h.pattern}, score=${h.score.toFixed(1)})`).join('; ')
     );
@@ -388,9 +382,9 @@ export function checkRuleA9(ctx: AuditContext): RuleCheck {
   // （v1.4.8 finding-11：测试文件内的注释命中同属 fixture 豁免面，不在此重复报警）
   const codeCommentWarns = diffCommentWarns.filter((w) => !isTestFilePath(w.file));
   if (codeCommentWarns.length > 0) {
-    if (rule.status === 'PASS') rule.status = 'WARN';
+    if (status === 'PASS') status = 'WARN';
     const uniqueWarns = Array.from(new Set(codeCommentWarns.map((w) => `${w.file}:${w.pattern}`)));
-    rule.details.push(
+    details.push(
       `检测到 ${uniqueWarns.length} 处代码注释中的可疑注入模式（P1-A3 扩展扫描）: ` +
       uniqueWarns.slice(0, 5).map((key) => {
         const w = codeCommentWarns.find((d) => `${d.file}:${d.pattern}` === key)!;
@@ -399,7 +393,7 @@ export function checkRuleA9(ctx: AuditContext): RuleCheck {
     );
   }
 
-  return rule;
+  return { status, details };
 }
 
 /** 找到最佳匹配模式名 */

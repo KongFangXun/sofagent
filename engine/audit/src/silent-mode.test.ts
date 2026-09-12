@@ -4,14 +4,14 @@
 // ============================================================
 
 import { describe, it, expect } from 'vitest';
-import { checkRuleA3 } from './rules/rule-a3-careful-modify';
+import { scanA3 } from './rules/rule-a3-careful-modify';
 import { scanE1 } from './rules/rule-e1-no-test-files';
-import { checkRuleE2 } from './rules/rule-e2-todo-undeclared';
+import { scanE2 } from './rules/rule-e2-todo-undeclared';
 // v1.2.9: E3 已并入 A11，不再独立存在
-import { checkRuleA11 } from './rules/rule-a11-no-abuse';
-import { checkRuleA5 } from './rules/rule-a5-honest-report';
+import { scanA11 } from './rules/rule-a11-no-abuse';
+import { scanA5 } from './rules/rule-a5-honest-report';
 import { scanA1 } from './rules/rule-a1-sensitive-files';
-import { checkRuleE4 } from './rules/rule-e4-low-comment-ratio';
+import { scanE4 } from './rules/rule-e4-low-comment-ratio';
 import type { AuditContext } from './rules/types';
 import type { DiffFile } from '@sofagent/core';
 import { makeDiffFile, makeCtx } from './test-utils';
@@ -21,14 +21,14 @@ describe('沉默审计模式 · 7 条纯 diff 规则', () => {
     it('文件数 ≤ 10 且与 task 相关 → PASS', () => {
       const files = Array.from({ length: 5 }, (_, i) => makeDiffFile(`src/file${i}.ts`));
       const ctx = makeCtx(files, { task: 'file module' });
-      const result = checkRuleA3(ctx);
+      const result = scanA3(ctx);
       expect(result.status).toBe('PASS');
     });
 
     it('文件数 > 10 且匹配率 < 50% → WARN', () => {
       const files = Array.from({ length: 15 }, (_, i) => makeDiffFile(`src/unrelated${i}.ts`));
       const ctx = makeCtx(files, { task: 'login page' });
-      const result = checkRuleA3(ctx);
+      const result = scanA3(ctx);
       expect(result.status).toBe('WARN');
       expect(result.details[0]).toContain('15');
     });
@@ -36,14 +36,14 @@ describe('沉默审计模式 · 7 条纯 diff 规则', () => {
     it('无 --task → PASS（跳过）', () => {
       const files = Array.from({ length: 15 }, (_, i) => makeDiffFile(`src/file${i}.ts`));
       const ctx = makeCtx(files);
-      const result = checkRuleA3(ctx);
+      const result = scanA3(ctx);
       expect(result.status).toBe('PASS');
     });
 
     it('文件数 > 10 且匹配率 ≥ 50% → PASS', () => {
       const files = Array.from({ length: 12 }, (_, i) => makeDiffFile(`src/login${i}.ts`));
       const ctx = makeCtx(files, { task: 'login' });
-      const result = checkRuleA3(ctx);
+      const result = scanA3(ctx);
       expect(result.status).toBe('PASS');
     });
   });
@@ -93,7 +93,7 @@ describe('沉默审计模式 · 7 条纯 diff 规则', () => {
         [makeDiffFile('src/index.ts', ['+// TODO: fix this later'])],
         { commitMsg: 'refactor: clean up TODO items' }
       );
-      const result = checkRuleE2(ctx);
+      const result = scanE2(ctx);
       expect(result.status).toBe('PASS');
     });
 
@@ -102,7 +102,7 @@ describe('沉默审计模式 · 7 条纯 diff 规则', () => {
         [makeDiffFile('src/index.ts', ['+// TODO: fix this later'])],
         { commitMsg: 'refactor: clean up code' }
       );
-      const result = checkRuleE2(ctx);
+      const result = scanE2(ctx);
       expect(result.status).toBe('WARN');
       expect(result.details[0]).toContain('TODO');
     });
@@ -112,7 +112,7 @@ describe('沉默审计模式 · 7 条纯 diff 规则', () => {
         [makeDiffFile('src/index.ts', ['+console.log("hello");'])],
         { commitMsg: 'add logging' }
       );
-      const result = checkRuleE2(ctx);
+      const result = scanE2(ctx);
       expect(result.status).toBe('PASS');
     });
 
@@ -121,7 +121,7 @@ describe('沉默审计模式 · 7 条纯 diff 规则', () => {
         [makeDiffFile('src/index.ts', ['+// FIXME: broken logic'])],
         { commitMsg: 'address fixme comments' }
       );
-      const result = checkRuleE2(ctx);
+      const result = scanE2(ctx);
       expect(result.status).toBe('PASS');
     });
   });
@@ -134,7 +134,7 @@ describe('沉默审计模式 · 7 条纯 diff 规则', () => {
         [makeDiffFile('src/legacy.ts', deletedLines)],
         { task: 'login feature' }
       );
-      const result = checkRuleA11(ctx);
+      const result = scanA11(ctx);
       expect(result.status).toBe('WARN');
       expect(result.details.some(d => d.includes('101'))).toBe(true);
     });
@@ -145,7 +145,7 @@ describe('沉默审计模式 · 7 条纯 diff 规则', () => {
         [makeDiffFile('src/login.ts', deletedLines)],
         { task: 'login feature' }
       );
-      const result = checkRuleA11(ctx);
+      const result = scanA11(ctx);
       expect(result.status).toBe('PASS');
     });
 
@@ -154,7 +154,7 @@ describe('沉默审计模式 · 7 条纯 diff 规则', () => {
       const ctx = makeCtx(
         [makeDiffFile('src/legacy.ts', deletedLines)]
       );
-      const result = checkRuleA11(ctx);
+      const result = scanA11(ctx);
       expect(result.status).toBe('PASS');
     });
 
@@ -164,7 +164,7 @@ describe('沉默审计模式 · 7 条纯 diff 规则', () => {
         [makeDiffFile('src/legacy.ts', deletedLines)],
         { task: 'login feature' }
       );
-      const result = checkRuleA11(ctx);
+      const result = scanA11(ctx);
       expect(result.status).toBe('PASS');
     });
   });
@@ -172,33 +172,33 @@ describe('沉默审计模式 · 7 条纯 diff 规则', () => {
   describe('R5 占位 commit', () => {
     it('commit = "fix" → WARN', () => {
       const ctx = makeCtx([], { commitMsg: 'fix' });
-      const result = checkRuleA5(ctx);
+      const result = scanA5(ctx);
       expect(result.status).toBe('WARN');
       expect(result.details[0]).toContain('占位符');
     });
 
     it('commit = "fix login bug" → PASS', () => {
       const ctx = makeCtx([], { commitMsg: 'fix login bug' });
-      const result = checkRuleA5(ctx);
+      const result = scanA5(ctx);
       expect(result.status).toBe('PASS');
     });
 
     it('commit = "" → FAIL', () => {
       const ctx = makeCtx([], { commitMsg: '' });
-      const result = checkRuleA5(ctx);
+      const result = scanA5(ctx);
       expect(result.status).toBe('FAIL');
       expect(result.details[0]).toContain('为空');
     });
 
     it('commit = "wip" → WARN', () => {
       const ctx = makeCtx([], { commitMsg: 'wip' });
-      const result = checkRuleA5(ctx);
+      const result = scanA5(ctx);
       expect(result.status).toBe('WARN');
     });
 
     it('commit = "update" → WARN', () => {
       const ctx = makeCtx([], { commitMsg: 'update' });
-      const result = checkRuleA5(ctx);
+      const result = scanA5(ctx);
       expect(result.status).toBe('WARN');
     });
   });
@@ -269,7 +269,7 @@ describe('沉默审计模式 · 7 条纯 diff 规则', () => {
       // 生成 210 行新增代码，0 行注释
       const addedLines = Array.from({ length: 210 }, (_, i) => `+const x${i} = ${i};`);
       const ctx = makeCtx([makeDiffFile('src/big-file.ts', addedLines)]);
-      const result = checkRuleE4(ctx);
+      const result = scanE4(ctx);
       expect(result.status).toBe('WARN');
       expect(result.details[0]).toContain('注释行');
     });
@@ -279,14 +279,14 @@ describe('沉默审计模式 · 7 条纯 diff 规则', () => {
       const codeLines = Array.from({ length: 200 }, (_, i) => `+const x${i} = ${i};`);
       const commentLines = Array.from({ length: 11 }, () => '+// this is a comment');
       const ctx = makeCtx([makeDiffFile('src/commented-file.ts', [...codeLines, ...commentLines])]);
-      const result = checkRuleE4(ctx);
+      const result = scanE4(ctx);
       expect(result.status).toBe('PASS');
     });
 
     it('新增 ≤ 200 行 → PASS', () => {
       const addedLines = Array.from({ length: 100 }, (_, i) => `+const x${i} = ${i};`);
       const ctx = makeCtx([makeDiffFile('src/small-file.ts', addedLines)]);
-      const result = checkRuleE4(ctx);
+      const result = scanE4(ctx);
       expect(result.status).toBe('PASS');
     });
   });

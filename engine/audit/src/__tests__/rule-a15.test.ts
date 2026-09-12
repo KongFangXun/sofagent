@@ -6,7 +6,7 @@
 import { describe, it, expect, beforeEach, afterEach, afterAll } from 'vitest';
 import { existsSync, mkdirSync, writeFileSync, rmSync } from 'fs';
 import { join } from 'path';
-import { checkRuleA15 } from '../rules/rule-a15-action-constraint';
+import { scanA15 } from '../rules/rule-a15-action-constraint';
 import type { AuditContext } from '../rules/types';
 import type { DiffFile } from '@sofagent/core';
 
@@ -49,14 +49,14 @@ describe('A15 不盲动', () => {
 
   it('无 workflow.yml → 跳过', () => {
     const ctx = makeCtx(['action: approve']);
-    const result = checkRuleA15(ctx);
+    const result = scanA15(ctx);
     expect(result.status).toBe('PASS');
     expect(result.details[0]).toContain('未找到');
   });
 
   it('无 action 变更 → PASS', () => {
     const ctx = makeCtx([]);
-    const result = checkRuleA15(ctx);
+    const result = scanA15(ctx);
     expect(result.status).toBe('PASS');
   });
 
@@ -74,7 +74,7 @@ describe('A15 不盲动', () => {
 
     // 需要让 rule 读取我们创建的 workflow.yml
     const ctx = makeCtx(['action: approve']);
-    const result = checkRuleA15(ctx);
+    const result = scanA15(ctx);
     // 因为 dataDir 是环境变量的默认值，我们创建的临时 workflow 不会被读取到
     // 这里测试的是代码逻辑存在，实际路径依赖环境
     expect(result.status).toBe('PASS');
@@ -87,7 +87,7 @@ describe('A15 不盲动', () => {
       '.deploy(Production)',
       '.validate(config)',
     ]);
-    const result = checkRuleA15(ctx);
+    const result = scanA15(ctx);
     // 无 workflow 时跳过
     expect(result.status).toBe('PASS');
     expect(result.details[0]).toContain('未找到');
@@ -99,7 +99,7 @@ describe('A15 不盲动', () => {
       'perform "delete"',
       'perform "destroy"',
     ]);
-    const result = checkRuleA15(ctx);
+    const result = scanA15(ctx);
     // 无 workflow 配置时跳过
     expect(result.status).toBe('PASS');
   });
@@ -113,7 +113,7 @@ describe('A15 不盲动', () => {
     writeFileSync(join(wfDir, 'workflow.yml'), `nodes:\n  - id: AP-审批\n    description: 审批节点\n  - id: AP-付款\n    description: 付款节点\n`);
 
     const ctx = makeCtx(['action: approve']);
-    const result = checkRuleA15(ctx);
+    const result = scanA15(ctx);
     expect(result.status).toBe('FAIL');
     expect(result.details[0]).toContain('均未声明 actions');
   });

@@ -4,7 +4,7 @@
 // ============================================================
 
 import { describe, it, expect } from 'vitest';
-import { checkRuleA17 } from './rule-a17-bulk-change';
+import { scanA17 } from './rule-a17-bulk-change';
 import { makeDiffFile, makeCtx } from '../test-utils';
 
 const defaultConfig = {
@@ -21,7 +21,7 @@ describe('A17 异常批量变更', () => {
       [makeDiffFile('src/a.ts', ['+a']), makeDiffFile('src/b.ts', ['+b'])],
       { config: defaultConfig as any }
     );
-    const result = checkRuleA17(ctx);
+    const result = scanA17(ctx);
     expect(result.status).toBe('PASS');
   });
 
@@ -30,7 +30,7 @@ describe('A17 异常批量变更', () => {
       makeDiffFile(`src/file${i}.ts`, [`+line`])
     );
     const ctx = makeCtx(files, { config: defaultConfig as any });
-    const result = checkRuleA17(ctx);
+    const result = scanA17(ctx);
     expect(result.status).toBe('WARN');
   });
 
@@ -39,17 +39,8 @@ describe('A17 异常批量变更', () => {
       makeDiffFile(`src/file${i}.ts`, [`+line`])
     );
     const ctx = makeCtx(files, { config: { A17: { enabled: false } } as any });
-    const result = checkRuleA17(ctx);
+    const result = scanA17(ctx);
     expect(result.status).toBe('PASS');
-  });
-
-  it('evidenceMode 标注为 filesystem', () => {
-    const ctx = makeCtx(
-      [makeDiffFile('src/index.ts', ['+console.log(1);'])],
-      { config: defaultConfig as any }
-    );
-    const result = checkRuleA17(ctx);
-    expect(result.evidenceMode).toBe('filesystem');
   });
 
   it('历史累加超阈值 → WARN', () => {
@@ -62,7 +53,7 @@ describe('A17 异常批量变更', () => {
       makeDiffFile(`src/file${i}.ts`, [`+line`])
     );
     const ctx = makeCtx(files, { config: defaultConfig as any, history });
-    const result = checkRuleA17(ctx);
+    const result = scanA17(ctx);
     // 5 (current) + 60 (history) = 65 >= 50 → WARN
     expect(result.status).toBe('WARN');
   });
@@ -79,7 +70,7 @@ describe('A17 异常批量变更', () => {
       makeDiffFile(`src/file${i}.ts`, [`+line`])
     );
     const ctx = makeCtx(files, { config: defaultConfig as any, history });
-    const result = checkRuleA17(ctx);
+    const result = scanA17(ctx);
     expect(result.status).toBe('PASS');
   });
 });

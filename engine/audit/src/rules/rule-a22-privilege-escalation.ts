@@ -5,7 +5,7 @@
 // ============================================================
 
 import { getAddedLines } from '@sofagent/core';
-import type { AuditContext, RuleCheck } from './types';
+import type { AuditContext, RuleScan, RuleStatus } from './types';
 
 /** 权限提升模式（不用 g 标志——避免 lastIndex 状态问题） */
 const PRIVILEGE_PATTERNS: { pattern: RegExp; name: string }[] = [
@@ -36,15 +36,9 @@ const SAFE_CHMOD_PATTERNS: RegExp[] = [
   /chmod\s+[ug]\s*\+\s*w\b/i,
 ];
 
-export function checkRuleA22(ctx: AuditContext): RuleCheck {
-  const rule: RuleCheck = {
-    name: 'A22 不越权限',
-    number: 22,
-    status: 'PASS',
-    details: [],
-    evidenceMode: 'git-diff',
-    ruleClass: '业务底线',
-  };
+export function scanA22(ctx: AuditContext): RuleScan {
+  let status: RuleStatus = 'PASS';
+  const details: string[] = [];
 
   const { diffFiles } = ctx;
 
@@ -84,12 +78,12 @@ export function checkRuleA22(ctx: AuditContext): RuleCheck {
   }
 
   if (hits.length > 0) {
-    rule.status = 'FAIL';
-    rule.details.push(
+    status = 'FAIL';
+    details.push(
       `检测到 ${hits.length} 处权限提升操作: ` +
       hits.map(h => `${h.file}: "${h.line}" (${h.pattern})`).join('; ')
     );
   }
 
-  return rule;
+  return { status, details };
 }

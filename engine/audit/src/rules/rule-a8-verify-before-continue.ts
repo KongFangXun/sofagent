@@ -6,20 +6,14 @@
 // ============================================================
 
 import { hasTestOrBuildExecution } from '@sofagent/core';
-import type { AuditContext, RuleCheck } from './types';
+import type { AuditContext, RuleScan, RuleStatus } from './types';
 
 const BUILD_FILES = ['package.json', 'package-lock.json', 'yarn.lock', 'pnpm-lock.yaml', 'build.gradle', 'build.gradle.kts', 'Cargo.toml', 'Cargo.lock', 'requirements.txt', 'Pipfile', 'pyproject.toml', 'go.mod', 'go.sum', 'Gemfile', 'composer.json', 'Dockerfile', 'docker-compose.yml', 'Makefile', '.env.example', 'tsconfig.json', 'next.config.js', 'vite.config.ts'];
 
-export function checkRuleA8(ctx: AuditContext): RuleCheck {
+export function scanA8(ctx: AuditContext): RuleScan {
   const { diffFiles, logEntries } = ctx;
-  const rule: RuleCheck = {
-    name: 'A8 不逃验证',
-    number: 8,
-    status: 'PASS',
-    details: [],
-    evidenceMode: 'hybrid',
-    ruleClass: '能力拐杖',
-  };
+  let status: RuleStatus = 'PASS';
+  const details: string[] = [];
 
   // 检查是否有构建/依赖文件变更
   const buildFileChanges = diffFiles.filter((f) => {
@@ -29,29 +23,29 @@ export function checkRuleA8(ctx: AuditContext): RuleCheck {
 
   if (buildFileChanges.length === 0) {
     // 没有构建文件变更，不需要检查
-    return rule;
+    return { status, details };
   }
 
   // silent 模式：无 Agent 日志，不做验证检查（CI 环境无需此日志依赖规则）
   if (ctx.silent && logEntries.length === 0) {
-    rule.status = 'PASS';
-    rule.details.push(`--silent 模式：构建文件变更 (${buildFileChanges.map((f) => f.path).join(', ')}) 后无日志，跳过「不逃验证」检查。`);
-    return rule;
+    status = 'PASS';
+    details.push(`--silent 模式：构建文件变更 (${buildFileChanges.map((f) => f.path).join(', ')}) 后无日志，跳过「不逃验证」检查。`);
+    return { status, details };
   }
 
   // 有构建文件变更，检查是否有 test/build 执行记录
   if (logEntries.length === 0) {
-    rule.status = 'WARN';
-    rule.details.push(`构建文件变更 (${buildFileChanges.map((f) => f.path).join(', ')}) 后无测试/构建执行记录（未找到任务日志）。`);
-    return rule;
+    status = 'WARN';
+    details.push(`构建文件变更 (${buildFileChanges.map((f) => f.path).join(', ')}) 后无测试/构建执行记录（未找到任务日志）。`);
+    return { status, details };
   }
 
   if (hasTestOrBuildExecution(logEntries)) {
-    rule.status = 'PASS';
+    status = 'PASS';
   } else {
-    rule.status = 'FAIL';
-    rule.details.push(`构建文件变更 (${buildFileChanges.map((f) => f.path).join(', ')}) 后无测试/构建命令执行记录。`);
+    status = 'FAIL';
+    details.push(`构建文件变更 (${buildFileChanges.map((f) => f.path).join(', ')}) 后无测试/构建命令执行记录。`);
   }
 
-  return rule;
+  return { status, details };
 }

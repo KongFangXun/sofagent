@@ -5,7 +5,7 @@
 // ============================================================
 
 import { getAddedLines } from '@sofagent/core';
-import type { AuditContext, RuleCheck } from './types';
+import type { AuditContext, RuleScan, RuleStatus } from './types';
 import { sanitizeDetailLine } from './rule-a9-no-injection';
 
 /** 路径穿越模式（不用 g 标志——避免 lastIndex 状态问题） */
@@ -44,15 +44,9 @@ const SAFE_PATH_PATTERNS: RegExp[] = [
   /^\/home\//,
 ];
 
-export function checkRuleA23(ctx: AuditContext): RuleCheck {
-  const rule: RuleCheck = {
-    name: 'A23 不逃路径',
-    number: 23,
-    status: 'PASS',
-    details: [],
-    evidenceMode: 'git-diff',
-    ruleClass: '业务底线',
-  };
+export function scanA23(ctx: AuditContext): RuleScan {
+  let status: RuleStatus = 'PASS';
+  const details: string[] = [];
 
   const { diffFiles } = ctx;
 
@@ -133,15 +127,15 @@ export function checkRuleA23(ctx: AuditContext): RuleCheck {
   const mainHits = hits.filter((h) => !isTestFilePath(h.file));
 
   if (mainHits.length > 0) {
-    rule.status = 'FAIL';
-    rule.details.push(
+    status = 'FAIL';
+    details.push(
       `检测到 ${mainHits.length} 处路径穿越/symlink 逃逸: ` +
       mainHits.map(h => `${h.file}: "${h.line}" (${h.pattern})`).join('; ')
     );
   }
   if (testFileHits.length > 0) {
-    if (rule.status === 'PASS') rule.status = 'WARN';
-    rule.details.push(
+    if (status === 'PASS') status = 'WARN';
+    details.push(
       `测试文件豁免命中（不 FAIL 但需人工确认）: ` +
       testFileHits.slice(0, 5).map(h => `${h.file}: "${sanitizeDetailLine(h.line)}" (${h.pattern})`).join('; ') +
       (testFileHits.length > 5 ? ` 等 ${testFileHits.length} 处` : '') +
@@ -149,5 +143,5 @@ export function checkRuleA23(ctx: AuditContext): RuleCheck {
     );
   }
 
-  return rule;
+  return { status, details };
 }

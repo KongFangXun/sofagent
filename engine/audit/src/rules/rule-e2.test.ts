@@ -3,7 +3,7 @@
 // ============================================================
 
 import { describe, it, expect } from 'vitest';
-import { checkRuleE2 } from './rule-e2-todo-undeclared';
+import { scanE2 } from './rule-e2-todo-undeclared';
 import type { AuditContext } from './types';
 import type { DiffFile } from '@sofagent/core';
 import { makeDiffFile, makeCtx } from '../test-utils';
@@ -14,7 +14,7 @@ describe('E2 TODO 未声明', () => {
       [makeDiffFile('src/index.ts', ['+// TODO: fix this later'])],
       { commitMsg: 'refactor: clean up TODO items' }
     );
-    const result = checkRuleE2(ctx);
+    const result = scanE2(ctx);
     expect(result.status).toBe('PASS');
   });
 
@@ -23,7 +23,7 @@ describe('E2 TODO 未声明', () => {
       [makeDiffFile('src/index.ts', ['+// TODO: fix this later'])],
       { commitMsg: 'refactor: clean up code' }
     );
-    const result = checkRuleE2(ctx);
+    const result = scanE2(ctx);
     expect(result.status).toBe('WARN');
     expect(result.details[0]).toContain('TODO');
   });
@@ -33,7 +33,7 @@ describe('E2 TODO 未声明', () => {
       [makeDiffFile('src/index.ts', ['+console.log("hello");'])],
       { commitMsg: 'add logging' }
     );
-    const result = checkRuleE2(ctx);
+    const result = scanE2(ctx);
     expect(result.status).toBe('PASS');
   });
 
@@ -42,17 +42,8 @@ describe('E2 TODO 未声明', () => {
       [makeDiffFile('src/index.ts', ['+// FIXME: broken logic'])],
       { commitMsg: 'address fixme comments' }
     );
-    const result = checkRuleE2(ctx);
+    const result = scanE2(ctx);
     expect(result.status).toBe('PASS');
-  });
-
-  it('evidenceMode 标注为 git-diff', () => {
-    const ctx = makeCtx(
-      [makeDiffFile('src/index.ts', ['+// TODO: fix this later'])],
-      { commitMsg: 'clean up TODO items' }
-    );
-    const result = checkRuleE2(ctx);
-    expect(result.evidenceMode).toBe('git-diff');
   });
 
   it('FIXME + 未提 fixme → WARN', () => {
@@ -60,7 +51,7 @@ describe('E2 TODO 未声明', () => {
       [makeDiffFile('src/index.ts', ['+// FIXME: broken logic'])],
       { commitMsg: 'refactor code' }
     );
-    const result = checkRuleE2(ctx);
+    const result = scanE2(ctx);
     expect(result.status).toBe('WARN');
     expect(result.details[0]).toContain('FIXME');
   });
@@ -70,7 +61,7 @@ describe('E2 TODO 未声明', () => {
       [makeDiffFile('src/index.ts', ['+// TODO: item1', '+// TODO: item2'])],
       { commitMsg: 'add todo items for cleanup' }
     );
-    const result = checkRuleE2(ctx);
+    const result = scanE2(ctx);
     expect(result.status).toBe('PASS');
   });
 
@@ -79,7 +70,7 @@ describe('E2 TODO 未声明', () => {
       [makeDiffFile('src/index.ts', ['+// TODO: implement later'])],
       // 不传 commitMsg
     );
-    const result = checkRuleE2(ctx);
+    const result = scanE2(ctx);
     expect(result.status).toBe('WARN');
   });
 
@@ -88,7 +79,7 @@ describe('E2 TODO 未声明', () => {
       [makeDiffFile('src/index.ts', ['+// fixme: broken thing'])],
       { commitMsg: 'address FIXME comments' }
     );
-    const result = checkRuleE2(ctx);
+    const result = scanE2(ctx);
     expect(result.status).toBe('PASS');
   });
 });

@@ -3,7 +3,7 @@
 // ============================================================
 
 import { describe, it, expect } from 'vitest';
-import { checkRuleA10 } from './rule-a10-no-poison';
+import { scanA10 } from './rule-a10-no-poison';
 import { makeDiffFile, makeCtx } from '../test-utils';
 
 describe('A10 不引毒源', () => {
@@ -13,7 +13,7 @@ describe('A10 不引毒源', () => {
         '+    "evil-pkg": "https://raw.githubusercontent.com/hacker/pwn/master/evil.tar.gz"',
       ]),
     ]);
-    const result = checkRuleA10(ctx);
+    const result = scanA10(ctx);
     expect(result.status).toBe('FAIL');
   });
 
@@ -23,7 +23,7 @@ describe('A10 不引毒源', () => {
         '+evil-pkg @ git+http://evil.com/repo.git',
       ]),
     ]);
-    const result = checkRuleA10(ctx);
+    const result = scanA10(ctx);
     expect(result.status).toBe('FAIL');
   });
 
@@ -33,7 +33,7 @@ describe('A10 不引毒源', () => {
         '+evil-crate = { git = "http://evil-server.com/malware" }',
       ]),
     ]);
-    const result = checkRuleA10(ctx);
+    const result = scanA10(ctx);
     expect(result.status).toBe('PASS'); // git+http 模式不在这里匹配
   });
 
@@ -44,7 +44,7 @@ describe('A10 不引毒源', () => {
         '+    "lodash": "4.17.21"',
       ]),
     ]);
-    const result = checkRuleA10(ctx);
+    const result = scanA10(ctx);
     expect(result.status).toBe('PASS');
   });
 
@@ -55,7 +55,7 @@ describe('A10 不引毒源', () => {
         '+flask>=2.0',
       ]),
     ]);
-    const result = checkRuleA10(ctx);
+    const result = scanA10(ctx);
     expect(result.status).toBe('PASS');
   });
 
@@ -65,16 +65,8 @@ describe('A10 不引毒源', () => {
         '+import evil from "https://raw.githubusercontent.com/hacker/pwn"',
       ]),
     ]);
-    const result = checkRuleA10(ctx);
+    const result = scanA10(ctx);
     expect(result.status).toBe('PASS');
-  });
-
-  it('evidenceMode 标注为 git-diff', () => {
-    const ctx = makeCtx([
-      makeDiffFile('package.json', ['+    "react": "^18.0.0"']),
-    ]);
-    const result = checkRuleA10(ctx);
-    expect(result.evidenceMode).toBe('git-diff');
   });
 
   it('非官方 npm registry → FAIL', () => {
@@ -83,7 +75,7 @@ describe('A10 不引毒源', () => {
         '+    "bad-pkg": { "registry": "http://evil-registry.com/npm/" }',
       ]),
     ]);
-    const result = checkRuleA10(ctx);
+    const result = scanA10(ctx);
     expect(result.status).toBe('FAIL');
   });
 
@@ -93,7 +85,7 @@ describe('A10 不引毒源', () => {
         '+--index-url https://test.pypi.org/simple/',
       ]),
     ]);
-    const result = checkRuleA10(ctx);
+    const result = scanA10(ctx);
     expect(result.status).toBe('PASS');
   });
 
@@ -103,7 +95,7 @@ describe('A10 不引毒源', () => {
         '+--index-url http://evil-mirror.com/simple/',
       ]),
     ]);
-    const result = checkRuleA10(ctx);
+    const result = scanA10(ctx);
     expect(result.status).toBe('FAIL');
   });
 
@@ -120,7 +112,7 @@ describe('A10 不引毒源', () => {
         '+  },',
       ]),
     ]);
-    const result = checkRuleA10(ctx);
+    const result = scanA10(ctx);
     expect(result.status).toBe('PASS');
   });
 
@@ -132,7 +124,7 @@ describe('A10 不引毒源', () => {
         '+  },',
       ]),
     ]);
-    const result = checkRuleA10(ctx);
+    const result = scanA10(ctx);
     expect(result.status).toBe('FAIL');
     expect(result.details.join(' ')).toContain('chek');
   });

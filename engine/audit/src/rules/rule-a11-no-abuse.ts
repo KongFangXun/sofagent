@@ -11,7 +11,7 @@
 // evidenceMode: git-diff
 // ============================================================
 import { getAddedLines } from '@sofagent/core';
-import type { AuditContext, RuleCheck } from './types';
+import type { AuditContext, RuleScan, RuleStatus } from './types';
 
 /** 新增文件数阈值 */
 const ADDED_FILES_THRESHOLD = 50;
@@ -39,15 +39,9 @@ function effectiveLineCount(addedLines: string[]): number {
   return count;
 }
 
-export function checkRuleA11(ctx: AuditContext): RuleCheck {
-  const rule: RuleCheck = {
-    name: 'A11 不滥资源',
-    number: 11,
-    status: 'PASS',
-    details: [],
-    evidenceMode: 'git-diff',
-    ruleClass: '业务底线',
-  };
+export function scanA11(ctx: AuditContext): RuleScan {
+  let status: RuleStatus = 'PASS';
+  const details: string[] = [];
 
   const { diffFiles } = ctx;
 
@@ -71,8 +65,8 @@ export function checkRuleA11(ctx: AuditContext): RuleCheck {
 
   // ① 新增文件数 > 50 → WARN
   if (addedFileCount > ADDED_FILES_THRESHOLD) {
-    rule.status = 'WARN';
-    rule.details.push(
+    status = 'WARN';
+    details.push(
       `新增文件数 ${addedFileCount}，超过 ${ADDED_FILES_THRESHOLD} 个阈值。请确认是否为预期行为。`
     );
   }
@@ -80,19 +74,19 @@ export function checkRuleA11(ctx: AuditContext): RuleCheck {
   // ② 单文件新增行 > 10000 → WARN（v1.4.5 T15: 阈值按有效行数判定——
   //    超长单行折算后计入；rawLines < lines 说明是少量超长行触发，明细里带出）
   if (largeAddedFiles.length > 0) {
-    if (rule.status === 'PASS') rule.status = 'WARN';
+    if (status === 'PASS') status = 'WARN';
     const detailList = largeAddedFiles
       .map((f) => `${f.path} (有效 ${f.lines} 行${f.rawLines < f.lines ? `，实际仅 ${f.rawLines} 行——超长单行折算` : ''})`)
       .join(', ');
-    rule.details.push(
+    details.push(
       `${largeAddedFiles.length} 个文件新增行数超过 ${SINGLE_FILE_LINES_THRESHOLD} 行: ${detailList}`
     );
   }
 
   // ③ 删除文件 > 20 → FAIL
   if (deletedFileCount > DELETED_FILES_THRESHOLD) {
-    rule.status = 'FAIL';
-    rule.details.push(
+    status = 'FAIL';
+    details.push(
       `删除文件数 ${deletedFileCount}，超过 ${DELETED_FILES_THRESHOLD} 个阈值。大量文件删除可能为破坏性操作。`
     );
   }
@@ -125,12 +119,12 @@ export function checkRuleA11(ctx: AuditContext): RuleCheck {
     }
 
     if (largeDeletionFiles.length > 0) {
-      if (rule.status === 'PASS') rule.status = 'WARN';
-      rule.details.push(
+      if (status === 'PASS') status = 'WARN';
+      details.push(
         `${largeDeletionFiles.length} 个文件删除超过 ${SINGLE_FILE_DELETION_THRESHOLD} 行且与任务 "${ctx.task}" 无关: ${largeDeletionFiles.join(', ')}`
       );
     }
   }
 
-  return rule;
+  return { status, details };
 }

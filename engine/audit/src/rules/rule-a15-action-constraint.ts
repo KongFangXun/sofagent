@@ -8,7 +8,7 @@
 import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
 import { load as yamlLoad } from 'js-yaml';
-import type { AuditContext, RuleCheck } from './types';
+import type { AuditContext, RuleScan, RuleStatus } from './types';
 import { loadEnvConfig } from '@sofagent/core';
 import { getAddedLines } from '@sofagent/core';
 
@@ -74,15 +74,9 @@ function extractActionsFromLines(lines: string[]): string[] {
   return [...new Set(actions)]; // 去重
 }
 
-export function checkRuleA15(ctx: AuditContext): RuleCheck {
-  const rule: RuleCheck = {
-    name: 'A15 不盲动',
-    number: 15,
-    status: 'PASS',
-    details: [],
-    evidenceMode: 'hybrid',
-    ruleClass: '能力拐杖',
-  };
+export function scanA15(ctx: AuditContext): RuleScan {
+  let status: RuleStatus = 'PASS';
+  const details: string[] = [];
 
   const { diffFiles } = ctx;
 
@@ -93,8 +87,8 @@ export function checkRuleA15(ctx: AuditContext): RuleCheck {
 
   // 无 workflow 配置时跳过
   if (workflowNodes.size === 0) {
-    rule.details.push('未找到 workflow.yml 或 nodes 配置，跳过。');
-    return rule;
+    details.push('未找到 workflow.yml 或 nodes 配置，跳过。');
+    return { status, details };
   }
 
   // 检查哪些节点有声明的 actions
@@ -104,9 +98,9 @@ export function checkRuleA15(ctx: AuditContext): RuleCheck {
     // 否则 Agent 可通过"不声明 actions"绕过所有约束检查。
     // 仅当 workflow.yml 存在且有 nodes 但零 actions 声明时触发——
     // 如果 workflow.yml 不存在或无 nodes，上面已跳过。
-    rule.status = 'FAIL';
-    rule.details.push('workflow.yml 存在 nodes 但均未声明 actions。为防止绕过约束检查，A15 要求每个节点显式声明 allowed actions。请在各节点添加 actions 字段，或删除 workflow.yml。');
-    return rule;
+    status = 'FAIL';
+    details.push('workflow.yml 存在 nodes 但均未声明 actions。为防止绕过约束检查，A15 要求每个节点显式声明 allowed actions。请在各节点添加 actions 字段，或删除 workflow.yml。');
+    return { status, details };
   }
 
   // 收集所有变更行中检测到的 action 调用
@@ -119,7 +113,7 @@ export function checkRuleA15(ctx: AuditContext): RuleCheck {
 
   if (allActions.length === 0) {
     // 无 action 调用检测到，PASS
-    return rule;
+    return { status, details };
   }
 
   // 构建所有声明的 action 集合
@@ -139,15 +133,15 @@ export function checkRuleA15(ctx: AuditContext): RuleCheck {
   }
 
   if (outOfScope.length > 0) {
-    rule.status = 'FAIL';
-    rule.details.push(
+    status = 'FAIL';
+    details.push(
       `检测到 ${outOfScope.length} 个未在 workflow 节点中声明的 action: ${outOfScope.join(', ')}。建议在 workflow.yml 对应节点的 actions 声明中添加。`
     );
   } else {
-    rule.details.push(
+    details.push(
       `检测到的 ${allActions.length} 个 action 均在 workflow 节点声明的 actions 范围内。`
     );
   }
 
-  return rule;
+  return { status, details };
 }

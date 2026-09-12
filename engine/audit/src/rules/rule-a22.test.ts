@@ -3,7 +3,7 @@
 // ============================================================
 
 import { describe, it, expect } from 'vitest';
-import { checkRuleA22 } from './rule-a22-privilege-escalation';
+import { scanA22 } from './rule-a22-privilege-escalation';
 import { makeDiffFile, makeCtx } from '../test-utils';
 
 describe('A22 不越权限', () => {
@@ -13,7 +13,7 @@ describe('A22 不越权限', () => {
         '+chmod 777 /etc',
       ]),
     ]);
-    const result = checkRuleA22(ctx);
+    const result = scanA22(ctx);
     expect(result.status).toBe('FAIL');
   });
 
@@ -23,7 +23,7 @@ describe('A22 不越权限', () => {
         "+echo 'ALL ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers",
       ]),
     ]);
-    const result = checkRuleA22(ctx);
+    const result = scanA22(ctx);
     expect(result.status).toBe('FAIL');
   });
 
@@ -33,7 +33,7 @@ describe('A22 不越权限', () => {
         '+chmod u+s /bin/bash',
       ]),
     ]);
-    const result = checkRuleA22(ctx);
+    const result = scanA22(ctx);
     expect(result.status).toBe('FAIL');
   });
 
@@ -43,7 +43,7 @@ describe('A22 不越权限', () => {
         '+chmod 755 dist/cli.js',
       ]),
     ]);
-    const result = checkRuleA22(ctx);
+    const result = scanA22(ctx);
     expect(result.status).toBe('PASS');
   });
 
@@ -53,7 +53,7 @@ describe('A22 不越权限', () => {
         '+chmod +x deploy.sh',
       ]),
     ]);
-    const result = checkRuleA22(ctx);
+    const result = scanA22(ctx);
     expect(result.status).toBe('PASS');
   });
 
@@ -63,15 +63,8 @@ describe('A22 不越权限', () => {
         '+chown root:root /tmp/evil',
       ]),
     ]);
-    const result = checkRuleA22(ctx);
+    const result = scanA22(ctx);
     expect(result.status).toBe('FAIL');
   });
 
-  it('evidenceMode 标注为 git-diff', () => {
-    const ctx = makeCtx([
-      makeDiffFile('src/index.ts', ['+const x = 1;']),
-    ]);
-    const result = checkRuleA22(ctx);
-    expect(result.evidenceMode).toBe('git-diff');
-  });
 });

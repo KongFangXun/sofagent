@@ -3,7 +3,7 @@
 // ============================================================
 
 import { describe, it, expect } from 'vitest';
-import { checkRuleA11 } from './rule-a11-no-abuse';
+import { scanA11 } from './rule-a11-no-abuse';
 import { makeDiffFile, makeCtx } from '../test-utils';
 import type { DiffFile } from '@sofagent/core';
 
@@ -13,7 +13,7 @@ describe('A11 不滥资源', () => {
       makeDiffFile(`src/new-${i}.ts`, [], 'added')
     );
     const ctx = makeCtx(files);
-    const result = checkRuleA11(ctx);
+    const result = scanA11(ctx);
     expect(result.status).toBe('WARN');
     expect(result.details[0]).toContain('51');
   });
@@ -23,14 +23,14 @@ describe('A11 不滥资源', () => {
       makeDiffFile(`src/new-${i}.ts`, [], 'added')
     );
     const ctx = makeCtx(files);
-    const result = checkRuleA11(ctx);
+    const result = scanA11(ctx);
     expect(result.status).toBe('PASS');
   });
 
   it('单文件新增行 > 10000 → WARN', () => {
     const lines = Array.from({ length: 10001 }, () => '+code line');
     const ctx = makeCtx([makeDiffFile('src/huge.ts', lines)]);
-    const result = checkRuleA11(ctx);
+    const result = scanA11(ctx);
     expect(result.status).toBe('WARN');
     expect(result.details[0]).toContain('10001');
   });
@@ -38,7 +38,7 @@ describe('A11 不滥资源', () => {
   it('单文件新增行 ≤ 10000 → PASS', () => {
     const lines = Array.from({ length: 100 }, () => '+code line');
     const ctx = makeCtx([makeDiffFile('src/small.ts', lines)]);
-    const result = checkRuleA11(ctx);
+    const result = scanA11(ctx);
     expect(result.status).toBe('PASS');
   });
 
@@ -47,7 +47,7 @@ describe('A11 不滥资源', () => {
       makeDiffFile(`src/deleted-${i}.ts`, [], 'deleted')
     );
     const ctx = makeCtx(files);
-    const result = checkRuleA11(ctx);
+    const result = scanA11(ctx);
     expect(result.status).toBe('FAIL');
     expect(result.details[0]).toContain('21');
   });
@@ -57,7 +57,7 @@ describe('A11 不滥资源', () => {
       makeDiffFile(`src/deleted-${i}.ts`, [], 'deleted')
     );
     const ctx = makeCtx(files);
-    const result = checkRuleA11(ctx);
+    const result = scanA11(ctx);
     expect(result.status).toBe('PASS');
   });
 
@@ -66,7 +66,7 @@ describe('A11 不滥资源', () => {
       makeDiffFile('src/index.ts', ['+const x = 1;']),
       makeDiffFile('src/utils.ts', ['+export function foo() {}']),
     ]);
-    const result = checkRuleA11(ctx);
+    const result = scanA11(ctx);
     expect(result.status).toBe('PASS');
   });
 
@@ -78,15 +78,9 @@ describe('A11 不滥资源', () => {
       makeDiffFile(`src/del-${i}.ts`, [], 'deleted')
     );
     const ctx = makeCtx([...addedFiles, ...deletedFiles]);
-    const result = checkRuleA11(ctx);
+    const result = scanA11(ctx);
     // FAIL 优先级最高
     expect(result.status).toBe('FAIL');
-  });
-
-  it('evidenceMode 标注为 git-diff', () => {
-    const ctx = makeCtx([makeDiffFile('src/index.ts')]);
-    const result = checkRuleA11(ctx);
-    expect(result.evidenceMode).toBe('git-diff');
   });
 
   it('仅 modified 文件（不新增也不删除）→ PASS', () => {
@@ -94,7 +88,7 @@ describe('A11 不滥资源', () => {
       makeDiffFile('src/a.ts', ['+line'], 'modified'),
       makeDiffFile('src/b.ts', ['+line'], 'modified'),
     ]);
-    const result = checkRuleA11(ctx);
+    const result = scanA11(ctx);
     expect(result.status).toBe('PASS');
   });
 });

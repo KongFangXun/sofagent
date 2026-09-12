@@ -9,7 +9,7 @@
 // evidenceMode: git-diff
 // ============================================================
 
-import type { AuditContext, RuleCheck } from './types';
+import type { AuditContext, RuleScan, RuleStatus } from './types';
 import { SECRET_PATTERNS, stripDataUris, REDACTION_PATTERNS } from '@sofagent/core';
 
 /**
@@ -305,15 +305,9 @@ export function foldHomoglyphs(text: string): string {
   return text.replace(/[а-яА-ЯїієґЇІЄҐκ]/g, (ch) => CYRILLIC_HOMOGLYPHS[ch] ?? ch);
 }
 
-export function checkRuleA2(ctx: AuditContext): RuleCheck {
-  const rule: RuleCheck = {
-    name: 'A2 不泄密钥',
-    number: 2,
-    status: 'PASS',
-    details: [],
-    evidenceMode: 'git-diff',
-    ruleClass: '业务底线',
-  };
+export function scanA2(ctx: AuditContext): RuleScan {
+  let status: RuleStatus = 'PASS';
+  const details: string[] = [];
 
   const { diffFiles } = ctx;
 
@@ -389,7 +383,7 @@ export function checkRuleA2(ctx: AuditContext): RuleCheck {
   }
 
   if (groupedDetections.size > 0) {
-    rule.status = 'FAIL';
+    status = 'FAIL';
     const parts: string[] = [];
     for (const { file, label, count } of groupedDetections.values()) {
       if (count > MAX_DISPLAY_PER_GROUP) {
@@ -398,23 +392,23 @@ export function checkRuleA2(ctx: AuditContext): RuleCheck {
         parts.push(`${file}: 检测到 ${label}${count > 1 ? ` ×${count}` : ''}`);
       }
     }
-    rule.details.push(
+    details.push(
       `检测到疑似密钥/令牌泄漏: ${parts.join('; ')}。密钥不应硬编码到源码中。`
     );
   }
 
   // v1.4.8 fresh-eyes（finding-11）：测试文件豁免命中降级 WARN——非静默放行
   if (testExemptDetections.size > 0) {
-    if (rule.status === 'PASS') rule.status = 'WARN';
+    if (status === 'PASS') status = 'WARN';
     const parts: string[] = [];
     for (const { file, label, count } of testExemptDetections.values()) {
       parts.push(`${file}: ${label}${count > 1 ? ` ×${count}` : ''}`);
     }
     // finding-13：detail 按最终状态区分——整体已 FAIL 时不再写「不 FAIL」误导人工确认
-    const exemptNote = rule.status === 'FAIL'
+    const exemptNote = status === 'FAIL'
       ? '测试文件豁免命中（已并入 FAIL 处置，需人工确认）'
       : '测试文件豁免命中（不 FAIL 但需人工确认）';
-    rule.details.push(
+    details.push(
       `${exemptNote}: ${parts.join('; ')}。测试文件命名在被审计 Agent 控制下，请确认以上命中均为合法 fixture 而非真实密钥夹带。`
     );
   }
@@ -426,8 +420,8 @@ export function checkRuleA2(ctx: AuditContext): RuleCheck {
   // 极少需要 -diff；按 fail-closed 原则升级 FAIL，用户确属误报可用 --ruleset 自定义豁免。
   const attrHiddenTargets = detectGitattributesDiffHidden(ctx);
   if (attrHiddenTargets.length > 0) {
-    rule.status = 'FAIL';
-    rule.details.push(
+    status = 'FAIL';
+    details.push(
       `检测到 .gitattributes 将以下文件标记为 -diff（内容不会出现在 git diff 中，A2 无法扫描——两步隐身路径：先标记 -diff 再提交密钥文件即静默绕过）: ${attrHiddenTargets.join(', ')}。如属真实二进制产物请改用审计友好的标记方式（如 .gitattributes 注释说明），密钥文件必须移除 -diff 标记。`
     );
   }
@@ -435,11 +429,11 @@ export function checkRuleA2(ctx: AuditContext): RuleCheck {
   // 新增二进制文件 WARN（内容扫描盲区——git 不输出二进制内容行，密钥可藏身）
   const binaryFiles = detectNewBinaryFiles(ctx);
   if (binaryFiles.length > 0) {
-    if (rule.status === 'PASS') rule.status = 'WARN';
-    rule.details.push(
+    if (status === 'PASS') status = 'WARN';
+    details.push(
       `检测到 ${binaryFiles.length} 个新增二进制文件（${binaryFiles.slice(0, 5).join(', ')}${binaryFiles.length > 5 ? ' 等' : ''}）：二进制文件不扫内容，请人工确认无密钥夹带。`
     );
   }
 
-  return rule;
+  return { status, details };
 }

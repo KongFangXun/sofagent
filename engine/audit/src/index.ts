@@ -109,12 +109,10 @@ import { runVerifyChain, runVerifyCommit } from './commands/verify';
 import { formatSuggestions } from './config-suggestion';
 import { runRegression, type DiffSnapshot } from './audit-regression';
 import { defaultRules, extendedRules } from './rules';
-import { ruleCode } from './rules/assemble';
+import { ruleCode, assembleCheck } from './rules/assemble';
 // 空提交 message 类审计：A5/A9/A19 只消费 commit message、不依赖 diff 内容
-// ——空 diff 短路前仍须执行（详见 runEmptyDiffMessageAudit）
-import { checkRuleA5 } from './rules/rule-a5-honest-report';
-import { checkRuleA9 } from './rules/rule-a9-no-injection';
-import { checkRuleA19 } from './rules/rule-a19-commit-msg-quality';
+// ——空 diff 短路前仍须执行（详见 runEmptyDiffMessageAudit）。
+// v1.4.8 条目 7：改走注册表装配（assembleCheck + defaultRules 查 id），不再直连规则文件
 import type { AuditContext, RuleCheck } from './rules/types';
 import { scanWorkspace, formatWorkspaceScan } from './workspace-scan';
 import { pushAuditResult, type WebhookPlatform } from './webhook';
@@ -757,7 +755,13 @@ function runEmptyDiffMessageAudit(args: Args): RuleCheck[] | null {
     silent: args.silent,
     commitMsg,
   };
-  return [checkRuleA5(ctx), checkRuleA9(ctx), checkRuleA19(ctx)];
+  // v1.4.8 条目 7：meta 单源——从注册表按 id 取规则，assembleCheck 装配前置块
+  const ruleById = (id: string) => defaultRules.find((r) => r.id === id)!;
+  return [
+    assembleCheck(ruleById('A5'), ctx),
+    assembleCheck(ruleById('A9'), ctx),
+    assembleCheck(ruleById('A19'), ctx),
+  ];
 }
 
 async function main(): Promise<void> {

@@ -4,8 +4,8 @@
 // ============================================================
 
 import { describe, it, expect } from 'vitest';
-import { checkRuleA7 } from './rules/rule-a7-read-before-write';
-import { checkRuleA8 } from './rules/rule-a8-verify-before-continue';
+import { scanA7 } from './rules/rule-a7-read-before-write';
+import { scanA8 } from './rules/rule-a8-verify-before-continue';
 import { rules } from './rules';
 import { runRuleCheck } from './rules/assemble';
 import type { AuditContext } from './rules/types';
@@ -37,7 +37,7 @@ describe('evidenceMode 双路径切换', () => {
         diffFiles: [makeDiffFile('src/config.ts')],
         logEntries: [makeReadEntry('src/config.ts')],
       };
-      const result = checkRuleA7(ctx);
+      const result = scanA7(ctx);
       expect(result.status).toBe('PASS');
     });
 
@@ -47,7 +47,7 @@ describe('evidenceMode 双路径切换', () => {
         logEntries: [],
         silent: true,
       };
-      const result = checkRuleA7(ctx);
+      const result = scanA7(ctx);
       expect(result.status).toBe('PASS');
       expect(result.details[0]).toContain('silent');
     });
@@ -57,7 +57,7 @@ describe('evidenceMode 双路径切换', () => {
         diffFiles: [makeDiffFile('src/index.ts')],
         logEntries: [],
       };
-      const result = checkRuleA7(ctx);
+      const result = scanA7(ctx);
       expect(result.status).toBe('WARN');
       expect(result.details[0]).toContain('未找到');
     });
@@ -68,7 +68,7 @@ describe('evidenceMode 双路径切换', () => {
         logEntries: [],
         strict: true,
       };
-      const result = checkRuleA7(ctx);
+      const result = scanA7(ctx);
       expect(result.status).toBe('FAIL');
     });
 
@@ -79,7 +79,7 @@ describe('evidenceMode 双路径切换', () => {
         silent: true,
         strict: true,
       };
-      const result = checkRuleA7(ctx);
+      const result = scanA7(ctx);
       expect(result.status).toBe('PASS');
     });
 
@@ -88,7 +88,8 @@ describe('evidenceMode 双路径切换', () => {
         diffFiles: [makeDiffFile('src/config.ts')],
         logEntries: [makeReadEntry('src/config.ts')],
       };
-      const result = checkRuleA7(ctx);
+      // v1.4.8 条目 7：装配路径（注册表 meta 单源）——RuleScan 不含 meta，须经 assembleCheck 装配
+      const result = runRuleCheck(rules.find((r) => r.id === 'A7')!, ctx);
       expect(result.evidenceMode).toBe('hybrid');
     });
   });
@@ -99,7 +100,7 @@ describe('evidenceMode 双路径切换', () => {
         diffFiles: [makeDiffFile('package.json')],
         logEntries: [makeExecEntry('npm test')],
       };
-      const result = checkRuleA8(ctx);
+      const result = scanA8(ctx);
       expect(result.status).toBe('PASS');
     });
 
@@ -109,7 +110,7 @@ describe('evidenceMode 双路径切换', () => {
         logEntries: [],
         silent: true,
       };
-      const result = checkRuleA8(ctx);
+      const result = scanA8(ctx);
       expect(result.status).toBe('PASS');
       expect(result.details[0]).toContain('silent');
     });
@@ -119,7 +120,7 @@ describe('evidenceMode 双路径切换', () => {
         diffFiles: [makeDiffFile('package.json')],
         logEntries: [],
       };
-      const result = checkRuleA8(ctx);
+      const result = scanA8(ctx);
       expect(result.status).toBe('WARN');
     });
 
@@ -128,7 +129,7 @@ describe('evidenceMode 双路径切换', () => {
         diffFiles: [makeDiffFile('package.json')],
         logEntries: [makeReadEntry('package.json')],
       };
-      const result = checkRuleA8(ctx);
+      const result = scanA8(ctx);
       expect(result.status).toBe('FAIL');
     });
 
@@ -137,7 +138,7 @@ describe('evidenceMode 双路径切换', () => {
         diffFiles: [makeDiffFile('package.json')],
         logEntries: [makeExecEntry('npm test')],
       };
-      const result = checkRuleA8(ctx);
+      const result = runRuleCheck(rules.find((r) => r.id === 'A8')!, ctx);
       expect(result.evidenceMode).toBe('hybrid');
     });
   });
@@ -184,6 +185,21 @@ describe('evidenceMode 双路径切换', () => {
       // v1.4.8 条目 7：走注册表装配路径
       const result = runRuleCheck(rules.find((r) => r.id === 'A3')!, ctx);
       expect(result.evidenceMode).toBe('git-diff');
+    });
+
+    // v1.4.8 条目 7（元数据断言集中地 · 唯一）：装配路径产出的 RuleCheck 必须携带
+    // evidenceMode——原散落在各 rule-*.test.ts 的 per-rule 断言已收口至此一处。
+    it(`所有 ${rules.length} 条规则装配路径返回值都带 evidenceMode`, () => {
+      const ctx: AuditContext = {
+        diffFiles: [makeDiffFile('src/index.ts')],
+        logEntries: [],
+        task: 'test',
+        commitMsg: 'fix login bug',
+      };
+      for (const rule of rules) {
+        const result = runRuleCheck(rule, ctx);
+        expect(result.evidenceMode, `${rule.name} should have evidenceMode`).toBeDefined();
+      }
     });
   });
 });

@@ -6,7 +6,7 @@
 // evidenceMode: git-diff
 // ============================================================
 
-import type { AuditContext, RuleCheck } from './types';
+import type { AuditContext, RuleScan, RuleStatus } from './types';
 /**
  * v1.2.5 §4.9.3: 审计引擎核心源码——Agent 不可修改
  *
@@ -45,18 +45,12 @@ const AUDIT_ENGINE_PROTECTED_PATHS: string[] = [
   'engine/core/src/shared/rule-constants.ts',
 ];
 
-export function checkRuleA16(ctx: AuditContext): RuleCheck {
-  const rule: RuleCheck = {
-    name: 'A16 非授权文件变更',
-    number: 16,
-    status: 'PASS',
-    details: [],
-    evidenceMode: 'git-diff',
-    ruleClass: '工程规范',
-  };
+export function scanA16(ctx: AuditContext): RuleScan {
+  let status: RuleStatus = 'PASS';
+  const details: string[] = [];
 
   const config = ctx.config?.A16;
-  if (!config?.enabled) return rule;
+  if (!config?.enabled) return { status, details };
 
   const protectedDirs: string[] = config.protected_dirs || [];
   const sensitiveTypes: string[] = config.sensitive_types || [];
@@ -86,9 +80,9 @@ export function checkRuleA16(ctx: AuditContext): RuleCheck {
   }
 
   if (violations.length > 0) {
-    rule.status = 'WARN';
-    rule.details.push(violations.join('; '));
+    status = 'WARN';
+    details.push(violations.join('; '));
   }
 
-  return rule;
+  return { status, details };
 }

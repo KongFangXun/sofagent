@@ -7,18 +7,12 @@
 // ============================================================
 
 import { getReadAccessMap } from '@sofagent/core';
-import type { AuditContext, RuleCheck } from './types';
+import type { AuditContext, RuleScan, RuleStatus } from './types';
 
-export function checkRuleA7(ctx: AuditContext): RuleCheck {
+export function scanA7(ctx: AuditContext): RuleScan {
   const { diffFiles, logEntries } = ctx;
-  const rule: RuleCheck = {
-    name: 'A7 不存盲改',
-    number: 7,
-    status: 'PASS',
-    details: [],
-    evidenceMode: 'hybrid',
-    ruleClass: '能力拐杖',
-  };
+  let status: RuleStatus = 'PASS';
+  const details: string[] = [];
 
   const readFiles = getReadAccessMap(logEntries);
   const modifiedFiles = diffFiles
@@ -27,26 +21,26 @@ export function checkRuleA7(ctx: AuditContext): RuleCheck {
 
   // 如果没有需要检查的修改文件（全是 deleted 或 renamed），跳过检查
   if (modifiedFiles.length === 0) {
-    return rule;
+    return { status, details };
   }
 
   // silent 模式：无 Agent 日志，不做盲改检查（CI 环境无需此日志依赖规则）
   if (ctx.silent && logEntries.length === 0) {
-    rule.status = 'PASS';
-    rule.details.push('⚠️ A7 silent: 无 Agent 日志，跳过「不存盲改」检查（CI/非交互环境预期行为）。');
-    return rule;
+    status = 'PASS';
+    details.push('⚠️ A7 silent: 无 Agent 日志，跳过「不存盲改」检查（CI/非交互环境预期行为）。');
+    return { status, details };
   }
 
   // 如果没有日志记录（可能是新项目或日志被清空），发出提示但不判定违规
   if (logEntries.length === 0) {
     if (ctx.strict) {
-      rule.status = 'FAIL';
-      rule.details.push('--strict 模式：未找到任务日志，「不存盲改」检查失败。Agent 必须记录操作日志。');
+      status = 'FAIL';
+      details.push('--strict 模式：未找到任务日志，「不存盲改」检查失败。Agent 必须记录操作日志。');
     } else {
-      rule.status = 'WARN';
-      rule.details.push('未找到 data/task/logs/ 任务记录——可能是首次使用或日志目录为空。跳过「不存盲改」检查。');
+      status = 'WARN';
+      details.push('未找到 data/task/logs/ 任务记录——可能是首次使用或日志目录为空。跳过「不存盲改」检查。');
     }
-    return rule;
+    return { status, details };
   }
 
   /**
@@ -83,13 +77,13 @@ export function checkRuleA7(ctx: AuditContext): RuleCheck {
   }
 
   if (uncheckedFiles.length > 0) {
-    rule.status = 'FAIL';
-    rule.details.push(
+    status = 'FAIL';
+    details.push(
       `${uncheckedFiles.length} 个文件被修改但无读取记录: ${uncheckedFiles.slice(0, 3).join(', ')}${uncheckedFiles.length > 3 ? ` 等 ${uncheckedFiles.length} 个` : ''}`
     );
   } else {
-    rule.status = 'PASS';
+    status = 'PASS';
   }
 
-  return rule;
+  return { status, details };
 }

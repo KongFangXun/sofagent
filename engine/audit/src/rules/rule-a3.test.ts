@@ -3,7 +3,7 @@
 // ============================================================
 
 import { describe, it, expect } from 'vitest';
-import { checkRuleA3 } from './rule-a3-careful-modify';
+import { scanA3 } from './rule-a3-careful-modify';
 import type { AuditContext } from './types';
 import type { DiffFile } from '@sofagent/core';
 import { makeDiffFile, makeCtx } from '../test-utils';
@@ -11,7 +11,7 @@ import { makeDiffFile, makeCtx } from '../test-utils';
 describe('A3 不改越界', () => {
   it('无 task 参数 → PASS（跳过检查）', () => {
     const ctx = makeCtx([makeDiffFile('src/index.ts')]);
-    const result = checkRuleA3(ctx);
+    const result = scanA3(ctx);
     expect(result.status).toBe('PASS');
     expect(result.details[0]).toContain('未提供');
   });
@@ -22,7 +22,7 @@ describe('A3 不改越界', () => {
       [makeDiffFile('src/index.ts'), makeDiffFile('src/auth.ts')],
       { task: 'quick-audit', quickMode: true }
     );
-    const result = checkRuleA3(ctx);
+    const result = scanA3(ctx);
     expect(result.status).toBe('PASS');
     expect(result.details[0]).toContain('quick 模式跳过');
   });
@@ -32,7 +32,7 @@ describe('A3 不改越界', () => {
       [makeDiffFile('src/components/login.tsx')],
       '修复 login.tsx 的 bug'
     );
-    const result = checkRuleA3(ctx);
+    const result = scanA3(ctx);
     expect(result.status).toBe('PASS');
   });
 
@@ -43,7 +43,7 @@ describe('A3 不改越界', () => {
       [makeDiffFile('src/auth/session.ts')],
       { task: '修复登录认证逻辑' }
     );
-    const result = checkRuleA3(ctx);
+    const result = scanA3(ctx);
     expect(result.status).toBe('PASS');
   });
 
@@ -56,7 +56,7 @@ describe('A3 不改越界', () => {
       makeDiffFile('README.md'), // 不在任务范围
     ];
     const ctx = makeCtx(files, { task: 'login auth session token' });
-    const result = checkRuleA3(ctx);
+    const result = scanA3(ctx);
     expect(result.status).toBe('PASS');
   });
 
@@ -69,7 +69,7 @@ describe('A3 不改越界', () => {
       makeDiffFile('src/unrelated.ts'),
     ];
     const ctx = makeCtx(files, { task: 'login auth' });
-    const result = checkRuleA3(ctx);
+    const result = scanA3(ctx);
     expect(result.status).toBe('WARN');
     expect(result.details[0]).toContain('1/3');
   });
@@ -79,7 +79,7 @@ describe('A3 不改越界', () => {
       [makeDiffFile('src/login.ts'), makeDiffFile('package-lock.json')],
       '修复 login 模块'
     );
-    const result = checkRuleA3(ctx);
+    const result = scanA3(ctx);
     expect(result.status).toBe('PASS');
   });
 
@@ -88,7 +88,7 @@ describe('A3 不改越界', () => {
       [makeDiffFile('src/login.ts'), makeDiffFile('README.md')],
       '修复 login 模块'
     );
-    const result = checkRuleA3(ctx);
+    const result = scanA3(ctx);
     expect(result.status).toBe('PASS');
   });
 
@@ -97,7 +97,7 @@ describe('A3 不改越界', () => {
       [makeDiffFile('src/login.ts'), makeDiffFile('LICENSE')],
       '修复 login 模块'
     );
-    const result = checkRuleA3(ctx);
+    const result = scanA3(ctx);
     expect(result.status).toBe('PASS');
   });
 
@@ -106,7 +106,7 @@ describe('A3 不改越界', () => {
       [makeDiffFile('src/login.ts'), makeDiffFile('Readme.md')],
       '修复 login 模块'
     );
-    const result = checkRuleA3(ctx);
+    const result = scanA3(ctx);
     expect(result.status).toBe('PASS');
   });
 
@@ -115,7 +115,7 @@ describe('A3 不改越界', () => {
       [makeDiffFile('src/login.ts'), makeDiffFile('CHANGELOG.md')],
       '修复 login 模块'
     );
-    const result = checkRuleA3(ctx);
+    const result = scanA3(ctx);
     expect(result.status).toBe('PASS');
   });
 
@@ -124,7 +124,7 @@ describe('A3 不改越界', () => {
       [makeDiffFile('src/login.ts'), makeDiffFile('packages/foo/README.md')],
       '修复 login 模块'
     );
-    const result = checkRuleA3(ctx);
+    const result = scanA3(ctx);
     expect(result.status).toBe('PASS');
   });
 
@@ -133,7 +133,7 @@ describe('A3 不改越界', () => {
       [makeDiffFile('src/login.ts'), makeDiffFile('tsconfig.json')],
       '修复 login 模块'
     );
-    const result = checkRuleA3(ctx);
+    const result = scanA3(ctx);
     expect(result.status).toBe('PASS');
   });
 
@@ -142,7 +142,7 @@ describe('A3 不改越界', () => {
       [makeDiffFile('src/components/Button.tsx'), makeDiffFile('src/components/Input.tsx')],
       '重构 src/components 目录下的组件'
     );
-    const result = checkRuleA3(ctx);
+    const result = scanA3(ctx);
     expect(result.status).toBe('PASS');
   });
 
@@ -153,7 +153,7 @@ describe('A3 不改越界', () => {
       makeDiffFile('src/unrelated.ts'),
     ];
     const ctx = makeCtx(files, { task: 'login auth' });
-    const result = checkRuleA3(ctx);
+    const result = scanA3(ctx);
     expect(result.status).toBe('WARN');
   });
 
@@ -163,7 +163,7 @@ describe('A3 不改越界', () => {
       [makeDiffFile('src/工具/helper.ts')],
       '修改 src/工具/helper.ts 的工具函数'
     );
-    const result = checkRuleA3(ctx);
+    const result = scanA3(ctx);
     expect(result.status).toBe('PASS');
   });
 
@@ -172,7 +172,7 @@ describe('A3 不改越界', () => {
       [makeDiffFile('src/组件/登录.ts')],
       '修复 登录.ts 组件'
     );
-    const result = checkRuleA3(ctx);
+    const result = scanA3(ctx);
     expect(result.status).toBe('PASS');
   });
 
@@ -185,7 +185,7 @@ describe('A3 不改越界', () => {
       ],
       '修改 src/工具/config.ts 和 src/工具/utils.ts 和 src/工具/helper.ts'
     );
-    const result = checkRuleA3(ctx);
+    const result = scanA3(ctx);
     expect(result.status).toBe('PASS');
   });
 
@@ -194,21 +194,21 @@ describe('A3 不改越界', () => {
       [makeDiffFile('auth/login.ts')],
       { task: '修复认证模块的会话逻辑' }
     );
-    const result = checkRuleA3(ctx);
+    const result = scanA3(ctx);
     expect(result.status).toBe('WARN');
   });
 
   // v0.97 追加 test cases
   it('空字符串 task → PASS（跳过检查）', () => {
     const ctx = makeCtx([makeDiffFile('src/index.ts')], { task: '' });
-    const result = checkRuleA3(ctx);
+    const result = scanA3(ctx);
     expect(result.status).toBe('PASS');
     expect(result.details[0]).toContain('未提供');
   });
 
   it('undefined task → PASS（跳过检查）', () => {
     const ctx = makeCtx([makeDiffFile('src/index.ts')], { task: undefined });
-    const result = checkRuleA3(ctx);
+    const result = scanA3(ctx);
     expect(result.status).toBe('PASS');
     expect(result.details[0]).toContain('未提供');
   });
@@ -220,7 +220,7 @@ describe('A3 不改越界', () => {
       [makeDiffFile('FDE/GUIDE.md')],
       { task: 'v1.1.3: SKILL+engage+FDE+install+审查体系' }
     );
-    const result = checkRuleA3(ctx);
+    const result = scanA3(ctx);
     expect(result.status).toBe('PASS');
   });
 
@@ -229,7 +229,7 @@ describe('A3 不改越界', () => {
       [makeDiffFile('src/auth.ts')],
       { task: '修复 login 的登录逻辑' }
     );
-    const result = checkRuleA3(ctx);
+    const result = scanA3(ctx);
     expect(result.status).toBe('WARN');
   });
 
@@ -243,7 +243,7 @@ describe('A3 不改越界', () => {
         commitMsg: 'docs: orchestrator 编排引擎实现原理补全\n\n- FORGE/FORGE.md: 删"计划中"段\n- ARCHITECTURE.md: +5 子节',
       }
     );
-    const result = checkRuleA3(ctx);
+    const result = scanA3(ctx);
     expect(result.status).toBe('PASS');
   });
 
@@ -255,7 +255,7 @@ describe('A3 不改越界', () => {
         commitMsg: '修复 login 模块\n\n仅改了 login.ts 和 auth.ts',
       }
     );
-    const result = checkRuleA3(ctx);
+    const result = scanA3(ctx);
     expect(result.status).toBe('WARN');
   });
 
@@ -264,7 +264,7 @@ describe('A3 不改越界', () => {
       [makeDiffFile('src/login.ts')],
       { task: '修复 login.ts', commitMsg: undefined }
     );
-    const result = checkRuleA3(ctx);
+    const result = scanA3(ctx);
     expect(result.status).toBe('PASS');
   });
 });

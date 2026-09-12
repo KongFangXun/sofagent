@@ -5,7 +5,7 @@
 // v1.3.7 新增 · v1.2.0 审查确认（黑名单优先于长度的顺序正确）
 // ============================================================
 
-import type { AuditContext, RuleCheck } from './types';
+import type { AuditContext, RuleScan, RuleStatus } from './types';
 
 /**
  * commit message 黑名单——精确匹配（trim + toLowerCase 后）。
@@ -40,21 +40,15 @@ function effectiveLength(msg: string): number {
   return len;
 }
 
-export function checkRuleA19(ctx: AuditContext): RuleCheck {
-  const rule: RuleCheck = {
-    name: 'A19 msg 质量',
-    number: 19,
-    status: 'PASS',
-    details: [],
-    evidenceMode: 'git-diff',
-    ruleClass: '工程规范',  // v1.3.4 对齐 index.ts（v1.2.5 起 SSOT=工程规范，impl 漏改）
-  };
+export function scanA19(ctx: AuditContext): RuleScan {
+  let status: RuleStatus = 'PASS';
+  const details: string[] = [];
 
   const commitMsg = ctx.commitMsg;
 
   // 无 message → 降级 PASS（不检测，避免误伤无 commit 上下文的调用）
   if (!commitMsg || !commitMsg.trim()) {
-    return rule;
+    return { status, details };
   }
 
   const normalized = commitMsg.trim();
@@ -62,18 +56,18 @@ export function checkRuleA19(ctx: AuditContext): RuleCheck {
 
   // 检查 1：黑名单精确匹配（优先——更具体的违规原因）
   if (BLACKLIST.includes(lowered)) {
-    rule.status = 'FAIL';
-    rule.details.push(`commit message 命中黑名单词：'${lowered}'`);
-    return rule;
+    status = 'FAIL';
+    details.push(`commit message 命中黑名单词：'${lowered}'`);
+    return { status, details };
   }
 
   // 检查 2：长度不足（中文字符加权计算——有效长度 = 中文数×2 + 其他字符数）
   const effLen = effectiveLength(normalized);
   if (effLen < MIN_LENGTH) {
-    rule.status = 'FAIL';
-    rule.details.push(`commit message 有效长度不足（${effLen} 有效字符，需 ≥${MIN_LENGTH}）`);
-    return rule;
+    status = 'FAIL';
+    details.push(`commit message 有效长度不足（${effLen} 有效字符，需 ≥${MIN_LENGTH}）`);
+    return { status, details };
   }
 
-  return rule;
+  return { status, details };
 }

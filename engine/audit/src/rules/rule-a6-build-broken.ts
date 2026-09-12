@@ -6,7 +6,7 @@
 // ============================================================
 
 import { basename } from 'path';
-import type { AuditContext, RuleCheck } from './types';
+import type { AuditContext, RuleScan, RuleStatus } from './types';
 
 /** 构建文件关键词——匹配 basename 中包含这些前缀的文件 */
 const BUILD_CONFIG_KEYWORDS = [
@@ -36,15 +36,9 @@ function isBuildConfigFile(filePath: string): boolean {
   });
 }
 
-export function checkRuleA6(ctx: AuditContext): RuleCheck {
-  const rule: RuleCheck = {
-    name: 'A6 不坏构建',
-    number: 6,
-    status: 'PASS',
-    details: [],
-    evidenceMode: 'git-diff',
-    ruleClass: '能力拐杖',
-  };
+export function scanA6(ctx: AuditContext): RuleScan {
+  let status: RuleStatus = 'PASS';
+  const details: string[] = [];
 
   const { diffFiles } = ctx;
 
@@ -67,11 +61,11 @@ export function checkRuleA6(ctx: AuditContext): RuleCheck {
   }
 
   if (flaggedFiles.length > 0) {
-    rule.status = 'WARN';
-    rule.details.push(
+    status = 'WARN';
+    details.push(
       `构建配置文件被破坏性修改: ${flaggedFiles.join(', ')}。删除行数超过 ${DELETION_THRESHOLD} 行，请确认不会导致构建失败。`
     );
   }
 
-  return rule;
+  return { status, details };
 }

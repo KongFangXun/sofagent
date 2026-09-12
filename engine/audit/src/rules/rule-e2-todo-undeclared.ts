@@ -4,19 +4,13 @@
 // evidenceMode: git-diff（纯 diff 判定，不依赖日志）
 // ============================================================
 
-import type { AuditContext, RuleCheck } from './types';
+import type { AuditContext, RuleScan, RuleStatus } from './types';
 
 const TODO_PATTERN = /\b(TODO|FIXME)\b/;
 
-export function checkRuleE2(ctx: AuditContext): RuleCheck {
-  const rule: RuleCheck = {
-    name: 'E2 TODO 未声明',
-    number: 202,
-    status: 'PASS',
-    details: [],
-    evidenceMode: 'git-diff',
-    ruleClass: '能力拐杖',
-  };
+export function scanE2(ctx: AuditContext): RuleScan {
+  let status: RuleStatus = 'PASS';
+  const details: string[] = [];
 
   const { diffFiles, commitMsg } = ctx;
 
@@ -34,7 +28,7 @@ export function checkRuleE2(ctx: AuditContext): RuleCheck {
 
   // diff 不含 TODO/FIXME → PASS
   if (todoMatches.length === 0) {
-    return rule;
+    return { status, details };
   }
 
   // 检查 commit message 是否提到 todo/fixme（不区分大小写）
@@ -42,11 +36,11 @@ export function checkRuleE2(ctx: AuditContext): RuleCheck {
   const commitMentionsTodo = msg.includes('todo') || msg.includes('fixme');
 
   if (!commitMentionsTodo) {
-    rule.status = 'WARN';
-    rule.details.push(
+    status = 'WARN';
+    details.push(
       `diff 新增代码含 ${todoMatches.length} 处 TODO/FIXME，但 commit message 未提及: ${todoMatches.slice(0, 3).join('; ')}${todoMatches.length > 3 ? ` 等 ${todoMatches.length} 处` : ''}`
     );
   }
 
-  return rule;
+  return { status, details };
 }

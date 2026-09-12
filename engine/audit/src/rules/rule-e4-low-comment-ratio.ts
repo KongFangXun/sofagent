@@ -4,7 +4,7 @@
 // evidenceMode: git-diff（纯 diff 判定，不依赖日志）
 // ============================================================
 
-import type { AuditContext, RuleCheck } from './types';
+import type { AuditContext, RuleScan, RuleStatus } from './types';
 
 const ADDED_LINE_THRESHOLD = 200;
 const MIN_COMMENT_RATIO = 0.05;
@@ -22,15 +22,9 @@ function isCommentLine(line: string): boolean {
   return false;
 }
 
-export function checkRuleE4(ctx: AuditContext): RuleCheck {
-  const rule: RuleCheck = {
-    name: 'E4 不低注释',
-    number: 204,
-    status: 'PASS',
-    details: [],
-    evidenceMode: 'git-diff',
-    ruleClass: '能力拐杖',
-  };
+export function scanE4(ctx: AuditContext): RuleScan {
+  let status: RuleStatus = 'PASS';
+  const details: string[] = [];
 
   const { diffFiles } = ctx;
 
@@ -54,17 +48,17 @@ export function checkRuleE4(ctx: AuditContext): RuleCheck {
 
   // 新增 ≤ 200 行时跳过
   if (addedCodeLines <= ADDED_LINE_THRESHOLD) {
-    return rule;
+    return { status, details };
   }
 
   const commentRatio = addedCodeLines > 0 ? commentLines / addedCodeLines : 0;
 
   if (commentRatio < MIN_COMMENT_RATIO) {
-    rule.status = 'WARN';
-    rule.details.push(
+    status = 'WARN';
+    details.push(
       `新增 ${addedCodeLines} 行代码，注释行 ${commentLines} 行 (${(commentRatio * 100).toFixed(1)}%)，低于 5% 阈值。建议补充关键逻辑注释。`
     );
   }
 
-  return rule;
+  return { status, details };
 }
