@@ -9,6 +9,18 @@ import { createLocalSpawnExecutor } from '../train-executor';
 import type { TrainExecutorHooks } from '../train-executor';
 import type { ChildProcess } from 'child_process';
 
+/**
+ * 轮询等待条件成立（上限 timeoutMs，超时即返回）。
+ * 用途：替代固定 `setTimeout` 消除**真实子进程**的事件竞态——超时不抛错，
+ * 由后续断言给出可读失败信息（不吞错、不放宽断言）。
+ */
+async function waitFor(pred: () => boolean, timeoutMs: number): Promise<void> {
+  const deadline = Date.now() + timeoutMs;
+  while (!pred() && Date.now() < deadline) {
+    await new Promise((r) => setTimeout(r, 10));
+  }
+}
+
 /** mock 云通道（内存状态机——零真实网络） */
 function makeMockChannel(script: ChannelStatusResult['status'][]): TrainChannel {
   let call = 0;
@@ -99,8 +111,11 @@ describe('章十二：执行者互换测试（同一 job 双执行面）', () =>
     const colCloud = makeCollector();
     cloud.start('job-cloud', 'train', [], { hooks: colCloud.hooks });
 
-    // 双面等收敛
-    await new Promise((r) => setTimeout(r, 200));
+    // 双面等收敛——**轮询到条件成立**（上限 5s），不用固定 sleep：
+    // local 面是真实子进程（node -e 输出两行 JSON），固定 200ms 在高负载下
+    // 不够——8GB 机器实测约 1/3 概率只收到 started 就断言 = 假失败。
+    // 断言强度**不变**：progress / done / close(0) / 云面 started+close(0) 一个都不能少。
+    await waitFor(() => colLocal.events.includes('event:done'), 5000);
     // 两面都收到事件流且以 close(0) 收尾——「执行者互换跑同一 job 均通」
     expect(colLocal.events).toContain('event:progress');
     expect(colLocal.events).toContain('event:done');

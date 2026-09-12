@@ -1177,6 +1177,15 @@ async function runWorker(step, runDir, target) {
 
   // v1.3.4 增量：stateModifier 构造为闭包——传给 langgraph-backend 作为 stateModifierFactory 回调。
   // 逻辑零改动（保留所有 run-XX 教训沉淀）：工具预算软熔断 + 上下文裁剪 + tool_calls 配对清洗。
+  // 🔴 v1.4.8（run-14 实证）：**工具预算按角色区分**——全局 TOOL_SOFT/HARD=35/45 的设计前提
+  // 是「release-gate 任务简单（读预执行结果 + 分析文档）」，这对 V 步骤成立；但 F 步骤是
+  // **写操作密集**任务（读 fix-plan → 逐文件读改 → 提交），45 次工具远远不够：
+  // run-14 的 f-diagnose 名义 recursion 80，却在第 48 次工具调用撞硬上限熔断（grace 窗口 0 步），
+  // 降级为无工具裸 LLM 报告 → 零 commit。F 步骤改用高预算 + 给足写报告窗口。
+  const isFRole = stepDef.role === 'F';
+  const softLimit = isFRole ? 150 : TOOL_SOFT_LIMIT;
+  const hardLimit = isFRole ? 200 : TOOL_HARD_LIMIT;
+
   const buildStateModifier = ({ systemPrompt: _sp, toolBudget: _tb }) => {
     return (state) => {
       const messages = state.messages ?? [];
@@ -1201,7 +1210,7 @@ async function runWorker(step, runDir, target) {
       };
 
       // L2 硬熔断：更强制的"最终警告"
-      if (toolCallCount >= TOOL_HARD_LIMIT) {
+      if (toolCallCount >= hardLimit) {
         const forceReport = new HumanMessage({
           content: '【🔴 系统最终警告 🔴】你已调用 ' + toolCallCount + ' 次工具，远超预算。' +
             '现在必须立即输出完整的分析报告文本。禁止再调用任何工具。' +
@@ -1211,12 +1220,12 @@ async function runWorker(step, runDir, target) {
       }
 
       // L1 软熔断：强制收尾指令
-      if (toolCallCount >= TOOL_SOFT_LIMIT) {
+      if (toolCallCount >= softLimit) {
         const forceReport = new HumanMessage({
           content: '【系统强制指令】你已经调用了 ' + toolCallCount + ' 次工具，超过软上限。' +
             '立即停止所有探索，用已掌握的信息写报告并写入产物文件。不要再调任何工具。'
         });
-        console.warn(`  ⚡ [${step}#V] 工具调用 ${toolCallCount} 次超软上限，注入强制收尾指令`);
+        console.warn(`  ⚡ [${step}#${stepDef.role ?? 'V'}] 工具调用 ${toolCallCount} 次超软上限，注入强制收尾指令`);
         return trimmed(forceReport);
       }
 
@@ -1259,8 +1268,9 @@ async function runWorker(step, runDir, target) {
   let graceStepCount = 0;
   let hardBreak = false;
   let gotReport = false;
-  const graceSteps = (step === 'coverage' || step === 'consolidate')
-    ? GRACE_STEPS_ANALYSIS : GRACE_STEPS_DEFAULT;
+  const graceSteps = isFRole
+    ? 20   // F 步骤：给足写报告窗口（零窗口会让 LLM 无机会落产物）
+    : ((step === 'coverage' || step === 'consolidate') ? GRACE_STEPS_ANALYSIS : GRACE_STEPS_DEFAULT);
 
   const streamHandler = (chunk) => {
     for (const [, delta] of Object.entries(chunk)) {
@@ -1276,7 +1286,7 @@ async function runWorker(step, runDir, target) {
           // 窗口期内检测报告质量
           if (inGraceWindow && isReportText(textContent)) {
             gotReport = true;
-            console.log(`  ✅ [${step}#V] 写报告窗口内捕获到报告文本（${textContent.length} 字符）`);
+            console.log(`  ✅ [${step}#${stepDef.role ?? 'V'}] 写报告窗口内捕获到报告文本（${textContent.length} 字符）`);
           }
         }
 
@@ -1291,9 +1301,9 @@ async function runWorker(step, runDir, target) {
     }
 
     // L2：撞硬上限 → 进入 grace window
-    if (streamToolCallCount >= TOOL_HARD_LIMIT && !inGraceWindow && !hardBreak) {
+    if (streamToolCallCount >= hardLimit && !inGraceWindow && !hardBreak) {
       inGraceWindow = true;
-      console.warn(`  ⏳ [${step}#V] 工具调用 ${streamToolCallCount} 次撞硬上限，进入 ${graceSteps} 步写报告窗口`);
+      console.warn(`  ⏳ [${step}#${stepDef.role ?? 'V'}] 工具调用 ${streamToolCallCount} 次撞硬上限，进入 ${graceSteps} 步写报告窗口`);
     }
 
     // Grace window 倒计时
@@ -1301,14 +1311,14 @@ async function runWorker(step, runDir, target) {
       graceStepCount++;
       if (graceStepCount >= graceSteps) {
         hardBreak = true;
-        console.warn(`  🛑 [${step}#V] 写报告窗口耗尽（${graceSteps} 步），模型仍未输出文本，强制中断`);
+        console.warn(`  🛑 [${step}#${stepDef.role ?? 'V'}] 写报告窗口耗尽（${graceSteps} 步），模型仍未输出文本，强制中断`);
         return { hardBreak: true };
       }
     }
 
     // 窗口期内拿到报告 → 正常结束
     if (gotReport) {
-      console.log(`  📝 [${step}#V] 报告已捕获，正常结束`);
+      console.log(`  📝 [${step}#${stepDef.role ?? 'V'}] 报告已捕获，正常结束`);
       return { hardBreak: true };
     }
 
@@ -1369,7 +1379,7 @@ async function runWorker(step, runDir, target) {
       task: userMessage,
       tools,
       modelConfig: { model, preModelHook },
-      toolBudget: { softLimit: TOOL_SOFT_LIMIT, hardLimit: TOOL_HARD_LIMIT },
+      toolBudget: { softLimit, hardLimit },
       recursionLimit,
       stateModifierFactory: buildStateModifier,
       streamHandler,
