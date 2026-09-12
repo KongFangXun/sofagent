@@ -108,7 +108,7 @@ print_completion_summary() {  # 安装完成 · 使用说明（按平台）
       echo "  3. 体验效果：cd 你的 git 项目 && git commit（hook 自动触发）"
       echo "  4. 5 分钟入门：cat \"${SCRIPT_DIR}/docs/HANDBOOK.md\""
     else
-      echo '  1. 验证安装：若 sofagent-core 未找到，先执行: export PATH="$HOME/.local/bin:$PATH"，然后再运行后续命令（sofagent-core verify 与 sofagent-audit --init 均依赖此 PATH）'
+      echo '  1. 验证安装：npm install -g @sofagent/core && sofagent-core verify（bootstrap 形态只装 @sofagent/audit，core 属按需可选包；若 command not found，先: export PATH="$HOME/.local/bin:$PATH"，步骤 2 的 sofagent-audit --init 同样依赖此 PATH）'
       echo "  2. 在你的 git 项目初始化审计：sofagent-audit --init"
       echo "  3. 体验效果：cd 你的 git 项目 && git commit（hook 自动触发）"
       echo "  4. 5 分钟入门：npm docs @sofagent/audit（或访问仓库 docs/HANDBOOK.md）"
@@ -120,6 +120,8 @@ print_completion_summary() {  # 安装完成 · 使用说明（按平台）
   echo '    rm -f "$(git rev-parse --git-path hooks)/pre-commit"'
   echo '    rm -f "$(git rev-parse --git-path hooks)/commit-msg"'
   echo '    rm -f "$(git rev-parse --git-path hooks)/post-commit"'
+  echo '  ⚠️ 若安装前仓库已有自有 hook（--install-hook 会将其保存为 <hook>.pre-sofagent 并链式调用），先还原再删，否则自有 hook 将被孤儿化：'
+  echo '    for f in pre-commit commit-msg post-commit; do [ -f "$(git rev-parse --git-path hooks)/$f.pre-sofagent" ] && mv "$(git rev-parse --git-path hooks)/$f.pre-sofagent" "$(git rev-parse --git-path hooks)/$f"; done'
   echo "  历史拦截：全新安装，审计历史将从第一次提交开始记录。"
   echo ""
   echo "  ✅ sofagent 已就绪，下次 git commit 自动生效"
