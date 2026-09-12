@@ -17,13 +17,11 @@ assignees: ''
 
 （尽可能详细一点——这个项目的作者不会写代码，越具体越好 😅）
 
-
 ## 环境（如果是 bug）
 
 - 平台：OpenClaw / WorkBuddy / Claude Code / Codex / Hermes
 - sofagent 版本：
 - 你是怎么装的：
-
 
 ## 额外信息
 

@@ -1803,7 +1803,6 @@ git grep -q "SOFAGENT_MCP_ROLES" -- docs/API.md && grep -q "reduceAuditHistory" 
 for s in createSshTrainChannel chainDualChannelEvent gateDataPush; do grep -q "$s" tools/check/check-unwired-exports.sh || echo "❌ $s 未登记监控表"; done; echo "✅ 接线登记机制（上方零失败）") 2>&1 | tee "/tmp/regress-dim133-$$.log"; grep -qE "^[[:space:]]{0,2}❌" "/tmp/regress-dim133-$$.log" && { rm -f "/tmp/regress-dim133-$$.log"; echo "维度133收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim133-$$.log"; echo "维度133收口:PASS"
 ```
 
-
 #### 136. 依赖方向架构测试防复发——13 包边界清单 + 注入自测三态（v1.4.8 第七章）
 
 > build 序列 13 包五层（核心 harness/core ← 领域 ont/rules ← 约束 audit/eval/think/evolve ← 编排 orch/daemon ← 展示 ab/mcp/load-chain）。三态实测：干净绿 / 注入 core→orchestrator 红 / 还原绿。

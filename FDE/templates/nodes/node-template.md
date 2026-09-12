@@ -23,7 +23,6 @@ constraints: {}     # 硬约束边界
 
 ---
 
-
 ## 识别 AI 节点 · fde-node-3
 
 | 属性 | 值 |

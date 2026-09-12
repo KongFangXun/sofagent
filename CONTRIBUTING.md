@@ -111,7 +111,7 @@ bash install.sh && bash engine/scripts/verify.sh
 > | 文档类型 | 代表文件 | 「开发中 / WIP / draft」类措辞 | 说明 |
 > |---------|---------|------|------|
 > | **对外文档** | `README.md`、badge、`README.en.md` | ❌ **禁止** | 面向陌生读者和潜在用户，「开发中/WIP/draft」降低可信度。只允许发布版本号或「规划中」（指向明确路线） |
-> | **内部文档** | `docs/ROADMAP.md`、`docs/CHANGELOG.md`、`docs/changelog/` | ✅ **允许** | 面向贡献者，标注「开发中/已排期/尚未实现」是正常的项目状态披露，不违反铁律 |
+> | **内部文档** | `docs/ROADMAP.md`、`CHANGELOG.md`、`docs/changelog/` | ✅ **允许** | 面向贡献者，标注「开发中/已排期/尚未实现」是正常的项目状态披露，不违反铁律 |
 >
 > **规则**：看到 README/badge 出现「开发中/WIP/draft」→ 要改（对外文档必须显得已完成或有明确规划）；看到 ROADMAP/CHANGELOG 出现「开发中/已排期」→ 不用改（内部文档正常披露）。
 
@@ -132,7 +132,7 @@ git clone https://github.com/KongFangXun/sofagent.git
 cd sofagent && bash install.sh && bash engine/scripts/verify.sh
 ```
 
-发版：按 [docs/changelog/releasing.md](./docs/changelog/releasing.md) 十一阶段 SOP 执行——阶段一~四（审查/开发/质量循环/审查体系）→ 阶段五~七（发版闸门/文档收尾/工具健康）→ 阶段八（确认关口）→ 阶段九~十（发布：npm 13 包 + ClawHub/SkillHub 双分发 + tag + Release）→ 阶段十一（发布后收尾）。简版：`docs/changelog/vX.Y/vX.Y.Z.md` 写日志 → `CHANGELOG.md` 加索引 → `tools/release/bump-version.sh` 升级版本号 → `./tools/pre-push-check.sh` 全绿 → `git tag vX.Y && git push` → `gh release create vX.Y`。
+发版：按 [docs/changelog/releasing.md](./docs/changelog/releasing.md) 十一阶段 SOP 执行——阶段一~四（审查/开发/质量循环/审查体系）→ 阶段五~七（发版闸门/文档收尾/工具健康）→ 阶段八（确认关口）→ 阶段九~十（发布：npm 13 包 + ClawHub/SkillHub 双分发 + tag + Release）→ 阶段十一（发布后收尾）。简版：`docs/changelog/vX.Y/vX.Y.Z.md` 写日志 → `CHANGELOG.md` 加索引 → `tools/release/bump-version.sh` 升级版本号 → `tools/release/pre-push-check.sh` 全绿 → `git tag vX.Y && git push` → `gh release create vX.Y`。
 
 > 📋 **changelog 写作规范**：changelog 是对外公开文档，**不写人名、内部私有路径、内部工单/审查代号**。
 > - ❌ 不写开发成员名字或角色代号（如"某某拍板""供某某实现"）

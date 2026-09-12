@@ -15,7 +15,6 @@ description: >
 
 本插件随 sofagent 主线版本发布（SkillHub 通道：`skillhub install cordis-plugin-sofagent-audit` 安装与检索；npm 通道未开通）。版本号与 sofagent 主线对齐。
 
-
 ## 相关链接
 
 - sofagent 主仓：https://github.com/KongFangXun/sofagent

@@ -75,7 +75,7 @@ Agent 接收任务后快速预判：
 
 执行路径：🟢🟡 → Read `task-aware.md` → 执行 / 🔴+FDE → Read `engage.md` → 编排 → 执行 / 🔴+非FDE → 手动拆解 + Read `task-aware.md` → 执行。
 
-<!-- 
+<!--
   7-Entry Pre-Flight Checklist 参照（Google Cloud Code）:
   ✅ recovery — 失败回退方案（已补入 LIMITATIONS + daemon 边界说明）
   ✅ loop — loop-check/evaluate/exit（已落地）
