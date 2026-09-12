@@ -1349,7 +1349,14 @@ async function runWorker(step, runDir, target) {
     //   之前的「worker 强制 LangGraph」方向错误已回滚——DSH 工具面覆盖 worker 需求。
     // FORGE_BACKEND 可显式覆盖（逃生舱：FORGE_BACKEND=langgraph 走 LangGraph）。
     const { createExecutionBackend } = await import('../../engine/orchestrator/dist/execution-backend.js');
-    const backendPref = process.env.FORGE_BACKEND === 'langgraph' ? 'langgraph' : 'dsh';
+    // 🔴 v1.4.8（run-08 实证）：F 步骤默认走 **langgraph**——DSH 桥接在 headless 子进程内
+    // 实测「工具注入成功（6/6）后空转无产出」：run-08 的 f-diagnose 注入工具后 12 分钟
+    // 未生成 fix-plan.md（与驱动注释记载的 run-16「DSH 四步空转 175-359s 吐空 stdout」同源）。
+    // V 步骤走直连（不经 backend），故此处偏好实际只作用于 F。
+    // 逃生舱：FORGE_BACKEND 可显式覆盖（dsh / langgraph）。
+    const backendPref = process.env.FORGE_BACKEND
+      ? process.env.FORGE_BACKEND
+      : (stepDef.role === 'F' ? 'langgraph' : 'dsh');
     const backend = await createExecutionBackend({ preferred: backendPref });
     console.log(`[worker] 执行后端：preferred=${backendPref} → actual=${backend.name}`);
     const execResult = await backend.execute({
