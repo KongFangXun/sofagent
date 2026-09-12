@@ -18,7 +18,7 @@
 //   qwen3.8-max       → QWEN_API_KEY（env.local.template 里配）
 //   glm-5.3           → GLM_API_KEY
 //   deepseek-v4-pro   → DEEPSEEK_API_KEY
-//   deepseek-v4-flash → DEEPSEEK_API_KEY（与 Pro 共用）
+//   deepseek-flash    → DEEPSEEK_API_KEY（与 Pro 共用；即 V4.1-Flash）
 //
 // role 字段决定 agentSkillPath 和 toolsKey：
 //   'reviewer'  → reviewer/SKILL.md + REVIEWER_TOOLS
@@ -32,6 +32,8 @@ export default {
   // v1.4.2 起：A/B/V/F 统一切到 glm-5.3-flash（用户 2026-08-28 拍板，Coding Plan 额度 3 倍）。
   // 2026-09-05 用户拍板「GLM 流量不够，全切回 V4 Flash」→ 四角色切 deepseek-v4-flash（GLM 实测 429 余额不足）。
   // 2026-09-07 用户拍板「几个 loop 的所有模型切换成 5.3 flash」→ 四角色切回 glm-5.3-flash。
+  // 2026-09-12：release-gate-loop 的 V/F 单独切 DeepSeek V4.1-Flash（官方正式名 deepseek-flash；
+  // V4-Flash 已退役，deepseek-v4-flash 仅作临时兼容别名）；A/B/C/D 仍为 glm-5.3-flash。
   // 双盲审查独立性仍通过 A/B 不同 prompt 视角保证（a-check.md ≠ b-check.md），不依赖不同模型。
   // 历史注记（勿删）：2026-08-30 晚 flash 端点间歇故障（45s 超时 / 500 code 1234 交替，run-20
   // 全 500 根因），曾临时切 glm-5.3 绕过（cde4ee27），次日凌晨双探确认恢复后切回。
@@ -44,6 +46,10 @@ export default {
   // 独立性靠「不同 worker 进程 + 零上下文 + 不同 prompt」保证，不依赖换模型。
   C: { model: glm53flash, role: 'reviewer' },  // 验收者：独立验收 B 的修复（每条亲手实测）
   D: { model: glm53flash, role: 'reviewer' },  // 复核者：对抗裁决 P0/P1（CONFIRM/DOWNGRADE/REOPEN）
-  V: { model: glm53flash, role: 'reviewer' },  // 验证者：glm-5.3-flash → GLM_API_KEY（Coding Plan）
-  F: { model: glm53flash, role: 'engineer' },  // 修复者：glm-5.3-flash → GLM_API_KEY（Coding Plan）
+  // release-gate-loop 专用：V/F 走 DeepSeek V4.1-Flash（deepseek-flash，按量计费）。
+  // 判断层默认「裸 LLM 直连」模式，模型取自本文件的 V/F 配置（走 DSH 桥接时才转读
+  // ~/.dsh/settings.yaml）——故此处即为 release loop 的模型开关，改此两行不影响
+  // fresh-eyes-loop 的 A/B/C/D（仍走 glm-5.3-flash）。
+  V: { model: deepseekV4Flash, role: 'reviewer' },  // 验证者：DeepSeek V4.1-Flash → DEEPSEEK_API_KEY
+  F: { model: deepseekV4Flash, role: 'engineer' },  // 修复者：DeepSeek V4.1-Flash → DEEPSEEK_API_KEY
 };

@@ -14,14 +14,16 @@ const MODEL_CONFIGS = {
 
 | 角色 | 模型 | 计费 | 用途 |
 |------|------|------|------|
-| A（审查者） | deepseek-v4-flash | DeepSeek API（按量） | 审查 / 合并 / 验证 |
-| B（工程师） | deepseek-v4-flash | DeepSeek API（按量） | 审查 / 修复 |
-| V（验证者） | deepseek-v4-flash | DeepSeek API（按量） | release-gate 全流程 |
-| F（修复者） | deepseek-v4-flash | DeepSeek API（按量） | F 修复链 |
+| A（审查者） | glm-5.3-flash | GLM Coding Plan（订阅） | 审查 / 合并 / 验证 |
+| B（工程师） | glm-5.3-flash | GLM Coding Plan（订阅） | 修复 |
+| C（验收者） | glm-5.3-flash | GLM Coding Plan（订阅） | 独立验收 B 的修复 |
+| D（复核者） | glm-5.3-flash | GLM Coding Plan（订阅） | 对抗裁决 P0/P1 |
+| V（验证者） | deepseek-flash（V4.1-Flash） | DeepSeek API（按量） | release-gate 全流程 |
+| F（修复者） | deepseek-flash（V4.1-Flash） | DeepSeek API（按量） | 修复 |
 
-> **A/B/V/F 统一 deepseek-v4-flash**（低成本档，~0 成本）。
-> 双盲审查独立性通过 A/B **不同 prompt 视角**保证（a-check.md ≠ b-check.md），**不依赖不同模型**——「异构双模型」时代已结束。
-> 历史注记（勿删）：Qwen3.8-max 在工具循环里无法被 stateModifier 约束（thinking-only 停不下来）→ 改 GLM-5.2；GLM-5.2 审查步骤调 60+ 次工具不收敛。切 V4 Flash 后重点观察重型循环收敛性 + 按量计费成本。
+> **fresh-eyes-loop（A/B/C/D）走 glm-5.3-flash；release-gate-loop（V/F）走 DeepSeek V4.1-Flash**——两条 loop 各自独立选型。
+> 审查独立性通过 **不同 worker 进程 + 零上下文 + 不同 prompt 视角**保证（a-check.md ≠ b-check.md），**不依赖不同模型**——「异构双模型」时代已结束。
+> 历史注记（勿删）：Qwen3.8-max 在工具循环里无法被 stateModifier 约束（thinking-only 停不下来）→ 改 GLM-5.2；GLM-5.2 审查步骤调 60+ 次工具不收敛。
 > 权威源：`FORGE/models/profile.mjs`（换模型只改这里，lessons 不重复定义）。
 
 ### Thinking 模型特殊处理（历史，deepseek-v4-flash 不适用）

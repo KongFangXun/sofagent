@@ -25,7 +25,7 @@
 | 章 | 文件 | 核心内容 |
 |---|------|---------|
 | 一·架构设计 | [./architecture.md](./architecture.md) | **执行后端三层（DSH CLI 桥接 → createReactAgent fallback → 禁 createDeepAgent）** · Driver-Worker 编排 · 步骤定义 · 目录架构 |
-| 二·模型配置 | [./models.md](./models.md) | MODEL_CONFIGS · **A/B/V/F 统一 deepseek-v4-flash** · 步骤级 maxTokens · 计费模式 |
+| 二·模型配置 | [./models.md](./models.md) | MODEL_CONFIGS · **fresh-eyes（A/B/C/D）走 glm-5.3-flash、release-gate（V/F）走 DeepSeek V4.1-Flash** · 步骤级 maxTokens · 计费模式 |
 | 三·性能优化 | [./performance.md](./performance.md) | 三层上下文裁剪（截断+stateModifier+preModelHook）· 效率铁律 · stream |
 | 四·Driver 编排 | [./driver.md](./driver.md) | **preflight-check 跑前自检** · recursionLimit · **三层熔断死循环防护** · **零信任复核（FAIL≠真实 bug）** · **守卫 fail-loud（PASS 更不可信）** · **冻结窗口锁（防并行会话误改）** · **fresh-eyes 四连事故（窗口冲突/修复静默丢失/降级滚雪球/API 漂移全灭）** · **DSH 桥接证据注入（无工具面）** · 失败容错 · 分片 · 停止条件 · 外部脚本 spawn · --step |
 | 五~八·Stream/Prompt/工具/可观测 | [./stream-prompt-tools.md](./stream-prompt-tools.md) | stream 迁移 P0 铁律 · BSD 约束 · 工具格式转换 · 两层可观测 |
@@ -47,7 +47,7 @@
 ### 🤖 模型配置
 
 - [ ] **MODEL_CONFIGS 定义完整字段**（[二·模型配置](./models.md#模型配置)）
-- [ ] **A/B/V/F 统一切 deepseek-v4-flash**（双盲靠 prompt 视角不靠异构模型；权威源 FORGE/models/profile.mjs）（[二·模型配置](./models.md#模型配置)）
+- [ ] **两条 loop 各自选型**（fresh-eyes 的 A/B/C/D 走 glm-5.3-flash 订阅档；release-gate 的 V/F 走 deepseek-flash 按量档；独立性靠 prompt 视角不靠异构模型；权威源 FORGE/models/profile.mjs）（[二·模型配置](./models.md#模型配置)）
 - [ ] **Thinking-only 模型特殊处理已归档**（deepseek-v4-flash 非 thinking-only，历史记录供换回 thinking 模型时参考）（[二·Thinking-only](./models.md#thinking-模型特殊处理历史deepseek-v4-flash-不适用)）
 - [ ] **合并/汇总步骤 maxTokens = 32000**（[二·步骤级 maxTokens](./models.md#步骤级-maxtokens-覆盖)）
 - [ ] **计费模式标注**（subscription 的 cost_cny = null；deepseek-v4-flash 按量计费）
