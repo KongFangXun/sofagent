@@ -24,6 +24,18 @@
 //   ⑤ 规划中承载：插件 description / pluginMeta 出现「规划中 / 待实现 / 未实现」时，
 //      同行必须带版本号（vX.Y.Z）承载 —— 不允许「无版本承载的规划中」。
 //
+//   ⑥ SKILL.md 反向对账（v1.4.8 A5）：SKILL.md 是**第四处手写 seam 面**（不在生成器
+//      产物之列），文本里带 `（seam: <值>）` 字面量 → 改它不改另三处会**静默漂移**。
+//      🔴 判据是**反向约束**：「**若** SKILL.md 出现 seam 字面量，则**每一处**都必须与
+//         src/index.ts 的 pluginMeta.seam 逐字一致」——**不是**「必须有」。
+//      依据：SKILL.md 是面向 SkillHub 消费端的人类描述文档，非契约载体；把「必须提及
+//        seam」写成硬要求 = 给所有新插件新增一条任务书里没有的硬要求，且合法不写者会
+//        被判假红。机器真值已在三处，SKILL.md 只是「可能漂移的第四面」。
+//      已知残余缺口（显式标出，不假装覆盖）：反向约束**不覆盖**「SKILL.md 悄悄删掉
+//        seam 字样」这一形态——是否把 SKILL.md 升格为契约面属产品决策，不在本脚本内裁。
+//      载体形态（实测 10/10 一致）：YAML frontmatter 的 `description: >` 折叠标量（行 7）
+//        + 正文同文重复行（行 12），均写作 `（seam: <值>）`（全角括号）。
+//
 // 用法：
 //   node tools/check/check-seam-contract.mjs             # 常态门禁
 //   node tools/check/check-seam-contract.mjs --selftest  # 合成回归（注入漂移 → 必报红）
@@ -51,9 +63,9 @@ const VERSION_RE = /v\d+\.\d+\.\d+/;
 const ARGV = process.argv.slice(2);
 if (ARGV.includes('--help') || ARGV.includes('-h')) {
   console.log('check-seam-contract.mjs — 插件适配层 seam 契约门禁');
-  console.log('  (无参数)    常态门禁：正向 / 三处一致 / 反向（宿主缺席 SKIP）/ 双向对账 / 规划中承载');
+  console.log('  (无参数)    常态门禁：正向 / 三处一致 / 反向（宿主缺席 SKIP）/ 双向对账 / 规划中承载 / SKILL.md 反向对账');
   console.log('  --verbose   连同反向检查的全部命中明细一并打印（取证用）');
-  console.log('  --selftest  合成回归：注入四类漂移（幽灵 seam / 三处不一致 / 漏写 / 无承载规划中）→ 必报红');
+  console.log('  --selftest  合成回归：注入五类漂移（幽灵 seam / 三处不一致 / 漏写 / 无承载规划中 / SKILL.md 漂移）→ 必报红');
   console.log('  --help      显示帮助');
   console.log('');
   console.log('环境变量（反向检查宿主根，缺席则打印 SKIP）：');
@@ -174,6 +186,23 @@ function seamFromTs(text) {
 function seamFromPatch(text) {
   const m = text.match(/^\s*seam:\s*"([^"]*)"\s*(?:#.*)?$/m);
   return m ? m[1] : null;
+}
+
+/**
+ * SKILL.md → 全部 `（seam: <值>）` 字面量（含行号）。
+ * 载体形态：全角括号「（seam: …）」/ 半角「(seam: …)」皆可（实测 10/10 用全角）。
+ * 值以**首个右括号**收尾——故值内不得含 `）`/`)`（seam 值形如 `tools/result + fs/write-intent`
+ * 或 `non-seam:tool-set`，天然不含括号）。
+ * 返回 [{ line, value }]；无字面量 → 空数组（反向约束下**不判红**）。
+ */
+function seamFromSkill(text) {
+  const out = [];
+  text.split('\n').forEach((lineText, i) => {
+    for (const m of lineText.matchAll(/[（(]\s*seam[:：]\s*([^）)]+?)\s*[）)]/g)) {
+      out.push({ line: i + 1, value: m[1] });
+    }
+  });
+  return out;
 }
 
 /** 归一化：折叠空白，供逐条比对 */
@@ -325,6 +354,8 @@ function runChecks(root, opts = {}) {
   const warns = [];
   const skips = [];
   const notes = [];
+  /** SKILL.md 反向对账的逐插件覆盖情况（打印用；不参与退出码） */
+  const skillNotes = [];
   const N = (id, detail) => fails.push({ id, detail });
   const W = (id, detail) => warns.push({ id, detail });
 
@@ -405,6 +436,43 @@ function runChecks(root, opts = {}) {
     // ⑤ 双向对账
     if (!vocabDshPlugins.has(short)) {
       N(dir, `词表未登记：插件「${short}」不在 SEAMS.md 任何 *-HOST / *-FORM 行的「挂载插件」列`);
+    }
+
+    // ⑥ SKILL.md 反向对账：出现 seam 字面量 ⇒ 每一处都必须与 src/index.ts 的 pluginMeta.seam 一致
+    const skillPath = path.join(base, 'SKILL.md');
+    if (fs.existsSync(skillPath)) {
+      const rawHits = seamFromSkill(fs.readFileSync(skillPath, 'utf8'));
+      // 注入点（--selftest 用）：用一个值替换全部命中，常态下不生效
+      const inj = inject[`skill:${dir}`];
+      const hits =
+        inj === undefined
+          ? rawHits
+          : rawHits.length > 0
+            ? rawHits.map(() => ({ line: rawHits[0].line, value: inj }))
+            : [{ line: 0, value: inj }];
+      const skillRel = path.join(DSH_PLUGINS_DIR, dir, 'SKILL.md');
+      if (hits.length === 0) {
+        skillNotes.push(`${short}：SKILL.md 无 seam 字面量（反向约束下不判红；本插件的第四面不受门禁覆盖）`);
+      } else {
+        for (const h of hits) {
+          if (norm(h.value) !== declared) {
+            N(`${skillRel}:${h.line}`, `SKILL.md seam 与契约漂移：SKILL.md=${norm(h.value)} / 契约（src/index.ts pluginMeta.seam）=${declared}`);
+          }
+        }
+        skillNotes.push(`${short}：SKILL.md ${hits.length} 处 seam 字面量（行 ${hits.map((h) => h.line).join('/')}）已纳入对账`);
+      }
+      // 无论命中与否：提到 seam 但**不是** `（seam: …）` 形态的行 → 未被对账覆盖，必须可见（WARN 不阻断）。
+      // 目的：将来有人换一种写法（如去掉括号）时，不会静默变成「门禁看不见的第四面」。
+      const parsedLines = new Set(hits.map((h) => h.line));
+      fs.readFileSync(skillPath, 'utf8')
+        .split('\n')
+        .forEach((t, i) => {
+          if (/\bseam\b/i.test(t) && !parsedLines.has(i + 1)) {
+            W(`${skillRel}:${i + 1}`, `提到「seam」但不是 \`（seam: …）\` 形态——该行未被对账覆盖（仅提示，不阻断）`);
+          }
+        });
+    } else {
+      skillNotes.push(`${short}：无 SKILL.md（第四面不存在，不判红）`);
     }
   }
   for (const p of vocabDshPlugins) {
@@ -539,7 +607,7 @@ function runChecks(root, opts = {}) {
     });
   }
 
-  return { fails, warns, skips, notes, vocab };
+  return { fails, warns, skips, notes, skillNotes, vocab };
 }
 
 /** git 追踪文件清单（排除 dist/ 等构建产物）；git 不可用时退化为目录遍历（排除 dist/node_modules） */
@@ -573,7 +641,7 @@ function trackedFiles(root, dirs) {
 function main() {
   console.log('── 插件适配层 seam 契约门禁 ──');
   console.log('');
-  const { fails, warns, skips, notes, vocab } = runChecks(REAL_ROOT);
+  const { fails, warns, skips, notes, skillNotes, vocab } = runChecks(REAL_ROOT);
   console.log(
     `  词汇表：DSH 宿主 ${vocab.dshHost.length} 条 / DSH 非 seam 形态 ${vocab.dshForm.length} 条 / ` +
       `OpenClaw hook ${vocab.oclHost.length} 条 / OpenClaw 内建 hook ${vocab.oclInternal.length} 条 / OpenClaw 非 seam 形态 ${vocab.oclForm.length} 条`,
@@ -593,6 +661,9 @@ function main() {
   for (const n of shown) console.log(`    · ${n}`);
   if (!VERBOSE && hitNotes.length > 3) console.log(`    · …（其余 ${hitNotes.length - 3} 条同类，略——加 --verbose 看全量）`);
   console.log('');
+  console.log(`  SKILL.md 反向对账（第四处手写 seam 面）：覆盖 ${skillNotes.filter((s) => /已纳入对账/.test(s)).length} 个插件`);
+  for (const s of skillNotes) console.log(`    · ${s}`);
+  console.log('');
   for (const w of warns) console.log(`  ⚠️  【WARN】${w.id}：${w.detail}`);
   for (const f of fails) console.log(`  ❌ 【FAIL】${f.id}：${f.detail}`);
   console.log('');
@@ -605,7 +676,7 @@ function main() {
 }
 
 // ============================================================
-// --selftest 合成回归：注入四类漂移 → 必报红（红不了的门禁是装饰品）
+// --selftest 合成回归：注入五类漂移 → 必报红（红不了的门禁是装饰品）
 // ============================================================
 function selftest() {
   console.log('── --selftest 合成回归（注入漂移 → 必报红）──');
@@ -614,9 +685,11 @@ function selftest() {
     ['三处漂移（只改 src 侧）', { inject: { 'cordis-plugin-sofagent-evolve': 'tools/result' } }, (r) => r.fails.some((f) => f.detail.includes('三处 seam 漂移'))],
     ['漏写 seam（清空声明）', { inject: { 'cordis-plugin-sofagent-gate': ' ' } }, (r) => r.fails.some((f) => f.detail.includes('漏写 seam'))],
     ['OpenClaw description 幽灵 hook', { inject: null }, null],
+    // ⑥ SKILL.md 反向对账：注入「词表内合法值」制造 SKILL.md 与契约不一致 → 必须点到 SKILL.md:行
+    ['SKILL.md 与契约漂移（词表内值）', { inject: { 'skill:cordis-plugin-sofagent-gate': 'tools/result' } }, (r) => r.fails.some((f) => String(f.id).endsWith('SKILL.md:7') && f.detail.includes('SKILL.md seam 与契约漂移'))],
   ];
   let fail = 0;
-  for (const [label, opts, assert] of cases.slice(0, 3)) {
+  for (const [label, opts, assert] of cases.filter((c) => c[2])) {
     const r = runChecks(REAL_ROOT, opts);
     const ok = assert(r);
     console.log(`  ${ok ? '✓' : '❌'} ${label}：${ok ? '必命中' : '未命中——守卫是装饰品'}`);
@@ -648,7 +721,7 @@ function selftest() {
     console.log(`✗ selftest 失败 ${fail} 项——守卫未抓到注入漂移`);
     return 1;
   }
-  console.log('✓ selftest 通过——四类合成漂移全命中（守卫非装饰品）');
+  console.log('✓ selftest 通过——五类合成漂移全命中（守卫非装饰品）');
   return 0;
 }
 
