@@ -18,7 +18,7 @@ import type { InspectorResult } from './types';
  *
  * @param _projectDir 项目根目录（本 inspector 数据走 SOFAGENT_HOME 路径 SSOT）
  */
-export function runSkilloptTrigger(_projectDir: string): InspectorResult {
+export function runEvolveTrigger(_projectDir: string): InspectorResult {
   try {
     // 动态 import evolve（daemon → evolve 依赖方向合法）
     const evolve = require('@sofagent/evolve') as {

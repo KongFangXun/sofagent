@@ -124,13 +124,14 @@
   checkKnowledgeFreshness,
   checkSkillStaleness,
   accumulateWarnings,
-  runInspectors,
   runHealthReport,
-  DEFAULT_INSPECTOR_CONFIG,
   generateDataSovereigntyDaily,
   generateDataSovereigntyWeekly,
   generateDataSovereigntyMonthly,
+  // v1.4.8 深模块条目 2：runInspectors / DEFAULT_INSPECTOR_CONFIG 降 @internal
+  //（包内外零运行时消费者——活路径是 runLayeredInspection；内部仍导出供测试）
 } from './inspectors';
+/* @internal */ export { runInspectors, DEFAULT_INSPECTOR_CONFIG } from './inspectors';
 /* @public */ export type { InspectorConfig, InspectorResult, DaemonHealth } from './inspectors';
 
 // v1.2.4 P0：分层巡检（L1/L2/L3）+ L3 新 inspector
@@ -150,7 +151,7 @@
 /* @public */ export { runEvalFailuresCheck } from './inspectors/eval-failures';
 
 // v1.2.4 P1：evolve 自动触发 inspector
-/* @public */ export { runSkilloptTrigger } from './inspectors/evolve-trigger';
+/* @public */ export { runEvolveTrigger } from './inspectors/evolve-trigger';
 
 // v1.2.4 P1b：Dashboard 历史趋势 + 任务统计
 /* @public */ export { runDailySnapshot } from './inspectors/daily-snapshot';

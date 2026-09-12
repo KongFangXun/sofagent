@@ -1,16 +1,25 @@
 {
-  "generatedAt": "2026-09-10T14:01:15.516Z",
+  "generatedAt": "2026-09-12T04:32:56.506Z",
   "packages": {
     "@sofagent/harness": {
-      "version": "1.4.6",
+      "version": "1.4.7",
       "symbols": [
+        "BudgetVerdict",
+        "COMPACT_END_MARKER",
+        "COMPACT_START_MARKER",
+        "CompactResult",
+        "LoadChainBudget",
+        "OnCompactCallback",
         "buildConstrainedSystemPrompt",
+        "checkBudget",
+        "compactIfNeeded",
+        "estimateTokens",
         "listCustomOverrides",
         "tryRead"
       ]
     },
     "@sofagent/ontology": {
-      "version": "1.4.6",
+      "version": "1.4.7",
       "symbols": [
         "LIFECYCLE_TO_MARKET_RING",
         "LifecycleMigrationRequest",
@@ -35,7 +44,7 @@
       ]
     },
     "@sofagent/core": {
-      "version": "1.4.6",
+      "version": "1.4.7",
       "symbols": [
         "AB_TEST_DIR",
         "AB_TEST_HISTORY",
@@ -61,6 +70,8 @@
         "CONFIG_TEMPLATE",
         "CheckItem",
         "CheckStatus",
+        "ClassifiedCommand",
+        "ClassifierOverrides",
         "CompactCommand",
         "ConfigLoadError",
         "ConfigParseError",
@@ -97,6 +108,11 @@
         "EncryptedPayload",
         "EnvReport",
         "EnvResult",
+        "EscalationDecision",
+        "EscalationLevel",
+        "EscalationPolicyOptions",
+        "EscalationScenarioPolicy",
+        "EscalationVerdict",
         "FEDERATION_TOKEN_PATH",
         "FORGE_RUNS_DIR",
         "FederationResult",
@@ -145,6 +161,10 @@
         "PAIRING_CODE_LENGTH",
         "PairedPeer",
         "PairingSession",
+        "QuotaConfig",
+        "QuotaPeriod",
+        "QuotaUsage",
+        "QuotaVerdict",
         "REDACTION_PATTERNS",
         "REPO_HASH_PATTERN",
         "RESTRICTED_PLACEHOLDER",
@@ -158,6 +178,9 @@
         "SOFAGENT_INTERNAL",
         "SOVEREIGNTY_DIR",
         "SampleSource",
+        "ScopeKind",
+        "ScopeVerdict",
+        "ScopedName",
         "Sensitivity",
         "SessionGoal",
         "SlashCommand",
@@ -189,6 +212,7 @@
         "appendLlmCallRecord",
         "appendThinkEntry",
         "archiveOldEntries",
+        "assertScopedName",
         "atomicAppendSync",
         "atomicWriteSync",
         "atomicWriteWithMergeSync",
@@ -201,6 +225,8 @@
         "checkHistoryChainDetailed",
         "checkHistoryChainIntegrity",
         "checkLogs",
+        "checkQuota",
+        "classifyCommand",
         "classifyError",
         "clearRepoHashCache",
         "collectEnvVars",
@@ -320,12 +346,14 @@
         "rotateBackups",
         "rotateDataKey",
         "rotateKey",
+        "routeEscalation",
         "runAllChecks",
         "runDataRules",
         "runDoctor",
         "runQuickChecks",
         "runWorkBuddyChecks",
         "safeDefaults",
+        "shouldRecordSpend",
         "shouldRotate",
         "signConfig",
         "signIdentityPayload",
@@ -333,6 +361,7 @@
         "stableStringify",
         "stripDataUris",
         "validateHmacKey",
+        "validateScopedName",
         "validateTenantId",
         "verifyAgentIdentity",
         "verifyEvidence",
@@ -345,7 +374,7 @@
       ]
     },
     "@sofagent/rules": {
-      "version": "1.4.6",
+      "version": "1.4.7",
       "symbols": [
         "ApprovalMode",
         "ApprovalResult",
@@ -371,7 +400,7 @@
       ]
     },
     "@sofagent/think": {
-      "version": "1.4.6",
+      "version": "1.4.7",
       "symbols": [
         "ThinkEntryOptions",
         "generateDataThink",
@@ -380,7 +409,7 @@
       ]
     },
     "@sofagent/audit": {
-      "version": "1.4.6",
+      "version": "1.4.7",
       "symbols": [
         "AgentRollupRow",
         "AgentShield",
@@ -475,10 +504,12 @@
         "checkDecisionChainDetailed",
         "checkHistoryChainIntegrity",
         "checkLogs",
+        "checkPathspecDiscipline",
         "commitSnapshot",
         "createAgentShield",
         "createShadowRepo",
         "defaultRules",
+        "detectForeignStaged",
         "emitDecision",
         "exportProvJsonLd",
         "exportProvTurtle",
@@ -544,15 +575,17 @@
         "scanFile",
         "showHelp",
         "signBody",
+        "snapshotForTurn",
         "traceBack",
         "traceDecisionChain",
         "traceFromBehavior",
         "upsertTriggerBinding",
-        "validateHmacKey"
+        "validateHmacKey",
+        "verifyNoConcurrentWrite"
       ]
     },
     "@sofagent/eval": {
-      "version": "1.4.6",
+      "version": "1.4.7",
       "symbols": [
         "EvalBreakdown",
         "EvalConfig",
@@ -567,22 +600,29 @@
       ]
     },
     "@sofagent/evolve": {
-      "version": "1.4.6",
+      "version": "1.4.7",
       "symbols": [
         "AUTO_TRIGGER_THRESHOLD",
         "BackfillConcept",
         "BackfillEntry",
+        "EvolveResult",
         "FailurePattern",
         "FailureRecord",
+        "GateHistory",
+        "GateVerdict",
+        "NativeGateOptions",
         "OptimizeInput",
         "OptimizeResult",
+        "ProposalWithSafety",
+        "ProposerInput",
         "SafetyHit",
         "SafetyResult",
         "SafetyRule",
-        "SkillOptResult",
+        "SkillProposal",
         "ValidationResult",
         "autoTriggerAll",
         "backfill",
+        "buildProposerPrompt",
         "clearBackfillQueue",
         "clearFailureCache",
         "findFiles",
@@ -591,11 +631,15 @@
         "getFailurePatternsBySkill",
         "getPendingTriggerCount",
         "getRepeatedFailures",
-        "isSkillOptAvailable",
+        "isEvolveAvailable",
+        "loadFailureLedger",
+        "loadImpactLedger",
         "optimize",
+        "parseProposalWithSafety",
         "recordFailure",
         "resolveFailureLedgerPath",
-        "runSkillOpt",
+        "runEvolve",
+        "runNativeGate",
         "scanFile",
         "scanSkillSafety",
         "skillSafetyCheckMain",
@@ -603,7 +647,7 @@
       ]
     },
     "@sofagent/orchestrator": {
-      "version": "1.4.6",
+      "version": "1.4.7",
       "symbols": [
         "ABPhase",
         "ABScheduleConfig",
@@ -2057,7 +2101,7 @@
       ]
     },
     "@sofagent/daemon": {
-      "version": "1.4.6",
+      "version": "1.4.7",
       "symbols": [
         "Atom",
         "AuditEntry",
@@ -2077,7 +2121,6 @@
         "CronJob",
         "CronMacro",
         "CronSugar",
-        "DEFAULT_INSPECTOR_CONFIG",
         "DEFAULT_MAX_NO_CHANGE_RUNS",
         "DEFAULT_TRAIN_ARCHIVE_CONFIG",
         "DREAM_CYCLE_STAGES",
@@ -2245,16 +2288,15 @@
         "runDailySnapshot",
         "runDreamCycle",
         "runEvalFailuresCheck",
+        "runEvolveTrigger",
         "runFailurePattern",
         "runFdeCompanionDaily",
         "runFdeRegistryDaily",
         "runFederationDistillation",
         "runFilesystemAudit",
         "runHealthReport",
-        "runInspectors",
         "runLayeredInspection",
         "runOntologyCoverage",
-        "runSkilloptTrigger",
         "runTaskStats",
         "runTrainArchiveTask",
         "runTrendAggregator",
@@ -2277,7 +2319,7 @@
       ]
     },
     "@sofagent/ab-test": {
-      "version": "1.4.6",
+      "version": "1.4.7",
       "symbols": [
         "ABConfig",
         "ABTestResult",
@@ -2296,7 +2338,7 @@
       ]
     },
     "@sofagent/load-chain": {
-      "version": "1.4.6",
+      "version": "1.4.7",
       "symbols": [
         "LoadChainEvent",
         "default",

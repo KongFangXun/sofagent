@@ -238,8 +238,6 @@
   "engine/orchestrator/src/loop/nodes.ts:596",
   "engine/orchestrator/src/loop/nodes.ts:802",
   "engine/orchestrator/src/loop/plan-node.ts:199",
-  "engine/orchestrator/src/mailbox/mailbox.ts:111",
-  "engine/orchestrator/src/mailbox/mailbox.ts:149",
   "engine/orchestrator/src/meta-harness/orchestrator.ts:301",
   "engine/orchestrator/src/middleware/dual-gate-mw.ts:308",
   "engine/orchestrator/src/middleware/dual-gate-mw.ts:335",

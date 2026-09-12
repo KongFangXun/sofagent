@@ -18,6 +18,9 @@ import { generateDataSovereigntyMonthly } from './data-sovereignty-monthly';
 import { runWorkspaceSummary } from '../workspace-summary';
 // v1.3.2 交付 7：审计轨迹聚合巡检器（@daily）
 import { runAuditTrailInspector } from './audit-trail';
+// v1.4.8 深模块条目 2：注册表单源（分层/配置/执行全派生）
+import { INSPECTORS, runAll } from './registry';
+import { LAYER_SCHEDULE } from '../inspector-layers';
 // v1.3.4 交付 1：能力目录日更生成（@daily）
 import { runCommonsCatalogDaily } from './commons-catalog-daily';
 // v1.3.4 交付 3：公地健康周检（@weekly）
@@ -27,22 +30,16 @@ export { analyzeAuditHistory, checkConflict, checkDoctorHealth, checkKnowledgeFr
 export type { InspectorConfig, InspectorResult } from './types';
 export type { DaemonHealth } from './health-reporter';
 
-/** 默认巡检器配置 */
-export const DEFAULT_INSPECTOR_CONFIG: Record<string, InspectorConfig> = {
-  'audit-history': { enabled: true, schedule: '@daily' },
-  'conflict-check': { enabled: true, schedule: '@weekly' },
-  'doctor-health': { enabled: true, schedule: '@daily' },
-  'knowledge-freshness': { enabled: true, schedule: '@weekly' },
-  'knowledge-health': { enabled: true, schedule: '@weekly' },
-  'skill-staleness': { enabled: false, schedule: '@weekly' },
-  'warn-accumulator': { enabled: true, schedule: '@daily' },
-  // v1.2.2 P0：数据主权审计三档报告
-  'data-sovereignty-daily': { enabled: true, schedule: '@daily' },
-  'data-sovereignty-weekly': { enabled: true, schedule: '@weekly' },
-  'data-sovereignty-monthly': { enabled: true, schedule: '@monthly' },
-  // v1.2.3 交付五：workspace 变更摘要（checkpoint 联动触发 · AD-6）
-  'workspace-summary': { enabled: true, schedule: '@daily' },
-};
+/**
+ * 默认巡检器配置（v1.4.8 深模块条目 2：从注册表派生——enabled 与层级来自
+ * ./registry.ts 的 INSPECTORS 单源，schedule 由 LAYER_SCHEDULE 映射）。
+ */
+export const DEFAULT_INSPECTOR_CONFIG: Record<string, InspectorConfig> = Object.fromEntries(
+  Object.entries(INSPECTORS).map(([name, entry]) => [
+    name,
+    { enabled: entry.enabled, schedule: LAYER_SCHEDULE[entry.layer] },
+  ]),
+);
 
 /**
  * workspace-summary 巡检适配（v1.2.3 · 交付五）。
@@ -89,21 +86,6 @@ export function runInspectors(
   projectDir: string,
   _config?: Partial<Record<string, InspectorConfig>>,
 ): InspectorResult[] {
-  return [
-    analyzeAuditHistory(projectDir),
-    checkConflict(projectDir),
-    checkDoctorHealth(projectDir),
-    checkKnowledgeFreshness(projectDir),
-    checkKnowledgeHealth(projectDir),
-    checkSkillStaleness(projectDir),
-    accumulateWarnings(projectDir),
-    // v1.3.1 交付 7：审计轨迹聚合巡检（@daily——按 agentId 归集跨设备审计轨迹）
-    runAuditTrailInspector(projectDir),
-    // v1.2.3 交付五：workspace 变更摘要（checkpoint 联动）
-    workspaceSummaryInspector(projectDir),
-    // v1.2.4 P0 修复预存 bug：data-sovereignty 三档报告之前只注册不执行，补入执行数组
-    generateDataSovereigntyDaily(projectDir),
-    generateDataSovereigntyWeekly(projectDir),
-    generateDataSovereigntyMonthly(projectDir),
-  ];
+  // v1.4.8 深模块条目 2：扁平执行表已死路径化——统一走注册表（单源）
+  return runAll(projectDir);
 }

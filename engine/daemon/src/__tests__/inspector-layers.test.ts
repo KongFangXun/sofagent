@@ -10,6 +10,7 @@
 // ============================================================
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { listInspectors } from '../inspectors/registry';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
@@ -128,10 +129,11 @@ describe('inspector-layers', () => {
       expect(result.executedAt).toBeTruthy();
     });
 
-    it('L2 执行返回结果数组', () => {
+    it('L2 执行返回结果数组（enabled 条目——disabled 不执行）', () => {
       const result = runLayeredInspection(tmpDir, 'L2');
       expect(result.layer).toBe('L2');
-      expect(result.results).toHaveLength(getLayerInspectorNames('L2').length);
+      // v1.4.8 条目 2：registry 尊重 enabled 位（skill-staleness=false 不执行）
+      expect(result.results).toHaveLength(listInspectors('L2').length - 1); // 8 注册 - 1 disabled
     });
 
     it('L3 执行返回结果数组', () => {
@@ -160,12 +162,12 @@ describe('inspector-layers', () => {
   // ════════════════════════════════════════
 
   describe('runAllLayers', () => {
-    it('全量执行结果数 = L1 + L2 + L3 inspector 总数', () => {
+    it('全量执行结果数 = 各层 enabled 条目之和（disabled 不执行）', () => {
       const results = runAllLayers(tmpDir);
-      const expected =
-        getLayerInspectorNames('L1').length +
-        getLayerInspectorNames('L2').length +
-        getLayerInspectorNames('L3').length;
+      // v1.4.8 条目 2：25 注册 - 1 disabled（skill-staleness）= 24 执行
+      const expected = (['L1', 'L2', 'L3'] as const).reduce(
+        (sum, l) => sum + listInspectors(l).length - (l === 'L2' ? 1 : 0), 0,
+      );
       expect(results).toHaveLength(expected);
     });
 

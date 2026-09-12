@@ -1,38 +1,9 @@
 // ============================================================
-// data-sovereignty-monthly.ts · 数据主权审计月报 inspector（v1.4.7 · P0）
+// data-sovereignty-monthly.ts · 数据主权审计月报 inspector
+// v1.4.8 深模块条目 2 批三：三档互为复制收敛为 makeSovereigntyInspector
+// 工厂（./data-sovereignty.ts）——本文件保留导出名薄委托（消费面不变）。
 // ============================================================
-//
-// @monthly：生成上月数据主权审计报告 → 写入 {企业名}/审计报告/{年}/{月}/monthly-YYYY-MM.md
-// ============================================================
 
-import { generateMonthlyReport } from '@sofagent/audit';
-import { pushAuditReport } from '../webhook/audit-report-push';
-import type { InspectorResult } from './types';
+import { makeSovereigntyInspector } from './data-sovereignty';
 
-/**
- * 生成上月数据主权月报
- * @param projectDir 项目根目录（数据走 SOFAGENT_HOME 路径 SSOT）
- */
-export function generateDataSovereigntyMonthly(projectDir: string): InspectorResult {
-  try {
-    const report = generateMonthlyReport();
-    void pushAuditReport(report);
-
-    return {
-      name: 'data-sovereignty-monthly',
-      triggered: report.stats.anomalyCount > 0,
-      message:
-        `数据主权月报 ${report.label} 已生成：` +
-        `${report.stats.total} 条记录 · 异常 ${report.stats.anomalyCount} 条` +
-        (report.visiblePath ? ` · ${report.visiblePath}` : ''),
-      severity: report.stats.anomalyCount > 0 ? 'warning' : 'info',
-    };
-  } catch (err) {
-    return {
-      name: 'data-sovereignty-monthly',
-      triggered: false,
-      message: `数据主权月报生成失败：${err instanceof Error ? err.message : String(err)}`,
-      severity: 'warning',
-    };
-  }
-}
+export const generateDataSovereigntyMonthly = makeSovereigntyInspector('monthly');
