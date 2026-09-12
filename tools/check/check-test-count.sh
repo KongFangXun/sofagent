@@ -703,7 +703,8 @@ else
   #    该版本测试数的 SSOT。双口径换算式写死防漂移：全量 = workspace + 27(DSH) + 17(OpenClaw)。
   CL_WS_MARK=$(echo "$CHANGELOG_LINE" | grep -oE 'workspace 口径 [0-9]+' | grep -oE '[0-9]+' || echo "")
   if [ -n "$CL_WS_MARK" ]; then
-    # 找同版本开发日志的 workspace 快照（「NNNN tests across 12 packages」或「workspace NNNN」）
+    # 找同版本开发日志的 workspace 快照（「NNNN tests across NN packages」或「workspace NNNN」）
+    # v1.4.8：包数不再写死 12——train 拆包后为 13，用 [0-9]+ 动态匹配（写死会在包数变化后静默穿透）
     # 注意只取第一个数字（该模式含两个数字——测试数与包数，head -1 取测试数）
     # v1.4.1 适配：DEVLOG_FILE 按 package.json 版本指向（版本未 bump 时指向上版已发日志），
     # 而 CHANGELOG 最新行已是开发中版本——优先在「下一版开发日志」找快照：若 CHANGELOG 行
@@ -715,7 +716,7 @@ else
       CL_CAND="docs/changelog/v${CL_MAJOR_MINOR}/v${CL_VER}.md"
       [ -f "$CL_CAND" ] && CL_DEVLOG="$CL_CAND"
     fi
-    DEVLOG_SNAPSHOT=$(grep -oE '[0-9]+ tests across 12 packages' "${CL_DEVLOG}" 2>/dev/null | head -1 | grep -oE '^[0-9]+' || echo "")
+    DEVLOG_SNAPSHOT=$(grep -oE '[0-9]+ tests across [0-9]+ packages' "${CL_DEVLOG}" 2>/dev/null | head -1 | grep -oE '^[0-9]+' || echo "")
     if [ -n "$DEVLOG_SNAPSHOT" ]; then
       if [ "$CL_WS_MARK" != "$DEVLOG_SNAPSHOT" ]; then
         echo -e "  ${RED}✗ CHANGELOG.md（行 ${CL_LINENO}）：workspace 口径声称 ${CL_WS_MARK}，开发日志快照 ${DEVLOG_SNAPSHOT}（${CL_DEVLOG}）${NC}"

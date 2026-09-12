@@ -52,4 +52,4 @@ clawhub package publish . --family code-plugin --name sofagent-audit --version 1
 
 ## 说明
 
-与 DSH 插件 `cordis-plugin-sofagent-audit` 同引擎、不同宿主：DSH 挂 `tools/pre-execute` 等生命周期事件，OpenClaw 挂 `before_prompt_build` / `before_tool_call` 等事件。审计模块（git diff 24 规则）在所有形态一样硬。
+与 DSH 插件 `cordis-plugin-sofagent-audit` 同引擎、不同宿主：DSH 侧挂 `tools/result` + `tools/pre-execute` + `fs/write-intent`（工具结果留证、执行前拦截、写入意图拦截），OpenClaw 侧挂 `before_tool_call`（调用前拦截，可拦停）。审计规则本身（git diff 24 规则）两侧共用同一引擎，口径一致。

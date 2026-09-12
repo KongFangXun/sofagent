@@ -10,7 +10,7 @@
 
 **威胁**：训练任务的路径字段（dataPath / checkpointPath / outputDir）被注入 `../` 逃逸、绝对路径、NUL 截断、Windows 盘符等构造——读写越出企业分区，污染或窃取其他目录。
 
-**覆盖**：`engine/orchestrator/src/train/security-baseline.ts` 的 `validateTrainPath` 路径白名单（五重校验：相对路径强制 / 盘符与 UNC 拒绝 / NUL 拒绝 / 逐段过块四 `isSafePathSegment` / resolve 后 containment 兜底）+ zod `TrainPathSchema` 封装（spawn 前第三道门）。
+**覆盖**：`engine/train/src/security-baseline.ts` 的 `validateTrainPath` 路径白名单（五重校验：相对路径强制 / 盘符与 UNC 拒绝 / NUL 拒绝 / 逐段过块四 `isSafePathSegment` / resolve 后 containment 兜底）+ zod `TrainPathSchema` 封装（spawn 前第三道门）。
 
 **验证**：`src/__tests__/security-baseline.test.ts` 路径白名单组八用例（逃逸 / 绝对路径 / NUL / 盘符 / 裸点段 / 空输入 / 合法放行 / zod 封装）。
 
@@ -105,9 +105,9 @@
 
 | 文件 | 角色 |
 |---|---|
-| `engine/orchestrator/src/train/security-baseline.ts` | 路径白名单 / 注入过滤 / 凭据脱敏 / 沙箱自检（本块） |
-| `engine/orchestrator/src/train/isolation-guard.ts` | 路径段校验与归属校验原语（块四——白名单底层） |
-| `engine/orchestrator/src/train/cleanup.ts` | 数据主权覆写清理（块四） |
-| `engine/orchestrator/src/train/train-audit.ts` | 审计链 + 值轴脱敏 sanitizeDeep（块三） |
+| `engine/train/src/security-baseline.ts` | 路径白名单 / 注入过滤 / 凭据脱敏 / 沙箱自检（本块） |
+| `engine/train/src/isolation-guard.ts` | 路径段校验与归属校验原语（块四——白名单底层） |
+| `engine/train/src/cleanup.ts` | 数据主权覆写清理（块四） |
+| `engine/train/src/train-audit.ts` | 审计链 + 值轴脱敏 sanitizeDeep（块三） |
 | `engine/core/src/shared/secret-patterns.ts` | 密钥检测/脱敏正则单一事实源（REDACTION_PATTERNS） |
 | `engine/orchestrator/src/__tests__/security-baseline.test.ts` | 本块测试（二十六用例） |

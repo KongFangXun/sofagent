@@ -73,8 +73,7 @@ packages:
     path: engine/daemon
     layer: 3
     allow: [core, ontology, audit, orchestrator, evolve, train]
-  # v1.4.8 第 7 批（train 拆包）：train 自 engine/orchestrator/src/train/ 迁出独立成包。
-  # 层号必须 3（与 orchestrator/daemon 同层）——daemon(L3) 与 mcp(L4) 都消费 train，
+  # train 是独立包，层号必须 3（与 orchestrator/daemon 同层）——daemon(L3) 与 mcp(L4) 都消费 train，
   # 规则「只允许依赖同层或更低层」下，放 L4 会让 daemon→train 违规。
   # orchestrator 不反向依赖 train（CLI 侧走运行期惰性解析），故单向、无包级循环。
   train:

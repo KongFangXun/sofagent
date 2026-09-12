@@ -6,7 +6,7 @@
 //   一致性只靠注释维系：
 //     · engine/audit/src/decision-log.ts        —— decision-log.jsonl 写侧
 //     · engine/audit/src/decision-chain.ts      —— decision-log.jsonl 验侧
-//     · engine/orchestrator/src/train/train-audit.ts —— audit.jsonl 写/验侧（复刻）
+//     · engine/train/src/train-audit.ts —— audit.jsonl 写/验侧（复刻）
 //   本文件把「写链（appendChained）」与「验链（verifyChain）」两个方向收口为
 //   唯一实现；上述三处改为调用本内核。协议变更此后只需改一处。
 //   This file consolidates the duplicated HMAC audit-chain protocol into one

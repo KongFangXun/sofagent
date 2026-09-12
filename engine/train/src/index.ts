@@ -1,10 +1,12 @@
 // ============================================================
-// @sofagent/train · src/index.ts（v1.4.8 第 7 批拆包）
+// @sofagent/train · src/index.ts
 // ============================================================
-// train 自 engine/orchestrator/src/train/ 整体迁出、独立成包。
-// 本 barrel = **原 orchestrator 根 barrel 中 train 域的全部 @public 导出**
-// （101 个 export 块 / 562 个符号）——逐块从原 index.ts 迁移、仅把相对
-// 路径 './train/X' 改写为 './X'，符号集与拆分前**逐符号一致**。
+// train 是独立包，本 barrel 是 train 域全部 @public 导出的**唯一出口**
+// （101 个 export 块 / 562 个符号）。
+// 依赖方向单向：train → @sofagent/orchestrator（只经窄入口
+// `./model-registry` `./weights-manifest` `./fde-compose` `./fde-quantify-core`
+// `./benchmark` `./benchmark-eval` `./sandbox-network-gateway`）；
+// orchestrator **不反向依赖** train，故无包级循环。
 //
 // 仓外消费者迁移：
 //   import { createTrainJob } from '@sofagent/orchestrator';   ← 移除

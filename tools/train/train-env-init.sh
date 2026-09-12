@@ -6,7 +6,7 @@
 # 定位：train env init 的脚本化形态——可打包进设备、可在装好系统的
 # 新机器上一条命令装好训练环境（对齐 devlog 表：venv + 框架 + CUDA 校验）。
 #
-# 分支逻辑（与 engine/orchestrator/src/train/env-manager.ts 的
+# 分支逻辑（与 engine/train/src/env-manager.ts 的
 # trainEnvInit 同一套判定——单一事实源是 env-manager，本脚本是
 # 「无 Node 环境也能装」的等价实现）：
 #   1. 有 nvidia-smi + CUDA     → 生产分支：pip3 install verl

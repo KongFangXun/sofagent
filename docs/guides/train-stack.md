@@ -2,7 +2,7 @@
 
 > v1.4.1 块一定稿。本文档回答一个问题：**训练这件事，在 sofagent 里到底由谁、在哪个栈、按什么接口完成。** 双栈不是妥协，是生态现实——主流生产后训练框架（verl / TRL / NeMo RL / Oumi / open-instruct）全部是 Python（PyTorch + CUDA 生态决定）。Node 管决策与资源，Python 只当被 spawn 的计算子进程。
 >
-> 接口字段的唯一权威来源是 `engine/orchestrator/src/train/train-protocol.ts`（SSOT）——本文档只讲约定与流程，不复制字段定义。
+> 接口字段的唯一权威来源是 `engine/train/src/train-protocol.ts`（SSOT）——本文档只讲约定与流程，不复制字段定义。
 
 ---
 
@@ -18,7 +18,7 @@
 
 ### 环境准备是资源面的第零步
 
-训练跑起来之前，资源面先做环境决策（`engine/orchestrator/src/train/train-env.ts`）：
+训练跑起来之前，资源面先做环境决策（`engine/train/src/train-env.ts`）：
 
 - 流程：**检测 GPU → 安装/配置框架 → 验证可用 → 输出就绪报告**（结构化 JSON）。
 - 分支判定：检测到可用 CUDA（`nvidia-smi` 存在且输出可解析）→ `cuda-ready`；否则 → `metal-degraded`（macOS 上用 `system_profiler SPDisplaysDataType` 探测 Metal 支持，给出明确降级提示）。
@@ -29,7 +29,7 @@
 
 ## 二、协议三约定（双栈的接口契约）
 
-> SSOT：`engine/orchestrator/src/train/train-protocol.ts`。此处只述约定本身，字段以源码为准。
+> SSOT：`engine/train/src/train-protocol.ts`。此处只述约定本身，字段以源码为准。
 
 ### 约定一 · 启动：Node spawn Python + 单 JSON config
 
@@ -93,8 +93,8 @@ Node 发 SIGINT → Python 捕获后存 checkpoint 优雅退出（退出码 0）
 
 | 文件 | 角色 |
 |---|---|
-| `engine/orchestrator/src/train/train-protocol.ts` | 协议三约定 SSOT（job.json schema / 事件流解析 / 信号控制） |
-| `engine/orchestrator/src/train/train-budget.ts` | 训练预算控制（时间 / 步数 / 成本三维度，超限 SIGINT + 人审） |
-| `engine/orchestrator/src/train/train-env.ts` | 环境准备（GPU 检测 / 框架安装验证 / 就绪报告） |
+| `engine/train/src/train-protocol.ts` | 协议三约定 SSOT（job.json schema / 事件流解析 / 信号控制） |
+| `engine/train/src/train-budget.ts` | 训练预算控制（时间 / 步数 / 成本三维度，超限 SIGINT + 人审） |
+| `engine/train/src/train-env.ts` | 环境准备（GPU 检测 / 框架安装验证 / 就绪报告） |
 | `engine/orchestrator/src/__tests__/train-env.test.ts` | 环境准备测试（mock 三场景 + Mac 真机集成） |
 | `docs/changelog/v1.4/v1.4.1.md` | 版本目标与八大块排期 |

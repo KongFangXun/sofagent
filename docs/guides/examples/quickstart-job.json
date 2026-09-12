@@ -16,5 +16,5 @@
     "maxSteps": 8,
     "_note": "预算三维（时间/步数/成本）——超限 SIGINT 暂停等人审，train_budget resolve 续跑或终止"
   },
-  "_usage": "最小可跑 job.json 模板（协议 SSOT：engine/orchestrator/src/train/train-protocol.ts · TrainJobSchema v1 · strict 模式——多余字段校验拒绝）。dataPath 相对 data 目录或绝对路径；checkpointPath/outputDir 由 createTrainJob 自动填充绝对路径时以此结构为准"
+  "_usage": "最小可跑 job.json 模板（协议 SSOT：engine/train/src/train-protocol.ts · TrainJobSchema v1 · strict 模式——多余字段校验拒绝）。dataPath 相对 data 目录或绝对路径；checkpointPath/outputDir 由 createTrainJob 自动填充绝对路径时以此结构为准"
 }

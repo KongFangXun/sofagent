@@ -4,7 +4,7 @@
 
 ## 接口定义
 
-`engine/orchestrator/src/train/train-channel.ts`——四动作契约：
+`engine/train/src/train-channel.ts`——四动作契约：
 
 | 动作 | 签名 | 语义 |
 |------|------|------|

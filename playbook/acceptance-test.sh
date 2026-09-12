@@ -2738,7 +2738,7 @@ $S323_OK && pass "train doctor 实跑通过（运行中 0 / 假活 0 / 体检通
 scenario 324 "v1.4.1 块三：enterpriseId 隔离——train-job 数据模型强制绑定（缺失拒绝创建）+ 合法创建全链路标记"; S324_OK=true
 S324_TMP=$(mktemp -d)
 R324=$(cd "$PROJECT_ROOT" && SOFAGENT_TEST_TMP="$S324_TMP" node -e "
-const { createTrainJob } = require('./engine/orchestrator/dist/train/train-job.js');
+const { createTrainJob } = require('./engine/train/dist/train-job.js');
 const dataDir = process.env.SOFAGENT_TEST_TMP;
 // ① 缺 enterpriseId → zod 拒绝（CreateTrainJobInput enterpriseId 必填）
 let rejected = false;
@@ -2763,7 +2763,7 @@ scenario 325 "v1.4.1 块五：可复现指纹——freezeTrainFingerprint 冻结
 S325_TMP=$(mktemp -d)
 R325=$(cd "$PROJECT_ROOT" && SOFAGENT_TEST_TMP="$S325_TMP" node -e "
 const fs = require('fs'), path = require('path');
-const { freezeTrainFingerprint } = require('./engine/orchestrator/dist/train/train-fingerprint.js');
+const { freezeTrainFingerprint } = require('./engine/train/dist/train-fingerprint.js');
 const tmp = process.env.SOFAGENT_TEST_TMP;
 const ds = path.join(tmp, 'ds'); fs.mkdirSync(ds, { recursive: true });
 fs.writeFileSync(path.join(ds, 'train.jsonl'), 'a,b,c');
@@ -2790,13 +2790,13 @@ S326_TMP=$(mktemp -d)
 R326=$(cd "$PROJECT_ROOT" && SOFAGENT_TEST_TMP="$S326_TMP" node -e "
 (async () => {
 const fs = require('fs'), path = require('path');
-const { createTrainJob } = require('./engine/orchestrator/dist/train/train-job.js');
-const { signArtifacts, loadArtifactManifest } = require('./engine/orchestrator/dist/train/artifact-signing.js');
+const { createTrainJob } = require('./engine/train/dist/train-job.js');
+const { signArtifacts, loadArtifactManifest } = require('./engine/train/dist/artifact-signing.js');
 const tmp = process.env.SOFAGENT_TEST_TMP;
 const r = createTrainJob({ dataDir: tmp, enterpriseId: 'ent-a', jobId: 'job-s-1', dataPath: 'data/train/a/d.json', baseModel: 'm', algorithm: 'sft' });
 const rec = r.record || r.job || r;
 // 前置：先冻结指纹（无指纹的产物不做完整性背书——产品正确行为）
-const { freezeTrainFingerprint } = require('./engine/orchestrator/dist/train/train-fingerprint.js');
+const { freezeTrainFingerprint } = require('./engine/train/dist/train-fingerprint.js');
 const ds = path.join(tmp, 'ds'); fs.mkdirSync(ds, { recursive: true }); fs.writeFileSync(path.join(ds, 'train.jsonl'), 'a,b');
 freezeTrainFingerprint({ dataDir: tmp, enterpriseId: 'ent-a', trainJobId: 'job-s-1', datasetDir: ds, envSnapshot: { branch: 'metal-degraded', gpuName: null, frameworkName: null, frameworkVersion: null, checkedAt: '2026-08-26T00:00:00Z' }, hyperparams: { lr: 1e-4 }, randomSeed: 1 });
 // 产物目录 = job 目录 output/（createTrainJob 缺省）——写两个权重文件
@@ -2809,7 +2809,7 @@ console.log('files-signed:', m.files.length);
 console.log('manifest-hmac:', typeof m.manifestHmac === 'string' && m.manifestHmac.length > 0);
 // 篡改检测：改一个字节 → verify 失败（用 loadArtifactManifest + 逐文件 hash 对比）
 fs.writeFileSync(path.join(outDir, 'q4.gguf'), 'BIN-X');
-const { hashArtifactFile } = require('./engine/orchestrator/dist/train/artifact-signing.js');
+const { hashArtifactFile } = require('./engine/train/dist/artifact-signing.js');
 const m2 = loadArtifactManifest(tmp, 'ent-a', 'job-s-1');
 let tampered = false;
 for (const f of m2.files) {
@@ -2826,7 +2826,7 @@ rm -rf "$S326_TMP"
 $S326_OK && pass "artifact manifest（2 文件 SHA-256+HMAC）+ 篡改检测" || fail "artifact 签名失败: $(echo "$R326" | grep -v '^$' | head -3 || true)"
 scenario 327 "v1.4.1 块九：安全基线——路径白名单（data/train/ 内放行/绝对路径拒/逃逸拒）+ 注入元字符检测"; S327_OK=true
 R327=$(cd "$PROJECT_ROOT" && node -e "
-const { validateTrainPath, containsShellMetachars } = require('./engine/orchestrator/dist/train/security-baseline.js');
+const { validateTrainPath, containsShellMetachars } = require('./engine/train/dist/security-baseline.js');
 const inOk = validateTrainPath('data/train/ent-a/job-1/train.jsonl');
 const absRejected = validateTrainPath('/etc/passwd').valid === false;
 const escRejected = validateTrainPath(['data','train','..','..','..','etc','x'].join('/')).valid === false;
@@ -2883,7 +2883,7 @@ scenario 330 "v1.4.1 阶段六 coverage 补测：训练任务异常退出→资�
 S330_TMP=$(mktemp -d)
 R330=$(cd "$PROJECT_ROOT" && SOFAGENT_TEST_TMP="$S330_TMP" node -e "
 const fs = require('fs'), path = require('path');
-const guard = require('./engine/orchestrator/dist/train/process-guard.js');
+const guard = require('./engine/train/dist/process-guard.js');
 const tmp = process.env.SOFAGENT_TEST_TMP;
 // ① 心跳守卫：注册后超过阈值无心跳 → detectStalled 命中（nowFn 注入推进时钟——零真实等待）
 let fakeNow = 1_000_000;
@@ -2948,29 +2948,29 @@ fi
 $S331_OK && pass "版本一致性双面（8 层 manifest = ${S331_SSOT} + bump 精确路径匹配）" || fail "plugin manifest 漂移或 bump 通配回退（上方列出）"
 # S333 · 数据管道 CSV 解析与类型推断端到端（行为实测）：parseCsv/ingestCsv 空标记/类型推断，dist 直跑（A2 纪律：无真实外部数据）
 scenario 333 "v1.4.2 章一：数据管道 CSV 解析——空标记过滤 + 类型推断（数字/布尔/字符串）端到端"; S333_OK=true
-S333_OUT=$(node -e "const { ingestCsv } = require('$PROJECT_ROOT/engine/orchestrator/dist/train/data-ingest.js'); const csv = 'name,age,ok\\nali,30,true\\nbo,,false\\n,25,TRUE'; const r = ingestCsv(csv); if (!r || !Array.isArray(r.records) || r.records.length === 0) { console.log('FAIL:no-records'); process.exit(1); } const allFields = r.records.map(x => x.fields || {}); const flat = allFields.flatMap(Object.values); if (!flat.some(v => typeof v === 'number')) { console.log('FAIL:no-number-type'); process.exit(1); } if (!flat.some(v => typeof v === 'boolean')) { console.log('FAIL:no-boolean-type'); process.exit(1); } if (!flat.some(v => typeof v === 'string')) { console.log('FAIL:no-string-type'); process.exit(1); } console.log('OK:' + r.records.length + '-records-types-ok');" 2>&1) || S333_OK=false
+S333_OUT=$(node -e "const { ingestCsv } = require('$PROJECT_ROOT/engine/train/dist/data-ingest.js'); const csv = 'name,age,ok\\nali,30,true\\nbo,,false\\n,25,TRUE'; const r = ingestCsv(csv); if (!r || !Array.isArray(r.records) || r.records.length === 0) { console.log('FAIL:no-records'); process.exit(1); } const allFields = r.records.map(x => x.fields || {}); const flat = allFields.flatMap(Object.values); if (!flat.some(v => typeof v === 'number')) { console.log('FAIL:no-number-type'); process.exit(1); } if (!flat.some(v => typeof v === 'boolean')) { console.log('FAIL:no-boolean-type'); process.exit(1); } if (!flat.some(v => typeof v === 'string')) { console.log('FAIL:no-string-type'); process.exit(1); } console.log('OK:' + r.records.length + '-records-types-ok');" 2>&1) || S333_OK=false
 echo "$S333_OUT" | grep -q "^OK:" || S333_OK=false
 $S333_OK && pass "数据管道 CSV 解析含类型推断（number/boolean/string 三类型齐）" || fail "数据管道 CSV 解析异常：$S333_OUT"
 # S334 · dataset_version 台账三件套（行为实测）：record/list/diff，隔离 tmp 目录（不碰 data/），用完清理
 scenario 334 "v1.4.2 章二：dataset_version 版本台账——记录/列表/两版 diff 含 hash 与样本数"; S334_OK=true
 S334_TMP=$(mktemp -d)
-S334_OUT=$(node -e "const dv = require('$PROJECT_ROOT/engine/orchestrator/dist/train/dataset-version.js'); const dir = '$S334_TMP'; const base = { dataDir: dir, enterpriseId: 'e2e', datasetId: 'ds1', algorithm: 'sft', columnMapping: { instruction: 'q', output: 'a' }, datasetFile: 'ds.jsonl' }; dv.recordDatasetVersion({ ...base, contentHash: 'aaaa1111', sampleCount: 100, createdAt: '2026-08-28T01:00:00Z' }); dv.recordDatasetVersion({ ...base, contentHash: 'bbbb2222', sampleCount: 150, createdAt: '2026-08-28T02:00:00Z' }); const list = dv.listDatasetVersions(dir, 'e2e', 'ds1'); if (!Array.isArray(list) || list.length < 2) { console.log('FAIL:list-' + (list ? list.length : 'null')); process.exit(1); } if (!list[0].contentHash || !list[0].version) { console.log('FAIL:record-shape-' + JSON.stringify(list[0]).slice(0,80)); process.exit(1); } const d = dv.diffDatasetVersions(list[0], list[1]); if (!d) { console.log('FAIL:diff-null'); process.exit(1); } const dstr = JSON.stringify(d); if (!dstr.includes('sampleCount')) { console.log('FAIL:diff-no-samples-' + dstr.slice(0,90)); process.exit(1); } console.log('OK:2-vers-diff-' + dstr.length + '-bytes');" 2>&1) || S334_OK=false
+S334_OUT=$(node -e "const dv = require('$PROJECT_ROOT/engine/train/dist/dataset-version.js'); const dir = '$S334_TMP'; const base = { dataDir: dir, enterpriseId: 'e2e', datasetId: 'ds1', algorithm: 'sft', columnMapping: { instruction: 'q', output: 'a' }, datasetFile: 'ds.jsonl' }; dv.recordDatasetVersion({ ...base, contentHash: 'aaaa1111', sampleCount: 100, createdAt: '2026-08-28T01:00:00Z' }); dv.recordDatasetVersion({ ...base, contentHash: 'bbbb2222', sampleCount: 150, createdAt: '2026-08-28T02:00:00Z' }); const list = dv.listDatasetVersions(dir, 'e2e', 'ds1'); if (!Array.isArray(list) || list.length < 2) { console.log('FAIL:list-' + (list ? list.length : 'null')); process.exit(1); } if (!list[0].contentHash || !list[0].version) { console.log('FAIL:record-shape-' + JSON.stringify(list[0]).slice(0,80)); process.exit(1); } const d = dv.diffDatasetVersions(list[0], list[1]); if (!d) { console.log('FAIL:diff-null'); process.exit(1); } const dstr = JSON.stringify(d); if (!dstr.includes('sampleCount')) { console.log('FAIL:diff-no-samples-' + dstr.slice(0,90)); process.exit(1); } console.log('OK:2-vers-diff-' + dstr.length + '-bytes');" 2>&1) || S334_OK=false
 rm -rf "$S334_TMP"
 echo "$S334_OUT" | grep -q "^OK:2-vers" || S334_OK=false
 $S334_OK && pass "dataset_version 台账三件套（记录/列表/diff）含 hash 样本数" || fail "dataset_version 异常：$S334_OUT"
 # S335 · v1.4.2 章三：eval 闭环阈值判定——continue/stop 双态（行为实测） 训练连评估的决策面：decideFromScores 按阈值外部化判定
 scenario 335 "v1.4.2 章三：eval 闭环阈值判定——达标 stop / 未达标 continue 双态决策"; S335_OK=true
-S335_OUT=$(node -e "const te = require('$PROJECT_ROOT/engine/orchestrator/dist/train/train-eval-loop.js'); const hi = te.computeScoreStats([{ score: 90, failureCode: null }, { score: 92, failureCode: null }, { score: 88, failureCode: null }]); const lo = te.computeScoreStats([{ score: 30, failureCode: null }, { score: 28, failureCode: null }, { score: 32, failureCode: null }]); const dHi = te.decideFromScores(hi, te.DEFAULT_EVAL_THRESHOLDS); const dLo = te.decideFromScores(lo, te.DEFAULT_EVAL_THRESHOLDS); if (dHi.decision !== 'stop') { console.log('FAIL:hi=' + dHi.decision); process.exit(1); } if (dLo.decision !== 'continue') { console.log('FAIL:lo=' + dLo.decision); process.exit(1); } if (!dHi.reason || !dLo.reason) { console.log('FAIL:no-reason'); process.exit(1); } console.log('OK:hi-stop-lo-continue');" 2>&1) || S335_OK=false
+S335_OUT=$(node -e "const te = require('$PROJECT_ROOT/engine/train/dist/train-eval-loop.js'); const hi = te.computeScoreStats([{ score: 90, failureCode: null }, { score: 92, failureCode: null }, { score: 88, failureCode: null }]); const lo = te.computeScoreStats([{ score: 30, failureCode: null }, { score: 28, failureCode: null }, { score: 32, failureCode: null }]); const dHi = te.decideFromScores(hi, te.DEFAULT_EVAL_THRESHOLDS); const dLo = te.decideFromScores(lo, te.DEFAULT_EVAL_THRESHOLDS); if (dHi.decision !== 'stop') { console.log('FAIL:hi=' + dHi.decision); process.exit(1); } if (dLo.decision !== 'continue') { console.log('FAIL:lo=' + dLo.decision); process.exit(1); } if (!dHi.reason || !dLo.reason) { console.log('FAIL:no-reason'); process.exit(1); } console.log('OK:hi-stop-lo-continue');" 2>&1) || S335_OK=false
 echo "$S335_OUT" | grep -q "^OK:hi-stop-lo-continue" || S335_OK=false
 $S335_OK && pass "eval 阈值判定双态（达标 stop / 未达标 continue）含 reason" || fail "eval 阈值判定异常：$S335_OUT"
 # S336 · v1.4.2 章五：dry-run 显存估算——参数量单调性（行为实测） 投之前先算：estimateVram 随参数量增大显存预算单调增（外推合理性）
 scenario 336 "v1.4.2 章五：dry-run 显存估算——同配置下参数量翻倍显存单调增"; S336_OK=true
-S336_OUT=$(node -e "const td = require('$PROJECT_ROOT/engine/orchestrator/dist/train/train-dryrun.js'); const s = td.estimateVram({ paramsBillions: 1, batchSize: 2, sequenceLength: 2048, bytesPerParam: 4 }); const b = td.estimateVram({ paramsBillions: 2, batchSize: 2, sequenceLength: 2048, bytesPerParam: 4 }); if (!s || typeof s.totalGiB !== 'number' || !isFinite(s.totalGiB)) { console.log('FAIL:shape-' + JSON.stringify(s).slice(0,100)); process.exit(1); } if (!(b.totalGiB > s.totalGiB)) { console.log('FAIL:not-monotonic-' + s.totalGiB + '-' + b.totalGiB); process.exit(1); } console.log('OK:mono-' + s.totalGiB.toFixed(1) + '-' + b.totalGiB.toFixed(1));" 2>&1) || S336_OK=false
+S336_OUT=$(node -e "const td = require('$PROJECT_ROOT/engine/train/dist/train-dryrun.js'); const s = td.estimateVram({ paramsBillions: 1, batchSize: 2, sequenceLength: 2048, bytesPerParam: 4 }); const b = td.estimateVram({ paramsBillions: 2, batchSize: 2, sequenceLength: 2048, bytesPerParam: 4 }); if (!s || typeof s.totalGiB !== 'number' || !isFinite(s.totalGiB)) { console.log('FAIL:shape-' + JSON.stringify(s).slice(0,100)); process.exit(1); } if (!(b.totalGiB > s.totalGiB)) { console.log('FAIL:not-monotonic-' + s.totalGiB + '-' + b.totalGiB); process.exit(1); } console.log('OK:mono-' + s.totalGiB.toFixed(1) + '-' + b.totalGiB.toFixed(1));" 2>&1) || S336_OK=false
 echo "$S336_OUT" | grep -q "^OK:mono-" || S336_OK=false
 $S336_OK && pass "dry-run 显存估算参数量单调（${S336_OUT#OK:mono-} GiB）" || fail "dry-run 显存估算异常：$S336_OUT"
 # S337 · v1.4.2 章五：ScaleRL sigmoid 缩放律外推——拟合与建议（行为实测） 算力外推预检：fitSigmoid + extrapolate + suggestNextPilotCompute 三件套
 scenario 337 "v1.4.2 章五：ScaleRL sigmoid 缩放律——小 run 拟合 + 大 run 外推 + 下一步建议"; S337_OK=true
-S337_OUT=$(node -e "const sc = require('$PROJECT_ROOT/engine/orchestrator/dist/train/scale-curve.js'); const pts = [{ compute: 1, performance: 20 }, { compute: 4, performance: 50 }, { compute: 16, performance: 85 }]; const fit = sc.fitSigmoid(pts); if (!fit || !fit.params || !fit.quality) { console.log('FAIL:fit-' + JSON.stringify(fit).slice(0,80)); process.exit(1); } if (!(fit.quality.rmse < 5)) { console.log('FAIL:rmse-' + fit.quality.rmse); process.exit(1); } const ext = sc.extrapolate(pts, 32); if (!ext || typeof ext.projectedPerformance !== 'number' || !isFinite(ext.projectedPerformance)) { console.log('FAIL:ext-' + JSON.stringify(ext).slice(0,90)); process.exit(1); } if (!(ext.projectedPerformance >= 80 && ext.projectedPerformance <= 100)) { console.log('FAIL:ext-range-' + ext.projectedPerformance); process.exit(1); } if (!ext.confidence) { console.log('FAIL:ext-no-confidence'); process.exit(1); } const sug = sc.suggestNextPilotCompute(pts); if (typeof sug !== 'number' || sug < 1 || sug > 64) { console.log('FAIL:sug-' + sug); process.exit(1); } console.log('OK:fit-rmse-' + fit.quality.rmse.toFixed(3) + '-ext-' + ext.projectedPerformance.toFixed(1) + '-sug-' + sug);" 2>&1) || S337_OK=false
+S337_OUT=$(node -e "const sc = require('$PROJECT_ROOT/engine/train/dist/scale-curve.js'); const pts = [{ compute: 1, performance: 20 }, { compute: 4, performance: 50 }, { compute: 16, performance: 85 }]; const fit = sc.fitSigmoid(pts); if (!fit || !fit.params || !fit.quality) { console.log('FAIL:fit-' + JSON.stringify(fit).slice(0,80)); process.exit(1); } if (!(fit.quality.rmse < 5)) { console.log('FAIL:rmse-' + fit.quality.rmse); process.exit(1); } const ext = sc.extrapolate(pts, 32); if (!ext || typeof ext.projectedPerformance !== 'number' || !isFinite(ext.projectedPerformance)) { console.log('FAIL:ext-' + JSON.stringify(ext).slice(0,90)); process.exit(1); } if (!(ext.projectedPerformance >= 80 && ext.projectedPerformance <= 100)) { console.log('FAIL:ext-range-' + ext.projectedPerformance); process.exit(1); } if (!ext.confidence) { console.log('FAIL:ext-no-confidence'); process.exit(1); } const sug = sc.suggestNextPilotCompute(pts); if (typeof sug !== 'number' || sug < 1 || sug > 64) { console.log('FAIL:sug-' + sug); process.exit(1); } console.log('OK:fit-rmse-' + fit.quality.rmse.toFixed(3) + '-ext-' + ext.projectedPerformance.toFixed(1) + '-sug-' + sug);" 2>&1) || S337_OK=false
 echo "$S337_OUT" | grep -q "^OK:fit-rmse-" || S337_OK=false
 $S337_OK && pass "sigmoid 缩放律拟合（RMSE<5）/外推（域内合理）/建议三件套" || fail "scale-curve 异常：$S337_OUT"
 # S338 · FDE 工作台审计链往返（行为实测）：emitFdeAudit 落盘 + readFdeAudit 读回一致，隔离 tmp（不碰 data/）
@@ -3025,7 +3025,7 @@ $S340_OK && pass "存量清零行为锁（19 处收编 + 全域零残留 + think
 scenario 341 "v1.4.2 章六补测：train report 报告生成本体真实可跑——dist 行为实测五段结构与归档落盘（补判断层唯一零覆盖项，对齐 S330 先例）"; S341_OK=true
 # ① dist 产物 generateTrainReport 真实可跑（隔离 dataDir，零真实训练）
 S341_RES=$(node -e "
-const { generateTrainReport, computeQuantification } = require('$PROJECT_ROOT/engine/orchestrator/dist/train/train-report.js');
+const { generateTrainReport, computeQuantification } = require('$PROJECT_ROOT/engine/train/dist/train-report.js');
 const fs = require('fs'); const os = require('os'); const path = require('path');
 const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 's341-report-'));
 const q = computeQuantification({ annualSalary: 60000, takeoverRatio: 0.33, aiAnnualCost: 3000, oneTimeInvestment: 10000 });
@@ -3181,7 +3181,7 @@ $S348_OK && pass "训练监控 tools 注册面完整（registry ${S348_COUNT}≥
 scenario 349 "v1.4.3 第三章：训练沙箱三约束——路径守卫读写拒三态 + spawn env 代理黑洞 + 网关 deny/allow 判定 + 沙箱标记"; S349_OK=true
 S349_OUT=$(node -e "
 (async () => {
-  const { createTrainSandbox } = await import('$PROJECT_ROOT/engine/orchestrator/dist/train/train-sandbox.js');
+  const { createTrainSandbox } = await import('$PROJECT_ROOT/engine/train/dist/train-sandbox.js');
   const sb = createTrainSandbox({ dataMounts: ['/data/ro'], outputDir: '/ws/out', modelCacheDir: '/models' });
   let bad = 0;
   // 路径守卫三态（checkAccess(path, mode)）
@@ -3212,7 +3212,7 @@ $S349_OK && pass "训练沙箱三约束行为实测过（路径三态/代理黑�
 scenario 350 "v1.4.3 第四章：训练需求推导——workflow 节点派生训练场景 + 默认模板匹配 + 报告路径企业隔离"; S350_OK=true
 S350_OUT=$(node -e "
 (async () => {
-  const m = await import('$PROJECT_ROOT/engine/orchestrator/dist/train/train-analyze.js');
+  const m = await import('$PROJECT_ROOT/engine/train/dist/train-analyze.js');
   let bad = 0;
   // ① 节点→场景派生（goal 命中分类语义→场景标识）
   const d = m.deriveTrainScenario({ id: 'n1', label: '训练专属模型', goal: '识别工单意图分类' });
@@ -3302,7 +3302,7 @@ $S352_OK && pass "DSH 执行深化三步锚点过（事件流/分级切/usage �
 scenario 353 "v1.4.3 第二章：train_diagnose 行为实测——七类分类注入已知故障形态命中 + 处方表全类覆盖"; S353_OK=true
 S353_OUT=$(node -e "
 (async () => {
-  const m = await import('$PROJECT_ROOT/engine/orchestrator/dist/train/train-diagnose.js');
+  const m = await import('$PROJECT_ROOT/engine/train/dist/train-diagnose.js');
   let bad = 0;
   // ① OOM 故障形态 → oom 类命中（关键词证据在案）
   const oom = m.classifyTrainFailure('RuntimeError: CUDA out of memory. Tried to allocate 2.50 GiB');
@@ -3453,7 +3453,7 @@ S358_OUT=$(SOFAGENT_DATA="$(mktemp -d)" node -e "
   if (!(r3.data ?? {}).isError) bad += 10000;
   // ④ GPU 队列行为：显存预算账本 + FIFO 放行——train_status 消费同源快照。
   // maxConcurrent=1 触发排队路径：j1 占位 → j2 入队等待 → release 泵拉。
-  const g = await import('$PROJECT_ROOT/engine/orchestrator/dist/train/gpu-queue.js');
+  const g = await import('$PROJECT_ROOT/engine/train/dist/gpu-queue.js');
   const q = g.createGpuQueue({ totalMiB: 8000, maxConcurrent: 1 });
   if (q.acquire('j1', 1000) !== true) bad += 100000;           // 空闲 → 立即获准
   if (q.acquire('j2', 6000) !== false) bad += 1000000;         // 并发满 → 入队等待
@@ -3595,7 +3595,7 @@ scenario 369 "v1.4.4 章三+四+六合并：产物注册衔接人审语义 + tra
 # S367 断言体（归并自章四：buildCompareReport 三断言原样保留）
 S369_CMP=$(node -e "
 (async () => {
-  const { buildCompareReport } = await import('$PROJECT_ROOT/engine/orchestrator/dist/train/train-compare.js');
+  const { buildCompareReport } = await import('$PROJECT_ROOT/engine/train/dist/train-compare.js');
   const mk = (base, score, cost, status) => ({ baseModel: base, trainJobId: 'job-' + base, status: status || 'completed', evalReport: score === null ? null : { averageScore: score }, usage: { elapsedMinutes: cost * 6, steps: cost * 100, cost } });
   let bad = 0;
   const r1 = buildCompareReport({ results: [mk('a', 82, 10), mk('b', 78, 5), mk('c', null, 0, 'running')], datasetHash: 'x1' });
@@ -3611,7 +3611,7 @@ grep -qE "requiresHuman|MountSuggestion" "$PROJECT_ROOT/engine/train/src/artifac
 grep -qE "jsdelivr|cdn\." "$PROJECT_ROOT/tools/dashboard/dashboard.html" 2>/dev/null && S369_OK=false            # 零 CDN 引用
 grep -q "127.0.0.1" "$PROJECT_ROOT/tools/dashboard/serve-dashboard.mjs" || S369_OK=false                         # 默认本机绑定
 grep -q "DASHBOARD_HOST" "$PROJECT_ROOT/docs/LIMITATIONS.md" || S369_OK=false                                    # 自查结论落档
-check_dist_export "engine/orchestrator/dist/train/artifact-register.js" "registerTrainArtifact" "S369" || true   # 原 S366 导出
+check_dist_export "engine/train/dist/artifact-register.js" "registerTrainArtifact" "S369" || true   # 原 S366 导出
 $S369_OK && [ "${S369_EXPORT_OK:-false}" = "true" ] && pass "章三人审+章六 dashboard 三锚过（tag/pin 归门禁；导出在位）" || fail "产物注册/CI 面回退——见上方 fail 定位"
 # S368 · v1.4.4 章五：决策因果链——三级回溯 + 先例打分 + HMAC 篡改判 tampered （独立子进程 + 固定密钥保证环境指纹稳定）
 scenario 368 "v1.4.4 章五：决策因果链——trace 三级回溯 + 先例检索打分 + HMAC 篡改判 tampered"; S368_OK=true
@@ -4086,7 +4086,7 @@ S383_OUT=$(node -e "
   const fs = require('fs');
   const bad = [];
   const orch = await import('$PROJECT_ROOT/engine/orchestrator/dist/index.js');
-  const tpl  = await import('$PROJECT_ROOT/engine/orchestrator/dist/train/train-templates.js');
+  const tpl  = await import('$PROJECT_ROOT/engine/train/dist/train-templates.js');
   // ① 删除符号不得复活（C 批 model-downloader 全套 + B 批 trainEnvInit）
   for (const s of ['downloadModel', 'trainEnvInit', 'modelDir', 'partPaths', 'preflightDiskSpace', 'makeDefaultFetchRange', 'defaultFreeSpace']) {
     if (typeof orch[s] !== 'undefined') bad.push('删除符号复活:' + s);

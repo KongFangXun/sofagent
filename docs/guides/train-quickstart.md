@@ -57,7 +57,7 @@ node engine/orchestrator/dist/cli.js train doctor
 
 ```js
 // node --input-type=module
-import { runDryrun } from '<repo>/engine/orchestrator/dist/train/train-dryrun.js';
+import { runDryrun } from '<repo>/engine/train/dist/train-dryrun.js';
 const r = runDryrun({ dataPath: '/tmp/sofagent-qs/home/data/quickstart-data.csv', algorithm: 'sft' });
 console.log(r.passed, r.checks.map(c => `${c.name}:${c.status}`).join(' '));
 ```
