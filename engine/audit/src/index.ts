@@ -1114,7 +1114,7 @@ async function main(): Promise<void> {
         for (const r of messageRuleChecks) {
           if (r.status !== 'PASS') {
             const mark = r.status === 'FAIL' ? '✗' : '⚠';
-            console.error(`  ${mark} ${r.name}: ${r.details.join('；')}`);
+            console.error(`  ${mark} ${r.name}: ${r.details.map(d => d.replace(/[。；]+$/, '')).join('；')}`);
           }
         }
         console.error('   请修复 commit message 后重新提交（空提交同样接受 message 类审计）。');

@@ -7,6 +7,7 @@
 import { getAddedLines } from '@sofagent/core';
 import { DOMAIN_WHITELIST } from '@sofagent/core';
 import type { AuditContext, RuleCheck } from './types';
+import { sanitizeDetailLine } from './rule-a9-no-injection';
 /** 外传动作模式——curl/wget POST、fetch POST、DNS 隧道 */
 const EXFIL_ACTION_PATTERNS: { pattern: RegExp; name: string }[] = [
   // curl/wget 发送数据到外部（不用 g 标志——避免 lastIndex 状态问题）
@@ -147,7 +148,8 @@ export function checkRuleA20(ctx: AuditContext): RuleCheck {
     if (rule.status === 'PASS') rule.status = 'WARN';
     rule.details.push(
       `测试文件豁免命中（不 FAIL 但需人工确认）: ` +
-      testFileHits.map(h => `${h.file}: "${h.line}" (${h.pattern})`).join('; ') +
+      testFileHits.slice(0, 5).map(h => `${h.file}: "${sanitizeDetailLine(h.line)}" (${h.pattern})`).join('; ') +
+      (testFileHits.length > 5 ? ` 等 ${testFileHits.length} 处` : '') +
       `。测试文件命名在被审计 Agent 控制下，请确认以上命中均为合法 fixture 而非真实外传夹带。`
     );
   }

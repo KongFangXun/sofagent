@@ -126,4 +126,16 @@ describe('A23 不逃路径', () => {
     const result = checkRuleA23(ctx);
     expect(result.status).toBe('PASS');
   });
+
+  // v1.4.8 finding-08: 测试文件命中不再静默跳过——降级 WARN 人工确认（对齐 a20 测试模板）
+  it('测试文件中的路径穿越 → WARN（v1.4.8 finding-08：豁免不再静默，降级人工确认）', () => {
+    const ctx = makeCtx([
+      makeDiffFile('__tests__/traversal.fixture.ts', [
+        "+fs.readFileSync('../../../etc/passwd')",
+      ]),
+    ]);
+    const result = checkRuleA23(ctx);
+    expect(result.status).toBe('WARN');
+    expect(result.details.join('; ')).toContain('测试文件豁免命中');
+  });
 });

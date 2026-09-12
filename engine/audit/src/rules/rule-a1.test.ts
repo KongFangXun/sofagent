@@ -112,4 +112,25 @@ describe('A1 不碰敏感', () => {
       expect(result.status).toBe('FAIL');
     });
   });
+
+  // round-2 finding-01：合法 .env 子串命名不误杀（allowlist 负例）
+  describe('allowlist 负例（finding-01）', () => {
+    const negativeCases = [
+      'config.env.ts',
+      'app.env.js',
+      'schema.env.example',
+      'types/env.d.ts',
+      'fixtures/test.env.json',
+    ];
+
+    it.each(negativeCases)('%s → PASS（不命中）', (path) => {
+      const result = checkRuleA1(makeCtx([makeDiffFile(path)]));
+      expect(result.status).toBe('PASS');
+    });
+
+    it('finding-12 夹心形态收口不回退：config.env.production / shared.env.backup 仍 FAIL', () => {
+      expect(checkRuleA1(makeCtx([makeDiffFile('config/config.env.production')])).status).toBe('FAIL');
+      expect(checkRuleA1(makeCtx([makeDiffFile('deploy/shared.env.backup')])).status).toBe('FAIL');
+    });
+  });
 });

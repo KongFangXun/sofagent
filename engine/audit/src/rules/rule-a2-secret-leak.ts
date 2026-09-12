@@ -410,8 +410,12 @@ export function checkRuleA2(ctx: AuditContext): RuleCheck {
     for (const { file, label, count } of testExemptDetections.values()) {
       parts.push(`${file}: ${label}${count > 1 ? ` ×${count}` : ''}`);
     }
+    // finding-13：detail 按最终状态区分——整体已 FAIL 时不再写「不 FAIL」误导人工确认
+    const exemptNote = rule.status === 'FAIL'
+      ? '测试文件豁免命中（已并入 FAIL 处置，需人工确认）'
+      : '测试文件豁免命中（不 FAIL 但需人工确认）';
     rule.details.push(
-      `测试文件豁免命中（不 FAIL 但需人工确认）: ${parts.join('; ')}。测试文件命名在被审计 Agent 控制下，请确认以上命中均为合法 fixture 而非真实密钥夹带。`
+      `${exemptNote}: ${parts.join('; ')}。测试文件命名在被审计 Agent 控制下，请确认以上命中均为合法 fixture 而非真实密钥夹带。`
     );
   }
 

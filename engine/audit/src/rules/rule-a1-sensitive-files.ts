@@ -22,6 +22,12 @@ const SENSITIVE_PATTERNS = [
   /\.p12$/i,                     // *.p12
 ];
 
+// round-2 finding-01: 模板/测试/类型声明/代码源文件形态不视为敏感 env 文件（保留夹心形态收口）。
+// .env 后跟代码扩展名（ts/js/json 等）是合法源码命名（config.env.ts），仅 .example/.sample/
+// .d.ts/.test./.spec. 或 .env.<代码扩展名> 结尾的放行；.env.local/.env.production 等仍 FAIL。
+const A1_ALLOWLIST =
+  /(\.example|\.sample|\.d\.ts)$|(\.test\.|\.spec\.)|\.env\.(?:[cm]?[jt]sx?|json|ya?ml|toml|md)$/i;
+
 /**
  * 检查文件路径是否为敏感文件
  * 同时检查 path 和 oldPath（重命名场景）
@@ -35,6 +41,10 @@ function isSensitiveFile(filePath: string): boolean {
   // 覆盖 .еnv（西里尔е）、.enν（希腊ν）等同形字变体
   if (/^\..*nv/i.test(name) && /[^\x00-\x7f]/.test(name)) {
     return true;
+  }
+  // round-2 finding-01: allowlist 短路放行（同形字检查之后，不削弱同形字防御）
+  if (A1_ALLOWLIST.test(name) || A1_ALLOWLIST.test(filePath)) {
+    return false;
   }
   return SENSITIVE_PATTERNS.some((pattern) => pattern.test(name) || pattern.test(filePath));
 }
