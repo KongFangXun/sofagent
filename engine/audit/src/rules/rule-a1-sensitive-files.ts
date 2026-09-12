@@ -9,8 +9,10 @@ import type { AuditContext, RuleCheck } from './types';
 
 /** 敏感文件匹配模式（匹配 basename） */
 const SENSITIVE_PATTERNS = [
-  /^\.env[\w.-]*$/i,            // .env, .env.local, .env.production, .env_backup, .env-backup, .env2, .envrc 等
-  /\.env$/i,                     // v1.3.8 P0-3：settings.env / production.env / config.env / 财务.env 等后缀式（原 ^\.env 锚定漏检）
+  // v1.4.8 fresh-eyes（finding-12）：原两条 .env 正则分别锚定「以 .env 开头」（^\.env…$）
+  // 与「以 .env 结尾」（\.env$），shared.env.backup / config.env.production 等
+  // <prefix>.env.<suffix> 形态同时逃逸两条锚定——合并为不锚定行首的单条
+  /\.env[\w.-]*$/i,              // .env, .env.local, .env_backup, settings.env, config.env.production, shared.env.backup 等
   /\.pem$/i,                     // *.pem
   /\.key$/i,                     // *.key
   /(^|\/)id_rsa$/,               // id_rsa
@@ -19,6 +21,18 @@ const SENSITIVE_PATTERNS = [
   /\.pfx$/i,                     // *.pfx
   /\.p12$/i,                     // *.p12
 ];
+
+// round-2 finding-01: 模板/测试/类型声明/代码源文件形态不视为敏感 env 文件（保留夹心形态收口）。
+// .env 后跟代码扩展名（ts/js 等）是合法源码命名（config.env.ts），仅 .example/.sample/
+// .d.ts/.test.<代码扩展名>/.spec.<代码扩展名> 或 .env.<代码扩展名> 结尾的放行；
+// .env.local/.env.production 等仍 FAIL。
+// round-3 finding-01/02/03：收窄两处绕过面——
+// ① 剔除 json/ya?ml/toml/md 数据容器臂：serverless.env.yml（Serverless Framework 经典
+//    密钥文件）、.env.json/.env.yaml 等 env dump 标准载体曾被静默放行，仅剩 A2 内容兜底；
+// ② .test./.spec. 从无锚定子串收紧为「代码扩展名尾锚定」：原形态使 prod.test.env.local
+//    整名放行、creds.test.pem 跳过 .pem 检测。
+const A1_ALLOWLIST =
+  /(\.example|\.sample|\.d\.ts)$|\.(?:test|spec)\.[cm]?[jt]sx?$|\.env\.[cm]?[jt]sx?$/i;
 
 /**
  * 检查文件路径是否为敏感文件
@@ -33,6 +47,16 @@ function isSensitiveFile(filePath: string): boolean {
   // 覆盖 .еnv（西里尔е）、.enν（希腊ν）等同形字变体
   if (/^\..*nv/i.test(name) && /[^\x00-\x7f]/.test(name)) {
     return true;
+  }
+  // round-2 finding-01: allowlist 短路放行（同形字检查之后，不削弱同形字防御）
+  // round-3 finding-03：仅对 basename 判定——src/foo.test.js/.env 这类目录组件
+  // 含 .test./.spec. 的路径不再整文件豁免（目录名由被审计 Agent 完全可控）
+  // round-3 finding-08：basename 以 .env 开头者不进 allowlist——.env.test.js 旧版经
+  // ^\.env…$ FAIL 拦截，allowlist 两臂（\.env\.<代码扩展名>$ 与 \.(?:test|spec)\.<代码扩展名>$）
+  // 均会重新放行，叠加 finding-11 测试豁免降级 + hook 对 WARN 放行 = 阻断→放行回归；
+  // config.env.ts 等前缀形态不受影响
+  if (!/^\.env/i.test(name) && A1_ALLOWLIST.test(name)) {
+    return false;
   }
   return SENSITIVE_PATTERNS.some((pattern) => pattern.test(name) || pattern.test(filePath));
 }

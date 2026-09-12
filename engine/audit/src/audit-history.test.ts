@@ -290,51 +290,60 @@ describe('audit-history', () => {
     // history.jsonl 前两条是旧格式（无 hashVersion，旧算法 hash 不含指纹）
     // 第三条是新格式（hashVersion:2，新算法 hash 含环境指纹）
     // checkHistoryChainIntegrity 应返回 true（逐条判断，不误报）
+    // v1.4.8 起：密钥在场 + 条目无签名 = 不可复验（黄）——本测试只验证 hashVersion
+    // 混合算法选择，与密钥态无关，指向不存在的密钥路径屏蔽机器 ~/.sofagent-key 差异。
+    const savedKeyPath = process.env.SOFAGENT_KEY_PATH;
+    try {
+      process.env.SOFAGENT_KEY_PATH = join(tmpdir(), `no-such-key-${randomBytes(4).toString('hex')}`);
 
-    mkdirSync(join(testDir, 'audit'), { recursive: true });
-    const histPath = getHistoryFilePath(testDir);
+      mkdirSync(join(testDir, 'audit'), { recursive: true });
+      const histPath = getHistoryFilePath(testDir);
 
-    // 旧格式条目 1（无 hashVersion）
-    const e1 = {
-      timestamp: '2026-07-01T00:00:00Z',
-      diffRange: 'HEAD~1..HEAD',
-      exitCode: 0,
-      ruleResults: [],
-      diffFileCount: 1,
-      prevHash: 'genesis',
-    };
+      // 旧格式条目 1（无 hashVersion）
+      const e1 = {
+        timestamp: '2026-07-01T00:00:00Z',
+        diffRange: 'HEAD~1..HEAD',
+        exitCode: 0,
+        ruleResults: [],
+        diffFileCount: 1,
+        prevHash: 'genesis',
+      };
 
-    // 旧格式条目 2（无 hashVersion，prevHash 用旧算法 = SHA-256(e1 without prevHash/hashVersion)）
-    const e1ForHash = { ...e1, prevHash: undefined, hashVersion: undefined };
-    const hash1 = createHash('sha256').update(JSON.stringify(e1ForHash)).digest('hex').slice(0, 16);
-    const e2 = {
-      timestamp: '2026-07-02T00:00:00Z',
-      diffRange: 'HEAD~2..HEAD~1',
-      exitCode: 0,
-      ruleResults: [],
-      diffFileCount: 1,
-      prevHash: hash1,
-    };
+      // 旧格式条目 2（无 hashVersion，prevHash 用旧算法 = SHA-256(e1 without prevHash/hashVersion)）
+      const e1ForHash = { ...e1, prevHash: undefined, hashVersion: undefined };
+      const hash1 = createHash('sha256').update(JSON.stringify(e1ForHash)).digest('hex').slice(0, 16);
+      const e2 = {
+        timestamp: '2026-07-02T00:00:00Z',
+        diffRange: 'HEAD~2..HEAD~1',
+        exitCode: 0,
+        ruleResults: [],
+        diffFileCount: 1,
+        prevHash: hash1,
+      };
 
-    // 写两条旧格式到文件
-    writeFileSync(histPath, JSON.stringify(e1) + '\n' + JSON.stringify(e2) + '\n');
+      // 写两条旧格式到文件
+      writeFileSync(histPath, JSON.stringify(e1) + '\n' + JSON.stringify(e2) + '\n');
 
-    // 验证纯旧格式时链完整
-    expect(checkHistoryChainIntegrity(testDir)).toBe(true);
+      // 验证纯旧格式时链完整
+      expect(checkHistoryChainIntegrity(testDir)).toBe(true);
 
-    // 追加一条新格式（appendHistory 自动用 hashVersion:2 + 环境指纹）
-    appendHistory({
-      timestamp: '2026-07-03T00:00:00Z',
-      diffRange: 'HEAD~3..HEAD~2',
-      exitCode: 0,
-      ruleResults: [],
-      diffFileCount: 1,
-    } as AuditHistoryEntry, testDir);
+      // 追加一条新格式（appendHistory 自动用 hashVersion:2 + 环境指纹）
+      appendHistory({
+        timestamp: '2026-07-03T00:00:00Z',
+        diffRange: 'HEAD~3..HEAD~2',
+        exitCode: 0,
+        ruleResults: [],
+        diffFileCount: 1,
+      } as AuditHistoryEntry, testDir);
 
-    // 混合格式——不应误报链断裂
-    // 关键：e2→e3 这一步用 curr(e3).hashVersion === 2 决定算法（含指纹）
-    //      e1→e2 这一步用 curr(e2).hashVersion === undefined 决定算法（不含指纹）
-    expect(checkHistoryChainIntegrity(testDir)).toBe(true);
+      // 混合格式——不应误报链断裂
+      // 关键：e2→e3 这一步用 curr(e3).hashVersion === 2 决定算法（含指纹）
+      //      e1→e2 这一步用 curr(e2).hashVersion === undefined 决定算法（不含指纹）
+      expect(checkHistoryChainIntegrity(testDir)).toBe(true);
+    } finally {
+      if (savedKeyPath === undefined) delete process.env.SOFAGENT_KEY_PATH;
+      else process.env.SOFAGENT_KEY_PATH = savedKeyPath;
+    }
   });
 
   describe('Action Governance schema (A4 研读落地)', () => {
@@ -422,6 +431,47 @@ describe('audit-history', () => {
       const parsed = JSON.parse(lines[0]!);
       expect(typeof parsed.hmacSig).toBe('string');
       expect(parsed.hmacSig.length).toBeGreaterThan(0);
+    });
+
+    it('签名剥离攻击：密钥在场但整链被剥掉签名并重算 prevHash → unverifiable 而非 ok（v1.4.8 fresh-eyes 回归）', () => {
+      // 攻击链：同用户攻击者无需读取 ~/.sofagent-key，剥掉全部条目的 hmacSig 伪装成
+      // legacy unsigned 条目，并用无密钥 SHA-256 重算 prevHash 链 + 重写链头锚点。
+      // 修复前：无签名的密钥在场条目被静默跳过验签 → 链报干净 ok（零告警）。
+      // 修复后：密钥在场但条目无签名 → 不可复验（黄），不再静默放行。
+      writeFileSync(KEY_PATH, 'test-hmac-key-1234567890', { mode: 0o600 });
+      appendHistory(makeEntry('2026-06-10T00:00:00Z', 0), testDir);
+      appendHistory(makeEntry('2026-06-11T00:00:00Z', 0), testDir);
+      expect(checkHistoryChainDetailed(testDir).status).toBe('ok');
+
+      const histPath = getHistoryFilePath(testDir);
+      const lines = readFileSync(histPath, 'utf-8').trim().split('\n');
+      const entries = lines.map((line) => JSON.parse(line) as Record<string, unknown>);
+      for (const entry of entries) {
+        delete entry.hmacSig;
+        delete entry.hmacAlgo;
+        delete entry.hashVersion;
+        delete entry.envFingerprint;
+      }
+      // 无密钥重算 prevHash（无指纹算法 = SHA-256(去 prevHash/hashVersion 的前一条)，可离线重算）
+      for (let i = 1; i < entries.length; i++) {
+        entries[i]!.prevHash = createHash('sha256')
+          .update(JSON.stringify({ ...entries[i - 1]!, prevHash: undefined, hashVersion: undefined }))
+          .digest('hex')
+          .slice(0, 16);
+      }
+      writeFileSync(histPath, entries.map((entry) => JSON.stringify(entry)).join('\n') + '\n');
+
+      // 同步重写链头锚点（headHash 无密钥可重算，锚点文件在同用户可写范围）——
+      // 不重写锚点会在锚点检查就报 tampered，攻击根本走不到链校验
+      const anchorPath = join(dirname(histPath), 'history-chain-head');
+      const anchor = JSON.parse(readFileSync(anchorPath, 'utf-8')) as Record<string, unknown>;
+      anchor.headHash = createHash('sha256')
+        .update(JSON.stringify({ ...entries[entries.length - 1]!, prevHash: undefined, hashVersion: undefined }) + '|' + anchor.envFingerprint)
+        .digest('hex')
+        .slice(0, 16);
+      writeFileSync(anchorPath, JSON.stringify(anchor) + '\n');
+
+      expect(checkHistoryChainDetailed(testDir).status).toBe('unverifiable');
     });
 
     it('有 HMAC 密钥：含 A2/A9 结果的 ≥2 条干净链 append + check 通过（P0-3 回归）', () => {

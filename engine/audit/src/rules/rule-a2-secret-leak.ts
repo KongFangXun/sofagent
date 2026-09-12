@@ -175,10 +175,22 @@ function extractCallArgLiterals(content: string): string[] {
 function candidatePlaintexts(content: string): string[] {
   // v1.4.4：入口先剥离 data URI 内嵌资源——base64 图像解码/原文的随机 40 位段
   // 会撞密钥正则（实锤：dashboard logo 70KB PNG data-URI 误报 AWS Secret Key）。
-  // data URI 是标准 Web 资源内嵌形态非密钥载体；剥离后剩余文本照常走全路径检测
-  // （资源以外藏真密钥仍会被抓）。URL-safe base64 载荷（含 -_）不匹配剥离正则，保持原扫。
+  // data URI 是标准 Web 资源内嵌形态非密钥载体；剥离后剩余文本照常走全路径检测。
+  // v1.4.8 fresh-eyes（finding-10）：整段剥离不分 mime 曾重开夹带通道——
+  // `data:application/octet-stream;base64,<标准b64>` 载荷在进入任何扫描候选前
+  // 被静默删除（v1.3.7 printf|base64 同款绕过换信封复现）。现在非 web 资源
+  // mime（image/font/audio/video 之外）的 b64 载荷（含 URL-safe 形态）解码后
+  // 照常进候选；资源 mime 维持剥离豁免（PNG logo 误报原始场景不受影响）。
+  const candidates: string[] = [];
+  const dataUriPayloadRe =
+    /data:(?!image\/|font\/|audio\/|video\/)[a-z0-9.+-]+\/[a-z0-9.+-]+;base64,([A-Za-z0-9+/=_-]+)/gi;
+  let pm: RegExpExecArray | null;
+  while ((pm = dataUriPayloadRe.exec(content)) !== null) {
+    const decoded = tryDecodeBase64(pm[1] ?? '');
+    if (decoded) candidates.push(decoded);
+  }
   const stripped = stripDataUris(content);
-  const candidates: string[] = [stripped];
+  candidates.push(stripped);
   const trimmed = stripped.trim();
 
   // P1-A4: 带变量前缀的赋值行（如 `token = <b64>` / `key: <hex>`）
@@ -307,12 +319,17 @@ export function checkRuleA2(ctx: AuditContext): RuleCheck {
 
   // 聚合结构：Map<"文件路径|密钥标签", string[]>
   const groupedDetections = new Map<string, { file: string; label: string; count: number }>();
+  // v1.4.8 fresh-eyes（finding-11）：测试文件内的密钥形态命中——不 FAIL，但强制 WARN 人工确认
+  const testExemptDetections = new Map<string, { file: string; label: string; count: number }>();
 
   for (const file of diffFiles) {
-    // 跳过测试文件——测试用例合法包含密钥形态作为 fixture（对抗性 golden-set
-    // 红队样本、正则回归用例等；对齐 A9 同款豁免先例。真实密钥仍会被 CI 侧
-    // 全量历史扫描工具拦截，测试豁免只作用于本 diff 规则面）
-    if (file.path.includes('.test.') || file.path.includes('__tests__/') || file.path.endsWith('.fixture')) continue;
+    // 测试文件豁免：测试用例合法包含密钥形态作为 fixture（对抗性 golden-set
+    // 红队样本、正则回归用例等；对齐 A9 同款豁免先例）。v1.4.8 fresh-eyes
+    // （finding-11）：豁免不再静默——文件命名完全在被审计 Agent 控制下，
+    // 真实密钥放进 *.test.ts 即全绿；命中照常记录，循环后统一降级 WARN
+    // 提示人工确认，而非静默放行。
+    const isTestFile = file.path.includes('.test.') || file.path.includes('__tests__/') || file.path.endsWith('.fixture');
+    const detections = isTestFile ? testExemptDetections : groupedDetections;
     for (const line of file.lines) {
       // 只检查新增行（以 + 开头且不是 +++）
       if (line.startsWith('+') && !line.startsWith('+++')) {
@@ -339,11 +356,11 @@ export function checkRuleA2(ctx: AuditContext): RuleCheck {
               // 二次判定防误报。
               if (contextKeyword && !contextKeyword.test(candidate)) continue;
               const key = `${file.path}|${label}`;
-              const existing = groupedDetections.get(key);
+              const existing = detections.get(key);
               if (existing) {
                 existing.count++;
               } else {
-                groupedDetections.set(key, { file: file.path, label, count: 1 });
+                detections.set(key, { file: file.path, label, count: 1 });
               }
             }
           }
@@ -359,11 +376,11 @@ export function checkRuleA2(ctx: AuditContext): RuleCheck {
           const isEnvReference = /^(process\.env|os\.Getenv|env\.)/i.test(assigned ?? '');
           if (assigned && !isEnvReference && !/^(REPLACE_ME|YOUR_[A-Z_]+|EXAMPLE|PLACEHOLDER|CHANGE_ME|xxxx+)$/i.test(assigned)) {
             const key = `${file.path}|密钥赋值`;
-            const existing = groupedDetections.get(key);
+            const existing = detections.get(key);
             if (existing) {
               existing.count++;
             } else {
-              groupedDetections.set(key, { file: file.path, label: '密钥赋值形态', count: 1 });
+              detections.set(key, { file: file.path, label: '密钥赋值形态', count: 1 });
             }
           }
         }
@@ -383,6 +400,22 @@ export function checkRuleA2(ctx: AuditContext): RuleCheck {
     }
     rule.details.push(
       `检测到疑似密钥/令牌泄漏: ${parts.join('; ')}。密钥不应硬编码到源码中。`
+    );
+  }
+
+  // v1.4.8 fresh-eyes（finding-11）：测试文件豁免命中降级 WARN——非静默放行
+  if (testExemptDetections.size > 0) {
+    if (rule.status === 'PASS') rule.status = 'WARN';
+    const parts: string[] = [];
+    for (const { file, label, count } of testExemptDetections.values()) {
+      parts.push(`${file}: ${label}${count > 1 ? ` ×${count}` : ''}`);
+    }
+    // finding-13：detail 按最终状态区分——整体已 FAIL 时不再写「不 FAIL」误导人工确认
+    const exemptNote = rule.status === 'FAIL'
+      ? '测试文件豁免命中（已并入 FAIL 处置，需人工确认）'
+      : '测试文件豁免命中（不 FAIL 但需人工确认）';
+    rule.details.push(
+      `${exemptNote}: ${parts.join('; ')}。测试文件命名在被审计 Agent 控制下，请确认以上命中均为合法 fixture 而非真实密钥夹带。`
     );
   }
 

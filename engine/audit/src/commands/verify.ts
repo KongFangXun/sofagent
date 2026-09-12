@@ -60,7 +60,7 @@ export function runVerifyChain(): void {
         // 'unverifiable' — key/环境漂移
         console.log('  ⚠️ hash chain 不可复验（密钥轮换或环境漂移，非篡改）');
         console.log(`  详情: ${result.detail ?? ''}`);
-        console.log('\n  如确为本人密钥变更，可忽略。');
+        console.log('\n  若近期确有密钥轮换记录，可忽略；否则请按疑似签名剥离攻击排查：核对该条目前后的提交者与时间是否异常。');
         console.log('  如非本人操作，请核查 ~/.sofagent-key');
         process.exit(1);
         break;

@@ -7,6 +7,7 @@
 import { getAddedLines } from '@sofagent/core';
 import { DOMAIN_WHITELIST } from '@sofagent/core';
 import type { AuditContext, RuleCheck } from './types';
+import { sanitizeDetailLine } from './rule-a9-no-injection';
 /** 外传动作模式——curl/wget POST、fetch POST、DNS 隧道 */
 const EXFIL_ACTION_PATTERNS: { pattern: RegExp; name: string }[] = [
   // curl/wget 发送数据到外部（不用 g 标志——避免 lastIndex 状态问题）
@@ -76,10 +77,10 @@ export function checkRuleA20(ctx: AuditContext): RuleCheck {
   const hits: Hit[] = [];
 
   for (const file of diffFiles) {
-    // 跳过文档和测试文件
+    // 跳过文档目录；测试文件不再静默跳过（v1.4.8 fresh-eyes finding-11：文件命名
+    // 完全在被审计 Agent 控制下，命中在末尾拆分降级 WARN 人工确认）
     if (file.path.startsWith('docs/')) continue;
     if (file.path.endsWith('.md') && !file.path.includes('SECURITY')) continue;
-    if (file.path.includes('.test.') || file.path.includes('__tests__/')) continue;
 
     const addedLines = getAddedLines(file);
     for (const line of addedLines) {
@@ -131,11 +132,25 @@ export function checkRuleA20(ctx: AuditContext): RuleCheck {
     }
   }
 
-  if (hits.length > 0) {
+  // v1.4.8 fresh-eyes（finding-11）：测试文件命中拆出主判定——不 FAIL，降级 WARN 人工确认
+  const isTestFilePath = (p: string) => p.includes('.test.') || p.includes('__tests__/');
+  const testFileHits = hits.filter((h) => isTestFilePath(h.file));
+  const mainHits = hits.filter((h) => !isTestFilePath(h.file));
+
+  if (mainHits.length > 0) {
     rule.status = 'FAIL';
     rule.details.push(
-      `检测到 ${hits.length} 处数据外传模式（双条件：外传动作 + 敏感数据）: ` +
-      hits.map(h => `${h.file}: "${h.line}" (${h.pattern})`).join('; ')
+      `检测到 ${mainHits.length} 处数据外传模式（双条件：外传动作 + 敏感数据）: ` +
+      mainHits.map(h => `${h.file}: "${h.line}" (${h.pattern})`).join('; ')
+    );
+  }
+  if (testFileHits.length > 0) {
+    if (rule.status === 'PASS') rule.status = 'WARN';
+    rule.details.push(
+      `测试文件豁免命中（不 FAIL 但需人工确认）: ` +
+      testFileHits.slice(0, 5).map(h => `${h.file}: "${sanitizeDetailLine(h.line)}" (${h.pattern})`).join('; ') +
+      (testFileHits.length > 5 ? ` 等 ${testFileHits.length} 处` : '') +
+      `。测试文件命名在被审计 Agent 控制下，请确认以上命中均为合法 fixture 而非真实外传夹带。`
     );
   }
 
