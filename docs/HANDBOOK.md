@@ -85,7 +85,7 @@
 
 - **大厂 LLM = 原水**：90% 的智力来自它，sofagent 不自己造水。
 - **大厂 Agent 平台 = 河床**：统一入口（Claude Code / Codex / WorkBuddy / OpenClaw），sofagent 不做河床。
-- **sofagent 引擎 = 堤坝 + 自来水厂 + 管网 + 水龙头（5 项核心已实现）+ 水表（审计已实现，终端 Dashboard v1.2.3 已落地）**：
+- **sofagent 约束层 = 堤坝 + 自来水厂 + 管网 + 水龙头（5 项核心已实现）+ 水表（审计已实现，终端 Dashboard v1.2.3 已落地）**：
   - 🧱 **堤坝（约束层）**——四层加载链，把行为底线焊死在每次对话里
   - 🏭 **自来水厂（沙箱安全）**——让原水变「直饮水」，危险操作隔离在沙箱
   - 🔧 **管网（审计模块）**——每次变更过 24 条规则审查
@@ -99,7 +99,7 @@
 | **层 1 · 约束层** | 约束层五种能力（注入·审计·回溯·沉淀·进化） | 怎么保证每次执行都做对 | ✅ 已交付 |
 | **层 2 · 生命周期（五阶段）** | 诊断 → 激活 → 编排 → 执行 → 持续（激活链四阶段 = 激活→编排→执行→持续 ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN，为五阶段中后四环） | 企业 AI 从诊断到自运转怎么走 | 🔗 Phase 1-4 已交付 |
 
-**层 1 · 约束层（约束层五种能力）**：
+**层 1 · 约束层（五种能力）**：
 
 | 角色 | 模块 | 管什么 | 触发方式 |
 |------|------|------|------|
@@ -597,7 +597,7 @@ sofagent-daemon create-usb-key \
   --platform macos   # 或 linux / win
 ```
 
-U 盘包含：Node.js 便携版 + sofagent 引擎 + knowledge/ 加密落盘 + 启动脚本 + HMAC 防篡改签名。员工双击 `start.command`/`.sh`/`.bat` → 验签 → 内存解密 → daemon 启动 → 联邦在线。拔掉零残留。完整部署场景与烧录命令见 [SKILL/agents/fde/SKILL.md §USB 烧录](../SKILL/agents/fde/SKILL.md)。
+U 盘包含：Node.js 便携版 + sofagent 约束层 + knowledge/ 加密落盘 + 启动脚本 + HMAC 防篡改签名。员工双击 `start.command`/`.sh`/`.bat` → 验签 → 内存解密 → daemon 启动 → 联邦在线。拔掉零残留。完整部署场景与烧录命令见 [SKILL/agents/fde/SKILL.md §USB 烧录](../SKILL/agents/fde/SKILL.md)。
 
 > 💡 跟你的 Agent 说"帮我烧一个 XX 节点的 U 盘"也行——Agent 会通过 FDE Skill 触发 `create-usb-key`。
 
@@ -620,7 +620,7 @@ sofagent-audit subagent run fde --mode sustain --task "巡检所有节点"
 
 审计 Agent 管"刹车是不是还在"，FDE Harness 管"能不能换更好的轮胎"。两者合在一起，企业的 AI 节点不需要人盯着。
 
-> sofagent 不做 AI 中台——做 AI 中台里**约束 Agent 行为和审计的那一层**。sofagent 本质上是一款 FDE Harness：对外你用的是品牌名 sofagent（它正是一套 FDE Harness 在帮你干活），对内是 sofagent 引擎（Harness 中间件）在跑。
+> sofagent 不做 AI 中台——做 AI 中台里**约束 Agent 行为和审计的那一层**。sofagent 本质上是一款 FDE Harness：对外你用的是品牌名 sofagent（它正是一套 FDE Harness 在帮你干活），对内是 sofagent 约束层（Harness 中间件）在跑。
 
 ### 🔗 激活链：从"交付文档"到"自动运转"（v1.2.5+ Phase 1-3 已交付）
 
@@ -701,7 +701,7 @@ sofagent-audit subagent run fde --mode sustain --task "巡检所有节点"
 
 ### 概念速查
 
-上述术语（Harness 中间件、约束层 × 生命周期双层架构、约束层五种能力（注入·审计·回溯·沉淀·进化）、激活链四阶段（ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN）、FORGE 内部工具链、铁律、审计规则、Skill、think.md、daemon、Agent 平台（OpenClaw / WorkBuddy 等）、FDE 等）已在上方各幕详述，此处仅作速查索引。加载链正典顺序：**SKILL.md（宪法）→ fde.md（规范）→ think.md（反思）→ knowledge/（知识）**。核心 = **约束层（约束层五能力）× 生命周期（诊断→激活→编排→执行→持续）**。完整概念见 [README](../README.md) 和 [ARCHITECTURE](./ARCHITECTURE.md)。
+上述术语（Harness 中间件、约束层 × 生命周期双层架构、约束层五种能力（注入·审计·回溯·沉淀·进化）、激活链四阶段（ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN）、FORGE 内部工具链、铁律、审计规则、Skill、think.md、daemon、Agent 平台（OpenClaw / WorkBuddy 等）、FDE 等）已在上方各幕详述，此处仅作速查索引。加载链正典顺序：**SKILL.md（宪法）→ fde.md（规范）→ think.md（反思）→ knowledge/（知识）**。核心 = **约束层（五种能力）× 生命周期（诊断→激活→编排→执行→持续）**。完整概念见 [README](../README.md) 和 [ARCHITECTURE](./ARCHITECTURE.md)。
 
 ---
 

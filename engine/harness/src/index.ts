@@ -127,7 +127,7 @@ function listCustomOverrides(dir: string, maxFiles = 4): string[] {
   if (thinkContent) parts.push(`# 历史经验\n${thinkContent}`);
 
   // 3.5 用户自定义层：custom/*-overrides.md（v1.2.1 新增）
-  // 加载顺序：引擎层（宪法/规范/反思）→ 用户层（custom/ 私有规则）。
+  // 加载顺序：约束层（宪法/规范/反思）→ 用户层（custom/ 私有规则）。
   // 后加载 = 优先级更高——custom/ 规则追加在官方规则之后，不是替换。
   const customRules = listCustomOverrides(path.join(skillDir, 'custom'));
   for (const rule of customRules) {

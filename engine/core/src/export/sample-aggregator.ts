@@ -6,7 +6,7 @@
 //   1. decision-log   data/audit/decision-log.jsonl（audit 包）
 //   2. llm-calls      data/audit/runtime/llm-calls.jsonl（core 包 llm-call-trace.ts 落盘，异名注意）
 //   3. evaluation-log data/<project>/benchmarks/<id>/evaluation-log.jsonl（orchestrator 包）
-//   4. runtime-audit  data/audit/runtime/<repo-hash>/runtime-audit.jsonl（FORGE 侧产物；引擎侧 llm-calls 已同构隔离）
+//   4. runtime-audit  data/audit/runtime/<repo-hash>/runtime-audit.jsonl（FORGE 侧产物；约束层侧 llm-calls 已同构隔离）
 //   5. fde-session    data/fde/sessions/<sessionId>/（context.md + meta.json）
 //
 // 合规红线（changelog 定）：仅脱敏聚合不落个体级——字段白名单制

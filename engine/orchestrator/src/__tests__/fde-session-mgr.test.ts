@@ -4,7 +4,7 @@
 // 覆盖（对齐 devlog 第八章验收标准）：
 //   - fde_interview 首次调用自动初始化客户目录（10 文件结构）——
 //     经 initFDEClientSession 幂等语义验证（MCP 挂载点在 fde-interview.ts，
-//     其调用即本函数；此处锁引擎层契约）
+//     其调用即本函数；此处锁约束层契约）
 //   - clientId 校验（空/路径逃逸拒绝；幂等二次调用不重写）
 //   - session-stop 自动捕获状态文件（captureFDEClientSession——
 //     session-state.json + history.jsonl 追加 + meta.lastCapturedAt）

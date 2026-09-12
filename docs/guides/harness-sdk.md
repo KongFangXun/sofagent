@@ -1,6 +1,6 @@
 # SubAgent 托管 SDK（`harness.wrap`）
 
-> v1.3.6 交付——约束层作为引擎的**最终接缝**：开发者用 LangChain/LangGraph 写自己的 graph，一行包装即自动获得约束层全部能力（审计 / 审批 / 身份 / Trace / 决策审计）。
+> v1.3.6 交付——约束层作为**最终接缝**：开发者用 LangChain/LangGraph 写自己的 graph，一行包装即自动获得约束层全部能力（审计 / 审批 / 身份 / Trace / 决策审计）。
 
 ## 为什么需要托管 SDK
 

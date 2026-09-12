@@ -128,7 +128,7 @@ AI 能力强但不可控 vs 企业需要可控可审计。FDE 用四件事化解
 
 ```mermaid
 graph TD
-    A[大厂 Agent + 大模型<br/>90% 智力 · 你自选 · 我们不替代] --> B[sofagent 引擎<br/>Harness 中间件<br/>约束层 × 生命周期]
+    A[大厂 Agent + 大模型<br/>90% 智力 · 你自选 · 我们不替代] --> B[sofagent<br/>Harness 中间件<br/>约束层 × 生命周期]
     B --> C[FDE Harness<br/>帮你梳理→部署→离场→AI 节点自己跑]
     C --> D[SMB · OPC 的每个人<br/>成为自己业务的 FDE]
 ```
@@ -839,7 +839,7 @@ sofagent-daemon create-usb-key \
   --platform macos   # 或 linux / win
 ```
 
-**U 盘里有什么**：Node.js 便携版 + sofagent 引擎（审计/编排/约束/回溯）+ knowledge/ 加密落盘（AES-256-GCM，明文只在内存）+ 三平台启动脚本（start.command/.sh/.bat）+ HMAC-SHA256 防篡改签名。
+**U 盘里有什么**：Node.js 便携版 + sofagent 约束层（审计/编排/约束/回溯）+ knowledge/ 加密落盘（AES-256-GCM，明文只在内存）+ 三平台启动脚本（start.command/.sh/.bat）+ HMAC-SHA256 防篡改签名。
 
 **插上即用**：双击启动脚本 → 全量验签（fail-closed：签名不匹配拒绝启动）→ 内存解密 knowledge（明文不落盘）→ daemon 启动（cron + 文件监听 + 联邦在线）→ 本机零残留（所有路径指向 U 盘，退出清空内存密钥）。
 

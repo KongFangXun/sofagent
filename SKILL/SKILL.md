@@ -52,7 +52,7 @@ solves:
 
 一、`bash install.sh` 装底座——MCP 自动配置随 `--platform` 落地（workbuddy/claude/cursor 写 mcp.json、codex 写 config.toml），装完即连
 二、DSH 用户按需挂插件——`skillhub install cordis-plugin-sofagent-<名>`（SkillHub 通道，每款独立安装渐进采用）
-三、plugin 经 @public API 调 sofagent 引擎（桥接实况见 `AGENTS.md`「DSH 插件家族」表）
+三、plugin 经 @public API 调 sofagent 约束层（桥接实况见 `AGENTS.md`「DSH 插件家族」表）
 四、审计 / 回滚走 MCP 工具面（`run_audit` / `snapshot_restore` 等）
 
 ---

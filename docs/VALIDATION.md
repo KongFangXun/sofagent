@@ -498,7 +498,7 @@ Onyx 四阶段闭环（L1：可见性 → 仿真 → 执行 → 学习）与人�
 | 数据接口层 | Agent 连接企业库 / 个人 / IoT / 实时数据 | CloudBase / OpenClaw 集成（Gateway 只桥接、不替代）|
 | 上下文理解层 | AI 理解数据背后的业务语义 / 规则 / 偏好 | Ontology（运行时语义层，翻译而非统一）|
 | 权限管理系统 | 身份认证 · 权限控制 · 行为审计 · 安全边界 | 审计能力（git diff 硬证据）+ 约束层（约束注入链）+ entry-gate 风险分级 |
-| Skill 生态 | 开发者输出专项 Skill（类比 App Store） | `/SKILL/` 统一入口 + 引擎层 / 用户层分离 |
+| Skill 生态 | 开发者输出专项 Skill（类比 App Store） | `/SKILL/` 统一入口 + 约束层（官方）/ 用户层分离 |
 
 ### 脑力自动化四阶段 ↔ sofagent 工程谱系映射
 

@@ -1788,7 +1788,7 @@ git grep -q "create-usb-key" -- engine/ install.sh && grep -q "runDueTasks" engi
 grep -q "interface TrainChannel" engine/orchestrator/src/train/train-channel.ts && grep -q "createSshTrainChannel" engine/daemon/src/cloud-exec.ts && grep -q "chainDualChannelEvent" engine/daemon/src/cloud-events.ts && test -f docs/guides/train-channel-spec.md && test -f engine/daemon/src/tasks/cloud-train.ts && echo "✅ 云通道五面齐备" || echo "❌ 云通道缺口（零调用回潮）"
 # g: 静态加密全量接线 + data_push 入口接线（daemon 接线收口批：生产调用点 + 双闸消费）
 grep -q "initDataEncryption" engine/daemon/src/cli.ts && grep -q "name: 'data_push'" engine/mcp/src/tool-registry.ts && echo "✅ 双接线收口（加密 + data_push）" || echo "❌ 接线回退（零调用）"
-# h: 运行时审计引擎侧 repo-hash 隔离（引擎化 + 审计侧消费 + commit 级主链全局不动）
+# h: 运行时审计约束层侧 repo-hash 隔离（引擎化 + 审计侧消费 + commit 级主链全局不动）
 grep -q "computeRepoHash" engine/core/src/repo-hash.ts && grep -q "computeRepoHash" engine/audit/src/data-sovereignty.ts && grep -q "history.jsonl" engine/audit/src/audit-history.ts && echo "✅ repo-hash 引擎化 + 隔离消费（主链全局不动）" || echo "❌ 隔离缺口"
 # i: audit 专职面文档化 + 审计留痕双层（角色配置文档 + 规约层过滤 + PROV-O 出口）
 git grep -q "SOFAGENT_MCP_ROLES" -- docs/API.md && grep -q "reduceAuditHistory" engine/audit/src/audit-reducer.ts && grep -q "exportProvTurtle" engine/audit/src/audit-reducer.ts && echo "✅ 专职面 + 留痕双层" || echo "❌ audit 面缺失"

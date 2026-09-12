@@ -55,9 +55,9 @@ graph LR
 
 ### 补充视角：约束层内部分层与业务概念嵌套
 
-> 以下两个视角是对双层架构内部结构的补充展开，不是独立的架构框架——**双层架构是唯一主框架**。**何时需要哪张图**：产品定位 → 双层架构图；引擎内部组织 → 引擎工程视角；企业业务概念 → 业务概念视角；落地终态 → 四层运行形态图。**生命周期五段 vs 激活链四阶段**：诊断=进场审计，激活=ACTIVATE，编排=ORCHESTRATE，执行=EXECUTE，进化=SUSTAIN。
+> 以下两个视角是对双层架构内部结构的补充展开，不是独立的架构框架——**双层架构是唯一主框架**。**何时需要哪张图**：产品定位 → 双层架构图；约束层内部组织 → 约束层工程视角；企业业务概念 → 业务概念视角；落地终态 → 四层运行形态图。**生命周期五段 vs 激活链四阶段**：诊断=进场审计，激活=ACTIVATE，编排=ORCHESTRATE，执行=EXECUTE，进化=SUSTAIN。
 
-**引擎工程视角**——约束层内部按「环境 → 流程 → 反馈」组织：
+**约束层工程视角**——约束层内部按「环境 → 流程 → 反馈」组织：
 
 ```mermaid
 graph TD
@@ -149,7 +149,7 @@ graph TB
 | 🧬 进化 | Evolution | FDE 周度巡检 + 自动优化 |
 | 加载链 | Load Chain | Agent 启动时注入的约束文件（又称约束注入链） |
 | FDE | Forward Deployed Engineer（前线部署工程师） | 源自 Palantir 交付纪律：工程师驻场客户，掌握完整上下文、打破岗位边界、对结果负责。sofagent 把 FDE 能力产品化——FDE 进场部署 AI 节点，离场后节点自己跑 |
-| Harness | 约束层 | FDE Harness 层的核心引擎：一个层五种能力（注入·审计·回溯·沉淀·进化）。对外中文「约束层」、英文「Harness」为 SSOT；「FDE Harness 层」即产品整体（约束层 + FDE 方法论 + 审计），「约束层」即其引擎，两者一体两面不另作区分；两者的咬合机制（两相位）：FDE 是判断力的**生成相位**（进场时把「该不该上 AI / 做好标准 / 谁拍板 / 何时跑」判断出来并冻结成交付物），约束层是判断力的**驻留相位**（离场后 7×24 按冻结的判断执行并产生反馈信号），交接物 = workflow.yml + ontology + MD（FDE 写入、约束层读写、持续进化——是共享状态不是一次性交付）；「Constraint Layer」为同义英文旧称，不再单独使用 |
+| Harness | 约束层 | FDE Harness 层的核心：一个层五种能力（注入·审计·回溯·沉淀·进化）。对外中文「约束层」、英文「Harness」为 SSOT；「FDE Harness 层」即产品整体（约束层 + FDE 方法论 + 审计），「约束层」即其核心，两者一体两面不另作区分；约束层的构成表述 = **一个主干 + 一组插件面**（主干=五模块不可拆，插件面=把主干能力挂到宿主、可插拔）；两者的咬合机制（两相位）：FDE 是判断力的**生成相位**（进场时把「该不该上 AI / 做好标准 / 谁拍板 / 何时跑」判断出来并冻结成交付物），约束层是判断力的**驻留相位**（离场后 7×24 按冻结的判断执行并产生反馈信号），交接物 = workflow.yml + ontology + MD（FDE 写入、约束层读写、持续进化——是共享状态不是一次性交付）；「Constraint Layer」为同义英文旧称，不再单独使用 |
 | Gateway | Gateway | 企业级 AI 统一入口（WorkBuddy / OpenClaw 等大厂平台），sofagent 不替代它 |
 | Sub Agent | Sub Agent | 用 LangGraph createReactAgent 搭的专有执行节点 |
 | Ontology | 本体数据 | 企业的业务世界模型——一套「什么实体存在、能做什么动作、受什么约束」的规则书（机器可读），FDE 帮你搭建并持续维护 |
@@ -217,7 +217,7 @@ v1.3.9 起对所有 workspace 包的入口 export 做显式分级，CI 门禁（
 - 未标记的导出**默认视为 @public**（保守默认：宁可多承诺不可漏承诺），`@internal` 需显式标注。
 
 **为什么 @internal 破坏性变更不影响适配层**：
-- 跨平台适配器（Cursor / Codex / Gemini CLI 薄挂载）与 `@sofagent/audit` 等外部依赖方**只许 import `@public` 层**——`@internal` 是引擎内部实现细节，破坏性变更不触发 semver 约束。
+- 跨平台适配器（Cursor / Codex / Gemini CLI 薄挂载）与 `@sofagent/audit` 等外部依赖方**只许 import `@public` 层**——`@internal` 是约束层内部实现细节，破坏性变更不触发 semver 约束。
 - 若某符号从 `@internal` 升为 `@public`，等同新增公开 API，需 bump 版本 + CHANGELOG 记录（门禁自动拦截漏标场景）。
 
 > 符号数声称与 baseline 的自动校验见 `public-api.mjs` 的「文档声称符号数校验」段——文档声称的符号总数必须与 baseline 实际数一致，否则门禁 FAIL（根治历史 1449 漂移类问题）。
@@ -392,18 +392,20 @@ graph LR
 
 > 📖 完整的感知衰减曲线 + 三层持续感知体系（定期价值证明 / 系统自曝复杂度 / 不可替代性标记）+ 配置方法见 [SKILL/skills/05-exit.md](../SKILL/skills/05-exit.md)（AI 执行层）与 [FDE/GUIDE.md §5.9](../FDE/GUIDE.md#59-离场五大能力)（人读概念）。
 
-### 地基与引擎
+### 地基与约束层
 
 | 层 | 是什么 | 成本 |
 |:--:|------|:--:|
 | 地基 | 四层加载链（纯 MD 文件，Agent 读即生效） | ~3,500 token |
-| 约束层（引擎） | 编排 + 审计 + 回溯 + 进化（含质量评估）+ 约束注入链（daemon + CLI） | 按需启动 |
+| 约束层 | 编排 + 审计 + 回溯 + 进化（含质量评估）+ 约束注入链（daemon + CLI） | 按需启动 |
 
 > v1.1.0 将审计拆为独立 npm 包 `@sofagent/audit`，地基（约束注入链）和其余能力（编排/审计/进化）与回溯不受影响。
 
-### 功能编制（引擎=约束层内的功能模块 · 2026-09-06 定型）
+### 功能编制（约束层内的功能模块 · 2026-09-06 定型）
 
-> **定位声明**：对外产品唯一 = **FDE Harness**（约束层，注入·审计·回溯·沉淀·进化五能力）。下表「模块」是约束层内部的功能域编制称呼——**模块不是产品线，无独立入口，所有产出过审计与注册闸门**。「引擎」一词在对外叙事中仅用于描述外部系统（宿主 Agent、LangGraph、商业三层架构中的「引擎层」）。
+> **定位声明**：对外产品唯一 = **FDE Harness**（约束层，注入·审计·回溯·沉淀·进化五能力）。下表「模块」是约束层内部的功能域编制称呼——**模块不是产品线，无独立入口，所有产出过审计与注册闸门**。「引擎」一词在对外叙事中**仅用于描述外部系统**（宿主 Agent、DSH、LangGraph）。**商业三层架构的中间层统一称「约束层」**（2026-09-12 拍板，撤销原「商业三层架构中的引擎层」豁免；旧称「引擎层」全站弃用）。
+>
+> **约束层的构成表述 = 「一个主干 + 一组插件面」**：主干即下表五模块，不可拆、不可裁——它是约束层本体；插件面把主干能力以插件形态挂到宿主（DSH 9 款 / OpenClaw 4 款），可插拔、可裁剪。**主干是被挂载方，不知道宿主是谁**——适配层不 import 宿主 SDK（这是写法保证的红线，不是纪律）。
 
 | 模块 | 职责一句话 | 主要载体 |
 |------|------|------|
@@ -574,14 +576,14 @@ graph LR
     C -->|FAIL| D[⛔ 拦截 + 运行时审计日志]
     C -->|requireApproval| E[⛔ HITL 待批准<br/>hitl_resolve 决策]
     C -->|WARN/PASS| F[✅ 放行 + 记日志]
-    D --> G[data/audit/runtime/&lt;repo-hash&gt;/<br/>（FORGE 路径已交付；引擎侧排 v1.3.9）]
+    D --> G[data/audit/runtime/&lt;repo-hash&gt;/<br/>（FORGE 路径已交付；约束层侧排 v1.3.9）]
     E --> G
     F --> G
 ```
 
 - 规则引擎：`@sofagent/rules`（`RulesEngine.check + aggregate`），3 条 tool-gate 规则（A1/A2/A9 移植版，`ruleType: 'tool'`）
 - 判定便捷 API：`shouldAllow(engine, ctx)` → `{ allow, reason, requireApproval }`
-- 运行时审计日志按 git 仓库隔离（FORGE 自托管 SubAgent 路径——`FORGE/src/audit-middleware.mjs` 写 `data/audit/runtime/<repo-hash>/runtime-audit.jsonl`，`git rev-parse --show-toplevel` hash，非 git 回退 `nogit-<cwd-hash>`；引擎侧 data-sovereignty 审计日志与 llm-calls Trace 已同构隔离——`data/audit/data-sovereignty/<repo-hash>/{年}/{月}/` 与 `data/audit/runtime/<repo-hash>/llm-calls.jsonl`，旧版无段历史读侧 fallback 原地可读）
+- 运行时审计日志按 git 仓库隔离（FORGE 自托管 SubAgent 路径——`FORGE/src/audit-middleware.mjs` 写 `data/audit/runtime/<repo-hash>/runtime-audit.jsonl`，`git rev-parse --show-toplevel` hash，非 git 回退 `nogit-<cwd-hash>`；约束层侧 data-sovereignty 审计日志与 llm-calls Trace 已同构隔离——`data/audit/data-sovereignty/<repo-hash>/{年}/{月}/` 与 `data/audit/runtime/<repo-hash>/llm-calls.jsonl`，旧版无段历史读侧 fallback 原地可读）
 - 每次判定同步写 `emitDecision`（决策审计 TOOL_GATE）
 - 企业 Agent 路径（node-executor）经 `wrapToolsWithGate` 补 gate——与 LOOP 路径一致
 

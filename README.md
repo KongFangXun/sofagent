@@ -118,7 +118,7 @@ sofagent 不造 Agent——执行能力交给成熟宿主（模型 + 工具 + �
 
 ## v1.4.7：商业平台接口版
 
-🔌 给商业平台预留的全部数据与动作接口一次到位——组织看得见（能力缺口/绩效）、协作转得动（PR 生命周期/workflow 对象化）、数据进得来（data_push 双闸）。`workflow_gaps` 能力缺口查询（缺人/缺能力/待升级三类，可转悬赏 PR）· `contribution_query` 绩效导出（PR 权重+决策留痕+审计变更三源聚合，人与数字员工同标准，org 租户过滤）· `pr_submit/pr_review/pr_merge` PR 生命周期三 tool（状态机+confidence 两态，branch→trunk 合并联动）· workflow 对象化 CRUD 四 tool（owner 直改 trunk/非 owner 开 branch，`trigger.schedule` 定时触发）· G6 节点级可见性（open/private/result-only 三级枚举 + 审阅门联动）· G7 多租户 v0（`data/<tenant>/` 路径地基+orgId 归属字段）· G8 首部署 cron job 包（`--with-first-deploy-cron` 装完即见效，daemon 周期消费）· `onboard_prompt` 上岗 prompt 生成器 · USB 烧录 workflow（验签后自动加载）· audit 留痕双层（规约聚合+PROV-O 导出）· TrainChannel 云训练标准接口（托管云按规范对接，ssh 通道引擎自研）· `data_push` 标准数据推送入口（schema 校验 + 敏感分拣双闸；企业合规拦截策略预留扩展）· 静态加密 daemon 接线收口（密钥就绪即密文落盘）· 运行时审计 repo-hash 隔离（llm-calls/data-sovereignty 按 git 仓分目录，旧历史原地可读）。（版本时点数字：MCP 84→95 tools、测试 4107→4279，见开发日志——当前口径以[核心特性](#核心特性)为准。）完整内容见[开发日志](./docs/changelog/v1.4/v1.4.7.md) · 更早版本见 [CHANGELOG](./CHANGELOG.md)。
+🔌 给商业平台预留的全部数据与动作接口一次到位——组织看得见（能力缺口/绩效）、协作转得动（PR 生命周期/workflow 对象化）、数据进得来（data_push 双闸）。`workflow_gaps` 能力缺口查询（缺人/缺能力/待升级三类，可转悬赏 PR）· `contribution_query` 绩效导出（PR 权重+决策留痕+审计变更三源聚合，人与数字员工同标准，org 租户过滤）· `pr_submit/pr_review/pr_merge` PR 生命周期三 tool（状态机+confidence 两态，branch→trunk 合并联动）· workflow 对象化 CRUD 四 tool（owner 直改 trunk/非 owner 开 branch，`trigger.schedule` 定时触发）· G6 节点级可见性（open/private/result-only 三级枚举 + 审阅门联动）· G7 多租户 v0（`data/<tenant>/` 路径地基+orgId 归属字段）· G8 首部署 cron job 包（`--with-first-deploy-cron` 装完即见效，daemon 周期消费）· `onboard_prompt` 上岗 prompt 生成器 · USB 烧录 workflow（验签后自动加载）· audit 留痕双层（规约聚合+PROV-O 导出）· TrainChannel 云训练标准接口（托管云按规范对接，ssh 通道自研）· `data_push` 标准数据推送入口（schema 校验 + 敏感分拣双闸；企业合规拦截策略预留扩展）· 静态加密 daemon 接线收口（密钥就绪即密文落盘）· 运行时审计 repo-hash 隔离（llm-calls/data-sovereignty 按 git 仓分目录，旧历史原地可读）。（版本时点数字：MCP 84→95 tools、测试 4107→4279，见开发日志——当前口径以[核心特性](#核心特性)为准。）完整内容见[开发日志](./docs/changelog/v1.4/v1.4.7.md) · 更早版本见 [CHANGELOG](./CHANGELOG.md)。
 
 ## FDE 方法论
 
@@ -149,7 +149,7 @@ sofagent 不造 Agent——执行能力交给成熟宿主（模型 + 工具 + �
 
 ## 约束层（Harness）
 
-**两阶段的后半段。**进场生成的判断（merge_criteria / approver / trigger）由它驻留执行——这是 FDE 离场后判断力仍然生效的那一半。约束层是 sofagent 的行为底座，五种能力（对外叙事；内部实现为五模块编制——编排/审计/后训/治理/执行，二者与五种分发形态的对应关系见 [ARCHITECTURE 功能编制](./docs/ARCHITECTURE.md#功能编制引擎约束层内的功能模块--2026-09-06-定型)）：
+**两阶段的后半段。**进场生成的判断（merge_criteria / approver / trigger）由它驻留执行——这是 FDE 离场后判断力仍然生效的那一半。约束层是 sofagent 的行为底座，五种能力（对外叙事；内部实现为五模块编制——编排/审计/后训/治理/执行，二者与五种分发形态的对应关系见 [ARCHITECTURE 功能编制](./docs/ARCHITECTURE.md#功能编制约束层内的功能模块--2026-09-06-定型)）：
 
 - **注入**——Agent 启动时注入企业约束，四层加载链；约束是建议性的
 - **审计**——24 条 git diff 硬证据规则（quick 零配置默认 17 条，扩展 7 条经 config 启用）+ AgentShield 五类配置面静态扫描；审计是强制性的，每次变更必审，违规当场拦截
@@ -188,7 +188,7 @@ sofagent-audit --doctor    # 验证环境（可选）
 
 > 💡 安装脚本主要写入 `~/.sofagent/`（数据目录）+ `~/.local/bin`（CLI 入口）；检测到 OpenClaw 时额外写入其集成目录；npm 权限不足时 CLI 入口 fallback 到 `/usr/local/bin`。其余系统文件零改动。`--init` 安装三层防线 git hook（pre-commit 拦 .sofagent/ 入库 + commit-msg 规则审计 + post-commit 对账）；`--no-verify` 可跳过 commit-msg 审计——防的是诚实 Agent 的疏忽不是恶意绕过，被跳过的 commit 由 post-commit 事后对账留痕（提示「疑似绕过」）但不阻断；个人兜底三件事：CI 侧 `sofagent-audit --diff`、定期 `--doctor`、翻审计记录。详见 [LIMITATIONS](./docs/LIMITATIONS.md)。
 >
-> 📌 **install.sh 是企业设备安装器**——装在企业跑 AI 节点的设备上（约束层引擎 + daemon 巡检 + 单机 dashboard）；FDE 自己的电脑不需要跑，FDE 的工具是 [FDE Skill](https://clawhub.ai/kongfangxun/skills/sofagent)（方法论），详见 [部署架构](./docs/ARCHITECTURE.md#安装包边界与部署架构v132-定位校准)。
+> 📌 **install.sh 是企业设备安装器**——装在企业跑 AI 节点的设备上（约束层 + daemon 巡检 + 单机 dashboard）；FDE 自己的电脑不需要跑，FDE 的工具是 [FDE Skill](https://clawhub.ai/kongfangxun/skills/sofagent)（方法论），详见 [部署架构](./docs/ARCHITECTURE.md#安装包边界与部署架构v132-定位校准)。
 >
 > 📌 **bootstrap.sh 和 install.sh 的关系**：bootstrap.sh 是 install.sh 的一行下载包装器——`curl bootstrap.sh | bash` 等价于「下载 install.sh + 运行 install.sh」。两个脚本装的是完全一样的东西，bootstrap 只是省掉手动 clone/下载那一步。
 
@@ -217,7 +217,7 @@ sofagent-audit --doctor    # 验证环境（可选）
 | **GitHub Action** | 每次 PR 自动审计，违规标注在 diff 行上 | CI/CD | 配置一次 |
 | **install.sh 全套** | 注入·审计·回溯·沉淀·进化五能力 + daemon 巡检 + dashboard——Agent 的完整约束层 | **企业设备**（跑 AI 节点的服务器/电脑） | FDE 驻场安装 |
 
-**安装粒度对比**（同一个引擎，三种装法——按场景选）：
+**安装粒度对比**（同一个约束层，三种装法——按场景选）：
 
 | 装法 | 命令 | 生命周期 | 适合 |
 |------|------|---------|------|
@@ -225,7 +225,7 @@ sofagent-audit --doctor    # 验证环境（可选）
 | npm 项目内 | `npm install @sofagent/audit`（项目 devDependency） | 随项目安装，版本锁进 package-lock | 固定依赖的团队项目、可复现审计 |
 | npm 全局 | `npm install -g @sofagent/audit` | 装一次到处用 | 跨仓库日常审计、daemon 常驻 |
 
-> ⚠️ **不要裸装 `npm i sofagent-audit`**——npm 上的裸名包 `sofagent-audit` 是**本项目的旧代理包**（已 deprecated，长期滞后于主引擎）。CLI 的正式包名是 `@sofagent/audit`（带 scope），CLI 安装统一走 bootstrap.sh / install.sh / `@sofagent/audit`。
+> ⚠️ **不要裸装 `npm i sofagent-audit`**——npm 上的裸名包 `sofagent-audit` 是**本项目的旧代理包**（已 deprecated，长期滞后于主包）。CLI 的正式包名是 `@sofagent/audit`（带 scope），CLI 安装统一走 bootstrap.sh / install.sh / `@sofagent/audit`。
 
 **规则市场**——社区规则集以 `sofagent-ruleset-*` npm 包发布、`--ruleset-path` 手动加载（也支持指向你自己的 JSON 规则）：
 

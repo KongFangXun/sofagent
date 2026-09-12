@@ -72,7 +72,7 @@ sofagent-daemon create-usb-key \
   --platform macos   # 或 linux / win
 ```
 
-U 盘包含：Node.js 便携版 + sofagent 引擎 + knowledge 加密落盘（AES-256-GCM）+ 启动脚本 + HMAC 签名。员工双击即用。
+U 盘包含：Node.js 便携版 + sofagent 约束层 + knowledge 加密落盘（AES-256-GCM）+ 启动脚本 + HMAC 签名。员工双击即用。
 
 ## 关键规则
 

@@ -87,7 +87,7 @@ export async function fdeQuantifyTool(args: FdeQuantifyArgs): Promise<FdeQuantif
         aiAnnualCost: n.ai_annual_cost,
         ...(n.one_time_investment !== undefined ? { oneTimeInvestment: n.one_time_investment } : {}),
       })),
-      plans as never, // 局部最小读集（nodeId/tag）——完整 NodePlan 由引擎侧消费方忽略其余字段
+      plans as never, // 局部最小读集（nodeId/tag）——完整 NodePlan 由约束层侧消费方忽略其余字段
     );
 
     const top = file.ranked[0];

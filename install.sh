@@ -1123,11 +1123,11 @@ verify_component_integrity
 # ════════════════════════════════════════
 # Step 8.6: v1.2.2 P3 Skill 分层升级三策略
 # ════════════════════════════════════════
-# 引擎层 vs 用户层分离：
-#   引擎层（官方维护，升级可覆盖） = SKILL.md + sofagent/ + agents/
+# 约束层 vs 用户层分离：
+#   约束层（官方维护，升级可覆盖） = SKILL.md + sofagent/ + agents/
 #   用户层（用户私有，默认不动）  = custom/
 # 三策略：
-#   默认      → 只同步引擎层；custom/ 不动；引擎层备份到 .backup/{ts}/
+#   默认      → 只同步约束层；custom/ 不动；约束层备份到 .backup/{ts}/
 #   --force   → 警告确认后覆盖所有层（含 custom/）；备份所有层
 #   --merge   → 三路合并 custom/（git merge-file）；备份所有层
 # 幂等：重复执行安全；custom/ 不存在时三策略行为一致（直接安装）
@@ -1261,7 +1261,7 @@ upgrade_skill() {
     return 0
   fi
 
-  # 引擎层 / 用户层路径
+  # 约束层 / 用户层路径
   local engine_paths=(
     "${UPGRADE_ROOT}/SKILL.md"
     "${UPGRADE_ROOT}/AGENTS.md"
@@ -1302,7 +1302,7 @@ upgrade_skill() {
     # 备份所有层
     local bk; bk="$(_backup_layers "$backup_root" "${engine_paths[@]}" "$user_layer")"
     ok "  已备份所有层到 ${bk}"
-    # 覆盖引擎层 + custom/
+    # 覆盖约束层 + custom/
     for src_item in "${SKILL_SRC}"/*; do
       local base; base="$(basename "$src_item")"
       [ "$base" = ".backup" ] && continue
@@ -1326,7 +1326,7 @@ upgrade_skill() {
     # 备份所有层（含 custom/）
     local bk; bk="$(_backup_layers "$backup_root" "${engine_paths[@]}" "$user_layer")"
     ok "  已备份所有层到 ${bk}"
-    # 引擎层：直接覆盖（引擎层官方维护，不做 merge）
+    # 约束层：直接覆盖（约束层官方维护，不做 merge）
     for src_item in "${SKILL_SRC}"/*; do
       local base; base="$(basename "$src_item")"
       case "$base" in
@@ -1358,9 +1358,9 @@ upgrade_skill() {
     return 0
   fi
 
-  # ── 策略 C：默认安全升级（只覆盖引擎层，custom/ 不动）──
+  # ── 策略 C：默认安全升级（只覆盖约束层，custom/ 不动）──
   local bk; bk="$(_backup_layers "$backup_root" "${engine_paths[@]}")"
-  ok "  引擎层已备份到 ${bk}"
+  ok "  约束层已备份到 ${bk}"
   for src_item in "${SKILL_SRC}"/*; do
     local base; base="$(basename "$src_item")"
     case "$base" in
@@ -1371,7 +1371,7 @@ upgrade_skill() {
     cp -R "$src_item" "${UPGRADE_ROOT}/${base}"
   done
   _rotate_backups "$backup_root"
-  ok "  安全升级完成：引擎层已同步到官方版本，custom/ 保持原样"
+  ok "  安全升级完成：约束层已同步到官方版本，custom/ 保持原样"
   return 0
 }
 

@@ -2,7 +2,7 @@
 // fde/fde-workbench.ts · v1.4.7 章八 · FDE 工作台核心（六引擎数据层 + 审计留痕）
 // ============================================================
 //
-// 定位：FDE 方法论 1173 行在 FDE/GUIDE.md，但引擎层此前只有 fde_compose
+// 定位：FDE 方法论 1173 行在 FDE/GUIDE.md，但约束层此前只有 fde_compose
 // 一个工具真实现——方法论是文字，Agent 读了手册但没有工作台。本文件
 // 是六引擎（interview/classify/quantify/derive/distill/deploy）的共享
 // 数据层：data/fde/<企业>/ 专属目录 + 独立 fde-audit 事件留痕。

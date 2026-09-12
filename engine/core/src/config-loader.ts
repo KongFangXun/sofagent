@@ -93,7 +93,7 @@ export interface AuditConfig {
   };
   /** v1.4.0 交付三: 成本审计配置（opt-in——不配 budget 不审计成本；WARN only 不拦截） */
   cost?: {
-    /** 成本预算（workflow.yml `budget:` 段的引擎侧落点） */
+    /** 成本预算（workflow.yml `budget:` 段的约束层侧落点） */
     budget?: {
       /** 单 run token 上限（input+output，按 Agent 聚合判定） */
       maxTokensPerRun?: number;
