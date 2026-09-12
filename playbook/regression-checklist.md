@@ -99,6 +99,12 @@ grep -rn "v1\.[0-9]\.[0-9]" docs/ SECURITY.md LIMITATIONS.md README.md --include
 
 # 子项 i: 被引用权威源自含性——所有"见 ROADMAP"引用的 feature，ROADMAP 自身须含该项（教训：引用处写 age 但 ROADMAP 权威表缺此条）
 grep -rn "见.*ROADMAP\|详见.*ROADMAP" docs/ SECURITY.md LIMITATIONS.md --include="*.md" 2>/dev/null | grep -v changelog # 人工核对：ROADMAP 含对应条目
+
+# 子项 j: 内部件「XX引擎」旧称零回归——判据 = 是否指约束层内部件（五模块/五能力/子组件），指内部件即旧称，须改「模块/能力/流程」或直称其名
+#   保留类（命中即正常，非回归）：六引擎（FDE 专名）· 绩效量化引擎（AIR 专名）· 通用技术名（规则/搜索/存储/检测/AST/状态机/OCR/Git 引擎）·
+#   外部系统转述（Microsoft AGT 等）· 历史快照区 · 记录旧名的说明行 · 代码 API 名（`AuditEngine` / `engine/audit` / `runAuditGate`）
+#   口径：git grep 全量（宽口径——`--include` 白名单会造假空，漏过 .html/.svg/.ps1/无扩展名脚本）；排除本清单自身（含旧称字面量，否则永久自命中）
+git grep -nE "审计引擎|训练引擎|编排引擎|回溯引擎|自迭代引擎|质量评估引擎|场景匹配引擎|评测引擎|commons 引擎|instinct 引擎|rules 引擎|quick 引擎|audit 引擎|loop-agent 引擎|Onboard 引擎|归属引擎|入口引擎|文件扫描引擎|跨引擎包|生成引擎签名" -- . ':(exclude)docs/archive/*' ':(exclude)docs/changelog/*' ':(exclude)CHANGELOG.md' ':(exclude)docs/evidence/*' ':(exclude)playbook/regression-checklist.md' ':(exclude)*/dist/*' # 人工核对：命中须为上方保留类，否则即旧称回归（须改回新称）
 ) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -qE "^[[:space:]]{0,2}❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true
 ```
 
