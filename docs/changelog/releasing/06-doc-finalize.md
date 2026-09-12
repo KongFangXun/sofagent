@@ -243,8 +243,8 @@ grep -rl "^> v[0-9].*· ${OLD_DATE}" --include="*.md" . \
 bash tools/check/check-version.sh   # 期望：日期一致项全绿
 ```
 
-> bump 详细指南（13 类位置 + package-lock 同步 + npm 铁律）见 [FORGE/playbook/version-bump.md](../../../FORGE/playbook/version-bump.md)。
-> 文档同步详细指南（LIMITATIONS 覆盖 + 归属原则 + D6 闭环）见 [FORGE/playbook/doc-sync.md](../../../FORGE/playbook/doc-sync.md)。
+> bump 详细指南（13 类位置 + package-lock 同步 + npm 铁律）见 [playbook/version-bump.md](../../../playbook/version-bump.md)。
+> 文档同步详细指南（LIMITATIONS 覆盖 + 归属原则 + D6 闭环）见 [playbook/doc-sync.md](../../../playbook/doc-sync.md)。
 
 ---
 

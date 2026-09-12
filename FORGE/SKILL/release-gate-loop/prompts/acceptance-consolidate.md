@@ -31,7 +31,7 @@
 # Acceptance Test 结果
 
 ## 执行信息
-- 命令：`bash FORGE/playbook/acceptance-test.sh`（driver 预跑）
+- 命令：`bash playbook/acceptance-test.sh`（driver 预跑）
 - 退出码：N
 - 场景总数：148
 - 通过数：N

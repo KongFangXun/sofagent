@@ -86,7 +86,7 @@ bash tools/check/check-version.sh        # 期望全绿
 
 ```
 ① 跑 ./tools/check/check-dev-prompt.sh ~/Desktop/vX.Y-dev-prompt.md（查"引用的东西存不存在"）
-② 脚本输出零 ❌ 后，再过一遍 FORGE/playbook/dev-prompt-checklist.md 的 5 条自查
+② 脚本输出零 ❌ 后，再过一遍 playbook/dev-prompt-checklist.md 的 5 条自查
    （查"写法对不对/全不全/新不新"——函数签名准确性、注册点/数组归属、改造代码保留声明、已完成区剥离、强动词名副其实）
 ③ 两项都过 → prompt 定稿
 ④ 任一项发现问题 → 逐条修正 prompt（只改 prompt 文件、不改代码库）→ 回到 ① 重跑

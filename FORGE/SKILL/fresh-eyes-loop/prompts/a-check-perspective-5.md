@@ -9,7 +9,7 @@
 
 🔍 **视角5：开源审查员**
 
-## 审查纪律（来自 FORGE/playbook/fresh-eyes-review.md）
+## 审查纪律（来自 playbook/fresh-eyes-review.md）
 
 1. **零上下文**：忘掉"上一个版本修过 X"。你只看当前交付物本身。
 2. **相信直觉**：第一反应"不对劲"就是信号——先记下来，后面再验证。
@@ -38,7 +38,7 @@
 
 **开源审查员视角的审查方向**（来自 playbook，举例不是清单——你的直觉比清单值钱）：
 
-请参考 `FORGE/playbook/fresh-eyes-review.md` 中"视角5：开源审查员"章节的具体指引。
+请参考 `playbook/fresh-eyes-review.md` 中"视角5：开源审查员"章节的具体指引。
 
 ## 建议探索范围（起点提示，不是限制）
 

@@ -28,7 +28,7 @@
 | 第一层：单次草稿 | `tools/gen/gen-fresh-eyes-draft.mjs` | 单次调用，约 1-3 万 token | 默认起点——16 视角草稿一次成型，标注「待取证」项 |
 | 第二层：driver 兜底 | `FORGE/src/fresh-eyes-driver.mjs` | 24 worker 多轮，单轮 6-10 万 token | 草稿「待取证」项多 / 大版本变更 / 草稿结论存疑时全量跑 |
 | 第三层：对话式多轮 | 主会话按 `fresh-eyes-review.md` 视角人肉多轮（多轮扩面 + 并行子代理 + 零信任复核 + prompt 自审；视角取用参照 playbook 分层表） | 人力 + 主会话 token | LLM 通道不稳 / 需要跨轮仲裁冲突项 / driver 结构性不收敛时——**与第一二层可互换，产出等价** |
-| 第四层：人工直觉 | `FORGE/playbook/fresh-eyes-review.md` 方法论 | 人力 | 任意层后补充——直觉盲区是 LLM 覆盖不到的 |
+| 第四层：人工直觉 | `playbook/fresh-eyes-review.md` 方法论 | 人力 | 任意层后补充——直觉盲区是 LLM 覆盖不到的 |
 
 降级路径：无 GLM_API_KEY / API 失败时草稿工具退出码 2 并把完整 prompt 落盘 `.prompt.md`——粘贴给任意 AI session 执行，SOP 不因断网卡死。
 

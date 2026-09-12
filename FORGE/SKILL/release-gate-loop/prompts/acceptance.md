@@ -63,7 +63,7 @@ driver 从你的**最终回复文本**中提取产物文件内容——你不在
 # Acceptance Test 结果
 
 ## 执行信息
-- 命令：`bash FORGE/playbook/acceptance-test.sh`（driver 预跑）
+- 命令：`bash playbook/acceptance-test.sh`（driver 预跑）
 - 退出码：0
 - 场景总数：142
 - 通过数：142

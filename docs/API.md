@@ -50,7 +50,7 @@
 | `audit_file` | audit | 单文件变更即时审计——Agent 编辑文件时调用，跑单文件适用规则，返回结构化结果（不阻断）。 |
 | `audit_data_change` | audit | 对知识库结构化数据变更跑数据审计（D1-D5）。 |
 | `audit_trail` | audit | 跨设备审计轨迹查询——按 agent_id 查完整轨迹（HMAC 验签）。 |
-| `data_push` | ops | 标准数据推送入口——企业存储按约定 schema 推送训练语料/知识数据，经 schema 校验 + 敏感分拣双闸入库（企业合规拦截策略预留扩展），拒绝留痕进审计链。 |
+| `data_push` | ops | 标准数据推送入口——企业存储按约定 schema 推送训练语料/知识数据，经分拣闸（敏感档标记）+ 合规闸（拦截违规）双闸入库，拒绝留痕进审计链。 |
 | `corpus_export` | ops | 训练语料导出三件套——规则（27 编号位含跳号占位 + reward_hint 骨架 + verifiers 三桶清单）+ FDE 方法论（锚点解析）+ 带标签审计样本（五源聚合 + 脱敏）。导出带版本号 + HMAC 签名，导出行为记 corpus_export 审计事件。 |
 
 ### 业务流编排（workflow DAG · 循环执行与优化）（16）
@@ -70,9 +70,9 @@
 | `workflow_node_add` | agent | 向既有 workflow 追加单节点（增量改）——节点 id 重复/depends_on 悬空/cron 非法拒绝；owner 直改 trunk，非 owner 写 branch。 |
 | `workflow_diff_preview` | agent | 对比传入文档与 trunk 当前的行级差异（unified 风格 + 增删行数）——只读零副作用，落库前先预览。 |
 | `workflow_gaps` | ops | workflow 能力缺口分析——扫描 workflow-store 声明节点 vs worklog 实际执行，产出三类缺口清单（缺人/缺能力/待升级），可被商业平台消费转悬赏。纯读零写入。 |
-| `pr_submit` | agent | 提交 workflow 变更提案（PR）——open 态入库 + 贡献者登记（人/数字员工同标准权重）+ 可选 triggerBinding（启发式=suggested / 显式=confirmed，显式不被启发式覆盖）。 |
-| `pr_review` | agent | 审阅 PR——approve 进 reviewed（可合并）；reject 终态 rejected（拒因进 decision-log 负样本训练信号）。 |
-| `pr_merge` | agent | 合并 PR——merge_criteria 全过自动合并；未过挂起 HITL（human_confirmed=true 强制合并，痕迹保留）。合并写回 workflow 基线（branch→trunk 联动）。 |
+| `pr_submit` | agent | 提交 workflow 变更提案（PR）——open 态入库 + 贡献者登记（人/数字员工同标准权重，weight 须 0-1 数值、声明 ≤10 条）+ 可选 triggerBinding（启发式=suggested / 显式=confirmed，显式不被启发式覆盖）。 |
+| `pr_review` | agent | 审阅 PR——approve 进 reviewed（可合并）；reject 终态 rejected（拒因进 decision-log 负样本训练信号）。提交者不可自审（利益冲突拒绝）；verdict 精确匹配 approve/reject（大小写敏感）。 |
+| `pr_merge` | agent | 合并 PR——merge_criteria 真判定（approver-review：reviewer 非 submitter；confidence-min：confirmed=1.0/suggested=0.5/无=0 ≥ detail 阈值；未知 kind 或 detail 畸形判不过）fail-closed，未过挂起 HITL（human_confirmed=true 强制合并）。PR 的 workflow 存在 branch-{submitter} 时联动写回 trunk（version+1+删 branch，mergedVersion 回填；写回失败 PR 回退 open）。 |
 
 ### Agent 组织与协作（数字员工 · 团队阵型 · HITL 人工介入）（7）
 

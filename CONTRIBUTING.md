@@ -58,7 +58,7 @@ bash install.sh && bash engine/scripts/verify.sh
 | `engine/core/src/` | 底座：配置加载 / 原子写入 / 审计历史哈希链 / 联邦合并 / 安全脱敏；`agent-identity.ts` Agent 身份码 |
 | `engine/daemon/src/` | 守护进程：cron / fs 监听 / 联邦查询 / Dream Cycle / 巡检器；`with-retry.ts` 推送重试 + `daemon-health.ts` 健康自检 |
 | `engine/orchestrator/src/` | 编排模块：`activate.ts` 激活链 Phase 1（读 FDE 交付物 → 注册企业 SubAgent） |
-| `tools/` | 门禁脚本（`check-docs.sh` / `check-test-count.sh` / `pre-push-check.sh` / `sofagent-dashboard.sh`） |
+| `tools/` | 维护者工具脚本（门禁在 `tools/check/`：`check-docs.sh` / `check-test-count.sh`；发布链在 `tools/release/`：`pre-push-check.sh`；仪表盘在 `tools/dashboard/`：`sofagent-dashboard.sh`；完整清单见 `tools/README.md`） |
 | `FORGE/` | 项目自迭代工具链（LOOP 流水线 / playbook / fresh-eyes 审查体系） |
 | `FDE/` | 前线部署方法论（GUIDE + templates） |
 | `SKILL/` | 技能文件（SKILL.md 宪法 + harness 模板 + 子 Skill） |

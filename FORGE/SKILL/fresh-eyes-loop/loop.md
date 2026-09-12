@@ -1,6 +1,6 @@
 # fresh-eyes-loop · 循环 SOP
 
-> 本文件定义质量循环的**运行协议**。A/B 的具体行为指令在 `prompts/`，12 视角定义在 `FORGE/playbook/fresh-eyes-review.md`（playbook 共 22 视角六层：1-12 driver 循环标准配置；13-16 文档治理/通读、17-19 动态面（需 build/实跑取证）、20-21 深度专项、22 发现面均不在本循环内——边界以 playbook 分层表为准）。
+> 本文件定义质量循环的**运行协议**。A/B 的具体行为指令在 `prompts/`，12 视角定义在 `playbook/fresh-eyes-review.md`（playbook 共 22 视角六层：1-12 driver 循环标准配置；13-16 文档治理/通读、17-19 动态面（需 build/实跑取证）、20-21 深度专项、22 发现面均不在本循环内——边界以 playbook 分层表为准）。
 
 ## 核心原则
 
@@ -83,7 +83,7 @@ FORGE/SKILL/fresh-eyes-loop/runs/YYYY/MM/DD/run-NN/
 
 - A/B 由 Node driver（`FORGE/src/fresh-eyes-driver.mjs`）spawn 独立子进程实现真零上下文。
 - driver 把对应 `prompts/*.md` 作为 SubAgent 的 system/behavior 指令注入。
-- 12 视角正文不必塞进 prompt（太长）——prompt 里写"按 `FORGE/playbook/fresh-eyes-review.md` 的 12 视角跑"，让 SubAgent 自行读取。
+- 12 视角正文不必塞进 prompt（太长）——prompt 里写"按 `playbook/fresh-eyes-review.md` 的 12 视角跑"，让 SubAgent 自行读取。
 
 ## 循环级演化（evolution.md）
 

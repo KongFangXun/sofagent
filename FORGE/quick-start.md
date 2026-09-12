@@ -49,10 +49,13 @@ export SOFAGENT_LLM_B="glm-5.2"
 也可以用 `env.local` 模板（见 `FORGE/env.local.template`）：
 
 ```bash
-cp FORGE/env.local.template FORGE/env.local
-# 编辑 FORGE/env.local 填入真实 key
-source FORGE/env.local
+mkdir -p ~/.sofagent
+cp FORGE/env.local.template ~/.sofagent/env.local
+# 编辑 ~/.sofagent/env.local 填入真实 key
+source ~/.sofagent/env.local
 ```
+
+> key 文件刻意放在**仓库目录之外**（`~/.sofagent/env.local`）——不只靠 .gitignore 挡，而是让它根本不在仓库里（2026-09-12 收面批迁移）。
 
 ### 模型参数
 
@@ -83,7 +86,7 @@ source FORGE/env.local
 
 ### API Key 透明度
 
-- key 仅存在本地环境变量（`~/.zshrc` 或 `FORGE/env.local`），**不进代码、不进 git、不进日志**
+- key 仅存在本地环境变量（`~/.zshrc` 或 `~/.sofagent/env.local`），**不进代码、不进 git、不进日志**
 - key 仅用于调用配置的 LLM API 的 HTTPS 请求（请求头 `Authorization: Bearer <key>`）
 - **不上传、不转发、不记录到第三方**——sofagent 无后端服务器
 - 详细的 key 管理和安全承诺见根目录 [`SECURITY.md`](../SECURITY.md) §六「LLM API Key 透明度」
@@ -141,7 +144,7 @@ node FORGE/src/release-gate-driver.mjs --target v1.3.7 --dry-run
 
 # sandbox 环境（acceptance-test.sh 预跑会被 kill 时）：
 # 先手动预跑，再 --skip-acceptance 启动
-bash FORGE/playbook/acceptance-test.sh > /tmp/acceptance-raw.log 2>&1
+bash playbook/acceptance-test.sh > /tmp/acceptance-raw.log 2>&1
 node FORGE/src/release-gate-driver.mjs --target v1.3.7 --skip-acceptance
 
 # 沙箱 OOM 环境（driver + worker 内存叠加触发 OOM 时）：
@@ -220,7 +223,7 @@ verdict     → V 出最终裁决（PASS / FAIL），写入 verdict.md
 | usage.jsonl 中 `price_confidence: no-pricing` | 该模型不在 `MODEL_PRICING` 表里 | 查阅厂商官方定价页，在 driver 内补上 |
 | a-consolidate 产物为空或降级 | maxTokens 截断（合并步骤输出超长） | 确认 STEPS 中 a-consolidate 的 maxTokens=32000（见 lessons/models.md） |
 | sofagent-audit 命令未找到 | 底座没装 | `bash install.sh` |
-| release-gate acceptance 步骤被 kill | sandbox 限制长时间子进程 | 手动预跑 `bash FORGE/playbook/acceptance-test.sh > /tmp/log 2>&1`，再 `--skip-acceptance` 启动 |
+| release-gate acceptance 步骤被 kill | sandbox 限制长时间子进程 | 手动预跑 `bash playbook/acceptance-test.sh > /tmp/log 2>&1`，再 `--skip-acceptance` 启动 |
 | release-gate driver OOM | driver + worker 内存叠加（沙箱环境） | 用 `--step` 单步模式逐步调用（见上方命令） |
 | release-gate verdict 误判 PASS/FAIL | driver parseVerdict 解析 bug | 以 `verdict.md` 权威产物为准，不信 LEDGER 中间状态（v1.2.5 已修 commit a845ed8） |
 

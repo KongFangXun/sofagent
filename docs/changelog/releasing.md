@@ -60,5 +60,5 @@
 
 - [ROADMAP 同步手册](./releasing/06-doc-finalize.md)——阶段六「步骤五」配套：本版移出规划表 / 探索方向清理 / 迭代表瘦身 / 发版后体检清单
 - [审查体系指南](../guides/review-system.md)——A/B/C 清单 / 模式提取 / 防膨胀 / 校准逻辑
-- [FORGE/playbook/version-bump.md](../../FORGE/playbook/version-bump.md)——bump 详细指南（13 类位置 + package-lock 同步）
-- [FORGE/playbook/doc-sync.md](../../FORGE/playbook/doc-sync.md)——文档同步详细指南（LIMITATIONS 覆盖 + D6 闭环）
+- [playbook/version-bump.md](../../playbook/version-bump.md)——bump 详细指南（13 类位置 + package-lock 同步）
+- [playbook/doc-sync.md](../../playbook/doc-sync.md)——文档同步详细指南（LIMITATIONS 覆盖 + D6 闭环）

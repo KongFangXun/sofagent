@@ -189,4 +189,4 @@ A：v1.1.x 轻量版 = 文件级别的异步同步（你负责传输，sofagent 
 - 触发与查询全程进审计（decision-log 记 `kind=REMOTE_API` 决策留痕）
 - 与联邦通道共用同一跨机器帧协议基座（IV‖tag‖ciphertext 密文帧）
 
-**双设备联调记录（v1.4.0 验收）**：E2E 脚本已固化入仓（`FORGE/playbook/federation-e2e.mjs`，10 断言全 PASS）；远程 API 通道的跨机实测依赖真实双设备环境，单机环境标注「依赖真实双设备，单机跳过」（技术选型 OpenClaw / DSH 通道留白，不锁死）。
+**双设备联调记录（v1.4.0 验收）**：E2E 脚本已固化入仓（`playbook/federation-e2e.mjs`，10 断言全 PASS）；远程 API 通道的跨机实测依赖真实双设备环境，单机环境标注「依赖真实双设备，单机跳过」（技术选型 OpenClaw / DSH 通道留白，不锁死）。

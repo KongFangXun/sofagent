@@ -39,8 +39,8 @@ FORGE 的自迭代不是单一循环，而是**外环 + 内环**的双层结构�
 
 | 节点 | 证据工具 | 有 ❌ 的后果 |
 |------|---------|------------|
-| A0（编写 dev prompt） | ① `tools/check/check-dev-prompt.sh`（查存在性）+ ② `FORGE/playbook/dev-prompt-checklist.md`（查签名/注册点/已完成区等软错误） | 两层都过才许进开发 |
-| A5-d3（D3 闸门） | `FORGE/playbook/acceptance-test.sh` | 零覆盖 = 不许进下一阶段 |
+| A0（编写 dev prompt） | ① `tools/check/check-dev-prompt.sh`（查存在性）+ ② `playbook/dev-prompt-checklist.md`（查签名/注册点/已完成区等软错误） | 两层都过才许进开发 |
+| A5-d3（D3 闸门） | `playbook/acceptance-test.sh` | 零覆盖 = 不许进下一阶段 |
 | A6（release-gate-loop） | `FORGE/src/release-gate-driver.mjs` | verdict = FAIL = 回阶段五 |
 | VERSION-check | `tools/check/check-version.sh` | 版本号不一致 = 阻断发布 |
 
@@ -87,15 +87,15 @@ FORGE 有两个内环，共用同一套模型配置（详见 [`quick-start.md`](
 
 ## 密钥注入纪律
 
-FORGE driver 运行依赖 LLM API key，经 `env.local` 注入：复制 `env.local.template` 为 `env.local` 并填入真实 key 后 `source FORGE/env.local`。**真实文件永不入库**（`FORGE/.gitignore` 已忽略 env.local，`git log --all -- FORGE/env.local` 恒为 0）。仓库目录内不落任何真实格式密钥——审计工具的仓库不能有审计红旗（A2 纪律的自我要求）。key 泄露嫌疑时优先轮换（控制台重新生成），而非仅删文件。
+FORGE driver 运行依赖 LLM API key，经 `env.local` 注入：复制 `env.local.template` 为 `~/.sofagent/env.local` 并填入真实 key 后 `source ~/.sofagent/env.local`。**key 文件存放在仓库目录之外**（2026-09-12 收面批从 `FORGE/env.local` 迁出）——不再只靠 .gitignore 挡，而是让它根本不在仓库里。仓库目录内不落任何真实格式密钥——审计工具的仓库不能有审计红旗（A2 纪律的自我要求）。key 泄露嫌疑时优先轮换（控制台重新生成），而非仅删文件。
 
 ### 敏感文件纪律（env.local 防呆三查）
 
-`FORGE/env.local` 磁盘上存有**真实 API key**——它躺在仓库目录里这件事本身就有流程性误触面（一次 `git add -f` 或 ignore 规则意外失效即泄漏事故）。三个防呆动作：
+`~/.sofagent/env.local` 磁盘上存有**真实 API key**。迁移后误触面从「一次 `git add -f` 即泄漏」降为「文件被复制回仓内才可能泄漏」，但三道防呆仍须保持：
 
-1. **禁用 `git add -f FORGE/env.local`**——force-add 会绕过 .gitignore，这是唯一能把这个文件送进 git 的常规操作，永远不要用；
-2. **入库自检**：`git ls-files FORGE/env.local` 输出**必须为空**（空 = 未跟踪 = 安全；有任何输出 = 立即 `git rm --cached FORGE/env.local` 并按上节纪律轮换 key）；
-3. **全历史自检**（深查）：`git log --all -- FORGE/env.local` 恒为 0——历史干净才算干净。
+1. **不要把 key 文件放回仓库目录**——`FORGE/env.local` 这个位置永远不该再出现真实 key 文件（`FORGE/.gitignore` 的 `env.local` 规则保留作兜底）；
+2. **入库自检**：`git ls-files | grep -E '(^|/)env\.local$'` 输出**必须为空**（空 = 未跟踪 = 安全；有任何输出 = 立即 `git rm --cached <file>` 并按上节纪律轮换 key）。`tools/check/check-version.sh` 末尾已带同款断言，机制化兜底；
+3. **全历史自检**（深查）：`git log --all -- '*env.local'` 恒为 0——历史干净才算干净。
 
 ## 内置 Agent
 
@@ -122,15 +122,6 @@ FORGE/
   ontology/                     ← 开发本体（dogfooding FDE §5）
     README.md                    ← 本体全景：六阶段闭环 + 多模型分工 + 文档分级
     objects.yml / actions.yml / constraints.yml
-  playbook/                     ← 证据工具（外环闸门 + 内环验证）
-    acceptance-test.sh           ← A5-d3 闸门证据
-    regression-checklist.md      ← 回归检查维度
-    fresh-eyes-review.md         ← 留白式直觉审查（六层 22 视角，发版走常规 1-12）
-    deep-module-review.md        ← 设计熵勘测**适配层**（方法论本体挂载上游，输出走对话不落文件）
-    vendor/improve-codebase-architecture/   ← vendored 上游技能闭包（MIT，钉 commit，只读不改；升级流程见其 PROVENANCE.md）
-    dev-prompt-checklist.md      ← A0 闸门人脑补充层（check-dev-prompt.sh 拦不住的软错误）
-    acceptance-node-probes.js    ← release-gate-loop 探针
-    version-bump.md / doc-sync.md
   SKILL/
     fresh-eyes-loop/             ← 内环 1：质量循环（A/B 双 Agent）
       SKILL.md / loop.md / prompts/ / evolution.md / runs/
@@ -141,14 +132,26 @@ FORGE/
     release-gate-driver.mjs      ← release-gate-loop 编排 driver
     progress-middleware.mjs      ← 进度上报中间件
     visibility.mjs / disk-backend.mjs / reporters/
+
+playbook/                       ← 顶层工具面（与 docs/ tools/ 同级）· 证据与门禁文档，见下方「playbook/ 定位」
+  acceptance-test.sh             ← A5-d3 闸门证据
+  regression-checklist.md        ← 回归检查维度
+  fresh-eyes-review.md           ← 留白式直觉审查（六层 22 视角，发版走常规 1-12）
+  deep-module-review.md          ← 设计熵勘测**适配层**（方法论本体挂载上游，输出走对话不落文件）
+  vendor/improve-codebase-architecture/   ← vendored 上游技能闭包（MIT，钉 commit，只读不改；升级流程见其 PROVENANCE.md）
+  dev-prompt-checklist.md        ← A0 闸门人脑补充层（check-dev-prompt.sh 拦不住的软错误）
+  acceptance-node-probes.js      ← release-gate-loop 探针
+  version-bump.md / doc-sync.md
 ```
 
 > 📏 **LEDGER.md 新条目禁绝对路径**：登记 run 时数据路径一律写 `~/.sofagent/data/forge-runs/...`（展开符），不写 `/Users/<who>/...` 绝对路径——账本会长期更新，他人机器上的绝对路径是纯噪声（2026-08-29 一次性清理 58 处存量后立此规约）。
 
 > 🗂️ **runs 目录边界（看执行证据只看数据目录）**：run 产物**唯一落点是 `~/.sofagent/data/forge-runs/<loop名>/<日期>/run-NN/`**（含 verdict.md / usage.jsonl / findings 等全部证据），数据目录不进 git。仓内 `FORGE/SKILL/*/runs/` 仅是**占位壳**（`.gitignore` 自排除全部内容），无任何历史 run 产物——新 session 查执行证据时若只翻仓内 runs/ 会得出「无运行痕迹」误判，正确姿势：读 `FORGE/LEDGER.md`（跨 run 索引）→ 按索引去数据目录核对原始产物。另注：顶层 `FORGE/runs/` 历史留档已移出仓——新 run 产物一律进数据目录，勿在仓内新建运行输出。
 
+> 🧭 **`playbook/` 在顶层（工具面）· 与 `FORGE/` 的关系**：`playbook/` 是**顶层工具面目录**，与 `docs/`、`tools/` 同级——小写即「工具/资料」语义（`FORGE/`、`FDE/`、`SKILL/` 为大写产品面）。它承载**跨模块共用的证据与门禁文档**，三类消费者都在 FORGE 之外：① **FDE 路径门禁场景**：`acceptance-test.sh` 的 S 场景被 `docs/changelog/` 与发版 SOP 阶段五/阶段七交叉引用，S 编号是对外可引用的验收锚；② **跨产品声称一致性**：`regression-checklist.md` 的维度既查 `engine/**` 也查 `docs/**`（`fresh-eyes-review.md` 同理），其职责是「全仓状态检查」而非「FORGE 状态检查」；③ **发版门禁**：`acceptance-node-probes.js` 探针 + `version-bump.md` / `doc-sync.md`。**它与 FORGE 内环是消费关系而非从属关系**——FORGE 的 `release-gate-loop` 调用 `playbook/acceptance-test.sh` 与 `playbook/regression-checklist.md`，但这两个文件的检查范围超出 FORGE 自身。**计账口径**：`playbook/` 与 `FORGE/` 同归 `tools/check/check-docs.sh` 的 B 层预算（`find ./FORGE ./playbook ...`，仍排除第三方原文 `playbook/vendor/`），A 层已显式排除 `*/playbook/*` 以免二次计账。新增证据文件一律落 `playbook/`，不另建证据目录。
+
 ### 技术债登记 · 拆分排期
 
-- **`FORGE/src/fresh-eyes-driver.mjs`（3691 行，仓内最大脚本）**：`driver-base.mjs` 已抽 1499 行公共层（preflight / 信号清理 / 镜像漂移防御），但单文件体量仍是贡献者认知税。**拆分排期：下次新增 driver 能力时按模块拆分**——触发条件 = 新增 driver 能力或触及 fresh-eyes-driver 长文件维护；本轮不拆代码（无近期触发因素，强行拆属高风险重构）。
+- **`FORGE/src/fresh-eyes-driver.mjs`（4800 行，仓内最大脚本）**：`driver-base.mjs` 已抽 1940 行公共层（preflight / 信号清理 / 镜像漂移防御），但单文件体量仍是贡献者认知税。**拆分排期：下次新增 driver 能力时按模块拆分**——触发条件 = 新增 driver 能力或触及 fresh-eyes-driver 长文件维护；本轮不拆代码（无近期触发因素，强行拆属高风险重构）。行数以 `wc -l FORGE/src/fresh-eyes-driver.mjs FORGE/src/driver-base.mjs` 实测为准，本登记数字须随 driver 提交同步复核（防再次静默漂移）。
 
 > **演进历程**：FORGE 从硬编码串行工具包（engineer→audit→reviewer 单循环 + loop-install.sh 独立安装）→ workflow 驱动（`FORGE/SKILL/<loop>/` + driver 自动编排）→ 双层循环架构（外环 releasing.md loop body + 内环 fresh-eyes/release-gate）。旧 `loop-workflow.sh`、`FORGE/SKILL.md`、`FORGE/loop-install.sh`、`FORGE/releaser/` 已删除。当前两个内环已可 driver 自转；外环的关键节点正逐步从"手动审批"升级为"证据闸门"——最近一轮补上的是 A0 的 `check-dev-prompt.sh`。

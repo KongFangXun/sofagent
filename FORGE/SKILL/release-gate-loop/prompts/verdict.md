@@ -70,7 +70,7 @@ driver 从你的**最终回复文本**中提取产物文件内容——你不在
    升格为 P0/P1 或列为阻塞项（与 consolidate 的「版本口径裁定」同源规则；verdict 步骤同样受约束）。
    版本口径唯一权威 = driver 注入的「版本口径」行。
 2. **豁免登记**：changelog 模块符合以下任一条，**视为显式豁免登记**，不计入覆盖缺口、不得判 P0/P1：
-   - 命中 `FORGE/playbook/.coverage-exempt` 豁免词（driver 已在 precheck 标 `exempt: true`）；
+   - 命中 `playbook/.coverage-exempt` 豁免词（driver 已在 precheck 标 `exempt: true`）；
    - 无专属场景锚定，但已在 `docs/changelog/v1.4/vX.Y.md` 的「发版闸门场景锚定登记」节逐项给出
      结论（含上位替代场景号 + 强度差异说明）。
 

@@ -14,7 +14,7 @@
 |:--:|------|------|
 | 一 | **来源提取（A/B/C 草稿自动生成）**：`source FORGE/env.local && node tools/gen/gen-abc-draft.mjs --fresh-eyes <报告> --bugfix <清单> --features <devlog> [--recheck <复审>] --out ~/Desktop/abc-draft-vX.Y.Z.md`——单次 GLM 调用（无工具无循环，~4 分钟）产出三类清单草稿（每条带来源定位 + 「无法归类」兜底段），人工只做审核修正而非从零写。降级路径：无 key / API 失败 → 退出码 2 + prompt 落盘 `<out>.prompt.md`，粘给任意 AI session 执行。关键纪律：新功能审查面零遗漏 + 每个真实发现都有模式归类 | A/B/C 草稿（`abc-draft-vX.Y.Z.md`）→ 人工审核定稿 |
 | 二 | **四份文档分发**：A+B 类 → regression-checklist + acceptance-test + check-version.sh（加法）；C 类 → fresh-eyes-review（校准非加法） | 四份文档更新 |
-| 三 | **覆盖率确认**：`bash tools/check/check-review-system.sh` 自动执行——脚本⑥段提取当前版本交付关键词（devlog 交付章标题 + CHANGELOG 版本行加粗短语），对 checklist/acceptance 双文档对账，零命中报 FAIL。词形差异（devlog「SubAgent 完整沙箱」vs checklist「沙箱五件套」类）加进豁免清单 `FORGE/playbook/.coverage-exempt`（每行一个关键词）。与阶段四共用同一脚本（阶段四在分发后跑=确认更新零遗漏；阶段四在终验跑=确认没回退） | 脚本⑥段全绿 + 豁免清单维护 |
+| 三 | **覆盖率确认**：`bash tools/check/check-review-system.sh` 自动执行——脚本⑥段提取当前版本交付关键词（devlog 交付章标题 + CHANGELOG 版本行加粗短语），对 checklist/acceptance 双文档对账，零命中报 FAIL。词形差异（devlog「SubAgent 完整沙箱」vs checklist「沙箱五件套」类）加进豁免清单 `playbook/.coverage-exempt`（每行一个关键词）。与阶段四共用同一脚本（阶段四在分发后跑=确认更新零遗漏；阶段四在终验跑=确认没回退） | 脚本⑥段全绿 + 豁免清单维护 |
 | 四 | **防膨胀瘦身（三判据硬门槛）**：上调警戒线前必须依次过三判据，全否才允许上调。行数警戒线数值**以 regression-checklist 头部声明为唯一 SSOT**（check-review-system.sh 动态提取校验；多处写死数值必然漂移，本表不写死）。历史上调记录见 checklist 头部警戒线段 | 三判据记录 + 自校验全 PASS |
 | 五 | **fresh-eyes-review 校准**：C 类走决策树（新视角 / 校准视角 / 历史教训），不往留白式审查里加精确检查项 | 校准完成 + 风格守护自检全 PASS |
 
@@ -75,16 +75,16 @@
 #    fresh-eyes-calibration.md（维护者档案，worker 不加载），新增校准不涨本文件行数。
 #    超线处置：校准段紧凑化（保语义压行数，不删视角）；上调警戒线改本段两处数字
 #    （check-review-system.sh 动态提取此处「不超过 N 行」，本段是 SSOT）。
-WC=$(wc -l < FORGE/playbook/fresh-eyes-review.md)
+WC=$(wc -l < playbook/fresh-eyes-review.md)
 [ "$WC" -gt 500 ] && echo "🔴 行数膨胀（$WC > 500）——检查是否在加精确检查项" || echo "✅ 行数正常（$WC）"
 
 # 2. 反清单化守护：不应出现精确检查命令（fresh-eyes-review 是留白式直觉审查，不是 checklist）
-CMD_COUNT=$(grep -cE '(grep|bash|npm|wc -l|test -)' FORGE/playbook/fresh-eyes-review.md || echo 0)
+CMD_COUNT=$(grep -cE '(grep|bash|npm|wc -l|test -)' playbook/fresh-eyes-review.md || echo 0)
 [ "$CMD_COUNT" -gt 5 ] && echo "🟡 命令引用偏多（$CMD_COUNT 处）——确认都是举例而非检查项" || echo "✅ 命令引用适度（$CMD_COUNT 处）"
 
 # 3. 视角数守护：当前基线 22 个视角；13-22 为手动层，driver 仍跑 1-12。
 #    只数真视角标题（「视角N [n]：」模式），动态对账不产生假信号。
-VIEWS=$(grep -cE '^### .*视角[一二三四五六七八九十]+ \[' FORGE/playbook/fresh-eyes-review.md)
+VIEWS=$(grep -cE '^### .*视角[一二三四五六七八九十]+ \[' playbook/fresh-eyes-review.md)
 [ "$VIEWS" -ne 22 ] && echo "🟡 视角数变化（当前 $VIEWS，基线 22）——确认是刻意调整" || echo "✅ 视角数稳定（$VIEWS）"
 
 # 4. 门禁有效性注入实测：审查体系更新后，门禁脚本自身可能腐烂（\s 正则/静默兜底/扫描失明）。

@@ -1,7 +1,13 @@
 name: pr-check
 
-# PR 提交时跑版本号一致性 + 文档检查 + 守卫的守卫（门禁自身腐烂检测）+ workspace 全量构建测试。
+# PR 提交时跑版本号一致性 + 文档检查 + 守卫的守卫（门禁自身腐烂检测）+ 工具健康
+# + 仓外门面/Actions pin 对账 + workspace 全量构建测试。
 # 与本地 pre-push-check.sh 保持等价，确保推前和推后检查一致。
+# 注：v1.4.8 接线后仍**不完全等价**——pre-push-check.sh 另含部分本地专用步骤尚未进本
+# workflow（第6批 FORGE 归位已把其中的 forge-smoke-test.sh 接线为独立 job，见文件末
+# forge-smoke-test；剩余差异项待后续批次裁决）。
+# 接线归属：第2批接 action-pins / storefront / tool-health（阻断）+ wiring-guard（非阻断）
+# + spec-first；跨批汇总批并入 readme-parity + template-drift。
 
 on:
   pull_request:
@@ -14,6 +20,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      # 🔴 v1.4.8 第2批：本 job 必须装依赖——check-version.sh（rhythm 段）与
+      # dependency-direction.sh（包边界清单）都经 node + js-yaml 读 tools/check/
+      # *.yml。此前本 job 无 npm ci，实测（无 node_modules 全新工作树）两脚本均
+      # exit 1：`Error: Cannot find module '.../node_modules/js-yaml'`。
+      # 另：deps 装齐后 engine/*/dist 仍不存在（构建产物未入 git），依赖构建的
+      # check-tool-health.sh 故放在 build-and-test job（见该 job 内注释）。
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - name: Install dependencies（js-yaml 供 check-version / dependency-direction 解析）
+        run: npm ci
       - name: check-version.sh
         run: bash tools/check/check-version.sh
       - name: check-docs.sh
@@ -57,6 +75,42 @@ jobs:
       - name: dependency-direction.sh
         run: bash tools/check/dependency-direction.sh
 
+      # ── v1.4.8 第2批：把「写了没接」的门禁接入 PR 门禁主入口 ──
+      # 本批统一接 pr-check.yml（PR 门禁主入口）。四个真门禁阻断，一个观察期非阻断。
+      # 均依赖本 job 已 checkout 的工作树；无额外 setup-node 需求（bash + node 内置）。
+
+      # GitHub Actions SHA pin 对账（uses: 完整 commit SHA vs 行内注释 tag）。
+      # 离线 / 无网络时脚本自身降级 exit 0 + 告警——门禁不被网络抖动阻断。
+      - name: check-action-pins.sh
+        run: bash tools/check/check-action-pins.sh
+
+      # 仓外门面对账（GitHub description/homepage/topics vs 仓内实数）。
+      # gh 不可达时 SKIP 并 exit 0（SKIP 可见、不假绿）；发布前须在本地补跑。
+      # 脚本自述：CI 中 gh 凭证缺失时本节自动 SKIP 是**设计语义**（发布流程本地跑）。
+      - name: check-storefront.sh
+        run: bash tools/check/check-storefront.sh
+
+      # 规范先行硬禁令（engine/*/src 提交须含 spec:/no-spec: 标记）。
+      # 观察期：脚本 exit 恒 0（WARN 不阻断），接线目的是把 WARN 暴露在 PR 上。
+      # 注：本 job 未设 fetch-depth，浅检出下 git log 只见末尾 commit——观察期可接受。
+      - name: check-spec-first.mjs
+        run: node tools/check/check-spec-first.mjs
+
+      # 接线守卫（注册表级：注册漂移 / 死路径）。
+      # 首版**非阻断**（观察期只提示不阻断）——continue-on-error 保留输出不拦 PR。
+      - name: check-wiring-guard.mjs（观察期非阻断）
+        run: node tools/check/check-wiring-guard.mjs
+        continue-on-error: true
+
+      # ── v1.4.8 跨批 CI 接线汇总（第4批产物并入）──
+      # 双语 README 结构对账（中英对称）——门禁目的：此前中英对称只有
+      # regression-checklist 子项 j 的人工 grep 兜着，改一侧忘同步另一侧无门禁可拦。
+      # 只比对【结构】（标题数 / 层级序列 / badge 数 / 关键数字集合），不比文本——
+      # 中英标题本就不可能逐字相同，比文本必然误报。实测 FAIL=0。
+      # 无需 build / 无需额外 setup：纯文本比对（bash + grep/awk）。
+      - name: check-readme-parity.sh
+        run: bash tools/check/check-readme-parity.sh
+
   # v1.3.9（四）：public API 变更检测——@public 符号集变化必须 semver bump + CHANGELOG。
   # v1.4.7：装依赖跑（口径统一到 AST）——此前「不装依赖直接跑」会因无 typescript 静默
   # 回退正则解析，与基线/文档声称值的 AST 口径分歧（实测差 8 符号：2236 vs 2244）导致
@@ -96,6 +150,24 @@ jobs:
         run: npm install --no-save @rollup/rollup-linux-x64-gnu
       - name: Build (workspace 拓扑序)
         run: npm run build
+      # 模板漂移总闸（六断言：HOOK 部署文件 / openclaw 双 manifest / core dist 时效 /
+      # load-chain 双份 handler / cordis.patch.yml 版本 / 插件清单生成式幂等）。
+      # 🔴 放在 `npm run build` 之后：断言三比对 `engine/core/dist/config-template.js` 的
+      # 编译时版本插值与 SSOT，dist 是构建产物（未入 git）。dist 缺失时该断言降级为
+      # `⚠ 跳过` 而非报红，等于把最易漂移的一项放空——故必须在 build 后跑才有完整信号。
+      # 跨批接线（v1.4.8 第5批的插件清单生成式，其断言六即 `gen-plugin-manifests.mjs --check`）。
+      # 实测六断言全过 6/6，EXIT=0。
+      - name: check-template-drift.sh
+        run: bash tools/check/check-template-drift.sh
+      # 工具脚本健康（路径活性 / 孤儿配置 / set -u 守卫 / README 收录对账）。
+      # v1.4.8 第2批接线：README 未收录由「不阻断警告」升级为**阻断**（前置已完成：
+      # 漂移文件全部补录 + 复跑 exit 0）。
+      # 🔴 放在 build-and-test 而非 version-and-docs：§⑤ 断言各 workflow 引用的仓内
+      # 路径存在，其中 windows-ci.yml → `engine/audit/dist/index.js` 是**构建产物**
+      # （dist 未入 git）。实测全新工作树无 dist 时 §⑤ 报红——故必须在 `npm run build`
+      # 之后跑。此 job 同时已有 npm ci，本地/CI 语义一致。
+      - name: check-tool-health.sh
+        run: bash tools/check/check-tool-health.sh
       - name: Test (workspace 全量)
         run: npm run test
       - name: Check test count drift
@@ -118,3 +190,30 @@ jobs:
             exit 1
           }
           echo "✅ install.sh 主安装器 + --base-only 契约 intact"
+
+  # ── FORGE driver 冒烟测试接入主门禁（补齐本文件头部「与 pre-push-check 不完全等价」缺口）──
+  # 痛点：FORGE/ 不在 npm workspaces 内，根 `npm run test` 从不执行 FORGE/src/*.test.mjs；
+  # driver 的 import/export 接线断裂（实案：DEFAULT_BUDGET 缺 export）只在发版首跑
+  # driver 时暴露。pre-push-check.sh 已含本步骤，但 pr-check.yml 此前未接。
+  # 前置依赖（读脚本本体判定，非猜测）：
+  #   ① `npm ci` 必需——7 个测试文件中 6 个 `from 'vitest'`，脚本走 `npx vitest run`；
+  #   ② `npm run build` 必需——脚本对 FORGE/src 纯库模块做 dynamic import，这些模块
+  #      `require` 了 engine/{audit,core,orchestrator,rules}/dist/*.js（构建产物，dist 未入 git）；
+  #   ③ 裸 node 可用（脚本以 `node --check` / `node --dry-run` 做语法与接线验证）。
+  # 故 steps = checkout → setup-node(22) → npm ci → npm run build → 跑脚本。
+  # 独立 job 而非并入 version-and-docs：该 job 的前提是「无 build 需求」（见其内注释），
+  # 与本步的 build 前置冲突。
+  forge-smoke-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - name: Install dependencies
+        run: npm ci
+      - name: Build (workspace 拓扑序——FORGE/src 依赖 engine/*/dist 产物)
+        run: npm run build
+      - name: forge-smoke-test.sh
+        run: bash tools/forge/forge-smoke-test.sh

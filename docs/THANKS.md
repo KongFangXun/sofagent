@@ -99,7 +99,7 @@ sofagent 直接使用或借鉴了它们的能力。
 - **[gstack](https://github.com/garrytan/gstack)** · Garry Tan — 六层安全栈 + 原子文件写入 + 角色分解架构
 - **[Multica](https://github.com/multica-ai/multica)** —「自己不调 LLM，全推给子进程」与 sofagent 平台无关策略一致
 - **[GBrain](https://github.com/garrytan/gbrain)** · Gary Tan — Karpathy LLM Wiki 的工业级落地，架构与 knowledge/ 同构
-- **[skills](https://github.com/mattpocock/skills)** · Matt Pocock — 深模块设计受控词汇表（module / interface / depth / seam / leverage / locality + 删除测试）与设计熵勘测技能 `improve-codebase-architecture`（MIT）。FORGE 深模块审查直接 vendored 其技能闭包并钉 commit，本地只留适配层——方法论本体不转写，升级走 `FORGE/playbook/vendor/improve-codebase-architecture/PROVENANCE.md`
+- **[skills](https://github.com/mattpocock/skills)** · Matt Pocock — 深模块设计受控词汇表（module / interface / depth / seam / leverage / locality + 删除测试）与设计熵勘测技能 `improve-codebase-architecture`（MIT）。FORGE 深模块审查直接 vendored 其技能闭包并钉 commit，本地只留适配层——方法论本体不转写，升级走 `playbook/vendor/improve-codebase-architecture/PROVENANCE.md`
 
 ---
 

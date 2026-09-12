@@ -411,7 +411,7 @@ npx vitest run FORGE/src/driver-base.test.mjs   # 单文件（调试用）
 sandbox kill 窗口 < acceptance 执行时间时，手动预跑日志后跳过：
 
 ```bash
-bash FORGE/playbook/acceptance-test.sh > run-00/acceptance-raw.log 2>&1
+bash playbook/acceptance-test.sh > run-00/acceptance-raw.log 2>&1
 node driver.mjs --target <版本> --skip-acceptance
 ```
 

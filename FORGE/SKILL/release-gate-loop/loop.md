@@ -43,7 +43,7 @@
 ### V 验证阶段（每轮固定 5 步）
 
 ```
-① acceptance  → 跑 bash FORGE/playbook/acceptance-test.sh    → 产物 acceptance.md
+① acceptance  → 跑 bash playbook/acceptance-test.sh    → 产物 acceptance.md
 ② regression  → 读 regression-checklist.md 跑各维度命令      → 产物 regression.md
 ③ coverage    → 读 changelog 功能点，逐条 grep acceptance-test → 产物 coverage.md
 ④ consolidate → 合并三份产物                                  → 产物 stage6-report.md

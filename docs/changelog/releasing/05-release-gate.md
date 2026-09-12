@@ -46,7 +46,7 @@
 - 时段：工作日 14:00-18:00 GLM 3 倍价窗口内不启动新轮——等待并每 10 分钟报时一次，窗口过了再启动（周末全天平价）
 
 ### ② 脚本层直跑（零 LLM，约 15 分钟，全绿才进判断层）
-bash FORGE/playbook/acceptance-test.sh > acceptance-raw.log 2>&1，确认 exit 0 且 SUMMARY 全过
+bash playbook/acceptance-test.sh > acceptance-raw.log 2>&1，确认 exit 0 且 SUMMARY 全过
 ⚠️ 🔴 日志必须落盘到仓库根 `acceptance-raw.log`（或 export SOFAGENT_ACCEPTANCE_LOG=/path/to/log）——driver 的 --judgment-only 启动时自动注入该日志为 runDir/acceptance.md 供 consolidate/verdict 读取；落错路径（如 /tmp/）→ driver 找不到 → 注入占位符 → verdict fail-closed 判 FAIL
 依次跑：tools/check/check-version.sh → tools/check/check-docs.sh → tools/check/check-anchors.mjs → tools/check/check-review-system.sh → tools/check/check-tool-health.sh
 脚本层红项：按「修复批协议」修复后复跑该项至 EXIT=0 才进判断层
@@ -139,9 +139,9 @@ verdict=FAIL/ERROR 修复后重跑判断层**之前**必查三项，任一跳过
 3. **独立复核对冲突**——手工裁决是**有上下文裁决**（主 session 知道自己修了什么），独立性弱于 driver 盲审，必须交给**无上下文 session**（如执行 session）复查关键判定后才生效
 
 **手工裁决内容**（三者全过才算 PASS）：
-- regression 全维度「driver 同款语义亲跑」全绿（维度数每版变化，以 `FORGE/playbook/regression-checklist.md` 头部「当前 N 维」为准；不是只跑脚本——按维度判定逻辑逐维过）
+- regression 全维度「driver 同款语义亲跑」全绿（维度数每版变化，以 `playbook/regression-checklist.md` 头部「当前 N 维」为准；不是只跑脚本——按维度判定逻辑逐维过）
 - coverage 关键词矩阵全命中
-- acceptance 全量 EXIT=0（`bash FORGE/playbook/acceptance-test.sh` 尾部 `SUMMARY: N/N passed`，**断言数每版变化，勿写死历史数字**）
+- acceptance 全量 EXIT=0（`bash playbook/acceptance-test.sh` 尾部 `SUMMARY: N/N passed`，**断言数每版变化，勿写死历史数字**）
 
 **记录纪律**：进度追踪必须写「手工裁决 PASS（driver N 轮 FAIL + 复验改判记录）」，**禁止写成「loop PASS」**——手工裁决与 driver 盲审是两个不同的保证等级，混淆即造假。
 
