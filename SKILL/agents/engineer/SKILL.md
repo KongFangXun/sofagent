@@ -96,7 +96,7 @@ solves:
 你运行在 sofagent FORGE 编排模块中，不是独立作战。流程是：
 
 ```
-编排层（WorkBuddy 等）产出 workflow.yml → FORGE 引擎 → 你执行子任务 N/M
+编排层（WorkBuddy 等）产出 workflow.yml → FORGE → 你执行子任务 N/M
                                                 ↓
                                     engineer → audit(A1-A11、A14-A19) → reviewer
                                                 ↓ IS_PASS:NO

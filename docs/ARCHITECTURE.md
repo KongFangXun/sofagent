@@ -190,7 +190,7 @@ Agent = **模型 + 上下文 + 工具 + 状态 + 执行控制 + 权限 + 可观�
 
 > 这份清单是「现在能干什么」的单一索引。约束层内部设计见 [二、约束层（Harness）设计——一个层，五种能力](#二约束层harness设计一个层五种能力)；未来方向见 [六、已知局限与未来方向](#六已知局限与未来方向)。
 
-### 29 个 workspace 源码包（构成以 package.json workspaces 为准：13 个 @sofagent/* 模块包 + 1 个工具包 + 10 个 DSH 插件包 cordis-plugin-sofagent-* + 4 个 OpenClaw 插件包（engine/openclaw-plugins/）+ 1 个 npm 裸名总包 engine/umbrella（包名 `sofagent`，v1.4.6 新增聚合安装入口，821bb85f 引入——不属引擎包也不属插件，故两个旧口径都不计）；其中 14 个发布为 @sofagent npm 包，DSH 插件 10 款经 SkillHub 分发。统计口径与包数构成见 [WIKI](./WIKI.md)）
+### 29 个 workspace 源码包（构成以 package.json workspaces 为准：13 个 @sofagent/* 模块包 + 1 个工具包 + 10 个 DSH 插件包 cordis-plugin-sofagent-* + 4 个 OpenClaw 插件包（engine/openclaw-plugins/）+ 1 个 npm 裸名总包 engine/umbrella（包名 `sofagent`，v1.4.6 新增聚合安装入口，821bb85f 引入——不属模块包也不属插件，故两个旧口径都不计）；其中 14 个发布为 @sofagent npm 包，DSH 插件 10 款经 SkillHub 分发。统计口径与包数构成见 [WIKI](./WIKI.md)）
 
 | 包 | 职责 | 状态 |
 |---|---|---|
