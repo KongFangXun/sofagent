@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-12T05:00:51.924Z",
+  "generatedAt": "2026-09-12T06:12:29.797Z",
   "packages": {
     "@sofagent/harness": {
       "version": "1.4.7",
@@ -1116,9 +1116,6 @@
         "OntologyValidatorOptions",
         "OntologyVerdict",
         "OntologyVerdictStatus",
-        "OptimizationIteration",
-        "OptimizationLoopOptions",
-        "OptimizationLoopResult",
         "OrphanDetectOptions",
         "OrphanProcess",
         "OwnerRecord",
@@ -1965,7 +1962,6 @@
         "runLoopGraph",
         "runMergeGate",
         "runOnboardLoop",
-        "runOptimizationLoop",
         "runRefineLoop",
         "runSandboxSelfCheck",
         "runTrainEval",
