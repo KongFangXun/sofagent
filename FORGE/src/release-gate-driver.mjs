@@ -831,7 +831,11 @@ function buildPrecheckEvidence(runDir, stepDef, target = '') {
 function buildInputsEvidence(runDir, stepDef) {
   if (stepDef?.precheck || !Array.isArray(stepDef?.inputs)) return '';
   const blocks = [];
-  const totalBudget = Math.min(150_000, Math.max(20_000, stepDef.inputs.length * 12_000));
+  // v1.4.8 run-02（verdict P0-2「证据链截断」）：原总预算 150K + 单文件 12K 上限，使
+  // acceptance.md（77K）/ regression.md 等报告被腰斩，V 按 fail-closed 判「证据缺失 = 未验证」。
+  // 上调总预算与单文件上限，并把截断策略由「只留头部」改为「保头尾」（尾部含裁决与统计行，
+  // 恰恰是 V 最需要的部分）。
+  const totalBudget = Math.min(400_000, Math.max(40_000, stepDef.inputs.length * 30_000));
   let total = 0;
   for (const f of stepDef.inputs) {
     const p = join(runDir, f);
@@ -842,8 +846,11 @@ function buildInputsEvidence(runDir, stepDef) {
     try {
       const raw = readFileSync(p, 'utf-8');
       const budget = Math.max(0, totalBudget - total);
-      const clipped = raw.length > Math.min(12_000, budget)
-        ? raw.slice(0, Math.min(12_000, budget)) + `\n…（截断，全文 ${raw.length} 字符（字符数非字节数），见 ${p}）`
+      const perFile = Math.min(40_000, budget);
+      const clipped = raw.length > perFile
+        ? (perFile >= 2_000
+            ? raw.slice(0, Math.floor(perFile / 2)) + `\n\n…（中段省略 ${raw.length - perFile} 字符；全文 ${raw.length} 字符，见 ${p}）…\n\n` + raw.slice(-Math.floor(perFile / 2))
+            : raw.slice(0, Math.max(0, perFile)) + `\n…（截断，全文 ${raw.length} 字符，见 ${p}）`)
         : raw;
       total += clipped.length;
       blocks.push(`[driver 注入] ${f} 内容（上一步产物，判定依据）：\n${clipped}`);
@@ -2282,14 +2289,64 @@ function parseChangelogModules(changelogRelPath) {
     return [];
   }
   const md = readFileSync(absPath, 'utf-8');
+  const lines = md.split('\n');
   const modules = [];
-  for (const line of md.split('\n')) {
-    const m = line.match(/^##\s+(.+)$/);
-    if (m && !/^##\s+(背景|前置依赖|状态)/.test(line)) {
-      modules.push({ title: m[1].trim() });
+  for (let i = 0; i < lines.length; i++) {
+    const m = lines[i].match(/^##\s+(.+)$/);
+    if (!m || /^##\s+(背景|前置依赖|状态)/.test(lines[i])) continue;
+    // 模块正文（本标题 → 下一个 ## 标题）中引用的场景号，供 V 做「模块 ↔ 场景」对账。
+    // v1.4.8 run-02 实证：此前模块只有 title，V 只能标「映射矩阵完全缺失」——清单两侧各持
+    // 一半线索（模块无场景、场景无模块），故补这一侧的结构化线索（非替代 V 的语义判定）。
+    let body = '';
+    for (let j = i + 1; j < lines.length && !/^##\s/.test(lines[j]); j++) body += lines[j] + '\n';
+    const refs = new Set();
+    for (const r of body.matchAll(/S(\d{1,3}[a-z]?)(?:\s*[-–~]\s*S?(\d{1,3}[a-z]?))?/g)) {
+      refs.add('S' + r[1]);
+      if (r[2]) {
+        const a = parseInt(r[1], 10), b = parseInt(r[2], 10);
+        if (b > a && b - a <= 20) for (let k = a; k <= b; k++) refs.add('S' + k);
+      }
     }
+    modules.push({ title: m[1].trim(), line: i + 1, scenarioRefs: [...refs] });
   }
   return modules;
+}
+
+/**
+ * 从 acceptance 原始日志解析逐场景执行结果（v1.4.8 run-02 · coverage P0-3 修复）。
+ *
+ * 背景：旧 precheck 的 scenarios[] 只有声明清单（num/label/title），没有任何「跑没跑、结果如何」
+ * 的信息——V 据此只能判「全量场景无任何执行结果」而挂起。然而 driver 在 judgment-only 模式下
+ * 读的 acceptance 实证一直存在（acceptance.md 的 SUMMARY 即来自它），只是未落到 precheck 里。
+ *
+ * 来源优先级：{runDir}/acceptance-raw.log → {REPO_ROOT}/acceptance-raw.log
+ * （judgment-only 模式不拷贝日志进 runDir，故必须有主仓回退）。
+ * 标记形态：`━━━ 场景 N: 标题 ━━━` 之后的 `✅ PASS` / `❌ FAIL` / `⏭ SKIP`。
+ * FAIL/SKIP 判定优先于 PASS（同场景多次回声时以否定结论为准，fail-closed 取向）。
+ *
+ * @returns {{source: string|null, results: Map<string,string>}}
+ */
+function parseAcceptanceResults(runDir) {
+  const candidates = [join(runDir, 'acceptance-raw.log'), join(REPO_ROOT, 'acceptance-raw.log')];
+  const logPath = candidates.find((p) => existsSync(p)) || null;
+  const results = new Map();
+  if (!logPath) return { source: null, results };
+  let src;
+  try { src = readFileSync(logPath, 'utf-8'); } catch { return { source: null, results }; }
+  let cur = null;
+  const settle = (verdict) => { if (cur) { results.set(cur, verdict); cur = null; } };
+  for (const line of src.split('\n')) {
+    const sc = line.match(/━+\s*场景\s+(\d+[a-z]?)\s*[:：]/);
+    if (sc) { settle('PASS'); cur = sc[1]; continue; }
+    if (!cur) continue;
+    // 精确匹配 fail()/warn() 的输出形态（`  ❌ FAIL: ` / `  ⏭ SKIP: `——两空格缩进 + 冒号）。
+    // 宽匹配会把**被测系统自身**的输出误记为场景失败：实测 `[sofagent] 判定: ❌ FAIL (exit 2)`
+    // 是场景「违规 commit 被拦截」的预期产物，宽匹配会误报 2 例 FAIL。
+    if (/^\s{1,4}❌ FAIL:/.test(line)) settle('FAIL');
+    else if (/^\s{1,4}⏭ SKIP/.test(line)) settle('SKIP');
+  }
+  settle('PASS');
+  return { source: logPath, results };
 }
 
 /**
@@ -2327,12 +2384,33 @@ async function runCoveragePrecheck(runDir, target) {
     if (exemptKeywords.some((k) => (m.title || '').includes(k))) m.exempt = true;
   }
 
+  // v1.4.8 run-02（coverage P0-3）：合并逐场景执行结果——旧 precheck 只有声明清单，
+  // V 无法判定「哪些真跑过 / 结果如何」，只能按 fail-closed 挂起。此处把 acceptance 实跑
+  // 结果写进同一份证据，使「覆盖」可区分「已执行且通过」与「未执行」。
+  const { source: accSource, results: accResults } = parseAcceptanceResults(runDir);
+  let accPass = 0, accFail = 0, accSkip = 0, accNotRun = 0;
+  if (accSource) {
+    for (const s of scenarios) {
+      const r = accResults.get(s.label);
+      if (r === 'PASS') { s.result = 'PASS'; accPass++; }
+      else if (r === 'FAIL') { s.result = 'FAIL'; accFail++; }
+      else if (r === 'SKIP') { s.result = 'SKIP'; accSkip++; }
+      else { s.result = 'NOT_RUN'; accNotRun++; }
+    }
+  }
+
   const payload = {
     meta: {
       changelogPath: changelogRel,
       modules: changelogModules.length,
       scenarios: scenarios.length,
       runAt: new Date().toISOString(),
+      acceptance: {
+        source: accSource,
+        executed: accPass + accFail + accSkip,
+        pass: accPass, fail: accFail, skip: accSkip, notRun: accNotRun,
+        rule: 'scenarios[].result ∈ {PASS,FAIL,SKIP,NOT_RUN}。NOT_RUN = 本次未执行（不等于失败，但不得计为已覆盖）。覆盖结论必须区分「已执行且通过」与「未执行」两种状态；source 为 null 表示未找到 acceptance 日志，此时全部场景按 NOT_RUN 处理。',
+      },
       note: '由 driver 预执行生成（v1.2.5+ 方案 A）。worker 只读此文件做覆盖交叉判定，禁止重新探索文件。',
       exempt: { count: exemptKeywords.length, keywords: exemptKeywords, rule: 'changelog 数组中 exempt:true 的模块为非交付性章节（如修复批施工记录），跳过场景对账，coverage.md 中标注 EXEMPT 即可，不计入缺口' },
     },
