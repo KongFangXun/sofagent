@@ -225,7 +225,7 @@ sofagent-audit --doctor    # 验证环境（可选）
 | npm 项目内 | `npm install @sofagent/audit`（项目 devDependency） | 随项目安装，版本锁进 package-lock | 固定依赖的团队项目、可复现审计 |
 | npm 全局 | `npm install -g @sofagent/audit` | 装一次到处用 | 跨仓库日常审计、daemon 常驻 |
 
-> ⚠️ **不要裸装 `npm i sofagent-audit`**——npm 上存在 OpenClaw 插件同名包（`sofagent-audit`，见 [engine/openclaw-plugins/sofagent-audit/](./engine/openclaw-plugins/sofagent-audit/)），那不是本 CLI。CLI 的正式包名是 `@sofagent/audit`（带 scope），CLI 安装统一走 bootstrap.sh / install.sh / `@sofagent/audit`。
+> ⚠️ **不要裸装 `npm i sofagent-audit`**——npm 上的裸名包 `sofagent-audit` 是**本项目的旧代理包**（已 deprecated，长期滞后于主引擎）。CLI 的正式包名是 `@sofagent/audit`（带 scope），CLI 安装统一走 bootstrap.sh / install.sh / `@sofagent/audit`。
 
 **规则市场**——社区规则集以 `sofagent-ruleset-*` npm 包发布、`--ruleset-path` 手动加载（也支持指向你自己的 JSON 规则）：
 
