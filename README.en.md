@@ -201,7 +201,7 @@ sofagent-audit --doctor    # verify the environment (optional)
 | What I want | Which channel | What I get |
 |---|---|---|
 | Everything, via the npm ecosystem | `npm i -g sofagent` (npm bare-name umbrella package `engine/umbrella`) | `@sofagent/audit` + `@sofagent/mcp` + `@sofagent/orchestrator` + `@sofagent/daemon` |
-| Everything, via DSH host mounting | mount one `cordis-plugin-sofagent-harness` entry in the host profile's `bundles` | all atomic plugins declared by that aggregator (one entry aggregates them) |
+| Everything, via DSH host mounting | mount one `cordis-plugin-sofagent-suite` entry in the host profile's `bundles` | all atomic plugins declared by that aggregator (one entry aggregates them) |
 
 ## Usage
 

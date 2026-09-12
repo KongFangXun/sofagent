@@ -518,7 +518,7 @@ v1.1.3 新增 `daemon/src/notify.ts` 提供 `[sofagent-daemon]` 品牌包装的�
 
 ### 插件包 `private: true` ⇒ `optionalDependencies` 在 npm 通道不可解析
 
-宿主聚合插件（`engine/dsh-plugins/cordis-plugin-sofagent-harness`）声明了 9 条 `optionalDependencies`，而这些声明项指向的插件包**自身都是 `private: true`**。三件事互为因果，须一并读懂：
+宿主聚合插件（`engine/dsh-plugins/cordis-plugin-sofagent-suite`）声明了 9 条 `optionalDependencies`，而这些声明项指向的插件包**自身都是 `private: true`**。三件事互为因果，须一并读懂：
 
 1. **插件包是 `private: true`**：`engine/dsh-plugins/**` 下全部插件（含聚合插件本身）不对 npm 发布，仅随仓库分发。
 2. **⇒ 这些 `optionalDependencies` 在 npm 通道无法命中**：npm 必须从注册表解析依赖树，而 `private: true` 的包没有注册表条目，因此这些声明项在 `npm install` 路径上**结构性地不可能被解析**——不是「装不上」，而是「根本不在 npm 的解析域内」。

@@ -28,7 +28,7 @@
 // 两类清单条目（v1.4.8 第8批新增第二类）：
 //   · kind 缺省 / "bridge" ——**桥接型**原子插件：桥接一个 @sofagent/* 能力包
 //     （bridgePkg + bridgeApi 必填）→ optionalDependencies = { <bridgePkg>: version }。
-//   · kind = "suite"        ——**聚合型**插件（cordis-plugin-sofagent-harness）：自身零
+//   · kind = "suite"        ——**聚合型**插件（cordis-plugin-sofagent-suite）：自身零
 //     @sofagent/* 依赖、只逐个挂载 9 个原子插件 → **bridgePkg / bridgeApi 语义不适用**
 //     （它不桥接任何单个能力包），改由 `suite` 字段声明「挂哪些兄弟插件」，
 //     → optionalDependencies = { <每个兄弟插件 id>: version }。

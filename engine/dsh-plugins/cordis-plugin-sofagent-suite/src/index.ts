@@ -1,4 +1,4 @@
-// cordis-plugin-sofagent-harness · DSH 反向插件（v1.4.8 第8批 · 聚合编排层）
+// cordis-plugin-sofagent-suite · DSH 反向插件（v1.4.8 第8批 · 聚合编排层）
 // seam 挂载：non-seam:plugin-suite    # 语义：非宿主事件接入（插件聚合）——一次 apply 逐个挂载 9 个原子插件；能力仍由各原子插件 provide
 // 清单生成源 = engine/dsh-plugins/plugins.json（生成 package.json 的 description/sofagent/dsh/optionalDependencies 段与 cordis.patch.yml）；本文件的 seam 字面量由生成器 --check 与之对账。
 //
@@ -27,7 +27,7 @@ const HOST_PKG = require('../package.json') as { version?: string };
  * 纯声明——本层**不注册任何自己的能力**，故此处只有身份与 seam，没有 bridge 字段。
  */
 export const pluginMeta = {
-  id: 'cordis-plugin-sofagent-harness',
+  id: 'cordis-plugin-sofagent-suite',
   version: HOST_PKG.version ?? '0.0.0-unknown',
   description: '一次挂载 sofagent 全套能力（聚合编排层，只编排不重实现）（seam: non-seam:plugin-suite）',
   seam: 'non-seam:plugin-suite',
@@ -189,7 +189,7 @@ export default {
         try {
           await undo();
         } catch (err) {
-          console.error('[sofagent-harness] 卸载失败:', err instanceof Error ? err.message : String(err));
+          console.error('[sofagent-suite] 卸载失败:', err instanceof Error ? err.message : String(err));
         }
       }
     };
@@ -208,7 +208,7 @@ export default {
     // ⑤ 本层自己的报告服务（同样收 disposer，卸载时反注册）
     const report: HarnessReport = { loaded, failed, total: SUITE.length, capability, viaHost, viaDirect, unloadHook };
     if (typeof c.provide === 'function') {
-      collect(c.provide('sofagent.harness', report));
+      collect(c.provide('sofagent.suite', report));
     } else {
       c.sofagent = { ...(c.sofagent ?? {}), harness: report };
       disposers.push(() => {

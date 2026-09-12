@@ -199,7 +199,7 @@ sofagent-audit --doctor    # 验证环境（可选）
 | 我要装什么 | 走哪条通道 | 装完得到什么 |
 |---|---|---|
 | 全套能力，走 npm 生态 | `npm i -g sofagent`（npm 裸名总包 `engine/umbrella`） | `@sofagent/audit` + `@sofagent/mcp` + `@sofagent/orchestrator` + `@sofagent/daemon` |
-| 全套能力，走 DSH 宿主挂载 | 宿主 profile 的 `bundles` 挂一条 `cordis-plugin-sofagent-harness` | 该聚合插件声明的全部原子插件（挂一条即聚合） |
+| 全套能力，走 DSH 宿主挂载 | 宿主 profile 的 `bundles` 挂一条 `cordis-plugin-sofagent-suite` | 该聚合插件声明的全部原子插件（挂一条即聚合） |
 
 ## 使用
 

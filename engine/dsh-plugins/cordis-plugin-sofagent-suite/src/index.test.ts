@@ -1,8 +1,8 @@
 // ============================================================
-// cordis-plugin-sofagent-harness · 插件单测（v1.4.8 第8批 · 聚合编排层）
+// cordis-plugin-sofagent-suite · 插件单测（v1.4.8 第8批 · 聚合编排层）
 // ============================================================
 // 断言面 = 第 8 批的三条硬约束：
-//   ① 只编排不重实现 —— 注册的服务只有 9 个原子插件 + 本层的 sofagent.harness
+//   ① 只编排不重实现 —— 注册的服务只有 9 个原子插件 + 本层的 sofagent.suite
 //   ② 逐个降级不整挂失败 —— 缺一个原子插件，其余 8 个照常；failed 精确报出缺的那一个
 //   ③ 不替代细粒度插件 —— 编排清单与 plugins.json 的 suite 段逐条一致（9 个原子插件全在）
 // ============================================================
@@ -103,13 +103,13 @@ function makeCtx(opts: CtxOptions = {}) {
 
 /** 取聚合层自己 provide 的报告 */
 function reportOf(ctx: ReturnType<typeof makeCtx>): HarnessReport {
-  return ctx.services.get('sofagent.harness') as HarnessReport;
+  return ctx.services.get('sofagent.suite') as HarnessReport;
 }
 
-describe('cordis-plugin-sofagent-harness', () => {
+describe('cordis-plugin-sofagent-suite', () => {
   it('插件元数据完整（id/version/seam/description 与 package.json SSOT 对齐）', () => {
     const pkg = require('../package.json') as { version: string };
-    expect(pluginMeta.id).toBe('cordis-plugin-sofagent-harness');
+    expect(pluginMeta.id).toBe('cordis-plugin-sofagent-suite');
     expect(pluginMeta.version).toBe(pkg.version); // SSOT 对齐：版本跟随主版本（读 package.json）
     expect(pluginMeta.seam).toBe('non-seam:plugin-suite');
     expect(pluginMeta.description).toContain(`seam: ${pluginMeta.seam}`); // 描述不滞后于契约
@@ -142,12 +142,12 @@ describe('cordis-plugin-sofagent-harness', () => {
     }
   });
 
-  it('只编排不重实现：注册面 = 9 个原子服务 + sofagent.harness，本层不复制任何子插件逻辑', async () => {
+  it('只编排不重实现：注册面 = 9 个原子服务 + sofagent.suite，本层不复制任何子插件逻辑', async () => {
     const ctx = makeCtx();
     await plugin.apply(ctx);
     const names = [...ctx.services.keys()].sort();
     expect(names).toHaveLength(10); // 9 原子 + 1 聚合报告
-    expect(names.filter((n) => n !== 'sofagent.harness')).toHaveLength(9);
+    expect(names.filter((n) => n !== 'sofagent.suite')).toHaveLength(9);
     expect(reportOf(ctx).capability).toBe(capability);
   });
 
@@ -197,7 +197,7 @@ describe('cordis-plugin-sofagent-harness', () => {
   it('A2·卸载路径：聚合层卸载后本层与 9 个原子服务全部反注册（不留残留）', async () => {
     const ctx = makeCtx();
     const dispose = await plugin.apply(ctx);
-    expect(ctx.services.get('sofagent.harness'), '装载后本层报告服务在').toBeDefined();
+    expect(ctx.services.get('sofagent.suite'), '装载后本层报告服务在').toBeDefined();
     expect(ctx.services.get('sofagent.audit'), '装载后原子服务在').toBeDefined();
     expect(ctx.services.size, '装载面 = 9 原子 + 1 聚合报告').toBe(10);
     // 宿主生命周期钩子已登记（双保险之一）
@@ -205,7 +205,7 @@ describe('cordis-plugin-sofagent-harness', () => {
     expect(reportOf(ctx).unloadHook).toBe('ctx.on');
     // 触发卸载（模拟宿主 dispose 事件）
     await ctx.onDispose[0]();
-    expect(ctx.services.get('sofagent.harness'), '卸载后本层服务须反注册').toBeUndefined();
+    expect(ctx.services.get('sofagent.suite'), '卸载后本层服务须反注册').toBeUndefined();
     expect(ctx.services.get('sofagent.audit'), '卸载后原子服务须反注册').toBeUndefined();
     expect(ctx.services.size, '卸载后 ctx 上不留任何 sofagent.* 服务').toBe(0);
     // 幂等：apply 返回值再调一次不抛、不复活

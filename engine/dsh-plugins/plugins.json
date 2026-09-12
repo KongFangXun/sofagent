@@ -57,7 +57,7 @@
       "description": "验收不过不放行——机器可判定验收 + 人审"
     },
     {
-      "id": "cordis-plugin-sofagent-harness",
+      "id": "cordis-plugin-sofagent-suite",
       "kind": "suite",
       "seam": "non-seam:plugin-suite",
       "seamSemantics": "非宿主事件接入（插件聚合）——一次 apply 逐个挂载 9 个原子插件；能力仍由各原子插件 provide，聚合层自身不挂任何生命周期",

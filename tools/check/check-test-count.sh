@@ -227,7 +227,7 @@ WORKSPACE_COUNT=$(grep -cE '^[[:space:]]*"engine/(harness|ontology|eval|core|thi
 # engine/dsh-plugins/ 下还存放基座包 plugin-kit 与非插件资产，数目录会把非插件多计进来。
 # 本判据与 tools/check/check-storefront.sh:44 的 `for d in engine/dsh-plugins/cordis-plugin-sofagent-*`
 # 同源同口径（一个口径两处消费，避免各数各的）；模块包 SSOT 仍为 WORKSPACE_COUNT。
-# v1.4.8 第 7 批：DSH 插件 9→10（engine/dsh-plugins/cordis-plugin-sofagent-harness 入列），
+# v1.4.8 第 7 批：DSH 插件 9→10（engine/dsh-plugins/cordis-plugin-sofagent-suite 入列），
 #   插件合计 13→14——README/README.en.md 的「14 插件 / 14 plugins」同批更新。
 DSH_PLUGIN_COUNT=0
 for d in engine/dsh-plugins/cordis-plugin-sofagent-*; do

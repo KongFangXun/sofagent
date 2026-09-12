@@ -83,7 +83,7 @@ grep -rhoE "['\"][a-z]+/[a-z-]+['\"]" "$B/dsh-hook-protocol/lib/" | tr -d "\"'" 
 | `non-seam:tool-set` | tool 集（能力以工具形式暴露） | 同上：本体查询 / 知识检索是工具调用，不拦截任何生命周期节点 | `ctx.provide('sofagent.ontology')` | `ontology` |
 | `non-seam:tool-set` | tool 集（能力以工具形式暴露） | 同上：`fde_*` 六 tool 是方法论工具集，宿主不派发事件给它 | `ctx.provide('sofagent.fde')` | `fde` |
 | `non-seam:host-process` | 独立调度进程 | 7×24 巡检是**进程级调度**（cron / 常驻），不寄生宿主事件循环 | `ctx.provide('sofagent.daemon')` | `daemon` |
-| `non-seam:plugin-suite` | 插件聚合（一次 apply 挂全套原子插件） | 自身**不挂任何宿主生命周期**——只依次调用 9 个原子插件的 `apply`；能力仍由各原子插件 `provide`，聚合层没有独立的事件时机，挂任何生命周期都会是「跑不到的假契约」 | `ctx.provide('sofagent.harness')` | `harness` |
+| `non-seam:plugin-suite` | 插件聚合（一次 apply 挂全套原子插件） | 自身**不挂任何宿主生命周期**——只依次调用 9 个原子插件的 `apply`；能力仍由各原子插件 `provide`，聚合层没有独立的事件时机，挂任何生命周期都会是「跑不到的假契约」 | `ctx.provide('sofagent.suite')` | `suite` |
 <!-- SEAM-VOCAB:DSH-FORM:END -->
 
 ## 3. OpenClaw 侧 · 宿主 seam 词汇表
