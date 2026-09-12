@@ -20,6 +20,7 @@ import type { AuditContext, RuleCheck } from './rules/types';
 import { defaultRules, extendedRules } from './rules';
 import type { AuditHistoryEntry } from './audit-history';
 import { runRules as runRulesWithFastFail } from './rules/runner';
+import { ruleCode } from './rules/assemble';
 
 // 向后兼容：re-export RuleCheck（index.ts 等模块通过 reporter 导入此类型）
 export type { RuleCheck } from './rules/types';
@@ -149,10 +150,7 @@ export function formatRuleDetails(results: AuditResult): string[] {
 
   for (const rule of problems) {
     const icon = rule.status === 'FAIL' ? '❌' : '⚠️';
-    const ruleId = rule.number >= 500 ? `R${rule.number - 500}`
-      : rule.number >= 200 ? `E${rule.number - 200}`
-      : rule.number > 0 ? `A${rule.number}`
-      : rule.name;
+    const ruleId = ruleCode(rule.number, rule.name);
     const classTag = rule.ruleClass === '业务底线' ? '[底线]'
       : rule.ruleClass === '能力拐杖' ? '[拐杖]'
       : rule.ruleClass === '工程规范' ? '[规范]'

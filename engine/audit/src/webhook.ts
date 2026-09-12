@@ -5,6 +5,7 @@
 // ============================================================
 
 import type { RuleCheck } from './rules/types';
+import { ruleCode } from './rules/assemble';
 import { VERSION, REDACTION_PATTERNS } from '@sofagent/core';
 import { URL } from 'url';
 import { isIP } from 'net';
@@ -214,10 +215,7 @@ function buildContent(payload: WebhookPayload, failedRules: RuleCheck[], isPass:
     lines.push(`任务：${safeTask}`);
   }
   for (const rule of failedRules) {
-    const ruleId = rule.number >= 500 ? `R${rule.number - 500}`
-      : rule.number >= 200 ? `E${rule.number - 200}`
-      : rule.number > 0 ? `A${rule.number}`
-      : rule.name;
+    const ruleId = ruleCode(rule.number, rule.name);
     lines.push(`${ruleId} ${rule.name}：${rule.details.map((d: string) => redactDetail(d, customPatterns)).join('；')}`);
   }
   lines.push(`详情：exit code ${payload.exitCode}`);

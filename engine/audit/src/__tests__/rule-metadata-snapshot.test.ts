@@ -6,6 +6,7 @@
 // ============================================================
 import { describe, expect, it } from 'vitest';
 import { defaultRules, extendedRules } from '../rules';
+import { ruleCode } from '../rules/assemble';
 
 describe('条目 7 · 规则注册表元数据快照（第 0 步——重构行为锚）', () => {
   it('defaultRules 17 条（双计数锚之一）', () => {
@@ -28,5 +29,12 @@ describe('条目 7 · 规则注册表元数据快照（第 0 步——重构行�
     expect(count('git-diff')).toBe(19);
     expect(count('hybrid')).toBe(4);
     expect(count('filesystem')).toBe(1);
+  });
+  it('Rule.id 与 ruleCode(number, name) 全量一致（条目 7 批一：编号单源不变式）', () => {
+    const all = [...defaultRules, ...extendedRules];
+    for (const r of all) {
+      expect(ruleCode(r.number, r.name), `${r.name} 的 id 漂移`).toBe(r.id);
+    }
+    expect(new Set(all.map((r) => r.id)).size).toBe(24);
   });
 });

@@ -1,0 +1,28 @@
+// ============================================================
+// assemble.ts · 规则装配缝（v1.4.8 深模块条目 7）
+// ============================================================
+// 职责（随施工分批落地）：
+//   1. ruleCode——规则编号 → 展示码（A<n> / E<n> / R<n>）的唯一推导实现。
+//      此前 stats / reporter / webhook / index / runner / rule-schema 多处各自
+//      重写同一套 number 区间分支；本模块收口为单源，其余调用方一律引用本函数。
+//   2. assembleCheck——前置块（PREAMBLE）装配：注册表 meta + 规则 scan 产出 → RuleCheck。
+//      规则文件不再自建前置块，只保留 scanXxx（业务判定本体）。
+//
+// 边界：本模块是叶子——只依赖 ./types，不 import 注册表（rules/index.ts），无循环。
+// ============================================================
+
+/**
+ * 规则编号 → 展示码（全工程唯一实现）。
+ *
+ * 取值口径（与历史多处逐字一致，零行为变化）：
+ * - number >= 500 → `R<n-500>`（规则集规则，R 前缀）
+ * - number >= 200 → `E<n-200>`（E 系列扩展规则）
+ * - number > 0    → `A<n>`
+ * - 其余（number <= 0）→ 回退规则名（插件/规则集的无编号条目）
+ */
+export function ruleCode(number: number, name: string): string {
+  if (number >= 500) return `R${number - 500}`;
+  if (number >= 200) return `E${number - 200}`;
+  if (number > 0) return `A${number}`;
+  return name;
+}

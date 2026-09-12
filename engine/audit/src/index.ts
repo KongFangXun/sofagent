@@ -109,6 +109,7 @@ import { runVerifyChain, runVerifyCommit } from './commands/verify';
 import { formatSuggestions } from './config-suggestion';
 import { runRegression, type DiffSnapshot } from './audit-regression';
 import { defaultRules, extendedRules } from './rules';
+import { ruleCode } from './rules/assemble';
 // 空提交 message 类审计：A5/A9/A19 只消费 commit message、不依赖 diff 内容
 // ——空 diff 短路前仍须执行（详见 runEmptyDiffMessageAudit）
 import { checkRuleA5 } from './rules/rule-a5-honest-report';
@@ -1769,10 +1770,7 @@ export function printResults(results: AuditResult, diffFiles: DiffFile[], json: 
   // 规则网格——一行展示全部规则状态
   console.log('');
   const gridParts = results.rules.map((r) => {
-    const num = r.number >= 500 ? `R${r.number - 500}`
-      : r.number >= 200 ? `E${r.number - 200}`
-      : r.number > 0 ? `A${r.number}`
-      : r.name;
+    const num = ruleCode(r.number, r.name);
     const icon = r.status === 'PASS' ? '✅' : r.status === 'WARN' ? '⚠️' : r.status === 'SKIPPED' ? '⏭️' : '❌';
     return `${num} ${icon}`;
   });

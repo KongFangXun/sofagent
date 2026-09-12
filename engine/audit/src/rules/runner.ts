@@ -11,6 +11,7 @@ import type { AuditContext, RuleCheck, Rule } from './types';
 import { loadHistory } from '../audit-history';
 import type { AuditHistoryEntry } from '../audit-history';
 import { defaultRules, rules } from './index';
+import { ruleCode } from './assemble';
 // v1.4.5 T5: 分级降级接线——主执行路径消费 degradation 梯队
 import { DegradationManager, getCapability, isAuditTimeout, type DegradationLevel } from '../degradation';
 // v1.3.2 交付 2：国标对齐 GB/T 48000.3-2026 审计维度（opt-in 默认 false）
@@ -101,13 +102,8 @@ function groupRulesByPriority(activeRules: Rule[]): Record<Priority, Rule[]> {
   return groups;
 }
 
-/**
- * 将规则编号转换为 AUDIT_PRIORITY 中的 key
- */
-function ruleToId(r: Rule): string {
-  if (r.number >= 200) return `E${r.number - 200}`;
-  return `A${r.number}`;
-}
+// v1.4.8 条目 7：规则编号推导收口——Rule.id 由注册表显式声明，
+// 旧的 number 区间推导函数 ruleToId 已删除（此前 A<n>/E<n> 分支在此重写）。
 
 /**
  * 向后兼容导出：派生的 AUDIT_PRIORITY（v1.3.3 #11 单源化后保留）
@@ -123,19 +119,12 @@ export const AUDIT_PRIORITY: Record<Priority, string[]> = (() => {
   const allRules = [...defaultRules];
   const groups = groupRulesByPriority(allRules);
   return {
-    critical: groups.critical.map(ruleToId),
-    warning: groups.warning.map(ruleToId),
-    crutch: groups.crutch.map(ruleToId),
-    extended: groups.extended.map(ruleToId),
+    critical: groups.critical.map((r) => r.id),
+    warning: groups.warning.map((r) => r.id),
+    crutch: groups.crutch.map((r) => r.id),
+    extended: groups.extended.map((r) => r.id),
   };
 })();
-
-/**
- * 获取所有已知的规则 ID（用于 SKIPPED 填充）
- */
-function getAllRuleIds(activeRules: Rule[]): string[] {
-  return activeRules.map(r => ruleToId(r));
-}
 
 /**
  * 运行全部审计规则（fast-fail 模式）
@@ -182,7 +171,7 @@ export function runRules(
   const suppressedBaselineRules: string[] = [];
   const activeRules = rulesConfig
     ? rulesToRun.filter((r) => {
-        const key = r.number >= 200 ? `e${r.number - 200}` : `a${r.number}`;
+        const key = r.id.toLowerCase();
         const enabled = rulesConfig[key];
         // 基线规则（A1/A2/A9）无视 config 关闭指令，永远生效
         if (BASELINE_RULE_NUMBERS.has(r.number)) {
@@ -195,7 +184,6 @@ export function runRules(
       })
     : rulesToRun;
 
-  const allRuleIds = getAllRuleIds(activeRules);
   // v1.3.3 #11: 从规则定义的 priority 字段动态分组（单源化），替代旧 AUDIT_PRIORITY 常量
   const priorityGroups = groupRulesByPriority(activeRules);
 
@@ -223,12 +211,13 @@ export function runRules(
       // critical 全部跑完后，如果有 FAIL → fast-fail 后续层
       if (criticalFailCount > 0) {
         // 标记后续层规则为 SKIPPED
-        const seenIds = new Set(results.map(r => ruleToId({ name: r.name, number: r.number } as Rule)));
-        for (const id of allRuleIds) {
-          if (!seenIds.has(id)) {
+        // v1.4.8 条目 7：编号改从规则注册表读（Rule.id），不再把 RuleCheck 反向解析回编号
+        const seenIds = new Set(results.map((r) => ruleCode(r.number, r.name)));
+        for (const rule of activeRules) {
+          if (!seenIds.has(rule.id)) {
             results.push({
-              name: id,
-              number: id.startsWith('E') ? 200 + parseInt(id.slice(1)) : parseInt(id.slice(1)),
+              name: rule.id,
+              number: rule.number,
               status: 'SKIPPED',
               details: [`critical 层 ${criticalFailCount} 条规则命中 FAIL，跳过后续层规则`],
             });

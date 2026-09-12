@@ -24,6 +24,7 @@ import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
 import type { AuditHistoryEntry } from './audit-history';
 import type { RuleCheck } from './rules/types';
+import { ruleCode } from './rules/assemble';
 
 // ════════════════════════════════════════
 // 聚合报告数据模型
@@ -165,11 +166,8 @@ export function computeAuditStats(options: StatsOptions = {}): AuditStatsReport 
   for (const entry of inWindow) {
     for (const rc of entry.ruleResults as RuleCheck[]) {
       if (!rc || rc.status !== 'WARN' && rc.status !== 'FAIL') continue;
-      // 规则码：A<n> / E<n> / R<n>（规则集规则 500+ 走 R 前缀，number=0 兜底用规则名）
-      const code = rc.number >= 500 ? `R${rc.number - 500}`
-        : rc.number >= 200 ? `E${rc.number - 200}`
-        : rc.number > 0 ? `A${rc.number}`
-        : rc.name;
+      // 规则码：A<n> / E<n> / R<n>（v1.4.8 条目 7：编号推导收口 ruleCode——此前本处内联分支）
+      const code = ruleCode(rc.number, rc.name);
       const existing = ruleCounts.get(code) ?? { name: '', count: 0, failCount: 0 };
       existing.count += 1;
       if (rc.status === 'FAIL') existing.failCount += 1;

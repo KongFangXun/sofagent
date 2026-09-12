@@ -125,6 +125,12 @@ export interface AuditContext {
  * 新增审计项时只需实现此接口并注册到 rules/index.ts
  */
 export interface Rule {
+  /**
+   * v1.4.8 深模块条目 7：规范编号（'A1' / 'E1' …）——注册表声明一次，全工程唯一来源。
+   * 由 rules/index.ts 的 `{ name: 'A…` 字面量显式填写；不等价于 number 的区间推导
+   * （E1 的 number=201 而 id='E1'）。缺了它，各消费点只能各自重推编号（历史 6 处重复）。
+   */
+  id: string;
   name: string;
   number: number;
   /** 证据模式标注 */
