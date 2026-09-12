@@ -3148,19 +3148,18 @@ echo "$S346_HUMAN" | grep -q "阻断率" || S346_OK=false
 $S346_OK && pass "审计聚合 CLI 三参数行为实测过（--stats/--days/--json 纯净）" || fail "审计聚合 CLI 行为回退——检查 stats.ts/dist 构建与口径行"
 # S347 · 反作弊基线三防线默认化（dist 行为锚）：doctor 三项体检接线 + env-manager 缺省配置全开
 scenario 347 "v1.4.3 第八章：反作弊基线双防线——doctor 三项体检在位 + 缺省配置全开 + 白名单外部化字段 + 四形态×双防线映射锁"; S347_OK=true
-S347_ORCH="$PROJECT_ROOT/engine/orchestrator/dist"
 # ① doctor 接线：train-doctor dist 产物含三项体检名
 grep -q "anticheat-git-disabled" "$PROJECT_ROOT/engine/mcp/dist/tools/train-doctor.js" 2>/dev/null || S347_OK=false
 grep -q "anticheat-network-allowlist" "$PROJECT_ROOT/engine/mcp/dist/tools/train-doctor.js" 2>/dev/null || S347_OK=false
 # ② env-manager dist：缺省反作弊配置（gitDisabled true + networkAllowlist 数组）
-grep -q "networkAllowlist" "$S347_ORCH/train/env-manager.js" 2>/dev/null || S347_OK=false
-grep -q "gitDisabled" "$S347_ORCH/train/env-manager.js" 2>/dev/null || S347_OK=false
+grep -q "networkAllowlist" "$PROJECT_ROOT/engine/train/dist/env-manager.js" 2>/dev/null || S347_OK=false
+grep -q "gitDisabled" "$PROJECT_ROOT/engine/train/dist/env-manager.js" 2>/dev/null || S347_OK=false
 # ③ 白名单外部化：train-env-init.sh 落默认白名单配置（install 时随装随落）
 grep -q "networkAllowlist" "$PROJECT_ROOT/tools/train/train-env-init.sh" 2>/dev/null || S347_OK=false
 # ④ 形态×防线→体检项映射锁（run-05 coverage F-2 闭环）：四形态（git gold commit / wget+curl / pip / urllib）× 双防线（断历史回溯 / 断外联通道）→ 三体检项 （git 禁用 + .git 不可见 = 防线一两个检查点；
 # 网络白名单生效 = 防线二）—— 映射完整非宣称虚标；行为级锚点 = env-anticheat.test.ts（.git 剥离/git 禁用/白名单分支 19 用例）
 grep -q "四形态" "$PROJECT_ROOT/docs/changelog/v1.4/v1.4.3.md" || S347_OK=false
-ls "$PROJECT_ROOT/engine/orchestrator/src/__tests__/env-anticheat.test.ts" >/dev/null 2>&1 || S347_OK=false
+ls "$PROJECT_ROOT/engine/train/src/__tests__/env-anticheat.test.ts" >/dev/null 2>&1 || S347_OK=false
 $S347_OK && pass "反作弊基线三防线锚点在位（doctor 体检/缺省全开/白名单外部化/四形态映射+行为级测试在位）" || fail "反作弊基线防线缺失——reward hacking 防线面临回退"
 # S348 · 训练监控 MCP tools 注册面（动态对账：tool-registry 实数，+N 不假红）；S364 corpus_export 已并入（MCP+SKILL 锚）
 scenario 348 "v1.4.3 第一章：训练监控三 MCP tools 注册——train_status/train_list/train_diagnose/corpus_export 在位 + registry 计数与 SKILL 对账（动态对账口径）"; S348_OK=true
@@ -3771,30 +3770,30 @@ scenario 375 "v1.4.5 交付面行为锁：train deliverable 打包+HMAC verify �
 S375_TMP=$(mktemp -d /tmp/sofagent-s375-XXXX)
 printf 'fixed-test-key-123' > "$S375_TMP/test.key"; mkdir -p "$S375_TMP/data"
 cat > "$S375_TMP/w.mjs" << S375EOF
-import { mkdirSync, writeFileSync, readFileSync, existsSync, symlinkSync } from 'fs'; const o = await import('$PROJECT_ROOT/engine/orchestrator/dist/index.js'); const tr = await import('$PROJECT_ROOT/engine/mcp/dist/tool-registry.js');
+import { mkdirSync, writeFileSync, readFileSync, existsSync, symlinkSync } from 'fs'; const o = await import('$PROJECT_ROOT/engine/orchestrator/dist/index.js'); const tn = await import('$PROJECT_ROOT/engine/train/dist/index.js'); const tr = await import('$PROJECT_ROOT/engine/mcp/dist/tool-registry.js');
 const DATA = process.env.SOFAGENT_DATA; const ent = 'acc-ent'; const bad = [];
 for (const n of ['train_serve','train_compliance','train_deliverable']) { if (!tr.TOOLS.find(t=>t.name===n)) bad.push('tools:'+n); } // serve 三 tools 注册面（83 静态）
-mkdirSync(DATA+'/train/'+ent, {recursive:true}); o.saveTrainJobRecord(DATA, {jobId:'j1', enterpriseId:ent, status:'completed'});
+mkdirSync(DATA+'/train/'+ent, {recursive:true}); tn.saveTrainJobRecord(DATA, {jobId:'j1', enterpriseId:ent, status:'completed'});
 for (const s of [100,200,300,400,500,600]) { mkdirSync(DATA+'/train/'+ent+'/j1/checkpoints/step-'+s+'/weights', {recursive:true}); writeFileSync(DATA+'/train/'+ent+'/j1/checkpoints/step-'+s+'/weights/w.bin','W'.repeat(2048)); } // 6>keep5 → step-100 进 archive
 symlinkSync(DATA+'/nonexistent-target-xyz', DATA+'/train/'+ent+'/j1/checkpoints/step-100/weights/link.bin'); // 悬空链接
-const rep = o.archiveExpired(DATA, ent);
+const rep = tn.archiveExpired(DATA, ent);
 if (!rep.failures.find(f=>f.source.includes('step-100') && f.reason.includes('符号链接'))) bad.push('retention:no-symlink-reject');
 if (!existsSync(DATA+'/train/'+ent+'/j1/checkpoints/step-100/weights/w.bin') || rep.archived.length!==0) bad.push('retention:source-kept-violation'); // 拒绝归档并保留源
 writeFileSync(DATA+'/ds-acc.csv','name,phone,note\n张三,13800138000,常规备注\n李四,13900139000,证件 110101199003074258\n');
-o.recordDatasetVersion({dataDir:DATA, enterpriseId:ent, datasetId:'ds-acc', contentHash:'hash-acc', sampleCount:2, algorithm:'sft', datasetFile:DATA+'/ds-acc.csv', createdAt:new Date().toISOString()}, 'v1');
-const cr = o.scanDatasetCompliance({dataDir:DATA, enterpriseId:ent, datasetId:'ds-acc', version:'v1'}); // findings 只记形态不记原文
+tn.recordDatasetVersion({dataDir:DATA, enterpriseId:ent, datasetId:'ds-acc', contentHash:'hash-acc', sampleCount:2, algorithm:'sft', datasetFile:DATA+'/ds-acc.csv', createdAt:new Date().toISOString()}, 'v1');
+const cr = tn.scanDatasetCompliance({dataDir:DATA, enterpriseId:ent, datasetId:'ds-acc', version:'v1'}); // findings 只记形态不记原文
 if (!cr.findings.find(f=>f.kind==='pii'&&f.severity==='high'&&f.matchedPattern.includes('手机号'))) bad.push('compliance:no-phone');
 if (!cr.findings.find(f=>f.kind==='pii'&&f.severity==='critical'&&f.matchedPattern.includes('身份证'))) bad.push('compliance:no-idcard');
-if (o.markProvenance(DATA, ent, 'ds-acc', 'v1', 'synthetic').version !== 'v1#synthetic') bad.push('compliance:provenance'); // 台账 append-only 追加
-const gen = o.generateTrainDeliverable(DATA, ent, {});
+if (tn.markProvenance(DATA, ent, 'ds-acc', 'v1', 'synthetic').version !== 'v1#synthetic') bad.push('compliance:provenance'); // 台账 append-only 追加
+const gen = tn.generateTrainDeliverable(DATA, ent, {});
 if (!existsSync(gen.zipPath)) bad.push('deliverable:no-zip');
-const v1rep = o.verifyTrainDeliverable(gen.zipPath);
+const v1rep = tn.verifyTrainDeliverable(gen.zipPath);
 if (!v1rep.ok || !v1rep.integrityOk) bad.push('deliverable:verify-fail');
-const entries = [...o.unzipEntries(readFileSync(gen.zipPath))].map(([name, data]) => ({name: name, data: data}));
+const entries = [...tn.unzipEntries(readFileSync(gen.zipPath))].map(([name, data]) => ({name: name, data: data}));
 const victim = entries.find(e=>e.name!=='manifest.json');
 if (!victim) bad.push('deliverable:no-victim-entry');
-else { victim.data = Buffer.from('TAMPERED-CONTENT'); writeFileSync(gen.zipPath, o.buildZip(entries, {at: new Date()}));
-  const v2rep = o.verifyTrainDeliverable(gen.zipPath);
+else { victim.data = Buffer.from('TAMPERED-CONTENT'); writeFileSync(gen.zipPath, tn.buildZip(entries, {at: new Date()}));
+  const v2rep = tn.verifyTrainDeliverable(gen.zipPath);
   if (v2rep.ok || v2rep.integrityOk || !v2rep.files.find(f=>f.status!=='ok')) bad.push('deliverable:tamper-not-rejected'); } // 篡改拒绝 + mismatch 明细
 const fi = o.initFDEClientSession(DATA,'acc-cli',{}); if(fi.files.length!==10||!o.isFDEClientInitialized(DATA,'acc-cli')) bad.push('fde-session:init'); // 模块八：10 文件
 const fc = o.captureFDEClientSession(DATA,{schemaVersion:'v1',clientId:'acc-cli',sessionId:'s-1',capturedAt:new Date().toISOString(),completed:['进场访谈完成'],inProgress:[],nextSteps:[],openQuestions:[]}); const fr = o.restoreFDEClientSession(DATA); if(!fc||!fr||fr.restored!==true||fr.clientId!=='acc-cli') bad.push('fde-session:capture-restore');
@@ -3807,7 +3806,7 @@ S375Q_OK=true; [ -f "$PROJECT_ROOT/docs/guides/train-quickstart.md" ] || { echo 
 scenario 376 "v1.4.6 章一 train multi 行为锁：多卡启动命令构造（单卡直通/多卡 torchrun/多机 master 参数/verl 入口）+ rank 事件汇总（最慢 rank 决定进度/loss-reward 均值/空集零）+ job.json schema v2（gpu/nodes/cloud 新字段 + v1 向后兼容 + strict 拒未知）+ GPU 队列双轴拓扑感知（卡数维度生效/队首泵放行/serial 向后兼容）+ NCCL 分布式诊断第八类"; S376_OK=true
 S376_TMP=$(mktemp -d /tmp/sofagent-s376-XXXX)
 cat > "$S376_TMP/w.mjs" << S376EOF
-const o = await import('$PROJECT_ROOT/engine/orchestrator/dist/index.js');
+const o = await import('$PROJECT_ROOT/engine/train/dist/index.js'); // 本场景符号（multi/schema/queue/diagnose）全部归属 @sofagent/train
 const bad = [];
 // 一、多卡启动命令构造（train-multi.buildMultiGpuLaunch）
 const job1 = { schemaVersion: 'v1', jobId: 'j1', dataPath: '/d', baseModel: 'Qwen3-0.6B', algorithm: 'sft', hyperparams: {}, checkpointPath: '/c', outputDir: '/o' };
@@ -3854,7 +3853,7 @@ $S376_OK && pass "train multi 行为锁（单卡直通/torchrun 多卡/多机 ma
 scenario 377 "v1.4.6 章二 train cloud 行为锁：分拣闸三档判定（敏感拦上云含保密证书编号/脱敏放行/公开放行/宁拦勿漏优先级）+ 批量分拣整批拦截 + data-push 双闸入库（合规先拒/分拣标记本地放行/双闸全过）+ schema strict 拒未知 + 云 VM 注册表 + 失联止损（5 分钟阈值/从未心跳不算失联）+ 成本核算（向上取整美分/超预算判定）+ train_cloud MCP 注册面"; S377_OK=true
 S377_TMP=$(mktemp -d /tmp/sofagent-s377-XXXX)
 cat > "$S377_TMP/w.mjs" << S377EOF
-const o = await import('$PROJECT_ROOT/engine/orchestrator/dist/index.js'); const tr = await import('$PROJECT_ROOT/engine/mcp/dist/tool-registry.js');
+const o = await import('$PROJECT_ROOT/engine/train/dist/index.js'); const tr = await import('$PROJECT_ROOT/engine/mcp/dist/tool-registry.js'); // 本场景符号（分拣/data-push/cloud/cost）全部归属 @sofagent/train；tr 仍为 mcp 注册面
 const bad = [];
 // 一、分拣闸三档（sorting-gate.classifyDataForCloud）
 const sens = o.classifyDataForCloud('客户张三 13800138000 购买金额 ¥12000');
@@ -4086,13 +4085,14 @@ S383_OUT=$(node -e "
   const fs = require('fs');
   const bad = [];
   const orch = await import('$PROJECT_ROOT/engine/orchestrator/dist/index.js');
+  const tn   = await import('$PROJECT_ROOT/engine/train/dist/index.js');
   const tpl  = await import('$PROJECT_ROOT/engine/train/dist/train-templates.js');
   // ① 删除符号不得复活（C 批 model-downloader 全套 + B 批 trainEnvInit）
   for (const s of ['downloadModel', 'trainEnvInit', 'modelDir', 'partPaths', 'preflightDiskSpace', 'makeDefaultFetchRange', 'defaultFreeSpace']) {
-    if (typeof orch[s] !== 'undefined') bad.push('删除符号复活:' + s);
+    if (typeof orch[s] !== 'undefined' || typeof tn[s] !== 'undefined') bad.push('删除符号复活:' + s);
   }
   // ② D 批：executor 面在位 + scheduler 源码不再直引 child_process
-  if (typeof orch.createLocalSpawnExecutor !== 'function') bad.push('createLocalSpawnExecutor 缺失');
+  if (typeof tn.createLocalSpawnExecutor !== 'function') bad.push('createLocalSpawnExecutor 缺失');
   if (/child_process/.test(fs.readFileSync('$PROJECT_ROOT/engine/train/src/train-scheduler.ts', 'utf8'))) bad.push('scheduler 仍直引 child_process');
   // ③ A 批：判定语义（SCENARIO_MATCH_HINTS 四键非空）+ 每场景参考模板在位
   const hints = tpl.SCENARIO_MATCH_HINTS || {};
