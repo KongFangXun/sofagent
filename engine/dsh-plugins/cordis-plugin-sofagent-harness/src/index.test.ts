@@ -23,19 +23,81 @@ interface HarnessReport {
   failed: Array<{ name: string; reason: string }>;
   total: number;
   capability: string;
+  viaHost: string[];
+  viaDirect: string[];
+  unloadHook: 'ctx.on' | 'apply-return';
+}
+
+/** 假 ctx 的可选宿主能力开关（用于覆盖三条挂载/卸载路径） */
+interface CtxOptions {
+  /** 是否提供宿主惯用法 ctx.plugin（false = 裸 ctx，只能回落直呼 apply） */
+  withHostPlugin?: boolean;
+  /** 是否提供宿主生命周期钩子 ctx.on('dispose', …) */
+  withDisposeHook?: boolean;
+  /** ctx.plugin 是否抛错（模拟宿主拒收 → 必须回落直呼） */
+  rejectHostMount?: boolean;
 }
 
 /**
- * 构造鸭子类型 ctx：只记录 provide 注册的服务。
+ * 构造鸭子类型 ctx：**对齐 cordis 4.x 的真实契约**（实测 ~/.dsh/.../@deepseek-ai/cordis 4.0.2）。
+ *   ① `provide(name, value)` **返回 disposer**（宿主实现走 fiber.effect，返回反注册函数）；
+ *   ② `plugin(p)` 挂载插件并返回 ForkScope（含 `dispose`），句柄 dispose 时反向撤销该子插件的注册；
+ *   ③ `on('dispose', fn)` 登记卸载监听。
  * 🔴 刻意不 import 任何宿主类型——与适配层红线同口径（ctx: unknown + 结构访问）。
  */
-function makeCtx() {
+function makeCtx(opts: CtxOptions = {}) {
+  const { withHostPlugin = true, withDisposeHook = true, rejectHostMount = false } = opts;
   const services = new Map<string, unknown>();
-  return {
+  /** ctx.on('dispose') 登记的回调（模拟宿主卸载事件触发面） */
+  const onDispose: Array<() => unknown> = [];
+  /** 经宿主路径挂载过的插件（断言「走的是宿主惯用法」） */
+  const mounted: unknown[] = [];
+
+  const ctx: Record<string, unknown> = {
     services,
-    provide: (name: string, service: unknown): void => {
+    onDispose,
+    mounted,
+    provide: (name: string, service: unknown): (() => void) => {
       services.set(name, service);
+      return () => {
+        services.delete(name);
+      };
     },
+    sofagent: {},
+  };
+
+  if (withHostPlugin) {
+    ctx.plugin = (p: { apply?: (c: unknown) => unknown }): { dispose: () => Promise<void> } => {
+      if (rejectHostMount) throw new Error('宿主拒收（合成：契约不符）');
+      mounted.push(p);
+      // 宿主职责：调用插件 apply 并**按 fiber 托管其返回的 disposer**
+      const childDisposers: Array<() => unknown> = [];
+      const ret = typeof p?.apply === 'function' ? p.apply(ctx) : undefined;
+      if (typeof ret === 'function') childDisposers.push(ret as () => unknown);
+      return {
+        dispose: async (): Promise<void> => {
+          for (const undo of childDisposers.splice(0).reverse()) await undo();
+        },
+      };
+    };
+  }
+  if (withDisposeHook) {
+    ctx.on = (event: string, listener: () => unknown): (() => void) => {
+      if (event === 'dispose') onDispose.push(listener);
+      return () => {
+        const i = onDispose.indexOf(listener);
+        if (i >= 0) onDispose.splice(i, 1);
+      };
+    };
+  }
+  return ctx as {
+    services: Map<string, unknown>;
+    onDispose: Array<() => unknown>;
+    mounted: unknown[];
+    sofagent: Record<string, unknown>;
+    plugin?: unknown;
+    on?: unknown;
+    provide: (name: string, service: unknown) => () => void;
   };
 }
 
@@ -113,6 +175,72 @@ describe('cordis-plugin-sofagent-harness', () => {
       }
     } finally {
       if (fs.existsSync(stash)) fs.renameSync(stash, gateDist);
+    }
+  });
+
+  it('A2·挂载路径：ctx.plugin 在场时走宿主惯用法（逐插件带 inject 声明），不静默直呼', async () => {
+    const ctx = makeCtx();
+    await plugin.apply(ctx);
+    const report = reportOf(ctx);
+    expect(report.viaHost, '宿主路径挂载数').toHaveLength(9);
+    expect(report.viaDirect, '宿主可用时回落路径应为空').toEqual([]);
+    expect(ctx.mounted, '宿主 ctx.plugin 收到的插件数').toHaveLength(9);
+    expect(report.loaded.length + report.failed.length, '守恒：loaded + failed = total').toBe(report.total);
+    // 走宿主路径的插件必须自带 inject 声明——否则宿主无从做就绪门控（A2 根因 1）
+    for (const p of ctx.mounted as Array<{ inject?: readonly string[] }>) {
+      expect(Array.isArray(p.inject), '插件对象须声明 inject').toBe(true);
+      expect(p.inject).toContain('settings');
+      expect(p.inject).toContain('dynamicCordisRunner');
+    }
+  });
+
+  it('A2·卸载路径：聚合层卸载后本层与 9 个原子服务全部反注册（不留残留）', async () => {
+    const ctx = makeCtx();
+    const dispose = await plugin.apply(ctx);
+    expect(ctx.services.get('sofagent.harness'), '装载后本层报告服务在').toBeDefined();
+    expect(ctx.services.get('sofagent.audit'), '装载后原子服务在').toBeDefined();
+    expect(ctx.services.size, '装载面 = 9 原子 + 1 聚合报告').toBe(10);
+    // 宿主生命周期钩子已登记（双保险之一）
+    expect(ctx.onDispose).toHaveLength(1);
+    expect(reportOf(ctx).unloadHook).toBe('ctx.on');
+    // 触发卸载（模拟宿主 dispose 事件）
+    await ctx.onDispose[0]();
+    expect(ctx.services.get('sofagent.harness'), '卸载后本层服务须反注册').toBeUndefined();
+    expect(ctx.services.get('sofagent.audit'), '卸载后原子服务须反注册').toBeUndefined();
+    expect(ctx.services.size, '卸载后 ctx 上不留任何 sofagent.* 服务').toBe(0);
+    // 幂等：apply 返回值再调一次不抛、不复活
+    await dispose();
+    expect(ctx.services.size).toBe(0);
+  });
+
+  it('A2·回落路径：宿主拒收 ctx.plugin 时回落直呼 apply，逐个降级不整挂失败', async () => {
+    const ctx = makeCtx({ rejectHostMount: true });
+    await plugin.apply(ctx);
+    const report = reportOf(ctx);
+    expect(report.viaHost, '宿主拒收 → 不应有宿主路径挂载').toEqual([]);
+    expect(report.viaDirect, '全部走回落直呼').toHaveLength(9);
+    expect(report.loaded).toHaveLength(9);
+    expect(report.failed).toEqual([]);
+    expect(report.loaded.length + report.failed.length).toBe(report.total);
+  });
+
+  it('A2·静默空转已修：子插件无 apply 时计入 failed，不得谎报 loaded', async () => {
+    vi.doMock('cordis-plugin-sofagent-ontology', () => ({ default: { pluginMeta: {}, capability: '' } })); // 无 apply
+    vi.resetModules();
+    try {
+      const fresh = (await import('./index')).default;
+      const ctx = makeCtx({ withHostPlugin: false, withDisposeHook: false }); // 裸 ctx：必走回落分支
+      await fresh.apply(ctx);
+      const report = reportOf(ctx);
+      expect(report.loaded, '无 apply 者不得计入 loaded').not.toContain('ontology');
+      expect(report.failed.map((f) => f.name)).toContain('ontology');
+      expect(report.loaded).toHaveLength(8);
+      expect(report.loaded.length + report.failed.length, '守恒：9 = loaded + failed').toBe(9);
+      expect(ctx.services.get('sofagent.ontology'), '缺 apply 者不得注册服务').toBeUndefined();
+      expect(report.unloadHook, '裸 ctx 无 ctx.on → 仅靠 apply 返回值').toBe('apply-return');
+    } finally {
+      vi.doUnmock('cordis-plugin-sofagent-ontology');
+      vi.resetModules();
     }
   });
 });

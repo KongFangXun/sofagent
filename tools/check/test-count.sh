@@ -15,6 +15,11 @@
 #   ./tools/check/test-count.sh           # 跑全量，汇总 + 退出码
 #   ./tools/check/test-count.sh --quiet   # 只输出机器可读的 TOTAL_TESTS= 行（供检查脚本 grep）
 #
+# flaky 可定位性（2026-09-12）：命中 flaky 时自动把**首跑原文**留档到
+#   /tmp/sofagent-test-count-<pkg>-flaky.log（复跑留档 -flaky-retry.log），
+#   并在输出中打印该路径与首跑失败用例定位行（FAIL / × / → / AssertionError）。
+#   路径不含 PID ⇒ 下次复现时仍可寻回，不再「知道 flaky 存在但查不出是哪条」。
+#
 # 退出码:
 #   0 = 全部通过（部分包无测试视为正常）
 #   1 = 有包测试失败
@@ -32,6 +37,11 @@ set -uo pipefail
 FLAKY_PKGS=""
 # v1.3.9 四十九：flaky 复跑次数计数（首跑失败→复跑全绿的包数，供 human 追因与采信上限）
 FLAKY_COUNT=0
+# 2026-09-12：flaky 证据落盘清单（机器可读）——稳定路径、不含 PID，
+# 「下次复现时」仍能寻回首跑原文。必须在此预初始化：set -u 下首次
+# 自引用拼接（FLAKY_LOGS="${FLAKY_LOGS}…"）若未初始化会崩 unbound variable
+# （同 FLAKY_PKGS 的 v1.3.7 实案，check-tool-health.sh ⑥ 有静态守卫）。
+FLAKY_LOGS=""
 
 cd "$(dirname "$0")/../.." || exit 1
 
@@ -53,6 +63,47 @@ YELLOW='\033[1;33m'
 RED='\033[0;31m'
 BOLD='\033[1m'
 NC='\033[0m'
+
+# ── flaky 可定位性（2026-09-12 补 · 只增可观测性，不改判据语义）──
+# 缺陷背景：此前 flaky 分支只报「包级」结论（`⚠ train: 首跑 1 失败，复跑全绿`），
+# 且首跑日志与复跑日志共用同一个 `-$$.log` 路径、读完当场 `rm` ⇒ 报告发出时
+# **证据已销毁**，flaky 退化成一桩「知道它存在、永远查不出是哪条用例」的悬案。
+# 现约定：flaky 命中时把**首跑原文**（含失败用例名/断言栈）落盘到稳定路径
+# （不含 PID——带 PID 的路径下次复现就找不到了），并当场抽出失败定位行打印。
+#
+# 规则：$VAR 后紧跟非 ASCII 字符必须写 ${VAR} 显式定界（check-cjk-var.sh 铁律）。
+
+# 从 vitest 输出中抽「失败定位行」：文件/用例名（FAIL 行、× 行）、断言原因（→ 行）。
+# 输入=原始输出（可含 ANSI）；输出=至多 20 行；无命中时输出空（不报错）。
+extract_fail_locs() {
+  sed $'s/\033\[[0-9;]*m//g' \
+    | grep -E '^[[:space:]]*(FAIL|[×✗✕])[[:space:]]|^[[:space:]]*→ |AssertionError' \
+    | head -20 \
+    || true
+}
+
+# flaky 证据落盘 + 打印。$1=包名  $2=首跑原文  $3=复跑原文
+# 副作用：写 2 个稳定路径日志；追加 FLAKY_LOGS 清单；非 quiet 时打印路径与失败定位。
+persist_flaky_evidence() {
+  _pe_pkg="$1"
+  _pe_first="$2"
+  _pe_retry="$3"
+  _pe_log="/tmp/sofagent-test-count-${_pe_pkg}-flaky.log"
+  _pe_rlog="/tmp/sofagent-test-count-${_pe_pkg}-flaky-retry.log"
+  printf '%s\n' "$_pe_first" > "$_pe_log" 2>/dev/null || true
+  printf '%s\n' "$_pe_retry" > "$_pe_rlog" 2>/dev/null || true
+  FLAKY_LOGS="${FLAKY_LOGS}${_pe_log} "
+  [ "$QUIET" = false ] || return 0
+  echo -e "      首跑日志（含失败用例）: ${_pe_log}"
+  echo -e "      复跑日志（对照组）:     ${_pe_rlog}"
+  _pe_hits=$(printf '%s\n' "$_pe_first" | extract_fail_locs)
+  if [ -n "$_pe_hits" ]; then
+    echo -e "      ↓ 首跑失败定位（文件 / 用例 / 断言）:"
+    printf '%s\n' "$_pe_hits" | sed 's/^/        /'
+  else
+    echo -e "      （首跑日志未匹配到 FAIL/×/Error 形态行——请直接查看上方日志文件全文）"
+  fi
+}
 
 # ── 收集有 test script 的 workspace 包（与 npm test --workspaces --if-present 语义一致）──
 # 注意：macOS /bin/bash 是 3.2，无 mapfile 内建，用 command substitution + herestring 兼容写法
@@ -139,11 +190,13 @@ while IFS= read -r pkg_dir; do
       tmp_retry="/tmp/sofagent-test-count-${pkg_name}-$$.log"
       (cd "$pkg_dir" && npm test -- $SOFAGENT_TEST_COUNT_SERIAL > "$tmp_retry" 2>&1)
       retry_code=$?
+      retry_out=$(cat "$tmp_retry" 2>/dev/null) || true
       rm -f "$tmp_retry"
       if [ "$retry_code" -eq 0 ]; then
         [ "$QUIET" = false ] && echo -e "  ${YELLOW}⚠${NC} ${pkg_name}: 首跑退出码 ${test_code}（无 Tests 汇总），复跑通过 → ${GREEN}flaky 候选${NC}"
         FLAKY_PKGS="${FLAKY_PKGS}${pkg_name} "
         FLAKY_COUNT=$((FLAKY_COUNT + 1))
+        persist_flaky_evidence "$pkg_name" "$out" "$retry_out"
       else
         [ "$QUIET" = false ] && echo -e "  ${RED}✗${NC} ${pkg_name}: 无 Tests 汇总且退出码非 0（首跑 ${test_code} / 复跑 ${retry_code}，真失败）"
         TOTAL_FAILED=$((TOTAL_FAILED + 1))
@@ -199,6 +252,8 @@ while IFS= read -r pkg_dir; do
       # 复跑过的包记录到 flaky 名单（供 human 追因）+ 计数
       FLAKY_PKGS="${FLAKY_PKGS}${pkg_name} "
       FLAKY_COUNT=$((FLAKY_COUNT + 1))
+      # 2026-09-12：落盘首跑/复跑原文 + 打印失败用例定位——让 flaky 下次可追（不改判据）
+      persist_flaky_evidence "$pkg_name" "$out" "$retry_out"
     else
       # 复跑仍失败（或无 Tests 汇总 = 复跑崩溃）→ 真失败：FAILED 保持首跑值，如实报红
       [ "$QUIET" = false ] && echo -e "  ${RED}✗${NC} ${pkg_name}: 复跑仍 ${RETRY_FAILED:-?} failed（真失败，非 flaky）"
@@ -228,6 +283,7 @@ if [ "$QUIET" = false ]; then
   fi
   if [ "$FLAKY_COUNT" -gt 0 ]; then
     echo -e "  flaky 复跑: ${YELLOW}${FLAKY_COUNT}${NC} 包（首跑失败复跑全绿，待追因）"
+    [ -n "$FLAKY_LOGS" ] && echo -e "  flaky 证据留档（首跑原文含失败用例）: ${FLAKY_LOGS}"
   fi
   echo ""
   echo -e "  CHANGELOG 写法: ${GREEN}${TOTAL_TESTS} tests across ${PKG_COUNT} packages（workspace 汇总口径）${NC}"
@@ -240,6 +296,9 @@ echo "TOTAL_TESTS=$TOTAL_TESTS PASSED=$TOTAL_PASSED FAILED=$TOTAL_FAILED PKGS=$P
 echo "FLAKY_PKGS=${FLAKY_PKGS:-}"
 # v1.3.9 四十九：flaky 复跑次数（机器可读，供采信上限/追因对账）
 echo "FLAKY_COUNT=${FLAKY_COUNT}"
+# 2026-09-12：flaky 证据留档路径（机器可读；空 = 本次无 flaky）。
+# 值形如 `/tmp/sofagent-test-count-<pkg>-flaky.log `（首跑原文，含失败用例名与断言栈）。
+echo "FLAKY_LOGS=${FLAKY_LOGS:-}"
 
 if [ "$TOTAL_FAILED" -gt 0 ]; then
   exit 1

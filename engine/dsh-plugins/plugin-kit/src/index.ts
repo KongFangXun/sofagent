@@ -61,6 +61,14 @@ export interface SofagentPluginHostPackage {
 const DEFAULT_BRAND_COLOR = '#16B8F3';
 
 /**
+ * 插件声明的宿主服务依赖（与各插件 cordis.patch.yml 的 `inject:` 同值）。
+ * 🔴 必须**同时**挂在插件对象上（见文件末 plugin 对象），否则宿主用 `ctx.plugin()` 挂载时
+ *    拿不到就绪门控——`cordis.patch.yml` 的 `inject` 只对「宿主直接挂载该 id」生效，
+ *    经聚合层转挂时不带过去。声明在对象上后两条挂载路径同语义。
+ */
+export const PLUGIN_INJECT = ['settings', 'dynamicCordisRunner'] as const;
+
+/**
  * 宿主 Cordis 上下文的最小结构面。
  * 🔴 刻意**不** import cordis 的类型——只用结构描述，运行时按鸭子类型探测，
  *    这样引擎/适配层永不编译期依赖宿主 SDK（红线 C）。
@@ -135,17 +143,36 @@ export function createSofagentPlugin(options: SofagentPluginOptions, hostPkg?: S
   /**
    * DSH Cordis 插件契约：apply(ctx) 把 sofagent 能力注册为 ctx 服务（sofagent.<short>）。
    * 插件被挂进 DSH profile（dsh.bundle + cordis.patch.yml）后由 Cordis loader 调用。
+   *
+   * 🔴 卸载契约：把宿主各注册 API **返回的 disposer** 收成一条复合 disposer 并 **返回**——
+   *    cordis 4.x 的 `Fiber._execute` 对「apply 返回函数」登记为 effect disposer，
+   *    卸载插件 fiber 时反向执行。故经 `ctx.plugin(本插件)` 转挂时，卸载聚合会连带反注册这些服务。
+   *    裸 ctx（无宿主注册 API）下无 disposer 可收，返回 undefined——不产生「跑不到的假契约」。
+   *
+   * @returns 复合 disposer（幂等；无可卸载面时 undefined）
    */
-  function apply(ctx: unknown): void {
+  function apply(ctx: unknown): undefined | (() => Promise<void>) {
     const c = (ctx ?? {}) as HostContext;
     const service: Record<string, unknown> = { invoke, meta: pluginMeta, capability };
+    /** 宿主注册 API 返回的 disposer（鸭子类型：只认「返回值是函数」这一条） */
+    const disposers: Array<() => unknown> = [];
+    const collect = (ret: unknown): void => {
+      if (typeof ret === 'function') disposers.push(ret as () => unknown);
+    };
 
     // ① 能力注册：provide 优先；无 provide API 时挂到 ctx.sofagent.<short> 命名空间（保持可发现）
     if (typeof c.provide === 'function') {
-      c.provide(`sofagent.${short}`, service);
+      collect(c.provide(`sofagent.${short}`, service));
     } else {
       const cur = (c.sofagent ?? {}) as Record<string, unknown>;
       c.sofagent = { ...cur, [short]: service };
+      // 命名空间分支没有宿主 disposer，自建一个「摘除本条目」的反注册
+      disposers.push(() => {
+        const now = (c.sofagent ?? {}) as Record<string, unknown>;
+        const next: Record<string, unknown> = { ...now };
+        delete next[short];
+        c.sofagent = next;
+      });
     }
 
     // ② 注册为 dynamicCordisRunner 动态插件（WebUI Plugin list 可见加载状态 + 品牌名）
@@ -160,6 +187,7 @@ export function createSofagentPlugin(options: SofagentPluginOptions, hostPkg?: S
           // sessionId 仅作记录字段（define 不校验会话真实性）——profile apply 无会话上下文，传固定标记
           sessionId: 'profile-boot',
         });
+        collect(res); // 宿主若返回 disposer，随插件卸载一并撤销动态注册
         console.error(`${logTag} dynamicCordisRunner.define 成功:`, JSON.stringify(res));
       } else {
         console.error(`${logTag} dynamicCordisRunner 服务不可用（inject 未生效）`);
@@ -186,7 +214,7 @@ export function createSofagentPlugin(options: SofagentPluginOptions, hostPkg?: S
         const base: Record<string, unknown> = { enabled: true };
         for (const [k, v] of Object.entries(settingsExtra)) base[k] = v;
         base.brandColor = brandColor;
-        settings.register(`sofagent-${short}`, s.object(shape), { base });
+        collect(settings.register(`sofagent-${short}`, s.object(shape), { base })); // 宿主若返回 disposer，随卸载撤销配置面板注册
         console.error(`${logTag} settings.register 成功`);
       } else {
         console.error(`${logTag} settings 服务不可用（inject 未生效）`);
@@ -195,9 +223,31 @@ export function createSofagentPlugin(options: SofagentPluginOptions, hostPkg?: S
       // settings 服务在 profile apply 时可能未就绪——跳过不崩（配置面板注册为增强项）
       console.error(`${logTag} settings.register 失败:`, err instanceof Error ? err.message : String(err));
     }
+
+    // ④ 卸载契约：收集到的宿主 disposer → 幂等复合 disposer，作为 apply 返回值交宿主登记
+    //    （cordis 4.x `Fiber._execute`：apply 返回函数即登记为 effect disposer，fiber 卸载时反向执行）
+    if (disposers.length === 0) return undefined;
+    let disposed = false;
+    return async () => {
+      if (disposed) return;
+      disposed = true;
+      for (const undo of disposers.splice(0).reverse()) {
+        try {
+          await undo();
+        } catch (err) {
+          console.error(`${logTag} 卸载失败:`, err instanceof Error ? err.message : String(err));
+        }
+      }
+    };
   }
 
-  return { pluginMeta, capability, invoke, plugin: { apply } };
+  return {
+    pluginMeta,
+    capability,
+    invoke,
+    // name：宿主诊断面可读；inject：宿主 `ctx.plugin()` 挂载时的就绪门控（与 cordis.patch.yml 同值）
+    plugin: { name: `sofagent-${short}`, inject: PLUGIN_INJECT, apply },
+  };
 }
 
 // NOTE（v1.4.8 第5批 · 收敛时的两处**文案**归一化，非行为变更）：
