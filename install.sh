@@ -68,6 +68,17 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # v1.2.0: install.sh 提升到根目录，lib/ 仍在 engine/scripts/lib/
 LIB_DIR="${SCRIPT_DIR}/engine/scripts/lib"
 
+# ── 易失源目录检测（v1.4.8）──
+# 从 /tmp 等临时目录运行 install.sh 时，写入 $SOFAGENT_HOME 的「路径标记」与「入口软链」
+# 会指向易失位置——重启或 tmp 清理后即失效（软链断链 / 未来升级脚本去错目录 pull）。
+# 检出后按用途分别降级：路径标记不写（fail-safe，宁缺勿错）、入口改为拷贝（自包含可用）。
+is_volatile_dir() {
+  case "${1:-}" in
+    /tmp/*|/private/tmp/*|/var/tmp/*|/var/folders/*) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
 # ── 帮助（v1.3.8 P0-1 前移：--help 不依赖 lib/仓库完整性，任何场景直接可答）──
 show_help() {
   cat <<EOF
@@ -393,7 +404,14 @@ echo "${VERSION}" > "$SOFAGENT_HOME/VERSION"
 
 # 写入源码仓库路径标记（供升级时定位 sofagent 引擎源码位置，
 # sofagent-update 等升级脚本读取此文件找到仓库根以执行 git pull + rebuild）
-echo "$SCRIPT_DIR" > "$SOFAGENT_HOME/REPO_PATH"
+if is_volatile_dir "$SCRIPT_DIR"; then
+  # 易失源（如从 /tmp 抢救拷贝运行）：**不写标记**——写了会让升级脚本去错目录 pull，
+  # 属「错得比缺更危险」；读取端查无此文件时应 fail-safe 退出并提示重装。
+  warn "  源码目录位于易失路径（${SCRIPT_DIR}）——跳过 REPO_PATH 标记写入"
+  warn "  如需升级链可用，请从持久目录重新运行 bash install.sh"
+else
+  echo "$SCRIPT_DIR" > "$SOFAGENT_HOME/REPO_PATH"
+fi
 
 # ── 迁移旧数据（Q2 决策：自动迁移）──
 # 仓库内 data/ → SOFAGENT_HOME/data/
@@ -862,8 +880,18 @@ CLIEOF
   local dashboard_src="${SCRIPT_DIR}/tools/dashboard/sofagent-dashboard.sh"
   local dashboard_link="$bin_dir/sofagent-dashboard"
   if [ -f "$dashboard_src" ]; then
+    # 易失源（如 /tmp 拷贝）→ 改为**拷贝**而非软链：软链必随源目录清理而断链，
+    # 拷贝自包含、装完即用（代价：不随源更新，重装时覆盖）。
+    if is_volatile_dir "$SCRIPT_DIR"; then
+      if cp "$dashboard_src" "$dashboard_link" 2>/dev/null && [ -f "$dashboard_link" ]; then
+        chmod +x "$dashboard_link" 2>/dev/null || true
+        ok "  Dashboard 入口已注册（拷贝模式）：sofagent-dashboard → $bin_dir/sofagent-dashboard"
+        warn "    源目录位于易失路径（${SCRIPT_DIR}）——已改用拷贝，后续升级请从持久目录重装以跟随更新"
+      else
+        warn "  Dashboard 拷贝注册失败（${dashboard_link}），wrapper 占位分支兜底"
+      fi
     # 同守卫纪律：软链成功才报 ok（失败走 wrapper 占位分支兜底并提示）
-    if ln -sf "$dashboard_src" "$dashboard_link" 2>/dev/null && [ -L "$dashboard_link" ]; then
+    elif ln -sf "$dashboard_src" "$dashboard_link" 2>/dev/null && [ -L "$dashboard_link" ]; then
       chmod +x "$dashboard_link" 2>/dev/null || true
       ok "  Dashboard 入口已注册：sofagent-dashboard → $bin_dir/sofagent-dashboard"
     else
