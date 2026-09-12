@@ -86,6 +86,17 @@ grep -rhoE "['\"][a-z]+/[a-z-]+['\"]" "$B/dsh-hook-protocol/lib/" | tr -d "\"'" 
 | `non-seam:plugin-suite` | 插件聚合（一次 apply 挂全套原子插件） | 自身**不挂任何宿主生命周期**——只依次调用 9 个原子插件的 `apply`；能力仍由各原子插件 `provide`，聚合层没有独立的事件时机，挂任何生命周期都会是「跑不到的假契约」 | `ctx.provide('sofagent.suite')` | `suite` |
 <!-- SEAM-VOCAB:DSH-FORM:END -->
 
+### 2b. 宿主 profile 的挂载差异是**有意的**
+
+`~/.dsh/profiles/<name>/` 各 profile 的 `bundles` 与 patch **允许不同**，差异本身不是漏挂：
+
+| profile | bundles 里的 sofagent 项 | 差异理由（该 profile `cordis.patch.yml` 自述） |
+| --- | --- | --- |
+| `web` | `cordis-plugin-sofagent-suite`（一次挂全套原子插件） | 有 WebUI 服务（`settings` / `dynamicCordisRunner`） |
+| `headless` | 只挂 `cordis-plugin-sofagent-audit`，patch 里 `inject: []` | headless 无上述 WebUI 服务——插件默认 patch inject 了这两个服务会导致 pending 启动失败 |
+
+> 巡检时若见某 profile 挂得少，先读该 profile 的 `cordis.patch.yml` 自述与 `bundles`，**不直接判为缺口**。
+
 ## 3. OpenClaw 侧 · 宿主 seam 词汇表
 
 OpenClaw 的探测事件名是**下划线风格**（`before_tool_call`），与 DSH 的
