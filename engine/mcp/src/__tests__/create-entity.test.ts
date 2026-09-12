@@ -124,15 +124,4 @@ describe('create_entity', () => {
     const filePath = path.join(tmpDir, 'knowledge', 'entities', '含密钥实体.md');
     expect(fs.existsSync(filePath)).toBe(false);
   });
-
-  it('名称含路径分隔符 → 拒绝', () => {
-    const result = createEntity({
-      name: '../etc/passwd',
-      domain: '财务',
-      content: '---\nname: test\n---\n\ncontent',
-    });
-
-    expect(result.data.isError).toBe(true);
-    expect(result.text).toContain('不合法');
-  });
 });

@@ -9,7 +9,7 @@
 import { existsSync, readFileSync, readdirSync } from 'fs';
 import { getDataDir } from '@sofagent/core';
 import { join } from 'path';
-import { load as yamlLoad } from 'js-yaml';
+import { parseFrontmatter } from './knowledge-page';
 import { checkOntologyStatus, mergeOntology } from '@sofagent/ontology';
 
 // ============================================================
@@ -41,17 +41,6 @@ export interface ValidateOntologyResult {
 // ============================================================
 // 辅助函数
 // ============================================================
-
-function parseFrontmatter(content: string): Record<string, unknown> | null {
-  const normalized = content.replace(/^\uFEFF/, '').replace(/\r\n/g, '\n');
-  const match = normalized.match(/^---\n([\s\S]*?)\n---/);
-  if (!match || !match[1]) return null;
-  try {
-    return yamlLoad(match[1]) as Record<string, unknown>;
-  } catch {
-    return null;
-  }
-}
 
 /**
  * 扫描所有 entity 文件，检查 relations 引用完整性

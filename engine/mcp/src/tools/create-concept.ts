@@ -6,11 +6,10 @@
 // 集成 S4 数据变更审计（D1-D5）——与 create-entity 同流程
 // ============================================================
 
-import { existsSync, readFileSync, appendFileSync, mkdirSync } from 'fs';
+import { existsSync, readFileSync, mkdirSync } from 'fs';
+import { parseFrontmatter, appendDataChangeLog, checkPageNameSafety } from './knowledge-page';
 import { join } from 'path';
-import { load as yamlLoad } from 'js-yaml';
-import {type DataChange,
-  diffDataChange,
+import { diffDataChange,
   runDataRules,
   type DataAuditResult,
   atomicWriteSync, getDataDir } from '@sofagent/core';
@@ -44,17 +43,6 @@ export interface CreateConceptResult {
 
 function getKnowledgeDir(): string {
   return join(getDataDir(), 'knowledge');
-}
-
-function parseFrontmatter(content: string): Record<string, unknown> | null {
-  const normalized = content.replace(/^\uFEFF/, '').replace(/\r\n/g, '\n');
-  const match = normalized.match(/^---\n([\s\S]*?)\n---/);
-  if (!match || !match[1]) return null;
-  try {
-    return yamlLoad(match[1]) as Record<string, unknown>;
-  } catch {
-    return null;
-  }
 }
 
 function readBeforeObject(filePath: string): Record<string, unknown> | undefined {
@@ -108,27 +96,6 @@ function writeConceptFile(filePath: string, content: string): void {
   atomicWriteSync(filePath, content);
 }
 
-function appendDataChangeLog(change: DataChange, auditResult: DataAuditResult): void {
-  const logDir = join(getDataDir(), 'audit');
-  if (!existsSync(logDir)) {
-    mkdirSync(logDir, { recursive: true });
-  }
-  const logPath = join(logDir, 'data-change-log.jsonl');
-  const entry = {
-    timestamp: change.timestamp,
-    type: change.type,
-    name: change.name,
-    action: change.action,
-    auditVerdict: auditResult.hasFail ? 'FAIL' : auditResult.hasWarn ? 'WARN' : 'PASS',
-    violations: auditResult.violations.map((v) => ({ rule: v.rule, detail: v.detail })),
-  };
-  try {
-    appendFileSync(logPath, JSON.stringify(entry) + '\n', 'utf-8');
-  } catch {
-    // 非致命
-  }
-}
-
 // ============================================================
 // 主函数
 // ============================================================
@@ -136,7 +103,7 @@ function appendDataChangeLog(change: DataChange, auditResult: DataAuditResult): 
 export function createConcept(args: CreateConceptArgs): CreateConceptResult {
   const { name, content } = args;
 
-  if (name.includes('..') || name.includes('/') || name.includes('\\')) {
+  if (checkPageNameSafety(name) !== null) {
     return {
       text: '[sofagent] concept 名称不合法：不得包含路径分隔符',
       data: { action: 'created', path: '', auditVerdict: 'FAIL', isError: true },

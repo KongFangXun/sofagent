@@ -1,14 +1,18 @@
 // ============================================================
-// ontology-crud.test.ts · MCP Ontology CRUD 补全测试（v1.3.2 交付 5）
+// ontology-crud.test.ts · MCP Ontology CRUD 测试（v1.3.2 交付 5）
+// v1.4.8 深模块条目 6：删除/改名的共用管道（parseFrontmatter /
+//   appendDataChangeLog / checkPageNameSafety）已下沉至 knowledge-page.ts，
+//   原按工具复制的重复用例合并为表驱动（覆盖不减、用例数下降）。
 // ============================================================
 //
 // 覆盖：
 // - update_entity：字段级更新（只改传入字段、保留其余 frontmatter 与正文、
 //   created_at 保留、updated_at 刷新）、改 domain、改名（newName）、
-//   更新不存在 entity 报错、D1 拦截（domain 改空）、D5 拦截（secret）、路径穿越
-// - delete_entity：强制人审（confirmed=false 不执行；true 执行删除 + D1-D5 留痕）、
+//   更新不存在 entity 报错、D1 拦截（domain 改空）、D5 拦截（secret）
+// - 名称守卫（5 工具共用 checkPageNameSafety）：路径穿越统一拒绝
+// - 删除管道（delete_entity / delete_concept 共用）：强制人审
+//   （confirmed=false/undefined 不执行；true 执行删除 + D1-D5 留痕）、
 //   删除不存在报错
-// - delete_concept：强制人审（confirmed=false 不执行；true 执行删除）
 // ============================================================
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
@@ -23,6 +27,8 @@ vi.mock('@sofagent/think', () => ({
 
 import { generateDataThink } from '@sofagent/think';
 
+import { createEntity } from '../tools/create-entity';
+import { createConcept } from '../tools/create-concept';
 import { updateEntity } from '../tools/update-entity';
 import { deleteEntity } from '../tools/delete-entity';
 import { deleteConcept } from '../tools/delete-concept';
@@ -170,25 +176,21 @@ describe('Ontology CRUD · update_entity（字段级更新）', () => {
     expect(content).toContain('旧正文');
     expect(content).not.toContain(apiKey);
   });
-
-  it('名称含路径分隔符 → 拒绝', () => {
-    const result = updateEntity({ name: '../etc/passwd' });
-    expect(result.data.isError).toBe(true);
-    expect(result.text).toContain('不合法');
-  });
 });
 
-describe('Ontology CRUD · delete_entity（强制人审）', () => {
+// ============================================================
+// 名称守卫：5 条知识页写入路径共用 knowledge-page.checkPageNameSafety
+// （原按工具复制的「路径分隔符 → 拒绝」用例合并为单条表驱动）
+// ============================================================
+
+describe('Ontology CRUD · 名称守卫（checkPageNameSafety 单源 · 5 工具）', () => {
   let tmpDir: string;
   let originalData: string | undefined;
-  let entitiesDir: string;
 
   beforeEach(() => {
-    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'sofagent-de-'));
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'sofagent-guard-'));
     originalData = process.env.SOFAGENT_DATA;
     vi.stubEnv('SOFAGENT_DATA', tmpDir);
-    entitiesDir = path.join(tmpDir, 'knowledge', 'entities');
-    fs.mkdirSync(entitiesDir, { recursive: true });
     vi.clearAllMocks();
   });
 
@@ -197,128 +199,122 @@ describe('Ontology CRUD · delete_entity（强制人审）', () => {
     try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch { /* */ }
   });
 
+  it('路径穿越特征一律拒绝（create/update×2/delete 五条路径）', () => {
+    const evil = '../etc/passwd';
+    const cases: Array<{ label: string; run: () => { text: string; data: { isError: boolean } } }> = [
+      { label: 'create_entity', run: () => createEntity({ name: evil, domain: '财务', content: '---\ntype: entity\n---\nx' }) },
+      { label: 'create_concept', run: () => createConcept({ name: evil, content: '---\ntype: concept\n---\nx' }) },
+      { label: 'update_entity(name)', run: () => updateEntity({ name: evil }) },
+      { label: 'update_entity(newName)', run: () => updateEntity({ name: 'ok', newName: evil }) },
+      { label: 'delete_entity', run: () => deleteEntity({ name: evil, confirmed: true }) },
+      { label: 'delete_concept', run: () => deleteConcept({ name: evil, confirmed: true }) },
+    ];
+    for (const c of cases) {
+      const r = c.run();
+      expect(r.data.isError, c.label).toBe(true);
+      expect(r.text, c.label).toContain('不合法');
+    }
+  });
+});
+
+// ============================================================
+// 删除管道：delete_entity / delete_concept 共用 knowledge-page 件
+// （原两个近似 describe 合并为表驱动，两工具同受断言）
+// ============================================================
+
+describe('Ontology CRUD · 删除管道（entity/concept 共用）', () => {
+  let tmpDir: string;
+  let originalData: string | undefined;
+
+  interface DeleteCase {
+    label: string;
+    sub: string;
+    name: string;
+    run: (args: { name: string; confirmed: boolean }) => {
+      text: string;
+      data: { isError: boolean; executed: boolean; confirmed: boolean; auditVerdict: string };
+    };
+  }
+
+  const tools: DeleteCase[] = [
+    {
+      label: 'delete_entity', sub: 'entities', name: '待删实体',
+      run: (a) => deleteEntity(a),
+    },
+    {
+      label: 'delete_concept', sub: 'concepts', name: '待删概念',
+      run: (a) => deleteConcept(a),
+    },
+  ];
+
+  beforeEach(() => {
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'sofagent-del-'));
+    originalData = process.env.SOFAGENT_DATA;
+    vi.stubEnv('SOFAGENT_DATA', tmpDir);
+    vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    vi.stubEnv('SOFAGENT_DATA', originalData ?? '');
+    try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch { /* */ }
+  });
+
+  function seed(c: DeleteCase): string {
+    const dir = path.join(tmpDir, 'knowledge', c.sub);
+    fs.mkdirSync(dir, { recursive: true });
+    const filePath = path.join(dir, `${c.name}.md`);
+    fs.writeFileSync(filePath, `---\nname: ${c.name}\ncreated_at: 2026-01-01T00:00:00.000Z\n---\n\n内容`, 'utf-8');
+    return filePath;
+  }
+
   it('confirmed=false → 不执行删除，返回人工确认提示', () => {
-    const filePath = path.join(entitiesDir, '待删实体.md');
-    fs.writeFileSync(
-      filePath,
-      '---\nname: 待删实体\ndomain: 财务\ncreated_at: 2026-01-01T00:00:00.000Z\n---\n\n内容',
-      'utf-8',
-    );
-
-    const result = deleteEntity({ name: '待删实体', confirmed: false });
-
-    expect(result.data.executed).toBe(false);
-    expect(result.data.confirmed).toBe(false);
-    expect(result.data.isError).toBe(false);
-    expect(result.text).toContain('人工确认');
-    // 文件仍在
-    expect(fs.existsSync(filePath)).toBe(true);
+    for (const c of tools) {
+      const filePath = seed(c);
+      const result = c.run({ name: c.name, confirmed: false });
+      expect(result.data.executed, c.label).toBe(false);
+      expect(result.data.confirmed, c.label).toBe(false);
+      expect(result.data.isError, c.label).toBe(false);
+      expect(result.text, c.label).toContain('人工确认');
+      expect(fs.existsSync(filePath), c.label).toBe(true);
+    }
   });
 
   it('缺省 confirmed（undefined）→ 同样不执行', () => {
-    const filePath = path.join(entitiesDir, '待删实体2.md');
-    fs.writeFileSync(filePath, '---\nname: 待删实体2\ndomain: 财务\n---\n\n内容', 'utf-8');
-
-    const result = deleteEntity({ name: '待删实体2', confirmed: undefined as unknown as boolean });
-
-    expect(result.data.executed).toBe(false);
-    expect(fs.existsSync(filePath)).toBe(true);
+    for (const c of tools) {
+      const filePath = seed(c);
+      const result = c.run({ name: c.name, confirmed: undefined as unknown as boolean });
+      expect(result.data.executed, c.label).toBe(false);
+      expect(fs.existsSync(filePath), c.label).toBe(true);
+    }
   });
 
   it('confirmed=true → 执行删除 + D1-D5 留痕（data-change-log.jsonl）', () => {
-    const filePath = path.join(entitiesDir, '过期实体.md');
-    fs.writeFileSync(
-      filePath,
-      '---\nname: 过期实体\ndomain: 财务\ncreated_at: 2026-01-01T00:00:00.000Z\n---\n\n内容',
-      'utf-8',
-    );
+    for (const c of tools) {
+      const filePath = seed(c);
+      const result = c.run({ name: c.name, confirmed: true });
+      expect(result.data.executed, c.label).toBe(true);
+      expect(result.data.confirmed, c.label).toBe(true);
+      expect(result.data.auditVerdict, c.label).toBe('PASS');
+      expect(result.text, c.label).toContain('已删除');
+      expect(fs.existsSync(filePath), c.label).toBe(false);
 
-    const result = deleteEntity({ name: '过期实体', confirmed: true });
-
-    expect(result.data.executed).toBe(true);
-    expect(result.data.confirmed).toBe(true);
-    expect(result.data.auditVerdict).toBe('PASS');
-    expect(result.text).toContain('已删除');
-    expect(fs.existsSync(filePath)).toBe(false);
-
-    // 审计留痕
-    const logPath = path.join(tmpDir, 'audit', 'data-change-log.jsonl');
-    expect(fs.existsSync(logPath)).toBe(true);
-    const log = fs.readFileSync(logPath, 'utf-8');
-    expect(log).toContain('过期实体');
-    expect(log).toContain('"action":"delete"');
+      // 审计留痕
+      const logPath = path.join(tmpDir, 'audit', 'data-change-log.jsonl');
+      expect(fs.existsSync(logPath), c.label).toBe(true);
+      const log = fs.readFileSync(logPath, 'utf-8');
+      expect(log, c.label).toContain(c.name);
+      expect(log, c.label).toContain('"action":"delete"');
+    }
     // generateDataThink 被调用（D1-D5 回溯）
     expect(generateDataThink).toHaveBeenCalled();
   });
 
-  it('删除不存在的 entity → isError', () => {
-    const result = deleteEntity({ name: '不存在', confirmed: true });
-    expect(result.data.isError).toBe(true);
-    expect(result.data.executed).toBe(false);
-    expect(result.text).toContain('不存在');
-  });
-});
-
-describe('Ontology CRUD · delete_concept（强制人审）', () => {
-  let tmpDir: string;
-  let originalData: string | undefined;
-  let conceptsDir: string;
-
-  beforeEach(() => {
-    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'sofagent-dc-'));
-    originalData = process.env.SOFAGENT_DATA;
-    vi.stubEnv('SOFAGENT_DATA', tmpDir);
-    conceptsDir = path.join(tmpDir, 'knowledge', 'concepts');
-    fs.mkdirSync(conceptsDir, { recursive: true });
-    vi.clearAllMocks();
-  });
-
-  afterEach(() => {
-    vi.stubEnv('SOFAGENT_DATA', originalData ?? '');
-    try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch { /* */ }
-  });
-
-  it('confirmed=false → 不执行删除，返回人工确认提示', () => {
-    const filePath = path.join(conceptsDir, '待删概念.md');
-    fs.writeFileSync(
-      filePath,
-      '---\nname: 待删概念\ncreated_at: 2026-01-01T00:00:00.000Z\n---\n\n内容',
-      'utf-8',
-    );
-
-    const result = deleteConcept({ name: '待删概念', confirmed: false });
-
-    expect(result.data.executed).toBe(false);
-    expect(result.data.isError).toBe(false);
-    expect(result.text).toContain('人工确认');
-    expect(fs.existsSync(filePath)).toBe(true);
-  });
-
-  it('confirmed=true → 执行删除 + 留痕', () => {
-    const filePath = path.join(conceptsDir, '过期概念.md');
-    fs.writeFileSync(
-      filePath,
-      '---\nname: 过期概念\ncreated_at: 2026-01-01T00:00:00.000Z\n---\n\n内容',
-      'utf-8',
-    );
-
-    const result = deleteConcept({ name: '过期概念', confirmed: true });
-
-    expect(result.data.executed).toBe(true);
-    expect(result.data.auditVerdict).toBe('PASS');
-    expect(result.text).toContain('已删除');
-    expect(fs.existsSync(filePath)).toBe(false);
-
-    const logPath = path.join(tmpDir, 'audit', 'data-change-log.jsonl');
-    expect(fs.existsSync(logPath)).toBe(true);
-    const log = fs.readFileSync(logPath, 'utf-8');
-    expect(log).toContain('过期概念');
-    expect(log).toContain('"action":"delete"');
-  });
-
-  it('删除不存在的 concept → isError', () => {
-    const result = deleteConcept({ name: '不存在', confirmed: true });
-    expect(result.data.isError).toBe(true);
-    expect(result.data.executed).toBe(false);
+  it('删除不存在的目标 → isError', () => {
+    for (const c of tools) {
+      const result = c.run({ name: '不存在', confirmed: true });
+      expect(result.data.isError, c.label).toBe(true);
+      expect(result.data.executed, c.label).toBe(false);
+      expect(result.text, c.label).toContain('不存在');
+    }
   });
 });

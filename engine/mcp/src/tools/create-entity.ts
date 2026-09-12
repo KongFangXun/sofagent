@@ -12,12 +12,10 @@
 //   6. 写入成功 → generateDataThink 回溯 + 数据变更日志
 // ============================================================
 
-import { existsSync, readFileSync, appendFileSync, mkdirSync } from 'fs';
-import { parseFrontmatter, appendDataChangeLog } from './knowledge-page';
+import { existsSync, readFileSync, mkdirSync } from 'fs';
+import { parseFrontmatter, appendDataChangeLog, checkPageNameSafety } from './knowledge-page';
 import { join } from 'path';
-import { load as yamlLoad } from 'js-yaml';
-import {type DataChange,
-  diffDataChange,
+import { diffDataChange,
   runDataRules,
   type DataAuditResult,
   atomicWriteSync, getDataDir } from '@sofagent/core';
@@ -158,7 +156,7 @@ export function createEntity(args: CreateEntityArgs): CreateEntityResult {
   const { name, domain, content, relations } = args;
 
   // 防路径穿越
-  if (name.includes('..') || name.includes('/') || name.includes('\\')) {
+  if (checkPageNameSafety(name) !== null) {
     return {
       text: '[sofagent] entity 名称不合法：不得包含路径分隔符',
       data: { action: 'created', path: '', auditVerdict: 'FAIL', isError: true },

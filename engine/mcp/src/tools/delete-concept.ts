@@ -10,11 +10,10 @@
 // D1-D5 审计流程与 create/update 同源：FAIL → 拒绝删除（防误删保护）。
 // ============================================================
 
-import { existsSync, readFileSync, appendFileSync, mkdirSync, rmSync } from 'fs';
+import { existsSync, readFileSync, rmSync } from 'fs';
+import { parseFrontmatter, appendDataChangeLog, checkPageNameSafety } from './knowledge-page';
 import { join } from 'path';
-import { load as yamlLoad } from 'js-yaml';
-import {type DataChange,
-  diffDataChange,
+import { diffDataChange,
   runDataRules,
   type DataAuditResult, getDataDir } from '@sofagent/core';
 import { generateDataThink } from '@sofagent/think';
@@ -54,45 +53,6 @@ function getKnowledgeDir(): string {
   return join(getDataDir(), 'knowledge');
 }
 
-/** 获取数据根目录 */
-/**
- * 从 Markdown 内容中解析 frontmatter
- */
-function parseFrontmatter(content: string): Record<string, unknown> | null {
-  const normalized = content.replace(/^\uFEFF/, '').replace(/\r\n/g, '\n');
-  const match = normalized.match(/^---\n([\s\S]*?)\n---/);
-  if (!match || !match[1]) return null;
-  try {
-    return yamlLoad(match[1]) as Record<string, unknown>;
-  } catch {
-    return null;
-  }
-}
-
-/**
- * 追加数据变更日志到 data/audit/data-change-log.jsonl
- */
-function appendDataChangeLog(change: DataChange, auditResult: DataAuditResult): void {
-  const logDir = join(getDataDir(), 'audit');
-  if (!existsSync(logDir)) {
-    mkdirSync(logDir, { recursive: true });
-  }
-  const logPath = join(logDir, 'data-change-log.jsonl');
-  const entry = {
-    timestamp: change.timestamp,
-    type: change.type,
-    name: change.name,
-    action: change.action,
-    auditVerdict: auditResult.hasFail ? 'FAIL' : auditResult.hasWarn ? 'WARN' : 'PASS',
-    violations: auditResult.violations.map((v) => ({ rule: v.rule, detail: v.detail })),
-  };
-  try {
-    appendFileSync(logPath, JSON.stringify(entry) + '\n', 'utf-8');
-  } catch {
-    // 非致命
-  }
-}
-
 // ============================================================
 // 主函数
 // ============================================================
@@ -107,7 +67,7 @@ export function deleteConcept(args: DeleteConceptArgs): DeleteConceptResult {
   const { name, confirmed } = args;
 
   // 防路径穿越
-  if (name.includes('..') || name.includes('/') || name.includes('\\')) {
+  if (checkPageNameSafety(name) !== null) {
     return {
       text: '[sofagent] concept 名称不合法：不得包含路径分隔符',
       data: { action: 'delete', path: '', confirmed: confirmed === true, executed: false, auditVerdict: 'FAIL', isError: true },

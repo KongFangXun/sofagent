@@ -10,12 +10,10 @@
 // D1-D5 审计流程与 create/update 同源：FAIL → 拒绝删除（防误删保护）。
 // ============================================================
 
-import { existsSync, readFileSync, appendFileSync, mkdirSync, rmSync } from 'fs';
-import { parseFrontmatter, appendDataChangeLog } from './knowledge-page';
+import { existsSync, readFileSync, rmSync } from 'fs';
+import { parseFrontmatter, appendDataChangeLog, checkPageNameSafety } from './knowledge-page';
 import { join } from 'path';
-import { load as yamlLoad } from 'js-yaml';
-import {type DataChange,
-  diffDataChange,
+import { diffDataChange,
   runDataRules,
   type DataAuditResult, getDataDir } from '@sofagent/core';
 import { generateDataThink } from '@sofagent/think';
@@ -72,7 +70,7 @@ export function deleteEntity(args: DeleteEntityArgs): DeleteEntityResult {
   const { name, confirmed } = args;
 
   // 防路径穿越
-  if (name.includes('..') || name.includes('/') || name.includes('\\')) {
+  if (checkPageNameSafety(name) !== null) {
     return {
       text: '[sofagent] entity 名称不合法：不得包含路径分隔符',
       data: { action: 'delete', path: '', confirmed: confirmed === true, executed: false, auditVerdict: 'FAIL', isError: true },
