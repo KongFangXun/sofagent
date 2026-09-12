@@ -167,7 +167,7 @@ export function computeAuditStats(options: StatsOptions = {}): AuditStatsReport 
     for (const rc of entry.ruleResults as RuleCheck[]) {
       if (!rc || rc.status !== 'WARN' && rc.status !== 'FAIL') continue;
       // 规则码：A<n> / E<n> / R<n>（v1.4.8 条目 7：编号推导收口 ruleCode——此前本处内联分支）
-      const code = ruleCode(rc.number, rc.name);
+      const code = rc.id ?? ruleCode(rc.number, rc.name);
       const existing = ruleCounts.get(code) ?? { name: '', count: 0, failCount: 0 };
       existing.count += 1;
       if (rc.status === 'FAIL') existing.failCount += 1;

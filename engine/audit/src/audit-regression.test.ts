@@ -5,26 +5,22 @@
 
 import { describe, it, expect } from 'vitest';
 import { runRegression, type DiffSnapshot } from './audit-regression';
-import type { Rule, RuleCheck, AuditContext } from './rules/types';
+import type { Rule, RuleCheck } from './rules/types';
 import type { DiffFile } from '@sofagent/core';
 import type { LogEntry } from '@sofagent/core';
 
-/** 构造一个模拟规则 */
+/** 构造一个模拟规则（v1.4.8 条目 7：scan 装配契约——规则本体只给 status/details） */
 function makeMockRule(
   name: string,
   status: 'PASS' | 'WARN' | 'FAIL'
 ): Rule {
   return {
+    id: name,
     name,
     number: 1,
     evidenceMode: 'git-diff',
     ruleType: 'diff',
-    check: (_ctx: AuditContext): RuleCheck => ({
-      name,
-      number: 1,
-      status,
-      details: [],
-    }),
+    scan: () => ({ status, details: [] }),
   };
 }
 

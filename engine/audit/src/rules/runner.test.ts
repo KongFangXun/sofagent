@@ -14,9 +14,9 @@ import { makeDiffFile } from '../test-utils';
 function buildPriorityGroups(): Record<string, string[]> {
   const groups: Record<string, string[]> = { critical: [], warning: [], crutch: [], extended: [] };
   for (const r of rules) {
-    const id = r.number >= 200 ? `E${r.number - 200}` : `A${r.number}`;
+    // v1.4.8 条目 7：编号直接读 Rule.id（不再本地重推 number 区间）
     const p = r.priority ?? 'extended';
-    groups[p].push(id);
+    groups[p].push(r.id);
   }
   return groups;
 }

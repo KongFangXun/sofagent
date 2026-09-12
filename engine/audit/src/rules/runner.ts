@@ -11,7 +11,7 @@ import type { AuditContext, RuleCheck, Rule } from './types';
 import { loadHistory } from '../audit-history';
 import type { AuditHistoryEntry } from '../audit-history';
 import { defaultRules, rules } from './index';
-import { ruleCode, runRuleCheck } from './assemble';
+import { ruleCode, assembleCheck } from './assemble';
 // v1.4.5 T5: 分级降级接线——主执行路径消费 degradation 梯队
 import { DegradationManager, getCapability, isAuditTimeout, type DegradationLevel } from '../degradation';
 // v1.3.2 交付 2：国标对齐 GB/T 48000.3-2026 审计维度（opt-in 默认 false）
@@ -200,7 +200,7 @@ export function runRules(
     if (priority === 'critical') {
       // critical 层：全部跑完，收集所有 FAIL
       for (const rule of groupRules) {
-        const result = runRuleCheck(rule, ctx);
+        const result = assembleCheck(rule, ctx);
         results.push(result);
 
         if (result.status === 'FAIL') {
@@ -211,11 +211,12 @@ export function runRules(
       // critical 全部跑完后，如果有 FAIL → fast-fail 后续层
       if (criticalFailCount > 0) {
         // 标记后续层规则为 SKIPPED
-        // v1.4.8 条目 7：编号改从规则注册表读（Rule.id），不再把 RuleCheck 反向解析回编号
-        const seenIds = new Set(results.map((r) => ruleCode(r.number, r.name)));
+        // v1.4.8 条目 7：编号优先读 RuleCheck.id（装配路径带入）；插件/规则集条目回退 ruleCode
+        const seenIds = new Set(results.map((r) => r.id ?? ruleCode(r.number, r.name)));
         for (const rule of activeRules) {
           if (!seenIds.has(rule.id)) {
             results.push({
+              id: rule.id,
               name: rule.id,
               number: rule.number,
               status: 'SKIPPED',
@@ -244,7 +245,7 @@ export function runRules(
 
     // warning/crutch/extended 层：原有逻辑不变
     for (const rule of groupRules) {
-      const result = runRuleCheck(rule, ctx);
+      const result = assembleCheck(rule, ctx);
       results.push(result);
     }
   }

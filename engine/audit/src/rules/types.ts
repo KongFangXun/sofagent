@@ -184,14 +184,8 @@ export interface Rule {
   /** v1.4.0 交付四①：人类可读拦截理由（reporter 输出层渲染，替代笼统「违规」） */
   justification?: string;
   /**
-   * v1.4.8 深模块条目 7（双轨过渡期）：规则判定本体——只返回 status/details，
-   * 前置块由 assembleCheck 装配。迁移完成的规则填本字段，未迁移的填 check。
-   * 批四移除双轨后本字段为唯一执行入口（必填）。
+   * v1.4.8 深模块条目 7：规则判定本体——只返回 status/details，前置块由 assembleCheck 装配。
+   * 条 7 批四收口后为唯一执行入口（check 旧路径已删除）。
    */
-  scan?: (ctx: AuditContext) => RuleScan;
-  /**
-   * 规则自装配入口（旧路径——规则文件内自建前置块）。
-   * 条目 7 批四移除；过渡期未迁移规则仍走此路径。
-   */
-  check?(ctx: AuditContext): RuleCheck;
+  scan(ctx: AuditContext): RuleScan;
 }

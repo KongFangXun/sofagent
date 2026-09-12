@@ -1774,7 +1774,7 @@ export function printResults(results: AuditResult, diffFiles: DiffFile[], json: 
   // 规则网格——一行展示全部规则状态
   console.log('');
   const gridParts = results.rules.map((r) => {
-    const num = ruleCode(r.number, r.name);
+    const num = r.id ?? ruleCode(r.number, r.name);
     const icon = r.status === 'PASS' ? '✅' : r.status === 'WARN' ? '⚠️' : r.status === 'SKIPPED' ? '⏭️' : '❌';
     return `${num} ${icon}`;
   });

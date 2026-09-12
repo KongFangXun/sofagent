@@ -215,7 +215,7 @@ function buildContent(payload: WebhookPayload, failedRules: RuleCheck[], isPass:
     lines.push(`任务：${safeTask}`);
   }
   for (const rule of failedRules) {
-    const ruleId = ruleCode(rule.number, rule.name);
+    const ruleId = rule.id ?? ruleCode(rule.number, rule.name);
     lines.push(`${ruleId} ${rule.name}：${rule.details.map((d: string) => redactDetail(d, customPatterns)).join('；')}`);
   }
   lines.push(`详情：exit code ${payload.exitCode}`);

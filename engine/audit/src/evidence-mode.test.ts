@@ -7,7 +7,7 @@ import { describe, it, expect } from 'vitest';
 import { scanA7 } from './rules/rule-a7-read-before-write';
 import { scanA8 } from './rules/rule-a8-verify-before-continue';
 import { rules } from './rules';
-import { runRuleCheck } from './rules/assemble';
+import { assembleCheck } from './rules/assemble';
 import type { AuditContext } from './rules/types';
 import type { DiffFile } from '@sofagent/core';
 import type { LogEntry } from '@sofagent/core';
@@ -89,7 +89,7 @@ describe('evidenceMode 双路径切换', () => {
         logEntries: [makeReadEntry('src/config.ts')],
       };
       // v1.4.8 条目 7：装配路径（注册表 meta 单源）——RuleScan 不含 meta，须经 assembleCheck 装配
-      const result = runRuleCheck(rules.find((r) => r.id === 'A7')!, ctx);
+      const result = assembleCheck(rules.find((r) => r.id === 'A7')!, ctx);
       expect(result.evidenceMode).toBe('hybrid');
     });
   });
@@ -138,7 +138,7 @@ describe('evidenceMode 双路径切换', () => {
         diffFiles: [makeDiffFile('package.json')],
         logEntries: [makeExecEntry('npm test')],
       };
-      const result = runRuleCheck(rules.find((r) => r.id === 'A8')!, ctx);
+      const result = assembleCheck(rules.find((r) => r.id === 'A8')!, ctx);
       expect(result.evidenceMode).toBe('hybrid');
     });
   });
@@ -171,7 +171,7 @@ describe('evidenceMode 双路径切换', () => {
         logEntries: [],
       };
       // v1.4.8 条目 7：走注册表装配路径（meta 单源），不再直连规则文件自装配入口
-      const result = runRuleCheck(rules.find((r) => r.id === 'A1')!, ctx);
+      const result = assembleCheck(rules.find((r) => r.id === 'A1')!, ctx);
       expect(result.evidenceMode).toBe('git-diff');
     });
 
@@ -183,7 +183,7 @@ describe('evidenceMode 双路径切换', () => {
         task: 'login',
       };
       // v1.4.8 条目 7：走注册表装配路径
-      const result = runRuleCheck(rules.find((r) => r.id === 'A3')!, ctx);
+      const result = assembleCheck(rules.find((r) => r.id === 'A3')!, ctx);
       expect(result.evidenceMode).toBe('git-diff');
     });
 
@@ -197,7 +197,7 @@ describe('evidenceMode 双路径切换', () => {
         commitMsg: 'fix login bug',
       };
       for (const rule of rules) {
-        const result = runRuleCheck(rule, ctx);
+        const result = assembleCheck(rule, ctx);
         expect(result.evidenceMode, `${rule.name} should have evidenceMode`).toBeDefined();
       }
     });
