@@ -12,11 +12,13 @@
 
 **行数警戒线（当前值）**：`regression-checklist.md` ≤ 1950 行、`acceptance-test.sh` ≤ 4300 行（1800→1950 / 4200→4300：v1.4.8 阶段四 A 类分发 + 深模块批的真实内容增长——checklist 新增 6 维（#137-#142）并以归并对销 10 处后仍净增（审查面为新增非重复覆盖，非归并可消化），acceptance 新增 S401-S409 九场景（九新面各 1 行为锚）；按铁律超标上调不删内容，未做任何断言/场景删减）；fresh-eyes 警戒线见 04-review-system.md 风格守护段。三条上调铁律：① 三判据全否方可调——(i) 新增非旧维度可扩展子项的独立审查面；(ii) 非既有场景/维度的重复覆盖；(iii) 真实防回归价值非归并压缩可消化；② 连续上调禁令——连续两版已调，本版须先真实归并对销方可再调；同版同侧只调一次（同版二次冻结）；③ **上调只记一行**——`旧值→新值（原因一句话）`，历史上调链不在此处累积（完整过程 git 历史可溯）。
 
-**维度脚本编写三铁律**（教训——7 个 FAIL 维度中 5 个是脚本自身缺陷而非仓库问题，driver 白跑一轮）：
+**维度脚本编写四铁律**（教训——7 个 FAIL 维度中 5 个是脚本自身缺陷而非仓库问题，driver 白跑一轮）：
 
 1. **显式收尾**：每个维度的检查命令必须以 `echo "✅ ..."`（通过）或 `echo "❌ ..."; exit 1`（失败）收尾——**禁用「期望：无输出」「期望：exit 1」这类依赖退出码语义的写法**。driver 判定只看 exitCode，`grep 无命中返回 1` / `for 循环尾条件判假返回 1` 都会被误判 FAIL（#59/#96 实证——输出全 ✅ 仍记 FAIL）。
 2. **禁写死 CLI 参数签名与数字**：检查命令引用 CLI（`node dist/cli.js <参数>`）或计数（N tools / N 规则）时，版本演进必漂——#56 的 `--golden-set` 参数被移除后老命令报参数缺失、#110 的 `48 tools` 在 52→60 后必然 FAIL。写**动态对账**（读 tool-registry 实数比文档）或**可达性验证**（`--help` 含子命令名），不锚定具体签名/数字。**已写死的历史锚处置**：工具数等静态计数锚（如各维度 `-eq N` 断言）在工具数变更的版本**发版中必漂**——bump/工具数变更 commit 后逐锚跑一遍受影响维度确认语义（fail 输出 ⚠️ 提示复核的锚 + 手动对 registry 实数），锚过时改锚、真漂移修文档，不等到 release-gate 轮才暴露（曾因锚停在旧实数被误判为「文档漂移」，实为锚未随实数更新）。
 3. **修改 checklist 的 commit 前最后跑一次 check-docs**：B 层预算会被修复净增顶破（实测一天内两次：8880→8885→8895）——commit 后才发现 CD 红等于多一个 fix commit。
+4. **跨进程边界只传退出码，不传变量**：`bash script.sh` 调子脚本时**子进程内设的变量不会回传**（只能取退出码或 stdout）；要读写变量须 `source script.sh`（同进程）。取证一律用 `cmd > log 2>&1; echo $?`——**`cmd | tail; echo $?` 取到的是 `tail` 的退出码**（管道陷阱，与上方「维度 8 · 子项 a」同族，但那条查的是脚本内部，本条查的是**取证方式**）。
+   实证（v1.4.8 复核）：验证「旧包名零残留」守卫时用 `bash /tmp/guard-c.sh` 后检查 `FAIL` → 恒 0（误判「守卫失效」）；改 `source` 同进程才拿到真实 `FAIL=1`。同一轮另一次：`bash xxx.sh | tail -3; echo $?` 把「注入被拦（真实 1）」读成 0。
 
 **清单自身健康度自校验**（每次修改后跑）：
 ```bash
@@ -172,8 +174,12 @@ grep -c "sofagent-audit · \|sofagent-audit v" engine/audit/src/index.ts # 期�
 #### 8. acceptance-test 健壮性
 
 ```bash
-# 子项 a: 管道 pipefail 保护
-grep -n 'grep.*|.*head\|grep.*|.*wc' playbook/acceptance-test.sh | grep -v '|| true' | grep -v '|| echo' | grep -vE '^[0-9]+:(#|.*grep -q ")' || echo '✅ 无未保护管道' # 期望：✅ 行（收窄|| echo 兜底的命令替换与 grep -q 字符串引用非真管道风险）
+# 子项 a: 管道吞退出码保护（范围：acceptance-test.sh + tools/ + engine/scripts + install.sh）
+# 判据收窄到**真坑形态**：管尾是 head/tail/wc/sort（恒返回 0）且随后判退出码。
+# ⚠️ 三类**不是**坑、勿误报：① 管尾是 grep 的形态（`... | grep -q X && pass || fail`）——$? 即 grep 的码；
+#    ② 命令替换取输出（`$(... | wc -l)`）不判码；③ 故意的 `|| true` / `|| echo` 兜底。
+# 实证（本版）：全仓真坑 = 1 处（S317 的 `| head -1 >/dev/null ||` 恒 0 ⇒ 场景恒绿）→ 已修。
+grep -rnE '\| *(head|tail|wc|sort)[^|]*(\|\||&&|; *\$\?)' --include="*.sh" playbook/ tools/ engine/scripts/ install.sh 2>/dev/null | grep -vE ':(#|.*grep -q ")' | grep -v '|| true' | grep -v '|| echo' || echo '✅ 无未保护管道（真坑形态判据 · 全仓脚本）' # 期望：✅ 行
 
 # 子项 b: 场景间清理
 grep -c "git rm --cached -f .env" playbook/acceptance-test.sh # 期望：≥ 2

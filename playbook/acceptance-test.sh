@@ -2634,7 +2634,7 @@ grep -q -- "--resume" "$PROJECT_ROOT/FORGE/src/fresh-eyes-driver.mjs" || S316_OK
 $S316_OK && pass "driver 进程守护（daemon/watch/resume）在位" || fail "driver 进程守护缺失"
 scenario 317 "v1.3.9 交付十二：>5MB diff 缝隙修复——spill 落盘 + 64MB 读回 + 截断 locator"; S317_OK=true
 grep -q "spill\|oversized" "$PROJECT_ROOT/engine/core/src/diff-parser.ts" 2>/dev/null || S317_OK=false
-grep -rn "diff-parser-oversized\|oversized" "$PROJECT_ROOT/engine/core/src/__tests__/" 2>/dev/null | head -1 >/dev/null || S317_OK=false
+grep -rq "diff-parser-oversized\|oversized" "$PROJECT_ROOT/engine/core/src/__tests__/" 2>/dev/null || S317_OK=false
 $S317_OK && pass "超大 diff spill 处理在位" || fail "5MB diff 缝隙修复缺失"
 scenario 318 "v1.3.9 交付十：ATTRIBUTION 归因——决策归因落盘 + 三维查询 + byAgent 联结（P2 库级验收）"; S318_OK=true
 R318=$(node -e "
