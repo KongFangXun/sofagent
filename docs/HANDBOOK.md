@@ -234,7 +234,7 @@ bash engine/scripts/uninstall.sh --platform openclaw|workbuddy|claude|codex|herm
 | 3 | `think.md` | 反思摘要（≤2K token） | ⚠️ 改了没用。→ [反思工程](./DEVELOPMENT.md#六反思工程) |
 | 4 | `knowledge/index.md` | AI 知识库目录，被动注入 top-3 页摘要 | ⚠️ daemon 自动维护 |
 
-> 地基约 3,500 token，不到 128K 窗口的 3%。支持 Hook 的平台（OpenClaw / WorkBuddy）自动注入 2-4 层，其他平台 Agent 主动 Read。详见 [ARCHITECTURE 地基与引擎](./ARCHITECTURE.md#地基与引擎)。
+> 地基约 3,500 token，不到 128K 窗口的 3%。支持 Hook 的平台（OpenClaw / WorkBuddy）自动注入 2-4 层，其他平台 Agent 主动 Read。详见 [ARCHITECTURE 地基与约束层](./ARCHITECTURE.md#地基与约束层)。
 
 ### 4 条底线 + 7 则行为铁律
 

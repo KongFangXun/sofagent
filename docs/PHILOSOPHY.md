@@ -261,7 +261,7 @@ sofagent 用**约束层（一个层五种能力：注入·审计·回溯·沉淀
 
 sofagent 不做 Prompt（那是模型的事），在 Context 层有约束注入链，**核心价值在约束层**（确定性边界），Loop/Graph 层是进化方向。模型越强，约束层越值钱——因为 Agent 能做的事更多了，"做错了怎么办"的代价也更大。
 
-> 地基（纯 MD 文件，~3,500 token）与引擎（daemon + CLI 按需启动）的完整设计见 [ARCHITECTURE §地基与引擎](./ARCHITECTURE.md#地基与引擎)。
+> 地基（纯 MD 文件，~3,500 token）与约束层（daemon + CLI 按需启动）的完整设计见 [ARCHITECTURE §地基与约束层](./ARCHITECTURE.md#地基与约束层)。
 
 ---
 
