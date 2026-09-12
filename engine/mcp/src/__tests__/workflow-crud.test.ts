@@ -1,6 +1,7 @@
 // workflow-crud.test.ts · MCP 侧 G14 四 tool 接线测试
 // 覆盖：tools/workflow-crud 薄委托全链（真实 orchestrator store）/ registry 登记四段
-// （name/roles/description/inputSchema）/ mcp-server 派发 case 存在性
+// （name/roles/description/inputSchema）/ registry handler 派发接线（v1.4.8 条目 5：switch 退场，
+//   分发单一来源改为 tool-registry handler 字段）
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { mkdirSync, rmSync, readFileSync, existsSync } from 'fs';
 import { join } from 'path';
@@ -18,7 +19,7 @@ const {
   workflowDiffPreview,
 } = await import('../tools/workflow-crud');
 const { TOOLS } = await import('../tool-registry');
-const registrySource = readFileSync(new URL('../mcp-server.ts', import.meta.url), 'utf-8');
+const serverSource = readFileSync(new URL('../mcp-server.ts', import.meta.url), 'utf-8');
 
 const baseDoc = {
   name: 'onboard-flow',
@@ -46,8 +47,11 @@ describe('G14 四 tool registry 登记四段（tools/ 实现 + mcp-server 派发
     expect(Object.keys(def!.inputSchema.properties!).length).toBeGreaterThan(0);
   });
 
-  it.each(crudNames)('%s 在 mcp-server.ts 有派发 case', (name) => {
-    expect(registrySource).toContain(`case '${name}'`);
+  it.each(crudNames)('%s 在 registry 有查表派发 handler（且 server switch 已退场）', (name) => {
+    const def = TOOLS.find((t) => t.name === name);
+    expect(typeof def!.handler).toBe('function');
+    // 分发单一来源：mcp-server 不再保留该工具的 switch case 回退
+    expect(serverSource).not.toContain(`case '${name}'`);
   });
 
   it('工具数 84→93（G14 四 tool + G2 + 章八 + G13 PR 三 tool 落位）', () => {
