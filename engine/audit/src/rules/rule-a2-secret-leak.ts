@@ -361,8 +361,11 @@ export function scanA2(ctx: AuditContext): RuleScan {
           // v1.4.0 交付四③：SECRET_ASSIGNMENT_REGEX——赋值形态通用检测（补已知格式之外的空档）
           // 覆盖 api_key=xxx / token: "xxx" / secret = xxx / password=xxx 等通用赋值；
           // 值长度 ≥8 且排除常见占位符（REPLACE_ME/your_/example/xxx）——保守防误报
+          // v1.4.8 修复：函数调用 RHS 豁免——`apiKey: resolveApiKey(role)` 的 RHS 是运行时读取
+          // （与 env 引用同语义），此前被当硬编码密钥误报；尾锚 `(?![\w(])` 兼防贪婪回溯
+          // （无锚时 `resolveApiKey(` 会回溯成 `resolveApiKe` 绕过断言）
           const ASSIGNMENT_PATTERN =
-            /(?:api[_-]?key|apikey|access[_-]?token|auth[_-]?token|token|secret|passwd|password)\s*[=:]\s*["']?([A-Za-z0-9_\-./+=]{8,})/i;
+            /(?:api[_-]?key|apikey|access[_-]?token|auth[_-]?token|token|secret|passwd|password)\s*[=:]\s*["']?([A-Za-z0-9_\-./+=]{8,})(?![\w(])/i;
           const m = candidate.match(ASSIGNMENT_PATTERN);
           const assigned = m?.[1];
           // env 引用豁免：值以 process.env / os.Getenv 等「运行时读取」开头的是代码引用

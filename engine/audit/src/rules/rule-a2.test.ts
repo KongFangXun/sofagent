@@ -294,6 +294,31 @@ describe('A2 不泄密钥', () => {
       expect(scanA2(ctx).status).toBe('PASS');
     });
 
+    it('函数调用 RHS（apiKey: resolveApiKey(role)）→ PASS（v1.4.8 修复）', () => {
+      // 误报根因实证：捕获组把标识符 `resolveApiKey` 当硬编码值——函数调用语义同 env 引用，
+      // 都是运行时读取。此前形态曾拦下文档中对代码的描述（条目 4 范围裁剪的根因）
+      const ctx = makeCtx([
+        makeDiffFile('loop/agent-runner.ts', ['+      apiKey: resolveApiKey(role),']),
+      ]);
+      expect(scanA2(ctx).status).toBe('PASS');
+    });
+
+    it('函数调用带参（const apiKey = buildApiKey(role, opts)）→ PASS（尾锚防贪婪回溯）', () => {
+      // 无尾锚 `(?![\w(])` 时，`buildApiKey(` 会回溯成 `buildApiKe` 绕过断言再命中——本用例锁死
+      const ctx = makeCtx([
+        makeDiffFile('loop/agent-runner.ts', ['+  const apiKey = buildApiKey(role, opts);']),
+      ]);
+      expect(scanA2(ctx).status).toBe('PASS');
+    });
+
+    it('无引号真硬编码仍判 FAIL（修复不松绑）', () => {
+      // 与函数调用修复的对照面：值段非调用形态、非 env 引用、非占位符 → 仍必须拦
+      const ctx = makeCtx([
+        makeDiffFile('config.env', ['+service_token=' + 'abcdef1234567890abcdef1234567890']),
+      ]);
+      expect(scanA2(ctx).status).toBe('FAIL');
+    });
+
     it('env 引用变体（const token = os.Getenv）→ PASS', () => {
       const ctx = makeCtx([makeDiffFile('main.go', ['+token := os.Getenv("GITHUB_TOKEN")'])]);
       expect(scanA2(ctx).status).toBe('PASS');

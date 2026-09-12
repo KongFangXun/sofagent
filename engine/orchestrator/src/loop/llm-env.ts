@@ -6,7 +6,7 @@
 // nodes-llm-env.test.ts 改从本文件导入（断言不变）。
 // ============================================================
 
-import { resolveLLMModel } from './nodes'; // 四级回退解析在 nodes.ts（export）——llm-env 只收角色级覆写层
+import { resolveLLMModel } from './llm-model-resolver'; // 四级回退解析在 llm-model-resolver.ts——llm-env 只收角色级覆写层
 
 /**
  * 角色级 LLM 解析：SOFAGENT_LLM_<ROLE> 优先 → SOFAGENT_LLM 兜底。
