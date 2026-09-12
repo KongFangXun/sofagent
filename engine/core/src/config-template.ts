@@ -126,7 +126,13 @@ fi
 # v1.3.4 P1-7: 无 dist + 无全局安装时输出显著提示（不静默 exit），告知用户如何修复
 # v1.4.8 F-15: 执行面不再 \`command -v\`（PATH 前置假 binary 可绕过），改与 2.1 校验面
 # 同源的 require.resolve 绝对路径——node_modules 解析链不受 PATH 摆布，校验哪个文件就执行哪个文件。
-RESOLVED_ENTRY=\$(node -e "try{process.stdout.write(require.resolve('sofagent-audit'))}catch{process.stdout.write('')}" 2>/dev/null)
+# v1.4.8 F-15 补（验收实测修正三处）：① 解析目标是**包名** \`@sofagent/audit\`——bin 名
+# \`sofagent-audit\` 不是包名，用它 require.resolve 必然 MODULE_NOT_FOUND（全局安装场景 hook
+# 全面误拦 + 完整性校验被静默跳过）；② require.resolve 默认只走 cwd 向上的本地解析链，
+# \`npm install -g\` 装的包需追加全局包根回退（execPath 推导 lib/node_modules + \`npm root -g\`
+# 兜底，两条均不走 PATH，不重开 command -v 劫持面）；③ 解析得的 main 是库入口 public-api.js，
+# 须从包根推导 CLI 入口 dist/index.js 再执行（hook 要的是完整 CLI 而非库 API）。
+RESOLVED_ENTRY=\$(node -e "try{const p=require('path');let e=null;try{e=require.resolve('@sofagent/audit')}catch(x){};if(!e){const r=[p.resolve(p.dirname(process.execPath),'..','lib','node_modules')];try{r.push(require('child_process').execSync('npm root -g',{encoding:'utf8',stdio:['ignore','pipe','ignore']}).trim())}catch(x){};for(const q of r){try{e=require.resolve('@sofagent/audit',{paths:[q]});break}catch(x){}}};if(e)process.stdout.write(p.join(p.dirname(p.dirname(e)),'dist','index.js'))}catch(x){}" 2>/dev/null)
 if [ -n "\$RESOLVED_ENTRY" ] && [ -f "\$RESOLVED_ENTRY" ]; then
   AUDIT_CMD=(node "\$RESOLVED_ENTRY")
 else
@@ -146,11 +152,13 @@ else
 fi
 
 # 2.1 P1-A2: dist 完整性校验——防止本地覆写 dist 致审计失效
-#     全局安装场景下比对其 dist 的 SHA-256 与安装时记录的基准哈希。
+#     比对本 hook 实际要执行的审计引擎 dist 的 SHA-256 与安装时记录的基准哈希——
+#     与上方 RESOLVED_ENTRY 同源（校验哪个文件就执行哪个文件），不再独立解析一次
+#     （原写法用 bin 名解析，必然解析失败 → 校验被静默跳过，防线形同虚设）。
 #     基准哈希存储在 ~/.sofagent/internal/audit-hash.txt（--doctor 首次运行时记录）。
 SOFAGENT_HOME="\${SOFAGENT_HOME:-\$HOME/.sofagent}"
 HASH_RECORD="$SOFAGENT_HOME/internal/audit-hash.txt"
-GLOBAL_DIST=$(node -e "try{const p=require('path');const idx=require.resolve('sofagent-audit');const d=p.dirname(p.dirname(idx));process.stdout.write(p.join(d,'dist','index.js'))}catch{process.stdout.write('')}" 2>/dev/null)
+GLOBAL_DIST="$RESOLVED_ENTRY"
 # v1.3.1 #5: 基准哈希文件不存在时改为醒目警告（不再静默跳过完整性校验）
 if [ -n "$GLOBAL_DIST" ] && [ -f "$GLOBAL_DIST" ] && [ ! -f "$HASH_RECORD" ]; then
   echo "⚠️ [sofagent] 首次运行——基准哈希未记录，已跳过完整性校验"

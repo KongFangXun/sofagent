@@ -35,7 +35,14 @@ fi
 if [ -f "engine/audit/dist/index.js" ]; then
   AUDIT_CMD=(node "engine/audit/dist/index.js")
 else
-  RESOLVED_ENTRY=$(node -e "try{process.stdout.write(require.resolve('sofagent-audit'))}catch{process.stdout.write('')}" 2>/dev/null)
+  # v1.4.8 F-15 补（验收实测修正三处）：① 解析目标是**包名** `@sofagent/audit`——
+  # bin 名 `sofagent-audit` 不是包名，用它 require.resolve 必然 MODULE_NOT_FOUND
+  # （全局安装场景 hook 全面误拦 + 完整性校验被静默跳过）；② require.resolve 默认
+  # 只走 cwd 向上的本地解析链，`npm install -g` 装的包需追加全局包根回退
+  # （execPath 推导 lib/node_modules + `npm root -g` 兜底，两条均不走 PATH，
+  # 不重开 command -v 劫持面）；③ 解析得的 main 是库入口 public-api.js，须从
+  # 包根推导 CLI 入口 dist/index.js 再执行（hook 要完整 CLI 而非库 API）。
+  RESOLVED_ENTRY=$(node -e "try{const p=require('path');let e=null;try{e=require.resolve('@sofagent/audit')}catch(x){};if(!e){const r=[p.resolve(p.dirname(process.execPath),'..','lib','node_modules')];try{r.push(require('child_process').execSync('npm root -g',{encoding:'utf8',stdio:['ignore','pipe','ignore']}).trim())}catch(x){};for(const q of r){try{e=require.resolve('@sofagent/audit',{paths:[q]});break}catch(x){}}};if(e)process.stdout.write(p.join(p.dirname(p.dirname(e)),'dist','index.js'))}catch(x){}" 2>/dev/null)
   if [ -n "$RESOLVED_ENTRY" ] && [ -f "$RESOLVED_ENTRY" ]; then
     AUDIT_CMD=(node "$RESOLVED_ENTRY")
   else
