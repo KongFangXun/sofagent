@@ -11,7 +11,7 @@
 
 | 能力 | 状态 | 接入方式 |
 |------|------|----------|
-| **自定义 MCP 服务** | ✅ 确定 | 支持 Streamable HTTP / SSE / STDIO；sofagent 的 `sofagent-mcp`（61 tool）可直接挂入 |
+| **自定义 MCP 服务** | ✅ 确定 | 支持 Streamable HTTP / SSE / STDIO；sofagent 的 `sofagent-mcp`（95 tool）可直接挂入 |
 | **自定义 Hook（命令行安全防护）** | ⚠️ 能力存在，schema 未公开 | 官方确认「支持开发者自定义 Hook 拦截危险命令（如 rm -rf）」，但配置格式未公开文档 |
 
 ## 与既有架构的同构性
@@ -22,7 +22,7 @@
 
 ### 一、MCP 接入（确定项，可先落地）
 1. 在千问办公的 MCP 配置处，按「STDIO」或「Streamable HTTP」挂载 `sofagent-mcp`。
-2. 验证 61 tool 可见（`run_audit` / `snapshot_restore` / `worklog_query` 等）。
+2. 验证 95 tool 可见（`run_audit` / `snapshot_restore` / `worklog_query` 等）。
 
 ### 二、Hook 拦截（待实测项，不写死）
 1. 查证千问办公自定义 Hook 的配置文件位置与 JSON schema（官方文档 / 实测抓包）。

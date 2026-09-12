@@ -27,7 +27,7 @@ npm install @sofagent/train
 
 ## 文档
 
-- [架构总览](../../docs/ARCHITECTURE.md) — train 在引擎层中的位置
+- [架构总览](../../docs/ARCHITECTURE.md) — train 在约束层中的位置
 - [使用手册（WIKI）](../../docs/WIKI.md) — 面向 FDE 的完整用法
 - [后训练全栈指南](../../docs/guides/train-stack.md) — 约定与流程
 - [训练安全基线](../../docs/guides/train-security.md) — 路径白名单 / 注入过滤 / 数据主权
