@@ -516,6 +516,16 @@ Ontology 统一层的合并逻辑从 `knowledge/entities/` 目录的 Markdown fr
 
 v1.1.3 新增 `daemon/src/notify.ts` 提供 `[sofagent-daemon]` 品牌包装的统一通知接口。**本地三态推送（PASS/WARN/FAIL）v1.1.6 已接通**（`webhook.ts` + `push-target.ts`，agent 自测可用）。但**企业平台完整推送（飞书/钉钉/企微）已在 v1.2.1 落地**——当前 daemon 的 cron 巡检和文件监听结果在企业场景仍依赖 stdout + `daemon-health.json`，企业 IT 需自行轮询 `history.jsonl` 或使用 v1.2.1 Webhook 推送。
 
+### 插件包 `private: true` ⇒ `optionalDependencies` 在 npm 通道不可解析
+
+宿主聚合插件（`engine/dsh-plugins/cordis-plugin-sofagent-harness`）声明了 9 条 `optionalDependencies`，而这些声明项指向的插件包**自身都是 `private: true`**。三件事互为因果，须一并读懂：
+
+1. **插件包是 `private: true`**：`engine/dsh-plugins/**` 下全部插件（含聚合插件本身）不对 npm 发布，仅随仓库分发。
+2. **⇒ 这些 `optionalDependencies` 在 npm 通道无法命中**：npm 必须从注册表解析依赖树，而 `private: true` 的包没有注册表条目，因此这些声明项在 `npm install` 路径上**结构性地不可能被解析**——不是「装不上」，而是「根本不在 npm 的解析域内」。
+3. **⇒ 它当前的真实作用 = 版本对齐**：声明这些可选依赖的实际场景，是**本地以文件链接方式把插件接入宿主**，用于把同一批原子插件钉在一致版本上，避免宿主挂载到版本漂移的副本。
+
+> 结论：这不是配置错误，而是**两条分发通道各有各的元数据**——npm 通道的入口是 `engine/umbrella`（`sofagent` 裸名包），DSH 通道的入口是宿主 profile 的 `bundles` 字段。
+
 ## 九、v1.1.7-v1.1.9 新功能局限
 
 ### Dream Cycle 知识质量依赖 LLM

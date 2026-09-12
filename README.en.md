@@ -196,6 +196,13 @@ sofagent-audit --doctor    # verify the environment (optional)
 
 **To uninstall**: `bash engine/scripts/uninstall.sh` — removes the Skill/constitution files, hook registrations and the three git hooks (`pre-commit` / `commit-msg` / `post-commit`), while keeping your `~/.sofagent/` data. More install options (clone install / full npx install / minimal install / enterprise deployment) in [HANDBOOK](./docs/HANDBOOK.md). Enterprise users who just want the FDE methodology for mapping business workflows, see [FDE/README.md](./FDE/README.md) (zero dependencies, no Node.js needed; for the 15-minute shortest path see its "15-minute shortest path" section).
 
+**What do I install → which channel** — two "install everything" entry points; pick the one matching your environment, and you **never need both** (they do not depend on each other, and neither is a prerequisite for the other):
+
+| What I want | Which channel | What I get |
+|---|---|---|
+| Everything, via the npm ecosystem | `npm i -g sofagent` (npm bare-name umbrella package `engine/umbrella`) | `@sofagent/audit` + `@sofagent/mcp` + `@sofagent/orchestrator` + `@sofagent/daemon` |
+| Everything, via DSH host mounting | mount one `cordis-plugin-sofagent-harness` entry in the host profile's `bundles` | all atomic plugins declared by that aggregator (one entry aggregates them) |
+
 ## Usage
 
 <p align="center"><img src="docs/assets/dashboard.png" alt="sofagent Dashboard cockpit" width="100%" /><br/><sub>Dashboard cockpit (single-file HTML · screenshot shows v1.4.0): rule pass rate, audit tasks, violation trends — see at a glance what the AI is doing.<br>(The installed UI is the source of truth.)</sub></p>

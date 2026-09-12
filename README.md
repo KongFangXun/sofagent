@@ -194,6 +194,13 @@ sofagent-audit --doctor    # 验证环境（可选）
 
 更多安装方式（clone 安装 / npx 完整安装 / 最小安装 / 企业部署）见 [HANDBOOK](./docs/HANDBOOK.md)；**卸载方式见 [HANDBOOK · 卸载](./docs/HANDBOOK.md#卸载怎么干净地撤掉)**（`bash engine/scripts/uninstall.sh`，会一并回收三层 git hook）。企业用户想直接用 FDE 方法论梳理业务流，看 [FDE/README.md](./FDE/README.md)（零依赖，不需要 Node.js；15 分钟最短路径见其「15 分钟最短路径」小节）。
 
+**我要装什么 → 走哪条通道**——两个「一次装全套」入口，按你所在环境**二选一**，**无需同时装**（两者互不依赖，也不互为前置）：
+
+| 我要装什么 | 走哪条通道 | 装完得到什么 |
+|---|---|---|
+| 全套能力，走 npm 生态 | `npm i -g sofagent`（npm 裸名总包 `engine/umbrella`） | `@sofagent/audit` + `@sofagent/mcp` + `@sofagent/orchestrator` + `@sofagent/daemon` |
+| 全套能力，走 DSH 宿主挂载 | 宿主 profile 的 `bundles` 挂一条 `cordis-plugin-sofagent-harness` | 该聚合插件声明的全部原子插件（挂一条即聚合） |
+
 ## 使用
 
 <p align="center"><img src="docs/assets/dashboard.png" alt="sofagent Dashboard 驾驶舱" width="100%" /><br/><sub>Dashboard 驾驶舱（单文件 HTML · 截图版本 v1.4.0）：规则通过率、审计任务、违规趋势——AI 在干什么，一眼看清。<br>（实际界面以安装态为准）</sub></p>
