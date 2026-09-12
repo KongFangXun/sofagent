@@ -360,13 +360,13 @@ export function runDoctor(projectDir: string = process.cwd(), options: { resetBa
   const criticalDeps = ['js-yaml'];
   for (const dep of criticalDeps) {
     try {
-      // require.resolve 从 doctor.ts 编译后的位置（引擎包 dist/ 内）向上查找
+      // require.resolve 从 doctor.ts 编译后的位置（模块包 dist/ 内）向上查找
       // node_modules，不受 cwd 影响——修复非仓库目录运行 --doctor 时误报依赖缺失。
       // CJS 环境下 require 全局可用，直接调用 require.resolve。
       require.resolve(dep);
       ok(`${dep} 已安装`);
     } catch {
-      // 引擎包内解析失败 → 尝试从 cwd 解析（workspace 场景）
+      // 模块包内解析失败 → 尝试从 cwd 解析（workspace 场景）
       try {
         const cwdRequire = require('module').createRequire(join(projectDir, 'package.json'));
         cwdRequire.resolve(dep);

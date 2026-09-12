@@ -6,7 +6,7 @@
 // （fde_interview 首次调用触发）+ session-stop 自动捕获状态文件
 // + 新 session 启动检测既有客户目录 → 自动恢复上下文。
 //
-// 与 v1.3.5 fde-session/（引擎包内进场记忆——按 sessionId 组织，
+// 与 v1.3.5 fde-session/（模块包内进场记忆——按 sessionId 组织，
 // 供 orchestrator API 层消费）的分工：
 //   - fde-session/：面向「会话」的记忆单元（context.md + meta.json），
 //     API 层交付，路径在 {dataDir}/fde/sessions/<sessionId>/

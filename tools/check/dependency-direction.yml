@@ -1,13 +1,13 @@
 # dependency-direction.yml · 包边界清单（依赖方向 SSOT）
 # ============================================================
 # v1.4.8 第七章/第〇批交付——build 序列 14 包的允许依赖方向（核心层 ← 约束层 ← 适配层 ← CLI/展示层）。
-#   第 7 批（train 拆包）后：13 引擎包 + engine/hooks/sofagent-load-chain。
+#   第 7 批（train 拆包）后：13 模块包 + engine/hooks/sofagent-load-chain。
 #
 # 🔴 口径裁定（写进清单头部，避免与既有门禁混写——各口径全表见开发 Prompt「包计数术语表」SSOT）：
-#   ① 本清单覆盖 **build 序列 14 包** = 13 引擎包 + engine/hooks/sofagent-load-chain（**不含 engine/umbrella**）。
+#   ① 本清单覆盖 **build 序列 14 包** = 13 模块包 + engine/hooks/sofagent-load-chain（**不含 engine/umbrella**）。
 #      workspace 实为 29 项——另含 14 个 DSH/OpenClaw 插件家族与 engine/umbrella，
 #      属适配层/分发层叶子，不在 npm 包依赖面边界清单范围。
-#   ② 引擎包 14（含 umbrella）与 build 序列 14（不含 umbrella）在此统一取 **build 序列口径**
+#   ② 模块包 14（含 umbrella）与 build 序列 14（不含 umbrella）在此统一取 **build 序列口径**
 #      （load-chain 是构建拓扑序末位、umbrella 不参与依赖图）。
 #   ③ 测试口径 13 包（engine/umbrella 无独立 test workspace）、check-version.sh §1/§2 硬编码
 #      循环 12 包（含 mcp + train；该脚本 §9b/§12b 已由本文件 rhythm.sync 驱动，15 包）、
