@@ -8,7 +8,7 @@
 // nodes.ts 原样 re-export 本文件符号——loop/index.ts 与测试的既有导入面不变。
 // ============================================================
 
-import type { AuditVerdict, LoopArtifacts, LoopGraphState, SessionGoalState } from './state';
+import type { AuditVerdict, LoopArtifacts, LoopGraphState } from './state';
 import type { FileCheckpointer } from '../graph/checkpoint';
 import type { WorktreeHandle } from '../worktree-isolation';
 
