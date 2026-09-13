@@ -107,11 +107,12 @@ sofagent 不造 Agent——执行能力交给成熟宿主（模型 + 工具 + �
 
 | 档位 | 平台 | 约束注入 | 挂载方式 |
 |------|------|---------|---------|
-| **深度结合** | DeepSeek Harness | ✅ 插件级 | 9 款原子 `cordis-plugin-sofagent-*` 挂载进运行时（另有 1 款聚合插件可选，见上章） |
-| **完整挂载** | OpenClaw / WorkBuddy | ✅ 自动 | Hook 注入四层约束 + 断路器 |
-| **薄挂载** | Claude Code / Codex / Cursor / Gemini CLI | ⚠️ 半自动 | Skill 目录 symlink / AGENTS.md 种子指令 + git hook 审计 |
+| **深度结合** | DeepSeek Harness | ✅ **逐工具调用可拦** | 9 款原子 `cordis-plugin-sofagent-*` 挂进运行时（另有 1 款聚合插件可选，见上章）——`tools/pre-execute` 等 8 个生命周期事件 |
+| **完整挂载** | OpenClaw | ✅ **每会话注入一次** | Hook 注入四层约束 + 断路器 + 4 款 OpenClaw 插件 |
+| **标准挂载** | Claude Code / Cursor | ⚠️ Skill 自觉加载 | Skill 目录 symlink + 平台规则文件 + 拦截配置（内容为提交级 24 规则，非调用级拦截） |
+| **薄挂载** | WorkBuddy / Codex / Gemini CLI / Hermes | ⚠️ Skill 自觉加载 | Skill 目录 symlink（Codex 走 `AGENTS.md` 挂载点）+ git hook 审计 |
 
-- **差在当前深度适配范围，不是差在 skill**——Claude Code、Cursor 也有 skills 目录（装完 Skill 同样能加载），差别是 sofagent 当前深度适配了哪些宿主：OpenClaw / WorkBuddy 已完成 Hook 通道接入（开机自动注入 + 断路器实时拦截）；Claude Code 支持 PreToolUse 等事件级 hook、Cursor/Gemini CLI 走 Skill 目录加载——未深度适配的平台约束随 Skill 文本加载（建议性），硬拦截统一交给 git hook（强制性）
+- **别假设能力对齐——档位差的是注入强度，不是「有没有」**：DSH 逐工具调用可拦，OpenClaw 每会话注入一遍，其余宿主由 Agent 自觉读 Skill 文本（建议性）。「支持某平台」= 约束资产在该平台可用，**≠ 约束强度与其他平台相同**；跨宿主迁移或写集成文档前，先看目标宿主落在哪一档，完整矩阵见[加载链 HOOK](./engine/hooks/sofagent-load-chain/HOOK.md)
 - **审计兜底平台无关**——`sofagent-audit --install-hook` 走 git hook，任何档位每次 commit 都过 24 条审计，违规硬拦截。约束是建议性的，审计是强制性的
 
 一条命令选定挂载档位：`bash install.sh --platform <平台名>`（全部平台与差异见 [HANDBOOK](./docs/HANDBOOK.md)）

@@ -103,7 +103,7 @@
 
 | 角色 | 模块 | 管什么 | 触发方式 |
 |------|------|------|------|
-| 🧱 底座 | **约束层**（harness） | 四层加载链注入规则，Agent 启动即生效 | 平台 Hook（OpenClaw / WorkBuddy）/ Sub Agent 自加载 |
+| 🧱 底座 | **约束层**（harness） | 四层加载链注入规则，Agent 启动即生效 | 平台 Hook（OpenClaw）/ DSH 插件 / Sub Agent 自加载 |
 | 🔍 模块① | **审计模块**（audit） | git diff → 24 条规则硬扫描，违规当场拦 | git commit / daemon 文件变更 |
 | 🔄 模块② | **回溯模块**（core） | 审计后自动快照，出事一键回滚 | 审计完成后自动 |
 | ⚙️ 内部工具 | **FORGE 工具链**（orchestrator） | LOOP 流水线（项目自迭代用，非对外模块） | CLI compose tool |
@@ -156,10 +156,19 @@ cd sofagent && bash install.sh
 | 平台 | install.sh 行为 |
 |------|------|
 | `openclaw` | 完整部署——宪法 + Hook + 配套脚本 + 断路器 → `~/.openclaw/` |
-| `workbuddy` | 部署 SKILL.md → `~/.workbuddy/skills/sofagent/` |
-| `claude` | 部署宪法 + 输出种子指令（手动粘贴到 CLAUDE.md） |
-| `codex` | 部署宪法 + 输出种子指令（手动粘贴到 AGENTS.md） |
-| `hermes` | 部署宪法 + 输出种子指令（手动粘贴到 SOUL.md） |
+| `workbuddy` | Skill symlink → `~/.workbuddy/skills/sofagent/` + 校验数据目录 |
+| `claude` | Skill symlink + 工具调用拦截配置 `~/.claude/settings.json` |
+| `cursor` | Skill symlink + `.cursor/rules/sofagent.mdc` + 拦截配置 `~/.cursor/hooks.json` |
+| `gemini` | Skill symlink + `~/.gemini/GEMINI.md` |
+| `codex` | 挂载点 `~/.codex/AGENTS.md`（无 Skill 目录，靠平台自身读取约定） |
+| `hermes` | Skill symlink + `SOUL.md` 种子指令 |
+| 不指定 | 只写 `~/.sofagent/`，不修改任何平台目录（平台无关安装） |
+
+#### 装之前：只认官方通道
+
+> ⚠️ **别从镜像装。**官方发布渠道只有三处——**GitHub 仓库 / npm（带 scope 的 `@sofagent/*` 与裸名总包 `sofagent`）/ ClawHub 与 SkillHub 双生态插件市场**，全部安装方式见 [README](../README.md)。第三方镜像、聚合仓库、二次打包的「一键脚本」不在发布链内：它们可能钉在已撤销的历史版本上，或改写了安装脚本——`install.sh` 会写 `~/.sofagent/` 并注册宿主 hook，**被改写等于交出宿主控制权**。
+>
+> 另有一类**同名陷阱**：npm 裸名包 `sofagent-audit` 是本项目的旧代理包（已 deprecated、长期滞后），正式包名是带 scope 的 `@sofagent/audit`——别按名字猜，见 README 的同名警示。
 
 #### 安装常见问题
 
@@ -195,7 +204,11 @@ sofagent-core verify                # 同样跑 verify 检查（注：没有 sof
 
 ### 跨平台能力差异
 
-支持 Hook 注入的平台（OpenClaw / WorkBuddy 等）获得完整能力（Hook 自动注入 + 断路器 + 编排模块）。其他平台核心约束生效，编排模块降级。详见 [开发文档 §一](./DEVELOPMENT.md#脚本与文件结构速查)。
+**不同宿主拿到的约束强度不同，别假设能力对齐。**完整矩阵（含 DSH）见[加载链 HOOK · 宿主支持矩阵](../engine/hooks/sofagent-load-chain/HOOK.md)——一句话概括：**DSH 逐工具调用可拦 > OpenClaw 每会话注入一次 > 其余宿主 Agent 自觉读 + 提交时兜底**。
+
+目前只有 OpenClaw 暴露 `agent:bootstrap` 会话事件，所以只有它额外承载加载链 Hook 与断路器；其他平台的约束走 Skill 自觉加载。**「支持某平台」指的是约束资产在该平台可用，不等于约束强度与其他平台相同**——编排模块在任何平台都可用，差别只在调用路径（Hook 平台走内部 API，其他走 CLI，详见[开发文档 §一](./DEVELOPMENT.md#脚本与文件结构速查)）。
+
+**审计在所有宿主上一样硬**：git diff 24 条规则不依赖 Agent 配合，任何宿主下提交都拦得住。约束是建议性的，审计是强制性的。
 
 ### 卸载（怎么干净地撤掉）
 
@@ -234,7 +247,7 @@ bash engine/scripts/uninstall.sh --platform openclaw|workbuddy|claude|codex|herm
 | 3 | `think.md` | 反思摘要（≤2K token） | ⚠️ 改了没用。→ [反思工程](./DEVELOPMENT.md#六反思工程) |
 | 4 | `knowledge/index.md` | AI 知识库目录，被动注入 top-3 页摘要 | ⚠️ daemon 自动维护 |
 
-> 地基约 3,500 token，不到 128K 窗口的 3%。支持 Hook 的平台（OpenClaw / WorkBuddy）自动注入 2-4 层，其他平台 Agent 主动 Read。详见 [ARCHITECTURE 地基与约束层](./ARCHITECTURE.md#地基与约束层)。
+> 地基约 3,500 token，不到 128K 窗口的 3%。暴露会话事件的宿主（OpenClaw）自动注入 2-4 层，其他平台 Agent 主动 Read。详见 [ARCHITECTURE 地基与约束层](./ARCHITECTURE.md#地基与约束层)。
 
 ### 4 条底线 + 7 则行为铁律
 

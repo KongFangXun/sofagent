@@ -109,11 +109,12 @@ Sits between the Agents you already use and the model layer — it doesn't repla
 
 | Tier | Platform | Constraint injection | Mounting method |
 |------|----------|---------------------|-----------------|
-| **Deep integration** | DeepSeek Harness | ✅ Plugin-level | 9 atomic `cordis-plugin-sofagent-*` mounted into the runtime (1 optional aggregate plugin also available; previous chapter) |
-| **Full mounting** | OpenClaw / WorkBuddy | ✅ Automatic | Hook-injected four-layer constraints + circuit breaker |
-| **Thin mounting** | Claude Code / Codex / Cursor / Gemini CLI | ⚠️ Semi-auto | Skills-directory symlink / AGENTS.md seed directives + git-hook audit |
+| **Deep integration** | DeepSeek Harness | ✅ **Per-tool-call interception** | 9 atomic `cordis-plugin-sofagent-*` mounted into the runtime (1 optional aggregate plugin also available; previous chapter) — 8 lifecycle events incl. `tools/pre-execute` |
+| **Full mounting** | OpenClaw | ✅ **Once per session** | Hook-injected four-layer constraints + circuit breaker + 4 OpenClaw plugins |
+| **Standard mounting** | Claude Code / Cursor | ⚠️ Skill self-load | Skills-directory symlink + platform rule file + interception config (content = commit-level 24 rules, not call-level interception) |
+| **Thin mounting** | WorkBuddy / Codex / Gemini CLI / Hermes | ⚠️ Skill self-load | Skills-directory symlink (Codex uses the `AGENTS.md` mount point) + git-hook audit |
 
-- **The difference is the current depth of adaptation, not skills** — Claude Code and Cursor also have skills directories (installed Skills load just the same); what differs is which hosts sofagent has deeply adapted so far: OpenClaw / WorkBuddy have completed Hook-channel integration (four constraint layers auto-inject at startup + circuit-breaker real-time blocking); Claude Code supports event-level hooks like PreToolUse, Cursor/Gemini CLI load via the Skills directory — on hosts without deep adaptation, constraints ride along as Skill text (advisory) and hard blocking falls uniformly to the git hook (mandatory)
+- **Never assume capability parity — tiers differ in injection strength, not in "supported or not"** — DSH intercepts per tool call, OpenClaw injects once per session, and on every other host constraints ride along as Skill text the Agent reads on its own (advisory). "Supports platform X" means the constraint assets work there; it does **not** mean constraint strength matches other platforms. Before migrating hosts or writing integration docs, check which tier the target host falls into — full matrix in the [load-chain HOOK](./engine/hooks/sofagent-load-chain/HOOK.md)
 - **Audit fallback is platform-agnostic** — `sofagent-audit --install-hook` runs as a git hook; at every tier, every commit passes through all 24 audit rules, violations hard-blocked. Constraints are advisory; auditing is mandatory
 
 One command selects your mounting tier: `bash install.sh --platform <platform-name>` (all platforms and differences in [HANDBOOK](./docs/HANDBOOK.md))

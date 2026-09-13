@@ -282,6 +282,8 @@ graph TB
 
 ### 部署 / 集成 / 开发
 
+> 📦 **两条分发通道互斥，别都装。**①**托管只读订阅**——从 ClawHub / SkillHub 装 Skill 或插件，文件由平台管理、随包更新、本地只读，适合「按原样用」；②**拷进项目可改**——把 Skill 文件复制进你自己的项目或工作目录，可自由改，适合「按自己团队改」。**两个都装 = 同一份技能存在两份副本**：改了一份另一份不知道，Agent 可能加载到旧的那份。选一条通道，别混用。
+
 | 你想…… | 读这个 |
 |---------|--------|
 | 了解系统怎么设计的 | [ARCHITECTURE.md](./ARCHITECTURE.md) |
@@ -302,7 +304,8 @@ graph TB
 | 开发/维护前端（Dashboard 等） | [guides/frontend-design-standard.md](./guides/frontend-design-standard.md)（设计标准 + 开发指南，改前端前必读） |
 | 用 SDK 接入约束层 | [guides/harness-sdk.md](./guides/harness-sdk.md)（SubAgent 托管 SDK · `harness.wrap` 一行包装） |
 | 了解后训模块 | [guides/train-stack.md](./guides/train-stack.md)（双栈契约）+ [train-security.md](./guides/train-security.md)（攻击面声明）+ [train-quickstart.md](./guides/train-quickstart.md)（v1.4.5 十步端到端入门） |
-| 浏览全部专题指南 | [guides/README.md](./guides/README.md)（19 份指南按角色分类索引） |
+| 判断一个场景该不该上后训 | [guides/fde-training-baseline.md](./guides/fde-training-baseline.md)（能力阶梯四格逐级排查） |
+| 浏览全部专题指南 | [guides/README.md](./guides/README.md)（20 份指南按角色分类索引） |
 | 添加新审计规则 | `engine/audit/src/rules/` → 对照现有规则模式（defaultRules / extendedRules） |
 | 新建 Sub Agent | `SKILL/agents/` → 参照 `agents/engineer/SKILL.md` |
 | 运行测试 | `npm test`（根目录）；全量统计以 `tools/check/test-count.sh` 为准，`npm test` 直跑遇 mcp 超时属 flaky，重跑即可 |

@@ -113,6 +113,7 @@ sofagent 的定位正卡在这个转折点上：审计模块（治理侧）+ Ont
 | 国标 Agent 审计对位 | 关注国家 AI 智能体互联标准草案进展，标准正式发布后评估对齐 |
 | **ACS YAML 策略引擎（Microsoft AGT 启发）** | 现有 ruleset 是 JSON，AGT 的 ACS 用 YAML + OPA Rego + Cedar 三引擎——策略更人类可读，需评估兼容性 |
 | **RL 训练治理（Microsoft AGT Agent Lightning 启发）** | 训练期间策略违规惩罚（policy-enforced runners + reward shaping）——v1.4.4 规则→reward 映射已铺路，v1.4.6 分布式执行面（train multi）已交付，待排期评估（候选 v1.5.x 后段） |
+| **事前授权（mandate）补环** | 现有审计是**事后**环（变更 → git diff → 24 规则 → 留痕可举证），缺**事前**环：Agent 动手前先领一张有限、可归属的授权（范围 + 时效 + 审批人），越界在**执行前**拦下而非事后追责。公开生态已有把两环做成同一个协议的实现（`emiliaprotocol/emilia-protocol`——在受保护执行边界上强制有限、客户自有授权）——本仓目前只有后环。**不提前抽象**：动手条件是真实企业客户提出「先批后干」的合规诉求；另注意 `define_acceptance` 是**验收条件**不是**行动授权**，两者别混 |
 | **docs 文体归位（三棵树声明式迁移 · Omarchy 启发）** | 文档按受众×文体分三棵树：任务流程（SKILL/、releasing/）/ 参考（ARCHITECTURE、LIMITATIONS 等）/ 用户手册（README、HANDBOOK）——Omarchy 三棵树启发。**不做目录大迁移**（锚点/预算/历史路径破坏大于收益），走声明式：WIKI 分工表已加文体列，新内容按声明落位，旧文档大改时自然毕业。印证见 [VALIDATION · Omarchy](./VALIDATION.md#omarchyskillmd-形态收敛与单一权威源纪律) |
 | **数据 schema 迁移管道（Omarchy migrations/ 启发）** | `~/.sofagent/data/` 数据格式演进的机制兜底：按版本号顺序执行迁移脚本 + 幂等可重跑（`sofagent doctor --migrate` 或升级时自动执行）。**不提前建管道**（无提前抽象纪律）——v1.5.0 trace 新数据源已埋 `schemaVersion` 前置件，首个破坏性 schema 变更真实出现时再触发评估 |
 | **审计范围语义一等公民化（AuditScope 重构）** | 所有规则输入面显式声明取 HEAD 还是 range——引入 `AuditScope{ diffRange, commitMsg, task, actor }` 显式对象，规则从 scope 取输入、不再自己调 git，消灭「规则自己调 git 取错范围」整类 bug（v1.4.4 审查 D-1 quick A9 同类，最小修复已随 12ec0171 落地，根治走重构专项——v1.4.5 重构窗口已过未排期，候选 v1.5.x 后段） |

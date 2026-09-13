@@ -206,14 +206,14 @@ Agent = **模型 + 上下文 + 工具 + 状态 + 执行控制 + 权限 + 可观�
 | ontology | 领域本体：合并 / 状态 / 视图 / 概念合成，三层 YAML 自动生长 | ✅ 已实现 |
 | evolve | Skill 优化：复用 audit 规则做安全审查 + 集成优化 + 回填（原 skillopt，v1.4.8 更名） | ✅ 已实现 |
 | think | 思考链分析：基于 diff + 审计结果自动生成 think.md 反思条目（append-only） | ✅ 已实现（⚠️ 仅 MCP/CLI 路径触发，git hook 路径不自动生成） |
-| load-chain | 加载链 Hook 包 `@sofagent/load-chain`：Agent 平台（OpenClaw / WorkBuddy 等）hook 注入四层约束（v1.2.0 DP-4（设计原则 4）提升为正式 workspace 包） | ✅ 已实现 |
+| load-chain | 加载链 Hook 包 `@sofagent/load-chain`：宿主平台（OpenClaw 等暴露会话事件的平台）hook 注入四层约束（v1.2.0 DP-4（设计原则 4）提升为正式 workspace 包） | ✅ 已实现 |
 
 ### API 分级边界决策（@public / @internal）
 
 v1.3.9 起对所有 workspace 包的入口 export 做显式分级，CI 门禁（[tools/check/public-api.mjs](./../tools/check/public-api.mjs)）拦截未 bump 版本的 `@public` 破坏性变更。
 
 **为什么是这个粒度**：
-- 基线覆盖 **13 个包**（12 个 `@sofagent/*` 模块包 + 工具包 `load-chain`；`engine/mcp` 无 `@public` 标注不入基线）——当前 13 包共 **2284 个 @public 符号**（以 `public-api.mjs` AST 解析为权威口径，非 grep 计数；v1.4.7 商业平台接口批新增 76 符号后全量重估——历史值 v1.4.0 时点 1456 / v1.4.6 时点 2168 已随版本演进失效，本值以门禁 baseline 对齐为准）。
+- 基线覆盖 **13 个包**（12 个 `@sofagent/*` 模块包 + 工具包 `load-chain`；`engine/mcp` 无 `@public` 标注不入基线）——当前 13 包共 **2283 个 @public 符号**（以 `public-api.mjs` AST 解析为权威口径，非 grep 计数；v1.4.7 商业平台接口批新增 76 符号后全量重估——历史值 v1.4.0 时点 1456 / v1.4.6 时点 2168 已随版本演进失效，本值以门禁 baseline 对齐为准）。
 - 未标记的导出**默认视为 @public**（保守默认：宁可多承诺不可漏承诺），`@internal` 需显式标注。
 
 **为什么 @internal 破坏性变更不影响适配层**：
@@ -419,6 +419,8 @@ graph LR
 
 > 📌 **后训模块的能力边界**：本仓负责后训流水线的**编排与治理**——任务提交 / 预算门禁 / 环境体检 / 提交前预检 / 失败诊断 / 语料导出 / 合规闸门 / 交付包 / 模型注册与灰度 / 推理服务；**训练本身在外部执行环境进行，本仓不实现训练器**（`train_submit` 是把任务提交出去并跟踪，不是自己训）。
 
+> 🧭 **训练器是「集成」不是「自研」——选型有公开对标物**：既定路线由 TrainChannel 把外部训练栈接进来（编排侧默认 `verl`，推理侧 vLLM / Ollama / OpenAI 兼容端点，双栈契约见 [train-stack](./guides/train-stack.md)），本仓不自研训练框架。公开生态里的**同位候选**（列作选型参照，**非已采用**）：`verl`（RL 后训通用框架）· `LMIS-ORG/slime-agentic`（基于 Slime 的 agentic RL）· `XYZ-AI-Lab/axrl`（SGLang rollout + Megatron 训练的 agentic RL 后训框架）· `jinzijian/EvoTrace`（把 Agent 轨迹编译成可验证、可交易的训练资产）。四者的共性正是本仓的边界——**训练与资产生产交给外部执行器，本仓只做编排与治理**。所以差异不在「训练框架选谁」，而在**变更级可问责**：谁改了哪条规则、哪次变更被拦、凭什么。
+
 > 🔒 **编制准入三问**（新功能域进编制表前必过）：
 > ① 挂得上五能力吗（注入/审计/回溯/沉淀/进化至少其一）？
 > ② 产出过审计/注册闸门吗（产物可追溯、可回滚）？
@@ -477,7 +479,7 @@ sofagent 落点：审计模块的 git diff 硬证据正是「动作结果被后�
 | 3 反思 | think.md | ⚠️ 自动生成 | 上轮踩过的坑 |
 | 4 知识 | knowledge/ | ✅ 积累 | 自动关联的 best practice |
 
-Agent 平台（OpenClaw / WorkBuddy 等）通过 Hook 精确注入，其他平台 Agent 主动 Read，v1.0.7+ Sub Agent 启动时自加载（`buildConstrainedSystemPrompt`）。
+宿主平台中暴露会话事件的（OpenClaw）通过 Hook 精确注入，DSH 走插件在 `tools/pre-execute` 等事件上逐调用注入，其他平台 Agent 主动 Read，v1.0.7+ Sub Agent 启动时自加载（`buildConstrainedSystemPrompt`）。
 
 > **v1.1.8 加载链扩展**：联邦知识注入于 knowledge/ 层（加载链第 4 层，位于 think.md 第 3 层之后；目录 `knowledge/federation/`，daemon 联邦查询落盘的 peer 知识快照）——低于 SKILL.md 宪法层。联邦内容是外部来源，强制 `<untrusted source="federation">` 包裹（Prompt 注入防线层 1，详见 SECURITY.md 8 层映射表）。
 
