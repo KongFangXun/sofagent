@@ -1,7 +1,7 @@
 ---
 name: cordis-plugin-sofagent-commons
 slug: cordis-plugin-sofagent-commons
-version: 1.4.7
+version: 1.4.8
 displayName: cordis-plugin-sofagent-commons
 description: >
   能力公地五环——复用 commons_* tool（seam: non-seam:tool-set）——桥接 @sofagent/audit loadConfig——DSH（DeepSeek Harness）cordis plugin。sofagent 约束层在 DeepSeek Harness 生态的插件形态。

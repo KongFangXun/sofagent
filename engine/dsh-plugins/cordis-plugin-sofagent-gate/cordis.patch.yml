@@ -1,4 +1,4 @@
-# sofagent cordis-plugin-sofagent-gate bundle patch v1.4.7——注册为 DSH profile layer
+# sofagent cordis-plugin-sofagent-gate bundle patch v1.4.8——注册为 DSH profile layer
 - insert:
     - id: sofagent-gate
       name: 'cordis-plugin-sofagent-gate'

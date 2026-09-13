@@ -2,7 +2,7 @@
   "id": "sofagent-rollback",
   "name": "sofagent 回溯",
   "description": "出错逆序撤销——git snapshot 快照 + 逆序回滚（effect disposer 语义）",
-  "version": "1.4.7",
+  "version": "1.4.8",
   "seam": "non-seam:tool-set",
   "seamSemantics": "非宿主事件接入（tool 集 + CLI 命令）——快照 / 回滚按需调用",
   "icon": "https://raw.githubusercontent.com/KongFangXun/sofagent/main/assets/logo.png",

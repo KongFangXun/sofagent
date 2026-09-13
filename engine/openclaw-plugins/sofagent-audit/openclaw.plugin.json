@@ -2,7 +2,7 @@
   "id": "sofagent-audit",
   "name": "sofagent 审计",
   "description": "变更机器审阅——24 规则 + git diff 硬证据 + 危险工具拦截（before_tool_call）",
-  "version": "1.4.7",
+  "version": "1.4.8",
   "seam": "before_tool_call",
   "seamSemantics": "工具调用前拦截危险工具（可拦停 / 要求审批）",
   "icon": "https://raw.githubusercontent.com/KongFangXun/sofagent/main/assets/logo.png",

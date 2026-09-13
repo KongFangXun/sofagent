@@ -1,7 +1,7 @@
 ---
 name: cordis-plugin-sofagent
 slug: cordis-plugin-sofagent
-version: 1.4.7
+version: 1.4.8
 displayName: cordis-plugin-sofagent
 description: >
   一次挂载 sofagent 全套能力（聚合编排层，只编排不重实现）（seam: non-seam:plugin-suite）——一次性挂载 9 个原子插件——DSH（DeepSeek Harness）cordis plugin。sofagent 约束层在 DeepSeek Harness 生态的插件形态。

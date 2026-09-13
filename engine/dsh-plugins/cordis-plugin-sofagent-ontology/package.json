@@ -1,6 +1,6 @@
 {
   "name": "cordis-plugin-sofagent-ontology",
-  "version": "1.4.7",
+  "version": "1.4.8",
   "engines": {
     "node": ">=18"
   },
@@ -27,7 +27,7 @@
   },
   "//optionalDependencies": "v1.4.5 T6 (R4)：src/index.ts 惰性 await import('@sofagent/ontology')（懒加载 + 缺依赖降级不抛；v1.4.8 起该样板由 @sofagent/dsh-plugin-kit 统一封装），此前未声明任何依赖——对齐 root package.json F-18 optionalDependencies 先例。",
   "optionalDependencies": {
-    "@sofagent/ontology": "1.4.7"
+    "@sofagent/ontology": "1.4.8"
   },
   "devDependencies": {
     "typescript": "^7.0.2",

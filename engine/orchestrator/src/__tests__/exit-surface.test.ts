@@ -146,7 +146,12 @@ describe('条目 9 · orchestrator 窄出口消费面契约', () => {
       readFileSync(join(__dirname, '..', '..', '..', 'train', 'package.json'), 'utf-8'),
     ) as { name: string; version: string; main: string; types: string; exports: Record<string, unknown> };
     expect(pkg.name).toBe('@sofagent/train');
-    expect(pkg.version).toBe('1.4.7');
+    // v1.4.8：不硬编码版本（bump 会红）——与 workspace SSOT（根 package.json）动态比对。
+    // 本测试的意图是「train 作为独立包与主线版本一致」，而非锚定某个具体版本号。
+    const rootPkg = JSON.parse(
+      readFileSync(join(__dirname, '..', '..', '..', '..', 'package.json'), 'utf-8'),
+    ) as { version: string };
+    expect(pkg.version).toBe(rootPkg.version);
     expect(pkg.main).toBeTruthy();
     expect(pkg.types).toBeTruthy();
     expect(pkg.exports['.'], '@sofagent/train 缺 "." 出口').toBeTruthy();

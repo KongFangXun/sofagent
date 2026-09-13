@@ -1,11 +1,11 @@
 # 路线图 · Roadmap
 
 > 已经做了什么、未来要去哪、哪些地方需要你的帮助。
-> v1.4.7 · 2026-09-11（UTC，✅ 已发版）· 🔌 商业平台接口版（G2/G4/G6/G7 平台接口 + G13 PR 生命周期 + G14 workflow CRUD + 云训练执行收口 + daemon 接线收口批）。此前版本详见 [CHANGELOG](../CHANGELOG.md) 与各版开发日志。
+> v1.4.8 · 2026-09-13（UTC，✅ 已发版）· 🔌 商业平台接口版（G2/G4/G6/G7 平台接口 + G13 PR 生命周期 + G14 workflow CRUD + 云训练执行收口 + daemon 接线收口批）。此前版本详见 [CHANGELOG](../CHANGELOG.md) 与各版开发日志。
 
 产品定位详见 [设计哲学](./PHILOSOPHY.md) 和 [README](../README.md)。
 
-## 现在在哪：v1.4.7（已交付）
+## 现在在哪：v1.4.8（已交付）
 
 > **v1.4.7 开发完成（2026-09-10）**——商业平台接口版（G2 能力缺口 / G4 绩效导出 / G6 节点可见性 / G7 多租户 v0 + G13 PR 生命周期 + G14 workflow CRUD + workflow 烧进 USB + G8 首部署 cron 包 + 上岗 prompt + 云训练执行收口 TrainChannel + 静态加密/repo-hash/data_push 三接线 + audit 规约层与 PROV-O 导出）· 测试 4107→4279（12 包 workspace 口径）· acceptance 311→328 场景 / 409 断言 · MCP 84→95 tools · release-gate verdict=PASS（run-04；四项 P1 放行条件 RC-1~RC-4 已收口）。详见 [v1.4.7 开发日志](./changelog/v1.4/v1.4.7.md)。下一版 v1.4.8（插件管控与工程效能）见[版本规划](#版本规划)。
 

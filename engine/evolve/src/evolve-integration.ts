@@ -1,9 +1,9 @@
 // ============================================================
 // evolve-integration.ts · Evolve 自进化能力集成
 // v1.3.7 新增：通过 CLI subprocess 调用 evolve-gate（v1.4.8 自研），验证 candidate skill
-// v1.4.7：迁移至 @sofagent/evolve
+// v1.4.8：迁移至 @sofagent/evolve
 //
-// v1.4.7 bugfix：对齐真实 evolve-gate（v1.4.8 自研） CLI 契约。
+// v1.4.8 bugfix：对齐真实 evolve-gate（v1.4.8 自研） CLI 契约。
 //   真实 CLI（Microsoft Evolve）是子命令式：
 //     evolve-gate（v1.4.8 自研） status       -> exit 0（探活）
 //     evolve-gate（v1.4.8 自研） run --target-skill-path <PATH> [--auto-adopt] [--json] ...
