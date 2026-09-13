@@ -10,6 +10,11 @@
 // fire-and-forget：推送失败不阻断训练主链路（与审计 webhook 同纪律）。
 
 import type { TrainJobRecord } from './train-job';
+// v1.4.9 P1-3：SSRF 判定改为**真正复用** @sofagent/audit 的权威实现。
+// 依赖方向合规（train L3 → audit L2 在 dependency-direction.yml 允许清单内）；
+// train/package.json 本就依赖 @sofagent/audit（train-audit.ts 已静态 import 该包），
+// 且 audit 不依赖 train ⇒ 无环。此前本文件自称「复用」实为自带内联副本，两处已漂移。
+import { isPrivateWebhookUrl } from '@sofagent/audit';
 
 /** 推送平台（对齐 @sofagent/audit webhook 三平台） */
 export type TrainWebhookPlatform = 'dingtalk' | 'feishu' | 'wecom';
@@ -102,7 +107,7 @@ const defaultPush: PushFn = async (target, body) => {
  * 推送训练终态事件（三态——fire-and-forget）。
  *
  * 目标未配置（null）或载荷为 null（非终态）直接返回 false 不发请求。
- * SSRF 防护：url 指向内网/本机时拒绝（复用 @sofagent/audit isPrivateWebhookUrl）。
+ * SSRF 防护：复用 @sofagent/audit `isPrivateWebhookUrl`（v1.4.9 P1-3 起为**真复用**）。
  */
 export async function pushTrainEvent(
   target: TrainWebhookTarget | null,
@@ -110,31 +115,43 @@ export async function pushTrainEvent(
   options: { push?: PushFn } = {},
 ): Promise<boolean> {
   if (!target || !payload) return false;
-  // SSRF 防护（本文件自带判定——与 @sofagent/audit webhook 同规则：内网/本机/
-  // 疑似数字编码 IP 一律拒绝；不 import audit 包避免 engine 间循环依赖）
-  const { URL } = await import('url');
-  const { isIP } = await import('net');
-  let parsed: URL;
-  try {
-    parsed = new URL(target.url);
-  } catch {
-    return false;
-  }
-  if (parsed.protocol !== 'http' && parsed.protocol !== 'https:') return false;
-  const host = parsed.hostname;
-  const isPrivateHost =
-    /^localhost$/i.test(host) ||
-    host === '127.0.0.1' ||
-    host === '::1' ||
-    host === '0.0.0.0' ||
-    /\.(local|internal|lan|intranet|home)$/i.test(host) ||
-    host.startsWith('10.') ||
-    host.startsWith('192.168.') ||
-    /^172\.(1[6-9]|2\d|3[01])\./.test(host) ||
-    (isIP(host) === 0 &&
-      host.split('.').some((seg) => /^\d+$/.test(seg) || /^0[xX][0-9a-fA-F]+$/.test(seg)));
-  if (isPrivateHost) {
-    console.warn(`[sofagent] train webhook URL 指向本机/内网地址，已拒绝推送（SSRF 防护）: ${target.url}`);
+  // v1.4.9 P1-3：替换掉原先的内联 SSRF 副本，改用 @sofagent/audit 的权威实现。
+  //
+  // 被替换的内联版有三处与 audit 侧漂移造成的实际缺陷（合并即修）：
+  //   ① 协议白名单写错：`parsed.protocol !== 'http'` **恒真**（WHATWG 规范下
+  //      `URL.protocol` 恒带冒号，取值只可能是 'http:' / 'https:'）⇒
+  //      **所有 http:// 端点被静默拒发**（https:// 正常，故既有测试未暴露）。
+  //   ② IPv6 未剥方括号：`URL.hostname` 对 IPv6 字面量返回 `[::1]`，内联版拿 `'::1'`
+  //      直接比 ⇒ `http://[::1]:8080/admin` 判定穿透。
+  //   ③ IPv4 私网用字符串前缀（`host.startsWith('10.')` / `'192.168.'`）⇒
+  //      `10.example.com` 这类**公共域名**被误拒（audit 侧按八位组精确解析）。
+  //
+  // 合并后的行为差异（**实测清单**——63 条 URL 样本逐个跑两版判定：等值 46 / 从严 8 / 放宽 9）：
+  //   放宽 9 项 —— 全部同一根因：`http://` + 公网/合法端点由「静默拒发」改「正常放行」
+  //     （http://example.com · http://oapi.dingtalk.com · http://172.15.0.1 ·
+  //       http://100.128.0.1 · http://[2001:4860::1] · http://1.2.3.4 …）。
+  //     这正是 P1-3 要修的协议白名单 bug：`protocol !== 'http'` 恒真 ⇒ http 一律被挡。
+  //     ⚠️ 该 bug 会**掩蔽**下方全部私网判定差异——旧版对任何 http:// 都拒发，
+  //     所以私网差异只在 **https://** 侧才暴露（下表 8 项清一色 https）。
+  //   从严 8 项 —— 均为 `https://` + 私网/非法主机（旧版放行、新版拒发）：
+  //     ① 127.0.0.0/8 全段（旧版只拦 `127.0.0.1` 单点）：https://127.0.0.2 · https://127.1.2.3
+  //     ② 169.254.0.0/16 云元数据靶：https://169.254.169.254
+  //     ③ 100.64.0.0/10（CGN）：https://100.64.1.1
+  //     ④ IPv6 字面量：https://[::1] · [fd00::1] · [fe80::1] · [::ffff:169.254.169.254]
+  //        （旧版 `host === '::1'` 对 hostname 取值 `'[::1]'` 永不命中，且无 fc/fd/fe80
+  //          与 IPv6-mapped IPv4 判定）
+  //   等值 46 项 —— 无行为变化：10/8 · 172.16/12 · 192.168/16 前缀段、localhost、0.0.0.0、
+  //     .local/.internal/.lan/.intranet/.home、数字段/0x 段 fail-closed
+  //     （`10.example.com` · `2130706433` · `0x7f.0x0.0x0.0x1` 两侧都拦）；
+  //     不可解析 URL 两侧都拒（旧版 catch → return false，**不是**放宽项——勿望文生义）。
+  // 返回值语义注记：audit 侧 `true` = 内网/非法（拒绝），与内联版 `true` = 可发**相反**，
+  // 故此处条件与内联版相反，勿照抄。
+  //
+  // 未做（属独立决策，不在本批）：接入 audit 的 `verifyWebhookDns` 异步 DNS 复验
+  //（DNS rebinding 纵深防御）。它是 fail-closed——离线/受限 CI 下解析失败即拒发，
+  // 会把正常推送一并拒掉，影响推送可用性，不能藏进「修一行协议判定」里。
+  if (isPrivateWebhookUrl(target.url)) {
+    console.warn(`[sofagent] train webhook URL 指向本机/内网或协议非法，已拒绝推送（SSRF 防护）: ${target.url}`);
     return false;
   }
   const push = options.push ?? defaultPush;
