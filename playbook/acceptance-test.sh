@@ -2317,7 +2317,7 @@ node "$PROJECT_ROOT/tools/audit/client-audit.mjs" --industry 通用 2>/dev/null 
 $S273_OK && pass "FDE 五件齐 + 问卷 7 行业可执行" || fail "FDE 运维件缺失"
 scenario 274 "v1.3.5 交付 2 附带：doctor --reset-baseline 双形态路由"; S274_OK=true
 grep -q "reset-baseline" "$PROJECT_ROOT/engine/audit/src/index.ts" || S274_OK=false
-node "$PROJECT_ROOT/engine/audit/dist/index.js" --reset-baseline 2>/dev/null | grep -q "基准哈希已重置" || S274_OK=false
+SOFAGENT_HOME_ALLOWED_PREFIXES="${SOFAGENT_HOME_ALLOWED_PREFIXES:-/tmp:/private/tmp:$HOME}" node "$PROJECT_ROOT/engine/audit/dist/index.js" --reset-baseline 2>/dev/null | grep -q "三锚已重置" || S274_OK=false  # v1.4.8：① resetBaseline 扩为同步三锚（文案「基准哈希已重置」→「三锚已重置」）② SOFAGENT_HOME 越界改 fail-loud，临时 HOME 需显式放行前缀  # v1.4.8：resetBaseline 扩为同步三锚，文案随之变更（原「基准哈希已重置」）
 $S274_OK && pass "--reset-baseline 独立 flag + 自动路由" || fail "基线重置 flag 失效（rebuild 后 hook 拦截无法自愈）"
 scenario 275 "v1.3.5 交付 6：DSH MCP 互通（HANDBOOK 配置节 + rc 诚实标注）"; S275_OK=true
 grep -q "dsh-mcp-client" "$PROJECT_ROOT/docs/HANDBOOK.md" || S275_OK=false
@@ -3469,7 +3469,7 @@ $S358_OK && pass "train_status 行为实测过（运行态查询/进度曲线/�
 # S359 · 过时承诺与悬空引用防复发四组静态断言：①安全代码承诺排期化 ②changelog 悬空引用补 S359 锚点 ③F-10 行映射表处置在位 ④exit 2 三态语义在位。对齐 S343 静态断言形态。
 scenario 359 "v1.4.3 闸门 run-05 P1 批闭环：过时承诺排期化 + 悬空引用补锚点——ecdh 注释指向 ROADMAP/changelog F-10 引 S359/三态退出码在位"; S359_OK=true
 # P1-7：ecdh.ts 文件头不再写死「留 v1.2.0」过时版本承诺，改指 ROADMAP v1.4.7
-grep -q "排期见 ROADMAP v1.4.7" "$PROJECT_ROOT/engine/core/src/crypto/ecdh.ts" || S359_OK=false  # 承诺排期化
+grep -qE "排期见 ROADMAP v[0-9]+\.[0-9]+\.[0-9]+" "$PROJECT_ROOT/engine/core/src/crypto/ecdh.ts" || S359_OK=false  # 承诺排期化（版本号随 bump 推进，故不锁具体值）
 grep -q "持久化留 v1.2.0" "$PROJECT_ROOT/engine/core/src/crypto/ecdh.ts" && S359_OK=false  # 过时承诺不得回潮
 # P1-8：changelog 模块十「F-10 定谳」标题补 S359 锚点（悬空引用闭合）
 grep -q "S359" "$PROJECT_ROOT/docs/changelog/v1.4/v1.4.3.md" || S359_OK=false  # 锚点落点
