@@ -19,8 +19,8 @@ fi
 # 检测 sofagent-audit
 if command -v sofagent-audit &>/dev/null; then
   AUDIT_CMD="sofagent-audit"
-elif [ -f "engine/audit/dist/index.js" ]; then
-  AUDIT_CMD="node engine/audit/dist/index.js"
+elif [ -n "${_REPO_TOP:-}" ] && [ -f "$_REPO_TOP/engine/audit/dist/index.js" ]; then
+  AUDIT_CMD="node $_REPO_TOP/engine/audit/dist/index.js"
 else
   exit 0  # 静默退出
 fi
