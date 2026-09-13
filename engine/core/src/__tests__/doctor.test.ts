@@ -12,7 +12,7 @@ import { mkdtempSync, rmSync, writeFileSync, mkdirSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
 import * as auditHistory from '../audit-history';
-import { runDoctor } from '../doctor';
+import { runDoctor, detectInstallShape, formatVersionRepairHint } from '../doctor';
 
 /**
  * v1.4.3 十三：Ontology 完整性检查测试的公共隔离装置。
@@ -318,5 +318,58 @@ describe('doctor daemon 守护感知（v1.4.4 #32+47）', () => {
     const out = t.output();
     expect(out).toContain('daemon-health.json 解析失败');
     expect(out).toContain('sofagent-daemon start');
+  });
+});
+
+// ============================================================
+// v1.4.9 P1-13 · 版本修复提示按安装形态分流
+// ------------------------------------------------------------
+// 缺陷：两条版本修复提示都把 `bash install.sh` 当唯一修法，而 npm 形态下该脚本
+//   不在用户机器上（`npm pack --dry-run` 实测 @sofagent/audit tarball 188 文件、
+//   install.sh 0 命中）——提示是死路。且 `~/.sofagent/VERSION` 全仓唯一写入点是
+//   install.sh:403，npm 安装不产生该文件 ⇒「**重新**运行 install.sh」双重不成立。
+// 锁点：① npm 形态提示不含 install.sh、给出 npm 升级命令与 VERSION 绝对路径；
+//   ② 仓库形态保留原 install.sh 修法，且两条都给出 VERSION 绝对路径（原先缺）。
+// ============================================================
+describe('doctor 版本修复提示按安装形态分流（v1.4.9 P1-13）', () => {
+  it('npm 形态：提示不含 install.sh，给出 npm 升级命令与 VERSION 绝对路径', () => {
+    // 构造 npm 安装布局：<root>/node_modules/@sofagent/core/dist
+    const tmpRoot = mkdtempSync(join(tmpdir(), 'sofagent-doctor-npm-'));
+    const moduleDir = join(tmpRoot, 'node_modules', '@sofagent', 'core', 'dist');
+    mkdirSync(moduleDir, { recursive: true });
+    try {
+      expect(detectInstallShape(moduleDir)).toBe('npm');
+
+      const versionFile = join(tmpRoot, 'VERSION');
+      const mismatch = formatVersionRepairHint('npm', 'mismatch', versionFile, '1.4.8');
+      // 锁「可执行修法」而非裸子串：npm 提示里刻意保留「无 install.sh」这句解释
+      // （用户看过旧提示会疑惑脚本去哪了），故断言点必须是 **bash install.sh** 这条命令。
+      expect(mismatch).not.toContain('bash install.sh');
+      expect(mismatch).toContain('npm i -g @sofagent/audit@1.4.8');
+      expect(mismatch).toContain(versionFile);
+
+      const missing = formatVersionRepairHint('npm', 'missing', versionFile, '1.4.8');
+      expect(missing).not.toContain('bash install.sh');
+      expect(missing).toContain(versionFile);
+      expect(missing).toContain('1.4.8');
+    } finally {
+      try { rmSync(tmpRoot, { recursive: true, force: true }); } catch { /* */ }
+    }
+  });
+
+  it('仓库形态：保留 bash install.sh 修法，且两条都给出 VERSION 具体路径', () => {
+    // 真实运行形态：本测试在仓库内跑，doctor.ts 的默认 __dirname 不含 node_modules 段
+    expect(detectInstallShape()).toBe('repo');
+    expect(detectInstallShape('/repo/engine/core/dist')).toBe('repo');
+
+    const versionFile = join('/repo', '.sofagent', 'VERSION');
+    const mismatch = formatVersionRepairHint('repo', 'mismatch', versionFile, '1.4.8');
+    expect(mismatch).toContain('bash install.sh');
+    expect(mismatch).toContain(versionFile);
+
+    const missing = formatVersionRepairHint('repo', 'missing', versionFile, '1.4.8');
+    expect(missing).toContain('install.sh');
+    // 本项新增：原先只说「创建 VERSION 文件」，不给路径
+    expect(missing).toContain(versionFile);
   });
 });

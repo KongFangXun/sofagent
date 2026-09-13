@@ -37,6 +37,77 @@ let _failCount = 0;
 /** v1.2.7: 修复提示输出 */
 function repairHint(cmd: string) { console.log(`     修复：${cmd}`); }
 
+// ============================================================
+// v1.4.9 P1-13 · 版本检查修复提示按**安装形态**分流
+// ------------------------------------------------------------
+// 缺陷：`:115` / `:125` 两条版本修复提示都把 `bash install.sh` 当唯一修法，
+//   而 npm 形态下该脚本**根本不在用户机器上**——提示是死路，用户按提示操作必然失败。
+// 实测依据（非推测）：
+//   ① `npm pack --dry-run`（@sofagent/audit v1.4.8）共 188 个文件，`install.sh`
+//      **0 命中**——package.json 的 files 字段只有 `dist/` · `hooks/` · `README.md`。
+//   ② 全仓 `~/.sofagent/VERSION` 的**唯一写入点**是 `install.sh:403`
+//      （`echo "${VERSION}" > "$SOFAGENT_HOME/VERSION"`），而 install.sh 不在 tarball 内
+//      ⇒ npm 形态下该文件恒缺失。故 `:125` 的「**重新**运行 install.sh」双重不成立：
+//      脚本不存在 + 从未运行过。
+// 边界：本项只分流**提示文案**，不动检查判据本身（npm 形态仍报该 warn——
+//   它是「引擎版本与全局安装标记不一致」的真实信号，只是修法不同）。
+// ============================================================
+
+/**
+ * 安装形态（v1.4.9 P1-13）：
+ *   `'repo'` = 仓库克隆 / install.sh 安装（install.sh 在安装根可见）
+ *   `'npm'`  = 纯 npm 安装（`npm i -g @sofagent/audit` 等，tarball 内无 install.sh）
+ */
+export type InstallShape = 'repo' | 'npm';
+
+/**
+ * 判定当前引擎的安装形态（v1.4.9 P1-13）。
+ *
+ * 判据：模块所在目录路径的路径段里是否含 `node_modules`。
+ *   - 仓库克隆：`<root>/engine/core/{src,dist}`                → `'repo'`
+ *   - npm 安装：`<global>/node_modules/@sofagent/core/dist`     → `'npm'`
+ * 选它而非「向上找 install.sh」的理由：路径段判定**确定**（不依赖安装根里有/没有
+ * 同名脚本），且 npm 与仓库两种布局的差别正是这一层 node_modules。
+ *
+ * @param moduleDir 本模块所在目录（默认 `__dirname`；测试可注入以覆盖 npm 布局）
+ * @returns 安装形态
+ */
+export function detectInstallShape(moduleDir: string = __dirname): InstallShape {
+  return moduleDir.split(/[\\/]+/).includes('node_modules') ? 'npm' : 'repo';
+}
+
+/**
+ * 生成版本一致性检查的修复提示（v1.4.9 P1-13）。
+ *
+ * 四条文案（`shape` × `situation`）都**必须**带上 `homeVersionFile` 绝对路径——
+ * 否则用户不知道要改哪个文件（`:125` 原先只说「创建 VERSION 文件」）。
+ * `repo + mismatch` 一条与 v1.4.9 之前的原文**逐字一致**，属纯保持。
+ *
+ * @param shape           安装形态（`detectInstallShape` 的结果）
+ * @param situation       `'mismatch'` = VERSION 存在但版本不符；`'missing'` = VERSION 不存在
+ * @param homeVersionFile VERSION 文件绝对路径
+ * @param version         当前引擎版本（升级/写入的目标版本）
+ * @returns 修复提示文案
+ */
+export function formatVersionRepairHint(
+  shape: InstallShape,
+  situation: 'mismatch' | 'missing',
+  homeVersionFile: string,
+  version: string,
+): string {
+  if (shape === 'npm') {
+    // npm 形态无 install.sh：修法是升级 npm 包（或直接改该文件）。
+    // 括号里保留「无 install.sh」这句解释是刻意的——用户若看过旧提示会疑惑脚本去哪了；
+    // 但**不得出现 `bash install.sh` 这个可执行修法**（npm 机器上没有该脚本）。
+    return situation === 'mismatch'
+      ? `npm 全局安装形态无 install.sh——升级到匹配版本：npm i -g @sofagent/audit@${version}（或手动更新 ${homeVersionFile}）`
+      : `npm 全局安装形态无 install.sh——该文件由安装器生成，npm 安装不产生它；手动创建 ${homeVersionFile} 并写入当前引擎版本：echo ${version} > ${homeVersionFile}`;
+  }
+  return situation === 'mismatch'
+    ? `重新安装以同步版本：bash install.sh（或手动更新 ${homeVersionFile}）`
+    : `重新运行 install.sh 创建 VERSION 文件（${homeVersionFile}）`;
+}
+
 /**
  * v1.2.7: doctor 检查结果（结构化，含修复命令）
  */
@@ -108,11 +179,14 @@ export function runDoctor(projectDir: string = process.cwd(), options: { resetBa
     // 白名单防护），不再直读 process.env.SOFAGENT_HOME——v1.3.2 P0-RC2 path-traversal
     // 防护对 doctor 三处全局路径读取同样生效。
     const homeVersionFile = join(resolveHomeDir(), 'VERSION');
+    // v1.4.9 P1-13：修复提示按安装形态分流（npm tarball 内无 install.sh——
+    // `bash install.sh` 对 npm 用户是死路）。判据见 detectInstallShape 注释。
+    const installShape = detectInstallShape();
     if (existsSync(homeVersionFile)) {
       const installedVersion = readFileSync(homeVersionFile, 'utf-8').trim();
       if (installedVersion !== VERSION) {
         warn(`~/.sofagent/VERSION 写的是 ${installedVersion}，当前引擎 ${VERSION}——可能发版后未同步`);
-        repairHint(`重新安装以同步版本：bash install.sh（或手动更新 ${homeVersionFile}）`);
+        repairHint(formatVersionRepairHint(installShape, 'mismatch', homeVersionFile, VERSION));
         // v1.3.9 补充升级安全性：消除企业 IT 对「升级覆盖数据」的顾虑——
         // 升级保留用户数据与已装 hooks（不覆盖 ~/.sofagent/data/ 与已装 hooks），
         // 破坏性变更见 CHANGELOG 对应版本条目。
@@ -122,7 +196,7 @@ export function runDoctor(projectDir: string = process.cwd(), options: { resetBa
       }
     } else {
       warn('~/.sofagent/VERSION 不存在——可能是首次安装或旧版本残留');
-      repairHint('重新运行 install.sh 创建 VERSION 文件');
+      repairHint(formatVersionRepairHint(installShape, 'missing', homeVersionFile, VERSION));
     }
   } catch {
     warn('版本检查失败（不影响审计功能）');
