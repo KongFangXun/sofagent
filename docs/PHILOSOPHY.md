@@ -324,6 +324,22 @@ sofagent 的审计能力 Gate + 硬规则正是这类锚点：审计只信 git d
 
 > 📖 来源：Goodhart, C.A.E. (1975). *Problems of Monetary Management: The U.K. Experience*. Reserve Bank of Australia；Perez, C.E. (2026). *From Loop Engineering to Graph Engineering?* IntuitionMachine. https://engineering.zooz.com/intuitionmachine/from-loop-engineering-to-graph-engineering-d3ebeb08511c
 
+### 拒绝权——不确定就不输出
+
+执行可以试错，判断不能。当 Agent 无法在不猜测的前提下完成判断时，正确动作是**拒绝输出、并说清缺什么**，而不是用一个自信的答案填空。这不是洁癖：Databricks 发布其企业本体层（Genie Ontology）时把这条写成了产品取舍——「当上下文缺失时，AI 会用猜测填补空缺；而在财务、运营或销售场景，**一个自信的错误答案往往比没有答案更糟**」。
+
+这条原则在本仓已是三处机制，只是此前从未被命名：
+
+| 机制 | 落点 | 行为 |
+|------|------|------|
+| 准入拒绝 | `SKILL/harness/task-aware.md` §1.1 | 需求不清楚 / 涉安全权限 / 涉删除重构 → 输出 `[准入检查: REJECT — ...]` 后不点火 |
+| 分级响应 | `SKILL/harness/loop-check.md` 输出规则 | 🟢 沉默 / 🟡 一句话 / 🔴 完整汇报 + 等确认——没把握就停下来等人 |
+| 回复前闸门 | `SKILL/SKILL.md` A0 | 四项自检，缺证据即降级为口头告警，而非硬下结论 |
+
+**边界**：拒绝权只对 Agent 自己的产出生效，不构成对人类提问的推辞；且拒绝必须连带「缺什么 + 谁来补」的补齐路径，否则退化为不作为。
+
+> 📖 来源：Databricks《Genie One》发布新闻稿（2026-06-16）——"When context is missing, AI fills the gap with guesses. And in finance, operations, or sales, a confident wrong answer is often worse than no answer at all."（CEO Ali Ghodsi：「今天的多数企业 AI 只是带着虚假自信在猜。」）
+
 ### 中立性——运动员不能兼任裁判
 
 平台内置的审计永远是运动员审计——OpenAI 审计自己的 Agent、字节审计自己的 Agent。这在单供应商场景下够用。但当企业混用多家 Agent（这是确定趋势），就需要一个**不属于任何一方的审计层**。
