@@ -296,6 +296,13 @@ node engine/audit/dist/index.js --version 2>&1 | grep -q "sofagent" && echo "✓
 > USB 专属 fail-closed 验签见维度 44。
 
 ```bash
+# 子项 i: 审计 hook 的退出码契约（v1.4.8 阶段七）——**崩溃必须与「警告」区分开**
+#   契约：0=全绿 / 1=有警告（放行）/ 2=有违规（阻断）/ **3=引擎崩溃**。
+#   坑位：node 未捕获异常默认 exit 1，与「1=警告」**撞码** ⇒ hook 的 `-eq 1` 分支把崩溃
+#   当警告**静默放行**（fail-open 实测：SOFAGENT_HOME 越界致 audit 崩溃，含密钥 .env 入库）。
+#   防线：① 各 fail-loud 点 `process.exitCode = 3` 再 throw；② CLI 顶部注册
+#   uncaughtException/unhandledRejection → exit 3；③ hook 侧 `elif [ $EXIT_CODE -ne 0 ]` 兜底阻断。
+#   反测：`SOFAGENT_HOME=/tmp/x node engine/audit/dist/index.js --help` 期望退出码 **3**（非 1）。
 # 子项 a: A15 actions 未声明时必须 FAIL（非 fail-open WARN）—— 二次验证确认已返回 FAIL，本项保留为回归锁
 grep -n "nodesWithActions.length === 0\|nodesWithActions.length === 0" engine/audit/src/rules/rule-a15-action-constraint.ts
 grep -A2 "nodesWithActions.length === 0" engine/audit/src/rules/rule-a15-action-constraint.ts | grep -c "FAIL" # 期望：≥ 1
