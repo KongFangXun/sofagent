@@ -54,6 +54,12 @@ if [ -n "${SOFAGENT_AUDIT_ENTRY:-}" ]; then
   AUDIT_CMD=(node "$SOFAGENT_AUDIT_ENTRY")
 elif [ -n "${_REPO_TOP:-}" ] && [ -f "$_REPO_TOP/engine/audit/dist/index.js" ]; then
   AUDIT_CMD=(node "$_REPO_TOP/engine/audit/dist/index.js")
+elif [ -f "engine/audit/dist/index.js" ]; then
+  # 🔴 保留「相对 CWD」这一环是**契约要求**（v1.4.8 回归教训）：单测在测试仓里建"迷你 dist"，
+  # 靠 `cwd: repoDir` 下的相对路径命中；且 CI 里 `git rev-parse --show-toplevel` 可能失败
+  # （实测 CI 报 `Command failed: git rev-parse --git-dir` ⇒ `_REPO_TOP` 为空），
+  # 此时必须能落到本分支，否则会一路退到全局包/静默退出（CI 5 例失败的真因）。
+  AUDIT_CMD=(node "engine/audit/dist/index.js")
 else
   # v1.4.8 F-15 补（验收实测修正三处）：① 解析目标是**包名** `@sofagent/audit`——
   # bin 名 `sofagent-audit` 不是包名，用它 require.resolve 必然 MODULE_NOT_FOUND
@@ -86,7 +92,10 @@ fi
 #     哈希同样可伪造，防线 self-defeating。故用 tools/ 下的独立脚本。
 #     v1.4.0 P1-A3：基准缺失时 FAIL 而非跳过——此前 if [ -f ] 缺基准即静默放行，
 #     首次部署窗口内可植入冒牌引擎（基准仅 --doctor 生成而首装不生成，空窗被利用）。
-if [ -n "${_REPO_TOP:-}" ] && [ -f "$_REPO_TOP/engine/audit/dist/index.js" ]; then
+#     v1.4.8：本判断同样保留「相对 CWD」兜底（CI 下 git rev-parse 可能失败）。
+_DIST_ROOT_FOR_HASH="${_REPO_TOP:-}"
+[ -n "$_DIST_ROOT_FOR_HASH" ] && [ -f "$_DIST_ROOT_FOR_HASH/engine/audit/dist/index.js" ] || _DIST_ROOT_FOR_HASH="$(pwd)"
+if [ -f "$_DIST_ROOT_FOR_HASH/engine/audit/dist/index.js" ]; then
   SOFAGENT_HOME="${SOFAGENT_HOME:-$HOME/.sofagent}"
   # 主锚：全部 dist/**/*.js 的聚合哈希（任一入口变化都可观测），本 hook 的拦截判定只看它
   HASH_RECORD="$SOFAGENT_HOME/internal/audit-dist-hash.txt"

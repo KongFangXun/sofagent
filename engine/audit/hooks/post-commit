@@ -17,13 +17,18 @@ if ! command -v node &>/dev/null; then
 fi
 
 # 检测 sofagent-audit
-# v1.4.8：与 commit-msg 同源——先认显式注入（测试/CI 指定），再认本仓 dist（仓库根绝对路径），
-# 最后才是全局/PATH。注入点 fail-loud（指定了不存在就退出，不静默落到别的实现）。
+# v1.4.8：与 commit-msg 同源——认显式注入（测试/CI 指定）> 本仓 dist（仓库根绝对）> **相对路径** > 全局/PATH。
+# 🔴 逐级保留"相对 CWD"这一环是**契约要求**：单测（init.test.ts）在测试仓里建"迷你 dist"，
+#    靠 `cwd: repoDir` 下的相对 `engine/audit/dist` 命中；且 CI 里 `git rev-parse --show-toplevel`
+#    可能失败（实测 CI 报 `Command failed: git rev-parse --git-dir` ⇒ `_REPO_TOP` 为空），
+#    此时必须能落到相对路径，否则静默 exit 0、回声为空（CI 5 例失败的真因）。
 if [ -n "${SOFAGENT_AUDIT_ENTRY:-}" ]; then
   [ -f "$SOFAGENT_AUDIT_ENTRY" ] || exit 0  # post-commit 不阻断，静默退出即可
   AUDIT_CMD="node $SOFAGENT_AUDIT_ENTRY"
 elif [ -n "${_REPO_TOP:-}" ] && [ -f "$_REPO_TOP/engine/audit/dist/index.js" ]; then
   AUDIT_CMD="node $_REPO_TOP/engine/audit/dist/index.js"
+elif [ -f "engine/audit/dist/index.js" ]; then
+  AUDIT_CMD="node engine/audit/dist/index.js"
 elif command -v sofagent-audit &>/dev/null; then
   AUDIT_CMD="sofagent-audit"
 else
