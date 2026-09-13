@@ -17,7 +17,7 @@
   "scripts": {
     "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
     "build": "npm run clean && tsc",
-    "postbuild": "node -e \"const fs=require('fs'),path=require('path');for(const b of ['dist/mcp-server.js']){const p=path.join(__dirname,b);fs.chmodSync(p,0o755);if(!(fs.statSync(p).mode & 0o111)){console.error('❌ bin 入口不可执行: '+b);process.exit(1)}}\"",
+    "postbuild": "node -e \"const fs=require('fs'),path=require('path');if(process.platform==='win32'){console.log('[postbuild] Windows 平台跳过 bin 可执行位检查（Windows 无 POSIX 执行位，改用 .cmd shim）');process.exit(0)}for(const b of ['dist/mcp-server.js']){const p=path.join(__dirname,b);fs.chmodSync(p,0o755);if(!(fs.statSync(p).mode & 0o111)){console.error('❌ bin 入口不可执行: '+b);process.exit(1)}}\"",
     "prepublishOnly": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\" && npm run build && find dist -name '*.js.map' -delete && find dist -name '*.d.ts.map' -delete",
     "check": "tsc --noEmit",
     "test": "vitest run"
