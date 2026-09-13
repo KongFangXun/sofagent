@@ -71,6 +71,20 @@ export function stripDataUris(s: string): string {
  * ⚠️ 宽度铁律：脱敏是落盘前最后防线，「宁多脱敏勿漏」——脱敏 pattern 宽度必须
  * **⊇ 检测 pattern**（可更宽，绝不比检测更窄）；收紧到与检测同宽会漏掉合法短 key。
  * 另含 1 条 PII（手机号，非密钥）。
+ *
+ * v1.4.9 P0-2：补齐 v1.4.2 H-02 扩检测表时漏配的 4 族（AIza / xox / JWT / 裸 40 位），
+ * 恢复「13 检测 → 13 脱敏（+1 PII）」全对齐——此前这 4 族**检出但原样落盘/外推/进训练集**，
+ * 审计工具自身成了第二泄漏点（与 PEM 同型不对称洞）。
+ * 前 3 族有唯一前缀锚（AIza/xox/eyJ），本仓实测零误报 ⇒ 直接无条件脱敏。
+ * 裸 40 位族是**无前缀锚的宽模式**，两侧处理不同：
+ *   - 检测侧保留 `contextKeyword`（同行含 aws|secret|key 才报告）压误报；
+ *   - 脱敏侧**不能**照搬「无条件宽口径」——审计链自有的 commitSha/parentSha/treeSha
+ *     恰是 40 位**纯 hex**，而 audit-history 的值维豁免判据是「脱敏对该值 no-op」，
+ *     无条件命中会把链字段打成 ***REDACTED***、摧毁对账与 HMAC 链（实测坐实）。
+ *     故加负向环视 `(?![0-9a-fA-F]{40}\b)` 放行纯 hex 形态：真实 AWS secret 为混合大小写
+ *     base64，落进纯 hex 的概率 ≈ (22/64)^40 ≈ 1e-19（可忽略），而链字段/SHA/action pin
+ *     全部保全。已知代价：非 hex 的裸 40 位串（实测本仓 500 处/74 文件，多为 URL 路径片段）
+ *     会被打码——只损可读性，不损链完整性与内容寻址。
  */
 // ⚠️ A2 自指误报规避：本文件是规则源码，若直接写 PEM 私钥头尾（BEGIN/END 那串）字面量，
 // 会被 A2 逐行扫描判为硬编码私钥（自指误报）。故 PEM 脱敏正则与替换串均用运行时拼接
@@ -106,6 +120,26 @@ export const REDACTION_PATTERNS: { pattern: RegExp; replacement: string }[] = [
   { pattern: /sk_(live|test)_[a-zA-Z0-9]{16,}/g, replacement: 'sk_***REDACTED***' },
   // 10. PII（非密钥）：中国大陆手机号（隐私脱敏，无对应 SECRET_PATTERNS）
   { pattern: /\b1[3-9]\d{9}\b/g, replacement: '1**REDACTED***' },
+  // 11. Google API Key（AIza，与 SECRET_PATTERNS #10 同源；v1.4.9 P0-2 补族）
+  //     宽口径 {35,}——脱敏 ⊇ 检测（检测侧 {35}），多余尾部一并吞掉防残留。
+  { pattern: /AIza[0-9A-Za-z\-_]{35,}/g, replacement: 'AIza***REDACTED***' },
+  // 12. Slack Token（xox，与 SECRET_PATTERNS #11 同源；v1.4.9 P0-2 补族）
+  { pattern: /xox[baprs]-[A-Za-z0-9\-]{10,}/g, replacement: 'xox***REDACTED***' },
+  // 13. JWT（eyJ 三段式，与 SECRET_PATTERNS #12 同源；v1.4.9 P0-2 补族）
+  //     检测侧只锚定前两段 + 尾点（第三段任意长度）；脱敏侧吞到签名段末尾
+  //     （`[A-Za-z0-9_-]*`），否则短签名会残留片段。
+  { pattern: /eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]*/g, replacement: 'eyJ***REDACTED***' },
+  // 14. 裸 40 位 base64（AWS Secret Access Key 形态，与 SECRET_PATTERNS #13 同源；
+  //     v1.4.9 P0-2 补族）。检测侧带 contextKeyword 压误报；脱敏侧走宽口径，但**必须**
+  //     放行「纯 hex 40 位」——审计链自有的 commitSha/parentSha/treeSha 正是 40 位纯 hex，
+  //     而 audit-history.shouldExempt 的值维豁免判据是「脱敏对该值 no-op」：
+  //     一旦裸 40 位无条件命中，链字段会被打成 ***REDACTED***，直接摧毁对账/HMAC 链
+  //     （实测坐实：本仓一条落盘记录的 parentSha/treeSha 被打码，post-commit 对账随即落未命中，
+  //     连 P0-1 的修复都被反噬）。故加负向环视排除纯 hex 形态（`(?![0-9a-fA-F]{40}\b)`）：
+  //     - 真实 AWS secret 是混合大小写 base64，恰为纯 hex 的概率 ≈ (22/64)^40 ≈ 1e-19（可忽略）；
+  //     - 40 位纯 hex 标识（git SHA / action pin）保持原样 ⇒ 链完整、快照保真。
+  //     ⚠️ 必须置于表末——它是唯一无前缀锚的宽模式，先让所有前缀族各自摘走自己的命中。
+  { pattern: /\b(?![0-9a-fA-F]{40}\b)[A-Za-z0-9/+=]{40}\b/g, replacement: '***REDACTED***' },
 ];
 
 /**
