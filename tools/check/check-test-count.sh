@@ -50,8 +50,10 @@ NC='\033[0m'
 PASS=0
 FAIL=0
 # SKIPS（v1.4.9 G-2②）：显式跳过项计数——「未找到声称即跳过」正是本批要消灭的静默形态。
-# 本脚本三处 skip：① check_doc() grep 未命中 ② 占位 devlog（尚未实现）③ CHANGELOG 索引行
-# 缺 workspace 口径标注。K>0 不阻断（跳过合法性由发版 SOP「SKIP 数逐条裁决」裁定），但必须打印。
+# 本脚本四处 skip：① check_doc() grep 未命中 ② 占位 devlog（**head-10 状态区**含「尚未实现」）
+# ③ 已发布 devlog（历史冻结，发版快照不回头改；v1.4.9 G-3 补记账——此前该分支不计 SKIPS）
+# ④ CHANGELOG 索引行缺 workspace 口径标注。
+# K>0 不阻断（跳过合法性由发版 SOP「SKIP 数逐条裁决」裁定），但必须打印。
 SKIPS=0
 
 # 覆盖度行输出助手（v1.4.9 G-2②）：**--quiet 模式不输出**——该模式的契约是「只输出 OK/FAIL」
@@ -319,7 +321,18 @@ CUR_MAJOR_MINOR=$(echo "$CUR_VERSION" | cut -d. -f1-2)
 DEVLOG_FILE="docs/changelog/v${CUR_MAJOR_MINOR}/v${CUR_VERSION}.md"
 if [ -f "$DEVLOG_FILE" ]; then
   # v1.3.2 修复：未发版的占位 changelog（含「尚未实现」）跳过校验，不算 FAIL
-  if grep -q '尚未实现' "$DEVLOG_FILE" 2>/dev/null; then
+  # v1.4.9 G-3 修复：占位判据从「**全文** grep」收窄到「**文件头状态区**（head -10）」——
+  #   语义依据：占位 devlog 的「尚未实现」写在**头部状态行**（v1.4.9.md:4 `> ⚠️ **尚未实现。**`），
+  #   而正文叙事里出现「尚未实现」是在描述**别的**东西（v1.4.8.md:671
+  #   「…（`sofagent-update` 尚未实现）」），不该具备「本 devlog 是占位」的判据效力。
+  #   旧全文判据的实测后果（v1.4.9 批二复现）：**已发版的 v1.4.8.md 被判为「占位文件」
+  #   并跳过测试数校验**（唯一命中源就是那句正文散文），且本 if 排在下方
+  #   「已发布版本（历史冻结）」elif **之前** ⇒ 冻结分支永不可达（死代码），
+  #   v1.4.8 的测试数快照校验从未真跑——是**门禁空转**，不是「合法的跳过」。
+  #   实现注记：不用 `head -10 "$F" | grep -q`——本脚本 `set -uo pipefail`，而 `grep -q`
+  #   命中即退出会关闭读端，head 若仍在写即收 SIGPIPE（141），pipefail 把整条管道判负
+  #   ⇒ 真占位文件反而漏判（竞态）。here-string 先让 head 跑完再喂给 grep，无竞态。
+  if grep -q '尚未实现' <<< "$(head -10 "$DEVLOG_FILE" 2>/dev/null)"; then
     SKIPS=$((SKIPS + 1))
     if [ "$QUIET" = false ]; then
       echo -e "  ${YELLOW}⚠ ${DEVLOG_FILE}：占位文件（尚未实现），跳过测试数校验${NC}"
@@ -331,6 +344,13 @@ if [ -f "$DEVLOG_FILE" ]; then
   # 其测试数是发版时快照，不随后续版本新增测试漂移（v1.3.5 发布后 v1.3.6 bugfix
   # 新增 6 测试致 2286→2292，历史 devlog 被误报 FAIL——已发布文档不回头改）。
   elif grep -qE '✅[ *]*(已开发|已交付|已发版)' "$DEVLOG_FILE" 2>/dev/null; then
+    # v1.4.9 G-3：冻结分支**也是一次显式跳过**（测试数比对确实没跑），必须计入 SKIPS——
+    #   依据 tools/check/lib/coverage-line.sh 契约第 4 条「每个 skip 分支加 SKIPS++」
+    #   与「**不得有跳过却填 0**」。此前只有占位分支记账，冻结分支静默跳过：
+    #   占位判据收窄后 v1.4.8 恰好从「占位（错理由）」迁到「冻结（对理由）」，
+    #   若不同步补账，覆盖度行的 skipped 会从 2 掉到 1，把「修好一处语义」
+    #   伪装成「少了一处跳过」——那才是粉饰。
+    SKIPS=$((SKIPS + 1))
     if [ "$QUIET" = false ]; then
       echo -e "  ${YELLOW}⚠ ${DEVLOG_FILE}：已发布版本（历史冻结），测试数不与当前 SSOT 比对${NC}"
     fi
