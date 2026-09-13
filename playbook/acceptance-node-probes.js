@@ -78,7 +78,10 @@ async function s107() {
   const { pushKnowledgeSummary, collectSummaryMaterial, buildSummary, NO_DATA_TEXT } = require(process.env.NOTIFY);
   const os = require('os'); const path = require('path');
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'sofagent-s107-'));
-  fs.mkdirSync(path.join(tmpDir, '.sofagent', 'knowledge'), { recursive: true });
+  // v1.4.9 P1-14：知识库路径真值 = {SOFAGENT_HOME}/data/knowledge（v1.2.1 数据目录重构）。
+  // 本 fixture 对断言为**空转**（collectSummaryMaterial 读的是 {SOFAGENT_DATA||dir/.sofagent}/log.md），
+  // 但仍随本批迁到 data/knowledge——否则它会成为「旧路径残留」门禁的活区命中点。
+  fs.mkdirSync(path.join(tmpDir, 'data', 'knowledge'), { recursive: true });
   const material = collectSummaryMaterial(tmpDir);
   const summary = buildSummary(material);
   if (!summary || summary.length < 5) {

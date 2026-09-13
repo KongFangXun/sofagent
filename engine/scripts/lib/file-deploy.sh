@@ -256,7 +256,7 @@ deploy_scripts() {
   fi
 }
 
-# v1.0.1: 创建 .sofagent/knowledge/ 目录结构 + 初始模板
+# v1.0.1 起：创建知识库目录结构 + 初始模板（v1.4.9 P1-14：v1.2.1 起实际落点为 data/knowledge/，旧注解 .sofagent/knowledge/ 已修正）
 _deploy_knowledge_skeleton() {
   local KB_DIR="${SOFAGENT_DATA}/knowledge"
   mkdir -p "${KB_DIR}/entities" "${KB_DIR}/concepts" "${KB_DIR}/comparisons" "${KB_DIR}/summaries"

@@ -10,6 +10,8 @@ import { readdirSync, readFileSync, existsSync } from 'fs';
 import { join, relative } from 'path';
 import { init, change, clone, merge } from '@automerge/automerge';
 import { TRUST_ORDER, type Trust } from './memory-contract';
+// v1.4.9 P1-14：知识库路径唯一事实源——禁止再手拼 `join(dir, '.sofagent', 'knowledge')`
+import { resolveKnowledgeDir } from './data-paths';
 
 // ────────────────────────────────────────────────────────────
 // 巡检器共享类型（原 daemon/src/inspectors/types.ts）
@@ -300,7 +302,12 @@ function extractInternalLinks(body: string): string[] {
  * 三类检测主入口
  */
 export function checkConflict(projectDir: string): InspectorResult {
-  const knowledgeDir = join(projectDir, '.sofagent', 'knowledge');
+  // v1.4.9 P1-14：知识库是**全局共享**数据（{SOFAGENT_HOME}/data/knowledge），不挂在 projectDir 下。
+  // v1.2.1 数据目录重构把 `.sofagent/knowledge/` 迁到 `data/knowledge/` 时本处漏网——仍按旧路径
+  // 拼字符串 ⇒ 生产环境（projectDir=cwd）恒读不到真实知识库（v1.4.8 起 knowledge 相关报警长期哑火）。
+  // 与同包 doctor.ts / daemon dream-cycle state-machine.ts / 本仓 CLI --fix 路径（tryAutoFix 用
+  // resolveKnowledgeDir()）口径对齐。projectDir 保留仅为 InspectorFn 签名兼容（registry 传入）。
+  const knowledgeDir = resolveKnowledgeDir();
 
   // 优雅降级：knowledge/ 不存在 → info
   if (!existsSync(knowledgeDir)) {
@@ -417,12 +424,17 @@ export function checkConflict(projectDir: string): InspectorResult {
   const severity: InspectorResult['severity'] =
     conflicts.length > 0 ? 'critical' : 'warning';
 
-  const relKnowledge = relative(projectDir, knowledgeDir) || '.sofagent/knowledge';
+  // v1.4.9 P1-14：原 `relative(projectDir, knowledgeDir) || '.sofagent/knowledge'` 里的
+  // `.sofagent/knowledge` 是 v1.2.1 重构漏网的兜底字面量（旧路径下 relative() 恒非空，
+  // 兜底从未触发；迁到全局 data/knowledge 后 relative() 恒为 `../` 串，兜底仍不触发）。
+  // 改为：路径在 projectDir 之内时展示相对路径（可读），否则展示解析后的绝对路径（如实）。
+  const relKnowledge = relative(projectDir, knowledgeDir);
+  const knowledgeLabel = relKnowledge.startsWith('..') ? knowledgeDir : relKnowledge;
 
   return {
     name: 'conflict-check',
     triggered: true,
-    message: `Knowledge 健康异常（${relKnowledge}）：${parts.join('；')}`,
+    message: `Knowledge 健康异常（${knowledgeLabel}）：${parts.join('；')}`,
     severity,
   };
 }

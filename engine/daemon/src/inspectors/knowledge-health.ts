@@ -29,7 +29,7 @@
 import { readdirSync, readFileSync, existsSync, statSync, appendFileSync, writeFileSync } from 'fs';
 import { join, relative } from 'path';
 
-import { resolveSensitivity, isSensitivityVisible } from '@sofagent/core';
+import { resolveSensitivity, isSensitivityVisible, resolveKnowledgeDir } from '@sofagent/core';
 
 import { pushKnowledgeSummary } from '../notify';
 import { pushToTarget } from '../push-target';
@@ -193,7 +193,11 @@ export function checkKnowledgeHealth(
   projectDir: string,
   options: { autoFix?: boolean } = {},
 ): InspectorResult {
-  const knowledgeDir = join(projectDir, '.sofagent', 'knowledge');
+  // v1.4.9 P1-14：知识库是全局共享数据（{SOFAGENT_HOME}/data/knowledge），不在 projectDir 下。
+  // v1.2.1 数据目录重构漏网——手拼 `.sofagent/knowledge` 使本巡检在生产（projectDir=cwd）恒
+  // 「No knowledge directory」→ 孤立页/重复页/死链长期零检出。改用 SSOT 解析器。
+  // projectDir 在下方 pushKnowledgeSummary 仍被使用，故签名与 registry 契约不变。
+  const knowledgeDir = resolveKnowledgeDir();
 
   // 优雅降级：knowledge/ 不存在 → info
   if (!existsSync(knowledgeDir)) {
@@ -420,11 +424,14 @@ export function checkKnowledgeHealth(
   // v1.1.8 新增：health 跑完触发知识摘要主动通知（best-effort，失败静默）
   void pushKnowledgeSummary(projectDir, pushToTarget);
 
-  const relKnowledge = relative(projectDir, knowledgeDir) || '.sofagent/knowledge';
+  // v1.4.9 P1-14：同 checkConflict——去掉 v1.2.1 遗留的 `.sofagent/knowledge` 兜底字面量，
+  // 按「在 projectDir 内则相对、否则绝对」展示，如实反映全局知识库位置。
+  const relKnowledge = relative(projectDir, knowledgeDir);
+  const knowledgeLabel = relKnowledge.startsWith('..') ? knowledgeDir : relKnowledge;
   return {
     name: 'knowledge-health',
     triggered: true,
-    message: `Knowledge 健康巡检（${relKnowledge}）：${parts.join('；')}`,
+    message: `Knowledge 健康巡检（${knowledgeLabel}）：${parts.join('；')}`,
     severity: 'warning',
   };
 }

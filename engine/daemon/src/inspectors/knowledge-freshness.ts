@@ -6,10 +6,15 @@
 import * as fs from 'fs';
 import * as path from 'path';
 
+import { resolveKnowledgeDir } from '@sofagent/core';
 import type { InspectorResult } from './types';
 
 export function checkKnowledgeFreshness(projectDir: string): InspectorResult {
-  const knowledgeDir = path.join(projectDir, '.sofagent', 'knowledge');
+  // v1.4.9 P1-14：知识库为全局共享数据（{SOFAGENT_HOME}/data/knowledge），v1.2.1 数据目录
+  // 重构时本处漏网（手拼 `.sofagent/knowledge`）⇒ 生产恒「No knowledge directory」，
+  // 陈旧知识检测长期失效。改用 SSOT 解析器；projectDir 保留仅为 InspectorFn 签名兼容。
+  void projectDir;
+  const knowledgeDir = resolveKnowledgeDir();
   if (!fs.existsSync(knowledgeDir)) {
     return {
       name: 'knowledge-freshness',

@@ -25,7 +25,9 @@ function tmpDir(): string {
 
 /** 在临时项目下创建 knowledge/{entities,...}/ 骨架 */
 function makeKnowledgeSkeleton(dir: string): string {
-  const knowledgeDir = path.join(dir, '.sofagent', 'knowledge');
+  // v1.4.9 P1-14：知识库路径 = {SOFAGENT_HOME}/data/knowledge（v1.2.1 数据目录重构后）
+  // ——fixture 随之从 {dir}/.sofagent/knowledge 迁到 {dir}/data/knowledge。
+  const knowledgeDir = path.join(dir, 'data', 'knowledge');
   for (const sub of ['entities', 'concepts', 'comparisons', 'summaries']) {
     fs.mkdirSync(path.join(knowledgeDir, sub), { recursive: true });
   }
@@ -57,12 +59,20 @@ function writeIndex(knowledgeDir: string, refs: string[]): void {
 
 describe('conflict-check · knowledge 矛盾/孤儿/死链巡检', () => {
   let dir: string;
+  let prevHome: string | undefined;
 
   beforeEach(() => {
     dir = tmpDir();
+    // v1.4.9 P1-14：checkConflict 改读全局 resolveKnowledgeDir()（{SOFAGENT_HOME}/data/knowledge）
+    // ——把 SOFAGENT_HOME 隔离到临时目录，否则会读到开发机真实 ~/.sofagent/data/knowledge
+    // 造成断言随本机状态时红时绿（P1-4 harness.test.ts 同款隔离纪律）。
+    prevHome = process.env.SOFAGENT_HOME;
+    process.env.SOFAGENT_HOME = dir;
   });
 
   afterEach(() => {
+    if (prevHome === undefined) delete process.env.SOFAGENT_HOME;
+    else process.env.SOFAGENT_HOME = prevHome;
     try { fs.rmSync(dir, { recursive: true, force: true }); } catch { /* #9 shim 加固 */ }
   });
 

@@ -9,7 +9,8 @@
 //
 // 用途：
 //   - 监控 agent memory 的 persona 记忆文件变化
-//   - 自动同步到 .sofagent/knowledge/entities/persona.md
+//   - 自动同步到 {SOFAGENT_HOME}/data/knowledge/entities/persona.md
+//     （v1.4.9 P1-14：v1.2.1 起知识库为全局 data/knowledge/，此处旧注解 `.sofagent/knowledge/` 已修正）
 //   - launcher.ts 构建 system prompt 时注入（前 500 字符）
 //
 // 安全边界：
@@ -129,9 +130,12 @@ function checkPersonaQuality(content: string): { valid: boolean; reason?: string
  * 流程：
  *   1. 查找源文件（三级优先：env SOFAGENT_PERSONA_SOURCE > config persona_sources > 内置默认）
  *   2. 检查内容质量
- *   3. 写入 .sofagent/knowledge/entities/persona.md
+ *   3. 写入 {SOFAGENT_HOME}/data/knowledge/entities/persona.md
  *
- * @param dataDir .sofagent 数据目录（默认 cwd/.sofagent）
+ * @param dataDir 数据根目录（**调用方应传 {SOFAGENT_HOME}/data**；v1.4.9 P1-14 复核：
+ *   本文档原写「.sofagent 数据目录（默认 cwd/.sofagent）」与 v1.2.1 后的真实布局不符。
+ *   ⚠️ 下方 getTargetPath() 的缺省兜底仍为 `join(cwd, '.sofagent')`——该字面量本身同属旧路径，
+ *   但**无生产调用方**（唯一调用方是测试，均显式传入 dataDir），故本批只修注解不改行为。
  * @param opts v1.3.7 ⑨ 源解析选项（不传 = 与 v1.3.6 行为完全一致的内置默认表）
  * @returns 同步结果
  */

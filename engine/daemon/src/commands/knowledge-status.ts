@@ -20,7 +20,7 @@
 import { readdirSync, readFileSync, existsSync } from 'fs';
 import { join } from 'path';
 
-import { resolveSensitivity } from '@sofagent/core';
+import { resolveSensitivity, resolveKnowledgeDir } from '@sofagent/core';
 
 /** knowledge Views 层四个一等子目录 */
 const KNOWLEDGE_SUBDIRS = ['entities', 'concepts', 'comparisons', 'summaries'] as const;
@@ -95,11 +95,16 @@ function parseLastHealthReport(reportContent: string): { findings: number; trigg
 /**
  * knowledge status 聚合主入口。
  *
- * @param projectDir 项目根目录
+ * @param projectDir 项目根目录（v1.4.9 P1-14 后不再用于定位知识库——知识库为全局
+ *   {SOFAGENT_HOME}/data/knowledge；参数保留以维持既有调用契约）
  * @returns KnowledgeStatusReport（只读聚合，任一源缺失优雅降级）
  */
 export function knowledgeStatus(projectDir: string): KnowledgeStatusReport {
-  const knowledgeDir = join(projectDir, '.sofagent', 'knowledge');
+  // v1.4.9 P1-14：原手拼 `.sofagent/knowledge` 是 v1.2.1 数据目录重构漏网——
+  // 生产（CLI `sofagent-daemon knowledge status` 传 process.cwd()）恒读不到知识库，
+  // 故 lastDreamCycle / health / sensitivity 三源长期全空。改用 SSOT 解析器。
+  void projectDir;
+  const knowledgeDir = resolveKnowledgeDir();
 
   const report: KnowledgeStatusReport = {
     health: { triggered: false, findings: 0, severity: 'info' },

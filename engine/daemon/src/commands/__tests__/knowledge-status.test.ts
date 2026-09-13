@@ -22,7 +22,8 @@ function tmpDir(): string {
 }
 
 function makeKnowledgeSkeleton(dir: string): string {
-  const knowledgeDir = path.join(dir, '.sofagent', 'knowledge');
+  // v1.4.9 P1-14：知识库路径 = {SOFAGENT_HOME}/data/knowledge（v1.2.1 数据目录重构后）
+  const knowledgeDir = path.join(dir, 'data', 'knowledge');
   for (const sub of ['entities', 'concepts', 'comparisons', 'summaries']) {
     fs.mkdirSync(path.join(knowledgeDir, sub), { recursive: true });
   }
@@ -44,12 +45,19 @@ function writePage(
 
 describe('knowledgeStatus · 聚合命令', () => {
   let dir: string;
+  let prevHome: string | undefined;
 
   beforeEach(() => {
     dir = tmpDir();
+    // v1.4.9 P1-14：knowledgeStatus 改读全局 resolveKnowledgeDir()（{SOFAGENT_HOME}/data/knowledge）
+    // ——隔离 SOFAGENT_HOME 防读开发机真实知识库导致断言漂移。
+    prevHome = process.env.SOFAGENT_HOME;
+    process.env.SOFAGENT_HOME = dir;
   });
 
   afterEach(() => {
+    if (prevHome === undefined) delete process.env.SOFAGENT_HOME;
+    else process.env.SOFAGENT_HOME = prevHome;
     try { fs.rmSync(dir, { recursive: true, force: true }); } catch { /* #9 shim 加固 */ }
   });
 

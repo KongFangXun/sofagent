@@ -3,7 +3,7 @@
 // ============================================================
 //
 // @monthly：统计知识库对 Ontology 本体的覆盖度。
-//   - 读 {projectDir}/.sofagent/knowledge/ 下各子目录的 .md 文件
+//   - 读 {SOFAGENT_HOME}/data/knowledge/ 下各子目录的 .md 文件（v1.4.9 P1-14：v1.2.1 起为全局路径）
 //   - 读 {projectDir}/.sofagent/ontology/ 本体定义
 //   - 计算覆盖度：已覆盖的实体类型 / 总实体类型
 //   - 覆盖度 < 50% → warning（知识库不完整）
@@ -11,6 +11,7 @@
 
 import { existsSync, readdirSync, readFileSync } from 'fs';
 import { join } from 'path';
+import { resolveKnowledgeDir } from '@sofagent/core';
 import type { InspectorResult } from './types';
 
 /** knowledge 一等子目录 */
@@ -20,7 +21,9 @@ const KNOWLEDGE_SUBDIRS = ['entities', 'concepts', 'comparisons', 'summaries'] a
  * 分析 Ontology 覆盖度
  */
 export function runOntologyCoverage(projectDir: string): InspectorResult {
-  const knowledgeDir = join(projectDir, '.sofagent', 'knowledge');
+  // v1.4.9 P1-14：知识库为全局共享数据（{SOFAGENT_HOME}/data/knowledge），v1.2.1 数据目录重构
+  // 时本处漏网（仍手拼 `.sofagent/knowledge`）⇒ 生产恒「knowledge 目录不存在」→ 覆盖度恒 info。
+  const knowledgeDir = resolveKnowledgeDir();
 
   if (!existsSync(knowledgeDir)) {
     return {

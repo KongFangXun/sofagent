@@ -47,6 +47,12 @@
 | `check/public-api-baseline.json` | @public 符号集基线（12 包 + 版本快照；`--update-baseline` 发版时重建） | 被 public-api.mjs 消费 |
 | `check/resolve-section.sh` | 行号→markdown 段落归属解析器（防「行号冒充归属」——排障工具，非门禁） | 审查报告取证时 |
 | `check/vitest-setup.mjs` | 全局测试隔离（预置 SOFAGENT_DATA 到 tmp，防测试污染真实 HOME——被 5 个 engine/*/vitest.config.ts setupFiles 引用） | vitest 自动挂载 |
+| `check/check-cross-package-relative.mjs` | 越包相对引用守卫（相对 import/require 解析后越出**包根**即 FAIL；9 款 DSH 插件对 plugin-kit 的刻意相对引用登记在 `cross-package-relative-exempt.json`；退出码 0 绿 / 1 违规 / 2 检查器失明） | CI（pre-push 步骤 2e）/ 改 dsh-plugins 后 / `--selftest` |
+| `check/cross-package-relative-exempt.json` | 越包相对引用存量豁免台账（被 `check-cross-package-relative.mjs` 消费；集合相等判定——新增/漂移/陈旧均红） | 被 check-cross-package-relative.mjs 消费 |
+| `check/check-legacy-knowledge-path.mjs` | 知识库旧路径残留守卫（v1.2.1 前的旧知识库落点写法，**连写 + 分离**双形态；扫描面 = git tracked 文件；非注释面对账 `knowledge-legacy-path-exempt.json`，注释面可见不阻塞，历史冻结区豁免，本守卫自身两个文件的引用归「装置面」逐次可见打印；退出码 0 绿 / 1 违规 / 2 检查器失明） | CI（check-docs §18）/ 改 knowledge 路径解析后 / `--selftest` |
+| `check/knowledge-legacy-path-exempt.json` | 知识库旧路径存量豁免台账（被 `check-legacy-knowledge-path.mjs` 消费；逐文件逐计数相等判定） | 被 check-legacy-knowledge-path.mjs 消费 |
+| `check/lib/coverage-line.sh` | 门禁覆盖度行统一范式（`[check:coverage] script=… asserts=… covered=… skipped=…`，让「跳过」可见可 grep） | 被 check-docs / check-silent-catch 等 source |
+| `check/silent-catch-prefilter-exempt.json` | 静默吞错扫描的文件级前置过滤豁免台账（被 `check-silent-catch.mjs` 消费） | 被 check-silent-catch.mjs 消费 |
 
 ## 二、gen/ — 草稿生成
 

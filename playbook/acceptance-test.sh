@@ -780,22 +780,23 @@ $S78_OK && [ -f "$PROJECT_ROOT/engine/audit/src/rules/rule-a15-action-constraint
 $S78_OK && pass
 scenario 80 "cron + conflict-check 三态"
 cd "$PROJECT_ROOT"; TMP80=$(mktemp -d /tmp/sofagent-cc80-XXXXXX)
-mkdir -p "$TMP80/.sofagent/knowledge"/{entities,concepts,comparisons,summaries}
-CC80_OUT=$(node -e "const {checkConflict} = require('$PROJECT_ROOT/engine/daemon/dist/inspectors/conflict-check.js'); console.log(JSON.stringify(checkConflict('$TMP80')));" 2>/dev/null)
+# v1.4.9 P1-14：S80/S81/S82/S98/S99 fixture 一律造在 $TMPxx/data/knowledge，并以 SOFAGENT_HOME=$TMPxx（+ ALLOWED_PREFIXES 放行 /tmp）驱动——被测函数经 resolveKnowledgeDir() 读**全局**知识库，不隔离就会读开发机真实 ~/.sofagent/data
+mkdir -p "$TMP80/data/knowledge"/{entities,concepts,comparisons,summaries}
+CC80_OUT=$(SOFAGENT_HOME="$TMP80" SOFAGENT_HOME_ALLOWED_PREFIXES="$TMP80" node -e "const {checkConflict} = require('$PROJECT_ROOT/engine/daemon/dist/inspectors/conflict-check.js'); console.log(JSON.stringify(checkConflict('$TMP80')));" 2>/dev/null)
 echo "$CC80_OUT" | grep -q '"triggered":false' && pass || fail "空 knowledge 期望 triggered:false，实际: $CC80_OUT"
 rm -rf "$TMP80"
 TMP81=$(mktemp -d /tmp/sofagent-cc81-XXXXXX)
-mkdir -p "$TMP81/.sofagent/knowledge"/{entities,summaries}
-printf -- '---\ndomain: user\n---\n# Alice (user)\n' > "$TMP81/.sofagent/knowledge/entities/alice.md"
-printf -- '---\ndomain: order\n---\n# Alice (order)\n' > "$TMP81/.sofagent/knowledge/summaries/alice.md"
-printf '| 页面 | 域 | 备注 |\n|------|----|------|\n| entities/alice.md | - | - |\n| summaries/alice.md | - | - |\n' > "$TMP81/.sofagent/knowledge/index.md"
-CC81_OUT=$(node -e "const {checkConflict} = require('$PROJECT_ROOT/engine/daemon/dist/inspectors/conflict-check.js'); console.log(JSON.stringify(checkConflict('$TMP81')));" 2>/dev/null)
+mkdir -p "$TMP81/data/knowledge"/{entities,summaries}
+printf -- '---\ndomain: user\n---\n# Alice (user)\n' > "$TMP81/data/knowledge/entities/alice.md"
+printf -- '---\ndomain: order\n---\n# Alice (order)\n' > "$TMP81/data/knowledge/summaries/alice.md"
+printf '| 页面 | 域 | 备注 |\n|------|----|------|\n| entities/alice.md | - | - |\n| summaries/alice.md | - | - |\n' > "$TMP81/data/knowledge/index.md"
+CC81_OUT=$(SOFAGENT_HOME="$TMP81" SOFAGENT_HOME_ALLOWED_PREFIXES="$TMP81" node -e "const {checkConflict} = require('$PROJECT_ROOT/engine/daemon/dist/inspectors/conflict-check.js'); console.log(JSON.stringify(checkConflict('$TMP81')));" 2>/dev/null)
 echo "$CC81_OUT" | grep -q '"triggered":true' && echo "$CC81_OUT" | grep -q '"severity":"critical"' && echo "$CC81_OUT" | grep -q "矛盾" && pass || fail "矛盾检测期望 critical + 含「矛盾」"
 rm -rf "$TMP81"
-TMP82=$(mktemp -d /tmp/sofagent-cc82-XXXXXX); mkdir -p "$TMP82/.sofagent/knowledge"/entities
-printf -- '---\ndomain: core\n---\n# Bob\n' > "$TMP82/.sofagent/knowledge/entities/bob.md"
-printf '| 页面 | 域 | 备注 |\n|------|----|------|\n| entities/ghost.md | - | - |\n' > "$TMP82/.sofagent/knowledge/index.md"
-CC82_OUT=$(node -e "const {checkConflict} = require('$PROJECT_ROOT/engine/daemon/dist/inspectors/conflict-check.js'); console.log(JSON.stringify(checkConflict('$TMP82')));" 2>/dev/null)
+TMP82=$(mktemp -d /tmp/sofagent-cc82-XXXXXX); mkdir -p "$TMP82/data/knowledge"/entities
+printf -- '---\ndomain: core\n---\n# Bob\n' > "$TMP82/data/knowledge/entities/bob.md"
+printf '| 页面 | 域 | 备注 |\n|------|----|------|\n| entities/ghost.md | - | - |\n' > "$TMP82/data/knowledge/index.md"
+CC82_OUT=$(SOFAGENT_HOME="$TMP82" SOFAGENT_HOME_ALLOWED_PREFIXES="$TMP82" node -e "const {checkConflict} = require('$PROJECT_ROOT/engine/daemon/dist/inspectors/conflict-check.js'); console.log(JSON.stringify(checkConflict('$TMP82')));" 2>/dev/null)
 echo "$CC82_OUT" | grep -q '"triggered":true' && echo "$CC82_OUT" | grep -q '"severity":"warning"' && echo "$CC82_OUT" | grep -q "孤儿" && echo "$CC82_OUT" | grep -q "死链" && pass || fail "孤儿+死链期望 warning"
 rm -rf "$TMP82"
 scenario 83 "ARCHITECTURE + llm-wiki 删除 + daemon 注册"
@@ -914,10 +915,10 @@ fi
 S98_OK=true; KH_DIST_98="$PROJECT_ROOT/engine/daemon/dist/inspectors/knowledge-health.js"
 require_dist "engine/daemon/dist/inspectors/knowledge-health.js" || S98_OK=false
 if $S98_OK; then
-  S98_TMP=$(mktemp -d /tmp/sofagent-kh98-XXXXXX); mkdir -p "$S98_TMP/.sofagent/knowledge/entities"
-  printf -- '---\ndomain: test\nsensitivity: internal\n---\n# Orphan Page\nNo incoming links from index.\n' > "$S98_TMP/.sofagent/knowledge/entities/orphan-page.md"
-  printf -- '| pages | domain | notes |\n|---|---|---|\n| entities/other.md | test | - |\n' > "$S98_TMP/.sofagent/knowledge/index.md"
-  S98_RESULT=$(node -e "const m = require('$KH_DIST_98'); console.log(JSON.stringify(m.checkKnowledgeHealth('$S98_TMP')));" 2>&1 || true)
+  S98_TMP=$(mktemp -d /tmp/sofagent-kh98-XXXXXX); mkdir -p "$S98_TMP/data/knowledge/entities"
+  printf -- '---\ndomain: test\nsensitivity: internal\n---\n# Orphan Page\nNo incoming links from index.\n' > "$S98_TMP/data/knowledge/entities/orphan-page.md"
+  printf -- '| pages | domain | notes |\n|---|---|---|\n| entities/other.md | test | - |\n' > "$S98_TMP/data/knowledge/index.md"
+  S98_RESULT=$(SOFAGENT_HOME="$S98_TMP" SOFAGENT_HOME_ALLOWED_PREFIXES="$S98_TMP" node -e "const m = require('$KH_DIST_98'); console.log(JSON.stringify(m.checkKnowledgeHealth('$S98_TMP')));" 2>&1 || true)
   rm -rf "$S98_TMP"
   echo "$S98_RESULT" | grep -q '"triggered":true' && echo "$S98_RESULT" | grep -q '"severity":"warning"' && echo "$S98_RESULT" | grep -q "孤立" || { fail "knowledge-health 孤立页检测不符预期"; S98_OK=false; }
 fi
@@ -925,8 +926,8 @@ $S98_OK && pass
 S99_OK=true; KS_DIST_99="$PROJECT_ROOT/engine/daemon/dist/commands/knowledge-status.js"
 require_dist "engine/daemon/dist/commands/knowledge-status.js" || S99_OK=false
 if $S99_OK; then
-  S99_TMP=$(mktemp -d /tmp/sofagent-ks99-XXXXXX); mkdir -p "$S99_TMP/.sofagent/knowledge"/{entities,concepts,comparisons,summaries}
-  S99_RESULT=$(node -e "const m = require('$KS_DIST_99'); console.log(typeof m.knowledgeStatus('$S99_TMP'));" 2>&1)
+  S99_TMP=$(mktemp -d /tmp/sofagent-ks99-XXXXXX); mkdir -p "$S99_TMP/data/knowledge"/{entities,concepts,comparisons,summaries}
+  S99_RESULT=$(SOFAGENT_HOME="$S99_TMP" SOFAGENT_HOME_ALLOWED_PREFIXES="$S99_TMP" node -e "const m = require('$KS_DIST_99'); console.log(typeof m.knowledgeStatus('$S99_TMP'));" 2>&1)
   rm -rf "$S99_TMP"
   echo "$S99_RESULT" | grep -q "object" || { fail "knowledge-status 在空 knowledge/ 上崩溃"; S99_OK=false; }
 fi

@@ -965,6 +965,42 @@ else
   ERRORS=$((ERRORS + 1))
 fi
 
+# ── 18. 知识库旧路径残留断言（v1.4.9 P1-14）──
+# 门禁目的：v1.2.1「数据目录重构」把知识库从 `.sofagent/knowledge/` 迁到
+#   `data/knowledge/`（真值 SSOT = engine/core/src/data-paths.ts 的 resolveKnowledgeDir），
+#   但收口漏网——多处引擎代码仍按旧路径手拼字符串 ⇒ 生产恒读不到真实知识库，
+#   knowledge 系巡检长期静默哑火（「机制在跑、结果永远 info」）。本步把「旧路径零残留」
+#   从人工记忆升级为可执行约束。
+# 🔴 双形态覆盖：旧路径有**连写**（`.sofagent/knowledge`）与**分离**
+#   （`join(dir, '.sofagent', 'knowledge')`）两种书写；只查第一种就是本仓反复出现的
+#   「语义盲区」缺陷（P1-14 实测：分离形态漏 12 处）。本断言两种同面覆盖。
+# 🔴 扫描面 = `git ls-files`（tracked 文件）——`.sofagent/`（含 .git-shadow 快照）与
+#   `.workbuddy/` 是 git-ignored 的本地产物，不是仓库内容；以工作区遍历会把快照里的
+#   历史文本读成活区命中（实测单 snapshots.json 产生 32 处噪声）。
+# 🔴 判定面分两面（口径详见该脚本头部）：
+#   · Face 1 非注释面（活代码路径构造 + 活文档用户可见路径）→ 集合须与豁免台账
+#     tools/check/knowledge-legacy-path-exempt.json 逐文件逐计数**相等**（增/减/漂移皆红）。
+#   · Face 2 注释面（源码里引述旧路径的历史沿革说明）→ **可见但不阻塞**（逐条打印）。
+#   · 历史冻结区 docs/changelog、docs/archive、evidence → 豁免（历史事实，改之=篡改）。
+# 退出码：0 = 绿（可含可见 SKIP）/ 1 = 未登记命中或台账漂移 / 2 = 检查器失明
+#   （tracked 面为空或 SSOT 缺失 ⇒ 拒绝把「读不到」当成「零违规」）。
+echo ""
+echo "=== 18. 知识库旧路径残留断言（v1.4.9 P1-14 · 连写 + 分离双形态）==="
+KLP_OUTPUT=$(node tools/check/check-legacy-knowledge-path.mjs 2>&1); KLP_RC=$?
+if [ "$KLP_RC" -eq 0 ]; then
+  ASSERTS=$((ASSERTS + 1)); echo "  ✓ 知识库旧路径非注释面命中与豁免台账一致"
+  printf '%s\n' "$KLP_OUTPUT" | sed 's/^/    /'
+else
+  ASSERTS=$((ASSERTS + 1))
+  if [ "$KLP_RC" -eq 2 ]; then
+    echo "  ❌ 知识库旧路径检查器失明（exit 2）——扫描面/SSOT 结构缺失，拒绝假绿"
+  else
+    echo "  ❌ 知识库旧路径残留与豁免台账不一致（exit ${KLP_RC}）"
+  fi
+  printf '%s\n' "$KLP_OUTPUT" | sed 's/^/    /'
+  ERRORS=$((ERRORS + 1))
+fi
+
 if [ "$ERRORS" -gt 0 ]; then
   echo "发现 ${ERRORS} 个问题"
 else
