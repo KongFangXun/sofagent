@@ -107,7 +107,7 @@ v1.0.1 新增 daemon Ingest（自动知识提取）+ loop-evaluate Lint（自动
 | **自验证闭环**（Evil Skill） | 多子 Agent 生成候选 Skill → A/B 对比 → 留更优 | ⏳ v1.0.6 起（方案 B：模型 API 直跑）。v1.0.7 升级为方案 C（DeepAgents 完整 Agent） |
 | **可训练参数**（Skill Opt） | 学习率约束/验证门控/负反馈缓冲/动量 | ✅ v1.0.4 起（SkillOpt 管道接通） |
 
-**SkillOpt 集成状态（v1.0.4）**：管道已接通——daemon 检测 eval.md 阈值（20 条）→ 24h 防抖 → 调用 `sofagent-audit skillopt-run` CLI → `runSkillOpt()` 调 skillopt-sleep → `validateCandidate()` 验证（行数 + 内容变化）→ 备份+替换 SKILL.md。`--doctor` 展示管道状态。前置条件：`pip install skillopt`（v0.2.0+ PyPI wheel 已含 skillopt-sleep CLI）；如需 Claude Code/Codex/Copilot/Devin 集成 shell 或 OpenClaw 适配，改用源码安装 `git clone + pip install -e ".[all]"`。skillopt-sleep 未安装时管道优雅降级——daemon 写提示到 daemon-health.json，不 crash。
+**SkillOpt 集成状态（v1.0.4 时点口径 · 已被 v1.4.8 更名取代）**：管道已接通——daemon 检测 eval.md 阈值（20 条）→ 24h 防抖 → 调用审计 CLI 的进化子命令 → `runEvolve()`（v1.4.8 前名 `runSkillOpt()`）→ `validateCandidate()` 验证（行数 + 内容变化）→ 备份+替换 SKILL.md。`--doctor` 展示管道状态。⚠️ **现行口径（v1.4.8+）**：子命令更名为 `evolve-run`、包更名为 `@sofagent/evolve`、默认走内置 native gate（零 Python 依赖），外部 CLI 仅为 `SOFAGENT_EVOLVE_GATE=cli` 可选兼容层——**无需任何 pip 安装**，旧版正文中的 pip 指引已摘除。外部 CLI 未安装时管道优雅降级——daemon 写提示到 daemon-health.json，不 crash。
 
 > ⚠️ **skillopt-sleep 的「生成候选」段已被真脑替代（v1.4.5 第七章五交付）**：skillopt 自进化链路原分两段——**检测/触发/验证/回滚**（纯 TypeScript，零外部依赖，核心能力）+ **生成候选 SKILL.md**（调外部 skillopt-sleep CLI）。v1.4.5 Dream Cycle 真脑（`engine/daemon/src/dream-cycle/real-provider.ts`，走模型注册表/DSH 通道 + callModelAPI 基建）交付后，「生成候选」可由通用模型 + prompt 工程直接完成（WikiSkill 论文实证：胜负手是结构化知识层而非模型特化）——skillopt-sleep 作为「生成候选」的临时外部依赖使命终结。检测/触发/验证/回滚段仍为纯 TypeScript 核心能力，不受影响；已安装 skillopt-sleep 的环境可继续使用（向后兼容），但不再是必需依赖。
 

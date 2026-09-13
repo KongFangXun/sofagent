@@ -552,7 +552,7 @@ Onyx 四阶段闭环（L1：可见性 → 仿真 → 执行 → 学习）与人�
 
 1. **Fortification Loop = 审计 + 验收的定位一句话**——「把什么叫做完成，从模型的自我判断变成可执行可追责的验收标准」正是 sofagent 审计模块 + `acceptance-test.sh` 冻结验收 + `define_acceptance` 机器可判定验收的定位（完成定义权的转移，完整论证见上文 [Verifier 才是瓶颈](#verifier-才是瓶颈)）。Fortification Loop 的价值不是让 Agent 多检查一遍，是完成定义权从模型转移到系统。
 2. **Event Driven Loop = daemon + WAL 续跑**——事件驱动不是加个定时器：任务排队（daemon scheduler/cron 三档）、重复事件（幂等）、并发冲突（MergeQueue）、失败重试（退避 + 收敛）、状态恢复（checkpoint 续跑）——sofagent 异步长任务自治逐项对应。
-3. **Hill Climbing Loop = 进化模块 + FORGE 自迭代**——「分析多次运行留下的 Trace，找到重复出现的问题，再修改产生这些问题的 Harness」：sofagent 进化模块（think.md 反思 + Dream Cycle 知识蒸馏 + skillopt 优化）消费 audit/eval 轨迹；FORGE fresh-eyes-loop 本身就是一个 Hill Climbing Loop（16 视角审查 → 修复 → 验证 → 系统改 harness）。**关键安全网：Hill Climbing ≠ 让 Agent 随意改自己的 Prompt 然后直接上线**——可靠改进仍需候选版本/离线评测/回归测试/人工审核/小流量验证/回滚，sofagent 的 release-gate-loop + check-version 门禁 + 快照回滚正是这套安全网。
+3. **Hill Climbing Loop = 进化模块 + FORGE 自迭代**——「分析多次运行留下的 Trace，找到重复出现的问题，再修改产生这些问题的 Harness」：sofagent 进化模块（think.md 反思 + Dream Cycle 知识蒸馏 + evolve 优化）消费 audit/eval 轨迹；FORGE fresh-eyes-loop 本身就是一个 Hill Climbing Loop（16 视角审查 → 修复 → 验证 → 系统改 harness）。**关键安全网：Hill Climbing ≠ 让 Agent 随意改自己的 Prompt 然后直接上线**——可靠改进仍需候选版本/离线评测/回归测试/人工审核/小流量验证/回滚，sofagent 的 release-gate-loop + check-version 门禁 + 快照回滚正是这套安全网。
 4. **自动化不是把人移出循环，是重新安排人的位置**——人不再盯着 Agent 每一步，但在高责任节点保留判断权和否决权：敏感工具（转账/删数据/改数据库）前人工确认、业务取舍/价值判断时担任 Grader、结果发客户或写核心系统前审批、Harness 新版本部署前评审——**这正是 sofagent HITL 钩子 + 工具审批四模式 + 危险操作前人工批准钩子的设计哲学**。
 
 ### 循环系统的鲁棒性：四类故障与六要素

@@ -99,13 +99,13 @@ export async function optimize(input: OptimizeInput): Promise<OptimizeResult> {
     };
   }
 
-  // 4. 达到阈值 → 检查 evolve-gate（v1.4.8 自研） 可用性
+  // 4. 达到阈值 → 检查外部 gate CLI 兼容层可用性（可选面；默认 native gate 无需外部依赖）
   if (!isEvolveAvailable()) {
     return {
       triggered: false,
       skillId: input.skillId,
       failureMode: input.failureMode,
-      skipReason: 'evolve-gate（v1.4.8 自研） CLI 不可用（未安装或不在 PATH 中）',
+      skipReason: '外部 gate CLI 兼容层不可用（可选面；默认内置 native gate，无需外部依赖）',
     };
   }
 

@@ -218,7 +218,7 @@ graph TB
 | `engine/dsh-plugins/` | cordis-plugin-sofagent* 10 款 DSH 插件——9 款原子（audit · rollback · inject · evolve · ontology · commons · gate · daemon · fde，inventory 可见 + Cursor/Claude hook 拦截）+ 1 款聚合（裸名 `cordis-plugin-sofagent`，一次挂载全套） |
 | `engine/openclaw-plugins/` | OpenClaw code-plugin 4 款（ClawHub 发布形态） |
 | `~/.sofagent/bin/sofagent` | CLI 入口（安装时生成，不在仓库内）— `sofagent status/where/version/data/help` |
-| 其余 6 包（eval/ab-test/skillopt/rules/ontology/think） | 详见 `docs/DEVELOPMENT.md §包结构`（README 口径：13 个 workspace 包、12 个含测试；含 @sofagent/load-chain hook 包，无独立测试） |
+| 其余 6 包（eval/ab-test/evolve/rules/ontology/think） | 详见 `docs/DEVELOPMENT.md §包结构`（README 口径：13 个 workspace 包、12 个含测试；含 @sofagent/load-chain hook 包，无独立测试） |
 
 ### 关键数据路径（`data/`）
 

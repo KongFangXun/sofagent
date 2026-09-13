@@ -390,7 +390,7 @@ async function executeNode(node, state) {
 |------|------|
 | FDE sustain 模式 | 已有：读 audit 报告趋势 → 生成优化建议 |
 | think.md 回溯 | 已有：每次任务自动写反思 |
-| skillopt 优化 | 已有：分析 Skill → 生成优化候选 |
+| evolve 优化 | 已有：分析 Skill → 生成优化候选 |
 | A/B 测试 | 已有：orchestrator-compare 跑 A/B 对比 |
 
 ### 激活链补全的闭环
@@ -399,7 +399,7 @@ async function executeNode(node, state) {
 企业业务流运行
   → 每个节点执行 → 自动审计 → think.md 回溯
   → FDE sustain 读 think.md 趋势 → 发现"某节点反复出错"
-  → skillopt 优化该节点 Skill → A/B 测试验证
+  → evolve 优化该节点 Skill → A/B 测试验证
   → 通过 → 更新 .sofagent/subagents/<node>.yml
   → 下次 activate 时自动加载优化后的 Skill
 ```
@@ -538,13 +538,13 @@ flowchart TD
 | 🧭 **约束层** | `buildConstrainedSystemPrompt()` 注册即生效，走 SKILL.md → fde.md → think.md → knowledge/ 四层加载链 | 启动时自动 |
 | 🔍 **审计模块** | EXECUTE 阶段 `on_step: true`，每步执行后自动跑 24 条规则 | 每步执行后 |
 | 🔄 **回溯能力** | 审计后自动 git snapshot，违规一键回滚 | 审计完成后自动 |
-| 🧬 **进化模块** | think.md 反思 + Dream Cycle 吃 task/logs + skillopt 优化企业 Skill | daemon 定时/事件 |
+| 🧬 **进化模块** | think.md 反思 + Dream Cycle 吃 task/logs + evolve 优化企业 Skill | daemon 定时/事件 |
 
 ### 自我进化的两层边界
 
 | 进化层级 | 机制 | 状态 | 企业 SubAgent 能得到吗 |
 |---------|------|:--:|----------------------|
-| **行为级进化** | think.md 反思（不犯同样错）+ Dream Cycle 知识回灌（越跑越懂企业）+ skillopt Skill 优化（失败 3 次自动改） | ✅ 已交付/轻量态 | **能，自动获得**——沉淀机制随使用迭代（轻量态，效果待验证） |
+| **行为级进化** | think.md 反思（不犯同样错）+ Dream Cycle 知识回灌（越跑越懂企业）+ evolve Skill 优化（失败 3 次自动改） | ✅ 已交付/轻量态 | **能，自动获得**——沉淀机制随使用迭代（轻量态，效果待验证） |
 | **模型级进化** | QLoRA 后训练小模型（workflow 数据训练进权重） | ⚠️ v3.x-v4.x 远期 | 远期蓝图，当前不具备 |
 
 > 🔒 **进化不碰宪法**：进化模块优化的是 Skill / 知识 / 反思，**不碰加载链第 1 层 SKILL.md 宪法**（4 底线 + 9 铁律，`❌ 不可修改`）。企业 SubAgent 的沉淀机制会随使用迭代，但不会"越用越不守规矩"——**自主性只给到能力层，宪法层永远不可改**。这是"受控自主"的设计哲学。

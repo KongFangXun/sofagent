@@ -678,13 +678,11 @@ print_completion_summary
 install_daemon
 log_install_audit
 
-# Evolve 自进化能力（可选）
-# v0.2.0 起 PyPI wheel 已包含 evolve-sleep CLI（pyproject.toml [project.scripts] 声明）
-# 直装即可：pip install evolve
-# 如需 Claude Code/Codex/Copilot/Devin 集成 shell 或 OpenClaw 适配（仅仓库 plugins/ 目录）：
-#   git clone https://github.com/microsoft/Evolve.git ~/Evolve
-#   cd ~/Evolve && pip install -e ".[all]"
-echo "ℹ️ Evolve 自进化能力（可选）：pip install evolve（v0.2.0+ 已含 evolve-sleep CLI）"
+# Evolve 自进化能力（内置 native gate，默认路径）
+# v1.4.8 起默认使用内置 native gate 验证器（零 Python 依赖，部署确定性）
+# 无需安装任何外部 CLI/包；SOFAGENT_EVOLVE_GATE=cli 为外部兼容层回退（可选、非默认）
+# 外部兼容层形态与集成方式见 docs/DEVELOPMENT.md
+echo "ℹ️ Evolve 自进化能力：内置 native gate（v1.4.8+），零外部依赖（无需 pip 安装）"
 
 # ── v1.1.0: 可选包提示（这些不在自动安装范围内，仅提示）──
 echo ""

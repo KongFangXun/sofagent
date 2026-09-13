@@ -232,10 +232,10 @@ _main_loop() {
         fi
       fi
 
-      # 检测 evolve-sleep 是否可用
+      # 检测外部 gate CLI 兼容层是否可用（可选面；默认内置 native gate，无需外部依赖）
       if ! command -v evolve-sleep &>/dev/null; then
         # v1.2.1：不再追加到 daemon-notice.md，改写 daemon.log（健康报告由 health-reporter.ts 生成 JSON）
-        daemon_log "Evolve: evolve-sleep 未安装（需 pip install evolve，v0.2.0+ 已含 sleep CLI）。eval.md 已积累 ${score_count} 条，触发条件已满足但该工具不可用。"
+        daemon_log "Evolve: 外部 gate CLI 兼容层不可用（可选面；默认内置 native gate，无需外部依赖）。eval.md 已积累 ${score_count} 条，触发条件已满足。"
         return
       fi
 

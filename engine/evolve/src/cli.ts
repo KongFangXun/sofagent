@@ -10,7 +10,7 @@ async function main() {
     console.log('Usage: sofagent-evolve <subcommand> [options]');
     console.log('');
     console.log('Subcommands:');
-    console.log('  run <path>     运行 Skill 优化（调用 evolve-gate（v1.4.8 自研） CLI）');
+    console.log('  run <path>     运行 Skill 优化（默认内置 native gate，零外部依赖）');
     console.log('  check <path>   扫描 Skill 文件安全性');
     process.exit(0);
   }
@@ -26,7 +26,7 @@ async function main() {
       const { runEvolve, validateCandidate, isEvolveAvailable } = await import('./evolve-integration');
 
       if (!isEvolveAvailable()) {
-        console.error('❌ evolve-gate（v1.4.8 自研） CLI 不可用。请安装：pip install evolve（v0.2.0+ 已含 evolve-gate（v1.4.8 自研） CLI）。');
+        console.error('❌ 外部 gate CLI 兼容层不可用（SOFAGENT_EVOLVE_GATE=cli 回退路径）。默认使用内置 native gate，无需安装任何外部依赖；如需外部兼容层请参阅 docs/DEVELOPMENT.md。');
         process.exit(1);
       }
 

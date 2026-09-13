@@ -6,7 +6,7 @@
 // - AUTO_TRIGGER_THRESHOLD 常量值 = 3
 // - optimize()：失败 < 3 次不触发（返回 skipReason）
 // - optimize()：失败 >= 3 次尝试触发（检查 isEvolveAvailable）
-// - optimize()：evolve-gate（v1.4.8 自研） 不可用时跳过
+// - optimize()：外部 gate CLI 兼容层不可用时跳过
 // - getPendingTriggerCount：统计待触发聚类数
 // ============================================================
 
