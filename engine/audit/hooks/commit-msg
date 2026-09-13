@@ -37,10 +37,22 @@ fi
 # 该判断恒假 ⇒ 静默回退到 PATH/全局包 ⇒ **审计执行的其实不是本仓代码**（验收场景 11 长期
 # 「失败」的真因：它一直在测 npm 上的旧版本，本仓的修复与回归都测不到）。
 # 正解：用 `git rev-parse --show-toplevel` 定位**本仓库根**再拼绝对路径。
+#
+# 0. 显式注入（v1.4.8 补）：`SOFAGENT_AUDIT_ENTRY` 让**测试/CI 能指定要测的 CLI**——
+#    否则"用本仓 dist 审计一个临时仓"这类场景永远只能命中全局包（被测对象错位）。
+#    🔴 **必须 fail-loud**：指定了却不存在就报错退出，**不得静默回退**——静默回退会让调用方
+#    误以为测的是指定实现（正是本 bug 的成因：回退不可见 ⇒ 假信号）。
 if command -v git >/dev/null 2>&1; then
   _REPO_TOP=$(git rev-parse --show-toplevel 2>/dev/null || true)
 fi
-if [ -n "${_REPO_TOP:-}" ] && [ -f "$_REPO_TOP/engine/audit/dist/index.js" ]; then
+if [ -n "${SOFAGENT_AUDIT_ENTRY:-}" ]; then
+  if [ ! -f "$SOFAGENT_AUDIT_ENTRY" ]; then
+    echo "❌ SOFAGENT_AUDIT_ENTRY 指向的入口不存在: $SOFAGENT_AUDIT_ENTRY"
+    echo "   （显式注入 fail-loud：不静默回退，避免被测对象与预期不符）"
+    exit 1
+  fi
+  AUDIT_CMD=(node "$SOFAGENT_AUDIT_ENTRY")
+elif [ -n "${_REPO_TOP:-}" ] && [ -f "$_REPO_TOP/engine/audit/dist/index.js" ]; then
   AUDIT_CMD=(node "$_REPO_TOP/engine/audit/dist/index.js")
 else
   # v1.4.8 F-15 补（验收实测修正三处）：① 解析目标是**包名** `@sofagent/audit`——
