@@ -123,11 +123,22 @@ for (const t of tools) {
   (grouped[key] = grouped[key] || []).push(t);
 }
 
+/**
+ * 分组能力边界注解（可选）——紧跟分组标题注入，声明「本仓负责到哪、不负责什么」。
+ * 只放**边界**，不放工具细节（工具细节在各 tool 的 description 里）。
+ */
+const GROUP_NOTES = {
+  train:
+    '> 📌 **能力边界**：本仓负责后训流水线的**编排与治理**（任务提交 / 预算门禁 / 环境体检 / 提交前预检 / 失败诊断 / 语料导出 / 合规闸门 / 交付包 / 模型注册与灰度 / 推理服务）；**训练本身在外部执行环境进行，本仓不实现训练器**（`train_submit` 是把任务提交出去并跟踪，不是自己训）。\n',
+};
+
 let section = '';
 for (const g of GROUP_ORDER) {
   const list = grouped[g] || [];
   if (list.length === 0) continue; // 空组不显示（执行模块 v1.5.3 交付后自然出现）
-  section += `\n### ${GROUP_NAMES[g]}（${list.length}）\n\n| tool | roles | 说明 |\n|---|---|---|\n`;
+  section += `\n### ${GROUP_NAMES[g]}（${list.length}）\n\n`;
+  if (GROUP_NOTES[g]) section += `${GROUP_NOTES[g]}\n`;
+  section += `| tool | roles | 说明 |\n|---|---|---|\n`;
   for (const t of list) section += `| \`${t.name}\` | ${t.roles.join(', ') || '—'} | ${t.desc} |\n`;
 }
 
