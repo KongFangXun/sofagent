@@ -154,6 +154,32 @@ bash tools/check/check-version.sh        # 期望全绿
 
 ---
 
+## 🔴 发布期机械自检清单（v1.4.8 事故沉淀 · 步骤四的落地形态）
+
+> **为什么要有这一节**：v1.4.8 发版暴露的问题里，**多数规则 SOP 早就写着**，但仍被踩——
+> 说明「叙述性规则」不足以约束执行。本节把它们**改写成可直接跑的命令/断言**：规则只有变成
+> 机械检查才真正生效。
+
+| # | 事故（v1.4.8 实锤） | 机械检查（照着跑） |
+|:--:|---|---|
+| 1 | **Release Notes 体例漂移 7 处**（加粗/千分位/超长说明/塞表格/简化 URL） | `gh release view v<上一版> --json body -q .body > /tmp/prev.md` 与本版 body **逐行 diff**；H2 骨架必须逐字相同（`grep -E "^## " ` 两侧比对） |
+| 2 | **编造数字**（「1017 断言」——脚本根本不统计断言数） | 表里每个数字**必须能指认产出命令**；指认不出就**不写**。acceptance 只认脚本 SUMMARY 原格式：`{N}/{N} passed · SKIP: {N} · EXIT: {N}` |
+| 3 | **剥元说明只剥顶部**（尾部「🔗 尾链…同源」漏剥） | `grep -nE "阶段六定稿必备项|数字取值说明|Release body 同源|\.\./releasing/" body.md` 必须**为空** |
+| 4 | **`INSTALL_SHA256` 基准算错**（用 bump 前 HEAD 算，而 bump 会改 install.sh） | 回填后自检：`git show v<tag>:bootstrap.sh` 的钉值 == `git show v<tag>:install.sh \| shasum -a 256`——**不等就重算并重打 tag** |
+| 5 | **活文档「待发版」漏翻**（ROADMAP 版本表行；旧门禁只在待发版窗口生效） | `bash tools/check/check-version.sh` 的**第 26 项**（v1.4.8 新增，不分窗口扫活文档） |
+| 6 | **验收断言随 bump 失配**（断言锁死 `v1.4.7`，bump 推成 v1.4.8） | 验收脚本里**禁止锁死当前 SSOT 版本号**；要比对就取变量或放宽为 `v[0-9]+\.[0-9]+\.[0-9]+` |
+| 7 | **CI 与本地门禁口径差**（shellcheck 按 shebang 扫全仓，本地按 `*.sh` 扫） | 本地必须跑 **CI 同口径**门禁：`bash tools/check/check-shellcheck.sh`（v1.4.8 新增） |
+| 8 | **跨平台脚本假设 bash**（我的 fail-closed 在 Windows 崩） | 任何 `postbuild`/`scripts` 里调 `bash` 的，必须加 `process.platform===win32` 短路 |
+| 9 | **平台发布输出判定词不全**（ClawHub 的 `Update submitted … pending security scans` 是**成功**） | 判定词表须含全部成功形态：`Published`/`success`/`already exists`/`Fix: Align`/`Update submitted` |
+| 10 | **自己写的检查脚本误判**（`grep -c` 空输出被 `[ "$n" != "0" ]` 判成「存在」） | 计数判据先 `n=${n:-0}`，或用 `grep -q`；**空输出 ≠ 0** |
+
+**执行纪律三条**（都踩过）：
+1. **批量替换前限定白名单目录**——v1.4.8 扫「`· 2026-09-11`」时把 `.workbuddy/memory/` 也扫了进去；
+2. **`cd` 到临时目录后必须切回**——否则后续命令在错目录里跑（v1.4.8 实锤：命令报 file not found）；
+3. **改门禁后跑反测**——注入一个违规样本确认它**真的会红**（只跑正常态不算验证；且注意注入样本要被门禁的扫描面覆盖：`git ls-files` 类门禁需先 `git add`）。
+
+---
+
 ## 进度追踪清零（步骤九）
 
 > 本版本发版流程全部完成后，最后一步——把 `releasing.md` 进度追踪的 11 个 `[x]` 全部改回 `[ ]`，为下一版本新周期做准备。

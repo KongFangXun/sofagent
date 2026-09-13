@@ -1449,6 +1449,28 @@ echo "=== 25. 待发版窗口三态一致性（B1 防复发：CHANGELOG 收录 �
 # 但按铁律不能修，形成死锁。按铁律更新：版本动向不走状态行，走 badge→CHANGELOG 动线，
 # 本项检查相应改为「badge 与 CHANGELOG 链接同排存在」。
 # 前置条件：第 24 项已算出顶版 > SSOT（drift=1）才进入；非待发版窗口三态天然一致，跳过。
+# 🔴 26. 活文档「待发版」残留（v1.4.8 实锤·不分窗口）
+# 上面第 25 项只在**待发版窗口**（顶版 ≠ SSOT）生效 ⇒ **发版后窗口关闭，残留的「待发版」不再被查**。
+# v1.4.8 实锤：`docs/ROADMAP.md` 的版本规划表行写的是「📋 规划中/待发版」这类写法（与 CHANGELOG 顶版
+# 行、文档头「> vX.Y · 待发版」三种写法并列），发版翻转时只翻了后两者，ROADMAP 表行**漏翻**，
+# 而门禁因窗口关闭而不报。故本项**不分窗口**扫活文档（排除 changelog/ 与 archive/，那里的「待发版」
+# 是历史当时的正确状态）。
+echo "=== 26. 活文档「待发版」残留（不分窗口） ==="
+# 排除两类**合法**的「待发版」出现：a) 索引规则自身的说明文字（CHANGELOG 头部「…附「待发版」状态标注」）；
+# b) 描述本检查项本身的文档。判据：只认**状态位语境**的命中——行首 emoji 前缀（⏳/📋）或行首分隔位。
+_DOCS_HIT=$(grep -rlE "待发版" --include="*.md" "${PROJECT_ROOT}/docs" 2>/dev/null \
+  | grep -v "/changelog/" | grep -v "/archive/" \
+  | xargs -r grep -lE "^- | ^> |[|]" 2>/dev/null || true)   # 只认行首状态位语境（表格行/引用行/列表行）
+_STALE_ROOT=$(grep -nE "^- \*\*v[0-9.]+\*\* *— *(⏳|📋)? *待发版" "${PROJECT_ROOT}/CHANGELOG.md" 2>/dev/null || true)
+if [ -n "${_DOCS_HIT}${_STALE_ROOT}" ]; then
+  echo -e "  ${RED}✗${NC} 活文档仍含「待发版」（发版后应已翻转为「已发版」）："
+  printf '%s\n' ${_DOCS_HIT} ${_STALE_ROOT} | sed 's/^/      /'
+  ERRORS=$((ERRORS + 1))
+else
+  echo -e "  ${GREEN}✓${NC} 活文档无「待发版」残留（changelog/archive 的历史标注不计）"
+  CHECKS=$((CHECKS + 1))
+fi
+
 if [[ -n "${CHANGELOG_TOP_VERSION}" ]] && [[ "${CHANGELOG_TOP_VERSION}" != "${PKG_VERSION}" ]]; then
   # a. CHANGELOG 顶版行必须带「待发版」状态标注（索引规则自我一致：收录了就要标）
   if grep -m1 -F -- "- **${CHANGELOG_TOP_VERSION}**" "${PROJECT_ROOT}/CHANGELOG.md" 2>/dev/null | grep -q "待发版"; then
