@@ -8,6 +8,11 @@
 
 ## 步骤一：Skill 分发
 
+> 🔴 **v1.4.8 执行环境提示**：本阶段所有 `for` 循环与变量展开命令**必须在 bash 下执行**
+> （`bash <<'BSH' … BSH` 或存成 .sh 再跑）。zsh 不对未加引号的 `$MULTILINE_VAR` 做空白分词
+> ——`for d in $DIRS` 会把整个多行串当一个值，`skillhub publish` 随即报「路径不存在」（v1.4.8 实锤）。
+> SOP 命令本就按 bash 语法书写，勿在 zsh 里直接粘。
+
 ```bash
 # 发布前确认 slug（SSOT）
 head -3 SKILL/SKILL.md   # 期望 slug: sofagent

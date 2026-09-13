@@ -4233,3 +4233,19 @@ echo "SUMMARY: ${PASSED}/$((PASSED + FAILED + WARNED)) passed · SKIP: ${WARNED}
 if [ "$FAILED" -gt 0 ]; then echo -e "${RED}❌ 有 $FAILED 个场景失败，请修复后再发版${NC}"; exit "$FAILED"
 elif [ "$WARNED" -gt 0 ]; then echo -e "${YELLOW}⚠️  有 $WARNED 个场景因环境依赖跳过（证据面不完整），放行前补跑${NC}"; exit 2
 else echo -e "${GREEN}✅ 全部通过，可以进入发版流程${NC}"; exit 0; fi
+# ── S410（v1.4.8 阶段十一）：Release body 卫生──
+# 判据：body 必须含指向本版 changelog 的链接（SOP 阶段十一步骤一以 contains 断言），
+# 且**不得**含给流程看的元说明（顶部「本节存在性 = 阶段六定稿必备项」/ 尾部「🔗 尾链…同源」）。
+S410_OK=true; S410_OUT=""
+if command -v gh >/dev/null 2>&1; then
+  _b=$(gh release view "v${SSOT_VER:-1.4.8}" --json body -q '.body' 2>/dev/null || echo "")
+  if [ -n "$_b" ]; then
+    echo "$_b" | grep -q "docs/changelog/" || { S410_OK=false; S410_OUT="body 缺本版 changelog 链接"; }
+    echo "$_b" | grep -qE "阶段六定稿必备项|GitHub Release body 同源" && { S410_OK=false; S410_OUT="${S410_OUT} body 含流程元说明"; }
+  else
+    S410_OUT="gh 不可用或 release 取不到——跳过"
+  fi
+else
+  S410_OUT="gh 未安装——跳过"
+fi
+

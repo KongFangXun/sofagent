@@ -303,6 +303,8 @@ node engine/audit/dist/index.js --version 2>&1 | grep -q "sofagent" && echo "✓
 #   防线：① 各 fail-loud 点 `process.exitCode = 3` 再 throw；② CLI 顶部注册
 #   uncaughtException/unhandledRejection → exit 3；③ hook 侧 `elif [ $EXIT_CODE -ne 0 ]` 兜底阻断。
 #   反测：`SOFAGENT_HOME=/tmp/x node engine/audit/dist/index.js --help` 期望退出码 **3**（非 1）。
+#   ⚠️ v1.4.8 阶段十一补：Release body **顶部与尾部各有一段元说明**（顶部「本节存在性=阶段六定稿必备项」/ 尾部「🔗 尾链…与 GitHub Release body 同源」）——剥时两段都要剥。
+#   ⚠️ 分发命令**须在 bash 下执行**（zsh 不对未加引号的 `$MULTILINE_VAR` 分词 ⇒ publish 收到多行路径报「路径不存在」）。
 # 子项 a: A15 actions 未声明时必须 FAIL（非 fail-open WARN）—— 二次验证确认已返回 FAIL，本项保留为回归锁
 grep -n "nodesWithActions.length === 0\|nodesWithActions.length === 0" engine/audit/src/rules/rule-a15-action-constraint.ts
 grep -A2 "nodesWithActions.length === 0" engine/audit/src/rules/rule-a15-action-constraint.ts | grep -c "FAIL" # 期望：≥ 1
