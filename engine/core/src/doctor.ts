@@ -409,11 +409,26 @@ export function runDoctor(projectDir: string = process.cwd(), options: { resetBa
       // v1.3.5 --reset-baseline：无条件重算并覆写基线（rebuild dist 后一键重置）
       // 覆写后按「基线 = 当前值」输出校验通过——不产生假 mismatch 告警。
       if (options.resetBaseline === true) {
+        // v1.4.8 阶段八修正：原实现只写 audit-hash.txt（**兼容锚**，语义 = dist/index.js 单文件哈希），
+        // 而 hook 的完整性校验读的是 **主锚 audit-dist-hash.txt**（多入口聚合哈希）⇒ 实测「--reset-baseline
+        // 输出『基准哈希已重置』但主锚纹丝不动、commit 仍被拦截」= 名不副实。
+        // 正解：调仓内唯一权威实现 tools/audit-baseline-sync.sh（它同步全部三锚：主锚/兼容锚/源码指纹），
+        // 避免在此重复实现聚合算法（会再造一套「靠人工保持一致」的双源）。
+        // 仓外场景（无 tools/）删除三个锚文件——hook 的「基准缺失」分支会 fail-closed 补生成并放行本次。
         try {
           const hashDir = join(hashRecordPath, '..');
           if (!existsSync(hashDir)) mkdirSync(hashDir, { recursive: true, mode: 0o700 });
-          writeFileSync(hashRecordPath, currentHash + '\n', { mode: 0o600 });
-          ok(`✅ 基准哈希已重置（SHA-256: ${currentHash.slice(0, 8)}…）`);
+          const syncScript = join(projectDir, 'tools', 'audit-baseline-sync.sh');
+          if (existsSync(syncScript)) {
+            const { execFileSync } = require('child_process');
+            execFileSync('bash', [syncScript, '--quiet'], { stdio: 'pipe' });
+            ok(`✅ 三锚已重置（主锚 audit-dist-hash / 兼容锚 audit-hash / 源码指纹）——经 tools/audit-baseline-sync.sh`);
+          } else {
+            for (const f of ['audit-dist-hash.txt', 'audit-hash.txt', 'audit-src-fingerprint.txt']) {
+              try { require('fs').rmSync(join(hashDir, f), { force: true }); } catch { /* 不存在即可 */ }
+            }
+            ok(`✅ 三锚已清除（仓外无 tools/ 同步脚本）——下次 hook 运行会 fail-closed 重新记录基线`);
+          }
         } catch (err) {
           fail(`基准哈希重置失败: ${err instanceof Error ? err.message : String(err)}`);
           distIntegrityOk = false;

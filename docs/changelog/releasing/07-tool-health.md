@@ -40,9 +40,12 @@ chmod +x /tmp/fe-verify-bin/sofagent-audit
 # 2. 新仓库装 hook（🔴 必须显式 console.log 输出——「require('...').HOOK_TEMPLATE」只求值不打印，
 #    会让 hook 文件为空且 exit 0 → fallback 不触发 → 拦截链路静默失效）
 mkdir -p /tmp/hook-test && cd /tmp/hook-test && rm -rf .git && git init
-node -e "console.log(require('$(pwd)/../../engine/core/dist/config-template.js').HOOK_TEMPLATE)" > .git/hooks/commit-msg
-chmod +x .git/hooks/commit-msg
-test -s .git/hooks/commit-msg || { echo "❌ hook 模板为空——HOOK_TEMPLATE 导出异常，停手排查"; exit 1; }
+# 🔴 v1.4.8 修正：不再从 core 的 HOOK_TEMPLATE 导出取模板（该常量已 @deprecated——它曾与
+#    engine/audit/hooks/ 人工同步并漂移，正是 S51 假红根因）。改为走**真实安装路径**：
+#    `sofagent-audit --init`（唯一源 = hooks/ 目录），顺带让本步骤测的是用户实际拿到的 hook。
+node "$(pwd)/../../engine/audit/dist/index.js" --init >/dev/null 2>&1
+test -s .git/hooks/commit-msg || { echo "❌ hook 未安装——--init 异常，停手排查"; exit 1; }
+test -x .git/hooks/commit-msg || chmod +x .git/hooks/commit-msg
 
 # 3. 拦截验证：提交含密钥 .env
 # ⚠️ message 必须够长够具体（≥8 有效字符）——A5 不瞒真相 + A19 msg 质量会拦截，

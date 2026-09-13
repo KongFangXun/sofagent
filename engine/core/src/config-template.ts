@@ -91,6 +91,12 @@ A17:
  * commit-msg hook 模板内容
  * 与 hooks/commit-msg 保持一致（含 v1.0 无声失败保护）
  */
+/**
+ * @deprecated v1.4.8：**不再是 hook 安装的模板源**——`audit --init` 已改为读
+ * `engine/audit/hooks/<name>`（唯一源，见 audit/src/commands/init.ts:readHookTemplate）。
+ * 本常量曾与 hooks/ 目录「靠人工保持一致」并**实际漂移**（停留单信号版），是 S51 假红的根因。
+ * 保留仅为兼容外部引用；**新代码请勿使用**。计划 v1.5.0 随公开 API 清理移除。
+ */
 export const HOOK_TEMPLATE = `#!/bin/bash
 # sofagent commit-msg hook v${VERSION}
 # 安装：sofagent-audit --init 或 sofagent-audit --install-hook
