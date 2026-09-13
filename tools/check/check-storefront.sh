@@ -60,7 +60,7 @@ echo ""
 # ── 断言 ④：npm 裸名总包 sofagent 对账（独立于 gh——离线时 npm 侧同样 SKIP，互不吞没）──
 # SSOT = engine/audit/package.json（与 bump-version.sh 同源）；比较用 node（BSD sort 无 -V）
 SSOT_VER=$(node -e "console.log(require('./engine/audit/package.json').version)" 2>/dev/null)
-BARE_VER=$(npm view sofagent version 2>/dev/null)
+BARE_VER=$(npm view sofagent version --prefer-online 2>/dev/null)
 if [ -z "$SSOT_VER" ]; then
   echo "  ⏭️  [npm 裸名] SSOT 版本读取失败——仓内异常，跳过本断言"
   SKIPS=$((SKIPS + 1))
@@ -83,10 +83,16 @@ else
     FAILS=$((FAILS + 1))
   fi
   # 附带：总包依赖面对账（audit 版本声明与 SSOT 一致；未发布形态/占位包无此字段 → 放行）
-  BARE_DEP=$(npm view sofagent dependencies --json 2>/dev/null | node -e "let d='';process.stdin.on('data',c=>d+=c).on('end',()=>{try{console.log(JSON.parse(d)['@sofagent/audit']||'')}catch{console.log('')}})")
-  if [ -n "$BARE_DEP" ] && [ "$BARE_DEP" != "$SSOT_VER" ]; then
+  BARE_DEP=$(npm view sofagent dependencies --json --prefer-online 2>/dev/null | node -e "let d='';process.stdin.on('data',c=>d+=c).on('end',()=>{try{console.log(JSON.parse(d)['@sofagent/audit']||'')}catch{console.log('')}})")
+  # v1.4.8：依赖面仅在「registry 版本 == SSOT」时严格对账。registry 落后于 SSOT 说明
+  # 本版尚在发布中（或未发布）——此时 registry 上的依赖声明属于**上一版**，拿它比 SSOT 会
+  # 在发版窗口内恒红（v1.4.8 实锤：主断言已按 lt ⏳ 放行，本附带断言却仍报 ❌ 造成假红）。
+  if [ "$BARE_VER" = "$SSOT_VER" ] && [ -n "$BARE_DEP" ] && [ "$BARE_DEP" != "$SSOT_VER" ]; then
     echo "  ❌ [npm 裸名] 总包 dependencies.@sofagent/audit=$BARE_DEP ≠ SSOT ${SSOT_VER}——聚合依赖版本漂移"
     FAILS=$((FAILS + 1))
+  elif [ "$BARE_VER" != "$SSOT_VER" ] && [ -n "$BARE_DEP" ]; then
+    echo "  ⏳ [npm 裸名] 总包依赖面待随本版发布（registry ${BARE_VER} < SSOT ${SSOT_VER}，其依赖声明属上一版）"
+    SKIPS=$((SKIPS + 1))
   fi
 fi
 echo ""

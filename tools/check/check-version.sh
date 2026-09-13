@@ -982,7 +982,20 @@ fi
 # v1.3.6 开发中：文档头统一沿用上一版发版日期 2026-08-16，发版时随 CHANGELOG 段更新
 LAST_KNOWN_DATE="2026-08-16"
 if [ -z "$EXPECTED_DOC_DATE" ]; then
-  echo "  ⚠ CHANGELOG 未找到 v${CUR_VER} 发版日期，退回 LAST_KNOWN_DATE=${LAST_KNOWN_DATE}（开发中版本可能如此）"
+  # 🔴 v1.4.8 实锤：CHANGELOG 的当前版本索引行若**没写发版日期**，这里会静默退回一个硬编码旧值，
+  # 于是**全部文档头**报「日期 ≠ 发版日期」——真因（索引行缺日期）被淹没成一堆下游噪声。
+  # 故按「已发版 / 开发中」分流：
+  #   已发版（存在 git tag v$CUR_VER）⇒ 索引行**必须有**日期，缺 = 真错，报 ❌ 并指名修法；
+  #   开发中（无 tag）⇒ 退回上一版日期合理，但仍给出醒目提示与修法指引。
+  if git -C "${PROJECT_ROOT}" rev-parse -q --verify "refs/tags/v${CUR_VER}" >/dev/null 2>&1; then
+    echo "  ❌ CHANGELOG 的 v${CUR_VER} 索引行缺发版日期（该版本已有 tag v${CUR_VER} = 已发版）——"
+    echo "     行尾须为「… · YYYY-MM-DD 已发版 · [开发日志](…)」；否则文档头日期校验会拿旧值兜底造成全量误报"
+    DOC_DATE_OK=false
+    ERRORS=$((ERRORS + 1))
+  else
+    echo "  ⚠ CHANGELOG 未找到 v${CUR_VER} 发版日期（该版本尚无 tag = 开发中），退回 LAST_KNOWN_DATE=${LAST_KNOWN_DATE}"
+    echo "     → 发版时请在索引行尾补「· YYYY-MM-DD 已发版」，本项即转为硬校验"
+  fi
   EXPECTED_DOC_DATE="$LAST_KNOWN_DATE"
 fi
 while IFS= read -r md; do
