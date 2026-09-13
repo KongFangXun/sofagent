@@ -319,20 +319,28 @@ check_doc() {
 CUR_VERSION=$(node -p "require('./engine/audit/package.json').version" 2>/dev/null || echo "1.2.9")
 CUR_MAJOR_MINOR=$(echo "$CUR_VERSION" | cut -d. -f1-2)
 DEVLOG_FILE="docs/changelog/v${CUR_MAJOR_MINOR}/v${CUR_VERSION}.md"
+# devlog 分类判据的**扫描窗口**（显式口径，两处判据共用——不允许 10 散落两处）：
+# 只读文件头 N 行（状态区）。devlog 的状态行、交付快照行都在头部；正文叙事里出现的
+# 「尚未实现」/「✅ 已发版」是在描述**别的**东西，不该具备分类判据的效力。
+# 窗口取 10 的实测依据（批 2c 扫全部 10 份 v1.4.x devlog）：
+#   已发版 9 份的「✅ (已开发|已交付|已发版)」在 head-10 内**全部命中**（head10=1），
+#   收窄后分类零变化；而 v1.4.7 该 pattern 全文命中 **8** 次、head-10 仅 1 次
+#   ⇒ 正文误伤冻结判据不是假想。
+# ⚠️ 不要改锚「状态：」标签替代窗口：v1.4.1 / v1.4.5 / v1.4.6 的 head-10 内**没有**
+#   「状态：」行，锚标签会把它们打出冻结分类，制造**新**错分类。窗口是唯一正确口径。
+DEVLOG_STATUS_WINDOW=10
 if [ -f "$DEVLOG_FILE" ]; then
   # v1.3.2 修复：未发版的占位 changelog（含「尚未实现」）跳过校验，不算 FAIL
-  # v1.4.9 G-3 修复：占位判据从「**全文** grep」收窄到「**文件头状态区**（head -10）」——
-  #   语义依据：占位 devlog 的「尚未实现」写在**头部状态行**（v1.4.9.md:4 `> ⚠️ **尚未实现。**`），
-  #   而正文叙事里出现「尚未实现」是在描述**别的**东西（v1.4.8.md:671
-  #   「…（`sofagent-update` 尚未实现）」），不该具备「本 devlog 是占位」的判据效力。
-  #   旧全文判据的实测后果（v1.4.9 批二复现）：**已发版的 v1.4.8.md 被判为「占位文件」
-  #   并跳过测试数校验**（唯一命中源就是那句正文散文），且本 if 排在下方
+  # v1.4.9 G-3 修复：占位判据从「**全文** grep」收窄到「**文件头状态区**」——
+  #   窗口口径见上方 DEVLOG_STATUS_WINDOW 处的说明。本分支的具体误命中源：
+  #   已发版的 v1.4.8.md 该串唯一出现在**正文** :671「…（`sofagent-update` 尚未实现）」，
+  #   旧全文判据据此把它判成「占位文件」并跳过校验；且本 if 排在下方
   #   「已发布版本（历史冻结）」elif **之前** ⇒ 冻结分支永不可达（死代码），
   #   v1.4.8 的测试数快照校验从未真跑——是**门禁空转**，不是「合法的跳过」。
-  #   实现注记：不用 `head -10 "$F" | grep -q`——本脚本 `set -uo pipefail`，而 `grep -q`
+  #   实现注记：不用 `head -N "$F" | grep -q`——本脚本 `set -uo pipefail`，而 `grep -q`
   #   命中即退出会关闭读端，head 若仍在写即收 SIGPIPE（141），pipefail 把整条管道判负
   #   ⇒ 真占位文件反而漏判（竞态）。here-string 先让 head 跑完再喂给 grep，无竞态。
-  if grep -q '尚未实现' <<< "$(head -10 "$DEVLOG_FILE" 2>/dev/null)"; then
+  if grep -q '尚未实现' <<< "$(head -"${DEVLOG_STATUS_WINDOW}" "$DEVLOG_FILE" 2>/dev/null)"; then
     SKIPS=$((SKIPS + 1))
     if [ "$QUIET" = false ]; then
       echo -e "  ${YELLOW}⚠ ${DEVLOG_FILE}：占位文件（尚未实现），跳过测试数校验${NC}"
@@ -343,7 +351,14 @@ if [ -f "$DEVLOG_FILE" ]; then
   # 已发版：v1.4.4 状态行措辞为「✅ **已发版（vX.Y.Z · 日期）。**」——冻结条件纳入 已发版
   # 其测试数是发版时快照，不随后续版本新增测试漂移（v1.3.5 发布后 v1.3.6 bugfix
   # 新增 6 测试致 2286→2292，历史 devlog 被误报 FAIL——已发布文档不回头改）。
-  elif grep -qE '✅[ *]*(已开发|已交付|已发版)' "$DEVLOG_FILE" 2>/dev/null; then
+  # v1.4.9 批2c 修复：冻结判据同样收窄到**同一个扫描窗口**（head-10，见 DEVLOG_STATUS_WINDOW）——
+  #   同族洞的隔壁：全文扫描时，正文叙事里的「✅ 已发版」会把 devlog 误判成「历史冻结」
+  #   而静默跳过（v1.4.7 实测该 pattern 全文命中 8 次、head-10 仅 1 次）。
+  #   实测收窄零风险：v1.4.0-v1.4.8 九份已发版 devlog 的该 pattern 在 head-10 内均命中 1 次
+  #   ⇒ 冻结分类**一份都没变**（v1.4.8 由「误判占位」变「正确冻结」，正是 G-3 要的效果）。
+  # ⚠️ 不用锚「状态：」标签替代窗口：v1.4.1 / v1.4.5 / v1.4.6 的 head-10 里没有「状态：」行，
+  #   锚标签会把这三份打出冻结分类 —— 窗口是唯一不制造新错分类的口径。
+  elif grep -qE '✅[ *]*(已开发|已交付|已发版)' <<< "$(head -"${DEVLOG_STATUS_WINDOW}" "$DEVLOG_FILE" 2>/dev/null)"; then
     # v1.4.9 G-3：冻结分支**也是一次显式跳过**（测试数比对确实没跑），必须计入 SKIPS——
     #   依据 tools/check/lib/coverage-line.sh 契约第 4 条「每个 skip 分支加 SKIPS++」
     #   与「**不得有跳过却填 0**」。此前只有占位分支记账，冻结分支静默跳过：
