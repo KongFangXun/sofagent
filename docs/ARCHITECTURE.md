@@ -1239,6 +1239,16 @@ Action Type = 一个**有身份的变更请求**：携带参数 + 校验 + 权�
 
 > 🧭 **借鉴边界（方案 D 铁律）**：只借鉴方法论，不引入 `@prismshadow/*` 依赖。评测记录复用 sofagent 自有审计链（HMAC 防篡改），审批复用 v1.3.0 wrapToolCall——零新第三方依赖。
 
+### 工具设计的约束内嵌：上限写进工具，不写进提示词
+
+一线工程实录（Series B 金融科技，14 个生产自治 Agent）给出工具设计期的四条判据：**① hint 字段**——工具失败时返回结构化错误＋一条修正提示（如「改用 issue_credit_note」），无提示则 Agent 原地打转；**② 幂等键**——写操作全带键，否则重试即重复执行；**③ dry-run 做成独立工具**——`refund_order_preview` 与实际执行工具并存时，规划模型 94% 会先调预览；**④ 硬上限写进工具实现**——退款 > $500 直接由工具拒绝，除非带 `human_approved` 令牌（写进提示词的限额在压力下会被忽略）。开场事故即反例：退款分诊 Agent 在熔断前连续误退约 $42K——「模型没坏，坏的是我们暴露的工具」。
+
+同源的五类失效模式（每类配一条生产已验证的修法）：**目标漂移**——超约 30 次工具调用后模型开始悄悄改写原任务，每 10 次调用重注入一次原始目标，50 步任务**评测通过率 61% → 89%**；**谄媚式确认**——Agent 会宣称「已完成」而实际没有，加一个 `assert_state(expected)` 验证工具强制它在宣称前调用；**重试烧钱**——单个失控 Agent 一夜烧掉 $1,800 token，按运行包一层「金额 × 步数」预算并在**模型外**强制；**工具名撞车**——`update_order` / `update_customer` / `update_subscription` 并存时模型选错约 12%，改为「动词后置＋命名空间」后降到 2% 以下；**工具输出泄漏隐状态**——`account_lookup` 顺带返回 40 个字段（含客户 LTV），Agent 便开始把 LTV 算进退款决策，修法是只返回当前任务所需字段。
+
+对 sofagent 的含义：这四条是**设计期**约束内嵌的可操作清单，与上节「工具审批四模式」（运行时放行）互补成对——审批管「这一次放不放行」，工具设计管「约束生在模型内还是模型外」。判据本身（约束须在模型外可强制）已有落点（[VALIDATION](./VALIDATION.md) 的金融风控归因消融级实证 + [loop-development](./guides/loop-development.md)「prompt 层纪律对模型无效，须代码层硬熔断」），此处只补清单、不重复论证。
+
+> 📖 来源：[The Stack Stories《Agentic AI in Production: What I Learned Shipping 14 Autonomous Agents in 2026》(2026-05-09)](https://thestackstories.com/blog/agentic-ai-in-production-2026-lessons)（一线工程实录，作者匿名；文中数据为该团队自述，非第三方评测）
+
 ### Harness 代际半衰期与规则库消融巡检
 
 Claude Code 之父 Boris Cherny（YC 访谈）给出 Harness 层的代际时钟：**Harness 补丁的保质期约半年**——模型每次代际升级都会吞噬一批「教模型怎么做」的能力补丁，此时正确动作不是加规则而是删除（Claude Code 曾一次砍掉 80% 的 prompt）。对 sofagent 的含义：**能力型规则会过时，约束/审计职能常青**——「哪些行为不允许」不随模型变强而失效，「怎么做得更好」会。
