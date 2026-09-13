@@ -111,6 +111,7 @@
 
 - 分诊第③类免修白名单：**版本中间态 finding**——npm registry 落后 / git tag 缺当前版本 / URL 指向未发布 tag / workspace 锁旧版；判别口径：该不一致会在「git push + tag + npm publish」三动作后自动消失 = SKIP
 - 红线追加：禁止删 `fresh-eyes-review.md` 的审查视角或改视角定义来消音；禁止改 `fresh-eyes-calibration.md` 校准结论迁就当轮发现
+- 收口方加载义务：主 session 复验、定级、落桶前**必读** `playbook/fresh-eyes-calibration.md`（其头部定义的法定读者=「报告判读者」）——「worker 不加载」是防锚定设计，成立前提恰是收口方必须加载；双方都不读 = 校准规则整体失明（同族去重/消费出口落桶/防误报隐性代价等判别规则将不生效）
 - 外层硬上限 = **修复批 2 次**（driver 内建多轮循环是主通道，session 修复批是兜底不是主通道）
 - 误报 SKIP 与存疑 DEFER 的留痕格式同 b-fix「分诊前置」节（`FORGE/SKILL/fresh-eyes-loop/prompts/b-fix.md`），分诊统计进汇报
 

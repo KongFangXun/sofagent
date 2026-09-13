@@ -479,7 +479,7 @@ sofagent（https://github.com/KongFangXun/sofagent）。不管当前处于什么
 
 > 以下不是"你必须检查 X"，而是"过去在这些方向出过问题，保持敏感"。它们帮你校准直觉——但你的直觉不应该被它们限制。
 
-这个项目在过去 10+ 个版本的独立审查中，问题反复集中在以下 5 个方向：
+这个项目在过去 10+ 个版本的独立审查中，问题反复集中在以下方向：
 
 - **数字与声称漂移**——文档里的数字（规则数、测试数、版本号）和代码实际对不上；声称的功能在代码里找不到对应实现
 - **物理搬迁残留**——目录改名、文件迁移、参数重命名后，总有什么东西没跟着动（路径、引用、调用方）
@@ -491,10 +491,4 @@ sofagent（https://github.com/KongFangXun/sofagent）。不管当前处于什么
 
 这些方向值得你保持**额外敏感**——但不要把它们当成清单。你今天发现的问题可能完全不在这个列表上。**那才是最值钱的发现。**
 
-> 🔧 **工程规则与校准档案已外移**：报告判别规则（审查校准）、driver/管道/门禁的工程防线、文档治理规则及已消化校准索引，见 [fresh-eyes-calibration.md](./fresh-eyes-calibration.md)（维护者文档——worker 不加载）。本文件保持「视角 + 纪律」纯审查输入；新校准往档案加，本文件不再因校准内容涨行（警戒线 500——权威出处 `docs/changelog/releasing/04-review-system.md`，本处仅外链、不自带数字）。
-
-## 发版流程类教训（v1.4.8 暴露）
-
-- **元说明「只剥一半」**：Release Notes 段顶部与尾部**各有一段**给流程看的元说明，只剥顶部会随 body 发出去 ⇒ 用断言查（body 须含指向本版 changelog 的链接），不靠肉眼。
-- **CI 与本地门禁口径差**：CI 的 shellcheck action 无 ignore_paths ⇒ 按 shebang 扫**全仓**（含无扩展名 hook），本地按 `*.sh` 扫 ⇒ 本地绿 CI 红 ⇒ **CI 怎么扫，本地就该有同口径门禁**。
-- **「同 commit 回填」也会算错基准 + shell 方言**：`INSTALL_SHA256` 须用 `git show <tag>:<file>` 算（bump 会改 install.sh）；批量 publish 须 `bash <<'BSH'` 包执行（zsh 不对未加引号变量分词）。
+> 🔧 **工程规则与校准档案已外移**：报告判别规则（审查校准）、driver/管道/门禁的工程防线、文档治理规则及已消化校准索引，见 [fresh-eyes-calibration.md](./fresh-eyes-calibration.md)（维护者文档——**worker 不加载**防注意力锚定，**报告判读者/收口方必读**）。本文件保持「视角 + 纪律」纯审查输入；新校准往档案加，本文件不再因校准内容涨行（警戒线权威出处 `docs/changelog/releasing/04-review-system.md`，本处仅外链、不自带数字）。
