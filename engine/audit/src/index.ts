@@ -1476,13 +1476,24 @@ async function main(): Promise<void> {
       commitSha = undefined;
     }
 
-    // v1.4.8 F-16: 对账键加内容指纹——记审计时 HEAD 的 tree SHA。
+    // v1.4.8 F-16: 对账键加内容指纹——记**本次提交**的 tree SHA。
     // post-commit 对账在 parentSha + subject 命中后叠加 HEAD^{tree} 比对：
     // soft-reset 换料（同 message 不同内容）后 treeSha 必变，假绿回声消失。
     // 非 hook 场景（手动 --diff）也记（对账侧按需消费，向后兼容旧记录）。
+    //
+    // v1.4.9 P0-1（B 方案）：hook 场景（--commit-msg 由 hook 传入）下 commit 对象
+    // **尚未生成**，此刻 HEAD 已是父提交 ⇒ `git rev-parse HEAD^{tree}` 记的是**父提交
+    // 的 tree**；而读侧 post-commit:57 运行时 HEAD 已是新提交 ⇒ `HEAD^{tree}` = 新提交
+    // tree ⇒ 三重键第三重恒不等 ⇒ 干净提交也永远落「未确认审计记录」分支（回声永不出现，
+    // 疑似绕过的安全信号被稀释成背景噪音）。
+    // 修法：hook 分支改取 `git write-tree`——把当前暂存区写成一棵树，正是「即将生成的
+    // 这个 commit」的 tree，与读侧读到的新提交 tree 恒等；换料后 tree 必变 ⇒ 仍不命中，
+    // F-16 防线保留（A 方案「读侧改比父 tree」会让换料场景恒等、防线全废，已否决）。
+    // 非 hook 分支（手动 --diff <range>）HEAD 已存在，维持 `HEAD^{tree}` 语义不变。
     let treeSha: string | undefined;
     try {
-      treeSha = execFileSync('git', ['rev-parse', 'HEAD^{tree}'], { encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'] }).trim();
+      const treeArgs = isPreCommitPhase ? ['write-tree'] : ['rev-parse', 'HEAD^{tree}'];
+      treeSha = execFileSync('git', treeArgs, { encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'] }).trim();
     } catch {
       treeSha = undefined; // unborn HEAD 等场景——不伪造
     }
