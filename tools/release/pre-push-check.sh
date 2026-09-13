@@ -224,6 +224,27 @@ if [ "$MINIMAL" = false ]; then
 fi
 
 # ════════════════════════════════════════
+# 2e. 越包相对引用守卫（check-cross-package-relative.mjs · v1.4.9 P1-2）
+#   相对 import/require 解析后越出包根 ⇒ FAIL（已登记的存量豁免除外）。
+#   9 款 DSH 插件对 plugin-kit 的相对引用是刻意设计（见该包 //notWorkspace），
+#   此前**只写在注释里、零守卫**；本步把它升级为可执行约束。
+#   退出码：0 = 绿（可含可见 SKIP）/ 1 = 有未登记越包引用 / 2 = 检查器失明
+#   （扫描面结构缺失时拒绝假绿——缺件被读成「零违规」正是要杀的形态）
+# ════════════════════════════════════════
+if [ "$MINIMAL" = false ]; then
+  echo -e "\n${BOLD}── 2e. 越包相对引用守卫 ──${NC}"
+  _xpr_output=$(node tools/check/check-cross-package-relative.mjs 2>&1)
+  _xpr_rc=$?
+  if [ "$_xpr_rc" -eq 0 ]; then
+    check_pass "check-cross-package-relative.mjs（越包相对引用零新增 / 存量 §台账一致）"
+  else
+    check_fail "check-cross-package-relative.mjs（rc=${_xpr_rc}）"
+    echo "$_xpr_output" | grep "❌\|✗" | head -5 | sed 's/^/    /'
+  fi
+  unset _xpr_output _xpr_rc
+fi
+
+# ════════════════════════════════════════
 # 3. 文档检查（check-docs.sh）
 # ════════════════════════════════════════
 if [ "$MINIMAL" = false ]; then

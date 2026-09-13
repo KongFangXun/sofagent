@@ -13,7 +13,7 @@
   "scripts": {
     "build": "tsc"
   },
-  "//notWorkspace": "刻意不登记进根 package.json 的 workspaces：check-version.sh §9e 断言「rhythm 段必须覆盖全部 workspace 项」，而 rhythm 段在 tools/check/dependency-direction.yml（本批禁改）→ 登记即 §9e 报红。9 个插件改用它作为相对路径依赖（'../../plugin-kit/dist/index.js'），无需 node_modules 解析。",
+  "//notWorkspace": "刻意不登记进根 package.json 的 workspaces：check-version.sh §9e 断言「rhythm 段必须覆盖全部 workspace 项」，而 rhythm 段在 tools/check/dependency-direction.yml（本批禁改）→ 登记即 §9e 报红。9 个插件改用它作为相对路径依赖（'../../plugin-kit/dist/index.js'），无需 node_modules 解析。⚠️ 该相对引用现由 tools/check/check-cross-package-relative.mjs 守卫（越包相对引用新增/目录移位即 FAIL；9 条存量已在 cross-package-relative-exempt.json 登记豁免）——「刻意」从注释升级为可执行约束；拓扑序由根 package.json 的 build 脚本手工钉住（本包先于 10 个插件构建）。",
   "devDependencies": {
     "typescript": "^7.0.2"
   }
