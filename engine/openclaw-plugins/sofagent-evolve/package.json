@@ -42,7 +42,7 @@
   },
   "homepage": "https://github.com/KongFangXun/sofagent#readme",
   "devDependencies": {
-    "@types/node": "^20.0.0",
+    "@types/node": "^24.13.4",
     "typescript": "^7.0.2",
     "vitest": "^5.0.0"
   },
