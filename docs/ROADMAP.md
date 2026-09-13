@@ -1,13 +1,13 @@
 # 路线图 · Roadmap
 
 > 已经做了什么、未来要去哪、哪些地方需要你的帮助。
-> v1.4.8 · 2026-09-13（UTC，✅ 已发版）· 🔌 商业平台接口版（G2/G4/G6/G7 平台接口 + G13 PR 生命周期 + G14 workflow CRUD + 云训练执行收口 + daemon 接线收口批）。此前版本详见 [CHANGELOG](../CHANGELOG.md) 与各版开发日志。
+> v1.4.8 · 2026-09-13（UTC，✅ 已发版）· 插件管控与工程效能 · 插件来源白名单（plugin-gate 三类来源校验：Git URL/主机/本地路径）+ 应用级工具策略（ToolGate app×tool 白名单矩阵 fail-closed）+ 多 Agent 协作阵型库（六阵型 schema + 交接留痕）+ 自动上下文压缩（加载链 3% 预算 + 段级压缩）+ shell 提权分级（三态 classifier，dangerous 走 HITL）+ 成本 quota 事前门禁（WARN/HARD 双模式）+ 依赖方向架构测试（13 包五层边界）+ workflow 节点级模型偏好（modelPreference）+ 执行机制纪律批（意图分类纯函数主判 / Git 能力三态×两隔离 / 作用域显名禁裸 id）+ 进化模块重构（@sofagent/skillopt → @sofagent/evolve）+ fresh-eyes 修复批 + LOOP 概念归位。此前版本详见 [CHANGELOG](../CHANGELOG.md) 与各版开发日志。
 
 产品定位详见 [设计哲学](./PHILOSOPHY.md) 和 [README](../README.md)。
 
 ## 现在在哪：v1.4.8（已交付）
 
-> **v1.4.7 开发完成（2026-09-10）**——商业平台接口版（G2 能力缺口 / G4 绩效导出 / G6 节点可见性 / G7 多租户 v0 + G13 PR 生命周期 + G14 workflow CRUD + workflow 烧进 USB + G8 首部署 cron 包 + 上岗 prompt + 云训练执行收口 TrainChannel + 静态加密/repo-hash/data_push 三接线 + audit 规约层与 PROV-O 导出）· 测试 4107→4279（12 包 workspace 口径）· acceptance 311→328 场景 / 409 断言 · MCP 84→95 tools · release-gate verdict=PASS（run-04；四项 P1 放行条件 RC-1~RC-4 已收口）。详见 [v1.4.7 开发日志](./changelog/v1.4/v1.4.7.md)。下一版 v1.4.8（插件管控与工程效能）见[版本规划](#版本规划)。
+> **v1.4.8 开发完成（2026-09-13，✅ 已发版）**——插件管控与工程效能（插件来源白名单 plugin-gate 三类来源校验 + 应用级工具策略 ToolGate app×tool 矩阵 fail-closed + 多 Agent 协作阵型库六阵型 + 自动上下文压缩加载链 3% 预算 + shell 提权分级三态 + 成本 quota 事前门禁 + 依赖方向架构测试 13 包五层边界 + workflow 节点级模型偏好 + 执行机制纪律批 + 进化模块重构 @sofagent/evolve + fresh-eyes 修复批 + LOOP 概念归位）· 测试 4279→4429（13 包 workspace 口径）· acceptance 328→337 场景（阶段四 A 类分发 S401-S409 九新面锚点）· MCP 95 tools · release-gate verdict=PASS。详见 [v1.4.8 开发日志](./changelog/v1.4/v1.4.8.md)。下一版 v1.4.9（📟 设备接入与数据承接版——多设备 Harness 中间层 + router 伴生数据面）见[版本规划](#版本规划)。
 
 ---
 
@@ -80,7 +80,7 @@ sofagent 的定位正卡在这个转折点上：审计模块（治理侧）+ Ont
 
 ### 场景数 SSOT 口径
 
-> **SSOT 口径**：`playbook/acceptance-test.sh` 头部「场景数」声明 = 真实 `scenario` 调用行数（非编号最大值、非运行时执行数）。当前值 337（最大场景号 S409，S1-S344 间有历史空洞号；v1.4.8 增量：S401-S409 九场景——策略门×2/行为分级×2/成本压缩×2/模型进化/纪律/安全豁免，阶段四 A 类分发；v1.4.6 增量：S376/S377 多卡/云 VM 行为锁 + S378 umbrella + S379-S382 流程加固批，归并 2 处——S367 并入 S369、S332 并入 S331，断言零删减；S383 边界收缩行为锁；v1.4.7 增量：S384-S400 十八场景（工具面/PR 域/云通道/daemon 接线 + G6/G7/G8/上岗/G14 + G2/G4 语义层 + 批 J/质量循环批/批 G/批 O 锚点 + USB + 四原则——release-gate 四轮闭环至 Conditional-PASS）。v1.4.5 增量：S373/S374 反哺闭环、L4 自进化链路级与 train 五新面行为锁场景——S375 两批扩展覆盖模块八/六，S265 归并入 S264 对销）。
+> **SSOT 口径**：`playbook/acceptance-test.sh` 头部「场景数」声明 = 真实 `scenario` 调用行数（非编号最大值、非运行时执行数）。当前值 338（最大场景号 S411，S1-S344 间有历史空洞号；v1.4.9 bugfix 批二 P0-1 回归锁 S411：hook 场景 treeSha 跨阶段错配三态锁 337→338；v1.4.8 增量：S401-S409 九场景——策略门×2/行为分级×2/成本压缩×2/模型进化/纪律/安全豁免，阶段四 A 类分发；v1.4.6 增量：S376/S377 多卡/云 VM 行为锁 + S378 umbrella + S379-S382 流程加固批，归并 2 处——S367 并入 S369、S332 并入 S331，断言零删减；S383 边界收缩行为锁；v1.4.7 增量：S384-S400 十八场景（工具面/PR 域/云通道/daemon 接线 + G6/G7/G8/上岗/G14 + G2/G4 语义层 + 批 J/质量循环批/批 G/批 O 锚点 + USB + 四原则——release-gate 四轮闭环至 Conditional-PASS）。v1.4.5 增量：S373/S374 反哺闭环、L4 自进化链路级与 train 五新面行为锁场景——S375 两批扩展覆盖模块八/六，S265 归并入 S264 对销）。
 >
 > 后续版本引用场景数一律以 `acceptance-test.sh` 头部声明为准，禁止从其他文档转述。
 

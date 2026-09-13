@@ -1040,7 +1040,7 @@ else
 fi
 echo ""
 
-# ── F-08: ROADMAP 版本头描述 vs CHANGELOG 标题一致性（WARN 级）──
+# ── F-08: ROADMAP 版本头描述 vs CHANGELOG 标题一致性（v1.4.9 P1-7 起 FAIL 级）──
 echo "=== 15. ROADMAP 版本头描述 vs CHANGELOG 标题一致性 ==="
 ROADMAP_HEADER=$(sed -n '4p' "${ROADMAP}" 2>/dev/null || echo "")
 if [[ -n "${ROADMAP_HEADER}" ]]; then
@@ -1069,11 +1069,15 @@ if [[ -n "${ROADMAP_HEADER}" ]]; then
     done
   fi
   if ${ROADMAP_WARN}; then
-    echo -e "  ${YELLOW}⚠ ROADMAP 版本头描述与 CHANGELOG 标题关键词重合度低${NC}"
-    echo -e "    ROADMAP:  ${ROADMAP_HEADER:0:80}..."
-    echo -e "    CHANGELOG: ${CHANGELOG_TITLE:0:80}"
-    echo -e "    建议检查 ROADMAP L4 描述是否与当前版本一致"
-    WARNINGS=$((WARNINGS + 1))
+    # v1.4.9 P1-7：由 WARN 升为 FAIL。本条早已能精确抓到 ROADMAP 版本头错版
+    # （v1.4.8 头部长期挂着 v1.4.7 的版本名「商业平台接口版」），却只计 WARNING、
+    # 非 --strict 即放行 ⇒ 已知告警随发版出门。ROADMAP L4 是用户第一眼看到的能力叙事，
+    # 错版 = 把上一版的名字贴在本版头上 = 事实性错误（不是风格问题）→ 阻断。
+    echo -e "  ${RED}❌ ROADMAP 版本头描述与 CHANGELOG 标题关键词重合度低（版本名疑似错版）${NC}"
+    echo -e "    ${RED}ROADMAP:  ${ROADMAP_HEADER:0:80}...${NC}"
+    echo -e "    ${RED}CHANGELOG: ${CHANGELOG_TITLE:0:80}${NC}"
+    echo -e "    修法：把 docs/ROADMAP.md L4 版本名改成与 CHANGELOG 当前版本标题一致（勿沿用上一版名字）"
+    ERRORS=$((ERRORS + 1))
   else
     echo -e "  ${GREEN}✓${NC} ROADMAP 版本头描述与 CHANGELOG 标题关键词重合"
     CHECKS=$((CHECKS + 1))
@@ -1107,6 +1111,22 @@ if [[ -f "${WIKI_FILE}" ]]; then
   done < <(grep -nE 'v[0-9]+\.[0-9]+' "${WIKI_FILE}" 2>/dev/null | grep -v 'changelog' || true)
   if $WIKI_DRIFT_OK; then
     echo -e "  ${GREEN}✓${NC} WIKI.md 状态表版本号一致"
+    CHECKS=$((CHECKS + 1))
+  fi
+  # v1.4.9 P1-7：「下一版 == 当前版本」是硬性自相矛盾（同一版既「当前」又「下一版」）。
+  # 上面 §16 的漂移扫描只认含「当前|状态|版本」的行 ⇒ 「下一版」行天然漏检
+  # （v1.4.8 状态表「当前版本 v1.4.8 / 下一版 v1.4.8」两侧同号长期并存正是此盲区）。
+  # 故单列一条断言：WIKI「下一版」值必须 ≠ SSOT 当前版本。
+  WIKI_NEXT_VER=$(grep -E '^\| *下一版 *\|' "${WIKI_FILE}" 2>/dev/null | head -1 | grep -oE 'v[0-9]+\.[0-9]+(\.[0-9]+)?' | head -1 | sed 's/^v//')
+  if [[ -z "${WIKI_NEXT_VER}" ]]; then
+    echo -e "  ${YELLOW}⚠${NC} WIKI.md 未找到状态表「下一版」行（表结构变更？请核对 docs/WIKI.md「六、当前状态」）"
+    WARNINGS=$((WARNINGS + 1))
+  elif [[ "${WIKI_NEXT_VER}" == "${SSOT_VERSION}" ]]; then
+    echo -e "  ${RED}❌ WIKI.md 状态表「下一版」= ${WIKI_NEXT_VER}，与当前版本 ${SSOT_VERSION} 同号——自相矛盾${NC}"
+    echo -e "    修法：docs/WIKI.md「下一版」应指向真正未发布的下一版（如 v1.4.9）"
+    ERRORS=$((ERRORS + 1))
+  else
+    echo -e "  ${GREEN}✓${NC} WIKI.md 状态表「下一版」${WIKI_NEXT_VER} ≠ 当前 ${SSOT_VERSION}"
     CHECKS=$((CHECKS + 1))
   fi
 fi
