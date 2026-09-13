@@ -31,12 +31,12 @@
 | 装 Skill → @ | WorkBuddy/OpenClaw | `bash install.sh`（自动装），然后 `@sofagent-fde` |
 | 复制 prompt | 不支持 Skill 的平台 | 把 SKILL.md 内容贴进 system prompt |
 | CLI 直跑 | 任何终端 | `sofagent-orchestrator subagent run fde --task "..."` |
-| DSH 插件通道 | DSH（DeepSeek Harness）用户 | `skillhub install cordis-plugin-sofagent-<名>`（SkillHub 单通道安装 + 发现；每款可独立安装、渐进采用） |
+| DSH 插件通道 | DSH（DeepSeek Harness）用户 | `skillhub install cordis-plugin-sofagent-<名>`（SkillHub 单通道安装 + 发现；每款可独立安装、渐进采用；**一次装全套**用裸名 `skillhub install cordis-plugin-sofagent`） |
 | MCP 自动配置 | workbuddy/claude/cursor/codex | `bash install.sh --platform <平台>` 自动写 MCP 配置（前三者写 mcp.json JSON、codex 写 config.toml `[mcp_servers.sofagent]` 段），装完即连 95 tools |
 
 ---
 
-## DSH 插件家族（9 款 cordis-plugin）
+## DSH 插件家族（10 款 cordis-plugin）
 
 > sofagent 约束能力在 DSH（DeepSeek Harness）生态的插件形态——每款只干一件事，可独立安装、渐进采用。能力完整面 = MCP Server 95 tools（连接 sofagent MCP 后调用）。随主线版本发布，SkillHub 通道检索。
 
@@ -51,6 +51,7 @@
 | `cordis-plugin-sofagent-gate` | 验收不过不放行（机器可判定验收 + 人审）——桥接 `@sofagent/audit runRules` | agent/turn-stopping |
 | `cordis-plugin-sofagent-daemon` | 7×24 巡检 + 健康监测 + webhook 推送——桥接 `@sofagent/daemon startCron` | 独立调度进程 |
 | `cordis-plugin-sofagent-fde` | FDE 进场方法论桥接（本体数据视图生成，fde_* 六 tool 为规划中形态，见 ROADMAP）——桥接 `@sofagent/ontology generateOntologyView` | fde_* tools（规划） |
+| `cordis-plugin-sofagent` | **整装入口**——一次挂载以上 9 款原子插件（聚合编排层，只编排不重实现；缺哪款只降级哪款，不整挂失败） | non-seam:plugin-suite |
 
 ---
 

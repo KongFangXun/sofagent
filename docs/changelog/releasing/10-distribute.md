@@ -40,12 +40,13 @@ skillhub publish "$tmpdir/SKILL" --version <版本号> --changelog "vX.Y.Z: 简�
 
 ## 步骤二：DSH plugin 分发（每版必做）
 
-> **背景**：SkillHub 支持 DeepSeek Harness plugin 分发。sofagent 的 DSH plugin 家族（`cordis-plugin-sofagent-*`，**9 个**：audit/rollback/inject/evolve/ontology/commons/gate/daemon/fde）**每版都要在 SkillHub 发布**——与 SKILL 分发并列，是 DSH 生态的发现层补充（npm 发布仍走主线，两者并行不互替）。
+> **背景**：SkillHub 支持 DeepSeek Harness plugin 分发。sofagent 的 DSH plugin 家族（`cordis-plugin-sofagent*`，**10 个**：9 款原子 audit/rollback/inject/evolve/ontology/commons/gate/daemon/fde + 1 款聚合 `cordis-plugin-sofagent`）**每版都要在 SkillHub 发布**——与 SKILL 分发并列，是 DSH 生态的发现层补充（npm 发布仍走主线，两者并行不互替）。
 
 ```bash
 # 发布前确认 plugin 家族清单（SSOT = engine/dsh-plugins/ 目录实数 + 各版开发日志 plugin 家族表）
-# 🔴 实际目录是 engine/dsh-plugins/cordis-plugin-sofagent-*（前缀 cordis-plugin-sofagent-）
-PLUGIN_DIRS=$(ls -d engine/dsh-plugins/cordis-plugin-sofagent-* 2>/dev/null || echo "")
+# 🔴 实际目录是 engine/dsh-plugins/cordis-plugin-sofagent*（前缀 cordis-plugin-sofagent——
+#   聚合插件是**裸名**，glob 不带尾横线才不漏它）
+PLUGIN_DIRS=$(ls -d engine/dsh-plugins/cordis-plugin-sofagent* 2>/dev/null || echo "")
 
 # 🔴 发布坑（发布前必读）：
 #   ① 各 plugin 目录已含静态 SKILL.md（skillhub 直接读它发布——不再需要临时目录组装）。
@@ -68,10 +69,11 @@ done
 ```
 
 > **DSH plugin 分发铁律**：
-> - 发布源 = 各 cordis-plugin 包目录（`engine/dsh-plugins/cordis-plugin-sofagent-*`，不是 SKILL/，SKILL 是方法论分发，plugin 是引擎能力分发）
+> - 发布源 = 各 cordis-plugin 包目录（`engine/dsh-plugins/cordis-plugin-sofagent*`，不是 SKILL/，SKILL 是方法论分发，plugin 是引擎能力分发）
 > - 版本号 = 与 sofagent 主线版本对齐（DSH Cordis 协议 breaking change 时 bump major）
+> - 🔴 **款数必须等于 glob 实测数**：正文枚举与下方 `PLUGIN_DIRS` 的 glob 是同一份清单的两种写法，改一个必改另一个——不一致时按文字走就会漏发（带尾横线的 glob 漏掉裸名聚合插件）
 > - 每版发版都要推，与 ClawHub/SkillHub SKILL 分发同等强制
-> - 分发通道真相源：**DSH plugin 只走 SkillHub 单通道**——`skillhub install cordis-plugin-sofagent-*` 是唯一安装通道 + 发现层。npm 不发布插件（09-publish 步骤八清单只有 13 个 @sofagent 包，不含插件）——`dsh plugin add` 依赖的 npm 通道未开通，文档一律不得声称 npm 可装
+> - 分发通道真相源：**DSH plugin 只走 SkillHub 单通道**——`skillhub install cordis-plugin-sofagent*` 是唯一安装通道 + 发现层。npm 不发布插件（09-publish 步骤八清单只有 13 个 @sofagent 包，不含插件）——`dsh plugin add` 依赖的 npm 通道未开通，文档一律不得声称 npm 可装
 
 ### 步骤二·a：OpenClaw plugin 分发（每版必做）
 
