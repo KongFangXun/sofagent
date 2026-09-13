@@ -11,13 +11,25 @@ import { buildConstrainedSystemPrompt } from '../index';
 
 describe('buildConstrainedSystemPrompt', () => {
   let tmpDir: string;
+  let tmpHome: string;
+  let prevHome: string | undefined;
 
   beforeEach(() => {
     tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'sofagent-test-'));
+    tmpHome = fs.mkdtempSync(path.join(os.tmpdir(), 'sofagent-home-'));
+    // v1.4.9 P1-4：读侧新增「用户级 custom 层回退」（{SOFAGENT_HOME}/skill/custom）。
+    // 不隔离 SOFAGENT_HOME 时，本机 ~/.sofagent/skill/custom/ 的真实 overrides
+    // 会被注入，「无约束目录 → 空串」断言将随开发机状态时红时绿。
+    prevHome = process.env.SOFAGENT_HOME;
+    process.env.SOFAGENT_HOME = tmpHome;
   });
 
   afterEach(() => {
-    try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch { /* */ }
+    if (prevHome === undefined) delete process.env.SOFAGENT_HOME;
+    else process.env.SOFAGENT_HOME = prevHome;
+    for (const d of [tmpDir, tmpHome]) {
+      try { fs.rmSync(d, { recursive: true, force: true }); } catch { /* */ }
+    }
   });
 
   function writeSkill(content: string, name = 'SKILL.md'): void {

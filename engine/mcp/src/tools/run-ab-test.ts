@@ -199,6 +199,11 @@ export async function runAbTest(args: RunAbTestArgs): Promise<RunAbTestResult> {
     lines.push(canPromote
       ? '  ✅ 已达晋升阈值——可调 promote_ab（需人工确认）执行晋升'
       : '  ⏳ 未达晋升阈值，继续实验积累连续胜出次数');
+    // v1.4.9 P1-5（同族）：持久化失败此前只在 data.persisted 里有真值、text 侧静默——
+    // 调用方（Agent）读的是 text，不提示就等于「结论未落盘」被吞掉。
+    if (!persisted) {
+      lines.push('  ⚠️ 实验结果持久化失败（latest.json 未写入）——本次结论未落盘，请检查数据目录权限');
+    }
 
     return {
       text: lines.join('\n'),

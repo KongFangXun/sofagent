@@ -7,7 +7,7 @@
 // ============================================================
 
 import { readFileSync } from 'fs';
-import { dirname } from 'path';
+import { basename, dirname } from 'path';
 import type { ABConfig, ABTestResult } from './types';
 import type { EvalBreakdown, TestCase } from '@sofagent/eval';
 import { evalCase } from '@sofagent/eval';
@@ -27,6 +27,41 @@ type ReactAgentFactory = (config: { llm: unknown; prompt: string; tools?: unknow
 /** Agent 运行结果 */
 interface AgentResult {
   output: Record<string, unknown>;
+}
+
+/**
+ * 约束链读空哨兵（v1.4.9 P1-5）。
+ *
+ * 方案 C（runReactAgent）用 buildConstrainedSystemPrompt 注入四层约束；约束目录与
+ * skillPath 不匹配时它**静默返回空串**，Agent 便在「无约束」条件下运行——而 A/B
+ * 评审要评的正是「约束下的行为」，无约束评审 = 评审语义被悄悄替换。
+ * 哨兵置于消息首部：runTestCase 据此**拒绝降级**（降级到方案 B 只是换一条语义
+ * 再跑一遍，会把「约束没注入」这个事实盖住）。
+ */
+const EMPTY_CONSTRAINT_CHAIN_PREFIX = '[empty-constraint-chain]';
+
+/** 四层约束的段标记（与 harness buildConstrainedSystemPrompt 的段首一一对应） */
+const CONSTRAINT_LAYER_MARKERS: readonly string[] = [
+  '# 宪法约束',
+  '# 企业规则',
+  '# 历史经验',
+  '# 用户自定义规则',
+];
+
+/**
+ * 约束链是否为空/仅骨架（v1.4.9 P1-5）。
+ *
+ * 空串，或四层核心约束（宪法/规范/反思/用户自定义）**一层都没注入** → 视为读空：
+ * 此时 systemPrompt 至多剩知识库/身份上下文等骨架，Agent 行为不再受宪法约束。
+ */
+function isConstraintChainEmpty(systemPrompt: string): boolean {
+  if (systemPrompt.trim() === '') return true;
+  return !CONSTRAINT_LAYER_MARKERS.some((marker) => systemPrompt.includes(marker));
+}
+
+/** 该错误是否为「约束链读空」哨兵（runTestCase 判「不得降级」用） */
+function isEmptyConstraintChainError(err: unknown): boolean {
+  return err instanceof Error && err.message.startsWith(EMPTY_CONSTRAINT_CHAIN_PREFIX);
 }
 
 /**
@@ -140,12 +175,37 @@ async function runReactAgent(
   testCase: TestCase,
   skillPath: string
 ): Promise<Record<string, unknown>> {
+  // v1.4.9 P1-5：约束链的派生与检查**先于**一切重依赖（langgraph 动态 import / LLM 解析）——
+  // 它是配置前置条件，失败应与「langgraph 是否装好 / SOFAGENT_LLM 是否配了」无关。
+  // 从 harness 导入约束构建函数（避免循环依赖）
+  const { buildConstrainedSystemPrompt } = await import('@sofagent/harness');
+
+  // v1.4.9 P1-5：消除「一个参数两种语义」——`skillPath` 恒为**文件**路径
+  // （方案 B 也按文件读它）。方案 C 要的是 harness 的 (projectRoot, skillDir)
+  // 二元组，此处从文件路径**显式派生**并把语义写死：
+  //   skillPath = <约束目录>/<文件名> ⇒ 约束目录 = dirname(skillPath)
+  //   projectRoot = dirname(约束目录) · skillDir = basename(约束目录)
+  //   ⇒ harness 读 <约束目录>/SKILL.md · fde.md · think.md · custom/
+  // 旧实现把 dirname(skillPath) 当 projectRoot 直接传，harness 会再 join 一层
+  // （默认 '.sofagent'）⇒ 实读 <约束目录>/.sofagent/* ⇒ 结构性读空。
+  const constraintDir = dirname(skillPath);
+  const projectRoot = dirname(constraintDir);
+  const skillDirName = basename(constraintDir) || '.sofagent';
+  const systemPrompt = buildConstrainedSystemPrompt(projectRoot, { skillDir: skillDirName });
+
+  // 约束链读空 ⇒ 与方案 B 同等处置（B 缺 skill 文件即 fail-loud「中止而非降级」）。
+  // 哨兵检查前置到 LLM 解析之前：这是**配置错误**，不该等模型就绪才暴露，
+  // 也使该失败的触发与 SOFAGENT_LLM 环境无关（可确定性测试）。
+  if (isConstraintChainEmpty(systemPrompt)) {
+    throw new Error(
+      `${EMPTY_CONSTRAINT_CHAIN_PREFIX} A/B 评审约束链读空（skillPath=${skillPath} ⇒ 约束目录 ${constraintDir} 下无 SKILL.md/fde.md/think.md/custom）：` +
+        `React Agent 将在**无约束**条件下运行，评审结果不可信——中止而非静默降级。`,
+    );
+  }
+
   // @ts-ignore — @langchain/langgraph/prebuilt 子路径导出在 moduleResolution: node 下无法解析类型
   const { createReactAgent } = await import('@langchain/langgraph/prebuilt');
   const reactCreate = createReactAgent as unknown as ReactAgentFactory;
-
-  // 从 harness 导入约束构建函数（避免循环依赖）
-  const { buildConstrainedSystemPrompt } = await import('@sofagent/harness');
 
   // 解析 LLM 模型（从环境变量读取）
   const { resolveLLMModel } = await import('@sofagent/orchestrator');
@@ -153,9 +213,6 @@ async function runReactAgent(
   if (!resolved || !resolved.model) {
     throw new Error('LLM 模型未配置（SOFAGENT_LLM 环境变量）');
   }
-
-  const skillDir = dirname(skillPath);
-  const systemPrompt = buildConstrainedSystemPrompt(skillDir);
 
   const userContent: string =
     typeof testCase.input === 'string'
@@ -224,6 +281,9 @@ async function runTestCase(
       5 * 60 * 1000 // 5 分钟超时
     );
   } catch (e) {
+    // v1.4.9 P1-5：约束链读空**不降级**——它是配置错误而非运行时抖动，降级到
+    // 方案 B 只会换一条语义再跑一遍，把「约束没注入」这个事实盖住。
+    if (isEmptyConstraintChainError(e)) throw e;
     if (verbose) {
       console.warn(`createReactAgent 运行超时或异常，降级到方案 B（模型 API 直跑）: ${(e as Error).message}`);
     }

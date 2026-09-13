@@ -17,6 +17,7 @@
  *   服务不同部署形态，**不要合并**。改动加载链逻辑时需两处同步评估。
  */
 import * as fs from 'fs';
+import * as os from 'os';
 import * as path from 'path';
 // v1.3.2 交付 14：L4 经验层渐进加载增强——知识索引构建（文件名 + frontmatter 摘要 + 首行）
 import {
@@ -29,6 +30,24 @@ import {
 // ============================================================
 // 辅助函数
 // ============================================================
+
+/**
+ * 解析引擎 home 目录（`{SOFAGENT_HOME}`，缺省 `~/.sofagent`）。
+ *
+ * v1.4.9 P1-4：⚠️ harness 是零依赖纪律的核心包（dependency-direction.yml：
+ * harness `allow: []`，全仓唯一不允许 import 任何 @sofagent 包者）——不能
+ * import core 的 `resolveHomeDir`。此处是**最小本地重实现**，口径须与
+ * core/data-paths.ts 的 `resolveHomeDir` 保持一致（SOFAGENT_HOME 非空优先，
+ * 缺省 ~/.sofagent）。改本函数必须同步评估 core 侧——两处口径漂移正是 P1-4 的成因。
+ */
+function resolveEngineHome(): string {
+  const fromEnv = process.env.SOFAGENT_HOME;
+  if (fromEnv !== undefined && fromEnv !== '') return fromEnv;
+  return path.join(os.homedir(), '.sofagent');
+}
+
+/** custom 层最多注入文件数（与 listCustomOverrides 缺省值一致） */
+const CUSTOM_OVERRIDES_MAX_FILES = 4;
 
 /**
  * 尝试读取文件——文件不存在时返回 null（静默跳过）
@@ -90,6 +109,8 @@ function listCustomOverrides(dir: string, maxFiles = 4): string[] {
  * 2. 规范层：fde.md（企业专属规则）
  * 3. 反思层：think.md（历史踩坑）
  * 3.5 用户层：custom/*-overrides.md（v1.2.1 新增——追加在官方规则之后，不是替换）
+ *     v1.4.9 P1-4：项目级 `<projectRoot>/<skillDir>/custom/` 优先，用户级
+ *     `{SOFAGENT_HOME}/skill/custom/`（/evolve 产物落点）按余量补足
  * 4. 知识库：knowledge/ top-N（按 mtime 排序，每篇截取前 2000 字符）
  * 5. v1.0.8: persona.md（Agent 记忆，前 500 字符）
  *
@@ -129,8 +150,22 @@ function listCustomOverrides(dir: string, maxFiles = 4): string[] {
   // 3.5 用户自定义层：custom/*-overrides.md（v1.2.1 新增）
   // 加载顺序：约束层（宪法/规范/反思）→ 用户层（custom/ 私有规则）。
   // 后加载 = 优先级更高——custom/ 规则追加在官方规则之后，不是替换。
-  const customRules = listCustomOverrides(path.join(skillDir, 'custom'));
-  for (const rule of customRules) {
+  //
+  // v1.4.9 P1-4（写入根 vs 读取根不一致）：读侧此前**只**扫
+  // <projectRoot>/<skillDir>/custom/，而写侧（orchestrator/instinct/evolver.ts:76）
+  // 把 /evolve 产物落在 {SOFAGENT_HOME}/skill/custom/ ⇒ evolve 产物落盘后
+  // **永远读不到**（evolver.ts 头注「该目录在加载链覆盖范围内」是不变量假设，
+  // 没有运行时兜底——本处补上兜底，写侧落点不动：那是 SSOT，改它要动外部数据布局）。
+  // 口径：**项目级优先、用户级补足**——项目级条目在前（后加载 ⇒ 优先级更高），
+  // 用户级按 maxFiles 余量补足；两级解析到同一目录时跳过用户级（防重复注入）。
+  const projectCustomDir = path.join(skillDir, 'custom');
+  const userCustomDir = path.join(resolveEngineHome(), 'skill', 'custom');
+  const projectRules = listCustomOverrides(projectCustomDir, CUSTOM_OVERRIDES_MAX_FILES);
+  const userRules =
+    projectRules.length < CUSTOM_OVERRIDES_MAX_FILES && userCustomDir !== projectCustomDir
+      ? listCustomOverrides(userCustomDir, CUSTOM_OVERRIDES_MAX_FILES - projectRules.length)
+      : [];
+  for (const rule of [...projectRules, ...userRules]) {
     parts.push(`# 用户自定义规则（custom/）\n${rule}`);
   }
 

@@ -122,13 +122,24 @@ describe('knowledge-index · 索引构建（v1.3.1 交付 14）', () => {
 
 describe('buildConstrainedSystemPrompt · 注入量下降（v1.3.1 交付 14）', () => {
   let tmpDir: string;
+  let tmpHome: string;
+  let prevHome: string | undefined;
 
   beforeEach(() => {
     tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'sofagent-harness-'));
+    // v1.4.9 P1-4：读侧新增「用户级 custom 层回退」（{SOFAGENT_HOME}/skill/custom）——
+    // 需隔离 SOFAGENT_HOME，「无约束目录 → 空串」断言才与本机状态无关。
+    tmpHome = fs.mkdtempSync(path.join(os.tmpdir(), 'sofagent-home-'));
+    prevHome = process.env.SOFAGENT_HOME;
+    process.env.SOFAGENT_HOME = tmpHome;
   });
 
   afterEach(() => {
-    try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch { /* */ }
+    if (prevHome === undefined) delete process.env.SOFAGENT_HOME;
+    else process.env.SOFAGENT_HOME = prevHome;
+    for (const d of [tmpDir, tmpHome]) {
+      try { fs.rmSync(d, { recursive: true, force: true }); } catch { /* */ }
+    }
   });
 
   it('注入格式：热点全文（≤2 篇）+ 知识索引（≤9 条）；总注入量显著下降', () => {
