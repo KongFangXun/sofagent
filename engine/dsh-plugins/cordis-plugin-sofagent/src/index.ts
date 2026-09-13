@@ -201,7 +201,8 @@ export default {
         c.on('dispose', dispose);
         unloadHook = 'ctx.on';
       } catch {
-        // 钩子登记失败不崩：apply 返回值仍在（宿主按 _execute 登记）
+        // 为何可静默：apply 返回值仍在——宿主按 _execute 登记 disposer，
+        // c.on 只是双保险；登记失败不等于卸载能力缺失，无降级告警可报。
       }
     }
 
