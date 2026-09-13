@@ -424,7 +424,7 @@ export function runDoctor(projectDir: string = process.cwd(), options: { resetBa
             ok(`✅ 三锚已重置（主锚 audit-dist-hash / 兼容锚 audit-hash / 源码指纹）——经 tools/audit-baseline-sync.sh`);
           } else {
             for (const f of ['audit-dist-hash.txt', 'audit-hash.txt', 'audit-src-fingerprint.txt']) {
-              try { rmSync(join(hashDir, f), { force: true }); } catch { /* 不存在即可 */ }
+              try { rmSync(join(hashDir, f), { force: true }); } catch { /* 为何可静默：force:true 下文件不存在不抛错，此 catch 仅兜底权限异常，且清锚失败会让 hook 的「基准缺失」分支兜住，不影响语义 */ }
             }
             ok(`✅ 三锚已清除（仓外无 tools/ 同步脚本）——下次 hook 运行会 fail-closed 重新记录基线`);
           }

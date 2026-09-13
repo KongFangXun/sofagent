@@ -44,7 +44,8 @@ COMMIT_SUBJECT=$(git log -1 --pretty=%s HEAD 2>/dev/null)
 # 比对：干净 commit 过审计后 soft-reset 换料（同 message 不同内容）提交，treeSha 必变，
 # 对账不命中走 INFO/WARN 路径——假绿回声消失（post-commit 永不阻断铁律不变）。
 # 旧审计记录无 treeSha 字段时跳过此重校验（向后兼容）。
-COMMIT_TREE=$(git rev-parse HEAD^{tree} 2>/dev/null)
+COMMIT_TREE=$(git rev-parse 'HEAD^{tree}' 2>/dev/null)   # 引号：{tree} 是 git 语法，避免 shellcheck SC1083
+                                                              # 误判大括号为字面量（语义不变）
 
 # 检查 history.jsonl：SHA 精确匹配 + parentSha 匹配
 # 路径动态获取用户级 data 目录（与 data-paths.ts 的解析链对齐——v1.4.8 F-17：
