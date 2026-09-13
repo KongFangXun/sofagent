@@ -297,20 +297,12 @@ node engine/audit/dist/index.js --version 2>&1 | grep -q "sofagent" && echo "✓
 
 ```bash
 # 子项 i: 审计 hook 的退出码契约（v1.4.8 阶段七 / v1.4.9 P1-15 改码）——**崩溃必须与「警告」区分开**
-#   契约：0=全绿 / 1=有警告（放行）/ 2=有违规（阻断）/ 3=非 git 仓库（cli-quick 口径）/ **4=引擎崩溃**。
-#   v1.4.9 P1-15：崩溃码 **3 → 4**——原 3 与 cli-quick 的「非 git 仓库 ⇒ return 3」撞码
-#   （实测两义并存：非 git 目录跑 3、SOFAGENT_HOME 越界崩溃也跑 3），改 4 后单义可辨。
-#   坑位：node 未捕获异常默认 exit 1，与「1=警告」**撞码** ⇒ hook 的 `-eq 1` 分支把崩溃
-#   当警告**静默放行**（fail-open 实测：SOFAGENT_HOME 越界致 audit 崩溃，含密钥 .env 入库）。
-#   防线：① CLI 顶部注册 uncaughtException/unhandledRejection → exit 4（index.ts 与 cli-quick.ts
-#   各自独立注册，双侧行为锁见 engine/audit/src/__tests__/cli-crash-exit-code.test.ts）；
-#   ② hook 侧 `elif [ $EXIT_CODE -ne 0 ]` 兜底阻断；③ stderr 崩溃特征扫描为**旧版引擎兜底**
-#   （v1.4.9 P1-15 由「必需」降级——新版已有专属码 4，旧版仍 exit 1 才需要它兜）。
-#   ⚠️ 独立实测：core/src/data-paths.ts 的 `process.exitCode = 3`（R6 fail-loud 点）在
-#   **无 CLI 兜底**的裸消费下不起作用——uncaught throw 强制 exit 1（实测 `SOFAGENT_HOME=/tmp/x
-#   node -e "require('./engine/core/dist/data-paths.js')"` → EXIT=1）。经 CLI 走时由上面的
-#   handler 的 4 决定。R6 该行的去留属独立决策，本项未改。
-#   反测：`SOFAGENT_HOME=/tmp/x node engine/audit/dist/index.js --help` 期望退出码 **4**（非 1、非 3）。
+#   契约：0=全绿 / 1=警告（放行）/ 2=违规（阻断）/ 3=非 git 仓库（cli-quick 口径）/ **4=引擎崩溃**。
+#   v1.4.9 P1-15：崩溃码 3→4——原 3 与「非 git 仓库 ⇒ return 3」撞码（实测两义并存：非 git 目录跑 3、
+#   SOFAGENT_HOME 越界崩溃也跑 3）。坑位同 v1.4.8：node 未捕获异常默认 exit 1 与「1=警告」撞码 ⇒
+#   hook 的 `-eq 1` 分支把崩溃静默放行（fail-open 实测：含密钥 .env 入库）。防线：① CLI 顶部 handler
+#   → exit 4（两 CLI 各自注册；双侧锁 src/__tests__/cli-crash-exit-code.test.ts）；② hook `-ne 0`
+#   兜底；③ stderr 特征扫描降为**旧版引擎兜底**（新版有 4）。反测：`SOFAGENT_HOME=/tmp/x node engine/audit/dist/index.js --help` → **4**（core/data-paths `exitCode=3` 裸消费实测无效，未改）。
 #   ⚠️ v1.4.8 阶段十一补：Release body **顶部与尾部各有一段元说明**（顶部「本节存在性=阶段六定稿必备项」/ 尾部「🔗 尾链…与 GitHub Release body 同源」）——剥时两段都要剥。
 #   ⚠️ 分发命令**须在 bash 下执行**（zsh 不对未加引号的 `$MULTILINE_VAR` 分词 ⇒ publish 收到多行路径报「路径不存在」）。
 # 子项 a: A15 actions 未声明时必须 FAIL（非 fail-open WARN）—— 二次验证确认已返回 FAIL，本项保留为回归锁
