@@ -13,7 +13,7 @@
 #     四插件的 ClawHub manifest（openclaw.plugin.json）version 必须与
 #     同目录 package.json 一致——两份 manifest 独立 bump 必漏改。
 #
-#   断言三：core dist 模板 vs src SSOT（编译产物时效性）
+#   断言三：engine/audit/hooks/ 三文件版本标记 vs SSOT（hook 唯一源的时效性）
 #     engine/core/dist 里编译进模板的 VERSION 插值结果必须与当前 SSOT
 #     一致——dist 落后 = 发出去的包带旧模板（npm 包消费者看到的
 #     hook 版本号旧 4 版这种事故的源头）。
@@ -128,26 +128,31 @@ else
   fi
 fi
 
-# ═══ 断言三：core dist 模板编译时效 ═══
-CORE_DIST="engine/core/dist/config-template.js"
-if [ ! -f "$CORE_DIST" ]; then
-  echo -e "  ${YELLOW}⚠${NC} 断言三：${CORE_DIST} 不存在（未构建？），跳过——构建后本断言生效"
-else
-  DIST_HOOK_VER=$(node -e "
-    const m = require('./${CORE_DIST}');
-    const v = (m.HOOK_TEMPLATE || '').match(/hook v([0-9]+\.[0-9]+\.[0-9]+)/);
-    console.log(v ? v[1] : '');
-  " 2>/dev/null || true)
-  if [ -z "$DIST_HOOK_VER" ]; then
-    echo -e "  ${RED}✗${NC} 断言三：dist HOOK_TEMPLATE 解析失败（模板结构变更？）"
-    DRIFT=$((DRIFT + 1))
-  elif [ "$DIST_HOOK_VER" != "$SSOT_VERSION" ]; then
-    echo -e "  ${RED}✗${NC} 断言三：core dist 模板编译时版本 v${DIST_HOOK_VER} ≠ SSOT v${SSOT_VERSION}——dist 落后，重跑 npm run build（engine/core）"
-    DRIFT=$((DRIFT + 1))
-  else
-    [ "$QUIET" = false ] && echo -e "  ${GREEN}✓${NC} 断言三：core dist 模板编译时效一致（v${DIST_HOOK_VER}）"
-    OK_COUNT=$((OK_COUNT + 1))
+# ═══ 断言三：hook 模板版本标记 vs SSOT ═══
+# v1.4.8 变更：core 的 HOOK_TEMPLATE 已**删除**（它是与 hooks/ 目录「靠人工保持一致」的第二份源，
+# 实际漂移后成为 S51 假红根因；`audit --init` 现读 hooks/ 唯一源）。故本断言改为守**新契约**：
+# engine/audit/hooks/ 三文件的头部版本标记必须与 SSOT 一致——hook 是随包发布的产物，
+# 版本标记落后 = 用户拿到的 hook 自报旧版本（npm 包消费者看到旧版本号这类事故的源头）。
+HOOKS_DIR="engine/audit/hooks"
+DRIFT_HOOKS=0
+for _hf in pre-commit commit-msg post-commit; do
+  _hp="$HOOKS_DIR/$_hf"
+  if [ ! -f "$_hp" ]; then
+    echo -e "  ${RED}✗${NC} 断言三：${_hp} 缺失（hook 唯一源不完整）"
+    DRIFT=$((DRIFT + 1)); DRIFT_HOOKS=1; continue
   fi
+  _hv=$(grep -oE "hook v[0-9]+\.[0-9]+\.[0-9]+" "$_hp" | head -1 | grep -oE "[0-9]+\.[0-9]+\.[0-9]+")
+  if [ -z "$_hv" ]; then
+    echo -e "  ${RED}✗${NC} 断言三：${_hp} 头部无「hook vX.Y.Z」版本标记"
+    DRIFT=$((DRIFT + 1)); DRIFT_HOOKS=1
+  elif [ "$_hv" != "$SSOT_VERSION" ]; then
+    echo -e "  ${RED}✗${NC} 断言三：${_hp} 版本 v${_hv} ≠ SSOT v${SSOT_VERSION}（随包发布的 hook 自报旧版本）"
+    DRIFT=$((DRIFT + 1)); DRIFT_HOOKS=1
+  fi
+done
+if [ "$DRIFT_HOOKS" = "0" ]; then
+  [ "$QUIET" = false ] && echo -e "  ${GREEN}✓${NC} 断言三：hooks/ 三文件版本标记与 SSOT 一致（v${SSOT_VERSION}）"
+  OK_COUNT=$((OK_COUNT + 1))
 fi
 
 # ═══ 断言四：load-chain 双份 handler.ts 同步 ═══

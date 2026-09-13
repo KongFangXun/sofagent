@@ -170,7 +170,7 @@
 } from './data-paths';
 
 // ── 配置模板 ──
-/* @public */ export { CONFIG_TEMPLATE, HOOK_TEMPLATE } from './config-template';
+/* @public */ export { CONFIG_TEMPLATE } from './config-template';
 
 // ── 监控配置 ──
 /* @public */ export {

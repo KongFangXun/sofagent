@@ -18,7 +18,7 @@ import { execFileSync, execSync } from 'child_process';
 import { homedir, platform } from 'os';
 import { randomBytes } from 'crypto';
 import { isatty } from 'tty';
-import { CONFIG_TEMPLATE, HOOK_TEMPLATE, VERSION, generateWatchTemplate, resolveKnowledgeDir, resolveDaemonLog } from '@sofagent/core';
+import { CONFIG_TEMPLATE, VERSION, generateWatchTemplate, resolveKnowledgeDir, resolveDaemonLog } from '@sofagent/core';
 import { writeConfig } from '@sofagent/core';
 import { defaultRules } from '../rules';
 // v1.4.5 T1: hook 落点解析（core.hooksPath 优先）——与 index.ts installHook() 同源
@@ -26,7 +26,7 @@ import { resolveHooksDir } from '../hook-install';
 
 /**
  * hook 模板**唯一源**：`engine/audit/hooks/<name>`（随包发布，`files` 白名单含 hooks/）。
- * ❌ 不再使用内嵌模板常量（HOOK_TEMPLATE / PRE_COMMIT_TEMPLATE / POST_COMMIT_TEMPLATE）——
+ * ❌ 不再使用任何内嵌模板常量——
  *   历史上三份内嵌模板与 hooks/ 目录「靠人工保持一致」，已实际漂移：内嵌 commit-msg 停留在
  *   单信号版本（只比 audit-hash.txt），而 hooks/commit-msg 已是双信号（含源码指纹 + dist 聚合）。
  *   `--init` 装的是内嵌版、`--install-hook` 装的是 hooks/ 版 ⇒ 两条安装路径行为不一致；
