@@ -720,10 +720,17 @@ function mergeWithDefaults(partial: Partial<AuditConfig>): AuditConfig {
   // v1.1.5: 补全 a18/a19（v1.1.4 新增 A18/A19 规则后此处遗漏）
   // 基线规则集合与 runner 统一（共享常量 BASELINE_RULE_KEYS，9 条：a1/a2/a9/a10/a11/a20/a21/a22/a23）
   if (merged.rules) {
+    // 🔴 v1.4.8 修复「双保险变单保险」：本段原先把 merged.rules[key] 改成 true，导致 runner 侧
+    // 的强制点永远看不到 false —— runner.ts 的 `enabled === false` 判断恒假，`suppressedBaselineRules`
+    // 恒为空，`BASELINE_GUARD` 警告**从未输出过**（死代码）。而 runner 单测直接传 config、绕过本层，
+    // 所以单测一直是绿的 —— 典型的「单测绿 / 端到端红」。
+    //
+    // 正解 = **本层不改值、也不重复告警**：runner 对基线规则**无条件 return true**（照旧强制生效），
+    // 同时能读到 false 从而产出 BASELINE_GUARD 警告。**告警单一来源归 runner**，两处不再各说一半。
     for (const key of BASELINE_RULE_KEYS) {
       if (merged.rules[key] === false) {
-        console.warn(`⚠️ 基线规则 ${key.toUpperCase()} 不可禁用，已强制启用（runner 侧亦有强制点）`);
-        merged.rules[key] = true;
+        // 仅记录：值保持 false，交由 runner 强制 + 告警
+        void key;
       }
     }
 
