@@ -25,6 +25,26 @@ import { defaultRules } from '../rules';
 import { resolveHooksDir } from '../hook-install';
 
 /**
+ * hook 模板**唯一源**：`engine/audit/hooks/<name>`（随包发布，`files` 白名单含 hooks/）。
+ * ❌ 不再使用内嵌模板常量（HOOK_TEMPLATE / PRE_COMMIT_TEMPLATE / POST_COMMIT_TEMPLATE）——
+ *   历史上三份内嵌模板与 hooks/ 目录「靠人工保持一致」，已实际漂移：内嵌 commit-msg 停留在
+ *   单信号版本（只比 audit-hash.txt），而 hooks/commit-msg 已是双信号（含源码指纹 + dist 聚合）。
+ *   `--init` 装的是内嵌版、`--install-hook` 装的是 hooks/ 版 ⇒ 两条安装路径行为不一致；
+ *   在「PATH 前置 wrapper」场景（acceptance 场景即如此）内嵌版的入口解析会解析到 wrapper 脚本，
+ *   哈希恒不匹配 ⇒ fail-closed 拦截 ⇒ audit 不执行 ⇒ A18 类场景**假红**（S51 实证）。
+ * 读不到即抛错（fail-closed）：audit 包必然带 hooks/，静默回退旧模板会重新引入漂移。
+ */
+function readHookTemplate(name: 'pre-commit' | 'commit-msg' | 'post-commit'): string {
+  const p = join(__dirname, '..', '..', 'hooks', name);
+  try {
+    return readFileSync(p, 'utf-8');
+  } catch (err) {
+    throw new Error(`hook 模板缺失: ${p}（audit 包应随包发布 hooks/ 目录）——${err instanceof Error ? err.message : String(err)}`);
+  }
+}
+
+
+/**
  * 仓库状态分类（v1.0.5 新增）
  * 来源：gstack 的 bin/gstack-first-task-detect
  */
@@ -547,7 +567,7 @@ exit 0
           }
         } catch { /* 备份失败不阻塞安装 */ }
       }
-      writeFileSync(preCommitPath, PRE_COMMIT_TEMPLATE, 'utf-8');
+      writeFileSync(preCommitPath, readHookTemplate('pre-commit'), 'utf-8');
       chmodSync(preCommitPath, 0o755);
       console.log('  → .git/hooks/pre-commit 已安装（.sofagent/ 永不入库主防线）');
     }
@@ -588,7 +608,7 @@ exit 0
       console.log(`  → commit-msg hook 已安装（检测到 sofagent 标识），跳过`);
       stepSkipped++;
     } else {
-      writeFileSync(hookPath, HOOK_TEMPLATE, 'utf-8');
+      writeFileSync(hookPath, readHookTemplate('commit-msg'), 'utf-8');
       chmodSync(hookPath, 0o755);
       console.log(`  → 检测到 git 仓库: ${gitDir.replace('/.git', '')}`);
       console.log('  → .git/hooks/commit-msg 已安装（可执行，含无声失败保护）');
@@ -810,7 +830,7 @@ exit 0
     if (hasPostCommitHook) {
       console.log('  → post-commit hook 已安装（检测到 sofagent 标识），跳过');
     } else {
-      writeFileSync(postCommitPath, POST_COMMIT_TEMPLATE, 'utf-8');
+      writeFileSync(postCommitPath, readHookTemplate('post-commit'), 'utf-8');
       chmodSync(postCommitPath, 0o755);
       console.log('  → .git/hooks/post-commit 已安装（--no-verify 绕过检测）');
     }
