@@ -41,7 +41,7 @@ console.log(regCount);
 " 2>/dev/null || echo "")
 
 DSH_COUNT=0
-for d in engine/dsh-plugins/cordis-plugin-sofagent-*; do
+for d in engine/dsh-plugins/cordis-plugin-sofagent*; do
   [ -d "$d" ] && DSH_COUNT=$((DSH_COUNT + 1))
 done
 OC_COUNT=0

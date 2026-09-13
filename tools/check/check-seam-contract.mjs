@@ -166,6 +166,17 @@ function discoverDshPlugins(root) {
     .sort();
 }
 
+/**
+ * 聚合插件（裸名 cordis-plugin-sofagent）⇄ 角色名（'suite'）双向映射的唯一出处。
+ * 剥前缀规则对其余插件成立（cordis-plugin-sofagent-audit → audit），对裸名不成立
+ * （剥完为空）——聚合层用**角色名**作词表键，与补丁条目 id sofagent-suite /
+ * 服务名 sofagent.suite 同语义。两处消费（正向推导 / 词表反查）都走这里，避免各写各的。
+ */
+const AGGREGATE_DIR = 'cordis-plugin-sofagent';
+const AGGREGATE_ROLE = 'suite';
+const shortOfDir = (dir) => (dir === AGGREGATE_DIR ? AGGREGATE_ROLE : dir.replace(/^cordis-plugin-sofagent-/, ''));
+const dirOfShort = (short) => (short === AGGREGATE_ROLE ? AGGREGATE_DIR : `cordis-plugin-sofagent-${short}`);
+
 function discoverOpenclawPlugins(root) {
   const dir = path.join(root, OPENCLAW_PLUGINS_DIR);
   if (!fs.existsSync(dir)) return [];
@@ -380,7 +391,7 @@ function runChecks(root, opts = {}) {
   const seenDsh = new Set();
   for (const dir of dshPlugins) {
     const base = path.join(root, DSH_PLUGINS_DIR, dir);
-    const short = dir.replace(/^cordis-plugin-sofagent-/, '');
+    const short = shortOfDir(dir);
     seenDsh.add(short);
 
     const tsPath = path.join(base, 'src', 'index.ts');
@@ -476,7 +487,7 @@ function runChecks(root, opts = {}) {
     }
   }
   for (const p of vocabDshPlugins) {
-    if (!seenDsh.has(p)) N(SEAMS_MD, `词表登记插件「${p}」在文件系统里不存在（${DSH_PLUGINS_DIR}/cordis-plugin-sofagent-${p}/）`);
+    if (!seenDsh.has(p)) N(SEAMS_MD, `词表登记插件「${p}」在文件系统里不存在（${DSH_PLUGINS_DIR}/${dirOfShort(p)}/）`);
   }
 
   // ── OpenClaw 侧 ────────────────────────────────────────

@@ -1,10 +1,10 @@
 {
-  "name": "cordis-plugin-sofagent-suite",
+  "name": "cordis-plugin-sofagent",
   "version": "1.4.7",
   "engines": {
     "node": ">=18"
   },
-  "description": "一次挂载 sofagent 全套能力（聚合编排层，只编排不重实现）（seam: non-seam:plugin-suite）——一次性挂载 9 个原子插件（sofagent 品牌插件 · 主色 #16B8F3）",
+  "description": "一次挂载 sofagent 全套能力（聚合编排层，只编排不重实现）（seam: non-seam:plugin-suite）——一次性挂载 9 个原子插件",
   "private": true,
   "license": "MIT",
   "author": "KongFangXun",

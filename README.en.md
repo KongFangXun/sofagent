@@ -201,7 +201,7 @@ sofagent-audit --doctor    # verify the environment (optional)
 | What I want | Which channel | What I get |
 |---|---|---|
 | Everything, via the npm ecosystem | `npm i -g sofagent` (npm bare-name umbrella package `engine/umbrella`) | `@sofagent/audit` + `@sofagent/mcp` + `@sofagent/orchestrator` + `@sofagent/daemon` |
-| Everything, via DSH host mounting | mount one `cordis-plugin-sofagent-suite` entry in the host profile's `bundles` | all atomic plugins declared by that aggregator (one entry aggregates them) |
+| Everything, via DSH host mounting | mount one `cordis-plugin-sofagent` entry in the host profile's `bundles` | all atomic plugins declared by that aggregator (one entry aggregates them) |
 
 ## Usage
 
@@ -268,7 +268,7 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # load the securit
 
 - DeepSeek Harness (upstream repository): <https://github.com/deepseek-ai/deepseek-harness>
 - Cordis runtime: <https://github.com/cordiverse/cordis>
-- 10 `cordis-plugin-sofagent-*` plugin sources (9 atomic + 1 aggregate): [`engine/dsh-plugins/`](./engine/dsh-plugins/)
+- 10 `cordis-plugin-sofagent*` plugin sources (9 atomic + 1 aggregate): [`engine/dsh-plugins/`](./engine/dsh-plugins/)
 
 | You want to know | Where |
 |:---------|:--------|

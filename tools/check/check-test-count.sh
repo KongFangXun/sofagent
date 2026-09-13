@@ -225,12 +225,14 @@ WORKSPACE_COUNT=$(grep -cE '^[[:space:]]*"engine/(harness|ontology|eval|core|thi
 # 任务八方案A（2026-08-29）：README 包数口径升级为双口径「13 模块包 + 14 插件（10 DSH + 4 OpenClaw）」。
 # 插件数 SSOT = 结构性判据（插件命名前缀），**非目录计数**——
 # engine/dsh-plugins/ 下还存放基座包 plugin-kit 与非插件资产，数目录会把非插件多计进来。
-# 本判据与 tools/check/check-storefront.sh:44 的 `for d in engine/dsh-plugins/cordis-plugin-sofagent-*`
+# 本判据与 tools/check/check-storefront.sh:44 的 `for d in engine/dsh-plugins/cordis-plugin-sofagent*`
 # 同源同口径（一个口径两处消费，避免各数各的）；模块包 SSOT 仍为 WORKSPACE_COUNT。
-# v1.4.8 第 7 批：DSH 插件 9→10（engine/dsh-plugins/cordis-plugin-sofagent-suite 入列），
-#   插件合计 13→14——README/README.en.md 的「14 插件 / 14 plugins」同批更新。
+# ⚠️ glob 一律写 `cordis-plugin-sofagent*`（**不带尾横线**）：聚合插件包名是裸名
+#   cordis-plugin-sofagent，带尾横线的写法定会把第 10 个插件漏数（曾实锤）。
+# v1.4.8 第 7 批：DSH 插件 9→10（聚合插件入列），插件合计 13→14——
+#   README/README.en.md 的「14 插件 / 14 plugins」同批更新。
 DSH_PLUGIN_COUNT=0
-for d in engine/dsh-plugins/cordis-plugin-sofagent-*; do
+for d in engine/dsh-plugins/cordis-plugin-sofagent*; do
   [ -d "$d" ] && DSH_PLUGIN_COUNT=$((DSH_PLUGIN_COUNT + 1))
 done
 DSH_PLUGIN_COUNT=${DSH_PLUGIN_COUNT:-0}

@@ -28,7 +28,7 @@
 // 两类清单条目（v1.4.8 第8批新增第二类）：
 //   · kind 缺省 / "bridge" ——**桥接型**原子插件：桥接一个 @sofagent/* 能力包
 //     （bridgePkg + bridgeApi 必填）→ optionalDependencies = { <bridgePkg>: version }。
-//   · kind = "suite"        ——**聚合型**插件（cordis-plugin-sofagent-suite）：自身零
+//   · kind = "suite"        ——**聚合型**插件（包名 = 裸名 cordis-plugin-sofagent）：自身零
 //     @sofagent/* 依赖、只逐个挂载 9 个原子插件 → **bridgePkg / bridgeApi 语义不适用**
 //     （它不桥接任何单个能力包），改由 `suite` 字段声明「挂哪些兄弟插件」，
 //     → optionalDependencies = { <每个兄弟插件 id>: version }。
@@ -86,9 +86,6 @@ const KEY_ORDER = [
   'devDependencies',
   'dsh',
 ];
-
-/** 品牌色（9 个原子插件的既有值；第8批的聚合插件 harness 同源取用，故现为 10 个插件共用此值） */
-const BRAND_COLOR = '#16B8F3';
 
 /** 清单条目类别：bridge（桥接单个 @sofagent/* 能力包，缺省）/ suite（聚合编排兄弟插件） */
 const KIND_BRIDGE = 'bridge';
@@ -200,27 +197,38 @@ function loadManifest(root) {
   return plugins;
 }
 
-/** 插件短名：cordis-plugin-sofagent-audit → audit */
-const shortOf = (id) => id.replace(/^cordis-plugin-sofagent-/, '');
+/**
+ * 插件短名 / 角色名（消费点：cordis.patch.yml 的条目 id 后缀）。
+ *   · 原子插件 → 剥前缀：cordis-plugin-sofagent-audit → audit
+ *   · 聚合插件 → 包名是**裸名** cordis-plugin-sofagent，剥完前缀为空、**无派生短名**，
+ *     故取它的角色名 = 自己的 kind（`suite`）。同一个 "suite" 语义在三处同形：
+ *     补丁层条目 id `sofagent-suite` / 服务名 `sofagent.suite` / SEAMS.md 词表键 `suite`
+ *     ——短名标识「挂载形态」，与包身份解耦（包名换裸名不改角色）。
+ */
+const AGGREGATE_ID = 'cordis-plugin-sofagent';
+const shortOf = (id) => (id === AGGREGATE_ID ? KIND_SUITE : id.replace(/^cordis-plugin-sofagent-/, ''));
 
 /**
- * 描述尾段（patch / package.json 两处消费，仅品牌措辞不同）：
- *   · bridge 型 → 「桥接 <bridgePkg> <bridgeApi>（…）」
- *   · suite  型 → 「一次性挂载 N 个原子插件（…）」——聚合层不桥接任何单个能力包
+ * 描述尾段（patch / package.json 两处消费，同形）：
+ *   · bridge 型 → 「桥接 <bridgePkg> <bridgeApi>」
+ *   · suite  型 → 「一次性挂载 N 个原子插件」——聚合层不桥接任何单个能力包
+ * 刻意不带品牌色等装饰后缀：插件描述只回答「这个插件干什么」；
+ * 品牌色是**运行时配置项**（kit 注册的 settings 字段 / OpenClaw configSchema 属性），
+ * 不属清单文案。
  */
-function tailOf(entry, brandLabel) {
+function tailOf(entry) {
   if (entry.kind === KIND_SUITE) {
-    return `一次性挂载 ${entry.suite.length} 个原子插件（${brandLabel}）`;
+    return `一次性挂载 ${entry.suite.length} 个原子插件`;
   }
-  return `桥接 ${entry.bridgePkg} ${entry.bridgeApi}（${brandLabel}）`;
+  return `桥接 ${entry.bridgePkg} ${entry.bridgeApi}`;
 }
 
 /** 生成 cordis.patch.yml 全文 */
 function renderPatch(entry, version) {
   const short = shortOf(entry.id);
-  const desc = `${entry.description}——${tailOf(entry, `sofagent 品牌 · ${BRAND_COLOR}`)}`;
+  const desc = `${entry.description}——${tailOf(entry)}`;
   return [
-    `# sofagent ${entry.id} bundle patch v${version}——sofagent 品牌插件，注册为 DSH profile layer`,
+    `# sofagent ${entry.id} bundle patch v${version}——注册为 DSH profile layer`,
     '- insert:',
     `    - id: sofagent-${short}`,
     `      name: '${entry.id}'`,
@@ -246,7 +254,7 @@ function generatedSegments(entry, version) {
       ? `v1.4.8 第8批：src/index.ts 逐个 await import('<兄弟插件 id>')（懒加载 + 逐个降级不抛——缺任一原子插件只记入 failed 数组，不整挂失败），聚合层自身零 @sofagent/* 依赖；对齐 root package.json F-18 optionalDependencies 先例。`
       : `v1.4.5 T6 (R4)：src/index.ts 惰性 await import('${entry.bridgePkg}')（懒加载 + 缺依赖降级不抛；v1.4.8 起该样板由 @sofagent/dsh-plugin-kit 统一封装），此前未声明任何依赖——对齐 root package.json F-18 optionalDependencies 先例。`;
   return {
-    description: `${entry.description}（seam: ${entry.seam}）——${tailOf(entry, `sofagent 品牌插件 · 主色 ${BRAND_COLOR}`)}`,
+    description: `${entry.description}（seam: ${entry.seam}）——${tailOf(entry)}`,
     sofagent: {
       type: 'dsh-plugin',
       family: 'cordis',
@@ -342,14 +350,14 @@ function suiteCheck(entry, plugins, root) {
   const allIds = plugins.map((e) => e.id);
   const idSet = new Set(allIds);
   // 判据 ④ 的期望集：清单里**除聚合层自身以外**的全部条目。
-  // （当前只有一个聚合层，故等价于「除 harness 自身外每一项」；若将来新增第二个聚合层，
+  // （当前只有一个聚合层，故等价于「除聚合层自身外每一项」；若将来新增第二个聚合层，
   //   本实现把「聚合层」互相排除——聚合层只编排原子插件，嵌套聚合会引入递归风险。）
   const expected = allIds.filter((id) => id !== entry.id && !plugins.find((e) => e.id === id && e.kind === KIND_SUITE));
   const tsSet = new Set(tsSuite);
   const mfSet = new Set(manifestSuite);
   const problems = [];
 
-  // 判据 ⑤：不自挂（自挂 = harness 挂 harness，无限递归）
+  // 判据 ⑤：不自挂（自挂 = 聚合层挂聚合层，无限递归）
   if (tsSuite.includes(entry.id)) {
     problems.push(`不自挂：src SUITE 含自身「${entry.id}」——聚合层只能编排原子插件，自挂即递归`);
   }
@@ -487,7 +495,7 @@ function planOutputs(root) {
   const dir = path.join(root, DSH_PLUGINS_DIR);
   const onDisk = fs
     .readdirSync(dir, { withFileTypes: true })
-    .filter((e) => e.isDirectory() && e.name.startsWith('cordis-plugin-sofagent-'))
+    .filter((e) => e.isDirectory() && (e.name === AGGREGATE_ID || e.name.startsWith('cordis-plugin-sofagent-')))
     .map((e) => e.name)
     .sort();
   const inManifest = plugins.map((e) => e.id).sort();

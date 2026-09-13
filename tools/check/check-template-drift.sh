@@ -177,7 +177,7 @@ if [ ! -d "$DSH_PLUGIN_DIR" ]; then
 fi
 A5_FAIL=0
 A5_TOTAL=0
-for _patch in "$DSH_PLUGIN_DIR"/cordis-plugin-sofagent-*/cordis.patch.yml; do
+for _patch in "$DSH_PLUGIN_DIR"/cordis-plugin-sofagent*/cordis.patch.yml; do
   [ -f "$_patch" ] || continue
   A5_TOTAL=$((A5_TOTAL + 1))
   _plug=$(basename "$(dirname "$_patch")")
@@ -194,7 +194,7 @@ for _patch in "$DSH_PLUGIN_DIR"/cordis-plugin-sofagent-*/cordis.patch.yml; do
   fi
 done
 if [ "$A5_TOTAL" -eq 0 ]; then
-  echo -e "  ${RED}✗${NC} 断言五：${DSH_PLUGIN_DIR} 下找不到任何 cordis-plugin-sofagent-*/cordis.patch.yml——搜索面为空，拒绝假绿"
+  echo -e "  ${RED}✗${NC} 断言五：${DSH_PLUGIN_DIR} 下找不到任何 cordis-plugin-sofagent*/cordis.patch.yml——搜索面为空，拒绝假绿"
   exit 2
 fi
 if [ "$A5_FAIL" -eq 0 ]; then

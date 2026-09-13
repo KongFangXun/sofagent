@@ -92,7 +92,7 @@ grep -rhoE "['\"][a-z]+/[a-z-]+['\"]" "$B/dsh-hook-protocol/lib/" | tr -d "\"'" 
 
 | profile | bundles 里的 sofagent 项 | 差异理由（该 profile `cordis.patch.yml` 自述） |
 | --- | --- | --- |
-| `web` | `cordis-plugin-sofagent-suite`（一次挂全套原子插件） | 有 WebUI 服务（`settings` / `dynamicCordisRunner`） |
+| `web` | `cordis-plugin-sofagent`（一次挂全套原子插件） | 有 WebUI 服务（`settings` / `dynamicCordisRunner`） |
 | `headless` | 只挂 `cordis-plugin-sofagent-audit`，patch 里 `inject: []` | headless 无上述 WebUI 服务——插件默认 patch inject 了这两个服务会导致 pending 启动失败 |
 
 > 巡检时若见某 profile 挂得少，先读该 profile 的 `cordis.patch.yml` 自述与 `bundles`，**不直接判为缺口**。

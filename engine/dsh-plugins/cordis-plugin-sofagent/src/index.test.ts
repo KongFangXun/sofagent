@@ -1,5 +1,5 @@
 // ============================================================
-// cordis-plugin-sofagent-suite · 插件单测（v1.4.8 第8批 · 聚合编排层）
+// cordis-plugin-sofagent · 插件单测（v1.4.8 第8批 · 聚合编排层）
 // ============================================================
 // 断言面 = 第 8 批的三条硬约束：
 //   ① 只编排不重实现 —— 注册的服务只有 9 个原子插件 + 本层的 sofagent.suite
@@ -17,8 +17,8 @@ const HERE = path.dirname(fileURLToPath(import.meta.url));
 const PLUGIN_DIR = path.resolve(HERE, '..');
 const SIBLINGS_DIR = path.resolve(PLUGIN_DIR, '..');
 
-/** 聚合层 apply 的结果快照（与 src/index.ts 的 HarnessReport 同形） */
-interface HarnessReport {
+/** 聚合层 apply 的结果快照（与 src/index.ts 的 SuiteReport 同形） */
+interface SuiteReport {
   loaded: string[];
   failed: Array<{ name: string; reason: string }>;
   total: number;
@@ -102,14 +102,14 @@ function makeCtx(opts: CtxOptions = {}) {
 }
 
 /** 取聚合层自己 provide 的报告 */
-function reportOf(ctx: ReturnType<typeof makeCtx>): HarnessReport {
-  return ctx.services.get('sofagent.suite') as HarnessReport;
+function reportOf(ctx: ReturnType<typeof makeCtx>): SuiteReport {
+  return ctx.services.get('sofagent.suite') as SuiteReport;
 }
 
-describe('cordis-plugin-sofagent-suite', () => {
+describe('cordis-plugin-sofagent', () => {
   it('插件元数据完整（id/version/seam/description 与 package.json SSOT 对齐）', () => {
     const pkg = require('../package.json') as { version: string };
-    expect(pluginMeta.id).toBe('cordis-plugin-sofagent-suite');
+    expect(pluginMeta.id).toBe('cordis-plugin-sofagent');
     expect(pluginMeta.version).toBe(pkg.version); // SSOT 对齐：版本跟随主版本（读 package.json）
     expect(pluginMeta.seam).toBe('non-seam:plugin-suite');
     expect(pluginMeta.description).toContain(`seam: ${pluginMeta.seam}`); // 描述不滞后于契约
@@ -120,7 +120,7 @@ describe('cordis-plugin-sofagent-suite', () => {
       plugins: Array<{ id: string; kind?: string; capability: string; suite?: string[] }>;
     };
     const entry = manifest.plugins.find((p) => p.id === pluginMeta.id);
-    expect(entry, 'plugins.json 未登记 harness').toBeDefined();
+    expect(entry, 'plugins.json 未登记聚合条目').toBeDefined();
     expect(entry!.kind).toBe('suite'); // 聚合型条目（bridgePkg/bridgeApi 语义不适用）
     expect(capability).toBe(entry!.capability);
     expect(suite).toHaveLength(9);
