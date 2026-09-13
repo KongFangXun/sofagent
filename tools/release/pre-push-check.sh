@@ -9,7 +9,7 @@
 #   - shellcheck.yml        → shellcheck 所有 .sh
 #   - verify.yml            → verify.sh
 #   - sofagent-audit.yml    → sofagent-audit --silent --diff HEAD~1..HEAD
-#   + check-version.sh      → 版本号一致性
+#   + check-version.sh      → 版本号一致性（v1.4.9 G-2③：发版窗口自动加 --strict，warning 也阻断）
 #   + check-docs.sh         → 文档预算+死链+Skill 行数
 #   + check-literals.sh     → 手填字面量对账（真相源 vs 文档手抄件）
 #   + test-count.sh         → 各包测试数汇总（任一包失败即拦截）
@@ -133,15 +133,45 @@ fi
 
 # ════════════════════════════════════════
 # 2. 版本号一致性（check-version.sh）
+#   v1.4.9 G-2③：**发版窗口默认开 --strict**（warning 也阻断）。
+#   动机（实测）：v1.4.8 发版批里 check-version §15 已精确抓到「ROADMAP 版本头描述与
+#   CHANGELOG 标题不一致」，但只计 WARNING、不带 --strict 即放行 ⇒ 已知告警随发版出门
+#   （即 P1-7 的根因形态：门禁看见了，却没拦住）。窗口内告警必须当场裁决。
+#   窗口判据（与 check-version §27「待发版窗口态」同源，不另造口径）：
+#     已发版态（本地 tag v{SSOT} 在位）**且** 下一 patch 版开发日志在位
+#     ⇒ 版本一致性天然处中间态，正是「告警必须当场裁决」的时刻。
+#   窗口外维持旧行为（不带 --strict，warning 只提示）——避免把非发版期的
+#   合法中间态告警变成日常推阻。
+#   退出码语义：0=全绿 · 1=有 ERROR（不一致）· 2=--strict 下有 WARNING；1/2 均判 FAIL。
 # ════════════════════════════════════════
 if [ "$MINIMAL" = false ]; then
   echo -e "\n${BOLD}── 2. 版本号一致性 ──${NC}"
-  if bash tools/check/check-version.sh >/dev/null 2>&1; then
-    check_pass "check-version.sh 全部通过"
-  else
-    check_fail "check-version.sh 有不一致"
-    bash tools/check/check-version.sh 2>&1 | grep "❌" | head -10
+  _cv_strict_args=""
+  _cv_ssot_ver=$(node -p "require('./package.json').version" 2>/dev/null || echo "")
+  if [ -n "${_cv_ssot_ver}" ]; then
+    # 注意：取 major.minor 必须用 %.* （最短后缀 ".patch"）——写成 %.*.* 会剥到只剩 major
+    # （"1.4.8" → "1"，实测踩过），窗口判据随之失效。
+    _cv_2seg="${_cv_ssot_ver%.*}"
+    _cv_patch="${_cv_ssot_ver##*.}"
+    _cv_next="${_cv_2seg}.$((_cv_patch + 1))"
+    _cv_devlog="docs/changelog/v${_cv_2seg}/v${_cv_next}.md"
+    if git rev-parse "v${_cv_ssot_ver}" >/dev/null 2>&1 && [ -s "${_cv_devlog}" ]; then
+      _cv_strict_args="--strict"
+      echo -e "  ${YELLOW}发版窗口态${NC}（tag v${_cv_ssot_ver} 在位 + v${_cv_next} 开发日志 ${_cv_devlog}）——check-version 以 --strict 跑（warning 也阻断）"
+    fi
   fi
+  _cv_out=$(bash tools/check/check-version.sh ${_cv_strict_args} 2>&1); _cv_rc=$?
+  if [ "${_cv_rc}" -eq 0 ]; then
+    check_pass "check-version.sh 全部通过${_cv_strict_args:+（--strict 发版窗口，warning 已清零）}"
+  elif [ "${_cv_rc}" -eq 2 ]; then
+    check_fail "check-version.sh --strict：有 warning 未裁决（发版窗口不放行）"
+    echo "${_cv_out}" | grep -E "⚠|⏭️" | head -10 | sed 's/^/    /'
+    echo "    裁决口径：真问题 → 当场修；合法窗口态 → 应计「降级跳过（⏭️）」而非「警告（⚠）」（见 check-version §27 先例与发版 SOP「SKIP 数逐条裁决」步骤）"
+  else
+    check_fail "check-version.sh 有不一致（rc=${_cv_rc}）"
+    echo "${_cv_out}" | grep "❌" | head -10 | sed 's/^/    /'
+  fi
+  unset _cv_out _cv_rc _cv_strict_args _cv_ssot_ver _cv_2seg _cv_patch _cv_next _cv_devlog
 fi
 
 # ════════════════════════════════════════

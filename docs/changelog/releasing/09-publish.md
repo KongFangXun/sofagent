@@ -97,6 +97,38 @@ bash tools/check/check-test-count.sh --quiet
 bash tools/check/check-storefront.sh
 # 期望 FAIL=0。FAIL = 仓外门面漂移，gh repo edit 修正后重跑
 
+# ── 步骤二·补：SKIP / 降级跳过 数逐条裁决（v1.4.9 G-2② 新增 · **必做**）──
+# 为什么要有这一步（实测根因，不是形式主义）：「门禁绿 = 增量为零 ≠ 债清零」——
+#   ① 锚定串不命中即「天然通过」（v1.4.9 G-1 已修）
+#   ② 文件级前置过滤静默跳过（check-silent-catch：617 个 .ts 跳过 167 个，其中 83 个含 177 处 catch 零覆盖）
+#   ③ 存量基线豁免（silent-catch-baseline.json 304 条）
+#   ④ 已知告警只计 WARNING 即放行——v1.4.8 发版批里 check-version §15 已精确抓到 ROADMAP 版本头
+#      描述错版，却因「非 --strict」随发版出门（= P1-7 根因）。
+# 共性：跳过是看不见的。故每个门禁结尾强制打印机器可读覆盖度行，本步逐条裁定并留档。
+for c in check-docs check-version check-storefront check-readme-parity; do
+  bash "tools/check/${c}.sh" > "/tmp/${c}.log" 2>&1
+done
+# 慢门禁（含 npm test）：非 quiet 跑一次才有覆盖度行（--quiet 契约只输出 OK/FAIL，不追加行）
+bash tools/check/check-test-count.sh > /tmp/check-test-count.log 2>&1
+node tools/check/check-silent-catch.mjs > /tmp/check-silent-catch.log 2>&1
+grep -h '^\[check:coverage\]' /tmp/check-*.log
+# 🔴 验收口径：`skipped=0` 也要留一行「本脚本本轮 0 跳过」——否则「没跑」与「跑了没跳过」不可区分。
+# 裁决表（逐条填，禁止空话；本表随发版汇报留档）：
+#   | 脚本 | skipped | 跳过项（逐条列） | 类别 | 处置 |
+#   | ---- | ------- | ---------------- | ---- | ---- |
+#   | ...  | ...     | ...              | ...  | ...  |
+# 类别口径（三选一，不许含糊）：
+#   真问题     → 当场修，不得进发版产物
+#   合法窗口态 → 注明「随 push+tag+publish 自然消解」或「下版 vX.Y.Z 收敛」
+#   已知盲区   → 注明收敛计划版本（例：check-silent-catch 前置过滤 167 文件，登记表 tools/check/silent-catch-prefilter-exempt.json）
+
+# ── 发版窗口 --strict 默认开（v1.4.9 G-2③）──
+# pre-push-check.sh 第 2 步在**发版窗口**（tag v{SSOT} 在位 + 下一 patch 版开发日志在位）
+# 自动给 check-version 加 --strict：warning 也阻断（exit 2 → FAIL）。
+# 窗口外维持旧行为（warning 只提示），避免把非发版期的合法中间态告警变成日常推阻。
+# 拿到 exit 2 时的裁决路径：真问题当场修；合法窗口态应计入「降级跳过（⏭️）」而非
+# 「警告（⚠）」——check-version §27 的待发版窗口白名单即此形态的既有先例。
+
 # CI shellcheck workflow 单独跑（pre-push-check 内含，但 CI 扫描范围可能不同）
 shellcheck engine/scripts/*.sh tools/*.sh install.sh
 
