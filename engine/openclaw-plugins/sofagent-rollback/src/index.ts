@@ -2,7 +2,7 @@
 // 出错逆序撤销：sofagent_rollback 工具做 git snapshot → 逆序回滚（effect disposer 语义），
 // 复用 @sofagent/core 的 snapshot 能力（平台无关零重写）。
 // 对应 DSH 插件 cordis-plugin-sofagent-rollback 的 OpenClaw 形态。
-// 品牌色 #16B8F3。API 分级：/* @public */ 导出对 OpenClaw 运行时契约锁定。
+// API 分级：/* @public */ 导出对 OpenClaw 运行时契约锁定。
 
 
 /* @public */ export interface RollbackPluginMeta {

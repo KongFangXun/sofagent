@@ -3,7 +3,6 @@
 //   L1 core-rules.md（核心铁律）· L2 think.md（反思区）· L3 fde.md（用户规则）· L4 knowledge/（知识库）
 // 复用 @sofagent/harness 的 buildConstrainedSystemPrompt（npm API 场景同源实现），
 // 与 engine/hooks/sofagent-load-chain（OpenClaw hook 形态）职责互补、不合并。
-// 品牌色 #16B8F3（sofagent 主色）。
 // API 分级：/* @public */ 导出对 OpenClaw 运行时契约锁定（register 入口 + pluginMeta）。
 
 

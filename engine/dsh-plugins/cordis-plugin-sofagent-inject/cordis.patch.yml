@@ -1,8 +1,8 @@
-# sofagent cordis-plugin-sofagent-inject bundle patch v1.4.7——sofagent 品牌插件，注册为 DSH profile layer
+# sofagent cordis-plugin-sofagent-inject bundle patch v1.4.7——注册为 DSH profile layer
 - insert:
     - id: sofagent-inject
       name: 'cordis-plugin-sofagent-inject'
       inject: [settings, dynamicCordisRunner]
       config:
         seam: "agent/pre-step"    # 语义：模型看到输入前注入四层加载链约束
-        description: "启动注入企业约束——四层加载链——桥接 @sofagent/harness buildConstrainedSystemPrompt（sofagent 品牌 · #16B8F3）"
+        description: "启动注入企业约束——四层加载链——桥接 @sofagent/harness buildConstrainedSystemPrompt"

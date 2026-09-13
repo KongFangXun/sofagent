@@ -4,12 +4,12 @@ slug: cordis-plugin-sofagent-evolve
 version: 1.4.7
 displayName: cordis-plugin-sofagent-evolve
 description: >
-  经验沉淀——think.md 反思 + Dream Cycle + evolve + instinct→skill + refine（seam: turn/end）——桥接 @sofagent/think generateThinkEntry（sofagent 品牌插件 · 主色 #16B8F3）——DSH（DeepSeek Harness）cordis plugin。sofagent 约束层在 DeepSeek Harness 生态的插件形态。
+  经验沉淀——think.md 反思 + Dream Cycle + evolve + instinct→skill + refine（seam: turn/end）——桥接 @sofagent/think generateThinkEntry——DSH（DeepSeek Harness）cordis plugin。sofagent 约束层在 DeepSeek Harness 生态的插件形态。
 ---
 
 # cordis-plugin-sofagent-evolve
 
-经验沉淀——think.md 反思 + Dream Cycle + evolve + instinct→skill + refine（seam: turn/end）——桥接 @sofagent/think generateThinkEntry（sofagent 品牌插件 · 主色 #16B8F3）
+经验沉淀——think.md 反思 + Dream Cycle + evolve + instinct→skill + refine（seam: turn/end）——桥接 @sofagent/think generateThinkEntry
 
 ## 用途
 

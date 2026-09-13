@@ -2,7 +2,7 @@
   "name": "sofagent-audit",
   "version": "1.4.7",
   "private": true,
-  "description": "变更机器审阅——24 规则 + git diff 硬证据 + 危险工具拦截（before_tool_call），品牌色 #16B8F3",
+  "description": "变更机器审阅——24 规则 + git diff 硬证据 + 危险工具拦截（before_tool_call）",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "openclaw": {

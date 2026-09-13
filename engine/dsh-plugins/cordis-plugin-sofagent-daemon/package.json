@@ -4,7 +4,7 @@
   "engines": {
     "node": ">=18"
   },
-  "description": "7×24 巡检 + 健康监测 + webhook 推送（seam: non-seam:host-process）——桥接 @sofagent/daemon startCron（sofagent 品牌插件 · 主色 #16B8F3）",
+  "description": "7×24 巡检 + 健康监测 + webhook 推送（seam: non-seam:host-process）——桥接 @sofagent/daemon startCron",
   "private": true,
   "license": "MIT",
   "author": "KongFangXun",

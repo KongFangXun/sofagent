@@ -1,8 +1,8 @@
-# sofagent cordis-plugin-sofagent-rollback bundle patch v1.4.7——sofagent 品牌插件，注册为 DSH profile layer
+# sofagent cordis-plugin-sofagent-rollback bundle patch v1.4.7——注册为 DSH profile layer
 - insert:
     - id: sofagent-rollback
       name: 'cordis-plugin-sofagent-rollback'
       inject: [settings, dynamicCordisRunner]
       config:
         seam: "agent/error"    # 语义：Agent 出错 → git snapshot 逆序撤销
-        description: "出错逆序撤销——git snapshot → effect disposer——桥接 @sofagent/core getHistoryFilePath（sofagent 品牌 · #16B8F3）"
+        description: "出错逆序撤销——git snapshot → effect disposer——桥接 @sofagent/core getHistoryFilePath"

@@ -2,7 +2,7 @@
 // 经验沉淀：sofagent_evolve 工具生成 think.md 反思条目（复用 @sofagent/think 的 generateThinkEntry，
 // 平台无关零重写）+ before_prompt_build 注入 think.md 反思区（进化闭环的 OpenClaw 形态）。
 // 对应 DSH 插件 cordis-plugin-sofagent-evolve 的 OpenClaw 形态。
-// 品牌色 #16B8F3。API 分级：/* @public */ 导出对 OpenClaw 运行时契约锁定。
+// API 分级：/* @public */ 导出对 OpenClaw 运行时契约锁定。
 
 
 /* @public */ export interface EvolvePluginMeta {

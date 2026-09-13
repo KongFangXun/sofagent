@@ -44,7 +44,7 @@ export interface SofagentPluginEntry {
 export interface SofagentPluginOptions extends SofagentPluginEntry {
   /** 品牌色，默认 #16B8F3 */
   brandColor?: string;
-  /** dynamicCordisRunner.define 的 purpose 文案，默认 `${description}（品牌色 <brandColor>）` */
+  /** dynamicCordisRunner.define 的 purpose 文案，默认 = description */
   purpose?: string;
   /** 动态插件 host main() 返回的 message，默认 = description */
   readyMessage?: string;
@@ -107,7 +107,7 @@ export function createSofagentPlugin(options: SofagentPluginOptions, hostPkg?: S
   // 短名/服务名/日志前缀：cordis-plugin-sofagent-audit → audit
   const short = id.replace(/^cordis-plugin-sofagent-/, '');
   const brandColor = options.brandColor ?? DEFAULT_BRAND_COLOR;
-  const purpose = options.purpose ?? `${description}（品牌色 ${brandColor}）`;
+  const purpose = options.purpose ?? description;
   const readyMessage = options.readyMessage ?? description;
   const settingsExtra = options.settingsExtra ?? {};
   const logTag = `[sofagent-${short}]`;
@@ -255,5 +255,4 @@ export function createSofagentPlugin(options: SofagentPluginOptions, hostPkg?: S
 //      rollback 的内层函数名从 'createShadowRepo'（与实际调用的 getHistoryFilePath
 //      不符的陈旧文案）改为按 bridgeApi 动态取——两者都只影响异常提示文本。
 //   ② fde 的 dynamicCordisRunner `purpose` 由「FDE 进场方法论桥接——本体数据视图生成」
-//      归一为「<description>（品牌色 …）」即「…（fde_* 六 tool 已交付）（品牌色 #16B8F3）」，
-//      与其余 8 个插件同形；WebUI 文案更完整，注册形状不变。
+//      归一为 `<description>`，与其余 8 个插件同形；WebUI 文案更完整，注册形状不变。

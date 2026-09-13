@@ -1,6 +1,6 @@
 # sofagent-evolve
 
-**自迭代变强** · sofagent 约束层五能力在 OpenClaw 生态的插件形态（品牌色 #16B8F3）
+**自迭代变强** · sofagent 约束层五能力在 OpenClaw 生态的插件形态
 
 think.md 反思条目生成 + 反思区注入，复用 @sofagent/think.generateThinkEntry。
 

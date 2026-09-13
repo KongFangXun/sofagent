@@ -15,7 +15,7 @@ const kit = createSofagentPlugin(
     bridgeApi: 'runRules',
     description: '变更机器审阅——24 规则 + git diff 硬证据 + 节点级审计',
     // audit 专属 envelope（其余 8 个插件走 kit 默认值）
-    purpose: 'sofagent 审计插件——24 规则 + git diff 硬证据（品牌色 #16B8F3）',
+    purpose: 'sofagent 审计插件——24 规则 + git diff 硬证据',
     readyMessage: '审计服务就绪（24 规则）',
     settingsExtra: { rules: '24' },
   },

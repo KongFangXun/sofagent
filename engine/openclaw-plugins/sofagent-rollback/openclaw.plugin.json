@@ -1,7 +1,7 @@
 {
   "id": "sofagent-rollback",
   "name": "sofagent 回溯",
-  "description": "出错逆序撤销——git snapshot 快照 + 逆序回滚（effect disposer 语义），品牌色 #16B8F3",
+  "description": "出错逆序撤销——git snapshot 快照 + 逆序回滚（effect disposer 语义）",
   "version": "1.4.7",
   "seam": "non-seam:tool-set",
   "seamSemantics": "非宿主事件接入（tool 集 + CLI 命令）——快照 / 回滚按需调用",

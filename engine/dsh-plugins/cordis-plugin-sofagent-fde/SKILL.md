@@ -4,12 +4,12 @@ slug: cordis-plugin-sofagent-fde
 version: 1.4.7
 displayName: cordis-plugin-sofagent-fde
 description: >
-  FDE 进场方法论桥接——本体数据视图生成（fde_* 六 tool 已交付）（seam: non-seam:tool-set）（sofagent 品牌插件 · 主色 #16B8F3）——DSH（DeepSeek Harness）cordis plugin。sofagent 约束层在 DeepSeek Harness 生态的插件形态。
+  FDE 进场方法论桥接——本体数据视图生成（fde_* 六 tool 已交付）（seam: non-seam:tool-set）——DSH（DeepSeek Harness）cordis plugin。sofagent 约束层在 DeepSeek Harness 生态的插件形态。
 ---
 
 # cordis-plugin-sofagent-fde
 
-FDE 进场方法论桥接——本体数据视图生成（fde_* 六 tool 已交付）（seam: non-seam:tool-set）（sofagent 品牌插件 · 主色 #16B8F3）
+FDE 进场方法论桥接——本体数据视图生成（fde_* 六 tool 已交付）（seam: non-seam:tool-set）
 
 ## 用途
 

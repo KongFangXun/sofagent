@@ -4,7 +4,7 @@
   "engines": {
     "node": ">=18"
   },
-  "description": "启动注入企业约束——四层加载链（seam: agent/pre-step）——桥接 @sofagent/harness buildConstrainedSystemPrompt（sofagent 品牌插件 · 主色 #16B8F3）",
+  "description": "启动注入企业约束——四层加载链（seam: agent/pre-step）——桥接 @sofagent/harness buildConstrainedSystemPrompt",
   "private": true,
   "license": "MIT",
   "author": "KongFangXun",
