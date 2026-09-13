@@ -218,12 +218,31 @@ AUDIT_DIFF_ARG="--cached"
 # 空提交（--allow-empty，NO_STAGED_FILES=1）同样发起引擎调用：引擎的空 diff
 # 短路已升级为「message 类规则照常执行」（A5 空 message / A9 注入 / A19 质量
 # 只消费 commit message、不依赖 diff 内容），空提交不再是无审计盲区。
+AUDIT_STDERR="$(mktemp /tmp/sofagent-hook-stderr-XXXXXX)"
 if [ -n "$COMMIT_SUBJECT" ]; then
-  "${AUDIT_CMD[@]}" --diff "$AUDIT_DIFF_ARG" --silent --ci --task "$COMMIT_SUBJECT" --commit-msg "$COMMIT_FULL_MSG"
+  "${AUDIT_CMD[@]}" --diff "$AUDIT_DIFF_ARG" --silent --ci --task "$COMMIT_SUBJECT" --commit-msg "$COMMIT_FULL_MSG" 2>"$AUDIT_STDERR"
 else
-  "${AUDIT_CMD[@]}" --diff "$AUDIT_DIFF_ARG" --silent --ci
+  "${AUDIT_CMD[@]}" --diff "$AUDIT_DIFF_ARG" --silent --ci 2>"$AUDIT_STDERR"
 fi
 EXIT_CODE=$?
+
+# v1.4.8 阶段九加固：**崩溃识别不依赖退出码**——旧版 audit（含用户已装的全局包）没有
+# 「崩溃=3」契约，node 未捕获异常仍是 exit 1，会与「1=警告」撞码 ⇒ fail-open。
+# 故额外扫 stderr 的崩溃特征（node 堆栈 / 未捕获异常），命中即判引擎故障。
+# 与退出码判断**互为冗余**：任一命中即阻断。
+ENGINE_CRASH=0
+if grep -qE "^(Error|TypeError|ReferenceError|RangeError|SyntaxError|UnhandledPromiseRejection)|throw new Error|at Object\.<anonymous>|Node\.js v[0-9]+" "$AUDIT_STDERR" 2>/dev/null; then
+  ENGINE_CRASH=1
+fi
+rm -f "$AUDIT_STDERR"
+
+if [ $ENGINE_CRASH -eq 1 ]; then
+  echo ""
+  echo "❌ sofagent audit: 审计引擎异常（stderr 含崩溃特征）——审计未完成，commit 已阻止。"
+  echo "   即使退出码为 0/1（旧版引擎无「崩溃=3」契约），崩溃也不得被当作「通过/警告」放行。"
+  echo "   排查：SOFAGENT_HOME 越界 / Node 版本 / dist 完整性。"
+  exit 1
+fi
 
 if [ $EXIT_CODE -eq 2 ]; then
   echo ""
