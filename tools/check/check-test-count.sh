@@ -18,6 +18,11 @@
 
 set -uo pipefail
 
+# ── 覆盖度行范式（v1.4.9 G-2②）——必须在 cd 之前取自身目录 ──
+_SELF_DIR="$(cd "$(dirname "$0")" && pwd)"
+# shellcheck source=/dev/null
+. "${_SELF_DIR}/lib/coverage-line.sh"
+
 cd "$(dirname "$0")/../.." || exit 1
 
 QUIET=false
@@ -44,6 +49,22 @@ NC='\033[0m'
 
 PASS=0
 FAIL=0
+# SKIPS（v1.4.9 G-2②）：显式跳过项计数——「未找到声称即跳过」正是本批要消灭的静默形态。
+# 本脚本三处 skip：① check_doc() grep 未命中 ② 占位 devlog（尚未实现）③ CHANGELOG 索引行
+# 缺 workspace 口径标注。K>0 不阻断（跳过合法性由发版 SOP「SKIP 数逐条裁决」裁定），但必须打印。
+SKIPS=0
+
+# 覆盖度行输出助手（v1.4.9 G-2②）：**--quiet 模式不输出**——该模式的契约是「只输出 OK/FAIL」
+# （CI/pre-push 依赖），追加任何行都会破坏机器可读契约。quiet 模式另由调用方负责裁决。
+emit_coverage_verbose() {
+  [ "${QUIET}" = true ] && return 0
+  local _cov_md
+  # covered 口径：仓内 tracked `.md` 文件数**上界**（本脚本按「文档 × 声称项」校验，
+  # 无单一文件清单；上界非精确值，显式标注勿当精确计数引用）
+  _cov_md=$(git ls-files '*.md' 2>/dev/null | wc -l | tr -d ' ')
+  _cov_md=${_cov_md:-0}
+  emit_coverage_line "check-test-count" "$(( ${1:-0} ))" "${_cov_md}" "${SKIPS}"
+}
 
 # ── acceptance-test.sh 场景数守卫（F-01/F-02 · v1.4.3 函数化重构）──
 # SSOT = acceptance-test.sh 头部「NNN 个场景」声明。三处文档
@@ -157,11 +178,14 @@ run_scenario_guard() {
 # 用途：改 acceptance 场景数后的秒级自检/commit 前拦截——漂移不再等到 pre-push 才暴露。
 if [ "$SCENARIOS_ONLY" = true ]; then
   run_scenario_guard
+  # 覆盖度行同样受 --quiet 契约约束（该模式只输出 OK/FAIL）
   if [ "$SCEN_FAIL" -gt 0 ]; then
     echo -e "${RED}场景数守卫：${SCEN_FAIL} 项 FAIL${NC}"
+    [ "$QUIET" = false ] && emit_coverage_line "check-test-count" "$((SCEN_PASS + SCEN_FAIL))" "-" "${SKIPS}"
     exit 1
   fi
   echo -e "${GREEN}场景数守卫：全过（SSOT 对账一致）${NC}"
+  [ "$QUIET" = false ] && emit_coverage_line "check-test-count" "$((SCEN_PASS + SCEN_FAIL))" "-" "${SKIPS}"
   exit 0
 fi
 
@@ -188,6 +212,7 @@ if [ "$TC_RC" -ne 0 ]; then
   else
     echo "FAIL"
   fi
+  emit_coverage_verbose "$((PASS + FAIL))"
   exit 1
 fi
 # 主路径：机器可读行 TOTAL_TESTS=NNN（strip ANSI 后 grep，最鲁棒）
@@ -203,6 +228,7 @@ fi
 
 if [ -z "$TOTAL_TESTS" ] || [ "$TOTAL_TESTS" = "0" ]; then
   echo -e "  ${RED}✗ 无法获取实际测试数（test-count.sh 失败）${NC}"
+  emit_coverage_verbose "$((PASS + FAIL))"
   exit 1
 fi
 
@@ -265,6 +291,7 @@ check_doc() {
   local actual
   actual=$(grep -oE "$pattern" "$file" 2>/dev/null | head -1 | grep -oE '[0-9]+' || echo "")
   if [ -z "$actual" ]; then
+    SKIPS=$((SKIPS + 1))
     if [ "$QUIET" = false ]; then
       echo -e "  ${YELLOW}⚠ ${label}：未找到测试数声明（grep 模式未命中），跳过${NC}"
     fi
@@ -293,6 +320,7 @@ DEVLOG_FILE="docs/changelog/v${CUR_MAJOR_MINOR}/v${CUR_VERSION}.md"
 if [ -f "$DEVLOG_FILE" ]; then
   # v1.3.2 修复：未发版的占位 changelog（含「尚未实现」）跳过校验，不算 FAIL
   if grep -q '尚未实现' "$DEVLOG_FILE" 2>/dev/null; then
+    SKIPS=$((SKIPS + 1))
     if [ "$QUIET" = false ]; then
       echo -e "  ${YELLOW}⚠ ${DEVLOG_FILE}：占位文件（尚未实现），跳过测试数校验${NC}"
     fi
@@ -738,6 +766,7 @@ else
     # v1.4.8 修正：原实现「无标注即整块静默跳过」属**守卫空转**（看着有校验、实际不校验，
     # 输出仍显示 ✓）。现改为**显式声明本次跳过**——不判红（部分版本行确无该标注），
     # 但让「未校验」这件事可见、可被审计发现。
+    SKIPS=$((SKIPS + 1))
     if [ "$QUIET" = false ]; then
       echo -e "  ${YELLOW}⚠ CHANGELOG.md 索引行未带「workspace 口径 NNNN」标注——双口径对齐校验本次跳过（非失败）${NC}"
     fi
@@ -767,6 +796,7 @@ if [ "$FAIL" -gt 0 ]; then
     echo -e "  ${YELLOW}修法：跑 bash tools/check/test-count.sh 拿实际数，手动更新上述文件的声称值${NC}"
     echo -e "  ${YELLOW}或更好：让文档引用 tools/check/test-count.sh 动态值，不硬编码${NC}"
   fi
+  emit_coverage_verbose "$((PASS + FAIL))"
   exit 1
 else
   if [ "$QUIET" = true ]; then
@@ -774,5 +804,6 @@ else
   else
     echo -e "  ${GREEN}✓ 文档测试数全部一致（${PASS} 处校验通过）${NC}"
   fi
+  emit_coverage_verbose "$((PASS + FAIL))"
   exit 0
 fi

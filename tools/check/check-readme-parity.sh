@@ -41,6 +41,10 @@
 
 set -uo pipefail
 
+_SELF_DIR="$(cd "$(dirname "$0")" && pwd)"
+# shellcheck source=/dev/null
+. "${_SELF_DIR}/lib/coverage-line.sh"
+
 cd "$(dirname "$0")/../.." || exit 1
 
 # 英文版文件名以实测为准：仓库里就是 README.en.md（ls README*.md 实测）。
@@ -48,6 +52,10 @@ CN_README="README.md"
 EN_README="README.en.md"
 
 FAILS=0
+# 覆盖度计数器（v1.4.9 G-2② · 口径见 tools/check/lib/coverage-line.sh）
+#   ASSERTS = 结果行数（✓ + ❌，逐 echo 插桩）· SKIPS = 显式跳过项（本脚本无跳过分支）
+ASSERTS=0
+SKIPS=0
 
 # 临时文件先一次性开好再挂 trap：避免第二个 trap 覆盖第一个时留下未覆盖的窗口。
 CN_LV=$(mktemp)
@@ -61,11 +69,11 @@ echo "════════════════════════�
 
 # ── 前置：两文件必须在。缺一即口径失效，直接红——不放静默假绿 ──
 if [ ! -f "$CN_README" ]; then
-  echo "  ❌ 中文 README 不存在：${CN_README}——脚本口径可能过期"
+  ASSERTS=$((ASSERTS + 1)); echo "  ❌ 中文 README 不存在：${CN_README}——脚本口径可能过期"
   exit 1
 fi
 if [ ! -f "$EN_README" ]; then
-  echo "  ❌ 英文 README 不存在：${EN_README}——若已改名，请同步本脚本的 EN_README"
+  ASSERTS=$((ASSERTS + 1)); echo "  ❌ 英文 README 不存在：${EN_README}——若已改名，请同步本脚本的 EN_README"
   exit 1
 fi
 echo "  对账文件：${CN_README}（中文）× ${EN_README}（英文）"
@@ -81,9 +89,9 @@ EN_H2=$(grep -cE '^## ' "$EN_README" || true)
 CN_H2=${CN_H2:-0}
 EN_H2=${EN_H2:-0}
 if [ "$CN_H2" -eq "$EN_H2" ] && [ "$CN_H2" -gt 0 ]; then
-  echo "  ✓ [①二级标题数] 中 ${CN_H2} = 英 ${EN_H2}"
+  ASSERTS=$((ASSERTS + 1)); echo "  ✓ [①二级标题数] 中 ${CN_H2} = 英 ${EN_H2}"
 else
-  echo "  ❌ [①二级标题数] 中 ${CN_H2} ≠ 英 ${EN_H2}——一侧加了/删了章节，另一侧未同步"
+  ASSERTS=$((ASSERTS + 1)); echo "  ❌ [①二级标题数] 中 ${CN_H2} ≠ 英 ${EN_H2}——一侧加了/删了章节，另一侧未同步"
   FAILS=$((FAILS + 1))
 fi
 
@@ -93,12 +101,12 @@ grep -oE '^#+' "$EN_README" > "$EN_LV" || true
 CN_LV_N=$(wc -l < "$CN_LV" | tr -d ' ')
 EN_LV_N=$(wc -l < "$EN_LV" | tr -d ' ')
 if [ "$CN_LV_N" -eq 0 ] || [ "$EN_LV_N" -eq 0 ]; then
-  echo "  ❌ [②标题层级序列] 提取为空（中 ${CN_LV_N} / 英 ${EN_LV_N}）——正则或文件口径失效"
+  ASSERTS=$((ASSERTS + 1)); echo "  ❌ [②标题层级序列] 提取为空（中 ${CN_LV_N} / 英 ${EN_LV_N}）——正则或文件口径失效"
   FAILS=$((FAILS + 1))
 elif diff -q "$CN_LV" "$EN_LV" >/dev/null 2>&1; then
-  echo "  ✓ [②标题层级序列] 逐位置一致（共 ${CN_LV_N} 个标题：$(tr '\n' ' ' < "$CN_LV" | sed 's/ $//')）"
+  ASSERTS=$((ASSERTS + 1)); echo "  ✓ [②标题层级序列] 逐位置一致（共 ${CN_LV_N} 个标题：$(tr '\n' ' ' < "$CN_LV" | sed 's/ $//')）"
 else
-  echo "  ❌ [②标题层级序列] 中英标题层级序列不一致——层级升降位置不同（漏加/多加标题，或标题层级写错）"
+  ASSERTS=$((ASSERTS + 1)); echo "  ❌ [②标题层级序列] 中英标题层级序列不一致——层级升降位置不同（漏加/多加标题，或标题层级写错）"
   # 只看前若干行差异，避免巨量噪声；diff 返回 1 属预期，不设 set -e
   diff "$CN_LV" "$EN_LV" 2>/dev/null | head -20 | sed 's/^/       /' || true
   echo "       （左=中文，右=英文；< 为中文侧独有，> 为英文侧独有）"
@@ -111,9 +119,9 @@ EN_BADGE=$(grep -cE 'img\.shields\.io' "$EN_README" || true)
 CN_BADGE=${CN_BADGE:-0}
 EN_BADGE=${EN_BADGE:-0}
 if [ "$CN_BADGE" -eq "$EN_BADGE" ] && [ "$CN_BADGE" -gt 0 ]; then
-  echo "  ✓ [③badge 数] 中 ${CN_BADGE} = 英 ${EN_BADGE}"
+  ASSERTS=$((ASSERTS + 1)); echo "  ✓ [③badge 数] 中 ${CN_BADGE} = 英 ${EN_BADGE}"
 else
-  echo "  ❌ [③badge 数] 中 ${CN_BADGE} ≠ 英 ${EN_BADGE}——一侧增删徽章，另一侧未同步"
+  ASSERTS=$((ASSERTS + 1)); echo "  ❌ [③badge 数] 中 ${CN_BADGE} ≠ 英 ${EN_BADGE}——一侧增删徽章，另一侧未同步"
   FAILS=$((FAILS + 1))
 fi
 
@@ -131,12 +139,12 @@ extract_key_nums "$EN_README" > "$EN_NUMS_FILE"
 CN_NUMS=$(tr '\n' ' ' < "$CN_NUMS_FILE" | sed 's/ $//')
 EN_NUMS=$(tr '\n' ' ' < "$EN_NUMS_FILE" | sed 's/ $//')
 if [ -z "$CN_NUMS" ] || [ -z "$EN_NUMS" ]; then
-  echo "  ❌ [④关键数字集合] 提取为空（中「${CN_NUMS}」/ 英「${EN_NUMS}」）——口径失效，宁可疑不假绿"
+  ASSERTS=$((ASSERTS + 1)); echo "  ❌ [④关键数字集合] 提取为空（中「${CN_NUMS}」/ 英「${EN_NUMS}」）——口径失效，宁可疑不假绿"
   FAILS=$((FAILS + 1))
 elif [ "$CN_NUMS" = "$EN_NUMS" ]; then
-  echo "  ✓ [④关键数字集合] 中英一致：${CN_NUMS}"
+  ASSERTS=$((ASSERTS + 1)); echo "  ✓ [④关键数字集合] 中英一致：${CN_NUMS}"
 else
-  echo "  ❌ [④关键数字集合] 中英不一致——某侧版本号/测试数/工具数/场景数漂移未同步"
+  ASSERTS=$((ASSERTS + 1)); echo "  ❌ [④关键数字集合] 中英不一致——某侧版本号/测试数/工具数/场景数漂移未同步"
   echo "       仅中文侧有：$(LC_ALL=C comm -23 "$CN_NUMS_FILE" "$EN_NUMS_FILE" | tr '\n' ' ')"
   echo "       仅英文侧有：$(LC_ALL=C comm -13 "$CN_NUMS_FILE" "$EN_NUMS_FILE" | tr '\n' ' ')"
   echo "       中文集合：${CN_NUMS}"
@@ -149,8 +157,17 @@ echo "════════════════════════�
 if [ "$FAILS" -gt 0 ]; then
   echo "  FAIL=${FAILS}——双语 README 结构不对称，改一侧必须同步另一侧"
   echo "  🔴 真实漂移请报告差异清单，不要为转绿而删 README 内容"
-  exit 1
 else
   echo "  FAIL=0——双语 README 四项结构对账通过"
+fi
+# ── 覆盖度行（v1.4.9 G-2②）──
+# covered 口径：本脚本的**精确**扫描面 = 2 个双语 README（非上界，直接计数）
+COVERED=2
+[ -f "$CN_README" ] || COVERED=$((COVERED - 1))
+[ -f "$EN_README" ] || COVERED=$((COVERED - 1))
+emit_coverage_line "check-readme-parity" "$ASSERTS" "$COVERED" "$SKIPS"
+if [ "$FAILS" -gt 0 ]; then
+  exit 1
+else
   exit 0
 fi

@@ -68,12 +68,23 @@ CYAN='\033[0;36m'
 BOLD='\033[1m'
 NC='\033[0m'
 
+# ── 覆盖度行范式（v1.4.9 G-2②）──
+# 必须在取 PROJECT_ROOT 之前定位自身目录（cd/相对路径问题在此脚本内表现为 $0 相对路径）。
+_SELF_DIR="$(cd "$(dirname "$0")" && pwd)"
+# shellcheck source=/dev/null
+. "${_SELF_DIR}/lib/coverage-line.sh"
+
 # ── 项目根目录 ────────────────────────────────────────────────
 PROJECT_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 
 ERRORS=0
 CHECKS=0
 WARNINGS=0
+# SKIPS（v1.4.9 G-2②）：显式「降级跳过」计数——与 WARNINGS **分列**。
+# 理由：合法的窗口态降级（如 §27 待发版窗口白名单）计入 WARNINGS 会让 --strict
+# 在发版窗口自锁（窗口态每次发版窗口必然出现，非「问题」）；分列后 --strict 只阻断
+# 真问题，跳过项则由覆盖度行暴露、由发版 SOP「SKIP 数逐条裁决」步骤裁定。
+SKIPS=0
 STRICT=false
 
 # ── 参数解析 ──
@@ -1583,8 +1594,8 @@ console.log(p[0]+'.'+p[1]+'.'+(p[2]+1));" 2>/dev/null || echo "")
     F6_WINDOW=true
   fi
   if $F6_WINDOW; then
-    echo -e "  ${YELLOW}⚠${NC} 待发版窗口态：v${F6_NEXT_PATCH} 开发日志在位（CHANGELOG 未收录）——ROADMAP「待发版」为合法状态，F6 断言降级跳过"
-    WARNINGS=$((WARNINGS + 1))
+    echo -e "  ${YELLOW}⏭️${NC} 待发版窗口态：v${F6_NEXT_PATCH} 开发日志在位（CHANGELOG 未收录）——ROADMAP「待发版」为合法状态，F6 断言降级跳过"
+    SKIPS=$((SKIPS + 1))
     CHECKS=$((CHECKS + 1))
   else
   F6_PENDING_HITS=$(grep -nE '待发版' "${PROJECT_ROOT}/docs/ROADMAP.md" 2>/dev/null || true)
@@ -1669,6 +1680,15 @@ else
 fi
 echo ""
 
+# ── 覆盖度行（v1.4.9 G-2② · 范式见 tools/check/lib/coverage-line.sh）──
+#   asserts = CHECKS + ERRORS（CHECKS 已含 WARN 项——report_warn 同时 ++CHECKS）
+#   covered = 仓内 tracked 文件数**上界口径**（本脚本各段扫描面跨 docs/SKILL/engine/根级
+#             多目录，无单一文件清单；上界非精确值，此处显式标注，勿当精确计数引用）
+#   skipped = 显式降级跳过项（§27 待发版窗口态等）——K>0 不阻断，但必须打印
+COVERED=$(git -C "${PROJECT_ROOT}" ls-files 2>/dev/null | wc -l | tr -d ' ')
+COVERED=${COVERED:-0}
+emit_coverage_line "check-version" "$((CHECKS + ERRORS))" "${COVERED}" "${SKIPS}"
+
 # ── 汇总 ──────────────────────────────────────────────────────
 echo -e "${BOLD}${CYAN}═══════════════════════════════════════════════════════════${NC}"
 if [[ ${ERRORS} -eq 0 ]]; then
@@ -1677,6 +1697,9 @@ if [[ ${ERRORS} -eq 0 ]]; then
   echo -e "  检查通过: ${CHECKS}/${TOTAL} 项"
   if [[ ${WARNINGS} -gt 0 ]]; then
     echo -e "  ${YELLOW}⚠ ${WARNINGS} 项警告${NC}（--strict 模式会阻断）"
+  fi
+  if [[ ${SKIPS} -gt 0 ]]; then
+    echo -e "  ${YELLOW}⏭️ ${SKIPS} 项降级跳过${NC}（不阻断；发版 SOP「SKIP 数逐条裁决」步骤逐条裁定）"
   fi
   echo -e "${BOLD}${CYAN}═══════════════════════════════════════════════════════════${NC}"
   if [[ "$STRICT" = true ]] && [[ ${WARNINGS} -gt 0 ]]; then
