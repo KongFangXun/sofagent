@@ -4231,55 +4231,31 @@ S408_OK=true; S408_OUT=$(PROJECT_ROOT="$PROJECT_ROOT" node -e "const r=process.e
 scenario 409 "v1.4.8 安全豁免面——A1 数据容器臂剔除 + 豁免边界双防 + A2 转义对抗锚（B 类防复发）"
 S409_OK=true; S409_OUT=$(PROJECT_ROOT="$PROJECT_ROOT" node -e "const r=process.env.PROJECT_ROOT; const fs=require('fs'); const bad=[]; const a1=fs.readFileSync(r+'/engine/audit/src/rules/rule-a1-sensitive-files.ts','utf8'); if(!/\.env\.json|\.env\.yaml|serverless\.env/.test(a1))bad.push('数据容器臂未剔除'); if(!a1.includes('必要非充分条件'))bad.push('豁免边界说明缺失'); const a2=fs.readFileSync(r+'/engine/audit/src/rules/rule-a2-secret-leak.ts','utf8'); if(!a2.includes('restoreHexEscapes'))bad.push('A2 转义还原缺失'); process.stdout.write(bad.length?('S409_FAIL:'+bad.join('|')):'ASSERT_OK');" 2>&1) || S409_OUT="S409_FAIL:crash"; echo "$S409_OUT" | grep -q ASSERT_OK || { echo "  ✗ S409: $S409_OUT"; S409_OK=false; }; $S409_OK && pass "v1.4.8 安全豁免面：env dump 载体不得静默 PASS + 豁免叠加边界 + A2 对抗锚" || fail "S409 锚点回潮——见上方 ✗ 行"
 
-# ── S411（v1.4.9 bugfix 批二 P0-1）：hook 场景 treeSha 跨阶段错配回归锁 ──
-# 编号说明：S410 标签已被文件尾部「Release body 卫生」块占用（该块在 exit 之后、不可达），
-#   本场景按「当前最大 scenario 编号 +1」顺延取 S411（编号跳号豁免见文件头）。
-# 三态判据：① 干净 commit → stdout 含「✓ [sofagent] 审计通过」且不含「未确认审计记录」；
-#   ② soft-reset 换料重提（同 message 不同内容，--no-verify）→ 不得出现「审计通过」
-#      （F-16 换料防线在位；此断言同时锁死**被否决的 A 方案**——读侧改比父 tree 会让换料场景
-#       恒等而报假绿，② 是 A 方案的否决锁）；
-#   ③ 不同 message 的相邻提交 → 各自命中（parentSha+subject 消歧不误伤相邻提交）。
-# 隔离：HOME 指向临时目录（Node os.homedir() 跟随 HOME ⇒ data-paths 越界守卫的「允许前缀含
-#   userHome」放行），不碰真实 ~/.sofagent；hook 经全局 SOFAGENT_AUDIT_ENTRY 精确执行本仓 dist。
+
+# ── S411（v1.4.9 bugfix 批二 P0-1）：hook 场景 treeSha 跨阶段错配回归锁（三态）──
+# ① 干净 commit 出「✓ [sofagent] 审计通过」且不含「未确认审计记录」；② soft-reset 换料重提
+# （同 message 不同内容 · --no-verify）不得再报「审计通过」（F-16 防线在位；此断言同时锁死被
+# 否决的 A 方案——读侧改比父 tree 会让②恒等而假绿）；③ 不同 message 的相邻提交各自命中。
+# 隔离：HOME 指临时目录（Node os.homedir() 跟随 HOME ⇒ data-paths 越界守卫「允许前缀含
+# userHome」放行），不碰真实 ~/.sofagent；hook 经全局 SOFAGENT_AUDIT_ENTRY 跑本仓刚构建的 dist。
+# 编号：S410 标签被文件尾部「Release body 卫生」不可达块占用，顺延取 S411（跳号豁免见文件头）。
 scenario 411 "v1.4.9 P0-1：hook 场景 treeSha 记「即将生成的提交」tree——post-commit 三重键对账回声恢复（三态）"
-P01_TMP=$(mktemp -d /tmp/sofagent-p01-XXXX)
-P01_ISO=$(mktemp -d /tmp/sofagent-p01-home-XXXX)
-P01_LOG=$(mktemp /tmp/sofagent-p01-log-XXXX.log)
-(
-  export HOME="$P01_ISO"
-  export SOFAGENT_HOME_ALLOWED_PREFIXES="$P01_ISO"
-  unset SOFAGENT_DATA
-  unset SOFAGENT_HOME
-  cd "$P01_TMP" || exit 9
-  git init -q .
-  git config user.email p01@test.com
-  git config user.name P01
-  echo "seed" > seed.txt
-  git add seed.txt
-  git commit -q --no-verify -m "chore: seed commit for P0-1 scenario"
+P01_TMP=$(mktemp -d /tmp/sofagent-p01-XXXX); P01_ISO=$(mktemp -d /tmp/sofagent-p01-home-XXXX); P01_LOG=$(mktemp /tmp/sofagent-p01-log-XXXX.log)
+( export HOME="$P01_ISO" SOFAGENT_HOME_ALLOWED_PREFIXES="$P01_ISO"; unset SOFAGENT_DATA SOFAGENT_HOME; cd "$P01_TMP" || exit 9
+  git init -q .; git config user.email p01@test.com; git config user.name P01
+  echo seed > seed.txt; git add seed.txt; git commit -q --no-verify -m "chore: seed commit for P0-1 scenario"
   node "$PROJECT_ROOT/engine/audit/dist/index.js" --init >/dev/null 2>&1
-  echo "clean content A" > alpha.txt
-  git add alpha.txt
-  echo "@@@STAGE1@@@"
-  git commit -m "chore: add alpha.txt for P0-1 clean reconciliation" 2>&1 || true
-  git reset --soft HEAD~1 2>/dev/null || true
-  echo "swapped content B" > alpha.txt
-  git add alpha.txt
-  echo "@@@STAGE2@@@"
-  git commit --no-verify -m "chore: add alpha.txt for P0-1 clean reconciliation" 2>&1 || true
-  echo "clean content C" > charlie.txt
-  git add charlie.txt
-  echo "@@@STAGE3@@@"
-  git commit -m "chore: add charlie.txt for P0-1 second commit" 2>&1 || true
+  echo "clean content A" > alpha.txt; git add alpha.txt; echo "@@@S1@@@"; git commit -m "chore: add alpha.txt for P0-1 clean reconciliation" 2>&1 || true
+  git reset --soft HEAD~1 2>/dev/null || true; echo "swapped content B" > alpha.txt; git add alpha.txt
+  echo "@@@S2@@@"; git commit --no-verify -m "chore: add alpha.txt for P0-1 clean reconciliation" 2>&1 || true
+  echo "clean content C" > charlie.txt; git add charlie.txt; echo "@@@S3@@@"; git commit -m "chore: add charlie.txt for P0-1 second commit" 2>&1 || true
 ) > "$P01_LOG" 2>&1 || true
-P01_S1=$(sed -n '/@@@STAGE1@@@/,/@@@STAGE2@@@/p' "$P01_LOG" 2>/dev/null || true)
-P01_S2=$(sed -n '/@@@STAGE2@@@/,/@@@STAGE3@@@/p' "$P01_LOG" 2>/dev/null || true)
-P01_S3=$(sed -n '/@@@STAGE3@@@/,$p' "$P01_LOG" 2>/dev/null || true)
+P01_1=$(sed -n '/@@@S1@@@/,/@@@S2@@@/p' "$P01_LOG" 2>/dev/null || true); P01_2=$(sed -n '/@@@S2@@@/,/@@@S3@@@/p' "$P01_LOG" 2>/dev/null || true); P01_3=$(sed -n '/@@@S3@@@/,$p' "$P01_LOG" 2>/dev/null || true)
 P01_OK=true
-echo "$P01_S1" | grep -q "✓ \[sofagent\] 审计通过" || { P01_OK=false; echo "  ✗ P0-1①：干净 commit 未出现「✓ [sofagent] 审计通过」回声——三重键第三重（treeSha）未命中"; }
-if echo "$P01_S1" | grep -q "未确认审计记录"; then P01_OK=false; echo "  ✗ P0-1①：干净 commit 仍落「未确认审计记录」分支（写侧 treeSha 又取到父提交 tree）"; fi
-if echo "$P01_S2" | grep -q "审计通过"; then P01_OK=false; echo "  ✗ P0-1②：soft-reset 换料重提后仍报「审计通过」——F-16 换料防线被绕过（A 方案回潮？）"; fi
-echo "$P01_S3" | grep -q "✓ \[sofagent\] 审计通过" || { P01_OK=false; echo "  ✗ P0-1③：不同 message 的相邻提交未命中（parentSha+subject 消歧误伤）"; }
+echo "$P01_1" | grep -q "✓ \[sofagent\] 审计通过" || { P01_OK=false; echo "  ✗ P0-1①：干净 commit 无「✓ 审计通过」回声（treeSha 又取到父提交 tree）"; }
+if echo "$P01_1" | grep -q "未确认审计记录"; then P01_OK=false; echo "  ✗ P0-1①：干净 commit 仍落「未确认审计记录」分支"; fi
+if echo "$P01_2" | grep -q "审计通过"; then P01_OK=false; echo "  ✗ P0-1②：换料重提仍报「审计通过」——F-16 换料防线被绕过（A 方案回潮？）"; fi
+echo "$P01_3" | grep -q "✓ \[sofagent\] 审计通过" || { P01_OK=false; echo "  ✗ P0-1③：相邻提交未命中（parentSha+subject 消歧误伤）"; }
 rm -rf "$P01_TMP" "$P01_ISO" "$P01_LOG"
 $P01_OK && pass "P0-1 三态：干净 commit 回声 + 换料不命中（F-16 防线在）+ 相邻提交各自命中" || fail "P0-1 对账三重键回归（见上方 ✗ 行）"
 
