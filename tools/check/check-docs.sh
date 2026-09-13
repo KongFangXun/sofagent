@@ -12,6 +12,12 @@ RED='\033[0;31m'
 GREEN='\033[0;32m'
 NC='\033[0m'
 
+# ── 覆盖度行范式（v1.4.9 G-2②）──
+# 必须在 cd 之前取自身目录（cd 后 $(dirname "$0") 的相对路径失效）。
+_SELF_DIR="$(cd "$(dirname "$0")" && pwd)"
+# shellcheck source=/dev/null
+. "${_SELF_DIR}/lib/coverage-line.sh"
+
 cd "$(dirname "$0")/../.." || exit 1
 
 # v1.3.6 B11: 并发防护——mkdir 原子锁（macOS/Linux 兼容）。已有实例运行时第二个实例
@@ -55,6 +61,11 @@ if [ "${LOCK_ACQUIRED}" = true ]; then
 fi
 
 ERRORS=0
+# 覆盖度计数器（v1.4.9 G-2②）——口径见 tools/check/lib/coverage-line.sh：
+#   ASSERTS = 本轮结果行数（`  ✓` + `  ❌`；在每处结果 echo 前统一插桩）
+#   SKIPS   = 显式跳过项数（`  ⏭️`）——跳得过不是绿，必须打印出来供 SOP 逐条裁决
+ASSERTS=0
+SKIPS=0
 
 echo "=== 1. 死链检查 ==="
 # 检查所有 .md 中**指向 rules.md 的 markdown 链接**是否死链。
@@ -139,7 +150,7 @@ process.stdout.write(JSON.stringify({ mainDead, archiveDead }));
 DEAD_LINKS=$(node -e "const d=JSON.parse(process.argv[1]);if(d.parseError)process.exit(1);console.log(d.mainDead.length)" "$DEAD_SCAN" 2>/dev/null || echo "SCAN_FAIL")
 ARCHIVE_DEAD=$(node -e "const d=JSON.parse(process.argv[1]);if(d.parseError)process.exit(1);console.log(d.archiveDead.length)" "$DEAD_SCAN" 2>/dev/null || echo "SCAN_FAIL")
 if [ "$DEAD_LINKS" = "SCAN_FAIL" ] || [ "$ARCHIVE_DEAD" = "SCAN_FAIL" ]; then
-  echo "  ❌ 死链扫描器自身故障（node 输出不可解析）——结果不可信，按失败处理"
+  ASSERTS=$((ASSERTS + 1)); echo "  ❌ 死链扫描器自身故障（node 输出不可解析）——结果不可信，按失败处理"
   ERRORS=$((ERRORS + 1))
   DEAD_LINKS=0
   ARCHIVE_DEAD=0
@@ -204,7 +215,7 @@ CAP5_COUNT=$(printf "%s" "$CAP5_HITS" | grep -c "." || true)
 CAP5_COUNT=${CAP5_COUNT:-0}
 if [ "$CAP5_COUNT" -gt 0 ]; then
   echo "=== 2a. 五能力术语断言 ==="
-  echo "  ❌ 活文档残留旧四能力表述 ${CAP5_COUNT} 处（现行口径：注入·审计·回溯·沉淀·进化）"
+  ASSERTS=$((ASSERTS + 1)); echo "  ❌ 活文档残留旧四能力表述 ${CAP5_COUNT} 处（现行口径：注入·审计·回溯·沉淀·进化）"
   printf "%s\n" "$CAP5_HITS" | grep "." | head -20
   ERRORS=$((ERRORS + 1))
 else
@@ -225,7 +236,7 @@ done
 FFFD_COUNT=$(printf "%s" "$FFFD_HITS" | grep -c "." || true)
 FFFD_COUNT=${FFFD_COUNT:-0}
 if [ "$FFFD_COUNT" -gt 0 ]; then
-  echo "  ❌ 活文档存在 U+FFFD（编码损坏）${FFFD_COUNT} 行"
+  ASSERTS=$((ASSERTS + 1)); echo "  ❌ 活文档存在 U+FFFD（编码损坏）${FFFD_COUNT} 行"
   printf "%s\n" "$FFFD_HITS" | grep "." | head -20
   ERRORS=$((ERRORS + 1))
 else
@@ -236,7 +247,7 @@ fi
 #     AIR 不进断言：三字母大写英文语境误报率不可控，维持人工自查）
 LEAK_HITS=$(grep -nwE "GrapHub|FlowHub" README.md README.en.md docs/*.md docs/guides/*.md SKILL/SKILL.md SKILL/rules/*.md FDE/GUIDE.md engine/hooks/*/HOOK.md engine/openclaw-plugins/*/README.md install.sh tools/dashboard/dashboard.html 2>/dev/null || true)
 if [ -n "$LEAK_HITS" ]; then
-  echo "  ❌ 活文档存在商业产品名（GrapHub/FlowHub）——开源脱敏规范违规"
+  ASSERTS=$((ASSERTS + 1)); echo "  ❌ 活文档存在商业产品名（GrapHub/FlowHub）——开源脱敏规范违规"
   echo "$LEAK_HITS" | head -20
   ERRORS=$((ERRORS + 1))
 else
@@ -275,7 +286,7 @@ elif [ "$WIKI_NEXT_V" != "$ROADMAP_NEXT_V" ]; then
   echo "  ${RED}✗ WIKI 状态表「下一版」=$WIKI_NEXT_V ≠ ROADMAP「下一版」=$ROADMAP_NEXT_V —— 版本语义声称漂移${NC}"
   ERRORS=$((ERRORS + 1))
 else
-  echo "  ✓ WIKI 状态表「下一版」$WIKI_NEXT_V 与 ROADMAP 一致"
+  ASSERTS=$((ASSERTS + 1)); echo "  ✓ WIKI 状态表「下一版」$WIKI_NEXT_V 与 ROADMAP 一致"
 fi
 
 # 3b. 新能力段版本堆叠检查（2026-08-22 新增——上轮发现 HANDBOOK 堆叠 v1.3.1~v1.3.8 六段历史能力，
@@ -289,7 +300,7 @@ if [ -n "$STACKED" ]; then
   echo "$STACKED" | while read -r line; do echo "    $line" | cut -c1-100; done
   echo "  （警告非阻断——历史段可能是有意的版本追溯对照表，人工裁决）"
 else
-  echo "  ✓ 活文档无历史版本新能力段堆叠（新能力段只留最新版）"
+  ASSERTS=$((ASSERTS + 1)); echo "  ✓ 活文档无历史版本新能力段堆叠（新能力段只留最新版）"
 fi
 
 echo ""
@@ -424,12 +435,12 @@ PKG_README_LINES=${PKG_README_LINES:-0}
 if [ "$LESSONS_LINES" -gt 3000 ]; then
   echo "  ⚠️ F-lessons 经验沉淀 ${LESSONS_LINES} 行 > 3000 软警戒——建议整理（归并重复/归档已泛化条目，见 FORGE/lessons/index.md 维护公约）"
 else
-  echo "  ✓ F-lessons 经验沉淀 ${LESSONS_LINES} 行（≤3000 软警戒，定期整理机制见 index.md）"
+  ASSERTS=$((ASSERTS + 1)); echo "  ✓ F-lessons 经验沉淀 ${LESSONS_LINES} 行（≤3000 软警戒，定期整理机制见 index.md）"
 fi
 if [ "$PKG_README_LINES" -gt 1500 ]; then
   echo "  ⚠️ F-pkg 包级 README 合计 ${PKG_README_LINES} 行 > 1500 软警戒——建议精简"
 else
-  echo "  ✓ F-pkg 包级 README 合计 ${PKG_README_LINES} 行（≤1500 软警戒）"
+  ASSERTS=$((ASSERTS + 1)); echo "  ✓ F-pkg 包级 README 合计 ${PKG_README_LINES} 行（≤1500 软警戒）"
 fi
 
 echo "  ─────────────────────────"
@@ -533,11 +544,11 @@ echo "  主 README.md 声称规则数:     $MAIN_README_COUNT"
 
 MISMATCH=0
 if [ "$AUDIT_README_COUNT" != "$INDEX_TS_COUNT" ]; then
-  echo "  ❌ audit/README ($AUDIT_README_COUNT) ≠ index.ts ($INDEX_TS_COUNT)"
+  ASSERTS=$((ASSERTS + 1)); echo "  ❌ audit/README ($AUDIT_README_COUNT) ≠ index.ts ($INDEX_TS_COUNT)"
   MISMATCH=$((MISMATCH + 1))
 fi
 if [ "$MAIN_README_COUNT" != "0" ] && [ "$MAIN_README_COUNT" != "$INDEX_TS_COUNT" ]; then
-  echo "  ❌ 主 README ($MAIN_README_COUNT) ≠ index.ts ($INDEX_TS_COUNT)"
+  ASSERTS=$((ASSERTS + 1)); echo "  ❌ 主 README ($MAIN_README_COUNT) ≠ index.ts ($INDEX_TS_COUNT)"
   MISMATCH=$((MISMATCH + 1))
 fi
 if [ "$MISMATCH" -eq 0 ]; then
@@ -602,7 +613,7 @@ for doc in $RIVER_DOCS; do
       echo "  ⚠ $doc River 比喻 ${RIVER_COUNT} 处（建议 ≤4）"
       RIVER_WARN=$((RIVER_WARN + 1))
     else
-      echo "  ✓ $doc River 比喻 ${RIVER_COUNT} 处"
+      ASSERTS=$((ASSERTS + 1)); echo "  ✓ $doc River 比喻 ${RIVER_COUNT} 处"
     fi
   fi
 done
@@ -636,15 +647,15 @@ if [ -f "$SKILL_FILE" ]; then
   echo "  底线: 标题声称 ${BOTTOM_CLAIMED:-N/A} 条，实际 ${BOTTOM_ACTUAL} 条"
   echo "  铁律: 标题声称 ${IRON_CLAIMED:-N/A} 条，实际 ${IRON_ACTUAL} 条"
   if [ "${BOTTOM_CLAIMED:-0}" != "${BOTTOM_ACTUAL}" ] 2>/dev/null; then
-    echo "  ❌ 底线数不一致: 标题 ${BOTTOM_CLAIMED} vs 实际 ${BOTTOM_ACTUAL}"
+    ASSERTS=$((ASSERTS + 1)); echo "  ❌ 底线数不一致: 标题 ${BOTTOM_CLAIMED} vs 实际 ${BOTTOM_ACTUAL}"
     ERRORS=$((ERRORS + 1))
   fi
   if [ "${IRON_CLAIMED:-0}" != "${IRON_ACTUAL}" ] 2>/dev/null; then
-    echo "  ❌ 铁律数不一致: 标题 ${IRON_CLAIMED} vs 实际 ${IRON_ACTUAL}"
+    ASSERTS=$((ASSERTS + 1)); echo "  ❌ 铁律数不一致: 标题 ${IRON_CLAIMED} vs 实际 ${IRON_ACTUAL}"
     ERRORS=$((ERRORS + 1))
   fi
   if [ "${BOTTOM_CLAIMED:-0}" = "${BOTTOM_ACTUAL}" ] && [ "${IRON_CLAIMED:-0}" = "${IRON_ACTUAL}" ] 2>/dev/null; then
-    echo "  ✓ 底线/铁律数一致"
+    ASSERTS=$((ASSERTS + 1)); echo "  ✓ 底线/铁律数一致"
   fi
 else
   echo "  ⚠ SKILL.md 不存在: $SKILL_FILE"
@@ -656,11 +667,11 @@ echo "=== 11. 跨文档 #锚点 死链扫描（F-20 · P0-13 起纳入 ERRORS）
 #（实测 26m42s，bash 每行 fork node 归一化标题；node 版几秒完成同等工作）。
 # 判定语义不变：锚点过时计入 ERRORS 阻断（文件断链由第 1/1b 节死链检查负责，本项只看锚点）。
 if [ "${SKIP_ANCHOR_SCAN:-0}" = "1" ]; then
-  echo "  ⏭️ 跳过（SKIP_ANCHOR_SCAN=1）——锚点检查由 check-anchors.mjs 覆盖（pre-push 第 4 步）"
+  SKIPS=$((SKIPS + 1)); echo "  ⏭️ 跳过（SKIP_ANCHOR_SCAN=1）——锚点检查由 check-anchors.mjs 覆盖（pre-push 第 4 步）"
 else
   ANCHOR_OUTPUT=$(node tools/check/check-anchors.mjs 2>&1); ANCHOR_RC=$?
   if [ "$ANCHOR_RC" -eq 0 ]; then
-    echo "  ✓ 跨文档锚点无死链"
+    ASSERTS=$((ASSERTS + 1)); echo "  ✓ 跨文档锚点无死链"
   else
     echo "  锚点过时（已计入 ERRORS）："
     printf '%s\n' "$ANCHOR_OUTPUT" | grep -E '✗|锚点过时' | head -12
@@ -693,11 +704,11 @@ if (extraInTable.length) console.log('EXTRA ' + extraInTable.join(','));
 process.exit(1);
 " 2>&1); TOOL_TABLE_RC=$?
 if [ "$TOOL_TABLE_RC" -eq 0 ]; then
-  echo "  ✓ 全量表与 registry 一致（${TOOL_TABLE_CHECK#OK } tools）"
+  ASSERTS=$((ASSERTS + 1)); echo "  ✓ 全量表与 registry 一致（${TOOL_TABLE_CHECK#OK } tools）"
 elif [ "$TOOL_TABLE_CHECK" = "PATTERN_MISS" ]; then
   echo "  ⚠ AGENTS.md 未找到「MCP 全量工具表」小节，跳过"
 else
-  echo "  ❌ 全量表与 registry 漂移："
+  ASSERTS=$((ASSERTS + 1)); echo "  ❌ 全量表与 registry 漂移："
   printf '%s\n' "$TOOL_TABLE_CHECK" | sed 's/^/    /'
   ERRORS=$((ERRORS + 1))
 fi
@@ -712,17 +723,31 @@ echo "=== 13. 接线存在性断言（v1.4.3 任务十一 · 声称「已交付�
 #   「文档路径|文档声称字面量|入口函数名|说明」
 #   ——文档路径按条指定：声称散落在不同文档（SECURITY.md / 双语 README）时各查各的，
 #     避免「只查一个文件」形成新盲区（AgentShield 声称在 README 却只查 SECURITY.md 的前车之鉴）。
-#   2026-08-29 首条：静态加密——SECURITY.md 若声称「已交付」，initDataEncryption
-#   必须有生产调用（当前降级为「接线未启用」态，声称侧不命中即天然通过；
-#   未来 v1.4.7 真接线后若把声称改回「已交付」，本断言自动生效防再虚报）。
+#   🔴 v1.4.9 G-1 修复（守卫空转根治）：**锚定串未命中 = FAIL，不再「天然通过」**。
+#     旧实现把「文档里找不到锚定串」当「断言不适用」打 ⏭️ 放行——实测事故：SECURITY.md
+#     措辞从「静态加密（v1.3.8 交付）」演化为「静态加密已接线（daemon start 路径）」后，
+#     锚定串失配 ⇒ 该断言永久空转（本节注释原文自陈「未来 v1.4.7 真接线后本断言自动生效
+#     防再虚报」——而正该生效时它没在跑）。根因不是设计而是遗漏：锚定串过期 = 文档措辞
+#     漂移 = 锚点必须跟着走，属**必须当场报红**的信号，与 §14「未找到声称 → fail
+#     （守卫不空转）」、check-storefront.sh 同款纪律。
+#     修复口径：任一条 claim 未命中 ⇒ 计入 WIRING_STALE 并 FAIL，提示「更新锚定串或
+#     从 WIRING_CLAIMS 移除该声称」——两条路都必须留痕，禁止静默流放声称。
+#   2026-08-29 首条：静态加密——SECURITY.md 声称「静态加密已接线」，initDataEncryption
+#   必须有生产调用（v1.4.7 真接线后本断言生效防再虚报）。
 #   2026-08-30 次条：AgentShield——双语 README 都当核心能力宣传，createAgentShield 必须有生产调用
 #   （v1.3.7 实现 + 有测试但长期零调用点，同批已补 agent-shield CLI 子命令接线）。
+#   2026-09-14 补漏（第 3 份审查报告点名族）：HANDBOOK 承诺「部署后自动收到」审计报告，
+#   交付机制 pushAuditReport 必须有生产调用。⚠️ 本断言只判「机制是否接线」；「档位于
+#   runtime 是否真按 weekly/monthly 触发」属保真度问题，不在本节判定面（见 HANDBOOK 措辞对账）。
+#   —— 补漏原则：声称族按「文档里能 grep 到的承诺句」逐族登记，不靠人工记忆。
 WIRING_FAIL=0
+WIRING_STALE=0
 WIRING_CLAIMS=(
-  "SECURITY.md|静态加密（v1.3.8 交付）|initDataEncryption|静态加密（SECURITY.md:50 声称族）"
+  "SECURITY.md|静态加密已接线|initDataEncryption|静态加密（SECURITY.md:65 声称族）"
   "README.md|AgentShield 五类配置面静态扫描|createAgentShield|AgentShield（README 核心能力声称）"
   "README.en.md|AgentShield five-face static config scanning|createAgentShield|AgentShield（README.en 核心能力声称）"
   "CHANGELOG.md|train compare|submitCompareJobs|多基座对比训练（CHANGELOG v1.4.4 交付④——CLI 接线防断链）"
+  "docs/HANDBOOK.md|部署后你会自动收到这些|pushAuditReport|审计报告自动推送（HANDBOOK「部署后你会自动收到这些」承诺族）"
 )
 for claim in "${WIRING_CLAIMS[@]}"; do
   claim_file="${claim%%|*}"; rest1="${claim#*|}"
@@ -736,17 +761,24 @@ for claim in "${WIRING_CLAIMS[@]}"; do
       | grep -cv "function $entry_fn(" || true)
     call_count=${call_count:-0}
     if [ "$call_count" -eq 0 ] 2>/dev/null; then
-      echo "  ❌ [${claim_desc}] ${claim_file} 命中「${claim_re}」但 ${entry_fn}() 在 engine/ 生产代码零调用——声称与接线断链"
+      ASSERTS=$((ASSERTS + 1)); echo "  ❌ [${claim_desc}] ${claim_file} 命中「${claim_re}」但 ${entry_fn}() 在 engine/ 生产代码零调用——声称与接线断链"
       WIRING_FAIL=$((WIRING_FAIL + 1))
     else
-      echo "  ✓ [${claim_desc}] ${entry_fn}() 生产调用 ${call_count} 处（声称与接线一致）"
+      ASSERTS=$((ASSERTS + 1)); echo "  ✓ [${claim_desc}] ${entry_fn}() 生产调用 ${call_count} 处（声称与接线一致）"
     fi
   else
-    echo "  ⏭️ [${claim_desc}] ${claim_file} 未命中声称「${claim_re}」——断言未触发（天然通过）"
+    # 🔴 v1.4.9 G-1：锚定串未命中 = 文档措辞漂移 = 断言空转 → FAIL（不再是「天然通过」）
+    ASSERTS=$((ASSERTS + 1)); echo "  ❌ [${claim_desc}] ${claim_file} 未命中锚定串「${claim_re}」——锚定串过期（文档措辞漂移），不是「天然通过」："
+    echo "      修法：① 把锚定串更新为现行措辞（见 ${claim_file} 实际文案）；② 或从 WIRING_CLAIMS 移除该声称（须留痕说明为何不再适用）"
+    WIRING_STALE=$((WIRING_STALE + 1))
   fi
 done
 if [ "$WIRING_FAIL" -gt 0 ]; then
   ERRORS=$((ERRORS + WIRING_FAIL))
+fi
+if [ "$WIRING_STALE" -gt 0 ]; then
+  ASSERTS=$((ASSERTS + 1)); echo "  ❌ §13 守卫空转：${WIRING_STALE} 条声称的锚定串已过期——守卫没在看（v1.4.9 G-1 起此处阻断）"
+  ERRORS=$((ERRORS + WIRING_STALE))
 fi
 
 echo ""
@@ -764,18 +796,18 @@ PM_CLAIMED=${PM_CLAIMED:-0}
 PLATFORM_MOUNT_FILES="GEMINI.md .cursor/rules/sofagent.mdc"
 for pmf in $PLATFORM_MOUNT_FILES; do
   if [ ! -f "$pmf" ]; then
-    echo "  ⏭️ $pmf 不存在——跳过"
+    SKIPS=$((SKIPS + 1)); echo "  ⏭️ $pmf 不存在——跳过"
     continue
   fi
   PM_CLAIMED=$(grep -oE '[0-9]+ 个 tool' "$pmf" 2>/dev/null | head -1 | grep -oE '[0-9]+' || true)
   if [ -z "$PM_CLAIMED" ]; then
-    echo "  ❌ $pmf 未找到「N 个 tool」声称——数字门禁盲区（守卫不空转：有挂载描述就该有数字且对账）"
+    ASSERTS=$((ASSERTS + 1)); echo "  ❌ $pmf 未找到「N 个 tool」声称——数字门禁盲区（守卫不空转：有挂载描述就该有数字且对账）"
     ERRORS=$((ERRORS + 1))
   elif [ "$PM_CLAIMED" != "$MCP_REG_COUNT" ]; then
-    echo "  ❌ ${pmf}：声称 ${PM_CLAIMED} 个 tool ≠ registry 实际 ${MCP_REG_COUNT}"
+    ASSERTS=$((ASSERTS + 1)); echo "  ❌ ${pmf}：声称 ${PM_CLAIMED} 个 tool ≠ registry 实际 ${MCP_REG_COUNT}"
     ERRORS=$((ERRORS + 1))
   else
-    echo "  ✓ ${pmf}：${PM_CLAIMED} 个 tool 与 registry 一致"
+    ASSERTS=$((ASSERTS + 1)); echo "  ✓ ${pmf}：${PM_CLAIMED} 个 tool 与 registry 一致"
   fi
 done
 
@@ -828,12 +860,12 @@ console.error('REG=' + regCount);
 TOOL_CLAIM_REG=$(grep -oE 'REG=[0-9]+' /tmp/guards-reg.log 2>/dev/null | grep -oE '[0-9]+' || true)
 TOOL_CLAIM_REG=${TOOL_CLAIM_REG:-0}
 if [ "$TOOL_CLAIM_REG" -eq 0 ]; then
-  echo "  ❌ registry 实数提取失败——对账无法进行（检查 tool-registry.ts 路径）"
+  ASSERTS=$((ASSERTS + 1)); echo "  ❌ registry 实数提取失败——对账无法进行（检查 tool-registry.ts 路径）"
   ERRORS=$((ERRORS + 1))
 elif [ -z "$TOOL_CLAIM_SCAN" ]; then
-  echo "  ✓ 全仓「N 个 tool(s)」声称与 registry（${TOOL_CLAIM_REG}）全部一致"
+  ASSERTS=$((ASSERTS + 1)); echo "  ✓ 全仓「N 个 tool(s)」声称与 registry（${TOOL_CLAIM_REG}）全部一致"
 else
-  echo "  ❌ 全仓工具数声称漂移："
+  ASSERTS=$((ASSERTS + 1)); echo "  ❌ 全仓工具数声称漂移："
   echo "$TOOL_CLAIM_SCAN" | sed 's/^/    /'
   ERRORS=$((ERRORS + $(echo "$TOOL_CLAIM_SCAN" | wc -l | tr -d ' ')))
 fi
@@ -862,11 +894,11 @@ for rclaim in "${REVERSE_CLAIMS[@]}"; do
   bad_lines=$(grep -n "$r_lit" "$r_file" 2>/dev/null | grep -cv "接线未启用" || true)
   bad_lines=${bad_lines:-0}
   if [ "$bad_lines" -gt 0 ]; then
-    echo "  ❌ [${r_desc}] ${r_file} 存在「${r_lit}」且同行缺「接线未启用」限定的行 ×${bad_lines}——能力级声称必须带限定词（见 SECURITY 口径）"
+    ASSERTS=$((ASSERTS + 1)); echo "  ❌ [${r_desc}] ${r_file} 存在「${r_lit}」且同行缺「接线未启用」限定的行 ×${bad_lines}——能力级声称必须带限定词（见 SECURITY 口径）"
     grep -n "$r_lit" "$r_file" 2>/dev/null | grep -v "接线未启用" | sed 's/^/    /' | head -5
     REVERSE_FAIL=$((REVERSE_FAIL + 1))
   else
-    echo "  ✓ [${r_desc}] ${r_file} 全部「${r_lit}」声称均带「接线未启用」限定（与 SECURITY 口径一致）"
+    ASSERTS=$((ASSERTS + 1)); echo "  ✓ [${r_desc}] ${r_file} 全部「${r_lit}」声称均带「接线未启用」限定（与 SECURITY 口径一致）"
   fi
 done
 fi
@@ -905,16 +937,16 @@ console.log('EXPIRED'); // 相等 = 到期
 " 2>/dev/null || echo "")
     LOC=$(echo "$line" | cut -d: -f1-2)
     if [ "$EXPIRED" = "EXPIRED" ]; then
-      echo "  ❌ [到期] ${LOC} 承诺 v${PROMISED} 移除（当前 v${CURRENT_VERSION}）——shim 仍在，兑现移除或改承诺"
+      ASSERTS=$((ASSERTS + 1)); echo "  ❌ [到期] ${LOC} 承诺 v${PROMISED} 移除（当前 v${CURRENT_VERSION}）——shim 仍在，兑现移除或改承诺"
       STALE_FAIL=$((STALE_FAIL + 1))
     else
-      echo "  ✓ [未到期] ${LOC} 承诺 v${PROMISED} 移除（当前 v${CURRENT_VERSION}）"
+      ASSERTS=$((ASSERTS + 1)); echo "  ✓ [未到期] ${LOC} 承诺 v${PROMISED} 移除（当前 v${CURRENT_VERSION}）"
     fi
   done <<EOF
 $STALE_PROMISES
 EOF
 else
-  echo "  ✓ engine/ 源码无「将在 vX.Y.Z 移除」承诺（无可盯防对象）"
+  ASSERTS=$((ASSERTS + 1)); echo "  ✓ engine/ 源码无「将在 vX.Y.Z 移除」承诺（无可盯防对象）"
 fi
 if [ "$STALE_FAIL" -gt 0 ]; then
   ERRORS=$((ERRORS + STALE_FAIL))
@@ -927,16 +959,27 @@ echo "=== 17. API.md 工具数对账（文档 tool 数 == registry 实数）==="
 REGISTRY_COUNT=$(grep -c "name: '" engine/mcp/src/tool-registry.ts || true)
 API_COUNT=$(grep -c '^| `' docs/API.md || true)
 if [ "$REGISTRY_COUNT" = "$API_COUNT" ]; then
-  echo "  ✓ docs/API.md：${API_COUNT} 个 tool 与 registry（${REGISTRY_COUNT}）一致"
+  ASSERTS=$((ASSERTS + 1)); echo "  ✓ docs/API.md：${API_COUNT} 个 tool 与 registry（${REGISTRY_COUNT}）一致"
 else
-  echo "  ❌ docs/API.md 工具数漂移：文档 ${API_COUNT} ≠ registry ${REGISTRY_COUNT}——跑 node tools/gen/gen-api-tools.mjs 重生成"
+  ASSERTS=$((ASSERTS + 1)); echo "  ❌ docs/API.md 工具数漂移：文档 ${API_COUNT} ≠ registry ${REGISTRY_COUNT}——跑 node tools/gen/gen-api-tools.mjs 重生成"
   ERRORS=$((ERRORS + 1))
 fi
 
 if [ "$ERRORS" -gt 0 ]; then
   echo "发现 ${ERRORS} 个问题"
-  exit 1
 else
   echo "全部通过"
+fi
+
+# ── 覆盖度行（v1.4.9 G-2② · 范式见 tools/check/lib/coverage-line.sh）──
+# covered 口径：仓内 tracked `.md` 文件数（本脚本的文档扫描面；不含 node_modules——非 tracked）。
+# 🔴 skipped > 0 不阻断退出码（合法跳过由发版 SOP「SKIP 数逐条裁决」步骤裁定），但必须打印。
+COVERED=$(git ls-files '*.md' 2>/dev/null | wc -l | tr -d ' ')
+COVERED=${COVERED:-0}
+emit_coverage_line "check-docs" "${ASSERTS}" "${COVERED}" "${SKIPS}"
+
+if [ "$ERRORS" -gt 0 ]; then
+  exit 1
+else
   exit 0
 fi
