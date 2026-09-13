@@ -178,7 +178,7 @@ export async function trainDoctor(
       ? {
           status: cuda.freeVramMiB > 8 * 1024 ? 'ok' : 'fail',
           freeMiB: cuda.freeVramMiB,
-          detail: `空闲显存 ${cuda.freeVramMiB} MiB（8B 模型训练建议 ≥ 8192 MiB）`,
+          detail: `空闲显存 ${cuda.freeVramMiB} MiB（8B 后训任务建议 ≥ 8192 MiB）`,
         }
       : {
           status: 'skip',
