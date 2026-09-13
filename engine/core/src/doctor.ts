@@ -14,7 +14,7 @@
 //
 // 注意：post-commit 仅检查存在性——不检查内容是否引用 sofagent
 
-import { existsSync, readFileSync, readdirSync, statSync, mkdirSync, writeFileSync } from 'fs';
+import { existsSync, readFileSync, readdirSync, statSync, mkdirSync, writeFileSync, rmSync } from 'fs';
 import { join, dirname, isAbsolute, resolve } from 'path';
 import { execFileSync } from 'child_process';
 import { createHash } from 'crypto';
@@ -420,12 +420,11 @@ export function runDoctor(projectDir: string = process.cwd(), options: { resetBa
           if (!existsSync(hashDir)) mkdirSync(hashDir, { recursive: true, mode: 0o700 });
           const syncScript = join(projectDir, 'tools', 'audit-baseline-sync.sh');
           if (existsSync(syncScript)) {
-            const { execFileSync } = require('child_process');
             execFileSync('bash', [syncScript, '--quiet'], { stdio: 'pipe' });
             ok(`✅ 三锚已重置（主锚 audit-dist-hash / 兼容锚 audit-hash / 源码指纹）——经 tools/audit-baseline-sync.sh`);
           } else {
             for (const f of ['audit-dist-hash.txt', 'audit-hash.txt', 'audit-src-fingerprint.txt']) {
-              try { require('fs').rmSync(join(hashDir, f), { force: true }); } catch { /* 不存在即可 */ }
+              try { rmSync(join(hashDir, f), { force: true }); } catch { /* 不存在即可 */ }
             }
             ok(`✅ 三锚已清除（仓外无 tools/ 同步脚本）——下次 hook 运行会 fail-closed 重新记录基线`);
           }

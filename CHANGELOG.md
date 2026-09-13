@@ -17,7 +17,7 @@
 > 🔴 **破坏性变更公告（v1.4.8）· 训练域符号迁移至 `@sofagent/train`**
 >
 > `@sofagent/orchestrator` 根 barrel 移除 train 域 **101 个重导出块 / 561 个 `@public` 符号**（orchestrator 符号数 1444 → 883），全部迁入独立包 `@sofagent/train`（barrel 564 符号）。**替换路径**：`import { createTrainJob } from '@sofagent/train'`。
-> **不提供兼容期**（技术原因，非选择）：保留根 barrel 重导出会使 `orchestrator` 依赖 `train`，与 `train` 依赖 `orchestrator` 构成**包级循环**。全仓 `@public` 基线 2281 → 2284。
+> **不提供兼容期**（技术原因，非选择）：保留根 barrel 重导出会使 `orchestrator` 依赖 `train`，与 `train` 依赖 `orchestrator` 构成**包级循环**。全仓 `@public` 基线 2281 → 2283。
 
 > 📋 **判据偏差登记（v1.4.8）· 伞包依赖闭包**
 >
