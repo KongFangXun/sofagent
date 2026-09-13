@@ -20,22 +20,35 @@
 //   - 零 token——纯本地规则扫描，不调 LLM
 //   - 3 秒内输出——规则扫描本身是毫秒级
 //
-// 退出码：
+// 退出码（v1.4.9 P1-15 补全口径——原「四态」表述漏记用法错误态，且崩溃态与
+// 「非 git 仓库」**撞码 3**，实测两义并存）：
 //   0 = 全通过
 //   1 = 有警告
 //   2 = 有违规
-//   3 = 非 git 仓库
+//       另一来源：承载安全语义的参数拼错（--ruleset* / --config / --task / --include
+//       等，见下方 SEMANTIC_FLAG_PREFIXES 分支）＝ **用法错误**，与审计发现共用 2——
+//       两者都属「必须中断」，故不分码（v1.4.6 finding-12 起）。
+//   3 = 非 git 仓库（runCliQuick 的 `return 3`，见 `if (!isGitRepo)` 分支）
+//   4 = 引擎崩溃（uncaughtException / unhandledRejection 兜底，见下方两处 process.exit）
 // ============================================================
 
-// v1.4.8 阶段七：与 index.ts 同源的崩溃兜底——引擎异常用 exit 3（区别 0=全绿/1=警告/2=违规），
-// 使 hook 的「非 0/1/2 ⇒ fail-loud 阻断」分支能识别崩溃，避免 fail-open 静默放行。
+// v1.4.8 阶段七：与 index.ts 同源的崩溃兜底——引擎异常用专属退出码 4
+// （区别 0=全绿/1=警告/2=违规/3=非 git 仓库），使 hook 的「非 0/1/2 ⇒ fail-loud 阻断」
+// 分支能识别崩溃，避免 fail-open 静默放行。
+// v1.4.9 P1-15：**3 → 4**。原用 3 与 cli-quick 自己的「非 git 仓库 ⇒ return 3」撞码
+// （实测两义并存：非 git 目录跑出 3，SOFAGENT_HOME 越界崩溃也跑出 3），撞码使问题定位
+// 需要靠 stderr 猜。独立为 4 后「崩溃」与「用错目录」可由退出码单义区分。
+// ⚠️ 与 index.ts 顶部同名常量/处理块**手同步**（两文件本就各自独立注册）
+// ——漂移由 `src/__tests__/cli-crash-exit-code.test.ts` 双侧行为锁兜住，不靠注释自律。
+const EXIT_ENGINE_CRASH = 4;
+
 process.on('uncaughtException', (err) => {
   console.error(`\u274c sofagent-audit(quick) 引擎异常退出: ${err instanceof Error ? err.message : String(err)}`);
-  process.exit(3);
+  process.exit(EXIT_ENGINE_CRASH);
 });
 process.on('unhandledRejection', (reason) => {
   console.error(`\u274c sofagent-audit(quick) 未处理的 Promise 拒绝: ${reason instanceof Error ? reason.message : String(reason)}`);
-  process.exit(3);
+  process.exit(EXIT_ENGINE_CRASH);
 });
 
 import { execFileSync, spawnSync } from 'child_process';
@@ -260,7 +273,8 @@ export function runCliQuick(argv: string[]): number {
   // v1.4.6 finding-12: 子命令同样需要完整引擎——此前只拦 flag 不拦子命令，
   // npx 主入口敲 `sofagent-audit agent-shield`（或 ontology/conflict-check/
   // federation-distill/corpus）时子命令落进下方位置参数 diffRange 分支，
-  // parseDiff('agent-shield') 抛「diff 解析失败」exit 3（误导性错误）。
+  // parseDiff('agent-shield') 抛「diff 解析失败」→ 引擎崩溃 ⇒ 退出码 4
+  // （v1.4.9 P1-15：此处原先写 exit 3，与上面「非 git 仓库 ⇒ 3」撞码，已改 4）。
   // 清单与 index.ts SUBCOMMANDS 保持对齐。
   const FULL_ONLY_SUBCOMMANDS = [...AUDIT_SUBCOMMANDS_SRC];
 

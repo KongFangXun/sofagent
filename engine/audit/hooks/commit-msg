@@ -255,10 +255,10 @@ else
 fi
 EXIT_CODE=$?
 
-# v1.4.8 阶段九加固：**崩溃识别不依赖退出码**——旧版 audit（含用户已装的全局包）没有
-# 「崩溃=3」契约，node 未捕获异常仍是 exit 1，会与「1=警告」撞码 ⇒ fail-open。
-# 故额外扫 stderr 的崩溃特征（node 堆栈 / 未捕获异常），命中即判引擎故障。
-# 与退出码判断**互为冗余**：任一命中即阻断。
+# v1.4.8 阶段九加固 / v1.4.9 P1-15 降为**兜底**：退出码是主判据（新版 audit 崩溃 = 专属码 4），
+# 故下面的 stderr 特征扫描**不再是必需项**——它只用来兜住**旧版引擎**：旧版（含用户已装的
+# 全局包）没有「崩溃」专属码，node 未捕获异常仍是 exit 1，会与「1=警告」撞码 ⇒ fail-open。
+# 两条判据**互为冗余**：任一命中即阻断。本项只降措辞与定性，**阻断语义与判定顺序均未动**。
 ENGINE_CRASH=0
 if grep -qE "^(Error|TypeError|ReferenceError|RangeError|SyntaxError|UnhandledPromiseRejection)|throw new Error|at Object\.<anonymous>|Node\.js v[0-9]+" "$AUDIT_STDERR" 2>/dev/null; then
   ENGINE_CRASH=1
@@ -268,7 +268,7 @@ rm -f "$AUDIT_STDERR"
 if [ $ENGINE_CRASH -eq 1 ]; then
   echo ""
   echo "❌ sofagent audit: 审计引擎异常（stderr 含崩溃特征）——审计未完成，commit 已阻止。"
-  echo "   即使退出码为 0/1（旧版引擎无「崩溃=3」契约），崩溃也不得被当作「通过/警告」放行。"
+  echo "   即使退出码为 0/1（旧版引擎无「崩溃=4」契约），崩溃也不得被当作「通过/警告」放行。"
   echo "   排查：SOFAGENT_HOME 越界 / Node 版本 / dist 完整性。"
   exit 1
 fi
@@ -286,7 +286,8 @@ if [ $EXIT_CODE -eq 1 ]; then
 elif [ $EXIT_CODE -ne 0 ]; then
   echo ""
   echo "❌ sofagent audit: 审计引擎异常退出（exit $EXIT_CODE）——审计未完成，commit 已阻止。"
-  echo "   契约：0=全绿 / 1=警告（放行）/ 2=违规（阻断）；此三者之外的退出码 = 引擎崩溃或环境异常"
+  echo "   契约：0=全绿 / 1=警告（放行）/ 2=违规（阻断）/ 3=非 git 仓库 / 4=引擎崩溃；"
+  echo "   上述五者之外的退出码 = 环境异常"
   echo "   （SOFAGENT_HOME 越界 fail-loud / Node 缺失 / dist 异常等）。静默放行 = 0 处违规但根本"
   echo "   没在看 = fail-open，故此处 fail-loud。"
   exit 1

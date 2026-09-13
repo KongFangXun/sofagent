@@ -1,13 +1,19 @@
 #!/usr/bin/env node
-// v1.4.8 阶段七：运行期崩溃兜底——引擎异常时用 exit 3（区别于 0=全绿/1=警告/2=违规），
+// v1.4.8 阶段七：运行期崩溃兜底——引擎异常时用专属退出码 4（区别于 0=全绿/1=警告/2=违规），
 // 使 hook 的「非 0/1/2 ⇒ fail-loud 阻断」分支能识别崩溃，避免 fail-open 静默放行。
+// v1.4.9 P1-15：**3 → 4**。原用 3 与 cli-quick 的「非 git 仓库 ⇒ exit 3」撞码（实测两义并存），
+// 独立为 4 后「引擎崩溃」与「用错目录」可由退出码单义区分。
+// ⚠️ 与 cli-quick.ts 顶部的同名处理块**手同步**——漂移由
+// `src/__tests__/cli-crash-exit-code.test.ts` 双侧行为锁兜住，不靠注释自律。
+const EXIT_ENGINE_CRASH = 4;
+
 process.on('uncaughtException', (err) => {
   console.error(`\u274c sofagent-audit 引擎异常退出: ${err instanceof Error ? err.message : String(err)}`);
-  process.exit(3);
+  process.exit(EXIT_ENGINE_CRASH);
 });
 process.on('unhandledRejection', (reason) => {
   console.error(`\u274c sofagent-audit 未处理的 Promise 拒绝: ${reason instanceof Error ? reason.message : String(reason)}`);
-  process.exit(3);
+  process.exit(EXIT_ENGINE_CRASH);
 });
 
 // ============================================================
@@ -32,6 +38,8 @@ process.on('unhandledRejection', (reason) => {
 //   0 = 全通过
 //   1 = 有警告
 //   2 = 有违规（A1 不碰敏感 / A2 不泄密钥）
+//   4 = 引擎崩溃（v1.4.9 P1-15 起为专属码；完整引擎自身不使用 3）
+//   （3 = 非 git 仓库，仅 cli-quick 口径；完整引擎在非 git 仓库下由各子命令自行处理）
 // ============================================================
 
 import { execFileSync } from 'child_process';
