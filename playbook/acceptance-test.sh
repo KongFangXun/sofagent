@@ -32,7 +32,7 @@ CLI="node $AUDIT_DIR/dist/index.js"
 # `git rev-parse --show-toplevel` —— 临时仓的 toplevel 下没有 engine/audit/dist ⇒ 它会回退到
 # **全局 npm 包** ⇒ 整批场景**测的都不是本仓代码**（场景 11 长期「失败」的真因）。
 # 统一注入显式入口，让 hook 精确执行**本仓刚构建的 dist**（hook 侧该注入 fail-loud）。
-export SOFAGENT_AUDIT_ENTRY="$PROJECT_ROOT/$AUDIT_DIR/dist/index.js"
+export SOFAGENT_AUDIT_ENTRY="$AUDIT_DIR/dist/index.js"  # AUDIT_DIR 已是绝对路径
 CORE_CLI="node $PROJECT_ROOT/engine/core/dist/cli.js"
 [ ! -f "$AUDIT_DIR/dist/index.js" ] && { echo -e "${RED}❌ dist/index.js 不存在，请先 build${NC}"; exit 1; }
 TMP_REPO=""; FAILED=0; PASSED=0; WARNED=0; CURRENT_SCEN=""  # CURRENT_SCEN：P1-7 warn 场景定位（头部初始化防 set -u）
