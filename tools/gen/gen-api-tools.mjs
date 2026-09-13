@@ -27,7 +27,7 @@ const GROUP_NAMES = {
   workflow: '业务流编排（workflow DAG · 循环执行与优化）',
   org: 'Agent 组织与协作（数字员工 · 团队阵型 · HITL 人工介入）',
   snapshot: '快照与回溯（状态留档 · 回滚恢复）',
-  train: '后训练流水线（数据回流 → 训练 → 模型注册晋升）',
+  train: '后训流水线（数据回流 → 训练 → 模型注册晋升）',
   eval: '评估与验收（基准评测 · 验收标准 · A/B 对比）',
   knowledge: '本体数据与知识资产（ontology · 实体概念 · 知识库 · 反思）',
   commons: '组织能力市场（发布 · 检索 · 调用 · 评分 · 退役）',
