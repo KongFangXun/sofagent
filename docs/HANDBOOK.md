@@ -166,7 +166,7 @@ cd sofagent && bash install.sh
 
 #### 装之前：只认官方通道
 
-> ⚠️ **别从镜像装。**官方发布渠道只有三处——**GitHub 仓库 / npm（带 scope 的 `@sofagent/*` 与裸名总包 `sofagent`）/ ClawHub 与 SkillHub 双生态插件市场**，全部安装方式见 [README](../README.md)。第三方镜像、聚合仓库、二次打包的「一键脚本」不在发布链内：它们可能钉在已撤销的历史版本上，或改写了安装脚本——`install.sh` 会写 `~/.sofagent/` 并注册宿主 hook，**被改写等于交出宿主控制权**。
+> ⚠️ **别从镜像装。**官方发布渠道只有三处——**GitHub 仓库**、**npm**（带 scope 的 `@sofagent/*` 与裸名总包 `sofagent`）、**插件市场**（ClawHub 与 SkillHub 双生态），全部安装方式见 [README](../README.md)。第三方镜像、聚合仓库、二次打包的「一键脚本」不在发布链内：它们可能钉在已撤销的历史版本上，或改写了安装脚本——`install.sh` 会写 `~/.sofagent/` 并注册宿主 hook，**被改写等于交出宿主控制权**。
 >
 > 另有一类**同名陷阱**：npm 裸名包 `sofagent-audit` 是本项目的旧代理包（已 deprecated、长期滞后），正式包名是带 scope 的 `@sofagent/audit`——别按名字猜，见 README 的同名警示。
 
