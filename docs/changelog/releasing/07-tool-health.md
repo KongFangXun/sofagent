@@ -20,6 +20,8 @@
 | 八 | **🔴 防线失明自检**：`bash tools/check/check-guard-fail-loud.sh`——PATH 劫持假检测引擎（崩溃型 exit 3 / 空响应型 exit 0 无输出）实测守卫 fail-loud：引擎故障下守卫必须非 0 退出，仍 exit 0 = 「0 处违规但根本没在看」= 失明不自知，比没有防线更坏。覆盖判定路径依赖 perl 的守卫（check-cjk-var / check-guards） | 正常态 RC=0 且注入矩阵全报红；人为让 perl 失效重跑必须 RC≠0 |
 
 > 退出码语义（两个新门禁共用）：0=全绿 / 1=有 FAIL / 2=脚本自身错误——「工具死了」和「检查出问题」严格区分。
+> 🔴 **audit CLI 的退出码契约（步骤六相关）**：0=全绿 / 1=有警告（放行）/ 2=有违规（阻断），**引擎崩溃=3**——node 未捕获异常默认 exit 1 会与「警告」撞码，导致 hook 把崩溃当警告**静默放行**（fail-open 实测：含密钥的 .env 入库）。hook 侧已有 `-ne 0` 兜底分支拦截非 0/1/2 退出码。
+
 > 脚本产出是**清单不是结论**：⚠️/❌ 逐条人工裁决，修复归本阶段。
 
 ---
@@ -45,7 +47,12 @@ test -s .git/hooks/commit-msg || { echo "❌ hook 模板为空——HOOK_TEMPLAT
 # 3. 拦截验证：提交含密钥 .env
 # ⚠️ message 必须够长够具体（≥8 有效字符）——A5 不瞒真相 + A19 msg 质量会拦截，
 #    过短的 message（"test"/"init"）会导致「密钥没测到先被 message 规则拦」的假失败
-export PATH=/tmp/fe-verify-bin:$PATH SOFAGENT_DATA=/tmp/fe-vd SOFAGENT_HOME="$(pwd)/.sofagent-test"
+# 🔴 v1.4.8 修正：SOFAGENT_HOME 不能用 /tmp 下路径——core 的 sanitizeSofagentHome 会
+#    fail-loud 拒绝（越界前缀），audit 随之崩溃。两种正确写法任选：
+#      a) 用 HOME 下路径（推荐）：SOFAGENT_HOME="$HOME/.sofagent-hooktest"
+#      b) 确需 /tmp 时显式放行：SOFAGENT_HOME_ALLOWED_PREFIXES=/tmp
+export PATH=/tmp/fe-verify-bin:$PATH SOFAGENT_DATA="$HOME/.sofagent-hooktest/data" \
+       SOFAGENT_HOME="$HOME/.sofagent-hooktest/home"
 echo "AWS_SECRET_ACCESS_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY" > .env
 git add -f .env   # ⚠️ 必须 -f——init 自带的 .gitignore 会挡 .env（git 层先拦是双保险，但那样测不到 hook 层）
 git commit -m "chore: add environment config for deployment"  # 期望：A1+A2 拦截 exit 2，.env 未入库
