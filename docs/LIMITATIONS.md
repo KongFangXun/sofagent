@@ -178,7 +178,58 @@ sofagent 跑在单个 Agent 里——没有 agent-to-agent 通信，没有多实
 
 ---
 
+### 🧩 依赖方向架构测试只覆盖 build 序列包
+
+`tools/check/dependency-direction.yml` 断言的是 **build 序列的包边界**（14 项：12 模块包 + `load-chain`），**不含 `umbrella` 与插件家族**（`engine/dsh-plugins/*`、`engine/openclaw-plugins/*`）。因此「插件依赖了不该依赖的包」不会被本门禁拦下——它的口径是架构边界，不是全仓依赖图。
+缓解：插件侧另有生成式清单（`plugins.json` ⇄ 生成物逐字节对账）与 seam 契约门禁覆盖其接口面。
+
+### 🗜️ 自动上下文压缩存在信息丢失风险
+
+加载链超 3% 预算触发段级压缩。压缩是**有损**的：被压缩段落进入模型时只剩摘要，细节不可回读。
+缓解：红线铁律区（品牌色/铁律/底线等语义块）**不参与压缩**；压缩决策与结果落审计可追溯。需要完整细节时以磁盘上的原始文档为准，不要依赖上下文里的压缩副本。
+
+### 🧭 成本 quota 是事前估算，不是精确账
+
+`cost_query` 与 quota 门禁给出的是**事前估算 + 用量台账**（余量/已用/周期三字段），不是与云厂商账单逐笔对账的结果。token 计价口径变化、缓存命中、并发重试都会让估算与实际账单产生偏差。
+缓解：WARN/HARD 双模式——WARN 只提示，HARD 才阻断；关键预算以厂商账单为准。
+
+### 🎛️ 多 Agent 协作阵型库是内置六阵型
+
+阵型库提供六种**内置**阵型（含 schema 校验与模板兜底实例化）。它不提供「自定义阵型的图形编排」——自定义需直接写阵型配置。
+缓解：交接留痕与边生命周期由框架托管；阵型结构错误在实例化前被 schema 拦下。
+
+### 🔗 workflow 模型偏好绑定需注册表同步
+
+节点级 `modelPreference` 解析依赖模型注册表。**未注册的模型会显式报错**（不静默降级到默认模型——这是刻意的，避免「以为跑的是 A 模型其实是 B」）。
+代价：注册表与工作流配置需同步维护，注册表缺项会让工作流直接失败而非降级运行。
+
+### 🧬 自研进化 gate 只比「历史最优」
+
+`@sofagent/evolve` 的 `native-gate` 判定逻辑是「跑 eval 验证集 → 出分数 → **与历史最优比对** → adopt / revert」。它给出的是**相对改善**信号，不是绝对质量保证：历史最优本身可能是低分的，此时「不比它差」就会被采纳。
+缓解：`SOFAGENT_EVOLVE_GATE=cli` 可切回外部 CLI 兼容层；gate 结论（score/bestScore/adopted/reverted）落盘可审计。
+
+### 📦 聚合插件的装配面依赖宿主 profile
+
+聚合插件（`cordis-plugin-sofagent-suite`）经**宿主挂载通道**分发：能力是否可用取决于宿主 profile 的 `bundles` 配置与 `node_modules` 软链是否就位。profile 被重置、软链被删或旧链残留时，能力会缺失或出现悬空链噪音。
+缓解：聚合层对逐个原子插件做降级（缺 `dist/` 的只报该一个、其余照常加载），失败项进 `failed` 列表；seam 契约四载体（源码 / `package.json` / patch / `SKILL.md`）机器对账。
+
 ## 三、安全与信任模型局限
+### 🔌 插件来源白名单的边界
+
+插件来源校验按三类（Git URL / 主机 / 本地路径）判定，**误分类即可能绕过**——例如把不受信来源写成受信主机形态。白名单保护的是「插件从哪来」，不校验「插件内容做什么」。
+缓解：`install.sh --policy` 三出口全部 fail-closed；托管 hook 为独裁路径；`--policy` 未声明时的默认行为以拒绝为准。
+
+### 🚦 shell 提权分级可能误判
+
+三态 classifier（safe 直接跑 / risky 走场景白名单或 HITL / dangerous forbid-until-approved）基于命令形态判定，**形态复杂的命令可能被分到比实际更宽的档位**（或反之）。
+缓解：dangerous 档 fail-closed（未批准不执行）；risky 档白名单与 HITL 兜底；分级决策与批准记录进审计。
+
+### 🧰 app_tool_policy 矩阵需人工维护
+
+应用级工具策略是 `app × tool` 白名单矩阵，**未声明即拒绝**。这保证了默认安全，但也意味着新增应用或新增 tool 时必须同步声明，否则会出现「功能正常但被策略拦下」的现象。
+缓解：矩阵可配置且改动进审计；被拒时的错误信息指明是哪一类未声明。
+
+
 
 > **企业 DevOps 集成路径**：当前 `history.jsonl` 为 append-only JSONL 明文，企业 IT 如需接入 SIEM / 企业日志平台，可通过 filebeat / logstash 等采集 agent 定时轮询 `~/.sofagent/data/audit/history.jsonl` 转发（见 SECURITY.md「审计结果推送」）。**本地三态 Webhook 推送 v1.1.6 已接通**（PASS/WARN/FAIL）；**企业平台推送（飞书/钉钉/企微）已在 v1.2.1 落地**（采购阻塞项已解除）。CI 集成方面，各包提供 `npm test` 与 `playbook/acceptance-test.sh` 可接入现有流水线做门禁；`sofagent-audit --install-hook` 提供的 commit-msg hook 可作为 pre-commit / pre-push 关卡。以下是一个完整的 GitHub Actions CI 兜底示例（在 CI 中跑 `sofagent-audit --diff`，确保 `--no-verify` 绕过 hook 后仍有防线）：
 >
