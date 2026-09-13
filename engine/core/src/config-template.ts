@@ -226,6 +226,13 @@ fi
 if [ $EXIT_CODE -eq 1 ]; then
   echo ""
   echo "⚠️  sofagent 发现警告（不阻止 commit）。"
+elif [ $EXIT_CODE -ne 0 ]; then
+  echo ""
+  echo "❌ sofagent audit: 审计引擎异常退出（exit $EXIT_CODE）——审计未完成，commit 已阻止。"
+  echo "   契约：0=全绿 / 1=警告（放行）/ 2=违规（阻断）；此三者之外的退出码 = 引擎崩溃或环境异常"
+  echo "   （SOFAGENT_HOME 越界 fail-loud / Node 缺失 / dist 异常等）。静默放行 = 0 处违规但根本"
+  echo "   没在看 = fail-open，故此处 fail-loud。"
+  exit 1
 fi
 
 # 成功回声（可感知性）：一行轻提示让用户知道审计在保护——与 FAIL 横幅/WARN 提示对齐

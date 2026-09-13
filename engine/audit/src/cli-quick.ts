@@ -27,6 +27,17 @@
 //   3 = 非 git 仓库
 // ============================================================
 
+// v1.4.8 阶段七：与 index.ts 同源的崩溃兜底——引擎异常用 exit 3（区别 0=全绿/1=警告/2=违规），
+// 使 hook 的「非 0/1/2 ⇒ fail-loud 阻断」分支能识别崩溃，避免 fail-open 静默放行。
+process.on('uncaughtException', (err) => {
+  console.error(`\u274c sofagent-audit(quick) 引擎异常退出: ${err instanceof Error ? err.message : String(err)}`);
+  process.exit(3);
+});
+process.on('unhandledRejection', (reason) => {
+  console.error(`\u274c sofagent-audit(quick) 未处理的 Promise 拒绝: ${reason instanceof Error ? reason.message : String(reason)}`);
+  process.exit(3);
+});
+
 import { execFileSync, spawnSync } from 'child_process';
 import { FULL_ONLY_FLAGS as FULL_ONLY_FLAGS_SRC, AUDIT_SUBCOMMANDS as AUDIT_SUBCOMMANDS_SRC } from './cli/flag-table';
 import { existsSync } from 'fs';

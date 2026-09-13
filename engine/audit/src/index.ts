@@ -1,4 +1,15 @@
 #!/usr/bin/env node
+// v1.4.8 阶段七：运行期崩溃兜底——引擎异常时用 exit 3（区别于 0=全绿/1=警告/2=违规），
+// 使 hook 的「非 0/1/2 ⇒ fail-loud 阻断」分支能识别崩溃，避免 fail-open 静默放行。
+process.on('uncaughtException', (err) => {
+  console.error(`\u274c sofagent-audit 引擎异常退出: ${err instanceof Error ? err.message : String(err)}`);
+  process.exit(3);
+});
+process.on('unhandledRejection', (reason) => {
+  console.error(`\u274c sofagent-audit 未处理的 Promise 拒绝: ${reason instanceof Error ? reason.message : String(reason)}`);
+  process.exit(3);
+});
+
 // ============================================================
 // sofagent-audit · 提交时审计 CLI 入口
 // v1.4.7 · 审计闭环六步（检测+分类+根因+改进+回归+上线）

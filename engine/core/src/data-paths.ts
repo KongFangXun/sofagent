@@ -55,6 +55,11 @@ function sanitizeSofagentHome(raw: string | undefined): string {
     // 一条测试记录进 46MB 真实 history.jsonl）。回退方向是「静默收窄隔离」而非
     // 报错，违反 fail-loud 纪律。改抛错：测试/CI 场景立刻暴露配置缺口；确需
     // 自定义根目录的企业场景用 SOFAGENT_HOME_ALLOWED_PREFIXES 显式放行（既有通道）。
+    // v1.4.8 阶段七：设专属退出码 3 再抛——node 未捕获异常默认 exit 1，与 audit CLI 的
+    // 「1=有警告」契约**撞码**：hook 的 `-eq 1` 分支会把它当「警告，放行 commit」⇒ 引擎崩溃
+    // 被静默放行（fail-open；实测密钥可入库）。设 exitCode=3（0=全绿/1=警告/2=违规之外）
+    // 让 hook 的 `-ne 0` 兜底分支识别为「引擎异常 ⇒ fail-loud 阻断」。
+    process.exitCode = 3;
     throw new Error(
       `SOFAGENT_HOME 越界：${resolved} 不在允许前缀内（fail-loud，不再静默回退）。` +
       `如确需该根目录，请设置 SOFAGENT_HOME_ALLOWED_PREFIXES 显式放行（冒号分隔多前缀）。` +
