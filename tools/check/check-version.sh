@@ -1129,7 +1129,7 @@ if [[ -d "${MCP_SRC_DIR}" ]] && [[ -f "${SKILL_FILE}" ]]; then
   if [[ -f "${ARCH_FILE}" ]]; then
     # 提取能力总览段（## 能力与状态总览 → ### 对外核心能力）中的「（N tools）」声称
     ARCH_CLAIMED=$(sed -n '/^## 能力与状态总览/,/^### 对外核心能力/p' "${ARCH_FILE}" 2>/dev/null \
-      | grep -oE '（[0-9]+ tools）' | grep -oE '[0-9]+' | head -1)
+      | grep -oE '[（(][0-9]+ tools[）)]' | grep -oE '[0-9]+' | head -1)
     if [[ -n "${ARCH_CLAIMED}" ]] && [[ "${ARCH_CLAIMED}" != "${REGISTERED_COUNT}" ]]; then
       echo "  ❌ ARCHITECTURE 能力总览表声称 ${ARCH_CLAIMED} tools，mcp/src/ 注册 ${REGISTERED_COUNT} 个"
       ERRORS=$((ERRORS + 1))
