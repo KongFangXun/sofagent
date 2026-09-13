@@ -319,6 +319,12 @@ describe('commit-msg reset fail-loud（H-01 index.lock 竞态）', () => {
   const hookPath = join(__dirname, '..', '..', 'hooks', 'commit-msg');
 
   beforeEach(() => {
+    // v1.4.8：本组测试驱动**真实 hook 脚本**，因此必须隔离外部 CLI 注入变量——
+    // `SOFAGENT_AUDIT_ENTRY` 是 hook 的显式入口注入点（fail-loud：指向不存在即报错退出）。
+    // 若外部 shell（如验收脚本）export 了它，会泄漏进本测试的子进程，而该路径在测试的
+    // 临时目录语境下不适用 ⇒ 期望 exit 0 的用例收到 exit 1（实测 2 例失败）。
+    // 本组测的是 hook 自身逻辑，不该受注入变量摆布 ⇒ 先清空。
+    delete process.env.SOFAGENT_AUDIT_ENTRY;
     repoDir = join(tmpdir(), `sofagent-h01-test-${Date.now()}-${Math.random().toString(36).slice(2)}`);
     sofagentHome = join(tmpdir(), `sofagent-h01-home-${Date.now()}-${Math.random().toString(36).slice(2)}`);
     mkdirSync(repoDir, { recursive: true });
