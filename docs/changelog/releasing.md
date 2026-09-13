@@ -14,6 +14,32 @@
 
 ---
 
+## 十一阶段一览（编号 SSOT —— 引用阶段时以本表为准）
+
+> **为什么需要本表**：阶段编号曾在 v1.4.3 被现场纠正（「七=ROADMAP 同步 / 八=tool health」与实际不符），
+> v1.4.8 执行时也出现过编号困惑。**根因 = 没有一个"编号 → 文件 → 一句话职责"的总表**，
+> 每次都要翻文件数序号。本表是编号的唯一 SSOT，本目录下所有文件引用阶段时以此为准。
+
+| # | 文件 | 一句话职责 | 关口 |
+|:--:|---|---|:--:|
+| 一 | [01-review](./releasing/01-review.md) | 复盘：上一版遗留 + 本轮待办梳理 | |
+| 二 | [02-dev](./releasing/02-dev.md) | 开发：功能实现 + 随开发实时补场景/维度 | |
+| 三 | [03-quality-loop](./releasing/03-quality-loop.md) | 质量循环：fresh-eyes-loop 多视角盲审 + 修复批 + 豁免 | |
+| 四 | [04-review-system](./releasing/04-review-system.md) | 审查体系升级：从产出物提取新发现，更新四份审查文档 | |
+| 五 | [05-release-gate](./releasing/05-release-gate.md) | 发布闸门：脚本层 + 判定层，verdict=PASS 才放行 | 🔴 |
+| 六 | [06-doc-finalize](./releasing/06-doc-finalize.md) | 文档定稿：devlog / Release Notes **规范源头** / 文档同步 | 🔴 |
+| 七 | [07-tool-health](./releasing/07-tool-health.md) | 工具健康：全部门禁脚本体检 + 新增目录收录 | |
+| 八 | [08-confirm](./releasing/08-confirm.md) | 确认关口：三问拍板（发版窗口 / 收口项 / 放行） | 🔴 |
+| 九 | [09-publish](./releasing/09-publish.md) | **发布流水线**：bump → 入口同步 → tag → release → npm publish | 🔴 |
+| 十 | [10-distribute](./releasing/10-distribute.md) | 分发：Skill（ClawHub/SkillHub）+ DSH plugin + OpenClaw plugin + Marketplace + 设备端 | |
+| 十一 | [11-post-publish](./releasing/11-post-publish.md) | 发布后：验证 + 三文档回写 + SOP 迭代 + dev-prompt + hook/daemon | |
+| （附） | [auto-converge-protocol](./releasing/auto-converge-protocol.md) | 自动收敛协议（阶段三/五通用的循环收敛规则） | |
+
+> 🔴 **关口标记**：带 🔴 的阶段是**人（项目负责人）确认关口**——AI 不得越过。
+> 一揽子放行（阶段九的授权边界）只覆盖**发布链本身的动作**，不覆盖关口决策。
+
+---
+
 ## 进度追踪
 
 > 每次新 session 或新阶段开始时，先读这 11 行确认进度。打勾的 = 已完成，第一个未打勾的 = 当前要做。
