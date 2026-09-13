@@ -378,7 +378,7 @@ gh release create vX.Y.Z --title "vX.Y.Z — {emoji 主题短语}" --notes "$(ca
 | npm test | {N} tests 全绿 ✅ |
 | acceptance-test | {N}/{N} 场景全绿 ✅ |
 | shellcheck | 零 error ✅ |
-| check-version | 71/71 全绿 ✅ |
+| check-version | {N}/{N} 全绿 ✅ |
 | 回归检查 | {N} 维度 ✅ |
 | release-gate | verdict=PASS ✅ |
 | fresh-eyes | {N} 轮独立审查 ✅ |
@@ -394,7 +394,7 @@ EOF
 > **格式规范源头**（Title 规则 / Body 五要素 / 质量表固定 7 项 / 破坏性变更写法）。
 >
 > **本节曾把同一套规范复制了一份** ⇒ 形成**双 SSOT**：v1.4.8 实锤——`09` 的副本里
-> `check-version` 示例还停在 `71/71`、acceptance 示例写成 `{N}/{N} 场景全绿`（与脚本实际的
+> `check-version` 示例还停在 `{N}/{N}`、acceptance 示例写成 `{N}/{N} 场景全绿`（与脚本实际的
 > `{N}/{N} passed · SKIP: {N} · EXIT: {N}` 不符），**规范一旦分叉，执法时按哪份都可能出错**。
 > 故此处**不再复述规范**，只保留本条指针；本步骤（步骤七）只负责**按 06 的规范生成 body**。
 
@@ -409,7 +409,7 @@ EOF
 | npm test | {N} tests 全绿 ✅ |
 | acceptance-test | {N}/{N} 场景全绿 ✅ |
 | shellcheck | 零 error ✅ |
-| check-version | 71/71 全绿 ✅ |
+| check-version | {N}/{N} 全绿 ✅ |
 | 回归检查 | {N} 维度 ✅ |
 | release-gate | verdict=PASS ✅ |
 | fresh-eyes | {N} 轮独立审查 ✅ |
