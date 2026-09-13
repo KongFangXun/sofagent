@@ -128,7 +128,9 @@ async function main() {
       }
 
       const { ensureDefaultInspectorsConfig } = await import('./cron');
-      const { startWatching } = await import('./fs-watch');
+      // v1.4.9 P1-12：formatFileWatchStartLine 是纯函数（fs-watch.ts 导出），
+      // 供下面的文件监听打印行按「实际 watcher 数」分流 ✅/⚠️。
+      const { startWatching, formatFileWatchStartLine } = await import('./fs-watch');
       const { runFilesystemAudit } = await import('./run-fs-audit');
 
       console.log(`sofagent-daemon v${VERSION} — 启动守护进程`);
@@ -237,7 +239,9 @@ async function main() {
           console.log('  ✅ 审计通过');
         }
       });
-      console.log('  ✅ 文件监听已启动');
+      // v1.4.9 P1-12：按实际建立的 watcher 数分流（照抄同文件 :216-224 的 cron 范式）——
+      // 此前无条件打 ✅「文件监听已启动」，watch.yml 无有效路径（0 目录）时也报已启动＝假绿。
+      console.log(formatFileWatchStartLine(watcher.watchedCount));
       console.log('');
       console.log('  守护进程运行中... (Ctrl+C 停止)');
 

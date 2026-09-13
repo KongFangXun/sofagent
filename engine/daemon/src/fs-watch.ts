@@ -30,6 +30,30 @@ export interface FileWatcher {
   stop: () => void;
   /** 获取当前配置 */
   config: WatchConfig;
+  /**
+   * 实际建立的目录 watcher 数（v1.4.9 P1-12）。
+   * `0` = config.paths 全部不存在/不可读 ⇒ 监控面空转，cli 层据此报 ⚠️ 而非 ✅。
+   * 语义边界：这是**启动时刻**快照（stop() 之后不再有意义）。
+   */
+  watchedCount: number;
+}
+
+/**
+ * cli 展示口径（v1.4.9 P1-12）——「文件监听启动结果 → 一行用户可见文案」。
+ *
+ * 抽成纯函数的原因：cli.ts 的 `daemon start` 是**常驻进程**，其打印行无法在单测里
+ * 跑起来；v1.4.5 T4 的 cron 分流（cli.ts:216-224）就因同行形态而无回归锁，
+ * 本项不重复该缺口。
+ *
+ * 与 fs-watch 层 v1.4.8 F-31 的 ⚠️ 文案（`监控 0 个目录（paths 全部不存在）…`）**两层同看**：
+ *   本层回答「cli 要不要报『已启动』」（面向用户的操作反馈）；
+ *   fs-watch 层回答「监控面为什么是空的」（面向排查的根因提示）。
+ * 两层措辞不矛盾、不重复上报。
+ */
+export function formatFileWatchStartLine(watchedCount: number): string {
+  return watchedCount > 0
+    ? `  ✅ 文件监听已启动（${watchedCount} 个目录）`
+    : '  ⚠️ 文件监听未启动（watch.yml 无有效路径）';
 }
 
 /**
@@ -194,6 +218,9 @@ export function startWatching(projectDir: string, onChange: ChangeCallback): Fil
 
   return {
     config,
+    // v1.4.9 P1-12：暴露实际建立的 watcher 数（启动时刻快照）——
+    // cli 层据此分流 ✅/⚠️，不再无条件打 ✅（此前 0 目录也报「已启动」＝假绿）。
+    watchedCount: watchers.length,
     stop: () => {
       stopped = true;
       if (debounceTimer) {
