@@ -352,7 +352,7 @@ cd engine/audit && npm ci && npm run build
 node dist/index.js --diff HEAD~1..HEAD --task "修复登录页 bug"
 ```
 
-exit code：0 = 通过 / 1 = 有警告 / 2 = 有违规。零 Agent 依赖——看的是已发生的 git diff。
+exit code：0 = 通过 / 1 = 有警告 / 2 = 有违规（含用法错误）/ 3 = 非 git 仓库（无审计基线，仅 `cli-quick` 口径）/ 4 = 引擎崩溃（v1.4.9 P1-15 起独立成码——此前与 3 撞码，同码两义不可辨）。零 Agent 依赖——看的是已发生的 git diff。
 
 > 审计规则的完整实现（绿灯路径检测、架构漂移检测、状态账本）见 [DEVELOPMENT §八 提交时审计](./DEVELOPMENT.md#八提交时审计--文件系统审计)。
 
@@ -440,7 +440,7 @@ jobs:
 | 严格 | `--strict` | 任何警告都 exit 2 | 0/2 |
 | CI | `--ci` | = `--silent`（CI 友好输出，无交互提示） | 0/1/2 |
 
-模式可叠加——CI 流水线需零容忍时用 `--diff HEAD --ci --strict`（v1.0.5 起 `--ci` 不再隐含 `--strict`）。未知参数处置：可能承载安全语义的拼错形态（如 `--rulesets` 复数、`--ruleset=security` 等号写法）会 **exit 2 直接中断**（用法错误，非审计发现——对齐三态退出码语义）；纯未知 flag 仅告警不中断，合法参数表见 `--help`。
+模式可叠加——CI 流水线需零容忍时用 `--diff HEAD --ci --strict`（v1.0.5 起 `--ci` 不再隐含 `--strict`）。未知参数处置：可能承载安全语义的拼错形态（如 `--rulesets` 复数、`--ruleset=security` 等号写法）会 **exit 2 直接中断**（用法错误，非审计发现——2 同时承载「有违规」与「用法错误」，环境异常另有专用码 3/4，见上文「提交后自动审计」节）；纯未知 flag 仅告警不中断，合法参数表见 `--help`。
 
 ---
 
