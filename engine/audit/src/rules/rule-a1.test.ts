@@ -180,3 +180,56 @@ describe('A1 不碰敏感', () => {
     });
   });
 });
+
+// ============================================================
+// v1.4.9 P1-10 · 按 DiffFile.status 的**方向**分级
+// ============================================================
+// 移除方向（deleted / 改名离开敏感区）= 补救动作 → WARN；
+// 引入方向（added / modified / 改名进入敏感区）= 泄漏面 → FAIL（现行为不变）。
+describe('A1 · status 方向分级（v1.4.9 P1-10）', () => {
+  const del = (p: string): DiffFile => makeDiffFile(p, undefined, 'deleted');
+  const add = (p: string): DiffFile => makeDiffFile(p, undefined, 'added');
+  const ren = (oldPath: string, p: string): DiffFile => ({ path: p, oldPath, status: 'renamed', lines: [] });
+
+  it('deleted 敏感文件 → WARN（补救 commit 不再被 exit 2 硬阻断）', () => {
+    const r = scanA1(makeCtx([del('.env')]));
+    expect(r.status).toBe('WARN');
+    expect(r.details.join(' ')).toContain('.env');
+    expect(r.details.join(' ')).toContain('已移除');
+  });
+
+  it('deleted 非敏感文件 → PASS（不误报）', () => {
+    expect(scanA1(makeCtx([del('src/index.ts')])).status).toBe('PASS');
+  });
+
+  it('renamed 离开敏感区（.env → docs/notes.md）→ WARN', () => {
+    const r = scanA1(makeCtx([ren('.env', 'docs/notes.md')]));
+    expect(r.status).toBe('WARN');
+    expect(r.details.join(' ')).toContain('.env');
+    expect(r.details.join(' ')).toContain('已移除');
+  });
+
+  it('renamed 进入敏感区（docs/notes.md → .env）→ FAIL', () => {
+    expect(scanA1(makeCtx([ren('docs/notes.md', '.env')])).status).toBe('FAIL');
+  });
+
+  it('renamed 敏感 → 敏感（.env → .env.production）→ FAIL（仍在敏感区）', () => {
+    expect(scanA1(makeCtx([ren('.env', '.env.production')])).status).toBe('FAIL');
+  });
+
+  it('added 敏感文件 → FAIL（现行为不变）', () => {
+    expect(scanA1(makeCtx([add('.env')])).status).toBe('FAIL');
+  });
+
+  it('modified 敏感文件 → FAIL（现行为不变）', () => {
+    expect(scanA1(makeCtx([makeDiffFile('.env')])).status).toBe('FAIL');
+  });
+
+  it('同时有引入与移除 → FAIL 且两行都在（最严者胜）', () => {
+    const r = scanA1(makeCtx([del('.env'), add('credentials.json')]));
+    expect(r.status).toBe('FAIL');
+    expect(r.details.join(' ')).toContain('credentials.json');
+    expect(r.details.join(' ')).toContain('.env');
+    expect(r.details.join(' ')).toContain('已移除');
+  });
+});

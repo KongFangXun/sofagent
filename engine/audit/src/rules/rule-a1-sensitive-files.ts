@@ -67,30 +67,66 @@ function isSensitiveFile(filePath: string): boolean {
 /**
  * 规则判定本体（v1.4.8 条目 7）：只产出 status/details——
  * 前置块（name/number/evidenceMode/ruleClass）由 assembleCheck 从注册表 meta 装配。
+ *
+ * v1.4.9 P1-10：按 `DiffFile.status` 的**方向**分级——数据早就在位
+ * （core/diff-parser.ts 的 `'added' | 'modified' | 'deleted' | 'renamed'`），
+ * 旧实现只读 `path`/`oldPath`、零 status 消费 ⇒ `git rm .env` 这类**补救 commit**
+ * 被判 FAIL → hook exit 2 → 用户被迫 `--no-verify`（恰好落进产品自己定义要防的
+ * 「诚实 Agent 疏忽」场景）。
+ *   - `deleted` 敏感文件 = **移除**（补救动作）→ WARN + 保留「删除 ≠ 止损完成」提示
+ *   - `renamed` 且敏感 oldPath → 非敏感 newPath = **移出**敏感区 → 同 WARN
+ *   - 新增/修改敏感文件 = **引入**泄漏面 → 维持 FAIL（现行为不变）
+ * A1 注册表 meta（priority: 'critical'）**不需要改**：runner 的 fast-fail 判定键是
+ * `status === 'FAIL'`（runner.ts:206），不是 priority——同一规则返回 WARN 不会触发
+ * 后续层 SKIPPED。
  */
 export function scanA1(ctx: AuditContext): RuleScan {
   const { diffFiles } = ctx;
 
-  const sensitiveFiles: string[] = [];
+  /** 引入泄漏面（新增/修改敏感文件；或改名后仍/新为敏感）→ FAIL */
+  const introduced: string[] = [];
+  /** 补救方向（删除 / 移出敏感区）→ WARN */
+  const removed: string[] = [];
 
   for (const file of diffFiles) {
-    if (isSensitiveFile(file.path)) {
-      sensitiveFiles.push(file.path);
+    const pathSensitive = isSensitiveFile(file.path);
+    const oldSensitive = file.oldPath !== undefined && isSensitiveFile(file.oldPath);
+
+    // ① 敏感文件被删除——补救动作，不是引入
+    if (file.status === 'deleted') {
+      if (pathSensitive) removed.push(file.path);
+      continue;
     }
-    // 重命名场景：oldPath 也可能是敏感文件
-    if (file.oldPath && isSensitiveFile(file.oldPath)) {
-      sensitiveFiles.push(file.oldPath);
+
+    // ② 从敏感区改名离开（old 敏感、new 不敏感）——补救动作
+    if (file.status === 'renamed' && oldSensitive && !pathSensitive) {
+      removed.push(`${file.oldPath} → ${file.path}`);
+      continue;
     }
+
+    // ③ 其余（added / modified / renamed 后仍在敏感区）——引入泄漏面
+    if (pathSensitive) introduced.push(file.path);
+    // 保留旧实现对「oldPath 敏感」的兜底判定（不放松既有拦截面）
+    if (oldSensitive && !pathSensitive) introduced.push(file.oldPath!);
   }
 
-  if (sensitiveFiles.length > 0) {
-    return {
-      status: 'FAIL',
-      details: [
-        `检测到敏感文件变更: ${sensitiveFiles.join(', ')}。密钥/凭据文件不应提交到版本控制。`,
-      ],
-    };
+  if (introduced.length === 0 && removed.length === 0) {
+    return { status: 'PASS', details: [] };
   }
 
-  return { status: 'PASS', details: [] };
+  const details: string[] = [];
+  if (introduced.length > 0) {
+    details.push(
+      `检测到敏感文件变更: ${introduced.join(', ')}。密钥/凭据文件不应提交到版本控制。`,
+    );
+  }
+  if (removed.length > 0) {
+    details.push(
+      `敏感文件已移除: ${removed.join(', ')}——删除 ≠ 止损完成：密钥若曾入库，历史仍在，` +
+        `请轮换凭据并考虑 git filter-repo 清理历史。`,
+    );
+  }
+
+  // 最严者胜：同时存在引入与移除时整体判 FAIL（有引入就必须拦）
+  return { status: introduced.length > 0 ? 'FAIL' : 'WARN', details };
 }
