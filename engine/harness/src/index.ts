@@ -26,6 +26,9 @@ import {
   topKnowledgeByMtime,
   INDEX_ENTRY_MAX_CHARS,
 } from './knowledge-index';
+// v1.4.9 P1-1：自动上下文压缩接线（compactIfNeeded 此前零生产调用点，见本文件末尾）
+import { compactIfNeeded } from './load-chain/compactor';
+import type { LoadChainBudget } from './load-chain/budget';
 
 // ============================================================
 // 辅助函数
@@ -48,6 +51,59 @@ function resolveEngineHome(): string {
 
 /** custom 层最多注入文件数（与 listCustomOverrides 缺省值一致） */
 const CUSTOM_OVERRIDES_MAX_FILES = 4;
+
+// ── 加载链预算 + 自动压缩接线（v1.4.9 P1-1）────────────────
+/** env 解析告警去重（一次性 warn——不为每次 prompt 构建刷屏） */
+const warnedEnvKeys = new Set<string>();
+
+/** 同一消息只告警一次（stderr 可见，但不反复刷） */
+function warnOnce(message: string): void {
+  if (warnedEnvKeys.has(message)) return;
+  warnedEnvKeys.add(message);
+  console.warn(`[sofagent/harness] ${message}`);
+}
+
+/** 缺省加载链占比上限（与 budget.ts 的 maxRatio 缺省一致） */
+const DEFAULT_BUDGET_RATIO = 0.03;
+
+/** 占比合法域上界（>0 且 ≤ 0.2——超过 20% 就不是「约束链」而是「主体内容」了） */
+const MAX_BUDGET_RATIO = 0.2;
+
+/**
+ * 从环境变量解析加载链 token 预算（v1.4.9 P1-1）。
+ *
+ * - `SOFAGENT_CONTEXT_WINDOW_TOKENS`：上下文窗口总 token（正整数）。**缺省/非法 ⇒
+ *   不启用压缩**——checkBudget 对 `contextWindowTokens<=0` 恒返回 `over:false`，
+ *   即零开销直通（休眠等价：未设 env 时 buildConstrainedSystemPrompt 与接线前逐字节相同）。
+ * - `SOFAGENT_CONTEXT_BUDGET_RATIO`：加载链占比上限，合法域 `(0, 0.2]`，缺省 0.03。
+ *
+ * 非法值处置：**忽略并一次性 warn**（既不静默——用户会以为开了却没开；也不抛错——
+ * 环境污染不该阻断 Agent 启动，本能力是注入体量优化，不是安全边界）。
+ */
+function resolveBudgetFromEnv(): LoadChainBudget | undefined {
+  const rawWindow = process.env.SOFAGENT_CONTEXT_WINDOW_TOKENS;
+  if (rawWindow === undefined || rawWindow === '') return undefined;
+  const windowTokens = Number(rawWindow);
+  if (!Number.isInteger(windowTokens) || windowTokens <= 0) {
+    warnOnce(
+      `SOFAGENT_CONTEXT_WINDOW_TOKENS="${rawWindow}" 非法（需正整数）——自动上下文压缩**不启用**`,
+    );
+    return undefined;
+  }
+  const rawRatio = process.env.SOFAGENT_CONTEXT_BUDGET_RATIO;
+  let maxRatio = DEFAULT_BUDGET_RATIO;
+  if (rawRatio !== undefined && rawRatio !== '') {
+    const parsed = Number(rawRatio);
+    if (Number.isFinite(parsed) && parsed > 0 && parsed <= MAX_BUDGET_RATIO) {
+      maxRatio = parsed;
+    } else {
+      warnOnce(
+        `SOFAGENT_CONTEXT_BUDGET_RATIO="${rawRatio}" 非法（合法域 (0, ${MAX_BUDGET_RATIO}]）——回落缺省 ${DEFAULT_BUDGET_RATIO}`,
+      );
+    }
+  }
+  return { contextWindowTokens: windowTokens, maxRatio };
+}
 
 /**
  * 尝试读取文件——文件不存在时返回 null（静默跳过）
@@ -113,6 +169,9 @@ function listCustomOverrides(dir: string, maxFiles = 4): string[] {
  *     `{SOFAGENT_HOME}/skill/custom/`（/evolve 产物落点）按余量补足
  * 4. 知识库：knowledge/ top-N（按 mtime 排序，每篇截取前 2000 字符）
  * 5. v1.0.8: persona.md（Agent 记忆，前 500 字符）
+ * 6. v1.4.9 P1-1: 自动上下文压缩（env 门控，缺省关闭）——设
+ *    `SOFAGENT_CONTEXT_WINDOW_TOKENS` 才启用；超预算时保留红线/铁律段、
+ *    截断长非保留段并加 COMPACT_START/END_MARKER
  *
  * @param projectRoot 项目根目录
  * @param opts.skillDir 约束文件子目录名（默认 ".sofagent"），相对于 projectRoot
@@ -235,7 +294,14 @@ function listCustomOverrides(dir: string, maxFiles = 4): string[] {
     // persona 注入失败不影响主流程
   }
 
-  return parts.join('\n\n---\n\n');
+  // 6. 自动上下文压缩（v1.4.9 P1-1：compactIfNeeded 此前零生产调用点）
+  //    env 门控、**缺省关闭**——未设 SOFAGENT_CONTEXT_WINDOW_TOKENS 时
+  //    checkBudget 恒 over:false，输出与接线前**逐字节一致**（休眠等价锁见测试）。
+  //    不传 onCompact：harness 零依赖纪律（本文件不 import @sofagent 包），
+  //    压缩事件落审计的出口留给调用方——审计留痕**尚未接线**（回调出口在位，
+  //    排期 v1.5.x；口径见 docs/LIMITATIONS.md「自动上下文压缩」节）。
+  const joined = parts.join('\n\n---\n\n');
+  return compactIfNeeded(joined, resolveBudgetFromEnv()).content;
 }
 
 // ============================================================

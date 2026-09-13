@@ -60,13 +60,18 @@ NC='\033[0m'
 #     入口保留为兼容 API（v1.3.x 起公开），能力已接线。
 #   runAllLayers: 内部调 runLayeredInspection（L1→L2→L3 遍历），后者被
 #     cron.ts:313 生产调度——同样是兼容入口的间接接线形态。
+#   compactIfNeeded（v1.4.9 P1-1 登记）：定义在 compactor.ts，此前**零生产调用点**
+#     （全仓只出现在 load-chain-compact.test.ts）。本版接线进
+#     engine/harness/src/index.ts 的 buildConstrainedSystemPrompt（env 门控、
+#     缺省关闭）⇒ 已为真接线，**不许走 --known-pending 豁免**。
 SYMBOLS="runInspectors:engine/daemon/src/inspectors/index.ts:via=analyzeAuditHistory,checkConflict,checkDoctorHealth,checkKnowledgeFreshness,checkKnowledgeHealth,checkSkillStaleness,runAuditTrailInspector
 runAllLayers:engine/daemon/src/inspector-layers.ts:via=runLayeredInspection
 runDreamCycle:engine/daemon/src/dream-cycle/state-machine.ts
 registerBuiltinSlashCommands:engine/core/src/slash-commands/index.ts
 gateDataPush:engine/train/src/data-push.ts
 createSshTrainChannel:engine/daemon/src/cloud-exec.ts
-chainDualChannelEvent:engine/daemon/src/cloud-events.ts"
+chainDualChannelEvent:engine/daemon/src/cloud-events.ts
+compactIfNeeded:engine/harness/src/load-chain/compactor.ts"
 
 # ── 已知待接线豁免（--known-pending 覆盖此默认值）──
 # v1.4.5 daemon 批完工后撤空——四符号已接线（runDreamCycle→cron.ts:346 直调；
