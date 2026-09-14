@@ -43,7 +43,7 @@
 | `check/check-open-boundary.sh` | 开源边界守卫（商业名/内部路径/未脱敏标识不得进入开源仓库——脱敏三层纪律的结构防线） | CI |
 | `check/check-spec-first.mjs` | 规范先行硬禁令门禁（engine/*/src 提交须含 `spec:` 关联或 `no-spec:` 豁免——观察期 WARN 不阻断，exit 恒 0） | CI（观察期）/ 发版 SOP / 定期 |
 | `check/check-deps.sh` | 关键依赖版本检查（npm 包版本对齐） | 发版前 / 定期 |
-| `check/check-dev-prompt.sh` | 开发日志/Dev Prompt 代码引用一致性校验 | 发版 SOP |
+| `check/check-dev-prompt.sh` | 开发日志/Dev Prompt 代码引用一致性校验（路径 / 函数定义 / 目录 / 快照行数；含「待新建·待归档·迁移目标」与「已退场」两类本就应当不存在的归类） | 发版 SOP |
 | `check/public-api.mjs` | public API 变更检测门禁（@public 符号集 vs 基线，未 bump 即 FAIL；v1.3.9 四） | CI / 发版前 |
 | `check/public-api-baseline.json` | @public 符号集基线（12 包 + 版本快照；`--update-baseline` 发版时重建） | 被 public-api.mjs 消费 |
 | `check/resolve-section.sh` | 行号→markdown 段落归属解析器（防「行号冒充归属」——排障工具，非门禁） | 审查报告取证时 |
@@ -134,7 +134,7 @@
 | 脚本 | 用途 | 不接 CI 的理由 |
 |------|------|---------------|
 | `check/check-deps.sh` | 关键依赖版本检查（含 DSH / LangGraph / automerge 等） | **exit 1 = 有依赖落后于上游最新版**，而「是否升级」是人工决策（SOP 步骤 5 决策规则）——接线即永久红。需要人做决策的工具不进 CI |
-| `check/check-dev-prompt.sh` | 开发日志/Dev Prompt 代码引用一致性校验（引用路径/函数是否真实存在） | **参数化按需工具**：必须传 `<file.md>`；无参数时报用法错并 exit 1——CI 无处传参。生成 prompt 后手动跑 |
+| `check/check-dev-prompt.sh` | 开发日志/Dev Prompt 代码引用一致性校验（引用路径/函数是否真实存在；历史档案漂移单列 🕘 不计失败） | **参数化按需工具**：必须传 `<file.md>`，可加 `--strict` 强制历史档案按严格口径判；无参数时报用法错并 exit 1——CI 无处传参。生成 prompt 后手动跑 |
 | `check/sync-test-count.sh` | 测试数多文档一键同步（实测值回写各文档声称位） | **写文档的收口工具**，不是检查器——发版 SOP 数字收口阶段人工触发 |
 | `check/resolve-section.sh` | 行号 → markdown 段落归属解析器（防「行号冒充归属」） | **排障工具非门禁**：自动化版在扫描面为 0 时会静默通过（死分支形态），故刻意不接 check-guards/CI。挂载于 `docs/changelog/releasing/03-quality-loop.md` / `04-review-system.md` |
 | `check/check-forge-branches.sh` | FORGE 分支收编标记对账（未标记的 `forge/*` 分支四要素列出） | 输出为 **INFO 级**（未标记分支需人工确认后补标记），由 `playbook/acceptance-test.sh` 人工链调用 |
