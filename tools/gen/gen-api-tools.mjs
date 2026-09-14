@@ -98,6 +98,12 @@ const NAME_TO_MODULE = {
   device_data_query: 'ops',
   // v1.4.9 G11（T3）：数据上行通道（audit——声明校验+加密+WAL，G11 推送面）
   device_data_push: 'audit',
+  // v1.4.9 G5b（T4）：连接器注册/发现（ops——目录面与工具面分列，audit 桥接注册表）
+  connector_register: 'ops',
+  connector_list: 'ops',
+  // v1.4.9 G1（T5）：workflow 模板导出/导入（workflow——五件套+血缘）
+  workflow_export: 'workflow',
+  workflow_import: 'workflow',
 };
 
 const src = readFileSync(REGISTRY, 'utf8');
