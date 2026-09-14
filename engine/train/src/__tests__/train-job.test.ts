@@ -206,6 +206,42 @@ describe('enterpriseId 必填校验', () => {
 });
 
 // ════════════════════════════════════════
+// 二b、写入口路径段安全（P2-3——与读入口 getJobGuarded 同源守卫 isSafePathSegment）
+// ════════════════════════════════════════
+
+describe('写入口路径段校验（P2-3）', () => {
+  it('test_createTrainJob_enterpriseId含逃逸构造_拒绝创建（写读两侧同强度）', () => {
+    // 读入口 getJobGuarded 本就拒绝这些——写入口此前只判「非空」，强度不对等
+    for (const bad of ['../ent', 'ent/sub', 'ent\\sub', 'a\0b', '..', '.', 'e'.repeat(129)]) {
+      expect(() => createTrainJob(baseInput({ enterpriseId: bad }) as Parameters<typeof createTrainJob>[0])).toThrow(
+        /enterpriseId 含逃逸构造/,
+      );
+    }
+  });
+
+  it('test_createTrainJob_jobId含逃逸构造_拒绝创建且在拼路径前拦下', () => {
+    for (const bad of ['../evil', 'a/b', 'a\\b', 'a\0b', '..', '.']) {
+      expect(() => createTrainJob(baseInput({ jobId: bad }) as Parameters<typeof createTrainJob>[0])).toThrow(
+        /jobId 含逃逸构造/,
+      );
+    }
+    // 拒绝发生在 trainJobFilePaths 之前 ⇒ 分区目录零新建、记录零落盘
+    expect(listTrainJobRecords(dataDir, 'ent-alpha')).toHaveLength(0);
+    expect(existsSync(join(dataDir, 'train'))).toBe(false);
+    // 且 `../evil` 的逃逸目标未被创建（守卫真的挡住了写侧越界）
+    expect(existsSync(join(dataDir, 'evil'))).toBe(false);
+  });
+
+  it('test_createTrainJob_合法标识_守卫不误伤', () => {
+    const { record } = createTrainJob(
+      baseInput({ enterpriseId: 'ent-beta', jobId: 'job-2026.09.14_01' }) as Parameters<typeof createTrainJob>[0],
+    );
+    expect(record.jobId).toBe('job-2026.09.14_01');
+    expect(existsSync(trainJobDir(dataDir, 'ent-beta', 'job-2026.09.14_01'))).toBe(true);
+  });
+});
+
+// ════════════════════════════════════════
 // 三、幂等
 // ════════════════════════════════════════
 

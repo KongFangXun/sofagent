@@ -243,6 +243,8 @@ export function listTrainJobRecords(dataDir: string, enterpriseId: string): Trai
  *
  * 校验顺序（快速失败）：
  *   1. enterpriseId 必填（块四隔离依赖——缺失直接拒绝）
+ *   1b. 路径段安全 isSafePathSegment（enterpriseId / jobId 含 `../` 等逃逸构造拒绝——
+ *       与读入口 getJobGuarded 同源守卫，写读两侧同强度）
  *   2. 协议校验 validateTrainJob（v1.3.6 SSOT——失败拒绝创建，等价拒绝 spawn）
  *   3. 预算预检 checkBudget（初始用量超限拒绝——续跑继承用量场景）
  */
@@ -254,10 +256,19 @@ export function createTrainJob(input: CreateTrainJobInput): CreateTrainJobResult
   ) {
     throw new Error('[train-job] enterpriseId 必填（企业隔离分区依赖）——缺失拒绝创建');
   }
+  // 1b. 路径段安全（P2-3）：写入口此前只判「非空」，而读入口 getJobGuarded 已用
+  //     同源守卫 isSafePathSegment 拦 `../` 等逃逸构造——写读两侧强度不对等，
+  //     `../` 型 enterpriseId 会在本函数被拼进训练产物路径（写侧逃逸）。
+  if (!isSafePathSegment(input.enterpriseId)) {
+    throw new Error('[train-job] enterpriseId 含逃逸构造（../、分隔符或空字节）——已拒绝创建');
+  }
 
   const jobId = input.jobId ?? generateTrainJobId();
   if (typeof jobId !== 'string' || jobId.trim() === '') {
     throw new Error('[train-job] jobId 非法（非空字符串）');
+  }
+  if (!isSafePathSegment(jobId)) {
+    throw new Error('[train-job] jobId 含逃逸构造（../、分隔符或空字节）——已拒绝创建');
   }
 
   const paths = trainJobFilePaths(input.dataDir, input.enterpriseId, jobId);
