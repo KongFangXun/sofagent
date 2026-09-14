@@ -1053,6 +1053,44 @@ else
   done
 fi
 
+# ── 20. ARCHITECTURE 五域分桶自洽（v1.4.9 P2-17）──
+# 门禁目的：ARCHITECTURE 的「MCP 工具五域一环」图题声称 N tools，五域 subgraph 题号之和
+#   应当 = N = registry 实数。
+# 改前实测（本项修复的现场）：图题**95**，而五域题号为 16/15/17/17/15 之和 **80**（差 15），
+#   且子项「后训模块 ×8」与实数 `train_*` = **12** 不符 —— 即该图是个「看起来在报数、
+#   实际三处互不相等」的自洽幻觉，而**没有任何门禁在看它**（与 G 系列同款：
+#   声明的数 ⊆ 实际的数，差集无人可见）。
+# 🔴 守卫空转防护（G-1 纪律，本段的重点）：域题号提取数为 0 或图题数字提取为空 ⇒ 判红，
+#   不许把「读不到」当成「自洽」——否则本轮重算完，下轮改坏图题仍会静默通过。
+echo ""
+echo "=== 20. ARCHITECTURE 五域分桶自洽（v1.4.9 P2-17）==="
+_arch_file="docs/ARCHITECTURE.md"
+_arch_domains=$(sed -n '/^```mermaid/,/^```$/p' "$_arch_file" 2>/dev/null \
+  | grep -o 'subgraph D[0-9]\["[^"]*' | grep -o '（[0-9]\+）' | tr -dc '0-9\n' || true)
+_arch_domain_n=$(printf '%s\n' "$_arch_domains" | grep -c '[0-9]' || true)
+_arch_domain_n=${_arch_domain_n:-0}
+_arch_sum=0
+if [ "$_arch_domain_n" -gt 0 ]; then
+  _arch_sum=$(printf '%s\n' "$_arch_domains" | awk '{s+=$1} END {print s+0}')
+fi
+_arch_title=$(grep -o 'MCP 工具五域一环（[0-9]\+ tools）' "$_arch_file" 2>/dev/null \
+  | grep -o '[0-9]\+' | head -1 || true)
+_arch_registry=$(grep -c "name: '" engine/mcp/src/tool-registry.ts 2>/dev/null || true)
+_arch_registry=${_arch_registry:-0}
+if [ "$_arch_domain_n" -ne 5 ] || [ -z "${_arch_title:-}" ] || [ "$_arch_registry" -eq 0 ]; then
+  # 提取面残缺 ⇒ 拒绝假绿（G-1：守卫读不到 ≠ 没问题）
+  ASSERTS=$((ASSERTS + 1))
+  echo "  ❌ 五域分桶提取残缺：域题号 ${_arch_domain_n} 个（应 5）/ 图题数字「${_arch_title:-空}」/ registry ${_arch_registry}——提取逻辑或图结构已变，拒绝把「读不到」当成「自洽」"
+  ERRORS=$((ERRORS + 1))
+elif [ "$_arch_sum" = "$_arch_title" ] && [ "$_arch_title" = "$_arch_registry" ]; then
+  ASSERTS=$((ASSERTS + 1))
+  echo "  ✓ 五域分桶自洽：${_arch_domains//$'\n'/ + } = ${_arch_sum} = 图题 ${_arch_title} = registry ${_arch_registry}"
+else
+  ASSERTS=$((ASSERTS + 1))
+  echo "  ❌ 五域分桶失谐：域和 ${_arch_sum} ≠ 图题 ${_arch_title} ≠ registry ${_arch_registry}——改了工具面请同批重算五域题号（分桶依据见 ARCHITECTURE 图下「数字口径」注）"
+  ERRORS=$((ERRORS + 1))
+fi
+
 if [ "$ERRORS" -gt 0 ]; then
   echo "发现 ${ERRORS} 个问题"
 else
