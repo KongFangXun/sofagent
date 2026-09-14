@@ -26,6 +26,9 @@ import { auditDataChange } from './tools/audit-data-change';
 import { notifySession } from './tools/notify-session';
 import { activateWorkflowTool } from './tools/activate-workflow';
 import { daemonStatus } from './tools/daemon-status';
+// v1.4.9 G9（T1）：设备注册面两 tool——注册（fail-closed 验签）+ 清单（在线态）
+import { deviceRegister } from './tools/device-register';
+import { deviceList } from './tools/device-list';
 import { worklogQuery } from './tools/worklog-query';
 import { costQuery } from './tools/cost-query';
 import { listAgentsTool } from './tools/list-agents';
@@ -139,7 +142,7 @@ export type ToolHandler = (
 ) => ToolResult | ToolDispatchError | Promise<ToolResult | ToolDispatchError>;
 
 /**
- * 完整工具清单——95 个 tool（v1.4.7：data_push 新增——标准数据推送入口（94→95 终值）；contribution_query 新增——G4 绩效数据导出（93→94）；pr_submit/pr_review/pr_merge 三 tool 新增——G13 PR 生命周期（90→93）；onboard_prompt 新增——上岗 prompt 生成器（89→90）；workflow_gaps 新增——G2 能力缺口查询（88→89）；workflow_create/workflow_update/workflow_node_add/workflow_diff_preview 四 tool 新增——G14 workflow 对象化 CRUD（84→88）；v1.4.6：train_cloud 新增——83→84，云 VM 执行面控制工具；v1.4.5：train_serve/train_compliance/train_deliverable 三件齐——80→83，SKILL.md/ARCHITECTURE 等九处 SSOT 同步收口；v1.4.4：corpus_export 新增；v1.4.3：train_status/train_list/train_diagnose 新增；v1.4.2：fde_interview/fde_classify/fde_quantify/fde_derive/fde_distill/fde_deploy 六引擎 + train_doctor/train_dryrun/train_report 新增；v1.4.1：train_submit 新增；v1.4.0：cost_query + browser 4 新增；v1.3.9：worklog_query 新增；v1.3.6：workflow_submit/ontology_import/model_register/model_switch/model_unregister/train_budget/define_acceptance/check_acceptance；v1.3.5：run_ab_test/promote_ab/snapshot_list/snapshot_restore；v1.3.4：commons_publish/search/invoke/rate/retire/harvest_rule；不含 4 个 resource shortcut）
+ * 完整工具清单——97 个 tool（v1.4.9 G9：device_register/device_list 新增——设备注册面（95→97，T1 设备身份验签 fail-closed + 清单在线态）；v1.4.7：data_push 新增——标准数据推送入口（94→95 终值）；contribution_query 新增——G4 绩效数据导出（93→94）；pr_submit/pr_review/pr_merge 三 tool 新增——G13 PR 生命周期（90→93）；onboard_prompt 新增——上岗 prompt 生成器（89→90）；workflow_gaps 新增——G2 能力缺口查询（88→89）；workflow_create/workflow_update/workflow_node_add/workflow_diff_preview 四 tool 新增——G14 workflow 对象化 CRUD（84→88）；v1.4.6：train_cloud 新增——83→84，云 VM 执行面控制工具；v1.4.5：train_serve/train_compliance/train_deliverable 三件齐——80→83，SKILL.md/ARCHITECTURE 等九处 SSOT 同步收口；v1.4.4：corpus_export 新增；v1.4.3：train_status/train_list/train_diagnose 新增；v1.4.2：fde_interview/fde_classify/fde_quantify/fde_derive/fde_distill/fde_deploy 六引擎 + train_doctor/train_dryrun/train_report 新增；v1.4.1：train_submit 新增；v1.4.0：cost_query + browser 4 新增；v1.3.9：worklog_query 新增；v1.3.6：workflow_submit/ontology_import/model_register/model_switch/model_unregister/train_budget/define_acceptance/check_acceptance；v1.3.5：run_ab_test/promote_ab/snapshot_list/snapshot_restore；v1.3.4：commons_publish/search/invoke/rate/retire/harvest_rule；不含 4 个 resource shortcut）
  */
 export const TOOLS: ToolDef[] = [
   {
@@ -1992,5 +1995,39 @@ export const TOOLS: ToolDef[] = [
     },
     // v1.4.8 条目 5 迁移：查表分发
     handler: async (args) => { const cer = await corpusExport({ ...(typeof args.scope === 'string' ? { scope: args.scope as CorpusExportArgs['scope'] } : {}), ...(typeof args.out_dir === 'string' ? { outDir: args.out_dir as string } : {}), ...(typeof args.data_dir === 'string' ? { dataDir: args.data_dir as string } : {}), ...(args.rules_only === true ? { rulesOnly: true } : {}) }); return { ...cer, isError: cer.data.isError }; },
+  },
+  {
+    // v1.4.9 G9（T1）：设备上线注册——Ed25519 身份码验签 fail-closed + 设备类型 + 能力声明
+    name: 'device_register',
+    roles: ['ops'],
+    description: '设备上线注册（G9）：Ed25519 身份码验签 fail-closed（伪造签名拒绝且留审计）+ 设备类型（pc/node/appliance）+ 能力声明（派单方按能力匹配设备）。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        identity: { type: 'object', description: '设备身份码（AgentIdentity JSON——须含 publicKey + signature）' },
+        kind: { type: 'string', enum: ['pc', 'node', 'appliance'], description: '设备类型' },
+        capabilities: { type: 'array', items: { type: 'string' }, description: '能力标签清单（挂载的 MCP / skill / 数据源）' },
+        tenant: { type: 'string', description: '租户（缺省 default）' },
+      },
+      required: ['identity', 'kind'],
+    },
+    // v1.4.8 条目 5 迁移：查表分发
+    handler: async (args) => { if (!args.identity || typeof args.identity !== 'object') { return { error: 'Missing required argument: identity' }; } if (args.kind !== 'pc' && args.kind !== 'node' && args.kind !== 'appliance') { return { error: 'Invalid kind (pc/node/appliance)' }; } const drr = await deviceRegister({ identity: args.identity as Record<string, unknown>, kind: args.kind, ...(Array.isArray(args.capabilities) ? { capabilities: args.capabilities as string[] } : {}), ...(typeof args.tenant === 'string' ? { tenant: args.tenant } : {}) }); return { ...drr, isError: !drr.data.ok }; },
+  },
+  {
+    // v1.4.9 G9（T1）：设备清单查询——只含已验签设备，在线态实时判定（T12 派单前置）
+    name: 'device_list',
+    roles: ['ops'],
+    description: '设备清单查询（G9 发现面）：按租户/类型/能力过滤，含最后心跳时间与在线状态；清单只含已验签设备（被拒/吊销设备不出现）。只读。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        tenant: { type: 'string', description: '租户过滤' },
+        kind: { type: 'string', enum: ['pc', 'node', 'appliance'], description: '设备类型过滤' },
+        capability: { type: 'string', description: '能力标签过滤' },
+      },
+    },
+    // v1.4.8 条目 5 迁移：查表分发
+    handler: (args) => deviceList({ ...(typeof args.tenant === 'string' ? { tenant: args.tenant } : {}), ...(typeof args.kind === 'string' ? { kind: args.kind } : {}), ...(typeof args.capability === 'string' ? { capability: args.capability } : {}) }),
   },
 ];
