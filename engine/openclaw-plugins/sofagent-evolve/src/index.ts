@@ -25,7 +25,7 @@ const _pkg: { version?: string } = require('../package.json');
   id: 'sofagent-evolve',
   name: 'sofagent 进化',
   version: _pkg.version ?? '0.0.0-unknown',
-  description: '经验沉淀——think.md 反思条目生成 + 反思区注入（Dream Cycle + evolve 数据源）',
+  description: '给 OpenClaw 加上经验沉淀——sofagent_evolve 工具把踩坑写成 think.md 反思条目（可选每轮提醒，默认关）',
   brandColor: '#16B8F3',
 };
 
@@ -35,9 +35,14 @@ type OpenClawApi = any;
 /* @public */ export function register(api: OpenClawApi): void {
   const logger = api?.logger ?? console;
 
-  // 1) before_prompt_build：注入一行收尾提示（提醒调 sofagent_evolve；条目正文由工具写入）
+  // 1) before_prompt_build：注入收尾提示（**默认关闭**）
+  //    🔴 为什么默认关：inject 插件的 L2 层已经把 think.md 注入 prompt，本插件若每轮再
+  //    无条件 prepend 同一句样板，就是纯上下文噪声（同一件事两处注入）。需要「每轮提醒」
+  //    的部署可在 openclaw.json 里显式打开 reflectHint。
   try {
     api.on?.('before_prompt_build', (_event: unknown, ctx: any) => {
+      const cfg = ctx?.config?.plugins?.entries?.['sofagent-evolve']?.config;
+      if (cfg?.reflectHint !== true) return undefined;
       try {
         // eslint-disable-next-line @typescript-eslint/no-require-imports
         const m = require('@sofagent/think');

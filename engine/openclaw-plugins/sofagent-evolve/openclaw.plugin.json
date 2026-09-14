@@ -1,7 +1,7 @@
 {
   "id": "sofagent-evolve",
   "name": "sofagent 进化",
-  "description": "经验沉淀——think.md 反思条目生成 + 反思区注入（Dream Cycle + evolve 数据源）",
+  "description": "给 OpenClaw 加上经验沉淀——sofagent_evolve 工具把踩坑写成 think.md 反思条目（可选每轮提醒，默认关）",
   "version": "1.4.8",
   "seam": "before_prompt_build",
   "seamSemantics": "模型调用前注入 think.md 反思区（进化闭环上下文）",
@@ -26,6 +26,11 @@
       "brandColor": {
         "type": "string",
         "default": "#16B8F3"
+      },
+      "reflectHint": {
+        "type": "boolean",
+        "default": false,
+        "description": "每轮注入一行收尾提示（默认关：think.md 已由 sofagent-inject 的 L2 层注入，重复注入是噪声）"
       }
     }
   }

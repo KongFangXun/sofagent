@@ -28,10 +28,32 @@ describe('sofagent-evolve pluginMeta', () => {
 });
 
 describe('sofagent-evolve register', () => {
-  it('应注册 before_prompt_build hook（反思区注入）', () => {
+  it('应注册 before_prompt_build hook（默认不注入，见下方默认关用例）', () => {
     const api = createMockApi();
     register(api as never);
     expect(api.on).toHaveBeenCalledWith('before_prompt_build', expect.any(Function), expect.objectContaining({ priority: 50 }));
+  });
+
+  // 防复发（重复注入噪声）：inject 的 L2 已注入 think.md，本插件此前每轮再无条件下发同一句
+  // 样板提示——同一件事两处注入。改为配置开关 reflectHint，默认关。
+  describe('reflectHint 默认关（不与 inject 的 L2 重复注入）', () => {
+    const handlerOf = () => {
+      const api = createMockApi();
+      register(api as never);
+      return (api.hooks['before_prompt_build']?.[0] as { handler: (e: unknown, c: unknown) => unknown }).handler;
+    };
+    const withCfg = (cfg: unknown) => ({ config: { plugins: { entries: { 'sofagent-evolve': { config: cfg } } } } });
+
+    it('未配置 reflectHint → 不注入（返回 undefined）', () => {
+      expect(handlerOf()({}, withCfg(undefined))).toBeUndefined();
+      expect(handlerOf()({}, withCfg({ enabled: true }))).toBeUndefined();
+    });
+
+    it('reflectHint: true → 注入收尾提示', () => {
+      const out = handlerOf()({}, withCfg({ reflectHint: true })) as { prependSystemContext?: string };
+      expect(typeof out?.prependSystemContext).toBe('string');
+      expect(out?.prependSystemContext).toContain('sofagent_evolve');
+    });
   });
 
   it('应注册 sofagent_evolve 工具（optional=true 写文件副作用）', () => {

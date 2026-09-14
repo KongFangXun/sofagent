@@ -31,6 +31,10 @@
     "plugin",
     "audit"
   ],
+  "//optionalDependencies": "命令级拦截复用引擎判据 @sofagent/orchestrator.checkDangerousCommand（懒加载 require + 缺依赖降级为工具名黑名单，不阻断会话）。",
+  "optionalDependencies": {
+    "@sofagent/orchestrator": "1.4.8"
+  },
   "license": "MIT",
   "author": "KongFangXun",
   "repository": {

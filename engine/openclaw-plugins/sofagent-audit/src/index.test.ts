@@ -1,7 +1,7 @@
 // sofagent-audit OpenClaw 插件测试
 // 覆盖：pluginMeta 元数据 / register 注册工具与 hook / default 导出契约
 import { describe, it, expect, vi } from 'vitest';
-import register, { pluginMeta, DANGEROUS_TOOLS } from './index';
+import register, { pluginMeta, DANGEROUS_TOOLS, extractCommand } from './index';
 
 function createMockApi() {
   const hooks: Record<string, unknown[]> = {};
@@ -62,6 +62,46 @@ describe('sofagent-audit register', () => {
     register(api as never);
     const entry = api.hooks['before_tool_call']?.[0] as { handler: (event: unknown) => unknown };
     expect(entry.handler({ toolName: 'read_file', params: {} })).toBeUndefined();
+  });
+
+  // 防复发（拦截面收窄：只比工具名 → 危险命令整条穿过）：
+  // 宿主的 before_tool_call 事件把工具参数放在 `params` 里，真正的高危命令藏在其中
+  // （`bash: rm -rf /` 的 toolName 是 `bash`，不在黑名单里）。旧实现只比 toolName，
+  // 这类调用会被静默放行——「装了审计却没拦住」的典型假绿。
+  describe('命令级检查（params 里的危险命令）', () => {
+    const handlerOf = () => {
+      const api = createMockApi();
+      register(api as never);
+      return (api.hooks['before_tool_call']?.[0] as { handler: (event: unknown) => unknown }).handler;
+    };
+
+    it('extractCommand 应取到 command / cmd / script，无命令字段返回 null', () => {
+      expect(extractCommand({ command: 'ls' })).toBe('ls');
+      expect(extractCommand({ cmd: 'pwd' })).toBe('pwd');
+      expect(extractCommand({ script: 'echo hi' })).toBe('echo hi');
+      expect(extractCommand({ path: '/tmp/x' })).toBeNull();
+      expect(extractCommand(undefined)).toBeNull();
+      expect(extractCommand({ command: '   ' })).toBeNull();
+    });
+
+    it('工具名不在黑名单但命令危险时应拦停（rm -rf）', () => {
+      const blocked = handlerOf()({ toolName: 'bash', params: { command: 'rm -rf /tmp/x' } }) as { block?: boolean; blockReason?: string };
+      expect(blocked?.block).toBe(true);
+      expect(blocked?.blockReason).toContain('审计拦截');
+    });
+
+    it('拼接命令也应拦停（echo x; rm -rf /）', () => {
+      const blocked = handlerOf()({ toolName: 'exec', params: { command: 'echo x; rm -rf /' } }) as { block?: boolean };
+      expect(blocked?.block).toBe(true);
+    });
+
+    it('安全命令应放行（不误伤）', () => {
+      expect(handlerOf()({ toolName: 'bash', params: { command: 'ls -la' } })).toBeUndefined();
+    });
+
+    it('无命令参数的工具调用应放行（不同 envelope 不误判）', () => {
+      expect(handlerOf()({ toolName: 'read_file', params: { path: '/tmp/a' } })).toBeUndefined();
+    });
   });
 
   it('应注册 sofagent_audit 工具', () => {

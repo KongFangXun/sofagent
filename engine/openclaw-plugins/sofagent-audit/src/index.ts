@@ -34,6 +34,23 @@ const _pkg: { version?: string } = require('../package.json');
   'delete_file', 'force_delete', 'fs_delete', 'fs_remove', 'drop_table', 'drop_database',
 ];
 
+/**
+ * 从工具参数里取命令字符串。
+ *
+ * 🔴 为什么需要：宿主 `before_tool_call` 事件带 `params`（工具参数），而真正的危险命令藏在
+ *    参数里——只比 `toolName` 时，形如 `bash: rm -rf /` 的调用会整条穿过拦截（工具名是 `bash`，
+ *    不在黑名单里）。不同工具的命令字段名不同，按 command / cmd / script / input 逐个试。
+ */
+/* @public */ export function extractCommand(params: unknown): string | null {
+  if (!params || typeof params !== 'object') return null;
+  const p = params as Record<string, unknown>;
+  for (const key of ['command', 'cmd', 'script', 'input']) {
+    const v = p[key];
+    if (typeof v === 'string' && v.trim()) return v;
+  }
+  return null;
+}
+
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type OpenClawApi = any;
 
@@ -55,6 +72,25 @@ type OpenClawApi = any;
       if (DANGEROUS_TOOLS.includes(toolName)) {
         logger.warn?.('[sofagent-audit] 拦截危险工具:', toolName);
         return { block: true, blockReason: `sofagent 审计拦截：工具 ${toolName} 属高危操作，请改用受审计通道（sofagent_audit 先行评估）` };
+      }
+      // 🔴 命令级检查（v1.4.9 修复）：黑名单只比工具名，而 `rm -rf /` 这类调用藏在 params 里
+      //    ——不查参数就等于拦截落空。判据复用引擎的 checkDangerousCommand（同一份，不重造）。
+      const command = extractCommand(event?.params);
+      if (command) {
+        try {
+          // eslint-disable-next-line @typescript-eslint/no-require-imports
+          const m = require('@sofagent/orchestrator');
+          const reason = typeof m.checkDangerousCommand === 'function'
+            ? (m.checkDangerousCommand(command) as string | null)
+            : null;
+          if (reason) {
+            logger.warn?.('[sofagent-audit] 拦截危险命令:', reason);
+            return { block: true, blockReason: `sofagent 审计拦截：${reason}` };
+          }
+        } catch {
+          // 为何可静默：@sofagent/orchestrator 未装时退化为「工具名黑名单」——拦截面收窄，
+          // 但不阻断会话、也不谎报放行为「已检查」（该分支下确实只做了工具名那一层）。
+        }
       }
       return;
     }, { priority: 100 });
