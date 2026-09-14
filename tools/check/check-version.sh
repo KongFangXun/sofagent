@@ -1040,6 +1040,39 @@ else
 fi
 echo ""
 
+# ── 14b. 非顶版发版日期 vs git tag（v1.4.9 P2-1 回归锁）──
+# 背景（P2-1 根因）：CHANGELOG 的 v1.4.7 索引行原写「2026-09-11 已发版」，v1.4.8 发版
+#   同步批的「日期同步」步骤把它**误改成 2026-09-13**（按「最新发版日」批量替换误伤上一版行，
+#   考古实证：`git show 1410794c` 的 diff）。§14 只认当前版本的文档头日期，看不到**非顶版行**，
+#   于是错日期随发版出门（WIKI 版本表仍写 v1.4.7 = 2026-09-11，两处互不一致）。
+# 判据：CHANGELOG 里每个「· YYYY-MM-DD 已发版」行，若该版本**存在 git tag**，其日期必须
+#   == 该 tag 的 creatordate（tag 是发版真值）。无 tag 的历史行不判（口径：tag 缺失即无真值可比）。
+# 守卫不空转：可判行数 == 0 ⇒ FAIL（说明判据正则失效或 CHANGELOG 结构变了，而不是「全过」）。
+TAG_DATE_OK=true
+TAG_DATE_CHECKED=0
+while IFS= read -r _cl_line; do
+  _cl_ver=$(printf '%s' "$_cl_line" | grep -oE '^- \*\*v[0-9]+\.[0-9]+\.[0-9]+\*\*' | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+  _cl_date=$(printf '%s' "$_cl_line" | grep -oE '· [0-9]{4}-[0-9]{2}-[0-9]{2} 已发版' | grep -oE '[0-9]{4}-[0-9]{2}-[0-9]{2}' | head -1)
+  [ -z "$_cl_ver" ] || [ -z "$_cl_date" ] && continue
+  _tag_date=$(git -C "${PROJECT_ROOT}" for-each-ref --format='%(creatordate:short)' "refs/tags/v${_cl_ver}" 2>/dev/null | head -1)
+  [ -z "$_tag_date" ] && continue
+  TAG_DATE_CHECKED=$((TAG_DATE_CHECKED + 1))
+  if [ "$_cl_date" != "$_tag_date" ]; then
+    echo -e "  ${RED}✗${NC} CHANGELOG v${_cl_ver} 索引行日期 ${_cl_date} ≠ tag v${_cl_ver} 日期 ${_tag_date}"
+    echo -e "     发版真值 = tag；非顶版行的「已发版」日期不得随后续发版批变动（P2-1 复发防御）"
+    TAG_DATE_OK=false
+    ERRORS=$((ERRORS + 1))
+  fi
+done < "${PROJECT_ROOT}/CHANGELOG.md"
+if [ "$TAG_DATE_CHECKED" -eq 0 ]; then
+  echo -e "  ${RED}✗${NC} 非顶版发版日期 vs tag：可判行数为 0（判据未命中任何行）——守卫空转，判 FAIL"
+  ERRORS=$((ERRORS + 1))
+elif $TAG_DATE_OK; then
+  echo -e "  ${GREEN}✓${NC} 非顶版发版日期与 tag 一致（可判 ${TAG_DATE_CHECKED} 行）"
+  CHECKS=$((CHECKS + 1))
+fi
+echo ""
+
 # ── F-08: ROADMAP 版本头描述 vs CHANGELOG 标题一致性（v1.4.9 P1-7 起 FAIL 级）──
 echo "=== 15. ROADMAP 版本头描述 vs CHANGELOG 标题一致性 ==="
 ROADMAP_HEADER=$(sed -n '4p' "${ROADMAP}" 2>/dev/null || echo "")

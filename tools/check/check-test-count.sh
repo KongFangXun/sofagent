@@ -174,6 +174,20 @@ run_scenario_guard() {
     CHG126_LINENO=$(echo "$CHG126_SCN_LINE" | cut -d: -f1)
     echo -e "  ${GREEN}✓ changelog v1.2.6.md（行 ${CHG126_LINENO}）：历史冻结 ${CHG126_CLAIMED} 场景（v1.2.6 发版时 SSOT，不与当前比对）${NC}"
   fi
+
+  # ⑤ ROADMAP.md「场景数 SSOT 口径」段的「当前值 NNN」（v1.4.9 G-4 补：该声称此前**零守卫**）
+  #    实测它已静默漂移：ROADMAP 段写「当前值 338」而 SSOT（acceptance 头部声明）= 339
+  #    （批三 P1-10 加了回归锁 S412 后没人回填）——数字声称在文档里却没有任何断言，正是 G-4 的缺口形态。
+  #    判据：与 SSOT 严格相等；提取为空 ⇒ FAIL（守卫不空转）。
+  ROADMAP_SCN_LINE=$(grep -nE '当前值 [0-9]+（最大场景号' docs/ROADMAP.md 2>/dev/null | head -1)
+  if [ -z "$ROADMAP_SCN_LINE" ]; then
+    echo -e "  ${RED}✗ docs/ROADMAP.md 未找到「当前值 NNN（最大场景号 …）」声称——措辞漂移或段被删（守卫不空转，判 FAIL）${NC}"
+    SCEN_FAIL=$((SCEN_FAIL + 1))
+  else
+    check_scenario_doc "docs/ROADMAP.md（场景数 SSOT 口径段）" "docs/ROADMAP.md" \
+      "$(echo "$ROADMAP_SCN_LINE" | cut -d: -f1)" \
+      "$(echo "$ROADMAP_SCN_LINE" | grep -oE '当前值 [0-9]+' | grep -oE '[0-9]+' | head -1)"
+  fi
 }
 
 # ── 轻量模式入口（--scenarios-only · v1.4.3 阶段十二优化）：跳过 npm test，只跑场景守卫 ──

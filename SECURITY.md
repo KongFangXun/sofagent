@@ -25,7 +25,7 @@
 
 sofagent 是一套 FDE 能力——底层引擎是纯本地 Harness 中间件（约束中间层），**数据不出本机**（除安装时 npm 拉包外运行时不联网；例外一：用户主动配置云同步时数据会离开本机，见 [多设备同步指南](./docs/guides/multi-device-sync.md)——该配置等于将 knowledge/ 与 think.md 托管给云盘服务商，属用户自主取舍，与本地数据主权承诺互斥；例外二：用户显式配置模型推理端点后（`SOFAGENT_MODEL_API_KEY` / `SOFAGENT_MODEL_BASE_URL` / `SOFAGENT_MODEL_NAME`，opt-in 默认关闭），Dream Cycle「真实大脑」会话反思与 train_serve 推理会把 prompt 上下文发往用户指定的模型 API——出口为 `engine/core/src/model-client.ts` 的 `callModelAPI`，经 `engine/daemon/src/dream-cycle/real-provider.ts` → `state-machine.ts` 接线；未配置时降级 MockLLM，零外发；例外三：v1.4.6 云 VM 执行面——`train cloud` 远程训练时，经分拣闸（sorting-gate）放行的非敏感/脱敏训练数据会上传云 VM（ssh 隧道加密传输，敏感档拦截留本地）；云 VM 执行面是「控制面本地、执行面云上」的 opt-in 交付模式，不配置云 VM 则纯本地训练，零外发）——但以下数据以**明文 Markdown** 存储，请评估风险：
 
-> 🏠 **当前定位：单机单用户**——sofagent 当前为单机单用户设计，多 Agent 共享同一知识库/审计历史；**多人/多部门共用需等租户隔离（ROADMAP v1.4.7 G7 多租户抽象层 v0）**。企业 IT 若规划多人共用同一 `~/.sofagent/`，部署前务必评估此边界（详见 [LIMITATIONS「知识库同样全局共享」](./docs/LIMITATIONS.md#三安全与信任模型局限)）。
+> 🏠 **当前定位：单机单用户**——sofagent 当前为单机单用户设计，多 Agent 共享同一知识库/审计历史；**多人/多部门共用需等租户隔离（查询侧 v0 已随 v1.4.7 交付；写入侧隔离尚未落地，见 [LIMITATIONS](./docs/LIMITATIONS.md)）**。企业 IT 若规划多人共用同一 `~/.sofagent/`，部署前务必评估此边界（详见 [LIMITATIONS「知识库同样全局共享」](./docs/LIMITATIONS.md#三安全与信任模型局限)）。
 
 **安装后数据目录结构**（`~/.sofagent/`）：
 ```

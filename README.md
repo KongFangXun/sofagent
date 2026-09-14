@@ -117,9 +117,9 @@ sofagent 不造 Agent——执行能力交给成熟宿主（模型 + 工具 + �
 
 一条命令选定挂载档位：`bash install.sh --platform <平台名>`（全部平台与差异见 [HANDBOOK](./docs/HANDBOOK.md)）
 
-## v1.4.7：商业平台接口版
+## v1.4.8：插件管控与工程效能
 
-🔌 给商业平台预留的全部数据与动作接口一次到位——组织看得见（能力缺口/绩效）、协作转得动（PR 生命周期/workflow 对象化）、数据进得来（data_push 双闸）。`workflow_gaps` 能力缺口查询（缺人/缺能力/待升级三类，可转悬赏 PR）· `contribution_query` 绩效导出（PR 权重+决策留痕+审计变更三源聚合，人与数字员工同标准，org 租户过滤）· `pr_submit/pr_review/pr_merge` PR 生命周期三 tool（状态机+confidence 两态，branch→trunk 合并联动）· workflow 对象化 CRUD 四 tool（owner 直改 trunk/非 owner 开 branch，`trigger.schedule` 定时触发）· G6 节点级可见性（open/private/result-only 三级枚举 + 审阅门联动）· G7 多租户 v0（`data/<tenant>/` 路径地基+orgId 归属字段）· G8 首部署 cron job 包（`--with-first-deploy-cron` 装完即见效，daemon 周期消费）· `onboard_prompt` 上岗 prompt 生成器 · USB 烧录 workflow（验签后自动加载）· audit 留痕双层（规约聚合+PROV-O 导出）· TrainChannel 云训练标准接口（托管云按规范对接，ssh 通道自研）· `data_push` 标准数据推送入口（schema 校验 + 敏感分拣双闸；企业合规拦截策略预留扩展）· 静态加密 daemon 接线收口（密钥就绪即密文落盘）· 运行时审计 repo-hash 隔离（llm-calls/data-sovereignty 按 git 仓分目录，旧历史原地可读）。（版本时点数字：MCP 84→95 tools、测试 4107→4279，见开发日志——当前口径以[核心特性](#核心特性)为准。）完整内容见[开发日志](./docs/changelog/v1.4/v1.4.7.md) · 更早版本见 [CHANGELOG](./CHANGELOG.md)。
+🔌 **插件管控与工程效能**——插件从哪装、装了能调什么、hook 谁说了算，一次收口：插件来源白名单（`plugin-gate` 三类来源校验：Git URL / 主机模式 / 本地路径 + 托管 hook 独裁模式；未声明来源即拒绝，校验器不可用即 fail-closed 拒装，管控不得静默降级）· 应用级工具策略（`ToolGate` app×tool 白名单矩阵，未声明即拒绝）· 多 Agent 协作阵型库（六阵型 schema 校验 + 模板兜底实例化 + 交接留痕）· 自动上下文压缩（加载链超 3% 预算触发段级压缩，红线铁律不丢）· shell 提权分级（三态分类器：safe 直跑 / risky 走白名单或 HITL / dangerous 批准前禁用）· 成本 quota 事前门禁（WARN/HARD 双模式 + 余量/已用/周期三字段）· 依赖方向架构测试（13 包五层边界，CI 强制）· workflow 节点级模型偏好（`modelPreference` schema，未注册报错不静默降级）· 执行机制纪律批（意图分类纯函数主判 + Git 能力三态×两隔离矩阵 + 作用域显名禁裸 id）· 进化模块重构（`@sofagent/skillopt` → `@sofagent/evolve` 更名联动 + 自研 gate 验证器零 Python 依赖）· LOOP 概念归位（三形态定位边界互不重叠声明）。完整内容见[开发日志](./docs/changelog/v1.4/v1.4.8.md) · 更早版本见 [CHANGELOG](./CHANGELOG.md)。
 
 ## FDE 方法论
 
@@ -284,7 +284,7 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # 加载安全规�
 | 安全声明 · 已知局限 | [SECURITY](./SECURITY.md) · [LIMITATIONS](./docs/LIMITATIONS.md) |
 | 贡献指南 | [CONTRIBUTING](./CONTRIBUTING.md) |
 
-> 🧪 **工程可信度**：4468 测试 / 13 模块包 + 14 插件（10 DSH + 4 OpenClaw）（4468 = 13 主包口径，check-test-count 门禁数；包数口径权威表述见 [WIKI](./docs/WIKI.md)）· 24 条审计规则 · fresh-eyes 独立审查持续运行（测试数以 `tools/check/test-count.sh` 判定为准，环境注意事项见 [docs/guides/review-system.md](./docs/guides/review-system.md)。性能数据为单机参考值，跨工具横评排期 v1.4.x 与 Benchmark 集成）。
+> 🧪 **工程可信度**：4468 测试 / 13 模块包 + 14 插件（10 DSH + 4 OpenClaw）（口径：13 个 workspace 包；包数与统计标准见 [WIKI](./docs/WIKI.md)）· 24 条审计规则 · fresh-eyes 独立审查持续运行（测试数以 `tools/check/test-count.sh` 判定为准，环境注意事项见 [docs/guides/review-system.md](./docs/guides/review-system.md)。性能数据为单机参考值，跨工具横评排期 v1.4.x 与 Benchmark 集成）。
 
 ---
 

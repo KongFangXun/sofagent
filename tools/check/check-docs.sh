@@ -1001,6 +1001,52 @@ else
   ERRORS=$((ERRORS + 1))
 fi
 
+# ── §19 README 双语「最新能力段」版本 == 根 package.json version（v1.4.9 P1-6 回归锁）──
+# 背景（P1-6 根因）：发版 SOP 的「新能力段替换」是**人工步骤**，v1.4.8 发版时被跳过——
+#   `git log -S'## v1.4.8' -- README.md README.en.md` 零命中（从未写过），能力段停在
+#   v1.4.7 一整版。既有三处守卫都看不到它：§14 只校验**文档头日期**、check-readme-parity
+#   只比双语**结构**、§3b 只查「历史段堆叠」——没有任何断言看「能力段版本有没有跟上 SSOT」
+#   ⇒ 第三个盲区（P1-6「零露出」）。
+# 判据：README.md / README.en.md 中**最后一个** `## vN.N.N` 标题的版本号 == 根
+#   package.json 的 version（SSOT）。双语各判一次（一侧漏改即红）。
+# 发版窗口白名单（对齐 check-version §26「待发版窗口态」先例）：当能力段版本 ≠ SSOT，但
+#   **同时**满足「该版本在 ROADMAP 迭代表中标 📋 规划中」**且**「对应开发日志
+#   docs/changelog/vX.Y/vX.Y.Z.md 已存在」时，判为待发版窗口（能力段按下一版预写），
+#   打印可见 ⏏️ 行放行。两条必须同时成立——单条件不放行，禁止用白名单洗白真漂移。
+# 声称提取为空（文件里没有 `## vN.N.N` 标题）⇒ FAIL：守卫空转比没有守卫更危险。
+echo ""
+echo "=== 19. README 双语「最新能力段」版本 == 根 package.json version（v1.4.9 P1-6）==="
+PJ_VERSION=$(node -e "console.log(require('./package.json').version)" 2>/dev/null || echo "")
+if [ -z "$PJ_VERSION" ]; then
+  ASSERTS=$((ASSERTS + 1))
+  echo "  ❌ 根 package.json 版本读取失败——能力段版本对账失明（拒绝假绿）"
+  ERRORS=$((ERRORS + 1))
+else
+  for _rd in README.md README.en.md; do
+    _rd_v=$(grep -oE '^## v[0-9]+\.[0-9]+\.[0-9]+' "$_rd" 2>/dev/null | tail -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' || true)
+    ASSERTS=$((ASSERTS + 1))
+    if [ -z "$_rd_v" ]; then
+      echo "  ❌ ${_rd} 未找到「## vN.N.N」最新能力段标题——声称缺失（措辞漂移或段被删），判 FAIL"
+      ERRORS=$((ERRORS + 1))
+    elif [ "$_rd_v" = "$PJ_VERSION" ]; then
+      echo "  ✓ ${_rd} 最新能力段 v${_rd_v} = 根 package.json ${PJ_VERSION}"
+    else
+      # 待发版窗口白名单：两条同时成立才放行
+      _rd_mm=$(echo "$_rd_v" | cut -d. -f1-2)
+      _win_roadmap=$(grep -cE "^\| \*\*v${_rd_v}\*\* \| 📋 规划中" docs/ROADMAP.md 2>/dev/null || true)
+      _win_devlog=0
+      [ -f "docs/changelog/v${_rd_mm}/v${_rd_v}.md" ] && _win_devlog=1
+      if [ "${_win_roadmap:-0}" -ge 1 ] && [ "$_win_devlog" -eq 1 ]; then
+        SKIPS=$((SKIPS + 1))
+        echo "  ⏏️ ${_rd} 最新能力段 v${_rd_v} ≠ SSOT ${PJ_VERSION}——待发版窗口（ROADMAP 标 📋 规划中 + 开发日志已存在），按预写放行"
+      else
+        echo "  ❌ ${_rd} 最新能力段 v${_rd_v} ≠ 根 package.json ${PJ_VERSION}（SSOT）——能力段未跟上版本（发版 SOP 的「新能力段替换」人工步骤漏做）"
+        ERRORS=$((ERRORS + 1))
+      fi
+    fi
+  done
+fi
+
 if [ "$ERRORS" -gt 0 ]; then
   echo "发现 ${ERRORS} 个问题"
 else
