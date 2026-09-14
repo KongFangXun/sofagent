@@ -202,6 +202,16 @@ sofagent-audit --doctor    # 验证环境（可选）
 | 全套能力，走 npm 生态 | `npm i -g sofagent`（npm 裸名总包 `engine/umbrella`） | `@sofagent/audit` + `@sofagent/mcp` + `@sofagent/orchestrator` + `@sofagent/daemon` |
 | 全套能力，走 DSH 宿主挂载 | 宿主 profile 的 `bundles` 挂一条 `cordis-plugin-sofagent` | 该聚合插件声明的全部原子插件（挂一条即聚合） |
 
+> ⚠️ **两条通道都产出名为 `sofagent` 的命令，但语义不同——别混用一个名字的心智**：
+>
+> | | npm 裸名总包（`npm i -g sofagent`） | `install.sh` 安装态 |
+> |---|---|---|
+> | `sofagent` 是什么 | **审计薄转发**——等价 `sofagent-audit`，零配置 30 秒审计 | **完整安装面入口**——另有 `status` / `web` / `dashboard` 等子命令 |
+> | 实现位置 | `engine/umbrella/bin/sofagent.js`（spawn 转发到 `@sofagent/audit`） | `$SOFAGENT_HOME/bin/`（install.sh 写入） |
+>
+> **PATH 判别法**（不确定自己在用哪个时）：`command -v sofagent` 看路径落在 npm global 还是 `$SOFAGENT_HOME/bin`；再 `sofagent --help` 看首屏是**审计参数表**还是**安装版子命令表**（`sofagent web` 只在 install.sh 安装态可用）。
+> 两者同时存在于 PATH 时，**显式用全名**（审计走 `sofagent-audit …`）或调整 PATH 次序——**不要**假设 `sofagent` 一定是完整安装面。（v1.4.9 P2-5）
+
 ## 使用
 
 <p align="center"><img src="docs/assets/dashboard.png" alt="sofagent Dashboard 驾驶舱" width="100%" /><br/><sub>Dashboard 驾驶舱（单文件 HTML · 截图版本 v1.4.0）：规则通过率、审计任务、违规趋势——AI 在干什么，一眼看清。<br>（实际界面以安装态为准）</sub></p>

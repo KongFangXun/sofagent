@@ -46,7 +46,7 @@ sofagent 是一套 FDE 能力——底层引擎是纯本地 Harness 中间件（
 
 | 数据面 | 存储位置 | 隔离粒度 | 防线时序 | 边界与排期 |
 |------|------|------|------|------|
-| `runtime-audit.jsonl`（运行时审计日志） | `data/audit/runtime/<repo-hash>/` | **按 git 仓库隔离**（repo-hash；非 git 回退 nogit-hash） | 事中（审计中间件随每次工具调用落盘） | FORGE 自托管路径已交付；约束层侧同构隔离已落地（§四详述） |
+| `runtime-audit.jsonl`（运行时审计日志） | `data/audit/runtime/<repo-hash>/` | **按 git 仓库隔离**（repo-hash；非 git 回退 nogit-hash） | 事中（审计中间件随每次工具调用落盘） | FORGE（**项目内部自迭代工具链，非产品能力**）自托管路径已交付；约束层侧同构隔离已落地（§四详述） |
 | data-sovereignty 审计日志 | `data/audit/data-sovereignty/<repo-hash>/{年}/{月}/` | **按 git 仓库隔离**（repo-hash；非 git 回退 nogit-hash；旧版无段历史读侧 fallback 原地可读） | 事后可追溯 | 约束层侧 repo-hash 隔离已落地（复用 FORGE 方案）；多项目仍需 `SOFAGENT_HOME` 按项目分目录时可用 |
 | `history.jsonl`（commit 级审计历史） | `~/.sofagent/data/audit/`（全局） | 全局 append-only（HMAC 签名链要求全量连续，跨仓查询是运维刚需） | 事后（HMAC 链 + `--doctor` 校验；锚点防尾部截断） | 全局共享是设计决策；无密钥时退化为弱校验 hash chain（同用户进程可重算，见 §四 HMAC 段） |
 | `knowledge/`（知识沉淀） | `data/knowledge/` | 全局共享（无租户/项目维度，多域数据会串） | sensitivity 分级是**分级标注非门禁**（L0-L3 分层脱敏管道事前打码） | 多租户抽象层 v0 排 v1.4.7（G7）；当前定位单机单用户 |

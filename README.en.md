@@ -204,6 +204,16 @@ sofagent-audit --doctor    # verify the environment (optional)
 | Everything, via the npm ecosystem | `npm i -g sofagent` (npm bare-name umbrella package `engine/umbrella`) | `@sofagent/audit` + `@sofagent/mcp` + `@sofagent/orchestrator` + `@sofagent/daemon` |
 | Everything, via DSH host mounting | mount one `cordis-plugin-sofagent` entry in the host profile's `bundles` | all atomic plugins declared by that aggregator (one entry aggregates them) |
 
+> ⚠️ **Both channels ship a command named `sofagent`, but with different semantics — do not carry one mental model across both**:
+>
+> | | npm bare-name umbrella (`npm i -g sofagent`) | `install.sh` state |
+> |---|---|---|
+> | What `sofagent` is | **Thin audit forwarder** — equivalent to `sofagent-audit`, zero-config 30-second audit | **Full-install entry point** — also exposes `status` / `web` / `dashboard` subcommands |
+> | Where it lives | `engine/umbrella/bin/sofagent.js` (spawns `@sofagent/audit`) | `$SOFAGENT_HOME/bin/` (written by install.sh) |
+>
+> **Tell them apart via PATH** (when unsure which one you are running): `command -v sofagent` shows whether the path falls under npm global or `$SOFAGENT_HOME/bin`; then `sofagent --help` shows whether the first screen is the **audit flag table** or the **full-install subcommand table** (`sofagent web` only exists in the install.sh state).
+> If both are on PATH, **use the explicit full name** (run audits as `sofagent-audit …`) or reorder PATH — **do not** assume `sofagent` is always the full-install face. (v1.4.9 P2-5)
+
 ## Usage
 
 <p align="center"><img src="docs/assets/dashboard.png" alt="sofagent Dashboard cockpit" width="100%" /><br/><sub>Dashboard cockpit (single-file HTML · screenshot shows v1.4.0): rule pass rate, audit tasks, violation trends — see at a glance what the AI is doing.<br>(The installed UI is the source of truth.)</sub></p>
