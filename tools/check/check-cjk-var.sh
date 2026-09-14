@@ -72,14 +72,17 @@ fi
 echo ""
 # 失明必须失声：引擎自身故障与真违规同样阻断——否则「零违规」可能只是「引擎瞎了」，
 # 防线失明时却假装还在岗，比没有这条防线更危险。
+# 输出口径：扫描文件数一律写成「N 个文件扫描」，三条退出路径同一措辞——消费方
+#   （check-guards ④ 扫描范围对账）按这一条 token 提取。同一事实两套措辞曾使提取在
+#   违规分支落空，于是真因被误报为「守卫失明（glob 未跟随目录重组）」，归因完全错。
 if [ "$VIOLATIONS" -gt 0 ] || [ "$GUARDS_VIOL" -ne 0 ]; then
   if [ "$VIOLATIONS" -gt 0 ]; then
     echo "✗ ${VIOLATIONS} 处非 ASCII 字符紧跟 \$VAR（${FILES} 个文件扫描）——改为 \${VAR} 定界后重跑"
   else
-    echo "✗ 0 处违规但守卫自身失明——上述引擎故障必须先修复，本次按违规处理"
+    echo "✗ 0 处违规但守卫自身失明（${FILES} 个文件扫描）——上述引擎故障必须先修复，本次按违规处理"
   fi
   exit 1
 else
-  echo "✓ $FILES 个 shell 脚本无非 ASCII 字符紧跟 \$VAR 的定界违规"
+  echo "✓ ${FILES} 个文件扫描，无非 ASCII 字符紧跟 \$VAR 的定界违规"
   exit 0
 fi

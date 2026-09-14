@@ -160,15 +160,21 @@ GLOB_ACCOUNT_FAIL=0
 # check-cjk-var.sh 自己报告的扫描数，期望值必须等于对方的实际范围，否则永久假红。
 # 若将来把 check-cjk-var.sh 的扫描面也扩到 playbook、engine/scripts，此处同步扩。
 _cjk_expect=$(find tools -name "*.sh" -type f | grep -v "check-cjk-var.sh" | wc -l | tr -d ' ')
-# check-cjk-var 的输出两种格式：成功「N 个 shell 脚本无违规」/ 失败「N 个文件扫描」
-_cjk_report=$(bash tools/check/check-cjk-var.sh 2>/dev/null | grep -oE '[0-9]+ 个 (shell 脚本|文件)' | grep -oE '^[0-9]+' | head -1 || true)
-_cjk_report=${_cjk_report:-0}
-if [ "$_cjk_report" -ne "$_cjk_expect" ]; then
-  echo "  ✗ check-cjk-var 报告扫描 ${_cjk_report} 文件 ≠ find 实际 ${_cjk_expect}（已扣 SELF 豁免）——守卫失明（glob 未跟随目录重组）"
+# 提取口径：check-cjk-var 的扫描数一律是「N 个文件扫描」这一个 token（其三条退出路径
+# 同一措辞）。**提取为空与数字不等必须分成两条判定**——合并成一条会给出错误归因：
+#   曾因对方两套措辞并存，违规分支提取落空 → 回落 0 → 报「守卫失明（glob 未跟随目录重组）」，
+#   而真因是「有违规」。判据：提取为空 = 对方输出契约变了/没跑起来，与 glob 范围无关。
+_cjk_raw=$(bash tools/check/check-cjk-var.sh 2>/dev/null | grep -oE '[0-9]+ 个文件扫描' | grep -oE '^[0-9]+' | head -1 || true)
+if [ -z "$_cjk_raw" ]; then
+  echo "  ✗ check-cjk-var 未输出扫描数（「N 个文件扫描」token 缺失）——输出契约变更或脚本未运行，本项无法判绿"
+  VIOL=$((VIOL + 1))
+  GLOB_ACCOUNT_FAIL=1
+elif [ "$_cjk_raw" -ne "$_cjk_expect" ]; then
+  echo "  ✗ check-cjk-var 报告扫描 ${_cjk_raw} 文件 ≠ find 实际 ${_cjk_expect}（已扣 SELF 豁免）——守卫失明（glob 未跟随目录重组）"
   VIOL=$((VIOL + 1))
   GLOB_ACCOUNT_FAIL=1
 else
-  echo "  ✓ check-cjk-var 扫描面 ${_cjk_report} = find 实际 ${_cjk_expect}（含 SELF 豁免扣减）"
+  echo "  ✓ check-cjk-var 扫描面 ${_cjk_raw} = find 实际 ${_cjk_expect}（含 SELF 豁免扣减）"
 fi
 
 # ============================================================
