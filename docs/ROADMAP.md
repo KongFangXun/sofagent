@@ -7,7 +7,7 @@
 
 ## 现在在哪：v1.4.8（已交付）
 
-> **v1.4.8 开发完成（2026-09-13，✅ 已发版）**——插件管控与工程效能（插件来源白名单 plugin-gate 三类来源校验 + 应用级工具策略 ToolGate app×tool 矩阵 fail-closed + 多 Agent 协作阵型库六阵型 + 自动上下文压缩加载链 3% 预算 + shell 提权分级三态 + 成本 quota 事前门禁 + 依赖方向架构测试 13 包五层边界 + workflow 节点级模型偏好 + 执行机制纪律批 + 进化模块重构 @sofagent/evolve + fresh-eyes 修复批 + LOOP 概念归位）· 测试 4279→4429（13 包 workspace 口径）· acceptance 328→337 场景（阶段四 A 类分发 S401-S409 九新面锚点）· MCP 95 tools · release-gate verdict=PASS。详见 [v1.4.8 开发日志](./changelog/v1.4/v1.4.8.md)。下一版 v1.4.9（📟 设备接入与数据承接版——多设备 Harness 中间层 + router 伴生数据面）见[版本规划](#版本规划)。
+> **v1.4.8 开发完成（2026-09-13，✅ 已发版）**——插件管控与工程效能（插件来源白名单 plugin-gate 三类来源校验 + 应用级工具策略 ToolGate app×tool 矩阵 fail-closed + 多 Agent 协作阵型库六阵型 + 自动上下文压缩加载链 3% 预算 + shell 提权分级三态 + 成本 quota 事前门禁 + 依赖方向架构测试 13 包五层边界 + workflow 节点级模型偏好 + 执行机制纪律批 + 进化模块重构 @sofagent/evolve + fresh-eyes 修复批 + LOOP 概念归位）· 测试 4279（12 包 workspace 口径）→4429（13 包 workspace 口径）· acceptance 328→337 场景（阶段四 A 类分发 S401-S409 九新面锚点）· MCP 95 tools · release-gate verdict=PASS。详见 [v1.4.8 开发日志](./changelog/v1.4/v1.4.8.md)。下一版 v1.4.9（📟 设备接入与数据承接版——多设备 Harness 中间层 + router 伴生数据面）见[版本规划](#版本规划)。
 
 ---
 

@@ -136,7 +136,7 @@ run_scenario_guard() {
   if [ -n "$DEV_LINE" ]; then
     check_scenario_doc "DEVELOPMENT.md" "docs/DEVELOPMENT.md" \
       "$(echo "$DEV_LINE" | cut -d: -f1)" \
-      "$(echo "$DEV_LINE" | grep -oE '[0-9]+ 场景' | grep -oE '[0-9]+')"
+      "$(echo "$DEV_LINE" | grep -oE '[0-9]+ 场景' | head -1 | grep -oE '[0-9]+')"
   fi
 
   # ② LIMITATIONS.md — "acceptance-test.sh NNN 场景"（当前版本口径，取「发版前手动覆盖」行）
@@ -415,22 +415,66 @@ else
   ((FAIL++)) || true
 fi
 
-# ROADMAP.md — "质量验证：NNN tests" 格式（最新版本段）
-ROADMAP_LINE=$(grep -nE '质量验证：[0-9]+ tests' docs/ROADMAP.md | head -1)
-if [ -n "$ROADMAP_LINE" ]; then
-  ROADMAP_CLAIMED=$(echo "$ROADMAP_LINE" | grep -oE '[0-9]+ tests' | head -1 | grep -oE '[0-9]+')
+# ── ROADMAP.md 最新版「开发完成」行的测试数快照（v1.4.9 G-6 改锚）──
+# 【原锚已死·取证】原锚串 '质量验证：[0-9]+ tests'（注释写「最新版本段」），实测
+#   `grep -cE` = 0 ⇒ 该 if 恒假 ⇒ **整块恒不执行**（守卫空转第二形态：看着有校验、
+#   实际零校验，输出照旧 ✓）。**不是「暂时失配」**，时间线（git 取证，非推断）：
+#     · 2026-07-21 871d9b8d（P1-3 门禁自动校验测试数）引入本锚——当时 ROADMAP.md 在
+#       **仓库根**且形态在位（`质量验证：937 tests across 12 packages 全绿`）⇒ 锚是活的；
+#     · 2026-07-24 80fed5c9（v1.2.0 阶段八文档收尾）改写该段，`质量验证：NNN tests`
+#       形态**从 ROADMAP 消失**（0 处）⇒ 本锚**自该日起恒不执行**；
+#     · 2026-08-03 ccf58d12（ROADMAP.md 迁 docs/）路径改对，但形态早已不在；
+#     · 至 2026-09-14 仍为 0 处 ⇒ **死锚存活 52 天，跨 v1.2.0→v1.4.9**，无人发现。
+#   复核：`git log --oneline -S'质量验证：' -- docs/ROADMAP.md` 零命中（该形态从未出现在
+#   现路径的历史里），`-S'质量验证：[0-9]+ tests' --all` 仅 5 个历史文档命中（archive/changelog）。
+# 【改锚判据】ROADMAP 现以「… · 测试 NNNN→MMMM（NN 包 workspace 口径）· …」声称最新版
+#   测试数（docs/ROADMAP.md:10）。它是**发版时点快照**（语义同 CHANGELOG 索引行），
+#   **不是当值** ⇒ 不得与当前 TOTAL_TESTS 比对（v1.4.8 快照 4429 ≠ 当前 4468，那样改会
+#   必红、属**制造假红**）；应与**同版本开发日志**的 `NNN tests across NN packages` 快照
+#   比对（范式与下方 CHANGELOG 段的 DEVLOG_SNAPSHOT 一致，一个判据两处消费）。
+#   提取为空 ⇒ FAIL；同版本开发日志快照不可用 ⇒ 可见 ⏏️ SKIP（不是静默）。
+ROADMAP_LINE=$(grep -nE '^> \*\*v[0-9]+\.[0-9]+\.[0-9]+ 开发完成' docs/ROADMAP.md 2>/dev/null | head -1)
+if [ -z "$ROADMAP_LINE" ]; then
+  echo -e "  ${RED}✗ docs/ROADMAP.md 未找到「> **vX.Y.Z 开发完成」最新版段（grep 未命中 → FAIL，禁止静默跳过）${NC}"
+  ((FAIL++)) || true
+else
   ROADMAP_LINENO=$(echo "$ROADMAP_LINE" | cut -d: -f1)
-  if [ "$QUIET" = false ]; then
-    echo -e "  校验 ROADMAP.md（行 ${ROADMAP_LINENO}）..."
-  fi
-  if [ "$ROADMAP_CLAIMED" = "$TOTAL_TESTS" ]; then
-    if [ "$QUIET" = false ]; then
-      echo -e "  ${GREEN}✓ ROADMAP.md：${ROADMAP_CLAIMED}${NC}"
-    fi
-    ((PASS++)) || true
-  else
-    echo -e "  ${RED}✗ ROADMAP.md（行 ${ROADMAP_LINENO}）：声称 ${ROADMAP_CLAIMED}，实际 ${TOTAL_TESTS}${NC}"
+  # head -1 + `[^→]*`：兼容「测试 4279→4429」与「测试 4279（12 包 workspace 口径）→4429（13 包…）」
+  # 两种写法，且不会把行内后续的 `acceptance 328→337` 一起吞进来。
+  ROADMAP_TESTPAIR=$(echo "$ROADMAP_LINE" | grep -oE '测试 [0-9]+[^→]*→[0-9]+' | head -1)
+  ROADMAP_VER=$(echo "$ROADMAP_LINE" | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+  ROADMAP_SNAP=$(echo "$ROADMAP_TESTPAIR" | grep -oE '→[0-9]+' | head -1 | grep -oE '[0-9]+' || echo "")
+  if [ -z "$ROADMAP_VER" ] || [ -z "$ROADMAP_SNAP" ]; then
+    echo -e "  ${RED}✗ ROADMAP.md（行 ${ROADMAP_LINENO}）：最新版测试数声称提取为空——ver=[${ROADMAP_VER:-空}] snap=[${ROADMAP_SNAP:-空}]（正则失配 / 声称被改写 → FAIL，禁止静默跳过）${NC}"
     ((FAIL++)) || true
+  else
+    if [ "$QUIET" = false ]; then
+      echo -e "  校验 ROADMAP.md（行 ${ROADMAP_LINENO}）..."
+    fi
+    # ⚠️ ROADMAP_VER 提取时带 `v` 前缀（'v1\.4\.8'），拼路径必须去掉——否则得到
+    #    `docs/changelog/vv1.4/vv1.4.8.md`（双 v）⇒ 文件恒不存在 ⇒ 新断言退化为
+    #    恒 SKIP 的**空转守卫**（实测踩过：首版就是这个 bug，输出 `vv1.4` 才暴露）。
+    ROADMAP_VER_BARE=${ROADMAP_VER#v}
+    ROADMAP_MM=$(echo "$ROADMAP_VER_BARE" | cut -d. -f1-2)
+    ROADMAP_DEVLOG="docs/changelog/v${ROADMAP_MM}/v${ROADMAP_VER_BARE}.md"
+    ROADMAP_DEVLOG_SNAP=""
+    if [ -f "$ROADMAP_DEVLOG" ]; then
+      ROADMAP_DEVLOG_SNAP=$(grep -oE '[0-9]+ tests across [0-9]+ packages' "$ROADMAP_DEVLOG" 2>/dev/null | head -1 | grep -oE '^[0-9]+' || echo "")
+    fi
+    if [ -z "$ROADMAP_DEVLOG_SNAP" ]; then
+      SKIPS=$((SKIPS + 1))
+      if [ "$QUIET" = false ]; then
+        echo -e "  ${YELLOW}⏏️ ROADMAP.md（行 ${ROADMAP_LINENO}）：${ROADMAP_VER} 开发日志快照不可用（${ROADMAP_DEVLOG} 缺失或无「NNN tests across NN packages」行）——本次跳过，非失败${NC}"
+      fi
+    elif [ "$ROADMAP_SNAP" = "$ROADMAP_DEVLOG_SNAP" ]; then
+      if [ "$QUIET" = false ]; then
+        echo -e "  ${GREEN}✓ ROADMAP.md（行 ${ROADMAP_LINENO}）：${ROADMAP_VER} 测试数快照 ${ROADMAP_SNAP} = 同版本开发日志快照${NC}"
+      fi
+      ((PASS++)) || true
+    else
+      echo -e "  ${RED}✗ ROADMAP.md（行 ${ROADMAP_LINENO}）：${ROADMAP_VER} 测试数声称 ${ROADMAP_SNAP}，同版本开发日志快照 ${ROADMAP_DEVLOG_SNAP}（${ROADMAP_DEVLOG}）${NC}"
+      ((FAIL++)) || true
+    fi
   fi
 fi
 
@@ -465,30 +509,64 @@ if [ -n "$LIMITATIONS_LINE" ]; then
   fi
 fi
 
-# evidence.md — 历史快照最后一列（最新版本）"vX.Y.Z 为 NNN（audit 包）" + "全 workspace ... vX.Y.Z 为 NNN"
-# evidence.md 是历史时间线，只校验最后一个版本（当前版本）的声称值
-EVIDENCE_AUDIT=$(grep -oE 'v1\.1\.[0-9]+ 为 [0-9]+（audit 包）' docs/evidence/evidence.md | tail -1 | grep -oE '[0-9]+（audit' | grep -oE '[0-9]+' || echo "")
-EVIDENCE_TOTAL=$(grep -oE '全 workspace.*v1\.1\.[0-9]+ 为 [0-9]+' docs/evidence/evidence.md | tail -1 | grep -oE '为 [0-9]+$' | grep -oE '[0-9]+' || echo "")
-if [ -n "$EVIDENCE_AUDIT" ] && [ -n "$EVIDENCE_TOTAL" ]; then
-  if [ "$QUIET" = false ]; then
-    echo -e "  校验 docs/evidence/evidence.md..."
-  fi
-  local_fail=0
-  if [ "$EVIDENCE_AUDIT" != "$AUDIT_TESTS" ]; then
-    echo -e "  ${RED}✗ evidence.md：最新快照 audit ${EVIDENCE_AUDIT}，实际 ${AUDIT_TESTS}${NC}"
-    local_fail=1
-  fi
-  if [ "$EVIDENCE_TOTAL" != "$TOTAL_TESTS" ]; then
-    echo -e "  ${RED}✗ evidence.md：最新快照 workspace ${EVIDENCE_TOTAL}，实际 ${TOTAL_TESTS}${NC}"
-    local_fail=1
-  fi
-  if [ "$local_fail" = "0" ]; then
-    if [ "$QUIET" = false ]; then
-      echo -e "  ${GREEN}✓ evidence.md：audit ${EVIDENCE_AUDIT} / workspace ${EVIDENCE_TOTAL}${NC}"
-    fi
-    ((PASS++)) || true
-  else
+# ── evidence.md 的「本页时点值」测试数快照（v1.4.9 G-6 改锚）──
+# 【原锚已死·取证】原双锚 ① 'v1\.1\.[0-9]+ 为 [0-9]+（audit 包）' ② '全 workspace.*v1\.1\.[0-9]+ 为 [0-9]+'
+#   实测均为 0 命中 ⇒ `[ -n "$EVIDENCE_AUDIT" ] && [ -n "$EVIDENCE_TOTAL" ]` 恒假
+#   ⇒ **整块恒不执行**（守卫空转第二形态：看着有校验、实际零校验，输出照旧 ✓）。
+#   时间线（git 取证，非推断）：
+#     · 2026-07-21 871d9b8d 引入本块；同日 d8f45674 该形态在 evidence.md 现身（0→1）⇒ 锚曾活；
+#     · 2026-07-27 35909f2e（v1.2.1 bugfix 返工批次）改写该段，形态**消失**（1→0）
+#       ⇒ 本锚自该日起恒不执行，至 2026-09-14 已存活 **49 天**（跨 v1.2.1→v1.4.9）。
+# 【为何不复活原意图】原意图 = 「evidence.md 最新快照 == 当前 SSOT」。该意图**已被页面定位
+#   变更取代**：经 v1.4.9 P2-10 裁定，本页显式声明为「**历史锚点页、不追当值**」，其历史沿革行
+#   （`v1.2.4：audit 包 507、全 workspace 1320 测试`）是**冻结历史值**——与当前 SSOT 比对必红，
+#   复活即制造假红（违反「守卫不空转」的姊妹纪律：也不得让守卫必红）。
+# 【改锚判据】改锚到页内**唯一的活声称**：「本页时点值（vX.Y.Z 发版快照）：全 workspace NNNN 测试」，
+#   判据 = NNNN **必须等于所标版本开发日志的 `NNN tests across NN packages` 快照**
+#   （**自洽性**断言，不是「追当值」——与「历史锚点页」定位不冲突，同上方 ROADMAP/CHANGELOG 范式）。
+#   ⚠️ 该行同时含多处「全 workspace NNNN 测试」（沿革账 4279/1320/1207/984/957）
+#   ⇒ **必须 head -1**，否则 `grep -oE` 返回多行拼成 "4279\n1320\n1207"、比对必失败。
+#   （实测复现：这正是死锚掩盖掉的**第二重缺陷**——锚一旦复活会立刻炸；属 G-13 同形态。）
+#   audit 半边不再断言：页内已无「当前形态」的 audit 时点值（沿革账的 audit 数是冻结历史值）。
+#   提取为空 ⇒ FAIL；所标版本开发日志快照不可用 ⇒ 可见 ⏏️ SKIP（不是静默）。
+EVIDENCE_LINE=$(grep -nE '本页时点值（v[0-9]+\.[0-9]+\.[0-9]+ 发版快照）：全 workspace [0-9]+ 测试' docs/evidence/evidence.md 2>/dev/null | head -1)
+if [ -z "$EVIDENCE_LINE" ]; then
+  echo -e "  ${RED}✗ docs/evidence/evidence.md 未找到「本页时点值（vX.Y.Z 发版快照）：全 workspace NNNN 测试」声明（grep 未命中 → FAIL，禁止静默跳过）${NC}"
+  ((FAIL++)) || true
+else
+  EVIDENCE_LINENO=$(echo "$EVIDENCE_LINE" | cut -d: -f1)
+  EVIDENCE_VER=$(echo "$EVIDENCE_LINE" | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+  # head -1 必加（见上）：该行沿革账含多个「全 workspace NNNN 测试」
+  EVIDENCE_SNAP=$(echo "$EVIDENCE_LINE" | grep -oE '全 workspace [0-9]+ 测试' | head -1 | grep -oE '[0-9]+' || echo "")
+  if [ -z "$EVIDENCE_VER" ] || [ -z "$EVIDENCE_SNAP" ]; then
+    echo -e "  ${RED}✗ evidence.md（行 ${EVIDENCE_LINENO}）：时点值声称提取为空——ver=[${EVIDENCE_VER:-空}] snap=[${EVIDENCE_SNAP:-空}]（正则失配 / 声称被改写 → FAIL，禁止静默跳过）${NC}"
     ((FAIL++)) || true
+  else
+    if [ "$QUIET" = false ]; then
+      echo -e "  校验 docs/evidence/evidence.md（行 ${EVIDENCE_LINENO}）..."
+    fi
+    # ⚠️ 同 ROADMAP 段：EVIDENCE_VER 带 `v` 前缀，拼路径必须去掉（否则 `vv1.4` 空转）
+    EVIDENCE_VER_BARE=${EVIDENCE_VER#v}
+    EVIDENCE_MM=$(echo "$EVIDENCE_VER_BARE" | cut -d. -f1-2)
+    EVIDENCE_DEVLOG="docs/changelog/v${EVIDENCE_MM}/v${EVIDENCE_VER_BARE}.md"
+    EVIDENCE_DEVLOG_SNAP=""
+    if [ -f "$EVIDENCE_DEVLOG" ]; then
+      EVIDENCE_DEVLOG_SNAP=$(grep -oE '[0-9]+ tests across [0-9]+ packages' "$EVIDENCE_DEVLOG" 2>/dev/null | head -1 | grep -oE '^[0-9]+' || echo "")
+    fi
+    if [ -z "$EVIDENCE_DEVLOG_SNAP" ]; then
+      SKIPS=$((SKIPS + 1))
+      if [ "$QUIET" = false ]; then
+        echo -e "  ${YELLOW}⏏️ evidence.md（行 ${EVIDENCE_LINENO}）：${EVIDENCE_VER} 开发日志快照不可用（${EVIDENCE_DEVLOG} 缺失或无「NNN tests across NN packages」行）——本次跳过，非失败${NC}"
+      fi
+    elif [ "$EVIDENCE_SNAP" = "$EVIDENCE_DEVLOG_SNAP" ]; then
+      if [ "$QUIET" = false ]; then
+        echo -e "  ${GREEN}✓ evidence.md（行 ${EVIDENCE_LINENO}）：${EVIDENCE_VER} 时点值快照 ${EVIDENCE_SNAP} = 同版本开发日志快照${NC}"
+      fi
+      ((PASS++)) || true
+    else
+      echo -e "  ${RED}✗ evidence.md（行 ${EVIDENCE_LINENO}）：${EVIDENCE_VER} 时点值声称 ${EVIDENCE_SNAP}，同版本开发日志快照 ${EVIDENCE_DEVLOG_SNAP}（${EVIDENCE_DEVLOG}）${NC}"
+      ((FAIL++)) || true
+    fi
   fi
 fi
 
@@ -496,8 +574,9 @@ fi
 # P0-13: grep 未命中 → FAIL（不再静默跳过——正则失配说明检查正则有 bug 或文档缺失声明）
 WIKI_LINE=$(grep -nE '[0-9]+ 测试 / [0-9]+ 包' docs/WIKI.md 2>/dev/null | head -1)
 if [ -n "$WIKI_LINE" ]; then
-  WIKI_CLAIMED=$(echo "$WIKI_LINE" | grep -oE '[0-9]+ 测试' | grep -oE '[0-9]+')
-  WIKI_PKGS=$(echo "$WIKI_LINE" | grep -oE '[0-9]+ 包' | grep -oE '[0-9]+')
+  # v1.4.9 G-13：补 `head -1`（同 README 形态——多命中拼接会让比对必失败且报错难读）
+  WIKI_CLAIMED=$(echo "$WIKI_LINE" | grep -oE '[0-9]+ 测试' | head -1 | grep -oE '[0-9]+')
+  WIKI_PKGS=$(echo "$WIKI_LINE" | grep -oE '[0-9]+ 包' | head -1 | grep -oE '[0-9]+')
   WIKI_LINENO=$(echo "$WIKI_LINE" | cut -d: -f1)
   if [ "$QUIET" = false ]; then
     echo -e "  校验 docs/WIKI.md（行 ${WIKI_LINENO}）..."
@@ -507,7 +586,11 @@ if [ -n "$WIKI_LINE" ]; then
     echo -e "  ${RED}✗ WIKI.md（行 ${WIKI_LINENO}）：声称 ${WIKI_CLAIMED}，实际 ${TOTAL_TESTS}${NC}"
     local_fail=1
   fi
-  if [ -n "$WIKI_PKGS" ] && [ "$WIKI_PKGS" != "$PKG_COUNT" ]; then
+  # v1.4.9 G-13：原 `[ -n "$WIKI_PKGS" ] &&` 形态 = 提取为空即静默跳过（免费绿灯）⇒ 改双分支都判红
+  if [ -z "$WIKI_PKGS" ]; then
+    echo -e "  ${RED}✗ WIKI.md（行 ${WIKI_LINENO}）：包数提取为空（正则失配 / 声称被改写）——守卫不空转，判 FAIL${NC}"
+    local_fail=1
+  elif [ "$WIKI_PKGS" != "$PKG_COUNT" ]; then
     echo -e "  ${RED}✗ WIKI.md（行 ${WIKI_LINENO}）：声称 ${WIKI_PKGS} 包，实际 ${PKG_COUNT} 包${NC}"
     local_fail=1
   fi
@@ -530,11 +613,17 @@ fi
 #  完整呈现交付物面——模块包 workspace 13 / 发布实体 26 两个数字可区分，消除「交付物只有 13 包」误读）
 README_PKG_LINE=$(grep -nE '[0-9]+ 测试 / [0-9]+ 模块包 \+ [0-9]+ 插件' README.md 2>/dev/null | head -1)
 if [ -n "$README_PKG_LINE" ]; then
-  README_CLAIMED=$(echo "$README_PKG_LINE" | grep -oE '[0-9]+ 测试' | grep -oE '[0-9]+')
-  README_PKGS=$(echo "$README_PKG_LINE" | grep -oE '[0-9]+ 模块包' | grep -oE '[0-9]+')
-  README_PLUGIN_TOTAL=$(echo "$README_PKG_LINE" | grep -oE '[0-9]+ 插件' | grep -oE '[0-9]+')
-  README_PLUGIN_DSH=$(echo "$README_PKG_LINE" | grep -oE '[0-9]+ DSH' | grep -oE '[0-9]+')
-  README_PLUGIN_OC=$(echo "$README_PKG_LINE" | grep -oE '[0-9]+ OpenClaw' | grep -oE '[0-9]+')
+  # v1.4.9 G-13：五个提取点全部补 `head -1`。
+  #   原实现无 head -1——同一行出现第二个「N 测试」/「N 模块包」/「N 插件」/「N DSH」/
+  #   「N OpenClaw」时，`grep -oE` 会把多处匹配拼成多行（实案：P2-11 摘内部口径后
+  #   README 行同时含“13 模块包”与“13 模块包 workspace”，README_PKGS 得 "13\n13"，
+  #   比对必失败且报错难读）。本文件 :443 的兄弟点早已修好并写了坑位注释（同一失败形态、
+  #   一处修了一处没修）——此处补齐为同一形态。取首个匹配 = 该行开头的当前声称值。
+  README_CLAIMED=$(echo "$README_PKG_LINE" | grep -oE '[0-9]+ 测试' | head -1 | grep -oE '[0-9]+')
+  README_PKGS=$(echo "$README_PKG_LINE" | grep -oE '[0-9]+ 模块包' | head -1 | grep -oE '[0-9]+')
+  README_PLUGIN_TOTAL=$(echo "$README_PKG_LINE" | grep -oE '[0-9]+ 插件' | head -1 | grep -oE '[0-9]+')
+  README_PLUGIN_DSH=$(echo "$README_PKG_LINE" | grep -oE '[0-9]+ DSH' | head -1 | grep -oE '[0-9]+')
+  README_PLUGIN_OC=$(echo "$README_PKG_LINE" | grep -oE '[0-9]+ OpenClaw' | head -1 | grep -oE '[0-9]+')
   README_LINENO=$(echo "$README_PKG_LINE" | cut -d: -f1)
   if [ "$QUIET" = false ]; then
     echo -e "  校验 README.md（行 ${README_LINENO}）..."
@@ -544,19 +633,33 @@ if [ -n "$README_PKG_LINE" ]; then
     echo -e "  ${RED}✗ README.md（行 ${README_LINENO}）：声称 ${README_CLAIMED} 测试，实际 ${TOTAL_TESTS}${NC}"
     local_fail=1
   fi
-  if [ -n "$README_PKGS" ] && [ "$README_PKGS" != "$WORKSPACE_COUNT" ]; then
+  # v1.4.9 G-13：原 `[ -n "$X" ] && [ "$X" != "$Y" ]` 形态下，**提取为空即静默跳过 = 免费绿灯**
+  #   （守卫空转第二形态）。改为「提取为空 ⇒ FAIL」+「不一致 ⇒ FAIL」双分支，二者都判红。
+  if [ -z "$README_PKGS" ]; then
+    echo -e "  ${RED}✗ README.md（行 ${README_LINENO}）：模块包数提取为空（正则失配 / 声称被改写）——守卫不空转，判 FAIL${NC}"
+    local_fail=1
+  elif [ "$README_PKGS" != "$WORKSPACE_COUNT" ]; then
     echo -e "  ${RED}✗ README.md（行 ${README_LINENO}）：声称 ${README_PKGS} 模块包（workspace 模块总数），实际 ${WORKSPACE_COUNT} 包${NC}"
     local_fail=1
   fi
-  if [ -n "$README_PLUGIN_TOTAL" ] && [ "$README_PLUGIN_TOTAL" != "$PLUGIN_TOTAL" ]; then
+  if [ -z "$README_PLUGIN_TOTAL" ]; then
+    echo -e "  ${RED}✗ README.md（行 ${README_LINENO}）：插件合计数提取为空（正则失配 / 声称被改写）——守卫不空转，判 FAIL${NC}"
+    local_fail=1
+  elif [ "$README_PLUGIN_TOTAL" != "$PLUGIN_TOTAL" ]; then
     echo -e "  ${RED}✗ README.md（行 ${README_LINENO}）：声称 ${README_PLUGIN_TOTAL} 插件（DSH+OpenClaw 合计），实际 ${PLUGIN_TOTAL} 插件${NC}"
     local_fail=1
   fi
-  if [ -n "$README_PLUGIN_DSH" ] && [ "$README_PLUGIN_DSH" != "$DSH_PLUGIN_COUNT" ]; then
+  if [ -z "$README_PLUGIN_DSH" ]; then
+    echo -e "  ${RED}✗ README.md（行 ${README_LINENO}）：DSH 插件数提取为空（正则失配 / 声称被改写）——守卫不空转，判 FAIL${NC}"
+    local_fail=1
+  elif [ "$README_PLUGIN_DSH" != "$DSH_PLUGIN_COUNT" ]; then
     echo -e "  ${RED}✗ README.md（行 ${README_LINENO}）：声称 ${README_PLUGIN_DSH} DSH 插件，实际 ${DSH_PLUGIN_COUNT}${NC}"
     local_fail=1
   fi
-  if [ -n "$README_PLUGIN_OC" ] && [ "$README_PLUGIN_OC" != "$OPENCLAW_PLUGIN_COUNT" ]; then
+  if [ -z "$README_PLUGIN_OC" ]; then
+    echo -e "  ${RED}✗ README.md（行 ${README_LINENO}）：OpenClaw 插件数提取为空（正则失配 / 声称被改写）——守卫不空转，判 FAIL${NC}"
+    local_fail=1
+  elif [ "$README_PLUGIN_OC" != "$OPENCLAW_PLUGIN_COUNT" ]; then
     echo -e "  ${RED}✗ README.md（行 ${README_LINENO}）：声称 ${README_PLUGIN_OC} OpenClaw 插件，实际 ${OPENCLAW_PLUGIN_COUNT}${NC}"
     local_fail=1
   fi
@@ -578,11 +681,12 @@ fi
 #  与中文版 P0-13 语义一致；任务八方案A 2026-08-29：随中文版同步升级为引擎+插件双口径）
 README_EN_LINE=$(grep -nE '[0-9]+ tests? / [0-9]+ module packages \+ [0-9]+ plugins' README.en.md 2>/dev/null | head -1)
 if [ -n "$README_EN_LINE" ]; then
-  README_EN_CLAIMED=$(echo "$README_EN_LINE" | grep -oE '[0-9]+ tests?' | grep -oE '[0-9]+')
-  README_EN_PKGS=$(echo "$README_EN_LINE" | grep -oE '[0-9]+ module packages' | grep -oE '[0-9]+')
-  README_EN_PLUGIN_TOTAL=$(echo "$README_EN_LINE" | grep -oE '[0-9]+ plugins' | grep -oE '[0-9]+')
-  README_EN_PLUGIN_DSH=$(echo "$README_EN_LINE" | grep -oE '[0-9]+ DSH' | grep -oE '[0-9]+')
-  README_EN_PLUGIN_OC=$(echo "$README_EN_LINE" | grep -oE '[0-9]+ OpenClaw' | grep -oE '[0-9]+')
+  # v1.4.9 G-13：同 README 中文版——五个提取点补 `head -1`（多命中拼接 ⇒ "14\n14" 式假红）
+  README_EN_CLAIMED=$(echo "$README_EN_LINE" | grep -oE '[0-9]+ tests?' | head -1 | grep -oE '[0-9]+')
+  README_EN_PKGS=$(echo "$README_EN_LINE" | grep -oE '[0-9]+ module packages' | head -1 | grep -oE '[0-9]+')
+  README_EN_PLUGIN_TOTAL=$(echo "$README_EN_LINE" | grep -oE '[0-9]+ plugins' | head -1 | grep -oE '[0-9]+')
+  README_EN_PLUGIN_DSH=$(echo "$README_EN_LINE" | grep -oE '[0-9]+ DSH' | head -1 | grep -oE '[0-9]+')
+  README_EN_PLUGIN_OC=$(echo "$README_EN_LINE" | grep -oE '[0-9]+ OpenClaw' | head -1 | grep -oE '[0-9]+')
   README_EN_LINENO=$(echo "$README_EN_LINE" | cut -d: -f1)
   if [ "$QUIET" = false ]; then
     echo -e "  校验 README.en.md（行 ${README_EN_LINENO}）..."
@@ -592,19 +696,31 @@ if [ -n "$README_EN_LINE" ]; then
     echo -e "  ${RED}✗ README.en.md（行 ${README_EN_LINENO}）：声称 ${README_EN_CLAIMED} tests，实际 ${TOTAL_TESTS}${NC}"
     local_fail=1
   fi
-  if [ -n "$README_EN_PKGS" ] && [ "$README_EN_PKGS" != "$WORKSPACE_COUNT" ]; then
+  if [ -z "$README_EN_PKGS" ]; then
+    echo -e "  ${RED}✗ README.en.md（行 ${README_EN_LINENO}）：module packages 提取为空（正则失配 / 声称被改写）——守卫不空转，判 FAIL${NC}"
+    local_fail=1
+  elif [ "$README_EN_PKGS" != "$WORKSPACE_COUNT" ]; then
     echo -e "  ${RED}✗ README.en.md（行 ${README_EN_LINENO}）：声称 ${README_EN_PKGS} module packages（workspace 模块总数），实际 ${WORKSPACE_COUNT} 包${NC}"
     local_fail=1
   fi
-  if [ -n "$README_EN_PLUGIN_TOTAL" ] && [ "$README_EN_PLUGIN_TOTAL" != "$PLUGIN_TOTAL" ]; then
+  if [ -z "$README_EN_PLUGIN_TOTAL" ]; then
+    echo -e "  ${RED}✗ README.en.md（行 ${README_EN_LINENO}）：plugins 合计数提取为空（正则失配 / 声称被改写）——守卫不空转，判 FAIL${NC}"
+    local_fail=1
+  elif [ "$README_EN_PLUGIN_TOTAL" != "$PLUGIN_TOTAL" ]; then
     echo -e "  ${RED}✗ README.en.md（行 ${README_EN_LINENO}）：声称 ${README_EN_PLUGIN_TOTAL} plugins（DSH+OpenClaw 合计），实际 ${PLUGIN_TOTAL} 插件${NC}"
     local_fail=1
   fi
-  if [ -n "$README_EN_PLUGIN_DSH" ] && [ "$README_EN_PLUGIN_DSH" != "$DSH_PLUGIN_COUNT" ]; then
+  if [ -z "$README_EN_PLUGIN_DSH" ]; then
+    echo -e "  ${RED}✗ README.en.md（行 ${README_EN_LINENO}）：DSH plugins 数提取为空（正则失配 / 声称被改写）——守卫不空转，判 FAIL${NC}"
+    local_fail=1
+  elif [ "$README_EN_PLUGIN_DSH" != "$DSH_PLUGIN_COUNT" ]; then
     echo -e "  ${RED}✗ README.en.md（行 ${README_EN_LINENO}）：声称 ${README_EN_PLUGIN_DSH} DSH plugins，实际 ${DSH_PLUGIN_COUNT}${NC}"
     local_fail=1
   fi
-  if [ -n "$README_EN_PLUGIN_OC" ] && [ "$README_EN_PLUGIN_OC" != "$OPENCLAW_PLUGIN_COUNT" ]; then
+  if [ -z "$README_EN_PLUGIN_OC" ]; then
+    echo -e "  ${RED}✗ README.en.md（行 ${README_EN_LINENO}）：OpenClaw plugins 数提取为空（正则失配 / 声称被改写）——守卫不空转，判 FAIL${NC}"
+    local_fail=1
+  elif [ "$README_EN_PLUGIN_OC" != "$OPENCLAW_PLUGIN_COUNT" ]; then
     echo -e "  ${RED}✗ README.en.md（行 ${README_EN_LINENO}）：声称 ${README_EN_PLUGIN_OC} OpenClaw plugins，实际 ${OPENCLAW_PLUGIN_COUNT}${NC}"
     local_fail=1
   fi
@@ -626,7 +742,9 @@ fi
 for pkg in audit core orchestrator daemon; do
   PKG_LINE=$(grep -nE "\| ${pkg} \|.*已实现（[0-9]+ 测试）" docs/ARCHITECTURE.md 2>/dev/null | head -1)
   if [ -n "$PKG_LINE" ]; then
-    PKG_CLAIMED=$(echo "$PKG_LINE" | grep -oE '已实现（[0-9]+ 测试' | grep -oE '[0-9]+')
+    # v1.4.9 G-13：补 `head -1`（同形态硬化——ARCHITECTURE 行含「已实现（N 测试）」之外
+    #   还可能有其他「N 测试」字样，多命中会把值拼成多行）
+    PKG_CLAIMED=$(echo "$PKG_LINE" | grep -oE '已实现（[0-9]+ 测试' | head -1 | grep -oE '[0-9]+')
     PKG_LINENO=$(echo "$PKG_LINE" | cut -d: -f1)
     PKG_ACTUAL=$(echo "$TC_OUT" | grep "${pkg}:.*passed" | grep -oE '[0-9]+ passed' | grep -oE '[0-9]+' | head -1)
     if [ -z "$PKG_ACTUAL" ]; then
@@ -656,7 +774,8 @@ done
 #   - grep 未命中 → FAIL（与 README 校验段一致，禁止静默跳过——声称行被改写也要显式暴露）。
 DEV_ORCH_LINE=$(grep -nE 'orchestrator 包（[0-9]+ 测试' docs/DEVELOPMENT.md 2>/dev/null | head -1)
 if [ -n "$DEV_ORCH_LINE" ]; then
-  DEV_ORCH_CLAIMED=$(echo "$DEV_ORCH_LINE" | grep -oE '包（[0-9]+ 测试' | grep -oE '[0-9]+')
+  # v1.4.9 G-13：补 `head -1`（同形态硬化）
+  DEV_ORCH_CLAIMED=$(echo "$DEV_ORCH_LINE" | grep -oE '包（[0-9]+ 测试' | head -1 | grep -oE '[0-9]+')
   DEV_ORCH_LINENO=$(echo "$DEV_ORCH_LINE" | cut -d: -f1)
   DEV_ORCH_ACTUAL=$(echo "$TC_OUT" | sed $'s/\033\[[0-9;]*m//g' | grep "orchestrator:.*passed" | grep -oE '[0-9]+ passed' | grep -oE '[0-9]+' | head -1)
   [ -z "$DEV_ORCH_ACTUAL" ] && DEV_ORCH_ACTUAL=0
@@ -684,8 +803,11 @@ if [ -n "$LIMITATIONS_ALL" ]; then
   while IFS= read -r line_info; do
     [ -z "$line_info" ] && continue
     LIM_LINENO=$(echo "$line_info" | cut -d: -f1)
-    LIM_AUDIT=$(echo "$line_info" | grep -oE '审计核心 [0-9]+' | grep -oE '[0-9]+')
-    LIM_TOTAL=$(echo "$line_info" | grep -oE '全 workspace [0-9]+' | grep -oE '[0-9]+')
+    # v1.4.9 G-13：补 `head -1`——LIMITATIONS 的「测试覆盖范围」行同时含
+    #   「当前审计核心 N 个、全 workspace N 个」与沿革账的多个「全 workspace N」，
+    #   无 head -1 时 LIM_TOTAL 会得 "4468\n3507\n3541" 式拼接值（比对必失败且难读）。
+    LIM_AUDIT=$(echo "$line_info" | grep -oE '审计核心 [0-9]+' | head -1 | grep -oE '[0-9]+')
+    LIM_TOTAL=$(echo "$line_info" | grep -oE '全 workspace [0-9]+' | head -1 | grep -oE '[0-9]+')
     LIM_FAIL=0
     if [ "$LIM_AUDIT" != "$AUDIT_TESTS" ]; then
       echo -e "  ${RED}✗ LIMITATIONS.md（行 ${LIM_LINENO}）：audit 声称 ${LIM_AUDIT}，实际 ${AUDIT_TESTS}${NC}"
@@ -789,7 +911,8 @@ else
   #    v1.4.8 修正：删除原「再叠 27(DSH)+17(OpenClaw) 得全量口径」的换算式——它与
   #    CHANGELOG 实际写法不符（索引行的数字本身即 workspace 口径，实测 4429 = 开发日志
   #    快照 4429）；保留会让校验一旦被标注激活就必红（4429 ≠ 4429+44）。
-  CL_WS_MARK=$(echo "$CHANGELOG_LINE" | grep -oE 'workspace 口径 [0-9]+' | grep -oE '[0-9]+' || echo "")
+  # v1.4.9 G-13：补 `head -1`（同形态硬化——无论首个「workspace 口径 N」出现在哪，都取行内首处）
+  CL_WS_MARK=$(echo "$CHANGELOG_LINE" | grep -oE 'workspace 口径 [0-9]+' | head -1 | grep -oE '[0-9]+' || echo "")
   if [ -n "$CL_WS_MARK" ]; then
     # 找同版本开发日志的 workspace 快照（「NNNN tests across NN packages」或「workspace NNNN」）
     # v1.4.8：包数不再写死 12——train 拆包后为 13，用 [0-9]+ 动态匹配（写死会在包数变化后静默穿透）
@@ -809,6 +932,14 @@ else
       if [ "$CL_WS_MARK" != "$DEVLOG_SNAPSHOT" ]; then
         echo -e "  ${RED}✗ CHANGELOG.md（行 ${CL_LINENO}）：workspace 口径声称 ${CL_WS_MARK}，开发日志快照 ${DEVLOG_SNAPSHOT}（${CL_DEVLOG}）${NC}"
         cl_fail=1
+      fi
+    else
+      # v1.4.9 G-13 同族：原实现无 else ⇒ 开发日志快照提取失败时**静默跳过**（本分支已进入
+      #   「CHANGELOG 行带 workspace 口径标注」的前提，理应能取到同版本开发日志快照）。
+      #   不判红（开发中版本的日志可能尚未写快照行），但必须让「未校验」可见。
+      SKIPS=$((SKIPS + 1))
+      if [ "$QUIET" = false ]; then
+        echo -e "  ${YELLOW}⏏️ CHANGELOG.md（行 ${CL_LINENO}）：带 workspace 口径 ${CL_WS_MARK} 标注，但 ${CL_DEVLOG} 无「NNN tests across NN packages」快照行——本次跳过，非失败${NC}"
       fi
     fi
   else
