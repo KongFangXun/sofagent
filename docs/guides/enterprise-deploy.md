@@ -320,13 +320,13 @@ sofagent 的审计记录以 JSONL 格式存储在 `data/audit/history.jsonl`，�
 ### 审计追溯
 
 - 每台设备的审计日志独立存储于本地 `data/audit/history.jsonl`（JSONL，每行一条审计记录）
-- **集中查看**：通过 rsync 等工具汇总各设备日志到中央节点后，用 jq 聚合分析（P1-30 修正：原文档所述聚合命令不存在，实际为 JSONL 文件 + jq）：
+- **集中查看**：通过 rsync 等工具汇总各设备日志到中央节点后，用 jq 聚合分析（修正：原文档所述聚合命令不存在，实际为 JSONL 文件 + jq）：
   ```bash
   # 按设备目录汇总统计违规（exitCode 判定：1=WARN / 2=FAIL）
   cat */data/audit/history.jsonl | jq -s '[.[] | select(.exitCode > 0)] | {total: length}'
   cat */data/audit/history.jsonl | jq -r '[.timestamp, (.commitSha // .parentSha // "-"), .engine] | @tsv'
   ```
-- **跨设备一致性**：history 条目含 `timestamp`/`prevHash`/`engine` 字段；设备身份靠文件路径（`<device>/data/audit/history.jsonl`）区分——条目本身不存 hostname/federation_id（P1-30 修正：原文档所述字段与实际 JSONL 不符）
+- **跨设备一致性**：history 条目含 `timestamp`/`prevHash`/`engine` 字段；设备身份靠文件路径（`<device>/data/audit/history.jsonl`）区分——条目本身不存 hostname/federation_id（修正：原文档所述字段与实际 JSONL 不符）
 
 ### 安全建议
 

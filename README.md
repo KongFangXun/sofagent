@@ -210,7 +210,7 @@ sofagent-audit --doctor    # 验证环境（可选）
 > | 实现位置 | `engine/umbrella/bin/sofagent.js`（spawn 转发到 `@sofagent/audit`） | `$SOFAGENT_HOME/bin/`（install.sh 写入） |
 >
 > **PATH 判别法**（不确定自己在用哪个时）：`command -v sofagent` 看路径落在 npm global 还是 `$SOFAGENT_HOME/bin`；再 `sofagent --help` 看首屏是**审计参数表**还是**安装版子命令表**（`sofagent web` 只在 install.sh 安装态可用）。
-> 两者同时存在于 PATH 时，**显式用全名**（审计走 `sofagent-audit …`）或调整 PATH 次序——**不要**假设 `sofagent` 一定是完整安装面。（v1.4.9 P2-5）
+> 两者同时存在于 PATH 时，**显式用全名**（审计走 `sofagent-audit …`）或调整 PATH 次序——**不要**假设 `sofagent` 一定是完整安装面。（v1.4.9 安装入口消歧批）
 
 ## 使用
 

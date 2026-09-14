@@ -212,7 +212,7 @@ sofagent-audit --doctor    # verify the environment (optional)
 > | Where it lives | `engine/umbrella/bin/sofagent.js` (spawns `@sofagent/audit`) | `$SOFAGENT_HOME/bin/` (written by install.sh) |
 >
 > **Tell them apart via PATH** (when unsure which one you are running): `command -v sofagent` shows whether the path falls under npm global or `$SOFAGENT_HOME/bin`; then `sofagent --help` shows whether the first screen is the **audit flag table** or the **full-install subcommand table** (`sofagent web` only exists in the install.sh state).
-> If both are on PATH, **use the explicit full name** (run audits as `sofagent-audit …`) or reorder PATH — **do not** assume `sofagent` is always the full-install face. (v1.4.9 P2-5)
+> If both are on PATH, **use the explicit full name** (run audits as `sofagent-audit …`) or reorder PATH — **do not** assume `sofagent` is always the full-install face. (v1.4.9 install-entry disambiguation batch)
 
 ## Usage
 

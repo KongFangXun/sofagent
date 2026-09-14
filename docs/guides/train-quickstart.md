@@ -7,7 +7,7 @@
 ```bash
 mkdir -p /tmp/sofagent-qs/home/data
 export SOFAGENT_HOME=/tmp/sofagent-qs/home
-export SOFAGENT_HOME_ALLOWED_PREFIXES=/tmp/sofagent-qs   # 越界防护白名单（v1.3.2 P0-RC2）
+export SOFAGENT_HOME_ALLOWED_PREFIXES=/tmp/sofagent-qs   # 越界防护白名单（v1.3.2 起）
 cp docs/guides/examples/quickstart-data.csv "$SOFAGENT_HOME/data/"
 ```
 

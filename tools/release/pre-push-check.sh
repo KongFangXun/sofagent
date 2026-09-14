@@ -22,6 +22,7 @@
 #                             ⑦ tools/README.md 收录对账 + 防线失明自检（2 子项）· v1.4.9 G-12 接入
 #   + check-home-resolution-parity.mjs → 家目录口径对照（harness resolveEngineHome ↔ core resolveHomeDir
 #                             同输入同输出 + 已登记差异钉住 · 须在构建之后跑 · v1.4.9 G-9 接入）
+#   + doc-discipline.sh    → 对外文档写作纪律（内部工单代号 / 本机私有路径 · v1.4.9 P2-27 接入）
 #   + check-prepush-checklist.mjs → 本清单自身的对账：清单里的脚本名 ⊆ 实际被调用（v1.4.9 G-16 接入）
 #   + npm run build         → 审计模块构建
 #
@@ -403,6 +404,21 @@ if [ "$MINIMAL" = false ]; then
 fi
 
 # ════════════════════════════════════════
+# ========================================
+# 3g. 对外文档写作纪律（doc-discipline.sh · v1.4.9 P2-27）
+# 依据 CONTRIBUTING.md:137-140：对外公开文档不写内部工单/审查代号、本机私有路径。
+# 与 3d 静默吞错同款纪律——把「人工记得」升级为「机器拦得住」。
+# ========================================
+if [ "$MINIMAL" = false ]; then
+  echo -e "\n${BOLD}── 3g. 对外文档写作纪律 ──${NC}"
+  if bash tools/check/doc-discipline.sh >/dev/null 2>&1; then
+    check_pass "doc-discipline.sh 通过（对外文档零内部代号 / 零本机私有路径）"
+  else
+    check_fail "doc-discipline.sh 发现违规（内部工单代号或本机私有路径）"
+    bash tools/check/doc-discipline.sh 2>&1 | grep -E "❌|命中" | head -10
+  fi
+fi
+
 # 4. 审计模块构建 + 测试数汇总（对应 verify.yml + test-count.sh 门禁）
 # ════════════════════════════════════════
 if [ "$MINIMAL" = false ] && [ "$QUICK" = false ]; then
