@@ -701,14 +701,14 @@ if $S64_OK; then
 fi
 $S64_OK && pass
 S65_OK=true; export PATH="$EVOLVE_VENV_BIN:$PATH"
-if command -v evolve-sleep >/dev/null 2>&1; then
-  S65_HELP=$(evolve-sleep --help 2>&1 || true)
-  echo "$S65_HELP" | grep -qi "usage\|usage:" || { fail "evolve-sleep --help 无 usage 输出"; S65_OK=false; }
-# 可选依赖未装＝合法态（install.sh 明示「Evolve 自进化能力（可选）」且"不在自动安装范围内，
-# 仅提示"），不属「本应验证而缺环境」的证据缺口——故不计入 SKIP 分母（否则「0 SKIP」门槛
-# 被可选面永久卡住，run-03 verdict 据此判 acceptance 证据面不完整）。此为语义修正而非放宽：
-# 已安装时仍走上方完整验证分支，守卫强度不变。
-else echo "  ℹ️ OPTIONAL: evolve-sleep（可选 PyPI 依赖）未安装——该可选面未启用，非证据缺口"; fi
+# v1.4.9 裁定：降级为**纯信息探针**——旧探针名 evolve-sleep 全仓无此可执行（恒 false＝免费绿灯），对齐真实外部
+# 兼容层名 skillopt-sleep；本版 native gate 已替代该路径，故不再对其 --help 输出断言（否则恰好装了该 CLI 的机器
+# 会因版本差异误红，判据本身错位）。结果仅打印，**不影响 S65_OK、不计入分母**；未装＝合法态，不计入 SKIP 分母
+# （install.sh 明示「无需安装任何外部 CLI/包；SOFAGENT_EVOLVE_GATE=cli 为回退、可选、非默认」）。
+if command -v skillopt-sleep >/dev/null 2>&1; then
+  S65_HELP=$(skillopt-sleep --help 2>&1 | head -1 || true)
+  echo "  ℹ️ 外部兼容层 skillopt-sleep 在场（信息位，不断言）：${S65_HELP}"
+else echo "  ℹ️ OPTIONAL: 外部兼容层 skillopt-sleep 未安装——native gate 已替代（非默认路径），非证据缺口"; fi
 $S65_OK && pass
 scenario 66 "DeepAgents + runtime.json"
 S66_OK=true; S66_RESULT=$(NODE_PATH="$DEEPAGENTS_MODULES" node -e "try { console.log('resolved:' + require.resolve('deepagents')); } catch (e) { console.log('NOT installed'); }" 2>&1 || true)

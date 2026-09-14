@@ -39,9 +39,17 @@ import type { LoadChainBudget } from './load-chain/budget';
  *
  * v1.4.9 P1-4：⚠️ harness 是零依赖纪律的核心包（dependency-direction.yml：
  * harness `allow: []`，全仓唯一不允许 import 任何 @sofagent 包者）——不能
- * import core 的 `resolveHomeDir`。此处是**最小本地重实现**，口径须与
- * core/data-paths.ts 的 `resolveHomeDir` 保持一致（SOFAGENT_HOME 非空优先，
- * 缺省 ~/.sofagent）。改本函数必须同步评估 core 侧——两处口径漂移正是 P1-4 的成因。
+ * import core 的 `resolveHomeDir`。此处是**最小本地重实现**。两侧口径**如实分述**（不假称一致）：
+ *   · harness 侧（本函数）：`fromEnv !== undefined && fromEnv !== ''` ⇒ **非空优先**，空串拦下、回落
+ *     `$HOME/.sofagent`；
+ *   · core 侧（`core/data-paths.ts:166`）：`overrideHome ?? process.env.SOFAGENT_HOME ?? SOFAGENT_HOME`
+ *     —— `??` 只拦 null · undefined，**空串原样返回** ⇒ 空串下 core 得 `''`，下游 `path.join('', 'data')`
+ *     成相对路径。
+ * 两处差异由 `tools/check/check-home-resolution-parity.mjs` 的 `DIFF_REGISTRY.empty` 登记（≥30 字 why）
+ * ——**差异消失也判红**：统一必须是显式动作（配套架构裁定），而非某次重构的副产品。收敛方向（core 也
+ * 拦空串回落 `$HOME/.sofagent`）列 v1.5.x：本版行为不动（`resolveHomeDir` 有 6 个消费方，改 SSOT 属行为
+ * 变更，不在 bugfix 范围；空串属病态输入，收敛需独立设计 pass）。改本函数必须同步评估 core 侧——
+ * 两处口径漂移正是 P1-4 的成因。
  */
 function resolveEngineHome(): string {
   const fromEnv = process.env.SOFAGENT_HOME;
