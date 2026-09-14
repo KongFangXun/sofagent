@@ -39,6 +39,7 @@
     "dist/",
     "HOOK.md",
     "!dist/**/*.js.map",
-    "!dist/**/*.d.ts.map"
+    "!dist/**/*.d.ts.map",
+    "!dist/**/*.test.*"
   ]
 }
