@@ -91,6 +91,9 @@ const NAME_TO_MODULE = {
   contribution_query: 'ops',
   // v1.4.7：标准数据推送入口（audit——合规双闸）
   data_push: 'audit',
+  // v1.4.9 G9（T1）：设备注册面（ops——设备发现与在线态，daemon 桥接）
+  device_register: 'ops',
+  device_list: 'ops',
 };
 
 const src = readFileSync(REGISTRY, 'utf8');
