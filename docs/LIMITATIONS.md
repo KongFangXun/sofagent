@@ -63,7 +63,7 @@
 2. **设置 git hooksPath**——在 `~/.gitconfig` 中设置 `[core] hooksPath = ...` 确保 hook 路径不可被 Agent 覆盖。
 3. **定期运行 doctor**——`sofagent-audit --doctor` 检查审计规则完整性，检测 hooks 是否被意外移除或 config 被篡改。注意 doctor 默认 warning 不计失败（exit 0），CI 门禁场景需加 `--strict`。
 
-> 📌 data 目录整体权限加固（chmod 700）见 [SECURITY.md](../SECURITY.md) "临时缓解措施"段。
+> 📌 data 目录整体权限加固（chmod 700）见 [SECURITY.md](../SECURITY.md) 「纵深防御」节。
 
 ---
 
@@ -94,11 +94,13 @@
 
 **行业侧同向信号（2026-06）**：Databricks 发布企业本体层（Genie Ontology）后，第三方分析的集中批评落在同一条线上——**排出「最权威的定义」不等于校验「由它算出的数对不对」**：上下文能解决「该信谁」，不能替代对「算得对不对」的独立判定；一旦定义漂移或被操纵，Agent 会规模化地返回**自信而误导**的答案。同期 Anthropic 的托管 Agent 记忆层把写入权限按范围收紧（组织级只读、个人级才可写），每次变更留不可变版本与可追溯到具体 Agent / session 的审计轨迹。两处指向同一方向：**产出方不应该是自己的判定方**。
 
+**判据要分层，且刻意不合分**：上游判「喂对了没」（检索命中、权限单测——纯函数、可离线、毫秒级）、下游判「说对了没」（产出有没有破领域规则）、真机判「通没通」（端到端链路）。三层**不合并成一个总分**——合了以后分数掉了，分不清是检索退化还是措辞退化，也定位不到该修哪层。实践复盘里出现过完整反例：上游判据全绿（离线单测全绿 + 检索命中 100% + 工具调用零报错 + 配置干跑干净），真实对话仍违反多条领域规则，**整条验收链一条都没红**——根因是没有任何一道判据在看「模型最后说出来的那段话」。对应本仓：`evaluate_output` / `eval_suite` / `run_ab_test` 是下游判据面，**上游门禁全绿不能替代它**。
+
 ---
 
 ### 🌱 Skill 自动优化：从经验记录走向结构化知识库
 
-v1.0.1 新增 daemon Ingest（自动知识提取）+ loop-evaluate Lint（自动体检）将自动优化从「纯经验记录」推进一步。但仍处于**记录 + 整理**阶段——尚未到「自动改进」（多轨迹归纳）阶段：
+daemon Ingest（自动知识提取）+ loop-evaluate Lint（自动体检）把自动优化从「纯经验记录」推进一步。但仍处于**记录 + 整理**阶段——尚未到「自动改进」（多轨迹归纳）阶段：
 
 | 阶段 | 机制 | sofagent 现状 |
 |------|------|------|
@@ -411,7 +413,7 @@ sofagent-audit 实现了完整的六步审计闭环流程（设计文档见 [ARC
 
 ### 测试覆盖范围
 
-当前审计核心 1158 个、全 workspace 4485 个测试（口径：13 包 workspace；逐批沿革账已迁出，见 [v1.4.9 开发日志 · 附录](./changelog/v1.4/v1.4.9.md#附录测试与场景账沿革)），但覆盖范围集中在审计规则和核心逻辑（diff-parser、reporter、config-loader、rules/*.ts）。以下模块没有独立测试：
+当前审计核心 1166 个、全 workspace 4493 个测试（口径：13 包 workspace；逐批沿革账已迁出，见 [v1.4.9 开发日志 · 附录](./changelog/v1.4/v1.4.9.md#附录测试与场景账沿革)），但覆盖范围集中在审计规则和核心逻辑（diff-parser、reporter、config-loader、rules/*.ts）。以下模块没有独立测试：
 
 | 模块 | 测试状态 | 风险 |
 |------|:--:|------|
@@ -494,7 +496,7 @@ FDE 完整四阶段十二步部署流程（[FDE/GUIDE.md](../FDE/GUIDE.md)）已
 
 v1.0 新增 `playbook/acceptance-test.sh`（场景数持续扩展，当前 339 个，SSOT 口径=真实 scenario 行数（S165 动态计算并跨文档对账））：
 
-- **CI 已覆盖**：单元测试审计核心 1158 个、全 workspace 4485 个测试（口径与本文件「测试覆盖范围」节一致；逐批沿革账已迁出，见 [v1.4.9 开发日志 · 附录](./changelog/v1.4/v1.4.9.md#附录测试与场景账沿革)）、sofagent-core verify 约 44-48 项（动态）
+- **CI 已覆盖**：单元测试审计核心 1166 个、全 workspace 4493 个测试（口径与本文件「测试覆盖范围」节一致；逐批沿革账已迁出，见 [v1.4.9 开发日志 · 附录](./changelog/v1.4/v1.4.9.md#附录测试与场景账沿革)）、sofagent-core verify 约 44-48 项（动态）
 - **发版前手动覆盖**：acceptance-test.sh 339 场景（含子断言，CLI 端到端，步骤 2.3；逐批沿革账已迁出，见 [v1.4.9 开发日志 · 附录](./changelog/v1.4/v1.4.9.md#附录测试与场景账沿革)）、OpenClaw 验收 63 场景（Agent 端到端，步骤 2.5）
 - **CI 未覆盖**：daemon → MCP → webhook → 编排四组件串联行为（v1.3.2 起由 Onboard 循环机制跑全链路 smoke test 承接，作为验收标准；日常 CI 无独立集成测试，发版前手动验证兜底）
 - **CI 未覆盖**：多平台兼容性（macOS only verified，Linux/Windows 未验证）
@@ -532,7 +534,7 @@ v1.0 新增 `playbook/acceptance-test.sh`（场景数持续扩展，当前 339 �
 
 ### A16/A17 文件系统审计是行为级检测
 
-v1.0.9 新增的 A16（非授权文件变更）和 A17（异常批量变更）是**行为级**检测——只看文件路径、扩展名、变更数量，不解析文件内容。Excel 单元格、PDF 文字、数据库内容不在审计范围内。内容级审计（OCR / 内容解析）不在 v1.0.9 范围，是 AgentLoop 或未来版本的事。
+A16（非授权文件变更）与 A17（异常批量变更）是**行为级**检测——只看文件路径、扩展名、变更数量，不解析文件内容。Excel 单元格、PDF 文字、数据库内容不在审计范围内。内容级审计（OCR / 内容解析）不在当前范围，是 AgentLoop 或未来版本的事。
 
 A16 的 `evidenceMode: git-diff` 依赖 git diff 获取变更文件列表；daemon 模式下需 daemon 主动填充 `ctx.diffFiles`。A17 的跨审计聚合依赖 `ctx.history` 窗口数据，daemon 模式下若未传入历史数据则只能检测单次批量变更。
 
@@ -572,7 +574,7 @@ Ontology 统一层的合并逻辑从 `knowledge/entities/` 目录的 Markdown fr
 
 ### daemon 通知机制为轻量版
 
-v1.1.3 新增 `daemon/src/notify.ts` 提供 `[sofagent-daemon]` 品牌包装的统一通知接口。**本地三态推送（PASS/WARN/FAIL）v1.1.6 已接通**（`webhook.ts` + `push-target.ts`，agent 自测可用）。但**企业平台完整推送（飞书/钉钉/企微）已在 v1.2.1 落地**——当前 daemon 的 cron 巡检和文件监听结果在企业场景仍依赖 stdout + `daemon-health.json`，企业 IT 需自行轮询 `history.jsonl` 或使用 v1.2.1 Webhook 推送。
+`daemon/src/notify.ts` 提供 `[sofagent-daemon]` 品牌包装的统一通知接口。**本地三态推送（PASS/WARN/FAIL）已接通**（`webhook.ts` + `push-target.ts`，agent 自测可用）。**企业平台完整推送（飞书/钉钉/企微）亦已落地**——但当前 daemon 的 cron 巡检和文件监听结果在企业场景仍依赖 stdout + `daemon-health.json`，企业 IT 需自行轮询 `history.jsonl` 或使用 Webhook 推送。
 
 ### 插件包 `private: true` ⇒ `optionalDependencies` 在 npm 通道不可解析
 

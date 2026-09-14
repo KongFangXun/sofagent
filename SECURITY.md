@@ -18,6 +18,9 @@
 - [八、训练安全](#八训练安全)
 - [九、合规框架映射](#九合规框架映射)
 - [报告漏洞](#报告漏洞)
+- [响应承诺](#响应承诺)
+- [适用范围](#适用范围)
+- [免责声明](#免责声明)
 
 ---
 
@@ -115,15 +118,14 @@ sofagent 是一套 FDE 能力——底层引擎是纯本地 Harness 中间件（
 **风险（已修复）**：联邦配对使用的 `SOFAGENT_FEDERATION_TOKEN` 曾通过环境变量传递，
 在进程列表（`ps e`、`/proc/*/environ`）中明文可见。
 
-**修复**：v1.2.3 已将 token 从环境变量迁移至 `~/.sofagent/federation.token` 文件读取（权限 600），
+**修复**：v1.2.3 已将 token 从环境变量迁移至 `~/.sofagent/federation.token` 文件读取（权限 600），不再在进程列表中暴露。详见 `engine/core/src/crypto/pairing.ts` 的 `readTokenFromFile()`。
 
-> **v1.2.8 轮换提醒**：联邦 token 建议 90 天轮换一次。`--doctor` 不自动检查 token 年龄。手动检查：
+> **轮换提醒**：联邦 token 建议 90 天轮换一次。`--doctor` 不自动检查 token 年龄。手动检查：
 > ```bash
 > # 查看 token 文件创建/修改时间
 > stat -f '%Sm' ~/.sofagent/federation.token 2>/dev/null || stat -c '%y' ~/.sofagent/federation.token 2>/dev/null
 > # 如超过 90 天，重新执行联邦配对流程生成新 token
 > ```
-不再在进程列表中暴露。详见 `engine/core/src/crypto/pairing.ts` 的 `readTokenFromFile()`。
 
 **影响范围**：v1.1.0 - v1.2.2（已修复于 v1.2.3）
 
@@ -229,6 +231,10 @@ sofagent 是一套 FDE 能力——底层引擎是纯本地 Harness 中间件（
 
 > ⚠️ **A9 注入检测局限——编码绕过**：A9 正则检测覆盖常见中文"忽略类"指令、英文"ignore 类"指令，以及 leet speak 变体（`1gn0r3` → `ignore`，通过 normalizeLine() 反转 + ×0.8 降权匹配）。但不覆盖：① Unicode 同形字替换（西里尔字母 `а` 替换拉丁 `a`）；② Base64/hex 编码后的注入 payload。这些绕过手法依赖语义分析（非纯正则可覆盖），LLM 辅助检测暂未排期（跟踪于 ROADMAP）。**在 LLM 辅助检测落地前，建议对外部输入做归一化（Unicode NFC + 解码后再送检）。**
 
+> 🔒 **主体级授权前置**（层 4/5 之外的独立一维）：敏感度过滤解决的是「这类数据能不能进 prompt」，**不等于**「这个主体有没有权看这份文档」。主体级授权必须在返回模型**之前**完成——无权内容连标题都不进上下文（标题本身就是泄漏：模型会说出「有一份《XX 办法》但你没权限」，等于确认了它的存在与名称）。且每一步独立判权：`read` 不信任 `search` 的结论，检索层过滤不能替代取回时的复核（模型会编造 id 绕过）。
+
+> 🛡️ **管理权不含自我豁免，也不含自我了断**：具备管理能力的 Agent（增删实体/注册模型/装卸插件/改规则）不得为自己开豁免口（自我授权、自我放行、自我关闭审计），也不得移除最后一道在岗防线（约束链全关、hook 全卸、审计停摆 = 把自己裁到无人接待）。管理动作一律过审计闸门，且**不因操作者持"管理员身份"而降级校验强度**。
+
 ### Sub Agent 工具集零重叠
 
 > 引入版本：v1.1.0。
@@ -253,14 +259,7 @@ sofagent 是一套 FDE 能力——底层引擎是纯本地 Harness 中间件（
 
 > 🔒 **运行时审计日志按 git 仓库隔离（FORGE 自托管路径 + 约束层侧均已交付）**：运行时审计日志在 FORGE 自托管 SubAgent 路径已按 `data/audit/runtime/<repo-hash>/` 隔离存储（`git rev-parse --show-toplevel` hash；非 git 回退 `nogit-<cwd-hash>`，见 `FORGE/src/audit-middleware.mjs`）。**约束层侧 data-sovereignty 审计日志与 LLM 调用 Trace（`llm-calls.jsonl`）同样已按 repo-hash 隔离存储（`data/audit/data-sovereignty/<repo-hash>/{年}/{月}/` 与 `data/audit/runtime/<repo-hash>/llm-calls.jsonl`）——旧版无段结构的既有历史读侧 fallback 原地可读（不迁移不回填）；commit 级审计历史 `history.jsonl` 保持全局（HMAC 链要求全量连续，跨仓查询是运维刚需）。**
 
-```
-~/.sofagent/
-├── data/          ← 用户可见运行时数据（审计/知识库/反思/任务日志）
-├── internal/      ← 约束层内部状态（checkpoint / .git-shadow / watch.yml）
-├── keys/          ← 静态加密密钥（0600，v1.3.8 能力 · daemon 启动已接线）
-├── bin/           ← CLI 入口
-└── skill/         ← Skill 文件
-```
+> 📁 审计与存储的目录落点见文首 [数据目录结构](#已知风险明文存储)。
 
 ### ActionGovernance 审计溯源
 
@@ -406,7 +405,7 @@ cp ~/.sofagent/data/audit/history.jsonl ~/.sofagent/data/audit/history.jsonl.bak
 chmod 600 ~/.sofagent/data/audit/history.jsonl.bak-*
 ```
 
-### 威胁模型：`SOFAGENT_DATA` 环境变量的信任边界（本版声明为已知风险）
+### 威胁模型：`SOFAGENT_DATA` 环境变量的信任边界（声明为已知风险）
 
 `getHistoryFilePath()`（`engine/core/src/audit-history.ts`）解析审计历史路径时优先级为：**显式 dataDir 参数 > `SOFAGENT_DATA` 环境变量 > 默认 `data/audit/history.jsonl`**。写入侧（`appendHistory`）与校验侧（`checkHistoryChainDetailed`）均走此函数。
 
@@ -419,7 +418,7 @@ chmod 600 ~/.sofagent/data/audit/history.jsonl.bak-*
 | 本地开发机 | 🟢 低 | 攻击者已能在本机设置环境变量 = 已拥有本机用户权限，游戏结束，审计重定向不构成额外提权 |
 | CI / 共享服务器 | 🟡 中 | 同机其他用户/作业可能注入环境变量，审计历史可被悄悄重定向 |
 
-**本版决策（方案 C · 声明而非改码）**：本版**不修改** `audit-history.ts` 的路径解析逻辑，仅在此明确声明信任边界。理由：① 本地低风险场景下白名单/固定路径会损害测试隔离与多实例部署的灵活性；② 共享服务器场景的正确防线是**环境隔离**（每用户独立 `~/.sofagent/`、CI 作业独立容器/沙箱、`env -i` 清洗环境），而非在审计模块内做路径白名单（白名单本身也可被同权限攻击者绕过）。
+**决策（方案 C · 声明而非改码）**：**不修改** `audit-history.ts` 的路径解析逻辑，仅在此明确声明信任边界。理由：① 本地低风险场景下白名单/固定路径会损害测试隔离与多实例部署的灵活性；② 共享服务器场景的正确防线是**环境隔离**（每用户独立 `~/.sofagent/`、CI 作业独立容器/沙箱、`env -i` 清洗环境），而非在审计模块内做路径白名单（白名单本身也可被同权限攻击者绕过）。
 
 **共享服务器缓解建议**：① CI 作业运行在独立容器/沙箱，环境变量不可跨作业注入；② 启动入口用 `env -i` 或显式白名单透传环境变量；③ 对 `history.jsonl` 所在卷做完整性监控（文件路径 + mtime 基线告警）。路径白名单校验（方案 A）与审计路径固定（方案 B）作为可选加固，列入 ROADMAP 评估。
 
