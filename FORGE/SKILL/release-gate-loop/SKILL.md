@@ -88,7 +88,7 @@ V 由 **Node driver**（`FORGE/src/release-gate-driver.mjs`）驱动——每个
    source ~/.sofagent/env.local && node FORGE/src/release-gate-driver.mjs --judgment-only --target <版本号>
    # 🔴 env 路径：真实 key 在 **~/.sofagent/env.local**（仓库外，永不进 git）——不是 FORGE/env.local
    #    （仓内只有 env.local.template 模板）。SOFAGENT_LLM_V/F 为角色占位（非空即过 preflight，
-   #    真模型由 FORGE/models/profile.mjs 决定）；厂商 key（如 DEEPSEEK_API_KEY）亦从该文件加载。
+   #    真模型由 FORGE/models/profile.mjs 决定）；厂商 key（如 GLM_API_KEY）亦从该文件加载。
    # 依据：全流程实测 30.7 万 token 中 61% 花在 acceptance 12 分片 LLM 复核（复核脚本
    # exit 0 的确定性结果，增值≈0）；判断层四步约 9 万 token / 20 分钟，盲审独立性保留在
    # 有判断空间的 regression 语义审查 + 终裁。

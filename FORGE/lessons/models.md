@@ -18,10 +18,10 @@ const MODEL_CONFIGS = {
 | B（工程师） | glm-5.3-flash | GLM Coding Plan（订阅） | 修复 |
 | C（验收者） | glm-5.3-flash | GLM Coding Plan（订阅） | 独立验收 B 的修复 |
 | D（复核者） | glm-5.3-flash | GLM Coding Plan（订阅） | 对抗裁决 P0/P1 |
-| V（验证者） | deepseek-flash（V4.1-Flash） | DeepSeek API（按量） | release-gate 全流程 |
-| F（修复者） | deepseek-flash（V4.1-Flash） | DeepSeek API（按量） | 修复 |
+| V（验证者） | glm-5.3-flash | GLM Coding Plan（订阅） | release-gate 全流程 |
+| F（修复者） | glm-5.3-flash | GLM Coding Plan（订阅） | 修复 |
 
-> **fresh-eyes-loop（A/B/C/D）走 glm-5.3-flash；release-gate-loop（V/F）走 DeepSeek V4.1-Flash**——两条 loop 各自独立选型。
+> **两条 loop 的六个角色（A/B/C/D/V/F）统一走 glm-5.3-flash**（GLM Coding Plan 订阅档）。
 > 审查独立性通过 **不同 worker 进程 + 零上下文 + 不同 prompt 视角**保证（a-check.md ≠ b-check.md），**不依赖不同模型**——「异构双模型」时代已结束。
 > 历史注记（勿删）：Qwen3.8-max 在工具循环里无法被 stateModifier 约束（thinking-only 停不下来）→ 改 GLM-5.2；GLM-5.2 审查步骤调 60+ 次工具不收敛。
 > 权威源：`FORGE/models/profile.mjs`（换模型只改这里，lessons 不重复定义）。
