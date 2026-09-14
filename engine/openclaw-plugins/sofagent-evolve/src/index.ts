@@ -1,6 +1,7 @@
 // sofagent-evolve · OpenClaw 原生插件（code-plugin）
 // 经验沉淀：sofagent_evolve 工具生成 think.md 反思条目（复用 @sofagent/think 的 generateThinkEntry，
-// 平台无关零重写）+ before_prompt_build 注入 think.md 反思区（进化闭环的 OpenClaw 形态）。
+// 平台无关零重写）+ before_prompt_build 注入一行收尾提示（提醒模型任务收尾时调 sofagent_evolve）。
+// ⚠️ 注入的是**提示语**不是条目正文：think.md 内容由 inject 插件的 L2 层加载链注入，本插件不重复注入。
 // 对应 DSH 插件 cordis-plugin-sofagent-evolve 的 OpenClaw 形态。
 // API 分级：/* @public */ 导出对 OpenClaw 运行时契约锁定。
 
@@ -34,7 +35,7 @@ type OpenClawApi = any;
 /* @public */ export function register(api: OpenClawApi): void {
   const logger = api?.logger ?? console;
 
-  // 1) before_prompt_build：注入 think.md 反思区（进化闭环上下文）
+  // 1) before_prompt_build：注入一行收尾提示（提醒调 sofagent_evolve；条目正文由工具写入）
   try {
     api.on?.('before_prompt_build', (_event: unknown, ctx: any) => {
       try {

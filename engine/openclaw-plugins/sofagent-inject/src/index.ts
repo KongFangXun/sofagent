@@ -33,6 +33,14 @@ const _pkg: { version?: string } = require('../package.json');
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type OpenClawApi = any;
 
+/**
+ * 已解析的项目根（hook 读配置后记下来）。
+ * 🔴 为什么需要：hook 读 `config.projectRoot`，而工具此前硬编码 `process.cwd()`——
+ * 用户在 openclaw.json 里指定 projectRoot 后，工具预览的注入内容会读错目录（误导调试，
+ * 表现为「明明有约束配置却显示无内容」）。两处必须同源：hook 未跑过时才回落 cwd。
+ */
+let configuredRoot: string | undefined;
+
 /* @public */ export function register(api: OpenClawApi): void {
   const logger = api?.logger ?? console;
 
@@ -44,6 +52,7 @@ type OpenClawApi = any;
         // eslint-disable-next-line @typescript-eslint/no-require-imports
         const m = require('@sofagent/harness');
         const projectRoot = ctx?.config?.plugins?.entries?.['sofagent-inject']?.config?.projectRoot ?? process.cwd();
+        configuredRoot = projectRoot; // 与工具同源（见文件头 configuredRoot 说明）
         const injected = typeof m.buildConstrainedSystemPrompt === 'function' ? m.buildConstrainedSystemPrompt(projectRoot) : '';
         if (injected) {
           return { prependSystemContext: injected };
@@ -71,7 +80,7 @@ type OpenClawApi = any;
           try {
             // eslint-disable-next-line @typescript-eslint/no-require-imports
             const m = require('@sofagent/harness');
-            const projectRoot = process.cwd();
+            const projectRoot = configuredRoot ?? process.cwd(); // 与 hook 同源：config.projectRoot 生效
             const injected = typeof m.buildConstrainedSystemPrompt === 'function' ? m.buildConstrainedSystemPrompt(projectRoot) : '';
             return {
               content: [{ type: 'text', text: injected ? `已注入四层加载链（${injected.length} 字符）：\n${injected.slice(0, 500)}` : '无注入内容（项目无约束配置）' }],
