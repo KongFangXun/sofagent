@@ -194,3 +194,14 @@ OpenClaw 还有一套**与 plugin hook 不同源**的内建 hook 事件（`HOOK.
      `seamSemantics` 承载（与 `seam` 同级）；门禁断言其非空，缺了报红。
 6. `package.json.description` 必须内含 `seam: <seam 值>`——描述滞后于契约（同一次挂载
    在不同消费面说不同的话）是本批要治的病之一，故做成**阻断项**。
+
+## 6. 声明与实现的边界（两侧接入深度不同）
+
+词表登记的是**接入契约**，不等于运行时已经接线。读词表时必须区分「声明」与「实现」：
+
+| 侧 | 现状 | 证据 |
+| --- | --- | --- |
+| **DSH** | seam 是**声明**——写在 `src` 注释 / `pluginMeta.seam` / `plugins.json` / `cordis.patch.yml` 的 `config.seam`，四载体由 `check-seam-contract.mjs` 对账；但插件**不注册宿主事件处理器**（`plugin-kit` 的 `apply` 只做 `provide` + `dynamicCordisRunner.define` + `settings.register`） | 全仓 `on(` + `tools/` 与 `on(` + `agent/` 均零命中；宿主侧确实可订阅（`ctx.waterfall(carrier, '<tools 族事件>', …)`） |
+| **OpenClaw** | hook 是**实现**——`api.on('before_tool_call', handler)` 真注册，拦停返回 `{ block: true, blockReason }` | `engine/openclaw-plugins/*/src/index.ts` |
+
+> ⚠️ **对使用者的含义**：DSH 侧插件的运行时介入（拦截 / 注入 / 收尾触发）**尚未接线**；今天拦截生效的路径是 sofagent 自身运行时（`engine/orchestrator` 的 `wrapToolsWithGate` + `checkDangerousCommand`）。补接线（基座加订阅面 + 各插件接线）是独立工作项——落地前，对外文案不得写成「已自动拦截」。
