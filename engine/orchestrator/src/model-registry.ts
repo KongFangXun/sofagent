@@ -15,6 +15,9 @@
 // 人审语义（对齐 v1.3.5 promote_ab）：
 //   - 灰度（percent < 100）：可逆运维操作，直接生效
 //   - 晋升（percent = 100）与退役/恢复：🔴 强制人审，humanConfirmed ≠ true 挂起
+//   - 回滚（模型级 rollbackModel）：🔴 强制人审——回滚翻转**活动模型**，与晋升同强度
+//   - 回滚（版本级 rollbackWeightsVersion）：免人审——只回拨同一模型的 manifest.current 指针，
+//     权重文件未动、可由版本清单本身回滚；与模型级**不是对齐关系**，是既定差异
 // ============================================================
 
 import { existsSync, readFileSync, mkdirSync } from 'fs';
@@ -471,7 +474,13 @@ export function rollbackModel(lane: 'executor' | 'pipeline', options: ModelRegis
  * 权重版本级回滚——local-path 模型切回上一权重版本（manifest.current 指针回拨）。
  *
  * 与 rollbackModel（模型级）的分工：模型级回滚换模型条目，版本级回滚换同一模型
- * 的权重版本（新训 v2 不如 v1 时用）。止损语义对齐 rollbackModel：直接生效不要求人审。
+ * 的权重版本（新训 v2 不如 v1 时用）。
+ *
+ * 🔴 人审语义：版本级**免人审**（直接生效）——这是版本级与模型级的**既定差异，不是对齐关系**。
+ * 版本级只回拨 manifest.current 指针、权重文件未动、可由版本清单本身回滚 ⇒ 止损语义下无须人工确认；
+ * 模型级 rollbackModel 因翻转**活动模型**而与晋升同强度强制人审（humanConfirmed === true 才执行）。
+ * 两侧差异已列入本文件头部「人审语义」清单（缺项正是本条被误读的成因）。
+ *
  * git snapshot 兜底由上层调用方决定（版本清单本身是回滚依据，文件未动）。
  *
  * 供应链红线：回滚目标版本哈希强制校验——checkWeightsDir 只验 current 版本，
