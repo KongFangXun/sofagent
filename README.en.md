@@ -286,7 +286,7 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # load the securit
 | **Global index** (one entry to all docs, in Chinese) | [WIKI](./docs/WIKI.md) — EN summary: one-liner & product story · core concepts · architecture overview · file map · current status · glossary · intent-based navigation |
 | How to install, use, FAQ | [HANDBOOK](./docs/HANDBOOK.md) |
 | Architecture (constraint layer · injection chain · evolution · 24 rules) | [ARCHITECTURE](./docs/ARCHITECTURE.md) |
-| API overview (seven interface surfaces + 95 MCP tools) | [API](./docs/API.md) |
+| API overview (seven interface surfaces + 97 MCP tools) | [API](./docs/API.md) |
 | Design philosophy | [PHILOSOPHY](./docs/PHILOSOPHY.md) |
 | Industry validation & ecosystem positioning (differences from existing tools) | [VALIDATION](./docs/VALIDATION.md) |
 | Version roadmap | [ROADMAP](./docs/ROADMAP.md) |

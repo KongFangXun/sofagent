@@ -285,7 +285,7 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # 加载安全规�
 | **全局索引**（所有文档一个入口） | [WIKI](./docs/WIKI.md) |
 | 怎么装、怎么用、常见问题 | [HANDBOOK](./docs/HANDBOOK.md) |
 | 架构设计（约束层「对内的技术名字」 · 注入链 · 进化机制 · 24 条规则） | [ARCHITECTURE](./docs/ARCHITECTURE.md) |
-| 接口总览（七大接口面 + 95 MCP tools 清单） | [API](./docs/API.md) |
+| 接口总览（七大接口面 + 97 MCP tools 清单） | [API](./docs/API.md) |
 | 设计哲学 | [PHILOSOPHY](./docs/PHILOSOPHY.md) |
 | 行业印证与生态定位（与现有工具的差异） | [VALIDATION](./docs/VALIDATION.md) |
 | 版本路线图 | [ROADMAP](./docs/ROADMAP.md) |
