@@ -351,8 +351,9 @@ export function runCliQuick(argv: string[]): number {
     console.log('  --verify-commit     校验单个 commit 完整性（v1.2.9+）');
     console.log('  --support-bundle    打包诊断信息\n');
     // v1.4.9 P2-8：退出码此前只写在源码头注释里，`--help` 面零披露——
-    // 用户（尤其 CI 里）拿到 3 无从查证。此处补全，与头注释 / index.ts 同口径。
-    console.log('退出码（quick 与完整引擎同口径）：');
+    // 用户（尤其 CI 里）拿到 3 无从查证。此处补全，与头注释同口径
+    // （3 = 非 git 仓库为**本入口专属**；完整引擎把非 git 仓库记为 2）。
+    console.log('退出码（quick 模式口径）：');
     console.log('  0 = 全通过');
     console.log('  1 = 有警告');
     console.log('  2 = 有违规（另一来源：承载安全语义的参数拼错 = 用法错误，与审计发现共用 2）');

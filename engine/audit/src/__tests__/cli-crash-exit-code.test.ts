@@ -146,12 +146,36 @@ describe('退出码 help 披露面（v1.4.9 P2-8）', () => {
     expect(r.output).not.toMatch(/^退出码: .*2=有违规$/m);
   });
 
-  it('两侧 help 同口径：3 / 4 两义分别可见、不混为一谈', () => {
+  // ⚠️ 标题如实化（v1.4.9 收尾）：改前写「两侧 help 同口径」，前提本身是错的——
+  //   两入口对「非 git 仓库」**本来就不同口径**（quick 给 3、完整引擎给 2）。
+  //   本用例真正锁的是「两侧各自披露本入口的 3 / 4 语义」，故只改描述、断言一条不留删。
+  it('两侧 help 各自披露本入口的 3 / 4 语义（3 为 quick 专属）', () => {
     const quick = run(QUICK_BIN, ['--help']).output;
     const full = run(FULL_BIN, ['--help', '--verbose']).output;
     for (const [name, out] of [['quick', quick], ['verbose', full]] as const) {
       expect(out, `${name} 缺「非 git 仓库」`).toContain('非 git 仓库');
       expect(out, `${name} 缺「引擎崩溃」`).toContain('引擎崩溃');
     }
+  });
+
+  // 🔴 真行为锁（v1.4.9 收尾新增）：两入口对同一处境给**不同**退出码——
+  //   这不是缺陷而是**既定分工**：3 = 非 git 仓库是 quick 入口专属；完整引擎把
+  //   「非 git 仓库」归入 2 档（`{ exitCode: 2, ..., error: 'NOT_A_GIT_REPO' }`）。
+  //   ⚠️ 实测（2026-09-14，`node dist/index.js --silent` @ 空 tmp 目录）→ **exit 2**。
+  //   本用例防的是「某天把完整引擎也改成返回 3」——那会让 3 重新变成两义码，
+  //   正是 P1-15 解撞码要根治的形态。
+  it('完整引擎在非 git 目录：归 2 档，绝不产出 3（3 为 quick 专属）', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'sofagent-p28-nogit-'));
+    tmpDirs.push(dir);
+    const env: NodeJS.ProcessEnv = { ...process.env };
+    delete env.SOFAGENT_HOME;
+    delete env.SOFAGENT_HOME_ALLOWED_PREFIXES;
+    // ⚠️ 必须带 --silent：无参数时完整引擎只打印帮助即 exit 0（不进入审计路径），
+    //    那样断言「≠3」是**空转**（恒真）——只有走审计路径才真正暴露该码。
+    const r = run(FULL_BIN, ['--silent'], { cwd: dir, env });
+    expect(r.output).toContain('不在 git 仓库内');
+    expect(r.status).not.toBe(EXIT_NOT_GIT_REPO);
+    // 实测值锁（先测后写）：本入口把「非 git 仓库」归 2 档
+    expect(r.status).toBe(2);
   });
 });
