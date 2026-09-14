@@ -184,7 +184,7 @@ sofagent 跑在单个 Agent 里——没有 agent-to-agent 通信，没有多实
 
 ### 🧩 依赖方向架构测试只覆盖 build 序列包
 
-`tools/check/dependency-direction.yml` 断言的是 **build 序列的包边界**（14 项：12 模块包 + `load-chain`），**不含 `umbrella` 与插件家族**（`engine/dsh-plugins/*`、`engine/openclaw-plugins/*`）。因此「插件依赖了不该依赖的包」不会被本门禁拦下——它的口径是架构边界，不是全仓依赖图。
+`tools/check/dependency-direction.yml` 断言的是 **build 序列的包边界**（14 项：13 模块包 + `load-chain`），**不含 `umbrella` 与插件家族**（`engine/dsh-plugins/*`、`engine/openclaw-plugins/*`）。因此「插件依赖了不该依赖的包」不会被本门禁拦下——它的口径是架构边界，不是全仓依赖图。
 缓解：插件侧另有生成式清单（`plugins.json` ⇄ 生成物逐字节对账）与 seam 契约门禁覆盖其接口面。
 
 ### 🗜️ 自动上下文压缩存在信息丢失风险
@@ -303,11 +303,11 @@ task/logs 和 think.md 以 Markdown 存储，可能含代码片段、API 响应�
 
 > ⚠️ **critical fast-fail：命中后后续层规则跳过（v1.4.3 披露）**：审计模块按规则分层串行执行——**critical 层（A1 敏感文件 / A2 密钥泄漏 / A9 注入等基线底线）任一 FAIL 后，后续层规则（A3 越界 / A7 盲改 / A16 非授权变更等）不再执行、统一标 SKIPPED**（输出形如「1 违规 · 7 通过 · 9 跳过」）。设计意图是 fail-fast（critical 命中已足以拦截 commit，无需继续跑）。**取证注意**：SKIPPED ≠ 通过——跳过的规则本次未检查，事后取证不能把「N 条跳过」读成「N 条无问题」；攻击者理论上可用显眼但无害的 critical 命中（如 A1 诱饵文件名）制造「审计抓到问题了」的表象，同时掩盖后续层规则未跑的事实。需要完整逐规则结果时，修复 critical 违规后重新审计即可获得全量执行。规则分层见 SECURITY.md「24 条审计规则」与 engine/audit/src/rules/runner.ts fast-fail 段。
 
-> ⚠️ **config-loader 环境变量死开关披露（v1.4.3 P2-g）**：`SofaEnvConfig` 中 `sanitizeEnabled` / `sanitizeIpsEnabled` / `cleanupOnRecord` / `cleanupFrequency` / `auditEnabled` 五字段**加载但无生产消费点**——企业 IT 设 `SOFAGENT_SANITIZE=...`、`SOFAGENT_AUDIT_ENABLED=...` 等**不改变任何行为**（已在 config-loader.ts 标 @deprecated）。实际生效面：脱敏管道常开（不受开关控制）、审计由 config.yml `rules:{...}` 控制（不构成第二通道）、清理走 cleanup.sh（其保留策略读 `SOFAGENT_RETENTION_DAYS`/`SOFAGENT_RETENTION_MAX`，v1.4.3 起认 SOFAGENT_ 新名、SOFA_ 旧名兼容）。
+> ⚠️ **config-loader 环境变量死开关披露（v1.4.3）**：`SofaEnvConfig` 中 `sanitizeEnabled` / `sanitizeIpsEnabled` / `cleanupOnRecord` / `cleanupFrequency` / `auditEnabled` 五字段**加载但无生产消费点**——企业 IT 设 `SOFAGENT_SANITIZE=...`、`SOFAGENT_AUDIT_ENABLED=...` 等**不改变任何行为**（已在 config-loader.ts 标 @deprecated）。实际生效面：脱敏管道常开（不受开关控制）、审计由 config.yml `rules:{...}` 控制（不构成第二通道）、清理走 cleanup.sh（其保留策略读 `SOFAGENT_RETENTION_DAYS`/`SOFAGENT_RETENTION_MAX`，v1.4.3 起认 SOFAGENT_ 新名、SOFA_ 旧名兼容）。
 
 > ⚠️ **边界：hook 安装位置尊重 git core.hooksPath（v1.4.5 修复披露）**——`--init` / `--install-hook` 安装三层防线时，若仓库配置了 `core.hooksPath`（自定义 hook 目录，如 husky / pre-commit 框架所设），hook 文件安装到该目录而非 `.git/hooks/` 默认位。此为 git 原生语义的正确尊重而非 bug，但两个推论要知道：① 卸载 `core.hooksPath` 指向目录（或切回 `.git/hooks/`）时，此前安装的 sofagent hook 不随之迁移——审计可能静默失效，需重新 `--init`；② `--doctor` 的 hook 完整性检查按 `core.hooksPath` 解析当前生效目录，历史遗留的 `.git/hooks/commit-msg` 旧文件不在检查面内。行为锁见 engine/audit hook-install 测试 T1。
 
-> ⚠️ **边界：审计模块超时降级是「收敛重跑」不是「抢占中断」（v1.4.5 T5 接线披露）**——审计整轮耗时超阈值（`SOFAGENT_AUDIT_TIMEOUT_MS`，缺省 30s）后自动降一级（full→rules-only→minimal）并用更少规则集**重跑一轮**（minimal 级只保留 A1-A11 核心安全规则）。语义要点：① 超时判定作用于「整轮完成后」，第一轮的结果**已完整产出**（降级不丢首轮证据，报告以降级重跑轮为准并注入 DEGRADATION_NOTICE）；② 已在 minimal 级还超时则不再降级重跑，返回首轮结果并标注；③ 扩展/拐杖规则在降级轮**不执行**——SKIPPED ≠ 通过，事后取证不能把「N 条跳过」读成「N 条无问题」。降级记录供 daemon/orchestrator 消费（audit-timeout 触发器）。
+> ⚠️ **边界：审计模块超时降级是「收敛重跑」不是「抢占中断」（v1.4.5 接线披露）**——审计整轮耗时超阈值（`SOFAGENT_AUDIT_TIMEOUT_MS`，缺省 30s）后自动降一级（full→rules-only→minimal）并用更少规则集**重跑一轮**（minimal 级只保留 A1-A11 核心安全规则）。语义要点：① 超时判定作用于「整轮完成后」，第一轮的结果**已完整产出**（降级不丢首轮证据，报告以降级重跑轮为准并注入 DEGRADATION_NOTICE）；② 已在 minimal 级还超时则不再降级重跑，返回首轮结果并标注；③ 扩展/拐杖规则在降级轮**不执行**——SKIPPED ≠ 通过，事后取证不能把「N 条跳过」读成「N 条无问题」。降级记录供 daemon/orchestrator 消费（audit-timeout 触发器）。
 
 ---
 
@@ -494,7 +494,7 @@ FDE 完整四阶段十二步部署流程（[FDE/GUIDE.md](../FDE/GUIDE.md)）已
 
 ### 端到端验收测试覆盖
 
-v1.0 新增 `playbook/acceptance-test.sh`（场景数持续扩展，当前 339 个，SSOT 口径=真实 scenario 行数（S165 动态计算并跨文档对账））：
+`playbook/acceptance-test.sh`（场景数持续扩展，当前 339 个，SSOT 口径=真实 scenario 行数（S165 动态计算并跨文档对账））：
 
 - **CI 已覆盖**：单元测试审计核心 1166 个、全 workspace 4493 个测试（口径与本文件「测试覆盖范围」节一致；逐批沿革账已迁出，见 [v1.4.9 开发日志 · 附录](./changelog/v1.4/v1.4.9.md#附录测试与场景账沿革)）、sofagent-core verify 约 44-48 项（动态）
 - **发版前手动覆盖**：acceptance-test.sh 339 场景（含子断言，CLI 端到端，步骤 2.3；逐批沿革账已迁出，见 [v1.4.9 开发日志 · 附录](./changelog/v1.4/v1.4.9.md#附录测试与场景账沿革)）、OpenClaw 验收 63 场景（Agent 端到端，步骤 2.5）

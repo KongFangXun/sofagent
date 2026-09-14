@@ -842,8 +842,8 @@ River 的载体是 Agent 平台（OpenClaw / WorkBuddy 等）+ sofagent + Channe
 ② LLM 调用 MCP tool: sofagent_compose
      参数：
        task: "实现用户注册模块"
-       enterprise_workflow: "fde梳理的认证流程.yaml"  ← v1.1.8 T02 新增
-       run: true                                     ← v1.1.8 T03 新增
+       enterprise_workflow: "fde梳理的认证流程.yaml"  ← v1.1.8 新增
+       run: true                                     ← v1.1.8 新增
 ③ sofagent compose 基于企业 workflow 拆解任务
      → 输出编排方案 YAML + 结构化 SubAgent[] 配置
      → 每个 SubAgent 注入四层约束加载链（buildConstrainedSystemPrompt）
