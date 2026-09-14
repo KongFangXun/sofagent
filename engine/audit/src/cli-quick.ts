@@ -42,6 +42,21 @@
 // ——漂移由 `src/__tests__/cli-crash-exit-code.test.ts` 双侧行为锁兜住，不靠注释自律。
 const EXIT_ENGINE_CRASH = 4;
 
+// v1.4.9 P2-13：quick 模式「跳过」的解释串——**单一常量，两个输出分支共用**。
+// 缺陷（两层）：
+//   ① 定性缺失——原串只说「跳过的是什么（归因类规则缺席）」，未答「为什么可接受」。
+//      企业 IT 视角下「N 条跳过」读起来像「N 条没查」，缺一句「硬证据类已全量跑」的
+//      定性，用户无法据此判断这次审计是否够用。
+//   ② 漂移面 ×2——该串在 PASS 分支与非 PASS 分支**各写一份字面量**（改前 :224 / :242），
+//      措辞改动必须两处同改，漏一处即形成「同一 CLI 两种解释」。
+// 修法：提取为本常量（漂移面归零）+ 补「git diff 硬证据类规则已全量执行，跳过项非漏检」。
+// 保留 v1.4.3 F-08 的归因口径如实化与两条升级路径（--task / --init），本条不得覆盖它。
+// ⚠️ 漂移由 `src/__tests__/cli-quick-skip-hint.test.ts` 的**双分支行为锁**兜住。
+export const QUICK_SKIP_HINT =
+  'ⓘ 跳过 = quick 模式不含归因分析（需任务描述/Agent 日志输入的规则）'
+  + '；git diff 硬证据类规则已全量执行，跳过项非漏检'
+  + '——用 --task 走完整引擎，或安装后运行 sofagent-audit；`--init` 装 hook 走完整引擎';
+
 process.on('uncaughtException', (err) => {
   console.error(`\u274c sofagent-audit(quick) 引擎异常退出: ${err instanceof Error ? err.message : String(err)}`);
   process.exit(EXIT_ENGINE_CRASH);
@@ -221,7 +236,7 @@ export function generateQuickOutput(
     // 引擎需任务描述/Agent 日志输入），原措辞「需任务描述输入的规则」未点破归因
     // 缺席，用户误以为 quick 也做归因。指向两条升级路径：--task 走完整引擎 / 全局安装。
     if (skipCount > 0) {
-      parts.push(`ⓘ 跳过 = quick 模式不含归因分析（需任务描述/Agent 日志输入的规则）——用 --task 走完整引擎，或安装后运行 sofagent-audit；\`--init\` 装 hook 走完整引擎`);
+      parts.push(QUICK_SKIP_HINT);
     }
     // v1.3.4 P1-8: 显著回声行——用户用了三周可能不知道 sofagent 在工作，此行解决可感知性
     if (commitSha && !isRangeMode) {
@@ -239,7 +254,7 @@ export function generateQuickOutput(
     // v1.3.5 #7: 跳过计数解释（同上，非 PASS 分支也需要）
     // v1.4.3 F-08: 同 PASS 分支——归因口径如实化
     if (skipCount > 0) {
-      parts.push(`ⓘ 跳过 = quick 模式不含归因分析（需任务描述/Agent 日志输入的规则）——用 --task 走完整引擎，或安装后运行 sofagent-audit；\`--init\` 装 hook 走完整引擎`);
+      parts.push(QUICK_SKIP_HINT);
     }
   }
 
@@ -335,6 +350,14 @@ export function runCliQuick(argv: string[]): number {
     console.log('  --verify-chain      校验审计历史 HMAC 链完整性');
     console.log('  --verify-commit     校验单个 commit 完整性（v1.2.9+）');
     console.log('  --support-bundle    打包诊断信息\n');
+    // v1.4.9 P2-8：退出码此前只写在源码头注释里，`--help` 面零披露——
+    // 用户（尤其 CI 里）拿到 3 无从查证。此处补全，与头注释 / index.ts 同口径。
+    console.log('退出码（quick 与完整引擎同口径）：');
+    console.log('  0 = 全通过');
+    console.log('  1 = 有警告');
+    console.log('  2 = 有违规（另一来源：承载安全语义的参数拼错 = 用法错误，与审计发现共用 2）');
+    console.log('  3 = 非 git 仓库（跑错目录——与「引擎崩溃」单义区分）');
+    console.log('  4 = 引擎崩溃（uncaughtException / unhandledRejection 兜底）\n');
     console.log('完整安装：npm install -g @sofagent/audit');
     return 0;
   }

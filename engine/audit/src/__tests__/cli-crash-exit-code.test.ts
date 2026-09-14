@@ -107,3 +107,51 @@ describe('引擎崩溃专属退出码（v1.4.9 P1-15）', () => {
     expect(r.status).not.toBe(EXIT_ENGINE_CRASH);
   });
 });
+
+// ============================================================
+// P2-8：退出码语义的**披露面**锁（v1.4.9）
+// ------------------------------------------------------------
+// 缺陷：退出码此前只写在源码头注释里，`--help` 面零披露（quick 侧）
+//   或只披露 0/1/2（完整引擎 verbose 侧）——用户（尤其 CI 里）拿到
+//   3 / 4 无从查证。本条与 P1-15（解撞码）是同一问题的两面：
+//   P1-15 让 3 与 4 语义可分，P2-8 让语义**可查**。
+// 修法：两处 `--help` 面补全 0/1/2/3/4 五段语义，与 docs/HANDBOOK.md
+//   的 exit code 清单同口径。
+// 反向锁：两侧都必须**各自出现** 3 与 4 且绑定不同数字——回归到
+//   「止于 0/1/2」或「退回 quick 零披露」都会让下面用例变红。
+// ============================================================
+describe('退出码 help 披露面（v1.4.9 P2-8）', () => {
+  it('quick `--help`：披露全部四个码的语义（改前此处零披露）', () => {
+    const r = run(QUICK_BIN, ['--help']);
+    expect(r.status).toBe(0);
+    expect(r.output).toContain('退出码');
+    for (const seg of [
+      '0 = 全通过',
+      '1 = 有警告',
+      '2 = 有违规',
+      '3 = 非 git 仓库',
+      '4 = 引擎崩溃',
+    ]) {
+      expect(r.output, `quick --help 缺披露: ${seg}`).toContain(seg);
+    }
+  });
+
+  it('完整引擎 `--help --verbose`：披露 3 / 4（改前止于 0/1/2）', () => {
+    const r = run(FULL_BIN, ['--help', '--verbose']);
+    expect(r.status).toBe(0);
+    expect(r.output).toContain('退出码');
+    expect(r.output).toContain('3=非 git 仓库');
+    expect(r.output).toContain('4=引擎崩溃');
+    // 反向锁：历史形态「止于 2」不得回归（改前该行以「2=有违规」收尾）
+    expect(r.output).not.toMatch(/^退出码: .*2=有违规$/m);
+  });
+
+  it('两侧 help 同口径：3 / 4 两义分别可见、不混为一谈', () => {
+    const quick = run(QUICK_BIN, ['--help']).output;
+    const full = run(FULL_BIN, ['--help', '--verbose']).output;
+    for (const [name, out] of [['quick', quick], ['verbose', full]] as const) {
+      expect(out, `${name} 缺「非 git 仓库」`).toContain('非 git 仓库');
+      expect(out, `${name} 缺「引擎崩溃」`).toContain('引擎崩溃');
+    }
+  });
+});

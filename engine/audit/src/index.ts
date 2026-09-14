@@ -465,7 +465,7 @@ function parseArgs(argv: string[]): Args {
         console.log('  --ruleset-path <d> 加载本地自定义规则集目录');
         console.log('  --list-rulesets    列出可用规则集');
         console.log('  --mcp              MCP Server（已拆分为 @sofagent/mcp）');
-        console.log('\n退出码: 0=全通过 / 1=有警告 / 2=有违规');
+        console.log('\n退出码: 0=全通过 / 1=有警告 / 2=有违规（含用法错误） / 3=非 git 仓库（quick 模式跑错目录） / 4=引擎崩溃');
       } else {
         console.log('\n完整参数列表: sofagent-audit --help --verbose');
       }
