@@ -13,7 +13,9 @@ description: >
 
 ## 用途
 
-**装上之后**：Agent 运行出错时按 git 快照**逆序撤销**本会话改动——出事能回到干净状态，不用人工逐个文件还原。介入时机 `agent/error`；桥接 `@sofagent/core`（需仓库已有快照历史，缺依赖时静默跳过）。
+**装上之后**：Agent 出错时按 git 快照逆序撤销本次会话改动。**什么时候用**：Agent 一次动了大量文件、需要一键回到干净状态。
+
+**接入点**（seam: agent/error）：桥接 `@sofagent/core`，缺依赖时该能力静默跳过；接入形态（声明 / 实现）见 [SEAMS.md](../SEAMS.md)。
 
 本插件随 sofagent 主线版本发布（SkillHub 通道：`skillhub install cordis-plugin-sofagent-rollback` 安装与检索；npm 通道未开通）。版本号与 sofagent 主线对齐。
 

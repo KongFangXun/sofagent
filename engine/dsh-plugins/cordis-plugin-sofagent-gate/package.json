@@ -4,7 +4,7 @@
   "engines": {
     "node": ">=18"
   },
-  "description": "验收不过不放行——机器可判定验收 + 人审（seam: agent/turn-stopping）——桥接 @sofagent/audit runRules",
+  "description": "给宿主加上验收门禁——Agent 想收尾先过机器判定，不过不放行（seam: agent/turn-stopping）——桥接 @sofagent/audit runRules",
   "private": true,
   "license": "MIT",
   "author": "KongFangXun",

@@ -13,7 +13,9 @@ description: >
 
 ## 用途
 
-**装上之后**：每轮任务收尾时自动生成一条经验沉淀（think.md 反思条目）——踩过的坑变成下一次可检索的规则，而不是随会话蒸发。介入时机 `turn/end`（收尾，不是提交时）；桥接 `@sofagent/think`。
+**装上之后**：任务收尾自动写一条 think.md 反思条目。**什么时候用**：同一个坑反复踩、想让经验留下来被下次检索。
+
+**接入点**（seam: turn/end）：桥接 `@sofagent/think`，缺依赖时该能力静默跳过；接入形态（声明 / 实现）见 [SEAMS.md](../SEAMS.md)。
 
 本插件随 sofagent 主线版本发布（SkillHub 通道：`skillhub install cordis-plugin-sofagent-evolve` 安装与检索；npm 通道未开通）。版本号与 sofagent 主线对齐。
 

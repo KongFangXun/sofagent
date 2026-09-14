@@ -5,4 +5,4 @@
       inject: [settings, dynamicCordisRunner]
       config:
         seam: "agent/turn-stopping"    # 语义：Turn 结束前停止条件判定——验收不过不放行
-        description: "验收不过不放行——机器可判定验收 + 人审——桥接 @sofagent/audit runRules"
+        description: "给宿主加上验收门禁——Agent 想收尾先过机器判定，不过不放行——桥接 @sofagent/audit runRules"

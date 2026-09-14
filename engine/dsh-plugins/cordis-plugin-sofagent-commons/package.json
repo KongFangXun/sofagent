@@ -4,7 +4,7 @@
   "engines": {
     "node": ">=18"
   },
-  "description": "能力公地五环——发布/发现/调用/评价/养护（seam: non-seam:tool-set）——桥接 @sofagent/audit loadConfig",
+  "description": "给宿主加上能力公地入口——能力发布 / 发现 / 调用 / 评价 / 养护五环（seam: non-seam:tool-set）——桥接 @sofagent/audit loadConfig",
   "private": true,
   "license": "MIT",
   "author": "KongFangXun",

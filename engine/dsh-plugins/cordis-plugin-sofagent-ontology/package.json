@@ -4,7 +4,7 @@
   "engines": {
     "node": ">=18"
   },
-  "description": "共享语义底座 + 知识检索（seam: non-seam:tool-set）——桥接 @sofagent/ontology generateOntologyView",
+  "description": "给宿主加上业务语义底座——查业务实体 / 关联关系 / 知识条目（seam: non-seam:tool-set）——桥接 @sofagent/ontology generateOntologyView",
   "private": true,
   "license": "MIT",
   "author": "KongFangXun",

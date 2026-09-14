@@ -4,16 +4,16 @@ slug: cordis-plugin-sofagent
 version: 1.4.8
 displayName: cordis-plugin-sofagent
 description: >
-  一次挂载 sofagent 全套能力（聚合编排层，只编排不重实现）（seam: non-seam:plugin-suite）——一次性挂载 9 个原子插件——DSH（DeepSeek Harness）cordis plugin。sofagent 约束层在 DeepSeek Harness 生态的插件形态。
+  一次挂载 sofagent 全套能力——9 项能力一次到位（注入 · 审计 · 验收 · 本体 · 公地 · 经验 · 回溯 · 巡检 · FDE）（seam: non-seam:plugin-suite）——只编排不重实现——sofagent 约束层在 DSH（DeepSeek Harness）生态的插件形态。
 ---
 
 # cordis-plugin-sofagent
 
-一次挂载 sofagent 全套能力（聚合编排层，只编排不重实现）（seam: non-seam:plugin-suite）——一次性挂载 9 个原子插件
+一次挂载 sofagent 全套能力——9 项能力一次到位（注入 · 审计 · 验收 · 本体 · 公地 · 经验 · 回溯 · 巡检 · FDE）（seam: non-seam:plugin-suite）——只编排不重实现，能力仍由各原子插件提供
 
 ## 用途
 
-一次 `apply` 把 9 个原子插件（inject / audit / gate / ontology / commons / evolve / rollback / daemon / fde）逐个挂到同一个 `ctx` 上，挂完把结果（`loaded` / `failed` / `total`）注册成 `sofagent.suite` 服务。适合「整套装上、不想逐个装」的场景。
+一次 `apply` 把 9 个原子插件（inject / audit / gate / ontology / commons / evolve / rollback / daemon / fde）逐个挂到同一个 `ctx` 上，挂完把结果（`loaded` / `failed` / `total`）注册成 `sofagent.suite` 服务。适合「整套装上、不想逐个装」的场景。**什么时候用**：一次拿到全套约束层能力、不想逐个挑插件时。
 
 三条硬约束：
 

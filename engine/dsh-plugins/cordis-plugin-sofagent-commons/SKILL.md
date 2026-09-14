@@ -13,7 +13,9 @@ description: >
 
 ## 用途
 
-**装上之后**：多一个能力公地入口——发布 / 发现 / 调用 / 评价 / 养护五环按需调用，让沉淀下来的能力可被再次找到和复用。无生命周期时机（工具按需调用）；桥接 `@sofagent/audit`（读公地配置）。
+**装上之后**：能力发布 / 发现 / 调用 / 评价 / 养护五环按需调用。**什么时候用**：团队沉淀了一批能力，需要被再次找到和复用。
+
+**接入点**（seam: non-seam:tool-set）：桥接 `@sofagent/audit`，缺依赖时该能力静默跳过；接入形态（声明 / 实现）见 [SEAMS.md](../SEAMS.md)。
 
 本插件随 sofagent 主线版本发布（SkillHub 通道：`skillhub install cordis-plugin-sofagent-commons` 安装与检索；npm 通道未开通）。版本号与 sofagent 主线对齐。
 

@@ -13,7 +13,9 @@ description: >
 
 ## 用途
 
-**装上之后**：Agent 每轮想收尾时先过验收判定——**验收不过不放行**，继续做，而不是把「做完了」交给模型自述。介入时机 `agent/turn-stopping`（Turn 结束前）；桥接 `@sofagent/audit`（未定义验收时按无验收处理）。
+**装上之后**：Agent 想收尾时先过机器判定，验收不过不放行。**什么时候用**：交付标准明确、不想让 Agent 自述「做完了」就算完。
+
+**接入点**（seam: agent/turn-stopping）：桥接 `@sofagent/audit`，缺依赖时该能力静默跳过；接入形态（声明 / 实现）见 [SEAMS.md](../SEAMS.md)。
 
 本插件随 sofagent 主线版本发布（SkillHub 通道：`skillhub install cordis-plugin-sofagent-gate` 安装与检索；npm 通道未开通）。版本号与 sofagent 主线对齐。
 

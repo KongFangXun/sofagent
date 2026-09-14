@@ -13,7 +13,9 @@ description: >
 
 ## 用途
 
-**装上之后**：宿主会话里多一个本体与知识查询面——Agent 按需查业务实体、关联关系与知识条目，不必你把业务背景复制粘贴进对话。无生命周期时机（工具按需调用、不拦截任何事件）；桥接 `@sofagent/ontology`。
+**装上之后**：会话里可查业务实体 / 关联关系 / 知识条目。**什么时候用**：需要 Agent 理解「谁是谁的上下游」，而不是靠你口述业务。
+
+**接入点**（seam: non-seam:tool-set）：桥接 `@sofagent/ontology`，缺依赖时该能力静默跳过；接入形态（声明 / 实现）见 [SEAMS.md](../SEAMS.md)。
 
 本插件随 sofagent 主线版本发布（SkillHub 通道：`skillhub install cordis-plugin-sofagent-ontology` 安装与检索；npm 通道未开通）。版本号与 sofagent 主线对齐。
 

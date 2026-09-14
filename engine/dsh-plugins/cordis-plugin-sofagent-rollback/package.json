@@ -4,7 +4,7 @@
   "engines": {
     "node": ">=18"
   },
-  "description": "出错逆序撤销——git snapshot → effect disposer（seam: agent/error）——桥接 @sofagent/core getHistoryFilePath",
+  "description": "给宿主加上快照回溯——Agent 出错时按 git 快照逆序撤销本次改动（seam: agent/error）——桥接 @sofagent/core getHistoryFilePath",
   "private": true,
   "license": "MIT",
   "author": "KongFangXun",

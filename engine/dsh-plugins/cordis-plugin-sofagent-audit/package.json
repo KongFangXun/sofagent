@@ -4,7 +4,7 @@
   "engines": {
     "node": ">=18"
   },
-  "description": "变更机器审阅——24 规则 + git diff 硬证据 + 节点级审计（seam: tools/result + tools/pre-execute + fs/write-intent）——桥接 @sofagent/audit runRules",
+  "description": "给宿主加上审计能力——24 条 git diff 硬证据规则 + 危险操作黑名单（seam: tools/result + tools/pre-execute + fs/write-intent）——桥接 @sofagent/audit runRules",
   "private": true,
   "license": "MIT",
   "author": "KongFangXun",

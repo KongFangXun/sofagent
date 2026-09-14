@@ -5,4 +5,4 @@
       inject: [settings, dynamicCordisRunner]
       config:
         seam: "non-seam:host-process"    # 语义：非宿主事件接入（独立调度进程）——7×24 巡检不走宿主事件循环
-        description: "7×24 巡检 + 健康监测 + webhook 推送——桥接 @sofagent/daemon startCron"
+        description: "给宿主加上 7×24 巡检——独立进程做健康监测与 webhook 推送——桥接 @sofagent/daemon startCron"

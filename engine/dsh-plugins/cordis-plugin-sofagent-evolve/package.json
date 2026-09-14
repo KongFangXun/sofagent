@@ -4,7 +4,7 @@
   "engines": {
     "node": ">=18"
   },
-  "description": "经验沉淀——think.md 反思 + Dream Cycle + evolve + instinct→skill + refine（seam: turn/end）——桥接 @sofagent/think generateThinkEntry",
+  "description": "给宿主加上经验沉淀——任务收尾自动写 think.md 反思条目（seam: turn/end）——桥接 @sofagent/think generateThinkEntry",
   "private": true,
   "license": "MIT",
   "author": "KongFangXun",

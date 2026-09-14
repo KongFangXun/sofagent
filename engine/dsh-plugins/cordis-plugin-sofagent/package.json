@@ -4,7 +4,7 @@
   "engines": {
     "node": ">=18"
   },
-  "description": "一次挂载 sofagent 全套能力（聚合编排层，只编排不重实现）（seam: non-seam:plugin-suite）——一次性挂载 9 个原子插件",
+  "description": "一次挂载 sofagent 全套能力（9 项一次到位：注入 · 审计 · 验收 · 本体 · 公地 · 经验 · 回溯 · 巡检 · FDE）（seam: non-seam:plugin-suite）——一次性挂载 9 个原子插件",
   "private": true,
   "license": "MIT",
   "author": "KongFangXun",

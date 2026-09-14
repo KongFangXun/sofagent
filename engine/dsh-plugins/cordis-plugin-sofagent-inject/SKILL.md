@@ -13,7 +13,9 @@ description: >
 
 ## 用途
 
-**装上之后**：模型每次看到你的输入之前，系统提示先被追加四层加载链（核心铁律 / 反思区 / 用户规则 / 知识库）——Agent 不必你每次交代背景。介入时机 `agent/pre-step`；桥接 `@sofagent/harness`（缺失时该能力静默跳过，不崩宿主）。只解决「约束注入」一件事，可与其余原子插件自由组合。
+**装上之后**：模型每次请求前带上企业铁律 / 反思 / 用户规则 / 知识库（四层加载链）。**什么时候用**：希望 Agent 一开口就带着公司的规矩，不必每次交代背景。
+
+**接入点**（seam: agent/pre-step）：桥接 `@sofagent/harness`，缺依赖时该能力静默跳过；接入形态（声明 / 实现）见 [SEAMS.md](../SEAMS.md)。
 
 本插件随 sofagent 主线版本发布（SkillHub 通道：`skillhub install cordis-plugin-sofagent-inject` 安装与检索；npm 通道未开通）。版本号与 sofagent 主线对齐。
 
