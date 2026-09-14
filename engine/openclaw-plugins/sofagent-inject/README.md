@@ -1,8 +1,10 @@
 # sofagent-inject
 
-**约束注入** · sofagent 约束层五能力在 OpenClaw 生态的插件形态
+**给 OpenClaw 加上约束注入** · sofagent 约束层五能力在 OpenClaw 生态的插件形态
 
-before_prompt_build 注入四层加载链（core-rules/think.md/fde.md/knowledge），复用 @sofagent/harness.buildConstrainedSystemPrompt。
+装上之后：模型每次构建提示词前，系统上下文先被追加四层加载链（core-rules.md / think.md / fde.md / knowledge/）——Agent 不必你每次交代背景；另有一个 `sofagent_inject` 工具可随时预览注入了什么。
+
+> 机制：复用 `@sofagent/harness` 的 `buildConstrainedSystemPrompt()`——四层加载链与 DSH 侧同源。
 
 ## 能力
 

@@ -24,7 +24,7 @@ const _pkg: { version?: string } = require('../package.json');
   id: 'sofagent-audit',
   name: 'sofagent 审计',
   version: _pkg.version ?? '0.0.0-unknown',
-  description: '变更机器审阅——24 规则 + git diff 硬证据 + 危险工具拦截（before_tool_call）',
+  description: '给 OpenClaw 加上审计——工具调用前拦停危险操作（工具名黑名单 + 命令级检查），另提供 sofagent_audit 工具跑 24 条 git diff 硬证据规则',
   brandColor: '#16B8F3',
 };
 

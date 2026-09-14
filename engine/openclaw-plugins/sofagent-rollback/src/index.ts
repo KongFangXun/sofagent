@@ -24,7 +24,7 @@ const _pkg: { version?: string } = require('../package.json');
   id: 'sofagent-rollback',
   name: 'sofagent 回溯',
   version: _pkg.version ?? '0.0.0-unknown',
-  description: '出错逆序撤销——git snapshot 快照 + 逆序回滚（effect disposer 语义）',
+  description: '给 OpenClaw 加上快照回溯——出错时用 sofagent_rollback 按 git 快照一键回滚本次改动',
   brandColor: '#16B8F3',
 };
 

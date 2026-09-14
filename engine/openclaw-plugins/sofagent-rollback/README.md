@@ -1,8 +1,10 @@
 # sofagent-rollback
 
-**出错逆序撤销** · sofagent 约束层五能力在 OpenClaw 生态的插件形态
+**给 OpenClaw 加上快照回溯** · sofagent 约束层五能力在 OpenClaw 生态的插件形态
 
-git snapshot 快照 + 逆序回滚（effect disposer 语义），复用 @sofagent/core。
+装上之后：Agent 出错时按 git 快照逆序回滚本次改动（effect disposer 语义），不用人工逐个文件还原。
+
+> 机制：复用 `@sofagent/core`——git 快照读写与 DSH 侧同源（效果等价 effect disposer 语义）。
 
 ## 能力
 

@@ -25,7 +25,7 @@ const _pkg: { version?: string } = require('../package.json');
   id: 'sofagent-inject',
   name: 'sofagent 注入',
   version: _pkg.version ?? '0.0.0-unknown',
-  description: '约束注入——before_prompt_build 注入四层加载链（core-rules/think.md/fde.md/knowledge）',
+  description: '给 OpenClaw 加上约束注入——每次构建提示词前带上企业铁律 / 反思 / 用户规则 / 知识库（四层加载链）',
   brandColor: '#16B8F3',
 };
 
