@@ -1698,8 +1698,8 @@ grep -q "checkHistoryChainIntegrity" CHANGELOG.md && echo "✅ 退役公告在 C
 
 ```bash
 (
-# a: 门禁正则跨平台健壮性——\s 在 BSD/部分 grep 语义不稳（实测：本机 2.6.0-FreeBSD 支持 \s，但 test-count 曾因 ANSI 前缀恒 0 假红、\s 组合加剧解析脆性）；shell 活代码一律 POSIX 类——注释行与 Node 内嵌 JS 行（matchAll/test/inFence 上下文）合法
-grep -rn '\\\\s' tools/check/check-docs.sh tools/check/check-review-system.sh tools/check/check-test-count.sh tools/check/check-dev-prompt.sh tools/check/check-version.sh 2>/dev/null | grep -vE "^[^:]+:[0-9]+:#" | grep -vE "(matchAll|\.test\(|inFence|node -e)" | grep -q . && echo "❌ 门禁 shell 活代码残留 \\\\s（跨平台假红隐患）" || echo "✅ 门禁 shell 活代码无 \\\\s 残留"
+# a: 门禁正则跨平台健壮性——\s 是 sed 表达式的真炸弹（GNU 认、BSD 不认），POSIX 类是正解；SSOT=check-guards.sh ①（perl 引擎 + find 递归 tools/playbook/engine/scripts + 注释行与 node/perl 内嵌行豁免）。本行只断言该守卫在位且当前干净，**不自建第二套 grep 判定**——grep 自身对 \s 的解释不可靠，正是 SSOT 选用 perl 的理由
+bash tools/check/check-guards.sh 2>/dev/null | grep -q "✓ 无 BSD 不兼容正则残留" && echo "✅ 门禁 shell 无 BSD 不兼容正则残留（sed 上下文 · SSOT=check-guards ①）" || echo "❌ BSD 不兼容正则残留，或 SSOT 守卫 ① 未跑/失声（先单独跑 bash tools/check/check-guards.sh 看 ① 段）"
 # 防御：正则只锚定审计命令形态——行首（忽略缩进）npx/node 调用 sofagent-audit 且同行挂 || true，才是「退出码被清 0」真假绿 宽匹配 `sofagent-audit.*|| true` 会误中 gh label 装饰行（描述字符串含产品名）；label 写操作挂 || true 是 fork PR 只读令牌的设计降级，非假绿
 grep -rnE '^[[:space:]]*(npx|node.*)sofagent-audit.*\|\| true' .github/workflows/ 2>/dev/null | grep -vE "^[^:]+:[0-9]+:#" | grep -q . && echo "❌ CI 审计门禁残留 || true 假绿（exit_code 被清 0，FAIL 永不阻断）" || echo "✅ CI 审计无 || true 假绿"
 # b: worktree 引用丢失防线（悬挂 commit 根因 80c94f64 + LEDGER worktree 副本蒸发）——teardown 固化 tip + driver 产物主仓落盘
