@@ -20,6 +20,9 @@
 #   + check-tool-health.sh  → 工具健康 9 项 ✅ = ① 审查文档路径活性 / ② 孤儿配置 / ③ bump↔check 结构对照 /
 #                             ④ hook 头版本标记 / ⑤ CI 引用活性 / ⑥ set -u 新变量初始化守卫（2 子项）/
 #                             ⑦ tools/README.md 收录对账 + 防线失明自检（2 子项）· v1.4.9 G-12 接入
+#   + check-home-resolution-parity.mjs → 家目录口径对照（harness resolveEngineHome ↔ core resolveHomeDir
+#                             同输入同输出 + 已登记差异钉住 · 须在构建之后跑 · v1.4.9 G-9 接入）
+#   + check-prepush-checklist.mjs → 本清单自身的对账：清单里的脚本名 ⊆ 实际被调用（v1.4.9 G-16 接入）
 #   + npm run build         → 审计模块构建
 #
 # 用法:
@@ -132,6 +135,32 @@ if command -v shellcheck &>/dev/null; then
   fi
 else
   check_warn "shellcheck 未安装——brew install shellcheck"
+fi
+
+# ════════════════════════════════════════
+# 1b. 本清单自身的对账（check-prepush-checklist.mjs · v1.4.9 G-16 接入）
+# 为什么需要：本文件头部的 `#   + <脚本名>` 清单长期**零对账**——没有任何守卫断言
+#   「清单里写的 ⊆ 实际调用的」。v1.4.9 批 4c 把 51 项加到 52 项时，这一致性只能靠人肉 grep。
+#   它守的是「**声明了 X、实现里没有 X**」这个缺陷类（G-12 = check-tool-health 声明有实则零接线；
+#   G-11 = 注释声明 evolve-gate 实则无可执行；本条 = 清单声明与调用面对账）。
+# 为什么排在 1b（**不能后移**）：纯静态文本分析，零构建依赖、零子进程，实测 <0.1s ⇒ 放最前面尽早拦。
+# 三态语义：0 = 清单 ⊆ 实现；1 = 清单里有未被调用的脚本名；2 = 检查器失明（清单/调用面提取为空）。
+# ════════════════════════════════════════
+echo -e "\n${BOLD}── 1b. 检查项清单对账 ──${NC}"
+if [ -f tools/check/check-prepush-checklist.mjs ]; then
+  CPC_OUT=$(node tools/check/check-prepush-checklist.mjs 2>&1)
+  CPC_RC=$?
+  if [ "$CPC_RC" -eq 0 ]; then
+    check_pass "check-prepush-checklist.mjs（清单 ⊆ 实现）"
+  elif [ "$CPC_RC" -eq 2 ]; then
+    check_fail "check-prepush-checklist.mjs 检查器失明（exit 2——清单或调用面提取为空，拒绝假绿）"
+    printf '%s\n' "$CPC_OUT" | grep -E '^❌|^    ·' | head -6
+  else
+    check_fail "check-prepush-checklist.mjs 发现清单声明了未接线的脚本（exit ${CPC_RC}）"
+    printf '%s\n' "$CPC_OUT" | grep -E '^❌|^    ·' | head -10
+  fi
+else
+  check_warn "tools/check/check-prepush-checklist.mjs 不存在（守卫缺失）"
 fi
 
 # ════════════════════════════════════════
@@ -667,6 +696,32 @@ if [ -f tools/check/check-guard-fail-loud.sh ]; then
   fi
 else
   check_warn "tools/check/check-guard-fail-loud.sh 不存在（失明自检缺失）"
+fi
+
+# ════════════════════════════════════════
+# 14. 家目录口径对照（check-home-resolution-parity.mjs · v1.4.9 G-9 接入）
+# 为什么需要：dependency-direction.yml 把 harness 定为 layer 0 · allow: [] ⇒
+#   harness 不能 import core 的 resolveHomeDir，只能本地重实现 resolveEngineHome()
+#   ——**被迫重复 ≠ 允许不可见**（P1-4 就是口径漂移的实案）。
+# 为什么排在 14（**不能前移**）：该守卫两侧都跑**真实调用**（require 各包 dist）
+#   ⇒ 依赖第 5 步的构建产物；前移到构建之前会在干净检出上误报「dist 缺失」。
+# 三态语义：0 = 口径与登记表一致；1 = 未登记差异 / 守卫失明（提取不到实现或观测不到哨兵）。
+# 成本实测：约 0.4s（6 行矩阵 × 1 个子进程）。
+# ════════════════════════════════════════
+if [ "$MINIMAL" = false ]; then
+  echo -e "\n${BOLD}── 14. 家目录口径对照 ──${NC}"
+  if [ -f tools/check/check-home-resolution-parity.mjs ]; then
+    HP_OUT=$(node tools/check/check-home-resolution-parity.mjs 2>&1)
+    HP_RC=$?
+    if [ "$HP_RC" -eq 0 ]; then
+      check_pass "check-home-resolution-parity.mjs（harness ↔ core 口径一致，登记差异已钉住）"
+    else
+      check_fail "check-home-resolution-parity.mjs 发现未登记差异或守卫失明（exit ${HP_RC}）"
+      printf '%s\n' "$HP_OUT" | grep -E '^❌|^⇒' | head -10
+    fi
+  else
+    check_warn "tools/check/check-home-resolution-parity.mjs 不存在（守卫缺失）"
+  fi
 fi
 
 # ════════════════════════════════════════

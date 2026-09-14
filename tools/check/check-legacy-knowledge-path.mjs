@@ -58,6 +58,8 @@
 // ── 负向断言（不许静默通过）──
 //   N1 扫描面完整性：tracked 文件数为 0、或 SSOT（data-paths.ts）缺失、
 //      或其中已无 `resolveKnowledgeDir` 导出 ⇒ 检查器失明 ⇒ exit 2（拒绝假绿）。
+//      含**形态 ③ 能力探针**：合成锚点样本（跨行分离）必须被 `matchCrossLine` 识别，
+//      识别不到 ⇒ 该形态判定静默归零 ⇒ exit 2（提取为空不许静默，v1.4.9 G-9 并入）。
 //   N2 自相矛盾：台账非空却零命中 ⇒ FAIL（豁免清单在为一个不存在的命中背书）。
 //   N3 台账空 + 零命中 ⇒ 打印可见 SKIP 行（不是静默绿）。
 //   N4 `--selftest`：双向合成探针——把「应该判违规」和「应该判合规」的样本喂给同一
@@ -124,6 +126,47 @@ const PAT_CONNECTED = /\.sofagent[\/\\]knowledge/;
 /** 旧路径形态 ② ：分离字面量（同一行出现带引号的 '.sofagent' 与 'knowledge'） */
 const PAT_ANCHOR = /['"`]\.sofagent['"`]/;
 const PAT_KNOWLEDGE = /['"`]knowledge['"`]/;
+
+// ── 旧路径形态 ③ ：跨行分离（v1.4.9 G-9 并入）──────────────────
+// 形态 ①② 都是**行内**判定，于是漏掉了最隐蔽也最真实的一类：
+//     const skillDir = path.join(projectRoot, '.sofagent');   ← 锚点行（无 knowledge）
+//     const knowledgeDir = path.join(skillDir, 'knowledge');   ← 使用行（无 .sofagent）
+// 两行各自都不命中，**整条旧路径却成立**——这正是 P1-14「收口漏网」的第三形态。
+// 实测（加入前）：全仓 3 文件 4 处全部不可见，含 engine/core 一处**真残留**。
+// 判定规则（**同文件内两步**，不做跨文件推断——避免把「碰巧同名」算成旧路径）：
+//   ① 收集本文件里「赋值右侧含 `'.sofagent'` 字面量」的变量名（锚点变量）
+//   ② 找 `join(<锚点变量>, 'knowledge')` 的调用行
+// 保守性：只认 join(...) 形态 + 变量名精确匹配 ⇒ 不会把 `join(x, 'knowledge')`（x 无锚点）误判。
+const ANCHOR_DEF = /(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=[^\n]*['"`]\.sofagent['"`]/;
+
+/**
+ * 形态 ③ 判定：返回该文件里 `join(<锚点变量>, 'knowledge')` 的所有命中行。
+ * @param {string} rel 相对路径（供注释行判定）
+ * @param {string} text 文件内容
+ * @returns {Array<{rel:string,line:number,text:string,forms:string[]}>}
+ */
+export function matchCrossLine(rel, text) {
+  const lines = text.split('\n');
+  const anchored = new Set();
+  for (const line of lines) {
+    const m = line.match(ANCHOR_DEF);
+    if (m) anchored.add(m[1]);
+  }
+  if (anchored.size === 0) return [];
+  const out = [];
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (isCommentLine(rel, line)) continue; // 注释面的同类命中留给形态 ①② 的注释面打印
+    for (const v of anchored) {
+      const re = new RegExp(`\\bjoin\\(\\s*${v.replace(/\$/g, '\\$')}\\s*,\\s*['"\`]knowledge['"\`]`);
+      if (re.test(line)) {
+        out.push({ rel, line: i + 1, text: line.trim().slice(0, 160), forms: ['cross-line'] });
+        break; // 一行只记一次（多锚点变量命中同一行不重复计数）
+      }
+    }
+  }
+  return out;
+}
 
 /** 行首注释标记 */
 const COMMENT_RE = /^\s*(\/\/|#|\*|\/\*|<!--)/;
@@ -215,6 +258,8 @@ export function scanContent(entries) {
       if (isCommentLine(rel, line)) comment.push(rec);
       else code.push(rec);
     }
+    // 形态 ③（跨行分离）：锚点行与使用行各自不命中，须在**文件级**补判（v1.4.9 G-9 并入）
+    for (const rec of matchCrossLine(rel, text)) code.push(rec);
   }
   return { code, comment, historical, apparatus, scanned };
 }
@@ -293,6 +338,22 @@ function main() {
   else if (!/export\s+function\s+resolveKnowledgeDir\s*\(/.test(ssotText)) {
     blindReasons.push(`${SSOT_REL} 中已无 resolveKnowledgeDir 导出（本守卫的判定前提失效）`);
   }
+  // ── 形态 ③ 能力自检（提取为空 ⇒ FAIL，不许静默）──
+  // 形态 ③（跨行分离）完全依赖 ANCHOR_DEF 能识别锚点变量。若该正则被改坏/删除，
+  // 形态 ③ 会**静默退回 0 命中**：已登记的「仅形态 ③ 可见」条目虽会变成陈旧豁免，
+  // 但那依赖台账恰好含此类条目——是**被动**发现。此处做**主动能力探针**：
+  // 合成样本必须被识别，否则判定能力已失明 ⇒ exit 2（拒绝假绿）。
+  const PROBE_ANCHOR_REL = 'probe-cross-line.ts';
+  const PROBE_ANCHOR_TEXT = [
+    "const probeSkillDir = path.join(root, '.sofagent');",
+    "const probeKnowledgeDir = path.join(probeSkillDir, 'knowledge');",
+  ].join('\n');
+  if (matchCrossLine(PROBE_ANCHOR_REL, PROBE_ANCHOR_TEXT).length === 0) {
+    blindReasons.push(
+      '形态 ③（跨行分离）能力探针失效：合成锚点样本未被识别（ANCHOR_DEF 已被改坏/删除 ⇒ 该形态判定静默归零）',
+    );
+  }
+
   if (blindReasons.length > 0) {
     console.log('❌ check-legacy-knowledge-path 检查器失明（拒绝假绿）：');
     for (const r of blindReasons) console.log(`    · ${r}`);
@@ -541,6 +602,44 @@ function selftest() {
     ok('P12c 装置面与台账重复记账可判', vDup.some((r) => r.includes('重复记账')));
     ok('P12d 装置面越界（非 tools/check/ 路径）可判', vOut.some((r) => r.includes('越界')));
     ok('P12e 装置面条数异常可判', vLen.some((r) => r.includes('恰 2 条')));
+  }
+
+  // 探针 13：形态 ③ 跨行分离（v1.4.9 G-9 并入）——锚点行与使用行各自不命中，须文件级补判
+  {
+    const pos = scanContent([
+      [
+        'engine/harness/src/index.ts',
+        `const skillDir = path.join(projectRoot, opts?.skillDir ?? '.sofagent');\n` +
+          `const knowledgeDir = path.join(skillDir, 'knowledge');`,
+      ],
+    ]);
+    ok('P13a 跨行分离（锚点行 + 使用行）被判非注释面命中', pos.code.length === 1 && pos.comment.length === 0);
+    ok('P13b 命中形态标记含 cross-line', pos.code[0]?.forms.includes('cross-line') === true);
+  }
+  {
+    // 反向：只有 join(var, 'knowledge') 而无锚点 ⇒ **不得**命中（防「碰巧同名」误判）
+    const neg = scanContent([
+      ['src/n.ts', `const base = '.sofagent/data';\nconst knowledgeDir = path.join(base, 'knowledge');`],
+    ]);
+    ok('P13c 无 .sofagent 锚点变量 ⇒ 不命中（不误判 join(<任意>, knowledge)）', neg.code.length === 0);
+  }
+  {
+    // 反向：锚点在**另一文件** ⇒ 不跨文件推断
+    const neg2 = scanContent([
+      ['src/a.ts', `const dirA = path.join(root, '.sofagent');`],
+      ['src/b.ts', `const knowledgeDir = path.join(dirA, 'knowledge');`],
+    ]);
+    ok('P13d 锚点在另一文件 ⇒ 不跨文件推断（只认同文件两步）', neg2.code.length === 0);
+  }
+  {
+    // 正向边界：锚点行与使用行同文件但中间隔了别的语句 ⇒ 仍应命中
+    const mid = scanContent([
+      [
+        'src/m.ts',
+        `const d = join(root, '.sofagent');\nconst other = 1;\nconst kd = join(d, 'knowledge');`,
+      ],
+    ]);
+    ok('P13e 锚点与使用行不同行/不相邻 ⇒ 仍命中', mid.code.length === 1);
   }
 
   let failed = 0;

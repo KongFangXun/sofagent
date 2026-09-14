@@ -77,4 +77,32 @@ describe('⑩ · 自研 gate 验证器（无 Python 依赖）', () => {
     expect(v.action).toBe('revert');
     expect(v.basis).toContain('fail-closed');
   });
+
+  // ── v1.4.9 G-17 回归锁：adopt 必须无损 ──
+
+  it('candidateDir === targetDir（自指）⇒ 不得删掉 live 文件', () => {
+    // 旧实现：rmSync(targetDir) 先删掉 live（它同时就是 candidate），
+    // 再 copyFileSync(candidateDir, targetDir) 拿已删的源拷贝 ⇒ ENOENT + live 永久丢失。
+    const live = path.join(TMP, 'SKILL.md');
+    const before = fs.readFileSync(live, 'utf-8');
+    const v = runNativeGate({
+      workDir: TMP,
+      candidateDir: live, // 自指（旧实害入口）
+      targetDir: live,
+      verifyCommand: 'echo "score: 0.99"',
+    });
+    expect(v.action).toBe('adopt');
+    expect(fs.existsSync(live)).toBe(true); // 旧实现此处为 false
+    expect(fs.readFileSync(live, 'utf-8')).toBe(before);
+  });
+
+  it('adopt 后不留 .gate-tmp-* 临时文件（无损替换收尾干净）', () => {
+    runNativeGate({
+      workDir: TMP,
+      candidateDir: path.join(TMP, 'staging', 'SKILL.md'),
+      targetDir: path.join(TMP, 'SKILL.md'),
+      verifyCommand: 'echo "score: 0.99"',
+    });
+    expect(fs.readdirSync(TMP).filter((f) => f.includes('gate-tmp'))).toEqual([]);
+  });
 });

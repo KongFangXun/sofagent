@@ -474,6 +474,99 @@ describe('audit-history', () => {
       expect(checkHistoryChainDetailed(testDir).status).toBe('unverifiable');
     });
 
+    // ── v1.4.9 G-5：黄色 verdict 必须 localize 到具体记录 ──
+    // 旧实现：8 个 foundUnverifiable 置位点最后共用**同一段静态文案** ⇒
+    // `(undefined)` 与 `(…, 100)` 两种坏输入输出**逐字相同**，用户无法得知「是哪一条」。
+
+    /** 辅助：剥掉指定（**全量**）序号的 hmacSig，并同步重写链头锚点 */
+    function stripSigAndReanchor(dir: string, idx: number): void {
+      const histPath = getHistoryFilePath(dir);
+      const lines = readFileSync(histPath, 'utf-8').trim().split('\n');
+      const entries = lines.map((line) => JSON.parse(line) as Record<string, unknown>);
+      delete entries[idx]!.hmacSig;
+      writeFileSync(histPath, entries.map((e) => JSON.stringify(e)).join('\n') + '\n');
+      // 不重写锚点会在锚点检查先报 tampered，根本走不到链校验（同「签名剥离攻击」用例口径）
+      const anchorPath = join(dirname(histPath), 'history-chain-head');
+      const anchor = JSON.parse(readFileSync(anchorPath, 'utf-8')) as Record<string, unknown>;
+      anchor.headHash = createHash('sha256')
+        .update(JSON.stringify({ ...entries[entries.length - 1]!, prevHash: undefined, hashVersion: undefined }) + '|' + anchor.envFingerprint)
+        .digest('hex')
+        .slice(0, 16);
+      writeFileSync(anchorPath, JSON.stringify(anchor) + '\n');
+    }
+
+    it('G-5 负向断言：两种不同坏输入 ⇒ 输出必须不同（否则「定位」是假的）', () => {
+      writeFileSync(KEY_PATH, 'test-hmac-key-1234567890', { mode: 0o600 });
+      const dirA = tmpDir();
+      const dirB = tmpDir();
+      const stamps = ['2026-08-01T00:00:00Z', '2026-08-02T00:00:00Z', '2026-08-03T00:00:00Z'];
+      for (const d of [dirA, dirB]) {
+        for (const ts of stamps) appendHistory(makeEntry(ts, 0), d);
+      }
+      stripSigAndReanchor(dirA, 0); // 坏记录 = #0（创世条目）
+      stripSigAndReanchor(dirB, 2); // 坏记录 = #2（链头）
+
+      const a = checkHistoryChainDetailed(dirA);
+      const b = checkHistoryChainDetailed(dirB);
+
+      expect(a.status).toBe('unverifiable');
+      expect(b.status).toBe('unverifiable');
+      // 🔴 旧实现：两段 detail 逐字相同 ⇒ 下面这一行在旧实现下必红（这就是「定位是假的」的判据）
+      expect(a.detail).not.toBe(b.detail);
+      // 定位信息落地：序号 + 时间戳 + prevHash 前缀 / 原因码
+      expect(a.detail).toContain('定位：#0');
+      expect(b.detail).toContain('定位：#2');
+      expect(a.detail).toContain(stamps[0]!);
+      expect(b.detail).toContain(stamps[2]!);
+      // 不退化成 (undefined)（原缺陷的外观特征）
+      expect(a.detail).not.toContain('undefined');
+      expect(b.detail).not.toContain('undefined');
+
+      rmSync(dirA, { recursive: true, force: true });
+      rmSync(dirB, { recursive: true, force: true });
+    });
+
+    it('G-5 校验窗口截断时仍报**全量**序号（窗口口径不影响定位）', () => {
+      writeFileSync(KEY_PATH, 'test-hmac-key-1234567890', { mode: 0o600 });
+      const d = tmpDir();
+      for (const ts of ['2026-09-01T00:00:00Z', '2026-09-02T00:00:00Z', '2026-09-03T00:00:00Z', '2026-09-04T00:00:00Z']) {
+        appendHistory(makeEntry(ts, 0), d);
+      }
+      stripSigAndReanchor(d, 3); // 坏记录 = 全量 #3（同时是链头）
+
+      const full = checkHistoryChainDetailed(d);
+      const win = checkHistoryChainDetailed(d, 2); // 窗口 = 最近 2 条（#2 / #3）
+
+      expect(full.status).toBe('unverifiable');
+      expect(win.status).toBe('unverifiable');
+      expect(full.detail).toContain('定位：#3');
+      // 关键：窗口内该记录是第 2 条（窗口序号 #1），但报告必须是**全量序号 #3**
+      expect(win.detail).toContain('定位：#3');
+      expect(win.detail).not.toContain('定位：#1');
+      // 截断时显式说明窗口口径（解释「为什么只报了这些」）
+      expect(win.detail).toContain('校验窗口');
+      expect(full.detail).not.toContain('校验窗口');
+
+      rmSync(d, { recursive: true, force: true });
+    });
+
+    it('G-5 原因码与条数可见（定位串自证不是空壳）', () => {
+      writeFileSync(KEY_PATH, 'test-hmac-key-1234567890', { mode: 0o600 });
+      const d = tmpDir();
+      for (const ts of ['2026-10-01T00:00:00Z', '2026-10-02T00:00:00Z']) appendHistory(makeEntry(ts, 0), d);
+      stripSigAndReanchor(d, 0); // 创世条目无签名（密钥在场）→ genesis-signature-stripped
+      const r = checkHistoryChainDetailed(d);
+      expect(r.status).toBe('unverifiable');
+      expect(r.detail).toContain('genesis-signature-stripped');
+      // 注意：剥掉 #0 的 hmacSig 会**连带**让 #1 的 prevHash 失配
+      //（prevHash 覆盖前一条记录的全部内容，含 hmacSig）⇒ 报告 2 条，且两条各有独立定位串。
+      // 这正是「定位面」的价值：旧实现只说「部分历史段无法复验」，看不出是两条、也看不出是哪两条。
+      expect(r.detail).toContain('不可复验记录 2 条');
+      expect(r.detail).toContain('定位：#0');
+      expect(r.detail).toContain('#1');
+      rmSync(d, { recursive: true, force: true });
+    });
+
     it('有 HMAC 密钥：含 A2/A9 结果的 ≥2 条干净链 append + check 通过（P0-3 回归）', () => {
       writeFileSync(KEY_PATH, 'test-hmac-key-1234567890', { mode: 0o600 });
       // 构造含 A2(number=2) + A9(number=9) 的结果，且 FAIL 触发 sanitizeRuleResult 覆盖 details

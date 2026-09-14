@@ -174,6 +174,51 @@ export interface ChainCheckResult {
 }
 
 /**
+ * 不可复验（黄色 verdict）的**原因码**（v1.4.9 G-5）。
+ *
+ * 背景：`foundUnverifiable` 原本只是一个布尔标记，8 个置位点最后共用**同一段静态文案**——
+ * 于是「创世条目签名漂移」与「第 42000 条无 prevHash」对用户来说输出**逐字相同**，
+ * 拿不到任何定位信息（缺陷形态：诊断输出**看起来**报了问题，实际无法据以行动）。
+ */
+type UnverifiableReason =
+  | 'genesis-hmac-drift'
+  | 'genesis-signature-stripped'
+  | 'no-prevhash'
+  | 'v2-prevhash-drift'
+  | 'v2-hmac-fingerprint-drift'
+  | 'v2-hmac-no-fingerprint'
+  | 'legacy-hmac-unreproducible'
+  | 'signature-stripped';
+
+/**
+ * 一条「不可复验」记录的定位信息（v1.4.9 G-5）。
+ *
+ * ⚠️ 这是**诊断信息**，不参与判定：`status` 的结果与置位时机完全由原逻辑决定
+ * （「不许碰链校验逻辑本身」——本结构只负责把「已经判出来的黄」说清楚）。
+ */
+interface UnverifiableRecord {
+  /** 在**全量** history.jsonl 中的 0-based 序号（不受 maxEntries 校验窗口影响） */
+  index: number;
+  /** 记录时间戳（存在且为字符串时带） */
+  timestamp: string | null;
+  /** prevHash 前缀（存在且为字符串时取前 8 位） */
+  prevHashPrefix: string | null;
+  reason: UnverifiableReason;
+}
+
+/**
+ * 把一条不可复验记录渲染成单行定位串（序号 / 时间戳 / prevHash 前缀 / 原因码）。
+ * 三者至少一项必然存在（index 恒有）⇒ 输出**永不**退化成 `(undefined)`。
+ */
+function describeUnverifiable(rec: UnverifiableRecord): string {
+  const parts = [`#${rec.index}`];
+  if (rec.timestamp) parts.push(rec.timestamp);
+  if (rec.prevHashPrefix) parts.push(`prevHash≈${rec.prevHashPrefix}`);
+  parts.push(rec.reason);
+  return parts.join(' · ');
+}
+
+/**
  * 验证 history.jsonl 的 hash chain 完整性（详细判定版，修复 + 复核修正）
  *
  * 区分三类异常（篡改优先于不可复验）：
@@ -199,7 +244,12 @@ export interface ChainCheckResult {
  * history.jsonl 与锚点文件的攻击者仍可伪造一致状态——锚点属防篡改证据强化而非密码学保证
  * （与 getEnvFingerprint 既有注释同一口径）。
  *
+ * 定位面（v1.4.9 G-5）：`unverifiable`（黄）的 `detail` **必须能指到具体记录**——
+ * 序号（**全量** history.jsonl 序号，已加回 maxEntries 窗口偏移）+ 时间戳 + prevHash 前缀
+ * + 原因码。这是**诊断输出**增强，`status` 的判定时机与取值零改动（见 UnverifiableReason 注释）。
+ *
  * @param dataDir 可选的数据目录覆盖
+ * @param maxEntries 可选：只校验最近 N 条（doctor 默认 500）；`undefined` = 全量
  * @returns ChainCheckResult
  */
 export function checkHistoryChainDetailed(dataDir?: string, maxEntries?: number): ChainCheckResult {
@@ -330,6 +380,21 @@ export function checkHistoryChainDetailed(dataDir?: string, maxEntries?: number)
   // 因为这些异常无法在当前侧区分「真·篡改」与「密钥轮换 / 环境漂移」。
   let foundUnverifiable = false;
 
+  // v1.4.9 G-5：黄 verdict 的**定位面**。判定时机/结果不变，只把「已经判出来的黄」记清楚。
+  // 校验窗口（maxEntries）会把 entriesToCheck 切片 ⇒ 记录相对序号，报告时加回窗口偏移，
+  // 使用户拿到的序号**始终是全量 history.jsonl 里的序号**（否则窗口一变同一个坏记录会显示成不同序号）。
+  const unverifiableRecords: UnverifiableRecord[] = [];
+  const windowOffset = entries.length - entriesToCheck.length;
+  const noteUnverifiable = (slicedIndex: number, entry: ChainEntry | undefined, reason: UnverifiableReason): void => {
+    const rec = (entry ?? {}) as unknown as Record<string, unknown>;
+    unverifiableRecords.push({
+      index: windowOffset + slicedIndex,
+      timestamp: typeof rec.timestamp === 'string' ? rec.timestamp : null,
+      prevHashPrefix: typeof rec.prevHash === 'string' && rec.prevHash.length > 0 ? rec.prevHash.slice(0, 8) : null,
+      reason,
+    });
+  };
+
   // v1.2.6 创世条目（entriesToCheck[0]）HMAC 验签——
   // 主循环从 i=1 开始（校验 prevHash 链），entriesToCheck[0] 从未被独立校验。
   // 攻击者可篡改创世条目内容（如修改初始审计结果）而不被检测。
@@ -377,11 +442,13 @@ export function checkHistoryChainDetailed(dataDir?: string, maxEntries?: number)
       }
       // 其余情况（指纹漂移 / 旧版 v2 未记录指纹 / 旧算法条目）归为不可复验（黄）
       foundUnverifiable = true;
+      noteUnverifiable(0, genesisEntry, 'genesis-hmac-drift');
     }
   } else if (genesisEntry && keyAvailable && hmacKey) {
     // 密钥在场但创世条目无签名：签名被剥离（攻击者无需密钥即可剥掉 hmacSig 重写链）
     // 或 legacy 未签名——无法证明完整性 → 不可复验（黄），不再静默跳过
     foundUnverifiable = true;
+    noteUnverifiable(0, genesisEntry, 'genesis-signature-stripped');
   }
 
   for (let i = 1; i < entriesToCheck.length; i++) {
@@ -399,6 +466,7 @@ export function checkHistoryChainDetailed(dataDir?: string, maxEntries?: number)
     // 报告区分: verified（链上） / legacy（旧格式标记） / unverified（无链字段）。
     if (curr.prevHash == null || curr.prevHash === 'unknown') {
       foundUnverifiable = true;
+      noteUnverifiable(i, curr, 'no-prevhash');
       continue;
     }
 
@@ -416,6 +484,7 @@ export function checkHistoryChainDetailed(dataDir?: string, maxEntries?: number)
         // git 路径或 ~/.sofagent-key 已漂移，无法复现写入时签名 →
         // 属历史证据不可复验（黄），非篡改，不报「链断裂/篡改」。
         foundUnverifiable = true;
+        noteUnverifiable(i, curr, 'v2-prevhash-drift');
       } else {
         // 无环境指纹的旧算法 prevHash 不匹配：环境无关，属真·篡改（红）。
         return { status: 'tampered', index: i, detail: `历史条目 ${i} prevHash 不匹配（旧算法，环境无关），疑似内容被篡改` };
@@ -452,10 +521,12 @@ export function checkHistoryChainDetailed(dataDir?: string, maxEntries?: number)
               }
               // 指纹不一致（hostname/git 路径/dataDir/密钥漂移）→ 不可复验（黄）
               foundUnverifiable = true;
+              noteUnverifiable(i, curr, 'v2-hmac-fingerprint-drift');
             } else {
               // hashVersion=2 但条目未记录 envFingerprint（旧版写入的 v2 条目）：
               // 无法区分「篡改」与「漂移」→ 不可复验（黄）
               foundUnverifiable = true;
+              noteUnverifiable(i, curr, 'v2-hmac-no-fingerprint');
             }
           } else {
             // hashVersion 未定义/非2（无指纹但用了 stable 签名）：环境无关，HMAC 不匹配 = 内容被改 → tampered（红）
@@ -464,19 +535,42 @@ export function checkHistoryChainDetailed(dataDir?: string, maxEntries?: number)
         } else {
           // 旧条目（无 hmacAlgo）：写入侧用内存 key 顺序签名，读侧无法复现 → 归为不可复验（黄）
           foundUnverifiable = true;
+          noteUnverifiable(i, curr, 'legacy-hmac-unreproducible');
         }
       }
     } else if (keyAvailable && hmacKey && !curr.hmacSig) {
       // 密钥在场但条目无签名：签名被整链剥离伪装 legacy / legacy 未签名条目
       // ——无法证明完整性 → 不可复验（黄），不再静默放行（防签名剥离攻击）
       foundUnverifiable = true;
+      noteUnverifiable(i, curr, 'signature-stripped');
     }
   }
 
   if (foundUnverifiable) {
+    // v1.4.9 G-5：黄色 verdict **必须定位到具体记录**。
+    // 旧实现返回一段静态文案 ⇒ `(undefined)`（全量校验）与 `(…, 100)`（截断窗口）两种坏输入
+    // 输出**逐字相同**，用户无从得知「是哪一条 / 什么时候 / 为什么」。现在带：
+    //   ① 原因码集合（去重）——说清「哪几类」问题；
+    //   ② 逐条定位串（序号 + 时间戳 + prevHash 前缀 + 原因码，最多 5 条，其余计数）——
+    //      序号是**全量**序号（已加回窗口偏移）；
+    //   ③ 校验窗口说明（仅在发生截断时出现）——解释「为什么只报了这些」。
+    // 判定本身零改动：走到这里与走到这里的时机、以及 status 的取值，都还是原逻辑。
+    const reasonKinds = [...new Set(unverifiableRecords.map((r) => r.reason))];
+    const LOCATE_LIMIT = 5;
+    const located = unverifiableRecords.slice(0, LOCATE_LIMIT).map(describeUnverifiable).join('；');
+    const locatedMore =
+      unverifiableRecords.length > LOCATE_LIMIT
+        ? `；…另有 ${unverifiableRecords.length - LOCATE_LIMIT} 条`
+        : '';
+    const windowNote =
+      windowOffset > 0
+        ? `（校验窗口：最近 ${maxEntries} 条，全量 ${entries.length} 条）`
+        : '';
     return {
       status: 'unverifiable',
-      detail: '部分历史段无法复验（含无 prevHash 的 legacy 条目 / 密钥在场但条目无签名（疑似签名剥离或 legacy 条目）/ v2 含环境指纹条目因 ~/.sofagent-key 或环境指纹漂移），属历史证据不可复验，非篡改',
+      detail:
+        `部分历史段无法复验（含无 prevHash 的 legacy 条目 / 密钥在场但条目无签名（疑似签名剥离或 legacy 条目）/ v2 含环境指纹条目因 ~/.sofagent-key 或环境指纹漂移），属历史证据不可复验，非篡改` +
+        `；原因：${reasonKinds.join(' / ')}；不可复验记录 ${unverifiableRecords.length} 条，定位：${located}${locatedMore}${windowNote}`,
     };
   }
 

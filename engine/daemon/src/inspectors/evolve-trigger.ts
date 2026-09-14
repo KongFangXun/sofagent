@@ -7,7 +7,9 @@
 // 数据流：
 //   failure-ledger.jsonl → getRepeatedFailures(3) → optimize() → runEvolve
 //
-// 如果 evolve-gate CLI 不可用 → info（不告警）
+// 如果 evolve 能力不可用 → info（不告警）
+//   （v1.4.9 G-11：旧注释写的 `evolve-gate CLI` 是一个从未存在的二进制名——一次过宽全局替换的产物；
+//     native 模式内置实现恒可用，能力不可用只在 SOFAGENT_EVOLVE_GATE=cli 且外部 CLI 缺位时成立）
 // 如果有 ≥1 个聚类达到阈值但触发失败 → warning
 // ============================================================
 

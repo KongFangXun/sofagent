@@ -11,7 +11,7 @@
 
 import { execFileSync } from 'child_process';
 import { existsSync, readFileSync, writeFileSync, renameSync, copyFileSync, rmSync, mkdirSync } from 'fs';
-import { join, dirname } from 'path';
+import { join, dirname, resolve } from 'path';
 
 /** 历史最优记录（JSON——score 单调可比即可） */
 export interface GateHistory {
@@ -37,7 +37,14 @@ export interface GateVerdict {
 export interface NativeGateOptions {
   /** 工作目录（技能目录父级——历史与备份落此） */
   workDir: string;
-  /** 待验证技能目录（staging 副本——adopt 时替换正式位） */
+  /**
+   * 待验证技能文件路径（**staging 副本**——adopt 时替换正式位）。
+   *
+   * 🔴 **必须与 `targetDir` 不同路径**（v1.4.9 G-17）。若调用方把同一路径同时传进
+   * `candidateDir` 与 `targetDir`，adopt 分支的「删目标 → 拷候选」就会变成**自指删除**：
+   * 先删掉 live 文件（它同时就是 candidate），再拿已删的源拷贝 ⇒ ENOENT + **live 永久丢失**。
+   * 本文件已改用无损替换（`replaceAtomically`）兜住该情形，但调用方仍应保持两路径分离。
+   */
   candidateDir: string;
   /** 正式技能目录 */
   targetDir: string;
@@ -102,8 +109,7 @@ export function runNativeGate(opts: NativeGateOptions): GateVerdict {
 
   if (score > history.bestScore) {
     // adopt：candidate 就位 + 历史更新
-    if (existsSync(opts.targetDir)) rmSync(opts.targetDir, { force: true });
-    copyFileSync(opts.candidateDir, opts.targetDir);
+    replaceAtomically(opts.candidateDir, opts.targetDir);
     bump(historyPath, { ...history, bestScore: score, updatedAt: new Date().toISOString() }, 'adopted');
     return { action: 'adopt', score, bestScore: history.bestScore, basis: `分数 ${score} > 历史最优 ${history.bestScore}——采纳` };
   }
@@ -111,6 +117,40 @@ export function runNativeGate(opts: NativeGateOptions): GateVerdict {
   revertFrom(backupDir, opts.targetDir);
   bump(historyPath, history, 'reverted');
   return { action: 'revert', score, bestScore: history.bestScore, basis: `分数 ${score} ≤ 历史最优 ${history.bestScore}——回滚` };
+}
+
+/**
+ * **无损替换**：把 `src` 的内容送到 `dst`（v1.4.9 G-17）。
+ *
+ * 🔴 为什么不能用 `rmSync(dst)` + `copyFileSync(src, dst)`：当 `src === dst`（调用方把
+ * 同一路径同时传成 candidate 与 target）时，删目标就是**删源**——随后的拷贝必然 ENOENT，
+ * 而 live 文件已经没了。实测复现（v1.4.8 实态）：调用后目录里只剩 `SKILL.md.gate-bak`，
+ * `SKILL.md` 消失，错误 `ENOENT: copyfile 'SKILL.md' -> 'SKILL.md'`。
+ *
+ * 两条不变式：
+ *   ① **同路径 ⇒ no-op**（文件已在正式位，无需搬运，绝不删）；
+ *   ② 异路径 ⇒ 先写同目录临时文件，再 `renameSync` 覆盖 —— 同一文件系统内 rename 是
+ *      原子替换，不存在「目标已删、新内容未到」的窗口（旧实现在该窗口里崩溃即数据丢失）。
+ *
+ * @param src 源文件（候选）
+ * @param dst 目标文件（正式位）
+ */
+function replaceAtomically(src: string, dst: string): void {
+  if (resolve(src) === resolve(dst)) return; // 不变式①：就地演化，文件已在正式位
+  const tmp = `${dst}.gate-tmp-${process.pid}`;
+  try {
+    copyFileSync(src, tmp); // 先把新内容安全落到目标同目录（同文件系统，rename 才可原子）
+    try {
+      renameSync(tmp, dst); // 不变式②：原子替换
+    } catch {
+      // 少数平台 rename 不覆盖已存在目标 —— 此时新内容已安全落在 tmp，退回「删旧 → 改名」
+      if (existsSync(dst)) rmSync(dst, { force: true });
+      renameSync(tmp, dst);
+    }
+  } catch (err) {
+    if (existsSync(tmp)) rmSync(tmp, { force: true }); // 不留半成品临时文件
+    throw err;
+  }
 }
 
 function revertFrom(backupDir: string, targetDir: string): void {

@@ -232,18 +232,19 @@ _main_loop() {
         fi
       fi
 
-      # 检测外部 gate CLI 兼容层是否可用（可选面；默认内置 native gate，无需外部依赖）
-      if ! command -v evolve-sleep &>/dev/null; then
-        # v1.2.1：不再追加到 daemon-notice.md，改写 daemon.log（健康报告由 health-reporter.ts 生成 JSON）
-        daemon_log "Evolve: 外部 gate CLI 兼容层不可用（可选面；默认内置 native gate，无需外部依赖）。eval.md 已积累 ${score_count} 条，触发条件已满足。"
-        return
-      fi
-
-      # 真正调用——通过 npx @sofagent/audit evolve-run
-      # v1.2.1：不再追加到 daemon-notice.md，改写 daemon.log
-      daemon_log "Evolve: eval.md 累积 ${score_count} 条，触发自进化"
-      npx @sofagent/audit evolve-run --input "${REPO_ROOT}/SKILL/SKILL.md" --output "${SOFAGENT_DATA}/skill-candidate.md" --scoring "$scoring_file" 2>>"$DAEMON_LOG"
-      date +%s > "$last_trigger"
+      # ── 旧 CLI 触发路径：**已废弃**（v1.4.9 G-11）——处置 = 显式明示废弃，不给死 CLI 编名字 ──
+      # 取证（本版实测）：
+      #   · 旧探活名 `evolve-sleep`：`command -v` 无命中，全仓无此可执行；
+      #   · 旧调用 `npx @sofagent/audit evolve-run …`：**死子命令**——实测「未知子命令: evolve-run」，
+      #     `sofagent-audit --help` 已把它列入 v1.5.0 移除项（`evolve-run → sofagent-evolve`）；
+      #   · 真实面：外部兼容层二进制 = `skillopt-sleep`（PyPI skillopt 0.2.0），自进化入口 =
+      #     `@sofagent/evolve` 的 bin（`sofagent-evolve` → dist/cli.js，native gate 内置）。
+      # 为什么是「明示废弃」而不是「静默 return」：旧版把两个都对不上真实面的名字写成
+      #   「可选面未安装」，于是「路径已死」被伪装成「条件未满足」——正是 G-11 的缺陷形态。
+      # 能力未丢：daemon 侧自进化由 `evolve-trigger.ts` inspector 承载
+      #   （调用 @sofagent/evolve 的 autoTriggerAll，走 native gate）；本 bash 段是 v1.2 前遗留形态。
+      daemon_log "Evolve: 旧 CLI 触发路径已废弃（v1.4.9 G-11）——探活名 evolve-sleep 无此可执行、调用名 '@sofagent/audit evolve-run' 无此子命令；自进化改由 evolve-trigger inspector / native gate 承载。eval.md 已积累 ${score_count} 条，触发条件已满足，但本路径不再动作。"
+      return
     }
     _trigger_evolve
 
