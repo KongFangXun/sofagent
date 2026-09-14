@@ -127,7 +127,7 @@
 
 > 💬 **sofagent 没有界面。** 装完之后，你不会看到任何窗口或网页。你通过你的 Agent（WorkBuddy / Codex / Claude Code）和 sofagent 对话——说一句话，它做完了告诉你结果在哪。语言就是界面，MCP 就是入口。详见 [设计哲学](./PHILOSOPHY.md)。
 
-> 📊 **部署后你会自动收到这些**：每周审计守护报告（拦截了多少次违规）、每月知识库增长报告（AI 掌握了多少实体）、每季度无 FDE 对照报告（裸模型 vs sofagent 回答对比）、扩容预警。这些是 sofagent 持续存在感的证明——由引擎自动生成推送，不需要人工干预。详见 [FDE/GUIDE.md §5.9 离场](../FDE/GUIDE.md#59-离场五大能力)。
+> 📊 **部署后可自动收到这些**：**审计守护日报**（今天拦了多少次违规）——由引擎自动生成推送，不需要人工干预（配好 `data/config/audit-report.json` 的 `target` + `schedule` 即生效）。**周报 / 月报 / 季度无 FDE 对照报告仍在排期中**——配置项的 `weekly` / `monthly` 是预留值，实现侧目前**仅 daily 实装**（自陈见 `engine/daemon/src/webhook/audit-report-push.ts:26`）；**扩容预警尚未实现**。详见 [FDE/GUIDE.md §5.9 离场](../FDE/GUIDE.md#59-离场五大能力)。
 
 ### 两种装法（v1.2.0）
 
