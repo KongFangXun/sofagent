@@ -21,12 +21,11 @@
 **前置**：sofagent 仓库已 `npm install` + 构建（`engine/*/dist/` 存在）。
 
 ```bash
-# 在 sofagent 仓库根目录运行（脚本自动定位仓库）
-cd /Users/kongfangxun/WorkBuddy/sofagent
+# 在 sofagent 仓库根目录运行（脚本自动向上探测定位仓库）
 node playbook/federation-e2e.mjs
 
-# 或显式指定仓库路径
-SOFAGENT_REPO=/Users/kongfangxun/WorkBuddy/sofagent node playbook/federation-e2e.mjs
+# 或从任意目录显式指定仓库路径
+SOFAGENT_REPO="$(pwd)" node playbook/federation-e2e.mjs
 ```
 
 无需管理员权限、无需网络外连（全程 127.0.0.1 loopback）、无需双设备。
