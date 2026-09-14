@@ -759,7 +759,6 @@ fi
 # ── v1.1.0: TencentDB Memory 集成（--with-memory flag）──
 if [[ "${WITH_MEMORY:-0}" == "1" ]]; then
   MEMORY_DIR="$HOME/.openclaw/memory-tdai"
-  CONFIG_PATH="${TARGET}/.sofagent/config.yml"
 
   echo ""
   echo "  📝 配置 TencentDB Memory 集成..."
@@ -773,15 +772,12 @@ if [[ "${WITH_MEMORY:-0}" == "1" ]]; then
     echo "     persona.md 将从 $MEMORY_DIR 自动同步"
   fi
 
-  # 写入 config.yml 开启 memory_sync
-  if [[ -f "$CONFIG_PATH" ]]; then
-    if [[ "$(uname)" == "Darwin" ]]; then
-      sed -e 's/memory_sync: false/memory_sync: true/g' "$CONFIG_PATH" > "${CONFIG_PATH}.tmp" && mv "${CONFIG_PATH}.tmp" "$CONFIG_PATH"
-    else
-      sed -i 's/memory_sync: false/memory_sync: true/g' "$CONFIG_PATH"
-    fi
-    echo "  ✅ config.yml memory_sync 已开启"
-  fi
+  # 本分支**不写 config.yml**（P2-24）：`memory_sync` 在 config-loader.ts:90 是对象
+  # （`memory_sync?: { persona_sources?: string[] }`），不存在可改的布尔键——旧版
+  # `sed 's/memory_sync: false/memory_sync: true/'` 的目标字面量**全仓零命中** ⇒ 恒 no-op，
+  # 却打印「✅ config.yml memory_sync 已开启」（假绿），故整块删除。
+  # `--with-memory` 的真实开关 = 上面 $MEMORY_DIR 的存在性检测 + memory-sync 三级解析
+  # （env SOFAGENT_PERSONA_SOURCE > config memory_sync.persona_sources > 内置默认路径）。
 fi
 
 # ════════════════════════════════════════
