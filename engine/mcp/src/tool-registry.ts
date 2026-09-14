@@ -2012,7 +2012,7 @@ export const TOOLS: ToolDef[] = [
       required: ['identity', 'kind'],
     },
     // v1.4.8 条目 5 迁移：查表分发
-    handler: async (args) => { if (!args.identity || typeof args.identity !== 'object') { return { error: 'Missing required argument: identity' }; } if (args.kind !== 'pc' && args.kind !== 'node' && args.kind !== 'appliance') { return { error: 'Invalid kind (pc/node/appliance)' }; } const drr = await deviceRegister({ identity: args.identity as Record<string, unknown>, kind: args.kind, ...(Array.isArray(args.capabilities) ? { capabilities: args.capabilities as string[] } : {}), ...(typeof args.tenant === 'string' ? { tenant: args.tenant } : {}) }); return { ...drr, isError: !drr.data.ok }; },
+    handler: async (args) => { if (!args.identity || typeof args.identity !== 'object') { return { error: 'Missing required argument: identity' }; } if (!args.kind || (args.kind !== 'pc' && args.kind !== 'node' && args.kind !== 'appliance')) { return { error: 'Invalid kind (pc/node/appliance)' }; } const drr = await deviceRegister({ identity: args.identity as Record<string, unknown>, kind: args.kind, ...(Array.isArray(args.capabilities) ? { capabilities: args.capabilities as string[] } : {}), ...(typeof args.tenant === 'string' ? { tenant: args.tenant } : {}) }); return { ...drr, isError: !drr.data.ok }; },
   },
   {
     // v1.4.9 G9（T1）：设备清单查询——只含已验签设备，在线态实时判定（T12 派单前置）
