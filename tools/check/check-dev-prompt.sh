@@ -745,7 +745,7 @@ echo "  ⚠️  警告: $WARNINGS"
 echo "  📋 待新建/待归档: $PLANNED"
 echo "  🗑  已退场: $RETIRED"
 if [ "$DRIFT" -gt 0 ] || [ "$LEGACY" = "1" ]; then
-  echo "  🕘 历史漂移: $DRIFT（冻结档案，不计失败）"
+  echo "  🕘 历史漂移: ${DRIFT}（冻结档案，不计失败）"
 fi
 echo "  🔄 跳过: $SKIPPED"
 
