@@ -1091,6 +1091,86 @@ else
   ERRORS=$((ERRORS + 1))
 fi
 
+
+# ── 20b. 五域**域内子项**自洽（§20 只校验五域之和；域内子项失谐同样抓不住）──
+# 病根：曾出现「域题号之和 = registry = 95」通过，但某域的子项 ×N 之和 ≠ 该域题号
+#   （实测 D5 题号 16 而子项 5+3+6=14）——§20 的口径看不见这类失谐，故补本断言。
+# 判定：逐域解析该域体内「×N」并求和，须 == 域题号；域数≠5 或某域零子项 ⇒ FAIL（守卫空转防御）。
+_arch_break=$(node -e '
+const fs=require("fs");
+const s=fs.readFileSync("docs/ARCHITECTURE.md","utf8");
+const i=s.indexOf("subgraph D1"), j=s.indexOf("```", i);
+if(i<0||j<0){console.log("EXTRACT_FAIL");process.exit(0);}
+const seg=s.slice(i,j);
+const doms=[...seg.matchAll(/subgraph D(\d)\["[^"]*?（(\d+)）/g)].map(m=>({d:+m[1],n:+m[2]}));
+if(doms.length!==5){console.log("EXTRACT_FAIL");process.exit(0);}
+const bad=[];
+for(const d of doms){
+  const st=seg.indexOf("subgraph D"+d.d), en=seg.indexOf("subgraph D"+(d.d+1));
+  const body=seg.slice(st, en>0?en:seg.length);
+  const subs=[...body.matchAll(/×(\d+)/g)].map(m=>+m[1]);
+  if(subs.length===0){console.log("EXTRACT_FAIL");process.exit(0);}
+  const sum=subs.reduce((a,b)=>a+b,0);
+  if(sum!==d.n) bad.push("D"+d.d+" 题号 "+d.n+" ≠ 子项和 "+sum+"（"+subs.join("+")+"）");
+}
+console.log(bad.length? ("BAD="+bad.join(" | ")) : "OK");
+' 2>/dev/null || true)
+case "$_arch_break" in
+  OK) ASSERTS=$((ASSERTS + 1)); echo "  ✓ 五域域内子项自洽：每域「×N」之和 == 该域题号" ;;
+  EXTRACT_FAIL|"") ASSERTS=$((ASSERTS + 1)); echo "  ❌ 五域域内子项提取残缺——拒绝把「读不到」当成「自洽」"; ERRORS=$((ERRORS + 1)) ;;
+  BAD=*) ASSERTS=$((ASSERTS + 1)); echo "  ❌ 五域域内失谐：${_arch_break#BAD=}"; ERRORS=$((ERRORS + 1)) ;;
+esac
+
+# ── 21. 文档视角数声称自洽（v1.4.9 收口 · 防「N 视角」口径漂移）──
+echo "=== 21. 文档视角数声称自洽（声称 ∈ {常规发版, 全量基线}）==="
+# 门禁目的：公开文档对 fresh-eyes 视角数的声称，曾出现既非「常规发版」也非「全量基线」的
+#   中间态数字（16）——读者无从判断该信哪个。本步把「声称 ∈ 两个合法口径」从人工记忆
+#   升级为可执行约束。
+# 🔴 两个口径**动态提取**，禁写死（维度脚本铁律 2——写死计数必随版本演进漂）：
+#   FE_TOTAL   = playbook/fresh-eyes-review.md 的真视角标题数（「### …视角N [n]：」形态）
+#   FE_REGULAR = 同文件分层表的「常规发版（1-N）」
+# 🔴 扫描面口径：只判**同时含 `fresh-eyes` 与「N 视角」**的行——不含 fresh-eyes 的
+#   「N 视角」是别的东西（如 Dashboard 面板数），纳入即成假阳性。
+# 🔴 守卫空转防御（本仓反复出现的缺陷形态）：口径任一提取为空、或全仓零条声称被读到
+#   ⇒ FAIL——「读不到」不等于「零违规」，静默通过比没有这道守卫更危险。
+FE_TOTAL=$(grep -cE '^### .*视角[一二三四五六七八九十]+ \[' playbook/fresh-eyes-review.md 2>/dev/null || true)
+FE_REGULAR=$(grep -oE '常规发版（1-[0-9]+）' playbook/fresh-eyes-review.md 2>/dev/null | head -1 | sed -E 's/.*1-([0-9]+).*/\1/' || true)
+FE_RAW=$(node -e '
+const fs=require("fs"),cp=require("child_process");
+const total=process.argv[1], regular=process.argv[2];
+let files=[];
+try{ files=cp.execSync("git ls-files \"*.md\"").toString().trim().split("\n"); }catch(e){ console.log("SCAN_FAIL"); process.exit(0); }
+files=files.filter(f=>f && (/^[^\/]+\.md$/.test(f) || /^docs\//.test(f)) && !/^(docs\/(changelog|archive|evidence)\/|CONTRIBUTING\.md$)/.test(f));
+let claims=0; const viol=[];
+for(const f of files){
+  let inf=false;
+  for(const [i,l] of fs.readFileSync(f,"utf8").split("\n").entries()){
+    if(/^\s*```/.test(l)){inf=!inf;continue;} if(inf)continue;
+    if(!/fresh-eyes/.test(l))continue;
+    for(const m of (l.match(/(\d+)\s*视角/g)||[])){
+      const n=m.match(/[0-9]+/)[0]; claims++;
+      if(n!==total && n!==regular) viol.push(f+":"+(i+1)+" 声称 "+n+" 视角");
+    }
+  }
+}
+console.log("CLAIMS="+claims); viol.forEach(v=>console.log("VIOL="+v));
+' "$FE_TOTAL" "$FE_REGULAR" 2>/dev/null || true)
+FE_N=$(printf '%s\n' "$FE_RAW" | sed -n 's/^CLAIMS=//p')
+FE_VIOL=$(printf '%s\n' "$FE_RAW" | sed -n 's/^VIOL=//p')
+if [ -z "$FE_TOTAL" ] || [ -z "$FE_REGULAR" ] || [ -z "$FE_N" ]; then
+  ASSERTS=$((ASSERTS + 1)); echo "  ❌ §21 口径基线/扫描提取失败（TOTAL='${FE_TOTAL}' REGULAR='${FE_REGULAR}'）——守卫空转，拒绝静默通过"
+  ERRORS=$((ERRORS + 1))
+elif [ "$FE_N" -eq 0 ]; then
+  ASSERTS=$((ASSERTS + 1)); echo "  ❌ §21 扫描面失效：全仓零条 fresh-eyes 视角声称被读到——守卫空转，拒绝静默通过"
+  ERRORS=$((ERRORS + 1))
+elif [ -n "$FE_VIOL" ]; then
+  ASSERTS=$((ASSERTS + 1)); echo "  ❌ §21 视角数口径漂移（合法口径仅：常规 ${FE_REGULAR} / 全量 ${FE_TOTAL}）——"
+  printf '%s\n' "$FE_VIOL" | sed 's/^/     /'
+  ERRORS=$((ERRORS + 1))
+else
+  ASSERTS=$((ASSERTS + 1)); echo "  ✓ §21 全仓 ${FE_N} 条 fresh-eyes 视角声称，均 ∈ {常规 ${FE_REGULAR}, 全量 ${FE_TOTAL}}"
+fi
+
 if [ "$ERRORS" -gt 0 ]; then
   echo "发现 ${ERRORS} 个问题"
 else

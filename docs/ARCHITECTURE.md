@@ -247,20 +247,21 @@ graph TB
         B2["后训模块 ×12（train_budget / train_submit / train_doctor / train_dryrun /<br/>train_report / train_status / train_list / train_diagnose /<br/>train_deliverable / train_serve / train_cloud / train_compliance）"]
         B3["模型注册挂载 ×3"]
     end
-    subgraph D3["三 · 审计·治理·运维（18）——约束层的神经系统"]
+    subgraph D3["三 · 审计·治理·运维（20）——约束层的神经系统"]
         C1["审计 ×7（run_audit / audit_file / audit_data_change /<br/>audit_trail / list_rules / stats / data_sovereignty_report）"]
         C2["HITL·快照 ×3"]
         C3["运维监控 ×6（daemon_status / health_check /<br/>worklog_query / cost_query / agent_identity / loop_debug）"]
         C4["语料导出 ×1（corpus_export）<br/>+ 治理推送 ×1（data_push）"]
+        C5["治理与可见性 ×2<br/>（contribution_query / list_capabilities）"]
     end
-    subgraph D4["四 · 知识资产（17）——越用越厚的组织记忆"]
+    subgraph D4["四 · 知识资产（16）——越用越厚的组织记忆"]
         E1["本体数据 ×11"]
-        E2["反思经验 ×5 + 知识检索 ×1"]
+        E2["反思经验 ×4 + 知识检索 ×1"]
     end
-    subgraph D5["五 · 进化与能力市场（16）——评测胜出才上岗"]
+    subgraph D5["五 · 进化与能力市场（15）——评测胜出才上岗"]
         F1["评测与验收 ×5"]
-        F2["A/B ×2 + skill 优化 ×1"]
-        F3["能力市场 ×8（commons_publish / commons_search /<br/>commons_invoke / commons_rate / commons_retire /<br/>commons_harvest_rule + list_capabilities / contribution_query）"]
+        F2["A/B ×2 + skill 优化 ×1 + refine ×1"]
+        F3["能力市场 ×6（commons_publish / commons_search /<br/>commons_invoke / commons_rate / commons_retire /<br/>commons_harvest_rule）"]
     end
     D1 -->|"① 业务流提交执行"| D3
     D3 -->|"② 逐次审计留痕"| D4
@@ -272,7 +273,7 @@ graph TB
 
 > 闭环读法：实线 = 主循环（执行→审计→沉淀→晋升→更强的执行面）；虚线 = 晋升回写与语料飞轮。
 >
-> ⚠️ **数字口径（v1.4.9 重算）**：五域条目数之和 **25 + 19 + 18 + 17 + 16 = 95**，与图题 95 及 registry 实数**三处自洽**（以 `engine/mcp/src/tool-registry.ts` 的 `TOOLS` 数组为唯一权威源，逐个工具名分桶；分桶依据是**业务职能**，不是 registry 的 `roles` 标签——见上方「两套标签不要混用」）。**自洽由 `tools/check/check-docs.sh` §20 断言**（提取本图五域数字求和，比对图题与 registry 实数；提取为空 ⇒ 判红，防守卫空转）。重算记录：改前五域题号为 16/15/17/17/15（和 80 ≠ 图题 95，差 15），且 `后训模块 ×8` 与实数 `train_*` = 12 不符——两处同批纠正。
+> ⚠️ **数字口径（v1.4.9 重算）**：五域条目数之和 **25 + 19 + 20 + 16 + 15 = 95**，与图题 95 及 registry 实数**三处自洽**（以 `engine/mcp/src/tool-registry.ts` 的 `TOOLS` 数组为唯一权威源，逐个工具名分桶；分桶依据是**业务职能**，不是 registry 的 `roles` 标签——见上方「两套标签不要混用」）。**自洽由 `tools/check/check-docs.sh` §20 断言**（提取本图五域数字求和，比对图题与 registry 实数；提取为空 ⇒ 判红，防守卫空转）。重算记录：改前五域题号为 16/15/17/17/15（和 80 ≠ 图题 95，差 15），且 `后训模块 ×8` 与实数 `train_*` = 12 不符——两处同批纠正；**回填 2 枚此前未归域的工具**（`contribution_query` 治理 KPI 贡献度报表、`list_capabilities` 能力发现元工具，见各自 registry 描述——均属「审计·治理·运维」面，落 C5）。
 
 
 | 版本 | 关键能力 |
