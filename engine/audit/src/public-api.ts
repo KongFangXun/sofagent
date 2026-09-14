@@ -166,3 +166,19 @@
 // v1.4.8 扩展三：并发 Git 纪律守卫（orchestrator/daemon 执行侧消费）
 // ============================================================
 /* @public */ export { checkPathspecDiscipline, detectForeignStaged, snapshotForTurn, verifyNoConcurrentWrite } from './concurrent-git-discipline';
+
+// ============================================================
+// v1.4.9 G5b（T4）：连接器注册面（MCP connector_register /
+// connector_list 消费——准入复用 plugin-gate 来源白名单）
+// ============================================================
+/* @public */ export {
+  registerConnector,
+  listConnectors,
+  getConnector,
+  loadConnectorPolicy,
+} from './cli/plugin-gate';
+/* @public */ export type {
+  ConnectorKind,
+  ConnectorEntry,
+  ConnectorRegisterResult,
+} from './cli/plugin-gate';

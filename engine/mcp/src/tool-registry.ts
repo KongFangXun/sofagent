@@ -31,6 +31,10 @@ import { deviceRegister } from './tools/device-register';
 import { deviceList } from './tools/device-list';
 import { deviceDataQuery } from './tools/device-data-query';
 import { deviceDataPush } from './tools/device-data-push';
+// v1.4.9 G5b/G1（T4/T5）：连接器注册面 + workflow 模板导出导入
+import { connectorRegister, connectorList } from './tools/connector-list';
+import { workflowExport } from './tools/workflow-export';
+import { workflowImport } from './tools/workflow-import';
 import { worklogQuery } from './tools/worklog-query';
 import { costQuery } from './tools/cost-query';
 import { listAgentsTool } from './tools/list-agents';
@@ -2066,5 +2070,78 @@ export const TOOLS: ToolDef[] = [
     },
     // v1.4.8 条目 5 迁移：查表分发
     handler: async (args) => { if (!args.identity || typeof args.identity !== 'object') { return { error: 'Missing required argument: identity' }; } if (!args.category || typeof args.category !== 'string') { return { error: 'Missing required argument: category' }; } if (typeof args.payload !== 'string') { return { error: 'Missing required argument: payload' }; } const dpr = await deviceDataPush({ identity: args.identity as Record<string, unknown>, category: args.category, payload: args.payload, ...(typeof args.destination === 'string' ? { destination: args.destination } : {}) }); return { ...dpr, isError: dpr.data.isError }; },
+  },
+  {
+    // v1.4.9 G5b（T4）：连接器注册——准入复用插件来源白名单（fail-closed）
+    name: 'connector_register',
+    roles: ['ops'],
+    description: '注册第三方连接器（G5b 准入面）：来源过 plugin-gate 白名单校验（Git URL / 主机 / 本地路径，白名单外拒绝）→ 注册表落库（config/connectors.json，租户隔离 + 同租户重名拒绝）→ 审计留痕。与工具注册分列——连接器清单见 connector_list。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        name: { type: 'string', description: '连接器标识（租户内唯一，1-64 位字母数字开头词法）' },
+        kind: { type: 'string', enum: ['db', 'rest', 'saas'], description: '连接器类型' },
+        source: { type: 'string', description: '来源串（Git URL / 主机 / 本地路径——须在企业白名单内）' },
+        capabilities: { type: 'array', items: { type: 'string' }, description: '能力标签（发现面过滤维度）' },
+        tenant: { type: 'string', description: '归属租户（缺省 default）' },
+        endpoint: { type: 'string', description: '接入端点回显（不含凭证）' },
+      },
+      required: ['name', 'kind', 'source'],
+    },
+    // v1.4.8 条目 5 迁移：查表分发
+    handler: async (args) => { if (!args.name || typeof args.name !== 'string') { return { error: 'Missing required argument: name' }; } if (!args.kind || (args.kind !== 'db' && args.kind !== 'rest' && args.kind !== 'saas')) { return { error: 'Invalid kind (db/rest/saas)' }; } if (!args.source || typeof args.source !== 'string') { return { error: 'Missing required argument: source' }; } const crr = await connectorRegister({ name: args.name, kind: args.kind, source: args.source, ...(Array.isArray(args.capabilities) ? { capabilities: args.capabilities as string[] } : {}), ...(typeof args.tenant === 'string' && args.tenant ? { tenant: args.tenant } : {}), ...(typeof args.endpoint === 'string' && args.endpoint ? { endpoint: args.endpoint } : {}) }); return { ...crr, isError: crr.data.isError }; },
+  },
+  {
+    // v1.4.9 G5b（T4）：连接器发现——与 tool-registry 分列铁律
+    name: 'connector_list',
+    roles: ['ops'],
+    description: '连接器发现（G5b 目录面）：按类型（db/rest/saas）/ 主机 / 能力标签过滤，租户隔离（只返回请求租户条目）。清单只含连接器——与 MCP 工具清单（TOOLS）分列，绝不混列。只读。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        tenant: { type: 'string', description: '租户隔离键（缺省 default）' },
+        kind: { type: 'string', enum: ['db', 'rest', 'saas'], description: '类型过滤' },
+        host: { type: 'string', description: '来源过滤（主机名 / 本地路径前缀）' },
+        capability: { type: 'string', description: '能力标签过滤' },
+      },
+    },
+    // v1.4.8 条目 5 迁移：查表分发
+    handler: async (args) => connectorList({ ...(typeof args.tenant === 'string' && args.tenant ? { tenant: args.tenant } : {}), ...(args.kind === 'db' || args.kind === 'rest' || args.kind === 'saas' ? { kind: args.kind } : {}), ...(typeof args.host === 'string' && args.host ? { host: args.host } : {}), ...(typeof args.capability === 'string' && args.capability ? { capability: args.capability } : {}) }),
+  },
+  {
+    // v1.4.9 G1（T5）：workflow 模板导出——五件套 + 血缘 + 跨租户剥离
+    name: 'workflow_export',
+    roles: ['agent'],
+    description: 'workflow 模板导出（G1 五件套）：workflow.yml + 本体数据 + MD 家族 + manifest（sha256 完整性）+ 血缘元数据（源企业/源版本/fork 层级/祖先链）。跨租户缺省剥离 private / result-only 节点（G6 联动，剥离计数入 manifest）。export 事件入血缘谱系 + 审计挂链。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        workflow_id: { type: 'string', description: '源 workflow 标识' },
+        enterprise: { type: 'string', description: '源企业标识（血缘元数据——导入方回溯锚）' },
+        cross_tenant: { type: 'boolean', description: '跨租户分发（缺省 true——private/result-only 剥离；同租户传 false 全量）' },
+        actor: { type: 'string', description: '执行者（审计留痕）' },
+      },
+      required: ['workflow_id'],
+    },
+    // v1.4.8 条目 5 迁移：查表分发
+    handler: async (args) => { if (!args.workflow_id || typeof args.workflow_id !== 'string') { return { error: 'Missing required argument: workflow_id' }; } const wer = await workflowExport({ workflow_id: args.workflow_id, ...(typeof args.enterprise === 'string' && args.enterprise ? { enterprise: args.enterprise } : {}), ...(typeof args.cross_tenant === 'boolean' ? { cross_tenant: args.cross_tenant } : {}), ...(typeof args.actor === 'string' && args.actor ? { actor: args.actor } : {}) }); return { ...wer, isError: wer.data.isError }; },
+  },
+  {
+    // v1.4.9 G1（T5）：workflow 模板导入——三闸 + 血缘回流
+    name: 'workflow_import',
+    roles: ['agent'],
+    description: 'workflow 模板导入（G1 三闸 fail-closed）：结构闸（manifest + 必要件 + sha256 完整性核对）→ schema 校验门（zod 结构 + 可见性枚举 + cron 语法，与 CRUD 同门）→ 落地闸（冲突拒绝）。跨企业包检出 private/result-only 节点整包拒绝（G6 加固）。血缘回流（import 事件 + 祖先链接入）+ 本体合并（本地优先）。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        bundle: { type: 'object', description: '导出包整体（workflow_export 返回的 bundle 对象——manifest + workflow.yml + 伴生件）' },
+        imported_as: { type: 'string', description: '落地 workflow id（缺省 = 源 id + \'-imported\'）' },
+        owner: { type: 'string', description: '落地 owner（trunk 直改权持有人——缺省 actor）' },
+        actor: { type: 'string', description: '执行者（审计留痕）' },
+      },
+      required: ['bundle'],
+    },
+    // v1.4.8 条目 5 迁移：查表分发
+    handler: async (args) => { if (!args.bundle || typeof args.bundle !== 'object') { return { error: 'Missing required argument: bundle' }; } const wir = await workflowImport({ bundle: args.bundle as Record<string, unknown>, ...(typeof args.imported_as === 'string' && args.imported_as ? { imported_as: args.imported_as } : {}), ...(typeof args.owner === 'string' && args.owner ? { owner: args.owner } : {}), ...(typeof args.actor === 'string' && args.actor ? { actor: args.actor } : {}) }); return { ...wir, isError: wir.data.isError }; },
   },
 ];
