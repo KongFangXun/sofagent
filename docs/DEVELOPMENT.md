@@ -84,7 +84,7 @@
 
 > 💡 **措辞心理学**：铁律不只是「写对规则」，更是「写到 AI 真的听」。Superpowers（GitHub 23.9 万星 Skill 项目）2.8 万次对话实测——强措辞（必须/绝无例外）让 AI 服从率从 33% 提升到 72%。LLM 对强语气的注意力权重高于弱语气。写 Skill 时，关键铁律用最强可用措辞。
 
-> 💡 **信息架构设计**：Skill 的 `description` 字段只写触发场景（"何时用这个 Skill"），绝不写执行步骤。实测发现如果步骤写进描述，AI 会照着摘要偷懒跳过正文——改为纯触发条件后，AI 才老老实实读完全文。措辞心理学管"强度"，信息架构管"结构"——两者是对称维度。（来源：Superpowers 2.8 万次对话实测）
+> 💡 **信息架构设计**：Skill 的 `description` 字段只写触发场景（「何时用这个 Skill」），绝不写执行步骤。实测发现如果步骤写进描述，AI 会照着摘要偷懒跳过正文——改为纯触发条件后，AI 才老老实实读完全文。措辞心理学管「强度」，信息架构管「结构」——两者是对称维度。（来源：Superpowers 2.8 万次对话实测）
 
 | 文件 | 何时加载 | 干什么 |
 |------|------|------|
@@ -111,8 +111,8 @@ Skill 的核心不是写执行步骤，而是划定**决策边界**。一个好 
 | 问题 | 写法 | 反例 |
 |------|------|------|
 | 什么时候启动 | 纯触发条件（场景/关键词/前置状态） | 把执行步骤写进 description——AI 会偷懒不读正文 |
-| 什么时候绝对不能调用 | 硬排除条件——依赖未就绪/数据过期/权限不足 | "建议不调用"——弱语气 AI 会忽视 |
-| 怎样算完成 | 显式 exit 条件——产出物/验证标准/交付动作 | "任务完成"——太模糊，AI 不知道什么时候停 |
+| 什么时候绝对不能调用 | 硬排除条件——依赖未就绪/数据过期/权限不足 | 「建议不调用」——弱语气 AI 会忽视 |
+| 怎样算完成 | 显式 exit 条件——产出物/验证标准/交付动作 | 「任务完成」——太模糊，AI 不知道什么时候停 |
 
 **事实约束三原则**：① 标注哪些内部数据存在过期风险、② 哪些业务动作必须实时核验、③ 查不到确切凭证必须拒答而非脑补。审计模块的 A9 中文注入检测部分覆盖此方向。
 
@@ -241,7 +241,7 @@ CLI 入口：`sofagent-daemon create-usb-key --role --target --platform`（写�
 
 #### 两条执行路径与降级链
 
-编排模块有两条执行路径，新代码应优先走 StateGraph（v1.1.3+，主推）：入口 `runLoopGraph()` / `sofagent-orchestrator loop --task`，LangGraph 四节点状态机 + checkpoint（`.sofagent/checkpoint/`，断点续跑）+ HITL（human_confirm 节点，`loop --resume` 可恢复）。路径一 compose（v1.0.6+，`composeWithDeepAgents()`）保留兼容——v1.2.0 前基于 deepagents，现已迁移至 LangGraph `createReactAgent` 拆任务为 YAML 业务流 DAG，无 checkpoint 无 HITL。对应源码：路径一 `engine/orchestrator/src/composer.ts` + `loop-runner.ts`；路径二 `engine/orchestrator/src/loop/`（state/nodes/graph）。StateGraph 的 engineer/reviewer 节点优先走"工具注入路径"（LangGraph `createReactAgent` + 工具集，systemPrompt 拼装四层约束链）；`SOFAGENT_LLM` 未设置或解析失败时，自动降级到 `spawnSubAgent` 零工具路径（composer）。v1.2.6 起 `resolveLLMModel()` 增加四级回退：`SOFAGENT_LLM`（显式优先）→ `SOFAGENT_LLM_A` → `SOFAGENT_LLM_B` → null，API key 同链回退——FORGE 审查用的 A/B 配置可直接驱动编排主链路。
+编排模块有两条执行路径，新代码应优先走 StateGraph（v1.1.3+，主推）：入口 `runLoopGraph()` / `sofagent-orchestrator loop --task`，LangGraph 四节点状态机 + checkpoint（`.sofagent/checkpoint/`，断点续跑）+ HITL（human_confirm 节点，`loop --resume` 可恢复）。路径一 compose（v1.0.6+，`composeWithDeepAgents()`）保留兼容——v1.2.0 前基于 deepagents，现已迁移至 LangGraph `createReactAgent` 拆任务为 YAML 业务流 DAG，无 checkpoint 无 HITL。对应源码：路径一 `engine/orchestrator/src/composer.ts` + `loop-runner.ts`；路径二 `engine/orchestrator/src/loop/`（state/nodes/graph）。StateGraph 的 engineer/reviewer 节点优先走「工具注入路径」（LangGraph `createReactAgent` + 工具集，systemPrompt 拼装四层约束链）；`SOFAGENT_LLM` 未设置或解析失败时，自动降级到 `spawnSubAgent` 零工具路径（composer）。v1.2.6 起 `resolveLLMModel()` 增加四级回退：`SOFAGENT_LLM`（显式优先）→ `SOFAGENT_LLM_A` → `SOFAGENT_LLM_B` → null，API key 同链回退——FORGE 审查用的 A/B 配置可直接驱动编排主链路。
 #### 测试友好：依赖注入
 
 StateGraph 的流转逻辑通过 `LoopGraphDeps` 接口完全可 mock——`runEngineer / runAudit / runReviewer / confirmHuman / recordBlocked / checkpointer / maxRetries / log` 七个槽位。`defaultDeps()` 给生产实现，测试时整体替换。这让节点流转逻辑可以脱离真实 LLM 单测（v1.1.7 测试堆到 770 case 的前提）。
@@ -256,7 +256,7 @@ compose 生成的编排方案 YAML 怎么真正跑起来——`dag-runner.ts`（
 | workflow-parser | `orchestrator/src/workflow-parser.ts` | YAML→SubAgent 映射（developer→ENGINEER / qa-engineer→REVIEWER / researcher→FDE sustain / technical-writer→内置）。DAG 悬空 / 自依赖 / 环校验 |
 | composer 改造 | `orchestrator/src/composer.ts` | `ComposeResult{ yaml, subagents }`——接 `enterpriseWorkflowYaml` + `variant` A/B/C/D 拆解策略 |
 
-> ⚠️ **当前是串行**：dag-runner 文件名暗示 DAG 并行，但实际是串行状态机（非并行调度）。完整的 DAG 并行规划在 [ROADMAP v1.3.1](./ROADMAP.md)。
+> ⚠️ **当前是串行**：`dag-runner` 文件名指向最终目标（DAG 并行调度），当前实现为**串行状态机**——主 Agent 按 `depends_on` 顺序委派 Sub Agent。完整 DAG 并行调度为后续目标（权威说明见 `engine/orchestrator/src/dag-runner.ts` 头部命名注释）。
 
 #### A/B 自动调度器（v1.1.9+）
 
@@ -282,8 +282,8 @@ MCP tools（当前 67 个）是 Agent 的手脚，工具设计是返工重灾区
 | 原则 | 要求 | 反例 |
 |------|------|------|
 | **职责单一** | 一个工具只干一件事 | 一个 tool 又查知识库又建 workflow 又推 webhook |
-| **描述精确** | 模型完全靠 description 理解工具——写清「查哪个库的什么数据、支持什么筛选」 | "查一查相关内容"——模型会在不该调用时调用 |
-| **错误信息清晰** | 返回"某某参数不能为空/超限范围"而非"执行失败"——模型看得懂错误才能自己改参数重试 | 只返回 `failed`——模型要么瞎猜要么放弃 |
+| **描述精确** | 模型完全靠 description 理解工具——写清「查哪个库的什么数据、支持什么筛选」 | 「查一查相关内容」——模型会在不该调用时调用 |
+| **错误信息清晰** | 返回「某某参数不能为空/超限范围」而非「执行失败」——模型看得懂错误才能自己改参数重试 | 只返回 `failed`——模型要么瞎猜要么放弃 |
 | **参数简洁** | 能少传就少传、能有默认值就给默认值 | 必填参数一堆，模型填的参数越多出错概率越大 |
 
 ### Agent 停止条件四件套
@@ -297,7 +297,7 @@ Agent 的执行路径由模型现场决定，`while` 循环跑几遍代码无法
 | Token/预算上限 | 训练预算控制超预算暂停 + 成本审计 WARN | v1.3.6 train_budget / v1.4.0 cost-audit |
 | 错误收敛 | stop_reason 分类（失败原因 + 退避 + 收敛判定） | v1.3.1 错误处理升级 |
 
-> 配套铁律：Agent 行为不确定（概率模型每次生成带随机性）——灵活性和不确定性是连体婴。生产环境必须落详细执行日志（每步思考 + 工具调用 + 结果），出事才能回溯"为什么今天和昨天结果不一样"。我们有 LLM 调用级 Trace（v1.3.1）+ 审计历史，这是日志纪律的实现层。
+> 配套铁律：Agent 行为不确定（概率模型每次生成带随机性）——灵活性和不确定性是连体婴。生产环境必须落详细执行日志（每步思考 + 工具调用 + 结果），出事才能回溯「为什么今天和昨天结果不一样」。我们有 LLM 调用级 Trace（v1.3.1）+ 审计历史，这是日志纪律的实现层。
 
 ### 主 Agent / 子 Agent
 
@@ -312,7 +312,14 @@ Session 边界用百分比（缓存≥50%，token≥70%），子 Agent 不参与
 
 ### 任务闭环
 
-子 Agent 销毁后 → ② 反思→think.md ③ 评分→data/eval/ ④ A/B→orchestrator/ ⑤ 口头汇报。外部 Skill 从 [ClawHub](https://clawhub.ai) 获取，岗位模板来自 [agency-agents-zh](https://github.com/jnMetaCode/agency-agents-zh)。
+子 Agent 销毁后的收尾动作：
+
+- 反思 → `think.md`
+- 评分 → `data/eval/`
+- A/B → `orchestrator/`
+- 口头汇报
+
+外部 Skill 从 [ClawHub](https://clawhub.ai) 获取，岗位模板来自 [agency-agents-zh](https://github.com/jnMetaCode/agency-agents-zh)。
 
 > **Loop 五组件对照**：行业共识 Loop = Goals / Automations / Skills / Sub Agents / Worktraces。sofagent 对应：Goals = fde.md，Automations = daemon，Skills = skill/，Sub Agents = agents/，Worktraces = task/logs + think.md。gstack 的七步业务流进一步验证了这个结构。
 
@@ -456,7 +463,7 @@ v1.0.7 预装了两个内置 Agent，v1.0.8 将它们升级为**基础设施 Age
   → FDE Harness sustain  "你能做得更好吗？"
 ```
 
-**不是"又一个检查清单"——是两个 Agent 形成自进化闭环**（双 Agent 定义详见 [ARCHITECTURE §双 Agent 定义](./ARCHITECTURE.md#agent-基础设施层v108)）。
+**不是「又一个检查清单」——是两个 Agent 形成自进化闭环**（双 Agent 定义详见 [ARCHITECTURE §双 Agent 定义](./ARCHITECTURE.md#agent-基础设施层v108)）。
 
 **开发 Agent 的方式**：新增 Agent 只需在 `SKILL/agents/{name}/SKILL.md` 创建文件——front matter（身份标签）+ 调用方式（CLI 指令）+ Agent 角色定义（Agency Agents 格式）。`builtin-agents.ts` 的 `parseSkillMd()` 自动加载，`registry.ts` 自动合并。
 
@@ -543,7 +550,7 @@ v1.0.7 预装了两个内置 Agent，v1.0.8 将它们升级为**基础设施 Age
 2. `bash engine/scripts/verify.sh --quiet`——确认输出数字与文档中引用一致
 3. `cd engine/audit && npm test 2>&1 | grep "Tests"`——确认通过数
 4. `wc -m SKILL/SKILL.md SKILL/harness/fde-template.md`——确认 Skill 字数旁注准确
-5. 全文件类型术语扫描：`grep -rn "纪律层\|纪律底座\|工具箱\|FDE 工程师\|部署底座\|AI 控制节点" --include="*.md" --include="*.sh" --include="*.ps1" . | grep -v docs/changelog/ | grep -v docs/evidence/`（其中"FDE 工程师"是禁用词——FDE 的 E 已经是 Engineer，不叠叫）
+5. 全文件类型术语扫描：`grep -rn "纪律层\|纪律底座\|工具箱\|FDE 工程师\|部署底座\|AI 控制节点" --include="*.md" --include="*.sh" --include="*.ps1" . | grep -v docs/changelog/ | grep -v docs/evidence/`（其中「FDE 工程师」是禁用词——FDE 的 E 已经是 Engineer，不叠叫）
 6. `./tools/check/check-version.sh > /dev/null 2>&1; echo $?`——必须为 0
 
 **铁律**：不是跑完看绿色就过。把实际输出数字逐字抄进 CHANGELOG。
@@ -630,7 +637,7 @@ Google Research 的 WikiSkill（[arXiv:2608.27454](https://arxiv.org/abs/2608.27
 
 ## 十、STATE.md 持久化外部记忆模式
 
-loop-engineering 社区将 STATE.md 定位为 **"对话外的持久化主干"**——Agent 每次任务启动时**必须先读**状态文件、结束时**必须写回**。这与 sofagent 的 `task/logs` 四字段（看到/改了/验证了/还剩）同构，但有两个增量值得吸收：
+loop-engineering 社区将 STATE.md 定位为 **「对话外的持久化主干」**——Agent 每次任务启动时**必须先读**状态文件、结束时**必须写回**。这与 sofagent 的 `task/logs` 四字段（看到/改了/验证了/还剩）同构，但有两个增量值得吸收：
 
 ### 先读后写纪律
 
@@ -646,7 +653,7 @@ loop-engineering 社区将 STATE.md 定位为 **"对话外的持久化主干"**�
 当多 Agent 节点并行时，每个节点在 STATE.md 中写入 `acting_on: <target>`（分支/PR/任务 ID）。其他节点启动前扫描所有 state 文件的 `acting_on`——若目标已被占用，跳过并记录到运行日志。
 
 这在 sofagent 中的实现路径：
-- FDE 节点部署时，在 `fde.md` 中加一条 rule："启动前读取 `STATE.md` 中的 `acting_on`，若目标冲突则排队等待或升级"
+- FDE 节点部署时，在 `fde.md` 中加一条 rule：「启动前读取 `STATE.md` 中的 `acting_on`，若目标冲突则排队等待或升级」
 - daemon 巡检可检测「同一 target 被两个节点同时 acting_on」→ 告警
 - 此模式不需要额外基础设施——一个约定 + 一个 Markdown 表就够
 
