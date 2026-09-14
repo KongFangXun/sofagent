@@ -12,7 +12,7 @@ const kit = createSofagentPlugin(
     seamSemantics: 'Agent 出错 → git snapshot 逆序撤销',
     capability: '快照回溯（出事一键回滚）',
     bridgePkg: '@sofagent/core',
-    bridgeApi: 'getHistoryFilePath',
+    bridgeApi: 'restoreSnapshot',
     description: '出错逆序撤销——git snapshot → effect disposer',
   },
   require('../package.json') as { version?: string },
