@@ -29,6 +29,8 @@ import { daemonStatus } from './tools/daemon-status';
 // v1.4.9 G9（T1）：设备注册面两 tool——注册（fail-closed 验签）+ 清单（在线态）
 import { deviceRegister } from './tools/device-register';
 import { deviceList } from './tools/device-list';
+import { deviceDataQuery } from './tools/device-data-query';
+import { deviceDataPush } from './tools/device-data-push';
 import { worklogQuery } from './tools/worklog-query';
 import { costQuery } from './tools/cost-query';
 import { listAgentsTool } from './tools/list-agents';
@@ -2029,5 +2031,40 @@ export const TOOLS: ToolDef[] = [
     },
     // v1.4.8 条目 5 迁移：查表分发
     handler: (args) => deviceList({ ...(typeof args.tenant === 'string' ? { tenant: args.tenant } : {}), ...(typeof args.kind === 'string' ? { kind: args.kind } : {}), ...(typeof args.capability === 'string' ? { capability: args.capability } : {}) }),
+  },
+  {
+    // v1.4.9 G10（T2）：设备侧数据面授权读取——白名单校验 → 读取 → 脱敏 → 审计计量
+    name: 'device_data_query',
+    roles: ['ops'],
+    description: '设备侧数据面授权读取（G10）：设备门禁 → 目录白名单校验（默认空=全拒，opt-in）→ 读取 → 脱敏管线（敏感字段不出设备）→ 审计留痕 + 计量进 worklog。返回结构化内容（不落原始路径）。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        identity: { type: 'object', description: '设备身份码（AgentIdentity JSON——须过 gateDevice 闸门）' },
+        path: { type: 'string', description: '请求读取的文件路径（设备侧绝对路径，须在白名单内）' },
+        max_bytes: { type: 'number', description: '读取上限字节（缺省 64KB）' },
+      },
+      required: ['identity', 'path'],
+    },
+    // v1.4.8 条目 5 迁移：查表分发
+    handler: async (args) => { if (!args.identity || typeof args.identity !== 'object') { return { error: 'Missing required argument: identity' }; } if (!args.path || typeof args.path !== 'string') { return { error: 'Missing required argument: path' }; } const dqr = await deviceDataQuery({ identity: args.identity as Record<string, unknown>, path: args.path, ...(typeof args.max_bytes === 'number' && args.max_bytes > 0 ? { maxBytes: args.max_bytes } : {}) }); return { ...dqr, isError: !dqr.data.ok }; },
+  },
+  {
+    // v1.4.9 G11（T3）：数据上行通道——采集声明校验 → 脱敏 → 加密入队（WAL 暂存/断点续传）
+    name: 'device_data_push',
+    roles: ['ops'],
+    description: '数据上行通道（G11）：设备门禁 → 采集声明校验（默认空=不上行，opt-in）→ 脱敏 → AES-256-GCM 加密入队（WAL 暂存断网不丢，游标续传不重传已 ack 段）→ 审计留痕 + 计量进 worklog。原始数据不出设备。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        identity: { type: 'object', description: '设备身份码（AgentIdentity JSON——须过 gateDevice 闸门）' },
+        category: { type: 'string', enum: ['metrics', 'audit-digest', 'inference-result'], description: '数据类别（须在采集声明内）' },
+        payload: { type: 'string', description: '上行内容明文（入队前脱敏 + 加密）' },
+        destination: { type: 'string', description: '目的地端点标识（与声明核对）' },
+      },
+      required: ['identity', 'category', 'payload'],
+    },
+    // v1.4.8 条目 5 迁移：查表分发
+    handler: async (args) => { if (!args.identity || typeof args.identity !== 'object') { return { error: 'Missing required argument: identity' }; } if (!args.category || typeof args.category !== 'string') { return { error: 'Missing required argument: category' }; } if (typeof args.payload !== 'string') { return { error: 'Missing required argument: payload' }; } const dpr = await deviceDataPush({ identity: args.identity as Record<string, unknown>, category: args.category, payload: args.payload, ...(typeof args.destination === 'string' ? { destination: args.destination } : {}) }); return { ...dpr, isError: dpr.data.isError }; },
   },
 ];
