@@ -32,13 +32,13 @@
 | 复制 prompt | 不支持 Skill 的平台 | 把 SKILL.md 内容贴进 system prompt |
 | CLI 直跑 | 任何终端 | `sofagent-orchestrator subagent run fde --task "..."` |
 | DSH 插件通道 | DSH（DeepSeek Harness）用户 | `skillhub install cordis-plugin-sofagent-<名>`（SkillHub 单通道安装 + 发现；每款可独立安装、渐进采用；**一次装全套**用裸名 `skillhub install cordis-plugin-sofagent`） |
-| MCP 自动配置 | workbuddy/claude/cursor/codex | `bash install.sh --platform <平台>` 自动写 MCP 配置（前三者写 mcp.json JSON、codex 写 config.toml `[mcp_servers.sofagent]` 段），装完即连 99 tools |
+| MCP 自动配置 | workbuddy/claude/cursor/codex | `bash install.sh --platform <平台>` 自动写 MCP 配置（前三者写 mcp.json JSON、codex 写 config.toml `[mcp_servers.sofagent]` 段），装完即连 103 tools |
 
 ---
 
 ## DSH 插件家族（10 款 cordis-plugin）
 
-> sofagent 约束能力在 DSH（DeepSeek Harness）生态的插件形态——每款只干一件事，可独立安装、渐进采用。能力完整面 = MCP Server 99 tools（连接 sofagent MCP 后调用）。随主线版本发布，SkillHub 通道检索。
+> sofagent 约束能力在 DSH（DeepSeek Harness）生态的插件形态——每款只干一件事，可独立安装、渐进采用。能力完整面 = MCP Server 103 tools（连接 sofagent MCP 后调用）。随主线版本发布，SkillHub 通道检索。
 
 | 插件 | 职责（桥接实况） | seam |
 |------|----------------|------|
@@ -103,7 +103,7 @@ FORGE engineer commit ──→ 自动调用 @sofagent-audit → 验证变更合
 
 ---
 
-## MCP 全量工具表（99 tools · 13 类）
+## MCP 全量工具表（103 tools · 13 类）
 
 > 与 `engine/mcp/src/tool-registry.ts` 一一对应（check-docs 第 12 节门禁校验双向差集为空）。主入口 `SKILL.md` 只列每类代表工具，本表为全量。🔴 = 破坏性操作（强制人审/confirmed）。
 
@@ -257,6 +257,10 @@ FORGE engineer commit ──→ 自动调用 @sofagent-audit → 验证变更合
 | `device_list` | 设备清单查询（G9）：租户/类型/能力过滤，在线态实时判定，只含已验签设备 |
 | `device_data_query` | 设备数据面授权读取（G10）：目录白名单（默认空=全拒 opt-in）→ 读取 → 脱敏管线 → 审计计量 |
 | `device_data_push` | 数据上行通道（G11）：采集声明校验（默认空=不上行）→ 脱敏 → AES-256-GCM 加密 WAL 暂存 + 游标续传 |
+| `connector_register` | 注册第三方连接器（G5b）：来源白名单准入（fail-closed）→ 注册表租户隔离落库 |
+| `connector_list` | 连接器发现（G5b）：类型/主机/能力过滤，与工具清单分列 |
+| `workflow_export` | workflow 模板导出（G1）：五件套 + 血缘元数据，跨租户剥离私域节点 |
+| `workflow_import` | 模板导入（G1）：三闸校验 + 血缘回流 + 本体合并（本地优先） |
 
 ### 浏览器（4）
 
