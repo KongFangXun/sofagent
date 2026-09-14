@@ -18,32 +18,29 @@ bash install.sh
 
 fresh-eyes-loop 和 release-gate-loop **共用同一套模型配置**——只需配一次，两个循环都能跑。fresh-eyes-loop 由 A（审查者）和 B（工程师）两个角色组成；release-gate-loop 由 V（验证者）单角色组成。
 
-**异构双模型**（2026-08-03 定稿）：A 用 Qwen3.8-max（深度推理强项），B/V 用 GLM-5.2（代码编写 + 测试验证强项）。fresh-eyes 纪律通过**每步独立子进程（零上下文）+ 独立 prompt** 实现，不依赖模型差异。
+**统一单模型**（当前口径，权威源 `FORGE/models/profile.mjs`）：六个角色（A/B/C/D/V/F）统一走 **glm-5.3-flash**（GLM Coding Plan 订阅档）。fresh-eyes 纪律通过**每步独立子进程（零上下文）+ 独立 prompt** 实现，不依赖模型差异。
 
 | 角色 | 职责 | 模型 | 行为指令 | 工具集 |
 |:--:|------|------|------|------|
 | **A**（审查者） | 12 视角单盲审查 + 合并 | glm-5.3-flash | `prompts/a-check-perspective-*.md` / `a-consolidate.md` | `REVIEWER_TOOLS`（只读） |
+| **B**（工程师） | 修复缺陷 | glm-5.3-flash | `prompts/b-check.md` / `b-fix.md` | `ENGINEER_TOOLS`（含写工具） |
 | **C**（验收者） | 逐条实测验收 B 的修复 | glm-5.3-flash | `prompts/c-verify.md` | `REVIEWER_TOOLS`（只读） |
 | **D**（复核者） | 对抗裁决 P0/P1（CONFIRM/DOWNGRADE/REOPEN） | glm-5.3-flash | `prompts/d-review.md` | `REVIEWER_TOOLS`（只读） |
-| **B**（工程师） | 修复缺陷 | glm-5.2 | `prompts/b-check.md` / `b-fix.md` | `ENGINEER_TOOLS`（含写工具） |
-| **V**（验证者） | release-gate 全流程 | glm-5.2 | `prompts/*.md` | `REVIEWER_TOOLS`（只读） |
+| **V**（验证者） | release-gate 全流程 | glm-5.3-flash | `prompts/*.md` | `REVIEWER_TOOLS`（只读） |
 
-> 💡 **异构模型策略**：A（审查者）需要最强推理能力 → Qwen3.8-max（阿里百炼 Token Plan）；B（工程师）+ V（验证者）侧重代码编写和测试执行 → GLM-5.2（智谱 Coding Plan）。driver 的 `MODEL_CONFIGS` 支持每个角色独立配置模型/baseURL/apiKey。
+> 💡 **换模型只改一处**：编辑 `FORGE/models/profile.mjs`（改 import 和角色映射即可），driver 代码不需要动——key 也自动跟着模型文件走。
 
 ### 配置环境变量
 
-driver 使用**异构双模型**，A/B 各需独立的 API Key：
+全链单一 GLM key 即可（如需按量备选可再配 DeepSeek）：
 
 ```bash
-# A 角色 API Key（阿里百炼 Qwen Token Plan）
-export SOFAGENT_LLM_A_API_KEY=your-qwen-key
+# GLM Coding Plan key——六个角色共用
+export GLM_API_KEY=REPLACE_ME
 
-# B/V 角色 API Key（智谱 GLM Coding Plan）—— B 和 V 共用同一个 key
-export SOFAGENT_LLM_B_API_KEY=your-glm-key
-
-# 模型规格标识（driver 启动检查要求非空，内容不影响模型选择——模型由 MODEL_CONFIGS 硬编码）
-export SOFAGENT_LLM_A="qwen3.8-max"
-export SOFAGENT_LLM_B="glm-5.2"
+# 模型规格标识（driver 启动检查要求非空，内容不影响模型选择——模型由 profile.mjs 决定）
+export SOFAGENT_LLM_A="active"
+export SOFAGENT_LLM_B="active"
 ```
 
 也可以用 `env.local` 模板（见 `FORGE/env.local.template`）：
@@ -59,16 +56,14 @@ source ~/.sofagent/env.local
 
 ### 模型参数
 
-**A（Qwen3.8-max）**：thinking-only 模型——始终思考、无法关闭。driver 不传 `thinking` / `reasoningEffort` 参数，只设 `maxTokens` 限制输出。
-
-**B/V（GLM-5.2）**：driver 传 `thinking={type:'enabled'}` + `reasoning_effort='max'` + `temperature=1.0`，启用最强推理模式。
+**glm-5.3-flash（全角色）**：driver 传 `thinking={type:'enabled', clear_thinking:false}` + `reasoningEffort='max'` + `temperature=1.0`，启用最强推理模式。
 
 | 参数 | 值 | 说明 |
 |------|:--:|------|
 | `maxTokens`（默认） | 16000 | 限制输出 token，防止 thinking 模式无限消耗 |
 | `maxTokens`（合并步骤） | 32000 | a-consolidate / consolidate 单独覆盖——合并多份完整报告输出超长，16000 会截断导致整轮降级 |
 
-> 如需覆盖默认参数或切换模型，在 `FORGE/src/fresh-eyes-driver.mjs` 的 `MODEL_CONFIGS` 中修改（release-gate-driver.mjs 有独立配置）。
+> 如需覆盖默认参数或切换模型，改 `FORGE/models/profile.mjs`（两个 driver 共用，不需要改 driver 代码）。
 
 ### 模型定价与计费模式
 
@@ -76,8 +71,7 @@ source ~/.sofagent/env.local
 
 | 模型类型 | 计费模式 | 说明 |
 |------|:--:|------|
-| **Qwen3.8-max**（A 使用） | 📦 订阅制 | 阿里百炼 Token Plan，按月固定费用 + 额度，**不按 token 扣费**。driver 只记录 token 用量，`cost_cny` 记为 `null`，`price_confidence` 标为 `subscription` |
-| **GLM-5.2**（B/V 使用） | 📦 订阅制 | 智谱 Coding Plan，按月固定费用 + 额度，**不按 token 扣费**。同上 |
+| **glm-5.3-flash**（全角色使用） | 📦 订阅制 | GLM Coding Plan，按月固定费用 + 额度，**不按 token 扣费**。driver 只记录 token 用量，`cost_cny` 记为 `null`，`price_confidence` 标为 `subscription` |
 | **按量计费模型**（如需切换） | 💧 按量计费 | driver 按「官方标价 × token 用量」算出 `cost_cny` 估算值。实际账单受**缓存命中率**影响，以厂商 API 后台为准 |
 
 > ⚠️ **计费模式区分（重要）**：
@@ -189,7 +183,7 @@ verdict     → V 出最终裁决（PASS / FAIL），写入 verdict.md
   "round": 1,
   "step": "a-check",
   "role": "A",
-  "model": "qwen3.8-max",
+  "model": "glm-5.3-flash",
   "prompt_tokens": 12450,
   "completion_tokens": 1820,
   "total_tokens": 14270,
@@ -216,7 +210,7 @@ verdict     → V 出最终裁决（PASS / FAIL），写入 verdict.md
 
 | 问题 | 原因 | 解决 |
 |------|------|------|
-| `SOFAGENT_LLM_A_API_KEY` 或 `SOFAGENT_LLM_B_API_KEY` 未设 | 没配 key | A key：`export SOFAGENT_LLM_A_API_KEY=your-qwen-key`；B key：`export SOFAGENT_LLM_B_API_KEY=your-glm-key` |
+| `SOFAGENT_LLM_A_API_KEY` 或 `SOFAGENT_LLM_B_API_KEY` 未设 | 没配 key | 厂商 key：`export GLM_API_KEY=REPLACE_ME`（key 跟模型文件走，见 `FORGE/models/*.mjs` 的 `apiKeyEnv`） |
 | driver 找不到 `node` 命令 | Node.js 未安装或不在 PATH | 装 Node.js ≥ 18（`brew install node` / `nvm install 18`） |
 | reviewer 每轮都驳回 | 审查标准太严 | 改 `SKILL/agents/reviewer/SKILL.md` 的判定标准 |
 | API key 报 401 | key 过期或额度耗尽 | 去对应厂商控制台检查 key 状态和余额 |
