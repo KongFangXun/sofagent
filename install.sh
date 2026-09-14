@@ -63,6 +63,43 @@ ok()    { echo -e "${GREEN}[✓]${NC} $1"; }
 warn()  { echo -e "${YELLOW}[!]${NC} $1"; }
 err()   { echo -e "${RED}[✗]${NC} $1"; }
 
+# v1.4.9 P2-20：symlink 被普通目录占用 ⇒ 降级「复制同步」会成为**两套布局副本**，
+# 且副本随本源更新而**静默过期**（用户改 skill 只改本源，平台侧永远是旧快照），
+# 日后无从发现。仅打一句 warn（滚屏即忘）不足以留下**可发现的状态**——
+# 降级时在**被降级的目录里**写 STALE-COPY.md 持久标记：说明以本源为准 + 给同步命令。
+# 单一来源：三个降级点（openclaw/workbuddy 共臂 · cursor · claude）共用本函数，
+# 禁三份重复字面量（重复字面量 = 改一处漏一处的漂移面）。
+# 用法：write_stale_copy_marker <被降级目录> <本源目录> <平台名>
+write_stale_copy_marker() {
+  local stale_dir="$1" src_dir="$2" platform="$3"
+  cat > "${stale_dir}/STALE-COPY.md" << STALECOPYEOF
+# ⚠️ 这里是副本，不是本源（由 sofagent install.sh 自动写入）
+
+平台「${platform}」的技能目录里已存在**普通目录**，安装器无法建立符号链接，
+于是**降级为复制同步**（v1.4.9 P2-20 起，降级时写本文件作为持久标记）。
+
+## 这意味着什么
+
+- 本源（唯一真相源）：${src_dir}
+- 本目录：${stale_dir} —— 只是本源在**安装那一刻**的快照
+- ⚠️ **本源后续的更新不会自动同步到这里**：本目录会静默过期，
+  而该平台读的正是本目录 —— 改了本源却看不到效果时，先回来看看这里。
+
+## 怎么同步（二选一）
+
+    # ① 一次性对齐（推荐）：腾出平台目录，改走符号链接，从此不再有副本
+    rm -rf '${stale_dir}' && bash install.sh --platform ${platform}
+
+    # ② 保持副本，手动刷新（每次本源变更后都要重跑）
+    rm -rf '${stale_dir}' && cp -R '${src_dir}' '${stale_dir}'
+
+---
+
+本文件由 install.sh 的 write_stale_copy_marker() 写入。它不会被本源的技能内容覆盖，
+也不会随下次安装自动删除 —— **只要它还在，就说明这里仍是副本形态**。
+STALECOPYEOF
+}
+
 # ── 确定脚本所在目录（支持符号链接）──
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # v1.2.0: install.sh 提升到根目录，lib/ 仍在 engine/scripts/lib/
@@ -978,7 +1015,8 @@ install_skill_unified() {
         else
           # symlink 被既有普通目录占用时降级为复制（防副本静默过期——收编后须以本源为准确认）
           cp -R "$SOFAGENT_HOME/skill"/. "$psd"/ 2>/dev/null || true
-          warn "  Symlink 被普通目录占用，已降级为复制同步：${psd}"
+          warn "  Symlink 被普通目录占用，已降级为复制同步：${psd}（并已在该目录写入 STALE-COPY.md 标记，见其内容）"
+          write_stale_copy_marker "$psd" "$SOFAGENT_HOME/skill" "$PLATFORM"
         fi
         ;;
       # v1.3.9（八）：跨平台适配器扩展——Cursor / Gemini CLI 薄挂载
@@ -991,7 +1029,8 @@ install_skill_unified() {
         if [ ! -L "$cur_skills" ]; then
           # symlink 被既有普通目录占用时降级为复制（防副本静默过期）
           cp -R "$SOFAGENT_HOME/skill"/. "$cur_skills"/ 2>/dev/null || true
-          warn "  Symlink 被普通目录占用，已降级为复制同步：${cur_skills}"
+          warn "  Symlink 被普通目录占用，已降级为复制同步：${cur_skills}（并已在该目录写入 STALE-COPY.md 标记，见其内容）"
+          write_stale_copy_marker "$cur_skills" "$SOFAGENT_HOME/skill" "cursor"
         fi
         if [ -f "${SCRIPT_DIR}/.cursor/rules/sofagent.mdc" ]; then
           cp "${SCRIPT_DIR}/.cursor/rules/sofagent.mdc" "${cur_rules}/sofagent.mdc"
@@ -1032,7 +1071,8 @@ HOOKJSONEOF
         if [ ! -L "${claude_rules}/skills/sofagent" ] && [ -d "${claude_rules}/skills/sofagent" ]; then
           # symlink 被既有普通目录占用时降级为复制（防副本静默过期）
           cp -R "$SOFAGENT_HOME/skill"/. "${claude_rules}/skills/sofagent"/ 2>/dev/null || true
-          warn "  Symlink 被普通目录占用，已降级为复制同步：${claude_rules}/skills/sofagent"
+          warn "  Symlink 被普通目录占用，已降级为复制同步：${claude_rules}/skills/sofagent（并已在该目录写入 STALE-COPY.md 标记，见其内容）"
+          write_stale_copy_marker "${claude_rules}/skills/sofagent" "$SOFAGENT_HOME/skill" "claude"
         fi
         if [ -f "${SCRIPT_DIR}/.claude/settings.json" ]; then
           cp "${SCRIPT_DIR}/.claude/settings.json" "${claude_rules}/settings.json"
