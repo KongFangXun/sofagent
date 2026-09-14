@@ -738,8 +738,14 @@ echo "=== 13. 接线存在性断言（v1.4.3 任务十一 · 声称「已交付�
 #   （v1.3.7 实现 + 有测试但长期零调用点，同批已补 agent-shield CLI 子命令接线）。
 #   2026-09-14 补漏（第 3 份审查报告点名族）：HANDBOOK 承诺「部署后自动收到」审计报告，
 #   交付机制 pushAuditReport 必须有生产调用。⚠️ 本断言只判「机制是否接线」；「档位于
-#   runtime 是否真按 weekly/monthly 触发」属保真度问题，不在本节判定面（见 HANDBOOK 措辞对账）。
+#   runtime 是否真按 weekly/monthly 触发」属保真度问题，不在本节判定面。
 #   —— 补漏原则：声称族按「文档里能 grep 到的承诺句」逐族登记，不靠人工记忆。
+#   2026-09-14 v1.4.9 P2-16 同步（本条**正是 G-1 抓到的第一个实例**）：HANDBOOK 的承诺句
+#   被降级为如实——日报实装 / 周·月·季报排期中 / 扩容预警未实现——原锚定串
+#   「部署后你会自动收到这些」随之过期，本断言当场报红（未静默空转，G-1 设计生效）。
+#   现锚定串同步为现行措辞「部署后可自动收到这些」。⚠️ 因措辞已如实降级，本族判定面
+#   **只**是「pushAuditReport 是否仍接线」，不再蕴含「四个报告档位都已实装」——
+#   该保真度问题已由 P2-16 的措辞侧如实化处置（见 docs/HANDBOOK.md:130）。
 WIRING_FAIL=0
 WIRING_STALE=0
 WIRING_CLAIMS=(
@@ -747,7 +753,7 @@ WIRING_CLAIMS=(
   "README.md|AgentShield 五类配置面静态扫描|createAgentShield|AgentShield（README 核心能力声称）"
   "README.en.md|AgentShield five-face static config scanning|createAgentShield|AgentShield（README.en 核心能力声称）"
   "CHANGELOG.md|train compare|submitCompareJobs|多基座对比训练（CHANGELOG v1.4.4 交付④——CLI 接线防断链）"
-  "docs/HANDBOOK.md|部署后你会自动收到这些|pushAuditReport|审计报告自动推送（HANDBOOK「部署后你会自动收到这些」承诺族）"
+  "docs/HANDBOOK.md|部署后可自动收到这些|pushAuditReport|审计报告自动推送（HANDBOOK「部署后可自动收到这些（日报实装，周/月/季报排期中，扩容预警未实现）」承诺族——v1.4.9 P2-16 措辞如实化后同步锚定串）"
 )
 for claim in "${WIRING_CLAIMS[@]}"; do
   claim_file="${claim%%|*}"; rest1="${claim#*|}"

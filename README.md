@@ -96,7 +96,7 @@ sofagent 不造 Agent——执行能力交给成熟宿主（模型 + 工具 + �
 
 - **企业 AI 落地的瓶颈不是模型，是部署**——MIT NANDA《生成式人工智能的鸿沟》：95% 的企业 GenAI 项目没能产生能写进财务报表的价值，而 FDE 岗位发布量一年涨了 729%（核验见 [VALIDATION](./docs/VALIDATION.md)）
 - **完整来自组合**——DSH 解决「能干活」，sofagent 解决「持续干」，两者合起来才是完整的 FDE Harness（见下章）
-- **约束层「持续优化」靠机制不靠承诺**——外部独立实验（ARC-AGI-3）：同一模型仅优化外层 Harness 可显著提升任务完成率。核验见 [VALIDATION](./docs/VALIDATION.md) · [THANKS](./docs/THANKS.md)
+- **约束层「持续优化」靠机制不靠承诺**——外部独立实验（ARC-AGI-3，**能力型 harness 数据**——提升的是任务得分与 token 效率，与治理型约束层的可靠性收益非同一量纲）：同一模型仅优化外层 Harness 可显著提升任务完成率。核验见 [VALIDATION](./docs/VALIDATION.md) · [THANKS](./docs/THANKS.md)
 - **能力可迁移，绝不绑死单一平台**——约束层平台无关，方法论跟着业务走、不跟着平台走
 
 > 🔄 **自举**：sofagent 给自己做的第一份 FDE，就是 sofagent 自己——项目本身就是一条完整的 FDE 业务流（梳理 → 构建 → 部署 → 离场），这个开源仓库就是那份交付物。
@@ -284,7 +284,7 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # 加载安全规�
 | 安全声明 · 已知局限 | [SECURITY](./SECURITY.md) · [LIMITATIONS](./docs/LIMITATIONS.md) |
 | 贡献指南 | [CONTRIBUTING](./CONTRIBUTING.md) |
 
-> 🧪 **工程可信度**：4485 测试 / 13 模块包 + 14 插件（10 DSH + 4 OpenClaw）（口径：13 个 workspace 包；包数与统计标准见 [WIKI](./docs/WIKI.md)）· 24 条审计规则 · fresh-eyes 独立审查持续运行（测试数以 `tools/check/test-count.sh` 判定为准，环境注意事项见 [docs/guides/review-system.md](./docs/guides/review-system.md)。性能数据为单机参考值，跨工具横评排期 v1.4.x 与 Benchmark 集成）。
+> 🧪 **工程可信度**：4493 测试 / 13 模块包 + 14 插件（10 DSH + 4 OpenClaw）（口径：13 个 workspace 包；包数与统计标准见 [WIKI](./docs/WIKI.md)）· 24 条审计规则 · fresh-eyes 独立审查持续运行（测试数以 `tools/check/test-count.sh` 判定为准，环境注意事项见 [docs/guides/review-system.md](./docs/guides/review-system.md)。性能数据为单机参考值，跨工具横评排期 v1.4.x 与 Benchmark 集成）。
 
 ---
 

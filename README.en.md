@@ -98,7 +98,7 @@ sofagent does not build its own Agent — execution is delegated to mature hosts
 
 - **The bottleneck for enterprise AI is deployment, not the model** — mapping workflows, drawing system boundaries, and setting data rules is precisely the FDE's job. MIT NANDA's *The GenAI Divide*: 95% of enterprise GenAI projects failed to produce value worth a financial statement, while FDE job postings surged 729% in a year (verification in [VALIDATION](./docs/VALIDATION.md))
 - **Completeness comes from the union** — DSH solves "can work"; sofagent solves "keeps working"; only together do they make a complete FDE Harness (next chapter)
-- **"Continuous optimization" only holds with a constraint layer** — backed by auditable, rollback-capable mechanisms, not promises in prompts. Independent external experiment (ARC-AGI-3): optimizing only the outer Harness around the same model significantly lifts task completion. Verification in [VALIDATION](./docs/VALIDATION.md) · [THANKS](./docs/THANKS.md)
+- **"Continuous optimization" only holds with a constraint layer** — backed by auditable, rollback-capable mechanisms, not promises in prompts. Independent external experiment (ARC-AGI-3, **capability-harness data** — it lifts task scores and token efficiency, a different dimension from the reliability gains of a governance constraint layer): optimizing only the outer Harness around the same model significantly lifts task completion. Verification in [VALIDATION](./docs/VALIDATION.md) · [THANKS](./docs/THANKS.md)
 - **Capabilities are portable, never dead-bound to a platform** — the constraint layer is platform-agnostic; the methodology follows the business, not the platform
 
 > 🔄 **Self-bootstrapping**: sofagent's first FDE engagement is sofagent itself — the project is a complete FDE business flow (map → build → deploy → depart), and this open-source repository is that deliverable.
@@ -285,7 +285,7 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # load the securit
 | Security statement · known limitations | [SECURITY](./SECURITY.md) · [LIMITATIONS](./docs/LIMITATIONS.md) |
 | Contribution guide | [CONTRIBUTING](./CONTRIBUTING.md) |
 
-> 🧪 **Engineering credibility**: 4485 tests / 13 module packages + 14 plugins (10 DSH + 4 OpenClaw) (scope: 13 workspace packages; package counts and counting standard in [WIKI](./docs/WIKI.md)) · 24 audit rules · fresh-eyes independent review continuously running (test counts are determined by `tools/check/test-count.sh`; environmental notes are documented in [docs/guides/review-system.md](./docs/guides/review-system.md). Performance figures are single-machine reference values; cross-tool benchmarking is scheduled for v1.4.x together with Benchmark integration).
+> 🧪 **Engineering credibility**: 4493 tests / 13 module packages + 14 plugins (10 DSH + 4 OpenClaw) (scope: 13 workspace packages; package counts and counting standard in [WIKI](./docs/WIKI.md)) · 24 audit rules · fresh-eyes independent review continuously running (test counts are determined by `tools/check/test-count.sh`; environmental notes are documented in [docs/guides/review-system.md](./docs/guides/review-system.md). Performance figures are single-machine reference values; cross-tool benchmarking is scheduled for v1.4.x together with Benchmark integration).
 
 ---
 
