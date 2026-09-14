@@ -17,6 +17,9 @@
 #   + check-review-system.sh → 审查体系一致性（维度数/警戒线/S 编号对账 · v1.4.8 接入）
 #   + check-silent-catch.mjs → 静默吞错门禁（只拦新增 · v1.4.8 接入）
 #   + dependency-direction.sh → 依赖方向架构测试（13 包边界 · v1.4.8 第七章）
+#   + check-tool-health.sh  → 工具健康 9 项 ✅ = ① 审查文档路径活性 / ② 孤儿配置 / ③ bump↔check 结构对照 /
+#                             ④ hook 头版本标记 / ⑤ CI 引用活性 / ⑥ set -u 新变量初始化守卫（2 子项）/
+#                             ⑦ tools/README.md 收录对账 + 防线失明自检（2 子项）· v1.4.9 G-12 接入
 #   + npm run build         → 审计模块构建
 #
 # 用法:
@@ -329,6 +332,44 @@ if [ "$MINIMAL" = false ]; then
   else
     check_fail "dependency-direction.sh 发现违规依赖边"
     bash tools/check/dependency-direction.sh 2>&1 | grep -E "❌" | head -10
+  fi
+fi
+
+# ════════════════════════════════════════
+# 3f. 工具健康（check-tool-health.sh · v1.4.9 G-12 接入）
+# 根因（实测取证，非推断）：`grep check-tool-health tools/release/pre-push-check.sh` **零命中**——
+#   该门禁此前只在 .github/workflows/pr-check.yml:171-172 被调用，**本地推前链路完全看不到它**。
+#   后果：v1.4.9 P1-2 批新增的 2 个 tools/check/ 文件未被 tools/README.md 收录，⑦ 收录对账
+#   报红而 pre-push 毫无反应（直到另一个批次偶然单跑该脚本才暴露）——**同一类「前序批次真实漏网」**。
+# 三态映射（按该脚本退出码 + 警告计数「落对应态」，不改它的退出码语义）：
+#   0 且 0 警告 → pass ／ 0 且 警告>0 → warn ／ 1 → fail ／ 2 → fail（**检查器失明**，单独报）
+#   ⚠️ exit 2 必须单独报：该脚本以 exit 2 表示「自身失明/结构缺失」（如 SSOT 读不到、
+#   tools/README.md 缺失）——若与 exit 1 同归一语，就丢了「拒绝假绿」这一层语义。
+# 成本实测：4.5s（含⑦的防线失明故障注入），相对 pre-push 全量 ~5min 可忽略。
+# ════════════════════════════════════════
+if [ "$MINIMAL" = false ]; then
+  echo -e "\n${BOLD}── 3f. 工具健康 ──${NC}"
+  TH_OUT=$(bash tools/check/check-tool-health.sh 2>&1)
+  TH_RC=$?
+  # 摘要行形态：`工具健康全通过（9 项 ✅ · 0 警告）` / `工具健康 FAIL：N 项不通过（M 警告）`
+  TH_WARN=$(printf '%s\n' "$TH_OUT" | grep -oE '· [0-9]+ 警告' | head -1 | grep -oE '[0-9]+' || echo "")
+  TH_SUMMARY=$(printf '%s\n' "$TH_OUT" | grep -E '工具健康(全通过|FAIL)' | head -1 | sed 's/^ *//')
+  if [ "$TH_RC" -eq 0 ]; then
+    if [ -z "$TH_WARN" ]; then
+      # 摘要行形态漂移 ⇒ 不静默当作「0 警告」（守卫不空转）
+      check_warn "check-tool-health.sh 退出 0，但警告计数提取为空（摘要行形态漂移，请核对）"
+      printf '%s\n' "$TH_OUT" | grep -E '工具健康' | head -3
+    elif [ "$TH_WARN" -gt 0 ]; then
+      check_warn "check-tool-health.sh 通过但有 ${TH_WARN} 警告：${TH_SUMMARY}"
+    else
+      check_pass "check-tool-health.sh ${TH_SUMMARY:-全部通过}"
+    fi
+  elif [ "$TH_RC" -eq 2 ]; then
+    check_fail "check-tool-health.sh 检查器失明（exit 2——结构缺失/SSOT 不可读，拒绝假绿）"
+    printf '%s\n' "$TH_OUT" | tail -10
+  else
+    check_fail "check-tool-health.sh 有 FAIL（exit ${TH_RC}）"
+    printf '%s\n' "$TH_OUT" | grep -E '❌|⚠️' | head -10
   fi
 fi
 

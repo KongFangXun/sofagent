@@ -81,7 +81,7 @@
 | 脚本 | 用途 | 何时使用 |
 |------|------|---------|
 | `release/bump-version.sh` | 版本号 bump（SSOT 联动 253+ 处） | 发版 SOP 阶段三 |
-| `release/pre-push-check.sh` | 推送前完整检查（CI 等价聚合 22+ 检查位：shellcheck / check-version / check-unwired-exports / check-template-drift / check-open-boundary / check-docs / check-literals / check-anchors / build / test-count / check-test-count / forge-smoke / check-cjk-var + CLI `--help` 矩阵 / install.sh 路径 / tag 校验 / 依赖图 / CHANGELOG 元信息等；`--quick` 跳过 test/build，`--minimal` 结构性快检；v1.4.0 由根目录移入） | git push 前 |
+| `release/pre-push-check.sh` | 推送前完整检查（CI 等价聚合 22+ 检查位：shellcheck / check-version / check-unwired-exports / check-template-drift / check-open-boundary / check-docs / check-literals / check-anchors / build / test-count / check-test-count / forge-smoke / check-cjk-var / check-tool-health（v1.4.9 G-12 接入） + CLI `--help` 矩阵 / install.sh 路径 / tag 校验 / 依赖图 / CHANGELOG 元信息等；`--quick` 跳过 test/build，`--minimal` 结构性快检；v1.4.0 由根目录移入） | git push 前 |
 | `release/publish-packages.sh` | npm 包批量发布（workspace 全量） | 发版 SOP 阶段十一 |
 | `release/sign-config.mjs` | config.yml HMAC-SHA256 签名颁发（读 `~/.sofagent-key`，DP-2） | 安装后 |
 | `release/gitdata-push.mjs` | Git Data API 推送备选通道（blobs→trees→commits→refs，https 断连绕行） | push 502 时 |
