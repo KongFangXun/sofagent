@@ -353,6 +353,7 @@ node dist/index.js --diff HEAD~1..HEAD --task "修复登录页 bug"
 ```
 
 exit code：0 = 通过 / 1 = 有警告 / 2 = 有违规（含用法错误）/ 3 = 非 git 仓库（无审计基线，仅 `cli-quick` 口径）/ 4 = 引擎崩溃（v1.4.9 起独立成码——此前与 3 撞码，同码两义不可辨）。零 Agent 依赖——看的是已发生的 git diff。
+> **⚠️ 输出语言**：CLI 全部输出为**中文**（i18n / `--lang en` 均**未排期**）——英文读者请以 [README.en.md](../README.en.md) 与本文档为准。
 
 > 审计规则的完整实现（绿灯路径检测、架构漂移检测、状态账本）见 [DEVELOPMENT §八 提交时审计](./DEVELOPMENT.md#八提交时审计--文件系统审计)。
 
