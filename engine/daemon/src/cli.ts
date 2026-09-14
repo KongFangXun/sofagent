@@ -179,6 +179,61 @@ async function main() {
       heartbeatTimer.unref?.(); // 计时器不阻止进程退出（退出钩子负责收尾落盘）
       console.log('  ✅ 健康自检已启动（心跳 5min，~/.sofagent/data/daemon-health.json）');
 
+      // ── v1.4.9 G9：设备注册面巡检接线 ──
+      // ① 设备离线告警（T1 验收 ③）：每 5min 扫描设备心跳超时 → webhook 推送
+      //    （复用既有 push 通道；离线判定 = isOnline 读侧实时计算）。
+      try {
+        const { scanOfflineDevices } = await import('./device-registry');
+        const { createWebhookPusher } = await import('./webhook/index');
+        const { getDataDir } = await import('@sofagent/core');
+        const pusher = createWebhookPusher();
+        const notifyOffline = async (deviceId: string, lastHeartbeatAt: string | null): Promise<void> => {
+          // 三平台择一推送（endpoint 已配置者；未配置 → push 降级本地日志，不阻断）
+          const result = await pusher.push(
+            'feishu',
+            'FAIL',
+            `[sofagent] 设备离线告警：${deviceId.slice(0, 8)}（最后心跳 ${lastHeartbeatAt ?? '从未心跳'}）`,
+          );
+          if (result.degraded) {
+            console.warn(`  ⚠️ 离线告警 webhook 降级（设备 ${deviceId.slice(0, 8)}）：${result.error ?? '未配置 endpoint'}`);
+          }
+        };
+        const scanOnce = (): void => {
+          const offline = scanOfflineDevices({
+            dataDir: getDataDir(),
+            onAlarm: (deviceId, lastHeartbeatAt) => {
+              void notifyOffline(deviceId, lastHeartbeatAt);
+            },
+          });
+          if (offline.length > 0) {
+            console.warn(`  ⚠️ G9 设备巡检：${offline.length} 台设备离线（已推送 webhook 告警）`);
+          }
+        };
+        scanOnce(); // 启动即扫一轮
+        const deviceScanTimer = setInterval(scanOnce, 5 * 60 * 1000);
+        deviceScanTimer.unref?.();
+      } catch (err) {
+        console.warn(`  ⚠️ G9 设备离线巡检启动失败（不影响 daemon 启动）: ${err instanceof Error ? err.message : String(err)}`);
+      }
+
+      // ② /health 三态端点（T1 验收 ⑥）：SOFAGENT_HEALTH_PORT 显式配置才启用
+      //    （默认关闭不占端口；启用时 loopback 绑定——外部不可达默认安全）。
+      if (process.env.SOFAGENT_HEALTH_PORT) {
+        try {
+          const { startHealthEndpoint } = await import('./health-endpoint');
+          const { getDataDir: getCoreDataDir } = await import('@sofagent/core');
+          const port = Number(process.env.SOFAGENT_HEALTH_PORT);
+          if (Number.isFinite(port) && port > 0) {
+            const ep = startHealthEndpoint({ port, dataDir: getCoreDataDir() });
+            console.log(`  ✅ /health 三态端点已启动（${ep.host}:${ep.port}，loopback 绑定）`);
+          } else {
+            console.warn(`  ⚠️ SOFAGENT_HEALTH_PORT 非法（${process.env.SOFAGENT_HEALTH_PORT}）——跳过 /health 启动`);
+          }
+        } catch (err) {
+          console.warn(`  ⚠️ /health 端点启动失败（不影响 daemon 启动）: ${err instanceof Error ? err.message : String(err)}`);
+        }
+      }
+
       // v1.4.4 #32+47：退出收尾——任何退出路径都落盘退出码，doctor 才能感知守护死亡
       const exitWith = (code: number, reason: 'sigint' | 'sigterm' | 'uncaught-exception' | 'startup-failure' | 'unknown', detail?: string) => {
         clearInterval(heartbeatTimer);

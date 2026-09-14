@@ -190,6 +190,54 @@
   WebhookPusher,
 } from './webhook/index';
 
+// G9 设备注册 / 发现 / 心跳（v1.4.9 T1+T11+T12）
+/* @public */ export {
+  isOnline,
+  DEVICE_HEARTBEAT_TIMEOUT_MS,
+  registerDevice,
+  gateDevice,
+  listDevices,
+  reportHeartbeat,
+  scanOfflineDevices,
+  enqueueDeviceTask,
+  claimDeviceTask,
+  reassignOrHold,
+  appendDeviceEvent,
+  verifyDeviceEventsChain,
+  deviceRegistryPath,
+  deviceEventsPath,
+  deviceTasksPath,
+} from './device-registry';
+/* @public */ export type {
+  DeviceKind,
+  DeviceRecord,
+  DeviceRegistryFile,
+  DeviceTask,
+  DeviceTasksFile,
+  DeviceEventRecord,
+  RegisterResult,
+  DeviceGateResult,
+  HeartbeatResponse,
+  EnqueueResult,
+  ClaimResult,
+  ReassignResult,
+} from './device-registry';
+
+// /health 三态健康巡检端点（v1.4.9 T1 验收 ⑥）
+/* @public */ export {
+  buildHealthVerdict,
+  collectHealthChecks,
+  startHealthEndpoint,
+} from './health-endpoint';
+/* @public */ export type {
+  HealthVerdict,
+  CheckStatus,
+  HealthCheckItem,
+  HealthSnapshot,
+  HealthEndpointOptions,
+  HealthEndpointHandle,
+} from './health-endpoint';
+
 // OpenClaw Federation（联邦查询 · v1.1.8 新增）
 /* @public */ export { loadOpenClawChannel, createMemoryChannel, filterOnlinePeers } from './federation/channel';
 /* @public */ export type { ChannelMessage, FederationChannel } from './federation/channel';
