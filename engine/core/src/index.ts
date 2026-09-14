@@ -417,6 +417,32 @@
 } from './export/methodology';
 /* @public */ export { redact, verifyNoLeak, loadRedactRules } from './export/redactor';
 /* @public */ export type { RedactRulesConfig, RedactResult } from './export/redactor';
+// G10/G11 设备数据面策略（v1.4.9 T2/T3）
+/* @public */ export {
+  DEVICE_DATA_POLICY_FILE,
+  normalizeDirPath,
+  isPathAllowed,
+  deviceDataPolicyPath,
+  loadDeviceDataPolicy,
+  saveDeviceDataPolicy,
+  authorizeDeviceRead,
+} from './device-data-policy';
+/* @public */ export type {
+  DeviceDataPolicyConfig,
+  DeviceReadAuthResult,
+} from './device-data-policy';
+/* @public */ export {
+  DEVICE_UPLOAD_POLICY_FILE,
+  deviceUploadPolicyPath,
+  loadDeviceUploadPolicy,
+  saveDeviceUploadPolicy,
+  authorizeDeviceUpload,
+} from './device-upload-policy';
+/* @public */ export type {
+  UploadDeclaration,
+  DeviceUploadPolicyConfig,
+  DeviceUploadAuthResult,
+} from './device-upload-policy';
 /* @public */ export { aggregateSamples } from './export/sample-aggregator';
 /* @public */ export type {
   SampleSource,

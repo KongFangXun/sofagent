@@ -223,6 +223,26 @@
   ReassignResult,
 } from './device-registry';
 
+// G11 数据上行 WAL 暂存 + 断点续传（v1.4.9 T3）
+/* @public */ export {
+  UPLOAD_WAL_FILE,
+  uploadWalPath,
+  deriveUploadAesKey,
+  enqueueUpload,
+  ackUpload,
+  failUpload,
+  readUploadCursor,
+  pendingUploads,
+  decryptPendingUpload,
+  uploadWalStats,
+} from './upload-wal';
+/* @public */ export type {
+  UploadWalType,
+  UploadWalRecord,
+  EnqueueUploadResult,
+  PendingUpload,
+} from './upload-wal';
+
 // /health 三态健康巡检端点（v1.4.9 T1 验收 ⑥）
 /* @public */ export {
   buildHealthVerdict,
