@@ -94,6 +94,10 @@ const NAME_TO_MODULE = {
   // v1.4.9 G9（T1）：设备注册面（ops——设备发现与在线态，daemon 桥接）
   device_register: 'ops',
   device_list: 'ops',
+  // v1.4.9 G10（T2）：设备数据面授权读取（ops——白名单+脱敏，G10 拉取面）
+  device_data_query: 'ops',
+  // v1.4.9 G11（T3）：数据上行通道（audit——声明校验+加密+WAL，G11 推送面）
+  device_data_push: 'audit',
 };
 
 const src = readFileSync(REGISTRY, 'utf8');

@@ -25,7 +25,7 @@
 > | 版本路线 / 排期 / 探索方向 | [ROADMAP](./ROADMAP.md) | 参考 | 已交付进「迭代历程」、已排期进「版本规划」、未排期进「探索方向」——三态不混写 |
 > | 版本变更记录（未发布版） | `docs/changelog/vX.Y/vX.Y.Z.md` | 历史 | 排期版日志不进主 [CHANGELOG](../CHANGELOG.md) 索引（纯已发布索引）；发布时才收编 |
 > | 架构决策 / 术语定义 / 数据流 | [ARCHITECTURE](./ARCHITECTURE.md) | 参考 | 行业对标委托 VALIDATION、规则清单委托 SECURITY、路线委托 ROADMAP |
-> | 接口总览 / MCP 工具清单 | [API](./API.md) | 参考 | 七大接口面 + 97 tools 分域清单，由 tool-registry.ts 生成（check-docs §17 对账防漂移） |
+> | 接口总览 / MCP 工具清单 | [API](./API.md) | 参考 | 七大接口面 + 99 tools 分域清单，由 tool-registry.ts 生成（check-docs §17 对账防漂移） |
 > | 已知限制 / 诚实边界 | [LIMITATIONS](./LIMITATIONS.md) | 参考 | 各文档披露「已知风险」时引用 LIMITATIONS，不展开重复 |
 > | 任务流程 / 操作步骤 / 发版 SOP | [SKILL/](../SKILL/) · [changelog/releasing/](./changelog/releasing/) | 任务流程 | 「干什么用什么步骤」——写给执行者（人/Agent）照着做；深度参考链接 docs/，不复制 |
 > | 面向使用者的操作说明 | [README](../README.md) · [HANDBOOK](./HANDBOOK.md) | 用户手册 | 永不含代码库内部细节；开发者向操作说明进 DEVELOPMENT/guides |
@@ -212,7 +212,7 @@ graph TB
 | `engine/orchestrator/` | @sofagent/orchestrator — LangGraph createReactAgent 编排 |
 | `engine/daemon/` | @sofagent/daemon — 后台守护进程（cron 巡检 + 文件监听） |
 | `engine/harness/` | @sofagent/harness — SKILL 加载链（上下文注入） |
-| `engine/mcp/` | @sofagent/mcp — MCP Server（知识库 CRUD tool）· **97 个 MCP tool**（以 `engine/mcp/src/tool-registry.ts` SSOT 为准；v1.4.9 G9 新增 device_register/device_list 设备注册面；v1.4.7 新增 workflow CRUD/PR 生命周期/绩效/缺口/data_push 等 11 个；v1.4.6 新增 train_cloud 云端训练执行面；v1.4.5 三件 train_serve/train_compliance/train_deliverable；v1.4.2 新增 FDE 六引擎 fde_interview/fde_classify/fde_quantify/fde_derive/fde_distill/fde_deploy，插件家族 MCP 面另计） |
+| `engine/mcp/` | @sofagent/mcp — MCP Server（知识库 CRUD tool）· **99 个 MCP tool**（以 `engine/mcp/src/tool-registry.ts` SSOT 为准；v1.4.9 G9 新增 device_register/device_list 设备注册面 + G10/G11 新增 device_data_query/device_data_push 设备数据面；v1.4.7 新增 workflow CRUD/PR 生命周期/绩效/缺口/data_push 等 11 个；v1.4.6 新增 train_cloud 云端训练执行面；v1.4.5 三件 train_serve/train_compliance/train_deliverable；v1.4.2 新增 FDE 六引擎 fde_interview/fde_classify/fde_quantify/fde_derive/fde_distill/fde_deploy，插件家族 MCP 面另计） |
 | `engine/hooks/sofagent-load-chain/` | @sofagent/load-chain — SKILL 加载链 git hook（v1.2.x 新增，第 13 个 workspace） |
 | `engine/scripts/` | 运维脚本集（9 个 .sh + lib/ 模块 + windows/ .ps1 安装与卸载脚本）——安装（install.sh 调用）、卸载、验证（verify.sh）、daemon 管理、运行时审计日志记录等 |
 | `engine/dsh-plugins/` | cordis-plugin-sofagent* 10 款 DSH 插件——9 款原子（audit · rollback · inject · evolve · ontology · commons · gate · daemon · fde，inventory 可见 + Cursor/Claude hook 拦截）+ 1 款聚合（裸名 `cordis-plugin-sofagent`，一次挂载全套） |
@@ -236,7 +236,7 @@ graph TB
 |----|-----|
 | 当前版本 | **v1.4.8**（2026-09-13，✅ 已发版）· 上一版 v1.4.7（2026-09-11） |
 | 下一版 | v1.4.9（见 docs/ROADMAP.md 规划表） |
-| 测试覆盖 | 4535 测试 / 13 包（统计标准：`tools/check/test-count.sh` 实际执行的 workspace 包；全仓共 29 个 workspace——13 个 @sofagent/* 模块包 + 1 个工具包 load-chain + 10 个 DSH 插件（private，随 DSH 分发）+ 4 个 OpenClaw 插件（`engine/openclaw-plugins/`）+ 1 个 npm 裸名总包 umbrella，其中 14 个模块包发布至 npm `@sofagent` scope；OpenClaw 插件经根 `npm test --workspaces` 统一执行测试。实测见 `tools/check/test-count.sh`、声称数同步校验见 `tools/check/check-test-count.sh`） |
+| 测试覆盖 | 4591 测试 / 13 包（统计标准：`tools/check/test-count.sh` 实际执行的 workspace 包；全仓共 29 个 workspace——13 个 @sofagent/* 模块包 + 1 个工具包 load-chain + 10 个 DSH 插件（private，随 DSH 分发）+ 4 个 OpenClaw 插件（`engine/openclaw-plugins/`）+ 1 个 npm 裸名总包 umbrella，其中 14 个模块包发布至 npm `@sofagent` scope；OpenClaw 插件经根 `npm test --workspaces` 统一执行测试。实测见 `tools/check/test-count.sh`、声称数同步校验见 `tools/check/check-test-count.sh`） |
 | 审计规则 | 24 条（17 默认 + 7 扩展），活跃编号 A1-A11 + A14-A23 + E1/E2/E4（A12/A13/E3 已并入 A11，编号不再使用），每次 commit 自动跑 |
 | FORGE | fresh-eyes-loop + release-gate-loop 运行中 |
 | 数据目录 | **data/**（v1.2.1+ SSOT 运行时数据目录） |

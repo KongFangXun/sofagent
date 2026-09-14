@@ -1478,7 +1478,7 @@ sed 's|bash tools/check/test-count.sh|bash /nonexistent/test-count.sh|' tools/ch
 ```bash
 (
 # ① MCP tools 三处口径（SKILL.md / ARCHITECTURE 能力表 / dist 实测）——口径84，勿写死
-grep -q "97 tools" SKILL/SKILL.md || echo "⚠️ SKILL 工具速查漂移（口径97）" # 演进：52→60→61→66→67（train_submit）→79→80（corpus_export）→84→95（v1.4.7 商业平台接口版 +11）→97（v1.4.9 G9 设备注册面 +2），随 SSOT；锚词与 SKILL.md §MCP 工具速查同步升级
+grep -q "99 tools" SKILL/SKILL.md || echo "⚠️ SKILL 工具速查漂移（口径99）" # 演进：52→60→61→66→67（train_submit）→79→80（corpus_export）→84→95（v1.4.7 商业平台接口版 +11）→97（v1.4.9 G9 设备注册面 +2）→99（v1.4.9 G10/G11 设备数据面 +2），随 SSOT；锚词与 SKILL.md §MCP 工具速查同步升级
 node -e "const m=require('./engine/mcp/dist/tool-registry.js');const doc=require('./package.json').version;console.log('✅ TOOLS='+m.TOOLS.length+'（registry 实数，勿写死——发版后人工对 SSOT 口径）')"
 # ② snapshot tool 零 daemon 静态依赖（optionalDependencies 场景会炸）——排除注释行（🔴 import 铁律注释含 @sofagent/daemon；校准：grep -h 去前缀保排除生效）
 grep -hE "@sofagent/daemon" engine/mcp/src/tools/snapshot-list.ts engine/mcp/src/tools/snapshot-restore.ts 2>/dev/null | grep -vE "^[[:space:]]*//" | head -1 | grep -q . && echo "⚠️ snapshot 静态 import daemon 回潮"

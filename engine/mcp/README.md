@@ -49,7 +49,7 @@ MCP Server 通过 stdio 通信（JSON-RPC 2.0）。最小运行时依赖。
 
 ---
 
-## 暴露的 Tools（97 个）
+## 暴露的 Tools（99 个）
 
 > 完整清单（按域分组 + 每工具说明）见 [docs/API.md](../../docs/API.md)——由 tool-registry.ts 生成，门禁对账永不漂移。
 

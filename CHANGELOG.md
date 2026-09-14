@@ -9,7 +9,7 @@
 
 > 未来版本规划见 [ROADMAP.md](./docs/ROADMAP.md)。
 > 尚未实现的规划版本（标注"尚未实现"）在 `docs/changelog/v1.4/` 下，不纳入本索引；已开发完成但未发版的版本纳入本索引并附「待发版」状态标注——tag/npm/package.json 在发版时统一同步。
-> **v1.4.9 开发中**（2026-09-14 开发启动）：G9 设备注册面三件合一已交付（MCP 95→**97** tools：device_register/device_list + Ed25519 身份注册表 + 心跳捎带/回执 + /health 三态端点）——开发完成前按上方规则暂不收录索引行，发版时随 tag 一并翻转；完整施工叙事见 [v1.4.9 开发日志](./docs/changelog/v1.4/v1.4.9.md)。
+> **v1.4.9 开发中**（2026-09-14 开发启动）：G9 设备注册面 + G10/G11 设备数据面已交付（MCP 95→**99** tools：device_register/device_list + Ed25519 身份注册表 + 心跳捎带/回执 + /health 三态端点 + device_data_query 授权读取 + device_data_push 加密上行 WAL 断点续传）——开发完成前按上方规则暂不收录索引行，发版时随 tag 一并翻转；完整施工叙事见 [v1.4.9 开发日志](./docs/changelog/v1.4/v1.4.9.md)。
 
 > ⚠️ **API 退役公告（v1.4.3 · 提前一版公告，移除归 v1.5.0）**
 >
