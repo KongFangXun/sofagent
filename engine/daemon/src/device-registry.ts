@@ -37,6 +37,7 @@
 
 import { createHash, createHmac, randomUUID } from 'crypto';
 import { verifyAgentIdentity, getHmacKey, getDataDir, type AgentIdentity } from '@sofagent/core';
+import type { AvailableModelEntry, RuntimeSkillPackage } from './model-inventory';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -79,6 +80,10 @@ export interface DeviceRecord {
   lastHeartbeatAt: string | null;
   /** 是否已被管理员吊销（吊销后设备态接口全拒） */
   revoked: boolean;
+  /** 本机可用模型清单（T10 第三项：心跳携带——注册表扫描 + 端点探测，去重后五字段条目；null=未上报过） */
+  availableModels?: AvailableModelEntry[] | null;
+  /** 执行时 skill 快照清单（T10 第三项：执行前打包、执行后清理——心跳只携带清单摘要；null=未上报过） */
+  runtimeSkillPackages?: RuntimeSkillPackage[] | null;
 }
 
 /** 设备注册表持久化结构 */
@@ -376,6 +381,9 @@ export function registerDevice(
     registeredAt: ts,
     lastHeartbeatAt: null,
     revoked: false,
+    // T10 第三项：注册时未上报（null）——首次心跳携带后填充
+    availableModels: null,
+    runtimeSkillPackages: null,
   };
   registry.devices.push(record);
   saveDeviceRegistry(registry, dataDir);
@@ -481,7 +489,14 @@ export interface HeartbeatResponse {
  */
 export function reportHeartbeat(
   identity: AgentIdentity,
-  opts: { dataDir?: string; nowIso?: string } = {},
+  opts: {
+    dataDir?: string;
+    nowIso?: string;
+    /** T10 第三项：随心跳上报的本机模型清单（缺省 null = 本次心跳不更新该字段） */
+    availableModels?: AvailableModelEntry[] | null;
+    /** T10 第三项：随心跳上报的 skill 快照清单（缺省 null = 本次心跳不更新该字段） */
+    runtimeSkillPackages?: RuntimeSkillPackage[] | null;
+  } = {},
 ): HeartbeatResponse {
   const ts = opts.nowIso ?? new Date().toISOString();
   const gate = gateDevice(identity, opts.dataDir);
@@ -502,9 +517,24 @@ export function reportHeartbeat(
   const dev = registry.devices.find((d) => d.identity.agentId === record.identity.agentId);
   if (dev) {
     dev.lastHeartbeatAt = ts;
+    // T10 第三项：上报字段进注册表（undefined = 调用方未带该字段，保留原值——
+    // 显式 null 才视为「本次无模型清单」清空；数组则整组替换）
+    if (opts.availableModels !== undefined) dev.availableModels = opts.availableModels;
+    if (opts.runtimeSkillPackages !== undefined) dev.runtimeSkillPackages = opts.runtimeSkillPackages;
     saveDeviceRegistry(registry, opts.dataDir);
   }
-  appendDeviceEvent('heartbeat', record.identity.agentId, `心跳：${ts}`, opts.dataDir, ts);
+  // 事件留痕摘要带清单计数（回放可查「哪次心跳报了几个模型几个 skill 包」）
+  const modelCount = Array.isArray(opts.availableModels) ? opts.availableModels.length : (dev?.availableModels?.length ?? 0);
+  const skillCount = Array.isArray(opts.runtimeSkillPackages)
+    ? opts.runtimeSkillPackages.length
+    : (dev?.runtimeSkillPackages?.length ?? 0);
+  appendDeviceEvent(
+    'heartbeat',
+    record.identity.agentId,
+    `心跳：${ts}（models=${modelCount} skills=${skillCount}）`,
+    opts.dataDir,
+    ts,
+  );
   const pendingTasks = loadDeviceTasks(opts.dataDir).tasks.filter(
     (t) => t.deviceId === record.identity.agentId && t.status === 'pending',
   );

@@ -223,6 +223,20 @@
   ReassignResult,
 } from './device-registry';
 
+// T10 第三项：执行侧模型清单扫描 + skill 快照类型（v1.4.9 批 4）
+/* @public */ export {
+  DEFAULT_PROBE_ENDPOINTS,
+  PROBE_TIMEOUT_MS,
+  scanRegistryModels,
+  probeEndpoint,
+  scanModelInventory,
+} from './model-inventory';
+/* @public */ export type {
+  AvailableModelEntry,
+  RuntimeSkillPackage,
+  ModelInventory,
+} from './model-inventory';
+
 // G11 数据上行 WAL 暂存 + 断点续传（v1.4.9 T3）
 /* @public */ export {
   UPLOAD_WAL_FILE,
