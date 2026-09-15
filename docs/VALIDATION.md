@@ -210,6 +210,14 @@ OpenAI 2026-09-10 把驱动 Codex 的 Harness 通过 [Agents API](https://openai
 
 > 📖 来源：[Introducing the Agents API](https://openai.com/index/introducing-the-agents-api/)（openai.com，2026-09-10 · 官方博客 · A 级源）+ 得到大脑视频解读（2026-09-15，第三方表述框架）
 
+### Codex Guardian 模块：审查结论的失效语义（2026-09-16 源码核验）
+
+codex-rs 深处有个此前未研究过的 [guardian/](https://github.com/openai/codex/tree/main/codex-rs/core/src/guardian) 模块（约 340KB，测试过半）——「宿主审批决策 + 隔离的同步审查者」。模块文档一句设计哲学值得引用：*"The extension chooses policy and evidence; core enforces permissions and mandatory review requirements"*（扩展选策略与证据，核心强制权限与强制审查——与 sofagent「插件定义规则、引擎统一执行」同构）。
+
+**对我们最有价值的是一套此前没有的语义——审查结论何时失效**（`GuardianReviewReason` 枚举）：`FreshRequired`（需新鲜结论）/ `StaleScore`（分数过期）/ `AuthorizationChanged`（授权变更即失效）/ **`IncompatibleCompaction`（压缩与审查结论不兼容即作废重审）** / `ElevatedRisk` / `ScoringFailure`。sofagent 现状：审计结论与 HITL 授权一经产生即视为永久有效，无失效条件。`IncompatibleCompaction` 是「压缩不是审计记录」的**工程化背书**——官方把 compaction 明确列为审查结论的作废条件，比叙事判断更硬。配套语义：审批粒度 `Granular`（五类开关，关闭即**自动拒绝而非静默吞**——fail-closed 不打扰人）与按 host 粒度的网络出口审批（`NetworkApprovalContext{host, protocol}`——管进也要管出）。
+
+> 📖 来源：[openai/codex guardian/](https://github.com/openai/codex/tree/main/codex-rs/core/src/guardian)（2026-09-16 源码核验，mod.rs + approvals.rs + protocol.rs），Apache-2.0
+
 ### Omnigent：meta-harness 把策略强制在基础设施层
 
 [Omnigent](https://github.com/omnigent-ai/omnigent)（Databricks 系团队开源，Apache-2.0，alpha，31 天 7091 star）自称 **meta-harness**——坐在 Claude Code / Codex / Pi 等 harness 之上的一层。它把我们的「Harness 中间件」判断又往前推了一步，给了两个可引用的硬证据：
