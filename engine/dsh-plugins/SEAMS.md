@@ -205,3 +205,98 @@ OpenClaw 还有一套**与 plugin hook 不同源**的内建 hook 事件（`HOOK.
 | **OpenClaw** | hook 是**实现**——`api.on('before_tool_call', handler)` 真注册，拦停返回 `{ block: true, blockReason }` | `engine/openclaw-plugins/*/src/index.ts` |
 
 > ⚠️ **对使用者的含义**：DSH 侧插件的运行时介入（拦截 / 注入 / 收尾触发）**尚未接线**；今天拦截生效的路径是 sofagent 自身运行时（`engine/orchestrator` 的 `wrapToolsWithGate` + `checkDangerousCommand`）。补接线（基座加订阅面 + 各插件接线）是独立工作项——落地前，对外文案不得写成「已自动拦截」。
+
+## 7. P0 动态探针实测记录（2026-09-15 · DSH 0.1.2-alpha.1 · Node 24.19.0）
+
+> 本节是 P0 探针（临时仓外插件 `cordis-plugin-sofagent-probe` + 仓外 profile
+> `~/.dsh/profiles/probe/`）的实测结论。探针产物已清理，不留在仓库；本节是结论沉淀。
+> 复核方式：临时插件 + `dsh --profile probe` 真实跑通 headless 任务（真 LLM + 真工具调用）。
+
+### 7.1 六项产出逐条结论
+
+| # | 实测项 | 结论 | 真实输出摘录 |
+| --- | --- | --- | --- |
+| ① | 契约形状复核 | **与任务书 §1.2 记载相符**。`ctx.get('tools')` / `ctx.get('tools', false)` / `ctx.tools`（属性）三种取法全部可用，返回 ToolRuntime 实例 | `[probe] ctx.get("tools") = <ToolRuntime register:function guard:function>` |
+| ① | 契约形状复核（身份差异） | `ctx.get('tools')` 与 `ctx.tools` 返回**不是同一对象引用**（`same object via get/property = false`）——属性访问经 Proxy trap 包装（getTraceable），方法面一致，等价可用 | `[probe] same object via get/property = false` |
+| ① | 契约形状复核（render 签名修正） | 🔴 `output.render` 是**双参签名** `render(exec.arguments, value)`——第一参是**工具入参**，第二参才是 execute 返回值。此前按单参 `render(value)` 的理解不准确；dsh-backend.ts 的 `safeRender(args, value)` 双参形态正确 | `rendered = tool.output.render(exec.arguments, value)`（dsh-tools/lib/index.js:3431） |
+| ② | ctx.tools 就绪时机与 inject 声明 | **plugin default export 上声明 `inject: ['tools']` 后，apply() 内三种取法均立即可用**（探针实测无等待/无竞态）。kit 现状 `PLUGIN_INJECT = ['settings','dynamicCordisRunner']` 不含 tools——P1 加 toolsRole 后必须显式扩（或走 `ctx.get?.('tools')` 免 inject 的鸭子路径）。不声明 inject 时属性访问会抛 `cannot get property "tools" without inject` | 探针 apply() 入口同 tick 打印 P1 段全部形状 |
+| ② | `ctx.get('tools')` vs `ctx.tools.register` 裁定 | **两者皆可用**；P1 kit 拍板走 `ctx.get?.('tools')`（对齐 dsh-backend.ts:135 参考实现）。理由：`ctx.get` 是 reflect mixin 直挂方法，**不要求 inject 声明**，服务未就绪返回 `undefined` 而非抛错——天然满足 kit「宿主 API 缺席降级不抛」红线；属性形态无 inject 时抛错且依赖 Proxy internal/get 瀑布流。方法面（register/guard/restrict/presentAs/view/modeFor）两种取法完全一致 | 见 7.2 机制分析 |
+| ③ | 工具注册后模型可见可调 | **通**。`register()` 返回 disposer（function）；模型在提示词里看到 `sofagent_probe_echo` 并真实调用：`tools/pre-execute` 瀑布流监听器收到调用 → `tools/result` 收到成功结果 `{"isError":false,...,"value":{"echoed":"probe-echo:hello-from-probe"}}` | `[probe] waterfall tools/pre-execute listener invoked for sofagent_probe_echo args.message = "hello-from-probe"` |
+| ③ | 危险调用被拒（guard） | **通**。`guard()` 同步返回字符串=拒绝理由，单调不可翻案；模型收到拒绝后明确表示不绕过 | `Error: probe-guard: DANGEROUS keyword denied (monotonic)` |
+| ④ | ask 分支真实交互 | **通，但 headless 下 fail-closed**。`ctx.get('approval')` 服务存在（`<ApprovalService request:function>`）；`tools/pre-execute` 返回 `{kind:'ask', reason}` 后宿主走 `serviceAsk → approval.request()`，无 answerer 时拒绝（`requires approval, but no approval channel is available`）。**WebUI 审批弹窗不在本探针范围**（需 web profile + 浏览器，P3 验收复核） | `[probe] event tools/result fired: sofagent_probe_ask {"isError":true,...requires approval...}` |
+| ⑤ | 命令/UI 面是否存在 | **headless 无 commands 注册面**——`ctx.get('commands')` 返回 `<CommandsService add:undefined>`，add 是 undefined 无法注册命令。WebUI 端命令面待 P3 验收（web profile）复核。⚠️ 直接影响 P1 kit 设计：**kit 不做命令注册面** | `[probe] ctx.get("commands") = <CommandsService add:undefined>` |
+| ⑥ | 宿主自跑可复现验证剧本 | 见 7.3 | — |
+
+### 7.2 两种取法的机制裁定（静态源码 + 动态双重确认）
+
+宿主 `@deepseek-ai/cordis`（dsh-deployed 内嵌 cordis 4.0.1，`@deepseek-ai/cordis` 包）：
+
+- **`ctx.get('tools')`** —— `ReflectService.get(name, strict=true)`（reflect mixin 直挂 ctx）：
+  从 fiber store 按 isolation key 取实现；**strict 态**下服务 fiber 未 active 返回 `undefined`；
+  **不要求 inject 声明**，天生鸭子降级友好（`ctx.get?.('tools')` + 判空）。
+- **`ctx.tools`（属性访问）** —— Context Proxy get trap：
+  1. `Reflect.has(target, prop)` 命中 → 直返；
+  2. 未命中 → `reflect.props[prop]` 存在（service）→ 走 `events.waterfall("internal/get", ...)` 解析；
+  3. **无 inject 声明且 fiber.runtime 存在** → 沿 fiber 链查 `fiber.store?.[prop]`，
+     查不到最终 `throw cannot get property "tools" without inject`；
+  `ctx.tools.register` 直接在 apply() 内可用，前提是 plugin 声明了 `inject: ['tools']`
+  （或经 `ctx.get` 先取）。属性形态的优势是**链式调用简洁**（`ctx.tools.register(def)` 一行），
+  劣势是**无 inject 时抛错**（破坏 kit「降级不抛」红线）。
+
+**裁定：P1 kit 采用 `ctx.get?.('tools')` 作为工具注册面的取法**（不采用 `ctx.tools` 属性形态），
+与 dsh-backend.ts:135 参考实现一致，且天然满足降级红线。
+
+### 7.3 宿主自跑可复现验证剧本（⑥产出）
+
+前置条件：DSH 0.1.2-alpha.1（`~/.local/share/dsh-deployed`）· Node 24.19.0 · `~/.zshrc` 内 GLM_API_KEY 可用。
+
+```bash
+# 1) 建仓外探针插件（纯 apply(ctx) 形态，无 cordis import——对齐 kit 鸭子类型先例）
+mkdir -p /tmp/sofagent-probe-plugin/dist
+#    package.json: { name: "cordis-plugin-sofagent-probe", main: "dist/index.js", type: "module",
+#                    dsh: { bundle: { patch: "./cordis.patch.yml" } } }
+#    cordis.patch.yml: - insert: [ { id: sofagent-probe, name: 'cordis-plugin-sofagent-probe',
+#                                    inject: [tools], config: { probeTag: probe } } ]
+#    dist/index.js: export default { name, inject: ['tools'], apply(ctx, config) { ... } }
+#    （apply 内：打印 ctx.get('tools') 形状 → 注册 sofagent_probe_echo/ask/report 工具 →
+#      guard 拦 DANGEROUS → ctx.on('tools/change'|'tools/result'|'tools/pre-execute') 订阅 →
+#      探测 ctx.get('approval')/ctx.get('commands')）
+
+# 2) 建探针 profile（link: 挂入，绝不动 web/headless）
+mkdir -p ~/.dsh/profiles/probe
+#    package.json: bundles [ "@deepseek-ai/dsh-base", "@deepseek-ai/dsh-headless",
+#                            "cordis-plugin-sofagent-probe" ] + deps link:/tmp/sofagent-probe-plugin
+cd ~/.dsh/profiles/probe && pnpm install
+
+# 3) 验证合成树（探针行出现且 inject 生效）
+dsh --profile probe --dump-config | grep -A6 sofagent-probe
+#    期望：- id: sofagent-probe / name: cordis-plugin-sofagent-probe / inject: [tools]
+
+# 4) 跑通三项核心验证（真 LLM）
+dsh --profile probe "Call the tool sofagent_probe_echo with message 'hello-from-probe'"
+#    期望：[probe] 前缀打印 P1–P5 全部形状结论；模型真实调用工具；tools/result 成功回显
+dsh --profile probe "Call sofagent_probe_echo with message 'DANGEROUS-payload'"
+#    期望（输出尾部）：Error: probe-guard: DANGEROUS keyword denied (monotonic)
+dsh --profile probe "Call sofagent_probe_ask with message 'confirm-me'"
+#    期望：tools/result isError:true —— requires approval, but no approval channel is available
+
+# 5) 清理（探针产物不留仓库，profile 用完即删）
+rm -rf /tmp/sofagent-probe-plugin ~/.dsh/profiles/probe
+```
+
+### 7.4 对 P1 kit 扩容的直接输入
+
+1. **`PLUGIN_INJECT` 必须扩 `'tools'`**（当走属性取法时）；走 `ctx.get?.('tools')` 则可免，
+   但显式声明更稳（保证 apply 时服务就绪、消除竞态可能）。P1 实现采用「inject 声明 +
+   `ctx.get?.('tools')` 取服务」双保险。
+2. **render 双参签名**：kit 的宿主形状转换必须按 `render(args, value)` 传双参——
+   dsh-backend.ts 的 `safeRender(args, value)` 正是此形态。
+3. **register() 返回 disposer**：必须纳入 kit 的 disposers 复合卸载契约（与 provide/define 的
+   disposer 合并）。
+4. 注册面无 `name='run_code'` 冲突风险（sofagent 工具名 mcp__sofagent__* 前缀不命中保留名）。
+5. **headless 无 commands 注册面**：kit 不做命令面；未来若需要，须在 web profile 下复核
+   `dsh-commands` 的 add 方法面。
+6. 工具注册时机：apply() 内同步注册即可（探针实测无竞态）；`tools/change` 事件每次注册都广播
+   （可用作注册确认信号）。
+7. **`ctx.get('approval')` 在 headless 下服务存在但无 answerer**：fail-closed。若某工具需要 ask
+   语义，须在 web profile（有 UI answerer）下才有完整交互；headless 下等价于 deny。
