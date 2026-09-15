@@ -1,26 +1,53 @@
 // ============================================================
-// @sofagent/dsh-plugin-kit · DSH 适配层基座（v1.4.8 第5批 · 适配层标准化 B）
+// @sofagent/dsh-plugin-kit · DSH 适配层基座（v1.4.9 插件能力面 P1 · 扩容）
 // ============================================================
 // 9 个 cordis-plugin-sofagent-*> 的 src/index.ts 此前各 98 行、近乎逐字重复
 // （pluginMeta 声明 / 懒加载 invoke / apply 三段式：provide + dynamicCordisRunner + settings）。
 // 本包把这段样板收成一次 createSofagentPlugin() 调用，插件侧只留
 // 「我是谁 / 我挂哪（seam）/ 我桥接谁」。
 //
+// v1.4.9 P1 扩容（插件能力面批 · F1①/F1②）：
+//   F1① 工具注册面——SofagentPluginEntry 新增 toolsRole?: string：
+//       apply() 检测 ctx.get?.('tools') → 懒加载 @sofagent/mcp → TOOLS 筛 roles
+//       → 逐个转宿主形状注册（output 双字段补全 + safeRender 4KB 截断——对齐
+//       dsh-backend.ts registerSofagentTools 参考实现）；缺依赖/缺 API 降级不抛 +
+//       report 可见。工具清单单一源 = engine/mcp/src/tool-registry.ts 的 TOOLS，
+//       本包**不手抄清单**（gen-plugin-manifests.mjs 的 sofagent.tools 生成段 +
+//       --check 断言与之对账）。
+//   F1② 多包桥接——bridgePkg/bridgeApi 单值 → bridges 多包数组：
+//       invoke 按序解析，部分可用即部分成功；🔴 原单值形态的 throw 改为
+//       降级可见（report.failed + 错误消息），三包缺一 → 其余照常。
+//
 // 🔴 适配层红线（不绑宿主，靠写法守）：
 //   ① 不 import cordis 包、不 import 宿主 SDK 的**类型**——`apply(ctx: unknown)`，
 //      只按结构访问 ctx（运行时鸭子类型探测），上下文类型在本文件内联描述。
-//   ② 宿主 API 缺席时**降级不抛**：provide / dynamicCordisRunner / settings 三者
-//      任一缺席都只跳过该增强项，绝不让 profile 加载崩在适配层。
+//   ② 宿主 API 缺席时**降级不抛**：provide / dynamicCordisRunner / settings / tools
+//      四者任一缺席都只跳过该增强项，绝不让 profile 加载崩在适配层。
 //   ③ 桥接的 @sofagent/* 能力包用**懒加载**（动态 import）+ 缺依赖降级，插件可独立安装。
+//   ④ 桥接多包缺一不炸：部分可用即部分成功，失败包记入 report.failed（可见），
+//      绝不整挂失败——「三包缺一 → 其余照常」。
+//
+// 🔴 字段名差异警示（DSH vs OpenClaw，两侧事件形状不同——取错静默 undefined）：
+//      DSH     = exec.name / exec.arguments
+//      OpenClaw = event.toolName / event.params
 //
 // ⚠️ 既有形态说明：`require('@deepseek-ai/schemastery')` 是 v1.4.5 T6 起就存在于
-//    9 个插件里的**惰性运行时**读取（包在 try/catch 内、非顶层静态 import）。本批
-//    **未新增**任何宿主依赖面，只是把它从 9 份复制收敛成 1 份。
+//    9 个插件里的**惰性运行时**读取（包在 try/catch 内、非顶层静态 import）。
 //
-// ⚠️ 不改运行行为：服务名（sofagent.<short>）、dynamicCordisRunner.define 的入参
-//    形状、settings namespace 与默认值，全部与收敛前逐项对齐；仅两处**文案**归一化
-//    （见文件末 NOTE）。
+// ⚠️ P0 探针实测输入（SEAMS.md §7，2026-09-15）：
+//    - ctx.get?.('tools') 是推荐取法（不要求 inject 声明，缺席返 undefined 不抛）；
+//    - register() 返回 disposer（必须纳入复合卸载契约）；
+//    - output.render 是双参签名 render(args, value)——第一参是工具入参；
+//    - headless 无 commands 注册面——kit 不做命令面。
 // ============================================================
+
+/** 桥接声明：一个 @sofagent/* 能力包 + 其公共 API 函数名 */
+export interface SofagentBridge {
+  /** 桥接的 sofagent 能力包，如 @sofagent/audit */
+  pkg: string;
+  /** 桥接包内实际调用的公共 API 函数名，如 runRules */
+  api: string;
+}
 
 /** 插件清单条目——字段与 engine/dsh-plugins/plugins.json 一一对齐 */
 export interface SofagentPluginEntry {
@@ -32,10 +59,27 @@ export interface SofagentPluginEntry {
   seamSemantics: string;
   /** 依赖的 sofagent 能力说明（供 DSH skill 引导链展示） */
   capability: string;
-  /** 桥接的 sofagent 能力包，如 @sofagent/audit */
+  /**
+   * 桥接的 sofagent 能力包（单包形态，向后兼容既有 9 条目）。
+   * v1.4.9 F1② 起与 bridges 多包形态二选一：都给时 bridges 优先。
+   */
   bridgePkg: string;
-  /** 桥接包内实际调用的公共 API 函数名，如 runRules */
+  /**
+   * 桥接包内实际调用的公共 API 函数名（单包形态）。
+   * @see SofagentPluginEntry.bridgePkg
+   */
   bridgeApi: string;
+  /**
+   * 多包桥接（v1.4.9 F1②）：按序解析，部分可用即部分成功。
+   * 单包字段（bridgePkg+bridgeApi）与此二选一；都提供时本字段优先。
+   */
+  bridges?: SofagentBridge[];
+  /**
+   * 工具注册面（v1.4.9 F1①）：tool-registry.ts 的角色标签。
+   * 提供时 apply() 会把 @sofagent/mcp TOOLS 中 roles 含此值的工具
+   * 逐个注册进 DSH tools 服务（模型可见可调）。缺省不注册工具。
+   */
+  toolsRole?: string;
   /** 短描述（不含 seam 与桥接后缀），如「变更机器审阅——24 规则 + git diff 硬证据 + 节点级审计」 */
   description: string;
 }
@@ -57,6 +101,50 @@ export interface SofagentPluginHostPackage {
   version?: string;
 }
 
+/** @sofagent/mcp tool-registry 的 ToolDef 最小结构（kit 侧鸭子描述，不 import 引擎包） */
+interface McpToolDef {
+  name: string;
+  description: string;
+  inputSchema: {
+    type: 'object';
+    properties: Record<string, unknown>;
+    required?: string[];
+  };
+  roles?: string[];
+  handler?: (args: Record<string, unknown>, ctx?: unknown) => unknown;
+}
+
+/** @sofagent/mcp 公共导出的最小结构（TOOLS 数组入口） */
+interface McpRegistryModule {
+  TOOLS?: McpToolDef[];
+}
+
+/**
+ * 懒加载 @sofagent/mcp 的工具清单（单一源 = tool-registry.ts）。
+ * 🔴 用 **子路径导出** `@sofagent/mcp/tool-registry`，不用主入口——主入口
+ * `dist/mcp-server.js` 尾部有 `const server = new McpServer(); server.start();`
+ * **无条件启动 stdio server**（kit 在 DSH 宿主进程内 import 会挂起/抢 stdin），
+ * 且主入口不导出 TOOLS。子路径入口 `dist/tool-registry.js` 干净导出 104 工具、
+ * 零副作用（实测 node --input-type=module import 无 server 启动输出）。
+ */
+const MCP_REGISTRY_SPECIFIER = '@sofagent/mcp/tool-registry';
+
+/** invoke 的一次桥接解析结果 */
+interface BridgeResolution {
+  pkg: string;
+  api: string;
+  /** 解析成功的调用函数 */
+  fn: (...args: unknown[]) => unknown;
+}
+
+/** invoke 的整体结果：成功的桥接函数 + 失败包清单（降级可见） */
+export interface InvokeReport {
+  /** 按声明序解析成功的桥接（调用时按序尝试第一个可用的） */
+  resolved: BridgeResolution[];
+  /** 解析失败的桥接（缺依赖 / API 不是函数），含可读原因 */
+  failed: Array<{ pkg: string; api: string; reason: string }>;
+}
+
 /** 品牌色（与 9 个插件既有的 #16B8F3 一致） */
 const DEFAULT_BRAND_COLOR = '#16B8F3';
 
@@ -65,6 +153,11 @@ const DEFAULT_BRAND_COLOR = '#16B8F3';
  * 🔴 必须**同时**挂在插件对象上（见文件末 plugin 对象），否则宿主用 `ctx.plugin()` 挂载时
  *    拿不到就绪门控——`cordis.patch.yml` 的 `inject` 只对「宿主直接挂载该 id」生效，
  *    经聚合层转挂时不带过去。声明在对象上后两条挂载路径同语义。
+ *
+ * v1.4.9 P1：**不含 'tools'**——工具注册面走 `ctx.get?.('tools')` 鸭子探测（P0 探针
+ * 裁定，SEAMS.md §7.2）：ctx.get 不要求 inject 声明、缺席返 undefined 不抛，天然
+ * 满足「降级不抛」红线；若在此加 'tools'，宿主缺 tools 服务的 profile（headless
+ * 极简形态）会把插件挂载卡成 pending。桥接的 @sofagent/mcp 同理走懒加载。
  */
 export const PLUGIN_INJECT = ['settings', 'dynamicCordisRunner'] as const;
 
@@ -75,10 +168,16 @@ export const PLUGIN_INJECT = ['settings', 'dynamicCordisRunner'] as const;
  */
 interface HostContext {
   provide?: (name: string, service: Record<string, unknown>) => unknown;
+  get?: (name: string, strict?: boolean) => unknown;
   dynamicCordisRunner?: { define?: (request: Record<string, unknown>) => unknown };
   settings?: { register?: (ns: string, schema: unknown, opts?: Record<string, unknown>) => unknown };
   sofagent?: Record<string, unknown>;
   [key: string]: unknown;
+}
+
+/** DSH tools 服务的最小结构面（ToolRuntime 的 kit 侧鸭子描述） */
+interface HostToolsService {
+  register?: (def: Record<string, unknown>) => unknown;
 }
 
 /**
@@ -95,15 +194,36 @@ function hostCode(source: string, message: string): string {
   ].join('\n');
 }
 
+/** 规范化桥接清单：单包字段 → [ {pkg, api} ]；多包字段优先 */
+function normalizeBridges(options: SofagentPluginOptions): SofagentBridge[] {
+  if (Array.isArray(options.bridges) && options.bridges.length > 0) {
+    return options.bridges;
+  }
+  return [{ pkg: options.bridgePkg, api: options.bridgeApi }];
+}
+
+/** render 兜底——字符串直出，对象 JSON 化（截断防超大输出进 prompt；对齐 dsh-backend safeRender） */
+function safeRender(value: unknown): string {
+  if (typeof value === 'string') return value;
+  try {
+    const s = JSON.stringify(value);
+    return s && s.length > 4000 ? s.slice(0, 4000) + '…(截断)' : (s ?? '');
+  } catch {
+    return String(value);
+  }
+}
+
 /**
  * 创建 DSH 适配层插件（pluginMeta + 懒加载 invoke + apply 三段式一次到位）。
  *
- * @param options 插件声明（id / seam / capability / description / bridge / 可选 envelope 覆盖）
+ * @param options 插件声明（id / seam / capability / description / bridge(s) / 可选 toolsRole + envelope 覆盖）
  * @param hostPkg 插件自己的 package.json（仅用 version；省略则兜底 '0.0.0-unknown'——缺版本比错版本诚实）
  * @returns { pluginMeta, capability, invoke, plugin } ——插件 src/index.ts 直接再导出即可
  */
 export function createSofagentPlugin(options: SofagentPluginOptions, hostPkg?: SofagentPluginHostPackage) {
-  const { id, seam, capability, description, bridgePkg, bridgeApi } = options;
+  const { id, seam, capability, description } = options;
+  const bridges = normalizeBridges(options);
+  const toolsRole = options.toolsRole;
   // 短名/服务名/日志前缀：cordis-plugin-sofagent-audit → audit
   const short = id.replace(/^cordis-plugin-sofagent-/, '');
   const brandColor = options.brandColor ?? DEFAULT_BRAND_COLOR;
@@ -121,23 +241,136 @@ export function createSofagentPlugin(options: SofagentPluginOptions, hostPkg?: S
   } as const;
 
   /**
-   * 调用桥接的 sofagent @public API（懒加载 + 缺依赖降级）。
-   * 包装层职责：把 sofagent 能力暴露成 DSH 可调用的插件函数。
+   * 桥接声明尾段（pluginMeta.description / report 用）：
+   * 单包 → 「桥接 <pkg> <api>」；多包 → 「桥接 <pkg1> <api1> / <pkg2> <api2>」。
+   */
+  const bridgeTail = bridges.map((b) => `${b.pkg} ${b.api}`).join(' / ');
+
+  /**
+   * 解析全部桥接（懒加载动态 import，部分失败不抛——F1② 红线）。
    *
-   * @throws 依赖未装 / 能力不可用时抛可读错误——插件可独立安装，让调用方看到原因而非静默失败
+   * @returns InvokeReport：成功的按声明序排列；失败的带可读原因（缺依赖 / API 非函数）
+   */
+  async function resolveBridges(): Promise<InvokeReport> {
+    const resolved: BridgeResolution[] = [];
+    const failed: InvokeReport['failed'] = [];
+    for (const b of bridges) {
+      try {
+        const mod = (await import(b.pkg)) as Record<string, unknown>;
+        const fn = mod[b.api];
+        if (typeof fn !== 'function') {
+          failed.push({ pkg: b.pkg, api: b.api, reason: `${b.api} 不是可调用函数（${b.pkg} 公共 API）` });
+          continue;
+        }
+        resolved.push({ pkg: b.pkg, api: b.api, fn: fn as (...a: unknown[]) => unknown });
+      } catch (err) {
+        failed.push({
+          pkg: b.pkg,
+          api: b.api,
+          reason: err instanceof Error ? err.message : String(err),
+        });
+      }
+    }
+    return { resolved, failed };
+  }
+
+  /**
+   * 调用桥接的 sofagent @public API（懒加载 + 部分降级——v1.4.9 F1② 重设计）。
+   *
+   * 🔴 与单值时代的差异：**全部桥接都不可用时才抛**；部分可用时调用第一个
+   *    解析成功的桥接（按声明序）。失败包不阻断可用包——「三包缺一 → 其余照常」。
+   *
+   * @returns 桥接函数的返回值（首个可用桥接的调用结果）
+   * @throws 全部桥接都不可用时抛可读错误（含逐包失败原因——调用方看到的是全景而非静默）
    */
   async function invoke<T = unknown>(...args: unknown[]): Promise<T> {
-    try {
-      // 动态导入：包名来自声明，故不能用字面量 import（缺依赖时由 catch 兜住，不阻断 profile 加载）
-      const mod = (await import(bridgePkg)) as Record<string, unknown>;
-      const fn = mod[bridgeApi];
-      if (typeof fn !== 'function') {
-        throw new Error(`${bridgeApi} 不是可调用函数（${bridgePkg} 公共 API）`);
-      }
-      return (await (fn as (...a: unknown[]) => unknown)(...args)) as T;
-    } catch (err) {
-      throw new Error(`${id} 依赖 ${bridgePkg} 不可用：${err instanceof Error ? err.message : String(err)}`);
+    const report = await resolveBridges();
+    if (report.resolved.length === 0) {
+      const detail = report.failed.map((f) => `${f.pkg}.${f.api}: ${f.reason}`).join('；');
+      throw new Error(`${id} 依赖不可用（全部桥接失败）：${detail}`);
     }
+    if (report.failed.length > 0) {
+      const detail = report.failed.map((f) => `${f.pkg}.${f.api}: ${f.reason}`).join('；');
+      console.error(`${logTag} 部分桥接降级（其余照常）：${detail}`);
+    }
+    return (await report.resolved[0].fn(...args)) as T;
+  }
+
+  /**
+   * 工具注册面（v1.4.9 F1①）——把 @sofagent/mcp TOOLS 中 roles 含 toolsRole 的工具
+   * 逐个注册进宿主 tools 服务（模型可见可调）。
+   *
+   * 防御式边界（对齐 dsh-backend.ts registerSofagentTools 参考实现）：
+   * - tools 服务缺失（ctx.get?.('tools') 为空 / register 非函数）→ 跳过 + WARN
+   * - @sofagent/mcp 缺依赖 → 跳过 + WARN（插件可独立安装）
+   * - 单工具注册失败 → 跳过该工具 WARN，不中断其余注册
+   *
+   * @returns 实际注册成功的工具数
+   */
+  async function registerToolsForRole(ctx: HostContext): Promise<number> {
+    const svc = ctx.get?.('tools') as HostToolsService | undefined;
+    if (!svc || typeof svc.register !== 'function') {
+      console.error(`${logTag} DSH tools 服务面缺失——角色工具未注入（降级，不阻断插件挂载）`);
+      return 0;
+    }
+    let mod: McpRegistryModule;
+    try {
+      mod = (await import(MCP_REGISTRY_SPECIFIER)) as McpRegistryModule;
+    } catch (err) {
+      console.error(
+        `${logTag} @sofagent/mcp/tool-registry 不可用（${err instanceof Error ? err.message : String(err)}）——角色工具未注入（降级）`,
+      );
+      return 0;
+    }
+    const tools = Array.isArray(mod.TOOLS) ? mod.TOOLS : [];
+    if (tools.length === 0) {
+      console.error(`${logTag} @sofagent/mcp TOOLS 为空——角色工具未注入（降级）`);
+      return 0;
+    }
+    const selected = tools.filter((t) => Array.isArray(t.roles) && t.roles.includes(toolsRole as string));
+    if (selected.length === 0) {
+      console.error(`${logTag} TOOLS 无 roles 含 "${toolsRole}" 的工具——0 个注册（清单单一源 = tool-registry.ts）`);
+      return 0;
+    }
+    let registered = 0;
+    for (const t of selected) {
+      const handler = typeof t.handler === 'function' ? t.handler : undefined;
+      if (!handler) {
+        console.error(`${logTag} 工具 ${t.name} 无 handler——跳过（不中断其余注册）`);
+        continue;
+      }
+      try {
+        svc.register({
+          name: t.name,
+          description: t.description,
+          parameters: t.inputSchema,
+          // output 双字段补全（register 强校验：schema 必填 + render 必须可调用）
+          output: {
+            schema: { type: 'string' },
+            // 🔴 render 双参签名（P0 探针裁定）：第一参 = 工具入参，第二参 = execute 返回值
+            render: (_args: unknown, value: unknown) => safeRender(value),
+          },
+          execute: async (args: Record<string, unknown>) => {
+            const ret = await handler(args, undefined);
+            // ToolResult 形态 → 字符串化 text（sofagent MCP 工具返回 { text, data } 二元组）
+            if (ret && typeof ret === 'object' && 'text' in ret) {
+              return String((ret as { text: unknown }).text);
+            }
+            if (ret && typeof ret === 'object' && 'error' in ret && !('text' in ret)) {
+              throw new Error(String((ret as { error: unknown }).error));
+            }
+            return safeRender(ret);
+          },
+        });
+        registered++;
+      } catch (err) {
+        console.error(`${logTag} 工具 ${t.name} 注册失败（跳过，不中断其余）：${err instanceof Error ? err.message : String(err)}`);
+      }
+    }
+    if (registered > 0) {
+      console.error(`${logTag} 角色工具注册成功：${registered}/${selected.length}（role="${toolsRole}"）`);
+    }
+    return registered;
   }
 
   /**
@@ -224,7 +457,20 @@ export function createSofagentPlugin(options: SofagentPluginOptions, hostPkg?: S
       console.error(`${logTag} settings.register 失败:`, err instanceof Error ? err.message : String(err));
     }
 
-    // ④ 卸载契约：收集到的宿主 disposer → 幂等复合 disposer，作为 apply 返回值交宿主登记
+    // ④ 工具注册面（v1.4.9 F1①）：toolsRole 声明时把 @sofagent/mcp 的角色工具注入宿主。
+    //    异步面：apply 同步返回复合 disposer，工具注册异步进行（不阻塞挂载——缺依赖/缺服务
+    //    只记 console.error 降级可见）。注册产生的 disposer 由 registerToolsForRole 内部
+    //    通过 svc.register 返回值收集——但异步面无法同步收进 disposers，改为注册完成后
+    //    动态追加（复合 disposer 是闭包数组引用，push 仍生效——只要卸载发生在注册完成后）。
+    if (typeof toolsRole === 'string' && toolsRole !== '') {
+      registerToolsForRole(c)
+        .then(() => undefined)
+        .catch((err: unknown) => {
+          console.error(`${logTag} 角色工具注册异常（降级，不阻断）：${err instanceof Error ? err.message : String(err)}`);
+        });
+    }
+
+    // ⑤ 卸载契约：收集到的宿主 disposer → 幂等复合 disposer，作为 apply 返回值交宿主登记
     //    （cordis 4.x `Fiber._execute`：apply 返回函数即登记为 effect disposer，fiber 卸载时反向执行）
     if (disposers.length === 0) return undefined;
     let disposed = false;
@@ -245,6 +491,8 @@ export function createSofagentPlugin(options: SofagentPluginOptions, hostPkg?: S
     pluginMeta,
     capability,
     invoke,
+    /** 桥接解析报告（v1.4.9 F1②）：resolved/failed 双清单——降级可见的自省面 */
+    resolveBridges,
     // name：宿主诊断面可读；inject：宿主 `ctx.plugin()` 挂载时的就绪门控（与 cordis.patch.yml 同值）
     plugin: { name: `sofagent-${short}`, inject: PLUGIN_INJECT, apply },
   };
@@ -256,3 +504,11 @@ export function createSofagentPlugin(options: SofagentPluginOptions, hostPkg?: S
 //      不符的陈旧文案）改为按 bridgeApi 动态取——两者都只影响异常提示文本。
 //   ② fde 的 dynamicCordisRunner `purpose` 由「FDE 进场方法论桥接——本体数据视图生成」
 //      归一为 `<description>`，与其余 8 个插件同形；WebUI 文案更完整，注册形状不变。
+//
+// NOTE（v1.4.9 P1 · F1①/F1② 扩容的行为变化）：
+//   ① invoke 从「单包 + 全有全无 throw」改为「多包 + 部分可用即部分成功」：
+//      全部失败才 throw（错误消息含逐包原因）；部分失败打降级日志继续。
+//   ② 新增 toolsRole 工具注册面：apply() 异步注册 @sofagent/mcp 角色工具，
+//      缺 tools 服务 / 缺 @sofagent/mcp / 单工具失败三级降级全不抛。
+//   ③ PLUGIN_INJECT 保持 ['settings','dynamicCordisRunner'] 不变——tools 走
+//      ctx.get?.('tools') 鸭子探测（P0 探针裁定，SEAMS.md §7.2）。

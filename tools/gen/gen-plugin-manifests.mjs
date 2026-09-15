@@ -50,6 +50,8 @@ import path from 'path';
 const REAL_ROOT = path.resolve(import.meta.dirname, '../..');
 const DSH_PLUGINS_DIR = 'engine/dsh-plugins';
 const MANIFEST = `${DSH_PLUGINS_DIR}/plugins.json`;
+/** v1.4.9 F1①：插件工具清单的单一源（roles 取值面 + 工具名全集都出自这里） */
+const TOOL_REGISTRY = 'engine/mcp/src/tool-registry.ts';
 
 const ARGV = process.argv.slice(2);
 if (ARGV.includes('--help') || ARGV.includes('-h')) {
@@ -240,8 +242,13 @@ function renderPatch(entry, version) {
   ].join('\n');
 }
 
-/** 生成 package.json 的生成段（description / sofagent / dsh / //optionalDependencies / optionalDependencies） */
-function generatedSegments(entry, version) {
+/**
+ * 生成 package.json 的生成段（description / sofagent / dsh / //optionalDependencies / optionalDependencies）
+ * @param {object} entry 清单条目
+ * @param {string} version 插件版本
+ * @param {{name: string, roles: string[]}[]} registry tool-registry.ts 解析结果（v1.4.9 F1①）
+ */
+function generatedSegments(entry, version, registry) {
   // optionalDependencies 的取值面按类别分流：
   //   · bridge 型 → 1 个 @sofagent/* 能力包（既有 9 条，一字不变）
   //   · suite  型 → 9 个兄弟插件包（懒加载逐个 import——缺哪个只记 failed，不整挂失败）
@@ -253,14 +260,31 @@ function generatedSegments(entry, version) {
     entry.kind === KIND_SUITE
       ? `v1.4.8 第8批：src/index.ts 逐个 await import('<兄弟插件 id>')（懒加载 + 逐个降级不抛——缺任一原子插件只记入 failed 数组，不整挂失败），聚合层自身零 @sofagent/* 依赖；对齐 root package.json F-18 optionalDependencies 先例。`
       : `v1.4.5 T6 (R4)：src/index.ts 惰性 await import('${entry.bridgePkg}')（懒加载 + 缺依赖降级不抛；v1.4.8 起该样板由 @sofagent/dsh-plugin-kit 统一封装），此前未声明任何依赖——对齐 root package.json F-18 optionalDependencies 先例。`;
+  // v1.4.9 F1①：sofagent.tools 生成段——「本插件注册哪些工具」的声明面。
+  // 只对声明了 toolsRole 的条目生成（当前批 plugins.json 10 条未动，无一声明 → 零扰动；
+  // P2 给 -fde 扩 toolsRole 时此段自动出现，--check 即与 tool-registry.ts 对账）。
+  const sofagentSegment = {
+    type: 'dsh-plugin',
+    family: 'cordis',
+    seam: entry.seam,
+    seamSemantics: entry.seamSemantics,
+  };
+  const toolsList = toolsForRole(registry, entry.toolsRole);
+  if (toolsList !== null) {
+    if (toolsList.length === 0) {
+      const err = new Error(
+        `${MANIFEST} 条目 ${entry.id} 声明 toolsRole="${entry.toolsRole}"，但 ${TOOL_REGISTRY} 里无任何工具的 roles 含该值` +
+          `——声明了角色却零工具可挂，请核对 roles 取值面（单一源 = tool-registry.ts）。`,
+      );
+      err.self = true;
+      throw err;
+    }
+    sofagentSegment.tools = toolsList;
+    sofagentSegment.toolsRole = entry.toolsRole;
+  }
   return {
     description: `${entry.description}（seam: ${entry.seam}）——${tailOf(entry)}`,
-    sofagent: {
-      type: 'dsh-plugin',
-      family: 'cordis',
-      seam: entry.seam,
-      seamSemantics: entry.seamSemantics,
-    },
+    sofagent: sofagentSegment,
     dsh: {
       bundle: {
         patch: './cordis.patch.yml',
@@ -303,6 +327,49 @@ function duplicatesOf(arr) {
     }
   }
   return dups;
+}
+
+// ============================================================
+// v1.4.9 F1①：sofagent.tools 生成段——插件工具清单的声明侧消费方
+// ============================================================
+// 单一源 = engine/mcp/src/tool-registry.ts（工具清单不手抄）。凡声明 toolsRole 的插件，
+// 生成器按「roles 含 toolsRole」筛出工具名列表写进 package.json 的 sofagent.tools；
+// --check 的逐字节比对 + 本处的角色校验共同构成「与 tool-registry.ts 一致」的门禁：
+//   · registry 变更（改名/挪角色/删工具）→ 重算列表与落盘不一致 → --check 红；
+//   · toolsRole 写错（registry 里没有这个角色）→ 生成期直接 fail-loud（exit 2）；
+//   · 筛出空清单 → 同样 fail-loud（声明了角色却一个工具不挂 = 声明无意义）。
+// 解析器与 tools/check/check-wiring-guard.mjs 的 extractToolRegistry 同一形态
+// （行式扫描：name 行 → 块内 4 空格缩进的 roles 行），刻意不 import dist——
+// 生成器零构建依赖（见头部注释「不 import 仓内 dist」约束）。
+
+/** tool-registry.ts 全文 → [{name, roles[]}]（保 registry 声明序） */
+function parseToolRegistry(text) {
+  const lines = text.split('\n');
+  const items = [];
+  for (let i = 0; i < lines.length; i++) {
+    const m = lines[i].match(/^\s{2,}name: '([a-z0-9_]+)',\s*$/);
+    if (!m) continue;
+    const name = m[1];
+    const roles = [];
+    for (let j = i + 1; j < lines.length; j++) {
+      if (/^\s{2}\},?\s*$/.test(lines[j])) break;
+      const rm = lines[j].match(/^\s{4}roles: \[([^\]]*)\]/);
+      if (rm) {
+        for (const r of rm[1].matchAll(/'([A-Za-z0-9_]+)'/g)) roles.push(r[1]);
+      }
+    }
+    items.push({ name, roles });
+  }
+  return items;
+}
+
+/**
+ * 按角色筛工具名（registry 声明序）——sofagent.tools 生成段的取值面。
+ * @returns {string[] | null} 条目无 toolsRole 时返回 null（不生成该键，其余插件零扰动）
+ */
+function toolsForRole(registry, toolsRole) {
+  if (toolsRole === undefined) return null;
+  return registry.filter((t) => t.roles.includes(toolsRole)).map((t) => t.name);
 }
 
 /** 首个不同位的下标（长度不同则取短的那个长度位）——用于把「不同序」定位到具体位次 */
@@ -437,6 +504,13 @@ function suiteCheck(entry, plugins, root) {
 function planOutputs(root) {
   const plugins = loadManifest(root);
   const rootVersion = readRootVersion(root);
+  // v1.4.9 F1①：tool-registry.ts 单一源解析（有 toolsRole 声明才消费；零声明时解析一次的开销可忽略）
+  const registry = parseToolRegistry(fs.readFileSync(path.join(root, TOOL_REGISTRY), 'utf8'));
+  if (registry.length === 0) {
+    const err = new Error(`${TOOL_REGISTRY} 解析出 0 个工具——行式解析器失效（正则与文件形态漂移），拒绝生成。`);
+    err.self = true;
+    throw err;
+  }
   const outputs = [];
   SUITE_WARNINGS.length = 0;
 
@@ -459,7 +533,7 @@ function planOutputs(root) {
     });
 
     // ② package.json（生成段覆盖 + 规范键序）
-    const next = reorder({ ...pkg, ...generatedSegments(entry, version) });
+    const next = reorder({ ...pkg, ...generatedSegments(entry, version, registry) });
     outputs.push({ path: `${DSH_PLUGINS_DIR}/${entry.id}/package.json`, content: serialize(next), kind: 'pkg' });
 
     // ③ 附加守卫：src/index.ts 的字面量 seam 必须 == plugins.json（否则两处静默漂移）

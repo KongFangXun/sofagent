@@ -69,6 +69,11 @@
       "require": "./dist/mcp-server.js",
       "default": "./dist/mcp-server.js"
     },
+    "./tool-registry": {
+      "types": "./dist/tool-registry.d.ts",
+      "require": "./dist/tool-registry.js",
+      "default": "./dist/tool-registry.js"
+    },
     "./package.json": "./package.json"
   }
 }
