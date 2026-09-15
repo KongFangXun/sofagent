@@ -61,7 +61,7 @@ describe('L4 进化工具 MCP 动态面（第七章三）', () => {
     // + 1 动态（evolution-dynamic-bridge 运行时注册）= 94
     // ——该断言是「不进静态计数」验收口径的本体（check-version 只数
     // tool-registry.ts 顶层 name，动态面不在其守卫面）。
-    expect(TOOLS.length).toBe(103);
+    expect(TOOLS.length).toBe(104);
 
     const generator = writeGenerator(base, 'regen_report');
     const registered = registerEvolvedTools({
@@ -80,7 +80,7 @@ describe('L4 进化工具 MCP 动态面（第七章三）', () => {
 
     expect(registered).toEqual(['regen_report']);
     // 静态面不变；动态面 +1；tools/list 语义 = 99 + 1（v1.4.9 G10/G11 后静态基线 99）
-    expect(TOOLS.length).toBe(103);
+    expect(TOOLS.length).toBe(104);
     expect(getDynamicTools().length).toBe(1);
   });
 

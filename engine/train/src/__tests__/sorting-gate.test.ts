@@ -159,3 +159,41 @@ describe('data-push 双闸分层（分拣 / 合规独立）', () => {
     expect(r.valid).toBe(false);
   });
 });
+
+// ────────────────────────────────────────────────────────────
+// v1.4.9 T8：敏感度分类前置件（applyPreClassification）
+// ────────────────────────────────────────────────────────────
+
+import { applyPreClassification, SENSITIVE_PATTERNS } from '../sorting-gate';
+
+describe('敏感度分类前置件（v1.4.9 T8）', () => {
+  it('前置 sensitive → 分拣敏感档拦截（含保密证书编号）', () => {
+    const d = applyPreClassification('项目内部代号文档', 'sensitive');
+    expect(d.classification).toBe('sensitive');
+    expect(d.allowCloud).toBe(false);
+    expect(d.matchedPatterns).toEqual(['pre-classified:sensitive']);
+    expect(d.confidentialityRef).toMatch(/^CONF-/);
+    expect(d.reason).toContain('sensitivity-classifier');
+  });
+
+  it('前置 public → 走既有正则判定（格式面仍由本闸把关——分层不越权）', () => {
+    // 公开档但含手机号——SENSITIVE_PATTERNS 仍然拦（分类不覆盖格式面）
+    const d = applyPreClassification('联系 13812345678', 'public');
+    expect(d.classification).toBe('sensitive');
+    expect(d.matchedPatterns).toContain('手机号');
+    // 真公开文本——放行
+    const clean = applyPreClassification('今天天气不错', 'public');
+    expect(clean.classification).toBe('public');
+    expect(clean.allowCloud).toBe(true);
+  });
+
+  it('前置 internal → 走既有正则判定（内部档不直接放行也不直接拦）', () => {
+    const d = applyPreClassification('内部评审材料', 'internal');
+    expect(d.classification).toBe('public'); // 无格式命中 → 公开档口径（专有云决策交企业配置）
+    expect(d.allowCloud).toBe(true);
+  });
+
+  it('SENSITIVE_PATTERNS 五标签保持（v1.4.6 回归锁——T8 前置件不收缩检测面）', () => {
+    expect(SENSITIVE_PATTERNS.map((p) => p.label)).toEqual(['手机号', '身份证号', '银行卡号', '金额', '邮箱']);
+  });
+});

@@ -11,8 +11,8 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 describe('条目 5 · 注册↔分发双射守卫（第 0 步）', () => {
-  it('TOOLS 恰为 103（门禁锚——不可变；v1.4.9 G9 95→97 + G10/G11 数据面 97→99 + G5b/G1 连接器与模板 99→103）', () => {
-    expect(TOOLS).toHaveLength(103);
+  it('TOOLS 恰为 104（门禁锚——不可变；v1.4.9 G9 95→97 + G10/G11 数据面 97→99 + G5b/G1 连接器与模板 99→103 + 批 5 router 承接 103→104）', () => {
+    expect(TOOLS).toHaveLength(104);
   });
 
   it('name 全局唯一（双射前提）', () => {
@@ -20,13 +20,13 @@ describe('条目 5 · 注册↔分发双射守卫（第 0 步）', () => {
     expect(new Set(names).size).toBe(names.length);
   });
 
-  it('全量迁移完成：103 条 TOOLS 全部有 handler（必填——分发单一来源）', () => {
+  it('全量迁移完成：104 条 TOOLS 全部有 handler（必填——分发单一来源）', () => {
     const migrated = TOOLS.filter((t) => t.handler !== undefined);
     for (const t of migrated) {
       expect(typeof t.handler).toBe('function');
     }
     expect(migrated).toHaveLength(TOOLS.length);
-    expect(migrated.length).toBe(103);
+    expect(migrated.length).toBe(104);
   });
 
   it('mcp-server 的 switch 分发表已退场（registry handler 为唯一分发源）', () => {

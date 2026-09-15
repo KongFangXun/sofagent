@@ -787,3 +787,110 @@ describe('数据管道端到端（CSV → instruction → 闸门 → 版本）',
     expect(gate.violations[0]?.code).toBe('empty_dataset');
   });
 });
+
+// ────────────────────────────────────────────────────────────
+// v1.4.9 T7：多轮 chat 形态（messages 列 + 切窗衔接 + validator 闸门兼容）
+// ────────────────────────────────────────────────────────────
+
+import {
+  buildDataset as buildDatasetT7,
+  defaultSampleSanitize as defaultSanitizeT7,
+} from '../dataset-builder';
+import { validateDataset as validateDatasetT7 } from '../dataset-validator';
+
+// A2 自指规避：sk 密钥 fixture 运行时拼接
+const SK_KEY = ['sk-abcdefghij', 'klmnopqrstuvwxyz1234567890'].join('');
+
+describe('dataset-builder · 多轮 chat 形态（v1.4.9 T7）', () => {
+  const chatRecords: IngestRecord[] = [
+    {
+      id: 'sess-001#w1',
+      source: 'router-session:router-a',
+      fields: {
+        sessionId: 'sess-001',
+        messages: JSON.stringify([
+          { role: 'system', content: '你是企业助手' },
+          { role: 'user', content: '查产能' },
+          { role: 'assistant', content: '今日 12,400 件' },
+        ]),
+      },
+    },
+  ];
+
+  it('chat 形态构建——messages 列解析为 ChatSample', () => {
+    const r = buildDatasetT7(chatRecords, ['messages', 'sessionId'], { algorithm: 'chat' });
+    expect(r.lines).toHaveLength(1);
+    const sample = r.lines[0]!.sample as { messages: Array<{ role: string; content: string }> };
+    expect(sample.messages).toHaveLength(3);
+    expect(sample.messages[0]!.role).toBe('system');
+    expect(sample.messages[2]!.content).toBe('今日 12,400 件');
+    expect(r.skipped).toBe(0);
+  });
+
+  it('messages 列非 JSON / 结构非法 → 跳过并汇总原因', () => {
+    const bad: IngestRecord[] = [
+      { id: 'x#1', source: 's', fields: { messages: 'not-json{' } },
+      { id: 'x#2', source: 's', fields: { messages: JSON.stringify([{ role: 'user' }]) } }, // 缺 content
+      { id: 'x#3', source: 's', fields: { messages: JSON.stringify([]) } }, // 空数组
+    ];
+    const r = buildDatasetT7(bad, ['messages'], { algorithm: 'chat' });
+    expect(r.lines).toHaveLength(0);
+    expect(r.skipped).toBe(3);
+    expect(r.skipReasons.join('; ')).toContain('非合法 JSON');
+    expect(r.skipReasons.join('; ')).toContain('结构非法');
+  });
+
+  it('chat 形态脱敏——messages 逐条 content 过 REDACTION_PATTERNS', () => {
+    const dirty: IngestRecord[] = [
+      {
+        id: 'd#1',
+        source: 's',
+        fields: {
+          messages: JSON.stringify([
+            { role: 'user', content: `key=${SK_KEY}` },
+            { role: 'assistant', content: '收到' },
+          ]),
+        },
+      },
+    ];
+    const r = buildDatasetT7(dirty, ['messages'], { algorithm: 'chat' });
+    const sample = r.lines[0]!.sample as { messages: Array<{ content: string }> };
+    expect(sample.messages[0]!.content).not.toContain(SK_KEY);
+    expect(sample.messages[0]!.content).toContain('***REDACTED***');
+    // role 不动（结构性字段无敏感语义）
+    expect(sample.messages[0]!.content).not.toContain('role');
+  });
+
+  it('defaultSampleSanitize 递归 messages（独立调用面——sanitizeFn 注入点兼容）', () => {
+    const out = defaultSanitizeT7({
+      messages: [
+        { role: 'user', content: `sk=${SK_KEY}` },
+        { role: 'assistant', content: 'ok' },
+      ],
+    }) as { messages: Array<{ role: string; content: string }> };
+    expect(out.messages[0]!.content).not.toContain(SK_KEY);
+    expect(out.messages[0]!.role).toBe('user'); // role 保持
+  });
+
+  it('validator 闸门兼容多轮——chat 形态必填字段 messages / 空数组判缺失', () => {
+    const lines = buildDatasetT7(chatRecords, ['messages', 'sessionId'], { algorithm: 'chat' }).lines;
+    const gate = validateDatasetT7(lines, 'chat', { minSamples: 1 });
+    expect(gate.passed).toBe(true);
+
+    // messages 空数组样本 → 必填缺失违规
+    const emptyMsg = [{ sample: { messages: [] }, meta: { source: 's', recordId: 'x' } }] as never;
+    const bad = validateDatasetT7(emptyMsg, 'chat', { minSamples: 1 });
+    expect(bad.passed).toBe(false);
+  });
+
+  it('既有 sft 形态回归锁——单轮路径零变化', () => {
+    const sftRecords: IngestRecord[] = [
+      { id: 'q#1', source: 's', fields: { instruction: '一加一等于几', output: '二' } },
+    ];
+    const r = buildDatasetT7(sftRecords, ['instruction', 'output'], { algorithm: 'sft' });
+    expect(r.lines).toHaveLength(1);
+    const sample = r.lines[0]!.sample as { instruction: string; output: string };
+    expect(sample.instruction).toBe('一加一等于几');
+    expect(sample.output).toBe('二');
+  });
+});
