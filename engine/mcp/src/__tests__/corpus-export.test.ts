@@ -169,7 +169,7 @@ describe('MCP corpus_export — 训练语料导出三件套（协议面）', () 
     expect(d.rules.hmac).toMatch(/^[0-9a-f]{32}$/);
   });
 
-  it('完整三件套：五源样本 + 方法论一并返回（absentSources 显式登记）', async () => {
+  it('完整三件套：六源样本 + 方法论一并返回（absentSources 显式登记）', async () => {
     const { send, lastResponse, flush } = await startServer();
     send({
       jsonrpc: '2.0',
@@ -187,7 +187,7 @@ describe('MCP corpus_export — 训练语料导出三件套（协议面）', () 
     expect(d.ok).toBe(true);
     // 方法论三段（真实 GUIDE 锚点解析——未 mock fs 读，走真文件）
     expect(d.methodology?.sections?.length).toBeGreaterThanOrEqual(3);
-    // 样本面：本机 data/ 无数据时五源全缺席但显式登记（非静默空）
+    // 样本面：本机 data/ 无数据时六源全缺席但显式登记（非静默空）
     expect(d.samples).toBeTruthy();
     expect(Array.isArray(d.samples.absentSources)).toBe(true);
   });

@@ -6,7 +6,7 @@
 // 3. verifiers 三桶分桶正确（机器可判/需人审/启发式）
 // 4. GUIDE 锚点解析（五要素/三问判定/量化公式三段）
 // 5. 脱敏管线（格式类/语义类/结构类 + 企业专名 0 命中）
-// 6. 五源样本聚合（合成数据源 + 白名单字段）
+// 6. 六源样本聚合（合成数据源 + 白名单字段 + 分拣闸）
 // 7. HMAC 签名 + 导出审计事件
 
 import { describe, it, expect, vi } from 'vitest';
@@ -301,13 +301,13 @@ describe('通用脱敏管线（redactor）', () => {
 });
 
 // ────────────────────────────────────────────────────────────
-// 五、五源样本聚合
+// 五、六源样本聚合（v1.4.9 T7：五源→六源——workflow-artifact 第六源）
 // ────────────────────────────────────────────────────────────
 
-describe('五源样本聚合（sample-aggregator）', () => {
+describe('六源样本聚合（sample-aggregator）', () => {
   let tmpData: string;
 
-  it('合成五源数据——全源提取 + 白名单字段 + 脱敏贯通', () => {
+  it('合成六源数据——全源提取 + 白名单字段 + 脱敏贯通 + 产物分拣闸', () => {
     tmpData = mkdtempSync(join(tmpdir(), 'corpus-agg-'));
     // 源 1：decision-log
     mkdirSync(join(tmpData, 'audit'), { recursive: true });
@@ -330,15 +330,30 @@ describe('五源样本聚合（sample-aggregator）', () => {
     writeFileSync(join(tmpData, 'fde', 'sessions', 'sess-1', 'meta.json'),
       JSON.stringify({ enterpriseId: 'ent-001' }));
     writeFileSync(join(tmpData, 'fde', 'sessions', 'sess-1', 'context.md'), '进场梳理：锐达科技电芯检测流程');
+    // 源 6：workflow-artifact（fde/<enterpriseId>/deliverables/**）——v1.4.9 T7
+    //   一件干净产物（过闸）+ 一件敏感产物（含 sk- 密钥 → 拦下走 RAG 不进语料）
+    mkdirSync(join(tmpData, 'fde', 'ent-001', 'deliverables'), { recursive: true });
+    writeFileSync(join(tmpData, 'fde', 'ent-001', 'deliverables', 'report.md'),
+      '交付报告：流程梳理完成，共三阶段。');
+    writeFileSync(join(tmpData, 'fde', 'ent-001', 'deliverables', 'secret.md'),
+      '内部记录：sk-abcdefghijklmnopqrstuvwxyz012345 是生产密钥。');
 
     const result = aggregateSamples(tmpData, {
       entities: [{ pattern: '锐达科技', placeholder: '{CUSTOMER_NAME}' }],
     });
 
-    // 五源全在位
-    expect(Object.keys(result.sourceCounts).sort()).toEqual(['decision-log', 'evaluation-log', 'fde-session', 'llm-calls', 'runtime-audit']);
+    // 六源全在位
+    expect(Object.keys(result.sourceCounts).sort()).toEqual(['decision-log', 'evaluation-log', 'fde-session', 'llm-calls', 'runtime-audit', 'workflow-artifact']);
     expect(result.absentSources).toEqual([]);
-    expect(result.samples).toHaveLength(5);
+    // 五个常规源各 1 + 第六源过闸 1（敏感产物被分拣闸拦下）
+    expect(result.samples).toHaveLength(6);
+
+    // 第六源语义：分拣闸拦截计数 + 产物脱敏贯通
+    expect(result.artifactGatedCount).toBe(1);
+    const artifact = result.samples.find((s) => s.source === 'workflow-artifact')!;
+    expect(artifact.enterpriseId).toBe('ent-001');
+    expect(artifact.label).toBe('artifact');
+    expect(result.samples.some((s) => s.origin?.includes('secret.md'))).toBe(false);
 
     // 人工基准标记（fde-session → human-fde）
     expect(result.humanBaselineCount).toBe(1);
@@ -371,12 +386,13 @@ describe('五源样本聚合（sample-aggregator）', () => {
     rmSync(tmpData, { recursive: true, force: true });
   });
 
-  it('空数据目录——五源全缺席不崩（fde-session 尚无数据属常态）', () => {
+  it('空数据目录——六源全缺席不崩（fde-session 尚无数据属常态）', () => {
     const empty = mkdtempSync(join(tmpdir(), 'corpus-empty-'));
     const result = aggregateSamples(empty);
     expect(result.samples).toEqual([]);
-    expect(result.absentSources).toHaveLength(5);
+    expect(result.absentSources).toHaveLength(6);
     expect(result.humanBaselineCount).toBe(0);
+    expect(result.artifactGatedCount).toBe(0);
     rmSync(empty, { recursive: true, force: true });
   });
 

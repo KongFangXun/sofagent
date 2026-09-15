@@ -1991,7 +1991,7 @@ export const TOOLS: ToolDef[] = [
     // 训练语料导出三件套（规则 + 方法论 + 样本）——训练信号机器可读化
     name: 'corpus_export',
     roles: ['ops'],
-    description: '训练语料导出三件套——规则（27 编号位含跳号占位 + reward_hint 骨架 + verifiers 三桶清单）+ FDE 方法论（锚点解析）+ 带标签审计样本（五源聚合 + 脱敏）。导出带版本号 + HMAC 签名，导出行为记 corpus_export 审计事件。',
+    description: '训练语料导出三件套——规则（27 编号位含跳号占位 + reward_hint 骨架 + verifiers 三桶清单）+ FDE 方法论（锚点解析）+ 带标签审计样本（六源聚合 + 脱敏）。导出带版本号 + HMAC 签名，导出行为记 corpus_export 审计事件。',
     inputSchema: {
       type: 'object',
       properties: {
