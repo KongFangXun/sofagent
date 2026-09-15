@@ -42,7 +42,7 @@ solves:
 | FDE Skill | 本 skill（方法论 + 约束注入） | ClawHub / SkillHub 分发，`bash install.sh` 装到本地 |
 | 企业底座 | 约束层全套（hooks + 数据 + MCP） | `bash install.sh`（企业设备） |
 | MCP Server | 104 tools 能力面（审计/本体/进化/训练/工作明细/PR 协同/设备注册/设备数据面/连接器/模板/session 承接） | `bash install.sh --platform <平台>` 自动配置，装完即连 |
-| DSH 插件家族 | 10 款 cordis-plugin（9 款原子 + 1 款聚合整装） | `skillhub install cordis-plugin-sofagent-<名>`（整套用裸名 `cordis-plugin-sofagent`），详见 `AGENTS.md` |
+| DSH 插件家族 | 7 款 cordis-plugin（6 款原子 + 1 款聚合整装） | `skillhub install cordis-plugin-sofagent-<名>`（整套用裸名 `cordis-plugin-sofagent`），详见 `AGENTS.md` |
 | CLI | `sofagent` 命令（审计 / 快照 / 部署 / dashboard） | `bash install.sh` 装到 `~/.sofagent/bin/` |
 | Dashboard | Web 驾驶舱（工作明细 / 图谱 / 健康） | `sofagent web` 起本地服务，读 `data/` 运行时数据 |
 
