@@ -109,6 +109,8 @@ sofagent 的定位正卡在这个转折点上：审计模块（治理侧）+ Ont
 
 | 方向 | 一句话 |
 |------|------|
+| **审计规则自测 schema（Codex execpolicy 启发）** | 24 条规则 schema 强制携带 `match`/`not_match` 样例，规则加载时逐条跑断言——把「正负成对」从纪律级 checklist 升级为引擎级机制（假门禁五形态的根治方向）；顺手吸收 forbidden 必附替代建议（FAIL 报文带「怎么改」）与多规则命中取最严裁决。源码锚点：[openai/codex execpolicy](https://github.com/openai/codex/tree/main/codex-rs/execpolicy) |
+| **Tool search 按需加载（OpenAI Agents API 启发）** | 工具定义不全量注入，按 workflow 节点域注入工具子集（业务图谱节点级权限模型可复用）——降 token 保 cache；TOOLS=104 已进适用区间。配套评估 mid-turn steering（运行中插话纠偏，fresh-eyes 长轮次价值明确）。官方锚点：[Agents API](https://openai.com/index/introducing-the-agents-api/) |
 | **自带净水设备的水龙头（v3.x+ 远景）** | Subagent 支持挂载外部精调小模型（约束层提供路由与加载插槽），零投喂、本地推理、离线可用 |
 | 国标 Agent 审计对位 | 关注国家 AI 智能体互联标准草案进展，标准正式发布后评估对齐 |
 | **ACS YAML 策略引擎（Microsoft AGT 启发）** | 现有 ruleset 是 JSON，AGT 的 ACS 用 YAML + OPA Rego + Cedar 三引擎——策略更人类可读，需评估兼容性 |

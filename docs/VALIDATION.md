@@ -195,6 +195,21 @@ OpenAI 2026-08-19 全面开源 [Codex Harness](https://github.com/openai/codex)�
 
 > 📖 来源：[openai/codex](https://github.com/openai/codex) 官方仓库（2026-08-22 源码核验）+ [Codex as a platform](https://developers.openai.com/blog/codex-as-a-platform)（openai.com，2026-08-19），Apache-2.0
 
+### OpenAI Agents API 公测：Harness 托管商品化与治理壁垒收窄（2026-09-10）
+
+OpenAI 2026-09-10 把驱动 Codex 的 Harness 通过 [Agents API](https://openai.com/index/introducing-the-agents-api/) 公测开放——"Build and run cloud agents with the Codex harness, fully managed by OpenAI"。这是继 2026-08-19 开源 Codex Harness 后的第三个独立数据点：**模型厂商不仅开源 Harness，还把 Harness 托管做成零平台费的基础设施**（无额外费用，只收 token/工具/容器钱）。
+
+**关键架构事实**：Harness（循环/会话/压缩/子Agent）永远 OpenAI 托管；Environment（执行沙箱）可选 OpenAI 托管/自托管/9 家伙伴（Cloudflare、Modal、E2B 等，支持 VPC 内部署）——**自托管的只是执行环境，控制平面与执行平面在架构上分离**。四大能力全是过去开发者自造的轮子：自动上下文压缩（跨多窗口，无需自建 compaction）、tool search（按需加载工具定义降 token 保 cache）、programmatic tool calling（代码并行/链式/过滤，只回传关键结果）、multi-agent 原生（subagent 各自独立上下文）。
+
+**对我们的意义——两条战略判断被官方一手源实证**：
+
+1. **编排层护城河在消失**：loop 管理、上下文压缩、工具编排、多 Agent 编排正在变成免费绑定的 API 能力（得到大脑解读：企业差异化收窄到「业务上下文、可信数据、actions、权限控制、人工审批」——这份清单几乎逐字就是 sofagent 能力面）。壁垒表述随之收窄：**不在 harness 工程，在治理工程**（24 规则 / HMAC 链 / 本体数据 / 审批流）——与 Codex ARC 数据的量纲限定同理（能力型表现 ≠ 治理型可靠性），治理壁垒不会被基础设施商品化覆盖。
+2. **压缩不是审计记录**（compaction 后原始内容不可恢复）——印证审计证据链必须独立落盘的设计：sofagent HMAC 链 + runs/ 产物从不依赖模型上下文作证据。推论：若业务 Agent 跑在托管 harness 上，审计接入点必须在 event 流层（router_exporter / trajectory 采集），不能依赖平台会话存储。
+
+客户证言数字（官方博客 8 条之一）：Ciridae 评分 0.71→0.85、subagent 流程 4 倍延迟降低；SafetyKit 每案成本 −60%；Hypha harness/沙箱分离后失败响应 −86%。第三方分析口径：仅美国数据驻留、不支持 ZDR——中国企业客户硬门槛，一体机私有部署（27B 稠密）的官方背书市场缝隙。
+
+> 📖 来源：[Introducing the Agents API](https://openai.com/index/introducing-the-agents-api/)（openai.com，2026-09-10 · 官方博客 · A 级源）+ 得到大脑视频解读（2026-09-15，第三方表述框架）
+
 ### Omnigent：meta-harness 把策略强制在基础设施层
 
 [Omnigent](https://github.com/omnigent-ai/omnigent)（Databricks 系团队开源，Apache-2.0，alpha，31 天 7091 star）自称 **meta-harness**——坐在 Claude Code / Codex / Pi 等 harness 之上的一层。它把我们的「Harness 中间件」判断又往前推了一步，给了两个可引用的硬证据：

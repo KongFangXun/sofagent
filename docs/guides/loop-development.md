@@ -175,6 +175,8 @@ try {
 - [ ] **driver catch 块写 ERROR + LOOP_END 事件**——否则 Dashboard 看到"永远在跑"
 - [ ] **`runs/` 目录放在 loop 自己目录下**——`.gitignore` 加 `FORGE/SKILL/*/runs/`
 - [ ] **`LEDGER.md` 追加一行记录**——git 跟踪的跨 run 永久索引
+- [ ] **注入片段登记**——buildSystemPrompt 拼入的每段有名 / token 估算 / owner；新段超 1K token 须标记并进入复审清单（Codex AGENTS.md 同款纪律的运行时近似，Node 无编译期保证）
+- [ ] **系统注入走 `core/context` 等价物**——注入物一律经登记表校验大小上限，不做无上限字符串拼接（no unbounded items）
 
 ---
 
