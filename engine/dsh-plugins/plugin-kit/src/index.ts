@@ -78,8 +78,27 @@ export interface SofagentPluginEntry {
    * 工具注册面（v1.4.9 F1①）：tool-registry.ts 的角色标签。
    * 提供时 apply() 会把 @sofagent/mcp TOOLS 中 roles 含此值的工具
    * 逐个注册进 DSH tools 服务（模型可见可调）。缺省不注册工具。
+   * v1.4.9 P2：与 toolsRoles 多角色形态二选一；都给时 toolsRoles 优先
+   * （并集语义）。单值形态保留 = 其余插件的最小声明面不变。
    */
   toolsRole?: string;
+  /**
+   * 工具注册面（v1.4.9 P2）：tool-registry.ts 的角色标签数组——
+   * **并集**注册（roles 含任一值的工具全注册）。与单值 toolsRole 二选一，
+   * 都给时本字段优先（normalizeRoles 统一归一）。
+   */
+  toolsRoles?: string[];
+  /**
+   * settings 分档（v1.4.9 P2）：键 = settings 档位字段名（注册进 settingsExtra，
+   * 值即默认值 'true'/'false' 字符串），值 = 该档控制的**工具名显式清单**。
+   * 关档（值为 'false'）即从注册全集剔除该清单内的工具——档位对工具域的
+   * 划分是**产品决策**（哪些工具属哪个域），故显式列名而非按前缀猜；
+   * 名单内的工具存在性 / schema 仍以 tool-registry.ts 为单一源
+   * （生成器 --check 对账 featureGates 名 ⊆ toolsRoles 并集，幽灵名 exit 2）。
+   * 未列入任何档的工具 = 方法论支撑面（think/compose/workflow/agent 族），
+   * 不设档常开。
+   */
+  featureGates?: Record<string, string[]>;
   /** 短描述（不含 seam 与桥接后缀），如「变更机器审阅——24 规则 + git diff 硬证据 + 节点级审计」 */
   description: string;
 }
@@ -170,14 +189,25 @@ interface HostContext {
   provide?: (name: string, service: Record<string, unknown>) => unknown;
   get?: (name: string, strict?: boolean) => unknown;
   dynamicCordisRunner?: { define?: (request: Record<string, unknown>) => unknown };
-  settings?: { register?: (ns: string, schema: unknown, opts?: Record<string, unknown>) => unknown };
+  settings?: HostSettingsService;
   sofagent?: Record<string, unknown>;
   [key: string]: unknown;
 }
 
-/** DSH tools 服务的最小结构面（ToolRuntime 的 kit 侧鸭子描述） */
+/** 宿主 tools 服务面扩展（v1.4.9 P2）：注册返回值之外可能带 watch/热更新面 */
 interface HostToolsService {
   register?: (def: Record<string, unknown>) => unknown;
+}
+
+/** @sofagent/dsh-settings 的 SettingsScope 最小结构面（kit 侧鸭子描述，不 import 宿主类型） */
+interface HostSettingsScope {
+  get?: () => unknown;
+  watch?: (cb: (next: unknown, prev: unknown) => void) => unknown;
+}
+
+/** settings 注册 API 的最小结构面（v1.4.9 P2——register 返回 SettingsScope） */
+interface HostSettingsService {
+  register?: (ns: string, schema: unknown, opts?: Record<string, unknown>) => HostSettingsScope | unknown;
 }
 
 /**
@@ -202,6 +232,20 @@ function normalizeBridges(options: SofagentPluginOptions): SofagentBridge[] {
   return [{ pkg: options.bridgePkg, api: options.bridgeApi }];
 }
 
+/**
+ * 规范化工具角色（v1.4.9 P2）：多角色数组优先；单值 toolsRole 归一为 [值]。
+ * 返回 null = 未声明工具注册面（apply 不触发）。
+ */
+function normalizeRoles(options: SofagentPluginOptions): string[] | null {
+  if (Array.isArray(options.toolsRoles) && options.toolsRoles.length > 0) {
+    return options.toolsRoles;
+  }
+  if (typeof options.toolsRole === 'string' && options.toolsRole !== '') {
+    return [options.toolsRole];
+  }
+  return null;
+}
+
 /** render 兜底——字符串直出，对象 JSON 化（截断防超大输出进 prompt；对齐 dsh-backend safeRender） */
 function safeRender(value: unknown): string {
   if (typeof value === 'string') return value;
@@ -223,13 +267,20 @@ function safeRender(value: unknown): string {
 export function createSofagentPlugin(options: SofagentPluginOptions, hostPkg?: SofagentPluginHostPackage) {
   const { id, seam, capability, description } = options;
   const bridges = normalizeBridges(options);
-  const toolsRole = options.toolsRole;
+  const toolsRoles = normalizeRoles(options);
+  const featureGates = options.featureGates ?? {};
   // 短名/服务名/日志前缀：cordis-plugin-sofagent-audit → audit
   const short = id.replace(/^cordis-plugin-sofagent-/, '');
   const brandColor = options.brandColor ?? DEFAULT_BRAND_COLOR;
   const purpose = options.purpose ?? description;
   const readyMessage = options.readyMessage ?? description;
   const settingsExtra = options.settingsExtra ?? {};
+  // v1.4.9 P2：featureGates 的档位键自动并入 settingsExtra（值 'true' = 默认开档）——
+  // 插件侧只声明 featureGates，不必在 settingsExtra 里重复抄一遍键名。
+  const mergedSettings: Record<string, string> = { ...settingsExtra };
+  for (const [gate, names] of Object.entries(featureGates)) {
+    if (names.length > 0) mergedSettings[gate] = mergedSettings[gate] ?? 'true';
+  }
   const logTag = `[sofagent-${short}]`;
 
   /** 插件元数据（DSH profile / 注册表消费） */
@@ -297,17 +348,48 @@ export function createSofagentPlugin(options: SofagentPluginOptions, hostPkg?: S
   }
 
   /**
-   * 工具注册面（v1.4.9 F1①）——把 @sofagent/mcp TOOLS 中 roles 含 toolsRole 的工具
-   * 逐个注册进宿主 tools 服务（模型可见可调）。
+   * 解析 settings 档位 → 当前开关表（v1.4.9 P2）。
+   * 取值优先级：宿主 settingsScope.get()（用户层覆盖）> featureGates 默认值 'true'。
+   * settingsScope 缺席（宿主无 settings 服务 / register 未返回 scope）→ 全档按默认值
+   * （开档）——「关档不注册」的验收硬线依赖用户层显式写 'false'，宿主缺 settings
+   * 面时无从关档，等价于全开（与「无 settings 面则无档可关」的直觉一致，不算降级漏洞）。
+   *
+   * @returns 档位名 → 布尔开/关；无 featureGates 时返回空对象
+   */
+  function resolveFeatureFlags(scope: HostSettingsScope | null | undefined): Record<string, boolean> {
+    const flags: Record<string, boolean> = {};
+    let resolved: Record<string, unknown> | null = null;
+    if (scope && typeof scope.get === 'function') {
+      try {
+        const v = scope.get();
+        if (v && typeof v === 'object') resolved = v as Record<string, unknown>;
+      } catch (err) {
+        console.error(`${logTag} settings 档位读取失败（按默认全开处理）：${err instanceof Error ? err.message : String(err)}`);
+      }
+    }
+    for (const gate of Object.keys(featureGates)) {
+      const raw = resolved ? resolved[gate] : undefined;
+      // 显式字符串 'false'（用户层关档）→ 关；其余（undefined / 'true' / true）→ 开
+      flags[gate] = !(raw === 'false' || raw === false);
+    }
+    return flags;
+  }
+
+  /**
+   * 工具注册面（v1.4.9 F1① / P2 扩多角色+分档）——把 @sofagent/mcp TOOLS 中
+   * roles 含任一 toolsRoles 值的工具（并集）逐个注册进宿主 tools 服务，
+   * 注册前按 settings 档位过滤：关档（值为 'false'）的工具从全集剔除。
    *
    * 防御式边界（对齐 dsh-backend.ts registerSofagentTools 参考实现）：
    * - tools 服务缺失（ctx.get?.('tools') 为空 / register 非函数）→ 跳过 + WARN
    * - @sofagent/mcp 缺依赖 → 跳过 + WARN（插件可独立安装）
    * - 单工具注册失败 → 跳过该工具 WARN，不中断其余注册
+   * - 档位全关后空集 → 0 注册 + WARN（显式可见，不是静默）
    *
    * @returns 实际注册成功的工具数
    */
-  async function registerToolsForRole(ctx: HostContext): Promise<number> {
+  async function registerToolsForRole(ctx: HostContext, scope: HostSettingsScope | null | undefined): Promise<number> {
+    const roles = toolsRoles as string[];
     const svc = ctx.get?.('tools') as HostToolsService | undefined;
     if (!svc || typeof svc.register !== 'function') {
       console.error(`${logTag} DSH tools 服务面缺失——角色工具未注入（降级，不阻断插件挂载）`);
@@ -327,9 +409,24 @@ export function createSofagentPlugin(options: SofagentPluginOptions, hostPkg?: S
       console.error(`${logTag} @sofagent/mcp TOOLS 为空——角色工具未注入（降级）`);
       return 0;
     }
-    const selected = tools.filter((t) => Array.isArray(t.roles) && t.roles.includes(toolsRole as string));
+    // 🔴 P2 分档过滤：关档清单并集（先算剔除集，再从角色并集里减——
+    //    一个工具被两个关档声明不影响语义；被一个开档一个关档声明时**剔除优先**
+    //    （保守面：误注册可由宿主卸载，漏关档不可由用户补救））。
+    const flags = resolveFeatureFlags(scope);
+    const offNames = new Set<string>();
+    for (const [gate, on] of Object.entries(flags)) {
+      if (!on) for (const n of featureGates[gate] ?? []) offNames.add(n);
+    }
+    const selected = tools.filter(
+      (t) => Array.isArray(t.roles) && t.roles.some((r) => roles.includes(r)) && !offNames.has(t.name),
+    );
+    const gatedOff = tools.filter(
+      (t) => Array.isArray(t.roles) && t.roles.some((r) => roles.includes(r)) && offNames.has(t.name),
+    ).length;
     if (selected.length === 0) {
-      console.error(`${logTag} TOOLS 无 roles 含 "${toolsRole}" 的工具——0 个注册（清单单一源 = tool-registry.ts）`);
+      console.error(
+        `${logTag} 档位过滤后角色工具为空集——0 个注册（roles=[${roles.join(',')}]，关档剔除 ${offNames.size} 项）`,
+      );
       return 0;
     }
     let registered = 0;
@@ -368,7 +465,14 @@ export function createSofagentPlugin(options: SofagentPluginOptions, hostPkg?: S
       }
     }
     if (registered > 0) {
-      console.error(`${logTag} 角色工具注册成功：${registered}/${selected.length}（role="${toolsRole}"）`);
+      const gateNote =
+        gatedOff > 0
+          ? `（关档剔除 ${gatedOff} 项：${Object.entries(flags)
+              .filter(([, on]) => !on)
+              .map(([g]) => g)
+              .join(',')}）`
+          : '';
+      console.error(`${logTag} 角色工具注册成功：${registered}/${selected.length}（roles=[${roles.join(',')}]）${gateNote}`);
     }
     return registered;
   }
@@ -431,6 +535,9 @@ export function createSofagentPlugin(options: SofagentPluginOptions, hostPkg?: S
     }
 
     // ③ 注册 settings namespace（WebUI Settings → Plugins → Plugin configuration 可见）
+    //    v1.4.9 P2：register 返回 SettingsScope（get/watch 面而非裸 disposer）——
+    //    档位键（featureGates）并入本 namespace，工具注册面从 scope.get() 读当前开关。
+    let settingsScope: HostSettingsScope | null = null;
     try {
       const settings = c.settings;
       if (settings && typeof settings.register === 'function') {
@@ -440,14 +547,20 @@ export function createSofagentPlugin(options: SofagentPluginOptions, hostPkg?: S
           boolean: () => unknown;
           string: () => unknown;
         };
-        // 字段顺序与收敛前一致：enabled → 各 settingsExtra → brandColor
+        // 字段顺序与收敛前一致：enabled → 各 settingsExtra（含 featureGates 档位键）→ brandColor
         const shape: Record<string, unknown> = { enabled: s.boolean() };
-        for (const k of Object.keys(settingsExtra)) shape[k] = s.string();
+        for (const k of Object.keys(mergedSettings)) shape[k] = s.string();
         shape.brandColor = s.string();
         const base: Record<string, unknown> = { enabled: true };
-        for (const [k, v] of Object.entries(settingsExtra)) base[k] = v;
+        for (const [k, v] of Object.entries(mergedSettings)) base[k] = v;
         base.brandColor = brandColor;
-        collect(settings.register(`sofagent-${short}`, s.object(shape), { base })); // 宿主若返回 disposer，随卸载撤销配置面板注册
+        const scope = settings.register(`sofagent-${short}`, s.object(shape), { base }) as HostSettingsScope;
+        // scope 兼容双形态：SettingsScope（get/watch）或宿主旧形态返回 disposer
+        if (scope && (typeof scope.get === 'function' || typeof (scope as unknown as { watch?: unknown }).watch === 'function')) {
+          settingsScope = scope;
+        } else {
+          collect(scope); // 旧形态 / 裸 disposer——照旧收卸载契约，档位退默认全开
+        }
         console.error(`${logTag} settings.register 成功`);
       } else {
         console.error(`${logTag} settings 服务不可用（inject 未生效）`);
@@ -457,17 +570,38 @@ export function createSofagentPlugin(options: SofagentPluginOptions, hostPkg?: S
       console.error(`${logTag} settings.register 失败:`, err instanceof Error ? err.message : String(err));
     }
 
-    // ④ 工具注册面（v1.4.9 F1①）：toolsRole 声明时把 @sofagent/mcp 的角色工具注入宿主。
+    // ④ 工具注册面（v1.4.9 F1① / P2 扩分档）：toolsRoles 声明时把 @sofagent/mcp 的
+    //    角色工具注入宿主（settings 档位过滤——关档即不注册该域工具）。
     //    异步面：apply 同步返回复合 disposer，工具注册异步进行（不阻塞挂载——缺依赖/缺服务
     //    只记 console.error 降级可见）。注册产生的 disposer 由 registerToolsForRole 内部
     //    通过 svc.register 返回值收集——但异步面无法同步收进 disposers，改为注册完成后
     //    动态追加（复合 disposer 是闭包数组引用，push 仍生效——只要卸载发生在注册完成后）。
-    if (typeof toolsRole === 'string' && toolsRole !== '') {
-      registerToolsForRole(c)
+    if (toolsRoles !== null) {
+      registerToolsForRole(c, settingsScope)
         .then(() => undefined)
         .catch((err: unknown) => {
           console.error(`${logTag} 角色工具注册异常（降级，不阻断）：${err instanceof Error ? err.message : String(err)}`);
         });
+      // P2 档位热更新：settingsScope.watch 监听用户改档 → 重算开关表（当前实现记录到
+      // 运行日志；已注册工具的反注册重挂属宿主 tools 生命周期能力，P2 不扩——关档语义
+      // 在「下次挂载/注册时生效」，热卸载属后续增强，不谎称已实现）。
+      const scope = settingsScope as HostSettingsScope | null;
+      if (scope && typeof scope.watch === 'function') {
+        try {
+          const watchRet = scope.watch((next) => {
+            const flags = next && typeof next === 'object' ? (next as Record<string, unknown>) : {};
+            const changed = Object.keys(featureGates).filter((g) => flags[g] === 'false');
+            console.error(
+              `${logTag} settings 档位变更：${Object.keys(featureGates)
+                .map((g) => `${g}=${flags[g] === 'false' ? 'off' : 'on'}`)
+                .join(' ')}——关档域 [${changed.join(',')}] 下次注册起不注入（热卸载为后续增强）`,
+            );
+          });
+          collect(watchRet);
+        } catch (err) {
+          console.error(`${logTag} settings watch 登记失败（档位变更不可见，不影响挂载）：${err instanceof Error ? err.message : String(err)}`);
+        }
+      }
     }
 
     // ⑤ 卸载契约：收集到的宿主 disposer → 幂等复合 disposer，作为 apply 返回值交宿主登记
@@ -505,10 +639,15 @@ export function createSofagentPlugin(options: SofagentPluginOptions, hostPkg?: S
 //   ② fde 的 dynamicCordisRunner `purpose` 由「FDE 进场方法论桥接——本体数据视图生成」
 //      归一为 `<description>`，与其余 8 个插件同形；WebUI 文案更完整，注册形状不变。
 //
-// NOTE（v1.4.9 P1 · F1①/F1② 扩容的行为变化）：
+// NOTE（v1.4.9 P1 · F1①/F1② 扩容的行为变化；P2 扩多角色+分档）：
 //   ① invoke 从「单包 + 全有全无 throw」改为「多包 + 部分可用即部分成功」：
 //      全部失败才 throw（错误消息含逐包原因）；部分失败打降级日志继续。
-//   ② 新增 toolsRole 工具注册面：apply() 异步注册 @sofagent/mcp 角色工具，
-//      缺 tools 服务 / 缺 @sofagent/mcp / 单工具失败三级降级全不抛。
+//   ② 新增工具注册面（F1① 单角色 toolsRole；P2 扩 toolsRoles 多角色并集 +
+//      featureGates settings 分档）：apply() 异步注册 @sofagent/mcp 角色工具，
+//      关档（settings 值 'false'）的工具从注册全集剔除；缺 tools 服务 / 缺
+//      @sofagent/mcp / 单工具失败三级降级全不抛。
 //   ③ PLUGIN_INJECT 保持 ['settings','dynamicCordisRunner'] 不变——tools 走
 //      ctx.get?.('tools') 鸭子探测（P0 探针裁定，SEAMS.md §7.2）。
+//   ④ P2 settings.register 返回 SettingsScope（get/watch）时：scope.get() 供
+//      档位解析、scope.watch() 供变更可见（disposer 照收进复合卸载契约）；
+//      旧形态返回裸 disposer 时档位退默认全开（向后兼容）。

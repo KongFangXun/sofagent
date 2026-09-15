@@ -37,8 +37,7 @@
 | `tools/change` | `@deepseek-ai/dsh-tools` | `lib/` | 工具集合变更（工具增删的广播） | 暂无 |
 | `tools/execute` | `@deepseek-ai/dsh-tools` | `lib/` | 工具执行中（计时 / 成本计量落点） | 暂无 |
 | `tools/post-execute` | `@deepseek-ai/dsh-tools` | `lib/` | 工具执行后（结果质检落点） | 暂无 |
-| `tools/pre-execute` | `@deepseek-ai/dsh-tools` | `lib/` | 工具执行前——可拦截、可改参（瀑布流） | `audit` |
-| `tools/ptc-dispatch-log` | `@deepseek-ai/dsh-tools` | `lib/` | PTC 派发日志（提示词工具调用派发） | 暂无 |
+| `tools/pre-execute` | `@deepseek-ai/dsh-tools` | `lib/` | 工具执行前——可拦截、可改参（瀑布流） | `audit` || `tools/ptc-dispatch-log` | `@deepseek-ai/dsh-tools` | `lib/` | PTC 派发日志（提示词工具调用派发） | 暂无 |
 | `tools/result` | `@deepseek-ai/dsh-tools` | `lib/` | 工具最终结果确定——审计留证落点 | `audit` |
 | `fs/edit-intent` | `@deepseek-ai/dsh-fs` | `lib/` | 文件编辑意图（写盘前可见） | 暂无 |
 | `fs/observed` | `@deepseek-ai/dsh-fs` | `lib/` | 文件系统变更已观测 | 暂无 |
@@ -46,7 +45,7 @@
 | `agent/pre-step` | `@deepseek-ai/dsh-agent` | `lib/` | 模型看到输入前——约束注入落点 | `inject` |
 | `agent/request` | `@deepseek-ai/dsh-agent` | `lib/` | 模型请求发出前 | 暂无 |
 | `agent/request-error` | `@deepseek-ai/dsh-agent` | `lib/` | 模型请求失败后（重试 / 降级落点） | 暂无 |
-| `agent/turn-stopping` | `@deepseek-ai/dsh-agent` | `lib/` | Turn 结束前停止条件判定——可拦截不放行 | `gate` |
+| `agent/turn-stopping` | `@deepseek-ai/dsh-agent` | `lib/` | Turn 结束前停止条件判定——可拦截不放行 | `audit` |
 | `agent/error` | `@deepseek-ai/dsh-agent` | `lib/` | Agent 运行出错（逆序撤销的触发点） | `rollback` |
 | `agent/session-start` | `@deepseek-ai/dsh-agent` | `lib/` | Agent 会话开始 | 暂无 |
 | `hook/invoked` | `@deepseek-ai/dsh-hook-protocol` | `lib/` | 外部 hook 被调用 | 暂无 |
@@ -79,11 +78,9 @@ grep -rhoE "['\"][a-z]+/[a-z-]+['\"]" "$B/dsh-hook-protocol/lib/" | tr -d "\"'" 
 <!-- SEAM-VOCAB:DSH-FORM:BEGIN -->
 | form | 接入形态 | 不通过宿主事件接入的理由 | 对外接口 | 插件 |
 | --- | --- | --- | --- | --- |
-| `non-seam:tool-set` | tool 集（能力以工具形式暴露） | 能力按需调用、无生命周期时机——挂任何生命周期事件都会是「跑不到的假契约」 | `ctx.provide('sofagent.<name>')` | `commons` |
-| `non-seam:tool-set` | tool 集（能力以工具形式暴露） | 同上：本体查询 / 知识检索是工具调用，不拦截任何生命周期节点 | `ctx.provide('sofagent.ontology')` | `ontology` |
-| `non-seam:tool-set` | tool 集（能力以工具形式暴露） | 同上：`fde_*` 六 tool 是方法论工具集，宿主不派发事件给它 | `ctx.provide('sofagent.fde')` | `fde` |
+| `non-seam:tool-set` | tool 集（能力以工具形式暴露） | 能力按需调用、无生命周期时机——挂任何生命周期事件都会是「跑不到的假契约」；v1.4.9 P2 起 `fde` 为厚插件：本体 / FDE / 公地三域工具面（合并原 `commons` 与 `ontology` 条目），settings 三档分域可关 | `ctx.provide('sofagent.fde')` | `fde` |
 | `non-seam:host-process` | 独立调度进程 | 7×24 巡检是**进程级调度**（cron / 常驻），不寄生宿主事件循环 | `ctx.provide('sofagent.daemon')` | `daemon` |
-| `non-seam:plugin-suite` | 插件聚合（一次 apply 挂全套原子插件） | 自身**不挂任何宿主生命周期**——只依次调用 9 个原子插件的 `apply`；能力仍由各原子插件 `provide`，聚合层没有独立的事件时机，挂任何生命周期都会是「跑不到的假契约」 | `ctx.provide('sofagent.suite')` | `suite` |
+| `non-seam:plugin-suite` | 插件聚合（一次 apply 挂全套原子插件） | 自身**不挂任何宿主生命周期**——只依次调用 6 个原子插件的 `apply`；能力仍由各原子插件 `provide`，聚合层没有独立的事件时机，挂任何生命周期都会是「跑不到的假契约」 | `ctx.provide('sofagent.suite')` | `suite` |
 <!-- SEAM-VOCAB:DSH-FORM:END -->
 
 ### 2b. 宿主 profile 的挂载差异是**有意的**

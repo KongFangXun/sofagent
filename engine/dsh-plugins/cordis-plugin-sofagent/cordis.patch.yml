@@ -4,5 +4,5 @@
       name: 'cordis-plugin-sofagent'
       inject: [settings, dynamicCordisRunner]
       config:
-        seam: "non-seam:plugin-suite"    # 语义：非宿主事件接入（插件聚合）——一次 apply 逐个挂载 9 个原子插件；能力仍由各原子插件 provide，聚合层自身不挂任何生命周期
-        description: "一次挂载 sofagent 全套能力（9 项一次到位：注入 · 审计 · 验收 · 本体 · 公地 · 经验 · 回溯 · 巡检 · FDE）——一次性挂载 9 个原子插件"
+        seam: "non-seam:plugin-suite"    # 语义：非宿主事件接入（插件聚合）——一次 apply 逐个挂载 6 个原子插件；能力仍由各原子插件 provide，聚合层自身不挂任何生命周期
+        description: "一次挂载 sofagent 全套能力（6 项一次到位：注入 · 审计与验收 · 经验 · 回溯 · 巡检 · FDE 三域）——一次性挂载 6 个原子插件"

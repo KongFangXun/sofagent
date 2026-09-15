@@ -694,10 +694,11 @@ function selftest() {
   const cases = [
     ['幽灵 seam（不在词汇表）', { inject: { 'cordis-plugin-sofagent-audit': 'tools/zzz-phantom' } }, (r) => r.fails.some((f) => f.detail.includes('tools/zzz-phantom') && f.detail.includes('不在词汇表'))],
     ['三处漂移（只改 src 侧）', { inject: { 'cordis-plugin-sofagent-evolve': 'tools/result' } }, (r) => r.fails.some((f) => f.detail.includes('三处 seam 漂移'))],
-    ['漏写 seam（清空声明）', { inject: { 'cordis-plugin-sofagent-gate': ' ' } }, (r) => r.fails.some((f) => f.detail.includes('漏写 seam'))],
+    // v1.4.9 P2：-gate/-ontology/-commons 已并入 -audit/-fde（合并批），注入载体换存活插件
+    ['漏写 seam（清空声明）', { inject: { 'cordis-plugin-sofagent-daemon': ' ' } }, (r) => r.fails.some((f) => f.detail.includes('漏写 seam'))],
     ['OpenClaw description 幽灵 hook', { inject: null }, null],
     // ⑥ SKILL.md 反向对账：注入「词表内合法值」制造 SKILL.md 与契约不一致 → 必须点到 SKILL.md:行
-    ['SKILL.md 与契约漂移（词表内值）', { inject: { 'skill:cordis-plugin-sofagent-gate': 'tools/result' } }, (r) => r.fails.some((f) => String(f.id).endsWith('SKILL.md:7') && f.detail.includes('SKILL.md seam 与契约漂移'))],
+    ['SKILL.md 与契约漂移（词表内值）', { inject: { 'skill:cordis-plugin-sofagent-daemon': 'tools/result' } }, (r) => r.fails.some((f) => String(f.id).endsWith('SKILL.md:7') && f.detail.includes('SKILL.md seam 与契约漂移'))],
   ];
   let fail = 0;
   for (const [label, opts, assert] of cases.filter((c) => c[2])) {

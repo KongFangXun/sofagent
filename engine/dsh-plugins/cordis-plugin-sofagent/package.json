@@ -4,7 +4,7 @@
   "engines": {
     "node": ">=18"
   },
-  "description": "一次挂载 sofagent 全套能力（9 项一次到位：注入 · 审计 · 验收 · 本体 · 公地 · 经验 · 回溯 · 巡检 · FDE）（seam: non-seam:plugin-suite）——一次性挂载 9 个原子插件",
+  "description": "一次挂载 sofagent 全套能力（6 项一次到位：注入 · 审计与验收 · 经验 · 回溯 · 巡检 · FDE 三域）（seam: non-seam:plugin-suite）——一次性挂载 6 个原子插件",
   "private": true,
   "license": "MIT",
   "author": "KongFangXun",
@@ -23,15 +23,12 @@
     "type": "dsh-plugin",
     "family": "cordis",
     "seam": "non-seam:plugin-suite",
-    "seamSemantics": "非宿主事件接入（插件聚合）——一次 apply 逐个挂载 9 个原子插件；能力仍由各原子插件 provide，聚合层自身不挂任何生命周期"
+    "seamSemantics": "非宿主事件接入（插件聚合）——一次 apply 逐个挂载 6 个原子插件；能力仍由各原子插件 provide，聚合层自身不挂任何生命周期"
   },
   "//optionalDependencies": "v1.4.8 第8批：src/index.ts 逐个 await import('<兄弟插件 id>')（懒加载 + 逐个降级不抛——缺任一原子插件只记入 failed 数组，不整挂失败），聚合层自身零 @sofagent/* 依赖；对齐 root package.json F-18 optionalDependencies 先例。",
   "optionalDependencies": {
     "cordis-plugin-sofagent-inject": "1.4.8",
     "cordis-plugin-sofagent-audit": "1.4.8",
-    "cordis-plugin-sofagent-gate": "1.4.8",
-    "cordis-plugin-sofagent-ontology": "1.4.8",
-    "cordis-plugin-sofagent-commons": "1.4.8",
     "cordis-plugin-sofagent-evolve": "1.4.8",
     "cordis-plugin-sofagent-rollback": "1.4.8",
     "cordis-plugin-sofagent-daemon": "1.4.8",

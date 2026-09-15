@@ -178,6 +178,29 @@ function loadManifest(root) {
         throw err;
       }
     }
+    // v1.4.9 P2：多包 bridges 数组校验（厚插件形态——pkg/api 必填、与单包字段并存时以 bridges 优先）
+    if (e.kind !== KIND_SUITE && e.bridges !== undefined) {
+      if (!Array.isArray(e.bridges) || e.bridges.length === 0 || e.bridges.some((b) => !b || typeof b.pkg !== 'string' || typeof b.api !== 'string' || b.pkg.trim() === '' || b.api.trim() === '')) {
+        const err = new Error(`${MANIFEST} plugins[${i}]（${e.id}）的 bridges 必须是非空 {pkg, api} 数组（v1.4.9 P2 厚插件多包桥接形态）`);
+        err.self = true;
+        throw err;
+      }
+    }
+    // v1.4.9 P2：featureGates / toolsRoles 类型校验（分档声明面——数组形态 + 档位值非空数组）
+    if (e.toolsRoles !== undefined) {
+      if (!Array.isArray(e.toolsRoles) || e.toolsRoles.length === 0 || e.toolsRoles.some((r) => typeof r !== 'string' || r.trim() === '')) {
+        const err = new Error(`${MANIFEST} plugins[${i}]（${e.id}）的 toolsRoles 必须是非空角色字符串数组（v1.4.9 P2 多角色并集形态）`);
+        err.self = true;
+        throw err;
+      }
+    }
+    if (e.featureGates !== undefined) {
+      if (typeof e.featureGates !== 'object' || e.featureGates === null || Array.isArray(e.featureGates)) {
+        const err = new Error(`${MANIFEST} plugins[${i}]（${e.id}）的 featureGates 必须是「档位名 → 工具名数组」对象（v1.4.9 P2 settings 分档）`);
+        err.self = true;
+        throw err;
+      }
+    }
     if (seen.has(e.id)) {
       const err = new Error(`${MANIFEST} plugins[${i}] id 重复：${e.id}`);
       err.self = true;
@@ -222,7 +245,12 @@ function tailOf(entry) {
   if (entry.kind === KIND_SUITE) {
     return `一次性挂载 ${entry.suite.length} 个原子插件`;
   }
-  return `桥接 ${entry.bridgePkg} ${entry.bridgeApi}`;
+  // v1.4.9 P2：多包桥接斜杠并列（F1② 既有惯例）；单包保持原形态
+  const bridgePkgs =
+    Array.isArray(entry.bridges) && entry.bridges.length > 0
+      ? entry.bridges
+      : [{ pkg: entry.bridgePkg, api: entry.bridgeApi }];
+  return `桥接 ${bridgePkgs.map((b) => `${b.pkg} ${b.api}`).join(' / ')}`;
 }
 
 /** 生成 cordis.patch.yml 全文 */
@@ -246,41 +274,89 @@ function renderPatch(entry, version) {
  * 生成 package.json 的生成段（description / sofagent / dsh / //optionalDependencies / optionalDependencies）
  * @param {object} entry 清单条目
  * @param {string} version 插件版本
- * @param {{name: string, roles: string[]}[]} registry tool-registry.ts 解析结果（v1.4.9 F1①）
+ * @param {{name: string, roles: string[]}[]} registry tool-registry.ts 解析结果（v1.4.9 F1① / P2）
  */
 function generatedSegments(entry, version, registry) {
   // optionalDependencies 的取值面按类别分流：
-  //   · bridge 型 → 1 个 @sofagent/* 能力包（既有 9 条，一字不变）
-  //   · suite  型 → 9 个兄弟插件包（懒加载逐个 import——缺哪个只记 failed，不整挂失败）
+  //   · bridge 型 → 声明的全部桥接包（单包 bridgePkg 既有形态 / P2 多包 bridges 并集）
+  //   · suite  型 → 全部兄弟插件包（懒加载逐个 import——缺哪个只记 failed，不整挂失败）
+  const bridgePkgs =
+    Array.isArray(entry.bridges) && entry.bridges.length > 0
+      ? entry.bridges.map((b) => b.pkg)
+      : [entry.bridgePkg];
   const optionalDependencies =
     entry.kind === KIND_SUITE
       ? Object.fromEntries(entry.suite.map((dep) => [dep, version]))
-      : { [entry.bridgePkg]: version };
+      : Object.fromEntries(bridgePkgs.map((p) => [p, version]));
   const optDepsNote =
     entry.kind === KIND_SUITE
       ? `v1.4.8 第8批：src/index.ts 逐个 await import('<兄弟插件 id>')（懒加载 + 逐个降级不抛——缺任一原子插件只记入 failed 数组，不整挂失败），聚合层自身零 @sofagent/* 依赖；对齐 root package.json F-18 optionalDependencies 先例。`
-      : `v1.4.5 T6 (R4)：src/index.ts 惰性 await import('${entry.bridgePkg}')（懒加载 + 缺依赖降级不抛；v1.4.8 起该样板由 @sofagent/dsh-plugin-kit 统一封装），此前未声明任何依赖——对齐 root package.json F-18 optionalDependencies 先例。`;
-  // v1.4.9 F1①：sofagent.tools 生成段——「本插件注册哪些工具」的声明面。
-  // 只对声明了 toolsRole 的条目生成（当前批 plugins.json 10 条未动，无一声明 → 零扰动；
-  // P2 给 -fde 扩 toolsRole 时此段自动出现，--check 即与 tool-registry.ts 对账）。
+      : `v1.4.5 T6 (R4)：src/index.ts 惰性 await import（懒加载 + 缺依赖降级不抛；v1.4.8 起该样板由 @sofagent/dsh-plugin-kit 统一封装；v1.4.9 P2 起厚插件多包 bridges 按序解析、部分可用即部分成功），此前未声明任何依赖——对齐 root package.json F-18 optionalDependencies 先例。`;
+  // v1.4.9 F1①/P2：sofagent.tools 生成段——「本插件注册哪些工具」的声明面。
+  // 单角色 toolsRole（F1①）与多角色 toolsRoles（P2）二选一：多角色优先（并集）。
+  // 只对声明了角色的条目生成；--check 与 tool-registry.ts 对账（幽灵角色 / 空清单 fail-loud）。
   const sofagentSegment = {
     type: 'dsh-plugin',
     family: 'cordis',
     seam: entry.seam,
     seamSemantics: entry.seamSemantics,
   };
-  const toolsList = toolsForRole(registry, entry.toolsRole);
+  // P2 featureGates 对账：每档清单内的名字必须 ⊆ 角色并集工具名（幽灵名 = 声明了
+  // registry 里不存在的工具 = 关档语义空转）；档位名不得重复出现在多个档（归属二义）。
+  if (entry.featureGates !== undefined) {
+    const roles = entry.toolsRoles ?? (entry.toolsRole !== undefined ? [entry.toolsRole] : []);
+    if (roles.length === 0) {
+      const err = new Error(
+        `${MANIFEST} 条目 ${entry.id} 声明 featureGates 但未声明 toolsRole/toolsRoles——分档无角色全集可对照，属声明矛盾。`,
+      );
+      err.self = true;
+      throw err;
+    }
+    const unionNames = new Set(
+      registry.filter((t) => t.roles.some((r) => roles.includes(r))).map((t) => t.name),
+    );
+    const owner = new Map();
+    for (const [gate, names] of Object.entries(entry.featureGates)) {
+      if (!Array.isArray(names) || names.length === 0) {
+        const err = new Error(`${MANIFEST} 条目 ${entry.id} 的 featureGates.${gate} 必须是非空工具名数组。`);
+        err.self = true;
+        throw err;
+      }
+      for (const n of names) {
+        if (!unionNames.has(n)) {
+          const err = new Error(
+            `${MANIFEST} 条目 ${entry.id} 的 featureGates.${gate} 含工具 "${n}"，但它不在 toolsRoles=[${roles.join(',')}] 的并集内` +
+              `（${TOOL_REGISTRY} 单一源查无此名或角色不符）——关档语义会空转，请核对清单。`,
+          );
+          err.self = true;
+          throw err;
+        }
+        if (owner.has(n) && owner.get(n) !== gate) {
+          const err = new Error(
+            `${MANIFEST} 条目 ${entry.id} 的工具 "${n}" 同时被 featureGates.${owner.get(n)} 与 ${gate} 声明——档位归属二义，一个工具只能属一个档。`,
+          );
+          err.self = true;
+          throw err;
+        }
+        owner.set(n, gate);
+      }
+    }
+    sofagentSegment.featureGates = entry.featureGates;
+  }
+  const toolsList = toolsForRole(registry, entry.toolsRoles ?? entry.toolsRole);
   if (toolsList !== null) {
     if (toolsList.length === 0) {
+      const rolesLabel = entry.toolsRoles ?? entry.toolsRole;
       const err = new Error(
-        `${MANIFEST} 条目 ${entry.id} 声明 toolsRole="${entry.toolsRole}"，但 ${TOOL_REGISTRY} 里无任何工具的 roles 含该值` +
+        `${MANIFEST} 条目 ${entry.id} 声明 toolsRoles/toolsRole="${String(rolesLabel)}"，但 ${TOOL_REGISTRY} 里无任何工具的 roles 含其中任一值` +
           `——声明了角色却零工具可挂，请核对 roles 取值面（单一源 = tool-registry.ts）。`,
       );
       err.self = true;
       throw err;
     }
     sofagentSegment.tools = toolsList;
-    sofagentSegment.toolsRole = entry.toolsRole;
+    if (entry.toolsRoles !== undefined) sofagentSegment.toolsRoles = entry.toolsRoles;
+    else sofagentSegment.toolsRole = entry.toolsRole;
   }
   return {
     description: `${entry.description}（seam: ${entry.seam}）——${tailOf(entry)}`,
@@ -365,11 +441,13 @@ function parseToolRegistry(text) {
 
 /**
  * 按角色筛工具名（registry 声明序）——sofagent.tools 生成段的取值面。
- * @returns {string[] | null} 条目无 toolsRole 时返回 null（不生成该键，其余插件零扰动）
+ * v1.4.9 P2：toolsRoles 数组 = 并集（roles 含任一值）；单值 toolsRole 兼容保留。
+ * @returns {string[] | null} 条目无角色声明时返回 null（不生成该键，其余插件零扰动）
  */
 function toolsForRole(registry, toolsRole) {
   if (toolsRole === undefined) return null;
-  return registry.filter((t) => t.roles.includes(toolsRole)).map((t) => t.name);
+  const roles = Array.isArray(toolsRole) ? toolsRole : [toolsRole];
+  return registry.filter((t) => t.roles.some((r) => roles.includes(r))).map((t) => t.name);
 }
 
 /** 首个不同位的下标（长度不同则取短的那个长度位）——用于把「不同序」定位到具体位次 */

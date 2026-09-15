@@ -4,5 +4,5 @@
       name: 'cordis-plugin-sofagent-fde'
       inject: [settings, dynamicCordisRunner]
       config:
-        seam: "non-seam:tool-set"    # 语义：非宿主事件接入（tool 集）——FDE 六 tool 按需调用
-        description: "给宿主加上 FDE 进场方法论——访谈 / 分类 / 量化 / 派生 / 蒸馏 / 部署六工具——桥接 @sofagent/ontology generateOntologyView"
+        seam: "non-seam:tool-set"    # 语义：非宿主事件接入（tool 集）——本体 / FDE / 公地三域工具按需调用（v1.4.9 P2 合并原 -ontology 与 -commons 面）
+        description: "FDE 进场与能力流通——把企业业务梳理成 AI 能力，并让这些能力在企业内被发布、发现、调用、评价、退役——桥接 @sofagent/orchestrator publishCapability / @sofagent/ontology generateOntologyView / @sofagent/core restoreSnapshot"

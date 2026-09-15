@@ -36,22 +36,19 @@
 
 ---
 
-## DSH 插件家族（10 款 cordis-plugin）
+## DSH 插件家族（7 款 cordis-plugin）
 
 > sofagent 约束能力在 DSH（DeepSeek Harness）生态的插件形态——每款只干一件事，可独立安装、渐进采用。能力完整面 = MCP Server 103 tools（连接 sofagent MCP 后调用）。随主线版本发布，SkillHub 通道检索。
 
 | 插件 | 职责（桥接实况） | seam |
 |------|----------------|------|
-| `cordis-plugin-sofagent-audit` | 变更机器审阅（24 规则 + git diff 硬证据）——桥接 `@sofagent/audit runRules` | tools/result + tools/pre-execute + fs/write-intent |
+| `cordis-plugin-sofagent-audit` | 变更机器审阅 + 验收硬门禁（24 规则 + git diff 硬证据 + Turn 停止验收判定——v1.4.9 P2 吸收原 gate 验收面，开关独立）——桥接 `@sofagent/audit runRules` | tools/result + tools/pre-execute + fs/write-intent + agent/turn-stopping |
 | `cordis-plugin-sofagent-rollback` | 出错逆序撤销（git snapshot → effect disposer）——桥接 `@sofagent/core getHistoryFilePath` | effect 注册/卸载 |
 | `cordis-plugin-sofagent-inject` | 启动注入企业约束（四层加载链）——桥接 `@sofagent/harness buildConstrainedSystemPrompt` | apply(ctx) |
 | `cordis-plugin-sofagent-evolve` | 经验沉淀（think.md 反思 + Dream Cycle）——桥接 `@sofagent/think generateThinkEntry` | 任务结束 hook |
-| `cordis-plugin-sofagent-ontology` | 共享语义底座（本体数据视图）——桥接 `@sofagent/ontology generateOntologyView` | ontology_* tools + search_knowledge |
-| `cordis-plugin-sofagent-commons` | 能力公地五环（发布/发现/调用/评价/养护）——桥接 `@sofagent/audit loadConfig` | commons_* tools |
-| `cordis-plugin-sofagent-gate` | 验收不过不放行（机器可判定验收 + 人审）——桥接 `@sofagent/audit runRules` | agent/turn-stopping |
 | `cordis-plugin-sofagent-daemon` | 7×24 巡检 + 健康监测 + webhook 推送——桥接 `@sofagent/daemon startCron` | 独立调度进程 |
-| `cordis-plugin-sofagent-fde` | FDE 进场方法论桥接（本体数据视图生成，fde_* 六 tool 为规划中形态，见 ROADMAP）——桥接 `@sofagent/ontology generateOntologyView` | fde_* tools（规划） |
-| `cordis-plugin-sofagent` | **整装入口**——一次挂载以上 9 款原子插件（聚合编排层，只编排不重实现；缺哪款只降级哪款，不整挂失败） | non-seam:plugin-suite |
+| `cordis-plugin-sofagent-fde` | FDE 进场与能力流通——本体 / FDE / 公地三域工具面（v1.4.9 P2 合并原 ontology / commons 两款，settings 三档分域可关）——桥接 `@sofagent/orchestrator publishCapability / @sofagent/ontology generateOntologyView / @sofagent/core restoreSnapshot` | ontology_* / fde_* / commons_* tools |
+| `cordis-plugin-sofagent` | **整装入口**——一次挂载以上 6 款原子插件（聚合编排层，只编排不重实现；缺哪款只降级哪款，不整挂失败） | non-seam:plugin-suite |
 
 ---
 

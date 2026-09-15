@@ -25,7 +25,7 @@
     "seam": "non-seam:host-process",
     "seamSemantics": "非宿主事件接入（独立调度进程）——7×24 巡检不走宿主事件循环"
   },
-  "//optionalDependencies": "v1.4.5 T6 (R4)：src/index.ts 惰性 await import('@sofagent/daemon')（懒加载 + 缺依赖降级不抛；v1.4.8 起该样板由 @sofagent/dsh-plugin-kit 统一封装），此前未声明任何依赖——对齐 root package.json F-18 optionalDependencies 先例。",
+  "//optionalDependencies": "v1.4.5 T6 (R4)：src/index.ts 惰性 await import（懒加载 + 缺依赖降级不抛；v1.4.8 起该样板由 @sofagent/dsh-plugin-kit 统一封装；v1.4.9 P2 起厚插件多包 bridges 按序解析、部分可用即部分成功），此前未声明任何依赖——对齐 root package.json F-18 optionalDependencies 先例。",
   "optionalDependencies": {
     "@sofagent/daemon": "1.4.8"
   },

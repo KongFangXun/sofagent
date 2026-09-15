@@ -241,9 +241,11 @@ describe('F1① 工具注册面（toolsRole）', () => {
     (kit.plugin.apply as (c: unknown) => unknown)(ctx);
     await new Promise((r) => setTimeout(r, 150));
     expect(register).not.toHaveBeenCalled();
-    // kit 降级日志是单参调用（一个模板串）——断言元数必须匹配真实调用面
+    // kit 降级日志是单参调用（一个模板串）——断言元数必须匹配真实调用面。
+    // v1.4.9 P2：多角色改写后空集走「档位过滤后角色工具为空集」分支
+    //（文案不再是旧单角色形态「无 roles 含」——同一空集，不同措辞）。
     expect(
-      errSpy.mock.calls.some((c) => String(c[0]).includes('无 roles 含')),
+      errSpy.mock.calls.some((c) => String(c[0]).includes('档位过滤后角色工具为空集')),
     ).toBe(true);
     errSpy.mockRestore();
   });
@@ -286,6 +288,108 @@ describe('F1① 工具注册面（toolsRole）', () => {
     (kit.plugin.apply as (c: unknown) => unknown)(ctx);
     await new Promise((r) => setTimeout(r, 50));
     expect(register).not.toHaveBeenCalled();
+  });
+});
+
+describe('P2 多角色并集 + featureGates 分档', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('toolsRoles 多角色：并集注册（fde+commons > 任一单角色数）', async () => {
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const registered: string[] = [];
+    const register = vi.fn((def: { name: string }) => {
+      registered.push(def.name);
+      return () => undefined;
+    });
+    const kit = createSofagentPlugin(makeEntry({ toolsRoles: ['fde', 'commons'] }));
+    const ctx = makeCtx({ get: vi.fn(() => ({ register })) });
+    (kit.plugin.apply as (c: unknown) => unknown)(ctx);
+    await new Promise((r) => setTimeout(r, 200));
+
+    const mcp = await import('@sofagent/mcp/tool-registry');
+    const union = mcp.TOOLS.filter(
+      (t) => Array.isArray(t.roles) && (t.roles.includes('fde') || t.roles.includes('commons')) && typeof t.handler === 'function',
+    ).map((t) => t.name);
+    expect([...registered].sort()).toEqual([...union].sort());
+    // 并集严格大于单角色（commons 6 工具不在 fde 角色内）
+    const fdeOnly = mcp.TOOLS.filter(
+      (t) => Array.isArray(t.roles) && t.roles.includes('fde') && typeof t.handler === 'function',
+    ).length;
+    expect(union.length).toBeGreaterThan(fdeOnly);
+    errSpy.mockRestore();
+  });
+
+  it('🔴 featureGates 关档：settings 值 false → 该档工具确实不注册（验收硬线）', async () => {
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const registered: string[] = [];
+    const register = vi.fn((def: { name: string }) => {
+      registered.push(def.name);
+      return () => undefined;
+    });
+    // settings.register 返回 SettingsScope 形态：get() 给出关档值
+    const ctx = makeCtx({
+      get: vi.fn(() => ({ register })),
+      settings: { register: vi.fn(() => ({ get: () => ({ enabled: true, commons: 'false' }), watch: () => () => undefined })) },
+    });
+    const kit = createSofagentPlugin(
+      makeEntry({
+        toolsRoles: ['fde', 'commons'],
+        featureGates: {
+          commons: ['commons_publish', 'commons_search', 'commons_invoke', 'commons_rate', 'commons_retire', 'commons_harvest_rule'],
+        },
+      }),
+    );
+    (kit.plugin.apply as (c: unknown) => unknown)(ctx);
+    await new Promise((r) => setTimeout(r, 200));
+
+    for (const n of ['commons_publish', 'commons_search', 'commons_invoke', 'commons_rate', 'commons_retire', 'commons_harvest_rule']) {
+      expect(registered, `关档后 ${n} 不得注册`).not.toContain(n);
+    }
+    expect(registered.some((n) => n.startsWith('fde_'))).toBe(true); // 其余域照常
+    errSpy.mockRestore();
+  });
+
+  it('featureGates 档位键自动并入 settings 注册面（base 默认 true，不必在 settingsExtra 重复声明）', () => {
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const register = vi.fn(() => ({ get: () => ({}), watch: () => () => undefined }));
+    const ctx = makeCtx({ settings: { register } });
+    const kit = createSofagentPlugin(
+      makeEntry({
+        toolsRoles: ['fde'],
+        featureGates: { fde: ['fde_compose'] },
+        settingsExtra: { existing: 'keep' },
+      }),
+    );
+    (kit.plugin.apply as (c: unknown) => unknown)(ctx);
+    const [ns, , opts] = register.mock.calls[0] as [string, unknown, { base: Record<string, string> }];
+    expect(ns).toBe('sofagent-test');
+    expect(opts.base.existing).toBe('keep'); // 既有 settingsExtra 不回归
+    expect(opts.base.fde).toBe('true'); // 档位键默认开
+    errSpy.mockRestore();
+  });
+
+  it('settings 缺席（headless）：档位退默认全开——注册面与无 featureGates 声明一致', async () => {
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const registered: string[] = [];
+    const register = vi.fn((def: { name: string }) => {
+      registered.push(def.name);
+      return () => undefined;
+    });
+    const ctx = makeCtx({ get: vi.fn(() => ({ register })) }); // 无 settings 服务
+    const kit = createSofagentPlugin(
+      makeEntry({
+        toolsRoles: ['commons'],
+        featureGates: { commons: ['commons_publish', 'commons_search'] },
+      }),
+    );
+    (kit.plugin.apply as (c: unknown) => unknown)(ctx);
+    await new Promise((r) => setTimeout(r, 200));
+    // commons 角色全注册（含档内名单——默认全开）
+    expect(registered).toContain('commons_publish');
+    expect(registered).toContain('commons_search');
+    errSpy.mockRestore();
   });
 });
 

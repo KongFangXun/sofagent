@@ -1,25 +1,25 @@
-// cordis-plugin-sofagent · DSH 反向插件（v1.4.8 第8批 · 聚合编排层）
-// seam 挂载：non-seam:plugin-suite    # 语义：非宿主事件接入（插件聚合）——一次 apply 逐个挂载 9 个原子插件；能力仍由各原子插件 provide
+// cordis-plugin-sofagent · DSH 反向插件（v1.4.8 第8批 · 聚合编排层；v1.4.9 P2 合并批：SUITE 9→6）
+// seam 挂载：non-seam:plugin-suite    # 语义：非宿主事件接入（插件聚合）——一次 apply 逐个挂载 6 个原子插件；能力仍由各原子插件 provide
 // 清单生成源 = engine/dsh-plugins/plugins.json（生成 package.json 的 description/sofagent/dsh/optionalDependencies 段与 cordis.patch.yml）；本文件的 seam 字面量由生成器 --check 与之对账。
 //
 // 🔴 三条硬约束（缺一不可）：
 //   ① 只编排，不重实现——每个能力仍由原子插件 provide，本层只依次调用它们的 apply；
-//   ② 逐个降级，不整挂失败——缺任一原子插件只记入 failed 数组，其余 8 个照常加载；
-//   ③ 不替代细粒度插件——9 个原子插件全部保留，本插件是**新增的整装选项**，不是替代品。
+//   ② 逐个降级，不整挂失败——缺任一原子插件只记入 failed 数组，其余 5 个照常加载；
+//   ③ 不替代细粒度插件——6 个原子插件全部保留，本插件是**新增的整装选项**，不是替代品。
+//
+// v1.4.9 P2 合并说明：原 -ontology/-commons 并入 -fde（厚插件三域），
+// 原 -gate 并入 -audit（验收 seam 四值）——原子插件 9→6，本 SUITE 同批收口。
 
 const SUITE: ReadonlyArray<readonly [string, string]> = [
   ['inject', 'cordis-plugin-sofagent-inject'],
   ['audit', 'cordis-plugin-sofagent-audit'],
-  ['gate', 'cordis-plugin-sofagent-gate'],
-  ['ontology', 'cordis-plugin-sofagent-ontology'],
-  ['commons', 'cordis-plugin-sofagent-commons'],
   ['evolve', 'cordis-plugin-sofagent-evolve'],
   ['rollback', 'cordis-plugin-sofagent-rollback'],
   ['daemon', 'cordis-plugin-sofagent-daemon'],
   ['fde', 'cordis-plugin-sofagent-fde'],
 ];
 
-/** 插件自己的 package.json（版本 SSOT 在插件自身，与其余 9 个插件同形） */
+/** 插件自己的 package.json（版本 SSOT 在插件自身，与其余 6 个插件同形） */
 const HOST_PKG = require('../package.json') as { version?: string };
 
 /**
@@ -34,7 +34,7 @@ export const pluginMeta = {
 } as const;
 
 /** 依赖的 sofagent 能力说明（DSH skill 引导链展示） */
-export const capability = '一次挂载 sofagent 全套能力（9 项）';
+export const capability = '一次挂载 sofagent 全套能力（6 项）';
 
 /** 被编排的原子插件清单（短名 → 包名）——供外部只读查阅（与 plugins.json 的 suite 段同源） */
 export const suite: ReadonlyArray<readonly [string, string]> = SUITE;
@@ -48,13 +48,13 @@ export interface SuiteReport {
   readonly loaded: string[];
   /** 未挂上的原子插件（短名 + 失败原因）——非空即说明该能力缺席，但其余能力不受影响 */
   readonly failed: Array<{ name: string; reason: string }>;
-  /** 原子插件总数（恒为 9） */
+  /** 原子插件总数（恒为 6） */
   readonly total: number;
   /** 能力说明（与 capability 同值） */
   readonly capability: string;
   /** 经宿主惯用法 `ctx.plugin()` 挂载的短名——这些拿到 inject 就绪门控 + 宿主托管卸载 */
   readonly viaHost: string[];
-  /** 经回落路径「直呼 apply」挂载的短名——裸 ctx / 宿主无 ctx.plugin 时即全部 9 个 */
+  /** 经回落路径「直呼 apply」挂载的短名——裸 ctx / 宿主无 ctx.plugin 时即全部 6 个 */
   readonly viaDirect: string[];
   /** 卸载钩子形态：`ctx.on` = 宿主生命周期事件；`apply-return` = 仅靠 apply 返回值（宿主据 _execute 登记） */
   readonly unloadHook: 'ctx.on' | 'apply-return';
@@ -86,7 +86,7 @@ interface HostCtx {
  * 跨模块形态取「插件对象」。
  *
  * 🔴 为什么不能直接写 `mod.default?.apply`（实测结论，见 tools/gen 与本批汇报）：
- *    9 个原子插件是 TS 编译出的 **CJS** 模块（`exports.default = kit.plugin` + `__esModule`），
+ *    6 个原子插件是 TS 编译出的 **CJS** 模块（`exports.default = kit.plugin` + `__esModule`），
  *    而 `await import(pkg)` 在 **CJS 里被 TS 保留为原生动态 import**（`module: node16`）。
  *    Node 对 CJS 的 ESM 互操作把 `default` 指向 `module.exports` 整体，于是
  *      · `mod.default`            = `{ __esModule, default: kit.plugin, pluginMeta, … }`
@@ -101,7 +101,7 @@ function pluginOf(mod: unknown): SubPlugin {
 }
 
 /**
- * DSH Cordis 插件契约：一次 apply 把 9 个原子插件逐个挂到同一个 ctx 上。
+ * DSH Cordis 插件契约：一次 apply 把 6 个原子插件逐个挂到同一个 ctx 上。
  *
  * 🔴 挂载路径（A2 修复）：**优先宿主惯用法 `ctx.plugin(插件)`**——由宿主按各原子插件自己声明的
  *    `inject` 做就绪门控，并把它挂成独立 fiber（卸载时宿主按 fiber 托管反注册其服务）；
@@ -144,7 +144,7 @@ export default {
         const mod = await import(pkg); // 懒加载：缺哪个报哪个，不整挂失败
         sub = pluginOf(mod);
       } catch (err) {
-        // 逐个降级：单个原子插件缺席（未装 / 未 build）不阻断其余 8 个
+        // 逐个降级：单个原子插件缺席（未装 / 未 build）不阻断其余 5 个
         failed.push({ name: key, reason: err instanceof Error ? err.message : String(err) });
         continue;
       }

@@ -1,8 +1,0 @@
-# sofagent cordis-plugin-sofagent-ontology bundle patch v1.4.8——注册为 DSH profile layer
-- insert:
-    - id: sofagent-ontology
-      name: 'cordis-plugin-sofagent-ontology'
-      inject: [settings, dynamicCordisRunner]
-      config:
-        seam: "non-seam:tool-set"    # 语义：非宿主事件接入（tool 集）——本体查询 / 知识检索按需调用
-        description: "给宿主加上业务语义底座——查业务实体 / 关联关系 / 知识条目——桥接 @sofagent/ontology generateOntologyView"

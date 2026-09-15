@@ -11,7 +11,7 @@
 // 为什么需要它（P1-2 前置事实）：
 //   `engine/dsh-plugins/plugin-kit` 是 `private: true` 且**刻意**不登记进根
 //   package.json 的 workspaces（理由见该包 `//notWorkspace` 字段：登记会撞
-//   check-version.sh §9e 的 rhythm 段断言）。9 款插件因此改用
+//   check-version.sh §9e 的 rhythm 段断言）。6 款插件因此改用
 //   `'../../plugin-kit/dist/index.js'` 相对引用它。
 //   ⇒ **「刻意」只写在注释里、零守卫**：任何一次目录改名 / 加层级 / 误改前缀
 //     都不会被任何门禁发现，只会在构建或分发时炸。本脚本补上这个执行面。
@@ -25,8 +25,9 @@
 //   ③ `FORGE/`、`tools/` 下无多包嵌套结构，不在扫描面内。
 //
 // 三层负向断言（对齐 G-2/G-3/G-6 同族铁律：**不许静默通过**）：
-//   ① 扫描面完整性：`engine/dsh-plugins/plugin-kit/package.json` 与 ≥9 个
-//      `cordis-plugin-sofagent-*` 目录必须在位。缺任一 ⇒ **exit 2 检查器失明**
+//   ① 扫描面完整性：`engine/dsh-plugins/plugin-kit/package.json` 与 ≥7 个
+//      `cordis-plugin-sofagent-*` 目录必须在位（v1.4.9 P2 合并批 9→6 原子款 +
+//      聚合 umbrella = 7）。缺任一 ⇒ **exit 2 检查器失明**
 //      （防「目录改名 / 前缀假设错」被读成「零违规」）。
 //   ② 台账非空却零命中 = 自相矛盾 ⇒ **FAIL**（防正则失配被读成「已收口」）。
 //      台账空且零命中 = 合理收口 ⇒ 打印**可见 SKIP 行**（不是静默 ✓）。
@@ -52,25 +53,28 @@
 //   如需计数量纲，参照 `check-legacy-knowledge-path.mjs` 的 `{count, reason}` 形态。
 //
 // 🔴 登记理由（豁免必须逐族说清为什么，禁「反正它绿了」）：
-//   族 1 · 9 款原子插件的 `../../plugin-kit/dist/index.js`（9 条）
+//   族 1 · 6 款原子插件的 `../../plugin-kit/dist/index.js`（6 条 · v1.4.9 P2 合并批 9→6）
 //     理由：plugin-kit 是 `private: true` 且**刻意不入 workspaces**（见该包
-//     `//notWorkspace`），9 款插件以相对路径引用它 ⇒ 这是**设计**，不是欠债。
+//     `//notWorkspace`），6 款插件以相对路径引用它 ⇒ 这是**设计**，不是欠债。
 //     分发形态实测（P1-2 取证，非推断）：
 //       a) 插件与 plugin-kit 均不入 npm（插件 `private: true`；plugin-kit 既
 //          `private` 又非 workspace 成员）；
 //       b) 两者 `dist/` 均不入 git（`.gitignore:8 dist/`）；
-//       c) 根 `npm run build` **显式**在 10 个插件之前执行
+//       c) 根 `npm run build` **显式**在 7 个插件之前执行
 //          `npm --prefix engine/dsh-plugins/plugin-kit run build` ⇒ 拓扑序被手工钉住；
 //       d) 故障注入实测：移走 `plugin-kit/dist` 后插件构建 **fail-loud**
 //          （`error TS2307: Cannot find module '../../plugin-kit/dist/index.js'`），
 //          不静默降级 ⇒ 假设「单目录切片分发」失效时也会当场报错，不会悄悄上线。
 //     残余风险（已承认，未消）：若某分发通道**只取单个插件目录**（兄弟目录不随行），
 //      构建期才会炸。本守卫把该假设钉成可执行约束——目录一旦改名/移位即 FAIL。
-//   族 2 · 聚合插件测试读清单 SSOT（1 条）
-//     `cordis-plugin-sofagent/src/index.test.ts → ../../plugins.json`
+//   族 2 · 清单 SSOT 对账测试读 plugins.json（3 条 · v1.4.9 P2 新增 2 条）
+//     a) `cordis-plugin-sofagent/src/index.test.ts → ../../plugins.json`（suite 面）
+//     b) `cordis-plugin-sofagent-audit/src/index.test.ts → ../../plugins.json`（seam 四值对账）
+//     c) `cordis-plugin-sofagent-fde/src/index.test.ts → ../../plugins.json`（featureGates 三档对账）
 //     理由：`plugins.json` 是 DSH 插件清单的**唯一手写源**（生成器据此产出各
-//     `package.json` / `cordis.patch.yml` 段）。该测试**就是要**对账这份 SSOT，
-//     故刻意相对引用而非复制一份。测试面，不进运行时产物。
+//     `package.json` / `cordis.patch.yml` 段）。这三处测试**就是要**对账这份 SSOT
+//     （audit 的 seam 四值、fde 的分档清单、suite 的条目数），故刻意相对引用而非
+//     复制一份。测试面，不进运行时产物。
 // ============================================================
 
 import fs from 'fs';
@@ -104,7 +108,8 @@ function assertScanFaceIntact() {
     pluginDirs = fs.readdirSync(DSH_DIR, { withFileTypes: true })
       .filter((e) => e.isDirectory() && /^cordis-plugin-sofagent/.test(e.name)).length;
   }
-  if (pluginDirs < 9) missing.push(`cordis-plugin-sofagent-* 目录数 = ${pluginDirs}（期望 ≥9）`);
+  // v1.4.9 P2 合并批：原子插件 9→6（ontology/commons/gate 并入 fde/audit），加聚合 umbrella 共 7 目录
+  if (pluginDirs < 7) missing.push(`cordis-plugin-sofagent-* 目录数 = ${pluginDirs}（期望 ≥7）`);
   if (missing.length > 0) {
     const err = new Error(
       `扫描面结构缺失 → 极可能目录已改名/移动，此时「零违规」是假空：\n      ${missing.join('\n      ')}`,
@@ -221,7 +226,7 @@ function selftest() {
   const okA2 = probeHits.includes(wantKit);
   const okA3 = !gotLocal;
   console.log(`  ${okA1 ? '✓' : '❌'} 越包（同级形状，import）必判：${okA1 ? '命中' : '未命中——判据是装饰品'}`);
-  console.log(`  ${okA2 ? '✓' : '❌'} 越包（与 9 条存量同形，require）必判：${okA2 ? '命中' : '未命中'}`);
+  console.log(`  ${okA2 ? '✓' : '❌'} 越包（与 6 条存量同形，require）必判：${okA2 ? '命中' : '未命中'}`);
   console.log(`  ${okA3 ? '✓' : '❌'} 包内相对引用不误判（负向对照）：${okA3 ? '未误判' : '误判了 local-helper.js'}`);
   if (!okA1 || !okA2 || !okA3) fail++;
 
@@ -233,8 +238,8 @@ function selftest() {
   console.log(`  ${okB1 ? '✓' : '❌'} 实测违规全部已登记（无未登记孤儿）：${registered.length}/${real.violations.size}`);
   if (!okB1) fail++;
 
-  const okB2 = kitEntries.length === 9;
-  console.log(`  ${okB2 ? '✓' : '❌'} 其中 plugin-kit 族恰 9 条（与「9 款原子插件」口径对上）：实测 ${kitEntries.length}`);
+  const okB2 = kitEntries.length === 6;
+  console.log(`  ${okB2 ? '✓' : '❌'} 其中 plugin-kit 族恰 6 条（与「6 款原子插件」口径对上 · v1.4.9 P2 合并批 9→6）：实测 ${kitEntries.length}`);
   if (!okB2) fail++;
 
   // 台账清空（内存模拟）→ 全部变未登记 ⇒ 豁免确实在承重，不是橡皮章
@@ -243,16 +248,16 @@ function selftest() {
   console.log(`  ${okB3 ? '✓' : '❌'} 台账清空后全部变未登记（承重性）：${newOnesEmpty.length}/${real.violations.size}`);
   if (!okB3) fail++;
 
-  // 只摘掉 plugin-kit 那 9 条 → **恰 9 条**变未登记 ⇒ 台账是「逐条」生效
+  // 只摘掉 plugin-kit 那 6 条 → **恰 6 条**变未登记 ⇒ 台账是「逐条」生效
   const withoutKit = ledger.filter((v) => !v.includes('plugin-kit'));
   const newOnesPartial = [...real.violations].filter((v) => !withoutKit.includes(v));
-  const okB4 = newOnesPartial.length === 9;
-  console.log(`  ${okB4 ? '✓' : '❌'} 仅摘掉 plugin-kit 9 条 → 恰 9 条转未登记（逐条生效，非全有全无）：实测 ${newOnesPartial.length}`);
+  const okB4 = newOnesPartial.length === 6;
+  console.log(`  ${okB4 ? '✓' : '❌'} 仅摘掉 plugin-kit 6 条 → 恰 6 条转未登记（逐条生效，非全有全无 · v1.4.9 P2）：实测 ${newOnesPartial.length}`);
   if (!okB4) fail++;
 
-  // 探针 C：9 条存量的登记理由同源可核对（全部指向同一包）
+  // 探针 C：6 条存量的登记理由同源可核对（全部指向同一包）
   const okC = kitEntries.every((v) => v.endsWith('→ ../../plugin-kit/dist/index.js'));
-  console.log(`  ${okC ? '✓' : '❌'} 9 条存量说明符同形（登记理由单一、可核对）`);
+  console.log(`  ${okC ? '✓' : '❌'} 6 条存量说明符同形（登记理由单一、可核对）`);
   if (!okC) fail++;
 
   console.log('');
@@ -302,7 +307,7 @@ try {
 
   if (unregistered.length === 0) {
     console.log(`  ✓ 全部 ${all.length} 条越包相对引用均在豁免台账内（新增 0）`);
-    console.log(`  ✓ 扫描面结构完整：plugin-kit/package.json 在位 + 10 个 cordis-plugin-sofagent-* 目录`);
+    console.log(`  ✓ 扫描面结构完整：plugin-kit/package.json 在位 + 7 个 cordis-plugin-sofagent-* 目录（v1.4.9 P2 合并批 10→7）`);
     emitCoverage(all.length + 1, scanned.length, 0);
     process.exit(0);
   }

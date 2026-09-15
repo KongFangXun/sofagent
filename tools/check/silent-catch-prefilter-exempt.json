@@ -22,7 +22,6 @@
   "engine/dsh-plugins/cordis-plugin-sofagent-evolve/src/index.ts",
   "engine/dsh-plugins/cordis-plugin-sofagent-fde/src/index.ts",
   "engine/dsh-plugins/cordis-plugin-sofagent-inject/src/index.ts",
-  "engine/dsh-plugins/cordis-plugin-sofagent-ontology/src/index.ts",
   "engine/evolve/src/auto-trigger.ts",
   "engine/evolve/src/cli.ts",
   "engine/evolve/src/evolve-integration.ts",

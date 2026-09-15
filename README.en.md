@@ -109,7 +109,7 @@ Sits between the Agents you already use and the model layer — it doesn't repla
 
 | Tier | Platform | Constraint injection | Mounting method |
 |------|----------|---------------------|-----------------|
-| **Deep integration** | DeepSeek Harness | ✅ **Per-tool-call interception** | 9 atomic `cordis-plugin-sofagent-*` mounted into the runtime (1 optional aggregate plugin also available; previous chapter) — 8 lifecycle events incl. `tools/pre-execute` |
+| **Deep integration** | DeepSeek Harness | ✅ **Per-tool-call interception** | 6 atomic `cordis-plugin-sofagent-*` mounted into the runtime (1 optional aggregate plugin also available; previous chapter) — 8 lifecycle events incl. `tools/pre-execute` |
 | **Full mounting** | OpenClaw | ✅ **Once per session** | Hook-injected four-layer constraints + circuit breaker + 4 OpenClaw plugins |
 | **Standard mounting** | Claude Code / Cursor | ⚠️ Skill self-load | Skills-directory symlink + platform rule file + interception config (content = commit-level 24 rules, not call-level interception) |
 | **Thin mounting** | WorkBuddy / Codex / Gemini CLI / Hermes | ⚠️ Skill self-load | Skills-directory symlink (Codex uses the `AGENTS.md` mount point) + git-hook audit |
@@ -137,7 +137,7 @@ Most tools teach you how to build Agents; sofagent first answers **where AI shou
 
 Full methodology (four phases, twelve steps) in [FDE/GUIDE.md](./FDE/GUIDE.md) — a half-day read, enough to run FDE independently afterwards.
 
-> 💾 **Don't rush off after deployment**: each node's workflow is "burned" onto a USB drive through the DeepSeek Harness execution backend — the drive becomes one node, one key: plug it into any machine and it runs there (unplug, zero residue). The 9 open-source atomic plugins are already mounted into DSH (1 aggregate plugin also available) — burn and go.
+> 💾 **Don't rush off after deployment**: each node's workflow is "burned" onto a USB drive through the DeepSeek Harness execution backend — the drive becomes one node, one key: plug it into any machine and it runs there (unplug, zero residue). The 6 open-source atomic plugins are already mounted into DSH (1 aggregate plugin also available) — burn and go.
 
 ## FDE Skill System
 
@@ -279,7 +279,7 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # load the securit
 
 - DeepSeek Harness (upstream repository): <https://github.com/deepseek-ai/deepseek-harness>
 - Cordis runtime: <https://github.com/cordiverse/cordis>
-- 10 `cordis-plugin-sofagent*` plugin sources (9 atomic + 1 aggregate): [`engine/dsh-plugins/`](./engine/dsh-plugins/)
+- 7 `cordis-plugin-sofagent*` plugin sources (6 atomic + 1 aggregate): [`engine/dsh-plugins/`](./engine/dsh-plugins/)
 
 | You want to know | Where |
 |:---------|:--------|
@@ -295,7 +295,7 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # load the securit
 | Security statement · known limitations | [SECURITY](./SECURITY.md) · [LIMITATIONS](./docs/LIMITATIONS.md) |
 | Contribution guide | [CONTRIBUTING](./CONTRIBUTING.md) |
 
-> 🧪 **Engineering credibility**: 4787 tests / 13 module packages + 14 plugins (10 DSH + 4 OpenClaw) (scope: 13 workspace packages; package counts and counting standard in [WIKI](./docs/WIKI.md)) · 24 audit rules · fresh-eyes independent review continuously running (test counts are determined by `tools/check/test-count.sh`; environmental notes are documented in [docs/guides/review-system.md](./docs/guides/review-system.md). Performance figures are single-machine reference values; cross-tool benchmarking is scheduled for v1.4.x together with Benchmark integration).
+> 🧪 **Engineering credibility**: 4787 tests / 13 module packages + 11 plugins (7 DSH + 4 OpenClaw) (scope: 13 workspace packages; package counts and counting standard in [WIKI](./docs/WIKI.md)) · 24 audit rules · fresh-eyes independent review continuously running (test counts are determined by `tools/check/test-count.sh`; environmental notes are documented in [docs/guides/review-system.md](./docs/guides/review-system.md). Performance figures are single-machine reference values; cross-tool benchmarking is scheduled for v1.4.x together with Benchmark integration).
 
 ---
 
