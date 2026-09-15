@@ -198,14 +198,14 @@ Agent = **模型 + 上下文 + 工具 + 状态 + 执行控制 + 权限 + 可观�
 | 包 | 职责 | 状态 |
 |---|---|---|
 | audit | 提交时审计，24 条规则（17 默认 + 7 扩展，[完整清单见 SECURITY](../SECURITY.md#24-条审计规则完整清单文档级-ssot)）硬证据扫描 + 快照/回滚/webhook + 本体建模要求对齐维度（`runRules({gb48000:true})` opt-in） | ✅ 已实现（1186 测试） |
-| core | 核心运行时：git diff 解析、shadow-repo 快照、AES-256-GCM/ECDH、think.md 契约、doctor、LLM 调用 Trace、stop_reason 分类、身份码 Ed25519 | ✅ 已实现（481 测试） |
+| core | 核心运行时：git diff 解析、shadow-repo 快照、AES-256-GCM/ECDH、think.md 契约、doctor、LLM 调用 Trace、stop_reason 分类、身份码 Ed25519、敏感识别三层插槽（T8：L0 正则/L1 词典/L2 外挂 NER + DetectorRegistry 调度 + 置信度分层 + Presidio 标签映射） | ✅ 已实现（526 测试） |
 | harness | 四层约束加载链 `buildConstrainedSystemPrompt()` + L4 渐进加载（热点全文 + 索引） | ✅ 已实现 |
 | rules | 规则引擎纯函数包（零 git 依赖；fs 仅限 AST 扫描的临时目录——mkdtemp 写入待检源码片段，扫描后即清理），编排层 tool-call 事前拦截 + 审批四模式 | ✅ 已实现 |
 | eval | 质量评估模块：精确匹配 / 语义相似 / 规则合规 三维评分 | ✅ 已实现 |
 | ab-test | A/B 自进化：current vs candidate 并行对比，连续胜出 + 非退化守卫才晋升 | ✅ 已实现 |
 | orchestrator | 编排模块：DAG 任务拆解 + LangGraph 闭环 + A/B 调度器 + ToolGate 事前拦截 + Ontology 运行时层 + 并行编排（MergeQueue/ParallelScheduler/波次卡关）+ Durable Execution + Onboard L1-L5 + Benchmark 评测 + agent-creation + FDE 梳理辅助 + Session 隔离 + meta-harness 多 harness 编排 + worklog 工作明细数据层 + 后训模块地基（train-job 编排/审计/隔离/指纹/签名/回收/恢复/安全 + 数据管道/版本/eval 闭环/环境/dry-run/报告）+ FDE 六引擎工作台 + workflow 模板血缘（lineage 事件流 + fork 谱系回溯）+ 执行时 skill 快照（打包/清理/审计锚点） | ✅ 已实现（1365 测试） |
 | daemon | 守护进程：cron + fs 监听 + 文件级审计 + USB 烧录 + 联邦查询 + Dream Cycle 6 阶段 + 启动 LOOP 续跑检查 + 审计轨迹聚合巡检 + 训练孤儿巡检 + 模型清单扫描（注册表 + 端点探测双源） | ✅ 已实现（504 测试） |
-| mcp | MCP Server：JSON-RPC 2.0 over stdio，tools + resources（103 tools）——含 FDE 六引擎（fde_interview/classify/quantify/derive/distill/deploy）、训练系（train_status/train_list/train_diagnose/corpus_export/train_serve/train_compliance/train_deliverable）、连接器与模板面（connector_register/connector_list/workflow_export/workflow_import） | ✅ 已实现 |
+| mcp | MCP Server：JSON-RPC 2.0 over stdio，tools + resources（104 tools）——含 FDE 六引擎（fde_interview/classify/quantify/derive/distill/deploy）、训练系（train_status/train_list/train_diagnose/corpus_export/train_serve/train_compliance/train_deliverable）、连接器与模板面（connector_register/connector_list/workflow_export/workflow_import） | ✅ 已实现 |
 | ontology | 领域本体：合并 / 状态 / 视图 / 概念合成，三层 YAML 自动生长 | ✅ 已实现 |
 | evolve | Skill 优化：复用 audit 规则做安全审查 + 集成优化 + 回填（原 skillopt，v1.4.8 更名） | ✅ 已实现 |
 | think | 思考链分析：基于 diff + 审计结果自动生成 think.md 反思条目（append-only） | ✅ 已实现（⚠️ 仅 MCP/CLI 路径触发，git hook 路径不自动生成） |
@@ -216,7 +216,7 @@ Agent = **模型 + 上下文 + 工具 + 状态 + 执行控制 + 权限 + 可观�
 v1.3.9 起对所有 workspace 包的入口 export 做显式分级，CI 门禁（[tools/check/public-api.mjs](./../tools/check/public-api.mjs)）拦截未 bump 版本的 `@public` 破坏性变更。
 
 **为什么是这个粒度**：
-- 基线覆盖 **13 个包**（12 个 `@sofagent/*` 模块包 + 工具包 `load-chain`；`engine/mcp` 无 `@public` 标注不入基线）——当前 13 包共 **2372 个 @public 符号**（以 `public-api.mjs` AST 解析为权威口径，非 grep 计数；v1.4.9 批 4 daemon 模型清单面新增 8 符号（AvailableModelEntry/ModelInventory/RuntimeSkillPackage/DEFAULT_PROBE_ENDPOINTS/PROBE_TIMEOUT_MS/probeEndpoint/scanModelInventory/scanRegistryModels）2364→2372——历史值 v1.4.0 时点 1456 / v1.4.6 时点 2168 / v1.4.7 时点 2364 已随版本演进失效，本值以门禁 baseline 对齐为准）。
+- 基线覆盖 **13 个包**（12 个 `@sofagent/*` 模块包 + 工具包 `load-chain`；`engine/mcp` 无 `@public` 标注不入基线）——当前 13 包共 **2475 个 @public 符号**（以 `public-api.mjs` AST 解析为权威口径，非 grep 计数；v1.4.9 批 5 core 敏感识别三层插槽新增 57 符号（DetectorRegistry/SensitiveSpan/detector-regex/glossary/remote/presidio-schema/sensitivity-classifier 全量导出）+ train session 承接面新增 62 符号（session-ingest/router-exporter/distill-pairs/weight-canary/applyPreClassification/chat 形态）+ daemon 设备面与 harness 训练环境面 27 符号 + audit 连接器注册面 6 符号，2372→2475（含批 3/4 未入账的设备注册与数据面符号一并重建基线）——历史值 v1.4.0 时点 1456 / v1.4.6 时点 2168 / v1.4.7 时点 2364 已随版本演进失效，本值以门禁 baseline 对齐为准）。
 - 未标记的导出**默认视为 @public**（保守默认：宁可多承诺不可漏承诺），`@internal` 需显式标注。
 
 **为什么 @internal 破坏性变更不影响适配层**：
@@ -229,7 +229,7 @@ v1.3.9 起对所有 workspace 包的入口 export 做显式分级，CI 门禁（
 
 > 累计能力表（按版本归组，全部 ✅ 已发布可用；规划中/排期项见下方「已排期」）：
 
-> 🗺️ **MCP 工具五域一环（103 tools）**（五域一环组织法 2026-09-02 收编；工具数 v1.4.5 增至 83，v1.4.6 增 train_cloud 至 84，v1.4.7 增 11 个至 95，v1.4.9 G9 增 device_register/device_list 至 97，G10/G11 增 device_data_query/device_data_push 至 99，G5b/G1 增连接器与模板 4 个至 103）：工具不是工具箱清单，是一个组织的编制表——五域各司其职，六条箭头构成「执行→审计→沉淀→晋升」的自进化闭环；审计域（域三）是整条飞轮的数据源头，其执法手册即 24 条审计规则。
+> 🗺️ **MCP 工具五域一环（104 tools）**（五域一环组织法 2026-09-02 收编；工具数 v1.4.5 增至 83，v1.4.6 增 train_cloud 至 84，v1.4.7 增 11 个至 95，v1.4.9 G9 增 device_register/device_list 至 97，G10/G11 增 device_data_query/device_data_push 至 99，G5b/G1 增连接器与模板 4 个至 103，批 5 增 router_session_push 至 104）：工具不是工具箱清单，是一个组织的编制表——五域各司其职，六条箭头构成「执行→审计→沉淀→晋升」的自进化闭环；审计域（域三）是整条飞轮的数据源头，其执法手册即 24 条审计规则。
 >
 > ⚠️ **两套标签不要混用**：五域按**业务职能**划分（本图组织法）；`tool-registry` 的 `roles` 是**使用场景标签**（7 面：audit/fde/eval/agent/ops/commons/browser），服务于 `SOFAGENT_MCP_ROLES` 按角色收窄暴露面。二者用途不同，域的条目数与 roles 分布数不相等属预期。
 
@@ -247,7 +247,7 @@ graph TB
         B2["后训模块 ×12（train_budget / train_submit / train_doctor / train_dryrun /<br/>train_report / train_status / train_list / train_diagnose /<br/>train_deliverable / train_serve / train_cloud / train_compliance）"]
         B3["模型注册挂载 ×3"]
     end
-    subgraph D3["三 · 审计·治理·运维（26）——约束层的神经系统"]
+    subgraph D3["三 · 审计·治理·运维（27）——约束层的神经系统"]
         C1["审计 ×7（run_audit / audit_file / audit_data_change /<br/>audit_trail / list_rules / stats / data_sovereignty_report）"]
         C2["HITL·快照 ×3"]
         C3["运维监控 ×6（daemon_status / health_check /<br/>worklog_query / cost_query / agent_identity / loop_debug）"]
@@ -255,6 +255,7 @@ graph TB
         C5["治理与可见性 ×2<br/>（contribution_query / list_capabilities）"]
         C6["设备接入面 ×4（device_register / device_list——G9 发现与在线态；<br/>device_data_query / device_data_push——G10/G11 数据面）"]
         C7["连接器注册面 ×2（connector_register / connector_list——G5b<br/>外部系统连接器注册与发现，与 tool-registry 分列不混列）"]
+        C8["router 承接面 ×1（router_session_push——T7 过站 session 承接：<br/>schema 校验 fail-closed + 脱敏本地落盘（数据主权）+<br/>usage 入 cost 台账 + key 维度 HMAC 挂链）"]
     end
     subgraph D4["四 · 知识资产（16）——越用越厚的组织记忆"]
         E1["本体数据 ×11"]
@@ -275,7 +276,7 @@ graph TB
 
 > 闭环读法：实线 = 主循环（执行→审计→沉淀→晋升→更强的执行面）；虚线 = 晋升回写与语料飞轮。
 >
-> ⚠️ **数字口径（v1.4.9 重算 · G5b/G1 增量同步）**：五域条目数之和 **27 + 19 + 26 + 16 + 15 = 103**，与图题 103 及 registry 实数**三处自洽**（以 `engine/mcp/src/tool-registry.ts` 的 `TOOLS` 数组为唯一权威源，逐个工具名分桶；分桶依据是**业务职能**，不是 registry 的 `roles` 标签——见上方「两套标签不要混用」）。**自洽由 `tools/check/check-docs.sh` §20 断言**（提取本图五域数字求和，比对图题与 registry 实数；提取为空 ⇒ 判红，防守卫空转）。重算记录：改前五域题号为 16/15/17/17/15（和 80 ≠ 图题 95，差 15），且 `后训模块 ×8` 与实数 `train_*` = 12 不符——两处同批纠正；**回填 2 枚此前未归域的工具**（`contribution_query` 治理 KPI 贡献度报表、`list_capabilities` 能力发现元工具，见各自 registry 描述——均属「审计·治理·运维」面，落 C5）；**v1.4.9 G9 增量**（device_register/device_list 设备注册面，D3 +2：95→97）；**v1.4.9 G10/G11 增量**（device_data_query/device_data_push 设备数据面，D3 +2：97→99，C6 扩为设备接入面 ×4）；**v1.4.9 G5b/G1 增量**（workflow_export/workflow_import 模板面归 D1 A3 编排域 +2、connector_register/connector_list 连接器注册面新 C7 落 D3 +2：99→103）。
+> ⚠️ **数字口径（v1.4.9 重算 · 批 5 增量同步）**：五域条目数之和 **27 + 19 + 27 + 16 + 15 = 104**，与图题 104 及 registry 实数**三处自洽**（以 `engine/mcp/src/tool-registry.ts` 的 `TOOLS` 数组为唯一权威源，逐个工具名分桶；分桶依据是**业务职能**，不是 registry 的 `roles` 标签——见上方「两套标签不要混用」）。**自洽由 `tools/check/check-docs.sh` §20 断言**（提取本图五域数字求和，比对图题与 registry 实数；提取为空 ⇒ 判红，防守卫空转）。重算记录：改前五域题号为 16/15/17/17/15（和 80 ≠ 图题 95，差 15），且 `后训模块 ×8` 与实数 `train_*` = 12 不符——两处同批纠正；**回填 2 枚此前未归域的工具**（`contribution_query` 治理 KPI 贡献度报表、`list_capabilities` 能力发现元工具，见各自 registry 描述——均属「审计·治理·运维」面，落 C5）；**v1.4.9 G9 增量**（device_register/device_list 设备注册面，D3 +2：95→97）；**v1.4.9 G10/G11 增量**（device_data_query/device_data_push 设备数据面，D3 +2：97→99，C6 扩为设备接入面 ×4）；**v1.4.9 G5b/G1 增量**（workflow_export/workflow_import 模板面归 D1 A3 编排域 +2、connector_register/connector_list 连接器注册面新 C7 落 D3 +2：99→103）；**v1.4.9 批 5 增量**（router_session_push 过站 session 承接面新 C8 落 D3 +1：103→104——主叙事是数据主权承接+审计挂链+cost 治理；语料管道消费端见 B2 后训模块）。
 
 
 | 版本 | 关键能力 |

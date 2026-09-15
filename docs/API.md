@@ -1,6 +1,6 @@
 # 接口总览 · API
 
-> sofagent 对外全部能力面的一站式清单——七大接口面 + MCP 103 tools 按域分组（第七面「标准数据推送接口」入口已接线：MCP tool `data_push` 双闸入库；v1.4.9 G9 新增 device_register/device_list 设备注册面，G10/G11 新增 device_data_query/device_data_push 设备数据面，G5b/G1 新增 connector_register/connector_list 连接器面与 workflow_export/workflow_import 模板面）。工具清单由 `engine/mcp/src/tool-registry.ts` 生成（scripts/check 门禁对账，文档与代码永不漂移）。
+> sofagent 对外全部能力面的一站式清单——七大接口面 + MCP 104 tools 按域分组（第七面「标准数据推送接口」入口已接线：MCP tool `data_push` 双闸入库；v1.4.9 G9 新增 device_register/device_list 设备注册面，G10/G11 新增 device_data_query/device_data_push 设备数据面，G5b/G1 新增 connector_register/connector_list 连接器面与 workflow_export/workflow_import 模板面，批 5 新增 router_session_push 过站 session 承接面）。工具清单由 `engine/mcp/src/tool-registry.ts` 生成（scripts/check 门禁对账，文档与代码永不漂移）。
 >
 > 版本：v1.4.8（已发版）· 103 tools / 7 面（第 7 面 v1.4.6 交付；v1.4.8 新增 11 tool 归入既有面；v1.4.9 G9 新增 device_register/device_list，G10/G11 新增 device_data_query/device_data_push，G5b/G1 新增连接器与模板 4 tool）
 
@@ -22,7 +22,7 @@
 
 ---
 
-## 二、MCP 工具清单（103 · 按产品能力域分组）
+## 二、MCP 工具清单（104 · 按产品能力域分组）
 
 > 十个能力域按「一个组 = 一个可独立讲述的产品能力」划分，与五能力叙事的对应：本节工具承载其中的**审计**（审计与合规）、**回溯**（快照与回溯）、**沉淀**（知识资产与能力市场）、**进化**（后训练流水线与 FDE 沉淀）能力面；**注入**能力走加载链文件（SKILL.md/fde.md/think.md/knowledge/），不经 MCP 暴露。**roles 列保留运行时真值**——`SOFAGENT_MCP_ROLES=audit,ops` 收窄面以 roles 为准（v1.4.0 工具角色分层），分组是文档编制判断。浏览器四件套（playwright_*）归审计域——主叙事是 UI 层审计取证（v1.5.2 UI 审计的执行底座）。
 
@@ -96,7 +96,7 @@
 | `snapshot_list` | ops | 列出审计快照时间线。只读。 |
 | `snapshot_restore` | ops | 恢复工作区到指定快照。🔴 破坏性，必须 human_confirmed:true。 |
 
-### 后训流水线（数据回流 → 训练 → 模型注册晋升）（15）
+### 后训流水线（数据回流 → 训练 → 模型注册晋升）（16）
 
 > 📌 **能力边界**：本仓负责后训流水线的**编排与治理**（任务提交 / 预算门禁 / 环境体检 / 提交前预检 / 失败诊断 / 语料导出 / 合规闸门 / 交付包 / 模型注册与灰度 / 推理服务）；**训练本身在外部执行环境进行，本仓不实现训练器**（`train_submit` 是把任务提交出去并跟踪，不是自己训）。
 
@@ -117,6 +117,7 @@
 | `train_serve` | eval, ops | 推理服务生命周期——从权重目录拉起 vLLM/Ollama/OpenAI 兼容端点（/health 就绪探测 + 指数退避重试）+ 启停重启状态四操作；每次启停记 train_serve 审计事件（谁启的/哪个模型/哪个节点）。 |
 | `train_cloud` | eval, ops | 云 VM 执行面——注册云 VM（endpoint + 凭据引用走虚拟 key 边界，真实凭据不落明文）/ 列出 / 查状态 / 注销；远程 spawn 训练走 ssh 通道（stdout JSON 回流）+ 分拣闸（敏感档拦上云，依据入审计链）+ 失联止损 + 成本入预算。 |
 | `train_compliance` | eval, ops | 训练数据合规扫描——PII（姓名/手机号/身份证）+ 敏感字段（健康/财务）+ 企业专有名词三类风险项（复用 v1.4.4 redactor 红名单检测）；报告（发现项+严重度+处置建议）写训练集版本；严重级发现阻断训练提交；数据来源标记（企业提供/合成/公开语料）。 |
+| `router_session_push` | ops | router 过站 session 承接（T7 第七章）：exporter 标准 schema 校验（fail-closed 拒绝坏格式）→ 多轮展开（切窗/角色映射）→ 脱敏本地落盘（数据主权铁律——记录不出企业边界，幂等：同 sessionId 重复推送拒绝）→ usage 入 cost 台账（按模型/时段聚合）→ key 维度过站行为 HMAC 挂链（审计）。会话续接五元组（执行器+员工身份+模型+工作目录+运行时）透传判定。 |
 
 ### 评估与验收（基准评测 · 验收标准 · A/B 对比）（7）
 

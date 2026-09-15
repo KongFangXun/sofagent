@@ -9,7 +9,7 @@
 
 > 未来版本规划见 [ROADMAP.md](./docs/ROADMAP.md)。
 > 尚未实现的规划版本（标注"尚未实现"）在 `docs/changelog/v1.4/` 下，不纳入本索引；已开发完成但未发版的版本纳入本索引并附「待发版」状态标注——tag/npm/package.json 在发版时统一同步。
-> **v1.4.9 开发中**（2026-09-14 开发启动）：G9 设备注册面 + G10/G11 设备数据面已交付（MCP 95→**99** tools：device_register/device_list + Ed25519 身份注册表 + 心跳捎带/回执 + /health 三态端点 + device_data_query 授权读取 + device_data_push 加密上行 WAL 断点续传）+ G5b/G1 连接器与模板面已交付（MCP 99→**103** tools：connector_register/connector_list 连接器注册/发现 + workflow_export/workflow_import 模板导出/导入 + 血缘事件流回溯）+ T6/T10 执行侧已交付（installer skill 四步装机引导 + 模型清单双源扫描随心跳上报 + 执行时 skill 快照打包/清理/审计锚点——不新增 MCP tool，TOOLS 保持 103；测试 4639→**4678**）——开发完成前按上方规则暂不收录索引行，发版时随 tag 一并翻转；完整施工叙事见 [v1.4.9 开发日志](./docs/changelog/v1.4/v1.4.9.md)。
+> **v1.4.9 开发中**（2026-09-14 开发启动）：G9 设备注册面 + G10/G11 设备数据面已交付（MCP 95→**99** tools：device_register/device_list + Ed25519 身份注册表 + 心跳捎带/回执 + /health 三态端点 + device_data_query 授权读取 + device_data_push 加密上行 WAL 断点续传）+ G5b/G1 连接器与模板面已交付（MCP 99→**103** tools：connector_register/connector_list 连接器注册/发现 + workflow_export/workflow_import 模板导出/导入 + 血缘事件流回溯）+ T6/T10 执行侧已交付（installer skill 四步装机引导 + 模型清单双源扫描随心跳上报 + 执行时 skill 快照打包/清理/审计锚点）+ T7/T8/T9 批 5 已交付（MCP 103→**104** tools：router_session_push 过站 session 承接 + T8 敏感识别三层插槽 L0/L1/L2 + T9 权重灰度 AB；测试 4639→**4787**）——开发完成前按上方规则暂不收录索引行，发版时随 tag 一并翻转；完整施工叙事见 [v1.4.9 开发日志](./docs/changelog/v1.4/v1.4.9.md)。
 
 > ⚠️ **API 退役公告（v1.4.3 · 提前一版公告，移除归 v1.5.0）**
 >

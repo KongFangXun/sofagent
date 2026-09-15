@@ -103,7 +103,7 @@ FORGE engineer commit ──→ 自动调用 @sofagent-audit → 验证变更合
 
 ---
 
-## MCP 全量工具表（103 tools · 13 类）
+## MCP 全量工具表（104 tools · 13 类）
 
 > 与 `engine/mcp/src/tool-registry.ts` 一一对应（check-docs 第 12 节门禁校验双向差集为空）。主入口 `SKILL.md` 只列每类代表工具，本表为全量。🔴 = 破坏性操作（强制人审/confirmed）。
 
@@ -243,7 +243,7 @@ FORGE engineer commit ──→ 自动调用 @sofagent-audit → 验证变更合
 | `define_acceptance` | 任务附机器可判定验收条件（test/build/grep-absent/schema） |
 | `check_acceptance` | 跑登记的条件，返回结构化结果 |
 
-### 运维观测（9）
+### 运维观测（10）
 
 | 工具 | 说明 |
 |------|------|
@@ -261,6 +261,7 @@ FORGE engineer commit ──→ 自动调用 @sofagent-audit → 验证变更合
 | `connector_list` | 连接器发现（G5b）：类型/主机/能力过滤，与工具清单分列 |
 | `workflow_export` | workflow 模板导出（G1）：五件套 + 血缘元数据，跨租户剥离私域节点 |
 | `workflow_import` | 模板导入（G1）：三闸校验 + 血缘回流 + 本体合并（本地优先） |
+| `router_session_push` | router 过站 session 承接（T7）：exporter schema 校验（fail-closed）→ 多轮展开切窗/角色映射 → 脱敏本地落盘（幂等）→ usage 入 cost 台账 → key 维度 HMAC 挂链 |
 
 ### 浏览器（4）
 
