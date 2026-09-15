@@ -1,6 +1,6 @@
 {
   "name": "sofagent",
-  "version": "1.4.8",
+  "version": "1.4.9",
   "description": "Audit-first governance layer for AI coding agents — one command install of audit CLI, MCP server, orchestrator and daemon (104 tools, 11 plugins). Full CLI: npx -y -p @sofagent/audit sofagent-audit",
   "license": "MIT",
   "author": "KongFangXun",
@@ -33,9 +33,9 @@
     "README.md"
   ],
   "dependencies": {
-    "@sofagent/audit": "1.4.8",
-    "@sofagent/mcp": "1.4.8",
-    "@sofagent/orchestrator": "1.4.8",
-    "@sofagent/daemon": "1.4.8"
+    "@sofagent/audit": "1.4.9",
+    "@sofagent/mcp": "1.4.9",
+    "@sofagent/orchestrator": "1.4.9",
+    "@sofagent/daemon": "1.4.9"
   }
 }

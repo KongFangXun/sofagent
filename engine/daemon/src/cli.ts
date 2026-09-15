@@ -2,7 +2,7 @@
 // daemon CLI · v1.4.8
 const args = process.argv.slice(2);
 const subcommand = args[0];
-const VERSION = '1.4.8';
+const VERSION = '1.4.9';
 
 /**
  * v1.4.0 交付四②：进程自身硬化（process-hardening 启发 · Linux/macOS 先行）

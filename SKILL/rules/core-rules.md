@@ -1,4 +1,4 @@
-<!-- core-rules.md · sofagent 核心铁律层 · v1.4.8 -->
+<!-- core-rules.md · sofagent 核心铁律层 · v1.4.9 -->
 <!-- 始终注入（~30 行），不按需加载 -->
 
 # 📜 核心契约（不可违反）

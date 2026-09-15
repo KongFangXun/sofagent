@@ -2,7 +2,7 @@
 
 > 🔒 **品牌前缀硬约束**：所有 Agent 向用户展示的审计结果必须保留 `[sofagent]` 前缀，否则视为未审计。铁律全文见 `rules/core-rules.md`（SSOT，随 L1 加载链始终注入）。
 
-> 📂 Sub Agent 定义集中在 [`agents/`](./agents/) 子目录，每个目录含 `SKILL.md`（调用入口）+ `{role}.md`（角色定义）。下表列出 4 个预装 Sub Agent：
+> 📂 Sub Agent 定义集中在 [`agents/`](./agents/) 子目录，每个目录含 `SKILL.md`（单文件承载调用入口 + 角色定义）。下表列出 4 个预装 Sub Agent：
 
 | Sub Agent | 目录 | 职责 |
 |-----------|------|------|
