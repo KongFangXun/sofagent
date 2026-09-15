@@ -210,7 +210,7 @@ FORGE engineer commit ──→ 自动调用 @sofagent-audit → 验证变更合
 | `commons_retire` | 能力退役/恢复（强制 owner 确认） |
 | `commons_harvest_rule` | 从调用日志 + Refine 循环提炼质量规则候选 |
 
-### 后训流水线（15）
+### 后训流水线（16）
 
 > 📌 **能力边界**：本仓负责后训流水线的**编排与治理**（任务提交 / 预算门禁 / 环境体检 / 提交前预检 / 失败诊断 / 语料导出 / 合规闸门 / 交付包 / 模型注册与灰度 / 推理服务）；**训练本身在外部执行环境进行，本仓不实现训练器**。
 
@@ -222,7 +222,7 @@ FORGE engineer commit ──→ 自动调用 @sofagent-audit → 验证变更合
 | `train_budget` | 训练预算控制（超预算人审续跑或终止） |
 | `train_submit` | 训练任务提交，数据+基座+算法+超参+预算→trainJobId |
 | `train_doctor` | 训练环境体检——CUDA/显存/框架/基座缓存四项报告 |
-| `corpus_export` | 训练语料导出三件套——规则（27 编号位 + reward_hint）+ 方法论锚点 + 五源样本（脱敏），带 HMAC 签名 |
+| `corpus_export` | 训练语料导出三件套——规则（27 编号位 + reward_hint）+ 方法论锚点 + 六源样本（脱敏），带 HMAC 签名 |
 | `train_dryrun` | 训练 dry-run 预检——管线连通+显存估算+数据抽样+算力外推 |
 | `train_report` | 训练报告生成——数据/超参/曲线/eval 对比/量化四字段，归档可追溯 |
 | `train_status` | 训练进度查询——status/step/loss/reward 曲线/断点/用量快照（长任务轮询） |
@@ -240,7 +240,7 @@ FORGE engineer commit ──→ 自动调用 @sofagent-audit → 验证变更合
 | `define_acceptance` | 任务附机器可判定验收条件（test/build/grep-absent/schema） |
 | `check_acceptance` | 跑登记的条件，返回结构化结果 |
 
-### 运维观测（10）
+### 运维观测（16）
 
 | 工具 | 说明 |
 |------|------|
