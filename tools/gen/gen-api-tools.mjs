@@ -104,6 +104,8 @@ const NAME_TO_MODULE = {
   // v1.4.9 G1（T5）：workflow 模板导出/导入（workflow——五件套+血缘）
   workflow_export: 'workflow',
   workflow_import: 'workflow',
+  // v1.4.9 批 5（T7）：router 会话承接面（train——session→语料管道+cost 台账+key 四件）
+  router_session_push: 'train',
 };
 
 const src = readFileSync(REGISTRY, 'utf8');

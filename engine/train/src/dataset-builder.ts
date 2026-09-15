@@ -29,14 +29,25 @@ import { recordDatasetVersion, datasetVersionsPath } from './dataset-version';
 // 训练集样本模型（三种算法形态）
 // ══════════════════════════════════════
 
-/** 训练算法（与 train-protocol 的 TrainJob.algorithm 同枚举口径） */
-export type DatasetAlgorithm = 'sft' | 'dpo' | 'grpo';
+/** 训练算法（与 train-protocol 的 TrainJob.algorithm 同枚举口径——v1.4.9 T7 增 chat 多轮形态） */
+export type DatasetAlgorithm = 'sft' | 'dpo' | 'grpo' | 'chat';
 
 /** SFT 样本（instruction / input / output 三元组——Alpaca 格式兼容） */
 export interface SftSample {
   instruction: string;
   input: string;
   output: string;
+}
+
+/** 多轮消息（v1.4.9 T7——Qwen chat / sharegpt 兼容角色） */
+export interface ChatMessage {
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+}
+
+/** 多轮 chat 样本（v1.4.9 T7——session 天然多轮，单轮 Alpaca 装不下） */
+export interface ChatSample {
+  messages: ChatMessage[];
 }
 
 /** DPO 偏好对样本（prompt + chosen + rejected） */
@@ -52,8 +63,8 @@ export interface RlSample {
   reference?: string;
 }
 
-/** 训练集样本（按 algorithm 三态） */
-export type DatasetSample = SftSample | DpoSample | RlSample;
+/** 训练集样本（按 algorithm 四态——v1.4.9 T7 扩多轮 chat 形态） */
+export type DatasetSample = SftSample | ChatSample | DpoSample | RlSample;
 
 /** 单条训练集 JSONL 行（样本 + 溯源头——__meta 不进训练，供审计回查） */
 export interface DatasetLine {
@@ -89,11 +100,22 @@ export function sanitizeCell(value: CellValue): string {
 /** 可注入的样本级脱敏函数（v1.4.4 redactor 升级对齐接口预留） */
 export type SampleSanitizeFn = (sample: DatasetSample) => DatasetSample;
 
-/** 默认样本脱敏：对样本内全部 string 字段过 REDACTION_PATTERNS */
+/** 默认样本脱敏：对样本内全部 string 字段过 REDACTION_PATTERNS（messages 数组逐条递归——v1.4.9 T7） */
 export const defaultSampleSanitize: SampleSanitizeFn = (sample) => {
   const out: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(sample)) {
-    out[k] = typeof v === 'string' ? redactString(v) : v;
+    if (typeof v === 'string') {
+      out[k] = redactString(v);
+    } else if (Array.isArray(v)) {
+      // 多轮 messages：逐条 content 脱敏（role 不动——结构性字段无敏感语义）
+      out[k] = v.map((m) =>
+        m && typeof m === 'object' && typeof (m as { content?: unknown }).content === 'string'
+          ? { ...(m as Record<string, unknown>), content: redactString((m as { content: string }).content) }
+          : m,
+      );
+    } else {
+      out[k] = v;
+    }
   }
   return out as unknown as DatasetSample;
 };
@@ -116,6 +138,8 @@ export interface ColumnMapping {
   rejected?: string;
   /** prompt 列（dpo/grpo 显式指定；缺省用 instruction 列） */
   prompt?: string;
+  /** messages 列（v1.4.9 T7——多轮 JSON 列，chat 形态消费） */
+  messages?: string;
 }
 
 /**
@@ -125,6 +149,7 @@ export interface ColumnMapping {
  *   output/answer/response/回答/答案/输出 → output
  *   chosen/ preferred/更优 → chosen
  *   rejected/dispreferred/更劣 → rejected
+ *   messages/多轮/对话 → messages（v1.4.9 T7 多轮形态）
  */
 export function inferColumnMapping(columns: readonly string[]): ColumnMapping {
   const find = (...cands: string[]): string | undefined => {
@@ -141,6 +166,7 @@ export function inferColumnMapping(columns: readonly string[]): ColumnMapping {
     output: find('output', 'answer', 'response', '回答', '答案', '输出'),
     chosen: find('chosen', 'preferred', '更优', ' preferred'),
     rejected: find('rejected', 'dispreferred', '更劣'),
+    messages: find('messages', '多轮', '对话'),
   };
 }
 
@@ -176,12 +202,13 @@ export interface BuildDatasetResult {
 }
 
 /**
- * 中间格式记录 → 训练集行（按算法三分支构建）。
+ * 中间格式记录 → 训练集行（按算法四分支构建）。
  *
  * 必填列缺失的行跳过不抛错（汇总 skipReasons 供质量闸门与人工研判）：
  *   - sft：instruction + output 必填
  *   - dpo：prompt + chosen + rejected 必填
  *   - grpo：prompt 必填（reference 可选）
+ *   - chat：messages 必填（JSON 数组——切窗/角色映射在 session-ingest 前置完成）
  */
 export function buildDataset(
   records: readonly IngestRecord[],
@@ -223,6 +250,32 @@ export function buildDataset(
         continue;
       }
       sample = sanitize({ prompt, chosen, rejected });
+    } else if (options.algorithm === 'chat') {
+      // v1.4.9 T7 多轮形态：messages 列（JSON 数组——session-ingest 切窗/角色映射后产物）
+      const raw = pickField(record, mapping.messages);
+      if (raw === '') {
+        skipped += 1;
+        skipReasons.add('必填字段为空（messages——chat 形态需要多轮 JSON 列）');
+        continue;
+      }
+      let parsed: unknown;
+      try {
+        parsed = JSON.parse(raw);
+      } catch {
+        skipped += 1;
+        skipReasons.add('messages 列非合法 JSON（chat 形态需要 [{role, content}] 数组）');
+        continue;
+      }
+      if (!Array.isArray(parsed) || parsed.length === 0 || !parsed.every((m) => m && typeof m === 'object' && typeof (m as { role?: unknown }).role === 'string' && typeof (m as { content?: unknown }).content === 'string')) {
+        skipped += 1;
+        skipReasons.add('messages 列结构非法（需要 [{role: string, content: string}] 非空数组）');
+        continue;
+      }
+      const messages = (parsed as ChatMessage[]).map((m) => ({
+        role: m.role === 'user' || m.role === 'assistant' || m.role === 'system' ? m.role : 'system',
+        content: m.content,
+      }));
+      sample = sanitize({ messages });
     } else {
       const prompt = pickField(record, mapping.prompt ?? mapping.instruction);
       if (prompt === '') {

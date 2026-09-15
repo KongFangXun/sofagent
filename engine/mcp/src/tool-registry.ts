@@ -98,6 +98,8 @@ import { onboardPrompt } from './tools/onboard-prompt';
 import { prSubmit, prReview, prMerge } from './tools/pr-tools';
 import { contributionQuery } from './tools/contribution-query';
 import { dataPush } from './tools/data-push-tool';
+// v1.4.9 T7：router 过站 session 承接（伴生 exporter 推送入口——最后一个新 tool）
+import { routerSessionPush } from './tools/router-session-push';
 
 /**
  * 工具定义（MCP tools/list 返回的 schema）
@@ -148,7 +150,7 @@ export type ToolHandler = (
 ) => ToolResult | ToolDispatchError | Promise<ToolResult | ToolDispatchError>;
 
 /**
- * 完整工具清单——97 个 tool（v1.4.9 G9：device_register/device_list 新增——设备注册面（95→97，T1 设备身份验签 fail-closed + 清单在线态）；v1.4.7：data_push 新增——标准数据推送入口（94→95 终值）；contribution_query 新增——G4 绩效数据导出（93→94）；pr_submit/pr_review/pr_merge 三 tool 新增——G13 PR 生命周期（90→93）；onboard_prompt 新增——上岗 prompt 生成器（89→90）；workflow_gaps 新增——G2 能力缺口查询（88→89）；workflow_create/workflow_update/workflow_node_add/workflow_diff_preview 四 tool 新增——G14 workflow 对象化 CRUD（84→88）；v1.4.6：train_cloud 新增——83→84，云 VM 执行面控制工具；v1.4.5：train_serve/train_compliance/train_deliverable 三件齐——80→83，SKILL.md/ARCHITECTURE 等九处 SSOT 同步收口；v1.4.4：corpus_export 新增；v1.4.3：train_status/train_list/train_diagnose 新增；v1.4.2：fde_interview/fde_classify/fde_quantify/fde_derive/fde_distill/fde_deploy 六引擎 + train_doctor/train_dryrun/train_report 新增；v1.4.1：train_submit 新增；v1.4.0：cost_query + browser 4 新增；v1.3.9：worklog_query 新增；v1.3.6：workflow_submit/ontology_import/model_register/model_switch/model_unregister/train_budget/define_acceptance/check_acceptance；v1.3.5：run_ab_test/promote_ab/snapshot_list/snapshot_restore；v1.3.4：commons_publish/search/invoke/rate/retire/harvest_rule；不含 4 个 resource shortcut）
+ * 完整工具清单——104 个 tool（v1.4.9 T7：router_session_push 新增——session 承接面（103→104 终值：97→104 = 批 1 +2、批 2 +2、批 3 +4、批 5 +1；router 伴生 exporter 推送入口，schema 校验 + 本地落盘 + HMAC 挂链 + usage 入 cost 台账）；v1.4.9 G9：device_register/device_list 新增——设备注册面（95→97，T1 设备身份验签 fail-closed + 清单在线态）；v1.4.7：data_push 新增——标准数据推送入口（94→95 终值）；contribution_query 新增——G4 绩效数据导出（93→94）；pr_submit/pr_review/pr_merge 三 tool 新增——G13 PR 生命周期（90→93）；onboard_prompt 新增——上岗 prompt 生成器（89→90）；workflow_gaps 新增——G2 能力缺口查询（88→89）；workflow_create/workflow_update/workflow_node_add/workflow_diff_preview 四 tool 新增——G14 workflow 对象化 CRUD（84→88）；v1.4.6：train_cloud 新增——83→84，云 VM 执行面控制工具；v1.4.5：train_serve/train_compliance/train_deliverable 三件齐——80→83，SKILL.md/ARCHITECTURE 等九处 SSOT 同步收口；v1.4.4：corpus_export 新增；v1.4.3：train_status/train_list/train_diagnose 新增；v1.4.2：fde_interview/fde_classify/fde_quantify/fde_derive/fde_distill/fde_deploy 六引擎 + train_doctor/train_dryrun/train_report 新增；v1.4.1：train_submit 新增；v1.4.0：cost_query + browser 4 新增；v1.3.9：worklog_query 新增；v1.3.6：workflow_submit/ontology_import/model_register/model_switch/model_unregister/train_budget/define_acceptance/check_acceptance；v1.3.5：run_ab_test/promote_ab/snapshot_list/snapshot_restore；v1.3.4：commons_publish/search/invoke/rate/retire/harvest_rule；不含 4 个 resource shortcut）
  */
 export const TOOLS: ToolDef[] = [
   {
@@ -2143,5 +2145,20 @@ export const TOOLS: ToolDef[] = [
     },
     // v1.4.8 条目 5 迁移：查表分发
     handler: async (args) => { if (!args.bundle || typeof args.bundle !== 'object') { return { error: 'Missing required argument: bundle' }; } const wir = await workflowImport({ bundle: args.bundle as Record<string, unknown>, ...(typeof args.imported_as === 'string' && args.imported_as ? { imported_as: args.imported_as } : {}), ...(typeof args.owner === 'string' && args.owner ? { owner: args.owner } : {}), ...(typeof args.actor === 'string' && args.actor ? { actor: args.actor } : {}) }); return { ...wir, isError: wir.data.isError }; },
+  },
+  {
+    // v1.4.9 T7：router 过站 session 承接——伴生 exporter 推送入口（103→104 终值）
+    name: 'router_session_push',
+    roles: ['ops'],
+    description: 'router 过站 session 承接（T7 第七章）：exporter 标准 schema 校验（fail-closed 拒绝坏格式）→ 多轮展开（切窗/角色映射）→ 脱敏本地落盘（数据主权铁律——记录不出企业边界，幂等：同 sessionId 重复推送拒绝）→ usage 入 cost 台账（按模型/时段聚合）→ key 维度过站行为 HMAC 挂链（审计）。会话续接五元组（执行器+员工身份+模型+工作目录+运行时）透传判定。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        raw: { type: 'object', description: 'exporter 推送 payload（RouterSessionSchema 形态——字段：sessionId、enterpriseId、source、messages、usage、route，可选 apiKeyId、scope、pushedAt）' },
+      },
+      required: ['raw'],
+    },
+    // v1.4.8 条目 5 迁移：查表分发
+    handler: async (args) => { if (!args.raw || typeof args.raw !== 'object') { return { error: 'Missing required argument: raw' }; } const rsp = await routerSessionPush({ raw: args.raw }); return { ...rsp, isError: rsp.data.isError }; },
   },
 ];

@@ -398,6 +398,8 @@
 /* @public */ export type {
   DatasetAlgorithm,
   SftSample,
+  ChatMessage,
+  ChatSample,
   DpoSample,
   RlSample,
   DatasetSample,
@@ -751,12 +753,14 @@
   classifyDataForCloud,
   classifyBatchForCloud,
   generateConfidentialityRef,
+  applyPreClassification,
   SENSITIVE_PATTERNS,
 } from './sorting-gate';
 /* @public */ export type {
   SortingClass,
   SortingDecision,
   SensitivePattern,
+  PreClassifiedLevel,
 } from './sorting-gate';
 /* @public */ export {
   DataPushSchema,
@@ -769,3 +773,73 @@
   DataPushGateResult,
   ComplianceCheck,
 } from './data-push';
+// T7 session 承接与 router 伴生（v1.4.9 第七章）
+/* @public */ export {
+  RouterSessionSchema,
+  MessageSchema,
+  UsageSchema,
+  RouteDecisionSchema,
+  SessionScopeSchema,
+  validateRouterSession,
+  windowMessages,
+  mapRoles,
+  decideContinuation,
+  buildHandoffSummary,
+  expandSessionToRecords,
+  usageToCostEntry,
+  aggregateByKeyUsage,
+  detectKeyAnomalies,
+  formatKeyDisposition,
+  DEFAULT_EXPAND_OPTIONS,
+  DEFAULT_KEY_ANOMALY_THRESHOLDS,
+} from './session-ingest';
+/* @public */ export type {
+  RouterSessionPayload,
+  SessionMessage,
+  SessionUsage,
+  RouteDecision,
+  SessionScope,
+  SessionValidation,
+  ExpandOptions,
+  ContinuationDecision,
+  HandoffSummary,
+  SessionIngestRecord,
+  SessionExpandResult,
+  CostLedgerEntry,
+  KeyAnomalyThresholds,
+  KeyUsageAggregate,
+  KeyAnomalyFinding,
+} from './session-ingest';
+/* @public */ export { RouterExporter, exporterProtocolSpec } from './router-exporter';
+/* @public */ export type { ExporterTransport, RouterExporterConfig } from './router-exporter';
+/* @public */ export {
+  buildDistillPairs,
+  distillPairsToRecords,
+} from './distill-pairs';
+/* @public */ export type {
+  DistillResponse,
+  DistillPairOptions,
+  DistillPair,
+  DistillPairResult,
+  DistillIngestRecord,
+} from './distill-pairs';
+// T9 权重灰度发布 AB（v1.4.9 第九章）
+/* @public */ export {
+  routeRequest,
+  emptyArmMetrics,
+  accumulateMetrics,
+  deriveRates,
+  judgeDeterioration,
+  runCanaryCheck,
+  DEFAULT_DETERIORATION_THRESHOLDS,
+} from './weight-canary';
+/* @public */ export type {
+  CanaryConfig,
+  RouteVerdict,
+  ArmMetrics,
+  DeteriorationThresholds,
+  DeteriorationVerdict,
+  RollbackWeightsFn,
+  RollbackAuditPayload,
+  RollbackOutcome,
+} from './weight-canary';

@@ -137,3 +137,41 @@ export function classifyBatchForCloud(
   const decisions = samples.map((s) => classifyDataForCloud(s, opts));
   return { allAllowed: decisions.every((d) => d.allowCloud), decisions };
 }
+
+// ══════════════════════════════════════
+// 敏感度分类前置件（v1.4.9 T8 第八章——分类结果作分拣输入前置）
+// ══════════════════════════════════════
+
+/** 敏感度档位（core sensitivity-classifier 三档同枚举——train 侧消费形态声明） */
+export type PreClassifiedLevel = 'public' | 'internal' | 'sensitive';
+
+/**
+ * 敏感度分类结果 → 分拣决策的前置映射（纯函数）。
+ *
+ * 分类（先分类）与分拣（再路由）的衔接规则：
+ *   - 分类 sensitive → 分拣档 sensitive（allowCloud=false——与命中 SENSITIVE_PATTERNS 同判）
+ *   - 分类 internal → 分拣脱敏档放行（内部数据不上公云但可上专有云——
+ *     分拣闸只管「能不能上云」，内部档交企业配置决策，缺省放行）
+ *   - 分类 public → 走既有 classifyDataForCloud 正常判定（分类不覆盖格式面——
+ *     手机号等格式命中仍由 SENSITIVE_PATTERNS 把关，分层不越权）
+ *
+ * 设计纪律：分类器（core sensitivity-classifier）与分拣闸（本文件）分层
+ * 不合并——分类管「这份数据是什么档」，分拣管「这份数据能去哪」。
+ */
+export function applyPreClassification(
+  sample: string,
+  level: PreClassifiedLevel,
+  opts: { now?: () => number } = {},
+): SortingDecision {
+  if (level === 'sensitive') {
+    return {
+      classification: 'sensitive',
+      allowCloud: false,
+      reason: '前置敏感度分类判敏感档（sensitivity-classifier——L0/L1/L2 检测器插槽命中）——拦截上云，留本地（挪知识库走 RAG）',
+      matchedPatterns: ['pre-classified:sensitive'],
+      confidentialityRef: generateConfidentialityRef(opts.now),
+    };
+  }
+  // public / internal → 走既有正则判定（分层不越权——格式面仍由本闸把关）
+  return classifyDataForCloud(sample, opts);
+}

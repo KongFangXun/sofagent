@@ -74,7 +74,7 @@ export interface DatasetValidationResult {
 // 字段完整性（按算法的必填字段集合）
 // ══════════════════════════════════════
 
-/** 按算法取必填字段（空串 = 缺失——builder 侧 sanitizeCell 已把 null → ''） */
+/** 按算法取必填字段（空串 = 缺失——builder 侧 sanitizeCell 已把 null → ''；v1.4.9 T7 增 chat 形态） */
 export function requiredFieldsOf(algorithm: DatasetAlgorithm): string[] {
   switch (algorithm) {
     case 'sft':
@@ -83,14 +83,17 @@ export function requiredFieldsOf(algorithm: DatasetAlgorithm): string[] {
       return ['prompt', 'chosen', 'rejected'];
     case 'grpo':
       return ['prompt'];
+    case 'chat':
+      return ['messages'];
   }
 }
 
-/** 判定样本的某字段是否为空（undefined / null / 空白串） */
+/** 判定样本的某字段是否为空（undefined / null / 空白串 / chat 形态的空 messages 数组） */
 function isFieldEmpty(sample: Record<string, unknown>, field: string): boolean {
   const v = sample[field];
   if (v === undefined || v === null) return true;
   if (typeof v === 'string') return v.trim() === '';
+  if (Array.isArray(v)) return v.length === 0; // v1.4.9 T7：chat 形态 messages 空数组 = 缺失
   return false;
 }
 
