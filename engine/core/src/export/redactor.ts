@@ -1,5 +1,6 @@
 // ============================================================
 // redactor.ts · v1.4.8 第一章 · 通用脱敏管线（业务语义脱敏）
+// v1.4.9 T8 · 插槽化升级（三类红名单 → L0/L1/L2 三层检测器管线）
 //
 // 背景：现役脱敏只有 A2 规则的格式匹配（AKIA / sk- / ghp_ / PEM 块）+
 // decision-log sanitizeWhy——企业业务语义脱敏（客户名/内部代号/API
@@ -12,10 +13,18 @@
 //
 // 占位符形态：{CUSTOMER_NAME} / {INTERNAL_CODE} / {FIELD:fieldName}——
 // 保留语义槽位（训练语料仍可学习结构）不保留原值。
+//
+// v1.4.9 T8 插槽消费（验收⑦ 向后兼容回归锁）：
+//   - 默认路径行为与 v1.4.4 三类红名单**完全一致**（不传 detectorRegistry
+//     时零插槽参与——既有测试与调用方零变化，回归锁全过）
+//   - 注入 DetectorRegistry 时：语义类升级为插槽管线（L1 词典/L0 正则/
+//     L2 外挂 NER 的 span 经置信度三层处置），格式类与结构类保持原位
+//     （密钥格式与字段黑名单是结构性规则——不进语义插槽，防口径漂移）
 // ============================================================
 
 import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
+import { DetectorRegistry, applySpans, type SensitiveSpan } from './detector-registry';
 
 /** 脱敏规则配置（redact-rules.json——语义类/结构类可外部注入） */
 export interface RedactRulesConfig {
@@ -95,8 +104,16 @@ function escapeRegExp(s: string): string {
  *
  * 应用顺序：格式类（内置）→ 结构类（字段）→ 语义类（实体名）——
  * 先抹结构性秘密再抹语义性名词，避免实体名出现在密钥占位符里被二次替换。
+ *
+ * v1.4.9 T8：语义类可经 detectorRegistry 注入升级为插槽管线
+ * （L1 词典/L0 正则/L2 NER 的 span 置信度三层处置——高/中替换、低只标记）；
+ * 不注入时行为与 v1.4.4 完全一致（回归锁）。
  */
-export function redact(text: string, config?: RedactRulesConfig): RedactResult {
+export function redact(
+  text: string,
+  config?: RedactRulesConfig,
+  opts: { detectorRegistry?: DetectorRegistry } = {},
+): RedactResult {
   let out = text;
   const hits: Record<string, number> = {};
 
@@ -131,8 +148,31 @@ export function redact(text: string, config?: RedactRulesConfig): RedactResult {
     }
   }
 
-  // 三、语义类（实体名库——简单字面替换，保留大小写不敏感）
-  if (config?.entities?.length) {
+  // 三、语义类——插槽注入态（v1.4.9 T8：L1/L0/L2 span 管线替换 entities 简单字面替换）
+  if (opts.detectorRegistry) {
+    const pipeline = opts.detectorRegistry.runPipeline(out);
+    // 置信度三层：高/中替换（中档记审计面交调用方——auditTrail 字段），
+    // 低只标记不替换（交人审——标记进 lowConfidence，原文不动）
+    const replacements: Array<{ span: SensitiveSpan; placeholder: string }> = [];
+    let glossaryIdx = 0;
+    let piiIdx = 0;
+    for (const span of pipeline.spans) {
+      if (span.tier === 'low') continue;
+      // 占位符不含原文（防二次泄漏——label 即命中词，序列号占位即可溯源）
+      const placeholder =
+        span.entityType === 'ORGANIZATION' || span.entityType === 'INTERNAL_CODE' || span.entityType === 'PERSON'
+          ? `{GLOSSARY:${glossaryIdx++}}`
+          : `{PII:${span.entityType}:${piiIdx++}}`;
+      replacements.push({ span, placeholder });
+      hits[placeholder] = (hits[placeholder] ?? 0) + 1;
+    }
+    const applied = applySpans(out, replacements);
+    out = applied.text;
+    void pipeline; // degraded（L2 降级事实等）由消费方经 runPipeline 自取——redact 只做替换面
+    // 插槽态下 entities 配置不再二次替换（span 管线已覆盖语义类命中面——
+    // 若词典与 entities 有差集，调用方应把 entities 并入 L1 词典注册）
+  } else if (config?.entities?.length) {
+    // 三、语义类——v1.4.4 原位路径（回归锁：无插槽注入时与旧版完全一致）
     for (const { pattern, placeholder } of config.entities) {
       if (!pattern) continue;
       const re = new RegExp(escapeRegExp(pattern), 'gi');

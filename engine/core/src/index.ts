@@ -417,6 +417,51 @@
 } from './export/methodology';
 /* @public */ export { redact, verifyNoLeak, loadRedactRules } from './export/redactor';
 /* @public */ export type { RedactRulesConfig, RedactResult } from './export/redactor';
+// T8 敏感识别三层插槽（v1.4.9 第八章——检测器注册表/三层检测器/Presidio schema/敏感度分类器）
+/* @public */ export {
+  DetectorRegistry,
+  DEFAULT_CONFIDENCE_THRESHOLDS,
+  tierOf,
+  aggregateSpans,
+  toPresidioResults,
+  applySpans,
+  toPresidioType,
+} from './export/detector-registry';
+/* @public */ export type {
+  DetectorLayer,
+  SensitiveSpan,
+  Detector,
+  ConfidenceThresholds,
+  ConfidenceTier,
+  PipelineResult,
+  AggregatedSpan,
+} from './export/detector-registry';
+/* @public */ export {
+  L0_REGEX_DETECTOR_NAME,
+  createL0RegexDetector,
+  createL0SensitiveDetector,
+  L0_SENSITIVE_PATTERN_SPECS,
+} from './export/detector-regex';
+/* @public */ export {
+  L1_GLOSSARY_DETECTOR_NAME,
+  buildGlossaryFromRecords,
+  buildGlossaryFromEntityNames,
+  createGlossaryDetector,
+  placeholderOf,
+} from './export/detector-glossary';
+/* @public */ export type { GlossaryEntry, GlossaryLoadResult } from './export/detector-glossary';
+/* @public */ export {
+  L2_REMOTE_DETECTOR_DEFAULT_NAME,
+  createRemoteDetector,
+  prefetchRemoteSpans,
+  createPrefetchedRemoteDetector,
+  validateRemoteSpans,
+} from './export/detector-remote';
+/* @public */ export type { RemoteDetectorConfig, RemoteSpanResponse, FetchLike } from './export/detector-remote';
+/* @public */ export type { PresidioEntityType, PresidioAnalysisResult, PresidioOperator } from './export/detector-presidio-schema';
+/* @public */ export { recommendedOperator } from './export/detector-presidio-schema';
+/* @public */ export { classifySensitivity } from './export/sensitivity-classifier';
+/* @public */ export type { SensitivityLevel, SensitivityDecision } from './export/sensitivity-classifier';
 // G10/G11 设备数据面策略（v1.4.9 T2/T3）
 /* @public */ export {
   DEVICE_DATA_POLICY_FILE,
@@ -448,4 +493,5 @@
   SampleSource,
   AggregatedSample,
   AggregationResult,
+  ArtifactGateFn,
 } from './export/sample-aggregator';

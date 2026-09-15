@@ -1,13 +1,19 @@
 // ============================================================
 // sample-aggregator.ts · v1.4.8 第一章 · 五源 + 轨迹聚合 + 脱敏 + 标签
+// v1.4.9 T7 · 五源 → 六源（workflow-artifact 工作产物采集）
 //
 // 训练语料第三件（最值钱的部分）——带标签审计样本聚合导出。
-// 五源落点（changelog 表下注 B，2026-09-01 实测）：
+// 六源落点（changelog 表下注 B，2026-09-01 实测；v1.4.9 T7 增第六源）：
 //   1. decision-log   data/audit/decision-log.jsonl（audit 包）
 //   2. llm-calls      data/audit/runtime/llm-calls.jsonl（core 包 llm-call-trace.ts 落盘，异名注意）
 //   3. evaluation-log data/<project>/benchmarks/<id>/evaluation-log.jsonl（orchestrator 包）
 //   4. runtime-audit  data/audit/runtime/<repo-hash>/runtime-audit.jsonl（FORGE 侧产物；约束层侧 llm-calls 已同构隔离）
 //   5. fde-session    data/fde/sessions/<sessionId>/（context.md + meta.json）
+//   6. workflow-artifact data/fde/<enterpriseId>/deliverables/**（v1.4.9 T7——
+//      workflow 执行的产物文件：生成的文档/报告/交付物。现有五源全是过程数据
+//      （审计轨迹/LLM 调用），产物数据首次入源。**进管道前过分拣闸**
+//      （产物敏感比例高——分拣闸主战场；判定经 classifyBatchForCloud 注入，
+//      敏感档拦下不进聚合——本文件按 train 包 sorting-gate 的判定结果消费）
 //
 // 合规红线（changelog 定）：仅脱敏聚合不落个体级——字段白名单制
 // （ruleId/ruleType/severity/token 数/耗时/失败码/脱敏后文本模式），
@@ -19,8 +25,14 @@ import { join } from 'path';
 import { redact, loadRedactRules, verifyNoLeak, type RedactRulesConfig } from './redactor';
 import { listLlmCallTraceFiles } from '../llm-call-trace';
 
-/** 样本源标识 */
-export type SampleSource = 'decision-log' | 'llm-calls' | 'evaluation-log' | 'runtime-audit' | 'fde-session';
+/** 样本源标识（v1.4.9 T7 增第六源 workflow-artifact） */
+export type SampleSource =
+  | 'decision-log'
+  | 'llm-calls'
+  | 'evaluation-log'
+  | 'runtime-audit'
+  | 'fde-session'
+  | 'workflow-artifact';
 
 /** 单条聚合样本（白名单字段制——黑名单字段不进结构） */
 export interface AggregatedSample {
@@ -58,6 +70,8 @@ export interface AggregationResult {
   humanBaselineCount: number;
   /** 脱敏验收（企业专名 0 命中检查——leaked 非空即验收不过） */
   redactionCheck: { clean: boolean; leaked: string[] };
+  /** v1.4.9 T7：第六源分拣闸拦截数（敏感产物留本地——非静默丢弃，审计留痕） */
+  artifactGatedCount: number;
 }
 
 /** 安全解析 JSONL（坏行跳过计数） */
@@ -205,19 +219,108 @@ function extractFdeSessions(dataDir: string, cfg: RedactRulesConfig): Aggregated
   return out;
 }
 
-// ════════════════════════════════════════
-// 主入口
-// ════════════════════════════════════════
+/**
+ * 第六源：workflow 执行产物（v1.4.9 T7——fde deliverables 目录下的
+ * 文档/报告/交付物）。产物敏感比例高——**进管道前过分拣闸**：
+ * gateFn 注入判定函数（生产装配绑 train 包 classifyDataForCloud；
+ * 缺省内置保守闸：命中基础敏感正则即拦——core 不反向 import train）。
+ */
+export type ArtifactGateFn = (content: string) => { allowCloud: boolean; matchedPatterns: string[] };
+
+/** 保守缺省闸（内置基础敏感面——手机号/身份证/银行卡/密钥 sk- 族） */
+const DEFAULT_ARTIFACT_GATE: ArtifactGateFn = (content) => {
+  const patterns: Array<{ label: string; re: RegExp }> = [
+    { label: '手机号', re: /1[3-9]\d{9}/ },
+    { label: '身份证号', re: /\b\d{17}[\dXx]\b/ },
+    { label: '银行卡号', re: /\b\d{16,19}\b/ },
+    { label: '密钥', re: /sk-[a-zA-Z0-9_\-]{16,}/ },
+    { label: 'AKIA', re: /AKIA[A-Z0-9]{16}/ },
+  ];
+  const matched = patterns.filter((p) => p.re.test(content)).map((p) => p.label);
+  return { allowCloud: matched.length === 0, matchedPatterns: matched };
+};
+
+function extractWorkflowArtifacts(
+  dataDir: string,
+  cfg: RedactRulesConfig,
+  opts: { gateFn?: ArtifactGateFn } = {},
+): { samples: AggregatedSample[]; gated: number } {
+  const gate = opts.gateFn ?? DEFAULT_ARTIFACT_GATE;
+  const out: AggregatedSample[] = [];
+  let gated = 0;
+  // 产物落点：data/fde/<enterpriseId>/deliverables/**（fde-workbench 布局）
+  const fdeRoot = join(dataDir, 'fde');
+  if (!existsSync(fdeRoot)) return { samples: out, gated };
+  let enterprises: string[] = [];
+  try {
+    enterprises = readdirSync(fdeRoot, { withFileTypes: true })
+      .filter((d) => d.isDirectory() && d.name !== 'sessions')
+      .map((d) => d.name);
+  } catch {
+    return { samples: out, gated };
+  }
+  for (const ent of enterprises) {
+    const deliverablesDir = join(fdeRoot, ent, 'deliverables');
+    if (!existsSync(deliverablesDir)) continue;
+    // 递归收集 .md/.txt 产物文件（深度 3——防异常深树拖垮聚合）
+    const collect = (dir: string, depth: number): string[] => {
+      if (depth > 3) return [];
+      let entries: Array<{ name: string; isDirectory: () => boolean }> = [];
+      try {
+        entries = readdirSync(dir, { withFileTypes: true });
+      } catch {
+        return [];
+      }
+      const files: string[] = [];
+      for (const e of entries) {
+        const p = join(dir, e.name);
+        if (e.isDirectory()) files.push(...collect(p, depth + 1));
+        else if (/\.(md|txt)$/i.test(e.name)) files.push(p);
+      }
+      return files;
+    };
+    for (const file of collect(deliverablesDir, 0)) {
+      let content = '';
+      try {
+        content = readFileSync(file, 'utf-8');
+      } catch {
+        continue;
+      }
+      // 分拣闸前置：敏感产物拦下不进聚合（留本地走 RAG——不进语料管道）
+      const verdict = gate(content);
+      if (!verdict.allowCloud) {
+        gated += 1;
+        continue;
+      }
+      out.push({
+        source: 'workflow-artifact',
+        origin: file.slice(dataDir.length + 1),
+        label: 'artifact',
+        enterpriseId: ent,
+        textPattern: redact(toPattern(content, 2000), cfg).text,
+      });
+    }
+  }
+  return { samples: out, gated };
+}
 
 /**
- * 五源聚合 + 脱敏 + 标签。
+ * 六源聚合 + 脱敏 + 标签（v1.4.9 T7：五源 → 六源——workflow-artifact 采集）。
  *
  * @param dataDir 数据根（缺省 SOFAGENT_DATA 或 'data'）
  * @param cfg 脱敏配置（缺省读 <dataDir>/config/redact-rules.json）
+ * @param opts.artifactGateFn 分拣闸判定函数（第六源前置件——生产装配绑
+ *                           train 包 classifyDataForCloud；缺省内置保守闸）
  */
-export function aggregateSamples(dataDir?: string, cfg?: RedactRulesConfig): AggregationResult {
+export function aggregateSamples(
+  dataDir?: string,
+  cfg?: RedactRulesConfig,
+  opts: { artifactGateFn?: ArtifactGateFn } = {},
+): AggregationResult {
   const base = dataDir ?? process.env.SOFAGENT_DATA ?? 'data';
   const config = cfg ?? loadRedactRules(base);
+
+  const artifactResult = extractWorkflowArtifacts(base, config, { gateFn: opts.artifactGateFn });
 
   const extractors: Array<[SampleSource, () => AggregatedSample[]]> = [
     ['decision-log', () => extractDecisionLog(base, config)],
@@ -225,6 +328,7 @@ export function aggregateSamples(dataDir?: string, cfg?: RedactRulesConfig): Agg
     ['evaluation-log', () => extractEvaluationLogs(base, config)],
     ['runtime-audit', () => extractRuntimeAudit(base, config)],
     ['fde-session', () => extractFdeSessions(base, config)],
+    ['workflow-artifact', () => artifactResult.samples],
   ];
 
   const sourceCounts: Record<string, number> = {};
@@ -254,5 +358,7 @@ export function aggregateSamples(dataDir?: string, cfg?: RedactRulesConfig): Agg
     samples,
     humanBaselineCount,
     redactionCheck: check,
+    /** 第六源分拣闸拦截数（产物敏感档拦下留本地——审计留痕，非静默丢弃） */
+    artifactGatedCount: artifactResult.gated,
   };
 }
