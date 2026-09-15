@@ -1450,6 +1450,29 @@ if [[ "${MCP_REG}" =~ ^[0-9]+$ ]] && [[ "${MCP_REG}" -gt 0 ]]; then
 fi
 echo ""
 
+# ── 22b. API.md 版本头工具数对账（v1.4.9 汇总报告零信任复验发现 · 防复发）──────
+# 批 5 同步曾漏改 API.md 版本头行（「版本：vX.Y · N tools / M 面」格式），
+# §22 既有正则只捕「当前 N 个 MCP tools」「N MCP tools?」，该行不匹配——版本头是对账盲区。
+# SSOT 仍为 tool-registry.ts 实际注册数；本段锚定 API.md 头部 20 行内的版本头行。
+echo "=== 22b. API.md 版本头工具数对账 ==="
+if [[ "${MCP_REG}" =~ ^[0-9]+$ ]] && [[ "${MCP_REG}" -gt 0 ]]; then
+  # 版本头格式「· N tools / M 面」；head -20 限定头部，避免误捕正文历史沿革叙述
+  API_HEAD_TOOLS=$(sed -n '1,20p' "${PROJECT_ROOT}/docs/API.md" 2>/dev/null | grep -oE '· [0-9]+ tools? /' | grep -oE '[0-9]+' | head -1 || true)
+  if [[ -z "${API_HEAD_TOOLS}" ]]; then
+    echo -e "  ${RED}✗ ${NC}API.md 头部未提取到版本头工具数（格式变化？）——锚点失效须人工修，不得静默跳过"
+    ERRORS=$((ERRORS + 1))
+  elif [[ "${API_HEAD_TOOLS}" != "${MCP_REG}" ]]; then
+    echo -e "  ${RED}✗ ${NC}API.md 版本头工具数漂移：声称 ${API_HEAD_TOOLS}，registry 实际 ${MCP_REG}——版本头行与 :3 总述行须同批同步"
+    ERRORS=$((ERRORS + 1))
+  else
+    echo -e "  ${GREEN}✓${NC} API.md 版本头工具数一致（${API_HEAD_TOOLS}）"
+    CHECKS=$((CHECKS + 1))
+  fi
+else
+  echo -e "  ${YELLOW}⚠${NC} registry 工具数不可用，API.md 版本头对账跳过"
+  WARNINGS=$((WARNINGS + 1))
+fi
+
 # ── 23. lock 与 workspace 同步（v1.4.0 发版 CI 4 红防复发 · checklist 维度 122）──
 # 新增/删除 workspace 包后 lock file 必须重新生成——本地 npm install 会静默补齐掩盖问题，
 # CI npm ci 严格校验直接红（v1.4.0：9 个 cordis-plugin 未入 lock，4 工作流同根因红）。
