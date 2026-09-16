@@ -9,7 +9,7 @@
 
 import { execFileSync, spawnSync } from 'child_process';
 import { createHash } from 'crypto';
-import { mkdirSync, openSync, closeSync, readSync } from 'fs';
+import { mkdirSync, openSync, closeSync, readSync, rmSync } from 'fs';
 import { join } from 'path';
 import { getDataDir } from './data-paths';
 
@@ -118,11 +118,14 @@ function spillDiffToLines(gitArgs: string[], cwd: string | undefined, filePath: 
   const spillFile = join(spillDir, `diff-${hash}.diff`);
 
   // 第一步：stdout 直接重定向进文件——spawnSync 对 fd 型 stdio 不做缓冲，
-  // git 输出多大都不占 Node 内存（stderr 走 pipe：失败时带回原因，不再吞掉）
+  // git 输出多大都不占 Node 内存（stderr 走 pipe：失败时带回原因，不再吞掉）。
+  // stderr maxBuffer 显式放大（F09）：默认 1MB，git hook 向 stderr 倾倒超量输出
+  // 会 ENOBUFS——把「正常可审计的 diff」误伤成 fail-closed 硬拒。与同文件
+  // 快路径（5MB/10MB）同向，上限内截断不致命（仅用于失败原因展示）。
   const fd = openSync(spillFile, 'w');
   let spillFailure = '';
   try {
-    const result = spawnSync('git', gitArgs, { cwd, stdio: ['ignore', fd, 'pipe'] });
+    const result = spawnSync('git', gitArgs, { cwd, stdio: ['ignore', fd, 'pipe'], maxBuffer: 5 * 1024 * 1024 });
     if (result.error || result.status !== 0) {
       const stderrText = (result.stderr ?? Buffer.alloc(0)).toString('utf-8').trim().slice(0, 500);
       spillFailure = result.error ? result.error.message : `exit=${result.status}${stderrText ? `：${stderrText}` : ''}`;
@@ -133,9 +136,12 @@ function spillDiffToLines(gitArgs: string[], cwd: string | undefined, filePath: 
   // fail-closed（v1.4.9 审）：git 失败 ⇒ spill 文件是空内容——静默返回空行集会让这个
   // >5MB 文件「零内容过审」（fail-open 审计盲区）。验不了 = 拒审：带标记上抛，
   // 由 parseDiff/parseStagedDiff 原样抛出走引擎崩溃路径（退出码 4），不许降级为告警。
+  // 失败即清理落盘残留（F10）：spill 文件可能含密钥类 diff 内容，git 已失败
+  // （无 locator 消费价值），不留驻数据目录——best-effort，清理失败不掩盖原错误。
   if (spillFailure) {
-    const err = new Error(`[diff-parser] spill 读取文件 ${filePath} 的 diff 失败（${spillFailure}）——拒绝以空内容过审`);
+    const err = new Error(`[sofagent] ⚠️ spill 读取文件 ${filePath} 的 diff 失败（${spillFailure}）——拒绝以空内容过审。常见原因：index.lock 被占 / 浅克隆缺对象；可先处理锁文件后重试（重试仍失败请带本行上报）`);
     (err as NodeJS.ErrnoException).code = SPILL_FAILURE_CODE;
+    try { rmSync(spillFile, { force: true }); } catch { /* 清理失败不掩盖原错误 */ }
     throw err;
   }
 
@@ -474,7 +480,7 @@ export function parseStagedDiff(): DiffFile[] {
     if ((err as NodeJS.ErrnoException)?.code === SPILL_FAILURE_CODE) throw err;
     // fail-closed（v1.4.9 审 F02）：git 失败不再吞成空 files——staged 内容验不了 = 拒审。
     // 同样带 SPILL_FAILURE_CODE：穿透上层一切「范围无效」宽容 catch，走引擎崩溃退出码 4。
-    const failure = new Error(`[diff-parser] 读取 staged diff 失败（${(err as Error)?.message ?? String(err)}）——拒绝以空内容过审`);
+    const failure = new Error(`[sofagent] ⚠️ 读取 staged diff 失败（${(err as Error)?.message ?? String(err)}）——拒绝以空内容过审。常见原因：index.lock 被占 / 浅克隆缺对象；可先处理锁文件后重试（重试仍失败请带本行上报）`);
     (failure as NodeJS.ErrnoException).code = SPILL_FAILURE_CODE;
     throw failure;
   }
