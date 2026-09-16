@@ -194,8 +194,18 @@ function readDiffLines(
     const isBufOverflow = (err as NodeJS.ErrnoException)?.code === 'ENOBUFS'
       || /maxBuffer/i.test((err as Error)?.message ?? '');
     if (!isBufOverflow) {
-      console.error('[diff-parser] 读取文件差异失败:', err);
-      return { lines: [], oversized: false };
+      // fail-closed（v1.4.9 审 F02）：git 进程失败 = diff 内容验不了——静默返回空行集
+      // 会让绝大多数 diff「零内容过审」（fail-open 审计盲区，A2 密钥检测空转）。
+      // 与 spill 路径同错误码同穿透：原样上抛走引擎崩溃路径（退出码 4），不许降级为告警。
+      // ⚠️ git 成功且输出为空 = 合法空 diff，仍走上方正常返回（不误伤无变更场景）。
+      const execErr = err as NodeJS.ErrnoException & { stderr?: Buffer | string; status?: number | null };
+      const stderrText = String(execErr.stderr ?? '').trim().slice(0, 500);
+      const failureDetail = execErr.status != null
+        ? `exit=${execErr.status}${stderrText ? `：${stderrText}` : ''}`
+        : (execErr.message ?? String(err)).slice(0, 500);
+      const failure = new Error(`[diff-parser] 读取文件 ${filePath} 的 diff 失败（${failureDetail}）——拒绝以空内容过审`);
+      (failure as NodeJS.ErrnoException).code = SPILL_FAILURE_CODE;
+      throw failure;
     }
     // 溢出 → spill 落盘分块读回（内容照扫，不再跳过）
     console.error(`[diff-parser] 文件 ${filePath} 的 diff 超过 5MB，spill 落盘后分块扫描`);
@@ -462,7 +472,11 @@ export function parseStagedDiff(): DiffFile[] {
   } catch (err) {
     // spill 路径 git 失败 = 内容验不了——原样上抛走引擎崩溃（退出码 4），不许降级为告警
     if ((err as NodeJS.ErrnoException)?.code === SPILL_FAILURE_CODE) throw err;
-    console.error('无法执行 git diff --cached:', (err as Error).message);
+    // fail-closed（v1.4.9 审 F02）：git 失败不再吞成空 files——staged 内容验不了 = 拒审。
+    // 同样带 SPILL_FAILURE_CODE：穿透上层一切「范围无效」宽容 catch，走引擎崩溃退出码 4。
+    const failure = new Error(`[diff-parser] 读取 staged diff 失败（${(err as Error)?.message ?? String(err)}）——拒绝以空内容过审`);
+    (failure as NodeJS.ErrnoException).code = SPILL_FAILURE_CODE;
+    throw failure;
   }
 
   return files;

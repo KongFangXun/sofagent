@@ -106,4 +106,32 @@ describe('checkDecisionChainDetailed', () => {
     const result = checkDecisionChainDetailed(testDir);
     expect(result.status).toBe('ok');
   });
+
+  it('创世条目被剥签名 → unverifiable（决策链入口与 kernel 同判，F06 收口一致性）', () => {
+    emitDecision(makeInput('s1'), testDir);
+    emitDecision(makeInput('s2'), testDir);
+    const filePath = getDecisionLogPath(testDir);
+    const lines = readFileSync(filePath, 'utf-8').trim().split('\n');
+    const genesis = JSON.parse(lines[0]!);
+    delete genesis.hmacSig;
+    lines[0] = JSON.stringify(genesis);
+    writeFileSync(filePath, lines.join('\n') + '\n', 'utf-8');
+    const result = checkDecisionChainDetailed(testDir);
+    expect(result.status).toBe('unverifiable');
+    expect(result.detail).toContain('genesis-signature-stripped');
+  });
+
+  it('中间条目被剥签名 → unverifiable（决策链入口与 kernel 同判，F06 收口一致性）', () => {
+    emitDecision(makeInput('s1'), testDir);
+    emitDecision(makeInput('s2'), testDir);
+    const filePath = getDecisionLogPath(testDir);
+    const lines = readFileSync(filePath, 'utf-8').trim().split('\n');
+    const second = JSON.parse(lines[1]!);
+    delete second.hmacSig;
+    lines[1] = JSON.stringify(second);
+    writeFileSync(filePath, lines.join('\n') + '\n', 'utf-8');
+    const result = checkDecisionChainDetailed(testDir);
+    expect(result.status).toBe('unverifiable');
+    expect(result.detail).toContain('signature-stripped');
+  });
 });

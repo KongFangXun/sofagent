@@ -278,3 +278,126 @@ describe('chain-kernel · verifyChain', () => {
     expect(verifyChain(entries, { key: 'wrong-key', fingerprint: 'moved-host' }).status).toBe('unverifiable');
   });
 });
+
+// ════════════════════════════════════════
+// 四、防 prevHash 短路 / 创世 stable 门控（v1.4.9 红队探针收编）
+// ════════════════════════════════════════
+
+describe('chain-kernel · verifyChain 防 prevHash 短路（红队探针回归）', () => {
+  /** 构建合法 3 条链并返回文件路径 */
+  function buildChain(): string {
+    const filePath = join(dir, 'probe.jsonl');
+    appendChained(goldenRecord1(), { filePath, validKinds: ['TOOL_GATE'], key: GOLDEN_KEY, fingerprint: GOLDEN_FP });
+    appendChained(goldenRecord2(), { filePath, validKinds: ['TOOL_GATE'], key: GOLDEN_KEY, fingerprint: GOLDEN_FP });
+    const third = { ...goldenRecord1(), ts: '2026-01-01T00:00:02.000Z' };
+    appendChained(third, { filePath, validKinds: ['TOOL_GATE'], key: GOLDEN_KEY, fingerprint: GOLDEN_FP });
+    return filePath;
+  }
+
+  it('test_防prevHash短路_篡改内容+保留hmacSig+prevHash置unknown_tampered', () => {
+    // 红队探针收编：旧实现对 prevHash=='unknown' 直接 continue（位于 HMAC 验签之前），
+    // 篡改内容 + prevHash 置 'unknown' 即整条免验返回 ok。签名输入排除 prevHash，
+    // 故保留原 hmacSig 时内容篡改必然失配 → tampered（红），不得为 ok。
+    const filePath = buildChain();
+    const lines = readFileSync(filePath, 'utf-8').trim().split('\n');
+    const entry = JSON.parse(lines[1]!) as Record<string, unknown>;
+    entry.why = { text: '被篡改' };
+    entry.prevHash = 'unknown';
+    lines[1] = JSON.stringify(entry);
+    writeFileSync(filePath, lines.join('\n') + '\n', 'utf-8');
+
+    const result = verifyChain(readEntries(filePath), { key: GOLDEN_KEY, fingerprint: GOLDEN_FP });
+    expect(result.status).toBe('tampered');
+    expect(result.index).toBe(1);
+    expect(result.detail).toContain('篡改');
+  });
+
+  it('test_防prevHash短路_篡改内容+删hmacSig+prevHash置unknown_unverifiable', () => {
+    // 内容被改 + 签名被剥 + prevHash 置 'unknown'：无签名可验 → 不可复验（黄），
+    // 原因标记含 no-prevhash（链接缺失）与 signature-stripped（签名缺失），不得为 ok。
+    const filePath = buildChain();
+    const lines = readFileSync(filePath, 'utf-8').trim().split('\n');
+    const entry = JSON.parse(lines[1]!) as Record<string, unknown>;
+    entry.why = { text: '被篡改' };
+    entry.prevHash = 'unknown';
+    delete entry.hmacSig;
+    lines[1] = JSON.stringify(entry);
+    writeFileSync(filePath, lines.join('\n') + '\n', 'utf-8');
+
+    const result = verifyChain(readEntries(filePath), { key: GOLDEN_KEY, fingerprint: GOLDEN_FP });
+    expect(result.status).toBe('unverifiable');
+    expect(result.detail).toContain('no-prevhash');
+    expect(result.detail).toContain('signature-stripped');
+  });
+
+  it('test_防prevHash短路_删除prevHash字段_内容未改_签名有效_unverifiable', () => {
+    // 合法链删除中间条目的 prevHash 字段（内容未改、签名有效）：链接不可复验 → 黄，
+    // 不得静默跳过后返回 ok。
+    const filePath = buildChain();
+    const lines = readFileSync(filePath, 'utf-8').trim().split('\n');
+    const entry = JSON.parse(lines[1]!) as Record<string, unknown>;
+    delete entry.prevHash;
+    lines[1] = JSON.stringify(entry);
+    writeFileSync(filePath, lines.join('\n') + '\n', 'utf-8');
+
+    const result = verifyChain(readEntries(filePath), { key: GOLDEN_KEY, fingerprint: GOLDEN_FP });
+    expect(result.status).toBe('unverifiable');
+    expect(result.detail).toContain('no-prevhash');
+  });
+});
+
+describe('chain-kernel · verifyChain 创世 stable 门控（与 core/主循环同判据）', () => {
+  it('test_创世非stable条目_指纹一致_HMAC失配_unverifiable非tampered', () => {
+    // v2 非 stable 创世条目（指纹一致 + HMAC 失配）：与主循环 L416-418、
+    // core/audit-history 创世分支同判据 → 不可复验（黄），不再误判 tampered（红）。
+    const filePath = join(dir, 'x.jsonl');
+    appendChained(goldenRecord1(), { filePath, validKinds: ['TOOL_GATE'], key: GOLDEN_KEY, fingerprint: GOLDEN_FP });
+    appendChained(goldenRecord2(), { filePath, validKinds: ['TOOL_GATE'], key: GOLDEN_KEY, fingerprint: GOLDEN_FP });
+    const lines = readFileSync(filePath, 'utf-8').trim().split('\n');
+    const genesis = JSON.parse(lines[0]!) as Record<string, unknown>;
+    genesis.why = { text: '创世被篡改' };
+    delete genesis.hmacAlgo;
+    lines[0] = JSON.stringify(genesis);
+    writeFileSync(filePath, lines.join('\n') + '\n', 'utf-8');
+
+    const result = verifyChain(readEntries(filePath), { key: GOLDEN_KEY, fingerprint: GOLDEN_FP });
+    expect(result.status).toBe('unverifiable');
+    expect(result.detail).toContain('genesis-hmac-drift');
+  });
+});
+
+describe('chain-kernel · verifyChain 防签名剥离（密钥在场，v1.4.9 审 F06）', () => {
+  it('test_防签名剥离_密钥在场_创世条目删hmacSig_unverifiable', () => {
+    // round-4 创世防剥离分支回归：密钥在场 + 创世条目无签名（被剥离或 legacy 未签名）
+    // → 不可复验（黄），不得静默跳过返回 ok。
+    const filePath = join(dir, 'x.jsonl');
+    appendChained(goldenRecord1(), { filePath, validKinds: ['TOOL_GATE'], key: GOLDEN_KEY, fingerprint: GOLDEN_FP });
+    appendChained(goldenRecord2(), { filePath, validKinds: ['TOOL_GATE'], key: GOLDEN_KEY, fingerprint: GOLDEN_FP });
+    const lines = readFileSync(filePath, 'utf-8').trim().split('\n');
+    const genesis = JSON.parse(lines[0]!) as Record<string, unknown>;
+    delete genesis.hmacSig;
+    lines[0] = JSON.stringify(genesis);
+    writeFileSync(filePath, lines.join('\n') + '\n', 'utf-8');
+
+    const result = verifyChain(readEntries(filePath), { key: GOLDEN_KEY, fingerprint: GOLDEN_FP });
+    expect(result.status).toBe('unverifiable');
+    expect(result.detail).toContain('genesis-signature-stripped');
+  });
+
+  it('test_防签名剥离_密钥在场_中间条目删hmacSig_unverifiable非ok', () => {
+    // round-4 主循环防剥离分支回归：密钥在场 + 中间条目签名被剥（内容与链接字段未动）
+    // → 不可复验（黄），不得为 ok。
+    const filePath = join(dir, 'x.jsonl');
+    appendChained(goldenRecord1(), { filePath, validKinds: ['TOOL_GATE'], key: GOLDEN_KEY, fingerprint: GOLDEN_FP });
+    appendChained(goldenRecord2(), { filePath, validKinds: ['TOOL_GATE'], key: GOLDEN_KEY, fingerprint: GOLDEN_FP });
+    const lines = readFileSync(filePath, 'utf-8').trim().split('\n');
+    const entry = JSON.parse(lines[1]!) as Record<string, unknown>;
+    delete entry.hmacSig;
+    lines[1] = JSON.stringify(entry);
+    writeFileSync(filePath, lines.join('\n') + '\n', 'utf-8');
+
+    const result = verifyChain(readEntries(filePath), { key: GOLDEN_KEY, fingerprint: GOLDEN_FP });
+    expect(result.status).toBe('unverifiable');
+    expect(result.detail).toContain('signature-stripped');
+  });
+});
