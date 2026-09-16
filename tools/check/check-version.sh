@@ -1536,25 +1536,64 @@ echo "=== 25. 待发版窗口三态一致性（B1 防复发：CHANGELOG 收录 �
 # 但按铁律不能修，形成死锁。按铁律更新：版本动向不走状态行，走 badge→CHANGELOG 动线，
 # 本项检查相应改为「badge 与 CHANGELOG 链接同排存在」。
 # 前置条件：第 24 项已算出顶版 > SSOT（drift=1）才进入；非待发版窗口三态天然一致，跳过。
-# 🔴 26. 活文档「待发版」残留（v1.4.8 实锤·不分窗口）
+# ── 已发版态判定（§26/§27 共用口径：tag/npm 任一达 SSOT = 已发版）──
+# 「待发版」标注的合法性由发版状态决定，两类窗口内活文档如实标注都不是漏翻：
+#   a) 开发态（tag/npm 均未达 SSOT）—— bump→tag 间合法中间态；
+#   b) 待发版窗口白名单（§27 F6 先例）—— 已发版态 + 下一版开发日志在位（下一版开发完成、
+#      CHANGELOG 尚未收录、ROADMAP 如实标「开发完成（待发版）」）。
+# 本判定上移供 §26/§27 共用，杜绝同一内容两套口径（检查 26 原不分窗口扫描曾在开发态
+# 与 §27「开发态标注合法」同内容对撞）。
+F6_RELEASED=false
+if git rev-parse "v${SSOT_VERSION}" >/dev/null 2>&1; then
+  F6_RELEASED=true
+  F6_WHY="git tag v${SSOT_VERSION} 已存在"
+fi
+F6_NPM_VER=$(npm view @sofagent/audit version 2>/dev/null | head -1 || true)
+if [ -n "$F6_NPM_VER" ] && [ "$F6_NPM_VER" = "$SSOT_VERSION" ]; then
+  F6_RELEASED=true
+  F6_WHY="npm registry @sofagent/audit@${SSOT_VERSION} 已发布${F6_WHY:+（${F6_WHY}）}"
+fi
+# 待发版窗口白名单条件（双判据缺一不可）：存在 docs/changelog/vX.Y/ 目录内 devlog
+# （版本号 = SSOT + 1 patch）且非空——防「上一版忘翻牌」借窗口逃检。
+F6_NEXT_PATCH=$(node -e "
+const p='${SSOT_VERSION}'.split('.').map(Number);
+console.log(p[0]+'.'+p[1]+'.'+(p[2]+1));" 2>/dev/null || echo "")
+F6_DEVLOG_DIR="${PROJECT_ROOT}/docs/changelog/v1.4"
+F6_NEXT_DEVLOG="${F6_DEVLOG_DIR}/v${F6_NEXT_PATCH}.md"
+F6_WINDOW=false
+if [ -n "$F6_NEXT_PATCH" ] && [ -s "$F6_NEXT_DEVLOG" ]; then
+  F6_WINDOW=true
+fi
+# 🔴 26. 活文档「待发版」残留（v1.4.8 实锤 · 已发版态扫描）
 # 上面第 25 项只在**待发版窗口**（顶版 ≠ SSOT）生效 ⇒ **发版后窗口关闭，残留的「待发版」不再被查**。
 # v1.4.8 实锤：`docs/ROADMAP.md` 的版本规划表行写的是「📋 规划中/待发版」这类写法（与 CHANGELOG 顶版
 # 行、文档头「> vX.Y · 待发版」三种写法并列），发版翻转时只翻了后两者，ROADMAP 表行**漏翻**，
-# 而门禁因窗口关闭而不报。故本项**不分窗口**扫活文档（排除 changelog/ 与 archive/，那里的「待发版」
-# 是历史当时的正确状态）。
-echo "=== 26. 活文档「待发版」残留（不分窗口） ==="
-# 排除两类**合法**的「待发版」出现：a) 索引规则自身的说明文字（CHANGELOG 头部「…附「待发版」状态标注」）；
-# b) 描述本检查项本身的文档。判据：只认**状态位语境**的命中——行首 emoji 前缀（⏳/📋）或行首分隔位。
-_DOCS_HIT=$(grep -rlE "待发版" --include="*.md" "${PROJECT_ROOT}/docs" 2>/dev/null \
-  | grep -v "/changelog/" | grep -v "/archive/" \
-  | xargs -r grep -lE "^- | ^> |[|]" 2>/dev/null || true)   # 只认行首状态位语境（表格行/引用行/列表行）
-_STALE_ROOT=$(grep -nE "^- \*\*v[0-9.]+\*\* *— *(⏳|📋)? *待发版" "${PROJECT_ROOT}/CHANGELOG.md" 2>/dev/null || true)
-if [ -n "${_DOCS_HIT}${_STALE_ROOT}" ]; then
-  echo -e "  ${RED}✗${NC} 活文档仍含「待发版」（发版后应已翻转为「已发版」）："
-  printf '%s\n' ${_DOCS_HIT} ${_STALE_ROOT} | sed 's/^/      /'
-  ERRORS=$((ERRORS + 1))
+# 而门禁因窗口关闭而不报。故本项扫活文档（排除 changelog/ 与 archive/，那里的「待发版」
+# 是历史当时的正确状态）；窗口语义与 §27 同口径——开发态/白名单窗口内「待发版」合法
+# （降级跳过，计 SKIPS 由发版 SOP「SKIP 数逐条裁决」步骤裁定），仅已发版态真扫描。
+echo "=== 26. 活文档「待发版」残留（已发版态扫描） ==="
+if $F6_RELEASED && ! $F6_WINDOW; then
+  # 排除两类**合法**的「待发版」出现：a) 索引规则自身的说明文字（CHANGELOG 头部「…附「待发版」状态标注」）；
+  # b) 描述本检查项本身的文档。判据：只认**状态位语境**的命中——行首 emoji 前缀（⏳/📋）或行首分隔位。
+  _DOCS_HIT=$(grep -rlE "待发版" --include="*.md" "${PROJECT_ROOT}/docs" 2>/dev/null \
+    | grep -v "/changelog/" | grep -v "/archive/" \
+    | xargs -r grep -lE "^- | ^> |[|]" 2>/dev/null || true)   # 只认行首状态位语境（表格行/引用行/列表行）
+  _STALE_ROOT=$(grep -nE "^- \*\*v[0-9.]+\*\* *— *(⏳|📋)? *待发版" "${PROJECT_ROOT}/CHANGELOG.md" 2>/dev/null || true)
+  if [ -n "${_DOCS_HIT}${_STALE_ROOT}" ]; then
+    echo -e "  ${RED}✗${NC} 活文档仍含「待发版」（发版后应已翻转为「已发版」）："
+    printf '%s\n' ${_DOCS_HIT} ${_STALE_ROOT} | sed 's/^/      /'
+    ERRORS=$((ERRORS + 1))
+  else
+    echo -e "  ${GREEN}✓${NC} 已发版态（${F6_WHY}），活文档无「待发版」残留（changelog/archive 的历史标注不计）"
+    CHECKS=$((CHECKS + 1))
+  fi
+elif $F6_RELEASED; then
+  echo -e "  ${YELLOW}⏭️${NC} 待发版窗口态：v${F6_NEXT_PATCH} 开发日志在位——活文档「待发版」为合法状态，跳过（与 §27 白名单同口径）"
+  SKIPS=$((SKIPS + 1))
+  CHECKS=$((CHECKS + 1))
 else
-  echo -e "  ${GREEN}✓${NC} 活文档无「待发版」残留（changelog/archive 的历史标注不计）"
+  echo -e "  ${YELLOW}⏭️${NC} 开发态（tag/npm 均未达 v${SSOT_VERSION}）——活文档「待发版」为 bump→tag 间合法中间态，跳过（§27 同口径）"
+  SKIPS=$((SKIPS + 1))
   CHECKS=$((CHECKS + 1))
 fi
 
@@ -1642,16 +1681,7 @@ echo "=== 27. 发版状态门禁：tag/npm 已发但活文档仍标待发版（F
 # 此态下活文档（ROADMAP「现在在哪」节 / 当前版本行）仍写「待发版」即矛盾——
 # 发版 SOP 阶段十之后忘改状态会漏出去（v1.4.4 曾靠人工记忆）。
 # 历史冻结文档（docs/changelog/vX.Y/ 旧版日志）不在扫描面——只查活文档。
-F6_RELEASED=false
-if git rev-parse "v${SSOT_VERSION}" >/dev/null 2>&1; then
-  F6_RELEASED=true
-  F6_WHY="git tag v${SSOT_VERSION} 已存在"
-fi
-F6_NPM_VER=$(npm view @sofagent/audit version 2>/dev/null | head -1 || true)
-if [ -n "$F6_NPM_VER" ] && [ "$F6_NPM_VER" = "$SSOT_VERSION" ]; then
-  F6_RELEASED=true
-  F6_WHY="npm registry @sofagent/audit@${SSOT_VERSION} 已发布${F6_WHY:+（${F6_WHY}）}"
-fi
+# 已发版态判定与窗口白名单已在 §26 前上移为共用段（F6_RELEASED/F6_WINDOW），此处直接消费。
 
 if $F6_RELEASED; then
   # 待发版窗口白名单（v1.4.8 批次 B）：已发版态 + 下一版开发日志存在 = 合法中间态
@@ -1660,15 +1690,6 @@ if $F6_RELEASED; then
   # 「上一版发完、下一版未开发」语境，没跟上此窗口——误报实锤：v1.4.8 devlog 46 项
   # 全勾 + ROADMAP 如实标注被拦。白名单条件（双判据缺一不可）：存在 docs/changelog/vX.Y/
   # 目录（版本号 = SSOT + 1 patch）且目录内 devlog 非空——防「上一版忘翻牌」借窗口逃检。
-  F6_NEXT_PATCH=$(node -e "
-const p='${SSOT_VERSION}'.split('.').map(Number);
-console.log(p[0]+'.'+p[1]+'.'+(p[2]+1));" 2>/dev/null || echo "")
-  F6_DEVLOG_DIR="${PROJECT_ROOT}/docs/changelog/v1.4"
-  F6_NEXT_DEVLOG="${F6_DEVLOG_DIR}/v${F6_NEXT_PATCH}.md"
-  F6_WINDOW=false
-  if [ -n "$F6_NEXT_PATCH" ] && [ -s "$F6_NEXT_DEVLOG" ]; then
-    F6_WINDOW=true
-  fi
   if $F6_WINDOW; then
     echo -e "  ${YELLOW}⏭️${NC} 待发版窗口态：v${F6_NEXT_PATCH} 开发日志在位（CHANGELOG 未收录）——ROADMAP「待发版」为合法状态，F6 断言降级跳过"
     SKIPS=$((SKIPS + 1))

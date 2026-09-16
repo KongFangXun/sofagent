@@ -166,7 +166,7 @@ bash tools/check/check-version.sh        # 期望全绿
 | 2 | **编造数字**（「1017 断言」——脚本根本不统计断言数） | 表里每个数字**必须能指认产出命令**；指认不出就**不写**。acceptance 只认脚本 SUMMARY 原格式：`{N}/{N} passed · SKIP: {N} · EXIT: {N}` |
 | 3 | **剥元说明只剥顶部**（尾部「🔗 尾链…同源」漏剥） | `grep -nE "阶段六定稿必备项|数字取值说明|Release body 同源|\.\./releasing/" body.md` 必须**为空** |
 | 4 | **`INSTALL_SHA256` 基准算错**（用 bump 前 HEAD 算，而 bump 会改 install.sh） | 回填后自检：`git show v<tag>:bootstrap.sh` 的钉值 == `git show v<tag>:install.sh \| shasum -a 256`——**不等就重算并重打 tag** |
-| 5 | **活文档「待发版」漏翻**（ROADMAP 版本表行；旧门禁只在待发版窗口生效） | `bash tools/check/check-version.sh` 的**第 26 项**（v1.4.8 新增，不分窗口扫活文档） |
+| 5 | **活文档「待发版」漏翻**（ROADMAP 版本表行） | `bash tools/check/check-version.sh` 的**第 26 项**（v1.4.8 新增，已发版态扫活文档；开发态/待发版窗口白名单内降级跳过，与 §27 同口径） |
 | 6 | **验收断言随 bump 失配**（断言锁死 `v1.4.7`，bump 推成 v1.4.8） | 验收脚本里**禁止锁死当前 SSOT 版本号**；要比对就取变量或放宽为 `v[0-9]+\.[0-9]+\.[0-9]+` |
 | 7 | **CI 与本地门禁口径差**（shellcheck 按 shebang 扫全仓，本地按 `*.sh` 扫） | 本地必须跑 **CI 同口径**门禁：`bash tools/check/check-shellcheck.sh`（v1.4.8 新增） |
 | 8 | **跨平台脚本假设 bash**（我的 fail-closed 在 Windows 崩） | 任何 `postbuild`/`scripts` 里调 `bash` 的，必须加 `process.platform===win32` 短路 |
