@@ -1,5 +1,5 @@
 // ============================================================
-// workflow/index.ts · workflow 域深 barrel（v1.4.8 深模块条目 9 下半场）
+// workflow/index.ts · workflow 域深 barrel（v1.4.9 深模块条目 9 下半场）
 // ============================================================
 // 覆盖 mcp 侧两个消费者（原经根 barrel 取符号）：
 //   tools/route-workflow.ts → routeRequest / RouteResult / ParsedWorkflow

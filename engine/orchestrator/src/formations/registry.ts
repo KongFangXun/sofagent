@@ -1,5 +1,5 @@
 // ============================================================
-// formations/registry.ts · 六阵型拓扑定义与实例化（v1.4.8 第三章）
+// formations/registry.ts · 六阵型拓扑定义与实例化（v1.4.9 第三章）
 // ============================================================
 // 阵型实例化 = 读配置 → 生成成员拓扑（v1.3.6 SubAgent SDK 形态的
 // spawn 计划）+ 边生命周期管理（Open/Closed——ACP agent-graph-store 参考）。
@@ -7,7 +7,6 @@
 // ============================================================
 
 import type { FormationConfig, FormationName, FormationEdge } from './schema';
-
 /** 实例化后的成员节点（spawn 计划） */
 export interface SpawnedMember {
   role: string;

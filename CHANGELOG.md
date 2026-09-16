@@ -9,7 +9,9 @@
 
 > 未来版本规划见 [ROADMAP.md](./docs/ROADMAP.md)。
 > 尚未实现的规划版本（标注"尚未实现"）在 `docs/changelog/v1.4/` 下，不纳入本索引；已开发完成但未发版的版本纳入本索引并附「待发版」状态标注——tag/npm/package.json 在发版时统一同步。
-> **v1.4.9 开发完成 · ⏳ 待发版**（2026-09-14 开发启动）：G9 设备注册面 + G10/G11 设备数据面已交付（MCP 95→**99** tools：device_register/device_list + Ed25519 身份注册表 + 心跳捎带/回执 + /health 三态端点 + device_data_query 授权读取 + device_data_push 加密上行 WAL 断点续传）+ G5b/G1 连接器与模板面已交付（MCP 99→**103** tools：connector_register/connector_list 连接器注册/发现 + workflow_export/workflow_import 模板导出/导入 + 血缘事件流回溯）+ T6/T10 执行侧已交付（installer skill 四步装机引导 + 模型清单双源扫描随心跳上报 + 执行时 skill 快照打包/清理/审计锚点）+ T7/T8/T9 批 5 已交付（MCP 103→**104** tools：router_session_push 过站 session 承接 + T8 敏感识别三层插槽 L0/L1/L2 + T9 权重灰度 AB；测试 4639→**4787**）——已开发完成待发版，索引行按上方规则发版时随 tag 一并翻转；完整施工叙事见 [v1.4.9 开发日志](./docs/changelog/v1.4/v1.4.9.md)。
+> **v1.4.9 开发完成 · ⏳ 待发版**（2026-09-14 开发启动 · 2026-09-17 阶段六定稿）：G9 设备注册面 + G10/G11 设备数据面 + G5b/G1 连接器与模板面 + T6/T10 执行侧 + T7/T8/T9 批 5 已交付（MCP 95→**104** tools）；发版闸门 run-04 CONDITIONAL PASS——RC-3/RC-5 阶段九 tag 前收口。完整施工叙事见 [v1.4.9 开发日志](./docs/changelog/v1.4/v1.4.9.md)。
+
+- **v1.4.9** — 设备接入与数据承接：G9 设备注册/发现/心跳（Ed25519 身份 + 心跳新鲜度判定 + 任务捎带/回执进审计链）· G10 数据目录白名单授权读取（device_data_query）· G11 采集声明 opt-in 上行（device_data_push——WAL 加密暂存/明文不落盘/断点续传/审计计量 evidence）· 派单语义（在线才派单 + 掉线改派/挂起）· T7 router 过站 session 承接（schema fail-closed + 签名验签 + 脱敏贯通 + cost 台账）· T8 敏感识别三层插槽（L0 正则/L1 词典/L2 NER 外挂）· T9 权重灰度 AB（hash 稳定分流 + 劣化触发 + 噪声保护）· G5b 连接器注册/发现 + G1 workflow 模板导出/导入 + 血缘追踪 · T6 installer skill + T10 模型清单上报/skill 快照 · bugfix 修复批 13 项 · MCP 95→**104** tools · 测试 4429→**4805**（+376：批1 G9/G10/G11 44 / 批3 G5b/G1 50 / 批4 T6/T10 39 / 批5 T7/T8/T9 109 / bugfix 批 134，13 包 workspace 口径）· acceptance 337→**352**（S418-S426 九新场景：G10 授权读取/G11 上行/installer/派单/蒸馏配对/灰度/模型清单/S425 G1 模板分发/S426 审查体系结构锁）· 发版闸门四轮收敛（run-01 推翻→run-04 CONDITIONAL PASS）· 2026-09-17 已发版 · [开发日志](./docs/changelog/v1.4/v1.4.9.md)
 
 > ⚠️ **API 退役公告（v1.4.3 · 提前一版公告，移除归 v1.5.0）**
 >

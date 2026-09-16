@@ -1,5 +1,5 @@
 // ============================================================
-// loop/deps-types.ts · LOOP 节点依赖注入契约（v1.4.8 深模块条目 4）
+// loop/deps-types.ts · LOOP 节点依赖注入契约（v1.4.9 深模块条目 4）
 // ============================================================
 // 从 nodes.ts 迁出（原位 234-293 行）：节点依赖接口与结果类型独立成件，
 // 让「默认依赖实现」（deps-defaults.ts）与「节点工厂」（nodes.ts）共享
@@ -7,7 +7,6 @@
 //
 // nodes.ts 原样 re-export 本文件符号——loop/index.ts 与测试的既有导入面不变。
 // ============================================================
-
 import type { AuditVerdict, LoopArtifacts, LoopGraphState } from './state';
 import type { FileCheckpointer } from '../graph/checkpoint';
 import type { WorktreeHandle } from '../worktree-isolation';

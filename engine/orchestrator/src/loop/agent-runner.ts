@@ -1,5 +1,5 @@
 // ============================================================
-// loop/agent-runner.ts · 角色 Agent 执行器工厂（v1.4.8 深模块条目 4）
+// loop/agent-runner.ts · 角色 Agent 执行器工厂（v1.4.9 深模块条目 4）
 // ============================================================
 // 背景：nodes.ts 两个角色 runner（defaultRunEngineer / defaultRunReviewer）
 // 归一化后 50 行重复（占 62%）：LLM provider 四级回退解析、gate 三段接线、

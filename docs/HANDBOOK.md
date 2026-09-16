@@ -1,7 +1,7 @@
 # sofagent Handbook
 
 > **sofagent 是一套 FDE 能力——装进你的 Agent（DSH / OpenClaw / WorkBuddy / Codex / Claude Code）后，进场梳理业务流、部署 AI 节点、离场后 7×24 自己跑。** 装完之后，你在自己的 Agent 里说一句话，它就帮你干活——审计每次变更、沉淀每次经验，沉淀机制随使用迭代。下面从装到用到查问题，全流程走一遍。
-> v1.4.8 · 2026-09-13（UTC）· ✅ 已发版（本批更新 2026-09-11）· 孔放勋
+> v1.4.9 ·  2026-09-17（UTC）· ✅ 已发版（本批更新 2026-09-11）· 孔放勋
 
 <img src="assets/sofagent.png" alt="sofagent" width="160" />
 

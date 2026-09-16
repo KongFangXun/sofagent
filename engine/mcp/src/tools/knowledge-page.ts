@@ -1,5 +1,5 @@
 // ============================================================
-// tools/knowledge-page.ts · 知识页写入管道共用件（v1.4.8 深模块条目 6）
+// tools/knowledge-page.ts · 知识页写入管道共用件（v1.4.9 深模块条目 6）
 // ============================================================
 // 背景：5 个知识页 tool 文件（create-entity/create-concept/update-entity/
 // delete-entity/delete-concept）各自复制同一套管道件——

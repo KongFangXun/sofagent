@@ -1,10 +1,10 @@
 // ============================================================
 // tool-registry.ts · MCP tools/list schema definitions
-// v1.4.8: 从 mcp-server.ts 提取
+// v1.4.9: 从 mcp-server.ts 提取
 // ============================================================
 
 import { VERSION } from '@sofagent/audit';
-// v1.4.8 深模块条目 5：handler 实现 import（查表分发目标——原 mcp-server switch 分发迁入）
+// v1.4.9 深模块条目 5：handler 实现 import（查表分发目标——原 mcp-server switch 分发迁入）
 import { runAudit, type WebhookPushFn } from './tools/audit-tools';
 import { auditFile } from './tools/audit-file';
 import { getThink, writeThink, readThinkMd, readLessons } from './tools/think-tools';

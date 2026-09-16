@@ -10,7 +10,7 @@
   <a href="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml"><img src="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml/badge.svg" alt="Verify" /></a>
   <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-brightgreen" alt="License: MIT" /></a>
   <!-- ⚠️ bump version: manually sync this badge version (Version-vX.Y.Z) -->
-  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.4.8-16B8F3" alt="Version" /></a>
+  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.4.9-16B8F3" alt="Version" /></a>
 </p>
 
 <p align="center"><sub><a href="./README.md">简体中文</a> | English</sub></p>
@@ -119,9 +119,9 @@ Sits between the Agents you already use and the model layer — it doesn't repla
 
 One command selects your mounting tier: `bash install.sh --platform <platform-name>` (all platforms and differences in [HANDBOOK](./docs/HANDBOOK.md))
 
-## v1.4.8: Plugin Governance & Engineering Efficiency
+## v1.4.9: Device Access & Data Ingestion
 
-🔌 **Plugin governance and engineering efficiency** — who may install a plugin, what it may call, and whose hooks win, closed in one pass: plugin source allowlist (`plugin-gate` validates three source classes — Git URL / host pattern / local path — plus a managed-hooks-only mode; undeclared sources are refused and a missing validator fails the install closed, so governance never degrades silently) · application-level tool policy (`ToolGate` app×tool allowlist matrix; undeclared means denied) · multi-agent collaboration formation library (six built-in formations with schema validation + template fallback instantiation + handoff traces) · automatic context compaction (segment-level compression once the load chain exceeds its 3% budget; red-line rules are never dropped) · shell escalation tiers (three-state classifier: safe runs directly / risky via allowlist or HITL / dangerous forbidden until approved) · cost quota pre-gate (WARN/HARD modes with remaining / used / period fields) · dependency-direction architecture test (13 packages across five layers, enforced in CI) · per-node model preference for workflows (`modelPreference` schema; unregistered models error out instead of degrading silently) · execution-discipline batch (intent classification as the pure-function primary judge + Git capability three-state × two-isolation matrix + explicit scoping that forbids bare ids) · evolve module refactor (`@sofagent/skillopt` → `@sofagent/evolve`, with a self-built gate validator that drops the Python dependency) · LOOP concept realignment (three form factors with non-overlapping boundaries). Full details in the [devlog](./docs/changelog/v1.4/v1.4.8.md) · earlier versions in [CHANGELOG](./CHANGELOG.md).
+📡 **Device access and data ingestion** — the engine grows from single-machine audit into a multi-device data broker, closing three chains at once: device registry & dispatch (G9: Ed25519 identity + heartbeat freshness gating + dispatch-only-when-online with offline reassign/suspend) · authorized reads & encrypted uploads (G10/G11: `device_data_query` allowlist-gated reads + `device_data_push` opt-in uploads — WAL-encrypted staging / no plaintext on disk / resumable transfer / audit-metered evidence) · training-data flywheel (T7/T8/T9: router session ingestion with fail-closed schema + signature verification + redaction throughout + cost ledger · 3-tier sensitive-detection slots L0 regex / L1 dictionary / L2 NER · weight canary AB with hash-stable splitting + degradation triggers + noise protection) · platform interface (G5b/G1: connector registry/discovery with tenant isolation + workflow template export/import with lineage) · engineering efficiency (T6/T10 + bugfix: installer skill four-step guided setup + model inventory reporting + skill snapshots · 13-item fix batch). MCP tools 95 → **104** · tests 4429 → **4805**. Full details in the [devlog](./docs/changelog/v1.4/v1.4.9.md) · earlier versions in [CHANGELOG](./CHANGELOG.md).
 
 ## FDE Methodology
 

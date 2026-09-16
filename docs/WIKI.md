@@ -1,6 +1,6 @@
 # sofagent 项目导航索引（WIKI）
 
-> v1.4.8 · 2026-09-13（✅ 已发版——本批更新 2026-09-11） · 孔放勋
+> v1.4.9 · 2026-09-17（✅ 已发版——本批更新 2026-09-11） · 孔放勋
 
 > **EN summary**: sofagent is an open-source (MIT) FDE Harness layer for AI Agents — it doesn't build the Agent; it adds the discipline layer around whichever host (DSH / OpenClaw / WorkBuddy) runs it. **Product story**: an FDE maps your business flow, freezes every AI node's acceptance criteria into machine-checkable files, then departs — the Harness judges every change against those files 24/7 (24 git-diff audit rules, HMAC-chained tamper-evident history, every model registered/rolled out/trained/deployed under audit). Five capabilities: inject · audit · rollback · distill · evolve. (Chinese-first project; full English face in README.en.md.)
 > **读者**：人类开发者 & AI Agent 均可阅读。本文档是项目全局索引入口。
@@ -12,7 +12,7 @@
 > - **[ARCHITECTURE.md](./ARCHITECTURE.md)**：双层架构设计（约束层 × 生命周期）+ 约束层工程三层嵌套（约束层 → Graph → Loop），关键技术决策记录。**3 秒版**：约束层管"做对"（注入·审计·回溯·沉淀·进化）· 激活链四阶段管"跑起来" · Graph 控制图分波次 · Loop 自迭代闭环。
 > - **[VALIDATION.md](./VALIDATION.md)**：行业印证与生态定位——sofagent 直觉如何被行业验证 + Agent 三层模型 + 架构框架映射。
 > - **[PHILOSOPHY.md](./PHILOSOPHY.md)**：设计哲学与产品方法论（§一~§九）。"不替代 Agent，做 Agent 的控制面"。
-> - **[ROADMAP.md](./ROADMAP.md)**：版本路线图 + 迭代历程。当前 v1.4.8。
+> - **[ROADMAP.md](./ROADMAP.md)**：版本路线图 + 迭代历程。当前 v1.4.9。
 > - **行业坐标**：sofagent = 企业 Neo-Lab 的**智能主权基础设施**——Sovereign AI 四层主权的落点详见 [VALIDATION · 红杉 Neo-Lab](./VALIDATION.md#红杉-neo-lab--sovereign-ai-四层主权)。
 
 > **📋 文档分工一页表**（写内容前先看——什么内容往哪个文档写，防止交叉重复）：
@@ -234,8 +234,8 @@ graph TB
 
 | 项 | 值 |
 |----|-----|
-| 当前版本 | **v1.4.8**（2026-09-13，✅ 已发版）· 上一版 v1.4.7（2026-09-11） |
-| 下一版 | v1.4.9（见 docs/ROADMAP.md 规划表） |
+| 当前版本 | **v1.4.9**（2026-09-17，⏳ 待发版——发版时翻牌）· 上一版 v1.4.8（2026-09-13，✅ 已发版） |
+| 下一版 | v1.5.0（🛡️ 治理模块 · 可见性与本体成熟——见 docs/ROADMAP.md 规划表） |
 | 测试覆盖 | 4805 测试 / 13 包（统计标准：`tools/check/test-count.sh` 实际执行的 workspace 包；全仓共 26 个 workspace（v1.4.9 P2 合并批 29→26）——13 个 @sofagent/* 模块包 + 1 个工具包 load-chain + 7 个 DSH 插件（private，随 DSH 分发）+ 4 个 OpenClaw 插件（`engine/openclaw-plugins/`）+ 1 个 npm 裸名总包 umbrella，其中 14 个模块包发布至 npm `@sofagent` scope；OpenClaw 插件经根 `npm test --workspaces` 统一执行测试。实测见 `tools/check/test-count.sh`、声称数同步校验见 `tools/check/check-test-count.sh`） |
 | 审计规则 | 24 条（17 默认 + 7 扩展），活跃编号 A1-A11 + A14-A23 + E1/E2/E4（A12/A13/E3 已并入 A11，编号不再使用），每次 commit 自动跑 |
 | FORGE | fresh-eyes-loop + release-gate-loop 运行中 |
@@ -323,4 +323,4 @@ graph TB
 
 ---
 
-> **维护规则**：本文档由 AI 在每次发版时更新（版本号、文件清单、状态表）。当前版本 v1.4.8 · 孔放勋 · 2026-09-13。
+> **维护规则**：本文档由 AI 在每次发版时更新（版本号、文件清单、状态表）。当前版本 v1.4.9 · 孔放勋 · 2026-09-17。

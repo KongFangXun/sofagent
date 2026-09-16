@@ -8,7 +8,7 @@
   <a href="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml"><img src="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml/badge.svg" alt="Verify" /></a>
   <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-brightgreen" alt="License: MIT" /></a>
   <!-- ⚠️ bump 版本时手动同步此 badges 版本号（Version-vX.Y.Z） -->
-  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.4.8-16B8F3" alt="Version" /></a>
+  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.4.9-16B8F3" alt="Version" /></a>
 </p>
 
 <p align="center"><sub>简体中文 | <a href="./README.en.md">English</a></sub></p>
@@ -117,9 +117,9 @@ sofagent 不造 Agent——执行能力交给成熟宿主（模型 + 工具 + �
 
 一条命令选定挂载档位：`bash install.sh --platform <平台名>`（全部平台与差异见 [HANDBOOK](./docs/HANDBOOK.md)）
 
-## v1.4.8：插件管控与工程效能
+## v1.4.9：设备接入与数据承接
 
-🔌 **插件管控与工程效能**——插件从哪装、装了能调什么、hook 谁说了算，一次收口：插件来源白名单（`plugin-gate` 三类来源校验：Git URL / 主机模式 / 本地路径 + 托管 hook 独裁模式；未声明来源即拒绝，校验器不可用即 fail-closed 拒装，管控不得静默降级）· 应用级工具策略（`ToolGate` app×tool 白名单矩阵，未声明即拒绝）· 多 Agent 协作阵型库（六阵型 schema 校验 + 模板兜底实例化 + 交接留痕）· 自动上下文压缩（加载链超 3% 预算触发段级压缩，红线铁律不丢）· shell 提权分级（三态分类器：safe 直跑 / risky 走白名单或 HITL / dangerous 批准前禁用）· 成本 quota 事前门禁（WARN/HARD 双模式 + 余量/已用/周期三字段）· 依赖方向架构测试（13 包五层边界，CI 强制）· workflow 节点级模型偏好（`modelPreference` schema，未注册报错不静默降级）· 执行机制纪律批（意图分类纯函数主判 + Git 能力三态×两隔离矩阵 + 作用域显名禁裸 id）· 进化模块重构（`@sofagent/skillopt` → `@sofagent/evolve` 更名联动 + 自研 gate 验证器零 Python 依赖）· LOOP 概念归位（三形态定位边界互不重叠声明）。完整内容见[开发日志](./docs/changelog/v1.4/v1.4.8.md) · 更早版本见 [CHANGELOG](./CHANGELOG.md)。
+📡 **设备接入与数据承接**——引擎从单机审计长成多设备数据承接层，三条链一次收口：设备注册与派单（G9：Ed25519 身份 + 心跳新鲜度判定 + 在线才派单/掉线改派挂起）· 授权读取与加密上行（G10/G11：`device_data_query` 白名单授权读取 + `device_data_push` opt-in 上行——WAL 加密暂存/明文不落盘/断点续传/审计计量 evidence）· 训练数据飞轮（T7/T8/T9：router 过站 session 承接 schema fail-closed + 签名验签 + 脱敏贯通 + cost 台账 · 敏感识别三层插槽 L0 正则/L1 词典/L2 NER · 权重灰度 AB hash 稳定分流 + 劣化触发 + 噪声保护）· 平台接口面（G5b/G1：连接器注册/发现租户隔离 + workflow 模板导出/导入与血缘追踪）· 工程效能（T6/T10 + bugfix：installer skill 四步装机引导 + 模型清单上报 + skill 快照 · 修复批 13 项）。MCP 工具 95 → **104** · 测试 4429 → **4805**。完整内容见[开发日志](./docs/changelog/v1.4/v1.4.9.md) · 更早版本见 [CHANGELOG](./CHANGELOG.md)。
 
 ## FDE 方法论
 

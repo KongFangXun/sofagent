@@ -1,5 +1,5 @@
 // ============================================================
-// loop/middleware-registry.ts · LOOP 节点级共享中间件注册表（v1.4.8 深模块条目 4）
+// loop/middleware-registry.ts · LOOP 节点级共享中间件注册表（v1.4.9 深模块条目 4）
 // ============================================================
 // 从 nodes.ts 迁出（原位 295-382 行）：gate 包装入口 + ModelRouter /
 // 数据主权 / 进度遥测三个 lazy 单例 + 路由评估。与节点工厂解耦——
@@ -7,7 +7,6 @@
 //
 // nodes.ts 原样 re-export 本文件符号（progress-mw.test 从 ../loop/nodes 导入）。
 // ============================================================
-
 import { wrapToolsWithGate, createToolGate, type ExecutableTool } from '../tools';
 import { ModelRouter } from '../model-router';
 import { DataSovereigntyMiddleware } from '../middleware/data-sovereignty-mw';

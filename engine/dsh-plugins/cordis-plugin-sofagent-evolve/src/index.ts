@@ -1,4 +1,4 @@
-// cordis-plugin-sofagent-evolve · DSH 反向插件（v1.4.8：98 行样板收敛到 @sofagent/dsh-plugin-kit）
+// cordis-plugin-sofagent-evolve · DSH 反向插件（v1.4.9：98 行样板收敛到 @sofagent/dsh-plugin-kit）
 // seam 挂载：turn/end    # 语义：Turn 结束（任务收尾）→ 经验沉淀（think.md 反思）
 // 清单生成源 = engine/dsh-plugins/plugins.json（生成 package.json 的 description/sofagent/dsh 段与 cordis.patch.yml）；本文件的 seam 字面量由生成器 --check 与之对账。
 

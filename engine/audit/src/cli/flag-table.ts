@@ -1,5 +1,5 @@
 // ============================================================
-// cli/flag-table.ts · audit CLI 子命令与 flag 单源（v1.4.8 深模块条目 8）
+// cli/flag-table.ts · audit CLI 子命令与 flag 单源（v1.4.9 深模块条目 8）
 // ============================================================
 // 背景：SUBCOMMANDS（index.ts）与 FULL_ONLY_SUBCOMMANDS（cli-quick.ts）
 // 两处手工同步，历史 F-12/F-13 两次漂移事故。本文件是唯一事实源，

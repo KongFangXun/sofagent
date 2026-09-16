@@ -1,13 +1,12 @@
 // ============================================================
-// inspector-layers.ts · 分层巡检调度薄层（v1.2.4 · v1.4.8 收敛为派生层）
+// inspector-layers.ts · 分层巡检调度薄层（v1.2.4 · v1.4.9 收敛为派生层）
 // ============================================================
-// v1.4.8 深模块条目 2：巡检器清单的唯一事实源已收敛至
+// v1.4.9 深模块条目 2：巡检器清单的唯一事实源已收敛至
 // ./inspectors/registry.ts（INSPECTORS 单源）。本文件保留分层调度
 // 语义与既有导出面（runLayeredInspection / runAllLayers /
 // getLayerInspectorNames / LAYER_SCHEDULE / InspectorLayer——cron.ts
 // 与测试消费面不变），内部全部从注册表派生。
 // ============================================================
-
 import type { InspectorResult } from './inspectors/types';
 import {
   runLayer as registryRunLayer,
