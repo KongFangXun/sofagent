@@ -1,7 +1,7 @@
 ---
 name: cordis-plugin-sofagent-inject
 slug: cordis-plugin-sofagent-inject
-version: 1.4.9
+version: 1.4.8
 displayName: cordis-plugin-sofagent-inject
 description: >
   启动注入企业约束——四层加载链（seam: agent/pre-step）——桥接 @sofagent/harness buildConstrainedSystemPrompt——DSH（DeepSeek Harness）cordis plugin。sofagent 约束层在 DeepSeek Harness 生态的插件形态。
