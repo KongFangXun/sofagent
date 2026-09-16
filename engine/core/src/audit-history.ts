@@ -464,33 +464,37 @@ export function checkHistoryChainDetailed(dataDir?: string, maxEntries?: number)
     // v1.3.1 #4: 无 prevHash 的 legacy 条目不直接 continue（静默跳过），
     // 而是标记为 unverified——这些条目不在链上，无法验证完整性（可能伪造）。
     // 报告区分: verified（链上） / legacy（旧格式标记） / unverified（无链字段）。
+    // v1.4.9 审（F01 对齐）：有密钥时链接字段缺失只置黄（no-prevhash），本条
+    // HMAC 验签与防剥离分支照常执行——内容被改 + 原签名仍在 → tampered（红）；
+    // 无密钥部署维持既有 legacy 跳过。与 chain-kernel verifyChain 的
+    // no-prevhash 分支同语义（chain-kernel.diff.test.ts 双跑差分锁定）。
     if (curr.prevHash == null || curr.prevHash === 'unknown') {
       foundUnverifiable = true;
       noteUnverifiable(i, curr, 'no-prevhash');
-      continue;
-    }
+      if (!(keyAvailable && hmacKey)) continue;
+    } else {
+      const recordForHash = { ...prev, prevHash: undefined, hashVersion: undefined };
+      const hashInput = currUseFingerprint
+        ? JSON.stringify(recordForHash) + '|' + fingerprint
+        : JSON.stringify(recordForHash);
+      const expectedPrevHash = createHash('sha256')
+        .update(hashInput)
+        .digest('hex').slice(0, 16);
 
-    const recordForHash = { ...prev, prevHash: undefined, hashVersion: undefined };
-    const hashInput = currUseFingerprint
-      ? JSON.stringify(recordForHash) + '|' + fingerprint
-      : JSON.stringify(recordForHash);
-    const expectedPrevHash = createHash('sha256')
-      .update(hashInput)
-      .digest('hex').slice(0, 16);
-
-    if (curr.prevHash !== expectedPrevHash) {
-      if (currUseFingerprint) {
-        // v2 段（含环境指纹）prevHash 不匹配：环境指纹 / hostname / username /
-        // git 路径或 ~/.sofagent-key 已漂移，无法复现写入时签名 →
-        // 属历史证据不可复验（黄），非篡改，不报「链断裂/篡改」。
-        foundUnverifiable = true;
-        noteUnverifiable(i, curr, 'v2-prevhash-drift');
-      } else {
-        // 无环境指纹的旧算法 prevHash 不匹配：环境无关，属真·篡改（红）。
-        return { status: 'tampered', index: i, detail: `历史条目 ${i} prevHash 不匹配（旧算法，环境无关），疑似内容被篡改` };
+      if (curr.prevHash !== expectedPrevHash) {
+        if (currUseFingerprint) {
+          // v2 段（含环境指纹）prevHash 不匹配：环境指纹 / hostname / username /
+          // git 路径或 ~/.sofagent-key 已漂移，无法复现写入时签名 →
+          // 属历史证据不可复验（黄），非篡改，不报「链断裂/篡改」。
+          foundUnverifiable = true;
+          noteUnverifiable(i, curr, 'v2-prevhash-drift');
+        } else {
+          // 无环境指纹的旧算法 prevHash 不匹配：环境无关，属真·篡改（红）。
+          return { status: 'tampered', index: i, detail: `历史条目 ${i} prevHash 不匹配（旧算法，环境无关），疑似内容被篡改` };
+        }
+        // v2 漂移：已记 unverifiable，跳过本条 HMAC，进入下一条
+        continue;
       }
-      // v2 漂移：已记 unverifiable，跳过本条 HMAC，进入下一条
-      continue;
     }
 
     // 2) HMAC 验签（条目带 hmacSig 且有密钥时验签；密钥在场但条目无签名 → 黄，见下方分支）
