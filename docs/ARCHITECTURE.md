@@ -133,7 +133,7 @@ graph TB
 - [五、激活链架构（v1.2.5+ Phase 1-4 已交付）](#五激活链架构v125-phase-1-4-已交付)
 - [六、已知局限与未来方向](#六已知局限与未来方向)
 - [七、架构设计决策的行业锚点](#七架构设计决策的行业锚点)
-- [八、数据层路线建议（v1.3.2 转正为正式章节）](#八数据层路线建议v132-转正为正式章节)
+- [八、数据层路线建议](#八数据层路线建议)
 
 ---
 
@@ -163,7 +163,7 @@ graph TB
 | EXECUTE | 执行 | DAG 运行 + HITL 人工审批 + 审计集成 + 异常兜底 |
 | SUSTAIN | 持续 | wrapToolCall 联动：执行 → 审计 → 反思 → 进化 |
 
-> ⚠️ **旧名兼容**：五能力（注入/审计/回溯/沉淀/进化）中，前四能力即原约束底座/审计模块/回溯引擎/进化模块（v1.2.9 统一为「约束层四种能力」），v1.4.4 起新增「沉淀」独立成词、升级为五种能力。「沉淀」承接原「进化」表述中的「经验沉淀」语义与知识蒸馏管线（knowledge/）。历史文档中的四能力与「引擎」表述保留不动（archive/changelog 是历史快照不改）。代码层面的类名 `AuditEngine`、函数名 `runAuditGate`、文件名 `engine/audit` 全是 API，保持不动。
+> ⚠️ **旧名兼容**：五能力（注入/审计/回溯/沉淀/进化）中，前四能力即原约束底座/审计模块/回溯引擎/进化模块（v1.2.9 统一为「约束层四种能力」），「沉淀」承接原「进化」表述中的「经验沉淀」语义与知识蒸馏管线（knowledge/）。历史文档中的四能力与「引擎」表述保留不动（archive/changelog 是历史快照不改）。代码层面的类名 `AuditEngine`、函数名 `runAuditGate`、文件名 `engine/audit` 全是 API，保持不动。
 
 > 💬 **交互范式**：sofagent 的核心交互是语言（MCP / IM / CLI），无操作型 GUI——所有能力通过 MCP 协议暴露，用户通过 Agent 对话（LUI）操作：说一句话，它做完告诉你结果在哪。dashboard 是只读监控视图（localhost:3780，详见下文），不承担操作职能。这是架构的根本设计约束：不存在「仅 CLI 可用」或「需要打开页面」的能力。详见 [设计哲学](./PHILOSOPHY.md)。
 
@@ -207,9 +207,9 @@ Agent = **模型 + 上下文 + 工具 + 状态 + 执行控制 + 权限 + 可观�
 | daemon | 守护进程：cron + fs 监听 + 文件级审计 + USB 烧录 + 联邦查询 + Dream Cycle 6 阶段 + 启动 LOOP 续跑检查 + 审计轨迹聚合巡检 + 训练孤儿巡检 + 模型清单扫描（注册表 + 端点探测双源） | ✅ 已实现（504 测试） |
 | mcp | MCP Server：JSON-RPC 2.0 over stdio，tools + resources（104 tools）——含 FDE 六引擎（fde_interview/classify/quantify/derive/distill/deploy）、训练系（train_status/train_list/train_diagnose/corpus_export/train_serve/train_compliance/train_deliverable）、连接器与模板面（connector_register/connector_list/workflow_export/workflow_import） | ✅ 已实现 |
 | ontology | 领域本体：合并 / 状态 / 视图 / 概念合成，三层 YAML 自动生长 | ✅ 已实现 |
-| evolve | Skill 优化：复用 audit 规则做安全审查 + 集成优化 + 回填（原 skillopt，v1.4.8 更名） | ✅ 已实现 |
+| evolve | Skill 优化：复用 audit 规则做安全审查 + 集成优化 + 回填（原 skillopt） | ✅ 已实现 |
 | think | 思考链分析：基于 diff + 审计结果自动生成 think.md 反思条目（append-only） | ✅ 已实现（⚠️ 仅 MCP/CLI 路径触发，git hook 路径不自动生成） |
-| load-chain | 加载链 Hook 包 `@sofagent/load-chain`：宿主平台（OpenClaw 等暴露会话事件的平台）hook 注入四层约束（v1.2.0 DP-4（设计原则 4）提升为正式 workspace 包） | ✅ 已实现 |
+| load-chain | 加载链 Hook 包 `@sofagent/load-chain`：宿主平台（OpenClaw 等暴露会话事件的平台）hook 注入四层约束（DP-4 设计原则提升为正式 workspace 包） | ✅ 已实现 |
 
 ### API 分级边界决策（@public / @internal）
 
@@ -277,7 +277,6 @@ graph TB
 > 闭环读法：实线 = 主循环（执行→审计→沉淀→晋升→更强的执行面）；虚线 = 晋升回写与语料飞轮。
 >
 > ⚠️ **数字口径（v1.4.9 重算 · 批 5 增量同步）**：五域条目数之和 **27 + 19 + 27 + 16 + 15 = 104**，与图题 104 及 registry 实数**三处自洽**（以 `engine/mcp/src/tool-registry.ts` 的 `TOOLS` 数组为唯一权威源，逐个工具名分桶；分桶依据是**业务职能**，不是 registry 的 `roles` 标签——见上方「两套标签不要混用」）。**自洽由 `tools/check/check-docs.sh` §20 断言**（提取本图五域数字求和，比对图题与 registry 实数；提取为空 ⇒ 判红，防守卫空转）。重算记录：改前五域题号为 16/15/17/17/15（和 80 ≠ 图题 95，差 15），且 `后训模块 ×8` 与实数 `train_*` = 12 不符——两处同批纠正；**回填 2 枚此前未归域的工具**（`contribution_query` 治理 KPI 贡献度报表、`list_capabilities` 能力发现元工具，见各自 registry 描述——均属「审计·治理·运维」面，落 C5）；**v1.4.9 G9 增量**（device_register/device_list 设备注册面，D3 +2：95→97）；**v1.4.9 G10/G11 增量**（device_data_query/device_data_push 设备数据面，D3 +2：97→99，C6 扩为设备接入面 ×4）；**v1.4.9 G5b/G1 增量**（workflow_export/workflow_import 模板面归 D1 A3 编排域 +2、connector_register/connector_list 连接器注册面新 C7 落 D3 +2：99→103）；**v1.4.9 批 5 增量**（router_session_push 过站 session 承接面新 C8 落 D3 +1：103→104——主叙事是数据主权承接+审计挂链+cost 治理；语料管道消费端见 B2 后训模块）。
-
 
 | 版本 | 关键能力 |
 |------|---------|
@@ -390,7 +389,7 @@ graph LR
 
 ### 输出签名机制
 
-约束层最大的挑战是存在感——约束在正常工作，但用户看到好结果时不知道是约束层在起作用。v1.1.3 引入三层签名：
+约束层最大的挑战是存在感——约束在正常工作，但用户看到好结果时不知道是约束层在起作用。三层签名：
 
 | 层级 | 机制 | 用户如何感知 |
 |------|------|------------|
@@ -704,7 +703,7 @@ sofagent-audit --timeline     # 快照时间线
 sofagent-audit --revert SHA   # 回滚到任意快照
 ```
 
-快照上限 50 份（MAX_SNAPSHOTS 滚动裁剪，超出移除最旧 + 回收孤儿 blob——v1.3.4/v2 实现，2026-08-19 修正此前「30 天」的过时口径）。Webhook 配置在 `.sofagent/config.yml`。
+快照上限 50 份（MAX_SNAPSHOTS 滚动裁剪，超出移除最旧 + 回收孤儿 blob——v1.3.4/v2 实现）。Webhook 配置在 `.sofagent/config.yml`。
 
 > 📐 **设计决策记录：`.git-shadow/` 为何在仓库内**：审计快照存放在被审计仓库根目录的 `.sofagent/.git-shadow/`（而非全局 `~/.sofagent/`），设计意图是**按 git 仓库隔离快照**——不同仓库的快照不能串，否则回溯到错误仓库的状态。代价是用户仓库内会多一个隐藏目录（已 sanitize 脱敏 + 默认 `.gitignore` 覆盖，不进 git 提交，但 `ls -a` 可见）。v1.3.4 bugfix 已为快照内容加 sanitize 管道（API key / 密码 / 手机号打码），防止快照自身成为泄漏点。改存储位置是 v1.4 架构决策，当前版本只披露。
 
@@ -858,9 +857,9 @@ River 的载体是 Agent 平台（OpenClaw / WorkBuddy 等）+ sofagent + Channe
      ↓ 钉钉 AI（LLM：Opus / GPT / 智谱 / DeepSeek 均可）识别意图
 ② LLM 调用 MCP tool: sofagent_compose
      参数：
-       task: "实现用户注册模块"
-       enterprise_workflow: "fde梳理的认证流程.yaml"  ← v1.1.8 新增
-       run: true                                     ← v1.1.8 新增
+      task: "实现用户注册模块"
+      enterprise_workflow: "fde梳理的认证流程.yaml"
+      run: true
 ③ sofagent compose 基于企业 workflow 拆解任务
      → 输出编排方案 YAML + 结构化 SubAgent[] 配置
      → 每个 SubAgent 注入四层约束加载链（buildConstrainedSystemPrompt）
@@ -1316,7 +1315,7 @@ Claude Code 之父 Boris Cherny（YC 访谈）给出 Harness 层的代际时钟�
 
 ---
 
-## 八、数据层路线建议（v1.3.2 转正为正式章节）
+## 八、数据层路线建议
 
 > 本节为数据层路线建议——已审阅确认并纳入正式架构讨论，作为后续数据层演进的参考基线。本节记录建议与设计理由，不修改任何既有引擎行为。
 
