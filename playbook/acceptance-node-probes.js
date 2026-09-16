@@ -416,6 +416,46 @@ function _s41x_register(dr, identity, capabilities, dataDir) {
   return dr.registerDevice(identity, { kind: 'pc', capabilities }, dataDir);
 }
 
+// S416 · 第八章 敏感识别插槽——DetectorRegistry 四方法 + tierOf 三档 + L0 检测器形态
+// （run-02 C-P1-6 扩：敏感度分类器三档 + NER 外挂协议三态——注册/调用/降级全上抛）
+async function s416() {
+  const core = require(process.env.PROJECT_ROOT + '/engine/core/dist/index.js'); const bad = [];
+  const r = new core.DetectorRegistry();
+  for (const m of ['register', 'unregister', 'list', 'runPipeline']) if (typeof r[m] !== 'function') bad.push('DetectorRegistry 缺方法 ' + m);
+  if (core.tierOf(0.9) !== 'high' || core.tierOf(0.5) !== 'low') bad.push('tierOf 三档判定');
+  const d = core.createL0RegexDetector({ patterns: [{ name: 'phone', regex: /(1[3-9]\d{9})/, tier: 1 }] });
+  if (!d || typeof d.detect !== 'function' || d.layer !== 'L0') bad.push('L0 检测器形态异常');
+
+  // ── 敏感度分类器（run-02 C-P1-6 补：三档 + 模型档透传 + routeReason 审计链锚点）──
+  const reg = new core.DetectorRegistry();
+  reg.register(core.createL0RegexDetector({ patterns: [{ name: 'phone', regex: /(1[3-9]\d{9})/, tier: 1 }] }));
+  const dSens = core.classifySensitivity('联系 13812345678 王工', reg);
+  if (dSens.level !== 'sensitive' || dSens.decidedBy !== 'rule' || !dSens.routeReason || !dSens.matchedLabels.includes('phone')) bad.push('sensitive 档判定错:' + JSON.stringify(dSens));
+  const dInt = core.classifySensitivity('这是内部资料 请勿外传', reg);
+  if (dInt.level !== 'internal') bad.push('internal 档判定错:' + dInt.level);
+  const dPub = core.classifySensitivity('今天天气不错', reg);
+  if (dPub.level !== 'public') bad.push('public 档判定错:' + dPub.level);
+  const dModel = core.classifySensitivity('任意文本', reg, { modelLevel: 'sensitive' });
+  if (dModel.level !== 'sensitive' || dModel.decidedBy !== 'model') bad.push('外挂模型档透传错:' + JSON.stringify(dModel));
+
+  // ── L2 NER 外挂协议三态（run-02 C-P1-6 补）──
+  // 协议：prefetchRemoteSpans(text, config, fetchLike) 异步预取 → createPrefetchedRemoteDetector(spans) 同步包装；
+  // 响应体 = span 数组（非 {spans} 包装）；失败/非 2xx/结构不符一律上抛（fail-closed 不静默放行）
+  const okSpans = await core.prefetchRemoteSpans('张三的工作日志', { name: 'l2-remote-ner', endpoint: 'http://ner:9000' },
+    async () => ({ ok: true, status: 200, json: async () => [{ start: 0, end: 2, label: 'PERSON', score: 0.95 }] }));
+  if (okSpans.length !== 1 || okSpans[0].text !== '张三' || okSpans[0].layer !== 'L2') bad.push('NER 预取切片/层级错:' + JSON.stringify(okSpans));
+  const l2 = core.createPrefetchedRemoteDetector(okSpans, { name: 'l2-remote-ner' });
+  if (l2.layer !== 'L2' || typeof l2.detect !== 'function') bad.push('NER 包装形态错');
+  const detSpans = l2.detect('张三的工作日志');
+  if (detSpans.length !== 1 || detSpans[0].label !== 'PERSON') bad.push('NER detect 断言错');
+  // 降级上抛 ×2：不可达（HTTP 0）/ 结构不符（非数组）
+  let threw1 = false, threw2 = false;
+  try { await core.prefetchRemoteSpans('x', { endpoint: 'http://dead:1' }, async () => ({ ok: false, status: 0, json: async () => [] })); } catch { threw1 = true; }
+  try { await core.prefetchRemoteSpans('x', { endpoint: 'http://bad:1' }, async () => ({ ok: true, status: 200, json: async () => ({ not: 'array' }) })); } catch { threw2 = true; }
+  if (!threw1 || !threw2) bad.push('NER 降级未上抛（fail-closed 失效）');
+  _s41x_done(bad, 'S416');
+}
+
 // S418 · 第二章 G10 授权读取——参数缺失拒 + 未注册拒 + [sofagent] 前缀
 async function s418() {
   const q = require(process.env.PROJECT_ROOT + '/engine/mcp/dist/tools/device-data-query.js'); const bad = [];
@@ -428,7 +468,8 @@ async function s418() {
   _s41x_done(bad, 'S418');
 }
 
-// S419 · 第三章 G11 上行通道——invalid-params + isError 形态 + 未注册拒
+// S419 · 第三章 G11 上行通道——拒绝路径（invalid-params + isError + 未注册拒）+ 成功路径全链
+// （WAL 加密入队明文不落盘 → 游标续传 → ack 后不重传 → 无密钥 fail-closed——run-02 C-P1-4 扩）
 async function s419() {
   const p = require(process.env.PROJECT_ROOT + '/engine/mcp/dist/tools/device-data-push.js'); const bad = [];
   let r = await p.deviceDataPush({ category: '', payload: '' });
@@ -437,6 +478,43 @@ async function s419() {
   r = await p.deviceDataPush({ identity: { agentId: 'ghost-dev', publicKey: 'x' }, category: 'metrics', payload: '{}' });
   if (r.data.ok !== false) bad.push('未注册设备未拒');
   if (!['not-registered', 'invalid-identity', 'daemon-unavailable', 'revoked'].includes(r.data.reason)) bad.push('拒绝 reason 异常:' + r.data.reason);
+
+  // ── 成功路径全链（upload-wal dist 直调·run-02 C-P1-4 补）──
+  // 独立子进程语义：本探针进程内先以隔离密钥实测 WAL 面（密钥须在 require 前就位——模块级常量）
+  const { fs, path, home } = _s41x_init('s419');
+  fs.writeFileSync(path.join(home, '.sofagent-key'), 's419-e2e-hmac-key');
+  process.env.SOFAGENT_KEY_PATH = path.join(home, '.sofagent-key');
+  const uw = require(process.env.PROJECT_ROOT + '/engine/daemon/dist/upload-wal.js');
+  const dataDir = path.join(home, 'data');
+  // ① 加密入队：seq 单调 + 密文三件套落盘 + 明文不落盘（原始数据不出设备的存储面字面语义）
+  const e1 = uw.enqueueUpload('s419-dev', 'metrics', '{"cpu":"机密值42"}', { redactHits: 0, dataDir });
+  const e2 = uw.enqueueUpload('s419-dev', 'metrics', '{"cpu":"机密值50"}', { redactHits: 1, dataDir });
+  if (!e1.ok || !e2.ok || e2.seq !== e1.seq + 1) bad.push('入队失败或 seq 非单调:' + JSON.stringify([e1, e2]));
+  const walRaw = fs.readFileSync(uw.uploadWalPath(dataDir), 'utf-8');
+  if (walRaw.includes('机密值')) bad.push('明文泄漏进 WAL');
+  // ② pending + 解密回读（AES-256-GCM 往返——密文可解且与明文一致）
+  const pend = uw.pendingUploads(dataDir);
+  if (pend.length !== 2) bad.push('pending 计数=' + pend.length);
+  const dec = uw.decryptPendingUpload(pend[0]);
+  if (dec !== '{"cpu":"机密值42"}') bad.push('解密回读不一致:' + String(dec));
+  // ③ 游标续传：ack 后 cursor 推进 + pending 清零（已确认段不重传）
+  if (uw.readUploadCursor(dataDir) !== 0) bad.push('初始游标非 0');
+  const ack = uw.ackUpload(e2.seq, { deviceId: 's419-dev', dataDir });
+  if (!ack.ok) bad.push('ack 失败:' + ack.message);
+  if (uw.readUploadCursor(dataDir) !== e2.seq) bad.push('游标未推进');
+  if (uw.pendingUploads(dataDir).length !== 0) bad.push('ack 后仍 pending（会重传）');
+  // ④ 无密钥 fail-closed：不可加密 = 不可上行（明文降级不是可接受形态）
+  const nkHome = fs.mkdtempSync(path.join(require('os').tmpdir(), 's419-nk-'));
+  const nkKey = path.join(nkHome, 'no-key');
+  const savedKey = process.env.SOFAGENT_KEY_PATH;
+  process.env.SOFAGENT_KEY_PATH = nkKey;
+  if (require.cache[require.resolve(process.env.PROJECT_ROOT + '/engine/daemon/dist/upload-wal.js')]) {
+    delete require.cache[require.resolve(process.env.PROJECT_ROOT + '/engine/daemon/dist/upload-wal.js')];
+  }
+  const uwNoKey = require(process.env.PROJECT_ROOT + '/engine/daemon/dist/upload-wal.js');
+  const nk = uwNoKey.enqueueUpload('s419-dev', 'metrics', 'x', { dataDir: path.join(nkHome, 'data') });
+  if (nk.ok !== false || nk.reason !== 'no-aes-key') bad.push('无密钥未拒:' + JSON.stringify(nk));
+  process.env.SOFAGENT_KEY_PATH = savedKey;
   _s41x_done(bad, 'S419');
 }
 
@@ -506,6 +584,51 @@ async function s422() {
   if (r.pairs[0] && r.pairs[0].chosen !== '强教师回答内容') bad.push('教师多响应未择优');
   const recs = dp.distillPairsToRecords(r.pairs);
   if (!Array.isArray(recs)) bad.push('toRecords 非数组');
+
+  // ── session 承接五元组 + router 伴生（run-02 C-P1-5 补——模块七双叙事面行为锁）──
+  const { fs, path, home } = _s41x_init('s422');
+  fs.writeFileSync(path.join(home, '.sofagent-key'), 's422-e2e-key');
+  process.env.SOFAGENT_KEY_PATH = path.join(home, '.sofagent-key');
+  const si = require(process.env.PROJECT_ROOT + '/engine/train/dist/session-ingest.js');
+  // ① 五元组全匹配 → continue；任一不匹配 → handoff + mismatched 指认（宁可不续）
+  const scope = { executor: 'e1', workerId: 'w1', model: 'glm', workDir: '/w', runtime: 'node' };
+  const cont = si.decideContinuation(scope, scope);
+  if (cont.canContinue !== true || cont.mode !== 'continue') bad.push('全匹配未续接:' + JSON.stringify(cont));
+  const mis = si.decideContinuation(scope, { ...scope, model: 'qwen' });
+  if (mis.canContinue !== false || mis.mode !== 'handoff' || !mis.mismatched.includes('model')) bad.push('模型不匹配未走 handoff:' + JSON.stringify(mis));
+  const mis2 = si.decideContinuation(scope, { ...scope, workerId: 'w2' });
+  if (mis2.canContinue !== false || !mis2.mismatched.includes('workerId')) bad.push('员工不匹配未指认:' + JSON.stringify(mis2));
+  // ② 摘要交接三要素（较早摘要 + 最近消息 + 最新结论）
+  const hs = si.buildHandoffSummary([
+    { role: 'user', content: 'q1' }, { role: 'assistant', content: '较早回答' },
+    { role: 'user', content: 'q2' }, { role: 'assistant', content: '最近回答' },
+    { role: 'user', content: 'q3' }, { role: 'assistant', content: '最新结论回答' },
+  ]);
+  if (!hs.earlierSummary || !Array.isArray(hs.recentMessages) || hs.recentMessages.length === 0 || hs.latestConclusion !== '最新结论回答') bad.push('交接三要素缺:' + Object.keys(hs).join(','));
+  // ③ router 伴生 exporter 推送：合法 session 落盘 + 幂等拒 + usage 入 cost 台账
+  const rp = require(process.env.PROJECT_ROOT + '/engine/mcp/dist/tools/router-session-push.js');
+  const raw = {
+    sessionId: 's422-sess', enterpriseId: 'acme', source: 'router', scope,
+    messages: [{ role: 'user', content: 'hi' }, { role: 'assistant', content: 'ok' }],
+    usage: { inputTokens: 10, outputTokens: 5, model: 'glm' },
+    route: { targetModel: 'glm', reason: 'default' },
+  };
+  const push1 = await rp.routerSessionPush({ raw });
+  if (push1.data.isError) bad.push('router 推送失败:' + (push1.data.message || '').slice(0, 80));
+  else {
+    const sessFile = path.join(home, 'data', 'acme', 'router-sessions', 's422-sess.jsonl');
+    if (!fs.existsSync(sessFile)) bad.push('session 未落盘');
+    const costFile = path.join(home, 'data', 'acme', 'cost', 'router-usage.jsonl');
+    if (!fs.existsSync(costFile)) bad.push('cost 台账未落盘');
+    else {
+      const costLine = JSON.parse(fs.readFileSync(costFile, 'utf-8').trim().split('\n')[0]);
+      if (costLine.inputTokens !== 10 || costLine.outputTokens !== 5 || costLine.model !== 'glm') bad.push('cost 台账形态错:' + JSON.stringify(costLine));
+    }
+  }
+  const push2 = await rp.routerSessionPush({ raw });
+  if (!push2.data.isError || push2.data.reason !== 'duplicate-session') bad.push('幂等未拒:' + JSON.stringify({ isError: push2.data.isError, reason: push2.data.reason }));
+  const push3 = await rp.routerSessionPush({ raw: { bad: 1 } });
+  if (!push3.data.isError || push3.data.reason !== 'invalid-schema') bad.push('非法 schema 未拒:' + String(push3.data.reason));
   _s41x_done(bad, 'S422');
 }
 
@@ -552,11 +675,158 @@ async function s424() {
   if (!_s41x_register(dr, id, [], dataDir).ok) bad.push('注册失败');
   const hb = dr.reportHeartbeat(id, { dataDir, availableModels: inv.availableModels });
   if (!hb.ok) bad.push('心跳失败:' + hb.message);
+
+  // ── 执行时 skill 快照三态（run-02 C-P1-7 补：生成/读取/清理/不一致检出/无常驻语义）──
+  fs.writeFileSync(path.join(home, '.sofagent-key'), 's424-e2e-key');
+  process.env.SOFAGENT_KEY_PATH = path.join(home, '.sofagent-key');
+  const ss = require(process.env.PROJECT_ROOT + '/engine/orchestrator/dist/exec/skill-snapshot.js');
+  const skillRoot = path.join(home, 'SKILL-test');
+  fs.mkdirSync(path.join(skillRoot, 'harness'), { recursive: true });
+  fs.writeFileSync(path.join(skillRoot, 'harness', 'installer.md'), '# 安装');
+  fs.writeFileSync(path.join(skillRoot, 'review.md'), '# 审查');
+  // ① 生成：清单含相对路径 + sha256 前 16 位 + 落盘 manifest
+  const snap1 = ss.snapshotSkills({ skillRoot, sessionId: 's424-1', dataDir, agentId: 's424-probe' });
+  if (snap1.packages.length !== 2 || !snap1.packages.some((p) => p.name === 'harness/installer.md')) bad.push('快照清单形态错:' + JSON.stringify(snap1.packages.map((p) => p.name)));
+  if (!snap1.packages.every((p) => /^[0-9a-f]{16}$/.test(p.sha256))) bad.push('sha256 前 16 位形态错');
+  // ② 读取：manifest 回读一致 + 更新后新快照版本/sha 变（两次执行用不同 skill 版本可证）
+  const m1 = ss.readSnapshotManifest(dataDir, 's424-1');
+  if (!m1 || m1.sessionId !== 's424-1' || m1.packages.length !== 2) bad.push('manifest 读取不一致');
+  const shaBefore = snap1.packages.find((p) => p.name === 'review.md').sha256;
+  fs.writeFileSync(path.join(skillRoot, 'review.md'), '# 审查 v2 内容更新');
+  const snap2 = ss.snapshotSkills({ skillRoot, sessionId: 's424-2', dataDir, agentId: 's424-probe' });
+  const shaAfter = snap2.packages.find((p) => p.name === 'review.md').sha256;
+  if (shaBefore === shaAfter) bad.push('skill 更新后快照 sha 未变（两次执行版本不可辨）');
+  // ③ 不一致检出：manifest sha 与实际文件不符可辨（篡改可检测——回放对账语义）
+  const m2 = ss.readSnapshotManifest(dataDir, 's424-2');
+  m2.packages[0].sha256 = 'deadbeefdeadbeef';
+  const actualSha = require('crypto').createHash('sha256').update(fs.readFileSync(path.join(skillRoot, m2.packages[0].name))).digest('hex').slice(0, 16);
+  if (m2.packages[0].sha256 === actualSha) bad.push('篡改 sha 不可辨');
+  // ④ 清理零残留 + 幂等 + 不误删兄弟会话 + 清理后 manifest=null（无常驻——审计链才是持久证据）
+  ss.cleanupSnapshot(dataDir, 's424-1');
+  if (fs.existsSync(path.join(dataDir, 'skill-snapshots', 's424-1'))) bad.push('清理后残留');
+  if (ss.readSnapshotManifest(dataDir, 's424-1') !== null) bad.push('清理后 manifest 仍可读（无常驻语义破坏）');
+  if (!fs.existsSync(path.join(dataDir, 'skill-snapshots', 's424-2', 'snapshot-manifest.json'))) bad.push('误删兄弟会话');
+  ss.cleanupSnapshot(dataDir, 's424-1'); // 幂等不抛
+  // ⑤ 空 skillRoot → 空清单照样走完（诚实记录「当时无 skill」比缺记录诚实）
+  const snap3 = ss.snapshotSkills({ skillRoot: path.join(home, 'no-such'), sessionId: 's424-3', dataDir, agentId: 's424-probe' });
+  if (snap3.packages.length !== 0) bad.push('空 root 应产空清单');
   _s41x_done(bad, 'S424');
 }
 
+// S425 · 第一章 G1 workflow 模板分发——export/import dist 直调往返（导出落盘→导入回读→节点一致
+// + 跨租户剥离 + 血缘回溯 + 篡改拒收 + 全私空包拒收 + 落地闸冲突拒收）
+async function s425() {
+  const { fs, path, dataDir } = _s41x_init('s425'); const bad = [];
+  const storeDir = path.join(dataDir, 'workflow-store');
+  fs.mkdirSync(storeDir, { recursive: true });
+  // 合法 CRUD 形态 trunk（导入 schema 要求 node 必含 id/agent/task 三 string——与 workflowCreateSchema 同门）
+  const trunk = {
+    version: 2, owner: 'qa-e2e',
+    workflow: {
+      workflowId: 'wf-e2e', name: 'E2E 往返验证流', description: 'S425 探针',
+      nodes: [
+        { id: 'collect', agent: 'collector-agent', task: '采集本体数据 ontology-entity-A', depends_on: [], type: 'auto', visibility: 'open' },
+        { id: 'review', agent: 'reviewer-agent', task: '复核 ontology-entity-A 引用', depends_on: ['collect'], type: 'manual', visibility: 'open' },
+        { id: 'secret', agent: 'inner-agent', task: '内部私域节点', depends_on: [], type: 'auto', visibility: 'private' },
+      ],
+    },
+  };
+  fs.writeFileSync(path.join(storeDir, 'wf-e2e.json'), JSON.stringify(trunk, null, 2));
+  const wexp = require(process.env.PROJECT_ROOT + '/engine/mcp/dist/tools/workflow-export.js');
+  const wimp = require(process.env.PROJECT_ROOT + '/engine/mcp/dist/tools/workflow-import.js');
+
+  // ① 导出成功：bundle 五件套按实收录 + private 剥离 1 件 + 悬空 depends_on 清理
+  const exported = await wexp.workflowExport({ workflow_id: 'wf-e2e', enterprise: 'acme', cross_tenant: true, actor: 'qa', data_dir: dataDir });
+  if (exported.data.isError) { bad.push('导出失败:' + (exported.data.code || '')); }
+  else {
+    const bundle = exported.data.bundle;
+    if (!bundle.manifest || typeof bundle['workflow.yml'] !== 'string' || typeof bundle['ontology-entities.json'] !== 'string') bad.push('bundle 缺必备件');
+    if (bundle.manifest.strippedPrivate !== 1) bad.push('private 剥离计数=' + bundle.manifest.strippedPrivate);
+    const yml = require('js-yaml').load(bundle['workflow.yml']);
+    const ids = yml.nodes.map((n) => n.id).join(',');
+    if (ids !== 'collect,review') bad.push('剥离后节点=' + ids);
+    const rev = yml.nodes.find((n) => n.id === 'review');
+    if (JSON.stringify(rev.depends_on) !== JSON.stringify(['collect'])) bad.push('悬空 depends_on 未清理:' + JSON.stringify(rev.depends_on));
+    // ② 导入回读往返：落地 v1 新 id + 节点 id/agent/task 逐项一致 + owner 落地者
+    const imported = await wimp.workflowImport({ bundle, imported_as: 'wf-e2e-rt', owner: 'qa-imp', actor: 'qa', data_dir: dataDir });
+    if (imported.data.isError) { bad.push('导入失败:' + (imported.data.code || '') + ' ' + (imported.data.issues ? imported.data.issues[0] : '')); }
+    else {
+      const rt = JSON.parse(fs.readFileSync(path.join(storeDir, 'wf-e2e-rt.json'), 'utf-8'));
+      if (rt.id !== 'wf-e2e-rt' || rt.version !== 1 || rt.owner !== 'qa-imp') bad.push('落地形态错:' + rt.id + '/v' + rt.version + '/' + rt.owner);
+      const same = yml.nodes.length === rt.workflow.nodes.length && yml.nodes.every((n, i) =>
+        n.id === rt.workflow.nodes[i].id && n.agent === rt.workflow.nodes[i].agent && n.task === rt.workflow.nodes[i].task);
+      if (!same) bad.push('往返节点不一致');
+      const lt = imported.data.lineageTrace || [];
+      if (!Array.isArray(lt) || lt.length < 2 || lt[0].workflowId !== 'wf-e2e' || lt[0].enterprise !== 'acme' || lt[0].version !== 2) bad.push('血缘回溯锚缺失');
+      // ③ 落地闸：同名再导入 → duplicate-id 拒收
+      const dup = await wimp.workflowImport({ bundle, imported_as: 'wf-e2e-rt', actor: 'qa', data_dir: dataDir });
+      if (!dup.data.isError || dup.data.code !== 'duplicate-id') bad.push('冲突未拒:' + String(dup.data.code));
+    }
+    // ④ 完整性闸：篡改 workflow.yml → integrity-mismatch 拒收
+    const tampered = { ...bundle, 'workflow.yml': bundle['workflow.yml'].replace('E2E 往返验证流', 'TAMPERED') };
+    const tamperRes = await wimp.workflowImport({ bundle: tampered, imported_as: 'wf-tamper', actor: 'qa', data_dir: dataDir });
+    if (!tamperRes.data.isError || tamperRes.data.code !== 'integrity-mismatch') bad.push('篡改未拒:' + String(tamperRes.data.code));
+  }
+  // ⑤ schema 闸：node 缺 agent/task 的非法模板 → schema-gate 拒收（fail-closed）
+  const illDoc = { name: '非法模板', nodes: [{ id: 'x1', task: '只有 task' }] };
+  const illYml = require('js-yaml').dump(illDoc);
+  const illBundle = {
+    manifest: { kind: 'sofagent-workflow-template', version: 1, files: { 'workflow.yml': require('crypto').createHash('sha256').update(illYml, 'utf8').digest('hex'), 'ontology-entities.json': require('crypto').createHash('sha256').update('[]', 'utf8').digest('hex') }, lineage: { sourceEnterprise: 'acme', sourceWorkflowId: 'wf-ill', sourceVersion: 1 } },
+    'workflow.yml': illYml,
+    'ontology-entities.json': '[]',
+  };
+  const illRes = await wimp.workflowImport({ bundle: illBundle, imported_as: 'wf-ill-rt', actor: 'qa', data_dir: dataDir });
+  if (!illRes.data.isError || illRes.data.code !== 'schema-gate') bad.push('非法模板未拒:' + String(illRes.data.code));
+  // ⑥ 全私导出 → empty-after-strip 拒收（空包分发无意义且掩盖全私事实）
+  fs.writeFileSync(path.join(storeDir, 'wf-all-private.json'), JSON.stringify({
+    version: 1, owner: 'x',
+    workflow: { workflowId: 'wf-all-private', name: '全私', nodes: [{ id: 'p1', agent: 'a', task: 't', visibility: 'private' }] },
+  }, null, 2));
+  const emptyRes = await wexp.workflowExport({ workflow_id: 'wf-all-private', actor: 'qa', data_dir: dataDir });
+  if (!emptyRes.data.isError || emptyRes.data.code !== 'empty-after-strip') bad.push('全私空包未拒:' + String(emptyRes.data.code));
+  // ⑦ tool-registry 双注册断言（S192/S398 先例路径——源码 SSOT）
+  const regSrc = fs.readFileSync(process.env.PROJECT_ROOT + '/engine/mcp/src/tool-registry.ts', 'utf-8');
+  if (!/'workflow_export'/.test(regSrc)) bad.push('tool-registry 缺 workflow_export 注册');
+  if (!/'workflow_import'/.test(regSrc)) bad.push('tool-registry 缺 workflow_import 注册');
+  _s41x_done(bad, 'S425');
+}
+
+// S426 · 第十四章 审查体系四文档分发结构锁（run-02 C-P1-8 补——按 S180-S183 文档结构锁先例）
+// 四文档 = regression-checklist.md（A 类·零新增维+归并 5 处）/ acceptance-test.sh（B 类·本场景族自身）/
+// fresh-eyes-calibration.md（C 类·v1.4.9 校准收编 5 条）/ 收敛批（changelog 模块十四收敛表——行数/维数/场景数/警戒线四行对账）
+async function s426() {
+  const { fs } = _s41x_init('s426'); const bad = [];
+  const root = process.env.PROJECT_ROOT;
+  const read = (p) => fs.readFileSync(root + '/' + p, 'utf-8');
+  // ① A 类锚：checklist 头部 90 维声明 + 行数警戒线双值 + 归并去向注释在位
+  const rc = read('playbook/regression-checklist.md');
+  if (!rc.includes('当前 90 维 · 编号 1-141 · 51 个编号已归并删除')) bad.push('checklist 头部 90 维声明漂移');
+  if (!/regression-checklist\.md` ≤ 1950 行、`acceptance-test\.sh` ≤ 4500 行/.test(rc)) bad.push('警戒线双值锚漂移');
+  const rcLines = (rc.match(/\n/g) || []).length; // wc -l 口径（与 check-review-system 同——换行符数，非 split 段数）
+  if (rcLines > 1950) bad.push('checklist 超警戒线:' + rcLines);
+  // ② C 类锚：calibration v1.4.9 收编 5 条特征锚（提取为空/同构替换 SSOT/死断言可达性/重跑全量/协议升级归 C）
+  const cal = read('playbook/fresh-eyes-calibration.md');
+  for (const anchor of [
+    '门禁「提取为空」≠「合规为空」',
+    '大范围同构替换须核对 SSOT',
+    '死断言（不可达块）与断言可达性',
+    '改断言必须重跑全量',
+    '结构性协议升级类 finding 归 C 不归 A/B',
+  ]) if (!cal.includes(anchor)) bad.push('calibration 缺锚:' + anchor.slice(0, 14));
+  // ③ 收敛批锚：changelog 模块十四收敛表四行（行数/维数/场景数/警戒线）
+  const cg = read('docs/changelog/v1.4/v1.4.9.md');
+  if (!/## 十四、阶段四审查体系分发/.test(cg)) bad.push('changelog 模块十四章节缺');
+  for (const anchor of ['| checklist 行数 |', '| checklist 维数 |', '| acceptance 行数 |', '| acceptance 场景数 |', '| 警戒线 |']) {
+    if (!cg.includes(anchor)) bad.push('收敛表缺行:' + anchor);
+  }
+  if (!/解散 #143/.test(cg) || !/归并 #142 → #128/.test(cg)) bad.push('A 类归并/解散去向注释缺');
+  // ④ 旧结构残留清零（分发后不应再有独立散落形态）
+  if (/fresh-eyes-run02|round-05 findings 汇总/.test(cg) && /待整理/.test(cg)) bad.push('存在未整理残留段');
+  _s41x_done(bad, 'S426');
+}
+
 // ── 调度器 ──────────────────────────────────────────────────
-const CASES = { s101, s102, s103, s106, s107, s108, s109, s111, s115, s148, s149, s151, s152, s155, s156, s418, s419, s420, s421, s422, s423, s424 };
+const CASES = { s101, s102, s103, s106, s107, s108, s109, s111, s115, s148, s149, s151, s152, s155, s156, s416, s418, s419, s420, s421, s422, s423, s424, s425, s426 };
 
 async function main() {
   const name = process.argv[2];
