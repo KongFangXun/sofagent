@@ -454,13 +454,16 @@ grep -A1 "'conflict-check'" engine/daemon/src/inspectors/index.ts | grep -c "@we
 # 子项 c: runInspectors 调用链包含 conflict-check
 grep -c "checkConflict\|conflict-check" engine/daemon/src/inspectors/index.ts # 期望：≥3
 
-# 子项 d: 空 knowledge 目录优雅降级
-node -e "
+# 子项 d: 空 knowledge 目录优雅降级——🔴 隔离 HOME 实测（P1-14 后知识库是全局数据
+# {SOFAGENT_HOME}/data/knowledge，不再挂 projectDir——裸跑 process.cwd() 会读到本机
+# 真实知识库（孤儿/矛盾项）导致 triggered:true 假红。必须 SOFAGENT_HOME 指向隔离
+# 空目录测「目录不存在 → info 降级」语义，对齐 S274 隔离手法）
+D25_HOME=$(mktemp -d /tmp/sofagent-d25-XXXX); SOFAGENT_HOME="$D25_HOME" SOFAGENT_HOME_ALLOWED_PREFIXES="$D25_HOME" node -e "
 const {checkConflict} = require('./engine/daemon/dist/inspectors/conflict-check.js');
 const r = checkConflict(process.cwd());
 if (r.triggered) throw new Error('Expected triggered:false');
 if (r.severity !== 'info') throw new Error('Expected info');
-console.log('OK');" # 期望：OK
+console.log('OK');" && rm -rf "$D25_HOME" # 期望：OK
 ```
 
 #### 28. Skill 元数据完整性
@@ -1459,13 +1462,14 @@ diff <(grep -c "exitCode" engine/audit/hooks/post-commit) <(grep -c "exitCode" .
 # ⑦ archive 断链模式（防 #34）：压平迁移后引用路径必须跟着改
 node -e "const fs=require('fs'),p=require('path');let bad=0;for(const f of fs.readdirSync('docs/archive/changelog-experimental')){if(!f.endsWith('.md'))continue;const c=fs.readFileSync(p.join('docs/archive/changelog-experimental',f),'utf8');for(const m of c.matchAll(/\]\((\.[^)]+)\)/g)){const t=p.resolve('docs/archive/changelog-experimental',m[1]);if(!fs.existsSync(t))bad++}}if(bad)console.log('⚠️ archive 断链 '+bad+' 处（迁移没跟引用）')"
 # 原 #116 并入的 12 项 P0-P1 锚点（v1.4.8 压缩：12 行 anchor grep → 单次批量断言，等价）
-node -e "const fs=require('fs');const T=[['engine/audit/src/commands/verify.ts',['selfMatched','process.exit(1)','tampered']],['tools/check/test-count.sh',['FLAKY_PKGS=\"\"','漏收集']],['engine/core/src/config-template.ts',['审计通过']],['engine/audit/src/rules/rule-a2-secret-leak.ts',['.bin','Binary files']],['engine/audit/src/rules/skill-safety-rules.ts',['(?!tmp|home']],['FORGE/src/driver-base.mjs',['timeout: 600_000']],['FORGE/src/fresh-eyes-driver.mjs',['timeout: 600_000','round === resumeState?.round']],['playbook/acceptance-test.sh',['cd \"$PROJECT_ROOT\" && NODE_OPTIONS']],['tools/check/check-version.sh',['ver == SSOT']]];const bad=[];for(const [f,pats] of T){let c='';try{c=fs.readFileSync(f,'utf8')}catch{bad.push(f+' 缺失');continue}for(const p of pats)if(!c.includes(p))bad.push(f+' 缺锚点: '+p)}if(bad.length){console.error('  \u274c 回植/漂移: '+bad.join(' | '));process.exit(1)}console.log('  \u2705 12 项 anchor 全在位')" # ⑧ 门禁失败路径注入自测（归并原维度 100——set -u 下 $? 赋值曾判 unbound 崩溃，CI 常绿无感）
+node -e "const fs=require('fs');const T=[['engine/audit/src/commands/verify.ts',['selfMatched','process.exit(1)','tampered']],['tools/check/test-count.sh',['FLAKY_PKGS=\"\"','漏收集']],['engine/audit/hooks/post-commit',['审计通过','含警告']],['engine/audit/src/rules/rule-a2-secret-leak.ts',['.bin','Binary files']],['engine/audit/src/rules/skill-safety-rules.ts',['(?!tmp|home']],['FORGE/src/driver-base.mjs',['timeout: 600_000']],['FORGE/src/fresh-eyes-driver.mjs',['timeout: 600_000','round === resumeState?.round']],['playbook/acceptance-test.sh',['--max-old-space-size=2048']],['tools/check/check-version.sh',['ver == SSOT']]];const bad=[];for(const [f,pats] of T){let c='';try{c=fs.readFileSync(f,'utf8')}catch{bad.push(f+' 缺失');continue}for(const p of pats)if(!c.includes(p))bad.push(f+' 缺锚点: '+p)}if(bad.length){console.error('  \u274c 回植/漂移: '+bad.join(' | '));process.exit(1)}console.log('  \u2705 anchor 批全在位')" # ⑧ 门禁失败路径注入自测（归并原维度 100——set -u 下 $? 赋值曾判 unbound 崩溃，CI 常绿无感）
+# 锚点勘误（阶段五复验）：①「审计通过」锚自 HOOK_TEMPLATE 删除后应指 hooks/ 唯一源（post-commit 成功回声双形态）②acceptance 锚改锚 NODE_OPTIONS 字面量——旧写法在双引号 node -e 里被 shell 展开成绝对路径再去匹配文件内字面 $PROJECT_ROOT，必假红（P1-1#2/P1-4 根因）
 sed 's|bash tools/check/test-count.sh|bash /nonexistent/test-count.sh|' tools/check/check-test-count.sh > /tmp/cct-t.sh; bash /tmp/cct-t.sh >/dev/null 2>&1; [ $? -eq 1 ] && echo "✅ 失败路径正确报红" || echo "⚠️ 失败路径崩溃或假绿"; rm -f /tmp/cct-t.sh
 ) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -qE "^[[:space:]]{0,2}❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true
 tmp_all=$( { grep -cF "[0-9;]*m//g" tools/check/test-count.sh 2>/dev/null || true; } | head -1 | tr -cd "0-9"); tmp_safe=$( { grep -cF "LC_ALL=C sed" tools/check/test-count.sh 2>/dev/null || true; } | head -1 | tr -cd "0-9"); [ "${tmp_all:-0}" = "${tmp_safe:-1}" ] && grep -q "解析失败，计数不可信" tools/check/test-count.sh && echo "✅ 计数解析 fail-loud 在位" || { echo "❌ 门禁吞数面回退（原 #143c · LC_ALL=C 覆盖 ${tmp_safe}/${tmp_all}）"; exit 1; }
-**子项（归并自原 #106 · 测试数文档同步）**：该维度内容已被门禁覆盖（`bash tools/check/check-test-count.sh`）——降为引用一行；增量判据「新增/删除测试必须同步文档声称数」并入本维度计数防线。
 ```
 
+**子项（归并自原 #106 · 测试数文档同步）**：该维度内容已被门禁覆盖（`bash tools/check/check-test-count.sh`）——降为引用一行；增量判据「新增/删除测试必须同步文档声称数」并入本维度计数防线。
 #### 111. 新功能审查面——MCP 自进化+instinct+FDE 运维+沙箱/权限/并发/OKF（A 类 · 归并 #115 入此：沙箱五件套/权限三防线/并发三级来源/OKF 三件套为同版配套面）
 
 **背景**：七大块交付的审查面。acceptance S270-S276 做执行级验证，本维度做静态一致性——两者成对构成新功能的完整回归网。
@@ -1806,8 +1810,8 @@ test -f engine/audit/src/chain-head-anchor.test.ts && grep -q "shouldExempt(key:
 # 零行为变化」）。锚点改为「ruleCode 三前缀分支在位 + 四渲染面均消费 ruleCode」双锚——
 # 覆盖面不变且更强（收敛为单一 SSOT，杜绝四份副本漂移）。
 grep -q "R1" engine/audit/src/ruleset-loader.ts && grep -q "number >= 500" engine/audit/src/rules/assemble.ts && RCOUNT=$(grep -l "ruleCode(" engine/audit/src/index.ts engine/audit/src/reporter.ts engine/audit/src/stats.ts engine/audit/src/webhook.ts 2>/dev/null | wc -l | tr -d ' '); [ "${RCOUNT:-0}" -ge 4 ] && echo "✅ ruleset R 前缀渲染（ruleCode SSOT + 四渲染面 ${RCOUNT}/4）" || echo "❌ ruleset A0 渲染回潮（ruleCode SSOT 缺失或渲染面仅 ${RCOUNT:-0}/4）"
-# B2: 版本动态读 ×10（engine/ab-test CLI + 9 dsh 插件 pluginMeta 均不硬编码版本）——插件为 _pkg.version 间接形态，锚词覆盖两种写法
-DYN=$(grep -rlE "require\('\.\./package\.json'\)" engine/ab-test/src/cli.ts engine/dsh-plugins/*/src/index.ts 2>/dev/null | wc -l | tr -d ' '); [ "${DYN:-0}" -ge 10 ] && echo "✅ 版本动态读 ${DYN} 文件在位" || echo "❌ 版本硬编码回潮（动态读仅 ${DYN:-0}/10）"
+# B2: 版本动态读 ×8（CLI 1 + DSH 插件 7，plugins.json SSOT；plugin-kit 为基座非插件——hostPkg 参数收版本，不入动态读 glob）（engine/ab-test CLI + 9 dsh 插件 pluginMeta 均不硬编码版本）——插件为 _pkg.version 间接形态，锚词覆盖两种写法
+DYN=$(grep -rlE "require\('\.\./package\.json'\)" engine/ab-test/src/cli.ts engine/dsh-plugins/cordis-plugin-sofagent*/src/index.ts 2>/dev/null | wc -l | tr -d ' '); [ "${DYN:-0}" -ge 8 ] && echo "✅ 版本动态读 ${DYN} 文件在位" || echo "❌ 版本硬编码回潮（动态读仅 ${DYN:-0}/8）"
 # B4: openclaw execute 空数组绕过修复——按 scope 取真实 diff 非 runRules([])
 grep -q "parseDiff" engine/openclaw-plugins/*/index.ts 2>/dev/null || grep -rq "parseDiff" engine/openclaw-plugins/ && echo "✅ openclaw execute 取真实 diff 在位" || echo "❌ execute 传空数组绕过回潮"
 # B5: uninstall 回收清单与 install 支持面配对（cursor/gemini 不漏）——脚本在 engine/scripts/ 非仓库根
