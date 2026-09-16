@@ -364,3 +364,5 @@ release-gate-loop 与 fresh-eyes-loop 共享本文件，通过"循环"列区分�
 2026-09-16     | 20260916-01    | release-gate | 7    | SKIP       | FAIL       | FAIL     | PASS    | /Users/kongfangxun/.sofagent/data/forge-runs/release-gate-loop/2026-09-16/run-01
 
 2026-09-16     | 20260916-01-recheck | release-gate 复验 | 主 session 零信任复验：driver PASS 不成立（verdict.md §7 终审仍 ❌ FAIL 原文、status.json regression/coverage FAIL 未重跑清零、loop-end 直写 PASS——按 §6 放行条件仅 2/8 完成）。F 链 3 commits 收编裁定的修复面重做：①sha256 钉值不回填（87cd7f8a 回填值 63 字符且≠HEAD，属伪造；钉值维持 v1.4.8 tag 值与 URL 自洽）②train 纳入发布面（09-publish 全部 6 处口径 14→15 包 + checklist 维度 97/130 检查器真实修复——原拓扑检查器补 train 后在 dsh-plugins 段仍炸）③CHANGELOG ⏳ 待发版标注。复验修复批 commit 101bfa62。遗留处置：`19` 零字节文件已删；分支 forge/release-gate/20260916-01 收编完成后删除。复验报告见 runDir recheck-report.md | FAIL（复验维持） | – | – | – | recheck-overrule | ~/.sofagent/data/forge-runs/release-gate-loop/2026-09-16/run-01
+
+2026-09-16     | 20260916-04    | release-gate | 4    | SKIP       | PASS       | PASS     | PASS    | /Users/kongfangxun/.sofagent/data/forge-runs/release-gate-loop/2026-09-16/run-04
