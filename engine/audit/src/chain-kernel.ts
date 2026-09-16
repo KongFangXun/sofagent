@@ -334,8 +334,29 @@ export function verifyChain(
           detail: `${subject}创世条目（索引 0）HMAC 签名不匹配（stable 条目，无环境指纹），疑似内容被篡改`,
         };
       }
+      // 篡改优先：v2 创世条目记录的 envFingerprint 与当前环境一致时，HMAC 不匹配
+      // 只能是内容在签名后被改——与主循环（下方 curr 分支）及 core/audit-history
+      // 创世分支同判据，不误归「不可复验（黄）」（v1.4.9 审：创世/非创世判定对齐）
+      if (genesisUseFingerprint) {
+        const genesisRecordedFingerprint = genesisEntry.envFingerprint;
+        if (
+          typeof genesisRecordedFingerprint === 'string' &&
+          genesisRecordedFingerprint.length > 0 &&
+          genesisRecordedFingerprint === fingerprint
+        ) {
+          return {
+            status: 'tampered',
+            index: 0,
+            detail: `${subject}创世条目（索引 0）HMAC 签名不匹配（环境指纹一致，确为内容被篡改）`,
+          };
+        }
+      }
       foundUnverifiable = true;
     }
+  } else if (genesisEntry && keyAvailable && key) {
+    // 密钥在场但创世条目无签名：签名被剥离（攻击者无需密钥即可剥掉 hmacSig 重写链）
+    // 或 legacy 未签名——无法证明完整性 → 不可复验（黄），不再静默跳过（与 core/audit-history 防签名剥离分支对齐）
+    foundUnverifiable = true;
   }
 
   for (let i = 1; i < records.length; i++) {
@@ -396,6 +417,10 @@ export function verifyChain(
           foundUnverifiable = true;
         }
       }
+    } else if (keyAvailable && key && !curr.hmacSig) {
+      // 密钥在场但条目无签名：签名被整链剥离伪装 legacy / legacy 未签名条目
+      // ——无法证明完整性 → 不可复验（黄），不再静默放行（与 core/audit-history 防签名剥离分支对齐）
+      foundUnverifiable = true;
     }
   }
 

@@ -77,9 +77,9 @@ describe('checkDecisionChainDetailed', () => {
     expect(result.status).toBe('tampered');
   });
 
-  it('篡改创世条目 → unverifiable（mirror core：v2 创世分支不做指纹区分）', () => {
-    // 与 checkHistoryChainDetailed 完全同构：v2 创世条目 HMAC 不匹配在 core 的
-    // genesis 分支只置 foundUnverifiable（不判 tampered）——decision-chain mirror 同行为。
+  it('篡改创世条目 → tampered（指纹一致即篡改，verifyChain 收口后与 core 同判据）', () => {
+    // decision-chain 判定收口至 chain-kernel.verifyChain（单一事实源）：v2 创世条目
+    // 记录指纹与当前环境一致时 HMAC 不匹配 = 内容被改，与 checkHistoryChainDetailed 同判红。
     emitDecision(makeInput('s1'), testDir);
     emitDecision(makeInput('s2'), testDir);
     const filePath = getDecisionLogPath(testDir);
@@ -89,7 +89,7 @@ describe('checkDecisionChainDetailed', () => {
     lines[0] = JSON.stringify(genesis);
     writeFileSync(filePath, lines.join('\n') + '\n', 'utf-8');
     const result = checkDecisionChainDetailed(testDir);
-    expect(result.status).toBe('unverifiable');
+    expect(result.status).toBe('tampered');
   });
 
   it('无密钥时降级 SHA-256 链仍通过（hmacSig 缺省）', () => {

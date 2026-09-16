@@ -2033,7 +2033,7 @@ function loadPipelineGraph(){
     })
     .catch(function(){
       box.innerHTML=emptyState('<i class="bi bi-shuffle"></i>','还没有编排数据','运行过 AI 编排任务后自动生成（graph-state.json）','去 FDE 引导',"goPage('fde')");
-      if(updated)updated.textContent=fmtUpdatedAt();
+      if(updated)updated.textContent='加载失败';
       list.innerHTML='<div style="grid-column:1/-1;text-align:center;color:var(--text-t);font-size:12px;padding:12px">—</div>';
     });
 }
@@ -2602,7 +2602,7 @@ function loadFdeSelfGraph(){
       }
       box.innerHTML='<div style="font-size:11px;color:var(--text-t);margin-bottom:8px">状态着色：蓝=运行中 绿=完成 黄=人工介入'+(fromYaml?' · 来自 template.yaml':' · 示例数据（部署 FDE workflow 后读真实节点）')+'</div>'+
         renderFlowGraph(selfNodes,selfEdges);
-      if(updated)updated.textContent=fmtUpdatedAt();
+      if(updated)updated.textContent=fromYaml?fmtUpdatedAt():'示例数据';
     });
   }).catch(function(){
     box.innerHTML=emptyState('<i class="bi bi-diagram-2"></i>','还没有 FDE workflow 模板','部署 FDE workflow 后读取真实节点（template.yaml）','去 FDE 引导',"goPage('fde')");

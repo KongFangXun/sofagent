@@ -239,9 +239,9 @@ describe('chain-kernel · verifyChain', () => {
     expect(result.detail).toContain('篡改');
   });
 
-  it('test_篡改创世条目_v2不做指纹区分_unverifiable', () => {
-    // 与 checkDecisionChainDetailed/checkTrainAuditChain 历史行为一致：
-    // v2 创世条目 HMAC 不匹配在 genesis 分支只置 foundUnverifiable（不判 tampered）。
+  it('test_篡改创世条目_指纹一致_tampered（篡改优先，对齐主循环与 core/audit-history）', () => {
+    // v2 创世条目记录的 envFingerprint 与当前环境一致时，HMAC 不匹配只能是内容被改
+    // ——与 verifyChain 主循环、checkHistoryChainDetailed 同判据，不再误归 unverifiable。
     const filePath = join(dir, 'x.jsonl');
     appendChained(goldenRecord1(), { filePath, validKinds: ['TOOL_GATE'], key: GOLDEN_KEY, fingerprint: GOLDEN_FP });
     appendChained(goldenRecord2(), { filePath, validKinds: ['TOOL_GATE'], key: GOLDEN_KEY, fingerprint: GOLDEN_FP });
@@ -251,7 +251,10 @@ describe('chain-kernel · verifyChain', () => {
     lines[0] = JSON.stringify(genesis);
     writeFileSync(filePath, lines.join('\n') + '\n', 'utf-8');
 
-    expect(verifyChain(readEntries(filePath), { key: GOLDEN_KEY, fingerprint: GOLDEN_FP }).status).toBe('unverifiable');
+    const result = verifyChain(readEntries(filePath), { key: GOLDEN_KEY, fingerprint: GOLDEN_FP });
+    expect(result.status).toBe('tampered');
+    expect(result.index).toBe(0);
+    expect(result.detail).toContain('创世条目');
   });
 
   it('test_环境指纹漂移_unverifiable', () => {
