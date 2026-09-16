@@ -246,8 +246,11 @@ export function appendChained<T extends object>(
         prevHash = computePrevHash(lastEntry, fingerprint);
       }
     } catch {
-      // 末行解析失败——无法建立链，保守置 'unknown'（与 appendHistory 同语义）
+      // 末行解析失败——无法建立链，保守置 'unknown'（与 appendHistory 同语义）。
+      // v1.4.9 审（F05）：不再静默——验侧（no-prevhash 分支）会把该链段黄化，但用户
+      // 需要在写入时就被告知链完整性从哪里开始存疑。仅加警告，不改变写入行为。
       prevHash = 'unknown';
+      console.error('[sofagent] ⚠️ 审计链末行损坏，新条目 prevHash 已置 unknown——该链段将无法复验，建议运行 sofagent doctor 检查');
     }
   }
 
@@ -308,6 +311,12 @@ export function verifyChain(
   const keyAvailable = key !== null;
 
   let foundUnverifiable = false;
+  // v1.4.9 审（F03）：黄态原因标记——原因码与 core/audit-history noteUnverifiable 对齐，
+  // 收口文案按原因分档（签名缺失 / 链接缺失 / 环境漂移），不再无条件断言「非篡改」。
+  const unverifiableNotes: { index: number; reason: string }[] = [];
+  const noteUnverifiable = (index: number, reason: string) => {
+    unverifiableNotes.push({ index, reason });
+  };
 
   // ── 创世条目独立验签（与 history 链一致）──
   const genesisEntry = records[0] as ChainEntry;
@@ -334,8 +343,32 @@ export function verifyChain(
           detail: `${subject}创世条目（索引 0）HMAC 签名不匹配（stable 条目，无环境指纹），疑似内容被篡改`,
         };
       }
+      // 篡改优先：仅 stable 算法 + v2 创世条目记录的 envFingerprint 与当前环境一致时，
+      // HMAC 不匹配只能是内容在签名后被改——与主循环（下方 curr 分支 stable 门控）及
+      // core/audit-history 创世分支（audit-history.ts:430）同判据。非 stable 创世条目
+      // 同证据降为不可复验（黄），不再同证据三处两判（v1.4.9 审 F04）
+      if (genesisEntry.hmacAlgo === 'stable' && genesisUseFingerprint) {
+        const genesisRecordedFingerprint = genesisEntry.envFingerprint;
+        if (
+          typeof genesisRecordedFingerprint === 'string' &&
+          genesisRecordedFingerprint.length > 0 &&
+          genesisRecordedFingerprint === fingerprint
+        ) {
+          return {
+            status: 'tampered',
+            index: 0,
+            detail: `${subject}创世条目（索引 0）HMAC 签名不匹配（环境指纹一致，确为内容被篡改）`,
+          };
+        }
+      }
       foundUnverifiable = true;
+      noteUnverifiable(0, 'genesis-hmac-drift');
     }
+  } else if (genesisEntry && keyAvailable && key) {
+    // 密钥在场但创世条目无签名：签名被剥离（攻击者无需密钥即可剥掉 hmacSig 重写链）
+    // 或 legacy 未签名——无法证明完整性 → 不可复验（黄），不再静默跳过（与 core/audit-history 防签名剥离分支对齐）
+    foundUnverifiable = true;
+    noteUnverifiable(0, 'genesis-signature-stripped');
   }
 
   for (let i = 1; i < records.length; i++) {
@@ -345,25 +378,37 @@ export function verifyChain(
     const currUseFingerprint = curr.hashVersion === 2;
 
     // 1) prevHash 链校验
-    if (curr.prevHash == null || curr.prevHash === 'unknown') continue;
+    // v1.4.9 审（F01 防 prevHash 短路）：原实现对 prevHash 缺失/'unknown' 直接 continue，
+    // 且该 continue 位于 HMAC 验签与防签名剥离分支之前——攻击者篡改条目内容后把
+    // prevHash 改成 'unknown'（甚至连 hmacSig 一并删掉）即可整条免验，verifyChain
+    // 返回 ok（红队三探针复现）。现在：有密钥时链接字段缺失只置黄（原因 no-prevhash），
+    // 本条 HMAC 验签与防剥离分支照常执行（内容被改 + 原签名仍在 → tampered）；无密钥
+    // 部署维持既有 legacy 跳过（LIMITATIONS.md 既有披露，不扩大行为变更面）。分支语义
+    // 与 core/audit-history checkHistoryChainDetailed 的 no-prevhash 分支对齐。
+    if (curr.prevHash == null || curr.prevHash === 'unknown') {
+      if (!(keyAvailable && key)) continue;
+      foundUnverifiable = true;
+      noteUnverifiable(i, 'no-prevhash');
+    } else {
+      const recordForHash = omitHashFields(prev as Record<string, unknown>);
+      const hashInput = currUseFingerprint
+        ? JSON.stringify(recordForHash) + '|' + fingerprint
+        : JSON.stringify(recordForHash);
+      const expectedPrevHash = createHash('sha256').update(hashInput).digest('hex').slice(0, 16);
 
-    const recordForHash = omitHashFields(prev as Record<string, unknown>);
-    const hashInput = currUseFingerprint
-      ? JSON.stringify(recordForHash) + '|' + fingerprint
-      : JSON.stringify(recordForHash);
-    const expectedPrevHash = createHash('sha256').update(hashInput).digest('hex').slice(0, 16);
-
-    if (curr.prevHash !== expectedPrevHash) {
-      if (currUseFingerprint) {
-        foundUnverifiable = true;
-      } else {
-        return {
-          status: 'tampered',
-          index: i,
-          detail: `${subject}条目 ${i} prevHash 不匹配（旧算法，环境无关），疑似内容被篡改`,
-        };
+      if (curr.prevHash !== expectedPrevHash) {
+        if (currUseFingerprint) {
+          foundUnverifiable = true;
+          noteUnverifiable(i, 'v2-prevhash-drift');
+        } else {
+          return {
+            status: 'tampered',
+            index: i,
+            detail: `${subject}条目 ${i} prevHash 不匹配（旧算法，环境无关），疑似内容被篡改`,
+          };
+        }
+        continue;
       }
-      continue;
     }
 
     // 2) HMAC 验签
@@ -382,8 +427,10 @@ export function verifyChain(
                 };
               }
               foundUnverifiable = true;
+              noteUnverifiable(i, 'v2-hmac-fingerprint-drift');
             } else {
               foundUnverifiable = true;
+              noteUnverifiable(i, 'v2-hmac-no-fingerprint');
             }
           } else {
             return {
@@ -394,15 +441,44 @@ export function verifyChain(
           }
         } else {
           foundUnverifiable = true;
+          noteUnverifiable(i, 'legacy-hmac-unreproducible');
         }
       }
+    } else if (keyAvailable && key && !curr.hmacSig) {
+      // 密钥在场但条目无签名：签名被整链剥离伪装 legacy / legacy 未签名条目
+      // ——无法证明完整性 → 不可复验（黄），不再静默放行（与 core/audit-history 防签名剥离分支对齐）
+      foundUnverifiable = true;
+      noteUnverifiable(i, 'signature-stripped');
     }
   }
 
   if (foundUnverifiable) {
+    // v1.4.9 审（F03）：黄态收口文案按置位原因分档——签名缺失（疑似剥离/legacy）、
+    // 链接字段缺失、密钥/指纹漂移三档，原因码枚举与 core/audit-history noteUnverifiable
+    // 对齐。任何档位都不再出现无条件「非篡改」断言（系统无法做出该断言：门口挂警报，
+    // 不进门递定心丸）。
+    const SIG_MISSING_REASONS = ['genesis-signature-stripped', 'signature-stripped'];
+    const LINK_MISSING_REASONS = ['no-prevhash'];
+    const idxByReason = (reasons: readonly string[]) =>
+      unverifiableNotes.filter((n) => reasons.includes(n.reason)).map((n) => n.index);
+    const sigMissing = idxByReason(SIG_MISSING_REASONS);
+    const linkMissing = idxByReason(LINK_MISSING_REASONS);
+    const drift = unverifiableNotes
+      .filter((n) => !SIG_MISSING_REASONS.includes(n.reason) && !LINK_MISSING_REASONS.includes(n.reason))
+      .map((n) => n.index);
+    const segs: string[] = [];
+    if (sigMissing.length > 0) {
+      segs.push(`段内 ${sigMissing.length} 条缺少 HMAC 签名（疑似被剥离或 legacy 未签名条目，索引: ${sigMissing.join(',')}）。该状态不等于确认篡改，也不可视为安全；请运行 sofagent doctor 与 verify 排查密钥与链完整性`);
+    }
+    if (linkMissing.length > 0) {
+      segs.push(`段内 ${linkMissing.length} 条 prevHash 缺失或为 unknown，链链接不可复验（索引: ${linkMissing.join(',')}）；请运行 sofagent doctor 与 verify 排查链完整性`);
+    }
+    if (drift.length > 0) {
+      segs.push(`因 ~/.sofagent-key 或环境指纹漂移无法复验（索引: ${drift.join(',')}），属历史证据不可复验；如近期重装/换机，请核对密钥轮换`);
+    }
     return {
       status: 'unverifiable',
-      detail: `部分${subject}段（v2 含环境指纹条目）因 ~/.sofagent-key 或环境指纹漂移无法复验，属历史证据不可复验，非篡改`,
+      detail: `部分${subject}段无法复验：${segs.join('；')}；原因：${[...new Set(unverifiableNotes.map((n) => n.reason))].join(' / ')}`,
     };
   }
 

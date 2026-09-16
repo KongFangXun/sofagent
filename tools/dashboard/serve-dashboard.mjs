@@ -88,17 +88,21 @@ async function tryRead(filePath) {
  * /api/summary · 复用 bash dashboard 的 jq 聚合口径
  * 与 tools/sofagent-dashboard.sh 的 render_rules / render_sovereignty 同一逻辑
  * ──────────────────────────────── */
+const JQ_CANDIDATES = ['jq', '/opt/homebrew/bin/jq', '/usr/local/bin/jq', '/usr/bin/jq'];
 function runJq(program, input) {
-  try {
-    return execFileSync('/usr/bin/jq', ['-r', '-s', program], {
-      input: input || '',
-      maxBuffer: 64 * 1024 * 1024,
-      timeout: 15000,
-      encoding: 'utf8',
-    }).trim();
-  } catch (e) {
-    return '';
+  for (const jq of JQ_CANDIDATES) {
+    try {
+      return execFileSync(jq, ['-r', '-s', program], {
+        input: input || '',
+        maxBuffer: 64 * 1024 * 1024,
+        timeout: 15000,
+        encoding: 'utf8',
+      }).trim();
+    } catch {
+      // 候选不可用（路径不存在或执行失败）→ 试下一个
+    }
   }
+  return '';
 }
 
 /* 测试记录过滤：fixture 泛化任务名（规则测试的故意违规/故意通过样本）

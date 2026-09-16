@@ -66,7 +66,7 @@ describe('DreamSandbox · 事前模拟 + 人工放行', () => {
 
   it('审批后合并生效 + 沙盒只读（二次 merge 拒绝）', () => {
     sandbox.stage('task-004', [{ path: 'src/app.ts', content: 'const version = 2;\n' }]);
-    const r = sandbox.merge('task-004', { approver: 'kongfangxun' });
+    const r = sandbox.merge('task-004', { approver: 'approver-a' });
     expect(r.merged).toBe(true);
     expect(r.appliedFiles).toBe(1);
     expect(fs.readFileSync(path.join(repoRoot, 'src', 'app.ts'), 'utf-8')).toBe('const version = 2;\n');

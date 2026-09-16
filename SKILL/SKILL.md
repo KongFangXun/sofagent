@@ -1,7 +1,7 @@
 ---
 name: sofagent
 slug: sofagent
-version: 1.4.8
+version: 1.4.9
 displayName: FDE Skill
 description: >
   FDE Skill——帮 FDE（前线部署工程师）更好完成企业 AI 落地的方法论 Skill。约束 Agent 行为、审计每次变更、沉淀经验。
@@ -42,7 +42,7 @@ solves:
 | FDE Skill | 本 skill（方法论 + 约束注入） | ClawHub / SkillHub 分发，`bash install.sh` 装到本地 |
 | 企业底座 | 约束层全套（hooks + 数据 + MCP） | `bash install.sh`（企业设备） |
 | MCP Server | 104 tools 能力面（审计/本体/进化/训练/工作明细/PR 协同/设备注册/设备数据面/连接器/模板/session 承接） | `bash install.sh --platform <平台>` 自动配置，装完即连 |
-| DSH 插件家族 | 10 款 cordis-plugin（9 款原子 + 1 款聚合整装） | `skillhub install cordis-plugin-sofagent-<名>`（整套用裸名 `cordis-plugin-sofagent`），详见 `AGENTS.md` |
+| DSH 插件家族 | 7 款 cordis-plugin（6 款原子 + 1 款聚合整装） | `skillhub install cordis-plugin-sofagent-<名>`（整套用裸名 `cordis-plugin-sofagent`），详见 `AGENTS.md` |
 | CLI | `sofagent` 命令（审计 / 快照 / 部署 / dashboard） | `bash install.sh` 装到 `~/.sofagent/bin/` |
 | Dashboard | Web 驾驶舱（工作明细 / 图谱 / 健康） | `sofagent web` 起本地服务，读 `data/` 运行时数据 |
 
@@ -189,12 +189,12 @@ solves:
 | 本体数据（7） | `create_entity` `validate_ontology` `ontology_import` |
 | 评估优化（8） | `evaluate_output` `run_ab_test` `promote_ab`（强制人审） |
 | FDE 编排（11） | `fde_interview`（访谈结构化）`fde_classify`（三问判定）`fde_quantify`（量化+ROI）`fde_derive`（本体推导）`fde_distill`（三层沉淀）`fde_deploy`（组装部署）`fde_compose` `sofagent_compose` `activate_workflow` `create_agent` |
-| Workflow/Agent（14） | `workflow_submit` `workflow_create` `workflow_node_add`（定时触发）`workflow_diff_preview` `workflow_gaps`（缺口查询）`workflow_export` `workflow_import`（G1 模板导出导入+血缘，v1.4.9）`route_workflow` `agent_identity` |
+| Workflow/Agent（12） | `workflow_submit` `workflow_create` `workflow_node_add`（定时触发）`workflow_diff_preview` `workflow_gaps`（缺口查询）`route_workflow` `agent_identity` |
 | 能力公地（6） | `commons_publish` `commons_search` `commons_invoke` |
 | PR 协同（3） | `pr_submit` `pr_review` `pr_merge`（合并强制 merge_criteria，未过走 HITL） |
-| 后训流水线（15） | `model_register` `model_switch`（灰度）`train_submit` `train_budget`（超预算等人审）`train_doctor`（环境体检）`train_dryrun`（提交前预检）`train_report`（训练报告）`train_status`（进度查询）`train_list`（任务列表）`train_diagnose`（失败诊断）`corpus_export`（训练语料导出三件套）`train_serve`（推理服务启停）`train_compliance`（合规扫描闸门）`train_deliverable`（FDE 交付包） |
+| 后训流水线（16） | `model_register` `model_switch`（灰度）`model_unregister`（模型退役）`train_submit` `train_budget`（超预算等人审）`train_doctor`（环境体检）`train_dryrun`（提交前预检）`train_report`（训练报告）`train_status`（进度查询）`train_list`（任务列表）`train_diagnose`（失败诊断）`corpus_export`（训练语料导出三件套）`train_serve`（推理服务启停）`train_compliance`（合规扫描闸门）`train_deliverable`（FDE 交付包）`train_cloud`（云 VM 执行面） |
 | 验收（2） | `define_acceptance` `check_acceptance` |
-| 运维观测（14） | `health_check` `snapshot_restore`（强制人审）`worklog_query` `cost_query` `device_register` `device_list`（G9 设备注册面，v1.4.9）`device_data_query` `device_data_push`（G10/G11 设备数据面，v1.4.9）`connector_register` `connector_list`（G5b 连接器注册面，v1.4.9）`router_session_push`（T7 过站 session 承接面，v1.4.9 批 5） |
+| 运维观测（16） | `health_check` `snapshot_list` `snapshot_restore`（强制人审）`worklog_query` `cost_query` `daemon_status` `contribution_query` `device_register` `device_list`（G9 设备注册面，v1.4.9）`device_data_query` `device_data_push`（G10/G11 设备数据面，v1.4.9）`connector_register` `connector_list`（G5b 连接器注册面，v1.4.9）`workflow_export` `workflow_import`（G1 模板导出导入+血缘，v1.4.9）`router_session_push`（T7 过站 session 承接面，v1.4.9 批 5） |
 | 浏览器（4） | `playwright_navigate` `playwright_screenshot` |
 
 > 📌 **后训流水线的能力边界**：本仓负责**编排与治理**——任务提交 / 预算门禁 / 环境体检 / 提交前预检 / 失败诊断 / 语料导出 / 合规闸门 / 交付包 / 模型注册与灰度 / 推理服务；**训练本身在外部执行环境进行，本仓不实现训练器**。

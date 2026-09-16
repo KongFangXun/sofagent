@@ -2,7 +2,7 @@
 
 > 🔒 **品牌前缀硬约束**：所有 Agent 向用户展示的审计结果必须保留 `[sofagent]` 前缀，否则视为未审计。铁律全文见 `rules/core-rules.md`（SSOT，随 L1 加载链始终注入）。
 
-> 📂 Sub Agent 定义集中在 [`agents/`](./agents/) 子目录，每个目录含 `SKILL.md`（调用入口）+ `{role}.md`（角色定义）。下表列出 4 个预装 Sub Agent：
+> 📂 Sub Agent 定义集中在 [`agents/`](./agents/) 子目录，每个目录含 `SKILL.md`（单文件承载调用入口 + 角色定义）。下表列出 4 个预装 Sub Agent：
 
 | Sub Agent | 目录 | 职责 |
 |-----------|------|------|
@@ -32,13 +32,13 @@
 | 复制 prompt | 不支持 Skill 的平台 | 把 SKILL.md 内容贴进 system prompt |
 | CLI 直跑 | 任何终端 | `sofagent-orchestrator subagent run fde --task "..."` |
 | DSH 插件通道 | DSH（DeepSeek Harness）用户 | `skillhub install cordis-plugin-sofagent-<名>`（SkillHub 单通道安装 + 发现；每款可独立安装、渐进采用；**一次装全套**用裸名 `skillhub install cordis-plugin-sofagent`） |
-| MCP 自动配置 | workbuddy/claude/cursor/codex | `bash install.sh --platform <平台>` 自动写 MCP 配置（前三者写 mcp.json JSON、codex 写 config.toml `[mcp_servers.sofagent]` 段），装完即连 103 tools |
+| MCP 自动配置 | workbuddy/claude/cursor/codex | `bash install.sh --platform <平台>` 自动写 MCP 配置（前三者写 mcp.json JSON、codex 写 config.toml `[mcp_servers.sofagent]` 段），装完即连 104 tools |
 
 ---
 
 ## DSH 插件家族（7 款 cordis-plugin）
 
-> sofagent 约束能力在 DSH（DeepSeek Harness）生态的插件形态——每款只干一件事，可独立安装、渐进采用。能力完整面 = MCP Server 103 tools（连接 sofagent MCP 后调用）。随主线版本发布，SkillHub 通道检索。
+> sofagent 约束能力在 DSH（DeepSeek Harness）生态的插件形态——每款只干一件事，可独立安装、渐进采用。能力完整面 = MCP Server 104 tools（连接 sofagent MCP 后调用）。随主线版本发布，SkillHub 通道检索。
 
 | 插件 | 职责（桥接实况） | seam |
 |------|----------------|------|
@@ -210,7 +210,7 @@ FORGE engineer commit ──→ 自动调用 @sofagent-audit → 验证变更合
 | `commons_retire` | 能力退役/恢复（强制 owner 确认） |
 | `commons_harvest_rule` | 从调用日志 + Refine 循环提炼质量规则候选 |
 
-### 后训流水线（15）
+### 后训流水线（16）
 
 > 📌 **能力边界**：本仓负责后训流水线的**编排与治理**（任务提交 / 预算门禁 / 环境体检 / 提交前预检 / 失败诊断 / 语料导出 / 合规闸门 / 交付包 / 模型注册与灰度 / 推理服务）；**训练本身在外部执行环境进行，本仓不实现训练器**。
 
@@ -222,7 +222,7 @@ FORGE engineer commit ──→ 自动调用 @sofagent-audit → 验证变更合
 | `train_budget` | 训练预算控制（超预算人审续跑或终止） |
 | `train_submit` | 训练任务提交，数据+基座+算法+超参+预算→trainJobId |
 | `train_doctor` | 训练环境体检——CUDA/显存/框架/基座缓存四项报告 |
-| `corpus_export` | 训练语料导出三件套——规则（27 编号位 + reward_hint）+ 方法论锚点 + 五源样本（脱敏），带 HMAC 签名 |
+| `corpus_export` | 训练语料导出三件套——规则（27 编号位 + reward_hint）+ 方法论锚点 + 六源样本（脱敏），带 HMAC 签名 |
 | `train_dryrun` | 训练 dry-run 预检——管线连通+显存估算+数据抽样+算力外推 |
 | `train_report` | 训练报告生成——数据/超参/曲线/eval 对比/量化四字段，归档可追溯 |
 | `train_status` | 训练进度查询——status/step/loss/reward 曲线/断点/用量快照（长任务轮询） |
@@ -240,7 +240,7 @@ FORGE engineer commit ──→ 自动调用 @sofagent-audit → 验证变更合
 | `define_acceptance` | 任务附机器可判定验收条件（test/build/grep-absent/schema） |
 | `check_acceptance` | 跑登记的条件，返回结构化结果 |
 
-### 运维观测（10）
+### 运维观测（16）
 
 | 工具 | 说明 |
 |------|------|

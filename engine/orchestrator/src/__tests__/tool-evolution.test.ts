@@ -82,7 +82,7 @@ describe('L4 工具层自进化（第七章三：候选→扫描→人审→注�
 
     // 二、人审（pending→approved 两态）
     const review = reviewToolCandidate(
-      { candidateId: nom.candidateId!, reviewer: 'kongfangxun', verdict: 'approved', comment: '高频低险，收编' },
+      { candidateId: nom.candidateId!, reviewer: 'reviewer-a', verdict: 'approved', comment: '高频低险，收编' },
       dataDir,
     );
     expect(review.ok).toBe(true);
@@ -107,7 +107,7 @@ describe('L4 工具层自进化（第七章三：候选→扫描→人审→注�
     const ledger = listToolEvolutionLedger(dataDir);
     const entry = ledger.find((e) => e.candidateId === nom.candidateId);
     expect(entry?.status).toBe('registered');
-    expect(entry?.review?.reviewer).toBe('kongfangxun');
+    expect(entry?.review?.reviewer).toBe('reviewer-a');
     expect(entry?.registration?.generatorExport).toBe('default');
   });
 
@@ -123,7 +123,7 @@ describe('L4 工具层自进化（第七章三：候选→扫描→人审→注�
 
     // 被拒候选终态：不可人审、不可注册
     const review = reviewToolCandidate(
-      { candidateId: nom.candidateId!, reviewer: 'kongfangxun', verdict: 'approved' },
+      { candidateId: nom.candidateId!, reviewer: 'reviewer-a', verdict: 'approved' },
       dataDir,
     );
     expect(review.ok).toBe(false);
@@ -154,7 +154,7 @@ describe('L4 工具层自进化（第七章三：候选→扫描→人审→注�
       dataDir,
     );
     const review = reviewToolCandidate(
-      { candidateId: nom.candidateId!, reviewer: 'kongfangxun', verdict: 'rejected', comment: '风险大，退回' },
+      { candidateId: nom.candidateId!, reviewer: 'reviewer-a', verdict: 'rejected', comment: '风险大，退回' },
       dataDir,
     );
     expect(review.ok).toBe(true);
