@@ -210,6 +210,12 @@ OpenAI 2026-09-10 把驱动 Codex 的 Harness 通过 [Agents API](https://openai
 
 > 📖 来源：[Introducing the Agents API](https://openai.com/index/introducing-the-agents-api/)（openai.com，2026-09-10 · 官方博客 · A 级源）+ 得到大脑视频解读（2026-09-15，第三方表述框架）
 
+### Anthropic 产品真相收敛：运行的生产代码是产品最可靠的事实来源
+
+Anthropic 设计负责人 Joel 分享的产品方法论判断：产品文档会过期、设计稿会过期、在线文档会过期——**真正运行的生产代码里存着此刻真实的功能规则、设计系统和产品逻辑**，因此产品、设计、研发的边界会围绕真实运行的系统重新组织。对 sofagent 的印证价值：审计模块「不看 Agent 说什么，看 git diff 留下什么」正是这一判断的治理面工程化——把「产品真相」锚定在运行系统的一手输出而非任何转述层，与 PHILOSOPHY 证据链（一手信息优先、二手声明不进证据链）同源。附带印证：AI 时代「生产能力不再稀缺、选择能力开始变贵」（供给暴涨而需求注意力不变，价值落差靠判断去填）——与「判断力上移」（执行可外包、判断不可外包）及 90/10 价值分层同构，不另立命题。
+
+> 📖 来源：Anthropic 产品设计负责人 Joel 访谈（得到大脑解读，2026-09-14，第三方表述框架——一手访谈出处未核验，按单源第三方对待）
+
 ### Codex Guardian 模块：审查结论的失效语义（2026-09-16 源码核验）
 
 codex-rs 深处有个此前未研究过的 [guardian/](https://github.com/openai/codex/tree/main/codex-rs/core/src/guardian) 模块（约 340KB，测试过半）——「宿主审批决策 + 隔离的同步审查者」。模块文档一句设计哲学值得引用：*"The extension chooses policy and evidence; core enforces permissions and mandatory review requirements"*（扩展选策略与证据，核心强制权限与强制审查——与 sofagent「插件定义规则、引擎统一执行」同构）。
