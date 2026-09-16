@@ -2301,7 +2301,10 @@ function parseAcceptanceScenarios() {
   // v1.4.0 修复（run-22 coverage P1-1 误报根因）：场景**内容字符串**里可能出现
   // 「...A19 scenario 48...」字样（echo 文案）——旧正则无行首锚定会误匹配为场景声明
   // （S48 title='>'）。要求 scenario 前是行首/换行（(^|\n)\s*）。
-  const re = /(^|\n)\s*scenario\s+(\d+[a-z]?)\s*(?:\([^)]*\))?\s*"([^"]{0,120})/g;
+  // 标题上限 400：v1.4.9 修复批起场景壳标题承载断言面清单（S419 达 376 字符），
+  // 120 上限会把「tool 入口 happy-path」段静默截断——coverage 按 precheck 标题
+  // 对账时判后段无锚点，产出「零覆盖」假红（run-04 P1-2 实锤）。
+  const re = /(^|\n)\s*scenario\s+(\d+[a-z]?)\s*(?:\([^)]*\))?\s*"([^"]{0,400})/g;
   let m;
   while ((m = re.exec(src)) !== null) {
     const title = m[3].trim();
