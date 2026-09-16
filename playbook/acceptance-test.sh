@@ -4373,12 +4373,12 @@ $S416_OK && pass "v1.4.9 第八章 敏感识别：插槽四方法 + tierOf 三�
 # 手法对齐 S413-S416 先例（dist 直调 + 返回形态与判定断言）。
 
 # ─── v1.4.9 阶段五 P0-3 补测（S418-S424）：断言本体已抽入 acceptance-node-probes.js（行数警戒线收敛批）───
-scenario 418 "v1.4.9 第二章 G10 设备侧数据面授权读取——device_data_query fail-closed 链路（参数缺失拒 + 未注册拒 + 白名单外拒，dist 直调 HOME 隔离）"; S418_OK=true
+scenario 418 "v1.4.9 第二章 G10 设备侧数据面授权读取——device_data_query fail-closed 链路（参数缺失拒 + 未注册拒 + 白名单外拒）+ 白名单内放行侧（真实身份注册→声明→读取成功/内容一致/审计留痕，run-03 C-P1-1 扩，dist 直调 HOME 隔离）"; S418_OK=true
 S418_OUT=$(PROJECT_ROOT="$PROJECT_ROOT" node "$SCRIPT_DIR/acceptance-node-probes.js" s418 2>&1) || true
 echo "$S418_OUT" | grep -q "^OK" || { echo "  ✗ S418: $S418_OUT"; S418_OK=false; }
 $S418_OK && pass "v1.4.9 G10 数据面授权读取：参数缺失/未注册/门禁 fail-closed 三拒 + [sofagent] 前缀结构化返回" || fail "G10 授权读取面回潮——见上方 ✗ 行"
 
-scenario 419 "v1.4.9 第三章 G11 数据上行通道——device_data_push 采集声明 fail-closed（参数缺失拒 + 未注册拒 + isError 形态，dist 直调 HOME 隔离）"; S419_OK=true
+scenario 419 "v1.4.9 第三章 G11 数据上行通道——device_data_push 采集声明 fail-closed（参数缺失拒 + 未注册拒 + isError 形态）+ WAL 加密暂存（明文不落盘/解密回读/游标续传/无密钥拒，run-02 扩）+ tool 入口 happy-path（声明 opt-in 放行入队/声明外拒/目的地不符拒/审计计量 evidence 落盘，run-03 C-P0-1 扩，dist 直调 HOME 隔离）"; S419_OK=true
 S419_OUT=$(PROJECT_ROOT="$PROJECT_ROOT" node "$SCRIPT_DIR/acceptance-node-probes.js" s419 2>&1) || true
 echo "$S419_OUT" | grep -q "^OK" || { echo "  ✗ S419: $S419_OUT"; S419_OK=false; }
 $S419_OK && pass "v1.4.9 G11 数据上行通道：参数缺失/未注册 fail-closed 两拒 + isError 结构化形态" || fail "G11 上行通道回潮——见上方 ✗ 行"
@@ -4403,7 +4403,7 @@ S423_OUT=$(PROJECT_ROOT="$PROJECT_ROOT" node "$SCRIPT_DIR/acceptance-node-probes
 echo "$S423_OUT" | grep -q "^OK" || { echo "  ✗ S423: $S423_OUT"; S423_OK=false; }
 $S423_OK && pass "v1.4.9 权重灰度 AB：确定性分流 + 0/100 端点 + 劣化判定附原因 + 无劣化对照" || fail "灰度 AB 面回潮——见上方 ✗ 行"
 
-scenario 424 "v1.4.9 第十章 模型清单上报——scanRegistryModels 注册表扫描/retired 过滤/降级原因 + 心跳 availableModels 捎带（dist 直调 HOME 隔离）"; S424_OK=true
+scenario 424 "v1.4.9 第十章 模型清单上报 + 执行时 skill 快照——scanRegistryModels 注册表扫描/retired 过滤/降级原因 + 心跳 availableModels 捎带 + snapshotSkills 快照清单/manifest 一致/篡改可辨/清理幂等不误删/空 root 诚实空清单（run-02 扩，dist 直调 HOME 隔离）"; S424_OK=true
 S424_OUT=$(PROJECT_ROOT="$PROJECT_ROOT" node "$SCRIPT_DIR/acceptance-node-probes.js" s424 2>&1) || true
 echo "$S424_OUT" | grep -q "^OK" || { echo "  ✗ S424: $S424_OUT"; S424_OK=false; }
 $S424_OK && pass "v1.4.9 模型清单上报：retired 过滤 + 降级原因 + 心跳 availableModels 捎带联动" || fail "清单上报面回潮——见上方 ✗ 行"

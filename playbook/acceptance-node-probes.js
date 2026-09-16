@@ -457,6 +457,7 @@ async function s416() {
 }
 
 // S418 · 第二章 G10 授权读取——参数缺失拒 + 未注册拒 + [sofagent] 前缀
+// （run-03 C-P1-1 扩：白名单内放行侧——真实身份注册 + 声明 + 读取成功 + 内容一致 + 审计留痕）
 async function s418() {
   const q = require(process.env.PROJECT_ROOT + '/engine/mcp/dist/tools/device-data-query.js'); const bad = [];
   let r = await q.deviceDataQuery({ identity: null, path: '/tmp/x' });
@@ -465,6 +466,28 @@ async function s418() {
   r = await q.deviceDataQuery({ identity: { agentId: 'ghost-dev', publicKey: 'x' }, path: '/tmp/x' });
   if (r.data.ok !== false) bad.push('未注册设备未拒');
   if (!['not-registered', 'invalid-identity', 'daemon-unavailable', 'revoked'].includes(r.data.reason)) bad.push('拒绝 reason 异常:' + r.data.reason);
+
+  // ── 放行侧全链（run-03 C-P1-1 补——白名单匹配只测过「能拒」没测过「能放」）──
+  // 身份注册 → 白名单声明 → 白名单内读取成功（内容一致 + 脱敏面在位 + 审计留痕）→ 白名单外拒
+  const { fs, path, home, dataDir } = _s41x_init('s418');
+  const core = require(process.env.PROJECT_ROOT + '/engine/core/dist/index.js');
+  const identity = _s41x_identity('s418-hp-dev');
+  const dr = require(process.env.PROJECT_ROOT + '/engine/daemon/dist/device-registry.js');
+  const reg = dr.registerDevice(identity, { kind: 'node' }, dataDir);
+  if (!reg.ok) bad.push('放行侧注册失败:' + reg.reason);
+  const shareDir = path.join(home, 'share');
+  fs.mkdirSync(shareDir, { recursive: true });
+  core.saveDeviceDataPolicy({ version: 1, deviceId: identity.agentId, allowedDirs: [shareDir] }, dataDir);
+  fs.writeFileSync(path.join(shareDir, 'report.txt'), 'server ok load=0.42');
+  // 密钥就位（emitDecision HMAC 面——审计留痕断言的前置）
+  fs.writeFileSync(path.join(home, '.sofagent-key'), 's418-hp-hmac-key');
+  process.env.SOFAGENT_KEY_PATH = path.join(home, '.sofagent-key');
+  const hit = await q.deviceDataQuery({ identity, path: path.join(shareDir, 'report.txt') });
+  if (hit.data.ok !== true) bad.push('白名单内读取未放行:' + hit.data.reason);
+  if (hit.data.content !== 'server ok load=0.42') bad.push('读取内容不一致:' + JSON.stringify(hit.data.content));
+  if (hit.data.auditLogged !== true) bad.push('放行读取未留审计痕');
+  const miss = await q.deviceDataQuery({ identity, path: shareDir + '-secret/x.txt' });
+  if (miss.data.ok !== false || miss.data.reason !== 'path-not-allowed') bad.push('白名单外未拒（边界字符防绕过失效）');
   _s41x_done(bad, 'S418');
 }
 
@@ -515,6 +538,45 @@ async function s419() {
   const nk = uwNoKey.enqueueUpload('s419-dev', 'metrics', 'x', { dataDir: path.join(nkHome, 'data') });
   if (nk.ok !== false || nk.reason !== 'no-aes-key') bad.push('无密钥未拒:' + JSON.stringify(nk));
   process.env.SOFAGENT_KEY_PATH = savedKey;
+
+  // ── tool 入口 happy-path 全链（run-03 C-P0-1 真实缺口补——此前只测 WAL 面直调，未测 MCP tool 入口串联）──
+  // 声明 opt-in → deviceDataPush 放行入队 → 声明外/目的地不符双拒 → 审计计量留痕（decision-log evidence 六元组）
+  // 注意：tool 层 dataDir 走 getDataDir(undefined) → SOFAGENT_DATA 环境变量（须在 require core 前就位）
+  const hpHome = fs.mkdtempSync(path.join(require('os').tmpdir(), 's419-hp-'));
+  const hpDataDir = path.join(hpHome, 'data');
+  process.env.SOFAGENT_DATA = hpDataDir;
+  process.env.SOFAGENT_KEY_PATH = path.join(hpHome, '.sofagent-key');
+  fs.writeFileSync(process.env.SOFAGENT_KEY_PATH, 's419-hp-hmac-key');
+  // 刷新模块级缓存：dataDir/密钥常量在 require 时固化（与上面无密钥面同手法）
+  for (const mod of ['engine/core/dist/index.js', 'engine/daemon/dist/device-registry.js', 'engine/daemon/dist/upload-wal.js', 'engine/audit/dist/index.js']) {
+    const abs = path.join(process.env.PROJECT_ROOT, mod);
+    if (require.cache[require.resolve(abs)]) delete require.cache[require.resolve(abs)];
+  }
+  const hpCore = require(process.env.PROJECT_ROOT + '/engine/core/dist/index.js');
+  const hpIdentity = _s41x_identity('s419-tool-dev');
+  const hpDr = require(process.env.PROJECT_ROOT + '/engine/daemon/dist/device-registry.js');
+  if (!hpDr.registerDevice(hpIdentity, { kind: 'node' }, hpDataDir).ok) bad.push('tool 链注册失败');
+  hpCore.saveDeviceUploadPolicy({ version: 1, deviceId: hpIdentity.agentId, declarations: [{ category: 'metrics', frequency: '@daily', destination: 'platform-a' }] }, hpDataDir);
+  const push = require(process.env.PROJECT_ROOT + '/engine/mcp/dist/tools/device-data-push.js');
+  const ok1 = await push.deviceDataPush({ identity: hpIdentity, category: 'metrics', payload: '{"cpu":0.42}' });
+  if (ok1.data.ok !== true || ok1.data.delivery !== 'queued' || ok1.data.isError !== false) bad.push('声明内上行未入队:' + JSON.stringify(ok1.data));
+  if (ok1.data.auditLogged !== true) bad.push('上行未留审计计量痕');
+  const rej1 = await push.deviceDataPush({ identity: hpIdentity, category: 'screenshots', payload: 'x' });
+  if (rej1.data.ok !== false || rej1.data.reason !== 'category-not-declared') bad.push('声明外类别未拒:' + rej1.data.reason);
+  const rej2 = await push.deviceDataPush({ identity: hpIdentity, category: 'metrics', payload: 'x', destination: 'platform-b' });
+  if (rej2.data.ok !== false || rej2.data.reason !== 'destination-mismatch') bad.push('目的地不符未拒:' + rej2.data.reason);
+  // 审计计量断言：decision-log 落盘且 evidence 含 seq/delivery（数据量/次数经 evidence 进计量视野）
+  const hpUw = require(process.env.PROJECT_ROOT + '/engine/daemon/dist/upload-wal.js');
+  const hpWalRaw = fs.readFileSync(hpUw.uploadWalPath(hpDataDir), 'utf-8');
+  if (hpWalRaw.includes('0.42')) bad.push('tool 链明文泄漏进 WAL');
+  const logPath = path.join(hpDataDir, 'audit', 'decision-log.jsonl');
+  if (!fs.existsSync(logPath)) bad.push('decision-log 未落盘');
+  else {
+    const last = JSON.parse(fs.readFileSync(logPath, 'utf-8').trim().split('\n').pop());
+    const ev = Array.isArray(last.evidence) ? last.evidence.map((x) => String(x)) : [];
+    if (!ev.some((x) => x.includes('seq=' + ok1.data.seq))) bad.push('审计 evidence 缺 seq:' + JSON.stringify(last.evidence));
+    if (!ev.some((x) => x.includes('delivery=queued'))) bad.push('审计 evidence 缺 delivery');
+  }
   _s41x_done(bad, 'S419');
 }
 

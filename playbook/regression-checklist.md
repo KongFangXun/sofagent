@@ -1355,19 +1355,18 @@ grep -q "4b825dc642cb6eb9a060e54bf8d69288fbee4904" "$PROJECT_ROOT/engine/audit/s
 **背景**：阶段八内容增强（FDE 方法论/职业道德/评估体系）导致 B 层（开发者参考）行数从 8302→8437，超 LIMIT_B=8400，CI pr-check 失败。发版过程中才发现——本地 check-docs.sh 在 WorkBuddy 环境下超时跑不完，CI 上才暴露。
 
 ```bash
-# CI 模拟：只跑 B 层行数检查（不跑锚点段避免超时） 修复：LIMIT_B 解析只抓「等号后第一个数字」——旧写法会把注释里的版本号/行数全抓出， 多片段含换行致 integer expression expected（实测误报）。head -1 不管用（按行不按片段）。
+# CI 模拟：只跑 B 层行数检查。LIMIT_B 解析只抓「等号后第一个数字」（旧写法会把注释里版本号全抓出）——多片段换行致 integer expression expected。
 LIMIT_VAL=$(grep -oE '^LIMIT_B=[0-9]+' tools/check/check-docs.sh | head -1 | cut -d= -f2 || true)
 LIMIT_VAL=${LIMIT_VAL:-0}
 AB=$(cat docs/ARCHITECTURE.md docs/DEVELOPMENT.md docs/HANDBOOK.md docs/PHILOSOPHY.md docs/WIKI.md SECURITY.md docs/VALIDATION.md docs/THANKS.md docs/ROADMAP.md docs/LIMITATIONS.md FDE/GUIDE.md FDE/README.md 2>/dev/null | wc -l)
-echo "B 层: $AB 行（LIMIT_B=$LIMIT_VAL）"
-[ "$AB" -le "$LIMIT_VAL" ] && echo "✅" || echo "⚠️ 超标——内容增强后需上调 LIMIT_B"
-**子项（归并自原 #109 · check-docs 锚点扫描环境降级）**：check-docs 锚点扫描环境降级——WorkBuddy shim 超时
+echo "B 层: $AB 行 / LIMIT_B=$LIMIT_VAL"
+[ "$AB" -le "$LIMIT_VAL" ] && echo "✅ 101-B-pass" || echo "❌ 101-B-fail-超标"
+```
 
-**背景**：check-docs.sh 第 11 项（bash 逐行嵌套循环锚点扫描）在 WorkBuddy 环境被 shim 拖慢必然超时，pre-push 因此失败——但它与 tools/check/check-anchors.mjs（node 版，pre-push 第 4 步独立跑）功能重复。已加 SKIP_ANCHOR_SCAN=1 降级。本维度守护降级开关不被误删 + CI 仍跑完整版。
+**子项（归并自原 #109）**：check-docs 锚点扫描在 WorkBuddy 被 shim 拖慢必超时——已加 SKIP_ANCHOR_SCAN=1 降级（与 node 版 check-anchors.mjs 功能重复）；本维度守护降级开关不被误删。
 
 ```bash
-grep -q "SKIP_ANCHOR_SCAN" tools/check/check-docs.sh || echo "⚠️ 降级开关丢失——WorkBuddy 下 pre-push 必失败"
-# 本地 WorkBuddy 环境跑 pre-push 应带降级变量
+grep -q "SKIP_ANCHOR_SCAN" tools/check/check-docs.sh && echo "✅ 101-anchor-降级开关在位" || echo "❌ 101-anchor-降级开关丢失——WorkBuddy 下 pre-push 必失败"
 ```
 
 ## 输出报告格式
@@ -1384,8 +1383,6 @@ grep -q "SKIP_ANCHOR_SCAN" tools/check/check-docs.sh || echo "⚠️ 降级开�
 > **路径迁移感知**：`.sofagent/` 已迁移到 `~/.sofagent/`，数据子目录从 `.sofagent/audit` 变为 `~/.sofagent/data/audit`。检查路径权限时认准 `~/.sofagent/`。
 
 ### 分组：环境敏感与后期维度（#59 起，上面铁律适用于本组所有维度）
-
-```
 
 #### 102. 市场五环完整性——10 模块 + 6 MCP tool + inspector 双注册
 
