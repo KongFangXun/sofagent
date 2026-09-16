@@ -76,7 +76,7 @@ NC='\033[0m'
 # 从 vitest 输出中抽「失败定位行」：文件/用例名（FAIL 行、× 行）、断言原因（→ 行）。
 # 输入=原始输出（可含 ANSI）；输出=至多 20 行；无命中时输出空（不报错）。
 extract_fail_locs() {
-  sed $'s/\033\[[0-9;]*m//g' \
+  LC_ALL=C sed $'s/\033\[[0-9;]*m//g' \
     | grep -E '^[[:space:]]*(FAIL|[×✗✕])[[:space:]]|^[[:space:]]*→ |AssertionError' \
     | head -20 \
     || true
@@ -182,7 +182,7 @@ while IFS= read -r pkg_dir; do
   # 取该包最后的 Tests 汇总行（vitest 每包仅一行 Tests 汇总，无跨包 grand-total）
   # v1.2.3 修复：CI 环境（GitHub Actions）vitest 即使在非 TTY 下也输出 ANSI 颜色码，
   # 行首 \033[2m 导致 ^\s*Tests 永远不匹配。先 strip ANSI 再 grep。
-  line=$(echo "$out" | sed $'s/\033\[[0-9;]*m//g' | grep -E '^[[:space:]]*Tests[[:space:]]+' | tail -1) || true
+  line=$(echo "$out" | LC_ALL=C sed $'s/\033\[[0-9;]*m//g' | grep -E '^[[:space:]]*Tests[[:space:]]+' | tail -1) || true
   if [ -z "$line" ]; then
     # 无 Tests 汇总行：区分「真无测试（退出码 0 = 正常跳过）」与「崩溃/编译失败
     # （退出码非 0 = 真失败）」。后者复跑一次排除 flaky；复跑仍非零 → 报红。
@@ -205,6 +205,19 @@ while IFS= read -r pkg_dir; do
       PKG_COUNT=$((PKG_COUNT + 1))
       continue
     fi
+    # v1.4.9 阶段三：退出码 0 但**有输出却提不出汇总** = 解析失败（真事故）——
+    # 此前按「无 Tests 输出（跳过）」静默不计入 ⇒ 整包测试数凭空蒸发，门禁只报「文档数字漂移」
+    # （实锤：acceptance 场景 165 报「README 缺测试数 3604」= 4805 − audit 1201；根因是 ANSI
+    #  剥离链在本机 locale 下遇多字节日志报 illegal byte sequence、输出为空，已改 LC_ALL=C）。
+    # 判据：有输出 = 解析链失灵（红，附原文首行供定位）；无输出 = 真·无测试（跳过）。
+    if [ -n "$(echo "$out" | LC_ALL=C tr -d '[:space:]')" ]; then
+      echo -e "  ${RED}✗${NC} ${pkg_name}: 退出码 0 但有输出未提取到 Tests 汇总（解析失败，计数不可信）"
+      echo "$out" | head -3 | sed 's/^/        /'
+      TOTAL_FAILED=$((TOTAL_FAILED + 1))
+      FAILED_PKGS=$((FAILED_PKGS + 1))
+      PKG_COUNT=$((PKG_COUNT + 1))
+      continue
+    fi
     [ "$QUIET" = false ] && echo -e "  ${YELLOW}⚠${NC} ${pkg_name}: 无 Tests 输出（跳过）"
     continue
   fi
@@ -215,7 +228,7 @@ while IFS= read -r pkg_dir; do
   # 兜底：任一解析失败（格式变化/无该行/带 failed|skipped 段）只跳过校验不判死
   # （防御失效优于门禁误杀；带 failed 的真失败走下方 flaky 复跑/FAIL 分支，不在此拦截）。
   # 用例级漂移（文件数同步缩水）由 check-test-count.sh 的 SSOT 对账兜底，两层互补。
-  files_line=$(echo "$out" | sed $'s/\033\[[0-9;]*m//g' | grep -E '^[[:space:]]*Test Files[[:space:]]+' | tail -1)
+  files_line=$(echo "$out" | LC_ALL=C sed $'s/\033\[[0-9;]*m//g' | grep -E '^[[:space:]]*Test Files[[:space:]]+' | tail -1)
   files_done=$(echo "$files_line" | grep -oE '[0-9]+ passed' | grep -oE '[0-9]+' || echo "")
   files_total=$(echo "$files_line" | grep -oE '\([0-9]+\)' | tr -d '()' || echo "")
   if [ -n "$files_done" ] && [ -n "$files_total" ] && echo "$files_line" | grep -qE '^[[:space:]]*Test Files[[:space:]]+[0-9]+ passed \([0-9]+\)\s*$'; then
@@ -239,7 +252,7 @@ while IFS= read -r pkg_dir; do
     retry_code=$?
     retry_out=$(cat "$tmp_retry" 2>/dev/null) || true
     rm -f "$tmp_retry"
-    retry_line=$(echo "$retry_out" | sed $'s/\033\[[0-9;]*m//g' | grep -E '^[[:space:]]*Tests[[:space:]]+' | tail -1) || true
+    retry_line=$(echo "$retry_out" | LC_ALL=C sed $'s/\033\[[0-9;]*m//g' | grep -E '^[[:space:]]*Tests[[:space:]]+' | tail -1) || true
     RETRY_PASSED=$(echo "$retry_line" | grep -oE '[0-9]+[[:space:]]+passed' | grep -oE '[0-9]+' || echo "0")
     RETRY_FAILED=$(echo "$retry_line" | grep -oE '[0-9]+[[:space:]]+failed' | grep -oE '[0-9]+' || echo "0")
     RETRY_TOTAL=$(echo "$retry_line" | grep -oE '\([0-9]+\)' | grep -oE '[0-9]+' || echo "0")

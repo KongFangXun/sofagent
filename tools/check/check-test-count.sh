@@ -232,14 +232,14 @@ if [ "$TC_RC" -ne 0 ]; then
   exit 1
 fi
 # 主路径：机器可读行 TOTAL_TESTS=NNN（strip ANSI 后 grep，最鲁棒）
-TOTAL_TESTS=$(echo "$TC_OUT" | sed $'s/\033\[[0-9;]*m//g' | grep -oE 'TOTAL_TESTS=[0-9]+' | grep -oE '[0-9]+' || echo "0")
+TOTAL_TESTS=$(echo "$TC_OUT" | LC_ALL=C sed $'s/\033\[[0-9;]*m//g' | grep -oE 'TOTAL_TESTS=[0-9]+' | grep -oE '[0-9]+' || echo "0")
 # 回退 1：quiet 模式（同样有机器可读行）
 if [ -z "$TOTAL_TESTS" ] || [ "$TOTAL_TESTS" = "0" ]; then
-  TOTAL_TESTS=$(bash tools/check/test-count.sh --quiet 2>/dev/null | sed $'s/\033\[[0-9;]*m//g' | grep -oE 'TOTAL_TESTS=[0-9]+' | grep -oE '[0-9]+' || echo "0")
+  TOTAL_TESTS=$(bash tools/check/test-count.sh --quiet 2>/dev/null | LC_ALL=C sed $'s/\033\[[0-9;]*m//g' | grep -oE 'TOTAL_TESTS=[0-9]+' | grep -oE '[0-9]+' || echo "0")
 fi
 # 回退 2：非 quiet 的「总计: NNN tests」人读行（strip ANSI 后再匹配）
 if [ -z "$TOTAL_TESTS" ] || [ "$TOTAL_TESTS" = "0" ]; then
-  TOTAL_TESTS=$(echo "$TC_OUT" | sed $'s/\033\[[0-9;]*m//g' | grep -oE '总计: [0-9]+ tests' | grep -oE '[0-9]+' || echo "0")
+  TOTAL_TESTS=$(echo "$TC_OUT" | LC_ALL=C sed $'s/\033\[[0-9;]*m//g' | grep -oE '总计: [0-9]+ tests' | grep -oE '[0-9]+' || echo "0")
 fi
 
 if [ -z "$TOTAL_TESTS" ] || [ "$TOTAL_TESTS" = "0" ]; then
@@ -249,7 +249,7 @@ if [ -z "$TOTAL_TESTS" ] || [ "$TOTAL_TESTS" = "0" ]; then
 fi
 
 # P0-13: 实际包数（有 test script 的 workspace 包，SSOT 口径 "12 包"）——机器可读行 PKGS=NNN
-PKG_COUNT=$(echo "$TC_OUT" | sed $'s/\033\[[0-9;]*m//g' | grep -oE 'PKGS=[0-9]+' | grep -oE '[0-9]+' | head -1 || echo "0")
+PKG_COUNT=$(echo "$TC_OUT" | LC_ALL=C sed $'s/\033\[[0-9;]*m//g' | grep -oE 'PKGS=[0-9]+' | grep -oE '[0-9]+' | head -1 || echo "0")
 [ -z "$PKG_COUNT" ] && PKG_COUNT=0
 
 # B13: 模块包数（README 声称「13 模块包」对账用）
@@ -289,7 +289,7 @@ PLUGIN_TOTAL=$(( DSH_PLUGIN_COUNT + OPENCLAW_PLUGIN_COUNT ))
 # audit 包单独数（从 test-count.sh 全量输出的逐包明细行提取，格式「✓ audit: 498 passed (498 tests)」）。
 # v1.2.3 修复：不再单独跑 engine/audit && npm test —— 该路径的 vitest 输出同样带 ANSI 码，
 # 在 CI 非 TTY 下 grep '^\s*Tests\s+' 恒失败。复用 TC_OUT 的明细行，strip ANSI 后提取。
-AUDIT_TESTS=$(echo "$TC_OUT" | sed $'s/\033\[[0-9;]*m//g' | grep -E 'audit:.*passed' | grep -oE '\([0-9]+ tests\)' | grep -oE '[0-9]+' | head -1 || echo "0")
+AUDIT_TESTS=$(echo "$TC_OUT" | LC_ALL=C sed $'s/\033\[[0-9;]*m//g' | grep -E 'audit:.*passed' | grep -oE '\([0-9]+ tests\)' | grep -oE '[0-9]+' | head -1 || echo "0")
 [ -z "$AUDIT_TESTS" ] && AUDIT_TESTS=0
 
 if [ "$QUIET" = false ]; then
@@ -778,7 +778,7 @@ if [ -n "$DEV_ORCH_LINE" ]; then
   # v1.4.9 G-13：补 `head -1`（同形态硬化）
   DEV_ORCH_CLAIMED=$(echo "$DEV_ORCH_LINE" | grep -oE '包（[0-9]+ 测试' | head -1 | grep -oE '[0-9]+')
   DEV_ORCH_LINENO=$(echo "$DEV_ORCH_LINE" | cut -d: -f1)
-  DEV_ORCH_ACTUAL=$(echo "$TC_OUT" | sed $'s/\033\[[0-9;]*m//g' | grep "orchestrator:.*passed" | grep -oE '[0-9]+ passed' | grep -oE '[0-9]+' | head -1)
+  DEV_ORCH_ACTUAL=$(echo "$TC_OUT" | LC_ALL=C sed $'s/\033\[[0-9;]*m//g' | grep "orchestrator:.*passed" | grep -oE '[0-9]+ passed' | grep -oE '[0-9]+' | head -1)
   [ -z "$DEV_ORCH_ACTUAL" ] && DEV_ORCH_ACTUAL=0
   if [ "$QUIET" = false ]; then
     echo -e "  校验 DEVELOPMENT.md orchestrator（行 ${DEV_ORCH_LINENO}）..."

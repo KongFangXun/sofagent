@@ -1045,9 +1045,9 @@ render_frame() {
     strip1="$(mktemp -t sofagent-dash-s1.XXXXXX)"
     strip2="$(mktemp -t sofagent-dash-s2.XXXXXX)"
     strip3="$(mktemp -t sofagent-dash-s3.XXXXXX)"
-    sed $'s/\033\[[0-9;]*m//g' "$f1" | cut -c1-"$COL_W" > "$strip1"
-    sed $'s/\033\[[0-9;]*m//g' "$f2" | cut -c1-"$COL_W" > "$strip2"
-    sed $'s/\033\[[0-9;]*m//g' "$f3" | cut -c1-"$COL_W" > "$strip3"
+    LC_ALL=C sed $'s/\033\[[0-9;]*m//g' "$f1" | cut -c1-"$COL_W" > "$strip1"
+    LC_ALL=C sed $'s/\033\[[0-9;]*m//g' "$f2" | cut -c1-"$COL_W" > "$strip2"
+    LC_ALL=C sed $'s/\033\[[0-9;]*m//g' "$f3" | cut -c1-"$COL_W" > "$strip3"
     paste "$strip1" "$strip2" "$strip3" | while IFS=$'\t' read -r c1 c2 c3; do
       if [ "$WATCH" = "1" ]; then
         printf '%-'$COL_W's │ %-'$COL_W's │ %s\n' "$(trunc "$c1" "$COL_W")" "$(trunc "$c2" "$COL_W")" "$c3" >> "$BUFFER_FILE"
