@@ -356,3 +356,7 @@ release-gate-loop 与 fresh-eyes-loop 共享本文件，通过"循环"列区分�
 2026-09-12     | 20260912-15    | release-gate | 7    | SKIP       | FAIL       | PASS     | PASS    | /Users/kongfangxun/.sofagent/data/forge-runs/release-gate-loop/2026-09-12/run-15
 
 2026-09-13     | 20260913-01    | release-gate | 20   | FAIL       | FAIL       | FAIL     | PASS    | /Users/kongfangxun/.sofagent/data/forge-runs/release-gate-loop/2026-09-13/run-01
+
+2026-09-15      | 20260915-01    | fresh-eyes  | 1（中止于 Round 1 A 侧 6/12 视角：p1–p6 产物落盘、p7 启动时宿主清理后台任务致 aborted-signal；worktree 已自动清理、分支 forge/fresh-eyes/20260915-01 保留；本 session 先因 env.local 缺 SOFAGENT_LLM_C/D 启动失败，已补占位变量（单盲四角色改造未同步 env.local.template，待补）；修复后重启续跑）| – | – | – | aborted-signal | ~/.sofagent/data/forge-runs/fresh-eyes-loop/2026-09-15/run-01
+
+2026-09-15     | 20260915-02    | fresh-eyes  | 5    | 0   | 0   | 2   | weighted-convergence | /Users/kongfangxun/.sofagent/data/forge-runs/fresh-eyes-loop/2026-09-15/run-02
