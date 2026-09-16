@@ -1,6 +1,6 @@
 # sofagent 项目导航索引（WIKI）
 
-> v1.4.9 · 2026-09-17（✅ 已发版——本批更新 2026-09-11） · 孔放勋
+> v1.4.9 · 2026-09-17（⏳ 待发版——本批更新 2026-09-17） · 孔放勋
 
 > **EN summary**: sofagent is an open-source (MIT) FDE Harness layer for AI Agents — it doesn't build the Agent; it adds the discipline layer around whichever host (DSH / OpenClaw / WorkBuddy) runs it. **Product story**: an FDE maps your business flow, freezes every AI node's acceptance criteria into machine-checkable files, then departs — the Harness judges every change against those files 24/7 (24 git-diff audit rules, HMAC-chained tamper-evident history, every model registered/rolled out/trained/deployed under audit). Five capabilities: inject · audit · rollback · distill · evolve. (Chinese-first project; full English face in README.en.md.)
 > **读者**：人类开发者 & AI Agent 均可阅读。本文档是项目全局索引入口。

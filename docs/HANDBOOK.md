@@ -1,7 +1,7 @@
 # sofagent Handbook
 
 > **sofagent 是一套 FDE 能力——装进你的 Agent（DSH / OpenClaw / WorkBuddy / Codex / Claude Code）后，进场梳理业务流、部署 AI 节点、离场后 7×24 自己跑。** 装完之后，你在自己的 Agent 里说一句话，它就帮你干活——审计每次变更、沉淀每次经验，沉淀机制随使用迭代。下面从装到用到查问题，全流程走一遍。
-> v1.4.9 ·  2026-09-17（UTC）· ✅ 已发版（本批更新 2026-09-11）· 孔放勋
+> v1.4.9 ·  2026-09-17（UTC）· ⏳ 待发版（本批更新 2026-09-17）· 孔放勋
 
 <img src="assets/sofagent.png" alt="sofagent" width="160" />
 
@@ -73,7 +73,7 @@
 
 > 📌 各版本演进明细见 [CHANGELOG](../CHANGELOG.md)（能力已并入当前版本，不逐版列举）。
 
-**现在还干不了的事（已排期，暂无代码）**：本地推理小模型（离线 USB 节点合体，v2.0.0）；多租户 v0 已交付数据路径与身份归属隔离（`data/<tenant>/` + orgId，v1.4.7），租户级鉴权/配额/跨租户策略与写入侧隔离留 v1.4.9/v2.x——路线见 [ROADMAP](./ROADMAP.md)。
+**现在还干不了的事（已排期，暂无代码）**：本地推理小模型（离线 USB 节点合体，v2.0.0）；多租户 v0 已交付数据路径与身份归属隔离（`data/<tenant>/` + orgId，v1.4.7），租户级鉴权/配额/跨租户策略与写入侧隔离留 v1.5.x/v2.x——路线见 [ROADMAP](./ROADMAP.md)。
 
 ---
 
@@ -479,6 +479,7 @@ jobs:
 | 后训模块·服务与持续 | v1.4.5 | 训练推理服务（`train_serve` 拉起 vLLM/Ollama/OpenAI 兼容端点，80→83 tools）+ 合规扫描闸门（`train_compliance`——PII/敏感字段/专有名词）+ 持续后训练（飞轮数据回流 + 三触发 + eval 回退保护）+ FDE 交付包（`train_deliverable`）+ 后训 Quickstart 十步端到端 + FDE 进场记忆目录（10 文件自动初始化）+ 进化模块实证收口 | [v1.4.5 开发日志](./changelog/v1.4/v1.4.5.md) |
 | 后训模块·分布式与云端 | v1.4.6 | 多卡/多机训练（`gpu.count`/`nodes` + schema v2 存量兼容 + GPU 双轴拓扑 + NCCL 第八类诊断，83→84 tools）+ 云 VM 执行面（`train_cloud` 注册/体检/远程 spawn + 分拣三档宁拦勿漏 + 失联止损 5min + 成本入预算）+ 标准数据推送接口（双闸，入口接线 v1.4.7）+ 边界收缩（配方外部装载 `--recipes` / model-downloader 删除 / `TrainExecutor` 隔离） | [v1.4.6 开发日志](./changelog/v1.4/v1.4.6.md) |
 | 商业平台接口版 | v1.4.7 | 商业平台接口一次到位——读接口（G2 能力缺口 `workflow_gaps` / G4 绩效 `contribution_query` / G6 节点 `visibility` / G7 多租户 v0 `data/<tenant>/`）+ 写接口（G13 PR 生命周期三 tool + G14 workflow CRUD 四 tool + `trigger.schedule` 定时）+ 交付三件（workflow 烧进 USB / G8 首部署 cron / 上岗 prompt）+ 云训练执行收口（`TrainChannel` 标准接口 + ssh 通道 + 双通道事件挂链）+ 三接线（静态加密 / audit repo-hash / `data_push`）（11 新 tool，84→95） | [v1.4.7 开发日志](./changelog/v1.4/v1.4.7.md) |
+| 设备接入与数据承接 | v1.4.9 | 多设备数据面一次收口——设备接入（G9 注册/发现/心跳：Ed25519 身份 + 新鲜度判定 + 在线才派单/掉线改派挂起）+ 数据承接（G10 `device_data_query` 白名单授权读取 / G11 `device_data_push` opt-in 上行——WAL 加密暂存 + 断点续传 + 审计计量）+ 训练数据飞轮（T7 `router_session_push` 过站承接 + T8 敏感识别三层插槽 + T9 权重灰度 AB）+ 平台接口面（G5b 连接器注册/发现 + G1 workflow 模板导出/导入与血缘）+ 工程效能（T6 installer skill + T10 模型清单上报/skill 快照 + bugfix 13 项）（9 新 tool，95→104） | [v1.4.9 开发日志](./changelog/v1.4/v1.4.9.md) |
 
 ### 新功能入口导览（v1.4.2 起三条新产品线——10 分钟上手各条线）
 
