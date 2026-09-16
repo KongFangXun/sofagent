@@ -314,7 +314,7 @@ fi
 
 ## 步骤七：gh release（触发 release.yml 自动 publish audit + mcp）
 
-> GitHub Release published 后，`.github/workflows/release.yml` 自动触发，publish `@sofagent/audit` 和 `@sofagent/mcp` 两个包到 npm。其余 10 包在步骤八手动 publish。
+> GitHub Release published 后，`.github/workflows/release.yml` 自动触发，publish `@sofagent/audit` 和 `@sofagent/mcp` 两个包到 npm。其余 11 包在步骤八手动 publish。
 
 ### 🔴 发版 artifact 四件对账（release create 后立即做，不等收尾）
 
@@ -324,7 +324,7 @@ fi
 |---|----------|---------|------|
 | 1 | git tag（远端存在且指向发版 commit） | `gh api repos/KongFangXun/sofagent/git/refs/tags/vX.Y.Z --jq '.object.sha'` 对比 `git rev-parse vX.Y.Z^{commit}` | 两 SHA 一致 |
 | 2 | GitHub Release（title + body 可达） | `gh release view vX.Y.Z --json name,isDraft` | name 匹配、isDraft=false |
-| 3 | npm 14 包（audit + mcp 自动，其余 12 手动后） | `for p in audit mcp core daemon eval harness ontology orchestrator rules evolve think ab-test; do npm view @sofagent/$p version --prefer-online; done` + `npm view @sofagent/load-chain version --prefer-online` + `npm view sofagent version --prefer-online` | 14 项全部 = 本版号（🔴 必加 --prefer-online——裸查询吃缓存会误报漏发） |
+| 3 | npm 15 包（audit + mcp 自动，其余 13 手动后） | `for p in audit mcp core daemon eval harness ontology orchestrator train rules evolve think ab-test; do npm view @sofagent/$p version --prefer-online; done` + `npm view @sofagent/load-chain version --prefer-online` + `npm view sofagent version --prefer-online` | 15 项全部 = 本版号（🔴 必加 --prefer-online——裸查询吃缓存会误报漏发） |
 | 4 | 安装入口（README 双语 + bootstrap.sh 的 tag URL 可达） | `grep -rn "refs/tags/v" README.md README.en.md bootstrap.sh` + 逐条 `curl -sI` HTTP 200 | 三处 = 本版 tag 且真实可达 |
 
 > 任何一件不满足 = 发版未完成，当场补（重推 tag / 补 publish / 修 URL），不带病进入收尾。
@@ -459,11 +459,11 @@ EOF
 
 ---
 
-## 步骤八：npm 手动 publish 其余 12 包（含裸名总包）
+## 步骤八：npm 手动 publish 其余 13 包（含裸名总包）
 
-> `npm publish --workspaces` 不支持 workspace 全局发布。release.yml 只 auto-publish audit + mcp（Release 触发），其余 12 包手动 publish（11 个 `engine/<pkg>` scope 包 + load-chain + 1 个裸名总包，合计补齐 14 包）。
+> `npm publish --workspaces` 不支持 workspace 全局发布。release.yml 只 auto-publish audit + mcp（Release 触发），其余 13 包手动 publish（12 个 `engine/<pkg>` scope 包 + load-chain + 1 个裸名总包，合计补齐 15 包）。
 >
-> ⚠️ **@sofagent/load-chain（`engine/hooks/sofagent-load-chain/`）是第 13 个 workspace 包，不在下方循环里**——它不叫 `engine/<pkg>` 布局（在 `engine/hooks/` 下），按「12 包」口径极易漏掉。必须把它加进循环与验证清单。
+> ⚠️ **@sofagent/load-chain（`engine/hooks/sofagent-load-chain/`）是第 13 个 workspace 包，不在下方循环里**——它不叫 `engine/<pkg>` 布局（在 `engine/hooks/` 下），按「13 包」口径极易漏掉。必须把它加进循环与验证清单。
 >
 > ⚠️ **裸名总包 `sofagent`（`engine/umbrella/`）是第 14 个发布物**——npm 包名是裸名 `sofagent`（无 scope）、目录名是 umbrella，两者都与循环模式不匹配，单独段发布。它是 npm 渠道的聚合安装入口（`npm i -g sofagent` = 全功能四包），v1.4.6 起随主线版本同步发版。
 
@@ -472,14 +472,14 @@ EOF
 npm view @sofagent/audit@vX.Y.Z version --prefer-online  # 期望返回版本号
 npm view @sofagent/mcp@vX.Y.Z version --prefer-online    # 期望返回版本号
 
-# 手动 publish 其余 10 包——每包 publish 后立即 npm view 对账 + E409 自动等待重查
+# 手动 publish 其余 11 包——每包 publish 后立即 npm view 对账 + E409 自动等待重查
 # 🔴 publish 输出严禁接管道过滤（| grep xxx）——报错被过滤吞掉会表面循环跑完实际漏发，
-#    14 包对账时才发现。输出必须全量落盘，失败立即停。
+#    15 包对账时才发现。输出必须全量落盘，失败立即停。
 # 🔴 npm view 对账必须加 --prefer-online——裸查询吃本地缓存，刚 publish 完会误报
 #    「失败实已发布」（发版 session 本地缓存里还是上版）。大包（≥800KB）registry 侧
 #    收录延迟可达 3+ 分钟，对账窗口预留足够，勿据一次裸查询判定失败。
 TARGET_VER=$(node -p "require('./package.json').version")
-for pkg in core daemon eval harness ontology orchestrator rules evolve think ab-test; do
+for pkg in core daemon eval harness ontology orchestrator train rules evolve think ab-test; do
   echo "--- @sofagent/$pkg ---"
   ( cd "engine/$pkg" && npm publish --access public ) > "/tmp/publish-$pkg.log" 2>&1
   RC=$?
@@ -512,14 +512,14 @@ for pkg in core daemon eval harness ontology orchestrator rules evolve think ab-
   [ "$LIVE" = "$TARGET_VER" ] && echo "  ✅ @sofagent/$pkg = $LIVE" || { echo "  🔴 对账失败：期望 $TARGET_VER 实际 $LIVE"; exit 1; }
 done
 
-# @sofagent/load-chain（布局在 engine/hooks/ 下，不进上面的循环——14 包口径之 13，验证逻辑同上）
+# @sofagent/load-chain（布局在 engine/hooks/ 下，不进上面的循环——15 包口径之 14，验证逻辑同上）
 ( cd "engine/hooks/sofagent-load-chain" && npm publish --access public ) > /tmp/publish-load-chain.log 2>&1
 RC=$?
 [ $RC -ne 0 ] && { echo "🔴 load-chain publish 失败："; cat /tmp/publish-load-chain.log; exit 1; }
 LIVE=$(npm view @sofagent/load-chain version 2>/dev/null || true)
 [ "$LIVE" = "$TARGET_VER" ] && echo "✅ @sofagent/load-chain = $LIVE" || echo "🔴 load-chain 对账失败：期望 $TARGET_VER 实际 $LIVE"
 
-# 裸名总包 sofagent（engine/umbrella/——npm 聚合安装入口，包名无 scope 不进上方循环；14 包口径之 14）
+# 裸名总包 sofagent（engine/umbrella/——npm 聚合安装入口，包名无 scope 不进上方循环；15 包口径之 15）
 # bin = `sofagent` 薄转发到 @sofagent/audit CLI；dependencies 四功能包（audit/mcp/orchestrator/daemon）
 # 版本随 SSOT 同步（bump-version.sh 步骤 2c 自动覆盖 engine/umbrella/package.json）。
 # 0.0.1 占位包（v1.4.6 前的防抢注壳）无需 unpublish——总包跳版发布后 latest 自动指向本版。

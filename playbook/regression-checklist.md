@@ -1305,24 +1305,24 @@ HARDCODED=$(grep -nE '(checklist|acceptance|fresh-eyes)[^0-9]{0,4}≤ ?1[0-9]{3}
 ) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -qE "^[[:space:]]{0,2}❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true
 ```
 
-#### 97. npm publish workspace 限制——12 包分两批发布
+#### 97. npm publish workspace 限制——13 包分两批发布
 
-**背景**：release.yml 只 auto-publish @sofagent/audit + @sofagent/mcp（Release 触发）；其余 10 包需手动 `cd engine/<pkg> && npm publish`。`npm publish --workspaces` 不支持 workspace 全局发布。
+**背景**：release.yml 只 auto-publish @sofagent/audit + @sofagent/mcp（Release 触发）；其余 11 包需手动 `cd engine/<pkg> && npm publish`（train 拆包后纳入，拓扑位次 orchestrator 后 daemon 前）。`npm publish --workspaces` 不支持 workspace 全局发布。
 
 ```bash
 (
 # 待发版窗口态分支（对齐维度 130 / check-version F6 判据）：CHANGELOG 该版条目带「⏳ 待发版」
-# 时，「12 包 == 目标版本」的检查对象尚不成立——发布属 SOP 阶段十，本维度标题即「发版后验证」。
+# 时，「13 包 == 目标版本」的检查对象尚不成立——发布属 SOP 阶段十，本维度标题即「发版后验证」。
 # 硬判 FAIL 会把「阶段五正常态」误报为 P0（run-03 实证：维度 97 因此被判阻塞）。
-if grep -qE "v1\.4\.8.*⏳|v1\.4\.8.*待发版" CHANGELOG.md 2>/dev/null; then
-  for pkg in audit core daemon eval harness ontology orchestrator rules evolve think ab-test mcp; do
+if grep -qE "v1\.4\.9.*⏳|v1\.4\.9.*待发版" CHANGELOG.md 2>/dev/null; then
+  for pkg in audit core daemon eval harness ontology orchestrator train rules evolve think ab-test mcp; do
     V=$(npm view @sofagent/$pkg version 2>/dev/null || echo "未发布")
     echo " @sofagent/$pkg: $V"
   done
-  echo "⏳ 待发版态：以上为 npm 现存版本；v1.4.8 发布属阶段十，本维度在发版后复核「12 包 == 目标版本」"
+  echo "⏳ 待发版态：以上为 npm 现存版本；v1.4.9 发布属阶段十，本维度在发版后复核「13 包 == 目标版本」"
 else
-  # 已发版态：验证 12 包全部到 npm
-  for pkg in audit core daemon eval harness ontology orchestrator rules evolve think ab-test mcp; do
+  # 已发版态：验证 13 包全部到 npm
+  for pkg in audit core daemon eval harness ontology orchestrator train rules evolve think ab-test mcp; do
     V=$(npm view @sofagent/$pkg version 2>/dev/null || echo "❌ 未发布")
     echo " @sofagent/$pkg: $V"
   done
@@ -1763,8 +1763,8 @@ else
   # 待发版窗口态（对齐 check-version F6 既有判据）：CHANGELOG 版本条目带「⏳ 待发版」标记时，
   # install.sh 已随开发改动、钉值仍指向上一已发版 tag 属预期——回填与打 tag 同步于阶段九。
   # 硬判 FAIL 会把「阶段五正常态」误报为 P0 阻塞（run-01 实证）。
-  if grep -qE "v1\.4\.8.*⏳|v1\.4\.8.*待发版" CHANGELOG.md 2>/dev/null; then
-    echo "⏳ 待发版态：钉值 ${EMB:0:12}… ≠ HEAD 哈希 ${HEAD_H:0:12}…（install.sh 已随 v1.4.8 开发改动）——回填+打 tag 属阶段九，非阻塞"
+  if grep -qE "v1\.4\.9.*⏳|v1\.4\.9.*待发版" CHANGELOG.md 2>/dev/null; then
+    echo "⏳ 待发版态：钉值 ${EMB:0:12}… ≠ HEAD 哈希 ${HEAD_H:0:12}…（install.sh 已随 v1.4.9 开发改动）——回填+打 tag 属阶段九，非阻塞"
   else
     echo "❌ sha256 不自洽（已发版态：钉值应等于 HEAD install.sh 哈希）"
   fi
@@ -1774,7 +1774,7 @@ MKT_HTML=$(curl -s --max-time 10 https://github.com/marketplace/actions/sofagent
 # ④ ClawHub 快照纪律：发布前 verify 落盘（clawhub skill verify <slug> > /tmp/clawhub-pre.json）对照处置；④b pending scan 显旧版+suspicious≠失败，转正判据走 API（clawhub.ai/api/v1/packages/<name>?ownerHandle=<handle>）
 grep -q "prefer-online" docs/changelog/releasing/09-publish.md && grep -q "prefer-online" docs/changelog/releasing/11-post-publish.md && echo "✅ SOP 对账命令守卫在位" || echo "❌ SOP 对账命令退化为裸查询"  # ⑤ npm 对账带 --prefer-online（裸查询吃缓存误报漏发）
 # ⑥ 构建拓扑序干净态自洽（本地 dist 残留会掩盖乱序）⑦ 环境特异失败先模拟 CI 干净态（三类排查序）⑧ 工具降级分支 fail-loud（降级必须可见）
-node -e "const s=require('./package.json').scripts.build; const order=['harness','core','ontology','rules','audit','eval','think','evolve','orchestrator','daemon','ab-test','mcp','sofagent-load-chain']; let i=-1; for(const seg of s.split(' && ')){const m=seg.match(/--workspace=([^\s]+)/); if(!m) continue; const short=m[1].replace(/^engine\//,'').replace(/^hooks\//,''); const idx=order.indexOf(short); if(idx<0||idx<=i){console.error('❌ 拓扑序倒置或未知包: '+m[1]); process.exit(1);} i=idx;}" && echo "✅ build 序列满足 13 包拓扑序"
+node -e "const s=require('./package.json').scripts.build; const order=['harness','core','ontology','rules','audit','eval','think','evolve','orchestrator','train','daemon','ab-test','mcp','sofagent-load-chain']; let i=-1; for(const seg of s.split(' && ')){const m=seg.match(/--workspace=([^\s]+)/); if(!m) continue; const short=m[1].replace(/^engine\//,'').replace(/^hooks\//,''); if(short.startsWith('dsh-plugins/')) continue; const idx=order.indexOf(short); if(idx<0||idx<=i){console.error('❌ 拓扑序倒置或未知包: '+m[1]); process.exit(1);} i=idx;}" && echo "✅ build 序列满足 14 包拓扑序（dsh-plugins 家族序由 check-cross-package-relative.mjs 独立钉住，不在此面）"
 grep -q "rm -rf engine/\*/dist" docs/changelog/releasing/09-publish.md && echo "✅ 干净态排查法已写入 SOP" || echo "❌ 干净态排查法从 SOP 丢失"
 git grep -q "regexWarned" -- tools/check/public-api.mjs && echo "✅ 降级 fail-loud 在位" || echo "❌ 降级静默"
 ) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -qE "^[[:space:]]{0,2}❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true
