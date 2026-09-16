@@ -2031,10 +2031,17 @@ function loadPipelineGraph(){
       }).join('');
       list.innerHTML=html||'<div style="grid-column:1/-1;text-align:center;color:var(--text-t);padding:12px">暂无节点</div>';
     })
-    .catch(function(){
-      box.innerHTML=emptyState('<i class="bi bi-shuffle"></i>','还没有编排数据','运行过 AI 编排任务后自动生成（graph-state.json）','去 FDE 引导',"goPage('fde')");
+    .catch(function(err){
+      // 加载失败与正常空态分离（F12）：404 = 尚无编排数据（引导空态）；其余 = 真故障（提示重试）
+      var isNotFound = err && (err.message === '404' || String(err).indexOf('404') !== -1);
+      if (isNotFound) {
+        box.innerHTML=emptyState('<i class="bi bi-shuffle"></i>','还没有编排数据','运行过 AI 编排任务后自动生成（graph-state.json）','去 FDE 引导',"goPage('fde')");
+        list.innerHTML='';
+      } else {
+        box.innerHTML=emptyState('<i class="bi bi-exclamation-triangle"></i>','编排数据加载失败','网络或服务异常，稍后自动重试','刷新页面',"location.reload()");
+        list.innerHTML='<div style="grid-column:1/-1;text-align:center;color:var(--text-t);font-size:12px;padding:12px">—</div>';
+      }
       if(updated)updated.textContent='加载失败';
-      list.innerHTML='<div style="grid-column:1/-1;text-align:center;color:var(--text-t);font-size:12px;padding:12px">—</div>';
     });
 }
 
@@ -2094,7 +2101,7 @@ function loadKnowledgeData(){
         entries.innerHTML=emptyState('<i class="bi bi-journal-bookmark"></i>','还没有知识库数据','运行 FDE 或在 Agent 中执行知识沉淀后自动写入（~/.sofagent/data/knowledge/）','去 FDE 引导',"goPage('fde')");
       }
     }
-    if(updated)updated.textContent=fmtUpdatedAt();
+    // F13：本数据源无 updatedAt 字段——不显示假时间戳（此前 fmtUpdatedAt() 无参 = 当前时刻）
     // 最近经验教训（think.md 段落渲染）
     var thinkBox=document.getElementById('thinkList');
     if(thinkBox){
