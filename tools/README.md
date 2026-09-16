@@ -22,6 +22,7 @@
 | `check/check-unwired-exports.sh` | @public 导出接线深扫（S2 四断言：深扫接线/白名单/类型标注/eval 隔离） | 发版 SOP 阶段三/六 |
 | `check/check-wiring-guard.mjs` | 接线守卫（注册表级：注册漂移——分发面孤儿/旁挂清单越界引用；死路径——注册项无分发落点。**首版非阻断**，只提示不阻断；`--selftest` 合成回归验证必命中） | CI（非阻断）/ 发版 SOP / 定期（观察期） |
 | `check/check-seam-contract.mjs` | 插件适配层 seam 契约门禁（正向：插件 seam ∈ `engine/dsh-plugins/SEAMS.md` 词汇表；DSH 三处 seam 逐条一致 + description 不滞后；反向：词汇表每条在**真实宿主**里 grep 到定义处，宿主缺席打印 `SKIP` 不静默通过；双向对账拦「漏写 seam」；`SKILL.md` 反向对账——SKILL.md 出现 `（seam: …）` 字面量的每一处都必须与三处一致，**残余缺口：SKILL.md 整体删去 seam 字样时不判红，只打印显著提示**；`--selftest` 合成回归验证必报红） | CI / 新增或改插件后 |
+| `check/check-seam-drift.mjs` | 宿主 seam 词表漂移巡检（登记本 vs 宿主实测差集：宿主有词表未登 / 词表登宿主已废 等三面判定；`SEAMS.md` 只保证 sofagent 侧四载体自洽，本巡检防「宿主破坏性升级后词表静默过期」——**只提示不阻断**，`--strict` 供 CI 收紧） | 宿主升级后 / 定期（默认非阻断） |
 | `check/check-template-drift.sh` | 模板漂移检测（三断言：模板与实现同步对账） | 发版 SOP 阶段六 |
 | `../engine/audit/src/rulesets/*.json`（跨模块指针，**非 tools/ 内文件**） | 行业 overlay 规则包（ai / fintech / government / medical 四件；overlay 按 `context.md` 的 `industry:` 字段加载，机制见 `FDE/GUIDE.md` §5.8c） | FDE 进场标注行业时（v1.4.8 第2批修正：此前登记的是仓内不存在的 `tools/check/` 下伪路径，真实文件在 engine/ 侧） |
 | `check/dependency-direction.sh` | 依赖方向架构测试（build 序列 13 包边界：核心层←约束层←适配层←展示层；读同目录 `dependency-direction.yml` SSOT——含 `rhythm` 版本节奏段） | CI / 改包依赖后 |
