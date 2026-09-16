@@ -2,7 +2,7 @@
 
 > **用途**：每次发版前跑一遍，确认之前修过的问题没有回退。发现新问题用 [fresh-eyes-review](./fresh-eyes-review.md)。审查范围：全仓库状态检查（不是只看增量）。
 > **编号规则**：归并项直接删除、编号不复用；维度演进与归并的完整历史 `git log -p` 可溯，本清单只维护当前状态。
-> **当前 94 维 · 编号 1-142 · 48 个编号已归并删除**。维度流连续不中断，分组导航：基线组 → 审查约束组 → 环境敏感组（前置 vitest/沙箱铁律）。
+> **当前 94 维 · 编号 1-143 · 49 个编号已归并删除**。维度流连续不中断，分组导航：基线组 → 审查约束组 → 环境敏感组（前置 vitest/沙箱铁律）。
 
 ## 🔒 维护公约（防膨胀铁律）
 
@@ -10,7 +10,7 @@
 
 **归并配额（硬门槛）**：新增 N 维 → 本版必须先真实归并 ≥N 维（被并维度检查内容实际移入目标维度，git diff 可查；注释压缩不算）；净增行数 > 警戒线余量 → 继续归并或移下一版——**只调警戒线不归并 = 不合格**。
 
-**行数警戒线（当前值）**：`regression-checklist.md` ≤ 1950 行、`acceptance-test.sh` ≤ 4300 行（1800→1950 / 4200→4300：v1.4.8 阶段四 A 类分发 + 深模块批的真实内容增长——checklist 新增 6 维（#137-#142）并以归并对销 10 处后仍净增（审查面为新增非重复覆盖，非归并可消化），acceptance 新增 S401-S409 九场景（九新面各 1 行为锚）；按铁律超标上调不删内容，未做任何断言/场景删减）；fresh-eyes 警戒线见 04-review-system.md 风格守护段。三条上调铁律：① 三判据全否方可调——(i) 新增非旧维度可扩展子项的独立审查面；(ii) 非既有场景/维度的重复覆盖；(iii) 真实防回归价值非归并压缩可消化；② 连续上调禁令——连续两版已调，本版须先真实归并对销方可再调；同版同侧只调一次（同版二次冻结）；③ **上调只记一行**——`旧值→新值（原因一句话）`，历史上调链不在此处累积（完整过程 git 历史可溯）。
+**行数警戒线（当前值）**：`regression-checklist.md` ≤ 1985 行、`acceptance-test.sh` ≤ 4400 行（1800→1950 / 4200→4300：v1.4.8 阶段四 A 类分发 + 深模块批的真实内容增长——checklist 新增 6 维（#137-#142）并以归并对销 10 处后仍净增（审查面为新增非重复覆盖，非归并可消化），acceptance 新增 S401-S409 九场景（九新面各 1 行为锚）；按铁律超标上调不删内容，未做任何断言/场景删减；4300→4400：v1.4.9 阶段四 B 类分发（六场景——S410 死断言接线 + 设备接入/连接器/血缘/敏感识别插槽/门禁解析链五新面零锚补齐），同批摘除文件尾部不可达死代码块 17 行；三判据全否（五新面首版覆盖、非既有场景重复、非归并压缩可消化））；1950→1985：v1.4.9 阶段四 A 类分发（新增 #143 v1.4.9 新交付面与门禁解析链防复发，并以 #142→#128 真实归并对销 1 处——内容逐字移入、断言零删减）；三判据全否（v1.4.9 五新面首版覆盖、非既有维度重复、非归并压缩可消化））；fresh-eyes 警戒线见 04-review-system.md 风格守护段。三条上调铁律：① 三判据全否方可调——(i) 新增非旧维度可扩展子项的独立审查面；(ii) 非既有场景/维度的重复覆盖；(iii) 真实防回归价值非归并压缩可消化；② 连续上调禁令——连续两版已调，本版须先真实归并对销方可再调；同版同侧只调一次（同版二次冻结）；③ **上调只记一行**——`旧值→新值（原因一句话）`，历史上调链不在此处累积（完整过程 git 历史可溯）。
 
 **维度脚本编写四铁律**（教训——7 个 FAIL 维度中 5 个是脚本自身缺陷而非仓库问题，driver 白跑一轮）：
 
@@ -29,7 +29,7 @@ ACTUAL=$(grep -c "^#### " playbook/regression-checklist.md)
 
 # 行数警戒线自检（越线即 FAIL——与 check-review-system.sh §1d 同口径；本段是速览，门禁是权威）
 WC_CHK=$(wc -l < playbook/regression-checklist.md); WC_ACC=$(wc -l < playbook/acceptance-test.sh)
-[ "$WC_CHK" -le 1950 ] && echo "✅ checklist $WC_CHK (≤1950)" || { echo "❌ checklist $WC_CHK 超 1950（check-review-system 判 FAIL——走归并，不走上调）"; RC=1; }; [ "$WC_ACC" -le 4300 ] && echo "✅ acceptance $WC_ACC (≤4300)" || { echo "❌ acceptance $WC_ACC 超 4300（同上）"; RC=1; }; exit ${RC:-0}  # 超线非零退出（人工执行可注释掉末行——防误伤终端后续命令）
+[ "$WC_CHK" -le 1985 ] && echo "✅ checklist $WC_CHK (≤1985)" || { echo "❌ checklist $WC_CHK 超 1985（check-review-system 判 FAIL——走归并，不走上调）"; RC=1; }; [ "$WC_ACC" -le 4400 ] && echo "✅ acceptance $WC_ACC (≤4400)" || { echo "❌ acceptance $WC_ACC 超 4400（同上）"; RC=1; }; exit ${RC:-0}  # 超线非零退出（人工执行可注释掉末行——防误伤终端后续命令）
 ) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -qE "^[[:space:]]{0,2}❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true
 ```
 ## 你的身份
@@ -1692,7 +1692,7 @@ grep -q "将在 v1.5.0 移除" engine/orchestrator/src/composer.ts && grep -q "a
 grep -q "checkHistoryChainIntegrity" CHANGELOG.md && echo "✅ 退役公告在 CHANGELOG 索引" || echo "❌ 公告丢失（v1.5.0 移除前置）") 2>&1 | tee "/tmp/regress-dim127-$$.log"; grep -qE "^[[:space:]]{0,2}❌" "/tmp/regress-dim127-$$.log" && { rm -f "/tmp/regress-dim127-$$.log"; echo "维度127收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim127-$$.log"; echo "维度127收口:PASS"
 ```
 
-#### 128. fresh-eyes 60+ 条修复防复发——门禁假红假绿族 + worktree 引用丢失 + 安全面六件 + dashboard 一致性（阶段四来源提取 B 类 · 参照 124/126 B 类一维收口惯例）
+#### 128. fresh-eyes 60+ 条修复防复发——门禁假红假绿族 + worktree 引用丢失 + 安全面六件 + dashboard 一致性（阶段四来源提取 B 类 · 参照 124/126 B 类一维收口惯例 · 归并 #142 入此）
 
 > 五轮审查（weighted-convergence 终态 0 P0/0 P1/1 P2 SKIP）修复的防复发锚点。文档数字面/npm 面已被 check-docs/check-version 工具覆盖不重复建维；vitest 并行假红/超时层已被 #110 覆盖。
 
@@ -1717,6 +1717,23 @@ grep -q "450" playbook/acceptance-test.sh && grep -q "迷你 dist" engine/audit/
 ) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -qE "^[[:space:]]{0,2}❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true
 ```
 
+**子项 g-i（归并自原 #142 · fresh-eyes 修复批安全豁免面防复发）**
+fresh-eyes 修复批安全豁免面防复发——A1 豁免组合矩阵 + A2 转义对抗链（v1.4.8 B 类）
+
+> 来源：run-02 b-fix 批（A1 数据容器臂 / 扩展名尾锚定 / .env 前缀豁免叠加 / A2 转义链）。核心方法论：任何新增豁免必须回答「与既有豁免叠加后最坏形态的阻断等级」。
+
+```bash
+(
+FAIL=0
+# a: 数据容器臂剔除（.env.json/.env.yaml/.env.yml 等 env dump 载体不得静默 PASS——豁免面组合矩阵实锤）
+grep -qE "\.env\.json|\.env\.yaml|serverless\.env" engine/audit/src/rules/rule-a1-sensitive-files.ts && echo "✅ 数据容器臂已剔除" || { echo "❌ env dump 载体仍可逃逸"; FAIL=1; }
+# b: 扩展名尾锚定 + basename .env 前缀不进豁免（目录组件绕过 / .env.test.js 放行回归双防）
+grep -qE "代码扩展名尾锚定|尾锚定" engine/audit/src/rules/rule-a1-sensitive-files.ts && grep -q "必要非充分条件" engine/audit/src/rules/rule-a1-sensitive-files.ts && echo "✅ 豁免边界双防在位" || { echo "❌ 豁免边界回退"; FAIL=1; }
+# c: A2 尾剥离/转义对抗回归样本在位（B 自报已修须有可复演样本——hex 转义还原 + 用例数不缩水）
+grep -q "restoreHexEscapes" engine/audit/src/rules/rule-a2-secret-leak.ts && [ "$(grep -c 'it(' engine/audit/src/rules/rule-a2.test.ts)" -ge 10 ] && echo "✅ A2 转义还原 + 对抗用例在位" || { echo "❌ A2 对抗样本缺失"; FAIL=1; }
+[ "${FAIL:-0}" = "1" ] && { echo "维度142:FAIL"; exit 1; }; echo "维度142:PASS"
+) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -qE "^[[:space:]]{0,2}❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true
+```
 #### 129. v1.4.4 fresh-eyes 19 项修复防复发——CLI 接线断链 + 供应链回滚路径 + nodeId/YAML 清洗 + 结构性收口（阶段四来源提取 A/B 类一维收口 · 行为面已由单测锁：weights-deploy/fde-workbench/export/corpus-export +9 用例）
 
 > 19 项发现（P0×1 + P1×7 + P2×11，修复批 37cab2b9）防复发锚点。P0「声称命令三面零接线」的机械防线已落 check-docs §13（submitCompareJobs 生产调用 ≥1 断言在册）；行为面（回滚哈希直验/中文 nodeId 清洗/YAML 转义/scope 校验/auditEvent null/enterpriseId 正名）已由四包单测 +9 用例锁定，此处只收 grep 级结构性锚 + 新增声称点对账面。
@@ -1932,19 +1949,26 @@ grep -q "planExecution" engine/orchestrator/src/exec/git-capability.ts && grep -
 ) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -qE "^[[:space:]]{0,2}❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true
 ```
 
-#### 142. fresh-eyes 修复批安全豁免面防复发——A1 豁免组合矩阵 + A2 转义对抗链（v1.4.8 B 类）
+#### 143. v1.4.9 新交付面与门禁解析链防复发——设备/连接器/血缘/敏感识别插槽零锚补齐 + 计数吞数 fail-loud（v1.4.9 阶段四 A 类）
 
-> 来源：run-02 b-fix 批（A1 数据容器臂 / 扩展名尾锚定 / .env 前缀豁免叠加 / A2 转义链）。核心方法论：任何新增豁免必须回答「与既有豁免叠加后最坏形态的阻断等级」。
+> 来源：v1.4.9 fresh-eyes run-02 终态（F01-F16）+ 阶段三存量修复（版本口径分裂 / 门禁 locale 吞数 / 过时断言）。核心方法论：新增交付面必须有机械锚；门禁的「提取为空」不得与「合规为空」同判（宁缺毋假）。
 
 ```bash
 (
 FAIL=0
-# a: 数据容器臂剔除（.env.json/.env.yaml/.env.yml 等 env dump 载体不得静默 PASS——豁免面组合矩阵实锤）
-grep -qE "\.env\.json|\.env\.yaml|serverless\.env" engine/audit/src/rules/rule-a1-sensitive-files.ts && echo "✅ 数据容器臂已剔除" || { echo "❌ env dump 载体仍可逃逸"; FAIL=1; }
-# b: 扩展名尾锚定 + basename .env 前缀不进豁免（目录组件绕过 / .env.test.js 放行回归双防）
-grep -qE "代码扩展名尾锚定|尾锚定" engine/audit/src/rules/rule-a1-sensitive-files.ts && grep -q "必要非充分条件" engine/audit/src/rules/rule-a1-sensitive-files.ts && echo "✅ 豁免边界双防在位" || { echo "❌ 豁免边界回退"; FAIL=1; }
-# c: A2 尾剥离/转义对抗回归样本在位（B 自报已修须有可复演样本——hex 转义还原 + 用例数不缩水）
-grep -q "restoreHexEscapes" engine/audit/src/rules/rule-a2-secret-leak.ts && [ "$(grep -c 'it(' engine/audit/src/rules/rule-a2.test.ts)" -ge 10 ] && echo "✅ A2 转义还原 + 对抗用例在位" || { echo "❌ A2 对抗样本缺失"; FAIL=1; }
-[ "${FAIL:-0}" = "1" ] && { echo "维度142:FAIL"; exit 1; }; echo "维度142:PASS"
+# a: 验链双实现判定域一致（kernel verifyChain vs core checkHistoryChainDetailed 差分锁——F01/F04/F16 族）
+[ -f engine/audit/src/chain-kernel.diff.test.ts ] && grep -q "checkHistoryChainDetailed" engine/audit/src/chain-kernel.diff.test.ts && echo "✅ 验链差分一致性测试在位" || { echo "❌ 验链差分锁缺失（no-prevhash 漂移复发面）"; FAIL=1; }
+# b: 审计主路径 fail-closed 与 spill 路径对称（快速路径不得返回空 diff 过审）
+grep -q "SPILL_FAILURE_CODE" engine/core/src/diff-parser.ts && grep -q "maxBuffer: 5 \* 1024 \* 1024" engine/core/src/diff-parser.ts && echo "✅ diff 拒审码 + stderr 容量在位" || { echo "❌ fail-closed 承重墙缺口"; FAIL=1; }
+# c: 门禁计数解析链 locale 无关（BSD sed 遇多字节报 illegal byte sequence ⇒ 整包静默吞数、门禁只当文档漂移）
+ALL=$( { grep -cF '[0-9;]*m//g' tools/check/test-count.sh 2>/dev/null || true; } | head -1 | tr -cd '0-9'); SAFE=$( { grep -cF 'LC_ALL=C sed' tools/check/test-count.sh 2>/dev/null || true; } | head -1 | tr -cd '0-9')
+[ "${ALL:-0}" = "${SAFE:-1}" ] && grep -q "解析失败，计数不可信" tools/check/test-count.sh && echo "✅ 计数解析 fail-loud 在位" || { echo "❌ 门禁吞数面回退（LOCALE 剥离覆盖率 ${SAFE}/${ALL}）"; FAIL=1; }
+# d: v1.4.9 五新 tool 注册（G9/G10/G11/G5b/G1 面——注册三处一致性延伸）
+for t in device_register device_list device_data_query device_data_push connector_register connector_list workflow_export workflow_import router_session_push; do grep -q "'$t'" engine/mcp/src/tool-registry.ts || { echo "❌ 未注册: $t"; FAIL=1; }; done
+[ "$FAIL" = "0" ] && echo "✅ v1.4.9 新面工具注册齐备"
+# e: 敏感识别三层插槽（第八章）+ workflow 血缘（G1）——运行面可达性（需 dist 已构建）
+node -e "const c=require('./engine/core/dist/index.js');['DetectorRegistry','createL0RegexDetector','applySpans','tierOf'].forEach(k=>{if(!c[k])throw new Error('缺 '+k)});console.log('✅ 检测器插槽四符号')" || { echo "❌ 检测器插槽面缺失"; FAIL=1; }
+node -e "const l=require('./engine/orchestrator/dist/workflow/lineage.js');['appendLineageEvent','readLineageEvents','traceLineage','lineagePath'].forEach(k=>{if(typeof l[k]!=='function')throw new Error('缺 '+k)});console.log('✅ 血缘四导出')" || { echo "❌ 血缘链面缺失"; FAIL=1; }
+[ "${FAIL:-0}" = "1" ] && { echo "维度143:FAIL"; exit 1; }; echo "维度143:PASS"
 ) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -qE "^[[:space:]]{0,2}❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true
 ```
