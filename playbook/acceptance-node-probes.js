@@ -698,10 +698,10 @@ async function s422() {
 async function s423() {
   const wc = require(process.env.PROJECT_ROOT + '/engine/train/dist/weight-canary.js'); const bad = [];
   const cfg = { oldAdapter: 'local-27b', newAdapter: 'cloud-plus', newWeightPercent: 50 };
-  const v1 = wc.routeRequest('user-42', cfg); const v2 = wc.routeRequest('user-42', cfg);
+  const v1 = wc.canaryRouteRequest('user-42', cfg); const v2 = wc.canaryRouteRequest('user-42', cfg);
   if (v1.adapter !== v2.adapter || v1.isNew !== v2.isNew) bad.push('同 key 分流不稳定');
-  if (wc.routeRequest('any', { ...cfg, newWeightPercent: 0 }).isNew !== false) bad.push('0% 未全走旧臂');
-  if (wc.routeRequest('any', { ...cfg, newWeightPercent: 100 }).isNew !== true) bad.push('100% 未全走新臂');
+  if (wc.canaryRouteRequest('any', { ...cfg, newWeightPercent: 0 }).isNew !== false) bad.push('0% 未全走旧臂');
+  if (wc.canaryRouteRequest('any', { ...cfg, newWeightPercent: 100 }).isNew !== true) bad.push('100% 未全走新臂');
   const old = { requests: 100, correct: 90, refusals: 2, costUsd: 1 };
   const badArm = { requests: 100, correct: 40, refusals: 30, costUsd: 5 };
   const d = wc.judgeDeterioration(old, badArm);

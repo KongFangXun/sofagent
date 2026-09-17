@@ -54,7 +54,7 @@ while [[ $# -gt 0 ]]; do
     --before)
       BEFORE_DATE="$2"
       # 校验日期格式 YYYY-MM-DD
-      if ! echo "$BEFORE_DATE" | grep -qE '^[0-9]{4}-[0-9]{2}-[0-9]{2}$'; then
+      if ! grep -qE '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' <<< "$BEFORE_DATE"; then
         echo "[cleanup] 错误：--before 需要日期格式 YYYY-MM-DD（收到：${BEFORE_DATE}）"
         exit 1
       fi
@@ -62,7 +62,7 @@ while [[ $# -gt 0 ]]; do
       ;;
     --before=*)
       BEFORE_DATE="${1#*=}"
-      if ! echo "$BEFORE_DATE" | grep -qE '^[0-9]{4}-[0-9]{2}-[0-9]{2}$'; then
+      if ! grep -qE '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' <<< "$BEFORE_DATE"; then
         echo "[cleanup] 错误：--before 需要日期格式 YYYY-MM-DD（收到：${BEFORE_DATE}）"
         exit 1
       fi
@@ -156,7 +156,7 @@ if [ -n "$BEFORE_DATE" ]; then
   done < <(find "$LOGS_DIR" -name "*.md" -not -path "*/archive/*" -print0 2>/dev/null | while IFS= read -r -d '' f; do
     # 提取文件名日期：task/logs/2026-03/2026-03-15.md → 2026-03-15
     fname=$(basename "$f" .md)
-    if echo "$fname" | grep -qE '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' && [[ "$fname" < "$BEFORE_DATE" ]]; then
+    if grep -qE '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' <<< "$fname" && [[ "$fname" < "$BEFORE_DATE" ]]; then
       printf '%s\0' "$f"
     fi
   done || true)

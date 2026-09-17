@@ -103,7 +103,7 @@ grep -rn "v1\.[0-9]\.[0-9]" docs/ SECURITY.md LIMITATIONS.md README.md --include
 grep -rn "见.*ROADMAP\|详见.*ROADMAP" docs/ SECURITY.md LIMITATIONS.md --include="*.md" 2>/dev/null | grep -v changelog # 人工核对：ROADMAP 含对应条目
 
 # 子项 j: 内部件「XX引擎」旧称零回归——判据 = 是否指约束层内部件（五模块/五能力/子组件），指内部件即旧称，须改「模块/能力/流程」或直称其名
-#   保留类（命中即正常，非回归）：六引擎（FDE 专名）· 绩效量化引擎（AIR 专名）· 通用技术名（规则/搜索/存储/检测/AST/状态机/OCR/Git 引擎）·
+#   保留类（命中即正常，非回归）：六引擎（FDE 专名）· 绩效量化引擎（私有产品专名，代号不入开源文档）· 通用技术名（规则/搜索/存储/检测/AST/状态机/OCR/Git 引擎）·
 #   外部系统转述（Microsoft AGT 等）· 历史快照区 · 记录旧名的说明行 · 代码 API 名（`AuditEngine` / `engine/audit` / `runAuditGate`）
 #   词表含「引擎包」（→「模块包」；原 README 门禁锚定词，已随同批改门禁字面量后取消豁免，见 check-test-count.sh B13）
 #   口径：git grep 全量（宽口径——`--include` 白名单会造假空，漏过 .html/.svg/.ps1/无扩展名脚本）；排除本清单自身（含旧称字面量，否则永久自命中）

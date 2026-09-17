@@ -54,7 +54,7 @@ print_completion_summary() {  # 安装完成 · 使用说明（按平台）
     openclaw)
       echo "  已部署文件："
       echo "    宪法文件:      $TARGET/skills/sofagent/fde.md（宪法内联在 SKILL.md）"
-      echo "    Skill 文件:     $TARGET/skills/sofagent/（6 核心 + 4 数据模板）"
+      echo "    Skill 文件:     $TARGET/skills/sofagent/（SKILL.md + 分层 rules/ + harness 约束骨架与 agents 子 Skill，以 SKILL/ 目录实际清单为准）"
       echo "    加载链 Hook:    $TARGET/hooks/sofagent-load-chain/（HOOK.md + handler.ts）"
       echo "    配套脚本:       $TARGET/scripts/{task-record,cleanup,audit}.sh"
       echo "    断路器:         ${CONFIG_FILE:-未配置}（tools.loopDetection）"
@@ -75,7 +75,7 @@ print_completion_summary() {  # 安装完成 · 使用说明（按平台）
       echo "  └──────────────────────────────────────────┘" ;;
     workbuddy)
       echo "  已部署文件："
-      echo "    Skill 文件:     $TARGET/skills/sofagent/（6 核心 + 4 数据模板）"
+      echo "    Skill 文件:     $TARGET/skills/sofagent/（SKILL.md + 分层 rules/ + harness 约束骨架，以 SKILL/ 目录实际清单为准）"
       echo "    数据目录:       $SOFAGENT_DATA"; echo ""
       echo "  ┌──────────────────────────────────────────┐"
       echo "  │  WorkBuddy: 仅基础约束生效                │"
