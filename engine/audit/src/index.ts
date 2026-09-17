@@ -131,7 +131,7 @@ import { defaultRules, extendedRules } from './rules';
 import { ruleCode, assembleCheck } from './rules/assemble';
 // 空提交 message 类审计：A5/A9/A19 只消费 commit message、不依赖 diff 内容
 // ——空 diff 短路前仍须执行（详见 runEmptyDiffMessageAudit）。
-// v1.4.9 条目 7：改走注册表装配（assembleCheck + defaultRules 查 id），不再直连规则文件
+// v1.4.8 条目 7：改走注册表装配（assembleCheck + defaultRules 查 id），不再直连规则文件
 import type { AuditContext, RuleCheck } from './rules/types';
 import { scanWorkspace, formatWorkspaceScan } from './workspace-scan';
 import { pushAuditResult, type WebhookPlatform } from './webhook';
@@ -774,7 +774,7 @@ function runEmptyDiffMessageAudit(args: Args): RuleCheck[] | null {
     silent: args.silent,
     commitMsg,
   };
-  // v1.4.9 条目 7：meta 单源——从注册表按 id 取规则，assembleCheck 装配前置块
+  // v1.4.8 条目 7：meta 单源——从注册表按 id 取规则，assembleCheck 装配前置块
   const ruleById = (id: string) => defaultRules.find((r) => r.id === id)!;
   return [
     assembleCheck(ruleById('A5'), ctx),

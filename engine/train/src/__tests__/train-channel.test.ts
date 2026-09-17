@@ -114,8 +114,12 @@ describe('章十二：执行者互换测试（同一 job 双执行面）', () =>
     // 双面等收敛——**轮询到条件成立**（上限 5s），不用固定 sleep：
     // local 面是真实子进程（node -e 输出两行 JSON），固定 200ms 在高负载下
     // 不够——8GB 机器实测约 1/3 概率只收到 started 就断言 = 假失败。
+    // 云面同理必须等：mock 通道是 in-process 定时器轮询，local 子进程收敛时
+    // 事件循环可能还没跑完云面首次 status 轮询——只等 local 就断言云面 =
+    // 同款竞态在云侧复发（实测 test-count 全量跑时 ~1/16 概率假失败）。
     // 断言强度**不变**：progress / done / close(0) / 云面 started+close(0) 一个都不能少。
     await waitFor(() => colLocal.events.includes('event:done'), 5000);
+    await waitFor(() => colCloud.isClosed(), 5000);
     // 两面都收到事件流且以 close(0) 收尾——「执行者互换跑同一 job 均通」
     expect(colLocal.events).toContain('event:progress');
     expect(colLocal.events).toContain('event:done');

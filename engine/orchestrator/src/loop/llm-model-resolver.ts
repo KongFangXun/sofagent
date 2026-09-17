@@ -1,5 +1,5 @@
 // ============================================================
-// loop/llm-model-resolver.ts · LLM provider/model/key 解析（v1.4.9 条目 4 范围回收）
+// loop/llm-model-resolver.ts · LLM provider/model/key 解析（v1.4.8 条目 4 范围回收）
 // ============================================================
 // 原内联在 nodes.ts（深模块条目 4 曾被裁为「不搬」）：独立成件会触发 A2「密钥赋值形态」
 // 误报——`const apiKey = resolveApiKey(role)` 的 RHS 是函数调用（运行时读取语义，
