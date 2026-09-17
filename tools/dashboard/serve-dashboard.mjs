@@ -398,18 +398,22 @@ function aggregateAiNodes() {
 /* ────────────────────────────────
  * /api/ontology · 本体数据（knowledge/ 目录真实结构）
  * 扫描 ~/.sofagent/data/knowledge/ 下的 entities/ concepts/ relations/ 文件
+ * 返回：三类列表（各截断至 ONTOLOGY_LIST_LIMIT）+ 各类总数 *_Total
  * ──────────────────────────────── */
+const ONTOLOGY_LIST_LIMIT = 24; // §12 列表精简：服务器端截断 + 报总数
 function aggregateOntology() {
-  const out = { ok: true, found: false, generatedAt: new Date().toISOString(), entities: [], concepts: [], relations: [], thinkCount: 0, indexPages: 0 };
+  const out = { ok: true, found: false, generatedAt: new Date().toISOString(), entities: [], concepts: [], relations: [], entitiesTotal: 0, conceptsTotal: 0, relationsTotal: 0, thinkCount: 0, indexPages: 0 };
   const kbDir = join(SOFAGENT_DATA, 'knowledge');
   try {
     if (!fsDirExists(kbDir)) return out;
     // entities/ concepts/ relations/ 子目录
+    // §12 列表精简：服务器端截断 + 报总数（实体目录可达上百个，全量平铺会把页面撑爆）
     for (const sub of ['entities', 'concepts', 'relations']) {
       const subDir = join(kbDir, sub);
       if (fsDirExists(subDir)) {
         const files = readdirSync(subDir).filter((f) => /\.(md|yml|yaml|json)$/.test(f)).sort();
-        for (const f of files) {
+        out[sub + 'Total'] = files.length;
+        for (const f of files.slice(0, ONTOLOGY_LIST_LIMIT)) {
           let title = f.replace(/\.(md|yml|yaml|json)$/, '');
           try {
             const content = readFileSync(join(subDir, f), 'utf8');

@@ -144,6 +144,12 @@ a:hover{text-decoration:none} /* 全站 hover 无下划线（统一）——按�
 .metrics{display:grid;grid-template-columns:repeat(5,1fr);gap:16px;margin-bottom:16px}
 /* 4 张指标卡的页面（后训练）：平均分满行，不留空列 */
 .metrics.cols-4{grid-template-columns:repeat(4,1fr)}
+/* 本体图谱条目（§4.1 小卡片规格：bg-s 底 / radius-s / 内边距 10px 12px / 标题 12px；§八.1 间距 8px） */
+.ont-group-title{font-size:13px;font-weight:600;color:var(--text-s);margin:10px 0 6px}
+.ont-list{display:flex;flex-wrap:wrap;gap:8px}
+.ont-item{background:var(--bg-s);border:1px solid var(--border);border-radius:var(--radius-s);padding:10px 12px;font-size:12px;max-width:100%}
+.ont-item-name{font-family:var(--mono);font-weight:600;color:var(--text);overflow-wrap:anywhere}
+.ont-trunc{font-size:11px;color:var(--text-t);margin-top:8px}
 .metric-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;text-align:center}
 /* 加载骨架：数据区加载态统一（shimmer 灰块，替代「加载中...」文字） */
 .skeleton{background:linear-gradient(90deg,var(--bg) 25%,var(--bg-s) 50%,var(--bg) 75%);background-size:200% 100%;animation:sk-shimmer 1.4s infinite;border-radius:var(--radius-s)}
@@ -2174,27 +2180,34 @@ function loadOntologyData(){
       var entities=d.entities||[];
       var concepts=d.concepts||[];
       var relations=d.relations||[];
+      // 统计卡显示总数：优先取服务端 *_Total（列表已按 §12 截断），无则回落列表长度
+      var eTotal=d.entitiesTotal||entities.length;
+      var cTotal=d.conceptsTotal||concepts.length;
+      var rTotal=d.relationsTotal||relations.length;
       if(stats){
         stats.innerHTML=
-          '<div class="chart-box" style="text-align:center;padding:12px"><div style="font-size:24px;font-weight:700;color:var(--text)">'+entities.length+'</div><div style="font-size:11px;color:var(--text-s)">实体 Entities</div></div>'+
-          '<div class="chart-box" style="text-align:center;padding:12px"><div style="font-size:24px;font-weight:700;color:var(--text)">'+concepts.length+'</div><div style="font-size:11px;color:var(--text-s)">概念 Concepts</div></div>'+
-          '<div class="chart-box" style="text-align:center;padding:12px"><div style="font-size:24px;font-weight:700;color:var(--text)">'+relations.length+'</div><div style="font-size:11px;color:var(--text-s)">关系 Relations</div></div>';
+          '<div class="chart-box" style="text-align:center;padding:12px"><div style="font-size:24px;font-weight:700;color:var(--text)">'+eTotal+'</div><div style="font-size:11px;color:var(--text-s)">实体 Entities</div></div>'+
+          '<div class="chart-box" style="text-align:center;padding:12px"><div style="font-size:24px;font-weight:700;color:var(--text)">'+cTotal+'</div><div style="font-size:11px;color:var(--text-s)">概念 Concepts</div></div>'+
+          '<div class="chart-box" style="text-align:center;padding:12px"><div style="font-size:24px;font-weight:700;color:var(--text)">'+rTotal+'</div><div style="font-size:11px;color:var(--text-s)">关系 Relations</div></div>';
       }
       if(entries){
         var html='';
         var any=false;
-        function renderGroup(title,color,items){
-          if(!items.length)return'';
+        // §12 列表精简：列表由服务端截断，此处只标注总数与未列出数量
+        function renderGroup(title,items,total){
+          if(!total)return'';
           any=true;
-          var h='<div style="font-size:13px;font-weight:600;color:'+color+';margin:10px 0 6px">'+escapeHtml(title)+'（'+items.length+'）</div>';
-          h+='<div style="display:flex;flex-wrap:wrap;gap:6px">'+items.map(function(it){
-            return '<div style="background:var(--bg-s);border:1px solid var(--border);border-radius:var(--radius-s);padding:6px 10px;font-size:12px"><span style="font-family:var(--mono);color:var(--brand-d);font-weight:600">'+escapeHtml(it.title)+'</span></div>';
+          var shown=items.length;
+          var h='<div class="ont-group-title">'+escapeHtml(title)+'（'+total+(shown<total?'，显示前 '+shown+' 个':'')+'）</div>';
+          h+='<div class="ont-list">'+items.map(function(it){
+            return '<div class="ont-item"><span class="ont-item-name">'+escapeHtml(it.title)+'</span></div>';
           }).join('')+'</div>';
+          if(shown<total)h+='<div class="ont-trunc">另有 '+(total-shown)+' 个未列出（全量见 knowledge/ 对应子目录）</div>';
           return h;
         }
-        html+=renderGroup('实体 Entities', 'var(--text-s)', entities);
-        html+=renderGroup('概念 Concepts', 'var(--text-s)', concepts);
-        html+=renderGroup('关系 Relations', 'var(--text-s)', relations);
+        html+=renderGroup('实体 Entities', entities, eTotal);
+        html+=renderGroup('概念 Concepts', concepts, cTotal);
+        html+=renderGroup('关系 Relations', relations, rTotal);
         if(!any){
           html=emptyState('<i class="bi bi-map"></i>','还没有本体数据','在 FDE 引导页复制 Prompt 执行深挖阶段，或运行 create_entity / create_concept 构建','去 FDE 引导',"goPage('fde')");
         }
