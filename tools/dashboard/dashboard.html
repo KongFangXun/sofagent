@@ -142,6 +142,8 @@ a:hover{text-decoration:none} /* 全站 hover 无下划线（统一）——按�
 .section-body{padding:20px;flex:1;display:flex;flex-direction:column;min-height:0}
 
 .metrics{display:grid;grid-template-columns:repeat(5,1fr);gap:16px;margin-bottom:16px}
+/* 4 张指标卡的页面（后训练）：平均分满行，不留空列 */
+.metrics.cols-4{grid-template-columns:repeat(4,1fr)}
 .metric-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;text-align:center}
 /* 加载骨架：数据区加载态统一（shimmer 灰块，替代「加载中...」文字） */
 .skeleton{background:linear-gradient(90deg,var(--bg) 25%,var(--bg-s) 50%,var(--bg) 75%);background-size:200% 100%;animation:sk-shimmer 1.4s infinite;border-radius:var(--radius-s)}
@@ -386,6 +388,8 @@ a:hover{text-decoration:none} /* 全站 hover 无下划线（统一）——按�
   :root{--nav-h:auto}
   .container{padding:12px 12px calc(12px + env(safe-area-inset-bottom))}
   .metrics{grid-template-columns:repeat(2,1fr);gap:12px}
+  /* 4 张指标卡窄屏同样 2 列（2×2 满行，无孤卡） */
+  .metrics.cols-4{grid-template-columns:repeat(2,1fr)}
   /* 5 张指标卡 2 列布局：最后一张占满整行，避免孤卡 */
   .metrics .metric-card:last-child:nth-child(odd){grid-column:1/-1}
   .metric-value{font-size:24px}
@@ -800,7 +804,7 @@ a:hover{text-decoration:none} /* 全站 hover 无下划线（统一）——按�
       <span style="font-size:11px;color:var(--text-t)">读 train-status.json / train-health.json（训练终态自动落盘刷新）</span>
     </div>
     <div class="section-body">
-      <div class="metrics" style="margin-bottom:12px">
+      <div class="metrics cols-4" style="margin-bottom:12px">
         <div class="metric-card"><div class="metric-value" id="tr-running">—</div><div class="metric-label">当前在跑</div></div>
         <div class="metric-card"><div class="metric-value" id="tr-completed">—</div><div class="metric-label">累计完成</div></div>
         <div class="metric-card"><div class="metric-value" id="tr-failed">—</div><div class="metric-label">失败/取消</div></div>
