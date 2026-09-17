@@ -226,6 +226,8 @@ done
 # exit 2 = 还在跑（循环重查） / exit 1 = 有失败（定位 → 修 → push → 重等，禁止打 tag） / exit 0 = 全绿
 ```
 
+> 🔴 **禁自写轮询脚本替代上方官方段**（v1.4.9 实锤）：执行者常顺手用 `PENDING=$(gh run list ... | grep -c ...)` 自写简化版——zsh 下 grep 命中 0 行时 exit 1 触发 `|| echo 0`，`$()` 捕获 "0\n0" 双值 → `[ -eq ]` integer expression expected **死循环不退出**（CI 实际早已全绿，后台任务空转）。上方 node 单进程版无此陷阱；确需自写时，计数一律 `n=${n:-0}` 归一 + 用 `grep -q` 不用 `grep -c`。
+
 > 🔴 **CI 失败三分类处置（先分类再动手——不同类修法完全不同）**：
 > 1. **真回归**（本版改动引入：新脚本 set -u 炸弹 / 新测试环境假设 / 配置兜底链引用未初始化变量）→ 修根因 → 复现验证 → push 重等。识别特征：v上版 tag..HEAD 的 diff 里能定位到引入点。
 > 2. **发版时序固有**（依赖 npm 上已有当前版本，而发布动作在本轮 CI 之后——如 install.sh 按 SSOT 版本从 registry 装 audit）→ 修依赖顺序/降级兜底（如 @latest 占位），不视为 CI 阻塞。
@@ -314,7 +316,7 @@ fi
 
 ## 步骤七：gh release（触发 release.yml 自动 publish audit + mcp）
 
-> GitHub Release published 后，`.github/workflows/release.yml` 自动触发，publish `@sofagent/audit` 和 `@sofagent/mcp` 两个包到 npm。其余 11 包在步骤八手动 publish。
+> GitHub Release published 后，`.github/workflows/release.yml` 自动触发，publish `@sofagent/audit` 和 `@sofagent/mcp` 两个包到 npm。其余 13 包在步骤八手动 publish（12 个 `engine/<pkg>` scope 包 + load-chain + 裸名总包 sofagent——包数口径以步骤八头部为准）。
 
 ### 🔴 发版 artifact 四件对账（release create 后立即做，不等收尾）
 
@@ -454,12 +456,16 @@ EOF
 npm view @sofagent/audit@vX.Y.Z version --prefer-online  # 期望返回版本号
 npm view @sofagent/mcp@vX.Y.Z version --prefer-online    # 期望返回版本号
 
-# 手动 publish 其余 11 包——每包 publish 后立即 npm view 对账 + E409 自动等待重查
+# 手动 publish 其余 13 包——每包 publish 后立即 npm view 对账 + E409 自动等待重查
 # 🔴 publish 输出严禁接管道过滤（| grep xxx）——报错被过滤吞掉会表面循环跑完实际漏发，
 #    15 包对账时才发现。输出必须全量落盘，失败立即停。
 # 🔴 npm view 对账必须加 --prefer-online——裸查询吃本地缓存，刚 publish 完会误报
 #    「失败实已发布」（发版 session 本地缓存里还是上版）。大包（≥800KB）registry 侧
 #    收录延迟可达 3+ 分钟，对账窗口预留足够，勿据一次裸查询判定失败。
+# 🔴 publish 日志含 `+@sofagent/<pkg>@<ver>` 行 = 已成功入队（npm CLI 的发布确认标记）——
+#    propagation 延迟期（30s-5min 波动）view 查不到 ≠ 发布失败。判定序：先查日志有无入队行，
+#    有则等 3 分钟再补查，连续 ≥6 轮仍查不到才升级人工处理（v1.4.9 实锤：orchestrator/train/
+#    load-chain 三包 6 轮超时全虚惊，日志均含入队行，等后全绿）。
 TARGET_VER=$(node -p "require('./package.json').version")
 for pkg in core daemon eval harness ontology orchestrator train rules evolve think ab-test; do
   echo "--- @sofagent/$pkg ---"
