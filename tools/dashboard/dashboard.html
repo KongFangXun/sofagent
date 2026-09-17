@@ -479,8 +479,8 @@ a:hover{text-decoration:none} /* 全站 hover 无下划线（统一）——按�
       <button class="nav-item active" onclick="goPage('cockpit')">驾驶舱</button>
       <button class="nav-item" onclick="goPage('workflow')">业务流</button>
       <button class="nav-item" onclick="goPage('train')">后训练</button>
-      <button class="nav-item" onclick="goPage('ontology')">本体图谱</button>
       <button class="nav-item" onclick="goPage('knowledge')">知识库</button>
+      <button class="nav-item" onclick="goPage('ontology')">本体图谱</button>
       <button class="nav-item" onclick="goPage('fde')">FDE 引导</button>
       <button class="nav-item" onclick="goPage('resources')">工具箱</button>
     </nav>
@@ -641,38 +641,22 @@ a:hover{text-decoration:none} /* 全站 hover 无下划线（统一）——按�
 </div>
 
 <!-- ================================================== -->
-<!-- PAGE: 本体图谱（本体数据 + 图谱，v1.4.0 归并） -->
+<!-- PAGE: 后训练 -->
 <!-- ================================================== -->
-<div class="page" id="page-ontology">
-    <div class="section">
-    <div class="section-header">
-      <div class="section-title"><span class="dot-emoji"><i class="bi bi-map"></i></span>本体数据（ontology）</div>
-      <span style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-        <a href="/api/export-ontology" download="ontology.json" title="下载本体数据完整清单（JSON，含来源分组与全部条目）" class="btn btn-outline" id="ontDownloadBtn" style="display:none;height:26px;padding:0 10px;font-size:11px"><i class="bi bi-download"></i> 下载本体清单</a>
-        <span class="updated-at" id="ontUpdatedAt">加载中...</span>
-      </span>
-    </div>
-    <div class="section-body">
-      <div id="ontStats" class="grid-3" style="margin-bottom:16px">
-        <div class="chart-box stat-box"><div class="stat-big">—</div><div class="stat-label">实体 Entities</div></div>
-        <div class="chart-box stat-box"><div class="stat-big">—</div><div class="stat-label">概念 Concepts</div></div>
-        <div class="chart-box stat-box"><div class="stat-big">—</div><div class="stat-label">关系 Relations</div></div>
-      </div>
-      <div id="ontSources"><div class="skeleton" style="height:60px"></div></div>
-      <div id="ontRecent" style="margin-top:16px"></div>
-    </div>
-  </div>
+<div class="page" id="page-train">
   <div class="section">
-    <div class="section-header"><div class="section-title"><span class="dot-emoji"><i class="bi bi-diagram-3"></i></span>图谱视图</div>
-      <span class="hint">FDE 双 graph（人读 workflow · 机器读 ontology）</span>
+    <div class="section-header"><div class="section-title"><span class="dot-emoji"><i class="bi bi-cpu"></i></span>训练任务</div>
+      <span class="hint">读 train-status.json / train-health.json（训练终态自动落盘刷新）</span>
     </div>
     <div class="section-body">
-      <div id="gr-view-workflow"></div>
-      <div id="gr-view-ontology" style="margin-top:20px"></div>
+      <div class="metrics cols-4" style="margin-bottom:12px">
+        <div class="metric-card"><div class="metric-value" id="tr-running">—</div><div class="metric-label">当前在跑</div></div>
+        <div class="metric-card"><div class="metric-value" id="tr-completed">—</div><div class="metric-label">累计完成</div></div>
+        <div class="metric-card"><div class="metric-value" id="tr-failed">—</div><div class="metric-label">失败/取消</div></div>
+        <div class="metric-card"><div class="metric-value" id="tr-success-rate">—</div><div class="metric-label">成功率</div><div class="metric-sub" id="tr-success-sub">train-health.json 口径</div></div>
+      </div>
+      <div id="trainJobsBox"><div class="skeleton" style="height:60px"></div></div>
     </div>
-  </div>
-  <div class="info-note" style="margin-top:0">
-    <strong>想学怎么建本体数据？</strong>点右上角 <button class="btn btn-outline" onclick="openHelp('ontology')" style="padding:2px 8px"><i class="bi bi-question-circle"></i> 帮助</button> 查看「什么是本体数据 / 业务四问 / 五条筛选标准 / 构建 Prompt」（或链 <a href="https://github.com/KongFangXun/sofagent/blob/main/FDE/GUIDE.md" target="_blank">FDE/GUIDE.md §3.2</a>）。
   </div>
 </div>
 
@@ -711,6 +695,42 @@ a:hover{text-decoration:none} /* 全站 hover 无下划线（统一）——按�
   </div>
   <div class="info-note" style="margin-top:0">
     知识库是 FDE 离场后企业留下的<strong>知识资产</strong>。<strong>数据主权</strong>（本地化率、数据流向）已在驾驶舱展示。Ledger-Views-Policy 三层治理说明见右上角 <button class="btn btn-outline" onclick="openHelp('knowledge')" style="padding:2px 8px"><i class="bi bi-question-circle"></i> 帮助</button>（或 <a href="https://github.com/KongFangXun/sofagent/blob/main/docs/PHILOSOPHY.md" target="_blank">PHILOSOPHY §五</a>）。
+  </div>
+</div>
+
+<!-- ================================================== -->
+<!-- PAGE: 本体图谱（本体数据 + 图谱，v1.4.0 归并） -->
+<!-- ================================================== -->
+<div class="page" id="page-ontology">
+    <div class="section">
+    <div class="section-header">
+      <div class="section-title"><span class="dot-emoji"><i class="bi bi-map"></i></span>本体数据（ontology）</div>
+      <span style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <a href="/api/export-ontology" download="ontology.json" title="下载本体数据完整清单（JSON，含来源分组与全部条目）" class="btn btn-outline" id="ontDownloadBtn" style="display:none;height:26px;padding:0 10px;font-size:11px"><i class="bi bi-download"></i> 下载本体清单</a>
+        <span class="updated-at" id="ontUpdatedAt">加载中...</span>
+      </span>
+    </div>
+    <div class="section-body">
+      <div id="ontStats" class="grid-3" style="margin-bottom:16px">
+        <div class="chart-box stat-box"><div class="stat-big">—</div><div class="stat-label">实体 Entities</div></div>
+        <div class="chart-box stat-box"><div class="stat-big">—</div><div class="stat-label">概念 Concepts</div></div>
+        <div class="chart-box stat-box"><div class="stat-big">—</div><div class="stat-label">关系 Relations</div></div>
+      </div>
+      <div id="ontSources"><div class="skeleton" style="height:60px"></div></div>
+      <div id="ontRecent" style="margin-top:16px"></div>
+    </div>
+  </div>
+  <div class="section">
+    <div class="section-header"><div class="section-title"><span class="dot-emoji"><i class="bi bi-diagram-3"></i></span>图谱视图</div>
+      <span class="hint">FDE 双 graph（人读 workflow · 机器读 ontology）</span>
+    </div>
+    <div class="section-body">
+      <div id="gr-view-workflow"></div>
+      <div id="gr-view-ontology" style="margin-top:20px"></div>
+    </div>
+  </div>
+  <div class="info-note" style="margin-top:0">
+    <strong>想学怎么建本体数据？</strong>点右上角 <button class="btn btn-outline" onclick="openHelp('ontology')" style="padding:2px 8px"><i class="bi bi-question-circle"></i> 帮助</button> 查看「什么是本体数据 / 业务四问 / 五条筛选标准 / 构建 Prompt」（或链 <a href="https://github.com/KongFangXun/sofagent/blob/main/FDE/GUIDE.md" target="_blank">FDE/GUIDE.md §3.2</a>）。
   </div>
 </div>
 
@@ -803,26 +823,6 @@ a:hover{text-decoration:none} /* 全站 hover 无下划线（统一）——按�
       <div id="fdeSelfGraphBox" class="meta12">
         <div class="skeleton" style="height:60px"></div>
       </div>
-    </div>
-  </div>
-</div>
-
-<!-- ================================================== -->
-<!-- PAGE: 后训练 -->
-<!-- ================================================== -->
-<div class="page" id="page-train">
-  <div class="section">
-    <div class="section-header"><div class="section-title"><span class="dot-emoji"><i class="bi bi-cpu"></i></span>训练任务</div>
-      <span class="hint">读 train-status.json / train-health.json（训练终态自动落盘刷新）</span>
-    </div>
-    <div class="section-body">
-      <div class="metrics cols-4" style="margin-bottom:12px">
-        <div class="metric-card"><div class="metric-value" id="tr-running">—</div><div class="metric-label">当前在跑</div></div>
-        <div class="metric-card"><div class="metric-value" id="tr-completed">—</div><div class="metric-label">累计完成</div></div>
-        <div class="metric-card"><div class="metric-value" id="tr-failed">—</div><div class="metric-label">失败/取消</div></div>
-        <div class="metric-card"><div class="metric-value" id="tr-success-rate">—</div><div class="metric-label">成功率</div><div class="metric-sub" id="tr-success-sub">train-health.json 口径</div></div>
-      </div>
-      <div id="trainJobsBox"><div class="skeleton" style="height:60px"></div></div>
     </div>
   </div>
 </div>
