@@ -138,12 +138,31 @@ a:hover{text-decoration:none} /* 全站 hover 无下划线（统一）——按�
 .section-title .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
 .dot-emoji{font-size:14px;line-height:1;flex-shrink:0}
 .dot-emoji .bi{font-size:14px;vertical-align:-1px}
-.section-sub{font-size:12px;color:var(--text-s);font-weight:400;margin-left:4px}
 .section-body{padding:20px;flex:1;display:flex;flex-direction:column;min-height:0}
 
 .metrics{display:grid;grid-template-columns:repeat(5,1fr);gap:16px;margin-bottom:16px}
 /* 4 张指标卡的页面（后训练）：平均分满行，不留空列 */
 .metrics.cols-4{grid-template-columns:repeat(4,1fr)}
+/* 统计卡三件套（本体图谱/知识库通用；§4.3 优先用类） */
+.hint{font-size:11px;color:var(--text-t)}
+.meta{font-size:11px;color:var(--text-s)}
+.meta12{font-size:12px;color:var(--text-s)}
+.stage-title{font-size:13px;color:var(--brand-d)}
+.sub-title{font-size:13px;font-weight:600;color:var(--text)}
+.stat-big-sm{font-size:20px;font-weight:700;color:var(--text);font-variant-numeric:tabular-nums}
+.icon-ok{color:var(--brand)}
+.hint12{font-size:12px;color:var(--text-t)}
+.hint12-center{text-align:center;color:var(--text-t);font-size:12px}
+.meta13{font-size:13px;color:var(--text-s)}
+.meta13w{font-size:13px;font-weight:500;color:var(--text-s)}
+.text12{font-size:12px;color:var(--text)}
+.title12{font-size:12px;font-weight:600;color:var(--text)}
+
+/* 统计卡三件套（本体图谱/知识库通用；§4.3 优先用类）
+   组合写法提升特异性：单独 .chart-box 的 padding:16px 在后文定义，同特异性会覆盖 12px */
+.chart-box.stat-box{text-align:center;padding:12px}
+.stat-big{font-size:24px;font-weight:700;color:var(--text);font-variant-numeric:tabular-nums}
+.stat-label{font-size:11px;color:var(--text-s)}
 /* 本体图谱：来源分布 + 最近更新（§4.1 规格 / §4.3 优先用类 / §八.4 数字等宽） */
 .ont-subtitle{font-size:11px;color:var(--text-t);margin-bottom:4px}
 .ont-src-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);font-size:12px}
@@ -198,19 +217,6 @@ a:hover{text-decoration:none} /* 全站 hover 无下划线（统一）——按�
 .node-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
 /* 流水线卡类型点：10px→8px（与 skill 加载链 sc-dot 一致） */
 .node-grid .agent-dot{width:8px;height:8px}
-
-/* Timeline */
-.timeline{position:relative;padding-left:24px}
-.timeline::before{content:'';position:absolute;left:8px;top:4px;bottom:4px;width:2px;background:var(--border)}
-.tl-item{position:relative;padding-bottom:14px}
-.tl-item:last-child{padding-bottom:0}
-.tl-dot{position:absolute;left:-20px;top:2px;width:12px;height:12px;border-radius:50%;border:2px solid var(--card)}
-.tl-dot.done{background:var(--text-t)}
-.tl-dot.current{background:var(--brand);box-shadow:0 0 0 3px rgba(22,184,243,.15)}
-.tl-dot.planned{background:var(--card);border-color:var(--border)}
-.tl-title{font-size:13px;font-weight:500}
-.tl-version{font-family:var(--mono);font-size:11px;color:var(--text-t);margin-left:6px}
-.tl-desc{font-size:12px;color:var(--text-s);margin-top:2px}
 
 /* Rules */
 .rule-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
@@ -271,8 +277,6 @@ a:hover{text-decoration:none} /* 全站 hover 无下划线（统一）——按�
 .btn-primary:hover{border-color:var(--text);color:var(--text)}
 .btn-outline{background:var(--card);border-color:var(--border);color:var(--text-s)}
 .btn-outline:hover{border-color:var(--text-t);color:var(--text)}
-.btn-ghost{background:transparent;border-color:transparent;color:var(--text-s)}
-.btn-ghost:hover{color:var(--text)}
 
 .fde-stage{display:flex;align-items:center;gap:12px;padding:10px 12px;background:var(--bg-s);border:1px solid var(--border);border-radius:var(--radius-s);margin-bottom:8px}
 .fde-num{width:20px;height:20px;border-radius:50%;background:var(--brand);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0}
@@ -343,7 +347,6 @@ a:hover{text-decoration:none} /* 全站 hover 无下划线（统一）——按�
 .refresh-bar select{padding:4px 8px;border:1px solid var(--border);border-radius:4px;font-size:12px;font-family:var(--font)}
 
 /* 刷新间隔（扁平文字式，无胶囊容器） */
-.seg-group{display:inline-flex;gap:2px}
 .seg-btn{border:none;background:transparent;color:var(--text-s);font-size:11px;font-weight:500;padding:3px 10px;border-radius:4px;cursor:pointer;font-family:var(--font);transition:color .15s;min-height:22px;line-height:1.2}
 .seg-btn:hover{color:var(--text)}
 .seg-btn.active{color:var(--brand);font-weight:600}
@@ -378,7 +381,6 @@ a:hover{text-decoration:none} /* 全站 hover 无下划线（统一）——按�
 /* 圆点共用结构：5 类圆点共用基础（尺寸/颜色/动画各自定义） */
 .agent-dot,.sc-dot,.st-dot,.sov-dot,.node-status .icon{display:inline-block;border-radius:50%;flex-shrink:0}
 /* 公用小类：消灭重复内联（设计原则：优先用类） */
-.hint{font-size:11px;color:var(--text-t)}
 .meta{font-size:11px;color:var(--text-s)}
 .ellipsis{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .updated-at{font-size:11px;color:var(--text-t)}
@@ -392,8 +394,6 @@ a:hover{text-decoration:none} /* 全站 hover 无下划线（统一）——按�
 .sc-item .sc-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;animation:pulse 2s infinite}
 .sc-name{font-size:12px;font-weight:600;display:flex;align-items:center;gap:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sc-desc{font-size:11px;color:var(--text-s);line-height:1.5}
-.sc-tag{display:none}
-.sc-arrow{display:none}
 
 @media(max-width:768px){
   :root{--nav-h:auto}
@@ -404,7 +404,7 @@ a:hover{text-decoration:none} /* 全站 hover 无下划线（统一）——按�
   /* 5 张指标卡 2 列布局：最后一张占满整行，避免孤卡 */
   .metrics .metric-card:last-child:nth-child(odd){grid-column:1/-1}
   .metric-value{font-size:24px}
-  .grid-2,.grid-3,.attention,.quick-start{grid-template-columns:1fr}
+  .grid-2,.grid-3,.quick-start{grid-template-columns:1fr}
   /* 加载链横向 4 卡窄屏回单列 */
   .skill-chain{grid-template-columns:1fr}
   /* 约束层五能力窄屏回单列 */
@@ -433,7 +433,6 @@ a:hover{text-decoration:none} /* 全站 hover 无下划线（统一）——按�
   /* 移动端触控区 ≥44px（Apple HIG） */
   .copy-btn{padding:7px 12px;min-height:44px;margin-top:2px}
   .btn{min-height:44px;padding:0 16px;font-size:13px}
-  .seg-group{width:100%;display:flex}
   .seg-btn{flex:1;min-height:36px;font-size:13px}
   .seg-refresh{flex:0 0 auto;width:34px;height:34px}
   .fde-stage{gap:8px;padding:10px;flex-wrap:wrap}
@@ -452,9 +451,6 @@ a:hover{text-decoration:none} /* 全站 hover 无下划线（统一）——按�
   .rule-item{flex:1 1 calc(50% - 8px);min-width:0}
   /* 编排控制图等宽 SVG 手机不缩放（可横滑看全），文字保持可读 */
   .chart-box svg.graph-wide{min-width:520px}
-  .timeline{padding-left:20px}
-  .hero{padding:16px}
-  .hero-tagline{font-size:17px}
 }
 
 /* iPhone 底部安全区兜底 */
@@ -516,7 +512,7 @@ a:hover{text-decoration:none} /* 全站 hover 无下划线（统一）——按�
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;display:block"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><line x1="12" y1="11" x2="12" y2="17"/><polyline points="9 14 12 17 15 14"/></svg>
     </button>
     <span style="margin-left:auto"></span>
-    <span id="lastRefresh" style="color:var(--text-t);font-size:11px"></span>
+    <span id="lastRefresh" class="hint"></span>
     <button class="seg-btn seg-refresh" onclick="manualRefresh(this)" title="立即刷新（每 5 秒自动刷新）" aria-label="立即刷新">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;display:block"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><polyline points="21 3 21 9 15 9"/></svg>
     </button>
@@ -567,7 +563,7 @@ a:hover{text-decoration:none} /* 全站 hover 无下划线（统一）——按�
       <div id="wl-view-overview"></div>
       <div id="wl-view-tasks" style="display:none"></div>
       <div id="wl-view-audit" style="display:none">
-        <div id="auditRecordCount" style="font-size:11px;color:var(--text-t);margin-bottom:8px;display:flex;align-items:center;gap:10px;justify-content:space-between;flex-wrap:wrap"></div>
+        <div id="auditRecordCount" class="hint" style="margin-bottom:8px;display:flex;align-items:center;gap:10px;justify-content:space-between;flex-wrap:wrap"></div>
         <div class="audit-log" id="liveAuditLog">
           <div class="skeleton" style="height:80px"></div>
         </div>
@@ -581,7 +577,7 @@ a:hover{text-decoration:none} /* 全站 hover 无下划线（统一）——按�
     <div class="section">
       <div class="section-header">
         <div class="section-title"><span class="dot-emoji"><i class="bi bi-graph-down"></i></span>审计分析（近 7 天）</div>
-        <div style="display:flex;align-items:center;gap:16px;font-size:11px;color:var(--text-s);flex-wrap:wrap;justify-content:flex-end">
+        <div class="meta" style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;justify-content:flex-end">
           <span style="display:inline-flex;align-items:center;gap:5px"><span style="width:12px;height:12px;background:var(--brand-l);border-radius:3px"></span>审计次数</span>
           <span style="display:inline-flex;align-items:center;gap:5px"><span style="width:12px;height:12px;background:var(--text-t);border-radius:3px"></span>问题次数</span>
           <span style="display:inline-flex;align-items:center;gap:5px"><span style="width:14px;height:3px;background:var(--brand);border-radius:2px"></span>通过率</span>
@@ -616,7 +612,7 @@ a:hover{text-decoration:none} /* 全站 hover 无下划线（统一）——按�
       <span class="updated-at" id="aiNodesUpdatedAt">加载中...</span>
     </div>
     <div class="section-body">
-      <div id="aiNodeList" style="font-size:12px;color:var(--text-s)">
+      <div id="aiNodeList" class="meta12">
         <div class="skeleton" style="height:60px"></div>
       </div>
       <div class="info-note" style="margin-top:12px">
@@ -627,7 +623,7 @@ a:hover{text-decoration:none} /* 全站 hover 无下划线（统一）——按�
   <div class="section">
     <div class="section-header">
       <div class="section-title"><span class="dot-emoji"><i class="bi bi-shuffle"></i></span>编排控制图</div>
-      <span style="font-size:11px;color:var(--text-t);display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <span class="hint" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
         <span id="graphMeta" style="display:none"></span>
         <span id="graphUpdatedAt">加载中...</span>
       </span>
@@ -657,9 +653,9 @@ a:hover{text-decoration:none} /* 全站 hover 无下划线（统一）——按�
     </div>
     <div class="section-body">
       <div id="ontStats" class="grid-3" style="margin-bottom:16px">
-        <div class="chart-box" style="text-align:center;padding:12px"><div style="font-size:24px;font-weight:700;color:var(--text)">—</div><div style="font-size:11px;color:var(--text-s)">实体 Entities</div></div>
-        <div class="chart-box" style="text-align:center;padding:12px"><div style="font-size:24px;font-weight:700;color:var(--text)">—</div><div style="font-size:11px;color:var(--text-s)">概念 Concepts</div></div>
-        <div class="chart-box" style="text-align:center;padding:12px"><div style="font-size:24px;font-weight:700;color:var(--text)">—</div><div style="font-size:11px;color:var(--text-s)">关系 Relations</div></div>
+        <div class="chart-box stat-box"><div class="stat-big">—</div><div class="stat-label">实体 Entities</div></div>
+        <div class="chart-box stat-box"><div class="stat-big">—</div><div class="stat-label">概念 Concepts</div></div>
+        <div class="chart-box stat-box"><div class="stat-big">—</div><div class="stat-label">关系 Relations</div></div>
       </div>
       <div id="ontSources"><div class="skeleton" style="height:60px"></div></div>
       <div id="ontRecent" style="margin-top:16px"></div>
@@ -667,7 +663,7 @@ a:hover{text-decoration:none} /* 全站 hover 无下划线（统一）——按�
   </div>
   <div class="section">
     <div class="section-header"><div class="section-title"><span class="dot-emoji"><i class="bi bi-diagram-3"></i></span>图谱视图</div>
-      <span style="font-size:11px;color:var(--text-t)">FDE 双 graph（人读 workflow · 机器读 ontology）</span>
+      <span class="hint">FDE 双 graph（人读 workflow · 机器读 ontology）</span>
     </div>
     <div class="section-body">
       <div id="gr-view-workflow"></div>
@@ -690,9 +686,9 @@ a:hover{text-decoration:none} /* 全站 hover 无下划线（统一）——按�
     </div>
     <div class="section-body">
       <div id="kbStats" class="grid-3" style="margin-bottom:16px">
-        <div class="chart-box" style="text-align:center;padding:12px"><div style="font-size:24px;font-weight:700;color:var(--text)">—</div><div style="font-size:11px;color:var(--text-s)">知识页面</div></div>
-        <div class="chart-box" style="text-align:center;padding:12px"><div style="font-size:24px;font-weight:700;color:var(--text)">—</div><div style="font-size:11px;color:var(--text-s)">业务领域</div></div>
-        <div class="chart-box" style="text-align:center;padding:12px"><div style="font-size:24px;font-weight:700;color:var(--text)">—</div><div style="font-size:11px;color:var(--text-s)">更新日志</div></div>
+        <div class="chart-box stat-box"><div class="stat-big">—</div><div class="stat-label">知识页面</div></div>
+        <div class="chart-box stat-box"><div class="stat-big">—</div><div class="stat-label">业务领域</div></div>
+        <div class="chart-box stat-box"><div class="stat-big">—</div><div class="meta">更新日志</div></div>
       </div>
       <div id="kbEntries"><div class="skeleton" style="height:60px"></div></div>
     </div>
@@ -723,7 +719,7 @@ a:hover{text-decoration:none} /* 全站 hover 无下划线（统一）——按�
 <div class="page" id="page-fde">
     <div class="section">
     <div class="section-header"><div class="section-title"><span class="dot-emoji"><i class="bi bi-rocket-takeoff"></i></span>怎么开始</div>
-      <span style="font-size:11px;color:var(--text-t)">零依赖方法论 · 或装进你的 Agent</span>
+      <span class="hint">零依赖方法论 · 或装进你的 Agent</span>
     </div>
     <div class="section-body">
       <div class="quick-start">
@@ -791,7 +787,7 @@ a:hover{text-decoration:none} /* 全站 hover 无下划线（统一）——按�
       <span class="updated-at" id="fdeWfUpdatedAt">加载中...</span>
     </div>
     <div class="section-body">
-      <div id="fdeWorkflowBox" style="font-size:12px;color:var(--text-s)">
+      <div id="fdeWorkflowBox" class="meta12">
         <div class="skeleton" style="height:60px"></div>
       </div>
     </div>
@@ -802,8 +798,8 @@ a:hover{text-decoration:none} /* 全站 hover 无下划线（统一）——按�
       <span class="updated-at" id="fdeSelfUpdatedAt">加载中...</span>
     </div>
     <div class="section-body">
-      <div style="font-size:11px;color:var(--text-t);margin-bottom:10px">sofagent 自己的 FDE 流程节点图——自举：梳理 → 识别 AI 节点 → 双 graph 交付 → 7×24 审计。我们是自己的第一个客户（数据源 <code style="background:var(--brand-l);padding:2px 6px;border-radius:4px">~/.sofagent/fde/workflow/template.yaml</code>）。</div>
-      <div id="fdeSelfGraphBox" style="font-size:12px;color:var(--text-s)">
+      <div class="hint" style="margin-bottom:10px">sofagent 自己的 FDE 流程节点图——自举：梳理 → 识别 AI 节点 → 双 graph 交付 → 7×24 审计。我们是自己的第一个客户（数据源 <code style="background:var(--brand-l);padding:2px 6px;border-radius:4px">~/.sofagent/fde/workflow/template.yaml</code>）。</div>
+      <div id="fdeSelfGraphBox" class="meta12">
         <div class="skeleton" style="height:60px"></div>
       </div>
     </div>
@@ -816,7 +812,7 @@ a:hover{text-decoration:none} /* 全站 hover 无下划线（统一）——按�
 <div class="page" id="page-train">
   <div class="section">
     <div class="section-header"><div class="section-title"><span class="dot-emoji"><i class="bi bi-cpu"></i></span>训练任务</div>
-      <span style="font-size:11px;color:var(--text-t)">读 train-status.json / train-health.json（训练终态自动落盘刷新）</span>
+      <span class="hint">读 train-status.json / train-health.json（训练终态自动落盘刷新）</span>
     </div>
     <div class="section-body">
       <div class="metrics cols-4" style="margin-bottom:12px">
@@ -841,7 +837,7 @@ a:hover{text-decoration:none} /* 全站 hover 无下划线（统一）——按�
         <code>bash install.sh &amp;&amp; sofagent-audit --init</code>
         <button class="copy-btn" onclick="copyPrompt(this, 'bash install.sh && sofagent-audit --init')">复制</button>
       </div>
-      <div style="font-size:12px;color:var(--text-t)">或 npx 零安装：<code style="background:var(--brand-l);padding:2px 6px;border-radius:4px;font-size:11px">npx @sofagent/audit --init</code> · 需要 Node.js ≥ 18 + git</div>
+      <div class="hint12">或 npx 零安装：<code style="background:var(--brand-l);padding:2px 6px;border-radius:4px;font-size:11px">npx @sofagent/audit --init</code> · 需要 Node.js ≥ 18 + git</div>
     </div>
   </div>
   <div class="section">
@@ -852,23 +848,23 @@ a:hover{text-decoration:none} /* 全站 hover 无下划线（统一）——按�
     <div class="section-body arch-grid">
       <div class="arch-layer" style="background:var(--bg-s);border:1px solid var(--border)">
         <h5 style="color:var(--text-s)">注入</h5>
-        <div style="font-size:12px;color:var(--text-s)">开工前注入红线 · 四层加载链 · SKILL.md → fde.md → think.md → knowledge/</div>
+        <div class="meta12">开工前注入红线 · 四层加载链 · SKILL.md → fde.md → think.md → knowledge/</div>
       </div>
       <div class="arch-layer" style="background:var(--bg-s);border:1px solid var(--border)">
         <h5 style="color:var(--text-s)">审计</h5>
-        <div style="font-size:12px;color:var(--text-s)">每次变更硬证据 · 24 条规则 · 19 条零 token · 违规当场拦截</div>
+        <div class="meta12">每次变更硬证据 · 24 条规则 · 19 条零 token · 违规当场拦截</div>
       </div>
       <div class="arch-layer" style="background:var(--bg-s);border:1px solid var(--border)">
         <h5 style="color:var(--text-s)">回溯</h5>
-        <div style="font-size:12px;color:var(--text-s)">自动快照 · 一键回滚 · git snapshot 独立快照 · 不污染提交历史</div>
+        <div class="meta12">自动快照 · 一键回滚 · git snapshot 独立快照 · 不污染提交历史</div>
       </div>
       <div class="arch-layer" style="background:var(--bg-s);border:1px solid var(--border)">
         <h5 style="color:var(--text-s)">沉淀</h5>
-        <div style="font-size:12px;color:var(--text-s)">审计轨迹 · think.md 反思 · 知识蒸馏进 knowledge/ 知识库</div>
+        <div class="meta12">审计轨迹 · think.md 反思 · 知识蒸馏进 knowledge/ 知识库</div>
       </div>
       <div class="arch-layer" style="background:var(--bg-s);border:1px solid var(--border)">
         <h5 style="color:var(--text-s)">进化</h5>
-        <div style="font-size:12px;color:var(--text-s)">think.md 反思 + Dream Cycle 知识回灌 + evolve Skill 优化</div>
+        <div class="meta12">think.md 反思 + Dream Cycle 知识回灌 + evolve Skill 优化</div>
       </div>
     </div>
   </div>
@@ -877,7 +873,7 @@ a:hover{text-decoration:none} /* 全站 hover 无下划线（统一）——按�
       <a href="https://github.com/KongFangXun/sofagent/blob/main/docs/ARCHITECTURE.md" target="_blank" class="btn btn-outline">ARCHITECTURE.md →</a>
     </div>
     <div class="section-body">
-      <div id="skillChainBox" style="font-size:12px;color:var(--text-s)">
+      <div id="skillChainBox" class="meta12">
         <div class="skeleton" style="height:60px"></div>
       </div>
     </div>
@@ -935,7 +931,7 @@ a:hover{text-decoration:none} /* 全站 hover 无下划线（统一）——按�
         <div class="rule-item rule-cat-green"><div class="rule-code">E2 遗留 TODO</div><div class="rule-name">未声明 TODO</div></div>
         <div class="rule-item rule-cat-green"><div class="rule-code">E4 注释率</div><div class="rule-name">注释覆盖率</div></div>
       </div>
-      <div style="font-size:11px;color:var(--text-t);margin-top:12px">24 条规则（17 默认 + 7 扩展），每次 git commit / 文件变更自动触发。<b>19 条纯 git-diff 规则零 token 不调 LLM</b>。颜色分级：红=安全红线 · 黄=行为约束 · 蓝=质量规范 · 紫=知识域约束 · 绿=测试规范 · 灰=工程治理</div>
+      <div class="hint" style="margin-top:12px">24 条规则（17 默认 + 7 扩展），每次 git commit / 文件变更自动触发。<b>19 条纯 git-diff 规则零 token 不调 LLM</b>。颜色分级：红=安全红线 · 黄=行为约束 · 蓝=质量规范 · 紫=知识域约束 · 绿=测试规范 · 灰=工程治理</div>
       <div class="grid-2" style="margin-top:12px">
         <div class="prompt-box" style="margin-top:0">
           <div class="prompt-action"><span class="prompt-label">触发审计检查</span><button class="copy-btn" onclick="copyPrompt(this, '帮我审计这次变更，检查有没有越界改文件、密钥泄漏、盲目修改。使用 sofagent 的审计规则。')">复制</button></div>
@@ -959,7 +955,7 @@ a:hover{text-decoration:none} /* 全站 hover 无下划线（统一）——按�
       <a href="https://github.com/KongFangXun/sofagent/blob/main/engine/mcp/src/tool-registry.ts" target="_blank" class="btn btn-outline">tool-registry →</a>
     </div>
     <div class="section-body">
-      <div style="font-size:11px;color:var(--text-t);margin-bottom:8px;line-height:1.7">这些工具经 <strong>MCP 协议</strong>注册给 Agent——对话里直接说需求，Agent 自动选择并调用对应工具，例如：<em>"帮我查一下最新的审计记录"</em> → 调 audit 查询工具；<em>"建一张周报表格"</em> → 调表格工具。无需手动拼命令。</div>
+      <div class="hint" style="margin-bottom:8px;line-height:1.7">这些工具经 <strong>MCP 协议</strong>注册给 Agent——对话里直接说需求，Agent 自动选择并调用对应工具，例如：<em>"帮我查一下最新的审计记录"</em> → 调 audit 查询工具；<em>"建一张周报表格"</em> → 调表格工具。无需手动拼命令。</div>
       <div class="mcp-grid" id="mcpList">
         <div class="skeleton" style="grid-column:1/-1;height:50px"></div>
       </div>
@@ -991,7 +987,7 @@ a:hover{text-decoration:none} /* 全站 hover 无下划线（统一）——按�
       <a href="https://github.com/KongFangXun/sofagent/blob/main/FORGE/README.md" target="_blank" class="btn btn-outline">FORGE README →</a>
     </div>
     <div class="section-body">
-      <p style="font-size:13px;color:var(--text-s);margin-bottom:16px">FORGE 是 sofagent <strong>项目内部的开发工具链</strong>（不是 FDE 方法论的一部分），用 sofagent 自己的审计能力审 sofagent 自己的代码——"用 AI 审 AI"。两条循环：<strong>fresh-eyes-loop</strong>（双盲质量审查）与 <strong>release-gate-loop</strong>（发版门禁，十二阶段 SOP）。</p>
+      <p class="meta13" style="margin-bottom:16px">FORGE 是 sofagent <strong>项目内部的开发工具链</strong>（不是 FDE 方法论的一部分），用 sofagent 自己的审计能力审 sofagent 自己的代码——"用 AI 审 AI"。两条循环：<strong>fresh-eyes-loop</strong>（双盲质量审查）与 <strong>release-gate-loop</strong>（发版门禁，十二阶段 SOP）。</p>
 
       <div class="step-card" style="margin-bottom:12px">
         <div class="step-title"><span class="step-num">1</span>fresh-eyes-loop · 双盲质量审查</div>
@@ -1095,8 +1091,8 @@ build → acceptance → regression → coverage，
 
       <div class="help-tab" id="help-ontology">
         <div class="help-intro"><b>构建本体数据的完整方法论</b>（FDE 深挖阶段）：</div>
-        <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:8px">什么是本体数据（ontology）</div>
-        <p style="font-size:13px;color:var(--text-s);margin-bottom:12px">类比城市规划中的<strong>「用地性质图」</strong>——每块地是住宅/商业/工业，决定了这块地能干什么、归谁管。本体数据 = 企业知识的「用地性质图」——每个知识节点是什么类型、归哪个业务域、能看什么不能看什么。</p>
+        <div class="sub-title" style="margin-bottom:8px">什么是本体数据（ontology）</div>
+        <p class="meta13" style="margin-bottom:12px">类比城市规划中的<strong>「用地性质图」</strong>——每块地是住宅/商业/工业，决定了这块地能干什么、归谁管。本体数据 = 企业知识的「用地性质图」——每个知识节点是什么类型、归哪个业务域、能看什么不能看什么。</p>
         <div class="grid-3" style="margin-bottom:16px">
           <div class="ont-card">
             <h4 style="color:var(--text-s)">实体 Entity</h4>
@@ -1129,7 +1125,7 @@ build → acceptance → regression → coverage，
         <div class="info-note" style="margin-top:0">
           <strong>本体 ≠ 知识图谱数据库</strong>：本体的核心是<strong>业务刻画</strong>——完整呈现业务领域的客观事实与关联关系。知识图谱只是它的一种技术实现。
         </div>
-        <div style="font-size:13px;font-weight:600;color:var(--text);margin:16px 0 8px">业务四问（入场必填）</div>
+        <div class="sub-title" style="margin:16px 0 8px">业务四问（入场必填）</div>
         <div class="step-card">
           <div class="step-title"><span class="step-num">1</span>关键业务对象有哪些？</div>
           <div class="step-desc">客户 / 商品 / 订单 / 供应商……列清实体类型</div>
@@ -1146,14 +1142,14 @@ build → acceptance → regression → coverage，
           <div class="step-title"><span class="step-num">4</span>动作风险等级？</div>
           <div class="step-desc">低（查询/只读）/ 中高（写操作/审批/对外发）</div>
         </div>
-        <div style="font-size:13px;font-weight:600;color:var(--text);margin:16px 0 8px">Object Type 五条筛选标准</div>
-        <p style="font-size:13px;color:var(--text-s);margin-bottom:12px">业务四问列出的名词不是全部都能当 Object Type——<strong>数据库表 ≠ 业务对象</strong>。五条标准缺两三条就要谨慎：</p>
+        <div class="sub-title" style="margin:16px 0 8px">Object Type 五条筛选标准</div>
+        <p class="meta13" style="margin-bottom:12px">业务四问列出的名词不是全部都能当 Object Type——<strong>数据库表 ≠ 业务对象</strong>。五条标准缺两三条就要谨慎：</p>
         <div class="grid-3">
-          <div class="ont-card"><h4 style="color:var(--brand-d);font-size:13px">1. 业务可命名</h4><p style="font-size:11px;margin:0">业务人员叫得出这个名字吗？</p></div>
-          <div class="ont-card"><h4 style="color:var(--brand-d);font-size:13px">2. 系统可查询</h4><p style="font-size:11px;margin:0">系统里能稳定查到它吗？</p></div>
-          <div class="ont-card"><h4 style="color:var(--brand-d);font-size:13px">3. AI 可推理</h4><p style="font-size:11px;margin:0">AI 能围绕它做推理吗？</p></div>
-          <div class="ont-card"><h4 style="color:var(--brand-d);font-size:13px">4. 动作可落地</h4><p style="font-size:11px;margin:0">业务动作能落在它身上吗？</p></div>
-          <div class="ont-card"><h4 style="color:var(--brand-d);font-size:13px">5. 责任可绑定</h4><p style="font-size:11px;margin:0">权限和责任能绑定到它吗？</p></div>
+          <div class="ont-card"><h4 class="stage-title">1. 业务可命名</h4><p style="font-size:11px;margin:0">业务人员叫得出这个名字吗？</p></div>
+          <div class="ont-card"><h4 class="stage-title">2. 系统可查询</h4><p style="font-size:11px;margin:0">系统里能稳定查到它吗？</p></div>
+          <div class="ont-card"><h4 class="stage-title">3. AI 可推理</h4><p style="font-size:11px;margin:0">AI 能围绕它做推理吗？</p></div>
+          <div class="ont-card"><h4 class="stage-title">4. 动作可落地</h4><p style="font-size:11px;margin:0">业务动作能落在它身上吗？</p></div>
+          <div class="ont-card"><h4 class="stage-title">5. 责任可绑定</h4><p style="font-size:11px;margin:0">权限和责任能绑定到它吗？</p></div>
         </div>
         <div class="prompt-box" style="margin-top:16px">
           <div class="prompt-action"><span class="prompt-label">让 Agent 帮你构建本体数据</span>
@@ -1174,11 +1170,11 @@ build → acceptance → regression → coverage，
       <div class="help-tab" id="help-knowledge">
         <div class="help-intro"><b>Ledger-Views-Policy 三层治理</b>——知识库怎么保证数据单向流动、经验自动积累：</div>
         <div class="lvp-row">
-          <div class="lvp-col l"><div class="lvp-label">Ledger · 发生了什么</div><div style="margin-top:4px;font-size:11px;color:var(--text-s)">原始数据 · append-only · 不可改</div><div style="font-size:11px;color:var(--text-t);margin-top:2px">task/logs · think.md · 审计历史</div></div>
+          <div class="lvp-col l"><div class="lvp-label">Ledger · 发生了什么</div><div class="meta" style="margin-top:4px">原始数据 · append-only · 不可改</div><div class="hint" style="margin-top:2px">task/logs · think.md · 审计历史</div></div>
           <div class="lvp-arrow">→</div>
-          <div class="lvp-col v"><div class="lvp-label">Views · 这代表什么</div><div style="margin-top:4px;font-size:11px;color:var(--text-s)">知识提炼 · 单向派生</div><div style="font-size:11px;color:var(--text-t);margin-top:2px">knowledge/ entities · concepts · comparisons</div></div>
+          <div class="lvp-col v"><div class="lvp-label">Views · 这代表什么</div><div class="meta" style="margin-top:4px">知识提炼 · 单向派生</div><div class="hint" style="margin-top:2px">knowledge/ entities · concepts · comparisons</div></div>
           <div class="lvp-arrow">→</div>
-          <div class="lvp-col p"><div class="lvp-label">Policy · 该怎么办</div><div style="margin-top:4px;font-size:11px;color:var(--text-s)">约束规则 · 启动时注入</div><div style="font-size:11px;color:var(--text-t);margin-top:2px">SKILL.md 铁律 · fde.md 业务底线</div></div>
+          <div class="lvp-col p"><div class="lvp-label">Policy · 该怎么办</div><div class="meta" style="margin-top:4px">约束规则 · 启动时注入</div><div class="hint" style="margin-top:2px">SKILL.md 铁律 · fde.md 业务底线</div></div>
         </div>
         <div class="info-note" style="margin-top:12px">
           知识库是 FDE 离场后企业留下的<strong>知识资产</strong>。三层治理保证数据单向流动、经验自动积累。详见 <a href="https://github.com/KongFangXun/sofagent/blob/main/docs/PHILOSOPHY.md" target="_blank">PHILOSOPHY §五</a>
@@ -1191,7 +1187,7 @@ build → acceptance → regression → coverage，
           <div class="step-title"><span class="step-num">A</span>方法论路径（零依赖，不需要 Node.js）</div>
           <div class="step-desc">
             只想了解方法论 → 读 <a href="https://github.com/KongFangXun/sofagent/blob/main/FDE/GUIDE.md" target="_blank">GUIDE.md</a>（半天精读）→ 用你喜欢的工具按手册逐步梳理<br>
-            <span style="color:var(--text-t);font-size:11px">方法论本身不依赖工具——五要素 + 三问判定法纯对话/纸笔即可完成</span>
+            <span class="hint">方法论本身不依赖工具——五要素 + 三问判定法纯对话/纸笔即可完成</span>
           </div>
         </div>
         <div class="step-card">
@@ -1210,7 +1206,7 @@ build → acceptance → regression → coverage，
             <span style="color:var(--brand)">"帮我梳理业务流"</span> → Agent 从当前阶段开始
           </div>
         </div>
-        <div style="font-size:13px;font-weight:600;color:var(--text);margin:16px 0 8px">持续优化场景速查</div>
+        <div class="sub-title" style="margin:16px 0 8px">持续优化场景速查</div>
         <div class="grid-2">
           <div class="prompt-box" style="margin-top:0">
             <div class="prompt-action"><span class="prompt-label">查询上次踩坑</span><button class="copy-btn" onclick="copyPrompt(this, '用 sofagent 查一下最近踩了什么坑，帮我回顾一下，避免重蹈覆辙。')">复制</button></div>
@@ -1428,7 +1424,7 @@ function renderAuditRows(records){
     // rule 列：FAIL/WARN 显示触发的规则码，PASS 显示 ✓
     var ruleCell=rec.rule
       ? '<span class="audit-rule" style="color:var(--'+(verdict==='FAIL'?'red':'amber')+')">'+escapeHtml(rec.rule)+'</span>'
-      : '<span class="audit-rule" style="color:var(--brand)">✓</span>';
+      : '<span class="audit-rule icon-ok">✓</span>';
     return '<div class="audit-row"><span class="audit-time">'+(rec.time||'')+'</span><span class="audit-badge '+cls+'">'+verdict+'</span>'+ruleCell+'<span class="audit-task">'+escapeHtml(rec.task||'')+'</span></div>';
   }).join('');
 }
@@ -1484,7 +1480,7 @@ function renderSummaryData(s){
   if(topEl){
     var top=s.top3||[];
     if(top.length){
-      topEl.innerHTML='<span style="font-size:11px;color:var(--text-s);font-weight:600">高频违规规则</span>'+
+      topEl.innerHTML='<span class="meta" style="font-weight:600">高频违规规则</span>'+
         top.slice(0,3).map(function(t){
           return '<span class="rule-chip" title="点击查看工具箱审计规则" onclick="goPage(\'resources\')">'+escapeHtml(t.code)+'<span class="rc-count">×'+t.count+'</span></span>';
         }).join('')+
@@ -1590,10 +1586,10 @@ function renderSovereigntyBox(sov,daemonStatus,auditTotal,todayCount){
   }
   /* 四栏数字：本地执行 / 本地化率 / 云端调用 / 数据流出，无分割线（锁定小字在 section 外） */
   el.innerHTML='<div class="chart-box" style="display:flex;align-items:center;justify-content:space-around;flex:1;min-height:56px;height:100%">'+
-    '<div style="display:flex;flex-direction:column;justify-content:center;align-items:center"><div style="font-size:20px;font-weight:700;color:var(--text)">'+sov.local+'</div><div style="font-size:11px;color:var(--text-s);margin-top:2px">本地执行</div></div>'+
-    '<div style="display:flex;flex-direction:column;justify-content:center;align-items:center"><div style="font-size:20px;font-weight:700;color:var(--text)">'+sov.localRate+'%</div><div style="font-size:11px;color:var(--text-s);margin-top:2px">本地化率</div></div>'+
-    '<div style="display:flex;flex-direction:column;justify-content:center;align-items:center"><div style="font-size:20px;font-weight:700;color:var(--text)">'+sov.cloud+'</div><div style="font-size:11px;color:var(--text-s);margin-top:2px">云端调用</div></div>'+
-    '<div style="display:flex;flex-direction:column;justify-content:center;align-items:center"><div style="font-size:20px;font-weight:700;color:var(--text)">'+(sov.outbound||0)+'</div><div style="font-size:11px;color:var(--text-s);margin-top:2px">数据流出</div></div>'+
+    '<div style="display:flex;flex-direction:column;justify-content:center;align-items:center"><div class="stat-big-sm">'+sov.local+'</div><div class="meta" style="margin-top:2px">本地执行</div></div>'+
+    '<div style="display:flex;flex-direction:column;justify-content:center;align-items:center"><div class="stat-big-sm">'+sov.localRate+'%</div><div class="meta" style="margin-top:2px">本地化率</div></div>'+
+    '<div style="display:flex;flex-direction:column;justify-content:center;align-items:center"><div class="stat-big-sm">'+sov.cloud+'</div><div class="meta" style="margin-top:2px">云端调用</div></div>'+
+    '<div style="display:flex;flex-direction:column;justify-content:center;align-items:center"><div class="stat-big-sm">'+(sov.outbound||0)+'</div><div class="meta" style="margin-top:2px">数据流出</div></div>'+
     '</div>';
 }
 
@@ -1643,12 +1639,12 @@ function renderLiveAuditLog(records){
     // rule 列：FAIL/WARN 显示触发规则码（红/橙），PASS 显示绿色 ✓
     var ruleCell=rule
       ? '<span class="audit-rule" style="color:var(--'+(verdict==='FAIL'?'red':'amber')+')">'+escapeHtml(rule)+'</span>'
-      : '<span class="audit-rule" style="color:var(--brand)">✓</span>';
+      : '<span class="audit-rule icon-ok">✓</span>';
     var ts=fmtTime(r.timestamp);
     var task=(r.task||r.commitMsg||'').slice(0,50);
     return '<div class="audit-row"><span class="audit-time">'+escapeHtml(ts)+'</span><span class="audit-badge '+verdictClass+'">'+verdict+'</span>'+ruleCell+'<span class="audit-task">'+escapeHtml(task)+'</span></div>';
   }).join('');
-  document.getElementById('liveAuditLog').innerHTML=html||'<div style="color:var(--text-t);font-size:12px;text-align:center;padding:20px">暂无记录</div>';
+  document.getElementById('liveAuditLog').innerHTML=html||'<div class="hint12" style="text-align:center;padding:20px">暂无记录</div>';
 }
 
 function renderTrendChart(records){
@@ -1713,7 +1709,7 @@ function loadSampleData(){
   document.getElementById('liveAuditLog').innerHTML=samples.map(function(r){
     var ruleCell=r.rule
       ? '<span class="audit-rule" style="color:var(--'+(r.verdict==='FAIL'?'red':'amber')+')">'+escapeHtml(r.rule)+'</span>'
-      : '<span class="audit-rule" style="color:var(--brand)">✓</span>';
+      : '<span class="audit-rule icon-ok">✓</span>';
     return '<div class="audit-row"><span class="audit-time">'+escapeHtml(r.time)+'</span><span class="audit-badge badge-'+r.verdict.toLowerCase()+'">'+r.verdict+'</span>'+ruleCell+'<span class="audit-task">'+escapeHtml(r.task)+'</span></div>';
   }).join('');
   // 示例数据：计数行整合（标注示例，不显示下载按钮——示例无下载意义）
@@ -1740,7 +1736,7 @@ function escapeHtml(s){return String(s).replace(/[&<>"']/g,function(c){return{'&
 function emptyState(emoji,title,desc,ctaText,ctaFn){
   return '<div style="text-align:center;padding:26px 16px">'+
     '<div style="font-size:26px;line-height:1">'+emoji+'</div>'+
-    '<div style="font-size:13px;font-weight:600;color:var(--text);margin-top:10px">'+escapeHtml(title)+'</div>'+
+    '<div class="sub-title" style="margin-top:10px">'+escapeHtml(title)+'</div>'+
     (desc?'<div style="font-size:12px;color:var(--text-s);margin-top:4px;max-width:420px;margin-left:auto;margin-right:auto">'+escapeHtml(desc)+'</div>':'')+
     (ctaText?'<div style="margin-top:12px"><button class="btn btn-primary" onclick="'+ctaFn+'" style="padding:7px 16px;min-height:34px;font-size:12px;font-weight:600">'+escapeHtml(ctaText)+'</button></div>':'')+
     '</div>';
@@ -1908,9 +1904,9 @@ function loadFdeWorkflowData(){
           var ac=agentColor[s.agent]||agentColor.analyst;
           html+='<div class="fde-step" style="flex:0 0 calc(20% - 7px);box-sizing:border-box;background:var(--bg-s);border:1px solid var(--border);border-radius:var(--radius-s);padding:12px;display:flex;flex-direction:column;gap:4px;min-width:0">'+
             // 第一行：点 + STEP 标签 + 标题（黑字，单行截断）；循环=右上角 icon+灰字（参考流水线卡右对齐）
-            '<div style="font-size:12px;display:flex;align-items:center;gap:6px;min-width:0"><span class="agent-dot '+escapeHtml(s.agent)+'" style="flex-shrink:0"></span><span style="font-size:12px;color:var(--text);flex-shrink:0">STEP '+(i+1)+'</span><span title="'+escapeHtml(s.name)+'" class="ellipsis" style="font-size:12px;font-weight:600;color:var(--text)">'+escapeHtml(s.name)+'</span>'+(s.loop?'<span class="right-meta"><i class="bi bi-arrow-clockwise"></i>循环</span>':'')+'</div>'+
+            '<div style="font-size:12px;display:flex;align-items:center;gap:6px;min-width:0"><span class="agent-dot '+escapeHtml(s.agent)+'" style="flex-shrink:0"></span><span class="text12" style="flex-shrink:0">STEP '+(i+1)+'</span><span title="'+escapeHtml(s.name)+'" class="ellipsis" class="title12">'+escapeHtml(s.name)+'</span>'+(s.loop?'<span class="right-meta"><i class="bi bi-arrow-clockwise"></i>循环</span>':'')+'</div>'+
             // 第二行：agent 英文 · 中文角色 · 类型（说明行）——字号显式统一 11px（gap 负责行距）
-            '<div class="meta" style="display:flex;align-items:center;gap:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"><span style="font-size:11px;font-family:var(--mono)">'+escapeHtml(s.agent)+'</span><span style="font-size:11px">·</span><span style="font-size:11px">'+escapeHtml(ac.role)+'</span><span style="font-size:11px;color:var(--text-t);flex-shrink:0">'+ac.label+'</span></div>'+
+            '<div class="meta" style="display:flex;align-items:center;gap:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"><span style="font-size:11px;font-family:var(--mono)">'+escapeHtml(s.agent)+'</span><span style="font-size:11px">·</span><span style="font-size:11px">'+escapeHtml(ac.role)+'</span><span class="hint" style="flex-shrink:0">'+ac.label+'</span></div>'+
             '</div>';
         });
         html+='</div>';
@@ -1958,7 +1954,7 @@ function loadAiNodesData(){
           return '<div class="node-card status-running"><div class="node-status"><span class="icon"></span>'+escapeHtml(nd.name)+'</div><div class="node-meta">'+escapeHtml(nd.description||nd.file||'')+'</div></div>';
         }).join('')+'</div>';
         if(total>showCount){
-          html+='<div style="font-size:11px;color:var(--text-t);margin-top:8px">共 '+total+' 个节点，仅显示前 '+showCount+' 个——完整列表见 <code style="background:var(--brand-l);padding:2px 6px;border-radius:4px">~/.sofagent/subagents/</code></div>';
+          html+='<div class="hint" style="margin-top:8px">共 '+total+' 个节点，仅显示前 '+showCount+' 个——完整列表见 <code style="background:var(--brand-l);padding:2px 6px;border-radius:4px">~/.sofagent/subagents/</code></div>';
         }
       }else{
         html=emptyState('<i class="bi bi-robot"></i>','还没有部署业务 AI 节点','在 FDE 引导页复制 Prompt 开始部署，节点会自动出现在这里（~/.sofagent/subagents/）','去 FDE 引导',"goPage('fde')");
@@ -2052,7 +2048,7 @@ function loadPipelineGraph(){
           '<div class="node-meta">'+escapeHtml(typeCn)+' · '+escapeHtml(n.id||'')+subtaskHtml+'</div>'+
           '</div>';
       }).join('');
-      list.innerHTML=html||'<div style="grid-column:1/-1;text-align:center;color:var(--text-t);padding:12px">暂无节点</div>';
+      list.innerHTML=html||'<div class="hint12-center" style="grid-column:1/-1;padding:12px">暂无节点</div>';
     })
     .catch(function(err){
       // 加载失败与正常空态分离（F12）：404 = 尚无编排数据（引导空态）；其余 = 真故障（提示重试）
@@ -2118,9 +2114,9 @@ function loadKnowledgeData(){
     var domainCount=Object.keys(domains).length;
     if(stats){
       stats.innerHTML=
-        '<div class="chart-box" style="text-align:center;padding:12px"><div style="font-size:24px;font-weight:700;color:var(--text)">'+(pageCount>0?pageCount:'0')+'</div><div style="font-size:11px;color:var(--text-s)">知识页面</div></div>'+
-        '<div class="chart-box" style="text-align:center;padding:12px"><div style="font-size:24px;font-weight:700;color:var(--text)">'+(domainCount>0?domainCount:'0')+'</div><div style="font-size:11px;color:var(--text-s)">业务领域</div></div>'+
-        '<div class="chart-box" style="text-align:center;padding:12px"><div style="font-size:24px;font-weight:700;color:var(--text)">'+(logCount>0?logCount:'0')+'</div><div style="font-size:11px;color:var(--text-s)">更新日志</div></div>';
+        '<div class="chart-box stat-box"><div class="stat-big">'+(pageCount>0?pageCount:'0')+'</div><div class="stat-label">知识页面</div></div>'+
+        '<div class="chart-box stat-box"><div class="stat-big">'+(domainCount>0?domainCount:'0')+'</div><div class="stat-label">业务领域</div></div>'+
+        '<div class="chart-box stat-box"><div class="stat-big">'+(logCount>0?logCount:'0')+'</div><div class="meta">更新日志</div></div>';
     }
     // 条目列表：index.md 表格行
     var rows=[];
@@ -2130,7 +2126,7 @@ function loadKnowledgeData(){
     });
     if(entries){
       if(rows.length){
-        entries.innerHTML='<div style="font-size:12px;color:var(--text-s);margin-bottom:8px"><b>知识页面 '+pageCount+' 个</b>，来自 index.md（daemon Ingest 自动维护）：</div>'+
+        entries.innerHTML='<div class="meta12" style="margin-bottom:8px"><b>知识页面 '+pageCount+' 个</b>，来自 index.md（daemon Ingest 自动维护）：</div>'+
           rows.map(function(r){
             return '<div style="display:flex;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid var(--border);font-size:12px">'+
               '<span style="font-family:var(--mono);color:var(--brand-d);font-weight:600">'+escapeHtml(r.name)+'</span>'+
@@ -2163,7 +2159,7 @@ function loadKnowledgeData(){
             escapeHtml(t.title)+'</b> '+(t.text!==t.title?escapeHtml(t.text):'')+'</div></div>';
         }).join('');
       }else{
-        thinkBox.innerHTML='<div style="grid-column:1/-1;font-size:12px;color:var(--text-s)">暂无经验教训——AI 每次被拦下的毛病、成功的经验会自动沉淀到这里（think.md）。</div>';
+        thinkBox.innerHTML='<div class="meta12" style="grid-column:1/-1">暂无经验教训——AI 每次被拦下的毛病、成功的经验会自动沉淀到这里（think.md）。</div>';
       }
     }
   }).catch(function(){
@@ -2199,9 +2195,9 @@ function loadOntologyData(){
       // ① 统计卡：总数取服务端 *_Total（列表已按 §12 截断）
       var eTotal=d.entitiesTotal||0, cTotal=d.conceptsTotal||0, rTotal=d.relationsTotal||0;
       stats.innerHTML=
-        '<div class="chart-box" style="text-align:center;padding:12px"><div style="font-size:24px;font-weight:700;color:var(--text)">'+eTotal+'</div><div style="font-size:11px;color:var(--text-s)">实体 Entities</div></div>'+
-        '<div class="chart-box" style="text-align:center;padding:12px"><div style="font-size:24px;font-weight:700;color:var(--text)">'+cTotal+'</div><div style="font-size:11px;color:var(--text-s)">概念 Concepts</div></div>'+
-        '<div class="chart-box" style="text-align:center;padding:12px"><div style="font-size:24px;font-weight:700;color:var(--text)">'+rTotal+'</div><div style="font-size:11px;color:var(--text-s)">关系 Relations</div></div>';
+        '<div class="chart-box stat-box"><div class="stat-big">'+eTotal+'</div><div class="stat-label">实体 Entities</div></div>'+
+        '<div class="chart-box stat-box"><div class="stat-big">'+cTotal+'</div><div class="stat-label">概念 Concepts</div></div>'+
+        '<div class="chart-box stat-box"><div class="stat-big">'+rTotal+'</div><div class="stat-label">关系 Relations</div></div>';
       // 有数据才给下载入口（§十二：空数据不显示下载按钮）
       if(downBtn)downBtn.style.display=(eTotal>0)?'inline-flex':'none';
       var kt=d.kindTotals||{engine:0,business:0};
@@ -2254,9 +2250,9 @@ function loadForgeData(){
       var a=f.agentA||{},b=f.agentB||{};
       var statusCn={running:'运行中',idle:'空闲',done:'完成',failed:'失败'};
       function card(name,agent){
-        return '<div style="flex:1;min-width:200px"><div style="font-size:13px;font-weight:500;color:var(--text-s)">'+name+'</div>'+
-          '<div style="font-size:12px;color:var(--text-s);margin-top:4px">状态：'+escapeHtml(statusCn[agent.status]||agent.status||'-')+' · 当前文件：'+escapeHtml(agent.currentFile||'-')+'</div>'+
-          '<div style="font-size:11px;color:var(--text-t);margin-top:2px">本轮发现：'+(agent.findings||0)+' · 累计：'+escapeHtml(agent.cumulative||'-')+'</div></div>';
+        return '<div style="flex:1;min-width:200px"><div class="meta13w">'+name+'</div>'+
+          '<div class="meta12" style="margin-top:4px">状态：'+escapeHtml(statusCn[agent.status]||agent.status||'-')+' · 当前文件：'+escapeHtml(agent.currentFile||'-')+'</div>'+
+          '<div class="hint" style="margin-top:2px">本轮发现：'+(agent.findings||0)+' · 累计：'+escapeHtml(agent.cumulative||'-')+'</div></div>';
       }
       var stopCn={maxRounds:'跑满轮次',clean:'正常完成',aborted:'中断','dry-run':'试运行'};
       var stopText=stopCn[f.stopReason]||f.stopReason||'-';
@@ -2294,7 +2290,7 @@ function loadReleaseGateData(){
     })
     .then(function(g){
       if(!g.runs||!g.runs.length){
-        box.innerHTML='<div style="text-align:center;color:var(--text-t);font-size:12px;padding:12px">暂无 release-gate 运行记录</div>';
+        box.innerHTML='<div class="hint12" style="text-align:center;padding:12px">暂无 release-gate 运行记录</div>';
         return;
       }
       var latest=g.runs[0];
@@ -2303,19 +2299,19 @@ function loadReleaseGateData(){
       var eventCn={'run-start':'运行开始','step-done':'步骤完成','step-fail':'步骤失败','gate-fail':'门禁失败','all-pass':'全部通过'}[st.event]||st.event||'-';
       var html='<div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">';
       // 目标版本
-      html+='<div style="text-align:center"><div style="font-size:20px;font-weight:700;color:var(--brand-d)">'+escapeHtml(st.target||'-')+'</div><div style="font-size:11px;color:var(--text-s)">目标版本</div></div>';
+      html+='<div style="text-align:center"><div style="font-size:20px;font-weight:700;color:var(--brand-d)">'+escapeHtml(st.target||'-')+'</div><div class="meta">目标版本</div></div>';
       // 当前步骤（进行中=品牌蓝激活）
-      html+='<div style="text-align:center"><div style="font-size:20px;font-weight:700;color:var(--brand)">'+escapeHtml(stepCn)+'</div><div style="font-size:11px;color:var(--text-s)">当前步骤 '+((st.stepIndex||0)+1)+'/'+(st.totalSteps||'-')+'</div></div>';
+      html+='<div style="text-align:center"><div style="font-size:20px;font-weight:700;color:var(--brand)">'+escapeHtml(stepCn)+'</div><div class="meta">当前步骤 '+((st.stepIndex||0)+1)+'/'+(st.totalSteps||'-')+'</div></div>';
       // 事件
-      html+='<div style="text-align:center"><div style="font-size:16px;font-weight:600;color:var(--text-s)">'+escapeHtml(eventCn)+'</div><div style="font-size:11px;color:var(--text-t)">最近事件</div></div>';
+      html+='<div style="text-align:center"><div style="font-size:16px;font-weight:600;color:var(--text-s)">'+escapeHtml(eventCn)+'</div><div class="hint">最近事件</div></div>';
       html+='</div>';
       // 步骤进度条
       var total=st.totalSteps||5;
       var done=st.stepIndex||0;
       var pct=Math.round(done*100/total);
-      html+='<div style="margin-top:12px;font-size:12px;color:var(--text-s)">十二阶段门禁进度（当前运行）：</div>';
+      html+='<div class="meta12" style="margin-top:12px">十二阶段门禁进度（当前运行）：</div>';
       html+='<div style="background:var(--bg);border-radius:6px;height:10px;margin-top:6px;overflow:hidden"><div style="width:'+pct+'%;height:100%;background:var(--brand);border-radius:6px;transition:width .3s"></div></div>';
-      html+='<div style="margin-top:6px;font-size:11px;color:var(--text-t)">'+escapeHtml(latest.date||'')+' · '+escapeHtml(latest.run||'')+' · 更新于 '+escapeHtml(fmtDayTime(st.lastUpdate))+'</div>';
+      html+='<div class="hint" style="margin-top:6px">'+escapeHtml(latest.date||'')+' · '+escapeHtml(latest.run||'')+' · 更新于 '+escapeHtml(fmtDayTime(st.lastUpdate))+'</div>';
       box.innerHTML=html;
     })
     .catch(function(){
@@ -2362,7 +2358,7 @@ function wlTab(tab){
 
 /* 统一表格渲染：窄屏横向滚动 + 全量转义 */
 function wlTable(headers,rows){
-  if(!rows||!rows.length)return '<div style="font-size:12px;color:var(--text-t);padding:12px 0">暂无数据</div>';
+  if(!rows||!rows.length)return '<div class="hint12" style="padding:12px 0">暂无数据</div>';
   var head='<thead><tr>'+headers.map(function(h){return '<th>'+h+'</th>'}).join('')+'</tr></thead>';
   var body='<tbody>'+rows.map(function(r){return '<tr>'+r.map(function(c){return '<td>'+c+'</td>'}).join('')+'</tr>'}).join('')+'</tbody>';
   return '<div class="table-wrap"><table class="wl-table">'+head+body+'</table></div>';
@@ -2413,7 +2409,7 @@ function loadWorklogData(){
           return {key:key,summary:r.summary||r.beforeAfter||r.reason||'成本超支告警'};
         }).filter(function(w){return w.key});
       }
-      var sampleFlag=isSample?'<div style="font-size:11px;color:var(--text-t);margin-bottom:8px">示例数据（未检测到真实 worklog.json / 结构不完整）</div>':'';
+      var sampleFlag=isSample?'<div class="hint" style="margin-bottom:8px">示例数据（未检测到真实 worklog.json / 结构不完整）</div>':'';
       // 驾驶舱指标卡：活跃 Agent / 总成本（LLM 估算）
       var agEl=document.getElementById('m-agents');
       if(agEl)animateNumber(agEl,(d.agents||[]).length);
@@ -2466,8 +2462,8 @@ function loadWorklogData(){
         });
       });
       var taskHtml=sampleFlag+
-        '<div style="font-size:11px;color:var(--text-t);margin-bottom:6px">口径：Token 数=输入+输出 · 成本=LLM 估算 · 耗时=模型调用时长 · 人工介入=需要人审批/纠正的次数</div>';
-      if(taskRows.length>30)taskHtml+='<div style="font-size:11px;color:var(--text-t);margin-bottom:6px">共 '+taskRows.length+' 条任务，仅显示最近 30 条</div>';
+        '<div class="hint" style="margin-bottom:6px">口径：Token 数=输入+输出 · 成本=LLM 估算 · 耗时=模型调用时长 · 人工介入=需要人审批/纠正的次数</div>';
+      if(taskRows.length>30)taskHtml+='<div class="hint" style="margin-bottom:6px">共 '+taskRows.length+' 条任务，仅显示最近 30 条</div>';
       taskHtml+=wlTable(['任务','所属流程','决策次数','模型调用','Token 数','耗时','成本','重试','人工介入','最后活跃'],taskRows.slice(0,30));
       document.getElementById('wl-view-tasks').innerHTML=taskHtml;
 
@@ -2485,7 +2481,7 @@ function loadWorklogData(){
         var mRate=mN>0?Math.round((mR/mN)*100)+'%':'—';
         var weeklyEl=document.getElementById('wl-view-weekly');
         weeklyEl.innerHTML=sampleFlag+
-          '<div style="font-size:11px;color:var(--text-t);margin-bottom:6px">近 4 周合计（'+escapeHtml(mWeeks[0].week)+' → '+escapeHtml(mWeeks[mWeeks.length-1].week)+'）：活跃度 '+mA+' · 审计成功率 '+mRate+' · 成本 '+fmtCost(mC)+'</div>'+
+          '<div class="hint" style="margin-bottom:6px">近 4 周合计（'+escapeHtml(mWeeks[0].week)+' → '+escapeHtml(mWeeks[mWeeks.length-1].week)+'）：活跃度 '+mA+' · 审计成功率 '+mRate+' · 成本 '+fmtCost(mC)+'</div>'+
           wlTable(['周','活跃度','审计成功率','成本'],wkRows);
       }
 
@@ -2502,7 +2498,7 @@ function loadWorklogData(){
         });
       }
       if(ivEvents.length){
-        document.getElementById('wl-view-intervention').innerHTML=sampleFlag+'<div style="font-size:11px;color:var(--text-t);margin-bottom:6px">来源：decisions.jsonl（ESCALATE_REPORT）</div>'+
+        document.getElementById('wl-view-intervention').innerHTML=sampleFlag+'<div class="hint" style="margin-bottom:6px">来源：decisions.jsonl（ESCALATE_REPORT）</div>'+
           wlTable(['时间','对象','类型','为什么（摘要）'],ivEvents.slice(0,30));
       }else{
         (d.agents||[]).forEach(function(a){if(a.totals.humanInterventions>0)ivRows.push(['<strong>'+escapeHtml(a.agentId)+'</strong>',a.totals.humanInterventions,'审批 / 纠正 / 回退'])});
@@ -2539,7 +2535,7 @@ function loadWorklogData(){
  * 容器纯 .chart-box；svg max-width 居中缩放（移动端 .graph-wide min-width 横滑兜底）
  * 绘制：矩形 110×34 起始 y28、文字居中 y49、状态 y76、脉冲块右上；每行 6 个自动换行 */
 function renderFlowGraph(nodes,edges){
-  if(!nodes||!nodes.length)return '<div style="font-size:12px;color:var(--text-t);padding:8px 0">暂无节点</div>';
+  if(!nodes||!nodes.length)return '<div class="hint12" style="padding:8px 0">暂无节点</div>';
   var nodeW=110,nodeH=34,gap=20,perRow=6,rowH=90;
   var rows=Math.max(1,Math.ceil(nodes.length/perRow));
   var boxW=Math.max(500,perRow*(nodeW+gap)+40);
@@ -2607,7 +2603,7 @@ function loadGraphView(){
         wfEdges=[{from:'demo:map',to:'demo:deploy'},{from:'demo:deploy',to:'demo:audit'}];
       }
       var wfIsDemo=!(wl&&wl.workflows&&wl.workflows.length);
-      wfBox.innerHTML='<div style="font-size:11px;color:var(--text-t);margin-bottom:8px">workflow 节点图（状态着色：蓝=运行中 灰=完成/未知 红=失败 黄=人工介入'+(wfIsDemo?' · 示例':'')+'）</div>'+renderFlowGraph(wfNodes,wfEdges);
+      wfBox.innerHTML='<div class="hint" style="margin-bottom:8px">workflow 节点图（状态着色：蓝=运行中 灰=完成/未知 红=失败 黄=人工介入'+(wfIsDemo?' · 示例':'')+'）</div>'+renderFlowGraph(wfNodes,wfEdges);
 
       // ontology 图谱：优先 knowledge/index.md 解析实体（按域分组连线），降级示例
       var ontNodes=[],ontEdges=[];
@@ -2641,7 +2637,7 @@ function loadGraphView(){
         ontEdges=[{from:'e:org',to:'e:dept'},{from:'e:dept',to:'e:workflow'},{from:'e:workflow',to:'e:agent'}];
       }
       document.getElementById('gr-view-ontology').innerHTML=
-        '<div style="font-size:11px;color:var(--text-t);margin-bottom:8px">ontology 语义图（实体 + 关系 · 按业务域分组连线'+(domKeys.length?' · 来自 knowledge/index.md':' · 示例')+'）</div>'+
+        '<div class="hint" style="margin-bottom:8px">ontology 语义图（实体 + 关系 · 按业务域分组连线'+(domKeys.length?' · 来自 knowledge/index.md':' · 示例')+'）</div>'+
         renderFlowGraph(ontNodes,ontEdges);
     });
   }).catch(function(){
@@ -2674,7 +2670,7 @@ function loadFdeSelfGraph(){
         selfNodes=[{id:'s1',label:'梳理（FDE 进场）',status:'done'},{id:'s2',label:'识别 AI 节点',status:'done'},{id:'s3',label:'双图谱交付',status:'done'},{id:'s4',label:'7×24 审计',status:'active'}];
         selfEdges=[{from:'s1',to:'s2'},{from:'s2',to:'s3'},{from:'s3',to:'s4'}];
       }
-      box.innerHTML='<div style="font-size:11px;color:var(--text-t);margin-bottom:8px">状态着色：蓝=运行中 绿=完成 黄=人工介入'+(fromYaml?' · 来自 template.yaml':' · 示例数据（部署 FDE workflow 后读真实节点）')+'</div>'+
+      box.innerHTML='<div class="hint" style="margin-bottom:8px">状态着色：蓝=运行中 绿=完成 黄=人工介入'+(fromYaml?' · 来自 template.yaml':' · 示例数据（部署 FDE workflow 后读真实节点）')+'</div>'+
         renderFlowGraph(selfNodes,selfEdges);
       if(updated)updated.textContent=fromYaml?fmtUpdatedAt():'示例数据';
     });
@@ -2725,7 +2721,7 @@ function renderSkillChain(){
     {name:'L3 · think.md',desc:'反思 · 自动生成——每次被拦下的毛病沉淀',tag:'~/.sofagent/skills/sofagent/think.md',dot:'var(--brand)'},
     {name:'L4 · knowledge/',desc:'知识 · 按需加载——实体/概念/教训检索注入',tag:'~/.sofagent/skills/sofagent/knowledge/',dot:'var(--brand)'}
   ];
-  var html='<div style="font-size:11px;color:var(--text-t);margin-bottom:12px">每次 Agent 启动按序注入四层约束——约束先于行为，红线先于干活：</div>';
+  var html='<div class="hint" style="margin-bottom:12px">每次 Agent 启动按序注入四层约束——约束先于行为，红线先于干活：</div>';
   html+='<div class="skill-chain">';
   layers.forEach(function(l){
     html+='<div class="sc-item" title="'+escapeHtml(l.tag)+'"><span class="sc-name"><span class="sc-dot" style="background:'+l.dot+'"></span>'+escapeHtml(l.name)+'</span><span class="sc-desc">'+escapeHtml(l.desc)+'</span></div>';
