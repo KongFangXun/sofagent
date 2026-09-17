@@ -25,7 +25,7 @@
 > | 版本路线 / 排期 / 探索方向 | [ROADMAP](./ROADMAP.md) | 参考 | 已交付进「迭代历程」、已排期进「版本规划」、未排期进「探索方向」——三态不混写 |
 > | 版本变更记录（未发布版） | `docs/changelog/vX.Y/vX.Y.Z.md` | 历史 | 排期版日志不进主 [CHANGELOG](../CHANGELOG.md) 索引（纯已发布索引）；发布时才收编 |
 > | 架构决策 / 术语定义 / 数据流 | [ARCHITECTURE](./ARCHITECTURE.md) | 参考 | 行业对标委托 VALIDATION、规则清单委托 SECURITY、路线委托 ROADMAP |
-> | 接口总览 / MCP 工具清单 | [API](./API.md) | 参考 | 七大接口面 + 103 tools 分域清单，由 tool-registry.ts 生成（check-docs §17 对账防漂移） |
+> | 接口总览 / MCP 工具清单 | [API](./API.md) | 参考 | 七大接口面 + 104 tools 分域清单，由 tool-registry.ts 生成（check-docs §17 对账防漂移） |
 > | 已知限制 / 诚实边界 | [LIMITATIONS](./LIMITATIONS.md) | 参考 | 各文档披露「已知风险」时引用 LIMITATIONS，不展开重复 |
 > | 任务流程 / 操作步骤 / 发版 SOP | [SKILL/](../SKILL/) · [changelog/releasing/](./changelog/releasing/) | 任务流程 | 「干什么用什么步骤」——写给执行者（人/Agent）照着做；深度参考链接 docs/，不复制 |
 > | 面向使用者的操作说明 | [README](../README.md) · [HANDBOOK](./HANDBOOK.md) | 用户手册 | 永不含代码库内部细节；开发者向操作说明进 DEVELOPMENT/guides |
@@ -203,22 +203,23 @@ graph TB
 | `docs/archive/` | 历史归档：实验版 changelog、早期证据、设计文档 |
 | `docs/guides/` | 专题指南：部署、测试、Dashboard 开发、Loop 开发等 |
 
-### engine/（13 个 npm 发布包，12 个含测试；13 个发布包 + 2 个插件族 + hooks/scripts 运维件）
+### engine/（13 个 @sofagent/* 模块包（12 含测试）+ @sofagent/load-chain 工具包 + sofagent 裸名总包 umbrella + 2 个插件族 + hooks/scripts 运维件）
 
 | 包 | 职责 |
 |----|------|
 | `engine/audit/` | @sofagent/audit — 审计模块（git diff + 24 条规则） |
 | `engine/core/` | @sofagent/core — 核心类型、HMAC 工具、memory-contract |
 | `engine/orchestrator/` | @sofagent/orchestrator — LangGraph createReactAgent 编排 |
+| `engine/train/` | @sofagent/train — 后训模块（数据管道/训练编排/云端执行/eval 闭环） |
 | `engine/daemon/` | @sofagent/daemon — 后台守护进程（cron 巡检 + 文件监听） |
 | `engine/harness/` | @sofagent/harness — SKILL 加载链（上下文注入） |
 | `engine/mcp/` | @sofagent/mcp — MCP Server（知识库 CRUD tool）· **104 个 MCP tool**（以 `engine/mcp/src/tool-registry.ts` SSOT 为准；v1.4.9 G9 新增 device_register/device_list 设备注册面 + G10/G11 新增 device_data_query/device_data_push 设备数据面 + G5b/G1 新增连接器注册面与 workflow 模板面 + 批 5 新增 router_session_push 过站 session 承接面；v1.4.7 新增 workflow CRUD/PR 生命周期/绩效/缺口/data_push 等 11 个；v1.4.6 新增 train_cloud 云端训练执行面；v1.4.5 三件 train_serve/train_compliance/train_deliverable；v1.4.2 新增 FDE 六引擎 fde_interview/fde_classify/fde_quantify/fde_derive/fde_distill/fde_deploy，插件家族 MCP 面另计） |
-| `engine/hooks/sofagent-load-chain/` | @sofagent/load-chain — SKILL 加载链 git hook（v1.2.x 新增，第 13 个 workspace） |
+| `engine/hooks/sofagent-load-chain/` | @sofagent/load-chain — SKILL 加载链 git hook（工具包，非模块包口径） |
 | `engine/scripts/` | 运维脚本集（9 个 .sh + lib/ 模块 + windows/ .ps1 安装与卸载脚本）——安装（install.sh 调用）、卸载、验证（verify.sh）、daemon 管理、运行时审计日志记录等 |
 | `engine/dsh-plugins/` | cordis-plugin-sofagent* 7 款 DSH 插件（v1.4.9 P2 合并批 10→7）——6 款原子（audit（含验收门禁面）· rollback · inject · evolve · daemon · fde（本体/FDE/公地三域厚插件））+ 1 款聚合（裸名 `cordis-plugin-sofagent`，一次挂载全套） |
 | `engine/openclaw-plugins/` | OpenClaw code-plugin 4 款（ClawHub 发布形态） |
 | `~/.sofagent/bin/sofagent` | CLI 入口（安装时生成，不在仓库内）— `sofagent status/where/version/data/help` |
-| 其余 6 包（eval/ab-test/evolve/rules/ontology/think） | 详见 `docs/DEVELOPMENT.md §包结构`（README 口径：13 个 workspace 包、12 个含测试；含 @sofagent/load-chain hook 包，无独立测试） |
+| 其余 5 包（eval/ab-test/evolve/rules/ontology/think） | 详见 `docs/DEVELOPMENT.md §包结构`（README 口径：13 个模块包 workspace、12 个含测试；@sofagent/load-chain 为工具包另列） |
 
 ### 关键数据路径（`data/`）
 
@@ -236,7 +237,7 @@ graph TB
 |----|-----|
 | 当前版本 | **v1.4.9**（2026-09-17，✅ 已发版）· 上一版 v1.4.8（2026-09-13，✅ 已发版） |
 | 下一版 | v1.5.0（🛡️ 治理模块 · 可见性与本体成熟——见 docs/ROADMAP.md 规划表） |
-| 测试覆盖 | 4807 测试 / 13 包（统计标准：`tools/check/test-count.sh` 实际执行的 workspace 包；全仓共 26 个 workspace（v1.4.9 P2 合并批 29→26）——13 个 @sofagent/* 模块包 + 1 个工具包 load-chain + 7 个 DSH 插件（private，随 DSH 分发）+ 4 个 OpenClaw 插件（`engine/openclaw-plugins/`）+ 1 个 npm 裸名总包 umbrella，其中 14 个模块包发布至 npm `@sofagent` scope；OpenClaw 插件经根 `npm test --workspaces` 统一执行测试。实测见 `tools/check/test-count.sh`、声称数同步校验见 `tools/check/check-test-count.sh`） |
+| 测试覆盖 | 4835 测试 / 13 包（统计标准：`tools/check/test-count.sh` 实际执行的 workspace 包；全仓共 26 个 workspace（v1.4.9 P2 合并批 29→26）——13 个 @sofagent/* 模块包 + 1 个工具包 load-chain + 7 个 DSH 插件（private，随 DSH 分发）+ 4 个 OpenClaw 插件（`engine/openclaw-plugins/`）+ 1 个 npm 裸名总包 umbrella，其中 14 个包发布至 npm（13 个 @sofagent/* 模块包 + @sofagent/load-chain 工具包，共 14 个 @sofagent scope 发布物）+ 1 个裸名总包 sofagent（umbrella），共 15 个 npm 发布物；OpenClaw 插件经根 `npm test --workspaces` 统一执行测试。实测见 `tools/check/test-count.sh`、声称数同步校验见 `tools/check/check-test-count.sh`） |
 | 审计规则 | 24 条（17 默认 + 7 扩展），活跃编号 A1-A11 + A14-A23 + E1/E2/E4（A12/A13/E3 已并入 A11，编号不再使用），每次 commit 自动跑 |
 | FORGE | fresh-eyes-loop + release-gate-loop 运行中 |
 | 数据目录 | **data/**（v1.2.1+ SSOT 运行时数据目录） |
@@ -250,6 +251,7 @@ graph TB
 | 术语 | 简释 | 精确定义 |
 |------|------|---------|
 | FDE | Forward Deployed Engineer——进场生成判断、部署 AI 节点的工程师 | [PHILOSOPHY §一](./PHILOSOPHY.md) |
+| 同名导出消歧 | 不同包导出同名符号时以「来源包 + 符号名」双键区分，禁裸符号名 grep 判接线。已知同名对：`routeRequest`——`@sofagent/orchestrator/workflow`（语义路由，route/route-request.ts）vs `canaryRouteRequest`（`@sofagent/train` 权重灰度分流，weight-canary.ts——v1.5.0 TASK-32 已更名避歧） | [DEVELOPMENT §包结构](./DEVELOPMENT.md) |
 | 中间件（Harness 中间件） | **品类定位词**——答「sofagent 属于哪个品类」（Harness 类运行时/治理框架）；**不是**「约束层是技术实现层的中间件」这一实现论判断 | [ARCHITECTURE §术语对照](./ARCHITECTURE.md#术语对照) |
 | Harness | Agent 行为约束中间件——"缰绳"，非"马" | [ARCHITECTURE §二](./ARCHITECTURE.md) |
 | 双层架构 | 约束层 × 生命周期——约束层保证"每次做对"，生命周期保证"从诊断到自运转怎么走" | [ARCHITECTURE §二·双层架构](./ARCHITECTURE.md#双层架构约束层与生命周期主框架) |

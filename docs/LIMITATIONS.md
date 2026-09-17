@@ -413,7 +413,7 @@ sofagent-audit 实现了完整的六步审计闭环流程（设计文档见 [ARC
 
 ### 测试覆盖范围
 
-当前审计核心 1201 个、全 workspace 4807 个测试（口径：13 包 workspace；逐批沿革账已迁出，见 [v1.4.9 开发日志 · 附录](./changelog/v1.4/v1.4.9.md#附录测试与场景账沿革)），但覆盖范围集中在审计规则和核心逻辑（diff-parser、reporter、config-loader、rules/*.ts）。以下模块没有独立测试：
+当前审计核心 1210 个、全 workspace 4835 个测试（口径：13 包 workspace；逐批沿革账已迁出，见 [v1.4.9 开发日志 · 附录](./changelog/v1.4/v1.4.9.md#附录测试与场景账沿革)），但覆盖范围集中在审计规则和核心逻辑（diff-parser、reporter、config-loader、rules/*.ts）。以下模块没有独立测试：
 
 | 模块 | 测试状态 | 风险 |
 |------|:--:|------|
@@ -496,7 +496,7 @@ FDE 完整四阶段十二步部署流程（[FDE/GUIDE.md](../FDE/GUIDE.md)）已
 
 `playbook/acceptance-test.sh`（场景数持续扩展，当前 352 个，SSOT 口径=真实 scenario 行数（S165 动态计算并跨文档对账））：
 
-- **CI 已覆盖**：单元测试审计核心 1201 个、全 workspace 4807 个测试（口径与本文件「测试覆盖范围」节一致；逐批沿革账已迁出，见 [v1.4.9 开发日志 · 附录](./changelog/v1.4/v1.4.9.md#附录测试与场景账沿革)）、sofagent-core verify 约 44-48 项（动态）
+- **CI 已覆盖**：单元测试审计核心 1210 个、全 workspace 4835 个测试（口径与本文件「测试覆盖范围」节一致；逐批沿革账已迁出，见 [v1.4.9 开发日志 · 附录](./changelog/v1.4/v1.4.9.md#附录测试与场景账沿革)）、sofagent-core verify 约 44-48 项（动态）
 - **发版前手动覆盖**：acceptance-test.sh 352 场景（含子断言，CLI 端到端，步骤 2.3；逐批沿革账已迁出，见 [v1.4.9 开发日志 · 附录](./changelog/v1.4/v1.4.9.md#附录测试与场景账沿革)）、OpenClaw 验收 63 场景（Agent 端到端，步骤 2.5）
 - **CI 未覆盖**：daemon → MCP → webhook → 编排四组件串联行为（v1.3.2 起由 Onboard 循环机制跑全链路 smoke test 承接，作为验收标准；日常 CI 无独立集成测试，发版前手动验证兜底）
 - **CI 未覆盖**：多平台兼容性（macOS only verified，Linux/Windows 未验证）
@@ -557,6 +557,10 @@ Ontology 统一层的合并逻辑从 `knowledge/entities/` 目录的 Markdown fr
 > ✅ **已于 v1.4.0 修复**：Dashboard HTML 产品化——`dashboard.html` + `serve-dashboard.mjs` 随 install.sh 安装到 `$SOFAGENT_HOME/web/`，`sofagent web` 一键起服务，读用户机 `~/.sofagent/data/` **真实数据**（FDE workflow / 已注册 SubAgent / sustain 周报 / 审计报告），开发态/安装态双路径解析。早期版本「目录为空时展示 2 个虚拟 Agent 假数据」的行为已移除（全仓无残留）。
 >
 > **仍存在的边界**（诚实披露）：① Dashboard 是**时间点快照**而非实时监控（无 WebSocket 推送，刷新即重读）；② daemon-health.json 的异常检测仍是关键词匹配（"error"/「异常」/「失败」），非结构化状态报告；③ 治理 KPI 面板（安全边界触发率/审计覆盖率等）排 v1.5.0。
+
+### SOFAGENT_CLEANUP_ON_RECORD 配置项已移除（✅ v1.5.0 · 死配置清扫）
+
+> ✅ **已于 v1.5.0 移除**：曾存在的 `SOFAGENT_CLEANUP_ON_RECORD` / `SOFA_CLEANUP_ON_RECORD` 环境变量及对应配置字段（v1.4.3 披露的 @deprecated 死配置）已随死配置清扫删除。该开关**从未生效**——自动清理路径从未接线，设 `true` 得到静默无动作。曾设置过该 env 的用户无需任何迁移（本来就不生效）；日志清理请使用**实际生效**的 `SOFAGENT_RETENTION_DAYS` / `SOFAGENT_RETENTION_MAX`（消费点 `engine/scripts/cleanup.sh`）。
 
 ---
 

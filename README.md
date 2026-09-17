@@ -25,7 +25,7 @@ sofagent 不造 Agent——执行能力交给成熟宿主（模型 + 工具 + �
 
 > 🚂 **后训模块为什么在治理仓里**（30 秒答案）：治理的天花板是数据——审计发现的错误（哪些任务做砸了、哪种输出不合格）正是训练的燃料。后训模块把「审计出来的问题 → 修复问题的模型」这条闭环接通，让治理数据反哺模型层；训练资产本身走商业侧交付，治理仓只保留协议与接口（外部化 / 可配置）。
 >
-> 📌 *术语注：英文面使用 "training engine"，系 2026-09-03 拍板的保留边界（英文面豁免）——两者指同一模块。独立审查员：这是已拍板的已知边界，不是漏改。*
+> 📌 *术语注：英文面使用 "training engine"，系 2026-09-03 拍板的保留边界（英文面豁免）——两者指同一模块。*
 
 <p align="center">
   <img src="docs/assets/audit-terminal.png" alt="sofagent-audit 拦截 .env 提交" width="860" /><br/>
@@ -62,7 +62,7 @@ sofagent 不造 Agent——执行能力交给成熟宿主（模型 + 工具 + �
 | 覆盖维度 | 密钥泄漏 | 任意（自己写） | 24 条规则：密钥/越界/注入/权限/后门 |
 | 建议 | 强密钥合规必配 | 已有体系可保留 | 与前两者并用，专注 Agent 治理维度 |
 
-**10 分钟轻量试用**：`npx -y -p @sofagent/audit sofagent-audit`（任意 git 仓库，密钥泄漏当场拦截）。
+**10 分钟轻量试用**（含拉包与环境检查全程；引擎本体单次审计约 1.1 秒，见下文实测）：`npx -y -p @sofagent/audit sofagent-audit`（任意 git 仓库，密钥泄漏当场拦截）。
 
 ## 核心特性
 
@@ -107,7 +107,7 @@ sofagent 不造 Agent——执行能力交给成熟宿主（模型 + 工具 + �
 
 | 档位 | 平台 | 约束注入 | 挂载方式 |
 |------|------|---------|---------|
-| **深度结合** | DeepSeek Harness | ✅ **逐工具调用可拦** | 6 款原子 `cordis-plugin-sofagent-*` 挂进运行时（另有 1 款聚合插件可选，见上章）——`tools/pre-execute` 等 8 个生命周期事件 |
+| **深度结合** | DeepSeek Harness | ✅ **逐工具调用可拦** | 6 款原子 `cordis-plugin-sofagent-*` 挂进运行时（另有 1 款聚合插件可选，见上章）——`tools/pre-execute` 等 7 个生命周期事件（以 `engine/dsh-plugins/SEAMS.md` 词汇表为准） |
 | **完整挂载** | OpenClaw | ✅ **每会话注入一次** | Hook 注入四层约束 + 断路器 + 4 款 OpenClaw 插件 |
 | **标准挂载** | Claude Code / Cursor | ⚠️ Skill 自觉加载 | Skill 目录 symlink + 平台规则文件 + 拦截配置（内容为提交级 24 规则，非调用级拦截） |
 | **薄挂载** | WorkBuddy / Codex / Gemini CLI / Hermes | ⚠️ Skill 自觉加载 | Skill 目录 symlink（Codex 走 `AGENTS.md` 挂载点）+ git hook 审计 |
@@ -119,7 +119,7 @@ sofagent 不造 Agent——执行能力交给成熟宿主（模型 + 工具 + �
 
 ## v1.4.9：设备接入与数据承接
 
-📡 **设备接入与数据承接**——引擎从单机审计长成多设备数据承接层，三条链一次收口：设备注册与派单（G9：Ed25519 身份 + 心跳新鲜度判定 + 在线才派单/掉线改派挂起）· 授权读取与加密上行（G10/G11：`device_data_query` 白名单授权读取 + `device_data_push` opt-in 上行——WAL 加密暂存/明文不落盘/断点续传/审计计量 evidence）· 训练数据飞轮（T7/T8/T9：router 过站 session 承接 schema fail-closed + 签名验签 + 脱敏贯通 + cost 台账 · 敏感识别三层插槽 L0 正则/L1 词典/L2 NER · 权重灰度 AB hash 稳定分流 + 劣化触发 + 噪声保护）· 平台接口面（G5b/G1：连接器注册/发现租户隔离 + workflow 模板导出/导入与血缘追踪）· 工程效能（T6/T10 + bugfix：installer skill 四步装机引导 + 模型清单上报 + skill 快照 · 修复批 13 项）。MCP 工具 95 → **104** · 测试 4429 → **4805**。完整内容见[开发日志](./docs/changelog/v1.4/v1.4.9.md) · 更早版本见 [CHANGELOG](./CHANGELOG.md)。
+📡 **设备接入与数据承接**——引擎从单机审计长成多设备数据承接层，三条链一次收口：设备注册与派单（G9：Ed25519 身份 + 心跳新鲜度判定 + 在线才派单/掉线改派挂起）· 授权读取与加密上行（G10/G11：`device_data_query` 白名单授权读取 + `device_data_push` opt-in 上行——WAL 加密暂存/明文不落盘/断点续传/审计计量 evidence）· 训练数据飞轮（T7/T8/T9：router 过站 session 承接 schema fail-closed + 签名验签 + 脱敏贯通 + cost 台账 · 敏感识别三层插槽 L0 正则/L1 词典/L2 NER（SDK 面已就绪，管线接线排期 v1.5.0）· 权重灰度 AB hash 稳定分流 + 劣化触发 + 噪声保护（SDK 面已就绪，管线接线排期 v1.5.0））· 平台接口面（G5b/G1：连接器注册/发现租户隔离 + workflow 模板导出/导入与血缘追踪）· 工程效能（T6/T10 + bugfix：installer skill 四步装机引导 + 模型清单上报 + skill 快照 · 修复批 13 项）。MCP 工具 95 → **104** · 测试 4429 → **4805**（发版时点口径；发版后修复批已 +30，当前值见下文「工程可信度」）。完整内容见[开发日志](./docs/changelog/v1.4/v1.4.9.md) · 更早版本见 [CHANGELOG](./CHANGELOG.md)。
 
 ## FDE 方法论
 
@@ -162,7 +162,7 @@ sofagent 不造 Agent——执行能力交给成熟宿主（模型 + 工具 + �
 
 > ⚠️ **企业用户先读** [LIMITATIONS §三](./docs/LIMITATIONS.md#三安全与信任模型局限)——`config.yml` 默认**非 fail-closed**（规则可被 Agent 篡改绕过），多租户**写入侧**隔离尚未落地（v0 已交付查询侧隔离：orgId 过滤 + data/<tenant>/ 路径地基，见 LIMITATIONS）。强合规场景建议 CI 兜底 + 文件权限锁（`chmod 444 .sofagent/config.yml`），不要用单机默认配置直接上生产。
 
-**30 秒，零配置**——在任何 git 仓库跑一次审计：
+**30 秒，零配置**（首次含 npx 拉包约 30 秒，复跑秒级——引擎本体约 1.1s，实测口径见上）——在任何 git 仓库跑一次审计：
 
 ```bash
 npx -y -p @sofagent/audit sofagent-audit
@@ -295,7 +295,7 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # 加载安全规�
 | 安全声明 · 已知局限 | [SECURITY](./SECURITY.md) · [LIMITATIONS](./docs/LIMITATIONS.md) |
 | 贡献指南 | [CONTRIBUTING](./CONTRIBUTING.md) |
 
-> 🧪 **工程可信度**：4807 测试 / 13 模块包 + 11 插件（7 DSH + 4 OpenClaw）（口径：13 个 workspace 包；包数与统计标准见 [WIKI](./docs/WIKI.md)）· 24 条审计规则 · fresh-eyes 独立审查持续运行（测试数以 `tools/check/test-count.sh` 判定为准，环境注意事项见 [docs/guides/review-system.md](./docs/guides/review-system.md)。性能数据为单机参考值，跨工具横评排期 v1.4.x 与 Benchmark 集成）。
+> 🧪 **工程可信度**：4835 测试 / 13 模块包 + 11 插件（7 DSH + 4 OpenClaw）——测试数为 v1.4.9 发版后 main 时点实测口径（随修复批滚动，v1.4.9 发版时点为 4805），当前权威值以 `tools/check/test-count.sh` 实跑为准（包数口径：13 个 workspace 包，统计标准见 [WIKI](./docs/WIKI.md)）· 24 条审计规则 · fresh-eyes 独立审查持续运行（环境注意事项见 [docs/guides/review-system.md](./docs/guides/review-system.md)。性能数据为单机参考值，跨工具横评排期 v1.4.x 与 Benchmark 集成）。
 
 ---
 
