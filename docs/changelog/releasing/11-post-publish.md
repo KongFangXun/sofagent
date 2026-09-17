@@ -45,6 +45,18 @@ npm view @sofagent/audit version --prefer-online   # 期望 vX.Y.Z
 npm view @sofagent/mcp version --prefer-online     # 期望 vX.Y.Z
 npm view @sofagent/audit readme --prefer-online    # 期望有内容（非空）
 
+# 分发渠道对账（v1.4.9 实锤：阶段十被整体跳过，直到下版自迭代才补走——本段是唯一报警面）
+# ① ClawHub skill：verify 返回版本号 = 本版（安全扫描 pending 时 verify 可能滞后几分钟，重试）
+clawhub skill verify sofagent 2>&1 | grep '"version"'   # 期望 "version": "vX.Y.Z"
+# ② ClawHub OpenClaw plugin 家族：API 逐款查 latestVersion（🔴 必须带 https:// 前缀——裸域名被当本地路径静默失败）
+for n in $(ls -d engine/openclaw-plugins/sofagent-* | xargs -n1 basename); do
+  curl -s "https://clawhub.ai/api/v1/packages/$n?ownerHandle=KongFangXun" \
+    | node -e 'const p=JSON.parse(require("fs").readFileSync("/dev/stdin","utf8")).package||{}; console.log(`${p.name||"?".padEnd(20)} latest=${p.latestVersion||"?"} scan=${p.scanStatus||"?"}`)'
+done   # 期望全部 latest=vX.Y.Z；scan=suspicious 未必是问题（测试文件触发启发式，见 10-distribute 快照纪律）
+# ③ SkillHub DSH plugin 家族：skillhub 无远端 verify（verify 只对已安装 skill 生效）——对账走发布时 CLI OK 输出留档
+# ④ Marketplace：curl 版本页含本版号即免网页操作
+curl -s https://github.com/marketplace/actions/sofagent | grep -c "vX.Y.Z"   # 期望 ≥1
+
 # 全局安装更新（registry 已更新，本地仍是旧版本）
 npm install -g @sofagent/audit@latest @sofagent/core@latest
 sofagent-audit --version           # 期望 vX.Y.Z
@@ -196,6 +208,9 @@ bash tools/check/check-version.sh        # 期望全绿
 
 **操作**：
 ```bash
+# 🔴 清零前断言——11 行必须全部 [x] 才允许清零（v1.4.9 实锤：阶段十分发整个被跳过，
+#    但没人发现——各阶段勾选从未全绿就进了清零，跳阶段的证据随清零销毁。少一行 = 有阶段没走）
+grep -c "^- \[x\]" docs/changelog/releasing.md   # 期望 11；<11 先补走缺口阶段，禁止清零
 # 把 releasing.md 进度追踪的 [x] 全部改回 [ ]
 sed -i '' 's/- \[x\]/- [ ]/g' docs/changelog/releasing.md
 ```
