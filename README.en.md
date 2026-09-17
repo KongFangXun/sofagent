@@ -70,7 +70,7 @@ sofagent does not build its own Agent — execution is delegated to mature hosts
 
 **On entry · generate judgment** (the FDE stage — deciding where AI belongs and what it's worth, frozen into deliverables):
 
-- 🧭 **Map the business flow on entry** — five-element deep-dive + three-question triage, capturing every role's process steps and pricing out what each AI node is worth
+- 🧭 **Map the business flow** — five-element deep-dive + three-question triage, capturing every role's process steps and pricing out what each AI node is worth
 - 🤖 **Deploy AI nodes** — three-layer deliverables (documents + Skills + runtime), installed into your existing AI tools; from "you do the work" to "you delegate the work"
 - 📦 **Judgment frozen into deliverables** — every node carries "what counts as done (merge_criteria) · who signs off (approver)", machine-checkable and shared across both stages
 
