@@ -1468,6 +1468,21 @@ if [[ "${MCP_REG}" =~ ^[0-9]+$ ]] && [[ "${MCP_REG}" -gt 0 ]]; then
     echo -e "  ${GREEN}✓${NC} API.md 版本头工具数一致（${API_HEAD_TOOLS}）"
     CHECKS=$((CHECKS + 1))
   fi
+  # ── 版本号字段对账（v1.4.9 阶段六复跑发现）────────────────────────
+  # 本行「版本：vX.Y.Z（状态）· N tools / M 面」共三个字段：工具数（上一段对账）、
+  # 版本号、状态措辞。后两者长期无人对账——曾出现 v1.4.8 版本头带「（已发版）」字样
+  # 滞留至 1.4.9 待发版窗口（bump 不认此形态 + 状态措辞系上版机械沿用）。
+  API_HEAD_VER=$(sed -n '1,20p' "${PROJECT_ROOT}/docs/API.md" 2>/dev/null | grep -oE '版本：v[0-9]+\.[0-9]+\.[0-9]+' | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' || true)
+  if [[ -z "${API_HEAD_VER}" ]]; then
+    echo -e "  ${RED}✗ ${NC}API.md 头部未提取到版本头版本号（格式变化？）——锚点失效须人工修，不得静默跳过"
+    ERRORS=$((ERRORS + 1))
+  elif [[ "${API_HEAD_VER}" != "${SSOT_VERSION}" ]]; then
+    echo -e "  ${RED}✗ ${NC}API.md 版本头版本号漂移：声称 v${API_HEAD_VER}，SSOT v${SSOT_VERSION}——bump 不认「版本：vX.Y.Z」形态，须手工同步"
+    ERRORS=$((ERRORS + 1))
+  else
+    echo -e "  ${GREEN}✓${NC} API.md 版本头版本号一致（v${API_HEAD_VER}）"
+    CHECKS=$((CHECKS + 1))
+  fi
 else
   echo -e "  ${YELLOW}⚠${NC} registry 工具数不可用，API.md 版本头对账跳过"
   WARNINGS=$((WARNINGS + 1))
