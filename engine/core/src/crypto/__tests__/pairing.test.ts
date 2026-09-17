@@ -23,7 +23,7 @@ import {
   pairByToken,
   computeTokenTag,
   pairByFederationFile,
-  FEDERATION_TOKEN_PATH,
+  getFederationTokenPath,
   MIN_TOKEN_LENGTH,
   PAIRING_CODE_LENGTH,
 } from '../pairing';
@@ -164,4 +164,43 @@ it('私钥恒为 32 字节定长（前导零补齐——2000 次采样）', () =
     expect(kp.privateKey.length).toBe(32);
     expect(kp.publicKey.length).toBe(33);
   }
+});
+
+// ============================================================
+// v1.5.0 TASK-17 · 联邦 token 路径 SSOT 双路径回归测试
+// ============================================================
+describe('TASK-17 · getFederationTokenPath 走 data-paths SSOT', () => {
+  it('未设 SOFAGENT_HOME → 默认 ~/.sofagent/federation.token（默认行为不变）', () => {
+    const prev = process.env.SOFAGENT_HOME;
+    delete process.env.SOFAGENT_HOME;
+    try {
+      const p = getFederationTokenPath();
+      expect(p).toBe(require('node:path').join(require('node:os').homedir(), '.sofagent', 'federation.token'));
+    } finally {
+      if (prev !== undefined) process.env.SOFAGENT_HOME = prev;
+    }
+  });
+
+  it('显式 SOFAGENT_HOME 隔离 → token 落隔离根（不再漏真实 home）', () => {
+    const prev = process.env.SOFAGENT_HOME;
+    const prevPrefixes = process.env.SOFAGENT_HOME_ALLOWED_PREFIXES;
+    const iso = require('node:fs').mkdtempSync(require('node:path').join(require('node:os').tmpdir(), 't17-iso-'));
+    process.env.SOFAGENT_HOME = iso;
+    // data-paths resolveHomeDir 实时读 env（v1.2.3 起不缓存）；
+    // 越界防护需白名单放行 tmp 隔离根
+    process.env.SOFAGENT_HOME_ALLOWED_PREFIXES = (prevPrefixes ? prevPrefixes + ':' : '') + iso;
+    try {
+      const p = getFederationTokenPath();
+      expect(p).toBe(require('node:path').join(iso, 'federation.token'));
+      expect(p).not.toContain(require('node:os').homedir() + '/.sofagent');
+    } finally {
+      if (prev === undefined) delete process.env.SOFAGENT_HOME; else process.env.SOFAGENT_HOME = prev;
+      if (prevPrefixes === undefined) delete process.env.SOFAGENT_HOME_ALLOWED_PREFIXES; else process.env.SOFAGENT_HOME_ALLOWED_PREFIXES = prevPrefixes;
+      try { require('node:fs').rmSync(iso, { recursive: true, force: true }); } catch { /* */ }
+    }
+  });
+
+  it('参数化覆盖（sofagentHome 入参 > 环境变量）', () => {
+    expect(getFederationTokenPath('/opt/sofagent')).toBe('/opt/sofagent/federation.token');
+  });
 });

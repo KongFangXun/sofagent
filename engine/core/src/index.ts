@@ -309,7 +309,7 @@
   pairByToken,
   computeTokenTag,
   pairByFederationFile,
-  FEDERATION_TOKEN_PATH,
+  getFederationTokenPath,
   PAIRING_CODE_LENGTH,
   MIN_TOKEN_LENGTH,
 } from './crypto/pairing';
@@ -380,6 +380,7 @@
   commitSnapshot,
   revertToSnapshot,
   listSnapshots,
+  findSnapshotByLabel,
   hasShadowRepo,
 } from './filesystem/isomorphic-git';
 /* @public */ export type { SnapshotEntry, IsoDiff } from './filesystem/isomorphic-git';

@@ -73,13 +73,8 @@ if [ ! -f "$HISTORY_FILE" ] && [ -n "$SOFAGENT_DATA" ]; then
   echo "  ⚠️ [sofagent] SOFAGENT_DATA 已设置但 $HISTORY_FILE 不存在——审计对账数据缺失，请检查数据目录配置。"
 fi
 if [ -f "$HISTORY_FILE" ]; then
-  # v1.3.5 #2: 假阳性回声修复——对账命中 pre-commit 记录时校验审计结果。
-  # 旧逻辑（grep -q parentSha）会命中**被拦截**的审计记录（exit 2）：
-  # 带 token commit 被 commit-msg 拦 → 拦截记录写入 history（含 parentSha）→
-  # 同内容 --no-verify 强推 → post-commit 命中失败记录 → 假绿。
-  # 改为 node 解析：只有 commitSha 匹配、或 pre-commit 记录 parentSha 匹配
-  # **且 exitCode === 0** 才静默退出（真回声）；命中失败记录输出疑似绕过提示。
-  # post-commit 永远 exit 0（不阻断任何操作）。
+  # v1.5.0 TASK-9: 捕获 node 对账退出码——真实损坏（解析异常）时 exit 1 传播
+  # （commit 已发生，post-commit 退出码不阻断 commit 本身，只向上游链路报红）。
   COMMIT_SHA="$CURRENT_SHA" PARENT_SHA="$PARENT_SHA" COMMIT_SUBJECT="$COMMIT_SUBJECT" COMMIT_TREE="$COMMIT_TREE" HISTORY_FILE="$HISTORY_FILE" node -e '
 const fs = require("fs");
 const COMMIT_SHA = process.env.COMMIT_SHA;
@@ -93,13 +88,36 @@ try {
   lines = fs.readFileSync(HISTORY_FILE, "utf-8").trim().split("\n").filter(Boolean);
 } catch { process.exit(0); }
 if (lines.length === 0) process.exit(0);
+// v1.5.0 TASK-9: 加密态对账修复——SOFAGENT-AGE-V1 密文行（SECURITY.md 定义格式）
+// 不 parse（parse 必抛错被吞 → 全静默）；计数跳过。三态语义：
+//   全密文 → 显式降级提示（对账不可用≠失败，但必须发声）；
+//   混合态 → 明文行正常对账 + 结尾「跳过 N 条密文行」；
+//   真实损坏（非密文前缀的 parse 异常）→ 红字 + exit 1（损坏不能吞）。
+const CIPHER_PREFIX = "SOFAGENT-AGE-V1";
+let cipherCount = 0;
+const plainLines = [];
+for (const line of lines) {
+  if (line.startsWith(CIPHER_PREFIX)) { cipherCount++; continue; }
+  plainLines.push(line);
+}
+if (plainLines.length === 0 && cipherCount > 0) {
+  console.log("  ℹ️ [sofagent] 审计历史为加密态（SOFAGENT-AGE-V1），post-commit 明文对账不可用——--no-verify 检测依赖 CI 侧 sofagent-audit --diff 兜底");
+  process.exit(0);  // 对账不可用≠失败——发声后 exit 0（post-commit 永不阻断铁律不变）
+}
+// 混合态跳过计数——对账出口（命中/未命中）前统一发声（任务书：结尾输出「跳过 N 条密文行」）
+function noteSkippedCipherLines() {
+  if (cipherCount > 0) {
+    console.log("  ℹ️ [sofagent] 另跳过 " + cipherCount + " 条密文行（SOFAGENT-AGE-V1 加密态，明文对账不可用）");
+  }
+}
 try {
-  // 反向查找（最新记录在末尾）
-  for (let i = lines.length - 1; i >= 0; i--) {
-    const entry = JSON.parse(lines[i]);
+  // 反向查找（最新记录在末尾）——只对明文行（密文行已滤出）
+  for (let i = plainLines.length - 1; i >= 0; i--) {
+    const entry = JSON.parse(plainLines[i]);
     const entryCommit = entry.commitSha || "";
     if (entryCommit === COMMIT_SHA) {
-      process.exit(0);  // commitSha 找到，commit 已审计
+      noteSkippedCipherLines();  // commitSha 找到，commit 已审计
+      process.exit(0);
     }
     if (entry.commitPhase === "pre-commit" && entry.parentSha === PARENT_SHA) {
       // 主题消歧：记录的 task（hook 写入时来自 commit message 主题行）与本 commit
@@ -125,10 +143,12 @@ try {
       //   2 = FAIL 拦截后仍出现同父新 commit = --no-verify 绕过，输出疑似绕过提示。
       if (entry.exitCode === 0) {
         console.log("  ✓ [sofagent] 审计通过");
+        noteSkippedCipherLines();
         process.exit(0);  // parentSha 找到（pre-commit 记录，审计通过）
       }
       if (entry.exitCode === 1) {
         console.log("  ✓ [sofagent] 审计通过（含警告，WARN 放行）");
+        noteSkippedCipherLines();
         process.exit(0);  // WARN 放行 = 合法走过审计，不是绕过
       }
       console.log("");
@@ -156,8 +176,25 @@ try {
     console.log("  ℹ️ [sofagent] 未确认审计记录（post-commit 对账未命中）。");
     console.log("  如未使用 --no-verify 可忽略；如需确认运行 sofagent-audit --verify-commit " + COMMIT_SHA);
   }
-} catch { process.exit(0); }
+  // v1.5.0 TASK-9: 混合态跳过计数——对账完成后补一行密文行跳过说明
+  if (cipherCount > 0) {
+    console.log("  ℹ️ [sofagent] 另跳过 " + cipherCount + " 条密文行（SOFAGENT-AGE-V1 加密态，明文对账不可用）");
+  }
+} catch (err) {
+  // v1.5.0 TASK-9: 区分「设计内的不可读」与「意外的损坏」——非密文前缀的
+  // JSON.parse 异常 = 真实损坏，红字 + exit 1（损坏必须红，不能吞）。
+  // 注意走 console.log（stdout）——外层 2>/dev/null 会吞 stderr。
+  console.log("  ❌ [sofagent] 审计历史解析异常（可能损坏）: " + (err && err.message ? err.message : String(err)));
+  console.log("  可运行 sofagent-audit --doctor 检查数据目录，或人工核查 " + HISTORY_FILE);
+  process.exit(1);
+}
 ' 2>/dev/null
+  RECONCILE_RC=$?
+  # v1.5.0 TASK-9: 真实损坏 exit 1 直接返回（跳过后续 best-effort 扫描——
+  # 检测面死亡必须红；commit 本身已完成，此处退出码只对上游链路/CI 报红）。
+  if [ "$RECONCILE_RC" -ne 0 ]; then
+    exit "$RECONCILE_RC"
+  fi
 fi
 
 # v1.4.2 H-01: HEAD tree 入库对账兜底——tree 在 commit-msg 运行前已生成、commit 成功后主进程

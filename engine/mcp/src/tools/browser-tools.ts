@@ -44,31 +44,33 @@ async function lazyBrowserSession(): Promise<{ session: { playwrightNavigate(u: 
     const session = new BrowserSession(driver, () => { /* MCP 场景审计留痕可后续接 decision-log */ });
     return { session };
   } catch {
-    return null; // Playwright 未安装 → 降级
+    // Playwright 未安装 → 产品化降级提示（非静默 null）：指明安装路径，用户可自行启用
+    process.stderr.write('[sofagent] 未安装 playwright——浏览器工具不可用。启用方式：`npm i -g sofagent --force` 重装，或单独 `npm i -g playwright && npx playwright install chromium`\n');
+    return null;
   }
 }
 
 export async function browserNavigate(url: string): Promise<BrowserToolResult> {
   const s = await lazyBrowserSession();
-  if (!s) return { text: '[sofagent] 浏览器导航不可用——需安装 Playwright（npm i playwright && npx playwright install chromium）。已返回降级结果。', data: { degraded: true, tool: 'playwright_navigate' } };
+  if (!s) return { text: '[sofagent] 浏览器导航不可用——未安装 playwright（`npm i -g playwright && npx playwright install chromium` 启用，详见上方 stderr 提示）。已返回降级结果。', data: { degraded: true, tool: 'playwright_navigate' } };
   try { return { text: '[sofagent] 浏览器导航（Playwright）', data: await s.session.playwrightNavigate(url) as Record<string, unknown> }; }
   catch (err) { return { text: `[sofagent] 浏览器导航失败：${err instanceof Error ? err.message : String(err)}`, data: { error: true } }; }
 }
 export async function browserClick(selector: string): Promise<BrowserToolResult> {
   const s = await lazyBrowserSession();
-  if (!s) return { text: '[sofagent] 浏览器点击不可用——需安装 Playwright。已返回降级结果。', data: { degraded: true, tool: 'playwright_click' } };
+  if (!s) return { text: '[sofagent] 浏览器点击不可用——未安装 playwright（安装指路见 stderr 提示）。已返回降级结果。', data: { degraded: true, tool: 'playwright_click' } };
   try { return { text: '[sofagent] 浏览器点击（Playwright）', data: await s.session.playwrightClick(selector) as Record<string, unknown> }; }
   catch (err) { return { text: `[sofagent] 浏览器点击失败：${err instanceof Error ? err.message : String(err)}`, data: { error: true } }; }
 }
 export async function browserScreenshot(name?: string): Promise<BrowserToolResult> {
   const s = await lazyBrowserSession();
-  if (!s) return { text: '[sofagent] 浏览器截图不可用——需安装 Playwright。已返回降级结果。', data: { degraded: true, tool: 'playwright_screenshot' } };
+  if (!s) return { text: '[sofagent] 浏览器截图不可用——未安装 playwright（安装指路见 stderr 提示）。已返回降级结果。', data: { degraded: true, tool: 'playwright_screenshot' } };
   try { return { text: '[sofagent] 浏览器截图（Playwright）', data: await s.session.playwrightScreenshot(name) as Record<string, unknown> }; }
   catch (err) { return { text: `[sofagent] 浏览器截图失败：${err instanceof Error ? err.message : String(err)}`, data: { error: true } }; }
 }
 export async function browserAssert(condition: string): Promise<BrowserToolResult> {
   const s = await lazyBrowserSession();
-  if (!s) return { text: '[sofagent] 浏览器断言不可用——需安装 Playwright。已返回降级结果。', data: { degraded: true, tool: 'playwright_assert' } };
+  if (!s) return { text: '[sofagent] 浏览器断言不可用——未安装 playwright（安装指路见 stderr 提示）。已返回降级结果。', data: { degraded: true, tool: 'playwright_assert' } };
   try { return { text: '[sofagent] 浏览器断言（Playwright）', data: await s.session.playwrightAssert(condition) as Record<string, unknown> }; }
   catch (err) { return { text: `[sofagent] 浏览器断言失败：${err instanceof Error ? err.message : String(err)}`, data: { error: true } }; }
 }
