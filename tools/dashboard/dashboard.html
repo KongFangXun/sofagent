@@ -144,12 +144,17 @@ a:hover{text-decoration:none} /* 全站 hover 无下划线（统一）——按�
 .metrics{display:grid;grid-template-columns:repeat(5,1fr);gap:16px;margin-bottom:16px}
 /* 4 张指标卡的页面（后训练）：平均分满行，不留空列 */
 .metrics.cols-4{grid-template-columns:repeat(4,1fr)}
-/* 本体图谱条目（§4.1 小卡片规格：bg-s 底 / radius-s / 内边距 10px 12px / 标题 12px；§八.1 间距 8px） */
-.ont-group-title{font-size:13px;font-weight:600;color:var(--text-s);margin:10px 0 6px}
-.ont-list{display:flex;flex-wrap:wrap;gap:8px}
-.ont-item{background:var(--bg-s);border:1px solid var(--border);border-radius:var(--radius-s);padding:10px 12px;font-size:12px;max-width:100%}
-.ont-item-name{font-family:var(--mono);font-weight:600;color:var(--text);overflow-wrap:anywhere}
-.ont-trunc{font-size:11px;color:var(--text-t);margin-top:8px}
+/* 本体图谱：来源分布 + 最近更新（§4.1 规格 / §4.3 优先用类 / §八.4 数字等宽） */
+.ont-subtitle{font-size:11px;color:var(--text-t);margin-bottom:4px}
+.ont-src-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);font-size:12px}
+.ont-src-row:last-child{border-bottom:none}
+.ont-src-name{color:var(--text-s)}
+.ont-src-name.engine{color:var(--text-t)}
+.ont-src-count{margin-left:auto;font-weight:600;color:var(--text);font-variant-numeric:tabular-nums}
+.ont-recent-row{display:flex;align-items:baseline;gap:10px;padding:5px 0;font-size:12px}
+.ont-recent-time{font-family:var(--mono);font-size:11px;color:var(--text-t);flex-shrink:0}
+.ont-recent-title{color:var(--text-s);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ont-guide{margin-top:10px;font-size:12px;color:var(--text-s);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .metric-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;text-align:center}
 /* 加载骨架：数据区加载态统一（shimmer 灰块，替代「加载中...」文字） */
 .skeleton{background:linear-gradient(90deg,var(--bg) 25%,var(--bg-s) 50%,var(--bg) 75%);background-size:200% 100%;animation:sk-shimmer 1.4s infinite;border-radius:var(--radius-s)}
@@ -645,7 +650,10 @@ a:hover{text-decoration:none} /* 全站 hover 无下划线（统一）——按�
     <div class="section">
     <div class="section-header">
       <div class="section-title"><span class="dot-emoji"><i class="bi bi-map"></i></span>本体数据（ontology）</div>
-      <span class="updated-at" id="ontUpdatedAt">加载中...</span>
+      <span style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <a href="/api/export-ontology" download="ontology.json" title="下载本体数据完整清单（JSON，含来源分组与全部条目）" class="btn btn-outline" id="ontDownloadBtn" style="display:none;height:26px;padding:0 10px;font-size:11px"><i class="bi bi-download"></i> 下载本体清单</a>
+        <span class="updated-at" id="ontUpdatedAt">加载中...</span>
+      </span>
     </div>
     <div class="section-body">
       <div id="ontStats" class="grid-3" style="margin-bottom:16px">
@@ -653,7 +661,8 @@ a:hover{text-decoration:none} /* 全站 hover 无下划线（统一）——按�
         <div class="chart-box" style="text-align:center;padding:12px"><div style="font-size:24px;font-weight:700;color:var(--text)">—</div><div style="font-size:11px;color:var(--text-s)">概念 Concepts</div></div>
         <div class="chart-box" style="text-align:center;padding:12px"><div style="font-size:24px;font-weight:700;color:var(--text)">—</div><div style="font-size:11px;color:var(--text-s)">关系 Relations</div></div>
       </div>
-      <div id="ontEntries"><div class="skeleton" style="height:60px"></div></div>
+      <div id="ontSources"><div class="skeleton" style="height:60px"></div></div>
+      <div id="ontRecent" style="margin-top:16px"></div>
     </div>
   </div>
   <div class="section">
@@ -2167,9 +2176,19 @@ function loadKnowledgeData(){
 /* ===== Ontology Data (本体数据) ===== */
 function loadOntologyData(){
   var stats=document.getElementById('ontStats');
-  var entries=document.getElementById('ontEntries');
+  var srcBox=document.getElementById('ontSources');
+  var recentBox=document.getElementById('ontRecent');
   var updated=document.getElementById('ontUpdatedAt');
+  var downBtn=document.getElementById('ontDownloadBtn');
   if(!stats)return;
+  // 最近更新行用的短时间格式（MM-DD HH:mm）
+  function fmtShort(iso){
+    if(!iso)return '—';
+    var t=new Date(iso);
+    if(isNaN(t.getTime()))return '—';
+    function p(n){return (n<10?'0':'')+n}
+    return p(t.getMonth()+1)+'-'+p(t.getDate())+' '+p(t.getHours())+':'+p(t.getMinutes());
+  }
   fetch('/api/ontology')
     .then(function(r){
       if(!r.ok)throw new Error(r.status);
@@ -2177,46 +2196,48 @@ function loadOntologyData(){
     })
     .then(function(d){
       if(updated)updated.textContent=fmtUpdatedAt(d.generatedAt);
-      var entities=d.entities||[];
-      var concepts=d.concepts||[];
-      var relations=d.relations||[];
-      // 统计卡显示总数：优先取服务端 *_Total（列表已按 §12 截断），无则回落列表长度
-      var eTotal=d.entitiesTotal||entities.length;
-      var cTotal=d.conceptsTotal||concepts.length;
-      var rTotal=d.relationsTotal||relations.length;
-      if(stats){
-        stats.innerHTML=
-          '<div class="chart-box" style="text-align:center;padding:12px"><div style="font-size:24px;font-weight:700;color:var(--text)">'+eTotal+'</div><div style="font-size:11px;color:var(--text-s)">实体 Entities</div></div>'+
-          '<div class="chart-box" style="text-align:center;padding:12px"><div style="font-size:24px;font-weight:700;color:var(--text)">'+cTotal+'</div><div style="font-size:11px;color:var(--text-s)">概念 Concepts</div></div>'+
-          '<div class="chart-box" style="text-align:center;padding:12px"><div style="font-size:24px;font-weight:700;color:var(--text)">'+rTotal+'</div><div style="font-size:11px;color:var(--text-s)">关系 Relations</div></div>';
+      // ① 统计卡：总数取服务端 *_Total（列表已按 §12 截断）
+      var eTotal=d.entitiesTotal||0, cTotal=d.conceptsTotal||0, rTotal=d.relationsTotal||0;
+      stats.innerHTML=
+        '<div class="chart-box" style="text-align:center;padding:12px"><div style="font-size:24px;font-weight:700;color:var(--text)">'+eTotal+'</div><div style="font-size:11px;color:var(--text-s)">实体 Entities</div></div>'+
+        '<div class="chart-box" style="text-align:center;padding:12px"><div style="font-size:24px;font-weight:700;color:var(--text)">'+cTotal+'</div><div style="font-size:11px;color:var(--text-s)">概念 Concepts</div></div>'+
+        '<div class="chart-box" style="text-align:center;padding:12px"><div style="font-size:24px;font-weight:700;color:var(--text)">'+rTotal+'</div><div style="font-size:11px;color:var(--text-s)">关系 Relations</div></div>';
+      // 有数据才给下载入口（§十二：空数据不显示下载按钮）
+      if(downBtn)downBtn.style.display=(eTotal>0)?'inline-flex':'none';
+      var kt=d.kindTotals||{engine:0,business:0};
+      // ② 来源分布：一眼分辨「我建的」与「引擎自己长的」
+      if(srcBox){
+        if(eTotal===0){
+          srcBox.innerHTML=emptyState('<i class="bi bi-map"></i>','还没有本体数据','在 FDE 引导页复制 Prompt 执行深挖阶段，或运行 create_entity / create_concept 构建','去 FDE 引导',"goPage('fde')");
+        }else{
+          var h='<div class="ont-subtitle">来源分布</div>';
+          h+='<div class="ont-src-row"><span class="ont-src-name">业务实体（FDE 交付 / 手动构建）</span><span class="ont-src-count">'+kt.business+'</span></div>';
+          if(kt.engine>0)h+='<div class="ont-src-row"><span class="ont-src-name engine">引擎沉淀（dream-cycle 等自动合成）</span><span class="ont-src-count">'+kt.engine+'</span></div>';
+          if(kt.business===0){
+            h+='<div class="ont-guide">业务实体为 0——当前实体均为引擎自动沉淀，企业业务本体尚未建立。'+
+               '<button class="btn btn-outline" onclick="goPage(\'fde\')" style="height:26px;padding:0 12px;font-size:11px">去 FDE 引导构建</button></div>';
+          }
+          srcBox.innerHTML=h;
+        }
       }
-      if(entries){
-        var html='';
-        var any=false;
-        // §12 列表精简：列表由服务端截断，此处只标注总数与未列出数量
-        function renderGroup(title,items,total){
-          if(!total)return'';
-          any=true;
-          var shown=items.length;
-          var h='<div class="ont-group-title">'+escapeHtml(title)+'（'+total+(shown<total?'，显示前 '+shown+' 个':'')+'）</div>';
-          h+='<div class="ont-list">'+items.map(function(it){
-            return '<div class="ont-item"><span class="ont-item-name">'+escapeHtml(it.title)+'</span></div>';
-          }).join('')+'</div>';
-          if(shown<total)h+='<div class="ont-trunc">另有 '+(total-shown)+' 个未列出（全量见 knowledge/ 对应子目录）</div>';
-          return h;
+      // ③ 最近更新：回答「本体在长什么」，替代原先的全量平铺清单
+      if(recentBox){
+        var rec=d.recent||[];
+        if(!rec.length){recentBox.innerHTML='';}
+        else{
+          recentBox.innerHTML='<div class="ont-subtitle">最近更新</div>'+rec.map(function(it){
+            return '<div class="ont-recent-row">'+
+              '<span class="ont-recent-time">'+escapeHtml(fmtShort(it.updatedAt))+'</span>'+
+              '<span class="ont-recent-title" title="'+escapeHtml(it.title)+'">'+escapeHtml(it.title)+'</span>'+
+              '<span class="ont-src-count">'+(it.engine?'引擎':'业务')+'</span></div>';
+          }).join('');
         }
-        html+=renderGroup('实体 Entities', entities, eTotal);
-        html+=renderGroup('概念 Concepts', concepts, cTotal);
-        html+=renderGroup('关系 Relations', relations, rTotal);
-        if(!any){
-          html=emptyState('<i class="bi bi-map"></i>','还没有本体数据','在 FDE 引导页复制 Prompt 执行深挖阶段，或运行 create_entity / create_concept 构建','去 FDE 引导',"goPage('fde')");
-        }
-        entries.innerHTML=html;
       }
     })
     .catch(function(){
       if(stats)stats.innerHTML='<div style="grid-column:1/-1;text-align:center;color:var(--text-t);font-size:12px;padding:12px">未连接数据源</div>';
-      if(entries)entries.innerHTML=emptyState('<i class="bi bi-map"></i>','还没有本体数据','通过 tools/dashboard/serve-dashboard.mjs 启动可看真实数据','去 FDE 引导',"goPage('fde')");
+      if(srcBox)srcBox.innerHTML=emptyState('<i class="bi bi-map"></i>','还没有本体数据','通过 tools/dashboard/serve-dashboard.mjs 启动可看真实数据','去 FDE 引导',"goPage('fde')");
+      if(recentBox)recentBox.innerHTML='';
       if(updated)updated.textContent='加载失败';
     });
 }

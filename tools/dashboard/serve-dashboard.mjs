@@ -431,29 +431,65 @@ function aggregateAiNodes() {
  * 返回：三类列表（各截断至 ONTOLOGY_LIST_LIMIT）+ 各类总数 *_Total
  * ──────────────────────────────── */
 const ONTOLOGY_LIST_LIMIT = 24; // §12 列表精简：服务器端截断 + 报总数
-function aggregateOntology() {
-  const out = { ok: true, found: false, generatedAt: new Date().toISOString(), entities: [], concepts: [], relations: [], entitiesTotal: 0, conceptsTotal: 0, relationsTotal: 0, thinkCount: 0, indexPages: 0 };
+const ONTOLOGY_RECENT_LIMIT = 6;
+// 引擎自动沉淀的 source 前缀——这些是约束层自身产物，不是企业业务本体，展示时与业务实体分列
+const ENGINE_SOURCE_PREFIXES = ['dream-cycle:', 'daemon:', 'evolve:', 'train:', 'auto:'];
+function isEngineSource(src) {
+  const s = String(src || '');
+  return ENGINE_SOURCE_PREFIXES.some((p) => s.startsWith(p));
+}
+function aggregateOntology(full) {
+  const out = { ok: true, found: false, generatedAt: new Date().toISOString(), entities: [], concepts: [], relations: [], entitiesTotal: 0, conceptsTotal: 0, relationsTotal: 0, sources: [], kindTotals: { engine: 0, business: 0 }, recent: [], thinkCount: 0, indexPages: 0 };
   const kbDir = join(SOFAGENT_DATA, 'knowledge');
   try {
     if (!fsDirExists(kbDir)) return out;
-    // entities/ concepts/ relations/ 子目录
-    // §12 列表精简：服务器端截断 + 报总数（实体目录可达上百个，全量平铺会把页面撑爆）
+    // entities/ concepts/ relations/ 子目录——全量扫描（只读 frontmatter + mtime，百级文件毫秒级）
+    // 全量用于「来源分组 / 最近更新」；列表本身按 §12 截断，明细走 /api/export-ontology
+    const all = { entities: [], concepts: [], relations: [] };
     for (const sub of ['entities', 'concepts', 'relations']) {
       const subDir = join(kbDir, sub);
-      if (fsDirExists(subDir)) {
-        const files = readdirSync(subDir).filter((f) => /\.(md|yml|yaml|json)$/.test(f)).sort();
-        out[sub + 'Total'] = files.length;
-        for (const f of files.slice(0, ONTOLOGY_LIST_LIMIT)) {
-          let title = f.replace(/\.(md|yml|yaml|json)$/, '');
-          try {
-            const content = readFileSync(join(subDir, f), 'utf8');
-            const m = content.match(/^(?:#|title:|name:)\s*(.+)$/m);
-            if (m) title = m[1].trim();
-          } catch {}
-          out[sub].push({ file: f, title });
-        }
+      if (!fsDirExists(subDir)) continue;
+      const files = readdirSync(subDir).filter((f) => /\.(md|yml|yaml|json)$/.test(f)).sort();
+      out[sub + 'Total'] = files.length;
+      for (const f of files) {
+        let title = f.replace(/\.(md|yml|yaml|json)$/, '');
+        let source = '';
+        let mtime = 0;
+        try {
+          mtime = statSync(join(subDir, f)).mtimeMs;
+          const content = readFileSync(join(subDir, f), 'utf8');
+          const sm = content.match(/^source:\s*(.+)$/m);
+          if (sm) source = sm[1].trim();
+          const m = content.match(/^(?:#|title:|name:)\s*(.+)$/m);
+          if (m) title = m[1].trim();
+        } catch {}
+        all[sub].push({ file: f, title, source, mtime, engine: isEngineSource(source) });
       }
     }
+    const pick = (list) => (full ? list : list.slice(0, ONTOLOGY_LIST_LIMIT));
+    for (const sub of ['entities', 'concepts', 'relations']) {
+      out[sub] = pick(all[sub]).map((it) => ({ file: it.file, title: it.title, source: it.source, updatedAt: it.mtime ? new Date(it.mtime).toISOString() : null }));
+    }
+    // 来源分组 + 引擎沉淀/业务实体 两类计数（针对实体）
+    const bySource = new Map();
+    let engine = 0;
+    let business = 0;
+    for (const it of all.entities) {
+      const key = it.source || '(未标注来源)';
+      bySource.set(key, (bySource.get(key) || 0) + 1);
+      if (it.engine) engine++;
+      else business++;
+    }
+    out.sources = [...bySource.entries()]
+      .map(([name, count]) => ({ name, count, engine: isEngineSource(name) }))
+      .sort((a, b) => b.count - a.count);
+    out.kindTotals = { engine, business };
+    // 最近更新（按 mtime 倒序）
+    out.recent = all.entities
+      .slice()
+      .sort((a, b) => b.mtime - a.mtime)
+      .slice(0, ONTOLOGY_RECENT_LIMIT)
+      .map((it) => ({ title: it.title, source: it.source, engine: it.engine, updatedAt: it.mtime ? new Date(it.mtime).toISOString() : null }));
     // index.md 知识页面数（表格行）
     const indexFile = join(kbDir, 'index.md');
     try {
@@ -472,7 +508,7 @@ function aggregateOntology() {
       const tk = readFileSync(thinkFile, 'utf8');
       out.thinkCount = tk.split('\n').filter((l) => l.startsWith('## ')).length;
     } catch {}
-    out.found = out.entities.length > 0 || out.concepts.length > 0 || out.relations.length > 0 || out.indexPages > 0;
+    out.found = out.entitiesTotal > 0 || out.conceptsTotal > 0 || out.relationsTotal > 0 || out.indexPages > 0;
   } catch {}
   return out;
 }
@@ -517,6 +553,26 @@ const server = createServer(async (req, res) => {
     const s = aggregateOntology();
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify(s));
+    return;
+  }
+
+  // /api/export-ontology → 本体数据完整清单（§12：列表只出前 24，全量走下载）
+  if (urlPath === '/api/export-ontology') {
+    const s = aggregateOntology(true);
+    const payload = {
+      generatedAt: s.generatedAt,
+      totals: { entities: s.entitiesTotal, concepts: s.conceptsTotal, relations: s.relationsTotal },
+      kindTotals: s.kindTotals,
+      sources: s.sources,
+      entities: s.entities,
+      concepts: s.concepts,
+      relations: s.relations,
+    };
+    res.writeHead(200, {
+      'Content-Type': 'application/json; charset=utf-8',
+      'Content-Disposition': 'attachment; filename="ontology.json"',
+    });
+    res.end(JSON.stringify(payload, null, 2));
     return;
   }
 
