@@ -39,25 +39,47 @@ BOLD='\033[1m'
 NC='\033[0m'
 
 # ── 参数检查 ──────────────────────────────────────────────────
+# 参数位置无关解析：--dry-run / -n 可出现在任意位置（实测踩坑：写成
+# `bump --dry-run 1.4.9 1.5.0` 时 --dry-run 被当版本号报「格式无效」，
+# 而错误信息完全没提示是参数顺序问题——排查走弯路）。
 DRY_RUN=false
-if [[ "${3:-}" == "--dry-run" ]]; then
-  DRY_RUN=true
-fi
+POSITIONAL=()
+for _arg in "$@"; do
+  case "$_arg" in
+    --dry-run|-n) DRY_RUN=true ;;
+    --help|-h)
+      echo "用法: $0 <旧版本> <新版本> [--dry-run]"
+      echo "  例: $0 0.94 0.95"
+      echo "  例: $0 0.94 0.95 --dry-run   # 参数顺序无关，--dry-run 放哪都行"
+      echo "  --dry-run / -n  只打印可替换处，不修改任何文件"
+      exit 0
+      ;;
+    *)
+      if [[ "$_arg" == -* ]]; then
+        echo -e "${RED}错误:${NC} 未知选项: '$_arg'（支持: --dry-run / -n / --help）"
+        exit 1
+      fi
+      POSITIONAL+=("$_arg")
+      ;;
+  esac
+done
 
-if [[ $# -lt 2 ]] || [[ $# -gt 3 ]]; then
+if [[ ${#POSITIONAL[@]} -lt 2 ]] || [[ ${#POSITIONAL[@]} -gt 2 ]]; then
   echo -e "${RED}用法:${NC} $0 <旧版本> <新版本> [--dry-run]"
   echo -e "  例: $0 0.94 0.95"
-  echo -e "  例: $0 0.94 0.95 --dry-run"
+  echo -e "  例: $0 0.94 0.95 --dry-run   # --dry-run 位置无关"
+  [[ ${#POSITIONAL[@]} -eq 1 ]] && echo -e "${RED}提示:${NC} 只收到 1 个版本参数 '${POSITIONAL[0]}'——需要 <旧版本> <新版本> 两个"
   exit 1
 fi
 
-OLD_VERSION="$1"
-NEW_VERSION="$2"
+OLD_VERSION="${POSITIONAL[0]}"
+NEW_VERSION="${POSITIONAL[1]}"
 
 # 验证版本号格式（2 段或 3 段，数字+点号）
 for v in "$OLD_VERSION" "$NEW_VERSION"; do
   if ! echo "$v" | grep -qE '^[0-9]+\.[0-9]+(\.[0-9]+)?$'; then
     echo -e "${RED}错误:${NC} 版本号格式无效: '$v'（期望如 0.94 或 0.94.0）"
+    echo -e "${YELLOW}提示:${NC} 若你想传 --dry-run，它可放在任意位置且不会触发本错误"
     exit 1
   fi
 done

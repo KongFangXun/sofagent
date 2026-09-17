@@ -334,6 +334,31 @@ else
 fi
 
 # ============================================================
+# ⑨ mjs 注释可执行反引号守卫（bash 误跑防线）
+# ============================================================
+# 原理：.mjs/.js 被 bash 误执行时（手滑 bash tools/check/x.mjs / 调度器误派），
+# 注释里的反引号串会被 bash 当**命令替换真执行**——实锤：check-prepush-checklist.mjs
+# 头部注释 '`tools/release/pre-push-check.sh`' 曾让 bash 完整跑了一遍 pre-push
+# 防线（数分钟），且 macOS 下 .mjs 无执行位报 Permission denied、Linux 或带执行位
+# 时则直接以 node 语义执行。判定器独立成 check-mjs-comment-backtick.mjs（本段
+# heredoc 内联 node -e 会反引号转义地狱，独立脚本可自测可复用）。
+if [ "$QUIET" = false ]; then echo -e "\n${BOLD}${CYAN}── ⑨ mjs 注释可执行反引号守卫（bash 误跑防线） ──${NC}"; fi
+# 判定器自带 ✅/❌ 行级输出（违规明细走 stderr），此处按退出码分诊：
+# exit 0 绿 / 1 有违规（明细已由判定器打出）/ 2 引擎故障（fail-loud 拒绝假绿）
+if _bt_out=$(node tools/check/check-mjs-comment-backtick.mjs 2>&1); then
+  [ "$QUIET" = false ] && echo "$_bt_out" | sed 's/^  //'
+  PASS=$((PASS + 1))
+else
+  _bt_rc=$?
+  echo "$_bt_out"
+  if [ "$_bt_rc" -eq 2 ]; then
+    bad "⑨ 反引号守卫引擎故障（node 扫描失败）——fail-loud 拒绝假绿"
+  else
+    bad "⑨ 发现注释内可执行反引号串（bash 误跑会真执行——改单引号，明细见上）"
+  fi
+fi
+
+# ============================================================
 # 汇总
 # ============================================================
 [ "$QUIET" = false ] && echo -e "\n${BOLD}═══════════════════════════════════════════════${NC}"

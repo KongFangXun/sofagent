@@ -19,9 +19,9 @@
 // 覆盖边界（显式标出，不假装全覆盖）：
 //   ① 只扫 `engine/**/src/**/*.{ts,mts,cts}`（非 .d.ts）。**不扫 dist**——
 //      dist 是 `.gitignore:8` 忽略的派生产物，克隆态为空，扫它不可确定；
-//      src 是 SSOT，dist 由 `npm run build` 从 src 派生。
+//      src 是 SSOT，dist 由 'npm run build' 从 src 派生。
 //   ② 只判**相对**说明符。包名说明符（`@sofagent/*`）由
-//      `tools/check/dependency-direction.sh` 按包边界判，分工不重叠。
+//      'tools/check/dependency-direction.sh' 按包边界判，分工不重叠。
 //   ③ `FORGE/`、`tools/` 下无多包嵌套结构，不在扫描面内。
 //
 // 三层负向断言（对齐 G-2/G-3/G-6 同族铁律：**不许静默通过**）：
@@ -60,8 +60,8 @@
 //       a) 插件与 plugin-kit 均不入 npm（插件 `private: true`；plugin-kit 既
 //          `private` 又非 workspace 成员）；
 //       b) 两者 `dist/` 均不入 git（`.gitignore:8 dist/`）；
-//       c) 根 `npm run build` **显式**在 7 个插件之前执行
-//          `npm --prefix engine/dsh-plugins/plugin-kit run build` ⇒ 拓扑序被手工钉住；
+//       c) 根 'npm run build' **显式**在 7 个插件之前执行
+//          'npm --prefix engine/dsh-plugins/plugin-kit run build' ⇒ 拓扑序被手工钉住；
 //       d) 故障注入实测：移走 `plugin-kit/dist` 后插件构建 **fail-loud**
 //          （`error TS2307: Cannot find module '../../plugin-kit/dist/index.js'`），
 //          不静默降级 ⇒ 假设「单目录切片分发」失效时也会当场报错，不会悄悄上线。
