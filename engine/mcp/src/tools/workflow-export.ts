@@ -159,7 +159,7 @@ function collectOntologyEntities(dataDir: string, doc: StoredDoc): Array<Record<
       try {
         entities.push(yamlLoad(readFileSync(join(dir, f), 'utf-8')) as Record<string, unknown>);
       } catch {
-        // 单个 entity 损坏跳过（伴生面不阻断导出）
+        /* 为何可静默：单个伴生 entity YAML 损坏跳过——导出主面不受阻，损坏项由导入侧完整性核对兜底 */
       }
     }
   }

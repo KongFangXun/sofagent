@@ -141,7 +141,7 @@ function spillDiffToLines(gitArgs: string[], cwd: string | undefined, filePath: 
   if (spillFailure) {
     const err = new Error(`[sofagent] ⚠️ spill 读取文件 ${filePath} 的 diff 失败（${spillFailure}）——拒绝以空内容过审。常见原因：index.lock 被占 / 浅克隆缺对象；可先处理锁文件后重试（重试仍失败请带本行上报）`);
     (err as NodeJS.ErrnoException).code = SPILL_FAILURE_CODE;
-    try { rmSync(spillFile, { force: true }); } catch { /* 清理失败不掩盖原错误 */ }
+    try { rmSync(spillFile, { force: true }); } catch { /* 为何可静默：spill 残留清理属 best-effort——原错误（已构造 err，含上报指引）继续抛出，清理失败不掩盖原错误 */ }
     throw err;
   }
 

@@ -104,7 +104,7 @@ function readAllRecords(dataDir?: string): UploadWalRecord[] {
         out.push(rec);
       }
     } catch {
-      // 坏行跳过
+      /* 为何可静默：WAL 逐行回放的坏行跳过——单行损坏不阻断其余记录回放，seq 连续性由消费侧校验 */
     }
   }
   return out;
@@ -138,7 +138,7 @@ function appendRecord(record: UploadWalRecord, dataDir?: string): void {
   try {
     chmodSync(p, 0o600);
   } catch {
-    /* 非 POSIX 容忍 */
+    /* 为何可静默：非 POSIX 平台（Windows）无 chmod 语义，0o600 权限收紧为尽力而为，失败不阻断写入主流程 */
   }
 }
 

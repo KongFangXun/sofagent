@@ -290,7 +290,7 @@ export async function workflowImport(args: {
         entitiesMerged = mergeOntologyEntities(dataDir, entities);
       }
     } catch {
-      // 伴生件损坏不阻断导入（主件已过完整性核对——此处仅防御性解析）
+      /* 为何可静默：伴生件解析失败不阻断导入——主件已过完整性核对，此处仅防御性解析 */
     }
   }
 

@@ -265,7 +265,7 @@ export function appendDeviceEvent(
     try {
       fs.chmodSync(filePath, 0o600);
     } catch {
-      /* 非 POSIX 平台容忍 */
+      /* 为何可静默：非 POSIX 平台（Windows）无 chmod 语义，0o600 权限收紧为尽力而为，失败不阻断写入主流程 */
     }
   } catch (err) {
     console.error(
@@ -799,7 +799,7 @@ export function loadDeviceRegistry(dataDir?: string): DeviceRegistryFile {
     const raw = JSON.parse(fs.readFileSync(p, 'utf-8')) as DeviceRegistryFile;
     if (raw && Array.isArray(raw.devices)) return raw;
   } catch {
-    /* 损坏按空表（fail-open 读取——注册面损坏不阻断，重注册即恢复） */
+    /* 为何可静默：注册表损坏按空表 fail-open——读取面损坏不阻断注册流程，重注册即恢复；写入侧仍严格报错 */
   }
   return { version: 1, devices: [] };
 }
@@ -814,7 +814,7 @@ export function saveDeviceRegistry(registry: DeviceRegistryFile, dataDir?: strin
   try {
     fs.chmodSync(p, 0o600);
   } catch {
-    /* 非 POSIX 容忍 */
+    /* 为何可静默：非 POSIX 平台（Windows）无 chmod 语义，0o600 权限收紧为尽力而为，失败不阻断写入主流程 */
   }
 }
 
@@ -826,7 +826,7 @@ export function loadDeviceTasks(dataDir?: string): DeviceTasksFile {
     const raw = JSON.parse(fs.readFileSync(p, 'utf-8')) as DeviceTasksFile;
     if (raw && Array.isArray(raw.tasks)) return raw;
   } catch {
-    /* 损坏按空队列 */
+    /* 为何可静默：任务队列损坏按空队列 fail-open——同上读取面纪律（写入侧严格） */
   }
   return { version: 1, tasks: [] };
 }
@@ -841,7 +841,7 @@ export function saveDeviceTasks(tasks: DeviceTasksFile, dataDir?: string): void 
   try {
     fs.chmodSync(p, 0o600);
   } catch {
-    /* 非 POSIX 容忍 */
+    /* 为何可静默：非 POSIX 平台（Windows）无 chmod 语义，0o600 权限收紧为尽力而为，失败不阻断写入主流程 */
   }
 }
 

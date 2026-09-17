@@ -204,7 +204,7 @@ export function keyHarnessSnapshot(
       try {
         entries.push(JSON.parse(t) as (typeof entries)[number]);
       } catch {
-        // 坏行跳过（与 sample-aggregator parseJsonl 同纪律）
+        /* 为何可静默：JSONL 逐行解析的坏行跳过——单行损坏不阻断其余样本落盘（与 sample-aggregator parseJsonl 同纪律） */
       }
     }
   }

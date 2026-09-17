@@ -109,7 +109,7 @@ export function saveDeviceUploadPolicy(config: DeviceUploadPolicyConfig, dataDir
   try {
     chmodSync(p, 0o600);
   } catch {
-    /* 非 POSIX 容忍 */
+    /* 为何可静默：非 POSIX 平台（Windows）无 chmod 语义，0o600 权限收紧为尽力而为，失败不阻断写入主流程 */
   }
 }
 
