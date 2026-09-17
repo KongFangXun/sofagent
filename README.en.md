@@ -27,7 +27,7 @@ sofagent does not build its own Agent — execution is delegated to mature hosts
 
 > 🚂 **Why a training engine in a governance repo** (30-second answer): governance is capped by data — what audits uncover (which tasks failed, which outputs were substandard) is exactly training fuel. The training engine closes the loop from "problems found by audits → models that fix those problems", letting governance data feed back into the model layer; training assets themselves ship on the commercial side — this repo keeps only protocols and interfaces (externalized / configurable).
 >
-> 📌 *Terminology note: the Chinese side uses「后训模块」(post-training module); the English "training engine" is deliberately retained per the 2026-09-03 naming ruling (English-face exemption) — the two refer to the same module. Independent reviewers: this is a known, ruled-on boundary, not a missed rename.*
+> 📌 *Terminology note: the Chinese side uses「后训模块」(post-training module); the English "training engine" is deliberately retained per the 2026-09-03 naming ruling (English-face exemption) — the two refer to the same module.*
 
 <p align="center">
   <img src="docs/assets/audit-terminal.png" alt="sofagent-audit blocks a .env commit" width="860" /><br/>
@@ -64,7 +64,7 @@ sofagent does not build its own Agent — execution is delegated to mature hosts
 | Coverage | secret leaks | anything (DIY) | 24 rules: secrets / scope / injection / privilege / backdoors |
 | Advice | a must for strict secret compliance | keep if you have one | use alongside both — focused on Agent governance |
 
-**10-minute lightweight trial**: `npx -y -p @sofagent/audit sofagent-audit` (any git repo; secret leaks blocked on the spot).
+**10-minute lightweight trial** (covers package fetch and environment checks end to end; a single engine audit itself takes ~1.1 seconds — see the measured figures below): `npx -y -p @sofagent/audit sofagent-audit` (any git repo; secret leaks blocked on the spot).
 
 ## Core Features
 
@@ -109,7 +109,7 @@ Sits between the Agents you already use and the model layer — it doesn't repla
 
 | Tier | Platform | Constraint injection | Mounting method |
 |------|----------|---------------------|-----------------|
-| **Deep integration** | DeepSeek Harness | ✅ **Per-tool-call interception** | 6 atomic `cordis-plugin-sofagent-*` mounted into the runtime (1 optional aggregate plugin also available; previous chapter) — 8 lifecycle events incl. `tools/pre-execute` |
+| **Deep integration** | DeepSeek Harness | ✅ **Per-tool-call interception** | 6 atomic `cordis-plugin-sofagent-*` mounted into the runtime (1 optional aggregate plugin also available; previous chapter) — 7 lifecycle events incl. `tools/pre-execute` (per the vocabulary table in `engine/dsh-plugins/SEAMS.md`) |
 | **Full mounting** | OpenClaw | ✅ **Once per session** | Hook-injected four-layer constraints + circuit breaker + 4 OpenClaw plugins |
 | **Standard mounting** | Claude Code / Cursor | ⚠️ Skill self-load | Skills-directory symlink + platform rule file + interception config (content = commit-level 24 rules, not call-level interception) |
 | **Thin mounting** | WorkBuddy / Codex / Gemini CLI / Hermes | ⚠️ Skill self-load | Skills-directory symlink (Codex uses the `AGENTS.md` mount point) + git-hook audit |
@@ -121,7 +121,7 @@ One command selects your mounting tier: `bash install.sh --platform <platform-na
 
 ## v1.4.9: Device Access & Data Ingestion
 
-📡 **Device access and data ingestion** — the engine grows from single-machine audit into a multi-device data broker, closing three chains at once: device registry & dispatch (G9: Ed25519 identity + heartbeat freshness gating + dispatch-only-when-online with offline reassign/suspend) · authorized reads & encrypted uploads (G10/G11: `device_data_query` allowlist-gated reads + `device_data_push` opt-in uploads — WAL-encrypted staging / no plaintext on disk / resumable transfer / audit-metered evidence) · training-data flywheel (T7/T8/T9: router session ingestion with fail-closed schema + signature verification + redaction throughout + cost ledger · 3-tier sensitive-detection slots L0 regex / L1 dictionary / L2 NER · weight canary AB with hash-stable splitting + degradation triggers + noise protection) · platform interface (G5b/G1: connector registry/discovery with tenant isolation + workflow template export/import with lineage) · engineering efficiency (T6/T10 + bugfix: installer skill four-step guided setup + model inventory reporting + skill snapshots · 13-item fix batch). MCP tools 95 → **104** · tests 4429 → **4805**. Full details in the [devlog](./docs/changelog/v1.4/v1.4.9.md) · earlier versions in [CHANGELOG](./CHANGELOG.md).
+📡 **Device access and data ingestion** — the engine grows from single-machine audit into a multi-device data broker, closing three chains at once: device registry & dispatch (G9: Ed25519 identity + heartbeat freshness gating + dispatch-only-when-online with offline reassign/suspend) · authorized reads & encrypted uploads (G10/G11: `device_data_query` allowlist-gated reads + `device_data_push` opt-in uploads — WAL-encrypted staging / no plaintext on disk / resumable transfer / audit-metered evidence) · training-data flywheel (T7/T8/T9: router session ingestion with fail-closed schema + signature verification + redaction throughout + cost ledger · 3-tier sensitive-detection slots L0 regex / L1 dictionary / L2 NER (SDK face ready; pipeline wiring scheduled for v1.5.0) · weight canary AB with hash-stable splitting + degradation triggers + noise protection (SDK face ready; pipeline wiring scheduled for v1.5.0)) · platform interface (G5b/G1: connector registry/discovery with tenant isolation + workflow template export/import with lineage) · engineering efficiency (T6/T10 + bugfix: installer skill four-step guided setup + model inventory reporting + skill snapshots · 13-item fix batch). MCP tools 95 → **104** · tests 4429 → **4805** (release-time figure; post-release fix batches added +30 — see the current value in "Engineering credibility" below). Full details in the [devlog](./docs/changelog/v1.4/v1.4.9.md) · earlier versions in [CHANGELOG](./CHANGELOG.md).
 
 ## FDE Methodology
 
@@ -164,7 +164,7 @@ Full methodology (four phases, twelve steps) in [FDE/GUIDE.md](./FDE/GUIDE.md) �
 
 > ⚠️ **Enterprise users read first** [LIMITATIONS §3](./docs/LIMITATIONS.md) — `config.yml` is **non-fail-closed by default** (rules can be bypassed by Agent tampering), and **write-side** multi-tenant isolation is not yet landed (v0 delivered query-side isolation: orgId filtering + the data/<tenant>/ path foundation — see LIMITATIONS). For strict-compliance scenarios use CI fallback + file-permission lock (`chmod 444 .sofagent/config.yml`); do not put the single-machine default config directly into production.
 
-**30 seconds, zero setup** — run an audit in any git repo:
+**30 seconds, zero setup** (first run includes the npx package fetch, ~30 seconds; reruns finish in seconds — the engine itself takes ~1.1s, measured basis above) — run an audit in any git repo:
 
 ```bash
 npx -y -p @sofagent/audit sofagent-audit
@@ -172,7 +172,7 @@ npx -y -p @sofagent/audit sofagent-audit
 
 > 💡 quick runs the **17 default rules** (A3 task-scope / A9 commit-msg injection detection active — quick mode auto-reads the latest commit message; when no message is available, A9 is handled by the engine as no-input and marked skipped). The full 24 rules + hook auto-audit require `--init` — see [LIMITATIONS §3](./docs/LIMITATIONS.md).
 
-Here's what it looks like when a known-format secret leak is blocked (real output; A2 detects AWS AKIA/Secret, OpenAI sk-*, GitHub ghp_, Google AIza, Slack xox*-, JWT, PEM private keys and other known formats — generic secret shapes are intentionally out of scope, a conservative design against false positives, see [LIMITATIONS §3 A2](./docs/LIMITATIONS.md#%E4%B8%89%E5%AE%89%E5%85%A8%E4%B8%8E%E4%BF%A1%E4%BB%BB%E6%A8%A1%E5%9E%8B%E5%B1%80%E9%99%90)): — the screenshot above (first screen) shows exactly this scenario, not repeated here.
+Here's what it looks like when a known-format secret leak is blocked (real output; A2 detects AWS AKIA/Secret, OpenAI sk-*, GitHub ghp_, Google AIza, Slack xox*-, JWT, PEM private keys and other known formats — generic secret shapes are intentionally out of scope, a conservative design against false positives, see [LIMITATIONS §3 A2](./docs/LIMITATIONS.md#%E4%B8%89%E5%AE%89%E5%85%A8%E4%B8%8E%E4%BF%A1%E4%BB%BB%E6%A8%A1%E5%9E%8B%E5%B1%80%E9%99%90)). This is exactly the scenario shown in the screenshot above (first screen); not repeated here.
 
 **Full install** (Node.js ≥ 18, download and review before running) — **installed on the enterprise devices running the AI nodes**:
 
@@ -296,7 +296,7 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # load the securit
 | Security statement · known limitations | [SECURITY](./SECURITY.md) · [LIMITATIONS](./docs/LIMITATIONS.md) |
 | Contribution guide | [CONTRIBUTING](./CONTRIBUTING.md) |
 
-> 🧪 **Engineering credibility**: 4807 tests / 13 module packages + 11 plugins (7 DSH + 4 OpenClaw) (scope: 13 workspace packages; package counts and counting standard in [WIKI](./docs/WIKI.md)) · 24 audit rules · fresh-eyes independent review continuously running (test counts are determined by `tools/check/test-count.sh`; environmental notes are documented in [docs/guides/review-system.md](./docs/guides/review-system.md). Performance figures are single-machine reference values; cross-tool benchmarking is scheduled for v1.4.x together with Benchmark integration).
+> 🧪 **Engineering credibility**: 4835 tests / 13 module packages + 11 plugins (7 DSH + 4 OpenClaw) — the test count is a post-v1.4.9-release snapshot of main (rolls forward with fix batches; the v1.4.9 release-time figure was 4805); the current authoritative value is whatever `tools/check/test-count.sh` reports (package scope: 13 workspace packages; counting standard in [WIKI](./docs/WIKI.md)) · 24 audit rules · fresh-eyes independent review continuously running (environmental notes are documented in [docs/guides/review-system.md](./docs/guides/review-system.md). Performance figures are single-machine reference values; cross-tool benchmarking is scheduled for v1.4.x together with Benchmark integration).
 
 ---
 

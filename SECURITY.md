@@ -437,7 +437,7 @@ chmod 600 ~/.sofagent/data/audit/history.jsonl.bak-*
 
 | 绕过方式 | 检测手段 | 缓解 |
 |----------|---------|------|
-| `git commit --no-verify` | ⚠️ post-commit hook 事后对账留痕（不阻断） | `--init` 同时装 pre-commit + commit-msg + post-commit（v1.4.2 三层防线）：绕过 commit-msg 的 commit 会被 post-commit 对账——命中拦截记录时输出「疑似绕过」提示并留痕 history.jsonl；未命中输出 INFO 提示可用 `--verify-commit <SHA>` 复核。定期 `--doctor` 检查未审计的 commit（`git log --grep` 匹配审计签名）；CI 侧 `sofagent-audit --diff HEAD~1..HEAD` 兜底 |
+| `git commit --no-verify` | ⚠️ post-commit hook 事后对账留痕（不阻断） | `--init` 同时装 pre-commit + commit-msg + post-commit（v1.4.2 三层防线）：绕过 commit-msg 的 commit 会被 post-commit 对账——命中拦截记录时输出「疑似绕过」提示并留痕 history.jsonl；未命中输出 INFO 提示可用 `--verify-commit <SHA>` 复核。定期 `--doctor` 检查未审计的 commit（`git log --grep` 匹配审计签名）；CI 侧 `sofagent-audit --diff HEAD~1..HEAD` 兜底。**加密态边界（v1.5.0）**：静态加密开启后 history.jsonl 密文行（`SOFAGENT-AGE-V1` 前缀）明文对账不可用——post-commit 降级为显式提示（全密文态输出「明文对账不可用，依赖 CI 兜底」；混合态对明文行对账并跳过密文行计数），`--no-verify` 检测在加密态依赖 CI 侧 `sofagent-audit --diff` 兜底 |
 | `git add -f .sofagent/`（审计数据强制入库） | ✅ v1.4.2 起三层防线拦截——pre-commit 在 commit 对象生成前将 .sofagent/ 移出暂存区（主防线，对当次 commit 直接生效）；commit-msg 阶段再兜一次（护磁盘 index 防后续 commit 卷入）；post-commit 扫 HEAD tree 命中即告警 | pre-commit reset 失败（index.lock 竞态）时 fail-loud 拒绝 commit（宁可 false-retry 不可静默入库）；CI 侧 `--diff` 仍可发现已入库残留 |
 | 删除 commit-msg hook 文件 | ⚠️ `--doctor` 可检测 | daemon 文件监控（fs-watch，v1.3.6 起）可配置监控 .git/hooks/ 目录变化（watch.yml 自定义路径）；hooks 目录监控未内置为默认巡检项（规划中） |
 | 伪造 Agent 日志（task/logs） | ❌ 无自动检测 | 人工抽查 + 交叉验证 git log 时间戳 |
@@ -514,7 +514,7 @@ install.sh 是 sofagent 的一键安装脚本。以下是其完整行为清单�
 |------|------|------|
 | 创建目录 | `~/.openclaw/skills/sofagent/` 或 `~/.workbuddy/skills/sofagent/` | 按平台部署 Skill 文件 |
 | 创建目录 | `${项目目录}/data/task/logs/` | 数据目录，权限 700 |
-| 复制文件 | 宪法(fde.md) + 6 核心 Skill + 数据模板 + 配套脚本 | 从仓库 `SKILL/harness/` 和 `engine/scripts/` 复制到目标目录 |
+| 复制文件 | 宪法(fde.md) + SKILL.md + 分层 rules/ + harness 约束骨架与 agents 子 Skill + 配套脚本 | 从仓库 `SKILL/` 和 `engine/scripts/` 复制到目标目录（以 `SKILL/` 目录实际清单为准） |
 | 写入配置 | `~/.openclaw/openclaw.json`（仅 OpenClaw） | 注册加载链 Hook |
 | 写入配置 | `~/.openclaw/config.json`（仅 OpenClaw） | 注入 loopDetection 断路器 |
 | npm install | `@langchain/langgraph`（编排模块依赖） | Sub Agent 编排模块 |

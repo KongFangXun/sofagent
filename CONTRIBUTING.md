@@ -1,7 +1,7 @@
 # 贡献指南
 
 > 📖 新贡献者？先看 [COMMUNITY.md](./docs/COMMUNITY.md) 了解社区现状和贡献路径。
-> 📌 基于版本 v1.4.8（2026-09-13）修订，目录结构以当前 main 分支为准。
+> 📌 基于当前 main 分支结构修订，目录与文件以你面前的仓库为准。
 
 欢迎参与 sofagent！这个项目的代码由 AI 模型辅助生成（详见[致谢](./docs/THANKS.md#生成伙伴)），作者做产品决策和终审。你看到的任何技术问题，请直接指出来，不必客气。
 
@@ -51,7 +51,7 @@ bash install.sh && bash engine/scripts/verify.sh
 
 | 目录 | 内容 |
 |------|------|
-| `engine/` | 13 个 @sofagent/* npm 发布包（`audit` 审计模块 / `core` 底座 / `daemon` 守护 / `orchestrator` 编排 / `mcp` / `rules` / `eval` / `think` / `evolve` / `ontology` / `harness` / `ab-test` / `hooks/sofagent-load-chain` 加载链 Hook）——全部发布到 npm，12 个含 test script；另有 2 个插件族：`dsh-plugins/`（cordis-plugin-sofagent* 10 款 DSH 插件：9 款原子 + 1 款聚合整装）+ `openclaw-plugins/`（OpenClaw code-plugin 4 款） |
+| `engine/` | 13 个 @sofagent/* 模块包（`audit` 审计模块 / `core` 底座 / `daemon` 守护 / `orchestrator` 编排 / `train` 后训 / `mcp` / `rules` / `eval` / `think` / `evolve` / `ontology` / `harness` / `ab-test`，12 个含 test script）+ `hooks/sofagent-load-chain`（加载链 Hook，工具包非模块包）——模块包全部发布到 npm；另有 2 个插件族：`dsh-plugins/`（cordis-plugin-sofagent* 7 款 DSH 插件：6 款原子 + 1 款聚合整装）+ `openclaw-plugins/`（OpenClaw code-plugin 4 款） |
 | `engine/audit/src/rules/` | 审计规则实现（`rule-a*.ts` A1-A23 + `skill-safety-engine.ts`）；A20 网络外传 / A21 持久化后门 / A22 权限提升 / A23 路径穿越 |
 | `engine/audit/src/` | 审计核心：`audit-trail.ts` 审计轨迹聚合 + `protocol-neutrality.ts` 协议中立声明 |
 | `engine/audit/src/permission/` | 权限配置加载与检查 |
