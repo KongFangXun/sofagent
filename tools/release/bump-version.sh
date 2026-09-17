@@ -359,13 +359,15 @@ while IFS= read -r ts; do
   [[ "$ts" == *.test.ts ]] && continue
   [[ "$ts" == */dist/* ]] && continue
   # 只处理文件头前 10 行的注释（文件头版本号声明区域）
-  # v1.3.7 修复：豁免功能溯源标记行（「vX.Y.Z 新增/增强/基础版/补上/交付/升级」是
-  # 功能引入版本的历史叙述，不是当前版本锚点——历史误伤的根源，check-version [12/14] 已同步豁免）
+  # 豁免功能溯源标记行：「vX.Y.Z 新增/增强/基础版/补上/交付/升级/引入/首次」是
+  # 功能引入版本的历史叙述，不是当前版本锚点——历史误伤的根源，check-version [12/14] 已同步豁免。
+  # 「条目」同属 CHANGELOG 历史档案锚（任务表行号），永不随 SSOT 抬号——
+  # 误抬会击穿 acceptance S407（三形态定位边界锚「v1.4.8 条目 10」）类锚定场景。
   ts_head=$(head -10 "$ts")
   ts_rest=$(tail -n +11 "$ts")
   ts_head_new=$(echo "$ts_head" | awk -v OLD3="$OLD_3SEG" -v NEW3="$NEW_3SEG" -v OLD2="$OLD_2SEG" -v NEW2="$NEW_2SEG" '
     {
-      if ($0 ~ /新增|增强|基础版|补上|交付|升级|引入|首次/) { print; next }
+      if ($0 ~ /新增|增强|基础版|补上|交付|升级|引入|首次|条目/) { print; next }
       gsub(OLD3, NEW3)
       gsub(OLD2 "([^0-9.]|$)", NEW2 "\\1")
       print
@@ -397,14 +399,26 @@ echo -e "${BOLD}[5/13] index.ts 版本引用${NC}"
 INDEX_TS="$PROJECT_ROOT/engine/audit/src/index.ts"
 if [[ -f "$INDEX_TS" ]]; then
   idx_content=$(cat "$INDEX_TS")
-  # 替换 vOLD 为 vNEW（注意不能误伤 vOLDx 这种）
+  # 行级豁免（与 [4/13] 同语义）：含溯源/历史档案标记的行整行跳过——
+  # 「新增/交付/升级/条目」是功能引入版本或 CHANGELOG 任务表锚，不随 SSOT 抬号。
+  # 历史事故：本通道无豁免时把「vX.(N-1) 条目 7」等历史锚抬成当前版，
+  # 击穿 acceptance S407 且制造同锚两套口径（index.ts vs driver.ts）。
+  # awk 双通道替换：3 段格式无脑 gsub；2 段格式带尾边界防误伤 vOLDx。
+  idx_awk_replace() {
+    awk -v OLD3="$OLD_3SEG" -v NEW3="$NEW_3SEG" -v OLD2="$OLD_2SEG" -v NEW2="$NEW_2SEG" '
+      /新增|增强|基础版|补上|交付|升级|引入|首次|条目/ { print; next }
+      {
+        if (USE3) { gsub("v" OLD3, "v" NEW3) } else { gsub("v" OLD2 "([^0-9.])", "v" NEW2 "\\1"); gsub("v" OLD2 "$", "v" NEW2) }
+        print
+      }' USE3="$1"
+  }
   if $PATCH_ONLY; then
-    idx_new=$(sed "s/v$OLD_3SEG/v$NEW_3SEG/g" "$INDEX_TS")
+    idx_new=$(idx_awk_replace 1 < "$INDEX_TS")
   else
-    idx_new=$(sed "s/v$OLD_2SEG/v$NEW_2SEG/g" "$INDEX_TS")
+    idx_new=$(idx_awk_replace 0 < "$INDEX_TS")
     # 2 段没匹配到，试 3 段格式
     if $HAS_PATCH && [[ "$idx_new" == "$idx_content" ]]; then
-      idx_new=$(sed "s/v$OLD_3SEG/v$NEW_3SEG/g" "$INDEX_TS")
+      idx_new=$(idx_awk_replace 1 < "$INDEX_TS")
     fi
   fi
   if [[ "$idx_new" != "$idx_content" ]]; then
