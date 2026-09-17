@@ -1,6 +1,6 @@
 # sofagent 专题指南索引（guides/）
 
-> 本目录收纳 20 份专题指南。按角色找入口：企业 IT / FDE 交付 / 开发者 / 审计与安全 / 后训模块 / 开源运营。全站文档导航见 [WIKI](../WIKI.md)。
+> 本目录收纳 21 份专题指南。按角色找入口：企业 IT / FDE 交付 / 开发者 / 审计与安全 / 后训模块 / 开源运营。全站文档导航见 [WIKI](../WIKI.md)。
 
 ## 一、企业落地（IT 负责人 / 管理员）
 
@@ -29,6 +29,7 @@
 | [testing.md](./testing.md) | 测试用例说明——怎么跑、跑什么、如何解读 |
 | [loop-development.md](./loop-development.md) | FORGE Loop 开发——给自迭代工具链加新 Loop |
 | [frontend-design-standard.md](./frontend-design-standard.md) | 前端设计标准——改 Dashboard 前必读的视觉与结构规范 |
+| [narrative-standard.md](./narrative-standard.md) | 叙事标准——改对外文案前必读的主轴/术语/结构公式 SSOT |
 
 ## 四、审计与安全
 

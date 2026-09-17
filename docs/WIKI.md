@@ -306,7 +306,7 @@ graph TB
 | 用 SDK 接入约束层 | [guides/harness-sdk.md](./guides/harness-sdk.md)（SubAgent 托管 SDK · `harness.wrap` 一行包装） |
 | 了解后训模块 | [guides/train-stack.md](./guides/train-stack.md)（双栈契约）+ [train-security.md](./guides/train-security.md)（攻击面声明）+ [train-quickstart.md](./guides/train-quickstart.md)（v1.4.5 十步端到端入门） |
 | 判断一个场景该不该上后训 | [guides/fde-training-baseline.md](./guides/fde-training-baseline.md)（能力阶梯四格逐级排查） |
-| 浏览全部专题指南 | [guides/README.md](./guides/README.md)（20 份指南按角色分类索引） |
+| 浏览全部专题指南 | [guides/README.md](./guides/README.md)（21 份指南按角色分类索引） |
 | 添加新审计规则 | `engine/audit/src/rules/` → 对照现有规则模式（defaultRules / extendedRules） |
 | 新建 Sub Agent | `SKILL/agents/` → 参照 `agents/engineer/SKILL.md` |
 | 运行测试 | `npm test`（根目录）；全量统计以 `tools/check/test-count.sh` 为准，`npm test` 直跑遇 mcp 超时属 flaky，重跑即可 |
