@@ -28,7 +28,7 @@ FDE 诊断完成后，交付了一堆**静态文件**：
   └──────────────────────────────────────────────────┘
 
 理想终态：
-  企业的业务流自动运行——每个 🔄 节点是一个 sub-agent，
+  企业的工作流自动运行——每个 🔄 节点是一个 sub-agent，
   每个 ⚡ 节点是一个辅助 Agent，节点间按 workflow.yml 的依赖自动编排
 ```
 
@@ -101,7 +101,7 @@ FDE 诊断完成后，以下文件就绪：
 │   │   ├── concepts/
 │   │   │   └── ...
 │   │   └── enterprise-profile.md   # 企业画像
-│   └── workflow.yml                 # FDE §5 输出的业务流定义
+│   └── workflow.yml                 # FDE §5 输出的工作流定义
 ├── skills/                           # FDE §7 交付的节点 Skill
 │   ├── 客户管理/
 │   │   └── SKILL.md
@@ -117,7 +117,7 @@ FDE 诊断完成后，以下文件就绪：
 ### workflow.yml 示例（FDE §5 产出）
 
 ```yaml
-name: 制造企业核心业务流
+name: 制造企业核心工作流
 description: 从接单到回款的完整流程
 nodes:
   - id: customer-intake
@@ -328,7 +328,7 @@ const compiled = graph.compile({
 ### 运行方式
 
 ```bash
-# 启动企业业务流
+# 启动企业工作流
 sofagent-orchestrator run-enterprise
 
 # 或通过 MCP
@@ -347,7 +347,7 @@ sofagent-orchestrator run-enterprise
   - 每个 🔄 节点：自动执行，结果写入 State + entity
   - 每个 ⚡ 节点：执行到此处暂停 → 向用户展示方案 → 等待确认 → 继续
   - 每个节点执行后：自动触发审计（@sofagent-audit）
-  - 审计 FAIL：暂停整个业务流，通知用户
+  - 审计 FAIL：暂停整个工作流，通知用户
   - 异常：写入 exceptions 队列，根据节点配置决定重试 or 跳过
 ```
 
@@ -366,7 +366,7 @@ async function executeNode(node, state) {
   if (diff.length > 0) {
     const auditResult = await runAuditRules(diff);
     if (auditResult.exitCode === 2) {  // FAIL
-      // 暂停业务流，通知用户
+      // 暂停工作流，通知用户
       state.exceptions.push({ node: node.id, audit: auditResult });
       return { ...state, nodeStatus: { ...state.nodeStatus, [node.id]: 'audit-failed' } };
     }
@@ -396,7 +396,7 @@ async function executeNode(node, state) {
 ### 激活链补全的闭环
 
 ```
-企业业务流运行
+企业工作流运行
   → 每个节点执行 → 自动审计 → think.md 回溯
   → FDE sustain 读 think.md 趋势 → 发现"某节点反复出错"
   → evolve 优化该节点 Skill → A/B 测试验证
@@ -404,7 +404,7 @@ async function executeNode(node, state) {
   → 下次 activate 时自动加载优化后的 Skill
 ```
 
-**这就是自运转**：企业业务流不仅跑起来了，还能自己优化自己。
+**这就是自运转**：企业工作流不仅跑起来了，还能自己优化自己。
 
 ---
 
@@ -492,7 +492,7 @@ async function executeNode(node, state) {
 | 数据流 | State 实时传递 + entity 持久化双写 |
 | 节点执行器 | dag-runner 能跑企业 Agent |
 | HITL 中断 | ⚡ 节点执行前暂停，等待用户确认 |
-| 审计集成 | 每个节点执行后自动审计，FAIL 时暂停业务流 |
+| 审计集成 | 每个节点执行后自动审计，FAIL 时暂停工作流 |
 | MCP tool | `activate_workflow` 可从任意 MCP 平台调用 |
 | 纯 CLI | `sofagent-orchestrator activate && sofagent-orchestrator run-enterprise` 可跑通 |
 | npm test | 全绿 |
@@ -553,4 +553,4 @@ flowchart TD
 
 ## 一句话总结
 
-> **FDE 诊断产出的是"图纸"（ontology + workflow + skills）。激活链是"施工队"——读图纸、砌墙（注册 Agent）、接水管（数据流）、通电（编排）、验收（审计）。施工完了，企业的业务流就自己跑起来了。**
+> **FDE 诊断产出的是"图纸"（ontology + workflow + skills）。激活链是"施工队"——读图纸、砌墙（注册 Agent）、接水管（数据流）、通电（编排）、验收（审计）。施工完了，企业的工作流就自己跑起来了。**

@@ -54,7 +54,7 @@
 | `corpus_export` | ops | 训练语料导出三件套——规则（27 编号位含跳号占位 + reward_hint 骨架 + verifiers 三桶清单）+ FDE 方法论（锚点解析）+ 带标签审计样本（六源聚合 + 脱敏）。导出带版本号 + HMAC 签名，导出行为记 corpus_export 审计事件。 |
 | `device_data_push` | ops | 数据上行通道（G11）：设备门禁 → 采集声明校验（默认空=不上行，opt-in）→ 脱敏 → AES-256-GCM 加密入队（WAL 暂存断网不丢，游标续传不重传已 ack 段）→ 审计留痕 + 计量进 worklog。原始数据不出设备。 |
 
-### 业务流编排（workflow DAG · 循环执行与优化）（18）
+### 工作流编排（workflow DAG · 循环执行与优化）（18）
 
 | tool | roles | 说明 |
 |---|---|---|

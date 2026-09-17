@@ -2,7 +2,7 @@
 <!--
   sofagent Dashboard 驾驶舱——安装后 sofagent web 启动
   开发预览：node tools/dashboard/serve-dashboard.mjs（localhost:3780）
-  v1.4.0：导航收敛 6 项（驾驶舱/业务流/本体图谱/FDE 引导/知识库/工具箱）
+  v1.4.0：导航收敛 6 项（驾驶舱/工作流/本体图谱/FDE 引导/知识库/工具箱）
 -->
 <html lang="zh-CN">
 <head>
@@ -281,7 +281,7 @@ a:hover{text-decoration:none} /* 全站 hover 无下划线（统一）——按�
 
 .fde-stage{display:flex;align-items:center;gap:12px;padding:10px 12px;background:var(--bg-s);border:1px solid var(--border);border-radius:var(--radius-s);margin-bottom:8px}
 .fde-num{width:20px;height:20px;border-radius:50%;background:var(--brand);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0}
-/* FDE Harness 内置模板步骤卡：类型点 10px→8px（局部，不影响业务流/流水线卡）；上移 1px 与 STEP 文字垂直对齐 */
+/* FDE Harness 内置模板步骤卡：类型点 10px→8px（局部，不影响工作流/流水线卡）；上移 1px 与 STEP 文字垂直对齐 */
 .fde-step .agent-dot{width:8px;height:8px}
 .fde-content{flex:1;display:flex;align-items:baseline;gap:8px;min-width:0}
 .fde-title{font-size:13px;font-weight:500;white-space:nowrap;flex-shrink:0}
@@ -477,7 +477,7 @@ a:hover{text-decoration:none} /* 全站 hover 无下划线（统一）——按�
     </div>
     <nav class="nav" id="nav">
       <button class="nav-item active" onclick="goPage('cockpit')">驾驶舱</button>
-      <button class="nav-item" onclick="goPage('workflow')">业务流</button>
+      <button class="nav-item" onclick="goPage('workflow')">工作流</button>
       <button class="nav-item" onclick="goPage('train')">后训练</button>
       <button class="nav-item" onclick="goPage('knowledge')">知识库</button>
       <button class="nav-item" onclick="goPage('ontology')">本体图谱</button>
@@ -485,7 +485,7 @@ a:hover{text-decoration:none} /* 全站 hover 无下划线（统一）——按�
       <button class="nav-item" onclick="goPage('resources')">工具箱</button>
     </nav>
     <div class="header-right">
-      <button class="help-btn" onclick="openHelp()" title="使用帮助：业务流/本体图谱/知识库/FDE 引导" aria-label="打开帮助">
+      <button class="help-btn" onclick="openHelp()" title="使用帮助：工作流/本体图谱/知识库/FDE 引导" aria-label="打开帮助">
         <i class="bi bi-question-circle"></i>
         帮助
       </button>
@@ -604,7 +604,7 @@ a:hover{text-decoration:none} /* 全站 hover 无下划线（统一）——按�
 </div>
 
 <!-- ================================================== -->
-<!-- PAGE: 业务流（AI 节点 + 工作明细，v1.4.0 归并） -->
+<!-- PAGE: 工作流（AI 节点 + 工作明细，v1.4.0 归并） -->
 <!-- ================================================== -->
 <div class="page" id="page-workflow">
   <div class="section">
@@ -781,14 +781,14 @@ a:hover{text-decoration:none} /* 全站 hover 无下划线（统一）——按�
       <div class="fde-stage">
         <div class="fde-num">2</div>
         <div class="fde-content"><div class="fde-title">深挖 · 五要素 + 本体数据</div><div class="fde-desc">梳理输入/输出/负责人/耗时/痛点，构建 ontology 本体数据。</div></div>
-        <button class="copy-btn" onclick="copyPrompt(this, '进入 FDE 深挖阶段。帮我梳理关键岗位的业务流：输入是什么、输出是什么、谁负责、耗多少时间、痛点在哪。然后构建本体数据。')">复制</button>
+        <button class="copy-btn" onclick="copyPrompt(this, '进入 FDE 深挖阶段。帮我梳理关键岗位的工作流：输入是什么、输出是什么、谁负责、耗多少时间、痛点在哪。然后构建本体数据。')">复制</button>
       </div>
       <div class="fde-stage">
         <div class="fde-num">3</div>
         <div class="fde-content"><div class="fde-title">量化 · 三问判定 + 价值计算</div><div class="fde-desc">三问判定类型，计算年节省金额。
           <span class="node-type nt-auto" style="margin-left:4px">AI 自主</span><span class="node-type nt-ai">AI 辅助</span><span class="node-type nt-human">人工确认</span></div>
         </div>
-        <button class="copy-btn" onclick="copyPrompt(this, '进入 FDE 量化阶段。对每个业务流节点做三问判定：能全自动吗？需要人确认吗？适合 AI 辅助吗？然后计算每个 AI 节点的年节省金额。')">复制</button>
+        <button class="copy-btn" onclick="copyPrompt(this, '进入 FDE 量化阶段。对每个工作流节点做三问判定：能全自动吗？需要人确认吗？适合 AI 辅助吗？然后计算每个 AI 节点的年节省金额。')">复制</button>
       </div>
       <div class="fde-stage">
         <div class="fde-num">4</div>
@@ -1039,7 +1039,7 @@ build → acceptance → regression → coverage，
     <div class="help-header">
       <div class="help-title">帮助与支持</div>
       <div class="tab-inline help-tabs" id="helpTabs">
-        <button class="nav-item" data-help="workflow" onclick="switchHelpTab('workflow')">业务流</button>
+        <button class="nav-item" data-help="workflow" onclick="switchHelpTab('workflow')">工作流</button>
         <button class="nav-item" data-help="ontology" onclick="switchHelpTab('ontology')">本体图谱</button>
         <button class="nav-item" data-help="knowledge" onclick="switchHelpTab('knowledge')">知识库</button>
         <button class="nav-item" data-help="fde" onclick="switchHelpTab('fde')">FDE 引导</button>
@@ -1051,7 +1051,7 @@ build → acceptance → regression → coverage，
       <div class="help-tab" id="help-workflow">
         <div class="help-intro"><b>怎么设置自己的 AI 节点</b>——四步引导，复制 Prompt 即可开始：</div>
         <div class="step-card">
-          <div class="step-title"><span class="step-num">1</span>梳理业务流，识别可自动化环节</div>
+          <div class="step-title"><span class="step-num">1</span>梳理工作流，识别可自动化环节</div>
           <div class="step-desc">用五要素法（输入/输出/负责人/耗时/痛点）盘点每个岗位，找出重复频率高、规则明确的环节。</div>
         </div>
         <div class="step-card">
@@ -1072,9 +1072,9 @@ build → acceptance → regression → coverage，
         </div>
         <div class="grid-2" style="margin-top:12px">
           <div class="prompt-box" style="margin-top:0">
-            <div class="prompt-action"><span class="prompt-label">创建 AI 节点</span><button class="copy-btn" onclick="copyPrompt(this, '作为 sofagent FDE Harness，帮我梳理业务流。先了解我的业务，盘点现有平台和系统，把能自动化的环节变成 AI 节点。')">复制</button></div>
+            <div class="prompt-action"><span class="prompt-label">创建 AI 节点</span><button class="copy-btn" onclick="copyPrompt(this, '作为 sofagent FDE Harness，帮我梳理工作流。先了解我的业务，盘点现有平台和系统，把能自动化的环节变成 AI 节点。')">复制</button></div>
             <code>作为 sofagent FDE Harness，
-帮我梳理业务流。先了解我的业务，
+帮我梳理工作流。先了解我的业务，
 盘点现有平台和系统，
 把能自动化的环节变成 AI 节点。</code>
           </div>
@@ -1204,7 +1204,7 @@ build → acceptance → regression → coverage，
           <div class="step-desc">
             安装完成后，在你的 Agent 里直接对话：<br>
             <span style="color:var(--brand)">"帮我做 FDE 诊断"</span> → Agent 会从 §1 进场开始引导你<br>
-            <span style="color:var(--brand)">"帮我梳理业务流"</span> → Agent 从当前阶段开始
+            <span style="color:var(--brand)">"帮我梳理工作流"</span> → Agent 从当前阶段开始
           </div>
         </div>
         <div class="sub-title" style="margin:16px 0 8px">持续优化场景速查</div>
@@ -1227,7 +1227,7 @@ build → acceptance → regression → coverage，
 </div>
 
   <div class="footer">
-    <p>sofagent · FDE Harness — 梳理业务流 · 构建本体图谱 · 部署 AI 节点 · 审计每次变更 · 自我反思迭代</p>
+    <p>sofagent · FDE Harness — 梳理工作流 · 构建本体图谱 · 部署 AI 节点 · 审计每次变更 · 自我反思迭代</p>
     <p style="margin-top:4px"><a href="https://github.com/KongFangXun/sofagent" target="_blank">GitHub</a> · MIT License · 孔放勋 · v1.4.9</p>
   </div>
 </div>
@@ -1968,7 +1968,7 @@ function loadAiNodesData(){
     });
 }
 
-/* ===== Pipeline Graph（业务流 · 编排控制图，读 graph-state.json） ===== */
+/* ===== Pipeline Graph（工作流 · 编排控制图，读 graph-state.json） ===== */
 function loadPipelineGraph(){
   var box=document.getElementById('graphBox');
   var list=document.getElementById('nodeList');
@@ -2320,7 +2320,7 @@ function loadReleaseGateData(){
     });
 }
 
-/* ===== 工作明细（业务流页 · v1.4.0） ===== */
+/* ===== 工作明细（工作流页 · v1.4.0） ===== */
 
 /* 异步探测 worklog.json 所在数据根（替代同步 XHR） */
 /* 数据根探针（任一命中即认为该 root 有效）
@@ -2634,7 +2634,7 @@ function loadGraphView(){
           for(var i=1;i<ids.length;i++)ontEdges.push({from:ids[i-1],to:ids[i]});
         });
       }else{
-        ontNodes=[{id:'e:org',label:'企业',status:'done'},{id:'e:dept',label:'部门',status:'done'},{id:'e:workflow',label:'业务流',status:'done'},{id:'e:agent',label:'AI 节点',status:'active'}];
+        ontNodes=[{id:'e:org',label:'企业',status:'done'},{id:'e:dept',label:'部门',status:'done'},{id:'e:workflow',label:'工作流',status:'done'},{id:'e:agent',label:'AI 节点',status:'active'}];
         ontEdges=[{from:'e:org',to:'e:dept'},{from:'e:dept',to:'e:workflow'},{from:'e:workflow',to:'e:agent'}];
       }
       document.getElementById('gr-view-ontology').innerHTML=
@@ -2737,7 +2737,7 @@ function openHelp(page){
   if(!overlay)return;
   overlay.style.display='flex';
   document.body.style.overflow='hidden'; // 模态框标准：锁背景滚动
-  // 联动：不传参时跟随当前页面（cockpit/resources 无对应教学页 → 默认业务流）
+  // 联动：不传参时跟随当前页面（cockpit/resources 无对应教学页 → 默认工作流）
   var cur=page||window.__currentPage||'workflow';
   if(cur!=='workflow'&&cur!=='ontology'&&cur!=='knowledge'&&cur!=='fde')cur='workflow';
   switchHelpTab(cur);

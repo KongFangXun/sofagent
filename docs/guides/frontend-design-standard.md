@@ -141,7 +141,7 @@
 2. **页内 Tab**（工作记录、帮助面板）：active 品牌蓝文字加粗，**无下划线**（与顶部导航区分，用 `.tab-inline` 类）。
 3. 徽章/状态条（badge）：允许胶囊形 `border-radius:20px`——徽章与按钮形态区分。
 4. header 结构：PC 三段对齐（logo | 导航 | 按钮），`.header-inner{max-width:1200px;margin:0 auto}` 与内容对齐；**别给 header 本身加 max-width**（背景会变窄）。
-5. **导航顺序**：驾驶舱 → 业务流 → **后训练** → **知识库 → 本体图谱** → FDE 引导 → 工具箱——后训练紧邻业务流（两者同属「数据/能力」面）；知识库在本体图谱前（知识是日常高频查看面，本体图谱是深挖分析面，浅→深排列）；DOM 页面块顺序与导航顺序保持一致（含前导注释整块移动）。
+5. **导航顺序**：驾驶舱 → 工作流 → **后训练** → **知识库 → 本体图谱** → FDE 引导 → 工具箱——后训练紧邻工作流（两者同属「数据/能力」面）；知识库在本体图谱前（知识是日常高频查看面，本体图谱是深挖分析面，浅→深排列）；DOM 页面块顺序与导航顺序保持一致（含前导注释整块移动）。
 6. **页内 Tab 显式初始化**：默认 tab（如工作记录"概况"）必须在 Init 里显式调用 `wlTab('overview')`——不依赖 HTML 静态 `active` class（刷新后 active 可能丢失，显式初始化最稳）。
 7. **导航点击反馈只微缩**：`.nav-item:active` 仅 `transform:scale(.96)`，**不参与通用 `:active` 组的 border-color/color 变蓝**——nav-item 的 `border-bottom:2px solid transparent` 是 active 指示线预留位，:active 变蓝会在点击瞬间闪出横线（曾误伤，教训）。
 8. **顶部状态条不放数据概语**：refresh-bar 只放「数据状态 + 操作按钮 + 更新时间」——与指标卡同源的文字概语（今日 X 任务 · X 次检查…）是重复信息，指标卡本身已展示（曾删 insightInline）。
@@ -187,7 +187,7 @@
 ## 十、空态
 
 统一 `emptyState(icon, title, desc, ctaText, ctaFn)`：图标（Bootstrap Icons 26px）+ 标题 + 一句说明 + 主操作按钮（btn-primary 白系）。文案统一「还没有 xxx + 去 XX 引导」模式。
-- **按钮统一**：「去 FDE 引导」（业务流/本体图谱/知识库空态一律此文案，不写"去 FDE 引导部署/构建"）。
+- **按钮统一**：「去 FDE 引导」（工作流/本体图谱/知识库空态一律此文案，不写"去 FDE 引导部署/构建"）。
 - **引导条**：数据源为空的页面（如工作记录概况）空态上方加主动引导条（说明数据来源 + 一键跳转按钮）。
 
 ---
@@ -293,7 +293,7 @@ node tools/gen/gen-weekly-report.mjs       # 手动生成持续优化周报
 | 页面 | 数据源 | 职责 |
 |------|--------|------|
 | 驾驶舱 | /api/summary + daemon-health | 5 指标卡 → 工作记录（概况/任务/审计/介入/周报）→ 审计分析+数据主权（一行） |
-| 业务流 | /api/ai-nodes + graph-state | 业务节点 + 编排控制图（+状态点图例） |
+| 工作流 | /api/ai-nodes + graph-state | 业务节点 + 编排控制图（+状态点图例） |
 | 后训练 | train-status.json + train-health.json | 训练任务（在跑 / 累计完成 / 失败取消 / 成功率 4 卡 + 任务明细表） |
 | 本体图谱 | /api/ontology | 来源画像：3 统计卡（实体/概念/关系总数）+ **来源分布**（业务实体 vs 引擎沉淀）+ **最近更新** 6 条 + 下载完整清单 |
 | FDE 引导 | workflow 模板 + 五阶段 Prompt | 方法论 + 部署入口（FDE Harness 模板 + FDE workflow 自举图） |

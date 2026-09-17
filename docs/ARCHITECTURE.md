@@ -9,7 +9,7 @@
 
 ## 心智模型（先读这个）
 
-> **sofagent 是一个开源 FDE Harness 层**（MIT）——不造 Agent，嵌在成熟 Agent（DSH / OpenClaw / WorkBuddy）与模型层之间做治理，对外帮你进场把业务判断写成文件（梳理业务流、构建本体图谱、部署 AI 节点），离场后按文件 7×24 执行与审计。能力底座是一套约束 Agent 行为的约束层，**约束层 × 生命周期**双层架构：层 1 约束层 = 一个层五种能力（注入·审计·回溯·沉淀·进化）；层 2 生命周期 = 诊断 → 激活 → 编排 → 执行 → 进化。FORGE 自迭代工具链（LOOP 流水线）是项目内部开发工具，保证每次变更可审计、可回滚、可进化。**FORGE = 项目内部自迭代工具链，非产品能力**（本文档中 FORGE 的后续出现均指此；术语表见 [WIKI](./WIKI.md)）。
+> **sofagent 是一个开源 FDE Harness 层**（MIT）——不造 Agent，嵌在成熟 Agent（DSH / OpenClaw / WorkBuddy）与模型层之间做治理，对外帮你进场把业务判断写成文件（梳理工作流、构建本体图谱、部署 AI 节点），离场后按文件 7×24 执行与审计。能力底座是一套约束 Agent 行为的约束层，**约束层 × 生命周期**双层架构：层 1 约束层 = 一个层五种能力（注入·审计·回溯·沉淀·进化）；层 2 生命周期 = 诊断 → 激活 → 编排 → 执行 → 进化。FORGE 自迭代工具链（LOOP 流水线）是项目内部开发工具，保证每次变更可审计、可回滚、可进化。**FORGE = 项目内部自迭代工具链，非产品能力**（本文档中 FORGE 的后续出现均指此；术语表见 [WIKI](./WIKI.md)）。
 
 ```mermaid
 graph TD
@@ -20,7 +20,7 @@ graph TD
 
 ### 双层架构：约束层与生命周期（主框架）
 
-**这是理解 sofagent 最关键的一张图**——之前只有「约束层五种能力」（那是**能力视角**：怎么保证做对）。激活链（Activation Chain：FDE 诊断交付物 → 注册企业 SubAgent → 编排成 LangGraph 业务流自动跑，四阶段 ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN）引入后，产品在「治理」之外多了一条**流程视角**（企业 AI 从诊断到自动运行怎么走）：
+**这是理解 sofagent 最关键的一张图**——之前只有「约束层五种能力」（那是**能力视角**：怎么保证做对）。激活链（Activation Chain：FDE 诊断交付物 → 注册企业 SubAgent → 编排成 LangGraph 工作流自动跑，四阶段 ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN）引入后，产品在「治理」之外多了一条**流程视角**（企业 AI 从诊断到自动运行怎么走）：
 
 | 层 | 是什么 | 视角 | 回答什么问题 |
 |----|--------|------|-------------|
@@ -76,11 +76,11 @@ graph TD
 | 层级 | 定义 | sofagent 对应 | 例子 |
 |------|------|--------------|------|
 | **本体图谱（Ontology Graph）** | 企业全部业务节点和关联关系的全局拓扑——FDE 交付的静态语义图谱（机器读） | FDE 第三章 本体数据（objects / relations / knowledge-domain） | objects.yml + relations |
-| **业务图谱（Workflow Graph）** | 企业全部业务流组成的流程图谱——FDE 交付的动态流程图谱（人读）；其中每条完整业务链路即单个业务流 | FDE 第四章 梳理出的业务流集合 | 采购审批流、财报生成流 |
-| **Loop** | 业务流中的一个闭环执行单元，由 Goal 驱动 | FORGE loop / AI 节点跑起来 | fresh-eyes-loop、release-gate-loop |
+| **业务图谱（Workflow Graph）** | 企业全部工作流组成的流程图谱——FDE 交付的动态流程图谱（人读）；其中每条完整业务链路即单个工作流 | FDE 第四章 梳理出的工作流集合 | 采购审批流、财报生成流 |
+| **Loop** | 工作流中的一个闭环执行单元，由 Goal 驱动 | FORGE loop / AI 节点跑起来 | fresh-eyes-loop、release-gate-loop |
 | **Goal** | Loop 的退出条件——达成即停，偏离即纠 | exit-gate 判定 | 「所有 P0 修复完成」 「审查全绿」 |
 
-**业务流（Workflow）由业务节点组成**——业务节点 = AI 节点 + Human 节点（对应 FDE 第四章 三问判定法：从业务节点中识别哪些可 AI 化 → 🔄/⚡ 成为 AI 节点，👤 保持 Human 节点）：
+**工作流（Workflow）由业务节点组成**——业务节点 = AI 节点 + Human 节点（对应 FDE 第四章 三问判定法：从业务节点中识别哪些可 AI 化 → 🔄/⚡ 成为 AI 节点，👤 保持 Human 节点）：
 
 - 🔄 **纯 Loop（AI 节点·自动执行）** — AI 跑完即退出，Goal 达成自动收工
 - ⚡ **Loop + Human（AI 节点·强化岗位）** — AI 跑 Loop，Human 在关键环节介入（审批 / 检查 / 兜底）
@@ -157,9 +157,9 @@ graph TB
 | River | 统一 Agent 入口 | 多个 Workflow 的集合——每段 Workflow 把模型能力引到业务侧，汇入同一条大河。详见 §三 River—Workflow—Subagent 三层架构 |
 | SMB | 中小企业（Small & Medium Business） | 没有专职 AI 部署团队、想低成本具备 FDE 能力的企业 |
 | OPC | 一人公司（One Person Company） | 个人或小团队，用自己的 Agent + 模型自主完成部署，不愿被单一厂商锁定 |
-| 激活链 | Activation Chain | 生命周期层：FDE 交付物 → 企业业务流自动跑。四阶段 ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN |
+| 激活链 | Activation Chain | 生命周期层：FDE 交付物 → 企业工作流自动跑。四阶段 ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN |
 | ACTIVATE | 激活 | 读 FDE 交付物 → 写 `.sofagent/subagents/*.yml` → 注册企业 SubAgent |
-| ORCHESTRATE | 编排 | 多个企业 SubAgent → LangGraph StateGraph 业务流 |
+| ORCHESTRATE | 编排 | 多个企业 SubAgent → LangGraph StateGraph 工作流 |
 | EXECUTE | 执行 | DAG 运行 + HITL 人工审批 + 审计集成 + 异常兜底 |
 | SUSTAIN | 持续 | wrapToolCall 联动：执行 → 审计 → 反思 → 进化 |
 
@@ -237,7 +237,7 @@ v1.3.9 起对所有 workspace 包的入口 export 做显式分级，CI 门禁（
 
 ```mermaid
 graph TB
-    subgraph D1["一 · 建业务流（27）——把需求变成可执行的业务流"]
+    subgraph D1["一 · 建工作流（27）——把需求变成可执行的工作流"]
         A1["FDE 六引擎 ×6<br/>interview→classify→quantify<br/>→derive→distill→deploy"]
         A2["梳理与路由 ×4（route_workflow / activate_workflow<br/>/ sofagent_compose / workflow_gaps）"]
         A3["workflow 编排与模板 ×7（workflow_create / workflow_update<br/>/ workflow_node_add / workflow_diff_preview / workflow_submit<br/>+ G1 模板导出/导入 workflow_export / workflow_import）"]
@@ -268,11 +268,11 @@ graph TB
         F2["A/B ×2 + skill 优化 ×1 + refine ×1"]
         F3["能力市场 ×6（commons_publish / commons_search /<br/>commons_invoke / commons_rate / commons_retire /<br/>commons_harvest_rule）"]
     end
-    D1 -->|"① 业务流提交执行"| D3
+    D1 -->|"① 工作流提交执行"| D3
     D3 -->|"② 逐次审计留痕"| D4
     D4 -->|"③ 反思沉淀 think / decision-log"| D5
     D5 -->|"④ 评测胜出晋升·写回运行面"| D2
-    D5 -.->|"晋升为业务流新能力"| D1
+    D5 -.->|"晋升为工作流新能力"| D1
     D3 -.->|"⑤ 审计轨迹→训练语料（v1.4.4 导出）→ model_register"| B3
 ```
 
@@ -430,7 +430,7 @@ graph LR
 
 | 模块 | 职责一句话 | 主要载体 |
 |------|------|------|
-| **编排模块** | 业务流 DAG 拆解、循环执行、Agent 阵型调度 | orchestrator 包（LangGraph） |
+| **编排模块** | 工作流 DAG 拆解、循环执行、Agent 阵型调度 | orchestrator 包（LangGraph） |
 | **审计模块** | 24 条规则 git diff 硬证据判定，每次变更必审 | audit 包 + git hook |
 | **后训模块** | post-training 流水线：审计轨迹→语料导出→训练（**外部执行**）→模型注册→晋升（模型进化闭环的中段） | orchestrator/train + eval 包 |
 | **治理模块** | 治理 KPI、跨层证据对账、可见性分级 | 规划中（v1.5.0） |
@@ -1080,7 +1080,7 @@ sofagent 的三层治理与 Karpathy LLM Wiki 的 `raw materials → Wiki entrie
 
 | 决策 | 含义 | 反模式（不做） |
 |------|------|---------------|
-| **双图谱并行产出** | Workflow Graph（流转）+ Ontology Graph（语义）从同一次 FDE 访谈并行产出，SHACL 互相校验 | 不做「Workflow Graph → Ontology Graph」单向转换——转换丢访谈中的隐性知识，本体沦为业务流的副产品 |
+| **双图谱并行产出** | Workflow Graph（流转）+ Ontology Graph（语义）从同一次 FDE 访谈并行产出，SHACL 互相校验 | 不做「Workflow Graph → Ontology Graph」单向转换——转换丢访谈中的隐性知识，本体沦为工作流的副产品 |
 | **执行层可换（编排层长期不动）** | 编排层 LangGraph StateGraph 长期不换（确定性审计依赖显式图结构，属架构级取舍非永久承诺）；执行层走 ExecutionBackend 接口——DSH 默认 / createReactAgent fallback / 三平台可选，双后端镜像验证 | 不做「只修一处的堤」——企业命脉不押单一运行时，DSH rc 阶段 breaking change 风险不传导给客户 |
 | **治理是事件域横切面** | plugin 挂 tools/result、turn-stopping、approval seam 等全局事件域，装一次全域生效 | 不做「逐节点插桩」——治理不是节点附件，是横切所有节点的约束层 |
 
@@ -1090,7 +1090,7 @@ sofagent 的三层治理与 Karpathy LLM Wiki 的 `raw materials → Wiki entrie
 
 > **本章是心智模型「层 2 · 生命周期」的架构展开**——层 1 约束层（一个层五种能力）已在第二章详述，这里讲生命周期怎么跑。
 >
-> **问题**：FDE 诊断交付了 ontology + workflow.yml + skills/ + nodes/*.md，这些静态文件躺在磁盘上，企业 IT 不知道怎么把它们跑起来。交付物和「业务流自动运行」之间有一道**大断裂带**。
+> **问题**：FDE 诊断交付了 ontology + workflow.yml + skills/ + nodes/*.md，这些静态文件躺在磁盘上，企业 IT 不知道怎么把它们跑起来。交付物和「工作流自动运行」之间有一道**大断裂带**。
 
 激活链（ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN）是连接「交付」和「自运转」的桥。详细设计见 [激活链设计文档](./guides/fde-activation-chain.md)，这里讲架构层面。
 

@@ -91,7 +91,7 @@ function writeEntity(dataDir: string, name: string, include: string[], exclude: 
 // 标准测试 workflow.yml（🔄 + ⚡ 混合）
 // ============================================================
 
-const STANDARD_WORKFLOW = `name: 制造企业核心业务流
+const STANDARD_WORKFLOW = `name: 制造企业核心工作流
 description: 从接单到回款的完整流程
 nodes:
   - id: customer-intake
@@ -517,7 +517,7 @@ nodes:
 
       const result = await activateWorkflow({ dataDir: tmpDir, dryRun: true });
 
-      expect(result.workflowGraph).toContain('制造企业核心业务流');
+      expect(result.workflowGraph).toContain('制造企业核心工作流');
       expect(result.workflowGraph).toContain('customer-intake');
       expect(result.workflowGraph).toContain('production-scheduling');
     });

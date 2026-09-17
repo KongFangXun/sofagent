@@ -14,8 +14,8 @@ tags:
   - deployment
   - enterprise
 image: sofagent-fde.png
-triggers: [Agent行为失控, 任务复杂需要拆解, 多文件修改, 部署AI节点, 梳理业务流, 构建知识库, 企业AI落地, FDE进场, 持续优化, 巡检, 高风险任务前加约束, DSH接入, skillhub, 装sofagent插件, 插件分发, cordis插件]
-scenarios: [Agent开始自由发挥偏离目标, 企业要装sofagent, 需要梳理业务流, 连续多个子任务需要编排协调, 刚踩过坑想避免重蹈覆辙, 需要构建知识库, 需要持续优化AI节点, DSH用户要装sofagent插件, 要在DSH生态用约束能力]
+triggers: [Agent行为失控, 任务复杂需要拆解, 多文件修改, 部署AI节点, 梳理工作流, 构建知识库, 企业AI落地, FDE进场, 持续优化, 巡检, 高风险任务前加约束, DSH接入, skillhub, 装sofagent插件, 插件分发, cordis插件]
+scenarios: [Agent开始自由发挥偏离目标, 企业要装sofagent, 需要梳理工作流, 连续多个子任务需要编排协调, 刚踩过坑想避免重蹈覆辙, 需要构建知识库, 需要持续优化AI节点, DSH用户要装sofagent插件, 要在DSH生态用约束能力]
 not_when: [简单闲聊, 单步查询, 纯信息检索]
 metadata:
   openclaw:

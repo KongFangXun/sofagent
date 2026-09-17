@@ -21,7 +21,7 @@
 
 > 💬 **One-sentence version**: on entry, it maps your business and writes it down as files; after it leaves, every time your digital employee touches code or files, it passes a security check, leaves a record, and saves a snapshot — traceable and roll-backable when things go wrong. That is what sofagent does.
 
-**An open-source FDE Harness layer.** The AI-deployment engineer for one-person companies and SMBs — never sleeps, never leaves, and carries its own auditor. It sits **between mature Agents (executors: DSH / OpenClaw / WorkBuddy) and the model layer (intelligence sources: general LLMs + bespoke/small post-trained models)**, governing both sides. Shipped as **FDE plugins + Skill + MCP + CLI + Dashboard**: on entry, write the business judgment down as files — the business flow, the ontology data, the deployed AI nodes; on departure, audit every change against those files and keep optimizing.
+**An open-source FDE Harness layer.** The AI-deployment engineer for one-person companies and SMBs — never sleeps, never leaves, and carries its own auditor. It sits **between mature Agents (executors: DSH / OpenClaw / WorkBuddy) and the model layer (intelligence sources: general LLMs + bespoke/small post-trained models)**, governing both sides. Shipped as **FDE plugins + Skill + MCP + CLI + Dashboard**: on entry, write the business judgment down as files — the workflow, the ontology data, the deployed AI nodes; on departure, audit every change against those files and keep optimizing.
 
 sofagent does not build its own Agent — execution is delegated to mature hosts (model + tools + sessions). What it delivers is the **FDE Harness layer**: FDE methodology × Harness engineering, two stages of one job — **on entry, generate judgment** (where AI belongs, written down as machine-checkable files), **after departure, retain judgment** (execute against those files 24/7, audit every change). The five Harness capabilities: inject · audit · rollback · distill · evolve — slots into any existing Agent; and it keeps every model (general or bespoke) under control (register / rollout / train / deploy fully audited). How the two stages interlock, and why they cannot be pulled apart, is covered in [the dedicated chapter below](#what-is-the-fde-harness).
 
@@ -51,7 +51,7 @@ sofagent does not build its own Agent — execution is delegated to mature hosts
 | If you are... | Recommendation |
 |---------------|----------------|
 | **Adding discipline to an existing Agent** — you already run DSH / OpenClaw / WorkBuddy and want your AI to behave, leave traces, and stay roll-backable when things go wrong | ✅ **Install now**. The core value is exactly the constraint layer (inject · audit · rollback · distill · evolve) — works right after installation |
-| **A one-person company / SMB landing AI** — no dedicated engineer, you need a "never-quitting FDE" to map your business flow and deploy AI nodes | ✅ **Install now**. The FDE Harness layer is built for this — the full journey from mapping to deployment to post-departure audit |
+| **A one-person company / SMB landing AI** — no dedicated engineer, you need a "never-quitting FDE" to map your workflow and deploy AI nodes | ✅ **Install now**. The FDE Harness layer is built for this — the full journey from mapping to deployment to post-departure audit |
 | **Looking for a turnkey enterprise Agent platform** — you expect a complete commercial product (multi-tenancy, permission management, billing, SLA) | ⏸️ **Hold off**. sofagent is a governance layer, not a platform product — platform-grade capabilities are out of this open-source repository's scope. Teams with integration capacity can still embed the constraint layer into their own platform as its governance module; if you need pure turnkey, look at platform products elsewhere |
 | **Researching / curious about constraint-layer design** — reading code, studying architecture, borrowing methodology | ✅ **Install now**. Full documentation ([HANDBOOK](./docs/HANDBOOK.md) / [ARCHITECTURE](./docs/ARCHITECTURE.md) / [PHILOSOPHY](./docs/PHILOSOPHY.md)), MIT licensed |
 
@@ -70,7 +70,7 @@ sofagent does not build its own Agent — execution is delegated to mature hosts
 
 **On entry · generate judgment** (the FDE stage — deciding where AI belongs and what it's worth, frozen into deliverables):
 
-- 🧭 **Map the business flow** — five-element deep-dive + three-question triage, capturing every role's process steps and pricing out what each AI node is worth
+- 🧭 **Map the workflow** — five-element deep-dive + three-question triage, capturing every role's process steps and pricing out what each AI node is worth
 - 🤖 **Deploy AI nodes** — three-layer deliverables (documents + Skills + runtime), installed into your existing AI tools; from "you do the work" to "you delegate the work"
 - 📦 **Judgment frozen into deliverables** — every node carries "what counts as done (merge_criteria) · who signs off (approver)", machine-checkable and shared across both stages
 
@@ -83,9 +83,9 @@ sofagent does not build its own Agent — execution is delegated to mature hosts
 
 ## What is the FDE Harness
 
-**FDE = Forward Deployed Engineer** — the person who embeds models into real enterprise operations. sofagent turns this role into an open-source FDE Harness layer, sitting between the Agents you already have (DSH / OpenClaw / WorkBuddy) and the model layer. A full FDE business flow has two stages, **sewn together by the deliverables handed over in between**:
+**FDE = Forward Deployed Engineer** — the person who embeds models into real enterprise operations. sofagent turns this role into an open-source FDE Harness layer, sitting between the Agents you already have (DSH / OpenClaw / WorkBuddy) and the model layer. A full FDE workflow has two stages, **sewn together by the deliverables handed over in between**:
 
-- **On entry · generate judgment**: four steps — **map the business flow → build dual graphs → qualify AI nodes → deploy**. Dual graphs = business graph (system boundaries, data flows; read by humans) + ontology graph (shared semantic foundation; read by AI), turning the enterprise into a machine-readable structure; for every AI node, "what counts as done (merge_criteria) · who signs off (approver) · when it runs (trigger)" is judged here and frozen into the deliverables (workflow.yml + ontology + skills).
+- **On entry · generate judgment**: four steps — **map the workflow → build dual graphs → qualify AI nodes → deploy**. Dual graphs = business graph (system boundaries, data flows; read by humans) + ontology graph (shared semantic foundation; read by AI), turning the enterprise into a machine-readable structure; for every AI node, "what counts as done (merge_criteria) · who signs off (approver) · when it runs (trigger)" is judged here and frozen into the deliverables (workflow.yml + ontology + skills).
 - **After departure · retain judgment**: the FDE leaves, the judgment stays — audit triggers automatically on change events (commits) against the frozen criteria, 24 rules judging on git-diff hard evidence; daemon inspects 7×24, snapshots roll back, experience distills back. The human leaves, governance doesn't.
 
 > 🔗 **Why they must be one thing**: the deliverables are a living state shared by both stages — written on entry, read during execution, written back during evolution (trial branches promoted to baseline, reflections distilled back). Without FDE, the constraint layer has no criteria to enforce; without the constraint layer, FDE judgment evaporates the moment the engineer leaves. That is where the name "FDE Harness" comes from — not a bundle of an FDE feature and a Harness feature, but two stages of one job.
@@ -101,7 +101,7 @@ sofagent does not build its own Agent — execution is delegated to mature hosts
 - **"Continuous optimization" only holds with a constraint layer** — backed by auditable, rollback-capable mechanisms, not promises in prompts. Independent external experiment (ARC-AGI-3, **capability-harness data** — it lifts task scores and token efficiency, a different dimension from the reliability gains of a governance constraint layer): optimizing only the outer Harness around the same model significantly lifts task completion. Verification in [VALIDATION](./docs/VALIDATION.md) · [THANKS](./docs/THANKS.md)
 - **Capabilities are portable, never dead-bound to a platform** — the constraint layer is platform-agnostic; the methodology follows the business, not the platform
 
-> 🔄 **Self-bootstrapping**: sofagent's first FDE engagement is sofagent itself — the project is a complete FDE business flow (map → build → deploy → depart), and this open-source repository is that deliverable.
+> 🔄 **Self-bootstrapping**: sofagent's first FDE engagement is sofagent itself — the project is a complete FDE workflow (map → build → deploy → depart), and this open-source repository is that deliverable.
 
 ## Multi-platform Mounting
 

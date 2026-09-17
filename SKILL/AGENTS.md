@@ -6,9 +6,9 @@
 
 | Sub Agent | 目录 | 职责 |
 |-----------|------|------|
-| `@sofagent-audit` | [`agents/audit/`](./agents/audit/) | 合规审计员——业务流巡检、铁律覆盖验证、知识库健康度检查 |
+| `@sofagent-audit` | [`agents/audit/`](./agents/audit/) | 合规审计员——工作流巡检、铁律覆盖验证、知识库健康度检查 |
 | `@sofagent-engineer` | [`agents/engineer/`](./agents/engineer/) | 最小变更工程师——读代码 + 写代码 + 跑测试 + git commit |
-| `@sofagent-fde` | [`agents/fde/`](./agents/fde/) | 前线部署工程师——梳理业务流、识别 AI 节点、构建知识库、交付离场 |
+| `@sofagent-fde` | [`agents/fde/`](./agents/fde/) | 前线部署工程师——梳理工作流、识别 AI 节点、构建知识库、交付离场 |
 | `@sofagent-reviewer` | [`agents/reviewer/`](./agents/reviewer/) | 代码审查员——语义审查 + 影响分析 + 铁律合规 |
 
 > 预装 Agent 为 Skill 格式。Skill 是调用入口——第三方 Agent 平台（WorkBuddy/Codex/OpenClaw 等）加载 Skill 后，通过 CLI 命令把任务交给 DeepAgents 编排模块执行。
@@ -17,8 +17,8 @@
 
 | Agent | Skill | CLI 命令 | 职责 |
 |------|------|------|------|
-| 部署工程师 | `@sofagent-fde` · `SKILL/agents/fde/SKILL.md` | `sofagent-orchestrator subagent run fde --task "..."` | 梳理业务流、识别 AI 节点、构建知识库、交付离场 |
-| 合规审计员 | `@sofagent-audit` · `SKILL/agents/audit/SKILL.md` | `sofagent-orchestrator subagent run audit --task "..."` | 业务流巡检、铁律覆盖验证、知识库健康度检查 |
+| 部署工程师 | `@sofagent-fde` · `SKILL/agents/fde/SKILL.md` | `sofagent-orchestrator subagent run fde --task "..."` | 梳理工作流、识别 AI 节点、构建知识库、交付离场 |
+| 合规审计员 | `@sofagent-audit` · `SKILL/agents/audit/SKILL.md` | `sofagent-orchestrator subagent run audit --task "..."` | 工作流巡检、铁律覆盖验证、知识库健康度检查 |
 | 最小变更工程师 | `@sofagent-engineer` · `SKILL/agents/engineer/SKILL.md` | `sofagent-orchestrator subagent run engineer --task "..."` | 读代码 + 写代码 + 跑测试 + git commit |
 | 代码审查员 | `@sofagent-reviewer` · `SKILL/agents/reviewer/SKILL.md` | `sofagent-orchestrator subagent run reviewer --task "..."` | 语义审查 + 影响分析 + 铁律合规 |
 
@@ -73,7 +73,7 @@ FORGE engineer commit ──→ 自动调用 @sofagent-audit → 验证变更合
 
 | 场景 | 什么时候 @ 它 | 它给你什么 |
 |------|------|------|
-| **发版前** | 准备发布新版本时 | 全量合规扫描——铁律是否覆盖所有 AI 节点、业务流有没有漏洞、版本号对齐没有 |
+| **发版前** | 准备发布新版本时 | 全量合规扫描——铁律是否覆盖所有 AI 节点、工作流有没有漏洞、版本号对齐没有 |
 | **事故后** | Agent 操作出了问题 | 根因分析——是约束没覆盖到，还是 Agent 绕过了审计，还是配置有漏洞 |
 | **定期巡检** | 每周一次 | 知识库健康度报告——哪些 entity 死链了、think.md 反思质量趋势 |
 | **新节点上线** | 新增 AI 节点后 | 检查新节点的 actions 声明是否完整、knowledge-domain 是否合理 |

@@ -1,6 +1,6 @@
 # @sofagent/orchestrator
 
-sofagent 编排模块——多 Agent 协作、业务流调度、prompt 模板。任务拆解 + LangGraph StateGraph 四节点串行状态机（v1.2.0 从 deepagents 迁移至 createReactAgent）。
+sofagent 编排模块——多 Agent 协作、工作流调度、prompt 模板。任务拆解 + LangGraph StateGraph 四节点串行状态机（v1.2.0 从 deepagents 迁移至 createReactAgent）。
 
 ## 安装
 

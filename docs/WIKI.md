@@ -2,7 +2,7 @@
 
 > v1.4.9 · 2026-09-17（✅ 已发版——本批更新 2026-09-17） · 孔放勋
 
-> **EN summary**: sofagent is an open-source (MIT) FDE Harness layer for AI Agents — it doesn't build the Agent; it adds the discipline layer around whichever host (DSH / OpenClaw / WorkBuddy) runs it. **Product story**: an FDE maps your business flow, freezes every AI node's acceptance criteria into machine-checkable files, then departs — the Harness judges every change against those files 24/7 (24 git-diff audit rules, HMAC-chained tamper-evident history, every model registered/rolled out/trained/deployed under audit). Five capabilities: inject · audit · rollback · distill · evolve. (Chinese-first project; full English face in README.en.md.)
+> **EN summary**: sofagent is an open-source (MIT) FDE Harness layer for AI Agents — it doesn't build the Agent; it adds the discipline layer around whichever host (DSH / OpenClaw / WorkBuddy) runs it. **Product story**: an FDE maps your workflow, freezes every AI node's acceptance criteria into machine-checkable files, then departs — the Harness judges every change against those files 24/7 (24 git-diff audit rules, HMAC-chained tamper-evident history, every model registered/rolled out/trained/deployed under audit). Five capabilities: inject · audit · rollback · distill · evolve. (Chinese-first project; full English face in README.en.md.)
 > **读者**：人类开发者 & AI Agent 均可阅读。本文档是项目全局索引入口。
 > 如果你是 AI Agent 且需要查找具体实现路径，请直接跳转到"## 五、文件地图"段。
 
@@ -41,7 +41,7 @@
 
 ## 一、一句话
 
-**sofagent 是一个开源 FDE Harness 层**（MIT，同时也是 FDE 方法论的参考实现）——不造 Agent，嵌在成熟 Agent（DSH / OpenClaw / WorkBuddy）与模型层（通用大模型 + 专属小模型 / 后训练模型）之间做治理：进场把业务判断写成文件（梳理业务流、构建本体图谱、把能自动化的环节变成 AI 节点），部署后按文件 7×24 执行与审计。底层是 **约束层**——约束 Agent 行为、审计每次变更、沉淀经验。**产品形态 = FDE Harness 层**：对执行体（Agent）做约束、对智力源（模型）做治理——它给自己做的第一份 FDE，就是 sofagent 自己（自举）。
+**sofagent 是一个开源 FDE Harness 层**（MIT，同时也是 FDE 方法论的参考实现）——不造 Agent，嵌在成熟 Agent（DSH / OpenClaw / WorkBuddy）与模型层（通用大模型 + 专属小模型 / 后训练模型）之间做治理：进场把业务判断写成文件（梳理工作流、构建本体图谱、把能自动化的环节变成 AI 节点），部署后按文件 7×24 执行与审计。底层是 **约束层**——约束 Agent 行为、审计每次变更、沉淀经验。**产品形态 = FDE Harness 层**：对执行体（Agent）做约束、对智力源（模型）做治理——它给自己做的第一份 FDE，就是 sofagent 自己（自举）。
 
 ---
 
@@ -49,7 +49,7 @@
 
 > **主轴**：sofagent 全部叙事的主语是同一件事——**判断**（该不该做、做到什么算好、谁拍板）。进场把它写成文件（FDE 交付物），离场按文件执行与审计。**一条 workflow 的产品**：给企业做 AI 落地 = 一条 FDE workflow。执行这条 workflow 的 Agent = 装上 FDE Harness 的 Agent（sofagent 让任何成熟 Agent 具备这个能力）。**它对自己做的第一份 FDE，就是 sofagent 项目本身**——自举循环：FDE Harness 对自己做 FDE → 项目更 AI 化 → 更好地服务企业 → 数据飞轮转起来。
 
-**FDE 交付**：进场梳理 → 交付**双图谱**——人看的业务图谱（workflow graph）+ 机器读的本体图谱（ontology graph，本体数据的图形化形态）。图谱里每个 AI 节点承担业务流中的职能；节点执行 = workflow 要求 → LangGraph 编排 → DeepSeek Harness 执行（ExecutionBackend 双后端：workflow 以 DAG 形态在所选后端运行）→ 全程约束层审计 + 回溯净化（plugin 功能）。**行业坐标**：两张图谱同属「知识层」（描述业务世界的语义资产），构建·校验·维护实践属「工程层」（图谱工程），详见 [ARCHITECTURE §一](./ARCHITECTURE.md)。
+**FDE 交付**：进场梳理 → 交付**双图谱**——人看的业务图谱（workflow graph）+ 机器读的本体图谱（ontology graph，本体数据的图形化形态）。图谱里每个 AI 节点承担工作流中的职能；节点执行 = workflow 要求 → LangGraph 编排 → DeepSeek Harness 执行（ExecutionBackend 双后端：workflow 以 DAG 形态在所选后端运行）→ 全程约束层审计 + 回溯净化（plugin 功能）。**行业坐标**：两张图谱同属「知识层」（描述业务世界的语义资产），构建·校验·维护实践属「工程层」（图谱工程），详见 [ARCHITECTURE §一](./ARCHITECTURE.md)。
 
 **训练 Agent（内层新 workflow）**：企业 AI 节点要数据主权 → 训练 Agent（受约束）驱动后训练工具：收集企业数据 → 模型后训练 → 私有化部署回节点。这本身是几个新 workflow（数据采集 / 训练 / 部署）。后训模块**工程骨架**随开源仓排期交付（编排/审计/沙箱，详见 ROADMAP；训练资产走商业侧）；训练也围绕 FDE——怎么让 FDE 更好、怎么让数据飞轮转起来。
 
@@ -91,15 +91,15 @@ graph TB
 | **约束层** | 对内的技术身份：约束 Agent 行为的「缰绳」——一个层五种能力（注入·审计·回溯·沉淀·进化），编排（FORGE）为内部工具 | [ARCHITECTURE §二](./ARCHITECTURE.md) |
 | **约束层七维度** | Agent = 模型 + 上下文 + 工具 + 状态 + 执行控制 + 权限 + 可观测性——五种能力各自覆盖其中哪些维度 | [ARCHITECTURE §一 · 约束层七维度](./ARCHITECTURE.md#约束层七维度agent-的构成面)（维度构成以本行为准；五种能力维度分工详见 [PHILOSOPHY §一·四件事的分工](./PHILOSOPHY.md#四件事的分工mcp--skills--ontology--harness)） |
 | **约束层构成（企业视角）** | 黄仁勋定义：企业专属约束层 = 知识 + 记忆 + 工作流 + 权限 + 安全机制 + 运行环境——模型是起点，围绕模型积累的这套专属系统才是核心资产 | [PHILOSOPHY §一·理论锚点](./PHILOSOPHY.md#智能与控制分离sofagent-的理论锚点) |
-| **业务图谱** | 人读的流程图谱 = Workflow Graph——FDE 交付的企业业务流完整拓扑，每条业务链路即一条业务流 | [ARCHITECTURE §定义表](./ARCHITECTURE.md) |
+| **业务图谱** | 人读的流程图谱 = Workflow Graph——FDE 交付的企业工作流完整拓扑，每条业务链路即一条工作流 | [ARCHITECTURE §定义表](./ARCHITECTURE.md) |
 | **本体图谱** | 机器读的语义图谱 = Ontology Graph——FDE 交付的企业全部业务节点和关联关系的全局拓扑（本体数据的图形化呈现） | [ARCHITECTURE §定义表](./ARCHITECTURE.md) |
-| **业务流** | 企业业务流的完整链路 = Workflow，由业务节点（AI 节点 + Human 节点）交替组成 | [ARCHITECTURE §定义表](./ARCHITECTURE.md) |
-| **业务节点** | 业务流中的执行单元 = Node——AI 自动执行（Loop）或 Human 介入（审批/检查/兜底）；AI 节点 = 业务节点中经三问判定法识别为可 AI 化的部分 | [ARCHITECTURE §定义表](./ARCHITECTURE.md) |
+| **工作流** | 企业业务链路的完整流程 = Workflow，由业务节点（AI 节点 + Human 节点）交替组成 | [ARCHITECTURE §定义表](./ARCHITECTURE.md) |
+| **业务节点** | 工作流中的执行单元 = Node——AI 自动执行（Loop）或 Human 介入（审批/检查/兜底）；AI 节点 = 业务节点中经三问判定法识别为可 AI 化的部分 | [ARCHITECTURE §定义表](./ARCHITECTURE.md) |
 | **审计模块** | git diff 驱动，24 条规则（17 默认 + 7 扩展），活跃编号 A1-A11 + A14-A23 + E1/E2/E4（A12/A13/E3 已并入 A11，编号不再使用），每次 commit 自动跑 | [24 条完整清单（SECURITY SSOT）](../SECURITY.md#24-条审计规则完整清单文档级-ssot) |
 | **三层治理** | Ledger（原始数据）→ Views（派生视图）→ Policy（约束规则），单向派生、不可逆写 | [PHILOSOPHY §五](./PHILOSOPHY.md) |
 | **FORGE** | 自迭代工具链（内部工具，外部用户可忽略）——通过 Workflow 驱动 Agent 审查/修复/验证自己的代码，核心是 fresh-eyes-loop | [FORGE/README.md](../FORGE/README.md) |
 | **SKILL** | Agent 的行为约束文件系统——三层：SKILL.md（主入口）/ harness/（约束层）/ agents/（Sub Agent） | [SKILL/SKILL.md](../SKILL/SKILL.md) |
-| **激活链** | FDE 交付物→企业业务流自运转的四阶段生命周期：ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN | [guides/fde-activation-chain.md](./guides/fde-activation-chain.md) |
+| **激活链** | FDE 交付物→企业工作流自运转的四阶段生命周期：ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN | [guides/fde-activation-chain.md](./guides/fde-activation-chain.md) |
 | **data/** | ~/.sofagent/data/ SSOT 数据目录（原 .sofagent/ 已迁移）：history.jsonl、knowledge/、audit/；用户配置入口为项目级 `.sofagent/config.yml`（data/config/ 是 daemon 运行时产物，非用户配置面） | [DEVELOPMENT §数据文件架构](./DEVELOPMENT.md) |
 
 ---
@@ -195,7 +195,7 @@ graph TB
 | `docs/ARCHITECTURE.md` | 架构详解：约束层五种能力（注入·审计·回溯·沉淀·进化）、数据流、部署模式、文件结构（含 Ledger-Views-Policy ↔ LLM Wiki 三层同构对照） |
 | `docs/DEVELOPMENT.md` | 开发指南：本地环境、包结构、测试、发版流程 |
 | `docs/HANDBOOK.md` | FDE 操作手册：进场流程、节点部署、持续维护 |
-| `docs/guides/fde-activation-chain.md` | 🔗 激活链设计（v1.2.5+）：FDE 交付物 → 企业业务流自动运转（ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN） |
+| `docs/guides/fde-activation-chain.md` | 🔗 激活链设计（v1.2.5+）：FDE 交付物 → 企业工作流自动运转（ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN） |
 | `docs/THANKS.md` | 致谢——谁启发了哪个设计决策 |
 | `docs/changelog/` | 每版本开发日志（`v1.0/` `v1.1/` `v1.2/` `v1.3/` `v1.4/`）。⚠️ 早期版本日志含"审查元信息/开发过程备注"等非产品文档内容，属当时开发留痕，不代表产品能力声明。✅ **v1.3.3 起已清理审查元信息**（见 v1.3.4 bugfix），当前版本 changelog 只含产品变更声明。以各版本 changelog 顶部的"已开发/已排期"标记为准。规划中版本的开发排期见 [ROADMAP](./ROADMAP.md) |
 | `docs/changelog/releasing.md` | **发版 SOP**——十一阶段全流程 |

@@ -24,7 +24,7 @@ const GROUP_ORDER = ['fde', 'audit', 'workflow', 'org', 'snapshot', 'train', 'ev
 const GROUP_NAMES = {
   fde: 'FDE 进场 · 六引擎（访谈 → 分类 → 量化 → 推导 → 沉淀 → 部署）',
   audit: '审计与合规（代码 / 轨迹 / 数据审计 · 浏览器取证 · 语料导出）',
-  workflow: '业务流编排（workflow DAG · 循环执行与优化）',
+  workflow: '工作流编排（workflow DAG · 循环执行与优化）',
   org: 'Agent 组织与协作（数字员工 · 团队阵型 · HITL 人工介入）',
   snapshot: '快照与回溯（状态留档 · 回滚恢复）',
   train: '后训流水线（数据回流 → 训练 → 模型注册晋升）',
@@ -44,7 +44,7 @@ const NAME_TO_MODULE = {
   corpus_export: 'audit',
   playwright_navigate: 'audit', playwright_click: 'audit',
   playwright_screenshot: 'audit', playwright_assert: 'audit',
-  // 业务流编排
+  // 工作流编排
   activate_workflow: 'workflow', workflow_submit: 'workflow', route_workflow: 'workflow',
   sofagent_compose: 'workflow', fde_compose: 'workflow', loop_debug: 'workflow',
   refine: 'workflow', optimize_skill: 'workflow',
@@ -83,7 +83,7 @@ const NAME_TO_MODULE = {
   workflow_create: 'workflow', workflow_update: 'workflow',
   workflow_node_add: 'workflow', workflow_diff_preview: 'workflow',
   pr_submit: 'workflow', pr_review: 'workflow', pr_merge: 'workflow',
-  // v1.4.7：能力缺口（workflow——业务流健康度查询）
+  // v1.4.7：能力缺口（workflow——工作流健康度查询）
   workflow_gaps: 'workflow',
   // v1.4.7：上岗 prompt 生成（fde）
   onboard_prompt: 'fde',
