@@ -152,6 +152,57 @@ else
   FAILS=$((FAILS + 1))
 fi
 
+# ── ④b 同文件测试数多值冲突检测 ──────────────────────────────
+# 背景：「中英一致地错」——4805/4807 在中英两版各自分裂但分裂方式完全对称
+# （122↔124、298↔299），④ 集合比对照绿。多值本身合法（发版时点 vs 当前值），
+# 但每处必须带口径标记词（发版时点 / 当前 / as of / current）——无标记的多值
+# 才是漂移。本段对每个文件独立扫描：命中「N 测试 / N tests」形态的 4 位数值，
+# 同文件出现 ≥2 个不同值时逐处检查口径标记，缺标记即 FAIL。
+# 豁免通道：确有合法多值场景时在下方数组登记（文件:行号 | 理由），默认为空——
+# 禁止「检测不到就跳过」的静默形态。
+declare -a TESTCOUNT_EXEMPT=()
+TESTCOUNT_EXEMPT_COUNT=0
+TESTCOUNT_MARKERS='发版时点|当前|as of|current'
+MULTIVALUE_FAILS=0
+for f in "$CN_README" "$EN_README"; do
+  [ -f "$f" ] || continue
+  # 匹配测试数声称行：「(测试|tests) NUM」或「NUM (测试|tests)」双向形态，
+  # 邻域窗 24 覆盖「测试 4429 → **4805**（发版时点口径）」加粗/箭头长形态
+  # （实测 122 行 4805 与前导「测试」间隔约 20 字符）；不误伤无测试词邻域的年份/章节号。
+  hits_f=$(grep -nE '(测试|tests)[^0-9]{0,24}[0-9]{4}|[0-9]{4}[^0-9]{0,24}(测试|tests)' "$f" 2>/dev/null)
+  [ -z "$hits_f" ] && continue
+  uniq_f=$(echo "$hits_f" | grep -oE '[0-9]{4}' | sort -u | wc -l | tr -d ' ')
+  [ "$uniq_f" -lt 2 ] && continue
+  # 同文件多值：逐命中行查口径标记（豁免登记行跳过）
+  file_bad=0
+  while IFS= read -r line; do
+    lineno="${line%%:*}"; content="${line#*:}"
+    exempt_key="${f}:${lineno}"; is_exempt=0
+    # BSD/bash 3.2 兼容：set -u 下空数组遍历会炸（TESTCOUNT_EXEMPT[@]: unbound），
+    # 用计数守卫替代直接展开；豁免键格式「文件:行号 | 理由」
+    _idx=0
+    while [ "$_idx" -lt "$TESTCOUNT_EXEMPT_COUNT" ]; do
+      ex="${TESTCOUNT_EXEMPT[$_idx]}"
+      [[ "$ex" == "${exempt_key} |"* ]] && is_exempt=1 && break
+      _idx=$((_idx + 1))
+    done
+    if [ "$is_exempt" = "0" ] && ! grep -qE "$TESTCOUNT_MARKERS" <<< "$content"; then
+      echo "  ❌ [④b测试数多值] ${f}:${lineno}：测试数命中行无口径标记（需 ${TESTCOUNT_MARKERS} 之一）——多值漂移无解释"
+      file_bad=$((file_bad + 1))
+    fi
+  done <<< "$hits_f"
+  ASSERTS=$((ASSERTS + 1))
+  if [ "$file_bad" -gt 0 ]; then
+    echo "  ❌ [④b测试数多值] ${f}：${uniq_f} 个不同测试数值，${file_bad} 处无口径标记"
+    MULTIVALUE_FAILS=$((MULTIVALUE_FAILS + file_bad))
+  else
+    echo "  ✓ [④b测试数多值] ${f}：${uniq_f} 个不同测试数值，均有口径标记"
+  fi
+done
+if [ "$MULTIVALUE_FAILS" -gt 0 ]; then
+  FAILS=$((FAILS + MULTIVALUE_FAILS))
+fi
+
 echo ""
 echo "════════════════════════════════════════════════════════════"
 if [ "$FAILS" -gt 0 ]; then

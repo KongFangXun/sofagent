@@ -612,6 +612,12 @@ fi
 # （P0-13: grep 未命中 → FAIL；B13: 包数拆双口径——引擎数对 WORKSPACE_COUNT、插件数对 PLUGIN_TOTAL；
 #  任务八方案A 2026-08-29：旧格式「N 测试 / N 包（N 个含测试）」升级为引擎+插件双口径，
 #  完整呈现交付物面——模块包 workspace 13 / 发布实体 26 两个数字可区分，消除「交付物只有 13 包」误读）
+# 锚定机制说明（TASK-5 排查结论）：下方正则只匹配「N 测试 / N 模块包 + N 插件」三段式格式，
+#   全 README 实测仅「工程可信度」段（当前权威值）满足；沿革段（「测试 4429 → 4805」箭头形态）
+#   不匹配。head -1 因此恰好锁定当前值——但该锁定依赖工程可信度段独有格式，格式改动后
+#   会静默换锚。多值扫描断言（README_MULTIVALUE_*）兜底：文件内测试数声称 ≥2 个不同值
+#   且无口径标记词时 FAIL，标记词与 check-readme-parity.sh ④b 同源
+#   （发版时点|当前|as of|current）——一处措辞两处引用，改动须同步两脚本。
 README_PKG_LINE=$(grep -nE '[0-9]+ 测试 / [0-9]+ 模块包 \+ [0-9]+ 插件' README.md 2>/dev/null | head -1)
 if [ -n "$README_PKG_LINE" ]; then
   # v1.4.9 G-13：五个提取点全部补 `head -1`。
@@ -738,6 +744,35 @@ else
   ((FAIL++)) || true
 fi
 
+# ── README 双语测试数多值扫描（TASK-5：防「文档升到 4810、门禁还在对旧值」的静默漂移）──
+# 与 check-readme-parity.sh ④b 同源：标记词「发版时点|当前|as of|current」一处定义
+# 两处引用，改动须同步两脚本。文件内「(测试|tests) N」或「N (测试|tests)」命中
+# ≥2 个不同 4 位值且任一命中行无标记词 → FAIL（防沿革值与当前值无解释并存）。
+README_MULTIVALUE_MARKERS='发版时点|当前|as of|current'
+README_MULTIVALUE_BAD=0
+for _mv_file in README.md README.en.md; do
+  [ -f "$_mv_file" ] || continue
+  _mv_hits=$(grep -nE '(测试|tests)[^0-9]{0,24}[0-9]{4}|[0-9]{4}[^0-9]{0,24}(测试|tests)' "$_mv_file" 2>/dev/null)
+  [ -z "$_mv_hits" ] && continue
+  _mv_uniq=$(echo "$_mv_hits" | grep -oE '[0-9]{4}' | sort -u | wc -l | tr -d ' ')
+  [ "$_mv_uniq" -lt 2 ] && continue
+  while IFS= read -r _mv_line; do
+    _mv_lineno="${_mv_line%%:*}"
+    _mv_content="${_mv_line#*:}"
+    if ! grep -qE "$README_MULTIVALUE_MARKERS" <<< "$_mv_content"; then
+      echo -e "  ${RED}✗ ${_mv_file}:${_mv_lineno}：测试数命中行无口径标记（需 ${README_MULTIVALUE_MARKERS} 之一）——多值漂移无解释${NC}"
+      README_MULTIVALUE_BAD=$((README_MULTIVALUE_BAD + 1))
+    fi
+  done <<< "$_mv_hits"
+done
+if [ "$README_MULTIVALUE_BAD" -gt 0 ]; then
+  echo -e "  ${RED}✗ README 测试数多值扫描：${README_MULTIVALUE_BAD} 处无口径标记${NC}"
+  ((FAIL++)) || true
+elif [ "$QUIET" = false ]; then
+  echo -e "  ${GREEN}✓ README 测试数多值扫描：多值处均有口径标记（与 check-readme-parity ④b 同源）${NC}"
+  ((PASS++)) || true
+fi
+
 # ARCHITECTURE.md — "audit ✅ 已实现（NNN 测试）" 逐包校验
 # 获取各包实际测试数
 for pkg in audit core orchestrator daemon; do
@@ -860,7 +895,7 @@ else
   # 此为发版流程固有次序（条目先行、版本号发版时统一 bump），非格式漂移。
   # 判定：锚定行含「待发版」且版本号恰为 CUR_VERSION 的下一补丁位 → 放行（数字照常校验）。
   CL_PENDING_OK=false
-  if echo "$CHANGELOG_LINE" | grep -q '待发版'; then
+  if [[ "$CHANGELOG_LINE" == *待发版* ]]; then
     CUR_PATCH=$(echo "$CUR_VERSION" | cut -d. -f3)
     PENDING_VER="${CUR_VERSION%.*}.$((CUR_PATCH + 1))"
     if [ "$CL_LINE_VER" = "$PENDING_VER" ]; then
@@ -894,7 +929,7 @@ else
     cl_fail=1
   fi
   # 防三：未量化字样 WARN（不阻塞，但让人看见）——「若干」等字样说明该批没数
-  if echo "$CL_PAREN" | grep -q '若干'; then
+  if [[ "$CL_PAREN" == *若干* ]]; then
     echo -e "  ${YELLOW}⚠ CHANGELOG.md（行 ${CL_LINENO}）：构成含「若干」未量化批次——算术校验覆盖不到该批，建议补具体数字${NC}"
   fi
   # ① 算术自洽：前值 + 各批增量之和 = 当前值（解析异常时短路，防空值参与算术产生新噪声）

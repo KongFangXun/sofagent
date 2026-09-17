@@ -1,8 +1,8 @@
 {
-  "generatedAt": "2026-09-15T04:28:18.004Z",
+  "generatedAt": "2026-09-17T18:26:06.418Z",
   "packages": {
     "@sofagent/harness": {
-      "version": "1.4.8",
+      "version": "1.4.9",
       "symbols": [
         "BudgetVerdict",
         "COMPACT_END_MARKER",
@@ -26,7 +26,7 @@
       ]
     },
     "@sofagent/ontology": {
-      "version": "1.4.8",
+      "version": "1.4.9",
       "symbols": [
         "LIFECYCLE_TO_MARKET_RING",
         "LifecycleMigrationRequest",
@@ -51,7 +51,7 @@
       ]
     },
     "@sofagent/core": {
-      "version": "1.4.8",
+      "version": "1.4.9",
       "symbols": [
         "AB_TEST_DIR",
         "AB_TEST_HISTORY",
@@ -134,7 +134,6 @@
         "EscalationPolicyOptions",
         "EscalationScenarioPolicy",
         "EscalationVerdict",
-        "FEDERATION_TOKEN_PATH",
         "FORGE_RUNS_DIR",
         "FederationResult",
         "FetchLike",
@@ -306,6 +305,7 @@
         "exportMethodology",
         "extractConstraintsFromPrompt",
         "extractSummary",
+        "findSnapshotByLabel",
         "generateAgentIdentity",
         "generateDataKey",
         "generateEd25519KeyPair",
@@ -319,6 +319,7 @@
         "getDecryptionKeys",
         "getEncryptionKey",
         "getEnvFingerprint",
+        "getFederationTokenPath",
         "getHistoryAnchorFilePath",
         "getHistoryFilePath",
         "getHmacKey",
@@ -438,7 +439,7 @@
       ]
     },
     "@sofagent/rules": {
-      "version": "1.4.8",
+      "version": "1.4.9",
       "symbols": [
         "ApprovalMode",
         "ApprovalResult",
@@ -464,7 +465,7 @@
       ]
     },
     "@sofagent/think": {
-      "version": "1.4.8",
+      "version": "1.4.9",
       "symbols": [
         "ThinkEntryOptions",
         "generateDataThink",
@@ -473,7 +474,7 @@
       ]
     },
     "@sofagent/audit": {
-      "version": "1.4.8",
+      "version": "1.4.9",
       "symbols": [
         "AgentRollupRow",
         "AgentShield",
@@ -656,7 +657,7 @@
       ]
     },
     "@sofagent/eval": {
-      "version": "1.4.8",
+      "version": "1.4.9",
       "symbols": [
         "EvalBreakdown",
         "EvalConfig",
@@ -671,7 +672,7 @@
       ]
     },
     "@sofagent/evolve": {
-      "version": "1.4.8",
+      "version": "1.4.9",
       "symbols": [
         "AUTO_TRIGGER_THRESHOLD",
         "BackfillConcept",
@@ -718,7 +719,7 @@
       ]
     },
     "@sofagent/orchestrator": {
-      "version": "1.4.8",
+      "version": "1.4.9",
       "symbols": [
         "ABPhase",
         "ABScheduleConfig",
@@ -730,6 +731,7 @@
         "AcceptanceDefinition",
         "ActionRegistration",
         "ActionRegistry",
+        "ActionType",
         "ActivateOptions",
         "ActivateResult",
         "AgentCreationResult",
@@ -750,6 +752,7 @@
         "AuditVerdict",
         "AutomationTag",
         "BUILTIN_AGENTS",
+        "BUILTIN_SCENARIOS",
         "BenchmarkCase",
         "BenchmarkDefinition",
         "BrowserAuditSink",
@@ -775,6 +778,7 @@
         "CheckpointManager",
         "CheckpointManagerOptions",
         "CheckpointRecord",
+        "CommonsPolicy",
         "ComparatorOptions",
         "ComposeInput",
         "ComposeResult",
@@ -827,6 +831,8 @@
         "DEFAULT_VIOLATION_THRESHOLD",
         "DSH_SEAM_FIELD_MAPPINGS",
         "DagRunnerDeps",
+        "DataDomain",
+        "DecisionLogEntry",
         "DeliveryListener",
         "DeployResult",
         "DeriveResult",
@@ -844,6 +850,7 @@
         "ENGINEER_TOOLS",
         "ENTITY_SCHEMA",
         "EXPERIENCE_LAYER_PATTERNS",
+        "ElevationGrant",
         "EndpointProfile",
         "EnqueueSubAgentInput",
         "EnterpriseAgentConfig",
@@ -1033,7 +1040,9 @@
         "PendingCheckpointInfo",
         "PermissionCeiling",
         "PermissionCeilingOptions",
+        "PermissionRequest",
         "PlanMetrics",
+        "PolicyAction",
         "PolicyLayer",
         "PolicyVerdict",
         "ProfileBundle",
@@ -1086,6 +1095,7 @@
         "RetireReason",
         "ReviewInput",
         "ReviewResult",
+        "RiskLevel",
         "RouteFallbackResult",
         "RoutePolicy",
         "RoutePolicyResolution",
@@ -1105,6 +1115,9 @@
         "SandboxHandle",
         "ScanResult",
         "ScanVerdict",
+        "Scenario",
+        "ScenarioMatchRequest",
+        "ScenarioMatchResult",
         "SchemaGateError",
         "SchemaValidationResult",
         "ScoredInstinct",
@@ -1134,11 +1147,13 @@
         "TaskExecutor",
         "TaskState",
         "TaskTrajectory",
+        "TaskType",
         "TaskWorklogEntry",
         "TeamConflictParty",
         "TeamFeedbackEntry",
         "TeamManager",
         "TeamManagerOptions",
+        "TeamPolicy",
         "TeamStateDoc",
         "TeamSyncChannel",
         "TeamYaml",
@@ -1252,6 +1267,7 @@
         "classifyAutomation",
         "classifyNodes",
         "classifyRequestRisk",
+        "classifyRisk",
         "classifyTrust",
         "clearGraphBuilders",
         "coldStartFactor",
@@ -1277,9 +1293,11 @@
         "createExecutionBackend",
         "createOntologyValidator",
         "createPermissionCeiling",
+        "createPolicyEngine",
         "createProxyGateway",
         "createRefineOnConvergedCallback",
         "createSandboxHandle",
+        "createScenarioRouter",
         "createSessionWorkspace",
         "createTeam",
         "createToolGate",
@@ -1508,6 +1526,7 @@
         "resumePendingLoops",
         "retireModel",
         "reviewToolCandidate",
+        "riskToDefaultAction",
         "rollbackModel",
         "rollbackToSnapshot",
         "rollbackWeightsVersion",
@@ -1606,7 +1625,7 @@
       ]
     },
     "@sofagent/train": {
-      "version": "1.4.8",
+      "version": "1.4.9",
       "symbols": [
         "AnticheatCheckResult",
         "AnticheatConfig",
@@ -2013,6 +2032,7 @@
         "buildTrainStatusBoard",
         "buildZip",
         "canTransition",
+        "canaryRouteRequest",
         "channelAsExecutor",
         "checkAnticheatBaseline",
         "checkBudget",
@@ -2175,7 +2195,6 @@
         "retentionConfigPath",
         "retentionMarkersPath",
         "rollbackFailedTrainJob",
-        "routeRequest",
         "runCanaryCheck",
         "runContinuousTraining",
         "runCrashRecoveryScan",
@@ -2237,7 +2256,7 @@
       ]
     },
     "@sofagent/daemon": {
-      "version": "1.4.8",
+      "version": "1.4.9",
       "symbols": [
         "Atom",
         "AuditEntry",
@@ -2513,7 +2532,7 @@
       ]
     },
     "@sofagent/ab-test": {
-      "version": "1.4.8",
+      "version": "1.4.9",
       "symbols": [
         "ABConfig",
         "ABTestResult",
@@ -2532,7 +2551,7 @@
       ]
     },
     "@sofagent/load-chain": {
-      "version": "1.4.8",
+      "version": "1.4.9",
       "symbols": [
         "LoadChainEvent",
         "default",

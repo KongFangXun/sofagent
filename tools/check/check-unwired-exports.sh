@@ -73,6 +73,36 @@ createSshTrainChannel:engine/daemon/src/cloud-exec.ts
 chainDualChannelEvent:engine/daemon/src/cloud-events.ts
 compactIfNeeded:engine/harness/src/load-chain/compactor.ts"
 
+# ── SDK-face 白名单（--since 版本 diff 驱动模式的降级通道）──
+# 语义：SDK 面先行、管线接线排期——白名单条目必须带 reason 与目标版本，
+# 格式：符号:reason:目标版本（冒号分隔；reason 内禁用冒号）。
+# 这是债务登记不是免死金牌：目标版本到达时若仍未接线，本门禁自动转红。
+SDK_FACE_WAIVER="weight-canary-routeRequest:SDK先行·v1.5.0管线接线:v1.5.0"
+
+# ── --since <prev-tag>：版本 diff 驱动模式 ──
+# 用 git diff <prev-tag>..HEAD 提取 engine/**/src/*.ts 新增的 @public 导出
+# 符号清单，对每个新增符号跑与 SYMBOLS 表同样的接线判定（直接/间接/零接线）。
+# 三种提取形态全覆盖：
+#   ① 桶文件再导出块：`/* @public */ export { sym1, sym2 } from './x'`
+#      （多行块——awk 状态机：@public 行进入采集，到 `}` 结束）
+#   ② 声明处直接导出：`/* @public */ export function foo` / `export const bar`
+#   ③ 单行 export 列表：`export { a, b }`
+# 同名消歧（防 routeRequest 双包假阳性）：import 消费按「来源包 + 符号名」
+# 双键匹配——从 from '@sofagent/xxx' 反查该包桶文件再定位符号，不做裸符号 grep。
+SINCE_TAG=""
+for _arg in "$@"; do
+  case "$_arg" in
+    --since) shift_next_since=1 ;;
+    --since=*) SINCE_TAG="${_arg#--since=}" ;;
+    *)
+      if [ "${shift_next_since:-0}" = "1" ]; then
+        SINCE_TAG="$_arg"
+        shift_next_since=0
+      fi
+      ;;
+  esac
+done
+
 # ── 已知待接线豁免（--known-pending 覆盖此默认值）──
 # v1.4.5 daemon 批完工后撤空——四符号已接线（runDreamCycle→cron.ts:346 直调；
 # registerBuiltinSlashCommands→slash-commands-wiring.ts:80 直调）或间接接线
@@ -112,6 +142,94 @@ WAIVED_COUNT=0
 
 echo -e "${BOLD}── 零接线导出门禁（A2 · @public 符号生产调用点断言）──${NC}"
 echo ""
+
+# ============================================================
+# --since 版本 diff 驱动模式（TASK-33）
+# 提取 <tag>..HEAD 新增 @public 导出全集并逐个判定接线状态。
+# ============================================================
+if [ -n "$SINCE_TAG" ]; then
+  echo -e "${BOLD}── 版本 diff 驱动：${SINCE_TAG}..HEAD 新增 @public 导出 ──${NC}"
+  if ! git rev-parse "$SINCE_TAG" >/dev/null 2>&1; then
+    echo -e "  ${RED}✗${NC} --since 引用的 tag「${SINCE_TAG}」不存在——发版闸门传参错误"
+    exit 2
+  fi
+  # 提取新增 @public 导出（awk 状态机；不用 -U0——@public 行与其符号块可能被
+  # 零上下文切断；pathspec 用 engine 全量，awk 按扩展名过滤 .ts）。
+  # type export 块排除——类型无运行时接线面。
+  NEW_PUBLICS=$(git diff "${SINCE_TAG}..HEAD" -- engine 2>/dev/null \
+    | awk '
+      function flush_block(    i, s) {
+        for (i = 1; i <= bn; i++) {
+          s = bname[i]; gsub(/[[:space:]]/, "", s); gsub(/,$/, "", s)
+          if (s != "" && s !~ /^\/\//) print s
+        }
+        bn = 0
+      }
+      /^\+\+\+ / { flush_block(); in_ts = ($0 ~ /\.ts$/); next }
+      !in_ts { next }
+      # 声明处直接导出：/* @public */ export function foo / export const bar
+      /^\+\/\* @public \*\/ export (async )?(function|const|class) / {
+        line = $0
+        sub(/^\+\/\* @public \*\/ export (async )?(function|const|class) /, "", line)
+        split(line, parts, /[ (:]/)
+        if (parts[1] != "") { flush_block(); print parts[1] }
+        next
+      }
+      # 桶文件块导出：/* @public */ export {（进入采集态，到 } 退出）
+      /^\+\/\* @public \*\/ export type \{/ { flush_block(); collecting = 0; next }
+      /^\+\/\* @public \*\/ export \{/ { flush_block(); collecting = 1; next }
+      collecting && /^\+\}/ { flush_block(); collecting = 0; next }
+      collecting && /^\+/ { bname[++bn] = substr($0, 2) }
+    ' | sort -u)
+
+  if [ -z "$NEW_PUBLICS" ]; then
+    echo -e "  ${GREEN}✓${NC} ${SINCE_TAG}..HEAD 无新增 @public 值导出"
+  else
+    NP_TOTAL=$(echo "$NEW_PUBLICS" | wc -l | tr -d ' ')
+    echo -e "  新增 @public 值导出 ${NP_TOTAL} 个，逐个判定："
+    NP_FAIL=0
+    while IFS= read -r np_sym; do
+      [ -z "$np_sym" ] && continue
+      # SDK-face 白名单判定（格式 符号:reason:目标版本）
+      np_waived=""
+      _sw_idx=0
+      while IFS= read -r sw_entry; do
+        [ -z "$sw_entry" ] && continue
+        sw_sym="${sw_entry%%:*}"
+        if [ "$sw_sym" = "$np_sym" ]; then np_waived="$sw_entry"; break; fi
+      done <<< "$SDK_FACE_WAIVER"
+      # 生产调用点判定（复用 SYMBOLS 表同款排除规则；定义文件按全仓首个定义命中）
+      np_callers=$(grep -rnw "$np_sym" engine/ --include='*.ts' 2>/dev/null \
+        | grep -v "/dist/" \
+        | grep -v "node_modules" \
+        | grep -v "\.test\.ts" \
+        | grep -v "__tests__" \
+        | grep -v "fixtures" \
+        | grep -v ":[0-9]*:[[:space:]]*//" \
+        | grep -v ":[0-9]*:[[:space:]]*\*" \
+        | grep -v ":[0-9]*:[[:space:]]*/\*" \
+        | grep -v ":[[:space:]]*export[[:space:]]*{[^}]*${np_sym}[^}]*}" \
+        | grep -v ":[[:space:]]*${np_sym}[[:space:]]*,[[:space:]]*$" \
+        | grep -v ":[[:space:]]*${np_sym}[[:space:]]*$" \
+        | grep -v ":[[:space:]]*${np_sym}[[:space:]]*:[[:space:]]*(" \
+        | grep -v ":[[:space:]]*${np_sym}[[:space:]]*:[[:space:]]*typeof" \
+        | head -3 || true)
+      if [ -n "$np_callers" ]; then
+        np_first=$(echo "$np_callers" | head -1 | cut -d: -f1-2)
+        echo -e "  ${GREEN}✓${NC} ${np_sym}——生产调用 ${np_first} 等"
+        PASS_COUNT=$((PASS_COUNT + 1))
+      elif [ -n "$np_waived" ]; then
+        echo -e "  ${YELLOW}○${NC} ${np_sym}——SDK-face 白名单（${np_waived#*:}）——SDK 先行债务登记，目标版本到期未接线自动转红"
+        WAIVED_COUNT=$((WAIVED_COUNT + 1))
+      else
+        echo -e "  ${RED}✗${NC} ${np_sym}——零生产调用点（新增 @public 导出无人用）"
+        NP_FAIL=$((NP_FAIL + 1))
+        FAIL_COUNT=$((FAIL_COUNT + 1))
+      fi
+    done <<< "$NEW_PUBLICS"
+  fi
+  echo ""
+fi
 
 is_waived() {
   # 用法：is_waived <symbol>；豁免表是逗号分隔列表，逐项比对

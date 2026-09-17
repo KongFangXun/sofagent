@@ -3,13 +3,14 @@
 # check-open-boundary.sh · 开源/商业边界守卫（对标 wemux
 #   scripts/open-core/public-boundary.mjs，2026-09-08 吸收）
 #
-# 门禁目的：商业产品名（GrapHub / FlowHub）不得进入开源仓。
+# 门禁目的：商业产品名（GrapHub / FlowHub / AIR）不得进入开源仓。
 #   check-docs.sh §2c 只扫 45 个活文档白名单；本脚本补两个盲区：
 #   ① 全仓 git tracked 文件（1480+ 个，含全部 .ts/.mjs/.sh 源码）
 #   ② --staged 模式：只查暂存区新增/修改文件（PR 级拦截，同 wemux）
 #
-# AIR 不进断言：三字母大写英文语境误报率不可控，
-#   沿用 check-docs.sh §2c 同一拍板（人工自查）。
+# AIR 分面断言：文档面（docs/ 活文档 + README* + 根 CHANGELOG + SKILL/ +
+#   FDE/ + playbook/）全词匹配 FAIL——中文文档语境中独立词 AIR 只可能是
+#   私有代号泄漏；源码层（三字母英文常量名）误报不可控，维持人工自查。
 # CHANGELOG 豁免：历史事实档案（v1.4.4 记录了断言本身的落地），
 #   与 check-docs §2c 豁免口径一致。
 #
@@ -72,6 +73,19 @@ $f: $HIT"
   exit 0
 fi
 
+# ── AIR 文档面断言（任务书 TASK-15 收编：文档面全词匹配，命中即红）──
+# 面定义：docs/ 活文档（除 changelog/archive 历史档案）+ README* + 根 CHANGELOG
+#        + SKILL/ + FDE/ + playbook/（含本文件自身的豁免仅限 GrapHub/FlowHub
+#        主 pattern；AIR 文档面 pattern 字面量在 check-docs.sh / 本文件头注释，
+#        均不在本断言扫描面内——check-docs.sh 2c 的 AIR 在 §2c 注释里，而该
+#        文件整体豁免主 pattern；AIR 断言自身面不含 tools/，无自命中）
+AIR_DOC_HITS=$(git ls-files -- 'docs/*.md' 'README*.md' 'CHANGELOG.md' 'SKILL/*.md' 'SKILL/rules/*.md' 'FDE/*.md' 'playbook/*.md' 2>/dev/null | grep -vE '^docs/(changelog|archive)/' | xargs grep -nwE "AIR" 2>/dev/null || true)
+if [ -n "$AIR_DOC_HITS" ]; then
+  echo "❌ AIR 文档面泄漏（私有商业代号不得进入开源文档）:"
+  printf "%s\n" "$AIR_DOC_HITS" | head -10
+  exit 1
+fi
+
 # ── 全仓模式（默认）──
 if ! command -v git >/dev/null 2>&1 || ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   echo "SKIP：git 不可用——全仓模式需要 git ls-files"
@@ -115,5 +129,5 @@ if [ -n "$HITS" ]; then
 fi
 
 echo "✅ 开源边界守卫：${SCANNED}/${TOTAL_TRACKED} 个 tracked 文件扫描，GrapHub/FlowHub 零命中"
-echo "   （AIR 沿用人工自查拍板；CHANGELOG 历史档案豁免）"
+echo "   （AIR 文档面断言在线；CHANGELOG 历史档案豁免）"
 exit 0
