@@ -14,20 +14,9 @@
 ./tools/release/bump-version.sh <旧版本> <新版本>
 ```
 
-**脚本覆盖 13 类位置**（全自动扫描，新增 .ts/.sh/.ps1 文件自动发现）：
-1. `engine/audit/package.json` version（SSOT）
-2. `engine/mcp/package.json` version
-3. `const VERSION = 'x.y'`（动态扫描 `audit/src/` + `mcp/src/` 全目录）
-4. .ts 文件头注释中的 `— vX.Y.Z` 格式
-5. `index.ts` 版本引用
-6. `VERSION="x.y"`（扫描 `scripts/*.sh`）+ .sh 文件头注释中的 `（vX.Y.Z）` 格式
-7. `$VERSION = "x.y"`（扫描 `scripts/windows/*.ps1`）
-8. MD 文件头 `> vX.Y ·`（排除 `docs/changelog/`）+ ROADMAP「现在在哪」节标题
-9. README badge `version-vX.Y`（大小写不敏感）
-10. SKILL.md frontmatter `version: x.y`（含 `SKILL/` 和 `FDE/` 下的 SKILL.md）
-11. MD tail signature `> *vX.Y*`
-12. SECURITY.md 状态标注 `**当前状态（vX.Y）**`
-13. `engine/*/package.json` 全 12 包 + `engine/hooks/sofagent-load-chain/package.json` + `FDE/package.json`（共 14 包，v1.0.3 起）
+**脚本覆盖范围**（全自动扫描，新增 .ts/.sh/.ps1 文件自动发现；🔴 类数与位置清单 SSOT = `tools/release/bump-version.sh` 头部「替换范围」注释，随脚本演进——本手册不复述逐项清单，防双源漂移。已知覆盖面含：各层 package.json（SSOT/workspace 子包/openclaw 双 manifest）/ const VERSION / .ts 头注释 / index.ts / .sh / .ps1 / MD 头尾 / README badge / SKILL.md / SECURITY.md / hook 头 / dashboard.html）：
+1. 版本号替换位置以脚本头部注释为准（`head -30 tools/release/bump-version.sh`），此处不维护第二份清单
+2. **bump 后必跑门禁**：`bash tools/check/check-version.sh`——bump 能改的 check 必须能查，两脚本覆盖范围一致性是阶段二开发纪律既有项
 
 **不碰**：正文中的历史引用（如 "v1.0 新增"）。这是正确设计。
 
@@ -37,7 +26,7 @@
 ./tools/check/check-version.sh
 ```
 
-从 `package.json` 读 SSOT 版本号，逐项比对全项目 13 类位置。任何不一致 → 红字报错 + exit 1。
+从 `package.json` 读 SSOT 版本号，逐项比对全项目版本位置（范围同 bump-version.sh 头部「替换范围」）。任何不一致 → 红字报错 + exit 1。
 
 #### 同步 package-lock.json（🔴 教训）
 

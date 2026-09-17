@@ -222,14 +222,14 @@
 
 ### 版本类 finding 处理规则（版本中间态 SKIP 判别口径）
 
-fresh-eyes 在**发版前**跑（阶段三时序先于打 tag/publish），此时版本一致性天然处于中间态——以下 finding 属预期噪音，**默认标 SKIP 不修**，留到阶段十（publish）自然消解：
+fresh-eyes 在**发版前**跑（阶段三时序先于打 tag/publish），此时版本一致性天然处于中间态——以下 finding 属预期噪音，**默认标 SKIP 不修**，留到阶段九（publish）自然消解：
 
 | finding 模式 | 为何是中间态 |
 |------|------|
 | npm registry 版本落后本地 | publish 前注册表必然是旧版 |
-| git tag 缺当前版本 | tag 在阶段十打 |
+| git tag 缺当前版本 | tag 在阶段九步骤六打 |
 | README/bootstrap URL 指向未发布 tag | 打完 tag 即生效的死链 |
-| workspace 依赖锁旧版 | bump-version.sh [2c] 发版时统一对齐 |
+| workspace 依赖锁旧版 | bump-version.sh [9b] 发版时统一对齐 |
 
 > 判别口径：**该不一致是否会在「git push + tag + npm publish」三动作后自动消失**——会 = SKIP，不会 = 真 finding（历史多轮 finding 属前者）。
 > **b-fix 侧已自包含**：SKIP 判别口径已固化进 `FORGE/SKILL/fresh-eyes-loop/prompts/b-fix.md` 的「分诊前置」节（b-fix 无需读本文件即自带规则）；同时 b-fix 分诊前置把「先验证真伪再动手」固化为每条 finding 的必经步骤（实锤/误报/存疑三定性 + 分诊统计进 summary）。

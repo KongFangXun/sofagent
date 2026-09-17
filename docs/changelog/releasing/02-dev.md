@@ -49,7 +49,7 @@
 
 | # | 步骤 | 验证方式 |
 |:--:|------|------|
-| 一 | **bump 时点（v1.3.9 起定稿：延后到阶段六）**：bump 13 类位置与阶段六文档收尾是同一批文件（版本号/日期/索引/状态行），阶段二 bump = 同批文件改两次、全量门禁跑两次。**本步骤只做预检**：`bash tools/check/check-version.sh` 确认当前版本三态一致（预期 1 警告=阶段六 bump 前置，非缺陷）；真正的 `bash tools/release/bump-version.sh X Y` 在阶段六步骤一执行，届时 hook 文件头版本一致性由 check-version.sh 覆盖 | check-version.sh exit 0（允许 1 警告发版前中间态） |
+| 一 | **bump 时点（延后到阶段六）**：bump 的全部结构性位置（package.json 各层 / ts / sh / ps1 / MD 头尾 / badge / SKILL.md / hook 头 / dashboard，SSOT = bump-version.sh 头部「替换范围」注释——类数随脚本演进，SOP 不硬编码复述）与阶段六文档收尾是同一批文件（版本号/日期/索引/状态行），阶段二 bump = 同批文件改两次、全量门禁跑两次。**本步骤只做预检**：`bash tools/check/check-version.sh` 确认当前版本三态一致（预期 1 警告=阶段六 bump 前置，非缺陷）；真正的 `bash tools/release/bump-version.sh X Y` 在阶段六步骤一执行，届时 hook 文件头版本一致性由 check-version.sh 覆盖 | check-version.sh exit 0（允许 1 警告发版前中间态） |
 | 二 | **changelog 状态转正**：`docs/changelog/v<major>.<minor>/vX.Y.md` 头部「⚠️ 尚未实现」+「状态：已排期」→ 改为「✅ 已开发」。删除「engine/ 下尚无对应代码」等过时警告，保留「前置依赖」 | 头部状态标注为已开发，无「尚未实现」残留 |
 | 三 | `npm run build && npm test` | exit 0 + 全部通过 |
 | 四 | **测试数文档同步门禁**：`bash tools/check/check-test-count.sh --quiet` | 输出 OK / EXIT=0。FAIL = README/WIKI/LIMITATIONS/ARCHITECTURE 测试数与 test-count.sh SSOT 不一致，必须手动同步后再继续 |
