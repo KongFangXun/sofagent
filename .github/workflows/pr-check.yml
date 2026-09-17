@@ -20,6 +20,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          # 🔴 本 job 必须 fetch-depth: 0（拉全历史 + tag）——check-version.sh 的
+          # §14b「非顶版发版日期 vs git tag」断言需要 tag 数据（对比 CHANGELOG
+          # 非顶版索引行的发版日期 vs 对应 tag 日期）。默认浅检出（fetch-depth: 1）
+          # 取不到任何 tag ⇒ 断言可判行数为 0 ⇒ 按 fail-loud 设计判 FAIL（守卫
+          # 空转即红），CI 必红。与 sofagent-audit.yml 同款配置。
+          fetch-depth: 0
       # 🔴 v1.4.8 第2批：本 job 必须装依赖——check-version.sh（rhythm 段）与
       # dependency-direction.sh（包边界清单）都经 node + js-yaml 读 tools/check/
       # *.yml。此前本 job 无 npm ci，实测（无 node_modules 全新工作树）两脚本均
