@@ -466,10 +466,10 @@ a:hover{text-decoration:none} /* 全站 hover 无下划线（统一）——按�
     <nav class="nav" id="nav">
       <button class="nav-item active" onclick="goPage('cockpit')">驾驶舱</button>
       <button class="nav-item" onclick="goPage('workflow')">业务流</button>
+      <button class="nav-item" onclick="goPage('train')">后训练</button>
       <button class="nav-item" onclick="goPage('ontology')">本体图谱</button>
       <button class="nav-item" onclick="goPage('knowledge')">知识库</button>
       <button class="nav-item" onclick="goPage('fde')">FDE 引导</button>
-      <button class="nav-item" onclick="goPage('train')">模型训练</button>
       <button class="nav-item" onclick="goPage('resources')">工具箱</button>
     </nav>
     <div class="header-right">
@@ -588,8 +588,6 @@ a:hover{text-decoration:none} /* 全站 hover 无下划线（统一）——按�
         <div class="skeleton" style="height:80px"></div>
       </div>
     </div>
-  </div>
-
   </div>
 </div>
 
@@ -794,7 +792,7 @@ a:hover{text-decoration:none} /* 全站 hover 无下划线（统一）——按�
 </div>
 
 <!-- ================================================== -->
-<!-- PAGE: 模型训练 -->
+<!-- PAGE: 后训练 -->
 <!-- ================================================== -->
 <div class="page" id="page-train">
   <div class="section">
@@ -2051,6 +2049,23 @@ function loadPipelineGraph(){
     });
 }
 
+/* index.md 表格行解析（兼容 [[双链]] 与纯文本两种形态）
+   daemon 写入形态已改为纯文本表格，旧正则硬要求 [[ ]] 导致解析恒空：
+   本体图谱「图谱视图」降级示例数据、知识库统计三项归零。
+   返回 {name,domain,nodes}；表头行 / 分隔行 / 非表格行返回 null。 */
+function parseIndexRow(line){
+  var t=(line||'').trim();
+  if(t.charAt(0)!=='|')return null;
+  var cells=t.split('|');
+  var name=(cells[1]||'').trim();
+  if(!name||name==='页面'||/^[-:]+$/.test(name))return null;
+  return {
+    name:name.replace(/^\[\[|\]\]$/g,'').trim(),
+    domain:(cells[2]||'').trim(),
+    nodes:(cells[3]||'').trim()
+  };
+}
+
 /* ===== Knowledge Data (知识库) ===== */
 function loadKnowledgeData(){
   var stats=document.getElementById('kbStats');
@@ -2065,10 +2080,10 @@ function loadKnowledgeData(){
     var index=res[0]||'';
     var log=res[1]||'';
     var think=res[2]||'';
-    // 统计知识页面数（index.md 表格行）
+    // 统计知识页面数（index.md 表格行 · 口径 = parseIndexRow 命中数）
     var pageCount=0;
     index.split('\n').forEach(function(line){
-      if(line.trim().startsWith('|')&&line.indexOf('[[')>=0)pageCount++;
+      if(parseIndexRow(line))pageCount++;
     });
     // 更新日志数（log.md 非空行，去掉表头/分隔线）
     var logCount=log.split('\n').filter(function(l){
@@ -2078,8 +2093,8 @@ function loadKnowledgeData(){
     // 业务领域数（index.md 表格第二列的域，去重）
     var domains={};
     index.split('\n').forEach(function(line){
-      var m=line.match(/\|.*?\[\[[^\]]+\]\]\s*\|\s*([^|]*)\|/);
-      if(m){var d=m[1].trim();if(d)domains[d]=1;}
+      var r=parseIndexRow(line);
+      if(r&&r.domain)domains[r.domain]=1;
     });
     var domainCount=Object.keys(domains).length;
     if(stats){
@@ -2091,8 +2106,8 @@ function loadKnowledgeData(){
     // 条目列表：index.md 表格行
     var rows=[];
     index.split('\n').forEach(function(line){
-      var m=line.match(/\|.*?\[\[([^\]]+)\]\]\s*\|\s*([^|]*)\|\s*([^|]*)\|/);
-      if(m)rows.push({name:m[1],domain:m[2].trim(),nodes:m[3].trim()});
+      var r=parseIndexRow(line);
+      if(r)rows.push(r);
     });
     if(entries){
       if(rows.length){
@@ -2273,15 +2288,22 @@ function loadReleaseGateData(){
 /* ===== 工作明细（业务流页 · v1.4.0） ===== */
 
 /* 异步探测 worklog.json 所在数据根（替代同步 XHR） */
+/* 数据根探针（任一命中即认为该 root 有效）
+   旧实现只探 dashboard/worklog.json——该文件缺失时恒返回 ''，
+   导致图谱视图 / 训练 / FDE 自省等多处加载静默降级为示例数据。 */
+var DATA_ROOT_PROBES=['/dashboard/worklog.json','/knowledge/index.md','/think.md'];
 function resolveDataRoot(){
   return new Promise(function(resolve){
     var i=0;
     (function next(){
       if(i>=DATA_ROOTS.length){resolve('');return}
-      tryFetch(DATA_ROOTS[i]+'/dashboard/worklog.json').then(function(t){
-        if(t){resolve(DATA_ROOTS[i])}
-        else{i++;next()}
-      });
+      var root=DATA_ROOTS[i],j=0;
+      (function probe(){
+        if(j>=DATA_ROOT_PROBES.length){i++;next();return}
+        tryFetch(root+DATA_ROOT_PROBES[j]).then(function(t){
+          if(t){resolve(root)}else{j++;probe()}
+        });
+      })();
     })();
   });
 }
@@ -2546,17 +2568,18 @@ function loadGraphView(){
         wfNodes=[{id:'demo:map',label:'梳理',status:'done'},{id:'demo:deploy',label:'部署节点',status:'done'},{id:'demo:audit',label:'审计',status:'active'}];
         wfEdges=[{from:'demo:map',to:'demo:deploy'},{from:'demo:deploy',to:'demo:audit'}];
       }
-      wfBox.innerHTML='<div style="font-size:11px;color:var(--text-t);margin-bottom:8px">workflow 节点图（状态着色：蓝=运行中 灰=完成/未知 红=失败 黄=人工介入）</div>'+renderFlowGraph(wfNodes,wfEdges);
+      var wfIsDemo=!(wl&&wl.workflows&&wl.workflows.length);
+      wfBox.innerHTML='<div style="font-size:11px;color:var(--text-t);margin-bottom:8px">workflow 节点图（状态着色：蓝=运行中 灰=完成/未知 红=失败 黄=人工介入'+(wfIsDemo?' · 示例':'')+'）</div>'+renderFlowGraph(wfNodes,wfEdges);
 
       // ontology 图谱：优先 knowledge/index.md 解析实体（按域分组连线），降级示例
       var ontNodes=[],ontEdges=[];
       var domains={};
       indexMd.split('\n').forEach(function(line){
-        var m=line.match(/\|.*?\[\[([^\]]+)\]\]\s*\|\s*([^|]*)\|/);
-        if(m){
-          var name=m[1].trim(),dom=m[2].trim()||'未分组';
+        var r=parseIndexRow(line);
+        if(r){
+          var dom=r.domain||'未分组';
           if(!domains[dom])domains[dom]=[];
-          domains[dom].push(name);
+          domains[dom].push(r.name);
         }
       });
       var domKeys=Object.keys(domains);

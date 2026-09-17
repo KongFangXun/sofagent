@@ -424,7 +424,13 @@ function aggregateOntology() {
     const indexFile = join(kbDir, 'index.md');
     try {
       const idx = readFileSync(indexFile, 'utf8');
-      out.indexPages = idx.split('\n').filter((l) => l.trim().startsWith('|') && l.includes('[[')).length;
+      // 口径与前端 parseIndexRow 对齐：兼容 [[双链]]（旧）与纯文本（daemon 现行写入）两种表格行
+      out.indexPages = idx.split('\n').filter((l) => {
+        const t = l.trim();
+        if (!t.startsWith('|')) return false;
+        const name = (t.split('|')[1] || '').trim();
+        return !!name && name !== '页面' && !/^[-:]+$/.test(name);
+      }).length;
     } catch {}
     // think.md 经验教训数
     const thinkFile = join(SOFAGENT_DATA, 'think.md');
