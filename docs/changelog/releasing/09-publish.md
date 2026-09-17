@@ -322,7 +322,7 @@ fi
 
 | # | artifact | 核验命令 | 期望 |
 |---|----------|---------|------|
-| 1 | git tag（远端存在且指向发版 commit） | `gh api repos/KongFangXun/sofagent/git/refs/tags/vX.Y.Z --jq '.object.sha'` 对比 `git rev-parse vX.Y.Z^{commit}` | 两 SHA 一致 |
+| 1 | git tag（远端存在且指向发版 commit） | 🔴 annotated tag 对账口径（v1.4.9 实锤）：`gh api git/refs/tags` 返回的是 **tag object SHA** ≠ commit SHA，直接与 `git rev-parse vX.Y.Z^{commit}` 比必不等——正确对账二选一：① `gh api refs/tags` 的 sha == `git rev-parse vX.Y.Z`（本地 tag object SHA）② `gh api git/tags/<object-sha>` 二段查 `.object.sha` == `git rev-parse vX.Y.Z^{commit}` | 两 SHA 一致（同口径） |
 | 2 | GitHub Release（title + body 可达） | `gh release view vX.Y.Z --json name,isDraft` | name 匹配、isDraft=false |
 | 3 | npm 15 包（audit + mcp 自动，其余 13 手动后） | `for p in audit mcp core daemon eval harness ontology orchestrator train rules evolve think ab-test; do npm view @sofagent/$p version --prefer-online; done` + `npm view @sofagent/load-chain version --prefer-online` + `npm view sofagent version --prefer-online` | 15 项全部 = 本版号（🔴 必加 --prefer-online——裸查询吃缓存会误报漏发） |
 | 4 | 安装入口（README 双语 + bootstrap.sh 的 tag URL 可达） | `grep -rn "refs/tags/v" README.md README.en.md bootstrap.sh` + 逐条 `curl -sI` HTTP 200 | 三处 = 本版 tag 且真实可达 |

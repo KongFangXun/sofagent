@@ -55,6 +55,12 @@ sofagent-core --doctor             # 期望全部通过
 # 三字拦截（措辞变体不可穷举，v1.4.5 漏 13 份、v1.4.6 漏 8+2 份连续复发后收口），
 # 此翻转必须在下方 check-version 全绿验收之前做，否则 F6 报文档头残留红灯。
 # 只翻转活文档头，历史 changelog/archive 的「待发版」是当时正确状态不动。
+# 🔴 翻牌批裹挟防御（v1.4.9 实锤）：多 session 并发时 `git add <翻牌文件>` 会把并行 session
+#    在该文件工作区的未提交 hunk（如测试数预改 4805→4807）一并裹挟进翻牌 commit → 远端 CI
+#    报测试数漂移红（本地因含对方改动看不到）。防御：翻牌 commit 前 `git diff --cached` 逐 hunk
+#    核对，只认翻牌 hunk（状态标注行），数字/内容 hunk 不是自己的不入——发现裹挟先
+#    `git restore --staged <file>` 重新只 stage 翻牌 hunk，或还原对方数字为 tag 时点值随
+#    follow-up 修（对方完工提交时再合法升级）。
 grep -rlE '待发版' --include="*.md" docs/ \
   | grep -v "docs/changelog/" \
   | grep -v "docs/archive/" \

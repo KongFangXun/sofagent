@@ -1219,13 +1219,15 @@ grep -c "stripped.*replace.*cd" FORGE/src/fresh-eyes-driver.mjs # ≥1
 
 #### 86. FORGE driver auto-commit 代码领域限定——防卷队友未提交内容
 
-**背景**：driver 用 `git add -A` 把队友并行编辑的规划文档（docs/changelog/v1.4/*.md）一起卷进 auto-commit；修复改为只 add 代码领域（engine/FORGE/src/tools/SKILL）。
+**背景**：driver 用 `git add -A` 把队友并行编辑的规划文档（docs/changelog/v1.4/*.md）一起卷进 auto-commit；修复改为只 add 代码领域（engine/FORGE/src/tools/SKILL）。**同族扩展（发版流程侧实锤）**：人工发版窗口的翻牌/收尾批 `git add <file>` 同样会裹挟并行 session 在该文件工作区的未提交 hunk——数字预改混入翻牌 commit 导致 CI 测试数漂移红；发版 SOP 已沉淀「commit 前 `git diff --cached` 逐 hunk 核对，非自己 hunk 不入」（docs/changelog/releasing/11-post-publish.md 步骤三）。
 
 ```bash
 # driver-base runAuditGate 不含 git add -A
 grep -c "git add -A" FORGE/src/driver-base.mjs # 0（仅注释引用）
 # 改为显式代码领域 add
 grep -c "git diff --name-only HEAD -- engine/" FORGE/src/driver-base.mjs # ≥1
+# 发版 SOP 裹挟防御段在位（同族防复发——人工批与 driver 批同守则）
+grep -q "git diff --cached" docs/changelog/releasing/11-post-publish.md && echo "✅ 发版 SOP 裹挟防御在位" || echo "⚠️ SOP 缺逐 hunk 核对纪律"
 ```
 
 #### 89. 审计规则 ruleClass 多处声明一致性
