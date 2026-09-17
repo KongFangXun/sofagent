@@ -113,6 +113,36 @@ function isTestRecord(rec) {
   return TEST_TASK_RE.test(String(rec.task || '').trim());
 }
 
+/* ────────────────────────────────
+ * /api/summary 结果缓存
+ * 聚合要全量读 history.jsonl（已 55MB / 万级记录）+ 同步 spawn jq 6 次，单次耗时数秒且阻塞事件循环。
+ * 前端固定 5s 轮询、多客户端（浏览器 + 预览面板）叠加 ⇒ 请求永远追不上 ⇒ 事件循环饱和、全站路由超时（「服务卡死」真身）。
+ * 对策：TTL 缓存 + 并发去重（同一时刻只算一次，其余复用结果）。
+ * 驾驶舱数字为历史累计口径、变化慢，30s TTL 不影响读数正确性。
+ * ──────────────────────────────── */
+const SUMMARY_TTL_MS = 30000;
+let summaryCacheAt = 0;
+let summaryCacheData = null;
+let summaryInFlight = null;
+function getSummaryCached() {
+  const now = Date.now();
+  if (summaryCacheData && now - summaryCacheAt < SUMMARY_TTL_MS) {
+    return Promise.resolve(summaryCacheData);
+  }
+  if (summaryInFlight) return summaryInFlight; // 并发请求复用同一次计算
+  summaryInFlight = (async () => {
+    try {
+      const s = aggregateSummary();
+      summaryCacheData = s;
+      summaryCacheAt = Date.now();
+      return s;
+    } finally {
+      summaryInFlight = null;
+    }
+  })();
+  return summaryInFlight;
+}
+
 function aggregateSummary() {
   const out = { ok: true, generatedAt: new Date().toISOString(), rules: null, sovereignty: null, top3: [], recent: [] };
 
@@ -460,7 +490,7 @@ const server = createServer(async (req, res) => {
 
   // /api/summary → bash 同口径聚合
   if (urlPath === '/api/summary') {
-    const s = aggregateSummary();
+    const s = await getSummaryCached();
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify(s));
     return;
