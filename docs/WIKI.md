@@ -41,7 +41,7 @@
 
 ## 一、一句话
 
-**sofagent 是一个开源 FDE Harness 层**（MIT，同时也是 FDE 方法论的参考实现）——不造 Agent，嵌在成熟 Agent（DSH / OpenClaw / WorkBuddy）与模型层（通用大模型 + 专属小模型 / 后训练模型）之间做治理：进场梳理业务流、构建本体图谱、把能自动化的环节变成 AI 节点、部署后 7×24 自己跑。底层是 **约束层**——约束 Agent 行为、审计每次变更、沉淀经验。**产品形态 = FDE Harness 层**：对执行体（Agent）做约束、对智力源（模型）做治理——它给自己做的第一份 FDE，就是 sofagent 自己（自举）。
+**sofagent 是一个开源 FDE Harness 层**（MIT，同时也是 FDE 方法论的参考实现）——不造 Agent，嵌在成熟 Agent（DSH / OpenClaw / WorkBuddy）与模型层（通用大模型 + 专属小模型 / 后训练模型）之间做治理：进场把业务判断写成文件（梳理业务流、构建本体图谱、把能自动化的环节变成 AI 节点），部署后按文件 7×24 执行与审计。底层是 **约束层**——约束 Agent 行为、审计每次变更、沉淀经验。**产品形态 = FDE Harness 层**：对执行体（Agent）做约束、对智力源（模型）做治理——它给自己做的第一份 FDE，就是 sofagent 自己（自举）。
 
 ---
 
@@ -249,7 +249,7 @@ graph TB
 
 | 术语 | 简释 | 精确定义 |
 |------|------|---------|
-| FDE | Forward Deployed Engineer——进场部署 AI 节点的工程师 | [PHILOSOPHY §一](./PHILOSOPHY.md) |
+| FDE | Forward Deployed Engineer——进场生成判断、部署 AI 节点的工程师 | [PHILOSOPHY §一](./PHILOSOPHY.md) |
 | 中间件（Harness 中间件） | **品类定位词**——答「sofagent 属于哪个品类」（Harness 类运行时/治理框架）；**不是**「约束层是技术实现层的中间件」这一实现论判断 | [ARCHITECTURE §术语对照](./ARCHITECTURE.md#术语对照) |
 | Harness | Agent 行为约束中间件——"缰绳"，非"马" | [ARCHITECTURE §二](./ARCHITECTURE.md) |
 | 双层架构 | 约束层 × 生命周期——约束层保证"每次做对"，生命周期保证"从诊断到自运转怎么走" | [ARCHITECTURE §二·双层架构](./ARCHITECTURE.md#双层架构约束层与生命周期主框架) |
