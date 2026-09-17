@@ -469,6 +469,7 @@ a:hover{text-decoration:none} /* 全站 hover 无下划线（统一）——按�
       <button class="nav-item" onclick="goPage('ontology')">本体图谱</button>
       <button class="nav-item" onclick="goPage('knowledge')">知识库</button>
       <button class="nav-item" onclick="goPage('fde')">FDE 引导</button>
+      <button class="nav-item" onclick="goPage('train')">模型训练</button>
       <button class="nav-item" onclick="goPage('resources')">工具箱</button>
     </nav>
     <div class="header-right">
@@ -589,19 +590,6 @@ a:hover{text-decoration:none} /* 全站 hover 无下划线（统一）——按�
     </div>
   </div>
 
-  <div class="section">
-    <div class="section-header"><div class="section-title"><span class="dot-emoji"><i class="bi bi-cpu"></i></span>训练任务（v1.4.3）</div>
-      <span style="font-size:11px;color:var(--text-t)">读 train-status.json / train-health.json（训练终态自动落盘刷新）</span>
-    </div>
-    <div class="section-body">
-      <div class="metrics" style="margin-bottom:12px">
-        <div class="metric-card"><div class="metric-value" id="tr-running">—</div><div class="metric-label">当前在跑</div></div>
-        <div class="metric-card"><div class="metric-value" id="tr-completed">—</div><div class="metric-label">累计完成</div></div>
-        <div class="metric-card"><div class="metric-value" id="tr-failed">—</div><div class="metric-label">失败/取消</div></div>
-        <div class="metric-card"><div class="metric-value" id="tr-success-rate">—</div><div class="metric-label">成功率</div><div class="metric-sub" id="tr-success-sub">train-health.json 口径</div></div>
-      </div>
-      <div id="trainJobsBox"><div class="skeleton" style="height:60px"></div></div>
-    </div>
   </div>
 </div>
 
@@ -806,6 +794,26 @@ a:hover{text-decoration:none} /* 全站 hover 无下划线（统一）——按�
 </div>
 
 <!-- ================================================== -->
+<!-- PAGE: 模型训练 -->
+<!-- ================================================== -->
+<div class="page" id="page-train">
+  <div class="section">
+    <div class="section-header"><div class="section-title"><span class="dot-emoji"><i class="bi bi-cpu"></i></span>训练任务</div>
+      <span style="font-size:11px;color:var(--text-t)">读 train-status.json / train-health.json（训练终态自动落盘刷新）</span>
+    </div>
+    <div class="section-body">
+      <div class="metrics" style="margin-bottom:12px">
+        <div class="metric-card"><div class="metric-value" id="tr-running">—</div><div class="metric-label">当前在跑</div></div>
+        <div class="metric-card"><div class="metric-value" id="tr-completed">—</div><div class="metric-label">累计完成</div></div>
+        <div class="metric-card"><div class="metric-value" id="tr-failed">—</div><div class="metric-label">失败/取消</div></div>
+        <div class="metric-card"><div class="metric-value" id="tr-success-rate">—</div><div class="metric-label">成功率</div><div class="metric-sub" id="tr-success-sub">train-health.json 口径</div></div>
+      </div>
+      <div id="trainJobsBox"><div class="skeleton" style="height:60px"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================== -->
 <!-- PAGE: 工具箱 -->
 <!-- ================================================== -->
 <div class="page" id="page-resources">
@@ -930,7 +938,7 @@ a:hover{text-decoration:none} /* 全站 hover 无下划线（统一）——按�
   </div>
 
   <div class="section">
-    <div class="section-header"><div class="section-title"><span class="dot-emoji"><i class="bi bi-plug"></i></span>MCP 工具（104 个 · v1.4.9）</div>
+    <div class="section-header"><div class="section-title"><span class="dot-emoji"><i class="bi bi-plug"></i></span>MCP 工具（104 个）</div>
       <a href="https://github.com/KongFangXun/sofagent/blob/main/engine/mcp/src/tool-registry.ts" target="_blank" class="btn btn-outline">tool-registry →</a>
     </div>
     <div class="section-body">
@@ -1230,6 +1238,7 @@ function goPage(name){
   if(name==='resources'){loadPipelineGraph();}
   if(name==='ontology'){loadOntologyData();loadGraphView();}
   if(name==='fde'){loadFdeWorkflowData();loadFdeSelfGraph();}
+  if(name==='train') loadTrainData('');
   if(name==='knowledge') loadKnowledgeData();
   if(name==='resources'){renderMcpList();renderSkillChain();loadForgeData();loadReleaseGateData();}
 }
@@ -1275,7 +1284,6 @@ async function loadLiveData(){
       updateDataStatus(true);
       document.getElementById('lastRefresh').textContent=fmtUpdatedAt();
       renderSummaryData(summary);
-      loadTrainData('');
       loadWorklogData();
       return;
     }
@@ -1296,7 +1304,6 @@ async function loadLiveData(){
     updateDataStatus(true);
     var records=parseJSONL(auditHistory);
     processAuditData(records);
-    loadTrainData(dataRoot);
     var dh=await tryFetch(dataRoot+'/dashboard/daemon-health.json');
     if(dh)try{daemonHealth=JSON.parse(dh)}catch(e){}
     // data-sovereignty 按 年/月/*.jsonl 分目录，取最近的
@@ -1321,7 +1328,6 @@ async function loadLiveData(){
     liveDataConnected=false;
     updateDataStatus(false);
     loadSampleData();
-    loadTrainData('');
     loadWorklogData();
   }
 
@@ -2705,8 +2711,11 @@ loadLiveData();
 loadStarCount();
 // 工作记录默认选中「概况」：显式初始化（不依赖 HTML 静态 active，保证刷新后必选中）
 wlTab('overview');
-// 固定 5s 自动刷新（不再提供间隔选择）
-refreshTimer=setInterval(loadLiveData,5000);
+// 固定 5s 自动刷新（不再提供间隔选择）——按当前页分发：训练页只刷训练数据，其余页刷驾驶舱
+refreshTimer=setInterval(function(){
+  if(window.__currentPage==='train'){loadTrainData('');return}
+  loadLiveData();
+},5000);
 </script>
 </body>
 </html>
