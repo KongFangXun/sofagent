@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
 # bootstrap.sh · sofagent 一行安装入口（装在企业跑 AI 节点的设备上）
 # 窗口态纪律：钉值维持上一已发版 tag 值（与 INSTALL_URL 同 tag 自洽），CHANGELOG ⏳ 待发版标注 + checklist 维度 130 窗口态分支消红；v1.4.9 哈希在阶段九打 tag 时回填。install.sh 现约 1601 行。
-# 用法：curl -fsSL https://raw.githubusercontent.com/KongFangXun/sofagent/refs/tags/v1.4.8/bootstrap.sh -o bootstrap.sh && bash bootstrap.sh
+# 用法：curl -fsSL https://raw.githubusercontent.com/KongFangXun/sofagent/refs/tags/v1.4.9/bootstrap.sh -o bootstrap.sh && bash bootstrap.sh
 # 离线：./bootstrap.sh --local /path/to/install.sh
 # 透传：curl ... | bash -s -- --base-only
 set -euo pipefail
 # ERR trap 品牌兜底：崩溃时用户看到产品信息而非裸 bash 报错（v1.3.2 P0-B1/P2-37）
 trap 'echo "❌ sofagent bootstrap 失败（exit $?）——请截图此信息到 GitHub Issues（github.com/KongFangXun/sofagent/issues）"' ERR
-# v1.3.5 #31: 锁定已发布 tag（当前 refs/tags/v1.4.8）——main 浮动导致装到的版本不可复现；
+# v1.3.5 #31: 锁定已发布 tag（当前 refs/tags/v1.4.9）——main 浮动导致装到的版本不可复现；
 #   升级时改此 tag 与 README 安装段同步。
-INSTALL_URL="https://raw.githubusercontent.com/KongFangXun/sofagent/refs/tags/v1.4.8/install.sh"
+INSTALL_URL="https://raw.githubusercontent.com/KongFangXun/sofagent/refs/tags/v1.4.9/install.sh"
 # ════════════════════════════════════════════════════════════════════════
 # v1.4.3 P2-f（F-07）：下载完整性校验（curl | bash 信任模型加固）
 # install.sh 是将被 bash 直接执行的代码——下载通道（HTTPS 上的 raw.githubusercontent）
@@ -24,15 +24,15 @@ INSTALL_URL="https://raw.githubusercontent.com/KongFangXun/sofagent/refs/tags/v1
 #      机器校验见 tools/check/check-version.sh 第 20 项（lib 哈希逐一对账）。
 #   发布清单同步提醒：docs/changelog/releasing/ 09-tag.md（tag 发布阶段）
 # ════════════════════════════════════════════════════════════════════════
-INSTALL_SHA256="fbb6b4151490dd57cf9e87b571e734c22284a6c76ceec5684d4d92a3d9b4e38e"  # v1.4.7 tag:install.sh（v1.4.8 已回填：与 v1.4.8 tag 同 commit，避免破坏 check-version 20b 的 tag 对账口径）
+INSTALL_SHA256="609a6bb2d00387dd00e11ade39e004ad3ca7c0f7a5ef1a9ade5f627e45052a5b"  # v1.4.9 tag:install.sh（与 URL 同 tag 自洽，check-version 20b tag 对账口径）
 # v1.3.8 P0-1 兜底：install.sh 依赖同目录 engine/scripts/lib/ 下 6 个模块——
 #   此前 bootstrap 只下载孤立 install.sh，source 立即失败（安装链全断根因）。
 #   现在同时下载 lib 全部文件到同目录结构，让 install.sh 的 source 可达。
-LIB_BASE_URL="https://raw.githubusercontent.com/KongFangXun/sofagent/refs/tags/v1.4.8/engine/scripts/lib"
+LIB_BASE_URL="https://raw.githubusercontent.com/KongFangXun/sofagent/refs/tags/v1.4.9/engine/scripts/lib"
 LIB_FILES="platform-detect.sh file-deploy.sh daemon-register.sh post-install.sh daemon-lib.sh config.sh"
-# lib 文件 sha256（v1.4.5 tag 起未改动沿用；与 LIB_FILES 顺序一一对应）
+# lib 文件 sha256（与 LIB_FILES 顺序一一对应；file-deploy.sh 为 v1.4.9 批次改动，其余 5 个沿用 v1.4.5 tag 起的值）
 LIB_SHA256S="3e9e4c30c2c26b57601e3e39c003e722eb522fae690cdd74311e2ceff3740809
-85c825c65aa04abc69022697943270b4bfae2c2beabf52b32fcc13e1c98ff82a
+27d3a19365a9657266f643b2fc31b3d1a58603bd3f5585259b13f503815bff4c
 e83cf4dc60d929ed7c085b7d5d93beb37e781fd5085eaa1a138d298eb37933b3
 ac9d812aae63aca6ce8cb4cb2ba4f1fd2507dc1cdd919c0ec141782167c504e1
 bec93fd676d2524b11abfb44e1ffa4cb6dd536d13e3a05421aebee5c6bcf6fc2
