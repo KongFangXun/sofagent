@@ -467,7 +467,12 @@ done < <(find "${PROJECT_ROOT}" \
   -not -path '*/.sofagent/*' \
   -not -path '*/.workbuddy/*' \
   -not -path '*/engine/daemon/data/*' \
+  -not -path '*/vendor/*/upstream/*' \
   -type f)
+# 🔴 `vendor/*/upstream/` 豁免（2026-09 复核查实）：该面是**上游原样 vendored**的第三方 skill
+# （pin/哈希/本地偏差见同级 PROVENANCE.md），上游 SKILL.md 无 `version:` frontmatter 属其固有格式，
+# 且不随本仓 SSOT 版本走——纳入判定只会产生每版固定误报（曾连续报 5 处「无 version 字段」）。
+# 只豁免 upstream 子目录：vendor 下的本地适配层文件仍受检。
 echo ""
 
 # ── 9. 检查 package.json SSOT 格式（必须 3 段）─────────────────
