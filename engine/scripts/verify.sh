@@ -463,13 +463,13 @@ else
       for log_file in $RECENT_LOGS; do
         [ -f "$log_file" ] || continue
         LOG_CONTENT=$(cat "$log_file" 2>/dev/null || true)
-        if echo "$LOG_CONTENT" | grep -q "sofagent-load-chain"; then
+        if [[ "$LOG_CONTENT" == *"sofagent-load-chain"* ]]; then
           HOOK_TRIGGERED=1
         fi
-        if echo "$LOG_CONTENT" | grep -q "think\\.md"; then
+        if grep -q "think\\.md" <<< "$LOG_CONTENT"; then
           LAYER2_FOUND=1
         fi
-        if echo "$LOG_CONTENT" | grep -q "rules\\.md"; then
+        if grep -q "rules\\.md" <<< "$LOG_CONTENT"; then
           LAYER3_FOUND=1
         fi
         [ "$HOOK_TRIGGERED" = "1" ] && [ "$LAYER2_FOUND" = "1" ] && [ "$LAYER3_FOUND" = "1" ] && break
@@ -520,7 +520,7 @@ _section "平台兼容性"
 if command -v openclaw &>/dev/null; then
   OC_PATH=$(command -v openclaw)
   OC_VER=$(openclaw --version 2>/dev/null || echo "?")
-  if echo "$OC_PATH" | grep -q ".workbuddy"; then
+  if grep -q ".workbuddy" <<< "$OC_PATH"; then
     check_pass "OpenClaw v${OC_VER}（WorkBuddy 内嵌）"
   else
     check_pass "OpenClaw 已安装: v${OC_VER}"
@@ -715,14 +715,14 @@ _test_sanitize() {
 }
 
 SANITY_SK=$(_test_sanitize "sk-***REDACTED***")
-if echo "$SANITY_SK" | grep -q "REDACTED"; then
+if [[ "$SANITY_SK" == *REDACTED* ]]; then
   check_pass "脱敏: API Key 打码正常 (sk- → sk-***REDACTED***)"
 else
   check_fail "脱敏: API Key 未打码"
 fi
 
 SANITY_PWD=$(_test_sanitize "password=mysecret123")
-if echo "$SANITY_PWD" | grep -q "REDACTED" && ! echo "$SANITY_PWD" | grep -q "mysecret123"; then
+if [[ "$SANITY_PWD" == *REDACTED* ]] && [[ "$SANITY_PWD" != *mysecret123* ]]; then
   check_pass "脱敏: 凭证打码正常 (password= → password=***REDACTED***)"
 else
   check_fail "脱敏: 凭证未打码"
@@ -730,7 +730,7 @@ fi
 
 # 手机号脱敏测试（v0.71 P0 修复）
 SANITY_PHONE=$(_test_sanitize "用户电话 13812345678 请回拨")
-if echo "$SANITY_PHONE" | grep -q "PHONE-REDACTED" && ! echo "$SANITY_PHONE" | grep -q "13812345678"; then
+if [[ "$SANITY_PHONE" == *PHONE-REDACTED* ]] && [[ "$SANITY_PHONE" != *13812345678* ]]; then
   check_pass "脱敏: 手机号打码正常 (1[3-9]xxxxxxxxx → [PHONE-REDACTED])"
 else
   check_fail "脱敏: 手机号未打码"
@@ -738,7 +738,7 @@ fi
 
 # 手机号误伤测试——11 位订单号不应被打码
 SANITY_NO_FALSE_POSITIVE=$(_test_sanitize "订单号 28012345678 已生成")
-if ! echo "$SANITY_NO_FALSE_POSITIVE" | grep -q "PHONE-REDACTED"; then
+if [[ "$SANITY_NO_FALSE_POSITIVE" != *PHONE-REDACTED* ]]; then
   check_pass "脱敏: 11 位订单号（非 1[3-9] 开头）未被误伤"
 else
   check_warn "脱敏: 11 位订单号被误伤（可能误打码）"
@@ -746,7 +746,7 @@ fi
 
 # 词边界防误伤测试——monkey=foo 不应被打码
 SANITY_KEYWORD=$(_test_sanitize "monkey=foo 这是任务名")
-if ! echo "$SANITY_KEYWORD" | grep -q "REDACTED"; then
+if [[ "$SANITY_KEYWORD" != *REDACTED* ]]; then
   check_pass "脱敏: 词边界保护（monkey=foo 不被误伤）"
 else
   check_warn "脱敏: 词边界失效（monkey=foo 被误伤）"
@@ -765,7 +765,7 @@ if [ -f "$CLEANUP_SCRIPT" ] && [ -x "$CLEANUP_SCRIPT" ]; then
   check_pass "cleanup.sh 存在且可执行"
   # 检查关键参数（注意：grep -q 在 pipefail 下会因 SIGPIPE 误报，用临时变量避免）
   CLEANUP_HELP=$(bash "$CLEANUP_SCRIPT" --help 2>/dev/null || true)
-  if echo "$CLEANUP_HELP" | grep -q "dry-run"; then
+  if [[ "$CLEANUP_HELP" == *dry-run* ]]; then
     check_pass "cleanup.sh --dry-run 参数可用"
   else
     check_warn "cleanup.sh --dry-run 参数不可用"
@@ -780,7 +780,7 @@ if [ -f "$AUDIT_SCRIPT_VERIFY" ] && [ -x "$AUDIT_SCRIPT_VERIFY" ]; then
   check_pass "audit.sh 存在且可执行"
   # 检查关键参数（同上，避免 pipefail + grep -q 的 SIGPIPE 误报）
   AUDIT_HELP=$(bash "$AUDIT_SCRIPT_VERIFY" --help 2>/dev/null || true)
-  if echo "$AUDIT_HELP" | grep -q "operation"; then
+  if [[ "$AUDIT_HELP" == *operation* ]]; then
     check_pass "audit.sh --operation 参数可用"
   else
     check_warn "audit.sh --operation 参数不可用"

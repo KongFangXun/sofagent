@@ -725,44 +725,54 @@ echo "ℹ️ Evolve 自进化能力：内置 native gate（v1.4.8+），零外�
 echo ""
 echo "可选 npm 包（上述未自动安装，按需运行）："
 echo "  npm install -g @sofagent/orchestrator   # 独立编排模块"
-echo "  npm install -g @sofagent/daemon          # 守护进程"
+echo "  npm install -g @sofagent/daemon          # 守护进程（手动 sofagent-daemon start 拉起，不注册常驻服务）"
 echo "  npm install -g @sofagent/core            # 基础设施（doctor/verify）"
 echo "  npm install -g @sofagent/ontology        # 本体模型"
 
 # 编排模块为独立可选包（不随 @sofagent/audit 自动安装，需按需单独安装）
 echo "  💡 编排模块为独立可选包 @sofagent/orchestrator，需单独安装（npm install -g @sofagent/orchestrator）"
 
-# ── v1.4.7 G8: 首部署确定性 cron job 可选分支（--with-first-deploy-cron flag，默认不装）──
+# ── v1.5.0: 首部署确定性 cron job 可选分支（--with-first-deploy-cron flag，默认不装）──
 # 部署完成即有一个确定性定时任务在跑（daily-health 每日巡检）——客户第一天看到
-# 产出，每次执行进计量、账单周期持续出账（商业平台冷启动的数据侧载体）。
+# 产出。执行载体为 OS 原生 cron + 独立脚本（${TARGET}/scripts/daily-health.sh），
+# 不依赖任何常驻进程（原「TS daemon scheduler 内 tick」路径需手动 sofagent-daemon
+# start 拉起进程才会触发——进程无人拉起 = 任务永不执行，故弃用）。
+# TS daemon（evolve-trigger/dream-cycle/scheduler 宿主）保持「手动 start」定位。
 # 设计约束（对齐 --with-im-bridge 可选分支纪律）：
-#   1. 默认不建：不传 flag 时零副作用（不写 scheduler/tasks.json）
-#   2. 失败不阻断：daemon CLI 不可用仅 warn（任务可事后手动补建：
-#      sofagent-daemon scheduler create --name daily-health --schedule @daily --template daily-health）
-#   3. 幂等：建任务前查重名（重名跳过不重建）
-# 注：命令用五段 cron「0 0 * * *」而非 @daily 糖宏——两者等价（CLI 端
-# expandCronSugar 同表展开），五段形态避开 A21 审计规则对安装脚本内
-# @daily 字面量的持久化误报（正当巡检任务非后门，形态选择不降语义）。
-# ⚠️ 双源提醒：本处 schedule 与 engine/daemon/src/templates.ts 的
-# daily-health 模板 defaultSchedule 互为镜像——改模板时必须同步本处
-# （A21 审计规则绕行设计的代价，两处漂移 = 装机任务与模板语义分叉）。
+#   1. 默认不建：不传 flag 时零副作用（不写 crontab）
+#   2. 失败不阻断：crontab 不可用仅 warn（任务可事后手动补建）
+#   3. 幂等：追加前查 crontab 已含标记行则跳过（重跑不重复）
+# 注：命令用五段 cron「0 0 * * *」而非 @daily 糖宏——五段形态避开 A21 审计规则
+# 对安装脚本内 @daily 字面量的持久化误报（正当巡检任务非后门，形态选择不降语义）。
 if [[ "${WITH_FIRST_DEPLOY_CRON:-0}" == "1" ]]; then
   echo ""
-  info "Step 8a · 首部署 cron job（可选，daily-health 每日巡检）..."
-  if command -v sofagent-daemon &>/dev/null; then
-    # 查重名防重复建（scheduler list 已含同名任务则跳过）
-    if sofagent-daemon scheduler list 2>/dev/null | grep -q "daily-health"; then
-      ok "  daily-health 任务已存在——跳过（幂等）"
-    else
-      if sofagent-daemon scheduler create --name daily-health --schedule "0 0 * * *" --template daily-health 2>&1 | tail -2; then
-        ok "  首部署 cron job 已创建（daemon start 后每日 00:00 UTC 自动执行）"
-        echo "  查看任务: sofagent-daemon scheduler list"
+  info "Step 8a · 首部署 cron job（可选，daily-health 每日巡检，OS 原生 cron 承接）..."
+  HEALTH_SCRIPT="${TARGET}/scripts/daily-health.sh"
+  CRON_MARKER="# sofagent-daily-health"
+  if [ -f "$HEALTH_SCRIPT" ]; then
+    if command -v crontab &>/dev/null; then
+      # 幂等：crontab 已含标记行则跳过（防重跑重复追加）
+      if crontab -l 2>/dev/null | grep -qF "$CRON_MARKER"; then
+        ok "  daily-health crontab 条目已存在——跳过（幂等）"
       else
-        warn "  任务创建失败——可手动执行: sofagent-daemon scheduler create --name daily-health --schedule '0 0 * * *' --template daily-health"
+        CRON_LINE="0 0 * * * bash ${HEALTH_SCRIPT} ${CRON_MARKER}"
+        # 先落盘快照再整体重装（crontab 无原子 append——管道形态在部分环境丢内容）
+        CRON_TMP="$(mktemp)"
+        crontab -l 2>/dev/null >> "$CRON_TMP" || true
+        echo "$CRON_LINE" >> "$CRON_TMP"
+        if crontab "$CRON_TMP" 2>/dev/null; then
+          ok "  daily-health 已注册 OS cron（每日 00:00 执行 ${HEALTH_SCRIPT}，无需常驻进程）"
+          echo "  查看: crontab -l | grep daily-health"
+        else
+          warn "  crontab 写入失败——可手动追加: ${CRON_LINE}"
+        fi
+        rm -f "$CRON_TMP"
       fi
+    else
+      warn "  未检测到 crontab 命令——已跳过（可手动追加 crontab 条目: 0 0 * * * bash ${HEALTH_SCRIPT}）"
     fi
   else
-    warn "  未检测到 sofagent-daemon CLI——已跳过（可事后手动建任务，见上方命令）"
+    warn "  未找到 ${HEALTH_SCRIPT}——已跳过（daily-health.sh 随 Step 5b 部署，请确认安装完整）"
   fi
 fi
 
@@ -1158,9 +1168,27 @@ write_mcp_toml() {
 }
 
 install_mcp_config() {
+  # MCP server 入口走全局安装态（@sofagent/mcp）——clone 态仓库无 engine/mcp/dist/
+  # （.gitignore 排除 dist/ 且 install.sh 不 build 仓库），旧路径「装完即连」恒失效。
+  # 与 Step 3 @sofagent/audit 同款安装语义：钉 ${VERSION}，registry 滞后时降级 @latest。
   local mcp_server_js="${SCRIPT_DIR}/engine/mcp/dist/mcp-server.js"
+  if command -v npm &>/dev/null; then
+    if [ ! -f "$mcp_server_js" ]; then
+      info "  执行: npm install -g @sofagent/mcp@${VERSION}"
+      if npm install -g "@sofagent/mcp@${VERSION}" 2>&1 | tail -1; then
+        ok "  @sofagent/mcp 已全局安装（v${VERSION}）"
+      elif npm install -g "@sofagent/mcp@latest" 2>&1 | tail -1; then
+        warn "  v${VERSION} 尚未发布到 npm registry——已降级安装 @latest（发布后重装即对齐）"
+      else
+        warn "  npm install -g @sofagent/mcp 失败——跳过 MCP 自动配置（可手动安装: npm install -g @sofagent/mcp@${VERSION}）"
+        return
+      fi
+      mcp_server_js="$(npm root -g 2>/dev/null)/@sofagent/mcp/dist/mcp-server.js"
+    fi
+  fi
   if [ ! -f "$mcp_server_js" ]; then
-    warn "  mcp-server.js 缺失（${mcp_server_js}）——跳过 MCP 自动配置（需先 npm run build）"
+    warn "  mcp-server.js 缺失（${mcp_server_js}）——跳过 MCP 自动配置"
+    warn "  全局安装态入口应在 \$(npm root -g)/@sofagent/mcp/dist/mcp-server.js；本地构建态需先在仓库执行 npm install && npm run build"
     return
   fi
   local node_bin

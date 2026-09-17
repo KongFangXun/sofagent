@@ -234,7 +234,7 @@ deploy_scripts() {
   [ "${LITE_MODE:-0}" = "1" ] && { info "Lite 模式：跳过配套脚本 + 数据目录"; return 0; }
   info "Step 5b · 部署配套脚本 + 数据目录 → $TARGET"
   local SCRIPTS_DST="${TARGET}/scripts"; mkdir -p "$SCRIPTS_DST"; local script src dst
-  for script in task-record.sh cleanup.sh audit.sh; do
+  for script in task-record.sh cleanup.sh audit.sh daily-health.sh; do
     src="${SCRIPT_DIR}/engine/scripts/${script}"; dst="${SCRIPTS_DST}/${script}"
     if [ -f "$src" ]; then cp "$src" "$dst"; chmod +x "$dst"; ok "配套脚本已部署: $dst"
     else warn "找不到 ${script}，跳过"; fi

@@ -76,13 +76,18 @@ SOFAGENT_DATA="$(_sofa_find_data_dir)"
 export SOFAGENT_DATA
 
 # ── 定位 fde.md ──
-# 优先级：当前工作目录、脚本相对路径、OPENCLAW_DIR
+# 候选链按真实存在概率排序，每个候选标注对应安装态；链首命中即返回：
+#   ① OpenClaw 安装态（--platform openclaw 部署目标）
+#   ② 平台无关安装态（默认安装只写 ~/.sofagent/）
+#   ③ 源码仓态（宪法内联在 SKILL.md，fde.md 不存在时以内联宪法文件定位）
+#   ④ 其余历史部署位置保留兜底
 _find_rules() {
   local candidate
   for candidate in \
-    "${PWD}/SKILL/harness/data/fde.md" \
-    "$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." 2>/dev/null && pwd)/SKILL/harness/data/fde.md" \
     "${OPENCLAW_STATE_DIR:-$HOME/.openclaw}/skills/sofagent/fde.md" \
+    "$HOME/.sofagent/skills/sofagent/fde.md" \
+    "${PWD}/SKILL/SKILL.md" \
+    "$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." 2>/dev/null && pwd)/SKILL/SKILL.md" \
     "${OPENCLAW_STATE_DIR:-$HOME/.openclaw}/fde.md" \
     "$HOME/.openclaw/fde.md" \
     "$HOME/.openclaw/skills/sofagent/constitution/fde.md" \
