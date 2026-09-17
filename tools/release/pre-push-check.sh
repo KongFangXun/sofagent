@@ -209,6 +209,9 @@ fi
 
 # ════════════════════════════════════════
 # 2b. 零接线导出门禁（check-unwired-exports.sh · v1.4.5 T11/A2）
+#     发版闸门双跑：存量 SYMBOLS 表 + --since <上一 tag> 版本 diff 驱动
+#     （新交付 @public 导出必须逐个判定接线或显式 SDK-face 白名单——
+#      防接线债按版本复利累积）。上一 tag 自动探测：git describe --abbrev=0。
 # ════════════════════════════════════════
 if [ "$MINIMAL" = false ]; then
   echo -e "\n${BOLD}── 2b. 零接线导出门禁 ──${NC}"
@@ -217,6 +220,17 @@ if [ "$MINIMAL" = false ]; then
   else
     check_fail "check-unwired-exports.sh 发现零接线导出"
     bash tools/check/check-unwired-exports.sh 2>&1 | grep "✗" | head -5 | sed 's/^/    /'
+  fi
+  PREV_TAG_AUTO=$(git describe --abbrev=0 --tags 2>/dev/null || true)
+  if [ -n "$PREV_TAG_AUTO" ]; then
+    if bash tools/check/check-unwired-exports.sh --since "$PREV_TAG_AUTO" >/dev/null 2>&1; then
+      check_pass "check-unwired-exports.sh --since ${PREV_TAG_AUTO}（版本 diff 驱动：新 @public 导出全判定）"
+    else
+      check_fail "check-unwired-exports.sh --since ${PREV_TAG_AUTO} 发现零接线新增导出"
+      bash tools/check/check-unwired-exports.sh --since "$PREV_TAG_AUTO" 2>&1 | grep "✗" | head -5 | sed 's/^/    /'
+    fi
+  else
+    check_pass "check-unwired-exports.sh --since 跳过（仓库无历史 tag——首版场景）"
   fi
 fi
 
@@ -536,7 +550,7 @@ echo -e "\n${BOLD}── 9. Tag message 校验 ──${NC}"
 SSOT_VERSION=$(node -e "console.log(require('./package.json').version)" 2>/dev/null) || true
 if [ -n "$SSOT_VERSION" ] && git tag -l "v${SSOT_VERSION}" | grep -q "v${SSOT_VERSION}" 2>/dev/null; then
   TAG_MSG=$(git tag -l "v${SSOT_VERSION}" --format='%(subject)' 2>/dev/null || true)
-  if echo "$TAG_MSG" | grep -q "${SSOT_VERSION}"; then
+  if grep -q "${SSOT_VERSION}" <<< "$TAG_MSG"; then
     check_pass "Tag v${SSOT_VERSION} message 含版本号"
   else
     check_fail "Tag v${SSOT_VERSION} message 与版本号不一致（message: \"${TAG_MSG}\"）"
@@ -552,7 +566,7 @@ if [ -n "$SSOT_VERSION" ] && git tag -l "v${SSOT_VERSION}" | grep -q "v${SSOT_VE
   #   pre-push-check 的职责是预防未来，不是追溯历史。历史污点在 docs/LIMITATIONS.md 标注即可。
   TAG_COMMIT_MSG=$(git log -1 "v${SSOT_VERSION}^{commit}" --format=%s 2>/dev/null || true)
   if [ -n "$TAG_COMMIT_MSG" ]; then
-    if echo "$TAG_COMMIT_MSG" | grep -q "${SSOT_VERSION}"; then
+    if grep -q "${SSOT_VERSION}" <<< "$TAG_COMMIT_MSG"; then
       check_pass "Tag v${SSOT_VERSION} 指向的 commit message 含版本号"
     else
       # 判断是历史污点还是当前发版的问题：tag 指向的 commit 是否等于 HEAD
@@ -583,7 +597,7 @@ if [ -n "$SSOT_VERSION" ] && git tag -l "v${SSOT_VERSION}" | grep -q "v${SSOT_VE
     HISTORY_TAG_TOTAL=$((HISTORY_TAG_TOTAL + 1))
     hv=$(echo "$t" | sed 's/^v//')
     hmsg=$(git log -1 "$t^{commit}" --format=%s 2>/dev/null || true)
-    if echo "$hmsg" | grep -q "$hv"; then
+    if grep -q "$hv" <<< "$hmsg"; then
       : # commit message 含版本号，正常
     else
       # 历史 commit message 不可改（rebase 重写会级联影响 50+ tag）
@@ -646,9 +660,9 @@ if (cycles.length > 0) {
   console.log("OK");
 }
 ' 2>&1)
-if echo "$CYCLE_CHECK" | grep -q "^OK$"; then
+if grep -q "^OK$" <<< "$CYCLE_CHECK"; then
   check_pass "依赖图无循环"
-elif echo "$CYCLE_CHECK" | grep -q "^CYCLE:"; then
+elif grep -q "^CYCLE:" <<< "$CYCLE_CHECK"; then
   check_fail "依赖图发现循环：$(echo "$CYCLE_CHECK" | sed 's/CYCLE://')"
 else
   check_warn "依赖图循环检测执行异常（跳过）"

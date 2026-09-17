@@ -201,7 +201,7 @@ else
 fi
 
 # ── 断言 ③：homepage https ──
-if echo "$GH_HOME" | grep -q '^http://'; then
+if grep -q '^http://' <<< "$GH_HOME"; then
   ASSERTS=$((ASSERTS + 1)); echo "  ❌ [homepage] 使用 http 非 https：${GH_HOME}"
   echo "      修法：gh repo edit --homepage（https 版）"
   FAILS=$((FAILS + 1))

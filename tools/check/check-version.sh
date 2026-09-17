@@ -161,8 +161,8 @@ extract_version() {
 
 # ── rhythm 段读取辅助（v1.4.8 第七章/第〇批）─────────────────────
 # tools/check/dependency-direction.yml 的 rhythm 段 = 版本节奏 SSOT（sync/independent/detached）。
-# 读 YAML 沿用本仓既有手法：node + 根 node_modules/js-yaml（见 tools/check/dependency-direction.sh），
-# 不引入 yq/jq 等外部依赖、不新增解析器。
+# 读 YAML 的依赖事实：js-yaml 经 @sofagent/audit 依赖链进入根 node_modules；本脚本直接
+# require，缺依赖时报解析器缺失（环境缺 node_modules，非 YAML 配置问题）。
 DD_YML="${PROJECT_ROOT}/tools/check/dependency-direction.yml"
 
 # rhythm_dump → 逐行打印 CSV 风格行（制表符分隔）：
@@ -170,6 +170,21 @@ DD_YML="${PROJECT_ROOT}/tools/check/dependency-direction.yml"
 #   "GLOB<TAB>段名<TAB>路径glob" —— independent / detached 段路径 glob（§9e 覆盖判定用）
 # 包路径解析：优先取 packages 段的 path（load-chain → engine/hooks/sofagent-load-chain），
 # 缺省回退 "engine/<包名>"（umbrella）。SSOT 缺失/解析失败时输出为空，由调用方 fail-loud。
+# 解析器可用性一次性预检（顶层执行）：$(rhythm_dump) 内的 exit 只退出子 shell
+# 杀不死主流程，会继续走到「段缺失」误导行——故在首次使用前于顶层探测，
+# 命中哨兵即整脚本退出，只报「环境缺依赖」一行。
+_YAML_PROBE_ERR=$(node -e '
+  try { require("js-yaml"); }
+  catch {
+    try { require(require("path").join(process.argv[1], "node_modules/js-yaml")); }
+    catch { process.stderr.write("SOFAGENT_YAML_PARSER_MISSING"); process.exit(3); }
+  }
+' "${PROJECT_ROOT}" 2>&1 1>/dev/null) || true
+if [[ "${_YAML_PROBE_ERR}" == *SOFAGENT_YAML_PARSER_MISSING* ]]; then
+  echo "✗ js-yaml 不可用——本脚本的 rhythm 段解析依赖根 node_modules/js-yaml，先在仓库根执行 npm install（环境缺依赖，非 YAML 配置问题）" >&2
+  exit 1
+fi
+
 rhythm_dump() {
   node -e '
     const fs = require("fs");
@@ -494,7 +509,7 @@ echo ""
 #   v1.4.8 第 7 批 train 拆包后 §1/§2 的硬编码循环为 **12 项**（+ train）。
 #   rhythm.sync 现为 15 包 = 原 11 包 + rules（原漏登记）+ umbrella（第 13 个 engine 包）
 #   + engine/hooks/sofagent-load-chain（build 序列末位）+ train（第 7 批拆包），五者实测同为 SSOT 版本。
-# 覆盖不变量（rhythm ⊇ workspace 29 项）由 §9e 断言；清单声明了却不存在的包在此 fail-loud。
+# 覆盖不变量（rhythm ⊇ workspace 26 项）由 §9e 断言；清单声明了却不存在的包在此 fail-loud。
 echo -e "${BOLD}── [9/14] 子包版本号一致性 ──${NC}"
 RHYTHM_SYNC_9B="$(rhythm_dump | awk -F'\t' '$1=="SYNC"{print $2"\t"$3}')"
 if [[ -z "${RHYTHM_SYNC_9B}" ]]; then
@@ -556,7 +571,7 @@ fi
 echo ""
 
 # ── 9e. rhythm 段覆盖全部 workspace 项（防漏登记 · v1.4.8 第七章/第〇批）──
-# 不变量：rhythm.sync ∪ independent ∪ detached 必须覆盖**全部 workspace 项**（实为 29 项）。
+# 不变量：rhythm.sync ∪ independent ∪ detached 必须覆盖**全部 workspace 项**（实为 26 项）。
 # 枚举源：package.json 的 workspaces 字段——**不得**用 `ls -d engine/*/`
 #   （那只得 19 个目录，漏 10 项：engine/hooks/sofagent-load-chain + 插件家族更深一层目录）。
 # 命中规则：sync 段按「包路径精确相等」命中；independent / detached 段按「路径 glob」命中。
@@ -1092,7 +1107,7 @@ if [[ -n "${ROADMAP_HEADER}" ]]; then
     [[ -z "${kw}" ]] && continue
     # 跳过太短的关键词（≤2 字符）
     [[ ${#kw} -lt 3 ]] && continue
-    if echo "${CHANGELOG_TITLE}" | grep -qF "${kw}"; then
+    if grep -qF "${kw}" <<< "${CHANGELOG_TITLE}"; then
       ROADMAP_WARN=false
       break
     fi
@@ -1100,7 +1115,7 @@ if [[ -n "${ROADMAP_HEADER}" ]]; then
   if ${ROADMAP_WARN}; then
     # 尝试更宽松匹配：取核心名词
     for kw in "产品叙事" "USB" "A/B" "控制图" "BugFix"; do
-      if echo "${ROADMAP_HEADER}" | grep -qF "${kw}" && echo "${CHANGELOG_TITLE}" | grep -qF "${kw}"; then
+      if grep -qF "${kw}" <<< "${ROADMAP_HEADER}" && grep -qF "${kw}" <<< "${CHANGELOG_TITLE}"; then
         ROADMAP_WARN=false
         break
       fi
@@ -1137,7 +1152,7 @@ if [[ -f "${WIKI_FILE}" ]]; then
     found_ver=$(echo "$found_vers" | sed 's/^v//')
     # 跳过旧版本历史叙述（如"v1.2.5 引入了..."）
     # 只检查状态表行（含"当前"或含"状态"或含"版本"关键字的行）
-    if echo "$line_content" | grep -qE '当前|状态|版本'; then
+    if grep -qE '当前|状态|版本' <<< "$line_content"; then
       # v1.3.8 P1-C：完整三段比较（此前只比前两段——v1.3.7 vs v1.3.8 同为 1.3，
       # 补丁号漂移漏检；SSOT 是三段全格式，直接全量比对）
       if [[ "$found_ver" != "$SSOT_VERSION" ]]; then

@@ -63,7 +63,7 @@ for _doc in $DOC_SOURCES; do
   while IFS= read -r _p; do
     [ -z "$_p" ] && continue
     # 跳过通配/参数化/明显非路径
-    echo "$_p" | grep -qE '[*?{}<>\$]|^/' && continue
+    grep -qE '[*?{}<>\$]|^/' <<< "$_p" && continue
     # 跳过「历史教训正文」里的不存在路径示例——上下文带「不存在/误指向/断链」字样的引用是
     # 在讲这个路径曾经错了，不是活引用（fresh-eyes-review 教训段大量此形态）
     if [ "$_doc" = "playbook/fresh-eyes-review.md" ]; then
@@ -137,7 +137,7 @@ EOF
 BUMP_RANGE=$(sed -n '/^# 替换范围/,/^# 不处理/p' "$BUMP" | grep -oE '[0-9]+\. .+' || true)
 STRUCT_GAP=0
 while IFS= read -r _line; do
-  echo "$_line" | grep -qE '^\s*$' && continue
+  grep -qE '^\s*$' <<< "$_line" && continue
   # 提取该替换步骤的核心关键词（如 ".ts 文件"→"ts"、"README badge"→"README"）
   _kw=$(echo "$_line" | grep -oE '(README|SKILL|package\.json|index\.ts|MD 文件|\.ts|\.sh|\.ps1)' | head -1 || echo "")
   [ -z "$_kw" ] && continue
@@ -183,13 +183,13 @@ for _yml in "$CI_DIR"/*.yml "$CI_DIR"/*.yaml; do
   [ -f "$_yml" ] || continue
   while IFS= read -r _p; do
     [ -z "$_p" ] && continue
-    echo "$_p" | grep -qE '[*?{<>\$]|^\$|^https?:' && continue
+    grep -qE '[*?{<>\$]|^\$|^https?:' <<< "$_p" && continue
     [ -e "$_p" ] || { CI_DEAD=$((CI_DEAD + 1)); CI_LIST="${CI_LIST}  $_yml → $_p"$'\n'; }
   done <<EOF
 $(grep -oE '(tools|engine|FORGE|docs)/[a-zA-Z0-9_./-]+(\*[a-zA-Z0-9_./-]*)?' "$_yml" | grep -vE '\$\{' | while IFS= read -r _raw; do
   # glob 前缀引用（daemon* / lib/daemon*）是 CI paths 过滤器合法形态——
   # 验证「* 前的父目录」存在且前缀能匹配到至少一个文件；非 glob 原样通过
-  echo "$_raw" | grep -q '\*' || { echo "$_raw"; continue; }
+  grep -q '\*' <<< "$_raw" || { echo "$_raw"; continue; }
   _prefix="${_raw%%\**}"
   _dir="${_prefix%/*}"
   if [ -d "$_dir" ]; then
@@ -226,7 +226,7 @@ for _sh in $(find tools -name '*.sh' -type f | sort); do
     _var=$(echo "$_assign" | grep -oE '[A-Za-z_][A-Za-z_0-9]*="\$\{[A-Za-z_][A-Za-z_0-9]*\}' | grep -oE '^[A-Za-z_][A-Za-z_0-9]*' || echo "")
     [ -z "$_var" ] && continue
     # 自引用确认：赋值行内出现 "${VAR}（任意后缀）——用 -F 匹配 "${VAR 前缀
-    echo "$_assign" | grep -qF '"${'"${_var}"'}' || continue
+    grep -qF '"${'"${_var}"'}' <<< "$_assign" || continue
     # 在该赋值行之前找初始化：VAR= 赋值行（含缩进/local/declare 前缀）或 ${VAR:= / ${VAR:- 兜底
     _init=$(head -n $((_lineno - 1)) "$_sh" | grep -cE "^[[:space:]]*(local |declare [-a-zA-Z]+ )?${_var}=|\${${_var}:-|\${${_var}:=" || true)
     if [ "${_init:-0}" -eq 0 ]; then
@@ -259,7 +259,7 @@ for _sh in $(find tools engine/scripts -name '*.sh' -type f 2>/dev/null | sort);
     _lineno=$(echo "$_hit" | grep -oE '^[0-9]+' || echo "0")
     [ "$_lineno" = "0" ] && continue
     _body=$(echo "$_hit" | sed 's/^[0-9]*://')
-    echo "$_body" | grep -qF 'env-guaranteed' && continue
+    grep -qF 'env-guaranteed' <<< "$_body" && continue
     # 提取「:-$B}」形态的裸兜底引用（B 直接闭合、无 ${B:- 二层兜底）
     _other=$(echo "$_body" | grep -oE '\$\{[A-Za-z_][A-Za-z_0-9]*:-\$[A-Za-z_][A-Za-z_0-9]*\}' | sed 's/^.*:-\$//;s/}$//' | head -1)
     [ -z "$_other" ] && continue

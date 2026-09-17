@@ -243,11 +243,12 @@ else
   echo "=== 2b. U+FFFD 扫描：活文档零命中 ✓ ==="
 fi
 
-# 2c. 商业名脱敏断言（开源脱敏规范——GrapHub/FlowHub 全词匹配 FAIL；
-#     AIR 不进断言：三字母大写英文语境误报率不可控，维持人工自查）
-LEAK_HITS=$(grep -nwE "GrapHub|FlowHub" README.md README.en.md docs/*.md docs/guides/*.md SKILL/SKILL.md SKILL/rules/*.md FDE/GUIDE.md engine/hooks/*/HOOK.md engine/openclaw-plugins/*/README.md install.sh tools/dashboard/dashboard.html 2>/dev/null || true)
+# 2c. 商业名脱敏断言（开源脱敏规范——GrapHub/FlowHub/AIR 全词匹配 FAIL；
+#     AIR 断言限定文档活文档面：中文文档语境中独立词 AIR 只可能是私有代号泄漏，
+#     源码层（三字母英文常量名）误报不可控、维持人工自查——本断言面为文档白名单）
+LEAK_HITS=$(grep -nwE "GrapHub|FlowHub|AIR" README.md README.en.md docs/*.md docs/guides/*.md SKILL/SKILL.md SKILL/rules/*.md FDE/GUIDE.md engine/hooks/*/HOOK.md engine/openclaw-plugins/*/README.md install.sh tools/dashboard/dashboard.html 2>/dev/null || true)
 if [ -n "$LEAK_HITS" ]; then
-  ASSERTS=$((ASSERTS + 1)); echo "  ❌ 活文档存在商业产品名（GrapHub/FlowHub）——开源脱敏规范违规"
+  ASSERTS=$((ASSERTS + 1)); echo "  ❌ 活文档存在商业产品名（GrapHub/FlowHub/AIR）——开源脱敏规范违规"
   echo "$LEAK_HITS" | head -20
   ERRORS=$((ERRORS + 1))
 else
@@ -415,7 +416,7 @@ LAYER_E=$(find ./docs/guides -name "*.md" -print0 2>/dev/null | xargs -0 wc -l 2
 LAYER_E=${LAYER_E:-0}
 
 # 上限定义
-LIMIT_A=7450  # v1.4.9 G5b/G1 连接器与模板批超标上调（7405>7400+5：AGENTS.md 补 connector_register/connector_list/workflow_export/workflow_import 四表行 + ARCHITECTURE 五域图 C7 连接器注册面条目与 A3 模板面扩容——均系 103 tools 真实落点，按铁律超标上调不删内容）# v1.5.0 命名债务清扫**排期预留余量**（前值 7200 仅余 19 行＝7181/7200，不足以承载改名牵动的 ARCHITECTURE/WIKI/双语 README 同步，及本批 SEAMS.md §2b 宿主 profile 挂载差异 +9 行）——属排期预留非超标上调，实测值见 check-docs 输出 # 前值 7200：seam 契约批新增 engine/dsh-plugins/SEAMS.md（182 行：宿主真实挂载点词汇表 + 非 seam 接入形态登记）+ 9 个 DSH 插件 SKILL.md 措辞同步；LAYER_A 的排除项未含 engine/dsh-plugins/** 故这批内容计入本层——按铁律超标上调不删内容 7020→7200 # v1.4.7 后知识库落盘批（7015>7000+15：ARCHITECTURE 新增「约束同源：一份定义，多端消费」节——四源行业印证+双规则引擎 v1.5.2 内部对位，系知识库 P1 落盘真实内容；另含并行 README 批 +1；按铁律超标上调不删内容） # v1.3.9 行业笔记落盘（6936>6900+36：VALIDATION 新增 4 节——947 测量者转型/红杉专家判断力工程化/Palantir Red Loop+KLMLoop Engineering 四层循环，均系行业印证真实内容；按铁律超标上调不删内容）  # v1.3.9 bugfix 67 项文档批：A 层 6761>6650 正当上调——诚实边界声明（task/logs 明文+单机单用户定位）/术语表 4 条/导读句/论证表等均系独立审查修复要求新增，非冗余；此前 v1.3.8 轮询语义修正 6642>6600 上调至 6650
+LIMIT_A=7470  # v1.4.9 bugfix 批超标上调（7458>7450+8：CHANGELOG 破坏性变更公告块 +5——cleanupOnRecord 移除/canaryRouteRequest 更名双声明、LIMITATIONS 诚实披露 +4——SOFAGENT_CLEANUP_ON_RECORD 移除说明、WIKI 同名导出消歧矩阵 +2、ARCHITECTURE train 独立测试行 +1，均系 bugfix 批正当交付物，按铁律超标上调不删内容）# v1.4.9 G5b/G1 连接器与模板批超标上调（7405>7400+5：AGENTS.md 补 connector_register/connector_list/workflow_export/workflow_import 四表行 + ARCHITECTURE 五域图 C7 连接器注册面条目与 A3 模板面扩容——均系 103 tools 真实落点，按铁律超标上调不删内容）# v1.5.0 命名债务清扫**排期预留余量**（前值 7200 仅余 19 行＝7181/7200，不足以承载改名牵动的 ARCHITECTURE/WIKI/双语 README 同步，及本批 SEAMS.md §2b 宿主 profile 挂载差异 +9 行）——属排期预留非超标上调，实测值见 check-docs 输出 # 前值 7200：seam 契约批新增 engine/dsh-plugins/SEAMS.md（182 行：宿主真实挂载点词汇表 + 非 seam 接入形态登记）+ 9 个 DSH 插件 SKILL.md 措辞同步；LAYER_A 的排除项未含 engine/dsh-plugins/** 故这批内容计入本层——按铁律超标上调不删内容 7020→7200 # v1.4.7 后知识库落盘批（7015>7000+15：ARCHITECTURE 新增「约束同源：一份定义，多端消费」节——四源行业印证+双规则引擎 v1.5.2 内部对位，系知识库 P1 落盘真实内容；另含并行 README 批 +1；按铁律超标上调不删内容） # v1.3.9 行业笔记落盘（6936>6900+36：VALIDATION 新增 4 节——947 测量者转型/红杉专家判断力工程化/Palantir Red Loop+KLMLoop Engineering 四层循环，均系行业印证真实内容；按铁律超标上调不删内容）  # v1.3.9 bugfix 67 项文档批：A 层 6761>6650 正当上调——诚实边界声明（task/logs 明文+单机单用户定位）/术语表 4 条/导读句/论证表等均系独立审查修复要求新增，非冗余；此前 v1.3.8 轮询语义修正 6642>6600 上调至 6650
 LIMIT_B=9500  # v1.3.9 发版后审查批（9434>9400+34：2026-08-22 审查轮新增——VALIDATION 行业笔记 4 节/PHILOSOPHY 拆章节/v1.4.0 排期 4 件收口（MLflow+Browser+联邦E2E+bash3.2）117 行/6+1 文档优化/WIKI 规划目录说明；按铁律超标上调不删内容）；此前 9400（9269>9220+49：A/B/C/D/E 文档批新增 79 行——meta-harness 19/MLflow 13/agentic-browser 18/tools 分目录 22/SKILL.md 工具表+1/banner 重生成说明+6；按铁律超标上调不删内容） ⚠️ 三项修复：checklist 49/94/101 注释 +9 行（run-06 零信任复验——dim49 环境误报标注/dim94 人工核对语义/dim101 LIMIT 解析 bug 根因记录，检查器侧修正非删内容）；此前 rules/ 收敛重构 +26→9190；v1.3.9 阶段十一发布前（9363>9300+63：阶段八文档收尾 B 层新增——ROADMAP v1.3.9 迭代表行+现在在哪段+13 行/HANDBOOK v1.3.9 能力 bullet/README 双语新能力段等；铁律超标上调不删内容）
 # v1.3.7: B 层 8945（交付⑥⑨测试数对账+memory_sync 文档），铁律上调 8940→8950；v1.3.6: 8901（累计 8880→8910→8940）
 LIMIT_E=4000  # v1.2.5: E 层 2905 行（新增 dashboard-html-dev.md 219 行 + enterprise-deploy 扩展），上调 2700→3100 留余量；v1.4.0: multi-device-sync 补远程 API 通道 → 3110>3100，按铁律超标上调不删内容 3100→3200 留余量；v1.4.1: 后训模块地基新增 train-stack.md（双栈契约）+ train-security.md（安全基线），先压缩旧指南 3327→3252 后仍超 → 2026-08-25 拍板上调 3200→3300（不放宽到 3400）；v1.4.2: ARCHITECTURE §二 FORGE 段 193 行迁入 loop-development.md（E 层 3300→3484）→ 按铁律超标上调不删内容 3300→3600；v1.4.3: 新增 github-pr-playbook.md 157 行（三轮实战 15 条 PR 经验沉淀）+ 四指南微调 → 3725>3600，按铁律超标上调不删内容 3600→3800；v1.4.4: github-pr-playbook 台账扩容（在投 20→29 条 + 坑位 2 条 + 流量基线 5.3.1 + 第七节曝光渠道）→ 3811>3800，按铁律超标上调不删内容 3800→3900；v1.4.5: 新增 train-quickstart.md 153 行 → 4047>3900 曾上调 3900→4200，2026-09-05 孔老师拍板回收紧 4200→4000——三大指南纯冗余压缩 101 行（loop-development 坑1/坑3 与 §3.4/§3.6 重复代码块改交叉引用、spawnWorker 全码块收为一行模式引用；fde-activation-chain activate 七步伪码收为签名+步骤摘要；team-collaboration automerge 三段样板收为一句）后 3947/4000，零信息删除；v1.4.6: github-pr-playbook.md 移出公开仓（星数博弈内容对开源形象损害大于收益，四轮审查 P1-⑨ 拍板）→ E 层回落

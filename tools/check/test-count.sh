@@ -231,7 +231,7 @@ while IFS= read -r pkg_dir; do
   files_line=$(echo "$out" | LC_ALL=C sed $'s/\033\[[0-9;]*m//g' | grep -E '^[[:space:]]*Test Files[[:space:]]+' | tail -1)
   files_done=$(echo "$files_line" | grep -oE '[0-9]+ passed' | grep -oE '[0-9]+' || echo "")
   files_total=$(echo "$files_line" | grep -oE '\([0-9]+\)' | tr -d '()' || echo "")
-  if [ -n "$files_done" ] && [ -n "$files_total" ] && echo "$files_line" | grep -qE '^[[:space:]]*Test Files[[:space:]]+[0-9]+ passed \([0-9]+\)\s*$'; then
+  if [ -n "$files_done" ] && [ -n "$files_total" ] && grep -qE '^[[:space:]]*Test Files[[:space:]]+[0-9]+ passed \([0-9]+\)\s*$' <<< "$files_line"; then
     if [ "$files_done" -lt "$files_total" ]; then
       echo "  ⚠ ${pkg_name}: Test Files ${files_done}/${files_total} 漏收集——本轮计数不可信，需复跑"
       continue

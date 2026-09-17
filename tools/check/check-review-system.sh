@@ -177,7 +177,7 @@ S_DEFINED_RAW=$( (grep -oE 'scenario [0-9]+ "' "$ACCEPTANCE" | grep -oE '[0-9]+'
 REF_MISSING=0
 while IFS= read -r sref; do
   [ -z "$sref" ] && continue
-  if ! echo "$S_DEFINED_RAW" | grep -qx "$sref"; then
+  if ! grep -qx "$sref" <<< "$S_DEFINED_RAW"; then
     bad "checklist 引用的 S$sref 在 acceptance 中不存在" "    checklist 中 grep S$sref 定位引用点，核对场景编号"
     REF_MISSING=$((REF_MISSING + 1))
   fi
@@ -263,7 +263,7 @@ else
     while IFS= read -r _kw; do
       [ -z "$_kw" ] && continue
       # 豁免清单命中（精确行匹配）→ 已知词形差异，不报
-      if echo "$EXEMPTED" | grep -qxF "$_kw"; then continue; fi
+      if grep -qxF "$_kw" <<< "$EXEMPTED"; then continue; fi
       # 命中判定：完整短语 或 任一 ≥4 字核心名词子串（放宽到关键组件名）
       _hit_cl=$(grep -c "$_kw" "$CHECKLIST" 2>/dev/null || true)
       _hit_ac=$(grep -c "$_kw" "$ACCEPTANCE" 2>/dev/null || true)

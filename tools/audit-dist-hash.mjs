@@ -52,8 +52,17 @@ function walk(dir, out = []) {
   return out;
 }
 
+// v1.5.0 TASK-10: 支持全局包根形态——开发仓 repoRoot 下是 engine/audit/dist，
+// 全局安装的 @sofagent/audit 包根下直接是 dist/。两种形态都认（开发仓优先，
+// 兼容既有调用与基准）。
 const root = resolve(process.argv[2] || process.cwd());
-const distRoot = join(root, 'engine/audit/dist');
+let distRoot = join(root, 'engine/audit/dist');
+if (!existsSync(distRoot) || !statSync(distRoot).isDirectory()) {
+  const pkgDist = join(root, 'dist');
+  if (existsSync(pkgDist) && statSync(pkgDist).isDirectory()) {
+    distRoot = pkgDist;
+  }
+}
 
 if (!existsSync(distRoot) || !statSync(distRoot).isDirectory()) {
   process.stdout.write('');

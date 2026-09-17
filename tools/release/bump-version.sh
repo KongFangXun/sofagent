@@ -77,7 +77,7 @@ NEW_VERSION="${POSITIONAL[1]}"
 
 # 验证版本号格式（2 段或 3 段，数字+点号）
 for v in "$OLD_VERSION" "$NEW_VERSION"; do
-  if ! echo "$v" | grep -qE '^[0-9]+\.[0-9]+(\.[0-9]+)?$'; then
+  if ! grep -qE '^[0-9]+\.[0-9]+(\.[0-9]+)?$' <<< "$v"; then
     echo -e "${RED}错误:${NC} 版本号格式无效: '$v'（期望如 0.94 或 0.94.0）"
     echo -e "${YELLOW}提示:${NC} 若你想传 --dry-run，它可放在任意位置且不会触发本错误"
     exit 1

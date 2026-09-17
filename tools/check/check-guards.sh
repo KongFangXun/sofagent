@@ -1,18 +1,20 @@
 #!/bin/bash
 # check-guards.sh — 守卫的守卫（meta-guard）
 # ============================================================
-# 职责：门禁脚本自身会烂。本脚本静态扫四类「检查器腐烂模式」，
+# 职责：门禁脚本自身会烂。本脚本静态扫五类「检查器腐烂模式」，
 # 并提供 --inject 注入实测（每门禁注入坏样本验证必红、清掉必绿——
 # 红不了的门禁是装饰品）。
 #
-# 四类静态模式（每类都有真实实案）：
+# 五类静态模式（每类都有真实实案）：
 #   ① sed/grep 用 \s \b（BSD sed 不认 \s、BSD grep BRE 无 \b）——跨平台炸弹
 #   ② $VAR 后紧跟全角标点（bash 把多字节首字节拼进变量名）——调度 check-cjk-var.sh
 #   ③ || echo 0 静默兜底（检查器故障伪装成零违规=假绿）——run-10 教训家族
 #   ④ 扫描范围对账（守卫声称扫了 N 文件 vs find 实际 M 文件）——失明防御
+#   ⑤ echo|grep -q SIGPIPE 毒方（`echo "$VAR" | grep -q PAT` 在 pipefail 下，
+#      变量大输出 + grep -q 提前退出 → 假红）——详见下方第⑤段
 #
 # 用法：
-#   bash tools/check/check-guards.sh           # 静态四扫（默认，只读，无副作用）
+#   bash tools/check/check-guards.sh           # 静态五扫（默认，只读，无副作用）
 #   bash tools/check/check-guards.sh --inject  # 静态扫 + 注入实测（会短暂改仓内文件，
 #                                              #   故前置 git 工作树干净检查；并行
 #                                              #   session 工作期间勿跑）
@@ -175,6 +177,36 @@ elif [ "$_cjk_raw" -ne "$_cjk_expect" ]; then
   GLOB_ACCOUNT_FAIL=1
 else
   echo "  ✓ check-cjk-var 扫描面 ${_cjk_raw} = find 实际 ${_cjk_expect}（含 SELF 豁免扣减）"
+fi
+
+# ============================================================
+# ⑤ echo|grep -q SIGPIPE 毒方：`echo "$VAR" | grep -q PAT` 在 set -o pipefail 下，
+#    变量大输出 + grep -q 提前退出 → echo 收 SIGPIPE exit 141 → pipefail 判失败。
+#    实案：acceptance-test.sh S378 bump dry-run（71462 字节）在 bash 下确定性假红。
+#    修法：字面量改 [[ "$VAR" == *PAT* ]]；正则改 grep -q PAT <<< "$VAR"。
+# ============================================================
+echo ""
+echo "── ⑤ echo|grep -q SIGPIPE 毒方（pipefail 下假红源）──"
+SIGPIPE_HITS=0
+_SIGPIPE_SCAN=$(guard_scan_files | while IFS= read -r _sh; do
+    [ "$_sh" = "$SELF" ] && continue
+    # 匹配 echo "$VAR" | grep -q —— 变量展开后接管道 grep 的形态（含 ${!VAR} 间接形态）
+    grep -nE 'echo[[:space:]]+\"\$[A-Za-z_{][^\"]*\"[[:space:]]*\|[[:space:]]*grep[[:space:]]+-[A-Za-z]*q' "$_sh" 2>/dev/null \
+      | grep -vE '^[0-9]+:[[:space:]]*#' \
+      | grep -v 'guards-allow' \
+      | sed "s|^|${_sh}:|" || true
+  done | sort -u)
+while IFS= read -r _line; do
+  [ -z "$_line" ] && continue
+  echo "  ✗ ${_line}"
+  echo "      修法：字面量匹配改 [[ \"\$VAR\" == *PAT* ]]（bash 内建零管道）；正则改 grep -q PAT <<< \"\$VAR\"（herestring 无 SIGPIPE 面）"
+  VIOL=$((VIOL + 1))
+  SIGPIPE_HITS=$((SIGPIPE_HITS + 1))
+done <<EOF
+${_SIGPIPE_SCAN}
+EOF
+if [ "$SIGPIPE_HITS" -eq 0 ]; then
+  echo "  ✓ 无 echo|grep -q 毒方残留（herestring/内建匹配形态）"
 fi
 
 # ============================================================
