@@ -3955,7 +3955,7 @@ rm -rf "$S378_TMP"
 $S378_OK && pass "npm 裸名总包行为锁（umbrella=audit SSOT + 四依赖逐一对账 + workspaces 收编 + bin 转发活体实测 + bump 覆盖面零写盘）" || fail "npm 裸名总包回退——见上方 ✗ 行"
 # 场景号 417 去向注记（run-02 C-P1-3 回写）：S417 已折入本场景（S379）——计数解析链 locale 无关 + 吞数判红
 # 与本场景「防线失明自检/fail-loud」同族，断言零删减；空洞号保留不回填（编号纪律：新场景=最大+1 顺延）。
-scenario 379 "流程加固批 防线失明自检行为锁：故障注入矩阵活体实测（PATH 前置假 perl 崩溃型/空响应型 × cjk-var/guards 双守卫 → 目标守卫非 0 退出——0 处违规但没在看必须报红）+ 自检脚本正常态 exit 0 + 自检脚本自身 fail-loud（劫持真 perl 后自身非 0）"; S379_OK=true
+scenario 379 "流程加固批 防线失明自检行为锁：故障注入矩阵活体实测（PATH 前置假 perl 崩溃型/空响应型 × cjk-var/guards 双守卫 → 目标守卫非 0 退出——0 处违规但没在看必须报红）+ 自检脚本正常态 exit 0 + 自检脚本自身 fail-loud（劫持真 perl 后自身非 0，原 S417 折入——计数解析链 locale 无关 + 吞数判红）"; S379_OK=true
 # 回主仓根（前面场景可能把 cwd 留在已清理的临时仓——本场景全部相对路径调用依赖主仓根）
 cd "$PROJECT_ROOT"
 S379_TMP=$(mktemp -d /tmp/sofagent-s379-XXXX)
