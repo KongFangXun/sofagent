@@ -13,9 +13,15 @@
 //   三、差异度轴：与 MockLLM 同输入输出不得雷同——真脑若退化到
 //                与按行切分等价，说明模型没有产生认知增量
 //
-// 不达标 → ok=false + reasons（RealLLM 据此抛错，state-machine
-// 落 failed:<stage> 游标）——绝不静默放行进 knowledge/。
+// 不达标 → ok=false + reasons。两道消费防线：
+//   - RealLLM.extract/synthesize：不达标即抛错，state-machine 落
+//     failed:<stage> 游标——绝不静默放行。
+//   - synthesizeConcepts 落盘边界（任何 provider 产出统一拦截）：
+//     不达标跳过落盘 + stderr warn——防线在落盘处兜底，mock 降级
+//     输出等绕过 RealLLM 的路径同样进不了 knowledge/。
 // ============================================================
+
+import { MockLLM } from './llm-mock';
 
 /** 长度轴阈值：合并产出最少字符数（过短 = 无实质内容） */
 const MIN_OUTPUT_CHARS = 24;
@@ -97,26 +103,20 @@ export function validateKnowledgeQuality(
 }
 
 /**
- * MockLLM.extract 的差异度对照输出（与 llm-mock.ts 同语义：
- * 按行切分 + 去 markdown 标题前缀——供 validateKnowledgeQuality 第三轴）。
- * 独立实现避免循环 import（llm-mock 不 import 本文件，方向单向）。
+ * MockLLM.extract 的差异度对照输出——直接实例化 MockLLM 取同输入
+ * 真实输出（单一真源，消灭双实现漂移面）。
  */
 export function mockExtractForDiff(input: string): string {
-  return input
-    .split('\n')
-    .map((line) => line.trim())
-    .map((line) => line.replace(/^#+\s*/, ''))
-    .filter((line) => line.length > 0)
-    .join('\n');
+  return new MockLLM().extractSync(input).join('\n');
 }
 
 /**
  * MockLLM.synthesize 的差异度对照输出（与 llm-mock.ts 同语义：
  * 首条前 20 字符 + hash 后缀做标题、编号拼接做正文）。
+ * 直接实例化 MockLLM 取同输入真实输出——差异度轴的对照源必须是
+ * mock 本体的真实形态（曾因双实现漂移：对照源漏 hash 后缀，导致
+ * 差异度轴对 mock 真实输出永不命中，防线失效）。
  */
 export function mockSynthesizeForDiff(inputs: string[]): { title: string; body: string } {
-  const firstLine = inputs[0] ?? 'untitled';
-  const title = `${firstLine.slice(0, 20)}`;
-  const body = inputs.map((t, i) => `${i + 1}. ${t}`).join('\n');
-  return { title, body };
+  return new MockLLM().synthesizeSync(inputs);
 }

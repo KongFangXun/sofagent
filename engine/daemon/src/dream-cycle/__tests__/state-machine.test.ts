@@ -2,14 +2,16 @@
 // dream-cycle/__tests__/state-machine.test.ts · Dream Cycle 状态机 e2e
 // v1.1.6 新增
 //
-// 覆盖用例（共 6 case）：
+// 覆盖用例（共 8 case）：
 //   1. 空 Ledger → pipeline 空转不报错，cycle_complete=true，counts 全 0
 //   2. 🔴 Q5 验收级：think.md 输入 → entities/ 教训/实体产物「内容级断言」
-//      （替代被删的 experience-sharing.test.ts —— 不是只断言 stage 流转）
+//      （替代被删的 experience-sharing.test.ts —— 不是只断言 stage 流转；
+//       假真脑注入——MockLLM 输出会被落盘边界质量门槛拦截）
 //   3. 单条 audit history → runDreamCycle 产出 ≥1 fact
-//   4. cycle_complete → knowledge/log.md 追加周报「本周学 N concept / M atom」
+//   4. cycle_complete → knowledge/log.md 追加周报（Mock 降级：concepts=0）
 //   5. fromStage 断点续跑 → 从 synthesize_concepts 续跑不重跑 extract_facts
 //   6. state.md 落盘 → cycle_complete=true 游标持久化
+//   7. MockLLM 全链 → 质量门槛拦截所有 concept，cycle_complete 仍 true
 // ============================================================
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
@@ -19,15 +21,48 @@ import * as os from 'os';
 
 import { runDreamCycle, loadState } from '../state-machine';
 import { MockLLM } from '../llm-mock';
+import { RealLLM } from '../real-provider';
+import type { CallModelFn } from '../real-provider';
 import type { Ledger } from '../types';
 
 function tmpDir(): string {
   return fs.mkdtempSync(path.join(os.tmpdir(), 'sofagent-dreamcycle-e2e-'));
 }
 
+/** 假真脑（真实形态输出——过质量门槛三轴；与 real-provider.test 同构） */
+function makeFakeRealCall(): CallModelFn {
+  return async (messages) => {
+    const userContent = messages.find((m) => m.role === 'user')?.content ?? '';
+    if (userContent.includes('提取独立、原子化的知识点')) {
+      const body = userContent.split('文本：\n')[1] ?? userContent;
+      const facts = body
+        .split('\n')
+        .map((line) => line.trim())
+        .filter((line) => line.length > 0)
+        .map((line) => `实测教训：${line.replace(/^#+\s*/, '')}（触发条件：CI 阈值 80%，命令 \`npm test -w @sofagent/daemon\` 验证）`);
+      return JSON.stringify(facts);
+    }
+    if (userContent.includes('按语义相近程度分组')) {
+      const listMatch = userContent.match(/输入列表：\n(\[[\s\S]*\])$/);
+      const inputs: string[] = listMatch ? (JSON.parse(listMatch[1]) as string[]) : [];
+      return JSON.stringify(inputs.map(() => '工程习惯'));
+    }
+    if (userContent.includes('合成为一个概念')) {
+      const listMatch = userContent.match(/知识点列表：\n(\[[\s\S]*\])$/);
+      const inputs: string[] = listMatch ? (JSON.parse(listMatch[1]) as string[]) : [];
+      return JSON.stringify({
+        title: `部署纪律：${inputs.length} 条实测教训的共性`,
+        body: inputs.map((t, i) => `${i + 1}. ${t}`).join('\n') + '\n\n共性：以上各条均来自「实测教训」记录，阈值 80%。',
+      });
+    }
+    return '["未匹配任务类型的兜底输出"]';
+  };
+}
+
 describe('runDreamCycle 状态机 e2e', () => {
   let dir: string;
   const llm = new MockLLM();
+  const fakeReal = new RealLLM(null, makeFakeRealCall());
 
   beforeEach(() => {
     dir = tmpDir();
@@ -55,13 +90,14 @@ describe('runDreamCycle 状态机 e2e', () => {
   });
 
   // 用例 2（🔴 Q5 验收级）：think.md → entities/ 产物「内容级断言」
+  //（假真脑注入：MockLLM 输出会被落盘边界质量门槛拦截，见用例 2b）
   it('think.md 输入 → entities/ 教训/实体产物内容级断言（Q5：不是只断言 stage 流转）', async () => {
     // 设备 A 踩坑写入 think.md（复刻被删 experience-sharing 的输入语义）
     const thinkContent =
       '## 教训：不要用 rm -rf\n原因：删了整个项目\n## 教训：提交前先跑测试\n原因：避免回归\n';
     fs.writeFileSync(path.join(dir, 'data', 'think.md'), thinkContent, 'utf-8');
 
-    const result = await runDreamCycle(dir, { llm });
+    const result = await runDreamCycle(dir, { llm: fakeReal });
     expect(result.cycleComplete).toBe(true);
     expect(result.counts.facts).toBeGreaterThanOrEqual(1);
 
@@ -97,8 +133,9 @@ describe('runDreamCycle 状态机 e2e', () => {
     expect(result.auditEntryCount).toBe(1);
   });
 
-  // 用例 4：cycle_complete → log.md 追加周报（LUI A）
-  it('cycle_complete → knowledge/log.md 追加周报「本周学 N concept / M atom」', async () => {
+  // 用例 4：cycle_complete → log.md 追加周报（LUI A）——MockLLM 显式降级态：
+  // 周报仍写（降级标注在 state-machine 层），concept 因质量门槛不落盘
+  it('cycle_complete → knowledge/log.md 追加周报「本周学 N concept / M atom」（Mock 降级：concepts=0）', async () => {
     const thinkContent = '## 教训：每周复盘\n持续改进\n';
     fs.writeFileSync(path.join(dir, 'data', 'think.md'), thinkContent, 'utf-8');
     const result = await runDreamCycle(dir, { llm });
@@ -114,11 +151,11 @@ describe('runDreamCycle 状态机 e2e', () => {
   it('fromStage 断点续跑 → 从 synthesize_concepts 续跑不重复 extract_facts', async () => {
     const thinkContent = '## 教训：断点续跑\n失败可重试\n';
     fs.writeFileSync(path.join(dir, 'data', 'think.md'), thinkContent, 'utf-8');
-    // 首轮完整跑
-    const first = await runDreamCycle(dir, { llm });
+    // 首轮完整跑（假真脑：续跑断言依赖 synthesize 产出 concepts 供后段流转）
+    const first = await runDreamCycle(dir, { llm: fakeReal });
     expect(first.cycleComplete).toBe(true);
     // 从 synthesize_concepts 续跑：completedStages 应只含后段
-    const resumed = await runDreamCycle(dir, { llm, fromStage: 'synthesize_concepts' });
+    const resumed = await runDreamCycle(dir, { llm: fakeReal, fromStage: 'synthesize_concepts' });
     expect(resumed.cycleComplete).toBe(true);
     expect(resumed.completedStages).toContain('synthesize_concepts');
     expect(resumed.completedStages).toContain('embed');
@@ -133,5 +170,16 @@ describe('runDreamCycle 状态机 e2e', () => {
     expect(state.completedStages.length).toBe(6);
     expect(state.failed).toBeNull();
     expect(state.lastRunAt).not.toBeNull();
+  });
+
+  // 用例 7（落盘边界质量门槛 e2e）：MockLLM 全链 → concepts=0、entities/ 不建、
+  // cycle_complete 仍 true（跳过不卡死——mock 降级是显式已知态，周报带标注）
+  it('MockLLM 全链 → 质量门槛拦截所有 concept，cycle_complete 仍 true 不卡死', async () => {
+    const thinkContent = '## 教训：占位不落盘\nmock 输出进不了知识库\n';
+    fs.writeFileSync(path.join(dir, 'data', 'think.md'), thinkContent, 'utf-8');
+    const result = await runDreamCycle(dir, { llm });
+    expect(result.cycleComplete).toBe(true);
+    expect(result.counts.concepts).toBe(0);
+    expect(fs.existsSync(path.join(dir, 'data', 'knowledge', 'entities'))).toBe(false);
   });
 });

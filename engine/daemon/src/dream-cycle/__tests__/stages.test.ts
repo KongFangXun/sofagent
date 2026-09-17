@@ -7,7 +7,8 @@
 //   2. extract_facts：单条 audit history → 至少产出 1 个 fact
 //   3. extract_atoms：单条 fact → 至少 1 条 atom
 //   4. cluster_patterns：多条 atom → 聚成少于原数的 pattern（M < N）
-//   5. synthesize_concepts：pattern → concept 写入 knowledge/entities/
+//   5. synthesize_concepts：假真脑 pattern → concept 写入 knowledge/entities/
+//   5b. synthesize_concepts：MockLLM 输出被落盘边界质量门槛拦截（不落盘不计数）
 //   6. evolve_backfill：触发 fde.md 优化钩子（mock 验证被调用）
 //   7. embed：产出定长向量
 //   8. RealLLM：v1.4.5 第七章五真脑交付后可构造（占位抛错行为已废止）
@@ -91,13 +92,24 @@ describe('Dream Cycle 6 阶段', () => {
   });
 
   // 用例 5：synthesize_concepts — pattern → concept 写入 knowledge/entities/
-  it('synthesize_concepts：pattern → concept 写入 knowledge/entities/', async () => {
+  //（假真脑注入：MockLLM 输出与对照源同构，会被落盘边界质量门槛拦截，见用例 5b）
+  it('synthesize_concepts：假真脑 pattern → concept 写入 knowledge/entities/', async () => {
     const patterns = [{ id: 'p1', label: 'pattern-0', atomIds: ['a1', 'a2'] }];
     const atoms = [
-      { id: 'a1', text: '教训一', factId: 'f1' },
-      { id: 'a2', text: '教训二', factId: 'f1' },
+      { id: 'a1', text: '教训一：跑 npm test 前先 npm install', factId: 'f1' },
+      { id: 'a2', text: '教训二：提交前 shellcheck 24 条规则全绿', factId: 'f1' },
     ];
-    const concepts = await synthesizeConcepts(patterns, atoms, llm, dir);
+    const fakeReal = new RealLLM(null, async (messages) => {
+      const userContent = messages.find((m) => m.role === 'user')?.content ?? '';
+      if (userContent.includes('合成为一个概念')) {
+        return JSON.stringify({
+          title: '工程纪律：测试与门禁的共性',
+          body: '共性：先跑 npm install 与 npm test，再过 shellcheck 门禁（24 条规则），阈值 80% 才收编。',
+        });
+      }
+      return '["兜底"]';
+    });
+    const concepts = await synthesizeConcepts(patterns, atoms, fakeReal, dir);
     expect(concepts.length).toBe(1);
     // v1.2.1：knowledge/ 从 .sofagent/ 迁移到 data/
     const entitiesDir = path.join(dir, 'data', 'knowledge', 'entities');
@@ -107,6 +119,20 @@ describe('Dream Cycle 6 阶段', () => {
     const content = fs.readFileSync(path.join(entitiesDir, files[0]!), 'utf-8');
     expect(content).toContain('source: dream-cycle:pattern-0');
     expect(content).toContain('sensitivity: internal');
+  });
+
+  // 用例 5b（落盘边界质量门槛）：MockLLM 降级输出与对照源同构 →
+  // 差异度轴拦截 → 跳过落盘 + 不计数（占位输出绝不进 knowledge/）
+  it('synthesize_concepts：MockLLM 输出被落盘边界质量门槛拦截（不落盘不计数）', async () => {
+    const patterns = [{ id: 'p1', label: 'pattern-0', atomIds: ['a1', 'a2'] }];
+    const atoms = [
+      { id: 'a1', text: '教训一：跑 npm test 前先 npm install', factId: 'f1' },
+      { id: 'a2', text: '教训二：提交前 shellcheck 24 条规则全绿', factId: 'f1' },
+    ];
+    const concepts = await synthesizeConcepts(patterns, atoms, llm, dir);
+    expect(concepts.length).toBe(0);
+    const entitiesDir = path.join(dir, 'data', 'knowledge', 'entities');
+    expect(fs.existsSync(entitiesDir)).toBe(false);
   });
 
   // 用例 6：evolve_backfill — mock 钩子被调用

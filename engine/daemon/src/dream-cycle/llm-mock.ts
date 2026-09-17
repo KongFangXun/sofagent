@@ -34,13 +34,17 @@ function shortHash(input: string): string {
 export class MockLLM implements LLMProvider {
   /** 从文本提取事实：按非空行切分，每行即一条事实 */
   extract(input: string): Promise<string[]> {
-    const facts = input
+    return Promise.resolve(this.extractSync(input));
+  }
+
+  /** 提取的同步实现（单一真源）——quality-gate 差异度对照直接复用本体输出 */
+  extractSync(input: string): string[] {
+    return input
       .split('\n')
       .map((line) => line.trim())
       // 去掉 markdown 标题前缀，让事实文本更干净
       .map((line) => line.replace(/^#+\s*/, ''))
       .filter((line) => line.length > 0);
-    return Promise.resolve(facts);
   }
 
   /**
@@ -61,13 +65,21 @@ export class MockLLM implements LLMProvider {
 
   /** 合成：把同组 atom 文本拼成 concept 标题 + 正文 */
   synthesize(inputs: string[]): Promise<{ title: string; body: string }> {
+    return Promise.resolve(this.synthesizeSync(inputs));
+  }
+
+  /**
+   * 合成的同步实现（单一真源）——quality-gate 差异度对照直接复用
+   * 本体输出，消灭「同一形态两套实现」的漂移面（async 包装也走这里）。
+   */
+  synthesizeSync(inputs: string[]): { title: string; body: string } {
     const joined = inputs.join('\n');
     const h = shortHash(joined);
     const firstLine = inputs[0] ?? 'untitled';
     // 标题取首条 atom 前 20 字符 + hash 后缀，保证同组同题、异组异题
     const title = `${firstLine.slice(0, 20)}-${h}`;
     const body = inputs.map((t, i) => `${i + 1}. ${t}`).join('\n');
-    return Promise.resolve({ title, body });
+    return { title, body };
   }
 
   /** 向量化：定长 8 维（0-1 浮点，由 hash 派生） */

@@ -14,6 +14,7 @@ import { synthesize } from '@sofagent/ontology';
 import { resolveKnowledgeDir, atomicWriteWithMergeSync, mergeAppendMissing } from '@sofagent/core';
 
 import type { Atom, Concept, LLMProvider, Pattern } from './types';
+import { validateKnowledgeQuality, mockSynthesizeForDiff } from './quality-gate';
 
 /**
  * Stage 4：把每个 Pattern 合成一个 Concept，写入 knowledge/entities/。
@@ -21,6 +22,10 @@ import type { Atom, Concept, LLMProvider, Pattern } from './types';
  * - 概念标题/正文由 llm.synthesize 产出（同组 atom → title+body）
  * - 落盘格式：frontmatter（source/sensitivity）+ 标题 + 正文
  * - sensitivity 缺省 internal（safe-by-default）
+ * - 质量门槛（落盘边界兜底）：任何 provider 的产出过不了
+ *   validateKnowledgeQuality 三轴校验即跳过落盘 + stderr warn——
+ *   RealLLM 路径门槛抛错在前，这里是第二道防线，覆盖 mock 降级 /
+ *   测试注入等绕过 RealLLM 的路径（占位输出绝不进 knowledge/）。
  */
 export async function synthesizeConcepts(
   patterns: Pattern[],
@@ -40,6 +45,25 @@ export async function synthesizeConcepts(
     if (texts.length === 0) continue;
 
     const { title, body } = await llm.synthesize(texts);
+
+    // 质量门槛（落盘边界）：不达标跳过该 pattern，不落盘不计数。
+    // 跳过而非抛错——mock 降级是显式已知态（周报已带标注），
+    // 抛错会让 state-machine 卡死在 synthesize 重试循环。
+    const gate = validateKnowledgeQuality(
+      `${title}\n${body}`,
+      texts.join('\n'),
+      (() => {
+        const mock = mockSynthesizeForDiff(texts);
+        return `${mock.title}\n${mock.body}`;
+      })(),
+    );
+    if (!gate.ok) {
+      process.stderr.write(
+        `[dream-cycle] 质量门槛拦截（不落盘）pattern=${pattern.id}：${gate.reasons.join('；')}\n`,
+      );
+      continue;
+    }
+
     const slug = title
       .toLowerCase()
       .replace(/[^a-z0-9\u4e00-\u9fa5]+/g, '-')
