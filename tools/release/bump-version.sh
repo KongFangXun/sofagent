@@ -763,6 +763,38 @@ done < <(find "$PROJECT_ROOT/engine" -maxdepth 3 -name "package.json" -not -path
 # v1.3.3 发版时 is-network-error@1.3.3 幽灵版本即属此情况（已被 git restore 修复）。
 TOTAL_CHANGED=$((TOTAL_CHANGED + BUMP_INTERNAL_DEPS_COUNT))
 
+# 9c. git hook 头版本（engine/audit/hooks/ 三文件）
+# 🔴 为何必须独立成段：hook 文件无 `.sh` 扩展名，[6/13] 的 glob（engine/scripts/*.sh + install.sh）
+#    与 `VERSION="X"` 替换模式双双不匹配 ⇒ 曾整段落空（三 hook 中仅 pre-commit 漏改，靠
+#    check-template-drift 断言一/三 在 pre-push 才拦到）。hook 是随包发布的唯一源，头版本须随 SSOT。
+#    替换模式 = 头注释行 `# sofagent <name> hook v<OLD>`——行首锚定 + hook 名逐字，不碰正文历史注记行。
+HOOK_COUNT=0
+for hook_name in pre-commit post-commit commit-msg; do
+  hook_file="$PROJECT_ROOT/engine/audit/hooks/$hook_name"
+  [[ -f "$hook_file" ]] || continue
+  hook_content=$(cat "$hook_file")
+  if $PATCH_ONLY; then
+    hook_new=$(sed "s/^# sofagent ${hook_name} hook v${OLD_3SEG}/# sofagent ${hook_name} hook v${NEW_3SEG}/" "$hook_file")
+  else
+    hook_new=$(sed "s/^# sofagent ${hook_name} hook v${OLD_2SEG}/# sofagent ${hook_name} hook v${NEW_2SEG}/" "$hook_file")
+    if [[ "$hook_new" == "$hook_content" ]] && $HAS_PATCH; then
+      hook_new=$(sed "s/^# sofagent ${hook_name} hook v${OLD_3SEG}/# sofagent ${hook_name} hook v${NEW_3SEG}/" "$hook_file")
+    fi
+  fi
+  if [[ "$hook_new" != "$hook_content" ]]; then
+    echo -e "  ${GREEN}✓${NC} ${hook_name} hook 头 v$OLD_2SEG → v$NEW_2SEG"
+    if ! $DRY_RUN; then
+      printf '%s\n' "$hook_new" > "$hook_file"
+    fi
+    HOOK_COUNT=$((HOOK_COUNT + 1))
+  fi
+done
+if [[ $HOOK_COUNT -eq 0 ]]; then
+  echo -e "  ${YELLOW}(no match)${NC}"
+fi
+echo ""
+TOTAL_CHANGED=$((TOTAL_CHANGED + HOOK_COUNT))
+
 # 10. 汇总
 echo -e "${BOLD}[13/13] 完成${NC}"
 echo ""
@@ -797,5 +829,10 @@ if ! $DRY_RUN; then
   echo "    7. docs/HANDBOOK.md「已经能替你干的事」是否已更新版本号 + 补新能力？"
   echo "    8. docs/HANDBOOK.md「现在还干不了的事」是否已移除本版交付的能力？"
   echo "    9. docs/DEVELOPMENT.md 正文中的测试数声称是否同步？（grep 'XX 测试'）"
+  echo ""
+  echo -e "  ${YELLOW}⚠️  生成式产物重生成（唯一生产方不是本脚本，须显式跑）：${NC}"
+  echo "    10. node tools/gen/gen-plugin-manifests.mjs —— cordis.patch.yml 头版本 + 桥包 optionalDependencies"
+  echo "        兄弟依赖属生成段，本脚本十三步只换版号字面量不覆盖它们；漏跑 = check-template-drift"
+  echo "        断言五/六 报漂移（v1.4.9 实锤：8 文件留旧版）。跑完 git diff 复核后随 bump 同 commit。"
   echo ""
 fi
