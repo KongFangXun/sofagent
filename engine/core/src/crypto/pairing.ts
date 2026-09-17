@@ -22,14 +22,33 @@ import crypto from 'node:crypto';
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { homedir } from 'node:os';
+import { resolveHomeDir } from '../data-paths';
 import {
   generateKeyPair,
   deriveSharedKey,
   publicKeyFingerprint,
 } from './ecdh';
 
-/** 联邦 token 文件路径（~/.sofagent/federation.token，权限 600） */
-export const FEDERATION_TOKEN_PATH = join(homedir(), '.sofagent', 'federation.token');
+/**
+ * 联邦 token 文件路径（<SOFAGENT_HOME>/federation.token，权限 600）
+ *
+ * v1.5.0 TASK-17: 从硬编码 homedir() 改走 data-paths SSOT（resolveHomeDir）——
+ * 显式 SOFAGENT_HOME 隔离（多项目/多租户地基）时 token 与数据同根，隔离面
+ * 不再漏凭据（同包 key-manager 走参数化 sofagentHome 的同款口径）。
+ * 函数形态实时读环境变量（测试可动态设 SOFAGENT_HOME 做隔离）。
+ */
+export function getFederationTokenPath(sofagentHome?: string): string {
+  return join(resolveHomeDir(sofagentHome), 'federation.token');
+}
+
+/**
+ * 旧路径（真实 home 直拼）——仅作读侧迁移 fallback：
+ * 升级前 token 已落 ~/.sofagent/federation.token 的存量用户，新路径不存在时
+ * 读旧路径并提示迁移（写侧一律新路径），防止升级即失联。
+ */
+function legacyTokenPath(): string {
+  return join(homedir(), '.sofagent', 'federation.token');
+}
 
 /** token 文件允许的最大权限位（rw-------，组/其他不允许任何位） */
 const TOKEN_FILE_MODE_MASK = 0o077;
@@ -41,24 +60,37 @@ const TOKEN_FILE_MODE_MASK = 0o077;
  * v1.4.5 (T3): 权限降级告警——读取时发现文件权限宽于 600（组/其他可读）时 WARN。
  * token 属凭据材料，宽权限 = 本机其他用户/进程可窃读。写入侧（如存在）应 chmod 600；
  * 读取侧在此兜底告警，doctor 检查项做周期性巡检。
+ *
+ * v1.5.0 TASK-17: 路径经 SSOT 解析（getFederationTokenPath）——SOFAGENT_HOME
+ * 隔离态读隔离根下的 token；新路径不存在而旧路径（真实 home）存在时 fallback
+ * 旧路径并 stderr 提示迁移（向后兼容——防升级即失联）。
  */
 function readTokenFromFile(): string | undefined {
+  const tokenPath = getFederationTokenPath();
   try {
-    if (existsSync(FEDERATION_TOKEN_PATH)) {
+    if (existsSync(tokenPath)) {
       // v1.4.5 (T3): 权限巡检——宽于 600 的 token 文件立即告警（仍继续读取，
       // 不阻断配对——阻断会把存量用户搞崩，告警 + doctor 巡检逐步收紧）
       try {
-        const mode = statSync(FEDERATION_TOKEN_PATH).mode & 0o777;
+        const mode = statSync(tokenPath).mode & 0o777;
         if ((mode & TOKEN_FILE_MODE_MASK) !== 0) {
           console.warn(
-            `[sofagent] ⚠️ 联邦 token 文件权限过宽（${mode.toString(8).padStart(3, '0')}，应为 600）: ${FEDERATION_TOKEN_PATH}\n` +
-            `    组/其他用户可读 = 凭据泄露面。修复：chmod 600 ${FEDERATION_TOKEN_PATH}`,
+            `[sofagent] ⚠️ 联邦 token 文件权限过宽（${mode.toString(8).padStart(3, '0')}，应为 600）: ${tokenPath}\n` +
+            `    组/其他用户可读 = 凭据泄露面。修复：chmod 600 ${tokenPath}`,
           );
         }
       } catch {
         // stat 失败不阻断读取——权限检查是尽力而为的加固层
       }
-      return readFileSync(FEDERATION_TOKEN_PATH, 'utf-8').trim();
+      return readFileSync(tokenPath, 'utf-8').trim();
+    }
+    // v1.5.0 TASK-17: 新路径 miss → 旧路径 fallback（存量用户升级不失联）
+    const legacy = legacyTokenPath();
+    if (existsSync(legacy)) {
+      process.stderr.write(
+        `[sofagent] ℹ️ 联邦 token 在旧路径 ${legacy}——建议迁移至 ${tokenPath}（mv 后保持 600 权限）\n`,
+      );
+      return readFileSync(legacy, 'utf-8').trim();
     }
   } catch {
     // 文件不可读——返回 undefined 由上层处理

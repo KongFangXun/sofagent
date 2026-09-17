@@ -1041,6 +1041,32 @@
   CeilingCheckResult,
 } from './gateway/permission-ceiling';
 
+// ── permission 三模块（v1.3.7 判定链：risk-classifier → scenario-router → policy-engine）──
+// v1.5.0 TASK-26: 顶层再导出接通——此前仅 permission/index.ts 桶导出，顶层零出口，
+// 包外（MCP 权限守卫等）无法消费，三模块成「建好未接线」孤岛。
+/* @public */ export {
+  createPolicyEngine,
+  createScenarioRouter,
+  classifyRisk,
+  riskToDefaultAction,
+  BUILTIN_SCENARIOS,
+} from './permission';
+/* @public */ export type {
+  PermissionRequest,
+  PolicyAction,
+  DecisionLogEntry,
+  ElevationGrant,
+  TeamPolicy,
+  CommonsPolicy,
+  Scenario,
+  ScenarioMatchRequest,
+  ScenarioMatchResult,
+  TaskType,
+  DataDomain,
+  ActionType,
+  RiskLevel,
+} from './permission';
+
 // ============================================================
 // v1.3.9（二）：meta-harness 多 harness 统一编排
 // ============================================================

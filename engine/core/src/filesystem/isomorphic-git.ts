@@ -34,6 +34,8 @@ export interface SnapshotEntry {
   sha: string;
   timestamp: string;
   files: Record<string, string>; // path → content
+  /** v1.5.0 TASK-18: 快照标签（创建时传入——rollback 按 label 定位快照的维度） */
+  label?: string;
 }
 
 /**
@@ -55,7 +57,7 @@ export interface SnapshotEntry {
 interface ShadowStore {
   version?: number;
   blobs?: Record<string, string>;
-  snapshots?: Array<{ sha: string; timestamp: string; fileIndex?: Record<string, string>; files?: Record<string, string> }>;
+  snapshots?: Array<{ sha: string; timestamp: string; label?: string; fileIndex?: Record<string, string>; files?: Record<string, string> }>;
 }
 
 /**
@@ -85,22 +87,27 @@ const MAX_SNAPSHOTS = 50;
  *     snapshots.json  — 快照索引 + 文件内容存储
  *     config.json     — 仓库元信息
  *
+ * v1.5.0 TASK-18: 签名扩展 (dir, label?)——label 作为快照组织维度记入
+ * config.json（缺省 label 维度记 null，向后兼容：无 label 走现路径语义不变）。
+ *
  * @param dir 要追踪的目录
+ * @param label 可选快照标签（rollback 定位维度——同 label 多次快照按时间序取最新）
  * @returns shadow repo 的路径
  */
-export function createShadowRepo(dir: string): string {
+export function createShadowRepo(dir: string, label?: string): string {
   const shadowDir = join(dir, '.sofagent', '.git-shadow');
   if (!existsSync(shadowDir)) {
     mkdirSync(shadowDir, { recursive: true, mode: 0o700 });
   }
 
-  // 写入仓库配置文件
+  // 写入仓库配置文件（label 维度入元信息——缺省 null 保持既有形态兼容）
   const configPath = join(shadowDir, 'config.json');
   if (!existsSync(configPath)) {
     const config = {
       version: '1.0.8',
       created: new Date().toISOString(),
       trackedDir: dir,
+      label: label ?? null,
     };
     writeFileSync(configPath, JSON.stringify(config, null, 2), 'utf-8');
   }
@@ -128,19 +135,19 @@ function loadSnapshots(shadowDir: string): SnapshotEntry[] {
   try {
     const data = JSON.parse(readFileSync(snapshotsPath, 'utf-8')) as ShadowStore;
     if (!Array.isArray(data.snapshots)) return [];
-    // v2：内容寻址还原
+    // v2：内容寻址还原（label 透传——TASK-18 rollback 定位维度）
     if (data.version === 2 && data.blobs) {
       return data.snapshots.map((s) => {
-        if (!s.fileIndex) return { sha: s.sha, timestamp: s.timestamp, files: s.files ?? {} };
+        if (!s.fileIndex) return { sha: s.sha, timestamp: s.timestamp, files: s.files ?? {}, ...(s.label !== undefined ? { label: s.label } : {}) };
         const files: Record<string, string> = {};
         for (const [p, h] of Object.entries(s.fileIndex)) {
           files[p] = data.blobs![h] ?? ''; // blob 丢失时降级为空串（不 crash 恢复流程）
         }
-        return { sha: s.sha, timestamp: s.timestamp, files };
+        return { sha: s.sha, timestamp: s.timestamp, files, ...(s.label !== undefined ? { label: s.label } : {}) };
       });
     }
     // v1：旧格式直读
-    return data.snapshots.map((s) => ({ sha: s.sha, timestamp: s.timestamp, files: s.files ?? {} }));
+    return data.snapshots.map((s) => ({ sha: s.sha, timestamp: s.timestamp, files: s.files ?? {}, ...(s.label !== undefined ? { label: s.label } : {}) }));
   } catch {
     return [];
   }
@@ -160,7 +167,7 @@ function saveSnapshots(shadowDir: string, snapshots: SnapshotEntry[]): void {
     ? snapshots.slice(snapshots.length - MAX_SNAPSHOTS)
     : snapshots;
 
-  // 内容寻址去重：构建 blobs 池 + 每快照的 path → hash 索引
+  // 内容寻址去重：构建 blobs 池 + 每快照的 path → hash 索引（label 透传落账）
   const blobs: Record<string, string> = {};
   const indexed = toSave.map((s) => {
     const fileIndex: Record<string, string> = {};
@@ -169,7 +176,7 @@ function saveSnapshots(shadowDir: string, snapshots: SnapshotEntry[]): void {
       if (!blobs[h]) blobs[h] = content; // 同内容只存一份
       fileIndex[p] = h;
     }
-    return { sha: s.sha, timestamp: s.timestamp, fileIndex };
+    return { sha: s.sha, timestamp: s.timestamp, ...(s.label !== undefined ? { label: s.label } : {}), fileIndex };
   });
 
   // 回收孤儿 blob：只保留被引用的（裁剪掉的快照其独有 blob 一并释放）
@@ -366,13 +373,16 @@ export function generateDiff(dir: string): IsoDiff[] {
  *
  * 由 daemon/snapshot.ts 在审计通过后调用
  *
+ * v1.5.0 TASK-18: 可选 label 随快照条目落账（rollback 按 label 定位的读侧维度）。
+ *
  * @param dir 要快照的目录
+ * @param label 可选快照标签（记入条目——listSnapshots 可见）
  * @returns 新快照的 SHA
  */
-export function commitSnapshot(dir: string): string {
+export function commitSnapshot(dir: string, label?: string): string {
   const shadowDir = join(dir, '.sofagent', '.git-shadow');
   if (!existsSync(shadowDir)) {
-    createShadowRepo(dir);
+    createShadowRepo(dir, label);
   }
 
   const snapshots = loadSnapshots(shadowDir);
@@ -403,6 +413,7 @@ export function commitSnapshot(dir: string): string {
     sha,
     timestamp: new Date().toISOString(),
     files,
+    ...(label !== undefined ? { label } : {}),
   };
 
   snapshots.push(entry);
@@ -539,6 +550,23 @@ export function listSnapshots(dir: string): SnapshotEntry[] {
   const shadowDir = join(dir, '.sofagent', '.git-shadow');
   if (!existsSync(shadowDir)) return [];
   return loadSnapshots(shadowDir);
+}
+
+/**
+ * v1.5.0 TASK-18: 按 label 解析快照——rollback 的定位维度。
+ *
+ * 匹配语义：label 精确匹配，同 label 多条快照取**最新**（时间序末尾——
+ * 快照按追加序存储，末尾即最新）；无 label 快照不在匹配面内。
+ *
+ * @param dir 工作目录
+ * @param label 快照标签
+ * @returns 匹配的最新快照；无匹配返回 null
+ */
+export function findSnapshotByLabel(dir: string, label: string): SnapshotEntry | null {
+  const snapshots = listSnapshots(dir);
+  const matched = snapshots.filter((s) => s.label === label);
+  if (matched.length === 0) return null;
+  return matched[matched.length - 1]!;
 }
 
 /**

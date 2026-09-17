@@ -42,10 +42,14 @@ export interface RouteVerdict {
  * 单请求分流判定（纯函数——hash 键稳定分流：同 sessionId 恒定同臂，
  * 避免同会话在两臂间抖动导致上下文漂移）。
  *
+ * 更名避歧（v1.5.0 TASK-32）：orchestrator 另有同名 routeRequest
+ * （语义路由，route/route-request.ts）——同名不同物，裸符号 grep 会假阳性，
+ * 故 train 灰度分流导出更名为 canaryRouteRequest。
+ *
  * @param key 分流键（sessionId/requestId——hash 输入）
  * @param config 灰度配置
  */
-export function routeRequest(key: string, config: CanaryConfig): RouteVerdict {
+export function canaryRouteRequest(key: string, config: CanaryConfig): RouteVerdict {
   const percent = Math.min(100, Math.max(0, config.newWeightPercent));
   const h = createHash('sha256').update(String(key)).digest();
   // 取 hash 前 4 字节 → [0, 100) 均匀桶

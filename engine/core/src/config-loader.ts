@@ -863,14 +863,8 @@ export interface SofaEnvConfig {
   /** 日志最大条数（有消费点：engine/scripts/cleanup.sh 读 SOFAGENT_RETENTION_MAX，v1.4.3 起新名优先） */
   retentionMax: number;
   /**
-   * 写日志后是否触发清理
-   * @deprecated v1.4.3 P2-g 披露：无生产消费点——实际清理走 cleanup.sh 手动/定时，
-   *   不存在「写后自动清理」路径，设 SOFAGENT_CLEANUP_ON_RECORD 无行为效果。
-   */
-  cleanupOnRecord: boolean;
-  /**
    * 清理触发频率（1/N 概率）
-   * @deprecated v1.4.3 P2-g 披露：依赖 cleanupOnRecord 的自动清理路径未接线——
+   * @deprecated v1.4.3 P2-g 披露：自动清理路径未接线——
    *   设 SOFAGENT_CLEANUP_FREQUENCY 无行为效果。
    */
   cleanupFrequency: number;
@@ -889,7 +883,6 @@ export const ENV_DEFAULTS: Omit<SofaEnvConfig, 'dataDir'> = {
   sanitizeIpsEnabled: true,
   retentionDays: 90,
   retentionMax: 500,
-  cleanupOnRecord: false,
   cleanupFrequency: 10,
   auditEnabled: false,
 };
@@ -910,7 +903,8 @@ export function loadEnvConfig(): SofaEnvConfig {
     sanitizeIpsEnabled: resolveBoolEnv('SOFAGENT_SANITIZE_IPS', 'SOFA_SANITIZE_IPS', ENV_DEFAULTS.sanitizeIpsEnabled),
     retentionDays: resolveNumberEnv('SOFAGENT_RETENTION_DAYS', 'SOFA_RETENTION_DAYS', ENV_DEFAULTS.retentionDays),
     retentionMax: resolveNumberEnv('SOFAGENT_RETENTION_MAX', 'SOFA_RETENTION_MAX', ENV_DEFAULTS.retentionMax),
-    cleanupOnRecord: resolveBoolEnv('SOFAGENT_CLEANUP_ON_RECORD', 'SOFA_CLEANUP_ON_RECORD', ENV_DEFAULTS.cleanupOnRecord),
+    // v1.5.0 TASK-27: SOFAGENT_CLEANUP_ON_RECORD 死配置已移除（v1.4.3 披露从未接线）——
+    // 曾设该 env 的用户无感（本来就不生效），声明见 LIMITATIONS.md §七
     cleanupFrequency: resolveNumberEnv('SOFAGENT_CLEANUP_FREQUENCY', 'SOFA_CLEANUP_FREQUENCY', ENV_DEFAULTS.cleanupFrequency),
     auditEnabled: resolveBoolEnv('SOFAGENT_AUDIT_ENABLED', 'SOFA_AUDIT_ENABLED', ENV_DEFAULTS.auditEnabled),
   };

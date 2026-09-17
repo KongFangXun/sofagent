@@ -232,7 +232,7 @@ describe('config-loader', () => {
       expect(config.sanitizeIpsEnabled).toBe(true);
       expect(config.retentionDays).toBe(90);
       expect(config.retentionMax).toBe(500);
-      expect(config.cleanupOnRecord).toBe(false);
+      // v1.5.0 TASK-27: SOFAGENT_CLEANUP_ON_RECORD 死配置已移除（从未接线）
       expect(config.cleanupFrequency).toBe(10);
       expect(config.auditEnabled).toBe(false);
     });
@@ -240,14 +240,12 @@ describe('config-loader', () => {
     it('环境变量 true/1/yes 转为 boolean', () => {
       process.env.SOFA_SANITIZE = 'true';
       process.env.SOFA_SANITIZE_IPS = '1';
-      process.env.SOFA_CLEANUP_ON_RECORD = 'yes';
       process.env.SOFA_AUDIT_ENABLED = 'true';
 
       const config = loadEnvConfig();
 
       expect(config.sanitizeEnabled).toBe(true);
       expect(config.sanitizeIpsEnabled).toBe(true);
-      expect(config.cleanupOnRecord).toBe(true);
       expect(config.auditEnabled).toBe(true);
     });
 

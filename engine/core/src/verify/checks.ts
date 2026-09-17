@@ -724,11 +724,11 @@ export function runAllChecks(
   // 10.5 默认关闭确认
   {
     // SOFAGENT_* 主名优先，SOFA_* 别名兜底
+    // v1.5.0 TASK-27: SOFAGENT_CLEANUP_ON_RECORD 死配置已移除（从未接线）
     const sofaSanitize = resolveEnvVar('SOFAGENT_SANITIZE', 'SOFA_SANITIZE');
     const sofaAuditEnabled = resolveEnvVar('SOFAGENT_AUDIT_ENABLED', 'SOFA_AUDIT_ENABLED');
-    const sofaCleanupOnRecord = resolveEnvVar('SOFAGENT_CLEANUP_ON_RECORD', 'SOFA_CLEANUP_ON_RECORD');
 
-    if (sofaSanitize !== 'true' && sofaAuditEnabled !== 'true' && sofaCleanupOnRecord !== 'true') {
+    if (sofaSanitize !== 'true' && sofaAuditEnabled !== 'true') {
       v.checkPass('默认关闭: 合规功能全部关闭（向后兼容）');
     } else {
       if (sofaSanitize === 'true') {
@@ -736,9 +736,6 @@ export function runAllChecks(
       }
       if (sofaAuditEnabled === 'true') {
         v.checkWarn('审计已启用 (audit_enabled=true)');
-      }
-      if (sofaCleanupOnRecord === 'true') {
-        v.checkWarn('清理触发已启用 (data_cleanup_on_record=true)');
       }
     }
   }

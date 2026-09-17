@@ -10,7 +10,7 @@
 
 import { describe, it, expect } from 'vitest';
 import {
-  routeRequest,
+  canaryRouteRequest,
   emptyArmMetrics,
   accumulateMetrics,
   deriveRates,
@@ -36,7 +36,7 @@ function arm(requests: number, correct: number, refusals: number, costUsd: numbe
 describe('weight-canary · 分流（T9 验收①）', () => {
   it('hash 稳定分流——同 key 恒定同臂（会话不抖动）', () => {
     for (let i = 0; i < 20; i += 1) {
-      expect(routeRequest('session-abc', CONFIG)).toEqual(routeRequest('session-abc', CONFIG));
+      expect(canaryRouteRequest('session-abc', CONFIG)).toEqual(canaryRouteRequest('session-abc', CONFIG));
     }
   });
 
@@ -44,7 +44,7 @@ describe('weight-canary · 分流（T9 验收①）', () => {
     let newHits = 0;
     const N = 10_000;
     for (let i = 0; i < N; i += 1) {
-      if (routeRequest(`req-${i}`, CONFIG).isNew) newHits += 1;
+      if (canaryRouteRequest(`req-${i}`, CONFIG).isNew) newHits += 1;
     }
     const ratio = newHits / N;
     expect(ratio).toBeGreaterThan(0.03);
@@ -52,10 +52,10 @@ describe('weight-canary · 分流（T9 验收①）', () => {
   });
 
   it('边界：0% 全旧 / 100% 全新', () => {
-    const allOld = routeRequest('k', { ...CONFIG, newWeightPercent: 0 });
+    const allOld = canaryRouteRequest('k', { ...CONFIG, newWeightPercent: 0 });
     expect(allOld.isNew).toBe(false);
     expect(allOld.adapter).toBe('lora-v3-prod');
-    const allNew = routeRequest('k', { ...CONFIG, newWeightPercent: 100 });
+    const allNew = canaryRouteRequest('k', { ...CONFIG, newWeightPercent: 100 });
     expect(allNew.isNew).toBe(true);
     expect(allNew.adapter).toBe('lora-v4-canary');
   });
@@ -63,7 +63,7 @@ describe('weight-canary · 分流（T9 验收①）', () => {
   it('不同 key 分散命中两臂（hash 分布性）', () => {
     const arms = new Set<string>();
     for (let i = 0; i < 200; i += 1) {
-      arms.add(routeRequest(`spread-${i}`, CONFIG).adapter);
+      arms.add(canaryRouteRequest(`spread-${i}`, CONFIG).adapter);
     }
     expect(arms.size).toBe(2); // 两臂都有命中
   });

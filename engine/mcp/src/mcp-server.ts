@@ -20,6 +20,10 @@ import { getActiveRoles, filterToolsByRoles, isToolExposed } from './tool-roles'
 import { listResources, readResource } from './resources';
 // dynamic tools（memory_backends 注册——运行时合并，不污染静态 TOOLS）
 import { getDynamicTools, getDynamicTool, registerMemoryBackends } from './tools/memory-backend';
+// L4 进化工具动态面桥（orchestrator 台账 → 动态面——启动时接线）
+import { registerEvolvedTools } from './tools/evolution-dynamic-bridge';
+// v1.5.0 TASK-26：tools/call 前置权限守卫（opt-in——SOFAGENT_PERMISSION_GUARD=1）
+import { guardToolCall, isPermissionGuardEnabled } from './tools/permission-guard';
 // 工具结果类型（sendTool 消费面）
 import { type ToolResult } from './tools/audit-tools';
 
@@ -68,6 +72,22 @@ class McpServer {
     void registerMemoryBackends().catch((err) => {
       process.stderr.write(`[${SERVER_NAME}] memory_backends 注册失败（不影响主流程）: ${err instanceof Error ? err.message : String(err)}\n`);
     });
+
+    // v1.5.0：L4 进化工具接线——启动时读 orchestrator 台账注册动态面
+    // （台账空则零注册、幂等；动态 import 避免编译期强耦合，失败降级不 crash）
+    void import('@sofagent/orchestrator')
+      .then(({ getApprovedEvolvedTools }) => {
+        const registered = registerEvolvedTools({
+          getTools: () => getApprovedEvolvedTools(),
+          loadGenerator: (p) => require(p),
+        });
+        if (registered.length > 0) {
+          process.stderr.write(`[${SERVER_NAME}] L4 进化工具注册 ${registered.length} 个: ${registered.join(', ')}\n`);
+        }
+      })
+      .catch((err) => {
+        process.stderr.write(`[${SERVER_NAME}] L4 进化工具注册失败（不影响主流程）: ${err instanceof Error ? err.message : String(err)}\n`);
+      });
 
     const rl = readline.createInterface({ input: process.stdin, output: process.stdout, terminal: false, crlfDelay: Infinity });
     process.stderr.write(`[${SERVER_NAME}] v${SERVER_VERSION} started\n`);
@@ -137,6 +157,16 @@ class McpServer {
     const args = (params.arguments ?? {}) as Record<string, unknown>;
 
     try {
+      // v1.5.0 TASK-26：权限守卫前置判定（opt-in）——risk 定级 → policy 判定 →
+      // deny/human-approval 拦截（守卫先于事件分发；未启用时直通零开销）
+      if (isPermissionGuardEnabled()) {
+        const verdict = await guardToolCall(toolName);
+        if (!verdict.allowed) {
+          this.sendError(id, -32602, verdict.blockReason ?? '权限守卫拦截');
+          return;
+        }
+      }
+
       // v1.3.0 (交付 10 MA1)：动态工具优先路由（memory_backends 注册的工具）
       const dynamicTool = getDynamicTool(toolName);
       if (dynamicTool) {

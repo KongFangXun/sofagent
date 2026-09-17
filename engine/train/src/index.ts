@@ -824,8 +824,10 @@
   DistillIngestRecord,
 } from './distill-pairs';
 // T9 权重灰度发布 AB（v1.4.9 第九章）
+// v1.5.0 TASK-32 更名避歧：routeRequest → canaryRouteRequest——orchestrator
+// 另有同名 routeRequest（语义路由），裸符号 grep 接线断言会假阳性
 /* @public */ export {
-  routeRequest,
+  canaryRouteRequest,
   emptyArmMetrics,
   accumulateMetrics,
   deriveRates,

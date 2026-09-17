@@ -462,14 +462,20 @@ export function runDoctor(projectDir: string = process.cwd(), options: { resetBa
   //   影子审计器防御永久失效（SECURITY.md:329 声称与事实矛盾）。
   // 修复后的解析顺序（覆盖 monorepo / npm 全局安装两种布局）：
   //   ① monorepo：core/dist → core → engine/ → engine/audit/dist/index.js（../../audit/dist）
-  //   ② 发布安装：require.resolve('@sofagent/audit') 反推 audit 包根，再拼 dist/index.js
+  //   ② 发布安装：require.resolve('@sofagent/audit') 得包 main 入口（./dist/public-api.js），
+  //      从入口文件上溯两级（dist/public-api.js → dist → 包根）再拼 dist/index.js
   //   ③ 两者均不存在 → 显式 warn（不再静默跳过——「检查不到」不等于「通过」）
+  // 🔴 v1.5.0 TASK-19 修正 ②：原实现 join(dirname(resolve(...)), 'dist', 'index.js')——
+  //   dirname(public-api.js) 是 dist/，再拼 dist/index.js 得 dist/dist/index.js（错位，
+  //   发布安装态恒 miss → doctor 的 audit 检查空转走显式 warn）。resolve 已落在 dist 内，
+  //   正解是上溯到**包根**再拼 dist/index.js（两种安装态的包根布局一致）。
   let auditDistPath = join(__dirname, '..', '..', 'audit', 'dist', 'index.js');
   if (!existsSync(auditDistPath)) {
     try {
       // CJS 环境下 require 全局可用（与上方依赖检查同一先例）；
       // 从 core 包位置出发解析 audit 包，兼容任意 node_modules 嵌套深度。
-      auditDistPath = join(dirname(require.resolve('@sofagent/audit')), 'dist', 'index.js');
+      // main 入口（dist/public-api.js）→ dirname×2 = 包根 → dist/index.js
+      auditDistPath = join(dirname(dirname(require.resolve('@sofagent/audit'))), 'dist', 'index.js');
     } catch {
       // @sofagent/audit 不可解析（未安装/独立安装 core）——留给下方显式 warn
     }

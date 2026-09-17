@@ -204,7 +204,17 @@ export function loadRedactRules(dataDir?: string): RedactRulesConfig {
   if (!existsSync(p)) return {};
   try {
     return JSON.parse(readFileSync(p, 'utf-8')) as RedactRulesConfig;
-  } catch {
-    return {}; // 坏配置按空处理——脱敏降级不崩（格式类仍内置生效）
+  } catch (err) {
+    // v1.5.0 TASK-20: 坏配置不再静默失效——检测面死亡必须可感知（与 TASK-9
+    // post-commit 加密吞错同族）。降级语义保留（不崩——格式类内置规则仍生效），
+    // 但必须先发声。SOFAGENT_REDACT_STRICT=1 时红死优于静默（企业高安全场景）。
+    const msg = err instanceof Error ? err.message : String(err);
+    if (process.env.SOFAGENT_REDACT_STRICT === '1') {
+      throw new Error(`redact-rules.json 解析失败（${p}）：${msg}——SOFAGENT_REDACT_STRICT=1 严格模式下自定义脱敏规则失效即中止`);
+    }
+    process.stderr.write(
+      `⚠️ [sofagent] redact-rules.json 解析失败（${p}）：${msg}——自定义脱敏规则已全部失效，仅格式类内置规则生效，请修复或删除该文件\n`,
+    );
+    return {};
   }
 }

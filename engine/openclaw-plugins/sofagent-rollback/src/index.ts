@@ -52,28 +52,80 @@ type OpenClawApi = any;
               type: 'string',
               description: '快照标签（创建时可选，rollback 时指定快照）',
             },
+            confirm: {
+              type: 'boolean',
+              description: 'rollback 二次确认——首次调用返回将触及文件的预览，confirm=true 才执行恢复',
+            },
           },
           required: ['action'],
         },
-        async execute(_id: string, params: { action: string; label?: string }) {
+        async execute(_id: string, params: { action: string; label?: string; confirm?: boolean }) {
           try {
             // eslint-disable-next-line @typescript-eslint/no-require-imports
             const m = require('@sofagent/core');
             const projectRoot = process.cwd();
             const action = params.action;
             if (action === 'snapshot') {
-              const path = typeof m.createShadowRepo === 'function'
-                ? await m.createShadowRepo(projectRoot, params.label)
-                : (typeof m.getHistoryFilePath === 'function' ? m.getHistoryFilePath(projectRoot) : null);
-              return { content: [{ type: 'text', text: `快照已创建：${path}` }] };
+              // v1.5.0 TASK-18: 快照走 commitSnapshot（真实快照落盘）+ label 记账——
+              // 原实现只 createShadowRepo（仅建目录结构，零快照内容），快照面空转。
+              const sha = typeof m.commitSnapshot === 'function'
+                ? m.commitSnapshot(projectRoot, params.label)
+                : null;
+              if (sha === null) throw new Error('@sofagent/core 缺 commitSnapshot 导出');
+              return { content: [{ type: 'text', text: `快照已创建：${sha}${params.label ? `（label: ${params.label}）` : ''}` }] };
             }
             if (action === 'list') {
-              const path = typeof m.getHistoryFilePath === 'function' ? m.getHistoryFilePath(projectRoot) : 'N/A';
-              return { content: [{ type: 'text', text: `快照历史：${path}` }] };
+              // v1.5.0 TASK-18: list 走 listSnapshots 真实清单（原实现只打 history 路径）
+              if (typeof m.listSnapshots !== 'function') throw new Error('@sofagent/core 缺 listSnapshots 导出');
+              const snaps = m.listSnapshots(projectRoot) as Array<{ sha: string; timestamp: string; label?: string; files: Record<string, string> }>;
+              if (snaps.length === 0) {
+                return { content: [{ type: 'text', text: '暂无快照（先 action=snapshot 创建）' }] };
+              }
+              const lines = snaps.map((s) => `  ${s.sha.slice(0, 8)}  ${s.timestamp}${s.label ? `  [${s.label}]` : ''}  (${Object.keys(s.files).length} 文件)`);
+              return { content: [{ type: 'text', text: `快照历史（${snaps.length} 份，最新在末尾）:\n${lines.join('\n')}` }] };
             }
-            return { content: [{ type: 'text', text: `回滚：${params.label ?? 'latest'}（需配合审计确认后执行）` }] };
+            if (action === 'rollback') {
+              // v1.5.0 TASK-18: rollback 实装——原实现仅返回提示文案（零恢复调用）。
+              // 两段式确认语义：首次调用展示将触及的文件（dry-run），confirm=true
+              // 才执行恢复；恢复失败抛结构化错误（非裸文本）。
+              if (typeof m.restoreSnapshot !== 'function' || typeof m.listSnapshots !== 'function') {
+                throw new Error('@sofagent/core 缺 restoreSnapshot/listSnapshots 导出');
+              }
+              // 定位目标快照：label 优先（findSnapshotByLabel），缺省最新
+              let targetSha: string | null = null;
+              let targetInfo = 'latest';
+              if (params.label) {
+                const snaps = m.listSnapshots(projectRoot) as Array<{ sha: string; timestamp: string; label?: string; files: Record<string, string> }>;
+                const matched = snaps.filter((s) => s.label === params.label);
+                if (matched.length === 0) {
+                  return { content: [{ type: 'text', text: `未找到 label 为 "${params.label}" 的快照。可用: ${snaps.filter((s) => s.label).map((s) => s.label).join(', ') || '（无带标签快照）'}` }] };
+                }
+                const target = matched[matched.length - 1]!;
+                targetSha = target.sha;
+                targetInfo = `label=${params.label} sha=${target.sha.slice(0, 8)}`;
+              } else {
+                const snaps = m.listSnapshots(projectRoot) as Array<{ sha: string }>;
+                if (snaps.length === 0) {
+                  return { content: [{ type: 'text', text: '暂无可回滚的快照' }] };
+                }
+                targetSha = snaps[snaps.length - 1]!.sha;
+              }
+              if (!params.confirm) {
+                // 第一段：dry-run 展示——回滚将触及的文件（快照内全部文件），等确认
+                const snaps = m.listSnapshots(projectRoot) as Array<{ sha: string; files: Record<string, string>; label?: string }>;
+                const target = snaps.find((s) => s.sha === targetSha)!;
+                const fileList = Object.keys(target.files).slice(0, 20).map((p) => `  ${p}`).join('\n');
+                const more = Object.keys(target.files).length > 20 ? `\n  ...（共 ${Object.keys(target.files).length} 个文件）` : '';
+                return { content: [{ type: 'text', text: `回滚预览（${targetInfo}）——将恢复以下文件:\n${fileList}${more}\n\n确认执行请带 confirm: true 重新调用。` }] };
+              }
+              // 第二段：确认后真实恢复
+              const restored = m.restoreSnapshot(projectRoot, targetSha) as string[];
+              return { content: [{ type: 'text', text: `已回滚到 ${targetInfo}，恢复 ${restored.length} 个文件` }] };
+            }
+            return { content: [{ type: 'text', text: `未知 action: ${action}（可选 snapshot / rollback / list）` }] };
           } catch (err) {
-            return { content: [{ type: 'text', text: `sofagent_rollback 依赖 @sofagent/core 不可用：${err instanceof Error ? err.message : String(err)}` }] };
+            // v1.5.0 TASK-18: 结构化错误（非裸文本）——调用方可编程处理
+            return { isError: true, content: [{ type: 'text', text: `sofagent_rollback 执行失败: ${err instanceof Error ? err.message : String(err)}` }] };
           }
         },
       },
