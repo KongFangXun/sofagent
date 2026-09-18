@@ -73,7 +73,7 @@ prompt 是**快照**，代码在动。写 prompt 时某个 bug 还没修，等�
       ① **章节数机械对账**：prompt 产任务章数 == devlog `## ` 章数（含元章声明——「与后续版本的依赖」这类不产任务的章也要显式标注，防对照困惑）
       ② **验收搬运对账**：devlog 每章验收 `- [ ]` 逐条 grep prompt（用 node 脚本机械比对，不靠肉眼）
       ③ **「不存在的东西当已存在写」**：devlog 引用的枚举值/常量/字段逐个查源码（实锤：`COVERAGE` 不在 DecisionKind 12 值枚举内，运行时校验会抛「非法 kind」）
-      ④ **移除/改名面全枚举**：凡「移除 X」条目，`git grep` X 的**全部落点**（导出面/测试/README/@public 基线 JSON——实锤：composeWithDeepAgents 四处残留，基线漏改 = 门禁红）
+      ④ **移除/改名面全枚举**：凡「移除 X」条目，`git grep` X 的**全部落点**（导出面/测试/README/@public 基线 JSON——实锤：曾发生移除面残留事故（更名期旧名多处残留，基线漏改 = 门禁红））
       ⑤ **基线数字时效**：devlog 排期快照数字（工具数/文件数/枚举数）逐个当轮重测（实锤：「77th tool」实为 105th；两族字面量 28/9 → 31/17 漂移）
       ⑥ **ROADMAP 行交叉对账**：ROADMAP 版本行能力条目逐条在 devlog+prompt 找落点（ROADMAP 是对外承诺面，漏项 = 承诺无载体）
       发现问题**先修 devlog（SSOT）再同步 prompt**——只修 prompt 不修源头，下个 session 读 devlog 重新踩坑。

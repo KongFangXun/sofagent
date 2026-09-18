@@ -5,7 +5,7 @@
 
 import { describe, it, expect } from 'vitest';
 import {
-  composeWithDeepAgents,
+  composeWithReactAgent,
   BUILTIN_AGENTS,
   loadDefinition,
   listAgents,
@@ -16,16 +16,16 @@ import {
 // ════════════════════════════════════════
 
 describe('compose — 编排主链路', () => {
-  it('composeWithDeepAgents 在无模型环境返回 null（不崩溃）', async () => {
+  it('composeWithReactAgent 在无模型环境返回 null（不崩溃）', async () => {
     // 无 SOFAGENT_LLM 环境变量时，模型解析失败，函数优雅降级返回 null
     // smoke 测试验证函数不抛异常、优雅降级
-    const result = await composeWithDeepAgents('测试任务：写一个 hello world');
+    const result = await composeWithReactAgent('测试任务：写一个 hello world');
     // 无模型时返回 null，有则返回 YAML 字符串
     expect(result === null || typeof result === 'string').toBe(true);
   });
 
-  it('composeWithDeepAgents 空任务描述不崩溃', async () => {
-    const result = await composeWithDeepAgents('');
+  it('composeWithReactAgent 空任务描述不崩溃', async () => {
+    const result = await composeWithReactAgent('');
     expect(result === null || typeof result === 'string').toBe(true);
   });
 });
@@ -75,14 +75,14 @@ describe('registration — Agent 注册主链路', () => {
 // ════════════════════════════════════════
 
 describe('invocation — 调用主链路', () => {
-  it('composeWithDeepAgents 带 workflowYml 参数不崩溃', async () => {
+  it('composeWithReactAgent 带 workflowYml 参数不崩溃', async () => {
     const sampleYml = `workflow:
   name: test
   nodes:
     - id: step1
       agent: developer
       task: do something`;
-    const result = await composeWithDeepAgents('测试任务', sampleYml);
+    const result = await composeWithReactAgent('测试任务', sampleYml);
     expect(result === null || typeof result === 'string').toBe(true);
   });
 
