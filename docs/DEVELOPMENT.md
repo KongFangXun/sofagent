@@ -690,3 +690,20 @@ loop-engineering 社区将 STATE.md 定位为 **「对话外的持久化主干�
 | `engine/orchestrator/src/dag-runner.ts` | v1.2.8 | 扩展：支持企业 Agent 执行 + 审计 hook |
 
 > 详见 [激活链设计文档](./guides/fde-activation-chain.md)。
+
+---
+
+## 维护者口径（自 ROADMAP 迁入——内部对账细节不占路线图版面）
+
+### 场景数 SSOT 口径
+
+> **SSOT 口径**：`playbook/acceptance-test.sh` 头部「场景数」声明 = 真实 `scenario` 调用行数（非编号最大值、非运行时执行数）。当前值 357（最大场景号 S431，S1-S431 间 77 个历史空洞号；v1.5.0 阶段三步骤四验收增量 +5：S427-S431（治理 KPI 面板/双时态时点快照/Validation Engine 环检测+fail-closed/trace 对账四态/FDE 陪跑期+插件事件接线——行为实测 dist 直调，多模块共场景对齐 S373/S374 先例）。
+>
+> 后续版本引用场景数一律以 `acceptance-test.sh` 头部声明为准，禁止从其他文档转述。逐版沿革账见 [v1.5.0 开发日志 · 附录](./changelog/v1.5/v1.5.0.md)。
+
+### 加载链预算目标跟踪
+
+- **≤3% 总占用预算目标**（加载链总占用 ≤ 上下文窗口 3% / 规范类 ≤500 字 / think ≤2K token）：当前未全量落地（全文注入，仅 persona 前 500 字符与 knowledge 单篇前 2000 字符有截断）。该目标拆两件、各自占位：
+  - **自动压缩**（超预算触发摘要压缩 + start/end 标记 + 留痕）：目标版本 [v1.4.8](./changelog/v1.4/v1.4.8.md) 第四章——本版只收口「压缩」一件。
+  - **窗口超预算拒载/降级机制**：仍未排期、无版本单元格（触发条件=自动压缩落地后实测仍频繁越线；触发后须**显式决策**——拒载越线项或降级至最小骨架，不许静默丢弃导致 limbo，fail-closed）。
+  机制设计见 [ARCHITECTURE §四 加载链预算](./ARCHITECTURE.md#四核心设计决策)。

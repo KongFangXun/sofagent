@@ -989,7 +989,7 @@ sofagent 的四条设计原则，每条背后有独立的理论/工程/经济学
 
 四层中前三层（SKILL.md / fde.md / think.md）在 Agent 启动时加载，第四层 knowledge/ 按需召回 top-N，不占基础预算。加载链总占用不超过上下文窗口的 3%，规范类文件（SKILL.md/fde.md 等）预算 ≤500 字，think.md 反思区单独预算 ≤2K token——这是 Agent 压缩后可读的最低保证（**上述预算为规划目标，尚未全量落地**，落地状态见下方注记）。
 
-> ⚠️ **预算约束当前状态（v1.3.8 文档对齐）**：上述「≤3% 总占用 / 规范类 ≤500 字 / think ≤2K」为**规划中的目标预算，尚未全量落地**——当前实现为全文注入（SKILL.md / fde.md / think.md 加载时不截断），仅 persona（前 500 字符）与 knowledge 单篇（前 2000 字符）有截断（`engine/inject/src/index.ts`）。窗口占用超预算时的拒载/降级机制列入后续版本。进度跟踪见 [ROADMAP「加载链预算目标跟踪」](./ROADMAP.md#加载链预算目标跟踪)。
+> ⚠️ **预算约束当前状态（v1.3.8 文档对齐）**：上述「≤3% 总占用 / 规范类 ≤500 字 / think ≤2K」为**规划中的目标预算，尚未全量落地**——当前实现为全文注入（SKILL.md / fde.md / think.md 加载时不截断），仅 persona（前 500 字符）与 knowledge 单篇（前 2000 字符）有截断（`engine/inject/src/index.ts`）。窗口占用超预算时的拒载/降级机制列入后续版本。进度跟踪见 [DEVELOPMENT「加载链预算目标跟踪」](./DEVELOPMENT.md#加载链预算目标跟踪)（维护者口径，自 ROADMAP 迁入）。
 
 > 💡 **记忆系统的三软肋 = 知识健康巡检的防御目标**
 >
