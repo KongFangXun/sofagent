@@ -30,6 +30,16 @@
       "type": "string",
       "description": "entity 简述（可选）"
     },
+    "validFrom": {
+      "type": "string",
+      "minLength": 1,
+      "description": "双时态事实：本实体自何时刻起有效（ISO 8601；可选，缺省 = 永久有效）。用于 stateAt(date) 时点快照查询——回答「系统在某天知道什么」"
+    },
+    "validTo": {
+      "type": "string",
+      "minLength": 1,
+      "description": "双时态事实：本实体自何时刻起失效（ISO 8601；可选，缺省 = 仍有效）。置值后 stateAt 快照不再包含本实体"
+    },
     "relations": {
       "type": "object",
       "description": "关联关系（对齐 CORE-LNK；值为目标 entity 名数组）",

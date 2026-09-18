@@ -29,6 +29,10 @@ export interface OntologyObject {
   stale_after?: string;
   /** v1.3.6 · v1.3.7 开发⑥ OKF ②：验证记录（OKF §5.2 三级信任 human > process > unverified；actor 复用 Ed25519 身份码三态 human:/process:/agent） */
   verified?: Array<{ by: string; at: string }>;
+  /** 双时态事实：本实体自何时刻起有效（ISO 8601；可选，缺省 = 永久有效）——stateAt(date) 时点快照查询用 */
+  validFrom?: string;
+  /** 双时态事实：本实体自何时刻起失效（ISO 8601；可选，缺省 = 仍有效）——置值后不再进入时点快照 */
+  validTo?: string;
 }
 
 /**

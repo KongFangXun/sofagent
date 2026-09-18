@@ -44,6 +44,8 @@ export interface EmitDecisionInput {
   causalType?: CausalType;
   specRef?: string;
   artifactRef?: string;
+  /** 双时态快照：决策引用本体实体时记录当时 validFrom/validTo（v1.5.0 第二章） */
+  entityValidity?: Record<string, { validFrom?: string; validTo?: string }>;
   /** 决策记录来源标识（缺省 'sofagent-audit'） */
   engine?: string;
   /** 触发证据链（字符串数组，可空）—— v1.3.3 新增
@@ -184,6 +186,7 @@ export function emitDecision(input: EmitDecisionInput, dataDir?: string): Decisi
     why: sanitizeWhy(normalizeWhy(input.why)),
     ...(input.specRef ? { specRef: input.specRef } : {}),
     ...(input.artifactRef ? { artifactRef: input.artifactRef } : {}),
+    ...(input.entityValidity !== undefined ? { entityValidity: input.entityValidity } : {}),
     ...(input.evidence !== undefined ? { evidence: input.evidence } : {}),
     engine: input.engine ?? 'sofagent-audit',
   };

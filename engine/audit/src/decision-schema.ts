@@ -150,6 +150,12 @@ export interface DecisionLogEntry {
   specRef?: string;
   /** 关联产物引用（文件路径 / commitSha） */
   artifactRef?: string;
+  /**
+   * 双时态快照：决策引用本体实体时，记录当时的 validFrom/validTo 区间——
+   * 「当时依据的版本」不再靠 git snapshot 反推（v1.5.0 第二章审计回溯联动）。
+   * 键 = 实体名，值 = 决策时刻的时间区间（undefined 字段语义同 schema：未填 = 永久/仍有效）。
+   */
+  entityValidity?: Record<string, { validFrom?: string; validTo?: string }>;
   // ── 防篡改链字段（复用 audit-history.ts 同套） ──
   /** 前一条记录的 hash（链完整性校验用） */
   prevHash?: string;
