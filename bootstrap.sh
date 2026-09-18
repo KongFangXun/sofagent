@@ -24,19 +24,19 @@ INSTALL_URL="https://raw.githubusercontent.com/KongFangXun/sofagent/refs/tags/v1
 #      机器校验见 tools/check/check-version.sh 第 20 项（lib 哈希逐一对账）。
 #   发布清单同步提醒：docs/changelog/releasing/ 09-tag.md（tag 发布阶段）
 # ════════════════════════════════════════════════════════════════════════
-INSTALL_SHA256="609a6bb2d00387dd00e11ade39e004ad3ca7c0f7a5ef1a9ade5f627e45052a5b"  # v1.4.9 tag:install.sh（与 URL 同 tag 自洽，check-version 20b tag 对账口径）
+INSTALL_SHA256="73327eb2267e6757aa389284212e9d1e560b35b1ba4ad70d8aaf786a5a50284d"  # HEAD install.sh（v1.5.0 发版批次回填，check-version 20b tag 对账口径）
 # v1.3.8 P0-1 兜底：install.sh 依赖同目录 engine/scripts/lib/ 下 6 个模块——
 #   此前 bootstrap 只下载孤立 install.sh，source 立即失败（安装链全断根因）。
 #   现在同时下载 lib 全部文件到同目录结构，让 install.sh 的 source 可达。
-LIB_BASE_URL="https://raw.githubusercontent.com/KongFangXun/sofagent/refs/tags/v1.4.9/engine/scripts/lib"
+LIB_BASE_URL="https://raw.githubusercontent.com/KongFangXun/sofagent/refs/tags/v1.5.0/engine/scripts/lib"
 LIB_FILES="platform-detect.sh file-deploy.sh daemon-register.sh post-install.sh daemon-lib.sh config.sh"
-# lib 文件 sha256（与 LIB_FILES 顺序一一对应；file-deploy.sh 为 v1.4.9 批次改动，其余 5 个沿用 v1.4.5 tag 起的值）
+# lib 文件 sha256（与 LIB_FILES 顺序一一对应；v1.5.0 批次按 HEAD 全量重算回填，勿在回填后改动被钉文件）
 LIB_SHA256S="3e9e4c30c2c26b57601e3e39c003e722eb522fae690cdd74311e2ceff3740809
-27d3a19365a9657266f643b2fc31b3d1a58603bd3f5585259b13f503815bff4c
+131cb676bcaae31b79873c8968084fdc6b9b49ce8b91ce9085d5ce4ce1be7f91
 e83cf4dc60d929ed7c085b7d5d93beb37e781fd5085eaa1a138d298eb37933b3
-ac9d812aae63aca6ce8cb4cb2ba4f1fd2507dc1cdd919c0ec141782167c504e1
+7bb42884f89bfd46b64567849088f096ba15299e8f585ee11d6aefb20aac24a1
 bec93fd676d2524b11abfb44e1ffa4cb6dd536d13e3a05421aebee5c6bcf6fc2
-84980eef59cf25f26541ccad5d80e0bf453edc8ef54334cdca8cb1b61b0674c3"
+77c2c93b199f5b3ff2245d88ce0383a1e670813af1fec1d42c9e7676550b7c0b"
 
 # sha256 工具兼容（macOS shasum / Linux sha256sum，取输出首段哈希）
 _sha256_of() { # $1=文件路径 → stdout 哈希（失败输出空）
