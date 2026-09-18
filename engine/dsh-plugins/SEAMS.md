@@ -263,66 +263,24 @@ OpenClaw 还有一套**与 plugin hook 不同源**的内建 hook 事件（`HOOK.
 - `dsh --profile probe "Call the tool sofagent_probe_echo ..."` —— 模型真实调用，`tools/result` 回显
 - `DANGEROUS-payload` 变体 —— guard 拒绝；`sofagent_probe_ask` 变体 —— headless 无 answerer 拒绝
 
-**事件位验证步（v1.5.0 起 · DSH 升级日复验用）**——把上一步的探针插件换成
-真实的 `cordis-plugin-sofagent-audit`，断言的不再是「订阅成功」而是「拦截生效」：
+**事件位验证步（DSH 升级日复验用）**——把上一步的探针插件换成真实的 `cordis-plugin-sofagent-audit`，
+断言的不再是「订阅成功」而是「拦截生效」：① 挂载后 kit 应打接线日志
+`seam 事件接线成功：4/4（tools/result, tools/pre-execute, fs/write-intent, agent/turn-stopping）`；
+② 模型发起一次**危险命令**调用（走宿主 bash 工具的 `command` 入参）——期望工具**未执行**、
+模型收到 `Error: sofagent 工具门禁：…`（宿主把 `{ kind: 'deny', reason }` 转成错误结果，理由取
+`dsh-tools/lib/index.js` 的 `prepareExecution` → `decision.reason`）；③ 非命令类工具（不带
+`command` 入参）应照常执行——证明接线没有扩大拦截面；④ 卸载该插件 fiber 后重复 ② —— 应回到
+**未拦截**状态（`plugin-kit` 的复合 disposer + cordis `ctx.on` 自身经 `fiber.effect` 登记，双保险）。
 
-1. 挂载真插件（profile `link:` 指到 `engine/dsh-plugins/cordis-plugin-sofagent-audit`，
-   其 `optionalDependencies` 里的 `@sofagent/*` 需可解析），启动后应看到 kit 的接线日志：
-   `seam 事件接线成功：4/4（tools/result, tools/pre-execute, fs/write-intent, agent/turn-stopping）`。
-2. 让模型发起一次**危险命令**调用（`rm -rf /` 这类，走宿主 bash 工具的 `command` 入参），
-   期望：工具**未执行**，模型收到 `Error: sofagent 工具门禁：…`（宿主把 `{ kind: 'deny', reason }`
-   转成错误结果），且插件日志打出 `工具执行前拦截：…`；
-   对齐宿主体：`dsh-tools/lib/index.js` 的 `prepareExecution` 用 `decision.reason` 组装拒绝理由。
-3. 非命令类工具（不带 `command` 入参）应照常执行——证明接线没有扩大拦截面。
-4. 卸载该插件 fiber 后重复第 2 步：应回到**未拦截**状态——证明订阅随 fiber 撤销
-   （`plugin-kit` 的复合 disposer + cordis `ctx.on` 自身经 `fiber.effect` 登记，双保险）。
+> ②④ 是唯一的端到端拦截面：`fs/write-intent` 是放行接线、`agent/error` 自动回滚默认关档（见 §6），
+> 不要拿它们当拦截断言。
 
-> 只做 1 与 4 也能判定基础接线；2 是本批唯一端到端可断言的拦截面——`fs/write-intent`
-> 为放行接线、`agent/error` 自动回滚默认关档（见 §6），不要拿它们当拦截断言。
-
-**进程内探针（零外部依赖，改动即复验）**——上面四步要起 profile + 真 LLM；日常复验用这条：
-在**真实 `@deepseek-ai/cordis` 运行时**里加载插件 `dist`，直接派发事件断言判定结果。
-
-```bash
-node --input-type=module -e '
-const R = "<仓库绝对路径>";
-const { Context } = await import(`file://${process.env.HOME}/.dsh/profiles/node_modules/@deepseek-ai/cordis/lib/index.js`);
-const load = async (n) => { const m = await import(`file://${R}/engine/dsh-plugins/${n}/dist/index.js`); return m.default.default ?? m.default; }; // ← 见坑 ②
-const ctx = new Context();
-ctx.provide("settings", { register: () => ({ get: () => ({}), watch: () => () => undefined }) }); // ← 见坑 ①
-ctx.provide("dynamicCordisRunner", {});
-const names = ["cordis-plugin-sofagent-audit", "cordis-plugin-sofagent-inject", "cordis-plugin-sofagent-evolve", "cordis-plugin-sofagent-rollback"];
-const fibers = names.map((n) => load(n).then((p) => ctx.plugin(p)));
-await Promise.all(fibers);
-const allow = () => ({ kind: "allow" });
-console.log(JSON.stringify(await ctx.waterfall("tools/pre-execute", { name: "bash", arguments: { command: "rm -rf /" } }, allow)));
-'
-```
-
-两个必踩的坑（实测记录）：
-
-1. **`inject` 门会静默拦住 `apply`**：插件声明 `inject: ["settings", "dynamicCordisRunner"]`，
-   裸 `new Context()` 缺这两个服务时 cordis **根本不调用 `apply`**——订阅一条没注册、
-   事件照常放行，表象与「接线失效」完全一样。探针必须先 `ctx.provide(...)` 补齐。
-2. **CJS 产物的 `default` 是双层的**：`dist` 是 CJS（`__esModule` + `exports.default`），
-   `import()` 得到的 `m.default` 是 `module.exports` 本身，真插件在 `m.default.default`。
-   宿主加载器不受影响（`unwrapExports` 连解两层：`exports.default ?? exports` → 判
-   `__esModule` → 再取 `.default`），但探针要自己按同口径解包，否则报
-   `invalid plugin, expect function or object with an "apply" method, received object`。
-
-实测输出（四款插件同挂 · 真实 cordis 4.0.1 · 危险载荷只作判定入参，不落任何执行面）：
-
-```
-[sofagent-audit] seam 事件接线成功：4/4（tools/pre-execute, tools/result, fs/write-intent, agent/turn-stopping）
-[sofagent-inject] seam 事件接线成功：1/1（agent/pre-step）
-[sofagent-evolve] seam 事件接线成功：1/1（session/event）
-[sofagent-rollback] seam 事件接线成功：1/1（agent/error）
-[sofagent-audit] 工具执行前拦截：rm 递归删除危险路径（/）
-危险命令    → {"kind":"deny","reason":"sofagent 工具门禁：rm 递归删除危险路径（/）"}
-安全命令    → {"kind":"allow"}
-非命令工具  → {"kind":"allow"}
-卸载 audit fiber 后同一危险载荷 → {"kind":"allow"}    ← 订阅随 fiber 撤销
-```
+**进程内探针（零外部依赖，改动即复验）**——不起 profile、不调 LLM：在真实 `@deepseek-ai/cordis`
+运行时里加载插件 `dist` 并直接派发事件断言判定结果。**完整脚本 + 两个必踩的坑**（① 插件
+`inject` 声明的服务缺席时 cordis 静默不调 `apply`，表象等同「接线失效」；② CJS 产物经 `import()`
+的 `default` 是双层的，宿主加载器 `unwrapExports` 解两层、探针须按同口径解包）**与实测输出**
+（四款同挂 `4/4` + `1/1`×3；危险命令 `deny`、安全命令 `allow`、卸载 fiber 后回到 `allow`）见
+Case 022 同名节。
 
 ### 7.4 对 P1 kit 扩容的直接输入
 

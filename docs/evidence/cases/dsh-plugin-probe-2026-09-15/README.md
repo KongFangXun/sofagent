@@ -79,6 +79,60 @@ Error: probe-guard: DANGEROUS keyword denied (monotonic)
 [probe] ctx.get("commands") = <CommandsService add:undefined>
 ```
 
+## 事件位接线探针（v1.5.0 章十 · seam 从声明到实现的验证）
+
+上文探针验的是「宿主给不给插件这些 API」；本节验的是**「接线真的触发拦截」**——同一套
+真实 cordis 运行时，换成仓内真插件。
+
+### 可复现剧本
+
+- **起 profile 版（端到端，真 LLM）**：`link:` 挂 `engine/dsh-plugins/cordis-plugin-sofagent-audit`
+  起 profile → 看 kit 接线日志 → 让模型发起一次危险命令调用（走宿主 bash 的 `command` 入参）
+  → 期望工具未执行、模型收到 `Error: sofagent 工具门禁：…`（宿主 `dsh-tools.prepareExecution`
+  用 `decision.reason` 组装拒绝理由）→ 再试非命令类工具应照常执行 → 卸载该插件 fiber 后
+  重复危险命令，应回到未拦截态。**②④ 是唯一的端到端拦截面**：`fs/write-intent` 是放行接线、
+  `agent/error` 自动回滚默认关档，不要拿它们当拦截断言。
+- **进程内版（零外部依赖，改动即复验，不起 profile 不调 LLM）**：
+
+```bash
+node --input-type=module -e '
+const { Context } = await import(`file://${process.env.HOME}/.dsh/profiles/node_modules/@deepseek-ai/cordis/lib/index.js`);
+const load = async (n) => { const m = await import(`file://<仓库绝对路径>/engine/dsh-plugins/${n}/dist/index.js`); return m.default.default ?? m.default; }; // 坑②
+const ctx = new Context();
+ctx.provide("settings", { register: () => ({ get: () => ({}), watch: () => () => undefined }) }); // 坑①
+ctx.provide("dynamicCordisRunner", {});
+for (const n of ["cordis-plugin-sofagent-audit", "cordis-plugin-sofagent-inject", "cordis-plugin-sofagent-evolve", "cordis-plugin-sofagent-rollback"]) ctx.plugin(await load(n));
+const allow = () => ({ kind: "allow" });
+console.log(JSON.stringify(await ctx.waterfall("tools/pre-execute", { name: "bash", arguments: { command: "rm -rf /" } }, allow)));
+'
+```
+
+### 两个必踩的坑（实测记录）
+
+1. **`inject` 门会静默拦住 `apply`**：插件声明 `inject: ["settings", "dynamicCordisRunner"]`，
+   裸 `new Context()` 缺这两个服务时 cordis **根本不调用 `apply`**——订阅一条没注册、事件照常
+   放行，表象与「接线失效」完全一样（且不报错）。探针必须先 `ctx.provide(...)` 补齐，否则会
+   得出「插件没接线」的错误结论。
+2. **CJS 产物的 `default` 是双层的**：插件 `dist` 是 CJS（`__esModule` + `exports.default`），
+   `import()` 得到的 `m.default` 是 `module.exports` 本身，真插件在 `m.default.default`。宿主
+   加载器不受影响（`cordis-plugin-loader` 的 `unwrapExports` 连解两层：`exports.default ?? exports`
+   → 判 `__esModule` → 再取 `.default`），但探针要自己按同口径解包，否则报
+   `invalid plugin, expect function or object with an "apply" method, received object`。
+
+### 实测输出（四款插件同挂 · 真实 cordis 4.0.1 · 危险载荷只作判定入参，不落任何执行面）
+
+```
+[sofagent-audit] seam 事件接线成功：4/4（tools/pre-execute, tools/result, fs/write-intent, agent/turn-stopping）
+[sofagent-inject] seam 事件接线成功：1/1（agent/pre-step）
+[sofagent-evolve] seam 事件接线成功：1/1（session/event）
+[sofagent-rollback] seam 事件接线成功：1/1（agent/error）
+[sofagent-audit] 工具执行前拦截：rm 递归删除危险路径（/）
+危险命令      → {"kind":"deny","reason":"sofagent 工具门禁：rm 递归删除危险路径（/）"}
+安全命令      → {"kind":"allow"}
+非命令工具    → {"kind":"allow"}
+卸载 audit fiber 后同一危险载荷 → {"kind":"allow"}    ← 订阅随 fiber 撤销
+```
+
 ## 后续
 
 - P1（plugin-kit 工具注册面 + 多包桥接）按 SEAMS.md §7.4 输入实施——kit 采用 `ctx.get?.('tools')` 取服务（免 inject、天然降级不抛），render 按 `render(args, value)` 双参。
