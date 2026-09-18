@@ -28,7 +28,7 @@
 
 ## 1. DSH 侧 · 宿主 seam 词汇表
 
-宿主包：`@deepseek-ai/dsh-tools` · `@deepseek-ai/dsh-fs` · `@deepseek-ai/dsh-agent` · `@deepseek-ai/dsh-hook-protocol`。
+宿主包：`@deepseek-ai/dsh-tools` · `@deepseek-ai/dsh-fs` · `@deepseek-ai/dsh-agent` · `@deepseek-ai/dsh-session` · `@deepseek-ai/dsh-hook-protocol`。
 下列每个名字都是**宿主 lib 里真实存在的事件字符串**，不是 sofagent 的转述。
 
 <!-- SEAM-VOCAB:DSH-HOST:BEGIN -->
@@ -37,7 +37,8 @@
 | `tools/change` | `@deepseek-ai/dsh-tools` | `lib/` | 工具集合变更（工具增删的广播） | 暂无 |
 | `tools/execute` | `@deepseek-ai/dsh-tools` | `lib/` | 工具执行中（计时 / 成本计量落点） | 暂无 |
 | `tools/post-execute` | `@deepseek-ai/dsh-tools` | `lib/` | 工具执行后（结果质检落点） | 暂无 |
-| `tools/pre-execute` | `@deepseek-ai/dsh-tools` | `lib/` | 工具执行前——可拦截、可改参（瀑布流） | `audit` || `tools/ptc-dispatch-log` | `@deepseek-ai/dsh-tools` | `lib/` | PTC 派发日志（提示词工具调用派发） | 暂无 |
+| `tools/pre-execute` | `@deepseek-ai/dsh-tools` | `lib/` | 工具执行前——可拦截、可改参（瀑布流） | `audit` |
+| `tools/ptc-dispatch-log` | `@deepseek-ai/dsh-tools` | `lib/` | PTC 派发日志（提示词工具调用派发） | 暂无 |
 | `tools/result` | `@deepseek-ai/dsh-tools` | `lib/` | 工具最终结果确定——审计留证落点 | `audit` |
 | `fs/edit-intent` | `@deepseek-ai/dsh-fs` | `lib/` | 文件编辑意图（写盘前可见） | 暂无 |
 | `fs/observed` | `@deepseek-ai/dsh-fs` | `lib/` | 文件系统变更已观测 | 暂无 |
@@ -45,14 +46,15 @@
 | `agent/pre-step` | `@deepseek-ai/dsh-agent` | `lib/` | 模型看到输入前——约束注入落点 | `inject` |
 | `agent/request` | `@deepseek-ai/dsh-agent` | `lib/` | 模型请求发出前 | 暂无 |
 | `agent/request-error` | `@deepseek-ai/dsh-agent` | `lib/` | 模型请求失败后（重试 / 降级落点） | 暂无 |
-| `agent/turn-stopping` | `@deepseek-ai/dsh-agent` | `lib/` | Turn 结束前停止条件判定——可拦截不放行 | `audit` |
+| `agent/turn-stopping` | `@deepseek-ai/dsh-agent` | `lib/` | Turn 结束前停止条件判定——可拦截不放行（宿主 serial 派发；续跑手段是向 agent 送消息，返回值不参与判定） | `audit` |
 | `agent/error` | `@deepseek-ai/dsh-agent` | `lib/` | Agent 运行出错（逆序撤销的触发点） | `rollback` |
 | `agent/session-start` | `@deepseek-ai/dsh-agent` | `lib/` | Agent 会话开始 | 暂无 |
-| `hook/invoked` | `@deepseek-ai/dsh-hook-protocol` | `lib/` | 外部 hook 被调用 | 暂无 |
-| `hook/result` | `@deepseek-ai/dsh-hook-protocol` | `lib/` | 外部 hook 返回结果 | 暂无 |
-| `session/created` | `@deepseek-ai/dsh-hook-protocol` | `lib/` | 会话创建 | 暂无 |
-| `turn/start` | `@deepseek-ai/dsh-hook-protocol` | `lib/` | Turn 开始 | 暂无 |
-| `turn/end` | `@deepseek-ai/dsh-hook-protocol` | `lib/` | Turn 结束（任务收尾——经验沉淀落点） | `evolve` |
+| `session/event` | `@deepseek-ai/dsh-session` | `lib/` | 会话事件流（`session.append` 追加即广播，listener 收 `(session, event)`；`turn/end` / `step/end` 等是 `event.type` 的取值，需自行过滤） | `evolve` |
+| `hook/invoked` | `@deepseek-ai/dsh-hook-protocol` | `lib/` | 外部 hook 调用**载荷类型**（经该协议发给仓外 hook 进程，非 ctx 订阅点） | 暂无 |
+| `hook/result` | `@deepseek-ai/dsh-hook-protocol` | `lib/` | 外部 hook 返回**载荷类型**（同上，非 ctx 订阅点） | 暂无 |
+| `session/created` | `@deepseek-ai/dsh-hook-protocol` | `lib/` | 会话创建**载荷类型**（同上，非 ctx 订阅点） | 暂无 |
+| `turn/start` | `@deepseek-ai/dsh-hook-protocol` | `lib/` | Turn 开始**载荷类型**（同上，非 ctx 订阅点） | 暂无 |
+| `turn/end` | `@deepseek-ai/dsh-hook-protocol` | `lib/` | Turn 结束**载荷类型**（同上，非 ctx 订阅点）——in-process 插件要观察 turn 收尾请订阅 `session/event` 并按 `event.type === 'turn/end'` 过滤 | 暂无 |
 <!-- SEAM-VOCAB:DSH-HOST:END -->
 
 **复核命令**（必须用真实路径，软链目录 grep 会假空）：
@@ -63,10 +65,18 @@ grep -rhoE "['\"]tools/[a-z-]+['\"]" "$B/dsh-tools/lib/"          | tr -d "\"'" 
 grep -rhoE "['\"]fs/[a-z-]+['\"]"    "$B/dsh-fs/lib/"             | tr -d "\"'" | sort -u
 grep -rhoE "['\"]agent/[a-z-]+['\"]" "$B/dsh-agent/lib/"          | tr -d "\"'" | sort -u
 grep -rhoE "['\"][a-z]+/[a-z-]+['\"]" "$B/dsh-hook-protocol/lib/" | tr -d "\"'" | sort -u
+# dsh-session 按**精确名**取：该包内 `session/*` 多数是 `session.append` 的载荷类型
+# （`session/title` / `session/flush` …），只有 `session/event` 是广播订阅点
+grep -rhoE "['\"]session/event['\"]" "$B/dsh-session/lib/"        | tr -d "\"'" | sort -u
 ```
 
-> 词汇表**只收插件可挂的生命周期事件**（上表 20 条），不追求把宿主全部内部事件
-> （如 `internal/dispatch`、`session/event`）登记进来——那些不对插件开放。
+> 词汇表**只收宿主真实存在的生命周期事件名**（上表 21 条）。其中 5 条
+> `@deepseek-ai/dsh-hook-protocol` 的行是该协议的**事件载荷类型**——它们确实
+> 是宿主真实存在的字符串，但**交付对象是仓外 hook 进程**（子进程 / webhook），
+> **不是 `ctx.on` 能收到的 cordis 事件**。给插件写 seam 时只能用 ctx 事件名：
+> 把 `turn/end` 这类载荷类型当订阅点写，会得到一个**永不触发的订阅**（grep 能过、
+> 探针必挂）——turn 收尾的真实订阅点是 `session/event` + `event.type` 过滤。
+> 其余 16 条（`tools/*` · `fs/*` · `agent/*` · `session/event`）都是真实派发点。
 
 ## 2. DSH 侧 · 非 seam 的接入形态
 
@@ -191,17 +201,35 @@ OpenClaw 还有一套**与 plugin hook 不同源**的内建 hook 事件（`HOOK.
      `seamSemantics` 承载（与 `seam` 同级）；门禁断言其非空，缺了报红。
 6. `package.json.description` 必须内含 `seam: <seam 值>`——描述滞后于契约（同一次挂载
    在不同消费面说不同的话）是本批要治的病之一，故做成**阻断项**。
+7. **接线面的三处对账**（v1.5.0 起）：声明了宿主事件的插件必须同时给出真实订阅名，
+   三处同集合，`gen-plugin-manifests --check` 强制（任一不对称即报红）：
+   - `plugins.json` 条目的 `seamHandlers`（声明侧）
+   - `src/index.ts` 的 `seamHandlers` 对象**顶层键**（实现侧——kit 按此逐个 `ctx.on`）
+   - 该条目 `seam` 值的事件段集（`+` 拆分后去掉 `non-seam:` 段）
+   不对称的两种形态各有名字：seam 有而 seamHandlers 无 = **漏接线**；seamHandlers 有而
+   seam 无 = **幽灵订阅**。非事件接入形态（`non-seam:*`）不得有 `seamHandlers`。
 
 ## 6. 声明与实现的边界（两侧接入深度不同）
 
-词表登记的是**接入契约**，不等于运行时已经接线。读词表时必须区分「声明」与「实现」：
+词表登记的是**接入契约**。自 v1.5.0 起，DSH 侧声明了宿主事件的 4 款插件
+（audit / inject / evolve / rollback）**同时是接线实现方**——订阅在 `plugin-kit` 的
+`seamHandlers` 面上真实注册，事件名三方对账（`seam` ↔ `plugins.json.seamHandlers`
+↔ `src/index.ts` 的 `seamHandlers` 顶层键，`gen-plugin-manifests --check` 强制）。
 
 | 侧 | 现状 | 证据 |
 | --- | --- | --- |
-| **DSH** | seam 是**声明**——写在 `src` 注释 / `pluginMeta.seam` / `plugins.json` / `cordis.patch.yml` 的 `config.seam`，四载体由 `check-seam-contract.mjs` 对账；但插件**不注册宿主事件处理器**（`plugin-kit` 的 `apply` 只做 `provide` + `dynamicCordisRunner.define` + `settings.register`） | 全仓 `on(` + `tools/` 与 `on(` + `agent/` 均零命中；宿主侧确实可订阅（`ctx.waterfall(carrier, '<tools 族事件>', …)`） |
+| **DSH** | seam 是**声明 + 实现**——7 款插件里声明了宿主事件的 4 款（共 7 个事件位）经 `ctx.on()` 真实订阅：audit `tools/result` + `tools/pre-execute` + `fs/write-intent` + `agent/turn-stopping`；inject `agent/pre-step`；evolve `session/event`（按 `event.type === 'turn/end'` 过滤）；rollback `agent/error`。订阅 disposer 收进 apply 的复合卸载契约 | 各插件 `src/index.ts` 的 `seamHandlers`；`plugins.json.seamHandlers`；门禁三方对账；探针剧本见 §7.3 |
 | **OpenClaw** | hook 是**实现**——`api.on('before_tool_call', handler)` 真注册，拦停返回 `{ block: true, blockReason }` | `engine/openclaw-plugins/*/src/index.ts` |
 
-> ⚠️ **对使用者的含义**：DSH 侧插件的运行时介入（拦截 / 注入 / 收尾触发）**尚未接线**；今天拦截生效的路径是 sofagent 自身运行时（`engine/orchestrator` 的 `wrapToolsWithGate` + `checkDangerousCommand`）。补接线（基座加订阅面 + 各插件接线）是独立工作项——落地前，对外文案不得写成「已自动拦截」。
+> ⚠️ **对使用者的含义**：DSH 侧插件的运行时介入已经接线，但**能力边界不同**，
+> 不要笼统写成「已自动拦截」：
+> - `tools/pre-execute` 是**真拦截**（判定源 `checkDangerousCommand`，命中即 deny）；
+> - `agent/turn-stopping` 是**验收续跑**（判定源 `checkAcceptance`，未定义验收时不拦；
+>   每 turn 至多续跑一次）；
+> - `fs/write-intent` 目前是**放行接线**——引擎包没有「按目标路径判定写意图」的
+>   @public 判定源，按马鞍铁律不新造判定，故只接线不拦截；
+> - `agent/error` 的自动回滚**默认关档**（settings `rollbackOnError`），开档才撤销工作区。
+> 另：判定源不可达时一律 fail-open（放行 + 可见日志）——接线故障不会升级成任务故障。
 
 ## 7. P0 动态探针实测记录（2026-09-15 · DSH 0.1.2-alpha.1 · Node 24.19.0）
 
@@ -234,6 +262,67 @@ OpenClaw 还有一套**与 plugin hook 不同源**的内建 hook 事件（`HOOK.
 - `dsh --profile probe --dump-config | grep -A6 sofagent-probe` —— 合成树含探针条目 + `inject: [tools]`
 - `dsh --profile probe "Call the tool sofagent_probe_echo ..."` —— 模型真实调用，`tools/result` 回显
 - `DANGEROUS-payload` 变体 —— guard 拒绝；`sofagent_probe_ask` 变体 —— headless 无 answerer 拒绝
+
+**事件位验证步（v1.5.0 起 · DSH 升级日复验用）**——把上一步的探针插件换成
+真实的 `cordis-plugin-sofagent-audit`，断言的不再是「订阅成功」而是「拦截生效」：
+
+1. 挂载真插件（profile `link:` 指到 `engine/dsh-plugins/cordis-plugin-sofagent-audit`，
+   其 `optionalDependencies` 里的 `@sofagent/*` 需可解析），启动后应看到 kit 的接线日志：
+   `seam 事件接线成功：4/4（tools/result, tools/pre-execute, fs/write-intent, agent/turn-stopping）`。
+2. 让模型发起一次**危险命令**调用（`rm -rf /` 这类，走宿主 bash 工具的 `command` 入参），
+   期望：工具**未执行**，模型收到 `Error: sofagent 工具门禁：…`（宿主把 `{ kind: 'deny', reason }`
+   转成错误结果），且插件日志打出 `工具执行前拦截：…`；
+   对齐宿主体：`dsh-tools/lib/index.js` 的 `prepareExecution` 用 `decision.reason` 组装拒绝理由。
+3. 非命令类工具（不带 `command` 入参）应照常执行——证明接线没有扩大拦截面。
+4. 卸载该插件 fiber 后重复第 2 步：应回到**未拦截**状态——证明订阅随 fiber 撤销
+   （`plugin-kit` 的复合 disposer + cordis `ctx.on` 自身经 `fiber.effect` 登记，双保险）。
+
+> 只做 1 与 4 也能判定基础接线；2 是本批唯一端到端可断言的拦截面——`fs/write-intent`
+> 为放行接线、`agent/error` 自动回滚默认关档（见 §6），不要拿它们当拦截断言。
+
+**进程内探针（零外部依赖，改动即复验）**——上面四步要起 profile + 真 LLM；日常复验用这条：
+在**真实 `@deepseek-ai/cordis` 运行时**里加载插件 `dist`，直接派发事件断言判定结果。
+
+```bash
+node --input-type=module -e '
+const R = "<仓库绝对路径>";
+const { Context } = await import(`file://${process.env.HOME}/.dsh/profiles/node_modules/@deepseek-ai/cordis/lib/index.js`);
+const load = async (n) => { const m = await import(`file://${R}/engine/dsh-plugins/${n}/dist/index.js`); return m.default.default ?? m.default; }; // ← 见坑 ②
+const ctx = new Context();
+ctx.provide("settings", { register: () => ({ get: () => ({}), watch: () => () => undefined }) }); // ← 见坑 ①
+ctx.provide("dynamicCordisRunner", {});
+const names = ["cordis-plugin-sofagent-audit", "cordis-plugin-sofagent-inject", "cordis-plugin-sofagent-evolve", "cordis-plugin-sofagent-rollback"];
+const fibers = names.map((n) => load(n).then((p) => ctx.plugin(p)));
+await Promise.all(fibers);
+const allow = () => ({ kind: "allow" });
+console.log(JSON.stringify(await ctx.waterfall("tools/pre-execute", { name: "bash", arguments: { command: "rm -rf /" } }, allow)));
+'
+```
+
+两个必踩的坑（实测记录）：
+
+1. **`inject` 门会静默拦住 `apply`**：插件声明 `inject: ["settings", "dynamicCordisRunner"]`，
+   裸 `new Context()` 缺这两个服务时 cordis **根本不调用 `apply`**——订阅一条没注册、
+   事件照常放行，表象与「接线失效」完全一样。探针必须先 `ctx.provide(...)` 补齐。
+2. **CJS 产物的 `default` 是双层的**：`dist` 是 CJS（`__esModule` + `exports.default`），
+   `import()` 得到的 `m.default` 是 `module.exports` 本身，真插件在 `m.default.default`。
+   宿主加载器不受影响（`unwrapExports` 连解两层：`exports.default ?? exports` → 判
+   `__esModule` → 再取 `.default`），但探针要自己按同口径解包，否则报
+   `invalid plugin, expect function or object with an "apply" method, received object`。
+
+实测输出（四款插件同挂 · 真实 cordis 4.0.1 · 危险载荷只作判定入参，不落任何执行面）：
+
+```
+[sofagent-audit] seam 事件接线成功：4/4（tools/pre-execute, tools/result, fs/write-intent, agent/turn-stopping）
+[sofagent-inject] seam 事件接线成功：1/1（agent/pre-step）
+[sofagent-evolve] seam 事件接线成功：1/1（session/event）
+[sofagent-rollback] seam 事件接线成功：1/1（agent/error）
+[sofagent-audit] 工具执行前拦截：rm 递归删除危险路径（/）
+危险命令    → {"kind":"deny","reason":"sofagent 工具门禁：rm 递归删除危险路径（/）"}
+安全命令    → {"kind":"allow"}
+非命令工具  → {"kind":"allow"}
+卸载 audit fiber 后同一危险载荷 → {"kind":"allow"}    ← 订阅随 fiber 撤销
+```
 
 ### 7.4 对 P1 kit 扩容的直接输入
 

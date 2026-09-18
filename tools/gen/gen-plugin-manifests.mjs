@@ -93,6 +93,9 @@ const KEY_ORDER = [
 const KIND_BRIDGE = 'bridge';
 const KIND_SUITE = 'suite';
 
+/** seam 值里的非事件段前缀（`non-seam:tool-set` 这类接入形态，不参与接线对账） */
+const NON_SEAM_PREFIX = 'non-seam:';
+
 /** 两类条目各自的必填字段（共同字段之外的差异部分） */
 const REQUIRED_COMMON = ['id', 'seam', 'seamSemantics', 'capability', 'description'];
 const REQUIRED_BRIDGE = ['bridgePkg', 'bridgeApi'];
@@ -301,6 +304,12 @@ function generatedSegments(entry, version, registry) {
     seam: entry.seam,
     seamSemantics: entry.seamSemantics,
   };
+  // v1.5.0 章十：接线实现面——声明了宿主事件 seam 的条目把真实订阅名一并写进
+  // sofagent 段（npm 侧消费方能看出「挂在哪些宿主事件上」而不是只听声明）。
+  // 三方一致性由 --check 的 seamHandlers 守卫负责。
+  if (Array.isArray(entry.seamHandlers) && entry.seamHandlers.length > 0) {
+    sofagentSegment.seamHandlers = entry.seamHandlers;
+  }
   // P2 featureGates 对账：每档清单内的名字必须 ⊆ 角色并集工具名（幽灵名 = 声明了
   // registry 里不存在的工具 = 关档语义空转）；档位名不得重复出现在多个档（归属二义）。
   if (entry.featureGates !== undefined) {
@@ -376,6 +385,72 @@ function generatedSegments(entry, version, registry) {
 function seamFromTs(text) {
   const m = text.match(/^\s*seam:\s*(['"])([\s\S]*?)\1\s*,?\s*$/m);
   return m ? m[2] : null;
+}
+
+/** seam 值 → 事件段清单（`a + b` 拆分；`non-seam:` 段是非事件接入形态，不参与接线对账） */
+function seamSegments(seam) {
+  return String(seam)
+    .split('+')
+    .map((s) => s.trim())
+    .filter((s) => s !== '' && !s.startsWith(NON_SEAM_PREFIX));
+}
+
+/**
+ * src/index.ts → `seamHandlers` 对象字面量的**顶层键**（= 真实订阅的宿主事件名）。
+ *
+ * 解析方式：从 `seamHandlers: Record<…> = {` 起逐字符扫描，维护大括号深度并跳过
+ * 字符串字面量（引号内含 `{}` 的日志文案不会污染深度）；只在深度 1 处、且字符串
+ * 后紧跟 `:` 的形态收录为键——即「对象直接成员」而非 handler 体内的字符串。
+ *
+ * @returns {string[] | null} 找不到声明处返回 null（由调用方升级为脚本自身错误）
+ */
+function seamHandlersFromTs(text) {
+  const decl = text.match(/seamHandlers\s*:\s*Record<[^>]*>\s*=\s*\{/);
+  if (!decl) return null;
+  const keys = [];
+  let i = decl.index + decl[0].length - 1; // 停在开括号
+  let depth = 0;
+  let expectingKey = true;
+  while (i < text.length) {
+    const ch = text[i];
+    if (ch === "'" || ch === '"' || ch === '`') {
+      let j = i + 1;
+      let buf = '';
+      while (j < text.length) {
+        if (text[j] === '\\') {
+          j += 2;
+          continue;
+        }
+        if (text[j] === ch) break;
+        buf += text[j];
+        j++;
+      }
+      if (depth === 1 && expectingKey) {
+        let k = j + 1;
+        while (k < text.length && /\s/.test(text[k])) k++;
+        if (text[k] === ':') {
+          keys.push(buf);
+          expectingKey = false;
+        }
+      }
+      i = j + 1;
+      continue;
+    }
+    if (ch === '{') depth++;
+    else if (ch === '}') {
+      depth--;
+      if (depth === 0) break;
+    } else if (ch === ',' && depth === 1) expectingKey = true;
+    i++;
+  }
+  return keys;
+}
+
+/** 集合等价判定（顺序无关，重复项单独报） */
+function sameSet(a, b) {
+  const sa = new Set(a);
+  const sb = new Set(b);
+  return sa.size === sb.size && [...sa].every((x) => sb.has(x));
 }
 
 /**
@@ -634,6 +709,64 @@ function planOutputs(root) {
       );
       err.self = true;
       throw err;
+    }
+
+    // ③b 附加守卫（v1.5.0 章十）：seamHandlers 三方对账
+    //     seam（事件集） ↔ plugins.json.seamHandlers（声明侧） ↔ src/index.ts 的
+    //     seamHandlers 顶层键（实现侧）。缺口背景：章十把 seam 从「声明」变成
+    //     「实现」，三处只要有一处落后，就会出现「grep 能过、探针必挂」的假接线
+    //     ——本守卫把这类静默漂移变成硬红。
+    {
+      const segments = seamSegments(entry.seam);
+      const declared = Array.isArray(entry.seamHandlers) ? entry.seamHandlers : null;
+      if (segments.length > 0 && (declared === null || declared.length === 0)) {
+        const err = new Error(
+          `${MANIFEST} 条目 ${entry.id} 声明了宿主事件 seam（${segments.join(', ')}）却没有 seamHandlers——\n` +
+            `  章十起「声明 seam」与「接线实现」必须同时成立：声明了事件位就得把订阅写出来（否则就是 SEAMS.md §6 要治的假接线）。`,
+        );
+        err.self = true;
+        throw err;
+      }
+      if (segments.length === 0 && declared !== null && declared.length > 0) {
+        const err = new Error(
+          `${MANIFEST} 条目 ${entry.id} 是非 seam 接入形态（${entry.seam}）却声明了 seamHandlers（${declared.join(', ')}）——\n` +
+            `  非事件接入的插件不该有宿主事件订阅；要么去掉 seamHandlers，要么把 seam 改成真实事件名。`,
+        );
+        err.self = true;
+        throw err;
+      }
+      if (declared !== null && declared.length > 0) {
+        if (new Set(declared).size !== declared.length) {
+          const err = new Error(`${MANIFEST} 条目 ${entry.id} 的 seamHandlers 有重复项：[${declared.join(', ')}]——同一事件订两次等于重复接线。`);
+          err.self = true;
+          throw err;
+        }
+        if (!sameSet(declared, segments)) {
+          const err = new Error(
+            `seamHandlers 与 seam 事件集不符：${entry.id}\n  seam 事件集        : [${segments.join(', ')}]\n  plugins.json 声明  : [${declared.join(', ')}]\n` +
+              `  —— 每个声明的宿主事件位都必须且只能有一个订阅；不对称即「幽灵订阅」或「漏接线」。`,
+          );
+          err.self = true;
+          throw err;
+        }
+        const tsHandlers = seamHandlersFromTs(fs.readFileSync(tsPath, 'utf8'));
+        if (tsHandlers === null) {
+          const err = new Error(
+            `${DSH_PLUGINS_DIR}/${entry.id}/src/index.ts 里找不到 seamHandlers 对象字面量——\n` +
+              `  plugins.json 声明了 ${declared.length} 个订阅，src 里必须有对应的 seamHandlers 实现（章十：seam 从声明到实现）。`,
+          );
+          err.self = true;
+          throw err;
+        }
+        if (!sameSet(tsHandlers, declared)) {
+          const err = new Error(
+            `seamHandlers 双源漂移：${entry.id}\n  plugins.json.seamHandlers : [${declared.join(', ')}]\n  src/index.ts 顶层键       : [${tsHandlers.join(', ')}]\n` +
+              `  —— 声明侧与实现侧必须同集合（改一处必须改另一处）。`,
+          );
+          err.self = true;
+          throw err;
+        }
+      }
     }
   }
 

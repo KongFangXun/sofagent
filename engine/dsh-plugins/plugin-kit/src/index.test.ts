@@ -14,7 +14,7 @@
 
 import { describe, expect, it, vi, afterEach } from 'vitest';
 
-import { createSofagentPlugin, PLUGIN_INJECT } from './index.js';
+import { createSofagentPlugin, seamHelpers, PLUGIN_INJECT } from './index.js';
 
 /** 真实存在且导出非函数键（TOOLS 是数组）的模块——「API 非函数」用例的素材 */
 const REAL_PKG = '@sofagent/mcp/tool-registry';
@@ -427,5 +427,183 @@ describe('apply 三段式回归锁（P1 不破坏既有面）', () => {
     expect(kit.plugin.inject).toEqual(PLUGIN_INJECT);
     expect(PLUGIN_INJECT).toContain('settings');
     expect(PLUGIN_INJECT).not.toContain('tools'); // P0 裁定：tools 走 get 鸭子探测
+  });
+});
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// v1.5.0 章十 · seam 事件接线（seam 从声明到实现）
+// 覆盖面：订阅调用形态（一律 ctx.on）+ handler 参数排布（宿主参数在前、helpers 末位）
+//        + 多事件逐个订阅 + 降级三态（无 ctx.on / 单事件抛错 / 非函数声明）
+//        + disposer 收进复合卸载契约 + helpers.flags 尊重 settings 声明默认值
+//        + seamHelpers 末位取值
+// ─────────────────────────────────────────────────────────────────────────────
+describe('章十 · seam 事件接线', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('按声明经 ctx.on 订阅；handler 收到宿主参数 + 末位 helpers（waterfall 的 next 在 helpers 前一位）', () => {
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const subscribed = new Map<string, (...a: unknown[]) => unknown>();
+    const on = vi.fn((event: string, handler: (...a: unknown[]) => unknown) => {
+      subscribed.set(event, handler);
+      return () => undefined;
+    });
+    const seen: unknown[][] = [];
+    const kit = createSofagentPlugin(
+      makeEntry({
+        seamHandlers: {
+          'tools/pre-execute': (...args: unknown[]) => {
+            seen.push(args);
+            return 'handler-return';
+          },
+        },
+      }),
+    );
+    (kit.plugin.apply as (c: unknown) => unknown)(makeCtx({ on }));
+    expect(on).toHaveBeenCalledTimes(1);
+    expect([...subscribed.keys()]).toEqual(['tools/pre-execute']);
+
+    // 宿主以 waterfall 风格调用：`(exec, next)`；kit 追加 helpers
+    const returned = subscribed.get('tools/pre-execute')!({ name: 'bash' }, () => 'next-default');
+    expect(returned).toBe('handler-return');
+    expect(seen).toHaveLength(1);
+    const args = seen[0]!;
+    expect(args).toHaveLength(3);
+    expect(args[0]).toEqual({ name: 'bash' });
+    expect(typeof args[1]).toBe('function'); // next 在 helpers 前一位
+    const helpers = args[2] as Record<string, unknown>;
+    expect(typeof helpers.call).toBe('function');
+    expect(typeof helpers.bridges).toBe('function');
+    expect(typeof helpers.flags).toBe('function');
+    expect(typeof helpers.log).toBe('function');
+    errSpy.mockRestore();
+  });
+
+  it('多事件逐个订阅（tools/result + fs/write-intent + agent/turn-stopping 三风格同一条路径）', () => {
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const events: string[] = [];
+    const on = vi.fn((event: string) => {
+      events.push(event);
+      return () => undefined;
+    });
+    const kit = createSofagentPlugin(
+      makeEntry({
+        seamHandlers: {
+          'tools/result': () => undefined,
+          'fs/write-intent': () => undefined,
+          'agent/turn-stopping': () => undefined,
+        },
+      }),
+    );
+    (kit.plugin.apply as (c: unknown) => unknown)(makeCtx({ on }));
+    expect(events.sort()).toEqual(['agent/turn-stopping', 'fs/write-intent', 'tools/result']);
+    errSpy.mockRestore();
+  });
+
+  it('订阅 disposer 收进复合卸载契约：调一次复合 disposer 即逐个反注册', async () => {
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const disposed: string[] = [];
+    const on = vi.fn((event: string) => () => {
+      disposed.push(event);
+    });
+    const kit = createSofagentPlugin(
+      makeEntry({
+        seamHandlers: { 'tools/result': () => undefined, 'agent/error': () => undefined },
+      }),
+    );
+    const disposer = (kit.plugin.apply as (c: unknown) => unknown)(makeCtx({ on })) as
+      | (() => Promise<void>)
+      | undefined;
+    expect(typeof disposer).toBe('function');
+    await disposer!();
+    expect(disposed.sort()).toEqual(['agent/error', 'tools/result']);
+    errSpy.mockRestore();
+  });
+
+  it('降级：宿主无 ctx.on 面（极简 profile）→ 打印 WARN、不抛、零订阅', () => {
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const kit = createSofagentPlugin(
+      makeEntry({ seamHandlers: { 'tools/result': () => undefined } }),
+    );
+    expect(() => (kit.plugin.apply as (c: unknown) => unknown)(makeCtx())).not.toThrow();
+    const warned = errSpy.mock.calls.some((c) => String(c[0]).includes('宿主事件订阅面缺失'));
+    expect(warned).toBe(true);
+    errSpy.mockRestore();
+  });
+
+  it('降级：单事件订阅抛错 → 记日志继续，其余事件照常订阅', () => {
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const okEvents: string[] = [];
+    const on = vi.fn((event: string) => {
+      if (event === 'tools/result') throw new Error('宿主拒绝该事件名');
+      okEvents.push(event);
+      return () => undefined;
+    });
+    const kit = createSofagentPlugin(
+      makeEntry({
+        seamHandlers: { 'tools/result': () => undefined, 'agent/error': () => undefined },
+      }),
+    );
+    expect(() => (kit.plugin.apply as (c: unknown) => unknown)(makeCtx({ on }))).not.toThrow();
+    expect(okEvents).toEqual(['agent/error']);
+    const logged = errSpy.mock.calls.some((c) => String(c[0]).includes('seam tools/result 订阅失败'));
+    expect(logged).toBe(true);
+    errSpy.mockRestore();
+  });
+
+  it('降级：声明值非函数 → 跳过该事件并记日志，不中断其余订阅', () => {
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const events: string[] = [];
+    const on = vi.fn((event: string) => {
+      events.push(event);
+      return () => undefined;
+    });
+    const kit = createSofagentPlugin(
+      makeEntry({
+        seamHandlers: {
+          'tools/result': 'not-a-function',
+          'agent/error': () => undefined,
+        } as unknown as Record<string, (...a: unknown[]) => unknown>,
+      }),
+    );
+    (kit.plugin.apply as (c: unknown) => unknown)(makeCtx({ on }));
+    expect(events).toEqual(['agent/error']);
+    errSpy.mockRestore();
+  });
+
+  it('helpers.flags() 按声明默认值给开关（acceptanceGate 默认开 / rollbackOnError 默认关）', () => {
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    let captured: Record<string, boolean> | null = null;
+    const kit = createSofagentPlugin(
+      makeEntry({
+        settingsExtra: { acceptanceGate: 'true', rollbackOnError: 'false' },
+        seamHandlers: {
+          'agent/error': (...args: unknown[]) => {
+            captured = seamHelpers(args).flags();
+          },
+        },
+      }),
+    );
+    const on = vi.fn((event: string, handler: (...a: unknown[]) => unknown) => {
+      handler();
+      return () => undefined;
+    });
+    (kit.plugin.apply as (c: unknown) => unknown)(makeCtx({ on }));
+    expect(captured).toEqual({ acceptanceGate: true, rollbackOnError: false });
+    errSpy.mockRestore();
+  });
+
+  it('seamHelpers(args)：取得末位助手面（与 handler 内取法同一实现）', () => {
+    const helper = { call: () => undefined, bridges: () => undefined, flags: () => ({}), log: () => undefined };
+    expect(seamHelpers(['host-a', 'host-b', helper])).toBe(helper);
+  });
+
+  it('无 seamHandlers 声明 → 不订阅、不报错（既有面零影响）', () => {
+    const on = vi.fn();
+    const kit = createSofagentPlugin(makeEntry());
+    (kit.plugin.apply as (c: unknown) => unknown)(makeCtx({ on }));
+    expect(on).not.toHaveBeenCalled();
   });
 });

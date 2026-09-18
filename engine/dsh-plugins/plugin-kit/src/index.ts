@@ -49,6 +49,61 @@ export interface SofagentBridge {
   api: string;
 }
 
+/**
+ * seam 事件处理器（v1.5.0 章十 · 事件接线面）。
+ *
+ * 调用形态：`handler(宿主事件参数…, helpers)`——宿主事件参数按宿主约定在前
+ * （DSH 工具族为 `exec` 对象，形状 `{ name, arguments }`），kit 注入的
+ * `SeamHelpers` 恒在**末位**。故 waterfall 派发的事件（宿主 listener 约定为
+ * `(...args, next)`）在 handler 里的排布是 `(...参数, next, helpers)`——
+ * **next 恒在 helpers 前一位**；handler 不调 next 即否决该事件（瀑布流语义）。
+ *
+ * 🔴 订阅一律走 `ctx.on`，没有第二种订阅入口。cordis 4.0.1 源码（`EventsService`）
+ *    把 `waterfall / serial / bail / parallel / emit` 定义为**派发**（`dispatch(style,args)`
+ *    的包装），只有 `on / once` 是订阅；宿主自己的插件无一例外用 `ctx.on` 收
+ *    waterfall 事件（`dsh-hooks-claude-code` 的 `ctx.on('tools/pre-execute', (exec, next) => …)`）。
+ *    事件由宿主以何种风格派发，只影响 handler 收到的参数形状（有没有 `next`），
+ *    不影响订阅调用——故本 kit 不为事件风格分叉订阅路径。
+ *
+ * 🔴 接线是**执行面动作**，不改判定逻辑：handler 内调既有引擎包 API
+ *    （经 helpers.call 取既有 @public 面），插件层只加一根管子。
+ */
+export type SeamHandler = (...args: unknown[]) => unknown;
+
+/** kit 注入给 seamHandler 的助手面（末位参数） */
+export interface SeamHelpers {
+  /**
+   * 调桥接包的既有 @public API（懒加载动态 import，按 pkg+api 精确取）。
+   * 缺依赖 / API 不存在/非函数 → **抛可读错误**（由 handler 决定是否吞）。
+   *
+   * 也用于取**宿主侧**工具（如 `@deepseek-ai/dsh-llm` 的消息工厂）——插件保持
+   * 「零静态宿主 import」的适配层红线，宿主面一律经此动态取、缺席即降级。
+   */
+  call: (pkg: string, api: string, ...args: unknown[]) => Promise<unknown>;
+  /** 本插件声明的桥接解析报告（resolved/failed 双清单——降级自省） */
+  bridges: () => Promise<InvokeReport>;
+  /**
+   * 本插件的 settings 开关快照（键 = settingsExtra + featureGates 档位名）。
+   * 用于 handler 内尊重用户关档（如 audit 的 `acceptanceGate`）；宿主无 settings
+   * 面时按声明默认值返回（与工具注册面同口径）。
+   */
+  flags: () => Record<string, boolean>;
+  /** 插件日志（统一 `[sofagent-<short>]` 前缀，写 console.error 对齐既有日志面） */
+  log: (message: string) => void;
+}
+
+/**
+ * 插件侧取助手面：`helpers` 恒在 handler 参数**末位**，本函数把它按位置取出来并
+ * 标上类型——比在每处 handler 里手写 `args[args.length - 1] as SeamHelpers` 可靠。
+ *
+ * 为什么 handler 用 `(...args: unknown[])` 书写而不是漂亮的位置参数：宿主各事件位
+ * 的参数形状互不相同（见 SEAMS.md §1），写死位置签名只会得到一个假装精确的类型；
+ * 统一用 rest + 本函数取值，宿主参数保持 unknown（鸭子类型读取，符合适配层红线）。
+ */
+export function seamHelpers(args: unknown[]): SeamHelpers {
+  return args[args.length - 1] as SeamHelpers;
+}
+
 /** 插件清单条目——字段与 engine/dsh-plugins/plugins.json 一一对齐 */
 export interface SofagentPluginEntry {
   /** 包名 / 插件 id，如 cordis-plugin-sofagent-audit（同时是服务短名的来源） */
@@ -99,6 +154,21 @@ export interface SofagentPluginEntry {
    * 不设档常开。
    */
   featureGates?: Record<string, string[]>;
+  /**
+   * seam 事件处理器（v1.5.0 章十 · 事件接线面）：事件名 → handler。
+   *
+   * 事件名必须 = 本插件真实订阅的宿主 ctx 事件名（check-seam-contract 正向对账
+   * 面 + gen-plugin-manifests 的 seam↔seamHandlers 双源对账）；apply() 内逐个经
+   * `ctx.on` 注册，**每个订阅的 disposer 收进既有复合卸载契约**（fiber 卸载即撤销）。
+   *
+   * 🔴 只写宿主**确实派发**的事件名——写了宿主不派发的名字（如把外部 hook 的
+   *    事件类型当 ctx 事件用）grep 能过、探针必挂，属假接线。
+   * 🔴 接线不改判定逻辑：handler 内经 helpers.call 取既有引擎 @public API
+   *    （如 `@sofagent/audit.runRules`），插件层只加管子。
+   * 🔴 宿主订阅面缺失 / 单事件注册失败 → 降级可见（console.error），
+   *    绝不阻断插件挂载。
+   */
+  seamHandlers?: Record<string, SeamHandler>;
   /** 短描述（不含 seam 与桥接后缀），如「变更机器审阅——24 规则 + git diff 硬证据 + 节点级审计」 */
   description: string;
 }
@@ -190,6 +260,13 @@ interface HostContext {
   get?: (name: string, strict?: boolean) => unknown;
   dynamicCordisRunner?: { define?: (request: Record<string, unknown>) => unknown };
   settings?: HostSettingsService;
+  /**
+   * 事件订阅面（v1.5.0 章十）：`ctx.on(event, handler)` —— **唯一的订阅入口**，
+   * 对所有派发风格（emit / serial / bail / waterfall）通用。P0 探针实测可用
+   * （`ctx.on('tools/pre-execute'|'tools/result'|'tools/change')` 订阅成功且被调用）；
+   * 返回 disposer（鸭子收集）。
+   */
+  on?: (event: string, handler: SeamHandler) => unknown;
   sofagent?: Record<string, unknown>;
   [key: string]: unknown;
 }
@@ -348,15 +425,21 @@ export function createSofagentPlugin(options: SofagentPluginOptions, hostPkg?: S
   }
 
   /**
-   * 解析 settings 档位 → 当前开关表（v1.4.9 P2）。
-   * 取值优先级：宿主 settingsScope.get()（用户层覆盖）> featureGates 默认值 'true'。
-   * settingsScope 缺席（宿主无 settings 服务 / register 未返回 scope）→ 全档按默认值
-   * （开档）——「关档不注册」的验收硬线依赖用户层显式写 'false'，宿主缺 settings
-   * 面时无从关档，等价于全开（与「无 settings 面则无档可关」的直觉一致，不算降级漏洞）。
+   * 解析 settings 档位 → 当前开关表（v1.4.9 P2；v1.5.0 章十泛化为按 key 集读）。
+   * 取值优先级：宿主 settingsScope.get()（用户层覆盖）> 声明默认值（settingsExtra /
+   * featureGates 默认 'true'）。settingsScope 缺席（宿主无 settings 服务 / register
+   * 未返回 scope）→ 全按声明默认值——「关档不注册」的验收硬线依赖用户层显式写
+   * 'false'，宿主缺 settings 面时无从关档，等价于全开（与「无 settings 面则无档可关」
+   * 的直觉一致，不算降级漏洞）。
    *
-   * @returns 档位名 → 布尔开/关；无 featureGates 时返回空对象
+   * @param scope 宿主 settings 作用域（可空）
+   * @param keys 要读的档位键（工具注册面传 featureGates；seam 接线面传全部 settings 键）
+   * @returns 档位名 → 布尔开/关
    */
-  function resolveFeatureFlags(scope: HostSettingsScope | null | undefined): Record<string, boolean> {
+  function resolveFlags(
+    scope: HostSettingsScope | null | undefined,
+    keys: string[],
+  ): Record<string, boolean> {
     const flags: Record<string, boolean> = {};
     let resolved: Record<string, unknown> | null = null;
     if (scope && typeof scope.get === 'function') {
@@ -367,12 +450,19 @@ export function createSofagentPlugin(options: SofagentPluginOptions, hostPkg?: S
         console.error(`${logTag} settings 档位读取失败（按默认全开处理）：${err instanceof Error ? err.message : String(err)}`);
       }
     }
-    for (const gate of Object.keys(featureGates)) {
+    for (const gate of keys) {
       const raw = resolved ? resolved[gate] : undefined;
-      // 显式字符串 'false'（用户层关档）→ 关；其余（undefined / 'true' / true）→ 开
-      flags[gate] = !(raw === 'false' || raw === false);
+      // 兜底取声明默认值：settingsExtra 未覆盖的键（如 featureGates 档位）默认 'true'
+      const effective = raw === undefined ? (mergedSettings[gate] ?? 'true') : raw;
+      // 显式字符串 'false'（用户层关档）/ 显式 false → 关；其余（'true' / true）→ 开
+      flags[gate] = !(effective === 'false' || effective === false);
     }
     return flags;
+  }
+
+  /** featureGates 档位开关表（工具注册面专用——关档即不注册该域工具） */
+  function resolveFeatureFlags(scope: HostSettingsScope | null | undefined): Record<string, boolean> {
+    return resolveFlags(scope, Object.keys(featureGates));
   }
 
   /**
@@ -475,6 +565,83 @@ export function createSofagentPlugin(options: SofagentPluginOptions, hostPkg?: S
       console.error(`${logTag} 角色工具注册成功：${registered}/${selected.length}（roles=[${roles.join(',')}]）${gateNote}`);
     }
     return registered;
+  }
+
+  /**
+   * seam 事件接线（v1.5.0 章十）——把声明的 seamHandlers 注册成宿主事件订阅。
+   *
+   * 订阅机制：**只有 `ctx.on(event, handler)` 一条路**。cordis 4.0.1 的
+   * `waterfall / serial / bail / parallel / emit` 是 `EventsService` 的**派发**包装
+   * （`dispatch(style, args)`），不是订阅面——宿主全部自带插件都用 `ctx.on` 收
+   * waterfall 事件。事件由宿主以何种风格派发，只决定 handler 收到的参数形状
+   * （waterfall 风格多一个 `next`），不改变订阅调用。
+   *
+   * 🔴 降级红线：宿主无 `ctx.on` 面（极简 profile）→ 打印 WARN 后整体跳过；
+   *    单事件注册抛错 → 记日志继续下一个，不中断插件挂载。
+   *
+   * 🔴 判定逻辑零改动：handler 由插件侧提供，kit 只负责把管子接上 + 注入助手面
+   *    + 收好 disposer。助手面（`SeamHelpers`）**恒在 handler 参数末位**：
+   *    `helpers.call(pkg, api, ...args)` 按需懒取既有引擎 @public 面，
+   *    判定函数本体与签名零改动；缺依赖时只在真触发时抛可读错误。
+   *    waterfall 风格事件的 handler 形如 `(...参数, next, helpers)`——next 在
+   *    helpers 前一位。
+   *
+   * @param c 宿主上下文
+   * @param collect 订阅 disposer 收集器（apply 内的复合卸载契约闭包）
+   * @param flags settings 开关快照（featureGates 档位 + settingsExtra 字段）
+   * @returns 已成功注册的订阅数（调用方可观测）
+   */
+  function registerSeamHandlers(
+    c: HostContext,
+    collect: (ret: unknown) => void,
+    flags: Record<string, boolean>,
+  ): number {
+    const decls = options.seamHandlers;
+    if (!decls || Object.keys(decls).length === 0) return 0;
+    if (typeof c.on !== 'function') {
+      console.error(
+        `${logTag} 宿主事件订阅面缺失（ctx.on 非函数）——${Object.keys(decls).length} 个 seamHandler 未接线（降级，不阻断挂载）`,
+      );
+      return 0;
+    }
+    // handler 末位注入的助手面：既有引擎 @public API 按需懒取（不在此处静态 import——
+    // 缺依赖的插件照常挂载，只在 handler 真被触发时抛可读错误，由 handler 决定是否吞）。
+    const helpers: SeamHelpers = {
+      call: async (pkg, api, ...args) => {
+        const mod = (await import(pkg)) as Record<string, unknown>;
+        const fn = mod[api];
+        if (typeof fn !== 'function') {
+          throw new Error(`${pkg}.${api} 不是可调用函数（seamHandler 桥接面）`);
+        }
+        return await (fn as (...a: unknown[]) => unknown)(...args);
+      },
+      bridges: () => resolveBridges(),
+      flags: () => ({ ...flags }),
+      log: (message) => console.error(`${logTag} ${message}`),
+    };
+    let wired = 0;
+    for (const [event, handler] of Object.entries(decls)) {
+      if (typeof handler !== 'function') {
+        console.error(`${logTag} seamHandler ${event} 非可调用对象——跳过（不中断其余订阅）`);
+        continue;
+      }
+      // 包装：宿主事件参数在前（原样透传，含 waterfall 的 next）+ helpers 恒在末位
+      const wrapped: SeamHandler = (...args: unknown[]) => handler(...args, helpers);
+      try {
+        // 订阅 disposer 收进复合卸载契约（cordis ctx.on 本身经 fiber.effect 登记，
+        // 此处照收一层——双保险，卸载幂等由 disposed 标志保证）
+        collect(c.on(event, wrapped));
+        wired++;
+      } catch (err) {
+        console.error(
+          `${logTag} seam ${event} 订阅失败（跳过，不中断其余）：${err instanceof Error ? err.message : String(err)}`,
+        );
+      }
+    }
+    if (wired > 0) {
+      console.error(`${logTag} seam 事件接线成功：${wired}/${Object.keys(decls).length}（${Object.keys(decls).join(', ')}）`);
+    }
+    return wired;
   }
 
   /**
@@ -604,7 +771,14 @@ export function createSofagentPlugin(options: SofagentPluginOptions, hostPkg?: S
       }
     }
 
-    // ⑤ 卸载契约：收集到的宿主 disposer → 幂等复合 disposer，作为 apply 返回值交宿主登记
+    // ⑤ seam 事件接线（v1.5.0 章十）：seamHandlers 声明时把宿主事件订阅接上——
+    //    这是「seam 从声明到实现」的落地段。handler 内部经 helpers.call 取既有
+    //    引擎 API（判定逻辑零改动），kit 只负责接管子 + 注入助手面 + 收 disposer。
+    //    开关快照按**全部 settings 键**读（含 settingsExtra 字段，如 acceptanceGate）
+    //    ——handler 内据此尊重用户关档。
+    registerSeamHandlers(c, collect, resolveFlags(settingsScope, Object.keys(mergedSettings)));
+
+    // ⑥ 卸载契约：收集到的宿主 disposer → 幂等复合 disposer，作为 apply 返回值交宿主登记
     //    （cordis 4.x `Fiber._execute`：apply 返回函数即登记为 effect disposer，fiber 卸载时反向执行）
     if (disposers.length === 0) return undefined;
     let disposed = false;

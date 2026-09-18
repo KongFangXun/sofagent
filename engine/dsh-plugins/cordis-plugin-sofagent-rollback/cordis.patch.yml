@@ -4,5 +4,5 @@
       name: 'cordis-plugin-sofagent-rollback'
       inject: [settings, dynamicCordisRunner]
       config:
-        seam: "agent/error"    # 语义：Agent 出错 → git snapshot 逆序撤销
-        description: "给宿主加上快照回溯——Agent 出错时按 git 快照逆序撤销本次改动——桥接 @sofagent/core restoreSnapshot"
+        seam: "agent/error"    # 语义：Agent 出错 → git snapshot 逆序撤销（默认关档，需显式开 rollbackOnError）
+        description: "给宿主加上快照回溯——Agent 出错时按 git 快照逆序撤销本次改动——桥接 @sofagent/core restoreSnapshot / @sofagent/core listSnapshots"
