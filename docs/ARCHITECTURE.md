@@ -124,6 +124,16 @@ graph TB
 
 ## 目录
 
+> **怎么读这份文档**（按需跳转，不必通读）：
+>
+> | 你的目的 | 读哪几节 | 大约 |
+> |---------|---------|:--:|
+> | 只要全貌 | [心智模型](#心智模型先读这个) + [能力与状态总览](#能力与状态总览) | 15 分钟 |
+> | 查术语/查能力在哪个包 | [术语对照](#术语对照) + 能力总览（查阅型，可跳过） | 随查 |
+> | 改代码 · 看模块编制 | 第二章 + 第三章 | 30 分钟 |
+> | 追溯某个设计决策为什么这么定 | 第四章 + 第七章 | 按需 |
+>
+
 - [术语对照](#术语对照)
 - [能力与状态总览](#能力与状态总览)
 - [一、核心理念与架构全景](#一核心理念与架构全景)
@@ -344,6 +354,17 @@ Dashboard Web 前端（`dashboard.html` 单文件控制台已落：驾驶舱/FDE
 > **Dashboard 双形态说明（v1.3.5 归位 tools/）**：`tools/dashboard/dashboard.html`（Web 形态，`node tools/dashboard/serve-dashboard.mjs` 起服务——与服务器同目录）与 `tools/dashboard/sofagent-dashboard.sh`（终端形态，装到 `~/.sofagent/bin/`，零依赖 bash）是同一 Dashboard 的两种产品入口（README 三入口表）：Web 给老板/IT 可视化看，终端给开发者/FDE 快速看。二者职责不同，勿混用/勿删其一。
 
 ---
+
+### v1.5.0 治理面（新增能力域）
+
+| 能力 | 落点包 | 一句话 |
+|------|--------|--------|
+| 治理 KPI 面板 | `@sofagent/audit` + Dashboard | 六卡聚合（边界触发率/审计覆盖率/HITL 时延/趋势/重复执行/trace 一致率）+ 数据集审阅 + lineage 合规报告 + 周报 |
+| 本体数据双时态 | `@sofagent/ontology` | `stateAt` 时点快照 + `validFrom`/`validTo` + 三层渐进加载（预算联动降级留痕） |
+| Validation Engine | `@sofagent/ontology` | DAG 三色 DFS 环链定位 + schema 兼容三态 + 激活前置门 fail-closed |
+| 跨层证据对账 | `@sofagent/core` | `reconcileTraces` 三源四态（一致/漏报/幻觉/瞒报）+ 回滚闭环豁免 |
+
+> 治理面是约束层的「可见性出口」——前四版把能力做进引擎，本版开始让能力被看见、被对账。
 
 ## 一、核心理念与架构全景
 

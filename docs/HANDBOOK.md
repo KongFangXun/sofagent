@@ -179,6 +179,23 @@ cd sofagent && bash install.sh
 >
 > 另有一类**同名陷阱**：npm 裸名包 `sofagent-audit` 是本项目的旧代理包（已 deprecated、长期滞后），正式包名是带 scope 的 `@sofagent/audit`——别按名字猜，见 README 的同名警示。
 
+#### 两条通道都叫 sofagent？怎么分辨（自 README 迁入）
+
+| | npm 裸名总包（`npm i -g sofagent`） | `install.sh` 安装态 |
+|---|---|---|
+| `sofagent` 是什么 | **审计薄转发**——等价 `sofagent-audit` | **完整安装面入口**——另有 `status` / `web` / `dashboard` 等子命令 |
+| 实现位置 | `engine/umbrella/bin/sofagent.js` | `$SOFAGENT_HOME/bin/` |
+
+**PATH 判别法**：`command -v sofagent` 看路径落在 npm global 还是 `$SOFAGENT_HOME/bin`；再 `sofagent --help` 看首屏是审计参数表还是安装版子命令表（`sofagent web` 只在 install.sh 安装态可用）。两者同时在 PATH 时显式用全名（审计走 `sofagent-audit`），不要假设 `sofagent` 一定是完整安装面。
+
+#### 三种装法粒度（同一约束层，按场景选）
+
+| 装法 | 命令 | 生命周期 | 适合 |
+|------|------|---------|------|
+| npx 临时 | `npx -y -p @sofagent/audit sofagent-audit` | 用完即走 | 任意仓库快速审计、一次性检查 |
+| npm 项目内 | `npm install @sofagent/audit` | 随项目，版本锁进 package-lock | 固定依赖的团队项目 |
+| npm 全局 | `npm install -g @sofagent/audit` | 装一次到处用 | 跨仓库日常审计、daemon 常驻 |
+
 #### 安装常见问题
 
 | 问题 | 原因 | 解决 |
@@ -460,24 +477,7 @@ jobs:
 
 ### 近期版本新功能速览
 
-| 功能 | 版本 | 一句话 | 详见 |
-|------|:--:|------|------|
-| Dream Cycle | v1.1.7 | knowledge/ 自动沉淀——daemon 6 阶段 pipeline 从 task/logs 提取知识，不再靠散点脚本 | [FDE/GUIDE.md §5.6 经验怎么沉淀](../FDE/GUIDE.md#56-经验怎么沉淀) |
-| sensitivity 分级 | v1.1.7 | 每条知识带 public/internal/restricted 分级，缺省 internal——restricted 在联邦查询中不外发 | [FDE/GUIDE.md §5.7 数据主权](../FDE/GUIDE.md#57-数据主权审计为什么重要) |
-| knowledge status | v1.1.7 | `sofagent-daemon knowledge status` 一条命令看知识全貌（Dream Cycle 周报 + 健康度 + sensitivity 计数） | [FDE/GUIDE.md §5.6 经验怎么沉淀](../FDE/GUIDE.md#56-经验怎么沉淀) |
-| 安全联邦 | v1.1.8 | 两台配对设备互查 knowledge/，AES-256-GCM 全链路加密 + sensitivity 双重过滤 | [FDE/GUIDE.md §5.7 数据主权](../FDE/GUIDE.md#57-数据主权审计为什么重要) |
-| Prompt 注入防护 | v1.1.8 | 8 层纵深防御——外部内容包裹 + 脱敏 + 知识可信分级 | [SECURITY.md](../SECURITY.md) |
-| USB 一键烧录 | v1.1.8 | workflow 烧进 U 盘 → 发给员工 → 插上即用，拔掉零残留 | [常驻：长期自跑与持续优化](#常驻长期自跑与持续优化) |
-| A/B 自动调度 | v1.1.9 | daemon 后台跑探索-利用——当前方案攒数据 → 自动切候选方案对比 → 赢家自动 promote | [ARCHITECTURE 编排模块](./ARCHITECTURE.md) |
-| 激活链 | v1.2.5-v1.3.0 | FDE 交付物 → 注册 SubAgent → 编排 → HITL+审计自动跑，交付物从静态文件变自运转系统 | [激活链设计](./guides/fde-activation-chain.md) |
-| 运行时审计 | v1.3.0 | wrapToolCall middleware + tool-gate 动态拦截 + 运行时审计日志 | [v1.3.0 开发日志](./changelog/v1.3/v1.3.0.md) |
-| 并行编排 | v1.3.1 | 波次并发 + MergeQueue，多 Agent 并行执行 | [v1.3.1 开发日志](./changelog/v1.3/v1.3.1.md) |
-| 沙箱 | v1.3.7 | SubAgent 完整沙箱（虚拟 FS / 网络白名单 / 工具中介 / 独立进程） | [v1.3.7 开发日志](./changelog/v1.3/v1.3.7.md) |
-| Durable L3 | v1.3.8 | 可恢复事务（writer/recovery/undo 三档可逆）+ 网关集成 + 真 git 回滚 | [v1.3.8 开发日志](./changelog/v1.3/v1.3.8.md) |
-| 代理网关 | v1.3.8 | SubAgent 外部请求唯一出入口（域名/路径白名单 + 四档风险分级 + 权限上界单调守卫 + HITL） | [v1.3.8 开发日志](./changelog/v1.3/v1.3.8.md) |
-| 静态加密 | v1.3.8 | 纯 TS AES-256-GCM（SOFAGENT-AGE-V1 透明读写）+ 密钥指纹备份 + 四目录加密 | [v1.3.8 开发日志](./changelog/v1.3/v1.3.8.md) |
-| AST 规则引擎 | v1.3.9 | 官方 AST 引擎（ASI01 目标劫持 + ASI04 供应链 SBOM 语义检测）+ meta-harness 多 harness 编排 | [v1.3.9 开发日志](./changelog/v1.3/v1.3.9.md) |
-| AI 工作明细 | v1.3.9 | `worklog` 数据层（按 Agent/Workflow/周 + 人工介入，`worklog_query` MCP） | [v1.3.9 开发日志](./changelog/v1.3/v1.3.9.md) |
+| 早期版本（v1.1.x-v1.3.x 共 30 版） | v1.1-v1.3 | 编排模块 ao→LangGraph→StateGraph 三演进 + 运行时审计闭环 + L1-L3 组织协作 + 引擎接口外化（MCP 52→60）+ SubAgent 完整沙箱 + 代理网关硬边界 + 数据静态加密 + AST 规则引擎 + meta-harness + Dream Cycle 知识进化 | [CHANGELOG](../CHANGELOG.md) |
 | Web 工作明细 + 图谱 | v1.4.0 | Dashboard 工作明细四视角 + 图谱栏（业务图谱 + 本体图谱 + MCP 工具视图 + skill 加载链）+ 随 install.sh 装到用户机 | [v1.4.0 开发日志](./changelog/v1.4/v1.4.0.md) |
 | 成本审计 | v1.4.0 | 超支告警 + `cost_query` MCP + COST DecisionKind（WARN-only 不拦截） | [v1.4.0 开发日志](./changelog/v1.4/v1.4.0.md) |
 | DSH/OpenClaw 插件家族 | v1.4.0 | DSH cordis-plugin 9 款 + OpenClaw code-plugin 4 款 + MCP 工具角色分层（默认 34/66）+ DSH 默认启用 | [v1.4.0 开发日志](./changelog/v1.4/v1.4.0.md) |

@@ -26,10 +26,11 @@
 - [七、数据文件架构](#七数据文件架构)
 - [八、提交时审计 + 文件系统审计](#八提交时审计--文件系统审计)
 - [九、验证方法论](#九验证方法论)
-- [九B、经验编译为持久知识](#九b经验编译为持久知识wikiskill-印证)
-- [九C、meta-harness 生态定位](#九cmeta-harness-生态与-sofagent-的定位2026-06-meta-harness-summer-印证)
-- [十、STATE.md 持久化外部记忆模式](#十statemd-持久化外部记忆模式)
-- [十一、激活链扩展指南](#十一激活链扩展指南)
+- [十、经验编译为持久知识](#十经验编译为持久知识wikiskill-印证)
+- [十一、meta-harness 生态定位](#十一meta-harness-生态与-sofagent-的定位2026-06-meta-harness-summer-印证)
+- [十二、STATE.md 持久化外部记忆模式](#十二statemd-持久化外部记忆模式)
+- [十三、激活链扩展指南](#十三激活链扩展指南)
+- [十三、激活链扩展指南](#十三激活链扩展指南)
 
 ---
 
@@ -611,7 +612,7 @@ v1.0.8 自研 git-shadow diff 解析（isomorphic-git **风格**，非 npm 包�
 - **上下文精简 = 低成本高通过**：研报发现 Pipe Agent 同模型下比原生工具便宜 1.2–2×、性能差距 <3pt，根因是初始提示 <1500 token（vs Claude Code 20k）。这从量化角度印证 sofagent「Harness 要轻」——约束层零 token 运行（24 条规则 19 条纯 git-diff），把成本压在确定性引擎而非上下文堆料。
 - **保存 ≠ 生效 ≠ 变好**：三个状态分记，谁也不许冒充谁——**已保存**（配置/产物写入了）／**已生效**（接线在真实路径上，不是只存在于测试或声明里）／**已验证变好**（行为级验证通过，且对照了改前基线）。交付声明只能落在实际达到的那一档，未做行为验证的显式记「未验证」，不并进「已完成」。
 
-## 九B、经验编译为持久知识（WikiSkill 印证）
+## 十、经验编译为持久知识（WikiSkill 印证）
 
 Google Research 的 WikiSkill（[arXiv:2608.27454](https://arxiv.org/abs/2608.27454)）把 Agent 工作区分为 Raw（不可变轨迹）/ Wiki（永不回滚的知识层）/ Skills（可回滚技能）三层，与 sofagent 的三层结构同构且提供了量化证据：
 
@@ -621,7 +622,7 @@ Google Research 的 WikiSkill（[arXiv:2608.27454](https://arxiv.org/abs/2608.27
 - **溯源与提案审计**：`PURPOSE.md`（技能回链到所解决的 pattern）与 `skill-impact.md`（每次提案 diff/分数/接受与否程序化落账）两个小机制，与 sofagent 的 LEDGER/审计轨迹理念同源。**v1.4.5 第七章四已收编落地**：`solves:` frontmatter 溯源字段（SKILL/ 子树 5 个带 frontmatter 的 SKILL.md 补齐——「为什么存在」回链 pattern，改技能先懂设计意图）+ skill-impact 台账（`engine/orchestrator/src/skill-evolution/`——JSONL append-only 程序化落账，被拒提案带原因不丢教训）+ eval 门控（技能变更过 eval 验证集、分数超历史最优才收编，接通 benchmark/evaluation-log 既有闭环）+ 执行/进化上下文隔离（rollout 期禁查进化知识库的运行时守卫——executor 访问即审计告警，对应消融 -2.8pt 实证的工程化防御）。
 - **自进化的开放问题恰是约束层的主场**：技能自进化的公开讨论自认仍缺质量控制、安全审核、版本管理三样——正是 sofagent 审计模块（规则集）+ 安全审查 + 回滚编排已经在做的事。开发者角色从「写技能」转为「设目标 + 把关」，与 sofagent 约束层哲学（人定规则、AI 执行、审计每次变更）同构，是 FDE 交付叙事的现成参照。
 
-## 九C、meta-harness 生态与 sofagent 的定位（2026-06 Meta-Harness Summer 印证）
+## 十一、meta-harness 生态与 sofagent 的定位（2026-06 Meta-Harness Summer 印证）
 
 2026 年 6 月硅谷一周内涌现一批「harness 之上的 harness」（Databricks 开源 Omnigent 时正式造词，类比 K8s 之于容器）——多 agent 统一接入/调度/治理层。行业评估这类产品已收敛出五维检查清单，与 sofagent 已交付能力对照：
 
@@ -635,7 +636,7 @@ Google Research 的 WikiSkill（[arXiv:2608.27454](https://arxiv.org/abs/2608.27
 
 **定位警示**：sofagent 不是「又一个 meta-harness」——meta-harness 解决「让一堆 agent 一起干活」，sofagent 解决「管住每一次变更」（约束层/审计层，平台无关）。对外叙事用「FDE Harness」借力 harness 概念普及时，防定位错置稀释差异化。另：斯坦福 IRIS Lab 同名论文走纵向路线（外循环搜索更优 harness 代码），与自迭代工具链思路同构，技能门控与提案审计机制已在 WikiSkill 收编中覆盖同类问题。
 
-## 十、STATE.md 持久化外部记忆模式
+## 十二、STATE.md 持久化外部记忆模式
 
 loop-engineering 社区将 STATE.md 定位为 **「对话外的持久化主干」**——Agent 每次任务启动时**必须先读**状态文件、结束时**必须写回**。这与 sofagent 的 `task/logs` 四字段（看到/改了/验证了/还剩）同构，但有两个增量值得吸收：
 
@@ -661,7 +662,7 @@ loop-engineering 社区将 STATE.md 定位为 **「对话外的持久化主干�
 
 ---
 
-## 十一、激活链扩展指南
+## 十三、激活链扩展指南
 
 > 激活链 Phase 1-4（ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN）全部已实现。以下为给贡献者的扩展指南。
 
