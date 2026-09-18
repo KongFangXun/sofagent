@@ -1,14 +1,22 @@
 {
-  "//": "DSH 插件清单 · 唯一手写源（v1.4.8 第5批 · 适配层标准化 A；第8批新增聚合型条目；v1.4.9 P2 合并批：ontology/commons/gate 三厚插件并入 -fde 与 -audit，条目 10→7）。tools/gen/gen-plugin-manifests.mjs 据此生成每个插件的 cordis.patch.yml 与 package.json 的 description / sofagent / dsh / //optionalDependencies / optionalDependencies 段。⚠️ 手改生成物 = 下一次生成即被覆盖——要改就改这里。⚠️ seam 字段仍须与各插件 src/index.ts 的字面量 seam 一致（check-seam-contract.mjs 正向检查读 src；生成器 --check 会对账两者，不一致即报红）。条目两类：kind 缺省/bridge = 桥接 @sofagent/* 能力包（bridgePkg+bridgeApi 必填，多包形态加 bridges 数组——optionalDependencies 随之展开）；kind=suite = 聚合型（bridgePkg/bridgeApi 语义不适用——它不桥接任何单个能力包，改用 suite 声明挂哪些兄弟插件）。P2 扩展字段：toolsRoles = tool-registry.ts 角色数组（并集注册，生成器写 sofagent.tools 段并与 registry 对账）；featureGates = settings 分档（键=档位字段名，值=该档控制的工具名清单；关档即从注册全集剔除——验收硬线：关档后该域工具确实不可注册）。",
+  "//": "DSH 插件清单 · 唯一手写源（v1.4.8 第5批 · 适配层标准化 A；第8批新增聚合型条目；v1.4.9 P2 合并批：ontology/commons/gate 三厚插件并入 -fde 与 -audit，条目 10→7；v1.5.0 章十：seam 从声明到实现）。tools/gen/gen-plugin-manifests.mjs 据此生成每个插件的 cordis.patch.yml 与 package.json 的 description / sofagent / dsh / //optionalDependencies / optionalDependencies 段。⚠️ 手改生成物 = 下一次生成即被覆盖——要改就改这里。⚠️ seam 字段仍须与各插件 src/index.ts 的字面量 seam 一致（check-seam-contract.mjs 正向检查读 src；生成器 --check 会对账两者，不一致即报红）。条目两类：kind 缺省/bridge = 桥接 @sofagent/* 能力包（bridgePkg+bridgeApi 必填，多包形态加 bridges 数组——optionalDependencies 随之展开）；kind=suite = 聚合型（bridgePkg/bridgeApi 语义不适用——它不桥接任何单个能力包，改用 suite 声明挂哪些兄弟插件）。P2 扩展字段：toolsRoles = tool-registry.ts 角色数组（并集注册，生成器写 sofagent.tools 段并与 registry 对账）；featureGates = settings 分档（键=档位字段名，值=该档控制的工具名清单；关档即从注册全集剔除——验收硬线：关档后该域工具确实不可注册）。章十扩展字段：seamHandlers = **真实订阅的宿主 ctx 事件名**数组（与 src 的 seamHandlers 键、与 seam 的事件集三方对账——seam 里有而 seamHandlers 里没有 = 假接线，反之 = 幽灵订阅；两处不一致即报红）。⚠️ 写进去的事件名必须是宿主**确实派发**的 ctx 事件：`@deepseek-ai/dsh-hook-protocol` 的若干事件类型（turn/start、turn/end、session/created、hook/*）是**交付外部 hook 的载荷类型**，不是 ctx 订阅点——in-process 插件订阅它们会得到一个永不触发的订阅（turn 收尾的真实订阅点是 `session/event` + event.type 过滤）。",
   "schemaVersion": 1,
   "plugins": [
     {
       "id": "cordis-plugin-sofagent-audit",
       "seam": "tools/result + tools/pre-execute + fs/write-intent + agent/turn-stopping",
-      "seamSemantics": "工具结果留证 + 工具执行前拦截 + 文件写入意图拦截 + Turn 停止验收判定（v1.4.9 P2 吸收原 -gate 验收门禁；判定源 = define_acceptance/check_acceptance，不另造）",
+      "seamSemantics": "工具结果留证 + 工具执行前拦截 + 文件写入意图拦截（放行） + Turn 停止验收判定（v1.4.9 P2 吸收原 -gate 验收门禁；判定源 = checkDangerousCommand/check_acceptance，不另造）",
+      "seamHandlers": ["tools/result", "tools/pre-execute", "fs/write-intent", "agent/turn-stopping"],
       "capability": "审计与验收（git diff 硬证据 + 24 规则 + 机器可判定验收）",
       "bridgePkg": "@sofagent/audit",
       "bridgeApi": "runRules",
+      "bridges": [
+        { "pkg": "@sofagent/audit", "api": "runRules" },
+        { "pkg": "@sofagent/audit", "api": "emitDecision" },
+        { "pkg": "@sofagent/orchestrator", "api": "checkDangerousCommand" },
+        { "pkg": "@sofagent/orchestrator", "api": "checkAcceptance" },
+        { "pkg": "@sofagent/core", "api": "getDataDir" }
+      ],
       "description": "变更机器审阅 + 验收硬门禁——24 规则 + git diff 硬证据 + Turn 停止验收判定（验收不过不放行，开关独立可关）"
     },
     {
@@ -22,11 +30,18 @@
     },
     {
       "id": "cordis-plugin-sofagent-evolve",
-      "seam": "turn/end",
-      "seamSemantics": "Turn 结束（任务收尾）→ 经验沉淀（think.md 反思）",
+      "seam": "session/event",
+      "seamSemantics": "会话事件流中的 Turn 结束（turn/end）→ 经验沉淀（think.md 反思）",
+      "seamHandlers": ["session/event"],
       "capability": "进化能力（经验自动沉淀）",
       "bridgePkg": "@sofagent/think",
       "bridgeApi": "generateThinkEntry",
+      "bridges": [
+        { "pkg": "@sofagent/think", "api": "generateThinkEntry" },
+        { "pkg": "@sofagent/core", "api": "parseDiff" },
+        { "pkg": "@sofagent/audit", "api": "runRules" },
+        { "pkg": "@sofagent/core", "api": "getDataDir" }
+      ],
       "description": "给宿主加上经验沉淀——任务收尾自动写 think.md 反思条目"
     },
     {
@@ -78,7 +93,8 @@
     {
       "id": "cordis-plugin-sofagent-inject",
       "seam": "agent/pre-step",
-      "seamSemantics": "模型看到输入前注入四层加载链约束",
+      "seamSemantics": "模型看到输入前注入四层加载链约束（Turn 首步一条消息，判定源 = buildConstrainedSystemPrompt）",
+      "seamHandlers": ["agent/pre-step"],
       "capability": "约束注入链（SKILL→fde→think→knowledge）",
       "bridgePkg": "@sofagent/inject",
       "bridgeApi": "buildConstrainedSystemPrompt",
@@ -87,10 +103,15 @@
     {
       "id": "cordis-plugin-sofagent-rollback",
       "seam": "agent/error",
-      "seamSemantics": "Agent 出错 → git snapshot 逆序撤销",
+      "seamSemantics": "Agent 出错 → git snapshot 逆序撤销（默认关档，需显式开 rollbackOnError）",
+      "seamHandlers": ["agent/error"],
       "capability": "快照回溯（出事一键回滚）",
       "bridgePkg": "@sofagent/core",
       "bridgeApi": "restoreSnapshot",
+      "bridges": [
+        { "pkg": "@sofagent/core", "api": "restoreSnapshot" },
+        { "pkg": "@sofagent/core", "api": "listSnapshots" }
+      ],
       "description": "给宿主加上快照回溯——Agent 出错时按 git 快照逆序撤销本次改动"
     }
   ]

@@ -91,7 +91,7 @@ function openclawFacts(dir) {
   return { file, union, deprecated };
 }
 
-/** DSH：三类宿主事件族（与 SEAMS.md §1 复核命令同口径） */
+/** DSH：五类宿主事件族（与 SEAMS.md §1 复核命令同口径） */
 function findDshHost() {
   const base = path.join(process.env.HOME ?? '', '.dsh/profiles/node_modules/@deepseek-ai');
   return fs.existsSync(base) ? base : null;
@@ -102,23 +102,38 @@ function dshFacts(base) {
     'dsh-tools': ['tools/'],
     'dsh-fs': ['fs/'],
     'dsh-agent': ['agent/'],
+    // dsh-hook-protocol 的 session/ 与 turn/ 命中的是**载荷类型字面量**（该协议发给
+    // 仓外 hook 的事件类型），不是 ctx 订阅点——词汇表按 §1 口径仍把它们登记在
+    // 「宿主真实存在的名字」下，故探测面照旧；in-process 订阅点的真实归属见下一行。
     'dsh-hook-protocol': ['hook/', 'session/', 'turn/'],
+    // v1.5.0 章十：会话事件流的**真实订阅点**只有 `session/event`（`Session.append`
+    // 广播 listener `(session, event)`，宿主观测点 `dsh-session/lib/index.js:1530` 以
+    // 位置参数派发该名）。同家族其余 `session/*` 是**会话事件类型**（`append` 的载荷名，
+    // 如 `session/title` / `session/flush` / `session/end-seed`），不是 ctx 订阅点——
+    // 故此条按**精确名**探测（前缀形态会把载荷名一并当成可挂事件，误报「宿主有、词表未登记」）。
+    'dsh-session': ['session/event'],
   };
   // 口径：扫代码/类型面（.js/.mjs/.cjs/.ts/.d.ts），**不扫 .md**——README 是散文，
   // 里面出现的名字可能是「已废弃」「示例」而非可挂载契约（实测 agent/pre-step 的定义
   // 落在 lib/types/runtime-types.d.ts，只扫 .js 会漏，故必须含 .d.ts）。
   const CODE = /\.(js|mjs|cjs|ts)$/;
   // SEAMS.md §1 尾注声明：词汇表**只收插件可挂的生命周期事件**，不追求登记宿主全部内部事件
-  // （例：internal/dispatch、session/event）——那些不对插件开放，出现即豁免，不算漂移。
-  const INTERNAL_NOT_OPEN = new Set(['internal/dispatch', 'session/event']);
+  // （例：internal/dispatch）——那些不对插件开放，出现即豁免，不算漂移。
+  // 🔴 v1.5.0 章十：`session/event` **不再**属豁免面——它是会话事件流的真实订阅点
+  //    （evolve 插件据此观察 turn 收尾），已正式登记进词汇表 §1，必须参与双向对账。
+  const INTERNAL_NOT_OPEN = new Set(['internal/dispatch']);
   const found = [];
   const exempt = new Set();
   for (const [pkg, prefixes] of Object.entries(families)) {
     const lib = path.join(base, pkg, 'lib');
     if (!fs.existsSync(lib)) continue;
     for (const prefix of prefixes) {
-      const re = new RegExp(`["']${prefix.replace('/', '\\/')}[a-z-]+["']`, 'g');
-      const hits = new Set();
+      // 两种探测口径：家族前缀（`tools/` → `"tools/<name>"`）与**精确名**（`session/event`）
+      const exact = /^[a-z-]+\/[a-z-]+$/.test(prefix);
+      const escaped = prefix.replace('/', '\\/');
+      const re = exact
+        ? new RegExp(`["']${escaped}["']`, 'g')
+        : new RegExp(`["']${escaped}[a-z-]+["']`, 'g');
       const walk = (dir) => {
         for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
           const p = path.join(dir, e.name);

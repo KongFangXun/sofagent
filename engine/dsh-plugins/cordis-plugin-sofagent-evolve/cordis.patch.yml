@@ -4,5 +4,5 @@
       name: 'cordis-plugin-sofagent-evolve'
       inject: [settings, dynamicCordisRunner]
       config:
-        seam: "turn/end"    # 语义：Turn 结束（任务收尾）→ 经验沉淀（think.md 反思）
-        description: "给宿主加上经验沉淀——任务收尾自动写 think.md 反思条目——桥接 @sofagent/think generateThinkEntry"
+        seam: "session/event"    # 语义：会话事件流中的 Turn 结束（turn/end）→ 经验沉淀（think.md 反思）
+        description: "给宿主加上经验沉淀——任务收尾自动写 think.md 反思条目——桥接 @sofagent/think generateThinkEntry / @sofagent/core parseDiff / @sofagent/audit runRules / @sofagent/core getDataDir"
