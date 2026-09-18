@@ -698,7 +698,7 @@ grep -c "runDAG\|detectFileConflicts\|ORCHESTRATOR_PROMPT" engine/orchestrator/s
 grep -c "parseWorkflowYaml\|toSubAgentConfigs\|ParsedWorkflow" engine/orchestrator/src/workflow-parser.ts # ≥2
 
 # 子项 c: compose --run + enterprise-workflow 参数
-grep -c "\-\-run\|enterpriseWorkflow\|composeWithDeepAgents" engine/orchestrator/src/composer.ts # ≥2
+grep -c "\-\-run\|enterpriseWorkflow\|composeWithReactAgent" engine/orchestrator/src/composer.ts # ≥2
 
 # 子项 d: A/B variants（一次生成多种拆解策略）
 grep -c "variants\|variant\|VARIANT" engine/orchestrator/src/composer.ts # ≥2
@@ -1662,7 +1662,7 @@ grep -q "dashboard.html" tools/check/check-version.sh && echo "✅ dashboard 版
 ) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -qE "^[[:space:]]{0,2}❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true
 ```
 
-#### 127. 新功能审查面——训练运行九章+DSH 执行深化+审计聚合+反作弊基线一维收口（阶段四来源提取 A 类 · 归并「旧交付退役收口」入此：composeWithDeepAgents 别名与 fde_compose ontology 收窄为退役治理子项）
+#### 127. 新功能审查面——训练运行九章+DSH 执行深化+审计聚合+反作弊基线一维收口（阶段四来源提取 A 类 · 归并「旧交付退役收口」入此：compose 旧别名下线与 fde_compose ontology 收窄为退役治理子项）
 
 > 九章+清扫五件的静态一致性快查（执行级验证单测 138 用例已落 orchestrator/audit，此处分钟级 grep）。子项 h 承接清扫任务二/三的退役收口治理（别名承诺句式 + workflow-only 收窄——v1.5.0 shim 移除的防遗忘锚）。**块级退出码防御**：子项行尾 `|| echo "❌"` 的 echo 恒 0 会吞失败退出码——整块必须包子 shell + tee 落盘 + 尾部 ❌ 扫描定 exit，严禁裸 echo 收尾。
 
@@ -1685,8 +1685,8 @@ grep -q "anticheat" tools/train/train-env-init.sh && grep -q "checkAnticheatBase
 grep -q "replayEventsToStreamHandler" engine/orchestrator/src/execution-backends/dsh-backend.ts && grep -q "runtimeUsage" FORGE/src/fresh-eyes-driver.mjs && grep -q "return 'dsh'" FORGE/src/fresh-eyes-driver.mjs && echo "✅ DSH 三步在位" || echo "❌ DSH 深化缺口"
 # g: onboarding 导览表（HANDBOOK 三线 × 是什么/从哪进/前置 + install 提示分层）
 grep -q "新功能入口导览" docs/HANDBOOK.md && grep -q "后训模块（需要 GPU 环境）" install.sh && echo "✅ 导览+分层提示" || echo "❌ onboarding 断层"
-# h: 退役收口治理（清扫二/三——别名句式「将在 v1.5.0 移除」+ fde_compose workflow-only；v1.5.0 移除时本子项同步清）
-grep -q "将在 v1.5.0 移除" engine/orchestrator/src/composer.ts && grep -q "action === 'ontology'" engine/mcp/src/tools/fde-compose.ts && grep -q "fde_derive" engine/mcp/src/tools/fde-compose.ts && echo "✅ 退役治理（别名+收窄）" || echo "❌ 退役收口回潮"
+# h: 退役收口治理（清扫二/三——别名与布尔链校验已在 v1.5.0 按预告移除，收窄在位即过；回潮=旧标识复活）
+! grep -qE "export (async )?function (composeWithDeepAgents|checkHistoryChainIntegrity)" engine/orchestrator/src/composer.ts engine/core/src/audit-history.ts && grep -q "action === 'ontology'" engine/mcp/src/tools/fde-compose.ts && grep -q "fde_derive" engine/mcp/src/tools/fde-compose.ts && echo "✅ 退役治理（别名+收窄）" || echo "❌ 退役收口回潮"
 grep -q "checkHistoryChainIntegrity" CHANGELOG.md && echo "✅ 退役公告在 CHANGELOG 索引" || echo "❌ 公告丢失（v1.5.0 移除前置）") 2>&1 | tee "/tmp/regress-dim127-$$.log"; grep -qE "^[[:space:]]{0,2}❌" "/tmp/regress-dim127-$$.log" && { rm -f "/tmp/regress-dim127-$$.log"; echo "维度127收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim127-$$.log"; echo "维度127收口:PASS"
 ```
 

@@ -262,10 +262,10 @@ entry = json.loads(open('$HISTORY').readline().strip())
 entry.pop('prevHash', None); entry.pop('hashVersion', None)
 print(hashlib.sha256(json.dumps(entry).encode()).hexdigest()[:16])")
 echo "{\"timestamp\":\"2026-07-02T00:00:00Z\",\"diffRange\":\"HEAD~2..HEAD~1\",\"exitCode\":0,\"ruleResults\":[],\"diffFileCount\":1,\"prevHash\":\"$OLD_HASH\",\"hashVersion\":2}" >> "$HISTORY"
-CHAIN_OK=true; NODE_CHECK=$(cd "$TMP_REPO" && node -e "try { const { checkHistoryChainIntegrity } = require('$PWD/engine/audit/dist/audit-history.js'); console.log(checkHistoryChainIntegrity('$TMP_REPO/.sofagent/audit') ? 'CHAIN_OK' : 'CHAIN_BREAK'); } catch(e) { console.log('CHAIN_ERROR'); }" 2>/dev/null)
+CHAIN_OK=true; NODE_CHECK=$(cd "$TMP_REPO" && node -e "try { const { checkHistoryChainDetailed } = require('$PWD/engine/audit/dist/audit-history.js'); console.log(checkHistoryChainDetailed('$TMP_REPO/.sofagent/audit').status === 'ok' ? 'CHAIN_OK' : 'CHAIN_BREAK'); } catch(e) { console.log('CHAIN_ERROR'); }" 2>/dev/null)
 [[ "$NODE_CHECK" == *CHAIN_BREAK* ]] && CHAIN_OK=false
 sed -i.bak '2s/prevHash":"[a-f0-9]*"/prevHash":"tampered99"/' "$HISTORY"
-TAMPER_CHECK=$(cd "$TMP_REPO" && node -e "try { const { checkHistoryChainIntegrity } = require('$PWD/engine/audit/dist/audit-history.js'); console.log(checkHistoryChainIntegrity('$TMP_REPO/.sofagent/audit') ? 'CHAIN_OK' : 'CHAIN_BREAK'); } catch(e) { console.log('CHAIN_ERROR'); }" 2>/dev/null)
+TAMPER_CHECK=$(cd "$TMP_REPO" && node -e "try { const { checkHistoryChainDetailed } = require('$PWD/engine/audit/dist/audit-history.js'); console.log(checkHistoryChainDetailed('$TMP_REPO/.sofagent/audit').status === 'ok' ? 'CHAIN_OK' : 'CHAIN_BREAK'); } catch(e) { console.log('CHAIN_ERROR'); }" 2>/dev/null)
 TAMPER_DETECTED=true; [[ "$TAMPER_CHECK" == *CHAIN_OK* ]] && TAMPER_DETECTED=false
 mv "$HISTORY.bak" "$HISTORY" 2>/dev/null || true
 if $CHAIN_OK && $TAMPER_DETECTED; then pass
@@ -766,7 +766,7 @@ scenario 76 "harness 约束自加载 + A14+A15 规则"
 S76_OK=true; HARNESS_DIST="$PROJECT_ROOT/engine/inject/dist/index.js"
 require_dist "engine/inject/dist/index.js" || S76_OK=false
 if $S76_OK; then S76_RESULT=$(node -e "try { const h = require('$HARNESS_DIST'); console.log('buildConstrainedSystemPrompt:' + typeof h.buildConstrainedSystemPrompt); } catch(e) { console.log('error:' + e.message); }" 2>&1 || true); [[ "$S76_RESULT" == *function* ]] || { fail "buildConstrainedSystemPrompt 未导出"; S76_OK=false; }; fi
-if $S76_OK; then S76_HARNESS=$(grep -c "harness" "$PROJECT_ROOT/engine/orchestrator/src/launcher.ts" 2>/dev/null || true); S76_HARNESS=${S76_HARNESS:-0}; [ "$S76_HARNESS" -ge 1 ] || { fail "launcher.ts 未引用 harness"; S76_OK=false; }; fi
+if $S76_OK; then S76_HARNESS=$(grep -c "inject" "$PROJECT_ROOT/engine/orchestrator/src/launcher.ts" 2>/dev/null || true); S76_HARNESS=${S76_HARNESS:-0}; [ "$S76_HARNESS" -ge 1 ] || { fail "launcher.ts 未引用 inject"; S76_OK=false; }; fi
 $S76_OK && pass
 S77_OK=true; S77_REG=$(grep -c "A14" "$AUDIT_RULES_INDEX" 2>/dev/null || true); S77_REG=${S77_REG:-0}
 [ "$S77_REG" -ge 2 ] || { fail "A14 规则未注册"; S77_OK=false; }
@@ -3353,15 +3353,14 @@ scenario 355 "v1.4.3 第十一章：存量清扫零残留——ao 探测死代�
 # ① 清扫一：run-envs 无 ao 探测残留（探测数组字面量不得出现在非注释行——清扫注记注释豁免）
 S355_AO=$(grep -n "\['ao'" "$PROJECT_ROOT/engine/core/src/run-envs.ts" 2>/dev/null | grep -vE "^[0-9]+:[[:space:]]*//" || true)
 [ -n "$S355_AO" ] && { S355_OK=false; echo "ao 探测残留: $S355_AO"; }
-# ② 清扫二：新名可用 + 旧名 @deprecated 别名转发（不删旧名——下游一版缓冲）
+# ② 清扫二：compose 更名——v1.5.0 已按预告移除别名 composeWithDeepAgents，新名是唯一入口
 grep -q "export async function composeWithReactAgent" "$PROJECT_ROOT/engine/orchestrator/src/composer.ts" || S355_OK=false
-grep -q "@deprecated" "$PROJECT_ROOT/engine/orchestrator/src/composer.ts" || S355_OK=false
-grep -q "return composeWithReactAgent" "$PROJECT_ROOT/engine/orchestrator/src/composer.ts" || S355_OK=false
+grep -nE "composeWithDeepAgents" "$PROJECT_ROOT/engine/orchestrator/src/composer.ts" 2>/dev/null | grep -vE "^[0-9]+:[[:space:]]*\*|^[0-9]+:[[:space:]]*//" > /dev/null && { echo "别名残留: composer.ts 非注释行仍有 composeWithDeepAgents"; S355_OK=false; }
 # ③ 清扫三：fde_compose ontology action 收窄（迁移提示在位，不执行旧推导）
 grep -q "action=ontology 已收窄" "$PROJECT_ROOT/engine/mcp/src/tools/fde-compose.ts" || S355_OK=false
 grep -q "fde_derive" "$PROJECT_ROOT/engine/mcp/src/tools/fde-compose.ts" || S355_OK=false
-# ④ 清扫四：checkHistoryChainIntegrity @deprecated 标记在位（移除归 v1.5.0——公告先行的证据）
-grep -B3 "export function checkHistoryChainIntegrity" "$PROJECT_ROOT/engine/core/src/audit-history.ts" 2>/dev/null | grep -q "@deprecated" || S355_OK=false
+# ④ 清扫四：checkHistoryChainIntegrity 退役完成——v1.5.0 已按公告移除，函数声明零残留即过（退役注记豁免）
+grep -qE "export function checkHistoryChainIntegrity" "$PROJECT_ROOT/engine/core/src/audit-history.ts" "$PROJECT_ROOT/engine/audit/src/audit-history.ts" 2>/dev/null && { echo "退役残留: 布尔版链校验函数仍在源码"; S355_OK=false; }
 $S355_OK && pass "存量清扫零残留过（ao 死代码/更名转发/ontology 收窄/退役公告四锚）" || fail "存量清扫残留——见上方 ✗ 行（grep 全库旧标识，对齐 S340 形态）"
 # S356 · v1.4.3 第十三章：doctor Ontology 完整性检查（run-04 coverage 零覆盖补测）
 scenario 356 "v1.4.3 第十三章：doctor Ontology 完整性检查——entities 遍历 + frontmatter 三查 + skip-log 对账锚点"; S356_OK=true

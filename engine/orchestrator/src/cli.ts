@@ -3,7 +3,7 @@
 //
 // loop 子命令 v1.3.7 升级：默认走 LangGraph StateGraph 节点级流转
 // （engineer→audit→reviewer→human_confirm），支持 --resume 从 checkpoint
-// 恢复。旧版串行路径通过 --legacy 保留兼容。
+// 恢复。旧版串行路径（--legacy）已按弃用公告在 v1.5.0 移除。
 
 import { join } from 'path';
 
@@ -53,7 +53,6 @@ async function main() {
     console.log('       --resolve <checkpointId> --decision approve|reject|aborted');
     console.log('                                  对 awaiting_human 挂起的 HITL 写入人工决策并续跑');
     console.log('       --data-dir <dir>             HITL pending/resolved 根路径（默认 {SOFAGENT_DATA}）');
-    console.log('       --legacy                     ⚠️ 已弃用（将于 v1.5.0 移除）：旧版串行路径，请迁移到默认循环');
     console.log('  compare                          编排方案 A/B 对比');
     console.log('  activate [--dry-run] [--node-filter id1,id2]');
     console.log('                                   激活 FDE 交付物 → 注册企业 SubAgent');
@@ -149,28 +148,7 @@ async function main() {
       break;
     }
     case 'loop': {
-      const legacyMode = args.includes('--legacy');
       const resumeMode = args.includes('--resume');
-
-      if (legacyMode) {
-        // 旧版兼容路径
-        // v1.4.8 条目 10：弃用告警——写 stderr，不污染 stdout 结果输出
-        console.error('⚠️ [弃用告警] loop --legacy 路径已弃用，将于 v1.5.0 移除（兼容期一个大版本）。');
-        console.error('   请迁移到默认循环：sofagent-orchestrator loop --task <描述>');
-        const taskIdx = args.indexOf('--task');
-        const taskDesc = taskIdx !== -1 ? args[taskIdx + 1] : undefined;
-        if (!taskDesc && !resumeMode) {
-          console.error('❌ loop --legacy 需要 --task <描述> 参数');
-          process.exit(1);
-        }
-        const { runLOOPIteration } = await import('./loop-runner');
-        const result = await runLOOPIteration(taskDesc!);
-        console.log('');
-        console.log(`判定: ${result.verdict === 'PASS' ? '✅ PASS' : '❌ FAIL'}`);
-        console.log(`迭代次数: ${result.iterations}`);
-        process.exit(result.verdict === 'PASS' ? 0 : 1);
-        break;
-      }
 
       // v1.2.2 P3b：解析 --resolve / --decision / --data-dir
       const resolveIdx = args.indexOf('--resolve');
