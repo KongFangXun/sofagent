@@ -10,7 +10,7 @@
 > 未来版本规划见 [ROADMAP.md](./docs/ROADMAP.md)。
 > 尚未实现的规划版本（标注"尚未实现"）在 `docs/changelog/v1.4/` 下，不纳入本索引；已开发完成但未发版的版本纳入本索引并附「待发版」状态标注——tag/npm/package.json 在发版时统一同步。
 
-- **v1.5.0** — 治理模块 · 可见性与本体成熟：治理 KPI 面板（Dashboard 治理 tab 六卡 + 数据集审阅 + lineage 合规报告 + 周报）· 本体数据双时态（stateAt 时点快照 + 三层渐进加载）· Ontology Validation Engine（DAG 无环 + 激活前置门 fail-closed）· 跨层证据对账 trace_reconcile（三源四态）· FDE 陪跑期 · 存量清扫 + @sofagent/inject 更名 · DSH 插件事件接线 · MCP 104→**105** tools · 测试 4805→**4903** · acceptance 352→**357** · ⏳ 待发版 · [开发日志](./docs/changelog/v1.5/v1.5.0.md)
+- **v1.5.0** — 治理模块 · 可见性与本体成熟：治理 KPI 面板（Dashboard 治理 tab 六卡 + 数据集审阅 + lineage 合规报告 + 周报）· 本体数据双时态（stateAt 时点快照 + 三层渐进加载）· Ontology Validation Engine（DAG 无环 + 激活前置门 fail-closed）· 跨层证据对账 trace_reconcile（三源四态）· FDE 陪跑期 · 存量清扫 + @sofagent/inject 更名 · DSH 插件事件接线 · MCP 104→**105** tools · 测试 4805→**4903**（+98，13 包 workspace 口径）· acceptance 352→**357** · ⏳ 待发版 · [开发日志](./docs/changelog/v1.5/v1.5.0.md)
 - **v1.4.9** — 设备接入与数据承接：G9 设备注册/发现/心跳（Ed25519 身份 + 在线才派单/掉线改派）· G10 数据目录白名单授权读取 · G11 采集声明 opt-in 上行（WAL 加密暂存 + 断点续传 + 审计计量）· T7 router 过站 session 承接 · T8 敏感识别三层插槽（SDK 面，管线接线排期 v1.5.1）· T9 权重灰度 AB（SDK 面同上）· G5b 连接器注册 + G1 workflow 模板血缘 · T6 installer + T10 模型清单 · MCP 95→**104**（9 新）· 测试 4429→**4805** · 2026-09-17 已发版· [开发日志](./docs/changelog/v1.4/v1.4.9.md)
 
 > ⚠️ **API 退役公告（v1.4.3 · 提前一版公告，移除归 v1.5.0）**

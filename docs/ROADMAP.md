@@ -91,7 +91,7 @@ sofagent 的定位正卡在这个转折点上：审计模块（治理侧）+ Ont
 | **v1.5.4** | 📋 规划中 | **🔍 审计模块 · 场景扩展与能力治理**：SMB 场景审计扩展（数值勾稽/来源可溯/口径一致）· UI 层审计前置评估 · OWASP Agentic Top 10 补条 · 能力面使用率治理 · 数据生命周期治理 | [日志](./changelog/v1.5/v1.5.4.md) |
 | **v2.0.0** | 📋 规划中 | **🏰 数据主权大版本（收窄版）**：离线 USB 节点合体（本地权重 + workflow 烧录 + 审计 + 路由底座 = 完全离线 + 滞留回传）· 网络出口治理面 | [日志](./changelog/v2.0/v2.0.0.md) |
 
-> 维护者口径（场景数 SSOT、加载链预算跟踪）已迁 [DEVELOPMENT](./DEVELOPMENT.md)——路线图只讲方向，不讲内部对账细节。
+> 维护者口径（场景数 SSOT、加载链预算跟踪）已迁 [DEVELOPMENT](./DEVELOPMENT.md)——路线图只讲方向，不讲内部对账细节。**当前 acceptance 场景数 357**（SSOT = `playbook/acceptance-test.sh` 头部声明，逐条对账见 DEVELOPMENT）。
 
 ---
 
