@@ -1550,11 +1550,17 @@ else
   node -e "
 const top = '${CHANGELOG_TOP_VERSION}'.slice(1).split('.').map(Number);
 const pkg = '${PKG_VERSION}'.slice(1).split('.').map(Number);
-// 顶版超前包版本最多 1 个 patch 位（开发完成待发版窗口）；超过 = 漂移
-const drift = (top[0]-pkg[0]) * 10000 + (top[1]-pkg[1]) * 100 + (top[2]-pkg[2]);
-if (drift > 1) { console.log('DRIFT:' + '${CHANGELOG_TOP_VERSION}' + '>' + '${PKG_VERSION}'); process.exit(1); }
+// 顶版超前包版本最多 1 个版本位（patch 或 minor/major 后继——开发完成待发版窗口）；
+// 超过一版 = 漂移。后继版本判定（非数值差）：minor 进位时 patch 归零（1.4.9→1.5.0）、
+// major 进位时 minor/patch 归零——数值差会把 minor 后继误算成 91 倍漂移。
+const isSucc = (t, p) =>
+  (t[0] === p[0] && t[1] === p[1] && t[2] === p[2]) ||               // 相等（发版后常态）
+  (t[0] === p[0] && t[1] === p[1] && t[2] === p[2] + 1) ||            // patch 后继
+  (t[0] === p[0] && t[1] === p[1] + 1 && t[2] === 0) ||               // minor 后继（patch 归零）
+  (t[0] === p[0] + 1 && t[1] === 0 && t[2] === 0);                    // major 后继（minor/patch 归零）
+if (!isSucc(top, pkg)) { console.log('DRIFT:' + '${CHANGELOG_TOP_VERSION}' + '>' + '${PKG_VERSION}'); process.exit(1); }
 console.log('OK:' + '${CHANGELOG_TOP_VERSION}' + ' vs ' + '${PKG_VERSION}');
-" 2>/dev/null && { echo -e "  ${GREEN}✓${NC} CHANGELOG 顶版与包版本差 ≤1 patch（待发版窗口合法）"; CHECKS=$((CHECKS + 1)); } || {
+" 2>/dev/null && { echo -e "  ${GREEN}✓${NC} CHANGELOG 顶版为包版本后继一版（patch/minor 待发版窗口合法）"; CHECKS=$((CHECKS + 1)); } || {
     echo -e "  ${RED}✗${NC} CHANGELOG 顶版 ${CHANGELOG_TOP_VERSION} 超前包版本 ${PKG_VERSION} 超一版——上一版发完未 bump 或跳版收录"
     echo -e "  ${RED}修复：bash tools/release/bump-version.sh <旧> <新> 后随代码同 commit${NC}"
     ERRORS=$((ERRORS + 1))
@@ -1589,12 +1595,28 @@ if [ -n "$F6_NPM_VER" ] && [ "$F6_NPM_VER" = "$SSOT_VERSION" ]; then
   F6_WHY="npm registry @sofagent/audit@${SSOT_VERSION} 已发布${F6_WHY:+（${F6_WHY}）}"
 fi
 # 待发版窗口白名单条件（双判据缺一不可）：存在 docs/changelog/vX.Y/ 目录内 devlog
-# （版本号 = SSOT + 1 patch）且非空——防「上一版忘翻牌」借窗口逃检。
-F6_NEXT_PATCH=$(node -e "
+# （版本号 = SSOT 的后继一版）且非空——防「上一版忘翻牌」借窗口逃检。
+# 后继候选三类：patch 后继（同目录段）/ minor 后继（patch 归零，目录段进位 v1.4→v1.5）/
+# major 后继（minor/patch 归零，目录段进位 v1→v2）——任一候选 devlog 在位即窗口开。
+# 不假设「patch 上限 9」等版本惯例：三个候选路径逐一探测，实际存在者为窗口对象。
+F6_NEXT_PATCH=""
+F6_NEXT_CANDIDATES=$(node -e "
 const p='${SSOT_VERSION}'.split('.').map(Number);
-console.log(p[0]+'.'+p[1]+'.'+(p[2]+1));" 2>/dev/null || echo "")
-F6_DEVLOG_DIR="${PROJECT_ROOT}/docs/changelog/v1.4"
-F6_NEXT_DEVLOG="${F6_DEVLOG_DIR}/v${F6_NEXT_PATCH}.md"
+const cands = [
+  [p[0], p[1], p[2]+1].join('.'),   // patch 后继
+  [p[0], p[1]+1, 0].join('.'),      // minor 后继
+  [p[0]+1, 0, 0].join('.')          // major 后继
+];
+console.log(cands.join(' '));" 2>/dev/null || echo "")
+for _cand in ${F6_NEXT_CANDIDATES}; do
+  _seg=$(echo "${_cand}" | cut -d. -f1-2)
+  if [ -s "${PROJECT_ROOT}/docs/changelog/v${_seg}/v${_cand}.md" ]; then
+    F6_NEXT_PATCH="${_cand}"
+    F6_DEVLOG_DIR="${PROJECT_ROOT}/docs/changelog/v${_seg}"
+    F6_NEXT_DEVLOG="${F6_DEVLOG_DIR}/v${_cand}.md"
+    break
+  fi
+done
 F6_WINDOW=false
 if [ -n "$F6_NEXT_PATCH" ] && [ -s "$F6_NEXT_DEVLOG" ]; then
   F6_WINDOW=true
@@ -1778,8 +1800,8 @@ if $F6_RELEASED; then
   F6_HDR_MISMATCH=""
   for _f in $F6_HDR_FILES; do
     [ -f "$_f" ] || continue
-    _hdr_ver=$(head -8 "$_f" | grep -E '^> *v1\.4\.[0-9]+ *·|^> *版本[：:] *v1\.4\.[0-9]+' \
-      | grep -oE 'v1\.4\.[0-9]+' | head -1)
+    _hdr_ver=$(head -8 "$_f" | grep -E "^> *v${SSOT_2SEG}\.[0-9]+ *·|^> *版本[：:] *v${SSOT_2SEG}\.[0-9]+" \
+      | grep -oE "v${SSOT_2SEG}\.[0-9]+" | head -1)
     [ -n "$_hdr_ver" ] || continue
     if [ "$_hdr_ver" != "v${SSOT_VERSION}" ]; then
       F6_HDR_MISMATCH="${F6_HDR_MISMATCH}$(basename "$_f"):头标 ${_hdr_ver} ≠ SSOT v${SSOT_VERSION}
