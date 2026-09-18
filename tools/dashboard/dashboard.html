@@ -482,6 +482,7 @@ a:hover{text-decoration:none} /* 全站 hover 无下划线（统一）——按�
       <button class="nav-item" onclick="goPage('knowledge')">知识库</button>
       <button class="nav-item" onclick="goPage('ontology')">本体图谱</button>
       <button class="nav-item" onclick="goPage('fde')">FDE 引导</button>
+      <button class="nav-item" onclick="goPage('governance')">治理</button>
       <button class="nav-item" onclick="goPage('resources')">工具箱</button>
     </nav>
     <div class="header-right">
@@ -1226,6 +1227,68 @@ build → acceptance → regression → coverage，
   </div>
 </div>
 
+<!-- ================================================== -->
+<!-- PAGE: 治理（KPI 面板，v1.5.0 章一——约束层价值面板化） -->
+<!-- ================================================== -->
+<div class="page" id="page-governance">
+  <div class="refresh-bar">
+    <span class="data-status ds-sample" id="govStatus">
+      <span class="pulse"></span>
+      <span id="govStatusText">加载中…</span>
+    </span>
+    <span style="margin-left:auto"></span>
+    <a href="/api/export-governance-weekly" download="governance-weekly.md" class="btn btn-outline" style="height:26px;padding:0 10px;font-size:11px"><i class="bi bi-download"></i> 治理周报</a>
+    <a href="/api/export-dataset-lineage" download="dataset-lineage.md" class="btn btn-outline" style="height:26px;padding:0 10px;font-size:11px"><i class="bi bi-file-earmark-lock"></i> lineage 报告</a>
+  </div>
+
+  <div class="metrics cols-3" id="govMetrics">
+    <div class="metric-card"><div class="metric-value" id="gov-trigger">—</div><div class="metric-label">安全边界触发率</div><div class="metric-sub" id="gov-trigger-sub">— 次变更</div></div>
+    <div class="metric-card"><div class="metric-value" id="gov-coverage">—</div><div class="metric-label">审计覆盖率</div><div class="metric-sub" id="gov-coverage-sub">— 个 commit 锚</div></div>
+    <div class="metric-card"><div class="metric-value" id="gov-hitl">—</div><div class="metric-label">HITL 响应时延（中位）</div><div class="metric-sub" id="gov-hitl-sub">已决议 — · 待办 —</div></div>
+  </div>
+  <div class="metrics cols-3" style="margin-top:8px">
+    <div class="metric-card"><div class="metric-value" id="gov-weekly">—</div><div class="metric-label">问题次数周环比</div><div class="metric-sub" id="gov-weekly-sub">本周 — vs 上周 —</div></div>
+    <div class="metric-card"><div class="metric-value" id="gov-repeat">—</div><div class="metric-label">任务重复执行率</div><div class="metric-sub" id="gov-repeat-sub">— 类动作有重复轨迹</div></div>
+    <div class="metric-card"><div class="metric-value" id="gov-trace">—</div><div class="metric-label">trace 对账一致率</div><div class="metric-sub" id="gov-trace-sub">尚未运行对账</div></div>
+  </div>
+
+  <div class="section">
+    <div class="section-header">
+      <div class="section-title"><span class="dot-emoji"><i class="bi bi-shield-check"></i></span>数据集审阅（人审面——该不该训，人来判定）</div>
+      <span class="hint" id="govDsMeta">版本台账 — 条</span>
+    </div>
+    <div class="section-body">
+      <div id="govDsBox"><div class="skeleton" style="height:60px"></div></div>
+      <div class="info-note" style="margin-top:12px">
+        validator 管结构质量，<strong>人审管语义质量</strong>——全自动管道的最终兜底。抽样展示待审数据集（版本台账 + 分拣/脱敏命中标记）；判定动作走 <code style="background:var(--brand-l);padding:2px 6px;border-radius:4px;font-size:11px">reviewDatasetVersion()</code>（train 包 API——写入台账 reviewStatus 并同步落 decision-log，可追溯；本页为只读展示面）。
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-header">
+      <div class="section-title"><span class="dot-emoji"><i class="bi bi-diagram-3"></i></span>决策高亮（因果链可追溯）</div>
+      <span class="updated-at" id="govDecisionMeta">—</span>
+    </div>
+    <div class="section-body">
+      <div id="govDecisions"><div class="skeleton" style="height:60px"></div></div>
+      <div class="info-note" style="margin-top:12px">
+        这里显示<strong>带因果边的决策</strong>（<code style="background:var(--brand-l);padding:2px 6px;border-radius:4px;font-size:11px">causedBy</code> 引用前序决策的 ts）——「决策不是日志行，是一等公民图节点」。链深 = 引用的前序决策条数；拦截决策引用触发它的路由决策（caused），HITL 决策引用待审的上游决策（influenced）。
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-header">
+      <div class="section-title"><span class="dot-emoji"><i class="bi bi-bar-chart"></i></span>高危规则 Top 5（近 30 天）</div>
+      <span class="updated-at" id="govUpdatedAt">加载中...</span>
+    </div>
+    <div class="section-body">
+      <div id="govTopRules"><div class="skeleton" style="height:60px"></div></div>
+    </div>
+  </div>
+</div>
+
   <div class="footer">
     <p>sofagent · FDE Harness — 梳理工作流 · 构建本体图谱 · 部署 AI 节点 · 审计每次变更 · 自我反思迭代</p>
     <p style="margin-top:4px"><a href="https://github.com/KongFangXun/sofagent" target="_blank">GitHub</a> · MIT License · 孔放勋 · v1.4.9</p>
@@ -1252,6 +1315,7 @@ function goPage(name){
   if(name==='resources'){loadPipelineGraph();}
   if(name==='ontology'){loadOntologyData();loadGraphView();}
   if(name==='fde'){loadFdeWorkflowData();loadFdeSelfGraph();}
+  if(name==='governance') loadGovernanceData();
   if(name==='train') loadTrainData('');
   if(name==='knowledge') loadKnowledgeData();
   if(name==='resources'){renderMcpList();renderSkillChain();loadForgeData();loadReleaseGateData();}
@@ -2762,6 +2826,98 @@ document.addEventListener('click',function(e){
 document.addEventListener('keydown',function(e){
   if(e.key==='Escape')closeHelp();
 });
+
+/* ===== Governance Data（治理页 · v1.5.0 章一——六 KPI 卡 + 数据集审阅 + Top 规则） ===== */
+var govLastReport=null;
+function govPct(rate){return rate===null||rate===undefined?'—':(rate*100).toFixed(1)+'%'}
+function govSigned(x){return x===null||x===undefined?'—':(x>=0?'+':'')+(x*100).toFixed(1)+'%'}
+function govMs(ms){
+  if(ms===null||ms===undefined)return '—';
+  if(ms<60000)return (ms/1000).toFixed(1)+' 秒';
+  if(ms<3600000)return (ms/60000).toFixed(1)+' 分钟';
+  return (ms/3600000).toFixed(1)+' 小时';
+}
+function govEsc(s){return String(s===null||s===undefined?'—':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+
+async function loadGovernanceData(){
+  var box=document.getElementById('govTopRules');
+  try{
+    var raw=await tryFetch('/api/governance');
+    var payload=raw?JSON.parse(raw):null;
+    if(!payload||!payload.ok||!payload.report){throw new Error('unavailable')}
+    var r=payload.report;govLastReport=r;
+
+    /* 六卡读数 */
+    document.getElementById('gov-trigger').textContent=govPct(r.boundary.triggerRate);
+    document.getElementById('gov-trigger-sub').textContent=(r.boundary.totalChanges||0)+' 次变更（阻断率 '+govPct(r.boundary.blockRate)+'）';
+    document.getElementById('gov-coverage').textContent=govPct(r.coverage.rate);
+    document.getElementById('gov-coverage-sub').textContent=(r.coverage.withSha||0)+' / '+(r.coverage.total||0)+' 个变更带 commit 锚';
+    document.getElementById('gov-hitl').textContent=govMs(r.hitl.medianLatencyMs);
+    document.getElementById('gov-hitl-sub').textContent='已决议 '+(r.hitl.resolvedCount||0)+' · 待办 '+(r.hitl.pendingCount||0);
+
+    var wk=r.weeklyTrend||{},d=wk.delta||{};
+    document.getElementById('gov-weekly').textContent=govSigned(d.violationsPct);
+    document.getElementById('gov-weekly-sub').textContent='本周 '+(wk.thisWeek?wk.thisWeek.violations:'—')+' vs 上周 '+(wk.lastWeek?wk.lastWeek.violations:'—');
+    document.getElementById('gov-repeat').textContent=govPct(r.repetition.repetitionRate);
+    document.getElementById('gov-repeat-sub').textContent=(r.repetition.repeatedFingerprints||0)+' / '+(r.repetition.uniqueFingerprints||0)+' 类动作有重复轨迹';
+    var tr=r.traceReconcile||{};
+    document.getElementById('gov-trace').textContent=tr.latestRate===null||tr.latestRate===undefined?'—':String(tr.latestRate);
+    document.getElementById('gov-trace-sub').textContent=tr.lastRunAt?('差异 '+(tr.discrepancies===null?'—':tr.discrepancies)+' 项 · '+(tr.totalSessions===null?'—':tr.totalSessions)+' session'):'尚未运行对账（trace_reconcile）';
+
+    /* 数据集审阅卡 */
+    var dsBox=document.getElementById('govDsBox');
+    var ds=r.datasetReview||{sample:[],totalVersions:0};
+    document.getElementById('govDsMeta').textContent='版本台账 '+(ds.totalVersions||0)+' 条 · 待审 '+(ds.pendingReview||0);
+    if(!ds.sample||!ds.sample.length){
+      dsBox.innerHTML='<div class="hint12" style="padding:12px 0">暂无数据集版本台账——数据集管道未运行（v1.4.9 第七/八章交付，跑 data_push / dataset 构建后此处出现抽样）。</div>';
+    }else{
+      dsBox.innerHTML=wlTable(
+        ['版本','数据集','创建时间','样本数','脱敏命中','审阅状态'],
+        ds.sample.map(function(s){
+          var badge=s.reviewStatus==='approved'?'<span style="color:var(--ok,#16a34a);font-weight:600">approved</span>':(s.reviewStatus==='rejected'?'<span style="color:var(--danger,#dc2626);font-weight:600">rejected</span>':'<span style="color:var(--text-t)">pending</span>');
+          return [govEsc(s.versionId||'—'),govEsc(s.datasetId||'—'),s.createdAt?govEsc(s.createdAt.slice(0,10)):'—',s.sampleCount===undefined?'—':s.sampleCount,s.redactionHits===undefined?'—':s.redactionHits,badge];
+        })
+      );
+    }
+
+    /* 高危规则 Top 5 */
+    if(r.boundary.topRules&&r.boundary.topRules.length){
+      box.innerHTML=wlTable(
+        ['规则','名称','触发次数','其中阻断'],
+        r.boundary.topRules.map(function(t){return [govEsc(t.rule),govEsc(t.name||'—'),t.count,t.failCount]})
+      );
+    }else{
+      box.innerHTML='<div class="hint12" style="padding:12px 0">窗口内零触发（干净窗口）</div>';
+    }
+
+    /* 决策高亮（因果链可追溯） */
+    var dBox=document.getElementById('govDecisions');
+    var hl=r.decisionHighlights||[];
+    document.getElementById('govDecisionMeta').textContent=hl.length?hl.length+' 条带因果边决策':'—';
+    if(!hl.length){
+      dBox.innerHTML='<div class="hint12" style="padding:12px 0">窗口内无带因果边的决策（causedBy 为空——链路未启用或决策未引用前序）。</div>';
+    }else{
+      dBox.innerHTML=wlTable(
+        ['时间','Agent','类型','因果','链深','理由'],
+        hl.map(function(h){
+          var causal=h.causalType?govEsc(h.causalType):'—';
+          var kind=govEsc(h.kind)+(h.category?'<span style="color:var(--text-t)"> / '+govEsc(h.category)+'</span>':'');
+          return [govEsc(String(h.ts).slice(5,16).replace('T',' ')),govEsc(h.agentId),kind,causal,h.causedByCount,govEsc(h.whySummary)];
+        })
+      );
+    }
+    document.getElementById('govUpdatedAt').textContent='更新于 '+fmtUpdatedAt();
+
+    var st=document.getElementById('govStatus');
+    if(st){st.classList.remove('ds-sample');st.classList.add('ds-live')}
+    document.getElementById('govStatusText').textContent='治理数据已连接';
+  }catch(e){
+    document.getElementById('govStatusText').textContent='治理引擎不可用（audit 包未构建）';
+    var st2=document.getElementById('govStatus');
+    if(st2){st2.classList.add('ds-sample');st2.classList.remove('ds-live')}
+    if(box){box.innerHTML='<div class="hint12" style="padding:12px 0">治理聚合引擎不可用——请先构建 audit 包（<code style="background:var(--brand-l);padding:2px 6px;border-radius:4px;font-size:11px">npm run build</code>）或确认安装态 packages 就位。</div>'}
+  }
+}
 
 /* ===== Init ===== */
 detectFsApi();

@@ -23,8 +23,11 @@ import { homedir } from 'node:os';
 import { join, extname, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { dirname } from 'node:path';
+import { createRequire } from 'node:module';
 import { spawn } from 'node:child_process';
 import net from 'node:net';
+
+const require = createRequire(import.meta.url);
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -62,6 +65,41 @@ const HISTORY_FILE = join(SOFAGENT_DATA, 'audit', 'history.jsonl');
 const SOVEREIGNTY_DIR = join(SOFAGENT_DATA, 'audit', 'data-sovereignty');
 const DAEMON_HEALTH = join(SOFAGENT_DATA, 'dashboard', 'daemon-health.json');
 const GRAPH_STATE = join(SOFAGENT_DATA, 'dashboard', 'graph-state.json');
+
+/* ────────────────────────────────
+ * 治理引擎解析（v1.5.0 章一）
+ * 候选链（首中即用，require 缓存保证幂等）：
+ *   1. 仓库态：serve 脚本相对的 engine/audit/dist/public-api.js
+ *   2. 安装态：npm 全局 @sofagent/audit（createRequire.resolve 走 node_modules 解析）
+ *   3. 预留：$SOFAGENT_HOME/packages/audit（一体化部署形态，当前未启用）
+ * 全部失败返回 null（端点降级 503，页面显示降级文案，不崩）
+ * ──────────────────────────────── */
+let __govEngineCache;
+function resolveGovernanceEngine() {
+  if (__govEngineCache !== undefined) return __govEngineCache;
+  __govEngineCache = null;
+  // 候选 1：仓库态相对路径
+  const repoDist = join(__dirname, '../../engine/audit/dist/public-api.js');
+  try {
+    const m = require(repoDist);
+    if (typeof m?.computeGovernanceKpis === 'function') { __govEngineCache = m; return m; }
+  } catch { /* 下一候选 */ }
+  // 候选 2：npm 全局 @sofagent/audit（安装态——sofagent-audit wrapper 同源 dist）
+  try {
+    const resolved = require.resolve('@sofagent/audit/public-api', {
+      paths: [join(SOFAGENT_HOME_INSTALL, 'node_modules'), process.cwd()],
+    });
+    const m = require(resolved);
+    if (typeof m?.computeGovernanceKpis === 'function') { __govEngineCache = m; return m; }
+  } catch { /* 下一候选 */ }
+  // 候选 3：预留一体化形态
+  try {
+    const p = join(SOFAGENT_HOME_INSTALL, 'packages', 'audit', 'dist', 'public-api.js');
+    const m = require(p);
+    if (typeof m?.computeGovernanceKpis === 'function') { __govEngineCache = m; return m; }
+  } catch { /* 全链失败 */ }
+  return null;
+}
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',
@@ -545,6 +583,55 @@ const server = createServer(async (req, res) => {
     const s = aggregateAiNodes();
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify(s));
+    return;
+  }
+
+  // /api/governance → 治理 KPI（v1.5.0 章一 · 复用 audit 包 governance 聚合）
+  if (urlPath === '/api/governance') {
+    const mod = resolveGovernanceEngine();
+    if (!mod) {
+      res.writeHead(503, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ ok: false, message: 'governance 聚合引擎不可用（audit 包未构建或未安装）' }));
+      return;
+    }
+    const gov = mod.computeGovernanceKpis({ dataDir: SOFAGENT_DATA, days: 30 });
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ ok: true, report: gov }));
+    return;
+  }
+
+  // /api/export-governance-weekly → 治理 KPI 周报下载（markdown · v1.5.0 章一）
+  if (urlPath === '/api/export-governance-weekly') {
+    const mod = resolveGovernanceEngine();
+    if (!mod) {
+      res.writeHead(503);
+      res.end('Not available: governance engine');
+      return;
+    }
+    const report = mod.computeGovernanceKpis({ dataDir: SOFAGENT_DATA, days: 30 });
+    const md = mod.formatGovernanceWeekly(report);
+    res.writeHead(200, {
+      'Content-Type': 'text/markdown; charset=utf-8',
+      'Content-Disposition': 'attachment; filename="governance-weekly.md"',
+    });
+    res.end(md);
+    return;
+  }
+
+  // /api/export-dataset-lineage → 数据集 lineage 合规报告下载（markdown · v1.5.0 章一）
+  if (urlPath === '/api/export-dataset-lineage') {
+    const mod = resolveGovernanceEngine();
+    if (!mod) {
+      res.writeHead(503);
+      res.end('Not available: governance engine');
+      return;
+    }
+    const md = mod.buildDatasetLineageReport({ dataDir: SOFAGENT_DATA });
+    res.writeHead(200, {
+      'Content-Type': 'text/markdown; charset=utf-8',
+      'Content-Disposition': 'attachment; filename="dataset-lineage.md"',
+    });
+    res.end(md);
     return;
   }
 

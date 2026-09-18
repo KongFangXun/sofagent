@@ -29,6 +29,9 @@ import type { DatasetAlgorithm, ColumnMapping } from './dataset-builder';
 /** 数据来源三分类（合规可追溯——企业提供 / 合成 / 公开语料） */
 export type DataProvenance = 'enterprise' | 'synthetic' | 'public';
 
+/** 数据集人审状态（v1.5.0 章一——pending 缺省，approved/rejected 由人审判定写入） */
+export type DatasetReviewStatus = 'pending' | 'approved' | 'rejected';
+
 /** 合规扫描结果摘要（写版本记录——完整报告在 train-compliance 侧生成） */
 export interface ComplianceStamp {
   /** 扫描时间（ISO） */
@@ -69,6 +72,12 @@ export interface DatasetVersionRecord {
   provenance?: DataProvenance;
   /** 合规扫描结果（v1.4.5 第三章——可选，最近一次扫描摘要） */
   compliance?: ComplianceStamp;
+  /**
+   * 人审状态（v1.5.0 章一数据集审阅卡——可选，缺省 pending）。
+   * validator 管结构质量，人审管语义质量（该不该训）——全自动管道的最终兜底。
+   * approved/rejected 由 reviewDatasetVersion 写入（判定同步入 decision-log）。
+   */
+  reviewStatus?: DatasetReviewStatus;
 }
 
 /** 记录版本入参（dataset-builder 产出侧组装） */
@@ -244,6 +253,106 @@ export function stampComplianceOnVersion(
     },
     `${baseVersion}-c`,
   );
+}
+
+// ══════════════════════════════════════
+// v1.5.0 章一：数据集人审（审阅卡判定动作）
+// ══════════════════════════════════════
+
+/** 人审入参 */
+export interface ReviewDatasetVersionInput {
+  dataDir: string;
+  enterpriseId: string;
+  datasetId: string;
+  version: string;
+  /** 人工判定：approve（该训）/ reject（不训） */
+  decision: 'approve' | 'reject';
+  /** 可选备注（判定理由——入 decision-log why） */
+  comment?: string;
+  /** 判定人（decision-log agentId——缺省 dashboard 人审面） */
+  reviewer?: string;
+}
+
+/** 人审结果 */
+export interface ReviewDatasetVersionResult {
+  /** 更新后的版本记录（reviewStatus 已写入） */
+  record: DatasetVersionRecord;
+  /** 是否首审（false = 改判——decision-log 记改判语义） */
+  isFirstReview: boolean;
+  /** decision-log 写入结果（best-effort——审计失败不阻断判定落盘） */
+  auditLogged: boolean;
+}
+
+/**
+ * 数据集人审判定（v1.5.0 章一——版本台账 reviewStatus 更新 + decision-log 留痕）。
+ *
+ * 台账纪律：versions.jsonl 是 append-only，reviewStatus 是状态字段——本函数
+ * 采取「原行原位更新」（读全量 → 改目标行 → 原子重写），不做追加（追加会
+ * 让同版本出现两行、审阅卡读到歧义态）。contentHash 不变——内容指纹仍是
+ * 版本身份的证据，reviewStatus 只是流程状态。
+ *
+ * 审计留痕：判定动作同步 emitDecision（kind=KNOWLEDGE_DISTILL 语义不符——
+ * 用 ARTIFACT_EDIT + category=select/skip，why 带 version/decision/comment）。
+ * audit 包不可用时 best-effort 降级（auditLogged=false），判定本身照常落盘。
+ */
+export function reviewDatasetVersion(input: ReviewDatasetVersionInput): ReviewDatasetVersionResult {
+  const { dataDir, enterpriseId, datasetId, version } = input;
+  const existing = getDatasetVersion(dataDir, enterpriseId, datasetId, version);
+  if (existing === null) {
+    throw new Error(
+      `[dataset-review] 版本不存在：${datasetId}@${version}（enterprise=${enterpriseId}）——人审对象必须是已产出版本`,
+    );
+  }
+  if (input.decision !== 'approve' && input.decision !== 'reject') {
+    throw new Error(`[dataset-review] decision 必须为 approve | reject（收到 ${String(input.decision)}）`);
+  }
+
+  const isFirstReview = existing.reviewStatus === undefined || existing.reviewStatus === 'pending';
+  const updated: DatasetVersionRecord = {
+    ...existing,
+    reviewStatus: input.decision === 'approve' ? 'approved' : 'rejected',
+  };
+
+  // 原行原位更新（读全量 → 改行 → 原子重写）
+  const filePath = datasetVersionsPath(dataDir, enterpriseId);
+  const all = readDatasetVersions(dataDir, enterpriseId);
+  const rewritten = all.map((r) =>
+    r.datasetId === datasetId && r.version === version ? updated : r,
+  );
+  // atomicAppendSync 是追加语义——重写用 writeFileSync + 临时文件双步（fs 同步面收敛）
+  const { writeFileSync, renameSync } = require('fs') as typeof import('fs');
+  const tmpPath = `${filePath}.review-tmp`;
+  writeFileSync(tmpPath, rewritten.map((r) => JSON.stringify(r)).join('\n') + '\n', 'utf-8');
+  renameSync(tmpPath, filePath);
+
+  // decision-log 留痕（best-effort）
+  let auditLogged = false;
+  try {
+    // 延迟 require 防 train→audit 包循环依赖（audit 是 peer 消费方）
+    const { emitDecision } = require('@sofagent/audit') as typeof import('@sofagent/audit');
+    emitDecision(
+      {
+        agentId: input.reviewer ?? 'sofagent-dataset-review',
+        sessionId: `dataset-review-${Date.now()}`,
+        kind: 'ARTIFACT_EDIT',
+        moment: 'ACT',
+        category: input.decision === 'approve' ? 'select' : 'skip',
+        why: `数据集人审：${datasetId}@${version} → ${input.decision === 'approve' ? '该训（approved）' : '不训（rejected）'}${input.comment ? `——${input.comment}` : ''}${isFirstReview ? '' : '（改判）'}`,
+        artifactRef: `dataset/${enterpriseId}/${datasetId}@${version}`,
+        evidence: [
+          `sampleCount=${existing.sampleCount}`,
+          `contentHash=${existing.contentHash.slice(0, 8)}`,
+          ...(existing.compliance ? [`compliancePassed=${existing.compliance.passed}`] : []),
+        ],
+      },
+      dataDir,
+    );
+    auditLogged = true;
+  } catch {
+    auditLogged = false;
+  }
+
+  return { record: updated, isFirstReview, auditLogged };
 }
 
 // ══════════════════════════════════════
