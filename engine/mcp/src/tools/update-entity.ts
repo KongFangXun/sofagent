@@ -170,6 +170,9 @@ export function updateEntity(args: UpdateEntityArgs): UpdateEntityResult {
   afterFm['updated_at'] = now;
   // created_at 必须保留（D4 不允许丢）
   if (!afterFm['created_at']) afterFm['created_at'] = existing.fm['created_at'] ?? now;
+  // 双时态：存量实体首次更新时补 validFrom（旧数据自动兼容——不回填历史时刻，
+  // 以「本次更新时刻」为起点进入时点快照；如需精确历史请显式传入 validFrom）
+  if (!afterFm['validFrom']) afterFm['validFrom'] = existing.fm['validFrom'] ?? now;
 
   // 3. 正文：content 传入则替换，省略保留原正文
   const afterBody = content !== undefined ? content : existing.body;

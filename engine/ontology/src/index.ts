@@ -21,6 +21,10 @@
 /* @public */ export { mergeSharedOntology } from './shared-merge';
 /* @public */ export { generateOntologyView } from './ontology-view';
 
+// ── v1.5.0 第二章：双时态时点快照 + 渐进加载三层 ──
+/* @public */ export { stateAt, isValidAt, progressiveLoad, defaultBudget } from './query';
+/* @public */ export type { EntityDigest, EntityRelations, LoadTier, TokenBudget, DowngradeTrace } from './query';
+
 // ── Dream Cycle synthesize 落点（v1.1.6 新增）──
 /* @public */ export { synthesize, getRegistered, clearRegistered } from './synthesize';
 /* @public */ export type { SynthesizableConcept, SynthesizeReceipt } from './synthesize';

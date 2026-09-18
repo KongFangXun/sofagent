@@ -158,6 +158,13 @@ function scanEntityFrontmatter(knowledgeDir: string): OntologyObject[] {
           )
         : undefined;
 
+      // 双时态事实：validFrom/validTo（可选，缺省 = 永久有效）——stateAt 时点快照的判定依据。
+      // 注意：裸 ISO 时间串在部分 js-yaml 版本会解析为 Date 对象——统一 toISOString 归一。
+      const toIsoString = (v: unknown): string | undefined =>
+        v instanceof Date ? v.toISOString() : typeof v === 'string' && v ? v : undefined;
+      const validFrom = toIsoString(fm['validFrom']);
+      const validTo = toIsoString(fm['validTo']);
+
       objects.push({
         name,
         type,
@@ -173,6 +180,8 @@ function scanEntityFrontmatter(knowledgeDir: string): OntologyObject[] {
         status,
         stale_after: staleAfter,
         verified,
+        validFrom,
+        validTo,
       });
   }
 
@@ -363,6 +372,8 @@ export function mergeOntology(configDir: string): MergedOntology {
       status: o.status,
       stale_after: o.stale_after,
       verified: o.verified,
+      validFrom: o.validFrom,
+      validTo: o.validTo,
     }) as unknown as Record<string, unknown>))
   );
 

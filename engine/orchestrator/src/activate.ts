@@ -449,6 +449,44 @@ export async function activateWorkflow(opts: ActivateOptions): Promise<ActivateR
   const workflowDesc = workflow.description || '';
   const nodes = workflow.nodes || [];
 
+  // ── Step 1.5: Validation Engine 前置门（v1.5.0 第三章 · fail-closed）──
+  // DAG 无环 + schema 兼容校验不过 = 拒绝激活。校验器自身异常同样拒绝
+  // （fail-closed——绝不「校验器挂了就放行」）。实体面读 ontology objects.yml
+  // （存在则校验 schema 兼容；不存在则只做 DAG 校验——空企业本体不应阻断激活）。
+  try {
+    const { validateForActivation } = await import('./graph/validator');
+    const entityCandidates: Array<{ name: string; fields?: Record<string, string> }> = [];
+    const objectsYml = join(dataSubDir, '..', 'knowledge', 'ontology', 'objects.yml');
+    if (existsSync(objectsYml)) {
+      try {
+        const objectsRaw = yamlLoad(readFileSync(objectsYml, 'utf-8')) as unknown;
+        if (Array.isArray(objectsRaw)) {
+          for (const o of objectsRaw as Array<Record<string, unknown>>) {
+            if (typeof o['name'] === 'string') {
+              entityCandidates.push({ name: o['name'], fields: undefined });
+            }
+          }
+        }
+      } catch {
+        // objects.yml 解析失败 → 实体面置空（DAG 校验仍执行）
+      }
+    }
+    const validation = validateForActivation(
+      nodes.map((n) => ({ id: n.id, depends_on: n.depends_on ?? [], io: undefined })),
+      entityCandidates,
+    );
+    if (!validation.valid) {
+      const lines = validation.issues.map((i) => `  - [${i.kind}] ${i.node}${i.field ? ` · ${i.field}` : ''}: ${i.detail}`);
+      throw new Error(`Validation Engine 拒绝激活（fail-closed）· ${validation.issues.length} 项：\n${lines.join('\n')}`);
+    }
+  } catch (err) {
+    if (err instanceof Error && err.message.includes('Validation Engine 拒绝激活')) {
+      throw err;
+    }
+    // 校验器自身异常 → 同样拒绝（fail-closed 语义在 validator 内部已保证，此处兜底）
+    throw new Error(`Validation Engine 异常（fail-closed 拒绝激活）：${err instanceof Error ? err.message : String(err)}`);
+  }
+
   // ── 初始化结果容器 ──
   const configs: EnterpriseAgentConfig[] = [];
   const skippedNodes: Array<{ name: string; reason: string }> = [];

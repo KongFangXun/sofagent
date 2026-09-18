@@ -109,6 +109,8 @@ function ensureTimestamps(name: string, domain: string, content: string, existin
       base['created_at'] = now;
     }
     base['updated_at'] = now;
+    // 双时态：新建实体未声明 validFrom 时自动补「创建时刻」——即刻进入时点快照
+    if (!base['validFrom']) base['validFrom'] = now;
     return base;
   };
 

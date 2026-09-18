@@ -47,6 +47,10 @@ export interface EntityImport {
   relations?: Partial<Record<RelationKey, string[]>>;
   created_at?: string;
   updated_at?: string;
+  /** 双时态事实：自何时刻起有效（可选——缺省由管线补「导入时刻」，旧数据自动兼容） */
+  validFrom?: string;
+  /** 双时态事实：自何时刻起失效（可选，缺省 = 仍有效） */
+  validTo?: string;
 }
 
 /** concept 注入项（concept 无 domain 字段——区别于 entity） */
@@ -117,6 +121,8 @@ export interface OntologyImportOptions {
     moment: string;
     why: string;
     artifactRef?: string;
+    /** 双时态快照：注入实体当时的 validFrom/validTo（审计回溯——「当时依据的版本」） */
+    entityValidity?: Record<string, { validFrom?: string; validTo?: string }>;
     evidence?: string[];
   }) => unknown;
 }
@@ -391,6 +397,8 @@ export function importOntology(payload: OntologyImportPayload, options: Ontology
   // 3. 写入（记录快照用于回滚）——entity-store YML + knowledge md 双写
   const written: string[] = [];
   const snapshots: Array<{ path: string; previous: string | undefined }> = [];
+  // 双时态：每实体实际落盘的 validFrom（含「补导入时刻」的兜底值）——decision 留痕用
+  const written_validFrom = new Map<string, string>();
   try {
     for (const e of entities) {
       // 3a. entity-store 注册（YML——机器可读注册表）
@@ -414,12 +422,17 @@ export function importOntology(payload: OntologyImportPayload, options: Ontology
       // 3b. knowledge 页（md——read_entity MCP tool 消费面）
       const mdPath = knowledgePath(dataDir, 'entities', e.name);
       snapshots.push({ path: mdPath, previous: readExisting(mdPath) });
+      // 双时态：无 validFrom 的旧数据自动补「导入时刻」（导入兼容——存量数据即刻可查时点快照）
+      const effectiveValidFrom = e.validFrom ?? new Date().toISOString();
+      written_validFrom.set(e.name, effectiveValidFrom);
       const frontmatter: Record<string, unknown> = {
         name: e.name,
         domain: e.domain,
         created_at: e.created_at,
         updated_at: e.updated_at,
         ...(e.relations !== undefined ? { relations: e.relations } : {}),
+        validFrom: effectiveValidFrom,
+        ...(e.validTo !== undefined ? { validTo: e.validTo } : {}),
       };
       writeFileEnsured(mdPath, renderKnowledgeMd(frontmatter, e.description ?? ''));
       written.push(mdPath);
@@ -474,6 +487,13 @@ export function importOntology(payload: OntologyImportPayload, options: Ontology
         `${relations.length} relation（schema 校验通过 · D1-D5 ${audit.hasWarn ? `WARN×${audit.warnCount}` : 'PASS'}）` +
         (options.comment ? ` · 备注: ${options.comment}` : ''),
       artifactRef: dataDir,
+      // 双时态快照：注入决策记录每个实体的时间区间——回溯不再靠 git snapshot 反推
+      entityValidity: Object.fromEntries(
+        entities.map((e) => [e.name, {
+          validFrom: e.validFrom ?? written_validFrom.get(e.name),
+          validTo: e.validTo,
+        }]),
+      ),
       evidence: [
         `entities=${entities.map((e) => e.name).join(',') || '(none)'}`,
         `concepts=${concepts.map((c) => c.name).join(',') || '(none)'}`,
