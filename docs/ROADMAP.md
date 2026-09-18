@@ -110,7 +110,9 @@ sofagent 的定位正卡在这个转折点上：审计模块（治理侧）+ Ont
 | **v1.5.2** | 📋 规划中 | **🔍 审计模块 · 开放与治理面**：audit 数据对外（只读查询 + 事件订阅）· should-run 判定链 · doctor 修复闭环 · 约束导出与证据链外部可验（独立验签工具）· 双规则引擎统一 · 审计规则自测 schema · A24 交付物落点规则 · 审计结论失效语义 | [日志](./changelog/v1.5/v1.5.2.md) |
 | **v1.5.3** | 📋 规划中 | **⚡ 执行模块 · 路由与验证**：模型路由层（云端规划/本地执行 + routeReason 可解释）· 凭证隔离 Vault · 多实例自验证 · 全节点执行状态机 · tool search 按需加载 · CLI 单入口收敛（13 bin → 域路由） | [日志](./changelog/v1.5/v1.5.3.md) |
 | **v1.5.4** | 📋 规划中 | **🔍 审计模块 · 场景扩展与能力治理**：SMB 场景审计扩展（数值勾稽/来源可溯/口径一致）· UI 层审计前置评估 · OWASP Agentic Top 10 补条 · 能力面使用率治理 · 数据生命周期治理 | [日志](./changelog/v1.5/v1.5.4.md) |
+| **v1.5.5** | 📋 规划中 | **⚡ 进化模块 · 自进化链路补强（RSI 三算子对位 · 2026-09-19 用户拍板落盘）**：经验池接训练管道（instinct 池→数据集→TrainChannel 断链打通——`instinct` 第五数据源 + 血缘锚点，一体机飞轮 Data 面自供给）· 进化准入判据（检验-生成差距——域验证器三档 deterministic/model-judge/human-only 分流 + 未登记 fail-closed 按 human-only）· 三层晋级判据（注入租用→skill 半持久→微调摊销——频次×存续×验证三输入纯函数 + 晋级台账 + promote-train 只提示人审）· 出题考核器（instinct 反向生成考核题 + 双成功才 `verified` 入池 + 考核态进 scorer 置信度——Data-RSI 归因→出题→考核补齐）· 加载链配置面契约（四层配置字段 SSOT + 字段所有权断言 + 越界检测——与 v1.5.4 可拔契约同族，判据是「配置面无死角」）。**形态归属**：主干 5 章（准入判据 / 晋级判据 / 出题考核器 / 配置面契约 / 经验池管道的入池资格判定）+ 通道成分 1（经验池管道的数据集构造与 TrainChannel 提交**执行动作**）；准入与考核两章**不可拔**（进化安全边界）。两项裁定不进版：统一改进调度器（马场——组合层，各面未熟前过度抽象）与证据驱动分组升级（马鞍但价值中）均入探索方向表 | [日志](./changelog/v1.5/v1.5.5.md) |
 | **v2.0.0** | 📋 规划中 | **🏰 数据主权大版本（收窄版）**：离线 USB 节点合体（本地权重 + workflow 烧录 + 审计 + 路由底座 = 完全离线 + 滞留回传）· 网络出口治理面 | [日志](./changelog/v2.0/v2.0.0.md) |
+
 
 > 维护者口径（场景数 SSOT、加载链预算跟踪）已迁 [DEVELOPMENT](./DEVELOPMENT.md)——路线图只讲方向，不讲内部对账细节。当前值 357（最大场景号 S431；SSOT = `playbook/acceptance-test.sh` 头部声明，逐条对账见 [DEVELOPMENT](./DEVELOPMENT.md)）。
 
@@ -142,6 +144,9 @@ sofagent 的定位正卡在这个转折点上：审计模块（治理侧）+ Ont
 | **审计范围语义一等公民化（AuditScope 重构）** | 所有规则输入面显式声明取 HEAD 还是 range——引入 `AuditScope{ diffRange, commitMsg, task, actor }` 显式对象，规则从 scope 取输入、不再自己调 git，消灭「规则自己调 git 取错范围」整类 bug（v1.4.4 审查 quick A9 同类，最小修复已随 12ec0171 落地，根治走重构专项——v1.4.5 重构窗口已过未排期，候选 v1.5.x 后段） |
 | **大文档三档拆分（概念/决策/清单）** | ARCHITECTURE/PHILOSOPHY 类大文档按「概念/决策/清单」三档拆分重组，控制单文档认知负载——归文档优化专项（无版本单元格，触发时机=下一次大规模文档新增时） |
 | **DSH-only 执行面收尾（保险绳拆除）** | FORGE 执行后端 v1.4.3 起全 step 默认 DSH，LangGraph 仅作 fallback 保险绳（`FORGE_FRESH_EYES_BACKEND=langgraph` 回退口 + langgraph-backend.ts + audit-middleware 包裹路径）。DSH 发布非 alpha 稳定版且连续 2–3 个完整 run 零 fallback 时，删除兜底面收尾为 DSH-only——driver 侧质量门控（熔断/产物门控/宽限窗）是产品逻辑不随迁，留在 driver。alpha 期实测已两遇破坏性变更（0.1.2-alpha.3→rc.1 砍 `Session.events`，防御见 snapshotSessionEvents 双形态兼容），保险绳成本低、拆除不急 |
+| **统一改进调度器（RSI 组合层 · 各面成熟后再议）** | 失败信号→改进面路由的统一调度器（该改 Harness 还是改 Model 由调度器判）。裁定不进 v1.5.5（马场——经验池/准入/晋级/考核四面未熟前是过度抽象，组合层的价值随被组合面的成熟而增长）。触发条件：[v1.5.5](./changelog/v1.5/v1.5.5.md) 四章交付且各面有真实运行数据后评估 |
+| **证据驱动分组（GEE 式 evolve 升级）** | instinct→skill 聚合从 2-gram 浅分组升级为证据驱动（工具调用直方图 / 高频命令 / 重复纠正聚合后再判哪些模式成 skill——RSI-Harness GEE 思路，轨迹数据 execution-backends/trajectory.ts 已有）。裁定马鞍但价值中、独立可做——不占版本格，触发条件=下一次 evolve 模块返工窗口 |
+| **透明仓（wild idea · 视角 21）** | evidence/ 实时公开治理原始记录（含误报）——审查 run 的 P0/P1 判定、误报与翻案全过程原样公开，「审查自己也在被审计」。比发版后 cherry-pick 的结论文档更狠的诚实面；误报率够低（当前 <5%）才敢开，先攒 [anti-cases](./evidence/anti-cases/README.md) 与 fresh-eyes 校准档案，无版本单元格、不排期，触发条件=第三方首次独立审查 |
 | **透明仓（wild idea）** | evidence/ 实时公开治理原始记录（含误报）——审查 run 的 P0/P1 判定、误报与翻案全过程原样公开，「审查自己也在被审计」。比发版后 cherry-pick 的结论文档更狠的诚实面；误报率压到红线以下（**红线 <5%，当前未测**——见 [evidence 误报率红线](./evidence/evidence.md)）才敢开，先攒 [anti-cases](./evidence/anti-cases/README.md) 与 fresh-eyes 校准档案，无版本单元格、不排期，触发条件=第三方首次独立审查 |
 | **敌手自测（audit 红队）** | 定期以攻击者视角尝试绕过审计——篡改 `history.jsonl` / 伪造 HMAC 链 / 绕过 ToolGate，结果进 [anti-cases](./evidence/anti-cases/README.md)。审计系统的可信度靠「被打过而没被打穿」证明；与「透明仓」触发条件（第三方首次独立审查）天然合流。无版本单元格、不排期 |
 | **`sofagent demo` 五分钟戏剧弧** | 一条命令跑完「注入 → 故意违规 → 审计拦截 → 出报告」完整链路，让新用户在 5 分钟内看到拦截发生的那一瞬间。属于**增长杠杆而非工程项**（新用户转化漏斗第一环），与社区运营同批考虑。无版本单元格、不排期 |
