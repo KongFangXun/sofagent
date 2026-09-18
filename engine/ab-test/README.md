@@ -31,4 +31,4 @@ v1.2.4 起，ab-test CLI 的 `run` 子命令从 `@sofagent/eval` 的 golden-set 
 - `persistABTestResult()` — 持久化 A/B 测试结果到 latest.json
 - `DEFAULT_SCORE_WEIGHTS` — 默认评分权重
 - 类型：`ABConfig` / `ABTestResult` / `PromotionDecision` / `ScoreWeights`
-- 依赖关系：`@sofagent/eval` / `@sofagent/core` / `@sofagent/harness` / `@sofagent/orchestrator`
+- 依赖关系：`@sofagent/eval` / `@sofagent/core` / `@sofagent/inject` / `@sofagent/orchestrator`

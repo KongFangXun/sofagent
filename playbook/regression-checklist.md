@@ -1898,7 +1898,7 @@ grep -q "forbid-until-approved" engine/core/src/escalation/policy.ts && grep -q 
 (
 FAIL=0
 # a: 3% 预算检测 + 压缩 start/end 标记 + 回调出口 + 零依赖（压缩器不得 import audit 包）
-node -e "const b=require('./engine/harness/dist/load-chain/budget.js');const c=require('./engine/harness/dist/load-chain/compactor.js');const fs=require('fs');const bad=[];if(typeof b.checkBudget!=='function')bad.push('缺 checkBudget');if(!c.COMPACT_START_MARKER||!c.COMPACT_END_MARKER)bad.push('缺压缩标记');const src=fs.readFileSync('engine/harness/src/load-chain/compactor.ts','utf8');if(/from\s+.[^.]*audit/.test(src))bad.push('压缩器耦审计包');if(bad.length){console.log(bad.join('|'));process.exit(1)};console.log('预算+标记+零依赖正确')" || { echo "❌ 压缩族锚点漂移"; FAIL=1; }
+node -e "const b=require('./engine/inject/dist/load-chain/budget.js');const c=require('./engine/inject/dist/load-chain/compactor.js');const fs=require('fs');const bad=[];if(typeof b.checkBudget!=='function')bad.push('缺 checkBudget');if(!c.COMPACT_START_MARKER||!c.COMPACT_END_MARKER)bad.push('缺压缩标记');const src=fs.readFileSync('engine/inject/src/load-chain/compactor.ts','utf8');if(/from\s+.[^.]*audit/.test(src))bad.push('压缩器耦审计包');if(bad.length){console.log(bad.join('|'));process.exit(1)};console.log('预算+标记+零依赖正确')" || { echo "❌ 压缩族锚点漂移"; FAIL=1; }
 # b: quota WARN/HARD 双模式 + cost_query 三字段（余量/已用/周期）
 grep -qE "'WARN' \| 'HARD'|WARN（放行" engine/core/src/cost/quota-gate.ts && grep -q "remaining" engine/mcp/src/tools/cost-query.ts && grep -qE "usedTokens|period" engine/mcp/src/tools/cost-query.ts && echo "✅ 双模式 + 三字段在位" || { echo "❌ quota 面缺失"; FAIL=1; }
 [ "${FAIL:-0}" = "1" ] && { echo "维度139:FAIL"; exit 1; }; echo "维度139:PASS"

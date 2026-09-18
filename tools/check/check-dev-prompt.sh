@@ -319,7 +319,7 @@ function isRelocateTarget(line, refIndex, ref) {
 }
 
 // 🔴 迁移/改名目标：引用紧跟在箭头（→ / -> / ⇒ / => / 改为 / 变为）之后 ⇒
-// 它是**目标位置**，本就可能尚未创建。实锤 v1.5.0 §九「`engine/harness/` → `engine/inject/`」：
+// 它是**目标位置**，本就可能尚未创建。实锤 v1.5.0 §九「`engine/inject/` → `engine/inject/`」：
 // inject/ 是本版改名目标，原实现报「❌ 目录不存在」= 假红。
 // 方向由箭头本身保证：箭头**左侧**的旧路径不受此规则保护，仍按存在性判。
 function isArrowTarget(line, refIndex) {

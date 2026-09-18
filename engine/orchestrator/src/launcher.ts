@@ -3,7 +3,7 @@
 // v1.3.7 新增：动态 import @langchain/langgraph，启动/关闭 Agent 实例
 // v1.3.7 新增：runtime.json 状态管理（name/status/startedAt/lastActive/pid）
 // v1.3.7 新增：buildConstrainedSystemPrompt() 四层约束加载链
-// v1.4.9：迁移至 @sofagent/orchestrator，buildConstrainedSystemPrompt → @sofagent/harness
+// v1.4.9：迁移至 @sofagent/orchestrator，buildConstrainedSystemPrompt → @sofagent/inject
 // ============================================================
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync, renameSync, copyFileSync, unlinkSync, readdirSync, statSync } from 'fs';
@@ -186,13 +186,13 @@ function listKnowledgeTopN(dir: string, n: number): string[] {
 /**
  * 构建带约束的 system prompt（四层加载链）
  *
- * v1.1.0：委托给 @sofagent/harness 中的 buildConstrainedSystemPrompt。
+ * v1.1.0：委托给 @sofagent/inject 中的 buildConstrainedSystemPrompt。
  * 本文件的 buildConstrainedSystemPrompt 保留为兼容导出。
  *
  * @param skillDir 约束文件目录（如 .sofagent/）
  * @returns 拼接后的 system prompt 字符串
  */
-export { buildConstrainedSystemPrompt } from '@sofagent/harness';
+export { buildConstrainedSystemPrompt } from '@sofagent/inject';
 
 // ════════════════════════════════════════
 // LangGraph Agent 启动/关闭

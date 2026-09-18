@@ -172,7 +172,7 @@ export async function executeNode(
   let buildPrompt = deps?.buildSystemPrompt;
   if (!buildPrompt) {
     try {
-      const harness = (await import('@sofagent/harness')) as { buildConstrainedSystemPrompt?: unknown };
+      const harness = (await import('@sofagent/inject')) as { buildConstrainedSystemPrompt?: unknown };
       const harnessFn = harness.buildConstrainedSystemPrompt as ((projectRoot: string) => string) | null;
       if (harnessFn) {
         buildPrompt = (projectRoot: string, agentConfig: SubAgentConfig) => {

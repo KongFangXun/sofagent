@@ -18,8 +18,8 @@
     "moduleResolution": "bundler",
     "baseUrl": ".",
     "paths": {
-      "@sofagent/harness": [
-        "engine/harness/src"
+      "@sofagent/inject": [
+        "engine/inject/src"
       ],
       "@sofagent/ontology": [
         "engine/ontology/src"

@@ -16,8 +16,8 @@
 //   本文件服务 **OpenClaw 平台 hook 部署形态**（.openclaw/hooks/sofagent-load-chain/handler.ts），
 //   由 OpenClaw 的 agent:bootstrap 事件触发注入 prompt——**仅 OpenClaw 生效**（平台边界见 HOOK.md）。
 //   WorkBuddy/Codex/Claude 无此事件，靠 SKILL.md 自觉加载（软约束）。
-//   npm API 场景（createReactAgent 构建 system prompt）用 @sofagent/harness 的
-//   buildConstrainedSystemPrompt（engine/harness/src/index.ts）——两份实现职责不同、
+//   npm API 场景（createReactAgent 构建 system prompt）用 @sofagent/inject 的
+//   buildConstrainedSystemPrompt（engine/inject/src/index.ts）——两份实现职责不同、
 //   服务不同部署形态，**不要合并**。改动加载链逻辑时需两处同步评估。
 //   未来：DSH（DeepSeek Harness）tools/pre-execute 等 8 个生命周期 hook 是
 //   约束注入从「bootstrap 一次」升级为「每次工具调用」的接入点（见 HOOK.md 前瞻节）。

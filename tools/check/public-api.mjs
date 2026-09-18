@@ -28,7 +28,7 @@ const UPDATE = process.argv.includes('--update-baseline');
 
 // 包清单：[目录, 入口源文件]
 const PACKAGES = [
-  ['@sofagent/harness', 'engine/harness/src/index.ts'],
+  ['@sofagent/inject', 'engine/inject/src/index.ts'],
   ['@sofagent/ontology', 'engine/ontology/src/index.ts'],
   ['@sofagent/core', 'engine/core/src/index.ts'],
   ['@sofagent/rules', 'engine/rules/src/index.ts'],

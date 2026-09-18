@@ -1,7 +1,7 @@
 // sofagent-inject · OpenClaw 原生插件（code-plugin）
 // 约束注入：before_prompt_build 时把 sofagent 四层加载链注入系统上下文。
 //   L1 core-rules.md（核心铁律）· L2 think.md（反思区）· L3 fde.md（用户规则）· L4 knowledge/（知识库）
-// 复用 @sofagent/harness 的 buildConstrainedSystemPrompt（npm API 场景同源实现），
+// 复用 @sofagent/inject 的 buildConstrainedSystemPrompt（npm API 场景同源实现），
 // 与 engine/hooks/sofagent-load-chain（OpenClaw hook 形态）职责互补、不合并。
 // API 分级：/* @public */ 导出对 OpenClaw 运行时契约锁定（register 入口 + pluginMeta）。
 
@@ -50,7 +50,7 @@ let configuredRoot: string | undefined;
       try {
         // 动态 require：依赖未装/能力不可用时降级（插件可独立安装）
         // eslint-disable-next-line @typescript-eslint/no-require-imports
-        const m = require('@sofagent/harness');
+        const m = require('@sofagent/inject');
         const projectRoot = ctx?.config?.plugins?.entries?.['sofagent-inject']?.config?.projectRoot ?? process.cwd();
         configuredRoot = projectRoot; // 与工具同源（见文件头 configuredRoot 说明）
         const injected = typeof m.buildConstrainedSystemPrompt === 'function' ? m.buildConstrainedSystemPrompt(projectRoot) : '';
@@ -79,14 +79,14 @@ let configuredRoot: string | undefined;
         async execute(_id: string, _params: Record<string, unknown>) {
           try {
             // eslint-disable-next-line @typescript-eslint/no-require-imports
-            const m = require('@sofagent/harness');
+            const m = require('@sofagent/inject');
             const projectRoot = configuredRoot ?? process.cwd(); // 与 hook 同源：config.projectRoot 生效
             const injected = typeof m.buildConstrainedSystemPrompt === 'function' ? m.buildConstrainedSystemPrompt(projectRoot) : '';
             return {
               content: [{ type: 'text', text: injected ? `已注入四层加载链（${injected.length} 字符）：\n${injected.slice(0, 500)}` : '无注入内容（项目无约束配置）' }],
             };
           } catch (err) {
-            return { content: [{ type: 'text', text: `sofagent_inject 依赖 @sofagent/harness 不可用：${err instanceof Error ? err.message : String(err)}` }] };
+            return { content: [{ type: 'text', text: `sofagent_inject 依赖 @sofagent/inject 不可用：${err instanceof Error ? err.message : String(err)}` }] };
           }
         },
       },

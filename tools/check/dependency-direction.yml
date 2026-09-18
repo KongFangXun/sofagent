@@ -16,19 +16,19 @@
 #      既有门禁口径各异，本门禁只断言 build 序列 14 包的依赖方向，不重述其它口径。
 #
 # 层级（自下而上；包只允许依赖**同层或更低层**）：
-#   L0 核心层   harness / core（全仓仅 harness 为零依赖；core 不依赖任何 @sofagent 包）
+#   L0 核心层   inject / core（全仓仅 inject 为零依赖；core 不依赖任何 @sofagent 包）
 #   L1 领域层   ontology / rules（依赖 core）
 #   L2 约束层   audit / eval / think / evolve（audit=ont+core+rules；eval=audit+core；think=core+eval；evolve=ont+core+audit）
-#   L3 编排层   orchestrator / train / daemon（orch=audit+core+harness+rules+evolve；train=core+audit+orch（窄入口）；daemon=audit+core+ont+orch+evolve+train）
-#   L4 展示层   ab-test / mcp / hooks/sofagent-load-chain（ab-test=harness+eval+core+orch；mcp=ab+audit+core+eval+ont+orch+rules+evolve+think+train；load-chain=零）
+#   L3 编排层   orchestrator / train / daemon（orch=audit+core+inject+rules+evolve；train=core+audit+orch（窄入口）；daemon=audit+core+ont+orch+evolve+train）
+#   L4 展示层   ab-test / mcp / hooks/sofagent-load-chain（ab-test=inject+eval+core+orch；mcp=ab+audit+core+eval+ont+orch+rules+evolve+think+train；load-chain=零）
 #
 # ⑩-2 更名联动：evolve → evolve 后本清单 package 名与层级同步改。
 # ============================================================
 
 packages:
   # ── L0 核心层（零 @sofagent 依赖）──
-  harness:
-    path: engine/harness
+  inject:
+    path: engine/inject
     layer: 0
     allow: []
   core:
@@ -68,7 +68,7 @@ packages:
   orchestrator:
     path: engine/orchestrator
     layer: 3
-    allow: [harness, core, rules, audit, evolve]
+    allow: [inject, core, rules, audit, evolve]
   daemon:
     path: engine/daemon
     layer: 3
@@ -85,7 +85,7 @@ packages:
   ab-test:
     path: engine/ab-test
     layer: 4
-    allow: [harness, core, eval, orchestrator]
+    allow: [inject, core, eval, orchestrator]
   mcp:
     path: engine/mcp
     layer: 4
@@ -110,14 +110,14 @@ packages:
 #   ⚠️ detached 段的 FORGE/ 是内部工具、**不属于** workspace，不计入这 26 项。
 rhythm:
   # ── 严格同频：版本必须精确 == SSOT ──
-  # 15 包 = check-version.sh §9b 原硬编码的 11 包（harness ontology eval core audit mcp
+  # 15 包 = check-version.sh §9b 原硬编码的 11 包（inject ontology eval core audit mcp
   #         orchestrator daemon ab-test think evolve）
   #       + rules（§9b 历史漏登记，packages 段早已收录）
   #       + umbrella（第 13 个 engine 包；npm 名 sofagent，随主线发布的聚合包）
   #       + engine/hooks/sofagent-load-chain（build 序列末位构建钩子）
   #       + train（必须精确同频，故 §9b/§12b 自动纳入其校验）
   sync:
-    - harness
+    - inject
     - ontology
     - eval
     - core

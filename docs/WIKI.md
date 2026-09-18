@@ -212,7 +212,7 @@ graph TB
 | `engine/orchestrator/` | @sofagent/orchestrator — LangGraph createReactAgent 编排 |
 | `engine/train/` | @sofagent/train — 后训模块（数据管道/训练编排/云端执行/eval 闭环） |
 | `engine/daemon/` | @sofagent/daemon — 后台守护进程（cron 巡检 + 文件监听） |
-| `engine/harness/` | @sofagent/harness — SKILL 加载链（上下文注入） |
+| `engine/inject/` | @sofagent/inject — SKILL 加载链（上下文注入） |
 | `engine/mcp/` | @sofagent/mcp — MCP Server（知识库 CRUD tool）· **104 个 MCP tool**（以 `engine/mcp/src/tool-registry.ts` SSOT 为准；v1.4.9 G9 新增 device_register/device_list 设备注册面 + G10/G11 新增 device_data_query/device_data_push 设备数据面 + G5b/G1 新增连接器注册面与 workflow 模板面 + 批 5 新增 router_session_push 过站 session 承接面；v1.4.7 新增 workflow CRUD/PR 生命周期/绩效/缺口/data_push 等 11 个；v1.4.6 新增 train_cloud 云端训练执行面；v1.4.5 三件 train_serve/train_compliance/train_deliverable；v1.4.2 新增 FDE 六引擎 fde_interview/fde_classify/fde_quantify/fde_derive/fde_distill/fde_deploy，插件家族 MCP 面另计） |
 | `engine/hooks/sofagent-load-chain/` | @sofagent/load-chain — SKILL 加载链 git hook（工具包，非模块包口径） |
 | `engine/scripts/` | 运维脚本集（9 个 .sh + lib/ 模块 + windows/ .ps1 安装与卸载脚本）——安装（install.sh 调用）、卸载、验证（verify.sh）、daemon 管理、运行时审计日志记录等 |
