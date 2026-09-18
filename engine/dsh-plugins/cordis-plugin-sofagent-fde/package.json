@@ -91,7 +91,8 @@
       "fde_quantify",
       "fde_derive",
       "fde_distill",
-      "fde_deploy"
+      "fde_deploy",
+      "trace_reconcile"
     ],
     "toolsRoles": [
       "fde",
