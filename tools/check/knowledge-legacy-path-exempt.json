@@ -15,11 +15,11 @@
     "count": 10,
     "reason": "多设备同步指南的**用户可见路径示例**（`ln -s … ~/.sofagent/knowledge`、`cp -r ~/.sofagent/knowledge …` 等 10 处）。⚠️ team-lead 明示「不要动这些，找我要论证」——理由是该指南描述的是**用户在自己机器上执行的命令**，改动需先确认用户环境真实落点（`~/.sofagent/data/knowledge` 还是 `~/.sofagent/knowledge`）与 symlink 语义在迁移后是否仍成立。**本批保持原样**，属已知待论证项。"
   },
-  "engine/harness/src/__tests__/harness.test.ts": {
+  "engine/inject/src/__tests__/inject.test.ts": {
     "count": 3,
     "reason": "🔴 **本批未修的**同族缺陷的测试面（P1-14 派生发现，非已派单范围）：harness 的 `buildConstrainedSystemPrompt()` 读 `path.join(skillDir, 'knowledge')`（skillDir 缺省 `{projectRoot}/.sofagent`）——即 `{projectRoot}/.sofagent/knowledge` 旧路径；生产调用方（orchestrator/loop/agent-runner.ts:83）传 `process.cwd()` ⇒ 知识段恒空。**修它必须同时改 5 个 harness 测试文件**（harness/constraints/knowledge-index/federation-injection/load-chain-wiring），且 harness 是 layer-0 零依赖包（不能 import @sofagent/core 的 resolveKnowledgeDir，只能本地重实现 ⇒ 与 G-9「被迫重复」同族）。故本批**不改**，只把测试面命中登记在此，等 team-lead 拍板是否单独派单。"
   },
-  "engine/harness/src/index.ts": {
+  "engine/inject/src/index.ts": {
     "count": 1,
     "reason": "🔴 同族缺陷的**源码面**（v1.4.9 G-9 派生发现）：`buildConstrainedSystemPrompt()` :235 `const knowledgeDir = path.join(skillDir, 'knowledge')`，skillDir 由 :187 `path.join(projectRoot, opts?.skillDir ?? '.sofagent')` 得来 ⇒ 实际读 `{projectRoot}/.sofagent/knowledge`（v1.2.1 前的旧路径；SSOT 已是 `{SOFAGENT_HOME}/data/knowledge`）。生产调用方传 `process.cwd()` ⇒ 知识段恒空（「机制在跑、结果永远 info」）。⚠️ 本批**不改**（team-lead 裁定「本版不动」）：修它要同时改 5 个 harness 测试文件 + harness 是 layer-0 零依赖包（不能 import core 的 resolveKnowledgeDir）⇒ 属需单独论证的架构面。本条目由 v1.4.9 G-9 的**形态 ③（跨行分离）**补判才首次可见——此前形态 ①②（行内）对它**零命中**。待专项派单。"
   },
@@ -27,8 +27,8 @@
     "count": 1,
     "reason": "🔴 **真残留（非豁免，属待派单）**——v1.4.9 G-9 形态 ③ 补判后的派生发现：`getTargetPath(dataDir?)` 的 `const base = dataDir || join(process.cwd(), '.sofagent')` ⇒ persona 同步目标落在 `{cwd}/.sofagent/knowledge/entities/persona.md`（旧路径），而 SSOT 是 `{SOFAGENT_HOME}/data/knowledge`。⚠️ 调用方若未传 `dataDir` 即写/读旧路径。**本批不改**（改它属产品行为变更，须单独派单 + 论证调用方是否都传 dataDir）。登记在此是为了「从沉默变可见」，不是为了宣告合法。"
   },
-  "engine/harness/src/__tests__/knowledge-index.test.ts": {
+  "engine/inject/src/__tests__/knowledge-index.test.ts": {
     "count": 2,
-    "reason": "🔴 **测试面，与 `engine/harness/src/index.ts`（源码面）同源**（v1.4.9 G-9 形态 ③ 补判后的派生发现）：`:148` 与 `:208` 两处 `const knowledgeDir = path.join(skillDir, 'knowledge')`，其中 `skillDir = path.join(tmpDir, '.sofagent')` ⇒ 夹具把知识页喂到 `{tmpDir}/.sofagent/knowledge`，正好掩盖了 `index.ts:235` 的旧路径（**测试与实现共享同一个错误路径 ⇒ 恒绿**，是「守卫空转」的测试面形态）。⚠️ 本批**不改**（team-lead 裁定「本版不动」）：改它必须与 `index.ts:235` 的收口同批做（同时要动 5 个 harness 测试文件），否则测试会立刻红。本条目由形态 ③ 补判才首次可见——此前形态 ①②（行内）对它**零命中**。待专项派单。"
+    "reason": "🔴 **测试面，与 `engine/inject/src/index.ts`（源码面）同源**（v1.4.9 G-9 形态 ③ 补判后的派生发现）：`:148` 与 `:208` 两处 `const knowledgeDir = path.join(skillDir, 'knowledge')`，其中 `skillDir = path.join(tmpDir, '.sofagent')` ⇒ 夹具把知识页喂到 `{tmpDir}/.sofagent/knowledge`，正好掩盖了 `index.ts:235` 的旧路径（**测试与实现共享同一个错误路径 ⇒ 恒绿**，是「守卫空转」的测试面形态）。⚠️ 本批**不改**（team-lead 裁定「本版不动」）：改它必须与 `index.ts:235` 的收口同批做（同时要动 5 个 harness 测试文件），否则测试会立刻红。本条目由形态 ③ 补判才首次可见——此前形态 ①②（行内）对它**零命中**。待专项派单。"
   }
 }

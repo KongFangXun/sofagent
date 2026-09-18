@@ -13,7 +13,7 @@
 
 import type { ExecutableTool } from '../tools';
 import { wrapToolsWithGate, createToolGate, convertToLangGraphTools } from '../tools';
-import { buildConstrainedSystemPrompt } from '@sofagent/harness';
+import { buildConstrainedSystemPrompt } from '@sofagent/inject';
 import { spawnSubAgent } from '../launcher';
 import type { SubAgentDefinition } from '../registry';
 import type { DataSovereigntyMiddleware } from '../middleware/data-sovereignty-mw';

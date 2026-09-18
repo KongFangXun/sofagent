@@ -7,7 +7,7 @@
 // ── 为什么需要这条守卫（「被迫重复 ≠ 允许不可见」）──────────────
 // `tools/check/dependency-direction.yml` 把 `harness` 定为 **layer 0 · allow: []**
 // （仓内唯一不允许 import 任何 @sofagent 包的包）⇒ harness **不能** import core 的
-// `resolveHomeDir`，只能在 `engine/harness/src/index.ts` 本地**重实现**一份
+// `resolveHomeDir`，只能在 `engine/inject/src/index.ts` 本地**重实现**一份
 // `resolveEngineHome()`。重复是被依赖方向**逼出来的**，但「被迫重复」不等于
 // 「允许两处口径悄悄漂移」——P1-4（写侧落 {SOFAGENT_HOME}/skill/custom、读侧只扫
 // 项目级）就是口径漂移的实案。本守卫让**两处口径的差集可见且被钉住**。
@@ -47,9 +47,9 @@ import { createRequire } from 'module';
 const require = createRequire(import.meta.url);
 const ROOT = path.resolve(import.meta.dirname, '../..');
 const CORE_DIST = path.join(ROOT, 'engine/core/dist/data-paths.js');
-const HARNESS_DIST = path.join(ROOT, 'engine/harness/dist/index.js');
+const HARNESS_DIST = path.join(ROOT, 'engine/inject/dist/index.js');
 const CORE_SRC = path.join(ROOT, 'engine/core/src/data-paths.ts');
-const HARNESS_SRC = path.join(ROOT, 'engine/harness/src/index.ts');
+const HARNESS_SRC = path.join(ROOT, 'engine/inject/src/index.ts');
 
 const fail = [];
 const JUDGED = [];

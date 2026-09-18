@@ -5,7 +5,7 @@
 // 未标记的导出视为 @public（保守默认：宁可多承诺不可漏承诺）
 // ────────────────────────────────────────────────────────
 /**
- * @sofagent/harness — 四层约束加载链
+ * @sofagent/inject — 四层约束加载链
  * 生成 Sub Agent 启动时的 context prompt：SKILL.md → fde.md → think.md → knowledge/
  * v1.2.0 从 sofagent/audit/src/subagents/launcher.ts 迁出
  *

@@ -62,7 +62,7 @@ NC='\033[0m'
 #     cron.ts:313 生产调度——同样是兼容入口的间接接线形态。
 #   compactIfNeeded（v1.4.9 P1-1 登记）：定义在 compactor.ts，此前**零生产调用点**
 #     （全仓只出现在 load-chain-compact.test.ts）。本版接线进
-#     engine/harness/src/index.ts 的 buildConstrainedSystemPrompt（env 门控、
+#     engine/inject/src/index.ts 的 buildConstrainedSystemPrompt（env 门控、
 #     缺省关闭）⇒ 已为真接线，**不许走 --known-pending 豁免**。
 SYMBOLS="runInspectors:engine/daemon/src/inspectors/index.ts:via=analyzeAuditHistory,checkConflict,checkDoctorHealth,checkKnowledgeFreshness,checkKnowledgeHealth,checkSkillStaleness,runAuditTrailInspector
 runAllLayers:engine/daemon/src/inspector-layers.ts:via=runLayeredInspection
@@ -71,7 +71,7 @@ registerBuiltinSlashCommands:engine/core/src/slash-commands/index.ts
 gateDataPush:engine/train/src/data-push.ts
 createSshTrainChannel:engine/daemon/src/cloud-exec.ts
 chainDualChannelEvent:engine/daemon/src/cloud-events.ts
-compactIfNeeded:engine/harness/src/load-chain/compactor.ts"
+compactIfNeeded:engine/inject/src/load-chain/compactor.ts"
 
 # ── SDK-face 白名单（--since 版本 diff 驱动模式的降级通道）──
 # 语义：SDK 面先行、管线接线排期——白名单条目必须带 reason 与目标版本，

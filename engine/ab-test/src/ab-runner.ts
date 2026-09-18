@@ -178,7 +178,7 @@ async function runReactAgent(
   // v1.4.9 P1-5：约束链的派生与检查**先于**一切重依赖（langgraph 动态 import / LLM 解析）——
   // 它是配置前置条件，失败应与「langgraph 是否装好 / SOFAGENT_LLM 是否配了」无关。
   // 从 harness 导入约束构建函数（避免循环依赖）
-  const { buildConstrainedSystemPrompt } = await import('@sofagent/harness');
+  const { buildConstrainedSystemPrompt } = await import('@sofagent/inject');
 
   // v1.4.9 P1-5：消除「一个参数两种语义」——`skillPath` 恒为**文件**路径
   // （方案 B 也按文件读它）。方案 C 要的是 harness 的 (projectRoot, skillDir)

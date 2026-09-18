@@ -763,8 +763,8 @@ if $S75_OK; then S75_RESULT=$(node -e "const t = require('$THINK_DIST'); console
 if $S75_OK; then S75_MC=$(grep -c "knowledge.*Views\|knowledge/.*派生" "$PROJECT_ROOT/engine/core/src/memory-contract.ts" 2>/dev/null || true); S75_MC=${S75_MC:-0}; [ "$S75_MC" -ge 1 ] || { fail "memory-contract.ts 无 knowledge Views 定义"; S75_OK=false; }; fi
 $S75_OK && pass
 scenario 76 "harness 约束自加载 + A14+A15 规则"
-S76_OK=true; HARNESS_DIST="$PROJECT_ROOT/engine/harness/dist/index.js"
-require_dist "engine/harness/dist/index.js" || S76_OK=false
+S76_OK=true; HARNESS_DIST="$PROJECT_ROOT/engine/inject/dist/index.js"
+require_dist "engine/inject/dist/index.js" || S76_OK=false
 if $S76_OK; then S76_RESULT=$(node -e "try { const h = require('$HARNESS_DIST'); console.log('buildConstrainedSystemPrompt:' + typeof h.buildConstrainedSystemPrompt); } catch(e) { console.log('error:' + e.message); }" 2>&1 || true); [[ "$S76_RESULT" == *function* ]] || { fail "buildConstrainedSystemPrompt 未导出"; S76_OK=false; }; fi
 if $S76_OK; then S76_HARNESS=$(grep -c "harness" "$PROJECT_ROOT/engine/orchestrator/src/launcher.ts" 2>/dev/null || true); S76_HARNESS=${S76_HARNESS:-0}; [ "$S76_HARNESS" -ge 1 ] || { fail "launcher.ts 未引用 harness"; S76_OK=false; }; fi
 $S76_OK && pass
@@ -2130,12 +2130,12 @@ grep -q "getHmacKey\|stableStringify" "$PROJECT_ROOT/engine/daemon/src/federatio
 grep -q "audit_trail" "$PROJECT_ROOT/engine/mcp/src/tool-registry.ts" || S243_OK=false
 $S243_OK && pass "跨设备审计轨迹聚合（HMAC 验签 + TRUST_ORDER + MCP audit_trail）"
 scenario 244 "v1.3.1 交付 14 L4 经验层渐进加载（热点全文 + 索引摘要）"; S244_OK=true
-[ -f "$PROJECT_ROOT/engine/harness/src/knowledge-index.ts" ] || S244_OK=false
+[ -f "$PROJECT_ROOT/engine/inject/src/knowledge-index.ts" ] || S244_OK=false
 # 热点全文 + 索引摘要注入逻辑
-grep -q "topKnowledgeByMtime\|热点" "$PROJECT_ROOT/engine/harness/src/index.ts" || S244_OK=false
-grep -q "knowledge-index\|knowledgeIndex" "$PROJECT_ROOT/engine/harness/src/index.ts" || S244_OK=false
+grep -q "topKnowledgeByMtime\|热点" "$PROJECT_ROOT/engine/inject/src/index.ts" || S244_OK=false
+grep -q "knowledge-index\|knowledgeIndex" "$PROJECT_ROOT/engine/inject/src/index.ts" || S244_OK=false
 # 索引每条 ≤150 字符（摘要截断）
-grep -q "150" "$PROJECT_ROOT/engine/harness/src/knowledge-index.ts" || S244_OK=false
+grep -q "150" "$PROJECT_ROOT/engine/inject/src/knowledge-index.ts" || S244_OK=false
 $S244_OK && pass "L4 经验层渐进加载（热点全文 + 索引摘要 ≤150 字符）"
 # ─── v1.3.2 新增场景（S245-S255：L2-L5/agent-creation/eval-suite/session-isolation）───
 scenario 245 "v1.3.2 交付 1 L2 语义判定——diff-report 三类 mismatch"; S245_OK=true
@@ -4244,7 +4244,7 @@ S403_OK=true; S403_OUT=$(PROJECT_ROOT="$PROJECT_ROOT" node -e "const m=require(p
 scenario 404 "v1.4.8 行为分级族——shell 提权三态 action 值（allow / require-approval / forbid-until-approved）"
 S404_OK=true; S404_OUT=$(PROJECT_ROOT="$PROJECT_ROOT" node -e "const fs=require('fs'),path=require('path'); const src=fs.readFileSync(path.join(process.env.PROJECT_ROOT,'engine/core/src/escalation/policy.ts'),'utf8'); const bad=[]; for(const k of ['forbid-until-approved','require-approval','allow']) if(!src.includes(k)) bad.push('缺 '+k); process.stdout.write(bad.length?('S404_FAIL:'+bad.join('|')):'ASSERT_OK');" 2>&1) || S404_OUT="S404_FAIL:crash"; grep -q ASSERT_OK <<< "$S404_OUT" || { echo "  ✗ S404: $S404_OUT"; S404_OK=false; }; $S404_OK && pass "v1.4.8 行为分级族：三态 action 齐备（dangerous 未批不放行）" || fail "S404 锚点回潮——见上方 ✗ 行"
 scenario 405 "v1.4.8 成本与压缩族——加载链 3% 预算 + 段级压缩标记 + 零依赖纪律"
-S405_OK=true; S405_OUT=$(PROJECT_ROOT="$PROJECT_ROOT" node -e "const r=process.env.PROJECT_ROOT; const b=require(r+'/engine/harness/dist/load-chain/budget.js'); const c=require(r+'/engine/harness/dist/load-chain/compactor.js'); const fs=require('fs'); const bad=[]; if(typeof b.checkBudget!=='function')bad.push('缺 checkBudget'); if(!c.COMPACT_START_MARKER||!c.COMPACT_END_MARKER)bad.push('缺压缩标记'); const src=fs.readFileSync(r+'/engine/harness/src/load-chain/compactor.ts','utf8'); if(/from\s+.[^.]*audit/.test(src))bad.push('压缩器耦审计包'); process.stdout.write(bad.length?('S405_FAIL:'+bad.join('|')):'ASSERT_OK');" 2>&1) || S405_OUT="S405_FAIL:crash"; grep -q ASSERT_OK <<< "$S405_OUT" || { echo "  ✗ S405: $S405_OUT"; S405_OK=false; }; $S405_OK && pass "v1.4.8 成本与压缩族：3% 预算 + start/end 标记 + 零依赖" || fail "S405 锚点回潮——见上方 ✗ 行"
+S405_OK=true; S405_OUT=$(PROJECT_ROOT="$PROJECT_ROOT" node -e "const r=process.env.PROJECT_ROOT; const b=require(r+'/engine/inject/dist/load-chain/budget.js'); const c=require(r+'/engine/inject/dist/load-chain/compactor.js'); const fs=require('fs'); const bad=[]; if(typeof b.checkBudget!=='function')bad.push('缺 checkBudget'); if(!c.COMPACT_START_MARKER||!c.COMPACT_END_MARKER)bad.push('缺压缩标记'); const src=fs.readFileSync(r+'/engine/inject/src/load-chain/compactor.ts','utf8'); if(/from\s+.[^.]*audit/.test(src))bad.push('压缩器耦审计包'); process.stdout.write(bad.length?('S405_FAIL:'+bad.join('|')):'ASSERT_OK');" 2>&1) || S405_OUT="S405_FAIL:crash"; grep -q ASSERT_OK <<< "$S405_OUT" || { echo "  ✗ S405: $S405_OUT"; S405_OK=false; }; $S405_OK && pass "v1.4.8 成本与压缩族：3% 预算 + start/end 标记 + 零依赖" || fail "S405 锚点回潮——见上方 ✗ 行"
 scenario 406 "v1.4.8 成本与压缩族——quota WARN/HARD 双模式 + cost_query 余量/已用/周期三字段"
 S406_OK=true; S406_OUT=$(PROJECT_ROOT="$PROJECT_ROOT" node -e "const r=process.env.PROJECT_ROOT; const q=require(r+'/engine/core/dist/cost/quota-gate.js'); const fs=require('fs'); const bad=[]; if(typeof q.checkQuota!=='function')bad.push('缺 checkQuota'); const src=fs.readFileSync(r+'/engine/core/src/cost/quota-gate.ts','utf8'); if(!src.includes('HARD')||!src.includes('WARN'))bad.push('缺双模式'); const cq=fs.readFileSync(r+'/engine/mcp/src/tools/cost-query.ts','utf8'); for(const f of ['remaining','usedTokens','period']) if(!cq.includes(f)) bad.push('缺字段 '+f); process.stdout.write(bad.length?('S406_FAIL:'+bad.join('|')):'ASSERT_OK');" 2>&1) || S406_OUT="S406_FAIL:crash"; grep -q ASSERT_OK <<< "$S406_OUT" || { echo "  ✗ S406: $S406_OUT"; S406_OK=false; }; $S406_OK && pass "v1.4.8 成本与压缩族：双模式 + 余量/已用/周期三字段（事前问路）" || fail "S406 锚点回潮——见上方 ✗ 行"
 scenario 407 "v1.4.8 模型与进化族——modelPreference 未注册抛错 + evolve native 默认 + 旧包名清零 + loop 概念归位（三形态定位边界明确不合并 + loop --legacy 弃用双面，移除版本 v1.5.0、兼容期一个大版本）"

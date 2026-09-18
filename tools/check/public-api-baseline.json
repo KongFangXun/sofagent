@@ -1,7 +1,7 @@
 {
   "generatedAt": "2026-09-17T18:26:06.418Z",
   "packages": {
-    "@sofagent/harness": {
+    "@sofagent/inject": {
       "version": "1.4.9",
       "symbols": [
         "BudgetVerdict",

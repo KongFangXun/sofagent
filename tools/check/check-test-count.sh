@@ -261,7 +261,7 @@ PKG_COUNT=$(echo "$TC_OUT" | LC_ALL=C sed $'s/\033\[[0-9;]*m//g' | grep -oE 'PKG
 # v1.4.8 第 7 批（train 拆包）：本清单同步 +train（第 13 个模块包），并**去掉 hooks/**——
 #   原清单 12 模块 + hooks/ 恰好也是 13，数值未变但语义不对（把 load-chain 当模块包数）。
 #   现值 = 12 模块 + train = 13，与 README「13 模块包」/ WIKI「13 个 @sofagent/* 模块包」对齐。
-WORKSPACE_COUNT=$(grep -cE '^[[:space:]]*"engine/(harness|ontology|eval|core|think|audit|orchestrator|train|daemon|ab-test|evolve|mcp|rules)"' package.json || true)
+WORKSPACE_COUNT=$(grep -cE '^[[:space:]]*"engine/(inject|ontology|eval|core|think|audit|orchestrator|train|daemon|ab-test|evolve|mcp|rules)"' package.json || true)
 [ -z "$WORKSPACE_COUNT" ] && WORKSPACE_COUNT=0
 
 # 任务八方案A（2026-08-29）：README 包数口径升级为双口径「13 模块包 + 14 插件（10 DSH + 4 OpenClaw）」。

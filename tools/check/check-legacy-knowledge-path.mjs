@@ -608,7 +608,7 @@ function selftest() {
   {
     const pos = scanContent([
       [
-        'engine/harness/src/index.ts',
+        'engine/inject/src/index.ts',
         `const skillDir = path.join(projectRoot, opts?.skillDir ?? '.sofagent');\n` +
           `const knowledgeDir = path.join(skillDir, 'knowledge');`,
       ],

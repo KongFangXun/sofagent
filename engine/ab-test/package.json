@@ -27,7 +27,7 @@
   "author": "KongFangXun",
   "dependencies": {
     "@langchain/langgraph": "^1.4.12",
-    "@sofagent/harness": "1.4.9",
+    "@sofagent/inject": "1.4.9",
     "@sofagent/eval": "1.4.9",
     "@sofagent/core": "1.4.9",
     "@sofagent/orchestrator": "1.4.9"

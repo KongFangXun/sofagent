@@ -166,7 +166,7 @@ async function loadCreateReactAgent(): Promise<CreateReactAgentFn | null> {
 
 async function loadBuildConstrainedSystemPrompt(): Promise<((projectRoot: string) => string) | null> {
   try {
-    const mod = (await import('@sofagent/harness')) as { buildConstrainedSystemPrompt?: unknown };
+    const mod = (await import('@sofagent/inject')) as { buildConstrainedSystemPrompt?: unknown };
     return (mod.buildConstrainedSystemPrompt ?? null) as ((projectRoot: string) => string) | null;
   } catch {
     return null;

@@ -4,7 +4,7 @@
 
 装上之后：模型每次构建提示词前，系统上下文先被追加四层加载链（core-rules.md / think.md / fde.md / knowledge/）——Agent 不必你每次交代背景；另有一个 `sofagent_inject` 工具可随时预览注入了什么。
 
-> 机制：复用 `@sofagent/harness` 的 `buildConstrainedSystemPrompt()`——四层加载链与 DSH 侧同源。
+> 机制：复用 `@sofagent/inject` 的 `buildConstrainedSystemPrompt()`——四层加载链与 DSH 侧同源。
 
 ## 能力
 

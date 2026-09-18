@@ -11,7 +11,7 @@ const kit = createSofagentPlugin(
     seam: 'agent/pre-step',
     seamSemantics: '模型看到输入前注入四层加载链约束',
     capability: '约束注入链（SKILL→fde→think→knowledge）',
-    bridgePkg: '@sofagent/harness',
+    bridgePkg: '@sofagent/inject',
     bridgeApi: 'buildConstrainedSystemPrompt',
     description: '启动注入企业约束——四层加载链',
   },

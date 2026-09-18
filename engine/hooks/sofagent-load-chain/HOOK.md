@@ -74,7 +74,7 @@ DSH 原生支持 **8 个生命周期 hook，全部为瀑布流（Waterfall）可
 | **Claude Code** | **③** Skill 自觉加载 | 工具调用时机触发共享拦截脚本（`~/.claude/settings.json`）——**内容为提交级 24 规则，非调用级拦截** | 支持 |
 | **Cursor** | **③** Skill 自觉加载 + `.cursor/rules/sofagent.mdc` | 同上（`~/.cursor/hooks.json`） | 支持 |
 | **WorkBuddy** | **③** Skill 自觉加载 | 走 git hook（提交前） | 支持 |
-| **自建 Agent（npm API）** | **④** `@sofagent/harness` 的 `buildConstrainedSystemPrompt` 代码级拼入 | MCP `run_audit` / git hook | 支持 |
+| **自建 Agent（npm API）** | **④** `@sofagent/inject` 的 `buildConstrainedSystemPrompt` 代码级拼入 | MCP `run_audit` / git hook | 支持 |
 | **Gemini CLI** | **③** Skill 自觉加载 + `~/.gemini/GEMINI.md` | 走 git hook | 薄挂载 |
 | **Hermes** | **③** Skill 自觉加载（`SOUL.md` 手动粘种子） | 走 git hook | 薄挂载 |
 | **Codex** | **③** `~/.codex/AGENTS.md` 挂载点（无 Skill 目录） | 走 git hook | 薄挂载 |
