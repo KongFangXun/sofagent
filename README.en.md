@@ -127,7 +127,7 @@ One command selects your mounting tier: `bash install.sh --platform <platform-na
 
 **On-site · produce the judgment** (FDE phase): map business flows (five-element dig + three-question test — price every AI node) → build the dual graphs (business graph for humans + ontology for AI) → decide AI nodes → deploy three-layer deliverables. Each node carries "done criteria (merge_criteria) · who approves (approver) · when it runs (trigger)", frozen into the deliverable.
 
-**Off-site · the judgment stays** (Harness phase): the FDE leaves, the judgment remains — daemon patrols 24/7, every commit triggers the 24 audit rules, snapshots are rollback-ready, experience keeps accumulating; evolution writes promotion and distilled reflection back into the deliverable.
+**Off-site · the judgment stays** (Harness phase): the FDE leaves, the judgment remains — daemon patrols 24/7, every commit triggers the 24 audit rules (including **AgentShield five-face static config scanning**), snapshots are rollback-ready, experience keeps accumulating; evolution writes promotion and distilled reflection back into the deliverable.
 
 Both phases are one thing: **the deliverable is shared live state** (written on-site, read off-site, written back when evolving) — without FDE, the constraint layer has no criteria to execute; without the constraint layer, the FDE's judgment evaporates when they leave. That is why "FDE Harness" is not a bundle of two feature sets.
 
