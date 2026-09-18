@@ -1102,6 +1102,25 @@ if [[ -n "${ROADMAP_HEADER}" ]]; then
   # 提取 CHANGELOG 当前版本标题
   # v1.2.5 起 CHANGELOG.md 改为纯目录索引格式（- **vX.Y.Z** — 摘要），旧格式 ### [vX.Y.Z] 已废弃
   CHANGELOG_TITLE=$(grep -m1 -E "^(- \*\*|### \[)v" "${PROJECT_ROOT}/CHANGELOG.md" 2>/dev/null || echo "")
+  # 🔴 待发版窗口感知（与 §24-27 同口径）：CHANGELOG 顶版超前 SSOT 一版（minor/patch 后继）
+  # 时处于「CHANGELOG 已收录新版、ROADMAP 版本头仍指 SSOT 旧版」的合法中间态——ROADMAP
+  # 五步同步挂账 bump 后同批执行（06-doc-finalize 时序定谳），窗口内本项对「顶版 ≠ SSOT」
+  # 降级跳过；仅顶版 = SSOT（发版后常态）才真比对。防窗口态假红（§15 先前无窗口感知，
+  # CHANGELOG 一收录即撞「版本名疑似错版」）。
+  _top_ver=$(echo "${CHANGELOG_TITLE}" | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' | head -1 || true)
+  _s15_window_skip=false
+  if [[ -n "${_top_ver}" && "${_top_ver}" != "v${SSOT_VERSION}" ]]; then
+    echo -e "  ${YELLOW}⏭️${NC} 待发版窗口态：CHANGELOG 顶版 ${_top_ver} ≠ SSOT v${SSOT_VERSION}——ROADMAP 版本头随 bump 后五步同步，本项跳过（§24-27 同口径）"
+    SKIPS=$((SKIPS + 1))
+    CHECKS=$((CHECKS + 1))
+    _s15_window_skip=true
+  fi
+  if ${_s15_window_skip}; then
+    : # 窗口态整段跳过比对（清空标题后空串仍会走循环假红，故显式短路）
+  elif [[ -z "${CHANGELOG_TITLE}" ]]; then
+    echo -e "  ${YELLOW}⚠${NC} CHANGELOG 顶版标题提取失败"
+    WARNINGS=$((WARNINGS + 1))
+  else
   ROADMAP_WARN=true
   while IFS= read -r kw; do
     [[ -z "${kw}" ]] && continue
@@ -1135,6 +1154,7 @@ if [[ -n "${ROADMAP_HEADER}" ]]; then
     echo -e "  ${GREEN}✓${NC} ROADMAP 版本头描述与 CHANGELOG 标题关键词重合"
     CHECKS=$((CHECKS + 1))
   fi
+  fi # _s15_window_skip / 标题提取失败 / 正常比对 三分支收口
 else
   echo -e "  ${YELLOW}⚠${NC} 无法读取 ROADMAP L4"
 fi
@@ -1718,7 +1738,12 @@ if [[ "${MCP_REG:-0}" =~ ^[0-9]+$ ]] && [[ "${MCP_REG}" -gt 0 ]]; then
   for _td in SKILL/SKILL.md docs/HANDBOOK.md docs/ARCHITECTURE.md AGENTS.md README.md README.en.md SKILL/AGENTS.md docs/API.md docs/WIKI.md GEMINI.md CHANGELOG.md; do
     [[ -f "${PROJECT_ROOT}/${_td}" ]] || continue
     # 口径：该文档任一含 tool 的行出现当前实数即算口径已跟（双态表述「66→67」天然含 67）
-    if grep -i "tool" "${PROJECT_ROOT}/${_td}" 2>/dev/null | grep -qE "(^|[^0-9])${MCP_REG}([^0-9]|$)"; then
+    # 🔴 管道形态防 SIGPIPE 假红：`grep -q` 命中即早退 → 首 grep 收 SIGPIPE(141) → 本脚本
+    # `set -o pipefail` 把整管道判 141 = 「口径缺失」假红（实测 CHANGELOG.md 16KB tool 行体量
+    # 必触发，小文件瞬间写完不触发——同为命中却一真一假）。改两段式：先落临时文件再判，
+    # 每段独立退出码，命中即真。
+    _b8_lines=$(grep -i "tool" "${PROJECT_ROOT}/${_td}" 2>/dev/null || true)
+    if printf '%s\n' "${_b8_lines}" | grep -qE "(^|[^0-9])${MCP_REG}([^0-9]|$)"; then
       echo -e "  ${GREEN}✓${NC} ${_td} 含当前口径 ${MCP_REG} tools"
       CHECKS=$((CHECKS + 1))
     else

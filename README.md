@@ -117,9 +117,9 @@ sofagent 不造 Agent——执行能力交给成熟宿主（模型 + 工具 + �
 
 一条命令选定挂载档位：`bash install.sh --platform <平台名>`（全部平台与差异见 [HANDBOOK](./docs/HANDBOOK.md)）
 
-## v1.4.9：设备接入与数据承接
+## v1.5.0：治理模块 · 可见性与本体成熟
 
-📡 **设备接入与数据承接**——引擎从单机审计长成多设备数据承接层，三条链一次收口：设备注册与派单（G9：Ed25519 身份 + 心跳新鲜度判定 + 在线才派单/掉线改派挂起）· 授权读取与加密上行（G10/G11：`device_data_query` 白名单授权读取 + `device_data_push` opt-in 上行——WAL 加密暂存/明文不落盘/断点续传/审计计量 evidence）· 训练数据飞轮（T7/T8/T9：router 过站 session 承接 schema fail-closed + 签名验签 + 脱敏贯通 + cost 台账 · 敏感识别三层插槽 L0 正则/L1 词典/L2 NER（SDK 面已就绪，管线接线排期 v1.5.1）· 权重灰度 AB hash 稳定分流 + 劣化触发 + 噪声保护（SDK 面已就绪，管线接线排期 v1.5.1））· 平台接口面（G5b/G1：连接器注册/发现租户隔离 + workflow 模板导出/导入与血缘追踪）· 工程效能（T6/T10 + bugfix：installer skill 四步装机引导 + 模型清单上报 + skill 快照 · 修复批 13 项）。MCP 工具 95 → **104** · 测试 4429 → **4805**（发版时点口径；发版后修复批已 +30，当前值见下文「工程可信度」）。完整内容见[开发日志](./docs/changelog/v1.4/v1.4.9.md) · 更早版本见 [CHANGELOG](./CHANGELOG.md)。
+🛡️ **引擎长出「治理面」**——约束层的价值看得见、本体数据经得起时间、证据跨层对得上账：治理 KPI 面板（Dashboard 独立「治理」tab：KPI 六卡——安全边界触发率/审计覆盖率/HITL 响应时延/趋势对比/任务重复执行/trace 对账一致率 + 数据集审阅卡（语义质量人审兜底）+ lineage 合规报告导出（数据从哪来→过什么闸→版本演进→审计链引用，可递交企业合规/法务）+ 周报导出）· 本体数据双时态事实（`validFrom`/`validTo` + `stateAt` 时点快照——「系统在某天知道什么」+ 三层渐进加载：entity 摘要→relations→全文，预算联动）· Ontology Validation Engine（DAG 三色 DFS 环链定位 + schema 兼容三态 + 激活前置门 fail-closed——校验器自身异常也拒绝激活）· 跨层证据对账引擎（`trace_reconcile` 新 tool：Agent 自述 vs git diff vs 模型行为三源对齐，一致/漏报/幻觉/瞒报四态判定——「别当摄像头当法医」）· FDE 陪跑期补全（14 天期满总结 + fde_deploy 登记衔接）· 存量清扫与命名收口（退役 API 正式移除 + composeWithReactAgent 别名下线 + loop --legacy 退役[breaking] + `@sofagent/harness` → `@sofagent/inject`[breaking]）· DSH 插件事件接线（7 seamHandler 接既有 bridge API：audit 4 事件位 + inject/evolve/rollback 各 1，判定逻辑零改动纯接线）。MCP 工具 104 → **105** · 测试 4805 → **4903**（13 包 workspace 口径，发版时点）· acceptance 352 → **357** 场景。完整内容见[开发日志](./docs/changelog/v1.5/v1.5.0.md) · 更早版本见 [CHANGELOG](./CHANGELOG.md)。
 
 ## FDE 方法论
 
