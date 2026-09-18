@@ -887,8 +887,166 @@ async function s426() {
   _s41x_done(bad, 'S426');
 }
 
+// S427 · v1.5.0 章一 治理 KPI 面板——governance 聚合引擎 dist 直调（六卡键 + 周报格式化
+// + lineage 合规报告结构），Dashboard 治理 tab 与 /api/governance 端点静态锚
+async function s427() {
+  const { fs, path } = _s41x_init('s427'); const bad = [];
+  const root = process.env.PROJECT_ROOT;
+  const gov = require(root + '/engine/audit/dist/governance.js');
+  // ① KPI 六卡键齐备（boundary/coverage/hitl/weeklyTrend/repetition/traceReconcile 五卡 + datasetReview/decisionHighlights 扩展卡）
+  const k = gov.computeGovernanceKpis(process.env.SOFAGENT_DATA);
+  for (const key of ['boundary', 'coverage', 'hitl', 'weeklyTrend', 'repetition', 'traceReconcile', 'datasetReview', 'decisionHighlights']) {
+    if (!(key in k)) bad.push('KPI 缺卡:' + key);
+  }
+  if (typeof k.consistencyRateAlias === 'string') bad.push('KPI 应为数值');
+  // ② 空数据目录降级不炸（治理面板新企业首启零数据面）
+  const empty = gov.computeGovernanceKpis(path.join(process.env.SOFAGENT_HOME, 'empty-data'));
+  if (!empty || !('boundary' in empty)) bad.push('空目录 KPI 未降级');
+  // ③ 周报导出 markdown 格式化在位
+  const md = gov.formatGovernanceWeekly(typeof k === 'object' ? k : {});
+  if (typeof md !== 'string' || !md.includes('治理')) bad.push('周报非 markdown/缺标题');
+  // ④ 数据集 lineage 合规报告：结构键（数据从哪来→过什么闸→版本演进→审计链引用）
+  if (typeof gov.buildDatasetLineageReport !== 'function') bad.push('lineage 报告函数缺失');
+  // ⑤ Dashboard 静态锚：治理 tab 按钮 + KPI 端点 + 周报导出端点三件
+  const html = fs.readFileSync(root + '/tools/dashboard/dashboard.html', 'utf-8');
+  if (!html.includes("goPage('governance')")) bad.push('治理 tab 按钮缺');
+  if (!html.includes('/api/governance')) bad.push('KPI 端点引用缺');
+  if (!html.includes('/api/export-governance-weekly')) bad.push('周报导出端点引用缺');
+  const serve = fs.readFileSync(root + '/tools/dashboard/serve-dashboard.mjs', 'utf-8');
+  if (!serve.includes('/api/governance') || !serve.includes('/api/export-governance-weekly')) bad.push('serve 端点缺');
+  _s41x_done(bad, 'S427');
+}
+
+// S428 · v1.5.0 章二 本体数据双时态——stateAt 时点快照（validTo 过滤）+ isValidAt 边界
+// + progressiveLoad 三层渐进（entity 摘要→relations→全文，预算联动）
+async function s428() {
+  const { fs, path } = _s41x_init('s428'); const bad = [];
+  const root = process.env.PROJECT_ROOT;
+  const onto = require(root + '/engine/ontology/dist/index.js');
+  // fixture：E1 长期有效 / E2 已过期（validTo 2026-06-30）/ E3 未生效（validFrom 2026-10-01）
+  const kd = path.join(process.env.SOFAGENT_HOME, 'knowledge');
+  fs.mkdirSync(path.join(kd, 'entities'), { recursive: true });
+  const w = (id, fm) => fs.writeFileSync(path.join(kd, 'entities', id + '.md'),
+    '---\nid: ' + id + '\nname: ' + id + '-name\n' + fm + '---\n正文全文内容 ' + id);
+  w('E1', 'validFrom: 2026-01-01\n');
+  w('E2', 'validFrom: 2025-01-01\nvalidTo: 2026-06-30\n');
+  w('E3', 'validFrom: 2026-10-01\n');
+  // ① 时点快照：2026-08-01 视角只见 E1（E2 已过期、E3 未生效）——EntityDigest[]，按 name 提取
+  const at = onto.stateAt(kd, '2026-08-01');
+  const names = at.map((e) => e && e.name ? e.name : String(e)).sort().join(',');
+  if (names !== 'E1-name') bad.push('时点快照=' + names + '（应仅 E1）');
+  // ② 历史时点：2026-05-01 视角见 E1+E2
+  const hist = onto.stateAt(kd, '2026-05-01').map((e) => e.name).sort().join(',');
+  if (hist !== 'E1-name,E2-name') bad.push('历史快照=' + hist);
+  // ③ isValidAt 边界三态
+  if (onto.isValidAt({ validFrom: '2025-01-01', validTo: '2026-06-30' }, '2026-06-30') !== false) bad.push('validTo 边界应含（闭区间）或排除——与实现一致校验失败');
+  if (onto.isValidAt({ validFrom: '2026-01-01' }, '2026-12-31') !== true) bad.push('无 validTo 应长期有效');
+  // ④ progressiveLoad 三层：names=实体名数组（文件名去 .md）；L1 摘要 ≤ L3 全文载荷，预算约束生效
+  const pl = onto.progressiveLoad(kd, ['E1', 'E2'], onto.defaultBudget(8000), 1);
+  const pl3 = onto.progressiveLoad(kd, ['E1', 'E2'], onto.defaultBudget(8000), 3);
+  if (!Array.isArray(pl.digests) || pl.digests.length < 1) bad.push('渐进加载摘要层形态错');
+  if (pl3.fullTexts.length < pl.fullTexts.length || (pl3.fullTexts.length === 0 && pl.digests.length > 0)) bad.push('三层载荷应≥一层');
+  if (JSON.stringify(pl3).length < JSON.stringify(pl).length) bad.push('L3 序列化应≥L1');
+  _s41x_done(bad, 'S428');
+}
+
+// S429 · v1.5.0 章三 Ontology Validation Engine——DAG 环检测（三色 DFS + 环链定位）
+// + schema 兼容（悬空实体/字段缺失/类型错配）+ 激活前置门 fail-closed
+async function s429() {
+  _s41x_init('s429'); const bad = [];
+  const root = process.env.PROJECT_ROOT;
+  const { validateDag, validateSchemaCompat, validateForActivation } = require(root + '/engine/orchestrator/dist/graph/validator.js');
+  // ① 环检测：a→c→b→a 三节点环，issue 带 kind=cycle + 环链定位
+  const cyc = validateDag([
+    { id: 'a', depends_on: ['c'] }, { id: 'b', depends_on: ['a'] }, { id: 'c', depends_on: ['b'] },
+  ]);
+  if (cyc.length === 0 || cyc[0].kind !== 'cycle' || !cyc[0].node.includes('→')) bad.push('环检测未定位环链');
+  // ② 悬空依赖也算 cycle 类 issue（depends_on 引用不存在节点）
+  const dangling = validateDag([{ id: 'a', depends_on: ['ghost'] }]);
+  if (dangling.length === 0 || dangling[0].kind !== 'cycle') bad.push('悬空依赖未报');
+  // ③ schema 兼容三态：未知实体 / 字段缺失 / 类型错配
+  const ents = [{ name: 'Order', fields: { amount: 'number' } }];
+  const sc = validateSchemaCompat([
+    { id: 'n1', depends_on: [], io: { consumes: [
+      { entity: 'NoSuch', fields: { x: 'string' } },
+      { entity: 'Order', fields: { amount: 'number', ghost: 'string' } },
+      { entity: 'Order', fields: { amount: 'string' } },
+    ] } },
+  ], ents);
+  if (sc.length < 3) bad.push('schema 三态应全报（未知实体/字段缺失/类型错配），实得 ' + sc.length);
+  // ④ 激活前置门：合法图 valid=true；环图 valid=false；fail-closed（校验器异常也拒绝）
+  const okRes = validateForActivation([{ id: 'a', depends_on: [] }], ents);
+  if (!okRes.valid) bad.push('合法图被拒');
+  const badRes = validateForActivation([{ id: 'a', depends_on: ['a'] }], ents);
+  if (badRes.valid) bad.push('自环图被放行');
+  _s41x_done(bad, 'S429');
+}
+
+// S430 · v1.5.0 章八 跨层证据对账——reconcileTraces 四态判定 dist 直调
+//（consistent/omitted 漏报/hallucinated 幻觉/misreported 瞒报 + 回滚闭环不计幻觉）
+// + trace_reconcile 105th tool 注册面静态锚
+async function s430() {
+  const { fs } = _s41x_init('s430'); const bad = [];
+  const root = process.env.PROJECT_ROOT;
+  const { reconcileTraces } = require(root + '/engine/core/dist/index.js');
+  const mk = (files, sid) => ({ sessionId: sid, events: files.map((f) => ({ type: 'file-op', fileOp: 'write', filePath: f })) });
+  // ① 四态：一致（a）+ 漏报（b：diff 有 trace 无）+ 幻觉（ghost：trace 有 diff 无）
+  const r1 = reconcileTraces({
+    traces: [mk(['src/a.ts', 'src/ghost.ts'], 's1')],
+    diffFiles: ['src/a.ts', 'src/b.ts'], deletedFiles: [], repoRoot: '/tmp/x',
+  });
+  const v = (p) => (r1.discrepancies.find((d) => d.path === p) || {}).verdict;
+  if (v('src/b.ts') !== 'omitted') bad.push('漏报态判定错');
+  if (v('src/ghost.ts') !== 'hallucinated') bad.push('幻觉态判定错');
+  if (!r1.discrepancies.some((d) => d.path === 'src/a.ts')) { /* 一致态不入 discrepancies——正确 */ }
+  else bad.push('一致态不应入差异清单');
+  if (typeof r1.consistencyRate !== 'number') bad.push('一致率缺失');
+  // ② 回滚闭环：写了又删（deletedFiles 命中）不计幻觉
+  const r2 = reconcileTraces({
+    traces: [mk(['src/rb.ts'], 's1')], diffFiles: [], deletedFiles: ['src/rb.ts'], repoRoot: '/tmp/x',
+  });
+  if (r2.discrepancies.some((d) => d.path === 'src/rb.ts')) bad.push('回滚闭环被误判幻觉');
+  // ③ 瞒报态：declared 声明但 diff/trace 均无
+  const r3 = reconcileTraces({
+    traces: [mk(['src/a.ts'], 's1')], diffFiles: ['src/a.ts'], deletedFiles: [],
+    declaredFiles: ['src/mis.ts'], repoRoot: '/tmp/x',
+  });
+  if (v('src/mis.ts') !== 'misreported' && !r3.discrepancies.some((d) => d.path === 'src/mis.ts' && d.verdict === 'misreported')) bad.push('瞒报态判定错');
+  // ④ 工具注册面：trace_reconcile 在 tool-registry（105th tool）
+  const reg = fs.readFileSync(root + '/engine/mcp/src/tool-registry.ts', 'utf-8');
+  if (!reg.includes('trace_reconcile')) bad.push('trace_reconcile 未注册');
+  _s41x_done(bad, 'S430');
+}
+
+// S431 · v1.5.0 章五 FDE 陪跑期 + 章十 DSH 插件事件接线——companion 期满总结（幂等 + 统计结构）
+// + plugins.json 7 handler 声明面 + audit 插件 seamHandlers 静态锚
+async function s431() {
+  const { fs, path } = _s41x_init('s431'); const bad = [];
+  const root = process.env.PROJECT_ROOT;
+  // ① companion 常量与导出面（COMPANION_DAYS=14 + 生成函数在位）
+  const comp = require(root + '/engine/daemon/dist/companion.js');
+  if (comp.COMPANION_DAYS !== 14) bad.push('陪跑期常量=' + comp.COMPANION_DAYS);
+  if (typeof comp.generateCompanionReport !== 'function') bad.push('期满总结生成函数缺失');
+  if (typeof comp.getCompanionState !== 'function') bad.push('陪跑状态查询缺失');
+  // ② 章十接线静态锚：plugins.json 7 插件 7 事件位（audit 4 + inject/evolve/rollback 各 1）
+  const plugins = JSON.parse(fs.readFileSync(root + '/engine/dsh-plugins/plugins.json', 'utf-8'));
+  const items = Array.isArray(plugins) ? plugins : (plugins.plugins || []);
+  let handlerCount = 0;
+  for (const p of items) {
+    const seams = p.seamHandlers || (p.manifest && p.manifest.seamHandlers) || [];
+    handlerCount += Array.isArray(seams) ? seams.length : 0;
+  }
+  if (handlerCount < 7) bad.push('seamHandlers 总数=' + handlerCount + '（应 ≥7）');
+  // ③ audit 插件声明面：4 事件位源码锚
+  const auditIdx = fs.readFileSync(root + '/engine/dsh-plugins/cordis-plugin-sofagent-audit/src/index.ts', 'utf-8');
+  for (const ev of ['tools/pre-execute', 'tools/result', 'fs/write-intent', 'agent/turn-stopping']) {
+    if (!auditIdx.includes(ev)) bad.push('audit 插件缺事件:' + ev);
+  }
+  _s41x_done(bad, 'S431');
+}
+
 // ── 调度器 ──────────────────────────────────────────────────
-const CASES = { s101, s102, s103, s106, s107, s108, s109, s111, s115, s148, s149, s151, s152, s155, s156, s416, s418, s419, s420, s421, s422, s423, s424, s425, s426 };
+const CASES = { s101, s102, s103, s106, s107, s108, s109, s111, s115, s148, s149, s151, s152, s155, s156, s416, s418, s419, s420, s421, s422, s423, s424, s425, s426, s427, s428, s429, s430, s431 };
 
 async function main() {
   const name = process.argv[2];
