@@ -68,6 +68,36 @@
 } from './llm-call-trace';
 /* @public */ export type { LlmCallTraceInput, LlmCallRecord, LlmCallTraceFilter } from './llm-call-trace';
 
+// ── v1.5.0 章八：跨层证据对账（trace reconcile）──
+/* @public */ export {
+  TRACE_MODEL_SCHEMA_VERSION,
+  extractFilePathFromArgs,
+  classifyFileOp,
+  dshSessionsRoot,
+  parseDshSession,
+  loadDshSessions,
+  TRACE_CACHE_SCHEMA_VERSION,
+  traceCachePath,
+  loadDshSessionsCached,
+  collectTraceWriteSet,
+  collectTraceReadSet,
+  reconcileTraces,
+  buildModelLayerTrace,
+} from './trace-reconcile';
+/* @public */ export type {
+  TraceEventType,
+  FileOpKind,
+  TraceEvent,
+  TraceModelExport,
+  DshRawEvent,
+  DecompressFn,
+  ReconcileVerdict,
+  ReconcileDiscrepancy,
+  ReconcileReport,
+  ReconcileInput,
+  ModelLayerTraceLink,
+} from './trace-reconcile';
+
 // ── 仓库标识 hash（运行时审计 repo-hash 隔离）──
 /* @public */ export {
   computeRepoHash,

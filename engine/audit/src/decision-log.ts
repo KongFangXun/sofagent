@@ -78,6 +78,11 @@ const VALID_KINDS: readonly string[] = [
   'ESCALATE_REPORT', 'FALLBACK_DEGRADE', 'CONFIG_CHANGE',
   'KNOWLEDGE_DISTILL', 'ORCHESTRATION',
   'EVOLUTION', 'TEAM', 'COMMONS',
+  // COST：v1.4.0 交付三新增时漏登白名单（类型 13 值 vs 白名单 12 值的
+  // 既有序态缺口）——v1.5.0 章八扩 COVERAGE 时一并对齐
+  'COST',
+  // COVERAGE：v1.5.0 章八——trace 三源对账结果（consistencyRate + 差异清单）
+  'COVERAGE',
 ];
 
 /** 合法 LoopPhase 集合 */

@@ -156,13 +156,13 @@ describe('router_session_push MCP tool（v1.4.9 T7）', () => {
     expect(lines.length).toBe(1);
   });
 
-  it('TOOLS 数组含 router_session_push（注册面接线——104 终值）', () => {
+  it('TOOLS 数组含 router_session_push（注册面接线——105 终值）', () => {
     const t = TOOLS.find((x) => x.name === 'router_session_push');
     expect(t).toBeDefined();
     expect(t!.roles).toContain('ops');
     expect(t!.description).toContain('session 承接');
     expect(t!.inputSchema.required).toContain('raw');
-    // 全量计数锁（104 = v1.4.9 终值）
-    expect(TOOLS.length).toBe(104);
+    // 全量计数锁（105 = v1.5.0 终值——trace_reconcile 104→105）
+    expect(TOOLS.length).toBe(105);
   });
 });

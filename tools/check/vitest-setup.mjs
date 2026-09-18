@@ -29,6 +29,14 @@ if (!process.env.SOFAGENT_DATA) {
   __viteTestSetupTmpDirs.push(dir);
 }
 
+// v1.5.0 章八：A7 trace 证据面测试隔离——真实 ~/.dsh/sessions 有 936 个
+// zstd 文件（183MB），同步审计路径逐文件解压 ~600ms/个会拖垮测试。
+// 测试环境默认关闭 trace 证据面（A7 回落 logs 兜底——即 v1.5.0 前行为）；
+// trace 证据面专项测试自行显式开启/注入。
+if (!process.env.SOFAGENT_TRACE_EVIDENCE) {
+  process.env.SOFAGENT_TRACE_EVIDENCE = 'off';
+}
+
 // worker 进程退出时清理（best-effort——泄漏的 tmp 目录不阻塞测试）
 process.on('exit', () => {
   for (const dir of __viteTestSetupTmpDirs) {

@@ -100,6 +100,7 @@ import { contributionQuery } from './tools/contribution-query';
 import { dataPush } from './tools/data-push-tool';
 // v1.4.9 T7：router 过站 session 承接（伴生 exporter 推送入口——最后一个新 tool）
 import { routerSessionPush } from './tools/router-session-push';
+import { traceReconcileTool, type TraceReconcileArgs } from './tools/trace-reconcile';
 
 /**
  * 工具定义（MCP tools/list 返回的 schema）
@@ -150,7 +151,7 @@ export type ToolHandler = (
 ) => ToolResult | ToolDispatchError | Promise<ToolResult | ToolDispatchError>;
 
 /**
- * 完整工具清单——104 个 tool（v1.4.9 T7：router_session_push 新增——session 承接面（103→104 终值：97→104 = 批 1 +2、批 2 +2、批 3 +4、批 5 +1；router 伴生 exporter 推送入口，schema 校验 + 本地落盘 + HMAC 挂链 + usage 入 cost 台账）；v1.4.9 G9：device_register/device_list 新增——设备注册面（95→97，T1 设备身份验签 fail-closed + 清单在线态）；v1.4.7：data_push 新增——标准数据推送入口（94→95 终值）；contribution_query 新增——G4 绩效数据导出（93→94）；pr_submit/pr_review/pr_merge 三 tool 新增——G13 PR 生命周期（90→93）；onboard_prompt 新增——上岗 prompt 生成器（89→90）；workflow_gaps 新增——G2 能力缺口查询（88→89）；workflow_create/workflow_update/workflow_node_add/workflow_diff_preview 四 tool 新增——G14 workflow 对象化 CRUD（84→88）；v1.4.6：train_cloud 新增——83→84，云 VM 执行面控制工具；v1.4.5：train_serve/train_compliance/train_deliverable 三件齐——80→83，SKILL.md/ARCHITECTURE 等九处 SSOT 同步收口；v1.4.4：corpus_export 新增；v1.4.3：train_status/train_list/train_diagnose 新增；v1.4.2：fde_interview/fde_classify/fde_quantify/fde_derive/fde_distill/fde_deploy 六引擎 + train_doctor/train_dryrun/train_report 新增；v1.4.1：train_submit 新增；v1.4.0：cost_query + browser 4 新增；v1.3.9：worklog_query 新增；v1.3.6：workflow_submit/ontology_import/model_register/model_switch/model_unregister/train_budget/define_acceptance/check_acceptance；v1.3.5：run_ab_test/promote_ab/snapshot_list/snapshot_restore；v1.3.4：commons_publish/search/invoke/rate/retire/harvest_rule；不含 4 个 resource shortcut）
+ * 完整工具清单——105 个 tool（v1.5.0 章八：trace_reconcile 新增——跨层证据对账（104→105：DSH trace vs git diff vs logs 三源比对四态判定 + 模型层回溯链 + 对账结果入 decision-log kind=COVERAGE）；v1.4.9 T7：router_session_push 新增——session 承接面（103→104 终值：97→104 = 批 1 +2、批 2 +2、批 3 +4、批 5 +1；router 伴生 exporter 推送入口，schema 校验 + 本地落盘 + HMAC 挂链 + usage 入 cost 台账）；v1.4.9 G9：device_register/device_list 新增——设备注册面（95→97，T1 设备身份验签 fail-closed + 清单在线态）；v1.4.7：data_push 新增——标准数据推送入口（94→95 终值）；contribution_query 新增——G4 绩效数据导出（93→94）；pr_submit/pr_review/pr_merge 三 tool 新增——G13 PR 生命周期（90→93）；onboard_prompt 新增——上岗 prompt 生成器（89→90）；workflow_gaps 新增——G2 能力缺口查询（88→89）；workflow_create/workflow_update/workflow_node_add/workflow_diff_preview 四 tool 新增——G14 workflow 对象化 CRUD（84→88）；v1.4.6：train_cloud 新增——83→84，云 VM 执行面控制工具；v1.4.5：train_serve/train_compliance/train_deliverable 三件齐——80→83，SKILL.md/ARCHITECTURE 等九处 SSOT 同步收口；v1.4.4：corpus_export 新增；v1.4.3：train_status/train_list/train_diagnose 新增；v1.4.2：fde_interview/fde_classify/fde_quantify/fde_derive/fde_distill/fde_deploy 六引擎 + train_doctor/train_dryrun/train_report 新增；v1.4.1：train_submit 新增；v1.4.0：cost_query + browser 4 新增；v1.3.9：worklog_query 新增；v1.3.6：workflow_submit/ontology_import/model_register/model_switch/model_unregister/train_budget/define_acceptance/check_acceptance；v1.3.5：run_ab_test/promote_ab/snapshot_list/snapshot_restore；v1.3.4：commons_publish/search/invoke/rate/retire/harvest_rule；不含 4 个 resource shortcut）
  */
 export const TOOLS: ToolDef[] = [
   {
@@ -2160,5 +2161,22 @@ export const TOOLS: ToolDef[] = [
     },
     // v1.4.8 条目 5 迁移：查表分发
     handler: async (args) => { if (!args.raw || typeof args.raw !== 'object') { return { error: 'Missing required argument: raw' }; } const rsp = await routerSessionPush({ raw: args.raw }); return { ...rsp, isError: rsp.data.isError }; },
+  },
+  {
+    // v1.5.0 章八：跨层证据对账（104→105——DSH trace vs git diff vs logs 三源比对）
+    name: 'trace_reconcile',
+    roles: ['ops', 'fde'],
+    description: '跨层证据对账（trace reconcile）：DSH session trace（Agent 自述）vs git diff（独立事实）vs logs 声明集三源比对——产出差异清单（漏报/幻觉动作/瞒报四态）+ 一致率；可选模型层回溯链（推理 → 模型版本 → train_job → datasetHash）。对账结果入 decision-log（kind=COVERAGE）。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        repo_root: { type: 'string', description: '仓库根（git diff 采集目标；缺省 process.cwd()）' },
+        include_model_layer: { type: 'boolean', description: '是否输出模型层回溯链（llm-calls → train fingerprint）' },
+        session_limit: { type: 'number', description: 'DSH session 扫描上限（缺省 50）' },
+      },
+      required: [],
+    },
+    // v1.4.8 条目 5 迁移：查表分发
+    handler: async (args) => { const trt = await traceReconcileTool({ ...(typeof args.repo_root === 'string' && args.repo_root ? { repo_root: args.repo_root } : {}), ...(typeof args.include_model_layer === 'boolean' ? { include_model_layer: args.include_model_layer } : {}), ...(typeof args.session_limit === 'number' ? { session_limit: args.session_limit } : {}) } satisfies TraceReconcileArgs); return { ...trt, isError: trt.data.isError }; },
   },
 ];

@@ -45,6 +45,7 @@
   "//": "v1.3.5 交付 4b：automerge 已切 @automerge/automerge ^3.4.1（与 orchestrator 同步切换，旧包名废弃）；federation.ts 迁移点 init/change/clone/merge，联邦合并测试验证收敛语义",
   "dependencies": {
     "@automerge/automerge": "^3.4.1",
+    "fzstd": "^0.1.1",
     "js-yaml": "^5.3.0"
   },
   "files": [
