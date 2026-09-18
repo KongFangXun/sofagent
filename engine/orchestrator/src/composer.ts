@@ -102,9 +102,8 @@ export async function compose(
  *
  * 旧接口保留：composeTask() 等现有调用方不动。内部走 composeYaml()。
  *
- * v1.4.3 清扫任务二更名：composeWithDeepAgents → composeWithReactAgent
- * （实现早已全走 createReactAgent——deepagents 依赖随 ao 于 v1.0.7 退役，
- * 旧名名不副实）。旧名保留一版 @deprecated 别名转发，将在 v1.5.0 移除。
+ * 历史注：曾有 composeWithDeepAgents 别名（v1.4.3 更名期保留一版转发），
+ * 已按预告在 v1.5.0 移除——新代码一律用 composeWithReactAgent。
  *
  * @param taskDesc    任务描述
  * @param workflowYml 可选——现有 workflow.yml 内容，用于指导编排风格
@@ -115,17 +114,6 @@ export async function composeWithReactAgent(
   workflowYml?: string
 ): Promise<string | null> {
   return composeYaml({ taskDesc, enterpriseWorkflowYaml: workflowYml, variant: 'A' });
-}
-
-/**
- * @deprecated 将在 v1.5.0 移除——请改用 `composeWithReactAgent`（实现同为
- * createReactAgent，本别名纯转发）。v1.4.3 清扫任务二更名期保留一版。
- */
-export async function composeWithDeepAgents(
-  taskDesc: string,
-  workflowYml?: string
-): Promise<string | null> {
-  return composeWithReactAgent(taskDesc, workflowYml);
 }
 
 /**
