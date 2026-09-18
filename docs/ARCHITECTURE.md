@@ -1341,6 +1341,8 @@ Claude Code 之父 Boris Cherny（YC 访谈）给出 Harness 层的代际时钟�
 
 递归自我改进的最新形式化（MetaRSI）把自我改进拆为三个**可写面算子**共享一个闭环内核：Data-RSI（执行轨迹→验证记录→经验池）、Harness-RSI（改 scaffold——system prompt / memory / 内置工具 / skills / MCP 五槽位）、Model-RSI（参数内化），其上再加**改进调度器**（横向选算子顺序、纵向改算子自身的提案策略）。对位 sofagent 三面现状：Data 面＝instinct 链（提取→错题本→置信度评分→注入）与 audit 轨迹；Harness 面＝SKILL.md 加载链 + evolve + eval-gate + A/B 调度器（**最强面**）；Model 面＝TrainChannel 训练通道（通道在、料未接——dataset-builder 只吃外部数据，不消费 instinct 池）。该研究的两条结构性结论直接支撑 sofagent 的生态位判断：**保护性评估器与发布门必须在所有可写面之外**，且四个控制角色（调度器/子代理/元代理/转换适配器）均可由人类专家按同一套类型化契约替换——企业场景恰恰需要独立的第三方治理面，这正是「约束基础设施」生态位在 RSI 时代的延伸：**sofagent 不做 RSI 引擎，做 RSI 循环的治理与审计层**。落地节奏见 [ROADMAP · 版本规划](./ROADMAP.md#版本规划)（自进化链路补强按版本承接）。
 
+> **RSI 定调句（一句话边界）**：**进步的单位不是模型，是循环；sofagent 管的是循环，不是模型。** 别人造让 AI 变强的引擎，sofagent 让变强的每一步「有据可查、可拒绝、可回退」——改进可以自动发生，但验证门、留痕与回退权永远在约束层手里，不随改进一起交出去。
+
 > 📖 来源：[MetaRSI/RSI² (arXiv 2609.06396)](https://arxiv.org/abs/2609.06396)（CosmosMind，2026-09）
 
 ### SHACL 语义契约（跨 Agent 协同的管控层参照）
