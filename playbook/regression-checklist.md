@@ -1135,14 +1135,14 @@ grep -c "recordHitlAudit" FORGE/src/audit-middleware.mjs # ≥1
 grep -c "DecisionKind\|DecisionWhy\|DecisionProvenance" engine/audit/src/decision-schema.ts # ≥3
 # 子项 b: emitDecision 签名顺序——先 sanitizeWhy 再 hmacSig（防泄漏→签名泄漏）
 grep -c "sanitizeWhy\|hmacSig\|recordForSig" engine/audit/src/decision-log.ts # ≥3
-# 子项 c: 签名基于脱敏后 payload（prevHash/hashVersion/hmacSig 排除后计算）
-grep "recordForSig.*prevHash.*undefined\|recordForSig.*hmacSig.*undefined" engine/audit/src/decision-log.ts # 期望：有匹配
+# 子项 c: 签名基于脱敏后 payload——recordForSig 排除链字段（链协议收口至 chain-kernel 单一事实源，判据随迁）
+grep "recordForSig" engine/audit/src/chain-kernel.ts # 期望：有匹配
 # 子项 d: decision-chain.ts 含链式验证 + 三态（ok/tampered/unverifiable）
 grep -c "'ok'\|'tampered'\|'unverifiable'" engine/audit/src/decision-chain.ts # ≥3
 # 子项 e: decision-query.ts 查询接口存在（queryByKind/traceBack/getHighFrequencyPatterns）
 grep -c "export function" engine/audit/src/decision-query.ts # ≥3
-# 子项 f: envFingerprint 在签名 payload 中（防止跨环境篡改）
-grep -c "envFingerprint" engine/audit/src/decision-log.ts # ≥1
+# 子项 f: 环境指纹参与签名 payload（防跨环境篡改）——decision-log 经 getEnvFingerprint 取值注入链内核
+grep -c "getEnvFingerprint\|fingerprint" engine/audit/src/decision-log.ts # ≥2
 ```
 
 #### 81. 外部记忆后端——动态 tool 注册 + sensitivity ACL 映射
@@ -1316,18 +1316,22 @@ HARDCODED=$(grep -nE '(checklist|acceptance|fresh-eyes)[^0-9]{0,4}≤ ?1[0-9]{3}
 
 ```bash
 (
-# 待发版窗口态分支（对齐维度 130 / check-version F6 判据）：CHANGELOG 该版条目带「⏳ 待发版」
-# 时，「13 包 == 目标版本」的检查对象尚不成立——发布属 SOP 阶段十，本维度标题即「发版后验证」。
+# 待发版窗口态分支（对齐 check-version F6 动态判据——勿用硬编码版本字面量，禁考古）：
+# SSOT 已发版（tag 在位）+ 后继一版 devlog 在位 ⇒ 待发版窗口开，「13 包 == 目标版本」的
+# 检查对象尚不成立——发布属 SOP 阶段十，本维度标题即「发版后验证」。
 # 硬判 FAIL 会把「阶段五正常态」误报为 P0（run-03 实证：维度 97 因此被判阻塞）。
-if grep -qE "v1\.4\.9.*⏳|v1\.4\.9.*待发版" CHANGELOG.md 2>/dev/null; then
-  for pkg in audit core daemon eval harness ontology orchestrator train rules evolve think ab-test mcp; do
+CUR_V=$(node -p "require('./package.json').version")
+NEXT_V=$(node -e "const p='${CUR_V}'.split('.').map(Number);console.log([p[0],p[1],p[2]+1].join('.')+'/'+[p[0],p[1]+1,0].join('.')+'/'+[p[0]+1,0,0].join('.'))")
+PEND=0; for cand in ${NEXT_V//\// }; do seg=$(echo "$cand"|cut -d. -f1-2); [ -s "docs/changelog/v${seg}/v${cand}.md" ] && PEND=1 && break; done
+if [ "$PEND" -eq 1 ] && git rev-parse "v${CUR_V}" >/dev/null 2>&1; then
+  for pkg in audit core daemon inject ontology orchestrator train rules evolve think ab-test mcp; do
     V=$(npm view @sofagent/$pkg version 2>/dev/null || echo "未发布")
     echo " @sofagent/$pkg: $V"
   done
-  echo "⏳ 待发版态：以上为 npm 现存版本；v1.4.9 发布属阶段十，本维度在发版后复核「13 包 == 目标版本」"
+  echo "⏳ 待发版态：以上为 npm 现存版本；v${NEXT_V%%/*} 发布属阶段十，本维度在发版后复核「13 包 == 目标版本」"
 else
   # 已发版态：验证 13 包全部到 npm
-  for pkg in audit core daemon eval harness ontology orchestrator train rules evolve think ab-test mcp; do
+  for pkg in audit core daemon inject ontology orchestrator train rules evolve think ab-test mcp; do
     V=$(npm view @sofagent/$pkg version 2>/dev/null || echo "❌ 未发布")
     echo " @sofagent/$pkg: $V"
   done
@@ -1475,8 +1479,8 @@ tmp_all=$( { grep -cF "[0-9;]*m//g" tools/check/test-count.sh 2>/dev/null || tru
 
 ```bash
 (
-# ① MCP tools 三处口径（SKILL.md / ARCHITECTURE 能力表 / dist 实测）——口径84，勿写死
-grep -q "104 tools" SKILL/SKILL.md || echo "⚠️ SKILL 工具速查漂移（口径104）" # 演进：52→60→61→66→67（train_submit）→79→80（corpus_export）→84→95（v1.4.7 商业平台接口版 +11）→97（v1.4.9 G9 设备注册面 +2）→99（v1.4.9 G10/G11 设备数据面 +2）→103（v1.4.9 G5b/G1 连接器与模板面 +4）→104（v1.4.9 批 5 router_session_push 承接面 +1），随 SSOT；锚词与 SKILL.md §MCP 工具速查同步升级
+# ① MCP tools 三处口径（SKILL.md / ARCHITECTURE 能力表 / dist 实测）——口径105，勿写死
+grep -q "105 tools" SKILL/SKILL.md || echo "⚠️ SKILL 工具速查漂移（口径105）" # 演进：52→60→61→66→67（train_submit）→79→80（corpus_export）→84→95（v1.4.7 商业平台接口版 +11）→97（v1.4.9 G9 设备注册面 +2）→99（v1.4.9 G10/G11 设备数据面 +2）→103（v1.4.9 G5b/G1 连接器与模板面 +4）→104（v1.4.9 批 5 router_session_push 承接面 +1）→105（v1.5.0 trace_reconcile），随 SSOT；锚词与 SKILL.md §MCP 工具速查同步升级
 node -e "const m=require('./engine/mcp/dist/tool-registry.js');const doc=require('./package.json').version;console.log('✅ TOOLS='+m.TOOLS.length+'（registry 实数，勿写死——发版后人工对 SSOT 口径）')"
 # ② snapshot tool 零 daemon 静态依赖（optionalDependencies 场景会炸）——排除注释行（🔴 import 铁律注释含 @sofagent/daemon；校准：grep -h 去前缀保排除生效）
 grep -hE "@sofagent/daemon" engine/mcp/src/tools/snapshot-list.ts engine/mcp/src/tools/snapshot-restore.ts 2>/dev/null | grep -vE "^[[:space:]]*//" | head -1 | grep -q . && echo "⚠️ snapshot 静态 import daemon 回潮"
@@ -1709,7 +1713,8 @@ grep -q "escaped" engine/audit/src/permission/checker.ts && grep -q "ReDoS\|灾�
 # d: dashboard 静态一致性（双版本/缺省态谎报/图例配色/scrollTop 非法 API）
 grep -c "logo-version" tools/dashboard/dashboard.html | grep -qE "^[0-9]+$" && ! grep -q "document.scrollTop" tools/dashboard/dashboard.html && echo "✅ dashboard 版本单源 + 无非法 API" || echo "❌ dashboard 一致性回退"
 # e: H-01 install 后形态（原 #126 a 归并）——双 hook 在位 + 旧 hook .bak 化（S16 接管语义）
-test -f .git/hooks/pre-commit && test -f .git/hooks/commit-msg && echo "✅ 双 hook 在位" || echo "❌ hook 缺失（跑 install.sh）"
+# worktree 场景 .git 是文件而非目录，raw path 必假阴——git-path 动态解析（主仓共享 hooks 目录）：
+HOOKS_DIR=$(git rev-parse --git-path hooks); test -f "$HOOKS_DIR/pre-commit" && test -f "$HOOKS_DIR/commit-msg" && echo "✅ 双 hook 在位（$HOOKS_DIR）" || echo "❌ hook 缺失（跑 install.sh）"
 # f: 断言校准三同步 + CI 纯净 fixture（原 #126 c/d 归并）——判定/展示/引用三处同步；hook 对账类测试自带迷你 dist 防 CI 假绿
 grep -q "450" playbook/acceptance-test.sh && grep -q "迷你 dist" engine/audit/src/commands/init.test.ts && echo "✅ 三同步示范 + 迷你 dist fixture" || echo "❌ 三同步/fixture 回潮"
 ) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -qE "^[[:space:]]{0,2}❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true
@@ -1763,11 +1768,15 @@ grep -q "GLM_API_KEY" FORGE/models/profile.mjs && echo "✅ fork 适配提示在
 EMB=$(sed -n 's/^INSTALL_SHA256="\([a-f0-9]*\)".*/\1/p' bootstrap.sh); HEAD_H=$(git show HEAD:install.sh | shasum -a 256 | cut -d' ' -f1)
 if [ "$EMB" = "$HEAD_H" ]; then echo "✅ sha256 自洽（钉值 == HEAD install.sh 哈希）"
 else
-  # 待发版窗口态（对齐 check-version F6 既有判据）：CHANGELOG 版本条目带「⏳ 待发版」标记时，
+  # 待发版窗口态（对齐 check-version F6 动态判据——勿用硬编码版本字面量，禁考古）：
+  # SSOT 已发版（tag 在位）+ 后继一版 devlog 在位 ⇒ 待发版窗口开，
   # install.sh 已随开发改动、钉值仍指向上一已发版 tag 属预期——回填与打 tag 同步于阶段九。
   # 硬判 FAIL 会把「阶段五正常态」误报为 P0 阻塞（run-01 实证）。
-  if grep -qE "v1\.4\.9.*⏳|v1\.4\.9.*待发版" CHANGELOG.md 2>/dev/null; then
-    echo "⏳ 待发版态：钉值 ${EMB:0:12}… ≠ HEAD 哈希 ${HEAD_H:0:12}…（install.sh 已随 v1.4.9 开发改动）——回填+打 tag 属阶段九，非阻塞"
+  CUR_V=$(node -p "require('./package.json').version")
+  NEXT_CANDS=$(node -e "const p='${CUR_V}'.split('.').map(Number);console.log([p[0],p[1],p[2]+1].join('.')+' '+[p[0],p[1]+1,0].join('.')+' '+[p[0]+1,0,0].join('.'))")
+  PEND=0; PEND_NAME=""; for cand in $NEXT_CANDS; do seg=$(echo "$cand"|cut -d. -f1-2); [ -s "docs/changelog/v${seg}/v${cand}.md" ] && PEND=1 && PEND_NAME="$cand" && break; done
+  if [ "$PEND" -eq 1 ] && git rev-parse "v${CUR_V}" >/dev/null 2>&1; then
+    echo "⏳ 待发版态（v${PEND_NAME} devlog 在位）：钉值 ${EMB:0:12}… ≠ HEAD 哈希 ${HEAD_H:0:12}…（install.sh 已随开发改动）——回填+打 tag 属阶段九，非阻塞"
   else
     echo "❌ sha256 不自洽（已发版态：钉值应等于 HEAD install.sh 哈希）"
   fi
@@ -1777,7 +1786,7 @@ MKT_HTML=$(curl -s --max-time 10 https://github.com/marketplace/actions/sofagent
 # ④ ClawHub 快照纪律：发布前 verify 落盘（clawhub skill verify <slug> > /tmp/clawhub-pre.json）对照处置；④b pending scan 显旧版+suspicious≠失败，转正判据走 API（clawhub.ai/api/v1/packages/<name>?ownerHandle=<handle>）
 grep -q "prefer-online" docs/changelog/releasing/09-publish.md && grep -q "prefer-online" docs/changelog/releasing/11-post-publish.md && echo "✅ SOP 对账命令守卫在位" || echo "❌ SOP 对账命令退化为裸查询"  # ⑤ npm 对账带 --prefer-online（裸查询吃缓存误报漏发）
 # ⑥ 构建拓扑序干净态自洽（本地 dist 残留会掩盖乱序）⑦ 环境特异失败先模拟 CI 干净态（三类排查序）⑧ 工具降级分支 fail-loud（降级必须可见）
-node -e "const s=require('./package.json').scripts.build; const order=['harness','core','ontology','rules','audit','eval','think','evolve','orchestrator','train','daemon','ab-test','mcp','sofagent-load-chain']; let i=-1; for(const seg of s.split(' && ')){const m=seg.match(/--workspace=([^\s]+)/); if(!m) continue; const short=m[1].replace(/^engine\//,'').replace(/^hooks\//,''); if(short.startsWith('dsh-plugins/')) continue; const idx=order.indexOf(short); if(idx<0||idx<=i){console.error('❌ 拓扑序倒置或未知包: '+m[1]); process.exit(1);} i=idx;}" && echo "✅ build 序列满足 14 包拓扑序（dsh-plugins 家族序由 check-cross-package-relative.mjs 独立钉住，不在此面）"
+node -e "const s=require('./package.json').scripts.build; const order=['inject','core','ontology','rules','audit','eval','think','evolve','orchestrator','train','daemon','ab-test','mcp','sofagent-load-chain']; let i=-1; for(const seg of s.split(' && ')){const m=seg.match(/--workspace=([^\s]+)/); if(!m) continue; const short=m[1].replace(/^engine\//,'').replace(/^hooks\//,''); if(short.startsWith('dsh-plugins/')||short.startsWith('openclaw-plugins/')) continue; const idx=order.indexOf(short); if(idx<0||idx<=i){console.error('❌ 拓扑序倒置或未知包: '+m[1]); process.exit(1);} i=idx;}" && echo "✅ build 序列满足 14 包拓扑序（dsh-plugins/openclaw-plugins 家族序由 check-cross-package-relative.mjs 独立钉住，不在此面）"
 grep -q "rm -rf engine/\*/dist" docs/changelog/releasing/09-publish.md && echo "✅ 干净态排查法已写入 SOP" || echo "❌ 干净态排查法从 SOP 丢失"
 git grep -q "regexWarned" -- tools/check/public-api.mjs && echo "✅ 降级 fail-loud 在位" || echo "❌ 降级静默"
 ) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -qE "^[[:space:]]{0,2}❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true
@@ -1923,11 +1932,13 @@ grep -q "SOFAGENT_EVOLVE_GATE ?? 'native'" engine/evolve/src/evolve-integration.
 
 # d: loop 概念归位与弃用承诺（深模块批条目 10）——三形态定位边界互不重叠声明在位（**明确不合并**：
 #    loop/ 对错门禁 · loop-agent/ 工程级崩溃判定 · refine-agent/ 质量好坏判据，两两判据与状态机不同）；
-#    optimization-loop 撤公开承诺但实现保留（撤承诺 ≠ 删实现）；loop --legacy 弃用标记双面（help 标注 + stderr 告警），
-#    **移除版本 v1.5.0、兼容期一个大版本**——本批不执行移除，v1.5.0 实际移除时本子项同步清
+#    optimization-loop 撤公开承诺但实现保留（撤承诺 ≠ 删实现）；loop --legacy 弃用承诺已由
+#    v1.5.0 存量清扫执行移除（显式拒绝 fail-closed）——判据随动翻新，对齐 acceptance S407 现行形态
 for f in engine/orchestrator/src/loop/index.ts engine/orchestrator/src/loop-agent/driver.ts engine/orchestrator/src/refine-agent/refine-driver.ts; do grep -q "定位边界（v1.4.8 条目 10）" "$f" && grep -q "不合并" "$f" || { echo "❌ 三形态定位边界声明缺失: $f"; FAIL=1; }; done
 grep -q "runOptimizationLoop" engine/orchestrator/src/refine-agent/optimization-loop.ts && echo "✅ optimization-loop 实现保留（撤公开承诺 ≠ 删实现）" || { echo "❌ optimization-loop 实现被误删"; FAIL=1; }
-grep -q "已弃用（将于 v1.5.0 移除）" engine/orchestrator/src/cli.ts && grep -q "loop --legacy 路径已弃用，将于 v1.5.0 移除（兼容期一个大版本）" engine/orchestrator/src/cli.ts && echo "✅ loop --legacy 弃用双面（help 标注 + stderr 告警）" || { echo "❌ loop --legacy 弃用标记回退"; FAIL=1; }
+# v1.5.0 已按弃用公告执行移除（f0a1f13b）：判据随动翻新——--legacy 退役显式拒绝 fail-closed 在位
+# （对齐 acceptance S407 现行判据），弃用标记双面已成为历史形态，不再作为在位判据。
+grep -q "已于 v1.5.0 移除" engine/orchestrator/src/cli.ts && grep -q "args.includes('--legacy')" engine/orchestrator/src/cli.ts && echo "✅ loop --legacy 退役显式拒绝（fail-closed 在位）" || { echo "❌ loop --legacy 退役拒绝缺失（移除执行回退）"; FAIL=1; }
 [ "${FAIL:-0}" = "1" ] && { echo "维度140:FAIL"; exit 1; }; echo "维度140:PASS"
 ) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -qE "^[[:space:]]{0,2}❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true
 ```

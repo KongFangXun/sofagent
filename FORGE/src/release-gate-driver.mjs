@@ -2124,9 +2124,14 @@ async function execRegressionDim(script, timeoutMs = 60_000) {
     const { stdout, stderr, code } = await runCommand(script2, REPO_ROOT, timeoutMs);
     let output = `${stdout}\n${stderr}`.trim();
     let exitCode = code ?? null;
+    // F15 显式标记透传（release-gate run-01 verdict §6 流程前置项）：归一化不再只靠
+    // output 尾注——结构化 normalized 字段同步进 precheck JSON，worker/人工可机读
+    // 区分「原生 exitCode」与「driver 归一化 exitCode」，防归一化掩盖语义失败。
+    let normalized = null;
     // 归一化规则：非零退出 + 输出零失败标记 = 语义性退出码（grep 无命中等），非真 FAIL
     if (exitCode !== 0 && exitCode !== null && !/(❌|FAIL|⚠️|缺失|漂移|超标|CRITICAL)/.test(output)) {
       output += `\n[driver] exit 语义归一化：原 exit=${exitCode} 但输出无失败标记——判定为语义性退出码（grep 无命中/尾判假），重写为 0。若该维度确有问题，请在维度脚本补显式 ❌ 输出（见 regression-checklist.md 维护公约·维度脚本编写三铁律）`;
+      normalized = { from: exitCode, to: 0, reason: 'semantic-exit' };
       exitCode = 0;
     }
     // run-16 修复（R-01 假绿根因）：反向防御——exit=0 但输出含显式 ❌。
@@ -2149,9 +2154,10 @@ async function execRegressionDim(script, timeoutMs = 60_000) {
     const userOutput = output.split('\n').filter(l => !l.startsWith('[driver]')).join('\n');
     if (exitCode === 0 && /^[\s>*#•·-]*❌/m.test(userOutput)) {
       output += `\n[driver] 反向防御：原 exit=0 但输出含显式 ❌——维度脚本以 || echo ❌ 收尾导致失败被 exit 0 掩盖（假绿），重写为 1。真失败见上方 ❌ 行；若为脚本误报请修脚本（见 regression-checklist.md 维度脚本编写三铁律）。`;
+      normalized = { from: exitCode, to: 1, reason: 'reverse-guard-failgreen' };
       exitCode = 1;
     }
-    return { exitCode, output: output.slice(0, 8000) };
+    return { exitCode, output: output.slice(0, 8000), ...(normalized ? { normalized } : {}) };
   } catch (err) {
     return { exitCode: null, output: `[driver] 执行异常: ${err.message}` };
   }
@@ -2205,7 +2211,7 @@ async function runRegressionPrecheck(runDir) {
 
   const executeDim = async (dim) => {
     const timeout = DIM_TIMEOUT_OVERRIDE[dim.num] ?? 60_000;
-    const { exitCode, output } = await execRegressionDim(dim.script, timeout);
+    const { exitCode, output, normalized } = await execRegressionDim(dim.script, timeout);
     // v1.3.8 run-10 修复：output 按行截断（保留前 12 行 + 截断标记）。
     // 91 维 × 平均 567 字符 ≈ 51KB JSON → 555 行，worker 的 sf_read 上限 500 行
     // 读不全 → 末尾维度数据缺失（run-10：59/91 维不可判定）。按行截断后总量
@@ -2238,6 +2244,7 @@ async function runRegressionPrecheck(runDir) {
       output: truncatedOutput,
       truncated: outLines.length > MAX_DIM_LINES || output.length > MAX_DIM_CHARS,
       rawLen: output.length, lineCount: outLines.length,
+      ...(normalized ? { normalized } : {}),
     };
   };
 
@@ -2265,6 +2272,7 @@ async function runRegressionPrecheck(runDir) {
     payload.dims[String(num)] = {
       num: r.num, title: r.title, exitCode: r.exitCode,
       output: r.output, truncated: r.truncated,
+      ...(r.normalized ? { normalized: r.normalized } : {}),
     };
     console.log(`  [precheck] 维度 ${r.num} ${r.title.slice(0, 24)}... exit=${r.exitCode ?? 'ERR'} (${r.rawLen}B${r.lineCount > 12 ? `→${r.lineCount} 行截断` : ''})`);
   }
@@ -2451,6 +2459,11 @@ async function runCoveragePrecheck(runDir, target) {
         rule: 'scenarios[].result ∈ {PASS,FAIL,SKIP,NOT_RUN}。NOT_RUN = 本次未执行（不等于失败，但不得计为已覆盖）。覆盖结论必须区分「已执行且通过」与「未执行」两种状态；source 为 null 表示未找到 acceptance 日志，此时全部场景按 NOT_RUN 处理。',
       },
       note: '由 driver 预执行生成（v1.2.5+ 方案 A）。worker 只读此文件做覆盖交叉判定，禁止重新探索文件。',
+      count_verification: {
+        rule: 'scenarios.length === meta.scenarios；逐条清单 = scenarios[]（label 唯一，num 为整数主编号）',
+        method: 'JSON.parse 后 scenarios.length，与 meta.scenarios 严格相等',
+        scope_note: 'S368/S32 等前移/随动场景均在 scenarios[] 数组内、计入口径；编号断档是历史合并/退役所致，断档号不计入',
+      },
       exempt: { count: exemptKeywords.length, keywords: exemptKeywords, rule: 'changelog 数组中 exempt:true 的模块为非交付性章节（如修复批施工记录），跳过场景对账，coverage.md 中标注 EXEMPT 即可，不计入缺口' },
     },
     changelog: changelogModules,
