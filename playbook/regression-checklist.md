@@ -10,7 +10,7 @@
 
 **归并配额（硬门槛）**：新增 N 维 → 本版必须先真实归并 ≥N 维（被并维度检查内容实际移入目标维度，git diff 可查；注释压缩不算）；净增行数 > 警戒线余量 → 继续归并或移下一版——**只调警戒线不归并 = 不合格**。
 
-**行数警戒线（当前值）**：`regression-checklist.md` ≤ 1950 行、`acceptance-test.sh` ≤ 4500 行（4200→4300→4375→4500：v1.4.9 阶段五 P0-3 七场景探针库化后 4422 行；v1.4.8 阶段四 A 类分发 + 深模块批的真实内容增长——checklist 新增 6 维（#137-#142）并以归并对销 10 处后仍净增（审查面为新增非重复覆盖，非归并可消化），acceptance 新增 S401-S409 九场景（九新面各 1 行为锚）；按铁律超标上调不删内容，未做任何断言/场景删减；4300→4400 的上调**已由收敛批撤回**——v1.4.9 阶段四最终：checklist 1974→**1947**（零上调）+ acceptance 4381→**4374**（警戒线定 4375）。收敛手段：checklist 归并 5 处（#142/#129→#128 · #109→#101 · #106→#110 降为一行引用 · #143 解散移入 #16/#51/#110）+ 移入断言注释压缩；acceptance 折壳 2 处（S417→S379 · S415→S414）+ 摘除不可达死代码 17 行。两侧均按「先真实归并对销、再议是否上调」执行）；fresh-eyes 警戒线见 04-review-system.md 风格守护段。三条上调铁律：① 三判据全否方可调——(i) 新增非旧维度可扩展子项的独立审查面；(ii) 非既有场景/维度的重复覆盖；(iii) 真实防回归价值非归并压缩可消化；② 连续上调禁令——连续两版已调，本版须先真实归并对销方可再调；同版同侧只调一次（同版二次冻结）；③ **上调只记一行**——`旧值→新值（原因一句话）`，历史上调链不在此处累积（完整过程 git 历史可溯）。
+**行数警戒线（当前值）**：`regression-checklist.md` ≤ 1950 行、`acceptance-test.sh` ≤ 4500 行（v1.5.0 修复批实测注记：checklist 1949→1960 被 Round 1 修复批净增 11 行顶破 S426 结构锁——「口径105 注释演进链 + F6 动态窗口 + hook git-path 解析」均为真实判据内容，按「先归并对销」处理，见下方自检段）。
 
 **维度脚本编写四铁律**（教训——7 个 FAIL 维度中 5 个是脚本自身缺陷而非仓库问题，driver 白跑一轮）：
 
@@ -1316,10 +1316,8 @@ HARDCODED=$(grep -nE '(checklist|acceptance|fresh-eyes)[^0-9]{0,4}≤ ?1[0-9]{3}
 
 ```bash
 (
-# 待发版窗口态分支（对齐 check-version F6 动态判据——勿用硬编码版本字面量，禁考古）：
-# SSOT 已发版（tag 在位）+ 后继一版 devlog 在位 ⇒ 待发版窗口开，「13 包 == 目标版本」的
-# 检查对象尚不成立——发布属 SOP 阶段十，本维度标题即「发版后验证」。
-# 硬判 FAIL 会把「阶段五正常态」误报为 P0（run-03 实证：维度 97 因此被判阻塞）。
+# 待发版窗口态分支（对齐 check-version F6 动态判据——SSOT 已发版 + 后继一版 devlog 在位 ⇒ 窗口开；
+# 「13 包 == 目标版本」检查对象尚不成立（发布属 SOP 阶段十），硬判 FAIL 会把阶段五正常态误报 P0）：
 CUR_V=$(node -p "require('./package.json').version")
 NEXT_V=$(node -e "const p='${CUR_V}'.split('.').map(Number);console.log([p[0],p[1],p[2]+1].join('.')+'/'+[p[0],p[1]+1,0].join('.')+'/'+[p[0]+1,0,0].join('.'))")
 PEND=0; for cand in ${NEXT_V//\// }; do seg=$(echo "$cand"|cut -d. -f1-2); [ -s "docs/changelog/v${seg}/v${cand}.md" ] && PEND=1 && break; done
@@ -1337,11 +1335,8 @@ else
   done
 fi
 # 期望：全部 = 当前版本号；未到 → cd engine/<pkg> && npm publish --access public
-# 🔴 对账口径（大包 CDN 传播坑）：大包（如 orchestrator 410 文件）publish 后 CDN 传播可超 6×30s 轮询窗口——
-# `npm view <pkg> version` 走缓存路径可报旧值造成「假失败」。判据：
-# ① publish 日志含 `+ <pkg>@<版本>` 即已提交成功，勿按 view 超时判失败；
-# ② 对账改查 `npm view <pkg> dist-tags --json` 的 latest 字段（registry 主记录先行于 CDN）；
-# ③ 同版本重发会 E409——传播等待期内禁止重发；E409 staged 态约 5 分钟自动 finalize（见发版四坑实录③）。
+# 🔴 对账口径（大包 CDN 传播坑）：publish 日志含 `+ <pkg>@<版本>` 即成功；对账查 `npm view <pkg> dist-tags --json` 的
+# latest（registry 主记录先行于 CDN，view 缓存路径可报旧值假失败）；同版本重发 E409（staged ~5 分钟自动 finalize）。
 ) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -qE "^[[:space:]]{0,2}❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true
 ```
 
@@ -1479,8 +1474,8 @@ tmp_all=$( { grep -cF "[0-9;]*m//g" tools/check/test-count.sh 2>/dev/null || tru
 
 ```bash
 (
-# ① MCP tools 三处口径（SKILL.md / ARCHITECTURE 能力表 / dist 实测）——口径105，勿写死
-grep -q "105 tools" SKILL/SKILL.md || echo "⚠️ SKILL 工具速查漂移（口径105）" # 演进：52→60→61→66→67（train_submit）→79→80（corpus_export）→84→95（v1.4.7 商业平台接口版 +11）→97（v1.4.9 G9 设备注册面 +2）→99（v1.4.9 G10/G11 设备数据面 +2）→103（v1.4.9 G5b/G1 连接器与模板面 +4）→104（v1.4.9 批 5 router_session_push 承接面 +1）→105（v1.5.0 trace_reconcile），随 SSOT；锚词与 SKILL.md §MCP 工具速查同步升级
+# ① MCP tools 三处口径（SKILL.md / ARCHITECTURE 能力表 / dist 实测）——口径随 SSOT 动态对账，勿写死
+grep -q "105 tools" SKILL/SKILL.md || echo "⚠️ SKILL 工具速查漂移（口径105）" # 历史演进链 git log -p 可溯；锚词与 SKILL.md §MCP 工具速查同步升级
 node -e "const m=require('./engine/mcp/dist/tool-registry.js');const doc=require('./package.json').version;console.log('✅ TOOLS='+m.TOOLS.length+'（registry 实数，勿写死——发版后人工对 SSOT 口径）')"
 # ② snapshot tool 零 daemon 静态依赖（optionalDependencies 场景会炸）——排除注释行（🔴 import 铁律注释含 @sofagent/daemon；校准：grep -h 去前缀保排除生效）
 grep -hE "@sofagent/daemon" engine/mcp/src/tools/snapshot-list.ts engine/mcp/src/tools/snapshot-restore.ts 2>/dev/null | grep -vE "^[[:space:]]*//" | head -1 | grep -q . && echo "⚠️ snapshot 静态 import daemon 回潮"
@@ -1712,8 +1707,7 @@ grep -q "symlink\|realpath" engine/audit/src/rules/rule-a23-path-traversal.ts &&
 grep -q "escaped" engine/audit/src/permission/checker.ts && grep -q "ReDoS\|灾难性回溯\|正则注入" engine/audit/src/permission/checker.ts && echo "✅ 权限正则元字符转义加固在位" || echo "❌ 权限正则注入/ReDoS 防线丢失"
 # d: dashboard 静态一致性（双版本/缺省态谎报/图例配色/scrollTop 非法 API）
 grep -c "logo-version" tools/dashboard/dashboard.html | grep -qE "^[0-9]+$" && ! grep -q "document.scrollTop" tools/dashboard/dashboard.html && echo "✅ dashboard 版本单源 + 无非法 API" || echo "❌ dashboard 一致性回退"
-# e: H-01 install 后形态（原 #126 a 归并）——双 hook 在位 + 旧 hook .bak 化（S16 接管语义）
-# worktree 场景 .git 是文件而非目录，raw path 必假阴——git-path 动态解析（主仓共享 hooks 目录）：
+# e: H-01 install 后形态（原 #126 a 归并）——双 hook 在位 + 旧 hook .bak 化（S16 接管语义）；worktree .git 是文件，raw path 必假阴——git-path 动态解析
 HOOKS_DIR=$(git rev-parse --git-path hooks); test -f "$HOOKS_DIR/pre-commit" && test -f "$HOOKS_DIR/commit-msg" && echo "✅ 双 hook 在位（$HOOKS_DIR）" || echo "❌ hook 缺失（跑 install.sh）"
 # f: 断言校准三同步 + CI 纯净 fixture（原 #126 c/d 归并）——判定/展示/引用三处同步；hook 对账类测试自带迷你 dist 防 CI 假绿
 grep -q "450" playbook/acceptance-test.sh && grep -q "迷你 dist" engine/audit/src/commands/init.test.ts && echo "✅ 三同步示范 + 迷你 dist fixture" || echo "❌ 三同步/fixture 回潮"
@@ -1768,10 +1762,8 @@ grep -q "GLM_API_KEY" FORGE/models/profile.mjs && echo "✅ fork 适配提示在
 EMB=$(sed -n 's/^INSTALL_SHA256="\([a-f0-9]*\)".*/\1/p' bootstrap.sh); HEAD_H=$(git show HEAD:install.sh | shasum -a 256 | cut -d' ' -f1)
 if [ "$EMB" = "$HEAD_H" ]; then echo "✅ sha256 自洽（钉值 == HEAD install.sh 哈希）"
 else
-  # 待发版窗口态（对齐 check-version F6 动态判据——勿用硬编码版本字面量，禁考古）：
-  # SSOT 已发版（tag 在位）+ 后继一版 devlog 在位 ⇒ 待发版窗口开，
-  # install.sh 已随开发改动、钉值仍指向上一已发版 tag 属预期——回填与打 tag 同步于阶段九。
-  # 硬判 FAIL 会把「阶段五正常态」误报为 P0 阻塞（run-01 实证）。
+  # 待发版窗口态（对齐 check-version F6 动态判据——SSOT 已发版 + 后继一版 devlog 在位 ⇒ 窗口开；
+  # install.sh 已随开发改动、钉值仍指向上一已发版 tag 属预期——回填与打 tag 同步于阶段九；硬判 FAIL 会把阶段五正常态误报 P0。
   CUR_V=$(node -p "require('./package.json').version")
   NEXT_CANDS=$(node -e "const p='${CUR_V}'.split('.').map(Number);console.log([p[0],p[1],p[2]+1].join('.')+' '+[p[0],p[1]+1,0].join('.')+' '+[p[0]+1,0,0].join('.'))")
   PEND=0; PEND_NAME=""; for cand in $NEXT_CANDS; do seg=$(echo "$cand"|cut -d. -f1-2); [ -s "docs/changelog/v${seg}/v${cand}.md" ] && PEND=1 && PEND_NAME="$cand" && break; done
@@ -1932,12 +1924,10 @@ grep -q "SOFAGENT_EVOLVE_GATE ?? 'native'" engine/evolve/src/evolve-integration.
 
 # d: loop 概念归位与弃用承诺（深模块批条目 10）——三形态定位边界互不重叠声明在位（**明确不合并**：
 #    loop/ 对错门禁 · loop-agent/ 工程级崩溃判定 · refine-agent/ 质量好坏判据，两两判据与状态机不同）；
-#    optimization-loop 撤公开承诺但实现保留（撤承诺 ≠ 删实现）；loop --legacy 弃用承诺已由
-#    v1.5.0 存量清扫执行移除（显式拒绝 fail-closed）——判据随动翻新，对齐 acceptance S407 现行形态
+#    optimization-loop 撤公开承诺但实现保留（撤承诺 ≠ 删实现）；loop --legacy 已按弃用公告执行移除
+#    （v1.5.0 存量清扫，显式拒绝 fail-closed）——判据随动翻新，对齐 acceptance S407 现行形态
 for f in engine/orchestrator/src/loop/index.ts engine/orchestrator/src/loop-agent/driver.ts engine/orchestrator/src/refine-agent/refine-driver.ts; do grep -q "定位边界（v1.4.8 条目 10）" "$f" && grep -q "不合并" "$f" || { echo "❌ 三形态定位边界声明缺失: $f"; FAIL=1; }; done
 grep -q "runOptimizationLoop" engine/orchestrator/src/refine-agent/optimization-loop.ts && echo "✅ optimization-loop 实现保留（撤公开承诺 ≠ 删实现）" || { echo "❌ optimization-loop 实现被误删"; FAIL=1; }
-# v1.5.0 已按弃用公告执行移除（f0a1f13b）：判据随动翻新——--legacy 退役显式拒绝 fail-closed 在位
-# （对齐 acceptance S407 现行判据），弃用标记双面已成为历史形态，不再作为在位判据。
 grep -q "已于 v1.5.0 移除" engine/orchestrator/src/cli.ts && grep -q "args.includes('--legacy')" engine/orchestrator/src/cli.ts && echo "✅ loop --legacy 退役显式拒绝（fail-closed 在位）" || { echo "❌ loop --legacy 退役拒绝缺失（移除执行回退）"; FAIL=1; }
 [ "${FAIL:-0}" = "1" ] && { echo "维度140:FAIL"; exit 1; }; echo "维度140:PASS"
 ) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -qE "^[[:space:]]{0,2}❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true
