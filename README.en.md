@@ -123,42 +123,20 @@ One command selects your mounting tier: `bash install.sh --platform <platform-na
 
 🛡️ **The engine grows a governance face** — constraint-layer value made visible, ontology data that survives time, and evidence that reconciles across layers: governance KPI dashboard (dedicated Dashboard "Governance" tab: six KPI cards — boundary-trigger rate / audit coverage / HITL response latency / weekly trend / task-repetition rate / trace-reconcile consistency + dataset review card (human semantic-quality backstop) + lineage compliance report export (where data came from → which gates it passed → version evolution → audit-chain references — submittable to enterprise compliance/legal) + weekly report export) · bitemporal ontology facts (`validFrom`/`validTo` + `stateAt` point-in-time snapshots — "what did the system know on that day" + 3-tier progressive loading: entity digests → relations → full text, budget-linked) · Ontology Validation Engine (DAG cycle detection with 3-color DFS chain localization + schema-compat three-state + fail-closed activation gate — validator crashes also refuse activation) · cross-layer evidence reconciliation (new `trace_reconcile` tool: agent self-report vs git diff vs model behavior, three sources, four verdicts — consistent / omitted / hallucinated / misreported — "be a forensics officer, not a camera") · FDE companion-period completion (14-day wrap-up report + fde_deploy registration handoff) · legacy & naming cleanup (retired API removal + composeWithReactAgent alias offline + loop --legacy retirement [breaking] + `@sofagent/harness` → `@sofagent/inject` [breaking]) · DSH plugin event wiring (7 seamHandlers onto existing bridge APIs: 4 audit event slots + one each for inject/evolve/rollback, zero judgment-logic change). MCP tools 104 → **105** · tests 4805 → **4903** (13-package workspace count, release-time figure) · acceptance 352 → **357** scenarios. Full details in the [devlog](./docs/changelog/v1.5/v1.5.0.md) · earlier versions in [CHANGELOG](./CHANGELOG.md).
 
-## FDE Methodology
+## The Two FDE Harness Phases
 
-**The first half of the two stages.** Many companies adopt AI the wrong way around — they pick models, build platforms, and buy Agents first, only to find nobody uses them. The problem isn't the technology; it's that **they haven't figured out their own business processes before handing them to AI**.
+**On-site · produce the judgment** (FDE phase): map business flows (five-element dig + three-question test — price every AI node) → build the dual graphs (business graph for humans + ontology for AI) → decide AI nodes → deploy three-layer deliverables. Each node carries "done criteria (merge_criteria) · who approves (approver) · when it runs (trigger)", frozen into the deliverable.
 
-Most tools teach you how to build Agents; sofagent first answers **where AI should go** — turning that judgment from guesswork into a repeatable methodology:
+**Off-site · the judgment stays** (Harness phase): the FDE leaves, the judgment remains — daemon patrols 24/7, every commit triggers the 24 audit rules, snapshots are rollback-ready, experience keeps accumulating; evolution writes promotion and distilled reflection back into the deliverable.
 
-| Phase | Input | What happens | Deliverable |
-|-------|-------|--------------|-------------|
-| 1 · Map | Role roster · existing systems | **Five-element deep-dive** — capture each step's input / output / owner / time cost / pain points | Enterprise profile |
-| 2 · Triage | Enterprise profile | **Three-question triage** — which steps fit AI: 🔄 automate · ⚡ augment · 👤 leave alone, prioritized by ROI | Node plan + annual savings |
-| 3 · Deliver | Node plan | **Three-layer deliverables** — documents + Skills + runtime, so AI nodes actually run | Ontology + workflow.yml + skills/ |
+Both phases are one thing: **the deliverable is shared live state** (written on-site, read off-site, written back when evolving) — without FDE, the constraint layer has no criteria to execute; without the constraint layer, the FDE's judgment evaporates when they leave. That is why "FDE Harness" is not a bundle of two feature sets.
 
-Full methodology (four phases, twelve steps) in [FDE/GUIDE.md](./FDE/GUIDE.md) — a half-day read, enough to run FDE independently afterwards.
-
-> 💾 **Don't rush off after deployment**: each node's workflow is "burned" onto a USB drive through the DeepSeek Harness execution backend — the drive becomes one node, one key: plug it into any machine and it runs there (unplug, zero residue). The 6 open-source atomic plugins are already mounted into DSH (1 aggregate plugin also available) — burn and go.
-
-## FDE Skill System
-
-**The seam of the two stages** — on-entry judgment is frozen into Skills loaded alongside the node, and after departure the constraint layer executes against them. Deploying an AI node is only the first step: the chapters above cover how to map the flow and where to put it; this one covers how to keep it behaving every single time. The FDE Skill System answers that:
-
-- 📜 **SKILL.md** — the single main entry, loaded by your AI tool: routes to the corresponding sub-Skill by phase, with role norms auto-injected by task type (mapping / audit / orchestration)
-- 🧩 **Phase sub-Skills** — a five-step closed loop of entry → deep-dive → quantify → deliver → depart (01-entry → 05-exit); what to do and what to deliver at each step is defined up front
-- 🔒 **Harness constraint skeleton** — entry-gate / fde-template / engage / loop-check / task-closure… every step from entry to departure has its matching constraint template
-- 📚 **Knowledge asset pipeline (Distill)** — the structured pipeline of think.md reflection + knowledge maintenance is in place; measured data on capture effectiveness under sustained use is still accumulating (see [LIMITATIONS · core-effect measurements](./docs/LIMITATIONS.md#%E6%A0%B8%E5%BF%83%E6%95%88%E6%9E%9C%E5%AE%9E%E6%B5%8B%E6%83%85%E5%86%B5))
-
-> What gets deployed is not a bare Agent, but an **Agent with a constraint skeleton** — constraints are advisory, auditing is mandatory: the Agent may ignore the constraints, but every change gets audited without exception.
-
-## Constraint Layer (Harness)
-
-**The second half of the two stages.** The judgment generated on entry (merge_criteria / approver / trigger) is retained and enforced here — this is the half that keeps FDE judgment alive after the engineer leaves. The constraint layer is sofagent's behavioral foundation, with five capabilities:
-
-- **Injection** — inject enterprise constraints at Agent startup through the four-layer loading chain; constraints are advisory
-- **Audit** — 24 git-diff hard-evidence rules (quick runs 17 by default, 7 extensions enabled via config) + AgentShield five-face static config scanning; auditing is mandatory — every change gets audited, violations blocked on the spot
-- **Rollback** — auto-archived snapshot after every audit, one-click restore to any snapshot
-- **Distillation** — audit trails, think.md reflections, and industry cases distilled into reusable knowledge assets (knowledge/ base + SKILL files; knowledge capture is currently a format-only pipeline; content filling advances as models get wired in — see [LIMITATIONS](./docs/LIMITATIONS.md))
-- **Evolution** — think.md reflection + Dream Cycle + evolve, consuming distilled knowledge assets to get stronger automatically (knowledge capture is currently a format-only pipeline; content filling advances as models get wired in — see [LIMITATIONS](./docs/LIMITATIONS.md))
+| Go deeper | Where |
+|--------|--------|
+| Four-phase twelve-step methodology (half-day read) | [FDE/GUIDE.md](./FDE/GUIDE.md) |
+| Constraint layer's five capabilities · module layout | [ARCHITECTURE](./docs/ARCHITECTURE.md) |
+| Why they must be one · design no-go zones | [PHILOSOPHY](./docs/PHILOSOPHY.md) |
+| Skill system & knowledge pipeline | [FDE/Skill system](./FDE/README.md) |
 
 ## Installation
 
@@ -237,14 +215,6 @@ sofagent-audit --doctor    # verify the environment (optional)
 | **GitHub Action** | Auto-audit every PR, violations annotated on the diff lines | CI/CD | Set up once |
 | **install.sh full suite** | inject · audit · rollback · distill · evolve + daemon inspection + dashboard — the Agent's complete constraint layer | **Enterprise device** (server/computer running the AI nodes) | FDE residency |
 
-**Install-granularity comparison** (same engine, three install styles — pick by scenario):
-
-| Style | Command | Lifecycle | Best for |
-|--------------|---------|-----------|----------|
-| npx temporary | `npx -y -p @sofagent/audit sofagent-audit` | use-and-go, downloaded each time | quick audit of any repo, one-off checks outside CI |
-| npm in-project | `npm install @sofagent/audit` (project devDependency) | installed with project, version locked in package-lock | team projects with fixed deps, reproducible audits |
-| npm global | `npm install -g @sofagent/audit` | install once, use everywhere | daily audit across repos, daemon residency |
-
 **Rule marketplace** — community rulesets are published as `sofagent-ruleset-*` npm packages and loaded manually via `--ruleset-path` (which also accepts your own JSON rules):
 
 ```bash
@@ -283,18 +253,13 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # load the securit
 - 7 `cordis-plugin-sofagent*` plugin sources (6 atomic + 1 aggregate): [`engine/dsh-plugins/`](./engine/dsh-plugins/)
 
 | You want to know | Where |
+| What you want | Where |
 |:---------|:--------|
-| **Global index** (one entry to all docs, in Chinese) | [WIKI](./docs/WIKI.md) — EN summary: one-liner & product story · core concepts · architecture overview · file map · current status · glossary · intent-based navigation |
-| How to install, use, FAQ | [HANDBOOK](./docs/HANDBOOK.md) |
-| Architecture (constraint layer · injection chain · evolution · 24 rules) | [ARCHITECTURE](./docs/ARCHITECTURE.md) |
-| API overview (seven interface surfaces + 105 MCP tools) | [API](./docs/API.md) |
-| Design philosophy | [PHILOSOPHY](./docs/PHILOSOPHY.md) |
-| Industry validation & ecosystem positioning (differences from existing tools) | [VALIDATION](./docs/VALIDATION.md) |
-| Version roadmap | [ROADMAP](./docs/ROADMAP.md) |
-| What each version delivered | [CHANGELOG](./CHANGELOG.md) |
-| FDE diagnostic methodology (four phases, twelve steps) | [FDE/GUIDE.md](./FDE/GUIDE.md) |
-| Security statement · known limitations | [SECURITY](./SECURITY.md) · [LIMITATIONS](./docs/LIMITATIONS.md) |
-| Contribution guide | [CONTRIBUTING](./CONTRIBUTING.md) |
+| **Full doc index** (by intent) | [WIKI](./docs/WIKI.md) |
+| Install, use, troubleshoot | [HANDBOOK](./docs/HANDBOOK.md) |
+| Architecture & the 24 rules | [ARCHITECTURE](./docs/ARCHITECTURE.md) |
+| What each release did | [CHANGELOG](./CHANGELOG.md) |
+| Security statement · known limits | [SECURITY](./SECURITY.md) · [LIMITATIONS](./docs/LIMITATIONS.md) |
 
 > 🧪 **Engineering credibility**: 4903 tests / 13 module packages + 11 plugins (7 DSH + 4 OpenClaw) — the test count is a post-v1.4.9-release snapshot of main (rolls forward with fix batches; the v1.4.9 release-time figure was 4805); the current authoritative value is whatever `tools/check/test-count.sh` reports (package scope: 13 workspace packages; counting standard in [WIKI](./docs/WIKI.md)) · 24 audit rules · fresh-eyes independent review continuously running (environmental notes are documented in [docs/guides/review-system.md](./docs/guides/review-system.md). Performance figures are single-machine reference values; cross-tool benchmarking is scheduled for v1.4.x together with Benchmark integration).
 
