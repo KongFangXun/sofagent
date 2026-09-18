@@ -29,7 +29,7 @@
   "author": "KongFangXun",
   "//automerge": "v1.3.5 交付 4b：已切换 @automerge/automerge ^3.4.1（Rust WASM 稳定核心，旧 automerge 1.0.1-preview.7 包名废弃）。迁移面：team-state.ts / team-manager.ts / protocol.ts + core/federation.ts（API 对照见 v1.3.5 dev-prompt 交付 4b 段）。回归保险：orchestrator team-state.regression.test.ts（11 用例）+ 联邦同步测试。",
   "dependencies": {
-    "@automerge/automerge": "^3.4.1",
+    "@automerge/automerge": "^3.5.0",
     "@deepseek-ai/dsh": "0.1.5-rc.2",
     "@deepseek-ai/dsh-agent": "0.1.5-rc.2",
     "@deepseek-ai/dsh-app-boot": "0.1.5-rc.2",
@@ -44,8 +44,8 @@
     "@sofagent/inject": "1.4.9",
     "@sofagent/rules": "1.4.9",
     "@sofagent/evolve": "1.4.9",
-    "js-yaml": "^5.3.0",
-    "zod": "^4.4.3"
+    "js-yaml": "^5.4.2",
+    "zod": "^4.6.5"
   },
   "//optionalDependencies": "v1.4.5 T6 (R4)：benchmark/case-evaluator.ts:188 惰性 await import('@sofagent/eval')（裁剪安装时回退协议完成度），此前未声明——对齐 root package.json F-18 optionalDependencies 先例（惰性加载的跨 workspace 依赖声明为 optional，裁剪安装不断言）。",
   "optionalDependencies": {

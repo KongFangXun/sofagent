@@ -49,7 +49,7 @@
     "@sofagent/rules": "1.4.9",
     "@sofagent/evolve": "1.4.9",
     "@sofagent/think": "1.4.9",
-    "js-yaml": "^5.3.0"
+    "js-yaml": "^5.4.2"
   },
   "//optionalDependencies": "playwright 是 browser-tools.ts 惰性 require 的可选运行时（浏览器工具需要时才加载，缺失时降级返回提示不阻断安装）——放 dependencies 会经 umbrella 总包（npm i -g sofagent 硬依赖 mcp）强制全装数百 MB 浏览器二进制。照抄 root package.json @langchain/anthropic 的 optionalDependencies 先例。",
   "optionalDependencies": {
