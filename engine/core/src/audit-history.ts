@@ -7,7 +7,7 @@
 //
 // Functions moved:
 //   getHistoryFilePath, getEnvFingerprint, getHmacKey,
-//   checkHistoryChainIntegrity
+//   checkHistoryChainDetailed（布尔兼容版 checkHistoryChainIntegrity 已于 v1.5.0 退役）
 //
 // These functions depend only on node builtins + @sofagent/core,
 // so they live naturally in core.
@@ -16,7 +16,7 @@
 //   - 【本文件】engine/core/src/audit-history.ts —— 底层「哈希链完整性」原语层。
 //     零上层依赖（只用 node 内置 + core 自身），提供 getHistoryFilePath /
 //     getEnvFingerprint / getHmacKey / stableStringify / checkHistoryChainDetailed /
-//     checkHistoryChainIntegrity / validateHmacKey。供 doctor、daemon 等任意包直接复用。
+//     validateHmacKey。供 doctor、daemon 等任意包直接复用。
 //   - engine/audit/src/audit-history.ts —— 业务「审计历史持久化」层。re-export 本文件
 //     的原语，并叠加 AuditHistoryEntry 类型 + appendHistory/loadHistory/clearHistory
 //     （依赖 audit 域的规则结果类型与 sanitize 管道）。
@@ -579,18 +579,6 @@ export function checkHistoryChainDetailed(dataDir?: string, maxEntries?: number)
   }
 
   return { status: 'ok' };
-}
-
-/**
- * 验证 history.jsonl 的 hash chain 完整性（boolean 兼容版）
- * @deprecated 布尔语义无法区分「篡改」「历史不可复验」与「不可信」，新代码请用 checkHistoryChainDetailed
- * @returns true = 链完整（含可降级），false = 存在篡改、不可复验段或历史不足（insufficient）
- */
-export function checkHistoryChainIntegrity(dataDir?: string): boolean {
-  // 向后兼容：保留 boolean 契约（audit 包外部 API / acceptance-test.sh 依赖）。
-  // 注：'unverifiable' 与 'insufficient' 均返回 false——不可复验段 / 历史不足同样
-  //     视为「非完整」，但 doctor 已改用 checkHistoryChainDetailed 单独归类为黄色提示而非红色篡改。
-  return checkHistoryChainDetailed(dataDir).status === 'ok';
 }
 
 /**
