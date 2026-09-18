@@ -1,6 +1,7 @@
 # 阶段五：release-gate-loop 发版闸门
 
 > **必须 verdict=PASS 才能进阶段六~八。**
+> **入口前置闸门（阶段四产物核对）**：生成交接 prompt 前主 session 核对 `~/Desktop/abc-draft-vX.Y.Z.md` 为**正式草稿**（非 `.prompt.md` 降级残留）且 C 类分发 commit 在列——阶段四未真实完成即启动本阶段 = 下游全绿也建立在漏审上（[04 打勾前置产物核对](./04-review-system.md)第 1/2 项）。曾出现降级落盘被误当阶段四完成打勾、直冲本阶段的实锤——此闸为拦该形态而设。
 > **执行方式（自动收敛模式，单 session 制）：开新 session 执行循环「跑闸门 → verdict=FAIL 则该 session 自行修复全部发现项 → 重跑」直到 verdict=PASS（硬上限 5 轮）**——执行 session 独立承担脚本层、判断层与修复批；主 session 只做两件事：PASS 零信任复验、停手条件命中后接手分诊。不再需要「监控 session ↔ 主 session」来回切换。用下方「Prompt 模板」生成交接 prompt，**直接在对话中输出可复制的 prompt 文本块（不落盘文件），用户复制粘贴到新 session 执行**（与阶段三交付形式一致）。
 
 ---
