@@ -348,12 +348,15 @@
 /* @public */ export type { FatigueSignals, FatigueReport, FatigueAction } from './fatigue';
 
 // v1.3.5 交付 5 #1：FDE 陪跑期（部署后前 2 周每日 Refine 巡检）
+// v1.5.0 章五：期满总结报告（generateCompanionReport——执行统计+终态分布+介入汇总）
 /* @public */ export {
   runCompanionDaily,
   getCompanionState,
+  generateCompanionReport,
+  companionReportPath,
   COMPANION_DAYS,
 } from './companion';
-/* @public */ export type { CompanionState, CompanionRunResult } from './companion';
+/* @public */ export type { CompanionState, CompanionRunResult, CompanionReportStats } from './companion';
 
 // v1.3.5 交付 5 #4：FDE 节点注册表巡检（fde-registry.yaml cadence 调度）
 /* @public */ export { runFdeCompanionDaily } from './inspectors/fde-companion-daily';

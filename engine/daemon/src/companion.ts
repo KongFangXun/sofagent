@@ -18,12 +18,33 @@
 //   @sofagent/orchestrator（daemon → orchestrator ✓）。
 // ============================================================
 
-import { existsSync, readFileSync } from 'fs';
+import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'fs';
 import { join } from 'path';
-import { loadEnvConfig, getThinkPath, appendThinkEntry } from '@sofagent/core';
+import { loadEnvConfig, getThinkPath, appendThinkEntry, getDecisionLogPath } from '@sofagent/core';
 
 /** 陪跑期天数（部署后前 2 周） */
 export const COMPANION_DAYS = 14;
+
+/** 陪跑期期满总结报告落盘路径 */
+export function companionReportPath(dataDir?: string): string {
+  return join(dataDir ?? loadEnvConfig().dataDir, 'fde', 'companion-final-report.md');
+}
+
+/** 陪跑期巡检执行统计（think.md + decision-log 双源汇总） */
+export interface CompanionReportStats {
+  /** think.md 中 sofagent-companion 巡检条目数 */
+  thinkEntries: number;
+  /** decision-log 中 sofagent-companion 决策条数 */
+  decisionEntries: number;
+  /** Refine 终态分布（decision-log why 解析） */
+  finalStates: Record<string, number>;
+  /** 报告生成时间（ISO） */
+  generatedAt: string;
+  /** 部署时间（ISO） */
+  deployedAt: string | null;
+  /** 已部署天数（报告生成时点） */
+  daysSinceDeploy: number | null;
+}
 
 /** 陪跑期判定输入 */
 export interface CompanionState {
@@ -83,6 +104,141 @@ export function getCompanionState(dataDir?: string, now: Date = new Date()): Com
 }
 
 /**
+ * 陪跑期巡检统计——从 think.md（sofagent-companion 标记条目）与
+ * decision-log.jsonl（agentId=sofagent-companion）双源汇总。
+ *
+ * @param dataDir 数据目录
+ * @param state 陪跑期状态（deployedAt/daysSinceDeploy 复用）
+ */
+function collectCompanionStats(dataDir: string, state: CompanionState, now: Date): CompanionReportStats {
+  const stats: CompanionReportStats = {
+    thinkEntries: 0,
+    decisionEntries: 0,
+    finalStates: {},
+    generatedAt: now.toISOString(),
+    deployedAt: state.deployedAt,
+    daysSinceDeploy: state.daysSinceDeploy,
+  };
+
+  // think.md：统计 sofagent-companion 标记的巡检条目（审计视角那条）
+  const thinkPath = getThinkPath(dataDir);
+  if (existsSync(thinkPath)) {
+    try {
+      const thinkContent = readFileSync(thinkPath, 'utf-8');
+      stats.thinkEntries = (thinkContent.match(/\(sofagent-companion\)/g) ?? []).length;
+    } catch {
+      // 读失败按 0 计（报告仍生成，标注数据缺失）
+    }
+  }
+
+  // decision-log.jsonl：agentId=sofagent-companion 条目计数 + finalState 分布
+  const decisionLogPath = getDecisionLogPath(dataDir);
+  if (existsSync(decisionLogPath)) {
+    try {
+      const lines = readFileSync(decisionLogPath, 'utf-8').split('\n').filter((l) => l.trim() !== '');
+      for (const line of lines) {
+        try {
+          const entry = JSON.parse(line) as {
+            agentId?: string;
+            why?: { text?: string } | string;
+          };
+          if (entry.agentId !== 'sofagent-companion') continue;
+          stats.decisionEntries += 1;
+          const whyText = typeof entry.why === 'string' ? entry.why : (entry.why?.text ?? '');
+          const match = whyText.match(/finalState=([^，,\s]+)/);
+          if (match) stats.finalStates[match[1]!] = (stats.finalStates[match[1]!] ?? 0) + 1;
+        } catch {
+          // 单行坏 JSON 跳过（不改总行数语义）
+        }
+      }
+    } catch {
+      // 读失败按 0 计
+    }
+  }
+
+  return stats;
+}
+
+/**
+ * 生成陪跑期期满总结报告（v1.5.0 章五）。
+ *
+ * 数据源：think.md 双向写记录（执行统计）+ decision-log 统计（介入记录
+ * 汇总 + Refine 终态分布）。幂等——companion.json 已含 reportGeneratedAt
+ * 时跳过（返回 alreadyGenerated=true）。
+ *
+ * @param dataDir 数据目录（缺省 loadEnvConfig）
+ * @param now 当前时间（测试注入）
+ * @returns 报告路径 + 是否新生成（已生成时 path 为既有报告路径）
+ */
+export function generateCompanionReport(
+  dataDir?: string,
+  now: Date = new Date(),
+): { path: string; generated: boolean } {
+  const dir = dataDir ?? loadEnvConfig().dataDir;
+  const state = getCompanionState(dir, now);
+  const reportPath = companionReportPath(dir);
+
+  // 幂等判定：companion.json 已标记 reportGeneratedAt → 不重复生成
+  const markerPath = join(dir, 'fde', 'companion.json');
+  let marker: Record<string, unknown> = {};
+  if (existsSync(markerPath)) {
+    try {
+      marker = JSON.parse(readFileSync(markerPath, 'utf-8')) as Record<string, unknown>;
+    } catch {
+      // 坏标记按空处理（下面重建）
+    }
+  }
+  if (typeof marker.reportGeneratedAt === 'string') {
+    return { path: reportPath, generated: false };
+  }
+
+  const stats = collectCompanionStats(dir, state, now);
+
+  // 报告正文——FDE 离场前的交接底稿
+  const finalStateLines = Object.entries(stats.finalStates)
+    .map(([state_, count]) => `| ${state_} | ${count} |`)
+    .join('\n');
+  const report = [
+    '# FDE 陪跑期总结报告',
+    '',
+    `> 部署时间：${stats.deployedAt ?? '未知'}；本报告生成于 ${stats.generatedAt}（已部署 ${stats.daysSinceDeploy ?? '?'} 天，陪跑期 ${COMPANION_DAYS} 天已结束）`,
+    '',
+    '## 执行统计',
+    '',
+    `- think.md 陪跑巡检条目：**${stats.thinkEntries}** 条（含审计视角 + FDE 视角双向写）`,
+    `- decision-log 决策留痕：**${stats.decisionEntries}** 条（kind=ORCHESTRATION）`,
+    '',
+    '## Refine 终态分布',
+    '',
+    finalStateLines ? `| 终态 | 次数 |\n|------|------|\n${finalStateLines}` : '_（decision-log 无终态记录——数据缺失或陪跑期内无成功巡检）_',
+    '',
+    '## 介入记录汇总',
+    '',
+    stats.decisionEntries > 0
+      ? `共 ${stats.decisionEntries} 条介入决策（见 decision-log.jsonl，agentId=sofagent-companion）。若终态含 error:*，建议 FDE 离场前检查质量规则集与 LLM 链路。`
+      : '_（无介入决策记录——陪跑期内未产生巡检留痕）_',
+    '',
+    '---',
+    '',
+    `_本报告由 sofagent companion 自动生成（期满触发），后续可经 fde_registry 或 dashboard 查阅。_`,
+    '',
+  ].join('\n');
+
+  mkdirSync(join(dir, 'fde'), { recursive: true });
+  writeFileSync(reportPath, report, 'utf-8');
+
+  // companion.json 落 reportGeneratedAt 标记（deployedAt 一并保底写入——
+  // fde_deploy 衔接前部署的存量部署也能闭环）
+  marker.reportGeneratedAt = stats.generatedAt;
+  if (typeof marker.deployedAt !== 'string' && state.deployedAt !== null) {
+    marker.deployedAt = state.deployedAt;
+  }
+  writeFileSync(markerPath, JSON.stringify(marker, null, 2) + '\n', 'utf-8');
+
+  return { path: reportPath, generated: true };
+}
+
+/**
  * 单日陪跑巡检结果（结构化，供 inspector 消费/单测断言）。
  */
 export interface CompanionRunResult {
@@ -98,6 +254,8 @@ export interface CompanionRunResult {
   daysSinceDeploy: number | null;
   /** decision-log 是否写入成功（best-effort，失败不阻断） */
   decisionLogged: boolean;
+  /** 期满总结报告路径（v1.5.0 章五——期满首检生成时返回） */
+  reportPath?: string;
 }
 
 /**
@@ -127,13 +285,27 @@ export async function runCompanionDaily(
   // 1. 陪跑期判定
   const state = getCompanionState(dataDir, now);
   if (!state.active) {
+    // v1.5.0 章五：期满首检自动生成总结报告（幂等——已生成则跳过；
+    // deployedAt 已知但报告未生成时触发，FDE 离场交接底稿）
+    let reportGenerated = false;
+    if (state.deployedAt !== null) {
+      try {
+        reportGenerated = generateCompanionReport(dataDir, now).generated;
+      } catch (err) {
+        // 报告生成失败不阻断 tick 返回——可见即可
+        console.warn(`[sofagent] companion 期满报告生成失败（不阻断）: ${err instanceof Error ? err.message : String(err)}`);
+      }
+    }
     return {
       ran: false,
       reason: state.deployedAt === null
         ? '部署时间未知（无 companion.json / sessions/current.json）——保守跳过'
-        : `陪跑期已结束（已部署 ${state.daysSinceDeploy} 天 ≥ ${COMPANION_DAYS} 天）`,
+        : reportGenerated
+          ? `陪跑期已结束（已部署 ${state.daysSinceDeploy} 天 ≥ ${COMPANION_DAYS} 天）——期满总结报告已生成`
+          : `陪跑期已结束（已部署 ${state.daysSinceDeploy} 天 ≥ ${COMPANION_DAYS} 天）`,
       daysSinceDeploy: state.daysSinceDeploy,
       decisionLogged: false,
+      ...(reportGenerated ? { reportPath: companionReportPath(dataDir) } : {}),
     };
   }
 
