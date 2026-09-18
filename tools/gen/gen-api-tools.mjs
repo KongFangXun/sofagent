@@ -42,6 +42,8 @@ const NAME_TO_MODULE = {
   // 审计与合规
   run_audit: 'audit', audit_file: 'audit', audit_trail: 'audit', audit_data_change: 'audit',
   corpus_export: 'audit',
+  // 跨层证据对账（trace reconcile）——审计证据面：三源比对（trace / git diff / logs）+ 一致率
+  trace_reconcile: 'audit',
   playwright_navigate: 'audit', playwright_click: 'audit',
   playwright_screenshot: 'audit', playwright_assert: 'audit',
   // 工作流编排
