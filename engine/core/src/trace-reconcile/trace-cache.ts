@@ -116,7 +116,7 @@ export function loadDshSessionsCached(
 
   if (cachePath && cacheDirty) {
     try {
-      mkdirSync(join(options.dataDir!, 'cache', 'trace'), { recursive: true });
+      mkdirSync(join(options.dataDir!, 'cache', 'trace'), { recursive: true, mode: 0o700 });
       writeFileSync(cachePath, JSON.stringify(cache), 'utf-8');
     } catch {
       // 缓存写失败不阻断——降级为无缓存直读

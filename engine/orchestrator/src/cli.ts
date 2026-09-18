@@ -150,6 +150,13 @@ async function main() {
     case 'loop': {
       const resumeMode = args.includes('--resume');
 
+      // v1.5.0 退役收口：--legacy 已按 v1.4.7 弃用公告移除——显式拒绝（fail-closed），
+      // 不静默吞旗标跑 StateGraph（静默忽略会让旧脚本误以为仍在串行路径）
+      if (args.includes('--legacy')) {
+        console.error('❌ loop --legacy 已于 v1.5.0 移除（v1.4.7 弃用公告，兼容期一个大版本）。当前默认路径为 LOOP StateGraph 节点级流转，直接使用 `loop --task <描述>` 即可。');
+        process.exit(2);
+      }
+
       // v1.2.2 P3b：解析 --resolve / --decision / --data-dir
       const resolveIdx = args.indexOf('--resolve');
       const resolveCheckpointId = resolveIdx !== -1 ? args[resolveIdx + 1] : undefined;

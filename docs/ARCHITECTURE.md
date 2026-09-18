@@ -217,7 +217,7 @@ Agent = **模型 + 上下文 + 工具 + 状态 + 执行控制 + 权限 + 可观�
 v1.3.9 起对所有 workspace 包的入口 export 做显式分级，CI 门禁（[tools/check/public-api.mjs](./../tools/check/public-api.mjs)）拦截未 bump 版本的 `@public` 破坏性变更。
 
 **为什么是这个粒度**：
-- 基线覆盖 **13 个包**（12 个 `@sofagent/*` 模块包 + 工具包 `load-chain`；`engine/mcp` 无 `@public` 标注不入基线）——当前 13 包共 **2491 个 @public 符号**（以 `public-api.mjs` AST 解析为权威口径，非 grep 计数；v1.5.0 存量清扫退役 3 符号（composeWithDeepAgents + checkHistoryChainIntegrity 双导出），2494→2491——历史值 v1.4.0 时点 1456 / v1.4.6 时点 2168 / v1.4.7 时点 2364 已随版本演进失效，本值以门禁 baseline 对齐为准）。
+- 基线覆盖 **13 个包**（12 个 `@sofagent/*` 模块包 + 工具包 `load-chain`；`engine/mcp` 无 `@public` 标注不入基线）——当前 13 包共 **2547 个 @public 符号**（以 `public-api.mjs` AST 解析为权威口径，非 grep 计数；v1.5.0 双向变动：存量清扫退役 3 符号（composeWithDeepAgents + checkHistoryChainIntegrity 双导出）+ 新功能新增 56 符号（章一治理面 16 + 章二双时态 9 + 章八 trace 对账 24 + 章五数据集审阅 4 + 章五陪跑期 3），2491→2547——历史值 v1.4.0 时点 1456 / v1.4.6 时点 2168 / v1.4.7 时点 2364 已随版本演进失效，本值以门禁 baseline 对齐为准）。
 - 未标记的导出**默认视为 @public**（保守默认：宁可多承诺不可漏承诺），`@internal` 需显式标注。
 
 **为什么 @internal 破坏性变更不影响适配层**：
