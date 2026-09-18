@@ -208,7 +208,7 @@ const STEPS = {
   'regression':  { role: 'V', prompt: 'regression.md',  outputs: ['regression.md'],  inputs: ['regression-precheck.json'], precheck: true },
   'coverage':    { role: 'V', prompt: 'coverage.md',    outputs: ['coverage.md'],    inputs: ['acceptance.md', 'coverage-precheck.json'], precheck: true },
   'consolidate': { role: 'V', prompt: 'consolidate.md', outputs: ['stage6-report.md'], inputs: ['acceptance.md', 'regression.md', 'coverage.md'], maxTokens: 32000 },
-  'verdict':     { role: 'V', prompt: 'verdict.md',     outputs: ['verdict.md'],     inputs: ['stage6-report.md'] },
+  'verdict':     { role: 'V', prompt: 'verdict.md',     outputs: ['verdict.md'],     inputs: ['stage6-report.md'], maxTokens: 32000 },
   // v1.2.8 新增 F 步骤（LLM 步骤——verdict FAIL 后触发）
   'f-diagnose':  { role: 'F', prompt: 'f-diagnose.md',  outputs: ['fix-plan.md'],     inputs: ['verdict.md'] },
   'f-fix':       { role: 'F', prompt: 'f-fix.md',       outputs: ['fix-summary.md'],  inputs: ['fix-plan.md', 'verdict.md'] },
