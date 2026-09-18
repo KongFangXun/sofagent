@@ -182,3 +182,18 @@
   ConnectorEntry,
   ConnectorRegisterResult,
 } from './cli/plugin-gate';
+
+// ============================================================
+// v1.5.0 章一：治理 KPI 聚合（dashboard「治理」tab 数据引擎）+
+// v1.4.9 第七章 stats 同源出口（--stats 契约不变，本批补公共面）
+// ============================================================
+/* @public */ export { computeAuditStats, formatStatsReport, formatStatsJson, readHistoryEntries } from './stats';
+/* @public */ export type { AuditStatsReport, StatsOptions, RuleTriggerEntry } from './stats';
+/* @public */ export {
+  computeGovernanceKpis,
+  formatGovernanceWeekly,
+  buildDatasetLineageReport,
+  readDecisionEntries,
+  readDatasetVersionsLite,
+} from './governance';
+/* @public */ export type { GovernanceKpiReport, GovernanceOptions, DatasetVersionLite, LineageReportOptions } from './governance';

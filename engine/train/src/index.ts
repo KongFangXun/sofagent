@@ -418,11 +418,15 @@
   listDatasetVersions,
   getDatasetVersion,
   diffDatasetVersions,
+  reviewDatasetVersion,
 } from './dataset-version';
 /* @public */ export type {
   DatasetVersionRecord,
   RecordDatasetVersionInput,
   DatasetVersionDiff,
+  ReviewDatasetVersionInput,
+  ReviewDatasetVersionResult,
+  DatasetReviewStatus,
 } from './dataset-version';
 /* @public */ export {
   requiredFieldsOf,
