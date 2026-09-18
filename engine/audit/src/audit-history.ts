@@ -10,7 +10,7 @@
 //     并 re-export core 的哈希链原语（见下方 import/export）。
 //   - engine/core/src/audit-history.ts —— 底层「哈希链完整性」原语层（零上层依赖）：
 //     getHistoryFilePath / getEnvFingerprint / getHmacKey / stableStringify /
-//     checkHistoryChainDetailed / checkHistoryChainIntegrity / validateHmacKey。
+//     checkHistoryChainDetailed / validateHmacKey。
 //   依赖方向单向：audit → core（core 绝不反向依赖 audit）。业务持久化含 audit 规则
 //   结果域类型，不能下沉到 core 底座（会违反 core「零上层依赖」分层契约），故保持两份。
 //
@@ -50,11 +50,11 @@ import {
 } from '@sofagent/core';
 import type { RuleCheck, ActionGovernance } from './rules/types';
 
-// v1.2.0: checkHistoryChainIntegrity + helpers sunk to core;
+// v1.2.0: checkHistoryChainDetailed + helpers sunk to core;
 // import for internal use (appendHistory/loadHistory/clearHistory still need them),
 // re-export for external backward compat.
 import { getHistoryFilePath, getEnvFingerprint, getHmacKey, stableStringify, validateHmacKey } from '@sofagent/core';
-export { checkHistoryChainIntegrity, checkHistoryChainDetailed, getHistoryFilePath, getHistoryAnchorFilePath, getHmacKey, validateHmacKey } from '@sofagent/core';
+export { checkHistoryChainDetailed, getHistoryFilePath, getHistoryAnchorFilePath, getHmacKey, validateHmacKey } from '@sofagent/core';
 
 /**
  * 对 ruleResult 做脱敏处理——避免审计工具自身成为第二泄漏点。
@@ -350,7 +350,7 @@ export function appendHistory(entry: AuditHistoryEntry, dataDir?: string): void 
   // 有密钥时签名整条记录（防 Agent 重算整链）；无密钥时降级 SHA-256（不写 hmacSig，向后兼容）。
   // 修复（含回归修复）：必须先脱敏再签名——HMAC 基于【已脱敏的 baseSanitized】计算，
   // 而非原始 entry.ruleResults。原因：落盘记录经过 sanitizeRuleResult()，它对 A2(number=2)/A9(number=9)
-  // 的 details 强制脱敏覆盖；读侧 checkHistoryChainIntegrity 校验的正是「脱敏后」记录。若写侧用 raw
+  // 的 details 强制脱敏覆盖；读侧 checkHistoryChainDetailed 校验的正是「脱敏后」记录。若写侧用 raw
   // ruleResults 签名，含 A2/A9 的条目 HMAC 永远与读侧不匹配，被 hmacAlgo:'stable' 判为篡改 →
   // 干净链误报链断裂（run-09 回归 false-positive）。先脱敏再签名后，写/读两侧 HMAC 输入完全一致。
   const hmacKey = getHmacKey();

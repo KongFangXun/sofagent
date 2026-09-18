@@ -32,7 +32,7 @@
 
 // clearHistory 已移出公共 exports——「用于测试」的破坏性 API 不应挂在包默认导出，
 // 任何人调一行 clearHistory() 就能清空全部审计历史。内部测试仍可从模块路径导入。
-/* @public */ export { loadHistory, appendHistory, checkHistoryChainIntegrity, isHmacKeyConfigured, validateHmacKey } from './audit-history';
+/* @public */ export { loadHistory, appendHistory, isHmacKeyConfigured, validateHmacKey } from './audit-history';
 /* @public */ export type { AuditHistoryEntry } from './audit-history';
 
 /* @public */ export { VERSION } from '@sofagent/core';

@@ -13,7 +13,6 @@ import {
   appendHistory,
   loadHistory,
   clearHistory,
-  checkHistoryChainIntegrity,
   checkHistoryChainDetailed,
   getHistoryFilePath,
   type AuditHistoryEntry,
@@ -164,7 +163,7 @@ describe('audit-history', () => {
 
   it('appendHistory 深扫不破坏 HMAC 验签（先脱敏再签名语义延伸到嵌套面）', () => {
     // 深扫结果必须是签名输入——读侧 recordForSig 复算需一致。
-    // 用 checkHistoryChainIntegrity 走一遍：写入两条（一条带嵌套密钥），
+    // 用 checkHistoryChainDetailed 走一遍：写入两条（一条带嵌套密钥），
     // 链完整性校验必须通过（写读两侧同一深扫管道 → 验签恒一致）。
     const leakKey = ['sk-', 'c'.repeat(40)].join('');
     const e1 = makeEntry('2026-01-01T00:00:00.000Z', 0);
@@ -179,8 +178,8 @@ describe('audit-history', () => {
     appendHistory(makeEntry('2026-01-02T00:00:00.000Z', 0), testDir);
 
     // 写读两侧脱敏一致 → 链校验通过（不因深扫差异误判篡改）
-    // 契约：checkHistoryChainIntegrity 返回 boolean（非对象）
-    expect(checkHistoryChainIntegrity(testDir)).toBe(true);
+    // 契约：checkHistoryChainDetailed 返回 status === 'ok'（三态语义）
+    expect(checkHistoryChainDetailed(testDir).status).toBe('ok');
   });
 
   it('appendHistory 深扫脱敏未知嵌套字段（新字段未声明策略时 fail-safe 默认脱敏）', () => {
@@ -289,7 +288,7 @@ describe('audit-history', () => {
     // 场景：用户从 v1.0.5 升级到 v1.0.6
     // history.jsonl 前两条是旧格式（无 hashVersion，旧算法 hash 不含指纹）
     // 第三条是新格式（hashVersion:2，新算法 hash 含环境指纹）
-    // checkHistoryChainIntegrity 应返回 true（逐条判断，不误报）
+    // checkHistoryChainDetailed 应返回 ok（逐条判断，不误报）
     // v1.4.8 起：密钥在场 + 条目无签名 = 不可复验（黄）——本测试只验证 hashVersion
     // 混合算法选择，与密钥态无关，指向不存在的密钥路径屏蔽机器 ~/.sofagent-key 差异。
     const savedKeyPath = process.env.SOFAGENT_KEY_PATH;
@@ -325,7 +324,7 @@ describe('audit-history', () => {
       writeFileSync(histPath, JSON.stringify(e1) + '\n' + JSON.stringify(e2) + '\n');
 
       // 验证纯旧格式时链完整
-      expect(checkHistoryChainIntegrity(testDir)).toBe(true);
+      expect(checkHistoryChainDetailed(testDir).status).toBe('ok');
 
       // 追加一条新格式（appendHistory 自动用 hashVersion:2 + 环境指纹）
       appendHistory({
@@ -339,7 +338,7 @@ describe('audit-history', () => {
       // 混合格式——不应误报链断裂
       // 关键：e2→e3 这一步用 curr(e3).hashVersion === 2 决定算法（含指纹）
       //      e1→e2 这一步用 curr(e2).hashVersion === undefined 决定算法（不含指纹）
-      expect(checkHistoryChainIntegrity(testDir)).toBe(true);
+      expect(checkHistoryChainDetailed(testDir).status).toBe('ok');
     } finally {
       if (savedKeyPath === undefined) delete process.env.SOFAGENT_KEY_PATH;
       else process.env.SOFAGENT_KEY_PATH = savedKeyPath;
@@ -416,7 +415,7 @@ describe('audit-history', () => {
       // P0-3: 单条不足 2 条 → insufficient（不可信）；≥2 条才能验证链
       appendHistory(makeEntry('2026-02-01T00:00:00Z', 0), testDir);
       appendHistory(makeEntry('2026-02-01T00:00:01Z', 0), testDir);
-      expect(checkHistoryChainIntegrity(testDir)).toBe(true);
+      expect(checkHistoryChainDetailed(testDir).status).toBe('ok');
       const lines = readFileSync(getHistoryFilePath(testDir), 'utf-8').trim().split('\n');
       const parsed = JSON.parse(lines[0]!);
       expect(parsed.hmacSig).toBeUndefined();
@@ -426,7 +425,7 @@ describe('audit-history', () => {
       writeFileSync(KEY_PATH, 'test-hmac-key-1234567890', { mode: 0o600 });
       appendHistory(makeEntry('2026-02-02T00:00:00Z', 0), testDir);
       appendHistory(makeEntry('2026-02-02T00:00:01Z', 0), testDir);
-      expect(checkHistoryChainIntegrity(testDir)).toBe(true);
+      expect(checkHistoryChainDetailed(testDir).status).toBe('ok');
       const lines = readFileSync(getHistoryFilePath(testDir), 'utf-8').trim().split('\n');
       const parsed = JSON.parse(lines[0]!);
       expect(typeof parsed.hmacSig).toBe('string');
@@ -578,7 +577,7 @@ describe('audit-history', () => {
       appendHistory(makeEntry('2026-03-01T00:00:00Z', 2, a2a9), testDir);
       appendHistory(makeEntry('2026-03-02T00:00:00Z', 2, a2a9), testDir);
       // 写侧基于脱敏记录签名、读侧校验脱敏记录 → 必须一致（不因 A2/A9 脱敏差异误判篡改）
-      expect(checkHistoryChainIntegrity(testDir)).toBe(true);
+      expect(checkHistoryChainDetailed(testDir).status).toBe('ok');
     });
 
     it('有 HMAC 密钥：篡改条目 → HMAC 校验失败（链断裂）', () => {
@@ -586,14 +585,14 @@ describe('audit-history', () => {
       appendHistory(makeEntry('2026-02-03T00:00:00Z', 0), testDir);
       appendHistory(makeEntry('2026-02-04T00:00:00Z', 0), testDir);
       // 篡改前干净链必须通过（确保不是因 A2/A9 脱敏不一致而“假通过”）
-      expect(checkHistoryChainIntegrity(testDir)).toBe(true);
+      expect(checkHistoryChainDetailed(testDir).status).toBe('ok');
       // 篡改最后一条（exitCode 从 0 改成 2）→ HMAC 验签失败 → 链断裂
       const histPath = getHistoryFilePath(testDir);
       const lines = readFileSync(histPath, 'utf-8').trim().split('\n');
       const tampered = JSON.parse(lines[lines.length - 1]!);
       tampered.exitCode = 2;
       writeFileSync(histPath, lines.slice(0, -1).concat(JSON.stringify(tampered)).join('\n') + '\n');
-      expect(checkHistoryChainIntegrity(testDir)).toBe(false);
+      expect(checkHistoryChainDetailed(testDir).status).toBe('tampered');
     });
 
     it('P0-3(2026-08-02 复核修正): stable 条目 + hashVersion=2 + HMAC 不匹配且环境指纹一致 → tampered', () => {

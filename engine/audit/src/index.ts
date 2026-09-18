@@ -74,8 +74,8 @@ import { resolveHooksDir, installHooks } from './hook-install';
 import { compileSanitizePattern } from './ruleset-loader';
 
 // Re-export for external consumers —— doctor 等外部调用方需要通过
-// require('@sofagent/audit') 使用 checkHistoryChainIntegrity
-export { checkHistoryChainIntegrity } from './audit-history';
+// v1.5.0: checkHistoryChainIntegrity 已移除（退役公告见 CHANGELOG 索引）——
+// require('@sofagent/audit') 请改用 checkHistoryChainDetailed（audit-history re-export）。
 
 // Re-export core 审计原语——daemon/mcp/orchestrator 通过 @sofagent/audit 消费（v1.2.9）
 export { runRules, productSignature } from './reporter';
@@ -421,15 +421,6 @@ function parseArgs(argv: string[]): Args {
       console.log('  sofagent-audit federation-distill [--json]           联邦蒸馏');
       console.log('  sofagent-audit corpus export [--scope all] [--json]  训练语料导出三件套（规则+方法论+样本）');
       console.log('');
-      if (verbose) {
-        console.log('v1.0.8 已弃用的子命令（将在 v1.5.0 移除，请尽快迁移）:');
-        console.log('  compose      → sofagent-orchestrator compose');
-        console.log('  subagent run → sofagent-orchestrator subagent run');
-        console.log('  evolve-run → sofagent-evolve');
-        console.log('  ab-test      → sofagent-ab-test');
-        console.log('  daemon       → sofagent-daemon');
-        console.log('  doctor/verify → sofagent-core（npm install -g @sofagent/core）');
-      }
       console.log('模式对照表:');
       console.log('  默认模式    全部规则（含 Agent 日志）   exit 0/1/2');
       console.log('  --silent    跳过依赖 Agent 日志的规则（A3/A7/A8/A14 等）exit 0/1/2');
@@ -787,17 +778,7 @@ async function main(): Promise<void> {
   // DP-1: 版本一致性自检（轻量、不阻断）
   checkVersionConsistency();
 
-  // === v1.0.8 deprecation shim ===
-  // 在 args 解析之后、主 switch 分支之前，拦截已迁移的子命令
   const rawArgs = process.argv.slice(2);
-
-  // compose → sofagent-orchestrator (v1.0.8 友好报错降级，不再 execFileSync)
-  if (rawArgs.includes('compose')) {
-    console.error('⚠️  "sofagent-audit compose" 已弃用，将在 v1.5.0 移除，请尽快迁移到 "sofagent-orchestrator compose"。');
-    console.error('   请直接运行：sofagent-orchestrator compose');
-    console.error('   安装：npm install -g @sofagent/orchestrator');
-    exit(1);
-  }
 
   // doctor → @sofagent/core 内置健康检查(移除对 core CLI 的 doctor 错误推荐——
   // core CLI 只支持子命令形式，flag 形式不合法；且 audit --doctor 已直接调用 core 的
@@ -830,14 +811,6 @@ async function main(): Promise<void> {
       }
       throw err;
     }
-  }
-
-  // verify → sofagent-core (v1.0.8 友好报错降级，不再 execFileSync)
-  if (rawArgs.includes('verify')) {
-    console.error('⚠️  "sofagent-audit verify" 已弃用，将在 v1.5.0 移除，请尽快迁移到 "sofagent-core verify"。');
-    console.error('   请直接运行：sofagent-core verify');
-    console.error('   安装：npm install -g @sofagent/core');
-    exit(1);
   }
 
   const args = parseArgs(process.argv);
