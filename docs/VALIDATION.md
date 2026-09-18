@@ -345,6 +345,12 @@ DHH（Rails 之父）的 Omarchy——「有主见」的 Arch Linux 桌面发行
 
 > 📖 来源：周建军、庄明光、沈琪《基于领域本体约束与大语言模型推理的风险异动归因研究》，《证券信息技术》2026 第 1 卷 63-77 页（汇添富基金，2026-08 公开）；95%/99% 为论文摘要原值（已核验）
 
+### Meta-RSI 三算子与保护面（2026-09）
+
+递归自我改进（RSI）的统一形式化：三个可写面算子（Data-RSI 经验池 / Harness-RSI 五槽位 scaffold / Model-RSI 参数内化）共享一个闭环内核（消费学习信号→提出改动→验证器裁决→回流下一轮），其上加改进调度器（横向编排算子顺序 + 纵向改写算子提案策略）。实测：无外部教师模型，目标模型自演全部角色，自托管 35B 模型四基准平均自提升 10.9 分；六款前沿 API 模型仅走 Harness 路线（不动权重）平均 +7.3 分——**context-space 改进对不可训练的前沿模型同样有效**。对 sofagent 三条判据级启示：① **保护面独立**——评估器与发布门必须在所有可写面之外（eval-gate + audit HMAC 链 + release-gate-loop 的既有架构恰是这个形态）；② **验证差距是自进化的适用边界**——自提升仅在有廉价验证器的域成立（代码/数学），开放式域必须人审兜底；③ **多层写的成本模型**——context 更新「每次推理重付」（租用），权重更新「一次付清」（摊销），prompt/skill/微调三层须有显式晋级判据而非平行堆叠。行业 RSI 分级（弱/中/强）与 sofagent 五层谱系的对位见 [PHILOSOPHY · 自进化五层谱系](./PHILOSOPHY.md#自进化的五层谱系update是分界线)。
+
+> 📖 来源：[MetaRSI/RSI²: A Meta-Recursive Self-Improving System (arXiv 2609.06396)](https://arxiv.org/abs/2609.06396)（CosmosMind，2026-09-06）；[开源 RSI-Harness（Genome 配置层）](https://github.com/CosmosMind-ai/RSI-Harness)（2026-09-08）；验证差距与两 substrate 成本模型综述（Two Substrates of Self-Evolving Agents，2026）
+
 ---
 
 > 对应的落地借鉴项清单见 [ROADMAP · 探索方向](./ROADMAP.md#探索方向)。
