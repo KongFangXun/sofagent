@@ -893,16 +893,25 @@ else
   CL_LINE_VER=$(echo "$CHANGELOG_LINE" | grep -oE '\*\*v[0-9]+\.[0-9]+\.[0-9]+\*\*' | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' || echo "")
   # 待发版态兼容：CHANGELOG 已收录下一版「⏳ 待发版」条目而 package.json 尚未 bump——
   # 此为发版流程固有次序（条目先行、版本号发版时统一 bump），非格式漂移。
-  # 判定：锚定行含「待发版」且版本号恰为 CUR_VERSION 的下一补丁位 → 放行（数字照常校验）。
+  # 判定：锚定行含「待发版」且版本号为 CUR_VERSION 的后继一版（patch 后继 / minor 后继
+  # patch 归零 / major 后继 minor+patch 归零——与 check-version §24 四态同族；只建模
+  # patch+1 会把 1.4.9→1.5.0 的 minor 窗口误判 FAIL）→ 放行（数字照常校验）。
   CL_PENDING_OK=false
   if [[ "$CHANGELOG_LINE" == *待发版* ]]; then
     CUR_PATCH=$(echo "$CUR_VERSION" | cut -d. -f3)
     PENDING_VER="${CUR_VERSION%.*}.$((CUR_PATCH + 1))"
     if [ "$CL_LINE_VER" = "$PENDING_VER" ]; then
       CL_PENDING_OK=true
-      if [ "$QUIET" = false ]; then
-        echo -e "  ${YELLOW}⚠ CHANGELOG 锚定 v${CL_LINE_VER}（待发版态，package.json=${CUR_VERSION}）——放行，数字照常校验${NC}"
-      fi
+    fi
+    # minor 后继（patch 归零）：1.4.9 → 1.5.0 / major 后继（minor+patch 归零）：1.4.9 → 2.0.0
+    IFS='.' read -r _cma _cmi _cp <<< "${CUR_VERSION}"
+    _pending_minor="${_cma}.$((_cmi + 1)).0"
+    _pending_major="$((_cma + 1)).0.0"
+    if [ "$CL_LINE_VER" = "$_pending_minor" ] || [ "$CL_LINE_VER" = "$_pending_major" ]; then
+      CL_PENDING_OK=true
+    fi
+    if [ "$CL_PENDING_OK" = true ] && [ "$QUIET" = false ]; then
+      echo -e "  ${YELLOW}⚠ CHANGELOG 锚定 v${CL_LINE_VER}（待发版态，package.json=${CUR_VERSION}）——放行，数字照常校验${NC}"
     fi
   fi
   if [ "$CL_LINE_VER" != "$CUR_VERSION" ] && [ "$CL_PENDING_OK" = false ]; then
