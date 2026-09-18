@@ -37,6 +37,7 @@
     result: FAIL
     rules_triggered:
     - A1
+    - A2
     severity: P0
 - id: A2-pass-01
   description: A2 正常用例：代码中无硬编码密钥
