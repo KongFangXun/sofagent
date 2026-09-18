@@ -1,5 +1,5 @@
 {
-  "name": "@sofagent/harness",
+  "name": "@sofagent/inject",
   "version": "1.4.9",
   "engines": {
     "node": ">=18"
@@ -16,7 +16,7 @@
   },
   "keywords": [
     "sofagent",
-    "harness",
+    "inject",
     "constraint"
   ],
   "license": "MIT",
