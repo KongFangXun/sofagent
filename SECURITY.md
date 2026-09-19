@@ -290,7 +290,14 @@ sofagent 是一套 FDE 能力——底层引擎是纯本地 Harness 中间件（
 
 ### 审计模块安全性（sofagent-audit）
 
-sofagent-audit（v0.92+）是 TypeScript CLI，读取 git diff 和文件系统的主力路径是 `execFileSync('git', ...)`（数组传参、不走 shell）。不使用 eval、不执行外部脚本；git 命令参数以数组传入（`['diff', '--unified=3', range]`），range 参数经过正则校验 `[a-zA-Z0-9~^.\-]`，无命令注入风险。**精确边界（v1.4.5 核实）**：包内存在 7 处 `execSync`（shell 形态）调用，均为静态可信命令串——audit 侧 6 处（webhook.ts 的 `git rev-parse --show-toplevel` / `git rev-parse --short HEAD` / `git config user.name`、init.ts 的 `which/where sofagent-daemon` / `which/where sofagent-audit`、agent-shield.ts 的 `ps aux`）+ core 侧 1 处（audit-history.ts 的 `git rev-parse --git-dir`）——命令体零外部输入插值，插值面仅限「取回输出后 trim」；审计主链（diff 解析/规则执行）不走这些路径。命令注入静态扫（`tools/check/check-shell-injection.sh`）持续覆盖此面。
+sofagent-audit（v0.92+）是 TypeScript CLI，读取 git diff 和文件系统的主力路径是 `execFileSync('git', ...)`（数组传参、不走 shell）。不使用 eval、不执行外部脚本；git 命令参数以数组传入（`['diff', '--unified=3', range]`），range 参数经过正则校验 `[a-zA-Z0-9~^.\-]`，无命令注入风险。
+
+**精确边界（v1.4.5 核实）**：包内存在 7 处 `execSync`（shell 形态）调用，均为静态可信命令串——命令体零外部输入插值，插值面仅限「取回输出后 trim」：
+
+- audit 侧 6 处：`webhook.ts`（`git rev-parse --show-toplevel` / `--short HEAD` / `git config user.name`）· `init.ts`（`which/where sofagent-daemon` / `sofagent-audit`）· `agent-shield.ts`（`ps aux`）
+- core 侧 1 处：`audit-history.ts`（`git rev-parse --git-dir`）
+
+审计主链（diff 解析 / 规则执行）不走这些路径。命令注入静态扫（`tools/check/check-shell-injection.sh`）持续覆盖此面。
 
 **数据访问**：审计模块核心不发起网络请求（webhook 为可选功能，需显式配置 URL 后才启用；模型推理出口仅 Dream Cycle「真实大脑」/ train_serve——同样 opt-in，需显式配置 `SOFAGENT_MODEL_API_KEY` 等才启用，见「已知风险」例外二）；写入仅限 `~/.sofagent/data/` 目录（审计历史、session 报告、快照等）。
 
@@ -446,7 +453,7 @@ chmod 600 ~/.sofagent/data/audit/history.jsonl.bak-*
 
 | 绕过方式 | 检测手段 | 缓解 |
 |----------|---------|------|
-| `git commit --no-verify` | ⚠️ post-commit hook 事后对账留痕（不阻断） | `--init` 同时装 pre-commit + commit-msg + post-commit（v1.4.2 三层防线）：绕过 commit-msg 的 commit 会被 post-commit 对账——命中拦截记录时输出「疑似绕过」提示并留痕 history.jsonl；未命中输出 INFO 提示可用 `--verify-commit <SHA>` 复核。定期 `--doctor` 检查未审计的 commit（`git log --grep` 匹配审计签名）；CI 侧 `sofagent-audit --diff HEAD~1..HEAD` 兜底。**加密态边界（v1.5.0）**：静态加密开启后 history.jsonl 密文行（`SOFAGENT-AGE-V1` 前缀）明文对账不可用——post-commit 降级为显式提示（全密文态输出「明文对账不可用，依赖 CI 兜底」；混合态对明文行对账并跳过密文行计数），`--no-verify` 检测在加密态依赖 CI 侧 `sofagent-audit --diff` 兜底 |
+| `git commit --no-verify` | ⚠️ post-commit hook 事后对账留痕（不阻断） | `--init` 装三层防线（pre-commit + commit-msg + post-commit，v1.4.2）：绕过 commit-msg 的 commit 由 post-commit 对账——命中拦截记录时输出「疑似绕过」并留痕 history.jsonl，未命中输出 INFO 且可用 `--verify-commit <SHA>` 复核；定期 `--doctor` 检查未审计 commit；CI 侧 `sofagent-audit --diff` 兜底。**加密态边界（v1.5.0）**：静态加密开启后 history.jsonl 为密文（`SOFAGENT-AGE-V1` 前缀），明文对账不可用——post-commit 降级为显式提示（全密文态提示依赖 CI 兜底；混合态只对明文行对账），`--no-verify` 检测在加密态依赖 CI 兜底 |
 | `git add -f .sofagent/`（审计数据强制入库） | ✅ v1.4.2 起三层防线拦截——pre-commit 在 commit 对象生成前将 .sofagent/ 移出暂存区（主防线，对当次 commit 直接生效）；commit-msg 阶段再兜一次（护磁盘 index 防后续 commit 卷入）；post-commit 扫 HEAD tree 命中即告警 | pre-commit reset 失败（index.lock 竞态）时 fail-loud 拒绝 commit（宁可 false-retry 不可静默入库）；CI 侧 `--diff` 仍可发现已入库残留 |
 | 删除 commit-msg hook 文件 | ⚠️ `--doctor` 可检测 | daemon 文件监控（fs-watch，v1.3.6 起）可配置监控 .git/hooks/ 目录变化（watch.yml 自定义路径）；hooks 目录监控未内置为默认巡检项（规划中） |
 | 伪造 Agent 日志（task/logs） | ❌ 无自动检测 | 人工抽查 + 交叉验证 git log 时间戳 |
