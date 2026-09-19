@@ -2,7 +2,7 @@
 <!--
   sofagent Dashboard 驾驶舱——安装后 sofagent web 启动
   开发预览：node tools/dashboard/serve-dashboard.mjs（localhost:3780）
-  v1.4.0：导航收敛 6 项（驾驶舱/工作流/本体图谱/FDE 引导/知识库/工具箱）
+  v1.4.0：导航收敛（驾驶舱/工作流/后训练/知识库/本体数据/FDE 引导/治理/工具箱）
 -->
 <html lang="zh-CN">
 <head>
@@ -157,6 +157,10 @@ a:hover{text-decoration:none} /* 全站 hover 无下划线（统一）——按�
 .meta13{font-size:13px;color:var(--text-s)}
 .meta13w{font-size:13px;font-weight:500;color:var(--text-s)}
 .text12{font-size:12px;color:var(--text)}
+/* 行内代码徽章（帮助/说明文字内的命令、API 名）——§4.3 消灭重复内联 */
+.code-chip{background:var(--brand-l);padding:2px 6px;border-radius:4px;font-size:11px;font-family:var(--mono)}
+/* section 头部右侧紧凑按钮（下载/导出类）——§4.3 消灭重复内联 */
+.btn-sm{height:26px;padding:0 10px;font-size:11px}
 .title12{font-size:12px;font-weight:600;color:var(--text)}
 
 /* 统计卡三件套（本体图谱/知识库通用；§4.3 优先用类）
@@ -382,10 +386,9 @@ a:hover{text-decoration:none} /* 全站 hover 无下划线（统一）——按�
 /* 圆点共用结构：5 类圆点共用基础（尺寸/颜色/动画各自定义） */
 .agent-dot,.sc-dot,.st-dot,.sov-dot,.node-status .icon{display:inline-block;border-radius:50%;flex-shrink:0}
 /* 公用小类：消灭重复内联（设计原则：优先用类） */
-.meta{font-size:11px;color:var(--text-s)}
 .ellipsis{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .updated-at{font-size:11px;color:var(--text-t)}
-.right-meta{class="right-meta"}
+.right-meta{margin-left:auto;font-size:11px;color:var(--text-t);display:inline-flex;align-items:center;gap:4px}
 .sov-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:6px;animation:pulse 2s infinite}
 /* 图节点脉冲动画（编排控制图 / 图谱共用） */
 .pulse-svg{animation:pulse 2s infinite}
@@ -551,7 +554,7 @@ a:hover{text-decoration:none} /* 全站 hover 无下划线（统一）——按�
   <div class="section">
     <div class="section-header"><div class="section-title"><span class="dot-emoji"><i class="bi bi-bar-chart"></i></span>工作记录（worklog）</div>
       <span style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-        <a href="/api/export-worklog" download="worklog.json" title="下载工作记录（worklog.json，含概况/任务/介入/周报数据）" class="btn btn-outline" id="wlDownloadBtn" style="display:none;height:26px;padding:0 10px;font-size:11px"><i class="bi bi-download"></i> 下载工作记录</a>
+        <a href="/api/export-worklog" download="worklog.json" title="下载工作记录（worklog.json，含概况/任务/介入/周报数据）" class="btn btn-outline btn-sm" id="wlDownloadBtn" style="display:none"><i class="bi bi-download"></i> 下载工作记录</a>
         <span class="tab-inline">
           <button class="nav-item active" id="wl-tab-overview" onclick="wlTab('overview')">概况</button>
           <button class="nav-item" id="wl-tab-tasks" onclick="wlTab('tasks')">任务</button>
@@ -618,7 +621,7 @@ a:hover{text-decoration:none} /* 全站 hover 无下划线（统一）——按�
         <div class="skeleton" style="height:60px"></div>
       </div>
       <div class="info-note" style="margin-top:12px">
-        这里显示你<strong>通过 FDE 部署的业务 AI 节点</strong>（<i class="bi bi-arrow-repeat"></i> 自动执行 / <i class="bi bi-lightning-charge"></i> 强化岗位）。当前展示的是 FDE 十步流程模板；部署节点后会自动出现在这里（数据源 <code style="background:var(--brand-l);padding:2px 6px;border-radius:4px">~/.sofagent/fde/workflow/</code>）。
+        这里显示你<strong>通过 FDE 部署的业务 AI 节点</strong>（<i class="bi bi-arrow-repeat"></i> 自动执行 / <i class="bi bi-lightning-charge"></i> 强化岗位）。当前展示的是 FDE 十步流程模板；部署节点后会自动出现在这里（数据源 <code class="code-chip">~/.sofagent/fde/workflow/</code>）。
       </div>
     </div>
   </div>
@@ -674,7 +677,7 @@ a:hover{text-decoration:none} /* 全站 hover 无下划线（统一）——按�
       <div id="kbStats" class="grid-3" style="margin-bottom:16px">
         <div class="chart-box stat-box"><div class="stat-big">—</div><div class="stat-label">知识页面</div></div>
         <div class="chart-box stat-box"><div class="stat-big">—</div><div class="stat-label">业务领域</div></div>
-        <div class="chart-box stat-box"><div class="stat-big">—</div><div class="meta">更新日志</div></div>
+        <div class="chart-box stat-box"><div class="stat-big">—</div><div class="stat-label">更新日志</div></div>
       </div>
       <div id="kbEntries"><div class="skeleton" style="height:60px"></div></div>
     </div>
@@ -707,7 +710,7 @@ a:hover{text-decoration:none} /* 全站 hover 无下划线（统一）——按�
     <div class="section-header">
       <div class="section-title"><span class="dot-emoji"><i class="bi bi-map"></i></span>本体数据（ontology）</div>
       <span style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-        <a href="/api/export-ontology" download="ontology.json" title="下载本体数据完整清单（JSON，含来源分组与全部条目）" class="btn btn-outline" id="ontDownloadBtn" style="display:none;height:26px;padding:0 10px;font-size:11px"><i class="bi bi-download"></i> 下载本体清单</a>
+        <a href="/api/export-ontology" download="ontology.json" title="下载本体数据完整清单（JSON，含来源分组与全部条目）" class="btn btn-outline btn-sm" id="ontDownloadBtn" style="display:none"><i class="bi bi-download"></i> 下载本体清单</a>
         <span class="updated-at" id="ontUpdatedAt">加载中...</span>
       </span>
     </div>
@@ -820,7 +823,7 @@ a:hover{text-decoration:none} /* 全站 hover 无下划线（统一）——按�
       <span class="updated-at" id="fdeSelfUpdatedAt">加载中...</span>
     </div>
     <div class="section-body">
-      <div class="hint" style="margin-bottom:10px">sofagent 自己的 FDE 流程节点图——自举：梳理 → 识别 AI 节点 → 双 graph 交付 → 7×24 审计。我们是自己的第一个客户（数据源 <code style="background:var(--brand-l);padding:2px 6px;border-radius:4px">~/.sofagent/fde/workflow/template.yaml</code>）。</div>
+      <div class="hint" style="margin-bottom:10px">sofagent 自己的 FDE 流程节点图——自举：梳理 → 识别 AI 节点 → 双 graph 交付 → 7×24 审计。我们是自己的第一个客户（数据源 <code class="code-chip">~/.sofagent/fde/workflow/template.yaml</code>）。</div>
       <div id="fdeSelfGraphBox" class="meta12">
         <div class="skeleton" style="height:60px"></div>
       </div>
@@ -839,7 +842,7 @@ a:hover{text-decoration:none} /* 全站 hover 无下划线（统一）——按�
         <code>bash install.sh &amp;&amp; sofagent-audit --init</code>
         <button class="copy-btn" onclick="copyPrompt(this, 'bash install.sh && sofagent-audit --init')">复制</button>
       </div>
-      <div class="hint12">或 npx 零安装：<code style="background:var(--brand-l);padding:2px 6px;border-radius:4px;font-size:11px">npx @sofagent/audit --init</code> · 需要 Node.js ≥ 18 + git</div>
+      <div class="hint12">或 npx 零安装：<code class="code-chip">npx @sofagent/audit --init</code> · 需要 Node.js ≥ 18 + git</div>
     </div>
   </div>
   <div class="section">
@@ -1065,7 +1068,7 @@ build → acceptance → regression → coverage，
         </div>
         <div class="step-card">
           <div class="step-title"><span class="step-num">3</span>在你的 Agent 中加载 sofagent Skill</div>
-          <div class="step-desc">WorkBuddy 搜索 <code style="background:var(--brand-l);padding:2px 6px;border-radius:4px;font-size:11px">sofagent</code> · 或 <code style="background:var(--brand-l);padding:2px 6px;border-radius:4px;font-size:11px">bash install.sh</code></div>
+          <div class="step-desc">WorkBuddy 搜索 <code class="code-chip">sofagent</code> · 或 <code class="code-chip">bash install.sh</code></div>
         </div>
         <div class="step-card">
           <div class="step-title"><span class="step-num">4</span>用 Prompt 让 Agent 帮你创建节点</div>
@@ -1195,9 +1198,9 @@ build → acceptance → regression → coverage，
         <div class="step-card">
           <div class="step-title"><span class="step-num">B</span>工具路径（在你的 Agent 中加载 Skill）</div>
           <div class="step-desc">
-            <strong>方式 1 · WorkBuddy</strong>：搜索 <code style="background:var(--brand-l);padding:2px 6px;border-radius:4px;font-size:11px">sofagent</code> → 点击安装 → Agent 自动加载 FDE Skill<br>
-            <strong>方式 2 · OpenClaw</strong>：<code style="background:var(--brand-l);padding:2px 6px;border-radius:4px;font-size:11px">bash install.sh</code> → 自动配置 Skill 加载链<br>
-            <strong>方式 3 · npm 全局安装</strong>：<code style="background:var(--brand-l);padding:2px 6px;border-radius:4px;font-size:11px">npm i -g @sofagent/audit && sofagent-audit --init</code>
+            <strong>方式 1 · WorkBuddy</strong>：搜索 <code class="code-chip">sofagent</code> → 点击安装 → Agent 自动加载 FDE Skill<br>
+            <strong>方式 2 · OpenClaw</strong>：<code class="code-chip">bash install.sh</code> → 自动配置 Skill 加载链<br>
+            <strong>方式 3 · npm 全局安装</strong>：<code class="code-chip">npm i -g @sofagent/audit && sofagent-audit --init</code>
           </div>
         </div>
         <div class="step-card">
@@ -1237,8 +1240,8 @@ build → acceptance → regression → coverage，
       <span id="govStatusText">加载中…</span>
     </span>
     <span style="margin-left:auto"></span>
-    <a href="/api/export-governance-weekly" download="governance-weekly.md" class="btn btn-outline" style="height:26px;padding:0 10px;font-size:11px"><i class="bi bi-download"></i> 治理周报</a>
-    <a href="/api/export-dataset-lineage" download="dataset-lineage.md" class="btn btn-outline" style="height:26px;padding:0 10px;font-size:11px"><i class="bi bi-file-earmark-lock"></i> lineage 报告</a>
+    <a href="/api/export-governance-weekly" download="governance-weekly.md" class="btn btn-outline btn-sm"><i class="bi bi-download"></i> 治理周报</a>
+    <a href="/api/export-dataset-lineage" download="dataset-lineage.md" class="btn btn-outline btn-sm"><i class="bi bi-file-earmark-lock"></i> lineage 报告</a>
   </div>
 
   <div class="metrics cols-3" id="govMetrics">
@@ -1260,7 +1263,7 @@ build → acceptance → regression → coverage，
     <div class="section-body">
       <div id="govDsBox"><div class="skeleton" style="height:60px"></div></div>
       <div class="info-note" style="margin-top:12px">
-        validator 管结构质量，<strong>人审管语义质量</strong>——全自动管道的最终兜底。抽样展示待审数据集（版本台账 + 分拣/脱敏命中标记）；判定动作走 <code style="background:var(--brand-l);padding:2px 6px;border-radius:4px;font-size:11px">reviewDatasetVersion()</code>（train 包 API——写入台账 reviewStatus 并同步落 decision-log，可追溯；本页为只读展示面）。
+        validator 管结构质量，<strong>人审管语义质量</strong>——全自动管道的最终兜底。抽样展示待审数据集（版本台账 + 分拣/脱敏命中标记）；判定动作走 <code class="code-chip">reviewDatasetVersion()</code>（train 包 API——写入台账 reviewStatus 并同步落 decision-log，可追溯；本页为只读展示面）。
       </div>
     </div>
   </div>
@@ -1273,7 +1276,7 @@ build → acceptance → regression → coverage，
     <div class="section-body">
       <div id="govDecisions"><div class="skeleton" style="height:60px"></div></div>
       <div class="info-note" style="margin-top:12px">
-        这里显示<strong>带因果边的决策</strong>（<code style="background:var(--brand-l);padding:2px 6px;border-radius:4px;font-size:11px">causedBy</code> 引用前序决策的 ts）——「决策不是日志行，是一等公民图节点」。链深 = 引用的前序决策条数；拦截决策引用触发它的路由决策（caused），HITL 决策引用待审的上游决策（influenced）。
+        这里显示<strong>带因果边的决策</strong>（<code class="code-chip">causedBy</code> 引用前序决策的 ts）——「决策不是日志行，是一等公民图节点」。链深 = 引用的前序决策条数；拦截决策引用触发它的路由决策（caused），HITL 决策引用待审的上游决策（influenced）。
       </div>
     </div>
   </div>
@@ -1969,7 +1972,7 @@ function loadFdeWorkflowData(){
           var ac=agentColor[s.agent]||agentColor.analyst;
           html+='<div class="fde-step" style="flex:0 0 calc(20% - 7px);box-sizing:border-box;background:var(--bg-s);border:1px solid var(--border);border-radius:var(--radius-s);padding:12px;display:flex;flex-direction:column;gap:4px;min-width:0">'+
             // 第一行：点 + STEP 标签 + 标题（黑字，单行截断）；循环=右上角 icon+灰字（参考流水线卡右对齐）
-            '<div style="font-size:12px;display:flex;align-items:center;gap:6px;min-width:0"><span class="agent-dot '+escapeHtml(s.agent)+'" style="flex-shrink:0"></span><span class="text12" style="flex-shrink:0">STEP '+(i+1)+'</span><span title="'+escapeHtml(s.name)+'" class="ellipsis" class="title12">'+escapeHtml(s.name)+'</span>'+(s.loop?'<span class="right-meta"><i class="bi bi-arrow-clockwise"></i>循环</span>':'')+'</div>'+
+            '<div style="font-size:12px;display:flex;align-items:center;gap:6px;min-width:0"><span class="agent-dot '+escapeHtml(s.agent)+'" style="flex-shrink:0"></span><span class="text12" style="flex-shrink:0">STEP '+(i+1)+'</span><span title="'+escapeHtml(s.name)+'" class="ellipsis title12">'+escapeHtml(s.name)+'</span>'+(s.loop?'<span class="right-meta"><i class="bi bi-arrow-clockwise"></i>循环</span>':'')+'</div>'+
             // 第二行：agent 英文 · 中文角色 · 类型（说明行）——字号显式统一 11px（gap 负责行距）
             '<div class="meta" style="display:flex;align-items:center;gap:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"><span style="font-size:11px;font-family:var(--mono)">'+escapeHtml(s.agent)+'</span><span style="font-size:11px">·</span><span style="font-size:11px">'+escapeHtml(ac.role)+'</span><span class="hint" style="flex-shrink:0">'+ac.label+'</span></div>'+
             '</div>';
@@ -2019,7 +2022,7 @@ function loadAiNodesData(){
           return '<div class="node-card status-running"><div class="node-status"><span class="icon"></span>'+escapeHtml(nd.name)+'</div><div class="node-meta">'+escapeHtml(nd.description||nd.file||'')+'</div></div>';
         }).join('')+'</div>';
         if(total>showCount){
-          html+='<div class="hint" style="margin-top:8px">共 '+total+' 个节点，仅显示前 '+showCount+' 个——完整列表见 <code style="background:var(--brand-l);padding:2px 6px;border-radius:4px">~/.sofagent/subagents/</code></div>';
+          html+='<div class="hint" style="margin-top:8px">共 '+total+' 个节点，仅显示前 '+showCount+' 个——完整列表见 <code class="code-chip">~/.sofagent/subagents/</code></div>';
         }
       }else{
         html=emptyState('<i class="bi bi-robot"></i>','还没有部署业务 AI 节点','在 FDE 引导页复制 Prompt 开始部署，节点会自动出现在这里（~/.sofagent/subagents/）','去 FDE 引导',"goPage('fde')");
@@ -2181,7 +2184,7 @@ function loadKnowledgeData(){
       stats.innerHTML=
         '<div class="chart-box stat-box"><div class="stat-big">'+(pageCount>0?pageCount:'0')+'</div><div class="stat-label">知识页面</div></div>'+
         '<div class="chart-box stat-box"><div class="stat-big">'+(domainCount>0?domainCount:'0')+'</div><div class="stat-label">业务领域</div></div>'+
-        '<div class="chart-box stat-box"><div class="stat-big">'+(logCount>0?logCount:'0')+'</div><div class="meta">更新日志</div></div>';
+        '<div class="chart-box stat-box"><div class="stat-big">'+(logCount>0?logCount:'0')+'</div><div class="stat-label">更新日志</div></div>';
     }
     // 条目列表：index.md 表格行
     var rows=[];
@@ -2194,9 +2197,9 @@ function loadKnowledgeData(){
         entries.innerHTML='<div class="meta12" style="margin-bottom:8px"><b>知识页面 '+pageCount+' 个</b>，来自 index.md（daemon Ingest 自动维护）：</div>'+
           rows.map(function(r){
             return '<div style="display:flex;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid var(--border);font-size:12px">'+
-              '<span style="font-family:var(--mono);color:var(--brand-d);font-weight:600">'+escapeHtml(r.name)+'</span>'+
-              '<span style="color:var(--text-t)">域：'+escapeHtml(r.domain||'-')+'</span>'+
-              '<span style="margin-left:auto;color:var(--text-t)">节点：'+escapeHtml(r.nodes||'-')+'</span></div>';
+              '<span style="font-family:var(--mono);color:var(--text);font-weight:600">'+escapeHtml(r.name)+'</span>'+
+              '<span style="color:var(--text-s)">域：'+escapeHtml(r.domain||'-')+'</span>'+
+              '<span style="margin-left:auto;color:var(--text-s)">节点：'+escapeHtml(r.nodes||'-')+'</span></div>';
           }).join('');
       }else{
         entries.innerHTML=emptyState('<i class="bi bi-journal-bookmark"></i>','还没有知识库数据','运行 FDE 或在 Agent 中执行知识沉淀后自动写入（~/.sofagent/data/knowledge/）','去 FDE 引导',"goPage('fde')");
@@ -2276,7 +2279,7 @@ function loadOntologyData(){
           if(kt.engine>0)h+='<div class="ont-src-row"><span class="ont-src-name engine">引擎沉淀（dream-cycle 等自动合成）</span><span class="ont-src-count">'+kt.engine+'</span></div>';
           if(kt.business===0){
             h+='<div class="ont-guide">业务实体为 0——当前实体均为引擎自动沉淀，企业业务本体尚未建立。'+
-               '<button class="btn btn-outline" onclick="goPage(\'fde\')" style="height:26px;padding:0 12px;font-size:11px">去 FDE 引导构建</button></div>';
+               '<button class="btn btn-outline btn-sm" onclick="goPage(\'fde\')">去 FDE 引导</button></div>';
           }
           srcBox.innerHTML=h;
         }
@@ -2874,7 +2877,7 @@ async function loadGovernanceData(){
       dsBox.innerHTML=wlTable(
         ['版本','数据集','创建时间','样本数','脱敏命中','审阅状态'],
         ds.sample.map(function(s){
-          var badge=s.reviewStatus==='approved'?'<span style="color:var(--ok,#16a34a);font-weight:600">approved</span>':(s.reviewStatus==='rejected'?'<span style="color:var(--danger,#dc2626);font-weight:600">rejected</span>':'<span style="color:var(--text-t)">pending</span>');
+          var badge=s.reviewStatus==='approved'?'<span style="color:var(--brand);font-weight:600">approved</span>':(s.reviewStatus==='rejected'?'<span style="color:var(--red);font-weight:600">rejected</span>':'<span style="color:var(--text-t)">pending</span>');
           return [govEsc(s.versionId||'—'),govEsc(s.datasetId||'—'),s.createdAt?govEsc(s.createdAt.slice(0,10)):'—',s.sampleCount===undefined?'—':s.sampleCount,s.redactionHits===undefined?'—':s.redactionHits,badge];
         })
       );
@@ -2915,7 +2918,7 @@ async function loadGovernanceData(){
     document.getElementById('govStatusText').textContent='治理引擎不可用（audit 包未构建）';
     var st2=document.getElementById('govStatus');
     if(st2){st2.classList.add('ds-sample');st2.classList.remove('ds-live')}
-    if(box){box.innerHTML='<div class="hint12" style="padding:12px 0">治理聚合引擎不可用——请先构建 audit 包（<code style="background:var(--brand-l);padding:2px 6px;border-radius:4px;font-size:11px">npm run build</code>）或确认安装态 packages 就位。</div>'}
+    if(box){box.innerHTML='<div class="hint12" style="padding:12px 0">治理聚合引擎不可用——请先构建 audit 包（<code class="code-chip">npm run build</code>）或确认安装态 packages 就位。</div>'}
   }
 }
 
