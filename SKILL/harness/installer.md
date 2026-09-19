@@ -68,7 +68,7 @@ bash <源路径>/install.sh --platform <平台> [--policy <策略文件>] [--bas
 
 ```
 ① ~/.sofagent/ 目录结构存在（data/ + SKILL/ + install.sh 落位）
-② node ~/.sofagent/.../dist/index.js doctor --project <工作目录> → 退出码 0（doctor 自检）
+② sofagent-audit --doctor → 退出码 0（doctor 自检：config / hook / 版本一致性）
 ③ MCP 连通：sofagent CLI 可响应（--version 或 doctor 的 MCP 段不报 unavailable）
 ```
 
@@ -93,7 +93,7 @@ MCP tool: device_register
 
 - **验签 fail-closed**：`reason=invalid-identity` → 身份码被篡改或字段缺失——**不要重试**，回派单方重新签发身份码；这不是可自愈故障。
 - `reason=duplicate-device` → 本机已注册过（agentId 唯一）——转「已注册」结论，直接跳到心跳确认。
-- 注册成功后立即发一次 `reportHeartbeat`（带 `availableModels` = 本机扫描清单）——注册即在线、心跳即上报，一步验证全链。
+- 注册成功后确认心跳已落位：写入面是 daemon 导出的 `reportHeartbeat`（带 `availableModels` = 本机扫描清单）——**它不是 MCP 工具**，MCP 面只读，Agent 侧用 `device_list` 的「最后心跳时间」与在线状态复核。注册即在线、心跳即上报，一步验证全链。
 
 **诊断表**：
 

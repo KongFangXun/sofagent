@@ -15,8 +15,8 @@
 ## 🧪 第 1 周：试用
 
 - [ ] 每天派 2-3 个真实任务给 Agent
-- [ ] 第 3 天翻一次 `.sofagent/think.md`——看 Agent 写了什么反思
-- [ ] 第 5 天翻一次 `.sofagent/task/logs/`——看执行记录
+- [ ] 第 3 天翻一次 `~/.sofagent/data/think.md`——看 Agent 写了什么反思
+- [ ] 第 5 天翻一次 `~/.sofagent/data/task/logs/`——看执行记录
 - [ ] 如果 Agent 行为异常，第一步查 think.md 删可疑条目
 - [ ] 周末填一次 docs/evidence/evidence.md（哪怕写「没觉得有变化」）
 

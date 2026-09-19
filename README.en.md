@@ -127,11 +127,11 @@ Also in this release: Ontology Validation Engine (DAG cycle detection with chain
 
 ## The Two FDE Harness Phases
 
-**On-site · produce the judgment** (FDE phase): map business flows (five-element dig + three-question test — price every AI node) → build the dual graphs (business graph for humans + ontology for AI) → decide AI nodes → deploy three-layer deliverables. Each node carries "done criteria (merge_criteria) · who approves (approver) · when it runs (trigger)", frozen into the deliverable.
+**On entry · generate judgment** (FDE phase): map business flows (five-element deep-dive + three-question test — price every AI node) → build the dual graphs (business graph for humans + ontology for AI) → decide AI nodes → deploy three-layer deliverables. Each node carries "done criteria (merge_criteria) · who approves (approver) · when it runs (trigger)", frozen into the deliverable.
 
-**Off-site · the judgment stays** (Harness phase): the FDE leaves, the judgment remains — daemon patrols 24/7, every commit triggers the 24 audit rules (including **AgentShield five-face static config scanning**), snapshots are rollback-ready, experience keeps accumulating; evolution writes promotion and distilled reflection back into the deliverable.
+**After departure · retain judgment** (Harness phase): the FDE leaves, the judgment remains — daemon patrols 24/7, every commit triggers the 24 audit rules (including **AgentShield static scanning across five config surfaces**), snapshots are rollback-ready, experience keeps accumulating; evolution writes promotion and distilled reflection back into the deliverable.
 
-Both phases are one thing: **the deliverable is shared live state** (written on-site, read off-site, written back when evolving) — without FDE, the constraint layer has no criteria to execute; without the constraint layer, the FDE's judgment evaporates when they leave. That is why "FDE Harness" is not a bundle of two feature sets.
+Both phases are one thing: **the deliverable is shared live state** (written on entry, read after departure, written back when evolving) — without FDE, the constraint layer has no criteria to execute; without the constraint layer, the FDE's judgment evaporates when they leave. That is why "FDE Harness" is not a bundle of two feature sets.
 
 **The organizational-management lens** — the two phases map onto onboarding a digital employee:
 
@@ -186,11 +186,7 @@ sofagent-audit --doctor    # verify the environment (optional)
 >
 > 📌 **How bootstrap.sh and install.sh relate**: bootstrap.sh is a one-line download wrapper around install.sh — `curl bootstrap.sh | bash` is equivalent to "download install.sh + run install.sh". Both scripts install exactly the same thing; bootstrap just saves you the manual clone/download step.
 
-**To uninstall**: `bash engine/scripts/uninstall.sh` — removes the Skill/constitution files, hook registrations and the three git hooks (`pre-commit` / `commit-msg` / `post-commit`), while keeping your `~/.sofagent/` data. More install options (clone install / full npx install / minimal install / enterprise deployment) in [HANDBOOK](./docs/HANDBOOK.md). Enterprise users who just want the FDE methodology for mapping business workflows, see [FDE/README.md](./FDE/README.md) (zero dependencies, no Node.js needed; for the 15-minute shortest path see its "15-minute shortest path" section).
-
-**To uninstall**: `bash engine/scripts/uninstall.sh` — removes the Skill/constitution files, hook registrations and the three git hooks (`pre-commit` / `commit-msg` / `post-commit`), while keeping your `~/.sofagent/` data. More install options (clone install / full npx install / minimal install / enterprise deployment) in [HANDBOOK](./docs/HANDBOOK.md). Enterprise users who just want the FDE methodology for mapping business workflows, see [FDE/README.md](./FDE/README.md) (zero dependencies, no Node.js needed; for the 15-minute shortest path see its "15-minute shortest path" section).
-
-> ⚠️ **Two install channels both ship a command named `sofagent` with different semantics** — the npm bare-name umbrella (`npm i -g sofagent`) is a thin audit forwarder, while the install.sh state exposes `status` / `web` / `dashboard` subcommands. Disambiguation (PATH check, `--help` first screen, explicit `sofagent-audit` usage) and channel selection details in [HANDBOOK · Installation](./docs/HANDBOOK.md). (v1.4.9 install-entry disambiguation batch)
+**To uninstall**: `bash engine/scripts/uninstall.sh` — removes the Skill/constitution files, hook registrations and the three git hooks (`pre-commit` / `commit-msg` / `post-commit`), while keeping your `~/.sofagent/` data. Full install options (clone install / full npx install / minimal install / enterprise deployment), uninstall, and how to tell the two channels both named `sofagent` apart (npm bare-name umbrella = thin audit forwarder; the install.sh state exposes `status` / `web` / `dashboard`) → [HANDBOOK · Installation](./docs/HANDBOOK.md). Enterprise users who just want the FDE methodology for mapping business workflows, see [FDE/README.md](./FDE/README.md) (zero dependencies, no Node.js needed; for the 15-minute shortest path see its "15-minute shortest path" section).
 
 ## Usage
 
@@ -214,6 +210,8 @@ sofagent-audit --doctor    # verify the environment (optional)
 | **`--ruleset` rule marketplace** | Load rulesets like security, or custom JSON rules | Same as above | 1 min |
 | **GitHub Action** | Auto-audit every PR, violations annotated on the diff lines | CI/CD | Set up once |
 | **install.sh full suite** | inject · audit · rollback · distill · evolve + daemon inspection + dashboard — the Agent's complete constraint layer | **Enterprise device** (server/computer running the AI nodes) | FDE residency |
+
+> ⚠️ **Do not bare-install `npm i sofagent-audit`** — the bare-name package `sofagent-audit` on npm is **this project's legacy proxy package** (deprecated; it lags far behind the main package). The official CLI package is the scoped `@sofagent/audit` — install the CLI via bootstrap.sh / install.sh / `@sofagent/audit` only.
 
 **Rule marketplace** — community rulesets are published as `sofagent-ruleset-*` npm packages and loaded manually via `--ruleset-path` (which also accepts your own JSON rules):
 

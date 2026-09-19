@@ -52,7 +52,7 @@
 
 | 边界 | 归属 | 说明 |
 |---|---|---|
-| Python 沙箱逃逸 | v1.4.3 实装 | 计算面子进程的资源隔离（seccomp/容器级）不在 v1.4.1 范围；本版 `runSandboxSelfCheck` 只提供**代码侧防线**的就绪性自检（路径白名单 / 注入过滤 / 分区规范 / 凭据脱敏四项活性探针），实装后升级为「不过自检不允许 spawn」门禁 |
+| Python 沙箱逃逸 | 接口已交付 · **门禁未接线** | 计算面子进程的资源隔离（seccomp/容器级）不在开源版范围；`runSandboxSelfCheck` 提供**代码侧防线**的就绪性自检（路径白名单 / 注入过滤 / 分区规范 / 凭据脱敏四项活性探针），但**全仓无生产调用方**——「不过自检不允许 spawn」的门禁仍是设计目标，未接线 |
 | 云凭据完整虚拟 key 边界 | v1.3.7 既有能力 | 凭据的签发/轮换/吊销生命周期归模型网关的虚拟 key 体系（v1.3.7）；本版训练侧只落**脱敏**（日志/审计不落明文），不重复建设凭据管理 |
 | 权重加载阻断的完整链路 | 块六（本版在途） | 签名与验签算法本版交付，与部署面（model_register）的阻断接线随块六收口 |
 
@@ -65,9 +65,9 @@
 
 开源版用户若需要上述能力，应在商业合同中明确；本文档不做「已覆盖」的暗示。
 
-## 四、沙箱完整性自检（本版接口，v1.4.3 实装为门禁）
+## 四、沙箱完整性自检（接口可用 · spawn 前置门禁未接线）
 
-`runSandboxSelfCheck()` 返回结构化就绪报告：四项检查（path-whitelist / injection-filter / partition-layout / credential-masking）各 `{name, passed, detail}`，全过 `ready=true`。每项都是**真实活性探针**（用中性占位的恶意样本实跑防线函数——非装饰性报告）。v1.4.1 验收口径：接口可用即验收；v1.4.3 将其接入 spawn 前置门禁。
+`runSandboxSelfCheck()` 返回结构化就绪报告：四项检查（path-whitelist / injection-filter / partition-layout / credential-masking）各 `{name, passed, detail}`，全过 `ready=true`。每项都是**真实活性探针**（用中性占位的恶意样本实跑防线函数——非装饰性报告）。**当前状态如实**：接口可用、有单测覆盖，但**全仓无生产调用方**——「自检不过不允许 spawn」的门禁尚未接线，需显式调用才生效。
 
 ## 五、部署面提示（系统级边界——代码层无法覆盖）
 
@@ -85,7 +85,7 @@
 | NUL 字节截断绕过白名单 | 同上（NUL_BYTE） | test_validateTrainPath_NUL字节_拒绝NUL_BYTE |
 | Windows 盘符 / UNC 跨平台注入 | 同上（DRIVE_LETTER） | test_validateTrainPath_盘符样式_拒绝DRIVE_LETTER |
 | 超参字符串携带 shell 元字符 | sanitizeHyperparamsForSpawn 拒绝式过滤 | test_sanitizeHyperparamsForSpawn_shell元字符值_整组拒绝 |
-| 管道 / 命令替换 / 反引号注入 | 同上（黑名单 14 字符） | test_sanitizeHyperparamsForSpawn_管道与命令替换_拒绝 |
+| 管道 / 命令替换 / 反引号注入 | 同上（黑名单 15 字符） | test_sanitizeHyperparamsForSpawn_管道与命令替换_拒绝 |
 | 嵌套对象深层注入（extra_args 数组内） | 递归过滤 + 键路径定位 | test_sanitizeHyperparamsForSpawn_嵌套对象数组_递归拦截 |
 | A 企业读 B 企业 job/事件流 | 受守卫查询 + 分区作用域读取 | train-isolation.test.ts · test_getJobGuarded_A查B的job_结构化拒绝不泄露内容 |
 | jobId 存在性探测（跨企业枚举） | 无权与不存在同形返回 | test_listJobsGuarded_按企业过滤_不泄露其他企业jobId存在性 |

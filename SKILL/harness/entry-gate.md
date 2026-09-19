@@ -16,7 +16,7 @@
 
 | 检查项 | 命令 | 权限边界 | OpenClaw | WorkBuddy | Web | 结果标注 |
 |------|------|------|:--:|:--:|:--:|------|
-| AO 编排 | `command -v ao` | 不可谎称编排可用 | ✅ | ⚠️ | ❌ | AO=可用/手动 |
+| 编排 | `command -v sofagent-orchestrator` | 不可谎称编排可用 | ✅ | ⚠️ | ❌ | 编排=可用/手动 |
 | bash | `command -v bash` | 不可 `rm -rf /`/删非项目文件/改系统配置/`curl\|bash` | ✅ | ⚠️ | ❌ | ✅/❌/N/A |
 | git | `command -v git` | 不可 `push --force` 到 main/master/改 `.git/config` | ✅ | ⚠️ | ❌ | ✅/❌/N/A |
 | jq/node | `command -v jq\|node` | — | ✅ | ⚠️ | ❌ | ✅/❌/N/A |

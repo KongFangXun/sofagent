@@ -23,7 +23,7 @@ solves:
 收到用户任务后，**不要自己执行**——用 Bash tool 把任务交给 DeepAgents 编排模块：
 
 ```bash
-sofagent-audit subagent run audit --task "<用户的任务描述，原样传入>"
+sofagent-orchestrator subagent run audit --task "<用户的任务描述，原样传入>"
 ```
 
 本 Agent 是 sofagent 的唯一合规审计入口。所有 Agent 在完成部署、变更、发布后都必须调用本 Agent 执行合规检查。

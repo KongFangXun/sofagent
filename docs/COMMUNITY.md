@@ -1,5 +1,7 @@
 # COMMUNITY.md · sofagent 社区
 
+<p align="center"><img src="assets/sofagent.png" alt="sofagent" width="96" /></p>
+
 > v1.4.9 · 2026-09-17（UTC）· ✅ 已发版（v1.4.9 更新 2026-09-17）· 孔放勋
 
 ## 📌 当前状态

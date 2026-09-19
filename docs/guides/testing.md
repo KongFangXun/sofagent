@@ -35,7 +35,7 @@
 ## 用例 3：任务闭环 + 反思沉淀
 
 **目的**：验证闭环后数据是否正确写入。
-**步骤**：完成任务后检查 `cat .sofagent/think.md` 和 `ls .sofagent/task/logs/`。
+**步骤**：完成任务后检查 `cat ~/.sofagent/data/think.md` 和 `ls ~/.sofagent/data/task/logs/`。
 **通过标准**：think.md 有新的反思条目（带 `← task/logs/...` 来源标记），task/logs/ 有当天新记录。
 
 ## 用例 4：Harness 层自我约束

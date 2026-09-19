@@ -21,7 +21,7 @@ sofagent 升级时会把 `SKILL.md` / `harness/` / `agents/` 全部覆盖为最�
 | **Agent 行为规则追加** | ✅ `custom/` | "commit message 必须带工单号" |
 | **业务流程约束** | ❌ `.sofagent/fde.md` | "每个 PR 要等 5 分钟再合" |
 | **审计规则开关** | ❌ `.sofagent/config.yml` | "关闭 A3 越界检查" |
-| **知识库内容** | ❌ `.sofagent/knowledge/` | "公司 API 文档摘要" |
+| **知识库内容** | ❌ `~/.sofagent/data/knowledge/` | "公司 API 文档摘要" |
 | **代码 / 脚本变更** | ❌ Git 仓库 | "给 rules 包加一条新规则" |
 | **LOOP 自迭代沉淀** | ❌ `.sofagent/` + Git | LOOP 写的代码进 Git commit，经验进 knowledge/ |
 

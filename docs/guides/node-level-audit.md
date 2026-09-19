@@ -11,7 +11,7 @@
 
 | 类别 | 判定标准 | 节点级处置 |
 |------|---------|-----------|
-| **A 类·天然适配节点链** | 违规证据出现在 tool 调用入参（路径/命令/凭证串），可归因到具体 tool 调用 | v1.4.0 plugin 在 `tools/pre-execute`（serial 检查点）拦截 |
+| **A 类·天然适配节点链** | 违规证据出现在 tool 调用入参（敏感路径 / 凭证串 / 注入载荷 / 外联命令 / 越权路径），可归因到具体 tool 调用 | **设计目标**：cordis-plugin 在 `tools/pre-execute`（serial 检查点）拦截——逐条实现状态见下方「实现判定源」 |
 | **B 类·hybrid 部分适配** | 部分信号可在节点链捕获，完整判定仍需 diff 视角 | 节点链留痕 + 提交时 diff 终裁 |
 | **C 类·只对 diff 有意义** | 违规证据只在文件内容/变更聚合/提交语义层，节点链无从感知 | 保持提交时 git diff 审计，不做节点级 |
 
@@ -33,8 +33,10 @@
 | A22 不越权限 | 提权命令（chmod/sudo/改授权）在入参 | 入参提权模式匹配 |
 | A23 不逃路径 | 路径穿越（`../../`）在入参 | 入参路径归一化校验 |
 
+> ⚠️ **归类提醒**：这 8 条的载荷并不同质——A1/A23 是**路径**类，A2/A9/A10/A22 是**命令 / 内容**类，A14 是**授权边界**类，A20 是**外联**类（注册表口径见 `engine/audit/src/rules/index.ts`）。按「都是危险路径」笼统理解会误配拦截点。
+
 > 与 v1.3.6 交付⑨ 验收 tool 的关系：`check_acceptance` 是软约束（Agent 主动调用）；
-> A 类 8 条进 v1.4.0 plugin 后是硬门禁（挂 `agent/turn-stopping` serial 检查点拦截关轮）。先软后硬的风险前置。
+> A 类 8 条的设计目标是进 plugin 后成为硬门禁（挂 `agent/turn-stopping` serial 检查点拦截关轮）。先软后硬的风险前置。
 
 ### B 类 · hybrid 部分适配（5 条）——节点链留痕 + diff 终裁
 
@@ -69,10 +71,10 @@
 
 > 📌 **实现判定源**：节点级实际接线两条——`checkDangerousCommand`（破坏性命令拦截，A11 族：`rm -rf /`、fork 炸弹、`curl|sh`、`mkfs`、裸设备写入）与 `check_acceptance`（验收门禁），见 `engine/dsh-plugins/cordis-plugin-sofagent-audit/src/index.ts`。下方 A/B/C 三分类是**规则设计映射**，逐条规则尚未在节点级实现判定。
 
-**纳入节点级硬门禁：A 类 8 条**（A1/A2/A9/A10/A14/A20/A22/A23）
+**设计目标·节点级硬门禁：A 类 8 条**（A1/A2/A9/A10/A14/A20/A22/A23）——**尚未逐条接线**，当前实际判定源只有上方两条（`checkDangerousCommand` + `check_acceptance`）
 **纳入节点链留痕（diff 终裁）：B 类 5 条**（A7/A8/A11/A15/A21）
 **不做节点级（保持提交时 git diff）：C 类 11 条**（A3/A4/A5/A6/A16/A17/A18/A19/E1/E2/E4）
 
-> 接线点：A 类拦截挂 DSH `tools/pre-execute`（serial 检查点，违规即拒绝执行）；
-> 关轮门禁挂 `agent/turn-stopping`（serial，验收 + A 类不过不放行，对齐交付⑨「硬门禁」语义）；
+> 接线点（**接线设计，非当前实现状态**——现状见上方「实现判定源」）：A 类拦截拟挂 DSH `tools/pre-execute`（serial 检查点，违规即拒绝执行）；
+> 关轮门禁拟挂 `agent/turn-stopping`（serial，验收 + A 类不过不放行，对齐交付⑨「硬门禁」语义）；
 > B 类留痕复用本文 Trajectory 采集器的事件订阅面。

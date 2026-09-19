@@ -92,6 +92,8 @@ MCP 面等价：`train_submit`（`data_path`/`base_model`/`algorithm`/`enterpris
 
 **排查**：enterprise_id 缺失被拒（企业隔离分区硬约束）；协议校验失败看返回的 issues 数组逐条修。
 
+> 📌 **模板里为什么不写注释字段**：`TrainJobSchema` 与 `TrainBudgetSchema` 都是 `.strict()`——多一个字段即解析失败（`_usage` 这类顶层说明键会被直接拒收）。`hyperparams` 是自由 record，语法上容得下任意键，但它会**原样透传给训练框架**，所以注释也不放在那里。本页正文即模板的说明面；模板本身只留可提交的最小字段集（10 条数据 8 步即可跑通链路，生产按 `train analyze` 的模板补全，如 extraction-qlora 的 loraRank 16 / lr 2e-4 / epochs 3 / maxSeqLen 2048）。budget 三维（时间 / 步数 / 成本）超限即 SIGINT 暂停等人审，`train_budget resolve` 续跑或终止。
+
 ## 七、监控（train_status）
 
 ```js

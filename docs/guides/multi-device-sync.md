@@ -32,13 +32,13 @@ sofagent 做的事情：
 ```bash
 # 移动现有内容
 mkdir -p ~/Library/Mobile\ Documents/com~apple~CloudDocs/sofagent
-cp -r ~/.sofagent/knowledge ~/Library/Mobile\ Documents/com~apple~CloudDocs/sofagent/
-cp ~/.sofagent/think.md ~/Library/Mobile\ Documents/com~apple~CloudDocs/sofagent/
+cp -r ~/.sofagent/data/knowledge ~/Library/Mobile\ Documents/com~apple~CloudDocs/sofagent/
+cp ~/.sofagent/data/think.md ~/Library/Mobile\ Documents/com~apple~CloudDocs/sofagent/
 
 # 替换为符号链接（sofagent 仍然读写原路径，实际落在 iCloud）
-rm -rf ~/.sofagent/knowledge ~/.sofagent/think.md
-ln -s ~/Library/Mobile\ Documents/com~apple~CloudDocs/sofagent/knowledge ~/.sofagent/knowledge
-ln -s ~/Library/Mobile\ Documents/com~apple~CloudDocs/sofagent/think.md ~/.sofagent/think.md
+rm -rf ~/.sofagent/data/knowledge ~/.sofagent/data/think.md
+ln -s ~/Library/Mobile\ Documents/com~apple~CloudDocs/sofagent/knowledge ~/.sofagent/data/knowledge
+ln -s ~/Library/Mobile\ Documents/com~apple~CloudDocs/sofagent/think.md ~/.sofagent/data/think.md
 ```
 
 2. 在另一台 Mac 上做同样的符号链接。
@@ -64,18 +64,18 @@ mkdir -p /volume1/sofagent-team/knowledge
 # macOS
 mkdir -p /Volumes/sofagent-team
 mount_smbfs //user@nas.local/sofagent-team /Volumes/sofagent-team
-ln -s /Volumes/sofagent-team/knowledge ~/.sofagent/knowledge
-ln -s /Volumes/sofagent-team/think.md ~/.sofagent/think.md
+ln -s /Volumes/sofagent-team/knowledge ~/.sofagent/data/knowledge
+ln -s /Volumes/sofagent-team/think.md ~/.sofagent/data/think.md
 
 # Linux
 mkdir -p /mnt/sofagent-team
 mount -t cifs //nas.local/sofagent-team /mnt/sofagent-team -o username=user
-ln -s /mnt/sofagent-team/knowledge ~/.sofagent/knowledge
+ln -s /mnt/sofagent-team/knowledge ~/.sofagent/data/knowledge
 ```
 
 3. 把挂载命令写入 `/etc/fstab`（Linux）或「登录项」（macOS 设置 → 通用 → 登录项），开机自动挂载。
 
-**⚠️ 离线场景**：设备离开局域网后 `~/.sofagent/knowledge` 会变空（NAS 断连）。daemon 的 `weekly-report` / `lessons-extract` 会跳过（检测目录为空不运行），不会写脏数据。
+**⚠️ 离线场景**：设备离开局域网后 `~/.sofagent/data/knowledge` 会变空（NAS 断连）。daemon 的 `weekly-report` / `lessons-extract` 会跳过（检测目录为空不运行），不会写脏数据。
 
 ## 方案三：Dropbox / Google Drive（跨平台）
 
@@ -89,10 +89,10 @@ ln -s /mnt/sofagent-team/knowledge ~/.sofagent/knowledge
 ```bash
 # Dropbox 示例
 mkdir -p ~/Dropbox/sofagent
-mv ~/.sofagent/knowledge ~/Dropbox/sofagent/
-mv ~/.sofagent/think.md ~/Dropbox/sofagent/
-ln -s ~/Dropbox/sofagent/knowledge ~/.sofagent/knowledge
-ln -s ~/Dropbox/sofagent/think.md ~/.sofagent/think.md
+mv ~/.sofagent/data/knowledge ~/Dropbox/sofagent/
+mv ~/.sofagent/data/think.md ~/Dropbox/sofagent/
+ln -s ~/Dropbox/sofagent/knowledge ~/.sofagent/data/knowledge
+ln -s ~/Dropbox/sofagent/think.md ~/.sofagent/data/think.md
 ```
 
 3. 其他设备同样操作。云盘客户端自动同步。
@@ -111,9 +111,11 @@ mkdir ~/sofagent-shared && cd ~/sofagent-shared
 git init
 mkdir knowledge
 
-# 作为 submodule 加入你的主项目
-cd ~/my-project
-git submodule add ~/sofagent-shared .sofagent/knowledge
+# 知识库真实落点 = {SOFAGENT_HOME}/data/knowledge（不是项目目录下的 .sofagent/）
+# submodule 需要父目录本身是 git 仓库——先把 data 目录初始化为仓库，再嵌入 shared
+mkdir -p ~/.sofagent/data && cd ~/.sofagent/data
+git init
+git submodule add ~/sofagent-shared knowledge
 ```
 
 设备 B clone 时加 `--recurse-submodules`。
@@ -132,15 +134,15 @@ git submodule add ~/sofagent-shared .sofagent/knowledge
 
 1. 设备 A 上 Agent 完成一个任务，写了一条 think.md：
 ```bash
-cat ~/.sofagent/think.md | tail -5
+cat ~/.sofagent/data/think.md | tail -5
 ```
 
 2. 设备 B 上等 30 秒（云盘同步延迟），检查：
 ```bash
-cat ~/.sofagent/think.md | tail -5
+cat ~/.sofagent/data/think.md | tail -5
 # 应该能看到设备 A 刚写的那条
 
-ls ~/.sofagent/knowledge/shared/ | head -20
+ls ~/.sofagent/data/knowledge/shared/ | head -20
 # 应该能看到 lessons-missteps 周报等共享文件
 ```
 

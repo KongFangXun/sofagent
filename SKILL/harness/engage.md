@@ -21,22 +21,22 @@
 
 | 档位 | 触发条件 | 决策 | 标注 |
 |:--:|---------|:--:|------|
-| **拆** | 多步操作 / 多文件 / 多 Agent 协作 / 有顺序依赖 | 走 AO compose 一次性拆解 → DAG → 逐步执行 | 边界情况默认拆 |
-| **不拆** | 单步操作 / 无依赖 / 已知模板匹配 | Agent 直接处理，不走 AO compose | 宁多拆不少拆 |
+| **拆** | 多步操作 / 多文件 / 多 Agent 协作 / 有顺序依赖 | 走 `sofagent-orchestrator compose` 一次性拆解 → DAG → 逐步执行 | 边界情况默认拆 |
+| **不拆** | 单步操作 / 无依赖 / 已知模板匹配 | Agent 直接处理，不走 `sofagent-orchestrator compose` | 宁多拆不少拆 |
 
 判断依据：读节点的五要素（输入/输出/负责人/耗时/痛点）→ 判断任务粒度。单步无依赖 → 不拆；多步有依赖需多 Agent → 拆。
 
 ---
 
-## AO Compose 拆解
+## 编排 Compose 拆解
 
-`sofagent-orchestrator compose` 的完整说明见 **DEVELOPMENT.md §二**。核心流程：Agent 读 `nodes/[节点名].md`（三层实体之文档层）→ 把节点定义注入给 `sofagent-orchestrator compose "节点描述"` → 输出 YAML DAG 结构 → 逐步执行。
+`sofagent-orchestrator compose` 的完整参数见 `sofagent-orchestrator --help`。核心流程：Agent 读 `nodes/[节点名].md`（三层实体之文档层）→ 把节点定义注入给 `sofagent-orchestrator compose "节点描述"` → 输出 YAML DAG 结构 → 逐步执行。
 
 > sofagent-orchestrator compose 接受自然语言描述（不是读 .yaml 配置文件）。Agent 读节点 .md 后，把内容揉成一句话描述传给 sofagent-orchestrator compose。sofagent-orchestrator compose 内部会生成临时 YAML DAG 做执行计划，但那是它自己的内部产物，不是我们需要维护的配置文件。
 
 ## Agent 模板匹配
 
-AO Compose 自带角色模板库，直接引用不自定义：
+编排 Compose 自带角色模板库，直接引用不自定义：
 
 | 节点类型 | 匹配角色 |
 |---------|---------|
@@ -44,9 +44,8 @@ AO Compose 自带角色模板库，直接引用不自定义：
 | 代码实现 / 配置修改 | `developer` |
 | 测试 / 验证 | `qa-engineer` |
 | 文档 / 报告生成 | `technical-writer` |
-| 部署 / 运维操作 | `devops-engineer` |
 
-优先用 `ao roles` 列出的角色，找不到匹配时默认 `developer`。
+模板库固定这四个角色（`engine/orchestrator/src/composer.ts`），**不自造角色名**——节点不属于上述类型时归到最接近的一个，拿不准时默认 `developer`。
 
 ---
 

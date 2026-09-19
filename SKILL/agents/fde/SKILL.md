@@ -107,7 +107,7 @@ U 盘包含：Node.js 便携版 + sofagent 约束层 + knowledge 加密落盘（
 
 **交付收尾时，FDE 必须引导执行 activate：**
 
-1. **运行激活**：在交付目录执行 `npx sofagent-audit --activate`（或 `sofagent activate`），确认：
+1. **运行激活**：在交付目录执行 `sofagent-orchestrator activate`（`--dry-run` 只预览、`--node-filter <id,...>` 限定节点），确认：
    - ontology 被读取并注册为 SubAgent（`list_agents` 可查）
    - workflow.yml 被 compose 成企业工作流（`sofagent_compose` 可查）
    - skills/ 被挂载到对应 Agent

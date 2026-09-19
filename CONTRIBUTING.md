@@ -1,5 +1,7 @@
 # 贡献指南
 
+<p align="center"><img src="docs/assets/sofagent.png" alt="sofagent" width="96" /></p>
+
 > 📖 新贡献者？先看 [COMMUNITY.md](./docs/COMMUNITY.md) 了解社区现状和贡献路径。
 > 📌 基于当前 main 分支结构修订，目录与文件以你面前的仓库为准。
 > v1.4.9 · 2026-09-17（UTC）· ✅ 已发版（v1.4.9 更新 2026-09-17）· 孔放勋
