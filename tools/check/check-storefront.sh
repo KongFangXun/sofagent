@@ -165,7 +165,7 @@ GH_TOPIC_COUNT=$(gh api repos/KongFangXun/sofagent --jq '.topics | length' 2>/de
 # → 走不进下方 SKIP 分支 → 错误体被当 description 解析 = 假红两连
 # （「未找到 (N tools) 声称」）。判据：任一变量含 "Bad credentials"/"message" JSON
 # 错误特征 = 凭证失效，与离线同走 SKIP。
-if echo "$GH_DESC$GH_HOME$GH_TOPIC_COUNT" | grep -qE 'Bad credentials|"message"'; then
+if [[ "$GH_DESC$GH_HOME$GH_TOPIC_COUNT" == *"Bad credentials"* ]] || [[ "$GH_DESC$GH_HOME$GH_TOPIC_COUNT" == *'"message"'* ]]; then
   GH_DESC=""; GH_HOME=""; GH_TOPIC_COUNT=""
 fi
 
