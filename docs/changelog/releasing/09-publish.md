@@ -611,6 +611,28 @@ env -u http_proxy -u https_proxy -u HTTP_PROXY -u HTTPS_PROXY -u ALL_PROXY -u al
 
 发布流水线跨多 session（本 session 收尾 + 其他 session 在途）时，`git add -A` 会把**其他 session 的在途改动**一并吞进本任务 commit（曾一次吞 19 文件含他人 package.json 与 2041 行 lock 删除——审计 A3/A11 警告才暴露，若已 push 将污染远端）。**收编一律逐文件 add**（任务清单内的文件显式列出）；审计 A3「不改越界」警告是最后的拦截线——**警告出现即说明混入了清单外文件，必须 reset 拆分重提，禁止带病 push**。
 
+### 🔴 凭证类 403 的诊断序（push 被拒 ≠ 网络问题）
+
+> 症状：`git push` 报 `remote: Permission to <owner>/<repo>.git denied to <owner>` + `403`，
+> 而 `gh api user` 正常、`gh api repos/... --jq .permissions` 显示 `push:true`。
+> **注意：API 的 permissions 位反映的是「账号对该仓的能力」，不是「当前 token 的能力」**——拿它当判据必误判。
+
+三步定性（按序做，前一步不能确定才进下一步）：
+
+1. **测 token 的写权限（唯一可信判据）**：用 Contents API 做一次最小写
+   `curl -X PUT -H "Authorization: Bearer $(gh auth token)" .../contents/_perm-test.txt -d '{"message":"perm test","content":"dGVzdA=="}'`
+   ——返回 `Resource not accessible by personal access token` = **fine-grained token 的 Contents 权限是 Read-only**（高频默认值），
+   须去 token 设置页把 `Contents` 与 `Workflows` 改为 Read and write（可原位编辑，token 串不变）。
+   写成功记得 DELETE 清理（会留下两个测试 commit，内容已删，属可接受留痕）。
+2. **看 git 实际用了哪个凭证**：`GIT_TRACE=1 GIT_CURL_VERBOSE=1 git push ...` 看 `run_command: '... git-credential get'`
+   ——命中 `git-credential-osxkeychain` 说明**钥匙串旧凭证优先于 gh 的 token**；
+   修法 = `git config --global --unset-all credential.helper` 后按序重加 `!gh auth git-credential` → `osxkeychain`，
+   并 `printf 'protocol=https\nhost=github.com\n' | git credential-osxkeychain erase` 清旧条目。
+3. **才轮到网络层**（前两步都通过）：`git -c http.version=HTTP/1.1 push`；仍失败且 `curl https://github.com` 返 `000` = 出口网络问题。
+
+> 🔴 **权限拒绝与网络抖动必须分开处置**：网络问题表现为 `Failed to connect` / `Error in the HTTP2 framing layer` /
+> `Recv failure` / curl 返 `000`；**权限问题固定为 `denied to <owner>` + `403`——后者重试一万次也不会好**。
+
 ### 🔴 重试循环与退出码测量（单次命令不够——网络失败是间歇性的）
 
 单次降级 push 成功≠网络稳定——失败形态会轮换（SSL timeout / Connection reset / Empty reply / lowSpeed 超时），**必须重试循环**（每轮重新评测，成功即退）：

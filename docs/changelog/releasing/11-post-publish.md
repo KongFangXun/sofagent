@@ -23,9 +23,21 @@
 | 八 | [ ] | **下版本内容对话讲解**（详见下方——三问讲完 + 负责人确认优先级，缺任一不算完） | 项目负责人理解下版本方向 |
 | 九 | [ ] | **进度追踪清零**：把 `releasing.md` 进度追踪的 11 个 `[x]` 全部改回 `[ ]`，并同步清零本文件内部步骤表勾选（见下方步骤九说明），为下一版本新周期做准备 | 进度追踪重置 |
 | 十 | [ ] | **releasing 自迭代**（sop 审查自己）：对照本次发版的实际执行体验，检查 11 个阶段文件是否有过时/缺漏/顺序不合理的地方，直接修正。这是 releasing.md 的「Dream Cycle」——每次发版后用它自己的经验喂养它自己 | releasing.md 更新 |
-| 十一 | [ ] | **本机 daemon 重载（dogfooding 保活）**：发版后本机守护进程要吃上新代码。launchd 配置 `~/Library/LaunchAgents/local.sofagent-daemon.plist` 指向仓库 dist（非全局 npm 包），一条命令重载：`launchctl kickstart -k gui/$(id -u)/local.sofagent-daemon`，随后 `tail -3 ~/.sofagent/data/daemon-launchd.log` 确认版本号 = 刚发的版本。开机自启已由 plist 的 RunAtLoad+KeepAlive 保证，无需每次处理。⚠️ **重载前先预检 plist node 路径存在性**（`ls "$(grep -o '/[^<]*bin/node' ~/Library/LaunchAgents/local.sofagent-daemon.plist | head -1)"`——plist 写死的绝对路径在 runtime 目录升级/清理后即失效 → exit 78 EX_CONFIG 崩溃循环；手动跑 CLI 正常即证明是路径问题。改路径须 `bootout`+`bootstrap` 重载，kickstart 不重读 plist）。⚠️ **真假日志辨析**：launchd 真实日志在 plist `StandardOutPath` 指向的 `~/.sofagent/data/daemon-launchd.log`；`~/.sofagent/daemon.log` 可能是测试进程残留旧文件，勿据此判断重载成败 | daemon 跑新版 |
+| 十一 | [ ] | **本机 daemon 重载（dogfooding 保活）**：发版后本机守护进程要吃上新代码。launchd 配置 `~/Library/LaunchAgents/local.sofagent-daemon.plist` 指向仓库 dist（非全局 npm 包），一条命令重载：`launchctl kickstart -k gui/$(id -u)/local.sofagent-daemon`，随后 `tail -3 ~/.sofagent/data/daemon-launchd.log` 确认版本号 = 刚发的版本。开机自启已由 plist 的 RunAtLoad+KeepAlive 保证，无需每次处理。⚠️ **前置：确认 plist 指向的仓库已同步到本版**——daemon 跑的 dist 来自 plist `WorkingDirectory` 指向的那个仓库，而发版常在 **worktree** 里进行（worktree 与主仓是两个工作副本）。若 daemon 指向主仓而主仓未 pull，`kickstart` 后日志版本号仍是上一版——**版本核对会当场揭穿，勿据「state = running」判成功**。同步主仓（`git pull` + `npm install` + `npm run build`）属对另一个工作副本的写操作：有并发 session 在其中作业时**停手报告**，交作者决定，勿自行 pull。
+>
+⚠️ **重载前先预检 plist node 路径存在性**（`ls "$(grep -o '/[^<]*bin/node' ~/Library/LaunchAgents/local.sofagent-daemon.plist | head -1)"`——plist 写死的绝对路径在 runtime 目录升级/清理后即失效 → exit 78 EX_CONFIG 崩溃循环；手动跑 CLI 正常即证明是路径问题。改路径须 `bootout`+`bootstrap` 重载，kickstart 不重读 plist）。⚠️ **真假日志辨析**：launchd 真实日志在 plist `StandardOutPath` 指向的 `~/.sofagent/data/daemon-launchd.log`；`~/.sofagent/daemon.log` 可能是测试进程残留旧文件，勿据此判断重载成败 | daemon 跑新版 |
 | 十二 | [ ] | **网络恢复收尾**：发版全程若用过降级通道（gh api tag / Git Data API push / 剥代理直连），网络恢复后必须做三件事：① `git fetch origin && git status` 确认本地/远端无分叉（有分叉按 09-publish「双 SHA 分叉接回」处理）；② lightweight tag 覆盖为 annotated——`git tag -f -a vX.Y.Z -m "vX.Y.Z · {一句话}" <commit> && git push origin vX.Y.Z --force`（gh api 直建 ref 的 lightweight tag 无 tag object，`git for-each-ref refs/tags` 显示 type blob/commit 即 lightweight；经 git/tags 建 object 再建 ref 的通道产出直接是 annotated，免覆盖）；③ 桌面发布物清理——本版产生的 prompt/body 草稿（`vX.Y.Z-*.md` / `release-note-*.md`）归档或删除，只保留下一版 dev prompt（发布物落盘铁律：统一 `~/Desktop/`，禁仓库内） | 远端/桌面双干净 |
 | 十三 | [ ] | **Discussions 置顶轮换**：新版 release 帖（Announcements 自动生成）**不置顶**——版本帖是流水内容，置顶位只留给常青帖。🔴 置顶**变更**无 API（GitHub GraphQL Mutation 只有 pinIssue 系，无 pinDiscussion），只能网页操作（右侧齿轮 → Unpin/Pin）；**只读核查**走 GraphQL `pinnedDiscussions { discussion { number title } }` 即可，无需开网页，异常才需网页干预 | 置顶位干净 |
+> 🔴 **本步骤的两个 worktree 陷阱（均在 worktree 内执行时命中）**：
+> ① **真实 hooks 路径不是 `<repo>/.git/hooks`**——worktree 里 `.git` 是**文件**（指向主仓的 gitdir），
+>    hooks 实际在主仓实现目录。取真实路径用 `git rev-parse --git-path hooks`（本 worktree 实跑命中：
+>    直接看 `.git/hooks/` 会误判「无本机 hook」，而真实 hooks 在 `~/WorkBuddy/sofagent/.git/hooks`）。
+> ② **`sofagent-audit --init` 在 worktree 内安装 hook 会失败**（实跑 `ENOTDIR: mkdir <worktree>/.git/hooks`
+>    ——安装器按 `<cwd>/.git/hooks` 拼路径，未走 `git rev-parse --git-path hooks`），且**此前的旧 hook 已在
+>    「先删后装」流程中被移除** → `--init` 失败后本仓处于**无 hook 状态**（后续 commit 不再被审计）。
+>    **安全修法（不依赖 CLI）**：备份 → 直接从 `engine/audit/hooks/` 拷贝三件并 `chmod +x` 到真实 hooks 路径
+>    （hook 本就是拷贝形态，与 `--init` 产出一致）。装完用一次真实 commit 验证审计确实运行。
+>
 | 十四 | [ ] | **hook 生效确认**：本机 `.git/hooks/commit-msg` 头部版本号 == `engine/audit/hooks/commit-msg` 头部版本号（hook 是拷贝非软链，git pull 不随同步——发版窗口改过 hook 的版本，本机与其他仓库都是旧拷贝）。不一致 → `sofagent-audit --install-hook` 重装后复验（install.sh Step 6.5 的版本对账提示同源） | 两版本号一致 | 🔴 **v1.4.8 补充**：`--init` **不会覆盖已存在的 hook**（保护性跳过）⇒ 版本不符时须**先备份并删除** `.git/hooks/{commit-msg,pre-commit,post-commit}` 再跑 `--init`，否则该步永远修不好（实测：跑完仍 `hook v1.4.7`）。
 
 ---
