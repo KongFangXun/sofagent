@@ -66,7 +66,7 @@ bash install.sh && bash engine/scripts/verify.sh
 
 | 目录 | 内容 |
 |------|------|
-| `engine/` | 13 个 @sofagent/* 模块包（`audit` 审计模块 / `core` 底座 / `daemon` 守护 / `orchestrator` 编排 / `train` 后训 / `mcp` / `rules` / `eval` / `think` / `evolve` / `ontology` / `harness` / `ab-test`，12 个含 test script）+ `hooks/sofagent-load-chain`（加载链 Hook，工具包非模块包）——模块包全部发布到 npm；另有 2 个插件族：`dsh-plugins/`（cordis-plugin-sofagent* 7 款 DSH 插件：6 款原子 + 1 款聚合整装）+ `openclaw-plugins/`（OpenClaw code-plugin 4 款） |
+| `engine/` | 13 个 @sofagent/* 模块包（`audit` 审计模块 / `core` 底座 / `daemon` 守护 / `orchestrator` 编排 / `train` 后训 / `mcp` / `rules` / `eval` / `think` / `evolve` / `ontology` / `inject`（v1.5.0 前名 harness）/ `ab-test`，12 个含 test script）+ `hooks/sofagent-load-chain`（加载链 Hook，工具包非模块包）——模块包全部发布到 npm；另有 2 个插件族：`dsh-plugins/`（cordis-plugin-sofagent* 7 款 DSH 插件：6 款原子 + 1 款聚合整装）+ `openclaw-plugins/`（OpenClaw code-plugin 4 款） |
 | `engine/audit/src/rules/` | 审计规则实现（`rule-a*.ts` A1-A23 + `skill-safety-engine.ts`）；A20 网络外传 / A21 持久化后门 / A22 权限提升 / A23 路径穿越 |
 | `engine/audit/src/` | 审计核心：`audit-trail.ts` 审计轨迹聚合 + `protocol-neutrality.ts` 协议中立声明 |
 | `engine/audit/src/permission/` | 权限配置加载与检查 |
@@ -87,7 +87,7 @@ bash install.sh && bash engine/scripts/verify.sh
 | 2 | 给 install.sh lib 模块加参数校验 | `engine/scripts/lib/*.sh` | ⭐ | 10 min |
 | 3 | 修复一个 ShellCheck 警告 | 见 ShellCheck Action 报告 | ⭐⭐ | 10 min |
 | 4 | 补一条审计规则 + 测试 | `engine/audit/src/rules/rule-a*.ts` + `.test.ts` | ⭐ | 15 min |
-| 5 | 翻译一段 README 到英文 | `README.en.md` | ⭐⭐ | 15 min |
+| 5 | 翻译一段 HANDBOOK 到英文 | `docs/HANDBOOK.md` → 英文版 | ⭐⭐ | 15 min |
 
 ---
 
@@ -210,7 +210,7 @@ sofagent 当前维护者为孔放勋一人。不设申请制——贡献自然�
 
 ## 成为维护者
 
-sofagent 当前 bus factor = 1（唯一维护者）。如果你以下条件满足至少 2 条，欢迎联系维护者讨论成为 co-maintainer：
+sofagent 当前 bus factor = 1（唯一维护者）。上面的「Seeking Co-maintainers」表是正式标准（合并 PR ≥5 + 持续 ≥2 月 + 作者邀请）；如果你已满足以下早期信号中的至少 2 条，可以先开 Discussion 与维护者聊聊方向——早期接触不算正式申请：
 
 - 提交过 3+ 个被合并的 PR
 - 熟悉 bash 兼容性 / OpenClaw hook / 安全审计 / 英文文档 中至少一个领域

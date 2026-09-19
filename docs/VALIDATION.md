@@ -19,7 +19,7 @@
 - [二、生态位：Agent 三层模型与 sofagent 的位置](#二生态位agent-三层模型与-sofagent-的位置)
 - [三、架构印证：行业框架独立复现 sofagent 的选择](#三架构印证行业框架独立复现-sofagent-的选择)
 - [四、市场印证：行业判断被市场买单](#四市场印证行业判断被市场买单)
-- [五、行业研报印证的新增局限（2026-07）](#五行业研报印证的新增局限2026-07)
+- [五、研报视角的边界提示](#五研报视角的边界提示)
 
 ---
 
@@ -784,7 +784,23 @@ DeepSeek Harness（DSH）开源后，一线从业者的通行判断是「垂直 
 
 ---
 
-## 五、行业研报印证的新增局限（2026-07）
+## 五、研报视角的边界提示
+
+> 行业研报在给出印证的同时也提示了边界，以下两条与 [LIMITATIONS](./LIMITATIONS.md) 的既有披露互证。
+
+### 约束增益与自进化系列的实验数据汇总（ARCHITECTURE/PHILOSOPHY 引用的数据锚）
+
+以下数据被 ARCHITECTURE（审计轨迹谱系 / 进化保留判据 / 蒸馏精度门槛）与 PHILOSOPHY（约束增益四源 / 进化多样性）以指针方式引用，集中于此：
+
+- **Harness-MU**（[arXiv:2606.21856](https://arxiv.org/abs/2606.21856)）：GPT 基座指令跟随 42.2%→91.2%（+48.9pt；冲突模式 30.9%→78.1%），全部访问控制攻击下隐私零泄露，效用分反升 0.28–0.39，wall-time 反降 11%。
+- **GLM-5.3-Flash 安全涌现**：约束下的编程能力即安全能力（CyberGym 84.5%）。
+- **JitRL**（[arXiv:2601.18510](https://arxiv.org/abs/2601.18510)，ICML 2026 Spotlight，NUS）：轨迹检索为经验、对数概率调制输出分布，权重不动，成本约为梯度微调的 1/30；KL 约束把策略拴在冻结基座附近。
+- **QWM**（[arXiv:2608.17163](https://arxiv.org/abs/2608.17163)，Stanford）：轨迹喂轻量世界模型做决策前树搜索；「Q 搜索（评估状态+动作）显著强于 V 搜索（只评估状态）」。
+- **HarnessDev**（[arXiv:2609.01437](https://arxiv.org/abs/2609.01437)，字节 Seed）：同一 GPT-5 权重仅换 harness，Terminal-Bench 35.2%→49.6%；反馈集 +13.9、held-out 仅剩 +1.43——保留判定须用外部信号。
+- **Aspire**（[arXiv:2608.31111](https://arxiv.org/abs/2608.31111)）：24 个 run 仅 1/12 超基线，继续训练会抹掉此前的改进。
+- **ES vs RL 多样性**（[arXiv:2608.12679](https://arxiv.org/abs/2608.12679)，Cognizant AI Lab × UT Austin）：MATH500/Olympiad Bench 上 ES 相比 RL checkpoint 减少回退、增加前进，失败时保留更高答案熵。
+- **S³Gym**（[arXiv:2608.31100](https://arxiv.org/abs/2608.31100)，字节 Seed）：自评判与环境真值一致率 0.88 但价值估计误差同样 0.88（NMAE），评判准确度与下一步改进几乎零相关（r=-0.23）；蒸馏正例 GPT-5.5/Trust ΔNABA +66.9、反例 GPT-4o/Snake ΔNABA -22.0。
+- **SkillZip**（[arXiv:2608.11079](https://arxiv.org/abs/2608.11079)，阿里×浙大×杜克）：第 1 轮起压缩的技能长度钉在 1.6-1.9 倍，第 8 轮才清理的涨到 2.6 倍追不回。
 
 ### 不要一上来就 Agent 自动闭环
 

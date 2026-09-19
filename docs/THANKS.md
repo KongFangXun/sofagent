@@ -60,7 +60,7 @@
 - **[The Anatomy of an Agent Harness](https://x.com/i/article/2040732084843782144)** · Akshay Pachaar — Harness 即 LLM 的操作系统，12 个核心组件
 - **[Three Key Loops](https://www.deeplearning.ai/the-batch/three-key-loops-for-building-great-software)** · Andrew Ng — 分钟→小时→天-周三层嵌套循环；开发者留在循环的理由是上下文优势而非品味
 - **[OpenWorker](https://github.com/andrewyng/openworker)** · Andrew Ng 团队 — 开源桌面 AI 代理（7.3k stars, MIT）。四级权限模型（plan/interactive/auto/custom）和无人值守收件箱设计，为 FDE sustain 模式的 daemon 审批机制提供参考。"Ask for an outcome, not just an answer"的产品叙事与 sofagent「交付文档而非建议」同源
-- **[aisuite](https://github.com/andrewyng/aisuite)** · Andrew Ng 团队 — OpenWorker 的底层引擎，`<provider>:<model>` 统一接口 + Agents API + tool policies。与 sofagent 11 模型供应商定位重叠，国产模型覆盖面印证统一接口方向的行业共识
+- **[aisuite](https://github.com/andrewyng/aisuite)** · Andrew Ng 团队 — OpenWorker 的底层引擎，`<provider>:<model>` 统一接口 + Agents API + tool policies。与 sofagent 的 OpenAI 兼容多供应商路由定位同向，国产模型覆盖面印证统一接口方向的行业共识
 - **[DeerFlow](https://github.com/bytedance/deer-flow)** · 字节跳动 — 用 "super agent **harness**" 命名其运行时框架，印证了 Harness 作为 Agent 工程化品类的行业站住
 - **[Omnigent](https://github.com/omnigent-ai/omnigent)** · Databricks 系 — 开源 meta-harness：策略强制在基础设施层而非 prompt。与 sofagent「约束进代码层」判断同源
 - **[LiteLLM](https://github.com/BerriAI/litellm)** · BerriAI — 开源 LLM gateway，未来控制平面成本与路由层可站在上面
@@ -77,7 +77,7 @@
 
 - **[A Field Guide to Fable](https://x.com/trq212/article/2073100352921215386)** · Thariq Shihipar — 四类未知框架；模型够强时瓶颈从「能不能做」变成「你能不能说清楚」
 - **[When AI builds itself](https://www.anthropic.com/institute/recursive-self-improvement)** · Anthropic — 代码生成不再是瓶颈，人工审查成为新堵点；sofagent 把审查外置到 git diff
-- **[SkillOpt](https://github.com/microsoft/SkillOpt)** · 微软 — Skill 自进化模块，为 v1.0.3 闭环提供参考
+- **[SkillOpt](https://github.com/microsoft/SkillOpt)** · 微软 — Skill 自进化模块，为 v1.0.3 闭环提供参考（v1.4.8 起由自研 gate 验证器 `@sofagent/evolve` 替代，依赖已摘除）
 - **[Satya Nadella at Microsoft Build](https://pod.wave.co/podcast/latent-space-the-ai-engineer-podcast/satya-nadella-no-priors-x-latent-space-crossover-special-at-microsoft-build)** · Satya Nadella —「Every company will have its own private eval」与 FDE 交付物对应
 
 ---

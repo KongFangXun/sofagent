@@ -1,6 +1,6 @@
 # sofagent 专题指南索引（guides/）
 
-> 本目录收纳 21 份专题指南。按角色找入口：企业 IT / FDE 交付 / 开发者 / 审计与安全 / 后训模块 / 开源运营。全站文档导航见 [WIKI](../WIKI.md)。
+> 本目录收纳 22 份专题指南。按角色找入口：企业 IT / FDE 交付 / 开发者 / 审计与安全 / 后训模块 / 开源运营。全站文档导航见 [WIKI](../WIKI.md)。
 
 ## 一、企业落地（IT 负责人 / 管理员）
 
@@ -25,6 +25,7 @@
 
 | 指南 | 讲什么 |
 |------|--------|
+| [dsh-mcp-integration.md](./dsh-mcp-integration.md) | DSH MCP 互通——在 DeepSeek Harness 中挂载 sofagent-mcp 的配置专章 |
 | [harness-sdk.md](./harness-sdk.md) | SubAgent 托管 SDK（`harness.wrap`）——自定义 graph 一行包装接入约束层 |
 | [testing.md](./testing.md) | 测试用例说明——怎么跑、跑什么、如何解读 |
 | [loop-development.md](./loop-development.md) | FORGE Loop 开发——给自迭代工具链加新 Loop |
@@ -41,8 +42,7 @@
 
 ## 五、开源运营（v1.4.5+）
 
-| 指南 | 讲什么 |
-|------|--------|
+> 本分类暂无专篇指南——开源运营相关内容暂由 [review-system.md](./review-system.md)（审查体系，归「四、审计与安全」）与 [narrative-standard.md](./narrative-standard.md)（叙事标准，归「三、开发者」）承载；新增运营指南时归入本分类。
 
 ## 六、后训模块（v1.4.1+）
 

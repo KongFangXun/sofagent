@@ -23,7 +23,7 @@
 
 > 🏢 **The organizational lens**: the bottleneck of AI adoption has shifted from "is the model smart enough" to "can the organization dare to onboard it" — does it fit the org chart, does it get an account, how is performance measured, what happens when it errs. sofagent is the onboarding system for digital employees: on entry it writes the job description into files; after departure it runs performance reviews (evidence for every change), organizational memory (compounding know-how), and fault tolerance (every mistake reversible). Install sofagent before you give AI an employee ID.
 
-**An open-source FDE Harness layer.** The AI-deployment engineer for one-person companies and SMBs — never sleeps, never leaves, and carries its own auditor. It sits **between mature Agents (executors: DSH / OpenClaw / WorkBuddy) and the model layer (intelligence sources: general LLMs + bespoke/small post-trained models)**, governing both sides. Shipped as **FDE plugins + Skill + MCP + CLI + Dashboard**: on entry, write the business judgment down as files — the business flow, the ontology data, the deployed AI nodes; on departure, audit every change against those files and keep optimizing.
+**An open-source FDE Harness layer** — embedded between mature Agents (DSH / OpenClaw / WorkBuddy) and the model layer (general LLMs + bespoke post-trained models) to govern both: on entry, it writes the business judgment down as files (business flow, ontology data, AI-node deployment); after departure, it audits every change against those files. Five Harness capabilities (inject · audit · rollback · distill · evolve), five distribution forms (FDE plugins / Skill / MCP / CLI / Dashboard). sofagent does not build the Agent — it delivers the layer that keeps any Agent governed.
 
 sofagent does not build its own Agent — execution is delegated to mature hosts (model + tools + sessions). What it delivers is the **FDE Harness layer**: FDE methodology × Harness engineering, two stages of one job — **on entry, generate judgment** (where AI belongs, written down as machine-checkable files), **after departure, retain judgment** (execute against those files 24/7, audit every change). The five Harness capabilities: inject · audit · rollback · distill · evolve — slots into any existing Agent; and it keeps every model (general or bespoke) under control (register / rollout / train / deploy fully audited). How the two stages interlock, and why they cannot be pulled apart, is covered in [the dedicated chapter below](#what-is-the-fde-harness).
 
@@ -36,13 +36,11 @@ sofagent does not build its own Agent — execution is delegated to mature hosts
 <summary>🗺️ System architecture overview (FDE Harness five-module structure)</summary>
 
 <p align="center">
-  <img src="docs/assets/architecture-diagram.png" alt="sofagent architecture: host Agent enters the FDE Harness constraint layer via MCP Server; orchestration / audit / post-training / governance / execution modules (governance & execution modules planned)" width="860" /><br/>
-  <sub>Constrain Agent behavior · Audit every change · Distill experience (five-module structure, governance & execution modules planned; full interactive version in <a href="./docs/ARCHITECTURE.md">ARCHITECTURE</a>)</sub>
+  <img src="docs/assets/architecture-diagram.png" alt="sofagent architecture: host Agent enters the FDE Harness constraint layer via MCP Server; orchestration / audit / post-training / governance / execution modules (governance module pending release, execution module planned)" width="860" /><br/>
+  <sub>Constrain Agent behavior · Audit every change · Distill experience (five-module structure; governance module pending release, execution module planned; full interactive version in <a href="./docs/ARCHITECTURE.md">ARCHITECTURE</a>)</sub>
 </p>
 
 </details>
-
-> 🏞️ Big tech hands you "water" (foundation models) and "riverbeds" (Agent platforms) — but the water is raw, and you don't dare drink it straight. sofagent is the engineering that makes the river usable for a whole city: dams keep the water from flooding, treatment plants turn raw water into drinking water, and pipe networks deliver it to every faucet. Models supply 90% of the intelligence; sofagent supplies the 10% of reliable execution.
 
 ### Should you install it?
 
@@ -107,7 +105,7 @@ Sits between the Agents you already use and the model layer — it doesn't repla
 
 | Tier | Platform | Constraint injection | Mounting method |
 |------|----------|---------------------|-----------------|
-| **Deep integration** | DeepSeek Harness | ✅ **Per-tool-call interception** | 6 atomic `cordis-plugin-sofagent-*` mounted into the runtime (1 optional aggregate plugin also available; previous chapter) — 7 lifecycle events incl. `tools/pre-execute` (per the vocabulary table in `engine/dsh-plugins/SEAMS.md`) |
+| **Deep integration** | DeepSeek Harness | ✅ **Per-tool-call interception** | 6 atomic `cordis-plugin-sofagent-*` mounted into the runtime (1 optional aggregate plugin also available; see "Upstream & plugin entries" below) — 7 lifecycle events incl. `tools/pre-execute` (per the vocabulary table in `engine/dsh-plugins/SEAMS.md`) |
 | **Full mounting** | OpenClaw | ✅ **Once per session** | Hook-injected four-layer constraints + circuit breaker + 4 OpenClaw plugins |
 | **Standard mounting** | Claude Code / Cursor | ⚠️ Skill self-load | Skills-directory symlink + platform rule file + interception config (content = commit-level 24 rules, not call-level interception) |
 | **Thin mounting** | WorkBuddy / Codex / Gemini CLI / Hermes | ⚠️ Skill self-load | Skills-directory symlink (Codex uses the `AGENTS.md` mount point) + git-hook audit |
@@ -117,7 +115,7 @@ Sits between the Agents you already use and the model layer — it doesn't repla
 
 One command selects your mounting tier: `bash install.sh --platform <platform-name>` (all platforms and differences in [HANDBOOK](./docs/HANDBOOK.md))
 
-## v1.5.0: Governance · Visibility & Ontology Maturity
+## v1.5.0: Governance · Visibility & Ontology Maturity (⏳ pending release)
 
 🛡️ **The engine grows a governance face** — constraint-layer value made visible, ontology data that survives time, and evidence that reconciles across layers: governance KPI dashboard (dedicated Dashboard "Governance" tab: six KPI cards — boundary-trigger rate / audit coverage / HITL response latency / weekly trend / task-repetition rate / trace-reconcile consistency + dataset review card (human semantic-quality backstop) + lineage compliance report export (where data came from → which gates it passed → version evolution → audit-chain references — submittable to enterprise compliance/legal) + weekly report export) · bitemporal ontology facts (`validFrom`/`validTo` + `stateAt` point-in-time snapshots — "what did the system know on that day" + 3-tier progressive loading: entity digests → relations → full text, budget-linked) · Ontology Validation Engine (DAG cycle detection with 3-color DFS chain localization + schema-compat three-state + fail-closed activation gate — validator crashes also refuse activation) · cross-layer evidence reconciliation (new `trace_reconcile` tool: agent self-report vs git diff vs model behavior, three sources, four verdicts — consistent / omitted / hallucinated / misreported — "be a forensics officer, not a camera") · FDE companion-period completion (14-day wrap-up report + fde_deploy registration handoff) · legacy & naming cleanup (retired API removal + composeWithReactAgent alias offline + loop --legacy retirement [breaking] + `@sofagent/harness` → `@sofagent/inject` [breaking]) · DSH plugin event wiring (7 seamHandlers onto existing bridge APIs: 4 audit event slots + one each for inject/evolve/rollback, zero judgment-logic change). MCP tools 104 → **105** · tests 4805 → **4903** (13-package workspace count, release-time figure) · acceptance 352 → **357** scenarios. Full details in the [devlog](./docs/changelog/v1.5/v1.5.0.md) · earlier versions in [CHANGELOG](./CHANGELOG.md).
 
@@ -184,22 +182,9 @@ sofagent-audit --doctor    # verify the environment (optional)
 
 **To uninstall**: `bash engine/scripts/uninstall.sh` — removes the Skill/constitution files, hook registrations and the three git hooks (`pre-commit` / `commit-msg` / `post-commit`), while keeping your `~/.sofagent/` data. More install options (clone install / full npx install / minimal install / enterprise deployment) in [HANDBOOK](./docs/HANDBOOK.md). Enterprise users who just want the FDE methodology for mapping business workflows, see [FDE/README.md](./FDE/README.md) (zero dependencies, no Node.js needed; for the 15-minute shortest path see its "15-minute shortest path" section).
 
-**What do I install → which channel** — two "install everything" entry points; pick the one matching your environment, and you **never need both** (they do not depend on each other, and neither is a prerequisite for the other):
+**To uninstall**: `bash engine/scripts/uninstall.sh` — removes the Skill/constitution files, hook registrations and the three git hooks (`pre-commit` / `commit-msg` / `post-commit`), while keeping your `~/.sofagent/` data. More install options (clone install / full npx install / minimal install / enterprise deployment) in [HANDBOOK](./docs/HANDBOOK.md). Enterprise users who just want the FDE methodology for mapping business workflows, see [FDE/README.md](./FDE/README.md) (zero dependencies, no Node.js needed; for the 15-minute shortest path see its "15-minute shortest path" section).
 
-| What I want | Which channel | What I get |
-|---|---|---|
-| Everything, via the npm ecosystem | `npm i -g sofagent` (npm bare-name umbrella package `engine/umbrella`) | `@sofagent/audit` + `@sofagent/mcp` + `@sofagent/orchestrator` + `@sofagent/daemon` |
-| Everything, via DSH host mounting | mount one `cordis-plugin-sofagent` entry in the host profile's `bundles` | all atomic plugins declared by that aggregator (one entry aggregates them) |
-
-> ⚠️ **Both channels ship a command named `sofagent`, but with different semantics — do not carry one mental model across both**:
->
-> | | npm bare-name umbrella (`npm i -g sofagent`) | `install.sh` state |
-> |---|---|---|
-> | What `sofagent` is | **Thin audit forwarder** — equivalent to `sofagent-audit`, zero-config 30-second audit | **Full-install entry point** — also exposes `status` / `web` / `dashboard` subcommands |
-> | Where it lives | `engine/umbrella/bin/sofagent.js` (spawns `@sofagent/audit`) | `$SOFAGENT_HOME/bin/` (written by install.sh) |
->
-> **Tell them apart via PATH** (when unsure which one you are running): `command -v sofagent` shows whether the path falls under npm global or `$SOFAGENT_HOME/bin`; then `sofagent --help` shows whether the first screen is the **audit flag table** or the **full-install subcommand table** (`sofagent web` only exists in the install.sh state).
-> If both are on PATH, **use the explicit full name** (run audits as `sofagent-audit …`) or reorder PATH — **do not** assume `sofagent` is always the full-install face. (v1.4.9 install-entry disambiguation batch)
+> ⚠️ **Two install channels both ship a command named `sofagent` with different semantics** — the npm bare-name umbrella (`npm i -g sofagent`) is a thin audit forwarder, while the install.sh state exposes `status` / `web` / `dashboard` subcommands. Disambiguation (PATH check, `--help` first screen, explicit `sofagent-audit` usage) and channel selection details in [HANDBOOK · Installation](./docs/HANDBOOK.md). (v1.4.9 install-entry disambiguation batch)
 
 ## Usage
 
@@ -261,8 +246,7 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # load the securit
 - Cordis runtime: <https://github.com/cordiverse/cordis>
 - 7 `cordis-plugin-sofagent*` plugin sources (6 atomic + 1 aggregate): [`engine/dsh-plugins/`](./engine/dsh-plugins/)
 
-| You want to know | Where |
-| What you want | Where |
+| What you want to know | Where |
 |:---------|:--------|
 | **Full doc index** (by intent) | [WIKI](./docs/WIKI.md) |
 | Install, use, troubleshoot | [HANDBOOK](./docs/HANDBOOK.md) |
@@ -270,7 +254,8 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # load the securit
 | What each release did | [CHANGELOG](./CHANGELOG.md) |
 | Security statement · known limits | [SECURITY](./SECURITY.md) · [LIMITATIONS](./docs/LIMITATIONS.md) |
 
-> 🧪 **Engineering credibility**: 4903 tests / 13 module packages + 11 plugins (7 DSH + 4 OpenClaw) — the test count is a post-v1.4.9-release snapshot of main (rolls forward with fix batches; the v1.4.9 release-time figure was 4805); the current authoritative value is whatever `tools/check/test-count.sh` reports (package scope: 13 workspace packages; counting standard in [WIKI](./docs/WIKI.md)) · 24 audit rules · fresh-eyes independent review continuously running (environmental notes are documented in [docs/guides/review-system.md](./docs/guides/review-system.md). Performance figures are single-machine reference values; cross-tool benchmarking is scheduled for v1.4.x together with Benchmark integration).
+> 🧪 **Engineering credibility** (current): 4903 tests / 13 module packages + 11 plugins (7 DSH + 4 OpenClaw) · 24 audit rules · fresh-eyes independent review continuously running.
+> The test count is a post-v1.4.9-release snapshot of main (rolls forward with fix batches; the release-time figure was 4805); the current authoritative value is whatever `tools/check/test-count.sh` reports — counting standard in [WIKI](./docs/WIKI.md). Review-environment notes in [docs/guides/review-system.md](./docs/guides/review-system.md); performance figures are single-machine reference values (cross-tool benchmarking scheduled with Benchmark integration).
 
 ---
 

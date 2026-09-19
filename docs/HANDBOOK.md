@@ -32,7 +32,7 @@
 |------|------|
 | 刚装上 | 落地 → 运行 |
 | 日常干活 | 运行 → 排查与自定义 |
-| 想改规矩 | 排查与自定义（改写 fde.md） |
+| 想改规矩 | 排查与自定义 ·「改写 fde.md」节（fde.md 当前约 1,800 字，模板在 `SKILL/harness/fde-template.md`） |
 | FDE 部署 / 持续优化 | 落地 → 常驻（完整方法论见 [FDE/GUIDE.md](../FDE/GUIDE.md)） |
 | 想理解内部机制 | [开发文档](./DEVELOPMENT.md) |
 | 想理解架构设计 | [架构文档](./ARCHITECTURE.md) |
@@ -140,7 +140,7 @@
 
 > 💬 **sofagent 没有界面。** 装完之后，你不会看到任何窗口或网页。你通过你的 Agent（WorkBuddy / Codex / Claude Code）和 sofagent 对话——说一句话，它做完了告诉你结果在哪。语言就是界面，MCP 就是入口。详见 [设计哲学](./PHILOSOPHY.md)。
 
-> 📊 **部署后可自动收到这些**：**审计守护日报**（今天拦了多少次违规）——由引擎自动生成推送，不需要人工干预（配好 `data/config/audit-report.json` 的 `target` + `schedule` 即生效）。**周报 / 月报 / 季度无 FDE 对照报告仍在排期中**——配置项的 `weekly` / `monthly` 是预留值，实现侧目前**仅 daily 实装**（自陈见 `engine/daemon` 的 audit-report-push 模块）；**扩容预警尚未实现**。详见 [FDE/GUIDE.md §5.9 离场](../FDE/GUIDE.md#59-离场五大能力)。
+> 📊 **部署后可自动收到这些**：**审计守护日报**（今天拦了多少次违规）——由引擎自动生成推送，不需要人工干预（配好 `data/config/audit-report.json` 的 `target` + `schedule` 即生效）。**周报 / 月报 / 季度无 FDE 对照报告仍在排期中**——配置项的 `weekly` / `monthly` 是预留值，实现侧目前**仅 daily 实装**（自陈见 `engine/daemon` 的 audit-report-push 模块）；**扩容预警尚未实现**。详见 [FDE/GUIDE.md §5.9 离场](../FDE/GUIDE.md#510-离场五大能力)。
 
 ### 两种装法（v1.2.0）
 
@@ -153,7 +153,7 @@ git clone https://github.com/KongFangXun/sofagent.git
 cd sofagent && bash install.sh
 ```
 
-> 只想加 Agent 行为约束？不需要装整个 sofagent——把 4 底线 + 9 铁律复制进你的 Agent 设置就行，详见 [README](../README.md)。
+> 只想加 Agent 行为约束？不需要装整个 sofagent——把 4 底线 + 9 铁律复制进你的 Agent 设置就行（清单见本文「运行」章的 4 条底线 + 9 则铁律，或直接用文末「彩蛋」的现成 prompt）。
 
 **前置依赖**：
 
@@ -226,13 +226,15 @@ sofagent-core verify                # 同样跑 verify 检查（注：没有 sof
 ### 安装后的目录
 
 ```
-你的项目根目录（$PWD）               Agent 平台用户目录
-├── .sofagent/          ← 数据目录    ~/.openclaw/ 或 ~/.workbuddy/
-│   ├── think.md                     ├── skills/sofagent/   ← Skill 文件
-│   └── task/logs/                   └── scripts/           ← 部署脚本
+~/.sofagent/                      Agent 平台用户目录
+├── data/          ← 用户数据      ~/.openclaw/ 或 ~/.workbuddy/
+│   ├── think.md                  ├── skills/sofagent/   ← Skill 文件
+│   └── task/logs/                └── scripts/           ← 部署脚本
+├── bin/           ← CLI 入口
+└── skill/         ← Skill 文件
 ```
 
-`.sofagent/` 建在**你的项目根目录**，不是 sofagent 仓库目录。
+用户数据在**用户主目录** `~/.sofagent/data/`（v1.2.1 起 SSOT，原项目内 `.sofagent/` 已迁移）；被审计仓库根目录还会生成一个**运行时产物** `.sofagent/`（审计快照等，可安全删除）——两者区别见下方「数据存储说明」。
 
 ### 跨平台能力差异
 
@@ -485,19 +487,13 @@ jobs:
 
 ### 近期版本新功能速览
 
-| 早期版本（v1.1.x-v1.3.x 共 30 版） | v1.1-v1.3 | 编排模块 ao→LangGraph→StateGraph 三演进 + 运行时审计闭环 + L1-L3 组织协作 + 引擎接口外化（MCP 52→60）+ SubAgent 完整沙箱 + 代理网关硬边界 + 数据静态加密 + AST 规则引擎 + meta-harness + Dream Cycle 知识进化 | [CHANGELOG](../CHANGELOG.md) |
-| Web 工作明细 + 图谱 | v1.4.0 | Dashboard 工作明细四视角 + 图谱栏（业务图谱 + 本体图谱 + MCP 工具视图 + skill 加载链）+ 随 install.sh 装到用户机 | [v1.4.0 开发日志](./changelog/v1.4/v1.4.0.md) |
-| 成本审计 | v1.4.0 | 超支告警 + `cost_query` MCP + COST DecisionKind（WARN-only 不拦截） | [v1.4.0 开发日志](./changelog/v1.4/v1.4.0.md) |
-| DSH/OpenClaw 插件家族 | v1.4.0 | DSH cordis-plugin 9 款 + OpenClaw code-plugin 4 款 + MCP 工具角色分层（默认 34/66）+ DSH 默认启用 | [v1.4.0 开发日志](./changelog/v1.4/v1.4.0.md) |
-| 后训模块地基 | v1.4.1 | train-job 编排 + `train_submit`（66→67 tools）+ 审计 HMAC 链 + 隔离/指纹/签名/回收/恢复/安全基线八块 | [v1.4.1 开发日志](./changelog/v1.4/v1.4.1.md) |
-| 训练数据与评估 + FDE 六引擎 | v1.4.2 | 企业数据→训练集管道 + dataset_version 版本 + eval 闭环 + train env/doctor + dry-run 算力外推 + 训练报告；FDE 六引擎工作台（fde_interview/classify/quantify/derive/distill/deploy，67→76 tools）+ IM 桥远程指挥 | [v1.4.2 开发日志](./changelog/v1.4/v1.4.2.md) |
-| 后训模块·运行与需求 | v1.4.3 | 训练需求推导+模板库（train analyze/templates）+ GPU 显存队列 + train_status/train_list/train_diagnose 三 MCP（76→79 tools）+ 训练沙箱与设备打包 + 审计聚合 KPI（--stats）+ 反作弊双防线 | [v1.4.3 开发日志](./changelog/v1.4/v1.4.3.md) |
-| 后训模块·信号与部署闭环 | v1.4.4 | 训练语料导出三件套（`corpus_export`，79→80 tools）+ 本地权重部署（manifest 清单 + sha256 篡改拒绝 + rollback-weights）+ 训练产物→注册自动衔接 + 多基座对比（train compare ROI 排序）+ 决策因果链与先例检索 + CI 供应链全 SHA 固定 + 五能力叙事定稿 | [v1.4.4 开发日志](./changelog/v1.4/v1.4.4.md) |
-| 后训模块·服务与持续 | v1.4.5 | 训练推理服务（`train_serve` 拉起 vLLM/Ollama/OpenAI 兼容端点，80→83 tools）+ 合规扫描闸门（`train_compliance`——PII/敏感字段/专有名词）+ 持续后训练（飞轮数据回流 + 三触发 + eval 回退保护）+ FDE 交付包（`train_deliverable`）+ 后训 Quickstart 十步端到端 + FDE 进场记忆目录（10 文件自动初始化）+ 进化模块实证收口 | [v1.4.5 开发日志](./changelog/v1.4/v1.4.5.md) |
-| 后训模块·分布式与云端 | v1.4.6 | 多卡/多机训练（`gpu.count`/`nodes` + schema v2 存量兼容 + GPU 双轴拓扑 + NCCL 第八类诊断，83→84 tools）+ 云 VM 执行面（`train_cloud` 注册/体检/远程 spawn + 分拣三档宁拦勿漏 + 失联止损 5min + 成本入预算）+ 标准数据推送接口（双闸，入口接线 v1.4.7）+ 边界收缩（配方外部装载 `--recipes` / model-downloader 删除 / `TrainExecutor` 隔离） | [v1.4.6 开发日志](./changelog/v1.4/v1.4.6.md) |
-| 商业平台接口版 | v1.4.7 | 商业平台接口一次到位——读接口（G2 能力缺口 `workflow_gaps` / G4 绩效 `contribution_query` / G6 节点 `visibility` / G7 多租户 v0 `data/<tenant>/`）+ 写接口（G13 PR 生命周期三 tool + G14 workflow CRUD 四 tool + `trigger.schedule` 定时）+ 交付三件（workflow 烧进 USB / G8 首部署 cron / 上岗 prompt）+ 云训练执行收口（`TrainChannel` 标准接口 + ssh 通道 + 双通道事件挂链）+ 三接线（静态加密 / audit repo-hash / `data_push`）（11 新 tool，84→95） | [v1.4.7 开发日志](./changelog/v1.4/v1.4.7.md) |
-| 设备接入与数据承接 | v1.4.9 | 多设备数据面一次收口——设备接入（G9 注册/发现/心跳：Ed25519 身份 + 新鲜度判定 + 在线才派单/掉线改派挂起）+ 数据承接（G10 `device_data_query` 白名单授权读取 / G11 `device_data_push` opt-in 上行——WAL 加密暂存 + 断点续传 + 审计计量）+ 训练数据飞轮（T7 `router_session_push` 过站承接 + T8 敏感识别三层插槽 + T9 权重灰度 AB）+ 平台接口面（G5b 连接器注册/发现 + G1 workflow 模板导出/导入与血缘）+ 工程效能（T6 installer skill + T10 模型清单上报/skill 快照 + bugfix 13 项）（9 新 tool，95→104） | [v1.4.9 开发日志](./changelog/v1.4/v1.4.9.md) |
-| 治理模块·可见性与本体成熟 | v1.5.0 | 约束层价值面板化——Dashboard 独立「治理」tab（KPI 六卡 + 数据集审阅 + lineage 合规报告导出 + 周报）+ 本体数据双时态事实（`stateAt` 时点快照「系统在某天知道什么」+ 三层渐进加载）+ Ontology Validation Engine（DAG 环链定位 + 激活前置门 fail-closed）+ 跨层证据对账 `trace_reconcile`（Agent 自述 vs git diff vs 模型行为四态判定）+ FDE 陪跑期期满总结 + 存量清扫与 `@sofagent/inject` 更名 + DSH 插件 7 事件位接线（1 新 tool，104→105） | [v1.5.0 开发日志](./changelog/v1.5/v1.5.0.md) |
+> 各版本能力沿革的完整清单见 [CHANGELOG 索引](../CHANGELOG.md) 与各版[开发日志](./changelog/)——此处只保留最近三版速览，旧版内容按「新能力段只留最新」纪律归档至 CHANGELOG。
+
+| 能力 | 版本 | 一句话 | 明细 |
+|------|------|--------|------|
+| 设备接入与数据承接 | v1.4.9 | 设备注册/发现/心跳（Ed25519 + 在线才派单）+ 数据目录白名单读取 + opt-in 加密上行 + router 过站承接（9 新 tool） | [v1.4.9 开发日志](./changelog/v1.4/v1.4.9.md) |
+| 治理模块·可见性与本体成熟 | v1.5.0 | Dashboard 治理 tab（KPI 六卡 + lineage 合规报告 + 周报）· 本体数据双时态 · Validation Engine · 跨层证据对账 trace_reconcile（1 新 tool） | [v1.5.0 开发日志](./changelog/v1.5/v1.5.0.md) |
+
 
 ### 新功能入口导览（v1.4.2 起三条新产品线——10 分钟上手各条线）
 
@@ -525,54 +521,12 @@ jobs:
 
 > 📖 **多设备同步**：v1.1.0 起支持轻量多设备——经验共享（knowledge/ + think.md）跨设备同步。4 种方案（iCloud / NAS / Dropbox / git submodule）见 [多设备同步指南](./guides/multi-device-sync.md)。
 
-### 在 DSH 中使用 sofagent（v1.3.5 · MCP 互通）
+### 在 DSH 中使用 sofagent（MCP 互通）
 
-sofagent 本身就是一个 MCP server（stdio 传输，bin `sofagent-mcp`，当前 **105 个 tool**——工具角色分层，默认全量暴露，`SOFAGENT_MCP_ROLES` 显式收窄专职面；各版增量见 [CHANGELOG](../CHANGELOG.md) 与 [API 工具清单](./API.md)）。
+sofagent 本身就是一个 MCP server（stdio 传输，bin `sofagent-mcp`，当前口径 105 个 tool——以 `engine/mcp/src/tool-registry.ts` 实数为准）。DSH 用户用官方 `@deepseek-ai/dsh-mcp-client` 桥接插件挂上 `sofagent-mcp`，即可在 DSH 会话里调用 sofagent 的全部能力——审计查询、知识库检索、A/B 实验、快照时间线等。
 
-DSH（DeepSeek Harness）用户不需要等 v1.4.0 的 cordis-plugin——用官方 `@deepseek-ai/dsh-mcp-client` 桥接插件挂上 `sofagent-mcp`，**今天就能在 DSH 会话里调用 sofagent 的全部能力**：审计查询、知识库检索、A/B 实验（`run_ab_test`）、快照时间线（`snapshot_list`）等。
+**配置方法、字段说明（`cordis.yml` 挂载示例）、两种 command 写法、安全边界（破坏性 tool 强制人审）与验证状态，整节见 [DSH MCP 互通指南](./guides/dsh-mcp-integration.md)。**
 
-#### 配置方法
-
-在 DSH 的 `cordis.yml`（插件挂载配置，通常在 `~/.dsh/` 或 profile 目录下）加一条 mcp-client 条目，stdio 传输直连 sofagent-mcp：
-
-```yaml
-- id: mcp-sofagent
-  name: '@deepseek-ai/dsh-mcp-client'
-  config:
-    serverName: sofagent
-    transport: stdio
-    command: npx
-    args: ['-y', '@sofagent/mcp']
-    env: {}                      # 可选：注入 SOFAGENT_HOME 等环境变量
-    toolCallTimeoutMs: 120000    # 可选：run_ab_test 等长任务建议放宽（默认 60000）
-```
-
-> 字段名以 `@deepseek-ai/dsh-mcp-client@0.1.0-rc.6`（2026-08-15 npm 实测拉包核对 `lib/types/index.d.ts` 的 `StdioConfig`）为准——`transport` / `serverName` / `command` / `args` / `env` / `cwd` / `toolCallTimeoutMs` / `failOnStartupError` / `reconnect`。DSH 尚处 developer preview（rc），后续版本字段可能变化，以 [DSH 官方仓库](https://github.com/deepseek-ai/deepseek-harness) config 文档为最终依据。
-
-挂载后 DSH 侧的模型看到的 tool 名形如 `mcp__sofagent__snapshot_list`（`mcp__<serverName>__<原始名>` 命名契约——与 Claude Code / Codex 同款），105 个 tool 全部可见，与 DSH 原生 tool 走完全相同的执行管道（权限策略、timeout、compaction 行为一致）。
-
-**两种 command 写法按部署形态选**：
-
-| 部署形态 | command / args | 说明 |
-|---------|---------------|------|
-| npm 安装（v1.3.5 发版后） | `npx -y @sofagent/mcp` | 最简——首次会拉包，需能访问 npm registry；`@sofagent/mcp@^1.3.5` 起 bin 为 `sofagent-mcp` |
-| monorepo 本地 / 内网 | `node /path/to/sofagent/engine/mcp/dist/mcp-server.js` | 开发/内网环境——dist 需先 `npm run build`（workspace 根目录执行）；也可 `npm i -g /path/to/engine/mcp` 后 command 直接写 `sofagent-mcp` |
-
-> ⚠️ **command 必须是 `node`，`.js` 路径放 args**——本地 dist 直用场景若把 command 写成 `.js` 文件路径，部分客户端（如 MCP Inspector）会 `spawn EACCES`（dist 文件无 +x 位；npm 安装的 bin 由 npm 自动加执行位，无此问题）。冒烟实测：`command: node` + `args: [<dist路径>]` 稳定通过。
-
-#### 安全边界（🔴 必读）
-
-互通只是新通道，不是新权限模型——sofagent 的安全语义在 DSH 通道下**完全不降级**：
-
-- **破坏性 tool 强制人审**：`promote_ab`（A/B 晋升）和 `snapshot_restore`（快照恢复）要求显式 `human_confirmed: true` 参数——不确认就只返回决策依据挂起，绝不执行。DSH 的模型绕过这道门会被审计链捕获（语义在 sofagent 服务端实现，与调用方无关）
-- **只读 tool 即开即用**：`snapshot_list` / `run_audit` / `search_knowledge` 等查询类无副作用
-- **进程控制不开放**：daemon start/stop 类操作不暴露为 MCP tool（changelog 安全边界第 2 条）
-
-#### 验证状态
-
-> ⚠️ **本节配置示例的验证口径**：字段结构已对照 `@deepseek-ai/dsh-mcp-client@0.1.0-rc.6` 的类型定义与官方 README 核对（2026-08-15），但**尚未经 DSH 真实连接端到端验证**——DSH 本体处于 developer preview（rc），安装面与 profile 结构仍在变动。验证口径：以 MCP Inspector（`npx @modelcontextprotocol/inspector`）做 stdio 通道等价冒烟（工具可见 + 只读 tool 调用 + 破坏性 tool 未确认时挂起）；DSH 直连验证待 DSH 正式版后补做。若你基于本节配置实操遇到字段不匹配，请以 DSH 报错信息与官方文档为准并[提 issue](https://github.com/KongFangXun/sofagent/issues)反馈。
-
----
 
 ## 常驻：长期自跑与持续优化
 
@@ -657,7 +611,7 @@ sofagent-audit subagent run fde --mode sustain --task "巡检所有节点"
 
 > sofagent 不做 AI 中台——做 AI 中台里**约束 Agent 行为和审计的那一层**。sofagent 本质上是一款 FDE Harness：对外你用的是品牌名 sofagent（它正是一套 FDE Harness 在帮你干活），对内是 sofagent 约束层（Harness 中间件）在跑。
 
-### 🔗 激活链：从"交付文档"到"自动运转"（v1.2.5+ Phase 1-3 已交付）
+### 🔗 激活链：从"交付文档"到"自动运转"（v1.2.5+ Phase 1-4 已交付）
 
 > **当前的断裂带**：FDE 离场后留下交付手册、节点 .md、workflow.yml、Skill 文件——这些都是静态文件，企业 IT 拿到后还得手动搭运行环境、手动配编排、手动接审批。
 
@@ -716,23 +670,9 @@ sofagent-audit subagent run fde --mode sustain --task "巡检所有节点"
 
 当前共 24 条审计规则（A1-A11、A14-A23 + E1-E2/E4），源码在 `engine/audit/src/rules/`。每条规则独立，新增只需写函数 + 注册一行。详见 [DEVELOPMENT §八](./DEVELOPMENT.md#八提交时审计--文件系统审计)。
 
-### 审计聚合指标口径（v1.4.3——单源防漂移）
+### 审计聚合指标口径
 
-`sofagent-audit --stats` 输出近 N 天（`--days` 可调，缺省 30）治理 KPI。指标口径以本节为准（CLI 实现 `engine/audit/src/stats.ts` 与此处同源——改口径先改本节）：
-
-| 指标 | 定义 | 分母 |
-|------|------|------|
-| **变更总数** | 统计窗口内 history.jsonl 的审计记录条数（每次 commit 审计一条） | — |
-| **判定分布** | PASS（exitCode=0）/ WARN（exitCode=1）/ FAIL（exitCode=2）三档计数 | — |
-| **安全边界触发率** | (WARN 条数 + FAIL 条数) ÷ 变更总数 | 变更总数 |
-| **阻断率** | FAIL 条数 ÷ 变更总数（FAIL 判定以 exitCode=2 为准） | 变更总数 |
-| **高危规则 Top 5** | ruleResults 中 status=WARN/FAIL 的规则按触发次数降序前五（含 FAIL 分计） | — |
-
-口径细则：
-- **空历史降级**：变更总数为 0 时触发率/阻断率输出 `null`（不硬凑 0——「无数据」与「零触发」语义不同）
-- **下钻说明**：每条触发记录的 17 条默认规则逐条 ruleResults 可查（`history.jsonl` 原始记录 + `--verify-chain` 完整性校验）——Top 5 规则可下钻到具体 commit 与证据
-- **机器可读**：`--stats --json` 输出纯净 JSON（企业 SIEM/监控平台消费）；聚合结果同步落盘 `data/dashboard/audit-stats.json`（Dashboard 面板化消费 v1.5.0）
-- **只读铁律**：聚合层永不写 `history.jsonl`（HMAC 链完整性是审计信任根基——聚合前后文件字节级一致）
+`sofagent-audit --stats` 的治理 KPI 指标定义（触发率/阻断率/Top 5 等）与口径细则见 [DEVELOPMENT · 审计聚合指标口径](./DEVELOPMENT.md#审计聚合指标口径单源防漂移)——该节与 CLI 实现 `engine/audit/src/stats.ts` 同源，改口径先改该节。
 
 ### 概念速查
 
@@ -749,7 +689,6 @@ sofagent 不是孤立的——它构建于以下成熟项目之上，各司其�
 | [LangChain](https://github.com/langchain-ai/langchainjs) + [LangGraph](https://github.com/langchain-ai/langgraphjs) | 编排模块——状态图、条件路由、HITL、持久化 | v1.0.1 |
 | [@langchain/langgraph](https://github.com/langchain-ai/langgraph) | Sub Agent 系统（createReactAgent）——FDE Sub Agent + Audit Sub Agent | v1.0.1（v1.2.0 从 deepagents 迁移） |
 | [Agency Agents](https://github.com/msitarzewski/agency-agents) | 230+ 岗位模板——Sub Agent 角色定义 | v1.0.3 |
-| ~~微软 SkillOpt~~（v1.4.8 起摘除） | 历史依赖——自研 gate 验证器替代（@sofagent/evolve） | v1.0.3–v1.4.7 |
 | [OpenFDE](https://open-fde.com) | 行业定位验证——10 步工作流 + 8 维能力模型 | v1.0 |
 | [Palantir Ontology](https://www.palantir.com/platforms/aip/) | 企业世界模型——实体+关系+动作+约束 | v1.0.1-v1.0.5 |
 

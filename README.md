@@ -58,8 +58,6 @@
 | 覆盖维度 | 密钥泄漏 | 任意（自己写） | 24 条规则：密钥/越界/注入/权限/后门 |
 | 建议 | 强密钥合规必配 | 已有体系可保留 | 与前两者并用，专注 Agent 治理维度 |
 
-**10 分钟轻量试用**（含拉包与环境检查全程；引擎本体单次审计约 1.1 秒，见下文实测）：`npx -y -p @sofagent/audit sofagent-audit`（任意 git 仓库，密钥泄漏当场拦截）。
-
 ## 核心特性
 
 **进场 · 生成判断**（FDE 相位——把「该不该上 AI、值多少钱」判断出来，冻结成交付物）：
@@ -91,7 +89,7 @@
 **为什么是 FDE Harness**
 
 - **企业 AI 落地的瓶颈不是模型，是部署**——MIT NANDA《生成式人工智能的鸿沟》：95% 的企业 GenAI 项目没能产生能写进财务报表的价值，而 FDE 岗位发布量一年涨了 729%（核验见 [VALIDATION](./docs/VALIDATION.md)）
-- **完整来自组合**——DSH 解决「能干活」，sofagent 解决「持续干」，两者合起来才是完整的 FDE Harness（见下章）
+- **完整来自组合**——DSH 解决「能干活」，sofagent 解决「持续干」，两者合起来才是完整的 FDE Harness（见下一章「多平台挂载」的 DSH 档）
 - **约束层「持续优化」靠机制不靠承诺**——外部独立实验（ARC-AGI-3，**能力型 harness 数据**——提升的是任务得分与 token 效率，与治理型约束层的可靠性收益非同一量纲）：同一模型仅优化外层 Harness 可显著提升任务完成率。核验见 [VALIDATION](./docs/VALIDATION.md) · [THANKS](./docs/THANKS.md)
 - **能力可迁移，绝不绑死单一平台**——约束层平台无关，方法论跟着业务走、不跟着平台走
 
@@ -103,7 +101,7 @@
 
 | 档位 | 平台 | 约束注入 | 挂载方式 |
 |------|------|---------|---------|
-| **深度结合** | DeepSeek Harness | ✅ **逐工具调用可拦** | 6 款原子 `cordis-plugin-sofagent-*` 挂进运行时（另有 1 款聚合插件可选，见上章）——`tools/pre-execute` 等 7 个生命周期事件（以 `engine/dsh-plugins/SEAMS.md` 词汇表为准） |
+| **深度结合** | DeepSeek Harness | ✅ **逐工具调用可拦** | 6 款原子 `cordis-plugin-sofagent-*` 挂进运行时（另有 1 款聚合插件可选，见「上游与插件入口」）——`tools/pre-execute` 等 7 个生命周期事件（以 `engine/dsh-plugins/SEAMS.md` 词汇表为准） |
 | **完整挂载** | OpenClaw | ✅ **每会话注入一次** | Hook 注入四层约束 + 断路器 + 4 款 OpenClaw 插件 |
 | **标准挂载** | Claude Code / Cursor | ⚠️ Skill 自觉加载 | Skill 目录 symlink + 平台规则文件 + 拦截配置（内容为提交级 24 规则，非调用级拦截） |
 | **薄挂载** | WorkBuddy / Codex / Gemini CLI / Hermes | ⚠️ Skill 自觉加载 | Skill 目录 symlink（Codex 走 `AGENTS.md` 挂载点）+ git hook 审计 |
@@ -113,7 +111,7 @@
 
 一条命令选定挂载档位：`bash install.sh --platform <平台名>`（全部平台与差异见 [HANDBOOK](./docs/HANDBOOK.md)）
 
-## v1.5.0：治理模块 · 可见性与本体成熟
+## v1.5.0：治理模块 · 可见性与本体成熟（⏳ 待发版）
 
 🛡️ 引擎长出「治理面」——三件事一次到位：
 
@@ -123,7 +121,7 @@
 | **本体数据双时态** | `validFrom`/`validTo` + `stateAt` 时点快照（「系统在某天知道什么」）+ 三层渐进加载 |
 | **证据跨层对账** | `trace_reconcile` 新 tool：Agent 自述 vs git diff vs 模型行为，一致/漏报/幻觉/瞒报四态判定 |
 
-同版另有：Ontology Validation Engine（DAG 无环 + 激活前置门 fail-closed）· FDE 陪跑期期满总结 · 存量清扫与 `@sofagent/inject` 更名 · DSH 插件 7 事件位接线。**MCP 104→105 tools · 测试 4805→4903 · acceptance 352→357**（13 包 workspace 口径，发版时点）。完整内容见[开发日志](./docs/changelog/v1.5/v1.5.0.md) · 更早版本见 [CHANGELOG](./CHANGELOG.md)。
+同版另有：Ontology Validation Engine（DAG 无环 + 激活前置门 fail-closed）· FDE 陪跑期期满总结 · 存量清扫与 `@sofagent/inject` 更名 · DSH 插件 7 事件位接线。**MCP 104→105 tools · 测试 4805→4903 · acceptance 352→357**（13 包 workspace 口径，发版时点；badge 与安装命令当前仍指 v1.4.9，随发版同步翻牌）。完整内容见[开发日志](./docs/changelog/v1.5/v1.5.0.md) · 更早版本见 [CHANGELOG](./CHANGELOG.md)。
 
 ## FDE Harness 两阶段
 
@@ -186,9 +184,7 @@ sofagent-audit --doctor    # 验证环境（可选）
 >
 > 📌 **bootstrap.sh 和 install.sh 的关系**：bootstrap.sh 是 install.sh 的一行下载包装器——`curl bootstrap.sh | bash` 等价于「下载 install.sh + 运行 install.sh」。两个脚本装的是完全一样的东西，bootstrap 只是省掉手动 clone/下载那一步。
 
-更多安装方式（clone 安装 / npx 完整安装 / 最小安装 / 企业部署）见 [HANDBOOK](./docs/HANDBOOK.md)；**卸载方式见 [HANDBOOK · 卸载](./docs/HANDBOOK.md#卸载怎么干净地撤掉)**（`bash engine/scripts/uninstall.sh`，会一并回收三层 git hook）。企业用户想直接用 FDE 方法论梳理工作流，看 [FDE/README.md](./FDE/README.md)（零依赖，不需要 Node.js；15 分钟最短路径见其「15 分钟最短路径」小节）。
-
-完整安装方式（clone / npx / 最小安装 / 企业部署）、卸载、以及「两条通道都叫 sofagent 怎么分辨」等消歧细节见 [HANDBOOK · 安装](./docs/HANDBOOK.md)。
+完整安装方式（clone / npx / 最小安装 / 企业部署）、卸载、以及「两条通道都叫 sofagent 怎么分辨」等消歧细节见 [HANDBOOK · 安装](./docs/HANDBOOK.md)。企业用户想直接用 FDE 方法论梳理工作流，看 [FDE/README.md](./FDE/README.md)（零依赖，不需要 Node.js；15 分钟最短路径见其「15 分钟最短路径」小节）。
 
 ## 使用
 
@@ -259,7 +255,8 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # 加载安全规�
 | 每个版本做了什么 | [CHANGELOG](./CHANGELOG.md) |
 | 安全声明 · 已知局限 | [SECURITY](./SECURITY.md) · [LIMITATIONS](./docs/LIMITATIONS.md) |
 
-> 🧪 **工程可信度**：4903 测试 / 13 模块包 + 11 插件（7 DSH + 4 OpenClaw）——测试数为 v1.4.9 发版后 main 时点实测口径（随修复批滚动，v1.4.9 发版时点为 4805），当前权威值以 `tools/check/test-count.sh` 实跑为准（包数口径：13 个 workspace 包，统计标准见 [WIKI](./docs/WIKI.md)）· 24 条审计规则 · fresh-eyes 独立审查持续运行（环境注意事项见 [docs/guides/review-system.md](./docs/guides/review-system.md)。性能数据为单机参考值，跨工具横评排期 v1.4.x 与 Benchmark 集成）。
+> 🧪 **工程可信度**（当前口径）：4903 测试 / 13 模块包 + 11 插件（7 DSH + 4 OpenClaw）· 24 条审计规则 · fresh-eyes 独立审查持续运行。
+> 测试数为 v1.4.9 发版后 main 时点实测口径（随修复批滚动，发版时点为 4805）；当前权威值以 `tools/check/test-count.sh` 实跑为准，包数统计标准见 [WIKI](./docs/WIKI.md)。审查环境注意事项见 [docs/guides/review-system.md](./docs/guides/review-system.md)；性能数据为单机参考值，跨工具横评排期 v1.4.x 与 Benchmark 集成。
 
 ---
 

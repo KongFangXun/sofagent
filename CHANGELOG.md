@@ -13,7 +13,7 @@
 > 尚未实现的规划版本（标注"尚未实现"）在 `docs/changelog/v1.4/` 下，不纳入本索引；已开发完成但未发版的版本纳入本索引并附「待发版」状态标注——tag/npm/package.json 在发版时统一同步。
 
 - **v1.5.0** — 治理模块 · 可见性与本体成熟：治理 KPI 面板（Dashboard 治理 tab 六卡 + 数据集审阅 + lineage 合规报告 + 周报）· 本体数据双时态（stateAt 时点快照 + 三层渐进加载）· Ontology Validation Engine（DAG 无环 + 激活前置门 fail-closed）· 跨层证据对账 trace_reconcile（三源四态）· FDE 陪跑期 · 存量清扫 + @sofagent/inject 更名 · DSH 插件事件接线 · MCP 104→**105** tools · 测试 4805→**4903**（+98，13 包 workspace 口径）· acceptance 352→**357** · ⏳ 待发版 · [开发日志](./docs/changelog/v1.5/v1.5.0.md)
-- **v1.4.9** — 设备接入与数据承接：G9 设备注册/发现/心跳（Ed25519 身份 + 在线才派单/掉线改派）· G10 数据目录白名单授权读取 · G11 采集声明 opt-in 上行（WAL 加密暂存 + 断点续传 + 审计计量）· T7 router 过站 session 承接 · T8 敏感识别三层插槽（SDK 面，管线接线排期 v1.5.1）· T9 权重灰度 AB（SDK 面同上）· G5b 连接器注册 + G1 workflow 模板血缘 · T6 installer + T10 模型清单 · MCP 95→**104**（9 新）· 测试 4429→**4805** · 2026-09-17 已发版· [开发日志](./docs/changelog/v1.4/v1.4.9.md)
+
 
 > ⚠️ **API 退役公告（v1.4.3 · 提前一版公告，移除归 v1.5.0）**
 >
@@ -33,6 +33,8 @@
 >
 > ① **`SOFAGENT_CLEANUP_ON_RECORD` 配置项移除**：曾存在的 cleanupOnRecord 配置字段（@deprecated v1.4.3 披露的死配置）已删除——自动清理路径从未接线，该开关**从未生效**。曾设置过该 env 的用户无需迁移（本来就不生效）；日志清理请使用实际生效的 `SOFAGENT_RETENTION_DAYS` / `SOFAGENT_RETENTION_MAX`（消费点 `engine/scripts/cleanup.sh`）。声明见 [LIMITATIONS §七](./docs/LIMITATIONS.md)。
 > ② **`@sofagent/train` 导出 `routeRequest` 更名为 `canaryRouteRequest`**（同名消歧）：orchestrator 另有同名 `routeRequest`（`@sofagent/orchestrator/workflow` 语义路由）——同名不同物，裸符号 grep 接线断言会假阳性。该导出零生产消费者，破坏面为零；消费侧（仅测试）已同步更名。同名导出矩阵见 [WIKI 术语表](./docs/WIKI.md)。
+
+- **v1.4.9** — 设备接入与数据承接：G9 设备注册/发现/心跳（Ed25519 身份 + 在线才派单/掉线改派）· G10 数据目录白名单授权读取 · G11 采集声明 opt-in 上行（WAL 加密暂存 + 断点续传 + 审计计量）· T7 router 过站 session 承接 · T8 敏感识别三层插槽（SDK 面，管线接线排期 v1.5.1）· T9 权重灰度 AB（SDK 面同上）· G5b 连接器注册 + G1 workflow 模板血缘 · T6 installer + T10 模型清单 · MCP 95→**104**（9 新）· 测试 4429→**4805** · 2026-09-17 已发版· [开发日志](./docs/changelog/v1.4/v1.4.9.md)
 
 - **v1.4.8** — 插件管控与工程效能：插件来源白名单 · 应用级工具策略 · 多 Agent 协作阵型库 · 自动上下文压缩 · shell 提权分级 · 成本 quota 事前门禁 · 依赖方向架构测试 · 自研进化 gate（skillopt 更名 @sofagent/evolve）· 执行机制纪律批 · MCP 95→**95**（零新增）· 测试 4279→**4429** · 2026-09-13 已发版· [开发日志](./docs/changelog/v1.4/v1.4.8.md)
 - **v1.4.7** — 商业平台接口版：G2 能力缺口 · G4 人机贡献度 · G6 节点可见性 · G7 多租户 v0 · G13 PR 生命周期 · G14 workflow CRUD · workflow 烧录 USB · G8 首部署 cron · 云训练 TrainChannel 收口 · MCP 84→**95**（11 新）· 测试 4088→**4279** · 2026-09-11 已发版· [开发日志](./docs/changelog/v1.4/v1.4.7.md)

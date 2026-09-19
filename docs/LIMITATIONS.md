@@ -183,8 +183,6 @@ sofagent 跑在单个 Agent 里——没有 agent-to-agent 通信，没有多实
 
 ---
 
----
-
 ### 🧩 依赖方向架构测试只覆盖 build 序列包
 
 `tools/check/dependency-direction.yml` 断言的是 **build 序列的包边界**（14 项：13 模块包 + `load-chain`），**不含 `umbrella` 与插件家族**（`engine/dsh-plugins/*`、`engine/openclaw-plugins/*`）。因此「插件依赖了不该依赖的包」不会被本门禁拦下——它的口径是架构边界，不是全仓依赖图。
@@ -245,7 +243,7 @@ A1（不碰敏感）按 `DiffFile.status` 分方向判定：**新增/修改**敏
 
 > **企业 DevOps 集成路径**：当前 `history.jsonl` 为 append-only JSONL 明文，企业 IT 如需接入 SIEM / 企业日志平台，可通过 filebeat / logstash 等采集 agent 定时轮询 `~/.sofagent/data/audit/history.jsonl` 转发（见 SECURITY.md「审计结果推送」）。**本地三态 Webhook 推送 v1.1.6 已接通**（PASS/WARN/FAIL）；**企业平台推送（飞书/钉钉/企微）已在 v1.2.1 落地**（采购阻塞项已解除）。CI 集成方面，各包提供 `npm test` 与 `playbook/acceptance-test.sh` 可接入现有流水线做门禁；`sofagent-audit --install-hook` 提供的 commit-msg hook 可作为 pre-commit / pre-push 关卡。以下是一个完整的 GitHub Actions CI 兜底示例（在 CI 中跑 `sofagent-audit --diff`，确保 `--no-verify` 绕过 hook 后仍有防线）：
 >
-> ⚠️ **安全豁免开关披露**：设置环境变量 `SOFAGENT_WEBHOOK_ALLOW_LOCALHOST=1` 可豁免 webhook URL 的 localhost/内网地址校验（用于本地集成测试，实现见 `engine/audit/src/webhook.ts`）。该开关开启期间 SSRF 防护对内网地址失效——**生产环境禁止开启**。本仓库验收脚本（acceptance-test.sh 场景 34）对该开关遵循「export 后立即 unset」的最小暴露窗口纪律，外部使用应照此执行。
+> ⚠️ **安全豁免开关披露**：设置环境变量 `SOFAGENT_WEBHOOK_ALLOW_LOCALHOST=1` 可豁免 webhook URL 的 localhost/内网地址校验（用于本地集成测试，实现见 `engine/audit/src/webhook.ts`）。该开关开启期间 SSRF 防护对内网地址失效——**生产环境禁止开启**。如需临时启用做本地集成测试，应遵循「export 后立即 unset」的最小暴露窗口纪律，用毕即关。
 >
 > ```yaml
 > # .github/workflows/sofagent-audit.yml

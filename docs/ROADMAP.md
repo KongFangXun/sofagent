@@ -23,7 +23,7 @@
 
 ## 现在在哪：v1.4.9（已交付 · v1.5.0 待发版）
 
-> **v1.5.0 开发完成、文档收尾完成，待发布**——治理 KPI 面板 + 本体数据双时态 + Validation Engine + 跨层证据对账 + FDE 陪跑期 + 存量清扫 + DSH 插件事件接线。详见 [v1.5.0 开发日志](./changelog/v1.5/v1.5.0.md)。发布后本节随 bump 同批更新。
+> **v1.5.0 开发完成、文档收尾完成，待发布**——治理 KPI 面板 + 本体数据双时态 + Validation Engine + 跨层证据对账 + FDE 陪跑期 + 存量清扫 + DSH 插件事件接线 · 测试 4805→4903 · acceptance 352→357。详见 [v1.5.0 开发日志](./changelog/v1.5/v1.5.0.md)。发布后本节随 bump 同批更新。
 
 ---
 
@@ -141,7 +141,7 @@ sofagent 的定位正卡在这个转折点上：审计模块（治理侧）+ Ont
 | **审计范围语义一等公民化（AuditScope 重构）** | 所有规则输入面显式声明取 HEAD 还是 range——引入 `AuditScope{ diffRange, commitMsg, task, actor }` 显式对象，规则从 scope 取输入、不再自己调 git，消灭「规则自己调 git 取错范围」整类 bug（v1.4.4 审查 quick A9 同类，最小修复已随 12ec0171 落地，根治走重构专项——v1.4.5 重构窗口已过未排期，候选 v1.5.x 后段） |
 | **大文档三档拆分（概念/决策/清单）** | ARCHITECTURE/PHILOSOPHY 类大文档按「概念/决策/清单」三档拆分重组，控制单文档认知负载——归文档优化专项（无版本单元格，触发时机=下一次大规模文档新增时） |
 | **DSH-only 执行面收尾（保险绳拆除）** | FORGE 执行后端 v1.4.3 起全 step 默认 DSH，LangGraph 仅作 fallback 保险绳（`FORGE_FRESH_EYES_BACKEND=langgraph` 回退口 + langgraph-backend.ts + audit-middleware 包裹路径）。DSH 发布非 alpha 稳定版且连续 2–3 个完整 run 零 fallback 时，删除兜底面收尾为 DSH-only——driver 侧质量门控（熔断/产物门控/宽限窗）是产品逻辑不随迁，留在 driver。alpha 期实测已两遇破坏性变更（0.1.2-alpha.3→rc.1 砍 `Session.events`，防御见 snapshotSessionEvents 双形态兼容），保险绳成本低、拆除不急 |
-| **透明仓（wild idea · 视角 21）** | evidence/ 实时公开治理原始记录（含误报）——审查 run 的 P0/P1 判定、误报与翻案全过程原样公开，「审查自己也在被审计」。比发版后 cherry-pick 的结论文档更狠的诚实面；误报率够低（当前 <5%）才敢开，先攒 [anti-cases](./evidence/anti-cases/README.md) 与 fresh-eyes 校准档案，无版本单元格、不排期，触发条件=第三方首次独立审查 |
+| **透明仓（wild idea）** | evidence/ 实时公开治理原始记录（含误报）——审查 run 的 P0/P1 判定、误报与翻案全过程原样公开，「审查自己也在被审计」。比发版后 cherry-pick 的结论文档更狠的诚实面；误报率够低（当前 <5%）才敢开，先攒 [anti-cases](./evidence/anti-cases/README.md) 与 fresh-eyes 校准档案，无版本单元格、不排期，触发条件=第三方首次独立审查 |
 | **敌手自测（audit 红队）** | 定期以攻击者视角尝试绕过审计——篡改 `history.jsonl` / 伪造 HMAC 链 / 绕过 ToolGate，结果进 [anti-cases](./evidence/anti-cases/README.md)。审计系统的可信度靠「被打过而没被打穿」证明；与「透明仓」触发条件（第三方首次独立审查）天然合流。无版本单元格、不排期 |
 | **`sofagent demo` 五分钟戏剧弧** | 一条命令跑完「注入 → 故意违规 → 审计拦截 → 出报告」完整链路，让新用户在 5 分钟内看到拦截发生的那一瞬间。属于**增长杠杆而非工程项**（新用户转化漏斗第一环），与社区运营同批考虑。无版本单元格、不排期 |
 

@@ -28,7 +28,6 @@
 - [十一、meta-harness 生态定位](#十一meta-harness-生态与-sofagent-的定位2026-06-meta-harness-summer-印证)
 - [十二、STATE.md 持久化外部记忆模式](#十二statemd-持久化外部记忆模式)
 - [十三、激活链扩展指南](#十三激活链扩展指南)
-- [十三、激活链扩展指南](#十三激活链扩展指南)
 
 ---
 
@@ -283,7 +282,7 @@ Loop 工程核心是收敛——目标必须满足：① 可验证（测试覆�
 
 ### Tools 设计四原则
 
-MCP tools（当前 67 个）是 Agent 的手脚，工具设计是返工重灾区——Agent 表现差，多数时候不是模型不行，是工具设计有问题。四条纪律：
+MCP tools（当前数量以 `engine/mcp/src/tool-registry.ts` 的 TOOLS 数组为准）是 Agent 的手脚，工具设计是返工重灾区——Agent 表现差，多数时候不是模型不行，是工具设计有问题。四条纪律：
 
 | 原则 | 要求 | 反例 |
 |------|------|------|
@@ -563,7 +562,7 @@ v1.0.7 预装了两个内置 Agent，v1.0.8 将它们升级为**基础设施 Age
 
 ### 文档总量预算
 
-> 核心文档（不含 changelog/evidence）总量硬上限 **5,000 行**。超标时必须删旧再加新。
+> 文档行数预算的现行口径与各层上限以 `tools/check/check-docs.sh` 的 LIMIT_A/LIMIT_B/LIMIT_E 为准（A 层用户文档 / B 层参考文档 / E 层 guides，超标须按铁律归并或登记上调）。
 
 ---
 
@@ -585,6 +584,24 @@ v1.0.8 自研 git-shadow diff 解析（isomorphic-git **风格**，非 npm 包�
 > 📖 **多设备同步**：daemon 的经验产出（knowledge/ + think.md）可跨设备共享——4 种方案见 [多设备同步指南](./guides/multi-device-sync.md)。
 
 > 📐 **最小 Harness 参照**：MicroHoneys 仅 400 行代码实现了完整的 Agent Harness（配置/提示词/工具调度/安全守卫/生命周期/长期记忆），证明 Harness 层不需要庞大的基础设施——核心是边界清晰的分层设计，不是代码量。sofagent 的审计模块同样追求极简：核心规则 < 2000 行，零外部 API 依赖。
+
+### 审计聚合指标口径（单源防漂移）
+
+`sofagent-audit --stats` 输出近 N 天（`--days` 可调，缺省 30）治理 KPI。指标口径以本节为准（CLI 实现 `engine/audit/src/stats.ts` 与此处同源——改口径先改本节）：
+
+| 指标 | 定义 | 分母 |
+|------|------|------|
+| **变更总数** | 统计窗口内 history.jsonl 的审计记录条数（每次 commit 审计一条） | — |
+| **判定分布** | PASS（exitCode=0）/ WARN（exitCode=1）/ FAIL（exitCode=2）三档计数 | — |
+| **安全边界触发率** | (WARN 条数 + FAIL 条数) ÷ 变更总数 | 变更总数 |
+| **阻断率** | FAIL 条数 ÷ 变更总数（FAIL 判定以 exitCode=2 为准） | 变更总数 |
+| **高危规则 Top 5** | ruleResults 中 status=WARN/FAIL 的规则按触发次数降序前五（含 FAIL 分计） | — |
+
+口径细则：
+- **空历史降级**：变更总数为 0 时触发率/阻断率输出 `null`（不硬凑 0——「无数据」与「零触发」语义不同）
+- **下钻说明**：每条触发记录的 17 条默认规则逐条 ruleResults 可查（`history.jsonl` 原始记录 + `--verify-chain` 完整性校验）——Top 5 规则可下钻到具体 commit 与证据
+- **机器可读**：`--stats --json` 输出纯净 JSON（企业 SIEM/监控平台消费）；聚合结果同步落盘 `data/dashboard/audit-stats.json`（Dashboard 面板化消费 v1.5.0）
+- **只读铁律**：聚合层永不写 `history.jsonl`（HMAC 链完整性是审计信任根基——聚合前后文件字节级一致）
 
 ### 绿灯路径检测
 
@@ -623,7 +640,7 @@ Google Research 的 WikiSkill（[arXiv:2608.27454](https://arxiv.org/abs/2608.27
 
 - **持久知识层是进化胜负手**：消融拿掉 Wiki 访问，平均分 63.7% → 48.7%（-15.0pt）——比任何方法间差距都大。印证 sofagent lessons/think.md 反思区这一柱的分量：经验沉淀不是锦上添花，是技能进化的前提。
 - **推理时禁查知识库反而更好**（-2.8pt）：训练 rollout 时让 Agent 直接查 Wiki，产出的轨迹对技能开发失去参考价值。反向印证 sofagent「约束层要轻、零 token 运行」——知识供进化者离线消费，不塞执行时上下文。
-- **跨模型技能迁移有负迁移实锤**：4B 模型进化的技能把 Gemini-3.5-Flash 从 50.5% 拉到 18.1%——弱模型的低层 workaround 束缚强模型。sofagent 覆盖 11 供应商多模型，技能应按模型分级门控，不能全局通用投放。
+- **跨模型技能迁移有负迁移实锤**：4B 模型进化的技能把 Gemini-3.5-Flash 从 50.5% 拉到 18.1%——弱模型的低层 workaround 束缚强模型。sofagent 走 OpenAI 兼容多供应商路由（任意兼容端点均可接入），技能应按模型分级门控，不能全局通用投放。
 - **溯源与提案审计**：`PURPOSE.md`（技能回链到所解决的 pattern）与 `skill-impact.md`（每次提案 diff/分数/接受与否程序化落账）两个小机制，与 sofagent 的 LEDGER/审计轨迹理念同源。**v1.4.5 第七章四已收编落地**：`solves:` frontmatter 溯源字段（SKILL/ 子树 5 个带 frontmatter 的 SKILL.md 补齐——「为什么存在」回链 pattern，改技能先懂设计意图）+ skill-impact 台账（`engine/orchestrator/src/skill-evolution/`——JSONL append-only 程序化落账，被拒提案带原因不丢教训）+ eval 门控（技能变更过 eval 验证集、分数超历史最优才收编，接通 benchmark/evaluation-log 既有闭环）+ 执行/进化上下文隔离（rollout 期禁查进化知识库的运行时守卫——executor 访问即审计告警，对应消融 -2.8pt 实证的工程化防御）。
 - **自进化的开放问题恰是约束层的主场**：技能自进化的公开讨论自认仍缺质量控制、安全审核、版本管理三样——正是 sofagent 审计模块（规则集）+ 安全审查 + 回滚编排已经在做的事。开发者角色从「写技能」转为「设目标 + 把关」，与 sofagent 约束层哲学（人定规则、AI 执行、审计每次变更）同构，是 FDE 交付叙事的现成参照。
 
