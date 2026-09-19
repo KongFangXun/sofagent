@@ -1,10 +1,12 @@
-# 核心文档体系审查 Prompt（多轮迭代版）
+# Doc Fresh Review · 核心文档体系独立审查
+
+> **为什么叫 Fresh**：审查者必须是**未参与这些文档编写的人（或新 session）**——编写者的视角已被施工过程污染（每处改动都是"当时认为该这样"），只有 fresh 视角能看见习焉不察的结构性问题。这与 fresh-eyes-review（代码审查）同一纪律：**新鲜的眼睛是审查的第一资源**。
 
 > **定位**：对核心文档体系（README 双语 / CHANGELOG / WIKI / HANDBOOK / FDE/GUIDE / guides/ / ARCHITECTURE / PHILOSOPHY / VALIDATION / API / LIMITATIONS / SECURITY / DEVELOPMENT / ROADMAP / CONTRIBUTING / THANKS / COMMUNITY + **dashboard.html**）做独立人读视角审查的标准 prompt 模板。
 >
 > **来源**：v1.5.0 发版前四轮实跑沉淀（r1 宏观 → r2 结构 → r3 终读+回归 → r4 收敛判定），每轮发现的修复回归率从 37% 降至收敛。
 >
-> **用法**：复制下方「审查 Prompt 模板」到新 session（审查只报告不修复）；多轮迭代时按「轮次策略表」选当轮重点。报告统一落 `~/Desktop/docs-review-vX.Y.Z{-rN}.md`。
+> **用法**：复制下方「审查 Prompt 模板」到**新 session**（fresh 纪律：严禁在参与过编写/修复的 session 里跑；审查只报告不修复）；多轮迭代时按「轮次策略表」选当轮重点。报告统一落 `~/Desktop/docs-review-vX.Y.Z{-rN}.md`。
 
 ---
 
