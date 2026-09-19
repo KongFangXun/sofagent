@@ -2,7 +2,7 @@
 
 <p align="center"><img src="docs/assets/sofagent.png" alt="sofagent" width="96" /></p>
 
-> v1.4.9 ·  2026-09-17（UTC）· 孔放勋
+> v1.4.9 · 2026-09-17（UTC）· ✅ 已发版（本批更新 2026-09-17）· 孔放勋
 >
 > 按安全主题组织，企业 IT 可按主题快速定位。各能力的引入版本在小节正文首句注明。
 
@@ -14,6 +14,7 @@
 - [二、知识安全](#二知识安全)
 - [三、编排安全](#三编排安全)
 - [四、审计与存储安全](#四审计与存储安全)
+  - [24 条审计规则完整清单（文档级 SSOT）](#24-条审计规则完整清单文档级-ssot)
 - [五、工程安全](#五工程安全)
 - [六、LLM API Key 透明度](#六llm-api-key-透明度)
 - [七、FDE 职业道德](#七fde-职业道德)
@@ -565,6 +566,11 @@ v1.3.5 交付 4b 起，CRDT 依赖已从旧包 `automerge@1.0.1-preview.7`（pre
 - **迁移面**：`engine/core/src/federation.ts`（init/change/clone/merge）与 orchestrator team 三件（team-state / team-manager / protocol）；API 对照见 v1.3.5 开发日志交付 4b 段，回归保险=team-state.regression.test.ts（11 用例）+ 联邦同步测试。
 - **uuid 传递依赖已消解**：旧 preview 包传递依赖 `uuid@3.4.0`（2018 弃用，`uuid()` 默认 RNG 可预测漏洞 GHSA-w5hq-g745-h8pq）——迁移后 lock 中 uuid 已不在依赖树（实测 package-lock 零 uuid 条目），原「可利用性极低」的评估对象已不存在。
 - **升级纪律**：`^3.4.1` 语义化范围内可升，跨 major 须先跑联邦合并与 team-state 回归测试（与 releasing/02-dev「禁止自动升」清单联动）。
+
+### Dashboard 本地服务面（核验结论）
+
+> **有网络面，已核验**：`serve-dashboard.mjs` 是真实 HTTP 服务面（非纯静态），三项核验——① 默认绑定 `127.0.0.1`（`DASHBOARD_HOST || '127.0.0.1'`，局域网共享须显式 `DASHBOARD_HOST=0.0.0.0` opt-in）；② dashboard.html 零外链 CDN（36 图标 SVG 内嵌，断网可用——与 v2.0.0 离线 USB 节点叙事对齐）；③ 服务无密钥/凭据面（只读 `~/.sofagent/data/` 快照文件，无写操作、无鉴权需求）。
+> **GitHub Actions 供应链面**：8 个 workflow 20 处 `uses:` 全部 pin 40 位 commit SHA + 注释 tag，`tools/check/check-action-pins.sh` 在线对账 SHA 与 tag 同 commit（离线降级不阻断门禁）。文档中的 CI 示例同样按此口径给出完整 SHA（见 [HANDBOOK](docs/HANDBOOK.md) / [LIMITATIONS](docs/LIMITATIONS.md)）。
 
 ---
 

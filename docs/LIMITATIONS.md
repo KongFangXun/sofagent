@@ -12,6 +12,7 @@
 
 ## 目录
 
+- [Key Limitations](#key-limitations)
 - [一、架构设计局限](#一架构设计局限)
 - [二、平台与兼容性局限](#二平台与兼容性局限)
 - [三、安全与信任模型局限](#三安全与信任模型局限)
@@ -42,7 +43,7 @@
 > - ~~FDE 交付物激活断裂带~~（v1.2.5-v1.3.0 消除：激活链 Phase 1-4 全部交付，详见 §十）
 > - ~~定时触发做不到~~（v1.2.8 消除：daemon 内置 scheduler，v1.3.5 扩展 cron 表达式，详见 §二）
 
-> ⚠️ **企业高安全场景**：`config.yml` 可被 Agent 篡改以绕过审计规则（如关闭规则、放宽阈值）。config.yml 有两个有效位置——项目级 `${cwd}/.sofagent/config.yml` 和全局级 `~/.sofagent/config.yml`（config-loader.ts 三级 fallback，项目级优先）。建议：① CI 侧独立校验 config 完整性（`sofagent-audit --diff` 兜底，hook 可绕 CI 不可绕）；② 文件权限锁（`chmod 600 ~/.sofagent/config.yml` 和 `chmod 600 .sofagent/config.yml`，仅受信用户可写）。与已有 `--no-verify` CI 兜底建议呼应。**v1.3.9 已落地（原「规划中 v1.3.9 目标」兑现）**：SubAgent 侧 config 篡改由沙箱虚拟 FS 拦截（写入走虚拟层审批）；主 Agent 侧由 meta-harness 统一编排承接（v1.3.9 交付二）。建议仍保留 CI 兜底 + 文件权限双保险（纵深防御）。
+> ⚠️ **企业高安全场景**：`config.yml` 可被 Agent 篡改以绕过审计规则（如关闭规则、放宽阈值）。config.yml 有两个有效位置——项目级 `${cwd}/.sofagent/config.yml` 和全局级 `~/.sofagent/config.yml`（config-loader.ts 三级 fallback，项目级优先）。建议：① CI 侧独立校验 config 完整性（`sofagent-audit --diff` 兜底，hook 可绕 CI 不可绕）；② 文件权限锁（`chmod 600 ~/.sofagent/config.yml` 和 `chmod 600 .sofagent/config.yml`，仅受信用户可写）。与已有 `--no-verify` CI 兜底建议呼应。**v1.3.9 已落地**：SubAgent 侧 config 篡改由沙箱虚拟 FS 拦截（写入走虚拟层审批）；主 Agent 侧由 meta-harness 统一编排承接（v1.3.9 交付二）。建议仍保留 CI 兜底 + 文件权限双保险（纵深防御）。
 >
 > **建议缓解措施**（按有效性排序）：
 > 1. **CI 侧兜底（最有效）**：在 CI pipeline 中加入 `sofagent-audit --diff HEAD~1..HEAD`，
@@ -108,12 +109,12 @@ daemon Ingest（自动知识提取）+ loop-evaluate Lint（自动体检）把�
 |------|------|------|
 | **经验记录** | 记录单次成功/失败，调整评分 | ✅ v1.0.1 起 |
 | **多轨迹归纳**（TRACE2SKILL） | 并行分析大量轨迹 → 提出补丁 → 合并去重 | ❌ 缺：前 5 次冷启动保护仅缓冲，未真正归因 |
-| **自验证闭环**（Evil Skill） | 多子 Agent 生成候选 Skill → A/B 对比 → 留更优 | ⏳ v1.0.6 起（方案 B：模型 API 直跑）。v1.0.7 升级为方案 C（DeepAgents 完整 Agent） |
+| **自验证闭环**（Evil Skill） | 多子 Agent 生成候选 Skill → A/B 对比 → 留更优 | ⏳ v1.0.6 起（方案 B：模型 API 直跑）。v1.0.7 升级为方案 C（DeepAgents 完整 Agent，**该路径 v1.2.0 起已弃用**） |
 | **可训练参数**（Skill Opt） | 学习率约束/验证门控/负反馈缓冲/动量 | ✅ v1.0.4 起（SkillOpt 管道接通） |
 
-**SkillOpt 集成状态（v1.0.4 时点口径 · 已被 v1.4.8 更名取代）**：管道已接通——daemon inspector（`engine/daemon/src/inspectors/evolve-trigger.ts`）检测 eval.md 阈值（20 条）→ 24h 防抖 → `autoTriggerAll()` → `runEvolve()`（v1.4.8 前名 `runSkillOpt()`）→ `validateCandidate()` 验证（行数 + 内容变化）→ 备份+替换 SKILL.md。`--doctor` 展示管道状态。⚠️ **现行口径（v1.4.8+）**：子命令更名为 `evolve-run`、包更名为 `@sofagent/evolve`、默认走内置 native gate（零 Python 依赖），外部 CLI 仅为 `SOFAGENT_EVOLVE_GATE=cli` 可选兼容层——**无需任何 pip 安装**，旧版正文中的 pip 指引已摘除。外部 CLI 未安装时管道优雅降级——daemon 写提示到 daemon-health.json，不 crash。
+**进化管道集成状态**：管道已接通——daemon inspector（`engine/daemon/src/inspectors/evolve-trigger.ts`）检测 eval.md 阈值（20 条）→ 24h 防抖 → `autoTriggerAll()` → `runEvolve()`（v1.4.8 前名 `runSkillOpt()`）→ `validateCandidate()` 验证（行数 + 内容变化）→ 备份+替换 SKILL.md。`--doctor` 展示管道状态。⚠️ **现行口径（v1.4.8+）**：子命令更名为 `evolve-run`、包更名为 `@sofagent/evolve`、默认走内置 native gate（零 Python 依赖），外部 CLI 仅为 `SOFAGENT_EVOLVE_GATE=cli` 可选兼容层——**无需任何 pip 安装**，旧版正文中的 pip 指引已摘除。外部 CLI 未安装时管道优雅降级——daemon 写提示到 daemon-health.json，不 crash。
 
-> ⚠️ **skillopt-sleep 的「生成候选」段已被真脑替代（v1.4.5 第七章五交付）**：skillopt 自进化链路原分两段——**检测/触发/验证/回滚**（纯 TypeScript，零外部依赖，核心能力）+ **生成候选 SKILL.md**（调外部 skillopt-sleep CLI）。v1.4.5 Dream Cycle 真脑（`engine/daemon/src/dream-cycle/real-provider.ts`，走模型注册表/DSH 通道 + callModelAPI 基建）交付后，「生成候选」可由通用模型 + prompt 工程直接完成（WikiSkill 论文实证：胜负手是结构化知识层而非模型特化）——skillopt-sleep 作为「生成候选」的临时外部依赖使命终结。检测/触发/验证/回滚段仍为纯 TypeScript 核心能力，不受影响；已安装 skillopt-sleep 的环境可继续使用（向后兼容），但不再是必需依赖。
+> ⚠️ **skillopt-sleep 的「生成候选」段已被真脑替代（v1.4.5 交付）**：skillopt 自进化链路原分两段——**检测/触发/验证/回滚**（纯 TypeScript，零外部依赖，核心能力）+ **生成候选 SKILL.md**（调外部 skillopt-sleep CLI）。v1.4.5 Dream Cycle 真脑（`engine/daemon/src/dream-cycle/real-provider.ts`，走模型注册表/DSH 通道 + callModelAPI 基建）交付后，「生成候选」可由通用模型 + prompt 工程直接完成（WikiSkill 论文实证：胜负手是结构化知识层而非模型特化）——skillopt-sleep 作为「生成候选」的临时外部依赖使命终结。检测/触发/验证/回滚段仍为纯 TypeScript 核心能力，不受影响；已安装 skillopt-sleep 的环境可继续使用（向后兼容），但不再是必需依赖。
 
 **A/B 运行器状态（v1.0.5 → v1.0.6 → v1.0.7）**：v1.0.5 `simulateAgentRun()` 是 mock（直接返回 expected，A/B 永远打平）。v1.0.6 替换为模型 API 直跑（方案 B）——自迭代闭环打通。v1.0.7 升级为 DeepAgents 完整 Agent（方案 C），支持工具调用验证——**该路径 v1.2.0 起已弃用**（编排迁移至 LangGraph `createReactAgent`，见 ROADMAP「架构演化」与 ARCHITECTURE.md「编排收敛」节）。
 
@@ -254,7 +255,7 @@ A1（不碰敏感）按 `DiffFile.status` 分方向判定：**新增/修改**敏
 >   audit:
 >     runs-on: ubuntu-latest
 >     steps:
->       - uses: actions/checkout@v4
+>       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
 >         with:
 >           fetch-depth: 0  # 需要完整 git 历史用于 --diff
 >       - name: 安装 sofagent-audit
@@ -269,16 +270,16 @@ A1（不碰敏感）按 `DiffFile.status` 分方向判定：**新增/修改**敏
 
 > ℹ️ **审计历史全局共享是设计决策**：审计历史（`history.jsonl` / `decision-log.jsonl`）写入全局 `~/.sofagent/data/audit/`，不做项目级隔离——这是**有意为之**：① HMAC 签名链完整性要求全量连续历史（`--verify-chain` 需要完整链）；② 跨仓库查询审计历史是运维刚需。多项目场景下审计记录会混合存储。**运行时审计日志已按 git 仓库隔离：`runtime-audit.jsonl`（FORGE 自托管路径）与约束层侧 data-sovereignty 审计日志 / llm-calls Trace 均落 `data/audit/<…>/<repo-hash>/` 段目录（非 git 回退 nogit-hash；旧版无段结构的既有历史读侧 fallback 原地可读，不迁移不回填）**；commit 级审计历史（history.jsonl / decision-log.jsonl）保持全局。**多项目整目录隔离**：使用 `SOFAGENT_HOME` 环境变量为不同项目/Agent 隔离数据目录（⚠️ 指向用户 home 外的根目录需同时设 `SOFAGENT_HOME_ALLOWED_PREFIXES` 显式放行——越界不再静默回退而是报错；daemon 子命令路径已与 data-paths SSOT 对齐，显式设 SOFAGENT_HOME 不再双拼）。
 
-> ⚠️ **知识库同样全局共享（当前单机单用户设计）**：`~/.sofagent/data/knowledge/` 单目录遍历、无租户/项目维度隔离——多项目、多 Agent 的知识沉淀（entities/concepts/comparisons/summaries）混合存储，查询时全局命中。财务与人事等不同域 Agent 的数据会串。**当前定位为单机单用户**：多 Agent 共享同一知识库/审计历史——多人/多部门共用需等租户隔离（ROADMAP v1.4.7 G7 多租户抽象层 v0：v0 为查询侧隔离（orgId 过滤 + `data/<tenant>/` 路径地基），PR/审计数据的**写入侧仍为全局分区**，写入隔离随 v1.4.9 session 承接版收口）。**临时方案**：使用 `SOFAGENT_HOME` 环境变量为不同项目/Agent 隔离数据目录（见 [企业部署指南](./guides/enterprise-deploy.md#多项目数据隔离v128)）。
+> ⚠️ **知识库同样全局共享（当前单机单用户设计）**：`~/.sofagent/data/knowledge/` 单目录遍历、无租户/项目维度隔离——多项目、多 Agent 的知识沉淀（entities/concepts/comparisons/summaries）混合存储，查询时全局命中。财务与人事等不同域 Agent 的数据会串。**当前定位为单机单用户**：多 Agent 共享同一知识库/审计历史——多人/多部门共用需等租户隔离（ROADMAP v1.4.7 G7 多租户抽象层 v0：v0 为查询侧隔离（orgId 过滤 + `data/<tenant>/` 路径地基），PR/审计数据的**写入侧仍为全局分区**——v1.4.9 复核确认**写入侧隔离尚未落地**）。**临时方案**：使用 `SOFAGENT_HOME` 环境变量为不同项目/Agent 隔离数据目录（见 [企业部署指南](./guides/enterprise-deploy.md#多项目数据隔离v128)）。
 
 > ⚠️ **云 VM 执行面（v1.4.6）数据上云边界**：`train cloud` 远程训练时，经分拣闸（sorting-gate）放行的非敏感/脱敏训练数据会上传云 VM（ssh 隧道加密传输，传输层加密；与静态加密 AES-256-GCM 的落盘加密是两层不同防护，见 SECURITY 例外三）。分拣闸是三档判定（敏感/脱敏/公开）——敏感档（客户名单/具体价格/财务数字）拦截留本地，但分拣是规则驱动、**非零漏判**：脱敏不彻底的数据可能误放行上云，强合规场景须人审分拣结果。云 VM 失联止损（心跳超时 → 强制 stop + 清理）防止 VM 按「时薪 × 时长」空烧，但止损依赖心跳可达——控制面与云 VM 网络断连时止损命令无法送达，VM 可能继续计费（成本口径见 train-cloud 预算注释）。
 
 > ⚠️ **`.sofagent/.git-shadow/` 在被审计仓库内创建**：sofagent 审计时会在被审计的 git 仓库根目录创建 `.sofagent/.git-shadow/` 目录存放审计快照——设计意图是按 git 仓库隔离快照（不同仓库的快照不能串，否则回溯到错误仓库）。快照内容**已 sanitize 脱敏**（API key / 密码 / 手机号打码，v1.3.4 起），位于仓库内便于 git worktree 隔离。经 `--init` 或 `--install-hook` 安装时，自动写入 .gitignore（v1.3.6 起两路径行为一致），且 v1.4.2 起三层 hook 防线兜底（pre-commit 在 commit 前将 .sofagent/ 移出暂存区 + commit-msg 二次清理 + post-commit HEAD tree 对账告警），`git add -f` 强制暂存也会被移出（reset 失败则 fail-loud 拒绝 commit）；该目录不进 git 提交，但用户 `ls -a` 可见。可安全删除（重新审计会重建）。改存储位置是 v1.4 架构决策，当前版本只披露。
-
-task/logs 和 think.md 以 Markdown 存储，可能含代码片段、API 响应、用户对话摘要。LLM 提炼反思时可能无意写入敏感信息。静态加密已接线 daemon 启动路径（crypto-init.ts AES-256-GCM + SOFAGENT-AGE-V1 格式）——密钥就绪后审计历史主链密文落盘；但 task/logs、think.md 与 forge-runs/checkpoint/model-registry、knowledge/ 属附链目录仍为明文（脱敏管道仍生效，权威清单见 Key Limitations #4），见 [ROADMAP](./ROADMAP.md) 和 [SECURITY](../SECURITY.md)。
-- history.jsonl 存审计判定详情，A2/A9 已脱敏，其他规则 details 可能含代码片段或文件路径，敏感场景请配合外部加密卷
-- **v1.3.1 #44 披露：审计历史并发写入无文件锁**——appendFileSync 在 POSIX 上对小于 PIPE_BUF (4KB) 的写入是原子的，审计历史条目通常 < 1KB，单次写入安全。但多进程同时写入（daemon 文件监控 + Agent commit）可能导致行交错，产生损坏行触发 hash chain 完整性校验失败。概率极低（审计触发频率 < 1次/分钟），但损坏会导致校验失败。**v1.3.8 解决**——WAL 写在网关层，天然单 writer 模式（所有工具调用经网关串行写入，消除并发写入）。
-- **写链两处「降级继续」是设计取舍（v1.4.4 披露）**：① 上一行解密/JSON 解析失败时 prevHash 置 `'unknown'` 继续写入（条目带 `chainStatus:'broken'` 显式标记，连续 ≥2 条断裂升级告警）；② chmod 0o600 失败时读回实际权限验证——真实宽松才告警，写入照常。两处均**不阻断审计写入**：审计写入被阻断 = 审计本身失效，比链断或权限宽更危险（fail-open 取舍，审计可用性 > 链完整性严格性）。攻防注意：能反复损坏 history.jsonl 最后一行的攻击者可让链持续断裂而不被写入侧拦截——发现连续断裂告警时应立即 `--doctor` 全链校验并排查文件篡改来源。
+>
+> task/logs 和 think.md 以 Markdown 存储，可能含代码片段、API 响应、用户对话摘要。LLM 提炼反思时可能无意写入敏感信息。静态加密已接线 daemon 启动路径（crypto-init.ts AES-256-GCM + SOFAGENT-AGE-V1 格式）——密钥就绪后审计历史主链密文落盘；但 task/logs、think.md 与 forge-runs/checkpoint/model-registry、knowledge/ 属附链目录仍为明文（脱敏管道仍生效，权威清单见 Key Limitations #4），见 [ROADMAP](./ROADMAP.md) 和 [SECURITY](../SECURITY.md)。
+> - history.jsonl 存审计判定详情，A2/A9 已脱敏，其他规则 details 可能含代码片段或文件路径，敏感场景请配合外部加密卷
+> - **v1.3.1 #44 披露：审计历史并发写入无文件锁**——appendFileSync 在 POSIX 上对小于 PIPE_BUF (4KB) 的写入是原子的，审计历史条目通常 < 1KB，单次写入安全。但多进程同时写入（daemon 文件监控 + Agent commit）可能导致行交错，产生损坏行触发 hash chain 完整性校验失败。概率极低（审计触发频率 < 1次/分钟），但损坏会导致校验失败。**v1.3.8 解决**——WAL 写在网关层，天然单 writer 模式（所有工具调用经网关串行写入，消除并发写入）。
+> - **写链两处「降级继续」是设计取舍（v1.4.4 披露）**：① 上一行解密/JSON 解析失败时 prevHash 置 `'unknown'` 继续写入（条目带 `chainStatus:'broken'` 显式标记，连续 ≥2 条断裂升级告警）；② chmod 0o600 失败时读回实际权限验证——真实宽松才告警，写入照常。两处均**不阻断审计写入**：审计写入被阻断 = 审计本身失效，比链断或权限宽更危险（fail-open 取舍，审计可用性 > 链完整性严格性）。攻防注意：能反复损坏 history.jsonl 最后一行的攻击者可让链持续断裂而不被写入侧拦截——发现连续断裂告警时应立即 `--doctor` 全链校验并排查文件篡改来源。
 
 ---
 
@@ -353,10 +354,6 @@ eval.md + think.md 在循环中持续自我修订，会引入**经验漂移**—
 | 加载链脚本 | ✅ 内部 hook | ❌ Agent Read替代 | ❌ |
 | 断路器 | ✅ loopDetection | ❌ | ❌ |
 
-### Dashboard 本地服务面自查结论（CI 供应链加固配套 · 已核验）
-
-> **有网络面，已修**：`serve-dashboard.mjs` 是真实 HTTP 服务面（非纯静态），三项核验——① 默认绑定 `127.0.0.1`（`DASHBOARD_HOST || '127.0.0.1'`，局域网共享须显式 `DASHBOARD_HOST=0.0.0.0` opt-in）；② dashboard.html 零外链 CDN（36 图标 SVG 内嵌，断网可用——与 v2.0.0 离线 USB 节点叙事对齐）；③ 服务无密钥/凭据面（只读 `~/.sofagent/data/` 快照文件，无写操作、无鉴权需求）。GitHub Actions 供应链面：8 个 workflow 20 处 `uses:` 全部 pin 40 位 commit SHA + 注释 tag，`tools/check/check-action-pins.sh` 在线对账 SHA 与 tag 同 commit（离线降级不阻断门禁）。
-
 ---
 
 ---
@@ -403,7 +400,7 @@ sofagent-audit 实现了完整的六步审计闭环流程（设计文档见 [ARC
 | 步骤 | 成熟度 | 说明 |
 |------|:--:|------|
 | 1. git diff 扫描 | ✅ 生产可用 | 纯 git 操作，确定性输出 |
-| 2. 规则检查 A1-A11、A14-A23 | ✅ 生产可用 | 24 条规则（A1-A11、A14-A23 + E1-E2/E4）全部有测试覆盖 |
+| 2. 规则检查（A1-A11、A14-A23 + E1-E2/E4） | ✅ 生产可用 | 24 条规则全部有测试覆盖 |
 | 3. 审计报告生成 | ✅ 生产可用 | JSON/text/table 三种格式 |
 | 4. think.md 自动更新 | ⚠️ 实验性 | LLM 生成，质量依赖模型 |
 | 5. MCP 推送 | ⚠️ 实验性 | MCP Server 已实现，端到端链路未验证 |
@@ -498,8 +495,8 @@ FDE 完整四阶段十二步部署流程（[FDE/GUIDE.md](../FDE/GUIDE.md)）已
 
 `playbook/acceptance-test.sh`（场景数持续扩展，当前 357 个，SSOT 口径=真实 scenario 行数（S165 动态计算并跨文档对账））：
 
-- **CI 已覆盖**：单元测试审计核心 1224 个、全 workspace 4903 个测试（口径与本文件「测试覆盖范围」节一致；逐批沿革账已迁出，见 [v1.4.9 开发日志 · 附录](./changelog/v1.4/v1.4.9.md#附录测试与场景账沿革)）、sofagent-core verify 约 44-48 项（动态）
-- **发版前手动覆盖**：acceptance-test.sh 357 场景（含子断言，CLI 端到端，步骤 2.3；逐批沿革账已迁出，见 [v1.4.9 开发日志 · 附录](./changelog/v1.4/v1.4.9.md#附录测试与场景账沿革)）、OpenClaw 验收 63 场景（Agent 端到端，步骤 2.5）
+- **CI 已覆盖**：单元测试审计核心 1224 个、全 workspace 4903 个测试（口径见本文件「测试覆盖范围」节）、sofagent-core verify 约 44-48 项（动态）
+- **发版前手动覆盖**：acceptance-test.sh 357 场景（含子断言，CLI 端到端，步骤 2.3）、OpenClaw 验收 63 场景（Agent 端到端，步骤 2.5）
 - **CI 未覆盖**：daemon → MCP → webhook → 编排四组件串联行为（v1.3.2 起由 Onboard 循环机制跑全链路 smoke test 承接，作为验收标准；日常 CI 无独立集成测试，发版前手动验证兜底）
 - **CI 未覆盖**：多平台兼容性（macOS only verified，Linux/Windows 未验证）
 
@@ -509,7 +506,7 @@ FDE 完整四阶段十二步部署流程（[FDE/GUIDE.md](../FDE/GUIDE.md)）已
 
 ### acceptance-test 数字口径
 
-> **acceptance-test 数字口径**：「4 处 check-test-count 一致」指 4 个关键文件（CHANGELOG / 版本开发日志 / README / acceptance-test.sh）的测试数字声明一致——以 check-test-count 脚本实际校验的 4 处为准。
+> **acceptance-test 数字口径**：「4 处 check-test-count 一致」指脚本**实际校验**的 4 处——CHANGELOG / 版本开发日志 / README / acceptance-test.sh 的测试数字声明一致。该数字在其它文档（本文件、WIKI、README.en 等）亦有出现，属**引用**，不在脚本校验面内；改动数字时须按「消费方清单」全量扫。
 
 ---
 
@@ -558,7 +555,7 @@ Ontology 统一层的合并逻辑从 `knowledge/entities/` 目录的 Markdown fr
 
 > ✅ **已于 v1.4.0 修复**：Dashboard HTML 产品化——`dashboard.html` + `serve-dashboard.mjs` 随 install.sh 安装到 `$SOFAGENT_HOME/web/`，`sofagent web` 一键起服务，读用户机 `~/.sofagent/data/` **真实数据**（FDE workflow / 已注册 SubAgent / sustain 周报 / 审计报告），开发态/安装态双路径解析。早期版本「目录为空时展示 2 个虚拟 Agent 假数据」的行为已移除（全仓无残留）。
 >
-> **仍存在的边界**（诚实披露）：① Dashboard 是**时间点快照**而非实时监控（无 WebSocket 推送，刷新即重读）；② daemon-health.json 的异常检测仍是关键词匹配（"error"/「异常」/「失败」），非结构化状态报告；③ 治理 KPI 面板（安全边界触发率/审计覆盖率等）排 v1.5.0。
+> **仍存在的边界**（诚实披露）：① Dashboard 是**时间点快照**而非实时监控（无 WebSocket 推送，刷新即重读）；② daemon-health.json 的异常检测仍是关键词匹配（"error"/「异常」/「失败」），非结构化状态报告；③ 治理 KPI 面板（安全边界触发率/审计覆盖率等）随 v1.5.0 交付（✅ 开发完成 · ⏳ 待发版）。
 
 ### SOFAGENT_CLEANUP_ON_RECORD 配置项已移除（✅ v1.5.0 · 死配置清扫）
 
@@ -596,7 +593,7 @@ Ontology 统一层的合并逻辑从 `knowledge/entities/` 目录的 Markdown fr
 
 ### Dream Cycle 知识质量依赖 LLM
 
-**v1.4.5 第七章五真脑交付后更新**：Dream Cycle 6 阶段管道此前跑在 MockLLM 上（占位符文本——格式正确但内容为零），v1.4.5 起接入真 LLM Provider（`real-provider.ts`——模型注册表/环境变量解析 + callModelAPI 复用 + 显式降级语义）。质量防御已工程化：extract/synthesize 产出过「非占位符」三轴校验（长度/信息量溯源/与 MockLLM 输出差异度——`quality-gate.ts`），占位符级产出被拦截不进知识库；模型不可用时显式降级（status 标 `mock` 进周报与 evolution report），「占位符跑 7 天」永不默默发生。**残余局限**：知识质量的本质上限仍依赖模型能力——三轴门槛能拦「正确的废话」，不能保证产出有洞察的知识；冷启动阶段（task logs 不足）提炼出的概念仍可能高度重复或过于泛化；泛化复述的判定边界（硬信息标记 + 溯源）是启发式而非语义级，存在漏放与误拦两侧的误差面。
+**v1.4.5 真脑交付后更新**：Dream Cycle 6 阶段管道此前跑在 MockLLM 上（占位符文本——格式正确但内容为零），v1.4.5 起接入真 LLM Provider（`real-provider.ts`——模型注册表/环境变量解析 + callModelAPI 复用 + 显式降级语义）。质量防御已工程化：extract/synthesize 产出过「非占位符」三轴校验（长度/信息量溯源/与 MockLLM 输出差异度——`quality-gate.ts`），占位符级产出被拦截不进知识库；模型不可用时显式降级（status 标 `mock` 进周报与 evolution report），「占位符跑 7 天」永不默默发生。**残余局限**：知识质量的本质上限仍依赖模型能力——三轴门槛能拦「正确的废话」，不能保证产出有洞察的知识；冷启动阶段（task logs 不足）提炼出的概念仍可能高度重复或过于泛化；泛化复述的判定边界（硬信息标记 + 溯源）是启发式而非语义级，存在漏放与误拦两侧的误差面。
 
 ### sensitivity 标注质量
 
