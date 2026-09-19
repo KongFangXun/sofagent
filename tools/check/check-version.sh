@@ -1165,12 +1165,24 @@ echo "=== 16. WIKI 状态表版本号扫描 ==="
 WIKI_FILE="${PROJECT_ROOT}/docs/WIKI.md"
 if [[ -f "${WIKI_FILE}" ]]; then
   WIKI_DRIFT_OK=true
+  # v1.5.0：待发版语义行的跳过计数——下述排除不是静默跳过，行数在段尾显式打印
+  WIKI_PENDING_SKIPPED=0
   # 扫描 WIKI.md 中所有 vX.Y.Z 格式版本号（排除历史叙述和 CHANGELOG 引用）
   while IFS=: read -r line_num line_content; do
     found_vers=$(echo "$line_content" | grep -oE 'v[0-9]+\.[0-9]+(\.[0-9]+)?' | head -1)
     [[ -z "$found_vers" ]] && continue
     found_ver=$(echo "$found_vers" | sed 's/^v//')
     # 跳过旧版本历史叙述（如"v1.2.5 引入了..."）
+    # v1.5.0：先排除「待发版 / 排期中 / 下一版」语义行——这些行里的版本号是待发版号，
+    #   天然不等于当前 SSOT，要求它相等是假阳性（实案：「能力全景」节的说明句
+    #   「状态：✅ 已交付 · 🚀 待发版（v1.5.0） · 📋 排期中」被"状态"关键字抓成状态表行，
+    #   使本节长期报 1 处不一致）。
+    #   这是「排除」而非「收窄关键字」：真正声称当前版本的行——表格行
+    #   「| 当前版本 | **v1.4.9**」与散文行「当前 v1.4.9」——都仍受检，检测力不损失。
+    if grep -qE '待发版|排期中|下一版' <<< "$line_content"; then
+      WIKI_PENDING_SKIPPED=$((WIKI_PENDING_SKIPPED + 1))
+      continue
+    fi
     # 只检查状态表行（含"当前"或含"状态"或含"版本"关键字的行）
     if grep -qE '当前|状态|版本' <<< "$line_content"; then
       # v1.3.8 P1-C：完整三段比较（此前只比前两段——v1.3.7 vs v1.3.8 同为 1.3，
@@ -1185,6 +1197,10 @@ if [[ -f "${WIKI_FILE}" ]]; then
   if $WIKI_DRIFT_OK; then
     echo -e "  ${GREEN}✓${NC} WIKI.md 状态表版本号一致"
     CHECKS=$((CHECKS + 1))
+  fi
+  # 跳过数显式打印——排除规则不允许静默生效（假门禁形态：锚串消失后静默跳过）
+  if [[ "${WIKI_PENDING_SKIPPED}" -gt 0 ]]; then
+    echo -e "  ${GREEN}✓${NC} WIKI.md 跳过 ${WIKI_PENDING_SKIPPED} 行待发版语义（版本号为待发版号，不比对当前 SSOT）"
   fi
   # v1.4.9 P1-7：「下一版 == 当前版本」是硬性自相矛盾（同一版既「当前」又「下一版」）。
   # 上面 §16 的漂移扫描只认含「当前|状态|版本」的行 ⇒ 「下一版」行天然漏检

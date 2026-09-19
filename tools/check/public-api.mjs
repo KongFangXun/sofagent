@@ -228,7 +228,10 @@ function claimedTotals() {
   // 之间被「个 @public」拦截导致门禁自部署以来从未校验过任何声称（NO MATCH 实测），
   // 还把「没验证」打印成「无基线冲突风险」。收口：数字后允许 ≤12 个非句读中缀字符
   // （个/@public/等），三种形态（中缀/含「个」/纯 symbols）全命中。
-  const re = /(\d{3,4})[^。；\n]{0,12}?(?:符号|symbols)/gi;
+  // 中缀字符集再排除「括号 / 箭头」：否则相邻小句里的数字会被回连成一次假声称——
+  // 实案「…（2494→2491）+ 新功能新增 56 符号…」中的「56 符号」跨过「）」回连到前面
+  // 的 2491，取出一个文档从未声称过的数。括号与箭头都是小句边界，不属中缀。
+  const re = /(\d{3,4})[^。；\n（）()→]{0,12}?(?:符号|symbols)/gi;
   for (const f of DOC_FILES) {
     if (!existsSync(f)) continue;
     const text = readFileSync(f, 'utf-8');
