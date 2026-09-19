@@ -119,6 +119,10 @@ describe('章十二：执行者互换测试（同一 job 双执行面）', () =>
     // 同款竞态在云侧复发（实测 test-count 全量跑时 ~1/16 概率假失败）。
     // 断言强度**不变**：progress / done / close(0) / 云面 started+close(0) 一个都不能少。
     await waitFor(() => colLocal.events.includes('event:done'), 5000);
+    // 🔴 等待条件必须覆盖断言条件：此前只等 done 事件就断言 isClosed()，
+    //   而 onClose 回调在 done 之后（子进程 exit 事件）——CI 高负载下 close
+    //   晚于 done 到达 ⇒ 「等待 done 却断言已关闭」的错配竞态（CI 实测复现）。
+    await waitFor(() => colLocal.isClosed(), 5000);
     await waitFor(() => colCloud.isClosed(), 5000);
     // 两面都收到事件流且以 close(0) 收尾——「执行者互换跑同一 job 均通」
     expect(colLocal.events).toContain('event:progress');
