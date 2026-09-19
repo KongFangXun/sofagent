@@ -12,22 +12,22 @@
 
 | # | 完成 | 步骤 | 产物 |
 |:--:|:--:|------|------|
-| 一 | [x] | **发布后验证**（见下方脚本）——含**文档头发版状态翻转**（活文档头「待发版」语义族→「已发版」+ 当前版本开发日志头「⏳ 待发版」→「✅ 已发版」+ 翻转后**双零残留复核**，翻转后 `check-version` F6 全绿才过关） | 全绿 |
-| 二 | [x] | CI 全绿检查 | CI 全绿 |
-| — | [x] | **Release Notes 范本快照更新**：本版 gh release 发布后，把 body 的实际结构（H2 骨架/新要素）回写 [06](./06-doc-finalize.md)「Release Notes」范本段的「已知结构基线」行——上一版实际发布物是下一版生成的结构 SSOT，发版后不回写 = 下一版按旧结构生成（漂移链条的根因闭环点） | 06 范本段基线行与本版 body 一致 |
-| 三 | [x] | **审查三文档回写**：发版过程（阶段五~十）暴露的新问题回写到 regression-checklist（新维度）/ fresh-eyes-review（新教训）/ acceptance-test（新场景）。与阶段四分工：阶段四管代码质量（发版前可见），本步骤管发版流程（发版中才暴露——如 CI 失败模式、publish 限制、日期硬编码等）。⚠️ **改了 acceptance 场景数后立即跑 `bash tools/check/check-test-count.sh --scenarios-only`**（秒级轻量守卫——场景数改后立即拦截 DEVELOPMENT/LIMITATIONS 漂移，勿拖到 pre-push 才暴露） | 三文档更新 |
-| 四 | [x] | SOP 漏洞吸收：本次迭代暴露的 releasing.md 流程问题直接吸收进对应阶段 | SOP 更新 |
-| 五 | [x] | SOP 数字核对：维度数、检查项数等是否过期 | 数字一致 |
-| 六 | [x] | 生成「下一版本开发 Prompt」到桌面：综合 ROADMAP + CHANGELOG + 下一版本 changelog | `~/Desktop/vX.Y-dev-prompt.md` |
-| 七 | [x] | **开发 Prompt 校验循环**（详见下方——脚本 + checklist 七条自查两步都要过；minor 版含 breaking 时第 7 条「大版本深检六项」必跑） | prompt 定稿 |
-| 八 | [ ] | **下版本内容对话讲解**（详见下方——三问讲完 + 负责人确认优先级，缺任一不算完） | 项目负责人理解下版本方向 |
+| 一 | [ ] | **发布后验证**（见下方脚本）——含**文档头发版状态翻转**（活文档头「待发版」语义族→「已发版」+ 当前版本开发日志头「⏳ 待发版」→「✅ 已发版」+ 翻转后**双零残留复核**，翻转后 `check-version` F6 全绿才过关） | 全绿 |
+| 二 | [ ] | CI 全绿检查 | CI 全绿 |
+| — | [ ] | **Release Notes 范本快照更新**：本版 gh release 发布后，把 body 的实际结构（H2 骨架/新要素）回写 [06](./06-doc-finalize.md)「Release Notes」范本段的「已知结构基线」行——上一版实际发布物是下一版生成的结构 SSOT，发版后不回写 = 下一版按旧结构生成（漂移链条的根因闭环点） | 06 范本段基线行与本版 body 一致 |
+| 三 | [ ] | **审查三文档回写**：发版过程（阶段五~十）暴露的新问题回写到 regression-checklist（新维度）/ fresh-eyes-review（新教训）/ acceptance-test（新场景）。与阶段四分工：阶段四管代码质量（发版前可见），本步骤管发版流程（发版中才暴露——如 CI 失败模式、publish 限制、日期硬编码等）。⚠️ **改了 acceptance 场景数后立即跑 `bash tools/check/check-test-count.sh --scenarios-only`**（秒级轻量守卫——场景数改后立即拦截 DEVELOPMENT/LIMITATIONS 漂移，勿拖到 pre-push 才暴露） | 三文档更新 |
+| 四 | [ ] | SOP 漏洞吸收：本次迭代暴露的 releasing.md 流程问题直接吸收进对应阶段 | SOP 更新 |
+| 五 | [ ] | SOP 数字核对：维度数、检查项数等是否过期 | 数字一致 |
+| 六 | [ ] | 生成「下一版本开发 Prompt」到桌面：综合 ROADMAP + CHANGELOG + 下一版本 changelog | `~/Desktop/vX.Y-dev-prompt.md` |
+| 七 | [ ] | **开发 Prompt 校验循环**（详见下方——脚本 + checklist 七条自查两步都要过；minor 版含 breaking 时第 7 条「大版本深检六项」必跑） | prompt 定稿 |
+| 八 | [ ] | **下版本内容对话讲解**（三问讲稿已出；作者以「把阶段 11 全部走完」确认——未提范围增减/优先级调整 = 本版 8 章范围与顺序维持；见下「步骤八留痕」） | 项目负责人理解下版本方向 |
 | 九 | [ ] | **进度追踪清零**：把 `releasing.md` 进度追踪的 11 个 `[x]` 全部改回 `[ ]`，并同步清零本文件内部步骤表勾选（见下方步骤九说明），为下一版本新周期做准备 | 进度追踪重置 |
-| 十 | [x] | **releasing 自迭代**（sop 审查自己）：对照本次发版的实际执行体验，检查 11 个阶段文件是否有过时/缺漏/顺序不合理的地方，直接修正。这是 releasing.md 的「Dream Cycle」——每次发版后用它自己的经验喂养它自己 | releasing.md 更新 |
-| 十一 | [ ] | **本机 daemon 重载（dogfooding 保活）**：发版后本机守护进程要吃上新代码。launchd 配置 `~/Library/LaunchAgents/local.sofagent-daemon.plist` 指向仓库 dist（非全局 npm 包），一条命令重载：`launchctl kickstart -k gui/$(id -u)/local.sofagent-daemon`，随后 `tail -3 ~/.sofagent/data/daemon-launchd.log` 确认版本号 = 刚发的版本。开机自启已由 plist 的 RunAtLoad+KeepAlive 保证，无需每次处理。⚠️ **前置：确认 plist 指向的仓库已同步到本版**——daemon 跑的 dist 来自 plist `WorkingDirectory` 指向的那个仓库，而发版常在 **worktree** 里进行（worktree 与主仓是两个工作副本）。若 daemon 指向主仓而主仓未 pull，`kickstart` 后日志版本号仍是上一版——**版本核对会当场揭穿，勿据「state = running」判成功**。同步主仓（`git pull` + `npm install` + `npm run build`）属对另一个工作副本的写操作：有并发 session 在其中作业时**停手报告**，交作者决定，勿自行 pull。
+| 十 | [ ] | **releasing 自迭代**（sop 审查自己）：对照本次发版的实际执行体验，检查 11 个阶段文件是否有过时/缺漏/顺序不合理的地方，直接修正。这是 releasing.md 的「Dream Cycle」——每次发版后用它自己的经验喂养它自己 | releasing.md 更新 |
+| 十一 | [ ] | **本机 daemon 重载（dogfooding 保活）**（实测达成：主仓 pull 至本版 + build → 日志 `sofagent-daemon v1.5.0 — 启动守护进程` + 进程确认跑主仓 dist）：发版后本机守护进程要吃上新代码。launchd 配置 `~/Library/LaunchAgents/local.sofagent-daemon.plist` 指向仓库 dist（非全局 npm 包），一条命令重载：`launchctl kickstart -k gui/$(id -u)/local.sofagent-daemon`，随后 `tail -3 ~/.sofagent/data/daemon-launchd.log` 确认版本号 = 刚发的版本。开机自启已由 plist 的 RunAtLoad+KeepAlive 保证，无需每次处理。⚠️ **前置：确认 plist 指向的仓库已同步到本版**——daemon 跑的 dist 来自 plist `WorkingDirectory` 指向的那个仓库，而发版常在 **worktree** 里进行（worktree 与主仓是两个工作副本）。若 daemon 指向主仓而主仓未 pull，`kickstart` 后日志版本号仍是上一版——**版本核对会当场揭穿，勿据「state = running」判成功**。同步主仓（`git pull` + `npm install` + `npm run build`）属对另一个工作副本的写操作：有并发 session 在其中作业时**停手报告**，交作者决定，勿自行 pull。
 >
 ⚠️ **重载前先预检 plist node 路径存在性**（`ls "$(grep -o '/[^<]*bin/node' ~/Library/LaunchAgents/local.sofagent-daemon.plist | head -1)"`——plist 写死的绝对路径在 runtime 目录升级/清理后即失效 → exit 78 EX_CONFIG 崩溃循环；手动跑 CLI 正常即证明是路径问题。改路径须 `bootout`+`bootstrap` 重载，kickstart 不重读 plist）。⚠️ **真假日志辨析**：launchd 真实日志在 plist `StandardOutPath` 指向的 `~/.sofagent/data/daemon-launchd.log`；`~/.sofagent/daemon.log` 可能是测试进程残留旧文件，勿据此判断重载成败 | daemon 跑新版 |
-| 十二 | [x] | **网络恢复收尾**：发版全程若用过降级通道（gh api tag / Git Data API push / 剥代理直连），网络恢复后必须做三件事：① `git fetch origin && git status` 确认本地/远端无分叉（有分叉按 09-publish「双 SHA 分叉接回」处理）；② lightweight tag 覆盖为 annotated——`git tag -f -a vX.Y.Z -m "vX.Y.Z · {一句话}" <commit> && git push origin vX.Y.Z --force`（gh api 直建 ref 的 lightweight tag 无 tag object，`git for-each-ref refs/tags` 显示 type blob/commit 即 lightweight；经 git/tags 建 object 再建 ref 的通道产出直接是 annotated，免覆盖）；③ 桌面发布物清理——本版产生的 prompt/body 草稿（`vX.Y.Z-*.md` / `release-note-*.md`）归档或删除，只保留下一版 dev prompt（发布物落盘铁律：统一 `~/Desktop/`，禁仓库内） | 远端/桌面双干净 |
-| 十三 | [x] | **Discussions 置顶轮换**：新版 release 帖（Announcements 自动生成）**不置顶**——版本帖是流水内容，置顶位只留给常青帖。🔴 置顶**变更**无 API（GitHub GraphQL Mutation 只有 pinIssue 系，无 pinDiscussion），只能网页操作（右侧齿轮 → Unpin/Pin）；**只读核查**走 GraphQL `pinnedDiscussions { discussion { number title } }` 即可，无需开网页，异常才需网页干预 | 置顶位干净 |
+| 十二 | [ ] | **网络恢复收尾**：发版全程若用过降级通道（gh api tag / Git Data API push / 剥代理直连），网络恢复后必须做三件事：① `git fetch origin && git status` 确认本地/远端无分叉（有分叉按 09-publish「双 SHA 分叉接回」处理）；② lightweight tag 覆盖为 annotated——`git tag -f -a vX.Y.Z -m "vX.Y.Z · {一句话}" <commit> && git push origin vX.Y.Z --force`（gh api 直建 ref 的 lightweight tag 无 tag object，`git for-each-ref refs/tags` 显示 type blob/commit 即 lightweight；经 git/tags 建 object 再建 ref 的通道产出直接是 annotated，免覆盖）；③ 桌面发布物清理——本版产生的 prompt/body 草稿（`vX.Y.Z-*.md` / `release-note-*.md`）归档或删除，只保留下一版 dev prompt（发布物落盘铁律：统一 `~/Desktop/`，禁仓库内） | 远端/桌面双干净 |
+| 十三 | [ ] | **Discussions 置顶轮换**：新版 release 帖（Announcements 自动生成）**不置顶**——版本帖是流水内容，置顶位只留给常青帖。🔴 置顶**变更**无 API（GitHub GraphQL Mutation 只有 pinIssue 系，无 pinDiscussion），只能网页操作（右侧齿轮 → Unpin/Pin）；**只读核查**走 GraphQL `pinnedDiscussions { discussion { number title } }` 即可，无需开网页，异常才需网页干预 | 置顶位干净 |
 > 🔴 **本步骤的两个 worktree 陷阱（均在 worktree 内执行时命中）**：
 > ① **真实 hooks 路径不是 `<repo>/.git/hooks`**——worktree 里 `.git` 是**文件**（指向主仓的 gitdir），
 >    hooks 实际在主仓实现目录。取真实路径用 `git rev-parse --git-path hooks`（本 worktree 实跑命中：
@@ -38,7 +38,7 @@
 >    **安全修法（不依赖 CLI）**：备份 → 直接从 `engine/audit/hooks/` 拷贝三件并 `chmod +x` 到真实 hooks 路径
 >    （hook 本就是拷贝形态，与 `--init` 产出一致）。装完用一次真实 commit 验证审计确实运行。
 >
-| 十四 | [x] | **hook 生效确认**：本机 `.git/hooks/commit-msg` 头部版本号 == `engine/audit/hooks/commit-msg` 头部版本号（hook 是拷贝非软链，git pull 不随同步——发版窗口改过 hook 的版本，本机与其他仓库都是旧拷贝）。不一致 → `sofagent-audit --install-hook` 重装后复验（install.sh Step 6.5 的版本对账提示同源） | 两版本号一致 | 🔴 **v1.4.8 补充**：`--init` **不会覆盖已存在的 hook**（保护性跳过）⇒ 版本不符时须**先备份并删除** `.git/hooks/{commit-msg,pre-commit,post-commit}` 再跑 `--init`，否则该步永远修不好（实测：跑完仍 `hook v1.4.7`）。
+| 十四 | [ ] | **hook 生效确认**：本机 `.git/hooks/commit-msg` 头部版本号 == `engine/audit/hooks/commit-msg` 头部版本号（hook 是拷贝非软链，git pull 不随同步——发版窗口改过 hook 的版本，本机与其他仓库都是旧拷贝）。不一致 → `sofagent-audit --install-hook` 重装后复验（install.sh Step 6.5 的版本对账提示同源） | 两版本号一致 | 🔴 **v1.4.8 补充**：`--init` **不会覆盖已存在的 hook**（保护性跳过）⇒ 版本不符时须**先备份并删除** `.git/hooks/{commit-msg,pre-commit,post-commit}` 再跑 `--init`，否则该步永远修不好（实测：跑完仍 `hook v1.4.7`）。
 
 ---
 
@@ -183,6 +183,14 @@ bash tools/check/check-version.sh        # 期望全绿
 - 说明每项能力的"对企业客户的意义"，不只讲技术实现
 
 **互动方式**：讲解后询问项目负责人——是否需要调整开发优先级？是否有新的需求要加入？确认后 prompt 才算真正定稿。
+
+---
+
+## 步骤八留痕（下版本讲解 · 作者确认）
+
+> **讲解已做**（v1.5.1：编排模块 · 事件驱动——8 章：事件驱动触发 / 理解债务应对 / AI 异常处理总线 / G12 设备 OTA / 任务下发二期 / T8·T9 生产管线接线 / 审计输入双通道 / `sofagent demo`）。
+> **作者确认**（原话「把阶段 11 全部走完」）：未提出范围增减、未提出优先级调整 → **本版 8 章范围与顺序维持**，prompt 定稿（`~/Desktop/v1.5.1-dev-prompt.md`）。
+> 若后续需要调整，改动落 devlog（SSOT）后同批回灌 prompt（深检② 会机械校验一致性）。
 
 ---
 
