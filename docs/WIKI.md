@@ -43,14 +43,14 @@
 
 ## 目录
 
-- 一、一句话
-- 二、产品叙事：sofagent 是 FDE Harness 层（不造 Agent，嵌在 Agent 与模型之间做治理）
-- 三、核心概念
-- 四、架构全景
-- 五、文件地图
-- 六、当前状态
-- 七、术语表
-- 八、导航：按你的意图选路
+- [一、一句话](#一一句话)
+- [二、产品叙事：sofagent 是 FDE Harness 层（不造 Agent，嵌在 Agent 与模型之间做治理）](#二产品叙事sofagent-是-fde-harness-层不造-agent嵌在-agent-与模型之间做治理)
+- [三、核心概念](#三核心概念)
+- [四、架构全景](#四架构全景)
+- [五、文件地图](#五文件地图)
+- [六、当前状态](#六当前状态)
+- [七、术语表](#七术语表)
+- [八、导航：按你的意图选路](#八导航按你的意图选路)
 
 ---
 
@@ -228,7 +228,7 @@ graph TB
 | `engine/train/` | @sofagent/train — 后训模块（数据管道/训练编排/云端执行/eval 闭环） |
 | `engine/daemon/` | @sofagent/daemon — 后台守护进程（cron 巡检 + 文件监听） |
 | `engine/inject/` | @sofagent/inject — SKILL 加载链（上下文注入） |
-| `engine/mcp/` | @sofagent/mcp — MCP Server（知识库 CRUD tool）· **105 个 MCP tool**（以 `engine/mcp/src/tool-registry.ts` SSOT 为准；v1.4.9 G9 新增 device_register/device_list 设备注册面 + G10/G11 新增 device_data_query/device_data_push 设备数据面 + G5b/G1 新增连接器注册面与 workflow 模板面 + 批 5 新增 router_session_push 过站 session 承接面；v1.4.7 新增 workflow CRUD/PR 生命周期/绩效/缺口/data_push 等 11 个；v1.4.6 新增 train_cloud 云端训练执行面；v1.4.5 三件 train_serve/train_compliance/train_deliverable；v1.4.2 新增 FDE 六引擎 fde_interview/fde_classify/fde_quantify/fde_derive/fde_distill/fde_deploy，插件家族 MCP 面另计） |
+| `engine/mcp/` | @sofagent/mcp — MCP Server（知识库 CRUD tool）· **105 个 MCP tool**（以 `engine/mcp/src/tool-registry.ts` 的 `TOOLS` 为 SSOT；各版增量见 [API 工具清单](./API.md) 与 [CHANGELOG](../CHANGELOG.md)；插件家族 MCP 面另计） |
 | `engine/hooks/sofagent-load-chain/` | @sofagent/load-chain — SKILL 加载链 git hook（工具包，非模块包口径） |
 | `engine/scripts/` | 运维脚本集（9 个 .sh + lib/ 模块 + windows/ .ps1 安装与卸载脚本）——安装（install.sh 调用）、卸载、验证（verify.sh）、daemon 管理、运行时审计日志记录等 |
 | `engine/dsh-plugins/` | cordis-plugin-sofagent* 7 款 DSH 插件（v1.4.9 P2 合并批 10→7）——6 款原子（audit（含验收门禁面）· rollback · inject · evolve · daemon · fde（本体/FDE/公地三域厚插件））+ 1 款聚合（裸名 `cordis-plugin-sofagent`，一次挂载全套） |
@@ -252,10 +252,12 @@ graph TB
 |----|-----|
 | 当前版本 | **v1.4.9**（2026-09-17，✅ 已发版）· 上一版 v1.4.8（2026-09-13，✅ 已发版） |
 | 下一版 | v1.5.0（✅ 已开发完成 · ⏳ 待发版——🛡️ 治理模块 · 可见性与本体成熟；以 [ROADMAP](./ROADMAP.md) 规划表为准） |
-| 测试覆盖 | 4903 测试 / 13 包（统计标准：`tools/check/test-count.sh` 实际执行的 workspace 包；全仓共 26 个 workspace（v1.4.9 P2 合并批 29→26）——13 个 @sofagent/* 模块包 + 1 个工具包 load-chain + 7 个 DSH 插件（private，随 DSH 分发）+ 4 个 OpenClaw 插件（`engine/openclaw-plugins/`）+ 1 个 npm 裸名总包 umbrella，其中 14 个包发布至 npm（13 个 @sofagent/* 模块包 + @sofagent/load-chain 工具包，共 14 个 @sofagent scope 发布物）+ 1 个裸名总包 sofagent（umbrella），共 15 个 npm 发布物；OpenClaw 插件经根 `npm test --workspaces` 统一执行测试。实测见 `tools/check/test-count.sh`、声称数同步校验见 `tools/check/check-test-count.sh`） |
+| 测试覆盖 | 4903 测试 / 13 包（统计标准：`tools/check/test-count.sh` 实际执行的 workspace 包；实测见该脚本，声称数同步校验见 `tools/check/check-test-count.sh`。包数口径见下表注） |
 | 审计规则 | 24 条（17 默认 + 7 扩展），活跃编号 A1-A11 + A14-A23 + E1/E2/E4（A12/A13/E3 已并入 A11，编号不再使用），每次 commit 自动跑 |
 | FORGE | fresh-eyes-loop + release-gate-loop 运行中 |
 | 数据目录 | **data/**（v1.2.1+ SSOT 运行时数据目录） |
+
+> 📦 **包数口径**：全仓共 **26 个 workspace**——13 个 `@sofagent/*` 模块包 + 1 个工具包 `load-chain` + 7 个 DSH 插件（private，随 DSH 分发）+ 4 个 OpenClaw 插件 + 1 个 npm 裸名总包 umbrella；其中 14 个发布为 `@sofagent` scope（13 模块包 + load-chain）+ 1 个裸名总包，共 **15 个 npm 发布物**。OpenClaw 插件经根 `npm test --workspaces` 统一执行测试。
 
 ---
 

@@ -292,13 +292,15 @@ graph TB
 
 > 闭环读法：实线 = 主循环（执行→审计→沉淀→晋升→更强的执行面）；虚线 = 晋升回写与语料飞轮。
 >
-> ⚠️ **数字口径（五域重算 · 批 5 增量同步）**：五域条目数之和 **28 + 19 + 27 + 16 + 15 = 105**，与图题 105 及 registry 实数**三处自洽**（以 `engine/mcp/src/tool-registry.ts` 的 `TOOLS` 数组为唯一权威源，逐个工具名分桶；分桶依据是**业务职能**，不是 registry 的 `roles` 标签——见上方「两套标签不要混用」）。**自洽由 `tools/check/check-docs.sh` §20 断言**（提取本图五域数字求和，比对图题与 registry 实数；提取为空 ⇒ 判红，防守卫空转）。重算记录：改前五域题号为 16/15/17/17/15（和 80 ≠ 图题 95，差 15），且 `后训模块 ×8` 与实数 `train_*` = 12 不符——两处同批纠正；**回填 2 枚此前未归域的工具**（`contribution_query` 治理 KPI 贡献度报表、`list_capabilities` 能力发现元工具，见各自 registry 描述——均属「审计·治理·运维」面，落 C5）；**v1.4.9 G9 增量**（device_register/device_list 设备注册面，D3 +2：95→97）；**v1.4.9 G10/G11 增量**（device_data_query/device_data_push 设备数据面，D3 +2：97→99，C6 扩为设备接入面 ×4）；**v1.4.9 G5b/G1 增量**（workflow_export/workflow_import 模板面归 D1 A3 编排域 +2、connector_register/connector_list 连接器注册面新 C7 落 D3 +2：99→103）；**v1.4.9 批 5 增量**（router_session_push 过站 session 承接面新 C8 落 D3 +1：103→104——主叙事是数据主权承接+审计挂链+cost 治理；语料管道消费端见 B2 后训模块）；**v1.5.0 增量**（`trace_reconcile` 跨层证据对账——审计证据面，归 D3 C1 审计域 +1：104→105）。
+> ⚠️ **数字口径（五域重算）**：五域条目数之和 **28 + 19 + 27 + 16 + 15 = 105**，与图题 105 及 registry 实数**三处自洽**——以 `engine/mcp/src/tool-registry.ts` 的 `TOOLS` 数组为唯一权威源，逐个工具名分桶（分桶依据是**业务职能**，不是 registry 的 `roles` 标签，见上方「三套标签不要混用」）。**自洽由 `tools/check/check-docs.sh` §20 断言**（提取本图五域数字求和，比对图题与 registry 实数；提取为空 ⇒ 判红，防守卫空转）。
+>
+> **增量化简记**（记号：域 +N = 该域条目数变化）：v1.4.9 分四批把 95 推到 104——G9 设备注册面 D3 +2、G10/G11 设备数据面 D3 +2、G5b/G1 连接器与模板面 D3 +2 与 D1 A3 +2、批 5 router 承接面 D3 +1（C8 新域）；同批回填 2 枚此前未归域的工具（`contribution_query` 治理 KPI 报表、`list_capabilities` 能力发现元工具，落 D3 C5）。v1.5.0 `trace_reconcile` 归 D3 C1 +1 至 105。改前旧题号 16/15/17/17/15（和 80 ≠ 当时图题 95，差 15）及 `后训模块 ×8` 与实数 `train_*` = 12 不符两处，已同批纠正。
 
 > 📌 本表覆盖至 v1.3.8；v1.3.9 及其后版本（v1.4.0~v1.4.9、v1.5.0）的能力见 [HANDBOOK · 近期版本新功能速览](./HANDBOOK.md) 与 [CHANGELOG](../CHANGELOG.md)，本表不再逐版续列。
 
 | 版本 | 关键能力 |
 |------|---------|
-| **基座（v1.2.0）** | FDE 常驻部署（进场梳理 → 识别节点 → 构建知识库 → 离场 7×24 自跑）· AI 节点自动化 · 24 条规则行为审计（零 token 纯静态，当场拦截）· 一键回滚（git snapshot `--revert`）· 平台无关核心约束（Claude Code / Codex / WorkBuddy / OpenClaw 均可用审计能力；支持平台 Hook 自动注入，其他平台手动注入约束 + 审计照常生效）· AI 知识库自动积累（Dream Cycle + sensitivity 分级）· Ontology 本体数据 · USB 一键烧录（AES-256 加密 + HMAC 签名，插上即用拔掉零残留）· 安全联邦多设备互查（v1.1.8+）· 4 个 Sub Agent（@sofagent-fde + @sofagent-audit + engineer + reviewer）· daemon 守护进程 + A/B 自动调度器 · MCP Server 暴露全部能力 · FDE 四阶段十二步方法论 · 持续优化 sustain 模式 · 控制图状态抽取（ControlGraphState 数据层） |
+| **基座（v1.2.0）** | FDE 常驻部署 · AI 节点自动化 · 24 条规则行为审计（零 token 纯静态）· 一键回滚 · 平台无关核心约束（Hook 自动注入 / 手动注入 + 审计照常）· AI 知识库自动积累 · Ontology 本体数据 · USB 一键烧录 · 安全联邦多设备互查 · 4 个 Sub Agent · daemon + A/B 调度器 · MCP Server · FDE 四阶段十二步 · sustain 模式 · ControlGraphState（逐项说明见 [HANDBOOK](./HANDBOOK.md) 与各版 [开发日志](./changelog/)） |
 | **v1.2.9** | 三个入口产品（npx 零配置审计 CLI + 规则市场 `--ruleset` + GitHub Action）· FORGE Driver 短任务化 + Checkpoint/Resume worker 级断点 + PM2 守护进程 |
 | **v1.3.0** | 运行时审计最小闭环（wrapToolCall middleware + tool-gate 动态拦截 + 运行时审计日志）· 决策审计（emitDecision + HMAC 链 + kind-wise 查询）· 规则透明化（`list_rules` MCP tool）· 危险操作 HITL 钩子 · 双规则系统统一（`ruleType`）· 激活链 Phase 4 收尾（SUSTAIN 全闭环）· 外部记忆后端 Path A（可选，缺省关闭）· 进化链路写保护 |
 | **v1.3.1** | Ontology 运行时层（Action 注册表 + validator 三态 + Schema 定稿）· 并行编排（ParallelScheduler + 波次审计卡关 + MergeQueue）· Durable Execution（checkpoint 续跑 + 副作用幂等）· Agent 身份码 Ed25519 · 🚀 Onboard Agent L1（loop_debug）· 📊 Benchmark 评测（evaluate）· 工具审批四模式 · LLM 调用级 Trace · 错误处理升级（stop_reason + 退避）· L4 渐进加载 · 本体建模要求对齐 GB/T 48000.3-2026（`runRules({gb48000:true})`）· 跨设备审计轨迹聚合（audit_trail） |
@@ -1109,7 +1111,12 @@ sofagent 的三层治理与 Karpathy LLM Wiki 的 `raw materials → Wiki entrie
 | **执行层可换（编排层长期不动）** | 编排层 LangGraph StateGraph 长期不换（确定性审计依赖显式图结构，属架构级取舍非永久承诺）；执行层走 ExecutionBackend 接口——DSH 默认 / createReactAgent fallback / 三平台可选，双后端镜像验证 | 不做「只修一处的堤」——企业命脉不押单一运行时，DSH rc 阶段 breaking change 风险不传导给客户 |
 | **治理是事件域横切面** | plugin 挂 tools/result、turn-stopping、approval seam 等全局事件域，装一次全域生效 | 不做「逐节点插桩」——治理不是节点附件，是横切所有节点的约束层 |
 
-> 📖 **双图谱术语定义**：FDE 的最终输出统一表述为——**梳理 workflow、定义 ontology，交付 Workflow Graph + Ontology Graph 双图谱**。「Graph」是可视化/可理解形态的统称：**Workflow Graph** = FDE 梳理好 workflow 后多个 workflow 组成的流程图谱（动态，**人读它理解企业怎么运转**）；**Ontology Graph** = ontology 的图谱化形态（ontology 本身是哲学定义，加 Graph 才让人知道它是可被理解、可视化的东西；静态，**AI 读它理解企业是什么**）。**两者对应同一套业务，只是读者不同**——人读 Workflow Graph 理解企业的运转方式，AI 读 Ontology Graph 理解企业的语义；FDE 进场两种都读（既向人解释流程，也向 AI 喂语义）。**与 Graph Engineering 的关系**：双图谱正是企业级 Graph Engineering 的前提——有了 Workflow Graph 和 Ontology Graph，Agent 才能针对它们做 graph engineering（编排、审阅、进化都作用在这两张图上）；sofagent 不自创概念，只负责帮企业把这两张图搭建出来。商业平台层（规划文档独立于本 MIT 仓库维护）托管的就是这双图谱。**名称辨析**：行业研报的 Org Graph（进组织架构的硅基员工，见 VALIDATION）与 Ontology Graph 是不同概念——前者讲 Agent 的组织归属，后者讲业务语义的图谱化形态，勿混。
+> 📖 **双图谱术语定义**：FDE 的最终输出统一表述为——**梳理 workflow、定义 ontology，交付 Workflow Graph + Ontology Graph 双图谱**。「Graph」是可视化 / 可理解形态的统称：
+>
+- **Workflow Graph** = FDE 梳理好 workflow 后多个 workflow 组成的流程图谱（动态，**人读它理解企业怎么运转**）
+- **Ontology Graph** = ontology 的图谱化形态（ontology 本身是哲学定义，加 Graph 才让人知道它是可被理解、可视化的东西；静态，**AI 读它理解企业是什么**）
+>
+> **两者对应同一套业务，只是读者不同**——FDE 进场两种都读（既向人解释流程，也向 AI 喂语义）。**与 Graph Engineering 的关系**：双图谱正是企业级 Graph Engineering 的前提——有了这两张图，Agent 才能针对它们做 graph engineering（编排、审阅、进化）；sofagent 不自创概念，只负责帮企业把图搭建出来，商业平台层（独立于本 MIT 仓库维护）托管的就是这双图谱。**名称辨析**：行业研报的 Org Graph（进组织架构的硅基员工，见 VALIDATION）与 Ontology Graph 是不同概念——前者讲 Agent 的组织归属，后者讲业务语义的图谱化形态，勿混。
 
 ## 五、激活链架构（v1.2.5+ Phase 1-4 已交付）
 
@@ -1203,7 +1210,13 @@ audit:
 | skill-staleness | @weekly（默认禁用） | Skill 陈旧度（需 eval 数据支持） |
 | warn-accumulator | @daily | 连续未处理 WARN 累积（阈值 3，含文件级追踪） |
 
-> **范围声明**：sofagent 是 Harness 中间件（**品类定位词**——「中间件」在此答的是「sofagent 属于哪个品类」，**不是**「约束层是技术实现层的中间件」这一实现论判断；两义互指见 [设计哲学](./PHILOSOPHY.md)）——覆盖行为约束 + 变更审计 + 经验沉淀 + 持续优化。不覆盖**主 Agent 平台**本身（IM 渠道 / 第三方平台托管的沙箱 / 工具调用——WorkBuddy / OpenClaw 等大厂平台的事），也不覆盖运维层（监控/告警/重启/日志轮转）。**例外**：sofagent 托管**自派 SubAgent** 的运行时治理——v1.3.0 起为 middleware 层轻量拦截（工具调用中介 + 人工批准钩子），v1.3.7 扩展为完整沙箱（文件系统隔离 + 网络出站白名单 + 工具调用前置 allow/deny + 虚拟 key 边界注入），因 sofagent 既起环境又发凭证、天然拥有执行边界。**运行时治理仅限自派 SubAgent，主 Agent 永远事后审计**。扣子（Coze，字节跳动）类全栈产品管从 Agent 到权限的全部层，sofagent 管其中可独立标准化的约束+审计层——不管企业用什么 Agent 平台，sofagent 是第三方独立底线守卫。
+> **范围声明**：sofagent 是 Harness 中间件（**品类定位词**——「中间件」在此答的是「sofagent 属于哪个品类」，**不是**「约束层是技术实现层的中间件」这一实现论判断；两义互指见 [设计哲学](./PHILOSOPHY.md)）——覆盖行为约束 + 变更审计 + 经验沉淀 + 持续优化。
+>
+> **不覆盖**：主 Agent 平台本身（IM 渠道 / 第三方平台托管的沙箱 / 工具调用——WorkBuddy / OpenClaw 等大厂平台的事），以及运维层（监控 / 告警 / 重启 / 日志轮转）。
+>
+> **例外**：sofagent 托管**自派 SubAgent** 的运行时治理——v1.3.0 起 middleware 层轻量拦截（工具调用中介 + 人工批准钩子），v1.3.7 扩展为完整沙箱（文件系统隔离 + 网络出站白名单 + 工具调用前置 allow/deny + 虚拟 key 边界注入），因 sofagent 既起环境又发凭证、天然拥有执行边界。**运行时治理仅限自派 SubAgent，主 Agent 永远事后审计**。
+>
+> 扣子（Coze，字节跳动）类全栈产品管从 Agent 到权限的全部层，sofagent 管其中可独立标准化的约束 + 审计层——不管企业用什么 Agent 平台，sofagent 是第三方独立底线守卫。
 
 ---
 
