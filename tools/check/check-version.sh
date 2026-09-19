@@ -1074,11 +1074,16 @@ while IFS= read -r _cl_line; do
   _cl_ver=$(printf '%s' "$_cl_line" | grep -oE '^- \*\*v[0-9]+\.[0-9]+\.[0-9]+\*\*' | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
   _cl_date=$(printf '%s' "$_cl_line" | grep -oE '· [0-9]{4}-[0-9]{2}-[0-9]{2} 已发版' | grep -oE '[0-9]{4}-[0-9]{2}-[0-9]{2}' | head -1)
   [ -z "$_cl_ver" ] || [ -z "$_cl_date" ] && continue
-  # 🔴 固定发版时区提取（CI 时区脆弱性实锤）：%(creatordate:short) 按运行环境 TZ 渲染——
-  #   本地（Asia/Shanghai）给 2026-08-29、CI runner（UTC）给 2026-08-28，同一 tag 两个"真值"，
-  #   守卫在 CI 恒红。发版动作恒在上海时区执行（CHANGELOG 行日期即上海发版日），
-  #   故 TZ=Asia/Shanghai 固定提取口径——本地与 CI 从此同值。
-  _tag_date=$(TZ='Asia/Shanghai' git -C "${PROJECT_ROOT}" for-each-ref --format='%(creatordate:short)' "refs/tags/v${_cl_ver}" 2>/dev/null | head -1)
+  # 🔴 固定发版时区提取（CI 时区脆弱性实锤 ×2）：%(creatordate:short) 按运行环境 TZ 渲染，
+  #   且 TZ=Asia/Shanghai 前缀对 git 的 ref 过滤器在 CI（actions/checkout 浅克隆+特定 git 版本）
+  #   仍不可靠（v1.4.2 在 CI 恒读 08-28、本地 08-29）。治本：取 %(creatordate:unix) 原始时间戳
+  #   （TZ 无关），由 macOS date -r + TZ 显式转上海日期——CHANGELOG 行日期即上海发版日。
+  _tag_ts=$(git -C "${PROJECT_ROOT}" for-each-ref --format='%(creatordate:unix)' "refs/tags/v${_cl_ver}" 2>/dev/null | head -1)
+  if [ -n "${_tag_ts}" ] && command -v date >/dev/null 2>&1; then
+    _tag_date=$(TZ='Asia/Shanghai' date -r "${_tag_ts}" '+%Y-%m-%d' 2>/dev/null)
+  else
+    _tag_date=$(TZ='Asia/Shanghai' git -C "${PROJECT_ROOT}" for-each-ref --format='%(creatordate:short)' "refs/tags/v${_cl_ver}" 2>/dev/null | head -1)
+  fi
   [ -z "$_tag_date" ] && continue
   TAG_DATE_CHECKED=$((TAG_DATE_CHECKED + 1))
   if [ "$_cl_date" != "$_tag_date" ]; then
