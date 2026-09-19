@@ -6,13 +6,11 @@
 
 > v1.4.9 · 2026-09-17（✅ 已发版——本批更新 2026-09-17） · 孔放勋
 
-<img src="assets/sofagent.png" alt="sofagent" width="160" />
-
 ---
 
 ## 基石
 
-- **[OpenClaw](https://github.com/openclaw/openclaw)** · Peter Steinberger — 整个 sofagent 建立在它之上：上下文加载、Hook 触发、Skill 注入、Session 管理
+- **[OpenClaw](https://github.com/openclaw/openclaw)** · Peter Steinberger — 四层加载链的 Hook 机制源自它：上下文加载、Hook 触发、Skill 注入、Session 管理
 
 ## 生成伙伴
 
@@ -30,7 +28,7 @@
 ### 哲学基因
 
 - **[Ralph Loop](https://ghuntley.com/loop/)** · Geoffrey Huntley —「Agent 会失忆，文件不会」启发了审计方向：git diff 是无状态的地面真相
-- **[Andrej Karpathy Skills](https://github.com/multica-ai/andrej-karpathy-skills)** — 4 条编码原则是 7 则铁律的根基
+- **[Andrej Karpathy Skills](https://github.com/multica-ai/andrej-karpathy-skills)** — 4 条编码原则是 9 则铁律的根基
 - **[Anthropic Skills](https://github.com/anthropics/skills)** — 官方 SKILL.md 格式规范，描述-实现分离的参考
 
 ### Loop → Harness → Graph
