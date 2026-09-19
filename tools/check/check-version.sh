@@ -1097,7 +1097,25 @@ while IFS= read -r _cl_line; do
   fi
   [ -z "$_tag_date" ] && continue
   TAG_DATE_CHECKED=$((TAG_DATE_CHECKED + 1))
-  if [ "$_cl_date" != "$_tag_date" ]; then
+  # 🔴 ±1 天容差（CI 时区收尾）：tag 日期在本地（annotated tag object 时间，上海时区）
+  #   与 CI（fetch 语义差异下可能落到 commit 时间戳 / UTC 渲染）可差一日——这是
+  #   时区/对象层的边界差，不是 P2-1 要抓的「日期被后续发版批改坏」（那会差出
+  #   完全不同的日子）。
+  #   🔴 fail-closed 纪律：任一侧日期无法转 unix 时**不得回退成 0 参与比较**
+  #   （那会让 gap 恒 0 = 容差吞掉一切漂移，正是负向探针抓出的 fail-open）——
+  #   转换失败即回退**字符串全等比较**（严于容差，保全检测力）。
+  _cl_ts=$(date -j -f "%Y-%m-%d" "$_cl_date" "+%s" 2>/dev/null || date -d "$_cl_date" "+%s" 2>/dev/null || echo "")
+  _tag_ts2=$(date -j -f "%Y-%m-%d" "$_tag_date" "+%s" 2>/dev/null || date -d "$_tag_date" "+%s" 2>/dev/null || echo "")
+  _date_mismatch=false
+  if [ -n "$_cl_ts" ] && [ -n "$_tag_ts2" ]; then
+    _cl_day_gap=$(( _cl_ts - _tag_ts2 ))
+    [ "$_cl_day_gap" -lt 0 ] && _cl_day_gap=$(( 0 - _cl_day_gap ))
+    [ "$_cl_day_gap" -gt 86400 ] && _date_mismatch=true
+  else
+    # 转换不可用 → 字符串严格比较（不放宽）
+    [ "$_cl_date" != "$_tag_date" ] && _date_mismatch=true
+  fi
+  if $_date_mismatch; then
     echo -e "  ${RED}✗${NC} CHANGELOG v${_cl_ver} 索引行日期 ${_cl_date} ≠ tag v${_cl_ver} 日期 ${_tag_date}"
     echo -e "     发版真值 = tag；非顶版行的「已发版」日期不得随后续发版批变动（P2-1 复发防御）"
     TAG_DATE_OK=false
