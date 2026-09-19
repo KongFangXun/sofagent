@@ -21,7 +21,9 @@
 
 > 💬 **One-sentence version**: on entry, it maps your business and writes it down as files; after it leaves, every time your digital employee touches code or files, it passes a security check, leaves a record, and saves a snapshot — traceable and roll-backable when things go wrong. That is what sofagent does.
 
-**An open-source FDE Harness layer.** The AI-deployment engineer for one-person companies and SMBs — never sleeps, never leaves, and carries its own auditor. It sits **between mature Agents (executors: DSH / OpenClaw / WorkBuddy) and the model layer (intelligence sources: general LLMs + bespoke/small post-trained models)**, governing both sides. Shipped as **FDE plugins + Skill + MCP + CLI + Dashboard**: on entry, write the business judgment down as files — the workflow, the ontology data, the deployed AI nodes; on departure, audit every change against those files and keep optimizing.
+> 🏢 **The organizational lens**: the bottleneck of AI adoption has shifted from "is the model smart enough" to "can the organization dare to onboard it" — does it fit the org chart, does it get an account, how is performance measured, what happens when it errs. sofagent is the onboarding system for digital employees: on entry it writes the job description into files; after departure it runs performance reviews (evidence for every change), organizational memory (compounding know-how), and fault tolerance (every mistake reversible). Install sofagent before you give AI an employee ID.
+
+**An open-source FDE Harness layer.** The AI-deployment engineer for one-person companies and SMBs — never sleeps, never leaves, and carries its own auditor. It sits **between mature Agents (executors: DSH / OpenClaw / WorkBuddy) and the model layer (intelligence sources: general LLMs + bespoke/small post-trained models)**, governing both sides. Shipped as **FDE plugins + Skill + MCP + CLI + Dashboard**: on entry, write the business judgment down as files — the business flow, the ontology data, the deployed AI nodes; on departure, audit every change against those files and keep optimizing.
 
 sofagent does not build its own Agent — execution is delegated to mature hosts (model + tools + sessions). What it delivers is the **FDE Harness layer**: FDE methodology × Harness engineering, two stages of one job — **on entry, generate judgment** (where AI belongs, written down as machine-checkable files), **after departure, retain judgment** (execute against those files 24/7, audit every change). The five Harness capabilities: inject · audit · rollback · distill · evolve — slots into any existing Agent; and it keeps every model (general or bespoke) under control (register / rollout / train / deploy fully audited). How the two stages interlock, and why they cannot be pulled apart, is covered in [the dedicated chapter below](#what-is-the-fde-harness).
 
@@ -126,6 +128,17 @@ One command selects your mounting tier: `bash install.sh --platform <platform-na
 **Off-site · the judgment stays** (Harness phase): the FDE leaves, the judgment remains — daemon patrols 24/7, every commit triggers the 24 audit rules (including **AgentShield five-face static config scanning**), snapshots are rollback-ready, experience keeps accumulating; evolution writes promotion and distilled reflection back into the deliverable.
 
 Both phases are one thing: **the deliverable is shared live state** (written on-site, read off-site, written back when evolving) — without FDE, the constraint layer has no criteria to execute; without the constraint layer, the FDE's judgment evaporates when they leave. That is why "FDE Harness" is not a bundle of two feature sets.
+
+**The organizational-management lens** — the two phases map onto onboarding a digital employee:
+
+| Organizational act | sofagent equivalent |
+|--------------------|---------------------|
+| Job description | Frozen deliverables from the entry phase (merge_criteria / approver / trigger) |
+| Performance review | Audit evidence + governance KPI dashboard (v1.5.0) |
+| Organizational memory | Knowledge distillation (think.md reflection + knowledge/) |
+| Training pipeline | Experience → exam → promotion self-evolution chain (scheduled v1.5.5) |
+| Fault tolerance | Snapshot rollback + capability baseline timeline (scheduled v1.5.5) |
+| Employment contract boundary | Pluggable contracts & core capability registry (scheduled v1.5.4) |
 
 | Go deeper | Where |
 |--------|--------|
