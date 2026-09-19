@@ -2,6 +2,7 @@
 
 <p align="center">
   <img src="docs/assets/banner.png" alt="sofagent" width="100%" />
+  <a href="https://www.npmjs.com/package/@sofagent/audit"><img src="https://img.shields.io/npm/dw/%40sofagent%2Faudit" alt="npm weekly downloads" /></a>
 </p>
 
 <!-- H1 & banner split: the H1 is the repo name and semantic anchor (search engines / no-image environments / screen readers); the banner carries the visuals -->
@@ -266,4 +267,12 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # load the securit
 <p align="center">
   Issues and PRs welcome, especially the nitpicky kind · <a href="./CONTRIBUTING.md">Contributing</a> · <a href="./docs/THANKS.md">Thanks</a><br/>
   <sub>MIT License © <a href="https://github.com/KongFangXun/sofagent">Kong Fangxun</a> · <a href="https://github.com/KongFangXun/sofagent">⭐ If sofagent helps you, star it and help more people find it</a></sub>
+</p>
+
+## Star History
+
+<p align="center">
+  <a href="https://www.star-history.com/#KongFangXun/sofagent&Date">
+    <img src="https://api.star-history.com/svg?repos=KongFangXun/sofagent&type=Date" alt="Star History Chart" />
+  </a>
 </p>
