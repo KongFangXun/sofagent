@@ -120,6 +120,8 @@
 | `.ellipsis` | 单行截断 | `white-space:nowrap;overflow:hidden;text-overflow:ellipsis` |
 | `.updated-at` | 更新时间 span | `font-size:11px;color:var(--text-t)` |
 | `.right-meta` | 第一行右对齐元信息 | `margin-left:auto;11px;text-t;inline-flex` |
+| `.code-chip` | 行内代码徽章（帮助/说明文字内的命令、API 名） | `background:var(--brand-l);padding:2px 6px;border-radius:4px;font-size:11px;mono` |
+| `.btn-sm` | section 头部右侧紧凑按钮（下载/导出类） | `height:26px;padding:0 10px;font-size:11px` |
 
 **圆点共用**：`.agent-dot,.sc-dot,.st-dot,.sov-dot,.node-status .icon` 共用 `display:inline-block;border-radius:50%;flex-shrink:0` 基础——新增圆点类时并入该组，只写尺寸/颜色/动画差异。
 

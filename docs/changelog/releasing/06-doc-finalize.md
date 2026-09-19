@@ -318,7 +318,7 @@
 | 22 | [ ] | engine/*/README.md 包级 README | 各包 README | 本包本版变更一句话（F-pkg 软预算约束） | 阶段六步骤七 |
 | 23 | [ ] | GitHub repo description | 仓外门面 | 工具数等 = 本版实数（`gh repo edit`——对外动作）| 阶段九发布批 |
 | 24 | [ ] | GitHub Release body | gh release | 按 09 三道工序生成 + 与 devlog Release Notes 段同源 | 阶段九步骤七 |
-| 25 | [ ] | tools/dashboard/dashboard.html | `.logo-version` 角标 | 界面版本角标 = 本版（用户可见的运行时版本叙事） | 阶段九 bump 批 |
+| 25 | [ ] | tools/dashboard/dashboard.html | `.logo-version` 角标 + 全页结构 | 界面版本角标 = 本版（用户可见的运行时版本叙事）；`check-dashboard` 七项结构门禁绿；改动跨页时按 `docs/guides/frontend-design-standard.md` 复审颜色分级/类化两条红线 | 阶段五脚本层（结构）/ 阶段九 bump 批（角标） |
 
 > **明确不算触点的**（扫到但不进清单）：TS 源码注释里的版本溯源（`// v1.4.9 P1-14 …` 是代码考古，归 check-guards 禁考古铁律管辖，发版不动）；docs/changelog/ 历史日志与 evidence（历史事实，只写不改）；.workbuddy/memory（会话记忆非交付物）。
 >

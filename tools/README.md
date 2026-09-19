@@ -24,12 +24,13 @@
 | `check/check-seam-contract.mjs` | 插件适配层 seam 契约门禁（正向：插件 seam ∈ `engine/dsh-plugins/SEAMS.md` 词汇表；DSH 三处 seam 逐条一致 + description 不滞后；反向：词汇表每条在**真实宿主**里 grep 到定义处，宿主缺席打印 `SKIP` 不静默通过；双向对账拦「漏写 seam」；`SKILL.md` 反向对账——SKILL.md 出现 `（seam: …）` 字面量的每一处都必须与三处一致，**残余缺口：SKILL.md 整体删去 seam 字样时不判红，只打印显著提示**；`--selftest` 合成回归验证必报红） | CI / 新增或改插件后 |
 | `check/check-seam-drift.mjs` | 宿主 seam 词表漂移巡检（登记本 vs 宿主实测差集：宿主有词表未登 / 词表登宿主已废 等三面判定；`SEAMS.md` 只保证 sofagent 侧四载体自洽，本巡检防「宿主破坏性升级后词表静默过期」——**只提示不阻断**，`--strict` 供 CI 收紧） | 宿主升级后 / 定期（默认非阻断） |
 | `check/check-template-drift.sh` | 模板漂移检测（三断言：模板与实现同步对账） | 发版 SOP 阶段六 |
-| `../engine/audit/src/rulesets/*.json`（跨模块指针，**非 tools/ 内文件**） | 行业 overlay 规则包（ai / fintech / government / medical 四件；overlay 按 `context.md` 的 `industry:` 字段加载，机制见 `FDE/GUIDE.md` §5.8c） | FDE 进场标注行业时（v1.4.8 第2批修正：此前登记的是仓内不存在的 `tools/check/` 下伪路径，真实文件在 engine/ 侧） |
+| `../engine/audit/src/rulesets/*.json`（跨模块指针，**非 tools/ 内文件**） | 行业 overlay 规则包（ai / fintech / government / medical 四件；overlay 按 `context.md` 的 `industry:` 字段加载，机制见 `FDE/GUIDE.md` §5.9） | FDE 进场标注行业时（v1.4.8 第2批修正：此前登记的是仓内不存在的 `tools/check/` 下伪路径，真实文件在 engine/ 侧） |
 | `check/dependency-direction.sh` | 依赖方向架构测试（build 序列 13 包边界：核心层←约束层←适配层←展示层；读同目录 `dependency-direction.yml` SSOT——含 `rhythm` 版本节奏段） | CI / 改包依赖后 |
 | `check/check-silent-catch.mjs` | 静默吞错扫描（关键路径空 catch 只拦新增，存量见 `silent-catch-baseline.json` 基线） | CI / 改错误处理时 |
 | `check/check-home-resolution-parity.mjs` | 家目录解析口径对照共享守卫（harness 因 layer 0 · `allow: []` **不能** import core，只能本地重实现 `resolveEngineHome()`——本守卫断言两侧**同输入同输出**；core 侧真实 `require` dist 调用、harness 侧用 `skill/custom` 哨兵经 `buildConstrainedSystemPrompt` 反推，子进程受控 `$HOME`/`cwd` 不碰真实 `~/.sofagent`；**已登记差异（空串口径）差异消失也判红**；提取不到实现 / 观测不到哨兵 ⇒ FAIL） | 改 harness 或 core 的家目录解析后 · pre-push |
 | `check/silent-catch-baseline.json` | 静默吞错存量基线（`check-silent-catch.mjs` 消费，新增即红） | 被 check-silent-catch.mjs 消费 |
 | `check/check-readme-parity.sh` | 双语 README 结构 parity 门禁（中英 README 章节/条目对齐，防单语漂移） | CI / 改 README 后 |
+| `check/check-dashboard.sh` | dashboard.html 结构性缺陷门禁（七项静默失效面：双 class 属性/未定义 CSS 变量/重复类定义不一致/未定义 keyframes/onclick 未定义函数/div 配平/U+FFFD 乱码——注入实测七项全报红） | CI / 改 dashboard.html 后 / 发版 SOP 阶段五 |
 | `dashboard/sofagent-dashboard.test.sh` | Dashboard 端到端冒烟（页面可达 + 数据面断言） | dashboard 改动后 |
 | `check/check-guards.sh` | 守卫的守卫（meta-guard：门禁脚本自身四类腐烂模式静态扫 + `--inject` 注入实测——红不了的门禁是装饰品） | 发版 SOP / CI |
 | `check/check-anchors.mjs` | 跨文档 Markdown 锚点引用活性校验（见 check-docs.sh 第 11 段） | 发版 SOP / CI |
