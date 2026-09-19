@@ -1,6 +1,8 @@
 # GitHub Action：PR 提交时自动审计
 
 > sofagent-audit 作为 GitHub Action，在每个 PR 上自动检查：AI 有没有跳过测试、有没有乱改不相关的文件、有没有引入安全风险。
+>
+> v1.4.9 · 2026-09-17（UTC）· ✅ 已发版（本批更新 2026-09-17）· 孔放勋
 
 ## 30 秒接入
 
@@ -19,12 +21,12 @@ jobs:
 
     steps:
       - name: Checkout 代码
-        uses: actions/checkout@v4
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           fetch-depth: 0
 
       - name: 安装 Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version: '22'
 
