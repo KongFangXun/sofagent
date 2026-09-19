@@ -113,7 +113,7 @@ Sits between the Agents you already use and the model layer — it doesn't repla
 
 One command selects your mounting tier: `bash install.sh --platform <platform-name>` (all platforms and differences in [HANDBOOK](./docs/HANDBOOK.md))
 
-## v1.5.0: Governance · Visibility & Ontology Maturity (⏳ pending release)
+## v1.5.0: Governance · Visibility & Ontology Maturity (✅ Released · 2026-09-19)
 
 🛡️ **The engine grows a governance face** — constraint-layer value made visible, ontology data that survives time, and evidence that reconciles across layers:
 
