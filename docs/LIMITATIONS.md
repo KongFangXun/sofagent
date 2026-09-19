@@ -264,11 +264,21 @@ A1（不碰敏感）按 `DiffFile.status` 分方向判定：**新增/修改**敏
 >         run: sofagent-audit --diff HEAD~1..HEAD --ci
 > ```
 
-> **审计日志防篡改检测边界**：`history.jsonl` 的完整性依赖 hash chain（`audit-history.ts`），Agent 可在篡改后重算整条链——hash chain 仅提供事后可追溯性，非强防篡改。v1.1.8 起已支持 HMAC-SHA256 签名（密钥来自 `~/.sofagent-key`，chmod 600），有密钥时强校验——但仅防**其他 OS 用户**篡改（密钥 600 只挡跨用户），**同用户运行的被审计进程仍可读密钥重算整链**，故对「Agent 本体」这一威胁主体不是强防篡改；无密钥时降级为 SHA-256 hash chain（此时篡改检测是**弱校验**——手改后重算整链即可通过，FAIL 可被抹成 PASS；企业 SOP 应强制配置密钥并周期体检）。`--doctor`（v1.2.0 起）会实际调用 `checkHistoryChainDetailed()` 校验链完整性。v1.4.5 起补**链头锚点**（`history-chain-head`，0600 原子写）：写入侧持久化总条数 + 末条哈希，读侧据此检出**尾部截断**（砍尾后剩余链自洽的逃逸路径）与锚位内容重写（判 tampered）；锚点不可读判 unverifiable（黄），无锚点（旧数据）跳过校验。诚实边界：能同时重写 `history.jsonl` 与锚点文件的攻击者仍可伪造——锚点是防篡改**证据强化**而非密码学保证。创世条目 HMAC 校验已与主循环对齐同款环境指纹比对（指纹一致判篡改、漂移判不可复验）。当前版本仍依赖「Agent 自觉 + 定期 --doctor」的信任模型。
+> **审计日志防篡改检测边界**：`history.jsonl` 的完整性依赖 hash chain（`audit-history.ts`），Agent 可在篡改后重算整条链——hash chain 仅提供**事后可追溯性，非强防篡改**。
+>
+> v1.1.8 起支持 HMAC-SHA256 签名（密钥来自 `~/.sofagent-key`，chmod 600），有密钥时强校验——但仅防**其他 OS 用户**篡改（密钥 600 只挡跨用户），**同用户运行的被审计进程仍可读密钥重算整链**，故对「Agent 本体」这一威胁主体不是强防篡改；无密钥时降级为 SHA-256 hash chain（此时篡改检测是**弱校验**——手改后重算整链即可通过，FAIL 可被抹成 PASS；企业 SOP 应强制配置密钥并周期体检）。
+>
+> `--doctor`（v1.2.0 起）会实际调用 `checkHistoryChainDetailed()` 校验链完整性。v1.4.5 起补**链头锚点**（`history-chain-head`，0600 原子写）：写入侧持久化总条数 + 末条哈希，读侧据此检出**尾部截断**（砍尾后剩余链自洽的逃逸路径）与锚位内容重写（判 tampered）；锚点不可读判 unverifiable（黄），无锚点（旧数据）跳过校验。
+>
+> **诚实边界**：能同时重写 `history.jsonl` 与锚点文件的攻击者仍可伪造——锚点是防篡改**证据强化**而非密码学保证。创世条目 HMAC 校验已与主循环对齐同款环境指纹比对（指纹一致判篡改、漂移判不可复验）。当前版本仍依赖「Agent 自觉 + 定期 `--doctor`」的信任模型。
 
 ### 🔒 数据存储安全
 
-> ℹ️ **审计历史全局共享是设计决策**：审计历史（`history.jsonl` / `decision-log.jsonl`）写入全局 `~/.sofagent/data/audit/`，不做项目级隔离——这是**有意为之**：① HMAC 签名链完整性要求全量连续历史（`--verify-chain` 需要完整链）；② 跨仓库查询审计历史是运维刚需。多项目场景下审计记录会混合存储。**运行时审计日志已按 git 仓库隔离：`runtime-audit.jsonl`（FORGE 自托管路径）与约束层侧 data-sovereignty 审计日志 / llm-calls Trace 均落 `data/audit/<…>/<repo-hash>/` 段目录（非 git 回退 nogit-hash；旧版无段结构的既有历史读侧 fallback 原地可读，不迁移不回填）**；commit 级审计历史（history.jsonl / decision-log.jsonl）保持全局。**多项目整目录隔离**：使用 `SOFAGENT_HOME` 环境变量为不同项目/Agent 隔离数据目录（⚠️ 指向用户 home 外的根目录需同时设 `SOFAGENT_HOME_ALLOWED_PREFIXES` 显式放行——越界不再静默回退而是报错；daemon 子命令路径已与 data-paths SSOT 对齐，显式设 SOFAGENT_HOME 不再双拼）。
+> ℹ️ **审计历史全局共享是设计决策**：审计历史（`history.jsonl` / `decision-log.jsonl`）写入全局 `~/.sofagent/data/audit/`，不做项目级隔离——这是**有意为之**：① HMAC 签名链完整性要求全量连续历史（`--verify-chain` 需要完整链）；② 跨仓库查询审计历史是运维刚需。多项目场景下审计记录会混合存储。
+>
+> **运行时审计日志已按 git 仓库隔离**：`runtime-audit.jsonl`（FORGE 自托管路径）与约束层侧 data-sovereignty 审计日志 / llm-calls Trace 均落 `data/audit/<…>/<repo-hash>/` 段目录（非 git 回退 `nogit-hash`；旧版无段结构的既有历史读侧 fallback 原地可读，不迁移不回填）；commit 级审计历史（`history.jsonl` / `decision-log.jsonl`）保持全局。
+>
+> **多项目整目录隔离**：使用 `SOFAGENT_HOME` 环境变量为不同项目 / Agent 隔离数据目录（⚠️ 指向用户 home 外的根目录需同时设 `SOFAGENT_HOME_ALLOWED_PREFIXES` 显式放行——越界不再静默回退而是报错；daemon 子命令路径已与 data-paths SSOT 对齐，显式设 `SOFAGENT_HOME` 不再双拼）。
 
 > ⚠️ **知识库同样全局共享（当前单机单用户设计）**：`~/.sofagent/data/knowledge/` 单目录遍历、无租户/项目维度隔离——多项目、多 Agent 的知识沉淀（entities/concepts/comparisons/summaries）混合存储，查询时全局命中。财务与人事等不同域 Agent 的数据会串。**当前定位为单机单用户**：多 Agent 共享同一知识库/审计历史——多人/多部门共用需等租户隔离（ROADMAP v1.4.7 G7 多租户抽象层 v0：v0 为查询侧隔离（orgId 过滤 + `data/<tenant>/` 路径地基），PR/审计数据的**写入侧仍为全局分区**——v1.4.9 复核确认**写入侧隔离尚未落地**）。**临时方案**：使用 `SOFAGENT_HOME` 环境变量为不同项目/Agent 隔离数据目录（见 [企业部署指南](./guides/enterprise-deploy.md#多项目数据隔离v128)）。
 
