@@ -71,21 +71,21 @@
 ## fresh-eyes-review 风格守护自检（步骤五 必跑）
 
 ```bash
-# 1. 行数守护：不超过 500 行——本文件只写「视角 + 纪律」纯审查输入；校准笔记在
+# 1. 行数守护：不超过 530 行——本文件只写「视角 + 纪律」纯审查输入；校准笔记在
 #    fresh-eyes-calibration.md（维护者档案，worker 不加载），新增校准不涨本文件行数。
 #    超线处置：校准段紧凑化（保语义压行数，不删视角）；上调警戒线改本段两处数字
 #    （check-review-system.sh 动态提取此处「不超过 N 行」，本段是 SSOT）。
 WC=$(wc -l < playbook/fresh-eyes-review.md)
-[ "$WC" -gt 500 ] && echo "🔴 行数膨胀（$WC > 500）——检查是否在加精确检查项" || echo "✅ 行数正常（$WC）"
+[ "$WC" -gt 530 ] && echo "🔴 行数膨胀（$WC > 530）——检查是否在加精确检查项" || echo "✅ 行数正常（$WC）"
 
 # 2. 反清单化守护：不应出现精确检查命令（fresh-eyes-review 是留白式直觉审查，不是 checklist）
 CMD_COUNT=$(grep -cE '(grep|bash|npm|wc -l|test -)' playbook/fresh-eyes-review.md || echo 0)
 [ "$CMD_COUNT" -gt 5 ] && echo "🟡 命令引用偏多（$CMD_COUNT 处）——确认都是举例而非检查项" || echo "✅ 命令引用适度（$CMD_COUNT 处）"
 
-# 3. 视角数守护：当前基线 22 个视角；13-22 为手动层，driver 仍跑 1-12。
+# 3. 视角数守护：当前基线 23 个视角；13-23 为手动层，driver 仍跑 1-12。
 #    只数真视角标题（「视角N [n]：」模式），动态对账不产生假信号。
 VIEWS=$(grep -cE '^### .*视角[一二三四五六七八九十]+ \[' playbook/fresh-eyes-review.md)
-[ "$VIEWS" -ne 22 ] && echo "🟡 视角数变化（当前 $VIEWS，基线 22）——确认是刻意调整" || echo "✅ 视角数稳定（$VIEWS）"
+[ "$VIEWS" -ne 23 ] && echo "🟡 视角数变化（当前 $VIEWS，基线 23）——确认是刻意调整" || echo "✅ 视角数稳定（$VIEWS）"
 
 # 4. 门禁有效性注入实测：审查体系更新后，门禁脚本自身可能腐烂（\s 正则/静默兜底/扫描失明）。
 #    --inject 会短暂改仓内文件（注入坏样本→验证必红→还原→验证必绿），前置要求工作树干净；

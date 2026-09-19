@@ -1,5 +1,7 @@
 # sofagent Limitations
 
+<p align="center"><img src="assets/sofagent.png" alt="sofagent" width="96" /></p>
+
 > 诚实坦白：已知局限。列出 sofagent 当前做不到什么、为什么做不到、等什么才能做到。
 >
 > v1.4.9 · 2026-09-17（UTC）· ✅ 已发版（本批更新 2026-09-17）· 孔放勋

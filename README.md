@@ -17,15 +17,9 @@
 
 ## 这是什么
 
-> 💬 **一句话版本**：进场时它替你把业务摸清、写成文件；离场后你的数字员工每次改代码、动文件，都按文件过一道安检、留一份记录、存一个快照——出事能查、能回滚，这就是 sofagent 干的事。
+> 💬 **一句话版本**：进场时它替你把业务摸清、写成文件；离场后你的数字员工每次改代码、动文件，都按文件过一道安检、留一份记录、存一个快照——出事能查、能回滚。
 
-**开源 FDE Harness 层。**一人公司 / 小企业的 AI 落地工程师——不睡觉、不离职、自带审计官。**横跨成熟 Agent（执行体：DSH / OpenClaw / WorkBuddy）、纵贯模型层（智力源：通用大模型 + 专属小模型 / 后训练模型）**，嵌在两者之间做治理。以 **FDE 插件 + Skill + MCP + CLI + Dashboard** 五种形态分发：进场，把业务判断写成文件——工作流、本体数据、AI 节点部署；离场，按文件审计每一次变更、持续优化。
-
-sofagent 不造 Agent——执行能力交给成熟宿主（模型 + 工具 + 会话），它交付的是 **FDE Harness 层**：FDE 方法论 × Harness 工程，同一件事的两个阶段——**进场生成判断**（哪里该上 AI，写成机器可判定的文件），**离场驻留判断**（按文件 7×24 执行、审计每次变更）。约束层五种能力：注入 · 审计 · 回溯 · 沉淀 · 进化，装进任何已有 Agent；让任何模型（通用或专属）都被管住（注册/灰度/训练/部署全留痕）。两个阶段怎么咬合、为什么拆不开，见[下文专章](#什么是-fde-harness)。
-
-> 🚂 **后训模块为什么在治理仓里**（30 秒答案）：治理的天花板是数据——审计发现的错误（哪些任务做砸了、哪种输出不合格）正是训练的燃料。后训模块把「审计出来的问题 → 修复问题的模型」这条闭环接通，让治理数据反哺模型层；训练资产本身走商业侧交付，治理仓只保留协议与接口（外部化 / 可配置）。
->
-> 📌 *术语注：英文面使用 "training engine"，系 2026-09-03 拍板的保留边界（英文面豁免）——两者指同一模块。*
+**开源 FDE Harness 层**——嵌在成熟 Agent（DSH / OpenClaw / WorkBuddy）与模型层之间做治理：进场把业务判断写成文件（工作流、本体数据、AI 节点部署），离场按文件审计每一次变更。约束层五种能力（注入 · 审计 · 回溯 · 沉淀 · 进化），五种形态分发（FDE 插件 / Skill / MCP / CLI / Dashboard）。sofagent 不造 Agent——交付的是让任何 Agent 被管住的那一层。
 
 <p align="center">
   <img src="docs/assets/audit-terminal.png" alt="sofagent-audit 拦截 .env 提交" width="860" /><br/>
@@ -36,13 +30,13 @@ sofagent 不造 Agent——执行能力交给成熟宿主（模型 + 工具 + �
 <summary>🗺️ 系统架构总览（FDE Harness 五模块编制）</summary>
 
 <p align="center">
-  <img src="docs/assets/architecture-diagram.png" alt="sofagent 系统架构：宿主 Agent 经 MCP Server 进入 FDE Harness 约束层，编排/审计/后训/治理/执行五模块编制（治理/执行模块规划中）" width="860" /><br/>
-  <sub>约束 Agent 行为 · 审计每次变更 · 沉淀经验（五模块编制，治理/执行模块规划中；完整交互版见 <a href="./docs/ARCHITECTURE.md">ARCHITECTURE</a>）</sub>
+  <img src="docs/assets/architecture-diagram.png" alt="sofagent 系统架构" width="860" /><br/>
+  <sub>约束 Agent 行为 · 审计每次变更 · 沉淀经验（完整交互版见 <a href="./docs/ARCHITECTURE.md">ARCHITECTURE</a>）</sub>
 </p>
 
 </details>
 
-> 🏞️ 大厂给你"水"（大模型）和"河床"（Agent 平台），但水是原水，你不敢直接喝。sofagent 是帮你把河里的水让整个城市用起来的工程——堤坝不让水泛滥、自来水厂把原水变直饮水、管网把水送到每家每户的水龙头。模型给 90% 的智力，sofagent 补 10% 的可靠执行。
+**10 分钟轻量试用**：`npx -y -p @sofagent/audit sofagent-audit`（任意 git 仓库，密钥泄漏当场拦截）。
 
 ### 该不该装？
 

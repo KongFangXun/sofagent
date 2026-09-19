@@ -1,5 +1,7 @@
 # sofagent 项目导航索引（WIKI）
 
+<p align="center"><img src="assets/sofagent.png" alt="sofagent" width="96" /></p>
+
 > v1.4.9 · 2026-09-17（✅ 已发版——本批更新 2026-09-17） · 孔放勋
 
 > **EN summary**: sofagent is an open-source (MIT) FDE Harness layer for AI Agents — it doesn't build the Agent; it adds the discipline layer around whichever host (DSH / OpenClaw / WorkBuddy) runs it. **Product story**: an FDE maps your workflow, freezes every AI node's acceptance criteria into machine-checkable files, then departs — the Harness judges every change against those files 24/7 (24 git-diff audit rules, HMAC-chained tamper-evident history, every model registered/rolled out/trained/deployed under audit). Five capabilities: inject · audit · rollback · distill · evolve. (Chinese-first project; full English face in README.en.md.)
@@ -36,6 +38,19 @@
 > **30 分钟深度路径**（想动手或评估选型时，承接上面的 3 分钟全景）：① 深入 [ARCHITECTURE](./ARCHITECTURE.md) §一~§二 + [PHILOSOPHY](./PHILOSOPHY.md) §一（在 3 分钟版基础上读双层架构与"不替代 Agent"论证，~15 分钟）→ ② [SECURITY](../SECURITY.md)「已知风险」+ [LIMITATIONS](./LIMITATIONS.md) 目录（诚实边界，~10 分钟）→ ③ 按角色进 [guides/](./guides/)：企业 IT 读 enterprise-deploy · 开发者读 harness-sdk · 想看审查体系读 review-system
 >
 > **评估选型对照框架**：对照 [README · 什么是 FDE Harness](../README.md#什么是-fde-harness) 对比表 + [VALIDATION](./VALIDATION.md) 生态定位，建议按四维评估——**审计方式 / 部署方式 / 数据主权 / 知识积累**——逐一对照自身现状做选型决策。
+
+---
+
+## 目录
+
+- 一、一句话
+- 二、产品叙事：sofagent 是 FDE Harness 层（不造 Agent，嵌在 Agent 与模型之间做治理）
+- 三、核心概念
+- 四、架构全景
+- 五、文件地图
+- 六、当前状态
+- 七、术语表
+- 八、导航：按你的意图选路
 
 ---
 

@@ -1,5 +1,7 @@
 # sofagent 设计哲学 · Philosophy
 
+<p align="center"><img src="assets/sofagent.png" alt="sofagent" width="96" /></p>
+
 > **本文档是 sofagent 最核心的一份「为什么」。** 读完你能回答：sofagent 是什么、怎么用、怎么跑、怎么管、怎么记、怎么装、怎么进化、以及不做什么。
 > v1.4.9 · 2026-09-17（UTC）· ✅ 已发版（本批更新 2026-09-17）· 孔放勋
 

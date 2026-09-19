@@ -1,5 +1,7 @@
 # Changelog
 
+<p align="center"><img src="docs/assets/sofagent.png" alt="sofagent" width="96" /></p>
+
 > **本文件是目录索引**。每个版本的完整开发日志在 [`docs/changelog/`](./docs/changelog/) 下，此处仅保留「版本能力索引（一段式）+ 链接」，不重复细节。
 > 实验版（v0.x）历史日志在 [`docs/archive/changelog-experimental/`](./docs/archive/changelog-experimental/)。
 

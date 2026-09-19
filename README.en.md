@@ -25,10 +25,6 @@
 
 sofagent does not build its own Agent — execution is delegated to mature hosts (model + tools + sessions). What it delivers is the **FDE Harness layer**: FDE methodology × Harness engineering, two stages of one job — **on entry, generate judgment** (where AI belongs, written down as machine-checkable files), **after departure, retain judgment** (execute against those files 24/7, audit every change). The five Harness capabilities: inject · audit · rollback · distill · evolve — slots into any existing Agent; and it keeps every model (general or bespoke) under control (register / rollout / train / deploy fully audited). How the two stages interlock, and why they cannot be pulled apart, is covered in [the dedicated chapter below](#what-is-the-fde-harness).
 
-> 🚂 **Why a training engine in a governance repo** (30-second answer): governance is capped by data — what audits uncover (which tasks failed, which outputs were substandard) is exactly training fuel. The training engine closes the loop from "problems found by audits → models that fix those problems", letting governance data feed back into the model layer; training assets themselves ship on the commercial side — this repo keeps only protocols and interfaces (externalized / configurable).
->
-> 📌 *Terminology note: the Chinese side uses「后训模块」(post-training module); the English "training engine" is deliberately retained per the 2026-09-03 naming ruling (English-face exemption) — the two refer to the same module.*
-
 <p align="center">
   <img src="docs/assets/audit-terminal.png" alt="sofagent-audit blocks a .env commit" width="860" /><br/>
   <sub>Zero-config audit in action: one command audits the latest commit; leaked secrets get blocked on the spot</sub>
