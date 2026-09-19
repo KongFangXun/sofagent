@@ -179,6 +179,47 @@ echo "npm 包洁净度 + 类型检查完成"
 
 ---
 
+## 🔴 假红定性判据（CI/门禁红 ≠ 产品坏——先定性再动手）
+
+> 发布窗口里「红」有三种性质，处置方式完全不同。**先定性，再动手**——把门禁红一律当产品 bug 修，
+> 或一律 rerun 到绿，都会把真问题放出门或把假问题修成真问题。
+
+| 性质 | 已实测形态 | 正确处置 |
+|------|-----------|---------|
+| **① 测试自身竞态** | 断言 X 之前只 `waitFor` 了 Y（等待条件 ≠ 断言条件）；断言条件晚于等待条件到达 | **修等待**（把等待条件对齐断言条件）——断言强度不变 |
+| **② CI 环境差异** | runner 无全局安装包（本地有 → hook 解析链走全局分支 fail-loud）；runner 时区/浅克隆无 tag（本地正常）；runner 2 核高负载 | **显式注入被测对象/固定口径**（如 `SOFAGENT_AUDIT_ENTRY` 指向仓内 dist），不做「本地绿就 rerun」 |
+| **③ 门禁自身缺陷** | 守卫空转（可判行数 0 却报全过）；把外部 API 错误体当数据解析（假红两连）；`echo \| grep -q` 在 `pipefail` 下的 SIGPIPE 假红 | **修门禁**，并做负向探针（见下）验证修复后仍能抓真问题 |
+
+> 🔴 **可以改什么、不可以改什么**：可以改**等待条件、环境注入、口径固定**（对齐测试真实意图）；
+> **不可放宽断言强度**（删断言、改小期望值、加 skip）。判据：改完之后，把已知的真缺陷注入回去，
+> 门禁是否仍会红——会红才是合格测试。
+
+## 🔴 门禁改动的负向探针纪律（放宽即须证伪）
+
+> 任何**放宽类**改动——容差（±N 天 / ±N 字）、豁免登记（exempt/baseline/waiver）、跳过条件、
+> 回退兜底——都属于「削弱检测力」的改动，**必须做负向探针**后才算完成。
+
+**三条探针（缺一不可）**：
+1. **应抓必抓**：注入一个超出阈值的偏移（如把日期改错 4 天），门禁**必须红**
+2. **阈内不误伤**：注入一个阈内的边界值（如差 1 天），门禁**必须绿**
+3. **还原后干净**：还原原始值，门禁回到绿（证明探针本身无副作用）
+
+> 🔴 **fail-open 陷阱（实测）**：把「取不到值」回退成中性值（`0`/空）参与比较，会让判据恒成立而
+> **静默吞掉一切漂移**——探针 1 若省掉，这种 bug 会随版本出门。**回退必须 fail-closed**：
+> 取不到就退回**更严**的判据（如字符串全等比较），而不是更宽的。
+
+> 🔴 **时区解耦（日期类守卫的通用口径）**：日期/时间比对取 **unix 时间戳 + 固定偏移**，
+> 不要用 `TZ=` 环境变量——三层实测不可靠：① git ref 过滤器对 `TZ=` 前缀不生效；
+> ② `date -r`（BSD）与 `date -d @`（GNU）语义不同，GNU 下 `-r` 是 `--reference`（取文件 mtime）；
+> ③ `TZ` 的生效性依赖 runner 的 shell 与 tzdata。纯算术（`ts + 偏移秒数`）跨平台同值。
+
+> 🔴 **外部 API 对账类门禁的失效判据**：凭证失效时 CLI 常把**错误体打到 stdout**（`2>/dev/null` 拦不住），
+> 三变量各自捕获错误文本 → 均非空 → 走不进「不可达」分支 → 错误体被当数据解析出假红。
+> 必须在解析前显式识别错误体特征（如 `Bad credentials` / `"message"` 字段）并归入 **SKIP**
+> （SKIP 语义 = 本轮未对账、不阻断但**不放行**，发布窗口须在凭证可用时补跑到 PASS）。
+
+---
+
 ## 步骤三：push 前置检查（双 SHA 分叉防御） ☐
 
 > Git Data API 推送会造成远端/本地「同 tree 双 SHA」——直接 push 会被 rejected (fetch first)。本地代理死时用 `git -c http.proxy= -c https.proxy= push` 直连。
@@ -270,6 +311,12 @@ done
 > bootstrap.sh 对下载的 install.sh + 6 个 lib 文件做 sha256 校验（curl | bash 信任模型加固）。**tag 指向新版后哈希必然变化——必须同步更新 bootstrap.sh 内嵌的 7 个哈希，否则用户安装会因校验失败而 fail-closed（好陷阱：宁可不装也不装被劫持的脚本，但会让所有人装不上）。**
 
 **优选路径：预计算哈希与 URL bump 同 commit，tag 一次打自洽**——打 tag 前预计算 HEAD 的 install.sh 哈希（`git show HEAD:install.sh | shasum -a 256`）与 tag URL bump、哈希回填全部进同一个 commit，push 后打 tag——tag 内 bootstrap.sh 天然自洽，无需重打。install.sh/lib 自上版零改动时 6 lib 哈希沿用免回填（`git diff <上tag>..HEAD --stat -- engine/scripts/lib/` 输出空即零改动）。验收：`git show vX.Y.Z:bootstrap.sh` 内嵌哈希 == `git show vX.Y.Z:install.sh | shasum -a 256`。
+
+> 🔴 **验收必须 7 项逐项实测，不能只验 install.sh**：6 个 lib 里任何一个在发布窗口内被改过
+> （哪怕是发布前的审查修复批顺手改的），其哈希就必须同步回填——只验 install.sh 会漏掉 lib 项，
+> 用户装到一半 fail-closed。口径：把 `LIB_FILES` 的 6 个文件按**声明顺序**逐一比对
+> `bootstrap.sh` 内嵌的 `LIB_SHA256S` 对应行（顺序错位 = 校验必失败），与 `install.sh` 合成 7/7 全绿才算过。
+> 判断 lib 是否改动：`git diff <上一 tag>..HEAD --stat -- engine/scripts/lib/`（输出空才可沿用旧哈希）。
 
 ```bash
 # ── 新 tag 打好后，在 bootstrap.sh 顶部更新两处后提交 ──
@@ -447,6 +494,12 @@ EOF
 
 ## 步骤八：npm 手动 publish 其余 13 包（含裸名总包） ☐
 
+> 🔴 **包列表 SSOT = 根 `package.json` 的 workspaces（可发布子集）——禁止把包名硬编码当事实源**。
+> 硬编码列表在包更名后必然漂移，照抄 = 静默漏发（漏发的包 npm 上停在上一版，无任何门禁会报）。
+> 开跑前先对账：`node -p "require('./package.json').workspaces.join('\n')"` 与下方循环逐项核对——
+> `engine/hooks/*`、`engine/umbrella` 不在循环内（单独发），`engine/dsh-plugins/*` 与
+> `engine/openclaw-plugins/*` 不是 npm 发布物（走 ClawHub/SkillHub 分发，见阶段十）。
+>
 > `npm publish --workspaces` 不支持 workspace 全局发布。release.yml 只 auto-publish audit + mcp（Release 触发），其余 13 包手动 publish（12 个 `engine/<pkg>` scope 包 + load-chain + 1 个裸名总包，合计补齐 15 包）。
 >
 > ⚠️ **@sofagent/load-chain（`engine/hooks/sofagent-load-chain/`）是第 13 个 workspace 包，不在下方循环里**——它不叫 `engine/<pkg>` 布局（在 `engine/hooks/` 下），按「13 包」口径极易漏掉。必须把它加进循环与验证清单。
@@ -469,7 +522,7 @@ npm view @sofagent/mcp@vX.Y.Z version --prefer-online    # 期望返回版本号
 #    有则等 3 分钟再补查，连续 ≥6 轮仍查不到才升级人工处理（v1.4.9 实锤：orchestrator/train/
 #    load-chain 三包 6 轮超时全虚惊，日志均含入队行，等后全绿）。
 TARGET_VER=$(node -p "require('./package.json').version")
-for pkg in core daemon eval harness ontology orchestrator train rules evolve think ab-test; do
+for pkg in core daemon eval inject ontology orchestrator train rules evolve think ab-test; do
   echo "--- @sofagent/$pkg ---"
   ( cd "engine/$pkg" && npm publish --access public ) > "/tmp/publish-$pkg.log" 2>&1
   RC=$?
