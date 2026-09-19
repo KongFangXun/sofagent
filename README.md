@@ -9,6 +9,7 @@
   <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-brightgreen" alt="License: MIT" /></a>
   <!-- ⚠️ bump 版本时手动同步此 badges 版本号（Version-vX.Y.Z） -->
   <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.5.0-16B8F3" alt="Version" /></a>
+  <a href="https://www.npmjs.com/package/@sofagent/audit"><img src="https://img.shields.io/npm/dw/%40sofagent%2Faudit" alt="npm weekly downloads" /></a>
 </p>
 
 <p align="center"><sub>简体中文 | <a href="./README.en.md">English</a></sub></p>
@@ -263,4 +264,12 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # 加载安全规�
 <p align="center">
   欢迎提 Issue 和 PR，尤其较真的那种 · <a href="./CONTRIBUTING.md">贡献指南</a> · <a href="./docs/THANKS.md">致谢</a><br/>
   <sub>MIT License © <a href="https://github.com/KongFangXun/sofagent">孔放勋</a> · <a href="https://github.com/KongFangXun/sofagent">⭐ 如果 sofagent 帮到你，Star 一下让更多人看到</a></sub>
+</p>
+
+## Star History
+
+<p align="center">
+  <a href="https://www.star-history.com/#KongFangXun/sofagent&Date">
+    <img src="https://api.star-history.com/svg?repos=KongFangXun/sofagent&type=Date" alt="Star History Chart" />
+  </a>
 </p>
