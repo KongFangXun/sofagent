@@ -332,25 +332,41 @@
 
 ## 发版日期同步脚本（步骤三）
 
+> 🔴 **日期 SSOT = CHANGELOG 当前版本索引行**。`check-version.sh` 的 `EXPECTED_DOC_DATE` 是**动态**变量——
+> 从 CHANGELOG 当前版本段提取日期，再拿它比对各活文档头。**禁止往脚本里写死日期**：
+> 一旦写死，脚本的「动态提取」设计被污染，下一版 bump 后残留旧日期，且与 CHANGELOG 形成第二个真值源。
+> 因此本步骤**只改文档与 CHANGELOG，不碰 check-version.sh**。
+
 ```bash
-TODAY=$(date -u +%Y-%m-%d)
+TODAY=$(date -u +%Y-%m-%d)   # 发版日（UTC）
 
-# 1. 找到 bump 写入的旧日期（从 package.json 的首次提交日期推断）
-OLD_DATE=$(git log --format="%ci" -1 --diff-filter=A -- package.json | grep -oE "[0-9]{4}-[0-9]{2}-[0-9]{2}" | head -1)
-# 如果找不到，手动指定：OLD_DATE="YYYY-MM-DD"
+# 1. CHANGELOG 当前版本索引行 —— 补/改「· YYYY-MM-DD 已发版」
+#    （该行的日期就是 EXPECTED_DOC_DATE 的来源；行内不得同时出现「待发版」与「已发版」）
+VER=$(node -p "require('./package.json').version")
+grep -n "^- \*\*v${VER}\*\*" CHANGELOG.md   # 目视确认行尾日期位；无日期则按既有版式补「· ${TODAY} 已发版」
+# 若该行仍带「⏳ 待发版」，同批删掉——两标记同现即自相矛盾（check-version F6 会红）
 
-# 2. check-version.sh 的 EXPECTED_DOC_DATE 改为今天
-sed -i '' "s/EXPECTED_DOC_DATE=\"[0-9-]*\"/EXPECTED_DOC_DATE=\"$TODAY\"/" tools/check/check-version.sh
+# 2. 批量更新活文档头日期（旧日期 → 今天）
+#    🔴 OLD_DATE 取**上一版发版日**，来源 = CHANGELOG 上一版索引行 或 git tag：
+OLD_DATE=$(git describe --tags --abbrev=0 HEAD 2>/dev/null | xargs -I{} git for-each-ref --format='%(creatordate:short)' refs/tags/{})
+#    ❌ 不要从 package.json 的首次提交日期推断——那是仓库首提日，不是上一版发版日（曾据此 sed 到空转）
+[ -n "$OLD_DATE" ] || { echo "🔴 取不到上一版发版日：改用 CHANGELOG 上一版索引行的日期"; }
 
-# 3. 批量更新文档头日期（旧日期 → 今天，只改 > vX.Y 开头的文档头行）
-grep -rl "^> v[0-9].*· ${OLD_DATE}" --include="*.md" . \
-  | grep -v "docs/changelog/" \
-  | grep -v "docs/evidence/" \
-  | xargs sed -i '' "s/· ${OLD_DATE}/· ${TODAY}/g" 2>/dev/null || true
+# 3. 替换：只改文档头行（`> vX.Y · 旧日期` 形态），历史档案与 evidence 排除
+for f in $(grep -rl "> v.*· ${OLD_DATE}" --include="*.md" . \
+    | grep -v "docs/changelog/" | grep -v "docs/evidence/"); do
+  sed -i '' "s/> \(v[0-9][^·]*· \)${OLD_DATE}/> \1${TODAY}/" "$f"
+  echo "  ✓ $f"
+done
 
-# 4. 验证
-bash tools/check/check-version.sh   # 期望：日期一致项全绿
+# 4. 验证：文档头日期一致项全绿 + 活文档面无「待发版」语义族残留
+bash tools/check/check-version.sh
+grep -rn "待发版" --include="*.md" . | grep -vE "docs/changelog/|docs/archive/|docs/evidence/|playbook/" || echo "  ✅ 零残留"
 ```
+
+> 🔴 **「待发版」是语义族，不是单点**（实跑命中 6 处）：CHANGELOG 索引行 / README 双语版本段标题 /
+> ARCHITECTURE·WIKI 状态行 / API 版本头与变更表——各可就地残留，且同一行可能出现「⏳ 待发版 · 已发版」自相矛盾。
+> 收尾必须用上面第 4 步的 grep 全仓扫一遍，逐条判「真残留 vs 语义正确的通用说明（如 CHANGELOG 顶部的状态标注约定）」。
 
 > bump 详细指南（版本位置清单 SSOT + package-lock 同步 + npm 铁律）见 [playbook/version-bump.md](../../../playbook/version-bump.md)。
 > 文档同步详细指南（LIMITATIONS 覆盖 + 归属原则 + D6 闭环）见 [playbook/doc-sync.md](../../../playbook/doc-sync.md)。

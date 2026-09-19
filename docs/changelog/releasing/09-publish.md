@@ -500,7 +500,7 @@ EOF
 > `engine/hooks/*`、`engine/umbrella` 不在循环内（单独发），`engine/dsh-plugins/*` 与
 > `engine/openclaw-plugins/*` 不是 npm 发布物（走 ClawHub/SkillHub 分发，见阶段十）。
 >
-> `npm publish --workspaces` 不支持 workspace 全局发布。release.yml 只 auto-publish audit + mcp（Release 触发），其余 13 包手动 publish（12 个 `engine/<pkg>` scope 包 + load-chain + 1 个裸名总包，合计补齐 15 包）。
+> `npm publish --workspaces` 不支持 workspace 全局发布。release.yml 只 auto-publish audit + mcp（Release 触发），其余 13 包手动 publish（11 个 `engine/<pkg>` scope 包（13 个 @sofagent/* scope 包减去 auto 发布的 audit/mcp） + load-chain + 1 个裸名总包，合计补齐 15 包）。
 >
 > ⚠️ **@sofagent/load-chain（`engine/hooks/sofagent-load-chain/`）是第 13 个 workspace 包，不在下方循环里**——它不叫 `engine/<pkg>` 布局（在 `engine/hooks/` 下），按「13 包」口径极易漏掉。必须把它加进循环与验证清单。
 >
