@@ -25,8 +25,6 @@
 
 **An open-source FDE Harness layer** — embedded between mature Agents (DSH / OpenClaw / WorkBuddy) and the model layer (general LLMs + bespoke post-trained models) to govern both: on entry, it writes the business judgment down as files (business flow, ontology data, AI-node deployment); after departure, it audits every change against those files. Five Harness capabilities (inject · audit · rollback · distill · evolve), five distribution forms (FDE plugins / Skill / MCP / CLI / Dashboard). sofagent does not build the Agent — it delivers the layer that keeps any Agent governed.
 
-sofagent does not build its own Agent — execution is delegated to mature hosts (model + tools + sessions). What it delivers is the **FDE Harness layer**: FDE methodology × Harness engineering, two stages of one job — **on entry, generate judgment** (where AI belongs, written down as machine-checkable files), **after departure, retain judgment** (execute against those files 24/7, audit every change). The five Harness capabilities: inject · audit · rollback · distill · evolve — slots into any existing Agent; and it keeps every model (general or bespoke) under control (register / rollout / train / deploy fully audited). How the two stages interlock, and why they cannot be pulled apart, is covered in [the dedicated chapter below](#what-is-the-fde-harness).
-
 <p align="center">
   <img src="docs/assets/audit-terminal.png" alt="sofagent-audit blocks a .env commit" width="860" /><br/>
   <sub>Zero-config audit in action: one command audits the latest commit; leaked secrets get blocked on the spot</sub>
@@ -117,7 +115,15 @@ One command selects your mounting tier: `bash install.sh --platform <platform-na
 
 ## v1.5.0: Governance · Visibility & Ontology Maturity (⏳ pending release)
 
-🛡️ **The engine grows a governance face** — constraint-layer value made visible, ontology data that survives time, and evidence that reconciles across layers: governance KPI dashboard (dedicated Dashboard "Governance" tab: six KPI cards — boundary-trigger rate / audit coverage / HITL response latency / weekly trend / task-repetition rate / trace-reconcile consistency + dataset review card (human semantic-quality backstop) + lineage compliance report export (where data came from → which gates it passed → version evolution → audit-chain references — submittable to enterprise compliance/legal) + weekly report export) · bitemporal ontology facts (`validFrom`/`validTo` + `stateAt` point-in-time snapshots — "what did the system know on that day" + 3-tier progressive loading: entity digests → relations → full text, budget-linked) · Ontology Validation Engine (DAG cycle detection with 3-color DFS chain localization + schema-compat three-state + fail-closed activation gate — validator crashes also refuse activation) · cross-layer evidence reconciliation (new `trace_reconcile` tool: agent self-report vs git diff vs model behavior, three sources, four verdicts — consistent / omitted / hallucinated / misreported — "be a forensics officer, not a camera") · FDE companion-period completion (14-day wrap-up report + fde_deploy registration handoff) · legacy & naming cleanup (retired API removal + composeWithReactAgent alias offline + loop --legacy retirement [breaking] + `@sofagent/harness` → `@sofagent/inject` [breaking]) · DSH plugin event wiring (7 seamHandlers onto existing bridge APIs: 4 audit event slots + one each for inject/evolve/rollback, zero judgment-logic change). MCP tools 104 → **105** · tests 4805 → **4903** (13-package workspace count, release-time figure) · acceptance 352 → **357** scenarios. Full details in the [devlog](./docs/changelog/v1.5/v1.5.0.md) · earlier versions in [CHANGELOG](./CHANGELOG.md).
+🛡️ **The engine grows a governance face** — constraint-layer value made visible, ontology data that survives time, and evidence that reconciles across layers:
+
+| Capability | In one line |
+|------|--------|
+| **Governance KPI dashboard** | Dedicated Dashboard "Governance" tab: six KPI cards + dataset review card + human semantic-quality backstop + lineage compliance report export (where data came from → which gates it passed → version evolution → audit-chain references) + weekly report export |
+| **Bitemporal ontology facts** | `validFrom`/`validTo` + `stateAt` point-in-time snapshots ("what did the system know on that day") + 3-tier progressive loading (entity digests → relations → full text, budget-linked) |
+| **Cross-layer evidence reconciliation** | New `trace_reconcile` tool: agent self-report vs git diff vs model behavior — three sources, four verdicts (consistent / omitted / hallucinated / misreported) — "be a forensics officer, not a camera" |
+
+Also in this release: Ontology Validation Engine (DAG cycle detection with chain localization + fail-closed activation gate) · FDE companion-period wrap-up · legacy & naming cleanup (retired API removal + `@sofagent/harness` → `@sofagent/inject` [breaking]) · DSH plugin event wiring. **MCP tools 104 → 105 · tests 4805 → 4903 · acceptance 352 → 357** (13-package workspace count; release-time figure 4805 — the **current** authoritative value is whatever `tools/check/test-count.sh` reports; badge and install command still point at v1.4.9 until release). Full details in the [devlog](./docs/changelog/v1.5/v1.5.0.md) · earlier versions in [CHANGELOG](./CHANGELOG.md).
 
 ## The Two FDE Harness Phases
 
@@ -147,7 +153,7 @@ Both phases are one thing: **the deliverable is shared live state** (written on-
 
 ## Installation
 
-> ⚠️ **Enterprise users read first** [LIMITATIONS §3](./docs/LIMITATIONS.md) — `config.yml` is **non-fail-closed by default** (rules can be bypassed by Agent tampering), and **write-side** multi-tenant isolation is not yet landed (v0 delivered query-side isolation: orgId filtering + the data/<tenant>/ path foundation — see LIMITATIONS). For strict-compliance scenarios use CI fallback + file-permission lock (`chmod 444 .sofagent/config.yml`); do not put the single-machine default config directly into production.
+> ⚠️ **Enterprise users read first** [LIMITATIONS §3](./docs/LIMITATIONS.md) — `config.yml` is **non-fail-closed by default** (rules can be bypassed by Agent tampering), and **write-side** multi-tenant isolation is not yet landed (v0 delivered query-side isolation: orgId filtering + the data/<tenant>/ path foundation — see LIMITATIONS). For strict-compliance scenarios use CI fallback + file-permission lock (`chmod 400 .sofagent/config.yml` — an auxiliary layer, ineffective against same-user processes; see [LIMITATIONS §3](./docs/LIMITATIONS.md)); do not put the single-machine default config directly into production.
 
 **30 seconds, zero setup** (first run includes the npx package fetch, ~30 seconds; reruns finish in seconds — the engine itself takes ~1.1s, measured basis above) — run an audit in any git repo:
 

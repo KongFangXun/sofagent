@@ -51,7 +51,7 @@ sofagent 是一套 FDE 能力——底层引擎是纯本地 Harness 中间件（
 
 ### 数据隔离与防线时序对照
 
-企业 IT 采购视角的单页速查：哪些数据按什么粒度隔离、防线发生在事前还是事后。内容逐行取自本文件与 [LIMITATIONS](./docs/LIMITATIONS.md) 既有披露，无新增声称。
+企业 IT 采购视角的单页速查：哪些数据按什么粒度隔离、防线发生在事前还是事后。内容取自本文件与 [LIMITATIONS](./docs/LIMITATIONS.md) 的既有披露，不引入新口径。
 
 | 数据面 | 存储位置 | 隔离粒度 | 防线时序 | 边界与排期 |
 |------|------|------|------|------|
@@ -215,7 +215,7 @@ sofagent 是一套 FDE 能力——底层引擎是纯本地 Harness 中间件（
 
 知识库作为 Agent 可信调用载体，sofagent 的对应机制：
 
-- **权限核验**：审计 A14 检测知识库越权访问——当前为**事后审计**而非运行时阻断（见 LIMITATIONS §五）；运行时阻断列入 v2.x（ROADMAP.md）。
+- **权限核验**：审计 A14 检测知识库越权访问——当前为**事后审计**而非运行时阻断（见 LIMITATIONS §四）；运行时阻断列入 v2.x（ROADMAP.md）。
 - **受控 Action + 全链路审计**：「模型提建议、审计模块控执行」——Action 经权限·副作用·审计后才落地（见 DEVELOPMENT §八）。
 - **权限隔离（Entity Resolution）**：多源知识先解析实体归属再授权，避免越权拼接——对应 knowledge/ 实体归属与 A15 约束验证。
 
@@ -469,7 +469,7 @@ chmod 600 ~/.sofagent/data/audit/history.jsonl.bak-*
 > ⚠️ 以上绕过路径均依赖 Agent 的「自觉」——这是 sofagent 架构级别的信任模型选择：审计模块是**协助**人类监督，不是**替代**人类监督。已知绕过路径详见 LIMITATIONS 已有信任模型描述。
 
 > ⚠️ **企业高安全场景**：`config.yml` 篡改可绕过审计规则（如关闭规则、放宽阈值）。建议：① CI 侧独立校验 config 完整性（`sofagent-audit --diff` 兜底，hook 可绕 CI 不可绕）；② 文件权限锁（`chmod 600 .sofagent/config.yml`，仅受信用户可写）。与已有 `--no-verify` CI 兜底建议呼应。
-> ⚠️ **企业高安全默认**：基线规则（A1/A2/A9/A10/A11/A20-A23）有强制保护不可禁用，但**非基线规则（A3-A8、A14-A19）可经 `rules:{x:false}` 关闭**。高安全场景建议显式锁定所有规则：`extendedRulesEnabled: true` + 在 config 中对全部非基线规则显式 `rules:{a3:true, a4:true, ...}`（禁止依赖默认值），并配合 `chmod 444 .sofagent/config.yml` 只读锁定。
+> ⚠️ **企业高安全默认**：基线规则（A1/A2/A9/A10/A11/A20-A23）有强制保护不可禁用，但**非基线规则（A3-A8、A14-A19）可经 `rules:{x:false}` 关闭**。高安全场景建议显式锁定所有规则：`extendedRulesEnabled: true` + 在 config 中对全部非基线规则显式 `rules:{a3:true, a4:true, ...}`（禁止依赖默认值），并配合 `chmod 400 .sofagent/config.yml` 只读锁定（**对同用户进程无效**，仅为纵深防御的辅助层，见 [LIMITATIONS §三](./docs/LIMITATIONS.md)）。
 >
 > 💡 **`hardenedMode` 配置项尚未实现**（代码中不存在此字段）——一键全规则基线化的便捷配置排入 ROADMAP 评估，当前需手动按上述方式逐条锁定。
 
@@ -583,7 +583,7 @@ v1.3.5 交付 4b 起，CRDT 依赖已从旧包 `automerge@1.0.1-preview.7`（pre
 ### Dashboard 本地服务面（核验结论）
 
 > **有网络面，已核验**：`serve-dashboard.mjs` 是真实 HTTP 服务面（非纯静态），三项核验——① 默认绑定 `127.0.0.1`（`DASHBOARD_HOST || '127.0.0.1'`，局域网共享须显式 `DASHBOARD_HOST=0.0.0.0` opt-in）；② dashboard.html 零外链 CDN（36 图标 SVG 内嵌，断网可用——与 v2.0.0 离线 USB 节点叙事对齐）；③ 服务无密钥/凭据面（只读 `~/.sofagent/data/` 快照文件，无写操作、无鉴权需求）。
-> **GitHub Actions 供应链面**：8 个 workflow 20 处 `uses:` 全部 pin 40 位 commit SHA + 注释 tag，`tools/check/check-action-pins.sh` 在线对账 SHA 与 tag 同 commit（离线降级不阻断门禁）。文档中的 CI 示例同样按此口径给出完整 SHA（见 [HANDBOOK](docs/HANDBOOK.md) / [LIMITATIONS](docs/LIMITATIONS.md)）。
+> **GitHub Actions 供应链面**：8 个 workflow 23 处 `uses:` 全部 pin 40 位 commit SHA + 注释 tag，`tools/check/check-action-pins.sh` 在线对账 SHA 与 tag 同 commit（离线降级不阻断门禁）。文档中的 CI 示例同样按此口径给出完整 SHA（见 [HANDBOOK](docs/HANDBOOK.md) / [LIMITATIONS](docs/LIMITATIONS.md)）。
 
 ---
 

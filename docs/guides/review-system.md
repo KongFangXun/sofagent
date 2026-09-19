@@ -79,7 +79,7 @@
 |------|:----:|-----------|
 | regression-checklist.md | 见 checklist 头部 SSOT | **超标靠归并不删内容**（v1.3.5 check-version 四盲区归并消化等，演进记录见 SSOT） |
 | acceptance-test.sh | 见 checklist 头部 SSOT | 同上（v1.3.5 注释/装饰框/冗余分组瘦身消化等） |
-| fresh-eyes-review.md | 见 04-review-system.md 步骤五自检 | 同上（v1.3.3 从 370 上调，v1.4.0 至 410） |
+| fresh-eyes-review.md | 见 04-review-system.md 步骤五自检 | 同上（以 04-review-system.md 的 SSOT 声明为准，当前上限 530 行） |
 
 ### 瘦身三步
 

@@ -28,10 +28,10 @@
 |------|------|
 | 报 Bug / 提想法 | → [开 Issue](https://github.com/KongFangXun/sofagent/issues/new/choose) |
 | 不知道怎么用 | → [Discussions 去问](https://github.com/KongFangXun/sofagent/discussions) |
-| 不知道怎么测 | → 看 [testing.md](./docs/guides/testing.md) 的 5 个标准化用例 |
+| 不知道怎么测 | → 看 [testing.md](./docs/guides/testing.md) 的 9 个标准化用例 |
 | 想直接改代码 | → 看下面「贡献者 10 分钟速览」 |
 | 想理解概念 | → 看 [ARCHITECTURE.md](./docs/ARCHITECTURE.md) |
-| 想跑实验 | → 看 docs/evidence/benchmark/ 的实验记录模板 |
+| 想跑实验 | → 看 [benchmark 复现指南](./docs/evidence/benchmark/reproduction-guide.md) 与 [案例模板](./docs/evidence/case-study-template.md) |
 
 ### 贡献者 10 分钟速览
 
@@ -66,7 +66,7 @@ bash install.sh && bash engine/scripts/verify.sh
 
 | 目录 | 内容 |
 |------|------|
-| `engine/` | 13 个 @sofagent/* 模块包（`audit` 审计模块 / `core` 底座 / `daemon` 守护 / `orchestrator` 编排 / `train` 后训 / `mcp` / `rules` / `eval` / `think` / `evolve` / `ontology` / `inject`（v1.5.0 前名 harness）/ `ab-test`，12 个含 test script）+ `hooks/sofagent-load-chain`（加载链 Hook，工具包非模块包）——模块包全部发布到 npm；另有 2 个插件族：`dsh-plugins/`（cordis-plugin-sofagent* 7 款 DSH 插件：6 款原子 + 1 款聚合整装）+ `openclaw-plugins/`（OpenClaw code-plugin 4 款） |
+| `engine/` | 13 个 @sofagent/* 模块包（`audit` 审计模块 / `core` 底座 / `daemon` 守护 / `orchestrator` 编排 / `train` 后训 / `mcp` / `rules` / `eval` / `think` / `evolve` / `ontology` / `inject`（v1.5.0 前名 harness）/ `ab-test`，13 个均含 test script）+ `hooks/sofagent-load-chain`（加载链 Hook，工具包非模块包）+ `umbrella/`（npm 裸名总包 `sofagent`）——模块包全部发布到 npm；另有 2 个插件族：`engine/dsh-plugins/`（cordis-plugin-sofagent* 7 款 DSH 插件：6 款原子 + 1 款聚合整装）+ `engine/openclaw-plugins/`（OpenClaw code-plugin 4 款） |
 | `engine/audit/src/rules/` | 审计规则实现（`rule-a*.ts` A1-A23 + `skill-safety-engine.ts`）；A20 网络外传 / A21 持久化后门 / A22 权限提升 / A23 路径穿越 |
 | `engine/audit/src/` | 审计核心：`audit-trail.ts` 审计轨迹聚合 + `protocol-neutrality.ts` 协议中立声明 |
 | `engine/audit/src/permission/` | 权限配置加载与检查 |
@@ -119,7 +119,7 @@ bash install.sh && bash engine/scripts/verify.sh
 
 **改 Skill 文件**：先改 `SKILL/harness/`（唯一权威），再 `bash install.sh` 同步。
 
-**文档修改**：改 HANDBOOK 必须同步更新 `SKILL/harness/` 下模板。详见 [DEVELOPER §七](./docs/DEVELOPMENT.md#七数据文件架构)。
+**文档修改**：改 HANDBOOK 必须同步更新 `SKILL/harness/` 下模板。详见 [DEVELOPMENT §七](./docs/DEVELOPMENT.md#七数据文件架构)。
 
 > 📋 **文档措辞规范（v1.3.4 起）**：sofagent 对「对外文档」和「内部文档」的措辞要求不同，避免审查者反复误报：
 >
@@ -190,7 +190,7 @@ sofagent 当前维护者为孔放勋一人。不设申请制——贡献自然�
 | **OpenClaw hook (TS)** | handler.ts 回归测试 + 升级适配 | 2-3 小时 |
 | **英文文档** | HANDBOOK + README 英文翻译 | 不限 |
 
-> 🔴 如果你是 bash 方向开发者，直接开 Issue 说「我想做 Co-maintainer」——不用走正常流程。
+> 🔴 如果你是 bash 方向开发者，先开 Discussion 与维护者聊聊方向（早期接触不算正式申请，正式标准见下方「Seeking Co-maintainers」）。
 
 ---
 

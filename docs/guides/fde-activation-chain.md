@@ -190,7 +190,7 @@ sofagent-orchestrator activate
 
 ### activate 内部流程
 
-新增 `engine/orchestrator/src/activate.ts`。核心签名与产出：
+核心实现 `engine/orchestrator/src/activate.ts`。核心签名与产出：
 
 ```typescript
 export interface ActivateResult {
@@ -504,7 +504,7 @@ async function executeNode(node, state) {
 | 开发线 | 衔接 |
 |--------|------|
 | **Skill × MCP 集成（S1-S5）** | FDE Skill 有 MCP 工具调用能力；激活链的 `activate_workflow` 是新增 MCP tool |
-| **Skill 分包** | skills/04-deliver.md 应含 activate 引导——交付后不是结束，activate 才是 |
+| **Skill 分包** | `SKILL/skills/04-deliver.md` 应含 activate 引导——交付后不是结束，activate 才是 |
 | **运行时审计** | LangGraph middleware wrapToolCall（通用拦截）与激活链"每个节点执行后审计"（企业专属）互补 |
 | **沙箱** | 激活链生成的企业 Agent 最终也需要沙箱隔离 |
 

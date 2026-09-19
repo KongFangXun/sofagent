@@ -41,7 +41,7 @@ sofagent 的约束效果的增量数据需要独立验证，不能只靠作者�
 **复现指南**：[docs/evidence/benchmark/reproduction-guide.md](./evidence/benchmark/reproduction-guide.md)
 
 **最小复现路径**（30 分钟）：
-1. 克隆 [sofagent-test-suite](https://github.com/cedric123123/sofagent-test-suite)（baseline `56160e1`；⚠️ 该仓库尚在公开流程中——若暂时 404，按下方 fixture 手动创建即可开始，无需等待）
+1. 克隆 [sofagent-test-suite](https://github.com/cedric123123/sofagent-test-suite)（baseline `56160e1`；⚠️ 该仓库尚在公开流程中——若暂时 404，可先跳过本步，用你自己的仓库构造同款任务）
 2. 跑 Task 1（camelCase → snake_case）——A 裸 Agent vs B sofagent 约束
 3. 手动评分：变量名误伤率（改了几个不该改的变量名 / 总变量数）
 4. 把结果发到 [GitHub Discussions](https://github.com/KongFangXun/sofagent/discussions)
@@ -58,11 +58,11 @@ sofagent 的约束效果的增量数据需要独立验证，不能只靠作者�
 4. 迟到的重复 PR → 关闭并致谢，欢迎转为 review 意见
 5. 范围重叠但不同 → 拆分合并，不整单取舍
 
-> 提前开 PR 不自动获得优先权——先到先得只看上面五条。此规则在出现第一份外部重复 PR 前生效。
+> 提前开 PR 不自动获得优先权——先到先得只看上面五条。本规则当前即生效（第一份外部重复 PR 出现前同样适用）。
 
 ## 行为准则
 
-我们就一条规矩：对事尖锐，对人客气。做不到？issue 见。
+我们就一条规矩：对事尖锐，对人客气。做不到的话，欢迎直接开 Issue 指出——这也是「对人客气」的一部分。
 
 ## 联系方式
 

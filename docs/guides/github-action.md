@@ -49,7 +49,7 @@ jobs:
 
 ## 它检查什么
 
-sofagent-audit 检查 24 条规则（A1-A11、A14-A23 + E1-E2/E4），覆盖安全、边界、追溯：
+sofagent-audit 检查 24 条规则（17 默认 + 7 扩展：A1-A11、A14-A23 + E1/E2/E4），覆盖安全、边界、追溯。下表为**默认规则**，扩展规则与完整清单见 [SECURITY](../../SECURITY.md)：
 
 | 规则 | 内容 | 级别 |
 |------|------|:--:|
@@ -84,7 +84,7 @@ audit:
   lowRiskPatterns: [package-lock.json, yarn.lock, "*.log", "docs/**"]
   testPatterns: [npm test, npm run test, npm run build, pytest, go test]
   carefulModifyThreshold: 0.2  # A3 触发阈值
-  extendedRulesEnabled: false   # E1-E4 扩展规则
+  extendedRulesEnabled: false   # E1/E2/E4 扩展规则
 ```
 
 > 三级 fallback：`${cwd}/.sofagent/config.yml` → `~/.sofagent/config.yml` → 内置默认值。`--ci` = `--silent`（CI 友好输出），需零容忍时加 `--strict`。
@@ -96,7 +96,7 @@ audit:
 | 问题 | 解决 |
 |------|------|
 | 跳过某 PR | commit message 加 `[skip audit]` |
-| "not found" | 确认 `engine/audit/` 子目录存在 + `package-lock.json` 已提交 |
+| "not found" | 本地构建方式：确认 `engine/audit/` 子目录存在 + `package-lock.json` 已提交；npx 方式无需本地目录 |
 | GitHub Enterprise | 支持，零外部 API 依赖 |
 | 审计太慢 | `npm ci`+build ~20 秒，审计 ~2 秒 |
 | 本地测试 | `cd engine/audit && npm ci && npm run build && node dist/index.js --diff main..HEAD --ci` |

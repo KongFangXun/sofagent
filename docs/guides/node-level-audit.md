@@ -67,6 +67,8 @@
 
 ## v1.4.0 cordis-plugin 规则子集
 
+> 📌 **实现判定源**：节点级实际接线两条——`checkDangerousCommand`（破坏性命令拦截，A11 族：`rm -rf /`、fork 炸弹、`curl|sh`、`mkfs`、裸设备写入）与 `check_acceptance`（验收门禁），见 `engine/dsh-plugins/cordis-plugin-sofagent-audit/src/index.ts`。下方 A/B/C 三分类是**规则设计映射**，逐条规则尚未在节点级实现判定。
+
 **纳入节点级硬门禁：A 类 8 条**（A1/A2/A9/A10/A14/A20/A22/A23）
 **纳入节点链留痕（diff 终裁）：B 类 5 条**（A7/A8/A11/A15/A21）
 **不做节点级（保持提交时 git diff）：C 类 11 条**（A3/A4/A5/A6/A16/A17/A18/A19/E1/E2/E4）

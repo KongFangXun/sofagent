@@ -110,4 +110,4 @@
 | `engine/train/src/cleanup.ts` | 数据主权覆写清理（块四） |
 | `engine/train/src/train-audit.ts` | 审计链 + 值轴脱敏 sanitizeDeep（块三） |
 | `engine/core/src/shared/secret-patterns.ts` | 密钥检测/脱敏正则单一事实源（REDACTION_PATTERNS） |
-| `engine/orchestrator/src/__tests__/security-baseline.test.ts` | 本块测试（二十六用例） |
+| `engine/train/src/__tests__/security-baseline.test.ts` | 本块测试（二十六用例） |

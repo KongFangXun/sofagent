@@ -142,9 +142,10 @@ jobs:
 **第 1 步 · 生成一次密钥并分发**（密钥同源，跨机可恢复）：
 
 ```bash
-# 管理机生成（交互确认一次，记下指纹）
-sofagent-daemon crypto --init
-# 指纹核对：sofagent-daemon crypto --fingerprint
+# 管理机首次启动 daemon：交互引导生成密钥 + 指纹确认 + 备份确认（指纹打印在启动输出）
+sofagent-daemon start
+# 无头批量部署跳过交互（非交互场景）：
+#   SOFAGENT_CONFIRM_BACKUP=1 sofagent-daemon start
 
 # 预共享分发到 20 台目标机（scp + 0600 权限）
 for host in $(cat hosts.txt); do
@@ -177,7 +178,7 @@ while IFS= read -r host; do
 done < hosts.txt
 ```
 
-> ⚠️ 安全边界：master.key 是全 fleet 同源密钥——单机失窃即全 fleet 密文暴露，强隔离场景应逐机生成（去掉分发步，每台各自 `crypto --init` + 本机确认）；备份指纹记录务必离线保管，密钥丢失 = 加密数据永久不可读（见 [SECURITY](../../SECURITY.md) 静态加密节）。
+> ⚠️ 安全边界：master.key 是全 fleet 同源密钥——单机失窃即全 fleet 密文暴露，强隔离场景应逐机生成（去掉分发步，每台各自 `sofagent-daemon start` + 本机确认）；备份指纹记录务必离线保管，密钥丢失 = 加密数据永久不可读（见 [SECURITY](../../SECURITY.md) 静态加密节）。
 
 ### 其他方案
 

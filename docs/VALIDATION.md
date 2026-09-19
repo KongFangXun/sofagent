@@ -2,7 +2,7 @@
 
 <p align="center"><img src="assets/sofagent.png" alt="sofagent" width="96" /></p>
 
-> v1.4.9 · 2026-09-17（✅ 已发版——本批更新 2026-09-17） · 孔放勋
+> v1.4.9 · 2026-09-17（UTC）· ✅ 已发版（本批更新 2026-09-17）· 孔放勋
 
 > **本文档从四个维度回答一个问题：行业有没有独立验证 sofagent 的直觉？**
 > - **§一 方法论**——行业研究怎么印证"约束层是刚需"（Harness 范式 / 确定性迁移 / Verifier 瓶颈 / 治理缺口代价）
@@ -786,7 +786,7 @@ DeepSeek Harness（DSH）开源后，一线从业者的通行判断是「垂直 
 
 ## 五、研报视角的边界提示
 
-> 行业研报在给出印证的同时也提示了边界，以下两条与 [LIMITATIONS](./LIMITATIONS.md) 的既有披露互证。
+> 行业研报在给出印证的同时也提示了边界，以下三条与 [LIMITATIONS](./LIMITATIONS.md) 的既有披露互证。
 
 ### 约束增益与自进化系列的实验数据汇总（ARCHITECTURE/PHILOSOPHY 引用的数据锚）
 
@@ -804,7 +804,7 @@ DeepSeek Harness（DSH）开源后，一线从业者的通行判断是「垂直 
 
 ### 不要一上来就 Agent 自动闭环
 
-研报的「分阶段风险收敛」警示：存量系统之上的语义接管不可跳步，高风险 Action 必须 human-in-the-loop。这印证 sofagent 的现状——审计 A14 仍是事后审计（非运行时阻断，见 [LIMITATIONS §五](./LIMITATIONS.md#五审计与工程局限)）。五阶段的完整对照（只读对象层 → 统一状态关系 → 挂载 Method → 开放低风险 Action → 高风险 Action）与动态 Agent 组织印证见 [ROADMAP · 行业印证](./ROADMAP.md#行业印证)。
+研报的「分阶段风险收敛」警示：存量系统之上的语义接管不可跳步，高风险 Action 必须 human-in-the-loop。这印证 sofagent 的现状——审计 A14 仍是事后审计（非运行时阻断，见 [LIMITATIONS §四](./LIMITATIONS.md#四成熟度与测试局限)）。五阶段的完整对照（只读对象层 → 统一状态关系 → 挂载 Method → 开放低风险 Action → 高风险 Action）与动态 Agent 组织印证见 [ROADMAP · 行业印证](./ROADMAP.md#行业印证)。
 
 ### 模糊提示下确定性骨架不可替代
 

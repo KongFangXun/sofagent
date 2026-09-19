@@ -6,7 +6,7 @@
 >
 > v1.4.9 · 2026-09-17（UTC）· ✅ 已发版（本批更新 2026-09-17）· 孔放勋
 
-> 💡 **行业背景**：sofagent 是一套 FDE 能力——装进成熟 Agent（DSH / OpenClaw / WorkBuddy）后，进场把业务判断写成文件（梳理工作流、构建本体数据、部署 AI 节点），离场后按文件 7×24 执行与审计。底层（Harness 中间件）**约束层 × 生命周期**双层架构：约束层 = 约束层五种能力（注入·审计·回溯·沉淀·进化），生命周期 = 激活链四阶段（诊断→激活→编排→执行→进化，v1.2.5+）。不管企业用 OpenClaw / WorkBuddy / 扣子还是其他 Agent 平台，sofagent 是独立的底线守卫层。详见 [FDE/GUIDE.md](../FDE/GUIDE.md)。
+> 💡 **行业背景**：sofagent 是一套 FDE 能力——装进成熟 Agent（DSH / OpenClaw / WorkBuddy）后，进场把业务判断写成文件（梳理工作流、构建本体数据、部署 AI 节点），离场后按文件 7×24 执行与审计。底层（Harness 中间件）**约束层 × 生命周期**双层架构：约束层 = 约束层五种能力（注入·审计·回溯·沉淀·进化），生命周期 = 五阶段（诊断→激活→编排→执行→进化；激活链四阶段 = 后四环 ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN，v1.2.5+）。不管企业用 OpenClaw / WorkBuddy / 扣子还是其他 Agent 平台，sofagent 是独立的底线守卫层。详见 [FDE/GUIDE.md](../FDE/GUIDE.md)。
 
 > 💬 **开发铁律**：sofagent 不建编辑器类交互界面。只读 Dashboard 面板（如 `tools/dashboard/dashboard.html`）例外——它是状态可视化，不做双向编辑。核心能力通过 MCP 协议暴露。Agent 首次连接时主动推送 `list_capabilities`。开发任何新功能前，先回答三个问题：（1）用户怎么通过对话发现这个能力？（2）结果推到哪？（3）用户怎么知道这个结果是 sofagent 做的，不是模型做的？——任何面向用户的输出必须带 `[sofagent]` 签名标注来源。详见 [设计哲学](./PHILOSOPHY.md)。
 
@@ -45,7 +45,7 @@
 
 ### Windows 开发踩坑（PowerShell 移植必读）
 
-> 来源：Windows 11 + PowerShell 5.1 实地勘察（2026-06）。核心 9 坑：UTF-8 BOM / 控制台编码 / .gitattributes 换行 / if-表达式 / switch-break / 数组摊平 / WSLENV / BSD sed。详见 [PS5兼容踩坑清单](https://github.com/KongFangXun/sofagent/issues?q=label%3Awindows)。
+> 来源：Windows 11 + PowerShell 5.1 实地勘察（2026-06）。核心 8 坑：UTF-8 BOM / 控制台编码 / .gitattributes 换行 / if-表达式 / switch-break / 数组摊平 / WSLENV / BSD sed。详见 [PS5兼容踩坑清单](https://github.com/KongFangXun/sofagent/issues?q=label%3Awindows)。
 
 ---
 
@@ -78,7 +78,7 @@
 
 ### Skill 文件结构
 
-**1 主 Skill（`SKILL.md`）+ 9 子 Skill = 10 个 .md（含 fde.md，按需加载）**。用户只安装 `SKILL.md`。A0 预判复杂度——🔴 复杂任务确认后加载 `engage.md` 走完整入口流程，🟢🟡 简单/中等任务跳过 engage.md 直接走 task-aware 闸门。每个子 Skill ≤100 行（v1.0.8 起，由 v0.99.5 的 ≤90 行上调）。
+**1 主 Skill（`SKILL.md`）+ 10 子 Skill = 11 个 .md（均在 `SKILL/harness/`；其中 `fde-template.md` 部署时改名 `fde.md`，按需加载）**。用户只安装 `SKILL.md`。A0 预判复杂度——🔴 复杂任务确认后加载 `engage.md` 走完整入口流程，🟢🟡 简单/中等任务跳过 engage.md 直接走 task-aware 闸门。每个子 Skill ≤100 行（v1.0.8 起，由 v0.99.5 的 ≤90 行上调）。
 
 > 💡 **措辞心理学**：铁律不只是「写对规则」，更是「写到 AI 真的听」。Superpowers（GitHub 23.9 万星 Skill 项目）2.8 万次对话实测——强措辞（必须/绝无例外）让 AI 服从率从 33% 提升到 72%。LLM 对强语气的注意力权重高于弱语气。写 Skill 时，关键铁律用最强可用措辞。
 
@@ -114,7 +114,7 @@ Skill 的核心不是写执行步骤，而是划定**决策边界**。一个好 
 
 **事实约束三原则**：① 标注哪些内部数据存在过期风险、② 哪些业务动作必须实时核验、③ 查不到确切凭证必须拒答而非脑补。审计模块的 A9 中文注入检测部分覆盖此方向。
 
-**工具集检查清单**：每个 Skill 的工具集应零重叠、无歧义——两个工具的功能描述不能模糊交叉。当工具数上百时，瓶颈不在模型推理而在工具描述歧义。v1.1.0 daemon 工具注册将做静态重叠检测。
+**工具集检查清单**：每个 Skill 的工具集应零重叠、无歧义——两个工具的功能描述不能模糊交叉。当工具数上百时，瓶颈不在模型推理而在工具描述歧义。
 
 ### Skill 生命力与自进化判据
 
@@ -180,9 +180,9 @@ FDE 部署 SOP 应遵循此顺序：
 - `SKILL/harness/`：纯 MD 规则（平台无关，所有 Agent 平台共用）
   > 注意：`SKILL/harness/` 是产品层 markdown 闸门规则文本，与 npm 模块包 `@sofagent/inject`（TypeScript 实现的 Harness 中间件）不是同一个东西——前者是规则，后者是实现。
   - `SKILL.md`：主入口（宪法内联——4 底线 + 9 则铁律）
-  - 子 Skill（9 个 .md）：`entry-gate.md` / `task-aware.md` / `task-closure.md` / `loop-check.md` / `loop-evaluate.md` / `loop-exit.md` / `engage.md` / `engage-fde.md` / `fde.md`
-  - `fde.md`：规范文件（企业运行规范，部署时复制到目标项目）
-  - `data/`（4 个模板：think.md / orchestrator.md / task.md / fde.md）
+  - 子 Skill（11 个 .md）：`entry-gate.md` / `task-aware.md` / `task-closure.md` / `loop-check.md` / `loop-evaluate.md` / `loop-exit.md` / `engage.md` / `engage-fde.md` / `installer.md` / `knowledge-maintain.md` / `fde-template.md`
+  - `fde-template.md`：规范文件模板（企业运行规范，部署时由 `engine/scripts/lib/file-deploy.sh` 复制并改名为 `fde.md`）
+  - `data/`：运行时目录（部署时创建，含 think.md 等，不随仓库分发）
 - `engine/scripts/`（核心 3 个）：`verify.sh` / `uninstall.sh` / `task-record.sh`
 - `install.sh`（仓库根目录）：多平台一键安装（v1.2.0 从 engine/scripts/ 提升到根目录）
 - `engine/hooks/sofagent-load-chain/`：`HOOK.md` + `handler.ts`（宿主平台 hook，目前唯一部署形态是 OpenClaw 的 `agent:bootstrap`）
@@ -207,7 +207,7 @@ FDE 部署 SOP 应遵循此顺序：
 |------|------|------|
 | `install.sh` | 多平台一键安装（7 步） | 手动跑 |
 | `uninstall.sh` | 删约束文件，保留 `.sofagent/` | 手动跑 |
-| `verify.sh` | 装后验证 9 类 24+ 检查项 | 安装完自动跑，也可手动 |
+| `verify.sh` | 装后验证 9 类 ~48 项动态检查 | 安装完自动跑，也可手动 |
 | `orchestrator-compare.ts` | A/B 对比 + promote + compose（合并了原 task-orchestrate） | 编排模块定期调用 |
 | `task-record.sh` | 收集任务数据 → 拼 Markdown → 追加到 task/logs/ | 闭环时自动调用 |
 
@@ -249,7 +249,7 @@ StateGraph 的 engineer / reviewer 节点优先走「工具注入路径」（Lan
 v1.2.6 起 `resolveLLMModel()` 增加四级回退：`SOFAGENT_LLM`（显式优先）→ `SOFAGENT_LLM_A` → `SOFAGENT_LLM_B` → null，API key 同链回退——FORGE 审查用的 A/B 配置可直接驱动编排主链路。
 #### 测试友好：依赖注入
 
-StateGraph 的流转逻辑通过 `LoopGraphDeps` 接口完全可 mock——`runEngineer / runAudit / runReviewer / confirmHuman / recordBlocked / checkpointer / maxRetries / log` 七个槽位。`defaultDeps()` 给生产实现，测试时整体替换。这让节点流转逻辑可以脱离真实 LLM 单测（v1.1.7 测试堆到 770 case 的前提）。
+StateGraph 的流转逻辑通过 `LoopGraphDeps` 接口完全可 mock——`runEngineer / runAudit / runReviewer / confirmHuman / recordBlocked / checkpointer / maxRetries / log` 八个槽位。`defaultDeps()` 给生产实现，测试时整体替换。这让节点流转逻辑可以脱离真实 LLM 单测（v1.1.7 测试堆到 770 case 的前提）。
 
 #### DAG Runner 与 Workflow 解析（v1.1.8+）
 
@@ -720,7 +720,7 @@ loop-engineering 社区将 STATE.md 定位为 **「对话外的持久化主干�
 
 ### 场景数 SSOT 口径
 
-> **SSOT 口径**：`playbook/acceptance-test.sh` 头部「场景数」声明 = 真实 `scenario` 调用行数（非编号最大值、非运行时执行数）。当前值 357（最大场景号 S431，S1-S431 间 77 个历史空洞号；v1.5.0 阶段三步骤四验收增量 +5：S427-S431（治理 KPI 面板/双时态时点快照/Validation Engine 环检测+fail-closed/trace 对账四态/FDE 陪跑期+插件事件接线——行为实测 dist 直调，多模块共场景对齐 S373/S374 先例）。
+> **SSOT 口径**：`playbook/acceptance-test.sh` 头部「场景数」声明 = 真实 `scenario` 调用行数（非编号最大值、非运行时执行数）。当前值 357（最大场景号 S431，S1-S431 间 77 个历史空洞号；v1.5.0 验收增量 +5：S427-S431（治理 KPI 面板/双时态时点快照/Validation Engine 环检测+fail-closed/trace 对账四态/FDE 陪跑期+插件事件接线——行为实测 dist 直调，多模块共场景对齐 S373/S374 先例）。
 >
 > 后续版本引用场景数一律以 `acceptance-test.sh` 头部声明为准，禁止从其他文档转述。逐版沿革账见 [v1.5.0 开发日志 · 附录](./changelog/v1.5/v1.5.0.md)。
 

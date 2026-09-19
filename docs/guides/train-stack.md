@@ -96,5 +96,5 @@ Node 发 SIGINT → Python 捕获后存 checkpoint 优雅退出（退出码 0）
 | `engine/train/src/train-protocol.ts` | 协议三约定 SSOT（job.json schema / 事件流解析 / 信号控制） |
 | `engine/train/src/train-budget.ts` | 训练预算控制（时间 / 步数 / 成本三维度，超限 SIGINT + 人审） |
 | `engine/train/src/train-env.ts` | 环境准备（GPU 检测 / 框架安装验证 / 就绪报告） |
-| `engine/orchestrator/src/__tests__/train-env.test.ts` | 环境准备测试（mock 三场景 + Mac 真机集成） |
+| `engine/train/src/__tests__/train-env.test.ts` | 环境准备测试（mock 三场景 + Mac 真机集成） |
 | `docs/changelog/v1.4/v1.4.1.md` | 版本目标与八大块排期 |

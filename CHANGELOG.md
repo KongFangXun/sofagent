@@ -2,8 +2,9 @@
 
 <p align="center"><img src="docs/assets/sofagent.png" alt="sofagent" width="96" /></p>
 
-> **本文件是目录索引**。每个版本的完整开发日志在 [`docs/changelog/`](./docs/changelog/) 下，此处仅保留「版本能力索引（一段式）+ 链接」，不重复细节。
+> **本文件是目录索引**。每个版本的完整开发日志在 [`docs/changelog/`](./docs/changelog/) 下，此处仅保留「版本能力索引（一段式）+ 链接」与「跨版本破坏性变更 / 退役公告」，不重复逐版细节。
 > 实验版（v0.x）历史日志在 [`docs/archive/changelog-experimental/`](./docs/archive/changelog-experimental/)。
+> **状态标注约定**：正式版条目一律带发布日期；近期版本另附「已发版 / 待发版」状态标注，历史版本以日期为准。
 
 ---
 
@@ -31,7 +32,7 @@
 
 > 🔶 **破坏性变更公告（v1.5.0 · 死配置清扫与同名导出更名）**
 >
-> ① **`SOFAGENT_CLEANUP_ON_RECORD` 配置项移除**：曾存在的 cleanupOnRecord 配置字段（@deprecated v1.4.3 披露的死配置）已删除——自动清理路径从未接线，该开关**从未生效**。曾设置过该 env 的用户无需迁移（本来就不生效）；日志清理请使用实际生效的 `SOFAGENT_RETENTION_DAYS` / `SOFAGENT_RETENTION_MAX`（消费点 `engine/scripts/cleanup.sh`）。声明见 [LIMITATIONS §七](./docs/LIMITATIONS.md)。
+> ① **`cleanupOnRecord` TS 配置字段移除**：`SofaEnvConfig` 中的该字段（@deprecated v1.4.3 披露）已随死配置清扫删除。⚠️ **shell 侧消费链未同步移除**——`engine/scripts/lib/config.sh` 仍解析 `data_cleanup_on_record` 并导出 `SOFAGENT_CLEANUP_ON_RECORD`，`engine/scripts/task-record.sh` 据此按概率触发 `cleanup.sh --force`，即该开关**当前仍会真实生效**；完整披露见 [LIMITATIONS §七](./docs/LIMITATIONS.md)。日志清理请使用 `SOFAGENT_RETENTION_DAYS` / `SOFAGENT_RETENTION_MAX`（消费点 `engine/scripts/cleanup.sh`）。
 > ② **`@sofagent/train` 导出 `routeRequest` 更名为 `canaryRouteRequest`**（同名消歧）：orchestrator 另有同名 `routeRequest`（`@sofagent/orchestrator/workflow` 语义路由）——同名不同物，裸符号 grep 接线断言会假阳性。该导出零生产消费者，破坏面为零；消费侧（仅测试）已同步更名。同名导出矩阵见 [WIKI 术语表](./docs/WIKI.md)。
 
 - **v1.4.9** — 设备接入与数据承接：G9 设备注册/发现/心跳（Ed25519 身份 + 在线才派单/掉线改派）· G10 数据目录白名单授权读取 · G11 采集声明 opt-in 上行（WAL 加密暂存 + 断点续传 + 审计计量）· T7 router 过站 session 承接 · T8 敏感识别三层插槽（SDK 面，管线接线排期 v1.5.1）· T9 权重灰度 AB（SDK 面同上）· G5b 连接器注册 + G1 workflow 模板血缘 · T6 installer + T10 模型清单 · MCP 95→**104**（9 新）· 测试 4429→**4805** · 2026-09-17 已发版· [开发日志](./docs/changelog/v1.4/v1.4.9.md)
@@ -53,7 +54,7 @@
 - **v1.3.4** — 🏪 L3 组织能力市场（五环：发布→发现→调用→评价→养护 + 6 market MCP tool；market_* 系列 v1.3.6 起更名 commons_*）+ 🛡️ SkillScan 安全门（三态判定 + 发布/安装双触发）+ 📊 评估体系三步（harvest→jury→promote）+ 🔌 编排层与执行层分离（ExecutionBackend + DSH 执行后端接入）+ 📜 DecisionKind.MARKET + daemon 市场双巡检 · 2026-08-14 · [开发日志](./docs/changelog/v1.3/v1.3.4.md)
 - **v1.3.3** — 🤝 L2 团队协作协议（五大机制）+ ✨ Refine Agent 完整版 + 🧭 主 agent 编排 + 🚪 入口路由 + 📈 进化闭环升级 + 📜 evidence 字段 · 2026-08-12 · [开发日志](./docs/changelog/v1.3/v1.3.3.md)
 - **v1.3.2** — 🔄 Onboard Agent 完整版（L2-L5）· 2026-08-11 · [开发日志](./docs/changelog/v1.3/v1.3.2.md)
-- **v1.3.1** — Durable Execution 编排增强 + Benchmark 基线：波次并发 + MergeQueue · 测试 2105→**2209** · 已发版 · [开发日志](./docs/changelog/v1.3/v1.3.1.md)
+- **v1.3.1** — Durable Execution 编排增强 + Benchmark 基线：波次并发 + MergeQueue · 测试 2105→**2209** · 2026-08-11 已发版 · [开发日志](./docs/changelog/v1.3/v1.3.1.md)
 - **v1.3.0** — 🔐 运行时审计最小闭环（tool wrapper 拦截层）+ 决策审计（意图问责 MVP）+ 双规则统一 + 运行时审计日志按 git 仓库隔离（FORGE 自托管 SubAgent 路径已交付 repo-hash 隔离；文档曾长期标「规划中」系滞后；引擎侧 data-sovereignty 审计日志仍全局，排 v1.3.9；commit 级 history.jsonl 仍全局）+ HITL 钩子 + list_rules 规则透明化 + 激活链收尾 + 外部记忆后端 Path A + 进化链路写保护 · 2026-08-09 · [开发日志](./docs/changelog/v1.3/v1.3.0.md)
 - **v1.2.9** — ⏸️ Checkpoint/Resume + 🏠 PM2 守护 + 🔗 激活链 Phase 3 后半 + mcp-server 拆分 + 📐 约束层叙事重构 + 🚪 三个入口产品（npx CLI + 规则市场 + GitHub Action） · 2026-08-08 · [开发日志](./docs/changelog/v1.2/v1.2.9.md)
 - **v1.2.8** — 记忆分层 + 定时任务 + 🔗 激活链 Phase 3 前半 + ⏸️ Checkpoint/Resume · 2026-08-07 · [开发日志](./docs/changelog/v1.2/v1.2.8.md)

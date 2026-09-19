@@ -144,9 +144,9 @@ ls ~/.sofagent/knowledge/shared/ | head -20
 # 应该能看到 lessons-missteps 周报等共享文件
 ```
 
-3. 设备 B 跑一次 daemon 的 lessons-extract：
+3. 设备 B 等一轮知识沉淀跑完（v1.1.7 起由 daemon 的 Dream Cycle 6 阶段 pipeline 承接；原 `weekly-report` / `lessons-extract` 脚本已退役）：
 ```bash
-sofagent-daemon lessons-extract
+sofagent-daemon knowledge status
 # 输出的 lessons 应包含「设备 A 本周踩过的坑」
 ```
 
@@ -186,7 +186,7 @@ A：v1.1.x 轻量版 = 文件级别的异步同步（你负责传输，sofagent 
 **安全边界**：
 - 只绑定本机/内网接口（默认 127.0.0.1，跨机需显式配置 + TLS）
 - 共享 token 走带外交换（对齐联邦通道 federation.token 的语义，不落环境变量）
-- 触发与查询全程进审计（decision-log 记 `kind=REMOTE_API` 决策留痕）
+- 触发与查询全程进审计（decision-log 留痕，kind 以实现为准）
 - 与联邦通道共用同一跨机器帧协议基座（IV‖tag‖ciphertext 密文帧）
 
 **双设备联调记录（v1.4.0 验收）**：E2E 脚本已固化入仓（`playbook/federation-e2e.mjs`，10 断言全 PASS）；远程 API 通道的跨机实测依赖真实双设备环境，单机环境标注「依赖真实双设备，单机跳过」（技术选型 OpenClaw / DSH 通道留白，不锁死）。

@@ -14,7 +14,7 @@
 > | §7 | 部署方案 | 第五章 |
 > | §8 | Skill 定制 | 第五章 §5.2（沉淀）与 §5.12（激活链） |
 > | §9 | 知识库初始化 | 第五章 §5.6 |
-> | §10 | 运行状态检查 | 第五章 §5.7 |
+> | §10 | 运行状态检查 | 第五章 §5.5 |
 > | §11 | 交接 | 第五章 §5.8 |
 > | §12 | 离场 | 第五章 §5.10 |
 >
@@ -607,7 +607,7 @@ AI 只给建议停在**工具层**；能执行受控动作才进入**生产流�
 
 **LLM 的边界**：LLM 适合**生成动作草稿、帮人补齐参数和理由**；动作能不能提交，要靠 schema 校验、权限、审批、审计这些**确定性机制**把关——不靠模型自觉。
 
-> sofagent 对应：四级 = 节点 frontmatter 的 `risk_level`（v1.3.6 审阅协议的 merge_criteria/approver 就是三级动作的门）；「LLM 起草 + 确定性机制把关」= 审计模块看 git diff 硬证据、不认 Agent 自我报告。三级动作落到商业平台即「数字员工提 PR → owner（人或 AI）审阅 → 合并进 trunk」——Action Type 的审批/写回/审计三件套，正是 PR 机制能被企业信任的原因（见 `商业平台规划文档` §2.3）。
+> sofagent 对应：四级 = 节点 frontmatter 的 `risk_level`（v1.3.6 审阅协议的 merge_criteria/approver 就是三级动作的门）；「LLM 起草 + 确定性机制把关」= 审计模块看 git diff 硬证据、不认 Agent 自我报告。三级动作落到商业平台即「数字员工提 PR → owner（人或 AI）审阅 → 合并进 trunk」——Action Type 的审批/写回/审计三件套，正是 PR 机制能被企业信任的原因。
 
 ### 3.10 FMEA 风险管理参照——部署后的十大失效模式
 
@@ -939,7 +939,8 @@ AI 节点跑起来后，自动生成这些文件：
 4. **能独立风险判断**——审批规则、风险边界、什么情况升级到外部支持
 5. **有后续改进机制**——下一阶段优化清单已有，不是「装完就结束」
 
-> 🚀 人走，FDE Harness 不走。离场那一刻，它从部署模式自动切到持续优化模式：周度巡检知识库健康度、月度汇总审计趋势、季度回顾 Skill 退化。客户看到的不是「FDE 走了系统就没人管」，而是「FDE 一直在，只是换了个工作节奏」。
+> 🚀 人走，FDE Harness 不走。离场那一刻，它从部署模式自动切到持续优化模式：日常巡检知识库健康度、汇总审计趋势、回顾 Skill 退化。
+> 📊 **周 / 月 / 季度报告的当前状态**：配置项 `weekly` / `monthly` 为预留值，实现侧**仅 daily 实装**（周报导出为 Dashboard 治理面能力）——口径见 [HANDBOOK](../docs/HANDBOOK.md)。客户看到的不是「FDE 走了系统就没人管」，而是「FDE 一直在，只是换了个工作节奏」。
 
 > 📋 **离场前必做：回写交付报告**。FDE 工程师离场前，按 `templates/delivery-report.md` 模板回写一份交付报告——把本次交付中踩的坑、调试难点、可复用模式结构化沉淀。这份报告**不交给客户**，而是回流到 sofagent 知识库，作为飞轮闭环的数据入口（详见 PHILOSOPHY §五「飞轮闭环」）。没有它，经验就散落在对话和脑子里，随时间流失。
 
@@ -988,7 +989,7 @@ skills/ + nodes/               →  EXECUTE（v1.2.8-9）: DAG 执行 + HITL 审
 | EXECUTE | v1.2.8-v1.2.9 | dag-runner node-executor + HITL interrupt + 审计集成 + 异常兜底 | 工作流跑起来时自动带审批和审计 |
 | SUSTAIN | v1.3.0 | 全链路验证 + `wrapToolCall` 联动 | 跑完一轮自动反思 + 进化，喂下一轮 |
 
-> **简单说**：现在 FDE 离场后留下的是"图纸 + 说明书"，激活链完成后留下的是"按图纸自动造好且自己跑着的工厂"。现有 `registry.ts` 的动态注册机制（v1.0.8 起支持从 `.sofagent/subagents/*.yml` 加载自定义 Agent）早就铺好了轨道——激活链是往轨道上放车厢。详见 sofagent 仓库 docs/guides/fde-activation-chain.md（从 [GitHub 仓库](https://github.com/KongFangXun/sofagent) 获取）。
+> **简单说**：现在 FDE 离场后留下的是"图纸 + 说明书"，激活链交付后留下的是"按图纸自动造好且自己跑着的工厂"。现有 `registry.ts` 的动态注册机制（v1.0.8 起支持从 `.sofagent/subagents/*.yml` 加载自定义 Agent）早就铺好了轨道——激活链是往轨道上放车厢。详见 sofagent 仓库 docs/guides/fde-activation-chain.md（从 [GitHub 仓库](https://github.com/KongFangXun/sofagent) 获取）。
 
 > **workflow.yml 标准格式（v1.2.6+）**：FDE 交付的 `workflow.yml` 使用**嵌套格式**——`workflow:` 根节点下包含 `name`、`description`、`nodes`。激活链同时兼容旧版平铺格式（无 `workflow:` 包裹层），但新交付物应使用嵌套标准：
 >

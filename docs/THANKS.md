@@ -4,7 +4,7 @@
 
 > sofagent 站在巨人肩膀上。以下每一个项目、文章和作者，都在某个设计决策里留下了痕迹。
 
-> v1.4.9 · 2026-09-17（✅ 已发版——本批更新 2026-09-17） · 孔放勋
+> v1.4.9 · 2026-09-17（UTC）· ✅ 已发版（本批更新 2026-09-17）· 孔放勋
 
 ---
 
@@ -99,7 +99,7 @@ sofagent 直接使用或借鉴了它们的能力。
 - **[gstack](https://github.com/garrytan/gstack)** · Garry Tan — 六层安全栈 + 原子文件写入 + 角色分解架构
 - **[Multica](https://github.com/multica-ai/multica)** —「自己不调 LLM，全推给子进程」与 sofagent 平台无关策略一致
 - **[GBrain](https://github.com/garrytan/gbrain)** · Gary Tan — Karpathy LLM Wiki 的工业级落地，架构与 knowledge/ 同构
-- **[skills](https://github.com/mattpocock/skills)** · Matt Pocock — 深模块设计受控词汇表（module / interface / depth / seam / leverage / locality + 删除测试）与设计熵勘测技能 `improve-codebase-architecture`（MIT）。FORGE 深模块审查直接 vendored 其技能闭包并钉 commit，本地只留适配层——方法论本体不转写，升级走 `playbook/vendor/improve-codebase-architecture/PROVENANCE.md`
+- **[skills](https://github.com/mattpocock/skills)** · Matt Pocock — 深模块设计受控词汇表（module / interface / depth / seam / leverage / locality + 删除测试）与设计熵勘测技能 `improve-codebase-architecture`（MIT）。项目内的深模块审查沿用它定义的受控词汇表，方法论本体不做转写
 
 ---
 
@@ -119,6 +119,6 @@ sofagent 直接使用或借鉴了它们的能力。
 
 为什么叫 sofagent？sofa + agent，合起来「沙发特工」——希望有一天能躺在沙发上，Agent 就把活干完了。
 
-这个项目里的文件是模型间 Loop 实验的产物——多 session 内互改互审，直到所有模型都通过。参与的核心模型详见 [生成伙伴](#生成伙伴)。分享出来期待你也参与进来一起优化。
+这个项目里的文件是模型间 Loop 实验的产物（见上方[生成伙伴](#生成伙伴)）。分享出来期待你也参与进来一起优化。
 
 如果你也在折腾 OpenClaw，希望这个对你有用。

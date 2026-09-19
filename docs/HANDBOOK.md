@@ -32,7 +32,7 @@
 |------|------|
 | 刚装上 | 落地 → 运行 |
 | 日常干活 | 运行 → 排查与自定义 |
-| 想改规矩 | 排查与自定义 ·「改写 fde.md」节（fde.md 当前约 1,800 字，模板在 `SKILL/harness/fde-template.md`） |
+| 想改规矩 | 排查与自定义 ·「改写 fde.md」节（模板 `SKILL/harness/fde-template.md`，约 2.6 KB） |
 | FDE 部署 / 持续优化 | 落地 → 常驻（完整方法论见 [FDE/GUIDE.md](../FDE/GUIDE.md)） |
 | 想理解内部机制 | [开发文档](./DEVELOPMENT.md) |
 | 想理解架构设计 | [架构文档](./ARCHITECTURE.md) |
@@ -59,7 +59,7 @@
 
 ## FDE Harness 能替你干什么
 
-> 这一节先讲「价值」，再讲「怎么用」。sofagent 不是一个工具包，而是**一层 FDE Harness**——嵌在成熟 Agent（DSH / OpenClaw / WorkBuddy）与模型层之间，对执行体约束、对智力源治理，替企业把大模型变成 7×24 自动执行的 AI 节点（产品形态 = FDE Harness 层，见 [WIKI 产品叙事](./WIKI.md#二产品叙事sofagent-是-fde-harness-层不造-agent嵌在-agent-与模型之间做治理)）。完整能力矩阵见 [ARCHITECTURE · 能力与状态总览](./ARCHITECTURE.md#能力与状态总览)。
+> 这一节先讲「价值」，再讲「怎么用」。sofagent 不是一个工具包，而是**一层 FDE Harness**——嵌在成熟 Agent（DSH / OpenClaw / WorkBuddy / Codex / Claude Code）与模型层之间，对执行体约束、对智力源治理，替企业把大模型变成 7×24 自动执行的 AI 节点（产品形态 = FDE Harness 层，见 [WIKI 产品叙事](./WIKI.md#二产品叙事sofagent-是-fde-harness-层不造-agent嵌在-agent-与模型之间做治理)）。完整能力矩阵见 [ARCHITECTURE · 能力与状态总览](./ARCHITECTURE.md#能力与状态总览)。
 
 **已经能替你干的事**（按两相位分组——进场生成判断 / 离场驻留判断）：
 
@@ -80,7 +80,7 @@
 
 **全程——不分相位的底座能力：**
 
-- **平台无关、即挂即用**：嵌在你自选的大厂 Agent（Claude Code / Codex / WorkBuddy / 扣子 / OpenClaw）与模型层之间，不替代模型，只补「可靠执行」——对 Agent 约束、对模型治理。（Cursor 社区验证中）
+- **平台无关、即挂即用**：嵌在你自选的大厂 Agent（Claude Code / Codex / WorkBuddy / 扣子 / OpenClaw）与模型层之间，不替代模型，只补「可靠执行」——对 Agent 约束、对模型治理。（Cursor 社区验证中；完整宿主档位矩阵以 [README · 多平台挂载](../README.md) 为准）
 - **能带走、能协同**：USB 一键烧录（插上即用、拔掉零残留）；多设备加密联邦互查；内置 `@sofagent-fde` + `@sofagent-audit` 双 Agent。
 - **📚 五能力叙事定稿**（v1.4.4）：注入 · 审计 · 回溯 · 沉淀 · 进化——五词定型全站落位（第五能力英文 Distill），「本体结构」全站改称「本体数据」（ontology）。
 
@@ -140,7 +140,7 @@
 
 > 💬 **sofagent 没有界面。** 装完之后，你不会看到任何窗口或网页。你通过你的 Agent（WorkBuddy / Codex / Claude Code）和 sofagent 对话——说一句话，它做完了告诉你结果在哪。语言就是界面，MCP 就是入口。详见 [设计哲学](./PHILOSOPHY.md)。
 
-> 📊 **部署后可自动收到这些**：**审计守护日报**（今天拦了多少次违规）——由引擎自动生成推送，不需要人工干预（配好 `data/config/audit-report.json` 的 `target` + `schedule` 即生效）。**周报 / 月报 / 季度无 FDE 对照报告仍在排期中**——配置项的 `weekly` / `monthly` 是预留值，实现侧目前**仅 daily 实装**（自陈见 `engine/daemon` 的 audit-report-push 模块）；**扩容预警尚未实现**。详见 [FDE/GUIDE.md §5.9 离场](../FDE/GUIDE.md#510-离场五大能力)。
+> 📊 **部署后可自动收到这些**：**审计守护日报**（今天拦了多少次违规）——由引擎自动生成推送，不需要人工干预（配好 `data/config/audit-report.json` 的 `target` + `schedule` 即生效）。**周报 / 月报 / 季度无 FDE 对照报告仍在排期中**——配置项的 `weekly` / `monthly` 是预留值，实现侧目前**仅 daily 实装**（自陈见 `engine/daemon` 的 audit-report-push 模块）；**扩容预警尚未实现**。详见 [FDE/GUIDE.md §5.10 离场](../FDE/GUIDE.md#510-离场五大能力)。
 
 ### 两种装法（v1.2.0）
 
@@ -252,12 +252,12 @@ sofagent-core verify                # 同样跑 verify 检查（注：没有 sof
 # install.sh 安装态（clone 出来的仓库里）
 bash engine/scripts/uninstall.sh              # 先列出将删除/回收的内容
 bash engine/scripts/uninstall.sh --force      # 跳过确认直接执行
-bash engine/scripts/uninstall.sh --platform openclaw|workbuddy|claude|codex|hermes
+bash engine/scripts/uninstall.sh --platform openclaw|workbuddy|claude|codex|hermes|cursor|gemini
 ```
 
 **它会回收什么**：宪法与 Skill 文件、加载链 Hook 目录、`openclaw.json` 里的 hook 注册、配套脚本、loopDetection 配置，以及**当前 git 仓库里的三层 hook**（`pre-commit` / `commit-msg` / `post-commit`）。
 
-**它不会动什么**：`.sofagent/` 下的用户数据（审计记录、快照、知识库）默认保留——要连数据一起清，手动删 `~/.sofagent/`（**不可恢复，先确认没有要留的审计证据**）。
+**它不会动什么**：用户数据（审计记录、快照、知识库）默认保留在 `~/.sofagent/data/`——要连数据一起清，手动删 `~/.sofagent/`（**不可恢复，先确认没有要留的审计证据**）。被审计仓库根目录的 `.sofagent/` 是运行时产物，可安全删除（见下方「数据存储说明」）。
 
 > 🔴 **为什么 git hook 必须回收**：`commit-msg` 找不到 `sofagent-audit` 时会 `exit 1`，即**此后每一次 `git commit` 都被拒绝**，报错还会让你「去安装」。卸载不回收 hook，仓库反而会进入比安装前更糟的状态。
 > 若你安装前自己写过 hook，卸载时会从 `<hook>.pre-sofagent` 备份自动还原。
@@ -487,12 +487,12 @@ jobs:
 
 ### 近期版本新功能速览
 
-> 各版本能力沿革的完整清单见 [CHANGELOG 索引](../CHANGELOG.md) 与各版[开发日志](./changelog/)——此处只保留最近三版速览，旧版内容按「新能力段只留最新」纪律归档至 CHANGELOG。
+> 各版本能力沿革的完整清单见 [CHANGELOG 索引](../CHANGELOG.md) 与各版[开发日志](./changelog/)——此处只保留最近两版速览，旧版内容按「新能力段只留最新」纪律归档至 CHANGELOG。
 
 | 能力 | 版本 | 一句话 | 明细 |
 |------|------|--------|------|
 | 设备接入与数据承接 | v1.4.9 | 设备注册/发现/心跳（Ed25519 + 在线才派单）+ 数据目录白名单读取 + opt-in 加密上行 + router 过站承接（9 新 tool） | [v1.4.9 开发日志](./changelog/v1.4/v1.4.9.md) |
-| 治理模块·可见性与本体成熟 | v1.5.0 | Dashboard 治理 tab（KPI 六卡 + lineage 合规报告 + 周报）· 本体数据双时态 · Validation Engine · 跨层证据对账 trace_reconcile（1 新 tool） | [v1.5.0 开发日志](./changelog/v1.5/v1.5.0.md) |
+| 治理模块·可见性与本体成熟 | v1.5.0 | Dashboard 治理 tab（KPI 六卡 + lineage 合规报告 + 周报导出）· 本体数据双时态 · Validation Engine · 跨层证据对账 trace_reconcile（1 新 tool） | [v1.5.0 开发日志](./changelog/v1.5/v1.5.0.md) |
 
 
 ### 新功能入口导览（v1.4.2 起三条新产品线——10 分钟上手各条线）
@@ -513,7 +513,7 @@ jobs:
 - **Ontology 本体**：企业世界模型——实体 + 关系 + 动作 + 约束，三层 YAML 自动生长，让 Agent 越用越懂你的业务语境。
 - **sensitivity 分级**：每条知识带 public / internal / restricted 分级，restricted 在跨设备联邦查询中默认不外发。
 
-> 知识库不是数据库，是会「长」的资产。完整治理机制见 [FDE/GUIDE.md §5.6 经验怎么沉淀](../FDE/GUIDE.md#56-经验怎么沉淀)。
+> 知识库不是数据库，是会「长」的资产。知识沉淀机制见 [FDE/GUIDE.md §5.6 经验怎么沉淀](../FDE/GUIDE.md#56-经验怎么沉淀)。
 
 ### 进化模块（沉淀机制随使用迭代）
 
@@ -534,7 +534,7 @@ sofagent 本身就是一个 MCP server（stdio 传输，bin `sofagent-mcp`，当
 
 ### 部署：装上 sofagent
 
-没有 sofagent，梳理的 workflow 就是一份 PPT。引擎装到设备上，AI 节点才有纪律和审计。完整引擎对照表与部署步骤见 [FDE/GUIDE.md §5.3 部署流程](../FDE/GUIDE.md#53-部署流程人怎么看懂)。
+没有 sofagent，梳理的 workflow 就是一份 PPT。引擎装到设备上，AI 节点才有纪律和审计。部署流程与检查清单见 [FDE/GUIDE.md §5.3 部署流程](../FDE/GUIDE.md#53-部署流程人怎么看懂)。
 
 > 📋 **部署文档导航**：sofagent 的部署文档按场景分散在三处，各归各位，按需选读：
 > | 文档 | 定位 | 给谁 |
@@ -557,7 +557,7 @@ sofagent 本身就是一个 MCP server（stdio 传输，bin `sofagent-mcp`，当
 > - **内存**：daemon 常驻进程（~50 MB）+ Node.js 运行时（~200 MB/并发 Agent）
 > - **网络**：仅 LLM API 出站，无入站端口需求
 
-> **性能口径**（README 首屏数字出处）：测量方法 = `time sofagent-audit`（quick 模式计时，含 Node.js 启动；全量模式对 5 万行 diff 计时）；环境 = 单机 macOS（Apple Silicon）。单机实测：quick 约 **1.1s**、5 万行 diff 约 **6.1s**。以上为单机参考值，非跨机器基准——跨工具横评排期 v1.4.x 与 Benchmark 集成。
+> **性能口径**（README 首屏数字出处）：测量方法 = `time sofagent-audit`（quick 模式计时，含 Node.js 启动；全量模式对 5 万行 diff 计时）；环境 = 单机 macOS（Apple Silicon）。单机实测：quick 约 **1.1s**、5 万行 diff 约 **6.1s**。以上为单机参考值，非跨机器基准——跨工具横评排期 v1.5.x 与 Benchmark 集成。
 
 ⚠️ **数据存储说明**：用户级审计数据在 `~/.sofagent/data/`（明文 Markdown 为主，静态加密见 SECURITY）。**例外**：子包在仓库内运行时会在各子包根生成 `.sofagent/` 运行时目录（已 gitignore，不入库）——与用户级数据不冲突；仓库内跑 daemon 的数据根行为见 `SOFAGENT_REPO_LOCAL` 说明。
 
@@ -577,7 +577,7 @@ sofagent 本身就是一个 MCP server（stdio 传输，bin `sofagent-mcp`，当
 
 **企业叙事**：「买 U 盘 → 下载 sofagent → 写盘 → 发给员工」——FDE 梳理好 workflow 节点后，一条命令烧录完整运行时到 U 盘。员工拿到 U 盘，插上任何电脑双击就能跑，不需要安装、不需要配对、不需要专业知识。
 
-FDE 梳理好 workflow 节点后，可以一键烧录到 U 盘——员工拿到插上就能用：
+一键烧录到 U 盘：
 
 ```bash
 sofagent-daemon create-usb-key \
@@ -603,7 +603,7 @@ U 盘包含：Node.js 便携版 + sofagent 约束层 + knowledge/ 加密落盘 +
 FDE 离场后，两个内置 Agent 接手持续运维：合规审计员 `@sofagent-audit`（向下看——防退化）与 FDE 部署工程师 `@sofagent-fde`（向上看——推动进化），职责对照（双 Agent 定义详见 [ARCHITECTURE §双 Agent 定义](./ARCHITECTURE.md#agent-基础设施层v108)）。
 
 ```bash
-sofagent-audit subagent run fde --mode sustain --task "巡检所有节点"
+sofagent-orchestrator subagent run fde --mode sustain --task "巡检所有节点"
 @sofagent-fde sustain     # WorkBuddy 中直接 @
 ```
 
@@ -613,7 +613,7 @@ sofagent-audit subagent run fde --mode sustain --task "巡检所有节点"
 
 ### 🔗 激活链：从"交付文档"到"自动运转"（v1.2.5+ Phase 1-4 已交付）
 
-> **当前的断裂带**：FDE 离场后留下交付手册、节点 .md、workflow.yml、Skill 文件——这些都是静态文件，企业 IT 拿到后还得手动搭运行环境、手动配编排、手动接审批。
+> **激活链交付前的断裂带**（v1.2.5 前）：FDE 离场后留下交付手册、节点 .md、workflow.yml、Skill 文件——这些都是静态文件，企业 IT 拿到后曾需手动搭运行环境、手动配编排、手动接审批。
 
 激活链解决的就是这个断裂带——**让交付物自己变成可运行的系统**：
 
@@ -624,7 +624,7 @@ sofagent-audit subagent run fde --mode sustain --task "巡检所有节点"
 | EXECUTE 执行 | DAG 运行 + 人工审批节点（HITL）+ 每步审计集成 + 异常兜底 | v1.2.8-v1.2.9 |
 | SUSTAIN 闭环 | 全链路验证 + wrapToolCall 联动（执行→审计→反思→进化完整循环） | v1.3.0 |
 
-> 简单说：现在 FDE 离场后你拿到的是"图纸"，激活链完成后你拿到的是"按图纸自动造好且自己跑着的工厂"。详见 [激活链设计文档](./guides/fde-activation-chain.md)。
+> 简单说：没有激活链，FDE 离场后你拿到的是"图纸"；激活链交付后你拿到的是"按图纸自动造好且自己跑着的工厂"。详见 [激活链设计文档](./guides/fde-activation-chain.md)。
 
 ---
 
