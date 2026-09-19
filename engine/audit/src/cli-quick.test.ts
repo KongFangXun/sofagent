@@ -307,4 +307,25 @@ describe('runCliQuick 参数拦截（F-13）', () => {
     expect(args).toContain('--task');
     expect(args).toContain('--commit-msg');
   });
+
+  // --timeline / --revert 只在完整引擎实现。quick 不识别时会落进位置参数分支被忽略 ⇒
+  // 对 HEAD 跑一次审计并 exit 0——用户以为查了时间线/做了回滚，实际审计的是错对象还拿到假绿。
+  it('--timeline 路由到完整引擎（时间线查询不静默审计错对象）', () => {
+    const code = runCliQuick(['node', 'cli-quick.js', '--timeline', '50']);
+    expect(code).toBe(0);
+    expect(spawnSync).toHaveBeenCalledTimes(1);
+    const [execPath, args] = vi.mocked(spawnSync).mock.calls[0] as [string, string[]];
+    expect(execPath).toBe(process.execPath);
+    expect(args[0]).toContain('index.js');
+    expect(args).toContain('--timeline');
+  });
+
+  it('--revert 路由到完整引擎（回滚参数不被 quick 吞掉）', () => {
+    const code = runCliQuick(['node', 'cli-quick.js', '--revert', 'abc1234']);
+    expect(code).toBe(0);
+    expect(spawnSync).toHaveBeenCalledTimes(1);
+    const [, args] = vi.mocked(spawnSync).mock.calls[0] as [string, string[]];
+    expect(args).toContain('--revert');
+    expect(args).toContain('abc1234');
+  });
 });

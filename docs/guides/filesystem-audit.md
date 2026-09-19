@@ -58,6 +58,8 @@ sofagent-audit --timeline --json  # JSON 格式
 sofagent-audit --revert <SHA>     # 回滚到指定快照
 ```
 
+> **两个入口的分工**：`sofagent-audit` 是 quick 入口（只读审计，零安装即用），`sofagent-audit-full` 是完整引擎入口。时间线 / 回滚这两个 flag **只在完整引擎实现**——quick 入口识别到它们会自动转交完整引擎执行，所以上面直接用 `sofagent-audit` 即可，无需换命令名。完整引擎不可用（未装依赖、未构建）时不会静默降级：命令以非零退出码失败并给出诊断，不会拿一次错对象的审计冒充成功。
+
 ## 局限
 
 - 不解析二进制文件内容（Excel、PDF 等）
