@@ -1079,13 +1079,18 @@ while IFS= read -r _cl_line; do
   #   治本：取 %(creatordate:unix) 原始时间戳（TZ 无关）再显式转上海日期。
   #   跨平台坑（×3 实锤）：BSD date 用 `-r <ts>`、GNU date 用 `-d @<ts>`——CI 是 Linux（GNU）、
   #   本仓开发机是 macOS（BSD），两条都试，谁成功用谁。
+  # 🔴 固定发版时区提取（CI 时区脆弱性实锤 ×4 收官）：TZ 环境变量形态在 CI runner
+  #   不可靠（TZ=Asia/Shanghai 前缀对 git ref 过滤器无效 ×1、GNU date -r 语义是
+  #   --reference 文件 ×2、TZ 生效性依赖 runner tzdata/shell 传递 ×3——三层全部踩过）。
+  #   治本：彻底摆脱 date/TZ——取 %(creatordate:unix) 原始时间戳，用纯 shell 算术
+  #   加 8 小时（28800 秒 = UTC+8 固定偏移，中国无夏令时）后取 UTC 日期前 10 字符。
+  #   零外部命令语义分歧、零 TZ 依赖、BSD/GNU 全同值。
   _tag_ts=$(git -C "${PROJECT_ROOT}" for-each-ref --format='%(creatordate:unix)' "refs/tags/v${_cl_ver}" 2>/dev/null | head -1)
   _tag_date=""
-  if [ -n "${_tag_ts}" ]; then
-    _tag_date=$(TZ='Asia/Shanghai' date -r "${_tag_ts}" '+%Y-%m-%d' 2>/dev/null || true)
-    if [ -z "${_tag_date}" ]; then
-      _tag_date=$(TZ='Asia/Shanghai' date -d "@${_tag_ts}" '+%Y-%m-%d' 2>/dev/null || true)
-    fi
+  if [ -n "${_tag_ts}" ] && command -v date >/dev/null 2>&1; then
+    _tag_date=$(TZ='UTC-8' date -u -r $(( _tag_ts + 28800 )) '+%Y-%m-%d' 2>/dev/null \
+      || TZ='UTC-8' date -u -d "@$(( _tag_ts + 28800 ))" '+%Y-%m-%d' 2>/dev/null \
+      || true)
   fi
   if [ -z "${_tag_date}" ]; then
     _tag_date=$(TZ='Asia/Shanghai' git -C "${PROJECT_ROOT}" for-each-ref --format='%(creatordate:short)' "refs/tags/v${_cl_ver}" 2>/dev/null | head -1)
