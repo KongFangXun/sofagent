@@ -1,20 +1,4 @@
 {
-  "SKILL/custom/README.md": {
-    "count": 1,
-    "reason": "SKILL 文案里的反例表格（「知识库内容 ❌ `.sofagent/knowledge/`」）——展示给 FDE 的是「不要写这里」的旧路径反例。v1.4.9 P1-14 复核：本行是该表格语义的一部分，改掉会破坏 `custom/` 分级表的正反对照结构。⚠️ 未在本批改动（team-lead 明示「SKILL/** 属用户可见路径示例，改它们要单独论证」）——**待专项论证**：该反例是否应改为 `~/.sofagent/data/knowledge/`。"
-  },
-  "SKILL/harness/fde-template.md": {
-    "count": 2,
-    "reason": "fde-template.md 正文两条规则句引用知识库落点（`.sofagent/knowledge/`）。⚠️ 同属 team-lead 明示「不要动、需单独论证」的 SKILL 面——待专项论证后统一改为 {SOFAGENT_HOME}/data/knowledge。"
-  },
-  "SKILL/harness/loop-evaluate.md": {
-    "count": 1,
-    "reason": "loop-evaluate.md closure 模式说明里扫描 `.sofagent/knowledge/`。⚠️ 同属 SKILL 面——该处不仅是措辞，还描述运行时扫描目标，须与引擎侧实际路径一并复核后改（单独论证）。"
-  },
-  "docs/guides/multi-device-sync.md": {
-    "count": 10,
-    "reason": "多设备同步指南的**用户可见路径示例**（`ln -s … ~/.sofagent/knowledge`、`cp -r ~/.sofagent/knowledge …` 等 10 处）。⚠️ team-lead 明示「不要动这些，找我要论证」——理由是该指南描述的是**用户在自己机器上执行的命令**，改动需先确认用户环境真实落点（`~/.sofagent/data/knowledge` 还是 `~/.sofagent/knowledge`）与 symlink 语义在迁移后是否仍成立。**本批保持原样**，属已知待论证项。"
-  },
   "engine/inject/src/__tests__/inject.test.ts": {
     "count": 3,
     "reason": "🔴 **本批未修的**同族缺陷的测试面（P1-14 派生发现，非已派单范围）：harness 的 `buildConstrainedSystemPrompt()` 读 `path.join(skillDir, 'knowledge')`（skillDir 缺省 `{projectRoot}/.sofagent`）——即 `{projectRoot}/.sofagent/knowledge` 旧路径；生产调用方（orchestrator/loop/agent-runner.ts:83）传 `process.cwd()` ⇒ 知识段恒空。**修它必须同时改 5 个 harness 测试文件**（harness/constraints/knowledge-index/federation-injection/load-chain-wiring），且 harness 是 layer-0 零依赖包（不能 import @sofagent/core 的 resolveKnowledgeDir，只能本地重实现 ⇒ 与 G-9「被迫重复」同族）。故本批**不改**，只把测试面命中登记在此，等 team-lead 拍板是否单独派单。"

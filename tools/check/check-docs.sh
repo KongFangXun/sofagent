@@ -752,7 +752,7 @@ WIRING_STALE=0
 WIRING_CLAIMS=(
   "SECURITY.md|静态加密已接线|initDataEncryption|静态加密（SECURITY.md:65 声称族）"
   "README.md|AgentShield 五类配置面静态扫描|createAgentShield|AgentShield（README 核心能力声称）"
-  "README.en.md|AgentShield five-face static config scanning|createAgentShield|AgentShield（README.en 核心能力声称）"
+  "README.en.md|AgentShield static scanning across five config surfaces|createAgentShield|AgentShield（README.en 核心能力声称）"
   "CHANGELOG.md|train compare|submitCompareJobs|多基座对比训练（CHANGELOG v1.4.4 交付④——CLI 接线防断链）"
   "docs/HANDBOOK.md|部署后可自动收到这些|pushAuditReport|审计报告自动推送（HANDBOOK「部署后可自动收到这些（日报实装，周/月/季报排期中，扩容预警未实现）」承诺族——v1.4.9 P2-16 措辞如实化后同步锚定串）"
 )
