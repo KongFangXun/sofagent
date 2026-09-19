@@ -1,3 +1,5 @@
+<!-- SOP-ANCHOR: S11 | file: 11-post-publish.md | prev: S10 | next: （S1 新周期） -->
+<!-- 机器锚（模型检索用，人不影响阅读）：grep "SOP-ANCHOR:" 可一跳取全部阶段元信息；本阶段完成后 → （S1 新周期） -->
 # 阶段十一：发布后
 
 ---

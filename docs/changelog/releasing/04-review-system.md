@@ -1,3 +1,5 @@
+<!-- SOP-ANCHOR: S4 | file: 04-review-system.md | prev: S3 | next: S5 -->
+<!-- 机器锚（模型检索用，人不影响阅读）：grep "SOP-ANCHOR:" 可一跳取全部阶段元信息；本阶段完成后 → S5 -->
 # 阶段四：审查体系合并更新（含最终确认）
 
 > **目的**：从本轮所有产出物中提取新发现，系统性升级四份审查文档。
@@ -10,13 +12,13 @@
 
 ## 步骤
 
-| # | 步骤 | 产物 |
-|:--:|------|------|
-| 一 | **来源提取（A/B/C 草稿自动生成）**：`source FORGE/env.local && node tools/gen/gen-abc-draft.mjs --fresh-eyes <报告> --bugfix <清单> --features <devlog> [--recheck <复审>] --out ~/Desktop/abc-draft-vX.Y.Z.md`——单次 GLM 调用（无工具无循环，~4 分钟）产出三类清单草稿（每条带来源定位 + 「无法归类」兜底段），人工只做审核修正而非从零写。降级路径：无 key / API 失败 → 退出码 2 + prompt 落盘 `<out>.prompt.md`，粘给任意 AI session 执行。关键纪律：新功能审查面零遗漏 + 每个真实发现都有模式归类 | A/B/C 草稿（`abc-draft-vX.Y.Z.md`）→ 人工审核定稿 |
-| 二 | **四份文档分发**：A+B 类 → regression-checklist + acceptance-test + check-version.sh（加法）；C 类 → fresh-eyes-review（校准非加法） | 四份文档更新 |
-| 三 | **覆盖率确认**：`bash tools/check/check-review-system.sh` 自动执行——脚本⑥段提取当前版本交付关键词（devlog 交付章标题 + CHANGELOG 版本行加粗短语），对 checklist/acceptance 双文档对账，零命中报 FAIL。词形差异（devlog「SubAgent 完整沙箱」vs checklist「沙箱五件套」类）加进豁免清单 `playbook/.coverage-exempt`（每行一个关键词）。与阶段四共用同一脚本（阶段四在分发后跑=确认更新零遗漏；阶段四在终验跑=确认没回退） | 脚本⑥段全绿 + 豁免清单维护 |
-| 四 | **防膨胀瘦身（三判据硬门槛）**：上调警戒线前必须依次过三判据，全否才允许上调。行数警戒线数值**以 regression-checklist 头部声明为唯一 SSOT**（check-review-system.sh 动态提取校验；多处写死数值必然漂移，本表不写死）。历史上调记录见 checklist 头部警戒线段 | 三判据记录 + 自校验全 PASS |
-| 五 | **fresh-eyes-review 校准**：C 类走决策树（新视角 / 校准视角 / 历史教训），不往留白式审查里加精确检查项 | 校准完成 + 风格守护自检全 PASS |
+| # | 完成 | 步骤 | 产物 |
+|:--:|:--:|------|------|
+| 一 | | **来源提取（A/B/C 草稿自动生成）**：`source FORGE/env.local && node tools/gen/gen-abc-draft.mjs --fresh-eyes <报告> --bugfix <清单> --features <devlog> [--recheck <复审>] --out ~/Desktop/abc-draft-vX.Y.Z.md`——单次 GLM 调用（无工具无循环，~4 分钟）产出三类清单草稿（每条带来源定位 + 「无法归类」兜底段），人工只做审核修正而非从零写。降级路径：无 key / API 失败 → 退出码 2 + prompt 落盘 `<out>.prompt.md`，粘给任意 AI session 执行。关键纪律：新功能审查面零遗漏 + 每个真实发现都有模式归类 | A/B/C 草稿（`abc-draft-vX.Y.Z.md`）→ 人工审核定稿 |
+| 二 | | **四份文档分发**：A+B 类 → regression-checklist + acceptance-test + check-version.sh（加法）；C 类 → fresh-eyes-review（校准非加法） | 四份文档更新 |
+| 三 | | **覆盖率确认**：`bash tools/check/check-review-system.sh` 自动执行——脚本⑥段提取当前版本交付关键词（devlog 交付章标题 + CHANGELOG 版本行加粗短语），对 checklist/acceptance 双文档对账，零命中报 FAIL。词形差异（devlog「SubAgent 完整沙箱」vs checklist「沙箱五件套」类）加进豁免清单 `playbook/.coverage-exempt`（每行一个关键词）。与阶段四共用同一脚本（阶段四在分发后跑=确认更新零遗漏；阶段四在终验跑=确认没回退） | 脚本⑥段全绿 + 豁免清单维护 |
+| 四 | | **防膨胀瘦身（三判据硬门槛）**：上调警戒线前必须依次过三判据，全否才允许上调。行数警戒线数值**以 regression-checklist 头部声明为唯一 SSOT**（check-review-system.sh 动态提取校验；多处写死数值必然漂移，本表不写死）。历史上调记录见 checklist 头部警戒线段 | 三判据记录 + 自校验全 PASS |
+| 五 | | **fresh-eyes-review 校准**：C 类走决策树（新视角 / 校准视角 / 历史教训），不往留白式审查里加精确检查项 | 校准完成 + 风格守护自检全 PASS |
 
 > **README 新能力段核对已移至阶段六**：README 新能力段由阶段六（文档收尾）写入，本阶段执行时版本通常未 bump、README 尚无本版新能力段——核对对象不存在，强行核对只能得到「段不存在」的结论。核对必须紧贴写入时机（同一版本状态下写→核），故并入阶段六随写入执行，见 [06-doc-finalize.md](./06-doc-finalize.md)。若特殊情况下本阶段执行时 README 已有本版新能力段（如补跑/跨版执行），可当场核对后打勾。原步骤六删除。
 
@@ -101,10 +103,10 @@ bash tools/check/check-guards.sh --inject
 
 > **定位**：审查体系合并更新（上方步骤一~五）完成后的收口确认——脚本管「数字对账」，人管「语义覆盖」。
 
-| # | 步骤 | 验证方式 |
-|:--:|------|------|
-| 一 | **跑一致性门禁**：`bash tools/check/check-review-system.sh`——脚本自动核对六组声称值 vs 实际值（checklist 头部/正文维度数、编号查重、双文档行数警戒线、checklist 自校验段警戒线同步、acceptance 场景数与编号唯一性、S 编号交叉引用闭环、fresh-eyes 行数、check-version 分母自洽）（v1.4.8 起已接入 pre-push-check 3c 与 pr-check CI，日常 push 即拦） | 脚本全绿（RC=0）；FAIL 项按输出逐条修复后重跑 |
-| 二 | **审查体系闭环确认**：regression 维度 → acceptance 场景 → fresh-eyes 5 方向（数字漂移/搬迁残留/叙事不一致/静默失效/假绿假阳性）三者形成闭环——脚本管「数字对账」，人管「语义覆盖」：三份文档读一遍，确认覆盖链完整、无维度指向已不存在的场景方向 | 对照三份文件人工确认 |
+| # | 完成 | 步骤 | 验证方式 |
+|:--:|:--:|------|------|
+| 一 | | **跑一致性门禁**：`bash tools/check/check-review-system.sh`——脚本自动核对六组声称值 vs 实际值（checklist 头部/正文维度数、编号查重、双文档行数警戒线、checklist 自校验段警戒线同步、acceptance 场景数与编号唯一性、S 编号交叉引用闭环、fresh-eyes 行数、check-version 分母自洽）（v1.4.8 起已接入 pre-push-check 3c 与 pr-check CI，日常 push 即拦） | 脚本全绿（RC=0）；FAIL 项按输出逐条修复后重跑 |
+| 二 | | **审查体系闭环确认**：regression 维度 → acceptance 场景 → fresh-eyes 5 方向（数字漂移/搬迁残留/叙事不一致/静默失效/假绿假阳性）三者形成闭环——脚本管「数字对账」，人管「语义覆盖」：三份文档读一遍，确认覆盖链完整、无维度指向已不存在的场景方向 | 对照三份文件人工确认 |
 
 > 审查文档自身也会过时——脚本管得住「声称 N ≠ 实际 N」这类数字漂移，管不住「维度内容过时」；后者靠步骤二的人工通读。`acceptance-test.sh` 的场景数和覆盖范围必须与 changelog 功能点对齐。
 >

@@ -1,3 +1,5 @@
+<!-- SOP-ANCHOR: S10 | file: 10-distribute.md | prev: S9 | next: S11 -->
+<!-- 机器锚（模型检索用，人不影响阅读）：grep "SOP-ANCHOR:" 可一跳取全部阶段元信息；本阶段完成后 → S11 -->
 # 阶段十：分发（Skill / DSH plugin / OpenClaw plugin / GitHub Marketplace / 设备端）
 
 > **项目负责人亲手执行，或授权 AI 代执行。npm 发布流水线（本阶段前置）见 [09-publish.md](./09-publish.md) 步骤一~八。**
@@ -6,7 +8,7 @@
 
 ---
 
-## 步骤一：Skill 分发
+## 步骤一：Skill 分发 ☐
 
 > 🔴 **v1.4.8 执行环境提示**：本阶段所有 `for` 循环与变量展开命令**必须在 bash 下执行**
 > （`bash <<'BSH' … BSH` 或存成 .sh 再跑）。zsh 不对未加引号的 `$MULTILINE_VAR` 做空白分词
@@ -43,7 +45,7 @@ skillhub publish "$tmpdir/SKILL" --version <版本号> --changelog "vX.Y.Z: 简�
 
 ---
 
-## 步骤二：DSH plugin 分发（每版必做）
+## 步骤二：DSH plugin 分发（每版必做） ☐
 
 > **背景**：SkillHub 支持 DeepSeek Harness plugin 分发。sofagent 的 DSH plugin 家族（`cordis-plugin-sofagent*`，**7 个**：6 款原子 audit/rollback/inject/evolve/daemon/fde + 1 款聚合 `cordis-plugin-sofagent`——款数以 glob 实测为准，曾为 10 后经归并收口）**每版都要在 SkillHub 发布**——与 SKILL 分发并列，是 DSH 生态的发现层补充（npm 发布仍走主线，两者并行不互替）。
 
@@ -123,7 +125,7 @@ done
 
 ---
 
-## 步骤二·b：GitHub Marketplace 分发（每版必做）
+## 步骤二·b：GitHub Marketplace 分发（每版必做） ☐
 
 > **背景**：sofagent 的 GitHub Action 形态（action.yml）已上线 GitHub Marketplace（listing：`github.com/marketplace/actions/sofagent`，Primary=Code review / Secondary=Utilities）。marketplace 版本列表跟随 release——**每次发新版，release 发布时必须勾选 Publish to Marketplace**，否则该版本不出现在 marketplace 版本页。
 >
@@ -149,7 +151,7 @@ done
 
 ---
 
-## 步骤三：设备端安装
+## 步骤三：设备端安装 ☐
 
 ```bash
 # 1. 全局包更新（audit + core）
@@ -172,7 +174,7 @@ bash tools/check/check-version.sh   # 全绿
 
 ---
 
-## 步骤四：npm 渠道门面检查（每版必做 · v1.4.6 拍板固化）
+## 步骤四：npm 渠道门面检查（每版必做 · v1.4.6 拍板固化） ☐
 
 > **定位**：npm 是实测主分发渠道（`@sofagent/audit` 月下载 4848 vs 43 star，113:1），但门面投入曾全部压在 GitHub——渠道门面错配（v1.4.5 审查实证）。本步骤每版分发时固定巡检 npm / GitHub / 官网三个「被找到」入口。仓内数字断言（description 工具数/插件数/homepage https）由 `bash tools/check/check-storefront.sh` 守护，此处补齐它不覆盖的面：
 

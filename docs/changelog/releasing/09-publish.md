@@ -1,3 +1,5 @@
+<!-- SOP-ANCHOR: S9 | file: 09-publish.md | prev: S8 | next: S10 -->
+<!-- 机器锚（模型检索用，人不影响阅读）：grep "SOP-ANCHOR:" 可一跳取全部阶段元信息；本阶段完成后 → S10 -->
 # 阶段九：发布流水线
 
 > **项目负责人亲手执行，或授权 AI 代执行。**
@@ -47,7 +49,7 @@ grep -n '@sofagent/[a-z-]*@[0-9]' action.yml | grep -v "$(node -p "require('./pa
 
 ---
 
-## 步骤一：本地安装（狗粮）
+## 步骤一：本地安装（狗粮） ☐
 
 > 全部验证通过、准备发布时，先把最新版装到本机——全局 npm 和本地 Skill 同步。这是发布前的最后一块狗粮。
 
@@ -76,7 +78,7 @@ sofagent-audit --doctor
 
 ---
 
-## 步骤二：发布前检查
+## 步骤二：发布前检查 ☐
 
 > push 前不模拟 CI 跑的检查 = 每次都 push→红叉→修→push 循环。以下检查**本地先跑一遍全绿再 push**。
 
@@ -177,7 +179,7 @@ echo "npm 包洁净度 + 类型检查完成"
 
 ---
 
-## 步骤三：push 前置检查（双 SHA 分叉防御）
+## 步骤三：push 前置检查（双 SHA 分叉防御） ☐
 
 > Git Data API 推送会造成远端/本地「同 tree 双 SHA」——直接 push 会被 rejected (fetch first)。本地代理死时用 `git -c http.proxy= -c https.proxy= push` 直连。
 
@@ -189,7 +191,7 @@ git merge-base --is-ancestor "$REMOTE_SHA" HEAD && echo "✓ 快进可推" || \
 # ② tag 顺序铁律：先安装入口 bump commit（步骤五），后打 tag（tag 内容就该指本版）
 ```
 
-## 步骤四：push main + 等 CI 全绿
+## 步骤四：push main + 等 CI 全绿 ☐
 
 > **tag 先行策略**：先 push main → 等 CI 全绿验证 → 才打 tag。tag 一定指向 CI 验证过的 commit，不会 tag 了之后才发现 CI 红。
 >
@@ -240,7 +242,7 @@ done
 
 ---
 
-## 步骤五：安装入口随版同步
+## 步骤五：安装入口随版同步 ☐
 
 > 🔴 tag 打了、npm 发了，安装入口没人管就会断链——曾出现 README/bootstrap 安装 URL 仍指上一版，用户按 README 完整安装装到旧版。**每版必做，curl 验证后才能进步骤七。**
 
@@ -284,7 +286,7 @@ done
 
 ---
 
-## 步骤六：git tag + push tag
+## 步骤六：git tag + push tag ☐
 
 ```bash
 # ── tag 前确认 ──
@@ -314,7 +316,7 @@ fi
 
 ---
 
-## 步骤七：gh release（触发 release.yml 自动 publish audit + mcp）
+## 步骤七：gh release（触发 release.yml 自动 publish audit + mcp） ☐
 
 > GitHub Release published 后，`.github/workflows/release.yml` 自动触发，publish `@sofagent/audit` 和 `@sofagent/mcp` 两个包到 npm。其余 13 包在步骤八手动 publish（12 个 `engine/<pkg>` scope 包 + load-chain + 裸名总包 sofagent——包数口径以步骤八头部为准）。
 
@@ -443,7 +445,7 @@ EOF
 
 ---
 
-## 步骤八：npm 手动 publish 其余 13 包（含裸名总包）
+## 步骤八：npm 手动 publish 其余 13 包（含裸名总包） ☐
 
 > `npm publish --workspaces` 不支持 workspace 全局发布。release.yml 只 auto-publish audit + mcp（Release 触发），其余 13 包手动 publish（12 个 `engine/<pkg>` scope 包 + load-chain + 1 个裸名总包，合计补齐 15 包）。
 >

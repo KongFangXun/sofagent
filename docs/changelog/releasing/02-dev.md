@@ -1,13 +1,15 @@
+<!-- SOP-ANCHOR: S2 | file: 02-dev.md | prev: S1 | next: S3 -->
+<!-- 机器锚（模型检索用，人不影响阅读）：grep "SOP-ANCHOR:" 可一跳取全部阶段元信息；本阶段完成后 → S3 -->
 # 阶段二：开发 + 基础自测
 
 ---
 
 ## 步骤
 
-| # | 步骤 | 产物 |
-|:--:|------|------|
-| 一 | 先修阶段一的 BugFix 批次（P0 先于一切新功能），再做新功能 | 代码 + 随修随记的回归维度 |
-| 二 | changelog 作为活文档随改随记（定稿在阶段六） | 活文档 |
+| # | 完成 | 步骤 | 产物 |
+|:--:|:--:|------|------|
+| 一 | | 先修阶段一的 BugFix 批次（P0 先于一切新功能），再做新功能 | 代码 + 随修随记的回归维度 |
+| 二 | | changelog 作为活文档随改随记（定稿在阶段六） | 活文档 |
 
 ---
 
@@ -47,17 +49,17 @@
 
 > **定位**：开发完成即自测（同一会话连续动作）——版本预检 → 构建 → 全量测试 → 文档数同步 → 依赖确认 → 卫生检查。bump 延后到阶段六（见步骤一）。
 
-| # | 步骤 | 验证方式 |
-|:--:|------|------|
-| 一 | **bump 时点（延后到阶段六）**：bump 的全部结构性位置（package.json 各层 / ts / sh / ps1 / MD 头尾 / badge / SKILL.md / hook 头 / dashboard，SSOT = bump-version.sh 头部「替换范围」注释——类数随脚本演进，SOP 不硬编码复述）与阶段六文档收尾是同一批文件（版本号/日期/索引/状态行），阶段二 bump = 同批文件改两次、全量门禁跑两次。**本步骤只做预检**：`bash tools/check/check-version.sh` 确认当前版本三态一致（预期 1 警告=阶段六 bump 前置，非缺陷）；真正的 `bash tools/release/bump-version.sh X Y` 在阶段六步骤一执行，届时 hook 文件头版本一致性由 check-version.sh 覆盖 | check-version.sh exit 0（允许 1 警告发版前中间态） |
-| 二 | **changelog 状态转正**：`docs/changelog/v<major>.<minor>/vX.Y.md` 头部「⚠️ 尚未实现」+「状态：已排期」→ 改为「✅ 已开发」。删除「engine/ 下尚无对应代码」等过时警告，保留「前置依赖」 | 头部状态标注为已开发，无「尚未实现」残留 |
-| 三 | `npm run build && npm test` | exit 0 + 全部通过 |
-| 四 | **测试数文档同步门禁**：`bash tools/check/check-test-count.sh --quiet` | 输出 OK / EXIT=0。FAIL = README/WIKI/LIMITATIONS/ARCHITECTURE 测试数与 test-count.sh SSOT 不一致，必须手动同步后再继续 |
-| 五 | **关键依赖版本检查**：`bash tools/check/check-deps.sh`。检查 LangGraph 三件套 / automerge / zod / js-yaml / DSH 的当前版本 vs 最新版本——Dependabot 做周检查自动提 PR，本步做发版前快照确认 | 输出各依赖状态。automerge 标 🔒 精确锁（禁升 2.x），其余 ⚠️ 有新版本时按规则评估 |
-| 六 | shellcheck：`bash tools/release/pre-push-check.sh --quick`。⚠️ 涉及 CLI 命令迁移时跳过，延后到阶段六 | 零 error |
-| 七 | **工作区卫生检查**：`npx sofagent-audit --diff-range HEAD --silent` 看「A18+ 工作区垃圾残留扫描」段（或直接跑 `git status --short` + 人工扫根目录） | 扫描零残留。有残留 = 先清理再发版（rm + `git rm --cached` + 补 .gitignore）——发版不带实验垃圾出门 |
-| 八 | **dist 与 src 同步验证**：`diff <(grep "关键命令" engine/audit/src/index.ts) <(grep "关键命令" engine/audit/dist/index.js)` | 无实质差异（排除编译格式化） |
-| 九 | 改动清单核对 | `git diff --stat` 确认只改了 changelog 规定的文件 |
+| # | 完成 | 步骤 | 验证方式 |
+|:--:|:--:|------|------|
+| 一 | | **bump 时点（v1.3.9 起定稿：延后到阶段六）**：bump 13 类位置与阶段六文档收尾是同一批文件（版本号/日期/索引/状态行），阶段二 bump = 同批文件改两次、全量门禁跑两次。**本步骤只做预检**：`bash tools/check/check-version.sh` 确认当前版本三态一致（预期 1 警告=阶段六 bump 前置，非缺陷）；真正的 `bash tools/release/bump-version.sh X Y` 在阶段六步骤一执行，届时 hook 文件头版本一致性由 check-version.sh 覆盖 | check-version.sh exit 0（允许 1 警告发版前中间态） |
+| 二 | | **changelog 状态转正**：`docs/changelog/v<major>.<minor>/vX.Y.md` 头部「⚠️ 尚未实现」+「状态：已排期」→ 改为「✅ 已开发」。删除「engine/ 下尚无对应代码」等过时警告，保留「前置依赖」 | 头部状态标注为已开发，无「尚未实现」残留 |
+| 三 | | `npm run build && npm test` | exit 0 + 全部通过 |
+| 四 | | **测试数文档同步门禁**：`bash tools/check/check-test-count.sh --quiet` | 输出 OK / EXIT=0。FAIL = README/WIKI/LIMITATIONS/ARCHITECTURE 测试数与 test-count.sh SSOT 不一致，必须手动同步后再继续 |
+| 五 | | **关键依赖版本检查**：`bash tools/check/check-deps.sh`。检查 LangGraph 三件套 / automerge / zod / js-yaml / DSH 的当前版本 vs 最新版本——Dependabot 做周检查自动提 PR，本步做发版前快照确认 | 输出各依赖状态。automerge 标 🔒 精确锁（禁升 2.x），其余 ⚠️ 有新版本时按规则评估 |
+| 六 | | shellcheck：`bash tools/release/pre-push-check.sh --quick`。⚠️ 涉及 CLI 命令迁移时跳过，延后到阶段六 | 零 error |
+| 七 | | **工作区卫生检查**：`npx sofagent-audit --diff-range HEAD --silent` 看「A18+ 工作区垃圾残留扫描」段（或直接跑 `git status --short` + 人工扫根目录） | 扫描零残留。有残留 = 先清理再发版（rm + `git rm --cached` + 补 .gitignore）——发版不带实验垃圾出门 |
+| 八 | | **dist 与 src 同步验证**：`diff <(grep "关键命令" engine/audit/src/index.ts) <(grep "关键命令" engine/audit/dist/index.js)` | 无实质差异（排除编译格式化） |
+| 九 | | 改动清单核对 | `git diff --stat` 确认只改了 changelog 规定的文件 |
 
 > **编号说明**：步骤编号一律纯数字递延，禁止字母后缀（字母后缀会让「步骤 N」引用歧义、脚本提示语错位）。
 

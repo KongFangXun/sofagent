@@ -1,3 +1,5 @@
+<!-- SOP-ANCHOR: S5 | file: 05-release-gate.md | prev: S4 | next: S6 -->
+<!-- 机器锚（模型检索用，人不影响阅读）：grep "SOP-ANCHOR:" 可一跳取全部阶段元信息；本阶段完成后 → S6 -->
 # 阶段五：release-gate-loop 发版闸门
 
 > **必须 verdict=PASS 才能进阶段六~八。**
@@ -8,12 +10,12 @@
 
 ## 步骤
 
-| # | 步骤 |
-|:--:|------|
-| 一 | **脚本层直跑（零 LLM）**：acceptance-test.sh + check-version + check-docs + 锚点 + check-review-system + check-tool-health 依次跑，全绿才进判断层；红项由执行 session 按「修复批协议」修复后复跑复绿 |
-| 二 | 同 session 跑**判断层**：driver `--judgment-only` 一次启动四步（regression → coverage → consolidate → verdict），**跳过 acceptance 分片 LLM 复核**（不再 --step 四步手工编排） |
-| 三 | verdict=PASS → 主 session 过「零信任复验三件套」→ 全过才进阶段六。**PASS 轮的 LEDGER 行由主 session 复验后收编——执行 session 禁止预写**（预写账会在复验推翻 PASS 时账实不符） |
-| 四 | verdict=FAIL → 执行 session 按「修复批协议」分诊修复 → 复绿 + 单次 commit 收编 → 归档断点重跑（自动收敛循环，硬上限 5 轮，上限可由用户在启动时调整）。**命中停手条件**（同一 FAIL 项连续 2 轮修不掉 / 修复需 bump·tag·push / 版本口径类 P0 再现 / 5 轮到顶）→ 停手汇报，主 session 接手（回阶段四语义）。driver 内置 `--auto-fix` 修复链仍默认关闭——session 级修复批与 F 链是两条不同机制，不混用 |
+| # | 完成 | 步骤 |
+|:--:|:--:|------|
+| 一 | | **脚本层直跑（零 LLM）**：acceptance-test.sh + check-version + check-docs + 锚点 + check-review-system + check-tool-health 依次跑，全绿才进判断层；红项由执行 session 按「修复批协议」修复后复跑复绿 |
+| 二 | | 同 session 跑**判断层**：driver `--judgment-only` 一次启动四步（regression → coverage → consolidate → verdict），**跳过 acceptance 分片 LLM 复核**（不再 --step 四步手工编排） |
+| 三 | | verdict=PASS → 主 session 过「零信任复验三件套」→ 全过才进阶段六。**PASS 轮的 LEDGER 行由主 session 复验后收编——执行 session 禁止预写**（预写账会在复验推翻 PASS 时账实不符） |
+| 四 | | verdict=FAIL → 执行 session 按「修复批协议」分诊修复 → 复绿 + 单次 commit 收编 → 归档断点重跑（自动收敛循环，硬上限 5 轮，上限可由用户在启动时调整）。**命中停手条件**（同一 FAIL 项连续 2 轮修不掉 / 修复需 bump·tag·push / 版本口径类 P0 再现 / 5 轮到顶）→ 停手汇报，主 session 接手（回阶段四语义）。driver 内置 `--auto-fix` 修复链仍默认关闭——session 级修复批与 F 链是两条不同机制，不混用 |
 
 > **为什么分层**：driver 全流程曾实测约 61% token 花在 acceptance 分片 LLM 复核——复核的是脚本 `exit 0 + SUMMARY`（断言数每版变化）的确定性结果，没有主观判断空间，盲审增值≈0。脚本层零 token 直跑拿到同样保证；driver 只保留有判断空间的 regression 语义审查 + coverage 交叉 + 终裁。**独立性不伤**：盲审保留在真正需要判断的环节。
 
