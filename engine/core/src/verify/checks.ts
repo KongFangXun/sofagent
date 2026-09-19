@@ -747,7 +747,6 @@ export function runAllChecks(
       'log_sanitize_ips',
       'data_retention_days',
       'data_retention_max_entries',
-      'data_cleanup_on_record',
       'data_cleanup_frequency',
       'audit_enabled',
     ];
@@ -774,9 +773,9 @@ export function runAllChecks(
         }
       }
       if (missing === 0) {
-        v.checkPass('fde.md 合规配置段完整（7/7 配置项）');
+        v.checkPass('fde.md 合规配置段完整（6/6 配置项）');
       } else {
-        v.checkWarn(`fde.md 合规配置段不完整（缺少 ${missing}/7 项）`);
+        v.checkWarn(`fde.md 合规配置段不完整（缺少 ${missing}/6 项）`);
       }
     } else {
       v.checkWarn('fde.md 未找到，无法验证合规配置段');

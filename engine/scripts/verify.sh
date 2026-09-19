@@ -829,9 +829,9 @@ if [ -n "$RULES_FILE" ]; then
     fi
   done
   if [ "$missing" -eq 0 ]; then
-    check_pass "fde.md 合规配置段完整（7/7 配置项）"
+    check_pass "fde.md 合规配置段完整（6/6 配置项）"
   else
-    check_warn "fde.md 合规配置段不完整（缺少 ${missing}/7 项）"
+    check_warn "fde.md 合规配置段不完整（缺少 ${missing}/6 项）"
   fi
 else
   check_warn "fde.md 未找到，无法验证合规配置段"

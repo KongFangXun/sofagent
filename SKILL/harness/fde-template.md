@@ -91,7 +91,6 @@
 # 数据保留：超过保留天数或条数上限自动清理（先归档）
 # data_retention_days: 90
 # data_retention_max_entries: 500
-# data_cleanup_on_record: true
 # data_cleanup_frequency: 10
 # 审计日志：记录关键操作
 # audit_enabled: true
@@ -108,8 +107,8 @@
 
 ## 附录：知识库维护规则（系统规范 · 非 FDE 填写）
 
-> 本段由 sofagent 系统提供，FDE 无需填写；Agent 运行时遵循以下规则维护 `.sofagent/knowledge/`。
-> `.sofagent/knowledge/` 是 AI 自动积累的经验库。以下规则约束 Agent 如何写入和引用。
+> 本段由 sofagent 系统提供，FDE 无需填写；Agent 运行时遵循以下规则维护 `~/.sofagent/data/knowledge/`（`{SOFAGENT_HOME}/data/knowledge`，由 `resolveKnowledgeDir()` 解析）。
+> 该目录是 AI 自动积累的经验库。以下规则约束 Agent 如何写入和引用。
 
 ### 页面格式
 - frontmatter 必填：`title` / `category` / `created` / `updated` / `sources`

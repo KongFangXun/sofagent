@@ -222,7 +222,7 @@ if ($rulesCfg) {
     foreach ($key in @("log_sanitize", "log_sanitize_ips", "data_retention_days", "data_retention_max_entries", "data_cleanup_frequency", "audit_enabled")) {
         if ($rulesCfgContent -notmatch "${key}:") { $missing++ }
     }
-    if ($missing -eq 0) { Check-Pass "fde.md 合规配置段完整（7/7 配置项）" } else { Check-Warn "fde.md 合规配置段不完整（缺少 $missing/7 项）" }
+    if ($missing -eq 0) { Check-Pass "fde.md 合规配置段完整（6/6 配置项）" } else { Check-Warn "fde.md 合规配置段不完整（缺少 $missing/6 项）" }
 } else { Check-Warn "fde.md 未找到，无法验证合规配置段" }
 
 # ════════ 总结 ════════

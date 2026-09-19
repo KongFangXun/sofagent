@@ -112,7 +112,7 @@ daemon Ingest（自动知识提取）+ loop-evaluate Lint（自动体检）把�
 | **自验证闭环**（Evil Skill） | 多子 Agent 生成候选 Skill → A/B 对比 → 留更优 | ⏳ v1.0.6 起（方案 B：模型 API 直跑）。v1.0.7 升级为方案 C（DeepAgents 完整 Agent，**该路径 v1.2.0 起已弃用**） |
 | **可训练参数**（Skill Opt） | 学习率约束/验证门控/负反馈缓冲/动量 | ✅ v1.0.4 起（SkillOpt 管道接通） |
 
-**进化管道集成状态**：管道已接通——daemon inspector（`engine/daemon/src/inspectors/evolve-trigger.ts`）检测 eval.md 阈值（20 条）→ 24h 防抖 → `autoTriggerAll()` → `runEvolve()`（v1.4.8 前名 `runSkillOpt()`）→ `validateCandidate()` 验证（行数 + 内容变化）→ 备份+替换 SKILL.md。`--doctor` 展示管道状态。⚠️ **现行口径（v1.4.8+）**：子命令更名为 `evolve-run`、包更名为 `@sofagent/evolve`、默认走内置 native gate（零 Python 依赖），外部 CLI 仅为 `SOFAGENT_EVOLVE_GATE=cli` 可选兼容层——**无需任何 pip 安装**，旧版正文中的 pip 指引已摘除。外部 CLI 未安装时管道优雅降级——daemon 写提示到 daemon-health.json，不 crash。
+**进化管道集成状态**：管道已接通——L2 周检 inspector（`engine/daemon/src/inspectors/evolve-trigger.ts`，`@weekly`）读 failure-ledger 的**连续同类失败聚类**，达 `AUTO_TRIGGER_THRESHOLD = 3`（连续 ≥3 次）即调用 `autoTriggerAll()` → `runEvolve()`（v1.4.8 前名 `runSkillOpt()`）→ `validateCandidate()` 验证（行数 + 内容变化）→ 备份 + 替换 SKILL.md；不足 3 次则跳过（巡检结论为「无连续 ≥3 次的失败聚类，跳过」）。`--doctor` 展示管道状态。⚠️ **现行口径（v1.4.8+）**：子命令更名为 `evolve-run`、包更名为 `@sofagent/evolve`、默认走内置 native gate（零 Python 依赖），外部 CLI 仅为 `SOFAGENT_EVOLVE_GATE=cli` 可选兼容层——**无需任何 pip 安装**，旧版正文中的 pip 指引已摘除。外部 CLI 未安装时管道优雅降级——daemon 写提示到 daemon-health.json，不 crash。
 
 > ⚠️ **skillopt-sleep 的「生成候选」段已被真脑替代（v1.4.5 交付）**：skillopt 自进化链路原分两段——**检测/触发/验证/回滚**（纯 TypeScript，零外部依赖，核心能力）+ **生成候选 SKILL.md**（调外部 skillopt-sleep CLI）。v1.4.5 Dream Cycle 真脑（`engine/daemon/src/dream-cycle/real-provider.ts`，走模型注册表/DSH 通道 + callModelAPI 基建）交付后，「生成候选」可由通用模型 + prompt 工程直接完成（WikiSkill 论文实证：胜负手是结构化知识层而非模型特化）——skillopt-sleep 作为「生成候选」的临时外部依赖使命终结。检测/触发/验证/回滚段仍为纯 TypeScript 核心能力，不受影响；已安装 skillopt-sleep 的环境可继续使用（向后兼容），但不再是必需依赖。
 
@@ -138,10 +138,10 @@ PowerShell 脚本（`.ps1`）作为 bash 脚本的平行实现存在，但**功�
 
 | 脚本 | .sh 行数 | .ps1 行数 | 覆盖度 |
 |------|:---:|:---:|------|
-| verify | 942 | 230 | ~25%，缺 §4 Hook 检查、§8 断路器配置、§10 企业合规验证、§11 daemon 状态 |
-| install | 193 | 555 | ps1 更详细（含 Windows 注册表逻辑），但实现路径完全不同 |
-| daemon | 233 | 131 | ~55% |
-| audit | 109 | 77 | ~70% |
+| verify | 955 | 230 | ~25%（按行数比，缺 §4 Hook 检查、§8 断路器配置、§10 企业合规验证、§11 daemon 状态） |
+| install | 1629 | 559 | 实现路径完全不同：ps1 含 Windows 注册表逻辑，但覆盖面窄于 sh（sh 走完整安装流程） |
+| daemon | 349 | 131 | ~38%（按行数比） |
+| audit | 111 | 77 | ~70%（按行数比） |
 
 **核心审计模块（@sofagent/audit npm 包）跨平台**——纯 TypeScript，Node.js ≥18 即可运行，不依赖 bash。
 
@@ -495,7 +495,7 @@ FDE 完整四阶段十二步部署流程（[FDE/GUIDE.md](../FDE/GUIDE.md)）已
 
 ### 组件间集成测试
 
-**状态：v1.3.2 起有循环级集成验证，无独立 CI 集成测试。** 各组件独立验证通过——daemon 手动验证（Case 014）、MCP Server 本地通过、webhook 推送代码完整、编排模块 LangGraph createReactAgent compose 通过。**v1.3.2 补全**——Onboard L2-L5 的循环机制天然跑全链路（编排→审计→定位→修复→再跑），作为验收标准补 smoke test。当前边界：daemon → MCP → webhook → 编排四组件串联行为依赖发版前手动验证（acceptance-test 步骤 2.3），不在日常 CI 集成测试内（见下节「端到端验收测试覆盖」）。
+**状态：v1.3.2 起有循环级集成验证，无独立 CI 集成测试。** 各组件独立验证通过——daemon 手动验证（Case 014）、MCP Server 本地通过、webhook 推送代码完整、编排模块 LangGraph createReactAgent compose 通过。**v1.3.2 补全**——Onboard L2-L5 的循环机制天然跑全链路（编排→审计→定位→修复→再跑），作为验收标准补 smoke test。当前边界：daemon → MCP → webhook → 编排四组件串联行为依赖发版前手动验证（acceptance-test，阶段五步骤一脚本层直跑），不在日常 CI 集成测试内（见下节「端到端验收测试覆盖」）。
 
 ---
 
@@ -504,7 +504,7 @@ FDE 完整四阶段十二步部署流程（[FDE/GUIDE.md](../FDE/GUIDE.md)）已
 `playbook/acceptance-test.sh`（场景数持续扩展，当前 357 个，SSOT 口径=真实 scenario 行数（S165 动态计算并跨文档对账））：
 
 - **CI 已覆盖**：单元测试审计核心 1224 个、全 workspace 4903 个测试（口径见本文件「测试覆盖范围」节）、sofagent-core verify 约 44-48 项（动态）
-- **发版前手动覆盖**：acceptance-test.sh 357 场景（含子断言，CLI 端到端，步骤 2.3）、OpenClaw 验收 63 场景（Agent 端到端，步骤 2.5）
+- **发版前手动覆盖**：acceptance-test.sh 357 场景（含子断言，CLI 端到端；阶段五步骤一脚本层直跑）、OpenClaw 验收 63 场景（Agent 端到端）
 - **CI 未覆盖**：daemon → MCP → webhook → 编排四组件串联行为（v1.3.2 起由 Onboard 循环机制跑全链路 smoke test 承接，作为验收标准；日常 CI 无独立集成测试，发版前手动验证兜底）
 - **CI 未覆盖**：多平台兼容性（macOS only verified，Linux/Windows 未验证）
 
@@ -565,9 +565,11 @@ Ontology 统一层的合并逻辑从 `knowledge/entities/` 目录的 Markdown fr
 >
 > **仍存在的边界**（诚实披露）：① Dashboard 是**时间点快照**而非实时监控（无 WebSocket 推送，刷新即重读）；② daemon-health.json 的异常检测仍是关键词匹配（"error"/「异常」/「失败」），非结构化状态报告；③ 治理 KPI 面板（安全边界触发率/审计覆盖率等）随 v1.5.0 交付（✅ 开发完成 · ⏳ 待发版）。
 
-### SOFAGENT_CLEANUP_ON_RECORD：TS 配置字段已移除，shell 侧仍在生效（v1.5.0）
+### SOFAGENT_CLEANUP_ON_RECORD 死配置已全链移除（v1.5.0）
 
-> ⚠️ **v1.5.0 只移除了 TS 配置字段**：`SofaEnvConfig` 中的 `cleanupOnRecord`（v1.4.3 披露的 @deprecated 项）已随死配置清扫删除。**但 shell 侧消费链未同步移除、当前仍真实生效**——`engine/scripts/lib/config.sh` 仍解析 `data_cleanup_on_record` 并双导出 `SOFAGENT_CLEANUP_ON_RECORD` / `SOFA_CLEANUP_ON_RECORD`；`engine/scripts/task-record.sh` 读取它、按 `SOFAGENT_CLEANUP_FREQUENCY` 概率触发 `cleanup.sh --force`；`engine/scripts/verify.sh` 也会据此输出「清理触发已启用 (data_cleanup_on_record=true)」告警。**即：设 `true` 会真实触发日志清理，不是静默无动作**——与「死配置」定性不符，属待收口项。日志清理的保留策略亦可用 `SOFAGENT_RETENTION_DAYS` / `SOFAGENT_RETENTION_MAX`（消费点 `engine/scripts/cleanup.sh`）。
+> ✅ **v1.5.0 全链清扫完成**：TS 侧 `SofaEnvConfig.cleanupOnRecord`（v1.4.3 披露的 @deprecated 项）已删除；shell 侧 `engine/scripts/lib/config.sh` 的 `data_cleanup_on_record` 解析与 `SOFAGENT_CLEANUP_ON_RECORD` / `SOFA_CLEANUP_ON_RECORD` 导出、`engine/scripts/task-record.sh` 的写后概率触发、`engine/scripts/verify.sh` 的「清理触发已启用」告警，以及 PowerShell 侧 `engine/scripts/windows/lib/config.ps1` 对应段**同批移除，三侧零残留**（合规配置段检查同步为 6 项，`fde-template.md` 亦已摘除该键）。
+>
+> ⚠️ **迁移指引（行为变更，非静默死配置）**：该开关此前在 shell 侧**真实生效**——升级后 `data_cleanup_on_record: true` 不再产生任何行为。需要写入后自动清理请显式调度 `engine/scripts/cleanup.sh`；保留策略仍由 `SOFAGENT_RETENTION_DAYS` / `SOFAGENT_RETENTION_MAX` 控制（消费点 `engine/scripts/cleanup.sh`）。
 
 ---
 
@@ -579,7 +581,7 @@ Ontology 统一层的合并逻辑从 `knowledge/entities/` 目录的 Markdown fr
 
 **v1.2.3 修复**：snapshot helpers（`restoreSnapshot` / `listAllSnapshots`）从 `@sofagent/daemon` 迁移到 `@sofagent/core`，`audit` 包的 `package.json` 不再含任何 `daemon` 引用（含 `optionalDependencies`），源码中仅保留 `types/daemon.d.ts` 类型 shim（无 runtime import）。依赖图恢复为单向：`daemon → audit → core`，符合四层单向依赖原则。（v1.4.7 后续：该类型 shim 经查为死声明——`declare module` 声明零消费，真实消费点直接 import `@sofagent/core`——已于 v1.4.7 删除，源码中不再有任何 daemon 引用形态。）
 
-**验证**：`grep -rn "@sofagent/daemon" engine/audit/package.json` 无命中；`grep -rn "from '@sofagent/daemon'" engine/audit/src/` 无命中（仅 `declare module` 类型声明）。
+**验证**：`grep -rn "@sofagent/daemon" engine/audit/package.json` 无命中；`grep -rn "from '@sofagent/daemon'" engine/audit/src/` 无命中（源码中已无任何 daemon 引用形态——`types/` 目录不存在、无 `declare module` shim；残留的 `@sofagent/daemon` 字样只出现在 init / federation-distill 的「如需 daemon 请安装」用户提示与迁移注释里，属文案非依赖引用）。
 
 **历史记录**：此局限在 v1.1.3 引入（audit 需调用 daemon 的 snapshot 能力），v1.2.0 物理重构时已规划迁移，v1.2.3 随编排隔离底座一并完成。
 
@@ -589,7 +591,7 @@ Ontology 统一层的合并逻辑从 `knowledge/entities/` 目录的 Markdown fr
 
 ### 插件包 `private: true` ⇒ `optionalDependencies` 在 npm 通道不可解析
 
-宿主聚合插件（`engine/dsh-plugins/cordis-plugin-sofagent`）声明了 9 条 `optionalDependencies`，而这些声明项指向的插件包**自身都是 `private: true`**。三件事互为因果，须一并读懂：
+宿主聚合插件（`engine/dsh-plugins/cordis-plugin-sofagent`）声明了 6 条 `optionalDependencies`（inject / audit / evolve / rollback / daemon / fde），而这些声明项指向的插件包**自身都是 `private: true`**。三件事互为因果，须一并读懂：
 
 1. **插件包是 `private: true`**：`engine/dsh-plugins/**` 下全部插件（含聚合插件本身）不对 npm 发布，仅随仓库分发。
 2. **⇒ 这些 `optionalDependencies` 在 npm 通道无法命中**：npm 必须从注册表解析依赖树，而 `private: true` 的包没有注册表条目，因此这些声明项在 `npm install` 路径上**结构性地不可能被解析**——不是「装不上」，而是「根本不在 npm 的解析域内」。
