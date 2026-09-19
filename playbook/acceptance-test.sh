@@ -3615,7 +3615,7 @@ S369_CMP=$(node -e "
 grep -qE "requiresHuman|MountSuggestion" "$PROJECT_ROOT/engine/train/src/artifact-register.ts" || S369_OK=false   # 原 S366 人审语义
 grep -qE "jsdelivr|cdn\." "$PROJECT_ROOT/tools/dashboard/dashboard.html" 2>/dev/null && S369_OK=false            # 零 CDN 引用
 grep -q "127.0.0.1" "$PROJECT_ROOT/tools/dashboard/serve-dashboard.mjs" || S369_OK=false                         # 默认本机绑定
-grep -q "DASHBOARD_HOST" "$PROJECT_ROOT/docs/LIMITATIONS.md" || S369_OK=false                                    # 自查结论落档
+grep -q "DASHBOARD_HOST" "$PROJECT_ROOT/SECURITY.md" || S369_OK=false                                   # 自查结论落档（r2 迁至 SECURITY「Dashboard 本地服务面」节，锚点随迁）
 check_dist_export "engine/train/dist/artifact-register.js" "registerTrainArtifact" "S369" || true   # 原 S366 导出
 $S369_OK && [ "${S369_EXPORT_OK:-false}" = "true" ] && pass "章三人审+章六 dashboard 三锚过（tag/pin 归门禁；导出在位）" || fail "产物注册/CI 面回退——见上方 fail 定位"
 # S368 · v1.4.4 章五：决策因果链——三级回溯 + 先例打分 + HMAC 篡改判 tampered （独立子进程 + 固定密钥保证环境指纹稳定）
