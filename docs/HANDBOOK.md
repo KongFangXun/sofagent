@@ -3,9 +3,11 @@
 <p align="center"><img src="assets/sofagent.png" alt="sofagent" width="96" /></p>
 
 > **sofagent 是一套 FDE 能力——装进你的 Agent（DSH / OpenClaw / WorkBuddy / Codex / Claude Code）后，进场把业务判断写成文件，离场后替你执行它：梳理工作流、部署 AI 节点、7×24 审计每次变更。** 装完之后，你在自己的 Agent 里说一句话，它就帮你干活——审计每次变更、沉淀每次经验，沉淀机制随使用迭代。下面从装到用到查问题，全流程走一遍。
-> v1.4.9 ·  2026-09-17（UTC）· ✅ 已发版（本批更新 2026-09-17）· 孔放勋
+> v1.4.9 · 2026-09-17（UTC）· ✅ 已发版（本批更新 2026-09-17）· 孔放勋
 
-<img src="assets/sofagent.png" alt="sofagent" width="160" />
+---
+
+## 目录
 
 - [阅读指南](#阅读指南)
 - [5 分钟速览](#5-分钟速览)
@@ -24,25 +26,6 @@
 
 ---
 
-## 目录
-
-- 阅读指南
-- 5 分钟速览
-- FDE Harness 能替你干什么
-- 心智模型：约束层与生命周期
-- 落地：装好就能派活
-- 运行：每次变更都被管住
-- 进化：知识自动沉淀
-- 常驻：长期自跑与持续优化
-- 排查与自定义
-- 相关技术栈
-- 致谢
-- 彩蛋
-- 分阶段上线（L1→L2→L3）
-- FDE 部署反模式
-
----
-
 ## 阅读指南
 
 | 你是谁 | 先读哪 |
@@ -52,7 +35,7 @@
 | 想改规矩 | 排查与自定义（改写 fde.md） |
 | FDE 部署 / 持续优化 | 落地 → 常驻（完整方法论见 [FDE/GUIDE.md](../FDE/GUIDE.md)） |
 | 想理解内部机制 | [开发文档](./DEVELOPMENT.md) |
-| 想理解设计哲学 | [架构文档](./ARCHITECTURE.md) |
+| 想理解架构设计 | [架构文档](./ARCHITECTURE.md) |
 | 想理解为什么这么做 | [设计哲学](./PHILOSOPHY.md)（**强烈推荐，读 5 分钟**） |
 
 > 📁 **项目文件导航**：根目录 8 个 .md 文件各司其职——[README.md](../README.md)（项目概览）、[README.en.md](../README.en.md)（英文概览）、[CHANGELOG.md](../CHANGELOG.md)（版本索引）、[SECURITY.md](../SECURITY.md)（安全策略）、[CONTRIBUTING.md](../CONTRIBUTING.md)（贡献指南）、[CODE_OF_CONDUCT.md](../CODE_OF_CONDUCT.md)（行为准则）、[AGENTS.md](../AGENTS.md)（Codex 适配薄挂载，四层加载链入口）、[GEMINI.md](../GEMINI.md)（Gemini CLI 适配薄挂载）。[ROADMAP.md](./ROADMAP.md)（路线图）和 [LIMITATIONS.md](./LIMITATIONS.md)（已知局限）在 `docs/` 下。
@@ -157,7 +140,7 @@
 
 > 💬 **sofagent 没有界面。** 装完之后，你不会看到任何窗口或网页。你通过你的 Agent（WorkBuddy / Codex / Claude Code）和 sofagent 对话——说一句话，它做完了告诉你结果在哪。语言就是界面，MCP 就是入口。详见 [设计哲学](./PHILOSOPHY.md)。
 
-> 📊 **部署后可自动收到这些**：**审计守护日报**（今天拦了多少次违规）——由引擎自动生成推送，不需要人工干预（配好 `data/config/audit-report.json` 的 `target` + `schedule` 即生效）。**周报 / 月报 / 季度无 FDE 对照报告仍在排期中**——配置项的 `weekly` / `monthly` 是预留值，实现侧目前**仅 daily 实装**（自陈见 `engine/daemon/src/webhook/audit-report-push.ts:26`）；**扩容预警尚未实现**。详见 [FDE/GUIDE.md §5.9 离场](../FDE/GUIDE.md#59-离场五大能力)。
+> 📊 **部署后可自动收到这些**：**审计守护日报**（今天拦了多少次违规）——由引擎自动生成推送，不需要人工干预（配好 `data/config/audit-report.json` 的 `target` + `schedule` 即生效）。**周报 / 月报 / 季度无 FDE 对照报告仍在排期中**——配置项的 `weekly` / `monthly` 是预留值，实现侧目前**仅 daily 实装**（自陈见 `engine/daemon` 的 audit-report-push 模块）；**扩容预警尚未实现**。详见 [FDE/GUIDE.md §5.9 离场](../FDE/GUIDE.md#59-离场五大能力)。
 
 ### 两种装法（v1.2.0）
 
@@ -176,7 +159,7 @@ cd sofagent && bash install.sh
 
 | 依赖 | 版本 | 为什么 | 检查 |
 |------|------|------|------|
-| bash | ≥4 | install.sh / task-record.sh | `bash --version` |
+| bash | ≥3.2 | install.sh / task-record.sh | `bash --version` |
 | git | 任意 | clone + task/logs 追溯 | `git --version` |
 | node | ≥18 | 编排模块 + 审计 CLI | `node --version` |
 | npm | ≥9 | 安装 @langchain/langgraph（编排模块） | `npm --version` |
@@ -194,13 +177,15 @@ cd sofagent && bash install.sh
 | `hermes` | Skill symlink + `SOUL.md` 种子指令 |
 | 不指定 | 只写 `~/.sofagent/`，不修改任何平台目录（平台无关安装） |
 
+> 📌 **DSH 不在此表内**——它不经 `install.sh --platform` 接入，而是由宿主 profile 的 `bundles` 挂载 6 款原子插件（见 [README · 多平台挂载](../README.md) 与 [`engine/dsh-plugins/SEAMS.md`](../engine/dsh-plugins/SEAMS.md)）。本表列的是 `install.sh` 的平台参数分支，不是「支持哪些宿主」的全集；完整宿主矩阵见[加载链 HOOK](../engine/hooks/sofagent-load-chain/HOOK.md)。
+
 #### 装之前：只认官方通道
 
 > ⚠️ **别从镜像装。**官方发布渠道只有三处——**GitHub 仓库**、**npm**（带 scope 的 `@sofagent/*` 与裸名总包 `sofagent`）、**插件市场**（ClawHub 与 SkillHub 双生态），全部安装方式见 [README](../README.md)。第三方镜像、聚合仓库、二次打包的「一键脚本」不在发布链内：它们可能钉在已撤销的历史版本上，或改写了安装脚本——`install.sh` 会写 `~/.sofagent/` 并注册宿主 hook，**被改写等于交出宿主控制权**。
 >
 > 另有一类**同名陷阱**：npm 裸名包 `sofagent-audit` 是本项目的旧代理包（已 deprecated、长期滞后），正式包名是带 scope 的 `@sofagent/audit`——别按名字猜，见 README 的同名警示。
 
-#### 两条通道都叫 sofagent？怎么分辨（自 README 迁入）
+#### 两条通道都叫 sofagent？怎么分辨
 
 | | npm 裸名总包（`npm i -g sofagent`） | `install.sh` 安装态 |
 |---|---|---|
@@ -296,7 +281,7 @@ bash engine/scripts/uninstall.sh --platform openclaw|workbuddy|claude|codex|herm
 
 > 地基约 3,500 token，不到 128K 窗口的 3%。暴露会话事件的宿主（OpenClaw）自动注入 2-4 层，其他平台 Agent 主动 Read。详见 [ARCHITECTURE 地基与约束层](./ARCHITECTURE.md#地基与约束层)。
 
-### 4 条底线 + 7 则行为铁律
+### 4 条底线 + 9 则行为铁律
 
 **底线**：
 1. 不泄露隐私
@@ -315,6 +300,8 @@ bash engine/scripts/uninstall.sh --platform openclaw|workbuddy|claude|codex|herm
 | 4 | 存疑即问 | 列出两种以上理解让用户选，不猜 | 猜用户意思全猜错 |
 | 5 | 不藏错误 | 报错、在哪、试了什么，不许吞错 | 报错静默跳过 |
 | 6 | 有始有终 | 任务完成主动收工，不确定时问用户 | 子任务跑完了没告诉用户 |
+| 7 | 规范先行 | 改代码前先声明对应哪份规范（workflow.yml / fde.md / task 书） | 凭对话记录直接改代码 |
+| 8 | 勿增实体 | 未经确认不建新文件/新目录；规则文档只写规则 | 顺手新建文件或目录 |
 
 > 「验证」不是自说自话——是跑测试、跑 lint、API 返回码、文件 diff。
 
@@ -469,10 +456,10 @@ jobs:
   audit:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           fetch-depth: 2
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version: '22'
       - run: bash install.sh
@@ -540,7 +527,7 @@ jobs:
 
 ### 在 DSH 中使用 sofagent（v1.3.5 · MCP 互通）
 
-sofagent 本身就是一个 MCP server（stdio 传输，bin `sofagent-mcp`，v1.3.6 起 60 个 tool，v1.4.0 为 66 个，v1.4.1 新增 train_submit 后为 67 个，v1.4.2 新增 train_doctor/train_dryrun/train_report + FDE 六引擎（fde_interview/fde_classify/fde_quantify/fde_derive/fde_distill/fde_deploy）后为 76 个，v1.4.3 新增 train_status/train_list/train_diagnose 后为 79 个，v1.4.4 新增 corpus_export（训练语料导出三件套）后为 80 个，v1.4.5 新增 train_serve/train_compliance/train_deliverable 后为 83 个，v1.4.6 新增 train_cloud 后为 84 个，v1.4.7 新增 11 tool（workflow CRUD/PR 生命周期/绩效/缺口/data_push 等）后为 95 个，v1.4.8 tools 面零新增仍为 95 个，v1.4.9 新增 device/data/connector/template/router_session_push 各面 9 tool 后为 104 个——工具角色分层，默认全量暴露，`SOFAGENT_MCP_ROLES` 显式收窄专职面）。DSH（DeepSeek Harness）用户不需要等 v1.4.0 的 cordis-plugin——用官方 `@deepseek-ai/dsh-mcp-client` 桥接插件挂上 `sofagent-mcp`，**今天就能在 DSH 会话里调用 sofagent 的全部能力**：审计查询、知识库检索、A/B 实验（`run_ab_test`）、快照时间线（`snapshot_list`）等。
+sofagent 本身就是一个 MCP server（stdio 传输，bin `sofagent-mcp`，v1.3.6 起 60 个 tool，v1.4.0 为 66 个，v1.4.1 新增 train_submit 后为 67 个，v1.4.2 新增 train_doctor/train_dryrun/train_report + FDE 六引擎（fde_interview/fde_classify/fde_quantify/fde_derive/fde_distill/fde_deploy）后为 76 个，v1.4.3 新增 train_status/train_list/train_diagnose 后为 79 个，v1.4.4 新增 corpus_export（训练语料导出三件套）后为 80 个，v1.4.5 新增 train_serve/train_compliance/train_deliverable 后为 83 个，v1.4.6 新增 train_cloud 后为 84 个，v1.4.7 新增 11 tool（workflow CRUD/PR 生命周期/绩效/缺口/data_push 等）后为 95 个，v1.4.8 tools 面零新增仍为 95 个，v1.4.9 新增 device/data/connector/template/router_session_push 各面 9 tool 后为 104 个，v1.5.0 新增 trace_reconcile 后为 105 个——工具角色分层，默认全量暴露，`SOFAGENT_MCP_ROLES` 显式收窄专职面）。DSH（DeepSeek Harness）用户不需要等 v1.4.0 的 cordis-plugin——用官方 `@deepseek-ai/dsh-mcp-client` 桥接插件挂上 `sofagent-mcp`，**今天就能在 DSH 会话里调用 sofagent 的全部能力**：审计查询、知识库检索、A/B 实验（`run_ab_test`）、快照时间线（`snapshot_list`）等。
 
 #### 配置方法
 
@@ -581,7 +568,7 @@ sofagent 本身就是一个 MCP server（stdio 传输，bin `sofagent-mcp`，v1.
 
 #### 验证状态
 
-> ⚠️ **本节配置示例的验证口径**：字段结构已对照 `@deepseek-ai/dsh-mcp-client@0.1.0-rc.6` 的类型定义与官方 README 核对（2026-08-15），但**尚未经 DSH 真实连接端到端验证**——DSH 本体处于 developer preview（rc），安装面与 profile 结构仍在变动。v1.3.5 发布前将以 MCP Inspector（`npx @modelcontextprotocol/inspector`）做 stdio 通道等价冒烟（60 tools 可见 + 只读 tool 调用 + 破坏性 tool 未确认时挂起）；DSH 直连验证待 DSH 正式版后补做。若你基于本节配置实操遇到字段不匹配，请以 DSH 报错信息与官方文档为准并[提 issue](https://github.com/KongFangXun/sofagent/issues)反馈。
+> ⚠️ **本节配置示例的验证口径**：字段结构已对照 `@deepseek-ai/dsh-mcp-client@0.1.0-rc.6` 的类型定义与官方 README 核对（2026-08-15），但**尚未经 DSH 真实连接端到端验证**——DSH 本体处于 developer preview（rc），安装面与 profile 结构仍在变动。验证口径：以 MCP Inspector（`npx @modelcontextprotocol/inspector`）做 stdio 通道等价冒烟（工具可见 + 只读 tool 调用 + 破坏性 tool 未确认时挂起）；DSH 直连验证待 DSH 正式版后补做。若你基于本节配置实操遇到字段不匹配，请以 DSH 报错信息与官方文档为准并[提 issue](https://github.com/KongFangXun/sofagent/issues)反馈。
 
 ---
 
@@ -775,7 +762,7 @@ sofagent 站在 6 个开源项目和 7 篇文章/社区的肩膀上。→ [完�
 ```
 请按 sofagent 的约束层约束自己：
 1. 遵守 4 底线——不泄露隐私、不执行危险操作、不生成有害内容、不冒充人类；
-2. 遵守 7 铁律——知行合一、目标驱动、全局视角、成本意识、存疑即问、不藏错误、有始有终；
+2. 遵守 9 铁律——知行合一、目标驱动、全局视角、成本意识、存疑即问、不藏错误、有始有终、规范先行、勿增实体；
 3. 每步先验证再继续，报错大声说，不确定就问我；
 4. 任务完成主动收工，别假装做完了。
 最后用三句话告诉我：你现在能替我干啥、干不了啥、我还要手动做啥。
@@ -813,5 +800,3 @@ loop-engineering 社区总结了 10 个生产反模式，以下 4 个直接适�
 > 📖 来源：cobusgreyling/loop-engineering（MIT 开源）— [anti-patterns.md](https://github.com/cobusgreyling/loop-engineering/blob/main/docs/anti-patterns.md)
 
 > 大半年 Agent 平台实战笔记（OpenClaw / WorkBuddy / Claude Code / Codex）。如有更好的用法，欢迎开 Issue。
->
-> *v1.4.0，2026 年 8 月 6 日*

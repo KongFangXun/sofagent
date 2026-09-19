@@ -13,14 +13,14 @@
 
 ## 🪜 贡献者阶梯
 
-详见 [CONTRIBUTING.md §贡献者阶梯](../CONTRIBUTING.md)。
+详见 [CONTRIBUTING.md](../CONTRIBUTING.md) 的「新人 30 秒快速开始」与「成为维护者」两节。
 
 ## 🎯 从哪开始
 
 | 类型 | 说明 | 难度 |
 |------|------|:--:|
 | **跨平台测试** | 在 Windows/WSL/Linux 上跑 install.sh + verify.sh，报告结果 | ★ |
-| **FAQ 补充** | HANDBOOK §三（场景三：排查问题）需要更多真实场景的回答 | ★ |
+| **FAQ 补充** | [HANDBOOK](./HANDBOOK.md) 的「排查与自定义」节需要更多真实场景的回答 | ★ |
 | **文档翻译** | README 已有英文版，需要维护和更新 | ★★ |
 | **安全审计** | 审查 install.sh / 审计规则（`engine/audit/src/rules/`）的安全性 | ★★★ |
 | **规则优化** | 改进审计规则（`engine/audit/src/rules/rule-a*.ts` + `skill-safety-engine.ts`）的正则，减少误报 | ★★★ |
@@ -30,7 +30,7 @@
 | 指标 | 状态 | 需要什么 |
 |------|:--:|------|
 | 外部 contributor | 0 | 👋 你（项目 2026 年 6 月创建，太新——不是没吸引力） |
-| 跨平台实测数据 | OpenClaw 完整，其余 4 平台部分 | Windows/Hermes Agent 实测 |
+| 跨平台实测数据 | OpenClaw 完整，其余平台部分覆盖 | Windows / Hermes Agent 实测 |
 | A/B 对照实验 | v0.93 已完成（10 组，结论：增量 = f(陷阱难度)） | 独立测试者 / 真实 Skill 加载对照 |
 | 多语言文档 | 中英双语 README，HANDBOOK 仅中文 | 英文翻译 |
 
