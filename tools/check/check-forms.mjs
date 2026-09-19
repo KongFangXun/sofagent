@@ -157,8 +157,9 @@ import path from 'node:path';
 const ROOT = path.resolve(import.meta.dirname, '..', '..');
 
 // ── 扫描面（显式清单：版本 → 开发日志）────────────────────────
+// 🔴 扫描窗口 = **未发版**版本（与下方 OPT_OUT_NOTE 同口径）：版本一旦发版即移出本清单——
+//    已发版版本的形态标注属历史档案，回填/对账均无意义（v1.5.0 发版后按此口径移出）。
 const VERSION_SOURCES = [
-  { version: 'v1.5.0', file: 'docs/changelog/v1.5/v1.5.0.md' },
   { version: 'v1.5.1', file: 'docs/changelog/v1.5/v1.5.1.md' },
   { version: 'v1.5.2', file: 'docs/changelog/v1.5/v1.5.2.md' },
   { version: 'v1.5.3', file: 'docs/changelog/v1.5/v1.5.3.md' },
