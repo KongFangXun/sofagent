@@ -21,6 +21,11 @@ head -3 SKILL/SKILL.md   # 期望 slug: sofagent
 
 # ── ClawHub 分发 ──
 # 发布前先查现有版本（同版本号不可覆盖，冲突则递增版本号）
+# 🔴 reasons 是集合、会随平台侧新增要求扩充——已实测：security.status_not_clean（安全扫描）、
+#    card.missing（平台要求 skill 根目录提供 skill-card.md，格式由平台定义、CLI 无对应选项）。
+#    判据 = 快照增量：发布前落盘 verify 快照 → 发布后逐条比对 → 只处置新引入的 reason；
+#    历史遗留项（上版就有）不阻断发布。新引入项优先按平台要求补齐产物；格式未公开时不得猜写，
+#    如实记为开放项上报（新建仓内文件属需作者拍板的动作）。
 # 🔴 verify 快照纪律：security.status_not_clean 可能是历史版本遗留的既有状态——
 #    发布前先落盘快照（verify 输出存档），发布后对照，新引入 reasons 才处置
 clawhub skill verify sofagent 2>&1 | grep version
