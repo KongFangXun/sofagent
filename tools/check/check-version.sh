@@ -1075,13 +1075,19 @@ while IFS= read -r _cl_line; do
   _cl_date=$(printf '%s' "$_cl_line" | grep -oE '· [0-9]{4}-[0-9]{2}-[0-9]{2} 已发版' | grep -oE '[0-9]{4}-[0-9]{2}-[0-9]{2}' | head -1)
   [ -z "$_cl_ver" ] || [ -z "$_cl_date" ] && continue
   # 🔴 固定发版时区提取（CI 时区脆弱性实锤 ×2）：%(creatordate:short) 按运行环境 TZ 渲染，
-  #   且 TZ=Asia/Shanghai 前缀对 git 的 ref 过滤器在 CI（actions/checkout 浅克隆+特定 git 版本）
-  #   仍不可靠（v1.4.2 在 CI 恒读 08-28、本地 08-29）。治本：取 %(creatordate:unix) 原始时间戳
-  #   （TZ 无关），由 macOS date -r + TZ 显式转上海日期——CHANGELOG 行日期即上海发版日。
+  #   且 TZ=Asia/Shanghai 前缀对 git 的 ref 过滤器在 CI（浅克隆+特定 git 版本）仍不可靠。
+  #   治本：取 %(creatordate:unix) 原始时间戳（TZ 无关）再显式转上海日期。
+  #   跨平台坑（×3 实锤）：BSD date 用 `-r <ts>`、GNU date 用 `-d @<ts>`——CI 是 Linux（GNU）、
+  #   本仓开发机是 macOS（BSD），两条都试，谁成功用谁。
   _tag_ts=$(git -C "${PROJECT_ROOT}" for-each-ref --format='%(creatordate:unix)' "refs/tags/v${_cl_ver}" 2>/dev/null | head -1)
-  if [ -n "${_tag_ts}" ] && command -v date >/dev/null 2>&1; then
-    _tag_date=$(TZ='Asia/Shanghai' date -r "${_tag_ts}" '+%Y-%m-%d' 2>/dev/null)
-  else
+  _tag_date=""
+  if [ -n "${_tag_ts}" ]; then
+    _tag_date=$(TZ='Asia/Shanghai' date -r "${_tag_ts}" '+%Y-%m-%d' 2>/dev/null || true)
+    if [ -z "${_tag_date}" ]; then
+      _tag_date=$(TZ='Asia/Shanghai' date -d "@${_tag_ts}" '+%Y-%m-%d' 2>/dev/null || true)
+    fi
+  fi
+  if [ -z "${_tag_date}" ]; then
     _tag_date=$(TZ='Asia/Shanghai' git -C "${PROJECT_ROOT}" for-each-ref --format='%(creatordate:short)' "refs/tags/v${_cl_ver}" 2>/dev/null | head -1)
   fi
   [ -z "$_tag_date" ] && continue
