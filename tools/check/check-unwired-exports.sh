@@ -176,9 +176,15 @@ if [ -n "$SINCE_TAG" ]; then
         next
       }
       # 桶文件块导出：/* @public */ export {（进入采集态，到 } 退出）
+      # 🔴 三种块收尾形态都要认：①独立「}」②「} from './xxx';」③单行块
+      #   「export { a, b } from './x';」（整行含 } ——ENTER 正则排除行内含 }
+      #   的单行块，否则 collecting 悬开，后续注释/import 行被当符号采集，
+      #   v1.5.0 实锤：public-api.ts 单行块悬开 → import{ 等 8 条假红）
       /^\+\/\* @public \*\/ export type \{/ { flush_block(); collecting = 0; next }
       /^\+\/\* @public \*\/ export \{/ { flush_block(); collecting = 1; next }
       collecting && /^\+\}/ { flush_block(); collecting = 0; next }
+      collecting && /^\+\}[[:space:]]*from/ { flush_block(); collecting = 0; next }
+      collecting && /\}/ && /from / { flush_block(); collecting = 0; next }
       collecting && /^\+/ { bname[++bn] = substr($0, 2) }
     ' | sort -u)
 
