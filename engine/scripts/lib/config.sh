@@ -13,7 +13,6 @@
 #   SOFAGENT_SANITIZE_IPS   内网 IP 脱敏开关（同上，旧名 SOFA_SANITIZE_IPS）
 #   SOFAGENT_RETENTION_DAYS 日志保留天数（默认 90；旧名 SOFA_RETENTION_DAYS）
 #   SOFAGENT_RETENTION_MAX  日志最大条数（默认 500；旧名 SOFA_RETENTION_MAX）
-#   SOFAGENT_CLEANUP_ON_RECORD 写日志后是否触发清理（旧名 SOFA_CLEANUP_ON_RECORD）
 #   SOFAGENT_CLEANUP_FREQUENCY 清理触发频率（默认 10，即 1/N 概率；旧名 SOFA_CLEANUP_FREQUENCY）
 #   SOFAGENT_AUDIT_ENABLED  审计日志开关（旧名 SOFA_AUDIT_ENABLED）
 # ============================================================
@@ -138,7 +137,7 @@ _parse_conf() {
 # v1.4.5 (T4): 用户显式设旧名的快照——必须在任何赋值/export 之前采集，
 # 否则下方 fde.md/默认值赋的 SOFA_* 会被误判为「用户设了旧名」（干净环境误告警）。
 for _v in SOFAGENT_SANITIZE SOFAGENT_SANITIZE_IPS SOFAGENT_RETENTION_DAYS \
-          SOFAGENT_RETENTION_MAX SOFAGENT_CLEANUP_ON_RECORD \
+          SOFAGENT_RETENTION_MAX \
           SOFAGENT_CLEANUP_FREQUENCY SOFAGENT_AUDIT_ENABLED; do
   _legacy="SOFA_${_v#SOFAGENT_}"
   _new="${_v}"
@@ -183,13 +182,7 @@ export SOFA_RETENTION_MAX
 SOFAGENT_RETENTION_MAX="${SOFAGENT_RETENTION_MAX:-${SOFA_RETENTION_MAX:-}}"
 export SOFAGENT_RETENTION_MAX
 
-# 写日志后触发清理
-if [ -n "$(_parse_conf "data_cleanup_on_record" "")" ]; then
-  SOFA_CLEANUP_ON_RECORD="$(_parse_conf "data_cleanup_on_record" "")"
-fi
-export SOFA_CLEANUP_ON_RECORD
-SOFAGENT_CLEANUP_ON_RECORD="${SOFAGENT_CLEANUP_ON_RECORD:-${SOFA_CLEANUP_ON_RECORD:-}}"
-export SOFAGENT_CLEANUP_ON_RECORD
+# （data_cleanup_on_record 解析已随 v1.5.0 死配置清扫移除）
 
 # 清理触发频率（1/N 概率）
 SOFA_CLEANUP_FREQUENCY="$(_parse_conf "data_cleanup_frequency" "${SOFA_CLEANUP_FREQUENCY:-10}")"

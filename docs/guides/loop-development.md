@@ -2,7 +2,7 @@
 
 > **想给 FORGE 加新 loop？这份文档告诉你怎么搭。** 从 driver 脚本结构到三个必踩的坑，每条都来自真实 debug 会话。
 >
-> v1.4.9 · 2026-09-17（UTC）· ✅ 已发版（本批更新 2026-09-17）
+> v1.4.9 · 2026-09-17（UTC）· ✅ 已发版（v1.4.9 更新 2026-09-17）
 
 - [一、技术栈：一句话声明](#一技术栈一句话声明)
 - [二、为什么选 LangGraph（弃用 deepagents）](#二为什么选-langgraph弃用-deepagents)
@@ -190,7 +190,7 @@ try {
 
 审查类步骤（a-check）用 150 不会 OOM，因为消息增长慢（大量是工具调用结果，短文本）；但 a-consolidate 要读取两份完整的 check 报告 + 产出 findings.md + result.md，单条消息体积大，150 步累积就爆了。
 
-**修复**：按步骤类型区分 recursionLimit——配置表见 [§3.4](#34-steprecursionlimits按步骤区分)，审查类 150 / 文本处理类 50，不能一刀切。
+**修复**：按步骤类型区分 recursionLimit——配置表见 [§3.4](#34-step_recursion_limits按步骤区分)，审查类 150 / 文本处理类 50，不能一刀切。
 
 **经验值参考**：
 

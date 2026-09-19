@@ -73,8 +73,7 @@ if (-not [string]::IsNullOrEmpty($parsed)) { $env:SOFA_SANITIZE_IPS = $parsed }
 $env:SOFA_RETENTION_DAYS = Get-SofaConf "data_retention_days" $(if ($env:SOFA_RETENTION_DAYS) { $env:SOFA_RETENTION_DAYS } else { "90" })
 $env:SOFA_RETENTION_MAX = Get-SofaConf "data_retention_max_entries" $(if ($env:SOFA_RETENTION_MAX) { $env:SOFA_RETENTION_MAX } else { "500" })
 
-$parsed = Get-SofaConf "data_cleanup_on_record" ""
-if (-not [string]::IsNullOrEmpty($parsed)) { $env:SOFA_CLEANUP_ON_RECORD = $parsed }
+# （data_cleanup_on_record 解析已随 v1.5.0 死配置清扫移除）
 
 $env:SOFA_CLEANUP_FREQUENCY = Get-SofaConf "data_cleanup_frequency" $(if ($env:SOFA_CLEANUP_FREQUENCY) { $env:SOFA_CLEANUP_FREQUENCY } else { "10" })
 

@@ -76,10 +76,13 @@ function githubAnchor(title) {
     .trim()
     .toLowerCase();
 
-  // 保留：字母(a-z) 数字(0-9) CJK(中日韩) 连字符(-) 空格( )
+  // 保留：字母(a-z) 数字(0-9) CJK(中日韩) 连字符(-) 下划线(_) 空格( )
   // 去掉：所有其他字符（标点、emoji、特殊符号）
   // 关键：标点删除后，其两侧的空格各自变连字符，形成连续连字符（GitHub 保留 --）
-  s = s.replace(/[^\p{L}\p{N}\s-]/gu, '');
+  // 下划线保留（r3 审查发现）：github-slugger 的删除区间不含 0x5F(_)——下划线是
+  //   「保留字符」，本门禁此前把它当标点抹掉，导致含 _ 的标题（如 STEP_RECURSION_LIMITS）
+  //   校验出假绿锚点（门禁算 steprecursionlimits、GitHub 实为 step_recursion_limits）
+  s = s.replace(/[^\p{L}\p{N}\s_-]/gu, '');
 
   // 每个空格变一个连字符（不折叠连续空格——GitHub 保留 --）
   // 例：「审计 + 文件」→ 删 + 得「审计  文件」（两个空格）→ 「审计--文件」

@@ -796,7 +796,7 @@ if [ -f "${VERIFY_SCRIPT_DIR}/lib/config.sh" ]; then
 fi
 # 10.4 默认关闭确认
 # v1.4.5 T4: 读规范名 SOFAGENT_*（旧 SOFA_* 兜底——lib/config.sh 双导出下两者一致）
-if [ "${SOFAGENT_SANITIZE:-${SOFA_SANITIZE:-}}" != "true" ] && [ "${SOFAGENT_AUDIT_ENABLED:-${SOFA_AUDIT_ENABLED:-}}" != "true" ] && [ "${SOFAGENT_CLEANUP_ON_RECORD:-${SOFA_CLEANUP_ON_RECORD:-}}" != "true" ]; then
+if [ "${SOFAGENT_SANITIZE:-${SOFA_SANITIZE:-}}" != "true" ] && [ "${SOFAGENT_AUDIT_ENABLED:-${SOFA_AUDIT_ENABLED:-}}" != "true" ]; then
   check_pass "默认关闭: 合规功能全部关闭（向后兼容）"
 else
   if [ "${SOFAGENT_SANITIZE:-${SOFA_SANITIZE:-}}" = "true" ]; then
@@ -804,9 +804,6 @@ else
   fi
   if [ "${SOFAGENT_AUDIT_ENABLED:-${SOFA_AUDIT_ENABLED:-}}" = "true" ]; then
     check_warn "审计已启用 (audit_enabled=true)"
-  fi
-  if [ "${SOFAGENT_CLEANUP_ON_RECORD:-${SOFA_CLEANUP_ON_RECORD:-}}" = "true" ]; then
-    check_warn "清理触发已启用 (data_cleanup_on_record=true)"
   fi
 fi
 
@@ -826,7 +823,7 @@ for candidate in \
 done
 if [ -n "$RULES_FILE" ]; then
   missing=0
-  for key in log_sanitize log_sanitize_ips data_retention_days data_retention_max_entries data_cleanup_on_record data_cleanup_frequency audit_enabled; do
+  for key in log_sanitize log_sanitize_ips data_retention_days data_retention_max_entries data_cleanup_frequency audit_enabled; do
     if ! grep -q "${key}:" "$RULES_FILE" 2>/dev/null; then
       missing=$((missing + 1))
     fi

@@ -204,13 +204,4 @@ $entry = $entry -replace "`r`n", "`n"   # 归一 LF，与 .sh 输出一致
 
 Write-Host "  已记录: $saneTask -> $logFile"
 
-# ── 写后概率触发 cleanup（如有 .ps1 版）──
-if ($env:SOFA_CLEANUP_ON_RECORD -eq "true") {
-    $freq = if ($env:SOFA_CLEANUP_FREQUENCY) { [int]$env:SOFA_CLEANUP_FREQUENCY } else { 10 }
-    if ((Get-Random -Maximum $freq) -eq 0) {
-        $cleanup = Join-Path $PSScriptRoot "cleanup.ps1"
-        if (Test-Path $cleanup) {
-            try { & $cleanup -Force 2>$null } catch {}
-        }
-    }
-}
+# （写后概率触发清理已随 v1.5.0 死配置清扫移除——手动清理走 cleanup.ps1）

@@ -2,7 +2,7 @@
 
 <p align="center"><img src="docs/assets/sofagent.png" alt="sofagent" width="96" /></p>
 
-> v1.4.9 · 2026-09-17（UTC）· ✅ 已发版（本批更新 2026-09-17）· 孔放勋
+> v1.4.9 · 2026-09-17（UTC）· ✅ 已发版（v1.4.9 更新 2026-09-17）· 孔放勋
 >
 > 按安全主题组织，企业 IT 可按主题快速定位。各能力的引入版本在小节正文首句注明。
 
@@ -486,7 +486,7 @@ chmod 600 ~/.sofagent/data/audit/history.jsonl.bak-*
 1. **CI 侧兜底（推荐）**：在 CI/CD pipeline 中独立运行 `sofagent-audit --diff HEAD~1..HEAD`（审最近一次 commit；审整个分支区间用 `--diff main..HEAD`），
    使用 CI 环境内受保护的 config.yml 副本，不依赖开发机上的配置文件。
    ⚠️ **边界说明**：`--diff HEAD~1..HEAD` 依赖「至少 2 个 commit」的仓库——首次提交（单 commit 仓库无 `HEAD~1`）会 `exit 2`。首次提交场景请用 `--init` 装 hook 自动审计，或改用 `--diff HEAD`（审工作树与 HEAD 的差异）。
-2. **文件权限加固**：`chmod 444 .sofagent/config.yml` 将配置设为只读。
+2. **文件权限加固**：`chmod 400 .sofagent/config.yml` 将配置设为只读。
    注意：此方法不能防止 Agent 以 root/同用户身份强制写入，
    但能防止意外修改。
 3. **完整性校验**：使用 `tools/release/sign-config.mjs` 对 config.yml 签名，
