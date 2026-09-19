@@ -1227,7 +1227,7 @@ audit:
 
 **与路线图的契合**：v1.3.1「Ontology 本体数据」把这套隐喻落到产品（分布式 knowledge/ + 联邦查询 + git diff 硬证据）；v2.x「ontology I/O schema 硬化」把「根系」升级为 JSON Schema 校验的节点输入/输出形状约束——正是上表「根系」的工程化。5 阶段风险收敛（只读对象层→…→高风险 Action）则是「养护」的节奏参考：不要一上来就让 Agent 自动闭环。
 
-**养护的操作化身**：上表「养护」不是抽象姿态，而是由 fresh-eyes 独立审查机制兑现——`playbook/fresh-eyes-review.md`（22 视角独立审查——常规发版 driver 跑其中 1-12，13-22 为手动层：零上下文、相信直觉、只报告不修复）正是护栏的审阅范式；FORGE `fresh-eyes-loop` 把这套独立视角自动化，ROADMAP v2.x 借 MLflow agent 评估为其补量化评审标准。换言之，本体分支要合入主干前，先过 fresh-eyes 这一关。
+**养护的操作化身**：上表「养护」不是抽象姿态，而是由 fresh-eyes 独立审查机制兑现——`playbook/fresh-eyes-review.md`（23 视角独立审查——常规发版 driver 跑其中 1-12，13-22 为手动层：零上下文、相信直觉、只报告不修复）正是护栏的审阅范式；FORGE `fresh-eyes-loop` 把这套独立视角自动化，ROADMAP v2.x 借 MLflow agent 评估为其补量化评审标准。换言之，本体分支要合入主干前，先过 fresh-eyes 这一关。
 
 **本体运维（OntologyOps = 知识资产的可版本化治理）**：本体数据不只是「一棵在长的树」，它还需要一套运维体系——把 DevOps 的版本化、可审计、可回滚实践应用到知识资产。sofagent 的落地：本体节点 = 带版本和 frontmatter 的文件（可 diff、可 review、可 revert）；knowledge/ 目录 = 可审计的知识仓库（daemon 的 conflict-check 巡检矛盾/孤儿/死链 = 知识层的 CI）；think.md append-only 契约 = 不可篡改的变更日志。换言之，Ledger-Views-Policy 三层不只是知识分类法，还是一套知识运维管线——Ledger 是 git 历史，Views 是构建产物，Policy 是合并保护规则。本体数据走向规模化的标志，不是「节点变多了」，而是「改一个节点有完整的 diff → review → merge → audit → rollback 流程」。
 
