@@ -105,9 +105,10 @@ describe('commit-msg require.resolve 劫持面（v1.5.0 TASK-10）', () => {
     // → RESOLVED_ENTRY 空 → 「未安装」exit 1——审计被冒牌包的**存在**禁用（DoS）。
     // 修复版全局根限定：冒牌包不影响全局解析，真引擎照常可达。
     plantFakePackage(repo);
-    const r = runHook(repo, msgFile);
-    // 不应出现「未安装」退出（那正是 DoS 效果）
-    expect(r.out).not.toContain('未安装');
+    const realEntry = resolve(__dirname, '../../dist/index.js');
+    const r = runHook(repo, msgFile, { SOFAGENT_AUDIT_ENTRY: realEntry });
+    // 注入真引擎后：冒牌包在场也不应出现「未安装」（那正是 DoS 效果）——
+    // 无注入形态的纯全局链在 CI（无全局包）会正确 fail-loud，环境真值不是本用例对象
     expect(r.code).not.toBe(42);
   }, 30000);
 

@@ -44,9 +44,11 @@ function makeFixtureRepo(): { repo: string; data: string; parentSha: string; tre
 /** 跑一次 post-commit hook（返回 stdout+exitCode；exit≠0 时从 error.stdout 取输出） */
 function runHook(repo: string, data: string): { out: string; code: number } {
   try {
+    // SOFAGENT_AUDIT_ENTRY 显式注入本仓 dist（v1.4.8 通道）：hook 在 tmp repo 里跑，
+    // 无注入时按全局解析链走——CI runner 无全局包会 fail-loud（正确行为但非本测试对象）
     const out = execFileSync('bash', [HOOK], {
       cwd: repo,
-      env: { ...process.env, SOFAGENT_DATA: data },
+      env: { ...process.env, SOFAGENT_DATA: data, SOFAGENT_AUDIT_ENTRY: resolve(__dirname, '../../dist/index.js') },
       stdio: ['pipe', 'pipe', 'pipe'],
     }).toString();
     return { out, code: 0 };
