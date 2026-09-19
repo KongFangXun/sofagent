@@ -7,7 +7,29 @@
 > **产品定位锚定**：本架构服务的产品 = **FDE Harness 层**（sofagent）——不造 Agent，嵌在成熟 Agent（执行体：DSH / OpenClaw / WorkBuddy）与模型层（智力源：通用大模型 + 专属小模型 / 后训练模型）之间做治理：对执行体约束（plugin + skill + MCP + CLI + dashboard 五种形态分发），对智力源治理（注册 / 灰度 / 训练 / 部署全留痕）（产品叙事见 [WIKI §二](./WIKI.md#二产品叙事sofagent-是-fde-harness-层不造-agent嵌在-agent-与模型之间做治理)）。
 > v1.4.9 · 2026-09-17（UTC）· ✅ 已发版（本批更新 2026-09-17）
 
-<img src="assets/sofagent.png" alt="sofagent" width="160" />
+## 目录
+
+> **怎么读这份文档**（按需跳转，不必通读）：
+>
+> | 你的目的 | 读哪几节 | 大约 |
+> |---------|---------|:--:|
+> | 只要全貌 | [心智模型](#心智模型先读这个) + [能力与状态总览](#能力与状态总览) | 15 分钟 |
+> | 查术语/查能力在哪个包 | [术语对照](#术语对照) + 能力总览（查阅型，可跳过） | 随查 |
+> | 改代码 · 看模块编制 | 第二章 + 第三章 | 30 分钟 |
+> | 追溯某个设计决策为什么这么定 | 第四章 + 第七章 | 按需 |
+>
+
+- [心智模型（先读这个）](#心智模型先读这个)
+- [术语对照](#术语对照)
+- [能力与状态总览](#能力与状态总览)
+- [一、核心理念与架构全景](#一核心理念与架构全景)
+- [二、约束层（Harness）设计——一个层，五种能力](#二约束层harness设计一个层五种能力)
+- [三、部署与运行架构](#三部署与运行架构)
+- [四、核心设计决策](#四核心设计决策)
+- [五、激活链架构（v1.2.5+ Phase 1-4 已交付）](#五激活链架构v125-phase-1-4-已交付)
+- [六、已知局限与未来方向](#六已知局限与未来方向)
+- [七、架构设计决策的行业锚点](#七架构设计决策的行业锚点)
+- [八、数据层路线建议](#八数据层路线建议)
 
 ## 心智模型（先读这个）
 
@@ -124,29 +146,6 @@ graph TB
 > - **L2 是「编排层长期不动 + 执行层可换」两层分离**——编排层 LangGraph StateGraph 长期不换（确定性审计依赖显式图结构；换掉编排层 = 放弃确定性审计，这是架构级取舍而非永久承诺），执行层走 ExecutionBackend 接口：DSH 默认 / createReactAgent fallback / 三平台可选。DSH 是最大的一条河，但「堤修在哪条河上都行」，不把企业命脉押在 developer preview 上。
 > - **L3 挂的是「事件域」不是节点**——plugin 装一次即在 tools/result、turn-stopping、approval seam 上全域生效，无需逐节点插桩；独立模式（OpenClaw/WorkBuddy + git diff 审计）永远保留，不依赖 DSH 才成立。
 
-## 目录
-
-> **怎么读这份文档**（按需跳转，不必通读）：
->
-> | 你的目的 | 读哪几节 | 大约 |
-> |---------|---------|:--:|
-> | 只要全貌 | [心智模型](#心智模型先读这个) + [能力与状态总览](#能力与状态总览) | 15 分钟 |
-> | 查术语/查能力在哪个包 | [术语对照](#术语对照) + 能力总览（查阅型，可跳过） | 随查 |
-> | 改代码 · 看模块编制 | 第二章 + 第三章 | 30 分钟 |
-> | 追溯某个设计决策为什么这么定 | 第四章 + 第七章 | 按需 |
->
-
-- [术语对照](#术语对照)
-- [能力与状态总览](#能力与状态总览)
-- [一、核心理念与架构全景](#一核心理念与架构全景)
-- [二、约束层（Harness）设计——一个层，五种能力](#二约束层harness设计一个层五种能力)
-- [三、部署与运行架构](#三部署与运行架构)
-- [四、核心设计决策](#四核心设计决策)
-- [五、激活链架构（v1.2.5+ Phase 1-4 已交付）](#五激活链架构v125-phase-1-4-已交付)
-- [六、已知局限与未来方向](#六已知局限与未来方向)
-- [七、架构设计决策的行业锚点](#七架构设计决策的行业锚点)
-- [八、数据层路线建议](#八数据层路线建议)
-
 ---
 
 ## 术语对照
@@ -216,8 +215,6 @@ Agent = **模型 + 上下文 + 工具 + 状态 + 执行控制 + 权限 + 可观�
 | eval | 质量评估模块：精确匹配 / 语义相似 / 规则合规 三维评分 | ✅ 已实现 |
 | ab-test | A/B 自进化：current vs candidate 并行对比，连续胜出 + 非退化守卫才晋升 | ✅ 已实现 |
 | orchestrator | 编排模块：DAG 任务拆解 + LangGraph 闭环 + A/B 调度器 + ToolGate 事前拦截 + Ontology 运行时层 + 并行编排（MergeQueue/ParallelScheduler/波次卡关）+ Durable Execution + Onboard L1-L5 + Benchmark 评测 + agent-creation + FDE 梳理辅助 + Session 隔离 + meta-harness 多 harness 编排 + worklog 工作明细数据层 + FDE 六引擎工作台 + workflow 模板血缘（lineage 事件流 + fork 谱系回溯）+ 执行时 skill 快照（打包/清理/审计锚点） | ✅ 已实现（1374 测试） |
-> **后训模块为什么在治理仓里**（30 秒答案）：治理的天花板是数据——审计发现的错误（哪些任务做砸了、哪种输出不合格）正是训练的燃料。后训模块把「审计出来的问题 → 修复问题的模型」这条闭环接通，让治理数据反哺模型层；训练资产本身走商业侧交付，治理仓只保留协议与接口（外部化 / 可配置）。英文面使用 "training engine" 系保留边界（2026-09-03 拍板），两者指同一模块。
-
 | train | 后训模块：train-job 编排/审计/隔离/指纹/签名/回收/恢复/安全 + 数据管道/版本/eval 闭环/环境/dry-run/报告 + 云端执行面（替换路径 `import { createTrainJob } from '@sofagent/train'`） | ✅ 已实现（711 测试） |
 | daemon | 守护进程：cron + fs 监听 + 文件级审计 + USB 烧录 + 联邦查询 + Dream Cycle 6 阶段 + 启动 LOOP 续跑检查 + 审计轨迹聚合巡检 + 训练孤儿巡检 + 模型清单扫描（注册表 + 端点探测双源） | ✅ 已实现（512 测试） |
 | mcp | MCP Server：JSON-RPC 2.0 over stdio，tools + resources（105 tools）——含 FDE 六引擎（fde_interview/classify/quantify/derive/distill/deploy）、训练系（train_status/train_list/train_diagnose/corpus_export/train_serve/train_compliance/train_deliverable）、连接器与模板面（connector_register/connector_list/workflow_export/workflow_import） | ✅ 已实现 |
@@ -225,6 +222,8 @@ Agent = **模型 + 上下文 + 工具 + 状态 + 执行控制 + 权限 + 可观�
 | evolve | Skill 优化：复用 audit 规则做安全审查 + 集成优化 + 回填（原 skillopt） | ✅ 已实现 |
 | think | 思考链分析：基于 diff + 审计结果自动生成 think.md 反思条目（append-only） | ✅ 已实现（⚠️ 仅 MCP/CLI 路径触发，git hook 路径不自动生成） |
 | load-chain | 加载链 Hook 包 `@sofagent/load-chain`：宿主平台（OpenClaw 等暴露会话事件的平台）hook 注入四层约束（DP-4 设计原则提升为正式 workspace 包） | ✅ 已实现 |
+
+> **后训模块为什么在治理仓里**（30 秒答案）：治理的天花板是数据——审计发现的错误（哪些任务做砸了、哪种输出不合格）正是训练的燃料。后训模块把「审计出来的问题 → 修复问题的模型」这条闭环接通，让治理数据反哺模型层；训练资产本身走商业侧交付，治理仓只保留协议与接口（外部化 / 可配置）。英文面使用 "training engine" 系保留边界（2026-09-03 拍板），两者指同一模块。
 
 ### API 分级边界决策（@public / @internal）
 
@@ -248,7 +247,7 @@ v1.3.9 起对所有 workspace 包的入口 export 做显式分级，CI 门禁（
 
 > 🗺️ **MCP 工具五域一环（105 tools）**（五域一环组织法 2026-09-02 收编；工具数 v1.4.5 增至 83，v1.4.6 增 train_cloud 至 84，v1.4.7 增 11 个至 95，v1.4.9 G9 增 device_register/device_list 至 97，G10/G11 增 device_data_query/device_data_push 至 99，G5b/G1 增连接器与模板 4 个至 103，批 5 增 router_session_push 至 104，v1.5.0 增 trace_reconcile 至 105）：工具不是工具箱清单，是一个组织的编制表——五域各司其职，六条箭头构成「执行→审计→沉淀→晋升」的自进化闭环；审计域（域三）是整条飞轮的数据源头，其执法手册即 24 条审计规则。
 >
-> ⚠️ **两套标签不要混用**：五域按**业务职能**划分（本图组织法）；`tool-registry` 的 `roles` 是**使用场景标签**（7 面：audit/fde/eval/agent/ops/commons/browser），服务于 `SOFAGENT_MCP_ROLES` 按角色收窄暴露面。二者用途不同，域的条目数与 roles 分布数不相等属预期。
+> ⚠️ **三套标签不要混用**：五域按**业务职能**划分（本图组织法）；`tool-registry` 的 `roles` 是**使用场景标签**（7 面：audit/fde/eval/agent/ops/commons/browser），服务于 `SOFAGENT_MCP_ROLES` 按角色收窄暴露面；`docs/API.md` 的**十能力域**是文档编制分组（一个组 = 一个可独立讲述的产品能力）。三者用途不同，条目数不相等属预期——**工具总数的唯一权威源始终是 `engine/mcp/src/tool-registry.ts` 的 TOOLS 数组**。
 
 ```mermaid
 graph TB
@@ -294,6 +293,8 @@ graph TB
 > 闭环读法：实线 = 主循环（执行→审计→沉淀→晋升→更强的执行面）；虚线 = 晋升回写与语料飞轮。
 >
 > ⚠️ **数字口径（五域重算 · 批 5 增量同步）**：五域条目数之和 **28 + 19 + 27 + 16 + 15 = 105**，与图题 105 及 registry 实数**三处自洽**（以 `engine/mcp/src/tool-registry.ts` 的 `TOOLS` 数组为唯一权威源，逐个工具名分桶；分桶依据是**业务职能**，不是 registry 的 `roles` 标签——见上方「两套标签不要混用」）。**自洽由 `tools/check/check-docs.sh` §20 断言**（提取本图五域数字求和，比对图题与 registry 实数；提取为空 ⇒ 判红，防守卫空转）。重算记录：改前五域题号为 16/15/17/17/15（和 80 ≠ 图题 95，差 15），且 `后训模块 ×8` 与实数 `train_*` = 12 不符——两处同批纠正；**回填 2 枚此前未归域的工具**（`contribution_query` 治理 KPI 贡献度报表、`list_capabilities` 能力发现元工具，见各自 registry 描述——均属「审计·治理·运维」面，落 C5）；**v1.4.9 G9 增量**（device_register/device_list 设备注册面，D3 +2：95→97）；**v1.4.9 G10/G11 增量**（device_data_query/device_data_push 设备数据面，D3 +2：97→99，C6 扩为设备接入面 ×4）；**v1.4.9 G5b/G1 增量**（workflow_export/workflow_import 模板面归 D1 A3 编排域 +2、connector_register/connector_list 连接器注册面新 C7 落 D3 +2：99→103）；**v1.4.9 批 5 增量**（router_session_push 过站 session 承接面新 C8 落 D3 +1：103→104——主叙事是数据主权承接+审计挂链+cost 治理；语料管道消费端见 B2 后训模块）；**v1.5.0 增量**（`trace_reconcile` 跨层证据对账——审计证据面，归 D3 C1 审计域 +1：104→105）。
+
+> 📌 本表覆盖至 v1.3.8；v1.3.9 及其后版本（v1.4.0~v1.4.9、v1.5.0）的能力见 [HANDBOOK · 近期版本新功能速览](./HANDBOOK.md) 与 [CHANGELOG](../CHANGELOG.md)，本表不再逐版续列。
 
 | 版本 | 关键能力 |
 |------|---------|
@@ -353,7 +354,9 @@ graph TB
 
 ### 已排期（开发中或即将开发，详见 ROADMAP）
 
-Dashboard Web 前端（`dashboard.html` 单文件控制台已落：驾驶舱/FDE 引导/AI 节点/本体数据/知识库/工具箱 6 页 + `tools/dashboard/serve-dashboard.mjs` 服务，读 `data/` 实时数据 + 示例降级；工作明细数据层 v1.3.9 + Web 工作明细页 v1.4.0）· 完整多设备协同 L2 · meta-harness 多 harness 编排 · 本地推理 workflow 专属 LoRA 小模型（v3.x–v4.x 远景，纯画饼）。完整路线见 [六、已知局限与未来方向](#六已知局限与未来方向) 与 ROADMAP。
+**排期中（未交付）**：完整多设备协同 L2 · 本地推理 workflow 专属 LoRA 小模型（v3.x–v4.x 远景，纯画饼）。
+
+**已交付（曾列本段，判为已交付后移出）**：Dashboard Web 前端（`dashboard.html` 单文件控制台 6 页 + `tools/dashboard/serve-dashboard.mjs` 服务）· meta-harness 多 harness 编排（v1.3.9）· 工作明细数据层（v1.3.9）+ Web 工作明细页（v1.4.0）。完整路线见 [六、已知局限与未来方向](#六已知局限与未来方向) 与 ROADMAP。
 >
 > **Dashboard 双形态说明（v1.3.5 归位 tools/）**：`tools/dashboard/dashboard.html`（Web 形态，`node tools/dashboard/serve-dashboard.mjs` 起服务——与服务器同目录）与 `tools/dashboard/sofagent-dashboard.sh`（终端形态，装到 `~/.sofagent/bin/`，零依赖 bash）是同一 Dashboard 的两种产品入口（README 三入口表）：Web 给老板/IT 可视化看，终端给开发者/FDE 快速看。二者职责不同，勿混用/勿删其一。
 
@@ -459,7 +462,7 @@ graph LR
 | **编排模块** | 工作流 DAG 拆解、循环执行、Agent 阵型调度 | orchestrator 包（LangGraph） |
 | **审计模块** | 24 条规则 git diff 硬证据判定，每次变更必审 | audit 包 + git hook |
 | **后训模块** | post-training 流水线：审计轨迹→语料导出→训练（**外部执行**）→模型注册→晋升（模型进化闭环的中段） | orchestrator/train + eval 包 |
-| **治理模块** | 治理 KPI、跨层证据对账、可见性分级 | 规划中（v1.5.0） |
+| **治理模块** | 治理 KPI、跨层证据对账、可见性分级 | v1.5.0（✅ 开发完成 · ⏳ 待发版） |
 | **执行模块** | 模型路由、沙箱隔离、凭证 Vault、多实例表决 | 规划中（v1.5.3） |
 
 > 📌 **后训模块的能力边界**：本仓负责后训流水线的**编排与治理**——任务提交 / 预算门禁 / 环境体检 / 提交前预检 / 失败诊断 / 语料导出 / 合规闸门 / 交付包 / 模型注册与灰度 / 推理服务；**训练本身在外部执行环境进行，本仓不实现训练器**（`train_submit` 是把任务提交出去并跟踪，不是自己训）。
@@ -704,8 +707,8 @@ graph LR
 | STM-01 | 状态建模要求（生命周期状态迁移） | CORE-STM · ontology/contracts.ts 状态机契约 | 🟡 部分对齐（迁移执行模块待规划） |
 | META-01 | 元数据/标识要求 | frontmatter name + created_at/updated_at（D4 规则） | ✅ 已对齐 |
 | VAL-01 | 一致性/校验要求 | validateAgainstSchema + 审计 D 规则 | ✅ 已对齐 |
-| VER-01 | 版本/演进要求 | Benchmark revision freeze + Durable checkpoint | 🟡 部分对齐（本体 Schema 版本迁移待 v1.3.6） |
-| ITF-01 | 互操作/标准化导出要求 | v1.3.6 Ontology 注册接口（规划） | ⚪ 不适用（当前版本） |
+| VER-01 | 版本/演进要求 | Benchmark revision freeze + Durable checkpoint | 🟡 部分对齐（本体 Schema 版本迁移未落地，不挂过期版本锚点，见 [ROADMAP](./ROADMAP.md)） |
+| ITF-01 | 互操作/标准化导出要求 | v1.3.6 已交付 `ontology_import` 注册接口面（D1-D5 留痕） | ⚪ 不适用（当前版本） |
 
 **审计报告「本体建模要求对齐」维度（opt-in）**：`runRules({ gb48000: true })`（编程接口选项，非 CLI flag）→ 结果追加 `GB48000` 信息条目（ruleClass='工程规范'，按 name 排除 exitCode 计算——默认行为零变化）。该维度对齐的是 **GB/T 48000.3-2026「标准数字化·本体建模要求」**（ontology schema/action-registry/contracts 合规映射，8 条 OBJ/LNK/ACT/STM/META/VAL/VER/ITF），**不是行为审计国标**，且为**非认证声明**。覆盖度：已对齐 5 / 部分对齐 2 / 不适用 1。
 
@@ -803,10 +806,6 @@ graph LR
 │ FORGE driver                             │  │ forge-runs/          │  │ verdict.md（人类读）                  │
 │   fresh-eyes / release-gate              │→ │   <loop>/<date>/run/ │→ │                                     │
 ├─────────────────────────────────────────┤  ├──────────────────────┤  ├─────────────────────────────────────┤
-│ @sofagent/orchestrator ⭐ v1.2.7         │  │（agent-mailbox/ 已于 v1.4.8 退场——零生产消费，见 changelog）│  │ @sofagent/orchestrator ⭐ v1.2.7     │
-│   SubAgent send() → inbox JSON           │→ │   <agent>/inbox/*.json│→ │ MessageInjector.injectMessages()    │
-│   （SubAgent 间异步消息）                 │→ │                      │→ │   （节点开始前注入 system prompt）   │
-├─────────────────────────────────────────┤  ├──────────────────────┤  ├─────────────────────────────────────┤
 │ @sofagent/core ⭐ v1.2.7                 │  │ orchestrator/goals/ ⭐│  │ @sofagent/orchestrator ⭐ v1.2.7     │
 │   /goal → evaluateGoal() 写 current.json │→ │   current.json       │→ │   goal_eval 节点（每轮评估收敛）     │
 │   （Session Goals 持久化）                │→ │                      │→ │                                     │
@@ -855,7 +854,7 @@ sofagent 支持两种节点类型：
 
 **River = 多个 Workflow 的集合**——每段 Workflow 把模型能力（水）引到业务侧，汇入同一条大河（River），从头到尾同一个身份、同一段上下文。
 
-Workflow 的混合架构（外层 `workflow.yml` Graph 骨架锁步骤 + 内层 ReAct 节点）实现细节见 HANDBOOK 的 Workflow 配置章节。
+Workflow 的混合架构（外层 `workflow.yml` Graph 骨架锁步骤 + 内层 ReAct 节点）实现细节见本节下文「Workflow 的混合架构」段。
 
 ```
 用户 → River（统一入口）→ Workflow A/B/C（分发）→ Subagent（执行）
@@ -903,7 +902,7 @@ River 的载体是 Agent 平台（OpenClaw / WorkBuddy 等）+ sofagent + Channe
 
 **前提条件**：大厂入口 Agent 需支持 MCP 协议。目前 Coze / Dify / WorkBuddy 已支持，钉钉/飞书/企微的 AI 助手在跟进 MCP 标准。
 
-**与 扣子（Coze，字节跳动） 在 Slack @tag 的区别**：扣子（Coze，字节跳动） 把 Agent 嵌入协同平台（Agent 还是通用 Agent），sofagent 把**约束过的专项 Workflow** 嵌入协同平台（Agent 行为被 Harness 限制在企业业务流程边界内）。
+**与扣子（Coze，字节跳动）在 Slack @tag 的区别**：扣子把 Agent 嵌入协同平台（Agent 还是通用 Agent），sofagent 把**约束过的专项 Workflow** 嵌入协同平台（Agent 行为被 Harness 限制在企业业务流程边界内）。
 
 ### 编排层与执行层分离（v1.3.4 增量 · DSH 执行后端接入）
 
@@ -1185,7 +1184,6 @@ audit:
 **已交付**：激活链 Phase 1-4（ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN）全链路——activate→compose→run→HITL→audit→sustain 验证 + `wrapToolCall` middleware 联动 + Ontology 本体数据 + 并行编排 + Agent 身份码 + Onboard Agent L1-L5 + Refine Agent + 进化闭环。各版本明细见 [CHANGELOG](../CHANGELOG.md) 与 [激活链设计文档](./guides/fde-activation-chain.md)。
 
 **未来方向**：
-- **v1.3.x 后期**：完整多设备协同——Agent 独立身份 + 跨设备审计聚合 + 场景驱动权限 + 代理网关硬边界 + SubAgent 沙箱
 - **v2.x**：组织级共享记忆 + 协同层 + **分层模型路由**（Harness 按任务复杂度路由到云端大模型/本地 7B/本地 0.5B，数据主权驱动——敏感数据不出内网）+ **离线 USB 节点**（企业专属模型本地推理 + workflow 烧录合体，依赖 v1.4.4 本地权重部署 + v1.4.7 workflow 烧录底座，2026-08-19 从 v3.x-v4.x 提前）
 - **v3.x-v4.x+**：企业专属小模型精调（`sofagent-model distill` QLoRA）——离线节点本地推理的轻量化（蒸馏到 7B/0.5B）。详见 [ROADMAP · 分层模型架构](./ROADMAP.md#分层模型架构v3x-远景概述)
 - **远期护城河演进方向（非当前能力）**：当前护城河 = 约束层 + 审计能力（模型越强越值钱）。更远的演进方向：把「帮 sofagent 自身进化」的 Harness + 进化模块能力，泛化为「**自动帮企业部署后训练模型**」的引擎。届时护城河从「约束能力」升维为「**后训练模型的自动化部署能力**」——交付物是部署在企业侧的定制模型（基于企业自有/通用基座后训练，非 sofagent 自制大模型），使用者是企业客户而非 sofagent 自身；ontology 在此既是企业数字孪生（语义层），也是后训练规格来源（每个 workflow 节点 → 一个专精模型）。**此为长期目标蓝图，当前完全不具备该能力**，仅作演进方向记录，不视为现状或近期计划。
@@ -1205,7 +1203,7 @@ audit:
 | skill-staleness | @weekly（默认禁用） | Skill 陈旧度（需 eval 数据支持） |
 | warn-accumulator | @daily | 连续未处理 WARN 累积（阈值 3，含文件级追踪） |
 
-> **范围声明**：sofagent 是 Harness 中间件（**品类定位词**——「中间件」在此答的是「sofagent 属于哪个品类」，**不是**「约束层是技术实现层的中间件」这一实现论判断；两义互指见 [设计哲学](./PHILOSOPHY.md)）——覆盖行为约束 + 变更审计 + 经验沉淀 + 持续优化。不覆盖**主 Agent 平台**本身（IM 渠道 / 第三方平台托管的沙箱 / 工具调用——WorkBuddy / OpenClaw 等大厂平台的事），也不覆盖运维层（监控/告警/重启/日志轮转）。**例外**：sofagent 托管**自派 SubAgent** 的运行时治理——v1.3.0 起为 middleware 层轻量拦截（工具调用中介 + 人工批准钩子），v1.3.7 扩展为完整沙箱（文件系统隔离 + 网络出站白名单 + 工具调用前置 allow/deny + 虚拟 key 边界注入），因 sofagent 既起环境又发凭证、天然拥有执行边界。**运行时治理仅限自派 SubAgent，主 Agent 永远事后审计**。扣子（Coze，字节跳动） 类全栈产品管从 Agent 到权限的全部层，sofagent 管其中可独立标准化的约束+审计层——不管企业用什么 Agent 平台，sofagent 是第三方独立底线守卫。
+> **范围声明**：sofagent 是 Harness 中间件（**品类定位词**——「中间件」在此答的是「sofagent 属于哪个品类」，**不是**「约束层是技术实现层的中间件」这一实现论判断；两义互指见 [设计哲学](./PHILOSOPHY.md)）——覆盖行为约束 + 变更审计 + 经验沉淀 + 持续优化。不覆盖**主 Agent 平台**本身（IM 渠道 / 第三方平台托管的沙箱 / 工具调用——WorkBuddy / OpenClaw 等大厂平台的事），也不覆盖运维层（监控/告警/重启/日志轮转）。**例外**：sofagent 托管**自派 SubAgent** 的运行时治理——v1.3.0 起为 middleware 层轻量拦截（工具调用中介 + 人工批准钩子），v1.3.7 扩展为完整沙箱（文件系统隔离 + 网络出站白名单 + 工具调用前置 allow/deny + 虚拟 key 边界注入），因 sofagent 既起环境又发凭证、天然拥有执行边界。**运行时治理仅限自派 SubAgent，主 Agent 永远事后审计**。扣子（Coze，字节跳动）类全栈产品管从 Agent 到权限的全部层，sofagent 管其中可独立标准化的约束+审计层——不管企业用什么 Agent 平台，sofagent 是第三方独立底线守卫。
 
 ---
 

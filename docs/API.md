@@ -4,7 +4,7 @@
 
 > sofagent 对外全部能力面的一站式清单——七大接口面 + MCP 105 tools 按域分组（第七面「标准数据推送接口」入口已接线：MCP tool `data_push` 双闸入库；v1.4.9 G9 新增 device_register/device_list 设备注册面，G10/G11 新增 device_data_query/device_data_push 设备数据面，G5b/G1 新增 connector_register/connector_list 连接器面与 workflow_export/workflow_import 模板面，批 5 新增 router_session_push 过站 session 承接面）。工具清单由 `engine/mcp/src/tool-registry.ts` 生成（scripts/check 门禁对账，文档与代码永不漂移）。
 >
-> 版本：v1.4.9（✅ 已发版——本批更新 2026-09-17）· 105 tools / 7 面（第 7 面 v1.4.6 交付；v1.4.7 新增 11 tool 归入既有面；v1.4.9 G9 新增 device_register/device_list，G10/G11 新增 device_data_query/device_data_push，G5b/G1 新增连接器与模板 4 tool，批 5 新增 router_session_push）
+> 版本：v1.4.9（✅ 已发版——本批更新 2026-09-17）· 105 tools / 7 面（第 7 面 v1.4.6 交付；v1.4.7 新增 11 tool 归入既有面；v1.4.9 G9 新增 device_register/device_list，G10/G11 新增 device_data_query/device_data_push，G5b/G1 新增连接器与模板 4 tool，批 5 新增 router_session_push；**v1.5.0 新增 `trace_reconcile`——✅ 开发完成 · ⏳ 待发版**，状态见 [ROADMAP](./ROADMAP.md)）
 
 ---
 
@@ -35,7 +35,7 @@
 
 ## 二、MCP 工具清单（105 · 按产品能力域分组）
 
-> 十个能力域按「一个组 = 一个可独立讲述的产品能力」划分，与五能力叙事的对应：本节工具承载其中的**审计**（审计与合规）、**回溯**（快照与回溯）、**沉淀**（知识资产与能力市场）、**进化**（后训练流水线与 FDE 沉淀）能力面；**注入**能力走加载链文件（SKILL.md/fde.md/think.md/knowledge/），不经 MCP 暴露。**roles 列保留运行时真值**——`SOFAGENT_MCP_ROLES=audit,ops` 收窄面以 roles 为准（v1.4.0 工具角色分层），分组是文档编制判断。浏览器四件套（playwright_*）归审计域——主叙事是 UI 层审计取证（v1.5.2 UI 审计的执行底座）。
+> 十个能力域按「一个组 = 一个可独立讲述的产品能力」划分，与五能力叙事的对应：本节工具承载其中的**审计**（审计与合规）、**回溯**（快照与回溯）、**沉淀**（知识资产与能力市场）、**进化**（后训练流水线与 FDE 沉淀）能力面；**注入**能力走加载链文件（SKILL.md/fde.md/think.md/knowledge/），不经 MCP 暴露。**roles 列保留运行时真值**——`SOFAGENT_MCP_ROLES=audit,ops` 收窄面以 roles 为准（v1.4.0 工具角色分层），分组是文档编制判断。浏览器四件套（playwright_*）归审计域——主叙事是 UI 层审计取证（v1.5.2 UI 审计的执行底座）。**与 ARCHITECTURE 的「MCP 工具五域一环」组织法（业务职能分桶）互为正交的另一套分桶**：两套分组用途不同、条目数不等属预期；工具总数的唯一权威源是 `engine/mcp/src/tool-registry.ts` 的 `TOOLS` 数组（见 [ARCHITECTURE · 能力与状态总览](./ARCHITECTURE.md)）。
 
 ### FDE 进场 · 六引擎（访谈 → 分类 → 量化 → 推导 → 沉淀 → 部署）（7）
 
@@ -210,3 +210,7 @@
 | 2026-09-03 | 建档——80 tools 首次成清单，六大接口面总表 |
 | 2026-09-05 | v1.4.5 三件收编（train_serve/train_compliance/train_deliverable）80→83 |
 | 2026-09-07 | 接口面六→七：新增「标准数据推送接口」第七面（v1.4.6 交付，验收标准转勾） |
+| 2026-09-11 | v1.4.7 新增 11 tool（workflow CRUD / PR 生命周期 / 绩效 / 缺口 / data_push 等）84→95 |
+| 2026-09-13 | v1.4.8 tools 面零新增，仍为 95 |
+| 2026-09-17 | v1.4.9 新增 9 tool（device_register / device_list · device_data_query / device_data_push · connector_register / connector_list · workflow_export / workflow_import · router_session_push）95→104 |
+| 待发版 | v1.5.0 新增 trace_reconcile 104→105（随该版发版同步） |

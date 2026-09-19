@@ -3,7 +3,7 @@
 <p align="center"><img src="assets/sofagent.png" alt="sofagent" width="96" /></p>
 
 > 已经做了什么、未来要去哪、哪些地方需要你的帮助。
-> v1.4.9 · 2026-09-17（✅ 已发版）· v1.5.0 已开发完成待发布（治理模块 · MCP 104→105 · 测试 4805→4903 · acceptance 352→357）· 治理模块 · 可见性与本体成熟 · MCP 104→105 tools · 测试 4805→4903 · acceptance 352→357。上一版 v1.4.9（2026-09-17，设备接入与数据承接）。完整历史见 [CHANGELOG](../CHANGELOG.md)。
+> v1.4.9 · 2026-09-17（✅ 已发版）· v1.5.0（✅ 开发完成 · ⏳ 待发版）——治理模块 · 可见性与本体成熟：MCP 104→105 tools · 测试 4805→4903 · acceptance 352→357。完整历史见 [CHANGELOG](../CHANGELOG.md)。
 
 产品定位详见 [设计哲学](./PHILOSOPHY.md) 和 [README](../README.md)。
 
@@ -16,7 +16,6 @@
 - 行业印证
 - 探索方向
 - 分层模型架构（v3.x 远景概述）
-- 不需要的
 - 欢迎参与
 - 历史架构演进
 
@@ -34,7 +33,9 @@
 
 | 版本 | 核心交付 |
 |------|------|
-| **v1.4.7** | **🔌 商业平台接口版**：G2 能力缺口查询 workflow_gaps（缺人/缺能力/待升级三类）+ G4 contribution_query 人机同标准贡献度（orgId 租户过滤）+ G6 节点级 visibility 三级枚举 + G7 多租户 v0（data/<tenant>/ 路径隔离 + orgId 归属）+ G13 PR 生命周期三 tool（状态机 + confidence 两态 + branch→trunk 联动 + 拒绝留痕）+ G14 workflow CRUD 四 tool（schema 校验门 + trigger.schedule）+ workflow 烧进 USB + G8 首部署 cron 包 + 上岗 prompt 生成器 + 云训练执行收口（TrainChannel 标准接口 + ssh 通道 + 双通道事件挂链）+ 静态加密/audit repo-hash/data_push 三接线 + audit 规约层与 PROV-O 导出 · 测试 4107→4279 · acceptance 311→328 · MCP 84→95（详见 [CHANGELOG](../CHANGELOG.md)） |
+| **v1.4.9** | **📡 设备接入与数据承接**：G9 设备注册/发现/心跳（Ed25519 身份 + 在线才派单/掉线改派）+ G10 数据目录白名单授权读取 + G11 采集声明 opt-in 上行（WAL 加密暂存 + 断点续传 + 审计计量）+ T7 router 过站 session 承接 + T8 敏感识别三层插槽（SDK 面）+ T9 权重灰度 AB + G5b 连接器注册 + G1 workflow 模板血缘 + T6 installer + T10 模型清单 · MCP 95→**104**（9 新）· 测试 4429→**4805**（详见 [CHANGELOG](../CHANGELOG.md)） |
+| **v1.4.8** | **🔌 插件管控与工程效能**：插件来源白名单 · 应用级工具策略 · 多 Agent 协作阵型库 · 自动上下文压缩 · shell 提权分级 · 成本 quota 事前门禁 · 依赖方向架构测试 · 自研进化 gate（skillopt 更名 `@sofagent/evolve`）· 执行机制纪律批 · MCP 95→**95**（零新增）· 测试 4279→**4429**（详见 [CHANGELOG](../CHANGELOG.md)） |
+| **v1.4.7** | **🔌 商业平台接口版**：G2 能力缺口查询 workflow_gaps（缺人/缺能力/待升级三类）+ G4 contribution_query 人机同标准贡献度（orgId 租户过滤）+ G6 节点级 visibility 三级枚举 + G7 多租户 v0（data/<tenant>/ 路径隔离 + orgId 归属）+ G13 PR 生命周期三 tool（状态机 + confidence 两态 + branch→trunk 联动 + 拒绝留痕）+ G14 workflow CRUD 四 tool（schema 校验门 + trigger.schedule）+ workflow 烧进 USB + G8 首部署 cron 包 + 上岗 prompt 生成器 + 云训练执行收口（TrainChannel 标准接口 + ssh 通道 + 双通道事件挂链）+ 静态加密/audit repo-hash/data_push 三接线 + audit 规约层与 PROV-O 导出 · 测试 4107→4279（起点为换基后口径：4107 = 4088 + 19 散测；CHANGELOG 索引行记换基前值 4088）· acceptance 311→328 · MCP 84→95（详见 [CHANGELOG](../CHANGELOG.md)） |
 | **v1.4.6** | **🚀 后训模块 · 分布式与云端**：多卡/多机训练（gpu.count/nodes + schema v2 存量兼容 + GPU 双轴拓扑 + NCCL 第八类诊断）+ 云 VM 执行面（train_cloud 注册/体检/远程 spawn + 分拣三档宁拦勿漏 + 失联止损 5min + 成本入预算）+ 标准数据推送接口（双闸，入口接线 v1.4.7）+ 边界收缩（配方外部装载/trainEnvInit 归 shell/model-downloader 删除/TrainExecutor 隔离，约 −1.2k 行）· 测试 4055→4088 · acceptance 305→311 · MCP 83→84（详见 [CHANGELOG](../CHANGELOG.md)） |
 | **v1.4.5** | **🚀 后训模块 · 服务与持续**：训练推理服务 train_serve + 持续后训练三触发与回退保护 + 合规扫描闸门 train_compliance + FDE 交付包 train_deliverable + 保留策略归档 + 后训 Quickstart 十步 + 进化实证收口（真脑/台账/采样/L4 自进化）+ FDE 进场记忆目录 + 可靠性加固批（webhook SSRF/审计链截断/超时降级）· 测试 3753→4055 · acceptance 304→305 · MCP 80→83（详见 [CHANGELOG](../CHANGELOG.md)） |
 | **v1.4.4** | **🚀 后训模块 · 信号与部署闭环**：训练语料导出三件套（corpus_export 79→80 + reward 骨架）+ 企业专属模型本地权重部署（manifest+sha256 篡改拒绝+rollback-weights）+ 训练产物→注册自动衔接 + 多基座对比（train compare ROI 排序）+ 决策因果链与先例检索 + CI 供应链全 SHA 固定 + 五能力叙事定稿 · 测试 3619→3753 · acceptance 294→304 · MCP 79→80（详见 [CHANGELOG](../CHANGELOG.md)） |
@@ -46,6 +47,8 @@
 | **v1.2.x**（10 版） | **激活链 ACTIVATE→ORCHESTRATE→EXECUTE 全线打通 + 约束层叙事统一 + 三个入口产品**：v1.2.0 物理结构大重构（/sofagent/→/engine/）→ v1.2.5 激活链 Phase 1 + A20-A23 规则 → v1.2.7 编排模块增强（StateGraph + Session Goals）→ v1.2.9 FORGE 短任务化 + npx CLI/规则市场/GitHub Action 三入口 + 约束层叙事重构（详见 [CHANGELOG](../CHANGELOG.md)） |
 | **v1.1.x**（10 版） | **编排模块从 ao → LangGraph + 多设备联邦 + Dream Cycle 知识进化**：v1.1.0 包结构纯度重构（12 包独立）→ v1.1.3 LangGraph StateGraph 直接编排 → v1.1.7 Dream Cycle 6 阶段 + 知识健康巡检 → v1.1.8 安全层加密 + 联邦查询 → v1.1.9 产品叙事收敛（FDE Agent）+ USB 完整运行时（详见 [CHANGELOG](../CHANGELOG.md)） |
 | **v1.0.x**（10 版） | **审计模块奠基 + AI 知识库实现 + 双节点架构**：v1.0.0 正式版发布（Agent 审计工具，2026-07-10）→ v1.0.5 Ontology 统一层 + Work模板市场 → v1.0.7 双节点架构 + ao 退役 → v1.0.8 FDE Agent 自进化 + 文件系统审计 → v1.0.9 二进制审计 + MCP compose tool（详见 [CHANGELOG](../CHANGELOG.md)） |
+
+> ℹ️ v1.4.8 / v1.4.9 两行未单列 acceptance 增量——两版合计 acceptance 328→352，逐版拆分未留档，按诚实原则留空；v1.5.0 起恢复逐版记录。
 
 ## 未来去哪
 
@@ -108,7 +111,7 @@ sofagent 的定位正卡在这个转折点上：审计模块（治理侧）+ Ont
 | **v1.5.4** | 📋 规划中 | **🔍 审计模块 · 场景扩展与能力治理**：SMB 场景审计扩展（数值勾稽/来源可溯/口径一致）· UI 层审计前置评估 · OWASP Agentic Top 10 补条 · 能力面使用率治理 · 数据生命周期治理 | [日志](./changelog/v1.5/v1.5.4.md) |
 | **v2.0.0** | 📋 规划中 | **🏰 数据主权大版本（收窄版）**：离线 USB 节点合体（本地权重 + workflow 烧录 + 审计 + 路由底座 = 完全离线 + 滞留回传）· 网络出口治理面 | [日志](./changelog/v2.0/v2.0.0.md) |
 
-> 维护者口径（场景数 SSOT、加载链预算跟踪）已迁 [DEVELOPMENT](./DEVELOPMENT.md)——路线图只讲方向，不讲内部对账细节。**当前 acceptance 场景数 357**（SSOT = `playbook/acceptance-test.sh` 头部声明，逐条对账见 DEVELOPMENT）。
+> 维护者口径（场景数 SSOT、加载链预算跟踪）已迁 [DEVELOPMENT](./DEVELOPMENT.md)——路线图只讲方向，不讲内部对账细节。当前值 357（最大场景号 S431；SSOT = `playbook/acceptance-test.sh` 头部声明，逐条对账见 [DEVELOPMENT](./DEVELOPMENT.md)）。
 
 ---
 
@@ -152,10 +155,6 @@ sofagent 的定位正卡在这个转折点上：审计模块（治理侧）+ Ont
 
 ---
 
-## 不需要的
-
-以下认真考虑过但决定不做。完整设计禁区见 [PHILOSOPHY §八](./PHILOSOPHY.md#八不做什么设计禁区)。
-
 ---
 
 ## 欢迎参与
@@ -163,7 +162,7 @@ sofagent 的定位正卡在这个转折点上：审计模块（治理侧）+ Ont
 | 你能做的事 | 时间 | 说明 |
 |------|:--:|------|
 | 跨平台测试 | 30 min | 你有 Codex / Hermes / Claude Code？装一下告诉我们 |
-| 补充 FAQ | 20 min | 你踩了什么坑？直接改 HANDBOOK §三（排查问题） |
+| 补充 FAQ | 20 min | 你踩了什么坑？直接改 [HANDBOOK](./HANDBOOK.md) 的「排查与自定义」节 |
 | 文档翻译 | 1-2 h | 英文翻译对社区意义巨大 |
 | 第三方证据 | 1 周 | 装完用一周，填 [docs/evidence/evidence.md](./evidence/evidence.md) |
 | 安全审计 | 不限 | 给 SECURITY.md 较真 |
@@ -179,4 +178,4 @@ sofagent 的定位正卡在这个转折点上：审计模块（治理侧）+ Ont
 
 > 📖 多设备同步方案见 [多设备同步指南](./guides/multi-device-sync.md)。
 
-> 📖 loop-engineering 启发方向的去向：FDE 节点注册表 + Worktree 隔离已交付（v1.3.5 / v1.3.6），理解债务已排期（v1.5.2），quota 事前门禁 + 依赖方向测试已排期（v1.4.8）。来源链接见 [cobusgreyling/loop-engineering](https://github.com/cobusgreyling/loop-engineering)（MIT 开源）。
+> 📖 loop-engineering 启发方向的去向：FDE 节点注册表 + Worktree 隔离已交付（v1.3.5 / v1.3.6），理解债务已排期（v1.5.2），quota 事前门禁 + 依赖方向测试已交付（v1.4.8）。来源链接见 [cobusgreyling/loop-engineering](https://github.com/cobusgreyling/loop-engineering)（MIT 开源）。
