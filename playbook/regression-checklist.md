@@ -1282,15 +1282,14 @@ done
 
 ```bash
 (
-# 子项 a: 英文版正文版本号检查（盲区）
-grep -q "Current version" tools/check/check-version.sh && echo "✅ 英文检查" || echo "✗ 缺英文检查"
-# 子项 b: MCP 计数扫描拆分后定义文件（盲区）
-grep -q 'tool-registry.ts' tools/check/check-version.sh && grep -q 'resources.ts' tools/check/check-version.sh && echo "✅ 扫描拆分文件" || echo "❌ 未扫描"
-# 子项 c: 漂移扫描排除 .test. 文件（盲区）
-grep 'grep.*条规则' tools/check/check-version.sh | grep -q '\.test\.' && echo "❌ 未排除 .test." || echo "✅ 已排除 .test."
-# 子项 d: EXPECTED_DOC_DATE 动态提取，与 CHANGELOG 发版日期一致（盲区）
-grep "EXPECTED_DOC_DATE" tools/check/check-version.sh
-grep "$(node -p "require('./package.json').version")" CHANGELOG.md | grep -oE "2026-[0-9]{2}-[0-9]{2}"
+grep -q "Current version" tools/check/check-version.sh && echo "✅ 英文检查" || echo "✗ 缺英文检查"   # 子项 a: 英文版正文版本号
+grep -q 'tool-registry.ts' tools/check/check-version.sh && grep -q 'resources.ts' tools/check/check-version.sh && echo "✅ 扫描拆分文件" || echo "❌ 未扫描"   # 子项 b: MCP 计数拆分后定义文件
+grep 'grep.*条规则' tools/check/check-version.sh | grep -q '\.test\.' && echo "❌ 未排除 .test." || echo "✅ 已排除 .test."   # 子项 c
+grep "EXPECTED_DOC_DATE" tools/check/check-version.sh; grep "$(node -p "require('./package.json').version")" CHANGELOG.md | grep -oE "2026-[0-9]{2}-[0-9]{2}"   # 子项 d: 动态提取 + 与 CHANGELOG 发版日期一致
+# 子项 e: §14b tag 日期提取须与时区解耦——合规形态 = unix 时间戳 + 固定偏移纯算术（禁 TZ 环境变量：ref 过滤器不认前缀 / GNU date -r 是 --reference / TZ 生效性依赖 runner）
+grep -q "28800" tools/check/check-version.sh && echo "✅ 14b 时区解耦（unix ts + 固定偏移）" || echo "❌ 14b 可能依赖 TZ（跨环境真值不一致）"
+# 子项 f: 容差/豁免类判据不得回退中性值——回退成 0/空 会让判据恒成立（fail-open 静默吞漂移），回退必须落到更严判据
+grep -q "不放宽" tools/check/check-version.sh && echo "✅ 容差 fail-closed" || echo "❌ 容差可能 fail-open"
 ) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -qE "^[[:space:]]{0,2}❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true
 ```
 #### 96. 警戒线声明多处同步——单一 SSOT 引用

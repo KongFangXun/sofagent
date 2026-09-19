@@ -1046,7 +1046,21 @@ async function s431() {
 }
 
 // ── 调度器 ──────────────────────────────────────────────────
-const CASES = { s101, s102, s103, s106, s107, s108, s109, s111, s115, s148, s149, s151, s152, s155, s156, s416, s418, s419, s420, s421, s422, s423, s424, s425, s426, s427, s428, s429, s430, s431 };
+// S432：CHANGELOG 顶版索引行状态自洽（锁「⏳ 待发版 · 已发版」同现矛盾——发版翻牌期高频缺陷）
+async function s432() {
+  const { fs } = _s41x_init('s432'); const bad = [];
+  const root = process.env.PROJECT_ROOT;
+  const ver = JSON.parse(fs.readFileSync(root + '/package.json', 'utf-8')).version;
+  const top = fs.readFileSync(root + '/CHANGELOG.md', 'utf-8')
+    .split('\n').find((l) => l.startsWith('- **v' + ver + '**'));
+  if (!top) { bad.push('CHANGELOG 缺当前版本 v' + ver + ' 的索引行'); }
+  else if (top.includes('待发版') && top.includes('已发版')) {
+    bad.push('顶版行状态自相矛盾（同时含待发版与已发版）');
+  }
+  _s41x_done(bad, 'S432');
+}
+
+const CASES = { s101, s102, s103, s106, s107, s108, s109, s111, s115, s148, s149, s151, s152, s155, s156, s416, s418, s419, s420, s421, s422, s423, s424, s425, s426, s427, s428, s429, s430, s431, s432 };
 
 async function main() {
   const name = process.argv[2];
