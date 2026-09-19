@@ -1,10 +1,10 @@
-// cordis-plugin-sofagent-audit · DSH 反向插件（v1.4.9 P2 合并批：吸收原 -gate 验收门禁面）
+// cordis-plugin-sofagent-audit · DSH 反向插件（v1.5.0 P2 合并批：吸收原 -gate 验收门禁面）
 // seam 挂载：tools/result + tools/pre-execute + fs/write-intent + agent/turn-stopping
 // # 语义：工具结果留证 + 工具执行前拦截 + 文件写入意图拦截（放行） + Turn 停止验收判定
 //   （判定源 = checkDangerousCommand / check_acceptance——引擎包既有 @public，零改动）
 // 清单生成源 = engine/dsh-plugins/plugins.json（生成 package.json 的 description/sofagent/dsh 段与 cordis.patch.yml）；本文件的 seam 字面量由生成器 --check 与之对账。
 //
-// v1.4.9 P2 吸收说明（F3）：原 -gate 独立承载 agent/turn-stopping 验收门禁，但其
+// v1.5.0 P2 吸收说明（F3）：原 -gate 独立承载 agent/turn-stopping 验收门禁，但其
 // 判定源（define_acceptance / check_acceptance 两 MCP tool）与 -audit 同族（机器可判定
 // 审计），拆两包造成「审计归 audit、验收归 gate」的人为割裂。本插件把验收 seam 并入
 // 四值声明，settings 补 acceptanceGate 独立开关（默认开；关档即不参与 Turn 停止判定——

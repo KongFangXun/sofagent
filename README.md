@@ -8,7 +8,7 @@
   <a href="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml"><img src="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml/badge.svg" alt="Verify" /></a>
   <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-brightgreen" alt="License: MIT" /></a>
   <!-- ⚠️ bump 版本时手动同步此 badges 版本号（Version-vX.Y.Z） -->
-  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.4.9-16B8F3" alt="Version" /></a>
+  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.5.0-16B8F3" alt="Version" /></a>
 </p>
 
 <p align="center"><sub>简体中文 | <a href="./README.en.md">English</a></sub></p>
@@ -166,7 +166,7 @@ npx -y -p @sofagent/audit sofagent-audit
 **完整安装**（Node.js ≥ 18，先下载审查再执行）——**装在企业跑 AI 节点的设备上**：
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/KongFangXun/sofagent/refs/tags/v1.4.9/bootstrap.sh -o bootstrap.sh
+curl -fsSL https://raw.githubusercontent.com/KongFangXun/sofagent/refs/tags/v1.5.0/bootstrap.sh -o bootstrap.sh
 less bootstrap.sh          # 先看一眼脚本内容，确认安全
 bash bootstrap.sh && rm bootstrap.sh
 ```

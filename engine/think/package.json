@@ -1,6 +1,6 @@
 {
   "name": "@sofagent/think",
-  "version": "1.4.9",
+  "version": "1.5.0",
   "engines": {
     "node": ">=18"
   },
@@ -26,8 +26,8 @@
   "license": "MIT",
   "author": "KongFangXun",
   "dependencies": {
-    "@sofagent/core": "1.4.9",
-    "@sofagent/eval": "1.4.9"
+    "@sofagent/core": "1.5.0",
+    "@sofagent/eval": "1.5.0"
   },
   "exports": {
     ".": {

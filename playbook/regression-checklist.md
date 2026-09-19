@@ -1730,7 +1730,7 @@ grep -qE "代码扩展名尾锚定|尾锚定" engine/audit/src/rules/rule-a1-sen
 grep -q "restoreHexEscapes" engine/audit/src/rules/rule-a2-secret-leak.ts && [ "$(grep -c 'it(' engine/audit/src/rules/rule-a2.test.ts)" -ge 10 ] && echo "✅ A2 转义还原 + 对抗用例在位" || { echo "❌ A2 对抗样本缺失"; FAIL=1; }
 [ "${FAIL:-0}" = "1" ] && { echo "维度142:FAIL"; exit 1; }; echo "维度142:PASS"
 ) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -qE "^[[:space:]]{0,2}❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true
-**子项 j-p（归并自原 #129 · v1.4.4 fresh-eyes 19 项修复防复发）**：v1.4.4 fresh-eyes 19 项修复防复发——CLI 接线断链 + 供应链回滚路径 + nodeId/YAML 清洗 + 结构性收口（阶段四来源提取 A/B 类一维收口 · 行为面已由单测锁：weights-deploy/fde-workbench/export/corpus-export +9 用例）
+**子项 j-p（归并自原 #129 · v1.5.4 fresh-eyes 19 项修复防复发）**：v1.4.4 fresh-eyes 19 项修复防复发——CLI 接线断链 + 供应链回滚路径 + nodeId/YAML 清洗 + 结构性收口（阶段四来源提取 A/B 类一维收口 · 行为面已由单测锁：weights-deploy/fde-workbench/export/corpus-export +9 用例）
 
 > 19 项发现（P0×1 + P1×7 + P2×11，修复批 37cab2b9）防复发锚点。P0「声称命令三面零接线」的机械防线已落 check-docs §13（submitCompareJobs 生产调用 ≥1 断言在册）；行为面（回滚哈希直验/中文 nodeId 清洗/YAML 转义/scope 校验/auditEvent null/enterpriseId 正名）已由四包单测 +9 用例锁定，此处只收 grep 级结构性锚 + 新增声称点对账面。
 
@@ -1947,4 +1947,3 @@ grep -q "planExecution" engine/orchestrator/src/exec/git-capability.ts && grep -
 [ "${FAIL:-0}" = "1" ] && { echo "维度141:FAIL"; exit 1; }; echo "维度141:PASS"
 ) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -qE "^[[:space:]]{0,2}❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true
 ```
-

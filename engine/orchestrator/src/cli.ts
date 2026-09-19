@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// orchestrator CLI · v1.4.9
+// orchestrator CLI · v1.5.0
 //
 // loop 子命令 v1.3.7 升级：默认走 LangGraph StateGraph 节点级流转
 // （engineer→audit→reviewer→human_confirm），支持 --resume 从 checkpoint
@@ -7,7 +7,7 @@
 
 import { join } from 'path';
 
-// ── 训练模块（v1.4.9 第 7 批 · train 拆包）────────────────────────
+// ── 训练模块（v1.5.0 第 7 批 · train 拆包）────────────────────────
 // train 已迁至独立包 @sofagent/train（源码 engine/train/）。orchestrator 对它是
 // **运行期按需加载**、非构建期依赖——若声明为依赖，则 train 依赖本包
 // 的 /fde-compose 窄入口会构成**包级循环**，build 拓扑序无解。

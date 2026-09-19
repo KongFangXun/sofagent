@@ -5,7 +5,7 @@
 > 设计决策记录——从为什么存在、约束层五种能力如何协作，到每个关键决策的工程理由。
 >
 > **产品定位锚定**：本架构服务的产品 = **FDE Harness 层**（sofagent）——不造 Agent，嵌在成熟 Agent（执行体：DSH / OpenClaw / WorkBuddy）与模型层（智力源：通用大模型 + 专属小模型 / 后训练模型）之间做治理：对执行体约束（plugin + skill + MCP + CLI + dashboard 五种形态分发），对智力源治理（注册 / 灰度 / 训练 / 部署全留痕）（产品叙事见 [WIKI §二](./WIKI.md#二产品叙事sofagent-是-fde-harness-层不造-agent嵌在-agent-与模型之间做治理)）。
-> v1.4.9 · 2026-09-17（UTC）· ✅ 已发版（v1.4.9 更新 2026-09-17）
+> v1.5.0 · 2026-09-19（UTC）· ✅ 已发版
 
 ## 目录
 
@@ -53,7 +53,7 @@ graph TD
 
 ```mermaid
 graph LR
-    subgraph 层2 · 生命周期（流程视角 · v1.4.4+）
+    subgraph 层2 · 生命周期（流程视角 · v1.5.4+）
         D1[诊断<br/>FDE 四阶段] --> D2[激活 ACTIVATE<br/>交付物→SubAgent]
         D2 --> D3[编排 ORCHESTRATE<br/>多 Agent→StateGraph]
         D3 --> D4[执行 EXECUTE<br/>DAG + HITL + 审计]
