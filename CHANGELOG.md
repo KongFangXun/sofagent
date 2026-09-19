@@ -47,7 +47,7 @@
 - **v1.3.8** — 🛡️ 代理网关硬边界（唯一出入口 + HITL 审批队列首场景）+ 🔐 数据静态加密（能力交付：AES-256-GCM，daemon 接线 v1.4.7 收口——密钥就绪后审计历史密文落盘 SOFAGENT-AGE-V1，见 SECURITY）+ ⏸️ Durable Execution L3（WAL 三档可逆）+ ⏰ 异步长任务自治（cron + 依赖图）+ FORGE 保活三件套 + SDK `sandbox:true` + release-gate 瘦身 + 审查循环成本重构 + 快照写路径加固 · 测试 2655→**2782**（+127）· 2026-08-20 · [开发日志](./docs/changelog/v1.3/v1.3.8.md)
 - **v1.3.7** — 🏰 SubAgent 完整沙箱（虚拟 FS/网络白名单/独立进程/A-B 双跑）+ 场景驱动权限（fail-closed）+ AgentShield 五类扫描 + 行业 overlay 四套 + 断路器监控（ASI08/ASI10）+ ontology 生命周期（branch/trunk + 审阅门）+ FORGE 自适应并发 + memory-sync 路径通用化 + 26 项加固（4 P0 + 红队防御增强）· 2026-08-18 · [开发日志](./docs/changelog/v1.3/v1.3.7.md)
 - **v1.3.6** — 🔌 引擎接口外化（Workflow 标准格式 / Ontology Schema D1-D5 / 模型注册灰度 + 强制人审）+ SubAgent 托管 SDK + 训练协议三约定 + 路由可解释性 + 机器可判定验收（define_acceptance）+ 可靠性五件（worktree 隔离/双闸验证/疲劳检测/降级梯队/decisions 五分类）+ market→commons 更名 · MCP 52→**60** · 2026-08-18 · [开发日志](./docs/changelog/v1.3/v1.3.6.md)
-- **v1.3.5** — MCP 自进化 + instinct→skill 自动进化：引擎接口外化推进 · MCP 53→**54** · 测试 2380→**2431** · 2026-08-16 已发版 · [开发日志](./docs/changelog/v1.3/v1.3.5.md)
+- **v1.3.5** — MCP 自进化 + instinct→skill 自动进化：引擎接口外化推进 · MCP 48→**52**（4 新）· 测试 2380→**2431** · 2026-08-16 已发版 · [开发日志](./docs/changelog/v1.3/v1.3.5.md)
 - **v1.3.4** — 🏪 L3 组织能力市场（五环：发布→发现→调用→评价→养护 + 6 market MCP tool；market_* 系列 v1.3.6 起更名 commons_*）+ 🛡️ SkillScan 安全门（三态判定 + 发布/安装双触发）+ 📊 评估体系三步（harvest→jury→promote）+ 🔌 编排层与执行层分离（ExecutionBackend + DSH 执行后端接入）+ 📜 DecisionKind.MARKET + daemon 市场双巡检 · 2026-08-14 · [开发日志](./docs/changelog/v1.3/v1.3.4.md)
 - **v1.3.3** — 🤝 L2 团队协作协议（五大机制）+ ✨ Refine Agent 完整版 + 🧭 主 agent 编排 + 🚪 入口路由 + 📈 进化闭环升级 + 📜 evidence 字段 · 2026-08-12 · [开发日志](./docs/changelog/v1.3/v1.3.3.md)
 - **v1.3.2** — 🔄 Onboard Agent 完整版（L2-L5）· 2026-08-11 · [开发日志](./docs/changelog/v1.3/v1.3.2.md)

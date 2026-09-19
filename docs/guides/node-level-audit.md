@@ -1,9 +1,9 @@
-# 节点级审计可行性结论 · 24 条规则子集
+# 节点级审计可行性结论 · v1.4.9 规则子集
 
-> v1.3.6 交付⑤ 产出 · 2026-08-17
+> v1.3.6 交付⑤ 产出 · 2026-08-17 · 规则面最终对齐 v1.4.9（产出时目标版本 v1.4.0）
 > 依据：DSH Cordis 事件流（turn / step / tool 全链）+ Trajectory 采集 PoC 已跑通（`execution-backends/trajectory.ts`），
 > 事件落 JSON 可进 reward 样本。本文逐条判定 24 条审计规则哪些天然适配节点链（可归因到具体 tool 调用），
-> 哪些只对 git diff 有意义，定出 v1.4.0 cordis-plugin 节点级审计的规则子集。
+> 哪些只对 git diff 有意义，定出 cordis-plugin 节点级审计的规则子集（规则面最终对齐 v1.4.9）。
 
 ## 判定框架
 
