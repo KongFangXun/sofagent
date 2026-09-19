@@ -23,7 +23,7 @@
 
 > 🏢 **The organizational lens**: the bottleneck of AI adoption has shifted from "is the model smart enough" to "can the organization dare to onboard it" — does it fit the org chart, does it get an account, how is performance measured, what happens when it errs. sofagent is the onboarding system for digital employees: on entry it writes the job description into files; after departure it runs performance reviews (evidence for every change), organizational memory (compounding know-how), and fault tolerance (every mistake reversible). Install sofagent before you give AI an employee ID.
 
-**An open-source FDE Harness layer** — embedded between mature Agents (DSH / OpenClaw / WorkBuddy) and the model layer (general LLMs + bespoke post-trained models) to govern both: on entry, it writes the business judgment down as files (business flow, ontology data, AI-node deployment); after departure, it audits every change against those files. Five Harness capabilities (inject · audit · rollback · distill · evolve), five distribution forms (FDE plugins / Skill / MCP / CLI / Dashboard). sofagent does not build the Agent — it delivers the layer that keeps any Agent governed.
+**An open-source FDE Harness layer** — embedded between mature Agents (DSH / OpenClaw / WorkBuddy) and the model layer (general LLMs + bespoke post-trained models) to govern both: on entry, it writes the business judgment down as files (workflow, ontology data, AI-node deployment); after departure, it audits every change against those files. Five Harness capabilities (inject · audit · rollback · distill · evolve), five distribution forms (FDE plugins / Skill / MCP / CLI / Dashboard). sofagent does not build the Agent — it delivers the layer that keeps any Agent governed.
 
 <p align="center">
   <img src="docs/assets/audit-terminal.png" alt="sofagent-audit blocks a .env commit" width="860" /><br/>
@@ -127,7 +127,7 @@ Also in this release: Ontology Validation Engine (DAG cycle detection with chain
 
 ## The Two FDE Harness Phases
 
-**On entry · generate judgment** (FDE phase): map business flows (five-element deep-dive + three-question test — price every AI node) → build the dual graphs (business graph for humans + ontology for AI) → decide AI nodes → deploy three-layer deliverables. Each node carries "done criteria (merge_criteria) · who approves (approver) · when it runs (trigger)", frozen into the deliverable.
+**On entry · generate judgment** (FDE phase): map workflows (five-element deep-dive + three-question test — price every AI node) → build the dual graphs (business graph for humans + ontology for AI) → decide AI nodes → deploy three-layer deliverables. Each node carries "done criteria (merge_criteria) · who approves (approver) · when it runs (trigger)", frozen into the deliverable.
 
 **After departure · retain judgment** (Harness phase): the FDE leaves, the judgment remains — daemon patrols 24/7, every commit triggers the 24 audit rules (including **AgentShield static scanning across five config surfaces**), snapshots are rollback-ready, experience keeps accumulating; evolution writes promotion and distilled reflection back into the deliverable.
 

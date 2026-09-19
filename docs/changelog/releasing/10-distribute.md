@@ -160,7 +160,11 @@ sofagent-audit --version   # 确认 registry 版本
 sofagent-core --doctor     # 期望全部通过
 
 # 2. Skill 同步（WorkBuddy + OpenClaw 双平台）
+# 🔴 主入口必须单独 cp：SKILL/harness/ 只有流程文件、不含 SKILL.md 主入口——
+#    只 cp harness/* 会让本地 skill 主入口停在旧版（版本号核对会立刻暴露）
+cp SKILL/SKILL.md ~/.workbuddy/skills/sofagent/SKILL.md
 cp -r SKILL/harness/* ~/.workbuddy/skills/sofagent/
+cp SKILL/SKILL.md ~/.openclaw/skills/sofagent/SKILL.md
 cp -r SKILL/harness/* ~/.openclaw/skills/sofagent/
 cp SKILL/SKILL.md ~/.workbuddy/skills/sofagent-fde/
 cp -r SKILL/agents/audit/ ~/.workbuddy/skills/sofagent-audit/
@@ -170,6 +174,10 @@ cp -r SKILL/agents/fde/ ~/.openclaw/skills/sofagent-fde/ 2>/dev/null || true
 
 # 3. 最终验证
 bash tools/check/check-version.sh   # 全绿
+# 本地 Skill 主入口版本核对（期望 = 本版号；不匹配 = cp 路径漂移）
+for f in ~/.workbuddy/skills/sofagent/SKILL.md ~/.openclaw/skills/sofagent/SKILL.md; do
+  printf "%-50s %s\n" "$f" "$(grep -m1 '^version' "$f")"
+done
 ```
 
 ---
