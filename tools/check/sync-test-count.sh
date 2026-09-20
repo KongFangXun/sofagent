@@ -19,6 +19,13 @@
 #     内部自洽校验，不做当前值比对；
 #   - 谁加测试谁同步（归属原则）：并发 session 收尾前慎跑同步模式，
 #     以免把在途改动固化成中间值——优先 --dry-run 预览。
+#
+# ⚠️ 覆盖边界（**如实声明，不是「已全部覆盖」**）：本脚本只同步「workspace 总量」声称，
+#   目标 = 下面四个文件里的总量行。**逐包声称不在同步面内**——
+#   `docs/ARCHITECTURE.md`（audit / core / orchestrator / train / daemon 逐包）与
+#   `docs/DEVELOPMENT.md`（orchestrator 单包）写的是**单包数**，用总量去覆盖会直接写错，
+#   故不做自动替换，改由 `check-test-count.sh` 的逐包校验段守住漂移（红了即需人工按
+#   该门禁输出的「实际值」逐处修正）。补齐这几处时请照门禁输出改，不要照总量改。
 
 set -euo pipefail
 
@@ -60,9 +67,14 @@ const lines = before.split('\n');
 let hits = 0;
 for (let i = 0; i < lines.length; i++) {
   const L = lines[i];
-  // 行级护栏：必须是「数字+测试/tests」声称形态（覆盖中英文），否则跳过
-  if (!/[0-9]{3,4}[ \t]*(测试|tests)/.test(L)) continue;
-  const updated = L.replace(/([0-9]{3,4})(?=[ \t]*(测试|tests))/g, (m, num) =>
+  // 行级护栏：必须是「数字 +（可选中缀「个」/「单元」）+ 测试/tests」的声称形态（覆盖中英文）。
+  // ⚠️ 中缀位必须容忍「个」——原护栏 `[0-9]{3,4}[ \t]*(测试|tests)` 匹配不上最常用的中文形态
+  //   「5075 个测试」，于是 LIMITATIONS / WIKI 里那几行**本脚本永远同步不到**（实测：跑完本脚本
+  //   后门禁仍红，只能手工补齐）。这是同步工具自身的盲区，不是文档写错。
+  //   注意中缀只吃「个/单元」这类量词，**不跨标点**：`审计核心 1226 个、全 workspace 4917 个测试`
+  //   里的 1226 后面跟的是「个、」，不会命中（它本就不是 workspace 总量声称）。
+  if (!/[0-9]{3,4}[ \t]*(个|单元)?[ \t]*(测试|tests)/.test(L)) continue;
+  const updated = L.replace(/([0-9]{3,4})(?=[ \t]*(个|单元)?[ \t]*(测试|tests))/g, (m, num) =>
     num === total ? m : total);
   if (updated !== L) { lines[i] = updated; hits++; }
 }

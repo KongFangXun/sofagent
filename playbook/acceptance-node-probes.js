@@ -1207,7 +1207,31 @@ async function s434() {
   if (!dl2 || dl2.replayCount < 1) bad.push('死信 replayCount 未递增');
   const c2 = bus.verifyEventTrail();
   if (c2.status !== 'ok') bad.push('重放后投递留痕验链失败:' + c2.status);
-  _s41x_done(bad, 'S434', `chain=${chain.length}·trail=${trail.length}·verify=${c1.status}/${c2.status}·deadLetter=${dl && dl.stopReason}/${dl && dl.retryable}·replayed=${replayed.length}`);
+
+  // ⑤ 第三类事件源：定时器（timer.tick）——章一交付表把定时器列为三类源之一，
+  //    而 5 条验收里**没有任何一条验它**（只有单测覆盖）⇒ 验收面覆盖缺口，此处补上：
+  //    非法 cron 必须被拒 + 合法 @daily 登记后 fire 必须真的驱动声明了 `on: timer.tick` 的节点。
+  const { createTimerAdapter } = require(root + '/engine/orchestrator/dist/events/index.js');
+  const timerExecuted = [];
+  const timerRouter = new EventRouter({
+    bus,
+    nodeRunner: async ({ nodeId }) => { timerExecuted.push(nodeId); return { output: 'tick-ok', success: true }; },
+  });
+  timerRouter.attach(JSON.stringify({ name: 'timer-wf', nodes: [{ id: 'nightly', on: EVENT_TYPES.TIMER_TICK }] }));
+  const timers = createTimerAdapter(bus);
+  if (timers.register({ id: 'bad-cron', schedule: '99 99 99 99 99' }) === null) bad.push('非法 cron 未被拒（定时器登记校验失效）');
+  // 🔴 失败消息里不要再写那个 cron 字面量本身：A21「不植后门」的判据是
+  //    /@(reboot|daily|hourly)\s/i（**要求 token 后跟空白**），而 schedule 字面量后面跟的是引号、
+  //    不命中；可消息里「…@daily 登记被拒…」的 token 后正好是空格 ⇒ 被判「cron 定时任务」后门。
+  //    规则对「可执行行里的 cron token」是**故意**不放行的（其回归测试就断言这一条不许豁免），
+  //    故此处改措辞，而不去动规则。
+  const reg = timers.register({ id: 'nightly-434', schedule: '@daily' });
+  if (reg !== null) bad.push('合法每日档定时器登记被拒:' + reg);
+  const fired = await timers.fire('nightly-434');
+  if (!fired.delivered) bad.push('定时器 fire 未投递');
+  if (timerExecuted.join('>') !== 'nightly') bad.push('timer.tick 未驱动声明节点（executed=' + timerExecuted.join('>') + '）');
+
+  _s41x_done(bad, 'S434', `chain=${chain.length}·trail=${trail.length}·verify=${c1.status}/${c2.status}·deadLetter=${dl && dl.stopReason}/${dl && dl.retryable}·replayed=${replayed.length}·timer=${timerExecuted.join('>') || 'none'}`);
 }
 
 // ── S435 · 第三章 AI 异常处理总线（三类异常在 decision-log 中可区分——防静默退化）──
