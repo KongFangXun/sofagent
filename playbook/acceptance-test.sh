@@ -77,35 +77,20 @@ assert_js() {
 assert_rc() { local expected="$1"; shift; set +e; "$@" >/dev/null 2>&1; local actual=$?; set -e; [ "$actual" = "$expected" ] && return 0 || { fail "exit code 期望 $expected 实际 $actual"; return 1; }; }
 assert_grep() { grep -q "$1" "$2" 2>/dev/null && return 0 || { fail "grep 零命中: '$1' in $2"; return 1; }; }
 exit_of() { set +e; "$@" >/dev/null 2>&1; local rc=$?; set -e; echo "$rc"; }
-# v1.5.1 F3：跨文档「数值对账」从「存在即过」（`grep -q "$N"` 命中即算过）升级为
-#   「**取值并断言唯一性**」。
-#   缺陷（实测）：文档里新旧值并存时 `grep -q` 永远命中——LIMITATIONS.md 曾同时含 357 与
-#     358，`grep -q 358` 与 `grep -q 357` 都能命中 ⇒ 即使值是 stale 的，S165 恒绿。
-#     这正是 F1/A7 族「stale 值长期存活」的原因（门禁看不见）。
-#   语义：提取文档中**全部**该数字的声明形态，断言
-#     ① 至少 1 处——缺声明 = FAIL（拒绝以「读不到就跳过」收场）；
-#     ② 去重后**仅一个值**且 == SSOT 声明值——任一处 stale ⇒ 逐条列出并 FAIL。
+# v1.5.1 F3：跨文档数值对账从「存在即过」升级为「取值并断言唯一性」——原 `grep -q "$N"` 在文档
+#   新旧值并存时永远命中（LIMITATIONS.md 曾同含 357 与 358）⇒ stale 值长期存活、S165 恒绿，
+#   这正是 F1/A7 族缺陷「门禁看不见」的根因。语义：提取全部声明形态，断言 ① 至少 1 处
+#   （缺声明即 FAIL，拒绝以「读不到就跳过」收场）② 去重后仅一个值且 == SSOT 声明值。
 #   参数: <文件相对路径> <SSOT 期望值> <声明正则（须完整覆盖目标数字）> <人读名称>
 assert_numbers_all_equal() {
-  local f="$1" want="$2" pat="$3" label="$4"
-  local raw vals
+  local f="$1" want="$2" pat="$3" label="$4" raw vals v bad=""
   set +o pipefail
   raw=$(grep -oE "$pat" "$PROJECT_ROOT/$f" 2>/dev/null | grep -oE '[0-9]+' | sort -u | tr '\n' ' ')
   set -o pipefail
   vals=$(echo "$raw" | tr -s ' ' | sed -E 's/^ //; s/ $//')
-  if [ -z "$vals" ]; then
-    fail "$f 未找到「${label}」声明（正则 ${pat}）——文档缺声明，拒绝静默放行"
-    return 1
-  fi
-  local v bad=""
-  for v in $vals; do
-    [ "$v" = "$want" ] || bad="${bad}${v} "
-  done
-  if [ -n "$bad" ]; then
-    fail "$f「${label}」声明值漂移：期望全为 ${want}，实测出现 [${bad% }]（stale 值与真值并存）"
-    return 1
-  fi
-  return 0
+  [ -n "$vals" ] || { fail "$f 未找到「${label}」声明（正则 ${pat}）——文档缺声明，拒绝静默放行"; return 1; }
+  for v in $vals; do [ "$v" = "$want" ] || bad="${bad}${v} "; done
+  [ -z "$bad" ] || { fail "$f「${label}」声明值漂移：期望全为 ${want}，实测出现 [${bad% }]（stale 值与真值并存）"; return 1; }
 }
 write_config() { printf 'audit:\n  rules: {}\n' > "$TMP_REPO/.sofagent/config.yml"; }
 wh_config() { printf 'audit:\n  rules: {}\n  webhook:\n    url: "%s"\n    platform: "feishu"\n' "$WEBHOOK_URL" > "$TMP_REPO/.sofagent/config.yml"; }
@@ -1494,17 +1479,13 @@ if [ -f "$PROJECT_ROOT/tools/check/test-count.sh" ]; then
   TEST_COUNT=$(bash "$PROJECT_ROOT/tools/check/test-count.sh" 2>/dev/null | grep -oE 'TOTAL_TESTS=[0-9]+' | head -1 | cut -d= -f2 || echo "")
 fi
 if [ -n "$TEST_COUNT" ] && [ "$TEST_COUNT" -gt 0 ] 2>/dev/null; then
-  for f in README.md docs/WIKI.md; do
-    assert_numbers_all_equal "$f" "$TEST_COUNT" '[0-9]+[[:space:]]*(个|单元)?[[:space:]]*测试' "测试数" || S165_OK=false
-  done
+  for f in README.md docs/WIKI.md; do assert_numbers_all_equal "$f" "$TEST_COUNT" '[0-9]+[[:space:]]*(个|单元)?[[:space:]]*测试' "测试数" || S165_OK=false; done
 else
   # v1.5.1 F3：取值失败不得静默跳过（原实现 `if [ -n ... ]` 空则整段跳过 ⇒ 守卫空转）
   fail "无法取得测试数真值（tools/check/test-count.sh 未产出 TOTAL_TESTS=）——拒绝以「读不到就跳过」收场"
   S165_OK=false
 fi
-for f in README.md docs/ARCHITECTURE.md docs/HANDBOOK.md; do
-  assert_numbers_all_equal "$f" 24 '[0-9]+[[:space:]]*(条|个)[[:space:]]*规则|[0-9]+[[:space:]]*rules' "规则数" || S165_OK=false
-done
+for f in README.md docs/ARCHITECTURE.md docs/HANDBOOK.md; do assert_numbers_all_equal "$f" 24 '[0-9]+[[:space:]]*(条|个)[[:space:]]*规则|[0-9]+[[:space:]]*rules' "规则数" || S165_OK=false; done
 # acceptance 场景数动态计算（防止每次加场景后硬编码漂移）
 S165_SCEN_COUNT=$(grep -oE 'scenario [0-9]+[a-z]? "' "$SCRIPT_DIR/acceptance-test.sh" | wc -l | tr -d ' ' || echo 0)
 S165_SCEN_COUNT=${S165_SCEN_COUNT:-0}
@@ -1513,9 +1494,7 @@ if [ "$S165_SCEN_COUNT" -le 0 ] 2>/dev/null; then
   fail "acceptance 场景数提取失败（scenario 行数=0）——拒绝以「0 也能对上」假绿收场"
   S165_OK=false
 else
-  for f in docs/DEVELOPMENT.md docs/LIMITATIONS.md docs/ROADMAP.md; do
-    assert_numbers_all_equal "$f" "$S165_SCEN_COUNT" '当前(值)?[[:space:]]*[0-9]+|场景数[[:space:]]*[0-9]+' "acceptance 场景数" || S165_OK=false
-  done
+  for f in docs/DEVELOPMENT.md docs/LIMITATIONS.md docs/ROADMAP.md; do assert_numbers_all_equal "$f" "$S165_SCEN_COUNT" '当前(值)?[[:space:]]*[0-9]+|场景数[[:space:]]*[0-9]+' "acceptance 场景数" || S165_OK=false; done
 fi
 $S165_OK && pass "关键数字跨文档一致（${TEST_COUNT:-N/A} / 24 / ${S165_SCEN_COUNT}）"
 scenario 166 "Markdown 格式完整性——代码块闭合 + 活跃文档无 U+FFFD"; S166_OK=true
