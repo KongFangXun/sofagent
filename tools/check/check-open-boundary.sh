@@ -3,7 +3,11 @@
 # check-open-boundary.sh · 开源/商业边界守卫（对标 wemux
 #   scripts/open-core/public-boundary.mjs，2026-09-08 吸收）
 #
-# 门禁目的：商业产品名（GrapHub / FlowHub / AIR）不得进入开源仓。
+# 门禁目的：商业产品名（私域产品名家族 / AIR）不得进入开源仓。
+#   产品名按 **family** 匹配而非字面量：`Grap`/`Graph` + 可选空格 + `Hub`、`Flow` + 可选空格 + `Hub`，
+#   且大小写不敏感。理由是实测教训——pattern 只写字面量时，一字之差即整条守卫失明：
+#   曾有一处 `GraphHub`（比 pattern 的 `GrapHub` 多一个 `h`）落在活文档里，
+#   守卫照常打印「零命中」放行。**判据：守的是"名字"这个 product，不是某个拼写。**
 #   check-docs.sh §2c 只扫 45 个活文档白名单；本脚本补两个盲区：
 #   ① 全仓 git tracked 文件（1480+ 个，含全部 .ts/.mjs/.sh 源码）
 #   ② --staged 模式：只查暂存区新增/修改文件（PR 级拦截，同 wemux）
@@ -25,7 +29,12 @@
 cd "$(dirname "$0")/../.." || exit 2
 
 # BSD 兼容：pattern 用 ERE；字面管道符在引号内无歧义
-PATTERN='GrapHub|FlowHub'
+# family 覆盖四种拼写（GrapHub / GraphHub / Graph Hub / Grap Hub）+ 大小写变体。
+# ⚠️ 残留风险（已披露）：`Graph Hub`（带空格变体）理论上可被「…Graph Hub…」这类
+#    跨词相邻误命中（如某文档写 "Workflow Graph Hub"）。实测全仓 0 命中，
+#    故当前无假阳性；若日后出现，按「先核实是否真泄漏、再决定收窄」处理，
+#    不因噎废食退回字面量匹配（那是本次要修的缺陷本身）。
+PATTERN='Grap[h]?[ ]?Hub|Flow[ ]?Hub'
 
 # 豁免清单（历史事实档案 + 守卫自身——断言 pattern 里的字面量不是泄漏）。
 # 实际豁免走两处 case 分支（staged/全仓），此处仅文档化口径：
@@ -57,7 +66,7 @@ if [ "$1" = "--staged" ]; then
     esac
     [ -f "$f" ] || continue
     TOTAL=$((TOTAL + 1))
-    HIT=$(grep -nE "$PATTERN" "$f" 2>/dev/null || true)
+    HIT=$(grep -niE "$PATTERN" "$f" 2>/dev/null || true)
     if [ -n "$HIT" ]; then
       HITS="$HITS
 $f: $HIT"
@@ -112,7 +121,7 @@ while IFS= read -r f; do
     continue
   fi
   [ -f "$f" ] || continue
-  HIT=$(grep -nE "$PATTERN" "$f" 2>/dev/null || true)
+  HIT=$(grep -niE "$PATTERN" "$f" 2>/dev/null || true)
   if [ -n "$HIT" ]; then
     HITS="$HITS
 $f: $HIT"
@@ -123,11 +132,11 @@ $TRACKED
 EOF
 
 if [ -n "$HITS" ]; then
-  echo "❌ 开源边界违规：tracked 文件存在商业产品名（GrapHub/FlowHub）"
+  echo "❌ 开源边界违规：tracked 文件存在商业产品名（私域产品名家族）"
   printf "%s\n" "$HITS" | grep "." | head -20
   exit 1
 fi
 
-echo "✅ 开源边界守卫：${SCANNED}/${TOTAL_TRACKED} 个 tracked 文件扫描，GrapHub/FlowHub 零命中"
+echo "✅ 开源边界守卫：${SCANNED}/${TOTAL_TRACKED} 个 tracked 文件扫描，产品名家族（Grap/Graph+Hub · Flow+Hub）零命中"
 echo "   （AIR 文档面断言在线；CHANGELOG 历史档案豁免）"
 exit 0

@@ -243,12 +243,17 @@ else
   echo "=== 2b. U+FFFD 扫描：活文档零命中 ✓ ==="
 fi
 
-# 2c. 商业名脱敏断言（开源脱敏规范——GrapHub/FlowHub/AIR 全词匹配 FAIL；
+# 2c. 商业名脱敏断言（开源脱敏规范——私域产品名**家族** + AIR，命中 FAIL）
+#     产品名按 family 匹配而非字面量：`Grap`/`Graph` + 可选空格 + `Hub`、`Flow` + 可选空格 + `Hub`，
+#     且大小写不敏感。理由是实测教训——守卫 pattern 只写字面量时，一字之差即整条失明：
+#     `GraphHub` 在 pattern 为 `GrapHub` 时**静默通过**、守卫照常打印零命中。
 #     AIR 断言限定文档活文档面：中文文档语境中独立词 AIR 只可能是私有代号泄漏，
-#     源码层（三字母英文常量名）误报不可控、维持人工自查——本断言面为文档白名单）
-LEAK_HITS=$(grep -nwE "GrapHub|FlowHub|AIR" README.md README.en.md docs/*.md docs/guides/*.md SKILL/SKILL.md SKILL/rules/*.md FDE/GUIDE.md engine/hooks/*/HOOK.md engine/openclaw-plugins/*/README.md install.sh tools/dashboard/dashboard.html 2>/dev/null || true)
+#     源码层（三字母英文常量名）误报不可控、维持人工自查——本断言面为文档白名单。
+LEAK_NAME=$(grep -niE 'Grap[h]?[ ]?Hub|Flow[ ]?Hub' README.md README.en.md docs/*.md docs/guides/*.md SKILL/SKILL.md SKILL/rules/*.md FDE/GUIDE.md engine/hooks/*/HOOK.md engine/openclaw-plugins/*/README.md install.sh tools/dashboard/dashboard.html 2>/dev/null || true)
+LEAK_AIR=$(grep -nwE "AIR" README.md README.en.md docs/*.md docs/guides/*.md SKILL/SKILL.md SKILL/rules/*.md FDE/GUIDE.md engine/hooks/*/HOOK.md engine/openclaw-plugins/*/README.md install.sh tools/dashboard/dashboard.html 2>/dev/null || true)
+LEAK_HITS=$(printf '%s\n%s\n' "$LEAK_NAME" "$LEAK_AIR" | grep '.' || true)
 if [ -n "$LEAK_HITS" ]; then
-  ASSERTS=$((ASSERTS + 1)); echo "  ❌ 活文档存在商业产品名（GrapHub/FlowHub/AIR）——开源脱敏规范违规"
+  ASSERTS=$((ASSERTS + 1)); echo "  ❌ 活文档存在商业产品名（产品名家族 / AIR）——开源脱敏规范违规"
   echo "$LEAK_HITS" | head -20
   ERRORS=$((ERRORS + 1))
 else
