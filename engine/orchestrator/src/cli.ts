@@ -326,7 +326,96 @@ async function main() {
         let allSuccess = true;
         const results: Array<{ node: string; success: boolean; durationMs: number; output: string }> = [];
 
+        // ── v1.5.1 第一章：事件驱动执行触发接线（上游节点产出 → 下游节点被触发）──
+        // 注册点：每次 run-enterprise 建**一个** EventBus + EventRouter 并 attach 本次
+        // workflow 的 `on:` 声明（dataDir 复用上面 loadEnvConfig().dataDir，不自造口径）；
+        // 节点执行完成后经 createNodeOutputSource(bus).emitCompletion(...) 发布
+        // workflow.node.completed，下游节点以 `on: { event, from }` 声明被触发。
+        // nodeRunner 必填：未注入时 router 对事件 fail-loud 进死信（不静默丢弃）。
+        //
+        // 🔴 零行为变化守卫：workflow **无任何 `on:` 声明**时 eventBus / eventRouter /
+        //    eventOutput 全为 null、eventHandled 恒空——下面「跳过已触发节点」与
+        //    「发射 completion」两处分支恒不进入，节点循环的落盘 / exit code /  stdout
+        //    与接线前逐字一致（不产生任何 events/ 落盘，也不写 decision-log）。
+        const { readFileSync: readWorkflowText } = await import('fs');
+        const {
+          EventBus: OrchestratorEventBus,
+          EventRouter,
+          createNodeOutputSource,
+          parseEventSubscriptions,
+        } = await import('./events');
+
+        let eventWorkflowText: string | null = null;
+        try {
+          const workflowText = readWorkflowText(workflowPath, 'utf8');
+          if (parseEventSubscriptions(workflowText).subscriptions.length > 0) {
+            eventWorkflowText = workflowText;
+          }
+        } catch (err) {
+          // 无 `on:` 声明属正常形态（parse 成功且清单为空，不走本分支）；
+          // 走到这里 = 声明了 `on:` 但不可解析（或文本不可读）——必须可见，
+          // 否则「声明了却永不触发」是静默失效。
+          console.warn(`  ⚠️ 事件订阅声明未生效：${(err as Error).message}`);
+        }
+
+        const eventBus = eventWorkflowText !== null ? new OrchestratorEventBus({ dataDir }) : null;
+        const eventOutput = eventBus === null ? null : createNodeOutputSource(eventBus);
+        const eventHandled = new Set<string>();
+        const eventRouter =
+          eventBus === null
+            ? null
+            : new EventRouter({
+                bus: eventBus,
+                // 真实节点执行器：事件命中的下游节点走与拓扑循环同一条 executeNode 链路
+                nodeRunner: async ({ nodeId }) => {
+                  const target = composeResult.graph.nodes.find((n) => n.id === nodeId);
+                  const agentConfig = target
+                    ? (subagentMap.get(target.agent) ?? subagentMap.get(target.id) ?? composeResult.subagents[0])
+                    : undefined;
+                  if (!target || !agentConfig) {
+                    throw new Error(`事件触发节点 ${nodeId} 无法执行：节点或 Agent 配置缺失`);
+                  }
+                  console.log(`▶️  [事件触发] 执行节点 ${target.id}（agent: ${target.agent}）...`);
+                  const r = await executeNode({
+                    agentName: target.agent,
+                    agentConfig,
+                    node: {
+                      id: target.id,
+                      agent: target.agent,
+                      task: target.task,
+                      depends_on: target.dependsOn,
+                      type: 'auto',
+                      hitl: false,
+                    },
+                    dataDir,
+                    projectRoot: process.cwd(),
+                  });
+                  eventHandled.add(target.id);
+                  results.push({
+                    node: target.id,
+                    success: r.success,
+                    durationMs: r.durationMs,
+                    output: r.output,
+                  });
+                  if (!r.success) allSuccess = false;
+                  if (r.success) {
+                    if (r.degraded) {
+                      console.warn(`  ⚠️ ${target.id} 降级完成（LLM 不可用，输出为模拟） (${r.durationMs}ms)`);
+                    } else {
+                      console.log(`  ✅ ${target.id} 完成 (${r.durationMs}ms)`);
+                    }
+                  } else {
+                    console.error(`  ❌ ${target.id} 失败: ${r.error}`);
+                  }
+                  return { output: r.output, success: r.success };
+                },
+              });
+        eventRouter?.attach(eventWorkflowText!);
+
         for (const graphNode of composeResult.graph.nodes) {
+          // v1.5.1 第一章：该节点已由事件链触发执行过 → 不再重复执行
+          // （无 `on:` 声明时 eventHandled 恒空，本行不改变既有行为）
+          if (eventHandled.has(graphNode.id)) continue;
           const agentConfig = subagentMap.get(graphNode.agent)
             ?? subagentMap.get(graphNode.id)
             ?? composeResult.subagents[0];
@@ -379,6 +468,17 @@ async function main() {
           } else {
             console.error(`  ❌ ${graphNode.id} 失败: ${result.error}`);
             allSuccess = false;
+          }
+
+          // v1.5.1 第一章：节点产出进总线（下游 `on:` 据此触发）
+          // （无 `on:` 声明时 eventOutput 为 null——不落盘、不发送）
+          if (eventOutput) {
+            await eventOutput.emitCompletion({
+              workflowId: composeResult.workflow.name,
+              nodeId: graphNode.id,
+              output: result.output,
+              success: result.success,
+            });
           }
         }
 

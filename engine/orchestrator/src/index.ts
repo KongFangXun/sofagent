@@ -390,7 +390,7 @@
 /* @public */ export { emptyDiffReport, isDiffPass, hasErrorMismatch, summarizeDiff } from './loop-agent/diff-report';
 /* @public */ export type { DiffReport, DiffMismatch } from './loop-agent/diff-report';
 /* @public */ export { localizeError } from './loop-agent/error-localizer';
-/* @public */ export type { LocalizationResult, ErrorSource, LocalizationContext, LlmLocalizerDeps } from './loop-agent/error-localizer';
+/* @public */ export type { LocalizationResult, ErrorSource, LocalizationContext, LlmLocalizerDeps, LocalizerDegradeInfo } from './loop-agent/error-localizer';
 /* @public */ export { applyFix } from './loop-agent/fix-applier';
 /* @public */ export type { FixProposal, FixApplyResult, LlmFixerDeps, AuditGateDeps, FileOpsDeps } from './loop-agent/fix-applier';
 /* @public */ export { DEFAULT_L5_CONFIG } from './loop-agent/driver';
@@ -1139,3 +1139,86 @@
   ensureSolvesField,
 } from './skill-evolution/solves-frontmatter';
 /* @public */ export type { FrontmatterSolves } from './skill-evolution/solves-frontmatter';
+
+// ============================================================
+// v1.5.1 第二章：理解债务应对——auto-PR 决策解释块
+// 挂载点：MCP pr_submit（AI 节点产出 PR 的既有链路）在生成 PR 变更描述处调用。
+// ============================================================
+/* @public */ export { buildPrDecisionExplanation, composePrBodyWithExplanation } from './runtime/pr-explainer';
+/* @public */ export type { PrExplanation, PrExplanationInput } from './runtime/pr-explainer';
+
+// ============================================================
+// v1.5.1 第一章/第三章：事件驱动执行触发 + AI 异常处理总线
+// ============================================================
+// 第一章：三类事件源（上游节点产出 / webhook 入站 / 定时器）→ 事件总线 →
+//   按 workflow 节点 `on:` 声明路由；投递全程 HMAC 留痕；失败进死信可重放。
+// 第三章：异常三分类（可重试/需人工/需回滚）→ 复用第一章死信通道作异常入口
+//   → 路由到重试队列 / HITL 审批队列 / 回溯能力；异常决策入 decision-log 挂因果边。
+// ============================================================
+/* @public */ export {
+  EventBus,
+  EventRouter,
+  AnomalyBus,
+  classifyAnomaly,
+  ANOMALY_DECISION_KIND,
+  ANOMALY_WHY_TAG,
+  getDefaultAnomalyBus,
+  setDefaultAnomalyBus,
+  reportAnomalyToDefaultBus,
+  EVENT_TYPES,
+  REGISTERED_EVENT_TYPES,
+  parseEventSubscriptions,
+  validateEventSubscriptions,
+  createNodeOutputSource,
+  createWebhookAdapter,
+  createTimerAdapter,
+  sortEventsByTime,
+  WebhookPayloadError,
+} from './events';
+/* @public */ export type {
+  EventBusOptions,
+  EventHandler,
+  EventSubscriptionHandle,
+  DeadLetterInput,
+  NodeOutputSource,
+  NodeCompletionInput,
+  WebhookAdapter,
+  WebhookInbound,
+  TimerAdapter,
+  TimerRegistration,
+  EventRouterOptions,
+  NodeRunner,
+  NodeRunContext,
+  NodeRunResult,
+  ParsedSubscriptions,
+  RoutingOutcome,
+  AnomalyBusDeps,
+  AnomalyClass,
+  AnomalyInput,
+  AnomalyRouting,
+  AnomalyRoutingResult,
+  RollbackOutcome,
+  DeadLetterEntry,
+  DeliveryOutcome,
+  DeliveryRecord,
+  EventPublishInput,
+  EventRoutingTarget,
+  EventSourceType,
+  EventSubscription,
+  NodeOutputPayload,
+  EventPublishResult,
+  RegisteredEventType,
+  SofagentEvent,
+  TimerPayload,
+  WebhookKind,
+  WebhookPayload,
+  // 设备面 payload 契约（第四 / 五章——唯一定义在 events/types.ts）
+  DeviceDeliverySignature,
+  DeviceDeployPayload,
+  DeviceTaskDispatchPayload,
+  DeviceTaskItem,
+  DeviceUpgradeComponent,
+  DeviceUpgradePayload,
+  DeviceUpgradeRollout,
+  DeviceUpgradeTier,
+} from './events';

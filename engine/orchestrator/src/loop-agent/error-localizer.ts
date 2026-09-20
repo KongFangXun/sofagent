@@ -19,6 +19,7 @@
 import type { DiffReport } from './diff-report';
 import { summarizeDiff } from './diff-report';
 import type { ModelMessage } from '@sofagent/core';
+import { reportAnomalyToDefaultBus } from '../events';
 
 /** 错误源（四类——LLM 推理输出） */
 export type ErrorSource = 'skill' | 'ontology' | 'prompt' | 'knowledge';
@@ -45,6 +46,30 @@ export interface LlmLocalizerDeps {
   /** LLM 调用选项（传入 model-client 的 options——Trace/agentId/taskId） */
   taskId?: string;
   agentId?: string;
+  /**
+   * 降级出口钩子（v1.5.1 第三章接线点·**只加出口，分类逻辑零改动**）。
+   *
+   * 触发时机：LLM 调用失败、或 LLM 返回不可解析 —— 即本定位器自身
+   * 「降级启发式」的两处兜底出口。缺省不传时走默认异常总线
+   * （`reportAnomalyToDefaultBus`，异常进总线即写 decision-log + 死信队列）；
+   * 显式传入则按调用方的出口处理（便于测试断言与宿主替换）。
+   *
+   * 边界：`无差异无需定位` / `未注入 callLlm` 属正常配置形态，**不上报**——
+   * 上报面只覆盖真实异常出口。
+   */
+  onDegrade?: (info: LocalizerDegradeInfo) => void;
+}
+
+/** 降级出口信息（异常总线上报载荷） */
+export interface LocalizerDegradeInfo {
+  /** 降级原因（人类可读） */
+  reason: string;
+  /** 触发降级的原始错误（LLM 调用失败时有） */
+  error?: unknown;
+  /** 本次定位的差异条数（上下文） */
+  diffCount: number;
+  /** 降级后仍返回的定位结果（兜底不中断） */
+  result: LocalizationResult;
 }
 
 /** 上下文材料（定位推理输入） */
@@ -115,6 +140,13 @@ export async function localizeError(
     // LLM 调用失败 → 降级到启发式（不致命——L4 兜底）
     const heuristic = heuristicLocalize(diffReport, context);
     heuristic.reasoning = `[LLM 调用失败，降级启发式] ${heuristic.reasoning}（LLM 错误：${err instanceof Error ? err.message : String(err)}）`;
+    // 出口接异常总线（v1.5.1 第三章接线点——分类逻辑零改动，仅出口上报）
+    reportDegrade(deps, {
+      reason: `LLM 调用失败，降级启发式：${err instanceof Error ? err.message : String(err)}`,
+      error: err,
+      diffCount: diffReport.mismatches.length,
+      result: heuristic,
+    });
     return heuristic;
   }
 
@@ -135,7 +167,41 @@ export async function localizeError(
   // LLM 返回不可解析 → 降级启发式
   const heuristic = heuristicLocalize(diffReport, context);
   heuristic.reasoning = `[LLM 返回不可解析，降级启发式] ${heuristic.reasoning}`;
+  // 出口接异常总线（同上）
+  reportDegrade(deps, {
+    reason: 'LLM 返回不可解析，降级启发式',
+    diffCount: diffReport.mismatches.length,
+    result: heuristic,
+  });
   return heuristic;
+}
+
+/**
+ * 降级出口上报（v1.5.1 第三章接线点）。
+ *
+ * 出口语义：本函数**只做上报**——不改动降级分类结果（heuristicLocalize /
+ * parseLlmResponse 的判定逻辑保持原样），且上报失败不阻断降级返回
+ * （异常总线内部已捕获并告警，见 error-bus 的 reportAnomalyToDefaultBus）。
+ *
+ * @param deps 定位器依赖（含可注入的 onDegrade 出口）
+ * @param info 降级出口信息
+ */
+function reportDegrade(deps: LlmLocalizerDeps | undefined, info: LocalizerDegradeInfo): void {
+  try {
+    if (deps?.onDegrade) {
+      deps.onDegrade(info);
+      return;
+    }
+    reportAnomalyToDefaultBus({
+      error: info.error ?? new Error(info.reason),
+      nodeId: 'loop-agent/l3-error-localizer',
+      attempts: 1,
+    });
+  } catch (err) {
+    console.error(
+      `[loop-agent:error-localizer] 降级出口上报失败（不阻断降级）：${err instanceof Error ? err.message : String(err)}`,
+    );
+  }
 }
 
 /** 构造定位器的 system prompt */
