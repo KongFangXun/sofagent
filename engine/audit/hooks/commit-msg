@@ -77,11 +77,17 @@ else
   if [ -n "$RESOLVED_ENTRY" ] && [ -f "$RESOLVED_ENTRY" ]; then
     # v1.5.0 TASK-10: 非开发仓路径（全局解析分支）纳入聚合哈希校验——
     # 此前 P1-A2 只覆盖 _REPO_TOP 开发仓路径，全局入口完全在防线外。
-    # 基准 ~/.sofagent/internal/audit-dist-hash.txt 由 --doctor 生成；
-    # 基准缺失（首装未 doctor）= 校验形同虚设，不静默放行（对齐 P1-A3 fail-loud）。
+    # v1.5.2 修正（口径错配假阳性）：本分支与开发仓分支**算的是两个不同对象**
+    #   （本分支 = 全局包 dist，开发仓分支 = 本仓 dist），原先却共用同一个基准文件
+    #   audit-dist-hash.txt——而该基准由 audit-baseline-sync.sh 按**本仓口径**写入。
+    #   后果：只要「全局包 dist ≠ 本仓 dist」（开发机常态；且 worktree 无本地 dist 时
+    #   必然走到本分支），提交即被判「可能被投毒」拦死——文案指向投毒，实为口径错配。
+    #   修正：本分支改用独立基准 audit-global-dist-hash.txt，由
+    #   `bash tools/audit-baseline-sync.sh --global` 生成；两处各读各的，互不污染。
+    # 基准缺失 = 校验形同虚设，不静默放行（对齐 P1-A3 fail-loud）：报错须指向生成命令。
     _RESOLVED_ROOT=$(dirname "$(dirname "$RESOLVED_ENTRY")")
     SOFAGENT_HOME="${SOFAGENT_HOME:-$HOME/.sofagent}"
-    _GLOBAL_HASH_RECORD="$SOFAGENT_HOME/internal/audit-dist-hash.txt"
+    _GLOBAL_HASH_RECORD="$SOFAGENT_HOME/internal/audit-global-dist-hash.txt"
     _GLOBAL_HASH_SCRIPT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)/tools/audit-dist-hash.mjs"
     _GLOBAL_HASH=""
     if [ -f "$_GLOBAL_HASH_SCRIPT" ]; then
@@ -89,14 +95,15 @@ else
     fi
     if [ -n "$_GLOBAL_HASH" ]; then
       if [ ! -f "$_GLOBAL_HASH_RECORD" ]; then
-        echo "🔴 [sofagent] 全局审计引擎哈希基准缺失——首次使用请运行 sofagent-audit --doctor 生成引擎基准哈希"
+        echo "🔴 [sofagent] 全局审计引擎基准缺失——本地全局包的完整性无从比对"
+        echo "   生成基准: bash tools/audit-baseline-sync.sh --global"
         exit 1
       fi
       _GLOBAL_RECORDED=$(tr -d '[:space:]' < "$_GLOBAL_HASH_RECORD" 2>/dev/null)
       if [ "$_GLOBAL_HASH" != "$_GLOBAL_RECORDED" ]; then
-        echo "🔴 [sofagent] 审计引擎哈希不匹配（可能被投毒）: $RESOLVED_ENTRY"
+        echo "🔴 [sofagent] 全局审计引擎哈希不匹配（可能被投毒）: $RESOLVED_ENTRY"
         echo "   当前聚合哈希 ${_GLOBAL_HASH:0:12}... ≠ 基准 ${_GLOBAL_RECORDED:0:12}..."
-        echo "   恢复: npm install -g @sofagent/audit 后重跑 sofagent-audit --doctor 重建基准"
+        echo "   恢复: npm install -g @sofagent/audit 后重跑 bash tools/audit-baseline-sync.sh --global"
         exit 1
       fi
     fi
