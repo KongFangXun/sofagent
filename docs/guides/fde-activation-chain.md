@@ -10,26 +10,11 @@
 
 ### 断裂带
 
-FDE 诊断完成后，交付了一堆**静态文件**：
+FDE 诊断完成后，交付了一堆**静态文件**：ontology 本体数据（entities + concepts + relations）· `workflow.yml`（节点清单 + 依赖关系）· 每个节点的三层实体（文档层 + Skill 层 + 运行层）· 每个节点标记了 🔄/⚡/👤。
 
-```
-交付物：
-  ✅ ontology 本体数据（entities + concepts + relations）
-  ✅ workflow.yml（节点清单 + 依赖关系）
-  ✅ 每个节点的三层实体（文档层 + Skill 层 + 运行层）
-  ✅ 每个节点标记了 🔄/⚡/👤
+**然后呢？** 交付物躺在磁盘上，没人把它们「点燃」——企业 IT 拿到一堆 .md 和 .yml，不知道怎么跑起来。这就是**大断裂带**。
 
-然后呢？
-  ┌──────────────────────────────────────────────────┐
-  │           🔴 大断裂带                               │
-  │  交付物躺在磁盘上，没人把它们"点燃"                   │
-  │  企业 IT 拿到一堆 .md 和 .yml，不知道怎么跑起来       │
-  └──────────────────────────────────────────────────┘
-
-理想终态：
-  企业的工作流自动运行——每个 🔄 节点是一个 sub-agent，
-  每个 ⚡ 节点是一个辅助 Agent，节点间按 workflow.yml 的依赖自动编排
-```
+**理想终态**：企业的工作流自动运行——每个 🔄 节点是一个 sub-agent，每个 ⚡ 节点是一个辅助 Agent，节点间按 `workflow.yml` 的依赖自动编排。
 
 ### 现有代码的三个零件
 
@@ -48,37 +33,14 @@ FDE 诊断完成后，交付了一堆**静态文件**：
 
 ## 激活链总览
 
-```
-FDE 诊断完成（交付物就绪）
-    │
-    ▼
-┌─────────────────────────────────────────┐
-│  Phase 1: ACTIVATE（激活）               │
-│  读交付物 → 注册企业 SubAgent            │
-│  新增 activate.ts                        │
-└──────────────┬──────────────────────────┘
-               │
-               ▼
-┌─────────────────────────────────────────┐
-│  Phase 2: ORCHESTRATE（编排）           │
-│  映射表+注册扩展 → StateGraph 构建        │
-│  扩展 composer.ts + workflow-parser.ts   │
-└──────────────┬──────────────────────────┘
-               │
-               ▼
-┌─────────────────────────────────────────┐
-│  Phase 3: EXECUTE（执行）               │
-│  dag-runner+节点执行器 → HITL+审计集成+异常处理 │
-│  扩展 dag-runner.ts                      │
-└──────────────┬──────────────────────────┘
-               │
-               ▼
-┌─────────────────────────────────────────┐
-│  Phase 4: SUSTAIN（持续）               │
-│  全闭环验证 + wrapToolCall 联动          │
-│  已有 sustain 模式 + think.md            │
-└─────────────────────────────────────────┘
-```
+FDE 诊断完成（交付物就绪）后，四阶段依次推进：
+
+| 阶段 | 做什么 | 改谁 |
+|------|--------|------|
+| **Phase 1 · ACTIVATE（激活）** | 读交付物 → 注册企业 SubAgent | 新增 `activate.ts` |
+| **Phase 2 · ORCHESTRATE（编排）** | 映射表 + 注册扩展 → StateGraph 构建 | 扩展 `composer.ts` + `workflow-parser.ts` |
+| **Phase 3 · EXECUTE（执行）** | dag-runner + 节点执行器 → HITL + 审计集成 + 异常处理 | 扩展 `dag-runner.ts` |
+| **Phase 4 · SUSTAIN（持续）** | 全闭环验证 + `wrapToolCall` 联动 | 已有 sustain 模式 + think.md |
 
 ---
 
@@ -92,20 +54,17 @@ FDE 诊断完成后，以下文件就绪：
 .sofagent/
 ├── data/
 │   ├── knowledge/
-│   │   ├── entities/
-│   │   │   ├── 客户管理.md          # entity（含 domain/relations/knowledge-domain）
+│   │   ├── entities/                 # entity（含 domain/relations/knowledge-domain）
+│   │   │   ├── 客户管理.md
 │   │   │   ├── 订单处理.md
 │   │   │   ├── 生产排程.md
 │   │   │   └── ...
-│   │   ├── concepts/
-│   │   │   └── ...
-│   │   └── enterprise-profile.md   # 企业画像
-│   └── workflow.yml                 # FDE §5 输出的工作流定义
+│   │   ├── concepts/                 # 概念页目录（内容省略）
+│   │   └── enterprise-profile.md     # 企业画像
+│   └── workflow.yml                  # FDE §5 输出的工作流定义
 ├── skills/                           # FDE §7 交付的节点 Skill
-│   ├── 客户管理/
-│   │   └── SKILL.md
-│   ├── 订单处理/
-│   │   └── SKILL.md
+│   ├── 客户管理/SKILL.md
+│   ├── 订单处理/SKILL.md
 │   └── ...
 └── nodes/                            # FDE §7 交付的文档层
     ├── 客户管理.md
@@ -149,21 +108,9 @@ nodes:
     hitl_config:
       interrupt_before: true    # LangGraph interrupt_before
       prompt: "请确认以下排程方案是否可执行："
-
-  - id: quality-check
-    name: 质量检验
-    type: 🔄
-    agent: enterprise
-    skill_ref: skills/质量检验/SKILL.md
-    entity_ref: entities/质量检验.md
-    task: "自动检验产品合格率，不合格批次自动标记并通知"
-    depends_on: [production-scheduling]
-    actions: [read, write]
-    knowledge_domain:
-      include: [检验标准, 合格阈值, 不合格处理流程]
-      exclude: []
-    hitl: false
 ```
+
+第三个节点 `id: quality-check`（质量检验，`skill_ref: skills/质量检验/SKILL.md`，`entity_ref: entities/质量检验.md`，`task: "自动检验产品合格率，不合格批次自动标记并通知"`）只在差异字段上不同：`type: 🔄` · `depends_on: [production-scheduling]` · `actions: [read, write]` · `hitl: false` · `knowledge_domain` = `include: [检验标准, 合格阈值, 不合格处理流程]` + `exclude: []`（空数组）。字段集与上面两个节点完全一致。
 
 ### activate 命令
 
@@ -171,22 +118,7 @@ nodes:
 sofagent-orchestrator activate
 ```
 
-或通过 MCP：
-
-```typescript
-// MCP tool（新增）
-{
-  name: 'activate_workflow',
-  description: '读取 FDE 交付物（workflow.yml + skills/ + entities/），注册企业 SubAgent 并构建可执行编排',
-  inputSchema: {
-    type: 'object',
-    properties: {
-      dry_run: { type: 'boolean', description: '只预览不真正注册，默认 false' },
-      node_filter: { type: 'array', items: { type: 'string' }, description: '只激活指定节点（默认全部）' },
-    },
-  },
-}
-```
+或通过 MCP 新增的 `activate_workflow` tool（职责：读取 FDE 交付物 `workflow.yml` + `skills/` + `entities/`，注册企业 SubAgent 并构建可执行编排），两个入参：`dry_run`（只预览不真正注册，默认 false）· `node_filter`（只激活指定节点，默认全部）。
 
 ### activate 内部流程
 
@@ -238,35 +170,22 @@ composer.ts 现在做的是"用户给一个通用 task → 用 LLM 拆成 workfl
 
 ### 新增能力
 
-扩展 composer.ts，新增 `composeEnterpriseWorkflow()` 函数：
+扩展 composer.ts，新增 `composeEnterpriseWorkflow()`——与 `compose()`（通用拆解）的区别：**不调 LLM 拆任务，直接用 workflow.yml**。
 
 ```typescript
 export interface EnterpriseComposeResult {
-  /** LangGraph StateGraph 配置（序列化） */
-  graphConfig: string;
-  /** SubAgent 配置列表 */
+  graphConfig: string;          // LangGraph StateGraph 配置（序列化）
   subagents: SubAgentConfig[];
-  /** 数据流映射：节点间怎么传数据 */
-  dataFlow: DataFlowMapping[];
-  /** HITL 节点列表 */
+  dataFlow: DataFlowMapping[];  // 节点间怎么传数据
   hitlNodes: string[];
 }
 
-/**
- * 从 FDE 交付物构建企业专属编排方案
- * 与 compose()（通用拆解）的区别：不调 LLM 拆任务，直接用 workflow.yml
- */
+// 五步：① 构建节点拓扑（DAG 校验已在 workflow-parser 中）→ ② 为每个节点创建 LangGraph node
+// → ③ 按 depends_on 添加 edges → ④ 标记 HITL 节点的 interrupt_before → ⑤ 设计数据流映射
 export async function composeEnterpriseWorkflow(
   workflow: ParsedWorkflow,
   agents: EnterpriseAgentConfig[]
-): Promise<EnterpriseComposeResult> {
-  // Step 1: 构建节点拓扑（DAG 校验已在 workflow-parser 中）
-  // Step 2: 为每个节点创建 LangGraph node
-  // Step 3: 按 depends_on 添加 edges
-  // Step 4: 标记 HITL 节点的 interrupt_before
-  // Step 5: 设计数据流映射
-  return { graphConfig, subagents, dataFlow, hitlNodes };
-}
+): Promise<EnterpriseComposeResult>
 ```
 
 ### 数据流设计
@@ -279,45 +198,21 @@ export async function composeEnterpriseWorkflow(
 | **知识数据**（客户信息、工艺标准） | ontology entity（持久化） | 重，写入磁盘 |
 | **状态标记**（处理中/已完成/异常） | State + entity 双写 | 中，State 传 + entity 留痕 |
 
-```typescript
-// LangGraph State 定义
-const enterpriseState = {
-  // 实时业务数据（内存传递）
-  currentOrder: null,           // 接单 → 排产传递的订单数据
-  scheduleResult: null,         // 排产 → 质检传递的排程结果
+LangGraph State 三个字段：
 
-  // 状态标记（双写）
-  nodeStatus: {},               // { customer-intake: 'done', production-scheduling: 'running' }
-
-  // 异常队列
-  exceptions: [],               // 任何节点可以往里塞异常
-};
-```
+| 字段 | 类别 | 说明 |
+|------|------|------|
+| `currentOrder` / `scheduleResult` | 实时业务数据（内存传递） | 接单 → 排产传递的订单数据；排产 → 质检传递的排程结果 |
+| `nodeStatus` | 状态标记（双写） | 形如 `{ customer-intake: 'done', production-scheduling: 'running' }` |
+| `exceptions` | 异常队列 | 任何节点可以往里塞异常 |
 
 ### HITL 集成
 
-LangGraph 原生支持 `interrupt_before`：
+LangGraph 原生支持 `interrupt_before`——注册节点（`graph.addNode(node.id, createNodeExecutor(node, agents))`）→ 按 `depends_on` 加边 → 编译时传 HITL 中断点：
 
 ```typescript
-const graph = new StateGraph(enterpriseState);
-
-// 注册节点
-for (const node of workflow.nodes) {
-  graph.addNode(node.id, createNodeExecutor(node, agents));
-}
-
-// 添加边
-for (const node of workflow.nodes) {
-  for (const dep of node.depends_on) {
-    graph.addEdge(dep, node.id);
-  }
-}
-
-// 标记 HITL 中断点
 const hitlNodes = workflow.nodes.filter(n => n.hitl).map(n => n.id);
-const compiled = graph.compile({
-  interruptBefore: hitlNodes,   // 在 ⚡ 节点前暂停
-});
+const compiled = graph.compile({ interruptBefore: hitlNodes });   // 在 ⚡ 节点前暂停
 ```
 
 ---
@@ -336,47 +231,21 @@ sofagent-orchestrator run-enterprise
 
 ### 运行时行为
 
-```
-1. 从 .sofagent/subagents/ 加载所有企业 Agent（registry.ts 已支持）
-2. 从 workflow.yml 构建编排方案（composeEnterpriseWorkflow）
-3. 构建 LangGraph 并编译（含 HITL 中断点）
-4. 从入口节点开始执行
+四步启动：① 从 `.sofagent/subagents/` 加载所有企业 Agent（`registry.ts` 已支持）→ ② 从 `workflow.yml` 构建编排方案（`composeEnterpriseWorkflow`）→ ③ 构建 LangGraph 并编译（含 HITL 中断点）→ ④ 从入口节点开始执行。
 
-执行过程中：
-  - 每个 🔄 节点：自动执行，结果写入 State + entity
-  - 每个 ⚡ 节点：执行到此处暂停 → 向用户展示方案 → 等待确认 → 继续
-  - 每个节点执行后：自动触发审计（@sofagent-audit）
-  - 审计 FAIL：暂停整个工作流，通知用户
-  - 异常：写入 exceptions 队列，根据节点配置决定重试 or 跳过
-```
+执行过程中：每个 🔄 节点**自动执行**，结果写入 State + entity · 每个 ⚡ 节点执行到此处**暂停** → 向用户展示方案 → 等待确认 → 继续 · 每个节点执行后**自动触发审计**（`@sofagent-audit`），审计 FAIL 则暂停整个工作流并通知用户 · 异常写入 `exceptions` 队列，根据节点配置决定重试 or 跳过。
 
 ### 审计集成
 
 每个节点执行后自动审计（复用现有 audit engine）：
 
 ```typescript
-// createNodeExecutor 内部
-async function executeNode(node, state) {
-  // 1. 执行节点任务
-  const result = await subAgent.invoke({ messages: [...] });
-
-  // 2. 如果有文件变更，跑审计
-  const diff = getDiffSinceLastRun();
-  if (diff.length > 0) {
-    const auditResult = await runAuditRules(diff);
-    if (auditResult.exitCode === 2) {  // FAIL
-      // 暂停工作流，通知用户
-      state.exceptions.push({ node: node.id, audit: auditResult });
-      return { ...state, nodeStatus: { ...state.nodeStatus, [node.id]: 'audit-failed' } };
-    }
-  }
-
-  // 3. 写入 think.md 回溯
-  generateThinkEntry(diff, auditResult, `企业节点 ${node.name}`);
-
-  // 4. 更新状态
-  return { ...state, nodeStatus: { ...state.nodeStatus, [node.id]: 'done' } };
-}
+// createNodeExecutor 内部的 executeNode，四步：
+// ① subAgent.invoke({ messages: [...] }) 执行节点任务
+// ② getDiffSinceLastRun() 有文件变更则 runAuditRules(diff)；exitCode === 2（FAIL）时把审计结果
+//    push 进 state.exceptions 并置节点状态 'audit-failed'（暂停工作流 + 通知用户）
+// ③ generateThinkEntry(diff, auditResult, `企业节点 ${node.name}`) 写 think.md 回溯
+// ④ 置节点状态 'done'
 ```
 
 ---
@@ -394,14 +263,7 @@ async function executeNode(node, state) {
 
 ### 激活链补全的闭环
 
-```
-企业工作流运行
-  → 每个节点执行 → 自动审计 → think.md 回溯
-  → FDE sustain 读 think.md 趋势 → 发现"某节点反复出错"
-  → evolve 优化该节点 Skill → A/B 测试验证
-  → 通过 → 更新 .sofagent/subagents/<node>.yml
-  → 下次 activate 时自动加载优化后的 Skill
-```
+企业工作流运行 → 每个节点执行 → 自动审计 → think.md 回溯 → **FDE sustain** 读 think.md 趋势 → 发现「某节点反复出错」→ **evolve** 优化该节点 Skill → A/B 测试验证 → 通过则更新 `.sofagent/subagents/<node>.yml` → 下次 activate 时自动加载优化后的 Skill。
 
 **这就是自运转**：企业工作流不仅跑起来了，还能自己优化自己。
 
