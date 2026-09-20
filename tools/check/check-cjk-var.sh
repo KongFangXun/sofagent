@@ -2,11 +2,11 @@
 # check-cjk-var.sh — shell 变量定界守卫
 # 检测 tools/ 下所有 .sh（含子目录）中 $VAR 后紧跟非 ASCII 字符的模式。
 #
-# 根因：bash 在 UTF-8 locale 下把 $TEST_RC， 解析成变量名 "TEST_RC，"
+# 根因：bash 在 UTF-8 locale 下把 ${TEST_RC}， 解析成变量名 "TEST_RC，"
 # （全角逗号 U+FF0C 被拼进变量名），set -u 下报 unbound variable 崩溃。
 # v1.3.6 实案：pre-push-check.sh:189 潜伏一个月（07-19 b58c6aba 引入），
 # 仅在「测试失败分支」触发，日常全绿掩盖了它。08-18 修复（3ec97569）。
-# v1.3.9 实案：check-docs.sh:622（$pmf：——全角冒号 U+FF1A 同族），引入于
+# v1.3.9 实案：check-docs.sh:622（${pmf}：——全角冒号 U+FF1A 同族），引入于
 # v1.3.9 目录重组后的新增检查（ba74ae10），同样只在「对账不等分支」触发。
 # 2026-08-29 修复守卫自身失明：v1.3.9 目录重组把 check 脚本移入 tools/check/
 # 等子目录，本守卫 glob 仍扫 tools/*.sh 顶层——19 个子目录脚本全部漏扫，
@@ -30,20 +30,27 @@ cd "$(dirname "$0")/../.." || exit 1
 #   误判成误报——判定时必须先确认 locale 与 shell 是 UTF-8 + bash。
 # 修法：$VAR → ${VAR}。已定界的 ${VAR}、引号闭合后的 "$VAR"、后接空格的 $VAR
 #   均不误报。
-# 已知误报面：单引号内的 '$VAR中' 不参与展开，本守卫仍会报——本守卫宁可误报
+# 已知误报面：单引号内的 '${VAR}中' 不参与展开，本守卫仍会报——本守卫宁可误报
 #   （人工复核）也不漏报（潜伏地雷代价更高）。
 # 注意：用 perl 而非 grep -P（BSD grep 无 -P）；且必须 -Mutf8 -CSD，否则字符类
 #   按**字节**匹配——覆盖面取决于各字符首字节是否碰巧撞进集合，是随机且不可
 #   预测的漏检（曾出现「（」只因与「）」共享前两字节才被命中的假覆盖）。
 PATTERN='\$[A-Za-z_][A-Za-z_0-9]*[^\x00-\x7F]'
-SELF="tools/check/check-cjk-var.sh"
+SELF="./tools/check/check-cjk-var.sh"
 
 VIOLATIONS=0
 FILES=0
 
-# find 递归收集 tools/ 下全部 .sh（v1.3.9 目录重组后脚本分散在
-# check/gen/dashboard/release/forge/audit 六个子目录，顶层 glob 会漏扫）
-ALL_SH=$(find tools -name "*.sh" -type f | LC_ALL=C sort)
+# find 递归收集全仓 .sh（历史上本守卫只扫 tools/，同理失明过两次：v1.3.9 目录
+# 重组把脚本移入子目录、顶层 glob 漏扫 19 个；此后仍有 playbook/ 与仓根脚本在面外）。
+# 本次扩面的直接动因是一枚真实事故：playbook/acceptance-test.sh 的两处 $VAR 后紧跟
+# 全角字符，都藏在「仅失败分支输出」的行里，日常全绿掩盖；一旦该断言真失败，
+# set -u 下变量名被拼成 "f<0xE3>" → unbound variable → **整个验收脚本当场崩掉**，
+# 且崩的是「本该报 FAIL」的那一行——失败表现得比失败本身更糟。
+# 扫描面 = 全仓 .sh（排除 node_modules / dist / .git / 本脚本自检豁免）。
+ALL_SH=$(find . -name "*.sh" -type f \
+  -not -path "*/node_modules/*" -not -path "*/dist/*" -not -path "./.git/*" \
+  | LC_ALL=C sort)
 GUARDS_VIOL=0
 for f in $ALL_SH; do
   # 自检豁免：本脚本展示规则的文案行（含 \$VAR 字面量教学）不违规
@@ -77,7 +84,7 @@ echo ""
 #   违规分支落空，于是真因被误报为「守卫失明（glob 未跟随目录重组）」，归因完全错。
 if [ "$VIOLATIONS" -gt 0 ] || [ "$GUARDS_VIOL" -ne 0 ]; then
   if [ "$VIOLATIONS" -gt 0 ]; then
-    echo "✗ ${VIOLATIONS} 处非 ASCII 字符紧跟 \$VAR（${FILES} 个文件扫描）——改为 \${VAR} 定界后重跑"
+    echo "✗ ${VIOLATIONS} 处非 ASCII 字符紧跟 \${VAR}（${FILES} 个文件扫描）——改为 \${VAR} 定界后重跑"
   else
     echo "✗ 0 处违规但守卫自身失明（${FILES} 个文件扫描）——上述引擎故障必须先修复，本次按违规处理"
   fi

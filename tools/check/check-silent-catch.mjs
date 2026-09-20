@@ -115,7 +115,11 @@ const UPDATE_EXEMPT = process.argv.includes('--update-prefilter-exempt');
 const MIGRATE = process.argv.includes('--migrate-baseline-key-format');
 
 // 关键路径关键词（命中任一即视为「失败不可无痕」域）
-const CRITICAL_FILE_HINTS = /audit|persist|notice|daemon|history|snapshot|write|crypto|hmac/i;
+// 事件路由面（`events/`）与错误定位面（`localiz`）同属本域——事件投递失败与降级定位都是
+// 「静默即丢证据」的路径。此前二者不在关键词集内，导致整文件被前置过滤跳过、其 catch
+// 从不进入判定（「有代码绕过了检查」）。收编方式取「纳入判定面」而非「登记进豁免台账」：
+// 豁免台账是承认覆盖盲区，而这些文件恰恰是失败行为的核心承载面，不该被盲区登记掉。
+const CRITICAL_FILE_HINTS = /audit|persist|notice|daemon|history|snapshot|write|crypto|hmac|events\/|localiz/i;
 
 // 同行空 catch：catch (...) { } 或 catch { } 或 catch (...) { /* 仅注释 */ }
 const SAME_LINE_EMPTY = /catch\s*(\([^)]*\))?\s*\{[\s]*(?:\/\*[^*]*\*\/|\/\/[^\n]*)?[\s]*\}/;

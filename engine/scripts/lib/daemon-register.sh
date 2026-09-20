@@ -114,7 +114,7 @@ N
   if [ -f "$CONFIG_FILE" ] && grep -q 'loopDetection' "$CONFIG_FILE" 2>/dev/null; then
     ok "loopDetection 配置已存在，跳过"; _log "loopdetect: already configured"
   elif _inject_loopdetect "$CONFIG_FILE"; then ok "loopDetection 安全配置已生效"; _log "loopdetect: injected into $CONFIG_FILE"
-  else warn "loopDetection 注入失败"; warn "请手动将以下配置写入 $CONFIG_FILE："; warn "  https://docs.openclaw.ai/zh-CN/gateway/config-tools"; fi
+  else warn "loopDetection 注入失败"; warn "请手动将以下配置写入 ${CONFIG_FILE}："; warn "  https://docs.openclaw.ai/zh-CN/gateway/config-tools"; fi
 }
 install_daemon() {  # Step 6b: daemon 可选安装
   local OS_TYPE

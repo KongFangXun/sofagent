@@ -80,21 +80,19 @@ compactIfNeeded:engine/inject/src/load-chain/compactor.ts"
 #   ① **到期**：目标版本 ≤ 当前 SSOT（package.json.version）仍未接线 ⇒ 自动转红
 #   ② **孤儿键**：符号名在当前 engine 源码零命中（已更名/删除）⇒ 转红
 #      （孤儿键即使实现了版本比对也匹配不上，必须单独判——防「静默豁免不存在的符号」）
-# ⚠️ v1.5.1 J3 实测现状：本条目**两条失败态同时成立**（目标 v1.5.0 = 当前 SSOT；
-#    条目名 weight-canary-routeRequest 是 TASK-32 更名前的旧名，当前引擎零命中 = 孤儿键）。
-#    **修法是接线或更名收编**，**不是**把目标版本改成 v1.5.1（那是「放宽阈值让它变绿」）。
-# v1.5.1 J3 执行（孔老师裁定）：只做「孤儿键」这一条——
-#   · **已更名**：`weight-canary-routeRequest` → `canaryRouteRequest`
-#     （现符号定义在 engine/train/src/weight-canary.ts；条目名若不指向真实符号，
-#      白名单就是在静默豁免一个不存在的符号，且版本比对永远匹配不上）。
-#   · **到期态保留为红**：目标版本仍写 `v1.5.0`（= 当前 SSOT）⇒ 本条**仍然报红**，
-#     这是**预期债务可见化**，不是回归。不续期、不改目标版本（改版即放宽阈值）。
-#   · **不删条目**：删掉后债务在门禁里彻底不可见。
-#   · 真清偿（把权重灰度 AB 从 SDK 面接进生产管线）属跨包产品改动，ROADMAP 已排在
-#     v1.5.1；**续期与否需孔老师拍板**，门禁侧不自行决定。
-#   ⚠️ 该红已由 v1.5.1 F6 接入 .github/workflows/pr-check.yml（本脚本现为 CI 门禁）
-#      ⇒ **会阻断 CI**。刻意不加 continue-on-error（那等于观察期假绿）。
-SDK_FACE_WAIVER="canaryRouteRequest:SDK先行·v1.5.0管线接线:v1.5.0"
+# ⚠️ 历史条目 canaryRouteRequest（`weight-canary-routeRequest` → TASK-32 更名后）的处置沿革：
+#   ① 两条失败态曾同时成立（目标 v1.5.0 = 当前 SSOT 的到期态；条目名是旧名导致引擎零命中 = 孤儿键）。
+#      **修法是接线或更名收编**，**不是**把目标版本改成下一版（那是「放宽阈值让它变绿」）。
+#   ② 孤儿键已修：条目名改为真实符号 `canaryRouteRequest`（定义在 engine/train/src/weight-canary.ts）——
+#      条目名若不指向真实符号，白名单就是在静默豁免一个不存在的符号，且版本比对永远匹配不上。
+#   ③ 到期态曾按「预期债务可见化」保留为红，不续期、不删条目、不改目标版本（删掉后债务在门禁里不可见）。
+#   ④ 真清偿落地：权重灰度 AB 从 SDK 面接进生产上行管线——`canaryRouteRequest` 现有生产调用点
+#      engine/mcp/src/tools/device-data-push.ts（`resolveUpstreamCanaryRoute`，经 MCP 工具
+#      `device_data_push` 在 engine/mcp/src/tool-registry.ts 调用）与
+#      engine/mcp/src/tools/router-session-push.ts（同语义管线，session 上行复用）。
+#      ⇒ 债务已清，条目**摘除**。摘除不同于续期/改目标版本，是本机制唯一认可的清偿动作。
+# 机制保留为空串：后续 SDK 先行债务按 `符号:reason:目标版本` 继续登记即可（登记即声明「尚无生产调用点」）。
+SDK_FACE_WAIVER=""
 
 # ── --since <prev-tag>：版本 diff 驱动模式 ──
 # 用 git diff <prev-tag>..HEAD 提取 engine/**/src/*.ts 新增的 @public 导出
@@ -261,7 +259,19 @@ while IFS= read -r sw_entry; do
     echo -e "  ${RED}✗${NC} SDK-face 白名单版本不可解析：SSOT「${_unwired_ssot}」/ 目标「${_sw_target}」——到期判定无法进行，拒绝静默放行"
     WAIVER_FAIL=$((WAIVER_FAIL + 1))
   elif [ "${_swv_ssot}" -ge "${_swv_target}" ]; then
-    echo -e "  ${RED}✗${NC} SDK-face 白名单**到期**：${sw_sym}——目标版本 ${_sw_target} 已到达（当前 SSOT ${_unwired_ssot}）仍未接线，债务到期转红"
+    # 到期态再分两支报（v1.5.1 清偿收口）：原实现无论是否已接线一律报「仍未接线」——
+    # 而本支的判据**只**比对版本，从不判定接线 ⇒ 一句未被验证的事实断言。
+    # 后果实证：权重灰度 AB 接线落地后本支仍报「仍未接线」，维护者会据此误判「债务未清」，
+    # 而不是「条目该摘了」。现复用本脚本自身的 prod_callers（与 --since 段同一实现，
+    # 不做第二套），把「已接线 ⇒ 摘条目」与「真未接线 ⇒ 真债务」分开报。
+    # 两支**都**计入 WAIVER_FAIL——到期本身即红，接线不自动放行，仍要求显式摘除条目。
+    _sw_pc=$(prod_callers "${sw_sym}" 1 || true)
+    if [ -n "${_sw_pc}" ]; then
+      echo -e "  ${RED}✗${NC} SDK-face 白名单**到期未摘除**：${sw_sym}——目标版本 ${_sw_target} 已到达（当前 SSOT ${_unwired_ssot}），且该符号**已有生产调用点**（${_sw_pc%%:*}）⇒ 债务已清偿，应把条目从 SDK_FACE_WAIVER 摘除"
+      echo -e "        处置：摘除条目不续期、不改目标版本（两者都是放宽阈值让红变绿）"
+    else
+      echo -e "  ${RED}✗${NC} SDK-face 白名单**到期**：${sw_sym}——目标版本 ${_sw_target} 已到达（当前 SSOT ${_unwired_ssot}）仍未接线，债务到期转红"
+    fi
     WAIVER_FAIL=$((WAIVER_FAIL + 1))
   fi
   _sw_hits=$(grep -rlw "$sw_sym" engine/ --include='*.ts' 2>/dev/null | head -1 || true)

@@ -122,7 +122,6 @@
   "engine/orchestrator/src/permission/index.ts",
   "engine/orchestrator/src/permission/policy-engine.ts",
   "engine/orchestrator/src/refine-agent/contamination-guard.ts",
-  "engine/orchestrator/src/refine-agent/quality-judge.ts",
   "engine/orchestrator/src/refine-agent/quality-rule-set.ts",
   "engine/orchestrator/src/route-policy.ts",
   "engine/orchestrator/src/route/route-request.ts",

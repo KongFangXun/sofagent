@@ -283,9 +283,9 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # load the securit
 | What each release did | [CHANGELOG](./CHANGELOG.md) |
 | Security statement · known limits | [SECURITY](./SECURITY.md) · [LIMITATIONS](./docs/LIMITATIONS.md) |
 
-> 🧪 **Engineering credibility** (current): 4917 tests / 13 module packages + 11 plugins (7 DSH + 4 OpenClaw) · 24 audit rules · fresh-eyes independent review continuously running.
+> 🧪 **Engineering credibility** (current): 5075 tests / 13 module packages + 11 plugins (7 DSH + 4 OpenClaw) · 24 audit rules · fresh-eyes independent review continuously running.
 > **Package-count standard** (disambiguation): workspace 26 = 13 module packages + load-chain + umbrella + 7 DSH plugins + 4 OpenClaw plugins (see [WIKI §6](./docs/WIKI.md#六当前状态)); the **test-count standard** = 13 test-bearing workspace packages — they are not the same set.
-> There are two test-count figures: the **release-time value** (the `4805 → 4903` delta account inside each version section — see the v1.5.0 section) and the **current measured value** (the 4917 above, rolling forward with fix batches); the current authoritative value is whatever `tools/check/test-count.sh` reports — counting standard in [WIKI package-count definition](./docs/WIKI.md#六当前状态). Review-environment notes in [docs/guides/review-system.md](./docs/guides/review-system.md); performance figures are single-machine reference values (cross-tool benchmarking scheduled with Benchmark integration).
+> There are two test-count figures: the **release-time value** (the `4805 → 4903` delta account inside each version section — see the v1.5.0 section) and the **current measured value** (the 5075 above, rolling forward with fix batches); the current authoritative value is whatever `tools/check/test-count.sh` reports — counting standard in [WIKI package-count definition](./docs/WIKI.md#六当前状态). Review-environment notes in [docs/guides/review-system.md](./docs/guides/review-system.md); performance figures are single-machine reference values (cross-tool benchmarking scheduled with Benchmark integration).
 
 ---
 

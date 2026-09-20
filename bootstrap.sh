@@ -127,7 +127,7 @@ fi
 # --local 模式 TMP_FILE 为空，set -e 下条件为假会触发 exit 1，改用 if
 if [[ -n "$TMP_FILE" ]]; then rm -rf "$TMP_DIR"; fi
 if [ "$INSTALL_RC" -ne 0 ]; then
-  echo "❌ sofagent 安装失败（exit $INSTALL_RC）——请截图此信息到 GitHub Issues（github.com/KongFangXun/sofagent/issues）"
+  echo "❌ sofagent 安装失败（exit ${INSTALL_RC}）——请截图此信息到 GitHub Issues（github.com/KongFangXun/sofagent/issues）"
   exit "$INSTALL_RC"
 fi
 echo "✅ bootstrap 完成"

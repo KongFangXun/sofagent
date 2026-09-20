@@ -91,7 +91,7 @@ case "$PLATFORM" in
     # 兼容旧 constitution/ 路径
     old_path="$HOME/.workbuddy/skills/engine/constitution/$f"
     if [ -f "$old_path" ]; then
-      if [ "$LIST_ONLY" = true ]; then info "  $old_path（v0.72 前残留）"; else rm -f "$old_path"; rmdir "$(dirname "$old_path")" 2>/dev/null || true; ok "已删除旧版残留: constitution/$f"; fi
+      if [ "$LIST_ONLY" = true ]; then info "  ${old_path}（v0.72 前残留）"; else rm -f "$old_path"; rmdir "$(dirname "$old_path")" 2>/dev/null || true; ok "已删除旧版残留: constitution/$f"; fi
     fi
     ((removed++)) || true
 
@@ -99,7 +99,7 @@ case "$PLATFORM" in
     legacy="$HOME/.workbuddy/sofagent.md"
     if [ -f "$legacy" ]; then
       if [ "$LIST_ONLY" = true ]; then
-        info "  $legacy（旧版遗留）"
+        info "  ${legacy}（旧版遗留）"
       else
         rm -f "$legacy" && ok "已删除旧版遗留: $legacy"
       fi
@@ -190,7 +190,7 @@ fi
 old_path="${OPENCLAW_DIR}/skills/engine/constitution/${f}"
 if [ -f "$old_path" ]; then
   if [ "$LIST_ONLY" = true ]; then
-    info "  $old_path（v0.72 前残留）"
+    info "  ${old_path}（v0.72 前残留）"
   else
     rm -f "$old_path" "${old_path}.bak"
     rmdir "$(dirname "$old_path")" 2>/dev/null || true
@@ -214,7 +214,7 @@ fi
 legacy="${OPENCLAW_DIR}/sofagent.md"
 if [ -f "$legacy" ]; then
   if [ "$LIST_ONLY" = true ]; then
-    info "  $legacy（旧版遗留）"
+    info "  ${legacy}（旧版遗留）"
   else
     rm -f "$legacy" "${legacy}.bak"
     ok "已删除旧版遗留: sofagent.md"
@@ -254,7 +254,7 @@ if [ "$PLATFORM" = "cursor" ]; then
   CUR_HOOKS="$HOME/.cursor/hooks.json"
   if [ -f "$CUR_HOOKS" ] && grep -q "sofagent" "$CUR_HOOKS" 2>/dev/null; then
     if [ "$LIST_ONLY" = true ]; then
-      info "  $CUR_HOOKS（sofagent hook 配置）"
+      info "  ${CUR_HOOKS}（sofagent hook 配置）"
     else
       rm -f "$CUR_HOOKS"
       ok "已删除: ~/.cursor/hooks.json（sofagent hook 配置）"
@@ -321,7 +321,7 @@ if git rev-parse --git-dir >/dev/null 2>&1; then
       _ghf="${GIT_HOOKS_DIR}/${_gh}"
       if [ -f "$_ghf" ] && grep -q "sofagent" "$_ghf" 2>/dev/null; then
         if [ "$LIST_ONLY" = true ]; then
-          info "  $GIT_HOOKS_DIR/$_gh（含 sofagent 调用，卸载后需回收）"
+          info "  $GIT_HOOKS_DIR/${_gh}（含 sofagent 调用，卸载后需回收）"
         else
           rm -f "$_ghf"
           # 还原安装时保存的用户自有 hook（hook-install.ts 存为 <hook>.pre-sofagent）

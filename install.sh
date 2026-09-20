@@ -177,7 +177,7 @@ ensure_repo_integrity() {
     # 🔴 --branch 钉 tag + 克隆内文件须真正存在（annotated tag 被删/未推时 clone 失败进 fail-closed 兜底）
     if git clone --depth 1 --branch "$pinned_tag" https://github.com/KongFangXun/sofagent.git "$rescue_tmp" 2>/dev/null \
       && [ -f "$rescue_tmp/install.sh" ]; then
-      ok "完整仓库已克隆到: $rescue_tmp（钉定 ${pinned_tag}）"
+      ok "完整仓库已克隆到: ${rescue_tmp}（钉定 ${pinned_tag}）"
       # v1.4.7 批次 M P1-2：哈希自锚定——bootstrap 通道下外层已校验 install.sh
       # sha256 并以环境变量传入，这里对克隆树的 install.sh 重算比对（fail-closed）：
       # tag 被移走/重打（内容变了）时在此拦截，而不是执行一份没人校验过的代码。
@@ -296,7 +296,7 @@ if [ "${REMOTE_MODE}" = "1" ]; then
     if ! git clone --depth 1 --branch "v${VERSION}" https://github.com/KongFangXun/sofagent.git "$REMOTE_TMP" 2>/dev/null || [ ! -f "$REMOTE_TMP/install.sh" ]; then
       err "git clone 失败（tag v${VERSION}），请检查网络或手动 git clone"; exit 1
     fi
-    ok "仓库已克隆到: $REMOTE_TMP（钉定 v${VERSION}）"; cd "$REMOTE_TMP"
+    ok "仓库已克隆到: ${REMOTE_TMP}（钉定 v${VERSION}）"; cd "$REMOTE_TMP"
     REMAINING_ARGS=""
     for _arg in "${ORIGINAL_ARGS[@]}"; do [ "$_arg" = "--remote" ] && continue; REMAINING_ARGS="$REMAINING_ARGS $_arg"; done
     exec bash install.sh "${REMAINING_ARGS# }"
@@ -324,7 +324,7 @@ resolve_data_dir
 # ════════════════════════════════════════
 if [ -n "${POLICY_FILE:-}" ]; then
   if [ ! -f "$POLICY_FILE" ]; then
-    echo "❌ [policy] 策略文件不存在: $POLICY_FILE——安装中止（fail-closed）" >&2
+    echo "❌ [policy] 策略文件不存在: ${POLICY_FILE}——安装中止（fail-closed）" >&2
     exit 1
   fi
   POLICY_GATE="${SCRIPT_DIR}/engine/audit/dist/cli/plugin-gate.js"
@@ -341,11 +341,11 @@ if [ -n "${POLICY_FILE:-}" ]; then
   fi
   # 校验策略文件可解析（yaml）且段结构合法——解析失败同样 fail-closed
   if ! node "$POLICY_GATE" --lint "$POLICY_FILE" 2>/dev/null; then
-    echo "❌ [policy] 策略文件解析/校验失败: $POLICY_FILE——安装中止（fail-closed）" >&2
+    echo "❌ [policy] 策略文件解析/校验失败: ${POLICY_FILE}——安装中止（fail-closed）" >&2
     exit 1
   fi
   # 策略生效标记——后续插件安装步骤（SkillHub/ClawHub 通道）经 --check-source 调校验器比对白名单
-  info "[policy] 企业策略已加载: $POLICY_FILE（插件来源白名单 + $(node "$POLICY_GATE" --summary "$POLICY_FILE" 2>/dev/null || echo '策略段')）"
+  info "[policy] 企业策略已加载: ${POLICY_FILE}（插件来源白名单 + $(node "$POLICY_GATE" --summary "$POLICY_FILE" 2>/dev/null || echo '策略段')）"
 fi
 
 # ── 历史注入残留检测（平台无关重构加分项）──
