@@ -17,6 +17,55 @@ import type { AuditConfig } from '@sofagent/core';
 export type EvidenceMode = 'git-diff' | 'logs' | 'hybrid' | 'filesystem';
 
 /**
+ * 审计输入通道（v1.5.1 第七章·审计输入双通道）
+ *
+ * - `result`：结果文本通道（git diff / 工具结果文本）——**既有唯一通道，且仍是默认通道**。
+ *   未声明 `inputChannels` 的规则行为零变化。
+ * - `intent`：调用意图通道（宿主 `tools/pre-execute` / `tools/result` 事件流留痕：
+ *   tool 名 + 参数摘要 + 会话标识 + 时间戳）——opt-in。参数级意图（`rm -rf` 的 path、
+ *   写文件落点、外发 host）只在意图通道可见，结果文本通道看不出来。
+ *
+ * 🔴 通道声明只描述**输入面**，不参与任何判定逻辑——本章不新增规则、不改规则判定。
+ */
+export type AuditInputChannel = 'result' | 'intent';
+
+/**
+ * 意图条目（`<dataDir>/audit/intent.jsonl` 一行 = 一条留痕；v1.5.1 第七章）
+ *
+ * 写入侧：`intent-channel.ts`——参数**先过既有脱敏管线**（`sanitizeFreeText` 的
+ * REDACTION_PATTERNS SSOT）才落盘，原始参数不入盘。
+ * 读取侧：规则经 {@link AuditContext.intentEntries} 消费——仅当规则在
+ * {@link Rule.inputChannels} 显式声明 `'intent'` 时才应被消费。
+ */
+export interface IntentEntry {
+  /**
+   * 条目通道——与 HMAC 链条目类型（`ChainEntryType`）同值，故意图与结果
+   * 落在同一条链上且条目类型可区分（举证可对照）。
+   * - `intent`：调用前意图（`tools/pre-execute`）
+   * - `result`：调用结果（`tools/result`）
+   */
+  channel: AuditInputChannel;
+  /** 工具名（宿主事件 `exec.name`）；**缺名不落盘**——不可归因的条目没有审计价值 */
+  tool: string;
+  /**
+   * 参数摘要——键为参数名，值为**脱敏后**文本（长值截断）。
+   * 🔐 脱敏策略：FREE_TEXT——写入前过 `sanitizeFreeText`（REDACTION_PATTERNS SSOT）；
+   * 嵌套对象先序列化再整体过管道，故嵌套里的密钥同样被打码。
+   */
+  argsSummary?: Record<string, string>;
+  /** 会话标识（宿主 `exec.agent.session.id`）；身份不可达时显式 `'unknown'`，不猜测 */
+  sessionId: string;
+  /** agent 标识（宿主 `exec.agent.id`） */
+  agentId?: string;
+  /** 调用标识（宿主 `exec.callId`）——同一次调用的「意图」与「结果」两条可对照 */
+  callId?: string;
+  /** 结果态（`channel='result'` 时）：ok / error */
+  outcome?: 'ok' | 'error';
+  /** 时间戳（ISO 8601） */
+  ts: string;
+}
+
+/**
  * 规则分级标签
  * - 业务底线：违反即破坏交付完整性（安全 / 边界 / 追溯）
  * - 能力拐杖：帮助 Agent 走完正确流程，违反不一定是事故
@@ -126,6 +175,13 @@ export interface AuditContext {
   config?: AuditConfig;
   /** v1.0.9: 窗口内历史审计记录（A17 跨审计聚合用） */
   history?: { timestamp: string; diffFileCount: number }[];
+  /**
+   * v1.5.1 第七章：意图通道输入面（`<dataDir>/audit/intent.jsonl` 的解析结果）。
+   *
+   * 缺省 `undefined` = 本规则未接入意图通道（= 未声明通道的规则读不到它，行为零变化）。
+   * 消费纪律：仅当规则在 {@link Rule.inputChannels} 显式声明 `'intent'` 时才应读取本字段。
+   */
+  intentEntries?: IntentEntry[];
   /** v1.3.3 #8: quick 模式标记（cli-quick 零配置审计）——A3 见到跳过越界检查（无任务描述必然误报） */
   quickMode?: boolean;
 }
@@ -157,6 +213,15 @@ export interface Rule {
   number: number;
   /** 证据模式标注 */
   evidenceMode: EvidenceMode;
+  /**
+   * v1.5.1 第七章：规则输入通道声明。
+   *
+   * 缺省（`undefined`）= 结果通道 `['result']`——**未声明通道的规则行为零变化**；
+   * 声明含 `'intent'` 的规则才消费 {@link AuditContext.intentEntries}（意图通道 opt-in）。
+   * 默认值单源化在 `intent-channel.ts` 的 `resolveInputChannels`（勿在各消费点各自重推）。
+   * 🔴 本字段只描述输入面，不参与判定——本章不新增规则、不改规则判定逻辑。
+   */
+  inputChannels?: AuditInputChannel[];
   /** 规则分级标签 */
   ruleClass?: RuleClass;
   /** 规则描述（v1.0.9） */

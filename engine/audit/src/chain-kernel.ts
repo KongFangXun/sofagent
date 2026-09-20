@@ -67,6 +67,18 @@ export interface ChainFields {
 }
 
 /**
+ * 链条目类型（v1.5.1 第七章·审计输入双通道）/ Chain entry type。
+ *
+ * - `intent`：调用意图条目（宿主 `tools/pre-execute` 事件——参数级意图：`rm -rf` 的
+ *   path、写文件落点、外发 host 全在参数里，结果文本通道看不见）
+ * - `result`：结果文本条目（宿主 `tools/result` 事件 / 既有 git diff 审计）
+ *
+ * 🔴 向后兼容：缺省 `undefined` = 历史条目（无该字段）——既有链结构、prevHash/HMAC
+ * 两条哈希输入、既有 golden vector 与双实现差分测试**逐字不变**。
+ */
+export type ChainEntryType = 'intent' | 'result';
+
+/**
  * appendChained 选项 / Options for appendChained。
  *
  * key / fingerprint 由调用方从 @sofagent/core 解析后显式传入（不在内核内部取
@@ -87,6 +99,18 @@ export interface AppendChainedOptions {
   fingerprint: string;
   /** 记录中承载 kind 的字段名（缺省 'kind'；train-audit 传 'type'）/ Kind field name */
   kindField?: string;
+  /**
+   * 条目类型（v1.5.1 第七章）——内核在**链字段装配之前**把它写入 `kindField` 指定的
+   * 字段，故该字段必然落在两条哈希输入之内：
+   *   · prevHash 输入 = JSON.stringify(omitHashFields(上一条)) + '|' + fingerprint
+   *   · hmacSig  输入 = stableStringify(omitSigFields(本条)) + '|' + fingerprint
+   * 两者都按字段全量展开，故注入的条目类型被签名覆盖——事后改条目类型与改业务
+   * 内容同判据（指纹一致时判 tampered），不可能「把 intent 条目改标成 result 而不留痕」。
+   *
+   * 🔴 缺省 `undefined` = 不写入任何字段、不做任何分支——哈希输入逐字不变，
+   * 既有 decision-log.jsonl / audit.jsonl 两条链与其 golden vector 零影响。
+   */
+  entryType?: ChainEntryType;
   /**
    * 非法 kind 时构造的错误（调用方自持错误类型）。
    * 缺省抛 ChainKernelError（内核独立可用场景）。
@@ -141,6 +165,8 @@ interface ChainEntry {
   hmacSig?: unknown;
   hmacAlgo?: unknown;
   envFingerprint?: unknown;
+  /** 条目类型（v1.5.1 第七章）——历史条目无此字段；校验侧不改判定，仅供举证区分 */
+  entryType?: unknown;
 }
 
 /**
@@ -199,19 +225,29 @@ function computeHmacSig(
 export function appendChained<T extends object>(
   record: T,
   options: AppendChainedOptions,
-): T & ChainFields {
+): T & ChainFields & { entryType?: ChainEntryType } {
   const {
     filePath,
     validKinds,
     key,
     fingerprint,
     kindField = 'kind',
+    entryType,
     onInvalidKind,
     onWriteError,
     logLabel = '[chain-kernel]',
   } = options;
 
-  const recordAsDict = record as Record<string, unknown>;
+  // ── 条目类型注入（v1.5.1 第七章）——位置在所有既有步骤之前：
+  //    ① 先于 kind 门：entryType 本身就是 kindField 的合法值来源（本仓意图通道
+  //       以 kindField='entryType' + validKinds=['intent','result'] 接线）；
+  //    ② 先于哈希输入装配：注入后的记录才是 prevHash / hmacSig 两条输入的被签对象。
+  //    未传 entryType 时 source 即原对象本身，后续每一步与改造前逐字一致。
+  //    （浅拷贝注入——绝不改动调用方传入的 record。）
+  const recordAsDict: Record<string, unknown> =
+    entryType === undefined
+      ? (record as Record<string, unknown>)
+      : { ...(record as Record<string, unknown>), [kindField]: entryType };
 
   // ── 0. kind 门（调用方自持白名单——内核不硬编码）──
   const kindValue = recordAsDict[kindField];
@@ -256,7 +292,7 @@ export function appendChained<T extends object>(
 
   // ── 2-3. 先脱敏再签名（脱敏已在调用方完成）+ 链字段装配 ──
   const base: Record<string, unknown> = {
-    ...record,
+    ...recordAsDict,
     prevHash,
     hashVersion: 2,
     envFingerprint: fingerprint,

@@ -2,6 +2,12 @@
 // seam 挂载：tools/result + tools/pre-execute + fs/write-intent + agent/turn-stopping
 // # 语义：工具结果留证 + 工具执行前拦截 + 文件写入意图拦截（放行） + Turn 停止验收判定
 //   （判定源 = checkDangerousCommand / check_acceptance——引擎包既有 @public，零改动）
+// v1.5.1 第七章：`tools/pre-execute` / `tools/result` 两个 seamHandler 追加**调用意图留痕**
+//   （@sofagent/audit.createIntentChannel → <dataDir>/audit/intent.jsonl），审计输入面由此
+//   从 git diff 单通道扩为双通道。该面**零执行权限**：只读消费宿主事件 + 落盘，不参与判定、
+//   不碰 next、无 deny/allow 语义（拦截能力仍归上述判定源与宿主事件位，本插件未新增）。
+//   身份不可达（exec 无 agent/session）时**调用证据跳过**，但「跳过」本身落
+//   `<dataDir>/audit/intent-skips.jsonl`（进盘不进链）——跳失可审计，不是黑洞。
 // 清单生成源 = engine/dsh-plugins/plugins.json（生成 package.json 的 description/sofagent/dsh 段与 cordis.patch.yml）；本文件的 seam 字面量由生成器 --check 与之对账。
 //
 // v1.5.0 P2 吸收说明（F3）：原 -gate 独立承载 agent/turn-stopping 验收门禁，但其
@@ -72,6 +78,96 @@ const errMsg = (err: unknown): string => (err instanceof Error ? err.message : S
 const lastSteeredTurn = new WeakMap<object, unknown>();
 
 /**
+ * 跳失留证（v1.5.1 第七章收口）——**「跳过」本身必须可审计**。
+ *
+ * 为什么不能只打一行日志：日志随进程消失，而「这个宿主上意图通道到底记了几次、
+ * 跳了几次、为什么跳」恰恰是**事后**（进程重启过 / 换过机器 / 翻旧账）才要问的
+ * 问题——只打日志等于把答案交给运气（日志没人收就没了）。故跳失落盘
+ * `<dataDir>/audit/intent-skips.jsonl`（**进盘不进链**：它是通道活性证据，
+ * 不是调用证据，不做完整性声明），配 `@sofagent/audit.summarizeIntentChannel`
+ * 即可**只读盘**回答上述问题。
+ *
+ * 隔离纪律：本函数同样只在**身份不可达**时被调用（见 recordIntent 的门），
+ * 故正常运行的生产宿主不会产生跳失记录；出现记录 = 宿主身份接线有问题。
+ *
+ * 🔴 失败一律 fail-open + 可见日志：留证故障不得升级为宿主工具调用故障。
+ */
+async function recordIntentSkipEvidence(helpers: SeamHelpers, event: string, exec: unknown): Promise<void> {
+  logOnce(
+    helpers,
+    'intent-no-identity',
+    '意图留证：宿主 exec 未带 agent/session 标识——调用证据跳过（不猜测身份），跳失已落盘留证',
+  );
+  const name = (exec as { name?: unknown } | null | undefined)?.name;
+  try {
+    await helpers.call('@sofagent/audit', 'recordIntentSkip', await resolveDataDir(helpers), {
+      reason: 'identity-unreachable',
+      event,
+      ...(typeof name === 'string' && name !== '' ? { tool: name } : {}),
+    });
+  } catch (err) {
+    logOnce(
+      helpers,
+      'intent-skip-evidence-failed',
+      `意图跳失留证写入失败（本次跳过只剩日志，不阻断宿主）：${errMsg(err)}`,
+    );
+  }
+}
+
+/**
+ * 调用意图留痕（v1.5.1 第七章·审计输入双通道）——**零执行权限**：
+ * 只读消费宿主事件 + 落盘留痕，不参与任何判定、不碰 `next`、不产生 deny/allow 语义
+ * （拦截能力仍归上面两个判定源，本函数不拥有也未新增拦截面）。
+ *
+ * 身份纪律与既有 `tools/result` 留证同款：exec 不带 agent/session ⇒ **跳过**（身份不可达，
+ * 不猜测）——不可归因的意图条目对审计没有价值；该纪律同时保证无身份载荷（宿主替身 /
+ * 尚未接入身份的宿主）不触发**调用证据**落盘。跳过的**事实**另落 `intent-skips.jsonl`
+ * （`recordIntentSkipEvidence`），故「跳过」可审计、不是黑洞。
+ *
+ * 通道实例按进程惰性创建一次（内建单例）；**任何失败一律 fail-open** + 可见日志——
+ * 留痕故障不得升级为宿主工具调用故障（对齐本文件既有接线红线）。
+ */
+type IntentChannelLike = { handle: (event: string, args: unknown[]) => void };
+let intentChannel: IntentChannelLike | null | undefined;
+
+async function recordIntent(
+  helpers: SeamHelpers,
+  event: string,
+  exec: unknown,
+  result?: unknown,
+): Promise<void> {
+  if (identityOf(exec) === null) {
+    await recordIntentSkipEvidence(helpers, event, exec);
+    return;
+  }
+  try {
+    if (intentChannel === undefined) {
+      const dataDir = await resolveDataDir(helpers);
+      const created = await helpers.call(
+        '@sofagent/audit',
+        'createIntentChannel',
+        dataDir === undefined ? {} : { dataDir },
+      );
+      const candidate = created as IntentChannelLike | null | undefined;
+      intentChannel =
+        candidate !== null && candidate !== undefined && typeof candidate.handle === 'function'
+          ? candidate
+          : null;
+      if (intentChannel === null) {
+        logOnce(
+          helpers,
+          'intent-channel-missing',
+          '意图通道不可用（@sofagent/audit 未导出 createIntentChannel）——意图留痕停用，不阻断宿主',
+        );
+      }
+    }
+    intentChannel?.handle(event, [exec, result]);
+  } catch (err) {
+    logOnce(helpers, 'intent-record-failed', `意图留痕写入失败（不阻断宿主工具调用）：${errMsg(err)}`);
+  }
+}
+
+/**
  * seam 事件处理器（v1.5.0 章十）——四个事件位的**实现**（此前只有声明）。
  *
  * 🔴 判定逻辑零改动：全部判定都来自引擎包既有 @public API
@@ -90,6 +186,10 @@ const seamHandlers: Record<string, SeamHandler> = {
     const [exec, next] = args;
     const cont = async (): Promise<unknown> =>
       typeof next === 'function' ? await (next as () => unknown)() : undefined;
+    // v1.5.1 第七章：意图留痕先于命令类判定（非命令类工具的意图同样在参数里：
+    // 写文件落点 / 外发 host），且**先于拦截**——被拒的操作也留痕。零执行权限：
+    // 本调用不改本 handler 的返回语义（下方放行/拦截分支逐字不变）。
+    await recordIntent(helpers, 'tools/pre-execute', exec);
     const command = commandOf(exec);
     if (command === null) return await cont(); // 非命令类工具不参与判定（不改变既有语义）
     try {
@@ -116,6 +216,9 @@ const seamHandlers: Record<string, SeamHandler> = {
   'tools/result': async (...args: unknown[]) => {
     const helpers = seamHelpers(args);
     const [exec, result] = args;
+    // v1.5.1 第七章：结果入意图通道（与 pre-execute 的意图条目同链留痕、条目类型可区分）
+    // ——先于下方「只留失败结果」的留证过滤：结果通道要的是**全部**调用的结果。
+    await recordIntent(helpers, 'tools/result', exec, result);
     if ((result as { isError?: unknown } | null | undefined)?.isError !== true) return;
     const id = identityOf(exec);
     if (id === null) {

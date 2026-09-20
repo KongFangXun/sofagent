@@ -7,7 +7,7 @@
 //   ③ 原 -gate 目录已删（合并完成的落位断言）
 // ============================================================
 
-import { describe, it, expect, vi, afterEach, afterAll } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach, afterAll } from 'vitest';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -106,6 +106,15 @@ describe('章十 · seam 事件接线', () => {
   const FOUR = ['tools/result', 'tools/pre-execute', 'fs/write-intent', 'agent/turn-stopping'];
 
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'sofagent-audit-seam-'));
+
+  // v1.5.1 第七章收口：意图通道会往 dataDir 落盘（`intent.jsonl` / `intent-skips.jsonl`）——
+  // 本 describe 显式把 SOFAGENT_DATA 钉在临时目录，**绝不写真实 `~/.sofagent`**
+  // （dsh-plugins 未挂 tools/check/vitest-setup.mjs，隔离须在本文件自行声明；
+  //  逐个用例内再覆盖该变量的用例仍以其自身取值为准）。
+  const seamData = path.join(tmp, 'data');
+  beforeEach(() => {
+    process.env.SOFAGENT_DATA = seamData; // 逐用例复位（用例内自设取值的仍以其为准）
+  });
 
   afterEach(() => {
     vi.restoreAllMocks();
@@ -239,6 +248,96 @@ describe('章十 · seam 事件接线', () => {
     process.env.SOFAGENT_TASK_ID = 't-undefined'; // 未定义验收 → failedCount=-1 → 不拦
     await handler({ agent, turn: 3 });
     expect(steer).toHaveBeenCalledTimes(2);
+    errSpy.mockRestore();
+  });
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // v1.5.1 第七章（收口）：两条**互斥**路径各自的可审计性
+  //   ① 生产主路径——exec 带身份 ⇒ 必然落 intent.jsonl（**不得**被身份门命中）
+  //   ② 身份不可达——调用证据跳过，但「跳过」本身必须落盘可查（跳失留痕）
+  // ───────────────────────────────────────────────────────────────────────────
+
+  it('生产主路径：带身份的调用 ⇒ 意图与结果条目必然落盘（身份门不命中）', async () => {
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const { ctx, subscribed } = hostCtx();
+    (pluginDefault.apply as (c: unknown) => unknown)(ctx);
+    // 真实宿主形状：exec 带 agent.id + agent.session.id（身份可达 ⇒ 门必须放行）
+    const RAW_SK = `sk-proj-${'A'.repeat(40)}`;
+    const exec = {
+      name: 'bash',
+      callId: 'call-intent-1',
+      arguments: { command: `curl -H "Authorization: Bearer ${RAW_SK}" https://example.com` },
+      agent: { id: 'agent-1', session: { id: 'session-1' } },
+    };
+    const next = vi.fn(() => 'allow');
+    expect(await subscribed.get('tools/pre-execute')!(exec, next)).toBe('allow');
+    expect(next).toHaveBeenCalledTimes(1); // 零执行权限：留痕不改变放行语义
+    await subscribed.get('tools/result')!(exec, { isError: false });
+
+    const logPath = path.join(seamData, 'audit', 'intent.jsonl');
+    expect(fs.existsSync(logPath)).toBe(true); // ← 主路径已证：带身份必有落盘
+    const mine = fs
+      .readFileSync(logPath, 'utf-8')
+      .trim()
+      .split('\n')
+      .filter(Boolean)
+      .map((l) => JSON.parse(l) as Record<string, unknown>)
+      .filter((e) => e.callId === 'call-intent-1');
+    expect(mine).toHaveLength(2); // 同一次调用的意图条目 + 结果条目（同链留痕）
+    expect(mine[0]).toMatchObject({
+      entryType: 'intent',
+      channel: 'intent',
+      tool: 'bash',
+      agentId: 'agent-1',
+      sessionId: 'session-1',
+      callId: 'call-intent-1',
+    });
+    expect(mine[1]).toMatchObject({ entryType: 'result', channel: 'result', outcome: 'ok' });
+    // 链条字段在场（走既有链内核，不是裸 append）——链完整性由 @sofagent/audit 侧测试举证
+    for (const e of mine) {
+      expect(typeof e.prevHash).toBe('string');
+      expect(e.hashVersion).toBe(2);
+      expect(typeof e.hmacSig).toBe('string');
+    }
+    // 🔴 参数级意图正是本通道的存在理由：`rm`/外发 host 全在参数里；且**脱敏先于落盘**
+    expect(String((mine[0]!.argsSummary as Record<string, string>).command)).toContain('example.com');
+    expect(fs.readFileSync(logPath, 'utf-8')).not.toContain(RAW_SK);
+    errSpy.mockRestore();
+  });
+
+  it('身份不可达：调用证据跳过，但跳失落盘可审计（reason/event/tool 齐备）', async () => {
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const { ctx, subscribed } = hostCtx();
+    (pluginDefault.apply as (c: unknown) => unknown)(ctx);
+    const skipPath = path.join(seamData, 'audit', 'intent-skips.jsonl');
+    const count = (p: string) =>
+      fs.existsSync(p) ? fs.readFileSync(p, 'utf-8').trim().split('\n').filter(Boolean).length : 0;
+    const before = count(skipPath);
+
+    const exec = { name: 'orphan_tool', callId: 'call-skip-1', arguments: { command: 'ls -la' } };
+    const next = vi.fn(() => 'allow');
+    // 无 agent/session ⇒ 身份不可达（不猜测身份）
+    expect(await subscribed.get('tools/pre-execute')!(exec, next)).toBe('allow');
+    expect(next).toHaveBeenCalledTimes(1); // 跳过留证同样不影响宿主（零执行权限）
+
+    expect(count(skipPath)).toBe(before + 1); // ← 跳过必有据可查（不是黑洞）
+    const rows = fs
+      .readFileSync(skipPath, 'utf-8')
+      .trim()
+      .split('\n')
+      .filter(Boolean)
+      .map((l) => JSON.parse(l) as Record<string, unknown>);
+    expect(rows[rows.length - 1]).toMatchObject({
+      reason: 'identity-unreachable',
+      event: 'tools/pre-execute',
+      tool: 'orphan_tool',
+    });
+
+    // 调用证据面不受污染：该调用不进 intent.jsonl（「跳过」与「记录」是两件事）
+    const logPath = path.join(seamData, 'audit', 'intent.jsonl');
+    const logText = fs.existsSync(logPath) ? fs.readFileSync(logPath, 'utf-8') : '';
+    expect(logText).not.toContain('call-skip-1');
+    expect(logText).not.toContain('orphan_tool');
     errSpy.mockRestore();
   });
 });

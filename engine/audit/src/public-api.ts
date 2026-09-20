@@ -105,6 +105,33 @@
 /* @internal */ export { appendChained, verifyChain, ChainKernelError } from './chain-kernel';
 /* @internal */ export type { AppendChainedOptions, VerifyChainOptions, ChainCheckStatus, ChainCheckResult, ChainFields } from './chain-kernel';
 
+// ── 审计输入双通道之「调用意图通道」（v1.5.1 第七章）──
+// @internal：跨生态内部接缝——**唯一生产消费方**是 DSH 插件
+// （engine/dsh-plugins/cordis-plugin-sofagent-audit/src/index.ts 的
+//  `tools/pre-execute` / `tools/result` 两个 seamHandler，经 helpers.call 桥接），
+// 故按 @internal 语义不计入 public API 基线（不承诺 semver 稳定性）。
+// 零执行权限：本通道只有「只读消费宿主事件 + 落盘留痕」两种能力，无拦截面。
+/* @internal */ export {
+  createIntentChannel,
+  resolveInputChannels,
+  ruleSupportsChannel,
+  readIntentEntries,
+  resolveIntentLogPath,
+  INTENT_EVENTS,
+  INTENT_LOG_FILENAME,
+  // 跳失留痕（v1.5.1 第七章·收口）——「跳过必须可审计」的落盘面：
+  // 生产消费方同上（插件在身份不可达时经 helpers.call 桥接 recordIntentSkip），
+  // readIntentSkips / summarizeIntentChannel 是运维「只读盘判断通道是否在工作」的查询面。
+  recordIntentSkip,
+  readIntentSkips,
+  resolveIntentSkipLogPath,
+  summarizeIntentChannel,
+  INTENT_SKIP_LOG_FILENAME,
+} from './intent-channel';
+/* @internal */ export type { IntentChannel, IntentChannelOptions, IntentEventContext } from './intent-channel';
+/* @internal */ export type { IntentSkipReason, IntentSkipRecord, IntentChannelStatus } from './intent-channel';
+/* @internal */ export type { IntentEntry, AuditInputChannel } from './rules/types';
+
 // ── 决策审计查询（v1.3.0 交付 6 T04；v1.3.6 交付⑮ 补 moment/agent/category/组合查询）──
 /* @public */ export {
   queryByKind,
