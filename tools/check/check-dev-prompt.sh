@@ -271,7 +271,7 @@ function isPlannedRef(ref, line, refIndex) {
   if (/^[ \t]*\|/.test(line)) return /新建|新文件|新增/.test(rowScope(line, ref, refIndex));
   // 自有后置注记是最局部证据，且必须排在「改动族否决」之前——
   // 否则前一项的注记（如「（协议执行器改造）」）会沿着路径列举式的外层分隔符
-  // 外溢，把后面所有项一并否决 = 假红（v1.5.3「涉及文件（预估）」实锤）。
+  // 外溢，把后面所有项一并否决 = 假红（「涉及文件（预估）」表实测实锤）。
   if (annoSaysNew(ownAnnotation(line, refIndex, ref))) return true;
 
   var pre = itemPrefix(line, refIndex);
