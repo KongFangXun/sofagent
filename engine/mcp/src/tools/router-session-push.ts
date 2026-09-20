@@ -9,6 +9,11 @@
 //
 // 落盘布局（data/<enterpriseId>/router-sessions/<sessionId>.jsonl——
 // 一会话一文件，多窗记录逐行 append；幂等：同 sessionId 已存在拒绝）。
+//
+// v1.5.1 第六章接线：第 4 步「脱敏落盘」升级为**三层敏感检测插槽管线**
+// （L0 正则 → L1 词典 → L2 外挂 NER，判定本体零改动）——与设备上行
+// （device-data-push）同一份管线实现；分流决策随审计事件入链。既有
+// schema 校验、幂等、cost 台账、HMAC 挂链**保持原样**。
 // ============================================================
 
 import {
@@ -28,7 +33,13 @@ import {
   aggregateByKeyUsage,
   detectKeyAnomalies,
 } from '@sofagent/train';
-import { getDataDir, redact, loadRedactRules, getHmacKey } from '@sofagent/core';
+import { getDataDir, loadRedactRules, getHmacKey, type SensitivityLevel } from '@sofagent/core';
+import {
+  runUpstreamSensitivityPipeline,
+  resolveUpstreamCanaryRoute,
+  type GlossaryNarrowing,
+  type UpstreamWiringOptions,
+} from './device-data-push';
 
 /** 推送结果（结构化） */
 export interface RouterSessionPushResult {
@@ -63,8 +74,13 @@ function auditEventsPath(dataDir: string): string {
  * router session 推送承接（T7 第七章）。
  *
  * @param args.raw exporter 推送 payload（RouterSessionSchema 形态——JSON 对象）
+ * @param args.wiring 三层检测插槽 / 灰度分流接线选项（缺省从配置面解析——
+ *        非必填：MCP 入参面不变，装配侧可注入 L2 端点 / 灰度配置覆盖）
  */
-export async function routerSessionPush(args: { raw: unknown }): Promise<RouterSessionPushResult> {
+export async function routerSessionPush(args: {
+  raw: unknown;
+  wiring?: UpstreamWiringOptions;
+}): Promise<RouterSessionPushResult> {
   // ── 参数校验 ──
   if (!args || args.raw === null || typeof args.raw !== 'object') {
     return {
@@ -106,13 +122,56 @@ export async function routerSessionPush(args: { raw: unknown }): Promise<RouterS
   // ── 3. 多轮展开（切窗 + 角色映射）──
   const expanded = expandSessionToRecords(payload);
 
-  // ── 4. 脱敏落盘（每窗记录逐行 append——文本字段过 redact 管线）──
+  // ── 4. 三层敏感检测插槽 + 脱敏落盘（每窗记录逐行 append）──
+  // v1.5.1 第六章接线：文本字段逐字段过同一份插槽管线（与设备上行同语义）。
+  // 逐字段而非整包的原因：插槽 span 的偏移绑定待检文本，跨字段复用 span
+  // 会串位（错位既漏脱敏又串改文本）。
+  // 会话级判定 = 各字段判定取最高档（sensitive > internal > public）——
+  // 这是**聚合**不是判定：判定本体仍是 classifySensitivity（逐字段调用，
+  // 内部实现零改动），聚合只决定审计留痕写哪一条 routeReason。
   const rules = loadRedactRules(dataDir);
+  const LEVEL_RANK: Record<SensitivityLevel, number> = { public: 0, internal: 1, sensitive: 2 };
+  let sessionLevel: SensitivityLevel = 'public';
+  let sessionReason = '';
+  let sessionHitCount = 0;
+  let sessionRedactHits = 0;
+  const sessionDegraded: Array<{ detector: string; reason: string }> = [];
+  const sessionL2Errors = new Set<string>();
+  const sessionDetectors = new Set<string>();
+  // L1 词典窄化统计：配置侧计数逐字段相同（同一份 rules）→ 取首个即可；
+  // 缺口命中（missed）逐字段并集——本会话任一字段落入缺口都要上链
+  let sessionNarrowed: GlossaryNarrowing | undefined;
+  const sessionNarrowedMisses = new Map<string, GlossaryNarrowing['missed'][number]['category']>();
   try {
     for (const rec of expanded.records) {
       const sanitizedFields: Record<string, string | number | boolean | null> = {};
       for (const [k, v] of Object.entries(rec.fields)) {
-        sanitizedFields[k] = typeof v === 'string' ? redact(v, rules).text : v;
+        if (typeof v !== 'string') {
+          sanitizedFields[k] = v;
+          continue;
+        }
+        if (v === '') {
+          sanitizedFields[k] = v; // 空字段无内容可检——不空跑管线
+          continue;
+        }
+        const field = await runUpstreamSensitivityPipeline({
+          text: v,
+          rules,
+          dataDir,
+          ...(args.wiring ? { opts: args.wiring } : {}),
+        });
+        sessionRedactHits += field.redactHits;
+        sessionHitCount += field.decision.hitCount;
+        for (const d of field.degraded) sessionDegraded.push(d);
+        if (field.l2PrefetchError) sessionL2Errors.add(field.l2PrefetchError);
+        if (!sessionNarrowed) sessionNarrowed = field.glossaryNarrowed;
+        for (const m of field.glossaryNarrowed.missed) sessionNarrowedMisses.set(`${m.category}@${m.tag}`, m.category);
+        for (const d of field.detectors) sessionDetectors.add(`${d.name}:${d.layer}`);
+        if (sessionReason === '' || LEVEL_RANK[field.decision.level] > LEVEL_RANK[sessionLevel]) {
+          sessionLevel = field.decision.level;
+          sessionReason = field.routeReasonSanitized;
+        }
+        sanitizedFields[k] = field.text;
       }
       appendFileSync(sessionFile, JSON.stringify({ id: rec.id, source: rec.source, fields: sanitizedFields }) + '\n', 'utf-8');
     }
@@ -122,6 +181,13 @@ export async function routerSessionPush(args: { raw: unknown }): Promise<RouterS
       data: { isError: true, ok: false, reason: 'write-failed', message: '会话文件写入失败', auditLogged: false },
     };
   }
+
+  // ── 4b. 灰度分流（上行采样数据经 canary hash 稳定分流——分流键 = sessionId）──
+  const canaryRoute = await resolveUpstreamCanaryRoute({
+    routeKey: payload.sessionId,
+    dataDir,
+    ...(args.wiring ? { opts: args.wiring } : {}),
+  });
 
   // ── 5. usage 入 cost 台账（按模型/时段聚合口径——append-only 单行）──
   const costEntry = usageToCostEntry(payload);
@@ -154,6 +220,26 @@ export async function routerSessionPush(args: { raw: unknown }): Promise<RouterS
       outputTokens: payload.usage.outputTokens,
       costUsd: costEntry.costUsd,
       scopeContinuation: expanded.continuation?.mode ?? 'none',
+      // v1.5.1 第六章接线留痕：三层检测判定 + 灰度分流决策（routeReason 可解释）
+      sensitivityLevel: sessionLevel,
+      sensitivityRouteReason: sessionReason,
+      wiringEvidence: [
+        `redactHits=${sessionRedactHits}`,
+        `sensitivityLevel=${sessionLevel}`,
+        `sensitivityHitCount=${sessionHitCount}`,
+        `sensitivityRouteReason=${sessionReason}`,
+        `detectors=${[...sessionDetectors].join('|')}`,
+        `l2Degraded=${sessionDegraded.length > 0 ? sessionDegraded.map((d) => `${d.detector}：${d.reason}`).join('|') : 'none'}`,
+        ...(sessionL2Errors.size > 0 ? [`l2DegradedReason=${[...sessionL2Errors].join('|')}`] : []),
+        // L1 词典窄化可见化（口径比配置窄时必须能从链上看出——不默默通过）
+        `glossaryNarrowed=${
+          sessionNarrowed && (sessionNarrowed.droppedShort > 0 || sessionNarrowed.asciiWordBoundary > 0)
+            ? `droppedShort:${sessionNarrowed.droppedShort};asciiWordBoundary:${sessionNarrowed.asciiWordBoundary}`
+            : 'none'
+        }`,
+        `glossaryNarrowedMiss=${sessionNarrowedMisses.size > 0 ? [...sessionNarrowedMisses.keys()].join('|') : 'none'}`,
+        ...canaryRoute.evidence,
+      ],
     };
     const hmacKey = getHmacKey();
     const line = hmacKey
