@@ -20,6 +20,7 @@ const GOLDEN_L1 = [
 const GOLDEN_L2 = [
   'conflict-check', 'knowledge-freshness', 'knowledge-health', 'skill-staleness',
   'data-sovereignty-weekly', 'evolve-trigger', 'trend-aggregator', 'commons-health',
+  'weekly-digest', // v1.5.1 章二：理解债务周报（注册即跑——L2 @weekly）
 ];
 const GOLDEN_L3 = [
   'federation-distillation', 'failure-pattern', 'ontology-coverage', 'data-sovereignty-monthly',
@@ -29,13 +30,13 @@ describe('巡检器金名单（条目 2 第 0 步——防漏挂/防漂移）', 
   it('L1 金名单精确匹配（13 个，含 audit-trail 漂移修复）', () => {
     expect(listInspectors('L1')).toEqual(GOLDEN_L1);
   });
-  it('L2 金名单精确匹配（8 个）', () => {
+  it('L2 金名单精确匹配（9 个，含 v1.5.1 章二 weekly-digest）', () => {
     expect(listInspectors('L2')).toEqual(GOLDEN_L2);
   });
   it('L3 金名单精确匹配（4 个）', () => {
     expect(listInspectors('L3')).toEqual(GOLDEN_L3);
   });
-  it('注册表无重名（25 条目键唯一）', () => {
+  it('注册表无重名（26 条目键唯一）', () => {
     const names = Object.keys(INSPECTORS);
     expect(new Set(names).size).toBe(names.length);
   });

@@ -27,6 +27,8 @@ import { generateDataSovereigntyMonthly } from './data-sovereignty-monthly';
 import { runAuditTrailInspector } from './audit-trail';
 import { runCommonsCatalogDaily } from './commons-catalog-daily';
 import { runCommonsHealth } from './commons-health';
+// v1.5.1 第二章：理解债务周报（节点执行统计 + 决策高亮 + 异常与介入汇总）
+import { runWeeklyDigest } from './weekly-digest';
 import { runWorkspaceSummary } from '../workspace-summary';
 import type { InspectorResult as _IR } from './types';
 
@@ -103,6 +105,8 @@ export const INSPECTORS: Readonly<Record<string, InspectorEntry>> = {
   'evolve-trigger': { fn: runEvolveTrigger, layer: 'L2', enabled: true },
   'trend-aggregator': { fn: runTrendAggregator, layer: 'L2', enabled: true },
   'commons-health': { fn: runCommonsHealth, layer: 'L2', enabled: true },
+  // v1.5.1 第二章：理解债务周报（digest-<week>.json 写入 dashboard 数据目录）
+  'weekly-digest': { fn: runWeeklyDigest, layer: 'L2', enabled: true },
   // ── L3 联邦分析（@monthly）──
   'federation-distillation': { fn: runFederationDistillation, layer: 'L3', enabled: true },
   'failure-pattern': { fn: runFailurePattern, layer: 'L3', enabled: true },
