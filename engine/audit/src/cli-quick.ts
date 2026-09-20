@@ -336,6 +336,26 @@ export function runCliQuick(argv: string[]): number {
     }
   }
 
+  // ── v1.5.1 第八章：`demo` 子命令分支（五分钟戏剧弧 · L4 卸包） ──
+  // 挂点：本文件就是 sofagent-audit 的子命令入口（package.json bin →
+  //   dist/cli-quick.js），demo 挂在这里 → **不新增 bin**（不碰「13 bin → 1」
+  //   收敛叙事），且传播命令与试用命令同体（去掉 `demo` 参数就是真审计）。
+  // 位置：放在 FULL_ONLY 路由之后、--help 之前——demo 自带 --help 文案，
+  //   且 demo 不要求当前目录是 git 仓库（它在 /tmp 自建沙箱），
+  //   故必须在下方 isGitRepo 检查之前拦截。
+  // 惰性 require：demo.ts 静态依赖 rules/index（24 条规则模块）——
+  //   顶层 import 会给既有零配置审计路径（npx sofagent-audit 的 30 秒 aha）
+  //   凭空加上这份冷启动开销。既有路径**行为与开销零变化**，是本分支的硬约束。
+  //
+  // 为什么不用 flag-table 的 AUDIT_SUBCOMMANDS 登记：该表是「quick 侧见名
+  //   转完整引擎」的路由清单（cli-quick.ts:319），demo 登记进去反而会被路由到
+  //   不认识它的完整引擎（dist/index.js）。demo 是 quick 侧自己的分支。
+  if (argv[2] === 'demo') {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const { runDemoCli } = require('./cli/demo');
+    return runDemoCli(argv) as number;
+  }
+
   // 拦截 --help / --version
   if (argv.includes('--help') || argv.includes('-h')) {
     console.log('sofagent-audit — AI Agent 行为审计\n');
@@ -347,6 +367,9 @@ export function runCliQuick(argv: string[]): number {
     console.log('  npx -y -p @sofagent/audit sofagent-audit --stats          审计聚合报告（近 30 天治理 KPI——v1.4.3）');
     console.log('  npx -y -p @sofagent/audit sofagent-audit --stats --days 7  窗口可调（近 7 天）');
     console.log('  npx -y -p @sofagent/audit sofagent-audit --stats --json   机器可读 JSON（SIEM/监控消费）\n');
+    // v1.5.1 第八章：demo 子命令披露（本行是纯新增——既有各行的文案与顺序一字未动）
+    console.log('  npx -y -p @sofagent/audit sofagent-audit demo           五分钟戏剧弧（亲眼看一次拦截发生，v1.5.1）');
+    console.log('  npx -y -p @sofagent/audit sofagent-audit demo --speed fast  60 秒精简版（跳幕①②直入拦截）\n');
     // v1.3.9 四十四：双模式边界一次性讲清——此前用户敲 --init/--doctor 撞二次安装门槛
     // 却无处查边界，这里显式并列 quick flag 集 vs 完整引擎 flag 集 + 升级命令。
     console.log('双模式边界：');
