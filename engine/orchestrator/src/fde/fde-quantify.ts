@@ -231,6 +231,30 @@ export const DELIVERABLES_TEMPLATE_FILES = {
   run: 'node-node.yaml',
 } as const;
 
+/**
+ * 模板查找全 miss / 读失败时的降级告警（K6 · v1.5.1 降级留痕）。
+ *
+ * 模块级一次性：批量 distill（N 个节点 → 多次调用）只打一次，不刷屏。
+ * 安装态下 `FDE/templates/` 不入安装态 ⇒ 该降级是**常态**，此前静默 `return null`
+ * 使交付方无从知晓「拿到的是内置默认骨架而非定制模板」。
+ */
+let templateFallbackWarned = false;
+
+function warnTemplateFallback(reason: string): void {
+  if (templateFallbackWarned) return;
+  templateFallbackWarned = true;
+  console.warn(
+    `⚠️  [fde-distill] ${reason}——本次交付物使用**内置默认骨架**（非 FDE/templates/ 定制模板）。\n` +
+      '    查找路径（三级）：\n' +
+      '      ① $SOFAGENT_REPO_ROOT/FDE/templates/deliverables/\n' +
+      `      ② ${join(process.cwd(), ...DELIVERABLES_TEMPLATE_DIR_SEGMENTS)}/\n` +
+      `      ③ ${join(__dirname, '..', '..', '..', '..', ...DELIVERABLES_TEMPLATE_DIR_SEGMENTS)}/\n` +
+      '    如需定制交付模板：在上述任一位置提供 FDE/templates/deliverables/（含 ' +
+      `${Object.values(DELIVERABLES_TEMPLATE_FILES).join(' / ')}），或设 SOFAGENT_REPO_ROOT 指向仓库根。\n` +
+      '    该降级为 fail-closed（不阻断交付），已如实披露于 docs/LIMITATIONS.md「FDE 交付模板不入安装态」。',
+  );
+}
+
 /** 逐级查找模板目录——找到即返回（未找到返回 null，调用方走内置回退） */
 function resolveTemplatesDir(): string | null {
   const candidates: string[] = [];
@@ -260,17 +284,24 @@ function renderTemplate(templateBody: string, vars: Record<string, string>): str
   return out.includes('{{') ? null : out;
 }
 
-/** 加载三层模板（任一缺失/损坏 → 整体回退内置，保证三层风格一致） */
+/** 加载三层模板（任一缺失/损坏 → 整体回退内置，保证三层风格一致——降级均留痕） */
 function loadDeliverablesTemplates(): { doc: string; skill: string; run: string } | null {
   const dir = resolveTemplatesDir();
-  if (dir === null) return null;
+  if (dir === null) {
+    warnTemplateFallback('未找到外置交付模板（三级查找全 miss）');
+    return null;
+  }
   try {
     const doc = readFileSync(join(dir, DELIVERABLES_TEMPLATE_FILES.doc), 'utf-8');
     const skill = readFileSync(join(dir, DELIVERABLES_TEMPLATE_FILES.skill), 'utf-8');
     const run = readFileSync(join(dir, DELIVERABLES_TEMPLATE_FILES.run), 'utf-8');
     return { doc, skill, run };
-  } catch {
-    return null; // 任一模板读失败 → 整体回退（三层不混搭）
+  } catch (err) {
+    // 任一模板读失败 → 整体回退（三层不混搭）；模板目录存在但读取失败同样要能看见
+    warnTemplateFallback(
+      `交付模板目录存在但读取失败（${dir}）：${err instanceof Error ? err.message : String(err)}`,
+    );
+    return null;
   }
 }
 

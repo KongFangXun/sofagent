@@ -1,17 +1,38 @@
 // ============================================================
 // builtin-agents.ts · 预装 Agent 定义（v1.5.0）
 //
-// 每个 Agent 的 systemPrompt 来自 SKILL/agents/<name>/ 下的
-// Agency Agents 格式 .md 文件。createReactAgent 启动时读取文件、
-// 剥离 frontmatter、注入为 system prompt。
+// 4 个内置 Agent 的 systemPrompt 一律来自 SKILL/agents/<name>/SKILL.md
+// （Agency Agents 格式）。createReactAgent 启动时读取文件、把 frontmatter
+// 字段转成身份标签后连同 body 注入为 system prompt。
 //
-// 如果文件找不到（如 npm 全局安装路径不同），回退到硬编码精简版。
+// 查找顺序（**单一实现** loadAgentMd，四个 Agent 共用）：
+//   0. $SOFAGENT_REPO_ROOT/SKILL/agents/<name>/SKILL.md
+//   1. $cwd/SKILL/agents/<name>/SKILL.md
+//   2. <包相对>/SKILL/agents/<name>/SKILL.md（dist/ 向上三级 = 仓库根）
+// 三条全不可达（如 npm 全局安装且未设 SOFAGENT_REPO_ROOT）→ **打印 warn** 后
+// 回退到各 Agent 的硬编码精简版（fail-safe + 留痕，不静默降级）。
+//
 // v1.5.0：迁移至 @sofagent/orchestrator
 // v1.5.0 P0-R2: npm 全局安装后 __dirname 不再是仓库内相对位置，
 //   包相对路径（多层上级目录拼 SKILL）会失效。新增 SOFAGENT_REPO_ROOT
 //   环境变量作为最高优先级解析：git clone 安装场景下显式指定仓库根，
 //   即可让 npm 全局安装的 orchestrator 也能加载 SKILL/agents 的 md。
 //   优先级：SOFAGENT_REPO_ROOT > cwd 相对路径 > 包相对路径 > fallback。
+//
+// ⚠️ v1.5.1 K5 · 该逃生门在**安装态结构性不可达**，如实标注（机制保留，口径待裁定）：
+//   - `install.sh` / `bootstrap.sh` 对 `SOFAGENT_REPO_ROOT` **零命中**（无导出、无写
+//     shell 配置）⇒ 安装后该变量为空；
+//   - `engine/orchestrator/package.json` 的 `files` **不含 `SKILL/`** ⇒ 即便设了变量，
+//     被安装的包内也没有 `SKILL/agents/` 可读（结构上不可达）。
+//   故第 0 级（以及安装态的 1/2 级）实际不生效，安装态恒走 fallback（现已 warn 留痕）。
+//   方向待维护者裁定：甲=安装器写入该变量使其可达（属越权写用户 shell 配置，需谨慎）；
+//   乙=删除该不可达设计、SKILL 加载统一走包内路径（需与 K2 同批）。**本批不动机制**。
+// v1.5.1 K2：此前**同文件两个同职责加载器**（loadAgentMd / loadAgentMdFile）——
+//   engineer/reviewer 走 loadAgentMdFile，只查 `FORGE/agents/<name>.md` 与
+//   `agents/<name>.md`（两者在本仓**均不存在**），且取不到时直接 `return fallback`
+//   无任何 warn ⇒ 这 2 个 Agent 的 systemPrompt **恒走 fallback 且静默**，
+//   而真定义 SKILL/agents/<name>/SKILL.md **存在却永远读不到**。
+//   现统一到 loadAgentMd 一个实现（FORGE/agents 这条死路径一并删除）。
 // ============================================================
 import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
@@ -73,6 +94,18 @@ function parseSkillMd(content: string): string {
   return header + '\n\n' + body;
 }
 
+/**
+ * 四个内置 Agent **共用的唯一** SKILL 加载器。
+ *
+ * 查找顺序：SOFAGENT_REPO_ROOT/SKILL/agents/<skillName>/SKILL.md
+ *   → cwd/SKILL/agents/<skillName>/SKILL.md
+ *   → <包相对>/SKILL/agents/<skillName>/SKILL.md
+ *
+ * 三条全不可达时**打印 warn 留痕**并返回 fallback（fail-safe，不静默降级）。
+ *
+ * @param skillName Agent 名（= SKILL/agents/ 下的目录名，如 engineer / reviewer）
+ * @param fallback  文件不可达时使用的硬编码精简版 system prompt
+ */
 function loadAgentMd(skillName: string, fallback: string): string {
   // 路径 0: SOFAGENT_REPO_ROOT/SKILL/agents/<skillName>/SKILL.md（v1.3.2 P0-R2：npm 全局安装场景）
   const root = repoRoot();
@@ -106,52 +139,11 @@ function loadAgentMd(skillName: string, fallback: string): string {
   return fallback;
 }
 
-/**
-/**
- * v1.1.4: 加载 agents/<name>.md 格式的 Agent 定义
- * 搜索优先级：FORGE/agents/ > agents/ > 包相对路径
- */
-function loadAgentMdFile(name: string, fallback: string): string {
-  // 路径 0: SOFAGENT_REPO_ROOT/FORGE/agents/<name>.md 或 SOFAGENT_REPO_ROOT/agents/<name>.md
-  //（v1.3.2 P0-R2：npm 全局安装场景，显式指定仓库根）
-  const root = repoRoot();
-  if (root !== null) {
-    const repoLoopPath = join(root, 'FORGE', 'agents', `${name}.md`);
-    if (existsSync(repoLoopPath)) {
-      return parseSkillMd(readFileSync(repoLoopPath, 'utf-8'));
-    }
-    const repoAgentsPath = join(root, 'agents', `${name}.md`);
-    if (existsSync(repoAgentsPath)) {
-      return parseSkillMd(readFileSync(repoAgentsPath, 'utf-8'));
-    }
-  }
-
-  // 路径 1: cwd/FORGE/agents/<name>.md（v1.1.4 新增）
-  const loopPath = join(process.cwd(), 'FORGE', 'agents', `${name}.md`);
-  if (existsSync(loopPath)) {
-    return parseSkillMd(readFileSync(loopPath, 'utf-8'));
-  }
-
-  // 路径 2: cwd/agents/<name>.md
-  const cwdPath = join(process.cwd(), 'agents', `${name}.md`);
-  if (existsSync(cwdPath)) {
-    return parseSkillMd(readFileSync(cwdPath, 'utf-8'));
-  }
-
-  // 路径 3: 包相对路径/FORGE/agents/<name>.md（v1.1.4 新增）
-  const pkgLoopPath = join(__dirname, '..', '..', '..', 'FORGE', 'agents', `${name}.md`);
-  if (existsSync(pkgLoopPath)) {
-    return parseSkillMd(readFileSync(pkgLoopPath, 'utf-8'));
-  }
-
-  // 路径 4: 包相对路径/agents/<name>.md
-  const pkgPath = join(__dirname, '..', '..', '..', 'agents', `${name}.md`);
-  if (existsSync(pkgPath)) {
-    return parseSkillMd(readFileSync(pkgPath, 'utf-8'));
-  }
-
-  return fallback;
-}
+// v1.5.1 K2：原 `loadAgentMdFile`（查 FORGE/agents/<name>.md → agents/<name>.md →
+// 包相对路径，取不到时**静默** return fallback）已删除——统一到上方 loadAgentMd。
+// 删除理由：① 它查的两条路径在本仓均不存在（`FORGE/agents/`、根 `agents/` 都没有）；
+// ② 真定义在 SKILL/agents/<name>/SKILL.md，该加载器**从不查**，导致 engineer/reviewer
+// 恒降级且无任何提示；③ 「同职责两个实现」本身就是漂移源（K2 明确要求只留一个）。
 
 // ============================================================
 // Agent 定义
@@ -160,7 +152,7 @@ function loadAgentMdFile(name: string, fallback: string): string {
 /**
  * FDE 部署工程师
  *
- * systemPrompt 优先加载 SKILL/agents/fde/forward-deployed-engineer.md
+ * systemPrompt 优先加载 `SKILL/agents/fde/SKILL.md`（与实现逐句一致）
  */
 const FDE_AGENT: SubAgentDefinition = {
   name: 'fde',
@@ -195,7 +187,7 @@ const FDE_AGENT: SubAgentDefinition = {
 /**
  * 合规审计员
  *
- * systemPrompt 优先加载 SKILL/agents/audit/security-compliance-auditor.md
+ * systemPrompt 优先加载 `SKILL/agents/audit/SKILL.md`（与实现逐句一致）
  */
 const AUDIT_AGENT: SubAgentDefinition = {
   name: 'audit',
@@ -231,14 +223,15 @@ const AUDIT_AGENT: SubAgentDefinition = {
 /**
  * 软件工程师（FORGE 代码执行者——最小变更哲学）
  *
- * systemPrompt 优先加载 SKILL/agents/engineer/SKILL.md
+ * systemPrompt 优先加载 `SKILL/agents/engineer/SKILL.md`（与实现逐句一致；
+ * v1.5.1 K2 前此声明**与代码矛盾**——当时走 loadAgentMdFile，压根不查 SKILL/）
  */
 export const ENGINEER_AGENT: SubAgentDefinition = {
   name: 'engineer',
   type: 'development',
   description: '软件工程师——只修复被要求的内容，拒绝范围蔓延，逐行自证差异',
   tools: ['read', 'write', 'bash', 'grep', 'glob'],
-  systemPrompt: loadAgentMdFile(
+  systemPrompt: loadAgentMd(
     'engineer',
     // fallback: 精简版
     `你是最小变更工程师，FORGE 自迭代循环中的代码执行者。
@@ -257,7 +250,8 @@ export const ENGINEER_AGENT: SubAgentDefinition = {
 /**
  * 代码审查员（FORGE 审查者）
  *
- * systemPrompt 优先加载 SKILL/agents/reviewer/SKILL.md
+ * systemPrompt 优先加载 `SKILL/agents/reviewer/SKILL.md`（与实现逐句一致；
+ * v1.5.1 K2 前此声明**与代码矛盾**——当时走 loadAgentMdFile，压根不查 SKILL/）
  */
 export const REVIEWER_AGENT: SubAgentDefinition = {
   name: 'reviewer',
@@ -265,7 +259,7 @@ export const REVIEWER_AGENT: SubAgentDefinition = {
   description: '代码审查员——提供建设性、可操作的反馈，聚焦正确性、可维护性、安全性和性能',
   tools: ['read', 'bash', 'grep', 'glob'],
   triggerOn: ['on-commit', 'on-review'],
-  systemPrompt: loadAgentMdFile(
+  systemPrompt: loadAgentMd(
     'reviewer',
     // fallback: 精简版
     `你是代码审查员，FORGE 自迭代循环中的审查者。

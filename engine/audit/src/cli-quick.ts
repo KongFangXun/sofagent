@@ -42,20 +42,36 @@
 // ——漂移由 `src/__tests__/cli-crash-exit-code.test.ts` 双侧行为锁兜住，不靠注释自律。
 const EXIT_ENGINE_CRASH = 4;
 
-// v1.4.9 P2-13：quick 模式「跳过」的解释串——**单一常量，两个输出分支共用**。
+// v1.4.3 F-08/§：quick 模式「跳过」的解释串——**单一常量，两个输出分支共用**。
 // 缺陷（两层）：
 //   ① 定性缺失——原串只说「跳过的是什么（归因类规则缺席）」，未答「为什么可接受」。
 //      企业 IT 视角下「N 条跳过」读起来像「N 条没查」，缺一句「硬证据类已全量跑」的
 //      定性，用户无法据此判断这次审计是否够用。
 //   ② 漂移面 ×2——该串在 PASS 分支与非 PASS 分支**各写一份字面量**（改前 :224 / :242），
 //      措辞改动必须两处同改，漏一处即形成「同一 CLI 两种解释」。
-// 修法：提取为本常量（漂移面归零）+ 补「git diff 硬证据类规则已全量执行，跳过项非漏检」。
+// v1.5.1 C8：措辞统一为「**本批未检查**」并显式声明「未检查 ≠ 通过」——
+//   `docs/LIMITATIONS.md` 已主动披露「SKIPPED ≠ 通过」，但终端措辞强度不匹配；
+//   「跳过」易被误读成「无问题」（fail-fast 命中后跳过的规则**本次未检查**）。
+//   机器可读契约不动：JSON 的 `status: 'SKIPPED'` 一字未改。
+// 修法：提取为本常量（漂移面归零）+ 补「git diff 硬证据类规则已全量执行，未检查项非漏检」。
 // 保留 v1.4.3 F-08 的归因口径如实化与两条升级路径（--task / --init），本条不得覆盖它。
 // ⚠️ 漂移由 `src/__tests__/cli-quick-skip-hint.test.ts` 的**双分支行为锁**兜住。
 export const QUICK_SKIP_HINT =
-  'ⓘ 跳过 = quick 模式不含归因分析（需任务描述/Agent 日志输入的规则）'
-  + '；git diff 硬证据类规则已全量执行，跳过项非漏检'
+  'ⓘ 本批未检查（未检查 ≠ 通过）= quick 模式不含归因分析（需任务描述/Agent 日志输入的规则）'
+  + '；git diff 硬证据类规则已全量执行，未检查项非漏检'
   + '——用 --task 走完整引擎，或安装后运行 sofagent-audit；`--init` 装 hook 走完整引擎';
+
+/** SKIPPED 的计数文案（v1.5.1 C8：不使用孤立的「跳过」二字） */
+function skipCountLabel(count: number, failFast: boolean): string {
+  return `⚠️ ${count} 条本批未检查${failFast ? '（critical 命中后 fail-fast）' : ''}`;
+}
+
+/** 是否存在 fail-fast 型未检查（details 由 rules/runner.ts 的 critical fast-fail 分支写入） */
+function hasFailFastSkip(rules: AuditResult['rules']): boolean {
+  return rules.some(
+    (r) => r.status === 'SKIPPED' && r.details.some((d) => d.includes('critical 层')),
+  );
+}
 
 process.on('uncaughtException', (err) => {
   console.error(`\u274c sofagent-audit(quick) 引擎异常退出: ${err instanceof Error ? err.message : String(err)}`);
@@ -226,11 +242,17 @@ export function generateQuickOutput(
   }
 
   // 汇总行
+  // v1.5.1 C8：计数文案统一用「本批未检查」（不再用孤立的「跳过」二字）——
+  // 与 docs/LIMITATIONS.md 的「SKIPPED ≠ 通过」口径强度对齐。fail-fast 限定词
+  // 按实测数据决定（details 含 critical 层）——quick 模式亦可无 fail-fast 的未检查项。
+  const failFast = hasFailFastSkip(result.rules);
   parts.push('');
   if (violationCount === 0 && warnCount === 0) {
     // v1.3.4 P1-8: PASS 时输出可感知回声——让用户明确知道「sofagent 在工作且通过了」
     // v1.3.2 P2-17: 解释 17 条默认 vs 24 条总量，消除「少装了什么」的认知落差
-    parts.push(`✅ 全部 ${passCount} 条规则通过（默认 17 条 · 完整 24 条含扩展，扩展规则经 config 启用，规则集用 --ruleset 加载）${skipCount > 0 ? `（${skipCount} 条跳过）` : ''}`);
+    // v1.5.1 M13①：补 `[sofagent]` 签名——改前本行无前缀、紧随其后的回声行有
+    // `✓ [sofagent] …`，同一屏一行署名一行不署名。产品自称口径与下方回声行一致。
+    parts.push(`✅ [sofagent] 全部 ${passCount} 条规则通过（默认 17 条 · 完整 24 条含扩展，扩展规则经 config 启用，规则集用 --ruleset 加载）${skipCount > 0 ? `（${skipCountLabel(skipCount, failFast)}）` : ''}`);
     // v1.3.5 #7: 跳过计数解释——让用户知道「跳过」是 quick 模式缺输入而非漏检
     // v1.4.3 F-08 (bugfix 批): 归因口径如实化——quick 模式不含归因分析（ATTRIBUTION
     // 引擎需任务描述/Agent 日志输入），原措辞「需任务描述输入的规则」未点破归因
@@ -249,7 +271,7 @@ export function generateQuickOutput(
     if (violationCount > 0) summaryParts.push(`${violationCount} 条违规`);
     if (warnCount > 0) summaryParts.push(`${warnCount} 条警告`);
     if (passCount > 0) summaryParts.push(`${passCount} 条通过`);
-    if (skipCount > 0) summaryParts.push(`${skipCount} 条跳过`);
+    if (skipCount > 0) summaryParts.push(skipCountLabel(skipCount, failFast));
     parts.push(`📊 ${summaryParts.join(' · ')}`);
     // v1.3.5 #7: 跳过计数解释（同上，非 PASS 分支也需要）
     // v1.4.3 F-08: 同 PASS 分支——归因口径如实化
@@ -479,11 +501,20 @@ export function runCliQuick(argv: string[]): number {
     //   ①「首次提交，无需审计」（parseDiff 内打印）②「审计最近一次 commit（SHA）」
     //   ③「无文件变更」——「无需审计」与「正在审计」互相打架。
     // 规则：有基线但 diff 为空称「无文件变更」；根 commit 补审见下方 hasBaseline 分支。
+    //
+    // v1.5.1 M13②：空态输出**三处字面重复且均无产品签名**（改前 :506/:525/:535），
+    // 而「误以为没装」的分支恰恰最该署名（同屏另两处回声行已有 `[sofagent]` 前缀）。
+    // 现收口为一个 printEmpty 闭包：单一字面量 + `[sofagent]` 签名；标题行保持各分支原样。
+    const printEmpty = (title?: string): void => {
+      if (title !== undefined) {
+        console.log(title);
+        console.log('');
+      }
+      console.log('✅ [sofagent] 无文件变更——没有需要审计的内容。');
+    };
     const hasBaseline = commitSha !== null && hasParentCommit();
     if (diffRange !== 'HEAD~1..HEAD') {
-      console.log(`🔍 审计指定范围（${diffRange}）`);
-      console.log('');
-      console.log('✅ 无文件变更——没有需要审计的内容。');
+      printEmpty(`🔍 审计指定范围（${diffRange}）`);
       return 0;
     }
     if (!hasBaseline) {
@@ -502,7 +533,7 @@ export function runCliQuick(argv: string[]): number {
           console.log('');
           // 已有内容，继续下方规则运行（不 return）
         } else {
-          console.log('✅ 无文件变更——没有需要审计的内容。');
+          printEmpty();
           return 0;
         }
       } else {
@@ -510,9 +541,7 @@ export function runCliQuick(argv: string[]): number {
         return 0;
       }
     } else {
-      console.log(`🔍 审计最近一次 commit（${commitSha}）`);
-      console.log('');
-      console.log('✅ 无文件变更——没有需要审计的内容。');
+      printEmpty(`🔍 审计最近一次 commit（${commitSha}）`);
       return 0;
     }
   }

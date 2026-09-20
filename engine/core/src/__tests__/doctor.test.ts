@@ -11,6 +11,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { mkdtempSync, rmSync, writeFileSync, mkdirSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
+import { execFileSync } from 'child_process';
 import * as auditHistory from '../audit-history';
 import { runDoctor, detectInstallShape, formatVersionRepairHint } from '../doctor';
 
@@ -371,5 +372,88 @@ describe('doctor 版本修复提示按安装形态分流（v1.4.9 P1-13）', () 
     expect(missing).toContain('install.sh');
     // 本项新增：原先只说「创建 VERSION 文件」，不给路径
     expect(missing).toContain(versionFile);
+  });
+});
+
+// ============================================================
+// v1.5.1 E3 · commit-msg hook 完整性校验（子串匹配 → 三要素）
+// ------------------------------------------------------------
+// 改前缺陷：doctor 用 `hookContent.includes('sofagent')` 判「已安装」——把
+//   commit-msg 换成三行空脚本（只要含一行 `# sofagent` 注释）就报「✅ 已安装」，
+//   而 SECURITY.md 只声称「删除可检测」，未披露「替换不可检测」。
+// 改后判据（三要素，与 check-template-drift.sh 的 hook 版本标记口径同源）：
+//   ① sofagent 标记 ② 版本标记行 `# sofagent commit-msg hook vX.Y.Z` ③ 行为锚点
+//   （`sofagent-audit` 调用 + `EXIT_CODE` 契约）。
+// 三点探针：① 形态完备 hook → 已安装 ② 三行空脚本（含 # sofagent）→ 不再误报已安装
+//   ③ 删除 hook → 未安装。
+// ============================================================
+describe('doctor commit-msg hook 完整性校验（v1.5.1 E3）', () => {
+  const GIT_OK = (() => {
+    try {
+      execFileSync('git', ['--version'], { stdio: ['pipe', 'pipe', 'pipe'] });
+      return true;
+    } catch {
+      return false;
+    }
+  })();
+
+  let repo: string;
+  let logSpy: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(() => {
+    const tmpHome = mkdtempSync(join(tmpdir(), 'doctor-e3-'));
+    vi.stubEnv('SOFAGENT_HOME', tmpHome);
+    vi.stubEnv('SOFAGENT_HOME_ALLOWED_PREFIXES', tmpdir());
+    logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.spyOn(auditHistory, 'checkHistoryChainDetailed').mockReturnValue({ status: 'ok' });
+    repo = mkdtempSync(join(tmpdir(), 'doctor-e3-repo-'));
+    execFileSync('git', ['init', '-q'], { cwd: repo, stdio: ['pipe', 'pipe', 'pipe'] });
+    mkdirSync(join(repo, '.git', 'hooks'), { recursive: true });
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.restoreAllMocks();
+    try { rmSync(repo, { recursive: true, force: true }); } catch { /* */ }
+  });
+
+  const out = (): string => logSpy.mock.calls.map((c) => String(c[0])).join('\n');
+  const hookPath = (): string => join(repo, '.git', 'hooks', 'commit-msg');
+
+  it('探针① 形态完备 hook（标记 + 版本标记行 + 行为锚点）→ 已安装（含版本号回显，具备版本对账能力）', () => {
+    writeFileSync(
+      hookPath(),
+      '#!/bin/bash\n# sofagent commit-msg hook v1.5.0\nsofagent-audit --commit-msg "$1"\nEXIT_CODE=$?\nexit $EXIT_CODE\n',
+      'utf-8',
+    );
+    const r = runDoctor(repo);
+    expect(out()).toContain('commit-msg hook 已安装');
+    expect(out()).toContain('v1.5.0');
+    expect(r.hook).toBe(true);
+  });
+
+  it('探针② 三行空脚本（只含 `# sofagent` 注释）→ **不再**误报「已安装」', () => {
+    writeFileSync(hookPath(), '#!/bin/bash\n# sofagent\nexit 0\n', 'utf-8');
+    const r = runDoctor(repo);
+    expect(out()).not.toContain('commit-msg hook 已安装');
+    expect(out()).toContain('commit-msg hook 不完整');
+    expect(out()).toContain('版本标记行');
+    expect(r.hook).toBe(false);
+  });
+
+  it('探针②b 有版本标记行但无行为锚点（替换为空壳）→ 同样不误报已安装', () => {
+    writeFileSync(hookPath(), '#!/bin/bash\n# sofagent commit-msg hook v1.5.0\nexit 0\n', 'utf-8');
+    const r = runDoctor(repo);
+    expect(out()).not.toContain('commit-msg hook 已安装');
+    expect(out()).toContain('行为锚点');
+    expect(r.hook).toBe(false);
+  });
+
+  it('探针③ 删除 hook → 未安装', () => {
+    rmSync(hookPath(), { force: true });
+    const r = runDoctor(repo);
+    expect(out()).toContain('commit-msg hook 未安装');
+    expect(r.hook).toBe(false);
   });
 });

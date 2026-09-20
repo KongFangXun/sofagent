@@ -173,14 +173,15 @@ describe('generateQuickOutput', () => {
     expect(output).toContain('1 条通过');
   });
 
-  it('包含 SKIPPED 时在汇总中显示', () => {
+  it('包含 SKIPPED 时在汇总中显示（v1.5.1 C8：文案为「本批未检查」而非孤立的「跳过」）', () => {
     const result = makeResult([
       makeRule({ name: 'A1', number: 1, status: 'PASS' }),
       makeRule({ name: 'A2', number: 2, status: 'SKIPPED' }),
     ], 0);
 
     const output = generateQuickOutput(result, 'abc1234');
-    expect(output).toContain('1 条跳过');
+    expect(output).toContain('1 条本批未检查');
+    expect(output).not.toContain('条跳过');
   });
 
   it('产品签名行存在', () => {

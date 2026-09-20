@@ -11,6 +11,12 @@
 //   2. 未配置 hooksPath + hook 在 .git/hooks → 维持现状通过（回归保护）
 //   3. 配置 hooksPath + 配置目录无 hook → 报「未安装」（真红，非假绿）
 //   4. 相对 hooksPath 按 repo 顶层 resolve（子目录运行 doctor 也能查对）
+//
+// v1.5.1 E3 连带更新：doctor 的 commit-msg 校验由**子串匹配**加强为**三要素**
+// （sofagent 标记 + 版本标记行 + 行为锚点），故本文件的 hook fixture 由
+// 「只含 sofagent 字样」的最小桩升级为**形态完备的 hook**（否则会因不完整而告警，
+// 掩盖本组用例真正要测的 hooksPath 解析面）。
+// 三要素各自的**负向**探针见 `doctor.test.ts` 的「commit-msg hook 完整性」组。
 // ============================================================
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
@@ -20,6 +26,18 @@ import { tmpdir } from 'os';
 import { execFileSync } from 'child_process';
 import * as auditHistory from '../audit-history';
 import { runDoctor } from '../doctor';
+
+/** 形态完备的 commit-msg hook 桩（v1.5.1 E3 三要素：标记 + 版本标记行 + 行为锚点） */
+function completeHook(version = '1.5.0'): string {
+  return [
+    '#!/bin/bash',
+    `# sofagent commit-msg hook v${version}`,
+    'sofagent-audit --commit-msg "$1"',
+    'EXIT_CODE=$?',
+    'exit $EXIT_CODE',
+    '',
+  ].join('\n');
+}
 
 /** git 不可用的环境（极端 CI 裁剪）跳过全组——与 getHmacKey null 跳过同先例 */
 const GIT_OK = (() => {
@@ -73,13 +91,13 @@ describe.skipIf(!GIT_OK)('T14 · doctor hook 检查尊重 core.hooksPath', () =>
     git(repo, 'config', 'core.hooksPath', '.githooks');
     mkdirSync(join(repo, '.githooks'));
     // 模拟安装侧（hook-install 尊重 hooksPath）写入的 hook——含 sofagent 标识
-    writeFileSync(join(repo, '.githooks', 'commit-msg'), '#!/bin/bash\n# sofagent commit-msg hook v1.4.4\nexit 0\n', 'utf-8');
+    writeFileSync(join(repo, '.githooks', 'commit-msg'), completeHook('1.4.4'), 'utf-8');
 
     const r = runDoctor(repo);
     const out = output();
 
     // 关键区分点：.git/hooks 为空——若 doctor 仍查缺省目录必报「未安装」
-    expect(out).toContain('commit-msg hook 已安装并包含 sofagent');
+    expect(out).toContain('commit-msg hook 已安装');
     expect(out).not.toContain('commit-msg hook 未安装');
     // hooksPath 生效应有提示行（用户能看出 doctor 查的是配置目录）
     expect(out).toContain('core.hooksPath 已配置');
@@ -88,12 +106,12 @@ describe.skipIf(!GIT_OK)('T14 · doctor hook 检查尊重 core.hooksPath', () =>
 
   it('未配置 hooksPath + hook 在 .git/hooks → 维持现状通过（回归保护）', () => {
     mkdirSync(join(repo, '.git', 'hooks'), { recursive: true });
-    writeFileSync(join(repo, '.git', 'hooks', 'commit-msg'), '#!/bin/bash\n# sofagent hook\nexit 0\n', 'utf-8');
+    writeFileSync(join(repo, '.git', 'hooks', 'commit-msg'), completeHook(), 'utf-8');
 
     const r = runDoctor(repo);
     const out = output();
 
-    expect(out).toContain('commit-msg hook 已安装并包含 sofagent');
+    expect(out).toContain('commit-msg hook 已安装');
     expect(out).not.toContain('core.hooksPath 已配置');
     expect(r.hook).toBe(true);
   });
@@ -113,7 +131,7 @@ describe.skipIf(!GIT_OK)('T14 · doctor hook 检查尊重 core.hooksPath', () =>
   it('相对 hooksPath 按 repo 顶层 resolve——子目录运行 doctor 也能查对', () => {
     git(repo, 'config', 'core.hooksPath', '.githooks');
     mkdirSync(join(repo, '.githooks'));
-    writeFileSync(join(repo, '.githooks', 'commit-msg'), '#!/bin/bash\n# sofagent commit-msg hook\nexit 0\n', 'utf-8');
+    writeFileSync(join(repo, '.githooks', 'commit-msg'), completeHook(), 'utf-8');
     // 子目录：git rev-parse --show-toplevel 仍指向 repo 顶层，hooksPath 应以顶层 resolve
     const sub = join(repo, 'packages', 'app');
     mkdirSync(sub, { recursive: true });
@@ -121,7 +139,7 @@ describe.skipIf(!GIT_OK)('T14 · doctor hook 检查尊重 core.hooksPath', () =>
     const r = runDoctor(sub);
     const out = output();
 
-    expect(out).toContain('commit-msg hook 已安装并包含 sofagent');
+    expect(out).toContain('commit-msg hook 已安装');
     expect(r.hook).toBe(true);
   });
 });

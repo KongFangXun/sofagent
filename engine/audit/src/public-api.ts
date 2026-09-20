@@ -23,7 +23,15 @@
 /* @public */ export { runCostAudit, loadWorklogSlice } from './cost-audit';
 /* @public */ export type { CostBudget, CostFinding, WorklogSlice } from './cost-audit';
 
-// v1.3.0 (交付 4)：规则清单只读暴露（list_rules 用）——默认规则 + 扩展规则全量
+// v1.3.0 (交付 4)：规则清单只读暴露——默认规则 + 扩展规则 + 全量聚合别名。
+// ⚠️ H2 · v1.5.1 更正（原注释写「list_rules 用」，点名的消费方是错的）：
+//   - MCP `list_rules` 实际只消费 defaultRules / extendedRules
+//     （见 engine/mcp/src/tools/list-rules.ts:14）；
+//   - `rules as allDiffRules` = `[...defaultRules, ...extendedRules]` 的全量聚合别名
+//     （见 ./rules/index.ts:87），仓内**零消费**——全仓仅本行与
+//     tools/check/public-api-baseline.json 命中。
+//   保留原因：已在 @public 基线内（semver 锁定），移除属 @public 退役，需走
+//   公告 + 基线同批改的流程；是否退役由维护者裁定，本批只更正注释、不动导出面。
 /* @public */ export { defaultRules, extendedRules, rules as allDiffRules } from './rules';
 /* @public */ export type { Rule, RuleClass, EvidenceMode } from './rules/types';
 

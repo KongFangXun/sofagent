@@ -21,7 +21,21 @@ import { DATA_DIR, ORCHESTRATOR_DIR } from '@sofagent/core';
 
 const VERSION = '1.5.0';
 
-export interface Metric { runCount: number; auditViolations: number; avgSteps: number; firstPassRate: number; }
+export interface Metric {
+  runCount: number;
+  auditViolations: number;
+  avgSteps: number;
+  firstPassRate: number;
+  /**
+   * v1.5.1 J4b-③：读取失败的文件数（**分母口径显式化**）。
+   * 改前逐文件「读不了就跳过」让读失败**静默缩小分母**
+   * （`firstPassRate = pass/(pass+fail)`——读不到的文件 pass/fail 双双缺席），
+   * 分不清「真的没有」与「读不到」。>0 时本次对比的指标基于**不完整样本**。
+   */
+  readFailures: number;
+  /** 参与统计的文件总数（= 成功读取 + readFailures）——分母口径 */
+  scannedFiles: number;
+}
 interface Args { current: string; candidate: string; output: string; }
 type Winner = 'Current' | 'Candidate' | '—';
 
@@ -45,6 +59,13 @@ interface AbState {
   lastComparedAt: string;
 }
 
+/** v1.5.1 J4b-③：ab-state 读取结果——区分「无历史（ok）」与「读失败（!ok）」 */
+interface AbStateRead {
+  state: AbState;
+  ok: boolean;
+  error: string | null;
+}
+
 function getAbStatePath(orchestratorDir?: string): string {
   // v1.2.1：默认编排目录从 ~/.sofagent/orchestrator 迁移到 data/orchestrator
   const od = orchestratorDir
@@ -52,19 +73,28 @@ function getAbStatePath(orchestratorDir?: string): string {
   return join(od, 'ab-state.json');
 }
 
-function readAbState(statePath: string): AbState {
+function readAbState(statePath: string): AbStateRead {
+  const EMPTY: AbState = { candidateSkill: '', currentSkill: '', consecutiveWins: 0, lastComparedAt: '' };
+  // 「无历史」与「读失败」是**两态**，不得都落到同一个零初值（v1.5.1 J4b-③）
+  if (!existsSync(statePath)) return { state: EMPTY, ok: true, error: null };
   try {
-    if (existsSync(statePath)) {
-      const raw = JSON.parse(readFileSync(statePath, 'utf-8'));
-      return {
+    const raw = JSON.parse(readFileSync(statePath, 'utf-8'));
+    return {
+      state: {
         candidateSkill: raw.candidateSkill ?? '',
         currentSkill: raw.currentSkill ?? '',
         consecutiveWins: raw.consecutiveWins ?? 0,
         lastComparedAt: raw.lastComparedAt ?? '',
-      };
-    }
-  } catch { /* ignore corrupt file */ }
-  return { candidateSkill: '', currentSkill: '', consecutiveWins: 0, lastComparedAt: '' };
+      },
+      ok: true,
+      error: null,
+    };
+  } catch (err) {
+    // v1.5.1 J4b-③：损坏文件**不得静默返回全零**。改前 catch 后返回 consecutiveWins=0，
+    // 等于把「灰度对比历史」清零——本该连续 2 胜才 promote，清零后**下一次胜出即 promote**
+    // （可直接触发错误晋升判定）。现返回 ok=false 让调用方 fail-closed。
+    return { state: EMPTY, ok: false, error: err instanceof Error ? err.message : String(err) };
+  }
 }
 
 interface CompareResult {
@@ -78,7 +108,17 @@ function updateAbState(result: CompareResult, candidateSkill: string, currentSki
   if (!existsSync(dirname(statePath))) {
     mkdirSync(dirname(statePath), { recursive: true });
   }
-  const state = readAbState(statePath);
+  const read = readAbState(statePath);
+  if (!read.ok) {
+    // v1.5.1 J4b-③ fail-closed：状态文件损坏时**不写、不 promote**——
+    // 在「连续胜出次数未知」的前提下做晋升决策会误晋升（见 readAbState 注释）。
+    // 留痕（warn 可被外部观测）+ 指路（人工处置后重跑）。
+    warn(`A/B 状态文件损坏，已跳过本次计数与晋升判定: ${statePath}（${read.error ?? '未知错误'}）`);
+    warn('  → 计数基准不可信，继续会在错误前提下 promote。人工确认后修复或重置：');
+    warn(`     修复: 检查/修正 ${statePath} 的 JSON；重置: rm ${statePath}（下次对比从 0 重新计数）`);
+    return;
+  }
+  const state = read.state;
 
   state.candidateSkill = candidateSkill;
   state.currentSkill = currentSkill;
@@ -167,6 +207,8 @@ export function scanLogFiles(dir: string): string[] {
 export function extractMetrics(dir: string): Metric {
   const files = scanLogFiles(dir);
   let fails = 0, steps = 0, pass = 0, fail = 0;
+  // v1.5.1 J4b-③：读失败**计数**（不再静默不计入分母）
+  let readFailures = 0;
   for (const file of files) {
     try {
       const c = readFileSync(file, 'utf-8');
@@ -174,7 +216,11 @@ export function extractMetrics(dir: string): Metric {
       steps += (c.match(/Step\s+\d+/gi) ?? []).length;
       pass += (c.match(/(?:✅|状态[：:]\s*成功|PASS|通过)/g) ?? []).length;
       fail += (c.match(/(?:🔴|状态[：:]\s*失败|未通过)/g) ?? []).length;
-    } catch { /* skip unreadable */ }
+    } catch {
+      // 改前此处静默跳过 → `firstPassRate = pass/(pass+fail)` 的**分母静默变小**，
+      // 报告分不清「真的没有失败」与「这个文件根本没读到」。现计数并在报告中显式标注。
+      readFailures++;
+    }
   }
   const n = files.length;
   const total = pass + fail;
@@ -183,6 +229,8 @@ export function extractMetrics(dir: string): Metric {
     auditViolations: fails,
     avgSteps: n > 0 ? Math.round((steps / n) * 10) / 10 : 0,
     firstPassRate: total > 0 ? Math.round((pass / total) * 100) : 0,
+    readFailures,
+    scannedFiles: n,
   };
 }
 
@@ -201,6 +249,8 @@ export function generateReport(curr: Metric, cand: Metric, date: string): string
       compare(curr.avgSteps, cand.avgSteps, true)],
     ['First-pass rate', `${curr.firstPassRate}%`, `${cand.firstPassRate}%`,
       compare(curr.firstPassRate, cand.firstPassRate, false)],
+    // v1.5.1 J4b-③：分母口径显式化——读失败数进报告，读者能看出本轮指标是否基于完整样本
+    ['Unreadable logs', String(curr.readFailures), String(cand.readFailures), '—'],
   ];
   const table = [
     '| Metric | Current | Candidate | Winner |',
@@ -213,7 +263,10 @@ export function generateReport(curr: Metric, cand: Metric, date: string): string
   const decisive = cw !== kw;
   const result = decisive ? (cw > kw ? 'Candidate' : 'Current') : 'Tie';
   const winCount = Math.max(cw, kw);
-  const metricCount = rows.length - 1;
+  // v1.5.1 J4b-③：分母只数**可比较**的指标行——`Runs` 与 `Unreadable logs`
+  // 是信息行（winner 恒 '—'），纳入会让 `wins on X/M` 系统性低估。
+  const NON_COMPARABLE_ROWS = new Set(['Runs', 'Unreadable logs']);
+  const metricCount = rows.filter(r => !NON_COMPARABLE_ROWS.has(r[0])).length;
 
   const minRuns = Math.min(curr.runCount, cand.runCount);
   const confidence = minRuns >= 30 ? 'high' : minRuns >= 15 ? 'medium' : 'low';

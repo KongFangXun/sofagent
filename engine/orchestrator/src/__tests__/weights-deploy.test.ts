@@ -317,7 +317,9 @@ describe('权重版本回滚（rollbackWeightsVersion）', () => {
     expect(rb.message).toContain('非 local-path');
   });
 
-  it('回滚目标版本目录被篡改 → 哈希直验拒绝（供应链三路径无旁路）', () => {
+  // v1.5.1 L1：原标题写「供应链三路径无旁路」与实现相反（注册路径有 verifyHash:false 旁路），
+  // 收窄为实测范围——本用例只锁「回滚目标版本」这一条无旁路。
+  it('回滚目标版本目录被篡改 → 哈希直验拒绝（回滚路径无旁路）', () => {
     // fresh-eyes 视角2-1/7-1 修复行为锁：checkWeightsDir 只验 current 版本，
     // 回滚恰好指向非 current 历史版本——目标目录必须 hashDir 单独直验，
     // 被篡改即拒（「合法回滚」不能成为挂载坏权重的旁路）

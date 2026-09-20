@@ -11,6 +11,8 @@
 //
 // 实测路径：直调导出的 generateQuickOutput（纯函数，无需 spawn dist）——
 //   「两个分支都发出同一定性」是本项真正的行为面，故两分支各锁一次。
+// v1.5.1 C8：计数文案由「N 条跳过」改为「N 条本批未检查」（+ fail-fast 限定词），
+//   故下方断言的**计数文案**同步更新（定性句的三条语义断言不变）。
 // ⚠️ 本文件是本项**唯一的漂移兜底**：常量被删、分支退回字面量、或定性句被
 //   抹掉，都会让下列用例变红。
 // ============================================================
@@ -49,19 +51,19 @@ describe('quick 跳过解释串（v1.4.9 P2-13）', () => {
 
   it('PASS 分支（有跳过）：输出含定性句', () => {
     const out = generateQuickOutput(result(16, 1), 'abcdef1');
-    expect(out).toContain('条跳过');
+    expect(out).toContain('条本批未检查');
     expect(out).toContain(QUICK_SKIP_HINT);
   });
 
   it('非 PASS 分支（有违规 + 有跳过）：输出同样含定性句——两分支不得漂移', () => {
     const out = generateQuickOutput(result(15, 1, 1), 'abcdef1');
-    expect(out).toContain('条跳过');
+    expect(out).toContain('条本批未检查');
     expect(out).toContain(QUICK_SKIP_HINT);
   });
 
   it('无跳过时不得出现该提示（避免无条件打印的假回声）', () => {
     const out = generateQuickOutput(result(17, 0), 'abcdef1');
-    expect(out).not.toContain('条跳过');
+    expect(out).not.toContain('条本批未检查');
     expect(out).not.toContain(QUICK_SKIP_HINT);
   });
 });

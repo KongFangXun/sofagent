@@ -487,6 +487,11 @@ export function startCron(projectDir: string): number {
       try {
         const { createScheduler } = require('./scheduler') as typeof import('./scheduler');
         const sched = createScheduler();
+        // v1.5.1 K1：调度失败**必须留痕**（K 批通则「降级必须留痕」的具体落点）。
+        // 改前：失败只塞进 data/scheduler/history/，而 `daemon-health.json` 的 lastError
+        // 仍为 null ⇒ 每 5 分钟 100% 失败而**零告警**（`--doctor` 也看不出）。
+        // 现在失败逐条收集，批次结束后写健康文件（可被 doctor / Dashboard 外部查询）。
+        const failures: Array<{ name: string; exitCode: number; output: string }> = [];
         const consumed = sched.runDueTasks((task) => {
           let exitCode = 0;
           let output = '';
@@ -495,8 +500,13 @@ export function startCron(projectDir: string): number {
               dirname(nodeRequire.resolve('@sofagent/orchestrator/package.json')),
               'dist', 'cli.js',
             );
+            // v1.5.1 K1：**移除 `--legacy`**。orchestrator 侧已按 v1.4.7 弃用公告在
+            // v1.5.0 退役收口（`cli.ts:155` 显式拒绝并 `process.exit(2)`，fail-closed 正确）。
+            // 调用侧却仍在传 ⇒ 每次调度**恒定 exit 2**，且失败只落 history、`daemon-health.json`
+            // 的 lastError 仍为 null ⇒ **零告警**（每 5 分钟 100% 失败而无人知晓）。
+            // v1.5.0 起默认路径即 LOOP StateGraph 节点级流转，直接 `loop --task <描述>`。
             output = execFileSync(process.execPath, [
-              orchCli, 'loop', '--legacy', '--task', task.prompt,
+              orchCli, 'loop', '--task', task.prompt,
             ], {
               encoding: 'utf-8',
               cwd: projectDir,
@@ -507,10 +517,25 @@ export function startCron(projectDir: string): number {
             exitCode = typeof e.status === 'number' ? e.status : 1;
             output = `${e.stdout ?? ''}${e.stderr ?? e.message}`;
           }
+          if (exitCode !== 0) {
+            failures.push({ name: task.name, exitCode, output: output.trim().slice(0, 300) });
+          }
           return { exitCode, output: output.trim() || '（无输出）' };
         });
         if (consumed > 0) {
           console.log(`[cron] scheduler-consume 完成: 消费 ${consumed} 个到期任务`);
+        }
+        if (failures.length > 0) {
+          const summary = `scheduler-consume: ${failures.length}/${consumed} 个到期任务失败——`
+            + failures.map((f) => `「${f.name}」exit ${f.exitCode}`).join('；');
+          console.error(`[cron] ❌ ${summary}`);
+          try {
+            const { writeHealthFile } = require('./daemon-health') as typeof import('./daemon-health');
+            writeHealthFile('error', { lastError: summary });
+          } catch (healthErr) {
+            // 健康文件自身写失败也要可见（否则「零告警」的病根又回来了）
+            console.error('[cron] daemon-health.json 写入失败:', (healthErr as Error).message);
+          }
         }
       } catch (err) {
         console.error('[cron] scheduler-consume 失败:', (err as Error).message);

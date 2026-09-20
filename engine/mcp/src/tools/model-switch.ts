@@ -6,6 +6,16 @@
 //   - percent < 100 → canary 灰度（只写灰度比例，活动模型不变——v1.5.0 接管链堵断）
 //   - percent = 100 / 缺省 → 晋升全量 🔴 强制人审（对齐 v1.3.5 promote_ab）
 //   - action='rollback' → 回滚到上一活动模型 🔴 强制人审（与 snapshot_restore 同强度）
+//   - action='rollback-weights' → 权重版本级回滚 ⚪ **例外：免人审**（见下）
+//
+// ── 人审语义例外声明（L5 · v1.5.1 补）────────────────────
+// rollback-weights 是本文件**唯一免人审**的路径，理由是版本级与模型级的既定差异
+// （非对齐关系，原文见 model-registry.ts「🔴 人审语义」段）：
+//   版本级只回拨 manifest.current 指针、权重文件未动 ⇒ 止损语义下无须人工确认。
+// 补偿控制：目标版本目录**强制哈希校验**——rollbackWeightsVersion 对非 current 的
+//   历史版本单独 hashDir 直验（checkWeightsDir { verifyHash: true }，
+//   见 model-registry.ts:504），旁路不存在。
+// 其余路径（rollback / 晋升 percent=100）维持强制人审，本例外不外溢。
 // ============================================================
 import { join } from 'path';
 import { getDataDir } from '@sofagent/core';

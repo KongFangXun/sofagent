@@ -583,7 +583,7 @@ export function runAllChecks(
   v.printBoldYellow('企业合规');
 
   // 确定脚本目录（verify.sh 里的 VERIFY_SCRIPT_DIR）
-  // 兼容两种布局：仓库源码态 scripts/ 在 repo root 下；部署态在 ~/.openclaw/scripts/。
+  // 兼容两种布局：仓库源码态 scripts/ 在 <repo>/engine/scripts/；部署态在 ~/.openclaw/scripts/。
   // 旧逻辑 join(__dirname,'..','..') 假设 dist 仅一层，实际 checks.ts 编译在 dist/verify/，
   // 两个 '..' 只到 audit 包目录，少一级 → 源码直跑时 scripts 解析错误（verify 自检误报缺失）。
   // 改为：部署锚点优先 + 从 __dirname 向上遍历查找含 cleanup.sh/audit.sh 的 scripts/ 父目录。
@@ -602,7 +602,9 @@ export function runAllChecks(
       if (parent === dir) break;
       dir = parent;
     }
-    return join(__dirname, '..', '..', '..'); // 兜底：源码态正确深度（dist/verify → repo root）
+    // 兜底：源码态正确深度——dist/verify 上溯三级 = <repo>/engine（不是 repo root；
+    // engine 下即 engine/scripts/，实测 scripts/lib/config.sh 在此）。
+    return join(__dirname, '..', '..', '..');
   })();
   const scriptsLibDir = join(verifyScriptDir, 'scripts', 'lib');
 

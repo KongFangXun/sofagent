@@ -1757,7 +1757,16 @@ export function printResults(results: AuditResult, diffFiles: DiffFile[], json: 
   console.log(bannerBottom());
 
   // 违规/警告详情
-  const problems = results.rules.filter((r) => r.status !== 'PASS');
+  // v1.5.1 C8+L10：SKIPPED 从逐条详情面**移出**。
+  //   改前 `status !== 'PASS'` 把 SKIPPED 一并纳入，9 条被跳过的规则各打一行
+  //   「⚠️ ... critical 层 N 条规则命中 FAIL，跳过后续层规则」——把「一次 fail-fast
+  //   决策」渲染成 9 条黄色告警（真实违规 3 条却看起来像 3 红 + 9 黄），且
+  //   「跳过」二字易被读成「无问题」（docs/LIMITATIONS.md 已主动披露「SKIPPED ≠ 通过」，
+  //   但终端措辞强度不匹配）。现改为：SKIPPED 只在下方**汇总一行**（含被跳过的规则清单，
+  //   用「本批未检查」而非「跳过」）。
+  //   机器可读契约不动：J2 字段值与 JSON 输出的 `status: 'SKIPPED'` 一字未改。
+  const problems = results.rules.filter((r) => r.status !== 'PASS' && r.status !== 'SKIPPED');
+  const skippedRules = results.rules.filter((r) => r.status === 'SKIPPED');
   if (problems.length > 0) {
     console.log('');
     for (const rule of problems) {
@@ -1772,6 +1781,18 @@ export function printResults(results: AuditResult, diffFiles: DiffFile[], json: 
         }
       }
     }
+  }
+
+  // fail-fast 汇总（v1.5.1 L10）：**只在这一次**说明被跳过的规则，逐条行不再重复。
+  // 规则清单直接取自 SKIPPED 结果的规则码（`id` 优先，插件/规则集条目回退 ruleCode）。
+  if (skippedRules.length > 0) {
+    const codes = skippedRules.map((r) => r.id ?? ruleCode(r.number, r.name));
+    console.log('');
+    console.log(
+      `  ⏭️ [sofagent] fail-fast：critical 层已有 FAIL，以下 ${skippedRules.length} 条规则本批未检查——`
+      + `${codes.join(' ')}`,
+    );
+    console.log('     未检查 ≠ 通过：这些规则本次未执行，事后取证不得把本行读成「无问题」（见 docs/LIMITATIONS.md）');
   }
 
   // 规则网格——一行展示全部规则状态

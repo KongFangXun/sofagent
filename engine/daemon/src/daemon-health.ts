@@ -43,7 +43,11 @@ export interface DaemonHealthFile {
   lastExitCode?: number;
   /** v1.4.4 #32+47：daemon 退出原因（'sigint' | 'sigterm' | 'uncaught-exception' | 'startup-failure' | 'unknown'） */
   stoppedReason?: string;
-  /** v1.3.6 交付⑬：Agent 疲劳度报告（每小时采集，fatigue.ts 独立写入） */
+  /**
+   * v1.3.6 交付⑬：Agent 疲劳度报告（fatigue.ts 独立写入，心跳不擦除）。
+   * ⚠️ E5 · v1.5.1：**当前无生产调用方**——daemon 默认配置下本字段不会被写入
+   * （fatigue.ts 的写入口仅被 barrel 再导出 + 测试引用）。见 fatigue.ts 文件头「接线状态」。
+   */
   fatigue?: FatigueReport;
   /** v1.4.5 T9：webhook 告警通道自身健康（推送侧写入，心跳不擦除） */
   webhook?: WebhookChannelHealth;

@@ -609,8 +609,11 @@ async function main() {
                 dirname(nodeRequire.resolve('@sofagent/orchestrator/package.json')),
                 'dist', 'cli.js',
               );
+              // v1.5.1 K1：移除 `--legacy`（orchestrator 侧已退役收口，继续传则恒定 exit 2）。
+              // 与 cron.ts 的 scheduler-consume 同步修正——两条调用侧必须一致，
+              // 否则「每 5 分钟调度」与「手动触发」行为分裂。
               output = execFileSync(process.execPath, [
-                orchCli, 'loop', '--legacy', '--task', task.prompt,
+                orchCli, 'loop', '--task', task.prompt,
               ], {
                 encoding: 'utf-8',
                 cwd: process.cwd(),

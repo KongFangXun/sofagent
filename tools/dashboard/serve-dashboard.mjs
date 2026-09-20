@@ -182,12 +182,33 @@ function getSummaryCached() {
 }
 
 function aggregateSummary() {
-  const out = { ok: true, generatedAt: new Date().toISOString(), rules: null, sovereignty: null, top3: [], recent: [] };
+  // v1.5.1 J4b-①：读失败**计数并上报**，不再静默改分母。
+  // 改前：`sovInput` 读单个文件失败即 `catch {}` 跳过 → 主权聚合的分母**静默变小**，
+  // Dashboard 显示偏低，且页面上分不清「读失败」与「真的少」。history.jsonl 读失败
+  // 更狠——`catch { return '' }` 让全部指标归零。现改为：失败逐条登记到 readErrors，
+  // 与结果一起返回；`ok=false` 表示本次聚合不完整（读错误清单非空）。
+  const readErrors = [];
+  const out = {
+    ok: true,
+    generatedAt: new Date().toISOString(),
+    rules: null,
+    sovereignty: null,
+    top3: [],
+    recent: [],
+    readErrors,
+  };
 
   // ── 规则通过率（bash render_rules 同一 jq）──
-  const historyRaw = (() => {
-    try { return readFileSync(HISTORY_FILE, 'utf8'); } catch { return ''; }
-  })();
+  let historyRaw = '';
+  try {
+    historyRaw = readFileSync(HISTORY_FILE, 'utf8');
+  } catch (err) {
+    // ENOENT（从未审计）与「文件在但读不了」语义不同——后者必须显式上报
+    if (err && err.code !== 'ENOENT') {
+      readErrors.push({ file: 'audit/history.jsonl', error: String(err.code || err.message), effect: '本次聚合分母为空——所有指标按 0 呈现' });
+      out.ok = false;
+    }
+  }
   if (historyRaw) {
     // 过滤测试记录——驾驶舱反映真实开发质量，不掺故意违规的 fixture
     const allRecs = [];
@@ -306,13 +327,32 @@ function aggregateSummary() {
   const sovFiles = (() => {
     try {
       return execSync(`find "${SOVEREIGNTY_DIR}" -name '*.jsonl' -type f 2>/dev/null`, { encoding: 'utf8' }).trim();
-    } catch { return ''; }
+    } catch {
+      // 目录不存在/无权限——目录级失败也要留痕（否则「0 条主权记录」与「读不到」同形）
+      readErrors.push({ file: 'audit/data-sovereignty/', error: 'find 失败（目录不存在或无权限）', effect: '主权聚合整段缺省' });
+      out.ok = false;
+      return '';
+    }
   })();
   if (sovFiles) {
     let sovInput = '';
+    // v1.5.1 J4b-①：逐文件读失败**计数**——改前 `catch {}` 让分母静默变小
+    // （页面分不清「读失败」与「真的少」）。此处登记到 readErrors 并置 ok=false。
+    let sovReadFails = 0;
     for (const f of sovFiles.split('\n')) {
-      try { sovInput += readFileSync(f, 'utf8') + '\n'; } catch {}
+      if (!f) continue;
+      try {
+        sovInput += readFileSync(f, 'utf8') + '\n';
+      } catch (err) {
+        sovReadFails++;
+        readErrors.push({
+          file: f,
+          error: String((err && err.code) || (err && err.message) || err),
+          effect: '该文件未计入主权分母',
+        });
+      }
     }
+    if (sovReadFails > 0) out.ok = false;
     const sov = runJq(
       'def is_sensitive: .dataFlow.sensitivity == "restricted" or .dataFlow.sensitivity == "confidential";' +
       'def is_cloud: .dataFlow.destination == "cloud-api";' +
@@ -333,6 +373,9 @@ function aggregateSummary() {
     out.sovereignty = {
       total, cloud, local, outbound, sensitive,
       localRate: total > 0 ? Math.round((local * 100) / total) : 0,
+      // v1.5.1 J4b-①：分母口径显式化——`readFailed>0` 时 total 是**不完整分母**，
+      // 页面可据此区分「真少」与「读失败」（不再静默偏低）。
+      readFailed: sovReadFails,
     };
   }
 
@@ -877,6 +920,16 @@ async function main() {
     console.log('');
     console.log('  sofagent Dashboard → ' + url);
     console.log('  监听：' + host + ':' + port + (host === '127.0.0.1' ? '（仅本机，局域网共享须 DASHBOARD_HOST=0.0.0.0）' : ''));
+    // v1.5.1 J4b-②：`0.0.0.0` 共享面**显式告警**——此模式下 Dashboard 把审计数据
+    // （history.jsonl / 数据主权记录 / 任务日志）暴露给整个局域网，且本服务**无鉴权**。
+    // 改前只有一行中性「监听：0.0.0.0:3780」，读者不会意识到这是对外暴露。
+    if (host !== '127.0.0.1' && host !== 'localhost' && host !== '::1') {
+      console.log('');
+      console.log('  ⚠️  ⚠️  数据暴露告警：已绑定 ' + host + '（非回环地址）——局域网内任何设备均可访问本 Dashboard。');
+      console.log('      · 本服务**无鉴权**，审计记录 / 数据主权明细 / 任务日志对同网段完全可见');
+      console.log('      · 仅应在受信网络内使用；离席前请 Ctrl+C 停止，或改用默认 127.0.0.1');
+      console.log('');
+    }
     console.log('');
     console.log('  数据源：' + SOFAGENT_DATA);
     console.log('  页面源：' + DOCS_DIR);
@@ -892,7 +945,11 @@ async function main() {
             console.log('  ⚠️ 仓库态 dashboard.html 存在但当前服务安装态副本——开发者调试请 SOFAGENT_HOME= node tools/dashboard/serve-dashboard.mjs');
           }
         }
-      } catch {}
+      } catch (err) {
+        // v1.5.1 J4b-① 收口：原为「catch 空块」（静默）——一致性比对失败时开发者
+        // 完全不知情，会误以为已经比对过。该降级不阻断服务启动，但必须留痕。
+        console.warn('  ⚠️ 仓库态/安装态 dashboard.html 一致性比对失败，已跳过该提示: ' + (err && err.message ? err.message : err));
+      }
     }
     console.log('  API：/api/summary（复用 bash dashboard jq 口径）');
     console.log('');

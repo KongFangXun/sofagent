@@ -8,7 +8,7 @@
 
 import { existsSync, readFileSync, writeFileSync, mkdirSync, readdirSync, statSync, appendFileSync } from 'fs';
 import { join } from 'path';
-import { VERSION, DATA_DIR } from '@sofagent/core';
+import { VERSION, DATA_DIR, resolveEnvBool } from '@sofagent/core';
 import type { ActionGovernance } from './rules/types';
 import { sanitizeFreeText } from './audit-history';
 import { log } from './logger';
@@ -30,8 +30,19 @@ function getDataBase(): string {
 }
 
 function getAuditEnabled(): boolean {
-  // SOFAGENT_* 主名优先，SOFA_* 别名兜底
-  return (process.env.SOFAGENT_AUDIT_ENABLED ?? process.env.SOFA_AUDIT_ENABLED) === 'true';
+  // v1.5.1 L12：改为**与 config-loader 同一套 bool 解析**（收敛到 core/shared/env.ts 的 SSOT）。
+  // 改前是 `(SOFAGENT_AUDIT_ENABLED ?? SOFA_AUDIT_ENABLED) === 'true'`——只认字面 'true'，
+  // 与 config-loader.ts:909 的 resolveBoolEnv 语义分裂：
+  //   取值        改前（本文件）   改前（config-loader）   改后（两侧一致）
+  //   未设        false            false                  false
+  //   ''          false            false                  false（空串 → 默认值，显式定义）
+  //   '0'         false            false                  false
+  //   'false'     false            false                  false
+  //   '1'         false  ← 分裂    true                   true
+  //   'yes'       false  ← 分裂    true                   true
+  //   'TRUE'      false  ← 分裂    true                   true
+  // 空串语义现为显式定义：`''` 视同未设 → 取默认值（与 resolveEnvBool 逐字一致）。
+  return resolveEnvBool('SOFAGENT_AUDIT_ENABLED', 'SOFA_AUDIT_ENABLED', false);
 }
 
 function escapePipe(s: string): string {
@@ -156,7 +167,11 @@ function main(): void {
     log.info('    node audit-log.js --sync               批量同步 task/logs → audit.md');
     log.info('');
     log.info('  配置:');
-    log.info('    SOFA_AUDIT_ENABLED=true 启用（默认关闭）');
+    // v1.5.1 L12：补上新名——SOFAGENT_* 是当前主名，SOFA_* 是 v1.5.0 起的 legacy 别名
+    // （见 core/src/shared/env.ts 的 resolveEnvBool：主名优先、别名兜底；
+    //  接受 true/1/yes，大小写不敏感；空串视同未设 → 默认关闭）
+    log.info('    SOFAGENT_AUDIT_ENABLED=true 启用（默认关闭）；旧名 SOFA_AUDIT_ENABLED 仍兼容');
+    log.info('    接受值：true / 1 / yes（大小写不敏感）；空串视同未设 → 关闭');
     process.exit(0);
   }
 
@@ -184,7 +199,7 @@ function main(): void {
 
   const success = appendAuditLog({ operation, target, result });
   if (!success) {
-    log.info('审计未启用（SOFA_AUDIT_ENABLED != true）');
+    log.info('审计未启用（SOFAGENT_AUDIT_ENABLED 未设为 true/1/yes；旧名 SOFA_AUDIT_ENABLED 兼容）');
   }
 }
 

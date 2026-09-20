@@ -22,6 +22,7 @@
 
 import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
+import { getDataDir } from '@sofagent/core';
 import type { AuditHistoryEntry } from './audit-history';
 import type { RuleCheck } from './rules/types';
 import { ruleCode } from './rules/assemble';
@@ -87,12 +88,20 @@ export function statsHistoryFilePath(dataDir?: string): string {
   return join(base, 'audit', 'history.jsonl');
 }
 
-/** 缺省数据目录（~/.sofagent/data——与 audit-history 的 getHistoryFilePath 同源） */
+/**
+ * 缺省数据目录——**走 core/data-paths.ts 的 SSOT 解析**（v1.5.1 E2 修复）。
+ *
+ * 缺陷（改前）：本函数自造第二套根解析（只读 `SOFAGENT_DATA` / `HOME`），
+ * 不走 SSOT —— `SOFAGENT_HOME` 被忽略。后果：非默认安装根
+ * （`/opt/sofagent`、`/var/lib/sofagent` 都是文档明确支持的根）下，
+ * `--stats` 读的是**默认根**的数据，治理 KPI 面板显示另一个数据集的数字且零提示。
+ * 同仓其他取数面（如 `SOFAGENT_HOME` 越界 fail-loud）走的是 SSOT。
+ *
+ * 现在优先级链与 SSOT **逐字一致**（`getDataDir`）：
+ *   显式入参 > `SOFAGENT_DATA` > `SOFAGENT_HOME/data` > `~/.sofagent/data`
+ */
 function resolveDefaultDataDir(): string {
-  const envDir = process.env.SOFAGENT_DATA;
-  if (envDir && envDir.trim() !== '') return envDir;
-  const home = process.env.HOME ?? process.env.USERPROFILE ?? '';
-  return join(home, '.sofagent', 'data');
+  return getDataDir();
 }
 
 /**
@@ -205,15 +214,26 @@ export function computeAuditStats(options: StatsOptions = {}): AuditStatsReport 
 
 /**
  * 人类可读报告（CLI --stats 缺省输出——表格化，治理汇报口径）。
+ *
+ * v1.5.1 L8：**口径提到首行**。改前口径只在第 2 行灰字，而标题写「治理 KPI」
+ * （KPI 语境隐含「本项目的指标」）——全局跨仓聚合被误读成项目 KPI。
+ * 现在标题行内联口径（全局 / 跨仓库混合 / 非单项目），且不再自称 KPI；
+ * `--stats` 不提供项目维度过滤，故首屏无法给出单项目数字（口径如实标注）。
+ *
+ * v1.5.1 E2 配套：数据源根**实测打印**，不再硬编码 `~/.sofagent`
+ * （改前 E2 未修时该行会写 `~/.sofagent` 却实际读默认根——非默认安装根下双重失真）。
+ * 数据源根仍由 `getDataDir()` 实时解析（显式入参 > SOFAGENT_DATA > SOFAGENT_HOME/data）。
+ *
+ * @param report 聚合报告
+ * @param dataDir 数据源根（缺省走 SSOT 解析——与 computeAuditStats 同源）
  */
-export function formatStatsReport(report: AuditStatsReport): string {
+export function formatStatsReport(report: AuditStatsReport, dataDir?: string): string {
   const pct = (rate: number | null): string =>
     rate === null ? '—（无数据）' : `${(rate * 100).toFixed(2)}%`;
+  const sourceDir = dataDir ?? resolveDefaultDataDir();
   const lines: string[] = [
-    '━━━ sofagent 审计聚合报告（治理 KPI）━━━',
-    // v1.4.5 T7: 口径标注——缺省读 ~/.sofagent/data（全局跨仓库混合，不分 repo），
-    // 汇报前必须知道分母混了哪些仓库，否则 KPI 会被误读成单项目口径
-    '口径：~/.sofagent 全局聚合（跨仓库混合，非单项目；数据源 history.jsonl）',
+    '━━━ 全局审计聚合报告（跨仓库混合 · 非单项目）━━━',
+    `口径：全局聚合（跨仓库混合，非单项目；数据源 ${sourceDir}/audit/history.jsonl）`,
     `统计窗口：近 ${report.windowDays} 天（${report.windowStart.slice(0, 10)} ~ ${report.windowEnd.slice(0, 10)}）`,
     `变更总数：${report.totalChanges}`,
     `判定分布：PASS ${report.distribution.pass} · WARN ${report.distribution.warn} · FAIL ${report.distribution.fail}`,

@@ -484,8 +484,17 @@ export function rollbackModel(lane: 'executor' | 'pipeline', options: ModelRegis
  * git snapshot 兜底由上层调用方决定（版本清单本身是回滚依据，文件未动）。
  *
  * 供应链红线：回滚目标版本哈希强制校验——checkWeightsDir 只验 current 版本，
- * 回滚恰好要指向非 current 的历史版本，故对目标版本目录单独 hashDir 直验
- * （注册/切换/回滚三条版本切换路径全部验哈希，无一旁路）。
+ * 回滚恰好要指向非 current 的历史版本，故对目标版本目录单独 hashDir 直验。
+ *
+ * ⚠️ 三条版本切换路径的验哈希强度**不一致**（L1 · v1.5.1 如实收口——此前此处写
+ * 「三条路径全部验哈希，无一旁路」与实现相反，已删除该声称）：
+ *   - 注册 registerModel：默认验哈希，但**调用方可用 `verifyHash: false` 显式跳过**
+ *     （`checkWeightsDir(input.weightsDir, { verifyHash: input.verifyHash !== false })`）
+ *     ——而该调用方恰是被约束方（Agent / MCP tool）；
+ *   - 切换 switchModel：硬编码 `verifyHash: true`，无开关；
+ *   - 回滚 rollbackWeightsVersion：本函数硬编码 `verifyHash: true`，无开关。
+ * 即：**注册路径存在显式旁路**，切换/回滚两条无。是否把注册侧也收紧为硬编码
+ * （消灭旁路、改变 API 语义）属维护者口径，见 ROADMAP；本批只做如实描述。
  */
 export function rollbackWeightsVersion(
   modelName: string,

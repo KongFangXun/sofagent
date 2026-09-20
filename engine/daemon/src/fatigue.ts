@@ -8,8 +8,22 @@
 //   信号 2：上下文窗口占用率（窗口快满 = 即将溢出/被截断）
 //   信号 3：输出与历史相似度（查重——复读机 = 不再产生新信息）
 //
-// 疲劳度评分 0-100（加权）→ 写 daemon-health.json（@hourly 采集）
-// → 超阈值触发 /compact 建议，超高位阈值建议重启。
+// 疲劳度评分 0-100（加权）→ 写 daemon-health.json
+// → 超阈值给出 /compact 建议，超高位阈值给出重启建议。
+//
+// 🔴 **接线状态：本模块当前无生产调用点（E5 · v1.5.1 如实标注）**。
+//   `FatigueTracker` / `computeFatigueScore` / `writeFatigueReport` / `readFatigueReport`
+//   在 engine/ 内**仅被 `engine/daemon/src/index.ts` 的 barrel 再导出 + 测试**引用；
+//   `inspectors/registry.ts` / `cli.ts` / `cron.ts` 零引用 ⇒ **默认配置下不采集、不落盘**，
+//   daemon-health.json 里的 `fatigue` 字段实际不会由本模块写入（除非外部调用方自行接线）。
+//   v1.3.6 发版日志声称的「疲劳度评分 → 写 daemon-health.json（@hourly 采集）」**当前不成立**
+//   （发版史不改；缺口已如实披露于 docs/LIMITATIONS.md）。
+//   接线前提（勿只写实现不写注册点）：需要一个真实的信号源——三信号分别来自
+//   tool-gate 调用结果（recordToolCall）/ 上下文窗口占用（setWindowOccupancy）/
+//   Agent 输出流（recordOutput），daemon 进程并不跑 Agent 主循环 ⇒ 应先由
+//   orchestrator 侧投递信号（或改为读取已有审计流回放），再在本进程挂
+//   `@hourly` 采集点；届时须在 cron.ts 的调度表 + inspectors/registry.ts 注册点
+//   同时落名，否则仍会静默不生效。
 //
 // ⚠️ 铁律：疲劳检测是观察层——评分失败绝不抛错阻塞 daemon 主循环。
 // ============================================================
@@ -118,7 +132,7 @@ function tokenize(text: string): Set<string> {
 /**
  * 疲劳度追踪器——运行时增量采集三信号。
  *
- * 用法（daemon 主循环 / @hourly cron）：
+ * 用法（⚠️ E5：以下为**预期用法**，当前仓内无调用方接线——见文件头「接线状态」）：
  *   const tracker = new FatigueTracker();
  *   tracker.recordToolCall('run_bash', false);  // 工具失败
  *   tracker.setWindowOccupancy(0.92);           // 窗口占用
@@ -241,7 +255,8 @@ function resolveHealthPath(dataDir?: string): string {
 }
 
 /**
- * 把疲劳度报告合并写入 daemon-health.json（@hourly 采集落点）。
+ * 把疲劳度报告合并写入 daemon-health.json（**预留落点**：E5——当前无生产调用方，
+ * 真实写入只发生在测试或外部调用方；见文件头「接线状态」）。
  *
  * 合并语义：读取现有 health 文件 → 只增改 fatigue 字段 → 写回；
  * 文件不存在时创建只含 fatigue 的最小文件（daemon 主循环的
