@@ -17,6 +17,10 @@
 // 检查范围（扫描面 = 显式硬编码清单，绝不扫目录）:
 //   · docs/changelog/v1.5/v1.5.0.md / v1.5.1 / v1.5.2 – v1.5.17（18 文件）
 //     ——v1.5.2–v1.5.17 为地基期拆版产物（原 v1.5.2–v1.5.5 四版按颗粒度细化拆为十六版）
+//   · docs/changelog/v1.6/ – v1.9/ 各三细版（12 文件）
+//     ——判定底座施工期四阶段十二细版，全部在规划态即带「形态归属」标注，
+//       纳入扫描面使标注与 ROADMAP 声明的对账同受守卫（此前只扫已拆版与 v2.0.0，
+//       施工期细版的标注不参与对账 ⇒ 标注写错无人拦）
 //   · docs/changelog/v2.0/v2.0.0.md（1 文件）
 //   · docs/ROADMAP.md（A7 对账的第二侧）
 //   明确不扫 docs/changelog/v1.4/ 及更早——已发版历史档案，不回填标注。
@@ -24,7 +28,7 @@
 //   不会静默少扫而输出假绿。
 //
 // 断言（编号即断言名）:
-//   A1 失明自检      实测 < 15 文件 或 需标注章 < 30 ⇒ exit 2，拒绝假绿
+//   A1 失明自检      实测 < 25 文件 或 需标注章 < 60 ⇒ exit 2，拒绝假绿
 //   A2 每章必有标注  章体须有「形态归属」行；排除「定位」「与后续版本的依赖」
 //                    与「章体为纯指针存根」的章（无交付面，见 isPointerStub）。
 //                    豁免判据**只看章体**、不看标题里标记的位置——按标题形态豁免会让
@@ -177,6 +181,18 @@ const VERSION_SOURCES = [
   { version: 'v1.5.15', file: 'docs/changelog/v1.5/v1.5.15.md' },
   { version: 'v1.5.16', file: 'docs/changelog/v1.5/v1.5.16.md' },
   { version: 'v1.5.17', file: 'docs/changelog/v1.5/v1.5.17.md' },
+  { version: 'v1.6.0', file: 'docs/changelog/v1.6/v1.6.0.md' },
+  { version: 'v1.6.1', file: 'docs/changelog/v1.6/v1.6.1.md' },
+  { version: 'v1.6.2', file: 'docs/changelog/v1.6/v1.6.2.md' },
+  { version: 'v1.7.0', file: 'docs/changelog/v1.7/v1.7.0.md' },
+  { version: 'v1.7.1', file: 'docs/changelog/v1.7/v1.7.1.md' },
+  { version: 'v1.7.2', file: 'docs/changelog/v1.7/v1.7.2.md' },
+  { version: 'v1.8.0', file: 'docs/changelog/v1.8/v1.8.0.md' },
+  { version: 'v1.8.1', file: 'docs/changelog/v1.8/v1.8.1.md' },
+  { version: 'v1.8.2', file: 'docs/changelog/v1.8/v1.8.2.md' },
+  { version: 'v1.9.0', file: 'docs/changelog/v1.9/v1.9.0.md' },
+  { version: 'v1.9.1', file: 'docs/changelog/v1.9/v1.9.1.md' },
+  { version: 'v1.9.2', file: 'docs/changelog/v1.9/v1.9.2.md' },
   { version: 'v2.0.0', file: 'docs/changelog/v2.0/v2.0.0.md' },
 ];
 const SCAN_FILES = VERSION_SOURCES.map((v) => v.file);
@@ -184,8 +200,8 @@ const ROADMAP_FILE = 'docs/ROADMAP.md';
 const OPT_OUT_NOTE = 'docs/changelog/v1.4/ 及更早（已发版历史档案，不回填标注）';
 
 // A1 基线：路径写错时若直接输出「通过」就是假绿 ⇒ 先拒绝判定
-const MIN_FILES = 15;
-const MIN_CHAPTERS = 30; // 实测基线 19 文件 / 48 章（地基期拆版后）
+const MIN_FILES = 25;
+const MIN_CHAPTERS = 60; // 实测基线 31 文件 / 73 章（判定底座施工期十二细版纳入扫描面后）
 
 // A2 排除面（无交付面 ⇒ 不要求标注）：固定标题两个；**指针存根章由 isPointerStub
 // （章体判据）另行豁免**——这里刻意不按标题形态豁免，理由见 isPointerStub 处注释。
@@ -365,6 +381,18 @@ const EXPECTED_LABELS = {
   'v1.5.15': ['主干', '通道成分'],
   'v1.5.16': ['主干'],
   'v1.5.17': ['主干'],
+  'v1.6.0': ['主干', '非功能'],
+  'v1.6.1': ['主干', '通道成分'],
+  'v1.6.2': ['主干'],
+  'v1.7.0': ['主干'],
+  'v1.7.1': ['主干'],
+  'v1.7.2': ['主干'],
+  'v1.8.0': ['主干'],
+  'v1.8.1': ['主干'],
+  'v1.8.2': ['主干'],
+  'v1.9.0': ['主干'],
+  'v1.9.1': ['主干'],
+  'v1.9.2': ['主干', '非功能'],
   'v2.0.0': ['主干', '通道成分', '部署形态'],
 };
 
@@ -395,6 +423,18 @@ const EXPECTED_COUNTS = {
   'v1.5.15': { 主干: 2, 通道成分: 1 },
   'v1.5.16': { 主干: 2 },
   'v1.5.17': { 主干: 2 },
+  'v1.6.0': { 主干: 2, 非功能: 1 },
+  'v1.6.1': { 主干: 2, 通道成分: 1 },
+  'v1.6.2': { 主干: 2 },
+  'v1.7.0': { 主干: 1 },
+  'v1.7.1': { 主干: 2 },
+  'v1.7.2': { 主干: 2 },
+  'v1.8.0': { 主干: 1 },
+  'v1.8.1': { 主干: 2 },
+  'v1.8.2': { 主干: 2 },
+  'v1.9.0': { 主干: 2 },
+  'v1.9.1': { 主干: 3 },
+  'v1.9.2': { 主干: 2, 非功能: 1 },
   'v2.0.0': { 主干: 1, 通道成分: 2, 部署形态: 1 },
 };
 
