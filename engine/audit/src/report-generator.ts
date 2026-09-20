@@ -69,17 +69,22 @@ export function aggregateStats(records: DataSovereigntyRecord[]): ReportStats {
         r.dataFlow.destination === 'cloud-api'),
   );
 
-  // 模型路由分布（按 model 分桶：云端 32B+ / 云端快速 / 本地 7B / 本地 0.5B）
-  const routeDist = { cloudStrong: 0, cloudFast: 0, local7b: 0, local05b: 0 };
+  // 模型路由分布（按模型名启发式归因：云端强档 / 云端快档 / 本地执行档 / 本地管道档）
+  //
+  // 说明：审计记录目前**不带路由档位字段**（DataSovereigntyRecord 无 routeTarget），
+  // 故此处只能按模型名启发式归因——**这不是精确的档位统计**。本地档的精确归因需在
+  // 记录层补 `routeTarget` / `reason` 字段（会动 HMAC 链，独立议题）。
+  const routeDist = { cloudStrong: 0, cloudFast: 0, localExecutor: 0, localPipeline: 0 };
   for (const r of records) {
     const m = r.cloudCall.model.toLowerCase();
     if (r.dataFlow.destination === 'cloud-api') {
-      // 启发式：32b/70b/4o/sonnet/opus 视为强模型，其余快速
+      // 启发式：32b/70b/4o/sonnet/opus 视为强档，其余快档
       if (/(32b|70b|72b|4o|sonnet|opus|gpt-4|claude-3)/.test(m)) routeDist.cloudStrong++;
       else routeDist.cloudFast++;
     } else if (r.dataFlow.destination === 'local-model') {
-      if (/(0\.5b|1b|mini)/.test(m)) routeDist.local05b++;
-      else routeDist.local7b++;
+      // 启发式：带轻量标记的归管道档，其余归执行档
+      if (/(0\.5b|1b|mini|tiny)/.test(m)) routeDist.localPipeline++;
+      else routeDist.localExecutor++;
     }
   }
 
