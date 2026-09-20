@@ -1,9 +1,42 @@
-# Ontology Actions —— 初始模板
-# v1.0.5 自动生成
-# 运行时由 mergeOntology() 覆盖
+# Ontology Actions · schema 案例（非运行时文件）
 #
-# 数据源: Workflow 节点的 actions 声明
-# 格式: YAML 动作列表
-# 每个动作包含 name（动作名）、nodeId（所属节点）、description（描述）
+# 产物路径: <workspace>/ontology/actions.yml
+# 数据源:    workflows/*.yml 节点的 actions 声明
+# 生成者:    @sofagent/ontology · mergeOntology()——每次运行重算，手改会被覆盖
+# 条目结构:  OntologyAction（定义见 engine/ontology/src/types.ts）
+#            name / nodeId / description? / constraints? / source
+#
+# 运行时序列化风格为 flow style（每项一行 JSON），此处用 block style 便于阅读——数据形状一致：
+#   # Ontology Actions —— 自动合并自 Workflow 节点 actions 声明
+#   # 生成时间: 2026-09-20T06:00:00.000Z
+#   # 来源: v1.0.3 workflow.yml actions
+#   - {"name":"approve","nodeId":"approval-route","description":"...","source":"workflows/..."}
+#
+# 💡 动作的「谁能调用」不在这里，在 constraints.yml 的 allowed_action——本文件只回答「有哪些动作」。
 
-[]
+- name: approve
+  nodeId: approval-route
+  description: 按金额规则放行该笔付款
+  constraints:
+    maxAmount: 100000
+  source: workflows/accounts-payable.yml
+
+- name: reject
+  nodeId: approval-route
+  description: 驳回该笔付款并留痕（进 decision-log 作训练负样本）
+  source: workflows/accounts-payable.yml
+
+- name: escalate
+  nodeId: approval-route
+  description: 三单匹配异常时升级到财务总监
+  constraints:
+    trigger: three-way-mismatch
+  source: workflows/accounts-payable.yml
+
+- name: execute_payment
+  nodeId: payment-execute
+  description: 生成付款指令并写回供应商余额
+  constraints:
+    requireHumanApproval: true
+    dedupeWindow: P1D
+  source: workflows/accounts-payable.yml

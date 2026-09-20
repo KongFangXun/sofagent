@@ -1,9 +1,50 @@
-# Ontology Objects —— 初始模板
-# v1.0.5 自动生成
-# 运行时由 mergeOntology() 覆盖
+# Ontology Objects · schema 案例（非运行时文件）
 #
-# 数据源: entities/ 页面的 frontmatter relations
-# 格式: YAML 对象列表
-# 每个对象的 relations 字段描述实体间关联
+# 产物路径: <workspace>/ontology/objects.yml
+# 数据源:    knowledge/entities/ 页面的 frontmatter relations 字段
+# 生成者:    @sofagent/ontology · mergeOntology()——每次运行重算，手改会被覆盖
+# 条目结构:  OntologyObject（定义见 engine/ontology/src/types.ts）
+#            name / type / relations{has_many·belongs_to·depends_on·produces·consumes}
+#            / source / lifecycle(trunk|branch) / status(draft|stable|deprecated)
+#            / stale_after / verified[{by, at}] / validFrom / validTo
+#
+# 运行时序列化风格为 flow style（每项一行 JSON），此处用 block style 便于阅读——数据形状一致：
+#   # Ontology Objects —— 自动合并自 entities/ frontmatter relations
+#   # 生成时间: 2026-09-20T06:00:00.000Z
+#   # 来源: v1.0.1 entities/ frontmatter
+#   - {"name":"合同","type":"entity","relations":{...},"source":"...","lifecycle":"branch"}
+#
+# ⚠️ 以下示例值均为示意（制造业应付账款场景），不代表任何真实企业数据。
 
-[]
+- name: 合同
+  type: entity
+  relations:
+    belongs_to: [客户]
+    has_many: [付款单]
+    depends_on: [审批流]
+    produces: [发票]
+    consumes: [采购订单]
+  source: knowledge/entities/合同.md
+  lifecycle: trunk
+  status: stable
+  stale_after: "2027-03-31T23:59:59+08:00"
+  verified:
+    - by: "human:kongfangxun"
+      at: "2026-09-20T10:00:00+08:00"
+  validFrom: "2026-01-01T00:00:00+08:00"
+
+- name: 客户
+  type: entity
+  relations:
+    has_many: [合同, 联系人]
+  source: knowledge/entities/客户.md
+  lifecycle: trunk
+  status: stable
+
+- name: 审批流
+  type: concept
+  relations:
+    depends_on: [合同, 付款单]
+  source: knowledge/concepts/审批流.md
+  lifecycle: branch
+  status: draft

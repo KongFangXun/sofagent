@@ -1,9 +1,41 @@
-# Ontology Constraints —— 初始模板
-# v1.0.5 自动生成
-# 运行时由 mergeOntology() 覆盖
+# Ontology Constraints · schema 案例（非运行时文件）
 #
-# 数据源: A15 约束验证规则
-# 格式: YAML 约束规则列表
-# 约束类型: allowed_action / domain_access / rate_limit / custom
+# 产物路径: <workspace>/ontology/constraints.yml
+# 数据源:    A15 约束验证规则
+# 生成者:    @sofagent/ontology · mergeOntology()——每次运行重算，手改会被覆盖
+# 条目结构:  OntologyConstraint（定义见 engine/ontology/src/types.ts）
+#            type(allowed_action|domain_access|rate_limit|custom) / target / rule
+#            / severity(error|warn|info) / source
+#
+# 四类语义：
+#   allowed_action —— 哪些动作可作用于该对象（谁能动它）
+#   domain_access  —— 哪个知识域可被谁读（看不到什么）
+#   rate_limit     —— 频次上限（防止烧钱 / 打爆下游）
+#   custom         —— 业务专属规则（如防重复付款）
+#
+# 运行时序列化风格为 flow style（每项一行 JSON），此处用 block style 便于阅读——数据形状一致。
+# ⚠️ 以下示例值均为示意（制造业应付账款场景），不代表任何真实企业数据。
 
-[]
+- type: allowed_action
+  target: 合同
+  rule: 仅 approval-route 与 payment-execute 两个节点可对合同发起状态变更
+  severity: error
+  source: A15
+
+- type: domain_access
+  target: finance/payment-accounts
+  rule: 付款账户域仅 finance-director 角色可读，其余角色读取返回空（fail-closed）
+  severity: error
+  source: A15
+
+- type: rate_limit
+  target: scan_invoice
+  rule: OCR 解析单节点每分钟不超过 30 次，超限挂起不静默续跑
+  severity: warn
+  source: A15
+
+- type: custom
+  target: 付款执行
+  rule: 同一供应商同一自然日不得重复付款（金额 + 收款账户双比对）
+  severity: error
+  source: A15
