@@ -1,0 +1,9 @@
+# Ontology Constraints —— 初始模板
+# v1.0.5 自动生成
+# 运行时由 mergeOntology() 覆盖
+#
+# 数据源: A15 约束验证规则
+# 格式: YAML 约束规则列表
+# 约束类型: allowed_action / domain_access / rate_limit / custom
+
+[]

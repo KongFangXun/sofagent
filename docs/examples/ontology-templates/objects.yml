@@ -1,0 +1,9 @@
+# Ontology Objects —— 初始模板
+# v1.0.5 自动生成
+# 运行时由 mergeOntology() 覆盖
+#
+# 数据源: entities/ 页面的 frontmatter relations
+# 格式: YAML 对象列表
+# 每个对象的 relations 字段描述实体间关联
+
+[]
