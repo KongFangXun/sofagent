@@ -285,6 +285,12 @@ export async function defaultRunPlannerDecide(task: string): Promise<string> {
       // 本地路径：Ollama /api/generate
       return await callOllamaForPlan(prompt);
     }
+    if (route.target === 'decision-model') {
+      // 判定档不走生成模型：判定由 DecisionChannel 处理，产出类型化答案而非文本。
+      // 这里显式返回空——绝不落到云端生成分支（那会把判定任务变成生成任务）
+      return '';
+    }
+    if (route.target === 'block') return '';
     // 云端路径：复用 SOFAGENT_LLM OpenAI 兼容接口
     return await callCloudForPlan(prompt);
   } catch {
@@ -323,10 +329,13 @@ async function callCloudForPlan(prompt: string): Promise<string> {
   return data.choices?.[0]?.message?.content ?? '';
 }
 
-/** 本地 Ollama 调用（/api/generate） */
+/** 本地调用（Ollama /api/generate） */
 async function callOllamaForPlan(prompt: string): Promise<string> {
   const endpoint = (process.env.SOFAGENT_OLLAMA_ENDPOINT ?? 'http://localhost:11434').replace(/\/$/, '');
-  const model = process.env.SOFAGENT_OLLAMA_MODEL ?? 'qwen2.5:7b';
+  // 模型名不预设默认值：未配置即不调用——绝不请求一个猜出来的模型名
+  // （那只会发出一次注定失败的请求，然后静默降级成空字符串）
+  const model = process.env.SOFAGENT_OLLAMA_MODEL ?? '';
+  if (!model) return '';
   const res = await fetch(`${endpoint}/api/generate`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

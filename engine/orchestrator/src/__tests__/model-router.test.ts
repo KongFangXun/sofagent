@@ -194,7 +194,7 @@ describe('ModelRouter · confidential 数据路由（最高级别保护）', () 
     const route = router.route('总结一下要点', {
       frontmatter: { sensitivity: 'confidential' },
     });
-    // 简单但不含管道关键词 → 走 local-executor（0.5B 撑不住）
+    // 简单但不含管道关键词 → 走 local-executor（管道档只接固定管道任务）
     expect(route.target).toBe('local-executor');
     expect(route.escalated).toBe(true);
   });
@@ -502,16 +502,23 @@ describe('ModelRouter · 消费 P0 审计日志辅助敏感度判定', () => {
 });
 
 // ════════════════════════════════════════
-// v1.3.2 交付 7：client_type 模型接入插槽
+// client_type 模型接入插槽
 // ════════════════════════════════════════
 
-describe('ModelRouter · v1.3.2 交付 7 client_type 模型插槽', () => {
-  it('默认配置 client_type=ollama（向后兼容）', () => {
+describe('ModelRouter · client_type 模型插槽', () => {
+  it('默认配置 client_type=ollama（与内置可达性探测实现一致）', () => {
     expect(DEFAULT_ROUTER_CONFIG.local.executor.client_type).toBe('ollama');
     expect(DEFAULT_ROUTER_CONFIG.local.pipeline.client_type).toBe('ollama');
   });
 
-  it('schema 缺省 client_type 时默认 ollama（向后兼容）', () => {
+  it('默认配置不写死模型选型（模型名留空 = 未配置）', () => {
+    expect(DEFAULT_ROUTER_CONFIG.cloud.strong.model).toBe('');
+    expect(DEFAULT_ROUTER_CONFIG.cloud.fast.model).toBe('');
+    expect(DEFAULT_ROUTER_CONFIG.local.executor.model).toBe('');
+    expect(DEFAULT_ROUTER_CONFIG.local.pipeline.model).toBe('');
+  });
+
+  it('schema 缺省 client_type 时默认 ollama（与内置可达性探测实现一致）', () => {
     const dir = tmpDir();
     const configPath = path.join(dir, 'model-router.json');
     // 不含 client_type 字段——向后兼容
