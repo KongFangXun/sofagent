@@ -5,7 +5,7 @@
   "version": "1.5.0",
   "seam": "before_prompt_build",
   "seamSemantics": "模型调用前注入 think.md 反思区（进化闭环上下文）",
-  "icon": "https://raw.githubusercontent.com/KongFangXun/sofagent/main/assets/logo.png",
+  "icon": "https://raw.githubusercontent.com/KongFangXun/sofagent/main/docs/assets/sofagent.png",
   "uiHints": {
     "brandColor": {
       "label": "品牌色",

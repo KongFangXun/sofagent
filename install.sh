@@ -327,7 +327,7 @@ if [ -n "${POLICY_FILE:-}" ]; then
     echo "❌ [policy] 策略文件不存在: $POLICY_FILE——安装中止（fail-closed）" >&2
     exit 1
   fi
-  POLICY_GATE="engine/audit/dist/cli/plugin-gate.js"
+  POLICY_GATE="${SCRIPT_DIR}/engine/audit/dist/cli/plugin-gate.js"
   if [ ! -f "$POLICY_GATE" ]; then
     # fresh clone 无 dist：找全局安装版
     GATE_RESOLVED=$(node -e "try{process.stdout.write(require.resolve('@sofagent/audit/dist/cli/plugin-gate.js'))}catch{process.stdout.write('')}" 2>/dev/null)
@@ -570,6 +570,7 @@ else
 fi
 
 if command -v npm &>/dev/null; then
+  info "  dist 路径探测: $LOCAL_AUDIT_DIST $([ -f "$LOCAL_AUDIT_DIST" ] && echo '存在 → 走仓库本地 dist' || echo '不存在 → 走全局 npm 包')"
   if [ -f "$LOCAL_AUDIT_DIST" ]; then
     # 仓库本地构建已就绪，创建 wrapper 到全局路径
     mkdir -p "$NPM_GLOBAL_BIN" 2>/dev/null || true
@@ -654,7 +655,7 @@ if command -v sofagent-audit >/dev/null 2>&1 && git rev-parse --git-dir >/dev/nu
   # 审计、冻结窗口锁缺失）而无人知晓。
   # 版本标记方式：hook 源头部注释行「# sofagent commit-msg hook vX.Y.Z」
   # （随引擎版本演进，维护在 engine/audit/hooks/commit-msg 首行）。
-  _hook_src="engine/audit/hooks/commit-msg"
+  _hook_src="${SCRIPT_DIR}/engine/audit/hooks/commit-msg"
   if [ -f "$_hook_src" ] && [ -f ".git/hooks/commit-msg" ]; then
     _src_ver=$(head -2 "$_hook_src" | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' | head -1)
     _dst_ver=$(head -2 ".git/hooks/commit-msg" | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' | head -1)

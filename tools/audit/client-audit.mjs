@@ -4,8 +4,8 @@
 // ============================================================
 //
 // 用法：
-//   node tools/client-audit.mjs --industry <行业>          输出该行业问卷（Markdown）
-//   node tools/client-audit.mjs --list                     列出支持的行业
+//   node tools/audit/client-audit.mjs --industry <行业>          输出该行业问卷（Markdown）
+//   node tools/audit/client-audit.mjs --list                     列出支持的行业
 //
 // 行业模板：tools/audit-questionnaires/<industry>.json
 //   每行业 15-20 题，三段式：审计现状 / 痛点定位 / 合规要求
@@ -46,9 +46,9 @@ function usage() {
   console.log(`sofagent client-audit · FDE 进场审计问卷生成器
 
 用法:
-  node tools/client-audit.mjs --industry <行业>   输出该行业问卷（Markdown）
-  node tools/client-audit.mjs --list             列出支持的行业
-  node tools/client-audit.mjs --help             本帮助
+  node tools/audit/client-audit.mjs --industry <行业>   输出该行业问卷（Markdown）
+  node tools/audit/client-audit.mjs --list             列出支持的行业
+  node tools/audit/client-audit.mjs --help             本帮助
 
 行业别名: finance=金融, manufacturing=制造, supplychain=供应链,
           healthcare=医疗, government=政务, retail=零售, generic=通用
