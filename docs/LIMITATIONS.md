@@ -36,7 +36,7 @@
 | 2 | **默认非 fail-closed**——config.yml 可被 Agent 篡改绕过审计规则。仅当 config 解析失败时走 safeDefaults（fail-closed 强制启用）。 | [三、安全与信任模型局限](#三安全与信任模型局限) |
 | 3 | **编排能力依赖 orchestrator 包 + 模型质量**——LangGraph createReactAgent 驱动，编排效果依赖模型质量。模型降级 → 编排降级。 | [五、审计与工程局限 → 编排模块稳定性](#五审计与工程局限) |
 | 4 | **静态加密覆盖主链、附链仍明文（权威清单）**——daemon start 已接线（交互引导生成密钥，非交互 WARN 明文兼容），密钥就绪后审计历史主链（history.jsonl/decision-log.jsonl）密文落盘；**附链目录仍明文**：forge-runs/checkpoint/model-registry 三目录 + task/logs + think.md + knowledge/（脱敏管道仍生效）。强合规场景附链建议外部加密卷。 | [三、安全与信任模型局限 → 数据存储安全](#三安全与信任模型局限) |
-| 5 | **单平台场景可能过重**——只用单一 Agent 平台且接受云端审计的用户，平台内置治理比 sofagent 更顺滑。sofagent 的价值在多供应商混用 + 本地留证场景。 | [二、平台与兼容性局限 → 单平台场景](#单平台用户建议) |
+| 5 | **单平台场景可能过重**——只用单一 Agent 平台且接受云端审计的用户，平台内置治理比 sofagent 更顺滑。sofagent 的价值在多供应商混用 + 本地留证场景。 | [二、平台与兼容性局限 → 单平台场景](#-单平台用户建议) |
 
 > ✅ **已解决的历史问题**（v1.3.2 移出 Key Limitations，不再计入当前边界）：
 > - ~~audit ↔ daemon 循环依赖~~（v1.2.3 消除：snapshot helpers 迁移至 `@sofagent/core`，依赖图恢复单向 `daemon → audit → core`，详见 §八）
@@ -109,7 +109,7 @@ daemon Ingest（自动知识提取）+ loop-evaluate Lint（自动体检）把�
 |------|------|------|
 | **经验记录** | 记录单次成功/失败，调整评分 | ✅ v1.0.1 起 |
 | **多轨迹归纳**（TRACE2SKILL） | 并行分析大量轨迹 → 提出补丁 → 合并去重 | ❌ 缺：前 5 次冷启动保护仅缓冲，未真正归因 |
-| **自验证闭环**（Evil Skill） | 多子 Agent 生成候选 Skill → A/B 对比 → 留更优 | ⏳ v1.0.6 起（方案 B：模型 API 直跑）。v1.0.7 升级为方案 C（DeepAgents 完整 Agent，**该路径 v1.2.0 起已弃用**） |
+| **自验证闭环**（Evil Skill） | 多子 Agent 生成候选 Skill → A/B 对比 → 留更优 | ⏳ v1.0.6 起（方案 B：模型 API 直跑）——现行 A/B 走 LangGraph 编排；**v1.0.7 曾升级的「方案 C（DeepAgents 完整 Agent）」路径 v1.2.0 起已弃用** |
 | **可训练参数**（Skill Opt） | 学习率约束/验证门控/负反馈缓冲/动量 | ✅ v1.0.4 起（SkillOpt 管道接通） |
 
 **进化管道集成状态**：管道已接通——L2 周检 inspector（`engine/daemon/src/inspectors/evolve-trigger.ts`，`@weekly`）读 failure-ledger 的**连续同类失败聚类**，达 `AUTO_TRIGGER_THRESHOLD = 3`（连续 ≥3 次）即调用 `autoTriggerAll()` → `runEvolve()`（v1.4.8 前名 `runSkillOpt()`）→ `validateCandidate()` 验证（行数 + 内容变化）→ 备份 + 替换 SKILL.md；不足 3 次则跳过（巡检结论为「无连续 ≥3 次的失败聚类，跳过」）。`--doctor` 展示管道状态。⚠️ **现行口径（v1.4.8+）**：子命令更名为 `evolve-run`、包更名为 `@sofagent/evolve`、默认走内置 native gate（零 Python 依赖），外部 CLI 仅为 `SOFAGENT_EVOLVE_GATE=cli` 可选兼容层——**无需任何 pip 安装**，旧版正文中的 pip 指引已摘除。外部 CLI 未安装时管道优雅降级——daemon 写提示到 daemon-health.json，不 crash。
@@ -149,6 +149,7 @@ PowerShell 脚本（`.ps1`）作为 bash 脚本的平行实现存在，但**功�
 - `verify.ps1` 只跑约 25% 的检查项，大量合规/Hook/daemon 检查缺失
 - `install.ps1` 和 `install.sh` 实现路径不同，行为可能不一致
 - daemon 注册逻辑在 Windows 上用 schtasks，行为未经充分验证
+- **构建产物不等价（如实声明）**：`engine/audit` 的 `postbuild` 在 **Windows 上显式跳过「信任锚同步」**（该步脚本是 bash，Windows 无 bash，`process.platform === 'win32'` 分支直接 `exit(0)`）——此时 `dist/` 产物**不含同步后的信任锚基线**，基线改由 hook 首次运行时自行记录；而在 **macOS / Linux 上这一步会执行，且失败即 `exit(1)`**（同步脚本缺失、或同步失败，都硬失败——宁可不产出，也不产出陈旧基线）。后果：**同一份源码在 Windows 与 Unix 上构建出的 `@sofagent/audit` 产物，信任锚状态可能不同**。跨平台分发 / 复现构建 / 校验发布物时须知悉这一点——此处**不承诺**两平台构建产物字节等价（对齐仓内「不虚标」纪律）。
 
 **建议**：Windows 用户优先用 `npx @sofagent/audit`（npm 包，全功能），bash 脚本用 Git Bash / WSL 运行。PowerShell 脚本作为后备，不作为主路径。
 
@@ -217,6 +218,12 @@ sofagent 跑在单个 Agent 里——没有 agent-to-agent 通信，没有多实
 
 聚合插件（`cordis-plugin-sofagent`）经**宿主挂载通道**分发：能力是否可用取决于宿主 profile 的 `bundles` 配置与 `node_modules` 软链是否就位。profile 被重置、软链被删或旧链残留时，能力会缺失或出现悬空链噪音。
 缓解：聚合层对逐个原子插件做降级（缺 `dist/` 的只报该一个、其余照常加载），失败项进 `failed` 列表；seam 契约四载体（源码 / `package.json` / patch / `SKILL.md`）机器对账。
+
+### 🧩 FDE 交付模板不入安装态 → 恒走内置默认（诚实披露）
+
+`install.sh` 不安装 `FDE/templates/`（`grep -n "templates" install.sh` 零命中），而 `fde-quantify` 的模板查找三级路径（`REPO_ROOT` / cwd / 上溯四级）在安装态下全部 miss → 返回 `null` → **交付模板恒走内置默认**。
+
+判定：这是 **fail-closed 且有文档说明**的降级，不是缺陷本身——真问题是**用户无从知晓**（当前无日志、无 warn，静默 `return null`）。缓解：安装后如需交付模板，从仓库 `FDE/templates/` 显式提供；运行时留痕（查找全 miss 时打印一次 warn / status）属代码侧整改项。
 
 ## 三、安全与信任模型局限
 ### 🔌 插件来源白名单的边界
@@ -349,7 +356,7 @@ eval.md + think.md 在循环中持续自我修订，会引入**经验漂移**—
 
 #### OpenClaw 的两种角色
 
-> 完整设计描述见 [ARCHITECTURE § 地基与约束层](./ARCHITECTURE.md#地基与约束层)。此处只记录与局限相关的点。
+> 完整设计描述见 [ARCHITECTURE § 约束层的两种形态：加载链与运行时](./ARCHITECTURE.md#约束层的两种形态加载链与运行时)。此处只记录与局限相关的点。
 
 **模式 B 的关键约束**：企业 Agent 不跑在 OpenClaw session 里。OpenClaw 不拦截 Agent 的 API 调用、不提供 Docker。sofagent 对企业 Agent 的审计走的是**文件系统层 + git hook**——Agent 在设备上正常安装、正常运行，代码仓库在设备文件系统上，`git commit` 时 commit-msg hook 自动触发 sofagent-audit。不需要「控制」Agent，不需要 Agent 配合，只需要 hook 它们的 git 仓库。
 
@@ -363,6 +370,20 @@ eval.md + think.md 在循环中持续自我修订，会引入**经验漂移**—
 | 断路器 | ✅ loopDetection | ❌ | ❌ |
 
 ---
+
+### 🔓 快照恢复的人审门禁是约定级，不是机制（v1.5.0 披露）
+
+回滚能力中「恢复快照」这一核心动作的唯一门控是工具入参 `human_confirmed`（`engine/mcp/src/tools/snapshot-restore.ts`）——该参数由**调用方 Agent 在同一次 tool call 里自报**，MCP tool 面**无带外确认通道**，快照文件也**无 HMAC / 指纹可验**（全链路无完整性校验）。即：**Agent 传 `human_confirmed: true` 即完成「人审」，不需要任何额外权限**——该门禁是**约定不是机制**。
+
+与 ROADMAP「管控能力不得静默降级」的既定纪律存在落差。三个整改方向（① 快照自身完整性校验；② 把 `human_confirmed` 改为复用仓内既有 HITL 机制的带外确认通道；③ 判定为设计取舍并保留本披露）**待维护者裁定**；裁定前请勿把该门禁当作安全边界。详见 [SECURITY §四「已知绕过路径」](../SECURITY.md)。
+
+---
+
+### 🔓 静态加密在非交互环境默认跳过（v1.5.0 披露）
+
+`initDataEncryption()`（`engine/daemon/src/crypto-init.ts`）在**非交互环境且未显式提供密钥**时**不生成密钥**，只打一条 `console.warn`（`status: 'warn'` / `action: 'skipped-non-interactive'`）后继续启动——**审计数据以明文落盘**。CI / docker / systemd / ssh 批量恰是企业最常见的部署形态，即该控制的**默认态是「关」**，且 systemd 下这条 warn 会淹没在 journal 里。
+
+这是「默认安全 vs 可用性」的**显式设计取舍**（避免无头部署因缺密钥而拒绝启动），交互首启或走 env 通道（`SOFAGENT_CONFIRM_BACKUP=1`）可正常激活。**「当前是否处于明文态」可否被外部查询（`doctor` / `--stats` 显式标注）尚待裁定**；裁定前请以启动日志 + `head -1 ~/.sofagent/data/audit/history.jsonl` 是否含 `SOFAGENT-AGE-V1` 前缀自行核验。详见 [SECURITY §四「已知绕过路径」](../SECURITY.md)。
 
 ---
 
@@ -420,7 +441,7 @@ sofagent-audit 实现了完整的六步审计闭环流程（设计文档见 [ARC
 
 ### 测试覆盖范围
 
-当前审计核心 1226 个、全 workspace 4905 个测试（口径：13 包 workspace；逐批沿革账已迁出，见 [v1.4.9 开发日志 · 附录](./changelog/v1.4/v1.4.9.md#附录测试与场景账沿革)），但覆盖范围集中在审计规则和核心逻辑（diff-parser、reporter、config-loader、rules/*.ts）。以下模块没有独立测试：
+当前审计核心 1226 个、全 workspace 4917 个测试（口径：13 包 workspace；逐批沿革账已迁出，见 [v1.4.9 开发日志 · 附录](./changelog/v1.4/v1.4.9.md#附录测试与场景账沿革)），但覆盖范围集中在审计规则和核心逻辑（diff-parser、reporter、config-loader、rules/*.ts）。以下模块没有独立测试：
 
 | 模块 | 测试状态 | 风险 |
 |------|:--:|------|
@@ -455,7 +476,7 @@ sofagent-audit 的全部证据来源是 Agent 自己写的 `~/.sofagent/data/tas
 - **bash 代码债**：~450 行重复代码（颜色常量/日志函数/平台探测），方向是 bash → TypeScript 迁移，不新建 bash 基础设施
 - **架构概念过载**：概念密度对新手不友好，缓解措施是 CONTRIBUTING 的「10 分钟速览」
 - **缺少恢复路径**：think.md 记录了踩坑，但没有结构化的「失败了怎么恢复」机制，等 JSONL 落地
-- **CHANGELOG 历史遗留**：CHANGELOG 历史版（v1.0.6 及之前）含审查元信息（「审查驱动修复」等），已发布不便回改。v1.0.7 起的 changelog 已严格区分产品变更与审查过程。
+- **CHANGELOG 历史遗留**：CHANGELOG 历史版（v1.0.6 及之前）含审查元信息（「审查驱动修复」等），已发布不便回改。v1.0.7 起的索引行以**产品变更**表述为主——内部工单号与审查轮次代号不再写入索引（此前的残留已随本轮文档修复批清理）；仍保留的过程性内容是**对外有披露价值的登记**（如 v1.4.8 判据偏差登记），不属审查代号。
 
 ---
 
@@ -501,9 +522,9 @@ FDE 完整四阶段十二步部署流程（[FDE/GUIDE.md](../FDE/GUIDE.md)）已
 
 ### 端到端验收测试覆盖
 
-`playbook/acceptance-test.sh`（场景数持续扩展，当前 357 个，SSOT 口径=真实 scenario 行数（S165 动态计算并跨文档对账））：
+`playbook/acceptance-test.sh`（场景数持续扩展，当前 358 个，SSOT 口径=真实 scenario 行数（S165 动态计算并跨文档对账））：
 
-- **CI 已覆盖**：单元测试审计核心 1226 个、全 workspace 4905 个测试（口径见本文件「测试覆盖范围」节）、sofagent-core verify 约 44-48 项（动态）
+- **CI 已覆盖**：单元测试审计核心 1226 个、全 workspace 4917 个测试（口径见本文件「测试覆盖范围」节）、sofagent-core verify 约 44-48 项（动态）
 - **发版前手动覆盖**：acceptance-test.sh 358 场景（含子断言，CLI 端到端；阶段五步骤一脚本层直跑）、OpenClaw 验收 63 场景（Agent 端到端）
 - **CI 未覆盖**：daemon → MCP → webhook → 编排四组件串联行为（v1.3.2 起由 Onboard 循环机制跑全链路 smoke test 承接，作为验收标准；日常 CI 无独立集成测试，发版前手动验证兜底）
 - **CI 未覆盖**：多平台兼容性（macOS only verified，Linux/Windows 未验证）
@@ -563,7 +584,7 @@ Ontology 统一层的合并逻辑从 `knowledge/entities/` 目录的 Markdown fr
 
 > ✅ **已于 v1.4.0 修复**：Dashboard HTML 产品化——`dashboard.html` + `serve-dashboard.mjs` 随 install.sh 安装到 `$SOFAGENT_HOME/web/`，`sofagent web` 一键起服务，读用户机 `~/.sofagent/data/` **真实数据**（FDE workflow / 已注册 SubAgent / sustain 周报 / 审计报告），开发态/安装态双路径解析。早期版本「目录为空时展示 2 个虚拟 Agent 假数据」的行为已移除（全仓无残留）。
 >
-> **仍存在的边界**（诚实披露）：① Dashboard 是**时间点快照**而非实时监控（无 WebSocket 推送，刷新即重读）；② daemon-health.json 的异常检测仍是关键词匹配（"error"/「异常」/「失败」），非结构化状态报告；③ 治理 KPI 面板（安全边界触发率/审计覆盖率等）随 v1.5.0 交付（✅ 开发完成 · ⏳ 待发版）。
+> **仍存在的边界**（诚实披露）：① Dashboard 是**时间点快照**而非实时监控（无 WebSocket 推送，刷新即重读）；② daemon-health.json 的异常检测仍是关键词匹配（"error"/「异常」/「失败」），非结构化状态报告；③ 治理 KPI 面板（安全边界触发率/审计覆盖率等）随 v1.5.0 交付（✅ 已发版 · 2026-09-19）。
 
 ### SOFAGENT_CLEANUP_ON_RECORD 死配置已全链移除（v1.5.0）
 

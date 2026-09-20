@@ -16,6 +16,7 @@
 - [怎么参与](#怎么参与)
 - [项目维护模型](#项目维护模型)
 - [开发环境 + 发版](#开发环境--发版)
+- [文档体例（H1 语言 / 术语大小写）](#文档体例h1-语言--术语大小写)
 - [目前最需要的帮助](#目前最需要的帮助)
 - [Seeking Co-maintainers](#seeking-co-maintainers)
 - [行为准则](#行为准则)
@@ -158,6 +159,34 @@ cd sofagent && bash install.sh && bash engine/scripts/verify.sh
 > - ✅ 版本号、功能描述、行为变更、兼容性说明照常写
 >
 > 已发布版本的 changelog 按"已发布不改"原则保留原样。
+
+---
+
+## 文档体例（H1 语言 / 术语大小写）
+
+> 这一节回答「新增文档该长什么样」——此前 H1 语言是三套写法并存且**无明文规则**，读者在不同文档间切换时只能靠猜。以下是**明文规则 + 逐份登记的例外清单**；不接受「不在清单里、也不是规则允许」的第五种形态。
+
+### H1 语言规则 + 例外清单
+
+**规则**：H1 的推荐形式是「**英文识别名 · 中文主题词**」（如 `# 路线图 · Roadmap`）——识别名给外链引用与全文检索（稳定），中文主题词给中文读者（可读）。**省略中文主题词是允许的例外，但必须在本清单登记**，新增文档不得默认走例外。
+
+| 类别 | 规则 | 已登记文档 |
+|:--:|------|-----------|
+| **A · 中文 H1** | 面向中文读者的首读 / 规范文档，用纯中文（品牌名 `sofagent` 视为语言中立，可单独作 H1） | `README.md`·`README.en.md`（均为 `# sofagent`）·`SECURITY.md`·`CONTRIBUTING.md`·`docs/COMMUNITY.md`·`docs/THANKS.md`·`docs/WIKI.md` |
+| **B · 英文元文件 H1** | 沿用 GitHub / 开源生态约定俗成的英文名，**刻意不改**（改了反而不被工具与读者识别） | `CHANGELOG.md`·`CODE_OF_CONDUCT.md` |
+| **C · 中英混排 H1**（推荐形态） | 「英文识别名 · 中文主题词」 | `docs/API.md`·`docs/PHILOSOPHY.md`·`docs/ROADMAP.md`·`docs/VALIDATION.md`·`AGENTS.md`·`GEMINI.md` |
+| **D · 英文主题 H1**（**登记的例外**：省略中文主题词） | 主题型长文档，H1 前缀已是稳定英文识别名 | `docs/ARCHITECTURE.md`·`docs/DEVELOPMENT.md`·`docs/HANDBOOK.md`·`docs/LIMITATIONS.md` |
+
+**D 类为什么登记为「例外」而不是统一改掉**：这四个 H1 已被仓内外链接以锚点形式引用（形如 `...#sofagent-architecture`），**改 H1 文字 = 同时破坏锚点与既有外链**，体例收益小于断链代价。因此明确**登记**——「有规则的例外」与「三套并存且无规则」的区别就在这张表。**新增文档默认按 C 类写**；若确需走 D 类，在同一 PR 里往本表补一行。
+
+### 术语大小写（`Skill` / `skill`）
+
+| 写法 | 何时用 | 例 |
+|------|--------|-----|
+| **`Skill`（大写 S）** | 作为**产品概念**——加载链的一层形态、`SKILL.md` 体系、能力市场里的技能实体、`evolve` 的优化对象 | 「五种形态分发（FDE 插件 / **Skill** / MCP / CLI / Dashboard）」「执行时 **Skill** 快照」「**Skill** 陈旧度」 |
+| **`skill`（小写）** | 只出现在**标识符语境**——目录 / 文件路径、包名或工具名、规则 id、YAML 字段名、锚点片段、外部体系自身的槽位命名 | 路径 `SKILL/skills/05-exit.md`、工具名 `skillopt`、规则 id `skill-staleness`、字段 `skill_ref:`、锚点 `#四件事的分工mcp--skills--ontology--harness` |
+
+> 📌 **同族的既定先例**：`plugin` 小写（通用名词）、`MCP`/`CLI`/`FDE`/`Agent` 大写（专有名词/缩写）——`Skill` 归入「大写」一侧，判据是「它指 sofagent 的一个具体产品实体，不是一个泛化的英文名词」。**改大小写时务必排除路径 / 包名 / 锚点**（改了会断链或失配门禁正则）。
 
 ---
 

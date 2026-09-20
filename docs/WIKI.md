@@ -2,7 +2,7 @@
 
 <p align="center"><img src="assets/sofagent.png" alt="sofagent" width="96" /></p>
 
-> v1.5.0 · 2026-09-19（✅ 已发版） · 孔放勋
+> v1.5.0 · 2026-09-19（UTC）· ✅ 已发版 · 孔放勋
 
 > **EN summary**: sofagent is an open-source (MIT) FDE Harness layer for AI Agents — it doesn't build the Agent; it adds the discipline layer around whichever host (DSH / OpenClaw / WorkBuddy) runs it. **Product story**: an FDE maps your workflow, freezes every AI node's acceptance criteria into machine-checkable files, then departs — the Harness judges every change against those files 24/7 (24 git-diff audit rules, HMAC-chained tamper-evident history, every model registered/rolled out/trained/deployed under audit). Five capabilities: inject · audit · rollback · distill · evolve. (Chinese-first project; full English face in README.en.md.)
 > **读者**：人类开发者 & AI Agent 均可阅读。本文档是项目全局索引入口。
@@ -242,7 +242,7 @@ graph TB
 | `docs/archive/` | 历史归档：实验版 changelog、早期证据、设计文档 |
 | `docs/guides/` | 专题指南：部署、测试、Dashboard 开发、Loop 开发等 |
 
-### engine/（13 个 @sofagent/* 模块包（12 含测试）+ @sofagent/load-chain 工具包 + sofagent 裸名总包 umbrella + 2 个插件族 + hooks/scripts 运维件）
+### engine/（13 个 @sofagent/* 模块包（13 个均含 test script）+ @sofagent/load-chain 工具包 + sofagent 裸名总包 umbrella + 2 个插件族 + hooks/scripts 运维件）
 
 | 包 | 职责 |
 |----|------|
@@ -258,7 +258,7 @@ graph TB
 | `engine/dsh-plugins/` | cordis-plugin-sofagent* 7 款 DSH 插件（v1.4.9 P2 合并批 10→7）——6 款原子（audit（含验收门禁面）· rollback · inject · evolve · daemon · fde（本体/FDE/公地三域厚插件））+ 1 款聚合（裸名 `cordis-plugin-sofagent`，一次挂载全套） |
 | `engine/openclaw-plugins/` | OpenClaw code-plugin 4 款（ClawHub 发布形态） |
 | `~/.sofagent/bin/sofagent` | CLI 入口（安装时生成，不在仓库内）— `sofagent status/where/version/data/help` |
-| 其余 6 包（eval/ab-test/evolve/rules/ontology/think） | 详见 `docs/DEVELOPMENT.md §包结构`（README 口径：13 个模块包 workspace、12 个含测试；@sofagent/load-chain 为工具包另列） |
+| 其余 6 包（eval/ab-test/evolve/rules/ontology/think） | 详见 `docs/DEVELOPMENT.md §包结构`（包数口径：workspace 26 = 13 模块包 + load-chain + umbrella + 7 DSH 插件 + 4 OpenClaw 插件，见 §六口径表；**测试计数口径** = 13 个含 test script 的 workspace 包 —— 与 README「工程可信度」段同口径；@sofagent/load-chain 为工具包另列） |
 
 ### 关键数据路径（`data/`）
 
@@ -276,7 +276,7 @@ graph TB
 |----|-----|
 | 当前版本 | **v1.5.0**（2026-09-19，✅ 已发版）· 上一版 v1.4.9（2026-09-17，✅ 已发版） |
 | 下一版 | **v1.5.1**（📋 排期中——编排模块 · 事件驱动（业务事件触发 + 理解债务应对）等；以 [ROADMAP](./ROADMAP.md) 规划表为准） |
-| 测试覆盖 | 4905 测试 / 13 包（统计标准：`tools/check/test-count.sh` 实际执行的 workspace 包；实测见该脚本，声称数同步校验见 `tools/check/check-test-count.sh`。包数口径见下表注） |
+| 测试覆盖 | 4917 测试 / 13 包（统计标准：`tools/check/test-count.sh` 实际执行的 workspace 包；实测见该脚本，声称数同步校验见 `tools/check/check-test-count.sh`。包数口径见下表注） |
 | 审计规则 | 24 条（17 默认 + 7 扩展），活跃编号 A1-A11 + A14-A23 + E1/E2/E4（A12/A13/E3 已并入 A11，编号不再使用），每次 commit 自动跑 |
 | FORGE | fresh-eyes-loop + release-gate-loop 运行中 |
 | 数据目录 | **data/**（v1.2.1+ SSOT 运行时数据目录） |

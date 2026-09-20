@@ -267,7 +267,7 @@ sofagent 用**约束层（一个层五种能力：注入·审计·回溯·沉淀
 
 sofagent 不做 Prompt（那是模型的事），在 Context 层有约束注入链，**核心价值在约束层**（确定性边界），Loop/Graph 层是进化方向。模型越强，约束层越值钱——因为 Agent 能做的事更多了，「做错了怎么办」的代价也更大。
 
-> 地基（纯 MD 文件，~3,500 token）与约束层（daemon + CLI 按需启动）的完整设计见 [ARCHITECTURE §地基与约束层](./ARCHITECTURE.md#地基与约束层)。
+> 约束层的两种形态——加载链（约束注入链·纯 MD 文件，~3,500 token）与运行时（daemon + CLI 按需启动）的完整设计见 [ARCHITECTURE §约束层的两种形态：加载链与运行时](./ARCHITECTURE.md#约束层的两种形态加载链与运行时)。
 
 ---
 
@@ -637,7 +637,7 @@ sofagent 的版本演进不是拍脑袋排的——它遵循 Agent 工程的生�
 | 记忆压缩自动化 | 每个 Agent 有自己的记忆 |
 | Connector | sofagent 是约束层 + 审计能力，不是自动化流水线 |
 | **Workflow Graph → Ontology Graph 单向转换** | 转换丢访谈中的隐性知识，本体沦为工作流的副产品——workflow（流转）与 ontology（语义）必须从同一次 FDE 访谈**并行产出**、SHACL 互相校验 |
-| **把 DSH 当唯一执行层** | 企业命脉不押单一运行时——编排层 LangGraph 永不换，执行层走 ExecutionBackend 接口（DSH 默认 / createReactAgent fallback / 三平台可选），DSH 只是可选后端之一（「堤修在哪条河上都行」） |
+| **把 DSH 当唯一执行层** | 企业命脉不押单一运行时——编排层 LangGraph **长期不换**（架构级取舍：确定性审计依赖显式图结构，换掉编排层等于放弃确定性审计），执行层走 ExecutionBackend 接口（DSH 默认 / createReactAgent fallback / 三平台可选），DSH 只是可选后端之一（「堤修在哪条河上都行」）。注意措辞精度：「长期不换」是**架构级取舍，不是永久承诺**（与 [ARCHITECTURE · 四层运行形态](./ARCHITECTURE.md) 同口径）——对外不承诺「永不改变」，只承诺「换它就意味着放弃确定性审计」这一代价显式化 |
 | **治理逐节点插桩** | 治理是事件域横切面，不是节点附件——挂 tools/result、turn-stopping、approval seam 一次即全域生效，逐节点插桩是把约束层降格为工具配件 |
 
 ---

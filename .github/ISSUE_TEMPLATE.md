@@ -15,11 +15,11 @@ assignees: ''
 
 ## 描述
 
-（尽可能详细一点——这个项目的作者不会写代码，越具体越好 😅）
+（尽可能详细一点，越具体越好 😅——维护者带宽有限，但每条都会认真读。详见 [CONTRIBUTING.md](../CONTRIBUTING.md)。）
 
 ## 环境（如果是 bug）
 
-- 平台：OpenClaw / WorkBuddy / Claude Code / Codex / Hermes
+- 平台：DeepSeek Harness (DSH) / OpenClaw / Claude Code / Cursor / WorkBuddy / Codex / Gemini CLI / Hermes（完整挂载矩阵见 [README 多平台挂载](../README.md)）
 - sofagent 版本：
 - 你是怎么装的：
 

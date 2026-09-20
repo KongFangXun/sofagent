@@ -58,7 +58,7 @@ sofagent 是一套 FDE 能力——底层引擎是纯本地 Harness 中间件（
 | `runtime-audit.jsonl`（运行时审计日志） | `data/audit/runtime/<repo-hash>/` | **按 git 仓库隔离**（repo-hash；非 git 回退 nogit-hash） | 事中（审计中间件随每次工具调用落盘） | FORGE（**项目内部自迭代工具链，非产品能力**）自托管路径已交付；约束层侧同构隔离已落地（§四详述） |
 | data-sovereignty 审计日志 | `data/audit/data-sovereignty/<repo-hash>/{年}/{月}/` | **按 git 仓库隔离**（repo-hash；非 git 回退 nogit-hash；旧版无段历史读侧 fallback 原地可读） | 事后可追溯 | 约束层侧 repo-hash 隔离已落地（复用 FORGE 方案）；多项目仍需 `SOFAGENT_HOME` 按项目分目录时可用 |
 | `history.jsonl`（commit 级审计历史） | `~/.sofagent/data/audit/`（全局） | 全局 append-only（HMAC 签名链要求全量连续，跨仓查询是运维刚需） | 事后（HMAC 链 + `--doctor` 校验；锚点防尾部截断） | 全局共享是设计决策；无密钥时退化为弱校验 hash chain（同用户进程可重算，见 §四 HMAC 段） |
-| `knowledge/`（知识沉淀） | `data/knowledge/` | 全局共享（无租户/项目维度，多域数据会串） | sensitivity 分级是**分级标注非门禁**（L0-L3 分层脱敏管道事前打码） | 多租户抽象层 v0 排 v1.4.7（G7）；当前定位单机单用户 |
+| `knowledge/`（知识沉淀） | `data/knowledge/` | 全局共享（无租户/项目维度，多域数据会串） | sensitivity 分级是**分级标注非门禁**（L0-L3 分层脱敏管道事前打码） | 多租户抽象层 v0（**查询侧**）已随 v1.4.7 交付；**写入侧隔离尚未落地**（见 [LIMITATIONS](./docs/LIMITATIONS.md)）；当前定位单机单用户 |
 | `task/logs/` 与 `think.md` | `data/task/logs/`、`data/think.md` | 全局明文 | 事前脱敏（sanitize() 写入前打码，脱敏是**掩码非加密**） | 附链目录不在加密范围（加密仅覆盖审计历史主链）；强合规场景建议外部加密卷 |
 
 > 排期项详见 [docs/ROADMAP.md](./docs/ROADMAP.md)；各数据面的攻击面与信任模型细节见 [docs/LIMITATIONS.md](./docs/LIMITATIONS.md)。
@@ -156,7 +156,7 @@ sofagent 是一套 FDE 能力——底层引擎是纯本地 Harness 中间件（
 **企业部署建议**：
 - 不要在共享/公共设备上启用 USB federation 自动检测
 - 如需使用，插入 U 盘前先在隔离设备上检查 `federation.json` 内容
-- 生产环境等 v1.1.5 的签名校验上线后再启用
+- 生产环境启用前请确认所选版本已含 HMAC 签名校验——**v1.1.5 起已上线，当前 v1.5.0 为全量签名**（见上方「USB 完整运行时攻防表」）
 
 `detectSofagentUsb()` 源码见 `engine/daemon/src/usb-detect.ts`，错误处理完善（设备不存在/文件不存在/JSON 解析失败都 try-catch 返回明确错误）。内容安全校验自 v1.1.5 起由 HMAC 签名校验覆盖（`.sig` sidecar + `timingSafeEqual`），v1.1.9 升级为全量签名（`usb-signature.ts`：HMAC-SHA256 路径 POSIX 归一化 + 字典序 + SHA-256 内容哈希串联，详见上方「USB 完整运行时攻防表」）。
 
@@ -481,6 +481,10 @@ chmod 600 ~/.sofagent/data/audit/history.jsonl.bak-*
 
 > ⚠️ **history.jsonl 的 beforeAfter 字段脱敏（v1.4.4 交付十三配套 · 端到端验证）**：审计条目的 `actionGovernance.beforeAfter`（变更前/后值摘要，从 diff 提取、截断至 200 字符）是新增落盘面——密钥可能混入。脱敏链路：`buildBeforeAfterSummary` 提取时脱敏 + `appendHistory` 落盘前经 sanitize 管道复扫（`baseSanitized` 之外的专项补面），端到端回归见 `engine/audit/src/before-after-redaction.test.ts`（构造含密钥的 beforeAfter 断言落盘无明文）。边界：脱敏是掩码非加密，密钥模式库未覆盖的自定义格式仍可能以明文入 history——与既有 sanitize 边界一致，强合规场景配合外部加密卷。
 
+> ⚠️ **快照恢复的人审门禁是约定级，不是机制（v1.5.0 如实披露）**：回滚能力中「恢复快照」这一核心动作的唯一门控是工具入参 `human_confirmed`（`engine/mcp/src/tools/snapshot-restore.ts`）——该参数由**调用方 Agent 在同一次 tool call 里自报**，MCP tool 面无带外确认通道、快照文件亦无 HMAC / 指纹可验（全链路无完整性校验）。即：**Agent 传 `human_confirmed: true` 即完成「人审」，不需要任何额外权限**，该门禁是约定而非机制。与「管控能力不得静默降级」的既定纪律存在落差。整改方向（① 快照自身完整性校验；② 把 `human_confirmed` 改为复用仓内既有 HITL 机制的带外确认通道；③ 判定为设计取舍并保留本披露）**待维护者裁定**；裁定前请勿把该门禁当作安全边界。
+
+> ⚠️ **静态加密在非交互环境默认跳过（v1.5.0 如实披露）**：`initDataEncryption()`（`engine/daemon/src/crypto-init.ts`）在**非交互环境且未显式提供密钥**时**不生成密钥**，只打一条 `console.warn`（`status: 'warn'` / `action: 'skipped-non-interactive'`）后继续启动——**审计数据以明文落盘**。而 CI / docker / systemd / ssh 批量恰恰是企业最常见的部署形态，即该控制的默认态是「关」，且 systemd 下这条 warn 会淹没在 journal 里。这是「默认安全 vs 可用性」的**显式设计取舍**（避免无头部署因缺密钥而拒绝启动），交互首启或走 env 通道（`SOFAGENT_CONFIRM_BACKUP=1`，见 [企业部署指南 §批量部署](./docs/guides/enterprise-deploy.md)）可正常激活。**「当前是否处于明文态」可否被外部查询（`doctor` / `--stats` 显式标注）尚待裁定**；裁定前请以启动日志 + `head -1 ~/.sofagent/data/audit/history.jsonl` 是否含 `SOFAGENT-AGE-V1` 前缀自行核验。
+
 ### 详细缓解步骤
 
 1. **CI 侧兜底（推荐）**：在 CI/CD pipeline 中独立运行 `sofagent-audit --diff HEAD~1..HEAD`（审最近一次 commit；审整个分支区间用 `--diff main..HEAD`），
@@ -698,7 +702,7 @@ grep -i "api_key\|apikey\|sk-" runs/*/usage.jsonl   # 应无结果
 | ASI08 级联失效 | 一个 Agent 失败拖垮整条链 | 快照回滚（`internal/checkpoint` + snapshot）+ 联邦查询离线降级（单 peer 5s 超时跳过，全离线退化本地）+ A11 不滥资源（超大文件/大删除）+ A8 不逃验证 | 无跨 Agent 编排级熔断器（单 Agent 循环失控熔断依赖 OpenClaw loopDetection） |
 | ASI09 人机信任滥用 | Agent 虚假汇报骗取人工批准 | 24 条规则 git diff 硬证据（不采信模型自评）+ A7 不存盲改（无读取记录的修改 FAIL）+ A5/A19 msg 质量 + entry-gate 🔴 高风险强制人工审批 + daemon 文件监控事后对账 | Agent 可伪造 task/logs（§四已知绕过路径）；HITL 依赖人真正审阅 |
 | ASI10 流氓 Agent | Agent 脱离监管自主行动 | `--doctor` 定期体检（hook 完整性/dist 哈希/config 签名/未审计 commit 扫描）+ post-commit 对账（绕过 commit-msg 留痕）+ daemon fs-watch + CI 侧 `--diff` 独立兜底（hook 可绕 CI 不可绕）+ 基线规则不可禁用 | 全部是事后检测/体检模型，无运行时进程级监控（如 eBPF）；影子审计器劫持见 §四 v1.2.7 风险 |
-| — | **未覆盖面** | 以下三类当前无对应能力，企业强合规场景需外部措施补位：多租户身份隔离（等 ROADMAP v1.4.7 G7）/ 运行时沙箱拦截 / 外部 A2A 协议安全（通信面仅覆盖 sofagent 联邦链路） | — |
+| — | **未覆盖面** | 以下三类当前无对应能力，企业强合规场景需外部措施补位：多租户身份隔离（**查询侧 v0 已随 v1.4.7 交付；写入侧隔离尚未落地**）/ 运行时沙箱拦截 / 外部 A2A 协议安全（通信面仅覆盖 sofagent 联邦链路） | — |
 | — | **NIST AI RMF / EU AI Act / SOC 2** | 未做正式对照（无认证与审计证据链），不做映射声明；如需上述框架的证据链，需商业层提供，开源版不虚标 | — |
 
 > 📌 阅读提示：表中「§N」指本 SECURITY.md 对应章节；规则 A1-A23 编号见 §四「24 条审计规则完整清单」；AST 规则见 §四「AST 规则引擎 SSOT」。
@@ -720,7 +724,7 @@ grep -i "api_key\|apikey\|sk-" runs/*/usage.jsonl   # 应无结果
 
 - **确认**：72 小时内确认收到报告
 - **初步评估**：7 天内给出初步评估和影响范围
-- **修复**：根据严重程度排期——高危（数据泄露/权限提升）优先修复并发布补丁版本
+- **修复**：根据严重程度排期——高危（数据泄露/权限提升）优先修复并发布补丁版本。**开源版不承诺修复时限**（维护者带宽有限，无商业 SLA 支撑的时限不作声明，与 §九「开源版不虚标」同口径）；需要修复时限保障请走商业层。
 
 ## 适用范围
 

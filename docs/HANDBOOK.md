@@ -209,7 +209,7 @@ cd sofagent && bash install.sh
 | `sofagent-audit: Node.js 未找到` | Node.js 未安装或版本过低 | 安装 Node.js ≥18：`node --version` 确认 |
 | commit 时没有审计输出 | commit-msg hook 未安装 | `sofagent-audit --init` 或 `sofagent-audit --install-hook` |
 | 首次 commit 提示「无需审计」 | 全新仓库首次提交没有前一个版本可对比 | 正常——下次 commit 起审计自动生效 |
-| Windows 上部分检查缺失 | Windows 为实验性支持 | 核心审计模块可用，PowerShell 脚本覆盖不全，详见 [LIMITATIONS](./LIMITATIONS.md#windows-支持是实验性的) |
+| Windows 上部分检查缺失 | Windows 为实验性支持 | 核心审计模块可用，PowerShell 脚本覆盖不全，详见 [LIMITATIONS](./LIMITATIONS.md#-windows-支持是实验性的) |
 | hook 装了但静默跳过 | Node.js 或 sofagent-audit 缺失时 hook 旧版会静默跳过 | v1.0 hook 含无声失败保护，会 exit 1 + 提示；旧 hook 跑 `--init` 更新 |
 | `sofagent-audit --doctor` 报 config 缺失 | 未跑过 `--init` | 跑 `sofagent-audit --init` 生成 config.yml，或用默认配置（默认 17 条（A1–A11 + A18–A23）全启用，扩展 7 条（A14–A17 + E1/E2/E4）需开启，全量 24 条） |
 
@@ -281,7 +281,7 @@ bash engine/scripts/uninstall.sh --platform openclaw|workbuddy|claude|codex|herm
 | 3 | `think.md` | 反思摘要（≤2K token） | ⚠️ 改了没用。→ [反思工程](./DEVELOPMENT.md#六反思工程) |
 | 4 | `knowledge/index.md` | AI 知识库目录，被动注入 top-3 页摘要 | ⚠️ daemon 自动维护 |
 
-> 地基约 3,500 token，不到 128K 窗口的 3%。暴露会话事件的宿主（OpenClaw）自动注入 2-4 层，其他平台 Agent 主动 Read。详见 [ARCHITECTURE 地基与约束层](./ARCHITECTURE.md#地基与约束层)。
+> 加载链（约束注入链）约 3,500 token，不到 128K 窗口的 3%。暴露会话事件的宿主（OpenClaw）自动注入 2-4 层，其他平台 Agent 主动 Read。详见 [ARCHITECTURE 约束层的两种形态：加载链与运行时](./ARCHITECTURE.md#约束层的两种形态加载链与运行时)。
 
 ### 4 条底线 + 9 则行为铁律
 
@@ -410,7 +410,7 @@ sofagent-audit --timeline             # 查看审计时间线快照
 sofagent-audit --revert <sha>         # 回滚到某次审计前
 ```
 
-Webhook 在 `.sofagent/config.yml` 配置，不配也能用。详见 [ARCHITECTURE 回溯能力](./ARCHITECTURE.md#回溯能力自研同构-git-引擎--一键回滚)。
+Webhook 在 `.sofagent/config.yml` 配置，不配也能用。详见 [ARCHITECTURE 回溯能力](./ARCHITECTURE.md#-回溯能力自研同构-git-引擎--一键回滚)。
 
 ### 终端 Dashboard：一眼看清 AI 在干什么
 

@@ -15,6 +15,21 @@
 
 ---
 
+## 目录
+
+- [这是什么](#这是什么)
+- [核心特性](#核心特性)
+- [什么是 FDE Harness](#什么是-fde-harness)
+- [多平台挂载](#多平台挂载)
+- [v1.5.0：治理模块 · 可见性与本体成熟](#v150治理模块--可见性与本体成熟-已发版--2026-09-19)
+- [FDE Harness 两阶段](#fde-harness-两阶段)
+- [安装](#安装)
+- [使用](#使用)
+- [常见问题](#常见问题)
+- [生态与文档索引](#生态与文档索引)
+
+---
+
 ## 这是什么
 
 > 💬 **一句话版本**：进场时它替你把业务摸清、写成文件；离场后你的数字员工每次改代码、动文件，都按文件过一道安检、留一份记录、存一个快照——出事能查、能回滚。
@@ -33,12 +48,12 @@
 
 <p align="center">
   <img src="docs/assets/architecture-diagram.png" alt="sofagent 系统架构" width="860" /><br/>
-  <sub>约束 Agent 行为 · 审计每次变更 · 沉淀经验（完整交互版见 <a href="./docs/ARCHITECTURE.md">ARCHITECTURE</a>）</sub>
+  <sub>约束 Agent 行为 · 审计每次变更 · 沉淀经验（五模块编制：治理模块 v1.5.0 已发版 · 执行模块规划中（v1.5.3）；完整交互版见 <a href="./docs/ARCHITECTURE.md">ARCHITECTURE</a>）</sub>
 </p>
 
 </details>
 
-**10 分钟轻量试用**：`npx -y -p @sofagent/audit sofagent-audit`（任意 git 仓库，密钥泄漏当场拦截）。
+**10 分钟轻量试用**（含拉包与环境检查的完整走查；单次引擎审计本身约 1.1 秒，实测口径见下）：`npx -y -p @sofagent/audit sofagent-audit`（任意 git 仓库，密钥泄漏当场拦截）。
 
 ### 该不该装？
 
@@ -46,7 +61,7 @@
 |----------|------|
 | **给现有 Agent 加纪律**——已有 DSH / OpenClaw / WorkBuddy，想让 AI 干活时守规矩、留痕、出事能回溯 | ✅ **现在装**。核心价值就是约束层（注入 · 审计 · 回溯 · 沉淀 · 进化），装完即用 |
 | **一人公司 / 小企业想落地 AI**——没有专职工程师，需要一个"不离职的 FDE"帮你梳理工作流、部署 AI 节点 | ✅ **现在装**。FDE Harness 层就是干这个的——进场把判断写成文件，离场按文件执行与审计，全链路 |
-| **要开箱即用的企业级 Agent 平台**——期待完整商业产品（多租户、权限管理、计费、SLA） | ⏸️ **暂缓**。sofagent 是治理层，不是平台产品——平台级能力不在本开源仓库范围内。有集成能力的团队仍可把约束层接入自有平台，作为其中的治理模块；纯开箱需求建议另选平台产品 |
+| **要开箱即用的企业级 Agent 平台**——期待完整商业产品（多租户、权限管理、计费、SLA） | ⏸️ **暂缓**。sofagent 是 FDE Harness 层，不是平台产品——平台级能力不在本开源仓库范围内。有集成能力的团队仍可把约束层接入自有平台，作为其中的治理模块；纯开箱需求建议另选平台产品 |
 | **纯研究 / 想看看约束层怎么设计**——读代码、学架构、借鉴方法论 | ✅ **现在装**。文档齐全（[HANDBOOK](./docs/HANDBOOK.md) / [ARCHITECTURE](./docs/ARCHITECTURE.md) / [PHILOSOPHY](./docs/PHILOSOPHY.md)），MIT 协议 |
 
 **和 gitleaks / pre-commit 这类工具什么关系？**（互补不互替）
@@ -56,6 +71,8 @@
 | 定位 | 密钥全量历史扫描 | 通用提交钩子框架 | Agent 行为审计约束层 |
 | 证据面 | 仓库文本模式 | 自定义脚本 | git diff 硬证据 + Agent 日志 + 决策留痕 |
 | 覆盖维度 | 密钥泄漏 | 任意（自己写） | 24 条规则：密钥/越界/注入/权限/后门 |
+| 部署成本 | 低——单二进制，零依赖 | 低——随语言生态装一个 CLI | 中——企业设备需一次 `install.sh` 装约束层（也可先用 npx 零配置试用） |
+| 维护负担 | 低——规则随上游更新 | 中——自定义脚本需自己维护 | 中——规则与 hook 随本仓升级，但每版需重装 hook 并对齐配置 |
 | 建议 | 强密钥合规必配 | 已有体系可保留 | 与前两者并用，专注 Agent 治理维度 |
 
 ## 核心特性
@@ -90,7 +107,7 @@
 
 - **企业 AI 落地的瓶颈不是模型，是部署**——MIT NANDA《生成式人工智能的鸿沟》：95% 的企业 GenAI 项目没能产生能写进财务报表的价值，而 FDE 岗位发布量一年涨了 729%（核验见 [VALIDATION](./docs/VALIDATION.md)）
 - **完整来自组合**——DSH 解决「能干活」，sofagent 解决「持续干」，两者合起来才是完整的 FDE Harness（见下一章「多平台挂载」的 DSH 档）
-- **约束层「持续优化」靠机制不靠承诺**——外部独立实验（ARC-AGI-3，**能力型 harness 数据**——提升的是任务得分与 token 效率，与治理型约束层的可靠性收益非同一量纲）：同一模型仅优化外层 Harness 可显著提升任务完成率。核验见 [VALIDATION](./docs/VALIDATION.md) · [THANKS](./docs/THANKS.md)
+- **约束层「持续优化」靠机制不靠承诺**——外部独立实验（ARC-AGI-3，**能力型 harness 数据**——提升的是任务得分与 token 效率，与治理型约束层的可靠性收益非同一量纲）：同一模型仅优化外层 Harness 可显著提升任务完成率。核验见 [VALIDATION](./docs/VALIDATION.md) · [THANKS](./docs/THANKS.md)（写面审计覆盖：权重面与 skill 面已交付；prompt / memory 两面排期 v1.5.5）
 - **能力可迁移，绝不绑死单一平台**——约束层平台无关，方法论跟着业务走、不跟着平台走
 
 > 🔄 **自举**：sofagent 给自己做的第一份 FDE，就是 sofagent 自己——项目本身就是一条完整的 FDE 工作流（梳理 → 构建 → 部署 → 离场），这个开源仓库就是那份交付物。
@@ -107,7 +124,7 @@
 | **薄挂载** | WorkBuddy / Codex / Gemini CLI / Hermes | ⚠️ Skill 自觉加载 | Skill 目录 symlink（Codex 走 `AGENTS.md` 挂载点）+ git hook 审计 |
 
 - **别假设能力对齐——档位差的是注入强度，不是「有没有」**：DSH 逐工具调用可拦，OpenClaw 每会话注入一遍，其余宿主由 Agent 自觉读 Skill 文本（建议性）。「支持某平台」= 约束资产在该平台可用，**≠ 约束强度与其他平台相同**；跨宿主迁移或写集成文档前，先看目标宿主落在哪一档，完整矩阵见[加载链 HOOK](./engine/hooks/sofagent-load-chain/HOOK.md)
-- **审计兜底平台无关**——`sofagent-audit --install-hook` 走 git hook，任何档位每次 commit 都过 24 条审计，违规硬拦截。约束是建议性的，审计是强制性的
+- **审计兜底平台无关**——`sofagent-audit --install-hook` 走 git hook，任何档位每次 commit 都自动审计（默认启用 17 条；完整 24 条需在 `.sofagent/config.yml` 显式开启 `extendedRulesEnabled: true`），违规硬拦截。约束是建议性的，审计是强制性的
 
 一条命令选定挂载档位：`bash install.sh --platform <平台名>`（全部平台与差异见 [HANDBOOK](./docs/HANDBOOK.md)）
 
@@ -117,19 +134,17 @@
 
 | 能力 | 一句话 |
 |------|--------|
-| **治理 KPI 面板** | Dashboard 独立「治理」tab：KPI 六卡 + 数据集审阅卡 + lineage 合规报告导出 + 周报导出 |
+| **治理 KPI 面板** | Dashboard 独立「治理」tab：KPI 六卡 + 数据集审阅卡（语义质量人审兜底）+ lineage 合规报告导出（数据从哪来 → 过了什么闸 → 版本演进 → 审计链引用）+ 周报导出 |
 | **本体数据双时态** | `validFrom`/`validTo` + `stateAt` 时点快照（「系统在某天知道什么」）+ 三层渐进加载 |
 | **证据跨层对账** | `trace_reconcile` 新 tool：Agent 自述 vs git diff vs 模型行为，一致/漏报/幻觉/瞒报四态判定 |
 
-同版另有：Ontology Validation Engine（DAG 无环 + 激活前置门 fail-closed）· FDE 陪跑期期满总结 · 存量清扫与 `@sofagent/inject` 更名 · DSH 插件 7 事件位接线。**MCP 104→105 tools · 测试 4805→4903 · acceptance 352→357**（13 包 workspace 口径，发版时点；badge 与安装命令当前仍指 v1.4.9，随发版同步翻牌）。完整内容见[开发日志](./docs/changelog/v1.5/v1.5.0.md) · 更早版本见 [CHANGELOG](./CHANGELOG.md)。
+同版另有：Ontology Validation Engine（DAG 无环 + 激活前置门 fail-closed）· FDE 陪跑期期满总结 · 存量清扫与 `@sofagent/inject` 更名 · DSH 插件 7 事件位接线。**MCP 104→105 tools · 测试 4805→4903 · acceptance 352→357**（13 包 workspace 口径，发版时点）。完整内容见[开发日志](./docs/changelog/v1.5/v1.5.0.md) · 更早版本见 [CHANGELOG](./CHANGELOG.md)。
 
 ## FDE Harness 两阶段
 
 **进场 · 生成判断**（FDE 相位）：梳理业务流（五要素深挖 + 三问判定法，算清每个 AI 节点值多少钱）→ 构建双图谱（业务图谱人读 + 本体图谱 AI 读）→ 判定 AI 节点 → 部署三层交付物。每个节点带「做好标准 merge_criteria · 谁拍板 approver · 何时跑 trigger」，冻结进交付物。
 
 **离场 · 驻留判断**（Harness 相位）：FDE 走，判断留下——daemon 7×24 巡检、commit 触发 24 条审计（含 **AgentShield 五类配置面静态扫描**）、快照可回滚、经验持续沉淀；进化时把试验分支晋升、反思蒸馏写回交付物。
-
-两阶段缝在一件事上：**交付物是共享的活状态**（进场写、离场读、进化写回）——没有 FDE，约束层没有判据可执行；没有约束层，FDE 的判断随人离场蒸发。这就是「FDE Harness」不是两个功能拼盘的原因。
 
 **组织管理学视角**——两阶段对应给数字员工办入职的全流程：
 
@@ -152,6 +167,8 @@
 ## 安装
 
 > ⚠️ **企业用户先读** [LIMITATIONS §三](./docs/LIMITATIONS.md#三安全与信任模型局限)——`config.yml` 默认**非 fail-closed**（规则可被 Agent 篡改绕过），多租户**写入侧**隔离尚未落地（v0 已交付查询侧隔离：orgId 过滤 + data/<tenant>/ 路径地基，见 LIMITATIONS）。强合规场景建议 CI 兜底 + 文件权限锁（`chmod 400 .sofagent/config.yml`——辅助层，对同用户进程无效，见 [LIMITATIONS §三](./docs/LIMITATIONS.md)），不要用单机默认配置直接上生产。
+>
+> 🔐 **数据主权**：运行时数据不出本机（除安装时 npm 拉包外不联网）；三个 opt-in 出口（云同步 / 模型推理端点 / 云 VM 执行面）需你显式配置，详见 [SECURITY](./SECURITY.md)。
 
 **30 秒，零配置**（首次含 npx 拉包约 30 秒，复跑秒级——引擎本体约 1.1s，实测口径见上）——在任何 git 仓库跑一次审计：
 
@@ -159,7 +176,9 @@
 npx -y -p @sofagent/audit sofagent-audit
 ```
 
-> 💡 quick 跑 17 条默认规则（A3 任务范围 / A9 commit-msg 注入检测激活——自动读最近一次 commit 消息，无消息时 A9 按无输入处理标记跳过），完整 24 条 + hook 自动审计需 `--init`——详见 [LIMITATIONS §三](./docs/LIMITATIONS.md#三安全与信任模型局限)。
+> 💡 quick 跑 17 条默认规则（A3 任务范围 / A9 commit-msg 注入检测激活——自动读最近一次 commit 消息，无消息时 A9 按无输入处理标记跳过）；`--init` 装的是 hook（默认仍跑这 17 条），完整 24 条另需在 `.sofagent/config.yml` 开启 `extendedRulesEnabled: true`——详见 [LIMITATIONS §三](./docs/LIMITATIONS.md#三安全与信任模型局限)。
+
+> ⚠️ 这一步是**一次性审计**（当次进程内），不装 git hook——之后 commit 不会被自动拦。要长期守护请跑 `sofagent-audit --init`（见下方完整安装）。
 
 拦截特定格式密钥泄漏时是这样的（真实输出；A2 检测 AWS AKIA/Secret、OpenAI sk-*、GitHub ghp_、Google AIza、Slack xox*-、JWT、PEM 私钥等已知格式，通用密钥形态暂不覆盖——保守设计防误报，详见 [LIMITATIONS §三 A2](./docs/LIMITATIONS.md#三安全与信任模型局限)）——首屏的实拍图即此场景，此处不再重复。
 
@@ -178,7 +197,7 @@ sofagent-audit --init      # 装 git hook，之后每次 commit 自动审计
 sofagent-audit --doctor    # 验证环境（可选）
 ```
 
-> 💡 安装脚本主要写入 `~/.sofagent/`（数据目录）+ `~/.local/bin`（CLI 入口）；检测到 OpenClaw 时额外写入其集成目录；npm 权限不足时 CLI 入口 fallback 到 `/usr/local/bin`。其余系统文件零改动。`--init` 安装三层防线 git hook（pre-commit 拦 .sofagent/ 入库 + commit-msg 规则审计 + post-commit 对账）；`--no-verify` 可跳过 commit-msg 审计——防的是诚实 Agent 的疏忽不是恶意绕过，被跳过的 commit 由 post-commit 事后对账留痕（提示「疑似绕过」）但不阻断；个人兜底三件事：CI 侧 `sofagent-audit --diff`、定期 `--doctor`、翻审计记录。详见 [LIMITATIONS](./docs/LIMITATIONS.md)。
+> 💡 安装脚本主要写入 `~/.sofagent/`（数据目录）+ `~/.local/bin`（CLI 入口）；检测到 OpenClaw 时额外写入其集成目录；npm 权限不足时 CLI 入口 fallback 到 `/usr/local/bin`。其余系统文件零改动。`--init` 安装三层防线 git hook（pre-commit 拦 .sofagent/ 入库 + commit-msg 规则审计 + post-commit 对账）；`--no-verify` 可跳过 **pre-commit 与 commit-msg 两个阶段**（即前两层防线），**post-commit 事后对账不受其影响**（git 原生开关不作用于 post-commit）——防的是诚实 Agent 的疏忽不是恶意绕过，被跳过的 commit 由 post-commit 事后对账留痕（提示「疑似绕过」）但不阻断；个人兜底三件事：CI 侧 `sofagent-audit --diff`、定期 `--doctor`、翻审计记录。详见 [LIMITATIONS](./docs/LIMITATIONS.md)。
 >
 > 📌 **install.sh 是企业设备安装器**——装在企业跑 AI 节点的设备上（约束层 + daemon 巡检 + 单机 dashboard）；FDE 自己的电脑不需要跑，FDE 的工具是 [FDE Skill](https://clawhub.ai/kongfangxun/skills/sofagent)（方法论），详见 [部署架构](./docs/ARCHITECTURE.md#安装包边界与部署架构v132-定位校准)。
 >
@@ -209,7 +228,12 @@ sofagent-audit --doctor    # 验证环境（可选）
 | **GitHub Action** | 每次 PR 自动审计，违规标注在 diff 行上 | CI/CD | 配置一次 |
 | **install.sh 全套** | 注入·审计·回溯·沉淀·进化五能力 + daemon 巡检 + dashboard——Agent 的完整约束层 | **企业设备**（跑 AI 节点的服务器/电脑） | FDE 驻场安装 |
 
-> ⚠️ **不要裸装 `npm i sofagent-audit`**——npm 上的裸名包 `sofagent-audit` 是**本项目的旧代理包**（已 deprecated，长期滞后于主包）。CLI 的正式包名是 `@sofagent/audit`（带 scope），CLI 安装统一走 bootstrap.sh / install.sh / `@sofagent/audit`。
+> ⚠️ **两条裸名通道都别裸装**——名字都像「sofagent 本体」，但都不是 CLI：
+>
+> - **`npm i sofagent-audit`**：npm 上的裸名包 `sofagent-audit` 是**本项目的旧代理包**（已 deprecated，长期滞后于主包）。
+> - **`npm i sofagent`**：裸名总包 `sofagent`（`engine/umbrella/`，把 audit / mcp / orchestrator / daemon 四个子包转发进来）**依赖树 604 包**，其中 5 个含原生模块与 install script（`node-pty` / `koffi` / `@google/genai` / `protobufjs` / `@deepseek-ai/dsh-subprocess-local`）——新版 npm 默认不执行未审阅的 install script，这些原生依赖的编译 / postinstall 会被**静默跳过**。只想要 CLI 就别装它。
+>
+> CLI 的正式包名是 `@sofagent/audit`（带 scope），CLI 安装统一走 bootstrap.sh / install.sh / `@sofagent/audit`。
 
 **规则市场**——社区规则集以 `sofagent-ruleset-*` npm 包发布、`--ruleset-path` 手动加载（也支持指向你自己的 JSON 规则）：
 
@@ -255,8 +279,9 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # 加载安全规�
 | 每个版本做了什么 | [CHANGELOG](./CHANGELOG.md) |
 | 安全声明 · 已知局限 | [SECURITY](./SECURITY.md) · [LIMITATIONS](./docs/LIMITATIONS.md) |
 
-> 🧪 **工程可信度**（当前口径）：4905 测试 / 13 模块包 + 11 插件（7 DSH + 4 OpenClaw）· 24 条审计规则 · fresh-eyes 独立审查持续运行。
-> 测试数为 v1.4.9 发版后 main 时点实测口径（随修复批滚动，发版时点为 4805）；当前权威值以 `tools/check/test-count.sh` 实跑为准，包数统计标准见 [WIKI](./docs/WIKI.md)。审查环境注意事项见 [docs/guides/review-system.md](./docs/guides/review-system.md)；性能数据为单机参考值，跨工具横评排期 v1.4.x 与 Benchmark 集成。
+> 🧪 **工程可信度**（当前口径）：4917 测试 / 13 模块包 + 11 插件（7 DSH + 4 OpenClaw）· 24 条审计规则 · fresh-eyes 独立审查持续运行。
+> **包数口径**（消歧）：workspace 26 = 13 模块包 + load-chain + umbrella + 7 DSH 插件 + 4 OpenClaw 插件（见 [WIKI §六](./docs/WIKI.md#六当前状态)）；**测试计数口径** = 13 个含测试的 workspace 包——二者不是同一个集合。
+> 测试数有两个口径：**发版时点值**（各版本章节内的 `4805→4903` 增量账，见 v1.5.0 章节）与**当前实测值**（上述 4917，随修复批滚动）；当前权威值以 `tools/check/test-count.sh` 实跑为准，包数统计标准见 [WIKI 包数口径](./docs/WIKI.md#六当前状态)。审查环境注意事项见 [docs/guides/review-system.md](./docs/guides/review-system.md)；性能数据为单机参考值，跨工具横评排期 v1.4.x 与 Benchmark 集成。
 
 ---
 

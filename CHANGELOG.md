@@ -13,12 +13,12 @@
 > 未来版本规划见 [ROADMAP.md](./docs/ROADMAP.md)。
 > 尚未实现的规划版本（标注"尚未实现"）在 `docs/changelog/v1.4/` 下，不纳入本索引；已开发完成但未发版的版本纳入本索引并附「待发版」状态标注——tag/npm/package.json 在发版时统一同步。
 
-- **v1.5.0** — 治理模块 · 可见性与本体成熟：治理 KPI 面板（Dashboard 治理 tab 六卡 + 数据集审阅 + lineage 合规报告 + 周报）· 本体数据双时态（stateAt 时点快照 + 三层渐进加载）· Ontology Validation Engine（DAG 无环 + 激活前置门 fail-closed）· 跨层证据对账 trace_reconcile（三源四态）· FDE 陪跑期 · 存量清扫 + @sofagent/inject 更名 · DSH 插件事件接线 · MCP 104→**105** tools · 测试 4805→**4903**（+98，13 包 workspace 口径）· acceptance 352→**357** · 2026-09-19 已发版 · [开发日志](./docs/changelog/v1.5/v1.5.0.md)
+- **v1.5.0** — 治理模块 · 可见性与本体成熟：治理 KPI 面板（Dashboard 治理 tab 六卡 + 数据集审阅 + lineage 合规报告 + 周报）· 本体数据双时态（stateAt 时点快照 + 三层渐进加载）· Ontology Validation Engine（DAG 无环 + 激活前置门 fail-closed）· 跨层证据对账 trace_reconcile（三源四态）· FDE 陪跑期 · 存量清扫 + @sofagent/inject 更名 · DSH 插件事件接线 · MCP 104→**105** tools · 测试 4805→**4903**（+98，13 包 workspace 口径，包数统计标准见 [WIKI §六](./docs/WIKI.md#六当前状态)）· acceptance 352→**357** · 2026-09-19 已发版 · [开发日志](./docs/changelog/v1.5/v1.5.0.md)
 
 
 > ⚠️ **API 退役公告（v1.4.3 · 提前一版公告，移除归 v1.5.0）**
 >
-> `checkHistoryChainIntegrity`（@public 双导出：`@sofagent/audit` 与 `@sofagent/core`）**将于 v1.5.0 移除**——布尔语义无法区分篡改/不可复验/历史不足三态，后继 `checkHistoryChainDetailed` 已交付多版。迁移：原 `true` 对应 `status === 'ok'`；原 `false` 改读结构化字段（`tampered` = HMAC 链断裂 / `unverifiable` = 环境漂移 / `insufficient-history` = 记录不足），已迁移示例见 `engine/audit/src/commands/verify.ts`。
+> `checkHistoryChainIntegrity`（@public 双导出：`@sofagent/audit` 与 `@sofagent/core`）**已于 v1.5.0 移除**——布尔语义无法区分篡改/不可复验/历史不足三态，后继 `checkHistoryChainDetailed` 已交付多版。迁移：原 `true` 对应 `status === 'ok'`；原 `false` 改读结构化字段（`tampered` = HMAC 链断裂 / `unverifiable` = 环境漂移 / `insufficient-history` = 记录不足），已迁移示例见 `engine/audit/src/commands/verify.ts`。
 
 > 🔴 **破坏性变更公告（v1.4.8）· 训练域符号迁移至 `@sofagent/train`**
 >
@@ -46,9 +46,9 @@
 - **v1.4.2** — 后训模块 · 数据与评估 + FDE 六引擎：数据管道（多源接入+质量闸门+脱敏）· dataset_version 台账 · eval 闭环 · train_doctor · dry-run 算力外推 · fde_* 六件 · IM 桥 · MCP 67→**76** · 测试 3202→**3349** · 2026-08-29 已发版 · [开发日志](./docs/changelog/v1.4/v1.4.2.md)
 - **v1.4.1** — 🚂 后训模块 · 地基：train-job 编排（`train_submit` 67 tools）+ 审计 HMAC 链 + enterpriseId 隔离 + 可复现指纹 + 权重 HMAC 签名阻断 + 崩溃恢复 + 安全基线（路径白名单/注入过滤/凭据脱敏）+ Metal reward 收敛验证 + 双栈契约文档 + SKILL 体系重构 + 依赖升级 · 测试 2981→**3222**（+241，全量口径：包含非 workspace 计数的散测 3178+44——v1.4.2 起改为 12 包 workspace 口径，两版数字不直接可比）· 2026-08-28 · [开发日志](./docs/changelog/v1.4/v1.4.1.md)
 - **v1.4.0** — 📊 Web 工作明细页 + 图谱栏 + 💰 成本审计（`cost_query` + 超支告警）+ 🔌 DSH 插件家族 9 款 + 🦞 OpenClaw 插件 4 款 + 🏠 Dashboard HTML 产品化 + 📡 远程 API 通道 + 🔗 MLflow 接线 + 🌐 Agentic Browser（66 tools）+ 🔀 工具角色分层 + ⚡ DSH 默认启用 + 🔌 MCP 自动配置 + 🔄 联邦查询 E2E + 🐚 bash 3.2 实测 · 测试 2903→**2981**（+78）· 2026-08-23 · [开发日志](./docs/changelog/v1.4/v1.4.0.md)
-- **v1.3.9** — 🔍 官方 AST 规则引擎（8+2 规则同管线）+ meta-harness 多 harness 编排 + worklog 数据层 + API 分级 @public/@internal（1439 符号门禁）+ FORGE 切 DSH + MLflow agent 评估 + Agentic Browser + 跨平台适配器 + ATTRIBUTION 归因 + Dream Sandbox + >5MB diff 修复 + driver 进程守护 · 测试 2782→**2903**（+121）· 2026-08-23 · [开发日志](./docs/changelog/v1.3/v1.3.9.md)
-- **v1.3.8** — 🛡️ 代理网关硬边界（唯一出入口 + HITL 审批队列首场景）+ 🔐 数据静态加密（能力交付：AES-256-GCM，daemon 接线 v1.4.7 收口——密钥就绪后审计历史密文落盘 SOFAGENT-AGE-V1，见 SECURITY）+ ⏸️ Durable Execution L3（WAL 三档可逆）+ ⏰ 异步长任务自治（cron + 依赖图）+ FORGE 保活三件套 + SDK `sandbox:true` + release-gate 瘦身 + 审查循环成本重构 + 快照写路径加固 · 测试 2655→**2782**（+127）· 2026-08-20 · [开发日志](./docs/changelog/v1.3/v1.3.8.md)
-- **v1.3.7** — 🏰 SubAgent 完整沙箱（虚拟 FS/网络白名单/独立进程/A-B 双跑）+ 场景驱动权限（fail-closed）+ AgentShield 五类扫描 + 行业 overlay 四套 + 断路器监控（ASI08/ASI10）+ ontology 生命周期（branch/trunk + 审阅门）+ FORGE 自适应并发 + memory-sync 路径通用化 + 26 项加固（4 P0 + 红队防御增强）· 2026-08-18 · [开发日志](./docs/changelog/v1.3/v1.3.7.md)
+- **v1.3.9** — 🔍 官方 AST 规则引擎（8+2 规则同管线）+ meta-harness 多 harness 编排 + worklog 数据层 + API 分级 @public/@internal（1439 符号门禁）+ FORGE 切 DSH + MLflow agent 评估 + Agentic Browser + 跨平台适配器 + ATTRIBUTION 归因 + Dream Sandbox + >5MB diff 修复 + 长任务进程自愈（守护 daemon + watcher，进程被外部回收后自动恢复） · 测试 2782→**2903**（+121）· 2026-08-23 · [开发日志](./docs/changelog/v1.3/v1.3.9.md)
+- **v1.3.8** — 🛡️ 代理网关硬边界（唯一出入口 + HITL 审批队列首场景）+ 🔐 数据静态加密（能力交付：AES-256-GCM，daemon 接线 v1.4.7 收口——密钥就绪后审计历史密文落盘 SOFAGENT-AGE-V1，见 SECURITY）+ ⏸️ Durable Execution L3（WAL 三档可逆）+ ⏰ 异步长任务自治（cron + 依赖图）+ FORGE 保活三件套 + SDK `sandbox:true` + release-gate 瘦身 + 审查成本计量（逐步 token 记账 + 单次草稿模式） + 快照写路径加固 · 测试 2655→**2782**（+127）· 2026-08-20 · [开发日志](./docs/changelog/v1.3/v1.3.8.md)
+- **v1.3.7** — 🏰 SubAgent 完整沙箱（虚拟 FS/网络白名单/独立进程/A-B 双跑）+ 场景驱动权限（fail-closed）+ AgentShield 五类扫描 + 行业 overlay 四套 + 断路器监控（ASI08/ASI10）+ ontology 生命周期（branch/trunk + 审阅门）+ FORGE 自适应并发 + memory-sync 路径通用化 + 安全加固 26 项 · 2026-08-18 · [开发日志](./docs/changelog/v1.3/v1.3.7.md)
 - **v1.3.6** — 🔌 引擎接口外化（Workflow 标准格式 / Ontology Schema D1-D5 / 模型注册灰度 + 强制人审）+ SubAgent 托管 SDK + 训练协议三约定 + 路由可解释性 + 机器可判定验收（define_acceptance）+ 可靠性五件（worktree 隔离/双闸验证/疲劳检测/降级梯队/decisions 五分类）+ market→commons 更名 · MCP 52→**60** · 2026-08-18 · [开发日志](./docs/changelog/v1.3/v1.3.6.md)
 - **v1.3.5** — MCP 自进化 + instinct→skill 自动进化：引擎接口外化推进 · MCP 48→**52**（4 新）· 测试 2380→**2431** · 2026-08-16 已发版 · [开发日志](./docs/changelog/v1.3/v1.3.5.md)
 - **v1.3.4** — 🏪 L3 组织能力市场（五环：发布→发现→调用→评价→养护 + 6 market MCP tool；market_* 系列 v1.3.6 起更名 commons_*）+ 🛡️ SkillScan 安全门（三态判定 + 发布/安装双触发）+ 📊 评估体系三步（harvest→jury→promote）+ 🔌 编排层与执行层分离（ExecutionBackend + DSH 执行后端接入）+ 📜 DecisionKind.MARKET + daemon 市场双巡检 · 2026-08-14 · [开发日志](./docs/changelog/v1.3/v1.3.4.md)
@@ -62,7 +62,7 @@
 - **v1.2.6** — 激活链 Phase 2 前半（映射表+注册扩展）+ MCP 交付链路修补（4 tool 三处注册）+ 文档死链清零 · 2026-08-04 · [开发日志](./docs/changelog/v1.2/v1.2.6.md)
 - **v1.2.5** — 激活链 Phase 1 ACTIVATE（activate.ts + MCP activate_workflow tool）+ 审计模块加固（A20-A23 四条安全规则 + 结构性地基加固 + 检测盲区补全）+ daemon 可靠性（推送重试 + plist 校验 + 健康自检）+ 多设备前置（Agent 身份码 + 跨设备审计聚合 + 协议中立）· 2026-08-02 · [开发日志](./docs/changelog/v1.2/v1.2.5.md)
 - **v1.2.4** — 知识进化（分层巡检 L1/L2/L3 + skillopt 自动触发 + 失败清单 + 联邦蒸馏 + Skill×MCP 集成 + FDE 人机分离 + LESSONS 方法论）· 2026-08-02 · [开发日志](./docs/changelog/v1.2/v1.2.4.md)
-- **v1.2.3** — Dashboard 产品化 + 编排隔离底座 + Fresh-Eyes 流程化（git worktree 隔离三原语 + 控制图波次渲染 + 用户可读状态映射 + releasing.md 阶段一重组 + v1.2.2 BugFix 31 项）· 2026-07-30 · [开发日志](./docs/changelog/v1.2/v1.2.3.md)
+- **v1.2.3** — Dashboard 产品化 + 编排隔离底座 + 审查进度可视化（git worktree 隔离三原语 + 控制图波次渲染 + Dashboard FORGE 审查 tab 进度实时显示 + 用户可读状态映射 + v1.2.2 BugFix 31 项）· 2026-07-30 · [开发日志](./docs/changelog/v1.2/v1.2.3.md)
 - **v1.2.2** — 数据主权审计 + 混合模型路由 + FDE Dashboard + Graph Engine + 异步 HITL + Skill 升级三策略（4 维审计追踪 + 敏感度路由 + bash 三栏 + Planner 降级链 + checkpoint 挂起）— 38 项修复详见 git log v1.2.2...v1.2.1 --oneline · 2026-07-29 · [开发日志](./docs/changelog/v1.2/v1.2.2.md)
 - **v1.2.1** — 数据目录重构 + Webhook 推送 + SubAgent 可见性 L2 + custom/ 闭环 + eval/ab-test 半成品补全（.sofagent/ → data/ + 飞书/钉钉/企微推送 + ProgressMiddleware + golden set 42 条 + CLI + 持久化）· 2026-07-28 · [开发日志](./docs/changelog/v1.2/v1.2.1.md)
 - **v1.2.0** — 物理结构大重构（/sofagent/→/engine/ + SKILL 收敛 + install.sh 提根 + rules 独立包）· 2026-07-26 · [开发日志](./docs/changelog/v1.2/v1.2.0.md)
