@@ -116,7 +116,7 @@ graph TD
 
 ### 四层运行形态：企业 AI 从梳理到专属模型
 
-上文双层架构图同时承载「能力视角」（约束层五种能力）与「流程视角」（激活链五阶段）。这张图是**第三个视角——站在企业/客户看完整运行形态**，回答「装上 sofagent 之后，企业 AI 最终长成什么样」：
+上文双层架构图同时承载「能力视角」（约束层五种能力）与「流程视角」（生命周期五阶段）。这张图是**第三个视角——站在企业/客户看完整运行形态**，回答「装上 sofagent 之后，企业 AI 最终长成什么样」：
 
 ```mermaid
 graph TB
@@ -592,7 +592,7 @@ graph LR
 
 **过程面与结果面的分工**：行业一线实践将运行时托管拆为双面——过程审计由运行时托管 Harness 承担（每步工具调用实时可见、可拦截，如 OpenAI Agents SDK 的 guardrail 拦截 + 审计留痕），结果审计由外置审计层承担（git diff 硬证据裁决）。两者组合构成完整运行时托管：过程面防「当下越权」，结果面裁「最终改了什么」——与证据分层（硬证据/软证据）互补，而非替代。
 
-> 📖 来源：GraphHub 产品形态与 FDE 从人力变能力（内部会议纪要，2026-09-15）；过程面印证：[OpenAI Agents SDK v0.22.0 release notes](https://github.com/openai/openai-agents-python/releases/tag/v0.22.0)
+> 📖 来源：[OpenAI Agents SDK v0.22.0 release notes](https://github.com/openai/openai-agents-python/releases/tag/v0.22.0)（2026-08-19 · 官方 changelog · A 级源）
 
 > [Anthropic《When AI builds itself》](https://www.anthropic.com/institute/recursive-self-improvement)（2026-06）：工程师代码产出达 2024 年 8 倍后，人工代码审查成为新堵点。sofagent 的审计把审查外置到 git diff 自动化——正是解这个瓶颈的方向。
 
