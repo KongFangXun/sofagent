@@ -720,7 +720,7 @@ loop-engineering 社区将 STATE.md 定位为 **「对话外的持久化主干�
 
 ### 场景数 SSOT 口径
 
-> **SSOT 口径**：`playbook/acceptance-test.sh` 头部「场景数」声明 = 真实 `scenario` 调用行数（非编号最大值、非运行时执行数）。当前值 358（最大场景号 S431，S1-S431 间 77 个历史空洞号；v1.5.0 验收增量 +5：S427-S431（治理 KPI 面板/双时态时点快照/Validation Engine 环检测+fail-closed/trace 对账四态/FDE 陪跑期+插件事件接线——行为实测 dist 直调，多模块共场景对齐 S373/S374 先例）。
+> **SSOT 口径**：`playbook/acceptance-test.sh` 头部「场景数」声明 = 真实 `scenario` 调用行数（非编号最大值、非运行时执行数）。当前值 358（最大场景号 S432，S1-S432 间 77 个历史空洞号；v1.5.0 验收增量 +5：S427-S431（治理 KPI 面板/双时态时点快照/Validation Engine 环检测+fail-closed/trace 对账四态/FDE 陪跑期+插件事件接线——行为实测 dist 直调，多模块共场景对齐 S373/S374 先例）。
 >
 > 后续版本引用场景数一律以 `acceptance-test.sh` 头部声明为准，禁止从其他文档转述。逐版沿革账见 [v1.5.0 开发日志 · 附录](./changelog/v1.5/v1.5.0.md)。
 
