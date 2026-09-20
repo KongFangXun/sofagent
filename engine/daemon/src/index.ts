@@ -368,3 +368,39 @@
   FDERegistryNode,
   FDERegistryParseResult,
 } from './fde-registry-types';
+
+// ── G12 设备 OTA 远程升级 + 任务下发推送（v1.5.1 第四/五章）──
+// 设备侧订阅登记面与执行器出口：MCP 侧 device-register.ts 的 registerDeviceSubscriptions()
+// 经本导出转调 daemon 的订阅登记表（唯一订阅挂载出口）。
+/* @public */ export {
+  DEVICE_EVENT_TOPICS,
+  DEVICE_OTA_SUBSCRIPTIONS,
+  registerDeviceOtaSubscriptions,
+  executeDeviceUpgrade,
+  resumeSuspendedUpgrades,
+  onDeviceOnline,
+  deliverTaskDispatch,
+  verifyDeliverySignature,
+  computeUpgradeDigest,
+  emitDeviceAudit,
+  loadUpgradePolicy,
+  evaluateUpgradePolicy,
+  listSuspendedUpgrades,
+  getDeviceVersions,
+} from './ota';
+// 平台侧签名器——**本版不对外承诺**：任务书章四（第 152 行）「验签判定留主干，
+// 本版只出执行侧」，设备端只验签不签名，故 signDelivery 在设备侧生产代码零调用点
+// （仅单测与验收探针使用）。仓内经 ota 子路径仍可用（验收探针
+// playbook/acceptance-node-probes.js 走的是 engine/daemon/dist/ota/index.js），
+// 平台（发布）侧落地时再提回 @public。
+/* @internal */ export { signDelivery } from './ota';
+/* @public */ export type {
+  DeviceUpgradePayload,
+  DeviceDeployPayload,
+  DeviceTaskDispatchPayload,
+  DeviceSubscriptionOptions,
+  DeviceEventBusPort,
+  VersionManifest,
+  VersionManifestPusher,
+  UpgradeOutcome,
+} from './ota';
