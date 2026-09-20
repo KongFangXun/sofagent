@@ -387,6 +387,8 @@ sofagent-audit（v0.92+）是 TypeScript CLI，读取 git diff 和文件系统�
 
 **两个覆盖缺口（不是第 25、26 条规则）。** 24 条规则全部面向**变更内容**，按动作门的六维检查清单做覆盖扫描后，有两件事**现有判定面完全没有人管**：**凭证范围**（当前凭证是否为本任务的最小授权——A22 查「有没有提权」，查的是权限本身，缺的是权限与任务的匹配度）与**动作授权状态**（这个动作有没有走过该走的授权——审批链在审计面不可见）。缺口登记见 [ARCHITECTURE · 审计规则面的判定化边界](./docs/ARCHITECTURE.md#审计规则面的判定化边界24-条规则--判定层接管)。
 
+**两处缺口均已在仓内有归属，不另开出处。** **凭证范围**归口 [ARCHITECTURE · 权限四原则与零凭证沙箱](./docs/ARCHITECTURE.md#权限四原则与零凭证沙箱)第 1 条——**原则已在、判定未在**，且 v1.5.7 凭证隔离 Vault 的交付面（托管 / 轮换 / 吊销）**不含匹配度判定**，该缺口不随 v1.5.7 关闭；**动作授权状态**归口 [ROADMAP · 探索方向](./docs/ROADMAP.md#探索方向)的「**事前授权（mandate）补环**」——与该条描述的「缺事前环」是同一件事，其动手条件不变。
+
 ### AST 规则引擎 SSOT（8+2）
 
 > 官方 AST 规则引擎（`sofagent-ruleset-ast`，v1.3.9 交付）——10 条示范规则（8 条代码 AST + 2 条 OWASP 语义），与上面 24 条 git-diff 规则同管线。规则代码在 `engine/rules/src/ast/rules/`（注册表 `engine/rules/src/ast/rules/index.ts` 的 `builtinAstRules`），触发条件以各文件 `description` 字段为准。
