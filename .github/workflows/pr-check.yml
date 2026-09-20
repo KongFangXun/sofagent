@@ -120,6 +120,18 @@ jobs:
       - name: check-readme-parity.sh
         run: bash tools/check/check-readme-parity.sh
 
+      # ── v1.5.1 F6 接入：@public 导出的「写了没接」守卫 ──
+      # 门禁目的：engine/* 的 @public 导出若无人调用，此前只在本地 pre-push 跑，
+      #   而 PR 门禁主入口（本文件）**没有它**——实测本文件原有 19 道门禁里唯一漏接的一个。
+      #   故本批**只补这一道**，不动其余门禁的接线与行为。
+      # 判定口径（v1.5.1 J2/J3 已修）：扫描面 = engine/ ＋ tools/；剔除「符号定义行」；
+      #   SDK-face 白名单逐条自审「目标版本是否已到期」＋「符号是否为孤儿键」，任一成立即阻断。
+      # 依赖：纯 bash + node 内置（require('./package.json') 读版本）——无需 build、
+      #   无需 node_modules、无需额外 setup-node（与 check-action-pins.sh 同款）。
+      # 注：默认模式即阻断用；`--since <tag>` 由发版闸门另行传参，此处不传。
+      - name: check-unwired-exports.sh（@public 导出接线）
+        run: bash tools/check/check-unwired-exports.sh
+
   # v1.3.9（四）：public API 变更检测——@public 符号集变化必须 semver bump + CHANGELOG。
   # v1.4.7：装依赖跑（口径统一到 AST）——此前「不装依赖直接跑」会因无 typescript 静默
   # 回退正则解析，与基线/文档声称值的 AST 口径分歧（实测差 8 符号：2236 vs 2244）导致

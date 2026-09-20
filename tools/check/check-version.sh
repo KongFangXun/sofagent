@@ -210,17 +210,31 @@ rhythm_dump() {
 
 # ── 2. 检查 .ts 文件 const VERSION = 'X.Y'（动态扫描，不硬编码文件列表）
 echo -e "${BOLD}── [1/14] TypeScript 常量 ──${NC}"
-# 动态扫描 12 个子包目录（v1.1.0 多包结构；v1.4.8 修正：原注释误写「12 个」，实测曾为 11 项；
-#   v1.4.8 第 7 批 train 拆包后为 12 项 = 原 11 项 + train。train 含
-#   train-deliverable.ts 的 TRAIN_DELIVERABLE_GENERATOR_VERSION——不纳入会**丢失既有覆盖**。）
-# ⚠️ 残留：本处清单与 §9b（已由 rhythm.sync 驱动）仍是两处硬编码，未随本批收编（避免越界重构）。
-SCAN_DIRS=()
-for pkg in harness ontology eval core audit mcp orchestrator train daemon ab-test think evolve; do
-  PKG_SRC="${PROJECT_ROOT}/engine/${pkg}/src"
-  if [[ -d "${PKG_SRC}" ]]; then
-    SCAN_DIRS+=("${PKG_SRC}")
-  fi
+# 包目录派生（v1.5.1 F7：**消除硬编码包清单**）。
+#   旧实现是一张手写的 12 名清单（`for pkg in harness ontology … evolve`），实测与仓库**分叉**：
+#     · `harness` 已是死条目——`@sofagent/harness` 早已更名 `@sofagent/inject`，`engine/harness/src`
+#       不存在，循环内 `[[ -d … ]]` 把它**静默跳过**（既不报错也不计数）；
+#     · `inject` 与 `rules` 目录真实存在却**漏列** ⇒ 静默漏扫；
+#     · 净结果实为 11 项，而注释声称 12 项。
+#   ⇒ 这正是「拿着一张过时/不全的清单扫」的空转形态：**清单项数必须 == 实测存在的项数**。
+#   判据改为**结构性**（不再人工维护）：`engine/*/src` 存在即纳入。
+#   SSOT 关系：与 package.json `workspaces` 里 13 个单段 `engine/<pkg>` 模块包**同值**
+#     （`engine/umbrella` 是 npm 裸名总包、无 `src/` ⇒ 不计；`engine/hooks/…`、
+#      `dsh-plugins/*`、`openclaw-plugins/*` 为多段 workspace 路径 ⇒ 不经本单层遍历）。
+#   本清单同时供 [1/14]（.ts 常量）与 [2/14]（index.ts 版本引用）两节消费——一处派生、两处消费。
+PKG_DIRS=()
+for _pkg_dir in "${PROJECT_ROOT}"/engine/*/; do
+  if [[ -d "${_pkg_dir}src" ]]; then PKG_DIRS+=("${_pkg_dir%/}"); fi
 done
+# 守卫不空转：派生结果为空 ⇒ 判定面塌了（路径错/源码树消失）⇒ 必须 FAIL，不得当「无漂移」放行
+if [[ "${#PKG_DIRS[@]}" -eq 0 ]]; then
+  echo -e "  ${RED}✗ 包目录派生为空（${PROJECT_ROOT}/engine/*/src 均不存在）——判定面塌了，拒绝假绿${NC}"
+  ERRORS=$((ERRORS + 1))
+fi
+SCAN_DIRS=()
+if [[ "${#PKG_DIRS[@]}" -gt 0 ]]; then
+  for _pkg_dir in "${PKG_DIRS[@]}"; do SCAN_DIRS+=("${_pkg_dir}/src"); done
+fi
 while IFS= read -r ts; do
   [[ -f "${ts}" ]] || continue
   # 跳过归档目录（_archive 和 docs/archive）
@@ -241,14 +255,18 @@ while IFS= read -r ts; do
   fi
 done < <(grep -rl "const [A-Z_]*VERSION = '" \
   --include='*.ts' \
-  "${SCAN_DIRS[@]}" \
+  ${SCAN_DIRS[@]+"${SCAN_DIRS[@]}"} \
   2>/dev/null || true)
 echo ""
 
-# ── 3. 检查 index.ts vOLD 引用（13 子包遍历）────────────────
+# ── 3. 检查 index.ts vOLD 引用（子包遍历；v1.5.1 F7：与 [1/14] 共用同一份派生清单）──
 echo -e "${BOLD}── [2/14] index.ts 版本引用 ──${NC}"
-for pkg in harness ontology eval core audit mcp orchestrator train daemon ab-test think evolve; do
-  INDEX_TS="${PROJECT_ROOT}/engine/${pkg}/src/index.ts"
+# 旧实现此处是第二张**独立硬编码**的同一份 12 名清单（与 §1 同死条目、同漏项）——两处各自
+# 演化正是「同一职责两套实现」的又一实例。现改为消费 §1 派生的 `PKG_DIRS`（一处派生、
+# 两处消费），两节覆盖面对齐，不再可能一多一少。
+# 注：`${arr[@]+"${arr[@]}"}` 是 bash 3.2（macOS 自带）在 `set -u` 下展开空数组的唯一安全写法。
+for _pkg_dir in ${PKG_DIRS[@]+"${PKG_DIRS[@]}"}; do
+  INDEX_TS="${_pkg_dir}/src/index.ts"
   if [[ ! -f "${INDEX_TS}" ]]; then
     continue
   fi
@@ -504,9 +522,10 @@ echo ""
 # ── 9b. 检查 rhythm.sync 段内子包 package.json version 与 SSOT 一致（v1.4.8：清单由 SSOT 驱动）──
 # v1.4.8 第七章/第〇批：原**硬编码**包清单改为读 tools/check/dependency-direction.yml 的
 #   rhythm.sync 段生成清单——「同频」由隐式（全同频）改为**显式声明**，本处不再持有任何包清单。
-# 既有 bug 修正：原注释写「检查 12 个子包」，实际循环仅 11 项（harness ontology eval core audit
-#   mcp orchestrator daemon ab-test think evolve）——已随本批把该注释修正为真实值；
-#   v1.4.8 第 7 批 train 拆包后 §1/§2 的硬编码循环为 **12 项**（+ train）。
+# 既有 bug 修正：原注释写「检查 12 个子包」，实际循环仅 11 项（原清单里的旧包名目录不存在
+#   而被 `-d` 静默跳过，且漏列两个真实存在的包）——已随本批把该注释修正为真实值；
+#   v1.5.1 F7 起 §1/§2 **不再持有包清单**，改为从 `engine/*/src` 结构派生（实测 13 项），
+#   因此本节注释不再需要维护「循环项数」这个数字（它由文件系统决定，不可能再漂移）。
 #   rhythm.sync 现为 15 包 = 原 11 包 + rules（原漏登记）+ umbrella（第 13 个 engine 包）
 #   + engine/hooks/sofagent-load-chain（build 序列末位）+ train（第 7 批拆包），五者实测同为 SSOT 版本。
 # 覆盖不变量（rhythm ⊇ workspace 26 项）由 §9e 断言；清单声明了却不存在的包在此 fail-loud。
@@ -1133,10 +1152,39 @@ echo ""
 
 # ── F-08: ROADMAP 版本头描述 vs CHANGELOG 标题一致性（v1.4.9 P1-7 起 FAIL 级）──
 echo "=== 15. ROADMAP 版本头描述 vs CHANGELOG 标题一致性 ==="
-ROADMAP_HEADER=$(sed -n '4p' "${ROADMAP}" 2>/dev/null || echo "")
+# v1.5.1 J1：取值方式由「硬编码第 4 行」改为**按内容定位**。
+#   缺陷（实测）：ROADMAP 头部随版本迭加行（现为 L1 标题 / L3 图 / L5 引言 / L6 状态行
+#   / L7 描述行），`sed -n '4p'` 恒读到空行 ⇒ 恒走 else 分支 ⇒ **只打印 ⚠，既不
+#   ERRORS++ 也不 SKIPS++**（三数皆不动，在门禁汇总里表现为「这条检查不存在」）——
+#   一个 P1-7 起就自陈「由 WARN 升为 FAIL」的守卫长期空转。
+#   定位口径：「ROADMAP 版本头」= 头部引用块里**全部** `^> v<版本>` 行（现为 L6 状态行 +
+#   L7 描述行两行；历史格式为单行 `> vX.Y.Z · <版本名> · …`，版本名在与 CHANGELOG 标题
+#   可对账的独立 `·` 分段里）。原硬编码的 `4p` 命中的就是「版本名那一行」；现头部已增至
+#   7 行且版本名落在 L7，故必须按内容定位、不认行号。
+# v1.5.1 J1 二次修正（守卫不得空转，第二形态 = 「拿着一张不全的清单扫」）：
+#   首版改法取**首条** `^> v` 行 → 命中 L6（状态行 `> vX.Y.Z · 日期 · 状态 · 作者`，**无版本名**）；
+#   且原过滤器「段内含日期 或 含 →」判据过激，会把 `——治理模块`、`可见性与本体成熟：MCP 104→105 tools`
+#   两个真版本名分段一起整段丢弃 ⇒ 关键词只剩 [✅ 已发版, 孔放勋] ⇒ 与 CHANGELOG 标题零重合 ⇒ 恒红。
+#   现口径：**取全部 `^> v` 行的并集**，并**逐段剥掉非版本名结构**（版本号 / 日期 / 状态标注 /
+#   整对括号 / `。` 后的自指句 / `：` 之后的描述后缀）——「剥前缀而非丢段」；仅丢弃**仍含 `→` 的
+#   纯统计段**（`MCP 104→105`、`测试 …→…`、`acceptance …→…` 不是版本名，剥不掉只能丢）。
+ROADMAP_HEADER=$(grep -E '^> v[0-9]' "${ROADMAP}" 2>/dev/null | tr '\n' ' ' || true)
 if [[ -n "${ROADMAP_HEADER}" ]]; then
   # 提取 ROADMAP 版本头中的关键词（· 与 + 均为分隔段——v1.2.5 头部用 + 连接多个交付项）
-  ROADMAP_KEYWORDS=$(echo "${ROADMAP_HEADER}" | sed 's/[·+]/\n/g' | grep -vE '^[[:space:]]*(>?[[:space:]]*v[0-9]|规划|.*→.*|[0-9]{4}-[0-9]{2}-[0-9]{2})' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | grep -vE '^$' | head -8)
+  ROADMAP_KEYWORDS=$(grep -E '^> v[0-9]' "${ROADMAP}" 2>/dev/null \
+    | sed -E 's/^>[[:space:]]*//; s/^[vV][0-9]+(\.[0-9]+)*[[:space:]]*//' \
+    | sed -E 's/[（(][^（）()]*[）)]/ /g' \
+    | sed -E 's/[0-9]{4}-[0-9]{2}-[0-9]{2}//g' \
+    | sed -E 's/(✅|⏳|📋|🚧|🔜)[[:space:]]*//g' \
+    | sed -E 's/(已发版|已发布|已交付|待发版|待发布|规划中|排期中)[[:space:]]*·[^·+]*//g' \
+    | sed -E 's/(已发版|已发布|已交付|待发版|待发布|规划中|排期中)//g' \
+    | sed -E 's/。.*$//' \
+    | sed 's/[·+]/\n/g' \
+    | sed -E 's/^[[:space:]—–-]+//; s/[[:space:]]+$//' \
+    | sed -E 's/：.*$//' \
+    | grep -vE '→' \
+    | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' \
+    | grep -vE '^$' | head -8 || true)
   # 提取 CHANGELOG 当前版本标题
   # v1.2.5 起 CHANGELOG.md 改为纯目录索引格式（- **vX.Y.Z** — 摘要），旧格式 ### [vX.Y.Z] 已废弃
   CHANGELOG_TITLE=$(grep -m1 -E "^(- \*\*|### \[)v" "${PROJECT_ROOT}/CHANGELOG.md" 2>/dev/null || echo "")
@@ -1169,15 +1217,11 @@ if [[ -n "${ROADMAP_HEADER}" ]]; then
       break
     fi
   done <<< "${ROADMAP_KEYWORDS}"
-  if ${ROADMAP_WARN}; then
-    # 尝试更宽松匹配：取核心名词
-    for kw in "产品叙事" "USB" "A/B" "控制图" "BugFix"; do
-      if grep -qF "${kw}" <<< "${ROADMAP_HEADER}" && grep -qF "${kw}" <<< "${CHANGELOG_TITLE}"; then
-        ROADMAP_WARN=false
-        break
-      fi
-    done
-  fi
+  # v1.5.1 J1：此处原有「更宽松匹配」兜底——`for kw in "产品叙事" "USB" "A/B" "控制图" "BugFix"`，
+  #   只要该词同时出现在 ROADMAP 头部与 CHANGELOG 标题即判通过。它是**硬编码豁免白名单**：
+  #   一旦 ROADMAP 头部错版（比如挂着上一版名字「商业平台接口版」）而正文里恰好含 `控制图`、
+  #   CHANGELOG 当前标题也含 `控制图`，就会**用正文偶然词把错版判成通过** = 假绿。
+  #   实测该表在当前仓两边命中数均为 0（纯死代码，只贡献假绿面）。取值口径已修好，兜底无存在必要 ⇒ 删除。
   if ${ROADMAP_WARN}; then
     # v1.4.9 P1-7：由 WARN 升为 FAIL。本条早已能精确抓到 ROADMAP 版本头错版
     # （v1.4.8 头部长期挂着 v1.4.7 的版本名「商业平台接口版」），却只计 WARNING、
@@ -1186,7 +1230,7 @@ if [[ -n "${ROADMAP_HEADER}" ]]; then
     echo -e "  ${RED}❌ ROADMAP 版本头描述与 CHANGELOG 标题关键词重合度低（版本名疑似错版）${NC}"
     echo -e "    ${RED}ROADMAP:  ${ROADMAP_HEADER:0:80}...${NC}"
     echo -e "    ${RED}CHANGELOG: ${CHANGELOG_TITLE:0:80}${NC}"
-    echo -e "    修法：把 docs/ROADMAP.md L4 版本名改成与 CHANGELOG 当前版本标题一致（勿沿用上一版名字）"
+    echo -e "    修法：把 docs/ROADMAP.md 版本头描述行的版本名改成与 CHANGELOG 当前版本标题一致（勿沿用上一版名字）"
     ERRORS=$((ERRORS + 1))
   else
     echo -e "  ${GREEN}✓${NC} ROADMAP 版本头描述与 CHANGELOG 标题关键词重合"
@@ -1194,7 +1238,10 @@ if [[ -n "${ROADMAP_HEADER}" ]]; then
   fi
   fi # _s15_window_skip / 标题提取失败 / 正常比对 三分支收口
 else
-  echo -e "  ${YELLOW}⚠${NC} 无法读取 ROADMAP L4"
+  # v1.5.1 J1：取值失败 ⇒ fail-loud（对齐同脚本 §14b「守卫不空转：可判行数 == 0 ⇒ FAIL」）。
+  # 旧实现只打印 ⚠（不计 ERRORS / SKIPS / CHECKS）⇒ 守卫空转且汇总里不可见。
+  echo -e "  ${RED}✗ 无法从 ${ROADMAP} 按内容定位版本头描述行（无 '^> v<版本>' 行）——取值失败，判 FAIL（拒绝静默）${NC}"
+  ERRORS=$((ERRORS + 1))
 fi
 echo ""
 
@@ -1703,25 +1750,67 @@ fi
 # 是历史当时的正确状态）；窗口语义与 §27 同口径——开发态/白名单窗口内「待发版」合法
 # （降级跳过，计 SKIPS 由发版 SOP「SKIP 数逐条裁决」步骤裁定），仅已发版态真扫描。
 echo "=== 26. 活文档「待发版」残留（已发版态扫描） ==="
-if $F6_RELEASED && ! $F6_WINDOW; then
-  # 排除两类**合法**的「待发版」出现：a) 索引规则自身的说明文字（CHANGELOG 头部「…附「待发版」状态标注」）；
-  # b) 描述本检查项本身的文档。判据：只认**状态位语境**的命中——行首 emoji 前缀（⏳/📋）或行首分隔位。
-  _DOCS_HIT=$(grep -rlE "待发版" --include="*.md" "${PROJECT_ROOT}/docs" 2>/dev/null \
-    | grep -v "/changelog/" | grep -v "/archive/" \
-    | xargs -r grep -lE "^- | ^> |[|]" 2>/dev/null || true)   # 只认行首状态位语境（表格行/引用行/列表行）
+# 🔴 v1.5.1 I2（方向甲）：**入口条件删除待发版窗口白名单分支**。
+#   判据自洽问题（本条的真正根因）：白名单设立的理由是「下一版 devlog 里的『待发版』标注
+#   是合法的」——但本项的扫描范围**本就排除 `docs/changelog/`**（`grep -v "/changelog/"`），
+#   该理由对本项**完全不适用**；这个白名单是从 §27 复制口径时连带抄来的，对本项纯属冗余
+#   **且造成漏检**。实测后果：`docs/changelog/v1.5/` 下 v1.5.1–v1.5.5 五份规划 devlog 长期
+#   在位 ⇒ `F6_WINDOW` 恒为 true ⇒ 本项自引入起**从未真正执行过一次**（「装了但没通电的
+#   报警器」）。故入口条件只保留「已发版态」；窗口概念对本项不再适用。
+#   ⚠️ §25 / §27 的白名单逻辑**不动**——那两处的窗口语义是正确的。
+#   v1.5.1 J5 同批补强（词形 + 范围）：
+#     ② 词形覆盖发版态语义族：`待发版` / `待发布`（历史写法），并补 `规划中/排期中`——
+#        但后者**仅在与本版绑定**（行内含 SSOT 版本号）时才算残留（未来能力的规划项不是
+#        发版态残留，全量纳入会制造假红）。
+#     ③ 范围扩到**根目录活文档**（README.md / README.en.md / CHANGELOG.md）——A1/A2 恰在
+#        根 README，原范围只有 docs/ ⇒ 同族漏网。
+#   命中判据（同批必做 · 区分两种合法语义）：
+#     · 本版残留     —— 已发版，文字仍述**本版**为待发版           ⇒ 报红
+#     · 下一版陈述   —— 行内出现**非当前 SSOT 的版本号**（ROADMAP「下一版 v1.5.1」导航行、
+#                       版本规划表里的未来版本行）⇒ **不报红**
+#     · 提及而非使用 —— 词被「…」引用（索引规则说明行）⇒ 不报红
+if $F6_RELEASED; then
+  _I2_CAND=$(grep -rnE "待发版|待发布|规划中|排期中" --include="*.md" \
+      "${PROJECT_ROOT}/docs" "${PROJECT_ROOT}/README.md" \
+      "${PROJECT_ROOT}/README.en.md" "${PROJECT_ROOT}/CHANGELOG.md" 2>/dev/null \
+    | grep -v "/changelog/" | grep -v "/archive/" || true)
+  _I2_HITS=""
+  while IFS= read -r _ln; do
+    [[ -z "${_ln}" ]] && continue
+    _rest="${_ln#*:}"; _body="${_rest#*:}"   # 剥掉 `文件:` 与 `行号:` 前缀
+    # ① 只认**状态位语境**的行（列表行 / 引用行 / 表格行）——正文散句里的字样不计
+    printf '%s' "${_body}" | grep -qE '^[[:space:]]*(-|>|\|)' || continue
+    # ② 剔除「…」引用串后再判：词被引用（提及）≠ 词被使用（状态标注本身）
+    _bare=$(printf '%s' "${_body}" | sed 's/「[^」]*」//g')
+    printf '%s' "${_bare}" | grep -qE '待发版|待发布|规划中|排期中' || continue
+    # ③ 合法「下一版陈述」：行内出现非当前 SSOT 的版本号 ⇒ 描述的是别的版本
+    _other=false
+    for _v in $(printf '%s' "${_body}" | grep -oE 'v?[0-9]+\.[0-9]+(\.[0-9]+)?' | tr -d 'v'); do
+      case "${_v}" in
+        "${SSOT_VERSION}"|"${SSOT_2SEG}") ;;
+        *) _other=true ;;
+      esac
+    done
+    ${_other} && continue
+    # ④ 「规划中/排期中」单独触发时，须与本版绑定（行内含 SSOT 版本号）**且**行内未声明
+    #    本版已发版——否则是「本版已发版 + 其他条目排期」的混合状态行，不是发版态残留
+    #    （全量纳入「规划中」会制造假红；未来能力的规划项同样不是残留）
+    if ! printf '%s' "${_bare}" | grep -qE '待发版|待发布'; then
+      printf '%s' "${_body}" | grep -qE "v${SSOT_VERSION}|v${SSOT_2SEG}" || continue
+      printf '%s' "${_bare}" | grep -qE '已发版|已发布|已交付' && continue
+    fi
+    _I2_HITS="${_I2_HITS}${_ln}"$'\n'
+  done <<< "${_I2_CAND}"
   _STALE_ROOT=$(grep -nE "^- \*\*v[0-9.]+\*\* *— *(⏳|📋)? *待发版" "${PROJECT_ROOT}/CHANGELOG.md" 2>/dev/null || true)
-  if [ -n "${_DOCS_HIT}${_STALE_ROOT}" ]; then
+  if [ -n "${_I2_HITS}${_STALE_ROOT}" ]; then
     echo -e "  ${RED}✗${NC} 活文档仍含「待发版」（发版后应已翻转为「已发版」）："
-    printf '%s\n' ${_DOCS_HIT} ${_STALE_ROOT} | sed 's/^/      /'
+    # 逐条引用（`${var}` 必须带引号：命中行含空格，裸展开会被 word-split 打散）
+    printf '%s' "${_I2_HITS}${_STALE_ROOT}" | sed '/^$/d; s/^/      /'
     ERRORS=$((ERRORS + 1))
   else
     echo -e "  ${GREEN}✓${NC} 已发版态（${F6_WHY}），活文档无「待发版」残留（changelog/archive 的历史标注不计）"
     CHECKS=$((CHECKS + 1))
   fi
-elif $F6_RELEASED; then
-  echo -e "  ${YELLOW}⏭️${NC} 待发版窗口态：v${F6_NEXT_PATCH} 开发日志在位——活文档「待发版」为合法状态，跳过（与 §27 白名单同口径）"
-  SKIPS=$((SKIPS + 1))
-  CHECKS=$((CHECKS + 1))
 else
   echo -e "  ${YELLOW}⏭️${NC} 开发态（tag/npm 均未达 v${SSOT_VERSION}）——活文档「待发版」为 bump→tag 间合法中间态，跳过（§27 同口径）"
   SKIPS=$((SKIPS + 1))
