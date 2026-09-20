@@ -682,8 +682,8 @@ Palantir Foundry 10 年迭代收敛出 Ontology 的 5 块构建块——**Object
 
 AI 从「程序」（单一模型）走向「协议」（多模型组合）是 Scaling Law 资源天花板的必然结果。两个对 sofagent 有直接影响的判断：
 
-1. **智能密度提升**——小模型与大模型能力差距从 2 年缩到 1 年甚至半年。这印证 sofagent v3.x 分层模型架构的可行性（本地 7B 执行 workflow + 本地 0.5B 跑管道层）：小模型够用时，本地推理的成本/隐私优势才真正成立。
-2. **运行时动态路由**——推理框架自动化后，runtime 动态把请求路由到最优模型组合。与 sofagent model-router（敏感度×复杂度四档路由）同构：public/internal 走云端，restricted/confidential 走本地，confidential 超复杂阻断。
+1. **智能密度提升**——小模型与大模型能力差距从 2 年缩到 1 年甚至半年。这印证 sofagent 分层模型架构的可行性（本地档执行 workflow + 本地管道档跑固定管道）：小模型够用时，本地推理的成本/隐私优势才真正成立。
+2. **运行时动态路由**——推理框架自动化后，runtime 动态把请求路由到最优模型组合。与 sofagent model-router 同构（敏感度 × 复杂度路由：云端两档 / 本地两档 / 判定档 / 拦截出口）：public/internal 走云端，restricted/confidential 走本地，confidential 超复杂阻断。
 
 > 💡 **self-recording improvement**：模型协作产生 trace → 用 trace 训练单模型 → 个体变强 → 增强协作边界。与 sofagent 进化能力同源：Dream Cycle 从 think.md 派生 knowledge/（Ledger→Views 单向），进化闭环用 Benchmark 分数驱动经验层优化——都是「把执行经验沉淀回个体」。
 
