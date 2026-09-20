@@ -278,6 +278,13 @@ describe('第三章 · 三类异常在 decision-log 中可区分', () => {
     expect(ANOMALY_DECISION_KIND.retryable).toBe('FALLBACK_DEGRADE');
     expect(ANOMALY_DECISION_KIND['needs-human']).toBe('ESCALATE_REPORT');
     expect(ANOMALY_DECISION_KIND['needs-rollback']).toBe('EVOLUTION');
+
+    // ⑤ category 不得乱标——五分类（route/select/skip/retry/escalate）里**没有 rollback 档**，
+    //    故 needs-rollback 一律不传 category。原实现把它落成 'retry'，读 decision-log 的人
+    //    会以为这条异常在重试，而它其实该走 snapshot_restore。缺失比标错诚实。
+    expect(three[0]!.category).toBe('retry');
+    expect(three[1]!.category).toBe('escalate');
+    expect(three[2]!.category).toBeUndefined();
     expect(Object.values(ANOMALY_WHY_TAG)).toEqual(['retryable', 'needs-human', 'needs-rollback']);
   });
 });

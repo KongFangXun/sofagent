@@ -309,6 +309,36 @@ workflow:
     expect(bus.listDeliveries({ eventId: replayed.event.id }).some((d) => d.kind === 'REPLAYED')).toBe(true);
   });
 
+  it('非 retryable 异常类别的死信：通用重放必须被拒，显式 force 才放行', async () => {
+    const bus = makeBus();
+    // 异常总线写入的死信带 anomalyClass——needs-human / needs-rollback 的正确处置分别是
+    // HITL 审批与 snapshot_restore，而不是「再跑一次执行链」。
+    const id = bus.sendToDeadLetter(
+      {
+        id: 'evt-human-1',
+        type: EVENT_TYPES.WEBHOOK_IM,
+        source: 'webhook',
+        ts: new Date().toISOString(),
+        payload: {},
+        correlationId: 'evt-human-1',
+      },
+      { error: '凭证失效', stopReason: 'failed', attempts: 1, anomalyClass: 'needs-human' },
+    );
+    // 关键前提：该类的 retryable 为 true（此标志只由 stop_reason 派生、不看 anomalyClass）
+    // ⇒「批量重放所有 retryable 死信」这种将来很自然的写法会把它静默放回执行链。
+    expect(bus.getDeadLetter(id)!.retryable).toBe(true);
+
+    const refused = await bus.replayDeadLetter(id);
+    expect(refused.delivered).toBe(false);
+    expect(refused.error).toContain('needs-human');
+    expect(bus.getDeadLetter(id)!.replayCount).toBe(0); // 被拒时不得留重放痕
+
+    bus.subscribe(EVENT_TYPES.WEBHOOK_IM, async () => {});
+    const forced = await bus.replayDeadLetter(id, { force: true });
+    expect(forced.delivered).toBe(true);
+    expect(bus.getDeadLetter(id)!.replayCount).toBe(1);
+  });
+
   it('不可重试错误（auth）直接进死信且标记不可重试', async () => {
     const bus = makeBus();
     const router = new EventRouter({

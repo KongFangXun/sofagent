@@ -358,7 +358,15 @@ export class AnomalyBus {
           input.event?.correlationId ??
           `anomaly-${input.nodeId ?? input.workflowId ?? 'unknown'}`,
         kind,
-        category: anomalyClass === 'needs-human' ? 'escalate' : 'retry',
+        // category 是五分类闭合枚举（route/select/skip/retry/escalate），**没有 rollback 档**。
+        //   故 needs-rollback 一律**不传** category——原实现把它落成 'retry'，读 decision-log
+        //   的人会以为这条异常在重试，而它的正确处置是 snapshot_restore。category 本身可选
+        //   （不传即无此字段，向后兼容），缺失比标错诚实。
+        ...(anomalyClass === 'needs-human'
+          ? { category: 'escalate' as const }
+          : anomalyClass === 'retryable'
+            ? { category: 'retry' as const }
+            : {}),
         moment: 'ATTRIBUTION',
         why: {
           text: `[异常总线] ${anomalyClass}：${target} 失败（stop_reason=${stopReason}）：${errorText}`,

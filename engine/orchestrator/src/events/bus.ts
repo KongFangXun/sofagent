@@ -455,7 +455,7 @@ export class EventBus {
    * @param id 死信 id
    * @returns 重放投递结果（死信不存在时 delivered=false + error）
    */
-  async replayDeadLetter(id: string): Promise<EventPublishResult> {
+  async replayDeadLetter(id: string, opts: { force?: boolean } = {}): Promise<EventPublishResult> {
     const entry = this.getDeadLetter(id);
     if (!entry) {
       return {
@@ -471,6 +471,23 @@ export class EventBus {
         subscriberCount: 0,
         attempts: 0,
         error: `死信 ${id} 不存在`,
+      };
+    }
+    // 异常总线写下的死信带 `anomalyClass`。只有 retryable 类才该被「通用重放」放行：
+    //   needs-human 的正确处置是人工审批（HITL 队列），needs-rollback 是 snapshot_restore；
+    //   而这两类死信的 `retryable` 标志为 true（该标志只由 stop_reason 派生，**不看 anomalyClass**），
+    //   于是「批量重放所有 retryable 死信」这种将来很自然的写法会把它们静默放回执行链。
+    //   故此处把「误放」从默认行为改成需人确认的动作：非 retryable 类必须显式 force。
+    if (!opts.force && entry.anomalyClass !== undefined && entry.anomalyClass !== 'retryable') {
+      return {
+        event: entry.event,
+        delivered: false,
+        subscriberCount: 0,
+        attempts: entry.attempts,
+        error:
+          `死信 ${id} 的异常类别为 ${entry.anomalyClass}（非 retryable）——通用重放会把「需人工/需回滚」的异常` +
+          `静默放回执行链。确需重放请显式传 { force: true }；否则走对应处置：needs-human → HITL 审批，` +
+          `needs-rollback → snapshot_restore`,
       };
     }
     const attempt = entry.attempts + 1;

@@ -510,7 +510,18 @@ export function verifyChain(
       segs.push(`段内 ${linkMissing.length} 条 prevHash 缺失或为 unknown，链链接不可复验（索引: ${linkMissing.join(',')}）；请运行 sofagent doctor 与 verify 排查链完整性`);
     }
     if (drift.length > 0) {
-      segs.push(`因 ~/.sofagent-key 或环境指纹漂移无法复验（索引: ${drift.join(',')}），属历史证据不可复验；如近期重装/换机，请核对密钥轮换`);
+      // ⚠️ prevHash 不匹配有两种成因，**从这一个判据里区分不出来**，故文案必须同时列出：
+      //   ① 环境指纹漂移（换机 / 重装 / 密钥轮换 / hostname 或 git 路径变化）——历史证据不可复验；
+      //   ② 该条目**之前的留痕缺行或损坏**——坏行被读取方跳过、或有人手工删改过中间行；
+      //      此时代替它参与哈希计算的是更早的一条，算出的 expectedPrevHash 自然对不上。
+      //   只写①会把「链中段断裂」指向「去核对密钥轮换」，查错方向。实测：把链中段任意一条
+      //   故意损坏后，本判据给出的 reason 与密钥漂移**完全相同**（v2-prevhash-drift）。
+      segs.push(
+        `段内 ${drift.length} 条 prevHash 不匹配（索引: ${drift.join(',')}）——两种成因不可由此区分：` +
+          `① ~/.sofagent-key 或环境指纹漂移（换机/重装/密钥轮换）属历史证据不可复验；` +
+          `② 该条目之前的留痕缺行或损坏（坏行被跳过或中间行被删改）属链中段断裂。` +
+          `请一并核对密钥轮换**与**留痕完整性（sofagent doctor + verify）`,
+      );
     }
     return {
       status: 'unverifiable',
