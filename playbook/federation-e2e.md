@@ -1,6 +1,6 @@
 # sofagent 联邦查询跨进程 E2E 测试
 
-验证 `@sofagent/daemon` 联邦查询（v1.1.8 引入）在**真实跨进程**场景下的完整性。补现有单测（`federation.test.ts`，同进程 mock channel 直投）未覆盖的缺口。
+验证 `@sofagent/daemon` 联邦查询在**真实跨进程**场景下的完整性。补现有单测（`federation.test.ts`，同进程 mock channel 直投）未覆盖的缺口。
 
 > 本 E2E 已被 acceptance-test.sh **场景 320** 纳入验收体系，每次发版验收自动运行。
 

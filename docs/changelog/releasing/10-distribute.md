@@ -187,7 +187,7 @@ done
 
 ---
 
-## 步骤四：npm 渠道门面检查（每版必做 · v1.4.6 拍板固化） ☐
+## 步骤四：npm 渠道门面检查（每版必做） ☐
 
 > **定位**：npm 是实测主分发渠道（`@sofagent/audit` 月下载 4848 vs 43 star，113:1），但门面投入曾全部压在 GitHub——渠道门面错配（v1.4.5 审查实证）。本步骤每版分发时固定巡检 npm / GitHub / 官网三个「被找到」入口。仓内数字断言（description 工具数/插件数/homepage https）由 `bash tools/check/check-storefront.sh` 守护，此处补齐它不覆盖的面：
 
@@ -199,9 +199,9 @@ npm view @sofagent/audit readme | head -20
 # 3. GitHub description/topics 品类词（搜索流量入口；拍板口径：可搜索品类词前置，自造词殿后）
 gh repo view --json description,repositoryTopics -q '.description, .repositoryTopics[].name'
 # 4. 官网门面（源码不在本仓 = 仓内门禁盲区）：文档链接可达性人工核查
-#    （v1.4.6 审查实证 3 链接 404：文档已下沉 docs/、FDE.md 实为 GUIDE.md）
+#    （3 链接 404：文档已下沉 docs/、FDE.md 实为 GUIDE.md）
 curl -sI https://sofagent.ai | head -1
 ```
 
-- **裸名状态（v1.4.6 起总包正式态）**：裸名 `sofagent` 升级为聚合安装入口（`engine/umbrella/`，bin `sofagent` 薄转发 @sofagent/audit CLI + dependencies 四功能包 audit/mcp/orchestrator/daemon）——`npm i -g sofagent` 一条命令装齐全功能，与 install.sh 等效。前态 `0.0.1` 占位包（2026-09-07 防抢注壳）无需 unpublish，总包随主线跳版发布后 latest 自动指向本版。每版 publish 后做一次直觉安装冒烟：`npm i -g sofagent` → `sofagent --help` 可跑 → `npm r -g sofagent` 还原。
-- **官网改版是仓外动作**：官网源码不在本仓，本步骤只能「发现」不能「修复」——发现 404 / 口径漂移后转项目负责人处理仓外源码（v1.4.6 拍板：短期可先下掉官网 about 中失效的描述段，止血优于留死链）。
+- **裸名状态（v1.4.6 起总包正式态）**：裸名 `sofagent` 升级为聚合安装入口（`engine/umbrella/`，bin `sofagent` 薄转发 @sofagent/audit CLI + dependencies 四功能包 audit/mcp/orchestrator/daemon）——`npm i -g sofagent` 一条命令装齐全功能，与 install.sh 等效。前态 `0.0.1` 占位包（防抢注壳）无需 unpublish，总包随主线跳版发布后 latest 自动指向本版。每版 publish 后做一次直觉安装冒烟：`npm i -g sofagent` → `sofagent --help` 可跑 → `npm r -g sofagent` 还原。
+- **官网改版是仓外动作**：官网源码不在本仓，本步骤只能「发现」不能「修复」——发现 404 / 口径漂移后转项目负责人处理仓外源码（短期可先下掉官网 about 中失效的描述段，止血优于留死链）。

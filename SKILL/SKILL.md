@@ -194,7 +194,7 @@ solves:
 | PR 协同（3） | `pr_submit` `pr_review` `pr_merge`（合并强制 merge_criteria，未过走 HITL） |
 | 后训流水线（16） | `model_register` `model_switch`（灰度）`model_unregister`（模型退役）`train_submit` `train_budget`（超预算等人审）`train_doctor`（环境体检）`train_dryrun`（提交前预检）`train_report`（训练报告）`train_status`（进度查询）`train_list`（任务列表）`train_diagnose`（失败诊断）`corpus_export`（训练语料导出三件套）`train_serve`（推理服务启停）`train_compliance`（合规扫描闸门）`train_deliverable`（FDE 交付包）`train_cloud`（云 VM 执行面） |
 | 验收（2） | `define_acceptance` `check_acceptance` |
-| 运维观测（17） | `health_check` `snapshot_list` `snapshot_restore`（强制人审）`worklog_query` `cost_query` `daemon_status` `contribution_query` `device_register` `device_list`（G9 设备注册面，v1.4.9）`device_data_query` `device_data_push`（G10/G11 设备数据面，v1.4.9）`connector_register` `connector_list`（G5b 连接器注册面，v1.4.9）`workflow_export` `workflow_import`（G1 模板导出导入+血缘，v1.4.9）`router_session_push`（T7 过站 session 承接面，v1.4.9 批 5）`trace_reconcile`（跨层证据对账：trace / diff / logs 三源四态 + 一致率，v1.5.0） |
+| 运维观测（17） | `health_check` `snapshot_list` `snapshot_restore`（强制人审）`worklog_query` `cost_query` `daemon_status` `contribution_query` `device_register` `device_list`（G9 设备注册面）`device_data_query` `device_data_push`（G10/G11 设备数据面）`connector_register` `connector_list`（G5b 连接器注册面）`workflow_export` `workflow_import`（G1 模板导出导入+血缘）`router_session_push`（T7 过站 session 承接面）`trace_reconcile`（跨层证据对账：trace / diff / logs 三源四态 + 一致率） |
 | 浏览器（4） | `playwright_navigate` `playwright_screenshot` |
 
 > 📌 **后训流水线的能力边界**：本仓负责**编排与治理**——任务提交 / 预算门禁 / 环境体检 / 提交前预检 / 失败诊断 / 语料导出 / 合规闸门 / 交付包 / 模型注册与灰度 / 推理服务；**训练本身在外部执行环境进行，本仓不实现训练器**。

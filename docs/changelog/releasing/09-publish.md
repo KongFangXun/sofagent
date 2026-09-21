@@ -99,12 +99,12 @@ bash tools/check/check-test-count.sh --quiet
 bash tools/check/check-storefront.sh
 # 期望 FAIL=0。FAIL = 仓外门面漂移，gh repo edit 修正后重跑
 
-# ── 步骤二·补：SKIP / 降级跳过 数逐条裁决（v1.4.9 G-2② 新增 · **必做**）──
+# ── 步骤二·补：SKIP / 降级跳过 数逐条裁决（**必做**）──
 # 为什么要有这一步（实测根因，不是形式主义）：「门禁绿 = 增量为零 ≠ 债清零」——
-#   ① 锚定串不命中即「天然通过」（v1.4.9 G-1 已修）
+#   ① 锚定串不命中即「天然通过」
 #   ② 文件级前置过滤静默跳过（check-silent-catch：617 个 .ts 跳过 167 个，其中 83 个含 177 处 catch 零覆盖）
 #   ③ 存量基线豁免（silent-catch-baseline.json 304 条）
-#   ④ 已知告警只计 WARNING 即放行——v1.4.8 发版批里 check-version §15 已精确抓到 ROADMAP 版本头
+#   ④ 已知告警只计 WARNING 即放行——check-version §15 已精确抓到 ROADMAP 版本头
 #      描述错版，却因「非 --strict」随发版出门（= P1-7 根因）。
 # 共性：跳过是看不见的。故每个门禁结尾强制打印机器可读覆盖度行，本步逐条裁定并留档。
 for c in check-docs check-version check-storefront check-readme-parity; do
@@ -124,7 +124,7 @@ grep -h '^\[check:coverage\]' /tmp/check-*.log
 #   合法窗口态 → 注明「随 push+tag+publish 自然消解」或「下版 vX.Y.Z 收敛」
 #   已知盲区   → 注明收敛计划版本（例：check-silent-catch 前置过滤 167 文件，登记表 tools/check/silent-catch-prefilter-exempt.json）
 
-# ── 发版窗口 --strict 默认开（v1.4.9 G-2③）──
+# ── 发版窗口 --strict 默认开 ──
 # pre-push-check.sh 第 2 步在**发版窗口**（tag v{SSOT} 在位 + 下一 patch 版开发日志在位）
 # 自动给 check-version 加 --strict：warning 也阻断（exit 2 → FAIL）。
 # 窗口外维持旧行为（warning 只提示），避免把非发版期的合法中间态告警变成日常推阻。
@@ -396,7 +396,7 @@ fi
 
 | # | artifact | 核验命令 | 期望 |
 |---|----------|---------|------|
-| 1 | git tag（远端存在且指向发版 commit） | 🔴 annotated tag 对账口径（v1.4.9 实锤）：`gh api git/refs/tags` 返回的是 **tag object SHA** ≠ commit SHA，直接与 `git rev-parse vX.Y.Z^{commit}` 比必不等——正确对账二选一：① `gh api refs/tags` 的 sha == `git rev-parse vX.Y.Z`（本地 tag object SHA）② `gh api git/tags/<object-sha>` 二段查 `.object.sha` == `git rev-parse vX.Y.Z^{commit}` | 两 SHA 一致（同口径） |
+| 1 | git tag（远端存在且指向发版 commit） | 🔴 annotated tag 对账口径：`gh api git/refs/tags` 返回的是 **tag object SHA** ≠ commit SHA，直接与 `git rev-parse vX.Y.Z^{commit}` 比必不等——正确对账二选一：① `gh api refs/tags` 的 sha == `git rev-parse vX.Y.Z`（本地 tag object SHA）② `gh api git/tags/<object-sha>` 二段查 `.object.sha` == `git rev-parse vX.Y.Z^{commit}` | 两 SHA 一致（同口径） |
 | 2 | GitHub Release（title + body 可达） | `gh release view vX.Y.Z --json name,isDraft` | name 匹配、isDraft=false |
 | 3 | npm 15 包（audit + mcp 自动，其余 13 手动后） | `for p in audit mcp core daemon eval harness ontology orchestrator train rules evolve think ab-test; do npm view @sofagent/$p version --prefer-online; done` + `npm view @sofagent/load-chain version --prefer-online` + `npm view sofagent version --prefer-online` | 15 项全部 = 本版号（🔴 必加 --prefer-online——裸查询吃缓存会误报漏发） |
 | 4 | 安装入口（README 双语 + bootstrap.sh 的 tag URL 可达） | `grep -rn "refs/tags/v" README.md README.en.md bootstrap.sh` + 逐条 `curl -sI` HTTP 200 | 三处 = 本版 tag 且真实可达 |
@@ -544,7 +544,7 @@ npm view @sofagent/mcp@vX.Y.Z version --prefer-online    # 期望返回版本号
 #    收录延迟可达 3+ 分钟，对账窗口预留足够，勿据一次裸查询判定失败。
 # 🔴 publish 日志含 `+@sofagent/<pkg>@<ver>` 行 = 已成功入队（npm CLI 的发布确认标记）——
 #    propagation 延迟期（30s-5min 波动）view 查不到 ≠ 发布失败。判定序：先查日志有无入队行，
-#    有则等 3 分钟再补查，连续 ≥6 轮仍查不到才升级人工处理（v1.4.9 实锤：orchestrator/train/
+#    有则等 3 分钟再补查，连续 ≥6 轮仍查不到才升级人工处理（orchestrator/train/
 #    load-chain 三包 6 轮超时全虚惊，日志均含入队行，等后全绿）。
 TARGET_VER=$(node -p "require('./package.json').version")
 for pkg in core daemon eval inject ontology orchestrator train rules evolve think ab-test; do
@@ -590,7 +590,7 @@ LIVE=$(npm view @sofagent/load-chain version 2>/dev/null || true)
 # 裸名总包 sofagent（engine/umbrella/——npm 聚合安装入口，包名无 scope 不进上方循环；15 包口径之 15）
 # bin = `sofagent` 薄转发到 @sofagent/audit CLI；dependencies 四功能包（audit/mcp/orchestrator/daemon）
 # 版本随 SSOT 同步（bump-version.sh 步骤 2c 自动覆盖 engine/umbrella/package.json）。
-# 0.0.1 占位包（v1.4.6 前的防抢注壳）无需 unpublish——总包跳版发布后 latest 自动指向本版。
+# 0.0.1 占位包（防抢注壳）无需 unpublish——总包跳版发布后 latest 自动指向本版。
 ( cd "engine/umbrella" && npm publish --access public ) > /tmp/publish-umbrella.log 2>&1
 RC=$?
 if [ $RC -ne 0 ] && grep -q "E409\|previously staged" /tmp/publish-umbrella.log; then

@@ -125,11 +125,11 @@
 > 🔴 **v1.4.8 补充两条 body 卫生要素**：① devlog 的 Release Notes 段**顶部与尾部各有一段元说明**（顶部「本节存在性 = 阶段六定稿必备项…」/ 尾部「🔗 尾链：本段与 GitHub Release body 同源…」）——**两段都必须剥掉**，只剥顶部会漏（v1.4.8 实锤）；② body 必须含指向本版 changelog 的**相对链接**（`](./docs/changelog/vX.Y/vX.Y.Z.md)`），SOP 步骤一以 `contains("](./docs/changelog/")` 断言——v1.4.7 有、v1.4.8 首版漏，靠步骤一查证才发现。
 > 🔴 **铁律：发布时禁止把 changelog 内嵌段直接复制当 GitHub body**——本段是格式规范源头，GitHub body 由 [09-publish.md 三道工序](./09-publish.md) 生成；两处同源同构，但生成动作在阶段九，此段只定义标准。
 
-### 格式规范（对照 v1.3.7 逐要素）
+### 格式规范
 
 **① Title（release name）**：`vX.Y.Z — {emoji 主题短语}`
-- 1-2 个核心交付的 emoji + 名词短语（v1.3.7：`v1.3.7 — 🏰 SubAgent 完整沙箱与场景驱动权限`）
-- 主题短语与 body 首行定位句呼应（v1.3.7：title「沙箱与权限」↔ 首行「第一次在真正隔离的环境里」）
+- 1-2 个核心交付的 emoji + 名词短语（示例：`vX.Y.Z — 🏰 SubAgent 完整沙箱与场景驱动权限`）
+- 主题短语与 body 首行定位句呼应（title「沙箱与权限」↔ 首行「第一次在真正隔离的环境里」）
 - ❌ 禁止裸版本号——历版均为「版本号 — 主题」惯例
 
 > 🔴 **质量表数字的三条硬规则**（v1.4.8 事故沉淀）：
@@ -140,7 +140,7 @@
 > 3. **禁止千分位**——写 `4429` 不写 `4,429`（与既有各版体例一致）；
 > 4. **数字代表发版批实测终值**，发布后复跑若有差异，**另记「发布后复跑记录」，不回头改写**。
 
-**② Body 五要素**（v1.3.7 逐项，缺一不可）：
+**② Body 五要素**（逐项，缺一不可）：
 
 ```
 {首行定位句：一句话故事，承接上版讲本版主线 + 1 个类比锚点。无标题行，直接开始}
@@ -183,7 +183,7 @@
 - **BugFix 段在核心变更最末**（不独立成 H2）——`### 🔒 BugFix（上版遗留）`逐字固定（N10），用 `-` 列表
 - **与 changelog 内嵌「Release Notes」段的关系**：GitHub Release body = 面向 GitHub 用户（精炼版）；changelog 文件末尾的 `## Release Notes · vX.Y.Z` = 面向深度读者（含破坏性变更细节）。两者内容可重叠但读者层不同——body 偏精炼，changelog 段偏完整
 
-### Release Notes 体例铁律（以 v1.3.7 为标准校准，仅约束此段与 GitHub body）
+### Release Notes 体例铁律（仅约束此段与 GitHub body）
 
 | # | 铁律 | 说明 |
 |---|------|------|
@@ -238,8 +238,8 @@
 | 二 | | **CHANGELOG 索引**：根 CHANGELOG.md 新增本版本索引条目（目录非详情） | 索引条目存在 |
 | 三 | | **发版日期同步**（详见下方脚本） | `bash tools/check/check-version.sh` 全绿 |
 | 四 | | **测试数一致性**：`bash tools/check/check-test-count.sh --quiet` 确认声称数与实际一致。**禁止手动报数——必须跑脚本** | 全绿 |
-| 五 | | **ROADMAP 同步**（详见下方「ROADMAP 同步手册」）：本版移出规划表→进迭代表；探索方向表清理已交付/已排期条目；版本号+日期更新；迭代表瘦身（老版本合并）；发版后体检。🔴 **时序口径（v1.4.7 定谳）**：ROADMAP 多处依赖新版本号（「现在在哪」标题受 check-version §10c 约束必须 == SSOT），而 SSOT bump 归**阶段九步骤五**——故五步同步**整体挂账 bump 后同批执行**；阶段六只做版本无关核对（规划表本版行内容准确性 / 探索方向清理判断），标题与顶栏改版本号会撞 check-version FAIL | ROADMAP 更新 |
-| 六 | | **全项目版本号扫描**：所有 package.json + 文档头版本号一致。🔴 **bump 中断恢复清单**：`bump-version.sh` 可能 EXIT 137 中断（后置步骤被杀），核心版本号已改但部分位置残留——**bump 后必须跑 check-version.sh 抓残留，命中后按以下清单补漏**：① 全量扫 `package.json`（根 + engine/* + FDE + FORGE）的 **4 个 section**（dependencies/devDependencies/peerDependencies/**optionalDependencies**——脚本只扫 3 个，optional 段易漏）② `action.yml` 的 npm 包@版本格式（`@sofagent/audit@X.Y.Z`，正则 `@sofagent/[a-z-]*@[0-9]`）③ 文档头日期批量同步（bump 只改版本不改日期）④ WIKI 状态表/尾部维护规则 + FORGE/FDE 文档日期 ⑤ package-lock.json version 字段 ⑥ **文档头发版状态标记**——bump 脚本机械沿用上版措辞，把「✅ 已发版」带进待发版窗口（7 文档头实锤）；bump 后全扫 `2026-09-17.*已发版`（或当前日期）对齐 v1.4.7 惯例「⏳ 待发版（本批更新 <当日>）」，发版时随三件套翻牌 | check-version.sh 全绿 |
+| 五 | | **ROADMAP 同步**（详见下方「ROADMAP 同步手册」）：本版移出规划表→进迭代表；探索方向表清理已交付/已排期条目；版本号+日期更新；迭代表瘦身（老版本合并）；发版后体检。🔴 **时序口径**：ROADMAP 多处依赖新版本号（「现在在哪」标题受 check-version §10c 约束必须 == SSOT），而 SSOT bump 归**阶段九步骤五**——故五步同步**整体挂账 bump 后同批执行**；阶段六只做版本无关核对（规划表本版行内容准确性 / 探索方向清理判断），标题与顶栏改版本号会撞 check-version FAIL | ROADMAP 更新 |
+| 六 | | **全项目版本号扫描**：所有 package.json + 文档头版本号一致。🔴 **bump 中断恢复清单**：`bump-version.sh` 可能 EXIT 137 中断（后置步骤被杀），核心版本号已改但部分位置残留——**bump 后必须跑 check-version.sh 抓残留，命中后按以下清单补漏**：① 全量扫 `package.json`（根 + engine/* + FDE + FORGE）的 **4 个 section**（dependencies/devDependencies/peerDependencies/**optionalDependencies**——脚本只扫 3 个，optional 段易漏）② `action.yml` 的 npm 包@版本格式（`@sofagent/audit@X.Y.Z`，正则 `@sofagent/[a-z-]*@[0-9]`）③ 文档头日期批量同步（bump 只改版本不改日期）④ WIKI 状态表/尾部维护规则 + FORGE/FDE 文档日期 ⑤ package-lock.json version 字段 ⑥ **文档头发版状态标记**——bump 脚本机械沿用上版措辞，把「✅ 已发版」带进待发版窗口（7 文档头实锤）；bump 后全扫 `2026-09-17.*已发版`（或当前日期）对齐惯例「⏳ 待发版（本批更新 <当日>）」，发版时随三件套翻牌 | check-version.sh 全绿 |
 | 七 | | **文档同步闭环**：changelog 每个功能点 → 对应项目文档有覆盖（详见下方按需文档表） | D6 清单零遗漏 |
 | 八 | | **changelog 文件命名一致性**：`ls docs/changelog/*/v*.md \| grep -v -E 'v[0-9]+\.[0-9]+\.[0-9]+\.md'` 期望无输出（全三段式）——**限定版本日志目录**（`docs/changelog/**/*.md` 会把 releasing/ 子目录的 SOP 文件误报为不合规，版本日志才是检查对象） | 无输出 |
 | 九 | | **文档预算确认**：`bash tools/check/check-docs.sh` 全绿——本阶段文档收尾会新增内容（README 新能力段/ROADMAP 迭代表行/HANDBOOK bullet 等）推高行数可能超 LIMIT；此处先跑提前暴露（曾拖到 pre-push 才发现超标，被迫回阶段六补上调） | check-docs RC=0 |
@@ -281,7 +281,7 @@
 >
 > **用法**：阶段六执行到本步骤时，把下表复制进当版 devlog（或进度追踪），逐格核对当场改 `[x]`——每格的判据是「该触点当前介绍的是**本版**」，不是「更新过」。
 
-### 触点清单（v1.5.0 时点 25 格 · 每版复核增删）
+### 触点清单（25 格 · 每版复核增删）
 
 > 清单分三组：**A 面向用户的介绍面**（讲「本版有什么」）/ **B 状态与口径面**（版本号/数字声称）/ **C 仓外门面与运行时**。每组核对方式不同：A 组核对**内容语义**（讲的是本版吗），B 组核对**字面一致**（可跑门禁），C 组核对**实际产物**。
 

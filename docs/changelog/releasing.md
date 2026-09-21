@@ -46,7 +46,7 @@
 
 - [ ] 一 · 审查上版本（fresh-eyes 独立审查 · 新 session 或对话式多轮）→ [01-review.md](./releasing/01-review.md)
 - [ ] 二 · 开发 + 基础自测（开发收尾即自测）→ [02-dev.md](./releasing/02-dev.md)
-- [ ] 三 · fresh-eyes-loop 质量循环 + 代码审核 + 验收测试（入口裁定一次 · A 快速直收 / B 盲审复制一次 prompt）→ [03-quality-loop.md](./releasing/03-quality-loop.md)（v1.4.6 走对话式多轮审查等价形态：22 视角分层取用 + 零信任复验通过，2026-09-08）
+- [ ] 三 · fresh-eyes-loop 质量循环 + 代码审核 + 验收测试（入口裁定一次 · A 快速直收 / B 盲审复制一次 prompt）→ [03-quality-loop.md](./releasing/03-quality-loop.md)（走对话式多轮审查等价形态：22 视角分层取用 + 零信任复验通过）
 - [ ] 四 · 审查体系合并更新 + 最终确认 → [04-review-system.md](./releasing/04-review-system.md)
 - [ ] 五 · release-gate-loop 发版闸门（新 session · 自动收敛循环 · 必须 PASS 才继续）→ [05-release-gate.md](./releasing/05-release-gate.md)
 - [ ] 六 · 开发日志定稿 + 文档收尾 → [06-doc-finalize.md](./releasing/06-doc-finalize.md)
@@ -84,7 +84,7 @@
 | **步骤表必有勾选列** | 执行时逐格打勾防漏（11-post-publish 教训：无勾选列曾整批漏做）——新加步骤必须带 `[ ]` 格 |
 | **单文件 ≤650 行** | 超限 = 拆子文件（如 auto-converge-protocol.md 先例），不往单文件堆——模型上下文有限，文件越长中段步骤越容易被跳过（lost-in-the-middle） |
 | **判据可 grep** | 写「验证方式」时优先给命令/字面判据（`EXIT=0`、`grep -c X 文件`），少写「人工确认」——模型执行不了「人工确认」，会跳过或假装做过 |
-| **禁考古** | 规则正文不带版本号/日期/run 编号（人工纪律，无脚本强制）；「为什么有这条」的叙事放 blockquote 且一句话内讲完 |
+| **禁考古** | 规则正文不带版本号/日期/run 编号（check-archaeology 强制；机器字面量/能力门槛除外）；「为什么有这条」的叙事放 blockquote 且一句话内讲完 |
 | **引用用相对链接** | 跨阶段引用写 `[04 打勾前置产物核对](./releasing/04-review-system.md)`，不写「见阶段四某节」——模型跟链接跳，不跟模糊引用 |
 
 **修改 SOP 时的自检三问**：

@@ -54,9 +54,9 @@ grep -A3 '"engine/audit":' package-lock.json | grep '"version"'
 # 应该是新版本号
 ```
 
-**🔴 v1.1.3 铁律**：**禁止用 `sed` 直接改 `package-lock.json`**——全局替换 `1.1.0→1.1.3` 会把外部包（如 `reusify@1.1.0`）也污染为不存在的版本（`reusify@1.1.3`），导致 CI 全平台 `npm ci` 崩溃。只能用 `npm install --package-lock-only` 重新生成锁文件。
+**🔴 铁律**：**禁止用 `sed` 直接改 `package-lock.json`**——全局替换 `1.1.0→1.1.3` 会把外部包（如 `reusify@1.1.0`）也污染为不存在的版本（`reusify@1.1.3`），导致 CI 全平台 `npm ci` 崩溃。只能用 `npm install --package-lock-only` 重新生成锁文件。
 
-#### 🔴 v1.1.3 npm 发布铁律：版本号永久锁死（详见 releasing.md 索引段）
+#### 🔴 npm 发布铁律：版本号永久锁死（详见 releasing.md 索引段）
 
 > 🔴 教训：npm 版本号 publish 后永久封存，unpublish 无法复写。发之前确认一切就绪 → 一次性批量发布。
 
