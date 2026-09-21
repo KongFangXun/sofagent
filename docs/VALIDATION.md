@@ -777,7 +777,7 @@ Jev 公开的接口面只有三原语（Noul / Choice / Score）且全部答案�
 
 一件声明 **Apache-2.0**（仓内 `LICENSE`）；另一件仓库根**未见任何 LICENSE 文件**（仓内唯一的 `LICENSE` 位于 `.agents/skills/typesafe-ai/`，属随附第三方技能）⇒ **「没写许可」不等于「默认可商用」**——引用其配方、数据或读数前须先确认授权口径。
 
-> 📖 来源：Kev（`jaredpalmer/kev`）与 Nimble（`bespokelabsai/nimble`）**本地克隆快照实测**（2026-09-21 读取，行号均为该快照内实测位置）。读数分两类：单机延迟与打包加速比来自**各自仓内自带的基准产物**（可复算，但**未由本仓复算**）；训练耗时 / 峰值显存 / 配方来自**其 model card 的自述**（未在本机复现）。按「不可复算数字不与本仓可复算数字并列展示」纪律，此处全部标注证据级别。
+> 📖 来源：[jaredpalmer/kev](https://github.com/jaredpalmer/kev) 与 [bespokelabsai/nimble](https://github.com/bespokelabsai/nimble) **本地克隆快照实测**（2026-09-21 读取，行号均为该快照内实测位置）。读数分两类：单机延迟与打包加速比来自**各自仓内自带的基准产物**（可复算，但**未由本仓复算**）；训练耗时 / 峰值显存 / 配方来自**其 model card 的自述**（未在本机复现）。按「不可复算数字不与本仓可复算数字并列展示」纪律，此处全部标注证据级别。
 
 ---
 
