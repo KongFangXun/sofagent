@@ -1,0 +1,84 @@
+{
+  "$schema": "禁考古守卫路径豁免台账（tools/check/check-archaeology.sh 消费）",
+  "usage": "bash tools/check/check-archaeology.sh [--selftest] [--list-exempt]",
+  "notes": [
+    "形态照 tools/check/ 既有台账（silent-catch-prefilter-exempt.json / cross-package-relative-exempt.json）：独立 json、由门禁读取、每条必须写理由。",
+    "exemptPaths 是**整路径**豁免（glob，* 跨斜杠）：命中即不计入扫描面，同时在范围对账里作为「路径豁免数」显式打印——豁免可见，不静默。",
+    "登记纪律（宁缺毋滥）：只有「本守卫不该判 / 判不了」的路径才进本表。凡属「该判但暂时没清」的，一律不进本表——那是真实待清项，待裁定后清理规则文档本身。",
+    "🔴 反例纪律：禁止为了转绿把规则文档路径加进来。加一条豁免 = 宣称该路径不属「规则正文」，须能在理由栏里说清为什么。"
+  ],
+  "exemptPaths": [
+    {
+      "pattern": "playbook/vendor/*",
+      "reason": "第三方 vendored 上游原文（MIT，钉 commit，路径 1:1 保留供 diff -r 升级，清单见 vendor/improve-codebase-architecture/PROVENANCE.md）。上游原文禁改——判它等于要求改上游，故整目录豁免（与 check-docs 的行数预算排除先例同口径）。"
+    },
+    {
+      "pattern": "docs/changelog/v*/*.md",
+      "reason": "历史事实档案（版本开发日志）。出身考古的正确落点就在这里——本守卫判的是「规则正文」，档案是出身该待的地方。今日不在扫描面内，留此为将来扩面时的防误报机制。"
+    },
+    {
+      "pattern": "docs/archive/*",
+      "reason": "历史归档目录（同上：档案非规则）。今日不在扫描面内，留档。"
+    },
+    {
+      "pattern": "CHANGELOG.md",
+      "reason": "版本索引台账（版本号 + 日期是它的正文内容，不是考古）。今日不在扫描面内，留档。"
+    }
+  ],
+  "exemptAnchors": [
+    {
+      "file": "docs/changelog/releasing/06-doc-finalize.md",
+      "anchor": "**v1.3.7 范本数据**（生成时对照）",
+      "reason": "校准范本数据行（非规则正文）：行内是某版实际发布物的实测尺寸，且尾链相对路径 `./docs/changelog/v1.3/v1.3.7.md` **本身就是文件名**——读者要打开该版 changelog 逐项对照才能生成 release notes。删版本号 ⇒ 范本不可定位、路径不成立。规则（本段上面那句「生成时对照这些要素」）仍在。"
+    },
+    {
+      "file": "docs/changelog/releasing/06-doc-finalize.md",
+      "anchor": "| 已交付范围 | 「已交付版本（v1.0.0~vX.Y.Z）」更新到本版 |",
+      "reason": "待改**字面量**（触点清单行）：ROADMAP 里实际写的就是这个字符串，v1.0.0 是区间固定起点（数据值，不是「哪版引入」的出身）。删掉或改写 ⇒ 该触点在 ROADMAP 里不可 grep 定位，判据从机械变肉眼。"
+    },
+    {
+      "file": "docs/changelog/releasing/06-doc-finalize.md",
+      "anchor": "| **v1.2.x**（10 版） | **激活链全线打通",
+      "reason": "迭代表「合并行格式」的**示例本体**（非规则正文）：示例内容就是历史版本归并（v1.2.0 物理重构 → v1.2.5 → v1.2.7 → v1.2.9）。版本号是示例本体，删后示例不再示范「怎么合并老版本」——而规则只写了「按此格式合并」，规则本身不依赖这些具体版本号。"
+    },
+    {
+      "file": "docs/changelog/releasing/06-doc-finalize.md",
+      "anchor": "| 五 | **「已交付范围」过期** | 「已交付版本（v1.0.0~vX.Y.Z）」是否更新到本版 | 更新版本号 |",
+      "reason": "同上（版本头对账表的判据行）：v1.0.0 是待改字面量的固定区间起点，属 ROADMAP 现文数据，非出身叙事。删后这一行判据失去可核对的字面形态。"
+    },
+    {
+      "file": "docs/changelog/releasing/06-doc-finalize.md",
+      "anchor": "全扫 `2026-09-17.*已发版`（或当前日期）",
+      "reason": "照抄可跑的 grep 模式（bump 中断恢复清单第 ⑥ 项）：日期是该模式的**字面量**，删后命令不可执行、清单第 ⑥ 项失去机械形态。判据本体（「bump 后必须跑 check-version 抓残留」）与清单其余五项均不受影响。"
+    },
+    {
+      "file": "docs/changelog/releasing/09-publish.md",
+      "anchor": "机制标准 = **v1.4.2 实际发布物",
+      "reason": "对外发布物的**机制标准锚点**：同行对照命令 `gh release view v1.4.2 --json name,body -q '{name, body}'`（锚点）+ 上一版漂移检测——锚点版本是命令操作数，删后命令不可执行、十字素比对无对照物。锚点选哪一版是 SOP 决策（「若上一版漂移以锚点为准」），不是出身叙事。"
+    },
+    {
+      "file": "playbook/federation-e2e.md",
+      "anchor": "**2026-08-22 · macOS + Node v24.19.0",
+      "reason": "跨进程 E2E 的**实测记录行**（非规则正文，位于「## 实测记录」节）：日期 + 运行时版本是复现条件（该用例依赖 Node ≥18 与两处构建产物在位），删任一项该记录就不再是可复现凭据（下方 blockquote 明说它是验收标准基线的证据）。"
+    },
+    {
+      "file": "playbook/fresh-eyes-calibration.md",
+      "anchor": "## v1.4.9 审查校准收编（阶段四 C 类）",
+      "reason": "按版分节的校准收编**存档**：节标题的版本号是节的**身份**（去版本后与下一节同名、两节不可区分），节内容是那一版审查校准的结论集，不是跨版通用规则。"
+    },
+    {
+      "file": "playbook/fresh-eyes-calibration.md",
+      "anchor": "## v1.5.0 审查校准收编（阶段四 C 类）",
+      "reason": "同上（另一节）：本文件按版并列多节，节标题版本号是唯一区分键；删版本号即造出两个同名标题，文档可读性反而更差。"
+    }
+  ],
+  "exemptAnchors_spec": {
+    "形态": "{ file, anchor, reason } 三条——**不是**「文件+行号」",
+    "为何不用行号": "行号随任何编辑漂移，漂移即静默失效或静默误放行（失明且失声）。锚串漂移可被检出，故锚定到「行内锚串」。",
+    "硬校验①": "anchor 在 file 内必须恰好命中 1 行（重复 ⇒ 守卫 exit 2）——防一条豁免顺带放行多行。",
+    "硬校验②": "anchor 解析出的行必须当前就是命中行（否则 ⇒ 守卫 exit 2「锚失效」）——被豁免的内容一变，锚必须重新核对，不得静默放行。",
+    "登记纪律（宁可进清理也不进台账）": "每条 = 宣称该行不属「规则正文」。理由栏必须说清「删掉后读者失去什么可执行信息」——答不上来即应清理（删出身标签、留判据内容），不进本表。",
+    "豁免可见": "每条在预扫输出里计入「E1 台账锚串豁免」行数，并可由 --list-exempt 逐行列出。"
+  },
+  "registered": []
+}

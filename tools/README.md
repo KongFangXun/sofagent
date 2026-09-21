@@ -29,6 +29,8 @@
 | `check/check-silent-catch.mjs` | 静默吞错扫描（关键路径空 catch 只拦新增，存量见 `silent-catch-baseline.json` 基线） | CI / 改错误处理时 |
 | `check/check-home-resolution-parity.mjs` | 家目录解析口径对照共享守卫（harness 因 layer 0 · `allow: []` **不能** import core，只能本地重实现 `resolveEngineHome()`——本守卫断言两侧**同输入同输出**；core 侧真实 `require` dist 调用、harness 侧用 `skill/custom` 哨兵经 `buildConstrainedSystemPrompt` 反推，子进程受控 `$HOME`/`cwd` 不碰真实 `~/.sofagent`；**已登记差异（空串口径）差异消失也判红**；提取不到实现 / 观测不到哨兵 ⇒ FAIL） | 改 harness 或 core 的家目录解析后 · pre-push |
 | `check/silent-catch-baseline.json` | 静默吞错存量基线（`check-silent-catch.mjs` 消费，新增即红） | 被 check-silent-catch.mjs 消费 |
+| `check/check-archaeology.sh` | 规则文档禁考古守卫（`releasing.md` + `releasing/*.md` + `SKILL/**` + `playbook/**` 正文禁带出身：版本号 / 日期 / 跑批编号 / 出身标签；豁免 = 能力/阶段版本门槛（`vX.Y.Z+`·`vX.Y.Z 起`·`低于`·`达到`）/ 文件头版本标识 / blockquote 叙事 / 机器注释 / 机器字面量（引号或命令内的版本号，逐处摘除）/ 台账锚串；带 `--selftest` 正反例夹具 + `--list-exempt` 列豁免行） | pre-push / 改规则文档后 |
+| `check/archaeology-exempt.json` | 禁考古豁免台账（`check-archaeology.sh` 消费：① `exemptPaths` 第三方 vendored 原文 + 历史档案目录——档案是出身该待的地方；② `exemptAnchors` 行级豁免 `{file, anchor, reason}`——**锚串而非行号**（行号漂移即静默失效），锚须文件内唯一且当前仍是命中行，两条硬校验不成立即 exit 2） | 被 check-archaeology.sh 消费 |
 | `check/check-readme-parity.sh` | 双语 README 结构 parity 门禁（中英 README 章节/条目对齐，防单语漂移） | CI / 改 README 后 |
 | `check/check-dashboard.sh` | dashboard.html 结构性缺陷门禁（七项静默失效面：双 class 属性/未定义 CSS 变量/重复类定义不一致/未定义 keyframes/onclick 未定义函数/div 配平/U+FFFD 乱码——注入实测七项全报红） | CI / 改 dashboard.html 后 / 发版 SOP 阶段五 |
 | `dashboard/sofagent-dashboard.test.sh` | Dashboard 端到端冒烟（页面可达 + 数据面断言） | dashboard 改动后 |

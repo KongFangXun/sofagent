@@ -24,6 +24,11 @@
 #                             同输入同输出 + 已登记差异钉住 · 须在构建之后跑 · v1.4.9 G-9 接入）
 #   + doc-discipline.sh    → 对外文档写作纪律（内部工单代号 / 本机私有路径 · v1.4.9 P2-27 接入）
 #   + check-prepush-checklist.mjs → 本清单自身的对账：清单里的脚本名 ⊆ 实际被调用（v1.4.9 G-16 接入）
+#   + check-archaeology.sh → 规则文档禁考古（正文不带版本号/日期/跑批编号/出身标签；
+#                             豁免：blockquote 叙事 / 能力版本门槛（`vX.Y.Z+`·`vX.Y.Z 起`·低于·达到）/
+#                             文件头版本标识 / 机器注释 / 机器字面量（引号或命令内版本号）/
+#                             台账锚串（tools/check/archaeology-exempt.json，逐条 {file,anchor,reason}）
+#                             · 批二接入）
 #   + npm run build         → 审计模块构建
 #
 # 用法:
@@ -333,6 +338,23 @@ if [ "$MINIMAL" = false ]; then
     check_fail "check-anchors.mjs 发现锚点过时"
     node tools/check/check-anchors.mjs 2>&1 | grep "✗" | head -10
     echo "  提示：node tools/check/check-anchors.mjs --fix 可自动修复"
+  fi
+fi
+
+# ════════════════════════════════════════
+# 4b. 规则文档禁考古（check-archaeology.sh · 批二接入）
+# 规则正文只写规则，不写出身（哪版加的 / 哪天定的 / 第几跑发现的 / 谁拍板的）——
+# 出身属 changelog 归档。命中项需逐条裁定「合法豁免 / 真实待清」，不得就地删内容。
+# 豁免台账：tools/check/archaeology-exempt.json（第三方 vendored 原文 + 历史档案目录）。
+# ════════════════════════════════════════
+if [ "$MINIMAL" = false ]; then
+  echo -e "\n${BOLD}── 4b. 规则文档禁考古 ──${NC}"
+  if bash tools/check/check-archaeology.sh >/dev/null 2>&1; then
+    check_pass "check-archaeology.sh 全部通过（规则正文无出身考古）"
+  else
+    check_fail "check-archaeology.sh 有命中（规则正文带版本号/日期/跑批编号/出身标签）"
+    bash tools/check/check-archaeology.sh 2>&1 | grep -E "命中合计" | head -3
+    echo "  提示：bash tools/check/check-archaeology.sh 看逐条清单（文件:行号:原文）"
   fi
 fi
 
