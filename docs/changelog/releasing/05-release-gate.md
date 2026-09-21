@@ -37,7 +37,7 @@
 先读 `FORGE/SKILL/release-gate-loop/SKILL.md` 拿到完整的「Session 监控协议」，然后按下面的循环骨架执行。
 
 ## 版本裁定声明（所有轮次适用）
-目标版本={TARGET_VERSION}；主仓 HEAD 以每轮启动时 git rev-parse 实测为准（记下该值，verdict 出来后核对运行窗口 HEAD 是否被动过）；package.json={上一版号} 是 SOP 设计的待发版中间态（🔴 **SSOT bump 属阶段九步骤五**——v1.4.7 定谳，见 [`06-doc-finalize.md`](./06-doc-finalize.md) §时序说明：阶段六只做版本无关核对，在此阶段改版本号必然撞 check-version FAIL。本行原文曾写「属阶段六」，系旧口径，已更正），非版本失控；git tag 未打（INSTALL_SHA256 回填+重打 tag=阶段九动作）；CHANGELOG 已带 {TARGET_VERSION} ⏳ 待发版段。
+目标版本={TARGET_VERSION}；主仓 HEAD 以每轮启动时 git rev-parse 实测为准（记下该值，verdict 出来后核对运行窗口 HEAD 是否被动过）；package.json={上一版号} 是 SOP 设计的待发版中间态（🔴 **SSOT bump 属阶段九步骤五**——见 [`06-doc-finalize.md`](./06-doc-finalize.md) §时序说明：阶段六只做版本无关核对，在此阶段改版本号必然撞 check-version FAIL。本行原文曾写「属阶段六」，系旧口径，已更正），非版本失控；git tag 未打（INSTALL_SHA256 回填+重打 tag=阶段九动作）；CHANGELOG 已带 {TARGET_VERSION} ⏳ 待发版段。
 预期合法输出形态（均不算 FAIL、不需修复）：维度 130 输出「⏳ 待发版态」「🟡 lib 相对 tag 有改动」「🟡 网络不可达——marketplace 对照跳过」（curl 已带 10s 上限，网络不通会正常降级）；维度 7 输出「⏸️ 未配置 webhook」；coverage 非交付性章节标 EXEMPT 不计入缺口。
 
 ## 外层循环（轮次 N=1..5，每轮按序执行）

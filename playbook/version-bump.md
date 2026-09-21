@@ -25,7 +25,7 @@ node tools/gen/gen-plugin-manifests.mjs
 
 > 🔴 **前缀替换陷阱（脚本级实测）**：bump 对「`v<major>.<minor>`」形态的位置做**前缀**替换——
 > 文件里若是 `vX.Y.Z`（三段）而脚本按 `vX.Y` 匹配，替换后会得到 `vX.(Y+1).Z` 这类**畸形版本号**
-> （例：`v1.4.9` → `v1.5.9`，正确应为 `v1.5.0`）。hook 头注释是该陷阱的高发点。
+> （例：`vX.Y.Z` → `vX.(Y+1).Z`，而正确结果应是 `vX.(Y+1).0`）。hook 头注释是该陷阱的高发点。
 > **防御**：bump 后必跑 `grep -rn "v[0-9]\+\.[0-9]\+\.[0-9]\+" $(git diff --name-only)` 逐条核对，
 > 或直接跑 `bash tools/check/check-template-drift.sh`（断言一/三 覆盖 hook 头版本自报）。
 
@@ -54,9 +54,9 @@ grep -A3 '"engine/audit":' package-lock.json | grep '"version"'
 # 应该是新版本号
 ```
 
-**🔴 v1.1.3 铁律**：**禁止用 `sed` 直接改 `package-lock.json`**——全局替换 `1.1.0→1.1.3` 会把外部包（如 `reusify@1.1.0`）也污染为不存在的版本（`reusify@1.1.3`），导致 CI 全平台 `npm ci` 崩溃。只能用 `npm install --package-lock-only` 重新生成锁文件。
+**🔴 铁律**：**禁止用 `sed` 直接改 `package-lock.json`**——全局替换 `1.1.0→1.1.3` 会把外部包（如 `reusify@1.1.0`）也污染为不存在的版本（`reusify@1.1.3`），导致 CI 全平台 `npm ci` 崩溃。只能用 `npm install --package-lock-only` 重新生成锁文件。
 
-#### 🔴 v1.1.3 npm 发布铁律：版本号永久锁死（详见 releasing.md 索引段）
+#### 🔴 npm 发布铁律：版本号永久锁死（详见 releasing.md 索引段）
 
 > 🔴 教训：npm 版本号 publish 后永久封存，unpublish 无法复写。发之前确认一切就绪 → 一次性批量发布。
 
@@ -73,7 +73,7 @@ grep -rn "vX\.Y\.旧" --include="*.md" --include="*.ts" --include="*.sh" . \
  | grep -v "docs/changelog/" | grep -v "node_modules"
 ```
 
-> 手动 grep 的结果会包含大量"合理的历史引用"（如 "v1.0 新增"）。这些**不改**——它们是变更溯源标记。
+> 手动 grep 的结果会包含大量"合理的历史引用"（如 "v1.0 新增"）。这些**不改**——它们是变更溯源标记（bump 语境 = 不改已有的；新写规则正文时不引入溯源标记，见 releasing.md 禁考古条）。
 
 #### 脚本不覆盖（必须手动）
 
@@ -83,7 +83,7 @@ grep -rn "vX\.Y\.旧" --include="*.md" --include="*.ts" --include="*.sh" . \
 | `ROADMAP.md` 五步更新 | 结构性改动（删节/迁移），不是纯替换 | 每次发版手动做五步（详见 releasing.md 阶段八） |
 | `ARCHITECTURE.md` 正文"当前 vX.Y" | 正文引用，不是版本头格式 | bump 后 grep `当前 v` 检查并手动更新 |
 | `package-lock.json` | bump-version.sh 不覆盖 | 「同步 package-lock.json」小节用 `npm install --package-lock-only` 同步 |
-| 正文中的历史引用 | "v1.0 新增"是溯源标记，不改 | 永远不改 |
+| 正文中的历史引用 | "v1.0 新增"是溯源标记，不改 | 永远不改（bump 语境） |
 | `engine/**` 常量 `= 'vX.Y.Z'` | bump 只认部分常量形态，漏改 = check-version 版本漂移断言红 | bump 后必跑 `bash tools/check/check-version.sh`，按报错逐条补 |
 | `action.yml` 的 npx pin（`@sofagent/<pkg>@X.Y.Z`） | GitHub Action 用户拉到旧版引擎 | 同上，check-version 有专用断言 |
 | 文档版本头「版本：vX.Y.Z」形态 | bump 不认该形态（非 `> vX.Y · DATE` 模板） | 同上；新增文档头请沿用模板形态 |

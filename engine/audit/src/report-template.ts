@@ -7,7 +7,7 @@
 //   2. 云端调用明细（时间 / 模型 / 用途 / 脱敏 / Token）
 //   3. 本地执行明细（时间 / 类型 / 目标 / 敏感度 / 审计结果）
 //   4. 数据流向分析（出站 / 本地 / 入站 条数 + 说明）
-//   5. 模型路由分布（云端 32B+ / 云端快速 / 本地 7B / 本地 0.5B）
+//   5. 模型路由分布（云端强档 / 云端快档 / 本地执行档 / 本地管道档）
 //   6. 异常告警
 // ============================================================
 
@@ -37,12 +37,12 @@ export interface ReportStats {
   sensitiveLocalRate: number;
   /** 审计异常数 */
   anomalyCount: number;
-  /** 模型路由分布 */
+  /** 模型路由分布（按模型名启发式归因，非精确档位统计——见 report-generator 说明） */
   routeDist: {
     cloudStrong: number;
     cloudFast: number;
-    local7b: number;
-    local05b: number;
+    localExecutor: number;
+    localPipeline: number;
   };
   /** 原始记录（明细表用） */
   records: DataSovereigntyRecord[];
@@ -194,10 +194,10 @@ function renderRouteDist(lines: string[], stats: ReportStats): void {
   lines.push('');
   lines.push('| 路由 | 条数 |');
   lines.push('|------|------|');
-  lines.push(`| 云端 32B+（强模型） | ${stats.routeDist.cloudStrong} |`);
-  lines.push(`| 云端快速 | ${stats.routeDist.cloudFast} |`);
-  lines.push(`| 本地 7B | ${stats.routeDist.local7b} |`);
-  lines.push(`| 本地 0.5B | ${stats.routeDist.local05b} |`);
+  lines.push(`| 云端强档 | ${stats.routeDist.cloudStrong} |`);
+  lines.push(`| 云端快档 | ${stats.routeDist.cloudFast} |`);
+  lines.push(`| 本地执行档 | ${stats.routeDist.localExecutor} |`);
+  lines.push(`| 本地管道档 | ${stats.routeDist.localPipeline} |`);
   lines.push('');
 }
 

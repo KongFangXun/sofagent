@@ -43,6 +43,7 @@
 - **[Don't Train the Model, Evolve the Harness](https://github.com/JoelNiklaus/harness-optimization)** · Joel Niklaus — 不改权重、仅优化 Harness，让 DeepSeek-v4-pro 从 63.4% 升至 80.1%（+16.7pp），实验数据见研究代码仓库。sofagent 存在理由的外部证据
 - **[AutoResearch](https://github.com/karpathy/autoresearch)** · Andrej Karpathy — 约束文档 + 锁定评估脚本 + 自动循环，与 sofagent 的 fde.md + audit + loop 高度对应
 - **[Bilevel Autoresearch](https://arxiv.org/abs/2603.23420)** — 双层循环论文，外层强制探索回避方向可实现 5 倍性能提升
+- **[MetaRSI / RSI²: A Meta-Recursive Self-Improving System for Recursive Self-Improving Systems Themselves](https://arxiv.org/abs/2609.06396)**（arXiv:2609.06396，2026-09-06）+ **[RSI-Harness](https://github.com/CosmosMind-ai/RSI-Harness)**（其开源实现）· CosmosMind — 递归自我改进（RSI）的统一形式化：Data / Harness / Model 三算子共享一个闭环内核，其上再加改进调度器。sofagent 的 Meta-RSI 三算子对位、「**保护面必须独立于所有可写面**」这条架构判断、以及「验证差距是自进化的适用边界」都源自此处；v1.5.8 的 RSI 缺口裁定收编（经验池接训练管道 / 进化准入判据 / 三层晋级 / 出题考核）即照它补差
 - **[Lost in the Middle](https://arxiv.org/abs/2307.03172)** — 长文档中段注意力衰减，500 字原则的理论源头
 - **[A Global Workspace in Language Models](https://www.anthropic.com/research/global-workspace)** · Anthropic — 模型输出前已形成未表达判断，为「审计必须外置」提供底层论证
 
@@ -72,6 +73,17 @@
 - **[ChatDemo](https://github.com/OpenFDEAI/ChatDemo)** · OpenFDEAI — 以 Forward Deployed Engineer 命名售前工作流，印证 FDE 术语同源
 - **[PenguinHarness](https://github.com/Prism-Shadow/penguin-harness)** · Yaowei Zheng（LlamaFactory 作者）— 开源 Agent 自我进化平台（Apache-2.0），Benchmark 评测与工具审批四模式方法论为 v1.3.x 提供设计参考
 - **[prime-agent](https://github.com/PrimeIntellect-ai/prime-agent)** · Prime Intellect — 开源 RLM 持续运行 Agent（MIT）。Continual Harness 的跨进程写保护与 RefinementEvent 证据记录，为 v1.3.3 进化链路可靠性提供设计参考
+
+### 判定与校准
+
+决策模型（约束层底座，随本仓开源）的来源。这一节记录的不含已交付能力，而是一条判断的出处：**判定层的门槛不在模型架构，在判据数据集**。
+
+- **[SalesRLAgent](https://arxiv.org/abs/2503.23303)**（arXiv:2503.23303，2025-03-30）· Nandakishor M — 把概率预测当作序列决策问题、用强化学习训练专用概率估计模型而非生成文本，「只出概率、不生成文本」的路线由此而来
+- **[Confidence-Aware Routing for LLM Reliability Enhancement](https://arxiv.org/abs/2510.01237)**（arXiv:2510.01237，2025-09-23）· Nandakishor M — 统一置信度分数驱动四路径路由（本地生成 / 检索增强 / 更大模型 / 人工复核），与判定分层 L0 → L1 → L2 + 第三态同构
+- **[DeepRAG: Building a Custom Hindi Embedding Model from Scratch](https://arxiv.org/abs/2503.08213)**（arXiv:2503.08213，2025-03-11）· Nandakishor M — 同作者从零自建 embedding 模型的实现参考
+- **[Introducing System One Models & Jev](https://typesafe.ai/blog/introducing-system-one-models-and-jev)**（2026-09-15）· TypeSafe AI —「RLCD（Reinforcement Learning for Calibrated Decisions）」这一术语、System One 模型类与 Choice / Score / Noul 三原语的提出方；「校准优先于偏好」由这里来。**其校准主张迄今未见校准曲线或期望校准误差数据公开**——本项目把 ECE 列为验收必测项，从这个空白处起步
+- **[laya](https://huggingface.co/convaiinnovations/laya)**（Apache-2.0）· Nandakishor M / Convai Innovations — 非自回归判定模型的开源实现（ModernBERT 编码器 + option-marker 判定头 + 三原语 + 分桶温度校准），是本方案架构与代码量的直接参照，也是对照基线。**它的价值一半在反面**：模型卡自述零样本准确率 0.362，实测复现其动作头零样本下恒为 1、置信度恒高——「有判定头」不等于「有判定力」
+- **严格适当评分规则（strictly proper scoring rules）** · Gneiting & Raftery 等 — RLCD 数学正确性的真正依据：只有诚实报告校准概率才取到最大期望奖励。判定层奖励函数以该理论为准绳
 
 ### 认知与反馈
 

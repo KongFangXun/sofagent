@@ -227,6 +227,15 @@ export async function defaultDecideCallLLM(prompt: string, route: ModelRoute): P
     if (route.target === 'local-executor' || route.target === 'local-pipeline') {
       return await callOllamaForDecide(prompt);
     }
+    if (route.target === 'decision-model') {
+      // 判定档不走生成模型：判定由 DecisionChannel 处理，产出类型化答案而非文本。
+      // 这里显式返回空——绝不落到云端生成分支（那会把判定任务变成生成任务）
+      return '';
+    }
+    // block 档是敏感数据的 fail-closed 出口：**绝不回落到云端**。
+    // （此前的写法会让 block 落入下面的云端分支——confidential 数据被阻断后
+    //   又被送到云端，违背数据主权铁律）
+    if (route.target === 'block') return '';
     return await callCloudForDecide(prompt);
   } catch {
     return '';
@@ -264,10 +273,13 @@ async function callCloudForDecide(prompt: string): Promise<string> {
   return data.choices?.[0]?.message?.content ?? '';
 }
 
-/** 本地 Ollama 调用 */
+/** 本地调用（Ollama /api/generate） */
 async function callOllamaForDecide(prompt: string): Promise<string> {
   const endpoint = (process.env.SOFAGENT_OLLAMA_ENDPOINT ?? 'http://localhost:11434').replace(/\/$/, '');
-  const model = process.env.SOFAGENT_OLLAMA_MODEL ?? 'qwen2.5:7b';
+  // 模型名不预设默认值：未配置即不调用——绝不请求一个猜出来的模型名
+  // （那只会发出一次注定失败的请求，然后静默降级成空字符串）
+  const model = process.env.SOFAGENT_OLLAMA_MODEL ?? '';
+  if (!model) return '';
   const res = await fetch(`${endpoint}/api/generate`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

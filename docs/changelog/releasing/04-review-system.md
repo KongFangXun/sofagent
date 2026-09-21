@@ -19,7 +19,7 @@
 | 三 | | **覆盖率确认**：`bash tools/check/check-review-system.sh` 自动执行——脚本⑥段提取当前版本交付关键词（devlog 交付章标题 + CHANGELOG 版本行加粗短语），对 checklist/acceptance 双文档对账，零命中报 FAIL。词形差异（devlog「SubAgent 完整沙箱」vs checklist「沙箱五件套」类）加进豁免清单 `playbook/.coverage-exempt`（每行一个关键词）。与阶段四共用同一脚本（阶段四在分发后跑=确认更新零遗漏；阶段四在终验跑=确认没回退） | 脚本⑥段全绿 + 豁免清单维护 |
 | 四 | | **防膨胀瘦身（三判据硬门槛）**：上调警戒线前必须依次过三判据，全否才允许上调。行数警戒线数值**以 regression-checklist 头部声明为唯一 SSOT**（check-review-system.sh 动态提取校验；多处写死数值必然漂移，本表不写死）。历史上调记录见 checklist 头部警戒线段 | 三判据记录 + 自校验全 PASS |
 | 五 | | **fresh-eyes-review 校准**：C 类走决策树（新视角 / 校准视角 / 历史教训），不往留白式审查里加精确检查项 | 校准完成 + 风格守护自检全 PASS |
-| 六 | | **Doc Fresh Review（大版本选做，小版本跳过）**：major/minor 发版或多文档大批量改动后，按 [playbook/doc-fresh-review.md](../../../playbook/doc-fresh-review.md) 复制 prompt 到**新 session**（fresh 纪律：参与过编写/修复的 session 不得跑）执行独立人读审查（含 dashboard.html 专项）；报告落桌面 → 零信任复核 → 修复批 → 收敛判定 GREEN 后放行。轮次策略与已知问题类型检查表见该 playbook（v1.5.0 四轮实跑沉淀）。**与 fresh-eyes-review 的分工**：fresh-eyes 管代码，Doc Fresh Review 管文档——同一 fresh 纪律的两个审查面 | 审查报告 + 复核记录 + 收敛 GREEN |
+| 六 | | **Doc Fresh Review（大版本选做，小版本跳过）**：major/minor 发版或多文档大批量改动后，按 [playbook/doc-fresh-review.md](../../../playbook/doc-fresh-review.md) 复制 prompt 到**新 session**（fresh 纪律：参与过编写/修复的 session 不得跑）执行独立人读审查（含 dashboard.html 专项）；报告落桌面 → 零信任复核 → 修复批 → 收敛判定 GREEN 后放行。轮次策略与已知问题类型检查表见该 playbook（四轮实跑沉淀）。**与 fresh-eyes-review 的分工**：fresh-eyes 管代码，Doc Fresh Review 管文档——同一 fresh 纪律的两个审查面 | 审查报告 + 复核记录 + 收敛 GREEN |
 
 > **README 新能力段核对已移至阶段六**：README 新能力段由阶段六（文档收尾）写入，本阶段执行时版本通常未 bump、README 尚无本版新能力段——核对对象不存在，强行核对只能得到「段不存在」的结论。核对必须紧贴写入时机（同一版本状态下写→核），故并入阶段六随写入执行，见 [06-doc-finalize.md](./06-doc-finalize.md)。若特殊情况下本阶段执行时 README 已有本版新能力段（如补跑/跨版执行），可当场核对后打勾。原步骤六删除。
 

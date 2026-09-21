@@ -353,7 +353,7 @@ DHH（Rails 之父）的 Omarchy——「有主见」的 Arch Linux 桌面发行
 
 ### System One 决策模型：判断与生成分离（Jev · 2026-09）
 
-「判断/生成分离」被做成了一类独立模型：TypeSafe AI（InstructGPT/RLHF 共同作者 Diogo Almeida 创立，$40M 种子）发布 Jev——不生成任何文字，输入状态 + 带类型的问题（Noul 是非/Choice 选项/Score 评级三原语），输出结构化答案 + 校准概率（RLCD 训练：声称 90% 把握就真的对 ~90%）。数字（厂商主张，独立验证仅 Every 一次实测 777 判断 0.7s）：70-500ms 延迟、$0.042/百万输入 token 输出免费、比前沿 LLM 快 20-200 倍便宜 40-400 倍。对 sofagent 四条判据级启示：① **判断面独立成层是行业级印证**——「能用规则不用模型判断」升级为「判断是独立模型类别」，约束层管判断的分工被反向验证；② **校准概率是置信度概念的验收标准**——引擎既有五处置信度（instinct scorer/敏感识别/灰度判定等）皆为未校准的拍脑袋数字，RLCD 点破「概率必须有意义」；③ **类型化输出天然可审计**——choice+概率+置信度的结构化记录是 decision-log/HMAC 链的理想输入，语义判断从不可审查的 LLM 调用变为可审查的分类结果；④ **可被操纵的失灵面决定其架构位置**——数学/日期不可靠、state 内容可诱导答案，故决策模型永不进信任地基，只坐确定性规则之后的语义兜底层（与审计「24 条 git-diff 在前，语义判断在后」同序）。同域学术谱系互证：模型路由侧 RouteLLM（ICLR 2025，偏好数据训练路由器，MT-Bench 省 85% 保 95% 质量）/ FrugalGPT（TMLR 2024，级联先廉后贵按评分升级）/ AutoMix（NeurIPS 2024，自验证置信度决定升级，省 50%+）/ BEST-Route（ICML 2025，联合路由模型与采样数，省 60% 损失 <1%）；语义路由侧 semantic-router（Aurelio，MIT，3.9k star，embedding 相似度路由零 LLM 调用）——三级「规则 <1ms → 语义路由 20-40ms → LLM 900ms」的延迟阶梯与 v1.5.3 判定分层 L0/L1/L2 同构。落地：v1.5.3 第七章 DecisionChannel 通道接口（研究收编，见 changelog）。
+「判断/生成分离」被做成了一类独立模型：TypeSafe AI（InstructGPT/RLHF 共同作者 Diogo Almeida 创立，$40M 种子）发布 Jev——不生成任何文字，输入状态 + 带类型的问题（Noul 是非/Choice 选项/Score 评级三原语），输出结构化答案 + 校准概率（RLCD 训练：声称 90% 把握就真的对 ~90%）。数字（厂商主张，独立验证仅 Every 一次实测 777 判断 0.7s）：70-500ms 延迟、$0.042/百万输入 token 输出免费、比前沿 LLM 快 20-200 倍便宜 40-400 倍。对 sofagent 四条判据级启示：① **判断面独立成层是行业级印证**——「能用规则不用模型判断」升级为「判断是独立模型类别」，约束层管判断的分工被反向验证；② **校准概率是置信度概念的验收标准**——引擎既有五处置信度（instinct scorer/敏感识别/灰度判定等）皆为未校准的拍脑袋数字，RLCD 点破「概率必须有意义」；③ **类型化输出天然可审计**——choice+概率+置信度的结构化记录是 decision-log/HMAC 链的理想输入，语义判断从不可审查的 LLM 调用变为可审查的分类结果；④ **可被操纵的失灵面决定其架构位置**——数学/日期不可靠、state 内容可诱导答案，故决策模型永不进信任地基，只坐确定性规则之后的语义兜底层（与审计「24 条 git-diff 在前，语义判断在后」同序）。同域学术谱系互证：模型路由侧 RouteLLM（ICLR 2025，偏好数据训练路由器，MT-Bench 省 85% 保 95% 质量）/ FrugalGPT（TMLR 2024，级联先廉后贵按评分升级）/ AutoMix（NeurIPS 2024，自验证置信度决定升级，省 50%+）/ BEST-Route（ICML 2025，联合路由模型与采样数，省 60% 损失 <1%）；语义路由侧 semantic-router（Aurelio，MIT，3.9k star，embedding 相似度路由零 LLM 调用）——三级「规则 <1ms → 语义路由 20-40ms → LLM 900ms」的延迟阶梯与 v1.5.4 判定分层 L0/L1/L2 同构。落地：[v1.5.4 第二章](./changelog/v1.5/v1.5.4.md) DecisionChannel 通道接口（研究收编，见 changelog）。
 
 > 📖 来源：[TypeSafe AI 官宣](https://typesafe.ai/)（2026-09-15，厂商主张）；[Every 独立实测](https://every.to/)（2026-09-15）；[RouteLLM (arXiv 2406.18665)](https://arxiv.org/abs/2406.18665)（ICLR 2025）；[FrugalGPT (arXiv 2305.05176)](https://arxiv.org/abs/2305.05176)（TMLR 2024）；[semantic-router](https://github.com/aurelio-labs/semantic-router)（MIT）；[Jev-style 开源复现 jev-on-a-laptop](https://github.com/rorshopping/jev-on-a-laptop)（KV cache 广播并行约束解码 + Qwen-2.5-1B-RLCD Apache-2.0 权重）
 
@@ -480,6 +480,23 @@ sofagent 的审计模块已经覆盖了「做了什么」——每次变更都�
 > 📖 来源：cobusgreyling/loop-engineering（MIT 开源）— [concepts.md](https://github.com/cobusgreyling/loop-engineering/blob/main/docs/concepts.md) / [failure-modes.md](https://github.com/cobusgreyling/loop-engineering/blob/main/docs/failure-modes.md)（Comprehension Debt Spiral 条目）
 
 > 📖 deepagents 弃用决策的完整踩坑记录（FilesystemMiddleware 硬编码注入 / wrapToolCall 并行崩溃 / REQUIRED_MIDDLEWARE_NAMES 白名单）详见 [FORGE/lessons/index.md](../FORGE/lessons/index.md)。
+
+### 2026 年的新一代对标：Agent 运行时治理内核
+
+「Agent 治理」在 2026 年从合规文档类（做输入输出过滤与合规台账的那一代）**分化为独立的运行时内核类**——不再挂在模型外面当过滤器，而是**在模型与真实副作用之间做确定性裁决**。同期多个独立团队给出结构与数据上高度一致的选择：
+
+| 对标物 | 结构与数据 | 与 sofagent 的关系 |
+|--------|-----------|-------------------|
+| **ArbiterOS**（港中文 CURE Lab，[arXiv 2604.18652](https://arxiv.org/abs/2604.18652)，开源） | 把模型重新概念化为**概率处理单元**，外面包一个**确定性神经符号内核**：语义 ISA 把概率消息固化为离散指令，按推理节点的**数据流血缘做污点传播**，在确定性汇聚点（高危工具调用 / 未授权出口）拦截并支持回滚。论文摘要实测高危拦截 **76%–95%** | **架构同构**——「概率与确定性执行的接缝层」正是 sofagent 的判定层与约束层。差异：其裁决为**二值**，无概率与弃权语义 |
+| **Cordum · policy-before-dispatch** | Safety Kernel 在 dispatch 前评估：是否显式授权 / payload 是否合 schema / 环境边界 / 是否需人批 / **决策能否回放**。主张「**大脑可以保持概率性，神经系统不能**」 | **同判断**——与「判定层永不进信任地基」「决策可脱离原模型回放」逐条对齐 |
+| **《Reason Less, Verify More》**（[arXiv 2607.07405](https://arxiv.org/abs/2607.07405)，KDD 2026 Workshop） | τ²-bench 上 **78% 的失败是「静默错误状态」**（工具不报错、Agent 自述成功）；确定性强预执行门把成功率 29.6% → 42.0%；**提升几乎全部来自一个精度 100% 的门，另一个门精度只有 5%** ⇒ 结论：**门自身的精度必须被审计** | **实证了两条原则**「静默失败监控是唯一防线」与「门槛纪律须两极端告警」——并用 100% vs 5% 的门精度差给出量化证据 |
+| **《Calibration Is Not Control》** | 校准只修**概率对齐**（Brier 分变好），**不修控制遗憾**（control regret 不变）；主张从「校准风险分」走向**干预优势**估计 | **对判定底座的重要补充**：校准概率是必要条件而非充分条件——判据除「判得准」，还须回答「按此判定去干预是否真的更好」 |
+| **《Adaptive AI Delegation under Uncertainty》**（[arXiv 2606.29406](https://arxiv.org/abs/2606.29406)） | 把「给 AI 多少决策权限」建模为 Governance-Aware POMDP——权限**随证据质量与不确定性动态分配** | 与档位五态同题：**权限不是静态配置，是随证据变化的分配** |
+| **风控行业的分层实践** | 第一层规则引擎（硬拦截 · 毫秒级）→ 第二层模型评分 → 第三层人工审核（灰色区间）；业界共识为「规则 + 模型结合」 | 与「确定性规则在前、语义判定在后 + 弃权交人」**三层同构**——该分层在风控已被验证多年 |
+
+**结论：sofagent 占的不是「又一个护栏库」，而是「Agent 运行时治理内核」这一格。** 位置与 ArbiterOS 同格；差异在**判定面**——对标物的裁决是二值的（allow / deny / rewrite），sofagent 多出**校准概率 + 弃权 + 档位**三件事，以及**判定能力可后训**（`train_*` 通路）这一层。
+
+**同时须诚实记录差距**：对标物均已有**实测数据**（拦截率区间 / 门精度对比），sofagent 的同类数据尚未产出——**这是当前最该补的东西，不是再补规划。**
 
 ---
 
@@ -682,8 +699,8 @@ Palantir Foundry 10 年迭代收敛出 Ontology 的 5 块构建块——**Object
 
 AI 从「程序」（单一模型）走向「协议」（多模型组合）是 Scaling Law 资源天花板的必然结果。两个对 sofagent 有直接影响的判断：
 
-1. **智能密度提升**——小模型与大模型能力差距从 2 年缩到 1 年甚至半年。这印证 sofagent v3.x 分层模型架构的可行性（本地 7B 执行 workflow + 本地 0.5B 跑管道层）：小模型够用时，本地推理的成本/隐私优势才真正成立。
-2. **运行时动态路由**——推理框架自动化后，runtime 动态把请求路由到最优模型组合。与 sofagent model-router（敏感度×复杂度四档路由）同构：public/internal 走云端，restricted/confidential 走本地，confidential 超复杂阻断。
+1. **智能密度提升**——小模型与大模型能力差距从 2 年缩到 1 年甚至半年。这印证 sofagent 分层模型架构的可行性（本地档执行 workflow + 本地管道档跑固定管道）：小模型够用时，本地推理的成本/隐私优势才真正成立。
+2. **运行时动态路由**——推理框架自动化后，runtime 动态把请求路由到最优模型组合。与 sofagent model-router 同构（敏感度 × 复杂度路由：云端两档 / 本地两档 / 判定档 / 拦截出口）：public/internal 走云端，restricted/confidential 走本地，confidential 超复杂阻断。
 
 > 💡 **self-recording improvement**：模型协作产生 trace → 用 trace 训练单模型 → 个体变强 → 增强协作边界。与 sofagent 进化能力同源：Dream Cycle 从 think.md 派生 knowledge/（Ledger→Views 单向），进化闭环用 Benchmark 分数驱动经验层优化——都是「把执行经验沉淀回个体」。
 
@@ -703,6 +720,64 @@ AI 从「程序」（单一模型）走向「协议」（多模型组合）是 S
 **生态警告**（原文）：「各行业每家公司都在把价值让渡给少数几个吞噬一切的模型」——若价值被少数模型层攫取，政治经济体系无法容忍。这给独立约束层存在的宏观理由：防价值全被模型层攫取，与治理层/审计层独立于模型厂商同源。
 
 > 📖 来源：纳德拉《A frontier without an ecosystem is not stable》（2026-06，X 长文，2800 万浏览）· A 级源（微软 CEO 署名）
+
+### 第三方判定模型对照：Laya 三处反例与 Jev 生态三种新用法
+
+判定面独立成层后，行业里长出了可逐行读的第三方实现与用法。两者对本仓的作用正好相反——**一个的价值在它弱的地方，一个的价值在它长出来的地方**。证据链：制品 `laya 0.3.4`（PyPI wheel）+ 权重快照 `c5d78730f3493e4fe16d61507ef4b78eef7318cf`，以下行号均为该制品实测。
+
+**Laya（反例级）——三处反例**
+
+1. **出厂制品不含校准**：`rl_agent_config.json` 实测 `temperature: [1.0,1.0,1.0]`、`temperature_by_options: {}`，而运行期正是在这两处取温度（`agent.py:304`）、默认值也是同一组（`agent.py:194-195`）⇒ 温度恒为 1.0（恒等变换），**出厂默认路径上不存在校准这一步**——不是「忘了配」。对应 [v1.7.0 第三章](./changelog/v1.7/v1.7.0.md)「校准制品随行」。
+2. **校准面与运行消费不是同一处代码保证**：运行期消费的置信度是归一化熵（`common.py:200-201` `1 - H(p)/log k`，消费点 `agent.py:309`），而拟合与评估面的 `ece_score(conf, correct, bins=15)`（`common.py:187`）收的是**调用方传入的 conf**——该 wheel 内零调用点，**这条路径不随制品发布**。⇒「对外校准数字能否由已发布制品复现」是可判定的事实，不是洁癖。对应 [v1.7.0 第三章](./changelog/v1.7/v1.7.0.md)「统计量一致性 / 对外数字可复现」。
+3. **判定力崩掉时置信度照高**：其 router 自述英文 checkpoint 在非英语上「does not gently degrade … it collapses」（20 选项 MASSIVE intent 上 Hindi 0.100、Korean 0.103，随机基线 0.050），「**and it reports high confidence while doing so**」（自述 Hindi ECE 0.855）（`router.py:21-24`）⇒ 置信度不等于判定力。
+
+**可借鉴两处**：① **判定原语是一等输入参数而非 prompt 措辞**——判定读 `items[r]["markers"]` / `QTYPES[q["t"]]` 这类结构体字段（`agent.py:292-320`），与 [v1.6.0 第一章](./changelog/v1.6/v1.6.0.md)「问题集限定」同源。② **分流前置在模型加载之前**——其 router 在任何 checkpoint 加载之前完成分流判定（`router.py:135-136`「a cold load costs seconds, while detection costs microseconds」），并自述 `typed-decisions`「**should not be a silent default**」（`router.py:26-28`）；「一开始就选错路径」是事后探针抓不到的失效面，见 [v1.9.0 第六章](./changelog/v1.9/v1.9.0.md)。
+
+**零承诺佐证**：全仓 `abstain` / `refuse` / `defer` **0 命中**——它把「势均力敌」与「没把握」压进同一个 confidence 数，「判不了」没有一等出口。这从反面佐证本仓 [ARCHITECTURE](./ARCHITECTURE.md)「`ABSTAIN` 必须与 `ASK` 分开」的判据：两者混装则下游无法区分「该调阈值」与「该补判据」。
+
+**Jev 生态（印证级）——三原语上线三天长出三种完全不同用法**
+
+Jev 公开的接口面只有三原语（Noul / Choice / Score）且全部答案带概率；三个互不相识的第三方用法在三天内各自长出来：① `browser-use/jev-ultrafast`——**动态动作空间索引**（只把此刻可用操作 + 目标交给模型）+ **投机式预判**（多目标一次往返问出、按最终操作丢弃其余）+ 检查器（元素 / 操作概率 / 目标概率 / 已执行动作全列，可单步暂停）；② `TheoLeeCJ/openjev`——3090 级显卡可跑，**直接从开放模型读类型化选项概率**（删掉「先写话再解析回 if」的中间环节），且不吃生成吞吐、吃并行打分能力；③ `tamaratran/fast-jev-compaction`——把判定当**有损操作守门人**（成对删除、原话一字不动、分级折叠，折叠到极限**直接报错而非静默丢东西**）。⇒ 对 sofagent 是零承诺印证：**接口干净则生态自发生长**——故本仓坚持契约由 `DecisionChannel` 保证、实现路线不绑定。其中「动态判定面收窄」与「投机式预判」两项对判定底座自身有增量价值，已按「不提前抽象 + 写清触发条件」登记进 [ROADMAP · 探索方向](./ROADMAP.md#探索方向)，不排期。
+
+> 📖 来源：[laya（PyPI 0.3.4）](https://pypi.org/project/laya/) 与 [HF `convaiinnovations/laya`](https://huggingface.co/convaiinnovations/laya)（Apache-2.0，快照 `c5d7873`）；Jev 生态三用法来自 2026-09-19 第三方行业文章梳理（`browser-use/jev-ultrafast` · `TheoLeeCJ/openjev` · `tamaratran/fast-jev-compaction`）——**未逐仓读源码，仅作生态形态记录**
+
+### 单机全流程的实测边界：单机推理已可服务、单机训练小档已跑通（2026-09-21）
+
+判定面独立成层之后的下一个问题，是「这套东西能不能完全跑在用户自己的机器上」——数据不出机、后训练权在用户手里。两个开源复刻件各自留下了**可直接引用的实测读数**，合起来把这条路的边界画清了：**推理侧笔记本档已能直接服务；训练侧小档已跑通、大档仍要云卡。**
+
+**单机推理（两个独立来源）**
+
+- **延迟的两档读数**：某 9B 判定件在 **M5 Pro 64 GB**（MLX）上判定延迟中位 **444.0 ms / p95 981.0 ms**（324 例）；同口径在 **H100 上中位 106.0 ms / p95 119.8 ms**（120 例），两者均为其仓内自带基准的产物（Nimble `README.md:463-464`）。⇒ 服务器档与单机档之间是**数量级差**，不是「能跑 / 不能跑」的二分。
+- **显存门槛按精度分档**：另一件的 4B / 9B 在 bf16 下**装进 32 GB Mac**，而 fp32 分别需约 16 GB / 约 33 GB——其 8B 卡直接写明「fp32 需约 33 GB，**装不进 32 GB Mac**，bf16（约 17 GB）可以」（Kev `README.md:20`、`docs/model-cards/kev-8b-qwen3.md:88`）。
+- 🔴 **单机可用性由「目标硬件上有没有快核」决定，不由参数量决定**：同一件制品在同一台 M5 上做同一件事（五问 × 三选项 × 约 230 token 的 state），把基座换成含线性注意力循环层的版本后**慢 3–7 倍**（4B：**779 ms vs 174 ms**；9B：**约 2 s vs 约 300 ms**）——根因是该循环层在 Apple Silicon 上**无 MPS 实现、框架回退到参考实现**（Kev `README.md:219-227`）。⇒ **基座选型的第一性问题不是「多大」，是「跑在谁的机器上、有没有核」**。
+
+**单机训练（路径是被刻意保留的，不是权宜）**
+
+- **本机训练路径写在计划里**：其计划文档明写「**保留 MacBook 训练路径**」，受控实验才上云卡（Kev `PLAN.md:68`），并给出可执行纪律：「**在 Mac 上一次只跑一个训练任务——同一块 Apple GPU 上两个任务慢得多**，长跑改用云卡」（`README.md:283`）。
+- **小档的完整读数**：0.5B 档在 **Apple M5 / 32 GB 统一内存 / PyTorch MPS** 上完成一次训练**约 1 小时 45 分钟**（约 0.29 s/record、2,250 步），**功耗 30–40 W ⇒ 约 0.06 kWh**（`docs/model-cards/kev-0.5b.md:112-118`、`:183-184`）。⇒ 「单机全流程」在小规模档上是**已经成立的物理事实**，不是愿景。
+- **现实分档**：0.6B 约 12 分钟、0.8B 约 20 分钟、4B 约 40–56 分钟、8B 约 70 分钟、9B 约 91 分钟（峰值显存 39.5 GB）——**除小档外全在单卡 H100 上**（各 model card）。⇒ 笔记本档与云卡档是**两条都要交付的路径**，对外口径只能是「**可训规模随可用内存分档**」，不能是「某机型能跑」。
+- ⚠️ **学习率不能跨规模照搬，且文档值与代码默认值必须同源**：4B / 8B 档的实证药方是 **5e-5**——其默认 **2e-4** 会把基座既有的零样本读出打坏（MMLU 0.688 → 0.60–0.66、PAWS 0.787 → 0.56–0.71），降价后恢复大部分，作者自述这是「**找到的最大单项配方改进**」，而**减 LoRA 目标模块与降 rank 的帮助都更小**；而 0.5B 档的配方写的是 **2e-4**（`docs/model-cards/kev-4b-qwen3.md:76`、`kev-0.5b.md:114`）⇒ **lr 须按规模重测**。同时其训练脚本 argparse 的**默认仍是被证伪的那个 2e-4**（`kev/train.py:64`）——**采用他人配方必须读代码默认值，不能只读文档**。
+- 🔴 **单机延迟的最大杠杆是前缀复用，不是更小的模型**：其 Apple GPU 工程优化清单（LoRA 权重 fp32 合并后再转换、SDPA、MPS 输入按 64-token 桶填充、**state 前缀缓存**）中，**前缀缓存在重复的 772-token state 下把同一件从 861 ms 降到 242 ms**（`README.md:230-231`）——与判定层「并行约束解码 + KV cache 广播、一次前向填充全部字段」是**同一个杠杆**，落地见 [v1.8.0 第三章](./changelog/v1.8/v1.8.0.md)。
+
+**概率偏移的两个独立同量级读数（可作工程先验，不可当可忽略）**
+
+- **打包模式差异**：跨「并行 / 串行缓存 / 独立」三种模式的**最大绝对概率差 0.018008**（相对独立执行）、0.012336（相对串行缓存）；其基准**容差为 0.03**，并自述「**这些是测试容差，不是校准保证**」（Nimble `docs/PARALLEL_SCORING.md:120-141`）。
+- **数值精度差异**：bf16 与 fp32 在 24 例新来源上的概率差**至多 0.017**，且**最优选项未变**；自述「**是一次小检查，不是对每个输入的保证**」（Kev `README.md:234`）。
+⇒ 两个独立制品在**两个不同维度**上给出的偏移量级都落在 **0.017–0.018** ⇒ 工程上可把「概率偏移量级 ~0.02」当先验参照，但**必须进入校准口径声明**（按哪种模式拟合、就按哪种模式评测），并与 [v1.9.0 第四章](./changelog/v1.9/v1.9.0.md) 端到端落数同批报告。
+
+**弃权面：生态已有同源实践，差异化在制度面而非概念面**
+
+两件都在做弃权，且机制与本仓同源：一件在路线图里写「可以从同一组概率特征（top-1 / margin / entropy / K）导出**等价的 abstain 旗标**，按开发集校准、**无需重训**」，并写明「以**固定覆盖率下的选择性准确率**在 OOD 上评测」（Kev `PLAN_Qwen35.md:151`、`:169`）；另一件在**数据策展面**用弃权把关标签生成——「checked premises, explicit rules, **abstention on gaps**」、「uncovered assignments **abstain**」（Nimble `nimble/datasets/evidence_curation.py:1`、`evidence_stages.py:85`、`:129`）。⇒ 本仓的差异化**须收窄到制度面**：弃权是**一等输出**（不是与概率并列的一个旗标）、**门槛按原语分档**、**弃权独立归因**、**门控四联红旗**、**校准上线前置门**。
+
+**隔离与注入面：生态做到的是「问句互不污染」，尚未做「政策不从数据里长出来」**
+
+一作把**问句隔离**当安全特性实现并验证（一问的文本无法操纵另一问的答案），分隔符伪造防护针对保留 token 已验；但同一处自述「**经由 state 文本的其他提示注入路径尚未研究**」（Kev `docs/model-cards/kev-0.5b.md:120`）。⇒ 这正是 [v1.8.0 第二章](./changelog/v1.8/v1.8.0.md) 新增的**不可信观察分层（授权面）**覆盖的空白：生态做到了「问句之间不互相污染」，尚未做「**state 内容不得供给政策与权限**」。
+
+**许可面（引用前必须确认）**
+
+一件声明 **Apache-2.0**（仓内 `LICENSE`）；另一件仓库根**未见任何 LICENSE 文件**（仓内唯一的 `LICENSE` 位于 `.agents/skills/typesafe-ai/`，属随附第三方技能）⇒ **「没写许可」不等于「默认可商用」**——引用其配方、数据或读数前须先确认授权口径。
+
+> 📖 来源：Kev（`jaredpalmer/kev`）与 Nimble（`bespokelabsai/nimble`）**本地克隆快照实测**（2026-09-21 读取，行号均为该快照内实测位置）。读数分两类：单机延迟与打包加速比来自**各自仓内自带的基准产物**（可复算，但**未由本仓复算**）；训练耗时 / 峰值显存 / 配方来自**其 model card 的自述**（未在本机复现）。按「不可复算数字不与本仓可复算数字并列展示」纪律，此处全部标注证据级别。
 
 ---
 

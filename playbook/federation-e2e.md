@@ -1,6 +1,6 @@
 # sofagent 联邦查询跨进程 E2E 测试
 
-验证 `@sofagent/daemon` 联邦查询（v1.1.8 引入）在**真实跨进程**场景下的完整性。补现有单测（`federation.test.ts`，同进程 mock channel 直投）未覆盖的缺口。
+验证 `@sofagent/daemon` 联邦查询在**真实跨进程**场景下的完整性。补现有单测（`federation.test.ts`，同进程 mock channel 直投）未覆盖的缺口。
 
 > 本 E2E 已被 acceptance-test.sh **场景 320** 纳入验收体系，每次发版验收自动运行。
 
@@ -56,7 +56,7 @@ SOFAGENT_REPO="$(pwd)" node playbook/federation-e2e.mjs
 
 前置核对全部满足（Node ≥18 / `engine/core/dist` + `engine/daemon/dist/federation` 构建产物在 / 脚本依赖 9 个符号全部导出）；五场景全过：配对协商（ECDH 一致 + 指纹锚点）· 跨进程加密查询（A→fork 子进程 B→TCP→解密→检索→加密回传）· 篡改检测（密文翻 1 字节 → AES-GCM 解密失败）· 离线降级（SIGKILL 杀 B → null → 本地知识库）· trust 白名单（标 public 含 AKIA → 降权 WARN）。
 
-> 该实测记录已作为 v1.4.0「联邦查询跨设备 E2E」排期的证据基线（E2E 脚本固化入仓时复用此验收标准）。
+> 该实测记录已作为「联邦查询跨设备 E2E」排期的证据基线（E2E 脚本固化入仓时复用此验收标准）。
 
 ## 常见失败排查
 

@@ -152,7 +152,7 @@ const GROUP_NOTES = {
 let section = '';
 for (const g of GROUP_ORDER) {
   const list = grouped[g] || [];
-  if (list.length === 0) continue; // 空组不显示（执行模块 v1.5.3 交付后自然出现）
+  if (list.length === 0) continue; // 空组不显示（执行模块 v1.5.4–v1.5.6 交付后自然出现）
   section += `\n### ${GROUP_NAMES[g]}（${list.length}）\n\n`;
   if (GROUP_NOTES[g]) section += `${GROUP_NOTES[g]}\n`;
   section += `| tool | roles | 说明 |\n|---|---|---|\n`;
@@ -170,7 +170,7 @@ if (i === -1 || j === -1) {
 }
 const updated =
   doc.slice(0, i) +
-  `${START}（${tools.length} · 按产品能力域分组）\n\n> 十个能力域按「一个组 = 一个可独立讲述的产品能力」划分，与五能力叙事的对应：本节工具承载其中的**审计**（审计与合规）、**回溯**（快照与回溯）、**沉淀**（知识资产与能力市场）、**进化**（后训练流水线与 FDE 沉淀）能力面；**注入**能力走加载链文件（SKILL.md/fde.md/think.md/knowledge/），不经 MCP 暴露。**roles 列保留运行时真值**——\`SOFAGENT_MCP_ROLES=audit,ops\` 收窄面以 roles 为准（v1.4.0 工具角色分层），分组是文档编制判断。浏览器四件套（playwright_*）归审计域——主叙事是 UI 层审计取证（v1.5.2 UI 审计的执行底座）。\n` +
+  `${START}（${tools.length} · 按产品能力域分组）\n\n> 十个能力域按「一个组 = 一个可独立讲述的产品能力」划分，与五能力叙事的对应：本节工具承载其中的**审计**（审计与合规）、**回溯**（快照与回溯）、**沉淀**（知识资产与能力市场）、**进化**（后训练流水线与 FDE 沉淀）能力面；**注入**能力走加载链文件（SKILL.md/fde.md/think.md/knowledge/），不经 MCP 暴露。**roles 列保留运行时真值**——\`SOFAGENT_MCP_ROLES=audit,ops\` 收窄面以 roles 为准（v1.4.0 工具角色分层），分组是文档编制判断。浏览器四件套（playwright_*）归审计域——主叙事是 UI 层审计取证（v1.5.7 UI 审计的执行底座）。\n` +
   section +
   doc.slice(j);
 writeFileSync(API_DOC, updated);

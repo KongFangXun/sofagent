@@ -429,12 +429,16 @@ fi
 #   复核：`git log --oneline -S'质量验证：' -- docs/ROADMAP.md` 零命中（该形态从未出现在
 #   现路径的历史里），`-S'质量验证：[0-9]+ tests' --all` 仅 5 个历史文档命中（archive/changelog）。
 # 【改锚判据】ROADMAP 现以「… · 测试 NNNN→MMMM（NN 包 workspace 口径）· …」声称最新版
-#   测试数（docs/ROADMAP.md:10）。它是**发版时点快照**（语义同 CHANGELOG 索引行），
+#   测试数（由本段锚定位，见下方 ROADMAP_LINE）。它是**发版时点快照**（语义同 CHANGELOG 索引行），
 #   **不是当值** ⇒ 不得与当前 TOTAL_TESTS 比对（v1.4.8 快照 4429 ≠ 当前 4468，那样改会
 #   必红、属**制造假红**）；应与**同版本开发日志**的 `NNN tests across NN packages` 快照
 #   比对（范式与下方 CHANGELOG 段的 DEVLOG_SNAPSHOT 一致，一个判据两处消费）。
 #   提取为空 ⇒ FAIL；同版本开发日志快照不可用 ⇒ 可见 ⏏️ SKIP（不是静默）。
-ROADMAP_LINE=$(grep -nE '^> \*\*v[0-9]+\.[0-9]+\.[0-9]+ 开发完成' docs/ROADMAP.md 2>/dev/null | head -1)
+# 【锚宽化】锚串不得把**状态词**当结构的一部分：`开发完成` 只在「开发完成待发版」态成立，
+#   发版后措辞改「已发版」即失配 ⇒ 守卫从「校验通过」掉成「锚未命中 FAIL」，而文档没有错。
+#   状态词是**发版流程变量**（开发完成 / 待发版 / 已发版），结构是「粗体版本号 + 粗体收尾 +
+#   破折号正文」——故锚定状态词枚举，不锚定其中某一个。
+ROADMAP_LINE=$(grep -nE '^> \*\*v[0-9]+\.[0-9]+\.[0-9]+ (开发完成|待发版|已发版)' docs/ROADMAP.md 2>/dev/null | head -1)
 if [ -z "$ROADMAP_LINE" ]; then
   echo -e "  ${RED}✗ docs/ROADMAP.md 未找到「> **vX.Y.Z 开发完成」最新版段（grep 未命中 → FAIL，禁止静默跳过）${NC}"
   ((FAIL++)) || true

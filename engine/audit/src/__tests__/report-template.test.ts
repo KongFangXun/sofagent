@@ -55,7 +55,7 @@ function makeStats(overrides: Partial<ReportStats> = {}): ReportStats {
     localOnlyCount: 0,
     sensitiveLocalRate: 1,
     anomalyCount: 0,
-    routeDist: { cloudStrong: 1, cloudFast: 0, local7b: 0, local05b: 0 },
+    routeDist: { cloudStrong: 1, cloudFast: 0, localExecutor: 0, localPipeline: 0 },
     records: [makeRecord()],
     ...overrides,
   };
@@ -238,17 +238,17 @@ describe('renderReport · Section 4 数据流向', () => {
 
 describe('renderReport · Section 5 模型路由', () => {
   it('渲染 4 个路由桶的条数', () => {
-    // 测试：cloudStrong / cloudFast / local7b / local05b 均显示
+    // 测试：cloudStrong / cloudFast / localExecutor / localPipeline 均显示
     const md = renderReport('daily', '2026-07-28', makeStats({
-      routeDist: { cloudStrong: 3, cloudFast: 2, local7b: 1, local05b: 0 },
+      routeDist: { cloudStrong: 3, cloudFast: 2, localExecutor: 1, localPipeline: 0 },
     }));
-    expect(md).toContain('云端 32B+');
+    expect(md).toContain('云端强档');
     expect(md).toContain('| 3 |');
-    expect(md).toContain('云端快速');
+    expect(md).toContain('云端快档');
     expect(md).toContain('| 2 |');
-    expect(md).toContain('本地 7B');
+    expect(md).toContain('本地执行档');
     expect(md).toContain('| 1 |');
-    expect(md).toContain('本地 0.5B');
+    expect(md).toContain('本地管道档');
     expect(md).toContain('| 0 |');
   });
 });

@@ -158,8 +158,8 @@ describe('aggregateStats', () => {
     expect(stats.routeDist.cloudFast).toBe(0);
   });
 
-  it('routeDist 本地 0.5B 模型归入 local05b', () => {
-    // 测试：qwen2.5-0.5b + local-model → local05b
+  it('routeDist 带轻量标记的本地模型归入 localPipeline', () => {
+    // 测试：qwen2.5-0.5b（轻量标记）+ local-model → localPipeline
     const records: DataSovereigntyRecord[] = [
       makeRecord({
         cloudCall: { timestamp: '2026-07-28T10:00:00.000Z', provider: 'local', model: 'qwen2.5-0.5b', endpoint: 'x', tokenCount: { input: 1, output: 1 }, purpose: 'p' },
@@ -167,7 +167,7 @@ describe('aggregateStats', () => {
       }),
     ];
     const stats = aggregateStats(records);
-    expect(stats.routeDist.local05b).toBe(1);
+    expect(stats.routeDist.localPipeline).toBe(1);
   });
 });
 

@@ -140,9 +140,9 @@ Both phases are one thing: **the deliverable is shared live state** (written on 
 | Job description | Frozen deliverables from the entry phase (merge_criteria / approver / trigger) |
 | Performance review | Audit evidence + governance KPI dashboard (v1.5.0) |
 | Organizational memory | Knowledge distillation (think.md reflection + knowledge/) |
-| Training pipeline | Experience → exam → promotion self-evolution chain (scheduled v1.5.5) |
-| Fault tolerance | Snapshot rollback + capability baseline timeline (scheduled v1.5.5) |
-| Employment contract boundary | Pluggable contracts & core capability registry (scheduled v1.5.4) |
+| Training pipeline | Experience → exam → promotion self-evolution chain (scheduled v1.5.8) |
+| Fault tolerance | Snapshot rollback + capability baseline timeline (scheduled v1.5.9) |
+| Employment contract boundary | Pluggable contracts & core capability registry (scheduled v1.5.7) |
 
 | Go deeper | Where |
 |--------|--------|
@@ -152,6 +152,10 @@ Both phases are one thing: **the deliverable is shared live state** (written on 
 | Skill system & knowledge pipeline | [FDE/Skill system](./FDE/README.md) |
 
 ## Installation
+
+**Release stage (read before installing)**: sofagent is in its **Alpha construction period** (**v0.x–v1.x**) — the feature surface moves fast and **no interface stability is promised**; read the [CHANGELOG](./CHANGELOG.md) before upgrading across versions. From **v2.0.0** on it enters the **Beta stage**.
+
+The matching npm release-channel policy: **construction-period versions are published under the `alpha` dist-tag and never occupy `latest`** (`latest` is reserved for the stable channel). Measured now: `npm view @sofagent/audit dist-tags` → `{ latest: '1.5.0' }` — during the construction period `latest` does not move forward; **after v2.0.0 ships, `latest` points to 2.0**.
 
 > ⚠️ **Enterprise users read first** [LIMITATIONS §3](./docs/LIMITATIONS.md) — `config.yml` is **non-fail-closed by default** (rules can be bypassed by Agent tampering), and **write-side** multi-tenant isolation is not yet landed (v0 delivered query-side isolation: orgId filtering + the data/<tenant>/ path foundation — see LIMITATIONS). For strict-compliance scenarios use CI fallback + file-permission lock (`chmod 400 .sofagent/config.yml` — an auxiliary layer, ineffective against same-user processes; see [LIMITATIONS §3](./docs/LIMITATIONS.md)); do not put the single-machine default config directly into production.
 
@@ -258,7 +262,7 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # load the securit
 | What each release did | [CHANGELOG](./CHANGELOG.md) |
 | Security statement · known limits | [SECURITY](./SECURITY.md) · [LIMITATIONS](./docs/LIMITATIONS.md) |
 
-> 🧪 **Engineering credibility** (current): 4905 tests / 13 module packages + 11 plugins (7 DSH + 4 OpenClaw) · 24 audit rules · fresh-eyes independent review continuously running.
+> 🧪 **Engineering credibility** (current): 4906 tests / 13 module packages + 11 plugins (7 DSH + 4 OpenClaw) · 24 audit rules · fresh-eyes independent review continuously running.
 > The test count is a post-v1.4.9-release snapshot of main (rolls forward with fix batches; the release-time figure was 4805); the current authoritative value is whatever `tools/check/test-count.sh` reports — counting standard in [WIKI](./docs/WIKI.md). Review-environment notes in [docs/guides/review-system.md](./docs/guides/review-system.md); performance figures are single-machine reference values (cross-tool benchmarking scheduled with Benchmark integration).
 
 ---

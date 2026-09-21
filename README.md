@@ -138,9 +138,9 @@
 | 岗位职责说明书 | 进场冻结的交付物（merge_criteria / approver / trigger） |
 | 绩效考核 | 审计留痕 + 治理 KPI 面板（v1.5.0） |
 | 组织记忆 | 知识沉淀（think.md 反思 + knowledge/） |
-| 培训体系 | 经验→考核→晋级的自进化链（v1.5.5 排期） |
-| 试错容错 | 快照回滚 + 能力基线版本线（v1.5.5 排期） |
-| 劳动合同边界 | 可拔契约与主干能力清单（v1.5.4 排期） |
+| 培训体系 | 经验→考核→晋级的自进化链（v1.5.8 排期） |
+| 试错容错 | 快照回滚 + 能力基线版本线（v1.5.9 排期） |
+| 劳动合同边界 | 可拔契约与主干能力清单（v1.5.7 排期） |
 
 | 想深入 | 看哪里 |
 |--------|--------|
@@ -150,6 +150,10 @@
 | Skill 体系与知识资产管道 | [FDE/SKILL 体系](./FDE/README.md) |
 
 ## 安装
+
+**版本阶段（装前必读）**：sofagent 处于**阿尔法施工期**（v0.x–v1.x）——功能面快速变动，**不承诺接口稳定**，跨版本升级前先读 [CHANGELOG](./CHANGELOG.md)。自 **v2.0.0** 起进入**贝塔阶段**。
+
+对应的 npm 发布通道策略：**施工期版本一概以 `alpha` 标签发布、不占用 `latest`**（`latest` 留给稳定通道）。实测 `npm view @sofagent/audit dist-tags` 当前为 `{ latest: '1.5.0' }`——施工期内 `latest` 不前移；**v2.0.0 发布后 `latest` 指向 2.0**。
 
 > ⚠️ **企业用户先读** [LIMITATIONS §三](./docs/LIMITATIONS.md#三安全与信任模型局限)——`config.yml` 默认**非 fail-closed**（规则可被 Agent 篡改绕过），多租户**写入侧**隔离尚未落地（v0 已交付查询侧隔离：orgId 过滤 + data/<tenant>/ 路径地基，见 LIMITATIONS）。强合规场景建议 CI 兜底 + 文件权限锁（`chmod 400 .sofagent/config.yml`——辅助层，对同用户进程无效，见 [LIMITATIONS §三](./docs/LIMITATIONS.md)），不要用单机默认配置直接上生产。
 
@@ -255,7 +259,7 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # 加载安全规�
 | 每个版本做了什么 | [CHANGELOG](./CHANGELOG.md) |
 | 安全声明 · 已知局限 | [SECURITY](./SECURITY.md) · [LIMITATIONS](./docs/LIMITATIONS.md) |
 
-> 🧪 **工程可信度**（当前口径）：4905 测试 / 13 模块包 + 11 插件（7 DSH + 4 OpenClaw）· 24 条审计规则 · fresh-eyes 独立审查持续运行。
+> 🧪 **工程可信度**（当前口径）：4906 测试 / 13 模块包 + 11 插件（7 DSH + 4 OpenClaw）· 24 条审计规则 · fresh-eyes 独立审查持续运行。
 > 测试数为 v1.4.9 发版后 main 时点实测口径（随修复批滚动，发版时点为 4805）；当前权威值以 `tools/check/test-count.sh` 实跑为准，包数统计标准见 [WIKI](./docs/WIKI.md)。审查环境注意事项见 [docs/guides/review-system.md](./docs/guides/review-system.md)；性能数据为单机参考值，跨工具横评排期 v1.4.x 与 Benchmark 集成。
 
 ---

@@ -1,9 +1,23 @@
 // ============================================================
-// model-router.ts · 混合模型路由层（v1.5.0 · P1）
+// model-router.ts · 混合模型路由层
 // ============================================================
 //
 // 按 数据敏感度 × 任务复杂度 把任务路由到：
-//   cloud-strong / cloud-fast / local-executor(7B) / local-pipeline(0.5B)
+//   cloud-strong / cloud-fast / local-executor / local-pipeline / decision-model
+//
+// 档位是**抽象槽位**，不是模型规格——具体模型由 data/config/model-router.json
+// 或 model_switch 注册表（model-registry）决定：
+//   cloud-strong     云端强档，复杂推理
+//   cloud-fast       云端快档，简单任务
+//   local-executor   本地执行档，多步 workflow（要长上下文、要推理）
+//   local-pipeline   本地管道档，固定管道（模板填充 / 字段提取 / 格式转换）
+//   decision-model   判定档，决策模型直接出判定结果，不调生成模型
+//
+// local-executor 与 local-pipeline 的区分是**任务形态**（执行 vs 管道），
+// 不是模型规格——同一台一体机上两者可指向同一个本地推理模型，差别在调用
+// 参数（执行档给足上下文；管道档走约束解码 + 低 token 预算）。
+//
+// block 不是模型档，是**拦截目标**：敏感数据本地不可用时的 fail-closed 出口。
 //
 // 路由硬规则（dev-prompt §3 L185-1.5.0111：
 //   public      × 任意        → cloud-fast
@@ -18,7 +32,7 @@
 //           走 block-and-alert（写 auditResult='FAIL' 的 DataSovereigntyRecord
 //           + stderr 告警）。
 //
-// 与 P0 审计的耦合：单向依赖——ModelRouter 只读消费 DataSovereigntyLogger
+// 与审计层的耦合：单向依赖——ModelRouter 只读消费 DataSovereigntyLogger
 // .queryRecent() 辅助敏感度判定；audit 包对 orchestrator 零 import。
 // ============================================================
 
@@ -35,14 +49,30 @@ import {
 // ============================================================
 
 export type Sensitivity = 'public' | 'internal' | 'restricted' | 'confidential';
-export type RouteTarget = 'cloud-strong' | 'cloud-fast' | 'local-executor' | 'local-pipeline' | 'block';
+/**
+ * 路由目标。
+ *
+ * - 前四项是**模型档位**（抽象槽位，具体模型由配置 / 注册表决定）
+ * - `decision-model` 是**判定档**：由决策模型直接作答（判定 / 分拣类任务），
+ *   不经生成模型——产出是类型化答案 + 概率，不是文本。该档由上游显式请求
+ *   （判定任务发起时指定），不参与「敏感度 × 复杂度」自动矩阵
+ * - `block` **不是模型档**，是敏感数据本地不可用时的拦截出口（fail-closed）
+ */
+export type RouteTarget =
+  | 'cloud-strong'
+  | 'cloud-fast'
+  | 'local-executor'
+  | 'local-pipeline'
+  | 'decision-model'
+  | 'block';
 export type RouteReason =
   | 'complex-reasoning'
   | 'simple-translation'
   | 'workflow-execution'
   | 'fixed-pipeline'
   | 'sensitive-data'
-  | 'insufficient-local-capacity';
+  | 'insufficient-local-capacity'
+  | 'typed-decision';
 
 export interface ModelRoute {
   target: RouteTarget;
@@ -50,7 +80,7 @@ export interface ModelRoute {
   sensitivity: Sensitivity;
   /** 任务复杂度（内部评估产物，用于测试断言） */
   complexity?: TaskComplexity;
-  /** confidential 复杂任务升级到 7B 时为 true（写审计告警） */
+  /** confidential 复杂任务升级到本地执行档时为 true（写审计告警） */
   escalated?: boolean;
   /** target='block' 时的阻断原因（人可读） */
   blockReason?: string;
@@ -260,10 +290,10 @@ export class ModelRouter {
         reason: 'insufficient-local-capacity',
         sensitivity,
         complexity,
-        blockReason: 'confidential 超复杂任务（需 32B+ 推理）本地模型能力不足，已阻断等待人工确认',
+        blockReason: 'confidential 超复杂任务超出本地档能力预算，已阻断等待人工确认',
       };
     }
-    // complex / simple → 升级到 7B + 审计告警
+    // complex / simple → 升级到本地执行档 + 审计告警
     return {
       target: 'local-executor',
       reason: 'sensitive-data',
