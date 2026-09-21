@@ -24,6 +24,8 @@
 #                             同输入同输出 + 已登记差异钉住 · 须在构建之后跑 · v1.4.9 G-9 接入）
 #   + doc-discipline.sh    → 对外文档写作纪律（内部工单代号 / 本机私有路径 · v1.4.9 P2-27 接入）
 #   + check-prepush-checklist.mjs → 本清单自身的对账：清单里的脚本名 ⊆ 实际被调用（v1.4.9 G-16 接入）
+#   + check-gate-inventory.sh → 门禁清单覆盖对账：tools/check/ 守卫 ⊆ 真实调用面（抓孤儿守卫）
+#   + check-forms.mjs       → 形态归属标注对账（changelog ↔ ROADMAP 双向）
 #   + npm run build         → 审计模块构建
 #
 # 用法:
@@ -162,6 +164,36 @@ if [ -f tools/check/check-prepush-checklist.mjs ]; then
   fi
 else
   check_warn "tools/check/check-prepush-checklist.mjs 不存在（守卫缺失）"
+fi
+
+# ════════════════════════════════════════
+# 1c. 门禁清单覆盖对账（check-gate-inventory.sh）
+# 为什么需要：本仓每个守卫都进了 tools/README.md 的**登记表**，但「守卫是否真的被调用」
+#   长期零对账 ⇒ **孤儿守卫**：脚本写好、登记在册、零调用点，红态无人知晓。
+#   实案：check-forms.mjs 曾整批红着，而 pre-commit 钩子 / 本文件 / releasing 各阶段
+#   门禁清单**全都不含它**——它只活在登记表里。**登记 ≠ 调用**，本步把两者机械化。
+# 覆盖口径（四项显式声明见脚本头）：脚本面认裸名且剔注释行 · 文档面只认 `tools/check/`
+#   路径化引用 · **登记表与 docs/changelog/v* 历史记述不在任何面内**（描述 ≠ 调用）·
+#   区分大小写。豁免：确不在开源仓自动调用的守卫写进 `playbook/.gate-inventory-exempt`。
+# 三态语义：0 = 无孤儿；1 = 有孤儿或陈旧豁免；2 = 失明（守卫 <30 / 调用面 <5 /
+#   语料装载不完整——拒绝假绿）。
+# 成本实测：约 6s（对全语料单次 grep，非 42×171 次进程启动）。
+# ════════════════════════════════════════
+echo -e "\n${BOLD}── 1c. 门禁清单覆盖对账 ──${NC}"
+if [ -f tools/check/check-gate-inventory.sh ]; then
+  GI_OUT=$(bash tools/check/check-gate-inventory.sh 2>&1)
+  GI_RC=$?
+  if [ "$GI_RC" -eq 0 ]; then
+    check_pass "check-gate-inventory.sh（守卫全部有调用点或已豁免）"
+  elif [ "$GI_RC" -eq 2 ]; then
+    check_fail "check-gate-inventory.sh 检查器失明（exit 2——扫描面塌缩/语料漏载，拒绝假绿）"
+    printf '%s\n' "$GI_OUT" | grep -E '失明' | head -3
+  else
+    check_fail "check-gate-inventory.sh 发现孤儿守卫或陈旧豁免（exit ${GI_RC}）"
+    printf '%s\n' "$GI_OUT" | grep -E '❌|处置二选一' | head -10
+  fi
+else
+  check_warn "tools/check/check-gate-inventory.sh 不存在（守卫缺失）"
 fi
 
 # ════════════════════════════════════════
@@ -431,6 +463,32 @@ if [ "$MINIMAL" = false ]; then
     check_fail "doc-discipline.sh 发现违规（内部工单代号或本机私有路径）"
     bash tools/check/doc-discipline.sh 2>&1 | grep -E "❌|命中" | head -10
   fi
+fi
+
+# ════════════════════════════════════════
+# 3h. 形态归属标注对账（check-forms.mjs）
+# 为什么需要：changelog 每章须挂 `> **形态归属**：` 行、形态词走封闭枚举、ROADMAP
+#   声明的形态计数与 changelog 实测**逐版双向对账**——这些此前只靠人肉自查
+#   （实测：38 章标注里 7 章曾标错或标缺，无一条被守卫拦住）。
+#   本步把它升级为可执行约束：加章漏挂标注 / 声明数与实测不符 / 计数 pin 被偷改，
+#   都在推前当场红。
+# 三态语义：0 = 全绿；1 = 违规/缺失/越界/自相矛盾/对账不符；2 = 失明（扫描面 <6 文件
+#   或需标注章 <30——拒绝假绿）。
+# ════════════════════════════════════════
+if [ "$MINIMAL" = false ]; then
+  echo -e "\n${BOLD}── 3h. 形态归属标注对账 ──${NC}"
+  CF_OUT=$(node tools/check/check-forms.mjs 2>&1)
+  CF_RC=$?
+  if [ "$CF_RC" -eq 0 ]; then
+    check_pass "check-forms.mjs（changelog ↔ ROADMAP 形态归属一致）"
+  elif [ "$CF_RC" -eq 2 ]; then
+    check_fail "check-forms.mjs 检查器失明（exit 2——扫描面塌缩，拒绝假绿）"
+    printf '%s\n' "$CF_OUT" | tail -8
+  else
+    check_fail "check-forms.mjs 发现形态标注违规（exit ${CF_RC}）"
+    printf '%s\n' "$CF_OUT" | grep -E '❌|✗' | head -10
+  fi
+  unset CF_OUT CF_RC
 fi
 
 # 4. 审计模块构建 + 测试数汇总（对应 verify.yml + test-count.sh 门禁）
