@@ -125,6 +125,6 @@ bash tools/check/check-guards.sh --inject
 | 二 | 分发落地——A/B 类有明确处置（新增维/并入既有/已有覆盖三类去向逐条标注），C 类进 calibration | 草稿每条有「建议落点」列；`git log --oneline -- playbook/fresh-eyes-calibration.md \| head -2` 有本版 commit |
 | 三 | 覆盖率确认在**分发后**跑（分发前跑的绿不算数） | check-review-system RC=0，且执行时点在分发 commit 之后 |
 | 四 | 瘦身判据记录在案——即使「零新增维」也要有记录（三判据检查了什么、为何无需归并），空白≠通过 | 草稿或 changelog 内有 `[瘦身判据记录 vX.Y.Z]` 段 |
-| 五 | 校准零膨胀——fresh-eyes-review 行数 ≤500、视角数稳定（校准笔记只进 calibration，不进 review） | `wc -l playbook/fresh-eyes-review.md` + 视角数对账 |
+| 五 | 校准零膨胀——fresh-eyes-review 行数 ≤530（以步骤五自检段「不超过 N 行」为 SSOT）、视角数稳定（校准笔记只进 calibration，不进 review） | `wc -l playbook/fresh-eyes-review.md` + 视角数对账 |
 
 > **跨阶段门**：阶段五入口前置核对——执行 release-gate 前主 session 快速过一遍本表第 1 项（正式草稿在位）。上道门漏了的，下道门要能拦住。
