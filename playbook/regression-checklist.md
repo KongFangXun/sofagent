@@ -1351,7 +1351,9 @@ fi
 # 修复post-commit 取 HEAD^ 作为 PARENT_SHA 对账
 grep -q "PARENT_SHA\|HEAD\^" "$PROJECT_ROOT/engine/audit/src/commands/init.ts" || echo "⚠️ post-commit 未用 PARENT_SHA 对账"
 # 首次 commit（unborn HEAD）用空树常量兜底
-grep -q "4b825dc642cb6eb9a060e54bf8d69288fbee4904" "$PROJECT_ROOT/engine/audit/src/commands/init.ts" || echo "⚠️ 首次 commit 无空树兜底"
+# 空树兜底双侧锚定：记录侧 index.ts 常量 + 对账侧 post-commit 首提回退（防 PARENT_SHA 空失配）
+grep -q "4b825dc642cb6eb9a060e54bf8d69288fbee4904" "$PROJECT_ROOT/engine/audit/src/index.ts" || echo "⚠️ 记录侧（index.ts）空树兜底缺失"
+grep -q 'PARENT_SHA=$(git hash-object -t tree /dev/null' "$PROJECT_ROOT/engine/audit/hooks/post-commit" || echo "⚠️ 对账侧（post-commit）首提空树回退缺失"
 ```
 
 #### 101. check-docs 双面防复发——B 层行数超预算 + 锚点扫描环境降级（归并 #109 入此）
@@ -1459,7 +1461,9 @@ SOFAGENT_DATA=/tmp/rg-nonexist node engine/audit/dist/index.js --verify-chain > 
 mkdir -p /tmp/rg-iso/data && printf 'rules:\n a4: false\n' > /tmp/rg-iso-cfg.yml 2>/dev/null
 grep -q "getHistoryFilePath" engine/audit/src/index.ts || echo "⚠️ rule_disabled 路径口径回退到 resolveAuditDir"
 # ⑥ hook 双副本同步（防 #2）：仓库模板与已装现场副本一致——改模板不重装即测旧副本=假绿
-diff <(grep -c "exitCode" engine/audit/hooks/post-commit) <(grep -c "exitCode" .git/hooks/post-commit 2>/dev/null) 2>/dev/null || echo "⚠️ post-commit 新旧副本逻辑不一致（模板改后未重装验证）"
+# worktree 下 .git 是文件，裸 .git/hooks 恒 miss——git rev-parse --git-path hooks 双形态解析真身
+HOOKS_DIR=$(git rev-parse --git-path hooks 2>/dev/null || echo ".git/hooks")
+diff <(grep -c "exitCode" engine/audit/hooks/post-commit) <(grep -c "exitCode" "$HOOKS_DIR/post-commit" 2>/dev/null) 2>/dev/null || echo "⚠️ post-commit 新旧副本逻辑不一致（模板改后未重装验证）"
 # ⑦ archive 断链模式（防 #34）：压平迁移后引用路径必须跟着改
 node -e "const fs=require('fs'),p=require('path');let bad=0;for(const f of fs.readdirSync('docs/archive/changelog-experimental')){if(!f.endsWith('.md'))continue;const c=fs.readFileSync(p.join('docs/archive/changelog-experimental',f),'utf8');for(const m of c.matchAll(/\]\((\.[^)]+)\)/g)){const t=p.resolve('docs/archive/changelog-experimental',m[1]);if(!fs.existsSync(t))bad++}}if(bad)console.log('⚠️ archive 断链 '+bad+' 处（迁移没跟引用）')"
 # 原 #116 并入的 12 项 P0-P1 锚点（v1.4.8 压缩：12 行 anchor grep → 单次批量断言，等价）
@@ -1799,10 +1803,12 @@ git grep -q "regexWarned" -- tools/check/public-api.mjs && echo "✅ 降级 fail
 
 ```bash
 (
-# 逐锚语义：a = 交付面存在性（train 五新面/进化实证 sampler cursor + skill-impact 台账/quickstart 双件/fde-session lastCapturedAt/WIKI §数据文件架构指针）+ tools 84 静态 SSOT（动态不进；83→84 为 v1.4.6 阶段六对齐 registry 实测实数——与维度 111 同款口径）；b = retention 加固 + 链锚/SANITIZE 值形可证
+# 逐锚语义：a = 交付面存在性（train 五新面/进化实证 sampler cursor + skill-impact 台账/quickstart 双件/fde-session lastCapturedAt/WIKI §数据文件架构指针）；b = retention 加固 + 链锚/SANITIZE 值形可证 + tools 双源动态对账
 MISS=0; for f in train-serve train-compliance train-deliverable retention-policy train-continuous; do test -f "engine/train/src/$f.ts" || MISS=$((MISS+1)); done; [ "$MISS" -eq 0 ] && echo "✅ train 五新面在位" || echo "❌ train 新面缺 $MISS 文件"
 test -f docs/guides/train-quickstart.md && test -f docs/guides/examples/quickstart-data.csv && grep -q "cursor" engine/daemon/src/dream-cycle/continuous-sampler.ts && test -f engine/orchestrator/src/skill-evolution/skill-impact-ledger.ts && grep -q "lastCapturedAt" engine/orchestrator/src/fde-session-mgr/index.ts && echo "✅ 进化实证 + quickstart + 会话时间戳在位" || echo "❌ 交付面缺口"
-grep -q "§数据文件架构" docs/WIKI.md && [ "$(grep -cE "^ {4}name: '" engine/mcp/src/tool-registry.ts)" -eq 95 ] && echo "✅ WIKI 指针 + tools 95 SSOT" || echo "⚠️ WIKI 指针/95 计数漂移——复核"
+# tools 计数源/dist 双源动态对账（写死数字每版必漂——与 S426 同款债）
+REG_N=$(grep -cE "^ {4}name: '" engine/mcp/src/tool-registry.ts); DIST_N=$(node -e "console.log(Object.keys(require('./engine/mcp/dist/tool-registry.js').TOOLS||require('./engine/mcp/dist/tool-registry.js')).length)" 2>/dev/null || echo 0)
+grep -q "§数据文件架构" docs/WIKI.md && [ "$REG_N" = "$DIST_N" ] && [ "$REG_N" -gt 0 ] && echo "✅ WIKI 指针在位 + tools 计数源/dist 一致（${REG_N}）" || echo "⚠️ WIKI 指针缺失或 tools 源/dist 计数漂移（源 ${REG_N} / dist ${DIST_N}）——复核"
 grep -q "isSymbolicLink" engine/train/src/retention-policy.ts && grep -q "realpathSync" engine/train/src/retention-policy.ts && [ "$(grep -c "resolvePointPath" engine/train/src/retention-policy.ts)" -ge 4 ] && grep -q "trainArchiveDir" engine/train/src/retention-policy.ts && echo "✅ retention 四词形在位" || echo "❌ retention 加固回潮"
 test -f engine/audit/src/chain-head-anchor.test.ts && grep -q "shouldExempt(key: string, value: string)" engine/audit/src/audit-history.ts && grep -q "sanitizeFreeText(value) === value" engine/audit/src/audit-history.ts && echo "✅ 链锚测试 + SANITIZE 值校验在位" || echo "❌ 链锚/SANITIZE 回潮"
 ) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -qE "^[[:space:]]{0,2}❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true
@@ -1915,24 +1921,18 @@ grep -q "planExecution" engine/orchestrator/src/exec/git-capability.ts && grep -
 ) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -qE "^[[:space:]]{0,2}❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true
 ```
 
-#### 144. v1.5.1 审查面一维收口——事件驱动/OTA 推送/上行脱敏/意图通道/demo/退役扫尾 + B 类防复发（阶段四来源 A/B 合流 · 行为面已由 S433–S439 锁 · 对齐 #131/#133 先例 · ③ 段只查单向，本维把 S433–S439 引进 checklist 补双向闭环）
+#### 144. v1.5.1 审查面一维收口——事件驱动/OTA/上行脱敏/意图通道/demo/退役扫尾 + B 类防复发（阶段四 A/B 合流 · 行为面已由 S433–S440 锁 · 对齐 #131/#133 先例 · ③ 段只查单向，本维把 S433–S440 引进 checklist 补双向闭环）
 ```bash
 (
 FAIL=0
-# a: S433–S439 引用闭环（七场景号须全数在位，缺一即红）
-grep -cE "scenario 43[3-9]" playbook/acceptance-test.sh | grep -q "^7$" && echo "✅ S433–S439 七场景在位" || { echo "❌ S433–S439 场景号缺失"; FAIL=1; }
-# b: 事件总线（章一——replayDeadLetter 重放 + event-queue.jsonl 落盘 + timer.tick 第三源）
-grep -rq "replayDeadLetter" engine/orchestrator/src/__tests__/events-bus.test.ts && grep -q "event-queue.jsonl" engine/orchestrator/src/events/bus.ts && grep -q "timer.tick" engine/orchestrator/src/events/adapters.ts && echo "✅ 事件总线三面在位" || { echo "❌ 事件总线面缺口"; FAIL=1; }
-# c: OTA 验签三要素披露（章四——验签对称或逐条披露；B1/B2 防复发）
-grep -q "平台公钥" engine/daemon/src/ota/upgrade-executor.ts && grep -q "设备注册表" engine/daemon/src/device-registry.ts && echo "✅ 验签三要素披露在位" || { echo "❌ 验签三要素披露缺失"; FAIL=1; }
-# d: 任务下发双通道（章五——在线推送 + 离线持有点 + 心跳捎带补收）
-grep -q "holdTaskDispatch" engine/daemon/src/ota/upgrade-policy.ts && grep -q "takeHeldTaskDispatches" engine/daemon/src/ota/upgrade-policy.ts && echo "✅ 双通道在位" || { echo "❌ 任务下发双通道缺口"; FAIL=1; }
-# e: 上行管线三层检测 + 灰度（章六——L0/L1/L2 逐层降漏；T9 灰度 canaryRouteRequest 稳定 hash 分流带 routeReason）
-grep -q "routeReason" engine/core/src/export/sensitivity-classifier.ts && grep -q "canaryRouteRequest" engine/mcp/src/tools/device-data-push.ts && echo "✅ 三层检测 + 灰度在位" || { echo "❌ 上行管线锚点缺失"; FAIL=1; }
-# f: 意图通道 opt-in + 第三态黑洞修复（章七——无声明零变化；B17：跳过留痕）
-grep -q "skipReasons" engine/audit/src/intent-channel.ts && grep -q "inputChannels" engine/audit/src/intent-channel.ts && echo "✅ 意图通道 opt-in + 跳过留痕在位" || { echo "❌ 意图通道 opt-in/第三态黑洞修复缺失"; FAIL=1; }
-# g: demo 缺省路径 + 判据一致（章八——getDataDir（B20：不落家目录）+ --speed fast 判据一致）
-grep -q "getDataDir" engine/audit/src/cli/demo.ts && grep -q "speed" engine/audit/src/cli/demo.ts && echo "✅ demo dataDir + speed 判据在位" || { echo "❌ demo dataDir/speed 缺失"; FAIL=1; }
+# a: S433–S440 引用闭环（八场景号须全数在位，缺一即红——S440 章十 BugFix 批五族锚，G-1 闭环）
+grep -cE "scenario 43[3-9]|scenario 440" playbook/acceptance-test.sh | grep -q "^8$" && echo "✅ S433–S440 八场景在位" || { echo "❌ S433–S440 场景号缺失"; FAIL=1; }
+grep -rq "replayDeadLetter" engine/orchestrator/src/__tests__/events-bus.test.ts && grep -q "event-queue.jsonl" engine/orchestrator/src/events/bus.ts && grep -q "timer.tick" engine/orchestrator/src/events/adapters.ts && echo "✅ 事件总线三面在位" || { echo "❌ 事件总线面缺口"; FAIL=1; } # b: 章一·事件总线三面（重放/落盘/tick 源）
+grep -q "平台公钥" engine/daemon/src/ota/upgrade-executor.ts && grep -q "设备注册表" engine/daemon/src/device-registry.ts && echo "✅ 验签三要素披露在位" || { echo "❌ 验签三要素披露缺失"; FAIL=1; } # c: 章四·OTA 验签对称/逐条披露（B1/B2 防复发）
+grep -q "holdTaskDispatch" engine/daemon/src/ota/upgrade-policy.ts && grep -q "takeHeldTaskDispatches" engine/daemon/src/ota/upgrade-policy.ts && echo "✅ 双通道在位" || { echo "❌ 任务下发双通道缺口"; FAIL=1; } # d: 章五·任务下发双通道（在线推送 + 离线持有点 + 心跳捎带补收）
+grep -q "routeReason" engine/core/src/export/sensitivity-classifier.ts && grep -q "canaryRouteRequest" engine/mcp/src/tools/device-data-push.ts && echo "✅ 三层检测 + 灰度在位" || { echo "❌ 上行管线锚点缺失"; FAIL=1; } # e: 章六·上行管线 L0/L1/L2 逐层降漏 + T9 灰度 hash 分流留痕
+grep -q "skipReasons" engine/audit/src/intent-channel.ts && grep -q "inputChannels" engine/audit/src/intent-channel.ts && echo "✅ 意图通道 opt-in + 跳过留痕在位" || { echo "❌ 意图通道 opt-in/第三态黑洞修复缺失"; FAIL=1; } # f: 章七·意图通道 opt-in 无声明零变化 + B17 跳过留痕
+grep -q "getDataDir" engine/audit/src/cli/demo.ts && grep -q "speed" engine/audit/src/cli/demo.ts && echo "✅ demo dataDir + speed 判据在位" || { echo "❌ demo dataDir/speed 缺失"; FAIL=1; } # g: 章八·demo 缺省路径 getDataDir 不落家目录（B20）+ --speed fast 判据一致
 # h: 发布链两件套（章十一 A16——check-gate-inventory + heavy-gate-receipt）
 test -f tools/check/check-gate-inventory.sh && test -f tools/release/heavy-gate-receipt.sh && echo "✅ 发布链两件套在位" || { echo "❌ 发布链两件套缺失"; FAIL=1; }
 # i: 退役扫尾（B23——--legacy 拒绝面已在 #137 k 锚，此处只验失败链 lastError 落 health）

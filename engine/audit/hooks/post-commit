@@ -41,8 +41,14 @@ if [ -z "$CURRENT_SHA" ]; then
   exit 0
 fi
 
-# 父提交 SHA（首次提交时 HEAD^ 不存在，留空）
-PARENT_SHA=$(git rev-parse HEAD^ 2>/dev/null)
+# 父提交 SHA（首次提交时 HEAD^ 不存在，留空——v1.5.1 G-4：回退空树常量与记录侧对齐：
+# commit-msg 阶段 unborn HEAD 时 parentSha 记的是空树 SHA（index.ts 空树兜底），
+# 此处若恒空则首提对账必未命中——「未确认审计记录」狼来了提示在每次首提都误响）
+# 🔴 unborn HEAD 时 rev-parse HEAD^ 输出「HEAD^」字面量到 stdout（fatal 走 stderr）——
+#    2>/dev/null 吞不掉 stdout 回显，PARENT_SHA 会被污染成「HEAD^」假 SHA，
+#    故须 exit-code 判定 + hash-object 实算兜底，不能只靠 stderr 重定向
+PARENT_SHA=$(git rev-parse HEAD^ 2>/dev/null) || PARENT_SHA=""
+[ -z "$PARENT_SHA" ] && PARENT_SHA=$(git hash-object -t tree /dev/null 2>/dev/null)
 
 # 当前 commit 的 message 主题行——parentSha 匹配后叠加主题消歧，防跨 commit 误认领：
 # commit N 的 SHA 天然是 commit N+1 审计记录的 parentSha，--no-verify 绕过提交 B 后
