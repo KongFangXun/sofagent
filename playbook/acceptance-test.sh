@@ -109,6 +109,14 @@ check_dist_export() {
     fail "$dist_rel 未导出 $export_name"
   fi
 }
+# 探针库统一断言：跑 acceptance-node-probes.js <slug>，stdout 命中 ^OK 记 PASS，否则打 ✗ 取证行并记 FAIL。
+# 用法: probe_assert <小写 slug> "<PASS 描述>" "<FAIL 描述>"
+probe_assert() {
+  local slug="$1" out tag
+  tag=$(printf '%s' "$slug" | tr '[:lower:]' '[:upper:]')
+  out=$(PROJECT_ROOT="$PROJECT_ROOT" node "$SCRIPT_DIR/acceptance-node-probes.js" "$slug" 2>&1) || true
+  grep -q "^OK" <<< "$out" && pass "$2" || { echo "  ✗ $tag: $out"; fail "$3"; }
+}
 scenario 1 "Fresh install（--install-hook）"
 # run-09 P0-3 修：开头注入主仓真实基线锚— —场景输出里会出现大量 TMP_REPO 的 自建测试 commit（如场景 41 的 "fast-fail test"，git reset 回显其 SHA），
 # 无主仓锚时审查者会把测试 commit 误读为「被测基线」（run-09 P0-3 实证： 2d35cc4 被三层报告当成发版候选）。此锚声明唯一被测基线 = 主仓 HEAD。
@@ -4395,133 +4403,86 @@ const reg = require(process.env.PROJECT_ROOT + '/engine/mcp/dist/tool-registry.j
 for (const n of ['workflow_export','workflow_import']) if (!reg.includes(n)) bad.push('未注册:' + n);
 process.stdout.write(bad.length === 0 ? 'ASSERT_OK' : 'S414_FAIL:' + bad.join('|'));
 " 2>&1) || S414_OUT="S414_FAIL:crash"
-[[ "$S414_OUT" == *ASSERT_OK* ]] || { echo "  ✗ S415: $S414_OUT"; S414_OK=false; }
+[[ "$S414_OUT" == *ASSERT_OK* ]] || { echo "  ✗ S414: $S414_OUT"; S414_OK=false; }
 $S414_OK && pass "v1.4.9 数据承接面：连接器 fail-closed/非法声明/清单形态 + 血缘事件形态/坏行计入/追溯数组/双 tool 注册" || fail "连接器注册面回潮——见上方 ✗ 行"
 
-scenario 416 "v1.4.9 第八章 敏感识别插槽——DetectorRegistry 四方法 + tierOf 三档 + L0 检测器形态 + 分类器三档/模型档透传 + L2 NER 协议三态（dist 直调）"; S416_OK=true
-S416_OUT=$(PROJECT_ROOT="$PROJECT_ROOT" node "$SCRIPT_DIR/acceptance-node-probes.js" s416 2>&1) || true
-grep -q "^OK" <<< "$S416_OUT" || { echo "  ✗ S416: $S416_OUT"; S416_OK=false; }
-$S416_OK && pass "v1.4.9 第八章 敏感识别：插槽四方法 + tierOf 三档 + 分类器三档/模型档 + NER 外挂协议三态" || fail "敏感识别三交付面回潮——见上方 ✗ 行"
+scenario 416 "v1.4.9 第八章 敏感识别插槽——DetectorRegistry 四方法 + tierOf 三档 + L0 检测器形态 + 分类器三档/模型档透传 + L2 NER 协议三态（dist 直调）"
+probe_assert s416 "v1.4.9 第八章 敏感识别：插槽四方法 + tierOf 三档 + 分类器三档/模型档 + NER 外挂协议三态" "敏感识别三交付面回潮——见上方 ✗ 行"
 
 # ── S418-S424（v1.4.9 阶段五 P0-3 补测）：零覆盖章行为锁 ──
 # 来源：release-gate 20260916-01 coverage 判定 9 章零场景锚点（S418/S419/S421-S424）+ 4 章部分锚（S420 补全 + S413 心跳半边已扩）。
 # 手法对齐 S413-S416 先例（dist 直调 + 返回形态与判定断言）。
 
 # ─── v1.4.9 阶段五 P0-3 补测（S418-S424）：断言本体已抽入 acceptance-node-probes.js（行数警戒线收敛批）───
-scenario 418 "v1.4.9 第二章 G10 设备侧数据面授权读取——device_data_query fail-closed 链路（参数缺失拒 + 未注册拒 + 白名单外拒）+ 白名单内放行侧（真实身份注册→声明→读取成功/内容一致/审计留痕，run-03 C-P1-1 扩，dist 直调 HOME 隔离）"; S418_OK=true
-S418_OUT=$(PROJECT_ROOT="$PROJECT_ROOT" node "$SCRIPT_DIR/acceptance-node-probes.js" s418 2>&1) || true
-grep -q "^OK" <<< "$S418_OUT" || { echo "  ✗ S418: $S418_OUT"; S418_OK=false; }
-$S418_OK && pass "v1.4.9 G10 数据面授权读取：参数缺失/未注册/门禁 fail-closed 三拒 + [sofagent] 前缀结构化返回" || fail "G10 授权读取面回潮——见上方 ✗ 行"
+scenario 418 "v1.4.9 第二章 G10 设备侧数据面授权读取——device_data_query fail-closed 链路（参数缺失拒 + 未注册拒 + 白名单外拒）+ 白名单内放行侧（真实身份注册→声明→读取成功/内容一致/审计留痕，run-03 C-P1-1 扩，dist 直调 HOME 隔离）"
+probe_assert s418 "v1.4.9 G10 数据面授权读取：参数缺失/未注册/门禁 fail-closed 三拒 + [sofagent] 前缀结构化返回" "G10 授权读取面回潮——见上方 ✗ 行"
 
-scenario 419 "v1.4.9 第三章 G11 数据上行通道——device_data_push 采集声明 fail-closed（参数缺失拒 + 未注册拒 + isError 形态）+ WAL 加密暂存（明文不落盘/解密回读/游标续传/无密钥拒，run-02 扩）+ tool 入口 happy-path（声明 opt-in 放行入队/声明外拒/目的地不符拒/审计计量 evidence 落盘，run-03 C-P0-1 扩，dist 直调 HOME 隔离）"; S419_OK=true
-S419_OUT=$(PROJECT_ROOT="$PROJECT_ROOT" node "$SCRIPT_DIR/acceptance-node-probes.js" s419 2>&1) || true
-grep -q "^OK" <<< "$S419_OUT" || { echo "  ✗ S419: $S419_OUT"; S419_OK=false; }
-$S419_OK && pass "v1.4.9 G11 数据上行通道：参数缺失/未注册 fail-closed 两拒 + isError 结构化形态" || fail "G11 上行通道回潮——见上方 ✗ 行"
+scenario 419 "v1.4.9 第三章 G11 数据上行通道——device_data_push 采集声明 fail-closed（参数缺失拒 + 未注册拒 + isError 形态）+ WAL 加密暂存（明文不落盘/解密回读/游标续传/无密钥拒，run-02 扩）+ tool 入口 happy-path（声明 opt-in 放行入队/声明外拒/目的地不符拒/审计计量 evidence 落盘，run-03 C-P0-1 扩，dist 直调 HOME 隔离）"
+probe_assert s419 "v1.4.9 G11 数据上行通道：参数缺失/未注册 fail-closed 两拒 + isError 结构化形态" "G11 上行通道回潮——见上方 ✗ 行"
 
-scenario 420 "v1.4.9 第四+五章 installer skill + 心跳捎带下发——installer.md 五步标题与诊断四字段 + enqueue/claim/心跳捎带往返（dist 直调 HOME 隔离）"; S420_OK=true
-S420_OUT=$(PROJECT_ROOT="$PROJECT_ROOT" node "$SCRIPT_DIR/acceptance-node-probes.js" s420 2>&1) || true
-grep -q "^OK" <<< "$S420_OUT" || { echo "  ✗ S420: $S420_OUT"; S420_OK=false; }
-$S420_OK && pass "v1.4.9 installer skill 五步+诊断四字段 + 心跳捎带下发往返（入队→捎带→领取）" || fail "installer/捎带下发面回潮——见上方 ✗ 行"
+scenario 420 "v1.4.9 第四+五章 installer skill + 心跳捎带下发——installer.md 五步标题与诊断四字段 + enqueue/claim/心跳捎带往返（dist 直调 HOME 隔离）"
+probe_assert s420 "v1.4.9 installer skill 五步+诊断四字段 + 心跳捎带下发往返（入队→捎带→领取）" "installer/捎带下发面回潮——见上方 ✗ 行"
 
-scenario 421 "v1.4.9 第六章 派单语义——在线才派单 + 掉线改派/挂起（enqueue 拒离线 + reassignOrHold 双模式 + 告警回调，dist 直调 HOME 隔离）"; S421_OK=true
-S421_OUT=$(PROJECT_ROOT="$PROJECT_ROOT" node "$SCRIPT_DIR/acceptance-node-probes.js" s421 2>&1) || true
-grep -q "^OK" <<< "$S421_OUT" || { echo "  ✗ S421: $S421_OUT"; S421_OK=false; }
-$S421_OK && pass "v1.4.9 派单语义：离线拒派 + 掉线改派在线备机 + hold 挂起告警回调三态" || fail "派单语义回潮——见上方 ✗ 行"
+scenario 421 "v1.4.9 第六章 派单语义——在线才派单 + 掉线改派/挂起（enqueue 拒离线 + reassignOrHold 双模式 + 告警回调，dist 直调 HOME 隔离）"
+probe_assert s421 "v1.4.9 派单语义：离线拒派 + 掉线改派在线备机 + hold 挂起告警回调三态" "派单语义回潮——见上方 ✗ 行"
 
-scenario 422 "v1.4.9 第七章 session 承接与 router 伴生——五元组续接判定/摘要交接三要素/router 推送幂等入账 + 蒸馏偏好对（模块七数据面）配对/择优/toRecords（dist 直调）"; S422_OK=true
-S422_OUT=$(PROJECT_ROOT="$PROJECT_ROOT" node "$SCRIPT_DIR/acceptance-node-probes.js" s422 2>&1) || true
-grep -q "^OK" <<< "$S422_OUT" || { echo "  ✗ S422: $S422_OUT"; S422_OK=false; }
-$S422_OK && pass "v1.4.9 第七章双面：五元组续接/handoff 交接三要素/router 伴生幂等入账 + 蒸馏偏好对配对择优" || fail "session 承接/router 伴生/蒸馏配对面回潮——见上方 ✗ 行"
+scenario 422 "v1.4.9 第七章 session 承接与 router 伴生——五元组续接判定/摘要交接三要素/router 推送幂等入账 + 蒸馏偏好对（模块七数据面）配对/择优/toRecords（dist 直调）"
+probe_assert s422 "v1.4.9 第七章双面：五元组续接/handoff 交接三要素/router 伴生幂等入账 + 蒸馏偏好对配对择优" "session 承接/router 伴生/蒸馏配对面回潮——见上方 ✗ 行"
 
-scenario 423 "v1.4.9 第九章 权重灰度 AB——canaryRouteRequest 确定性分流 + judgeDeterioration 劣化判定（dist 直调纯函数）"; S423_OK=true
-S423_OUT=$(PROJECT_ROOT="$PROJECT_ROOT" node "$SCRIPT_DIR/acceptance-node-probes.js" s423 2>&1) || true
-grep -q "^OK" <<< "$S423_OUT" || { echo "  ✗ S423: $S423_OUT"; S423_OK=false; }
-$S423_OK && pass "v1.4.9 权重灰度 AB：确定性分流 + 0/100 端点 + 劣化判定附原因 + 无劣化对照" || fail "灰度 AB 面回潮——见上方 ✗ 行"
+scenario 423 "v1.4.9 第九章 权重灰度 AB——canaryRouteRequest 确定性分流 + judgeDeterioration 劣化判定（dist 直调纯函数）"
+probe_assert s423 "v1.4.9 权重灰度 AB：确定性分流 + 0/100 端点 + 劣化判定附原因 + 无劣化对照" "灰度 AB 面回潮——见上方 ✗ 行"
 
-scenario 424 "v1.4.9 第十章 模型清单上报 + 执行时 skill 快照——scanRegistryModels 注册表扫描/retired 过滤/降级原因 + 心跳 availableModels 捎带 + snapshotSkills 快照清单/manifest 一致/篡改可辨/清理幂等不误删/空 root 诚实空清单（run-02 扩，dist 直调 HOME 隔离）"; S424_OK=true
-S424_OUT=$(PROJECT_ROOT="$PROJECT_ROOT" node "$SCRIPT_DIR/acceptance-node-probes.js" s424 2>&1) || true
-grep -q "^OK" <<< "$S424_OUT" || { echo "  ✗ S424: $S424_OUT"; S424_OK=false; }
-$S424_OK && pass "v1.4.9 模型清单上报：retired 过滤 + 降级原因 + 心跳 availableModels 捎带联动" || fail "清单上报面回潮——见上方 ✗ 行"
+scenario 424 "v1.4.9 第十章 模型清单上报 + 执行时 skill 快照——scanRegistryModels 注册表扫描/retired 过滤/降级原因 + 心跳 availableModels 捎带 + snapshotSkills 快照清单/manifest 一致/篡改可辨/清理幂等不误删/空 root 诚实空清单（run-02 扩，dist 直调 HOME 隔离）"
+probe_assert s424 "v1.4.9 模型清单上报：retired 过滤 + 降级原因 + 心跳 availableModels 捎带联动" "清单上报面回潮——见上方 ✗ 行"
 
-scenario 425 "v1.4.9 第一章 G1 workflow 模板分发——export/import dist 直调往返（导出落盘→导入回读→节点一致 + 剥离/血缘/篡改/全私/冲突/非法模板六拒）+ tool-registry 双注册"; S425_OK=true
-S425_OUT=$(PROJECT_ROOT="$PROJECT_ROOT" node "$SCRIPT_DIR/acceptance-node-probes.js" s425 2>&1) || true
-grep -q "^OK" <<< "$S425_OUT" || { echo "  ✗ S425: $S425_OUT"; S425_OK=false; }
-$S425_OK && pass "v1.4.9 G1 模板分发：export→import 往返一致 + 六态拒收 + tool-registry 双注册" || fail "G1 模板分发行为锁回潮——见上方 ✗ 行"
+scenario 425 "v1.4.9 第一章 G1 workflow 模板分发——export/import dist 直调往返（导出落盘→导入回读→节点一致 + 剥离/血缘/篡改/全私/冲突/非法模板六拒）+ tool-registry 双注册"
+probe_assert s425 "v1.4.9 G1 模板分发：export→import 往返一致 + 六态拒收 + tool-registry 双注册" "G1 模板分发行为锁回潮——见上方 ✗ 行"
 
-scenario 426 "v1.4.9 第十四章 审查体系四文档分发结构锁——checklist 90 维/警戒线双值 + calibration 五校准锚 + changelog 收敛表五行 + 归并去向注释（S180-S183 文档结构锁先例）"; S426_OK=true
-S426_OUT=$(PROJECT_ROOT="$PROJECT_ROOT" node "$SCRIPT_DIR/acceptance-node-probes.js" s426 2>&1) || true
-grep -q "^OK" <<< "$S426_OUT" || { echo "  ✗ S426: $S426_OUT"; S426_OK=false; }
-$S426_OK && pass "v1.4.9 第十四章审查体系分发：四文档结构锁（A 类 90 维 + B 类场景族 + C 类五校准锚 + 收敛表对账）" || fail "审查体系四文档结构漂移——见上方 ✗ 行"
+scenario 426 "v1.4.9 第十四章 审查体系四文档分发结构锁——checklist 90 维/警戒线双值 + calibration 五校准锚 + changelog 收敛表五行 + 归并去向注释（S180-S183 文档结构锁先例）"
+probe_assert s426 "v1.4.9 第十四章审查体系分发：四文档结构锁（A 类 90 维 + B 类场景族 + C 类五校准锚 + 收敛表对账）" "审查体系四文档结构漂移——见上方 ✗ 行"
 
-scenario 427 "v1.5.0 第一章 治理 KPI 面板——governance 聚合引擎 dist 直调（六卡键 + 空目录降级 + 周报 markdown + lineage 合规报告导出面）+ Dashboard 治理 tab/api 端点三锚"; S427_OK=true
-S427_OUT=$(PROJECT_ROOT="$PROJECT_ROOT" node "$SCRIPT_DIR/acceptance-node-probes.js" s427 2>&1) || true
-grep -q "^OK" <<< "$S427_OUT" || { echo "  ✗ S427: $S427_OUT"; S427_OK=false; }
-$S427_OK && pass "v1.5.0 治理 KPI 面板：六卡聚合 + 数据集审阅/lineage 合规 + 周报导出 + Dashboard 三锚" || fail "治理面板行为锁回潮——见上方 ✗ 行"
+scenario 427 "v1.5.0 第一章 治理 KPI 面板——governance 聚合引擎 dist 直调（六卡键 + 空目录降级 + 周报 markdown + lineage 合规报告导出面）+ Dashboard 治理 tab/api 端点三锚"
+probe_assert s427 "v1.5.0 治理 KPI 面板：六卡聚合 + 数据集审阅/lineage 合规 + 周报导出 + Dashboard 三锚" "治理面板行为锁回潮——见上方 ✗ 行"
 
-scenario 428 "v1.5.0 第二章 本体数据双时态——stateAt 时点快照（validTo 过滤/未生效过滤）+ isValidAt 边界 + progressiveLoad 三层渐进（entity 摘要→relations→全文）"; S428_OK=true
-S428_OUT=$(PROJECT_ROOT="$PROJECT_ROOT" node "$SCRIPT_DIR/acceptance-node-probes.js" s428 2>&1) || true
-grep -q "^OK" <<< "$S428_OUT" || { echo "  ✗ S428: $S428_OUT"; S428_OK=false; }
-$S428_OK && pass "v1.5.0 双时态事实：时点快照两视角 + 有效期边界 + 三层渐进加载预算联动" || fail "双时态行为锁回潮——见上方 ✗ 行"
+scenario 428 "v1.5.0 第二章 本体数据双时态——stateAt 时点快照（validTo 过滤/未生效过滤）+ isValidAt 边界 + progressiveLoad 三层渐进（entity 摘要→relations→全文）"
+probe_assert s428 "v1.5.0 双时态事实：时点快照两视角 + 有效期边界 + 三层渐进加载预算联动" "双时态行为锁回潮——见上方 ✗ 行"
 
-scenario 429 "v1.5.0 第三章 Ontology Validation Engine——DAG 环检测（三色 DFS + 环链定位）+ schema 兼容三态（悬空实体/字段缺失/类型错配）+ 激活前置门 fail-closed"; S429_OK=true
-S429_OUT=$(PROJECT_ROOT="$PROJECT_ROOT" node "$SCRIPT_DIR/acceptance-node-probes.js" s429 2>&1) || true
-grep -q "^OK" <<< "$S429_OUT" || { echo "  ✗ S429: $S429_OUT"; S429_OK=false; }
-$S429_OK && pass "v1.5.0 Validation Engine：环链定位 + schema 三态 + 激活 fail-closed" || fail "Validation Engine 行为锁回潮——见上方 ✗ 行"
+scenario 429 "v1.5.0 第三章 Ontology Validation Engine——DAG 环检测（三色 DFS + 环链定位）+ schema 兼容三态（悬空实体/字段缺失/类型错配）+ 激活前置门 fail-closed"
+probe_assert s429 "v1.5.0 Validation Engine：环链定位 + schema 三态 + 激活 fail-closed" "Validation Engine 行为锁回潮——见上方 ✗ 行"
 
-scenario 430 "v1.5.0 第八章 跨层证据对账——reconcileTraces 四态 dist 直调（一致/漏报/幻觉/瞒报 + 回滚闭环不计幻觉 + consistencyRate）+ trace_reconcile 105th tool 注册锚"; S430_OK=true
-S430_OUT=$(PROJECT_ROOT="$PROJECT_ROOT" node "$SCRIPT_DIR/acceptance-node-probes.js" s430 2>&1) || true
-grep -q "^OK" <<< "$S430_OUT" || { echo "  ✗ S430: $S430_OUT"; S430_OK=false; }
-$S430_OK && pass "v1.5.0 trace 对账：三源四态判定 + 回滚闭环豁免 + 工具注册面" || fail "跨层证据对账行为锁回潮——见上方 ✗ 行"
+scenario 430 "v1.5.0 第八章 跨层证据对账——reconcileTraces 四态 dist 直调（一致/漏报/幻觉/瞒报 + 回滚闭环不计幻觉 + consistencyRate）+ trace_reconcile 105th tool 注册锚"
+probe_assert s430 "v1.5.0 trace 对账：三源四态判定 + 回滚闭环豁免 + 工具注册面" "跨层证据对账行为锁回潮——见上方 ✗ 行"
 
-scenario 431 "v1.5.0 第五章 FDE 陪跑期 + 第十章 DSH 插件事件接线——companion 期满总结（14 天常量 + 生成/查询函数）+ plugins.json 7 seamHandlers + audit 插件 4 事件位源码锚"; S431_OK=true
-S432_OK=true
-S431_OUT=$(PROJECT_ROOT="$PROJECT_ROOT" node "$SCRIPT_DIR/acceptance-node-probes.js" s431 2>&1) || true
-grep -q "^OK" <<< "$S431_OUT" || { echo "  ✗ S431: $S431_OUT"; S431_OK=false; }
-$S431_OK && pass "v1.5.0 FDE 陪跑期 + 插件事件接线：期满总结面 + 7 handler 声明面 + 4 事件位" || fail "陪跑期/事件接线行为锁回潮——见上方 ✗ 行"
+scenario 431 "v1.5.0 第五章 FDE 陪跑期 + 第十章 DSH 插件事件接线——companion 期满总结（14 天常量 + 生成/查询函数）+ plugins.json 7 seamHandlers + audit 插件 4 事件位源码锚"
+probe_assert s431 "v1.5.0 FDE 陪跑期 + 插件事件接线：期满总结面 + 7 handler 声明面 + 4 事件位" "陪跑期/事件接线行为锁回潮——见上方 ✗ 行"
 
 scenario 432 "v1.5.0 发版态自洽：CHANGELOG 顶版索引行不同时含「待发版」与「已发版」（翻牌期矛盾锁）"
-S432_OUT=$(PROJECT_ROOT="$PROJECT_ROOT" node "$SCRIPT_DIR/acceptance-node-probes.js" s432 2>&1) || true
-grep -q "^OK" <<< "$S432_OUT" || { echo "  ✗ S432: $S432_OUT"; S432_OK=false; }
-$S432_OK && pass "CHANGELOG 顶版行状态自洽 + 当前版本索引行在位" || fail "顶版行状态矛盾或缺索引行"
+probe_assert s432 "CHANGELOG 顶版行状态自洽 + 当前版本索引行在位" "顶版行状态矛盾或缺索引行"
 
-scenario 433 "v1.5.1 第九章 存量断链残余面：退役 flag（--legacy）无生产调用方残留——全仓扫描（含 tools/ 与所有 .sh，测试面/fixtures 豁免），退役侧唯一命中且退役判定在位"; S433_OK=true
-S433_OUT=$(PROJECT_ROOT="$PROJECT_ROOT" node "$SCRIPT_DIR/acceptance-node-probes.js" s433 2>&1) || true
-grep -q "^OK" <<< "$S433_OUT" || { echo "  ✗ S433: $S433_OUT"; S433_OK=false; }
-$S433_OK && pass "退役 flag 生产调用方清零（全仓扫描含 tools/ 与 shell 脚本）+ 退役侧哨点在位" || fail "退役 flag 仍有生产调用方残留，或退役侧判定被误删——见上方 ✗ 行"
+scenario 433 "v1.5.1 第九章 存量断链残余面：退役 flag（--legacy）无生产调用方残留——全仓扫描（含 tools/ 与所有 .sh，测试面/fixtures 豁免），退役侧唯一命中且退役判定在位"
+probe_assert s433 "退役 flag 生产调用方清零（全仓扫描含 tools/ 与 shell 脚本）+ 退役侧哨点在位" "退役 flag 仍有生产调用方残留，或退役侧判定被误删——见上方 ✗ 行"
 
 # ─── v1.5.1 产任务九章验收增量（S434-S439）：断言本体已抽入 acceptance-node-probes.js ───
 # 手法：dist 直调真实入口 + 逐场景独立 tmp HOME/DATA/HMAC 密钥隔离（真实 ~/.sofagent 零接触）；
 # 每场景均做过反向探针（改坏被断言面 → 必红 → 还原 → 绿），防「写了场景但断言不咬人」。
 
-scenario 434 "v1.5.1 第一章 事件驱动执行触发——上游产出触发下游链（webhook→n1→n1 产出事件→n2）+ 触发链可还原 + 投递留痕 HMAC 可验 + 超时进死信且重放后 REPLAYED 可见 + 第三类源 timer.tick 登记校验与驱动声明节点（补验收覆盖面）"; S434_OK=true
-S434_OUT=$(PROJECT_ROOT="$PROJECT_ROOT" node "$SCRIPT_DIR/acceptance-node-probes.js" s434 2>&1) || true
-grep -q "^OK" <<< "$S434_OUT" || { echo "  ✗ S434: $S434_OUT"; S434_OK=false; }
-$S434_OK && pass "v1.5.1 第一章事件驱动触发：链式触发 + 触发链还原 + 留痕验链 + 死信重放闭环" || fail "事件驱动触发行为锁回潮——见上方 ✗ 行"
+scenario 434 "v1.5.1 第一章 事件驱动执行触发——上游产出触发下游链（webhook→n1→n1 产出事件→n2）+ 触发链可还原 + 投递留痕 HMAC 可验 + 超时进死信且重放后 REPLAYED 可见 + 第三类源 timer.tick 登记校验与驱动声明节点（补验收覆盖面）"
+probe_assert s434 "v1.5.1 第一章事件驱动触发：链式触发 + 触发链还原 + 留痕验链 + 死信重放闭环" "事件驱动触发行为锁回潮——见上方 ✗ 行"
 
-scenario 435 "v1.5.1 第三章 AI 异常处理总线——三分类路由（可重试/需人工/需回滚）在 decision-log 中 kind 集合大小 === 3 且 why 标签三值可辨 + 入口复用第一章死信通道"; S435_OK=true
-S435_OUT=$(PROJECT_ROOT="$PROJECT_ROOT" node "$SCRIPT_DIR/acceptance-node-probes.js" s435 2>&1) || true
-grep -q "^OK" <<< "$S435_OUT" || { echo "  ✗ S435: $S435_OUT"; S435_OK=false; }
-$S435_OK && pass "v1.5.1 第三章异常总线：三类异常留痕可区分（防静默退化）+ 分类路由与死信入口复用" || fail "异常三分类留痕区分度丢失——见上方 ✗ 行"
+scenario 435 "v1.5.1 第三章 AI 异常处理总线——三分类路由（可重试/需人工/需回滚）在 decision-log 中 kind 集合大小 === 3 且 why 标签三值可辨 + 入口复用第一章死信通道"
+probe_assert s435 "v1.5.1 第三章异常总线：三类异常留痕可区分（防静默退化）+ 分类路由与死信入口复用" "异常三分类留痕区分度丢失——见上方 ✗ 行"
 
-scenario 436 "v1.5.1 第二章 理解债务——auto-PR 解释块引 decision-log 因果链（因果链条数 + 无依据时如实标注）+ daemon 周报 INSPECTORS 登记（L2）与 digest-*.json 四段落盘"; S436_OK=true
-S436_OUT=$(PROJECT_ROOT="$PROJECT_ROOT" node "$SCRIPT_DIR/acceptance-node-probes.js" s436 2>&1) || true
-grep -q "^OK" <<< "$S436_OUT" || { echo "  ✗ S436: $S436_OUT"; S436_OK=false; }
-$S436_OK && pass "v1.5.1 第二章理解债务：PR 解释块引因果链 + 周报 L2 登记与四段产物齐备" || fail "理解债务两面（PR 理由/周报聚合）回潮——见上方 ✗ 行"
+scenario 436 "v1.5.1 第二章 理解债务——auto-PR 解释块引 decision-log 因果链（因果链条数 + 无依据时如实标注）+ daemon 周报 INSPECTORS 登记（L2）与 digest-*.json 四段落盘"
+probe_assert s436 "v1.5.1 第二章理解债务：PR 解释块引因果链 + 周报 L2 登记与四段产物齐备" "理解债务两面（PR 理由/周报聚合）回潮——见上方 ✗ 行"
 
-scenario 437 "v1.5.1 第四+五章 G12 OTA 与任务推送——伪造签名（改 principal 不重签）拒绝且组件零落盘 + 灰度次序「非核心→探针→核心」+ 离线暂存上线补投 + 领任务回执入 device-events 链"; S437_OK=true
-S437_OUT=$(PROJECT_ROOT="$PROJECT_ROOT" node "$SCRIPT_DIR/acceptance-node-probes.js" s437 2>&1) || true
-grep -q "^OK" <<< "$S437_OUT" || { echo "  ✗ S437: $S437_OUT"; S437_OK=false; }
-$S437_OK && pass "v1.5.1 OTA 与任务推送：验签 fail-closed 零写盘 + 灰度批次次序 + 离线补投 + 回执入链" || fail "OTA/任务推送四锚点回潮——见上方 ✗ 行"
+scenario 437 "v1.5.1 第四+五章 G12 OTA 与任务推送——伪造签名（改 principal 不重签）拒绝且组件零落盘 + 灰度次序「非核心→探针→核心」+ 离线暂存上线补投 + 领任务回执入 device-events 链"
+probe_assert s437 "v1.5.1 OTA 与任务推送：验签 fail-closed 零写盘 + 灰度批次次序 + 离线补投 + 回执入链" "OTA/任务推送四锚点回潮——见上方 ✗ 行"
 
-scenario 438 "v1.5.1 第六章 T8/T9 生产管线接线——三层检测 L0 命中原始值不入盘（含 WAL）+ L2 端点不可用降级留痕 l2Degraded（不静默放行）+ 灰度同键多次判定同侧（hash 稳定）"; S438_OK=true
-S438_OUT=$(PROJECT_ROOT="$PROJECT_ROOT" node "$SCRIPT_DIR/acceptance-node-probes.js" s438 2>&1) || true
-grep -q "^OK" <<< "$S438_OUT" || { echo "  ✗ S438: $S438_OUT"; S438_OK=false; }
-$S438_OK && pass "v1.5.1 上行管线接线：三层检测脱敏 + L2 降级可见 + 灰度分流稳定" || fail "T8/T9 上行管线接线回潮——见上方 ✗ 行"
+scenario 438 "v1.5.1 第六章 T8/T9 生产管线接线——三层检测 L0 命中原始值不入盘（含 WAL）+ L2 端点不可用降级留痕 l2Degraded（不静默放行）+ 灰度同键多次判定同侧（hash 稳定）"
+probe_assert s438 "v1.5.1 上行管线接线：三层检测脱敏 + L2 降级可见 + 灰度分流稳定" "T8/T9 上行管线接线回潮——见上方 ✗ 行"
 
-scenario 439 "v1.5.1 第七+八章 审计输入双通道 + sofagent demo——意图落盘脱敏（原始密钥逐字不入盘）+ 零执行权限订阅面 + 缺省结果通道行为零变化 + demo --speed fast 五幕两拒一放（A1/A2 拒 · A3 WARN 放行）与沙箱清理"; S439_OK=true
-S439_OUT=$(PROJECT_ROOT="$PROJECT_ROOT" node "$SCRIPT_DIR/acceptance-node-probes.js" s439 2>&1) || true
-grep -q "^OK" <<< "$S439_OUT" || { echo "  ✗ S439: $S439_OUT"; S439_OK=false; }
-$S439_OK && pass "v1.5.1 输入双通道 + demo：意图脱敏落链 + 默认通道零变化 + 五幕两拒一放与沙箱自证" || fail "意图通道/demo 叙事一致性回潮——见上方 ✗ 行"
+scenario 439 "v1.5.1 第七+八章 审计输入双通道 + sofagent demo——意图落盘脱敏（原始密钥逐字不入盘）+ 零执行权限订阅面 + 缺省结果通道行为零变化 + demo --speed fast 五幕两拒一放（A1/A2 拒 · A3 WARN 放行）与沙箱清理"
+probe_assert s439 "v1.5.1 输入双通道 + demo：意图脱敏落链 + 默认通道零变化 + 五幕两拒一放与沙箱自证" "意图通道/demo 叙事一致性回潮——见上方 ✗ 行"
 
 echo -e "  验收测试结果：${GREEN}$PASSED 通过${NC} / ${RED}$FAILED 失败${NC} / ${YELLOW}$WARNED 跳过${NC} / 共 $((PASSED + FAILED + WARNED))"
 # 汇总口径（run-10/run-08/run-05 三轮收紧）：无色码 SUMMARY 行供 driver grep（EXIT: 0=全PASS / <N>=N失败）； 跳过 = 证据面缺失与失败同为闸门关注面（WARNED=0 才可称全过）；退出码三态：0=全过 / 2=有跳过（放行前补跑）/ N=失败数
