@@ -1171,8 +1171,7 @@
   createNodeOutputSource,
   WebhookPayloadError,
 } from './events';
-// v1.5.1 修复批 B1：下列两符号收窄为 @internal（不构成对外承诺）——
-//   · `sortEventsByTime`：全仓（含测试面）零引用 ⇒ 死导出；
+// v1.5.1 修复批 B1：下列符号收窄为 @internal（不构成对外承诺）——
 //   · `setDefaultAnomalyBus`：仅 error-localizer-outlet.test.ts 从**子路径**
 //     '../events/error-bus' 导入（不依赖 barrel）⇒ 测试缝被误提成对外承诺。
 // v1.5.1 修复批 F2：下列两符号同法收窄为 @internal——
@@ -1181,7 +1180,9 @@
 // 三者共同的收窄理由：**本版不构成对外承诺**——宿主装配不在本版落点、零生产调用点。
 // 宿主装配落版时随版本 bump 重升 `@public`（届时接线，或按 SDK-face 债务登记）。
 // 子路径导出保留，仓内消费与测试导入不受影响。
-/* @internal */ export { setDefaultAnomalyBus, sortEventsByTime } from './events';
+// v1.5.1 复验收编：原 B1 亦收窄过 `sortEventsByTime`（全仓含测试面零引用），
+//   因其属**死导出**——收窄只是降级而非除根，本次直接删除定义与两处 barrel 导出。
+/* @internal */ export { setDefaultAnomalyBus } from './events';
 /* @internal */ export { createWebhookAdapter, createTimerAdapter } from './events';
 /* @public */ export type {
   EventBusOptions,

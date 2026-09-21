@@ -26,7 +26,6 @@ import { EventBus } from './bus';
 import {
   EVENT_TYPES,
   type EventPublishResult,
-  type SofagentEvent,
   type TimerPayload,
   type WebhookKind,
   type WebhookPayload,
@@ -249,9 +248,4 @@ export function createTimerAdapter(bus: EventBus): TimerAdapter {
       });
     },
   };
-}
-
-/** 事件时间线辅助（测试/举证：按事件时刻排序的链条视图） */
-export function sortEventsByTime(events: SofagentEvent[]): SofagentEvent[] {
-  return [...events].sort((a, b) => a.ts.localeCompare(b.ts) || a.id.localeCompare(b.id));
 }

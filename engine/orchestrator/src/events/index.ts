@@ -76,9 +76,7 @@ export type {
 } from './types';
 
 // ── @internal（v1.5.1 修复批 B1：收窄对外承诺，子路径导出保留、仓内仍可用）──
-//   · sortEventsByTime：全仓（含测试面）零引用，死导出；
 //   · setDefaultAnomalyBus：仅测试从子路径 '../events/error-bus' 导入（不依赖 barrel）。
-/* @internal */ export { sortEventsByTime } from './adapters';
 /* @internal */ export { setDefaultAnomalyBus } from './error-bus';
 
 // ── @internal（v1.5.1 修复批 F2：同法收窄）──
