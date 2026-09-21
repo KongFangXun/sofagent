@@ -73,7 +73,7 @@ grep -rn "vX\.Y\.旧" --include="*.md" --include="*.ts" --include="*.sh" . \
  | grep -v "docs/changelog/" | grep -v "node_modules"
 ```
 
-> 手动 grep 的结果会包含大量"合理的历史引用"（如 "v1.0 新增"）。这些**不改**——它们是变更溯源标记。
+> 手动 grep 的结果会包含大量"合理的历史引用"（如 "v1.0 新增"）。这些**不改**——它们是变更溯源标记（bump 语境 = 不改已有的；新写规则正文时不引入溯源标记，见 releasing.md 禁考古条）。
 
 #### 脚本不覆盖（必须手动）
 

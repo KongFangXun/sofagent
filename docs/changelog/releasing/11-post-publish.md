@@ -38,7 +38,7 @@
 >    **安全修法（不依赖 CLI）**：备份 → 直接从 `engine/audit/hooks/` 拷贝三件并 `chmod +x` 到真实 hooks 路径
 >    （hook 本就是拷贝形态，与 `--init` 产出一致）。装完用一次真实 commit 验证审计确实运行。
 >
-| 十四 | [x] | **hook 生效确认**：本机 `.git/hooks/commit-msg` 头部版本号 == `engine/audit/hooks/commit-msg` 头部版本号（hook 是拷贝非软链，git pull 不随同步——发版窗口改过 hook 的版本，本机与其他仓库都是旧拷贝）。不一致 → `sofagent-audit --install-hook` 重装后复验（install.sh Step 6.5 的版本对账提示同源） | 两版本号一致 | 🔴 `--init` **不会覆盖已存在的 hook**（保护性跳过）⇒ 版本不符时须**先备份并删除** `.git/hooks/{commit-msg,pre-commit,post-commit}` 再跑 `--init`，否则该步永远修不好。
+| 十四 | [x] | **hook 生效确认**：本机 `.git/hooks/commit-msg` 头部版本号 == `engine/audit/hooks/commit-msg` 头部版本号（hook 是拷贝非软链，git pull 不随同步——发版窗口改过 hook 的版本，本机与其他仓库都是旧拷贝）。不一致 → `sofagent-audit --install-hook` 重装后复验（install.sh Step 6.5 的版本对账提示同源） | 两版本号一致 | 🔴 `--init` **不会覆盖已存在的 hook**（保护性跳过）⇒ 版本不符时须**先备份并删除** `.git/hooks/{commit-msg,pre-commit,post-commit}` 再跑 `--init`，否则该步永远修不好（实测：跑完 hook 版本仍未更新）。
 
 ---
 
@@ -59,7 +59,7 @@ npm view @sofagent/audit version --prefer-online   # 期望 vX.Y.Z
 npm view @sofagent/mcp version --prefer-online     # 期望 vX.Y.Z
 npm view @sofagent/audit readme --prefer-online    # 期望有内容（非空）
 
-# 分发渠道对账（阶段十被整体跳过，直到下版自迭代才补走——本段是唯一报警面）
+# 分发渠道对账（实锤：阶段十被整体跳过，直到下版自迭代才补走——本段是唯一报警面）
 # ① ClawHub skill：verify 返回版本号 = 本版（安全扫描 pending 时 verify 可能滞后几分钟，重试）
 clawhub skill verify sofagent 2>&1 | grep '"version"'   # 期望 "version": "vX.Y.Z"
 # ② ClawHub OpenClaw plugin 家族：API 逐款查 latestVersion（🔴 必须带 https:// 前缀——裸域名被当本地路径静默失败）
@@ -78,7 +78,7 @@ sofagent-audit --doctor            # 期望与当前版本 doctor 项数一致
 sofagent-core --doctor             # 期望全部通过
 
 # 文档头发版状态翻转（「待发版」语义族 →「已发版」）——check-version F6 已锚定「待发版」
-# 三字拦截（措辞变体不可穷举，连续复发后收口），
+# 三字拦截（措辞变体不可穷举，曾两版各漏 13 份与 8+2 份后收口），
 # 此翻转必须在下方 check-version 全绿验收之前做，否则 F6 报文档头残留红灯。
 # 只翻转活文档头，历史 changelog/archive 的「待发版」是当时正确状态不动。
 # 🔴 翻牌批裹挟防御：多 session 并发时 `git add <翻牌文件>` 会把并行 session
@@ -186,7 +186,7 @@ bash tools/check/check-version.sh        # 期望全绿
 
 ---
 
-## 🔴 发布期机械自检清单（步骤四的落地形态）
+## 🔴 发布期机械自检清单（事故沉淀 · 步骤四的落地形态）
 
 > **为什么要有这一节**：v1.4.8 发版暴露的问题里，**多数规则 SOP 早就写着**，但仍被踩——
 > 说明「叙述性规则」不足以约束执行。本节把它们**改写成可直接跑的命令/断言**：规则只有变成
@@ -199,7 +199,7 @@ bash tools/check/check-version.sh        # 期望全绿
 | 3 | **剥元说明只剥顶部**（尾部「🔗 尾链…同源」漏剥） | `grep -nE "阶段六定稿必备项|数字取值说明|Release body 同源|\.\./releasing/" body.md` 必须**为空** |
 | 4 | **`INSTALL_SHA256` 基准算错**（用 bump 前 HEAD 算，而 bump 会改 install.sh） | 回填后自检：`git show v<tag>:bootstrap.sh` 的钉值 == `git show v<tag>:install.sh \| shasum -a 256`——**不等就重算并重打 tag** |
 | 5 | **活文档「待发版」漏翻**（ROADMAP 版本表行） | `bash tools/check/check-version.sh` 的**第 26 项**（已发版态扫活文档；开发态/待发版窗口白名单内降级跳过，与 §27 同口径） |
-| 6 | **验收断言随 bump 失配** | 验收脚本里**禁止锁死当前 SSOT 版本号**；要比对就取变量或放宽为 `v[0-9]+\.[0-9]+\.[0-9]+` |
+| 6 | **验收断言随 bump 失配**（断言锁死当版号，bump 后失配） | 验收脚本里**禁止锁死当前 SSOT 版本号**；要比对就取变量或放宽为 `v[0-9]+\.[0-9]+\.[0-9]+` |
 | 7 | **CI 与本地门禁口径差**（shellcheck 按 shebang 扫全仓，本地按 `*.sh` 扫） | 本地必须跑 **CI 同口径**门禁：`bash tools/check/check-shellcheck.sh` |
 | 8 | **跨平台脚本假设 bash**（我的 fail-closed 在 Windows 崩） | 任何 `postbuild`/`scripts` 里调 `bash` 的，必须加 `process.platform===win32` 短路 |
 | 9 | **平台发布输出判定词不全**（ClawHub 的 `Update submitted … pending security scans` 是**成功**） | 判定词表须含全部成功形态：`Published`/`success`/`already exists`/`Fix: Align`/`Update submitted` |
@@ -207,7 +207,7 @@ bash tools/check/check-version.sh        # 期望全绿
 
 **执行纪律三条**（都踩过）：
 1. **批量替换前限定白名单目录**——否则会把 `.workbuddy/memory/` 也扫进去；
-2. **`cd` 到临时目录后必须切回**——否则后续命令在错目录里跑；
+2. **`cd` 到临时目录后必须切回**——否则后续命令在错目录里跑（实锤：命令报 file not found）；
 3. **改门禁后跑反测**——注入一个违规样本确认它**真的会红**（只跑正常态不算验证；且注意注入样本要被门禁的扫描面覆盖：`git ls-files` 类门禁需先 `git add`）。
 
 ---
@@ -222,7 +222,7 @@ bash tools/check/check-version.sh        # 期望全绿
 
 **操作**：
 ```bash
-# 🔴 清零前断言——11 行必须全部 [x] 才允许清零（阶段十分发整个被跳过，
+# 🔴 清零前断言——11 行必须全部 [x] 才允许清零（实锤：阶段十分发整个被跳过，
 #    但没人发现——各阶段勾选从未全绿就进了清零，跳阶段的证据随清零销毁。少一行 = 有阶段没走）
 grep -c "^- \[x\]" docs/changelog/releasing.md   # 全 [x]=11 → 清零；全 [ ]=0 → 终态语义直接达成
 #   部分打勾（0 < n < 11）= 有阶段走到一半没走完 → 先补走缺口阶段，禁止清零

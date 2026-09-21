@@ -101,7 +101,7 @@ bash tools/check/check-storefront.sh
 
 # ── 步骤二·补：SKIP / 降级跳过 数逐条裁决（**必做**）──
 # 为什么要有这一步（实测根因，不是形式主义）：「门禁绿 = 增量为零 ≠ 债清零」——
-#   ① 锚定串不命中即「天然通过」
+#   ① 锚定串不命中即「天然通过」（已修）
 #   ② 文件级前置过滤静默跳过（check-silent-catch：617 个 .ts 跳过 167 个，其中 83 个含 177 处 catch 零覆盖）
 #   ③ 存量基线豁免（silent-catch-baseline.json 304 条）
 #   ④ 已知告警只计 WARNING 即放行——check-version §15 已精确抓到 ROADMAP 版本头
@@ -544,7 +544,7 @@ npm view @sofagent/mcp@vX.Y.Z version --prefer-online    # 期望返回版本号
 #    收录延迟可达 3+ 分钟，对账窗口预留足够，勿据一次裸查询判定失败。
 # 🔴 publish 日志含 `+@sofagent/<pkg>@<ver>` 行 = 已成功入队（npm CLI 的发布确认标记）——
 #    propagation 延迟期（30s-5min 波动）view 查不到 ≠ 发布失败。判定序：先查日志有无入队行，
-#    有则等 3 分钟再补查，连续 ≥6 轮仍查不到才升级人工处理（orchestrator/train/
+#    有则等 3 分钟再补查，连续 ≥6 轮仍查不到才升级人工处理（实锤：orchestrator/train/
 #    load-chain 三包 6 轮超时全虚惊，日志均含入队行，等后全绿）。
 TARGET_VER=$(node -p "require('./package.json').version")
 for pkg in core daemon eval inject ontology orchestrator train rules evolve think ab-test; do

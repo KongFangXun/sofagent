@@ -125,7 +125,7 @@
 > 🔴 **v1.4.8 补充两条 body 卫生要素**：① devlog 的 Release Notes 段**顶部与尾部各有一段元说明**（顶部「本节存在性 = 阶段六定稿必备项…」/ 尾部「🔗 尾链：本段与 GitHub Release body 同源…」）——**两段都必须剥掉**，只剥顶部会漏（v1.4.8 实锤）；② body 必须含指向本版 changelog 的**相对链接**（`](./docs/changelog/vX.Y/vX.Y.Z.md)`），SOP 步骤一以 `contains("](./docs/changelog/")` 断言——v1.4.7 有、v1.4.8 首版漏，靠步骤一查证才发现。
 > 🔴 **铁律：发布时禁止把 changelog 内嵌段直接复制当 GitHub body**——本段是格式规范源头，GitHub body 由 [09-publish.md 三道工序](./09-publish.md) 生成；两处同源同构，但生成动作在阶段九，此段只定义标准。
 
-### 格式规范
+### 格式规范（对照范本逐要素）
 
 **① Title（release name）**：`vX.Y.Z — {emoji 主题短语}`
 - 1-2 个核心交付的 emoji + 名词短语（示例：`vX.Y.Z — 🏰 SubAgent 完整沙箱与场景驱动权限`）
@@ -183,7 +183,7 @@
 - **BugFix 段在核心变更最末**（不独立成 H2）——`### 🔒 BugFix（上版遗留）`逐字固定（N10），用 `-` 列表
 - **与 changelog 内嵌「Release Notes」段的关系**：GitHub Release body = 面向 GitHub 用户（精炼版）；changelog 文件末尾的 `## Release Notes · vX.Y.Z` = 面向深度读者（含破坏性变更细节）。两者内容可重叠但读者层不同——body 偏精炼，changelog 段偏完整
 
-### Release Notes 体例铁律（仅约束此段与 GitHub body）
+### Release Notes 体例铁律（以范本为标准校准，仅约束此段与 GitHub body）
 
 | # | 铁律 | 说明 |
 |---|------|------|

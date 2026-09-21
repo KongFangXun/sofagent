@@ -199,7 +199,7 @@ npm view @sofagent/audit readme | head -20
 # 3. GitHub description/topics 品类词（搜索流量入口；拍板口径：可搜索品类词前置，自造词殿后）
 gh repo view --json description,repositoryTopics -q '.description, .repositoryTopics[].name'
 # 4. 官网门面（源码不在本仓 = 仓内门禁盲区）：文档链接可达性人工核查
-#    （3 链接 404：文档已下沉 docs/、FDE.md 实为 GUIDE.md）
+#    （审查实证 3 链接 404：文档已下沉 docs/、FDE.md 实为 GUIDE.md）
 curl -sI https://sofagent.ai | head -1
 ```
 

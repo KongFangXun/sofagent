@@ -30,7 +30,7 @@ LIMITATIONS.md 必须覆盖本版本引入的核心新功能带来的已知局�
  COV=$(grep -c "$NEW_FEATURES" LIMITATIONS.md || echo 0)
  [ "$COV" -lt 3 ] && echo "⚠️ LIMITATIONS 新功能覆盖不足（$COV 处）" || echo "✅ $COV 处"
  ```
-- [ ] 🔴 **evidence 文件存在且测试数一致**：证据文件路径是 `docs/evidence/evidence.md`（单文件，非按版本拆分），测试数由 `check-test-count.sh` 自动校验。检查方式：
+- [ ] 🔴 **evidence 文件存在且测试数一致**（fresh-eyes 教训）：证据文件路径是 `docs/evidence/evidence.md`（单文件，非按版本拆分），测试数由 `check-test-count.sh` 自动校验。检查方式：
  ```bash
  test -f docs/evidence/evidence.md && echo "✅ evidence 文件存在" || echo "❌ evidence 文件缺失"
  bash tools/check/check-test-count.sh # 期望：全绿（CHANGELOG/ROADMAP/LIMITATIONS/evidence.md 声称数 vs 实际值）

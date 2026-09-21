@@ -10,7 +10,7 @@
 
 **归并配额（硬门槛）**：新增 N 维 → 本版必须先真实归并 ≥N 维（被并维度检查内容实际移入目标维度，git diff 可查；注释压缩不算）；净增行数 > 警戒线余量 → 继续归并或移下一版——**只调警戒线不归并 = 不合格**。
 
-**行数警戒线（当前值）**：`regression-checklist.md` ≤ 1950 行、`acceptance-test.sh` ≤ 4500 行（实测注记：checklist 1949→1960 被 Round 1 修复批净增 11 行顶破 S426 结构锁——「口径105 注释演进链 + F6 动态窗口 + hook git-path 解析」均为真实判据内容，按「先归并对销」处理，见下方自检段）。
+**行数警戒线（当前值）**：`regression-checklist.md` ≤ 1950 行、`acceptance-test.sh` ≤ 4500 行（实测注记：checklist 1949→1960 被首轮修复批净增 11 行顶破 S426 结构锁——「口径105 注释演进链 + F6 动态窗口 + hook git-path 解析」均为真实判据内容，按「先归并对销」处理，见下方自检段）。
 
 **维度脚本编写四铁律**（教训——7 个 FAIL 维度中 5 个是脚本自身缺陷而非仓库问题，driver 白跑一轮）：
 
@@ -76,7 +76,7 @@ bash tools/check/check-version.sh 2>&1 | grep "TS 文件头" | grep -q "✓" && 
 (
 # 子项 a: think.md 始终为 Ledger/source（非 Views/派生视图） 注意：grep 须精确匹配"think.md 被标为 Views"，而非"think.md 和 Views 出现在同一行" 正确模式：think.md 后跟 Views/派生（think.md = Views）→ 误标；think.md 后跟 Ledger/source → 正确
 grep -rnE "think\.md *= *(Views|派生视图)|think\.md（Views" docs/ARCHITECTURE.md docs/PHILOSOPHY.md docs/DEVELOPMENT.md FDE/GUIDE.md; # 期望：无匹配
-# 正则收紧：原 `think\.md.* Views` 会跨语义单元误命中——正解行写的是
+# 正则收紧（实证）：原 `think\.md.* Views` 会跨语义单元误命中——正解行写的是
 # 「task/logs + think.md = Ledger → knowledge/ = Views」，同行后续出现 Views 即被误判。
 # 本注释上方原有「正确模式：think.md 后跟 Views/派生」的说明，正则却未按该意图实现，
 # 属实现与注释不符，现按注释收紧为「think.md 紧邻 = Views/派生视图」形态。
@@ -86,7 +86,7 @@ grep -rn "Ledger-Views-Policy" docs/ARCHITECTURE.md docs/PHILOSOPHY.md docs/DEVE
 
 # 子项 f: WIKI.md 存在 + 七节结构完整（原维度一词归并）
 [ -f docs/WIKI.md ] && echo "✅ WIKI.md 存在" || echo "❌ WIKI.md 缺失"
-# 两处修正：① BSD grep 的中文方括号字符类 [一二三…] 恒 0 匹配——
+# 两处修正（实证）：① BSD grep 的中文方括号字符类 [一二三…] 恒 0 匹配——
 # 改展开式交替；② `grep -c … || echo 0` 在无匹配时既输出 0 又返回 1，`|| echo 0` 会再补
 # 一个 0 → 变量成两行，后续 [ -ge ] 报 integer expression expected。
 WIKI_SECTIONS=$(grep -cE "^## (一|二|三|四|五|六|七)、" docs/WIKI.md 2>/dev/null || true); WIKI_SECTIONS=${WIKI_SECTIONS:-0}
@@ -205,7 +205,7 @@ grep -c "defaultRules\.length\|defaultRules\[.length\]" engine/audit/src/command
 # 「并发」无法单条 grep 干净断言（2>&1 / & 会误报），主体人工巡检铁律；下行只自动查 nohup/后台显式并发拉起
 grep -rnE "nohup.*(build|acceptance-test)|npm run build[^&]*&[[:space:]]*$" tools/ .github/workflows/ 2>/dev/null || true # 期望：零命中=无并发隐患=PASS；🔴 || true 必须在命令部分（注释里的 || true 不生效——零命中 grep exit 1 会把代码块整体判 FAIL）
 
-# 子项 h: 假绿 / 空转六形态扫描——判据**收窄到真坑形态**，宽口径会满屏误报，勿扩
+# 子项 h: 假绿 / 空转六形态扫描（假绿专项）——判据**收窄到真坑形态**，宽口径会满屏误报，勿扩
 # 六形态与判定：
 #   A 管尾恒 0 命令判退出码 —— 判据见子项 a（同源）
 #   B 空值守卫静默跳过 —— 判据见下方脚本（**本轮唯一真坑形态**）
@@ -296,7 +296,7 @@ node engine/audit/dist/index.js --version 2>&1 | grep -q "sofagent" && echo "✓
 > USB 专属 fail-closed 验签见维度 44。
 
 ```bash
-# 子项 i: 审计 hook 的退出码契约——**崩溃必须与「警告」区分开**
+# 子项 i: 审计 hook 的退出码契约（改码）——**崩溃必须与「警告」区分开**
 #   契约：0=全绿 / 1=警告（放行）/ 2=违规（阻断）/ 3=非 git 仓库（cli-quick 口径）/ **4=引擎崩溃**。
 #   崩溃码 3→4——原 3 与「非 git 仓库 ⇒ return 3」撞码（实测两义并存：非 git 目录跑 3、
 #   SOFAGENT_HOME 越界崩溃也跑 3）。坑位：node 未捕获异常默认 exit 1 与「1=警告」撞码 ⇒
@@ -1443,7 +1443,7 @@ README_N=$(grep -oE '17 条默认规则' README.md | head -1); [ -n "$README_N" 
 node -e "const m=require('./engine/audit/dist/rules/index.js');const d=m.defaultRules.length,x=m.extendedRules.length;if(d!==17||d+x!==24)process.exit(1)" || echo "⚠️ dist 规则数非 17/24，README 同步"
 # ② check-version MCP 数含 ARCHITECTURE 能力总览（防 #3/#14）
 bash tools/check/check-version.sh > /tmp/cv.log 2>&1; grep -qE "60 tools|MCP 工具数" /tmp/cv.log || echo "⚠️ MCP 工具数比对未含 ARCHITECTURE" # 注：48→60（52+8 新 tool），数字勿写死——check-version 自身会跟 SSOT
-node -e "const fs=require('fs');const s=fs.readFileSync('docs/ARCHITECTURE.md','utf8');const reg=require('./engine/mcp/dist/tool-registry.js');const actual=Object.keys(reg.TOOLS||reg).length||60;s.split('\n').forEach(l=>{const mm=l.match(/（([0-9]+) tools）/);if(!mm)return;const v=+mm[1];if(v!==actual&&!/v1.[0-3].[0-9]/.test(l))console.log('⚠️ ARCHITECTURE tools 数漂移:',mm[0],'实际',actual)})" # 注：动态对账代替写死 48；行级版本豁免（含 v1.x.y 的历史演进行不算漂移）
+node -e "const fs=require('fs');const s=fs.readFileSync('docs/ARCHITECTURE.md','utf8');const reg=require('./engine/mcp/dist/tool-registry.js');const actual=Object.keys(reg.TOOLS||reg).length||60;s.split('\n').forEach(l=>{const mm=l.match(/（([0-9]+) tools）/);if(!mm)return;const v=+mm[1];if(v!==actual&&!/v1.[0-3].[0-9]/.test(l))console.log('⚠️ ARCHITECTURE tools 数漂移:',mm[0],'实际',actual)})" # 注：动态对账代替写死 48；行级版本豁免（含 v1.x.y 的历史演进行不算漂移——27=该时点真实数）
 # ③ doctor dist 路径存在性 + 基线（防 #18）
 node engine/audit/dist/index.js --doctor 2>&1 | grep -q "完整性校验通过" || echo "⚠️ 影子审计器基线链路失效"
 [ -f ~/.sofagent/internal/audit-hash.txt ] || echo "⚠️ 哈希基线未生成"

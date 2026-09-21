@@ -24,7 +24,7 @@
 #                             同输入同输出 + 已登记差异钉住 · 须在构建之后跑 · v1.4.9 G-9 接入）
 #   + doc-discipline.sh    → 对外文档写作纪律（内部工单代号 / 本机私有路径 · v1.4.9 P2-27 接入）
 #   + check-prepush-checklist.mjs → 本清单自身的对账：清单里的脚本名 ⊆ 实际被调用（v1.4.9 G-16 接入）
-#   + check-archaeology.sh → 规则文档禁考古（正文不带版本号/日期/跑批编号/出身标签；
+#   + check-archaeology.sh → 规则文档禁考古（正文不带版本号/日期/跑批编号（run-N·第N轮·Round N）/出身标签；
 #                             豁免：blockquote 叙事 / 能力版本门槛（`vX.Y.Z+`·`vX.Y.Z 起`·低于·达到）/
 #                             文件头版本标识 / 机器注释 / 机器字面量（引号或命令内版本号）/
 #                             台账锚串（tools/check/archaeology-exempt.json，逐条 {file,anchor,reason}）
@@ -345,7 +345,8 @@ fi
 # 4b. 规则文档禁考古（check-archaeology.sh · 批二接入）
 # 规则正文只写规则，不写出身（哪版加的 / 哪天定的 / 第几跑发现的 / 谁拍板的）——
 # 出身属 changelog 归档。命中项需逐条裁定「合法豁免 / 真实待清」，不得就地删内容。
-# 豁免台账：tools/check/archaeology-exempt.json（第三方 vendored 原文 + 历史档案目录）。
+# 豁免台账：tools/check/archaeology-exempt.json（exemptPaths 路径级 = vendored 原文 + 历史档案；
+# exemptAnchors 行级 = {file, anchor, reason} 锚串，锚须文件内唯一且当前仍是命中行）。
 # ════════════════════════════════════════
 if [ "$MINIMAL" = false ]; then
   echo -e "\n${BOLD}── 4b. 规则文档禁考古 ──${NC}"
