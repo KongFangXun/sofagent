@@ -77,6 +77,8 @@
 
 **10-minute lightweight trial** (covers package fetch and environment checks end to end; a single engine audit itself takes ~1.1 seconds — see the measured figures below): `npx -y -p @sofagent/audit sofagent-audit` (any git repo; secret leaks blocked on the spot).
 
+**Five-minute theatrical demo** (shipped in v1.5.1; sandboxed, zero touch on real files): `npx -y -p @sofagent/audit sofagent-audit demo` — one command runs the full five-act chain: sandbox build → injection → deliberate violation → audit interception → snapshot rollback → HMAC evidence export (`--speed fast` for a 60-second cut; artifacts land under `$SOFAGENT_DATA/demo`, never in your home directory).
+
 ## Core Features
 
 **On entry · generate judgment** (the FDE stage — deciding where AI belongs and what it's worth, frozen into deliverables):
@@ -283,9 +285,9 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # load the securit
 | What each release did | [CHANGELOG](./CHANGELOG.md) |
 | Security statement · known limits | [SECURITY](./SECURITY.md) · [LIMITATIONS](./docs/LIMITATIONS.md) |
 
-> 🧪 **Engineering credibility** (current): 5076 tests / 13 module packages + 11 plugins (7 DSH + 4 OpenClaw) · 24 audit rules · fresh-eyes independent review continuously running.
+> 🧪 **Engineering credibility** (current): 5078 tests / 13 module packages + 11 plugins (7 DSH + 4 OpenClaw) · 24 audit rules · fresh-eyes independent review continuously running.
 > **Package-count standard** (disambiguation): workspace 26 = 13 module packages + load-chain + umbrella + 7 DSH plugins + 4 OpenClaw plugins (see [WIKI §6](./docs/WIKI.md#六当前状态)); the **test-count standard** = 13 test-bearing workspace packages — they are not the same set.
-> There are two test-count figures: the **release-time value** (the `4805 → 4903` delta account inside each version section — see the v1.5.0 section) and the **current measured value** (the 5076 above, rolling forward with fix batches); the current authoritative value is whatever `tools/check/test-count.sh` reports — counting standard in [WIKI package-count definition](./docs/WIKI.md#六当前状态). Review-environment notes in [docs/guides/review-system.md](./docs/guides/review-system.md); performance figures are single-machine reference values (cross-tool benchmarking scheduled with Benchmark integration).
+> There are two test-count figures: the **release-time value** (the `4805 → 4903` delta account inside each version section — see the v1.5.0 section) and the **current measured value** (the 5078 above, rolling forward with fix batches); the current authoritative value is whatever `tools/check/test-count.sh` reports — counting standard in [WIKI package-count definition](./docs/WIKI.md#六当前状态). Review-environment notes in [docs/guides/review-system.md](./docs/guides/review-system.md); performance figures are single-machine reference values (cross-tool benchmarking scheduled with Benchmark integration).
 
 ---
 

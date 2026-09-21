@@ -264,6 +264,18 @@ sofagent 是一套 FDE 能力——底层引擎是纯本地 Harness 中间件（
 
 单 peer 5s 超时按离线跳过不阻塞；全部 peer 离线 / federation 整块失败 → 退化纯本地查，不影响 MCP server 运行（best-effort）。
 
+### G12 设备远程下发面（升级 / 内容下发 / 任务推送）
+
+> 引入版本：v1.5.1。
+
+> ⚠️ **远程下发面的信任与传输边界（v1.5.1 如实披露）**：本版新开三条**远程下发事件**——`device.upgrade`（G12 设备 OTA）/ `device.deploy`（平台→设备模板包下发）/ `device.task.dispatch`（任务推送），类型登记在 `engine/orchestrator/src/events/types.ts`，设备侧消费在 `engine/daemon/src/ota/`。两条边界须与服务侧同时知悉：
+>
+> ① **设备侧验签无可信根**：`verifyDeliverySignature`（`engine/daemon/src/ota/upgrade-executor.ts`）第三步只证明「摘要是由**信封自带的那把公钥**签出」这一**自洽性**——全链**无平台公钥 pin / 无 principal 白名单 / 无设备注册表绑定**。⇒ 挡得住**篡改与传输损坏**，**挡不住**持有自洽密钥对的外来伪造签名者。
+>
+> ② **`device.task.dispatch` 零验签**：`deliverTaskDispatch`（`engine/daemon/src/ota/subscriptions.ts`）**全路径无 `verifyDeliverySignature` 调用**——该调用只出现在 `device.deploy` 分支；任务下发通道目前**没有签名校验面**。
+>
+> **当前性质是「设计期已知缺口」而非「已暴露面」**：三条下发面尚未接真实传输通道（npm registry / 制品库 / 安装脚本均为**注入端口**，缺省只落盘内联内容），外部无法触达；**一旦接上真实传输，①② 直接构成远程包注入面**——信任锚与任务面验签须随该批落地。详见 [LIMITATIONS §三](./docs/LIMITATIONS.md)。
+
 ---
 
 ## 四、审计与存储安全

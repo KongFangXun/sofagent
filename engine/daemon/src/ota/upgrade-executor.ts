@@ -36,6 +36,10 @@
 //   `manifestPush=no-pusher`，**不静默**。
 // · 真实网络拉取 / 安装动作为注入端口（制品库 / npm registry / 设备安装脚本）；
 //   缺省安装 = 落盘 `<dataDir>/ota/components/<name>.json`（可测、确定性）。
+// · **本版无签名者信任锚**：`verifyDeliverySignature` 只证「摘要由信封**自带的那个
+//   公钥**签出」这一**自洽性**——平台公钥 pin / principal 白名单 / 设备注册表绑定
+//   均**不在本版落点**（本目录下无 trusted/allowlist/pinned 任何一处）。
+//   ⇒ 验签挡得住**篡改与传输损坏**，**挡不住持自洽密钥对的伪造签名者**。
 // ============================================================
 
 import { createHash } from 'crypto';
@@ -298,8 +302,14 @@ function asSignerIdentity(sig: DeliverySignature): AgentIdentity {
  *
  * 三步判据，任一不过即拒：
  *   1. 信封缺失 → missing-signature（不「无签名视为可信」）；
- *   2. 载荷位摘要 ≠ 实际内容重算摘要 → digest-mismatch（内容被换）；
- *   3. verifyAgentIdentity 不过 → invalid-signature（伪造 / 换公钥 / 改委托人）。
+ *   2. 载荷位摘要 ≠ 实际内容重算摘要 → digest-mismatch（内容被换 / 传输损坏）；
+ *   3. verifyAgentIdentity 不过 → invalid-signature（换公钥 / 改载荷后未重签）。
+ *
+ * ⚠️ 第 3 步的**真实含义**：它只证明「摘要由**信封自带的那把公钥**签出」这一
+ * **自洽性**——**不证明签名者可信**。本版全链**无签名者信任锚**（无平台公钥 pin /
+ * 无 principal 白名单 / 无设备注册表绑定，见文件头「已知边界」）。
+ * ⇒ 本函数挡得住**篡改类伪造**（改 payload / 改 principal / 换公钥而不重签），
+ *   **挡不住**「自带一对自洽密钥、自己签自己」的外来伪造签名者。
  */
 export function verifyDeliverySignature(
   sig: DeliverySignature | undefined,

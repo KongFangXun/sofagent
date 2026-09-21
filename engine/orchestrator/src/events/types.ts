@@ -133,7 +133,14 @@ export interface DeviceUpgradeComponent {
 
 /** 灰度策略 */
 export interface DeviceUpgradeRollout {
-  /** 灰度比例（0-100，平台侧语义） */
+  /**
+   * 灰度比例（0-100，**平台侧语义**）。
+   *
+   * ⚠️ **设备侧不读该字段做采样**：执行器只按 `batchSize` 分批（非核心 → 核心），
+   * 组件清单里的**全部**组件都会被升级——即便 `percentage: 0`。仓内该字段唯一消费点
+   * 是审计证据行 `rolloutPercentage=`（`engine/daemon/src/ota/upgrade-executor.ts`），
+   * 无任何采样分支。服务侧要按比例抽样，须在下发前自行裁剪 `components`。
+   */
   percentage?: number;
   /** 分批大小（每批组件数；缺省 = 每个层级一批） */
   batchSize?: number;

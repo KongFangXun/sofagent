@@ -7,7 +7,10 @@
 // 三个「留痕/可靠性」设计要点：
 //   1. **落盘事件队列**：每个事件进总线即 append 到
 //      `{dataDir}/events/event-queue.jsonl`（HMAC 链，kindField='type'）——
-//      进程崩溃后事件不丢，且队列本身可验链。
+//      进程崩溃后事件不丢。⚠️ 队列链**当前无验链消费点**：`verifyChain(queue)`
+//      是内核具备的能力，但本仓无任何调用方对它验链（`verifyEventTrail()`
+//      只验 `delivery-trail.jsonl`；`traceEvent()` 只按 correlationId 读队列）。
+//      即「队列可验链」目前是**能力**而非**已装配的校验面**——接线属后续版本落点。
 //   2. **投递全程留痕**：每次投递结局（DELIVERED / FAILED / DEAD_LETTER /
 //      REPLAYED）写 `{dataDir}/events/delivery-trail.jsonl`（HMAC 链），
 //      条目带 correlationId（触发链根）+ causationId（父事件）——每条事件
@@ -186,11 +189,16 @@ export class EventBus {
    * 发布事件——落盘队列 → 投递订阅者 → 写投递留痕。
    *
    * 投递失败：classifyError 分类 → 可重试且未超内联重试上限 → 退避后重投；
-   * 否则进死信队列（可重放）。**不抛错**——失败以结构化结果返回，
+   * 否则进死信队列（可重放）。**投递失败不抛错**——以结构化结果返回，
    * 保证事件源（webhook 接入方 / 节点执行方）不被下游故障拖垮。
+   *
+   * ⚠️ 唯一的抛错路径是**落盘 kind 门**：`type` ∉ REGISTERED_EVENT_TYPES 时
+   * `appendChained` 抛 `ChainKernelError`（fail-closed——未登记类型永不触发，
+   * 静默接受会把「拼错事件名」变成无声事故）。事件类型务必取自 `EVENT_TYPES`。
    *
    * @param input 发布入参
    * @returns 投递结果（含死信 id / stop_reason / 留痕决策 ts）
+   * @throws ChainKernelError 事件类型未登记（落盘 kind 门 fail-closed 拒绝）
    */
   async publish<T>(input: EventPublishInput<T>): Promise<EventPublishResult> {
     const event = this.normalize(input);
