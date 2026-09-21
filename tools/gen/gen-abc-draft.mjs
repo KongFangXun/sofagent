@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 // ============================================================
-// gen-abc-draft.mjs · 阶段五 A/B/C 三类清单草稿生成器（单次 LLM）
+// gen-abc-draft.mjs · 阶段四 A/B/C 三类清单草稿生成器（单次 LLM）
 // ============================================================
-// 用途：把阶段五步骤 1「来源提取」的 A/B/C 三分类做成单次 LLM 调用——
+// 用途：把阶段四步骤 1「来源提取」的 A/B/C 三分类做成单次 LLM 调用——
 //   无工具、无 agent 循环、一次成型（分类是理解型任务不是探查型任务）。
 //
 // 本文件只保留差异面：来源参数定义 + A/B/C 分类 prompt 模板；
@@ -21,7 +21,7 @@
 
 import { join } from 'node:path';
 import {
-  REPO_ROOT, loadModelConfig, parseArgs, resolveVersion,
+  REPO_ROOT, loadModelConfig, parseArgs, resolveDraftVersion,
   resolveApiKey, writeDegraded, loadSources, readChangelogLine,
   callLLM, writeOutput, defaultOut,
 } from './gen-draft-lib.mjs';
@@ -29,7 +29,7 @@ import {
 // 分类任务要稳定不要发散（审查草稿 0.5 / 创意 0.8）
 const MODEL_CFG = loadModelConfig({ temperature: 0.3 });
 
-const HELP = `gen-abc-draft.mjs — 阶段五 A/B/C 三类清单草稿生成（单次 LLM）
+const HELP = `gen-abc-draft.mjs — 阶段四 A/B/C 三类清单草稿生成（单次 LLM）
 
 用法：node tools/gen-abc-draft.mjs --fresh-eyes <p> --bugfix <p> --features <p> [--recheck <p>] [--out <p>]
 
@@ -43,11 +43,14 @@ const HELP = `gen-abc-draft.mjs — 阶段五 A/B/C 三类清单草稿生成（�
 其他：
   --out   <path>       产物路径（默认 ~/Desktop/abc-draft-<ver>.md）
   --api-key <key>      显式传 key（缺省读 GLM_API_KEY 环境变量）
+  --version <x.y.z>    草稿版本号（缺省从输入/产物路径内嵌版本取，再退 package.json SSOT）
 
 退出码：0=成功 / 1=输入错误 / 2=LLM 不可用（降级输出 prompt 到 <out>.prompt.md）`;
 
 const opts = parseArgs(process.argv.slice(2), HELP);
-const CUR_VER = resolveVersion();
+// 版本按「输入材料所指的发版目标版本」解析（缺省从路径内嵌版本取，再退 package.json SSOT）——
+// package.json 的 bump 属发版末段，直取会把草稿标成上一版号
+const CUR_VER = resolveDraftVersion(opts);
 
 // ── 读来源（本工具差异面：4 来源 + 各 15k 截断上限）──────────
 const { sections, loaded, skipped } = loadSources([
@@ -68,10 +71,10 @@ if (changelogLine) {
   loaded.push('CHANGELOG 版本行');
 }
 
-// ── Prompt（分类规则内嵌——阶段五步骤 1 的 A/B/C 语义）─────────
+// ── Prompt（分类规则内嵌——阶段四步骤 1 的 A/B/C 语义）─────────
 const SYSTEM_PROMPT = `你是 sofagent 项目的审查体系管理员。任务：把下列来源中的发现与交付，分类成 A/B/C 三类清单草稿，供人工审核后分发到四份审查文档。
 
-分类规则（来自 releasing.md 阶段五）：
+分类规则（来自 releasing 阶段四步骤①）：
 - A 类【新功能审查面】：本版本新交付带来的、以前不存在的检查需求（每个新功能至少一条）
 - B 类【Bug 防回归】：本轮修过的 bug——每个修复一条防复发检查
 - C 类【fresh-eyes 校准】：审查方法论的改进（新视角/校准视角/历史教训），归 fresh-eyes-review.md，不加检查项
@@ -117,7 +120,7 @@ try {
   const header = `<!-- gen-abc-draft 产物 · v${CUR_VER} · ${new Date().toISOString()}
      模型：${MODEL_CFG.model}（单次调用，无工具）
      来源：${loaded.join('、')}${skipped.length ? `；跳过：${skipped.join('、')}` : ''}
-     ⚠️ 草稿须人工审核后分发——LLM 分类是草稿不是结论（阶段五纪律） -->
+     ⚠️ 草稿须人工审核后分发——LLM 分类是草稿不是结论（阶段四纪律） -->
 
 `;
   writeOutput(OUT, header, content);

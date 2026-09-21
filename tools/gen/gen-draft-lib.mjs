@@ -106,6 +106,32 @@ export function resolveVersion() {
 }
 
 /**
+ * 草稿版本解析：**发版目标版本 ≠ 当前 SSOT 版本**（bump 属发版末段），而草稿是
+ *   「发版目标版本的审查草稿」——直接用 package.json 会把草稿标成上一版号
+ *   （实测：v1.5.1 阶段四产出标题写成 v1.5.0，靠人工才发现）。
+ * 优先级：`--version` 显式 > 输入/产物路径内嵌 vX.Y.Z（SOP 命令形态 `...-vX.Y.Z.md`
+ *   与 `docs/changelog/vX.Y/vX.Y.Z.md`）> package.json SSOT 兜底。
+ * 每次打印取值来源（留痕），SSOT 与取值不一致时显式说明原因。
+ * @param {Record<string, string|undefined>} opts 解析后参数（读 version / out / features / bugfix / fresh-eyes / changelog）
+ * @returns {string} 版本号（如 '1.5.1'）
+ */
+export function resolveDraftVersion(opts = {}) {
+  const ssot = resolveVersion();
+  const flag = String(opts.version || '').trim();
+  const pathHint = [opts.out, opts.features, opts.bugfix, opts['fresh-eyes'], opts.changelog]
+    .map(p => /(?:^|[^\d])v?(\d+\.\d+\.\d+)\.md$/.exec(String(p || ''))?.[1] || '')
+    .find(Boolean) || '';
+  const ver = flag || pathHint || ssot;
+  const src = flag ? '--version' : (pathHint ? '输入/产物路径内嵌' : 'package.json SSOT');
+  if (ver === ssot) {
+    console.log(`→ 草稿版本 v${ver}（来源：${src}）`);
+  } else {
+    console.log(`→ 草稿版本 v${ver}（来源：${src}；package.json SSOT 仍为 v${ssot}——bump 属发版末段）`);
+  }
+  return ver;
+}
+
+/**
  * key 解析：环境变量 GLM_API_KEY 优先，--api-key 参数兜底。
  * 无 key 时降级写 <out>.prompt.md 并退出 2（SOP 不因断网/key 轮换卡死）。
  * @returns {string} API key（保证非空——空则已退出）

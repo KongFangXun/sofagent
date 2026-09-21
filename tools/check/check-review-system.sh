@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
-# check-review-system.sh — 审查体系一致性校验（阶段七执行体）
+# check-review-system.sh — 审查体系一致性校验（阶段四执行体）
 # ============================================================
-# 职责：把 SOP 阶段七「审查体系最终确认」的两大步做成确定性检查——
+# 职责：把 SOP 阶段四「审查体系合并更新（含最终确认）」的两大步做成确定性检查——
 #   ① 状态一致性：checklist / acceptance / fresh-eyes 三份文档的
 #      「声称值 vs 实际值」逐一对账（维度数 / 编号连续性 / 行数警戒线 /
 #      场景数 / 头部自校验段同步）
 #   ② 覆盖闭环：checklist 新增维度引用的 S 场景号在 acceptance 中真实
 #      存在；check-version 的「检查通过 X/Y 项」分母与实际检查项数一致
 #
-# 本脚本是「清单核对器」不是「判断器」——只报事实，修复归人工/阶段五。
+# 本脚本是「清单核对器」不是「判断器」——只报事实，修复归人工/阶段四。
 #
 # 用法:
 #   bash tools/check-review-system.sh          # 人读输出
@@ -27,7 +27,7 @@ for _arg in "$@"; do
   case "$_arg" in
     --quiet) QUIET=true ;;
     --help|-h)
-      echo "check-review-system.sh — 审查体系一致性校验（阶段七）"
+      echo "check-review-system.sh — 审查体系一致性校验（阶段四）"
       echo "  --quiet   只输出 OK / FAIL"
       echo "  --help    显示此帮助"
       exit 0 ;;
@@ -42,9 +42,9 @@ RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; BOLD='\033[1m'; CYAN=
 CHECKLIST="playbook/regression-checklist.md"
 ACCEPTANCE="playbook/acceptance-test.sh"
 FRESH_EYES="playbook/fresh-eyes-review.md"
-RELEASING5="docs/changelog/releasing/04-review-system.md"
+RELEASING4="docs/changelog/releasing/04-review-system.md"
 
-for _f in "$CHECKLIST" "$ACCEPTANCE" "$FRESH_EYES" "$RELEASING5"; do
+for _f in "$CHECKLIST" "$ACCEPTANCE" "$FRESH_EYES" "$RELEASING4"; do
   if [ ! -f "$_f" ]; then
     echo "❌ 文件缺失: ${_f}（脚本无法执行）" >&2
     exit 2
@@ -104,7 +104,7 @@ if [ -n "$LIMIT_CHK" ]; then
   if [ "$WC_CHK" -le "$LIMIT_CHK" ]; then
     ok "checklist 行数 $WC_CHK ≤ 警戒线 $LIMIT_CHK"
   else
-    bad "checklist 行数 $WC_CHK 超警戒线 $LIMIT_CHK" "    处置：走阶段五三判据（真实归并或上调记录）"
+    bad "checklist 行数 $WC_CHK 超警戒线 $LIMIT_CHK" "    处置：走阶段四三判据（真实归并或上调记录）"
   fi
 else
   warn "checklist 头部未提取到自身警戒线（格式变化？人工确认）"
@@ -113,7 +113,7 @@ if [ -n "$LIMIT_ACC" ]; then
   if [ "$WC_ACC" -le "$LIMIT_ACC" ]; then
     ok "acceptance 行数 $WC_ACC ≤ 警戒线 $LIMIT_ACC"
   else
-    bad "acceptance 行数 $WC_ACC 超警戒线 $LIMIT_ACC" "    处置：走阶段五三判据（真实归并或上调记录）"
+    bad "acceptance 行数 $WC_ACC 超警戒线 $LIMIT_ACC" "    处置：走阶段四三判据（真实归并或上调记录）"
   fi
 else
   warn "checklist 头部未提取到 acceptance 警戒线（格式变化？人工确认）"
@@ -192,21 +192,21 @@ EOF
 [ "$QUIET" = false ] && echo -e "\n${BOLD}${CYAN}── ④ fresh-eyes-review 守护 ──${NC}"
 
 WC_FE=$(wc -l < "$FRESH_EYES" | tr -d ' ')
-# 警戒线唯一 SSOT：releasing 阶段五 04-review-system.md（「不超过 N 行」）。
+# 警戒线唯一 SSOT：releasing 阶段四 04-review-system.md（「不超过 N 行」）。
 # 别处（含 fresh-eyes-review.md 自身）一律外链，不再自带数字。
 # v1.4.4：删除原先对 regression-checklist.md 的回退分支——该 checklist 第 13 行已把
 # fresh-eyes 阈值外链给 04-review-system.md、自身不再自带数字，回退正则实测零命中
-# （永不生效的死分支），且它使下方 warn 文案指向 ${RELEASING5} 而实读 ${CHECKLIST}，
-# 排障时会被带到错误的文件。删掉后本段唯一读取源即 ${RELEASING5}，文案与之对齐。
-LIMIT_FE=$(grep -oE '不超过 [0-9]+ 行' "$RELEASING5" | head -1 | grep -oE '[0-9]+' || echo "")
+# （永不生效的死分支），且它使下方 warn 文案指向 ${RELEASING4} 而实读 ${CHECKLIST}，
+# 排障时会被带到错误的文件。删掉后本段唯一读取源即 ${RELEASING4}，文案与之对齐。
+LIMIT_FE=$(grep -oE '不超过 [0-9]+ 行' "$RELEASING4" | head -1 | grep -oE '[0-9]+' || echo "")
 if [ -n "$LIMIT_FE" ]; then
   if [ "$WC_FE" -le "$LIMIT_FE" ]; then
     ok "fresh-eyes-review 行数 $WC_FE ≤ 警戒线 $LIMIT_FE"
   else
-    bad "fresh-eyes-review 行数 $WC_FE 超警戒线 $LIMIT_FE" "    处置：阶段五校准段做紧凑化（保语义压行数，不删视角——警戒线只准归并消化，不准抬阈值）\n    权威出处：${RELEASING5}（「不超过 N 行」句式），别处一律外链"
+    bad "fresh-eyes-review 行数 $WC_FE 超警戒线 $LIMIT_FE" "    处置：阶段四校准段做紧凑化（保语义压行数，不删视角——警戒线只准归并消化，不准抬阈值）\n    权威出处：${RELEASING4}（「不超过 N 行」句式），别处一律外链"
   fi
 else
-  warn "未提取到 fresh-eyes 警戒线（检查 $RELEASING5 是否含「不超过 N 行」句式）"
+  warn "未提取到 fresh-eyes 警戒线（检查 $RELEASING4 是否含「不超过 N 行」句式）"
 fi
 
 # ============================================================
@@ -228,14 +228,14 @@ else
 fi
 
 # ============================================================
-# 六、交付关键词覆盖率对账（阶段五步骤 3 脚本化 · 零遗漏验证）
+# 六、交付关键词覆盖率对账（阶段四步骤 3 脚本化 · 零遗漏验证）
 # ============================================================
 # 源：CHANGELOG.md 主索引当前版本行的加粗交付名 + devlog 交付章标题核心词
-# 目标：每个交付关键词在 checklist / acceptance 至少出现一次（SOP 阶段五
+# 目标：每个交付关键词在 checklist / acceptance 至少出现一次（SOP 阶段四
 # 步骤 3「grep 确认 CHANGELOG 每个交付关键词在审查文档中至少出现一次」）
 # 词形差异（如 devlog「SubAgent 完整沙箱」vs checklist「沙箱五件套」）由
 # 豁免清单处理：playbook/.coverage-exempt 每行一个关键词，命中的不报
-[ "$QUIET" = false ] && echo -e "\n${BOLD}${CYAN}── ⑥ 交付关键词覆盖率（阶段五零遗漏） ──${NC}"
+[ "$QUIET" = false ] && echo -e "\n${BOLD}${CYAN}── ⑥ 交付关键词覆盖率（阶段四零遗漏） ──${NC}"
 
 CUR_VER=$(node -p "require('./engine/audit/package.json').version" 2>/dev/null || echo "")
 # v1.4.7 修正：版本源滞后——原只取 package.json（SSOT bump 在阶段九、安装入口 bump commit），
@@ -278,7 +278,7 @@ else
 $(echo "$_kw" | grep -oE '[一-龥]{4,}|[A-Za-z][A-Za-z-]{3,}' || true)
 EOF
         if [ "$_sub_hit" -eq 0 ]; then
-          bad "交付关键词「${_kw}」在 checklist/acceptance 均零命中" "    处置三选一：① 审查文档补该审查面（阶段五 A 类分发）② 词形不同 → 加进 $EXEMPT_FILE ③ 非交付性章节（背景/依赖）→ 豁免"
+          bad "交付关键词「${_kw}」在 checklist/acceptance 均零命中" "    处置三选一：① 审查文档补该审查面（阶段四 A 类分发）② 词形不同 → 加进 $EXEMPT_FILE ③ 非交付性章节（背景/依赖）→ 豁免"
           COV_MISS=$((COV_MISS + 1))
         fi
       fi
@@ -290,7 +290,7 @@ EOF
 fi
 
 # ============================================================
-# 七、同主题维度聚簇提示（阶段五三判据②重叠判据的脚本化）
+# 七、同主题维度聚簇提示（阶段四三判据②重叠判据的脚本化）
 # ============================================================
 # 原理：维度标题先清洗（去编号/去括号注释/去分隔符）→ 抽「≥2 字 CJK 连续段」+
 # 「≥4 字符拉丁词（排除版本号）」作主题词 → 同一主题词命中 ≥3 个维度 = 强归并候选
