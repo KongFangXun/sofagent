@@ -779,6 +779,32 @@ Jev 公开的接口面只有三原语（Noul / Choice / Score）且全部答案�
 
 > 📖 来源：[jaredpalmer/kev](https://github.com/jaredpalmer/kev) 与 [bespokelabsai/nimble](https://github.com/bespokelabsai/nimble) **本地克隆快照实测**（2026-09-21 读取，行号均为该快照内实测位置）。读数分两类：单机延迟与打包加速比来自**各自仓内自带的基准产物**（可复算，但**未由本仓复算**）；训练耗时 / 峰值显存 / 配方来自**其 model card 的自述**（未在本机复现）。按「不可复算数字不与本仓可复算数字并列展示」纪律，此处全部标注证据级别。
 
+### 判定工程的治理件深读：冻结评测边界、钉哈希挂载与谱系声明（2026-09-21 二次深读）
+
+继上节实测边界之后，对同一批快照做了第二轮源码级深读（判定头实现、评测冻结协议、训练脚本、包本体、测试组织）。本节只收录**对本仓治理面有增量**的发现；工程实现细节（双线性 pointer、混合骨干降级路径、数据增广变体族）不进主线文档。
+
+**自动搜索的边界写法：可变面白名单化，评测面永不可变**
+
+Kev 把「自动扫参」做成显式边界契约：agent 可变的只有 **allowlist 里的试验参数**（optimizer / LoRA rank / epochs / 增广率 / 损失权重），而「**the evaluator, the frozen suites, the gates, or the locked test** 永不可变」；选优只许在开发分区上做，「locked test 在此之前永不被读取」，候选资格达成才解锁 locked 读（`kev/autoresearch.py:8-10`、`:167`、`:284`）。resume 机制双查**代码哈希与 suite manifest 哈希**（`kev/experiment.py:173-179`、`:229`），且**失败试验也写进 results.jsonl 台账**（`:265-279`，`allow_nan=False` 严格落盘）。⇒ 与本仓两条既有实践同构：审计链 golden vector 锚（锚定不可变面）与「温故知新只产候选 Prompt、永不触本仓」（搜索与冻结的边界）。其增量在「**台账必须记录失败**」被写成机制而非纪律——失败行与成功行同格式落盘，报告层没有「只挑好的」的通道。
+
+**第三方技能件以内容哈希挂载：与 install.sh 权威源互补**
+
+Nimble 的 `skills-lock.json` 把引用的第三方技能钉到 **SHA-256 computedHash**（`skills-lock.json:8`，指向 `typesafe-ai/skills` 仓的 SKILL.md），结构上与 lockfile 同构。⇒ 本仓 SKILL/ 权威源走「install.sh 从仓内复制」，两者正好覆盖技能治理的两个失效面：钉哈希防「上游悄悄变」，install.sh 复制防「本地副本漂移」。上游无 LICENSE 时的处置线见上节许可面警示。
+
+**配方写进代码而非文档：LoRA α=2×rank 硬绑定**
+
+Nimble 训练脚本把 `lora_alpha=2*lora_rank` 写成代码级绑定（`nimble/training/schema_train.py:192`），参数防御拒绝非正数与 warmup ≥ max_steps（`:154-157`）。⇒ 与上节「train.py 默认值与 model card 不一致」互为正反例：**配方落在代码里才自洽，落在文档里必漂移**——与「能力声称唯一真相源 = 实现面」同源。
+
+**测试名即规范，但零 CI 的反差**
+
+Nimble 有 39 个测试文件 3353 行，测试函数名直接陈述规范语义（`test_review_hides_labels_and_generation_metadata` / `test_verification_blinds_labels_and_quarantines_disagreement` / `test_heldout_sources_excluded_and_whole_groups_required`），但全仓**无 .github/ 目录——零 CI**；Kev 则有 GitHub Actions pytest（4 文件 887 行 63 测试函数）。⇒ 反面印证「**约束是建议性的，审计是强制性的**」：测试写得再好，不进门禁就只是研究者自律。「测试名即规范」的写法本身值得吸收——让断言承担规范表述，函数名就是文档。
+
+**数据谱系主动声明污染**
+
+Nimble 的 `data/manifest.json` 记录三生成器谱系（900 + 1000 + 1000 = 2676 训练行）并**主动声明 22 行同源污染**——「Sonnet 有 22 行起草用了同源 Luna 插图，**releases are not independent**」。⇒ 谱系透明度的最低配置是三件套：生成器构成、行数对账、污染声明。比任何「零泄漏」口头承诺都硬，与 [v1.7.0 第三章](./changelog/v1.7/v1.7.0.md)「对外数字可复现」同向。
+
+> 📖 来源：[jaredpalmer/kev](https://github.com/jaredpalmer/kev) 与 [bespokelabsai/nimble](https://github.com/bespokelabsai/nimble) 本地克隆快照**二次深读**（2026-09-21，行号均为该快照内实测位置）。kev 为 Apache-2.0；nimble 仓库根无 LICENSE（处置线见上节），本节仅引用其设计思想与配置文件结构，未拷贝任何实现代码。
+
 ---
 
 ## 四、市场印证：行业判断被市场买单
