@@ -275,6 +275,8 @@ sofagent 是一套 FDE 能力——底层引擎是纯本地 Harness 中间件（
 > ② **`device.task.dispatch` 零验签**：`deliverTaskDispatch`（`engine/daemon/src/ota/subscriptions.ts`）**全路径无 `verifyDeliverySignature` 调用**——该调用只出现在 `device.deploy` 分支；任务下发通道目前**没有签名校验面**。
 >
 > **当前性质是「设计期已知缺口」而非「已暴露面」**：三条下发面尚未接真实传输通道（npm registry / 制品库 / 安装脚本均为**注入端口**，缺省只落盘内联内容），外部无法触达；**一旦接上真实传输，①② 直接构成远程包注入面**——信任锚与任务面验签须随该批落地。详见 [LIMITATIONS §三](./docs/LIMITATIONS.md)。
+>
+> ③ **「外部无法触达」的射程声明（穷尽性交代）**：该断言的对象是**三条下发面**，不是 daemon 的全部网络面——daemon 进程本身**确有一个在监听的 HTTP 端点**：`startHealthEndpoint`（`engine/daemon/src/health-endpoint.ts:191`，由 `engine/daemon/src/cli.ts:227` 在生产路径调用）执行 `http.createServer`（`:195`）+ `server.listen(port, host)`（`:213`），但其 URL 分支只有 `GET /health` 与 `/health/`（`:196`）两支，只回健康三态、不接收下发内容、不写盘。⇒ 它是**只读探针面**，与三条下发面的入站路径无交集；三条下发面的事件入站仍是注入端口。
 
 ---
 
