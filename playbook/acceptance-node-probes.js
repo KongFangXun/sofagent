@@ -880,9 +880,16 @@ async function s426() {
   const { fs } = _s41x_init('s426'); const bad = [];
   const root = process.env.PROJECT_ROOT;
   const read = (p) => fs.readFileSync(root + '/' + p, 'utf-8');
-  // ① A 类锚：checklist 头部 90 维声明 + 行数警戒线双值 + 归并去向注释在位
+  // ① A 类锚：checklist 头部维度声明 + 行数警戒线双值 + 归并去向注释在位
+  //    维度数改动态对账（声称 = 实际 ^#### 计数，与 check-review-system ① 同款判据）——
+  //    硬编码维数在每次归并/新增后必漂（v1.5.1 归并 #138-141 后 90→87 实证），写死即假红
   const rc = read('playbook/regression-checklist.md');
-  if (!rc.includes('当前 90 维 · 编号 1-141 · 51 个编号已归并删除')) bad.push('checklist 头部 90 维声明漂移');
+  const dimClaim = rc.match(/当前 (\d+) 维 · 编号 1-(\d+) · (\d+) 个编号已归并删除/);
+  if (!dimClaim) bad.push('checklist 头部维度声明形态漂移');
+  const dimActual = (rc.match(/^#### /gm) || []).length;
+  if (dimClaim && Number(dimClaim[1]) !== dimActual) bad.push('checklist 维度声称 ' + dimClaim[1] + ' ≠ 实际 ' + dimActual);
+  const numMax = (rc.match(/^#### (\d+)\./gm) || []).map((s) => Number(s.replace(/\D/g, '')));
+  if (dimClaim && numMax.length && Math.max(...numMax) !== Number(dimClaim[2])) bad.push('checklist 编号上界声称 ' + dimClaim[2] + ' ≠ 实际 ' + Math.max(...numMax));
   if (!/regression-checklist\.md` ≤ 1950 行、`acceptance-test\.sh` ≤ 4500 行/.test(rc)) bad.push('警戒线双值锚漂移');
   const rcLines = (rc.match(/\n/g) || []).length; // wc -l 口径（与 check-review-system 同——换行符数，非 split 段数）
   if (rcLines > 1950) bad.push('checklist 超警戒线:' + rcLines);
