@@ -134,6 +134,42 @@ function hasParentCommit(): boolean {
 }
 
 /**
+ * v1.5.1 F1：判定 diff 范围能否被 git 解析——区分「无效范围」与「合法但无变更」。
+ *
+ * 为什么不能整串丢给 `git rev-parse --verify`：`--verify` 只接受**单个 rev**，
+ * 对 `HEAD~1..HEAD` 这类范围表达式必失败（实测 exit 1）——若照此判定，合法范围
+ * 会被误判为无效。故范围形如 `A..B` / `A...B` 时**逐端点**验证。
+ *
+ * 切分口径：三点范围（`A...B`，git 的 merge-base 语义）先于二点范围切分，
+ * 否则 `HEAD~3...HEAD` 会被切成 `['HEAD~3', '.HEAD']` 造成误判。
+ * 空端点（如 `..HEAD`）不参与验证，交回原行为——本函数只封「无效范围」这一条路径。
+ *
+ * @param range git refspec（如 'HEAD~3..HEAD'、'origin/main..HEAD'、'nonsense-range'）
+ * @returns true = 全部端点可解析（合法范围，含确实无变更的范围）
+ */
+function isResolvableDiffRange(range: string): boolean {
+  const endpoints = (range.includes('...') ? range.split('...') : range.split('..')).filter(
+    (part) => part.length > 0
+  );
+  // 无任何非空端点可验证 ⇒ 不新增拦截面，保持既有行为
+  if (endpoints.length === 0) {
+    return true;
+  }
+  return endpoints.every((rev) => {
+    try {
+      execFileSync('git', ['rev-parse', '--verify', '--quiet', rev], {
+        encoding: 'utf-8',
+        stdio: ['pipe', 'pipe', 'pipe'],
+      });
+      return true;
+    } catch {
+      // 不解析的 ref：git 报错已在 --quiet 下静默，由调用方输出产品化文案
+      return false;
+    }
+  });
+}
+
+/**
  * 获取指定 ref 的完整 commit message（供 A9 注入检测）。
  * quick 模式此前 runRules 第 6 参 commitMsg=undefined——A9 无输入假绿。
  * 失败时返回 null（不打 raw git stderr，同 P1-B5 原则）。
@@ -537,6 +573,18 @@ export function runCliQuick(argv: string[]): number {
     };
     const hasBaseline = commitSha !== null && hasParentCommit();
     if (diffRange !== 'HEAD~1..HEAD') {
+      // v1.5.1 F1：显式指定的范围必须先证明**可解析**，再谈「无变更」。
+      // 缺陷：无效 ref（如 `nonsense-range`）在 parseDiff 内吞掉 git 报错并返回空数组，
+      // 与「合法范围确实无变更」共用同一条 exit 0 路径 ⇒ 敲错 ref 即拿假绿；而本文件对
+      // 「非 git 仓库」「diff 解析失败」都 fail-loud（exit 3），唯独无效范围放行，自相矛盾。
+      // 判据：全部端点可解析 ⇒ 保持原行为（exit 0）；任一端点不可解析 ⇒ fail-loud。
+      // 默认范围 `HEAD~1..HEAD` 不进本分支（其空态由下方 hasBaseline 分支统一处理，含
+      // 根 commit 空树补审），故根 commit / 真无变更两种既有行为与文案零变化。
+      if (!isResolvableDiffRange(diffRange)) {
+        console.log('⚠️  diff 解析失败。');
+        console.log(`   无法解析 diff 范围「${diffRange}」的 ref——请检查 ref 是否存在（如 HEAD~1..HEAD、origin/main..HEAD），或仓库是否尚无提交。`);
+        return 3;
+      }
       printEmpty(`🔍 审计指定范围（${diffRange}）`);
       return 0;
     }

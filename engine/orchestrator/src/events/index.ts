@@ -6,8 +6,6 @@ export { EventBus } from './bus';
 export type { EventBusOptions, EventHandler, EventSubscriptionHandle, DeadLetterInput } from './bus';
 export {
   createNodeOutputSource,
-  createWebhookAdapter,
-  createTimerAdapter,
   WebhookPayloadError,
 } from './adapters';
 export type {
@@ -82,3 +80,10 @@ export type {
 //   · setDefaultAnomalyBus：仅测试从子路径 '../events/error-bus' 导入（不依赖 barrel）。
 /* @internal */ export { sortEventsByTime } from './adapters';
 /* @internal */ export { setDefaultAnomalyBus } from './error-bus';
+
+// ── @internal（v1.5.1 修复批 F2：同法收窄）──
+//   · createWebhookAdapter / createTimerAdapter：三类事件源适配器工厂的 webhook /
+//     timer 两支，全仓零生产调用点。收窄理由：**本版不构成对外承诺**——宿主装配
+//     不在本版落点、零生产调用点；宿主装配落版时随版本 bump 重升 `@public`（届时
+//     接线，或按 SDK-face 债务登记）。子路径导出保留，仓内与测试导入不受影响。
+/* @internal */ export { createWebhookAdapter, createTimerAdapter } from './adapters';

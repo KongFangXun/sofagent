@@ -378,7 +378,6 @@
   registerDeviceOtaSubscriptions,
   executeDeviceUpgrade,
   resumeSuspendedUpgrades,
-  onDeviceOnline,
   deliverTaskDispatch,
   verifyDeliverySignature,
   computeUpgradeDigest,
@@ -394,6 +393,12 @@
 // playbook/acceptance-node-probes.js 走的是 engine/daemon/dist/ota/index.js），
 // 平台（发布）侧落地时再提回 @public。
 /* @internal */ export { signDelivery } from './ota';
+// v1.5.1 修复批 F2：设备上线钩子收窄为 @internal（同 signDelivery 口径）——
+//   · `onDeviceOnline`：设备上线补投钩子，零生产调用点。收窄理由：**本版不构成对外
+//     承诺**——宿主装配（设备进程注册该钩子）不在本版落点、零生产调用点；宿主装配
+//     落版时随版本 bump 重升 `@public`（届时接线，或按 SDK-face 债务登记）。
+//     仓内经 ota 子路径 `/ota/index.ts` 仍可用，仓内消费与测试导入不受影响。
+/* @internal */ export { onDeviceOnline } from './ota';
 /* @public */ export type {
   DeviceUpgradePayload,
   DeviceDeployPayload,
