@@ -721,6 +721,26 @@ AI 从「程序」（单一模型）走向「协议」（多模型组合）是 S
 
 > 📖 来源：纳德拉《A frontier without an ecosystem is not stable》（2026-06，X 长文，2800 万浏览）· A 级源（微软 CEO 署名）
 
+### 第三方判定模型对照：Laya 三处反例与 Jev 生态三种新用法
+
+判定面独立成层后，行业里长出了可逐行读的第三方实现与用法。两者对本仓的作用正好相反——**一个的价值在它弱的地方，一个的价值在它长出来的地方**。证据链：制品 `laya 0.3.4`（PyPI wheel）+ 权重快照 `c5d78730f3493e4fe16d61507ef4b78eef7318cf`，以下行号均为该制品实测。
+
+**Laya（反例级）——三处反例**
+
+1. **出厂制品不含校准**：`rl_agent_config.json` 实测 `temperature: [1.0,1.0,1.0]`、`temperature_by_options: {}`，而运行期正是在这两处取温度（`agent.py:304`）、默认值也是同一组（`agent.py:194-195`）⇒ 温度恒为 1.0（恒等变换），**出厂默认路径上不存在校准这一步**——不是「忘了配」。对应 [v1.7.0 第三章](./changelog/v1.7/v1.7.0.md)「校准制品随行」。
+2. **校准面与运行消费不是同一处代码保证**：运行期消费的置信度是归一化熵（`common.py:200-201` `1 - H(p)/log k`，消费点 `agent.py:309`），而拟合与评估面的 `ece_score(conf, correct, bins=15)`（`common.py:187`）收的是**调用方传入的 conf**——该 wheel 内零调用点，**这条路径不随制品发布**。⇒「对外校准数字能否由已发布制品复现」是可判定的事实，不是洁癖。对应 [v1.7.0 第三章](./changelog/v1.7/v1.7.0.md)「统计量一致性 / 对外数字可复现」。
+3. **判定力崩掉时置信度照高**：其 router 自述英文 checkpoint 在非英语上「does not gently degrade … it collapses」（20 选项 MASSIVE intent 上 Hindi 0.100、Korean 0.103，随机基线 0.050），「**and it reports high confidence while doing so**」（自述 Hindi ECE 0.855）（`router.py:21-24`）⇒ 置信度不等于判定力。
+
+**可借鉴两处**：① **判定原语是一等输入参数而非 prompt 措辞**——判定读 `items[r]["markers"]` / `QTYPES[q["t"]]` 这类结构体字段（`agent.py:292-320`），与 [v1.6.0 第一章](./changelog/v1.6/v1.6.0.md)「问题集限定」同源。② **分流前置在模型加载之前**——其 router 在任何 checkpoint 加载之前完成分流判定（`router.py:135-136`「a cold load costs seconds, while detection costs microseconds」），并自述 `typed-decisions`「**should not be a silent default**」（`router.py:26-28`）；「一开始就选错路径」是事后探针抓不到的失效面，见 [v1.9.0 第六章](./changelog/v1.9/v1.9.0.md)。
+
+**零承诺佐证**：全仓 `abstain` / `refuse` / `defer` **0 命中**——它把「势均力敌」与「没把握」压进同一个 confidence 数，「判不了」没有一等出口。这从反面佐证本仓 [ARCHITECTURE](./ARCHITECTURE.md)「`ABSTAIN` 必须与 `ASK` 分开」的判据：两者混装则下游无法区分「该调阈值」与「该补判据」。
+
+**Jev 生态（印证级）——三原语上线三天长出三种完全不同用法**
+
+Jev 公开的接口面只有三原语（Noul / Choice / Score）且全部答案带概率；三个互不相识的第三方用法在三天内各自长出来：① `browser-use/jev-ultrafast`——**动态动作空间索引**（只把此刻可用操作 + 目标交给模型）+ **投机式预判**（多目标一次往返问出、按最终操作丢弃其余）+ 检查器（元素 / 操作概率 / 目标概率 / 已执行动作全列，可单步暂停）；② `TheoLeeCJ/openjev`——3090 级显卡可跑，**直接从开放模型读类型化选项概率**（删掉「先写话再解析回 if」的中间环节），且不吃生成吞吐、吃并行打分能力；③ `tamaratran/fast-jev-compaction`——把判定当**有损操作守门人**（成对删除、原话一字不动、分级折叠，折叠到极限**直接报错而非静默丢东西**）。⇒ 对 sofagent 是零承诺印证：**接口干净则生态自发生长**——故本仓坚持契约由 `DecisionChannel` 保证、实现路线不绑定。其中「动态判定面收窄」与「投机式预判」两项对判定底座自身有增量价值，已按「不提前抽象 + 写清触发条件」登记进 [ROADMAP · 探索方向](./ROADMAP.md#探索方向)，不排期。
+
+> 📖 来源：[laya（PyPI 0.3.4）](https://pypi.org/project/laya/) 与 [HF `convaiinnovations/laya`](https://huggingface.co/convaiinnovations/laya)（Apache-2.0，快照 `c5d7873`）；Jev 生态三用法来自 2026-09-19 第三方行业文章梳理（`browser-use/jev-ultrafast` · `TheoLeeCJ/openjev` · `tamaratran/fast-jev-compaction`）——**未逐仓读源码，仅作生态形态记录**
+
 ---
 
 ## 四、市场印证：行业判断被市场买单
