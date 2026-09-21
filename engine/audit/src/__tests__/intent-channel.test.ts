@@ -689,5 +689,30 @@ describe('第七章 · 跳失留痕（跳过必须可审计）', () => {
     expect(recording.intentEntries).toBe(1);
     expect(recording.skipped).toBe(2);
   });
+
+  // v1.5.1 修复批 B2：第三态补口——**身份可达但工具名缺失**时，原实现在此直接 return，
+  // 既不落调用证据也不落跳失记录（'tool-unattributable' 枚举零生产发射点），
+  // 「跳过必须可审计」在这条路径上不成立。本用例钉住补口后的行为。
+  it('test_第三态_身份可达但工具名缺失_落跳失tool-unattributable且不落调用证据', () => {
+    const { channel, listeners } = mountChannel();
+    // exec 带完整身份但**无工具名**（宿主 exec 形状不全）——第三态：不是「没有调用」
+    listeners.get('tools/pre-execute')!({
+      callId: 'call-third',
+      arguments: { command: 'rm -rf /tmp/demo' },
+      agent: { id: 'engineer', session: { id: 'sess-third' } },
+    });
+
+    // 调用证据面：零条目（不可归因 → 不落，不猜测）
+    expect(readIntentEntries(channel.filePath)).toHaveLength(0);
+    // 跳失面：恰一条且 reason 为该枚举值（跳过可审计，不是黑洞）
+    const skips = readIntentSkips(resolveIntentSkipLogPath(dir));
+    expect(skips).toHaveLength(1);
+    expect(skips[0]!.reason).toBe('tool-unattributable');
+    expect(skips[0]!.event).toBe('tools/pre-execute');
+    // 照旧不进链（活性证据不做完整性声明）
+    expect(readLines(resolveIntentSkipLogPath(dir))[0]!.prevHash).toBeUndefined();
+    // 活性快照据此把「接线在但每次都被挡下」与「宿主没调用」区分开
+    expect(summarizeIntentChannel(dir).verdict).toBe('skipped-only');
+  });
 });
 

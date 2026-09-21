@@ -117,6 +117,13 @@ probe_assert() {
   out=$(PROJECT_ROOT="$PROJECT_ROOT" node "$SCRIPT_DIR/acceptance-node-probes.js" "$slug" 2>&1) || true
   grep -q "^OK" <<< "$out" && pass "$2" || { echo "  ✗ $tag: $out"; fail "$3"; }
 }
+# v1.5.1 修复批 B3 · 场景体例 fail-loud 守卫（静态扫描；只加守卫，不改任何既有场景体例）：
+# 两代体例 = probe_assert｜旧三行壳（$S<N>_OUT=$(...) + grep -q "^OK" + $S<N>_OK && pass || fail）｜webhook_assert/assert_* 助手。某 ^scenario 块一条判据都没有 ⇒ 会被静默跳过而 REPORT 仍称「已落地」——缺判据即 FAIL 并打印场景号。
+scenario_format_guard() {
+  local bad; bad=$(awk '/^scenario [0-9]/{if(n!=""&&!ok)print n;n=$2;ok=0;next} n!=""{if($0~/probe_assert/||$0~/_assert/||$0~/(^|[^A-Za-z_])pass([^A-Za-z_]|$)/||$0~/(^|[^A-Za-z_])fail([^A-Za-z_]|$)/)ok=1} END{if(n!=""&&!ok)print n}' "$SCRIPT_DIR/acceptance-test.sh")
+  if [ -n "$bad" ]; then fail "场景体例守卫：场景 $(echo $bad | tr '\n' ' ') 无任何判据（probe_assert / *_assert / pass / fail 皆缺）——会被静默跳过"; fi
+}
+scenario_format_guard
 scenario 1 "Fresh install（--install-hook）"
 # run-09 P0-3 修：开头注入主仓真实基线锚— —场景输出里会出现大量 TMP_REPO 的 自建测试 commit（如场景 41 的 "fast-fail test"，git reset 回显其 SHA），
 # 无主仓锚时审查者会把测试 commit 误读为「被测基线」（run-09 P0-3 实证： 2d35cc4 被三层报告当成发版候选）。此锚声明唯一被测基线 = 主仓 HEAD。

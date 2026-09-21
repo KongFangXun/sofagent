@@ -1163,7 +1163,6 @@
   ANOMALY_DECISION_KIND,
   ANOMALY_WHY_TAG,
   getDefaultAnomalyBus,
-  setDefaultAnomalyBus,
   reportAnomalyToDefaultBus,
   EVENT_TYPES,
   REGISTERED_EVENT_TYPES,
@@ -1172,9 +1171,14 @@
   createNodeOutputSource,
   createWebhookAdapter,
   createTimerAdapter,
-  sortEventsByTime,
   WebhookPayloadError,
 } from './events';
+// v1.5.1 修复批 B1：下列两符号收窄为 @internal（不构成对外承诺）——
+//   · `sortEventsByTime`：全仓（含测试面）零引用 ⇒ 死导出；
+//   · `setDefaultAnomalyBus`：仅 error-localizer-outlet.test.ts 从**子路径**
+//     '../events/error-bus' 导入（不依赖 barrel）⇒ 测试缝被误提成对外承诺。
+// 子路径导出保留，仓内消费不受影响；恢复公开需 bump 版本 + CHANGELOG 记录。
+/* @internal */ export { setDefaultAnomalyBus, sortEventsByTime } from './events';
 /* @public */ export type {
   EventBusOptions,
   EventHandler,

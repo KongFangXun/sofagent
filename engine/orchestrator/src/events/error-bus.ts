@@ -6,7 +6,9 @@
 //
 //   可重试   → 重试队列（第一章死信通道 + v1.3.1 退避阶梯）
 //   需人工   → HITL 审批队列（hitl-channel 的 pending 文件通道）
-//   需回滚   → 回溯能力（core restoreSnapshot——与 snapshot_restore 工具同原语）
+//   需回滚   → 回溯能力（core restoreSnapshot——与 snapshot_restore 工具同原语，
+//              经 `deps.rollback` **注入**执行器；**未注入 ⇒ fail-closed 不回滚**，
+//              绝不拿 `process.cwd()` 兜底去回滚用户当前工程目录）
 //
 // 🔴 入口复用第一章死信通道：所有异常一律先经 `bus.sendToDeadLetter()` 入
 //    死信队列（本文件**不新建第二套死信机制**），再按下分类做具体路由动作。
@@ -30,9 +32,7 @@ import {
   classifyError,
   getDataDir,
   isRetryableStopReason,
-  listAllSnapshots,
   MAX_RETRY_COUNT,
-  restoreSnapshot,
   type StopReason,
 } from '@sofagent/core';
 import { HITL_OPTIONS, writeHITLRequest, type HITLRequest } from '../hitl/hitl-channel';
@@ -97,7 +97,7 @@ export interface AnomalyInput {
   requiresHuman?: boolean;
   /** 因果边：上游决策条目 ts（挂 causedBy） */
   causedBy?: string[];
-  /** 回滚目标（缺省取项目最新快照） */
+  /** 回滚目标（注入回滚执行器时使用；未注入执行器则整段 fail-closed 跳过，不取 cwd 兜底） */
   rollback?: { projectDir?: string; snapshotSha?: string };
 }
 
@@ -143,7 +143,13 @@ export interface AnomalyBusDeps {
   bus: EventBus;
   /** 数据目录覆盖（缺省走 getDataDir） */
   dataDir?: string;
-  /** 回滚执行器（缺省 = core restoreSnapshot——与 snapshot_restore 工具同原语） */
+  /**
+   * 回滚执行器（与 snapshot_restore 工具同原语：core restoreSnapshot）。
+   *
+   * 🔴 **未注入 ⇒ fail-closed 不回滚**（v1.5.1 修复批）：原缺省实现拿 `process.cwd()`
+   * 当 `projectDir` 去 `restoreSnapshot`——那会回滚**用户的当前工程目录**。现改为：
+   * 未注入执行器时不执行回滚，并把「已跳过」写进 decision-log evidence 与 HITL 留痕。
+   */
   rollback?: (input: { projectDir: string; snapshotSha?: string }) => RollbackOutcome;
   /** HITL 请求写入器（缺省 = hitl-channel writeHITLRequest） */
   writeHitl?: (request: HITLRequest) => string;
@@ -208,13 +214,14 @@ export function classifyAnomaly(input: {
 export class AnomalyBus {
   private readonly bus: EventBus;
   private readonly dataDir: string;
-  private readonly rollbackFn: (input: { projectDir: string; snapshotSha?: string }) => RollbackOutcome;
+  /** 注入的回滚执行器（未注入 = null ⇒ 需回滚类 fail-closed 跳过，不取 process.cwd() 兜底） */
+  private readonly rollbackFn: ((input: { projectDir: string; snapshotSha?: string }) => RollbackOutcome) | null;
   private readonly writeHitlFn: (request: HITLRequest) => string;
 
   constructor(deps: AnomalyBusDeps) {
     this.bus = deps.bus;
     this.dataDir = deps.dataDir ?? deps.bus.dataDir ?? getDataDir();
-    this.rollbackFn = deps.rollback ?? defaultRollback;
+    this.rollbackFn = deps.rollback ?? null;
     this.writeHitlFn = deps.writeHitl ?? ((request) => {
       writeHITLRequest(this.dataDir, request);
       return `${this.dataDir}/hitl/pending/${request.checkpointId}.json`;
@@ -234,6 +241,13 @@ export class AnomalyBus {
     const kind = ANOMALY_DECISION_KIND[anomalyClass];
     const tag = ANOMALY_WHY_TAG[anomalyClass];
 
+    // 需回滚类但**未注入回滚执行器** ⇒ 本次不会执行回滚（fail-closed，不取 process.cwd()
+    // 兜底——那会回滚用户当前工程目录）。该事实先于动作写进 decision-log evidence（先留痕后动作）。
+    const rollbackSkipReason =
+      anomalyClass === 'needs-rollback' && this.rollbackFn === null
+        ? '未注入回滚执行器，已跳过回滚（不取 process.cwd() 兜底）'
+        : undefined;
+
     // ① 异常进总线即写 decision-log（挂 causedBy 因果边）
     const decisionTs = this.writeAnomalyDecision({
       input,
@@ -242,6 +256,7 @@ export class AnomalyBus {
       tag,
       stopReason,
       errorText,
+      ...(rollbackSkipReason !== undefined ? { rollbackSkipReason } : {}),
     });
 
     // ② 入口 = 第一章死信通道（不新建第二套死信机制）
@@ -267,10 +282,20 @@ export class AnomalyBus {
     } else if (anomalyClass === 'needs-human') {
       routed.hitl = this.enqueueHitl(input, stopReason, errorText, anomalyClass);
     } else {
-      const outcome = this.rollbackFn({
-        projectDir: input.rollback?.projectDir ?? process.cwd(),
-        ...(input.rollback?.snapshotSha !== undefined ? { snapshotSha: input.rollback.snapshotSha } : {}),
-      });
+      // fail-closed（v1.5.1 修复批）：**未注入执行器 ⇒ 不回滚**——缺省实现曾拿
+      // `process.cwd()` 当 projectDir 去 restoreSnapshot，可能回滚**用户的当前工程目录**。
+      // 注入执行器时行为与既有版本逐字一致（projectDir 仍缺省取 cwd，属调用方 opt-in）。
+      const outcome: RollbackOutcome =
+        this.rollbackFn !== null
+          ? this.rollbackFn({
+              projectDir: input.rollback?.projectDir ?? process.cwd(),
+              ...(input.rollback?.snapshotSha !== undefined ? { snapshotSha: input.rollback.snapshotSha } : {}),
+            })
+          : {
+              attempted: false,
+              executed: false,
+              error: rollbackSkipReason ?? '未注入回滚执行器，已跳过回滚（不取 process.cwd() 兜底）',
+            };
       routed.rollback = outcome;
       if (!outcome.executed) {
         // 回滚不可执行（无可用快照等）→ 同时进人工队列，不静默留在自动路径
@@ -347,8 +372,10 @@ export class AnomalyBus {
     tag: string;
     stopReason: StopReason;
     errorText: string;
+    /** 需回滚但未注入执行器时的跳过事实（写进 evidence——留痕先于动作） */
+    rollbackSkipReason?: string;
   }): string {
-    const { input, anomalyClass, kind, tag, stopReason, errorText } = args;
+    const { input, anomalyClass, kind, tag, stopReason, errorText, rollbackSkipReason } = args;
     const target = [input.workflowId, input.nodeId].filter(Boolean).join('/') || '未知节点';
     const entry = emitDecision(
       {
@@ -381,6 +408,7 @@ export class AnomalyBus {
           `stop_reason=${stopReason}`,
           `节点=${target}`,
           `已尝试=${input.attempts ?? 1}`,
+          ...(rollbackSkipReason !== undefined ? [`回滚=${rollbackSkipReason}`] : []),
         ],
       },
       this.dataDir,
@@ -423,28 +451,6 @@ export class AnomalyBus {
       ...(input.nodeId !== undefined ? { targetNodeId: input.nodeId } : {}),
       metadata: { stopReason, synthetic: true },
       attempt: input.attempts ?? 1,
-    };
-  }
-}
-
-/** 缺省回滚执行器——与 snapshot_restore 工具同原语（core restoreSnapshot） */
-function defaultRollback(input: { projectDir: string; snapshotSha?: string }): RollbackOutcome {
-  try {
-    let sha = input.snapshotSha;
-    if (sha === undefined) {
-      const snapshots = listAllSnapshots(input.projectDir);
-      if (snapshots.length === 0) {
-        return { attempted: true, executed: false, error: '没有可用的快照（先运行审计创建快照）' };
-      }
-      sha = snapshots[snapshots.length - 1]!.sha;
-    }
-    const restored = restoreSnapshot(input.projectDir, sha);
-    return { attempted: true, executed: true, snapshotSha: sha, restoredFiles: restored.length };
-  } catch (err) {
-    return {
-      attempted: true,
-      executed: false,
-      error: err instanceof Error ? err.message : String(err),
     };
   }
 }

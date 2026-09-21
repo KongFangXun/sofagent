@@ -20,7 +20,7 @@ import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import { existsSync, mkdtempSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
-import { resolveHomeDir } from '@sofagent/core';
+import { getDataDir } from '@sofagent/core';
 import {
   runDemo,
   parseDemoArgs,
@@ -329,8 +329,28 @@ describe('demo · CLI 参数解析', () => {
     expect(parseDemoArgs(['node', 'cli-quick.js', 'demo']).speed).toBe('normal');
   });
 
-  it('--out 覆盖产物目录，缺省落在 ~/.sofagent/demo', () => {
+  it('--out 覆盖产物目录；缺省落在 dataDir 下（不再写用户家目录）', () => {
     expect(parseDemoArgs(['node', 'cli-quick.js', 'demo', '--out', '/tmp/x']).outDir).toBe('/tmp/x');
-    expect(parseDemoArgs(['node', 'cli-quick.js', 'demo']).outDir).toBe(join(resolveHomeDir(), 'demo'));
+    // 缺省 = `<dataDir>/demo`——与仓内 dataDir 解析口径一致（显式 > SOFAGENT_DATA > 默认数据目录）；
+    // 不再是 `~/.sofagent/demo`（demo 自称沙箱隔离，默认产物不该落用户家目录——v1.5.1 修复批 B5）。
+    expect(parseDemoArgs(['node', 'cli-quick.js', 'demo']).outDir).toBe(join(getDataDir(), 'demo'));
+  });
+
+  // v1.5.1 修复批 B5 行为锁：默认分支此前无测试覆盖（验收探针恒传显式 outDir）。
+  it('缺省 outDir 随 SOFAGENT_DATA 走（默认落在 dataDir 下）', () => {
+    const saved = process.env.SOFAGENT_DATA;
+    const tmpData = mkdtempSync(join(tmpdir(), 'sofagent-demo-data-'));
+    try {
+      process.env.SOFAGENT_DATA = tmpData;
+      const parsed = parseDemoArgs(['node', 'cli-quick.js', 'demo']);
+      expect(parsed.outDir).toBe(join(tmpData, 'demo'));
+      expect(parsed.outDir.startsWith(tmpData)).toBe(true);
+      // --out 覆盖能力保留（不受 dataDir 影响）
+      expect(parseDemoArgs(['node', 'cli-quick.js', 'demo', '--out', '/tmp/y']).outDir).toBe('/tmp/y');
+    } finally {
+      if (saved === undefined) delete process.env.SOFAGENT_DATA;
+      else process.env.SOFAGENT_DATA = saved;
+      rmSync(tmpData, { recursive: true, force: true });
+    }
   });
 });

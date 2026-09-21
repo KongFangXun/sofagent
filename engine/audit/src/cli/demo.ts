@@ -33,7 +33,8 @@
 // 用法：
 //   sofagent-audit demo                  五幕完整版
 //   sofagent-audit demo --speed fast     60 秒精简版（跳幕①②，直入拦截）
-//   sofagent-audit demo --out <dir>      指定产物目录（缺省 ~/.sofagent/demo）
+//   sofagent-audit demo --out <dir>      指定产物目录（缺省 `<dataDir>/demo`，即
+//                                        `$SOFAGENT_DATA/demo`——沿用仓内 dataDir 解析口径）
 // ============================================================
 
 import { execFileSync, spawnSync } from 'child_process';
@@ -41,7 +42,7 @@ import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, st
 import { join } from 'path';
 import { homedir, tmpdir } from 'os';
 import { installHooks } from '../hook-install';
-import { resolveHomeDir, extractConstraintsFromPrompt, generateAgentIdentity, listAllSnapshots, restoreSnapshot } from '@sofagent/core';
+import { resolveHomeDir, getDataDir, extractConstraintsFromPrompt, generateAgentIdentity, listAllSnapshots, restoreSnapshot } from '@sofagent/core';
 import { defaultRules, extendedRules } from '../rules/index';
 import {
   SANDBOX_PREFIX,
@@ -997,7 +998,10 @@ export function parseDemoArgs(argv: string[]): DemoArgs {
   const speedIdx = rest.indexOf('--speed');
   const speed: DemoSpeed = speedIdx !== -1 && rest[speedIdx + 1] === 'fast' ? 'fast' : 'normal';
   const outIdx = rest.indexOf('--out');
-  const outDir = outIdx !== -1 && rest[outIdx + 1] ? (rest[outIdx + 1] as string) : join(resolveHomeDir(), 'demo');
+  // 缺省产物目录落 **dataDir 下**（getDataDir：显式 > SOFAGENT_DATA > 默认数据目录）——
+  // 不再默认写 `~/.sofagent/demo`：demo 自己宣称「沙箱隔离、真实文件零接触」，
+  // 默认产物却落到用户家目录会与这句承诺观感冲突；`--out` 覆盖能力保留。
+  const outDir = outIdx !== -1 && rest[outIdx + 1] ? (rest[outIdx + 1] as string) : join(getDataDir(), 'demo');
   const known = new Set(['--speed', 'fast', '--out', outDir, '--help', '-h']);
   const unknown = rest.filter((a) => !known.has(a));
   return { speed, outDir, help: rest.includes('--help') || rest.includes('-h'), unknown };
@@ -1011,7 +1015,7 @@ export function demoHelpText(): string {
     '用法：',
     '  npx -y -p @sofagent/audit sofagent-audit demo                 五幕完整版',
     '  npx -y -p @sofagent/audit sofagent-audit demo --speed fast    60 秒精简版（跳幕①②直入拦截）',
-    '  npx -y -p @sofagent/audit sofagent-audit demo --out <dir>     指定产物目录（缺省 ~/.sofagent/demo）',
+    '  npx -y -p @sofagent/audit sofagent-audit demo --out <dir>     指定产物目录（缺省 `<dataDir>/demo`，即 `$SOFAGENT_DATA/demo`）',
     '',
     '五幕：',
     '  幕 0  沙箱构建——只在 /tmp 建演示仓库，真实文件零接触',

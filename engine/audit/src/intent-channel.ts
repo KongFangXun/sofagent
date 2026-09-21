@@ -521,7 +521,13 @@ export function createIntentChannel(options: IntentChannelOptions = {}): IntentC
     if (event !== 'tools/pre-execute' && event !== 'tools/result') return;
     const exec = args[0];
     const tool = toolNameOf(exec);
-    if (tool === null) return; // 无工具名 = 不可归因 → 不落盘（不猜测）
+    if (tool === null) {
+      // 第三态（身份可达但**工具名缺失**）：既不能落调用证据（不可归因），
+      // 也不能静默跳过——「跳过必须可审计」在这条路径上同样成立。故落跳失记录
+      // （reason='tool-unattributable'），运维可据此区分「宿主没调用」与「每次调用都被挡下」。
+      recordIntentSkip(options.dataDir, { reason: 'tool-unattributable', event });
+      return; // 不落调用证据（不猜测）
+    }
     const id = identityOf(exec);
     const callId = callIdOf(exec);
     const argsSummary = sanitizeArgsSummary(argsOf(exec));
