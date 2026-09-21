@@ -140,9 +140,9 @@ Both phases are one thing: **the deliverable is shared live state** (written on 
 | Job description | Frozen deliverables from the entry phase (merge_criteria / approver / trigger) |
 | Performance review | Audit evidence + governance KPI dashboard (v1.5.0) |
 | Organizational memory | Knowledge distillation (think.md reflection + knowledge/) |
-| Training pipeline | Experience → exam → promotion self-evolution chain (scheduled v1.5.15) |
-| Fault tolerance | Snapshot rollback + capability baseline timeline (scheduled v1.5.16) |
-| Employment contract boundary | Pluggable contracts & core capability registry (scheduled v1.5.12) |
+| Training pipeline | Experience → exam → promotion self-evolution chain (scheduled v1.5.8) |
+| Fault tolerance | Snapshot rollback + capability baseline timeline (scheduled v1.5.9) |
+| Employment contract boundary | Pluggable contracts & core capability registry (scheduled v1.5.7) |
 
 | Go deeper | Where |
 |--------|--------|
