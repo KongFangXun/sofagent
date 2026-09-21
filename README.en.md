@@ -153,6 +153,10 @@ Both phases are one thing: **the deliverable is shared live state** (written on 
 
 ## Installation
 
+**Release stage (read before installing)**: sofagent is in its **Alpha construction period** (**v0.x–v1.x**) — the feature surface moves fast and **no interface stability is promised**; read the [CHANGELOG](./CHANGELOG.md) before upgrading across versions. From **v2.0.0** on it enters the **Beta stage**.
+
+The matching npm release-channel policy: **construction-period versions are published under the `alpha` dist-tag and never occupy `latest`** (`latest` is reserved for the stable channel). Measured now: `npm view @sofagent/audit dist-tags` → `{ latest: '1.5.0' }` — during the construction period `latest` does not move forward; **after v2.0.0 ships, `latest` points to 2.0**.
+
 > ⚠️ **Enterprise users read first** [LIMITATIONS §3](./docs/LIMITATIONS.md) — `config.yml` is **non-fail-closed by default** (rules can be bypassed by Agent tampering), and **write-side** multi-tenant isolation is not yet landed (v0 delivered query-side isolation: orgId filtering + the data/<tenant>/ path foundation — see LIMITATIONS). For strict-compliance scenarios use CI fallback + file-permission lock (`chmod 400 .sofagent/config.yml` — an auxiliary layer, ineffective against same-user processes; see [LIMITATIONS §3](./docs/LIMITATIONS.md)); do not put the single-machine default config directly into production.
 
 **30 seconds, zero setup** (first run includes the npx package fetch, ~30 seconds; reruns finish in seconds — the engine itself takes ~1.1s, measured basis above) — run an audit in any git repo:

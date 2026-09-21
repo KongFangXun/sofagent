@@ -151,6 +151,10 @@
 
 ## 安装
 
+**版本阶段（装前必读）**：sofagent 处于**阿尔法施工期**（v0.x–v1.x）——功能面快速变动，**不承诺接口稳定**，跨版本升级前先读 [CHANGELOG](./CHANGELOG.md)。自 **v2.0.0** 起进入**贝塔阶段**。
+
+对应的 npm 发布通道策略：**施工期版本一概以 `alpha` 标签发布、不占用 `latest`**（`latest` 留给稳定通道）。实测 `npm view @sofagent/audit dist-tags` 当前为 `{ latest: '1.5.0' }`——施工期内 `latest` 不前移；**v2.0.0 发布后 `latest` 指向 2.0**。
+
 > ⚠️ **企业用户先读** [LIMITATIONS §三](./docs/LIMITATIONS.md#三安全与信任模型局限)——`config.yml` 默认**非 fail-closed**（规则可被 Agent 篡改绕过），多租户**写入侧**隔离尚未落地（v0 已交付查询侧隔离：orgId 过滤 + data/<tenant>/ 路径地基，见 LIMITATIONS）。强合规场景建议 CI 兜底 + 文件权限锁（`chmod 400 .sofagent/config.yml`——辅助层，对同用户进程无效，见 [LIMITATIONS §三](./docs/LIMITATIONS.md)），不要用单机默认配置直接上生产。
 
 **30 秒，零配置**（首次含 npx 拉包约 30 秒，复跑秒级——引擎本体约 1.1s，实测口径见上）——在任何 git 仓库跑一次审计：

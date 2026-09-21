@@ -367,6 +367,29 @@ fi
 
 > GitHub Release published 后，`.github/workflows/release.yml` 自动触发，publish `@sofagent/audit` 和 `@sofagent/mcp` 两个包到 npm。其余 13 包在步骤八手动 publish（12 个 `engine/<pkg>` scope 包 + load-chain + 裸名总包 sofagent——包数口径以步骤八头部为准）。
 
+### 🔴 dist-tag 分道（`gh release create` 之前必做 · 施工期一律 `--tag alpha`）
+
+> **判据是版本期，不是日期**：本版低于 `v2.0.0` = 施工期 → 本版**全部 15 包**以 `--tag alpha` 发布，**`latest` 不动**；本版达到 `v2.0.0` = 贝塔，不加 tag（默认写 `latest`），恢复正常发布。
+> **为什么有这条**：施工期功能面快速变动、不承诺接口稳定，`latest` 是留给「装了就不想被施工期改动打扰」的稳定通道——施工期把 `latest` 一路顶到最后一个施工版，等于把所有用户强推上施工节奏。
+>
+> 🔴 **自动通道也要管**：`.github/workflows/release.yml` 的 `npm publish --access public` **不带 tag**——本步骤若不先行，audit + mcp 会被 CI 以默认 tag 发布、`latest` 当场被改写。故施工期必须在 `gh release create` **之前**先手动以 `alpha` 发布这两包：release.yml 的 `Check if version already published` 步查到版本已在即置 `skip=true`、自动跳过 publish（该跳过通道 release.yml 内既有，非本步骤新增机制）。
+
+```bash
+# 施工期（本版低于 v2.0.0）：先手动以 alpha 发布自动通道那两包，再 gh release create
+( cd engine/audit && npm publish --access public --tag alpha ) > /tmp/publish-audit.log 2>&1 \
+  || { echo "🔴 audit publish 失败："; cat /tmp/publish-audit.log; exit 1; }
+( cd engine/mcp && npm publish --access public --tag alpha ) > /tmp/publish-mcp.log 2>&1 \
+  || { echo "🔴 mcp publish 失败："; cat /tmp/publish-mcp.log; exit 1; }
+# 达到 v2.0.0 起：删掉上方两行（恢复由 release.yml 自动发布 = latest）
+```
+
+**逐格打勾**（施工期四格全做；达到 `v2.0.0` 起只做第 4 格）：
+
+- [ ] 判版本期：本版低于 `v2.0.0` → 本步骤与步骤八全程 `--tag alpha`；达到 `v2.0.0` → 全程默认 tag
+- [ ] 施工期：`gh release create` 之前先行发布 audit + mcp（上方命令），并确认 release.yml 走到「已发布即跳过」
+- [ ] 施工期：步骤八每处 `npm publish --access public` 追加 `--tag alpha`
+- [ ] 发布后对账：逐包 `npm view @sofagent/<pkg> dist-tags --prefer-online`——期望 `alpha` = 本版、**`latest` 不动**。施工期任何包出现在 `latest` = 策略被破坏：处置是查发布命令漏了 tag，**不是改本文件**
+
 ### 🔴 发版 artifact 四件对账（release create 后立即做，不等收尾）
 
 > 每版发完都出现「Release 发了但某个 artifact 断链」的返工——四件 artifact 在 release create 后**立即逐件核验**，比收尾阶段统一排查省一轮往返：
@@ -493,6 +516,8 @@ EOF
 ---
 
 ## 步骤八：npm 手动 publish 其余 13 包（含裸名总包） ☐
+
+> 🔴 **dist-tag 分道（与步骤七同款）**：施工期（本版低于 `v2.0.0`）下方每处 `npm publish --access public` 一律追加 `--tag alpha`、`latest` 不动；达到 `v2.0.0` 起去掉该 tag。判据与发布后对账命令见步骤七「dist-tag 分道」节（本节不复述）。
 
 > 🔴 **包列表 SSOT = 根 `package.json` 的 workspaces（可发布子集）——禁止把包名硬编码当事实源**。
 > 硬编码列表在包更名后必然漂移，照抄 = 静默漏发（漏发的包 npm 上停在上一版，无任何门禁会报）。
