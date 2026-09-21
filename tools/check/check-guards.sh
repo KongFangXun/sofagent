@@ -158,10 +158,13 @@ echo "── ④ 扫描范围对账（glob 声称 vs find 实际）──"
 # 实案：check-cjk-var 顶层 glob 在目录重组后漏扫 19 个子目录脚本
 GLOB_ACCOUNT_FAIL=0
 # 期望值 = find 总数 - 1：check-cjk-var 自排除自身（SELF 豁免），属正常扣减而非失明
-# 注意：此处刻意保持 tools/ 原范围，不复用 guard_scan_files——本段对账的是
-# check-cjk-var.sh 自己报告的扫描数，期望值必须等于对方的实际范围，否则永久假红。
-# 若将来把 check-cjk-var.sh 的扫描面也扩到 playbook、engine/scripts，此处同步扩。
-_cjk_expect=$(find tools -name "*.sh" -type f | grep -v "check-cjk-var.sh" | wc -l | tr -d ' ')
+# 注意：不复用 guard_scan_files——本段对账的是 check-cjk-var.sh 自己报告的扫描数，
+# 期望值必须与对方的 find 范围**同源同排除集**，否则永久假红。
+# check-cjk-var 的扫描面已扩到**全仓 .sh**（含 playbook/ 与 engine/scripts），本行同步扩——
+# 两处范围是同一事实，改一处必须改另一处（扩面只扩一半 ⇒ 本项当场转红）。
+_cjk_expect=$(find . -name "*.sh" -type f \
+  -not -path "*/node_modules/*" -not -path "*/dist/*" -not -path "./.git/*" \
+  | grep -v "check-cjk-var.sh" | wc -l | tr -d ' ')
 # 提取口径：check-cjk-var 的扫描数一律是「N 个文件扫描」这一个 token（其三条退出路径
 # 同一措辞）。**提取为空与数字不等必须分成两条判定**——合并成一条会给出错误归因：
 #   曾因对方两套措辞并存，违规分支提取落空 → 回落 0 → 报「守卫失明（glob 未跟随目录重组）」，
