@@ -1913,6 +1913,54 @@ else
 fi
 echo ""
 
+echo "=== 28. 单 minor 补丁位上限（vX.Y.0–vX.Y.9，第 10 个位该开新 minor） ==="
+# 背景：版本方案定为「一个 minor 十个位」——vX.Y.0 是主线交付，vX.Y.1–vX.Y.9 是同 minor
+# 内的补丁位。旧方案曾把十余个细版塞进同一个 minor（v1.5.2 … v1.5.17），结果是版本号
+# 越编越长、语义越来越糊：外部只看到 v1.5.15，读不出它离 v1.5.0 有多远。
+# 本断言锚定「补丁段 ≥ 两位数字」= 溢出（vX.Y.10 起），因为一位数才在 0–9 区间内。
+#   溢出 → 该开新 minor（vX.(Y+1).0）；**不得**续编 vX.Y.10 —— 补丁位越界会把
+#   「第几个补丁」和「第几个 minor」压成同一维度，读者无法从号上判远近。
+# 扫描面（只查**版本号本身出现的位置**，不查散文——行文里的「旧 v1.5.10」是撤并溯源，
+# 属历史事实而非方案里的版本位，扫进来会把刚做完的收编误判成溢出）:
+#   a) docs/ROADMAP.md 各版本表的**版本列**（行首 `| **vX.Y.Z**` 第一格）
+#   b) docs/changelog/ 下的版本目录名与日志文件名（vX.Y / vX.Y.Z.md）
+# 注：本条与「地基期颗粒度收编」互为见证——旧方案把 v1.5.10–v1.5.17 挤在同一 minor，
+# 本条落地时正好报出这 8 个位；收编把对应文件与行删掉后本条转绿。
+# 反例按需自查：把 v1.5.10 写进 ROADMAP 版本列即本段报错（下方自检已确证非空网）。
+PATCH_OVERFLOW_RE='\bv[0-9]+\.[0-9]+\.[0-9]{2,}\b'
+# 自检（正/反例）：v1.5.9 放行、v1.5.10 拦截——防止正则写成永不命中的空网。
+_PATCH_SELFTEST=$(printf '%s\n' \
+  '| **v1.5.9** | 📋 规划中 |' \
+  '| **v1.5.10** | 📋 规划中 |' \
+  | grep -Eo "$PATCH_OVERFLOW_RE" || true)
+if [ "$_PATCH_SELFTEST" != "v1.5.10" ]; then
+  echo -e "  ${RED}✗${NC} 本段自检失败：补丁位溢出正则未按预期命中（v1.5.9 应放行 / v1.5.10 应拦截），实得「${_PATCH_SELFTEST}」——断言失效，先修正则"
+  ERRORS=$((ERRORS + 1))
+else
+  # a) ROADMAP 版本列：锚行首第一格，只取该格里的版本号
+  _PATCH_FROM_ROADMAP=$(grep -hoE '^[[:space:]]*\|[[:space:]]*\*\*v[0-9]+\.[0-9]+\.[0-9]+\*\*' \
+    "${PROJECT_ROOT}/docs/ROADMAP.md" 2>/dev/null \
+    | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' || true)
+  # b) changelog 目录名/文件名：只取 basename（目录名 vX.Y 无补丁段，自然不参与溢出判定）
+  _PATCH_FROM_CHANGELOG=$(find "${PROJECT_ROOT}/docs/changelog" -maxdepth 2 \
+    \( -type d -o -type f \) -name 'v[0-9]*' 2>/dev/null \
+    | sed 's#.*/##' | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' || true)
+  PATCH_OVERFLOW_HITS=$(printf '%s\n%s\n' "$_PATCH_FROM_ROADMAP" "$_PATCH_FROM_CHANGELOG" \
+    | grep -E "$PATCH_OVERFLOW_RE" | sort -uV || true)
+  if [ -n "$PATCH_OVERFLOW_HITS" ]; then
+    _PATCH_OVERFLOW_N=$(printf '%s\n' "$PATCH_OVERFLOW_HITS" | wc -l | tr -d ' ')
+    echo -e "  ${RED}✗${NC} 单 minor 补丁位溢出（上限 vX.Y.9）——${_PATCH_OVERFLOW_N} 处："
+    echo "$PATCH_OVERFLOW_HITS" | sed 's/^/      /'
+    echo -e "      ${YELLOW}处置：该开新 minor（vX.(Y+1).0），不得续编 vX.Y.10——补丁位越界会把「第几个补丁」"
+    echo -e "      ${YELLOW}      与「第几个 minor」压成同一维度，读者无法从版本号判远近${NC}"
+    ERRORS=$((ERRORS + 1))
+  else
+    echo -e "  ${GREEN}✓${NC} 补丁位全在 vX.Y.0–vX.Y.9 内（ROADMAP 版本列 + changelog 目录/文件名）"
+    CHECKS=$((CHECKS + 1))
+  fi
+fi
+echo ""
+
 # ── 覆盖度行（v1.4.9 G-2② · 范式见 tools/check/lib/coverage-line.sh）──
 #   asserts = CHECKS + ERRORS（CHECKS 已含 WARN 项——report_warn 同时 ++CHECKS）
 #   covered = 仓内 tracked 文件数**上界口径**（本脚本各段扫描面跨 docs/SKILL/engine/根级
