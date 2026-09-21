@@ -10,9 +10,9 @@
 
 ## 步骤一：Skill 分发 ☐
 
-> 🔴 **v1.4.8 执行环境提示**：本阶段所有 `for` 循环与变量展开命令**必须在 bash 下执行**
+> 🔴 **执行环境提示**：本阶段所有 `for` 循环与变量展开命令**必须在 bash 下执行**
 > （`bash <<'BSH' … BSH` 或存成 .sh 再跑）。zsh 不对未加引号的 `$MULTILINE_VAR` 做空白分词
-> ——`for d in $DIRS` 会把整个多行串当一个值，`skillhub publish` 随即报「路径不存在」（v1.4.8 实锤）。
+> ——`for d in $DIRS` 会把整个多行串当一个值，`skillhub publish` 随即报「路径不存在」（实测）。
 > SOP 命令本就按 bash 语法书写，勿在 zsh 里直接粘。
 
 ```bash
@@ -100,7 +100,7 @@ done
 > - **双 manifest 版本一致**：ClawHub 校验 `package.json` 与 `openclaw.plugin.json` 两层 version 必须一致且 = 目标版本——bump 后先跑 `bash tools/check/check-version.sh`（9c 段已覆盖双 manifest），漂移直接被拒
 > - 先 `--dry-run` 验证格式与 source 映射，再真实发布
 
-> **publish 输出歧义判读**：真实发布输出「Fix: Align the plugin version...」是**自动修复提示非拒收**——发布已成功。重试报「Version already exists」也是已发布证据。**定性唯一通道**：API 查证 `https://clawhub.ai/api/v1/packages/<name>?ownerHandle=<handle>`（🔴 必须 `https://` 前缀——裸 `clawhub.ai/...` 被 curl 当本地路径静默失败返回空，对账假红）的 `latestVersion` + `scanStatus` + `verification.sourceCommit`，勿据 CLI 输出盲改版本号。另两条实测补充（v1.4.9 补走批）：① **服务端内存瞬断**——Convex `512 MB out of memory (reset in 48s)` 是平台侧限流非包问题，等 ≥60s 重发即成；② **scan=suspicious 未必是问题**——包内含 `*.test.js` 会触发扫描器启发式（同批无 test 文件的包 clean），按 verify 快照纪律判「新引入 vs 历史遗留」后再处置。
+> **publish 输出歧义判读**：真实发布输出「Fix: Align the plugin version...」是**自动修复提示非拒收**——发布已成功。重试报「Version already exists」也是已发布证据。**定性唯一通道**：API 查证 `https://clawhub.ai/api/v1/packages/<name>?ownerHandle=<handle>`（🔴 必须 `https://` 前缀——裸 `clawhub.ai/...` 被 curl 当本地路径静默失败返回空，对账假红）的 `latestVersion` + `scanStatus` + `verification.sourceCommit`，勿据 CLI 输出盲改版本号。另两条实测补充：① **服务端内存瞬断**——Convex `512 MB out of memory (reset in 48s)` 是平台侧限流非包问题，等 ≥60s 重发即成；② **scan=suspicious 未必是问题**——包内含 `*.test.js` 会触发扫描器启发式（同批无 test 文件的包 clean），按 verify 快照纪律判「新引入 vs 历史遗留」后再处置。
 
 ```bash
 # 发布前确认 plugin 清单（SSOT = engine/openclaw-plugins/ 目录实数 + 各版开发日志家族表）
@@ -189,7 +189,7 @@ done
 
 ## 步骤四：npm 渠道门面检查（每版必做） ☐
 
-> **定位**：npm 是实测主分发渠道（`@sofagent/audit` 月下载 4848 vs 43 star，113:1），但门面投入曾全部压在 GitHub——渠道门面错配（v1.4.5 审查实证）。本步骤每版分发时固定巡检 npm / GitHub / 官网三个「被找到」入口。仓内数字断言（description 工具数/插件数/homepage https）由 `bash tools/check/check-storefront.sh` 守护，此处补齐它不覆盖的面：
+> **定位**：npm 是实测主分发渠道（`@sofagent/audit` 月下载 4848 vs 43 star，113:1），但门面投入曾全部压在 GitHub——渠道门面错配（审查实证）。本步骤每版分发时固定巡检 npm / GitHub / 官网三个「被找到」入口。仓内数字断言（description 工具数/插件数/homepage https）由 `bash tools/check/check-storefront.sh` 守护，此处补齐它不覆盖的面：
 
 ```bash
 # 1. 裸名守护——期望指向本仓总包 sofagent（engine/umbrella/ 发版物）；版本对账由 check-storefront 断言 ④ 守护

@@ -34,7 +34,7 @@
 #        ③ `vX.Y.Z 后` / `vX.Y.Z 前` **不**豁免（多处出现在出身叙述里：「某版后补的」）。
 #      ⚠️ 相对原始口径（只列 vX.Y.Z+ 形态）本行是语义扩写——扩写理由：规则正文里的版本号可作比较操作数（阶段门槛）而非出身；形态集封闭于此行，vX.Y.Z 后/前 刻意不豁免。
 #   E3 文件头版本标识：前 5 行的 H1 里的版本号（文件身份标识，非正文叙事）
-#   E4 引用块（`>` 开头）：「为什么有这条」的一句话叙事按 SOP 规约就放在引用块里
+#   E4 引用块整行豁免（`>` 开头）——**已取消，见下方「🔴 E4 取消」段**
 #   E5 机器注释行（`<!--`）：给模型检索用的锚，不是正文
 #   E6 机器字面量（**逐处**豁免，不整行豁免）：行内版本号若属机器字面量则摘除，
 #      同一行里的真出身**仍会被判**。判据（任一成立）：
@@ -47,6 +47,17 @@
 #      会把散文整体放水（实测假红转假绿的主要入口）。故引号跨度正则显式排除反引号。
 #      🔴 单引号为何附加「命令行」条件：ASCII 撇号在英文散文里作所有格（`Don't`），
 #      无条件下配对会把两个撇号之间的版本号误豁免——这是静默放水，不是降噪。
+#
+# 🔴 E4 取消（引用块整行豁免）——**载体不是豁免理由**：
+#   实测 E4 的免责面是 **670 行**，其中含版本号的 35 行 / 含日期的 3 行；
+#   扣掉 E2 门槛形态后**仍是真出身的 28+ 行**，分布在 12 个文件。
+#   最刺眼的一处：`06-doc-finalize` 里同一个字符串「（v1.4.7 定谳）」——
+#     表格行形态按判据**已清理**，引用块形态却因 E4 **原样活着**：
+#     同一文件、同一串、只差载体 ⇒ 这正是本仓定为缺陷的「同文件内两套口径」。
+#   ⚠️ E4（引用块整行豁免）已取消——实测 670 行免责面里藏 28+ 行真出身（含与表格行同一串的「（v1.4.7 定谳）」）⇒ 载体不是豁免理由：`>` 里同样只写「问题 + 解决」，不带出身。
+#   处置纪律：**删标签、留内容**（「🔴 阶段十不可跨（v1.4.9 实锤）：…」→ 去掉「（v1.4.9 实锤）」，
+#   规则句一字不动）——保持叙事完整、行数中性；**不为转绿就地删规则内容**。
+#   ⛔ 后来人不得因「引用块里版本号多」而把 E4 加回来（那等于给后来人一条明路）。
 #
 # 扫描面（**只扫规则文档，不外扩**）：
 #   docs/changelog/releasing.md + docs/changelog/releasing/*.md（SOP 家族）
@@ -198,8 +209,7 @@ detect_core() {
       while (my $line = <$fh>) {
         $ln++;
         chomp $line;
-        # E4 引用块豁免 / E5 机器注释豁免
-        if ($line =~ /^\s*>/)    { print "EXEMPT_BQ\t$file\t$ln\t" . $prune->($line) . "\n"; next; }
+        # E5 机器注释豁免（E4 引用块整行豁免已取消——不再有 `>` 分支）
         if ($line =~ /^\s*<!--/) { print "EXEMPT_HC\t$file\t$ln\t" . $prune->($line) . "\n"; next; }
         # E3 文件头版本标识（前 N 行的 H1）
         my $is_head = ($ln <= $head_lines && $line =~ /^# /) ? 1 : 0;
@@ -293,6 +303,7 @@ if [ "$MODE" = "selftest" ]; then
   _FIX_BAD="${_FIX_DIR}/bad.md"
   _FIX_GOOD="${_FIX_DIR}/good.md"
   _FIX_E6NEG="${_FIX_DIR}/e6neg.md"
+  _FIX_BQ="${_FIX_DIR}/bq.md"
   # 夹具 A：四类判据各自的真违规；类2 刻意两种日期形态各一（ASCII 与 年月日），
   # 防「年形态」静默永不命中却没被任何断言看见。
   {
@@ -304,11 +315,10 @@ if [ "$MODE" = "selftest" ]; then
     echo '第四处：2026年9月11日 复核时补记。'
     echo '第五处：Round 2 修复批收口时补记。'
   } > "$_FIX_BAD"
-  # 夹具 B：全部豁免形态各一（门槛 +/起、引用块叙事、文件头标识、机器注释、E6 机器字面量）
+  # 夹具 B：全部豁免形态各一（门槛 后缀形/前置比较形、文件头标识、机器注释、E6 机器字面量）
+  #   ⚠️ 引用块样本**不在此**——E4 取消后引用块里的出身必须被判中，样本已移入夹具 D
   {
     echo '# good.md · 合法样本 · v1.5.0'
-    echo ''
-    echo '> 为什么有这条：v1.4.8 那次踩过坑，一句话讲完。'
     echo ''
     echo '门槛形态（判据，非出身）：Loop Check 轮次上限见（v1.0.1+）；自 v1.3.9 起 bump 延后到阶段六。'
     echo '门槛形态·前置比较（判据，非出身）：本版低于 `v2.0.0` → 全程加 `--tag alpha`；达到 `v2.0.0` → 默认 tag。'
@@ -326,8 +336,15 @@ if [ "$MODE" = "selftest" ]; then
     echo '见 `v1.5.0` 的裁定。'
     echo "Writer's note: 该判据 v1.4.8 定稿，reader's 无需记忆。"
   } > "$_FIX_E6NEG"
+  # 夹具 D：E4 取消后的**正例**——引用块里的出身必须被判中。
+  #   为何必需：取消 E4 却留着依赖 E4 放行的旧夹具 = 断言在保护一个已不存在的行为。
+  {
+    echo '# bq.md · 引用块里的出身（必须命中）'
+    echo ''
+    echo '> 为什么有这条：v1.4.8 那次踩过坑，一句话讲完。'
+  } > "$_FIX_BQ"
 
-  printf '%s\n%s\n%s\n' "$_FIX_BAD" "$_FIX_GOOD" "$_FIX_E6NEG" > "$LIST_TMP"
+  printf '%s\n%s\n%s\n%s\n' "$_FIX_BAD" "$_FIX_GOOD" "$_FIX_E6NEG" "$_FIX_BQ" > "$LIST_TMP"
   _RAW_FILE="$HITS_TSV"
   detect_core "$LIST_TMP" > "$_RAW_FILE" || {
     echo "❌ 检测核心在自检夹具上报错——拒绝假绿" >&2
@@ -341,6 +358,7 @@ if [ "$MODE" = "selftest" ]; then
   _ST_E2_POS=$(awk -F'\t' -v f="$_FIX_GOOD" '$1 == "EXEMPT_TH" && $2 == f' "$_RAW_FILE" | grep -c . || true)
   _ST_E6_POS=$(awk -F'\t' -v f="$_FIX_GOOD" '$1 == "EXEMPT_MACHINE" && $2 == f' "$_RAW_FILE" | grep -c . || true)
   _ST_E6_NEG_V=$(awk -F'\t' -v f="$_FIX_E6NEG" '$1 == "V" && $2 == f' "$_RAW_FILE" | grep -c . || true)
+  _ST_BQ_V=$(awk -F'\t' -v f="$_FIX_BQ" '$1 == "V" && $2 == f' "$_RAW_FILE" | grep -c . || true)
   _ST_BAD_V=${_ST_BAD_V:-0}
   _ST_BAD_D=${_ST_BAD_D:-0}
   _ST_BAD_R=${_ST_BAD_R:-0}
@@ -349,8 +367,9 @@ if [ "$MODE" = "selftest" ]; then
   _ST_E2_POS=${_ST_E2_POS:-0}
   _ST_E6_POS=${_ST_E6_POS:-0}
   _ST_E6_NEG_V=${_ST_E6_NEG_V:-0}
+  _ST_BQ_V=${_ST_BQ_V:-0}
   _ST_FAILS=0
-  ASSERTS=9
+  ASSERTS=10
 
   echo "夹具 A（真违规样本 6 行）——期望四类全中："
   for _pair in "类1 版本号:${_ST_BAD_V}" "类2 日期:${_ST_BAD_D}" "类3 跑批编号:${_ST_BAD_R}" "类4 出身标签:${_ST_BAD_T}"; do
@@ -369,7 +388,7 @@ if [ "$MODE" = "selftest" ]; then
     echo "  ❌ 类3 只命中 ${_ST_BAD_R} 行（应 ≥2：run-N·第N轮 与 Round N 各一）——有形态静默失明"
     _ST_FAILS=$((_ST_FAILS + 1))
   fi
-  echo "夹具 B（合法样本：门槛 / 引用块叙事 / 文件头标识 / 机器注释 / E6 机器字面量）——期望零命中："
+  echo "夹具 B（合法样本：门槛 / 文件头标识 / 机器注释 / E6 机器字面量）——期望零命中："
   if [ "$_ST_GOOD_HITS" -eq 0 ]; then
     echo "  ✓ 四类零命中（豁免规则生效）"
   else
@@ -397,10 +416,18 @@ if [ "$MODE" = "selftest" ]; then
     echo "  ❌ E6 正例未被豁免——机器字面量会持续假红，E6 判据失效"
     _ST_FAILS=$((_ST_FAILS + 1))
   fi
+  echo "夹具 D（E4 取消后的正例：引用块里的出身）——期望**仍然命中**："
+  if [ "$_ST_BQ_V" -ge 1 ]; then
+    echo "  ✓ 引用块里的出身仍被判类1 命中（${_ST_BQ_V} 处）——「载体免责」口子已堵"
+  else
+    echo "  ❌ 引用块里的出身未被判中——E4 口子被误加回，引用块成了出身的藏身处： "
+    awk -F'\t' -v f="$_FIX_BQ" '$2 == f { printf "      [%s] %s:%s: %s\n", $1, $2, $3, $4 }' "$_RAW_FILE"
+    _ST_FAILS=$((_ST_FAILS + 1))
+  fi
   echo ""
   if [ "$_ST_FAILS" -eq 0 ]; then
-    echo "✅ 自检通过：注入真违规必红、合法形态必绿、E6 反例不放水（夹具 A 四类全中 / B 零命中 / C 两处仍红）"
-    emit_coverage_line "check-archaeology(--selftest)" "$ASSERTS" "5" "0"
+    echo "✅ 自检通过：注入真违规必红、合法形态必绿、E6 反例与 E4 取消均不放水（夹具 A 四类全中 / B 零命中 / C 两处仍红 / D 引用块出身仍红）"
+    emit_coverage_line "check-archaeology(--selftest)" "$ASSERTS" "6" "0"
     exit 0
   fi
   echo "❌ 自检失败：${_ST_FAILS} 项——守卫失效，禁止据此判规则文档合规" >&2
@@ -532,7 +559,6 @@ HITS_V=$(count_key "$_RAW_FILE" "V")
 HITS_D=$(count_key "$_RAW_FILE" "D")
 HITS_R=$(count_key "$_RAW_FILE" "R")
 HITS_T=$(count_key "$_RAW_FILE" "T")
-EXEMPT_BQ=$(count_key "$_RAW_FILE" "EXEMPT_BQ")
 EXEMPT_HC=$(count_key "$_RAW_FILE" "EXEMPT_HC")
 EXEMPT_HEAD=$(count_key "$_RAW_FILE" "EXEMPT_HEAD")
 EXEMPT_THRESH=$(count_key "$_RAW_FILE" "EXEMPT_TH")
@@ -565,7 +591,7 @@ if [ "$LIST_EXEMPT" = "true" ]; then
 fi
 
 echo "──── 豁免放行计数（跳过必须可见）────"
-echo "  E4 引用块叙事       ${EXEMPT_BQ} 行"
+echo "  E4 引用块叙事       —— 已取消（引用块里的出身同样判，见头部「🔴 E4 取消」段）"
 echo "  E5 机器注释         ${EXEMPT_HC} 行"
 echo "  E3 文件头版本标识   ${EXEMPT_HEAD} 行"
 echo "  E2 能力版本门槛     ${EXEMPT_THRESH} 行"
@@ -578,11 +604,11 @@ echo "════════════════════════�
 #   asserts = 命中数 + 干净文件数（每个文件至少产出一条判定：有命中按命中数计，
 #             零命中按 1 条「该文件干净」计）
 #   covered = 实际扫描文件数（find 收集 − 路径豁免）
-#   skipped = 按豁免放行的命中行数（E1/E2/E3/E4/E5/E6 之和）——跳过是看不见的，故必须打印
+#   skipped = 按豁免放行的命中行数（E1/E2/E3/E5/E6 之和；E4 已取消）——跳过是看不见的，故必须打印
 _CLEAN=$((FILES_SCANNED - FILES_HIT))
 ASSERTS=$((HITS + _CLEAN))
 COVERED="${FILES_SCANNED}"
-SKIPS=$((EXEMPT_BQ + EXEMPT_HC + EXEMPT_HEAD + EXEMPT_THRESH + EXEMPT_MACHINE + EXEMPT_ANCHOR))
+SKIPS=$((EXEMPT_HC + EXEMPT_HEAD + EXEMPT_THRESH + EXEMPT_MACHINE + EXEMPT_ANCHOR))
 
 if [ "$HITS" -gt 0 ]; then
   echo "  命中合计 ${HITS} 处（类1 ${HITS_V} / 类2 ${HITS_D} / 类3 ${HITS_R} / 类4 ${HITS_T}），分布在 ${FILES_HIT} 个文件"

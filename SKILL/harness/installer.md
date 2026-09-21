@@ -1,7 +1,7 @@
 # Installer · 裸机自动安装引导
 
 > 设备侧 Agent（OpenClaw / WorkBuddy / Claude Code 等）读本 skill 自主完成 sofagent 引擎装机。四步分步引导：**依赖检测 → install.sh 执行 → 安装结果校验 → 触发 G9 设备注册**——装完即注册、注册即在线。
-> 上游输入：上岗 prompt（v1.4.7 onboard_prompt 生成器产出——设备身份、平台选择、策略文件路径以它为准）。
+> 上游输入：上岗 prompt（onboard_prompt 生成器产出——设备身份、平台选择、策略文件路径以它为准）。
 > ⛔ **每步必须可回滚/可中断**：任何一步失败先输出结构化诊断（本 skill 各步的「诊断表」），不要打哑炮，不要在失败后继续下一步。
 
 ---

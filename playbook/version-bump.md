@@ -25,7 +25,7 @@ node tools/gen/gen-plugin-manifests.mjs
 
 > 🔴 **前缀替换陷阱（脚本级实测）**：bump 对「`v<major>.<minor>`」形态的位置做**前缀**替换——
 > 文件里若是 `vX.Y.Z`（三段）而脚本按 `vX.Y` 匹配，替换后会得到 `vX.(Y+1).Z` 这类**畸形版本号**
-> （例：`v1.4.9` → `v1.5.9`，正确应为 `v1.5.0`）。hook 头注释是该陷阱的高发点。
+> （例：`vX.Y.Z` → `vX.(Y+1).Z`，而正确结果应是 `vX.(Y+1).0`）。hook 头注释是该陷阱的高发点。
 > **防御**：bump 后必跑 `grep -rn "v[0-9]\+\.[0-9]\+\.[0-9]\+" $(git diff --name-only)` 逐条核对，
 > 或直接跑 `bash tools/check/check-template-drift.sh`（断言一/三 覆盖 hook 头版本自报）。
 
@@ -83,7 +83,7 @@ grep -rn "vX\.Y\.旧" --include="*.md" --include="*.ts" --include="*.sh" . \
 | `ROADMAP.md` 五步更新 | 结构性改动（删节/迁移），不是纯替换 | 每次发版手动做五步（详见 releasing.md 阶段八） |
 | `ARCHITECTURE.md` 正文"当前 vX.Y" | 正文引用，不是版本头格式 | bump 后 grep `当前 v` 检查并手动更新 |
 | `package-lock.json` | bump-version.sh 不覆盖 | 「同步 package-lock.json」小节用 `npm install --package-lock-only` 同步 |
-| 正文中的历史引用 | "v1.0 新增"是溯源标记，不改 | 永远不改 |
+| 正文中的历史引用 | "v1.0 新增"是溯源标记，不改 | 永远不改（bump 语境） |
 | `engine/**` 常量 `= 'vX.Y.Z'` | bump 只认部分常量形态，漏改 = check-version 版本漂移断言红 | bump 后必跑 `bash tools/check/check-version.sh`，按报错逐条补 |
 | `action.yml` 的 npx pin（`@sofagent/<pkg>@X.Y.Z`） | GitHub Action 用户拉到旧版引擎 | 同上，check-version 有专用断言 |
 | 文档版本头「版本：vX.Y.Z」形态 | bump 不认该形态（非 `> vX.Y · DATE` 模板） | 同上；新增文档头请沿用模板形态 |

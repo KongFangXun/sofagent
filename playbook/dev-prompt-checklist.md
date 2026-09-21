@@ -7,7 +7,7 @@
 >
 > **嵌入位置**：`docs/changelog/releasing.md` 阶段十二 步骤 41（开发 Prompt 校验循环）。
 >
-> **来源**：v1.2.5 发版前评审实证（5🔴 / 5🟡 / 7🔵，双人背书）——详见 `~/Desktop/v1.2.5-dev-prompt-review-2026-08-02.md`。
+> **来源**：发版前评审实证（5🔴 / 5🟡 / 7🔵，双人背书）——详见 `~/Desktop/<版本>-dev-prompt-review-<日期>.md`。
 
 ---
 

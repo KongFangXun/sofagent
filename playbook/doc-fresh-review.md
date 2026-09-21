@@ -4,7 +4,7 @@
 
 > **定位**：对核心文档体系（README 双语 / CHANGELOG / WIKI / HANDBOOK / FDE/GUIDE / guides/ / ARCHITECTURE / PHILOSOPHY / VALIDATION / API / LIMITATIONS / SECURITY / DEVELOPMENT / ROADMAP / CONTRIBUTING / THANKS / COMMUNITY + **dashboard.html**）做独立人读视角审查的标准 prompt 模板。
 >
-> **来源**：v1.5.0 发版前四轮实跑沉淀（r1 宏观 → r2 结构 → r3 终读+回归 → r4 收敛判定），每轮发现的修复回归率从 37% 降至收敛。
+> **来源**：发版前四轮实跑沉淀（r1 宏观 → r2 结构 → r3 终读+回归 → r4 收敛判定），每轮发现的修复回归率从 37% 降至收敛。
 >
 > **用法**：复制下方「审查 Prompt 模板」到**新 session**（fresh 纪律：严禁在参与过编写/修复的 session 里跑；审查只报告不修复）；多轮迭代时按「轮次策略表」选当轮重点。报告统一落 `~/Desktop/docs-review-vX.Y.Z{-rN}.md`。
 

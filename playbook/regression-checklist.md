@@ -1662,7 +1662,7 @@ grep -q "dashboard.html" tools/check/check-version.sh && echo "✅ dashboard 版
 
 #### 127. 新功能审查面——训练运行九章+DSH 执行深化+审计聚合+反作弊基线一维收口（阶段四来源提取 A 类 · 归并「旧交付退役收口」入此：compose 旧别名下线与 fde_compose ontology 收窄为退役治理子项）
 
-> 九章+清扫五件的静态一致性快查（执行级验证单测 138 用例已落 orchestrator/audit，此处分钟级 grep）。子项 h 承接清扫任务二/三的退役收口治理（别名承诺句式 + workflow-only 收窄——v1.5.0 shim 移除的防遗忘锚）。**块级退出码防御**：子项行尾 `|| echo "❌"` 的 echo 恒 0 会吞失败退出码——整块必须包子 shell + tee 落盘 + 尾部 ❌ 扫描定 exit，严禁裸 echo 收尾。
+> 九章+清扫五件的静态一致性快查（执行级验证单测 138 用例已落 orchestrator/audit，此处分钟级 grep）。子项 h 承接清扫任务二/三的退役收口治理（别名承诺句式 + workflow-only 收窄——shim 移除的防遗忘锚）。**块级退出码防御**：子项行尾 `|| echo "❌"` 的 echo 恒 0 会吞失败退出码——整块必须包子 shell + tee 落盘 + 尾部 ❌ 扫描定 exit，严禁裸 echo 收尾。
 
 ```bash
 (# a: 训练查询侧三 tools（train_status/train_list/train_diagnose 注册 + 分发）
@@ -1716,7 +1716,7 @@ grep -q "450" playbook/acceptance-test.sh && grep -q "迷你 dist" engine/audit/
 **子项 g-i（归并自原 #142 · fresh-eyes 修复批安全豁免面防复发）**
 fresh-eyes 修复批安全豁免面防复发——A1 豁免组合矩阵 + A2 转义对抗链（B 类）
 
-> 来源：run-02 b-fix 批（A1 数据容器臂 / 扩展名尾锚定 / .env 前缀豁免叠加 / A2 转义链）。核心方法论：任何新增豁免必须回答「与既有豁免叠加后最坏形态的阻断等级」。
+> **本块覆盖**：A1 数据容器臂 / 扩展名尾锚定 / .env 前缀豁免叠加 / A2 转义链。核心方法论：任何新增豁免必须回答「与既有豁免叠加后最坏形态的阻断等级」。
 
 ```bash
 (
@@ -1798,7 +1798,7 @@ test -f engine/audit/src/chain-head-anchor.test.ts && grep -q "shouldExempt(key:
 
 #### 132. bugfix 批与流程加固防复发——ruleset 渲染/版本动态读/空 diff 审计/uninstall 配对/PERSPECTIVES 对账一维收口（阶段四来源提取 B 类 · 行为面 S381 空 diff 三形态已锁 · B3 根 commit 补审归 S222 空树锚）
 
-> v1.4.6 阶段三 8 finding + bugfix 29 文件的轻量锚。B1 ruleset A0 渲染、B2 版本硬编码双批、B4 openclaw 空 diff、B5 uninstall 漏平台、B6 双清单漂移——全部 grep 型快速检查，端到端行为面由 acceptance S381（空 diff 审计三形态）/S222（根 commit 空树补审）锁定。
+> 阶段三 8 finding + bugfix 29 文件的轻量锚。B1 ruleset A0 渲染、B2 版本硬编码双批、B4 openclaw 空 diff、B5 uninstall 漏平台、B6 双清单漂移——全部 grep 型快速检查，端到端行为面由 acceptance S381（空 diff 审计三形态）/S222（根 commit 空树补审）锁定。
 
 ```bash
 (
