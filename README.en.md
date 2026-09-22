@@ -23,7 +23,7 @@
 - [Core Features](#core-features)
 - [What is the FDE Harness](#what-is-the-fde-harness)
 - [Multi-platform Mounting](#multi-platform-mounting)
-- [v1.5.0: Governance · Visibility & Ontology Maturity](#v150-governance--visibility--ontology-maturity--released--2026-09-19)
+- [v1.5.1: Orchestration · Event-Driven](#v151-orchestration--event-driven--pending-release)
 - [The Two FDE Harness Phases](#the-two-fde-harness-phases)
 - [Installation](#installation)
 - [Usage](#usage)
@@ -132,17 +132,17 @@ Sits between the Agents you already use and the model layer — it doesn't repla
 
 One command selects your mounting tier: `bash install.sh --platform <platform-name>` (all platforms and differences in [HANDBOOK](./docs/HANDBOOK.md))
 
-## v1.5.0: Governance · Visibility & Ontology Maturity (✅ Released · 2026-09-19)
+## v1.5.1: Orchestration · Event-Driven (⏳ Pending Release)
 
-🛡️ **The engine grows a governance face** — constraint-layer value made visible, ontology data that survives time, and evidence that reconciles across layers:
+⚡ **The orchestration module goes event-driven** — business nodes run themselves when events arrive:
 
 | Capability | In one line |
 |------|--------|
-| **Governance KPI dashboard** | Dedicated Dashboard "Governance" tab: six KPI cards + dataset review card + human semantic-quality backstop + lineage compliance report export (where data came from → which gates it passed → version evolution → audit-chain references) + weekly report export |
-| **Bitemporal ontology facts** | `validFrom`/`validTo` + `stateAt` point-in-time snapshots ("what did the system know on that day") + 3-tier progressive loading (entity digests → relations → full text, budget-linked) |
-| **Cross-layer evidence reconciliation** | New `trace_reconcile` tool: agent self-report vs git diff vs model behavior — three sources, four verdicts (consistent / omitted / hallucinated / misreported) — "be a forensics officer, not a camera" |
+| **Business event triggers** | Four event sources (upstream output / email arrival / form submission / timer) + `on:` declarative subscriptions + dead-letter replay, with full audit trails on event delivery |
+| **Comprehension-debt response** | Auto-PR explanation blocks citing decision-log causal chains ("why this was done") + daemon weekly digest with INSPECTORS registration |
+| **Device OTA remote upgrade** | Upgrade commands over the event bus + device-daemon pull with signature verification + gray-release batching + offline-hold catch-up |
 
-Also in this release: Ontology Validation Engine (DAG cycle detection with chain localization + fail-closed activation gate) · FDE companion-period wrap-up · legacy & naming cleanup (retired API removal + `@sofagent/harness` → `@sofagent/inject` [breaking]) · DSH plugin event wiring. **MCP tools 104 → 105 · tests 4805 → 4903 · acceptance 352 → 357** (13-package workspace count; release-time figure 4805 — the **current** authoritative value is whatever `tools/check/test-count.sh` reports). Full details in the [devlog](./docs/changelog/v1.5/v1.5.0.md) · earlier versions in [CHANGELOG](./CHANGELOG.md).
+Also in this release: AI exception bus (retry / human / rollback routing) · task dispatch phase 2 (push-direct + offline heartbeat piggyback + receipts into the audit chain) · production pipeline wiring (three-layer sensitivity detection + canary routing) · dual-channel audit input (intent stream redacted at rest) · a five-minute `sofagent demo` drama arc · legacy cleanup (`--legacy` callers zeroed). **Tests 4903 → 5083 · acceptance 357 → 367 · 87 regression dimensions** (13-package workspace count, release-time figure). Full details in the [devlog](./docs/changelog/v1.5/v1.5.1.md) · earlier versions in [CHANGELOG](./CHANGELOG.md).
 
 ## The Two FDE Harness Phases
 
