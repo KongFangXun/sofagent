@@ -7,7 +7,7 @@
 > **本文档从四个维度回答一个问题：行业有没有独立验证 sofagent 的直觉？**
 > - **§一 方法论**——行业研究怎么印证"约束层是刚需"（Harness 范式 / 确定性迁移 / Verifier 瓶颈 / 治理缺口代价）
 > - **§二 生态位**——sofagent 在 Agent 生态三层模型中的位置（约束基础设施，不碰平台、不碰框架）
-> - **§三 架构**——行业框架怎么独立复现 sofagent 的架构选择（Ontology / Apache Ossie / 五层骨架 / AOS / Palantir OAG）
+> - **§三 架构**——行业框架怎么独立复现 sofagent 的架构选择（Ontology / Apache Ossie / 五层骨架 / AOS / Palantir OAG 与双 MCP）
 > - **§四 市场**——这些技术判断有没有被市场买单（FDE 经济账 / SMB 断层 / 产品化四条 / 价值度量翻转）
 > 四个维度共同指向同一结论：**不管你的 Agent 怎么搭、在哪跑，它需要一个独立的约束层。**
 
@@ -694,6 +694,18 @@ Palantir Foundry 10 年迭代收敛出 Ontology 的 5 块构建块——**Object
 > 3. **KLM 范式** = 智能 / 控制分离（PHILOSOPHY §一理论锚点）+ 模型注册 / 灰度切换 / 路由决策可解释性——「把规则动作边界放在模型外边」正是约束层哲学。
 > 4. **Apollo 交付层自检五问** = 版本同步机制 + `check-version` 门禁 + 快照回滚 + 模型换后重考评测（Benchmark）。
 > 5. **两个验收问题** = 「编排层永远不换」（24 条 git diff 规则 + HMAC 链不依赖模型）+ 快照 `--revert` 一键回滚——「换模型对象还在不在」的答案就在约束层与模型解耦的设计里。
+
+### Palantir 双 MCP 体系：把「改结构」和「改数据」拆成两条治理通道
+
+> 📖 来源：[Palantir Foundation · Ontology MCP 样例架构](https://palantirfoundation.org/docs/foundry/ontology-mcp/sample-architecture)（官方文档，2026）+ 第三方评测交叉（chatforest.com，2026-07 口径）。官方事实，非转写。
+
+Palantir 的 agent 接入面拆成两个 MCP server，**读写分离、各带治理门**：**Palantir MCP（PMCP，2025-07 GA）**是平台开发面——70+ 工具覆盖本体 schema 的搜/查/改、代码仓 Git 操作、跨资源分支、数据集与血缘；**本体 schema 的任何修改必须走 proposal review 人工审批后才生效**。**Ontology MCP（OMCP，2026-01 beta → 2026-06 GA）**是运行时业务面——object types 收敛为一个统一 SQL 查询工具；**每个 action type 独立暴露为一个 MCP 工具**（agent 写数据只能调预定义 Action，不能直接 UPDATE 底表）；query functions 逐个成工具；AIP Logic / chatbot 可存为函数经 MCP 暴露（**agents as tools**，agent 产物成为别的 agent 的工具）。2026-07 再发 Claude / OpenAI / Google 三家 Agent SDK 模板：不合并框架，共享 Ontology 资源 scope、认证、MCP 接口与发布流程，agent 发布后注册为异步函数由对象变更触发。
+
+> 💡 **对 sofagent 的三点印证**：
+>
+> 1. **「agent 能改什么」与「agent 能做什么」被显式拆开**——schema 变更（PMCP + proposal 人工门）与数据变更（OMCP + 受控 Action）分走两套接口。sofagent 同构：约束注入（改 workflow / SKILL）走 SKILL.md 单一权威源 + git 提交审计，业务执行（改业务对象）走 workflow Action + human_confirm——两条通道也是分门的，且 sofagent 两条都落在 git 可审计面上。
+> 2. **Action 逐工具暴露 = 审计粒度到单个业务动作**——OMCP 不把「写」收成一个大工具，而是每个 Action 一个工具，权限与审计天然按动作切分。这与「24 条 git diff 规则按变更类型切分」同构：粒度即治理面。
+> 3. **agents as tools 与框架中立模板印证「沉淀即复用」**——agent 产物存为函数给别的 agent 用，对应 think.md → knowledge/ 的晋升机制；三家 SDK 模板共享本体接口、各留原生 loop，与「平台层不定义治理、只表达治理」的宿主无关哲学同向。
 
 ### Snowflake 自下而上本体路径：数仓巨头的 context 工厂
 
