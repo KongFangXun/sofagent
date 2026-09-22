@@ -697,7 +697,7 @@ Palantir Foundry 10 年迭代收敛出 Ontology 的 5 块构建块——**Object
 
 ### Snowflake 自下而上本体路径：数仓巨头的 context 工厂
 
-> 📖 来源：Snowflake 官方工程博客与产品公告（Horizon Catalog / Semantic Views / Knowledge Graph / Cortex Sense）+ FY2026 财报。benchmark 数字为官方口径。
+> 📖 来源：[Introducing Cortex Sense](https://www.snowflake.com/en/blog/enterprise-ai-agents-grounded-context/)（Snowflake 官方博客，2026-06）· [Incorporating Ontologies into Snowflake Cortex Agents](https://www.snowflake.com/en/blog/engineering/ontology-grounded-cortex-agents/)（Snowflake 工程博客，2026-05）+ Horizon Catalog / Semantic Views 官方产品文档与 FY2026 财报。benchmark 数字为官方口径。
 
 Palantir 从业务对象出发「自顶向下」建本体，Snowflake 反向走「自下而上」：从数仓长出本体栈，四层演进——目录（Horizon Catalog，2025-11 GA，底层捐给 Apache 基金会成 Polaris 顶级项目）→ 语义层（Semantic Views / Semantic Studio，2026-03 GA）→ 图（Knowledge Graph：KG_NODE / KG_EDGE 两张表存数仓内，recursive CTE 遍历，2026-05 公开）→ 智能体接口（Cortex Sense：自动扫描全库构建全局 ontology 作 context substrate，2026-06 私预）。定位一句话：**把数仓改造成 agent 的 context 工厂**。关键数字（官方口径）：Cortex Sense 称治理 context 使 agent 回答复杂业务问题的准确率 47%→83%（对照：通用 coding agent 裸连数仓 23%）。
 

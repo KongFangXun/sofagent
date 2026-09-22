@@ -48,6 +48,22 @@
 #      🔴 单引号为何附加「命令行」条件：ASCII 撇号在英文散文里作所有格（`Don't`），
 #      无条件下配对会把两个撇号之间的版本号误豁免——这是静默放水，不是降噪。
 #
+#   E7 产品文档台账形态（仅 docs/** 与 FDE/** 适用，releasing 家族严格度不降）：
+#      产品文档（HANDBOOK/DEVELOPMENT/PHILOSOPHY/API/WIKI/VALIDATION/guides 等）大量使用
+#      版本号/日期作**台账内容**而非出身叙事，四类判据原样套用会整面假红。逐形态实测豁免：
+#        (a) 头部版本状态行（前 N 行的 `> vX.Y.Z · 日期 · ✅ 已发版` / `> 版本：vX.Y.Z`）——
+#            文档身份行（同 E3「文件头版本标识」语义，docs 家族惯例是 blockquote 形态）
+#        (b) frontmatter 机器元数据（created_at / updated_at / date 等键值行）
+#        (c) 能力沿革——「vX.Y.Z 交付/新增/拆独立包/增至 N/合并批」是产品能力地图，
+#            不是「哪版引入」的规则出身
+#        (d) 第三方生态版本与外链（`@deepseek-ai/dsh-mcp-client@0.1.0-rc.6`、
+#            `[…](https://…tag/v0.22.0)` 等）——外部世界的版本号，与本仓出身无关
+#        (e) 来源/实测/核验快照——「2026-08-25 实测」「来源：arXiv 2608.31100（2026-08）」
+#            是证据的时间戳（开源透明度），不是内部决策时间
+#        (f) 测试/验收记录行（testing.md 的 `| 日期 | PASS |` 表）
+#      ⚠️ E7 不豁免（真考古，仍判）：拍板/收编/定型/明确/核正/核实等**决策时间**——
+#      「哪天内部定了什么」是出身叙事，删标签留内容（处置纪律同 E4 取消段）。
+#
 # 🔴 E4 取消（引用块整行豁免）——**载体不是豁免理由**：
 #   实测 E4 的免责面是 **670 行**，其中含版本号的 35 行 / 含日期的 3 行；
 #   扣掉 E2 门槛形态后**仍是真出身的 28+ 行**，分布在 12 个文件。
@@ -59,9 +75,10 @@
 #   规则句一字不动）——保持叙事完整、行数中性；**不为转绿就地删规则内容**。
 #   ⛔ 后来人不得因「引用块里版本号多」而把 E4 加回来（那等于给后来人一条明路）。
 #
-# 扫描面（**只扫规则文档，不外扩**）：
-#   docs/changelog/releasing.md + docs/changelog/releasing/*.md（SOP 家族）
-#   SKILL/**  playbook/**
+# 扫描面（规则文档 + 产品文档全量）：
+#   docs/**（含 changelog/releasing SOP 家族、HANDBOOK/DEVELOPMENT/PHILOSOPHY 等全部产品文档）
+#   FDE/**（GUIDE 与 templates）+ SKILL/**  playbook/**
+#   台账/档案类路径豁免见 E1；产品文档的版本沿革/证据日期形态豁免见 E7（releasing 家族不适用 E7，严格度不降）
 #
 # 🔴 刻意**不豁免代码块**（原始口径未列，且实测不该列）：
 #   ① 实测 docs/changelog/releasing/06-doc-finalize.md 的围栏**不闭合**（11 个围栏
@@ -104,8 +121,8 @@ cd "$(dirname "$0")/../.." || exit 2
 
 SELF="tools/check/check-archaeology.sh"
 EXEMPT_JSON="tools/check/archaeology-exempt.json"
-SCAN_FILES_FIXED="docs/changelog/releasing.md"
-SCAN_DIRS="docs/changelog/releasing SKILL playbook"
+SCAN_FILES_FIXED=""
+SCAN_DIRS="docs FDE SKILL playbook"
 HEAD_LINES=5
 MAX_SHOWN=200
 HITS_TSV="/tmp/check-archaeology-hits.tsv"
@@ -210,9 +227,13 @@ detect_core() {
         $ln++;
         chomp $line;
         # E5 机器注释豁免（E4 引用块整行豁免已取消——不再有 `>` 分支）
-        if ($line =~ /^\s*<!--/) { print "EXEMPT_HC\t$file\t$ln\t" . $prune->($line) . "\n"; next; }
-        # E3 文件头版本标识（前 N 行的 H1）
-        my $is_head = ($ln <= $head_lines && $line =~ /^# /) ? 1 : 0;
+        # E5 扩展：frontmatter 机器元数据行（created_at / updated_at / date 等键）——
+        #   机器生成的时间戳字段，非正文叙事（FDE/GUIDE.md 的 YAML 头等实测形态）
+        if ($line =~ /^\s*<!--/ || $line =~ /^\s*(?:created_at|updated_at|published|date|lastmod)\s*:/) { print "EXEMPT_HC\t$file\t$ln\t" . $prune->($line) . "\n"; next; }
+        # E3 文件头版本标识（前 N 行的 H1）；E3 扩展：头部版本状态行（blockquote 形态
+        #   `> v1.5.0 · 2026-09-19（UTC）· ✅ 已发版` / `> 版本：v1.5.0`）——docs 家族
+        #   惯例的文档身份行，语义同 H1 版本标识（API.md `> 版本：v1.5.0（✅ 已发版）· …` 实测）
+        my $is_head = ($ln <= $head_lines && ($line =~ /^# / || $line =~ /^>[ \t]*(?:版本[：:][ \t]*)?v[0-9]/)) ? 1 : 0;
         my $work = $line;
         # E2 能力版本门槛：门槛形态先摘掉，剩下的版本号才算出身
         my $th = () = $work =~ /$RE_THRESHOLD/g;
@@ -232,6 +253,39 @@ detect_core() {
         if ($n_e6) {
           $work = $work_e6;
           print "EXEMPT_MACHINE\t$file\t$ln\t" . $prune->($line) . "\n";
+        }
+        # E7 产品文档台账形态（仅 docs/** 与 FDE/** 适用；releasing/SKILL/playbook 严格度不降）：
+        #   反向判据——产品文档里版本号/日期绝大多数是台账内容（能力沿革表/第三方生态版本/
+        #   证据时间戳/测试记录），四类正向判据整面假红（实测 docs+FDE 的 V 类 328 处中台账
+        #   形态占绝大多数）。故对 docs/FDE 的 V/D/R token 逐个判定：**仅当前后 22 字窗口内
+        #   无决策动词**（拍板/定谳/明确/收编/定型/核正/核实/决定/勘误/补充）才摘除——
+        #   「哪天内部定了什么」才是出身叙事，决策动词邻近的 token 原样保留（仍会被四类判到）。
+        #   ⚠️ E7 不动类4（出身标签）：括号出身形态（如「（v1.4.7 定谳）」）在产品文档与
+        #   规则文档里同判——本仓公开文档清理的正是这类（实测清理后 docs+FDE 类4 零残留）。
+        my $n_e7 = 0;
+        # E7 适用面：docs/ 与 FDE/ 产品文档，但**排除 docs/changelog/releasing**（SOP 家族
+        #   是规则文档，严格度不降——台账锚豁免仍走 E1-anchor，不经 E7 摘除）
+        if ($file =~ m{^(?:docs/|FDE/)} && $file !~ m{^docs/changelog/releasing}) {
+          my $RE_E7_TOKEN = qr/v[0-9]+\.[0-9]+\.[0-9]+|[0-9]{4}-[0-9]{2}-[0-9]{2}|[0-9]{4}年[0-9]{1,2}月[0-9]{1,2}日/;
+          my $RE_E7_DECISION = qr/(?:拍板|定谳|明确|收编|定型|核正|核实|决定|勘误|补充)/;
+          while ($work =~ m{$RE_E7_TOKEN}g) {
+            my $pos = pos($work);
+            my $start = $pos - length($&);
+            my $ctx_pre  = substr($work, ($start >= 22 ? $start - 22 : 0), ($start >= 22 ? 22 : $start));
+            my $ctx_post = substr($work, $pos, 22);
+            # 决策动词与 token 之间允许间隔标点/空格（` 2026-08-16 明确）`、`· 2026-09-06 定型）`——
+            # 窗口内任意位置出现即视为决策考古（实测形态：日期与动词间至少隔一个空格或 `·`）
+            if ($ctx_pre =~ /$RE_E7_DECISION/ || $ctx_post =~ /$RE_E7_DECISION/) {
+              # 决策动词在前/后窗口内 → 真考古，保留待判
+            } else {
+              substr($work, $start, length($&)) = "X.Y.Z";
+              $n_e7++;
+              pos($work) = $start; # 重置 pos 继续扫描后续 token
+            }
+          }
+          if ($n_e7) {
+            print "EXEMPT_E7\t$file\t$ln\t" . $prune->($line) . "\n";
+          }
         }
         my $out = $prune->($line);
         my $n = () = $work =~ /$RE_VERSION/g;
@@ -277,7 +331,7 @@ engine_probe() {
   printf '%s\n' '示例 v1.4.8 新增' | perl -Mutf8 -CSD -ne 'print "HIT" if /v[0-9]+\.[0-9]+\.[0-9]+/' 2>/dev/null
 }
 
-echo "🔍 规则文档禁考古预扫（扫描面：releasing.md + releasing/ + SKILL/ + playbook/）"
+echo "🔍 规则文档禁考古预扫（扫描面：docs/ + FDE/ + SKILL/ + playbook/）"
 echo "════════════════════════════════════════════════════════════"
 
 # ── 前置：node（读豁免台账）与 perl（检测引擎）——缺失即失声，不得静默假绿 ──
@@ -299,7 +353,7 @@ fi
 # ── 自检夹具模式：注入真违规必红 + 合法形态必绿 ──
 if [ "$MODE" = "selftest" ]; then
   _FIX_DIR="$(mktemp -d)"
-  trap 'rm -rf "${_FIX_DIR}"' EXIT
+  trap 'rm -rf "${_FIX_DIR}" "${_FIX_E7DIR:-}"' EXIT
   _FIX_BAD="${_FIX_DIR}/bad.md"
   _FIX_GOOD="${_FIX_DIR}/good.md"
   _FIX_E6NEG="${_FIX_DIR}/e6neg.md"
@@ -343,8 +397,30 @@ if [ "$MODE" = "selftest" ]; then
     echo ''
     echo '> 为什么有这条：v1.4.8 那次踩过坑，一句话讲完。'
   } > "$_FIX_BQ"
+  # 夹具 E：E7 产品文档台账形态——正例（docs/ 前缀模拟：能力沿革/第三方版本/测试记录 必绿）
+  #   与反例（决策考古 必红）。E7 按 $file 前缀判定，故在仓库 docs/ 下造相对路径夹具，跑完即删。
+  _FIX_E7DIR="docs/.e7selftest"
+  mkdir -p "$_FIX_E7DIR"
+  _FIX_E7GOOD="${_FIX_E7DIR}/e7good.md"
+  _FIX_E7BAD="${_FIX_E7DIR}/e7bad.md"
+  {
+    echo '# e7good.md · 产品文档台账形态（必绿）'
+    echo ''
+    echo '| v1.3.7 | SubAgent 沙箱隔离交付，新增独立 FS |'
+    echo '工具数 v1.4.5 增至 83，v1.4.7 增 11 个至 95。'
+    echo '依赖 @deepseek-ai/cordis@4.0.1 stable 接入。'
+    echo '| 2026-06-18 | 郝交付 | PASS | v0.55 安装验证 |'
+    echo 'DeepSeek 2026-08-13 开源 DeepSeek Harness。'
+  } > "$_FIX_E7GOOD"
+  {
+    echo '# e7bad.md · 决策考古（必红）'
+    echo ''
+    echo '> 这张图的三处关键精化（2026-08-16 明确）：'
+    echo '### 功能编制（约束层内的功能模块 · 2026-09-06 定型）'
+    echo '> 接入门禁状态（2026-09-05 核正）：包名长期 404。'
+  } > "$_FIX_E7BAD"
 
-  printf '%s\n%s\n%s\n%s\n' "$_FIX_BAD" "$_FIX_GOOD" "$_FIX_E6NEG" "$_FIX_BQ" > "$LIST_TMP"
+  printf '%s\n%s\n%s\n%s\n%s\n%s\n' "$_FIX_BAD" "$_FIX_GOOD" "$_FIX_E6NEG" "$_FIX_BQ" "$_FIX_E7GOOD" "$_FIX_E7BAD" > "$LIST_TMP"
   _RAW_FILE="$HITS_TSV"
   detect_core "$LIST_TMP" > "$_RAW_FILE" || {
     echo "❌ 检测核心在自检夹具上报错——拒绝假绿" >&2
@@ -359,6 +435,9 @@ if [ "$MODE" = "selftest" ]; then
   _ST_E6_POS=$(awk -F'\t' -v f="$_FIX_GOOD" '$1 == "EXEMPT_MACHINE" && $2 == f' "$_RAW_FILE" | grep -c . || true)
   _ST_E6_NEG_V=$(awk -F'\t' -v f="$_FIX_E6NEG" '$1 == "V" && $2 == f' "$_RAW_FILE" | grep -c . || true)
   _ST_BQ_V=$(awk -F'\t' -v f="$_FIX_BQ" '$1 == "V" && $2 == f' "$_RAW_FILE" | grep -c . || true)
+  _ST_E7_GOOD_HITS=$(awk -F'\t' -v f="$_FIX_E7GOOD" '$1 ~ /^(V|D|R|T)$/ && $2 == f' "$_RAW_FILE" | grep -c . || true)
+  _ST_E7_BAD_D=$(awk -F'\t' -v f="$_FIX_E7BAD" '$1 == "D" && $2 == f' "$_RAW_FILE" | grep -c . || true)
+  _ST_E7_GOOD_EX=$(awk -F'\t' -v f="$_FIX_E7GOOD" '$1 == "EXEMPT_E7" && $2 == f' "$_RAW_FILE" | grep -c . || true)
   _ST_BAD_V=${_ST_BAD_V:-0}
   _ST_BAD_D=${_ST_BAD_D:-0}
   _ST_BAD_R=${_ST_BAD_R:-0}
@@ -368,8 +447,11 @@ if [ "$MODE" = "selftest" ]; then
   _ST_E6_POS=${_ST_E6_POS:-0}
   _ST_E6_NEG_V=${_ST_E6_NEG_V:-0}
   _ST_BQ_V=${_ST_BQ_V:-0}
+  _ST_E7_GOOD_HITS=${_ST_E7_GOOD_HITS:-0}
+  _ST_E7_BAD_D=${_ST_E7_BAD_D:-0}
+  _ST_E7_GOOD_EX=${_ST_E7_GOOD_EX:-0}
   _ST_FAILS=0
-  ASSERTS=10
+  ASSERTS=13
 
   echo "夹具 A（真违规样本 6 行）——期望四类全中："
   for _pair in "类1 版本号:${_ST_BAD_V}" "类2 日期:${_ST_BAD_D}" "类3 跑批编号:${_ST_BAD_R}" "类4 出身标签:${_ST_BAD_T}"; do
@@ -424,10 +506,25 @@ if [ "$MODE" = "selftest" ]; then
     awk -F'\t' -v f="$_FIX_BQ" '$2 == f { printf "      [%s] %s:%s: %s\n", $1, $2, $3, $4 }' "$_RAW_FILE"
     _ST_FAILS=$((_ST_FAILS + 1))
   fi
+  echo "夹具 E（E7 产品文档台账形态：docs/ 前缀）——台账必绿、决策考古必红："
+  if [ "$_ST_E7_GOOD_HITS" -eq 0 ] && [ "$_ST_E7_GOOD_EX" -ge 1 ]; then
+    echo "  ✓ 台账形态（沿革表/第三方版本/测试记录/开源快照）零命中，E7 已豁免（${_ST_E7_GOOD_EX} 行）"
+  else
+    echo "  ❌ 台账形态被误判 ${_ST_E7_GOOD_HITS} 处——E7 豁免失效，产品文档会整面假红："
+    awk -F'\t' -v f="$_FIX_E7GOOD" '$1 ~ /^(V|D|R|T)$/ && $2 == f { printf "      [%s] %s:%s: %s\n", $1, $2, $3, $4 }' "$_RAW_FILE"
+    _ST_FAILS=$((_ST_FAILS + 1))
+  fi
+  if [ "$_ST_E7_BAD_D" -ge 1 ]; then
+    echo "  ✓ 决策考古（明确/定型/核正）仍被判类2 命中（${_ST_E7_BAD_D} 处）——E7 不放水"
+  else
+    echo "  ❌ 决策考古未被判中——E7 窗口过宽，决策时间被静默豁免："
+    awk -F'\t' -v f="$_FIX_E7BAD" '$1 ~ /^(V|D|R|T)$/ && $2 == f { printf "      [%s] %s:%s: %s\n", $1, $2, $3, $4 }' "$_RAW_FILE"
+    _ST_FAILS=$((_ST_FAILS + 1))
+  fi
   echo ""
   if [ "$_ST_FAILS" -eq 0 ]; then
-    echo "✅ 自检通过：注入真违规必红、合法形态必绿、E6 反例与 E4 取消均不放水（夹具 A 四类全中 / B 零命中 / C 两处仍红 / D 引用块出身仍红）"
-    emit_coverage_line "check-archaeology(--selftest)" "$ASSERTS" "6" "0"
+    echo "✅ 自检通过：注入真违规必红、合法形态必绿、E6/E7 反例与 E4 取消均不放水（夹具 A 四类全中 / B 零命中 / C 两处仍红 / D 引用块出身仍红 / E 台账绿·决策红）"
+    emit_coverage_line "check-archaeology(--selftest)" "$ASSERTS" "8" "0"
     exit 0
   fi
   echo "❌ 自检失败：${_ST_FAILS} 项——守卫失效，禁止据此判规则文档合规" >&2
@@ -506,7 +603,7 @@ EOF
 }
 
 # ── 扫描面收集 + 范围对账（失明防御：声称 vs 实际）──
-_ALL_FILES="$( { echo "$SCAN_FILES_FIXED"; find $SCAN_DIRS -name "*.md" -type f 2>/dev/null || true; } | LC_ALL=C sort )"
+_ALL_FILES="$( { [ -n "$SCAN_FILES_FIXED" ] && echo "$SCAN_FILES_FIXED"; find $SCAN_DIRS -name "*.md" -type f 2>/dev/null || true; } | LC_ALL=C sort -u )"
 : > "$LIST_TMP"
 while IFS= read -r _af; do
   [ -z "$_af" ] && continue
@@ -563,6 +660,7 @@ EXEMPT_HC=$(count_key "$_RAW_FILE" "EXEMPT_HC")
 EXEMPT_HEAD=$(count_key "$_RAW_FILE" "EXEMPT_HEAD")
 EXEMPT_THRESH=$(count_key "$_RAW_FILE" "EXEMPT_TH")
 EXEMPT_MACHINE=$(count_key "$_RAW_FILE" "EXEMPT_MACHINE")
+EXEMPT_E7=$(count_key "$_RAW_FILE" "EXEMPT_E7")
 EXEMPT_ANCHOR=$(count_key "$_RAW_FILE" "EXEMPT_ANCHOR")
 
 # ── 锚失效检测（裁定 1）：声明的每条锚都必须仍匹配到命中行，否则被豁免的内容已变 ──
@@ -596,6 +694,7 @@ echo "  E5 机器注释         ${EXEMPT_HC} 行"
 echo "  E3 文件头版本标识   ${EXEMPT_HEAD} 行"
 echo "  E2 能力版本门槛     ${EXEMPT_THRESH} 行"
 echo "  E6 机器字面量       ${EXEMPT_MACHINE} 行"
+echo "  E7 产品文档台账形态 ${EXEMPT_E7} 行"
 echo "  E1 台账锚串豁免     ${EXEMPT_ANCHOR} 行（声明 ${ANCHORS_DECLARED} 条，逐条见 --list-exempt）"
 echo "                      ⓘ 行数 ≥ 条数是正常的：同一行可同时命中多类（如日期 + 版本号）"
 echo ""
@@ -604,11 +703,11 @@ echo "════════════════════════�
 #   asserts = 命中数 + 干净文件数（每个文件至少产出一条判定：有命中按命中数计，
 #             零命中按 1 条「该文件干净」计）
 #   covered = 实际扫描文件数（find 收集 − 路径豁免）
-#   skipped = 按豁免放行的命中行数（E1/E2/E3/E5/E6 之和；E4 已取消）——跳过是看不见的，故必须打印
+#   skipped = 按豁免放行的命中行数（E1/E2/E3/E5/E6/E7 之和；E4 已取消）——跳过是看不见的，故必须打印
 _CLEAN=$((FILES_SCANNED - FILES_HIT))
 ASSERTS=$((HITS + _CLEAN))
 COVERED="${FILES_SCANNED}"
-SKIPS=$((EXEMPT_HC + EXEMPT_HEAD + EXEMPT_THRESH + EXEMPT_MACHINE + EXEMPT_ANCHOR))
+SKIPS=$((EXEMPT_HC + EXEMPT_HEAD + EXEMPT_THRESH + EXEMPT_MACHINE + EXEMPT_E7 + EXEMPT_ANCHOR))
 
 if [ "$HITS" -gt 0 ]; then
   echo "  命中合计 ${HITS} 处（类1 ${HITS_V} / 类2 ${HITS_D} / 类3 ${HITS_R} / 类4 ${HITS_T}），分布在 ${FILES_HIT} 个文件"

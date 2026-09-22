@@ -144,7 +144,7 @@ graph TB
     M -.治理产生 Trajectory → 训练信号 → 新模型回到治理下灰度.-> L2
 ```
 
-> 这张图的三处关键精化（2026-08-16 明确）：
+> 这张图的三处关键精化：
 > - **L1 是「双图谱并行产出」不是单向转换**——Workflow Graph 管流转（**人读它理解企业怎么运转**）、Ontology Graph 管语义（**AI 读它理解企业是什么**），两者从同一次 FDE 访谈并行产出、互相校验（SHACL），不是「Workflow Graph 画完再转 Ontology Graph」（转换会丢访谈里的隐性知识）。**双图谱术语**：ontology 本身是哲学定义，加 Graph 让它成为可被理解、可视化的东西——FDE 交付的两张图谱即 Workflow Graph（多个 workflow 组成，人读的运转图）与 Ontology Graph（本体数据的图谱化形态，AI 读的语义图）。**行业坐标**：Workflow Graph / Ontology Graph / 知识图谱 / 上下文图谱同属「知识层」（描述业务世界），图谱工程（构建·校验·维护图谱的工程实践）属「工程层」——sofagent 的双图谱交付 = 用工程层方法产出知识层资产，行业对标详见 [VALIDATION](./VALIDATION.md)。
 > - **L2 是「编排层长期不动 + 执行层可换」两层分离**——编排层 LangGraph StateGraph 长期不换（确定性审计依赖显式图结构；换掉编排层 = 放弃确定性审计，这是架构级取舍而非永久承诺），执行层走 ExecutionBackend 接口：DSH 默认 / createReactAgent fallback / 三平台可选。DSH 是最大的一条河，但「堤修在哪条河上都行」，不把企业命脉押在 developer preview 上。
 > - **L3 挂的是「事件域」不是节点**——plugin 装一次即在 tools/result、turn-stopping、approval seam 上全域生效，无需逐节点插桩；独立模式（OpenClaw/WorkBuddy + git diff 审计）永远保留，不依赖 DSH 才成立。
@@ -250,7 +250,7 @@ v1.3.9 起对所有 workspace 包的入口 export 做显式分级，CI 门禁（
 >
 > **控制的两层**（读能力表前的一个定位）：平台（Agents API / guardrail 类）治**动作**——Agent 能不能删库、能不能调这个工具，答案写在平台文档里，generic；sofagent 治**判据**——交期改得对不对、报价能不能发，答案在这家企业的本体数据里。两层互补不互替：平台拦得住越权动作，拦不住业务对错。105 个 tool、24 条审计规则裁的都是后者——这是「嵌在 Agent 与模型之间」的确切含义。
 
-> 🗺️ **MCP 工具五域一环（105 tools）**（五域一环组织法 2026-09-02 收编；工具数 v1.4.5 增至 83，v1.4.6 增 train_cloud 至 84，v1.4.7 增 11 个至 95，v1.4.9 G9 增 device_register/device_list 至 97，G10/G11 增 device_data_query/device_data_push 至 99，G5b/G1 增连接器与模板 4 个至 103，批 5 增 router_session_push 至 104，v1.5.0 增 trace_reconcile 至 105）：工具不是工具箱清单，是一个组织的编制表——五域各司其职，六条箭头构成「执行→审计→沉淀→晋升」的自进化闭环；审计域（域三）是整条飞轮的数据源头，其执法手册即 24 条审计规则。
+> 🗺️ **MCP 工具五域一环（105 tools）**（工具数 v1.4.5 增至 83，v1.4.6 增 train_cloud 至 84，v1.4.7 增 11 个至 95，v1.4.9 G9 增 device_register/device_list 至 97，G10/G11 增 device_data_query/device_data_push 至 99，G5b/G1 增连接器与模板 4 个至 103，批 5 增 router_session_push 至 104，v1.5.0 增 trace_reconcile 至 105）：工具不是工具箱清单，是一个组织的编制表——五域各司其职，六条箭头构成「执行→审计→沉淀→晋升」的自进化闭环；审计域（域三）是整条飞轮的数据源头，其执法手册即 24 条审计规则。
 >
 > ⚠️ **三套标签不要混用**：五域按**业务职能**划分（本图组织法）；`tool-registry` 的 `roles` 是**使用场景标签**（7 面：audit/fde/eval/agent/ops/commons/browser），服务于 `SOFAGENT_MCP_ROLES` 按角色收窄暴露面；`docs/API.md` 的**十能力域**是文档编制分组（一个组 = 一个可独立讲述的产品能力）。三者用途不同，条目数不相等属预期——**工具总数的唯一权威源始终是 `engine/mcp/src/tool-registry.ts` 的 TOOLS 数组**。
 
@@ -453,7 +453,7 @@ graph LR
 
 > v1.1.0 将审计拆为独立 npm 包 `@sofagent/audit`，地基（约束注入链）和其余能力（编排/审计/进化）与回溯不受影响。
 
-### 功能编制（约束层内的功能模块 · 2026-09-06 定型）
+### 功能编制（约束层内的功能模块）
 
 > **定位声明**：对外产品唯一 = **FDE Harness**（约束层，注入·审计·回溯·沉淀·进化五能力）。下表「模块」是约束层内部的功能域编制称呼——**模块不是产品线，无独立入口，所有产出过审计与注册闸门**。「引擎」在对外叙事中**指约束层本体**（下表五模块构成的整体），单个功能域仍称「模块」；宿主 Agent、DSH、LangGraph 等**外部系统直接称其名**。**商业三层架构的中间层统一称「约束层」**（撤销原「商业三层架构中的引擎层」豁免；旧称「引擎层」全站弃用）。
 >
@@ -627,7 +627,7 @@ graph LR
 
 **自评判的实验警示（为什么审计必须外置的实验证据）**：[S³Gym](https://arxiv.org/abs/2608.31100)（字节 Seed，2026-08）用 7 个文字游戏、11.6 万条转移实测「自测试→自评判→自改进」三环耦合：自评判与环境真值的一致率可达 0.88，但价值估计误差同样高达 0.88（NMAE）——模型知道动作「看起来有用」，却严重估错其价值；更关键的是**评判准确度与下一步改进几乎零相关**（run 级 r=-0.23），「认得出好动作」不能保证「把反馈变成好策略」。这为「审计外置、只看 git diff 硬证据、不依赖 Agent 自我报告」提供了 benchmark 级证明：自我评分组织经验可以保留（think.md），但保留/晋升判定必须交给模型外信号。
 
-> 📖 来源：[S³Gym: Can LLMs Turn Self-Testing and Self-Judging into Self-Improvement?](https://arxiv.org/abs/2608.31100)（arXiv 2608.31100，2026-08-31 核实）
+> 📖 来源：[S³Gym: Can LLMs Turn Self-Testing and Self-Judging into Self-Improvement?](https://arxiv.org/abs/2608.31100)（arXiv 2608.31100，2026-08-31 检索）
 
 #### 运行时审计 tool wrapper
 
@@ -783,7 +783,7 @@ graph LR
 
 **蒸馏的精度门槛：合理而粗糙的建议，不如不给**。S³Gym 对 Summary Memory 的逐对比较给出一个蒸馏纪律的硬边界：经验能压缩成可复用策略规则的场景（博弈结构、可总结流程），蒸馏优于原始历史；依赖局部精确细节的场景（几何导航、状态敏感操作），「方向全对但缺精度」的总结反而有害（逐对实验数字见 [VALIDATION](./VALIDATION.md)）。对 think.md → knowledge/ 的启示：**蒸馏前先判经验的可压缩性**——能提炼为「条件 → 动作」规则的才进 knowledge/，依赖具体上下文细节的留在 think.md 原始轨迹层，宁可不清蒸馏，不可清错。
 
-> 📖 来源：[HarnessDev: Can LLMs Create and Evolve Their Own Agent Harness?](https://arxiv.org/abs/2609.01437) · [Aspire: Can Models Self-Evolve from Vague Goals?](https://arxiv.org/abs/2608.31111) · [S³Gym](https://arxiv.org/abs/2608.31100)（字节 Seed 自进化系列，self-developing-agents.github.io，2026-09-09 核实）
+> 📖 来源：[HarnessDev: Can LLMs Create and Evolve Their Own Agent Harness?](https://arxiv.org/abs/2609.01437) · [Aspire: Can Models Self-Evolve from Vague Goals?](https://arxiv.org/abs/2608.31111) · [S³Gym](https://arxiv.org/abs/2608.31100)（字节 Seed 自进化系列，self-developing-agents.github.io，2026-09-09 检索）
 
 ### 运行时数据层：引擎间数据流全景
 
@@ -949,7 +949,7 @@ sofagent 的编排模块从 v1.3.4 起显式分为两层——**编排层不换�
 
 **DSH 关系定位**：DSH 是「agent 框架插件化」路线，sofagent 是「FDE 方法论 + 确定性审计」路线。两者通过 `ExecutionBackend` 接口对接——DSH Cordis 运行时成为 sofagent 执行层默认后端，LangGraph createReactAgent 作为 fallback。
 
-> ⚠️ **接入门禁状态（2026-09-05 核正）**：早期候选包名（deepseek-harness / @dsh/core 等）曾长期 404，v1.4.0 已改走 **Cordis 内嵌路径**（@deepseek-ai/cordis@4.0.1 stable + `@deepseek-ai/dsh@0.1.2-alpha.3`（engine/orchestrator/package.json devDependencies 实测），rc.2 内嵌已验证可行：boot() + loadProfile() + 注入 cmdlineArgs/appExit + agent.followup 驱动，对照官方 dsh-headless runner 实现）。rc 期**内嵌为主路径**，内嵌执行失败自动 fallback CLI 桥接；LangGraph 作为最终 fallback。决策记录见 ROADMAP（precheck 证据注入保持主路径）。
+> ⚠️ **接入门禁状态**：早期候选包名（deepseek-harness / @dsh/core 等）曾长期 404，v1.4.0 已改走 **Cordis 内嵌路径**（@deepseek-ai/cordis@4.0.1 stable + `@deepseek-ai/dsh@0.1.2-alpha.3`（engine/orchestrator/package.json devDependencies 实测），rc.2 内嵌已验证可行：boot() + loadProfile() + 注入 cmdlineArgs/appExit + agent.followup 驱动，对照官方 dsh-headless runner 实现）。rc 期**内嵌为主路径**，内嵌执行失败自动 fallback CLI 桥接；LangGraph 作为最终 fallback。决策记录见 ROADMAP（precheck 证据注入保持主路径）。
 
 > 💡 **为什么不把整个编排层也换成 DSH**：DSH 的事件驱动模型（插件 A 触发 B → B 触发 C）没有显式执行路径，运行时才确定——而 sofagent 的审计模块（git diff 硬证据 + HMAC 链 + 波次审计卡关）全部依赖预先画好的 DAG 图结构。用 DSH 替代 LangGraph 编排 = 放弃确定性审计能力。分层使用 = 两者各取所长。
 

@@ -208,7 +208,7 @@
 | 日期 | 变更 |
 |------|------|
 | 2026-09-03 | 建档——80 tools 首次成清单，六大接口面总表 |
-| 2026-09-05 | v1.4.5 三件收编（train_serve/train_compliance/train_deliverable）80→83 |
+| 2026-09-05 | v1.4.5 三件并入（train_serve/train_compliance/train_deliverable）80→83 |
 | 2026-09-07 | 接口面六→七：新增「标准数据推送接口」第七面（v1.4.6 交付，验收标准转勾） |
 | 2026-09-11 | v1.4.7 新增 11 tool（workflow CRUD / PR 生命周期 / 绩效 / 缺口 / data_push 等）84→95 |
 | 2026-09-13 | v1.4.8 tools 面零新增，仍为 95 |
