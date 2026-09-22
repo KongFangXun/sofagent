@@ -171,11 +171,12 @@ cp SKILL/SKILL.md ~/.workbuddy/skills/sofagent/SKILL.md
 cp -r SKILL/harness/* ~/.workbuddy/skills/sofagent/
 cp SKILL/SKILL.md ~/.openclaw/skills/sofagent/SKILL.md
 cp -r SKILL/harness/* ~/.openclaw/skills/sofagent/
-cp SKILL/SKILL.md ~/.workbuddy/skills/sofagent-fde/
+# 🔴 sofagent-fde 目录的主入口来自子 skill（SKILL/agents/fde/），不要用主 SKILL.md 覆写——
+#    同名文件，写入顺序决定净结果（主入口被随后回写才侥幸正确），属顺序耦合
+cp SKILL/agents/fde/ ~/.workbuddy/skills/sofagent-fde/ 2>/dev/null || echo "FDE 目标目录不存在，跳过"
+cp SKILL/agents/fde/ ~/.openclaw/skills/sofagent-fde/ 2>/dev/null || echo "FDE 目标目录不存在，跳过"
 cp -r SKILL/agents/audit/ ~/.workbuddy/skills/sofagent-audit/
 cp -r SKILL/agents/audit/ ~/.openclaw/skills/sofagent-audit/
-cp -r SKILL/agents/fde/ ~/.workbuddy/skills/sofagent-fde/ 2>/dev/null || echo "FDE Harness 目录不存在，跳过"
-cp -r SKILL/agents/fde/ ~/.openclaw/skills/sofagent-fde/ 2>/dev/null || true
 
 # 3. 最终验证
 bash tools/check/check-version.sh   # 全绿
