@@ -1,14 +1,25 @@
 // sofagent-audit OpenClaw 插件测试
-// 覆盖：pluginMeta 元数据 / register 注册工具与 hook / default 导出契约
-import { describe, it, expect, vi } from 'vitest';
+// 覆盖：pluginMeta 元数据 / register 注册工具与 hook / 危险工具拦截 / pluginConfig.projectRoot 读取 / default 导出契约
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import register, { pluginMeta, DANGEROUS_TOOLS, extractCommand } from './index';
 
-function createMockApi() {
+declare const require: (id: string) => {
+  version?: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [k: string]: any;
+};
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
+
+function createMockApi(pluginConfig?: unknown) {
   const hooks: Record<string, unknown[]> = {};
   const tools: Record<string, unknown> = {};
   return {
     hooks,
     tools,
+    pluginConfig,
     on: vi.fn((name: string, handler: unknown, opts?: unknown) => {
       hooks[name] = hooks[name] ?? [];
       hooks[name].push({ handler, opts });
@@ -119,6 +130,47 @@ describe('sofagent-audit register', () => {
   });
 });
 
+// 防复发（配置静默失效）：manifest 声明了 `configSchema.projectRoot`（描述即「审计工作区
+// 根目录」），宿主把该配置经 schema 校验后从**插件 API 顶层 `pluginConfig`** 注入。旧实现
+// 硬编码 `process.cwd()`——用户在配置里指定 projectRoot 后，审计依然对宿主进程当前目录取
+// diff，「装在工作区 A、却审了目录 B」会让审计结论整体失真。
+//
+// 断言手法：插件工具在**执行期**动态 `require('@sofagent/audit')`，Node 的 require 缓存
+// 保证它与测试里 require 到的是同一个模块对象，因此在测试侧 spy 该模块即可观测
+// 「工具把哪个根交给了 audit」。不用 vi.mock：它拦不到源码里的动态 require。
+describe('projectRoot 配置读取（防「声明了配置但没人读」）', () => {
+  const executeAudit = async (pluginConfig?: unknown, params: Record<string, unknown> = { scope: 'workspace' }) => {
+    const api = createMockApi(pluginConfig);
+    register(api as never);
+    return (api.tools['sofagent_audit'] as { tool: { execute: (id: string, p: unknown) => Promise<unknown> } }).tool.execute('id-1', params);
+  };
+
+  it('pluginConfig.projectRoot 应作为 parseDiff 的根（而非宿主 cwd）', async () => {
+    const m = require('@sofagent/audit');
+    const spy = vi.spyOn(m, 'parseDiff').mockReturnValue([]);
+    vi.spyOn(m, 'runRules').mockReturnValue({ rules: [] });
+    await executeAudit({ projectRoot: '/tmp/configured-proj' });
+    expect(spy).toHaveBeenCalled();
+    expect(spy.mock.calls[0]?.[1]).toBe('/tmp/configured-proj');
+  });
+
+  it('未配置 projectRoot → 回落宿主 cwd', async () => {
+    const m = require('@sofagent/audit');
+    const spy = vi.spyOn(m, 'parseDiff').mockReturnValue([]);
+    vi.spyOn(m, 'runRules').mockReturnValue({ rules: [] });
+    await executeAudit(undefined);
+    expect(spy.mock.calls[0]?.[1]).toBe(process.cwd());
+  });
+
+  it('projectRoot 为空白串 → 视同未配置，回落 cwd（不审空根）', async () => {
+    const m = require('@sofagent/audit');
+    const spy = vi.spyOn(m, 'parseDiff').mockReturnValue([]);
+    vi.spyOn(m, 'runRules').mockReturnValue({ rules: [] });
+    await executeAudit({ projectRoot: '   ' });
+    expect(spy.mock.calls[0]?.[1]).toBe(process.cwd());
+  });
+});
+
 // v1.4.5 (T7/R4) 防复发：pluginMeta.version 必须与 package.json 一致——
 // 此前硬编码 '1.4.0' 落后实际 4 个版本。运行时读取后两者永远同步；
 // 本测试锁定「改回硬编码 + 忘 bump」的回归路径。
@@ -126,7 +178,6 @@ describe('sofagent-audit register', () => {
 // 用 process.cwd() 无效（测试可从任意目录起跑）。最稳妥：node:path + 相对
 // module 自身——但 ESM 无 __filename。此处用 require('../package.json') 双态
 // 通吃（vitest ESM 转译后 require 可用；CJS 原生可用）。
-declare const require: (id: string) => { version?: string };
 describe('pluginMeta.version 运行时同步（T7 防复发）', () => {
   it('pluginMeta.version === package.json version（不再硬编码漂移）', () => {
     const pkg = require('../package.json');

@@ -32,21 +32,34 @@ const _pkg: { version?: string } = require('../package.json');
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type OpenClawApi = any;
 
+/**
+ * 反思提示开关（register 时从插件配置捕获）。
+ *
+ * 🔴 为什么在这里读：manifest 声明了 `configSchema.reflectHint`，宿主把该配置经 schema
+ * 校验后通过插件 API 顶层的 `pluginConfig` 注入（OpenClaw 插件契约字段，SDK 侧类型为
+ * `pluginConfig?: Record<string, unknown>`）。此前在 hook 内读
+ * `ctx?.config?.plugins?.entries?.['sofagent-evolve']?.config`——agent 类 hook 的 ctx 由宿主
+ * 白名单构造（`buildAgentHookContext` 只展开 runId / agentId / sessionKey / workspaceDir /
+ * modelId 等 15 个字段，**不含 config**），该表达式恒得 undefined；也就是说「把 reflectHint
+ * 打开」在真实宿主里从来没生效过（默认关的语义恰好掩盖了这个缺陷）。
+ * 插件配置的正确读点只有 register 期的 `api.pluginConfig`。
+ */
+let reflectHint = false;
+
 /* @public */ export function register(api: OpenClawApi): void {
   const logger = api?.logger ?? console;
+  reflectHint = api?.pluginConfig?.reflectHint === true;
 
   // 1) before_prompt_build：注入收尾提示（**默认关闭**）
   //    🔴 为什么默认关：inject 插件的 L2 层已经把 think.md 注入 prompt，本插件若每轮再
   //    无条件 prepend 同一句样板，就是纯上下文噪声（同一件事两处注入）。需要「每轮提醒」
   //    的部署可在 openclaw.json 里显式打开 reflectHint。
   try {
-    api.on?.('before_prompt_build', (_event: unknown, ctx: any) => {
-      const cfg = ctx?.config?.plugins?.entries?.['sofagent-evolve']?.config;
-      if (cfg?.reflectHint !== true) return undefined;
+    api.on?.('before_prompt_build', () => {
+      if (!reflectHint) return undefined;
       try {
         // eslint-disable-next-line @typescript-eslint/no-require-imports
         const m = require('@sofagent/think');
-        const projectRoot = ctx?.config?.plugins?.entries?.['sofagent-evolve']?.config?.projectRoot ?? process.cwd();
         if (typeof m.generateThinkEntry === 'function') {
           // 存在性探测：能力可用即提示反思区已挂载（实际条目由 sofagent_evolve 工具生成）
           return { prependSystemContext: `[sofagent-evolve] 反思区已挂载——任务完成后调用 sofagent_evolve 沉淀经验（think.md）` };

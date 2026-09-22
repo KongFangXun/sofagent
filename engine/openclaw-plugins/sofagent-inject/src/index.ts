@@ -34,25 +34,36 @@ const _pkg: { version?: string } = require('../package.json');
 type OpenClawApi = any;
 
 /**
- * 已解析的项目根（hook 读配置后记下来）。
- * 🔴 为什么需要：hook 读 `config.projectRoot`，而工具此前硬编码 `process.cwd()`——
- * 用户在 openclaw.json 里指定 projectRoot 后，工具预览的注入内容会读错目录（误导调试，
- * 表现为「明明有约束配置却显示无内容」）。两处必须同源：hook 未跑过时才回落 cwd。
+ * 已解析的项目根（register 时从插件配置捕获）。
+ *
+ * 🔴 为什么需要：manifest 声明了 `configSchema.projectRoot`，宿主把该配置经 schema 校验后
+ * 通过插件 API 顶层的 `pluginConfig` 注入（OpenClaw 插件契约字段，SDK 侧类型为
+ * `pluginConfig?: Record<string, unknown>`）。两处必须同源：hook 与工具都取本变量，
+ * 都未配置时才回落 `process.cwd()`。
+ *
+ * 🔴 不要改读 hook 的 `ctx.config`：agent 类 hook 的 ctx 由宿主白名单构造
+ * （`buildAgentHookContext` 只展开 runId / agentId / sessionKey / workspaceDir /
+ * modelId 等 15 个字段），**不含 config**——照 `ctx?.config?.plugins?.entries?...` 取配置
+ * 会恒得 undefined 并静默回落，表现为「配置写了不生效」。插件配置的正确读点只有
+ * register 期的 `api.pluginConfig`。
  */
 let configuredRoot: string | undefined;
 
 /* @public */ export function register(api: OpenClawApi): void {
   const logger = api?.logger ?? console;
+  const pluginCfg = api?.pluginConfig;
+  configuredRoot = typeof pluginCfg?.projectRoot === 'string' && pluginCfg.projectRoot.trim()
+    ? pluginCfg.projectRoot
+    : undefined;
 
   // 1) before_prompt_build：注入四层加载链（会话级强制，对应 DSH tools/pre-execute 的注入形态）
   try {
-    api.on?.('before_prompt_build', (_event: unknown, ctx: any) => {
+    api.on?.('before_prompt_build', () => {
       try {
         // 动态 require：依赖未装/能力不可用时降级（插件可独立安装）
         // eslint-disable-next-line @typescript-eslint/no-require-imports
         const m = require('@sofagent/inject');
-        const projectRoot = ctx?.config?.plugins?.entries?.['sofagent-inject']?.config?.projectRoot ?? process.cwd();
-        configuredRoot = projectRoot; // 与工具同源（见文件头 configuredRoot 说明）
+        const projectRoot = configuredRoot ?? process.cwd(); // 与工具同源（见 configuredRoot 说明）
         const injected = typeof m.buildConstrainedSystemPrompt === 'function' ? m.buildConstrainedSystemPrompt(projectRoot) : '';
         if (injected) {
           return { prependSystemContext: injected };
@@ -80,7 +91,7 @@ let configuredRoot: string | undefined;
           try {
             // eslint-disable-next-line @typescript-eslint/no-require-imports
             const m = require('@sofagent/inject');
-            const projectRoot = configuredRoot ?? process.cwd(); // 与 hook 同源：config.projectRoot 生效
+            const projectRoot = configuredRoot ?? process.cwd(); // 与 hook 同源：pluginConfig.projectRoot 生效
             const injected = typeof m.buildConstrainedSystemPrompt === 'function' ? m.buildConstrainedSystemPrompt(projectRoot) : '';
             return {
               content: [{ type: 'text', text: injected ? `已注入四层加载链（${injected.length} 字符）：\n${injected.slice(0, 500)}` : '无注入内容（项目无约束配置）' }],

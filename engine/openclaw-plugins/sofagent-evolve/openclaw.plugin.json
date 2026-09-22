@@ -20,9 +20,6 @@
         "type": "boolean",
         "default": true
       },
-      "projectRoot": {
-        "type": "string"
-      },
       "brandColor": {
         "type": "string",
         "default": "#16B8F3"

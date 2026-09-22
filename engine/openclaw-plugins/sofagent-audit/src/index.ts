@@ -54,8 +54,26 @@ const _pkg: { version?: string } = require('../package.json');
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type OpenClawApi = any;
 
+/**
+ * 已解析的审计工作区根（register 时从插件配置捕获）。
+ *
+ * 🔴 为什么需要：manifest 声明了 `configSchema.projectRoot`（描述即「审计工作区根目录」），
+ * 宿主把该配置经 schema 校验后通过插件 API 顶层的 `pluginConfig` 注入（OpenClaw 插件契约
+ * 字段，SDK 侧类型为 `pluginConfig?: Record<string, unknown>`）。此前硬编码
+ * `process.cwd()`——用户在配置里指定 projectRoot 后，审计依然对宿主进程当前目录取 diff；
+ * 「装在工作区 A、却审了目录 B」会让审计结论整体失真。
+ *
+ * 读点只能是 register：`api.pluginConfig` 仅在注册期可达（工具执行期拿不到 api 对象），
+ * 故在注册时解析一次并缓存，工具内回落 `process.cwd()`。
+ */
+let configuredRoot: string | undefined;
+
 /* @public */ export function register(api: OpenClawApi): void {
   const logger = api?.logger ?? console;
+  const pluginCfg = api?.pluginConfig;
+  configuredRoot = typeof pluginCfg?.projectRoot === 'string' && pluginCfg.projectRoot.trim()
+    ? pluginCfg.projectRoot
+    : undefined;
 
   // 1) before_tool_call：危险工具拦截（对应 DSH tools/pre-execute，审计硬约束）
   // 🔴 OpenClaw 拦截契约（宿主 PluginHookBeforeToolCallResult）：拦停 = 返回
@@ -118,7 +136,7 @@ type OpenClawApi = any;
           try {
             // eslint-disable-next-line @typescript-eslint/no-require-imports
             const m = require('@sofagent/audit');
-            const projectRoot = process.cwd();
+            const projectRoot = configuredRoot ?? process.cwd(); // 与 register 同源：pluginConfig.projectRoot 生效
             // v1.4.5 审查 P1 修复：此前 m.runRules([], { projectRoot }) 传空 diff——
             // 空 diff 无可审内容恒 PASS（假绿），且 { projectRoot } 被误当 logEntries 位置参数。
             // 现按 scope 取真实 diff：workspace = git diff HEAD（整仓未提交变更），
