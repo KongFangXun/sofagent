@@ -59,6 +59,8 @@
 //   扫描面 = 全仓 .md − 有意排除（EXCLUDE_PATTERNS，每条带排除理由且逐条报命中数）
 //   「全仓」= PROJECT_ROOT 下全部 .md，仅**结构性**剪掉 node_modules / .git
 //   （非文档产出，且数量级会淹没口径；故不计入「有意排除」）。
+//   另：gitignored 本地目录（.workbuddy / .sofagent）属**有意排除**而非结构性剪枝——
+//   扫描面口径 = 受跟踪面，排除须可见、带理由、计入排除计数。
 //   脚本输出「扫描面 N / 全仓 M（有意排除 K）」——三数都不可省略：
 //   原实现只印「扫描 88 个」，88 与仓内数百个 .md 的差额无法解释，
 //   属「计数不可自解释」形态的空转。
@@ -70,13 +72,19 @@ import path from 'path';
 const PROJECT_ROOT = path.resolve(import.meta.dirname, '../..');
 const FIX_MODE = process.argv.includes('--fix');
 
-// 有意排除的目录（非文档产出 / 历史冻结）——**每条附排除理由**，
+// 有意排除的目录（gitignored 本地内容 / 非文档产出 / 历史冻结）——**每条附排除理由**，
 // 输出行会逐条打印实际命中数（清单条数须等于实测命中数，不得留死条目）。
 // 判据用**带首尾斜杠的规范路径**（`/` + rel + `/`）：目录名出现在任意层级都能命中，
 // **包括顶层**。此前只 walk 子目录，顶层 .git / node_modules 靠 fullPath 兜住；
 // 改为根递归后必须用这个写法，否则会递归进 .git（顶层 rel 恰为 ".git"，
 // 匹配不上 /[\/]\.git[\/]/）。
 const EXCLUDE_PATTERNS = [
+  // gitignored 本地内容（非仓库内容）——整目录排除，置于最前故优先级最高：
+  // 这些目录在全新克隆与 CI 中不存在，排除它们使扫描面与「受跟踪面」口径一致
+  // （同 check-archaeology / check-docs 死链扫描的既有口径）。
+  { re: /\/\.workbuddy\//, reason: '.workbuddy（gitignored 本地笔记/记忆，非仓库内容）' },
+  { re: /\/\.sofagent\//, reason: '.sofagent（gitignored 运行时状态，非仓库内容）' },
+  // 仓内文档子集（非文档产出 / 历史冻结）——每条同样附排除理由。
   { re: /\/dist\//, reason: 'dist（构建产物，非源文档）' },
   { re: /\/archive\//, reason: 'archive（历史冻结文档）' },
   { re: /\/changelog\//, reason: 'changelog（发版日志，锚点随版本冻结）' },
