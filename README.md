@@ -82,7 +82,7 @@
 
 > 🔗 **为什么必须一体**：交付物是两个阶段共享的活状态——进场时写入、离场后执行时读、进化时写回（试验分支晋升基线、反思蒸馏回流）。没有 FDE，约束层没有判据可执行；没有约束层，FDE 的判断随人离场蒸发。这正是「FDE Harness」名字的由来——不是 FDE 功能 + Harness 功能的拼盘，是同一件事的两个阶段。
 >
-> **从 FDE 到 FDEing——万物皆可 FDEing**：两个阶段的合成效果，是把 Forward Deployed **Engineer**（一个岗位）变成 Forward Deployed **Engineering**（一种能力）——岗位随人走，能力随交付物留。FDEing 读作 /ef-di-i-ing/，与 engineering 同构。**FDE 是名词，FDEing 是动词**——把 FDE 从一项人力工作变成一种可自动执行的能力（打法 × 判定 × 治理合成）：花更少的人力，提供更多的能力，任何业务对象、流程、节点，都可以被 FDEing 一遍「梳理 → 判定 → 交付 → 养护」；不限于软件：硬件节点、机器人运动过程同样是一条条 workflow，差别在执行器、不在治理形态。**它同时是一种思维方式**——做任何事之前先想三件：① 这件事的 workflow 怎么搭；② 其中的 AI 节点是什么；③ 怎么让 AI 更好地帮你实现（详见 [PHILOSOPHY · 从 FDE 到 FDEing](./docs/PHILOSOPHY.md)）。
+> **从 FDE 到 FDEing——万物皆可 FDEing**：两个阶段的合成效果，是把 Forward Deployed **Engineer**（一个岗位）变成 Forward Deployed **Engineering**（一种能力）——岗位随人走，能力随交付物留。**Forward Deployed Engineering 就是这种能力的正式名称**；FDEing 读作 /ef-di-i-ing/，即它的动词形态（FDE + ing）——万物皆可 FDEing，说的就是万物皆可被这套 Engineering 能力处理一遍。**FDE 是名词，FDEing 是动词**——把 FDE 从一项人力工作变成一种可自动执行的能力（打法 × 判定 × 治理合成）：花更少的人力，提供更多的能力，任何业务对象、流程、节点，都可以被 FDEing 一遍「梳理 → 判定 → 交付 → 养护」；不限于软件：硬件节点、机器人运动过程同样是一条条 workflow，差别在执行器、不在治理形态。**它同时是一种思维方式**——做任何事之前先想三件：① 这件事的 workflow 怎么搭；② 其中的 AI 节点是什么；③ 怎么让 AI 更好地帮你实现（详见 [PHILOSOPHY · 从 FDE 到 FDEing](./docs/PHILOSOPHY.md)）。
 
 <p align="center"><img src="docs/assets/arch-layers.svg" alt="sofagent 三层定位：模型层 → FDE Harness 层 → Agent 层" width="85%" /></p>
 
