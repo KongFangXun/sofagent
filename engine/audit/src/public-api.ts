@@ -1,4 +1,4 @@
-// ── API 分级契约（v1.5.0 四）────────────────────────────
+// ── API 分级契约（v1.5.1 四）────────────────────────────
 // `/* @public */`：公开 API——semver 锁定，变更必须 bump 版本 + CHANGELOG 记录
 //                 （外部依赖方与跨平台适配器只许 import 这一层）
 // `/* @internal */`：内部 API——不承诺稳定性，破坏性变更无需 bump
@@ -6,7 +6,7 @@
 // ────────────────────────────────────────────────────────
 // ============================================================
 // public-api.ts · @sofagent/audit 公共 API（barrel export）
-// v1.5.0: 供 @sofagent/mcp 等外部包使用的稳定接口
+// v1.5.1: 供 @sofagent/mcp 等外部包使用的稳定接口
 // ============================================================
 // 注意：此文件只导出已经稳定且被外部消费的符号。
 // 内部实现细节不要加到这里——避免泄露实现导致耦合。
@@ -23,7 +23,15 @@
 /* @public */ export { runCostAudit, loadWorklogSlice } from './cost-audit';
 /* @public */ export type { CostBudget, CostFinding, WorklogSlice } from './cost-audit';
 
-// v1.3.0 (交付 4)：规则清单只读暴露（list_rules 用）——默认规则 + 扩展规则全量
+// v1.3.0 (交付 4)：规则清单只读暴露——默认规则 + 扩展规则 + 全量聚合别名。
+// ⚠️ H2 · v1.5.1 更正（原注释写「list_rules 用」，点名的消费方是错的）：
+//   - MCP `list_rules` 实际只消费 defaultRules / extendedRules
+//     （见 engine/mcp/src/tools/list-rules.ts:14）；
+//   - `rules as allDiffRules` = `[...defaultRules, ...extendedRules]` 的全量聚合别名
+//     （见 ./rules/index.ts:87），仓内**零消费**——全仓仅本行与
+//     tools/check/public-api-baseline.json 命中。
+//   保留原因：已在 @public 基线内（semver 锁定），移除属 @public 退役，需走
+//   公告 + 基线同批改的流程；是否退役由维护者裁定，本批只更正注释、不动导出面。
 /* @public */ export { defaultRules, extendedRules, rules as allDiffRules } from './rules';
 /* @public */ export type { Rule, RuleClass, EvidenceMode } from './rules/types';
 
@@ -96,6 +104,33 @@
 // 按 tools/check/public-api.mjs 的 @internal 语义不计入 public API 基线。
 /* @internal */ export { appendChained, verifyChain, ChainKernelError } from './chain-kernel';
 /* @internal */ export type { AppendChainedOptions, VerifyChainOptions, ChainCheckStatus, ChainCheckResult, ChainFields } from './chain-kernel';
+
+// ── 审计输入双通道之「调用意图通道」（v1.5.1 第七章）──
+// @internal：跨生态内部接缝——**唯一生产消费方**是 DSH 插件
+// （engine/dsh-plugins/cordis-plugin-sofagent-audit/src/index.ts 的
+//  `tools/pre-execute` / `tools/result` 两个 seamHandler，经 helpers.call 桥接），
+// 故按 @internal 语义不计入 public API 基线（不承诺 semver 稳定性）。
+// 零执行权限：本通道只有「只读消费宿主事件 + 落盘留痕」两种能力，无拦截面。
+/* @internal */ export {
+  createIntentChannel,
+  resolveInputChannels,
+  ruleSupportsChannel,
+  readIntentEntries,
+  resolveIntentLogPath,
+  INTENT_EVENTS,
+  INTENT_LOG_FILENAME,
+  // 跳失留痕（v1.5.1 第七章·收口）——「跳过必须可审计」的落盘面：
+  // 生产消费方同上（插件在身份不可达时经 helpers.call 桥接 recordIntentSkip），
+  // readIntentSkips / summarizeIntentChannel 是运维「只读盘判断通道是否在工作」的查询面。
+  recordIntentSkip,
+  readIntentSkips,
+  resolveIntentSkipLogPath,
+  summarizeIntentChannel,
+  INTENT_SKIP_LOG_FILENAME,
+} from './intent-channel';
+/* @internal */ export type { IntentChannel, IntentChannelOptions, IntentEventContext } from './intent-channel';
+/* @internal */ export type { IntentSkipReason, IntentSkipRecord, IntentChannelStatus } from './intent-channel';
+/* @internal */ export type { IntentEntry, AuditInputChannel } from './rules/types';
 
 // ── 决策审计查询（v1.3.0 交付 6 T04；v1.3.6 交付⑮ 补 moment/agent/category/组合查询）──
 /* @public */ export {

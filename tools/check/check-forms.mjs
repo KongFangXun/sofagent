@@ -163,8 +163,9 @@ import path from 'node:path';
 const ROOT = path.resolve(import.meta.dirname, '..', '..');
 
 // ── 扫描面（显式清单：版本 → 开发日志）────────────────────────
+// 🔴 扫描窗口 = **未发版**版本（与下方 OPT_OUT_NOTE 同口径）：版本一旦发版即移出本清单——
+//    已发版版本的形态标注属历史档案，回填/对账均无意义（v1.5.0 发版后按此口径移出）。
 const VERSION_SOURCES = [
-  { version: 'v1.5.0', file: 'docs/changelog/v1.5/v1.5.0.md' },
   { version: 'v1.5.1', file: 'docs/changelog/v1.5/v1.5.1.md' },
   { version: 'v1.5.2', file: 'docs/changelog/v1.5/v1.5.2.md' },
   { version: 'v1.5.3', file: 'docs/changelog/v1.5/v1.5.3.md' },
@@ -192,7 +193,11 @@ const MIN_CHAPTERS = 60; // 实测基线 15 文件 / 78 章（判定底座施工
 
 // A2 排除面（无交付面 ⇒ 不要求标注）：固定标题两个；**指针存根章由 isPointerStub
 // （章体判据）另行豁免**——这里刻意不按标题形态豁免，理由见 isPointerStub 处注释。
+// Release Notes / Install 段是面向用户的发布说明复述面（阶段六定稿项），非交付章——
+// 硬打形态标注会污染 A7 形态计数对账（非功能 pin），故入排除面（标题带版本号后缀，用前缀匹配）。
+const SKIP_TITLE_PREFIXES = ['Release Notes', '⚡ Install'];
 const SKIP_TITLES = new Set(['定位', '与后续版本的依赖']);
+const isSkippedTitle = (title) => SKIP_TITLES.has(title) || SKIP_TITLE_PREFIXES.some((p) => title.startsWith(p));
 // A8 判定面（**宽**）：标题里出现标记 ⇒ 必须校验其目标。
 // 与 A2 的豁免面**解耦**是硬要求：两面共用一个谓词时，「标记写在末尾括注内 / 括注外」
 // 会决定它是否被校验——同一个不存在的版本号写括注内判红、写括注外完全免检（实测 P-d）。
@@ -398,8 +403,8 @@ const EXPECTED_LABELS = {
 // 标签集无新增，故 EXPECTED_LABELS 本次不动。
 const EXPECTED_COUNTS = {
   'v1.5.0': { 主干: 5, 插件: 1, 非功能: 3, 通道成分: 1 },
-  'v1.5.1': { 主干: 5, 通道: 3, 通道成分: 1, 非功能: 1 },
-  'v1.5.2': { 主干: 6, 通道成分: 2, 非功能: 1 },
+  'v1.5.1': { 主干: 7, 通道: 3, 通道成分: 1, 非功能: 3 },
+  'v1.5.2': { 主干: 7, 通道成分: 2, 非功能: 1 },
   'v1.5.3': { 主干: 4, 非功能: 3, 通道成分: 1 },
   'v1.5.4': { 主干: 5, 通道: 1, 非功能: 1 },
   'v1.5.5': { 主干: 2, 非功能: 1 },
@@ -607,7 +612,7 @@ function collectChapters(relFile) {
   const chapters = [];
   const pointers = [];
   headings.forEach((h, k) => {
-    if (SKIP_TITLES.has(h.title)) return;
+    if (isSkippedTitle(h.title)) return;
     const bodyEnd = k + 1 < headings.length ? headings[k + 1].index : lines.length;
     const bodyLines = lines.slice(h.index + 1, bodyEnd);
 

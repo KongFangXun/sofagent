@@ -2,7 +2,7 @@
 
 > **边界说明（v1.4.6 对齐 engine/scripts/README）**：`engine/scripts/` 是 install.sh 组装调用的**用户安装链**（task-record / cleanup / audit / lib/config 等随 `deploy_scripts()` 到达用户目标目录的 `scripts/` 下，install / verify / daemon 同理）；`tools/` 面向维护者发版 SOP 与仓库健康检查，不随安装分发。
 >
-> **目录结构（v1.3.9 物理分目录 · v1.5.0 收口 · v1.5.0 补 report/）**：按职能分子目录——check/ 门禁与测试统计、gen/ 草稿生成、report/ 报告生成、dashboard/ 仪表盘、release/ 发布与签名（v1.4.0 起含 `pre-push-check.sh` 四门禁聚合入口）、forge/ FORGE 运维、audit/ FDE 进场审计（脚本 + 问卷数据源同目录）、hooks/ 共享 hook 脚本（v1.4.0 交付五）、train/ 训练环境与设备打包（v1.4.4 归位）。**根目录无任何脚本与数据文件**（含 .mjs——vitest-setup 归 check/，训练脚本归 train/）。
+> **目录结构（v1.3.9 物理分目录 · v1.5.1 收口 · v1.5.1 补 report/）**：按职能分子目录——check/ 门禁与测试统计、gen/ 草稿生成、report/ 报告生成、dashboard/ 仪表盘、release/ 发布与签名（v1.4.0 起含 `pre-push-check.sh` 四门禁聚合入口）、forge/ FORGE 运维、audit/ FDE 进场审计（脚本 + 问卷数据源同目录）、hooks/ 共享 hook 脚本（v1.4.0 交付五）、train/ 训练环境与设备打包（v1.4.4 归位）。**根目录无任何脚本与数据文件**（含 .mjs——vitest-setup 归 check/，训练脚本归 train/）。
 
 ## 根目录
 
@@ -17,7 +17,7 @@
 | `check/check-test-count.sh` | 测试数对账（README/文档声称 vs 实测，双口径） | 发版 SOP / CI |
 | `check/test-count.sh` | workspace 测试数汇总（SSOT 反查 · 门禁用） | 发版 SOP / 常态 |
 | `check/sync-test-count.sh` | 测试数联动写入（实测值回写文档声称位） | 发版 SOP 数字收口 |
-| `check/check-review-system.sh` | 审查体系一致性（维度数/警戒线/S 编号闭环对账） | 发版 SOP 阶段七 |
+| `check/check-review-system.sh` | 审查体系一致性（维度数/警戒线/S 编号闭环对账） | 发版 SOP 阶段四 |
 | `check/check-tool-health.sh` | 工具脚本健康（路径活性/孤儿配置/set -u 守卫/README 收录对账——递归扫 tools/ 全部 .sh 含子目录；**README 未收录自 v1.4.8 起阻断**） | CI / 发版 SOP 阶段九 |
 | `check/check-unwired-exports.sh` | @public 导出接线深扫（S2 四断言：深扫接线/白名单/类型标注/eval 隔离） | 发版 SOP 阶段三/六 |
 | `check/check-wiring-guard.mjs` | 接线守卫（注册表级：注册漂移——分发面孤儿/旁挂清单越界引用；死路径——注册项无分发落点。**首版非阻断**，只提示不阻断；`--selftest` 合成回归验证必命中） | CI（非阻断）/ 发版 SOP / 定期（观察期） |
@@ -36,7 +36,7 @@
 | `dashboard/sofagent-dashboard.test.sh` | Dashboard 端到端冒烟（页面可达 + 数据面断言） | dashboard 改动后 |
 | `check/check-guards.sh` | 守卫的守卫（meta-guard：门禁脚本自身四类腐烂模式静态扫 + `--inject` 注入实测——红不了的门禁是装饰品） | 发版 SOP / CI |
 | `check/check-anchors.mjs` | 跨文档 Markdown 锚点引用活性校验（见 check-docs.sh 第 11 段） | 发版 SOP / CI |
-| `check/check-forms.mjs` | 「形态归属」标注一致性守卫（changelog ↔ ROADMAP） | 发版 SOP |
+| `check/check-forms.mjs` | 「形态归属」标注一致性守卫（changelog 章标注 ↔ ROADMAP 声明计数**双向对账**：每章须挂 `> **形态归属**：` 行 · 形态词封闭枚举 · 声明计数逐版 pin · 成分按结构判据提取；退出码 0 绿 / 1 违规 / 2 失明） | pre-push 第 3h 步 / 发版 SOP / 新增或改 changelog 章后 |
 | `check/check-cjk-var.sh` | shell 变量定界守卫（`$VAR` + CJK 全角标点误吞检测） | 改 shell 脚本后 / CI |
 | `check/check-guard-fail-loud.sh` | 防线失明自检门禁（PATH 劫持假检测引擎实测守卫 fail-loud——引擎故障下仍 exit 0 的守卫即失明不自知） | 发版 SOP / CI |
 | `check/check-shell-injection.sh` | 命令注入静态扫（engine 源码面：execSync 模板插值/字符串拼接注入形态——v1.4.3 安全修复批防线） | CI |
@@ -61,6 +61,7 @@
 | `check/source-block-exempt.txt` | 来源块溯源存量台账（被 `doc-discipline.sh` Face 3b 消费；逐文件逐类别计数**集合相等**判定——新增 / 漂移 / 陈旧均红。格式 `<类别>TAB<文件>TAB<计数>`，类别 ∈ {缺链接, 缺日期}；用 `.txt` 而非 `.json`，因消费方是 bash 而 macOS 不自带 jq。数字**只许随真实清理下调**——「只调数字不清理」= 假绿，与文档预算「只调警戒线不归并 = 不合格」同罪） | 被 doc-discipline.sh Face 3b 消费 |
 | `check/check-prepush-checklist.mjs` | pre-push 检查项清单对账（v1.4.9 G-16：`pre-push-check.sh` 里 `#   + <脚本名>` 清单声明的脚本名 **⊆ 实际被调用的脚本名**——子集非相等，实现多于清单合法；守「**声明了 X、实现里没有 X**」缺陷类（G-12 / G-11 同族）。清单提取为空 / 调用面提取为空 / 提取器能力探针失效 ⇒ exit 2 失明；退出码 0 绿 / 1 有未接线声明 / 2 检查器失明） | pre-push 第 1b 步 / 改 pre-push 检查项后 / `--selftest` |
 | `check/check-mjs-comment-backtick.mjs` | mjs/js 注释可执行反引号守卫：注释行反引号串首 token 形似仓内脚本路径或 npm/node/bash 命令头 = 危险——bash 误跑该文件时会把注释串当命令替换**真执行**（实锤：check-prepush-checklist.mjs 头部注释串曾让 bash 跑完整套 pre-push 防线数分钟）。退出码 0 绿 / 1 有违规（改单引号）/ 2 引擎故障 | check-tool-health 第 ⑨ 项 / 新写 .mjs 注释含反引号路径串后 |
+| `check/check-gate-inventory.sh` | 门禁清单覆盖对账（**登记 ≠ 调用**：`tools/check/` 全体守卫 ⊆ 真实调用面——抓「脚本写好、登记在册、零调用点」的**孤儿守卫**，其红态无人知晓）。口径四项显式声明：脚本面认裸名且**剔注释行** · 文档面只认 `tools/check/` 路径化引用 · **登记表与 `docs/changelog/v*` 历史记述不在任何面内**（描述守卫 ≠ 调用守卫）· 区分大小写。豁免写 `playbook/.gate-inventory-exempt`（`文件名:理由`，理由不可为空）。**语料装载完整性对账**（清单件数 ≡ 语料件数 ∧ 语料行数 ≡ 非空件行数之和）把「漏载某个面」这一整类故障变成 exit 2，而非静默把真接线误判成孤儿。退出码 0 绿 / 1 有孤儿或陈旧豁免 / 2 失明 | pre-push 第 1c 步 / 新增或搬迁 tools/check/ 守卫后 |
 | `check/lib/coverage-line.sh` | 门禁覆盖度行统一范式（`[check:coverage] script=… asserts=… covered=… skipped=…`，让「跳过」可见可 grep） | 被 check-docs / check-silent-catch 等 source |
 | `check/silent-catch-prefilter-exempt.json` | 静默吞错扫描的文件级前置过滤豁免台账（被 `check-silent-catch.mjs` 消费） | 被 check-silent-catch.mjs 消费 |
 
@@ -68,7 +69,7 @@
 
 | 脚本 | 用途 | 何时使用 |
 |------|------|---------|
-| `gen/gen-abc-draft.mjs` | 阶段五 A/B/C 三类清单草稿（单次 LLM） | 发版 SOP 阶段五 |
+| `gen/gen-abc-draft.mjs` | 阶段四 A/B/C 三类清单草稿（单次 LLM） | 发版 SOP 阶段四 |
 | `gen/gen-fresh-eyes-draft.mjs` | fresh-eyes 16 视角审查草稿（单次 LLM） | fresh-eyes-loop |
 | `gen/gen-acceptance-shard-prompts.mjs` | 验收测试 12 分片 prompt 生成 | 发版 SOP |
 | `gen/gen-perspective-prompts.mjs` | 24 视角 prompt 生成 | fresh-eyes-loop |
@@ -91,7 +92,8 @@
 | 脚本 | 用途 | 何时使用 |
 |------|------|---------|
 | `release/bump-version.sh` | 版本号 bump（SSOT 联动 253+ 处） | 发版 SOP 阶段三 |
-| `release/pre-push-check.sh` | 推送前完整检查（CI 等价聚合 22+ 检查位：shellcheck / check-version / check-unwired-exports / check-template-drift / check-open-boundary / check-docs / check-literals / check-anchors / build / test-count / check-test-count / forge-smoke / check-cjk-var / check-tool-health（v1.4.9 G-12 接入） + CLI `--help` 矩阵 / install.sh 路径 / tag 校验 / 依赖图 / CHANGELOG 元信息等；`--quick` 跳过 test/build，`--minimal` 结构性快检；v1.4.0 由根目录移入） | git push 前 |
+| `release/pre-push-check.sh` | 推送前完整检查（CI 等价聚合 22+ 检查位：shellcheck / check-prepush-checklist / check-gate-inventory / check-version / check-unwired-exports / check-template-drift / check-open-boundary / check-cross-package-relative / check-docs / check-literals / check-anchors / check-review-system / check-silent-catch / dependency-direction / check-tool-health（v1.4.9 G-12 接入） / doc-discipline / check-forms / build / test-count / check-test-count / forge-smoke / check-cjk-var / check-guard-fail-loud / check-home-resolution-parity + CLI `--help` 矩阵 / install.sh 路径 / tag 校验 / 依赖图 / CHANGELOG 元信息等；`--quick` 跳过 test/build，`--minimal` 结构性快检；v1.4.0 由根目录移入） | git push 前 |
+| `release/heavy-gate-receipt.sh` | 长跑门禁「一次跑、多环节复用」凭据（`acceptance-test.sh` 单跑 9~15 分钟，而阶段三/四/五会反复跑同一内容 ⇒ 最高 5 倍耗时且零新信息）。子命令 `fingerprint` / `verify` / `record` / `show`；指纹为**工作区内容树对象 sha**（临时 index + `git add -A` + `write-tree`——**内容寻址**，故 `git commit` 不使其过期）。四道防线：内容指纹 · 原始日志须在位非空 · 日志须真有绿灯摘要（`log_looks_green`）· `record --pre <指纹>` 钉住长跑**开始前**的内容（中途改文件 ⇒ 拒落凭据 exit 3）。退出码 0 可复用 / 2 失明拒绝假绿 / 3 需重跑。凭据库 `.sofagent/heavy-gate-receipts.log`（已 gitignore ⇒ 自指回避） | 发版 SOP 阶段五脚本层 |
 | `release/publish-packages.sh` | npm 包批量发布（workspace 全量） | 发版 SOP 阶段十一 |
 | `release/sign-config.mjs` | config.yml HMAC-SHA256 签名颁发（读 `~/.sofagent-key`，DP-2） | 安装后 |
 | `release/gitdata-push.mjs` | Git Data API 推送备选通道（blobs→trees→commits→refs，https 断连绕行） | push 502 时 |
@@ -134,7 +136,7 @@
 |------|------|---------|
 | `report/evolution-report.mjs` | 进化实证报告生成（Dream Cycle 持续采样 → skill-impact 台账汇总） | 进化模块周报 / 发版证据 |
 
-## 十、不接 CI 的工具（人工 / 按需触发 · v1.5.0 第2批登记）
+## 十、不接 CI 的工具（人工 / 按需触发 · v1.5.1 第2批登记）
 
 以下脚本**刻意不接 CI**——接了会永久红或本身不是门禁。此处登记用途与「不接线」理由，防「不登记的新脚本过几版就没人知道为什么存在」（对齐 `docs/changelog/releasing/07-tool-health.md` 的登记纪律）。
 

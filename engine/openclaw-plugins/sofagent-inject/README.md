@@ -47,7 +47,7 @@ clawhub package validate .  # Plugin Inspector 校验（0 breakage / 0 warning�
 ## 发布
 
 ```bash
-clawhub package publish . --family code-plugin --name sofagent-inject --version 1.4.0
+clawhub package publish . --family code-plugin --name sofagent-inject --version "$(node -p "require('./package.json').version")"
 ```
 
 ## 说明

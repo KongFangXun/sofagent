@@ -8,8 +8,12 @@
 // 扫描 engine 各子包 src 下的「catch 后空块或仅注释块」，且所在文件
 // 含 audit / persist / notice / daemon / history / write / snapshot
 // 关键词（关键持久化路径）的，输出 ❌ 清单。
-// 扫描面（v1.4.8 起）：engine/ 一级包 src **＋** engine/dsh-plugins/*/src 与
-// engine/openclaw-plugins/*/src（嵌套二级插件，此前为覆盖盲区）——共 28 个包。
+// 扫描面（v1.5.1 起）：engine/ 一级包 src **＋** engine/dsh-plugins/*/src 与
+// engine/openclaw-plugins/*/src（嵌套二级插件，此前为覆盖盲区）——共 28 个包；
+// **＋ tools/ 下全部 *.mjs**（v1.5.1 J4 扩面：`tools/` 是「非 workspace / 不被 check
+//   自扫描 / 不被 acceptance 覆盖内部正确性」的无主之地，吞错此前在视野外）——32 个 .mjs。
+//   tools/ 侧**不走文件级前置过滤**（下方 prefilter 是「非关键路径文件默认不判」的
+//   误报抑制启发式）：tools/ 均属关键工具路径，且守卫自身的失败必须可判。
 //
 // 实现说明：仓库 typescript 为 6.x（package exports 只开 ./lib/version.cjs
 // 与 unstable API 面，无经典 createSourceFile 走线）——正则轻扫替代 AST：
@@ -24,6 +28,13 @@
 //          （模板字面量内的 shell 片段）。判据：命中行位于反引号模板内、
 //          且不属「关键持久化路径」语义面 ⇒ 误报。
 //   处置：新增命中若属此类，**勿改判定逻辑**（会削弱真命中），改为在基线登记并注明类 A。
+//   类 B · 门禁自身源码里的**注释行** —— v1.5.1 J4 把扫描面扩到 tools/**/*.mjs 后，
+//          本脚本（及同类门禁）头部文档注释里以文字描述 catch 形态
+//          （如 `// 同行空 catch：catch (...) { } 或 catch { }`）会被自身扫到。
+//          判据：命中行 trim 后以 `//` 或 `*` 或 `/*` 起首 ⇒ 注释行 ⇒ 误报
+//          （注释不产生控制流，不可能吞错）。实测 4 处，全部在本脚本内。
+//          处置：同上——**落基线登记**。**不**加「跳过注释行」判定分支：那会改变
+//          engine 侧同源的判定面（v1.5.1 J4 保留声明要求 engine 侧判定逻辑不动）。
 //
 // 存量豁免：首跑产出基线清单 tools/check/silent-catch-baseline.json，
 // 门禁只拦**新增**空 catch（存量按节奏消化）。--update-baseline 重生成。
@@ -77,14 +88,17 @@
 //   （新出现的未登记跳过 / 已登记但不再跳过）。**不再静默跳过**。
 //   ⚠️ 语义边界（诚实标注，勿误读为已修）：落盘的是「已知覆盖盲区」的显式承认，
 //   不是「已检查」——登记表只让盲区可见可审计，把盲区收窄需逐文件把关键词纳入判定面
-//   或改前置过滤为内容级判据（属门禁演进，不在 v1.4.9 批）。因此 K>0 不阻断退出码，
-//   但必须打印（发版 SOP「SKIP 数逐条裁决」步骤逐条裁定）。
-//   为何不阻断新跳过：前置过滤是**误报抑制**启发式（非关键路径文件默认不判），
-//   任何新增非持久化文件都会合法落此名单——阻断会制造持续噪音并诱导 `--update-*`
-//   一键消音，反而稀释门禁。故取「可见 + 需显式登记」而非「默认阻断」。
+//   或改前置过滤为内容级判据（属门禁演进，不在本批）。
+//   **台账漂移（新出现未登记跳过文件）⇒ EXIT 1**（v1.5.1 F2 收紧）：一个文件绕过前置
+//   过滤登记 = 「有代码绕过了检查」，与「检查通过」是两回事——**不得留在「既未登记
+//   也未判定」的中间态**。收编后即绿：node tools/check/check-silent-catch.mjs --update-prefilter-exempt
+//   （v1.4.9 原取「可见但不断退出码」，实测后果是 3 个文件长期停在中间态而门禁全绿——
+//    这正是「守卫不得空转」要杀的形态，故本轮改为阻断。）
+//   K>0（已登记在册的盲区）本身仍不阻断退出码——那部分由发版 SOP「SKIP 数逐条裁决」逐条裁定。
 //
-// 退出码: 0 = 无新增静默吞错 / 1 = 有新增 **或** 基线键格式非内容级 / 检查器失明 /
-//            迁移被拒（后三者均为「拒绝假绿」路径，无需区分——stderr 文案已明示原因）
+// 退出码: 0 = 无新增静默吞错 **且** 前置过滤台账无漂移 / 1 = 有新增 **或** 台账漂移 **或**
+//            基线键格式非内容级 / 检查器失明 / 迁移被拒
+//            （后四者均为「拒绝假绿」路径，无需区分——stderr 文案已明示原因）
 // ============================================================
 
 import fs from 'fs';
@@ -101,7 +115,11 @@ const UPDATE_EXEMPT = process.argv.includes('--update-prefilter-exempt');
 const MIGRATE = process.argv.includes('--migrate-baseline-key-format');
 
 // 关键路径关键词（命中任一即视为「失败不可无痕」域）
-const CRITICAL_FILE_HINTS = /audit|persist|notice|daemon|history|snapshot|write|crypto|hmac/i;
+// 事件路由面（`events/`）与错误定位面（`localiz`）同属本域——事件投递失败与降级定位都是
+// 「静默即丢证据」的路径。此前二者不在关键词集内，导致整文件被前置过滤跳过、其 catch
+// 从不进入判定（「有代码绕过了检查」）。收编方式取「纳入判定面」而非「登记进豁免台账」：
+// 豁免台账是承认覆盖盲区，而这些文件恰恰是失败行为的核心承载面，不该被盲区登记掉。
+const CRITICAL_FILE_HINTS = /audit|persist|notice|daemon|history|snapshot|write|crypto|hmac|events\/|localiz/i;
 
 // 同行空 catch：catch (...) { } 或 catch { } 或 catch (...) { /* 仅注释 */ }
 const SAME_LINE_EMPTY = /catch\s*(\([^)]*\))?\s*\{[\s]*(?:\/\*[^*]*\*\/|\/\/[^\n]*)?[\s]*\}/;
@@ -116,25 +134,63 @@ function normalizeClause(raw) {
 }
 
 // 覆盖度行（v1.4.9 G-2②）：与 tools/check/lib/coverage-line.sh 逐字段同格式同语义。
-//   asserts = 真正做出判定的断言数（本脚本 v1.4.9 G-7 起 3 条：
+//   asserts = 真正做出判定的断言数（本脚本 v1.5.1 起 4 条：
 //             ① 新增空 catch 判定 ② 基线键格式自证（不含 `::#` ⇒ 拒绝在旧格式上比对）
-//             ③ 失明自检（扫描 0 站点但基线非空 ⇒ 拒绝假绿））
+//             ③ 失明自检（扫描 0 站点但基线非空 ⇒ 拒绝假绿）
+//             ④ 前置过滤台账漂移判定（新出现未登记跳过文件 ⇒ FAIL · v1.5.1 F2））
 //   covered = 实际进入判定的文件数 · skipped = 被前置过滤跳过的文件数
 function emitCoverage(asserts, covered, skipped) {
   console.log(`[check:coverage] script=check-silent-catch asserts=${asserts} covered=${covered} skipped=${skipped}`);
 }
 
-function collectSources(dir, out = []) {
+function collectSources(dir, out = [], exts = ['.ts']) {
   for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
     const p = path.join(dir, e.name);
     if (e.isDirectory()) {
       if (['dist', 'node_modules', '__tests__'].includes(e.name)) continue;
-      collectSources(p, out);
-    } else if (e.name.endsWith('.ts') && !e.name.endsWith('.d.ts') && !e.name.endsWith('.test.ts')) {
+      collectSources(p, out, exts);
+    } else if (exts.some(x => e.name.endsWith(x)) && !e.name.endsWith('.d.ts') && !e.name.endsWith('.test.ts')) {
       out.push(p);
     }
   }
   return out;
+}
+
+// 单文件判定（v1.5.1 J4 抽出）：engine 侧与 tools 侧**共用同一份判定实现**，
+// 差异只在「是否先过文件级前置过滤」——tools/ 不过（见头部扫描面说明）。
+function judgeFile(rel, content) {
+  const lines = content.split('\n');
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (!line.includes('catch')) continue;
+    // 豁免：注释里写明「为何可静默」
+    const ctx = lines.slice(i, i + 4).join('\n');
+    if (/为何可静默/.test(ctx)) continue;
+    // 子句文本起点（v1.4.9 G-7）：自本行首个 `catch` 起——判定仍在本行上做（行为不变），
+    // 仅取键原料时剥掉 catch 之前的前缀（如 `} else {`）。
+    const ci = line.indexOf('catch');
+    const head = ci >= 0 ? line.slice(ci) : line;
+    // 形态一：同行空块
+    if (SAME_LINE_EMPTY.test(line)) {
+      // 子句文本：自首个 catch 起到本 catch 块闭合 }。
+      // 用「切片后重匹配」与本行判定同源（判定在整行上做，子句只取 catch 起的那一段，
+      // 避免把行首 `} else {` 之类前缀带进键）。
+      const m = head.match(SAME_LINE_EMPTY);
+      sites.push({ rel, line: i + 1, clause: normalizeClause(m ? m[0] : head) });
+      continue;
+    }
+    // 形态二：catch 行只有 {，下一非空行是 }（跨行空块，可含注释行）
+    if (/catch\s*(\([^)]*\))?\s*\{\s*$/.test(line)) {
+      let j = i + 1;
+      while (j < lines.length && (lines[j].trim() === '' || lines[j].trim().startsWith('//') || lines[j].trim().startsWith('/*') || lines[j].trim().startsWith('*'))) j++;
+      if (j < lines.length && lines[j].trim().startsWith('}')) {
+        // 子句 = catch 头行 + 其间注释/空行 + 闭合行到 }。空白折叠后即「catch … { …注释… }」
+        const mid = lines.slice(i + 1, j).join('\n');
+        const close = lines[j].slice(0, lines[j].indexOf('}') + 1);
+        sites.push({ rel, line: i + 1, clause: normalizeClause(`${head}\n${mid}\n${close}`) });
+      }
+    }
+  }
 }
 
 // 站点（v1.4.9 G-7）：内容级键的原料，也是本轮命中的**唯一**真源（原 `findings`
@@ -174,38 +230,18 @@ for (const pkgName of packages) {
       continue;
     }
     scannedFiles.push(rel);
-    const lines = content.split('\n');
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i];
-      if (!line.includes('catch')) continue;
-      // 豁免：注释里写明「为何可静默」
-      const ctx = lines.slice(i, i + 4).join('\n');
-      if (/为何可静默/.test(ctx)) continue;
-      // 子句文本起点（v1.4.9 G-7）：自本行首个 `catch` 起——判定仍在本行上做（行为不变），
-      // 仅取键原料时剥掉 catch 之前的前缀（如 `} else {`）。
-      const ci = line.indexOf('catch');
-      const head = ci >= 0 ? line.slice(ci) : line;
-      // 形态一：同行空块
-      if (SAME_LINE_EMPTY.test(line)) {
-        // 子句文本：自首个 catch 起到本 catch 块闭合 }。
-        // 用「切片后重匹配」与本行判定同源（判定在整行上做，子句只取 catch 起的那一段，
-        // 避免把行首 `} else {` 之类前缀带进键）。
-        const m = head.match(SAME_LINE_EMPTY);
-        sites.push({ rel, line: i + 1, clause: normalizeClause(m ? m[0] : head) });
-        continue;
-      }
-      // 形态二：catch 行只有 {，下一非空行是 }（跨行空块，可含注释行）
-      if (/catch\s*(\([^)]*\))?\s*\{\s*$/.test(line)) {
-        let j = i + 1;
-        while (j < lines.length && (lines[j].trim() === '' || lines[j].trim().startsWith('//') || lines[j].trim().startsWith('/*') || lines[j].trim().startsWith('*'))) j++;
-        if (j < lines.length && lines[j].trim().startsWith('}')) {
-          // 子句 = catch 头行 + 其间注释/空行 + 闭合行到 }。空白折叠后即「catch … { …注释… }」
-          const mid = lines.slice(i + 1, j).join('\n');
-          const close = lines[j].slice(0, lines[j].indexOf('}') + 1);
-          sites.push({ rel, line: i + 1, clause: normalizeClause(`${head}\n${mid}\n${close}`) });
-        }
-      }
-    }
+    judgeFile(rel, content);
+  }
+}
+
+// v1.5.1 J4 扩面：tools/ 下全部 .mjs（详见头部扫描面说明）——**不过前置过滤**，
+// 逐个进判定面；其吞错此前完全在视野外（如 tools/dashboard/serve-dashboard.mjs）。
+const TOOLS = path.join(ROOT, 'tools');
+if (fs.existsSync(TOOLS)) {
+  for (const file of collectSources(TOOLS, [], ['.mjs'])) {
+    const rel = path.relative(ROOT, file);
+    scannedFiles.push(rel);
+    judgeFile(rel, fs.readFileSync(file, 'utf8'));
   }
 }
 
@@ -264,10 +300,13 @@ if (UPDATE_EXEMPT) {
 const newlySkipped = skippedList.filter(f => !exemptBaseline.includes(f));
 const staleExempt = exemptBaseline.filter(f => !skippedList.includes(f));
 
+// 打印豁免台账状态；并返回是否漂移（v1.5.1 F2）：
+//   true ⇒ 存在「未登记即被跳过」的文件（或登记表整体缺失）——调用方据此 EXIT≠0。
+// 漂移 = 有代码绕过检查，与「检查通过」是两回事，不得停留在中间态。
 function reportPrefilterExemption() {
   console.log(
     `📊 前置过滤豁免（显式登记 · 不再静默跳过）：跳过 ${skippedList.length} 个 / 实际判定 ${scannedFiles.length} 个` +
-      `（扫描面 ${skippedList.length + scannedFiles.length} 个 .ts）`,
+      `（扫描面 ${skippedList.length + scannedFiles.length} 个源文件 = engine/**/*.ts ＋ tools/**/*.mjs）`,
   );
   console.log(
     `   ⚠️ 其中 ${skippedCatchFiles.length} 个文件含 ${skippedCatchClauses} 处 catch 子句**零覆盖**——本门禁从不判定它们（已知覆盖盲区，非「已检查」）`,
@@ -290,6 +329,25 @@ function reportPrefilterExemption() {
   } else {
     console.log(`   ✓ 豁免台账与实测一致（${skippedList.length}/${skippedList.length}，登记表 ${path.relative(ROOT, PREFILTER_EXEMPT)}）`);
   }
+  return !exemptFileExists || newlySkipped.length > 0;
+}
+
+// 台账漂移判据（v1.5.1 F2）：登记表缺失，或有「未登记即被跳过」的文件。
+function prefilterLedgerDrifted() {
+  return !exemptFileExists || newlySkipped.length > 0;
+}
+
+// 台账漂移的 fail-loud 收口（v1.5.1 F2）：**只在成功判定路径**上调用——
+// 失败路径本就 EXIT 1，无需重复；`--update-*` / `--migrate-*` 是登记写入模式，不适用。
+function failIfLedgerDrift() {
+  if (!prefilterLedgerDrifted()) return;
+  console.error(
+    `❌ 前置过滤台账漂移：存在未经登记即被跳过的文件（或登记表缺失）——「有代码绕过了检查」≠「检查通过」（v1.5.1 F2 · 拒绝假绿）`,
+  );
+  console.error(
+    `   处置：复核这些文件确实属「非关键路径」后收编台账 ` +
+      `node tools/check/check-silent-catch.mjs --update-prefilter-exempt（或把其关键词纳入判定面）`,
+  );
 }
 
 // ── 格式迁移（一次性 · v1.4.9 G-7）：旧行号键 → 新内容键 ────────────
@@ -349,7 +407,7 @@ if (MIGRATE) {
   );
   if (!setEq) process.exit(1);
   reportPrefilterExemption();
-  emitCoverage(3, scannedFiles.length, skippedList.length);
+  emitCoverage(4, scannedFiles.length, skippedList.length);
   process.exit(0);
 }
 
@@ -358,7 +416,7 @@ if (UPDATE) {
   fs.writeFileSync(BASELINE, JSON.stringify([...new Set(contentKeys)].sort(), null, 2) + '\n');
   console.log(`基线已更新：${new Set(contentKeys).size} 条存量记录（内容级键）→ ${path.relative(ROOT, BASELINE)}`);
   reportPrefilterExemption();
-  emitCoverage(3, scannedFiles.length, skippedList.length);
+  emitCoverage(4, scannedFiles.length, skippedList.length);
   process.exit(0);
 }
 
@@ -381,7 +439,7 @@ if (sites.length === 0 && baseline.length > 0) {
   );
   console.error(`   扫描面文件数 ${scannedFiles.length} / 前置过滤跳过 ${skippedList.length}——请核查扫描根与过滤条件`);
   reportPrefilterExemption();
-  emitCoverage(3, scannedFiles.length, skippedList.length);
+  emitCoverage(4, scannedFiles.length, skippedList.length);
   process.exit(1);
 }
 // 键唯一性自证（v1.4.9 G-7）：带出现序号后，站点数必须**逐一**对应唯一键。
@@ -390,7 +448,7 @@ if (new Set(contentKeys).size !== sites.length) {
   console.error(
     `❌ 内容级键唯一性自证失败：站点 ${sites.length} 个 / 唯一键 ${new Set(contentKeys).size} 条——序号逻辑失效（会少报站点）`,
   );
-  emitCoverage(3, scannedFiles.length, skippedList.length);
+  emitCoverage(4, scannedFiles.length, skippedList.length);
   process.exit(1);
 }
 
@@ -401,6 +459,14 @@ const staleKeys = baseline.filter(k => !contentKeys.includes(k));
 
 const newOnes = contentKeys.filter(k => !baseline.includes(k));
 if (newOnes.length === 0) {
+  // v1.5.1 F2：台账漂移先于绿色结论判定——「有代码绕过了检查」（未登记即被跳过）
+  // 与「检查通过」是两回事，不得同屏给出「✓ 通过」再报漂移。漂移 ⇒ EXIT 1。
+  if (prefilterLedgerDrifted()) {
+    failIfLedgerDrift();
+    reportPrefilterExemption();
+    emitCoverage(4, scannedFiles.length, skippedList.length);
+    process.exit(1);
+  }
   console.log(`✓ 静默吞错检查通过（存量 ${baseline.length} 条内容级键按基线豁免，本轮新增 0）`);
   if (staleKeys.length > 0) {
     console.log(`ℹ️ 基线陈旧条目 ${staleKeys.length} 条（已不再命中实测——catch 已修好或子句已改写，可择机收窄）：`);
@@ -410,7 +476,7 @@ if (newOnes.length === 0) {
     console.log(`   ✓ 基线无陈旧条目（${baseline.length} 条全部命中实测）`);
   }
   reportPrefilterExemption();
-  emitCoverage(3, scannedFiles.length, skippedList.length);
+  emitCoverage(4, scannedFiles.length, skippedList.length);
   process.exit(0);
 }
 
@@ -425,5 +491,5 @@ if (staleKeys.length > 0) {
 console.error('修法：失败时至少走既有 logger 输出一行 warn（降级可见），或注释「为何可静默」豁免标记。');
 console.error('存量修复后收窄基线：node tools/check/check-silent-catch.mjs --update-baseline');
 reportPrefilterExemption();
-emitCoverage(3, scannedFiles.length, skippedList.length);
+emitCoverage(4, scannedFiles.length, skippedList.length);
 process.exit(1);

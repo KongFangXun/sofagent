@@ -229,12 +229,26 @@ function registerDaemon(cwd: string): void {
 
   // 已有 plist → 询问是否覆盖(单例互踩根因——不再静默卸载覆盖）
   if (existsSync(plistPath)) {
-    let oldTarget = '(无法读取)';
+    // v1.5.1 J4b-②：读失败**不得拿未知值做决策**（fail-loud）。
+    // 改前该分支是「catch 块体内只有一句『读不了就按未知处理』注释」的空块形态 →
+    // oldTarget 保持 `'(无法读取)'`，
+    // 接着仍向用户提问「已有 daemon 注册（指向 (无法读取)），是否覆盖为当前项目？」——
+    // 把「未知」当合法值喂进覆盖决策；用户答 y 就在信息缺失下覆盖了别人的注册。
+    // 现改为：读不到 / 解析不出指向 → 停下并指路，不做任何覆盖或卸载。
+    let oldTarget: string | null = null;
+    let readFailure: string | null = null;
     try {
-      const oldContent = readFileSync(plistPath, 'utf-8');
-      const prog = extractFirstPlistString(oldContent);
-      if (prog) oldTarget = prog;
-    } catch { /* 读不了就按未知处理 */ }
+      oldTarget = extractFirstPlistString(readFileSync(plistPath, 'utf-8'));
+    } catch (err) {
+      readFailure = err instanceof Error ? err.message : String(err);
+    }
+    if (oldTarget === null) {
+      console.log(`  ⚠️ 已有 daemon 注册文件存在，但无法确定它指向哪个项目：${readFailure ?? '未解析出 ProgramArguments 字符串'}`);
+      console.log('  → 未做任何覆盖/卸载（不在未知状态下替你决策）');
+      console.log(`  → 请先人工确认后再处理：cat ${plistPath}`);
+      console.log(`  → 确认可弃用后删除并重跑: rm ${plistPath} && sofagent-audit --init`);
+      return;
+    }
     if (!promptYesNoSync(`  已有 daemon 注册（指向 ${oldTarget}），是否覆盖为当前项目？`, 'n')) {
       console.log('  → 已保留现有 daemon 注册（如需重新注册请先手动删除 ~/Library/LaunchAgents/com.sofagent.daemon.plist）');
       return;
@@ -242,8 +256,25 @@ function registerDaemon(cwd: string): void {
     try {
       execFileSync('launchctl', ['unload', plistPath], { stdio: 'pipe' });
       console.log('  → 已卸载旧 daemon 注册');
-    } catch {
-      // 可能没有在运行，忽略
+    } catch (err) {
+      // v1.5.1 J4b-②：unload 失败**不得静默**。改前该分支是「catch 块体内只有一句
+      // 『可能没有在运行，忽略』注释」的空块形态，把「卸载失败」与「本来就没跑」
+      // 混为一谈：旧实例可能仍在运行，而下一步会写新 plist 并 load →
+      // **同一数据目录两个写者（双实例）**，且无人知晓。
+      //
+      // 「正常不存在」为何不必单独判型（实测判据，非推测）：macOS `launchctl unload`
+      // 对「plist 不存在」与「plist 存在但从未 load」**均返回 exit 0 且无输出**
+      //   $ node -e "execFileSync('launchctl',['unload','/tmp/无此文件.plist'],{stdio:'pipe'})" → 无异常
+      //   $ 同上，传一个存在但未加载的 plist → 无异常
+      // ⇒ 能进入本 catch 的**只会是真失败**（权限不足 / plist 损坏 / launchctl 报错），
+      //   故此处无需按错误码分流，一律按真失败留痕。
+      //
+      // （注：本注释刻意不复写该空块的源码字面量——门禁 check-silent-catch.mjs 是
+      //  文本级匹配，行内出现该形态会被自身扫到，属已知假阳性面。）
+      console.warn(`  ⚠️ 旧 daemon 卸载失败: ${err instanceof Error ? err.message : String(err)}`);
+      console.log('  → 旧实例可能仍在运行——双实例会争抢同一数据目录，请先确认再继续');
+      console.log('  → 确认命令: launchctl list | grep com.sofagent.daemon');
+      console.log(`  → 手动清理: launchctl unload ${plistPath}`);
     }
   }
 
@@ -332,8 +363,13 @@ export function runInit(): void {
   // 此处不再设置任何环境变量（原 process.env.SOFAGENT_INTERNAL_INIT = '1' 已删除）。
 
   console.log('');
-  console.log(`sofagent v${VERSION}`);
-  console.log('sofagent-audit · 初始化');
+  // v1.5.1 L11：同一会话内**统一自称**——改前首两行是 `sofagent v1.5.0` 接
+  // `sofagent-audit · 初始化`（一屏两个名字），而 `--ruleset` 横幅又是
+  // `sofagent-audit · FDE Harness`。README:212 专门解释过这个易混点
+  // （`sofagent-audit` 是 CLI 命令名 / 正式包名 `@sofagent/audit`），CLI 自己
+  // 不得把它抵消。现统一为与 `index.ts` 横幅同源的 `sofagent-audit vX.Y.Z · FDE Harness 的审计模块`。
+  console.log(`sofagent-audit v${VERSION} · FDE Harness 的审计模块`);
+  console.log('--init · 初始化');
   console.log('');
 
   // v1.0.5: 仓库状态分类（gstack 首次运行引导）
@@ -738,8 +774,17 @@ export function runInit(): void {
     if (process.argv.includes('--no-daemon')) {
       console.log('  → 已指定 --no-daemon，跳过 daemon 常驻服务注册');
     } else if (!promptYesNoSync('  是否注册 daemon 常驻服务（后台监控文件变更，开机自启）？', 'n')) {
+      // v1.5.1 L9：文案改为**可执行的真动作**。改前是「重新运行 sofagent-audit --init 并选择注册」——
+      // 但整轮 --init 没有菜单，「选择」指向不存在的东西；且非交互（脚本/CI/npx 管道）下
+      // 本步的 y/N 提示**根本不会显示**（promptYesNoSync 在非 TTY 直接取默认 N），
+      // 照抄该指令重跑仍然是同一个默认 N —— 死循环指令。
+      // 真实 opt-in 通道两条，均已核实可执行（无第三入口）：
+      //   ① 交互式终端（TTY）重跑 --init —— 第 5 步会打印 y/N 提示，答 y 走 registerDaemon()
+      //   ② 不经 --init —— 全局装 daemon 后 sofagent-daemon start（daemon/cli.ts 的 start 子命令）
       console.log('  → 已跳过 daemon 注册（git commit 审计不受影响）');
-      console.log('  → 如需常驻监控，重新运行 sofagent-audit --init 并选择注册');
+      console.log('  → 如需常驻监控，二选一（非交互环境重跑 --init 不会出现此提示，直接重跑无效）：');
+      console.log('    ① 在**交互式终端**里重跑 sofagent-audit --init——第 5 步会问「是否注册 daemon 常驻服务」，答 y 即注册');
+      console.log('    ② 不经 --init：npm install -g @sofagent/daemon 后运行 sofagent-daemon start（非 macOS 请自行配置 systemd / Windows Service）');
     } else {
       try {
         registerDaemon(cwd);

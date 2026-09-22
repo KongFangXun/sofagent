@@ -19,9 +19,9 @@
 // ============================================================
 
 import { join } from 'node:path';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import {
-  REPO_ROOT, loadModelConfig, parseArgs, resolveVersion,
+  REPO_ROOT, loadModelConfig, parseArgs, resolveDraftVersion,
   resolveApiKey, writeDegraded, loadSources, readChangelogLine,
   callLLMWithFallback as callLLM, writeOutput, defaultOut,
 } from './gen-draft-lib.mjs';
@@ -40,6 +40,7 @@ const HELP = `gen-fresh-eyes-draft.mjs — fresh-eyes 16 视角审查草稿生�
 其他：
   --out      <path>   产物路径（默认 ~/Desktop/fresh-eyes-draft-<ver>.md）
   --api-key  <key>    显式传 key（缺省读 GLM_API_KEY 环境变量）
+  --version  <x.y.z>  草稿版本号（缺省从输入/产物路径内嵌版本取，再退 package.json SSOT）
 
 分层说明（v1.3.8 交付八）：
   本工具是「单次草稿优先」层——16 视角草稿一次成型（省 24 worker 的探查循环）；
@@ -49,7 +50,9 @@ const HELP = `gen-fresh-eyes-draft.mjs — fresh-eyes 16 视角审查草稿生�
 退出码：0=成功 / 1=输入错误 / 2=LLM 不可用（降级输出 prompt 到 <out>.prompt.md）`;
 
 const opts = parseArgs(process.argv.slice(2), HELP);
-const CUR_VER = resolveVersion();
+// 版本按「输入材料所指的发版目标版本」解析（缺省从路径内嵌版本取，再退 package.json SSOT）——
+// package.json 的 bump 属发版末段，直取会把草稿标成上一版号
+const CUR_VER = resolveDraftVersion(opts);
 
 // ── 读来源（本工具差异面：diff 是审查主料，25k 截断比分类的 15k 宽）──
 const { sections, loaded, skipped } = loadSources([
@@ -69,10 +72,10 @@ if (!opts.changelog) {
   }
 }
 
-// ── Prompt（1-16 视角——playbook 22 视角中的静态可审子集）──────────────────
+// ── Prompt（1-16 视角——playbook 23 视角中的静态可审子集）──────────────────
 // 边界说明：草稿是单次 LLM 读 diff+changelog 的静态审查，动态面 17-19（需
-// build/实跑取证）与深度专项 20-21（全仓体检向）不在材料可达范围；22 发现面
-// 属门面专项。边界以 playbook 分层表为准——playbook 调整分层时此处同步。
+// build/实跑取证）与深度专项 20-21（全仓体检向）不在材料可达范围；22 发现面 /
+// 23 排版审读属门面专项。边界以 playbook 分层表为准——playbook 调整分层时此处同步。
 // 对账防御：下方硬编码清单与 playbook 权威源（fresh-eyes-review.md 视角标题）
 // 漂移时启动即报错——防「playbook 改名、草稿工具仍审旧视角」的静默分叉。
 const PERSPECTIVES_16 = [
@@ -82,17 +85,32 @@ const PERSPECTIVES_16 = [
 ];
 
 // playbook 视角标题对账：### 👔 视角二 [2]：企业 IT → 提取「编号 名称」对
+// 🔴 落点 = 仓根 `playbook/`（工具面顶层目录）。`FORGE/playbook/` 是**历史位置**，
+//   目录迁移后此处路径未同步，`catch` 又静默 return ⇒ 本守卫**从未执行过一次**
+//   （哑守卫：存在、有代码、永不生效）。故一并处理三个形态：
+//   ① 路径纠正（现行落点优先，保留历史落点兼容旧仓）
+//   ② 不可读改**显式留痕**（静默跳过等于守卫不存在）
+//   ③ **空集假绿**——解析不到任何视角标题时 `drift` 恒为空，同样会「通过」
 function assertPerspectivesMatchPlaybook() {
-  const playbookPath = join(REPO_ROOT, 'FORGE', 'playbook', 'fresh-eyes-review.md');
-  let text;
-  try {
-    text = readFileSync(playbookPath, 'utf-8');
-  } catch {
-    return; // playbook 不可读（如独立分发态）——跳过对账，不阻断草稿生成
+  const candidates = [
+    join(REPO_ROOT, 'playbook', 'fresh-eyes-review.md'),
+    join(REPO_ROOT, 'FORGE', 'playbook', 'fresh-eyes-review.md'),
+  ];
+  const playbookPath = candidates.find(p => existsSync(p));
+  if (!playbookPath) {
+    console.error(`⚠️  playbook 不可读，视角对账跳过：${candidates.join(' / ')}`);
+    console.error('    （独立分发态属预期；本仓缺失 = 目录迁移后路径未同步）');
+    return;
   }
+  const text = readFileSync(playbookPath, 'utf-8');
   const re = /视角[一二三四五六七八九十]+ \[(\d+)\]：(.+)$/gm;
   const playbookMap = new Map();
   for (const m of text.matchAll(re)) playbookMap.set(Number(m[1]), m[2].trim());
+  if (playbookMap.size === 0) {
+    console.error(`❌ 未能从 ${playbookPath} 解析出任何视角标题（体例应为「视角N [n]：名称」）`);
+    console.error('    空集会让漂移检测恒为空 = 假绿——拒绝在失明状态下继续');
+    process.exit(1);
+  }
   const drift = [];
   for (const p of PERSPECTIVES_16) {
     const num = Number(p.split(' ')[0]);
@@ -103,7 +121,7 @@ function assertPerspectivesMatchPlaybook() {
   if (drift.length > 0) {
     console.error('❌ PERSPECTIVES_16 与 playbook 视角清单漂移（维护者需同步两处）：');
     for (const d of drift) console.error(`   ${d}`);
-    console.error('   权威源：playbook/fresh-eyes-review.md（视角标题节）');
+    console.error(`   权威源：${playbookPath}（视角标题节）`);
     process.exit(1);
   }
 }

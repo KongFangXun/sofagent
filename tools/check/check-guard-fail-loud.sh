@@ -19,9 +19,15 @@
 #                                  GUARDS_VIOL 退出判定，本门禁验证它真会响
 #   tools/check/check-guards.sh  — ① 段 BSD 正则判定用 perl；② 段调度
 #                                  check-cjk-var（fail-loud 须经调度传导整链非 0）
-# 不纳入（读了源码、有理由）：check-review-system.sh（perl 仅主题词聚类提取，
-#   空结果已有 warn 防御且非阻断判定）；check-action-pins.sh / check-storefront.sh
-#   （无判定级 perl 调用）。
+#   tools/check/check-review-system.sh — ⑦ 段主题词提取用 perl `\p{Han}`。**曾被本门禁
+#                                  以「空结果已有 warn 防御且非阻断判定」为由排除，该理由
+#                                  两条均不成立**：残留词表**非空**（6 行乱码）⇒ warn
+#                                  分支根本不触发；结论「无 ≥3 维同主题聚簇」是**假绿判定**
+#                                  而非无害提示（实测吞掉真聚簇 `审查面`×5 / `新功能审查面`×6）。
+#                                  ⇒ 教训：排除/纳入名单靠「读源码推断」定，推断错就是门禁
+#                                    自身漏项，且漏得无声。纳入判据只有一条——**故障注入
+#                                    实测非 0**（下方矩阵即该判据的执行体）。
+# 不纳入（读了源码、有理由）：check-action-pins.sh / check-storefront.sh（无判定级 perl 调用）。
 #
 # 用法：bash tools/check/check-guard-fail-loud.sh
 # 退出码：0 = 全部守卫在引擎故障下正确报红 / 1 = 存在失明不自知的守卫或本门禁自检失败
@@ -36,7 +42,7 @@
 set -uo pipefail
 cd "$(dirname "$0")/../.." || exit 1
 
-TARGETS="tools/check/check-cjk-var.sh tools/check/check-guards.sh"
+TARGETS="tools/check/check-cjk-var.sh tools/check/check-guards.sh tools/check/check-review-system.sh"
 FAILURES=0
 CHECKED=0
 

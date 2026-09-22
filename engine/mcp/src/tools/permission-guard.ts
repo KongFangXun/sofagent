@@ -1,5 +1,5 @@
 // ============================================================
-// tools/permission-guard.ts · tools/call 前置权限守卫（v1.5.0 TASK-26）
+// tools/permission-guard.ts · tools/call 前置权限守卫（v1.5.1 TASK-26）
 //
 // 接线 orchestrator permission 三模块（risk-classifier → policy-engine →
 // scenario-router 判定链）到 MCP 工具执行前置面：

@@ -31,8 +31,26 @@ const _pkg: { version?: string } = require('../package.json');
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type OpenClawApi = any;
 
+/**
+ * 已解析的项目根（register 时从插件配置捕获）。
+ *
+ * 🔴 为什么需要：manifest 声明了 `configSchema.projectRoot`，宿主把该配置经 schema 校验后
+ * 通过插件 API 顶层的 `pluginConfig` 注入（OpenClaw 插件契约字段，SDK 侧类型为
+ * `pluginConfig?: Record<string, unknown>`）。此前硬编码 `process.cwd()`——用户在配置里
+ * 指定 projectRoot 后，快照 / 回滚依然落到宿主进程的当前目录而不是配置的仓库；
+ * 对回滚工具而言「回滚到错误仓库」属高危面。
+ *
+ * 读点只能是 register：`api.pluginConfig` 仅在注册期可达（工具执行期拿不到 api 对象），
+ * 故在注册时解析一次并缓存，工具内回落 `process.cwd()`。
+ */
+let configuredRoot: string | undefined;
+
 /* @public */ export function register(api: OpenClawApi): void {
   const logger = api?.logger ?? console;
+  const pluginCfg = api?.pluginConfig;
+  configuredRoot = typeof pluginCfg?.projectRoot === 'string' && pluginCfg.projectRoot.trim()
+    ? pluginCfg.projectRoot
+    : undefined;
 
   // registerTool：sofagent_rollback——快照 / 回滚 / 列出快照
   try {
@@ -63,7 +81,7 @@ type OpenClawApi = any;
           try {
             // eslint-disable-next-line @typescript-eslint/no-require-imports
             const m = require('@sofagent/core');
-            const projectRoot = process.cwd();
+            const projectRoot = configuredRoot ?? process.cwd(); // 与 register 同源：pluginConfig.projectRoot 生效
             const action = params.action;
             if (action === 'snapshot') {
               // v1.5.0 TASK-18: 快照走 commitSnapshot（真实快照落盘）+ label 记账——

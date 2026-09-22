@@ -1,14 +1,21 @@
 // sofagent-evolve OpenClaw 插件测试
-// 覆盖：pluginMeta 元数据 / register 注册 hook 与工具 / default 导出契约
+// 覆盖：pluginMeta 元数据 / register 注册 hook 与工具 / reflectHint 开关读取 / default 导出契约
 import { describe, it, expect, vi } from 'vitest';
 import register, { pluginMeta } from './index';
 
-function createMockApi() {
+declare const require: (id: string) => {
+  version?: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [k: string]: any;
+};
+
+function createMockApi(pluginConfig?: unknown) {
   const hooks: Record<string, unknown[]> = {};
   const tools: Record<string, unknown> = {};
   return {
     hooks,
     tools,
+    pluginConfig,
     on: vi.fn((name: string, handler: unknown, opts?: unknown) => {
       hooks[name] = hooks[name] ?? [];
       hooks[name].push({ handler, opts });
@@ -36,23 +43,33 @@ describe('sofagent-evolve register', () => {
 
   // 防复发（重复注入噪声）：inject 的 L2 已注入 think.md，本插件此前每轮再无条件下发同一句
   // 样板提示——同一件事两处注入。改为配置开关 reflectHint，默认关。
-  describe('reflectHint 默认关（不与 inject 的 L2 重复注入）', () => {
-    const handlerOf = () => {
-      const api = createMockApi();
+  //
+  // 防复发（配置读错通道）：宿主把插件配置经 schema 校验后从**插件 API 顶层 `pluginConfig`**
+  // 注入；而 agent 类 hook 的 ctx 由宿主白名单构造（`buildAgentHookContext` 只展开 15 个
+  // 字段，**不含 config**）。旧实现在 hook 内读 `ctx?.config?.plugins?.entries?...`，
+  // 该表达式在真实宿主恒为 undefined——「把 reflectHint 打开」从来没生效过，
+  // 默认关的语义恰好把这个缺陷掩盖了。最后一个用例把错误通道钉死。
+  describe('reflectHint（register 期读 pluginConfig）', () => {
+    const handlerOf = (pluginConfig?: unknown) => {
+      const api = createMockApi(pluginConfig);
       register(api as never);
       return (api.hooks['before_prompt_build']?.[0] as { handler: (e: unknown, c: unknown) => unknown }).handler;
     };
-    const withCfg = (cfg: unknown) => ({ config: { plugins: { entries: { 'sofagent-evolve': { config: cfg } } } } });
 
     it('未配置 reflectHint → 不注入（返回 undefined）', () => {
-      expect(handlerOf()({}, withCfg(undefined))).toBeUndefined();
-      expect(handlerOf()({}, withCfg({ enabled: true }))).toBeUndefined();
+      expect(handlerOf()({}, {})).toBeUndefined();
+      expect(handlerOf({ enabled: true })({}, {})).toBeUndefined();
     });
 
     it('reflectHint: true → 注入收尾提示', () => {
-      const out = handlerOf()({}, withCfg({ reflectHint: true })) as { prependSystemContext?: string };
+      const out = handlerOf({ reflectHint: true })({}, {}) as { prependSystemContext?: string };
       expect(typeof out?.prependSystemContext).toBe('string');
       expect(out?.prependSystemContext).toContain('sofagent_evolve');
+    });
+
+    it('开关仅认 pluginConfig——hook ctx.config 不是通道（真实宿主 ctx 无 config）', () => {
+      const ctxWithLegacyConfig = { config: { plugins: { entries: { 'sofagent-evolve': { config: { reflectHint: true } } } } } };
+      expect(handlerOf(undefined)({}, ctxWithLegacyConfig)).toBeUndefined();
     });
   });
 
@@ -73,7 +90,6 @@ describe('sofagent-evolve register', () => {
 // 本测试锁定「改回硬编码 + 忘 bump」的回归路径。
 // v1.4.5 T7 注：CJS 编译态无 import.meta——用 require 双态通吃
 // （vitest ESM 转译后 require 可用；tsc CJS 原生可用）
-declare const require: (id: string) => { version?: string };
 describe('pluginMeta.version 运行时同步（T7 防复发）', () => {
   it('pluginMeta.version === package.json version（不再硬编码漂移）', () => {
     const pkg = require('../package.json');

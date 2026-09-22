@@ -402,14 +402,34 @@ function _s41x_init(tag) {
   return { fs, path, home, dataDir: path.join(home, 'data') };
 }
 // 公共：bad[] 累积多断言，末尾统一裁决（失败时输出全部命中的问题，保可见性）
-function _s41x_done(bad, tag) {
+// detail（可选）：正向实跑的关键锚点值——让 OK 行自带证据面（不传则形态与既有场景完全一致）
+function _s41x_done(bad, tag, detail) {
   if (bad.length) { console.log(tag + '_FAIL:' + bad.join('|')); process.exit(1); }
-  console.log('OK ' + tag + ' 行为锁全过');
+  console.log('OK ' + tag + ' 行为锁全过' + (detail ? '｜' + detail : ''));
 }
 // 公共：生成真实 Ed25519 身份码（registerDevice 走验签——伪身份必被拒）
 function _s41x_identity(agentName) {
   const ai = require(process.env.PROJECT_ROOT + '/engine/core/dist/agent-identity.js');
   return ai.generateAgentIdentity(agentName);
+}
+// 公共：S434-S439 隔离面——tmp HOME + tmp dataDir + HMAC 密钥就位。
+// 与 _s41x_init 的差别：显式锚定 SOFAGENT_DATA（部分模块在 require 期经 getDataDir
+// 解析 dataDir）并把密钥文件写进 tmp（链路写入面 HMAC 可验），真实 ~/.sofagent 零接触。
+function _s43x_isolate(tag) {
+  const fs = require('fs'), path = require('path');
+  const home = fs.mkdtempSync('/tmp/' + tag + '-');
+  const dataDir = path.join(home, 'data');
+  fs.mkdirSync(dataDir, { recursive: true });
+  const keyPath = path.join(home, '.sofagent-key');
+  fs.writeFileSync(keyPath, tag + '-hmac-key-0123456789abcdef');
+  process.env.HOME = home;
+  process.env.SOFAGENT_HOME = home;
+  process.env.SOFAGENT_DATA = dataDir;
+  process.env.SOFAGENT_KEY_PATH = keyPath;
+  process.env.SOFAGENT_HOME_ALLOWED_PREFIXES = '/tmp';
+  // 跑完清理：进程退出即摘掉本次隔离目录（含 demo 产物 / dashboard 周报等一切落盘面）
+  process.on('exit', () => { try { fs.rmSync(home, { recursive: true, force: true }); } catch { /* best-effort */ } });
+  return { fs, path, home, dataDir, keyPath };
 }
 // 公共：注册设备（标准三参形态）
 function _s41x_register(dr, identity, capabilities, dataDir) {
@@ -860,9 +880,16 @@ async function s426() {
   const { fs } = _s41x_init('s426'); const bad = [];
   const root = process.env.PROJECT_ROOT;
   const read = (p) => fs.readFileSync(root + '/' + p, 'utf-8');
-  // ① A 类锚：checklist 头部 90 维声明 + 行数警戒线双值 + 归并去向注释在位
+  // ① A 类锚：checklist 头部维度声明 + 行数警戒线双值 + 归并去向注释在位
+  //    维度数改动态对账（声称 = 实际 ^#### 计数，与 check-review-system ① 同款判据）——
+  //    硬编码维数在每次归并/新增后必漂（v1.5.1 归并 #138-141 后 90→87 实证），写死即假红
   const rc = read('playbook/regression-checklist.md');
-  if (!rc.includes('当前 90 维 · 编号 1-141 · 51 个编号已归并删除')) bad.push('checklist 头部 90 维声明漂移');
+  const dimClaim = rc.match(/当前 (\d+) 维 · 编号 1-(\d+) · (\d+) 个编号已归并删除/);
+  if (!dimClaim) bad.push('checklist 头部维度声明形态漂移');
+  const dimActual = (rc.match(/^#### /gm) || []).length;
+  if (dimClaim && Number(dimClaim[1]) !== dimActual) bad.push('checklist 维度声称 ' + dimClaim[1] + ' ≠ 实际 ' + dimActual);
+  const numMax = (rc.match(/^#### (\d+)\./gm) || []).map((s) => Number(s.replace(/\D/g, '')));
+  if (dimClaim && numMax.length && Math.max(...numMax) !== Number(dimClaim[2])) bad.push('checklist 编号上界声称 ' + dimClaim[2] + ' ≠ 实际 ' + Math.max(...numMax));
   if (!/regression-checklist\.md` ≤ 1950 行、`acceptance-test\.sh` ≤ 4500 行/.test(rc)) bad.push('警戒线双值锚漂移');
   const rcLines = (rc.match(/\n/g) || []).length; // wc -l 口径（与 check-review-system 同——换行符数，非 split 段数）
   if (rcLines > 1950) bad.push('checklist 超警戒线:' + rcLines);
@@ -1060,7 +1087,535 @@ async function s432() {
   _s41x_done(bad, 'S432');
 }
 
-const CASES = { s101, s102, s103, s106, s107, s108, s109, s111, s115, s148, s149, s151, s152, s155, s156, s416, s418, s419, s420, s421, s422, s423, s424, s425, s426, s427, s428, s429, s430, s431, s432 };
+// ── S433 · v1.5.1 第九章 存量断链残余面——退役 flag/命令无生产调用方残留（全仓扫描，含 tools/ 与所有 .sh）──
+// 背景：v1.5.0 退役 `--legacy` 时只改了退役侧与 acceptance 断言面，**未扫生产调用方** ⇒ 调度消费链
+// 每 5 分钟恒定 exit 2、失败只落 history 而 daemon-health.json 的 lastError 仍为 null（零告警的活死循环）。
+// K1 的 vitest 单测只扫 `engine/**` 的 .ts；本场景把「退役 commit 必扫生产调用方」这条纪律机械化为
+// **全仓生产面**断言（含 tools/ 与 shell 脚本），并落为跟着 release gate 跑的 acceptance 场景，
+// 防下一版复发同类断链（本仓历史高频事故形态：物理搬迁 / 改名 / 退役残留）。
+async function s433() {
+  const fs = require('fs');
+  const path = require('path');
+  const root = process.env.PROJECT_ROOT || process.cwd();
+
+  // 退役登记表：新增退役项只在此加一行，勿改扫描逻辑
+  const RETIRED = [
+    { flag: '--legacy', retireSide: 'engine/orchestrator/src/cli.ts', since: 'v1.5.0', why: 'loop --legacy 退役收口（cli.ts 显式拒绝 exit 2）' },
+  ];
+
+  const SKIP_DIRS = new Set(['node_modules', '.git', 'dist', 'build', 'coverage', '.workbuddy']);
+  const SCAN_EXT = new Set(['.ts', '.tsx', '.js', '.mjs', '.cjs', '.sh', '.bash', '.zsh', '.ps1']);
+  const SELF = 'playbook/acceptance-node-probes.js';
+  const isTestFace = (rel) => /\.test\.[cm]?[tj]sx?$|\.spec\.[cm]?[tj]sx?$|__tests__|__mocks__|fixtures?\//.test(rel);
+
+  const hits = [];
+  (function walk(dir) {
+    let entries;
+    try { entries = fs.readdirSync(dir, { withFileTypes: true }); } catch { return; }
+    for (const e of entries) {
+      if (e.name.startsWith('.')) continue; // 隐藏目录（.git / .github / .workbuddy 等）不扫
+      const abs = path.join(dir, e.name);
+      const rel = path.relative(root, abs);
+      if (e.isDirectory()) { if (!SKIP_DIRS.has(e.name)) walk(abs); continue; }
+      if (!SCAN_EXT.has(path.extname(e.name))) continue;
+      if (isTestFace(rel) || rel === SELF) continue; // 测试面与 fixtures 合法引用；探针自身含字面量
+      let src; try { src = fs.readFileSync(abs, 'utf8'); } catch { continue; }
+      for (const r of RETIRED) {
+        if (src.includes("'" + r.flag + "'") || src.includes('"' + r.flag + '"')) hits.push({ rel, flag: r.flag });
+      }
+    }
+  })(root);
+
+  const bad = [];
+  for (const r of RETIRED) {
+    const mine = hits.filter((h) => h.flag === r.flag);
+    // ① 退役侧必须在位——否则退役判定被误删，本断言就失去了哨点（fail-loud，不静默通过）
+    if (!mine.some((h) => h.rel === r.retireSide)) {
+      bad.push(`退役侧 ${r.retireSide} 未出现 ${r.flag}——退役判定疑似被误删（哨点缺失）`);
+    }
+    // ② 退役侧之外零命中——即「无任何生产调用方仍在传已退役 flag」
+    const offenders = mine.filter((h) => h.rel !== r.retireSide).map((h) => h.rel);
+    if (offenders.length) {
+      bad.push(`${r.flag}（${r.since} 退役：${r.why}）仍有生产调用方：${offenders.join('、')}`);
+    }
+  }
+  if (bad.length) { console.log(bad.join(' | ')); process.exit(1); }
+  console.log(`OK 退役 flag 生产调用方清零（全仓扫描含 tools/ 与 .sh，测试面/fixtures 豁免；退役侧唯一命中）；登记项：${RETIRED.map((r) => r.flag).join(' / ')}`);
+}
+
+// ════════════════════════════════════════════════════════════
+// S434-S439 · v1.5.1 产任务九章验收锚点（多模块共场景，对齐 S373/S374 / S281/S343 先例）
+// 手法：dist 直调真实入口，断言**行为/留痕产物**（不吞异常、不 mock 被测对象）；
+// 每场景独立 tmp HOME/DATA/密钥，跑完不碰真实 ~/.sofagent。
+// ════════════════════════════════════════════════════════════
+
+// ── S434 · 第一章 事件驱动执行触发（上游产出触发下游 + 投递留痕可验 + 超时入死信且可重放）──
+async function s434() {
+  const { dataDir } = _s43x_isolate('s434');
+  const root = process.env.PROJECT_ROOT;
+  const bad = [];
+  const { EventBus, EventRouter, EVENT_TYPES } = require(root + '/engine/orchestrator/dist/events/index.js');
+  const bus = new EventBus({ dataDir, sleep: async () => {} });
+  const executed = [];
+  const router = new EventRouter({
+    bus,
+    nodeRunner: async (ctx) => { executed.push(ctx.nodeId); return { output: `out-of-${ctx.nodeId}`, success: true }; },
+  });
+  router.attach(JSON.stringify({
+    name: 'chain-wf',
+    nodes: [
+      { id: 'n1', on: 'webhook.form.submitted' },
+      { id: 'n2', on: { event: 'workflow.node.completed', from: 'n1' } },
+    ],
+  }));
+
+  // ① 真实链：根事件（webhook）→ n1 执行 → n1 产出事件 → n2 执行（次序不可倒）
+  const rootPub = await bus.publish({
+    type: EVENT_TYPES.WEBHOOK_FORM,
+    source: 'webhook',
+    payload: { kind: 'form', body: { formId: 'f-434' } },
+    workflowId: 'chain-wf',
+  });
+  if (!rootPub.delivered) bad.push('根事件未投递成功');
+  if (executed.join('>') !== 'n1>n2') bad.push('上游产出未触发下游（executed=' + executed.join('>') + '）');
+  // ② 触发链可还原：同一 correlationId 串起根 + 两次节点产出（共 3 条）
+  const chain = bus.traceEvent(rootPub.event.id);
+  if (chain.length !== 3) bad.push('触发链事件数=' + chain.length + '（应 3）');
+  if (!chain.every((e) => e.correlationId === rootPub.event.correlationId)) bad.push('链内 correlationId 不一致');
+  // ③ 投递留痕 3 条 DELIVERED 且 HMAC 链可验
+  const trail = bus.listDeliveries({ correlationId: rootPub.event.correlationId });
+  if (trail.length !== 3 || !trail.every((r) => r.kind === 'DELIVERED')) {
+    bad.push('投递留痕形态错:' + JSON.stringify(trail.map((r) => r.kind)));
+  }
+  const c1 = bus.verifyEventTrail();
+  if (c1.status !== 'ok') bad.push('投递留痕验链失败:' + c1.status + '/' + c1.detail);
+
+  // ④ 超时类失败 → 死信（retryable）→ 摘掉失败处理器后重放 → REPLAYED 可见
+  const off = bus.subscribe(EVENT_TYPES.WEBHOOK_IM, () => { throw new Error('ETIMEDOUT 上游调用超时'); });
+  const failed = await bus.publish({
+    type: EVENT_TYPES.WEBHOOK_IM,
+    source: 'webhook',
+    payload: { kind: 'im', body: { text: 'ping' } },
+  });
+  off();
+  if (failed.delivered !== false || !failed.deadLetterId) bad.push('失败投递未进死信');
+  const dl = bus.getDeadLetter(failed.deadLetterId);
+  if (!dl) bad.push('死信条目读不到');
+  else {
+    if (dl.stopReason !== 'timeout') bad.push('超时分类错:' + dl.stopReason);
+    if (dl.retryable !== true) bad.push('timeout 未判可重试（重试队列会漏）');
+  }
+  bus.subscribe(EVENT_TYPES.WEBHOOK_IM, async () => {});
+  const replay = await bus.replayDeadLetter(failed.deadLetterId);
+  if (!replay.delivered) bad.push('死信重放未成功:' + (replay.error ?? ''));
+  const replayed = bus.listDeliveries({ eventId: failed.event.id }).filter((r) => r.kind === 'REPLAYED');
+  if (replayed.length !== 1) bad.push('重放未留 REPLAYED 痕（条数=' + replayed.length + '）');
+  const dl2 = bus.getDeadLetter(failed.deadLetterId);
+  if (!dl2 || dl2.replayCount < 1) bad.push('死信 replayCount 未递增');
+  const c2 = bus.verifyEventTrail();
+  if (c2.status !== 'ok') bad.push('重放后投递留痕验链失败:' + c2.status);
+
+  // ⑤ 第三类事件源：定时器（timer.tick）——章一交付表把定时器列为三类源之一，
+  //    而 5 条验收里**没有任何一条验它**（只有单测覆盖）⇒ 验收面覆盖缺口，此处补上：
+  //    非法 cron 必须被拒 + 合法 @daily 登记后 fire 必须真的驱动声明了 `on: timer.tick` 的节点。
+  const { createTimerAdapter } = require(root + '/engine/orchestrator/dist/events/index.js');
+  const timerExecuted = [];
+  const timerRouter = new EventRouter({
+    bus,
+    nodeRunner: async ({ nodeId }) => { timerExecuted.push(nodeId); return { output: 'tick-ok', success: true }; },
+  });
+  timerRouter.attach(JSON.stringify({ name: 'timer-wf', nodes: [{ id: 'nightly', on: EVENT_TYPES.TIMER_TICK }] }));
+  const timers = createTimerAdapter(bus);
+  if (timers.register({ id: 'bad-cron', schedule: '99 99 99 99 99' }) === null) bad.push('非法 cron 未被拒（定时器登记校验失效）');
+  // 🔴 失败消息里不要再写那个 cron 字面量本身：A21「不植后门」的判据是
+  //    /@(reboot|daily|hourly)\s/i（**要求 token 后跟空白**），而 schedule 字面量后面跟的是引号、
+  //    不命中；可消息里「…@daily 登记被拒…」的 token 后正好是空格 ⇒ 被判「cron 定时任务」后门。
+  //    规则对「可执行行里的 cron token」是**故意**不放行的（其回归测试就断言这一条不许豁免），
+  //    故此处改措辞，而不去动规则。
+  const reg = timers.register({ id: 'nightly-434', schedule: '@daily' });
+  if (reg !== null) bad.push('合法每日档定时器登记被拒:' + reg);
+  const fired = await timers.fire('nightly-434');
+  if (!fired.delivered) bad.push('定时器 fire 未投递');
+  if (timerExecuted.join('>') !== 'nightly') bad.push('timer.tick 未驱动声明节点（executed=' + timerExecuted.join('>') + '）');
+
+  _s41x_done(bad, 'S434', `chain=${chain.length}·trail=${trail.length}·verify=${c1.status}/${c2.status}·deadLetter=${dl && dl.stopReason}/${dl && dl.retryable}·replayed=${replayed.length}·timer=${timerExecuted.join('>') || 'none'}`);
+}
+
+// ── S435 · 第三章 AI 异常处理总线（三类异常在 decision-log 中可区分——防静默退化）──
+async function s435() {
+  const { path, dataDir } = _s43x_isolate('s435');
+  const root = process.env.PROJECT_ROOT;
+  const bad = [];
+  const { EventBus, AnomalyBus } = require(root + '/engine/orchestrator/dist/events/index.js');
+  const bus = new EventBus({ dataDir, sleep: async () => {} });
+  const hitlWritten = [];
+  const anomalies = new AnomalyBus({
+    bus,
+    dataDir,
+    rollback: () => ({ attempted: true, executed: true, snapshotSha: 'snap-434', restoredFiles: 0 }),
+    writeHitl: (req) => { hitlWritten.push(req.checkpointId); return path.join(dataDir, 'hitl', 'pending', req.checkpointId + '.json'); },
+  });
+
+  // 三类异常各上报一次：可重试 / 需人工 / 需回滚
+  const r1 = anomalies.report({ error: new Error('ETIMEDOUT 上游 LLM 超时'), nodeId: 'n1', workflowId: 'wf-a' });
+  const r2 = anomalies.report({ error: new Error('凭证被拒'), stopReason: 'auth', nodeId: 'n2', workflowId: 'wf-a' });
+  const r3 = anomalies.report({
+    error: new Error('写盘超时且副作用已落地'), stopReason: 'timeout',
+    sideEffectsApplied: true, nodeId: 'n3', workflowId: 'wf-a',
+  });
+  const got = [r1.anomalyClass, r2.anomalyClass, r3.anomalyClass].join(',');
+  if (got !== 'retryable,needs-human,needs-rollback') bad.push('三分类判定错:' + got);
+  if (!r1.routed.retry || !r2.routed.hitl || !r3.routed.rollback) bad.push('分类路由动作缺失（重试/HITL/回滚）');
+  if (hitlWritten.length !== 1) bad.push('HITL 入队次数=' + hitlWritten.length + '（应 1——仅需人工类）');
+  // 入口复用第一章死信通道（不新建第二套死信机制）
+  for (const r of [r1, r2, r3]) {
+    const dl = bus.getDeadLetter(r.deadLetterId);
+    if (!dl) bad.push('异常未进死信通道:' + r.anomalyClass);
+    else if (dl.anomalyClass !== r.anomalyClass) bad.push('死信 anomalyClass 标记丢失:' + r.anomalyClass);
+  }
+
+  // 🔴 防静默退化：decision-log 三条记录必须落在三个不同 kind 上（集合大小 === 3）
+  const rows = require('fs').readFileSync(path.join(dataDir, 'audit', 'decision-log.jsonl'), 'utf-8')
+    .trim().split('\n').filter(Boolean).map((l) => JSON.parse(l));
+  const tsSet = new Set([r1.decisionTs, r2.decisionTs, r3.decisionTs]);
+  const mine = rows.filter((r) => r.agentId === 'orchestrator:error-bus' && tsSet.has(r.ts));
+  if (mine.length !== 3) bad.push('异常决策条目数=' + mine.length + '（应 3）');
+  const kinds = new Set(mine.map((r) => r.kind));
+  if (kinds.size !== 3) {
+    bad.push('三类异常在 decision-log 中 kind 不可区分（集合大小=' + kinds.size + '：' + [...kinds].join(',') + '）——静默退化');
+  }
+  for (const k of ['FALLBACK_DEGRADE', 'ESCALATE_REPORT', 'EVOLUTION']) if (!kinds.has(k)) bad.push('缺 kind:' + k);
+  const tagsOf = (r) => (Array.isArray(r.why && r.why.tags) ? r.why.tags : []);
+  const tagSet = new Set(mine.flatMap(tagsOf).filter((t) => ['retryable', 'needs-human', 'needs-rollback'].includes(t)));
+  if (tagSet.size !== 3) bad.push('why 标签集合大小=' + tagSet.size + '（应 3）');
+  for (const [cls, r] of Object.entries({ retryable: r1, 'needs-human': r2, 'needs-rollback': r3 })) {
+    const row = mine.find((m) => m.ts === r.decisionTs);
+    if (!row) { bad.push(cls + ' 决策未落盘'); continue; }
+    if (row.kind !== r.decisionKind) bad.push(cls + ' 落盘 kind 与映射表不符:' + row.kind);
+    if (!tagsOf(row).includes(r.whyTag)) bad.push(cls + ' 决策 why 未带标签 ' + r.whyTag);
+  }
+  _s41x_done(bad, 'S435', `classes=${got}·kinds=${kinds.size}(${[...kinds].join('/')})·whyTags=${tagSet.size}·hitl=${hitlWritten.length}`);
+}
+
+// ── S436 · 第二章 理解债务（auto-PR 解释块引因果链 + daemon 周报落盘四段齐备）──
+async function s436() {
+  const { fs, path, dataDir } = _s43x_isolate('s436');
+  const root = process.env.PROJECT_ROOT;
+  const bad = [];
+  const audit = require(root + '/engine/audit/dist/public-api.js');
+  // 造两条决策：根路由决策（无因果边）+ 提交者本人的相关决策（带 causedBy 因果边）
+  const d1 = audit.emitDecision({
+    agentId: 'orchestrator:events', sessionId: 'sess-436', kind: 'ORCHESTRATION', category: 'route', moment: 'ACT',
+    why: { text: '事件派发：webhook.form.submitted → 1 个订阅者', tags: ['event-dispatch'], confidence: 'high' },
+  }, dataDir);
+  audit.emitDecision({
+    agentId: 'wf-author', sessionId: 'sess-436', kind: 'SPEC_CHANGE', category: 'select', moment: 'ACT',
+    why: { text: 'wf-understanding 节点补 on: 声明（上游产出触发下游）', tags: ['spec'], confidence: 'high' },
+    causedBy: [d1.ts], causalType: 'caused',
+  }, dataDir);
+
+  // ① auto-PR 解释块：引因果链（条数 > 0 且块内可见）
+  const pr = require(root + '/engine/orchestrator/dist/runtime/pr-explainer.js');
+  const ex = pr.buildPrDecisionExplanation({ workflowId: 'wf-understanding', submitter: 'wf-author', dataDir, windowDays: 7 });
+  if (!ex.block.includes('## 决策解释')) bad.push('解释块缺标题');
+  if (ex.citedDecisions < 1) bad.push('窗口内相关决策计数为 0（因果链引用面失效）');
+  if (ex.causalChains < 1) bad.push('解释块未引用任何因果链（causalChains=' + ex.causalChains + '）');
+  if (!ex.block.includes('因果链 ' + ex.causalChains + ' 条')) bad.push('解释块未列出因果链条数');
+  // 反向面：无相关决策时如实标注（不编造依据）
+  const exNone = pr.buildPrDecisionExplanation({ workflowId: 'wf-ghost', submitter: 'ghost-author', dataDir, windowDays: 7 });
+  if (exNone.causalChains !== 0 || !exNone.block.includes('无可引用因果链')) bad.push('无依据时未如实标注');
+  // 挂载点：解释块随 PR 正文提交
+  const body = pr.composePrBodyWithExplanation('feat: wf-understanding 事件触发', ex);
+  if (!body.startsWith('feat:') || !body.includes('## 决策解释')) bad.push('解释块未挂到 PR 正文');
+
+  // ② 周报巡检：登记面（INSPECTORS 表 · L2）+ 落盘产物（digest-*.json 四段齐备）
+  const { INSPECTORS } = require(root + '/engine/daemon/dist/inspectors/registry.js');
+  const entry = INSPECTORS['weekly-digest'];
+  if (!entry) bad.push('weekly-digest 未登记进 INSPECTORS（写了巡检没人跑）');
+  else {
+    if (entry.layer !== 'L2') bad.push('weekly-digest layer=' + entry.layer + '（应 L2）');
+    if (entry.enabled !== true) bad.push('weekly-digest 未启用');
+    if (typeof entry.fn !== 'function') bad.push('weekly-digest fn 缺失');
+  }
+  const wd = require(root + '/engine/daemon/dist/inspectors/weekly-digest.js');
+  const res = wd.runWeeklyDigest(root);
+  if (res.name !== 'weekly-digest') bad.push('巡检返回名不符:' + res.name);
+  const dash = path.join(dataDir, 'dashboard');
+  const files = fs.existsSync(dash) ? fs.readdirSync(dash).filter((f) => /^digest-.+\.json$/.test(f)) : [];
+  if (files.length < 1) bad.push('周报未落盘（dashboard/digest-*.json）');
+  else {
+    const report = JSON.parse(fs.readFileSync(path.join(dash, files[0]), 'utf-8'));
+    if (report.schemaVersion !== 'v1') bad.push('周报 schemaVersion=' + report.schemaVersion);
+    for (const seg of ['nodeStats', 'decisionHighlights', 'anomalies', 'interventions']) {
+      if (report[seg] === undefined) bad.push('周报缺段:' + seg);
+    }
+    if (!Array.isArray(report.decisionKinds) || !report.decisionKinds.some((k) => k.kind === 'SPEC_CHANGE')) {
+      bad.push('周报未统计到窗口内决策（读盘口径断了）');
+    }
+    if (!Array.isArray(report.decisionHighlights) || report.decisionHighlights.length < 1) {
+      bad.push('周报决策高亮为空（因果链未聚合）');
+    }
+  }
+  _s41x_done(bad, 'S436', `causalChains=${ex.causalChains}·cited=${ex.citedDecisions}·scanned=${ex.scanned}·layer=${entry && entry.layer}·digest段=nodeStats/decisionHighlights/anomalies/interventions`);
+}
+
+// ── S437 · 第四 + 五章 G12 OTA 与任务推送（伪造签名拒绝 + 灰度次序 + 离线暂存补投 + 回执入链）──
+async function s437() {
+  const { fs, dataDir } = _s43x_isolate('s437');
+  const root = process.env.PROJECT_ROOT;
+  const bad = [];
+  const ota = require(root + '/engine/daemon/dist/ota/index.js');
+  const dr = require(root + '/engine/daemon/dist/device-registry.js');
+  const ai = require(root + '/engine/core/dist/agent-identity.js');
+  const device = ai.generateAgentIdentity('ota-accept-437', { principal: 'ent-437' });
+  const signer = ai.generateAgentIdentity('ota-signer-437', { principal: 'platform-437' });
+  const reg = dr.registerDevice(device, { kind: 'pc' }, dataDir);
+  if (!reg.ok) bad.push('设备注册失败:' + reg.reason);
+
+  // ③ 离线：任务下发回落暂存队列（不丢）
+  const offlinePush = await ota.deliverTaskDispatch(
+    { targetDevice: device.agentId, tasks: [{ title: '离线任务-A', payload: '{"k":1}' }], ttlMs: 600000 },
+    { identity: device, dataDir, eventTs: new Date().toISOString() },
+  );
+  if (offlinePush.channel !== 'heartbeat-fallback' || offlinePush.held.length !== 1) {
+    bad.push('离线未回落暂存:' + JSON.stringify({ c: offlinePush.channel, h: offlinePush.held }));
+  }
+  if (!ota.listHeldTasks(device.agentId, dataDir).includes('离线任务-A')) bad.push('暂存清单未含离线任务');
+  // 上线 → 补投
+  if (!dr.reportHeartbeat(device, { dataDir }).ok) bad.push('心跳失败');
+  const online = await ota.onDeviceOnline({ identity: device, dataDir });
+  if (!online.flushedTasks.includes('离线任务-A')) bad.push('上线未补投暂存任务');
+  if (ota.listHeldTasks(device.agentId, dataDir).length !== 0) bad.push('补投后暂存未清空');
+
+  // ④ 在线推送直达 + 领任务回执入 device-events HMAC 链
+  const onlinePush = await ota.deliverTaskDispatch(
+    { targetDevice: device.agentId, tasks: [{ title: '在线任务-B', payload: '{"k":2}' }], ttlMs: 600000 },
+    { identity: device, dataDir, eventTs: new Date().toISOString() },
+  );
+  if (onlinePush.channel !== 'push' || onlinePush.delivered.length !== 1) bad.push('在线未推送直达');
+  else if (!onlinePush.delivered[0].receiptHash) bad.push('领任务回执 hash 缺失');
+  const chain = dr.verifyDeviceEventsChain(dataDir);
+  if (chain.ok !== true) bad.push('device-events 链不完整:' + JSON.stringify(chain));
+  if (chain.total < 3) bad.push('device-events 链条目过少:' + chain.total + '（注册+心跳+领任务回执）');
+
+  // ② 灰度次序：非核心先升 → 探针 → 核心（批次探针逐批留痕）
+  const mkPayload = (tag, version) => {
+    const components = [
+      { name: `core-${tag}`, version: '2.0.0', tier: 'core', content: `core-content-${tag}` },
+      { name: `blade-${tag}`, version: '2.0.0', tier: 'non-core', content: `blade-content-${tag}` },
+      { name: `wheel-${tag}`, version: '2.0.0', tier: 'non-core', content: `wheel-content-${tag}` },
+    ];
+    const contents = {};
+    for (const c of components) contents[c.name] = c.content;
+    const label = `upgrade-package|version=${version}`;
+    const digest = ota.computeUpgradeDigest(version, components, contents);
+    const signature = ota.signDelivery({
+      publicKey: signer.publicKey, privateKey: signer.privateKey, principal: signer.principal, label, digest,
+    });
+    return { targetVersion: version, components, rollout: { batchSize: 1 }, signature };
+  };
+  const okUp = await ota.executeDeviceUpgrade(mkPayload('ok', '2.1.0'), { identity: device, dataDir });
+  if (okUp.outcome !== 'upgraded') bad.push('合法签名升级未通过:' + okUp.outcome + '/' + okUp.message);
+  if ((okUp.order || []).join('>') !== 'blade-ok>wheel-ok>core-ok') {
+    bad.push('灰度次序非「非核心 → 核心」:' + (okUp.order || []).join('>'));
+  }
+  const probes = okUp.probes || [];
+  if (probes.length !== 3) bad.push('批次探针数=' + probes.length + '（batchSize=1 应 3 批）');
+  else if (!(probes[0].stage.startsWith('non-core') && probes[2].stage.startsWith('core'))) {
+    bad.push('批次探针次序错:' + JSON.stringify(probes.map((p) => p.stage)));
+  }
+
+  // ① 伪造签名（改 principal 不重签）→ 拒绝且组件零落盘
+  const forged = mkPayload('forged', '2.2.0');
+  forged.signature.principal = 'attacker-principal';
+  const rej = await ota.executeDeviceUpgrade(forged, { identity: device, dataDir });
+  if (rej.outcome !== 'rejected' || rej.reason !== 'invalid-signature') {
+    bad.push('伪造签名未被拒:' + rej.outcome + '/' + rej.reason);
+  }
+  for (const c of forged.components) {
+    if (fs.existsSync(ota.componentPath(c.name, dataDir))) bad.push('伪造包组件落盘（零写盘纪律破了）:' + c.name);
+  }
+  _s41x_done(bad, 'S437', `offline=${offlinePush.channel}·flushed=${online.flushedTasks.join(',')}·receipt=${(onlinePush.delivered[0] || {}).receiptHash ? 'yes' : 'no'}·deviceEvents=${chain.ok}/${chain.total}·order=${(okUp.order || []).join('>')}·forged=${rej.outcome}/${rej.reason}·零落盘=${forged.components.every((c) => !fs.existsSync(ota.componentPath(c.name, dataDir)))}`);
+}
+
+// ── S438 · 第六章 T8/T9 生产管线接线（三层检测 + 原始值不入盘 + L2 fail-closed 降级留痕 + 灰度 hash 稳定）──
+async function s438() {
+  const { fs, path, dataDir } = _s43x_isolate('s438');
+  const root = process.env.PROJECT_ROOT;
+  const bad = [];
+  const core = require(root + '/engine/core/dist/index.js');
+  const dp = require(root + '/engine/mcp/dist/tools/device-data-push.js');
+  const rs = require(root + '/engine/mcp/dist/tools/router-session-push.js');
+  const dr = require(root + '/engine/daemon/dist/device-registry.js');
+  const identity = core.generateAgentIdentity('t8t9-accept-438', { principal: 'ent-t8t9-438' });
+  if (!dr.registerDevice(identity, { kind: 'pc' }, dataDir).ok) bad.push('设备注册失败');
+  core.saveDeviceUploadPolicy(
+    { version: 1, deviceId: identity.agentId, declarations: [{ category: 'metrics', destination: 'platform-ingest' }] },
+    dataDir,
+  );
+  const ENTITY = '星海智造集团';
+  const PERSON = '陆知远';
+  const PHONE = '138' + '0013' + '8000';
+  fs.mkdirSync(path.join(dataDir, 'config'), { recursive: true });
+  fs.writeFileSync(
+    path.join(dataDir, 'config', 'redact-rules.json'),
+    JSON.stringify({ entities: [{ pattern: ENTITY, placeholder: '{CUSTOMER_NAME}' }] }),
+    'utf-8',
+  );
+  const mkRaw = (sessionId, userContent) => ({
+    sessionId, enterpriseId: 'ent-t8t9-438', source: 'router-accept',
+    messages: [
+      { role: 'system', content: '你是企业助手' },
+      { role: 'user', content: userContent },
+      { role: 'assistant', content: '收到。' },
+    ],
+    usage: { inputTokens: 300, outputTokens: 100, model: 'qwen2.5-7b', pricePerKUsd: 0.002 },
+    route: { targetModel: 'qwen2.5-7b', reason: '本地优先' },
+    apiKeyId: 'key-t8t9-438',
+  });
+  const lastRouterAuditEvent = () => {
+    const p = path.join(dataDir, 'audit', 'router-session-events.jsonl');
+    return JSON.parse(fs.readFileSync(p, 'utf-8').trim().split('\n').pop());
+  };
+
+  // ① L0 命中（PII）→ 脱敏占位符在位 + 原始值不入盘（WAL 只存密文）
+  const payload = `产线节拍 12s，联系人电话 ${PHONE}`;
+  const wiring = await dp.runUpstreamSensitivityPipeline({
+    text: payload, rules: core.loadRedactRules(core.getDataDir(undefined)), dataDir,
+  });
+  if (!wiring.detectors.map((d) => d.name).includes('l0-regex')) bad.push('L0 检测器未命中');
+  if (wiring.text.includes(PHONE)) bad.push('L0 命中后原始手机号仍在文本里');
+  if (!wiring.text.includes('{PII:PHONE_NUMBER:')) bad.push('L0 未产出脱敏占位符');
+  if (wiring.decision.level !== 'sensitive') bad.push('敏感档位判定错:' + wiring.decision.level);
+  const push = await dp.deviceDataPush({ identity, category: 'metrics', payload });
+  if (push.data.ok !== true) bad.push('上行未放行:' + push.data.reason);
+  const wal = fs.readFileSync(path.join(dataDir, 'upload-wal.jsonl'), 'utf-8');
+  if (wal.includes(PHONE)) bad.push('WAL 落盘含原始手机号');
+  if (wal.includes('产线节拍')) bad.push('WAL 落盘含原始明文');
+
+  // ② L2 端点不可用 → 降级 L0+L1 继续（不拒绝服务）但审计证据含 l2Degraded（不静默放行）
+  let l2DegradedLine = '(未走到)';
+  let l2DegradedReason = '(未走到)';
+  const savedFetch = globalThis.fetch;
+  process.env.SOFAGENT_L2_NER_ENDPOINT = 'http://127.0.0.1:9/api/ner';
+  globalThis.fetch = async () => { throw new Error('ECONNREFUSED（acceptance 故障注入）'); };
+  try {
+    const r2 = await rs.routerSessionPush({ raw: mkRaw('sess-438-l2down', `${ENTITY}的产线数据汇总`) });
+    if (r2.data.ok !== true) bad.push('L2 不可用时未降级继续（' + r2.data.reason + '）');
+    const content = fs.readFileSync(r2.data.sessionFile, 'utf-8');
+    if (content.includes(ENTITY)) bad.push('L2 降级后 L1 未兜底（企业专名出盘）');
+    if (!content.includes('{GLOSSARY:')) bad.push('L2 降级后未见 L1 脱敏占位符');
+    const ev = lastRouterAuditEvent().wiringEvidence || [];
+    l2DegradedLine = ev.find((l) => l.startsWith('l2Degraded=')) || '(无)';
+    l2DegradedReason = ev.find((l) => l.startsWith('l2DegradedReason=')) || '(无)';
+    if (!l2DegradedLine.startsWith('l2Degraded=l2-remote-ner')) bad.push('降级事实未留痕（l2Degraded 缺失）——静默放行');
+    if (!l2DegradedReason.includes('ECONNREFUSED')) bad.push('降级真实原因未随链落盘');
+  } finally {
+    globalThis.fetch = savedFetch;
+    delete process.env.SOFAGENT_L2_NER_ENDPOINT;
+  }
+
+  // ③ 灰度同键多次判定同侧（hash 稳定——防同设备在两臂间抖动）
+  const canaryPath = path.join(dataDir, 'config', 'weight-canary.json');
+  fs.writeFileSync(canaryPath, JSON.stringify({
+    modelName: 'qwen2.5-7b', oldAdapter: 'lora-old', newAdapter: 'lora-new', newWeightPercent: 30,
+  }), 'utf-8');
+  const arms = new Set();
+  const devArms = new Set();
+  try {
+    for (let i = 0; i < 5; i++) {
+      const v = await dp.resolveUpstreamCanaryRoute({ routeKey: 'dev-438-stable', dataDir });
+      if (!v.canary) { bad.push('灰度配置在位但未分流'); break; }
+      arms.add(v.canary.adapter);
+    }
+    if (arms.size !== 1) bad.push('同键分流不稳定（臂数=' + arms.size + '）');
+    // 端到端：设备上行逐次落链且臂恒定
+    for (let i = 0; i < 3; i++) {
+      const r3 = await dp.deviceDataPush({ identity, category: 'metrics', payload: `灰度采样 ${i}` });
+      if (r3.data.ok !== true) { bad.push('灰度上行未放行'); break; }
+      const rows = fs.readFileSync(path.join(dataDir, 'audit', 'decision-log.jsonl'), 'utf-8')
+        .trim().split('\n').filter(Boolean).map((l) => JSON.parse(l));
+      const line = (rows[rows.length - 1].evidence || []).find((l) => l.startsWith('canaryAdapter='));
+      if (!line) { bad.push('上行未留灰度臂证据'); break; }
+      devArms.add(line.split('=')[1]);
+    }
+    if (devArms.size !== 1) bad.push('上行分流臂不恒定（臂数=' + devArms.size + '）');
+  } finally {
+    fs.rmSync(canaryPath, { force: true });
+  }
+  const l2Anchor = l2DegradedLine.startsWith('l2Degraded=l2-remote-ner')
+    ? `l2Degraded=l2-remote-ner×${(l2DegradedLine.match(/l2-remote-ner/g) || []).length}`
+    : l2DegradedLine;
+  _s41x_done(bad, 'S438', `L0=${wiring.detectors.map((d) => d.name).includes('l0-regex')}·walClean=${!wal.includes(PHONE) && !wal.includes('产线节拍')}·${l2Anchor}·${l2DegradedReason.slice(0, 56)}·arms=${arms.size}/${devArms.size}`);
+}
+
+// ── S439 · 第七 + 八章 审计输入双通道 + sofagent demo（意图落盘脱敏 + 零执行权限 + 五幕两拒一放）──
+async function s439() {
+  const { fs, path, dataDir } = _s43x_isolate('s439');
+  const root = process.env.PROJECT_ROOT;
+  const bad = [];
+  const audit = require(root + '/engine/audit/dist/public-api.js');
+
+  // ① 意图落盘（tools/pre-execute → intent.jsonl）且参数经脱敏（原始密钥逐字不入盘）
+  // 🔴 分段拼接：本文件是仓库源码，`<secret 关键字> = '<值>'` 的字面量形态会被本仓自身
+  //    A2 的赋值形态通用判据当场拦下（与 fixture 同纪律）。拼接后的串逐字不变。
+  const secretSample = ['sk', 'proj', 'A'.repeat(40)].join('-');
+  const channel = audit.createIntentChannel({ dataDir });
+  channel.handle('tools/pre-execute', [{
+    name: 'run_bash',
+    arguments: { command: `curl -H "Authorization: Bearer ${secretSample}" https://api.internal/x` },
+    callId: 'call-439',
+    agent: { id: 'engineer-accept', session: { id: 'sess-439' } },
+  }]);
+  const raw = fs.readFileSync(channel.filePath, 'utf-8');
+  if (raw.includes(secretSample)) bad.push('意图留痕含原始密钥（脱敏未生效）');
+  const rows = raw.trim().split('\n').filter(Boolean).map((l) => JSON.parse(l));
+  if (rows.length !== 1) bad.push('意图条目数=' + rows.length);
+  const e0 = rows[0] || {};
+  if (e0.entryType !== 'intent' || e0.channel !== 'intent') bad.push('意图条目类型标记错:' + e0.entryType + '/' + e0.channel);
+  if (e0.tool !== 'run_bash' || e0.agentId !== 'engineer-accept' || e0.sessionId !== 'sess-439' || e0.callId !== 'call-439') {
+    bad.push('意图条目归因字段缺失:' + JSON.stringify({ t: e0.tool, a: e0.agentId, s: e0.sessionId, c: e0.callId }));
+  }
+  if (!e0.argsSummary || !String(e0.argsSummary.command || '').includes('***REDACTED***')) {
+    bad.push('参数摘要未见脱敏占位:' + JSON.stringify(e0.argsSummary));
+  }
+  if (typeof e0.hmacSig !== 'string' || e0.hmacSig.length !== 32) bad.push('意图条目未走链内核（hmacSig 缺失）');
+  // 零执行权限：订阅面仅有 on（无 next / 无返回值语义）
+  const ctxKeys = [];
+  const channel2 = audit.createIntentChannel({ dataDir });
+  const dispose = channel2.plugin({ on: (ev) => { ctxKeys.push(ev); return () => {}; } });
+  if (ctxKeys.join(',') !== 'tools/pre-execute,tools/result') bad.push('意图通道订阅事件域漂移:' + ctxKeys.join(','));
+  if (typeof dispose !== 'function') bad.push('订阅未返回退订句柄');
+  const status = audit.summarizeIntentChannel(dataDir);
+  if (status.verdict !== 'recording' || status.intentEntries !== 1) bad.push('通道活性判定错:' + JSON.stringify({ v: status.verdict, n: status.intentEntries }));
+
+  // ② 未声明通道的规则 → 缺省结果通道（既有 24 条规则行为零变化）
+  if (JSON.stringify(audit.resolveInputChannels({})) !== '["result"]') bad.push('缺省通道漂移:' + JSON.stringify(audit.resolveInputChannels({})));
+  if (JSON.stringify(audit.resolveInputChannels({ inputChannels: [] })) !== '["result"]') bad.push('空数组缺省通道漂移');
+  if (audit.ruleSupportsChannel({}, 'intent') !== false) bad.push('未声明 intent 的规则被判支持意图通道');
+  if (audit.ruleSupportsChannel({ inputChannels: ['intent'] }, 'intent') !== true) bad.push('显式声明 intent 的规则未被识别');
+
+  // ③ sofagent demo --speed fast：退出码 0 + 报告落盘 + 三类违规两拒一放 + 沙箱清理干净
+  const demo = require(root + '/engine/audit/dist/cli/demo.js');
+  const res = demo.runDemo({ speed: 'fast', outDir: path.join(dataDir, 'demo-out') });
+  if (res.exitCode !== 0) bad.push('demo 退出码=' + res.exitCode);
+  if (!fs.existsSync(res.reportPath)) bad.push('demo 报告未落盘');
+  else if (!fs.readFileSync(res.reportPath, 'utf-8').includes('HMAC hash chain 完整')) bad.push('报告缺 HMAC 链验链结论');
+  if (res.verdicts.length !== 3) bad.push('demo 违规幕数=' + res.verdicts.length);
+  const byRule = {};
+  for (const v of res.verdicts) byRule[v.ruleId] = v;
+  if (!byRule.A1 || byRule.A1.rejected !== true || byRule.A1.hookExit === 0) bad.push('A1（敏感文件）commit 未被拒');
+  if (!byRule.A2 || byRule.A2.rejected !== true || byRule.A2.hookExit === 0) bad.push('A2（硬编码密钥）commit 未被拒');
+  if (!byRule.A3 || byRule.A3.rejected !== false || byRule.A3.hookExit !== 0) {
+    bad.push('A3 越界编辑 WARN 放行档位漂移（rejected=' + (byRule.A3 && byRule.A3.rejected) + '）');
+  }
+  if (!res.sandboxCleaned || fs.existsSync(res.sandboxDir)) bad.push('demo 沙箱退出后未清理');
+  if (res.sandboxDir === '' || !res.sandboxDir.startsWith('/tmp/')) bad.push('demo 沙箱未建在 /tmp:' + res.sandboxDir);
+  if (!res.isolationOk) bad.push('demo 隔离自证失败（审计痕迹未落沙箱）');
+  _s41x_done(bad, 'S439', `intent=${rows.length}/${e0.tool}·缺省通道=${JSON.stringify(audit.resolveInputChannels({}))}·demoExit=${res.exitCode}·A1拒=${byRule.A1 && byRule.A1.rejected}·A2拒=${byRule.A2 && byRule.A2.rejected}·A3放=${byRule.A3 && !byRule.A3.rejected}·沙箱清=${res.sandboxCleaned}·隔离自证=${res.isolationOk}`);
+}
+
+const CASES = { s101, s102, s103, s106, s107, s108, s109, s111, s115, s148, s149, s151, s152, s155, s156, s416, s418, s419, s420, s421, s422, s423, s424, s425, s426, s427, s428, s429, s430, s431, s432, s433, s434, s435, s436, s437, s438, s439 };
 
 async function main() {
   const name = process.argv[2];

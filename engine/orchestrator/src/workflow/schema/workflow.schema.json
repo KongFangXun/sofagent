@@ -94,6 +94,46 @@
           },
           "description": "节点级触发器（可选）——trigger.schedule 定时触发进 worklog 可溯源"
         },
+        "on": {
+          "description": "v1.5.1 第一章：事件驱动触发声明（可选）——本节点订阅哪些业务事件（上游节点产出 / webhook 入站 / 定时器）。两种写法：简写为事件类型字符串，完整形态为 { event, from?, filter? }。事件类型必须在事件注册表（@sofagent/orchestrator 的 EVENT_TYPES）内——未登记类型在 workflow_submit 与 router 双侧 fail-loud 拒绝（拼错的事件名 = 永不触发的静默失效）。缺省（不写本字段）= 该节点仍按拓扑顺序执行，既有行为不变。",
+          "oneOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "description": "简写形态：on: workflow.node.completed"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "event": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "订阅的事件类型（EVENT_TYPES 注册表取值，如 workflow.node.completed / webhook.form.submitted / webhook.im.message / timer.tick / anomaly.reported / device.upgrade / device.deploy / device.task.dispatch）"
+                },
+                "from": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "上游节点约束（仅对 workflow.node.completed 有效）——必须指向本 workflow 内存在的节点 id（悬空引用 = 永不触发，校验拒绝）"
+                },
+                "filter": {
+                  "type": "object",
+                  "description": "payload 等值过滤（键值全等才命中；先查 payload 顶层字段，未命中再查 payload.body——webhook 入站字段在 body 内）。键值须为字符串/数字/布尔，空对象无过滤语义故拒绝",
+                  "additionalProperties": {
+                    "type": [
+                      "string",
+                      "number",
+                      "boolean"
+                    ]
+                  }
+                }
+              },
+              "required": [
+                "event"
+              ],
+              "additionalProperties": false
+            }
+          ]
+        },
         "visibility": {
           "type": "string",
           "enum": [

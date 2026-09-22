@@ -3,7 +3,7 @@
 <p align="center"><img src="assets/sofagent.png" alt="sofagent" width="96" /></p>
 
 > **sofagent 是一套 FDE 能力——装进你的 Agent（DSH / OpenClaw / WorkBuddy / Codex / Claude Code）后，进场把业务判断写成文件，离场后替你执行它：梳理工作流、部署 AI 节点、7×24 审计每次变更。** 装完之后，你在自己的 Agent 里说一句话，它就帮你干活——审计每次变更、沉淀每次经验，沉淀机制随使用迭代。下面从装到用到查问题，全流程走一遍。
-> v1.5.0 · 2026-09-19（UTC）· ✅ 已发版 · 孔放勋
+> v1.5.1 · 2026-09-22（UTC）· ✅ 已发版 · 孔放勋
 
 ---
 
@@ -118,6 +118,7 @@
 |------|------|------|------|
 | 🧱 底座 | **约束层**（harness） | 四层加载链注入规则，Agent 启动即生效 | 平台 Hook（OpenClaw）/ DSH 插件 / Sub Agent 自加载 |
 | 🔍 模块① | **审计模块**（audit） | git diff → 24 条规则硬扫描，违规当场拦 | git commit / daemon 文件变更 |
+| ⚡ 模块④ | **编排模块**（orchestrator） | 工作流 DAG 调度 + 事件驱动触发（v1.5.1：四类事件源 + `on:` 订阅 + 死信重放）+ 异常三分类路由 | 业务事件到达 / 显式指令 |
 | 🔄 模块② | **回溯模块**（core） | 审计后自动快照，出事一键回滚 | 审计完成后自动 |
 | ⚙️ 内部工具 | **FORGE 工具链**（orchestrator） | LOOP 流水线（项目自迭代用，非对外模块） | CLI compose tool |
 | 🧬 模块③ | **进化模块**（think.md 反思 + Dream Cycle 知识回灌 + evolve Skill 优化；eval/ab-test 为评估支撑；由 daemon 定时驱动） | 知识沉淀 + 反思 + 自优化，沉淀机制随使用迭代 | daemon cron / 手动触发 |
@@ -209,7 +210,7 @@ cd sofagent && bash install.sh
 | `sofagent-audit: Node.js 未找到` | Node.js 未安装或版本过低 | 安装 Node.js ≥18：`node --version` 确认 |
 | commit 时没有审计输出 | commit-msg hook 未安装 | `sofagent-audit --init` 或 `sofagent-audit --install-hook` |
 | 首次 commit 提示「无需审计」 | 全新仓库首次提交没有前一个版本可对比 | 正常——下次 commit 起审计自动生效 |
-| Windows 上部分检查缺失 | Windows 为实验性支持 | 核心审计模块可用，PowerShell 脚本覆盖不全，详见 [LIMITATIONS](./LIMITATIONS.md#windows-支持是实验性的) |
+| Windows 上部分检查缺失 | Windows 为实验性支持 | 核心审计模块可用，PowerShell 脚本覆盖不全，详见 [LIMITATIONS](./LIMITATIONS.md#-windows-支持是实验性的) |
 | hook 装了但静默跳过 | Node.js 或 sofagent-audit 缺失时 hook 旧版会静默跳过 | v1.0 hook 含无声失败保护，会 exit 1 + 提示；旧 hook 跑 `--init` 更新 |
 | `sofagent-audit --doctor` 报 config 缺失 | 未跑过 `--init` | 跑 `sofagent-audit --init` 生成 config.yml，或用默认配置（默认 17 条（A1–A11 + A18–A23）全启用，扩展 7 条（A14–A17 + E1/E2/E4）需开启，全量 24 条） |
 
@@ -281,7 +282,7 @@ bash engine/scripts/uninstall.sh --platform openclaw|workbuddy|claude|codex|herm
 | 3 | `think.md` | 反思摘要（≤2K token） | ⚠️ 改了没用。→ [反思工程](./DEVELOPMENT.md#六反思工程) |
 | 4 | `knowledge/index.md` | AI 知识库目录，被动注入 top-3 页摘要 | ⚠️ daemon 自动维护 |
 
-> 地基约 3,500 token，不到 128K 窗口的 3%。暴露会话事件的宿主（OpenClaw）自动注入 2-4 层，其他平台 Agent 主动 Read。详见 [ARCHITECTURE 地基与约束层](./ARCHITECTURE.md#地基与约束层)。
+> 加载链（约束注入链）约 3,500 token，不到 128K 窗口的 3%。暴露会话事件的宿主（OpenClaw）自动注入 2-4 层，其他平台 Agent 主动 Read。详见 [ARCHITECTURE 约束层的两种形态：加载链与运行时](./ARCHITECTURE.md#约束层的两种形态加载链与运行时)。
 
 ### 4 条底线 + 9 则行为铁律
 
@@ -410,7 +411,7 @@ sofagent-audit --timeline             # 查看审计时间线快照
 sofagent-audit --revert <sha>         # 回滚到某次审计前
 ```
 
-Webhook 在 `.sofagent/config.yml` 配置，不配也能用。详见 [ARCHITECTURE 回溯能力](./ARCHITECTURE.md#回溯能力自研同构-git-引擎--一键回滚)。
+Webhook 在 `.sofagent/config.yml` 配置，不配也能用。详见 [ARCHITECTURE 回溯能力](./ARCHITECTURE.md#-回溯能力自研同构-git-引擎--一键回滚)。
 
 ### 终端 Dashboard：一眼看清 AI 在干什么
 
@@ -491,8 +492,8 @@ jobs:
 
 | 能力 | 版本 | 一句话 | 明细 |
 |------|------|--------|------|
-| 设备接入与数据承接 | v1.4.9 | 设备注册/发现/心跳（Ed25519 + 在线才派单）+ 数据目录白名单读取 + opt-in 加密上行 + router 过站承接（9 新 tool） | [v1.4.9 开发日志](./changelog/v1.4/v1.4.9.md) |
 | 治理模块·可见性与本体成熟 | v1.5.0 | Dashboard 治理 tab（KPI 六卡 + lineage 合规报告 + 周报导出）· 本体数据双时态 · Validation Engine · 跨层证据对账 trace_reconcile（1 新 tool） | [v1.5.0 开发日志](./changelog/v1.5/v1.5.0.md) |
+| 编排模块·事件驱动 | v1.5.1 | 业务事件触发（四类事件源 + `on:` 订阅 + 死信重放）· 理解债务应对（auto-PR 决策解释 + daemon 周报四段）· 设备 OTA 远程升级（事件总线 + 验签 + 灰度批次）· 异常处理总线（三分类路由）· `sofagent demo` 五分钟戏剧弧 | [v1.5.1 开发日志](./changelog/v1.5/v1.5.1.md) |
 
 
 ### 新功能入口导览（v1.4.2 起三条新产品线——10 分钟上手各条线）

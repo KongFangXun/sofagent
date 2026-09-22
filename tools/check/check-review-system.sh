@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
-# check-review-system.sh — 审查体系一致性校验（阶段七执行体）
+# check-review-system.sh — 审查体系一致性校验（阶段四执行体）
 # ============================================================
-# 职责：把 SOP 阶段七「审查体系最终确认」的两大步做成确定性检查——
+# 职责：把 SOP 阶段四「审查体系合并更新（含最终确认）」的两大步做成确定性检查——
 #   ① 状态一致性：checklist / acceptance / fresh-eyes 三份文档的
 #      「声称值 vs 实际值」逐一对账（维度数 / 编号连续性 / 行数警戒线 /
 #      场景数 / 头部自校验段同步）
 #   ② 覆盖闭环：checklist 新增维度引用的 S 场景号在 acceptance 中真实
 #      存在；check-version 的「检查通过 X/Y 项」分母与实际检查项数一致
 #
-# 本脚本是「清单核对器」不是「判断器」——只报事实，修复归人工/阶段五。
+# 本脚本是「清单核对器」不是「判断器」——只报事实，修复归人工/阶段四。
 #
 # 用法:
 #   bash tools/check-review-system.sh          # 人读输出
@@ -22,12 +22,24 @@
 set -uo pipefail
 cd "$(dirname "$0")/../.." || exit 2
 
+# ── locale 防御（维度 90 同族；本脚本是真做 CJK 处理的脚本，必须自持） ──
+# CI/sandbox 默认 `LANG=""` / `LC_CTYPE=C`。本脚本用 perl `\p{Han}` 抽取中文主题词：
+#   · `sed 's/（[^）]*）//g'` 的多字节字符类在 C locale 下按字节切 → **产出非法 UTF-8**
+#   · `perl -CSD` 读到非法字节 → **进程直接死（exit 255）**，而旧版 `2>/dev/null` 吞报错、
+#     `|| true` 吞退出码 ⇒ ⑦ 段在「提取已死」状态下走 else 分支报「无 ≥3 维同主题聚簇」
+#     = 假绿（实测真聚簇被吞：`审查面`×5 / `新功能审查面`×6 / `一致性`×3 / `完整性`×3）。
+# 🔴 必须**强制**而非 `${VAR:-默认}`：默认值写法在「环境已显式设为 C」时原样保留 C，
+#    恰好在最需要防御的沙箱场景失效（实测 `LC_ALL=C bash <script>` 下两个用默认值写法的
+#    脚本仍是 C）。参照 `playbook/acceptance-test.sh` 的强制写法。
+export LANG=en_US.UTF-8
+export LC_ALL=en_US.UTF-8
+
 QUIET=false
 for _arg in "$@"; do
   case "$_arg" in
     --quiet) QUIET=true ;;
     --help|-h)
-      echo "check-review-system.sh — 审查体系一致性校验（阶段七）"
+      echo "check-review-system.sh — 审查体系一致性校验（阶段四）"
       echo "  --quiet   只输出 OK / FAIL"
       echo "  --help    显示此帮助"
       exit 0 ;;
@@ -42,9 +54,9 @@ RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; BOLD='\033[1m'; CYAN=
 CHECKLIST="playbook/regression-checklist.md"
 ACCEPTANCE="playbook/acceptance-test.sh"
 FRESH_EYES="playbook/fresh-eyes-review.md"
-RELEASING5="docs/changelog/releasing/04-review-system.md"
+RELEASING4="docs/changelog/releasing/04-review-system.md"
 
-for _f in "$CHECKLIST" "$ACCEPTANCE" "$FRESH_EYES" "$RELEASING5"; do
+for _f in "$CHECKLIST" "$ACCEPTANCE" "$FRESH_EYES" "$RELEASING4"; do
   if [ ! -f "$_f" ]; then
     echo "❌ 文件缺失: ${_f}（脚本无法执行）" >&2
     exit 2
@@ -104,7 +116,7 @@ if [ -n "$LIMIT_CHK" ]; then
   if [ "$WC_CHK" -le "$LIMIT_CHK" ]; then
     ok "checklist 行数 $WC_CHK ≤ 警戒线 $LIMIT_CHK"
   else
-    bad "checklist 行数 $WC_CHK 超警戒线 $LIMIT_CHK" "    处置：走阶段五三判据（真实归并或上调记录）"
+    bad "checklist 行数 $WC_CHK 超警戒线 $LIMIT_CHK" "    处置：走阶段四三判据（真实归并或上调记录）"
   fi
 else
   warn "checklist 头部未提取到自身警戒线（格式变化？人工确认）"
@@ -113,7 +125,7 @@ if [ -n "$LIMIT_ACC" ]; then
   if [ "$WC_ACC" -le "$LIMIT_ACC" ]; then
     ok "acceptance 行数 $WC_ACC ≤ 警戒线 $LIMIT_ACC"
   else
-    bad "acceptance 行数 $WC_ACC 超警戒线 $LIMIT_ACC" "    处置：走阶段五三判据（真实归并或上调记录）"
+    bad "acceptance 行数 $WC_ACC 超警戒线 $LIMIT_ACC" "    处置：走阶段四三判据（真实归并或上调记录）"
   fi
 else
   warn "checklist 头部未提取到 acceptance 警戒线（格式变化？人工确认）"
@@ -192,21 +204,21 @@ EOF
 [ "$QUIET" = false ] && echo -e "\n${BOLD}${CYAN}── ④ fresh-eyes-review 守护 ──${NC}"
 
 WC_FE=$(wc -l < "$FRESH_EYES" | tr -d ' ')
-# 警戒线唯一 SSOT：releasing 阶段五 04-review-system.md（「不超过 N 行」）。
+# 警戒线唯一 SSOT：releasing 阶段四 04-review-system.md（「不超过 N 行」）。
 # 别处（含 fresh-eyes-review.md 自身）一律外链，不再自带数字。
 # v1.4.4：删除原先对 regression-checklist.md 的回退分支——该 checklist 第 13 行已把
 # fresh-eyes 阈值外链给 04-review-system.md、自身不再自带数字，回退正则实测零命中
-# （永不生效的死分支），且它使下方 warn 文案指向 ${RELEASING5} 而实读 ${CHECKLIST}，
-# 排障时会被带到错误的文件。删掉后本段唯一读取源即 ${RELEASING5}，文案与之对齐。
-LIMIT_FE=$(grep -oE '不超过 [0-9]+ 行' "$RELEASING5" | head -1 | grep -oE '[0-9]+' || echo "")
+# （永不生效的死分支），且它使下方 warn 文案指向 ${RELEASING4} 而实读 ${CHECKLIST}，
+# 排障时会被带到错误的文件。删掉后本段唯一读取源即 ${RELEASING4}，文案与之对齐。
+LIMIT_FE=$(grep -oE '不超过 [0-9]+ 行' "$RELEASING4" | head -1 | grep -oE '[0-9]+' || echo "")
 if [ -n "$LIMIT_FE" ]; then
   if [ "$WC_FE" -le "$LIMIT_FE" ]; then
     ok "fresh-eyes-review 行数 $WC_FE ≤ 警戒线 $LIMIT_FE"
   else
-    bad "fresh-eyes-review 行数 $WC_FE 超警戒线 $LIMIT_FE" "    处置：阶段五校准段做紧凑化（保语义压行数，不删视角——警戒线只准归并消化，不准抬阈值）\n    权威出处：${RELEASING5}（「不超过 N 行」句式），别处一律外链"
+    bad "fresh-eyes-review 行数 $WC_FE 超警戒线 $LIMIT_FE" "    处置：阶段四校准段做紧凑化（保语义压行数，不删视角——警戒线只准归并消化，不准抬阈值）\n    权威出处：${RELEASING4}（「不超过 N 行」句式），别处一律外链"
   fi
 else
-  warn "未提取到 fresh-eyes 警戒线（检查 $RELEASING5 是否含「不超过 N 行」句式）"
+  warn "未提取到 fresh-eyes 警戒线（检查 $RELEASING4 是否含「不超过 N 行」句式）"
 fi
 
 # ============================================================
@@ -228,14 +240,14 @@ else
 fi
 
 # ============================================================
-# 六、交付关键词覆盖率对账（阶段五步骤 3 脚本化 · 零遗漏验证）
+# 六、交付关键词覆盖率对账（阶段四步骤 3 脚本化 · 零遗漏验证）
 # ============================================================
 # 源：CHANGELOG.md 主索引当前版本行的加粗交付名 + devlog 交付章标题核心词
-# 目标：每个交付关键词在 checklist / acceptance 至少出现一次（SOP 阶段五
+# 目标：每个交付关键词在 checklist / acceptance 至少出现一次（SOP 阶段四
 # 步骤 3「grep 确认 CHANGELOG 每个交付关键词在审查文档中至少出现一次」）
 # 词形差异（如 devlog「SubAgent 完整沙箱」vs checklist「沙箱五件套」）由
 # 豁免清单处理：playbook/.coverage-exempt 每行一个关键词，命中的不报
-[ "$QUIET" = false ] && echo -e "\n${BOLD}${CYAN}── ⑥ 交付关键词覆盖率（阶段五零遗漏） ──${NC}"
+[ "$QUIET" = false ] && echo -e "\n${BOLD}${CYAN}── ⑥ 交付关键词覆盖率（阶段四零遗漏） ──${NC}"
 
 CUR_VER=$(node -p "require('./engine/audit/package.json').version" 2>/dev/null || echo "")
 # v1.4.7 修正：版本源滞后——原只取 package.json（SSOT bump 在阶段九、安装入口 bump commit），
@@ -247,14 +259,33 @@ CL_TOP_VER=$(grep -oE '^\- \*\*v[0-9]+\.[0-9]+\.[0-9]+\*\*' CHANGELOG.md 2>/dev/
 EXEMPT_FILE="playbook/.coverage-exempt"
 EXEMPTED=$(cat "$EXEMPT_FILE" 2>/dev/null || echo "")
 
+# 🔴 devlog 落点 = `docs/changelog/v<major>.<minor>/v<X.Y.Z>.md`（目录段是**两段**格式）。
+# 此前写作 `v1.${CUR_VER#1.}`——`${CUR_VER#1.}` 把 `1.5.1` 剥成 `5.1`，拼出 `v1.5.1`
+# 目录段，该路径**永不存在**（真目录 `v1.5`），`2>/dev/null` 又把报错吞掉 ⇒ 章标题
+# 抽取恒空，「交付关键词覆盖率」只剩 CHANGELOG 加粗短语（滤掉纯数字后通常仅版本号本身）
+# ⇒ **零遗漏验证空转**（同类第三例：哑守卫 / 空集假绿 / 抽取失明）。
+# 目录段用 `${CUR_VER%.*}` 去尾段派生，不吃死 major=1 假设。
+DEVLOG_PATH="docs/changelog/v${CUR_VER%.*}/v${CUR_VER}.md"
+
 if [ -z "$CUR_VER" ]; then
   warn "无法读取当前版本号，跳过覆盖率对账（人工确认）"
 else
   # 交付章标题核心词（devlog ## N、 标题，去编号/括号注释）+ CHANGELOG 版本行 `**加粗**` 交付短语
   # 纯数字词（测试数/tool 数等计量值）非交付短语，排除——它们本就不该出现在 checklist/acceptance 正文
-  DEVLOG_KW=$(grep -E "^## [一二三四五六七八九十]+、" "docs/changelog/v1.${CUR_VER#1.}/v${CUR_VER}.md" 2>/dev/null | sed -E 's/^## [一二三四五六七八九十一点五]+、//; s/（.*//; s/\(.*//' || true)
+  # 🔴 抽取失明守卫（非重言双断言）：devlog 不在位 / 章标题抽取为空，都让覆盖率对账**失去输入**，
+  #    此时「零遗漏」是假结论 ⇒ 显式报 FAIL，不静默降级为「只有版本号一个关键词」的空转绿。
+  if [ ! -s "$DEVLOG_PATH" ]; then
+    bad "当前版本 devlog 不在位（${DEVLOG_PATH}）——交付关键词抽取失去输入，覆盖率对账空转" "    修复：确认 devlog 落点（目录段 = v<major>.<minor>）或版本号取值源"
+  fi
+  DEVLOG_KW=$(grep -E "^## [一二三四五六七八九十]+、" "$DEVLOG_PATH" 2>/dev/null | sed -E 's/^## [一二三四五六七八九十]+、//; s/（.*//; s/\(.*//' || true)
+  if [ -s "$DEVLOG_PATH" ] && [ -z "$DEVLOG_KW" ]; then
+    bad "从 ${DEVLOG_PATH} 未提取到任何交付章标题（体例应为「## N、标题」）——抽取体例漂移，覆盖率对账失去输入" "    修复：对齐章标题体例，或更新本段抽取规则"
+  fi
   CHANGELOG_KW=$(grep -E "^\- \*\*v${CUR_VER}\*\*" CHANGELOG.md 2>/dev/null | head -1 | grep -oE '\*\*[^*]+\*\*' | sed 's/\*\*//g' | sed -e 's/（.*//' -e 's/(.*//' | grep -vE '^[0-9]+$' || true)
-  ALL_KW=$(printf '%s\n%s\n' "$DEVLOG_KW" "$CHANGELOG_KW" | grep -vE '^[[:space:]]*$' | grep -vE '^[0-9]+$' | sort -u || true)
+  # 🔴 排序去重强制 LC_ALL=C：UTF-8 collation 会把不同汉字串判为相等，`sort -u` 随即
+  # **静默丢关键词**（实测同一份 11 条关键词表在 UTF-8 下只剩 9 条 ⇒ 少查 2 项、缺口被掩盖，
+  # 表现为「UTF-8 跑出 3 个缺口 / C 跑出 5 个缺口」的假分歧——真相是 UTF-8 那版漏查）。
+  ALL_KW=$(printf '%s\n%s\n' "$DEVLOG_KW" "$CHANGELOG_KW" | grep -vE '^[[:space:]]*$' | grep -vE '^[0-9]+$' | LC_ALL=C sort -u || true)
 
   if [ -z "$ALL_KW" ]; then
     warn "当前版本（v${CUR_VER}）未提取到交付关键词——devlog 章标题/CHANGELOG 版本行格式变化？人工确认"
@@ -278,7 +309,7 @@ else
 $(echo "$_kw" | grep -oE '[一-龥]{4,}|[A-Za-z][A-Za-z-]{3,}' || true)
 EOF
         if [ "$_sub_hit" -eq 0 ]; then
-          bad "交付关键词「${_kw}」在 checklist/acceptance 均零命中" "    处置三选一：① 审查文档补该审查面（阶段五 A 类分发）② 词形不同 → 加进 $EXEMPT_FILE ③ 非交付性章节（背景/依赖）→ 豁免"
+          bad "交付关键词「${_kw}」在 checklist/acceptance 均零命中" "    处置三选一：① 审查文档补该审查面（阶段四 A 类分发）② 词形不同 → 加进 $EXEMPT_FILE ③ 非交付性章节（背景/依赖）→ 豁免"
           COV_MISS=$((COV_MISS + 1))
         fi
       fi
@@ -290,7 +321,7 @@ EOF
 fi
 
 # ============================================================
-# 七、同主题维度聚簇提示（阶段五三判据②重叠判据的脚本化）
+# 七、同主题维度聚簇提示（阶段四三判据②重叠判据的脚本化）
 # ============================================================
 # 原理：维度标题先清洗（去编号/去括号注释/去分隔符）→ 抽「≥2 字 CJK 连续段」+
 # 「≥4 字符拉丁词（排除版本号）」作主题词 → 同一主题词命中 ≥3 个维度 = 强归并候选
@@ -310,12 +341,24 @@ DIM_TITLES_CLEAN=$(grep -E "^#### " "$CHECKLIST" | sed 's/^#### [0-9]*\. //; s/�
 # 数据流单向化根治）。展示循环只读文件，变量全部独立前缀。
 CLUSTER_TMP=$(mktemp /tmp/crs-cluster-XXXX)
 CLUSTER_ALL=$(mktemp /tmp/crs-all-XXXX)
-# 判据分离：原始词表（CLUSTER_ALL）空 = perl 提取失败（真故障）；原始词表非空但过滤后（CLUSTER_TMP）空
-# = 干净态（无 ≥min 聚簇，低信号正是本检查该有的行为）。两态共用空结果 = 旧版把干净态误报成故障的根因。
-printf '%s\n' "$DIM_TITLES_CLEAN" | LC_ALL="${LC_ALL_UTF8:-en_US.UTF-8}" perl -CSD -ne 'while (/([\p{Han}]{2,}|[A-Za-z]{4,})/g) { my $w = $1; next if $w =~ /^[vV]\d/; print "$w\n" }' 2>/dev/null > "$CLUSTER_ALL" || true
-sort "$CLUSTER_ALL" | uniq -c | sort -rn | awk -v min="$CLUSTER_MIN" '$1 >= min {print $1, $2}' > "$CLUSTER_TMP" || true
+# 提取失败必须留痕：旧版 `2>/dev/null` + `|| true` 把 perl 死亡（C locale 下读到被 sed
+# 按字节切的损坏多字节 → exit 255）变成静默——提取已死却落进「词表非空 ⇒ 干净态」分支。
+printf '%s\n' "$DIM_TITLES_CLEAN" | LC_ALL="${LC_ALL_UTF8:-en_US.UTF-8}" perl -CSD -ne 'while (/([\p{Han}]{2,}|[A-Za-z]{4,})/g) { my $w = $1; next if $w =~ /^[vV]\d/; print "$w\n" }' > "$CLUSTER_ALL" 2> "${CLUSTER_ALL}.err"
+CLUSTER_RC=$?
+CLUSTER_NWORDS=$(wc -l < "$CLUSTER_ALL" | tr -d ' ')
+# 排序/去重强制 LC_ALL=C：UTF-8 collation 把不同汉字串判为相等 ⇒ `uniq -c` 假合并
+# （实测「产物/模型/策略」三词并成一组、计数虚高到 247，凭空造出假聚簇）。两个方向都坏，
+# 只是坏法不同：C 下「提取死」，UTF-8 下「计数假」。
+LC_ALL=C sort "$CLUSTER_ALL" | LC_ALL=C uniq -c | LC_ALL=C sort -rn | LC_ALL=C awk -v min="$CLUSTER_MIN" '$1 >= min {print $1, $2}' > "$CLUSTER_TMP" || true
 
-if [ -s "$CLUSTER_TMP" ]; then
+# 提取健康度两道闸（都是「非空但失真」——旧版只挡「空集」，挡不住退化，这是空集守卫的洞）：
+#   ① perl 退出码 ≠ 0 = 抽取进程故障
+#   ② 词表行数 < 维度数 = 「每维至少产出 1 个主题词」的体例被打破 = 清洗/抽取被 locale 削弱
+if [ "$CLUSTER_RC" -ne 0 ]; then
+  bad "主题词提取失败（perl 退出码 ${CLUSTER_RC}）——⑦ 段失去输入，'无聚簇' 结论不可信" "    错误：$(head -2 "${CLUSTER_ALL}.err" 2>/dev/null | tr '\n' ' ')"
+elif [ "${CLUSTER_NWORDS:-0}" -lt "${ACTUAL_DIM:-0}" ]; then
+  bad "主题词表仅 ${CLUSTER_NWORDS} 行 < 维度数 ${ACTUAL_DIM:-?}——提取退化（locale 清洁度？），'无聚簇' 结论不可信" "    期望：每个维度标题至少产出 1 个主题词"
+elif [ -s "$CLUSTER_TMP" ]; then
   while IFS= read -r c7_line; do
     [ -z "$c7_line" ] && continue
     c7_n=$(echo "$c7_line" | awk '{print $1}')
@@ -333,14 +376,9 @@ if [ -s "$CLUSTER_TMP" ]; then
     [ "$QUIET" = false ] && echo -e "  ↳ 提示非 FAIL：聚簇=归并候选（三判据②），归并/保留人工裁决；「tool/完整性」类通用词多为假信号"
   fi
 else
-  if [ ! -s "$CLUSTER_ALL" ]; then
-    # 原始词表为空 = perl 提取失败（locale 退化 / perl 缺失），不误报"干净"
-    warn "聚簇提取结果为空但维度标题非空——perl 提取可能失败（locale？），人工确认"
-  else
-    ok "无 ≥${CLUSTER_MIN} 维同主题聚簇（暂无归并候选——干净态低信号，正常）"
-  fi
+  ok "无 ≥${CLUSTER_MIN} 维同主题聚簇（暂无归并候选——干净态低信号，正常）"
 fi
-rm -f "$CLUSTER_TMP" "$CLUSTER_ALL"
+rm -f "$CLUSTER_TMP" "$CLUSTER_ALL" "${CLUSTER_ALL}.err"
 
 # ============================================================
 # 汇总

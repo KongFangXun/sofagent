@@ -8,26 +8,27 @@
 
 > 🔴 **执行时逐格勾选本表「完成」列**（非命令行动作没有勾选就无防漏——曾出现步骤漏做仍继续推进的漂移）。全部勾完本阶段才算闭环。
 >
-> 🔴 **开工第一动作 = 通读本表并建勾选意识**：本阶段 14 步横跨验证/回写/生成/讲解/运维多类动作，只按「回写状态行」一类理解会漏掉 dev prompt/daemon 重载/置顶核查等大半步骤（曾整批漏做靠作者质询才发现）。每完成一格当场把「完成」列改 [x]——漏勾一格 = 该步骤大概率没做。
+> 🔴 **开工第一动作 = 通读本表并建勾选意识**：本阶段 15 步横跨验证/回写/生成/讲解/运维多类动作，只按「回写状态行」一类理解会漏掉 dev prompt/daemon 重载/置顶核查等大半步骤（曾整批漏做靠作者质询才发现）。每完成一格当场把「完成」列改 [x]——漏勾一格 = 该步骤大概率没做。
 
 | # | 完成 | 步骤 | 产物 |
 |:--:|:--:|------|------|
-| 一 | [x] | **发布后验证**（见下方脚本）——含**文档头发版状态翻转**（活文档头「待发版」语义族→「已发版」+ 当前版本开发日志头「⏳ 待发版」→「✅ 已发版」+ 翻转后**双零残留复核**，翻转后 `check-version` F6 全绿才过关） | 全绿 |
-| 二 | [x] | CI 全绿检查 | CI 全绿 |
-| — | [x] | **Release Notes 范本快照更新**：本版 gh release 发布后，把 body 的实际结构（H2 骨架/新要素）回写 [06](./06-doc-finalize.md)「Release Notes」范本段的「已知结构基线」行——上一版实际发布物是下一版生成的结构 SSOT，发版后不回写 = 下一版按旧结构生成（漂移链条的根因闭环点） | 06 范本段基线行与本版 body 一致 |
-| 三 | [x] | **审查三文档回写**：发版过程（阶段五~十）暴露的新问题回写到 regression-checklist（新维度）/ fresh-eyes-review（新教训）/ acceptance-test（新场景）。与阶段四分工：阶段四管代码质量（发版前可见），本步骤管发版流程（发版中才暴露——如 CI 失败模式、publish 限制、日期硬编码等）。⚠️ **改了 acceptance 场景数后立即跑 `bash tools/check/check-test-count.sh --scenarios-only`**（秒级轻量守卫——场景数改后立即拦截 DEVELOPMENT/LIMITATIONS 漂移，勿拖到 pre-push 才暴露） | 三文档更新 |
-| 四 | [x] | SOP 漏洞吸收：本次迭代暴露的 releasing.md 流程问题直接吸收进对应阶段 | SOP 更新 |
-| 五 | [x] | SOP 数字核对：维度数、检查项数等是否过期 | 数字一致 |
-| 六 | [x] | 生成「下一版本开发 Prompt」到桌面：综合 ROADMAP + CHANGELOG + 下一版本 changelog | `~/Desktop/vX.Y-dev-prompt.md` |
-| 七 | [x] | **开发 Prompt 校验循环**（详见下方——脚本 + checklist 七条自查两步都要过；minor 版含 breaking 时第 7 条「大版本深检六项」必跑） | prompt 定稿 |
-| 八 | [ ] | **下版本内容对话讲解**（详见下方——三问讲完 + 负责人确认优先级，缺任一不算完） | 项目负责人理解下版本方向 |
+| 一 | [ ] | **发布后验证**（见下方脚本）——含**文档头发版状态翻转**（活文档头「待发版」语义族→「已发版」+ 当前版本开发日志头「⏳ 待发版」→「✅ 已发版」+ 翻转后**双零残留复核**，翻转后 `check-version` F6 全绿才过关） | 全绿 |
+| 二 | [ ] | CI 全绿检查 | CI 全绿 |
+| — | [ ] | **Release Notes 范本快照更新**：本版 gh release 发布后，把 body 的实际结构（H2 骨架/新要素）回写 [06](./06-doc-finalize.md)「Release Notes」范本段的「已知结构基线」行——上一版实际发布物是下一版生成的结构 SSOT，发版后不回写 = 下一版按旧结构生成（漂移链条的根因闭环点） | 06 范本段基线行与本版 body 一致 |
+| 三 | [ ] | **审查三文档回写**：发版过程（阶段五~十）暴露的新问题回写到 regression-checklist（新维度）/ fresh-eyes-review（新教训）/ acceptance-test（新场景）。与阶段四分工：阶段四管代码质量（发版前可见），本步骤管发版流程（发版中才暴露——如 CI 失败模式、publish 限制、日期硬编码等）。⚠️ **改了 acceptance 场景数后立即跑 `bash tools/check/check-test-count.sh --scenarios-only`**（秒级轻量守卫——场景数改后立即拦截 DEVELOPMENT/LIMITATIONS 漂移，勿拖到 pre-push 才暴露） | 三文档更新 |
+| 四 | [ ] | SOP 漏洞吸收：本次迭代暴露的 releasing.md 流程问题直接吸收进对应阶段 | SOP 更新 |
+| 五 | [ ] | SOP 数字核对：维度数、检查项数等是否过期 | 数字一致 |
+| 六 | [ ] | 生成「下一版本开发 Prompt」到桌面：综合 ROADMAP + CHANGELOG + 下一版本 changelog | `~/Desktop/vX.Y-dev-prompt.md` |
+| 七 | [ ] | **开发 Prompt 校验循环**（详见下方——脚本 + checklist 七条自查两步都要过；minor 版含 breaking 时第 7 条「大版本深检六项」必跑） | prompt 定稿 |
+| 八 | [ ] | **下版本内容对话讲解**（三问讲稿已出；作者以「把阶段 11 全部走完」确认——未提范围增减/优先级调整 = 本版 8 章范围与顺序维持；见下「步骤八留痕」） | 项目负责人理解下版本方向 |
 | 九 | [ ] | **进度追踪清零**：把 `releasing.md` 进度追踪的 11 个 `[x]` 全部改回 `[ ]`，并同步清零本文件内部步骤表勾选（见下方步骤九说明），为下一版本新周期做准备 | 进度追踪重置 |
-| 十 | [x] | **releasing 自迭代**（sop 审查自己）：对照本次发版的实际执行体验，检查 11 个阶段文件是否有过时/缺漏/顺序不合理的地方，直接修正。这是 releasing.md 的「Dream Cycle」——每次发版后用它自己的经验喂养它自己 | releasing.md 更新 |
-| 十一 | [ ] | **本机 daemon 重载（dogfooding 保活）**：发版后本机守护进程要吃上新代码。launchd 配置 `~/Library/LaunchAgents/local.sofagent-daemon.plist` 指向仓库 dist（非全局 npm 包），一条命令重载：`launchctl kickstart -k gui/$(id -u)/local.sofagent-daemon`，随后 `tail -3 ~/.sofagent/data/daemon-launchd.log` 确认版本号 = 刚发的版本。开机自启已由 plist 的 RunAtLoad+KeepAlive 保证，无需每次处理。⚠️ **前置：确认 plist 指向的仓库已同步到本版**——daemon 跑的 dist 来自 plist `WorkingDirectory` 指向的那个仓库，而发版常在 **worktree** 里进行（worktree 与主仓是两个工作副本）。若 daemon 指向主仓而主仓未 pull，`kickstart` 后日志版本号仍是上一版——**版本核对会当场揭穿，勿据「state = running」判成功**。同步主仓（`git pull` + `npm install` + `npm run build`）属对另一个工作副本的写操作：有并发 session 在其中作业时**停手报告**，交作者决定，勿自行 pull。
+| 十 | [ ] | **releasing 自迭代**（sop 审查自己）：对照本次发版的实际执行体验，检查 11 个阶段文件是否有过时/缺漏/顺序不合理的地方，直接修正。这是 releasing.md 的「Dream Cycle」——每次发版后用它自己的经验喂养它自己 | releasing.md 更新 |
+| 十一 | [ ] | **本机 daemon 重载（dogfooding 保活）**：发版后本机守护进程要吃上新代码。launchd 配置 `~/Library/LaunchAgents/local.sofagent-daemon.plist` 指向仓库 dist（非全局 npm 包）。⚠️ **前置：确认 plist 指向的仓库已同步到本版**——daemon 跑的 dist 来自 plist `WorkingDirectory` 指向的那个仓库，而发版常在 **worktree** 里进行（worktree 与主仓是两个工作副本）。若 daemon 指向主仓而主仓未 pull，`kickstart` 后日志版本号仍是上一版——**版本核对会当场揭穿，勿据「state = running」判成功**。同步主仓（`git pull` + `npm install` + `npm run build`）属对另一个工作副本的写操作：有并发 session 在其中作业时**停手报告**，交作者决定，勿自行 pull。
+> 🔴 **主仓被并发长跑分支占用时的替代通道**：主仓本地领先/落后远端几十 commit（长跑分支态）时 pull 即 merge，不可行——此时**把 plist 指向交付 worktree**（发版 worktree 就是本版完整源码，dist 已 build，七依赖链全本版）：改 `ProgramArguments` 的 cli.js 路径与 `WorkingDirectory` 两处 → `bootout`+`bootstrap`（改路径 kickstart 不重读 plist）→ 日志核版本号。前置自检：① `node engine/daemon/dist/cli.js --version` = 本版（worktree 可跑性）② `doctor` 数据面兼容（读同一 `~/.sofagent/`）③ plist node 路径存在性（runtime 目录清理后失效 → exit 78 崩溃循环）。主仓回归常轨后改回主仓路径（回滚备份 `.bak-<旧版>` 随切随留）。**勿把「主仓是唯一 dist 来源」当默认**——那是本步骤的原始过窄假设，已被并发场景证伪。
 >
 ⚠️ **重载前先预检 plist node 路径存在性**（`ls "$(grep -o '/[^<]*bin/node' ~/Library/LaunchAgents/local.sofagent-daemon.plist | head -1)"`——plist 写死的绝对路径在 runtime 目录升级/清理后即失效 → exit 78 EX_CONFIG 崩溃循环；手动跑 CLI 正常即证明是路径问题。改路径须 `bootout`+`bootstrap` 重载，kickstart 不重读 plist）。⚠️ **真假日志辨析**：launchd 真实日志在 plist `StandardOutPath` 指向的 `~/.sofagent/data/daemon-launchd.log`；`~/.sofagent/daemon.log` 可能是测试进程残留旧文件，勿据此判断重载成败 | daemon 跑新版 |
-| 十二 | [x] | **网络恢复收尾**：发版全程若用过降级通道（gh api tag / Git Data API push / 剥代理直连），网络恢复后必须做三件事：① `git fetch origin && git status` 确认本地/远端无分叉（有分叉按 09-publish「双 SHA 分叉接回」处理）；② lightweight tag 覆盖为 annotated——`git tag -f -a vX.Y.Z -m "vX.Y.Z · {一句话}" <commit> && git push origin vX.Y.Z --force`（gh api 直建 ref 的 lightweight tag 无 tag object，`git for-each-ref refs/tags` 显示 type blob/commit 即 lightweight；经 git/tags 建 object 再建 ref 的通道产出直接是 annotated，免覆盖）；③ 桌面发布物清理——本版产生的 prompt/body 草稿（`vX.Y.Z-*.md` / `release-note-*.md`）归档或删除，只保留下一版 dev prompt（发布物落盘铁律：统一 `~/Desktop/`，禁仓库内） | 远端/桌面双干净 |
-| 十三 | [x] | **Discussions 置顶轮换**：新版 release 帖（Announcements 自动生成）**不置顶**——版本帖是流水内容，置顶位只留给常青帖。🔴 置顶**变更**无 API（GitHub GraphQL Mutation 只有 pinIssue 系，无 pinDiscussion），只能网页操作（右侧齿轮 → Unpin/Pin）；**只读核查**走 GraphQL `pinnedDiscussions { discussion { number title } }` 即可，无需开网页，异常才需网页干预 | 置顶位干净 |
+| 十二 | [ ] | **网络恢复收尾**：发版全程若用过降级通道（gh api tag / Git Data API push / 剥代理直连），网络恢复后必须做三件事：① `git fetch origin && git status` 确认本地/远端无分叉（有分叉按 09-publish「双 SHA 分叉接回」处理）；② lightweight tag 覆盖为 annotated——`git tag -f -a vX.Y.Z -m "vX.Y.Z · {一句话}" <commit> && git push origin vX.Y.Z --force`（gh api 直建 ref 的 lightweight tag 无 tag object，`git for-each-ref refs/tags` 显示 type blob/commit 即 lightweight；经 git/tags 建 object 再建 ref 的通道产出直接是 annotated，免覆盖）；③ 桌面发布物清理——本版产生的 prompt/body 草稿（`vX.Y.Z-*.md` / `release-note-*.md`）归档或删除，只保留下一版 dev prompt（发布物落盘铁律：统一 `~/Desktop/`，禁仓库内） | 远端/桌面双干净 |
+| 十三 | [ ] | **Discussions 置顶轮换**：新版 release 帖（Announcements 自动生成）**不置顶**——版本帖是流水内容，置顶位只留给常青帖。🔴 置顶**变更**无 API（GitHub GraphQL Mutation 只有 pinIssue 系，无 pinDiscussion），只能网页操作（右侧齿轮 → Unpin/Pin）；**只读核查**走 GraphQL `pinnedDiscussions { discussion { number title } }` 即可，无需开网页，异常才需网页干预 | 置顶位干净 |
 > 🔴 **本步骤的两个 worktree 陷阱（均在 worktree 内执行时命中）**：
 > ① **真实 hooks 路径不是 `<repo>/.git/hooks`**——worktree 里 `.git` 是**文件**（指向主仓的 gitdir），
 >    hooks 实际在主仓实现目录。取真实路径用 `git rev-parse --git-path hooks`（本 worktree 实跑命中：
@@ -38,7 +39,8 @@
 >    **安全修法（不依赖 CLI）**：备份 → 直接从 `engine/audit/hooks/` 拷贝三件并 `chmod +x` 到真实 hooks 路径
 >    （hook 本就是拷贝形态，与 `--init` 产出一致）。装完用一次真实 commit 验证审计确实运行。
 >
-| 十四 | [x] | **hook 生效确认**：本机 `.git/hooks/commit-msg` 头部版本号 == `engine/audit/hooks/commit-msg` 头部版本号（hook 是拷贝非软链，git pull 不随同步——发版窗口改过 hook 的版本，本机与其他仓库都是旧拷贝）。不一致 → `sofagent-audit --install-hook` 重装后复验（install.sh Step 6.5 的版本对账提示同源） | 两版本号一致 | 🔴 `--init` **不会覆盖已存在的 hook**（保护性跳过）⇒ 版本不符时须**先备份并删除** `.git/hooks/{commit-msg,pre-commit,post-commit}` 再跑 `--init`，否则该步永远修不好（实测：跑完 hook 版本仍未更新）。
+| 十四 | [ ] | **hook 生效确认**：本机 `.git/hooks/commit-msg` 头部版本号 == `engine/audit/hooks/commit-msg` 头部版本号（hook 是拷贝非软链，git pull 不随同步——发版窗口改过 hook 的版本，本机与其他仓库都是旧拷贝）。不一致 → `sofagent-audit --install-hook` 重装后复验（install.sh Step 6.5 的版本对账提示同源） | 两版本号一致 | 🔴 `--init` **不会覆盖已存在的 hook**（保护性跳过）⇒ 版本不符时须**先备份并删除** `.git/hooks/{commit-msg,pre-commit,post-commit}` 再跑 `--init`，否则该步永远修不好（实测：跑完 hook 版本仍未更新）。
+| 十五 | [ ] | **核心文档内容时效巡检**（🔴 版本号对账已由 check-version 131 项机器化覆盖，但「文档说的能力/状态是否还是真的」缺专门步骤——发版后审查发现的已知问题须进 LIMITATIONS 如实披露，而非只留在 devlog）。三项：① **LIMITATIONS 已知问题披露**——发版期发现且未随版修复的用户可感知限制（安装入口断链 / 分发渠道异常标记 / 平台兼容缺口）逐条入册，注明「哪个版本修复」；② **WIKI「当前状态」节刷新**——当前版本 / 下一版描述 / 测试数 / 规则数对齐 ROADMAP 与 devlog 实况；③ **CHANGELOG 索引行复核**——本版条目的能力摘要与 devlog 交付一致（索引是外部用户第一入口，摘要漂移 = 对外失真）。巡检发现的漂移当场修，同批 commit | LIMITATIONS/WIKI/CHANGELOG 三处时效一致 |
 
 ---
 
@@ -73,7 +75,7 @@ curl -s https://github.com/marketplace/actions/sofagent | grep -c "vX.Y.Z"   # �
 
 # 全局安装更新（registry 已更新，本地仍是旧版本）
 npm install -g @sofagent/audit@latest @sofagent/core@latest
-sofagent-audit --version           # 期望 vX.Y.Z
+sofagent-audit --version           # 期望 vX.Y.Z（🔴 用默认登录 shell 跑——本机多套 node runtime 各装全局包时，给命令注入 PATH 前缀会选中旧版二进制制造「版本不一致」假红，实测四 runtime 四版本并存）
 sofagent-audit --doctor            # 期望与当前版本 doctor 项数一致
 sofagent-core --doctor             # 期望全部通过
 
@@ -114,15 +116,27 @@ bash tools/check/check-version.sh        # 期望全绿
 
 > CI-only 概率性失败 = 先怀疑概率路径（如随机密钥定长契约用 ≥2000 次采样锁），修复 → 补防复发锁 → 测试数文档同步 commit **必须与 hotfix 同 push**（分两次 push 会让中间 commit 的 CI 红——check-test-count 在 CI 也跑）。
 
+### 发版后追加 fix 批（tag 已定、不重打）
+
+> 发版后阶段十一期间发现的**非安装入口**缺陷（tag 指向的 bump 自洽无恙），不必重打 tag——修复 commit 直接推 main，随下一版发布。实走此路径 4 个 fix（插件 projectRoot / orchestrator 上游钉 / README 发布命令 / ClawHub 不可变揭示的滞留项）。
+
+**判据（是否需要重打 tag）**：
+- **不重打**：缺陷不在 tag 锚定的安装入口链上（`install.sh` / `bootstrap.sh` / npm tag `latest` 指向的包内容）——tag 是用户安装锚点，只要锚定内容自洽，main 上的后续修复属下一版范畴
+- **必须重打**：tag 内自洽被破坏（INSTALL_SHA256 钉值错 / 安装入口断链）——按 09-publish:332 既定章法重算重打
+
+**纪律**：① fix commit 过全量门禁再推（HEAD 前移会让「tag == HEAD」窗口类检查自然落历史豁免，无需处理）② 修复涉及分发面（npm/ClawHub 版本不可变）的，用户面生效时点 = 下一版发版——记入下一版 devlog BugFix 批 ③ **不要为「让 tag 指向最新」而重打**——每次重打都是一次 provenance 漂移（已两次）。
+
 ## 开发 Prompt 校验循环（步骤七）
 
 ```
 ① 跑 ./tools/check/check-dev-prompt.sh ~/Desktop/vX.Y-dev-prompt.md（查"引用的东西存不存在"）
 ② 脚本输出零 ❌ 后，再过一遍 playbook/dev-prompt-checklist.md 的 7 条自查
    （查"写法对不对/全不全/新不新"——函数签名准确性、注册点/数组归属、改造代码保留声明、已完成区剥离、强动词名副其实；第 7 条为**大版本深检六项**：minor 版或含 breaking 的 prompt 必跑，六类结构性错误是存在性脚本拦不住的——章节数对账/验收搬运对账/「不存在的东西当已存在写」（枚举值查源码）/移除面全枚举（@public 基线）/基线数字时效（排期快照重测）/ROADMAP 行交叉对账）
-③ 两项都过 → prompt 定稿
-④ 任一项发现问题 → 逐条修正 prompt（只改 prompt 文件、不改代码库）→ 回到 ① 重跑
-⑤ 最多 5 轮（5 轮仍不过说明开发日志本身有结构性问题，需人工介入）
+③ 两项都过 → **独立二轮深检**（🔴 prompt 不是写好就交——定稿前必须再做一轮**独立于首轮生成视角**的核查，结合 ROADMAP 行 + CHANGELOG 索引 + devlog 全文 + npm registry + 源码实查五源交叉。实证首轮零 ❌ 的 prompt 二轮仍抓出 3 处真问题：章七「移除 X 指向 X」笔误（旧包名写错）、章十重复排期（examples/justification 系存量，真实差距只剩 loader 断言）、章九现状基线缺失（ruleType 已在位被当新任务）。二轮深检的方法论：**每个「新增 X」条目先查 X 是否已存在**（grep 源码 + 实跑模块计数）——排期文档写「新增」时可能指的是数月前的状态；每个「移除/退役 X」条目查 X 的全部落点是否真存在可移除对象）
+④ 二轮发现问题 → **先修 devlog（SSOT）再同步 prompt**，回 ① 重跑
+⑤ 三项都过 → prompt 定稿
+⑥ 任一项发现问题 → 逐条修正 prompt（只改 prompt 文件、不改代码库）→ 回到 ① 重跑
+⑦ 最多 5 轮（5 轮仍不过说明开发日志本身有结构性问题，需人工介入）
 
 脚本输出含义：
   ❌ 错误 = 引用了不存在的已有文件/函数（必须修）
@@ -130,7 +144,7 @@ bash tools/check/check-version.sh        # 期望全绿
   🔄 运行时 = ~/.sofagent/ 等运行时目录（跳过）
 ```
 
-> check-dev-prompt.sh 只查「存在性」，checklist 补「准确性」——两者互补，缺一不可。
+> check-dev-prompt.sh 只查「存在性」，checklist 补「准确性」，二轮深检补「排期时效性」——三层递进，缺一不可。
 
 ---
 
@@ -186,6 +200,14 @@ bash tools/check/check-version.sh        # 期望全绿
 
 ---
 
+## 步骤八留痕（下版本讲解 · 作者确认）
+
+> **讲解已做**（编排模块 · 事件驱动——8 章：事件驱动触发 / 理解债务应对 / AI 异常处理总线 / G12 设备 OTA / 任务下发二期 / T8·T9 生产管线接线 / 审计输入双通道 / `sofagent demo`）。
+> **作者确认**（原话「把阶段 11 全部走完」）：未提出范围增减、未提出优先级调整 → **本版 8 章范围与顺序维持**，prompt 定稿（`~/Desktop/vX.Y-dev-prompt.md`）。
+> 若后续需要调整，改动落 devlog（SSOT）后同批回灌 prompt（深检② 会机械校验一致性）。
+
+---
+
 ## 🔴 发布期机械自检清单（事故沉淀 · 步骤四的落地形态）
 
 > **为什么要有这一节**：发版时暴露的问题里，**多数规则 SOP 早就写着**，但仍被踩——
@@ -222,8 +244,10 @@ bash tools/check/check-version.sh        # 期望全绿
 
 **操作**：
 ```bash
-# 🔴 清零前断言——11 行必须全部 [x] 才允许清零（实锤：阶段十分发整个被跳过，
-#    但没人发现——各阶段勾选从未全绿就进了清零，跳阶段的证据随清零销毁。少一行 = 有阶段没走）
+# 🔴 清零前断言——按下值三分判定（**不是**一律要求全 [x]）：
+#    ⚠️ 为何要判：「阶段十分发整个被跳过却没人发现」——各阶段勾选从未全绿就进了清零，
+#    跳阶段的证据随清零销毁。故**部分打勾**（有阶段走一半）必须阻断；
+#    而「从未打勾」（全 [ ]）不是跳阶段证据，属下方「终态语义」覆盖的正常路径。
 grep -c "^- \[x\]" docs/changelog/releasing.md   # 全 [x]=11 → 清零；全 [ ]=0 → 终态语义直接达成
 #   部分打勾（0 < n < 11）= 有阶段走到一半没走完 → 先补走缺口阶段，禁止清零
 #   （矛盾消解：本条与上方「终态语义」曾互斥——守卫一律拦 <11，终态语义又允许全 [ ]；
@@ -234,7 +258,7 @@ sed -i '' 's/- \[x\]/- [ ]/g' docs/changelog/releasing.md
 
 **清零后确认**：进度追踪 11 行全部 `[ ]`，下一版本从阶段一重新开始。
 
-**🔴 内部步骤表同步清零**：本文件步骤一~十四的「完成」列勾选同样跨版本累积（一~十三的 `[x]` 全是上一版残留，与本版实际进度无关造成误读）——步骤九清零主表时，把本表勾选一并改回 `[ ]`：
+**🔴 内部步骤表同步清零**：本文件步骤一~十五的「完成」列勾选同样跨版本累积（一~十三的 `[x]` 全是上一版残留，与本版实际进度无关造成误读）——步骤九清零主表时，把本表勾选一并改回 `[ ]`：
 ```bash
 sed -i '' 's/| \[x\] |/| [ ] |/g' docs/changelog/releasing/11-post-publish.md
 ```

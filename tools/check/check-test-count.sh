@@ -132,21 +132,38 @@ run_scenario_guard() {
   }
 
   # ① DEVELOPMENT.md — "acceptance-test.sh（NNN 场景）"
-  DEV_LINE=$(grep -nE 'acceptance-test\.sh.*[0-9]+ 场景' docs/DEVELOPMENT.md 2>/dev/null | head -1)
-  if [ -n "$DEV_LINE" ]; then
-    check_scenario_doc "DEVELOPMENT.md" "docs/DEVELOPMENT.md" \
-      "$(echo "$DEV_LINE" | cut -d: -f1)" \
-      "$(echo "$DEV_LINE" | grep -oE '[0-9]+ 场景' | head -1 | grep -oE '[0-9]+')"
+  # v1.5.1 F4：原实现 `grep -n … | head -1` **只取首个匹配行**——同文档其余
+  #   「NNN 场景」声称**完全不受检**，多值并存时首个命中即放行（整类假绿）。
+  #   改为**逐行全检**：每处声称各出一个判定。缺失声称 ⇒ FAIL（守卫不空转）。
+  DEV_MATCHES=$(grep -nE 'acceptance-test\.sh.*[0-9]+ 场景' docs/DEVELOPMENT.md 2>/dev/null)
+  if [ -z "$DEV_MATCHES" ]; then
+    echo -e "  ${RED}✗ docs/DEVELOPMENT.md 未找到「acceptance-test.sh … NNN 场景」声称——措辞漂移或段被删（守卫不空转，判 FAIL）${NC}"
+    SCEN_FAIL=$((SCEN_FAIL + 1))
+  else
+    while IFS= read -r _dev_ln; do
+      [ -n "$_dev_ln" ] || continue
+      check_scenario_doc "DEVELOPMENT.md" "docs/DEVELOPMENT.md" \
+        "$(echo "$_dev_ln" | cut -d: -f1)" \
+        "$(echo "$_dev_ln" | grep -oE '[0-9]+ 场景' | head -1 | grep -oE '[0-9]+')"
+    done <<< "$DEV_MATCHES"
   fi
 
-  # ② LIMITATIONS.md — "acceptance-test.sh NNN 场景"（当前版本口径，取「发版前手动覆盖」行）
-  # 注意：该行同时含「OpenClaw 验收 63 场景」，必须 head -1 只取 acceptance 的紧邻数字，
-  # 否则 grep -oE 会连带捕获 63 造成误报。
-  LIM_SCN_LINE=$(grep -nE 'acceptance-test\.sh [0-9]+ 场景' docs/LIMITATIONS.md 2>/dev/null | head -1)
-  if [ -n "$LIM_SCN_LINE" ]; then
-    check_scenario_doc "docs/LIMITATIONS.md" "docs/LIMITATIONS.md" \
-      "$(echo "$LIM_SCN_LINE" | cut -d: -f1)" \
-      "$(echo "$LIM_SCN_LINE" | grep -oE 'acceptance-test\.sh [0-9]+ 场景' | head -1 | grep -oE '[0-9]+')"
+  # ② LIMITATIONS.md — "acceptance-test.sh NNN 场景"（当前版本口径）
+  # 注意（行内取值）：该行同时含「OpenClaw 验收 63 场景」，行内 `head -1` 只取 acceptance
+  #   紧邻数字，否则 grep -oE 会连带捕获 63 造成误报——**此处 head -1 是行内取值，保留**。
+  # v1.5.1 F4：但**行的选取**不得 `head -1`——改为逐行全检；且缺失声称 ⇒ FAIL
+  #   （原实现是 `if [ -n … ]` 无 else ⇒ 找不到就静默跳过，属守卫空转）。
+  LIM_SCN_MATCHES=$(grep -nE 'acceptance-test\.sh [0-9]+ 场景' docs/LIMITATIONS.md 2>/dev/null)
+  if [ -z "$LIM_SCN_MATCHES" ]; then
+    echo -e "  ${RED}✗ docs/LIMITATIONS.md 未找到「acceptance-test.sh NNN 场景」声称——措辞漂移或段被删（守卫不空转，判 FAIL）${NC}"
+    SCEN_FAIL=$((SCEN_FAIL + 1))
+  else
+    while IFS= read -r _lim_ln; do
+      [ -n "$_lim_ln" ] || continue
+      check_scenario_doc "docs/LIMITATIONS.md" "docs/LIMITATIONS.md" \
+        "$(echo "$_lim_ln" | cut -d: -f1)" \
+        "$(echo "$_lim_ln" | grep -oE 'acceptance-test\.sh [0-9]+ 场景' | head -1 | grep -oE '[0-9]+')"
+    done <<< "$LIM_SCN_MATCHES"
   fi
 
   # ③ changelog v1.2.3.md — 历史冻结文档，场景数不随当前 SSOT 变化（v1.2.3 发版时 SSOT=100）

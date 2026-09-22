@@ -11,6 +11,13 @@
 //     外部提交方先拿到校验反馈，再决定是否执行（对齐 workflow_submit 模式）
 //   - mode='run'：校验通过后经 dag-runner 加载执行（run 字段触发）
 //   - 非法 workflow 返回结构化错误清单（issues），绝不 crash
+//
+// v1.5.1 第一章新增（🔴 改造保留声明）：
+//   本文件**只新增**节点 `on:` 事件订阅声明的解析与校验分支
+//   （`validateEventSubscriptions` / `parseEventSubscriptions` 复用
+//   @sofagent/orchestrator 的 events 模块——单一事实源，不在 MCP 侧重写判据）；
+//   既有必填字段校验、DAG 校验、注册流程（submitWorkflow 容器）**保持原样**，
+//   本文件不替换其任何一段。不含 `on:` 声明的 workflow 行为零变化。
 // ============================================================
 
 export interface WorkflowSubmitArgs {
@@ -43,6 +50,16 @@ export interface WorkflowSubmitResult {
     mergeCriteria?: Array<Record<string, unknown>>;
     /** approver 审阅批准者（校验通过时，缺省 null = 默认强制人审） */
     approver?: Record<string, unknown> | null;
+    /**
+     * v1.5.1 第一章：节点 `on:` 事件订阅声明（校验通过时回填）。
+     * 无 `on:` 声明的 workflow 缺省不返回（保持老结构）。
+     */
+    subscriptions?: Array<{
+      node: string;
+      event: string;
+      from?: string;
+      filter?: Record<string, string | number | boolean>;
+    }>;
     /** 校验未通过时的结构化错误清单（机器可读） */
     issues?: string[];
     /** run 模式执行结果（executed=true 时） */
@@ -63,10 +80,37 @@ export async function workflowSubmit(args: WorkflowSubmitArgs): Promise<Workflow
     };
   }
 
+  // ── v1.5.1 第一章新增分支：`on:` 事件订阅声明校验与回填 ──
+  // 判据复用 @sofagent/orchestrator 的 events 模块（单一事实源，不在 MCP 侧
+  // 重写判据）；无 `on:` 声明的 workflow 恒返回空清单 → 行为零变化。
+  // 校验失败即结构化返回，不进既有 submitWorkflow 流程（该流程本文件一行未动）。
   try {
-    const { submitWorkflow } = await import('@sofagent/orchestrator');
+    const { submitWorkflow, parseEventSubscriptions, validateEventSubscriptions } = await import(
+      '@sofagent/orchestrator'
+    );
+
+    const subscriptionIssues = validateEventSubscriptions(workflow);
+    if (subscriptionIssues.length > 0) {
+      return {
+        text: `[sofagent] workflow 校验未通过 ❌（on: 事件订阅声明 ${subscriptionIssues.length} 项）：${subscriptionIssues.join('；')}`,
+        data: {
+          isError: true,
+          validated: false,
+          executed: false,
+          issues: subscriptionIssues,
+        },
+      };
+    }
+
     const handle = submitWorkflow({ workflow });
     const parsed = handle.parsed;
+    // `on:` 声明回填（解析已在上面校验通过——此处不抛）
+    const subscriptions = parseEventSubscriptions(workflow).subscriptions.map((s) => ({
+      node: s.nodeId,
+      event: s.event,
+      ...(s.from !== undefined ? { from: s.from } : {}),
+      ...(s.filter !== undefined ? { filter: s.filter } : {}),
+    }));
 
     if (mode === 'validate') {
       const criterionCount = parsed.mergeCriteria?.length ?? 0;
@@ -77,10 +121,14 @@ export async function workflowSubmit(args: WorkflowSubmitArgs): Promise<Workflow
         criterionCount > 0
           ? `merge_criteria ${criterionCount} 条（${parsed.mergeCriteria!.map((c) => c.kind).join('/')}）`
           : 'merge_criteria=无条件';
+      const eventNote =
+        subscriptions.length > 0
+          ? ` · on: ${subscriptions.length} 条事件订阅（${subscriptions.map((s) => `${s.node}←${s.event}`).join('/')}）`
+          : '';
       return {
         text:
           `[sofagent] workflow 校验通过 ✅「${parsed.name}」` +
-          ` ${parsed.nodes.length} 节点 · ${mergeNote} · ${approverNote}` +
+          ` ${parsed.nodes.length} 节点 · ${mergeNote} · ${approverNote}${eventNote}` +
           `\n  mode=validate 只校验不执行；传 mode='run' + task 触发 dag-runner 执行。`,
         data: {
           isError: false,
@@ -90,6 +138,7 @@ export async function workflowSubmit(args: WorkflowSubmitArgs): Promise<Workflow
           nodeCount: parsed.nodes.length,
           mergeCriteria: (parsed.mergeCriteria ?? []).map((c) => ({ ...c })),
           approver: parsed.approver ? { ...parsed.approver } : null,
+          ...(subscriptions.length > 0 ? { subscriptions } : {}),
         },
       };
     }
@@ -104,6 +153,7 @@ export async function workflowSubmit(args: WorkflowSubmitArgs): Promise<Workflow
         executed: true,
         name: parsed.name,
         nodeCount: parsed.nodes.length,
+        ...(subscriptions.length > 0 ? { subscriptions } : {}),
         result,
       },
     };

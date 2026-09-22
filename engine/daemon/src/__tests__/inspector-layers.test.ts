@@ -133,7 +133,7 @@ describe('inspector-layers', () => {
       const result = runLayeredInspection(tmpDir, 'L2');
       expect(result.layer).toBe('L2');
       // v1.4.8 条目 2：registry 尊重 enabled 位（skill-staleness=false 不执行）
-      expect(result.results).toHaveLength(listInspectors('L2').length - 1); // 8 注册 - 1 disabled
+      expect(result.results).toHaveLength(listInspectors('L2').length - 1); // 9 注册 - 1 disabled（v1.5.1 章二 weekly-digest 入 L2）
     });
 
     it('L3 执行返回结果数组', () => {
@@ -164,7 +164,7 @@ describe('inspector-layers', () => {
   describe('runAllLayers', () => {
     it('全量执行结果数 = 各层 enabled 条目之和（disabled 不执行）', () => {
       const results = runAllLayers(tmpDir);
-      // v1.4.8 条目 2：25 注册 - 1 disabled（skill-staleness）= 24 执行
+      // v1.4.8 条目 2：26 注册 - 1 disabled（skill-staleness）= 25 执行（v1.5.1 章二 weekly-digest 入 L2）
       const expected = (['L1', 'L2', 'L3'] as const).reduce(
         (sum, l) => sum + listInspectors(l).length - (l === 'L2' ? 1 : 0), 0,
       );

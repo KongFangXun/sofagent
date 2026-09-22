@@ -38,8 +38,10 @@ export function runVerifyChain(): void {
     switch (result.status) {
       case 'ok':
         console.log('  ✅ HMAC hash chain 完整——所有记录可验证');
-        console.log(`  首条记录: ${history[0]?.timestamp ?? 'N/A'}`);
-        console.log(`  末条记录: ${history[history.length - 1]?.timestamp ?? 'N/A'}`);
+        // loadHistory 按时间倒序返回（最新在前；默认窗口最近 100 条）——标签须与排序一致：
+        // history[0] = 最新记录；末元素 = 窗口内最早（若历史超 100 条，更早记录被窗口截断，不在此列）。
+        console.log(`  最新记录: ${history[0]?.timestamp ?? 'N/A'}`);
+        console.log(`  最早记录（最近 ${history.length} 条窗口内）: ${history[history.length - 1]?.timestamp ?? 'N/A'}`);
         process.exit(0);
         break;
       case 'tampered':

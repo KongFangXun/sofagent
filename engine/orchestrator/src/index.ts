@@ -1,4 +1,4 @@
-// ── API 分级契约（v1.5.0 四）────────────────────────────
+// ── API 分级契约（v1.5.1 四）────────────────────────────
 // `/* @public */`：公开 API——semver 锁定，变更必须 bump 版本 + CHANGELOG 记录
 //                 （外部依赖方与跨平台适配器只许 import 这一层）
 // `/* @internal */`：内部 API——不承诺稳定性，破坏性变更无需 bump
@@ -390,7 +390,7 @@
 /* @public */ export { emptyDiffReport, isDiffPass, hasErrorMismatch, summarizeDiff } from './loop-agent/diff-report';
 /* @public */ export type { DiffReport, DiffMismatch } from './loop-agent/diff-report';
 /* @public */ export { localizeError } from './loop-agent/error-localizer';
-/* @public */ export type { LocalizationResult, ErrorSource, LocalizationContext, LlmLocalizerDeps } from './loop-agent/error-localizer';
+/* @public */ export type { LocalizationResult, ErrorSource, LocalizationContext, LlmLocalizerDeps, LocalizerDegradeInfo } from './loop-agent/error-localizer';
 /* @public */ export { applyFix } from './loop-agent/fix-applier';
 /* @public */ export type { FixProposal, FixApplyResult, LlmFixerDeps, AuditGateDeps, FileOpsDeps } from './loop-agent/fix-applier';
 /* @public */ export { DEFAULT_L5_CONFIG } from './loop-agent/driver';
@@ -1139,3 +1139,95 @@
   ensureSolvesField,
 } from './skill-evolution/solves-frontmatter';
 /* @public */ export type { FrontmatterSolves } from './skill-evolution/solves-frontmatter';
+
+// ============================================================
+// v1.5.1 第二章：理解债务应对——auto-PR 决策解释块
+// 挂载点：MCP pr_submit（AI 节点产出 PR 的既有链路）在生成 PR 变更描述处调用。
+// ============================================================
+/* @public */ export { buildPrDecisionExplanation, composePrBodyWithExplanation } from './runtime/pr-explainer';
+/* @public */ export type { PrExplanation, PrExplanationInput } from './runtime/pr-explainer';
+
+// ============================================================
+// v1.5.1 第一章/第三章：事件驱动执行触发 + AI 异常处理总线
+// ============================================================
+// 第一章：三类事件源（上游节点产出 / webhook 入站 / 定时器）→ 事件总线 →
+//   按 workflow 节点 `on:` 声明路由；投递全程 HMAC 留痕；失败进死信可重放。
+// 第三章：异常三分类（可重试/需人工/需回滚）→ 复用第一章死信通道作异常入口
+//   → 路由到重试队列 / HITL 审批队列 / 回溯能力；异常决策入 decision-log 挂因果边。
+// ============================================================
+/* @public */ export {
+  EventBus,
+  EventRouter,
+  AnomalyBus,
+  classifyAnomaly,
+  ANOMALY_DECISION_KIND,
+  ANOMALY_WHY_TAG,
+  getDefaultAnomalyBus,
+  reportAnomalyToDefaultBus,
+  EVENT_TYPES,
+  REGISTERED_EVENT_TYPES,
+  parseEventSubscriptions,
+  validateEventSubscriptions,
+  createNodeOutputSource,
+  WebhookPayloadError,
+} from './events';
+// v1.5.1 修复批 B1：下列符号收窄为 @internal（不构成对外承诺）——
+//   · `setDefaultAnomalyBus`：仅 error-localizer-outlet.test.ts 从**子路径**
+//     '../events/error-bus' 导入（不依赖 barrel）⇒ 测试缝被误提成对外承诺。
+// v1.5.1 修复批 F2：下列两符号同法收窄为 @internal——
+//   · `createWebhookAdapter` / `createTimerAdapter`：三类事件源适配器工厂的
+//     webhook / timer 两支，全仓零生产调用点（新增 @public 导出无人用）。
+// 三者共同的收窄理由：**本版不构成对外承诺**——宿主装配不在本版落点、零生产调用点。
+// 宿主装配落版时随版本 bump 重升 `@public`（届时接线，或按 SDK-face 债务登记）。
+// 子路径导出保留，仓内消费与测试导入不受影响。
+// v1.5.1 复验收编：原 B1 亦收窄过 `sortEventsByTime`（全仓含测试面零引用），
+//   因其属**死导出**——收窄只是降级而非除根，本次直接删除定义与两处 barrel 导出。
+/* @internal */ export { setDefaultAnomalyBus } from './events';
+/* @internal */ export { createWebhookAdapter, createTimerAdapter } from './events';
+/* @public */ export type {
+  EventBusOptions,
+  EventHandler,
+  EventSubscriptionHandle,
+  DeadLetterInput,
+  NodeOutputSource,
+  NodeCompletionInput,
+  WebhookAdapter,
+  WebhookInbound,
+  TimerAdapter,
+  TimerRegistration,
+  EventRouterOptions,
+  NodeRunner,
+  NodeRunContext,
+  NodeRunResult,
+  ParsedSubscriptions,
+  RoutingOutcome,
+  AnomalyBusDeps,
+  AnomalyClass,
+  AnomalyInput,
+  AnomalyRouting,
+  AnomalyRoutingResult,
+  RollbackOutcome,
+  DeadLetterEntry,
+  DeliveryOutcome,
+  DeliveryRecord,
+  EventPublishInput,
+  EventRoutingTarget,
+  EventSourceType,
+  EventSubscription,
+  NodeOutputPayload,
+  EventPublishResult,
+  RegisteredEventType,
+  SofagentEvent,
+  TimerPayload,
+  WebhookKind,
+  WebhookPayload,
+  // 设备面 payload 契约（第四 / 五章——唯一定义在 events/types.ts）
+  DeviceDeliverySignature,
+  DeviceDeployPayload,
+  DeviceTaskDispatchPayload,
+  DeviceTaskItem,
+  DeviceUpgradeComponent,
+  DeviceUpgradePayload,
+  DeviceUpgradeRollout,
+  DeviceUpgradeTier,
+} from './events';

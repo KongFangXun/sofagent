@@ -4,7 +4,7 @@
 
 > 给开发者的内部机制文档——本文讲 sofagent 内部怎么跑：Skill 结构、编排模块、反思闭环、数据架构。普通用户看 [Handbook](./HANDBOOK.md)，设计决策看 [Architecture](./ARCHITECTURE.md)；sofagent 是一层 FDE Harness（嵌在成熟 Agent 与模型层之间），底层引擎的内部实现在这里展开。
 >
-> v1.5.0 · 2026-09-19（UTC）· ✅ 已发版 · 孔放勋
+> v1.5.1 · 2026-09-22（UTC）· ✅ 已发版 · 孔放勋
 
 > 💡 **行业背景**：sofagent 是一套 FDE 能力——装进成熟 Agent（DSH / OpenClaw / WorkBuddy）后，进场把业务判断写成文件（梳理工作流、构建本体数据、部署 AI 节点），离场后按文件 7×24 执行与审计。底层（Harness 中间件）**约束层 × 生命周期**双层架构：约束层 = 约束层五种能力（注入·审计·回溯·沉淀·进化），生命周期 = 五阶段（诊断→激活→编排→执行→进化；激活链四阶段 = 后四环 ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN，v1.2.5+）。不管企业用 OpenClaw / WorkBuddy / 扣子还是其他 Agent 平台，sofagent 是独立的底线守卫层。详见 [FDE/GUIDE.md](../FDE/GUIDE.md)。
 
@@ -632,7 +632,7 @@ v1.0.8 自研 git-shadow diff 解析（isomorphic-git **风格**，非 npm 包�
 
 行业测评揭示的「防刷分验证法」与 sofagent 验证体系同构：
 
-- **真实代码库 + 真实 PR 当考题**：研报用「已合并 PR + 原 PR 测试用例」当评分标准，规避公开 benchmark 泄漏导致的刷分。对应 sofagent `regression-checklist.md`（90 维）+ `acceptance-test.sh`（358 场景）——用真实修复场景与历史 case 当验收，而非玩具 benchmark。
+- **真实代码库 + 真实 PR 当考题**：研报用「已合并 PR + 原 PR 测试用例」当评分标准，规避公开 benchmark 泄漏导致的刷分。对应 sofagent `regression-checklist.md`（90 维）+ `acceptance-test.sh`（367 场景）——用真实修复场景与历史 case 当验收，而非玩具 benchmark。
 - **上下文精简 = 低成本高通过**：研报发现 Pipe Agent 同模型下比原生工具便宜 1.2–2×、性能差距 <3pt，根因是初始提示 <1500 token（vs Claude Code 20k）。这从量化角度印证 sofagent「Harness 要轻」——约束层零 token 运行（24 条规则 19 条纯 git-diff），把成本压在确定性引擎而非上下文堆料。
 - **保存 ≠ 生效 ≠ 变好**：三个状态分记，谁也不许冒充谁——**已保存**（配置/产物写入了）／**已生效**（接线在真实路径上，不是只存在于测试或声明里）／**已验证变好**（行为级验证通过，且对照了改前基线）。交付声明只能落在实际达到的那一档，未做行为验证的显式记「未验证」，不并进「已完成」。
 
@@ -642,7 +642,7 @@ Google Research 的 WikiSkill（[arXiv:2608.27454](https://arxiv.org/abs/2608.27
 
 - **持久知识层是进化胜负手**：消融拿掉 Wiki 访问，平均分 63.7% → 48.7%（-15.0pt）——比任何方法间差距都大。印证 sofagent lessons/think.md 反思区这一柱的分量：经验沉淀不是锦上添花，是技能进化的前提。
 - **推理时禁查知识库反而更好**（-2.8pt）：训练 rollout 时让 Agent 直接查 Wiki，产出的轨迹对技能开发失去参考价值。反向印证 sofagent「约束层要轻、零 token 运行」——知识供进化者离线消费，不塞执行时上下文。
-- **跨模型技能迁移有负迁移实锤**：4B 模型进化的技能把 Gemini-3.5-Flash 从 50.5% 拉到 18.1%——弱模型的低层 workaround 束缚强模型。sofagent 走 OpenAI 兼容多供应商路由（任意兼容端点均可接入），技能应按模型分级门控，不能全局通用投放。
+- **跨模型技能迁移存在负迁移**：4B 模型进化的技能把 Gemini-3.5-Flash 从 50.5% 拉到 18.1%——弱模型的低层 workaround 束缚强模型。sofagent 走 OpenAI 兼容多供应商路由（任意兼容端点均可接入），技能应按模型分级门控，不能全局通用投放。
 - **溯源与提案审计**：`PURPOSE.md`（技能回链到所解决的 pattern）与 `skill-impact.md`（每次提案 diff/分数/接受与否程序化落账）两个小机制，与 sofagent 的 LEDGER/审计轨迹理念同源。**v1.4.5 第七章四已落地**：`solves:` frontmatter 溯源字段（SKILL/ 子树 5 个带 frontmatter 的 SKILL.md 补齐——「为什么存在」回链 pattern，改技能先懂设计意图）+ skill-impact 台账（`engine/orchestrator/src/skill-evolution/`——JSONL append-only 程序化落账，被拒提案带原因不丢教训）+ eval 门控（技能变更过 eval 验证集、分数超历史最优才收编，接通 benchmark/evaluation-log 既有闭环）+ 执行/进化上下文隔离（rollout 期禁查进化知识库的运行时守卫——executor 访问即审计告警，对应消融 -2.8pt 实证的工程化防御）。
 - **自进化的开放问题恰是约束层的主场**：技能自进化的公开讨论自认仍缺质量控制、安全审核、版本管理三样——正是 sofagent 审计模块（规则集）+ 安全审查 + 回滚编排已经在做的事。开发者角色从「写技能」转为「设目标 + 把关」，与 sofagent 约束层哲学（人定规则、AI 执行、审计每次变更）同构，是 FDE 交付叙事的现成参照。
 
@@ -692,7 +692,7 @@ loop-engineering 社区将 STATE.md 定位为 **「对话外的持久化主干�
 
 ### 激活链要解决的工程问题
 
-当前 orchestrator 包（1375 测试，实测见 `tools/check/test-count.sh`）和 registry.ts（v1.0.8 动态注册）已经能跑——但只有开发者手动写 `.sofagent/subagents/*.yml` 才能注册自定义 Agent。激活链做的事：**让 FDE 诊断交付物自动变成 `.sofagent/subagents/*.yml`**，不需要人手写。
+当前 orchestrator 包（1426 测试，实测见 `tools/check/test-count.sh`）和 registry.ts（v1.0.8 动态注册）已经能跑——但只有开发者手动写 `.sofagent/subagents/*.yml` 才能注册自定义 Agent。激活链做的事：**让 FDE 诊断交付物自动变成 `.sofagent/subagents/*.yml`**，不需要人手写。
 
 ### 扩展点
 
@@ -722,7 +722,7 @@ loop-engineering 社区将 STATE.md 定位为 **「对话外的持久化主干�
 
 ### 场景数 SSOT 口径
 
-> **SSOT 口径**：`playbook/acceptance-test.sh` 头部「场景数」声明 = 真实 `scenario` 调用行数（非编号最大值、非运行时执行数）。当前值 357（最大场景号 S431，S1-S431 间 77 个历史空洞号；v1.5.0 验收增量 +5：S427-S431（治理 KPI 面板/双时态时点快照/Validation Engine 环检测+fail-closed/trace 对账四态/FDE 陪跑期+插件事件接线——行为实测 dist 直调，多模块共场景对齐 S373/S374 先例）。
+> **SSOT 口径**：`playbook/acceptance-test.sh` 头部「场景数」声明 = 真实 `scenario` 调用行数（非编号最大值、非运行时执行数）。当前值 367（最大场景号 S441，S1-S441 间 77 个历史空洞号；v1.5.1 验收增量 +1：S441 发布链加固代表锚——门禁清单覆盖对账三态 + 长跑凭据四道防线 + 随动面三锚，对齐 S440/S343 先例；v1.5.0 验收增量 +5：S427-S431 治理 KPI 面板/双时态时点快照/Validation Engine 环检测+fail-closed/trace 对账四态/FDE 陪跑期+插件事件接线——行为实测 dist 直调，多模块共场景对齐 S373/S374 先例）。
 >
 > 后续版本引用场景数一律以 `acceptance-test.sh` 头部声明为准，禁止从其他文档转述。逐版沿革账见 [v1.5.0 开发日志 · 附录](./changelog/v1.5/v1.5.0.md)。
 

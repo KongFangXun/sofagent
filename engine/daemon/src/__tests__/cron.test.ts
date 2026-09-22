@@ -238,3 +238,58 @@ describe('loadDreamCycleConfig（v1.4.5 T2）', () => {
     expect(loadDreamCycleConfig(tmpDir).enabled).toBe(true);
   });
 });
+
+// ============================================================
+// v1.5.1 K1 · 「退役 flag 无调用侧残留」机械断言
+// ------------------------------------------------------------
+// 缺陷：orchestrator 的 `loop --legacy` 已按弃用公告在 v1.5.0 退役收口
+//   （`cli.ts:155` 显式拒绝 → `process.exit(2)`，fail-closed 正确），
+//   但调用侧（cron.ts / cli.ts）仍在传 ⇒ 每 5 分钟的调度消费**恒定 exit 2**，
+//   失败只落 scheduler history、daemon-health.json 的 lastError 仍为 null ⇒ 零告警。
+//   测试盲区：acceptance-test.sh 只断言「CLI 会拒绝 --legacy」——**测了守门人的拒绝，
+//   没测有没有人在撞门**。
+// 本断言补上另一半：**全仓非测试的 engine/ 源码不得把 `--legacy` 作为参数字面量**
+// （`'--legacy'` / `"--legacy"`——即真正会传给子进程的形态；纯注释叙述不算），
+// 唯一允许面是退役侧自身（engine/orchestrator/src/cli.ts 的注释与拒绝分支）。
+// ⚠️ 把 `--legacy` 加回任一调用侧 → 本用例立刻变红。
+// ============================================================
+describe('K1 · 退役 flag 无调用侧残留（--legacy）', () => {
+  const REPO_ROOT = path.resolve(__dirname, '../../../..');
+  const ALLOWED = new Set(['engine/orchestrator/src/cli.ts']);
+  /** 参数字面量形态——注释里的反引号叙述（`--legacy`）不算调用点 */
+  const ARG_LITERAL = /['"]--legacy['"]/;
+
+  /** 递归收集 engine/ 下的生产 .ts（排除测试与 dist） */
+  function collectProdTs(dir: string, out: string[] = []): string[] {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        if (entry.name === 'dist' || entry.name === 'node_modules' || entry.name === '__tests__') continue;
+        collectProdTs(full, out);
+      } else if (entry.name.endsWith('.ts') && !entry.name.endsWith('.test.ts')) {
+        out.push(full);
+      }
+    }
+    return out;
+  }
+
+  it('engine/ 生产源码中 --legacy 参数字面量只出现在退役侧（orchestrator/src/cli.ts）', () => {
+    const hits: string[] = [];
+    for (const file of collectProdTs(path.join(REPO_ROOT, 'engine'))) {
+      const rel = path.relative(REPO_ROOT, file);
+      const content = fs.readFileSync(file, 'utf-8');
+      if (!ARG_LITERAL.test(content)) continue;
+      if (!ALLOWED.has(rel)) hits.push(rel);
+    }
+    expect(hits).toEqual([]);
+  });
+
+  it('调度调用侧确实不带 --legacy（cron.ts / cli.ts 的 loop 调用形态）', () => {
+    for (const rel of ['engine/daemon/src/cron.ts', 'engine/daemon/src/cli.ts']) {
+      const content = fs.readFileSync(path.join(REPO_ROOT, rel), 'utf-8');
+      // 调用形态必须是 `'loop', '--task'`（不得再插入任何 flag）
+      expect(content).toContain("'loop', '--task'");
+      expect(content).not.toContain("'loop', '--legacy'");
+    }
+  });
+});

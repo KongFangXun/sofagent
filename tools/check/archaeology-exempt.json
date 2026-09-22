@@ -70,6 +70,11 @@
       "file": "playbook/fresh-eyes-calibration.md",
       "anchor": "## v1.5.0 审查校准收编（阶段四 C 类）",
       "reason": "同上（另一节）：本文件按版并列多节，节标题版本号是唯一区分键；删版本号即造出两个同名标题，文档可读性反而更差。"
+    },
+    {
+      "file": "playbook/fresh-eyes-calibration.md",
+      "anchor": "## v1.5.1 审查校准收编（阶段四 C 类）",
+      "reason": "同上（新增一节）：本文件按版并列多节（v1.4.9 / v1.5.0 / v1.5.1），节标题版本号是唯一区分键；删版本号即造出多个同名标题，且「已消化校准索引」按版本号回指本节，删后不可定位。"
     }
   ],
   "exemptAnchors_spec": {

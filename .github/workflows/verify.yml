@@ -4,6 +4,26 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  # ── v1.5.1 第八章：新增 schedule 触发器（本批**唯一**的触发器变更）──
+  # 目的：给下面的 demo job 一个「定期跑」的入口，产出可链接的 CI artifact
+  #   （README / 推文引用「看 demo 输出」的链接源）。
+  # 为什么 demo 不进 push/PR：demo 是**产品演示**（增长杠杆），不是回归门禁——
+  #   每次 push/PR 都跑会给常规 CI 加分钟级开销却不抓回归；每周定期跑同样
+  #   产出 artifact，满足验收且不拖慢开发回路。
+  # ⚠️ 连带效应（同批显式披露）：加 schedule 后，**本文件里未加 if 守卫的既有
+  #   job 也会被每周触发一次**（含上面的 verify job）。
+  # **裁定（非「下次再说」）**：接受这个连带效应，不给 verify job 加
+  #   `if: github.event_name != 'schedule'` 收敛。理由三条：
+  #   ① 每周一次的全量 verify 在 main 上是**正向资产**——能抓到常规 push/PR
+  #      回路看不见的漂移（依赖上游变更、registry 解析失效、时间相关的 flaky）；
+  #   ② 本批「唯一触发器变更 = schedule」的声明要求既有 job **定义零改动**，
+  #      加 if 就破了这条声明；③ 成本可控（一次全量 build+test）。
+  #   若**将来**实测证明每周 verify 带来噪声（例如稳定性不足以作为信号），
+  #   再按「先降低触发频率、后加守卫」的顺序收敛——届时应作为一次显式决策记录，
+  #   而不是在这里留一个默认打开的开关。
+  schedule:
+    # 每周一 03:00 UTC（北京 11:00）——避开工作日高峰，跑完当天可见产物
+    - cron: '0 3 * * 1'
 
 jobs:
   verify:
@@ -68,3 +88,59 @@ jobs:
         run: npm test
         env:
           CI: true
+
+  # ============================================================
+  # v1.5.1 第八章：`sofagent demo` 五分钟戏剧弧（新增 job）
+  # ============================================================
+  # 触发面：**只在 schedule 事件**（每周一次）——`if` 守卫是本 job 的全部开关，
+  #   push / PR 不会把它拖进常规回路（理由见文件顶部 schedule 段注释）。
+  # 产出：五幕输出存 artifact（demo-report.md + demo-transcript.txt），
+  #   并把报告正文写进 Job Summary —— 两者都可从 CI 运行页直接链接。
+  # 运行形态说明：**跑本分支构建出的 dist**（不是 npx）。
+  #   npx 会从 registry 装**已发布版本**，那测的是上一个发版而不是本次改动——
+  #   「主分发形态是 npx」是给用户的传播面，不是 CI 的被测对象；CI 必须测
+  #   当前分支的真实产物。dist/cli-quick.js 即 package.json 里 sofagent-audit
+  #   这个 bin 的实体，与 npx 装到的入口是同一个文件。
+  demo:
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Fix rollup native binary (npm/cli#4828)
+        run: npm install @rollup/rollup-linux-x64-gnu --no-save || true
+
+      # demo 需要完整引擎（dist/index.js）与 hook 模板（hooks/）——
+      # 二者都由 build 产出，故必须先 build（与上面的 verify job 同款）。
+      - name: Build workspace
+        run: npm run build
+
+      # 完整五幕（非 fast 档）——artifact 要装下幕①② 的输出。
+      # --out 指到 workspace 内，供下一步上传。
+      - name: Run sofagent demo (five acts)
+        run: node engine/audit/dist/cli-quick.js demo --out "$GITHUB_WORKSPACE/demo-output"
+
+      - name: Append demo report to job summary
+        if: always()
+        run: |
+          if [ -f demo-output/demo-report.md ]; then
+            cat demo-output/demo-report.md >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "未产出 demo-report.md（demo 未跑完或早退）——见本 job 上方日志" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      # if: always() —— demo 失败时同样上传现场（失败现场的 artifact 比成功时更值钱）
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: sofagent-demo-five-acts
+          path: demo-output/
+          if-no-files-found: warn

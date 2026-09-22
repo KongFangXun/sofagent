@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// evolve CLI · v1.5.0
+// evolve CLI · v1.5.1
 
 const args = process.argv.slice(2);
 const subcommand = args[0];

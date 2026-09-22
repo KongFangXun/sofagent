@@ -21,11 +21,28 @@ async function resolveDataDir(explicit?: string): Promise<string> {
 
 export async function prSubmit(args: Record<string, unknown>): Promise<PrResult> {
   const { prSubmit } = await import('@sofagent/audit');
-  return prSubmit(
+  const dataDir = await resolveDataDir(args.data_dir as string | undefined);
+
+  // ── v1.5.1 章二挂载点：AI 节点产出 PR 时强制附决策解释块（引 decision-log 因果链）──
+  // PR 无独立 body 字段——变更描述（title）即 PR 的人读正文载体，解释块以
+  // 分隔线追加在正文末尾，保证 pr-store 记录本身自带「为什么这么做」。
+  // 既有入参映射、校验、注册流程保持原样（只改 title 的组装）。
+  let title = args.title as string;
+  let explanationNote: string;
+  const built = await buildExplanation(args, dataDir);
+  if (built.ok) {
+    title = built.title;
+    explanationNote = `\n[sofagent] 📎 已附决策解释块（引 ${built.explanation.citedDecisions} 条相关决策 / ${built.explanation.causalChains} 条因果链）——见 PR 变更描述`;
+  } else {
+    // 解释块生成不可用：如实标注（不静默）——PR 仍可提交，但缺口可见
+    explanationNote = `\n[sofagent] ⚠️ 决策解释块未附（生成不可用：${built.reason}）——PR 已提交，理由面留缺口`;
+  }
+
+  const result = prSubmit(
     {
       pr_id: args.pr_id as string,
       workflow_id: args.workflow_id as string,
-      title: args.title as string,
+      title,
       submitter: args.submitter as string,
       ...(Array.isArray(args.contributors)
         ? { contributors: args.contributors as Array<{ contributor_id: string; weight: number }> }
@@ -42,8 +59,41 @@ export async function prSubmit(args: Record<string, unknown>): Promise<PrResult>
           }
         : {}),
     },
-    await resolveDataDir(args.data_dir as string | undefined),
+    dataDir,
   );
+  // 提交失败（缺参/重名等）不追加解释块指引——避免错误文本里出现「已附」
+  if (result.data.isError) return result;
+  return { ...result, text: `${result.text}${explanationNote}` };
+}
+
+/** 解释块生成结果（ok=false 时带降级原因——调用方据此如实标注） */
+type ExplanationOutcome =
+  | { ok: true; title: string; explanation: import('@sofagent/orchestrator').PrExplanation }
+  | { ok: false; reason: string };
+
+/**
+ * 生成决策解释块并组装 PR 变更描述（best-effort：解释面是质量增量，
+ * 不阻断 PR 提交流程）。失败原因**回传调用方**并由其在返回文本中标注
+ * ——不静默吞错。
+ */
+async function buildExplanation(
+  args: Record<string, unknown>,
+  dataDir: string,
+): Promise<ExplanationOutcome> {
+  try {
+    const { buildPrDecisionExplanation, composePrBodyWithExplanation } = await import(
+      '@sofagent/orchestrator'
+    );
+    const explanation = buildPrDecisionExplanation({
+      workflowId: (args.workflow_id as string) ?? '',
+      submitter: (args.submitter as string) ?? '',
+      ...(typeof args.pr_id === 'string' ? { prId: args.pr_id } : {}),
+      dataDir,
+    });
+    return { ok: true, title: composePrBodyWithExplanation(args.title as string, explanation), explanation };
+  } catch (err) {
+    return { ok: false, reason: err instanceof Error ? err.message : String(err) };
+  }
 }
 
 export async function prReview(args: Record<string, unknown>): Promise<PrResult> {

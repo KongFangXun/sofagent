@@ -1,10 +1,10 @@
 // ============================================================
 // mlflow-exporter.ts · Benchmark 评测结果 MLflow tracking 集成
-// v1.5.0（六）：多维标准化评估——自定义单一分数 → MLflow 标准指标
+// v1.5.1（六）：多维标准化评估——自定义单一分数 → MLflow 标准指标
 //
 // 设计约束：
 // - 零新依赖：MLflow REST API（fetch，Node 18+ 原生）直连 tracking server，
-//   MLFLOW_TRACKING_URI 环境变量指定（缺省 http://127.0.0.1:5000）
+//   MLFLOW_TRACKING_URI 环境变量指定（缺省 http://127.0.0.1.5.10）
 // - 离线容错：tracking server 不可达时返回 structured degraded 结果（不崩——
 //   Benchmark 本地评测照常，MLflow 是附加通道）
 // - 指标映射：≥10 个标准指标（sofagent 审计/工作明细数据 → MLflow 标准指标）

@@ -117,7 +117,7 @@ export function initDataEncryption(
   //      - 非交互 + SOFAGENT_CONFIRM_BACKUP=1：无头部署显式确认通道
   //        （enterprise-deploy.md 批量激活 SOP 引用本 env）；
   //      - 非交互 + 未设 env：保持 WARN 跳过（上方分支，措辞已含风险）。
-  // 交互 TTY：同步等待用户确认（30s 超时降级 WARN——无人应答不落盘）；
+  // 交互 TTY：同步等待用户确认（30s 真超时降级 WARN——无人应答不落盘）；
   // 测试/自动化注入 confirmBackupInput 通道优先
   const confirmed = options.confirmBackupInput
     ? options.confirmBackupInput()
@@ -144,44 +144,51 @@ export function initDataEncryption(
 
 
 // ============================================================
-// v1.4.8 F-20: 交互备份确认门——同步 readline + 30s 超时降级
+// v1.4.8 F-20: 交互备份确认门——单一读取路径 + 真超时（v1.5.1 L3 重写）
+//
+// 重写前（v1.4.8 形态）的三处缺陷：
+//   ① 承诺的「30s 超时降级」由 setTimeout 承担——但同步 execSync 阻塞期间定时器
+//      物理上无法执行（单线程事件循环被占住），该守卫是死代码；
+//   ② 父进程 createInterface 建了 readline 却从不读，仅凭构造即把 stdin 置为
+//      flowing，与子进程 `head -1 /dev/stdin` **争抢同一 stdin** → 交互确认恒失败；
+//   ③ 依赖外部 `head` 命令 → Windows 必失败 → 静默降级为不加密。
+// 现形态：把读一行交给 `process.execPath` 子进程内的 readline（不依赖任何外部
+// 命令，跨平台），父进程只负责 spawn + 收 stdout ⇒ stdin 只有一条读取路径；
+// 超时用 spawnSync 的 `timeout`（内核级 SIGTERM，实测 ETIMEDOUT），不再是 setTimeout。
 // ============================================================
+
+/** 子进程内读取一行 stdin 的脚本（父进程不碰 stdin——避免 flowing 争抢） */
+const READ_ONE_LINE_SCRIPT =
+  "const rl=require('readline').createInterface({input:process.stdin});" +
+  "rl.once('line',(l)=>{process.stdout.write(String(l));rl.close();});" +
+  "rl.once('close',()=>process.exit(0));";
+
+/** 备份确认等待上限（真超时：spawnSync 到点 SIGTERM 子进程，不落盘） */
+const BACKUP_CONFIRM_TIMEOUT_MS = 30_000;
 
 /**
  * 交互 TTY 下等待用户确认「已理解密钥须离线备份」。
  * 任何输入以 y/yes/是 开头视为确认；其余（含超时静默）视为拒绝。
- * 非真实 TTY 直接返回 false（防脚本管道里 readFileSync(0) 挂死）。
+ * 降级留痕：读取失败/超时都打印成因（不再静默 return false），由调用方 WARN。
  */
 function awaitInteractiveBackupConfirm(sofagentHome: string): boolean {
-  const { createInterface } = require('readline') as typeof import('readline');
   console.log(`🔐 [crypto-init] 即将生成数据加密密钥（落盘 ${sofagentHome}/keys/data.key）`);
   console.log('    ⚠️ 密钥丢失 = 加密数据永久不可读——生成前请确认你已理解须离线备份。');
-  const rl = createInterface({ input: process.stdin, output: process.stdout });
-  let answered = false;
-  let confirmed = false;
-  const timer = setTimeout(() => {
-    if (!answered) {
-      rl.close();
-    }
-  }, 30_000);
-  try {
-    // execSync 形态的单问题同步等待——daemon 启动路径不能改异步签名（调用方为同步流）
-    const { execSync } = require('child_process') as typeof import('child_process');
-    let answer = '';
-    try {
-      answer = execSync('head -1 /dev/stdin', {
-        input: undefined,
-        timeout: 30_000,
-        stdio: ['inherit', 'pipe', 'pipe'],
-      }).toString().trim();
-    } catch {
-      return false;
-    }
-    answered = true;
-    confirmed = /^(y|yes|是)/i.test(answer);
-  } finally {
-    clearTimeout(timer);
-    try { rl.close(); } catch { /* 已关 */ }
+  const { spawnSync } = require('child_process') as typeof import('child_process');
+  const res = spawnSync(process.execPath, ['-e', READ_ONE_LINE_SCRIPT], {
+    // stdin 交给子进程继承（真实 TTY 下用户输入直达子进程）；父进程零干预
+    stdio: ['inherit', 'pipe', 'pipe'],
+    timeout: BACKUP_CONFIRM_TIMEOUT_MS,
+    encoding: 'utf8',
+  });
+  if (res.error) {
+    const code = (res.error as NodeJS.ErrnoException).code ?? '';
+    console.warn(
+      `⚠️  [crypto-init] 备份确认读取失败（${code || res.error.message}）——` +
+        `本次不生成密钥（降级为明文落盘，未静默通过）。` +
+        `无头环境请改用 SOFAGENT_CONFIRM_BACKUP=1 显式确认通道。`,
+    );
+    return false;
   }
-  return confirmed;
+  return /^(y|yes|是)/i.test(String(res.stdout ?? '').trim());
 }

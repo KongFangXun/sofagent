@@ -12,7 +12,7 @@
 
 | # | 完成 | 步骤 |
 |:--:|:--:|------|
-| 一 | | **脚本层直跑（零 LLM）**：acceptance-test.sh + check-version + check-docs + 锚点 + check-review-system + check-tool-health + check-dashboard（dashboard.html 结构门禁）依次跑，全绿才进判断层；红项由执行 session 按「修复批协议」修复后复跑复绿 |
+| 一 | | **脚本层直跑（零 LLM）**：acceptance-test.sh + check-version + check-docs + 锚点 + check-review-system + check-tool-health + check-dashboard（dashboard.html 结构门禁）依次跑，全绿才进判断层；红项由执行 session 按「修复批协议」修复后复跑复绿。长跑门禁（acceptance）**先查凭据复用**——见 ② |
 | 二 | | 同 session 跑**判断层**：driver `--judgment-only` 一次启动四步（regression → coverage → consolidate → verdict），**跳过 acceptance 分片 LLM 复核**（不再 --step 四步手工编排） |
 | 三 | | verdict=PASS → 主 session 过「零信任复验三件套」→ 全过才进阶段六。**PASS 轮的 LEDGER 行由主 session 复验后收编——执行 session 禁止预写**（预写账会在复验推翻 PASS 时账实不符） |
 | 四 | | verdict=FAIL → 执行 session 按「修复批协议」分诊修复 → 复绿 + 单次 commit 收编 → 归档断点重跑（自动收敛循环，硬上限 5 轮，上限可由用户在启动时调整）。**命中停手条件**（同一 FAIL 项连续 2 轮修不掉 / 修复需 bump·tag·push / 版本口径类 P0 再现 / 5 轮到顶）→ 停手汇报，主 session 接手（回阶段四语义）。driver 内置 `--auto-fix` 修复链仍默认关闭——session 级修复批与 F 链是两条不同机制，不混用 |
@@ -49,8 +49,16 @@
 - 时段：工作日 14:00-18:00 GLM 3 倍价窗口内不启动新轮——等待并每 10 分钟报时一次，窗口过了再启动（周末全天平价）
 
 ### ② 脚本层直跑（零 LLM，约 15 分钟，全绿才进判断层）
-bash playbook/acceptance-test.sh > acceptance-raw.log 2>&1，确认 exit 0 且 SUMMARY 全过
-⚠️ 🔴 日志必须落盘到仓库根 `acceptance-raw.log`（或 export SOFAGENT_ACCEPTANCE_LOG=/path/to/log）——driver 的 --judgment-only 启动时自动注入该日志为 runDir/acceptance.md 供 consolidate/verdict 读取；落错路径（如 /tmp/）→ driver 找不到 → 注入占位符 → verdict fail-closed 判 FAIL
+🟢 **先查长跑凭据**（外层循环 N=1..5 会反复跑到**同一内容**上，凭据命中即跳过重跑，零信息损失）：
+`bash tools/release/heavy-gate-receipt.sh verify acceptance` ⇒ **0 = 可复用（跳过本段 acceptance 直跑）** ／ 3 = 需重跑（无凭据或内容已变） ／ 2 = 失明（凭据或日志不可信 ⇒ 按需重跑处置）
+需要重跑时——🔴 **先钉前指纹、后跑、跑完带 `--pre` 落凭据**（长跑期间本仓冻结，不得 commit / 改文件）：
+```bash
+FP=$(bash tools/release/heavy-gate-receipt.sh fingerprint)
+bash playbook/acceptance-test.sh > acceptance-raw.log 2>&1; EC=$?
+bash tools/release/heavy-gate-receipt.sh record acceptance "$EC" acceptance-raw.log --pre "$FP"
+```
+⚠️ `--pre` 不是可选项：不传 ⇒ 凭据只能自证「**落盘那一刻**」的内容，无法自证「**被实际测过**」的内容；传了而长跑期间工作区变过 ⇒ `record` 当场 exit 3 **拒绝落凭据**（有意如此——该次结果不对应当前内容，既不该被复用，也不该留痕为绿）。
+⚠️ 🔴 日志必须落盘到仓库根 `acceptance-raw.log`（或 export SOFAGENT_ACCEPTANCE_LOG=/path/to/log）——driver 的 --judgment-only 启动时自动注入该日志为 runDir/acceptance.md 供 consolidate/verdict 读取；落错路径（如 /tmp/）→ driver 找不到 → 注入占位符 → verdict fail-closed 判 FAIL。`acceptance-raw.log` 与 `.sofagent/` 均已被 .gitignore 忽略，故日志落仓库根**不会**进入内容指纹——这也是凭据库（写在 `.sofagent/` 内）能自指回避的原因。
 依次跑：tools/check/check-version.sh → tools/check/check-docs.sh → tools/check/check-anchors.mjs → tools/check/check-review-system.sh → tools/check/check-tool-health.sh → tools/check/check-dashboard.sh（dashboard.html 七项结构门禁：双 class/未定义 CSS 变量/重复类定义/缺 keyframes/onclick 未定义函数/div 配平/乱码）
 脚本层红项：按「修复批协议」修复后复跑该项至 EXIT=0 才进判断层
 acceptance 预跑异常处置：先单跑死点命令对比，不要改脚本；单命令健康+全量挂=上下文差异（cwd/env），如实记录后重试一次，再挂则停手汇报

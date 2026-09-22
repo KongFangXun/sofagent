@@ -4,7 +4,7 @@
 
 > sofagent 对外全部能力面的一站式清单——七大接口面 + MCP 105 tools 按域分组（第七面「标准数据推送接口」入口已接线：MCP tool `data_push` 双闸入库；v1.4.9 G9 新增 device_register/device_list 设备注册面，G10/G11 新增 device_data_query/device_data_push 设备数据面，G5b/G1 新增 connector_register/connector_list 连接器面与 workflow_export/workflow_import 模板面，批 5 新增 router_session_push 过站 session 承接面）。工具清单由 `engine/mcp/src/tool-registry.ts` 生成（scripts/check 门禁对账，文档与代码永不漂移）。
 >
-> 版本：v1.5.0（✅ 已发版）· 105 tools / 7 面（**105 = v1.4.9 的 104 + v1.5.0 新增 `trace_reconcile`**，状态见 [ROADMAP](./ROADMAP.md)；第 7 面 v1.4.6 交付；v1.4.7 新增 11 tool 归入既有面；v1.4.9 G9 新增 device_register/device_list，G10/G11 新增 device_data_query/device_data_push，G5b/G1 新增连接器与模板 4 tool，批 5 新增 router_session_push）
+> 版本：v1.5.1（✅ 已发版）· 105 tools / 7 面（**105 = v1.4.9 的 104 + v1.5.0 新增 `trace_reconcile`**，状态见 [ROADMAP](./ROADMAP.md)；第 7 面 v1.4.6 交付；v1.4.7 新增 11 tool 归入既有面；v1.4.9 G9 新增 device_register/device_list，G10/G11 新增 device_data_query/device_data_push，G5b/G1 新增连接器与模板 4 tool，批 5 新增 router_session_push）
 
 ---
 

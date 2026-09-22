@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 // ============================================================
 // cli-quick.ts · npx sofagent-audit 零配置 CLI 入口
-// v1.5.0 (⑧-1)：30 秒 aha moment——任何 git repo 都能跑
+// v1.5.1 (⑧-1)：30 秒 aha moment——任何 git repo 都能跑
 //
-// 依赖说明（v1.5.0 P0-R13）：
+// 依赖说明（v1.5.1 P0-R13）：
 //   本文件 import @sofagent/core（见 package.json dependencies）。
 //   git clone 后直接跑 dist/cli-quick.js 会报 MODULE_NOT_FOUND——
 //   需先 `npm install`（根目录安装会 link workspace 依赖）或
@@ -42,20 +42,36 @@
 // ——漂移由 `src/__tests__/cli-crash-exit-code.test.ts` 双侧行为锁兜住，不靠注释自律。
 const EXIT_ENGINE_CRASH = 4;
 
-// v1.4.9 P2-13：quick 模式「跳过」的解释串——**单一常量，两个输出分支共用**。
+// v1.4.3 F-08/§：quick 模式「跳过」的解释串——**单一常量，两个输出分支共用**。
 // 缺陷（两层）：
 //   ① 定性缺失——原串只说「跳过的是什么（归因类规则缺席）」，未答「为什么可接受」。
 //      企业 IT 视角下「N 条跳过」读起来像「N 条没查」，缺一句「硬证据类已全量跑」的
 //      定性，用户无法据此判断这次审计是否够用。
 //   ② 漂移面 ×2——该串在 PASS 分支与非 PASS 分支**各写一份字面量**（改前 :224 / :242），
 //      措辞改动必须两处同改，漏一处即形成「同一 CLI 两种解释」。
-// 修法：提取为本常量（漂移面归零）+ 补「git diff 硬证据类规则已全量执行，跳过项非漏检」。
+// v1.5.1 C8：措辞统一为「**本批未检查**」并显式声明「未检查 ≠ 通过」——
+//   `docs/LIMITATIONS.md` 已主动披露「SKIPPED ≠ 通过」，但终端措辞强度不匹配；
+//   「跳过」易被误读成「无问题」（fail-fast 命中后跳过的规则**本次未检查**）。
+//   机器可读契约不动：JSON 的 `status: 'SKIPPED'` 一字未改。
+// 修法：提取为本常量（漂移面归零）+ 补「git diff 硬证据类规则已全量执行，未检查项非漏检」。
 // 保留 v1.4.3 F-08 的归因口径如实化与两条升级路径（--task / --init），本条不得覆盖它。
 // ⚠️ 漂移由 `src/__tests__/cli-quick-skip-hint.test.ts` 的**双分支行为锁**兜住。
 export const QUICK_SKIP_HINT =
-  'ⓘ 跳过 = quick 模式不含归因分析（需任务描述/Agent 日志输入的规则）'
-  + '；git diff 硬证据类规则已全量执行，跳过项非漏检'
+  'ⓘ 本批未检查（未检查 ≠ 通过）= quick 模式不含归因分析（需任务描述/Agent 日志输入的规则）'
+  + '；git diff 硬证据类规则已全量执行，未检查项非漏检'
   + '——用 --task 走完整引擎，或安装后运行 sofagent-audit；`--init` 装 hook 走完整引擎';
+
+/** SKIPPED 的计数文案（v1.5.1 C8：不使用孤立的「跳过」二字） */
+function skipCountLabel(count: number, failFast: boolean): string {
+  return `⚠️ ${count} 条本批未检查${failFast ? '（critical 命中后 fail-fast）' : ''}`;
+}
+
+/** 是否存在 fail-fast 型未检查（details 由 rules/runner.ts 的 critical fast-fail 分支写入） */
+function hasFailFastSkip(rules: AuditResult['rules']): boolean {
+  return rules.some(
+    (r) => r.status === 'SKIPPED' && r.details.some((d) => d.includes('critical 层')),
+  );
+}
 
 process.on('uncaughtException', (err) => {
   console.error(`\u274c sofagent-audit(quick) 引擎异常退出: ${err instanceof Error ? err.message : String(err)}`);
@@ -115,6 +131,42 @@ function hasParentCommit(): boolean {
     // 首次提交（无 HEAD~1）或非 git 仓库——按「无父提交」处理
     return false;
   }
+}
+
+/**
+ * v1.5.1 F1：判定 diff 范围能否被 git 解析——区分「无效范围」与「合法但无变更」。
+ *
+ * 为什么不能整串丢给 `git rev-parse --verify`：`--verify` 只接受**单个 rev**，
+ * 对 `HEAD~1..HEAD` 这类范围表达式必失败（实测 exit 1）——若照此判定，合法范围
+ * 会被误判为无效。故范围形如 `A..B` / `A...B` 时**逐端点**验证。
+ *
+ * 切分口径：三点范围（`A...B`，git 的 merge-base 语义）先于二点范围切分，
+ * 否则 `HEAD~3...HEAD` 会被切成 `['HEAD~3', '.HEAD']` 造成误判。
+ * 空端点（如 `..HEAD`）不参与验证，交回原行为——本函数只封「无效范围」这一条路径。
+ *
+ * @param range git refspec（如 'HEAD~3..HEAD'、'origin/main..HEAD'、'nonsense-range'）
+ * @returns true = 全部端点可解析（合法范围，含确实无变更的范围）
+ */
+function isResolvableDiffRange(range: string): boolean {
+  const endpoints = (range.includes('...') ? range.split('...') : range.split('..')).filter(
+    (part) => part.length > 0
+  );
+  // 无任何非空端点可验证 ⇒ 不新增拦截面，保持既有行为
+  if (endpoints.length === 0) {
+    return true;
+  }
+  return endpoints.every((rev) => {
+    try {
+      execFileSync('git', ['rev-parse', '--verify', '--quiet', rev], {
+        encoding: 'utf-8',
+        stdio: ['pipe', 'pipe', 'pipe'],
+      });
+      return true;
+    } catch {
+      // 不解析的 ref：git 报错已在 --quiet 下静默，由调用方输出产品化文案
+      return false;
+    }
+  });
 }
 
 /**
@@ -226,11 +278,17 @@ export function generateQuickOutput(
   }
 
   // 汇总行
+  // v1.5.1 C8：计数文案统一用「本批未检查」（不再用孤立的「跳过」二字）——
+  // 与 docs/LIMITATIONS.md 的「SKIPPED ≠ 通过」口径强度对齐。fail-fast 限定词
+  // 按实测数据决定（details 含 critical 层）——quick 模式亦可无 fail-fast 的未检查项。
+  const failFast = hasFailFastSkip(result.rules);
   parts.push('');
   if (violationCount === 0 && warnCount === 0) {
     // v1.3.4 P1-8: PASS 时输出可感知回声——让用户明确知道「sofagent 在工作且通过了」
     // v1.3.2 P2-17: 解释 17 条默认 vs 24 条总量，消除「少装了什么」的认知落差
-    parts.push(`✅ 全部 ${passCount} 条规则通过（默认 17 条 · 完整 24 条含扩展，扩展规则经 config 启用，规则集用 --ruleset 加载）${skipCount > 0 ? `（${skipCount} 条跳过）` : ''}`);
+    // v1.5.1 M13①：补 `[sofagent]` 签名——改前本行无前缀、紧随其后的回声行有
+    // `✓ [sofagent] …`，同一屏一行署名一行不署名。产品自称口径与下方回声行一致。
+    parts.push(`✅ [sofagent] 全部 ${passCount} 条规则通过（默认 17 条 · 完整 24 条含扩展，扩展规则经 config 启用，规则集用 --ruleset 加载）${skipCount > 0 ? `（${skipCountLabel(skipCount, failFast)}）` : ''}`);
     // v1.3.5 #7: 跳过计数解释——让用户知道「跳过」是 quick 模式缺输入而非漏检
     // v1.4.3 F-08 (bugfix 批): 归因口径如实化——quick 模式不含归因分析（ATTRIBUTION
     // 引擎需任务描述/Agent 日志输入），原措辞「需任务描述输入的规则」未点破归因
@@ -249,7 +307,7 @@ export function generateQuickOutput(
     if (violationCount > 0) summaryParts.push(`${violationCount} 条违规`);
     if (warnCount > 0) summaryParts.push(`${warnCount} 条警告`);
     if (passCount > 0) summaryParts.push(`${passCount} 条通过`);
-    if (skipCount > 0) summaryParts.push(`${skipCount} 条跳过`);
+    if (skipCount > 0) summaryParts.push(skipCountLabel(skipCount, failFast));
     parts.push(`📊 ${summaryParts.join(' · ')}`);
     // v1.3.5 #7: 跳过计数解释（同上，非 PASS 分支也需要）
     // v1.4.3 F-08: 同 PASS 分支——归因口径如实化
@@ -314,6 +372,26 @@ export function runCliQuick(argv: string[]): number {
     }
   }
 
+  // ── v1.5.1 第八章：`demo` 子命令分支（五分钟戏剧弧 · L4 卸包） ──
+  // 挂点：本文件就是 sofagent-audit 的子命令入口（package.json bin →
+  //   dist/cli-quick.js），demo 挂在这里 → **不新增 bin**（不碰「13 bin → 1」
+  //   收敛叙事），且传播命令与试用命令同体（去掉 `demo` 参数就是真审计）。
+  // 位置：放在 FULL_ONLY 路由之后、--help 之前——demo 自带 --help 文案，
+  //   且 demo 不要求当前目录是 git 仓库（它在 /tmp 自建沙箱），
+  //   故必须在下方 isGitRepo 检查之前拦截。
+  // 惰性 require：demo.ts 静态依赖 rules/index（24 条规则模块）——
+  //   顶层 import 会给既有零配置审计路径（npx sofagent-audit 的 30 秒 aha）
+  //   凭空加上这份冷启动开销。既有路径**行为与开销零变化**，是本分支的硬约束。
+  //
+  // 为什么不用 flag-table 的 AUDIT_SUBCOMMANDS 登记：该表是「quick 侧见名
+  //   转完整引擎」的路由清单（cli-quick.ts:319），demo 登记进去反而会被路由到
+  //   不认识它的完整引擎（dist/index.js）。demo 是 quick 侧自己的分支。
+  if (argv[2] === 'demo') {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const { runDemoCli } = require('./cli/demo');
+    return runDemoCli(argv) as number;
+  }
+
   // 拦截 --help / --version
   if (argv.includes('--help') || argv.includes('-h')) {
     console.log('sofagent-audit — AI Agent 行为审计\n');
@@ -325,6 +403,9 @@ export function runCliQuick(argv: string[]): number {
     console.log('  npx -y -p @sofagent/audit sofagent-audit --stats          审计聚合报告（近 30 天治理 KPI——v1.4.3）');
     console.log('  npx -y -p @sofagent/audit sofagent-audit --stats --days 7  窗口可调（近 7 天）');
     console.log('  npx -y -p @sofagent/audit sofagent-audit --stats --json   机器可读 JSON（SIEM/监控消费）\n');
+    // v1.5.1 第八章：demo 子命令披露（本行是纯新增——既有各行的文案与顺序一字未动）
+    console.log('  npx -y -p @sofagent/audit sofagent-audit demo           五分钟戏剧弧（亲眼看一次拦截发生，v1.5.1）');
+    console.log('  npx -y -p @sofagent/audit sofagent-audit demo --speed fast  60 秒精简版（跳幕①②直入拦截）\n');
     // v1.3.9 四十四：双模式边界一次性讲清——此前用户敲 --init/--doctor 撞二次安装门槛
     // 却无处查边界，这里显式并列 quick flag 集 vs 完整引擎 flag 集 + 升级命令。
     console.log('双模式边界：');
@@ -479,11 +560,32 @@ export function runCliQuick(argv: string[]): number {
     //   ①「首次提交，无需审计」（parseDiff 内打印）②「审计最近一次 commit（SHA）」
     //   ③「无文件变更」——「无需审计」与「正在审计」互相打架。
     // 规则：有基线但 diff 为空称「无文件变更」；根 commit 补审见下方 hasBaseline 分支。
+    //
+    // v1.5.1 M13②：空态输出**三处字面重复且均无产品签名**（改前 :506/:525/:535），
+    // 而「误以为没装」的分支恰恰最该署名（同屏另两处回声行已有 `[sofagent]` 前缀）。
+    // 现收口为一个 printEmpty 闭包：单一字面量 + `[sofagent]` 签名；标题行保持各分支原样。
+    const printEmpty = (title?: string): void => {
+      if (title !== undefined) {
+        console.log(title);
+        console.log('');
+      }
+      console.log('✅ [sofagent] 无文件变更——没有需要审计的内容。');
+    };
     const hasBaseline = commitSha !== null && hasParentCommit();
     if (diffRange !== 'HEAD~1..HEAD') {
-      console.log(`🔍 审计指定范围（${diffRange}）`);
-      console.log('');
-      console.log('✅ 无文件变更——没有需要审计的内容。');
+      // v1.5.1 F1：显式指定的范围必须先证明**可解析**，再谈「无变更」。
+      // 缺陷：无效 ref（如 `nonsense-range`）在 parseDiff 内吞掉 git 报错并返回空数组，
+      // 与「合法范围确实无变更」共用同一条 exit 0 路径 ⇒ 敲错 ref 即拿假绿；而本文件对
+      // 「非 git 仓库」「diff 解析失败」都 fail-loud（exit 3），唯独无效范围放行，自相矛盾。
+      // 判据：全部端点可解析 ⇒ 保持原行为（exit 0）；任一端点不可解析 ⇒ fail-loud。
+      // 默认范围 `HEAD~1..HEAD` 不进本分支（其空态由下方 hasBaseline 分支统一处理，含
+      // 根 commit 空树补审），故根 commit / 真无变更两种既有行为与文案零变化。
+      if (!isResolvableDiffRange(diffRange)) {
+        console.log('⚠️  diff 解析失败。');
+        console.log(`   无法解析 diff 范围「${diffRange}」的 ref——请检查 ref 是否存在（如 HEAD~1..HEAD、origin/main..HEAD），或仓库是否尚无提交。`);
+        return 3;
+      }
+      printEmpty(`🔍 审计指定范围（${diffRange}）`);
       return 0;
     }
     if (!hasBaseline) {
@@ -502,7 +604,7 @@ export function runCliQuick(argv: string[]): number {
           console.log('');
           // 已有内容，继续下方规则运行（不 return）
         } else {
-          console.log('✅ 无文件变更——没有需要审计的内容。');
+          printEmpty();
           return 0;
         }
       } else {
@@ -510,9 +612,7 @@ export function runCliQuick(argv: string[]): number {
         return 0;
       }
     } else {
-      console.log(`🔍 审计最近一次 commit（${commitSha}）`);
-      console.log('');
-      console.log('✅ 无文件变更——没有需要审计的内容。');
+      printEmpty(`🔍 审计最近一次 commit（${commitSha}）`);
       return 0;
     }
   }

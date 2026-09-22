@@ -1,12 +1,12 @@
 // ============================================================
 // evolve-integration.ts · Evolve 自进化能力集成
 // v1.3.7 新增：通过 CLI subprocess 调用外部 gate CLI，验证 candidate skill
-// v1.5.0：迁移至 @sofagent/evolve
-// v1.5.0 ⑩：外部 Python 依赖摘除 —— 默认走**自研 native gate**（零外部依赖，部署确定性），
+// v1.5.1：迁移至 @sofagent/evolve
+// v1.5.1 ⑩：外部 Python 依赖摘除 —— 默认走**自研 native gate**（零外部依赖，部署确定性），
 //   仅 `SOFAGENT_EVOLVE_GATE=cli` 时才回退到外部 CLI 兼容层。
-// v1.5.0 G-11：清理一次**过宽全局替换**留下的污染字面量。
-//   污染面（实测）：本文件里 `evolve-gate（v1.5.0 自研）` 同时被写进 ① 探活二进制名
-//   ② 文档里的 CLI 名 ③ 状态目录路径 `<project>/.evolve-gate（v1.5.0 自研）/staging/`。
+// v1.5.1 G-11：清理一次**过宽全局替换**留下的污染字面量。
+//   污染面（实测）：本文件里 `evolve-gate（v1.5.1 自研）` 同时被写进 ① 探活二进制名
+//   ② 文档里的 CLI 名 ③ 状态目录路径 `<project>/.evolve-gate（v1.5.1 自研）/staging/`。
 //   `evolve-gate`（去掉全角括号）**全仓没有可执行**：探的是一个从未存在、也从未发布过的二进制
 //   ⇒ `isEvolveAvailable()` 恒 false ⇒ 三个调用方（cli.ts / optimize-skill.ts / auto-trigger.ts）
 //   全部静默降级或跳过，把「原生路径没接线」伪装成「外部 CLI 未安装」。

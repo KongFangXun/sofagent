@@ -52,7 +52,7 @@ deploy_skill_files() {
     if [ -f "$src" ]; then
       [ -f "$dst" ] && cmp -s "$src" "$dst" 2>/dev/null && continue
       cp "$src" "$dst"; ((copied++)) || true
-    else warn "找不到 ${f}，跳过（源: $src）"; fi
+    else warn "找不到 ${f}，跳过（源: ${src}）"; fi
   done
   mkdir -p "${SKILL_DST}/data"
   for f in "$SKILL_SRC"/data/*.md; do  # 数据模板

@@ -17,6 +17,7 @@
 // ============================================================
 
 import { spawnSync } from 'node:child_process';
+import { existsSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -33,7 +34,13 @@ try {
   // 依赖未安装或损坏时给出产品化提示，而非裸抛堆栈
   // Productized message instead of a raw stack when deps missing/broken
   console.error('[sofagent] 无法定位 @sofagent/audit CLI 入口：' + (err && err.message ? err.message : err));
-  console.error('[sofagent] 请尝试重新安装：npm i -g sofagent');
+  // 场景分支（只影响人类可读提示，退出码 127 契约不变）：
+  // 仓库内 clone 但未构建 → 提示构建；全局安装态 → 维持重装建议
+  const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
+  const inRepo = existsSync(join(repoRoot, 'engine', 'audit', 'package.json'));
+  console.error(inRepo
+    ? '[sofagent] 检测到在仓库内运行且 @sofagent/audit 尚未构建——请先在仓库根执行：npm install && npm run build'
+    : '[sofagent] 请尝试重新安装：npm i -g sofagent');
   process.exit(127);
 }
 

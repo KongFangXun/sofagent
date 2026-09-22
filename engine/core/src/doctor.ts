@@ -7,7 +7,7 @@
 // 检查项：
 //   1. 环境检查（Node / git / npm / disk / bash）
 //   2. 配置检查（.sofagent/config.yml 是否存在且有效）
-//   3. 数据目录结构（v1.5.0：data/ 用户可见数据 + .sofagent/ 引擎内部状态）
+//   3. 数据目录结构（v1.5.1：data/ 用户可见数据 + .sofagent/ 引擎内部状态）
 //   4. Hook 状态（commit-msg 是否安装含 sofagent 标识 + post-commit 是否存在）
 //   5. 包完整性（node_modules 依赖）
 //   8. Ontology 完整性（v1.4.3 十三：knowledge/entities/ frontmatter 三查 + skip-log 对账）
@@ -354,12 +354,32 @@ export function runDoctor(projectDir: string = process.cwd(), options: { resetBa
     if (existsSync(hookPath)) {
       try {
         const hookContent = readFileSync(hookPath, 'utf-8');
-        if (hookContent.includes('sofagent')) {
-          ok('commit-msg hook 已安装并包含 sofagent');
+        // v1.5.1 E3：改前是**子串匹配** `hookContent.includes('sofagent')`——
+        // 把 commit-msg 换成三行空脚本（只要含一行 `# sofagent` 注释）doctor 就报
+        // 「✅ 已安装」，而 SECURITY.md 只声称「删除可检测」，未披露「替换不可检测」。
+        // 现按三要素判定（与 tools/check/check-template-drift.sh 的 hook 版本标记口径同源）：
+        //   ① sofagent 标记  ② 版本标记行 `# sofagent <hook> hook vX.Y.Z`
+        //   ③ 关键行为锚点（审计引擎调用 / 退出码契约）
+        // 三要素齐才判「已安装」；缺任一要素即按「不完整」告警并给重装命令。
+        // 副作用是 doctor 顺带具备**版本对账**能力（与安装器 Step 6.5 的版本提示互补）。
+        const hasMarker = hookContent.includes('sofagent');
+        const versionMarker = hookContent.match(/^\s*#\s*sofagent\s+commit-msg\s+hook\s+v(\d+)\.(\d+)\.(\d+)\s*$/m);
+        // 关键行为锚点：hook 必须真的调用审计引擎并区分退出码契约
+        const hasBehaviorAnchor = hookContent.includes('sofagent-audit') && hookContent.includes('EXIT_CODE');
+        if (hasMarker && versionMarker && hasBehaviorAnchor) {
+          ok(`commit-msg hook 已安装（v${versionMarker[1]}.${versionMarker[2]}.${versionMarker[3]}，含版本标记与行为锚点）`);
           hookOk = true;
-        } else {
+        } else if (!hasMarker) {
           warn('commit-msg hook 存在但不包含 sofagent 标识');
           repairHint('sofagent-audit --install-hook');
+        } else {
+          // 有 sofagent 字样但缺版本标记 / 行为锚点——典型的**替换型篡改或旧版残留**。
+          // 不再误报「已安装」（这正是 E3 的缺陷面）。
+          const missing: string[] = [];
+          if (!versionMarker) missing.push('版本标记行（# sofagent commit-msg hook vX.Y.Z）');
+          if (!hasBehaviorAnchor) missing.push('行为锚点（sofagent-audit 调用 + EXIT_CODE 契约）');
+          warn(`commit-msg hook 不完整——缺 ${missing.join(' / ')}（可能是被替换的空壳脚本或旧版残留）`);
+          repairHint('sofagent-audit --install-hook（重装以恢复版本标记与行为锚点）');
         }
       } catch (err) {
         warn(`commit-msg hook 存在但无法读取: ${err instanceof Error ? err.message : String(err)}`);
@@ -899,13 +919,14 @@ export function runDoctorWithRepair(projectDir: string = process.cwd(), repair: 
     let repairsApplied = 0;
 
     // 1. ~/.sofagent 不存在 → 创建
-    // run-07 verdict P1-3：同批收口——引导期初始化也走 SSOT 入口（白名单防护生效）；
-    // 引导语义不变（~/.sofagent 不存在时创建骨架目录）。
+    // 引导期初始化也走 SSOT 入口（白名单防护生效）；引导语义不变
+    // （~/.sofagent 不存在时创建骨架目录）；data/internal 子目录路径
+    // 一律取自 data-paths SSOT（resolveDataDir），禁手拼 join(home, 'data')
     const home = resolveHomeDir();
     if (!existsSync(home)) {
       try {
         mkdirSync(home, { recursive: true, mode: 0o700 });
-        mkdirSync(join(home, 'data'), { recursive: true, mode: 0o700 });
+        mkdirSync(resolveDataDir(), { recursive: true, mode: 0o700 });
         mkdirSync(join(home, 'internal'), { recursive: true, mode: 0o700 });
         ok('~/.sofagent 已自动创建');
         repairsApplied++;

@@ -1,24 +1,20 @@
 # sofagent 回归检查清单
 
-> **用途**：每次发版前跑一遍，确认之前修过的问题没有回退。发现新问题用 [fresh-eyes-review](./fresh-eyes-review.md)。审查范围：全仓库状态检查（不是只看增量）。
-> **编号规则**：归并项直接删除、编号不复用；维度演进与归并的完整历史 `git log -p` 可溯，本清单只维护当前状态。
-> **当前 90 维 · 编号 1-141 · 51 个编号已归并删除**。维度流连续不中断，分组导航：基线组 → 审查约束组 → 环境敏感组（前置 vitest/沙箱铁律）。
+> **用途**：每次发版前跑一遍，确认之前修过的问题没有回退。发现新问题用 [fresh-eyes-review](./fresh-eyes-review.md)。审查范围：全仓库状态检查（不是只看增量）。**编号规则**：归并项直接删除、编号不复用；演进历史 `git log -p` 可溯，本清单只维护当前状态。
+> **当前 87 维 · 编号 1-144 · 56 个编号已归并删除（#145 发版期四项已并入 #144 n–q）**。维度流连续不中断，分组导航：基线组 → 审查约束组 → 环境敏感组（前置 vitest/沙箱铁律）。
 
 ## 🔒 维护公约（防膨胀铁律）
 
 **追加新维度前，必须先 grep 同类**：有同类 → 扩展旧维度的子项，不新增编号；无同类 → 才新增编号 = 当前最大 +1。历史维度靠 `git log -p` 找回。
 
-**归并配额（硬门槛）**：新增 N 维 → 本版必须先真实归并 ≥N 维（被并维度检查内容实际移入目标维度，git diff 可查；注释压缩不算）；净增行数 > 警戒线余量 → 继续归并或移下一版——**只调警戒线不归并 = 不合格**。
-
+**归并配额（硬门槛）**：新增 N 维 → 本版必须先真实归并 ≥N 维（被并内容实际移入目标维度，git diff 可查；注释压缩不算）；净增行数 > 警戒线余量 → 继续归并或移下一版——**只调警戒线不归并 = 不合格**。
 **行数警戒线（当前值）**：`regression-checklist.md` ≤ 1950 行、`acceptance-test.sh` ≤ 4500 行（实测注记：checklist 1949→1960 被首轮修复批净增 11 行顶破 S426 结构锁——「口径105 注释演进链 + F6 动态窗口 + hook git-path 解析」均为真实判据内容，按「先归并对销」处理，见下方自检段）。
 
-**维度脚本编写四铁律**（教训——7 个 FAIL 维度中 5 个是脚本自身缺陷而非仓库问题，driver 白跑一轮）：
-
-1. **显式收尾**：每个维度的检查命令必须以 `echo "✅ ..."`（通过）或 `echo "❌ ..."; exit 1`（失败）收尾——**禁用「期望：无输出」「期望：exit 1」这类依赖退出码语义的写法**。driver 判定只看 exitCode，`grep 无命中返回 1` / `for 循环尾条件判假返回 1` 都会被误判 FAIL（#59/#96 实证——输出全 ✅ 仍记 FAIL）。
-2. **禁写死 CLI 参数签名与数字**：检查命令引用 CLI（`node dist/cli.js <参数>`）或计数（N tools / N 规则）时，版本演进必漂——#56 的 `--golden-set` 参数被移除后老命令报参数缺失、#110 的 `48 tools` 在 52→60 后必然 FAIL。写**动态对账**（读 tool-registry 实数比文档）或**可达性验证**（`--help` 含子命令名），不锚定具体签名/数字。**已写死的历史锚处置**：工具数等静态计数锚（如各维度 `-eq N` 断言）在工具数变更的版本**发版中必漂**——bump/工具数变更 commit 后逐锚跑一遍受影响维度确认语义（fail 输出 ⚠️ 提示复核的锚 + 手动对 registry 实数），锚过时改锚、真漂移修文档，不等到 release-gate 轮才暴露（曾因锚停在旧实数被误判为「文档漂移」，实为锚未随实数更新）。
-3. **修改 checklist 的 commit 前最后跑一次 check-docs**：B 层预算会被修复净增顶破（实测一天内两次：8880→8885→8895）——commit 后才发现 CD 红等于多一个 fix commit。
-4. **跨进程边界只传退出码，不传变量**：`bash script.sh` 调子脚本时**子进程内设的变量不会回传**（只能取退出码或 stdout）；要读写变量须 `source script.sh`（同进程）。取证一律用 `cmd > log 2>&1; echo $?`——**`cmd | tail; echo $?` 取到的是 `tail` 的退出码**（管道陷阱，与上方「维度 8 · 子项 a」同族，但那条查的是脚本内部，本条查的是**取证方式**）。
-   实证：验证「旧包名零残留」守卫时用 `bash /tmp/guard-c.sh` 后检查 `FAIL` → 恒 0（误判「守卫失效」）；改 `source` 同进程才拿到真实 `FAIL=1`。同一轮另一次：`bash xxx.sh | tail -3; echo $?` 把「注入被拦（真实 1）」读成 0。
+**维度脚本编写四铁律**（教训——7 个 FAIL 维度中 5 个是脚本自身缺陷，driver 白跑一轮）：
+1. **显式收尾**：每个维度的检查命令必须以 `echo "✅ ..."` 或 `echo "❌ ..."; exit 1` 收尾——**禁用「期望：无输出」「期望：exit 1」这类依赖退出码语义的写法**。driver 只看 exitCode，`grep 无命中返回 1` / `for 循环尾判假返回 1` 都被误判 FAIL（#59/#96 实证——输出全 ✅ 仍记 FAIL）。
+2. **禁写死 CLI 参数签名与数字**：检查命令引用 CLI 或计数（N tools / N 规则）时版本演进必漂（#56 `--golden-set` 被移除、#110 `48 tools` 在 52→60 后 FAIL）。写**动态对账**（读 tool-registry 实数比文档）或**可达性验证**（`--help` 含子命令名）。**已写死的历史锚**：工具数变更的版本发版中必漂——bump/工具数变更 commit 后逐锚跑受影响维度，锚过时改锚、真漂移修文档，不等 release-gate 轮才暴露。
+3. **修改 checklist 的 commit 前最后跑一次 check-docs**：B 层预算会被修复净增顶破（实测一天两次 8880→8885→8895）——commit 后才发现 CD 红等于多一个 fix commit。
+4. **跨进程边界只传退出码，不传变量**：`bash script.sh` 调子脚本时子进程内变量不回传（要读写须 `source` 同进程）。取证一律 `cmd > log 2>&1; echo $?`——**`cmd | tail; echo $?` 取到的是 `tail` 的退出码**（实证两案：`bash 守卫.sh` 后查 `FAIL` 恒 0 误判守卫生效；管道取退出码把「注入被拦 1」读成 0）。
 
 **清单自身健康度自校验**（每次修改后跑）：
 ```bash
@@ -36,7 +32,7 @@ WC_CHK=$(wc -l < playbook/regression-checklist.md); WC_ACC=$(wc -l < playbook/ac
 
 你是**回归测试工程师**——确认已知的修复没有回退，不是发现新问题。逐项核对，全 PASS 即通过。⏰ 时序：回归检查在阶段六跑，git tag/npm registry 未到位的项标 ⏳。🔍 维度 7f/17a-b/20 依赖真实环境（npm/git/OpenClaw），AI 审查标 `⏸️ 需人工环境`。
 
-## 审查维度（90 维 · 编号规则见头部）
+## 审查维度（87 维 · 编号规则见头部）
 
 ### 审查维度正文（#1-142 · 维度流连续不中断）
 
@@ -239,6 +235,10 @@ for f in sorted(glob.glob('tools/check/*.sh')) + ['playbook/acceptance-test.sh']
             bad.append(f"{f}:{i + 1} ${m.group(1)}")
 print('\n'.join(bad) if bad else '✅ 无空值守卫静默跳过（真坑形态 B）')
 PY
+
+# 子项 i: 场景体例守卫（两代体例并存，新场景误用旧三行壳既不被判也不被计数而 REPORT 仍称已落地）
+# 守卫已落 acceptance-test.sh 静态扫描（跑前扫全部 ^scenario 块，无任何判据即 FAIL 并打印场景号）；本子项锚守卫在位不回退
+grep -q "场景体例 fail-loud 守卫" playbook/acceptance-test.sh && echo "✅ 场景体例守卫在位（缺判据即 FAIL）" || echo "❌ 场景体例守卫丢失——旧三行壳复活无门禁拦截"
 ```
 
 #### 9. 动态规则禁用逻辑 + 文档侧规则数声称一致性
@@ -1347,7 +1347,9 @@ fi
 # 修复post-commit 取 HEAD^ 作为 PARENT_SHA 对账
 grep -q "PARENT_SHA\|HEAD\^" "$PROJECT_ROOT/engine/audit/src/commands/init.ts" || echo "⚠️ post-commit 未用 PARENT_SHA 对账"
 # 首次 commit（unborn HEAD）用空树常量兜底
-grep -q "4b825dc642cb6eb9a060e54bf8d69288fbee4904" "$PROJECT_ROOT/engine/audit/src/commands/init.ts" || echo "⚠️ 首次 commit 无空树兜底"
+# 空树兜底双侧锚定：记录侧 index.ts 常量 + 对账侧 post-commit 首提回退（防 PARENT_SHA 空失配）
+grep -q "4b825dc642cb6eb9a060e54bf8d69288fbee4904" "$PROJECT_ROOT/engine/audit/src/index.ts" || echo "⚠️ 记录侧（index.ts）空树兜底缺失"
+grep -q 'PARENT_SHA=$(git hash-object -t tree /dev/null' "$PROJECT_ROOT/engine/audit/hooks/post-commit" || echo "⚠️ 对账侧（post-commit）首提空树回退缺失"
 ```
 
 #### 101. check-docs 双面防复发——B 层行数超预算 + 锚点扫描环境降级（归并 #109 入此）
@@ -1455,7 +1457,9 @@ SOFAGENT_DATA=/tmp/rg-nonexist node engine/audit/dist/index.js --verify-chain > 
 mkdir -p /tmp/rg-iso/data && printf 'rules:\n a4: false\n' > /tmp/rg-iso-cfg.yml 2>/dev/null
 grep -q "getHistoryFilePath" engine/audit/src/index.ts || echo "⚠️ rule_disabled 路径口径回退到 resolveAuditDir"
 # ⑥ hook 双副本同步（防 #2）：仓库模板与已装现场副本一致——改模板不重装即测旧副本=假绿
-diff <(grep -c "exitCode" engine/audit/hooks/post-commit) <(grep -c "exitCode" .git/hooks/post-commit 2>/dev/null) 2>/dev/null || echo "⚠️ post-commit 新旧副本逻辑不一致（模板改后未重装验证）"
+# worktree 下 .git 是文件，裸 .git/hooks 恒 miss——git rev-parse --git-path hooks 双形态解析真身
+HOOKS_DIR=$(git rev-parse --git-path hooks 2>/dev/null || echo ".git/hooks")
+diff <(grep -c "exitCode" engine/audit/hooks/post-commit) <(grep -c "exitCode" "$HOOKS_DIR/post-commit" 2>/dev/null) 2>/dev/null || echo "⚠️ post-commit 新旧副本逻辑不一致（模板改后未重装验证）"
 # ⑦ archive 断链模式（防 #34）：压平迁移后引用路径必须跟着改
 node -e "const fs=require('fs'),p=require('path');let bad=0;for(const f of fs.readdirSync('docs/archive/changelog-experimental')){if(!f.endsWith('.md'))continue;const c=fs.readFileSync(p.join('docs/archive/changelog-experimental',f),'utf8');for(const m of c.matchAll(/\]\((\.[^)]+)\)/g)){const t=p.resolve('docs/archive/changelog-experimental',m[1]);if(!fs.existsSync(t))bad++}}if(bad)console.log('⚠️ archive 断链 '+bad+' 处（迁移没跟引用）')"
 # 原 #116 并入的 12 项 P0-P1 锚点（12 行 anchor grep → 单次批量断言，等价）
@@ -1626,6 +1630,14 @@ cd "$REPO_ROOT" && npm ci --dry-run 2>&1 | grep -c "^npm error Missing" | grep -
 node -e "const l=require('./package-lock.json');const p=JSON.parse(require('fs').readFileSync('package.json','utf8'));const miss=p.workspaces.flat().filter(w=>!l.packages[w]);if(miss.length){console.error('❌ lock 缺:',miss.join(','));process.exit(1)}console.log('✅ 全部 workspace 在 lock')"
 grep -q "createArgv1Guard" engine/orchestrator/src/execution-backends/dsh-backend.ts && echo "✅ argv 守卫在位" || echo "❌ argv 守卫回退"
 grep -c "dsh-deployed" package-lock.json | grep -q "^0$" && echo "✅ lock 零本地部署树路径" || echo "❌ lock 残留本地部署树 symlink——CI 必红 TS2307"
+# B 类披露面批（B4/B5/B13/B14——新增网络面同 commit 披露 / 产物落点写全 / 旗舰能力同 commit 露出 / 明文清单逐文件）
+# B4: 三条远程下发面 SECURITY + LIMITATIONS 披露在位（「下一版补」不接受）
+grep -q "device.upgrade\|device.deploy" SECURITY.md && grep -q "device" docs/LIMITATIONS.md && echo "✅ 远程下发面双披露在位" || echo "❌ 新增网络面缺 SECURITY/LIMITATIONS 披露（B4：同 commit 补齐）"
+grep -q "intent.jsonl" docs/LIMITATIONS.md && echo "✅ 明文清单含 intent.jsonl（B14：逐文件列全）" || echo "❌ intent.jsonl 未进 LIMITATIONS 明文清单"
+# B5: 周报产物落点写全（落哪 + 有无消费方）
+grep -q "digest-" engine/daemon/src/inspectors/weekly-digest.ts && grep -qE "无前端读取面|消费方" docs/changelog/v1.5/v1.5.1.md && echo "✅ 周报落点 + 消费方声明在位" || echo "🟡 周报落点声明人工复核（B5：只写目录名 = 声称不完整）"
+# B13: 旗舰能力双语 README + WIKI 露出（「排期」vs 实物已交付不得并存）
+grep -q "demo" README.md && grep -q "demo" docs/WIKI.md && echo "✅ demo 双面露出在位" || echo "🟡 demo README/WIKI 露出人工复核（B13：旗舰能力同 commit 露出）"
 ) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -qE "^[[:space:]]{0,2}❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true
 ```
 
@@ -1787,10 +1799,12 @@ git grep -q "regexWarned" -- tools/check/public-api.mjs && echo "✅ 降级 fail
 
 ```bash
 (
-# 逐锚语义：a = 交付面存在性（train 五新面/进化实证 sampler cursor + skill-impact 台账/quickstart 双件/fde-session lastCapturedAt/WIKI §数据文件架构指针）+ tools 84 静态 SSOT（动态不进；83→84 为对齐 registry 实测实数——与维度 111 同款口径）；b = retention 加固 + 链锚/SANITIZE 值形可证
+# 逐锚语义：a = 交付面存在性（train 五新面/进化实证 sampler cursor + skill-impact 台账/quickstart 双件/fde-session lastCapturedAt/WIKI §数据文件架构指针）；b = retention 加固 + 链锚/SANITIZE 值形可证 + tools 双源动态对账
 MISS=0; for f in train-serve train-compliance train-deliverable retention-policy train-continuous; do test -f "engine/train/src/$f.ts" || MISS=$((MISS+1)); done; [ "$MISS" -eq 0 ] && echo "✅ train 五新面在位" || echo "❌ train 新面缺 $MISS 文件"
 test -f docs/guides/train-quickstart.md && test -f docs/guides/examples/quickstart-data.csv && grep -q "cursor" engine/daemon/src/dream-cycle/continuous-sampler.ts && test -f engine/orchestrator/src/skill-evolution/skill-impact-ledger.ts && grep -q "lastCapturedAt" engine/orchestrator/src/fde-session-mgr/index.ts && echo "✅ 进化实证 + quickstart + 会话时间戳在位" || echo "❌ 交付面缺口"
-grep -q "§数据文件架构" docs/WIKI.md && [ "$(grep -cE "^ {4}name: '" engine/mcp/src/tool-registry.ts)" -eq 95 ] && echo "✅ WIKI 指针 + tools 95 SSOT" || echo "⚠️ WIKI 指针/95 计数漂移——复核"
+# tools 计数源/dist 双源动态对账（写死数字每版必漂——与 S426 同款债）
+REG_N=$(grep -cE "^ {4}name: '" engine/mcp/src/tool-registry.ts); DIST_N=$(node -e "console.log(Object.keys(require('./engine/mcp/dist/tool-registry.js').TOOLS||require('./engine/mcp/dist/tool-registry.js')).length)" 2>/dev/null || echo 0)
+grep -q "§数据文件架构" docs/WIKI.md && [ "$REG_N" = "$DIST_N" ] && [ "$REG_N" -gt 0 ] && echo "✅ WIKI 指针在位 + tools 计数源/dist 一致（${REG_N}）" || echo "⚠️ WIKI 指针缺失或 tools 源/dist 计数漂移（源 ${REG_N} / dist ${DIST_N}）——复核"
 grep -q "isSymbolicLink" engine/train/src/retention-policy.ts && grep -q "realpathSync" engine/train/src/retention-policy.ts && [ "$(grep -c "resolvePointPath" engine/train/src/retention-policy.ts)" -ge 4 ] && grep -q "trainArchiveDir" engine/train/src/retention-policy.ts && echo "✅ retention 四词形在位" || echo "❌ retention 加固回潮"
 test -f engine/audit/src/chain-head-anchor.test.ts && grep -q "shouldExempt(key: string, value: string)" engine/audit/src/audit-history.ts && grep -q "sanitizeFreeText(value) === value" engine/audit/src/audit-history.ts && echo "✅ 链锚测试 + SANITIZE 值校验在位" || echo "❌ 链锚/SANITIZE 回潮"
 ) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -qE "^[[:space:]]{0,2}❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true
@@ -1858,91 +1872,79 @@ bash tools/check/dependency-direction.sh > /dev/null 2>&1 && echo "✅ 13 包方
 ) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -qE "^[[:space:]]{0,2}❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true
 ```
 
-#### 137. 审查面 A 类——策略门族（插件来源白名单 + 应用级工具策略）
+#### 137. 审查面 A 类——五族合一维收口（策略门/行为分级/成本压缩/模型进化/执行纪律 · 归并 #138-#141 入此：断言零删减，git log -p 可溯）
 
-> 来源：devlog 一/二章（阶段四 A 类收拢——族内两臂同为「未声明即拒绝」fail-closed 语义）。
+> 来源：devlog 一~十章（阶段四 A 类收拢——五族同为 fail-closed/显式失败语义；⑦ 段真聚簇实测**同版本**五维同题，按判据②归并对销；跨版本聚簇按判据④.4 不归并）。
 
 ```bash
 (
 FAIL=0
+# ── 策略门族 ──
 # a: 三类来源分类（git-url / host / local-path）——误分类即白名单绕过
 node -e "const m=require('./engine/audit/dist/cli/plugin-gate.js');const k=[['https://github.com/org/*','git-url'],['github.com','host'],['/opt/plugins/*','local-path']];const bad=k.filter(p=>m.classifySource(p[0]).kind!==p[1]);if(bad.length){console.log('分类漂移',JSON.stringify(bad));process.exit(1)};console.log('三类来源分类正确')" || { echo "❌ 来源分类漂移"; FAIL=1; }
 # b: install.sh --policy 三出口 fail-closed（文件缺失 / 校验器不可用 / --lint 解析失败各自 exit 1）
 grep -q "安装中止（fail-closed）" install.sh && grep -q "校验器不可用" install.sh && grep -q "\-\-lint" install.sh && echo "✅ --policy 三出口在位" || { echo "❌ fail-closed 出口缺失"; FAIL=1; }
 # c: app×tool 白名单未声明即拒绝（ToolGate 语义锚 + 单测在位）
 grep -q "未出现在本表" engine/audit/src/cli/plugin-gate.ts && grep -rq "app_tool_policy" engine/audit/src/__tests__/ && echo "✅ 白名单矩阵语义在位" || { echo "❌ ToolGate 语义缺失"; FAIL=1; }
+# ── 行为分级族（原 #138 归并）──
+# d: 六阵型合法值 + 未识别阵型拒绝（schema 值域漂移 = 静默放行未知阵型）
+node -e "const m=require('./engine/orchestrator/dist/formations/schema.js');const bad=[];if(m.FORMATION_NAMES.length!==6)bad.push('阵型数='+m.FORMATION_NAMES.length);const v=m.validateFormation({formation:'no-such-formation',members:[{id:'m1',role:'r'}],edges:[]});if(v.valid)bad.push('未识别阵型被放行');if(bad.length){console.log('阵型 schema 异常',bad.join('|'));process.exit(1)};console.log('六阵型 + 拒绝语义正确')" || { echo "❌ 阵型 schema 漂移"; FAIL=1; }
+# e: 提权三态 action 值齐备（safe=allow / risky=require-approval / dangerous=forbid-until-approved）
+grep -q "forbid-until-approved" engine/core/src/escalation/policy.ts && grep -q "require-approval" engine/core/src/escalation/policy.ts && grep -q "'allow'" engine/core/src/escalation/policy.ts && echo "✅ 三态 action 值齐备" || { echo "❌ 三态语义缺失"; FAIL=1; }
+# ── 成本与压缩族（原 #139 归并）──
+# f: 3% 预算检测 + 压缩 start/end 标记 + 回调出口 + 零依赖（压缩器不得 import audit 包）
+node -e "const b=require('./engine/inject/dist/load-chain/budget.js');const c=require('./engine/inject/dist/load-chain/compactor.js');const fs=require('fs');const bad=[];if(typeof b.checkBudget!=='function')bad.push('缺 checkBudget');if(!c.COMPACT_START_MARKER||!c.COMPACT_END_MARKER)bad.push('缺压缩标记');const src=fs.readFileSync('engine/inject/src/load-chain/compactor.ts','utf8');if(/from\s+.[^.]*audit/.test(src))bad.push('压缩器耦审计包');if(bad.length){console.log(bad.join('|'));process.exit(1)};console.log('预算+标记+零依赖正确')" || { echo "❌ 压缩族锚点漂移"; FAIL=1; }
+# g: quota WARN/HARD 双模式 + cost_query 三字段（余量/已用/周期）
+grep -qE "'WARN' \| 'HARD'|WARN（放行" engine/core/src/cost/quota-gate.ts && grep -q "remaining" engine/mcp/src/tools/cost-query.ts && grep -qE "usedTokens|period" engine/mcp/src/tools/cost-query.ts && echo "✅ 双模式 + 三字段在位" || { echo "❌ quota 面缺失"; FAIL=1; }
+# ── 模型与进化族（原 #140 归并）──
+# h: required 未注册 → 抛 ModelPreferenceError（静默降级 = 模型漂移无感）
+node -e "const m=require('./engine/orchestrator/dist/model-resolver.js');const fs=require('fs');const bad=[];if(typeof m.ModelPreferenceError!=='function')bad.push('缺 ModelPreferenceError');const src=fs.readFileSync('engine/orchestrator/src/model-resolver.ts','utf8');if(!/required/.test(src))bad.push('缺 required 语义');if(bad.length){console.log(bad.join('|'));process.exit(1)};console.log('模型偏好显式失败语义在位')" || { echo "❌ 模型偏好语义缺失"; FAIL=1; }
+# i: 进化模块自研 gate 默认 native（零 Python 触点）
+grep -q "SOFAGENT_EVOLVE_GATE ?? 'native'" engine/evolve/src/evolve-integration.ts && ! grep -rqE "python3?( |$)|spawnSync\('py" engine/evolve/src/ --include="*.ts" && echo "✅ native 默认 + 零 Python" || { echo "❌ evolve gate 默认值/Python 触点异常"; FAIL=1; }
+# j: 旧包名 @sofagent/skillopt 零残留（更名 73 文件联动）——三面齐查（package.json / 锁文件 / node_modules）
+{ grep -rq "@sofagent/skillopt" package.json engine/*/package.json FORGE/package.json package-lock.json 2>/dev/null \
+  || [ -e node_modules/@sofagent/skillopt ]; } && { echo "❌ 旧包名残留（package.json / 锁文件 / node_modules 任一面）"; FAIL=1; } || echo "✅ 旧名清零（三面齐查）"
+# k: loop 三形态定位边界互不重叠声明 + optimization-loop 实现保留（撤承诺 ≠ 删实现）+ --legacy 退役显式拒绝
+for f in engine/orchestrator/src/loop/index.ts engine/orchestrator/src/loop-agent/driver.ts engine/orchestrator/src/refine-agent/refine-driver.ts; do grep -q "定位边界（v1.4.8 条目 10）" "$f" && grep -q "不合并" "$f" || { echo "❌ 三形态定位边界声明缺失: $f"; FAIL=1; }; done
+grep -q "runOptimizationLoop" engine/orchestrator/src/refine-agent/optimization-loop.ts && echo "✅ optimization-loop 实现保留" || { echo "❌ optimization-loop 实现被误删"; FAIL=1; }
+grep -q "已于 v1.5.0 移除" engine/orchestrator/src/cli.ts && grep -q "args.includes('--legacy')" engine/orchestrator/src/cli.ts && echo "✅ loop --legacy 退役显式拒绝（fail-closed 在位）" || { echo "❌ loop --legacy 退役拒绝缺失"; FAIL=1; }
+# ── 执行机制纪律族（原 #141 归并）──
+# l: 裸 id 结构化拒绝（SOFAGENT_SCOPE_REQUIRED——多实体系统撞名必然）
+node -e "const m=require('./engine/core/dist/scope-names.js');const r=m.validateScopedName('bare-id-without-scope');if(r.valid){console.log('裸 id 被放行');process.exit(1)};if(r.error&&!/作用域显名/.test(r.error)){console.log('拒绝原因非显名语义');process.exit(1)};console.log('裸 id 结构化拒绝正确')" || { echo "❌ 作用域显名语义漂移"; FAIL=1; }
+# m: Git 能力三态×两隔离矩阵 + 意图分类纯函数主判在位（「靠 LLM 判定等于没判定」）
+grep -q "planExecution" engine/orchestrator/src/exec/git-capability.ts && grep -qE "'none' \| 'local' \| 'remote'" engine/orchestrator/src/exec/git-capability.ts && grep -q "classifyIntentByRules" engine/orchestrator/src/dispatch/intent-classifier.ts && echo "✅ 三态×两隔离 + 纯函数主判在位" || { echo "❌ 纪律批缺失"; FAIL=1; }
 [ "${FAIL:-0}" = "1" ] && { echo "维度137:FAIL"; exit 1; }; echo "维度137:PASS"
 ) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -qE "^[[:space:]]{0,2}❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true
 ```
 
-#### 138. 审查面 A 类——行为分级族（协作阵型库 + shell 提权分级）
-
-> 来源：devlog 三/五章（阶段四 A 类收拢——「未识别即拒」与「dangerous 未批不放行」同为收敛语义）。
-
+#### 144. 审查面一维收口——事件驱动/OTA/上行脱敏/意图通道/demo/退役扫尾 + B 类防复发 + 发版期插件配置/分发不可变/上游钉（阶段四 A/B 合流 · 行为面已由 S433–S441 锁 · 对齐 #131/#133 先例 · ③ 段只查单向，本维把 S433–S441 引进 checklist 补双向闭环；发版期四项自 #145 归并——同版收口主题，归并对销净增行）
 ```bash
 (
 FAIL=0
-# a: 六阵型合法值 + 未识别阵型拒绝（schema 值域漂移 = 静默放行未知阵型）
-node -e "const m=require('./engine/orchestrator/dist/formations/schema.js');const bad=[];if(m.FORMATION_NAMES.length!==6)bad.push('阵型数='+m.FORMATION_NAMES.length);const v=m.validateFormation({formation:'no-such-formation',members:[{id:'m1',role:'r'}],edges:[]});if(v.valid)bad.push('未识别阵型被放行');if(bad.length){console.log('阵型 schema 异常',bad.join('|'));process.exit(1)};console.log('六阵型 + 拒绝语义正确')" || { echo "❌ 阵型 schema 漂移"; FAIL=1; }
-# b: 提权三态 action 值齐备（safe=allow / risky=require-approval / dangerous=forbid-until-approved）
-grep -q "forbid-until-approved" engine/core/src/escalation/policy.ts && grep -q "require-approval" engine/core/src/escalation/policy.ts && grep -q "'allow'" engine/core/src/escalation/policy.ts && echo "✅ 三态 action 值齐备" || { echo "❌ 三态语义缺失"; FAIL=1; }
-[ "${FAIL:-0}" = "1" ] && { echo "维度138:FAIL"; exit 1; }; echo "维度138:PASS"
-) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -qE "^[[:space:]]{0,2}❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true
-```
-
-#### 139. 审查面 A 类——成本与压缩族（自动上下文压缩 + 成本 quota 事前门禁）
-
-> 来源：devlog 四/六章（阶段四 A 类收拢——压缩须可事后识别、配额须事前问路）。
-
-```bash
-(
-FAIL=0
-# a: 3% 预算检测 + 压缩 start/end 标记 + 回调出口 + 零依赖（压缩器不得 import audit 包）
-node -e "const b=require('./engine/inject/dist/load-chain/budget.js');const c=require('./engine/inject/dist/load-chain/compactor.js');const fs=require('fs');const bad=[];if(typeof b.checkBudget!=='function')bad.push('缺 checkBudget');if(!c.COMPACT_START_MARKER||!c.COMPACT_END_MARKER)bad.push('缺压缩标记');const src=fs.readFileSync('engine/inject/src/load-chain/compactor.ts','utf8');if(/from\s+.[^.]*audit/.test(src))bad.push('压缩器耦审计包');if(bad.length){console.log(bad.join('|'));process.exit(1)};console.log('预算+标记+零依赖正确')" || { echo "❌ 压缩族锚点漂移"; FAIL=1; }
-# b: quota WARN/HARD 双模式 + cost_query 三字段（余量/已用/周期）
-grep -qE "'WARN' \| 'HARD'|WARN（放行" engine/core/src/cost/quota-gate.ts && grep -q "remaining" engine/mcp/src/tools/cost-query.ts && grep -qE "usedTokens|period" engine/mcp/src/tools/cost-query.ts && echo "✅ 双模式 + 三字段在位" || { echo "❌ quota 面缺失"; FAIL=1; }
-[ "${FAIL:-0}" = "1" ] && { echo "维度139:FAIL"; exit 1; }; echo "维度139:PASS"
-) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -qE "^[[:space:]]{0,2}❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true
-```
-
-#### 140. 审查面 A 类——模型与进化族（节点级模型偏好 + 进化模块重构）
-
-> 来源：devlog 八/九章与第九章重构（阶段四 A 类收拢——「未注册不静默降级」与「自研 gate 默认」同为显式失败语义）。
-
-```bash
-(
-FAIL=0
-# a: required 未注册 → 抛 ModelPreferenceError（静默降级 = 模型漂移无感）
-node -e "const m=require('./engine/orchestrator/dist/model-resolver.js');const fs=require('fs');const bad=[];if(typeof m.ModelPreferenceError!=='function')bad.push('缺 ModelPreferenceError');const src=fs.readFileSync('engine/orchestrator/src/model-resolver.ts','utf8');if(!/required/.test(src))bad.push('缺 required 语义');if(bad.length){console.log(bad.join('|'));process.exit(1)};console.log('模型偏好显式失败语义在位')" || { echo "❌ 模型偏好语义缺失"; FAIL=1; }
-# b: 进化模块自研 gate 默认 native（零 Python 触点）
-grep -q "SOFAGENT_EVOLVE_GATE ?? 'native'" engine/evolve/src/evolve-integration.ts && ! grep -rqE "python3?( |$)|spawnSync\('py" engine/evolve/src/ --include="*.ts" && echo "✅ native 默认 + 零 Python" || { echo "❌ evolve gate 默认值/Python 触点异常"; FAIL=1; }
-# c: 旧包名 @sofagent/skillopt 零残留（更名 73 文件联动）——**三面齐查**：
-#    package.json / 锁文件 / node_modules（后两面原缺：extraneous 残留由此存活一整版，见 dependency-direction.sh ⑵）
-{ grep -rq "@sofagent/skillopt" package.json engine/*/package.json FORGE/package.json package-lock.json 2>/dev/null \
-  || [ -e node_modules/@sofagent/skillopt ]; } && { echo "❌ 旧包名残留（package.json / 锁文件 / node_modules 任一面）"; FAIL=1; } || echo "✅ 旧名清零（三面齐查）"
-
-# d: loop 概念归位与弃用承诺（深模块批条目 10）——三形态定位边界互不重叠声明在位（**明确不合并**：
-#    loop/ 对错门禁 · loop-agent/ 工程级崩溃判定 · refine-agent/ 质量好坏判据，两两判据与状态机不同）；
-#    optimization-loop 撤公开承诺但实现保留（撤承诺 ≠ 删实现）；loop --legacy 已按弃用公告执行移除
-#    （存量清扫，显式拒绝 fail-closed）——判据随动翻新，对齐 acceptance S407 现行形态
-for f in engine/orchestrator/src/loop/index.ts engine/orchestrator/src/loop-agent/driver.ts engine/orchestrator/src/refine-agent/refine-driver.ts; do grep -q "定位边界（v1.4.8 条目 10）" "$f" && grep -q "不合并" "$f" || { echo "❌ 三形态定位边界声明缺失: $f"; FAIL=1; }; done
-grep -q "runOptimizationLoop" engine/orchestrator/src/refine-agent/optimization-loop.ts && echo "✅ optimization-loop 实现保留（撤公开承诺 ≠ 删实现）" || { echo "❌ optimization-loop 实现被误删"; FAIL=1; }
-grep -q "已于 v1.5.0 移除" engine/orchestrator/src/cli.ts && grep -q "args.includes('--legacy')" engine/orchestrator/src/cli.ts && echo "✅ loop --legacy 退役显式拒绝（fail-closed 在位）" || { echo "❌ loop --legacy 退役拒绝缺失（移除执行回退）"; FAIL=1; }
-[ "${FAIL:-0}" = "1" ] && { echo "维度140:FAIL"; exit 1; }; echo "维度140:PASS"
-) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -qE "^[[:space:]]{0,2}❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true
-```
-
-#### 141. 审查面 A 类——执行机制纪律族（意图分类主判 + Git 能力矩阵 + 作用域显名）
-
-> 来源：devlog 第十章（阶段四 A 类收拢——裸 id 结构化拒绝与并发 Git 纪律同属「机制约束先生效」）。
-
-```bash
-(
-FAIL=0
-# a: 裸 id 结构化拒绝（SOFAGENT_SCOPE_REQUIRED——多实体系统撞名必然）
-node -e "const m=require('./engine/core/dist/scope-names.js');const r=m.validateScopedName('bare-id-without-scope');if(r.valid){console.log('裸 id 被放行');process.exit(1)};if(r.error&&!/作用域显名/.test(r.error)){console.log('拒绝原因非显名语义');process.exit(1)};console.log('裸 id 结构化拒绝正确')" || { echo "❌ 作用域显名语义漂移"; FAIL=1; }
-# b: Git 能力三态×两隔离矩阵 + 意图分类纯函数主判在位（「靠 LLM 判定等于没判定」）
-grep -q "planExecution" engine/orchestrator/src/exec/git-capability.ts && grep -qE "'none' \| 'local' \| 'remote'" engine/orchestrator/src/exec/git-capability.ts && grep -q "classifyIntentByRules" engine/orchestrator/src/dispatch/intent-classifier.ts && echo "✅ 三态×两隔离 + 纯函数主判在位" || { echo "❌ 纪律批缺失"; FAIL=1; }
-[ "${FAIL:-0}" = "1" ] && { echo "维度141:FAIL"; exit 1; }; echo "维度141:PASS"
+# a: S433–S441 引用闭环（九场景号须全数在位，缺一即红——S440 章十五族锚 G-1 闭环 / S441 章十一发布链锚 G-10 闭环）
+grep -cE "scenario 43[3-9]|scenario 44[01]" playbook/acceptance-test.sh | grep -q "^9$" && echo "✅ S433–S441 九场景在位" || { echo "❌ S433–S441 场景号缺失"; FAIL=1; }
+grep -rq "replayDeadLetter" engine/orchestrator/src/__tests__/events-bus.test.ts && grep -q "event-queue.jsonl" engine/orchestrator/src/events/bus.ts && grep -q "timer.tick" engine/orchestrator/src/events/adapters.ts && echo "✅ 事件总线三面在位" || { echo "❌ 事件总线面缺口"; FAIL=1; } # b: 章一·事件总线三面（重放/落盘/tick 源）
+grep -q "平台公钥" engine/daemon/src/ota/upgrade-executor.ts && grep -q "设备注册表" engine/daemon/src/device-registry.ts && echo "✅ 验签三要素披露在位" || { echo "❌ 验签三要素披露缺失"; FAIL=1; } # c: 章四·OTA 验签对称/逐条披露（B1/B2 防复发）
+grep -q "holdTaskDispatch" engine/daemon/src/ota/upgrade-policy.ts && grep -q "takeHeldTaskDispatches" engine/daemon/src/ota/upgrade-policy.ts && echo "✅ 双通道在位" || { echo "❌ 任务下发双通道缺口"; FAIL=1; } # d: 章五·任务下发双通道（在线推送 + 离线持有点 + 心跳捎带补收）
+grep -q "routeReason" engine/core/src/export/sensitivity-classifier.ts && grep -q "canaryRouteRequest" engine/mcp/src/tools/device-data-push.ts && echo "✅ 三层检测 + 灰度在位" || { echo "❌ 上行管线锚点缺失"; FAIL=1; } # e: 章六·上行管线 L0/L1/L2 逐层降漏 + T9 灰度 hash 分流留痕
+grep -q "skipReasons" engine/audit/src/intent-channel.ts && grep -q "inputChannels" engine/audit/src/intent-channel.ts && echo "✅ 意图通道 opt-in + 跳过留痕在位" || { echo "❌ 意图通道 opt-in/第三态黑洞修复缺失"; FAIL=1; } # f: 章七·意图通道 opt-in 无声明零变化 + B17 跳过留痕
+grep -q "getDataDir" engine/audit/src/cli/demo.ts && grep -q "speed" engine/audit/src/cli/demo.ts && echo "✅ demo dataDir + speed 判据在位" || { echo "❌ demo dataDir/speed 缺失"; FAIL=1; } # g: 章八·demo 缺省路径 getDataDir 不落家目录（B20）+ --speed fast 判据一致
+# h: 发布链两件套（章十一 A16——check-gate-inventory + heavy-gate-receipt）
+test -f tools/check/check-gate-inventory.sh && test -f tools/release/heavy-gate-receipt.sh && echo "✅ 发布链两件套在位" || { echo "❌ 发布链两件套缺失"; FAIL=1; }
+# i: 退役扫尾（B23——--legacy 拒绝面已在 #137 k 锚，此处只验失败链 lastError 落 health）
+grep -q "lastError" engine/daemon/src/cli.ts && echo "✅ 失败链 lastError 在位" || { echo "❌ 失败链零告警回潮（B23）"; FAIL=1; }
+# j: 死导出防线（B16/B24——check-unwired-exports --since 模式 + @internal 收窄面）
+grep -q "\-\-since" tools/check/check-unwired-exports.sh && grep -q "@internal" engine/orchestrator/src/events/index.ts && echo "✅ 死导出防线双锚在位" || { echo "❌ 死导出防线缺失"; FAIL=1; }
+# k: 哑守卫防御（B25——gen-fresh-eyes-draft 守卫双路径：playbook/ 权威源 + FORGE/ 旧位兜底）
+grep -q "join(REPO_ROOT, 'playbook', 'fresh-eyes-review.md')" tools/gen/gen-fresh-eyes-draft.mjs && grep -q "FORGE', 'playbook', 'fresh-eyes-review.md'" tools/gen/gen-fresh-eyes-draft.mjs && echo "✅ 对账守卫双路径在位" || { echo "❌ 哑守卫修复回退（路径写死单源）"; FAIL=1; }
+# l: 草稿版本串取发版目标版本（B26——显式 --version > 路径内嵌 > SSOT 兜底）
+grep -q "resolveDraftVersion" tools/gen/gen-abc-draft.mjs && grep -q "发版目标版本" tools/gen/gen-abc-draft.mjs && echo "✅ 版本串三源解析在位" || { echo "❌ 版本串解析回退（直取 SSOT 标错版）"; FAIL=1; }
+# m: SOP 阶段号权威源对齐（B27；B8 行数实测已由 literals.json devlog-demo-line-count 机器对账）
+head -1 docs/changelog/releasing/04-review-system.md | grep -q "S4" && echo "✅ SOP 阶段编号权威源对齐" || echo "🟡 SOP 04 锚点漂移人工复核（B27 教训）"
+_hit=$(grep -rn "ctx?.config?.plugins?.entries" engine/openclaw-plugins/*/src/index.ts 2>/dev/null | grep -vE '^[^:]+:[0-9]+:\s*(//|\*|/\*)' || true); [ -n "$_hit" ] && { echo "❌ 插件残留 ctx.config 代码读法"; FAIL=1; } || echo "✅ 零 ctx.config 代码读法" # n: 配置唯一读点 api.pluginConfig（ctx 白名单无 config；注释行引用字面量合法）
+grep -q "pluginCfg?.projectRoot" engine/openclaw-plugins/sofagent-rollback/src/index.ts && grep -q "pluginCfg?.projectRoot" engine/openclaw-plugins/sofagent-audit/src/index.ts && grep -q "pluginCfg" engine/openclaw-plugins/sofagent-inject/src/index.ts && grep -q "api?.pluginConfig?.reflectHint" engine/openclaw-plugins/sofagent-evolve/src/index.ts && echo "✅ pluginConfig 读点在位" || { echo "❌ pluginConfig 读点缺失"; FAIL=1; } # o: 四款读点
+grep -rq -- "--version 1\." engine/openclaw-plugins/*/README.md && { echo "❌ README 发布命令写死版本号"; FAIL=1; } || echo "✅ 发布命令零硬编码版本" # p: ClawHub 版本不可变
+grep -q '"@deepseek-ai/dsh-web-app": "0.1.5-rc.2"' engine/orchestrator/package.json && echo "✅ dsh-web-app 钉在位" || { echo "❌ 上游钉缺失"; FAIL=1; } # q: 缺失则全新安装 ETARGET 回潮
+[ "${FAIL:-0}" = "1" ] && { echo "维度144:FAIL"; exit 1; }; echo "维度144:PASS"
 ) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -qE "^[[:space:]]{0,2}❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true
 ```

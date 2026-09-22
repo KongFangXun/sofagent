@@ -1,10 +1,12 @@
 # FDE 交付物激活链 — 从静态交付到自运转企业 Agent
 
-> v1.5.0 · 2026-09-19（UTC）· ✅ 已发版 · 孔放勋
+> v1.5.1 · 2026-09-22（UTC）· ✅ 已发版 · 孔放勋
 >
 > 状态：Phase 1-4（ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN）全部已实现。灵感来源：用户提出「FDE Harness 读自己的交付物，自动生成企业 sub-agent」。
 
 ---
+
+**目录**：[核心问题](#核心问题) · [激活链总览](#激活链总览) · [Phase 1: ACTIVATE — 从交付物注册企业 SubAgent](#phase-1-activate--从交付物注册企业-subagent) · [Phase 2: ORCHESTRATE — 按 workflow 依赖构建 LangGraph](#phase-2-orchestrate--按-workflow-依赖构建-langgraph) · [Phase 3: EXECUTE — DAG 运行 + 审计监控](#phase-3-execute--dag-运行--审计监控) · [Phase 4: SUSTAIN — 持续优化](#phase-4-sustain--持续优化) · [设计问题与决策](#设计问题与决策) · [文件清单](#文件清单) · [验证方式](#验证方式) · [与其他开发线的衔接](#与其他开发线的衔接) · [企业 SubAgent = 引擎公民，不是独立脚本](#企业-subagent--引擎公民不是独立脚本) · [一句话总结](#一句话总结)
 
 ## 核心问题
 

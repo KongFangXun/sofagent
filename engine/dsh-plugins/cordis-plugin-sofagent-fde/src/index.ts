@@ -1,8 +1,8 @@
-// cordis-plugin-sofagent-fde · DSH 反向插件（v1.5.0 P2 合并批：并入 -ontology 与 -commons 面）
+// cordis-plugin-sofagent-fde · DSH 反向插件（v1.5.1 P2 合并批：并入 -ontology 与 -commons 面）
 // seam 挂载：non-seam:tool-set    # 语义：非宿主事件接入（tool 集）——本体 / FDE / 公地三域工具按需调用
 // 清单生成源 = engine/dsh-plugins/plugins.json（生成 package.json 的 description/sofagent/dsh 段与 cordis.patch.yml）；本文件的 seam 字面量由生成器 --check 与之对账。
 //
-// v1.5.0 P2 合并说明（F2）：
+// v1.5.1 P2 合并说明（F2）：
 //   原三薄插件 -ontology（本体查询）/ -commons（能力公地）/ -fde（方法论六 tool）同为
 //   non-seam:tool-set 形态、桥接同一 @sofagent 能力族，拆三包徒增清单与挂载成本。
 //   本插件为合并后的**厚插件**：
