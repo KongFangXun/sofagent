@@ -833,15 +833,20 @@ echo ""
 # 本节全仓扫「N 个 tool(s)」声称，与 tool-registry.ts 实数对账：
 #   - 排除面：changelog/ 历史快照、archive 归档、node_modules、engine 源码内的
 #     泛型文案（如「N 个 tools 数组」非工具数声称）
-#   - 豁免规则：演进链行（含 v1.x 且含「后为/起/新增」——历史事实行）；
-#     「训练 N tools」等带前缀限定的行（非全局工具数声称）
+#   - 豁免规则：演进链行（含 v1.x 且含「后为/起/新增/→」——历史事实行）；
+#     「训练 N tools」等带前缀限定的行（限定面计数，非全局工具数声称）；
+#     历史清单行（CHANGELOG 版本行 / 版本表行 / 日期流水行）；装置面自引用（bash 片段）
+#   - 词形面（v1.5.2 扩）：N tools / N 个 tools / N 个 MCP tool / N MCP tools / N 个 MCP 工具
+#     （原正则只认「N 个 tools」——实测全仓 dominant 形态是「N tools」，v2.0.0.md 的
+#     「其余 103 tools」正是漏在该词形外；扩词形属补覆盖，非放宽判据）
 #   - 其余声称 ≠ 实数 → fail（新声称点自动进对账面，零登记）
 echo "=== 15. 全仓工具数声称对账（防新文件成盲区）==="
 TOOL_CLAIM_SCAN=$(node -e "
 const fs = require('fs');
 const path = require('path');
-// 排除面与 1b 死链扫描同口径 + engine 源码（内部文案非文档声称）
-const EXCLUDE = [/node_modules/, /\.git/, /\.workbuddy/, /\.sofagent/, /docs\/changelog\//, /docs\/archive\//, /FORGE\/archive\//, /^engine\//, /^FORGE\/runs\//, /commercial/];
+// 排除面与 1b 死链扫描同口径 + engine 源码（内部文案非文档声称）+ docs/evidence（历史冻结区，
+//   与本脚本他处「历史冻结区 docs/changelog、docs/archive、evidence → 豁免」口径一致）
+const EXCLUDE = [/node_modules/, /\.git/, /\.workbuddy/, /\.sofagent/, /docs\/changelog\//, /docs\/archive\//, /docs\/evidence\//, /FORGE\/archive\//, /^engine\//, /^FORGE\/runs\//, /commercial/];
 const regSrc = fs.readFileSync('engine/mcp/src/tool-registry.ts', 'utf8');
 const regCount = new Set([...regSrc.matchAll(/name:\s*'([a-z_]+)',/g)].map(m => m[1])).size;
 const results = [];
@@ -853,15 +858,24 @@ function walk(dir) {
     if (EXCLUDE.some(re => re.test(p))) continue;
     const lines = fs.readFileSync(p, 'utf8').split('\n');
     lines.forEach((line, i) => {
-      // 「N 个 tool」「N 个 tools」声称（含 badge/表格/散文各形态）
-      const m = line.match(/([0-9]+) 个 tools?\b/g);
-      if (!m) return;
-      for (const claim of m) {
-        const n = parseInt(claim, 10);
-        // 豁免：演进链历史行（含 vX.Y 且含「后为/起」——HANDBOOK 441 行形态）
-        if (/v[0-9]+\.[0-9]/.test(line) && /(后为|起)/.test(line)) continue;
-        // 豁免：带前缀限定的非全局声称（训练 N tools / N tools 数组等）
-        if (/训练|数组|监控/.test(line.slice(Math.max(0, line.indexOf(claim) - 6), line.indexOf(claim)))) continue;
+      // 工具数声称词形（v1.5.2 扩）：N tools / N 个 tools / N 个 MCP tool / N MCP tools / N 个 MCP 工具。
+      // 边界约束 (?<![A-Za-z0-9_.-]) … (?!包) 是**修正 token 边界而非收窄词形**：无边界时会把
+      //   版本号/编号/参数粘连成假声称（v1.4.0 工具 / v1.4.8 tools / B8 工具 / L1 工具 / 3.3 工具 /
+      //   head -30 tools/ / ASI02 工具 / 1 个工具包），假报 29 → 13，而目标词形一个不少。
+      for (const _mm of line.matchAll(/(?<![A-Za-z0-9_.-])([0-9]+)\s*(?:个\s*)?(?:MCP\s*)?(?:tools?|工具)(?!包)/g)) {
+        const claim = _mm[0];
+        const _idx = _mm.index;
+        const n = parseInt(_mm[1], 10);
+        // 豁免：演进链历史行（含 vX.Y 且含 后为/起/新增/→——HANDBOOK 441 行与 API.md 版本头形态）
+        if (/v[0-9]+\.[0-9]/.test(line) && /(后为|起|新增|→)/.test(line)) continue;
+        // 豁免：历史清单行——CHANGELOG 版本行（- **v1.2.6** — …）/ 版本表行（| **v1.3.6** | …）/
+        //   日期流水行（| 2026-09-03 | …）：记录「当时的口径」而非当前口径承诺
+        if (/^\s*-\s*\*\*v[0-9.]+\*\*/.test(line) || /^\s*\|\s*\*\*v[0-9.]+/.test(line) || /^\s*\|\s*20[0-9]{2}-[0-9]{2}-[0-9]{2}/.test(line)) continue;
+        // 豁免：带前缀限定的非全局声称（训练 N tools / 10 模块 + 6 MCP tool / Agentic Browser（4 工具 ——限定面计数）
+        if (/训练|数组|监控|模块|Browser/.test(line.slice(Math.max(0, _idx - 12), _idx))) continue;
+        // 豁免：装置面自引用与反例引用（playbook/bash 片段引用门禁输出字符串或引用历史反例
+        //   「48 tools 在 52→60 后 FAIL」——均为装置面论据，非文档当前口径承诺）
+        if (/\bgrep\b|check-version\.sh|check-docs\.sh|FAIL|反例/.test(line)) continue;
         if (n !== regCount) results.push(p.replace(/^\.\//, '') + ':' + (i + 1) + ' 声称 ' + n + ' ≠ registry ' + regCount + ' ｜ ' + line.trim().slice(0, 80));
       }
     });
