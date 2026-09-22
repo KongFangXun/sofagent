@@ -695,6 +695,18 @@ Palantir Foundry 10 年迭代收敛出 Ontology 的 5 块构建块——**Object
 > 4. **Apollo 交付层自检五问** = 版本同步机制 + `check-version` 门禁 + 快照回滚 + 模型换后重考评测（Benchmark）。
 > 5. **两个验收问题** = 「编排层永远不换」（24 条 git diff 规则 + HMAC 链不依赖模型）+ 快照 `--revert` 一键回滚——「换模型对象还在不在」的答案就在约束层与模型解耦的设计里。
 
+### Snowflake 自下而上本体路径：数仓巨头的 context 工厂
+
+> 📖 来源：Snowflake 官方工程博客与产品公告（Horizon Catalog / Semantic Views / Knowledge Graph / Cortex Sense）+ FY2026 财报。benchmark 数字为官方自报口径，未独立验证。
+
+Palantir 从业务对象出发「自顶向下」建本体，Snowflake 反向走「自下而上」：从数仓长出本体栈，四层演进——目录（Horizon Catalog，2025-11 GA，底层捐给 Apache 基金会成 Polaris 顶级项目）→ 语义层（Semantic Views / Semantic Studio，2026-03 GA）→ 图（Knowledge Graph：KG_NODE / KG_EDGE 两张表存数仓内，recursive CTE 遍历，2026-05 公开）→ 智能体接口（Cortex Sense：自动扫描全库构建全局 ontology 作 context substrate，2026-06 私预）。定位一句话：**把数仓改造成 agent 的 context 工厂**。关键数字（自报口径）：Cortex Sense 称治理 context 使 agent 回答复杂业务问题的准确率 47%→83%（对照：通用 coding agent 裸连数仓 23%）。
+
+> 💡 **对 sofagent 的三点印证**：
+>
+> 1. **「本体 = 运行时 context 层」被多家独立复现**——Snowflake（自下而上）与 Palantir（自顶向下）、微软 Fabric（语义模型）路径相反、结论相同：本体是 agent 的 context substrate，不是文档柜。与上文「Ontology = 共同理解层」条目互为外部佐证。
+> 2. **Action 语义缺失是反面印证**——Snowflake 对标 Palantir 时公认的最弱格：写操作仍走 ETL/SQL，Action 语义未沉淀到平台。context 巨头把「agent 知道什么」做成了商品，「agent 能做什么动作、谁审批、错了怎么办」这一格留白——恰是审计规则 + HITL 审批 + 审计链的主场。
+> 3. **83% 不是终点，是判定面的起点**——六分之一的错误率且无不确定性标记（不弃权、不给校准概率），agent 敢答就答。context 治理解决「知道得对」，不解决「知道自己不知道」——后者正是判定面（校准概率 / 弃权）要补的位。
+
 ### 模型层判断：组合优于单一，本地模型可行
 
 AI 从「程序」（单一模型）走向「协议」（多模型组合）是 Scaling Law 资源天花板的必然结果。两个对 sofagent 有直接影响的判断：
