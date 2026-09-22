@@ -84,7 +84,7 @@
 
 > 🔗 **Why they must be one thing**: the deliverables are a living state shared by both stages — written on entry, read during execution, written back during evolution (trial branches promoted to baseline, reflections distilled back). Without FDE, the constraint layer has no criteria to enforce; without the constraint layer, FDE judgment evaporates the moment the engineer leaves. That is where the name "FDE Harness" comes from — not a bundle of an FDE feature and a Harness feature, but two stages of one job.
 >
-> **From FDE to FDEing — everything can be FDEing**: the combined effect of the two stages is turning Forward Deployed **Engineer** (a job title) into Forward Deployed **Engineering** (a capability) — the person moves on, the capability stays with the deliverables. FDEing is pronounced /ef-di-i-ing/, mirroring "engineering". **FDE is the noun; FDEing is the verb** — turning Forward Deployed **Engineer** into Forward Deployed **Engineering**: the FDE capability, once locked in a person, becomes an auto-executable capability (playbook × judgment × governance). Any business object, process, or node can be FDEing'd through "map → judge → deliver → sustain"; not limited to software: hardware nodes and robot motion are workflows too — the difference lies in the actuator, not the governance. **It is also a mindset** — before doing anything, think: ① how to structure the workflow; ② which nodes are AI nodes; ③ how AI can best help you get it done (see [PHILOSOPHY](./docs/PHILOSOPHY.md)).
+> **From FDE to FDEing — everything can be FDEing**: the combined effect of the two stages is turning Forward Deployed **Engineer** (a job title) into Forward Deployed **Engineering** (a capability) — the person moves on, the capability stays with the deliverables. FDEing is pronounced /ef-di-i-ing/, mirroring "engineering". **FDE is the noun; FDEing is the verb** — turning FDE from human labor into an auto-executable capability (playbook × judgment × governance): less human labor, more capability delivered. Any business object, process, or node can be FDEing'd through "map → judge → deliver → sustain"; not limited to software: hardware nodes and robot motion are workflows too — the difference lies in the actuator, not the governance. **It is also a mindset** — before doing anything, think: ① how to structure the workflow; ② which nodes are AI nodes; ③ how AI can best help you get it done (see [PHILOSOPHY](./docs/PHILOSOPHY.md)).
 
 <p align="center"><img src="docs/assets/arch-layers-en.svg" alt="sofagent three-layer positioning: model layer → FDE Harness layer → Agent layer" width="85%" /></p>
 
@@ -269,6 +269,6 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # load the securit
 
 <p align="center">
   Issues and PRs welcome, especially the nitpicky kind · <a href="./CONTRIBUTING.md">Contributing</a> · <a href="./docs/THANKS.md">Thanks</a><br/>
-  <sub>Everything can be FDEing — turning Forward Deployed Engineer into Engineering · coined by sofagent</sub><br/>
+  <sub>Everything can be FDEing — turning FDE labor into FDEing capability · coined by sofagent</sub><br/>
   <sub>MIT License © <a href="https://github.com/KongFangXun/sofagent">Kong Fangxun</a> · <a href="https://github.com/KongFangXun/sofagent">⭐ If sofagent helps you, star it and help more people find it</a></sub>
 </p>
