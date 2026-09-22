@@ -241,8 +241,17 @@ git merge-base --is-ancestor "$REMOTE_SHA" HEAD && echo "✓ 快进可推" || \
 > 🔴 **CI 全绿是打 tag 的硬前置**：push 之后必须**轮询等到全绿**（不是看一眼就走）——`exit 0` 之前禁止进入步骤六。CI 红着打 tag 会让用户装到坏版本（tag 是安装入口的锚点），回滚成本远高于等待 2-5 分钟。**轮询必须前台执行**：上述 while 循环在 session 前台逐轮跑（每轮一查 + sleep 60），严禁包进 run_in_background——挂后台 = session 空闲 = 界面无进展反馈。轮询脚本如下（循环跑直到 exit 0，每次间隔 60s）：
 
 ```bash
-# ── push main ──
-git push origin main
+# ── push main（🔴 v1.5.1 实证：裸命令一次成功率不稳——github.com:443 间歇阻断，
+#    round 2 才成功是常态。push 主命令直接用「网络降级策略」的重试循环形态跑
+#    （退出码判定版，禁 `| tail` 管道测退出码），失败形态见该节三连失败谱）──
+for i in $(seq 1 10); do
+  git push origin main > /tmp/push-main.log 2>&1
+  RC=$?
+  [ $RC -eq 0 ] && { echo "✅ push 第 $i 次成功"; break; }
+  echo "第 $i 次 RC=$RC: $(tail -1 /tmp/push-main.log)"
+  sleep 20
+done
+# push 完成后必须 ls-remote 核对远端 == 本地（防管道假绿 / 半成功态）
 
 # ── 轮询 CI 直到全绿（循环执行本段，exit 0 才继续）──
 while true; do

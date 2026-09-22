@@ -115,15 +115,27 @@ bash tools/check/check-version.sh        # 期望全绿
 
 > CI-only 概率性失败 = 先怀疑概率路径（如随机密钥定长契约用 ≥2000 次采样锁），修复 → 补防复发锁 → 测试数文档同步 commit **必须与 hotfix 同 push**（分两次 push 会让中间 commit 的 CI 红——check-test-count 在 CI 也跑）。
 
+### 发版后追加 fix 批（tag 已定、不重打 · v1.5.1 实证路径）
+
+> 发版后阶段十一期间发现的**非安装入口**缺陷（tag 指向的 bump 自洽无恙），不必重打 tag——修复 commit 直接推 main，随下一版发布。v1.5.1 实走此路径 4 个 fix（插件 projectRoot / orchestrator 上游钉 / README 发布命令 / ClawHub 不可变揭示的滞留项）。
+
+**判据（是否需要重打 tag）**：
+- **不重打**：缺陷不在 tag 锚定的安装入口链上（`install.sh` / `bootstrap.sh` / npm tag `latest` 指向的包内容）——tag 是用户安装锚点，只要锚定内容自洽，main 上的后续修复属下一版范畴
+- **必须重打**：tag 内自洽被破坏（INSTALL_SHA256 钉值错 / 安装入口断链）——按 09-publish:332 既定章法重算重打
+
+**纪律**：① fix commit 过全量门禁再推（HEAD 前移会让「tag == HEAD」窗口类检查自然落历史豁免，无需处理）② 修复涉及分发面（npm/ClawHub 版本不可变）的，用户面生效时点 = 下一版发版——记入下一版 devlog BugFix 批（v1.5.2 第十四章先例）③ **不要为「让 tag 指向最新」而重打**——每次重打都是一次 provenance 漂移（v1.5.1 已两次）。
+
 ## 开发 Prompt 校验循环（步骤七）
 
 ```
 ① 跑 ./tools/check/check-dev-prompt.sh ~/Desktop/vX.Y-dev-prompt.md（查"引用的东西存不存在"）
 ② 脚本输出零 ❌ 后，再过一遍 playbook/dev-prompt-checklist.md 的 7 条自查
    （查"写法对不对/全不全/新不新"——函数签名准确性、注册点/数组归属、改造代码保留声明、已完成区剥离、强动词名副其实；第 7 条为**大版本深检六项**：minor 版或含 breaking 的 prompt 必跑，六类结构性错误是存在性脚本拦不住的——章节数对账/验收搬运对账/「不存在的东西当已存在写」（枚举值查源码）/移除面全枚举（@public 基线）/基线数字时效（排期快照重测）/ROADMAP 行交叉对账）
-③ 两项都过 → prompt 定稿
-④ 任一项发现问题 → 逐条修正 prompt（只改 prompt 文件、不改代码库）→ 回到 ① 重跑
-⑤ 最多 5 轮（5 轮仍不过说明开发日志本身有结构性问题，需人工介入）
+③ 两项都过 → **独立二轮深检**（🔴 v1.5.1 拍板新增：prompt 不是写好就交——定稿前必须再做一轮**独立于首轮生成视角**的核查，结合 ROADMAP 行 + CHANGELOG 索引 + devlog 全文 + npm registry + 源码实查五源交叉。v1.5.1 实证首轮零 ❌ 的 prompt 二轮仍抓出 3 处真问题：章七「移除 X 指向 X」笔误（旧包名写错）、章十重复排期（examples/justification 系 v1.4.0 存量，真实差距只剩 loader 断言）、章九现状基线缺失（ruleType 已在位被当新任务）。二轮深检的方法论：**每个「新增 X」条目先查 X 是否已存在**（grep 源码 + 实跑模块计数）——排期文档写「新增」时可能指的是数月前的状态；每个「移除/退役 X」条目查 X 的全部落点是否真存在可移除对象）
+④ 二轮发现问题 → **先修 devlog（SSOT）再同步 prompt**，回 ① 重跑
+⑤ 三项都过 → prompt 定稿
+⑥ 任一项发现问题 → 逐条修正 prompt（只改 prompt 文件、不改代码库）→ 回到 ① 重跑
+⑦ 最多 5 轮（5 轮仍不过说明开发日志本身有结构性问题，需人工介入）
 
 脚本输出含义：
   ❌ 错误 = 引用了不存在的已有文件/函数（必须修）
@@ -131,7 +143,7 @@ bash tools/check/check-version.sh        # 期望全绿
   🔄 运行时 = ~/.sofagent/ 等运行时目录（跳过）
 ```
 
-> check-dev-prompt.sh 只查「存在性」，checklist 补「准确性」——两者互补，缺一不可。
+> check-dev-prompt.sh 只查「存在性」，checklist 补「准确性」，二轮深检补「排期时效性」——三层递进，缺一不可。
 
 ---
 
