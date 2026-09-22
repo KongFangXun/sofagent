@@ -1445,12 +1445,32 @@ echo ""
 # v1.4.5 实锤：INSTALL_SHA256 回填之后又改了 config.sh（set -u 炸弹修复），
 # 主安装路径 fail-closed 100% 装不上（用户看到「可能被劫持」红色告警），
 # 而本脚本当时报全绿——7 个哈希里只有 1 个有验收式。此处逐一对账全部 lib。
+# 🔴 双基准：tag 已打 → 对账 tag 内容（发版后契约）；tag 未打但 INSTALL_URL 已随版同步
+#    （bump 已落盘）→ 对账**工作树**内容。后者是拦住「钉值按 bump 前内容计算」的唯一
+#    时机——bump 会改写 install.sh / lib 的版本串，钉值必须在 bump 之后重算；该时序错
+#    一旦带进 tag，主安装路径对全部用户 fail-closed（用户看到「可能被劫持」红色告警）。
 echo "=== 20b. bootstrap lib 哈希对账（钉值 vs tag 实际内容） ==="
 BOOTSTRAP_LIB_MISS=0
-if ! git rev-parse "refs/tags/v${SSOT_VERSION}" >/dev/null 2>&1; then
-  echo -e "  ${YELLOW}⚠${NC} 本地无 tag v${SSOT_VERSION}，跳过 lib 哈希对账（发版后自动生效）"
-  WARNINGS=$((WARNINGS + 1))
+B_BASE=""; B_BASE_DESC=""
+if git rev-parse "refs/tags/v${SSOT_VERSION}" >/dev/null 2>&1; then
+  B_BASE="refs/tags/v${SSOT_VERSION}"
+  B_BASE_DESC="v${SSOT_VERSION} tag"
 else
+  B_URL_TAG=$(grep -oE 'refs/tags/v[0-9]+\.[0-9]+\.[0-9]+' "${PROJECT_ROOT}/bootstrap.sh" 2>/dev/null | head -1 || true)
+  if [[ "$B_URL_TAG" = "refs/tags/v${SSOT_VERSION}" ]]; then
+    B_BASE_DESC="工作树（tag 未打 · INSTALL_URL 已随版同步）"
+  else
+    echo -e "  ${YELLOW}⚠${NC} 本地无 tag v${SSOT_VERSION} 且 INSTALL_URL 仍指 ${B_URL_TAG:-无}（窗口态），跳过 lib 哈希对账（发版后自动生效）"
+    WARNINGS=$((WARNINGS + 1))
+  fi
+fi
+if [[ -n "$B_BASE_DESC" ]]; then
+  # 内容读取：tag 态取 tag blob / tag 前取工作树文件（口径由 B_BASE_DESC 随行打印）
+  if [[ -n "$B_BASE" ]]; then
+    _b_blob() { git show "${B_BASE}:$1" 2>/dev/null; }
+  else
+    _b_blob() { cat "${PROJECT_ROOT}/$1" 2>/dev/null; }
+  fi
   B_LIB_FILES=$(sed -n 's/^LIB_FILES="\(.*\)"$/\1/p' "${PROJECT_ROOT}/bootstrap.sh" 2>/dev/null | head -1 || true)
   # 提取 LIB_SHA256S 多行块（首行带 `LIB_SHA256S="` 前缀，末行带 `"` 后缀）
   B_LIB_HASHES=$(awk '/^LIB_SHA256S="/{f=1} f{line=$0; gsub(/LIB_SHA256S="|"/,"",line); if (line != "") print line} f&&/"$/{exit}' "${PROJECT_ROOT}/bootstrap.sh" 2>/dev/null || true)
@@ -1471,33 +1491,33 @@ else
     else
       # install.sh 本体哈希（与 6 个 lib 同一类契约，一并对账）
       if [[ -n "$B_INST_HASH" ]]; then
-        B_INST_ACTUAL=$(git show "refs/tags/v${SSOT_VERSION}:install.sh" 2>/dev/null | shasum -a 256 | cut -d' ' -f1 || true)
+        B_INST_ACTUAL=$(_b_blob install.sh | shasum -a 256 | cut -d' ' -f1 || true)
         if [[ "$B_INST_HASH" == "$B_INST_ACTUAL" ]]; then
-          echo -e "  ${GREEN}✓${NC} install.sh 哈希与 v${SSOT_VERSION} tag 一致"
+          echo -e "  ${GREEN}✓${NC} install.sh 哈希与 ${B_BASE_DESC} 一致"
           CHECKS=$((CHECKS + 1))
         else
-          echo -e "  ${RED}✗${NC} install.sh 哈希漂移：钉值 ${B_INST_HASH:0:12}… ≠ tag 实际 ${B_INST_ACTUAL:0:12}…——重算回填（回填后不得再改该文件）"
+          echo -e "  ${RED}✗${NC} install.sh 哈希漂移：钉值 ${B_INST_HASH:0:12}… ≠ ${B_BASE_DESC} 实际 ${B_INST_ACTUAL:0:12}…——重算回填（回填后不得再改该文件）"
           ERRORS=$((ERRORS + 1))
         fi
       fi
       B_IDX=0
       for _lfname in "${B_FILE_ARR[@]}"; do
         B_EXPECT="${B_HASH_ARR[$B_IDX]}"
-        B_ACTUAL=$(git show "refs/tags/v${SSOT_VERSION}:engine/scripts/lib/${_lfname}" 2>/dev/null | shasum -a 256 | cut -d' ' -f1 || true)
+        B_ACTUAL=$(_b_blob "engine/scripts/lib/${_lfname}" | shasum -a 256 | cut -d' ' -f1 || true)
         if [[ -z "$B_ACTUAL" ]]; then
-          echo -e "  ${RED}✗${NC} tag v${SSOT_VERSION} 上无 engine/scripts/lib/${_lfname}——钉了不存在的文件"
+          echo -e "  ${RED}✗${NC} ${B_BASE_DESC} 上无 engine/scripts/lib/${_lfname}——钉了不存在的文件"
           ERRORS=$((ERRORS + 1))
         elif [[ "$B_EXPECT" == "$B_ACTUAL" ]]; then
           CHECKS=$((CHECKS + 1))
         else
-          echo -e "  ${RED}✗${NC} ${_lfname} 哈希漂移：钉值 ${B_EXPECT:0:12}… ≠ tag 实际 ${B_ACTUAL:0:12}…——回填后又改过该文件，重算回填"
+          echo -e "  ${RED}✗${NC} ${_lfname} 哈希漂移：钉值 ${B_EXPECT:0:12}… ≠ ${B_BASE_DESC} 实际 ${B_ACTUAL:0:12}…——回填后又改过该文件，重算回填"
           ERRORS=$((ERRORS + 1))
           BOOTSTRAP_LIB_MISS=$((BOOTSTRAP_LIB_MISS + 1))
         fi
         B_IDX=$((B_IDX + 1))
       done
       if [[ $BOOTSTRAP_LIB_MISS -eq 0 ]]; then
-        echo -e "  ${GREEN}✓${NC} ${#B_FILE_ARR[@]} 个 lib 哈希与 v${SSOT_VERSION} tag 全部一致（主安装链完整）"
+        echo -e "  ${GREEN}✓${NC} ${#B_FILE_ARR[@]} 个 lib 哈希与 ${B_BASE_DESC} 全部一致（主安装链完整）"
       fi
     fi
   fi
