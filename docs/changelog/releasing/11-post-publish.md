@@ -73,7 +73,7 @@ curl -s https://github.com/marketplace/actions/sofagent | grep -c "vX.Y.Z"   # �
 
 # 全局安装更新（registry 已更新，本地仍是旧版本）
 npm install -g @sofagent/audit@latest @sofagent/core@latest
-sofagent-audit --version           # 期望 vX.Y.Z
+sofagent-audit --version           # 期望 vX.Y.Z（🔴 用默认登录 shell 跑——本机多套 node runtime 各装全局包时，给命令注入 PATH 前缀会选中旧版二进制制造「版本不一致」假红，v1.5.1 实锤四 runtime 四版本并存）
 sofagent-audit --doctor            # 期望与当前版本 doctor 项数一致
 sofagent-core --doctor             # 期望全部通过
 
