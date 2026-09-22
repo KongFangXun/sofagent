@@ -20,7 +20,7 @@ FDE 把这件事倒过来：先逐岗位梳理工作流，构建本体图谱，�
 >
 > 🔗 **FDE 与约束层的相位关系**：FDE 是判断的**生成相位**——进场把判断做出来（哪里上 AI、标准是什么、谁拍板），并冻结成 `merge_criteria` / `approver` / `trigger.schedule` / ontology 这些机器可判定的格式；约束层是判断的**驻留相位**——人离场后按冻结的判断 7×24 执行，并在进化时写回（branch 晋 trunk、think.md 蒸馏）。三重角色里，①是生成、②是交接（激活链即交接协议）、③是驻留期的持续养护。**没有 FDE，约束层没有判据可执行；没有约束层，FDE 的判断随人离场蒸发**——这就是「FDE Harness」名字的由来：不是两个功能的拼盘，是同一件事的两个相位。
 >
-> 🧠 **自研 S1M，FDE 是打法**：这套体系里的判断本体是 sofagent **自研的 S1M（System One Model）**——不生成文字、只输出类型化决策与校准概率的判定模型；**FDE 可以理解为我们的打法，或者场景**——**万物皆可 FDEING**：任何业务对象、流程、节点都能被 FDEING 一遍「梳理 → 判定 → 交付 → 养护」，而这条链上每一个「该不该 / 行不行 / 值不值」就是 S1M 的工作面。**思维方式三问**：做任何事之前先想——workflow 怎么搭 / 其中的 AI 节点是什么 / 怎么让 AI 更好地帮你实现。FDE 定义场景，S1M 执行判断，Harness 保证判断被治理。S1M 在 FDE 全生命周期每个决策点上的归属判定，见 [S1M-DECISION-POINTS.md](./S1M-DECISION-POINTS.md)。**FDEING 是动词**（FDE 是名词；见 [PHILOSOPHY](../docs/PHILOSOPHY.md)「从 FDE 到 FDEing」）。
+> 🧠 **自研 S1M，FDE 是打法**：这套体系里的判断本体是 sofagent **自研的 S1M（System One Model）**——不生成文字、只输出类型化决策与校准概率的判定模型；**FDE 可以理解为我们的打法，或者场景**——**万物皆可 FDEing**：任何业务对象、流程、节点都能被 FDEing 一遍「梳理 → 判定 → 交付 → 养护」，而这条链上每一个「该不该 / 行不行 / 值不值」就是 S1M 的工作面。**思维方式三问**：做任何事之前先想——workflow 怎么搭 / 其中的 AI 节点是什么 / 怎么让 AI 更好地帮你实现。FDE 定义场景，S1M 执行判断，Harness 保证判断被治理。S1M 在 FDE 全生命周期每个决策点上的归属判定，见 [S1M-DECISION-POINTS.md](./S1M-DECISION-POINTS.md)。**FDEing 是动词**（FDE 是名词；见 [PHILOSOPHY](../docs/PHILOSOPHY.md)「从 FDE 到 FDEing」）。
 
 ## AI 时代的组织：从「飞书式」到「GitHub 式」
 
