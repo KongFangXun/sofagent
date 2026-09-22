@@ -27,12 +27,16 @@ openclaw plugins install -l ./engine/openclaw-plugins/sofagent-evolve
     "entries": {
       "sofagent-evolve": {
         "enabled": true,
-        "config": { "projectRoot": "/path/to/project" }
+        "config": { "reflectHint": false }
       }
     }
   }
 }
 ```
+
+`reflectHint` 默认 `false`（每轮注入收尾提示属可选增强；inject 插件的 L2 层已注入 think.md，默认关避免重复噪声）。
+
+本插件不声明 `projectRoot`：思考条目的落点由数据根决定（`dataDir`，见 @sofagent/think 的 SSOT：显式入参 > `SOFAGENT_DATA` > `SOFAGENT_HOME/data`），与宿主项目根无关——声明一个不影响行为的配置项只会误导部署方。
 
 ## 开发
 
@@ -45,7 +49,7 @@ clawhub package validate .  # Plugin Inspector 校验（0 breakage / 0 warning�
 ## 发布
 
 ```bash
-clawhub package publish . --family code-plugin --name sofagent-evolve --version 1.4.0
+clawhub package publish . --family code-plugin --name sofagent-evolve --version "$(node -p "require('./package.json').version")"
 ```
 
 ## 说明
