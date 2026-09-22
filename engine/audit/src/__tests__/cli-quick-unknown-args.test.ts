@@ -121,7 +121,20 @@ describe('cli-quick diff 范围有效性（v1.5.1 F1）', () => {
   });
 
   it('合法且有变更的范围 HEAD~2..HEAD → 不被新守卫误拦（非 3）', () => {
-    const r = run(['HEAD~2..HEAD']);
+    // 固定口径（CI 浅克隆适配）：本用例依赖 HEAD~2 存在——CI 默认 fetch-depth: 1 下
+    // 宿主仓无深层历史，ref 不可解析会被 F1 守卫判 exit 3（本地全历史则绿，假红两连）。
+    // 自建三 commit 临时仓显式固定被测口径，不依赖宿主克隆深度；断言强度不变。
+    const dir = mkdtempSync(join(tmpdir(), 'sofagent-f1-depth-'));
+    tmpDirs.push(dir);
+    execFileSync('git', ['init', '-q'], { cwd: dir, stdio: ['ignore', 'pipe', 'pipe'] });
+    for (let i = 0; i < 3; i++) {
+      execFileSync(
+        'git',
+        ['-c', 'user.email=t@example.invalid', '-c', 'user.name=f1', 'commit', '--allow-empty', '-q', '-m', `c${i}`],
+        { cwd: dir, stdio: ['ignore', 'pipe', 'pipe'] }
+      );
+    }
+    const r = run(['HEAD~2..HEAD'], dir);
     expect(r.status).not.toBe(EXIT_DIFF_PARSE_FAILED);
     expect(r.output).not.toContain('diff 解析失败');
   });

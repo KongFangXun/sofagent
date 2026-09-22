@@ -12,12 +12,22 @@ import {
 } from './cli-quick';
 import type { AuditResult, RuleCheck } from './reporter';
 
-// F-13: 拦截 spawnSync，避免 --init 等路由测试真实拉起完整引擎
+// F-13: 拦截 spawnSync，避免 --init 等路由测试真实拉起完整引擎。
+// execFileSync 同步 mock：isResolvableDiffRange 的 ref 校验走真 git 依赖宿主仓克隆深度
+// （CI fetch-depth: 1 下 HEAD~N 不存在 → F1 守卫 exit 3 假红）——mock 为「ref 可解析」
+// 固定口径，测试不再依赖宿主历史深度；断言强度不变。
 vi.mock('child_process', async (importOriginal) => {
   const actual = await importOriginal<typeof import('child_process')>();
   return {
     ...actual,
     spawnSync: vi.fn(() => ({ status: 0 })),
+    execFileSync: vi.fn((...args: unknown[]) => {
+      const argv = args[1] as string[] | undefined;
+      if (argv && argv[0] === 'rev-parse') {
+        return '4b825dc642cb6eb9a060e54bf8d69288fbee4904\n';
+      }
+      return '';
+    }),
   };
 });
 
