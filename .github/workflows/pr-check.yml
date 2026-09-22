@@ -190,7 +190,18 @@ jobs:
       - name: check-tool-health.sh
         run: bash tools/check/check-tool-health.sh
       - name: Test (workspace 全量)
-        run: npm run test
+        run: |
+          # 先落测试密钥文件（getHmacKey 只认文件路径，不读内容 env）
+          printf '%s' "${SOFAGENT_TEST_KEY_CONTENT}" > "${HOME}/.sofagent-key-test"
+          chmod 600 "${HOME}/.sofagent-key-test"
+          npm run test
+        env:
+          # 🔴 v1.5.1：intent.jsonl 链字段的测试断言依赖 HMAC 密钥在场（getHmacKey 缺省读
+          # ~/.sofagent-key，密钥缺位时链降级 SHA-256、hmacSig 缺省 → 「typeof string」断言红）。
+          # verify.yml 经 install.sh --quick 生成密钥后同面全绿即先例——本地绿 CI 红的根因
+          # 是本 job 缺等价配置。注入测试密钥（非生产密钥，仅供链字段签名路径可达）。
+          SOFAGENT_KEY_PATH: /home/runner/.sofagent-key-test
+          SOFAGENT_TEST_KEY_CONTENT: ci-test-key-not-a-secret
       - name: Check test count drift
         run: npm run test:count
 
