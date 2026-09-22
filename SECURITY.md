@@ -475,7 +475,7 @@ chmod 600 ~/.sofagent/data/audit/history.jsonl.bak-*
 | `SOFAGENT_CONFIG` 环境变量指向恶意 config（v1.2.9 起最高优先级配置入口） | ⚠️ `--doctor` 可检测环境变量 | 启动入口用 `env -i` 或显式白名单透传环境变量（见共享服务器缓解建议）；CI 侧用受控 config |
 | `--verify-chain` 场景：追加伪造审计记录（history.jsonl 末尾追加格式合法的假 PASS 行） | ⚠️ 结构异常可检出（缺 timestamp/exitCode 必有字段或非 JSON 行 → 判 tampered，exit 2）；格式完整但 HMAC 不可复验的 legacy 记录仅 ⚠️ 容忍 | 审计后立即备份 history.jsonl（`--verify-chain` 定期校验）；HMAC 密钥妥善保管（密钥在手可伪造任意合法签名） |
 | 密钥藏进二进制文件（blob 夹带，非文本 diff） | ⚠️ A2 对新增二进制扩展（.bin/.exe/.dll/.so/.dylib 等）或 Binary files differ 标记输出 WARN「不扫内容请人工确认」（v1.3.7 起） | 二进制 WARN 人工确认；强合规场景对二进制提交走独立密钥扫描（gitleaks --binary 类工具） |
-| 密钥编码后放函数参数位：`Buffer.from("<b64>", "base64")` / `atob("<b64>")` | ✅ v1.4.1 起拦截——A2 提取函数调用参数里的编码串候选，base64/hex 解码命中密钥正则即 FAIL（红队实锤堵洞，回归测试固化） | 已默认拦截，无需额外缓解 |
+| 密钥编码后放函数参数位：`Buffer.from("<b64>", "base64")` / `atob("<b64>")` | ✅ v1.4.1 起拦截——A2 提取函数调用参数里的编码串候选，base64/hex 解码命中密钥正则即 FAIL（红队验证覆盖，回归测试固化） | 已默认拦截，无需额外缓解 |
 | 密钥 `\\xNN` hex 转义形态（`"\\x41\\x4b..."`） | ✅ v1.4.1 起拦截——A2 对含 `\\x` 转义的行还原后跑密钥正则 | 已默认拦截，无需额外缓解 |
 | 密钥字符串拼接形态（拆两半用 `+` 相邻摆放） | ✅ v1.4.1 起拦截——A2 合并同行相邻字面量后检测 | 已默认拦截，无需额外缓解 |
 | 密钥放环境变量/模板变量（`${env.KEY}` / `process.env.KEY`） | ✅ 不构成泄漏——密钥本体不在 diff 内容中，属合法引用形态，A2 放行是设计行为 | 无需缓解（这是推荐做法：密钥走 .env + .gitignore） |

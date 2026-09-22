@@ -640,7 +640,7 @@ Google Research 的 WikiSkill（[arXiv:2608.27454](https://arxiv.org/abs/2608.27
 
 - **持久知识层是进化胜负手**：消融拿掉 Wiki 访问，平均分 63.7% → 48.7%（-15.0pt）——比任何方法间差距都大。印证 sofagent lessons/think.md 反思区这一柱的分量：经验沉淀不是锦上添花，是技能进化的前提。
 - **推理时禁查知识库反而更好**（-2.8pt）：训练 rollout 时让 Agent 直接查 Wiki，产出的轨迹对技能开发失去参考价值。反向印证 sofagent「约束层要轻、零 token 运行」——知识供进化者离线消费，不塞执行时上下文。
-- **跨模型技能迁移有负迁移实锤**：4B 模型进化的技能把 Gemini-3.5-Flash 从 50.5% 拉到 18.1%——弱模型的低层 workaround 束缚强模型。sofagent 走 OpenAI 兼容多供应商路由（任意兼容端点均可接入），技能应按模型分级门控，不能全局通用投放。
+- **跨模型技能迁移存在负迁移**：4B 模型进化的技能把 Gemini-3.5-Flash 从 50.5% 拉到 18.1%——弱模型的低层 workaround 束缚强模型。sofagent 走 OpenAI 兼容多供应商路由（任意兼容端点均可接入），技能应按模型分级门控，不能全局通用投放。
 - **溯源与提案审计**：`PURPOSE.md`（技能回链到所解决的 pattern）与 `skill-impact.md`（每次提案 diff/分数/接受与否程序化落账）两个小机制，与 sofagent 的 LEDGER/审计轨迹理念同源。**v1.4.5 第七章四已收编落地**：`solves:` frontmatter 溯源字段（SKILL/ 子树 5 个带 frontmatter 的 SKILL.md 补齐——「为什么存在」回链 pattern，改技能先懂设计意图）+ skill-impact 台账（`engine/orchestrator/src/skill-evolution/`——JSONL append-only 程序化落账，被拒提案带原因不丢教训）+ eval 门控（技能变更过 eval 验证集、分数超历史最优才收编，接通 benchmark/evaluation-log 既有闭环）+ 执行/进化上下文隔离（rollout 期禁查进化知识库的运行时守卫——executor 访问即审计告警，对应消融 -2.8pt 实证的工程化防御）。
 - **自进化的开放问题恰是约束层的主场**：技能自进化的公开讨论自认仍缺质量控制、安全审核、版本管理三样——正是 sofagent 审计模块（规则集）+ 安全审查 + 回滚编排已经在做的事。开发者角色从「写技能」转为「设目标 + 把关」，与 sofagent 约束层哲学（人定规则、AI 执行、审计每次变更）同构，是 FDE 交付叙事的现成参照。
 

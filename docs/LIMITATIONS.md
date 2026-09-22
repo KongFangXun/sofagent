@@ -124,12 +124,13 @@ daemon Ingest（自动知识提取）+ loop-evaluate Lint（自动体检）把�
 
 ## 二、平台与兼容性局限
 
-### 📦 v1.5.1 安装入口已知限制（发版后审查发现 · v1.5.2 修复）
+### 📦 v1.5.1：`npm i -g sofagent` 全新安装失败（v1.5.2 修复）
 
-> 2026-09-22 发版后审查实锤，两项均已在 main 修复、随 v1.5.2 发布（用户拍板不发 hotfix）：
+上游依赖的传递版本解析问题导致 npm 全新安装失败（`install.sh` 安装路径与 `@sofagent/audit` 直装不受影响，可正常使用）。修复已进入主干，v1.5.2 发布后恢复。
 
-- **`npm i -g sofagent` 在 v1.5.1 上 ETARGET**：上游 `@deepseek-ai/dsh` 的传递依赖 `dsh-web-app@^0.1.5-rc.3` 从未发布（registry 最高 rc.2），无 lock 的全新安装解析即失败。1.4.9 / 1.5.0 / 1.5.1 三版同样失败（时间性上游 skew，非本版回归）。**不受影响的安装路径**：install.sh 主链（`curl | bash`，只装 `@sofagent/audit`）与 `@sofagent/audit` 直装——推荐用户在 v1.5.2 发布前走 install.sh。修复 = orchestrator 精确钉 `dsh-web-app@0.1.5-rc.2`。
-- **OpenClaw 插件 rollback v1.5.1 在 ClawHub 标记 `scan=suspicious`**：安全扫描对「manifest 声明 projectRoot 而运行时用 process.cwd()」的 concern 评分——即四款插件配置读取 bug（已修）的扫描面投影。ClawHub 版本不可变，1.5.1 上无法重发消除；v1.5.2 重发后自然转 clean。功能不受影响（suspicious 是扫描器启发式，非拦截）。
+### 📦 v1.5.1：OpenClaw rollback 插件被 ClawHub 标记 suspicious（v1.5.2 消除）
+
+平台安全扫描对 1.5.1 版 rollback 插件的启发式标记（源于一项配置读取缺陷，功能不受影响，不影响安装使用）。v1.5.2 重发后消除。
 
 ### 🐚 B1 数据初始化依赖 bash
 
