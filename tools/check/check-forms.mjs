@@ -179,6 +179,7 @@ const VERSION_SOURCES = [
   { version: 'v1.8.0', file: 'docs/changelog/v1.8/v1.8.0.md' },
   { version: 'v1.9.0', file: 'docs/changelog/v1.9/v1.9.0.md' },
   { version: 'v2.0.0', file: 'docs/changelog/v2.0/v2.0.0.md' },
+  { version: 'v2.0.1', file: 'docs/changelog/v2.0/v2.0.1.md' },
 ];
 const SCAN_FILES = VERSION_SOURCES.map((v) => v.file);
 const ROADMAP_FILE = 'docs/ROADMAP.md';
@@ -364,7 +365,8 @@ const EXPECTED_LABELS = {
   'v1.7.0': ['主干'],
   'v1.8.0': ['主干'],
   'v1.9.0': ['主干', '非功能'],
-  'v2.0.0': ['主干', '通道成分', '部署形态'],
+  'v2.0.0': ['主干', '非功能'],
+  'v2.0.1': ['主干', '通道成分'],
 };
 
 // A7 修 C（②③）：**标签→计数** pin（EXPECTED_LABELS 的升级面，两者并用）。
@@ -375,6 +377,8 @@ const EXPECTED_LABELS = {
 // 正常加章 ⇒ 改 changelog + ROADMAP + pin 三处——多一步正是关闭缺口的代价（已拍板）。
 // 初值 = 74e7a26a 时的基线实测值（六版本 20 模式逐个写死，与上方通过清单一一对应）。
 // 登记纪律同 EXPECTED_LABELS：新增版本 / 新增声明 / 计数变化都必须同批更新本表。
+// v2.0.0 pin 值 2026-09-22 更新：定位重写为决策模型宣告版（原「主干 1 / 通道成分 2 /
+// 部署形态 1」随数据主权两章迁出作废——网络出口治理面迁 v2.0.1、USB 节点入探索方向）。
 const EXPECTED_COUNTS = {
   'v1.5.0': { 主干: 5, 插件: 1, 非功能: 3, 通道成分: 1 },
   'v1.5.1': { 主干: 5, 通道: 3, 通道成分: 1 },
@@ -390,7 +394,8 @@ const EXPECTED_COUNTS = {
   'v1.7.0': { 主干: 6 },
   'v1.8.0': { 主干: 6 },
   'v1.9.0': { 主干: 8, 非功能: 1 },
-  'v2.0.0': { 主干: 1, 通道成分: 2, 部署形态: 1 },
+  'v2.0.0': { 主干: 2, 非功能: 3 },
+  'v2.0.1': { 主干: 1, 通道成分: 1 },
 };
 
 // ── 输出样式（与 check-anchors.mjs 同款 ASCII 颜色 + ═ 横幅）────
