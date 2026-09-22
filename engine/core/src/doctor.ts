@@ -919,13 +919,14 @@ export function runDoctorWithRepair(projectDir: string = process.cwd(), repair: 
     let repairsApplied = 0;
 
     // 1. ~/.sofagent 不存在 → 创建
-    // run-07 verdict P1-3：同批收口——引导期初始化也走 SSOT 入口（白名单防护生效）；
-    // 引导语义不变（~/.sofagent 不存在时创建骨架目录）。
+    // 引导期初始化也走 SSOT 入口（白名单防护生效）；引导语义不变
+    // （~/.sofagent 不存在时创建骨架目录）；data/internal 子目录路径
+    // 一律取自 data-paths SSOT（resolveDataDir），禁手拼 join(home, 'data')
     const home = resolveHomeDir();
     if (!existsSync(home)) {
       try {
         mkdirSync(home, { recursive: true, mode: 0o700 });
-        mkdirSync(join(home, 'data'), { recursive: true, mode: 0o700 });
+        mkdirSync(resolveDataDir(), { recursive: true, mode: 0o700 });
         mkdirSync(join(home, 'internal'), { recursive: true, mode: 0o700 });
         ok('~/.sofagent 已自动创建');
         repairsApplied++;

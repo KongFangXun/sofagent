@@ -1921,12 +1921,12 @@ grep -q "planExecution" engine/orchestrator/src/exec/git-capability.ts && grep -
 ) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -qE "^[[:space:]]{0,2}❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true
 ```
 
-#### 144. v1.5.1 审查面一维收口——事件驱动/OTA/上行脱敏/意图通道/demo/退役扫尾 + B 类防复发（阶段四 A/B 合流 · 行为面已由 S433–S440 锁 · 对齐 #131/#133 先例 · ③ 段只查单向，本维把 S433–S440 引进 checklist 补双向闭环）
+#### 144. v1.5.1 审查面一维收口——事件驱动/OTA/上行脱敏/意图通道/demo/退役扫尾 + B 类防复发（阶段四 A/B 合流 · 行为面已由 S433–S441 锁 · 对齐 #131/#133 先例 · ③ 段只查单向，本维把 S433–S441 引进 checklist 补双向闭环）
 ```bash
 (
 FAIL=0
-# a: S433–S440 引用闭环（八场景号须全数在位，缺一即红——S440 章十 BugFix 批五族锚，G-1 闭环）
-grep -cE "scenario 43[3-9]|scenario 440" playbook/acceptance-test.sh | grep -q "^8$" && echo "✅ S433–S440 八场景在位" || { echo "❌ S433–S440 场景号缺失"; FAIL=1; }
+# a: S433–S441 引用闭环（九场景号须全数在位，缺一即红——S440 章十五族锚 G-1 闭环 / S441 章十一发布链锚 G-10 闭环）
+grep -cE "scenario 43[3-9]|scenario 44[01]" playbook/acceptance-test.sh | grep -q "^9$" && echo "✅ S433–S441 九场景在位" || { echo "❌ S433–S441 场景号缺失"; FAIL=1; }
 grep -rq "replayDeadLetter" engine/orchestrator/src/__tests__/events-bus.test.ts && grep -q "event-queue.jsonl" engine/orchestrator/src/events/bus.ts && grep -q "timer.tick" engine/orchestrator/src/events/adapters.ts && echo "✅ 事件总线三面在位" || { echo "❌ 事件总线面缺口"; FAIL=1; } # b: 章一·事件总线三面（重放/落盘/tick 源）
 grep -q "平台公钥" engine/daemon/src/ota/upgrade-executor.ts && grep -q "设备注册表" engine/daemon/src/device-registry.ts && echo "✅ 验签三要素披露在位" || { echo "❌ 验签三要素披露缺失"; FAIL=1; } # c: 章四·OTA 验签对称/逐条披露（B1/B2 防复发）
 grep -q "holdTaskDispatch" engine/daemon/src/ota/upgrade-policy.ts && grep -q "takeHeldTaskDispatches" engine/daemon/src/ota/upgrade-policy.ts && echo "✅ 双通道在位" || { echo "❌ 任务下发双通道缺口"; FAIL=1; } # d: 章五·任务下发双通道（在线推送 + 离线持有点 + 心跳捎带补收）
