@@ -1042,7 +1042,8 @@ else
     else
       # 待发版窗口白名单：两条同时成立才放行
       _rd_mm=$(echo "$_rd_v" | cut -d. -f1-2)
-      _win_roadmap=$(grep -cE "^\| \*\*v${_rd_v}\*\* \| (📋 规划中|✅ 开发完成)" docs/ROADMAP.md 2>/dev/null || true)
+      # 状态列可能带粗体包裹（翻牌态 **✅ 开发完成（⏳ 待发版）**）——\*\* 可选前缀，防粗体形态漏配
+      _win_roadmap=$(grep -cE "^\| \*\*v${_rd_v}\*\* \| (📋 规划中|✅ 开发完成|\*\*(📋 规划中|✅ 开发完成))" docs/ROADMAP.md 2>/dev/null || true)
       _win_devlog=0
       [ -f "docs/changelog/v${_rd_mm}/v${_rd_v}.md" ] && _win_devlog=1
       if [ "${_win_roadmap:-0}" -ge 1 ] && [ "$_win_devlog" -eq 1 ]; then

@@ -177,7 +177,11 @@ const MIN_CHAPTERS = 30; // 实测基线 6 文件 / 38 章
 
 // A2 排除面（无交付面 ⇒ 不要求标注）：固定标题两个；**指针存根章由 isPointerStub
 // （章体判据）另行豁免**——这里刻意不按标题形态豁免，理由见 isPointerStub 处注释。
+// Release Notes / Install 段是面向用户的发布说明复述面（阶段六定稿项），非交付章——
+// 硬打形态标注会污染 A7 形态计数对账（非功能 pin），故入排除面（标题带版本号后缀，用前缀匹配）。
+const SKIP_TITLE_PREFIXES = ['Release Notes', '⚡ Install'];
 const SKIP_TITLES = new Set(['定位', '与后续版本的依赖']);
+const isSkippedTitle = (title) => SKIP_TITLES.has(title) || SKIP_TITLE_PREFIXES.some((p) => title.startsWith(p));
 // A8 判定面（**宽**）：标题里出现标记 ⇒ 必须校验其目标。
 // 与 A2 的豁免面**解耦**是硬要求：两面共用一个谓词时，「标记写在末尾括注内 / 括注外」
 // 会决定它是否被校验——同一个不存在的版本号写括注内判红、写括注外完全免检（实测 P-d）。
@@ -555,7 +559,7 @@ function collectChapters(relFile) {
   const chapters = [];
   const pointers = [];
   headings.forEach((h, k) => {
-    if (SKIP_TITLES.has(h.title)) return;
+    if (isSkippedTitle(h.title)) return;
     const bodyEnd = k + 1 < headings.length ? headings[k + 1].index : lines.length;
     const bodyLines = lines.slice(h.index + 1, bodyEnd);
 
