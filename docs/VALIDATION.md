@@ -699,7 +699,7 @@ Palantir Foundry 10 年迭代收敛出 Ontology 的 5 块构建块——**Object
 
 > 📖 来源：[Palantir Foundation · Ontology MCP 样例架构](https://palantirfoundation.org/docs/foundry/ontology-mcp/sample-architecture)（官方文档，2026）+ 第三方评测交叉（chatforest.com，2026-07 口径）。官方事实，非转写。
 
-Palantir 的 agent 接入面拆成两个 MCP server，**读写分离、各带治理门**：**Palantir MCP（PMCP，2025-07 GA）**是平台开发面——70+ 工具覆盖本体 schema 的搜/查/改、代码仓 Git 操作、跨资源分支、数据集与血缘；**本体 schema 的任何修改必须走 proposal review 人工审批后才生效**。**Ontology MCP（OMCP，2026-01 beta → 2026-06 GA）**是运行时业务面——object types 收敛为一个统一 SQL 查询工具；**每个 action type 独立暴露为一个 MCP 工具**（agent 写数据只能调预定义 Action，不能直接 UPDATE 底表）；query functions 逐个成工具；AIP Logic / chatbot 可存为函数经 MCP 暴露（**agents as tools**，agent 产物成为别的 agent 的工具）。2026-07 再发 Claude / OpenAI / Google 三家 Agent SDK 模板：不合并框架，共享 Ontology 资源 scope、认证、MCP 接口与发布流程，agent 发布后注册为异步函数由对象变更触发。
+Palantir 的 agent 接入面拆成两个 MCP server，**读写分离、各带治理门**：**Palantir MCP（PMCP，已 GA）**是平台开发面——70+ 工具覆盖本体 schema 的搜/查/改、代码仓 Git 操作、跨资源分支、数据集与血缘；**本体 schema 的任何修改必须走 proposal review 人工审批后才生效**。**Ontology MCP（OMCP，后至 GA）**是运行时业务面——object types 收敛为一个统一 SQL 查询工具；**每个 action type 独立暴露为一个 MCP 工具**（agent 写数据只能调预定义 Action，不能直接 UPDATE 底表）；query functions 逐个成工具；AIP Logic / chatbot 可存为函数经 MCP 暴露（**agents as tools**，agent 产物成为别的 agent 的工具）。另发 Claude / OpenAI / Google 三家 Agent SDK 模板：不合并框架，共享 Ontology 资源 scope、认证、MCP 接口与发布流程，agent 发布后注册为异步函数由对象变更触发。
 
 > 💡 **对 sofagent 的三点印证**：
 >
@@ -711,7 +711,7 @@ Palantir 的 agent 接入面拆成两个 MCP server，**读写分离、各带治
 
 > 📖 来源：[Introducing Cortex Sense](https://www.snowflake.com/en/blog/enterprise-ai-agents-grounded-context/)（Snowflake 官方博客，2026-06）· [Incorporating Ontologies into Snowflake Cortex Agents](https://www.snowflake.com/en/blog/engineering/ontology-grounded-cortex-agents/)（Snowflake 工程博客，2026-05）+ Horizon Catalog / Semantic Views 官方产品文档与 FY2026 财报。benchmark 数字为官方口径。
 
-Palantir 从业务对象出发「自顶向下」建本体，Snowflake 反向走「自下而上」：从数仓长出本体栈，四层演进——目录（Horizon Catalog，2025-11 GA，底层捐给 Apache 基金会成 Polaris 顶级项目）→ 语义层（Semantic Views / Semantic Studio，2026-03 GA）→ 图（Knowledge Graph：KG_NODE / KG_EDGE 两张表存数仓内，recursive CTE 遍历，2026-05 公开）→ 智能体接口（Cortex Sense：自动扫描全库构建全局 ontology 作 context substrate，2026-06 私预）。定位一句话：**把数仓改造成 agent 的 context 工厂**。关键数字（官方口径）：Cortex Sense 称治理 context 使 agent 回答复杂业务问题的准确率 47%→83%（对照：通用 coding agent 裸连数仓 23%）。
+Palantir 从业务对象出发「自顶向下」建本体，Snowflake 反向走「自下而上」：从数仓长出本体栈，四层演进——目录（Horizon Catalog，已 GA，底层捐给 Apache 基金会成 Polaris 顶级项目）→ 语义层（Semantic Views / Semantic Studio，已 GA）→ 图（Knowledge Graph：KG_NODE / KG_EDGE 两张表存数仓内，recursive CTE 遍历，已公开）→ 智能体接口（Cortex Sense：自动扫描全库构建全局 ontology 作 context substrate，私预）。定位一句话：**把数仓改造成 agent 的 context 工厂**。关键数字（官方口径）：Cortex Sense 称治理 context 使 agent 回答复杂业务问题的准确率 47%→83%（对照：通用 coding agent 裸连数仓 23%）。
 
 > 💡 **对 sofagent 的三点印证**：
 >
