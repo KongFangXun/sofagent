@@ -1926,6 +1926,87 @@ else
   echo -e "  ${YELLOW}⚠${NC} tool-registry.ts 工具数解析失败，跳过全仓口径核对（第 22 项已报原因）"
   WARNINGS=$((WARNINGS + 1))
 fi
+
+# ── 26b. 规划中 devlog 工具数逐处对账（工具数覆盖洞 2 · v1.5.2 批）──────────────
+# 门禁目的：§26 B8 是「至少出现一次」语义，管不到 changelog 域；§15 又整域排除 docs/changelog。
+# 两道门禁之间，规划中（未发版）devlog 是当前口径的**承诺面**（发版时会成为事实），却无人逐处
+# 对账——v2.0.0.md「其余 103 tools」与 v1.5.5.md「TOOLS=104」两处漂移正是漏在此缝里。
+# 设计（主理人批准 · 方案 C）：两级分闸 + 行级判定。
+#   闸 1（文件级）：boundary 取根 package.json 的 version 字段作 SSOT（🔴 禁由 ROADMAP 反推）；
+#     版本 > boundary 的 changelog devlog 进闸 2；<= boundary 的已发版历史段整文件排除——
+#     后者是冻结的历史（实测 <=1.5.1 共 52 文件含 104 条合法历史值，整域纳入即假红洪泛）。
+#   闸 2（行级）：命中行若为「历史记录行」且数字 ≠ registry 实数 → 判红。行级判据
+#     **直接移植 check-docs §15 现有四谓词**（演进链历史行/历史清单行/前缀限定面/装置面自引用），
+#     不新造逻辑；另加谓词 5a/5b（方案 C，收敛 v2.0.0.md B 表的 9 条分面计数）：
+#     5a 括注形态：claim 后紧跟 ）/) → 「能力簇（N tools）」表格逐簇计数；
+#     5b 余量短语：claim 前 6 字符内含 其余|剩余 → 减面派生子集（如「其余 101」= 105−浏览器 4）。
+# 🔴 已知盲区（硬要求一登记，与 form B 同一纪律）：
+#   - 5a 豁免的是**括注形态**而非内容——planning devlog 内若出现括注形态的**全局**声称
+#     （（本仓 N tools））同样会被豁免，属已知取舍；分面/簇计数轴的精确断言归属将来的
+#     角色轴/能力簇轴门禁（洞 3 同判据注释）。
+#   - 5b 豁免的数字是减面派生值非全局口径，同上归属分面轴。
+#   - 本节正则与 §15 同源：不覆盖 TOOLS=N / 工具数=N（数字在词后）形态，出现时须同批扩正则。
+# 落地实测（2026-09-21）：13 个 planning 文件 · ≠105 命中 13 条 → 四谓词收敛至 9 → +5a/5b 收敛至 0。
+echo "=== 26b. 规划中 devlog 工具数逐处对账（boundary > v$(node -e 'console.log(require("./package.json").version)')）==="
+PDL_SCAN=$(node -e "
+const fs = require('fs');
+const path = require('path');
+// 闸 1：boundary = 根 package.json version（SSOT；🔴 禁由 ROADMAP 反推）
+const boundary = JSON.parse(fs.readFileSync('package.json', 'utf8')).version;
+const bp = boundary.split('.').map(Number);
+const isPlanning = v => { const p = v.split('.').map(Number); for (let i = 0; i < 3; i++) { const a = p[i] || 0, b = bp[i] || 0; if (a !== b) return a > b; } return false; };
+const regSrc = fs.readFileSync('engine/mcp/src/tool-registry.ts', 'utf8');
+const regCount = new Set([...regSrc.matchAll(/name:\s*'([a-z_]+)',/g)].map(m => m[1])).size;
+const results = [];
+let planningCount = 0;
+function walk(dir) {
+  for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+    const p = path.join(dir, e.name);
+    if (e.isDirectory()) { walk(p); continue; }
+    if (!p.endsWith('.md')) continue;
+    const vm = p.match(/v(\d+\.\d+(?:\.\d+)?)\.md$/);
+    if (!vm || !isPlanning(vm[1])) continue;  // 闸 1：已发版（<= boundary）整文件排除
+    planningCount++;
+    const lines = fs.readFileSync(p, 'utf8').split('\n');
+    lines.forEach((line, i) => {
+      // 词形与 check-docs §15 同源（含 token 边界约束——修正边界非收窄词形）
+      for (const _mm of line.matchAll(/(?<![A-Za-z0-9_.-])([0-9]+)\s*(?:个\s*)?(?:MCP\s*)?(?:tools?|工具)(?!包)/g)) {
+        const claim = _mm[0];
+        const _idx = _mm.index;
+        const n = parseInt(_mm[1], 10);
+        // 谓词 1（§15 移植）：演进链历史行（含 vX.Y 且含 后为/起/新增/→）
+        if (/v[0-9]+\.[0-9]/.test(line) && /(后为|起|新增|→)/.test(line)) continue;
+        // 谓词 2（§15 移植）：历史清单行（CHANGELOG 版本行 / 版本表行 / 日期流水行）
+        if (/^\s*-\s*\*\*v[0-9.]+\*\*/.test(line) || /^\s*\|\s*\*\*v[0-9.]+/.test(line) || /^\s*\|\s*20[0-9]{2}-[0-9]{2}-[0-9]{2}/.test(line)) continue;
+        // 谓词 3（§15 移植）：带前缀限定的非全局声称
+        if (/训练|数组|监控|模块|Browser/.test(line.slice(Math.max(0, _idx - 12), _idx))) continue;
+        // 谓词 4（§15 移植）：装置面自引用与反例引用
+        if (/\bgrep\b|check-version\.sh|check-docs\.sh|FAIL|反例/.test(line)) continue;
+        // 谓词 5a（方案 C）：括注形态——claim 后紧跟 ）/) → 表格逐簇分面计数
+        if (/[）)]/.test(line.slice(_idx + claim.length, _idx + claim.length + 1))) continue;
+        // 谓词 5b（方案 C）：余量短语——claim 前 6 字符内含 其余|剩余 → 减面派生子集
+        if (/(其余|剩余)/.test(line.slice(Math.max(0, _idx - 6), _idx))) continue;
+        if (n !== regCount) results.push(p + ':' + (i + 1) + ' 声称 ' + n + ' ≠ registry ' + regCount + '（规划中 devlog）｜ ' + line.trim().slice(0, 80));
+      }
+    });
+  }
+}
+walk('docs/changelog');
+console.error('PDL_N=' + planningCount);
+console.log(results.length ? results.join('\n') : '');
+" 2>/tmp/pdl-reg.log)
+PDL_REG_N=$(grep -oE 'PDL_N=[0-9]+' /tmp/pdl-reg.log 2>/dev/null | grep -oE '[0-9]+' || true)
+PDL_REG_N=${PDL_REG_N:--1}
+if [ "${PDL_REG_N}" -lt 0 ]; then
+  CHECKS=$((CHECKS + 1)); echo -e "  ${RED}❌${NC} 规划域解析失败（boundary/package.json 读取异常），对账无法进行"
+  ERRORS=$((ERRORS + 1))
+elif [ -n "${PDL_SCAN}" ]; then
+  CHECKS=$((CHECKS + 1)); echo -e "  ${RED}❌${NC} 规划中（未发版）devlog 工具数声称漂移："
+  echo "${PDL_SCAN}" | sed 's/^/    /'
+  ERRORS=$((ERRORS + 1))
+else
+  CHECKS=$((CHECKS + 1)); echo -e "  ${GREEN}✓${NC} ${PDL_REG_N} 个规划中 devlog 工具数声称与 registry 全部一致（逐处对账）"
+fi
 echo ""
 
 echo "=== 27. 发版状态门禁：tag/npm 已发但活文档仍标待发版（F6 · v1.4.5 T10） ==="
