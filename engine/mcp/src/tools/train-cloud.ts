@@ -1,4 +1,4 @@
-// train-cloud.ts · MCP tool：train_cloud（v1.5.0 章二）
+// train-cloud.ts · MCP tool：train_cloud（v1.5.1 章二）
 // ============================================================
 //
 // 云 VM 执行面入口（控制面本地 / 执行面云上）四操作：

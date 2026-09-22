@@ -2,7 +2,7 @@
 
 <p align="center"><img src="assets/sofagent.png" alt="sofagent" width="96" /></p>
 
-> v1.5.0 · 2026-09-19（UTC）· ✅ 已发版 · 孔放勋
+> v1.5.1 · 2026-09-22（UTC）· ✅ 已发版 · 孔放勋
 
 > **EN summary**: sofagent is an open-source (MIT) FDE Harness layer for AI Agents — it doesn't build the Agent; it adds the discipline layer around whichever host (DSH / OpenClaw / WorkBuddy) runs it. **Product story**: an FDE maps your workflow, freezes every AI node's acceptance criteria into machine-checkable files, then departs — the Harness judges every change against those files 24/7 (24 git-diff audit rules, HMAC-chained tamper-evident history, every model registered/rolled out/trained/deployed under audit). Five capabilities: inject · audit · rollback · distill · evolve. (Chinese-first project; full English face in README.en.md.)
 > **读者**：人类开发者 & AI Agent 均可阅读。本文档是项目全局索引入口。
@@ -14,7 +14,7 @@
 > - **[ARCHITECTURE.md](./ARCHITECTURE.md)**：双层架构设计（约束层 × 生命周期）+ 约束层工程三层嵌套（约束层 → Graph → Loop），关键技术决策记录。**3 秒版**：约束层管"做对"（注入·审计·回溯·沉淀·进化）· 激活链四阶段管"跑起来" · Graph 控制图分波次 · Loop 自迭代闭环。
 > - **[VALIDATION.md](./VALIDATION.md)**：行业印证与生态定位——sofagent 直觉如何被行业验证 + Agent 三层模型 + 架构框架映射 + 行业坐标（企业 Neo-Lab 的智能主权基础设施，Sovereign AI 四层主权落点）。
 > - **[PHILOSOPHY.md](./PHILOSOPHY.md)**：设计哲学与产品方法论（§一~§九）。"不替代 Agent，做 Agent 的控制面"。
-> - **[ROADMAP.md](./ROADMAP.md)**：版本路线图 + 迭代历程。当前 v1.5.0。
+> - **[ROADMAP.md](./ROADMAP.md)**：版本路线图 + 迭代历程。当前 v1.5.1。
 
 > **📋 文档分工一页表**（写内容前先看——什么内容往哪个文档写，防止交叉重复）：
 >
@@ -99,7 +99,7 @@ graph TB
 
 ## 二·五、能力全景（用「你遇到的事」说 · 3 分钟版）
 
-> 模块语言（注入/审计/回溯/沉淀/进化）是给开发者的；下面这张表用**用户任务语言**回答「到底能干什么」。状态：✅ 已发版（v1.5.0 · 2026-09-19） · 📋 排期中。
+> 模块语言（注入/审计/回溯/沉淀/进化）是给开发者的；下面这张表用**用户任务语言**回答「到底能干什么」。状态：✅ 已发版（v1.5.1 · 2026-09-22） · 📋 排期中。
 
 | 你遇到的事 | sofagent 做什么 | 状态 |
 |------|------|:--:|
@@ -274,8 +274,8 @@ graph TB
 
 | 项 | 值 |
 |----|-----|
-| 当前版本 | **v1.5.0**（2026-09-19，✅ 已发版）· 上一版 v1.4.9（2026-09-17，✅ 已发版） |
-| 下一版 | **v1.5.1**（✅ 开发完成 ⏳ 待发版——编排模块 · 事件驱动（业务事件触发 + 理解债务应对 + 设备 OTA 远程升级）等，[开发日志](./changelog/v1.5/v1.5.1.md)已定稿；以 [ROADMAP](./ROADMAP.md) 规划表为准） |
+| 当前版本 | **v1.5.1**（2026-09-22，✅ 已发版）· 上一版 v1.5.0（2026-09-19，✅ 已发版） |
+| 下一版 | **v1.5.2**（📋 规划中——审计模块 · 开放与治理面（MCP audit 数据对外 + doctor 修复闭环 + 约束导出外部可验）等，以 [ROADMAP](./ROADMAP.md) 规划表为准） |
 | 测试覆盖 | 5083 测试 / 13 包（统计标准：`tools/check/test-count.sh` 实际执行的 workspace 包；实测见该脚本，声称数同步校验见 `tools/check/check-test-count.sh`。包数口径见下表注） |
 | 审计规则 | 24 条（17 默认 + 7 扩展），活跃编号 A1-A11 + A14-A23 + E1/E2/E4（A12/A13/E3 已并入 A11，编号不再使用），每次 commit 自动跑 |
 | FORGE | fresh-eyes-loop + release-gate-loop 运行中 |
@@ -369,4 +369,4 @@ graph TB
 
 ---
 
-> **维护规则**：本文档由 AI 在每次发版时更新（版本号、文件清单、状态表）。当前版本 v1.5.0 · 孔放勋 · 2026-09-19。
+> **维护规则**：本文档由 AI 在每次发版时更新（版本号、文件清单、状态表）。当前版本 v1.5.1 · 孔放勋 · 2026-09-22。

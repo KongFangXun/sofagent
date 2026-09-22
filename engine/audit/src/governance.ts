@@ -1,9 +1,9 @@
-// governance.ts · v1.5.0 章一 · 治理 KPI 聚合层（约束层价值面板化）
+// governance.ts · v1.5.1 章一 · 治理 KPI 聚合层（约束层价值面板化）
 //
 // 定位：dashboard「治理」tab 的数据引擎——把审计/决策/HITL/数据集四路
 // 只读数据源聚合成「给老板汇报的一页纸」。与 stats.ts 的分工：
 //   stats.ts = v1.4.3 安全边界 KPI（history.jsonl 单源，CLI --stats 契约不变）
-//   governance.ts = v1.5.0 治理全景 KPI（四源聚合，dashboard /api/governance 消费）
+//   governance.ts = v1.5.1 治理全景 KPI（四源聚合，dashboard /api/governance 消费）
 //
 // 六卡口径（与 HANDBOOK 指标口径节同源）：
 //   ① 安全边界触发率 = (WARN+FAIL)/total（复用 stats 口径——同源防漂移）

@@ -1,4 +1,4 @@
-# sofagent cordis-plugin-sofagent-fde bundle patch v1.5.0——注册为 DSH profile layer
+# sofagent cordis-plugin-sofagent-fde bundle patch v1.5.1——注册为 DSH profile layer
 - insert:
     - id: sofagent-fde
       name: 'cordis-plugin-sofagent-fde'

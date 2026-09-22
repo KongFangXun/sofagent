@@ -2,7 +2,7 @@
   "id": "sofagent-audit",
   "name": "sofagent 审计",
   "description": "给 OpenClaw 加上审计——工具调用前拦停危险操作（工具名黑名单 + 命令级检查），另提供 sofagent_audit 工具跑 24 条 git diff 硬证据规则",
-  "version": "1.5.0",
+  "version": "1.5.1",
   "seam": "before_tool_call",
   "seamSemantics": "工具调用前拦截危险工具（可拦停 / 要求审批）",
   "icon": "https://raw.githubusercontent.com/KongFangXun/sofagent/main/docs/assets/sofagent.png",

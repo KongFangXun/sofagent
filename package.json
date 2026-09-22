@@ -1,6 +1,6 @@
 {
   "name": "sofagent-monorepo",
-  "version": "1.5.0",
+  "version": "1.5.1",
   "description": "sofagent 单仓根（monorepo，private 不发布）——开源 FDE Harness 层：嵌在 Agent 与模型层之间做治理，进场把业务判断写成文件（工作流 / 本体数据 / AI 节点），离场按文件审计每一次变更。各能力包在 engine/* 下独立发布（CLI 入口 @sofagent/audit，裸名总包 sofagent）。",
   "keywords": [
     "sofagent",
@@ -65,7 +65,7 @@
   },
   "//dependencies": "B-3 (v1.4.4) 归属说明：@sofagent/rules 是 root 级声明，实测（临时移除跑 npm install --package-lock-only 对比 lock 面）workspace 态下 node_modules/@sofagent/rules 的 link 条目由 engine/audit、engine/orchestrator、engine/mcp 三个 workspace 消费者维持，root 声明本身零增量语义——但保留声明可让根目录脚本直接 require('@sofagent/rules') 开箱可解析，且对齐 workspace 内部依赖版本对齐原则。勿删（先例：optionalDependencies 同款注释保留）。",
   "dependencies": {
-    "@sofagent/rules": "1.5.0",
+    "@sofagent/rules": "1.5.1",
     "fzstd": "^0.1.1"
   },
   "devDependencies": {

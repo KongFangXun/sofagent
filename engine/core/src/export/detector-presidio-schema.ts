@@ -1,5 +1,5 @@
 // ============================================================
-// detector-presidio-schema.ts · v1.5.0 T8 · Presidio 实体类型 schema 对齐
+// detector-presidio-schema.ts · v1.5.1 T8 · Presidio 实体类型 schema 对齐
 // ============================================================
 //
 // 对齐 Microsoft Presidio 的实体类型命名（PERSON/EMAIL/PHONE 等）与

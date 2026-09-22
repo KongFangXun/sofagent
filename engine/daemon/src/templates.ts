@@ -1,5 +1,5 @@
 // ============================================================
-// templates.ts · 首部署 cron job 模板库（G8 · v1.5.0）
+// templates.ts · 首部署 cron job 模板库（G8 · v1.5.1）
 //
 // 从 cli.ts scheduler create 内联表抽出为独立模块——模板增多
 // 不再撑爆 CLI 入口文件；billing/templates 单测挂本模块。

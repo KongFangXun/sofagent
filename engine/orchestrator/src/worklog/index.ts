@@ -1,6 +1,6 @@
 // ============================================================
 // worklog/index.ts · barrel export
-// v1.5.0（三）：AI 工作明细数据层——三源聚合 + worklog.json 落盘
+// v1.5.1（三）：AI 工作明细数据层——三源聚合 + worklog.json 落盘
 // ============================================================
 
 export { WorklogAggregator, isoWeekKey } from './aggregator';

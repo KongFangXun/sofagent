@@ -1,6 +1,6 @@
 {
   "name": "cordis-plugin-sofagent",
-  "version": "1.5.0",
+  "version": "1.5.1",
   "engines": {
     "node": ">=18"
   },
@@ -27,12 +27,12 @@
   },
   "//optionalDependencies": "v1.4.8 第8批：src/index.ts 逐个 await import('<兄弟插件 id>')（懒加载 + 逐个降级不抛——缺任一原子插件只记入 failed 数组，不整挂失败），聚合层自身零 @sofagent/* 依赖；对齐 root package.json F-18 optionalDependencies 先例。",
   "optionalDependencies": {
-    "cordis-plugin-sofagent-inject": "1.5.0",
-    "cordis-plugin-sofagent-audit": "1.5.0",
-    "cordis-plugin-sofagent-evolve": "1.5.0",
-    "cordis-plugin-sofagent-rollback": "1.5.0",
-    "cordis-plugin-sofagent-daemon": "1.5.0",
-    "cordis-plugin-sofagent-fde": "1.5.0"
+    "cordis-plugin-sofagent-inject": "1.5.1",
+    "cordis-plugin-sofagent-audit": "1.5.1",
+    "cordis-plugin-sofagent-evolve": "1.5.1",
+    "cordis-plugin-sofagent-rollback": "1.5.1",
+    "cordis-plugin-sofagent-daemon": "1.5.1",
+    "cordis-plugin-sofagent-fde": "1.5.1"
   },
   "devDependencies": {
     "typescript": "^7.0.2",

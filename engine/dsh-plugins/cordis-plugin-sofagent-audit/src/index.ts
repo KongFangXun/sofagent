@@ -1,4 +1,4 @@
-// cordis-plugin-sofagent-audit · DSH 反向插件（v1.5.0 P2 合并批：吸收原 -gate 验收门禁面）
+// cordis-plugin-sofagent-audit · DSH 反向插件（v1.5.1 P2 合并批：吸收原 -gate 验收门禁面）
 // seam 挂载：tools/result + tools/pre-execute + fs/write-intent + agent/turn-stopping
 // # 语义：工具结果留证 + 工具执行前拦截 + 文件写入意图拦截（放行） + Turn 停止验收判定
 //   （判定源 = checkDangerousCommand / check_acceptance——引擎包既有 @public，零改动）

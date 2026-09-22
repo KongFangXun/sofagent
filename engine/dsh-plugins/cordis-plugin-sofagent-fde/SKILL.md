@@ -1,7 +1,7 @@
 ---
 name: cordis-plugin-sofagent-fde
 slug: cordis-plugin-sofagent-fde
-version: 1.5.0
+version: 1.5.1
 displayName: cordis-plugin-sofagent-fde
 description: >
   FDE 进场与能力流通——把企业业务梳理成 AI 能力，并让这些能力在企业内被发布、发现、调用、评价、退役（seam: non-seam:tool-set）——桥接 @sofagent/orchestrator publishCapability / @sofagent/ontology generateOntologyView / @sofagent/core restoreSnapshot——DSH（DeepSeek Harness）cordis plugin。sofagent 约束层在 DeepSeek Harness 生态的插件形态。

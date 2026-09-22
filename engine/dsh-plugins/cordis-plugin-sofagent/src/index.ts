@@ -1,4 +1,4 @@
-// cordis-plugin-sofagent · DSH 反向插件（v1.5.0 第8批 · 聚合编排层；v1.5.0 P2 合并批：SUITE 9→6）
+// cordis-plugin-sofagent · DSH 反向插件（v1.5.1 第8批 · 聚合编排层；v1.5.1 P2 合并批：SUITE 9→6）
 // seam 挂载：non-seam:plugin-suite    # 语义：非宿主事件接入（插件聚合）——一次 apply 逐个挂载 6 个原子插件；能力仍由各原子插件 provide
 // 清单生成源 = engine/dsh-plugins/plugins.json（生成 package.json 的 description/sofagent/dsh/optionalDependencies 段与 cordis.patch.yml）；本文件的 seam 字面量由生成器 --check 与之对账。
 //
@@ -7,7 +7,7 @@
 //   ② 逐个降级，不整挂失败——缺任一原子插件只记入 failed 数组，其余 5 个照常加载；
 //   ③ 不替代细粒度插件——6 个原子插件全部保留，本插件是**新增的整装选项**，不是替代品。
 //
-// v1.5.0 P2 合并说明：原 -ontology/-commons 并入 -fde（厚插件三域），
+// v1.5.1 P2 合并说明：原 -ontology/-commons 并入 -fde（厚插件三域），
 // 原 -gate 并入 -audit（验收 seam 四值）——原子插件 9→6，本 SUITE 同批收口。
 
 const SUITE: ReadonlyArray<readonly [string, string]> = [

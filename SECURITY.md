@@ -2,7 +2,7 @@
 
 <p align="center"><img src="docs/assets/sofagent.png" alt="sofagent" width="96" /></p>
 
-> v1.5.0 · 2026-09-19（UTC）· ✅ 已发版 · 孔放勋
+> v1.5.1 · 2026-09-22（UTC）· ✅ 已发版 · 孔放勋
 >
 > 按安全主题组织，企业 IT 可按主题快速定位。各能力的引入版本在小节正文首句注明。
 
@@ -156,7 +156,7 @@ sofagent 是一套 FDE 能力——底层引擎是纯本地 Harness 中间件（
 **企业部署建议**：
 - 不要在共享/公共设备上启用 USB federation 自动检测
 - 如需使用，插入 U 盘前先在隔离设备上检查 `federation.json` 内容
-- 生产环境启用前请确认所选版本已含 HMAC 签名校验——**v1.1.5 起已上线，当前 v1.5.0 为全量签名**（见上方「USB 完整运行时攻防表」）
+- 生产环境启用前请确认所选版本已含 HMAC 签名校验——**v1.1.5 起已上线，当前 v1.5.1 为全量签名**（见上方「USB 完整运行时攻防表」）
 
 `detectSofagentUsb()` 源码见 `engine/daemon/src/usb-detect.ts`，错误处理完善（设备不存在/文件不存在/JSON 解析失败都 try-catch 返回明确错误）。内容安全校验自 v1.1.5 起由 HMAC 签名校验覆盖（`.sig` sidecar + `timingSafeEqual`），v1.1.9 升级为全量签名（`usb-signature.ts`：HMAC-SHA256 路径 POSIX 归一化 + 字典序 + SHA-256 内容哈希串联，详见上方「USB 完整运行时攻防表」）。
 

@@ -1,5 +1,5 @@
 // ============================================================
-// tools/optimize-skill.ts · optimize_skill MCP tool（v1.5.0 · P3 S2）
+// tools/optimize-skill.ts · optimize_skill MCP tool（v1.5.1 · P3 S2）
 // ============================================================
 
 import { scanSkillSafety, runEvolve, validateCandidate, isEvolveAvailable } from '@sofagent/evolve';

@@ -1,6 +1,6 @@
 # DSH MCP 互通指南——在 DeepSeek Harness 中使用 sofagent
 
-> v1.5.0 · 2026-09-19（UTC）· ✅ 已发版 · 孔放勋 · MCP 互通自 v1.3.5 起支持。
+> v1.5.1 · 2026-09-22（UTC）· ✅ 已发版 · 孔放勋 · MCP 互通自 v1.3.5 起支持。
 
 sofagent 本身就是一个 MCP server（stdio 传输，bin `sofagent-mcp`，工具数以 `engine/mcp/src/tool-registry.ts` 为准——工具角色分层，默认全量暴露，`SOFAGENT_MCP_ROLES` 显式收窄专职面；各版增量见 [CHANGELOG](../../CHANGELOG.md) 与 [API 工具清单](../API.md)）。
 

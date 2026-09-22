@@ -1,8 +1,8 @@
 // ============================================================
-// router-session-push.ts · MCP tool：router 过站 session 推送（v1.5.0 T7）
+// router-session-push.ts · MCP tool：router 过站 session 推送（v1.5.1 T7）
 // ============================================================
 //
-// 伴生 exporter 的引擎侧承接入口（最后一个新 tool：103→1.5\11：
+// 伴生 exporter 的引擎侧承接入口（最后一个新 tool：103→1.5\111：
 //   schema 校验（fail-closed：格式不合法拒绝入库）→ 会话续接五元组
 //   判定 → 脱敏 → 本地落盘（数据主权铁律——记录不出企业边界）→
 //   usage 入 cost 台账 → key 维度过站行为 HMAC 挂链（审计）→ 计量。

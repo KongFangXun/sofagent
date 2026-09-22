@@ -1,6 +1,6 @@
 // ============================================================
 // FORGE barrel export
-// v1.5.0：StateGraph 单任务 FORGE + Workflow 两类消费入口
+// v1.5.1：StateGraph 单任务 FORGE + Workflow 两类消费入口
 //
 // 编排智能来自外部平台（WorkBuddy 等），sofagent FORGE 负责执行层。
 // checkpoint 保留在 graph/ 下（被 daemon 和 FORGE 共用）。

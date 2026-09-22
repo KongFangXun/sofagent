@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-# sofagent install.sh · 企业设备安装器 · v1.5.0
+# sofagent install.sh · 企业设备安装器 · v1.5.1
 # ============================================================
 # 将 sofagent 约束层部署到企业跑 AI 节点的设备上，让 Agent 获得监控约束。
 #
@@ -8,7 +8,7 @@
 #    默认模式 = 全套（底座 + Agent Skill）——事前约束 + 事后拦截完整闭环。
 #    --base-only 模式 = 仅装约束层（审计·回溯·daemon），不装 Agent Skill。
 #
-# 📦 安装包边界（v1.5.0）：
+# 📦 安装包边界（v1.5.1）：
 #    ┌─────────────────────────┬──────────────┬──────────────────────┐
 #    │ 脚本                    │ 装在哪       │ 装什么               │
 #    ├─────────────────────────┼──────────────┼──────────────────────┤
@@ -49,7 +49,7 @@
 # ============================================================
 
 set -euo pipefail
-VERSION="1.5.0"
+VERSION="1.5.1"
 
 # ERR trap 品牌兜底（v1.3.8 P0-1）：对齐 bootstrap.sh——此前 install.sh 全文无 trap，
 # 任何未处理失败都是裸 bash 报错 exit 1；现在统一输出产品化指路信息。
@@ -105,7 +105,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # v1.2.0: install.sh 提升到根目录，lib/ 仍在 engine/scripts/lib/
 LIB_DIR="${SCRIPT_DIR}/engine/scripts/lib"
 
-# ── 易失源目录检测（v1.5.0）──
+# ── 易失源目录检测（v1.5.1）──
 # 从 /tmp 等临时目录运行 install.sh 时，写入 $SOFAGENT_HOME 的「路径标记」与「入口软链」
 # 会指向易失位置——重启或 tmp 清理后即失效（软链断链 / 未来升级脚本去错目录 pull）。
 # 检出后按用途分别降级：路径标记不写（fail-safe，宁缺勿错）、入口改为拷贝（自包含可用）。
@@ -416,7 +416,7 @@ if [ ! -f "$INTERNAL_ROOT/watch.yml" ]; then
 # sofagent 定时任务缺省配置（v1.4.5 首装生成——可按需修改）
 # 项目级配置（${项目根}/.sofagent/watch.yml）存在时优先于本文件
 
-# 分层巡检调度（v1.5.0）：L1 快速健康 / L2 深度巡检 / L3 联邦分析
+# 分层巡检调度（v1.5.1）：L1 快速健康 / L2 深度巡检 / L3 联邦分析
 # enabled: false 可整体关闭；layers 下可按层覆盖频率
 inspectors:
   enabled: true
@@ -425,7 +425,7 @@ inspectors:
     L2: "@weekly"
     L3: "@monthly"
 
-# Dream Cycle 知识蒸馏（v1.5.0）：think.md + audit history → concepts/atoms
+# Dream Cycle 知识蒸馏（v1.5.1）：think.md + audit history → concepts/atoms
 # 产物落 data/knowledge/；enabled: false 可关闭
 dream-cycle:
   enabled: true
@@ -1133,7 +1133,7 @@ HOOKJSONEOF
 }
 
 # ════════════════════════════════════════
-# MCP 自动配置（v1.5.0）——装完即连，不用手动在各平台添加 MCP server
+# MCP 自动配置（v1.5.1）——装完即连，不用手动在各平台添加 MCP server
 # ════════════════════════════════════════
 # 写 JSON 格式 MCP 配置（workbuddy / claude / cursor）——merge 不覆盖用户已有 server
 write_mcp_json() {
