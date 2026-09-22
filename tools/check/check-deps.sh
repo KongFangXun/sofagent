@@ -59,8 +59,8 @@ check_npm() {
 echo ""
 echo "🟢 通用工具库"
 echo "─────────────────────────────────────────────────────────────"
-check_npm "js-yaml" "5.4.1"
-check_npm "zod" "4.5.4"
+check_npm "js-yaml" "5.4.2"
+check_npm "zod" "4.6.5"
 check_npm "archiver" "8.0.0"
 # ⚠️ 上方「当前版本」为脚本硬编码基线——升级依赖后必须同步更新（v1.4.1 教训：
 #    基线滞后于 lock 实际版本会把「已是最新」误报成「有新版本」，门禁假红）
@@ -69,9 +69,9 @@ check_npm "archiver" "8.0.0"
 echo ""
 echo "🟡 核心框架（LangGraph 三件套）"
 echo "─────────────────────────────────────────────────────────────"
-check_npm "@langchain/langgraph" "1.4.13"
-check_npm "@langchain/core" "1.2.9"
-check_npm "@langchain/openai" "1.5.11"
+check_npm "@langchain/langgraph" "1.4.17"
+check_npm "@langchain/core" "1.2.12"
+check_npm "@langchain/openai" "1.5.13"
 
 echo ""
 echo "🔴 automerge（CRDT 核心）"
