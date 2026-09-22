@@ -325,7 +325,7 @@ DHH（Rails 之父）的 Omarchy——「有主见」的 Arch Linux 桌面发行
 
 **第二件：反漂移靠「禁二份」纪律，而非全仓对账。** Omarchy 命令组的权威清单只活在 `bin/omarchy` 的 `GROUP_DESCRIPTIONS` 结构里，AGENTS.md 明文「不要在这里维护第二份清单，以免与路由器漂移」。我们治同一病（工具数声称曾多次与 registry 实数漂移）用的是双招：SSOT 声明 + check-docs §15 全仓扫描对账。两招互补——声明治源头（新文档写前先问权威源在哪），扫描治存量（漂移当场红）。把「任何清单在仓内出现第二处时，一处为权威源、其余必须标注引用」升格为文档分工纪律，成本一行，收益是把「扫出漂移」变成「不产生漂移」。
 
-**对我们的意义**：三棵文档树（task procedure / reference / user manual，按受众×文体切分）的声明式迁移方向已登记 ROADMAP 探索方向；skill 分发与文档分工纪律两条则即刻可抄——前者已被市场验证，后者已被 35k stars 项目的实践验证。
+**对我们的意义**：三棵文档树（task procedure / reference / user manual，按受众×文体切分）的**声明式迁移**已作为文档分工纪律落地（不排目录大迁移——新内容按文体声明落位、旧文档大改时自然毕业）；skill 分发与文档分工纪律两条则即刻可抄——前者已被市场验证，后者已被 35k stars 项目的实践验证。
 
 > 📖 来源：[Omarchy](https://github.com/omacom/omarchy)（DHH，2025-06 建仓，35.3k stars@2026-08-30 实测）；AGENTS.md「禁二份清单」与 SKILL.md 均为仓库原文
 
