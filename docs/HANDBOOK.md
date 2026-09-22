@@ -59,7 +59,7 @@
 
 ## FDE Harness 能替你干什么
 
-> 这一节先讲「价值」，再讲「怎么用」。sofagent 不是一个工具包，而是**一层 FDE Harness**——嵌在成熟 Agent（DSH / OpenClaw / WorkBuddy / Codex / Claude Code）与模型层之间，对执行体约束、对智力源治理，替企业把大模型变成 7×24 自动执行的 AI 节点（产品形态 = FDE Harness 层，见 [WIKI 产品叙事](./WIKI.md#二产品叙事sofagent-是-fde-harness-层不造-agent嵌在-agent-与模型之间做治理)）。完整能力矩阵见 [ARCHITECTURE · 能力与状态总览](./ARCHITECTURE.md#能力与状态总览)。
+> 这一节先讲「价值」，再讲「怎么用」。sofagent 不是一个工具包，而是**一层 FDE Harness**——嵌在成熟 Agent（DSH / OpenClaw / WorkBuddy / Codex / Claude Code）与模型层之间，对执行体约束、对智力源治理，替企业把大模型变成 7×24 自动执行的 AI 节点（产品形态 = FDE Harness 层，见 [WIKI 产品叙事](./WIKI.md#二产品叙事sofagent-是-fde-harness-层不造-agent嵌在-agent-与模型之间做治理)）。完整能力矩阵见 [ARCHITECTURE · 能力与状态总览](./ARCHITECTURE.md#能力与状态总览)。把下面这份清单读成一句话：**你的每个业务对象都能被 FDEING 一遍**——FDE 是名词（岗位 / 方法论），FDEING 是动词（把这套打法跑一遍）。
 
 **已经能替你干的事**（按两相位分组——进场生成判断 / 离场驻留判断）：
 

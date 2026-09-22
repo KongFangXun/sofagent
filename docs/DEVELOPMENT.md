@@ -76,6 +76,8 @@
 
 ## 一、工作原理
 
+> 一句话：开发者视角的 FDEING——Skill 结构、加载链与闸门就是 FDEING 在工程面的实体；本仓自身的开发流程也是被 FDEING 的对象（每个 PR 过审计链，与交付给企业的治理同构）。
+
 ### Skill 文件结构
 
 **1 主 Skill（`SKILL.md`）+ 10 子 Skill = 11 个 .md（均在 `SKILL/harness/`；其中 `fde-template.md` 部署时改名 `fde.md`，按需加载）**。用户只安装 `SKILL.md`。A0 预判复杂度——🔴 复杂任务确认后加载 `engage.md` 走完整入口流程，🟢🟡 简单/中等任务跳过 engage.md 直接走 task-aware 闸门。每个子 Skill ≤100 行（v1.0.8 起，由 v0.99.5 的 ≤90 行上调）。
