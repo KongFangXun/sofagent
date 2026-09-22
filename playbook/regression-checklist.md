@@ -1,24 +1,20 @@
 # sofagent 回归检查清单
 
-> **用途**：每次发版前跑一遍，确认之前修过的问题没有回退。发现新问题用 [fresh-eyes-review](./fresh-eyes-review.md)。审查范围：全仓库状态检查（不是只看增量）。
-> **编号规则**：归并项直接删除、编号不复用；维度演进与归并的完整历史 `git log -p` 可溯，本清单只维护当前状态。
-> **当前 87 维 · 编号 1-144 · 55 个编号已归并删除**。维度流连续不中断，分组导航：基线组 → 审查约束组 → 环境敏感组（前置 vitest/沙箱铁律）。
+> **用途**：每次发版前跑一遍，确认之前修过的问题没有回退。发现新问题用 [fresh-eyes-review](./fresh-eyes-review.md)。审查范围：全仓库状态检查（不是只看增量）。**编号规则**：归并项直接删除、编号不复用；演进历史 `git log -p` 可溯，本清单只维护当前状态。
+> **当前 87 维 · 编号 1-144 · 56 个编号已归并删除（#145 发版期四项已并入 #144 n–q）**。维度流连续不中断，分组导航：基线组 → 审查约束组 → 环境敏感组（前置 vitest/沙箱铁律）。
 
 ## 🔒 维护公约（防膨胀铁律）
 
 **追加新维度前，必须先 grep 同类**：有同类 → 扩展旧维度的子项，不新增编号；无同类 → 才新增编号 = 当前最大 +1。历史维度靠 `git log -p` 找回。
 
-**归并配额（硬门槛）**：新增 N 维 → 本版必须先真实归并 ≥N 维（被并维度检查内容实际移入目标维度，git diff 可查；注释压缩不算）；净增行数 > 警戒线余量 → 继续归并或移下一版——**只调警戒线不归并 = 不合格**。
-
+**归并配额（硬门槛）**：新增 N 维 → 本版必须先真实归并 ≥N 维（被并内容实际移入目标维度，git diff 可查；注释压缩不算）；净增行数 > 警戒线余量 → 继续归并或移下一版——**只调警戒线不归并 = 不合格**。
 **行数警戒线（当前值）**：`regression-checklist.md` ≤ 1950 行、`acceptance-test.sh` ≤ 4500 行（v1.5.0 修复批实测注记：checklist 1949→1960 被 Round 1 修复批净增 11 行顶破 S426 结构锁——「口径105 注释演进链 + F6 动态窗口 + hook git-path 解析」均为真实判据内容，按「先归并对销」处理，见下方自检段）。
 
-**维度脚本编写四铁律**（教训——7 个 FAIL 维度中 5 个是脚本自身缺陷而非仓库问题，driver 白跑一轮）：
-
-1. **显式收尾**：每个维度的检查命令必须以 `echo "✅ ..."`（通过）或 `echo "❌ ..."; exit 1`（失败）收尾——**禁用「期望：无输出」「期望：exit 1」这类依赖退出码语义的写法**。driver 判定只看 exitCode，`grep 无命中返回 1` / `for 循环尾条件判假返回 1` 都会被误判 FAIL（#59/#96 实证——输出全 ✅ 仍记 FAIL）。
-2. **禁写死 CLI 参数签名与数字**：检查命令引用 CLI（`node dist/cli.js <参数>`）或计数（N tools / N 规则）时，版本演进必漂——#56 的 `--golden-set` 参数被移除后老命令报参数缺失、#110 的 `48 tools` 在 52→60 后必然 FAIL。写**动态对账**（读 tool-registry 实数比文档）或**可达性验证**（`--help` 含子命令名），不锚定具体签名/数字。**已写死的历史锚处置**：工具数等静态计数锚（如各维度 `-eq N` 断言）在工具数变更的版本**发版中必漂**——bump/工具数变更 commit 后逐锚跑一遍受影响维度确认语义（fail 输出 ⚠️ 提示复核的锚 + 手动对 registry 实数），锚过时改锚、真漂移修文档，不等到 release-gate 轮才暴露（曾因锚停在旧实数被误判为「文档漂移」，实为锚未随实数更新）。
-3. **修改 checklist 的 commit 前最后跑一次 check-docs**：B 层预算会被修复净增顶破（实测一天内两次：8880→8885→8895）——commit 后才发现 CD 红等于多一个 fix commit。
-4. **跨进程边界只传退出码，不传变量**：`bash script.sh` 调子脚本时**子进程内设的变量不会回传**（只能取退出码或 stdout）；要读写变量须 `source script.sh`（同进程）。取证一律用 `cmd > log 2>&1; echo $?`——**`cmd | tail; echo $?` 取到的是 `tail` 的退出码**（管道陷阱，与上方「维度 8 · 子项 a」同族，但那条查的是脚本内部，本条查的是**取证方式**）。
-   实证（v1.4.8 复核）：验证「旧包名零残留」守卫时用 `bash /tmp/guard-c.sh` 后检查 `FAIL` → 恒 0（误判「守卫失效」）；改 `source` 同进程才拿到真实 `FAIL=1`。同一轮另一次：`bash xxx.sh | tail -3; echo $?` 把「注入被拦（真实 1）」读成 0。
+**维度脚本编写四铁律**（教训——7 个 FAIL 维度中 5 个是脚本自身缺陷，driver 白跑一轮）：
+1. **显式收尾**：每个维度的检查命令必须以 `echo "✅ ..."` 或 `echo "❌ ..."; exit 1` 收尾——**禁用「期望：无输出」「期望：exit 1」这类依赖退出码语义的写法**。driver 只看 exitCode，`grep 无命中返回 1` / `for 循环尾判假返回 1` 都被误判 FAIL（#59/#96 实证——输出全 ✅ 仍记 FAIL）。
+2. **禁写死 CLI 参数签名与数字**：检查命令引用 CLI 或计数（N tools / N 规则）时版本演进必漂（#56 `--golden-set` 被移除、#110 `48 tools` 在 52→60 后 FAIL）。写**动态对账**（读 tool-registry 实数比文档）或**可达性验证**（`--help` 含子命令名）。**已写死的历史锚**：工具数变更的版本发版中必漂——bump/工具数变更 commit 后逐锚跑受影响维度，锚过时改锚、真漂移修文档，不等 release-gate 轮才暴露。
+3. **修改 checklist 的 commit 前最后跑一次 check-docs**：B 层预算会被修复净增顶破（实测一天两次 8880→8885→8895）——commit 后才发现 CD 红等于多一个 fix commit。
+4. **跨进程边界只传退出码，不传变量**：`bash script.sh` 调子脚本时子进程内变量不回传（要读写须 `source` 同进程）。取证一律 `cmd > log 2>&1; echo $?`——**`cmd | tail; echo $?` 取到的是 `tail` 的退出码**（v1.4.8 实证两案：`bash 守卫.sh` 后查 `FAIL` 恒 0 误判守卫生效；管道取退出码把「注入被拦 1」读成 0）。
 
 **清单自身健康度自校验**（每次修改后跑）：
 ```bash
@@ -1921,7 +1917,7 @@ grep -q "planExecution" engine/orchestrator/src/exec/git-capability.ts && grep -
 ) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -qE "^[[:space:]]{0,2}❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true
 ```
 
-#### 144. v1.5.1 审查面一维收口——事件驱动/OTA/上行脱敏/意图通道/demo/退役扫尾 + B 类防复发（阶段四 A/B 合流 · 行为面已由 S433–S441 锁 · 对齐 #131/#133 先例 · ③ 段只查单向，本维把 S433–S441 引进 checklist 补双向闭环）
+#### 144. v1.5.1 审查面一维收口——事件驱动/OTA/上行脱敏/意图通道/demo/退役扫尾 + B 类防复发 + 发版期插件配置/分发不可变/上游钉（阶段四 A/B 合流 · 行为面已由 S433–S441 锁 · 对齐 #131/#133 先例 · ③ 段只查单向，本维把 S433–S441 引进 checklist 补双向闭环；发版期四项自 #145 归并——同版收口主题，归并对销净增行）
 ```bash
 (
 FAIL=0
@@ -1945,6 +1941,10 @@ grep -q "join(REPO_ROOT, 'playbook', 'fresh-eyes-review.md')" tools/gen/gen-fres
 grep -q "resolveDraftVersion" tools/gen/gen-abc-draft.mjs && grep -q "发版目标版本" tools/gen/gen-abc-draft.mjs && echo "✅ 版本串三源解析在位" || { echo "❌ 版本串解析回退（直取 SSOT 标错版）"; FAIL=1; }
 # m: SOP 阶段号权威源对齐（B27；B8 行数实测已由 literals.json devlog-demo-line-count 机器对账）
 head -1 docs/changelog/releasing/04-review-system.md | grep -q "S4" && echo "✅ SOP 阶段编号权威源对齐" || echo "🟡 SOP 04 锚点漂移人工复核（B27 教训）"
+_hit=$(grep -rn "ctx?.config?.plugins?.entries" engine/openclaw-plugins/*/src/index.ts 2>/dev/null | grep -vE '^[^:]+:[0-9]+:\s*(//|\*|/\*)' || true); [ -n "$_hit" ] && { echo "❌ 插件残留 ctx.config 代码读法"; FAIL=1; } || echo "✅ 零 ctx.config 代码读法" # n: 配置唯一读点 api.pluginConfig（ctx 白名单无 config；注释行引用字面量合法）
+grep -q "pluginCfg?.projectRoot" engine/openclaw-plugins/sofagent-rollback/src/index.ts && grep -q "pluginCfg?.projectRoot" engine/openclaw-plugins/sofagent-audit/src/index.ts && grep -q "pluginCfg" engine/openclaw-plugins/sofagent-inject/src/index.ts && grep -q "api?.pluginConfig?.reflectHint" engine/openclaw-plugins/sofagent-evolve/src/index.ts && echo "✅ pluginConfig 读点在位" || { echo "❌ pluginConfig 读点缺失"; FAIL=1; } # o: 四款读点
+grep -rq -- "--version 1\." engine/openclaw-plugins/*/README.md && { echo "❌ README 发布命令写死版本号"; FAIL=1; } || echo "✅ 发布命令零硬编码版本" # p: ClawHub 版本不可变
+grep -q '"@deepseek-ai/dsh-web-app": "0.1.5-rc.2"' engine/orchestrator/package.json && echo "✅ dsh-web-app 钉在位" || { echo "❌ 上游钉缺失"; FAIL=1; } # q: 缺失则全新安装 ETARGET 回潮
 [ "${FAIL:-0}" = "1" ] && { echo "维度144:FAIL"; exit 1; }; echo "维度144:PASS"
 ) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -qE "^[[:space:]]{0,2}❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true
 ```

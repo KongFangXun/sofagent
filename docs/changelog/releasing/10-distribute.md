@@ -124,6 +124,8 @@ done
 > **OpenClaw plugin 分发铁律**：
 > - 发布源 = `engine/openclaw-plugins/sofagent-*` 包目录（与 DSH plugin 家族分开，别混；前缀是 sofagent-，不是 openclaw-plugin-）
 > - 发布通道 = **ClawHub plugins**（`clawhub package publish --family code-plugin`）——注意 ClawHub 的 `skill publish` 与 `package publish` 是两条独立命令
+> - 🔴 **版本不可变（v1.5.1 实锤）**：ClawHub package 通道**拒绝覆盖已发布版本**（`Version X.Y.Z already exists. Increment the version number and try again.`）——与 skill 通道「同版本可 `Update submitted` 更新」**行为不同**。含义：发版后发现的插件缺陷修复**无法在原版本号上重发**，只能随下一版号发布；发版前插件侧的修复必须全部赶在 publish 之前落定，publish 之后发现的缺陷记入下一版 BugFix 批
+> - 发布遇 Convex 512MB OOM（服务端内存限，CLI 报 `Node.js action execution ran out of memory`）属平台瞬时态：等待提示的 reset 时长（约 1 分钟）后重试即可
 > - **必须先 push 再发布**（source-linked 从 GitHub 拉源码；未 push 时真实发布失败，dry-run 只能验证格式）
 > - 版本号 = 与 sofagent 主线版本对齐（同 DSH 家族机制）
 > - 每版发版都要推，与 SKILL / DSH plugin 分发同等强制

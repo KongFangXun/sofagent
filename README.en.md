@@ -142,7 +142,7 @@ One command selects your mounting tier: `bash install.sh --platform <platform-na
 | **Comprehension-debt response** | Auto-PR explanation blocks citing decision-log causal chains ("why this was done") + daemon weekly digest with INSPECTORS registration |
 | **Device OTA remote upgrade** | Upgrade commands over the event bus + device-daemon pull with signature verification + gray-release batching + offline-hold catch-up |
 
-Also in this release: AI exception bus (retry / human / rollback routing) · task dispatch phase 2 (push-direct + offline heartbeat piggyback + receipts into the audit chain) · production pipeline wiring (three-layer sensitivity detection + canary routing) · dual-channel audit input (intent stream redacted at rest) · a five-minute `sofagent demo` drama arc · legacy cleanup (`--legacy` callers zeroed). **Tests 4903 → 5083 · acceptance 357 → 367 · 87 regression dimensions** (13-package workspace count, release-time figure). Full details in the [devlog](./docs/changelog/v1.5/v1.5.1.md) · earlier versions in [CHANGELOG](./CHANGELOG.md).
+Also in this release: AI exception bus (retry / human / rollback routing) · task dispatch phase 2 (push-direct + offline heartbeat piggyback + receipts into the audit chain) · production pipeline wiring (three-layer sensitivity detection + canary routing) · dual-channel audit input (intent stream redacted at rest) · a five-minute `sofagent demo` drama arc · legacy cleanup (`--legacy` callers zeroed). **Tests 4903 → 5083 · acceptance 357 → 367 · 87 regression dimensions** (13-package workspace count; post-release items merged into existing dimensions). Full details in the [devlog](./docs/changelog/v1.5/v1.5.1.md) · earlier versions in [CHANGELOG](./CHANGELOG.md).
 
 ## The Two FDE Harness Phases
 
