@@ -1901,6 +1901,8 @@ echo "=== 26. 工具数口径：全仓文档声称 vs registry SSOT（B8 漏改�
 #   但此前无守卫）。仅收「含当前全局口径」者：engine/mcp/README.md 的唯一工具数行是**分面**计数
 #   （audit 专职面 9 tools），本项判据要求出现**全局**口径，收它即假红，故不在白名单（分面计数
 #   另需角色轴断言，见当日排查报告）。
+# 🔴 已知盲区（与 check-docs §15 同步登记）：全仓工具数正则只覆盖「数字在词前」形态，不覆盖
+#   TOOLS=N / 工具数=N（数字在词后）；受跟踪面活文档该形态当前零命中，出现时须同批扩正则。
 if [[ "${MCP_REG:-0}" =~ ^[0-9]+$ ]] && [[ "${MCP_REG}" -gt 0 ]]; then
   B8_DOC_MISS=0
   for _td in SKILL/SKILL.md docs/HANDBOOK.md docs/ARCHITECTURE.md AGENTS.md README.md README.en.md SKILL/AGENTS.md docs/API.md docs/WIKI.md GEMINI.md CHANGELOG.md engine/umbrella/README.md; do

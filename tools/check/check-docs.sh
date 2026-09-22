@@ -861,7 +861,11 @@ function walk(dir) {
       // 工具数声称词形（v1.5.2 扩）：N tools / N 个 tools / N 个 MCP tool / N MCP tools / N 个 MCP 工具。
       // 边界约束 (?<![A-Za-z0-9_.-]) … (?!包) 是**修正 token 边界而非收窄词形**：无边界时会把
       //   版本号/编号/参数粘连成假声称（v1.4.0 工具 / v1.4.8 tools / B8 工具 / L1 工具 / 3.3 工具 /
-      //   head -30 tools/ / ASI02 工具 / 1 个工具包），假报 29 → 13，而目标词形一个不少。
+      //   head -30 tools/ / ASI02 工具 / 1 个工具包），≠105 的假报 24 → 13（24 系把 docs/evidence 并入
+      //   EXCLUDE 后的实测值；旧注「29」为并入前读数），而目标词形一个不少。
+      // 🔴 已知盲区（受跟踪）：本正则只认「数字在词前」形态，**不覆盖 TOOLS=N / 工具数=N（数字在词后）**。
+      //   实测受跟踪面活文档该形态 ≠105 零命中（唯一 planning 命中 v1.5.5.md 已按「去数字」修掉）；
+      //   将来若出现须同批扩正则，勿静默漏。
       for (const _mm of line.matchAll(/(?<![A-Za-z0-9_.-])([0-9]+)\s*(?:个\s*)?(?:MCP\s*)?(?:tools?|工具)(?!包)/g)) {
         const claim = _mm[0];
         const _idx = _mm.index;
