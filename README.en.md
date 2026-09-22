@@ -84,7 +84,7 @@
 
 > 🔗 **Why they must be one thing**: the deliverables are a living state shared by both stages — written on entry, read during execution, written back during evolution (trial branches promoted to baseline, reflections distilled back). Without FDE, the constraint layer has no criteria to enforce; without the constraint layer, FDE judgment evaporates the moment the engineer leaves. That is where the name "FDE Harness" comes from — not a bundle of an FDE feature and a Harness feature, but two stages of one job.
 >
-> **From FDE to FDEing**: the combined effect of the two stages is turning Forward Deployed **Engineer** (a job title) into Forward Deployed **Engineering** (a capability) — the person moves on, the capability stays with the deliverables. FDEing is pronounced /ef-di-i-ing/, mirroring "engineering".
+> **From FDE to FDEing — everything can be FDEING**: the combined effect of the two stages is turning Forward Deployed **Engineer** (a job title) into Forward Deployed **Engineering** (a capability) — the person moves on, the capability stays with the deliverables. FDEing is pronounced /ef-di-i-ing/, mirroring "engineering". **FDE is the noun; FDEING is the verb** — any business object, process, or node can be FDEING'd through "map → judge → deliver → sustain"; not limited to software: hardware nodes and robot motion are workflows too — the difference lies in the actuator, not the governance. Turning the FDE job title into a reusable engineering verb is a concept first proposed by sofagent (see [PHILOSOPHY](./docs/PHILOSOPHY.md)).
 
 <p align="center"><img src="docs/assets/arch-layers-en.svg" alt="sofagent three-layer positioning: model layer → FDE Harness layer → Agent layer" width="85%" /></p>
 

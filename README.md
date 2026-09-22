@@ -82,7 +82,7 @@
 
 > 🔗 **为什么必须一体**：交付物是两个阶段共享的活状态——进场时写入、离场后执行时读、进化时写回（试验分支晋升基线、反思蒸馏回流）。没有 FDE，约束层没有判据可执行；没有约束层，FDE 的判断随人离场蒸发。这正是「FDE Harness」名字的由来——不是 FDE 功能 + Harness 功能的拼盘，是同一件事的两个阶段。
 >
-> **从 FDE 到 FDEing**：两个阶段的合成效果，是把 Forward Deployed **Engineer**（一个岗位）变成 Forward Deployed **Engineering**（一种能力）——岗位随人走，能力随交付物留。FDEing 读作 /ef-di-i-ing/，与 engineering 同构。
+> **从 FDE 到 FDEing——万物皆可 FDEING**：两个阶段的合成效果，是把 Forward Deployed **Engineer**（一个岗位）变成 Forward Deployed **Engineering**（一种能力）——岗位随人走，能力随交付物留。FDEing 读作 /ef-di-i-ing/，与 engineering 同构。**FDE 是名词，FDEING 是动词**——任何业务对象、流程、节点，都可以被 FDEING 一遍「梳理 → 判定 → 交付 → 养护」；不限于软件：硬件节点、机器人运动过程同样是一条条 workflow，差别在执行器、不在治理形态。把「FDE 岗位」动词化为一种可复用的工程能力——这个概念形态由 sofagent 首先提出（详见 [PHILOSOPHY · 从 FDE 到 FDEing](./docs/PHILOSOPHY.md)）。
 
 <p align="center"><img src="docs/assets/arch-layers.svg" alt="sofagent 三层定位：模型层 → FDE Harness 层 → Agent 层" width="85%" /></p>
 
