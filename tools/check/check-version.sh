@@ -1896,9 +1896,14 @@ echo "=== 26. 工具数口径：全仓文档声称 vs registry SSOT（B8 漏改�
 # （registry 实数）必须至少出现一次；历史双态表述（66/67 并列）不豁免「缺当前数」。
 # 白名单语义：这些文档实际写着工具数叙事，口径必须跟住；叙事删除时应有意识地移白名单，不静默漏。
 # v1.4.6（2026-09-07 拍板）：白名单由 6 处扩至 11 处活文档（补 SKILL/AGENTS.md、docs/API.md、docs/WIKI.md、GEMINI.md、CHANGELOG.md）——不再手数处数，以本白名单为唯一同步面。
+# v1.5.2（工具数覆盖洞 3 批）：补 engine/umbrella/README.md（12 处）——包级 README 原在 §15 的
+#   `^engine/` 排除面外、又不在本白名单内，两道门禁都不看它（实测其工具数叙事与 registry 一致，
+#   但此前无守卫）。仅收「含当前全局口径」者：engine/mcp/README.md 的唯一工具数行是**分面**计数
+#   （audit 专职面 9 tools），本项判据要求出现**全局**口径，收它即假红，故不在白名单（分面计数
+#   另需角色轴断言，见当日排查报告）。
 if [[ "${MCP_REG:-0}" =~ ^[0-9]+$ ]] && [[ "${MCP_REG}" -gt 0 ]]; then
   B8_DOC_MISS=0
-  for _td in SKILL/SKILL.md docs/HANDBOOK.md docs/ARCHITECTURE.md AGENTS.md README.md README.en.md SKILL/AGENTS.md docs/API.md docs/WIKI.md GEMINI.md CHANGELOG.md; do
+  for _td in SKILL/SKILL.md docs/HANDBOOK.md docs/ARCHITECTURE.md AGENTS.md README.md README.en.md SKILL/AGENTS.md docs/API.md docs/WIKI.md GEMINI.md CHANGELOG.md engine/umbrella/README.md; do
     [[ -f "${PROJECT_ROOT}/${_td}" ]] || continue
     # 口径：该文档任一含 tool 的行出现当前实数即算口径已跟（双态表述「66→67」天然含 67）
     # 🔴 管道形态防 SIGPIPE 假红：`grep -q` 命中即早退 → 首 grep 收 SIGPIPE(141) → 本脚本
