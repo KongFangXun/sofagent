@@ -184,4 +184,36 @@ describe('sofagent_evolve 工具：写入回执如实回报（v1.5.2 章八-2 �
       rmSync(tmpRoot, { recursive: true, force: true });
     }
   });
+
+  // 防复发（清洗顺序口径分歧）：lesson 清洗必须与 @sofagent/mcp 的 write_think 逐字一致
+  // = 先截断到 10000 → 折行 → trim。若被改成「先折行后截断」，本条钉子的精确长度断言即红。
+  it('超长且含换行的 summary → 落盘 lesson 无换行且按「先截断后折行」口径产出（顺序钉）', async () => {
+    const tmpRoot = mkdtempSync(join(tmpdir(), 'sofagent-evolve-'));
+    const dataDir = join(tmpRoot, 'data');
+    const thinkPath = join(dataDir, 'think.md');
+    const prevData = process.env.SOFAGENT_DATA;
+    process.env.SOFAGENT_DATA = dataDir;
+    try {
+      // 10057 字符，中途夹一段连续换行（\n\n 折行为 1 个空格 → 折行会缩短长度）：
+      //   先截断后折行 → 取前 10000 原始字符再折行 = 9999 字符
+      //   先折行后截断 → 折行后 10056 字符再截到 10000 = 10000 字符
+      const summary = 'A'.repeat(9995) + '\n\n' + 'B'.repeat(60);
+      expect(summary.length).toBeGreaterThan(10000);
+
+      const out = await executeOf()('id', { task: '超长任务', summary });
+      expect(out.content[0]?.text ?? '').toContain('已写入');
+
+      const content = readFileSync(thinkPath, 'utf-8');
+      const m = content.match(/- #教训: ([\s\S]*?)\n\n/);
+      expect(m).not.toBeNull();
+      const lesson = m?.[1] ?? '';
+      expect(lesson).not.toContain('\n'); // 折行生效——不得把换行写进条目
+      expect(lesson.length).toBeLessThanOrEqual(10000);
+      expect(lesson.length).toBe(9999); // 精确钉住「先截断 → 后折行 → trim」顺序
+    } finally {
+      if (prevData === undefined) delete process.env.SOFAGENT_DATA;
+      else process.env.SOFAGENT_DATA = prevData;
+      rmSync(tmpRoot, { recursive: true, force: true });
+    }
+  });
 });

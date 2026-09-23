@@ -99,10 +99,14 @@ const MAX_MANUAL_LESSON_LENGTH = 10000;
 /**
  * 口述沉淀：把用户口述的 task + summary 写成一条 think.md 反思条目，并返回写入回执。
  *
- * 格式与 @sofagent/mcp 的 write_think 先例保持一致（该先例是既有的手动反思写入点）：
+ * 条目文本与清洗口径与 @sofagent/mcp 的 write_think 先例对齐（该先例是既有的手动反思写入点）：
  *   `\n## ${timestamp} 任务: ${task}\n\n- #教训: ${lesson}\n\n`
- * 清洗口径亦照抄：换行折成空格 + trim（防止 summary 注入伪造的 `## ` 条目标题），
- * 长度上限 10000 字符；task 缺省 `(手动记录)`。
+ * lesson 清洗顺序与 write_think **逐字一致**：先截断到 10000 → 把 `[\r\n]+` 折成空格 → trim。
+ * 🔴 顺序必须一致——「先折行后截断」与「先截断后折行」在「超长且含换行」输入下会产出不同的
+ * lesson，那种情况下「与 write_think 同口径」的说法即不成立（本仓反模式：同一契约两处同源、
+ * 改一处漏一处）。折行本身是为了防止 summary 注入伪造的 `## ` 条目标题。
+ * task 额外做 fold + trim（write_think 不清理 task；本入口加这一步以防 task 注入伪造的
+ * `## ` 条目标题），缺省 `(手动记录)`。
  *
  * 与 write_think 的唯一语义差异：summary 清洗后为空时**不写盘**并如实返回
  * `written:false, reason:'empty-lesson'`（write_think 侧由 MCP 入参校验拦截空 lesson）。
@@ -116,9 +120,13 @@ export function appendManualThinkEntry(
   summary: string,
   opts?: ThinkEntryOptions
 ): ManualThinkReceipt {
-  // 清洗 summary：折行 + trim（先折行再截断，避免截断点落在换行中间）
-  const lesson = String(summary ?? '').replace(/[\r\n]+/g, ' ').trim().slice(0, MAX_MANUAL_LESSON_LENGTH);
-  // task 同口径清洗，缺省 (手动记录)
+  // 清洗 lesson：截断 → 折行 → trim（顺序与 write_think 逐字一致，勿调换）
+  let lesson = String(summary ?? '');
+  if (lesson.length > MAX_MANUAL_LESSON_LENGTH) {
+    lesson = lesson.slice(0, MAX_MANUAL_LESSON_LENGTH);
+  }
+  lesson = lesson.replace(/[\r\n]+/g, ' ').trim();
+  // task 同口径清洗（fold + trim），缺省 (手动记录)
   const taskName = String(task ?? '').replace(/[\r\n]+/g, ' ').trim() || '(手动记录)';
 
   const now = opts?.now ?? new Date();
