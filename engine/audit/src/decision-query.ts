@@ -14,6 +14,7 @@
 import { existsSync, readFileSync } from 'fs';
 import { getDecisionLogPath } from '@sofagent/core';
 import { loadHistory, type AuditHistoryEntry } from './audit-history';
+import { collectInvalidations, filterValid } from './invalidation';
 import type { DecisionCategory, DecisionKind, DecisionLogEntry, LoopPhase } from './decision-schema';
 
 /** 从决策日志加载全部条目（按写入顺序，时间升序）。
@@ -403,6 +404,11 @@ export interface SimilarDecisionHit {
  * 打分：tags 交集每命中 +2；triggeredRule 相同 +3；kind 相同 +1。
  * 只返回 score > 0 的条目（零分 = 无结构化相似性），降序。
  *
+ * v1.5.2 章四（下游消费语义）：**带失效标记的结论不进入先例列表**——
+ * 本接口是人审界面（HITL）展示「历史类似决策 + 结果」的**免检依据**来源，
+ * 失效结论被引用即等于「过期结论当新证据用」。原文仍在日志中可查
+ * （失效是标记不是抹除），只是不再作为判定输入。
+ *
  * @param query 查询条件（tags / triggeredRule / kind 至少一项）
  * @param opts 查询选项（limit 缺省 10——先例列表够用）
  * @param dataDir 可选的数据目录覆盖（用于测试）
@@ -415,8 +421,9 @@ export function findSimilarDecisions(
   const limit = opts.limit ?? 10;
   const queryTags = new Set(query.tags ?? []);
   const hits: SimilarDecisionHit[] = [];
+  const valid = filterValid(loadDecisionLog(dataDir), collectInvalidations(dataDir));
 
-  for (const entry of loadDecisionLog(dataDir)) {
+  for (const entry of valid) {
     let score = 0;
     const matchedOn: string[] = [];
     // tags 交集

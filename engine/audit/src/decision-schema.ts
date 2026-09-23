@@ -11,7 +11,7 @@
 
 import { REDACTION_PATTERNS } from '@sofagent/core';
 
-/** 决策种类（12 类）——覆盖 Agent 生命周期内所有可问责决策
+/** 决策种类（15 类）——覆盖 Agent 生命周期内所有可问责决策
  *
  * v1.3.3 新增 EVOLUTION（进化动作）+ TEAM（团队协作动作）：
  *   - EVOLUTION：优化器修改经验层（think.md / knowledge）、Benchmark 评估 accept/reject、
@@ -23,6 +23,14 @@ import { REDACTION_PATTERNS } from '@sofagent/core';
  *     evidence 字段记能力名 + 调用结果 + 评分 + 扫描判定。
  *     与 ORCHESTRATION（编排委派）/ EVOLUTION（经验层进化）语义区分——
  *     公地是能力流转层，既非编排也非进化。
+ *
+ * v1.5.2 新增 INVALIDATION（结论失效标记）：
+ *   - INVALIDATION：宣告「某条既有审计结论不再可作为依据」的**只追加标记条目**。
+ *     decision-log 是 append-only HMAC 链，已签名条目一律不得改写——故失效
+ *     不是回头涂改原条目，而是追加一条 kind=INVALIDATION 的新条目：
+ *     `causedBy` 指向被失效结论的 ts、`causalType='influenced'`、
+ *     `invalidationReason` 记失效原因（见 InvalidationReason）。
+ *     原文留痕（HMAC 链完整）+ 失效可见（新条目可查）= 「失效是标记不是抹除」。
  */
 export type DecisionKind =
   | 'SPEC_CHANGE'       // 改变需求/规格（范围变更）
@@ -38,7 +46,8 @@ export type DecisionKind =
   | 'TEAM'              // 团队协作动作（冲突消解 / 意图广播 / 反馈放大 / 自动入队）
   | 'COMMONS'            // 公地能力动作（能力发布 / 调用 / 评分 / 退役 / SkillScan）
   | 'COST'              // 成本告警（v1.4.0 交付三 · budget 超支 WARN，queryByKind('COST') 可追溯）
-  | 'COVERAGE';          // 对账覆盖动作（v1.5.0 章八 · trace 三源对账结果入 decision-log——说的和干的差在哪）
+  | 'COVERAGE'          // 对账覆盖动作（v1.5.0 章八 · trace 三源对账结果入 decision-log——说的和干的差在哪）
+  | 'INVALIDATION';      // 结论失效标记（v1.5.2 章四 · append-only 追加的「失效是标记不是抹除」条目）
 
 /**
  * 判断时刻分类（v1.3.6 交付⑮ · decisions.jsonl 完整版 · OpenFDE 启发）。
@@ -116,6 +125,37 @@ export interface RouteReason {
  */
 export type CausalType = 'caused' | 'influenced' | 'precedent_for';
 
+/**
+ * 审计结论失效原因词汇表（v1.5.2 章四 · Codex Guardian 启发 · 语义取子集）。
+ *
+ * 背景：审计结论（decision-log 条目）一经产生即被视为永久有效，下游消费方
+ * 无法判断「这条结论还能不能信」。本词汇表给结论定义一套**失效条件**——
+ * 每个取值对应本仓一个可观测事件，事件发生时由 invalidation.ts 追加
+ * kind=INVALIDATION 的标记条目（原文不改写、链不破坏）。
+ *
+ * 对齐 Guardian `GuardianReviewReason` 六原因（源码核验：codex-rs
+ * `core/src/guardian`）取**五项子集**，逐项映射如下：
+ *
+ * | 本仓取值                | Guardian reason       | 本仓真实触发点 |
+ * |------------------------|-----------------------|----------------|
+ * | authorization-changed  | AuthorizationChanged  | config.yml 关闭规则（`index.ts` ALL_RULE_KEYS 检出段）／`permission.local.json` 覆盖全局规则（`permission/loader.ts`）／`policy.yml` plugin_sources 白名单变更 |
+ * | incompatible-compaction| IncompatibleCompaction| L2 工具输出总结（`FORGE/src/tool-output-budget.mjs`）／加载链压缩（`engine/hooks/sofagent-load-chain`）／`compactIfNeeded`（`engine/inject`）——压缩后既有结论的上下文前提不再可核 |
+ * | elevated-risk          | ElevatedRisk          | 同一对象（文件/artifactRef）后续轮次被更严规则命中（FAIL）——先前宽松结论失效 |
+ * | stale-score            | StaleScore            | 带分数的结论（Benchmark/BoundaryScore 等）超出时效窗口——分数过期不等于仍成立 |
+ * | fresh-required         | FreshRequired         | 消费方显式要求新鲜结论（发版闸门/预推送校验等）——旧结论不得当依据 |
+ *
+ * 未取 Guardian 的 `ScoringFailure`（评分失败）——那是「本次评分不成立」的
+ * 过程故障，不是「既有结论失效」的语义，本仓由降级梯队（degradation.ts）覆盖。
+ *
+ * 可选字段语义：**缺省 = 有效**。老日志无此字段照常解析/校验（向后兼容）。
+ */
+export type InvalidationReason =
+  | 'authorization-changed'    // 授权或白名单配置变更（Guardian: AuthorizationChanged）
+  | 'incompatible-compaction'  // 压缩/摘要事件使既有结论前提失效（Guardian: IncompatibleCompaction）
+  | 'elevated-risk'            // 同一对象后续被更严规则命中（风险升级 · Guardian: ElevatedRisk）
+  | 'stale-score'              // 分数过期（Guardian: StaleScore）
+  | 'fresh-required';          // 需新鲜结论（Guardian: FreshRequired）
+
 /** 决策日志完整条目 schema */
 export interface DecisionLogEntry {
   /** ISO 8601 UTC 时间戳 */
@@ -143,6 +183,14 @@ export interface DecisionLogEntry {
   causedBy?: string[];
   /** 因果边类型（causedBy 存在时通常有值） */
   causalType?: CausalType;
+  /**
+   * 审计结论失效原因（v1.5.2 章四）——**仅出现在 kind=INVALIDATION 的标记条目上**。
+   *
+   * 语义：本条目宣告「`causedBy` 指向的那些既有结论自此刻起失效」。
+   * 可选字段——**缺省 = 有效**；老日志无此字段照常解析与验链（HMAC 只依赖
+   * 链字段，新增业务字段天然向后兼容）。失效是标记不是抹除：原条目字节不变。
+   */
+  invalidationReason?: InvalidationReason;
   /** 决策发生时刻 */
   moment: LoopPhase;
   /** 决策理由（已脱敏） */

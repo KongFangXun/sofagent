@@ -14,10 +14,10 @@
 
 import { getDecisionLogPath, getEnvFingerprint, getHmacKey } from '@sofagent/core';
 import { appendChained, type ChainFields } from './chain-kernel';
-import { sanitizeWhy, type DecisionKind, type DecisionCategory, type CausalType, type DecisionLogEntry, type DecisionWhy, type LoopPhase } from './decision-schema';
+import { sanitizeWhy, type DecisionKind, type DecisionCategory, type CausalType, type DecisionLogEntry, type DecisionWhy, type InvalidationReason, type LoopPhase } from './decision-schema';
 
 // Re-export schema 类型——public-api 从 decision-log 统一导出（与 appendHistory 模式一致）
-export type { DecisionLogEntry, DecisionWhy, RouteReason, CausalType } from './decision-schema';
+export type { DecisionLogEntry, DecisionWhy, RouteReason, CausalType, InvalidationReason } from './decision-schema';
 
 /**
  * 决策写入入参——schema 未含的运行时输入定义在此并导出。
@@ -42,6 +42,12 @@ export interface EmitDecisionInput {
    */
   causedBy?: string[];
   causalType?: CausalType;
+  /**
+   * 审计结论失效原因（v1.5.2 章四 · 可选）。
+   * 仅 kind=INVALIDATION 的标记条目应传——宣告 causedBy 指向的结论失效。
+   * 传了则必须在 InvalidationReason 枚举内（不传不校验，向后兼容）。
+   */
+  invalidationReason?: InvalidationReason;
   specRef?: string;
   artifactRef?: string;
   /** 双时态快照：决策引用本体实体时记录当时 validFrom/validTo（v1.5.0 第二章） */
@@ -83,6 +89,10 @@ const VALID_KINDS: readonly string[] = [
   'COST',
   // COVERAGE：v1.5.0 章八——trace 三源对账结果（consistencyRate + 差异清单）
   'COVERAGE',
+  // INVALIDATION：v1.5.2 章四——审计结论失效标记（append-only 追加：
+  // causedBy 指向被失效结论 ts + invalidationReason 记原因）。失效是标记
+  // 不是抹除——原条目字节不变、HMAC 链完整。
+  'INVALIDATION',
 ];
 
 /** 合法 LoopPhase 集合 */
@@ -97,6 +107,11 @@ const VALID_CATEGORIES: readonly string[] = [
 
 /** 合法 CausalType 集合（决策因果边三分类） */
 const VALID_CAUSAL_TYPES: readonly string[] = ['caused', 'influenced', 'precedent_for'];
+
+/** 合法 InvalidationReason 集合（v1.5.2 章四 · 失效原因五分类） */
+const VALID_INVALIDATION_REASONS: readonly string[] = [
+  'authorization-changed', 'incompatible-compaction', 'elevated-risk', 'stale-score', 'fresh-required',
+];
 
 /**
  * 归一化 why 为 DecisionWhy——纯 string → { text }
@@ -171,6 +186,10 @@ export function emitDecision(input: EmitDecisionInput, dataDir?: string): Decisi
   if (input.causalType !== undefined && !VALID_CAUSAL_TYPES.includes(input.causalType)) {
     throw new DecisionSchemaError(`非法 causalType "${String(input.causalType)}"——必须在 CausalType 枚举内（caused/influenced/precedent_for）`);
   }
+  // v1.5.2 章四：invalidationReason 可选——传了则必须在五分类内（不传不校验，向后兼容）
+  if (input.invalidationReason !== undefined && !VALID_INVALIDATION_REASONS.includes(input.invalidationReason)) {
+    throw new DecisionSchemaError(`非法 invalidationReason "${String(input.invalidationReason)}"——必须在 InvalidationReason 枚举内（authorization-changed/incompatible-compaction/elevated-risk/stale-score/fresh-required）`);
+  }
 
   const filePath = getDecisionLogPath(dataDir);
   const fingerprint = getEnvFingerprint(dataDir);
@@ -187,6 +206,8 @@ export function emitDecision(input: EmitDecisionInput, dataDir?: string): Decisi
     // 因果边可选——传了才落盘并纳入 HMAC 签名（stableStringify 全字段）
     ...(input.causedBy !== undefined ? { causedBy: input.causedBy } : {}),
     ...(input.causalType !== undefined ? { causalType: input.causalType } : {}),
+    // v1.5.2 章四：失效原因——传了才落盘（老语义不传 = 无此字段 = 结论有效）
+    ...(input.invalidationReason !== undefined ? { invalidationReason: input.invalidationReason } : {}),
     moment: input.moment,
     why: sanitizeWhy(normalizeWhy(input.why)),
     ...(input.specRef ? { specRef: input.specRef } : {}),

@@ -1245,6 +1245,24 @@ async function main(): Promise<void> {
       } catch {
         // 记录失败不影响核心审计流程
       }
+
+      // v1.5.2 章四：授权/白名单配置变更 → 既有结论失效标记（append-only）。
+      //   规则被关闭 = 授权面变更——此前以被关规则为依据的审计结论不再可信，
+      //   追加 kind=INVALIDATION 条目宣告其失效（原文不改写、HMAC 链不破坏）。
+      //   fail-safe：标记失败绝不影响审计主流程；无可失效目标时不写（不产空标记）。
+      try {
+        const { hooks } = await import('./invalidation');
+        hooks.onAuthorizationChanged({
+          agentId: 'sofagent-audit',
+          sessionId: args.diffRange,
+          changedRules: disabledEntries.map(([key]) => key),
+          trigger: `config.yml 关闭审计规则：${disabledList}`,
+          evidence: disabledEntries.map(([key, val]) => `${key}=${String(val)}`),
+        });
+      } catch {
+        // 失效标记失败——吞错（配置变更留痕不能反过来压垮审计），但显式告警不静默
+        process.stderr.write('[sofagent-audit] 警告: 结论失效标记写入失败，跳过（不影响审计结果）\n');
+      }
     }
 
     if (disabledCount > 3) {

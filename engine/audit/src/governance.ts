@@ -26,6 +26,7 @@
 import { existsSync, readFileSync, readdirSync } from 'fs';
 import { join } from 'path';
 import { readHistoryEntries } from './stats';
+import { collectInvalidations, filterValid } from './invalidation';
 import type { AuditHistoryEntry } from './audit-history';
 import type { DecisionLogEntry } from './decision-log';
 
@@ -412,7 +413,11 @@ export function computeGovernanceKpis(options: GovernanceOptions = {}): Governan
 
   // ── ⑤ 任务重复执行维度（decision-log TOOL_GATE 分布） ──
   // 指纹 = (agentId, why.tags join)——同 agent 反复做同类动作 = 可比较轨迹
-  const decisions = readDecisionEntries(dataDir, 5000); // 近 5000 条防超大日志
+  // v1.5.2 章四：带失效标记的结论不作 KPI 统计输入（「过期结论不当新证据用」）
+  //   ——失效条目仍在日志里（原文留痕），但不再计入重复执行率 / trace 对账 /
+  //   决策高亮的读数。
+  const invalidated = collectInvalidations(dataDir);
+  const decisions = filterValid(readDecisionEntries(dataDir, 5000), invalidated); // 近 5000 条防超大日志
   const gateDecisions = decisions.filter((d) => d.kind === 'TOOL_GATE');
   const fp = new Map<string, { count: number; agentId: string }>();
   for (const d of gateDecisions) {
