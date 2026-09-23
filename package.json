@@ -39,6 +39,7 @@
     "engine/rules",
     "engine/umbrella",
     "engine/hooks/sofagent-load-chain",
+    "engine/dsh-plugins/plugin-kit",
     "engine/dsh-plugins/cordis-plugin-sofagent-audit",
     "engine/dsh-plugins/cordis-plugin-sofagent-rollback",
     "engine/dsh-plugins/cordis-plugin-sofagent-inject",
@@ -51,7 +52,7 @@
     "engine/openclaw-plugins/sofagent-inject",
     "engine/openclaw-plugins/sofagent-rollback"
   ],
-  "//build-scope": "根 build 覆盖边界（v1.5.1 K4 显式声明，非缺陷）：scripts.build 按拓扑序显式枚举 22 个子命令 = 21 个 workspace 包 + 非 workspace 的 engine/dsh-plugins/plugin-kit。26 项 workspaces 中未被根 build 覆盖的 5 项为：engine/umbrella（无 build 脚本——纯转发壳，bin/sofagent.js 是源码级入口，合理）+ 4 个 engine/openclaw-plugins/sofagent-{audit,evolve,inject,rollback}。⚠️ 后 4 个**各自带 build 脚本但刻意不随根 build 构建**——它们走 OpenClaw 独立分发通道（ClawHub），产物面与根 monorepo 的 npm 发布面相互独立；install.sh 亦不消费其 dist（故当前无故障，属显式声明的潜伏断链收口）。如需改为纳入根 build、或在文档中另作声明，须先确认分发形态。",
+  "//build-scope": "根 build 覆盖边界（v1.5.1 K4 显式声明，非缺陷）：scripts.build 按拓扑序显式枚举 22 个子命令 = 22 个 workspace 包（其中 engine/dsh-plugins/plugin-kit 以 `npm --prefix` 形态调用而非 --workspace，故仍先于全部 DSH 插件构建——构建拓扑序由本字段手工钉住）。27 项 workspaces 中未被根 build 覆盖的 5 项为：engine/umbrella（无 build 脚本——纯转发壳，bin/sofagent.js 是源码级入口，合理）+ 4 个 engine/openclaw-plugins/sofagent-{audit,evolve,inject,rollback}。⚠️ 后 4 个**各自带 build 脚本但刻意不随根 build 构建**——它们走 OpenClaw 独立分发通道（ClawHub），产物面与根 monorepo 的 npm 发布面相互独立；install.sh 亦不消费其 dist（故当前无故障，属显式声明的潜伏断链收口）。如需改为纳入根 build、或在文档中另作声明，须先确认分发形态。",
   "scripts": {
     "test": "npm test --workspaces --if-present && bash tools/dashboard/sofagent-dashboard.test.sh",
     "test:count": "bash tools/check/check-test-count.sh",

@@ -4,8 +4,7 @@
   "engines": {
     "node": ">=18"
   },
-  "description": "DSH 适配层基座——把 cordis-plugin-sofagent-* 的 98 行样板收敛成 createSofagentPlugin() 一次调用（私有包：不发布、不登记为 workspace 成员，插件用相对路径 import）",
-  "private": true,
+  "description": "DSH 适配层基座——把 cordis-plugin-sofagent-* 的 98 行样板收敛成 createSofagentPlugin() 一次调用（正常 npm 发布物：六款原子插件以包名 @sofagent/dsh-plugin-kit 依赖它）",
   "license": "MIT",
   "author": "KongFangXun",
   "main": "dist/index.js",
@@ -13,8 +12,14 @@
   "scripts": {
     "build": "tsc"
   },
-  "//notWorkspace": "刻意不登记进根 package.json 的 workspaces：本包 private:true，不发布 npm，只作为 DSH 插件族的构建期相对路径依赖（插件以 '../../plugin-kit/dist/index.js' import，无需 node_modules 解析），不参与版本同步节奏。⚠️ 该相对引用现由 tools/check/check-cross-package-relative.mjs 守卫（越包相对引用新增/目录移位即 FAIL；存量条目逐条登记在 tools/check/cross-package-relative-exempt.json）——「刻意」从注释升级为可执行约束；拓扑序由根 package.json 的 build 脚本手工钉住（本包先于全部 DSH 插件构建；bump 面由 tools/release/bump-version.sh 的 find 枚举覆盖，与本包是否入 workspaces 无关）。",
+  "//distributionAndBuildOrder": "本包是 DSH 插件族的**适配层基座**，形态 = workspace 成员 + 正常 npm 发布物：六款原子插件以包名 `@sofagent/dsh-plugin-kit` 声明 dependencies 引用它。（键名原为 `//notWorkspace`——v1.5.2 章九前推修复推翻了「不发布、不入 workspaces、插件用相对路径 import」的旧设计：那条路会让插件从 registry 装完第一步挂载即 MODULE_NOT_FOUND。旧相对引用形态已由 tools/check/check-cross-package-relative.mjs 的自证断言「该形态不再存在」守住。）**构建拓扑序仍由根 package.json 的 build 脚本手工钉住**（本包先于全部 DSH 插件构建；bump 面由 tools/release/bump-version.sh 的 find 枚举覆盖）。",
   "devDependencies": {
     "typescript": "^7.0.2"
-  }
+  },
+  "files": [
+    "dist/",
+    "!dist/**/*.js.map",
+    "!dist/**/*.d.ts.map",
+    "!dist/**/*.test.*"
+  ]
 }

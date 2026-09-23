@@ -7,7 +7,7 @@ import {
   seamHelpers,
   type SeamHandler,
   type SeamHelpers,
-} from '../../plugin-kit/dist/index.js';
+} from '@sofagent/dsh-plugin-kit';
 
 /** 一次性日志表（接线自证 / 降级提示只打一次） */
 const logged = new Set<string>();

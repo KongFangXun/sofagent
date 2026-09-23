@@ -2,7 +2,7 @@
 // seam 挂载：non-seam:host-process    # 语义：非宿主事件接入（独立调度进程）——7×24 巡检不走宿主事件循环
 // 清单生成源 = engine/dsh-plugins/plugins.json（生成 package.json 的 description/sofagent/dsh 段与 cordis.patch.yml）；本文件的 seam 字面量由生成器 --check 与之对账。
 
-import { createSofagentPlugin } from '../../plugin-kit/dist/index.js';
+import { createSofagentPlugin } from '@sofagent/dsh-plugin-kit';
 
 /** 插件声明（本文件唯一手写处；适配层红线由 kit 承担：ctx 鸭子类型 + 宿主 API 缺席降级不抛） */
 const kit = createSofagentPlugin(

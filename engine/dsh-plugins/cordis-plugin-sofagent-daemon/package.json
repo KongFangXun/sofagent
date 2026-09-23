@@ -44,5 +44,8 @@
     "!dist/**/*.js.map",
     "!dist/**/*.d.ts.map",
     "!dist/**/*.test.*"
-  ]
+  ],
+  "dependencies": {
+    "@sofagent/dsh-plugin-kit": "1.5.1"
+  }
 }

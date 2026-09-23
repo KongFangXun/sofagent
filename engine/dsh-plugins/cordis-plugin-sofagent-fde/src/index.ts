@@ -17,7 +17,7 @@
 //   · 未设档的 fde 角色工具（think/compose/workflow/agent 族——方法论支撑面）常开：
 //       它们不属于「本体/FDE/公地」任一业务域，是三域共用的执行底座。
 
-import { createSofagentPlugin } from '../../plugin-kit/dist/index.js';
+import { createSofagentPlugin } from '@sofagent/dsh-plugin-kit';
 
 /** 插件声明（本文件唯一手写处；适配层红线由 kit 承担：ctx 鸭子类型 + 宿主 API 缺席降级不抛） */
 const kit = createSofagentPlugin(

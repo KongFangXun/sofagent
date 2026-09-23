@@ -21,7 +21,7 @@ import {
   seamHelpers,
   type SeamHandler,
   type SeamHelpers,
-} from '../../plugin-kit/dist/index.js';
+} from '@sofagent/dsh-plugin-kit';
 
 // ── 事件接线共用的环境解析与防御式取数 ────────────────────────────────────────
 // 适配层红线：只做鸭子类型读取，宿主/引擎面缺席一律降级不抛——接线故障不得
