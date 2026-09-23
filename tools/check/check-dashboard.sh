@@ -14,6 +14,9 @@
 #     ⑤ onclick 引用未定义函数——点击无反应，控制台报错用户无感
 #     ⑥ div 不配平——DOM 嵌套错位（后续 section 嵌进前一个）
 #     ⑦ U+FFFD 乱码——编码损坏字符入库
+#     ⑧ MCP 工具清单漂移——dashboard 内嵌 MCP_TOOLS 数组与 tool-registry.ts
+#        注册名集合不一致（实锤：trace_reconcile v1.5.0 注册后清单漏更 104/105，
+#        标题计数动态渲染只能保证「标题=数组长度」，保证不了「数组=registry」）
 #   共性：全部是「静默失效」形态——页面能开、不报错、功能/样式悄悄丢。
 #   本脚本把这类缺陷变成发版前机械拦截。
 #
@@ -26,9 +29,12 @@
 #   - regression-checklist #128 d：只锁「版本单源 + 无 scrollTop」，本脚本全量
 #   - check-version：锁 .logo-version 角标值，不锁结构
 #   - 本脚本不查版本号、不查颜色规范（颜色规范靠设计文档人工审）
+#   - ⑧ 与 check-docs §17 的分工：§17 对账「API.md vs registry」（文档面），
+#     本脚本 ⑧ 对账「dashboard 清单 vs registry」（门面 UI 面）——两侧独立，
+#     registry 变更后两处都须同步，任何一侧漂移各自报红
 #
 # 用法：bash tools/check/check-dashboard.sh
-# 退出码：0 = 七项全过 / 1 = 有缺陷 / 2 = 脚本自身错误
+# 退出码：0 = 八项全过 / 1 = 有缺陷 / 2 = 脚本自身错误
 # ============================================================
 
 set -uo pipefail
@@ -189,11 +195,45 @@ fi
 
 echo ""
 echo "════════════════════════════════════════════════════════════"
+
+# ── ⑧ MCP 工具清单对账（dashboard MCP_TOOLS ↔ tool-registry 注册名集合）──
+# node 实现：嵌套数组 + 转义提取用正则太脆；两侧集合差集判漂移。
+# 差集双向：清单漏工具（registry 有清单无）与清单多工具（registry 已退役/
+# 改名清单未跟）都报——单向只防漏不防多。node 失败（非空输出但含标记）判脚本错误。
+ASSERTS=$((ASSERTS + 1))
+MCP_DRIFT=$(node -e '
+const fs = require("fs");
+const html = fs.readFileSync(process.argv[1], "utf8");
+const reg = fs.readFileSync(process.argv[2], "utf8");
+const m = html.match(/var MCP_TOOLS=\[([\s\S]*?)\];/);
+if (!m) { console.log("__EXTRACT_FAIL__ MCP_TOOLS 数组未找到（形态变更？）"); process.exit(0); }
+const dash = [...m[1].matchAll(/\[\x27([a-z_]+)\x27,/g)].map(x => x[1]);
+const registry = [...reg.matchAll(/name:\s*\x27([a-z_]+)\x27/g)].map(x => x[1]);
+const miss = registry.filter(r => !dash.includes(r));
+const extra = dash.filter(d => !registry.includes(d));
+const parts = [];
+if (miss.length) parts.push("清单缺 " + miss.length + " 个: " + miss.join(", "));
+if (extra.length) parts.push("清单多 " + extra.length + " 个: " + extra.join(", "));
+if (parts.length) console.log(parts.join(" | "));
+' "$HTML" "${REPO_ROOT}/engine/mcp/src/tool-registry.ts" 2>/dev/null)
+if [[ "$MCP_DRIFT" == *"__EXTRACT_FAIL__"* ]]; then
+  echo "  ❌ [⑧MCP清单对账] MCP_TOOLS 提取失败——dashboard 数组形态变更或脚本错误"
+  FAILS=$((FAILS + 1))
+elif [ -n "$MCP_DRIFT" ]; then
+  echo "  ❌ [⑧MCP清单对账] dashboard MCP_TOOLS 与 tool-registry 漂移：${MCP_DRIFT}"
+  echo "     修法：同步 tools/dashboard/dashboard.html 的 MCP_TOOLS 数组（标题计数已是动态渲染，无需另改）"
+  FAILS=$((FAILS + 1))
+else
+  echo "  ✓ [⑧MCP清单对账] dashboard 清单与 registry 注册名集合一致"
+fi
+
+echo ""
+echo "════════════════════════════════════════════════════════════"
 if [ "$FAILS" -gt 0 ]; then
   echo "  FAIL=${FAILS}——dashboard.html 存在结构性缺陷（全部为静默失效形态）"
   echo "  🔴 修复请改 dashboard.html 本体，禁止为转绿而放宽本脚本断言"
 else
-  echo "  FAIL=0——七项结构检查通过"
+  echo "  FAIL=0——八项结构检查通过"
 fi
 # ── 覆盖度行（v1.4.9 G-2② 范式）──
 # covered 口径：单文件全量扫描，covered=1
