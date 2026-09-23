@@ -227,6 +227,35 @@ describe('A2 不泄密钥', () => {
     });
   });
 
+  // v1.5.2 A-8：CI 场景二进制夹带升 FAIL（exit 2）——拦截强度与证据形态解耦。
+  // quick 本地交互维持 WARN（上一 describe 全覆盖）；此处断言 --ci 双态。
+  describe('新增二进制文件 CI 场景二分（A-8）', () => {
+    it('ciMode=true 新增 .bin → FAIL + CI 拦截文案（不给不存在的豁免入口）', () => {
+      const ctx = makeCtx(
+        [makeDiffFile('assets/blob.bin', ['diff --git a/assets/blob.bin b/assets/blob.bin', 'Binary files /dev/null and b/assets/blob.bin differ'], 'added')],
+        { ciMode: true },
+      );
+      const result = scanA2(ctx);
+      expect(result.status).toBe('FAIL');
+      const msg = result.details.join(' ');
+      expect(msg).toContain('二进制文件不扫内容');
+      expect(msg).toContain('CI 场景二进制入库默认拦截——确认无风险请拆出文本清单人工核');
+    });
+
+    it('ciMode=true 无二进制文件 → 行为不变（不误伤）', () => {
+      const ctx = makeCtx([makeDiffFile('src/plain.ts', ['+export const x = 1;'], 'added')], { ciMode: true });
+      const result = scanA2(ctx);
+      expect(result.status).toBe('PASS');
+    });
+
+    it('ciMode 缺省（本地交互）→ 维持 WARN（回归保护，双态断言之默认态）', () => {
+      const ctx = makeCtx([makeDiffFile('assets/blob.bin', ['Binary files /dev/null and b/assets/blob.bin differ'], 'added')]);
+      const result = scanA2(ctx);
+      expect(result.status).toBe('WARN');
+      expect(result.details.join(' ')).not.toContain('CI 场景二进制入库默认拦截');
+    });
+  });
+
   // v1.3.8 P1-A2 回归：.gitattributes -diff 两步隐身——原仅 WARN 放行：
   // 第一步提交 .gitattributes 标记 secrets.js -diff（WARN 不拦截），
   // 第二步提交密钥文件，git diff 无内容行 → A2 静默全绿。升级为 FAIL。

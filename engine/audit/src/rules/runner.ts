@@ -154,11 +154,12 @@ export function runRules(
   history?: AuditHistoryEntry[],
   gb48000?: boolean,
   quickMode?: boolean,
+  ciMode?: boolean,
 ): AuditResult {
   // v1.1.0 修复(F2)：ctx.history 此前从未赋值，导致 A17 跨审计聚合（基于窗口内历史累计文件数）
   // 成为死代码。调用方显式传入 history 则优先；否则自动从审计历史加载。
   const auditHistory = history ?? loadHistory();
-  const ctx: AuditContext = { diffFiles, logEntries, task, strict, silent, commitMsg, config, history: auditHistory, quickMode };
+  const ctx: AuditContext = { diffFiles, logEntries, task, strict, silent, commitMsg, config, history: auditHistory, quickMode, ciMode };
   const results: RuleCheck[] = [];
 
   // 根据 config.extendedRulesEnabled 决定运行哪些规则
@@ -352,11 +353,12 @@ export function runRulesMonitored(
   history?: AuditHistoryEntry[],
   gb48000?: boolean,
   quickMode?: boolean,
+  ciMode?: boolean,
 ): MonitoredAuditResult {
   const timeoutMs = auditTimeoutMs();
   const dm = new DegradationManager();
   const start = Date.now();
-  const first = runRules(diffFiles, logEntries, task, strict, silent, commitMsg, config, history, gb48000, quickMode);
+  const first = runRules(diffFiles, logEntries, task, strict, silent, commitMsg, config, history, gb48000, quickMode, ciMode);
   const elapsed = Date.now() - start;
 
   if (!isAuditTimeout(null, elapsed, timeoutMs)) {
@@ -383,7 +385,7 @@ export function runRulesMonitored(
   // 等价于「只保留 number 1-11」）——带预算守卫，防降级重跑自身超时
   if (cap.coreOnly) {
     const retryStart = Date.now();
-    const minimalResult = runRules(diffFiles, [], task, strict, true, commitMsg, config, history, false, quickMode);
+    const minimalResult = runRules(diffFiles, [], task, strict, true, commitMsg, config, history, false, quickMode, ciMode);
     const retryElapsed = Date.now() - retryStart;
     void retryElapsed; // 预算内完成即采纳；超预算也不再降（safe-stop 会停止审计，违背可用性优先）
     // 标注降级事实：核心规则之外的检查未执行（报告层据此提示审计覆盖收敛）

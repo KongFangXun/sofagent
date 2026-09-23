@@ -184,6 +184,12 @@ export interface AuditContext {
   intentEntries?: IntentEntry[];
   /** v1.3.3 #8: quick 模式标记（cli-quick 零配置审计）——A3 见到跳过越界检查（无任务描述必然误报） */
   quickMode?: boolean;
+  /**
+   * v1.5.2 A-8：CI 场景标记（--ci flag 经完整引擎传入）——拦截强度与证据形态解耦：
+   * 二进制夹带等「本地 WARN 请人工确认」类发现，在无人值守场景升 FAIL（exit 2）。
+   * quick 本地交互模式缺省 false，行为零变化。
+   */
+  ciMode?: boolean;
 }
 
 /**

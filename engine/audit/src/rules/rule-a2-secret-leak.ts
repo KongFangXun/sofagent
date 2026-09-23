@@ -429,13 +429,23 @@ export function scanA2(ctx: AuditContext): RuleScan {
     );
   }
 
-  // 新增二进制文件 WARN（内容扫描盲区——git 不输出二进制内容行，密钥可藏身）
+  // 新增二进制文件（内容扫描盲区——git 不输出二进制内容行，密钥可藏身）
+  // v1.5.2 A-8：severity 按场景二分——本地交互维持 WARN（有人工在场可确认）；
+  // --ci 场景升 FAIL（exit 2）：CI 没有「人工」在场，WARN 给谁看？同一规则两种
+  // 证据形态（文本密钥 vs 二进制夹带）拦截强度一致。
   const binaryFiles = detectNewBinaryFiles(ctx);
   if (binaryFiles.length > 0) {
-    if (status === 'PASS') status = 'WARN';
-    details.push(
-      `检测到 ${binaryFiles.length} 个新增二进制文件（${binaryFiles.slice(0, 5).join(', ')}${binaryFiles.length > 5 ? ' 等' : ''}）：二进制文件不扫内容，请人工确认无密钥夹带。`
-    );
+    if (ctx.ciMode) {
+      status = 'FAIL';
+      details.push(
+        `检测到 ${binaryFiles.length} 个新增二进制文件（${binaryFiles.slice(0, 5).join(', ')}${binaryFiles.length > 5 ? ' 等' : ''}）：二进制文件不扫内容，请人工确认无密钥夹带。CI 场景二进制入库默认拦截——确认无风险请拆出文本清单人工核。`
+      );
+    } else {
+      if (status === 'PASS') status = 'WARN';
+      details.push(
+        `检测到 ${binaryFiles.length} 个新增二进制文件（${binaryFiles.slice(0, 5).join(', ')}${binaryFiles.length > 5 ? ' 等' : ''}）：二进制文件不扫内容，请人工确认无密钥夹带。`
+      );
+    }
   }
 
   return { status, details };

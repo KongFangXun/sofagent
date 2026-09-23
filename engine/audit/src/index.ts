@@ -1267,7 +1267,8 @@ async function main(): Promise<void> {
   // v1.5.1 T5: 改经 runRulesMonitored——审计模块超时自动降级（full→rules-only→minimal），
   // 降级事实写审计日志（FALLBACK_DEGRADE）并在规则列表注入 DEGRADATION_NOTICE WARN
   const { runRulesMonitored } = await import('./rules/runner');
-  const results = runRulesMonitored(diffFiles, logEntries, args.task, args.strict, args.silent, commitMsg || undefined, config, undefined, args.gb48000);
+  // v1.5.2 A-8：args.ci 传入规则上下文——二进制夹带类「请人工确认」发现在 CI 场景升 FAIL
+  const results = runRulesMonitored(diffFiles, logEntries, args.task, args.strict, args.silent, commitMsg || undefined, config, undefined, args.gb48000, undefined, args.ci);
 
   // v1.2.9 (⑧-2): --ruleset / --ruleset-path → 运行 JSON 规则集（叠加在内置规则之上）
   if (args.ruleset || args.rulesetPath) {
