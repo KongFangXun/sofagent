@@ -13,18 +13,31 @@
 // 判定形态（三分，只抓「值声称」，不误伤命令提示）：
 //   一行含 dist-tags 时——
 //     ① 且解析出 latest 值 + 包名 ⇒ 一条值声称（对账）
-//        pkg 解析优先级：npm view <pkg> dist-tags 里的 <pkg>；无 npm view 时
-//        回退到行内被引用包名（@sofagent/<name> 或裸名 sofagent，带词边界）——
-//        覆盖「dist-tags 当前为 …」无 npm view 形态。
+//        pkg 解析优先级：npm view 形态的包名 > scoped 包名 @sofagent/<name> >
+//        裸名 sofagent。优先 scoped 是为防散文词 sofagent 劫持同行的
+//        @sofagent/audit 归属；裸名不接 . - 字母数字（故 sofagent.config.yml
+//        这类文件名不认、mysofagent / sofagent-cli 也不认），避免把文件名或
+//        近似词当包名产生误报。
 //     ② 无 latest 值 ⇒ 命令提示 / 策略叙述，非值声称（可见跳过）
 //     ③ 有 latest 值但解析不出包名 ⇒ 盲区（不可判定 ⇒ main 判 exit 2，拒绝假绿）
+//
+// 值形态的识别面（覆盖常见书写变体——「写法一变换就静默漏检」是假门禁）：
+//   key 可带引号（"latest" / 'latest' / latest）；分隔符可 ASCII 冒号、全角冒号
+//   或中文「为」；值**首字符必须是数字**（版本值恒数字开头，此锚显著压低误报），
+//   可带引号可不带引号。
+//
+// ── 明示的残余盲区（诚实披露，勿当已覆盖）──
+//   · 值与其 dist-tags 上下文**分处两行**（逐行判定，不做跨行合并）不检出；
+//   · 无冒号也无「为」的散文式表述（如 latest 指向 2.0）不检出。
+//   · 文档引用的包名在 registry 上不存在（E404）判 **exit 1**——「包不存在」不是
+//     「环境限制」，不得混入离线 SKIP 通道产出误导性绿。
 //
 // 真值来源：npm view <pkg> dist-tags --prefer-online（≥3 轮重试；超时走
 //   Node child_process 的 timeout 选项——macOS 无 timeout 命令，故不用它）。
 //
 // 三态退出码（对齐 check 系家族）：
 //   0 = 全部通过（可含可见 SKIP：registry 不可达）
-//   1 = 文档声称值与 registry 真值失配
+//   1 = 文档声称值与 registry 真值失配（含文档引用了 registry 上不存在的包名）
 //   2 = 检查器失明 / 豁免台账非法 / 存在无法判定包名的值声称——拒绝假绿
 //
 // 已知债豁免：tools/check/npm-claims-exempt.json（形态照 archaeology-exempt.json
@@ -63,8 +76,9 @@ const LIST_EXEMPT = argv.includes('--list-exempt');
 // ── 检测核心 ──────────────────────────────────────────────
 // 行含 dist-tags 才进入判定；三分见文件头「判定形态」。
 const PKG_RE = /npm view\s+([^\s`'"|]+)\s+dist-tags/;
-const PKG_CITED_RE = /(@sofagent\/[a-z0-9][a-z0-9-]*|(?<![\w/@-])sofagent(?![-\w]))/;
-const LATEST_RE = /latest:\s*['"]([^'"]+)['"]/;
+const PKG_SCOPED_RE = /@sofagent\/[a-z0-9][a-z0-9-]*/;
+const PKG_BARE_RE = /(?<![\w/@.-])sofagent(?![-\w.])/;
+const LATEST_RE = /["']?\blatest\b["']?\s*(?:[:：]|为)[\s`"'={]*([0-9][0-9A-Za-z.+_-]*)/;
 
 function detectClaim(line) {
   if (!line.includes('dist-tags')) return null;
@@ -74,11 +88,12 @@ function detectClaim(line) {
     return { pkg: mp ? mp[1] : null, claimed: null, pkgFrom: mp ? 'npm-view' : null };
   }
   const mp = line.match(PKG_RE);
-  const mc = mp ? null : line.match(PKG_CITED_RE);
+  const ms = mp ? null : line.match(PKG_SCOPED_RE);
+  const mb = (mp || ms) ? null : line.match(PKG_BARE_RE);
   return {
-    pkg: mp ? mp[1] : (mc ? mc[1] : null),
+    pkg: mp ? mp[1] : (ms ? ms[0] : (mb ? mb[0] : null)),
     claimed: ml[1],
-    pkgFrom: mp ? 'npm-view' : (mc ? 'cited' : null),
+    pkgFrom: mp ? 'npm-view' : (ms ? 'scoped' : (mb ? 'bare' : null)),
   };
 }
 
@@ -189,13 +204,16 @@ function loadExempt() {
 
 // ── registry 真值 ─────────────────────────────────────────
 function parseTags(out) {
-  try { return JSON.parse(out); } catch { /* 落到宽松解析 */ }
+  // registry 输出非纯 JSON 时降级到下面的宽松正则解析；两条失败路径都有显式兜底
+  // （最终返回 null → 上游判「真值不可得」并可见 SKIP），故静默是安全的。
+  try { return JSON.parse(out); } catch { /* 为何可静默：落到宽松解析，兜底见上 */ }
   const m = out.match(/\{[\s\S]*\}/);
-  if (m) { try { return JSON.parse(m[0]); } catch { /* 放弃 */ } }
+  if (m) { try { return JSON.parse(m[0]); } catch { /* 为何可静默：放弃→null，兜底见上 */ } }
   return null;
 }
 
 function fetchLatest(pkg) {
+  let sawNotFound = false;
   for (let i = 0; i < REGISTRY_ATTEMPTS; i++) {
     try {
       const out = execFileSync('npm', ['view', pkg, 'dist-tags', '--prefer-online', '--json'], {
@@ -206,9 +224,14 @@ function fetchLatest(pkg) {
       });
       const j = parseTags(out);
       if (j && typeof j === 'object' && typeof j.latest === 'string') return { ok: true, latest: j.latest };
-    } catch { /* 重试 */ }
+    } catch (e) {
+      // E404 = registry 上无此包（文档引用了不存在的包名）——这不是环境限制，
+      // 不得混入离线 SKIP 通道产出误导性绿；记下后交 main 判 exit 1。
+      const msg = String((e && e.stderr) || (e && e.message) || '');
+      if (/E404|404 Not Found/.test(msg)) sawNotFound = true;
+    }
   }
-  return { ok: false };
+  return sawNotFound ? { ok: false, notFound: true } : { ok: false };
 }
 
 // ── 自检 ──────────────────────────────────────────────────
@@ -234,11 +257,25 @@ function runSelftest() {
   chk('正例③：英文「→」形态同样命中', !!s6 && s6.pkg === '@sofagent/audit' && s6.claimed === '1.5.1');
   const s7 = detectClaim("当前 dist-tags 为 `{ latest: '1.6.0' }`");
   chk('盲例：有值无包名 ⇒ 归盲区（pkg null / claimed 有）', !!s7 && s7.pkg === null && s7.claimed === '1.6.0');
+  const s8 = detectClaim('当前 `sofagent` 的 dist-tags 为 `{"latest":"9.9.9"}`');
+  chk('变体①：JSON 双引号 key、无空格 检出', !!s8 && s8.claimed === '9.9.9');
+  const s9 = detectClaim('当前 `sofagent` 的 dist-tags 为 latest: 9.9.9');
+  chk('变体②：值不带引号 检出', !!s9 && s9.claimed === '9.9.9');
+  const s10 = detectClaim("当前 `sofagent` 的 dist-tags 为 `{ latest：'9.9.9' }`");
+  chk('变体③：全角冒号 检出', !!s10 && s10.claimed === '9.9.9');
+  const s11 = detectClaim("当前 `sofagent` 的 dist-tags 如下：latest 为 `9.9.9`");
+  chk('变体④：中文「为」分隔 检出', !!s11 && s11.claimed === '9.9.9');
+  const s12 = detectClaim("在 sofagent 生态中，`@sofagent/audit` 的 dist-tags 当前为 `{ latest: '9.9.9' }`");
+  chk('归属②：scoped 包名优先于散文词 sofagent（防归属劫持）', !!s12 && s12.pkg === '@sofagent/audit');
+  const s13 = detectClaim("编辑 sofagent.config.yml 后，dist-tags 当前为 `{ latest: '1.5.0' }`");
+  chk('归属③：文件名 sofagent.config.yml 不当包名（→ 盲区）', !!s13 && s13.pkg === null && s13.claimed === '1.5.0');
+  const s14 = detectClaim("当前 `mysofagent` 的 dist-tags 为 `{ latest: '1.0.0' }`");
+  chk('归属④：近似词 mysofagent 不当包名（→ 盲区）', !!s14 && s14.pkg === null && s14.claimed === '1.0.0');
   if (bad > 0) {
     console.error(`❌ 自检失败 ${bad} 项`);
     process.exit(1);
   }
-  console.log('✅ 自检通过（8/8）');
+  console.log('✅ 自检通过（15/15）');
   process.exit(0);
 }
 
@@ -299,14 +336,16 @@ function main() {
   // registry 真值（仅对待验声称涉及的去重包名取一次）
   const pkgs = [...new Set(pending.map((c) => c.pkg))];
   const truth = {};
+  const notFound = new Set();
   let registryDown = false;
   for (const pkg of pkgs) {
     const r = fetchLatest(pkg);
     if (r.ok) truth[pkg] = r.latest;
+    else if (r.notFound) notFound.add(pkg);
     else registryDown = true;
   }
 
-  if (pending.length > 0 && registryDown && Object.keys(truth).length === 0) {
+  if (pending.length > 0 && registryDown && Object.keys(truth).length === 0 && notFound.size === 0) {
     console.log('');
     console.log('  ⏭️ SKIP：registry 不可达（离线 / 无网络）——环境限制 ≠ 产品缺陷，显式跳过不假绿');
     console.log(`[check:coverage] script=${SCRIPT_NAME} asserts=${asserts} covered=${files.length} skipped=${skipped + pending.length}`);
@@ -317,6 +356,11 @@ function main() {
   console.log('');
   let fails = 0;
   for (const c of pending) {
+    if (notFound.has(c.pkg)) {
+      console.log(`  ❌ ${c.file}:${c.line} 「${c.pkg}」registry 无此包（E404）——文档引用了不存在的包名，非环境限制`);
+      fails++;
+      continue;
+    }
     if (!(c.pkg in truth)) {
       console.log(`  ⏭️ SKIP ${c.file}:${c.line} 「${c.pkg}」registry 真值不可得`);
       skipped++;
