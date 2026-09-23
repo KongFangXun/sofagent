@@ -398,8 +398,8 @@ fi
 - [ ] 施工期：步骤八每处 `npm publish --access public` 追加 `--tag alpha`
 - [ ] 发布后对账：逐包 `npm view @sofagent/<pkg> dist-tags --prefer-online`——期望 `alpha` = 本版、**`latest` 不动**。施工期任何包出现在 `latest` = 策略被破坏：处置是查发布命令漏了 tag，**不是改本文件**
 
-> 🔴 **首发包（本版首次上 npm 的包）额外一拍**：`--tag alpha` 意味着该包在 `@latest` 上**根本不存在**——`npm i <pkg>`（默认取 `latest`）会报 `No matching version found`。v1.5.2 首发的七款 DSH 插件 + `@sofagent/dsh-plugin-kit` 全属此类。二选一，**发布前想清楚选哪条**：
-> ① **保持施工期分道**：对外说明用 `npm i <pkg>@alpha`（或 `npm dist-tag add` 前先不装）；`latest` 留到 `v2.0.0` 贝塔期再由一次正式发布顶上。
+> 🔴 **首发包（本版首次上 npm 的包）额外一拍**：`--tag alpha` 意味着该包在 `@latest` 上**根本不存在**——`npm i <pkg>`（默认取 `latest`）会报 `No matching version found`。本版首发的七款 DSH 插件 + `@sofagent/dsh-plugin-kit` 全属此类。二选一，**发布前想清楚选哪条**：
+> ① **保持施工期分道**：对外说明用 `npm i <pkg>@alpha`（或 `npm dist-tag add` 前先不装）；`latest` 留到**贝塔期**再由一次正式发布顶上（判据 = 本版低于 `v2.0.0`，见上）。
 > ② **验证通过后提升 `latest`**：**先**在干净 DSH 环境跑完「步骤八·补」的四段实装验证（挂载 → seam 订阅 → `helpers.call` 引擎包解析 → 事件触发产出），**再**执行 `npm dist-tag add <pkg>@<版本> latest` 逐款顶 `latest`。
 > ⚠️ **顺序不可颠倒**：未验证就顶 `latest` = 把未验证的空壳推给 `npm i` 的默认通道（本仓最痛恨的假绿形态）。逐款 `dist-tag add` 后仍按上一格复查 `dist-tags`。
 
@@ -546,7 +546,7 @@ EOF
 >
 > ⚠️ **`@sofagent/load-chain`（`engine/hooks/sofagent-load-chain/`）不在下方循环里**——下方循环写死 `engine/<pkg>` 布局，而它在 `engine/hooks/` 下，按「模块包」口径极易漏掉。必须把它加进循环与验证清单（仓内脚本 `publish-packages.sh` 已改为由根 workspaces 查表解析目录，不受此限）。
 >
-> ⚠️ **`@sofagent/dsh-plugin-kit`（`engine/dsh-plugins/plugin-kit/`）同样不在下方循环里**（v1.5.2 章九二轮起转 npm 发布物）——目录在 `engine/dsh-plugins/` 下、不匹配 `engine/<pkg>`。它是六款原子插件的**适配层基座依赖** ⇒ **必须先于七款 DSH 插件发布**（否则插件装完第一步挂载即 `MODULE_NOT_FOUND: Cannot find module '@sofagent/dsh-plugin-kit'`）。单独段发布，见下方「load-chain 段」之后。
+> ⚠️ **`@sofagent/dsh-plugin-kit`（`engine/dsh-plugins/plugin-kit/`）同样不在下方循环里**（章九二轮起转 npm 发布物）——目录在 `engine/dsh-plugins/` 下、不匹配 `engine/<pkg>`。它是六款原子插件的**适配层基座依赖** ⇒ **必须先于七款 DSH 插件发布**（否则插件装完第一步挂载即 `MODULE_NOT_FOUND: Cannot find module '@sofagent/dsh-plugin-kit'`）。单独段发布，见下方「load-chain 段」之后。
 >
 > ⚠️ **裸名总包 `sofagent`（`engine/umbrella/`）是手动 14 包中唯一的裸名包**——npm 包名是裸名 `sofagent`（无 scope）、目录名是 umbrella，两者都与循环模式不匹配，单独段发布。它是 npm 渠道的聚合安装入口（`npm i -g sofagent` = 全功能四包），v1.4.6 起随主线版本同步发版。
 
@@ -651,7 +651,7 @@ npm view sofagent dependencies --json | grep -q '"@sofagent/audit"' && echo "  �
 > `engine/dsh-plugins/plugins.json`（**不硬编码包名**——改名/新增款由数据源自动纳入，目录缺失即报红），
 > 顺序 = 六原子款在前、suite 聚合款（`cordis-plugin-sofagent`，其 `optionalDependencies` 引用六个原子款）在末。
 >
-> 🔴 **发布前置之前置（v1.5.2 章九二轮）**：本段的**前一拍**是上方「`@sofagent/dsh-plugin-kit` 单独段」——
+> 🔴 **发布前置之前置（章九二轮）**：本段的**前一拍**是上方「`@sofagent/dsh-plugin-kit` 单独段」——
 > 六款原子插件以包名依赖 `@sofagent/dsh-plugin-kit`，该包未先发则逐款实装的第三步「`helpers.call` 引擎包
 > 解析」必挂 `MODULE_NOT_FOUND: Cannot find module '@sofagent/dsh-plugin-kit'`。**kit 未发，本段不可开跑。**
 >
@@ -688,7 +688,7 @@ done
 
 > 仓内脚本同源实现 = `tools/release/publish-packages.sh` 的「DSH 插件发布」段（同数据源、同「原子款在前
 > suite 在后」顺序、目录缺失即置失败标记、版本验证循环涵盖七款）。该脚本的 `@sofagent/*` 段**已改为由根
-> `package.json` 的 workspaces 构建「包名→目录」查表**（v1.5.2 章九二轮）——`@sofagent/dsh-plugin-kit`
+> `package.json` 的 workspaces 构建「包名→目录」查表**（章九二轮）——`@sofagent/dsh-plugin-kit`
 > 因此被自动纳入并落第一层，无需像本 SOP 那样单独开段；施工期执行脚本时用
 > `SOFAGENT_PUBLISH_TAG=alpha bash tools/release/publish-packages.sh <版本>` 让全量 publish 追加 `--tag alpha`。
 
