@@ -149,7 +149,7 @@ sofagent 的定位正卡在这个转折点上：审计模块（治理侧）+ Ont
 
 > 📖 各版完整交付与验收标准见 [changelog 目录](./changelog/README.md)；设计依据（三原语对位、权重分发与制品架构、判定面边界）见维护者侧判定底座设计文档（仓外）。
 
-> 维护者口径（场景数 SSOT、加载链预算跟踪）已迁 [DEVELOPMENT](./DEVELOPMENT.md)——路线图只讲方向，不讲内部对账细节。当前值 367（最大场景号 S441；SSOT = `playbook/acceptance-test.sh` 头部声明，逐条对账见 [DEVELOPMENT](./DEVELOPMENT.md)）。
+> 维护者口径（场景数 SSOT、加载链预算跟踪）已迁 [DEVELOPMENT](./DEVELOPMENT.md)——路线图只讲方向，不讲内部对账细节。当前值 369（最大场景号 S444；SSOT = `playbook/acceptance-test.sh` 头部声明，逐条对账见 [DEVELOPMENT](./DEVELOPMENT.md)）。
 
 ---
 

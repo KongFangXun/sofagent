@@ -1615,7 +1615,217 @@ async function s439() {
   _s41x_done(bad, 'S439', `intent=${rows.length}/${e0.tool}·缺省通道=${JSON.stringify(audit.resolveInputChannels({}))}·demoExit=${res.exitCode}·A1拒=${byRule.A1 && byRule.A1.rejected}·A2拒=${byRule.A2 && byRule.A2.rejected}·A3放=${byRule.A3 && !byRule.A3.rejected}·沙箱清=${res.sandboxCleaned}·隔离自证=${res.isolationOk}`);
 }
 
-const CASES = { s101, s102, s103, s106, s107, s108, s109, s111, s115, s148, s149, s151, s152, s155, s156, s416, s418, s419, s420, s421, s422, s423, s424, s425, s426, s427, s428, s429, s430, s431, s432, s433, s434, s435, s436, s437, s438, s439 };
+// ── S440 / S441 · v1.5.1 章十 BugFix 批 + 章十一 发布链加固：五族/三面代表锚点──
+// 体例归并（v1.5.2 审查面登记）：S440/S441 原为 acceptance-test.sh 内联 node -e 三行壳，
+// 现整体移入本库（断言逐字保留、零删减），shell 侧两场景共壳（scenario 440 内并列两条
+// probe_assert），以对销 S442-S444 新增行数——属「真实归并」（内容整体搬移 + 零删减），
+// 非注释压缩。锚点集合与 MISS 拼接逻辑与内联时代完全一致。
+async function s440() {
+  const { fs } = _s41x_init('s440'); const bad = [];
+  const P = process.env.PROJECT_ROOT;
+  const T = [
+    ['tools/check/check-version.sh', ['存在即纳入']],
+    ['tools/check/test-count.sh', ['解析失败，计数不可信']],
+    ['tools/check/check-anchors.mjs', ['slugger']],
+    ['engine/core/src/data-paths.ts', ['export function getDataDir']],
+    ['engine/audit/hooks/post-commit', ['SOFAGENT_AUDIT_ENTRY']],
+    ['engine/orchestrator/src/orchestrator-compare.ts', ['A/B 状态文件损坏，已跳过']],
+    ['install.sh', ['SCRIPT_DIR']],
+    ['tools/check/public-api.mjs', ['handler.ts']],
+    ['tools/check/dependency-direction.sh', ['判据面（如实声明）']],
+  ];
+  for (const [f, pats] of T) {
+    let c = '';
+    try { c = fs.readFileSync(P + '/' + f, 'utf8'); } catch { bad.push(f + ' 缺失'); continue; }
+    for (const p of pats) if (!c.includes(p)) bad.push(f + ' 缺锚: ' + p);
+  }
+  const rm = fs.readFileSync(P + '/docs/ROADMAP.md', 'utf8');
+  if (!/已发版|待发版/.test(rm)) bad.push('ROADMAP 三态缺失');
+  _s41x_done(bad, 'S440', '五族十锚在位');
+}
+
+async function s441() {
+  const { fs } = _s41x_init('s441'); const bad = [];
+  const P = process.env.PROJECT_ROOT;
+  const T = [
+    ['tools/check/check-gate-inventory.sh', ['孤儿守卫', '装载完整性', 'exit 2']],
+    ['tools/release/heavy-gate-receipt.sh', ['fingerprint', 'verify', 'record', '--pre']],
+    ['playbook/.gate-inventory-exempt', ['check-interface-roadmap.mjs', 'check-seam-drift.mjs']],
+    ['tools/release/pre-push-check.sh', ['check-gate-inventory.sh', '形态归属']],
+    ['tools/README.md', ['heavy-gate-receipt.sh', 'heavy-gate-receipts.log']],
+  ];
+  for (const [f, pats] of T) {
+    let c = '';
+    try { c = fs.readFileSync(P + '/' + f, 'utf8'); } catch { bad.push(f + ' 缺失'); continue; }
+    for (const p of pats) if (!c.includes(p)) bad.push(f + ' 缺锚: ' + p);
+  }
+  const ginv = fs.readFileSync(P + '/tools/check/check-gate-inventory.sh', 'utf8');
+  if (!/失明.*exit 2|exit 2.*失明/.test(ginv)) bad.push('gate-inventory 失明态语义缺失');
+  const rcpt = fs.readFileSync(P + '/tools/release/heavy-gate-receipt.sh', 'utf8');
+  if (!rcpt.includes('log_looks_green')) bad.push('receipt 绿灯摘要校验缺失');
+  if (!rcpt.includes('自指回避') && !rcpt.includes('gitignore')) bad.push('receipt 自指回避防线缺失');
+  _s41x_done(bad, 'S441', '发布链加固三面锚在位');
+}
+
+// ── S442 · v1.5.2 章二 约束导出与证据链外部可验 + 章三 运行时 should-run 判定链──
+// 咬人面（改坏必红）：
+//   ① verify-chain --selftest 真跑（exit 0 + 末行「0 失败」）——篡改判定链内核或锚串即红。
+//   ② should-run 行为探针：五问缺省态必须放行（降级铁律）；human-gate 不通过必须**首问挂起**
+//      且 report 出「human-gate」——删/改 SHOULD_RUN_ORDER 或 gate 工厂即红。
+// 静态锚（文件在位 + 关键符号存在）：ruleset_export tool / export-metadata 导出面 /
+//   verify 命令接线 checkDecisionChainDetailed / 唯一 EventBus 构造点注入 gate。
+// 残余风险（如实标注）：静态锚只保证「符号/锚串在位」，不证明语义正确（如 buildExportMetadata
+//   内部逻辑被改坏但符号仍在 → 本探针不咬）；该残余面由章二单测（双向可逆）与 --selftest 补。
+async function s442() {
+  const { fs, path } = _s41x_init('s442'); const bad = [];
+  const root = process.env.PROJECT_ROOT;
+  const rel = (p) => path.join(root, p);
+  // ① 章二 约束导出与证据链外部可验（静态锚）
+  for (const f of ['tools/verify/verify-chain.mjs', 'tools/verify/README.md', 'engine/mcp/src/tools/ruleset-export.ts', 'engine/audit/src/rules/export-metadata.ts']) {
+    if (!fs.existsSync(rel(f))) bad.push('缺文件:' + f);
+  }
+  const vc = fs.existsSync(rel('tools/verify/verify-chain.mjs')) ? fs.readFileSync(rel('tools/verify/verify-chain.mjs'), 'utf-8') : '';
+  for (const s of ['--selftest', 'head-mismatch']) if (vc && !vc.includes(s)) bad.push('verify-chain 缺锚:' + s);
+  if (fs.existsSync(rel('engine/audit/src/rules/export-metadata.ts'))) {
+    const em = fs.readFileSync(rel('engine/audit/src/rules/export-metadata.ts'), 'utf-8');
+    for (const s of ['buildExportMetadata', 'SEVERITY_BASIS', 'assertIntentCoverage']) if (!em.includes(s)) bad.push('export-metadata 缺符号:' + s);
+  }
+  if (fs.existsSync(rel('engine/mcp/src/tools/ruleset-export.ts')) && !fs.readFileSync(rel('engine/mcp/src/tools/ruleset-export.ts'), 'utf-8').includes('ruleset_export')) {
+    bad.push('ruleset-export 缺 tool 名 ruleset_export');
+  }
+  if (fs.existsSync(rel('engine/audit/src/commands/verify.ts')) && !fs.readFileSync(rel('engine/audit/src/commands/verify.ts'), 'utf-8').includes('checkDecisionChainDetailed')) {
+    bad.push('verify 命令未接线 checkDecisionChainDetailed');
+  }
+  // ② 章三 运行时 should-run 判定链（静态锚）
+  const srTs = fs.readFileSync(rel('engine/orchestrator/src/events/should-run.ts'), 'utf-8');
+  for (const s of ['SHOULD_RUN_ORDER', 'createShouldRunGate', 'buildEnterpriseEventBusOptions']) if (!srTs.includes(s)) bad.push('should-run 缺符号:' + s);
+  if (!fs.readFileSync(rel('engine/orchestrator/src/events/bus.ts'), 'utf-8').includes('shouldRunGate')) bad.push('bus.ts 未声明 shouldRunGate 选项');
+  if (!fs.readFileSync(rel('engine/orchestrator/src/cli.ts'), 'utf-8').includes('buildEnterpriseEventBusOptions')) bad.push('cli.ts 唯一 EventBus 构造点未注入 should-run gate');
+  // ③ 真行为 A：外部可验证证器 --selftest 全过
+  const { execFileSync } = require('child_process');
+  let out = '';
+  try { out = execFileSync(process.execPath, [rel('tools/verify/verify-chain.mjs'), '--selftest'], { encoding: 'utf-8', cwd: root }); }
+  catch (e) { bad.push('verify-chain --selftest 非零退出:' + ((e && e.status != null) ? e.status : 'err')); }
+  if (!out.includes('0 失败')) bad.push('verify-chain --selftest 未见「0 失败」结论');
+  // ④ 真行为 B：判定链 fail-fast + 降级铁律
+  const srMod = require(rel('engine/orchestrator/dist/events/should-run.js'));
+  if (srMod.SHOULD_RUN_ORDER.join(',') !== 'health,human-gate,evidence,focus,quota') bad.push('五问固定顺序漂移:' + srMod.SHOULD_RUN_ORDER.join(','));
+  const gatePass = await srMod.createShouldRunGate({})({ type: 'timer.tick' });
+  if (gatePass.run !== true) bad.push('五问缺省态未放行（降级铁律破）');
+  const gateHold = await srMod.createShouldRunGate({ 'human-gate': () => ({ ok: false }) })({ type: 'timer.tick' });
+  if (gateHold.run !== false || !gateHold.suspended || gateHold.suspended.question !== 'human-gate') bad.push('human-gate 不通过未首问挂起:' + JSON.stringify(gateHold));
+  _s41x_done(bad, 'S442', 'selftest=0 失败·should-run 顺序=' + srMod.SHOULD_RUN_ORDER.join('/') + '·缺省放行=' + gatePass.run + '·首问挂起=' + (gateHold.suspended && gateHold.suspended.question));
+}
+
+// ── S443 · v1.5.2 章四 审计结论失效语义 + 章五 网络出口治理面──
+// 咬人面（改坏必红）：
+//   ① 失效链真跑：markInvalid 追加 kind=INVALIDATION 标记 → collectInvalidations 命中被失效 ts
+//      → filterValid 把该条剔除、保留其余（改坏任一环即红；标记被当结论消费也会红）。
+//   ② 出口裁决真跑：空策略必须 Deny/empty-policy（默认全拒 opt-in）、已声明 host 放行 Allow、
+//      未声明 host 仍 Deny（白名单失效即红）。
+// 静态锚：invalidation 三钩子导出面 / decision-schema 的 INVALIDATION+invalidationReason /
+//   egress 三件套（policy 纯函数 / audit 留痕 / 通道 fail-closed no-interceptor）/ rules index 导出。
+// 残余风险：通道面为「接口+约束层，实现在外」，仓内无可跑拦截器 → 通道仅静态锚（EgressChannel
+//   与 no-interceptor 字面量在位），不做行为探针；失效「五分类 reason 枚举完整性」亦仅静态锚。
+async function s443() {
+  const { fs, path, dataDir } = _s43x_isolate('s443'); const bad = [];
+  const root = process.env.PROJECT_ROOT;
+  const rel = (p) => path.join(root, p);
+  // ① 章四 审计结论失效语义（静态锚）
+  const inv = fs.readFileSync(rel('engine/audit/src/invalidation.ts'), 'utf-8');
+  for (const s of ['markInvalid', 'filterValid', 'isInvalidationMarker', 'export const hooks']) if (!inv.includes(s)) bad.push('invalidation 缺符号:' + s);
+  for (const h of ['onAuthorizationChanged', 'onCompaction', 'onRiskEscalated']) if (!inv.includes(h)) bad.push('失效三钩子缺失:' + h);
+  const schema = fs.readFileSync(rel('engine/audit/src/decision-schema.ts'), 'utf-8');
+  for (const s of ['INVALIDATION', 'invalidationReason']) if (!schema.includes(s)) bad.push('decision-schema 缺符号:' + s);
+  // ② 章五 网络出口治理面（静态锚）
+  const policy = fs.readFileSync(rel('engine/rules/src/egress-policy.ts'), 'utf-8');
+  for (const s of ['decideEgress', 'EgressVerdict']) if (!policy.includes(s)) bad.push('egress-policy 缺符号:' + s);
+  if (!fs.readFileSync(rel('engine/audit/src/egress-audit.ts'), 'utf-8').includes('recordEgressDecision')) bad.push('egress-audit 缺 recordEgressDecision');
+  const chan = fs.readFileSync(rel('engine/orchestrator/src/egress-interceptor-api.ts'), 'utf-8');
+  for (const s of ['class EgressChannel', 'no-interceptor']) if (!chan.includes(s)) bad.push('出口通道面缺:' + s);
+  if (!fs.readFileSync(rel('engine/rules/src/index.ts'), 'utf-8').includes('decideEgress')) bad.push('rules index 未导出 decideEgress');
+  if (!fs.readFileSync(rel('tools/check/check-unwired-exports.sh'), 'utf-8').includes('decideEgress')) bad.push('decideEgress 未登记 SDK-face 白名单');
+  // ③ 真行为 A：失效链闭环（append-only 标记 → 命中 → 下游剔除）
+  try {
+    const invMod = require(rel('engine/audit/dist/invalidation.js'));
+    const targetTs = '2026-09-23T00:00:00.000Z';
+    const entry = invMod.markInvalid({ agentId: 'qa-443', sessionId: 's443', reason: 'authorization-changed', targets: [targetTs], trigger: 's443 行为探针' }, dataDir);
+    if (entry.kind !== 'INVALIDATION') bad.push('markInvalid 未落 INVALIDATION 条目:' + entry.kind);
+    if (entry.invalidationReason !== 'authorization-changed') bad.push('失效原因未落盘:' + entry.invalidationReason);
+    if (invMod.isInvalidationMarker(entry) !== true) bad.push('isInvalidationMarker 未识别标记条目');
+    const invalid = invMod.collectInvalidations(dataDir);
+    if (!invalid.has(targetTs)) bad.push('collectInvalidations 未命中被失效条目');
+    const kept = invMod.filterValid([{ ts: targetTs }, { ts: 'keep-443' }], invalid);
+    if (kept.length !== 1 || kept[0].ts !== 'keep-443') bad.push('filterValid 未剔除失效结论:' + JSON.stringify(kept));
+    const hk = invMod.hooks;
+    if (typeof hk.onAuthorizationChanged !== 'function' || typeof hk.onCompaction !== 'function' || typeof hk.onRiskEscalated !== 'function') bad.push('失效三钩子导出面漂移');
+  } catch (e) { bad.push('失效链行为探针异常:' + (e && e.message)); }
+  // ④ 真行为 B：出口裁决默认全拒 + 命中放行
+  try {
+    const egMod = require(rel('engine/rules/dist/egress-policy.js'));
+    const deny = egMod.decideEgress({ host: 'api.internal', port: 443, protocol: 'https' }, null);
+    if (deny.verdict !== 'Deny' || deny.reason !== 'empty-policy') bad.push('空策略未默认全拒:' + JSON.stringify(deny));
+    const allow = egMod.decideEgress({ host: 'api.internal', port: 443, protocol: 'https' }, { version: 1, hosts: [{ host: 'api.internal' }] });
+    if (allow.verdict !== 'Allow') bad.push('已声明 host 未放行:' + JSON.stringify(allow));
+    const noRule = egMod.decideEgress({ host: 'evil.example', port: 443, protocol: 'https' }, { version: 1, hosts: [{ host: 'api.internal' }] });
+    if (noRule.verdict !== 'Deny') bad.push('未声明 host 被放行（出口治理破）:' + JSON.stringify(noRule));
+  } catch (e) { bad.push('出口裁决行为探针异常:' + (e && e.message)); }
+  _s41x_done(bad, 'S443', '失效链闭环=标记+剔除·出口裁决=默认全拒/命中放行/未声明拒');
+}
+
+// ── S444 · v1.5.2 章七 事前授权补环 + 章九 DSH 插件 npm 首发面（仓内就绪态）──
+// 咬人面（改坏必红）：
+//   ① 授权三态真跑：无授权 → no-mandate（covered=false）；签发覆盖授权后同动作 → covered=true
+//      且 approver 可追溯；越界动作 → out-of-scope。判定语义被改坏即红。
+//   ② 插件就绪态：7 个 cordis-plugin-sofagent* 包目录齐备，包名==目录名、package.json 版本为
+//      semver、cordis.patch.yml 带版本标记（缺包/改名/删标记即红）。
+// 静态锚：mandate-store 三元素/判定入口 / mandate-gate-mw 工厂+中间件+should-run 探针 /
+//   loop deps-defaults 注入 / tools.ts wrapToolsWithGate 第 4 参 mandateToolGate。
+// 残余风险（如实标注）：章九**仅验仓内就绪态**——npm registry 真「首发」（npm publish 面）是
+//   发版面主 session 的职责，本探针不连 registry、不断言「已发布」；包版本号 v1.5.2 bump 属
+//   阶段九，故此处只断言 semver 形态与包名一致性，不钉具体版本值。
+async function s444() {
+  const { fs, path, dataDir } = _s43x_isolate('s444'); const bad = [];
+  const root = process.env.PROJECT_ROOT;
+  const rel = (p) => path.join(root, p);
+  // ① 章七 事前授权补环（静态锚）
+  const store = fs.readFileSync(rel('engine/audit/src/mandate-store.ts'), 'utf-8');
+  for (const s of ['MANDATE_GRANT_KIND', 'hasAllThreeElements', 'evaluateMandateRequest', 'MandateVerdict']) if (!store.includes(s)) bad.push('mandate-store 缺符号:' + s);
+  const gateMw = fs.readFileSync(rel('engine/orchestrator/src/middleware/mandate-gate-mw.ts'), 'utf-8');
+  for (const s of ['createMandateShouldRunGate', 'MandateGateMiddleware', 'mandateShouldRunProbe']) if (!gateMw.includes(s)) bad.push('mandate-gate-mw 缺符号:' + s);
+  if (!fs.readFileSync(rel('engine/orchestrator/src/loop/deps-defaults.ts'), 'utf-8').includes('getLoopMandateGateMw')) bad.push('loop deps-defaults 未注入 mandate gate');
+  if (!fs.readFileSync(rel('engine/orchestrator/src/tools.ts'), 'utf-8').includes('mandateToolGate')) bad.push('tools.ts wrapToolsWithGate 缺第 4 参 mandateToolGate');
+  // ② 章九 DSH 插件 npm 首发面（仓内就绪态）
+  const dshDir = rel('engine/dsh-plugins');
+  const plugins = fs.readdirSync(dshDir).filter((n) => n.startsWith('cordis-plugin-sofagent')).sort();
+  if (plugins.length !== 7) bad.push('DSH 插件包数=' + plugins.length + '（应 7）');
+  for (const n of plugins) {
+    const pkgPath = rel('engine/dsh-plugins/' + n + '/package.json');
+    const patchPath = rel('engine/dsh-plugins/' + n + '/cordis.patch.yml');
+    if (!fs.existsSync(pkgPath)) { bad.push(n + ' 缺 package.json'); continue; }
+    if (!fs.existsSync(patchPath)) { bad.push(n + ' 缺 cordis.patch.yml'); continue; }
+    const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'));
+    if (pkg.name !== n) bad.push(n + ' 包名与目录不一致:' + pkg.name);
+    if (!/^\d+\.\d+\.\d+/.test(String(pkg.version))) bad.push(n + ' 版本非 semver:' + pkg.version);
+    if (!/v\d+\.\d+\.\d+/.test(fs.readFileSync(patchPath, 'utf-8'))) bad.push(n + ' cordis.patch.yml 缺版本标记');
+  }
+  // ③ v1.5.2 交付标记在位（章四 schema 注释）
+  if (!fs.readFileSync(rel('engine/audit/src/decision-schema.ts'), 'utf-8').includes('v1.5.2')) bad.push('decision-schema 缺 v1.5.2 交付标记');
+  // ④ 真行为：授权三态
+  try {
+    const ms = require(rel('engine/audit/dist/mandate-store.js'));
+    const none = ms.evaluateMandateRequest({ subject: 'bot-444', action: 'run_bash' }, new Date(), dataDir);
+    if (none.verdict !== 'no-mandate' || none.covered !== false) bad.push('无授权未判 no-mandate:' + JSON.stringify(none));
+    ms.issueMandate({ id: 'm-444', subject: 'bot-444', scope: { tools: ['run_bash'] }, validity: { validFrom: '2020-01-01T00:00:00Z' }, approver: 'human-444' }, dataDir);
+    const cov = ms.evaluateMandateRequest({ subject: 'bot-444', action: 'run_bash' }, new Date(), dataDir);
+    if (cov.verdict !== 'covered' || cov.covered !== true) bad.push('授权内动作未覆盖:' + JSON.stringify(cov));
+    const oos = ms.evaluateMandateRequest({ subject: 'bot-444', action: 'rm_rf' }, new Date(), dataDir);
+    if (oos.verdict !== 'out-of-scope') bad.push('越界动作未判 out-of-scope:' + JSON.stringify(oos));
+  } catch (e) { bad.push('授权补环行为探针异常:' + (e && e.message)); }
+  _s41x_done(bad, 'S444', '授权三态=no-mandate/covered/out-of-scope·插件包就绪=' + plugins.length);
+}
+
+const CASES = { s101, s102, s103, s106, s107, s108, s109, s111, s115, s148, s149, s151, s152, s155, s156, s416, s418, s419, s420, s421, s422, s423, s424, s425, s426, s427, s428, s429, s430, s431, s432, s433, s434, s435, s436, s437, s438, s439, s440, s441, s442, s443, s444 };
 
 async function main() {
   const name = process.argv[2];
