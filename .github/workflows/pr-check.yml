@@ -99,6 +99,13 @@ jobs:
       - name: check-storefront.sh
         run: bash tools/check/check-storefront.sh
 
+      # registry 实测声称对账（文档「实测 npm view … dist-tags」声称 vs registry 在线真值）。
+      # 动机：A-5 的根因是「实测」声称在发版后必然失真却靠人肉保鲜——把比对前移到 PR。
+      # registry 不可达时 SKIP 并 exit 0（SKIP 可见、不假绿）；已知债走 npm-claims-exempt.json
+      # （锚须当前仍是命中行，A-5 落地即 exit 2 强制摘除）。
+      - name: check-npm-claims.mjs
+        run: node tools/check/check-npm-claims.mjs
+
       # 规范先行硬禁令（engine/*/src 提交须含 spec:/no-spec: 标记）。
       # 观察期：脚本 exit 恒 0（WARN 不阻断），接线目的是把 WARN 暴露在 PR 上。
       # 注：本 job 未设 fetch-depth，浅检出下 git log 只见末尾 commit——观察期可接受。

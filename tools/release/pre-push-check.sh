@@ -31,6 +31,8 @@
 #                             · 批二接入）
 #   + check-gate-inventory.sh → 门禁清单覆盖对账：tools/check/ 守卫 ⊆ 真实调用面（抓孤儿守卫）
 #   + check-forms.mjs       → 形态归属标注对账（changelog ↔ ROADMAP 双向）
+#   + check-npm-claims.mjs  → registry 实测声称对账（文档声称值 vs registry 在线真值；
+#                             离线 SKIP 可见不假绿 · 豁免台账 npm-claims-exempt.json · v1.5.2 A-6 接入）
 #   + npm run build         → 审计模块构建
 #
 # 用法:
@@ -512,6 +514,37 @@ if [ "$MINIMAL" = false ]; then
     printf '%s\n' "$CF_OUT" | grep -E '❌|✗' | head -10
   fi
   unset CF_OUT CF_RC
+fi
+
+# ════════════════════════════════════════
+# 3i. registry 实测声称对账（check-npm-claims.mjs · v1.5.2 A-6 接入）
+# 为什么需要：README / docs 里所有「实测 npm view <pkg> dist-tags …」形态的对外
+#   声称，在发版（publish/tag）后必然失真却靠人肉记忆保鲜——A-5 的根因。
+#   本步把「文档声称值 vs registry 在线真值」的比对前移到推前，让失真当场红。
+# 已知债豁免：npm-claims-exempt.json（锚须文件内唯一且当前仍是命中行；A-5 一旦
+#   落地、锚串不再命中即 exit 2——债自动过期，不留永久口子）。
+# 三态语义：0 = 一致（可含可见 SKIP：registry 不可达）／1 = 声称与真值失配／
+#   2 = 检查器失明或豁免台账非法（拒绝假绿）。
+# 成本实测：常态 0 条待验声称（已豁免）≈ 0.1s；有非豁免声称时含网络往返。
+# ════════════════════════════════════════
+if [ "$MINIMAL" = false ]; then
+  echo -e "\n${BOLD}── 3i. registry 实测声称对账 ──${NC}"
+  if [ -f tools/check/check-npm-claims.mjs ]; then
+    NPM_CLAIMS_OUT=$(node tools/check/check-npm-claims.mjs 2>&1)
+    NPM_CLAIMS_RC=$?
+    if [ "$NPM_CLAIMS_RC" -eq 0 ]; then
+      check_pass "check-npm-claims.mjs（文档声称值 = registry 真值，或已登记豁免 / 显式 SKIP）"
+    elif [ "$NPM_CLAIMS_RC" -eq 2 ]; then
+      check_fail "check-npm-claims.mjs 检查器失明或豁免台账非法（exit 2——拒绝假绿）"
+      printf '%s\n' "$NPM_CLAIMS_OUT" | grep -E '❌|·' | head -6
+    else
+      check_fail "check-npm-claims.mjs 发现文档声称值与 registry 真值失配（exit ${NPM_CLAIMS_RC}）"
+      printf '%s\n' "$NPM_CLAIMS_OUT" | grep -E '❌' | head -10
+    fi
+    unset NPM_CLAIMS_OUT NPM_CLAIMS_RC
+  else
+    check_warn "tools/check/check-npm-claims.mjs 不存在（守卫缺失）"
+  fi
 fi
 
 # 4. 审计模块构建 + 测试数汇总（对应 verify.yml + test-count.sh 门禁）
