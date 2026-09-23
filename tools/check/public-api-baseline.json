@@ -497,7 +497,7 @@
       ]
     },
     "@sofagent/think": {
-      "version": "1.5.1",
+      "version": "1.4.9",
       "symbols": [
         "ManualThinkReceipt",
         "ThinkEntryOptions",
