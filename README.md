@@ -203,6 +203,9 @@ sofagent-audit --init      # 装 git hook，之后每次 commit 自动审计
 sofagent-audit --doctor    # 验证环境（可选）
 ```
 
+> 🔧 **新装机器首跑 `--doctor` 报「未建立 dist 基线」？** 运行 `sofagent-audit --doctor --baseline` 建立基线（信任锚 = 你此刻确认 dist 可信的时刻——防影子审计器劫持，故不自动记录）。
+
+
 > 💡 安装脚本主要写入 `~/.sofagent/`（数据目录）+ `~/.local/bin`（CLI 入口）；检测到 OpenClaw 时额外写入其集成目录；npm 权限不足时 CLI 入口 fallback 到 `/usr/local/bin`。其余系统文件零改动。`--init` 安装三层防线 git hook（pre-commit 拦 .sofagent/ 入库 + commit-msg 规则审计 + post-commit 对账）；`--no-verify` 可跳过 **pre-commit 与 commit-msg 两个阶段**（即前两层防线），**post-commit 事后对账不受其影响**（git 原生开关不作用于 post-commit）——防的是诚实 Agent 的疏忽不是恶意绕过，被跳过的 commit 由 post-commit 事后对账留痕（提示「疑似绕过」）但不阻断；个人兜底三件事：CI 侧 `sofagent-audit --diff`、定期 `--doctor`、翻审计记录。详见 [LIMITATIONS](./docs/LIMITATIONS.md)。
 >
 > 📌 **install.sh 是企业设备安装器**——装在企业跑 AI 节点的设备上（约束层 + daemon 巡检 + 单机 dashboard）；FDE 自己的电脑不需要跑，FDE 的工具是 [FDE Skill](https://clawhub.ai/kongfangxun/skills/sofagent)（方法论），详见 [部署架构](./docs/ARCHITECTURE.md#安装包边界与部署架构v132-定位校准)。

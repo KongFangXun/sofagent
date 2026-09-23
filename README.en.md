@@ -205,6 +205,9 @@ sofagent-audit --init      # install the git hook — every commit is audited fr
 sofagent-audit --doctor    # verify the environment (optional)
 ```
 
+> 🔧 **First `--doctor` on a fresh machine reports "no dist baseline"?** Run `sofagent-audit --doctor --baseline` to establish it (the trust anchor = the moment you confirm the dist is trustworthy — never auto-recorded, to defend against shadow-auditor hijacking).
+
+
 > 💡 The install scripts mainly write to `~/.sofagent/` (data directory) + `~/.local/bin` (CLI entry); when OpenClaw is detected they additionally write into its integration directory; if npm permissions are insufficient, the CLI entry falls back to `/usr/local/bin`. No other system files are touched. `--init` installs the three-layer git hook defense (pre-commit blocks `.sofagent/` from entering the repo + commit-msg rule audit + post-commit reconciliation). `--no-verify` can skip **both pre-commit and commit-msg** (the first two layers); **post-commit reconciliation is unaffected** (the git-native switch does not apply to post-commit) — it guards against honest Agents' carelessness, not malicious bypass; skipped commits are reconciled afterwards by the post-commit hook (flagged "suspected bypass") but not blocked. Personal fallbacks: CI-side `sofagent-audit --diff`, periodic `--doctor`, and reviewing the audit records. See [LIMITATIONS](./docs/LIMITATIONS.md).
 >
 > 📌 **install.sh is the enterprise device installer** — install it on the enterprise devices running the AI nodes (constraint-layer engine + daemon inspection + single-machine dashboard); FDEs do not need to run it on their own machines — the FDE's tools are the [FDE Skill](https://clawhub.ai/kongfangxun/skills/sofagent) (methodology). See [deployment architecture](./docs/ARCHITECTURE.md#%E5%AE%89%E8%A3%85%E5%8C%85%E8%BE%B9%E7%95%8C%E4%B8%8E%E9%83%A8%E7%BD%B2%E6%9E%B6%E6%9E%84v132-%E5%AE%9A%E4%BD%8D%E6%A0%A1%E5%87%86).
