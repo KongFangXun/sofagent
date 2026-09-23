@@ -166,6 +166,17 @@
 /* @public */ export { buildVerifiersManifest, buildVerifiersWithOverrides } from './export/reward-mapping';
 /* @public */ export type { RuleExportEntry, RuleCorpusBody, RuleCorpusExport, Verifiability, RewardHint } from './export/rule-schema';
 
+// ── 规则集导出（v1.5.2 章二 · MCP `ruleset_export` 消费面）──
+// @internal：跨包内部接缝——**唯一生产消费方**是 MCP tool
+// （engine/mcp/src/tools/ruleset-export.ts 经 createRequire 延迟 require），
+// 故按 tools/check/public-api.mjs 的 @internal 语义不计入 public API 基线
+// （不承诺 semver 稳定性）。后续如需外部消费，再走 @public 升级流程。
+/* @internal */ export { buildRulesetExport, buildRulesetCore, buildExportedRuleset, computeRulesetFingerprint, RULESET_EXPORT_SCHEMA_VERSION } from './export/ruleset-export';
+/* @internal */ export type { RulesetExportOptions, RulesetExportResult, RulesetExportAuditEvent, ExportedRuleset, ExportedRulesetRule, RulesetCore, FingerprintAlgo } from './export/ruleset-export';
+// 规则训练消费元数据（同章交付——意图表 + 构建函数）
+/* @internal */ export { buildExportMetadata, assertIntentCoverage, severityOf, sampleViolationOf, RULE_INTENTS, SEVERITY_BASIS } from './rules/export-metadata';
+/* @internal */ export type { RuleExportMetadata, RuleSeverity, SampleViolationSource } from './rules/export-metadata';
+
 // ── PR 生命周期（G13 · workflow 变更提案状态机——MCP pr_submit/pr_review/pr_merge 消费面）──
 /* @public */ export {
   prSubmit,
