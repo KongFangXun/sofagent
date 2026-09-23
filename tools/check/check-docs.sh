@@ -342,28 +342,37 @@ count_md() {
 #   下次直接对照，不再靠字样猜（这是本批「承诺↔落地物」核对的一个反例教训）。
 # 另：tools/README.md 的**收录完整性**（工具是否漏登记）由 tools/check/check-tool-health.sh
 #   单独对账，与本处行数预算属两个面。
-LAYER_A=$(find . -name "*.md" \
-  -not -path "*/node_modules/*" \
-  -not -path "*/.workbuddy/*" \
-  -not -path "*/.sofagent/*" \
-  -not -path "*/docs/changelog/*" \
-  -not -path "*/docs/evidence/*" \
-  -not -path "*/SKILL/*" \
-  -not -path "*/FDE/*" \
-  -not -path "*/FORGE/*" \
-  -not -path "*/playbook/*" \
-  -not -path "*/docs/guides/*" \
-  -not -path "*/agents/*" \
-  -not -path "*/.github/*" \
-  -not -path "*/engine/hooks/*" \
-  -not -path "*/commercial/*" \
-  -not -path "*/docs/DEVELOPMENT.md" \
-  -not -path "*/docs/archive/*" \
-  -not -path "*/data/*" \
-  -not -path "*/engine/*/README.md" \
-  -not -path "*/engine/dsh-plugins/*.md" \
-  -not -path "*/engine/orchestrator/src/sandbox/*.md" \
-  -not -path "*/tools/README.md" \
+# ── A 层排除模式的单一事实源（预算归层修正批）──
+# 本数组被两处共用：① 下方 LAYER_A 的行数计算 ② §22 文档计账覆盖对账。
+# 分三类不是为了好看，是因为三类要受**不同断言**（混在一起必然要么假红、要么漏检）：
+#   ① METERED（转计型）：从 A 层移出**是为了在别处计量**——故必须满足两条硬断言
+#      a) 不得零命中（零命中 = 该路径已无内容，排除项已成过度放行的口子）
+#      b) 它命中的每个 tracked .md 必须出现在 A/B/E/F 任一计量桶里
+#         ★ 这条断言就是本批抓出 518 行静默漏计的那一条：engine/dsh-plugins 曾被
+#           「移出 A 层」却从未进 B 层——既是开发者参考面又不在任何桶里。
+#   ② FROZEN（冻结型）：历史档案（changelog/archive/evidence）——内容整体冻结，
+#      不计行数预算是有意的，故只断言不得零命中，不要求进桶。
+#   ③ GUARD（防御型）：受跟踪面里合法地零命中（gitignore 面、本仓不存在的商业面与
+#      运行时目录）——不做零命中断言，否则纯造假红。它们的价值是防止将来谁建了同名
+#      目录、内容被静默挤出 A 层而无人察觉（D 层拆除批的教训）。
+A_EXCLUDE_METERED=(
+  "*/SKILL/*" "*/FDE/*" "*/FORGE/*" "*/playbook/*" "*/docs/guides/*" "*/agents/*"
+  "*/.github/*" "*/engine/hooks/*" "*/docs/DEVELOPMENT.md" "*/docs/API.md"
+  "*/docs/WIKI.md" "*/docs/THANKS.md" "*/docs/assets/*" "*/docs/reports/*"
+  "*/docs/examples/*" "*/engine/*/README.md" "*/engine/dsh-plugins/*.md"
+  "*/engine/orchestrator/src/sandbox/*.md" "*/tools/README.md"
+)
+A_EXCLUDE_FROZEN=(
+  "*/docs/changelog/*" "*/docs/archive/*" "*/docs/evidence/*"
+)
+A_EXCLUDE_GUARD=(
+  "*/node_modules/*" "*/.workbuddy/*" "*/.sofagent/*" "*/commercial/*" "*/data/*"
+)
+A_EXCLUDE_PATTERNS=("${A_EXCLUDE_METERED[@]}" "${A_EXCLUDE_FROZEN[@]}" "${A_EXCLUDE_GUARD[@]}")
+_A_PRUNE=()
+for _p in "${A_EXCLUDE_PATTERNS[@]}"; do _A_PRUNE+=( -not -path "$_p" ); done
+
+LAYER_A=$(find . -name "*.md" "${_A_PRUNE[@]}" \
   -print0 2>/dev/null | xargs -0 wc -l 2>/dev/null | tail -1 | awk '{print $1+0}')
 LAYER_A=${LAYER_A:-0}
 
@@ -383,12 +392,16 @@ LAYER_A=${LAYER_A:-0}
 # 计入 B 层预算，LIMIT_B 覆盖二者合计。反向必查：A 层 find 是全仓扫，必须显式排除
 # */playbook/*，否则 playbook/ 下的 *.md 会被 A 层二次计账。两层互斥：既无重复计账，
 # 也无覆盖盲区。
-LAYER_B=$(find ./FORGE ./playbook ./agents ./.github ./engine/hooks ./docs/DEVELOPMENT.md \
+B_ROOTS="./FORGE ./playbook ./agents ./.github ./engine/hooks ./docs/DEVELOPMENT.md ./docs/API.md ./engine/dsh-plugins ./engine/orchestrator/src/sandbox"
+B_EXCLUDE_PATTERNS=(
+  "*/node_modules/*" "*/fresh-eyes-loop/runs/*" "*/FORGE/lessons/*" "*/playbook/vendor/*"
+)
+_B_PRUNE=()
+for _p in "${B_EXCLUDE_PATTERNS[@]}"; do _B_PRUNE+=( -not -path "$_p" ); done
+
+LAYER_B=$(find ${B_ROOTS} \
   -name "*.md" \
-  -not -path "*/node_modules/*" \
-  -not -path "*/fresh-eyes-loop/runs/*" \
-  -not -path "*/FORGE/lessons/*" \
-  -not -path "*/playbook/vendor/*" \
+  "${_B_PRUNE[@]}" \
   -print0 2>/dev/null | xargs -0 wc -l 2>/dev/null | tail -1 | awk '{print $1+0}')
 LAYER_B=${LAYER_B:-0}
 
@@ -423,11 +436,11 @@ LAYER_E=$(find ./docs/guides -name "*.md" -print0 2>/dev/null | xargs -0 wc -l 2
 LAYER_E=${LAYER_E:-0}
 
 # 上限定义
-LIMIT_A=7680  # 归层修正批（2026-09-19）：engine/dsh-plugins/*.md 与 engine/orchestrator/src/sandbox/*.md 移出 A 层（前者是门禁 check-seam-contract.mjs 直接解析的 seam 词汇表 SSOT、后者是沙箱实现位置对照表——均属开发者参考面，与既有 engine/*/README.md、engine/hooks/* 排除先例同类）；同时修正「批注自身记载过该缺口却以抬上限代替归层修正」的累积——此前 SEAMS.md 加入时（7020→7200 批）已记「LAYER_A 的排除项未含 engine/dsh-plugins/** 故这批内容计入本层」，其后 A 层六次上调（7200→7470→7520→7600→7620→7680）部分由此挤占。归层后 A 层实测 7089（回收 518 行 = SEAMS.md 291 + engine/dsh-plugins/*/SKILL.md 七插件 181 + sandbox/ATTACK-SURFACE.md 46——排除模式 `*/engine/dsh-plugins/*.md` 的 * 含斜杠故连插件级 SKILL.md 一并归位，与既有 `*/SKILL/*` 排除同理），余 591。 # v1.5.0 发版前排期预留余量（实测 7607，前值 7620 仅余 13 行——并发 session 的 A 层改动即引爆门禁；前批已实际发生一次碰撞：并发 README 重构使 A 层 7559→7585 计 +26。本批预留三项：并发批碰撞量 ~26 + 阶段十一发版后翻牌批双语 README 能力段替换 ~30 + 安全裕度。属排期预留非超标上调，前值 7620）# 排期预留余量：墙式段落与表格单格拆解后实测 7598，上一值 7600 仅余 2 行（任何 A 层文档改动即引爆门禁——本批已实际发生一次：并发 README 重构使 A 层 7559→7585）——按排期预留余量上调（非超标上调，前值 7600）  # 文档体系修复批：墙式段落拆解（12 处 >=500 字符的段落/表格单格改分点结构，零信息删除）+ CONTRIBUTING 补目录与版本头 + SECURITY 承接 Dashboard 服务面核验节（归属调整）——按铁律超标上调不删内容（前值 7520）  # v1.5.0 章十 DSH 插件事件接线批（7506>7470+36：SEAMS.md 增「接线面三处对账」硬规则（漏接线/幽灵订阅专名）与事件位验证步；§1 词表修两处缺陷——被合并的表格行致门禁对某条失明、hook-protocol 载荷类型误登记为可挂事件——并新增 session/event 行；§6 表改「声明 + 实现」。探针完整脚本 + 两个必踩的坑 + 实测输出落 Case 022（docs/evidence/ 不计入本层），SEAMS.md 只留指针。均系本章真实交付物，按铁律超标上调不删内容） # 前值 7470 = v1.4.9 bugfix 批超标上调（7458>7450+8：CHANGELOG 破坏性变更公告块 +5——cleanupOnRecord 移除/canaryRouteRequest 更名双声明、LIMITATIONS 诚实披露 +4——SOFAGENT_CLEANUP_ON_RECORD 移除说明、WIKI 同名导出消歧矩阵 +2、ARCHITECTURE train 独立测试行 +1，均系 bugfix 批正当交付物，按铁律超标上调不删内容）# v1.4.9 G5b/G1 连接器与模板批超标上调（7405>7400+5：AGENTS.md 补 connector_register/connector_list/workflow_export/workflow_import 四表行 + ARCHITECTURE 五域图 C7 连接器注册面条目与 A3 模板面扩容——均系 103 tools 真实落点，按铁律超标上调不删内容）# v1.5.0 命名债务清扫**排期预留余量**（前值 7200 仅余 19 行＝7181/7200，不足以承载改名牵动的 ARCHITECTURE/WIKI/双语 README 同步，及本批 SEAMS.md §2b 宿主 profile 挂载差异 +9 行）——属排期预留非超标上调，实测值见 check-docs 输出 # 前值 7200：seam 契约批新增 engine/dsh-plugins/SEAMS.md（182 行：宿主真实挂载点词汇表 + 非 seam 接入形态登记）+ 9 个 DSH 插件 SKILL.md 措辞同步；LAYER_A 的排除项未含 engine/dsh-plugins/** 故这批内容计入本层——按铁律超标上调不删内容 7020→7200 # v1.4.7 后知识库落盘批（7015>7000+15：ARCHITECTURE 新增「约束同源：一份定义，多端消费」节——四源行业印证+双规则引擎 v1.5.4 内部对位，系知识库 P1 落盘真实内容；另含并行 README 批 +1；按铁律超标上调不删内容） # v1.3.9 行业笔记落盘（6936>6900+36：VALIDATION 新增 4 节——947 测量者转型/红杉专家判断力工程化/Palantir Red Loop+KLMLoop Engineering 四层循环，均系行业印证真实内容；按铁律超标上调不删内容）  # v1.3.9 bugfix 67 项文档批：A 层 6761>6650 正当上调——诚实边界声明（task/logs 明文+单机单用户定位）/术语表 4 条/导读句/论证表等均系独立审查修复要求新增，非冗余；此前 v1.3.8 轮询语义修正 6642>6600 上调至 6650
-LIMIT_B=9600  # v1.5.0 文档审查修复批（9544>9500+44：r2/r3 两轮独立审查修复——GUIDE 章节归正/索引修正/ARCHITECTURE 治理面与导航/DEVELOPMENT 章节正序化+维护者口径迁入/guides 若干路径与事实修正；铁律超标上调不删内容） # v1.3.9 发版后审查批（9434>9400+34：2026-08-22 审查轮新增——VALIDATION 行业笔记 4 节/PHILOSOPHY 拆章节/v1.4.0 排期 4 件收口（MLflow+Browser+联邦E2E+bash3.2）117 行/6+1 文档优化/WIKI 规划目录说明；按铁律超标上调不删内容）；此前 9400（9269>9220+49：A/B/C/D/E 文档批新增 79 行——meta-harness 19/MLflow 13/agentic-browser 18/tools 分目录 22/SKILL.md 工具表+1/banner 重生成说明+6；按铁律超标上调不删内容） ⚠️ 三项修复：checklist 49/94/101 注释 +9 行（run-06 零信任复验——dim49 环境误报标注/dim94 人工核对语义/dim101 LIMIT 解析 bug 根因记录，检查器侧修正非删内容）；此前 rules/ 收敛重构 +26→9190；v1.3.9 阶段十一发布前（9363>9300+63：阶段八文档收尾 B 层新增——ROADMAP v1.3.9 迭代表行+现在在哪段+13 行/HANDBOOK v1.3.9 能力 bullet/README 双语新能力段等；铁律超标上调不删内容）
+LIMIT_A=7150  # 预算归层修正批：A 层下行 819 行、**零内容删除**，上限按实测重算（7680→7150，**减额**不占额度）——① `docs/API.md`（222）归 B 层（API 参考与 `docs/DEVELOPMENT.md` 同为开发者参考面）② `docs/WIKI.md`（374）+ `docs/THANKS.md`（139）+ `docs/assets`、`docs/reports`、`docs/examples` 三处附属 README（84）移出硬预算。移出理由（新建类别「索引与台账」）：**它们的长度由被索引对象决定，不由作者决定**——给索引设行数上限，等于把「多收录一份文档」变成预算事故（与 `FORGE/lessons`、`playbook/vendor` 的既有排除同源）。该类不留盲区：改由 F-idx 软警戒兜底读数。归层后实测 A 6858（原 7677），余 292——注入面（README/ARCHITECTURE/PHILOSOPHY/HANDBOOK/LIMITATIONS/SECURITY/VALIDATION）全在 A 层，故余量按 B 步 R2–R8 七版注入留。 # 前值 7680＝归层修正批（2026-09-19）：engine/dsh-plugins/*.md 与 engine/orchestrator/src/sandbox/*.md 移出 A 层（前者是门禁 check-seam-contract.mjs 直接解析的 seam 词汇表 SSOT、后者是沙箱实现位置对照表——均属开发者参考面，与既有 engine/*/README.md、engine/hooks/* 排除先例同类）；同时修正「批注自身记载过该缺口却以抬上限代替归层修正」的累积——此前 SEAMS.md 加入时（7020→7200 批）已记「LAYER_A 的排除项未含 engine/dsh-plugins/** 故这批内容计入本层」，其后 A 层六次上调（7200→7470→7520→7600→7620→7680）部分由此挤占。归层后 A 层实测 7089（回收 518 行 = SEAMS.md 291 + engine/dsh-plugins/*/SKILL.md 七插件 181 + sandbox/ATTACK-SURFACE.md 46——排除模式 `*/engine/dsh-plugins/*.md` 的 * 含斜杠故连插件级 SKILL.md 一并归位，与既有 `*/SKILL/*` 排除同理），余 591。 # v1.5.0 发版前排期预留余量（实测 7607，前值 7620 仅余 13 行——并发 session 的 A 层改动即引爆门禁；前批已实际发生一次碰撞：并发 README 重构使 A 层 7559→7585 计 +26。本批预留三项：并发批碰撞量 ~26 + 阶段十一发版后翻牌批双语 README 能力段替换 ~30 + 安全裕度。属排期预留非超标上调，前值 7620）# 排期预留余量：墙式段落与表格单格拆解后实测 7598，上一值 7600 仅余 2 行（任何 A 层文档改动即引爆门禁——本批已实际发生一次：并发 README 重构使 A 层 7559→7585）——按排期预留余量上调（非超标上调，前值 7600）  # 文档体系修复批：墙式段落拆解（12 处 >=500 字符的段落/表格单格改分点结构，零信息删除）+ CONTRIBUTING 补目录与版本头 + SECURITY 承接 Dashboard 服务面核验节（归属调整）——按铁律超标上调不删内容（前值 7520）  # v1.5.0 章十 DSH 插件事件接线批（7506>7470+36：SEAMS.md 增「接线面三处对账」硬规则（漏接线/幽灵订阅专名）与事件位验证步；§1 词表修两处缺陷——被合并的表格行致门禁对某条失明、hook-protocol 载荷类型误登记为可挂事件——并新增 session/event 行；§6 表改「声明 + 实现」。探针完整脚本 + 两个必踩的坑 + 实测输出落 Case 022（docs/evidence/ 不计入本层），SEAMS.md 只留指针。均系本章真实交付物，按铁律超标上调不删内容） # 前值 7470 = v1.4.9 bugfix 批超标上调（7458>7450+8：CHANGELOG 破坏性变更公告块 +5——cleanupOnRecord 移除/canaryRouteRequest 更名双声明、LIMITATIONS 诚实披露 +4——SOFAGENT_CLEANUP_ON_RECORD 移除说明、WIKI 同名导出消歧矩阵 +2、ARCHITECTURE train 独立测试行 +1，均系 bugfix 批正当交付物，按铁律超标上调不删内容）# v1.4.9 G5b/G1 连接器与模板批超标上调（7405>7400+5：AGENTS.md 补 connector_register/connector_list/workflow_export/workflow_import 四表行 + ARCHITECTURE 五域图 C7 连接器注册面条目与 A3 模板面扩容——均系 103 tools 真实落点，按铁律超标上调不删内容）# v1.5.0 命名债务清扫**排期预留余量**（前值 7200 仅余 19 行＝7181/7200，不足以承载改名牵动的 ARCHITECTURE/WIKI/双语 README 同步，及本批 SEAMS.md §2b 宿主 profile 挂载差异 +9 行）——属排期预留非超标上调，实测值见 check-docs 输出 # 前值 7200：seam 契约批新增 engine/dsh-plugins/SEAMS.md（182 行：宿主真实挂载点词汇表 + 非 seam 接入形态登记）+ 9 个 DSH 插件 SKILL.md 措辞同步；LAYER_A 的排除项未含 engine/dsh-plugins/** 故这批内容计入本层——按铁律超标上调不删内容 7020→7200 # v1.4.7 后知识库落盘批（7015>7000+15：ARCHITECTURE 新增「约束同源：一份定义，多端消费」节——四源行业印证+双规则引擎 v1.5.4 内部对位，系知识库 P1 落盘真实内容；另含并行 README 批 +1；按铁律超标上调不删内容） # v1.3.9 行业笔记落盘（6936>6900+36：VALIDATION 新增 4 节——947 测量者转型/红杉专家判断力工程化/Palantir Red Loop+KLMLoop Engineering 四层循环，均系行业印证真实内容；按铁律超标上调不删内容）  # v1.3.9 bugfix 67 项文档批：A 层 6761>6650 正当上调——诚实边界声明（task/logs 明文+单机单用户定位）/术语表 4 条/导读句/论证表等均系独立审查修复要求新增，非冗余；此前 v1.3.8 轮询语义修正 6642>6600 上调至 6650
+LIMIT_B=10650  # 预算归层修正批：9600→10650（+1050），实测 B 10324（原 9584），三个来源——① 承接 `docs/API.md`（222，自 A 层归入）② **恢复 518 行此前不在任何层的既有内容**：`engine/dsh-plugins/**/*.md`（472＝SEAMS.md 291 + 七款插件 SKILL.md 181）与 `engine/orchestrator/src/sandbox/ATTACK-SURFACE.md`（46）——2026-09-19 归层修正批把它们**移出了 A 层却未加进 B 层 find**，批注自述「均属开发者参考面」但这批内容此后既不在 A/B/E 也不在任何 F 软检查内（覆盖盲区，属假绿五形态之「扫描面与受跟踪面不对齐」）；本批各归其位并补上自动断言（见 §22）③ 余量重分配 310。其中 SEAMS.md 是 `check-seam-contract.mjs` 直接解析的词汇表 SSOT——规范性文档必须在硬预算层，不能下沉软警戒。 # 前值 9600＝v1.5.0 文档审查修复批（9544>9500+44：r2/r3 两轮独立审查修复——GUIDE 章节归正/索引修正/ARCHITECTURE 治理面与导航/DEVELOPMENT 章节正序化+维护者口径迁入/guides 若干路径与事实修正；铁律超标上调不删内容） # v1.3.9 发版后审查批（9434>9400+34：2026-08-22 审查轮新增——VALIDATION 行业笔记 4 节/PHILOSOPHY 拆章节/v1.4.0 排期 4 件收口（MLflow+Browser+联邦E2E+bash3.2）117 行/6+1 文档优化/WIKI 规划目录说明；按铁律超标上调不删内容）；此前 9400（9269>9220+49：A/B/C/D/E 文档批新增 79 行——meta-harness 19/MLflow 13/agentic-browser 18/tools 分目录 22/SKILL.md 工具表+1/banner 重生成说明+6；按铁律超标上调不删内容） ⚠️ 三项修复：checklist 49/94/101 注释 +9 行（run-06 零信任复验——dim49 环境误报标注/dim94 人工核对语义/dim101 LIMIT 解析 bug 根因记录，检查器侧修正非删内容）；此前 rules/ 收敛重构 +26→9190；v1.3.9 阶段十一发布前（9363>9300+63：阶段八文档收尾 B 层新增——ROADMAP v1.3.9 迭代表行+现在在哪段+13 行/HANDBOOK v1.3.9 能力 bullet/README 双语新能力段等；铁律超标上调不删内容）
 # v1.3.7: B 层 8945（交付⑥⑨测试数对账+memory_sync 文档），铁律上调 8940→8950；v1.3.6: 8901（累计 8880→8910→8940）
 LIMIT_E=4000  # v1.2.5: E 层 2905 行（新增 dashboard-html-dev.md 219 行 + enterprise-deploy 扩展），上调 2700→3100 留余量；v1.4.0: multi-device-sync 补远程 API 通道 → 3110>3100，按铁律超标上调不删内容 3100→3200 留余量；v1.4.1: 后训模块地基新增 train-stack.md（双栈契约）+ train-security.md（安全基线），先压缩旧指南 3327→3252 后仍超 → 2026-08-25 拍板上调 3200→3300（不放宽到 3400）；v1.4.2: ARCHITECTURE §二 FORGE 段 193 行迁入 loop-development.md（E 层 3300→3484）→ 按铁律超标上调不删内容 3300→3600；v1.4.3: 新增 github-pr-playbook.md 157 行（三轮实战 15 条 PR 经验沉淀）+ 四指南微调 → 3725>3600，按铁律超标上调不删内容 3600→3800；v1.4.4: github-pr-playbook 台账扩容（在投 20→29 条 + 坑位 2 条 + 流量基线 5.3.1 + 第七节曝光渠道）→ 3811>3800，按铁律超标上调不删内容 3800→3900；v1.4.5: 新增 train-quickstart.md 153 行 → 4047>3900 曾上调 3900→4200，2026-09-05 孔老师拍板回收紧 4200→4000——三大指南纯冗余压缩 101 行（loop-development 坑1/坑3 与 §3.4/§3.6 重复代码块改交叉引用、spawnWorker 全码块收为一行模式引用；fde-activation-chain activate 七步伪码收为签名+步骤摘要；team-collaboration automerge 三段样板收为一句）后 3947/4000，零信息删除；v1.4.6: github-pr-playbook.md 移出公开仓（星数博弈内容对开源形象损害大于收益，四轮审查 P1-⑨ 拍板）→ E 层回落
-LIMIT_TOTAL=17280  # v1.5.0 发版前随 LIMIT_A 同步（7680+9600=17280，须 >= A 与 B 上限之和；实测 A+B 17162）（前值 17220） # 随 LIMIT_B 同步（7620+9600=17220，须 >= A 与 B 上限之和；实测 A+B 17120）（前值 17120） # 随 LIMIT_A 同步（7620+9500=17120，须 >= A 与 B 上限之和；实测 A+B 17032）（前值 17100）  # 随 LIMIT_A 同步（7600+9500=17100，须 >= A 与 B 上限之和；实测 A+B 16993）（前值 17020）  # v1.5.0 随 LIMIT_A 同步（7520+9500=17020，A+B 共享计数故须 ≥ A 与 B 上限之和；实测 A+B 16866）+ v1.5.0 章十上调见 LIMIT_A 记录 # 前值 17000（v1.5.0 随 LIMIT_A 预留同步 7400+9500=16900 ≤ 17000） # 前值 16500：v1.3.9 发版后审查批（A+B 16423>16400+23 随 B 层上调——2026-08-22 审查轮新增，见 LIMIT_B 记录；铁律超标上调不删内容）  # v1.3.9 行业笔记落盘（A+B 16301>16300+1 随 A 层上调——VALIDATION 新增 4 节；铁律超标上调不删内容）  # v1.3.9 bugfix 67 项文档批：A+B 15968>15860 随 A 层上调（B 层 9207<9220 未超）；此前 v1.3.8 regression 修复连带 15830→15860；v1.3.9 阶段十一发布前（A+B 16208>16200 随 B 层上调——阶段八文档收尾新增，见 LIMIT_B 记录）
+LIMIT_TOTAL=17800  # 预算归层修正批：17280→17800（+520），**其中 518 行只为把此前静默漏计的既有内容恢复计数**（engine/dsh-plugins 472 + sandbox 46，见 LIMIT_B 记录），另 2 行取整对齐——属恢复可见性，不是内容扩额；同一批把 A 层 819 行移出硬预算（见 LIMIT_A 记录），故实测 A+B 由 17261 降到 17182（**比旧值还少 79 行**），总余量由 19 行变为 618 行。恒等式：LIMIT_TOTAL == LIMIT_A + LIMIT_B（7150 + 10650 = 17800）——两者必须相等，否则超总额的那道闸永不触发（假绿）。 # 前值 17280（v1.5.0 发版前随 LIMIT_A 同步，7680+9600） # 随 LIMIT_B 同步（7620+9600=17220，须 >= A 与 B 上限之和；实测 A+B 17120）（前值 17120） # 随 LIMIT_A 同步（7620+9500=17120，须 >= A 与 B 上限之和；实测 A+B 17032）（前值 17100）  # 随 LIMIT_A 同步（7600+9500=17100，须 >= A 与 B 上限之和；实测 A+B 16993）（前值 17020）  # v1.5.0 随 LIMIT_A 同步（7520+9500=17020，A+B 共享计数故须 ≥ A 与 B 上限之和；实测 A+B 16866）+ v1.5.0 章十上调见 LIMIT_A 记录 # 前值 17000（v1.5.0 随 LIMIT_A 预留同步 7400+9500=16900 ≤ 17000） # 前值 16500：v1.3.9 发版后审查批（A+B 16423>16400+23 随 B 层上调——2026-08-22 审查轮新增，见 LIMIT_B 记录；铁律超标上调不删内容）  # v1.3.9 行业笔记落盘（A+B 16301>16300+1 随 A 层上调——VALIDATION 新增 4 节；铁律超标上调不删内容）  # v1.3.9 bugfix 67 项文档批：A+B 15968>15860 随 A 层上调（B 层 9207<9220 未超）；此前 v1.3.8 regression 修复连带 15830→15860；v1.3.9 阶段十一发布前（A+B 16208>16200 随 B 层上调——阶段八文档收尾新增，见 LIMIT_B 记录）
 
 # 输出各层
 echo "  A 用户文档:     ${LAYER_A} 行 / ${LIMIT_A} 上限"
@@ -449,6 +462,36 @@ if [ "$PKG_README_LINES" -gt 1500 ]; then
   echo "  ⚠️ F-pkg 包级 README 合计 ${PKG_README_LINES} 行 > 1500 软警戒——建议精简"
 else
   ASSERTS=$((ASSERTS + 1)); echo "  ✓ F-pkg 包级 README 合计 ${PKG_README_LINES} 行（≤1500 软警戒）"
+fi
+# F-idx（软提示非阻断）：索引与台账（WIKI / THANKS / 附属 README）——与 LIMIT_A 的归层修正配套。
+# 移出硬预算的**前提是不移出视线**：无上限且无读数＝假绿五形态之「正向探针空转」，
+# 故这些文件必须仍有可读数字与软警戒线（只提示不阻断，超线触发定期整理）。
+IDX_LINES=$(find ./docs/WIKI.md ./docs/THANKS.md ./docs/assets ./docs/reports ./docs/examples -name "*.md" -print0 2>/dev/null | xargs -0 wc -l 2>/dev/null | tail -1 | awk '{print $1+0}')
+IDX_LINES=${IDX_LINES:-0}
+if [ "$IDX_LINES" -gt 900 ]; then
+  echo "  ⚠️ F-idx 索引与台账 ${IDX_LINES} 行 > 900 软警戒——建议整理（索引指向实体不复述、台账归并旧条目）"
+else
+  ASSERTS=$((ASSERTS + 1)); echo "  ✓ F-idx 索引与台账 ${IDX_LINES} 行（≤900 软警戒，不进 A/B 硬预算的理由见 LIMIT_A 记录）"
+fi
+# F-skill / F-fde（软提示非阻断）：技能源树与 FDE 手册模板面——此前**无任何读数**。
+# 二者不进 A/B 硬预算的理由不同：SKILL/ 是 `install.sh` 复制的技能源树，行数直接决定
+# 装载后的上下文成本，其正确约束是「逐文件上限」（§5 对 harness/ 与 skills/ 已有硬上限，
+# rules/ agents/ custom/ 与两个根文件此前无上限）；FDE/ 是随交付场景收录的模板与手册，
+# 长度由收录的模板数决定（与 F-idx 同类）。二者共同点是「不该按总行数卡死、但必须有读数」
+# ——无读数即等于看不见（静默面），故各设一条软警戒线。
+SKILL_LINES=$(find ./SKILL -name "*.md" -print0 2>/dev/null | xargs -0 wc -l 2>/dev/null | tail -1 | awk '{print $1+0}')
+SKILL_LINES=${SKILL_LINES:-0}
+FDE_LINES=$(find ./FDE -name "*.md" -print0 2>/dev/null | xargs -0 wc -l 2>/dev/null | tail -1 | awk '{print $1+0}')
+FDE_LINES=${FDE_LINES:-0}
+if [ "$SKILL_LINES" -gt 3400 ]; then
+  echo "  ⚠️ F-skill 技能源树 ${SKILL_LINES} 行 > 3400 软警戒——建议整理（技能行数直接进入装载上下文，优先合并重复步骤）"
+else
+  ASSERTS=$((ASSERTS + 1)); echo "  ✓ F-skill 技能源树 ${SKILL_LINES} 行（≤3400 软警戒；逐文件上限见 §5）"
+fi
+if [ "$FDE_LINES" -gt 2600 ]; then
+  echo "  ⚠️ F-fde FDE 手册与模板 ${FDE_LINES} 行 > 2600 软警戒——建议整理（模板去重、手册拆节外置）"
+else
+  ASSERTS=$((ASSERTS + 1)); echo "  ✓ F-fde FDE 手册与模板 ${FDE_LINES} 行（≤2600 软警戒）"
 fi
 
 echo "  ─────────────────────────"
@@ -1196,6 +1239,96 @@ elif [ -n "$FE_VIOL" ]; then
   ERRORS=$((ERRORS + 1))
 else
   ASSERTS=$((ASSERTS + 1)); echo "  ✓ §21 全仓 ${FE_N} 条 fresh-eyes 视角声称，均 ∈ {常规 ${FE_REGULAR}, 全量 ${FE_TOTAL}}"
+fi
+
+echo ""
+echo "=== 22. 文档计账覆盖对账（每个 tracked .md 必落在某个桶内 · 防静默漏计）==="
+# 病根实录（预算归层修正批）：2026-09-19 归层修正批把 `engine/dsh-plugins/**/*.md`
+#   （472 行，含 check-seam-contract.mjs 直接解析的词汇表 SSOT `SEAMS.md`）与
+#   `engine/orchestrator/src/sandbox/*.md`（46 行）**移出了 A 层却未加进 B 层 find**——
+#   批注自述「均属开发者参考面」，但这 518 行此后既不在 A/B/E 硬预算内、也不在任何
+#   F 软读数内。行数闸门对它们完全失明，且**没有任何读数能暴露这件事**：它不是红，是静默。
+#   （本批把这 518 行归入 B 层，并把 `SKILL/`、`FDE/` 两个同样无读数的面补成 F 软读数。）
+# 判据（双向，缺任一即半扇门）：
+#   ① 转计方向：`A_EXCLUDE_METERED` 每条命中的 tracked .md 必须落在 A/B/E/F 任一计量桶内
+#      ——「从 A 层移出」只在**别处有计量**时才成立；只移出不接手 = 静默漏计。
+#   ② 死条目方向：`METERED` 与 `FROZEN` 每条必须至少命中一个 tracked .md——零命中意味着
+#      该路径已无内容，排除项成了「过度放行」的口子（路径下再有文件就直落 A 层而不被察觉）。
+#      `A_EXCLUDE_GUARD`（gitignore 面 / 本仓不存在的商业面与运行时目录）合法零命中，
+#      **不做此断言**，否则纯造假红。
+# 口径声明（跨人可比）：匹配模式=find 同源的 `-path` 通配；大小写=区分；
+#   注释处理=不适用（对账对象是文件路径不是行内容）；切块边界=`git ls-files` 受跟踪面全量。
+DOCSCAN_ARTIFACT="${TMPDIR:-/tmp}/check-docs-cover.$$"
+mkdir -p "${DOCSCAN_ARTIFACT}" 2>/dev/null
+if [ ! -d "${DOCSCAN_ARTIFACT}" ]; then
+  ASSERTS=$((ASSERTS + 1)); echo "  ❌ §22 临时目录创建失败（${DOCSCAN_ARTIFACT}）——覆盖对账无法执行，拒绝静默通过"
+  ERRORS=$((ERRORS + 1))
+else
+  DOCSCAN_T="${DOCSCAN_ARTIFACT}"
+  {
+    find . -name "*.md" "${_A_PRUNE[@]}" -print 2>/dev/null
+    find ${B_ROOTS} -name "*.md" "${_B_PRUNE[@]}" -print 2>/dev/null
+    find ./docs/guides -name "*.md" -print 2>/dev/null
+    find ./FORGE/lessons ./playbook/vendor ./docs/WIKI.md ./docs/THANKS.md ./docs/assets ./docs/reports ./docs/examples -name "*.md" -print 2>/dev/null
+    find ./SKILL ./FDE -name "*.md" -print 2>/dev/null
+    find ./engine ./tools -name "README.md" -not -path "*/node_modules/*" -not -path "*/dist/*" -print 2>/dev/null
+  } | sed -e 's|^\./||' -e 's|^|/|' | LC_ALL=C sort -u > "${DOCSCAN_T}/buckets.txt"
+  git ls-files '*.md' 2>/dev/null | sed 's|^|/|' | LC_ALL=C sort > "${DOCSCAN_T}/tracked.txt"
+  # 🔴 计数写法说明：`grep -c` 在零命中时**既打印 0 又返回 1**——写成 `|| echo 0` 会得到
+  #    「0\n0」两个值，随后 `[ "$N" -gt 0 ]` 报 `integer expression expected` 并把判据整条跳过
+  #    （stderr 有字、ERRORS 不增 = 静默吞数家族的又一形态）。故一律 `|| true` 只掩退出码、
+  #    不追加输出，再由 `${VAR:-0}` 兜文件缺失。
+  DOCSCAN_TRACKED_N=$(grep -c . "${DOCSCAN_T}/tracked.txt" 2>/dev/null || true)
+  DOCSCAN_BUCKET_N=$(grep -c . "${DOCSCAN_T}/buckets.txt" 2>/dev/null || true)
+  : > "${DOCSCAN_T}/leak.txt"
+  : > "${DOCSCAN_T}/dead.txt"
+  # 逐条转计 + 死条目判定（一条一遍 tracked，命中即断，成本 = 模式数 × 文件数）
+  for _p in "${A_EXCLUDE_METERED[@]}"; do
+    _hit=0
+    while IFS= read -r _f; do
+      case "${_f}" in
+        ${_p})
+          _hit=1
+          LC_ALL=C grep -qxF "${_f}" "${DOCSCAN_T}/buckets.txt" || printf '%s\t%s\n' "${_p}" "${_f}" >> "${DOCSCAN_T}/leak.txt"
+          ;;
+      esac
+    done < "${DOCSCAN_T}/tracked.txt"
+    [ "${_hit}" -eq 1 ] || printf '%s\n' "${_p}" >> "${DOCSCAN_T}/dead.txt"
+  done
+  for _p in "${A_EXCLUDE_FROZEN[@]}"; do
+    _hit=0
+    while IFS= read -r _f; do
+      case "${_f}" in ${_p}) _hit=1; break ;; esac
+    done < "${DOCSCAN_T}/tracked.txt"
+    [ "${_hit}" -eq 1 ] || printf '%s\n' "${_p}" >> "${DOCSCAN_T}/dead.txt"
+  done
+  DOCSCAN_LEAK_N=$(grep -c . "${DOCSCAN_T}/leak.txt" 2>/dev/null || true)
+  DOCSCAN_DEAD_N=$(grep -c . "${DOCSCAN_T}/dead.txt" 2>/dev/null || true)
+  # 🔴 扫描面自证：清单或桶为空 ⇒ 守卫空转（哑守卫），必须判红而非静默通过。
+  #    另：排序用 LC_ALL=C 时比较也必须 LC_ALL=C——否则 comm 以当前 locale 校验「有序性」，
+  #    判成 not in sorted order 并**中途吐半截结果**。本行初版曾 `2>/dev/null || true`
+  #    静默吞掉该报错，把 297 个文件误报成「不在任何桶内」——正是本仓「检查器故障伪装成
+  #    违规/静默吞数」家族的又一实例，故此处 stderr 不吞、退出码不兜。
+  if [ "${DOCSCAN_TRACKED_N:-0}" -le 0 ] || [ "${DOCSCAN_BUCKET_N:-0}" -le 0 ]; then
+    ASSERTS=$((ASSERTS + 1)); echo "  ❌ §22 扫描面失效：tracked=${DOCSCAN_TRACKED_N:-0} 桶内=${DOCSCAN_BUCKET_N:-0}（任一为 0 即守卫空转）——拒绝静默通过"
+    ERRORS=$((ERRORS + 1))
+  elif [ "${DOCSCAN_LEAK_N:-0}" -gt 0 ]; then
+    ASSERTS=$((ASSERTS + 1))
+    echo "  ❌ §22 有 ${DOCSCAN_LEAK_N} 处「移出 A 层却未在任何桶内」的静默漏计（不计硬预算也不进软读数）："
+    head -20 "${DOCSCAN_T}/leak.txt" | sed 's/^/     /'
+    echo "     修法：加进对应层的 find（B 层开发者参考面 / F 家族软读数），或改列为 A_EXCLUDE_FROZEN 并写明冻结理由"
+    ERRORS=$((ERRORS + 1))
+  elif [ "${DOCSCAN_DEAD_N:-0}" -gt 0 ]; then
+    ASSERTS=$((ASSERTS + 1))
+    echo "  ❌ §22 排除项零命中（过度放行）："
+    sed 's/^/     /' "${DOCSCAN_T}/dead.txt"
+    echo "     修法：该路径确已无内容 ⇒ 删除本条排除；确属防御型 ⇒ 移入 A_EXCLUDE_GUARD"
+    ERRORS=$((ERRORS + 1))
+  else
+    ASSERTS=$((ASSERTS + 1))
+    echo "  ✓ §22 计账覆盖自洽：tracked .md ${DOCSCAN_TRACKED_N} 个全部有归属；转计型 ${#A_EXCLUDE_METERED[@]} 条命中全部落在计量桶内；冻结型 ${#A_EXCLUDE_FROZEN[@]} 条在岗；防御型 ${#A_EXCLUDE_GUARD[@]} 条不做命中断言"
+  fi
+  rm -rf "${DOCSCAN_T}"
 fi
 
 if [ "$ERRORS" -gt 0 ]; then
