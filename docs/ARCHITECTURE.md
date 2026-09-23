@@ -175,7 +175,7 @@ graph TB
 | EXECUTE | 执行 | DAG 运行 + HITL 人工审批 + 审计集成 + 异常兜底 |
 | SUSTAIN | 持续 | wrapToolCall 联动：执行 → 审计 → 反思 → 进化 |
 | S1M | System One Model（决策模型 · 身份句） | 本仓判定件之名——不生成文字、只输出类型化决策（三原语 Choice/Score/Noul）+ 校准概率 + 弃权语义。**判定/决策/判断三层口径**：身份句用「**决策模型**」（对齐 System One 谱系，产品身份）；机制句用「**判定**」（名词 · 机构面——判定面 · 判定底座 · 判定档 · 判据集 · 判定调用，只出结论、指向治理面）；叙事句用「**判断**」（动词 · 动作面——S1M 执行判断 · 判断被治理）。不互换：「决策」含行动意志指向应用面，「判定」是机制实体，「判断」是动作——混用会把治理面读成应用面 |
-| System 1 Agent | 品类名 | `FDEing × S1M × Harness` 组合定义的 Agent 品类（[v2.0.0 §一](./changelog/v2.0/v2.0.0.md)宣告）：FDE 定义场景，S1M 执行判断，Harness 保证判断被治理——不是更快的 Agent，是判断先被治理的 Agent。sofagent = **System One For Agents**（名字 backronym，谐音彩蛋保留） |
+| System 1 Agent | 品类名 | `S1A = S1M + Harness`（受 FDEing 作用——FDEing 为方法论 plug-in，见 v2.0.0 §一）定义的 Agent 品类（[v2.0.0 §一](./changelog/v2.0/v2.0.0.md)宣告）：FDE 定义场景，S1M 执行判断，Harness 保证判断被治理——不是更快的 Agent，是判断先被治理的 Agent。sofagent = **System One For Agents**（名字 backronym，谐音彩蛋保留） |
 
 > ⚠️ **旧名兼容**：五能力（注入/审计/回溯/沉淀/进化）中，前四能力即原约束底座/审计模块/回溯引擎/进化模块（v1.2.9 统一为「约束层四种能力」），「沉淀」承接原「进化」表述中的「经验沉淀」语义与知识蒸馏管线（knowledge/）。历史文档中的四能力与「引擎」表述保留不动（archive/changelog 是历史快照不改）。代码层面的类名 `AuditEngine`、函数名 `runAuditGate`、文件名 `engine/audit` 全是 API，保持不动。
 
