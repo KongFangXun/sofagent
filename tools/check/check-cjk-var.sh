@@ -36,7 +36,8 @@ cd "$(dirname "$0")/../.." || exit 1
 #   按**字节**匹配——覆盖面取决于各字符首字节是否碰巧撞进集合，是随机且不可
 #   预测的漏检（曾出现「（」只因与「）」共享前两字节才被命中的假覆盖）。
 PATTERN='\$[A-Za-z_][A-Za-z_0-9]*[^\x00-\x7F]'
-SELF="./tools/check/check-cjk-var.sh"
+SELF="tools/check/check-cjk-var.sh"
+# 兼容 ./ 前缀路径（find 流输出 ./xxx 形态；sed 已归一，此处双形态防御防回退）
 
 VIOLATIONS=0
 FILES=0
@@ -47,14 +48,37 @@ FILES=0
 # 全角字符，都藏在「仅失败分支输出」的行里，日常全绿掩盖；一旦该断言真失败，
 # set -u 下变量名被拼成 "f<0xE3>" → unbound variable → **整个验收脚本当场崩掉**，
 # 且崩的是「本该报 FAIL」的那一行——失败表现得比失败本身更糟。
-# 扫描面 = 全仓 .sh（排除 node_modules / dist / .git / 本脚本自检豁免）。
-ALL_SH=$(find . -name "*.sh" -type f \
-  -not -path "*/node_modules/*" -not -path "*/dist/*" -not -path "./.git/*" \
-  | LC_ALL=C sort)
+# 扫描面（v1.5.2 A-9 重构）：git ls-files 圈定「会被 bash 执行的文件」——
+# 判据 = 首行 shebang 匹配 bash|sh|zsh **或** 可执行位（-x）。扩展名不再是
+# 「会被 bash 执行」的充分条件：engine/audit/hooks/{pre-commit,post-commit,
+# commit-msg}（无扩展名、每次 commit 真正执行）与 *.command 文件此前全在
+# 视野外（第四轮 P1-5：`find -name "*.sh"` 对它们零命中）。
+# 排除面不变：node_modules / dist / .git / 本脚本自检豁免。
+ALL_SH=$(
+  {
+    git ls-files
+    find . -name "*.sh" -type f \
+      -not -path "*/node_modules/*" -not -path "*/dist/*" -not -path "./.git/*"
+  } | LC_ALL=C sort -u | sed 's|^\./||' | grep -vE '(^|/)(node_modules|dist|\.git)/' | while IFS= read -r _f; do
+      # 存在性（git ls-files 在文件被删未提交时仍列出）
+      [ -f "$_f" ] || continue
+      # 判据一：首行 shebang ^#! 含 bash|sh|zsh
+      if head -n 1 "$_f" 2>/dev/null | grep -qE '^#!.*((ba)?sh|zsh)'; then
+        printf '%s\n' "$_f"
+        continue
+      fi
+      # 判据二：可执行位（hook 无扩展名、.command 双击执行——bash 语义执行面）
+      if [ -x "$_f" ]; then
+        printf '%s\n' "$_f"
+        continue
+      fi
+      # 既无 shell shebang 又不可执行（含 .sh 扩展名但不执行的纯文本）——不在执行面
+    done
+)
 GUARDS_VIOL=0
 for f in $ALL_SH; do
   # 自检豁免：本脚本展示规则的文案行（含 \$VAR 字面量教学）不违规
-  [ "$f" = "$SELF" ] && continue
+  case "$f" in "$SELF"|./"$SELF") continue ;; esac
   FILES=$((FILES + 1))
   # 跳过纯注释行（行首 # 后的 $VAr 讲解不违规）
   # v1.4.6 修报号错位：此前先 `grep -v` 剔注释再交给 perl，perl 的 $. 取的是
