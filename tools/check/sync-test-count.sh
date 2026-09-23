@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# sync-test-count.sh · 测试数五文档一键同步（v1.4.3 复核轮交付）
+# sync-test-count.sh · 测试数四文件一键同步（v1.4.3 复核轮交付；2026-09-23 头部自述对齐实测滚动面——原「五文档」系漂移）
 #
 # 用法：
 #   bash tools/check/sync-test-count.sh            # 同步模式：实跑计数并更新文档
