@@ -508,10 +508,26 @@ migrate_to_install_dir() {
 }
 migrate_to_install_dir || { err "安装因迁移失败中止（数据安全，见上方提示）"; exit 1; }
 
-# v1.3.2 P1-8: 清理仓库内 .sofagent/ 残留（运行时数据应全在 ~/.sofagent/，仓库内不保留）
+# 清理仓库内 .sofagent/ 残留（运行时数据应全在 ~/.sofagent/，仓库内不保留）
+#
+# 破坏性护栏：该目录可能含 .git-shadow 审计快照等**不可再生**数据，且此处
+# 「自动迁移」受 data/ 存在性门控、可能整段跳过——直接 rm -rf 会静默销毁审计链。
+# 故默认**改名移出**（可回滚、可人工取回），只有显式 SOFAGENT_PURGE_REPO_DATA=1 才真删。
 if [ -d "${SCRIPT_DIR}/.sofagent" ] && [ "$SCRIPT_DIR" != "$HOME" ]; then
-  warn "检测到仓库内 .sofagent/ 残留，清理中..."
-  rm -rf "${SCRIPT_DIR}/.sofagent"
+  if [ "${SOFAGENT_PURGE_REPO_DATA:-}" = "1" ]; then
+    warn "SOFAGENT_PURGE_REPO_DATA=1：直接删除仓库内 .sofagent/ 残留"
+    rm -rf "${SCRIPT_DIR}/.sofagent"
+  else
+    _residue_bak="${SOFAGENT_HOME}/backup/repo-residue-$(date +%Y%m%d%H%M%S)"
+    mkdir -p "$(dirname "${_residue_bak}")"
+    # 同迁移纪律：移动失败保留源、绝不删除
+    if mv "${SCRIPT_DIR}/.sofagent" "${_residue_bak}" 2>/dev/null; then
+      warn "检测到仓库内 .sofagent/ 残留，已备份移出（未原地删除）：${_residue_bak}"
+      warn "  确认其中 .git-shadow 等数据不再需要后手动删除；如需安装时直接清除，用 SOFAGENT_PURGE_REPO_DATA=1 重跑"
+    else
+      warn "仓库内 .sofagent/ 残留备份失败，源目录已保留：${SCRIPT_DIR}/.sofagent（请手动检查）"
+    fi
+  fi
 fi
 
 ok "  安装目录结构就绪：${SOFAGENT_HOME}/ (data/ + internal/ + bin/ + skill/)"
