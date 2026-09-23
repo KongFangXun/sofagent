@@ -8,20 +8,24 @@
 //   **相对**说明符（以 `./` 或 `../` 开头）解析后若**越出本文件的包根**
 //   （= 距离该文件最近的、含 package.json 的祖先目录），即判违规。
 //
-// 为什么需要它（P1-2 前置事实）：
-//   `engine/dsh-plugins/plugin-kit` 是 `private: true` 且**刻意**不登记进根
-//   package.json 的 workspaces（理由见该包 `//notWorkspace` 字段：登记会撞
-//   check-version.sh §9e 的 rhythm 段断言）。6 款插件因此改用
-//   `'../../plugin-kit/dist/index.js'` 相对引用它。
-//   ⇒ **「刻意」只写在注释里、零守卫**：任何一次目录改名 / 加层级 / 误改前缀
-//     都不会被任何门禁发现，只会在构建或分发时炸。本脚本补上这个执行面。
+// 为什么需要它（P1-2 前置事实 → v1.5.2 章九第二轮起收敛）：
+//   本守卫起源于一处**零守卫的「刻意越包引用」**：`engine/dsh-plugins/plugin-kit`
+//   曾是 `private: true` 且**刻意**不登记进根 workspaces（旧 `//notWorkspace`），
+//   6 款原子插件因此用 `'../../plugin-kit/dist/index.js'` 相对引用它。该形态只写在
+//   注释里、无任何门禁，目录改名 / 加层级 / 误改前缀只会在构建或分发时静默爆炸。
+//   ⇒ v1.5.2 章九第二轮**已推翻该旧设计**：kit 转正为 workspace 成员 + npm 发布物
+//     （`@sofagent/dsh-plugin-kit`），6 款插件改用**包名**引用 ⇒ 上述「越包相对引用」
+//     形态**已不存在于扫描面**（`--selftest` 探针 B 逐帧断言其为 0，防回潮）。
+//   守卫**保留**为通用不变量：任何**新增**的越包相对引用（含重新引入旧形态）仍会
+//   FAIL，这正是它存在的意义——把「别越包」从口头约定钉成可执行约束。
 //
 // 覆盖边界（显式标出，不假装全覆盖）：
 //   ① 只扫 `engine/**/src/**/*.{ts,mts,cts}`（非 .d.ts）。**不扫 dist**——
 //      dist 是 `.gitignore:8` 忽略的派生产物，克隆态为空，扫它不可确定；
 //      src 是 SSOT，dist 由 'npm run build' 从 src 派生。
-//   ② 只判**相对**说明符。包名说明符（`@sofagent/*`）由
-//      'tools/check/dependency-direction.sh' 按包边界判，分工不重叠。
+//   ② 只判**相对**说明符。包名说明符（`@sofagent/*`，含 6 款插件现用的
+//      `@sofagent/dsh-plugin-kit`）由 'tools/check/dependency-direction.sh'
+//      按包边界判，分工不重叠。
 //   ③ `FORGE/`、`tools/` 下无多包嵌套结构，不在扫描面内。
 //
 // 三层负向断言（对齐 G-2/G-3/G-6 同族铁律：**不许静默通过**）：
@@ -53,36 +57,16 @@
 //   如需计数量纲，参照 `check-legacy-knowledge-path.mjs` 的 `{count, reason}` 形态。
 //
 // 🔴 登记理由（豁免必须逐族说清为什么，禁「反正它绿了」）：
-//   族 1 · 6 款原子插件的 `../../plugin-kit/dist/index.js`（6 条 · v1.4.9 P2 合并批 9→6）
-//     理由：plugin-kit 是 `private: true` 且**刻意不入 workspaces**（见该包
-//     `//notWorkspace`），6 款插件以相对路径引用它 ⇒ 在**仓内构建 / 目录切片**分发形态下
-//     这是**设计**，不是欠债。
-//     分发形态实测（P1-2 取证，非推断；v1.5.2 章九后 (a) 按新事实收窄）：
-//       a) **plugin-kit 不入 npm**（`private: true` 且非 workspace 成员）——仍然成立；
-//          ⚠️ 但 6 款插件**已是 npm 发布物**（v1.5.2 章九起摘 `private` + 加 `files`
-//          白名单，包内只带 `dist/` + `cordis.patch.yml` + `SKILL.md`，**不带
-//          plugin-kit**）。⇒ 「兄弟目录不随行」由假设变为既成事实：从 registry 装的单包，
-//          其 `dist/index.js` 里 `require('../../plugin-kit/dist/index.js')` 解析不到
-//          （实测 `MODULE_NOT_FOUND: Cannot find module '../../plugin-kit/dist/index.js'`），
-//          「单独可用」不成立。该缺口**不在本守卫判定面内**（本守卫只判相对引用是否越包，
-//          不判运行时能否解析），已作为独立项上报，处置未定——勿据本守卫绿推断 npm 可装可用。
-//       b) 两者 `dist/` 均不入 git（`.gitignore:8 dist/`）；
-//       c) 根 'npm run build' **显式**在 7 个插件之前执行
-//          'npm --prefix engine/dsh-plugins/plugin-kit run build' ⇒ 拓扑序被手工钉住；
-//       d) 故障注入实测：移走 `plugin-kit/dist` 后插件构建 **fail-loud**
-//          （`error TS2307: Cannot find module '../../plugin-kit/dist/index.js'`），
-//          不静默降级 ⇒ 假设「单目录切片分发」失效时也会当场报错，不会悄悄上线。
-//     残余风险（已承认；其中「单目录切片」一路已因 (a) 现实化，但不改变本守卫职责）：
-//       **构建期**缺兄弟目录 → TS2307 fail-loud；**npm 安装态**则加载期 MODULE_NOT_FOUND。
-//       本守卫把「目录改名 / 移位」钉成可执行约束——目录一旦改名/移位即 FAIL。
-//   族 2 · 清单 SSOT 对账测试读 plugins.json（3 条 · v1.4.9 P2 新增 2 条）
-//     a) `cordis-plugin-sofagent/src/index.test.ts → ../../plugins.json`（suite 面）
-//     b) `cordis-plugin-sofagent-audit/src/index.test.ts → ../../plugins.json`（seam 四值对账）
-//     c) `cordis-plugin-sofagent-fde/src/index.test.ts → ../../plugins.json`（featureGates 三档对账）
+//   族 1 · 清单 SSOT 对账测试读 plugins.json（6 条）
+//     `cordis-plugin-sofagent{-audit,-evolve,-fde,-inject,-rollback}/src/index.test.ts`
+//     与聚合款 `cordis-plugin-sofagent/src/index.test.ts` 各 1 条 → `../../plugins.json`
 //     理由：`plugins.json` 是 DSH 插件清单的**唯一手写源**（生成器据此产出各
-//     `package.json` / `cordis.patch.yml` 段）。这三处测试**就是要**对账这份 SSOT
-//     （audit 的 seam 四值、fde 的分档清单、suite 的条目数），故刻意相对引用而非
+//     `package.json` / `cordis.patch.yml` 段）。这 6 处测试**就是要**对账这份 SSOT
+//     （audit 的 seam 四值、fde 的分档清单、各款条目 / 计数），故刻意相对引用而非
 //     复制一份。测试面，不进运行时产物。
+//   （历史族 · v1.5.2 章九第二轮已收口：6 款插件曾以 `'../../plugin-kit/dist/index.js'`
+//     相对引用 plugin-kit，随 kit 转正为 npm 发布物改用包名引用，该**越包相对引用**形态
+//     已从扫描面消失——台账条目同步删除，`--selftest` 探针 B 显式断言其为 0，防回潮。）
 // ============================================================
 
 import fs from 'fs';
@@ -222,7 +206,7 @@ function selftest() {
   const probeContent = [
     `import local from '${probeInPackage}';`,      // 包内 → 不得判（负向对照）
     `import esc from '${probeEscape}';`,            // 越出包根 → 必须判
-    `const r = require('${probeKitShape}');`,       // 越出包根（与存量同形）→ 必须判
+    `const r = require('${probeKitShape}');`,       // 越出包根（历史 kit 存量同形）→ 必须判
   ].join('\n');
   const { violations } = scanTree({ virtual: [{ path: probePath, content: probeContent }] });
   const probeHits = [...violations].filter((v) => v.startsWith(probePath));
@@ -234,20 +218,24 @@ function selftest() {
   const okA2 = probeHits.includes(wantKit);
   const okA3 = !gotLocal;
   console.log(`  ${okA1 ? '✓' : '❌'} 越包（同级形状，import）必判：${okA1 ? '命中' : '未命中——判据是装饰品'}`);
-  console.log(`  ${okA2 ? '✓' : '❌'} 越包（与 6 条存量同形，require）必判：${okA2 ? '命中' : '未命中'}`);
+  console.log(`  ${okA2 ? '✓' : '❌'} 越包（历史 kit 存量同形，require）必判：${okA2 ? '命中' : '未命中——旧形态若回潮将无人拦截'}`);
   console.log(`  ${okA3 ? '✓' : '❌'} 包内相对引用不误判（负向对照）：${okA3 ? '未误判' : '误判了 local-helper.js'}`);
   if (!okA1 || !okA2 || !okA3) fail++;
 
-  // 探针 B：台账承重性——豁免必须是「逐条」而非「全有全无」
+  // 探针 B：台账承重性（逐条生效）+ 旧 kit 形态「已收口」断言（防回潮）
   const real = scanTree();
   const registered = [...real.violations].filter((v) => ledger.includes(v));
-  const kitEntries = registered.filter((v) => v.includes('plugin-kit/dist/index.js'));
+  const kitEntries = [...real.violations].filter((v) => v.includes('plugin-kit/dist/index.js'));
   const okB1 = real.violations.size > 0 && registered.length === real.violations.size;
   console.log(`  ${okB1 ? '✓' : '❌'} 实测违规全部已登记（无未登记孤儿）：${registered.length}/${real.violations.size}`);
   if (!okB1) fail++;
 
-  const okB2 = kitEntries.length === 6;
-  console.log(`  ${okB2 ? '✓' : '❌'} 其中 plugin-kit 族恰 6 条（与「6 款原子插件」口径对上 · v1.4.9 P2 合并批 9→6）：实测 ${kitEntries.length}`);
+  // B2 · v1.5.2 章九第二轮：6 款插件已改**包名**引用（@sofagent/dsh-plugin-kit），
+  //      旧 `'../../plugin-kit/dist/index.js'` 越包相对引用形态**必须已从扫描面消失**。
+  //      注：本探针取 `real.violations`（未过台账）——纵使有人把该形态重新登记回台账，
+  //      本项仍会红，是真正的「防回潮」锁，而非依赖台账状态的橡皮图章。
+  const okB2 = kitEntries.length === 0;
+  console.log(`  ${okB2 ? '✓' : '❌'} 旧 plugin-kit 越包相对引用已收口为 0（改用包名引用 · v1.5.2 章九二轮）：实测 ${kitEntries.length}`);
   if (!okB2) fail++;
 
   // 台账清空（内存模拟）→ 全部变未登记 ⇒ 豁免确实在承重，不是橡皮章
@@ -256,16 +244,17 @@ function selftest() {
   console.log(`  ${okB3 ? '✓' : '❌'} 台账清空后全部变未登记（承重性）：${newOnesEmpty.length}/${real.violations.size}`);
   if (!okB3) fail++;
 
-  // 只摘掉 plugin-kit 那 6 条 → **恰 6 条**变未登记 ⇒ 台账是「逐条」生效
-  const withoutKit = ledger.filter((v) => !v.includes('plugin-kit'));
-  const newOnesPartial = [...real.violations].filter((v) => !withoutKit.includes(v));
-  const okB4 = newOnesPartial.length === 6;
-  console.log(`  ${okB4 ? '✓' : '❌'} 仅摘掉 plugin-kit 6 条 → 恰 6 条转未登记（逐条生效，非全有全无 · v1.4.9 P2）：实测 ${newOnesPartial.length}`);
+  // 只摘掉台账**首条** → **恰 1 条**变未登记 ⇒ 台账是「逐条」生效，不是全有全无
+  const withoutFirst = ledger.slice(1);
+  const newOnesPartial = [...real.violations].filter((v) => !withoutFirst.includes(v));
+  const okB4 = newOnesPartial.length === 1;
+  console.log(`  ${okB4 ? '✓' : '❌'} 仅摘掉台账首条 → 恰 1 条转未登记（逐条生效，非全有全无）：实测 ${newOnesPartial.length}`);
   if (!okB4) fail++;
 
-  // 探针 C：6 条存量的登记理由同源可核对（全部指向同一包）
-  const okC = kitEntries.every((v) => v.endsWith('→ ../../plugin-kit/dist/index.js'));
-  console.log(`  ${okC ? '✓' : '❌'} 6 条存量说明符同形（登记理由单一、可核对）`);
+  // 探针 C：现存存量的登记理由同源可核对（全部指向 plugins.json 这一份 SSOT）
+  const pluginsJsonEntries = registered.filter((v) => v.endsWith('→ ../../plugins.json'));
+  const okC = registered.length > 0 && pluginsJsonEntries.length === registered.length;
+  console.log(`  ${okC ? '✓' : '❌'} 现存 ${registered.length} 条存量说明符同形（全指 plugins.json，登记理由单一、可核对）：满足 ${pluginsJsonEntries.length}`);
   if (!okC) fail++;
 
   console.log('');

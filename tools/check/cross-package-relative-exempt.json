@@ -1,14 +1,8 @@
 [
   "engine/dsh-plugins/cordis-plugin-sofagent-audit/src/index.test.ts → ../../plugins.json",
-  "engine/dsh-plugins/cordis-plugin-sofagent-audit/src/index.ts → ../../plugin-kit/dist/index.js",
-  "engine/dsh-plugins/cordis-plugin-sofagent-daemon/src/index.ts → ../../plugin-kit/dist/index.js",
   "engine/dsh-plugins/cordis-plugin-sofagent-evolve/src/index.test.ts → ../../plugins.json",
-  "engine/dsh-plugins/cordis-plugin-sofagent-evolve/src/index.ts → ../../plugin-kit/dist/index.js",
   "engine/dsh-plugins/cordis-plugin-sofagent-fde/src/index.test.ts → ../../plugins.json",
-  "engine/dsh-plugins/cordis-plugin-sofagent-fde/src/index.ts → ../../plugin-kit/dist/index.js",
   "engine/dsh-plugins/cordis-plugin-sofagent-inject/src/index.test.ts → ../../plugins.json",
-  "engine/dsh-plugins/cordis-plugin-sofagent-inject/src/index.ts → ../../plugin-kit/dist/index.js",
   "engine/dsh-plugins/cordis-plugin-sofagent-rollback/src/index.test.ts → ../../plugins.json",
-  "engine/dsh-plugins/cordis-plugin-sofagent-rollback/src/index.ts → ../../plugin-kit/dist/index.js",
   "engine/dsh-plugins/cordis-plugin-sofagent/src/index.test.ts → ../../plugins.json"
 ]
