@@ -5,7 +5,6 @@
     "node": ">=18"
   },
   "description": "给宿主加上经验沉淀——任务收尾自动写 think.md 反思条目（seam: session/event）——桥接 @sofagent/think generateThinkEntry / @sofagent/core parseDiff / @sofagent/audit runRules / @sofagent/core getDataDir",
-  "private": true,
   "license": "MIT",
   "author": "KongFangXun",
   "main": "dist/index.js",
@@ -42,5 +41,13 @@
     "bundle": {
       "patch": "./cordis.patch.yml"
     }
-  }
+  },
+  "files": [
+    "dist/",
+    "cordis.patch.yml",
+    "SKILL.md",
+    "!dist/**/*.js.map",
+    "!dist/**/*.d.ts.map",
+    "!dist/**/*.test.*"
+  ]
 }

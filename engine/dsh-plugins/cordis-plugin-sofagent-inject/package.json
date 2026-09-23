@@ -5,7 +5,6 @@
     "node": ">=18"
   },
   "description": "给宿主加上约束注入——每次请求模型前带上企业铁律 / 反思 / 用户规则 / 知识库（四层加载链）（seam: agent/pre-step）——桥接 @sofagent/inject buildConstrainedSystemPrompt",
-  "private": true,
   "license": "MIT",
   "author": "KongFangXun",
   "main": "dist/index.js",
@@ -40,5 +39,13 @@
     "bundle": {
       "patch": "./cordis.patch.yml"
     }
-  }
+  },
+  "files": [
+    "dist/",
+    "cordis.patch.yml",
+    "SKILL.md",
+    "!dist/**/*.js.map",
+    "!dist/**/*.d.ts.map",
+    "!dist/**/*.test.*"
+  ]
 }

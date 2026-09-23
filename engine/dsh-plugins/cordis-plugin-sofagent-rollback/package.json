@@ -5,7 +5,6 @@
     "node": ">=18"
   },
   "description": "给宿主加上快照回溯——Agent 出错时按 git 快照逆序撤销本次改动（seam: agent/error）——桥接 @sofagent/core restoreSnapshot / @sofagent/core listSnapshots",
-  "private": true,
   "license": "MIT",
   "author": "KongFangXun",
   "main": "dist/index.js",
@@ -40,5 +39,13 @@
     "bundle": {
       "patch": "./cordis.patch.yml"
     }
-  }
+  },
+  "files": [
+    "dist/",
+    "cordis.patch.yml",
+    "SKILL.md",
+    "!dist/**/*.js.map",
+    "!dist/**/*.d.ts.map",
+    "!dist/**/*.test.*"
+  ]
 }

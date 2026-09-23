@@ -5,7 +5,6 @@
     "node": ">=18"
   },
   "description": "一次挂载 sofagent 全套能力（6 项一次到位：注入 · 审计与验收 · 经验 · 回溯 · 巡检 · FDE 三域）（seam: non-seam:plugin-suite）——一次性挂载 6 个原子插件",
-  "private": true,
   "license": "MIT",
   "author": "KongFangXun",
   "main": "dist/index.js",
@@ -42,5 +41,13 @@
     "bundle": {
       "patch": "./cordis.patch.yml"
     }
-  }
+  },
+  "files": [
+    "dist/",
+    "cordis.patch.yml",
+    "SKILL.md",
+    "!dist/**/*.js.map",
+    "!dist/**/*.d.ts.map",
+    "!dist/**/*.test.*"
+  ]
 }

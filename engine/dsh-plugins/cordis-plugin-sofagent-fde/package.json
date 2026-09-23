@@ -5,7 +5,6 @@
     "node": ">=18"
   },
   "description": "FDE 进场与能力流通——把企业业务梳理成 AI 能力，并让这些能力在企业内被发布、发现、调用、评价、退役（seam: non-seam:tool-set）——桥接 @sofagent/orchestrator publishCapability / @sofagent/ontology generateOntologyView / @sofagent/core restoreSnapshot",
-  "private": true,
   "license": "MIT",
   "author": "KongFangXun",
   "main": "dist/index.js",
@@ -113,5 +112,13 @@
     "bundle": {
       "patch": "./cordis.patch.yml"
     }
-  }
+  },
+  "files": [
+    "dist/",
+    "cordis.patch.yml",
+    "SKILL.md",
+    "!dist/**/*.js.map",
+    "!dist/**/*.d.ts.map",
+    "!dist/**/*.test.*"
+  ]
 }
