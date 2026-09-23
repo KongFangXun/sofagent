@@ -228,15 +228,15 @@ Agent = **模型 + 上下文 + 工具 + 状态 + 执行控制 + 权限 + 可观�
 
 | 包 | 职责 | 状态 |
 |---|---|---|
-| audit | 提交时审计，24 条规则（17 默认 + 7 扩展，[完整清单见 SECURITY](../SECURITY.md#24-条审计规则完整清单文档级-ssot)）硬证据扫描 + 快照/回滚/webhook + 本体建模要求对齐维度（`runRules({gb48000:true})` opt-in） | ✅ 已实现（1292 测试） |
+| audit | 提交时审计，24 条规则（17 默认 + 7 扩展，[完整清单见 SECURITY](../SECURITY.md#24-条审计规则完整清单文档级-ssot)）硬证据扫描 + 快照/回滚/webhook + 本体建模要求对齐维度（`runRules({gb48000:true})` opt-in） | ✅ 已实现（1352 测试） |
 | core | 核心运行时：git diff 解析、shadow-repo 快照、AES-256-GCM/ECDH、think.md 契约、doctor、LLM 调用 Trace、stop_reason 分类、身份码 Ed25519、敏感识别三层插槽（T8：L0 正则/L1 词典/L2 外挂 NER + DetectorRegistry 调度 + 置信度分层 + Presidio 标签映射） | ✅ 已实现（562 测试） |
 | inject | 四层约束加载链 `buildConstrainedSystemPrompt()` + L4 渐进加载（热点全文 + 索引） | ✅ 已实现 |
 | rules | 规则引擎纯函数包（零 git 依赖；fs 仅限 AST 扫描的临时目录——mkdtemp 写入待检源码片段，扫描后即清理），编排层 tool-call 事前拦截 + 审批四模式 | ✅ 已实现 |
 | eval | 质量评估模块：精确匹配 / 语义相似 / 规则合规 三维评分 | ✅ 已实现 |
 | ab-test | A/B 自进化：current vs candidate 并行对比，连续胜出 + 非退化守卫才晋升 | ✅ 已实现 |
-| orchestrator | 编排模块：DAG 任务拆解 + LangGraph 闭环 + A/B 调度器 + ToolGate 事前拦截 + Ontology 运行时层 + 并行编排（MergeQueue/ParallelScheduler/波次卡关）+ Durable Execution + Onboard L1-L5 + Benchmark 评测 + agent-creation + FDE 梳理辅助 + Session 隔离 + meta-harness 多 harness 编排 + worklog 工作明细数据层 + FDE 六引擎工作台 + workflow 模板血缘（lineage 事件流 + fork 谱系回溯）+ 执行时 Skill 快照（打包/清理/审计锚点） | ✅ 已实现（1426 测试） |
+| orchestrator | 编排模块：DAG 任务拆解 + LangGraph 闭环 + A/B 调度器 + ToolGate 事前拦截 + Ontology 运行时层 + 并行编排（MergeQueue/ParallelScheduler/波次卡关）+ Durable Execution + Onboard L1-L5 + Benchmark 评测 + agent-creation + FDE 梳理辅助 + Session 隔离 + meta-harness 多 harness 编排 + worklog 工作明细数据层 + FDE 六引擎工作台 + workflow 模板血缘（lineage 事件流 + fork 谱系回溯）+ 执行时 Skill 快照（打包/清理/审计锚点） | ✅ 已实现（1474 测试） |
 | train | 后训模块：train-job 编排/审计/隔离/指纹/签名/回收/恢复/安全 + 数据管道/版本/eval 闭环/环境/dry-run/报告 + 云端执行面（替换路径 `import { createTrainJob } from '@sofagent/train'`） | ✅ 已实现（717 测试） |
-| daemon | 守护进程：cron + fs 监听 + 文件级审计 + USB 烧录 + 联邦查询 + Dream Cycle 6 阶段 + 启动 LOOP 续跑检查 + 审计轨迹聚合巡检 + 训练孤儿巡检 + 模型清单扫描（注册表 + 端点探测双源） | ✅ 已实现（555 测试） |
+| daemon | 守护进程：cron + fs 监听 + 文件级审计 + USB 烧录 + 联邦查询 + Dream Cycle 6 阶段 + 启动 LOOP 续跑检查 + 审计轨迹聚合巡检 + 训练孤儿巡检 + 模型清单扫描（注册表 + 端点探测双源） | ✅ 已实现（582 测试） |
 | mcp | MCP Server：JSON-RPC 2.0 over stdio，tools + resources（107 tools）——含 FDE 六引擎（fde_interview/classify/quantify/derive/distill/deploy）、训练系（train_status/train_list/train_diagnose/corpus_export/train_serve/train_compliance/train_deliverable）、连接器与模板面（connector_register/connector_list/workflow_export/workflow_import） | ✅ 已实现 |
 | ontology | 领域本体：合并 / 状态 / 视图 / 概念合成，三层 YAML 自动生长 | ✅ 已实现 |
 | evolve | Skill 优化：复用 audit 规则做安全审查 + 集成优化 + 回填（原 skillopt） | ✅ 已实现 |
@@ -250,7 +250,7 @@ Agent = **模型 + 上下文 + 工具 + 状态 + 执行控制 + 权限 + 可观�
 v1.3.9 起对所有 workspace 包的入口 export 做显式分级，CI 门禁（[tools/check/public-api.mjs](./../tools/check/public-api.mjs)）拦截未 bump 版本的 `@public` 破坏性变更。
 
 **为什么是这个粒度**：
-- 基线覆盖 **13 个包**（12 个 `@sofagent/*` 模块包 + 工具包 `load-chain`；`engine/mcp` 无 `@public` 标注不入基线）——当前 13 包共 **2631 个 @public 符号**（以 `public-api.mjs` AST 解析为权威口径，非 grep 计数；v1.5.1 增量 +84：orchestrator 900→963（+63，章一事件总线与三类事件源适配器 + 章三异常三分类路由与死信重放 + 章二 PR 决策解释面；同版修复批复核处置 4 符号——B1 **删除** `sortEventsByTime`（全仓含测试面零引用，死导出除根）+ 收窄 `setDefaultAnomalyBus`（测试缝），F2 同法收窄 `createWebhookAdapter` + `createTimerAdapter`（宿主装配不在本版落点、零生产调用点）——被删者原即不计入 @public，故不影响本行计数）、daemon 274→295（+21，章四 OTA 升级执行器与升级策略 + 章五任务下发推送与订阅登记；平台侧签名器 `signDelivery` 按「本版只出执行侧」降 `@internal`，设备上线钩子 `onDeviceOnline` 按「宿主装配不在本版落点、零生产调用点」同法降 `@internal`，故 23 项中 2 项不计入）；v1.5.0 时点值 2547（双向变动：存量清扫退役 3 符号——composeWithDeepAgents 与 checkHistoryChainIntegrity 双导出，2494→2491；新功能新增 56——章一治理面 16 + 章二双时态 9 + 章八 trace 对账 24 + 章五数据集审阅 4 + 章五陪跑期 3，两段不重叠故 56 即净值）；v1.4.0 时点 1456 / v1.4.6 时点 2168 / v1.4.7 时点 2364（更早时点值）。本行以门禁 baseline 对齐为准）。
+- 基线覆盖 **13 个包**（12 个 `@sofagent/*` 模块包 + 工具包 `load-chain`；`engine/mcp` 无 `@public` 标注不入基线）——当前 13 包共 **2650 个 @public 符号**（以 `public-api.mjs` AST 解析为权威口径，非 grep 计数；v1.5.2 增量 +19：rules 出口治理面 11 符号（egress-policy 契约类型 + 裁决函数）+ daemon 审计事件流订阅桥 4 符号 + 并行批 4；v1.5.1 增量 +84：orchestrator 900→963（+63，章一事件总线与三类事件源适配器 + 章三异常三分类路由与死信重放 + 章二 PR 决策解释面；同版修复批复核处置 4 符号——B1 **删除** `sortEventsByTime`（全仓含测试面零引用，死导出除根）+ 收窄 `setDefaultAnomalyBus`（测试缝），F2 同法收窄 `createWebhookAdapter` + `createTimerAdapter`（宿主装配不在本版落点、零生产调用点）——被删者原即不计入 @public，故不影响本行计数）、daemon 274→295（+21，章四 OTA 升级执行器与升级策略 + 章五任务下发推送与订阅登记；平台侧签名器 `signDelivery` 按「本版只出执行侧」降 `@internal`，设备上线钩子 `onDeviceOnline` 按「宿主装配不在本版落点、零生产调用点」同法降 `@internal`，故 23 项中 2 项不计入）；v1.5.0 时点值 2547（双向变动：存量清扫退役 3 符号——composeWithDeepAgents 与 checkHistoryChainIntegrity 双导出，2494→2491；新功能新增 56——章一治理面 16 + 章二双时态 9 + 章八 trace 对账 24 + 章五数据集审阅 4 + 章五陪跑期 3，两段不重叠故 56 即净值）；v1.4.0 时点 1456 / v1.4.6 时点 2168 / v1.4.7 时点 2364（更早时点值）。本行以门禁 baseline 对齐为准）。
 - 未标记的导出**默认视为 @public**（保守默认：宁可多承诺不可漏承诺），`@internal` 需显式标注。
 
 **为什么 @internal 破坏性变更不影响适配层**：
