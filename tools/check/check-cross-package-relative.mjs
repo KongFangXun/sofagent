@@ -55,18 +55,26 @@
 // 🔴 登记理由（豁免必须逐族说清为什么，禁「反正它绿了」）：
 //   族 1 · 6 款原子插件的 `../../plugin-kit/dist/index.js`（6 条 · v1.4.9 P2 合并批 9→6）
 //     理由：plugin-kit 是 `private: true` 且**刻意不入 workspaces**（见该包
-//     `//notWorkspace`），6 款插件以相对路径引用它 ⇒ 这是**设计**，不是欠债。
-//     分发形态实测（P1-2 取证，非推断）：
-//       a) 插件与 plugin-kit 均不入 npm（插件 `private: true`；plugin-kit 既
-//          `private` 又非 workspace 成员）；
+//     `//notWorkspace`），6 款插件以相对路径引用它 ⇒ 在**仓内构建 / 目录切片**分发形态下
+//     这是**设计**，不是欠债。
+//     分发形态实测（P1-2 取证，非推断；v1.5.2 章九后 (a) 按新事实收窄）：
+//       a) **plugin-kit 不入 npm**（`private: true` 且非 workspace 成员）——仍然成立；
+//          ⚠️ 但 6 款插件**已是 npm 发布物**（v1.5.2 章九起摘 `private` + 加 `files`
+//          白名单，包内只带 `dist/` + `cordis.patch.yml` + `SKILL.md`，**不带
+//          plugin-kit**）。⇒ 「兄弟目录不随行」由假设变为既成事实：从 registry 装的单包，
+//          其 `dist/index.js` 里 `require('../../plugin-kit/dist/index.js')` 解析不到
+//          （实测 `MODULE_NOT_FOUND: Cannot find module '../../plugin-kit/dist/index.js'`），
+//          「单独可用」不成立。该缺口**不在本守卫判定面内**（本守卫只判相对引用是否越包，
+//          不判运行时能否解析），已作为独立项上报，处置未定——勿据本守卫绿推断 npm 可装可用。
 //       b) 两者 `dist/` 均不入 git（`.gitignore:8 dist/`）；
 //       c) 根 'npm run build' **显式**在 7 个插件之前执行
 //          'npm --prefix engine/dsh-plugins/plugin-kit run build' ⇒ 拓扑序被手工钉住；
 //       d) 故障注入实测：移走 `plugin-kit/dist` 后插件构建 **fail-loud**
 //          （`error TS2307: Cannot find module '../../plugin-kit/dist/index.js'`），
 //          不静默降级 ⇒ 假设「单目录切片分发」失效时也会当场报错，不会悄悄上线。
-//     残余风险（已承认，未消）：若某分发通道**只取单个插件目录**（兄弟目录不随行），
-//      构建期才会炸。本守卫把该假设钉成可执行约束——目录一旦改名/移位即 FAIL。
+//     残余风险（已承认；其中「单目录切片」一路已因 (a) 现实化，但不改变本守卫职责）：
+//       **构建期**缺兄弟目录 → TS2307 fail-loud；**npm 安装态**则加载期 MODULE_NOT_FOUND。
+//       本守卫把「目录改名 / 移位」钉成可执行约束——目录一旦改名/移位即 FAIL。
 //   族 2 · 清单 SSOT 对账测试读 plugins.json（3 条 · v1.4.9 P2 新增 2 条）
 //     a) `cordis-plugin-sofagent/src/index.test.ts → ../../plugins.json`（suite 面）
 //     b) `cordis-plugin-sofagent-audit/src/index.test.ts → ../../plugins.json`（seam 四值对账）

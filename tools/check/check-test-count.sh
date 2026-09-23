@@ -383,8 +383,10 @@ PKG_COUNT=$(echo "$TC_OUT" | LC_ALL=C sed $'s/\033\[[0-9;]*m//g' | grep -oE 'PKG
 [ -z "$PKG_COUNT" ] && PKG_COUNT=0
 
 # B13: 模块包数（README 声称「13 模块包」对账用）
-# v1.4.0：只数发布到 npm 的 13 个 @sofagent/* 引擎模块包——engine/dsh-plugins/ 下 10 个
-#   插件包为 private（不发布）、engine/umbrella 是 npm 裸名总包（走 [README] 另一个口径：
+# v1.4.0：只数发布到 npm 的 13 个 @sofagent/* 引擎模块包——engine/dsh-plugins/ 下
+#   7 个插件包（v1.4.9 P2 合并批 10→7；v1.5.2 章九起已摘 `private` 并上 npm，但**仍不计入
+#   「模块包」口径**——插件另有 DSH_PLUGIN_COUNT 口径，两条口径不混算）、
+#   engine/umbrella 是 npm 裸名总包（走 [README] 另一个口径：
 #   「14 个模块包发布至 npm @sofagent scope」= 13 模块 + umbrella）、
 #   engine/hooks/sofagent-load-chain 是构建序列末位的工具包（见 docs/WIKI.md §六 口径表），三者均不计入。
 # 兜底用 || true 而非 || echo "0"：grep -c 零匹配已自行输出单行 0，|| echo 0 追加第二行成双零
