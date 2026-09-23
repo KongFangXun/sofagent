@@ -5,7 +5,7 @@
 export { EventBus } from './bus';
 export type { EventBusOptions, EventHandler, EventSubscriptionHandle, DeadLetterInput, PendingDispatch } from './bus';
 // v1.5.2 第三章：运行时 should-run 判定链（五问 + 派发前置挂起/自动恢复）
-export { shouldRun, createShouldRunGate, SHOULD_RUN_ORDER } from './should-run';
+export { shouldRun, createShouldRunGate, createDefaultShouldRunGate, buildEnterpriseEventBusOptions, SHOULD_RUN_ORDER } from './should-run';
 export type {
   ShouldRunQuestion,
   ShouldRunCheck,
@@ -15,6 +15,8 @@ export type {
   ShouldRunProbe,
   ShouldRunProbes,
   ShouldRunGate,
+  DefaultShouldRunGateDeps,
+  EnterpriseEventBusOptions,
 } from './should-run';
 export {
   createNodeOutputSource,

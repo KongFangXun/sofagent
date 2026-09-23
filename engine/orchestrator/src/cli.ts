@@ -343,6 +343,7 @@ async function main() {
           EventRouter,
           createNodeOutputSource,
           parseEventSubscriptions,
+          buildEnterpriseEventBusOptions,
         } = await import('./events');
 
         let eventWorkflowText: string | null = null;
@@ -358,7 +359,31 @@ async function main() {
           console.warn(`  ⚠️ 事件订阅声明未生效：${(err as Error).message}`);
         }
 
-        const eventBus = eventWorkflowText !== null ? new OrchestratorEventBus({ dataDir }) : null;
+        // v1.5.2 第三章：生产接线——把五问 should-run 判定链接入本仓**唯一的生产
+        // EventBus 构造点**（事件派发前置）。真实状态源：
+        //   · human-gate ← registry.listAgents（企业 agent 定义的 hitl 标记，对齐
+        //                  node-executor 的 checkHITL 判定依据）；
+        //   · quota      ← audit.queryByKind('COST')（预算告警可查态）；
+        //   · health     ← 本作用域内无断路器实例（事件触发路径未接断路器），
+        //                  按降级铁律恒通过；
+        //   · evidence / focus ← 新引入判定位，仓内无运行时常量，恒通过。
+        // 🔴 降级铁律：任一状态源不可得/未配置/抛错 → 该问判通过（permissive），
+        //    默认态（干净数据）下行为与接线前逐字一致；装配实现见
+        //    events/should-run.ts 的 createDefaultShouldRunGate。
+        const eventBus =
+          eventWorkflowText === null
+            ? null
+            : await (async () => {
+                const { listAgents: listEnterpriseAgents } = await import('./registry');
+                const { queryByKind } = await import('@sofagent/audit');
+                return new OrchestratorEventBus(
+                  buildEnterpriseEventBusOptions({
+                    dataDir,
+                    listAgents: listEnterpriseAgents,
+                    queryCostDecisions: (dir: string) => queryByKind('COST', {}, dir),
+                  }),
+                );
+              })();
         const eventOutput = eventBus === null ? null : createNodeOutputSource(eventBus);
         const eventHandled = new Set<string>();
         const eventRouter =
