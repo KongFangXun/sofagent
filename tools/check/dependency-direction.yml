@@ -5,12 +5,13 @@
 #
 # 🔴 口径裁定（写进清单头部，避免与既有门禁混写——各口径全表见开发 Prompt「包计数术语表」SSOT）：
 #   ① 本清单覆盖 **build 序列 14 包** = 13 模块包 + engine/hooks/sofagent-load-chain（**不含 engine/umbrella**）。
-#      workspace 实为 26 项——另含 11 个 DSH/OpenClaw 插件（7+4）与 engine/umbrella，
-#      属适配层/分发层叶子，不在 npm 包依赖面边界清单范围。
+#      workspace 实为 27 项——另含 11 个 DSH/OpenClaw 插件（7+4）、engine/umbrella 与
+#      engine/dsh-plugins/plugin-kit（v1.5.2 章九二轮起转入 workspace），三者均属适配层/分发层
+#      叶子，不在 npm 包依赖面边界清单范围。
 #   ② 模块包 14（含 umbrella）与 build 序列 14（不含 umbrella）在此统一取 **build 序列口径**
 #      （load-chain 是构建拓扑序末位、umbrella 不参与依赖图）。
-#   ③ 测试口径 13 包（engine/umbrella 无独立 test workspace）、check-version.sh §1/§2 硬编码
-#      循环 12 包（含 mcp + train；该脚本 §9b/§12b 已由本文件 rhythm.sync 驱动，15 包）、
+#   ③ 测试口径 13 包（engine/umbrella 无独立 test workspace）、check-version.sh §1/§2 结构性派生
+#      13 项（v1.5.1 F7 起不再持有手写包清单；该脚本 §9b/§12b 由本文件 rhythm.sync 驱动，16 包）、
 #      public-api-baseline.json 13 包
 #      （含 rules/load-chain/train、不含 mcp）——
 #      既有门禁口径各异，本门禁只断言 build 序列 14 包的依赖方向，不重述其它口径。
@@ -109,20 +110,20 @@ packages:
 #       + engine/dsh-plugins/plugin-kit（v1.5.2 章九二轮起转 npm 发布物 @sofagent/dsh-plugin-kit）
 #   ⚠️ 枚举源必须是 package.json 的 workspaces 字段——`ls -d engine/*/` 只得 19 个目录，会漏 10+ 项。
 #   ⚠️ detached 段的 FORGE/ 是内部工具、**不属于** workspace，不计入这 27 项。
-#   ⚠️ 口径待议（v1.5.2 章九二轮发现，如实标注不掩盖）：plugin-kit 当前由下方 independent 的
-#       `engine/dsh-plugins/*` glob 覆盖 ⇒ §9b **不对其做「版本 == SSOT」精确断言**。但按本段定义，
-#       independent 语义是「各有发布通道（SkillHub/ClawHub）」而 kit 是**同步发版的 npm 发布物**、
-#       不走 SkillHub——语义上更应入 sync。是否把 kit 移入 sync（并把 independent 的 glob 收窄为
-#       7 个插件）属版本策略改动，留待拍板；未拍板前此处只标注、不改结构（当前 kit 版本 == SSOT，
-#       无观测差异；风险面是未来漂移不被 §9b 拦下）。
+#   🔴 plugin-kit 归 **sync**（v1.5.2 章九二轮裁定）：判据 = **无第二发布通道**——它是 DSH 适配层基座，
+#      只有 npm 一条通道、随主线同版发布（不像 DSH 插件另有 SkillHub、OpenClaw 插件另有 ClawHub）；
+#      故必须受 §9b「版本 == SSOT」精确断言。目录在 engine/dsh-plugins/ 下、与短名不同名，故 sync
+#      条目显式给 path（见下方 sync 段）；independent 的 DSH glob 同步收窄为只覆盖 7 款插件。
 rhythm:
   # ── 严格同频：版本必须精确 == SSOT ──
-  # 15 包 = check-version.sh §9b 原硬编码的 11 包（inject ontology eval core audit mcp
+  # 16 包 = check-version.sh §9b 原硬编码的 11 包（inject ontology eval core audit mcp
   #         orchestrator daemon ab-test think evolve）
   #       + rules（§9b 历史漏登记，packages 段早已收录）
   #       + umbrella（第 13 个 engine 包；npm 名 sofagent，随主线发布的聚合包）
   #       + engine/hooks/sofagent-load-chain（build 序列末位构建钩子）
   #       + train（必须精确同频，故 §9b/§12b 自动纳入其校验）
+  #       + engine/dsh-plugins/plugin-kit（v1.5.2 章九二轮；只有 npm 一条通道、随主线同版发布
+  #         ⇒ 归 sync。目录不在 engine/<name> 且未登记 packages: 段 ⇒ 此条显式给 path）
   sync:
     - inject
     - ontology
@@ -139,15 +140,17 @@ rhythm:
     - rules
     - umbrella
     - load-chain
+    - name: dsh-plugin-kit
+      path: engine/dsh-plugins/plugin-kit
 
   # ── 独立节奏：各有发布通道，版本可不同步 ──
   # ⚠️ 现存张力（本批未动）：§9c 仍断言 openclaw-plugins 双 manifest 版本 == SSOT
   #    （ClawHub package publish 校验硬要求），故本段对 OpenClaw 表达的是「发布通道独立」，
   #    版本自由度需 §9c 一并放开后才真正生效。
   independent:
-    - path: engine/dsh-plugins/*        # 走 SkillHub（DSH 插件家族 7 个）
+    - path: engine/dsh-plugins/cordis-plugin-sofagent*  # 走 SkillHub（DSH 插件家族 7 个；已排除 plugin-kit——它归 sync）
     - path: engine/openclaw-plugins/*   # 走 ClawHub（OpenClaw 插件家族 4 个）
 
   # ── 完全脱离：内部工具，不随任何发行物 ──
   detached:
-    - path: FORGE                       # FORGE 自迭代工具链（非 workspace，不计入 26 项）
+    - path: FORGE                       # FORGE 自迭代工具链（非 workspace，不计入 27 项）

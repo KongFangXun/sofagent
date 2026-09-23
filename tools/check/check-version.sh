@@ -196,8 +196,12 @@ rhythm_dump() {
     const rhythm = spec.rhythm || {};
     const pkgs = spec.packages || {};
     const asPath = (e) => (typeof e === "string" ? e : (e && e.path) || "");
-    for (const name of rhythm.sync || []) {
-      const p = (pkgs[name] && pkgs[name].path) || "engine/" + name;
+    for (const entry of rhythm.sync || []) {
+      // v1.5.2 章九二轮：sync 条目支持显式 { name, path } 形态（与下方 independent/detached 的
+      //   asPath 用法同构）——供「随主线同版发布、但目录不在 engine/<name> 且未登记进 packages: 段」
+      //   的包（如 engine/dsh-plugins/plugin-kit）声明精确路径，§9b/§9e/§12b 三个消费者无需改动。
+      const name = typeof entry === "string" ? entry : (entry && entry.name) || "";
+      const p = (entry && entry.path) || (pkgs[name] && pkgs[name].path) || "engine/" + name;
       console.log(["SYNC", name, p].join("\t"));
     }
     for (const seg of ["independent", "detached"]) {
@@ -526,8 +530,11 @@ echo ""
 #   而被 `-d` 静默跳过，且漏列两个真实存在的包）——已随本批把该注释修正为真实值；
 #   v1.5.1 F7 起 §1/§2 **不再持有包清单**，改为从 `engine/*/src` 结构派生（实测 13 项），
 #   因此本节注释不再需要维护「循环项数」这个数字（它由文件系统决定，不可能再漂移）。
-#   rhythm.sync 现为 15 包 = 原 11 包 + rules（原漏登记）+ umbrella（第 13 个 engine 包）
-#   + engine/hooks/sofagent-load-chain（build 序列末位）+ train（第 7 批拆包），五者实测同为 SSOT 版本。
+#   rhythm.sync 现为 16 包 = 原 11 包 + rules（原漏登记）+ umbrella（第 13 个 engine 包）
+#   + engine/hooks/sofagent-load-chain（build 序列末位）+ train（第 7 批拆包）
+#   + engine/dsh-plugins/plugin-kit（v1.5.2 章九二轮：DSH 适配层基座，只有 npm 一条通道、
+#     随主线同版发布 ⇒ 归 sync；目录不在 engine/<name> 且未登记 packages: 段 ⇒ sync 条目显式给 path），
+#   上述实测同为 SSOT 版本。
 # 覆盖不变量（rhythm ⊇ workspace 27 项，含 engine/dsh-plugins/plugin-kit）由 §9e 断言；清单声明了却不存在的包在此 fail-loud。
 echo -e "${BOLD}── [9/14] 子包版本号一致性 ──${NC}"
 RHYTHM_SYNC_9B="$(rhythm_dump | awk -F'\t' '$1=="SYNC"{print $2"\t"$3}')"
@@ -619,7 +626,7 @@ else
     if [[ "${covered}" == "false" ]]; then
       while IFS= read -r glob; do
         [[ -z "${glob}" ]] && continue
-        # shellcheck disable=SC2053  # 故意不给 RHS 加引号：这里要的正是 glob 匹配（如 engine/dsh-plugins/*）
+        # shellcheck disable=SC2053  # 故意不给 RHS 加引号：这里要的正是 glob 匹配（如 engine/dsh-plugins/cordis-plugin-sofagent*）
         if [[ "${ws}" == ${glob} ]]; then covered=true; break; fi
       done <<< "${GLOBS_9E}"
     fi
