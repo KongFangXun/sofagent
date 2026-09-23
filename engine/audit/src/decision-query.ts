@@ -14,7 +14,7 @@
 import { existsSync, readFileSync } from 'fs';
 import { getDecisionLogPath } from '@sofagent/core';
 import { loadHistory, type AuditHistoryEntry } from './audit-history';
-import { collectInvalidations, filterValid } from './invalidation';
+import { collectInvalidations, filterValid, isInvalidationMarker } from './invalidation';
 import type { DecisionCategory, DecisionKind, DecisionLogEntry, LoopPhase } from './decision-schema';
 
 /** 从决策日志加载全部条目（按写入顺序，时间升序）。
@@ -200,11 +200,16 @@ export interface HighFrequencyPattern {
 /**
  * 提取高频决策模式（MA5 审查历史回灌）——kind+tags 组合出现 ≥3 次。
  *
+ * v1.5.2 章四：本接口是聚合**读数**（会被回灌进审查判定），故排除
+ * 失效标记条目（kind=INVALIDATION，元记录）——否则「失效动作」会被当成
+ * 一种高频 Agent 决策模式回灌。被失效的结论本身仍计入原始分布
+ * （本接口不做失效结论过滤——它统计的是「做过什么」，不是「结论还可信吗」）。
+ *
  * @param minCount 最低出现次数（默认 3）
  * @param dataDir 可选的数据目录覆盖（用于测试）
  */
 export function getHighFrequencyPatterns(minCount = 3, dataDir?: string): HighFrequencyPattern[] {
-  const entries = loadDecisionLog(dataDir);
+  const entries = loadDecisionLog(dataDir).filter((e) => !isInvalidationMarker(e));
   const groups = new Map<string, { kind: DecisionKind; count: number; sample: DecisionLogEntry }>();
 
   for (const e of entries) {
@@ -408,6 +413,9 @@ export interface SimilarDecisionHit {
  * 本接口是人审界面（HITL）展示「历史类似决策 + 结果」的**免检依据**来源，
  * 失效结论被引用即等于「过期结论当新证据用」。原文仍在日志中可查
  * （失效是标记不是抹除），只是不再作为判定输入。
+ * 失效**标记条目自身**（kind=INVALIDATION）亦排除——它是元记录，不是可援引先例。
+ * （注：直接按 kind/id 查询的接口不在此列——`queryByKind('INVALIDATION')` 等
+ * 仍应能取到标记条目本身，排除只发生在「把条目当证据用」的读数面上。）
  *
  * @param query 查询条件（tags / triggeredRule / kind 至少一项）
  * @param opts 查询选项（limit 缺省 10——先例列表够用）
@@ -421,7 +429,9 @@ export function findSimilarDecisions(
   const limit = opts.limit ?? 10;
   const queryTags = new Set(query.tags ?? []);
   const hits: SimilarDecisionHit[] = [];
-  const valid = filterValid(loadDecisionLog(dataDir), collectInvalidations(dataDir));
+  // 失效结论 + 失效标记条目都不是可援引的先例（标记是元记录，非 Agent 决策）
+  const valid = filterValid(loadDecisionLog(dataDir), collectInvalidations(dataDir))
+    .filter((e) => !isInvalidationMarker(e));
 
   for (const entry of valid) {
     let score = 0;

@@ -31,6 +31,17 @@ import { REDACTION_PATTERNS } from '@sofagent/core';
  *     `causedBy` 指向被失效结论的 ts、`causalType='influenced'`、
  *     `invalidationReason` 记失效原因（见 InvalidationReason）。
  *     原文留痕（HMAC 链完整）+ 失效可见（新条目可查）= 「失效是标记不是抹除」。
+ *
+ *   为何新增枚举值而不是复用既有 kind（对齐 COST = v1.4.0 交付三、
+ *   COVERAGE = v1.5.0 章八两次成例：新决策语义 → 新 kind）：
+ *     ① 唯一识别面——标记条目须能被 KPI / 查询读数一眼区分（否则标记混入
+ *        CONFIG_CHANGE / KNOWLEDGE_DISTILL 口径，还得另造一套排除逻辑）；
+ *     ② 语义不勉强——三类触发（授权变更 / 压缩不兼容 / 风险升级）没有一个
+ *        既有 kind 能同时覆盖，硬塞即污染该 kind 的 KPI 口径；
+ *     ③ 兼容成本低——本 union 属 `@public`，新增成员对消费方向后兼容
+ *        （`COST` 与 `COVERAGE` 两次新增即同款先例）。
+ *   注：标记是**元记录**，不是 Agent 决策——下游读数（治理 KPI / 决策查询
+ *   聚合）须以 `isInvalidationMarker` 把标记条目排除在决策计数之外。
  */
 export type DecisionKind =
   | 'SPEC_CHANGE'       // 改变需求/规格（范围变更）

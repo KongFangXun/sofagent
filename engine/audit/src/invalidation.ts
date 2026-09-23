@@ -18,7 +18,14 @@
 //
 //   ③ 下游过滤 —— 带失效标记的结论不作为后续判定的输入。消费方经
 //      collectInvalidations / isInvalidated / filterValid 剔除失效结论
-//      （「过期结论不当新证据用」）。
+//      （「过期结论不当新证据用」）。已接线两处：治理 KPI 统计
+//      （governance.computeGovernanceKpis）与 HITL 免检依据
+//      （decision-query.findSimilarDecisions/先例检索）；失效**标记条目自身**
+//      在读数面亦以 isInvalidationMarker 排除（元记录，不是 Agent 决策）。
+//      ⚠️ 第三处「fresh-eyes 审查输入」**仓内无落点**——已核 `FORGE/src/
+//      fresh-eyes-driver.mjs` 全程不读 decision-log（仅一处 `emitDecision: true`
+//      配置项），即本仓不存在消费决策结论的 fresh-eyes 输入构造点，非漏接。
+//      过滤 API 已从本模块导出，供跨仓 / 后续消费方按同一语义接入。
 //
 // 失效原因词汇表见 decision-schema.ts 的 InvalidationReason（对齐 Guardian
 // `GuardianReviewReason` 六原因取五项子集）。

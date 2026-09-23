@@ -17,7 +17,7 @@ import { randomBytes } from 'crypto';
 import { getDecisionLogPath } from '@sofagent/core';
 import { emitDecision, DecisionSchemaError, type EmitDecisionInput } from '../decision-log';
 import { checkDecisionChainDetailed } from '../decision-chain';
-import { loadDecisionLog, findSimilarDecisions } from '../decision-query';
+import { loadDecisionLog, findSimilarDecisions, getHighFrequencyPatterns, queryByKind } from '../decision-query';
 import { computeGovernanceKpis } from '../governance';
 import { appendHistory, type AuditHistoryEntry } from '../audit-history';
 import { defaultRules } from '../rules';
@@ -283,6 +283,47 @@ describe('v1.5.2 章四 · 审计结论失效语义', () => {
       expect(after.repetition.repeatedFingerprints).toBe(0);
       // 失效条目仍在日志（原文留痕），只是不进统计
       expect(loadDecisionLog(testDir).some((e) => e.ts === d1.ts)).toBe(true);
+    });
+
+    it('治理 KPI 统计：失效标记条目自身是元记录，不使决策总数 +1', () => {
+      const agentId = 'kpi-marker-agent';
+      emitDecision(makeInput({ agentId, why: { text: 'r1', tags: ['rep2'] } }), testDir);
+      emitDecision(makeInput({ agentId, why: { text: 'r2', tags: ['rep2'] } }), testDir);
+      // 第三条：非 TOOL_GATE，不参与重复执行读数；拿它当失效目标以隔离变量
+      const bystander = emitDecision(makeInput({ agentId, sessionId: 'by', kind: 'ARTIFACT_EDIT' }), testDir);
+
+      const before = computeGovernanceKpis({ dataDir: testDir });
+      expect(before.repetition.totalDecisions).toBe(2);
+
+      const marker = markInvalid({
+        agentId: 'sofagent-audit', sessionId: 's', reason: 'authorization-changed',
+        targets: [bystander.ts], trigger: '标记元记录不计入 KPI',
+      }, testDir);
+      expect(marker.kind).toBe('INVALIDATION');
+
+      const after = computeGovernanceKpis({ dataDir: testDir });
+      // 标记条目 +1 落盘（原文留痕），但 KPI 决策总数不因标记而增加
+      expect(rawLines(testDir).filter((l) => l.includes('"kind":"INVALIDATION"'))).toHaveLength(1);
+      expect(after.repetition.totalDecisions).toBe(2);
+      expect(after.repetition.uniqueFingerprints).toBe(before.repetition.uniqueFingerprints);
+    });
+
+    it('决策查询读数：标记条目不作为先例 / 高频模式回灌', () => {
+      const c1 = emitDecision(makeInput({ sessionId: 'm1', why: { text: 'x', tags: ['invalidation'] } }), testDir);
+      const c2 = emitDecision(makeInput({ sessionId: 'm2', why: { text: 'y', tags: ['invalidation'] } }), testDir);
+      const c3 = emitDecision(makeInput({ sessionId: 'm3', why: { text: 'z', tags: ['invalidation'] } }), testDir);
+      expect(findSimilarDecisions({ tags: ['invalidation'] }, {}, testDir)).toHaveLength(3);
+
+      // 三条同类标记（原始 kind+tags 组合 = 3 次，足以构成高频模式）
+      for (const t of [c1.ts, c2.ts, c3.ts]) {
+        markInvalid({ agentId: 'a', sessionId: 's', reason: 'elevated-risk', targets: [t], trigger: 't' }, testDir);
+      }
+      // 先例列表：失效结论与其标记都不出现
+      expect(findSimilarDecisions({ tags: ['invalidation'] }, {}, testDir)).toHaveLength(0);
+      // 高频模式回灌：不产生 INVALIDATION 分组
+      expect(getHighFrequencyPatterns(3, testDir).some((p) => p.kind === 'INVALIDATION')).toBe(false);
+      // 但直接按 kind 查询仍可取到标记条目本身（排除只发生在当证据用的读数面）
+      expect(queryByKind('INVALIDATION', {}, testDir)).toHaveLength(3);
     });
   });
 
