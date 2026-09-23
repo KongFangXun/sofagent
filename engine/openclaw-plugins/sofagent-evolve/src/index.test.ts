@@ -1,6 +1,10 @@
 // sofagent-evolve OpenClaw 插件测试
 // 覆盖：pluginMeta 元数据 / register 注册 hook 与工具 / reflectHint 开关读取 / default 导出契约
+//      / sofagent_evolve 工具写入回执如实回报（v1.5.2 章八-2 防复发）
 import { describe, it, expect, vi } from 'vitest';
+import { existsSync, readFileSync, rmSync, mkdtempSync } from 'fs';
+import { join } from 'path';
+import { tmpdir } from 'os';
 import register, { pluginMeta } from './index';
 
 declare const require: (id: string) => {
@@ -95,5 +99,89 @@ describe('pluginMeta.version 运行时同步（T7 防复发）', () => {
     const pkg = require('../package.json');
     expect(pluginMeta.version).toBe(pkg.version);
     expect(pluginMeta.version).not.toBe('0.0.0-unknown'); // 兜底值出现在生产 = 读取路径断了
+  });
+});
+
+// v1.5.2 章八-2 防复发：工具假成功。
+// 病根：execute 传空 diff 数组调 generateThinkEntry（其首行 `if (diffFiles.length === 0) return;`
+// 直接空转零写入），却**无条件**回报「反思条目已写入 think.md」——进化闭环数据源长期空转。
+// 修法：改调 appendManualThinkEntry（口述沉淀入口），并**按写入回执分支**，封死假成功路径。
+// 说明：插件用动态 require('@sofagent/think')，vi.mock 拦不到动态 require；改用 vi.spyOn
+// 作用在真实模块对象（require 同一缓存实例）上——既有 require 双态写法见本文件顶部声明。
+describe('sofagent_evolve 工具：写入回执如实回报（v1.5.2 章八-2 防复发）', () => {
+  const executeOf = () => {
+    const api = createMockApi();
+    register(api as never);
+    return (api.tools['sofagent_evolve'] as {
+      tool: { execute: (id: string, p: { task: string; summary: string }) => Promise<{ content: Array<{ text: string }> }> };
+    }).tool.execute;
+  };
+
+  it('回执 written:true → 文案含「已写入」与字节数', async () => {
+    const think = require('@sofagent/think');
+    const spy = vi.spyOn(think, 'appendManualThinkEntry').mockReturnValue({
+      written: true, path: '/tmp/think.md', before: 0, bytes: 123,
+      timestamp: '2026-01-01 00:00', task: 't', lesson: 's',
+    });
+    try {
+      const out = await executeOf()('id', { task: 't', summary: 's' });
+      const text = out.content[0]?.text ?? '';
+      expect(text).toContain('已写入');
+      expect(text).toContain('123');
+      expect(spy).toHaveBeenCalledWith('t', 's');
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
+  it('回执 written:false → 文案含「未写入」且不含「已写入」（不谎报成功）', async () => {
+    const think = require('@sofagent/think');
+    const spy = vi.spyOn(think, 'appendManualThinkEntry').mockReturnValue({
+      written: false, reason: 'empty-lesson', path: '/tmp/think.md', before: 0, bytes: 0,
+      timestamp: '2026-01-01 00:00', task: 't', lesson: '',
+    });
+    try {
+      const out = await executeOf()('id', { task: 't', summary: '' });
+      const text = out.content[0]?.text ?? '';
+      expect(text).toContain('未写入');
+      expect(text).not.toContain('已写入');
+      expect(text).toContain('empty-lesson');
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
+  // 关键反证：不 mock，走真实 think 模块 + 临时数据目录（SOFAGENT_DATA 隔离）。
+  // 空 summary 时 think.md 必须不存在/不增长，且工具文案不谎报成功；非空 summary 时真落盘。
+  it('反证：真实写入路径——空 summary 不写盘且不谎报，非空 summary 真增长', async () => {
+    const tmpRoot = mkdtempSync(join(tmpdir(), 'sofagent-evolve-'));
+    const dataDir = join(tmpRoot, 'data');
+    const thinkPath = join(dataDir, 'think.md');
+    const prevData = process.env.SOFAGENT_DATA;
+    process.env.SOFAGENT_DATA = dataDir;
+    try {
+      const think = require('@sofagent/think');
+      // 确认未被上一条用例的 spy 污染（真实实现）
+      expect(vi.isMockFunction(think.appendManualThinkEntry)).toBe(false);
+
+      // 空 summary（含换行/空格）→ 不写盘、不谎报
+      const outEmpty = await executeOf()('id', { task: '空教训任务', summary: '  \n\t ' });
+      expect(existsSync(thinkPath)).toBe(false);
+      const textEmpty = outEmpty.content[0]?.text ?? '';
+      expect(textEmpty).toContain('未写入');
+      expect(textEmpty).not.toContain('已写入');
+
+      // 非空 summary → 真实落盘增长、文案含「已写入」
+      const outOk = await executeOf()('id', { task: '真任务', summary: '真教训' });
+      expect(existsSync(thinkPath)).toBe(true);
+      const content = readFileSync(thinkPath, 'utf-8');
+      expect(content).toContain('真任务');
+      expect(content).toContain('真教训');
+      expect(outOk.content[0]?.text ?? '').toContain('已写入');
+    } finally {
+      if (prevData === undefined) delete process.env.SOFAGENT_DATA;
+      else process.env.SOFAGENT_DATA = prevData;
+      rmSync(tmpRoot, { recursive: true, force: true });
+    }
   });
 });

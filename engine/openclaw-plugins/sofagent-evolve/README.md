@@ -2,7 +2,7 @@
 
 **自迭代变强** · sofagent 约束层五能力在 OpenClaw 生态的插件形态
 
-think.md 反思条目生成 + 反思区注入，复用 @sofagent/think.generateThinkEntry。
+think.md 反思条目生成（口述沉淀，带写入回执）+ 反思区注入，复用 @sofagent/think.appendManualThinkEntry。
 
 ## 能力
 

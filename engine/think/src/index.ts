@@ -10,5 +10,5 @@
  * 思考链分析 — 推理路径追踪 / 决策可视化 / 思维审计
  */
 
-/* @public */ export { generateThinkEntry, generateThinkFromEval, generateDataThink } from './think-generator';
-/* @public */ export type { ThinkEntryOptions } from './think-generator';
+/* @public */ export { generateThinkEntry, generateThinkFromEval, generateDataThink, appendManualThinkEntry } from './think-generator';
+/* @public */ export type { ThinkEntryOptions, ManualThinkReceipt } from './think-generator';

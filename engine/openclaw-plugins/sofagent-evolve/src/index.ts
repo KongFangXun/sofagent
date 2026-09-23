@@ -1,6 +1,7 @@
 // sofagent-evolve · OpenClaw 原生插件（code-plugin）
-// 经验沉淀：sofagent_evolve 工具生成 think.md 反思条目（复用 @sofagent/think 的 generateThinkEntry，
-// 平台无关零重写）+ before_prompt_build 注入一行收尾提示（提醒模型任务收尾时调 sofagent_evolve）。
+// 经验沉淀：sofagent_evolve 工具把口述的 task + summary 写成 think.md 反思条目
+// （复用 @sofagent/think 的 appendManualThinkEntry，平台无关零重写），并**按写入回执如实回报**
+// 写没写 / 为何没写 + before_prompt_build 注入一行收尾提示（提醒模型任务收尾时调 sofagent_evolve）。
 // ⚠️ 注入的是**提示语**不是条目正文：think.md 内容由 inject 插件的 L2 层加载链注入，本插件不重复注入。
 // 对应 DSH 插件 cordis-plugin-sofagent-evolve 的 OpenClaw 形态。
 // API 分级：/* @public */ 导出对 OpenClaw 运行时契约锁定。
@@ -78,7 +79,7 @@ let reflectHint = false;
     api.registerTool?.(
       {
         name: 'sofagent_evolve',
-        description: 'sofagent 经验沉淀——生成 think.md 反思条目（任务失败/踩坑/经验总结，进化闭环数据源）',
+        description: 'sofagent 经验沉淀——把口述的 task + summary 写成 think.md 反思条目（任务失败/踩坑/经验总结，进化闭环数据源），并如实回报写入结果（写没写 / 为何没写）',
         parameters: {
           type: 'object',
           properties: {
@@ -97,11 +98,15 @@ let reflectHint = false;
           try {
             // eslint-disable-next-line @typescript-eslint/no-require-imports
             const m = require('@sofagent/think');
-            if (typeof m.generateThinkEntry !== 'function') {
-              return { content: [{ type: 'text', text: 'sofagent_evolve：generateThinkEntry 不可用（@sofagent/think 公共 API 未导出）' }] };
+            if (typeof m.appendManualThinkEntry !== 'function') {
+              return { content: [{ type: 'text', text: 'sofagent_evolve：appendManualThinkEntry 不可用（@sofagent/think 公共 API 未导出）' }] };
             }
-            m.generateThinkEntry([], { rules: [], summary: params.summary }, params.task);
-            return { content: [{ type: 'text', text: `反思条目已写入 think.md：${params.task}` }] };
+            // 口述沉淀：走 appendManualThinkEntry（task + summary），**按写入回执如实回报**
+            const receipt = m.appendManualThinkEntry(params.task, params.summary);
+            if (receipt.written === true) {
+              return { content: [{ type: 'text', text: `反思条目已写入 think.md（${receipt.bytes} 字节）：${params.task}` }] };
+            }
+            return { content: [{ type: 'text', text: `未写入 think.md：${receipt.reason ?? '未知原因'}——口述条目未沉淀，请检查 summary 是否为空` }] };
           } catch (err) {
             return { content: [{ type: 'text', text: `sofagent_evolve 依赖 @sofagent/think 不可用：${err instanceof Error ? err.message : String(err)}` }] };
           }
