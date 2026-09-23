@@ -524,7 +524,7 @@ jobs:
 
 ### 在 DSH 中使用 sofagent（MCP 互通）
 
-sofagent 本身就是一个 MCP server（stdio 传输，bin `sofagent-mcp`，当前口径 105 个 tool——以 `engine/mcp/src/tool-registry.ts` 实数为准）。DSH 用户用官方 `@deepseek-ai/dsh-mcp-client` 桥接插件挂上 `sofagent-mcp`，即可在 DSH 会话里调用 sofagent 的全部能力——审计查询、知识库检索、A/B 实验、快照时间线等。
+sofagent 本身就是一个 MCP server（stdio 传输，bin `sofagent-mcp`，当前口径 107 个 tool——以 `engine/mcp/src/tool-registry.ts` 实数为准）。DSH 用户用官方 `@deepseek-ai/dsh-mcp-client` 桥接插件挂上 `sofagent-mcp`，即可在 DSH 会话里调用 sofagent 的全部能力——审计查询、知识库检索、A/B 实验、快照时间线等。
 
 **配置方法、字段说明（`cordis.yml` 挂载示例）、两种 command 写法、安全边界（破坏性 tool 强制人审）与验证状态，整节见 [DSH MCP 互通指南](./guides/dsh-mcp-integration.md)。**
 

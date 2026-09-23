@@ -32,13 +32,13 @@
 | 复制 prompt | 不支持 Skill 的平台 | 把 SKILL.md 内容贴进 system prompt |
 | CLI 直跑 | 任何终端 | `sofagent-orchestrator subagent run fde --task "..."` |
 | DSH 插件通道 | DSH（DeepSeek Harness）用户 | `skillhub install cordis-plugin-sofagent-<名>`（SkillHub 单通道安装 + 发现；每款可独立安装、渐进采用；**一次装全套**用裸名 `skillhub install cordis-plugin-sofagent`） |
-| MCP 自动配置 | workbuddy/claude/cursor/codex | `bash install.sh --platform <平台>` 自动写 MCP 配置（前三者写 mcp.json JSON、codex 写 config.toml `[mcp_servers.sofagent]` 段），装完即连 105 tools |
+| MCP 自动配置 | workbuddy/claude/cursor/codex | `bash install.sh --platform <平台>` 自动写 MCP 配置（前三者写 mcp.json JSON、codex 写 config.toml `[mcp_servers.sofagent]` 段），装完即连 107 tools |
 
 ---
 
 ## DSH 插件家族（7 款 cordis-plugin）
 
-> sofagent 约束能力在 DSH（DeepSeek Harness）生态的插件形态——每款只干一件事，可独立安装、渐进采用。能力完整面 = MCP Server 105 tools（连接 sofagent MCP 后调用）。随主线版本发布，SkillHub 通道检索。
+> sofagent 约束能力在 DSH（DeepSeek Harness）生态的插件形态——每款只干一件事，可独立安装、渐进采用。能力完整面 = MCP Server 107 tools（连接 sofagent MCP 后调用）。随主线版本发布，SkillHub 通道检索。
 
 | 插件 | 职责（桥接实况） | seam |
 |------|----------------|------|
@@ -100,11 +100,11 @@ FORGE engineer commit ──→ 自动调用 @sofagent-audit → 验证变更合
 
 ---
 
-## MCP 全量工具表（105 tools · 13 类）
+## MCP 全量工具表（107 tools · 13 类）
 
 > 与 `engine/mcp/src/tool-registry.ts` 一一对应（check-docs 第 12 节门禁校验双向差集为空）。主入口 `SKILL.md` 只列每类代表工具，本表为全量。🔴 = 破坏性操作（强制人审/confirmed）。
 
-### 审计合规（9）
+### 审计合规（11）
 
 | 工具 | 说明 |
 |------|------|
@@ -112,6 +112,8 @@ FORGE engineer commit ──→ 自动调用 @sofagent-audit → 验证变更合
 | `audit_file` | 单文件变更即时审计（不阻断） |
 | `audit_data_change` | 知识库结构化数据变更跑数据审计（D1-D5） |
 | `audit_trail` | 跨设备审计轨迹查询（HMAC 验签） |
+| `audit_query` | 审计数据只读查询——history 三维过滤（时间/规则/exitCode）+ decision-log 因果链（严格只读，不写链） |
+| `ruleset_export` | 规则集导出——默认规则 + 已加载扩展 → 标准 JSON（导出即加载格式，双向可逆 + 内容指纹 + 审计留痕） |
 | `list_rules` | 列出所有审计规则清单（只读） |
 | `data_sovereignty_report` | 数据主权审计报告摘要（云端调用/本地执行/数据流出率） |
 | `notify_session` | 向当前 session 推送审计结果摘要 |

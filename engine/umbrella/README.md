@@ -5,7 +5,7 @@
 `npm i -g sofagent` 一次装全：聚合安装入口（umbrella），等价于同时安装四大功能包。
 
 - **审计 CLI**（`@sofagent/audit`）——`sofagent` / `sofagent-audit` 命令，扫描 git diff 检查 Agent 是否遵守工作纪律
-- **MCP server**（`@sofagent/mcp`）——105 tools，把审计/训练/治理能力接入任意 MCP 客户端
+- **MCP server**（`@sofagent/mcp`）——107 tools，把审计/训练/治理能力接入任意 MCP 客户端
 - **编排器**（`@sofagent/orchestrator`）——训练任务全生命周期：数据管道、多卡多机、云执行平面
 - **守护进程**（`@sofagent/daemon`）——dashboard 与 cron 任务
 

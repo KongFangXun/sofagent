@@ -49,7 +49,7 @@ MCP Server 通过 stdio 通信（JSON-RPC 2.0）。最小运行时依赖。
 
 ---
 
-## 暴露的 Tools（99 个）
+## 暴露的 Tools（107 个）
 
 > 完整清单（按域分组 + 每工具说明）见 [docs/API.md](../../docs/API.md)——由 tool-registry.ts 生成，门禁对账永不漂移。
 
@@ -59,7 +59,7 @@ MCP Server 通过 stdio 通信（JSON-RPC 2.0）。最小运行时依赖。
 | `get_think` | 读取 think.md 最近 N 条反思条目 |
 | `write_think` | 向 think.md 追加一条反思记录 |
 | `device_register` / `device_list` | G9 设备注册面（v1.4.9）：Ed25519 验签注册 + 清单在线态 |
-| `worklog_query` / `cost_query` / `fde_*` / `train_*` / `snapshot_*` / `ontology_*` / `pr_*` / `workflow_*` / `data_push` / … | 其余 92 个——审计/编排/后训/治理/成本/知识/PR 生命周期/workflow CRUD/数据推送各域，见 API.md 分域清单 |
+| `worklog_query` / `cost_query` / `fde_*` / `train_*` / `snapshot_*` / `ontology_*` / `pr_*` / `workflow_*` / `data_push` / … | 其余 102 个——审计/编排/后训/治理/成本/知识/PR 生命周期/workflow CRUD/数据推送各域，见 API.md 分域清单 |
 
 > 注：A12/A13 已在 v0.99.4 合并入 A11（不滥资源），编号不再使用。
 
@@ -79,7 +79,7 @@ SOFAGENT_MCP_ROLES=audit sofagent-mcp
 
 多角色逗号分隔（如 `fde,audit`）；缺省 / `all` = 全量暴露。调用未暴露 tool 返回结构化错误（含恢复全量的配置提示）。
 
-### audit 专职面（9 tools）
+### audit 专职面（11 tools）
 
 `SOFAGENT_MCP_ROLES=audit` 时的暴露清单（与 tool-registry `roles` 打标逐项一致——门禁断言防漂移）：
 
@@ -87,6 +87,8 @@ SOFAGENT_MCP_ROLES=audit sofagent-mcp
 |------|------|
 | `run_audit` | 全量审计规则跑批（24 条规则 + HMAC 链） |
 | `audit_file` | 单文件定点审计（不改链） |
+| `audit_query` | 审计数据只读查询（history 三维过滤 + decision 因果链，不写链） |
+| `ruleset_export` | 规则集导出（默认规则 + 扩展 → 标准 JSON，双向可逆 + 内容指纹） |
 | `search_knowledge` | 审计知识库检索（lessons/规则语料） |
 | `read_lessons` | 经验教训条目读取 |
 | `data_sovereignty_report` | 数据主权审计报告 |

@@ -1,7 +1,7 @@
 /**
  * alias-rewrite.test.ts · MCP tool 更名别名路由测试（v1.5.2 A-4）
  *
- * 背景：'sofagent_compose' 更名 'compose'（105 个 tool 中唯一带前缀项的命名收口）。
+ * 背景：'sofagent_compose' 更名 'compose'（107 个 tool 中唯一带前缀项的命名收口）。
  * 旧名经 mcp-server.ts tools/call 分派层别名路由兼容一版——本文件断言：
  *   ① 规名 'compose' 正常分发（走到 handler）；
  *   ② 旧名 'sofagent_compose' 路由到同一 handler 且结果 text 追加更名提示；

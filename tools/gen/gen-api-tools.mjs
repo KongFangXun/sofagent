@@ -34,7 +34,7 @@ const GROUP_NAMES = {
   ops: '运维与可见性（成本 · 工作明细 · 健康 · 规则 · 能力发现）',
 };
 
-/** tool → 能力域显式映射（83 个 · 新增工具必须在此拍板归组，否则生成器 fail） */
+/** tool → 能力域显式映射（107 个 · 新增工具必须在此拍板归组，否则生成器 fail） */
 const NAME_TO_MODULE = {
   // FDE 六引擎
   fde_interview: 'fde', fde_classify: 'fde', fde_quantify: 'fde',
@@ -44,6 +44,9 @@ const NAME_TO_MODULE = {
   corpus_export: 'audit',
   // 跨层证据对账（trace reconcile）——审计证据面：三源比对（trace / git diff / logs）+ 一致率
   trace_reconcile: 'audit',
+  // v1.5.2 章一/章二：审计对外两面（audit——数据面只读查询 + 规则面标准 JSON 导出，双向可逆）
+  audit_query: 'audit',
+  ruleset_export: 'audit',
   playwright_navigate: 'audit', playwright_click: 'audit',
   playwright_screenshot: 'audit', playwright_assert: 'audit',
   // 工作流编排

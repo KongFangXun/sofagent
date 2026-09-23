@@ -72,8 +72,8 @@ describe('isToolExposed 单工具判定', () => {
 describe('filterToolsByRoles 清单过滤', () => {
   it('全量模式 → 返回原清单', () => {
     const filtered = filterToolsByRoles(TOOLS, null);
-    // v1.4.7 G14+G2+章八+G13+G4+章十三：84→95；v1.4.9 G9：95→97（device_register/device_list 设备注册面落位）；v1.4.9 G10/G11：97→99（device_data_query/device_data_push 数据面落位）；v1.4.9 G5b/G1：99→103（connector_register/connector_list + workflow_export/workflow_import 注册与模板面落位）
-    expect(filtered).toHaveLength(105);
+    // v1.4.7 G14+G2+章八+G13+G4+章十三：84→95；v1.4.9 G9：95→97（device_register/device_list 设备注册面落位）；v1.4.9 G10/G11：97→99（device_data_query/device_data_push 数据面落位）；v1.4.9 G5b/G1：99→103（connector_register/connector_list + workflow_export/workflow_import 注册与模板面落位）；v1.5.0 章八 trace_reconcile：103→105；v1.5.2 章一/章二：105→107（audit_query/ruleset_export 审计对外面落位）
+    expect(filtered).toHaveLength(107);
   });
 
   it('显式 fde+audit+agent 三面 → 只暴露这三面（不含 browser/ops/commons 独占工具）', () => {
@@ -113,18 +113,20 @@ describe('filterToolsByRoles 清单过滤', () => {
     expect(names).toContain('list_capabilities');
   });
 
-  it('章十一：audit 专职面清单与 README 逐项一致（9 tools 防漂移）', () => {
+  it('章十一：audit 专职面清单与 README 逐项一致（11 tools 防漂移）', () => {
     const filtered = filterToolsByRoles(TOOLS, ['audit']);
     const names = filtered.filter((t) => t.roles).map((t) => t.name).sort();
-    // engine/mcp/README.md「audit 专职面（9 tools）」表逐项对齐
+    // engine/mcp/README.md「audit 专职面（11 tools）」表逐项对齐
     expect(names).toEqual([
       'audit_data_change',
       'audit_file',
+      'audit_query',
       'audit_trail',
       'data_sovereignty_report',
       'list_rules',
       'notify_session',
       'read_lessons',
+      'ruleset_export',
       'run_audit',
       'search_knowledge',
     ]);

@@ -41,7 +41,7 @@ solves:
 |------|--------|--------|
 | FDE Skill | 本 skill（方法论 + 约束注入） | ClawHub / SkillHub 分发，`bash install.sh` 装到本地 |
 | 企业底座 | 约束层全套（hooks + 数据 + MCP） | `bash install.sh`（企业设备） |
-| MCP Server | 105 tools 能力面（审计/本体/进化/训练/工作明细/PR 协同/设备注册/设备数据面/连接器/模板/session 承接） | `bash install.sh --platform <平台>` 自动配置，装完即连 |
+| MCP Server | 107 tools 能力面（审计/审计查询与规则导出/本体/进化/训练/工作明细/PR 协同/设备注册/设备数据面/连接器/模板/session 承接） | `bash install.sh --platform <平台>` 自动配置，装完即连 |
 | DSH 插件家族 | 7 款 cordis-plugin（6 款原子 + 1 款聚合整装） | `skillhub install cordis-plugin-sofagent-<名>`（整套用裸名 `cordis-plugin-sofagent`），详见 `AGENTS.md` |
 | CLI | `sofagent` 命令（审计 / 快照 / 部署 / dashboard） | `bash install.sh` 装到 `~/.sofagent/bin/` |
 | Dashboard | Web 驾驶舱（工作明细 / 图谱 / 健康） | `sofagent web` 起本地服务，读 `data/` 运行时数据 |
@@ -177,13 +177,13 @@ solves:
 
 ---
 
-## MCP 工具速查（105 tools · 13 类）
+## MCP 工具速查（107 tools · 13 类）
 
 > 连接 sofagent MCP Server 后可用。未连接时降级为纯文本引导。每类列代表工具，**MCP 协议面暴露规则与 `SOFAGENT_MCP_ROLES` 收窄说明见 `AGENTS.md`**。
 
 | 分类（数） | 代表工具 |
 |------|------|
-| 审计合规（9） | `run_audit` `audit_file` `audit_trail` `hitl_resolve` |
+| 审计合规（11） | `run_audit` `audit_file` `audit_trail` `audit_query`（审计数据只读查询）`ruleset_export`（规则集导出·双向可逆）`hitl_resolve` |
 | 反思沉淀（3） | `get_think` `write_think` |
 | 知识库（7） | `search_knowledge` `list_entities` `stats` |
 | 本体数据（7） | `create_entity` `validate_ontology` `ontology_import` |

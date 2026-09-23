@@ -2,16 +2,16 @@
 
 <p align="center"><img src="assets/sofagent.png" alt="sofagent" width="96" /></p>
 
-> sofagent 对外全部能力面的一站式清单——七大接口面 + MCP 105 tools 按域分组（第七面「标准数据推送接口」入口已接线：MCP tool `data_push` 双闸入库；v1.4.9 G9 新增 device_register/device_list 设备注册面，G10/G11 新增 device_data_query/device_data_push 设备数据面，G5b/G1 新增 connector_register/connector_list 连接器面与 workflow_export/workflow_import 模板面，批 5 新增 router_session_push 过站 session 承接面）。工具清单由 `engine/mcp/src/tool-registry.ts` 生成（scripts/check 门禁对账，文档与代码永不漂移）。
+> sofagent 对外全部能力面的一站式清单——七大接口面 + MCP 107 tools 按域分组（第七面「标准数据推送接口」入口已接线：MCP tool `data_push` 双闸入库；v1.4.9 G9 新增 device_register/device_list 设备注册面，G10/G11 新增 device_data_query/device_data_push 设备数据面，G5b/G1 新增 connector_register/connector_list 连接器面与 workflow_export/workflow_import 模板面，批 5 新增 router_session_push 过站 session 承接面，v1.5.2 章一/章二 新增 audit_query/ruleset_export 审计对外两面）。工具清单由 `engine/mcp/src/tool-registry.ts` 生成（scripts/check 门禁对账，文档与代码永不漂移）。
 >
-> 版本：v1.5.1（✅ 已发版）· 105 tools / 7 面（**105 = v1.4.9 的 104 + v1.5.0 新增 `trace_reconcile`**，状态见 [ROADMAP](./ROADMAP.md)；第 7 面 v1.4.6 交付；v1.4.7 新增 11 tool 归入既有面；v1.4.9 G9 新增 device_register/device_list，G10/G11 新增 device_data_query/device_data_push，G5b/G1 新增连接器与模板 4 tool，批 5 新增 router_session_push）
+> 版本：v1.5.1（✅ 已发版）· 107 tools / 7 面（**107 = v1.4.9 的 104 + v1.5.0 新增 `trace_reconcile` + v1.5.2 新增 `audit_query`/`ruleset_export`**，状态见 [ROADMAP](./ROADMAP.md)；第 7 面 v1.4.6 交付；v1.4.7 新增 11 tool 归入既有面；v1.4.9 G9 新增 device_register/device_list，G10/G11 新增 device_data_query/device_data_push，G5b/G1 新增连接器与模板 4 tool，批 5 新增 router_session_push，v1.5.2 章一/章二 新增 audit_query/ruleset_export）
 
 ---
 
 ## 目录
 
 - [一、七大接口面](#一七大接口面)
-- [二、MCP 工具清单（105 · 按产品能力域分组）](#二mcp-工具清单105--按产品能力域分组)
+- [二、MCP 工具清单（107 · 按产品能力域分组）](#二mcp-工具清单107--按产品能力域分组)
 - [三、防漂移机制](#三防漂移机制)
 - [四、变更日志](#四变更日志)
 
@@ -33,7 +33,7 @@
 
 ---
 
-## 二、MCP 工具清单（105 · 按产品能力域分组）
+## 二、MCP 工具清单（107 · 按产品能力域分组）
 
 > 十个能力域按「一个组 = 一个可独立讲述的产品能力」划分，与五能力叙事的对应：本节工具承载其中的**审计**（审计与合规）、**回溯**（快照与回溯）、**沉淀**（知识资产与能力市场）、**进化**（后训练流水线与 FDE 沉淀）能力面；**注入**能力走加载链文件（SKILL.md/fde.md/think.md/knowledge/），不经 MCP 暴露。**roles 列保留运行时真值**——`SOFAGENT_MCP_ROLES=audit,ops` 收窄面以 roles 为准（v1.4.0 工具角色分层），分组是文档编制判断。浏览器四件套（playwright_*）归审计域——主叙事是 UI 层审计取证（v1.5.7 UI 审计的执行底座）。
 
@@ -49,7 +49,7 @@
 | `fde_distill` | fde | FDE 三层交付物生成（引擎五）——跑通过程沉淀：文档层手册（人读：现状/六步/验收/回滚）+ Skill 层模板（Agent 可执行）+ 运行层 yaml 片段（引擎六组装用），归档 deliverables/ 带 README 索引。 |
 | `fde_deploy` | fde | FDE workflow 组装部署（引擎六）——三层交付物 → deployments/<name>.yml（与 fde_compose 同格式）；只产出工件不代激活——激活走 workflow_submit + activate_workflow（人审闸门保留）。 |
 
-### 审计与合规（代码 / 轨迹 / 数据审计 · 浏览器取证 · 语料导出）（12）
+### 审计与合规（代码 / 轨迹 / 数据审计 · 浏览器取证 · 语料导出）（14）
 
 | tool | roles | 说明 |
 |---|---|---|
@@ -65,12 +65,14 @@
 | `corpus_export` | ops | 训练语料导出三件套——规则（27 编号位含跳号占位 + reward_hint 骨架 + verifiers 三桶清单）+ FDE 方法论（锚点解析）+ 带标签审计样本（六源聚合 + 脱敏）。导出带版本号 + HMAC 签名，导出行为记 corpus_export 审计事件。 |
 | `device_data_push` | ops | 数据上行通道（G11）：设备门禁 → 采集声明校验（默认空=不上行，opt-in）→ 脱敏 → AES-256-GCM 加密入队（WAL 暂存断网不丢，游标续传不重传已 ack 段）→ 审计留痕 + 计量进 worklog。原始数据不出设备。 |
 | `trace_reconcile` | ops, fde | 跨层证据对账（trace reconcile）：DSH session trace（Agent 自述）vs git diff（独立事实）vs logs 声明集三源比对——产出差异清单（漏报/幻觉动作/瞒报四态）+ 一致率；可选模型层回溯链（推理 → 模型版本 → train_job → datasetHash）。对账结果入 decision-log（kind=COVERAGE）。 |
+| `audit_query` | audit | 审计数据只读查询——按时间/规则/exitCode 过滤读 history.jsonl，按 ts 查 decision-log 因果链（消费 causedBy 字段）。严格只读，不写任何审计链。边界：audit_trail 按 agentId 查跨设备轨迹 / worklog_query 查工作效能指标 / run_audit 跑规则写 think.md（写侧）/ ruleset_export 导出规则面——本 tool 只查「时间·规则·exitCode·因果链」维度，勿混用。 |
+| `ruleset_export` | audit | 规则集导出——24 条默认规则 + 已加载扩展规则导出为标准 JSON（与 --ruleset-path 加载格式同构，导出即加载格式、双向可逆），每条附训练消费元数据（rule_id / 检测意图 / 违规样例 / 严重级别）+ 规则集版本号 + 内容指纹（HMAC-SHA256），导出行为写审计留痕。边界：list_rules 只列规则清单、corpus_export 导出训练语料三件套——本 tool 导出「规则面标准 JSON」供第三方零转换消费。 |
 
 ### 工作流编排（workflow DAG · 循环执行与优化）（18）
 
 | tool | roles | 说明 |
 |---|---|---|
-| `compose` | fde | 编排模块——传入任务描述，返回 Sub Agent 编排方案（YAML）。v1.5.2 前名 `sofagent_compose`（别名兼容一版）。 |
+| `compose` | fde | 编排模块——传入任务描述，返回 Sub Agent 编排方案（YAML）。 |
 | `optimize_skill` | eval | 优化指定 Skill 文件，生成优化建议。 |
 | `activate_workflow` | agent, fde | 读取 FDE 交付物，注册企业 SubAgent。 |
 | `loop_debug` | eval | Onboard Agent 调试循环——传 task 触发 activate→run→judge→fix 循环；不传查记录。 |
@@ -220,3 +222,4 @@
 | 2026-09-13 | v1.4.8 tools 面零新增，仍为 95 |
 | 2026-09-17 | v1.4.9 新增 9 tool（device_register / device_list · device_data_query / device_data_push · connector_register / connector_list · workflow_export / workflow_import · router_session_push）95→104 |
 | 2026-09-19 | v1.5.0 新增 trace_reconcile 104→105 |
+| 2026-09-23 | v1.5.2 章一/章二 新增 audit_query（审计数据只读查询）/ ruleset_export（规则集导出，双向可逆）105→107 |

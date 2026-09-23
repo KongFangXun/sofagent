@@ -179,7 +179,7 @@ describe('device_data_query / device_data_push MCP tools（v1.4.9 G10/G11）', (
       const names = TOOLS.map((t) => t.name);
       expect(names).toContain('device_data_query');
       expect(names).toContain('device_data_push');
-      expect(TOOLS.length).toBe(105);
+      expect(TOOLS.length).toBe(107);
     });
   });
 });

@@ -151,7 +151,7 @@ class McpServer {
 
   // ── tools/call ──
 
-  // v1.5.2 A-4：旧名别名路由表——'sofagent_compose' 已更名 'compose'（105 个 tool 中
+  // v1.5.2 A-4：旧名别名路由表——'sofagent_compose' 已更名 'compose'（107 个 tool 中
   // 唯一带前缀项的命名收口）。别名兼容一版（下个大版本移除）；结果 text 追加更名提示。
   private static readonly ALIAS_RENAMED_TOOLS: Record<string, string> = { sofagent_compose: 'compose' };
 

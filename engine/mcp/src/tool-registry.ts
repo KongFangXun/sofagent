@@ -101,6 +101,9 @@ import { dataPush } from './tools/data-push-tool';
 // v1.4.9 T7：router 过站 session 承接（伴生 exporter 推送入口——最后一个新 tool）
 import { routerSessionPush } from './tools/router-session-push';
 import { traceReconcileTool, type TraceReconcileArgs } from './tools/trace-reconcile';
+// v1.5.2 章一/章二：审计对外两面——只读数据查询（audit_query）+ 规则集导出（ruleset_export）
+import { auditQuery } from './tools/audit-query';
+import { rulesetExport } from './tools/ruleset-export';
 
 /**
  * 工具定义（MCP tools/list 返回的 schema）
@@ -151,7 +154,7 @@ export type ToolHandler = (
 ) => ToolResult | ToolDispatchError | Promise<ToolResult | ToolDispatchError>;
 
 /**
- * 完整工具清单——105 个 tool（v1.5.0 章八：trace_reconcile 新增——跨层证据对账（104→105：DSH trace vs git diff vs logs 三源比对四态判定 + 模型层回溯链 + 对账结果入 decision-log kind=COVERAGE）；v1.4.9 T7：router_session_push 新增——session 承接面（103→104 终值：97→104 = 批 1 +2、批 2 +2、批 3 +4、批 5 +1；router 伴生 exporter 推送入口，schema 校验 + 本地落盘 + HMAC 挂链 + usage 入 cost 台账）；v1.4.9 G9：device_register/device_list 新增——设备注册面（95→97，T1 设备身份验签 fail-closed + 清单在线态）；v1.4.7：data_push 新增——标准数据推送入口（94→95 终值）；contribution_query 新增——G4 绩效数据导出（93→94）；pr_submit/pr_review/pr_merge 三 tool 新增——G13 PR 生命周期（90→93）；onboard_prompt 新增——上岗 prompt 生成器（89→90）；workflow_gaps 新增——G2 能力缺口查询（88→89）；workflow_create/workflow_update/workflow_node_add/workflow_diff_preview 四 tool 新增——G14 workflow 对象化 CRUD（84→88）；v1.4.6：train_cloud 新增——83→84，云 VM 执行面控制工具；v1.4.5：train_serve/train_compliance/train_deliverable 三件齐——80→83，SKILL.md/ARCHITECTURE 等九处 SSOT 同步收口；v1.4.4：corpus_export 新增；v1.4.3：train_status/train_list/train_diagnose 新增；v1.4.2：fde_interview/fde_classify/fde_quantify/fde_derive/fde_distill/fde_deploy 六引擎 + train_doctor/train_dryrun/train_report 新增；v1.4.1：train_submit 新增；v1.4.0：cost_query + browser 4 新增；v1.3.9：worklog_query 新增；v1.3.6：workflow_submit/ontology_import/model_register/model_switch/model_unregister/train_budget/define_acceptance/check_acceptance；v1.3.5：run_ab_test/promote_ab/snapshot_list/snapshot_restore；v1.3.4：commons_publish/search/invoke/rate/retire/harvest_rule；不含 4 个 resource shortcut）
+ * 完整工具清单——107 个 tool（v1.5.2 章一/章二：audit_query 新增——审计数据只读查询（history 三维过滤 + decision 因果链，严格只读不写链）；ruleset_export 新增——规则集导出（24 条默认规则 + 已加载扩展 → 标准 JSON，与 --ruleset-path 加载格式同构双向可逆 + 内容指纹 + 审计留痕）（105→107）；v1.5.0 章八：trace_reconcile 新增——跨层证据对账（104→105：DSH trace vs git diff vs logs 三源比对四态判定 + 模型层回溯链 + 对账结果入 decision-log kind=COVERAGE）；v1.4.9 T7：router_session_push 新增——session 承接面（103→104 终值：97→104 = 批 1 +2、批 2 +2、批 3 +4、批 5 +1；router 伴生 exporter 推送入口，schema 校验 + 本地落盘 + HMAC 挂链 + usage 入 cost 台账）；v1.4.9 G9：device_register/device_list 新增——设备注册面（95→97，T1 设备身份验签 fail-closed + 清单在线态）；v1.4.7：data_push 新增——标准数据推送入口（94→95 终值）；contribution_query 新增——G4 绩效数据导出（93→94）；pr_submit/pr_review/pr_merge 三 tool 新增——G13 PR 生命周期（90→93）；onboard_prompt 新增——上岗 prompt 生成器（89→90）；workflow_gaps 新增——G2 能力缺口查询（88→89）；workflow_create/workflow_update/workflow_node_add/workflow_diff_preview 四 tool 新增——G14 workflow 对象化 CRUD（84→88）；v1.4.6：train_cloud 新增——83→84，云 VM 执行面控制工具；v1.4.5：train_serve/train_compliance/train_deliverable 三件齐——80→83，SKILL.md/ARCHITECTURE 等九处 SSOT 同步收口；v1.4.4：corpus_export 新增；v1.4.3：train_status/train_list/train_diagnose 新增；v1.4.2：fde_interview/fde_classify/fde_quantify/fde_derive/fde_distill/fde_deploy 六引擎 + train_doctor/train_dryrun/train_report 新增；v1.4.1：train_submit 新增；v1.4.0：cost_query + browser 4 新增；v1.3.9：worklog_query 新增；v1.3.6：workflow_submit/ontology_import/model_register/model_switch/model_unregister/train_budget/define_acceptance/check_acceptance；v1.3.5：run_ab_test/promote_ab/snapshot_list/snapshot_restore；v1.3.4：commons_publish/search/invoke/rate/retire/harvest_rule；不含 4 个 resource shortcut）
  */
 export const TOOLS: ToolDef[] = [
   {
@@ -284,7 +287,7 @@ export const TOOLS: ToolDef[] = [
     handler: (args) => writeThink(args),
   },
   {
-    // v1.5.2 A-4：由 'sofagent_compose' 统一为 'compose'（105 个 tool 中唯一带前缀项的命名收口）。
+    // v1.5.2 A-4：由 'sofagent_compose' 统一为 'compose'（107 个 tool 中唯一带前缀项的命名收口）。
     // 旧名经 mcp-server.ts tools/call 分派层别名路由兼容一版。
     name: 'compose',
     roles: ['fde'],
@@ -2180,5 +2183,47 @@ export const TOOLS: ToolDef[] = [
     },
     // v1.4.8 条目 5 迁移：查表分发
     handler: async (args) => { const trt = await traceReconcileTool({ ...(typeof args.repo_root === 'string' && args.repo_root ? { repo_root: args.repo_root } : {}), ...(typeof args.include_model_layer === 'boolean' ? { include_model_layer: args.include_model_layer } : {}), ...(typeof args.session_limit === 'number' ? { session_limit: args.session_limit } : {}) } satisfies TraceReconcileArgs); return { ...trt, isError: trt.data.isError }; },
+  },
+  {
+    // v1.5.2 章一：审计数据只读查询——history 三维过滤 + decision 因果链（严格只读，不写链）
+    name: 'audit_query',
+    roles: ['audit'],
+    description: '审计数据只读查询——按时间/规则/exitCode 过滤读 history.jsonl，按 ts 查 decision-log 因果链（消费 causedBy 字段）。严格只读，不写任何审计链。边界：audit_trail 按 agentId 查跨设备轨迹 / worklog_query 查工作效能指标 / run_audit 跑规则写 think.md（写侧）/ ruleset_export 导出规则面——本 tool 只查「时间·规则·exitCode·因果链」维度，勿混用。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        since: { type: 'string', description: '起始时间（ISO 8601，闭区间含）——history 与 decision 两面通用' },
+        until: { type: 'string', description: '结束时间（ISO 8601，闭区间含）——history 与 decision 两面通用' },
+        rule: { type: 'string', description: '规则 id（如 A1 / E1）——匹配 history 条目 ruleResults（id / name）' },
+        exitCode: { type: 'number', enum: [0, 1, 2], description: '审计退出码：0=PASS / 1=WARN / 2=FAIL' },
+        limit: { type: 'number', description: '返回条数上限（默认 100，时间倒序取最新）' },
+        causedBy: { type: 'string', description: 'decision 面：查以该 ts 为因果上游的后继决策条目（消费 causedBy 字段）' },
+        source: { type: 'string', enum: ['history', 'decision', 'both'], description: '查询源（缺省按是否有 causedBy 推断：有→decision，无→history）' },
+        dataDir: { type: 'string', description: '数据目录覆盖（测试注入用；缺省走 SOFAGENT_DATA 解析链）' },
+      },
+      required: [],
+    },
+    // v1.4.8 条目 5 迁移：查表分发
+    handler: async (args) => { const aq = await auditQuery({ ...(typeof args.since === 'string' && args.since ? { since: args.since } : {}), ...(typeof args.until === 'string' && args.until ? { until: args.until } : {}), ...(typeof args.rule === 'string' && args.rule ? { rule: args.rule } : {}), ...(args.exitCode === 0 || args.exitCode === 1 || args.exitCode === 2 ? { exitCode: args.exitCode } : {}), ...(typeof args.limit === 'number' ? { limit: args.limit } : {}), ...(typeof args.causedBy === 'string' && args.causedBy ? { causedBy: args.causedBy } : {}), ...(args.source === 'history' || args.source === 'decision' || args.source === 'both' ? { source: args.source } : {}), ...(typeof args.dataDir === 'string' && args.dataDir ? { dataDir: args.dataDir } : {}) }); return { ...aq, isError: aq.data.isError === true }; },
+  },
+  {
+    // v1.5.2 章二：规则集导出——默认规则 + 扩展规则 → 标准 JSON（导出格式即加载格式，双向可逆）
+    name: 'ruleset_export',
+    roles: ['audit'],
+    description: '规则集导出——24 条默认规则 + 已加载扩展规则导出为标准 JSON（与 --ruleset-path 加载格式同构，导出即加载格式、双向可逆），每条附训练消费元数据（rule_id / 检测意图 / 违规样例 / 严重级别）+ 规则集版本号 + 内容指纹（HMAC-SHA256），导出行为写审计留痕。边界：list_rules 只列规则清单、corpus_export 导出训练语料三件套——本 tool 导出「规则面标准 JSON」供第三方零转换消费。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        rulesetName: { type: 'string', description: '规则集名称（缺省 sofagent）' },
+        rulesetVersion: { type: 'string', description: '规则集版本（缺省读 audit 包 package.json 版本）' },
+        description: { type: 'string', description: '规则集描述（缺省自动生成）' },
+        dataDir: { type: 'string', description: '数据根目录（审计留痕落点，缺省 SOFAGENT_DATA / data）' },
+        outDir: { type: 'string', description: '导出 JSON 落盘目录（缺省 <dataDir>/export/ruleset）' },
+        dryRun: { type: 'boolean', description: '只构造不落盘、不留痕（预览用）' },
+      },
+      required: [],
+    },
+    // v1.4.8 条目 5 迁移：查表分发
+    handler: async (args) => { const re = await rulesetExport({ ...(typeof args.rulesetName === 'string' && args.rulesetName ? { rulesetName: args.rulesetName } : {}), ...(typeof args.rulesetVersion === 'string' && args.rulesetVersion ? { rulesetVersion: args.rulesetVersion } : {}), ...(typeof args.description === 'string' && args.description ? { description: args.description } : {}), ...(typeof args.dataDir === 'string' && args.dataDir ? { dataDir: args.dataDir } : {}), ...(typeof args.outDir === 'string' && args.outDir ? { outDir: args.outDir } : {}), ...(typeof args.dryRun === 'boolean' ? { dryRun: args.dryRun } : {}) }); return { ...re, isError: re.data.isError === true }; },
   },
 ];

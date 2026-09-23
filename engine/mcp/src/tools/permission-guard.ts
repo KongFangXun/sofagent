@@ -39,6 +39,9 @@ const TOOL_RISK_PROFILES: Record<string, ToolRiskProfile> = {
   // 审计数据面（防篡改——写/删一律 critical）
   run_audit: { action: 'write', domain: 'audit-data', taskType: 'ops' },
   audit_file: { action: 'write', domain: 'audit-data', taskType: 'ops' },
+  // v1.5.2 章二：规则集导出——导出物落盘 + 写一条 HMAC 挂链审计留痕（audit-data 非读动作 → critical，
+  // 与 run_audit/audit_file 同域；audit_query 为纯只读，不入本表，走缺省 read/public 画像）
+  ruleset_export: { action: 'export', domain: 'audit-data', taskType: 'ops' },
   corpus_export: { action: 'export', domain: 'user-data', taskType: 'data-processing' },
   data_sovereignty_report: { action: 'export', domain: 'user-data', taskType: 'data-processing' },
   // 知识/实体写面
