@@ -81,11 +81,11 @@ exit_of() { set +e; "$@" >/dev/null 2>&1; local rc=$?; set -e; echo "$rc"; }
 #   新旧值并存时永远命中（LIMITATIONS.md 曾同含 357 与 358）⇒ stale 值长期存活、S165 恒绿，
 #   这正是 F1/A7 族缺陷「门禁看不见」的根因。语义：提取全部声明形态，断言 ① 至少 1 处
 #   （缺声明即 FAIL，拒绝以「读不到就跳过」收场）② 去重后仅一个值且 == SSOT 声明值。
-#   参数: <文件相对路径> <SSOT 期望值> <声明正则（须完整覆盖目标数字）> <人读名称>
+#   参数: <文件相对路径> <SSOT 期望值> <声明正则（须完整覆盖目标数字）> <人读名称>。v1.5.2 精度修复：抽数前先经 node 剥「第 N(、N…)* 条」序数指代散文（如 ARCHITECTURE.md「不是第 25 条规则」）——它非声明，裸 grep 会误当 stale 值；只剥该形态，真 stale 值仍被抽到、空集仍 fail-loud，两个失败方向都仍响（守卫不变哑）
 assert_numbers_all_equal() {
   local f="$1" want="$2" pat="$3" label="$4" raw vals v bad=""
   set +o pipefail
-  raw=$(grep -oE "$pat" "$PROJECT_ROOT/$f" 2>/dev/null | grep -oE '[0-9]+' | sort -u | tr '\n' ' ')
+  raw=$(node -e 'const fs=require("fs");process.stdout.write(fs.readFileSync(process.argv[1],"utf8").replace(/第\s*[0-9]+(?:[、，,]\s*[0-9]+)*\s*条/g,""))' "$PROJECT_ROOT/$f" 2>/dev/null | grep -oE "$pat" | grep -oE '[0-9]+' | sort -u | tr '\n' ' ')
   set -o pipefail
   vals=$(echo "$raw" | tr -s ' ' | sed -E 's/^ //; s/ $//')
   [ -n "$vals" ] || { fail "$f 未找到「${label}」声明（正则 ${pat}）——文档缺声明，拒绝静默放行"; return 1; }
