@@ -386,7 +386,10 @@ export function runDoctor(projectDir: string = process.cwd(), options: { resetBa
         repairHint(`检查文件权限（chmod 755 ${hookPath}）`);
       }
     } else {
-      warn('commit-msg hook 未安装——审计不会运行！运行 sofagent-audit --install-hook 安装');
+      // v1.5.2 A-7：warn → fail——commit-msg 是审计主防线，「审计不会运行」不该静默
+      // 通过（此前 allOk 含 hookOk 但 CLI 侧只看 failCount，warn 即 exit 0——最该
+      // 报警的一天静默通过）。文案不变，只升严重度。
+      fail('commit-msg hook 未安装——审计不会运行！运行 sofagent-audit --install-hook 安装');
       repairHint('sofagent-audit --install-hook');
     }
 
@@ -411,7 +414,9 @@ export function runDoctor(projectDir: string = process.cwd(), options: { resetBa
         repairHint(`检查文件权限（chmod 755 ${preCommitPath}）`);
       }
     } else {
-      warn('pre-commit hook 未安装——.sofagent/ 入库主防线缺失。运行 sofagent-audit --install-hook 补装');
+      // v1.5.2 A-7：warn → fail——pre-commit 是 .sofagent/ 入库主防线，语义同
+      // commit-msg（主防线缺失 = 最该报警的一天）。文案不变，只升严重度。
+      fail('pre-commit hook 未安装——.sofagent/ 入库主防线缺失。运行 sofagent-audit --install-hook 补装');
       repairHint('sofagent-audit --install-hook');
     }
 

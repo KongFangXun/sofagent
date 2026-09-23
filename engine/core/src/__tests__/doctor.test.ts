@@ -456,4 +456,42 @@ describe('doctor commit-msg hook 完整性校验（v1.5.1 E3）', () => {
     expect(out()).toContain('commit-msg hook 未安装');
     expect(r.hook).toBe(false);
   });
+
+  // v1.5.2 A-7：pre-commit / commit-msg 未安装升 fail（主防线缺失不该 exit 0）
+  it('A-7 commit-msg 未安装 → FAIL（failCount ≥1，文案不变只升严重度）', () => {
+    rmSync(hookPath(), { force: true });
+    const r = runDoctor(repo);
+    expect(out()).toContain('❌ commit-msg hook 未安装——审计不会运行');
+    expect(r.failCount).toBeGreaterThanOrEqual(1);
+    expect(r.allOk).toBe(false);
+  });
+
+  it('A-7 pre-commit 未安装 → FAIL（.sofagent/ 入库主防线缺失）', () => {
+    writeFileSync(
+      hookPath(),
+      '#!/bin/bash\n# sofagent commit-msg hook v1.5.0\nsofagent-audit --commit-msg "$1"\nEXIT_CODE=$?\nexit $EXIT_CODE\n',
+      'utf-8',
+    );
+    // commit-msg 完备、pre-commit 缺席 → hookOk=false 且 pre-commit 分支 fail
+    const r = runDoctor(repo);
+    expect(out()).toContain('❌ pre-commit hook 未安装——.sofagent/ 入库主防线缺失');
+    expect(r.failCount).toBeGreaterThanOrEqual(1);
+  });
+
+  it('A-7 post-commit 未安装维持 WARN（事后对账非主防线，severity 不升）', () => {
+    writeFileSync(
+      hookPath(),
+      '#!/bin/bash\n# sofagent commit-msg hook v1.5.0\nsofagent-audit --commit-msg "$1"\nEXIT_CODE=$?\nexit $EXIT_CODE\n',
+      'utf-8',
+    );
+    writeFileSync(
+      join(repo, '.git', 'hooks', 'pre-commit'),
+      '#!/bin/bash\n# sofagent pre-commit guard\nsofagent marker\ngit reset\n.sofagent/\n',
+      'utf-8',
+    );
+    const r = runDoctor(repo);
+    expect(out()).toContain('⚠️  post-commit hook 未安装——绕过检测不可用');
+    // post-commit 未装不产生 fail 项（本仓库其余检查全绿时 failCount 应为 0）
+    expect(out()).not.toContain('❌ post-commit hook 未安装');
+  });
 });
