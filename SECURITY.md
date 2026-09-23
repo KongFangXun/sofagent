@@ -2,7 +2,7 @@
 
 <p align="center"><img src="docs/assets/sofagent.png" alt="sofagent" width="96" /></p>
 
-> v1.5.1 · 2026-09-22（UTC）· ✅ 已发版 · 孔放勋
+> v1.5.1 · 2026-09-22（UTC）· ✅ 已发版（[CHANGELOG](./CHANGELOG.md)）· 孔放勋
 >
 > 按安全主题组织，企业 IT 可按主题快速定位。各能力的引入版本在小节正文首句注明。
 
