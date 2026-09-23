@@ -80,7 +80,7 @@ const LIST_EXEMPT = argv.includes('--list-exempt');
 const PKG_RE = /npm view\s+([^\s`'"|]+)\s+dist-tags/;
 const PKG_SCOPED_RE = /@sofagent\/[a-z0-9][a-z0-9-]*/;
 const PKG_BARE_RE = /(?<![\w/@.-])sofagent(?![-\w./])/;
-const LATEST_RE = /(?<![/\w-])["']?\blatest\b["']?\s*(?:[:：]|为)[\s`"'={]*([0-9][0-9A-Za-z+_-]*\.[0-9][0-9A-Za-z.+_-]*)/;
+const LATEST_RE = /(?<![/\w-])["']?\blatest\b["']?\s*(?:[:：]|为)[\s`"'={]*v?([0-9][0-9A-Za-z+_-]*\.[0-9][0-9A-Za-z.+_-]*)/;
 
 function detectClaim(line) {
   if (!line.includes('dist-tags')) return null;
@@ -279,11 +279,13 @@ function runSelftest() {
   chk('误报回归②：URL 路径内的 latest: 9.9.9 不认为值声称', !!s16 && s16.claimed === null);
   const s17 = detectClaim("编辑 sofagent/config.yml 后，dist-tags 当前为 `{ latest: '1.5.0' }`");
   chk('误报回归③：路径 sofagent/config.yml 不当包名（→ 盲区）', !!s17 && s17.pkg === null && s17.claimed === '1.5.0');
+  const s18 = detectClaim("当前 `sofagent` 的 dist-tags 为 `{ latest: 'v1.5.1' }`");
+  chk('漏检回归：带 v 前缀的版本值去掉 v 后仍识别', !!s18 && s18.claimed === '1.5.1');
   if (bad > 0) {
     console.error(`❌ 自检失败 ${bad} 项`);
     process.exit(1);
   }
-  console.log('✅ 自检通过（18/18）');
+  console.log('✅ 自检通过（19/19）');
   process.exit(0);
 }
 
