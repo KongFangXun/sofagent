@@ -978,7 +978,9 @@ else
   #    CHANGELOG 实际写法不符（索引行的数字本身即 workspace 口径，实测 4429 = 开发日志
   #    快照 4429）；保留会让校验一旦被标注激活就必红（4429 ≠ 4429+44）。
   # v1.4.9 G-13：补 `head -1`（同形态硬化——无论首个「workspace 口径 N」出现在哪，都取行内首处）
-  CL_WS_MARK=$(echo "$CHANGELOG_LINE" | grep -oE 'workspace 口径 [0-9]+' | head -1 | grep -oE '[0-9]+' || echo "")
+  # v1.5.2 A-2：正则扩双形态——既有「workspace 口径 NNNN」与 B-15 口径精确化的
+  #   「workspace（模块包）口径 NNNN」（门禁格式契约随台账措辞联动，防再漂移致校验静默跳过）。
+  CL_WS_MARK=$(echo "$CHANGELOG_LINE" | grep -oE 'workspace(（模块包）)? ?口径 ?[0-9]+' | head -1 | grep -oE '[0-9]+' || echo "")
   if [ -n "$CL_WS_MARK" ]; then
     # 找同版本开发日志的 workspace 快照（「NNNN tests across NN packages」或「workspace NNNN」）
     # v1.4.8：包数不再写死 12——train 拆包后为 13，用 [0-9]+ 动态匹配（写死会在包数变化后静默穿透）
