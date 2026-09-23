@@ -3,22 +3,11 @@
   "usage": "node tools/check/check-npm-claims.mjs [--selftest] [--list-exempt]",
   "notes": [
     "形态照 tools/check/archaeology-exempt.json 的 exemptAnchors：独立 json、由门禁读取、每条必须写理由。",
-    "锚粒度 = {file, anchor}：anchor 是文件内唯一子串，锚定的行当前必须仍是「npm view … dist-tags 值声称」命中行——A-5 一旦落地、锚串不再命中 ⇒ 门禁 exit 2（债自动过期，不留永久口子）。",
+    "锚粒度 = {file, anchor}：anchor 是文件内唯一子串，锚定的行当前必须仍是「npm view … dist-tags 值声称」命中行——所豁免的声称一旦改为真值、锚串不再命中 ⇒ 门禁 exit 2（债自动过期，不留永久口子）。",
     "登记纪律（宁缺毋滥）：只有「真实已知债、待拍板/待裁定后清理」的声称才进本表。凡能直接改成 registry 真值的，一律不进本表——那是真实待清项，改了即绿。",
     "🔴 反例纪律：禁止为了转绿把能改的声称加进来。加一条豁免 = 宣称该声称暂不改为真值，须能在理由栏里说清「为何现在不能改」。"
   ],
-  "exemptAnchors": [
-    {
-      "file": "README.md",
-      "anchor": "实测 `npm view @sofagent/audit dist-tags` 当前为 `{ latest: '1.5.0' }`",
-      "reason": "A-5 待拍板：npm 通道策略未定（改走 latest / 恢复 alpha 二选一），README 声称暂不改为最新真值。拍板并落地后本锚串不再命中 → 门禁 exit 2，强制从本表摘除。"
-    },
-    {
-      "file": "README.en.md",
-      "anchor": "Measured now: `npm view @sofagent/audit dist-tags` → `{ latest: '1.5.0' }`",
-      "reason": "A-5 待拍板：npm 通道策略未定（与 README.md 同源），英文声称暂不改为最新真值。拍板并落地后本锚串不再命中 → 门禁 exit 2，强制从本表摘除。"
-    }
-  ],
+  "exemptAnchors": [],
   "exemptAnchors_spec": {
     "形态": "{ file, anchor, reason } 三条——**不是**「文件+行号」",
     "为何不用行号": "行号随任何编辑漂移，漂移即静默失效或静默误放行（失明且失声）。锚串漂移可被检出，故锚定到「行内锚串」。",

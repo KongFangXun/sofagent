@@ -101,7 +101,11 @@
 
 > 🔗 **为什么必须一体**：交付物是两个阶段共享的活状态——进场时写入、离场后执行时读、进化时写回（试验分支晋升基线、反思蒸馏回流）。没有 FDE，约束层没有判据可执行；没有约束层，FDE 的判断随人离场蒸发。这正是「FDE Harness」名字的由来——不是 FDE 功能 + Harness 功能的拼盘，是同一件事的两个阶段。
 >
-> **从 FDE 到 FDEing——万物皆可 FDEing**：两个阶段的合成效果，是把 Forward Deployed **Engineer**（一个岗位）变成 Forward Deployed **Engineering**（一种能力）——岗位随人走，能力随交付物留。**FDEing 即 Forward Deployed Engineering 的缩写**（读作 /ef-di-i-ing/，与 engineering 同构），名词指这种能力，动词指把 FDE 从人力工作变成这种能力——万物皆可 FDEing。**FDE 是名词，FDEing 是动词**——把 FDE 从一项人力工作变成一种可自动执行的能力（打法 × 判定 × 治理合成）：花更少的人力，提供更多的能力，任何业务对象、流程、节点，都可以被 FDEing 一遍「梳理 → 判定 → 交付 → 养护」；不限于软件：硬件节点、机器人运动过程同样是一条条 workflow，差别在执行器、不在治理形态。**它同时是一种思维方式**——做任何事之前先想三件：① 这件事的 workflow 怎么搭；② 其中的 AI 节点是什么；③ 怎么让 AI 更好地帮你实现（详见 [PHILOSOPHY · 从 FDE 到 FDEing](./docs/PHILOSOPHY.md)）。
+> **从 FDE 到 FDEing——万物皆可 FDEing**：两个阶段的合成效果，是把 Forward Deployed **Engineer**（一个岗位）变成 Forward Deployed **Engineering**（一种能力）——岗位随人走，能力随交付物留。**FDEing 即 Forward Deployed Engineering 的缩写**（读作 /ef-di-i-ing/，与 engineering 同构），名词指这种能力，动词指把 FDE 从人力工作变成这种能力——万物皆可 FDEing。
+>
+> - **FDE 是名词，FDEing 是动词**——把 FDE 从一项人力工作变成一种可自动执行的能力（打法 × 判定 × 治理合成）：花更少的人力，提供更多的能力。
+> - **不限于软件**——任何业务对象、流程、节点，都可以被 FDEing 一遍「梳理 → 判定 → 交付 → 养护」；硬件节点、机器人运动过程同样是一条条 workflow，差别在执行器、不在治理形态。
+> - **它同时是一种思维方式**——做任何事之前先想三件：① 这件事的 workflow 怎么搭；② 其中的 AI 节点是什么；③ 怎么让 AI 更好地帮你实现（详见 [PHILOSOPHY · 从 FDE 到 FDEing](./docs/PHILOSOPHY.md)）。
 
 <p align="center"><img src="docs/assets/arch-layers.svg" alt="sofagent 三层定位：模型层 → FDE Harness 层 → Agent 层" width="85%" /></p>
 
@@ -170,7 +174,7 @@
 
 **版本阶段（装前必读）**：sofagent 处于**阿尔法施工期**（v0.x–v1.x）——功能面快速变动，**不承诺接口稳定**，跨版本升级前先读 [CHANGELOG](./CHANGELOG.md)。自 **v2.0.0** 起进入**贝塔阶段**。
 
-对应的 npm 发布通道策略：**施工期版本一概以 `alpha` 标签发布、不占用 `latest`**（`latest` 留给稳定通道）。实测 `npm view @sofagent/audit dist-tags` 当前为 `{ latest: '1.5.0' }`——施工期内 `latest` 不前移；**v2.0.0 发布后 `latest` 指向 2.0**。
+对应的 npm 发布通道策略：**施工期版本照常发布到 `latest`**——`npx @sofagent/audit` 默认拉到的即当前最新版，无需指定标签。实测 `npm view @sofagent/audit dist-tags` 当前为 `{ latest: '1.5.1' }`；**v2.0.0 发布后 `latest` 指向 2.0**。
 
 > ⚠️ **企业用户先读** [LIMITATIONS §三](./docs/LIMITATIONS.md#三安全与信任模型局限)——`config.yml` 默认**非 fail-closed**（规则可被 Agent 篡改绕过），多租户**写入侧**隔离尚未落地（v0 已交付查询侧隔离：orgId 过滤 + data/<tenant>/ 路径地基，见 LIMITATIONS）。强合规场景建议 CI 兜底 + 文件权限锁（`chmod 400 .sofagent/config.yml`——辅助层，对同用户进程无效，见 [LIMITATIONS §三](./docs/LIMITATIONS.md)），不要用单机默认配置直接上生产。
 >
