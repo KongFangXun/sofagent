@@ -956,7 +956,7 @@ a:hover{text-decoration:none} /* 全站 hover 无下划线（统一）——按�
   </div>
 
   <div class="section">
-    <div class="section-header"><div class="section-title"><span class="dot-emoji"><i class="bi bi-plug"></i></span>MCP 工具（104 个）</div>
+    <div class="section-header"><div class="section-title"><span class="dot-emoji"><i class="bi bi-plug"></i></span>MCP 工具（<span id="mcpToolCount">…</span> 个）</div>
       <a href="https://github.com/KongFangXun/sofagent/blob/main/engine/mcp/src/tool-registry.ts" target="_blank" class="btn btn-outline">tool-registry →</a>
     </div>
     <div class="section-body">
@@ -2748,10 +2748,10 @@ function loadFdeSelfGraph(){
   });
 }
 
-/* MCP 工具清单（v1.4.9 · 104 个，与 engine/mcp/src/tool-registry.ts 对齐 · 按功能分组折叠） */
+/* MCP 工具清单（与 engine/mcp/src/tool-registry.ts 对齐 · 按功能分组折叠 · 计数由 renderMcpList 动态渲染） */
 var MCP_TOOLS=[
   {g:'审计与安全',open:true,items:[
-    ['run_audit','全量审计'],['audit_file','单文件审计'],['audit_data_change','数据变更审计'],['audit_trail','审计轨迹'],['cost_query','成本审计查询'],['data_sovereignty_report','数据主权报告'],['list_rules','规则清单'],['agent_identity','身份码查询']
+    ['run_audit','全量审计'],['audit_file','单文件审计'],['audit_data_change','数据变更审计'],['audit_trail','审计轨迹'],['trace_reconcile','跨层证据对账'],['cost_query','成本审计查询'],['data_sovereignty_report','数据主权报告'],['list_rules','规则清单'],['agent_identity','身份码查询']
   ]},
   {g:'知识库与本体',open:true,items:[
     ['search_knowledge','知识库搜索'],['read_entity','读取实体'],['read_concept','读取概念'],['list_entities','实体列表'],['list_concepts','概念列表'],['read_lessons','踩坑记录'],['read_think_md','读取 think.md'],['stats','知识库统计'],['create_entity','创建实体'],['create_concept','创建概念'],['update_entity','更新实体'],['delete_entity','删除实体'],['delete_concept','删除概念'],['validate_ontology','本体校验'],['ontology_import','本体注入']
@@ -2776,6 +2776,9 @@ function renderMcpList(){
   // 全部平铺（与 24 审计规则同风格），分组仅作为数组组织结构
   var all=[];
   MCP_TOOLS.forEach(function(g){(g.items||[]).forEach(function(t){all.push(t)})});
+  // 计数动态渲染（单源：本清单实数）——标题栏不再硬编码，加 tool 不改标题
+  var countEl=document.getElementById('mcpToolCount');
+  if(countEl)countEl.textContent=all.length;
   box.innerHTML=all.map(function(t){
     return '<div class="mcp-item"><code>'+escapeHtml(t[0])+'</code><div class="mcp-desc">'+escapeHtml(t[1])+'</div></div>';
   }).join('');
