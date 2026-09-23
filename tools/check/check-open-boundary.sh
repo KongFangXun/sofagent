@@ -40,11 +40,6 @@ PATTERN='Grap[h]?[ ]?Hub|Flow[ ]?Hub'
 # 实际豁免走两处 case 分支（staged/全仓），此处仅文档化口径：
 #   ^\.git/ ^docs/changelog/ ^tools/check/check-docs\.sh$ ^tools/check/check-open-boundary\.sh$
 
-fail() {
-  echo "❌ $1"
-  exit 1
-}
-
 # ── 模式分派 ──
 if [ "$1" = "--staged" ]; then
   # staged 模式：只查暂存区新增/修改（PR 级拦截）

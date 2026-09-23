@@ -82,9 +82,10 @@ NC='\033[0m'
 PASS=0
 FAIL=0
 # SKIPS（v1.4.9 G-2②）：显式跳过项计数——「未找到声称即跳过」正是本批要消灭的静默形态。
-# 本脚本四处 skip：① check_doc() grep 未命中 ② 占位 devlog（**head-10 状态区**含「尚未实现」）
-# ③ 已发布 devlog（历史冻结，发版快照不回头改；v1.4.9 G-3 补记账——此前该分支不计 SKIPS）
-# ④ CHANGELOG 索引行缺 workspace 口径标注。
+# 本脚本五类 skip：① 占位 devlog（**head-10 状态区**含「尚未实现」）
+# ② 已发布 devlog（历史冻结，发版快照不回头改；v1.4.9 G-3 补记账——此前该分支不计 SKIPS）
+# ③ ROADMAP/evidence 引用的同版本开发日志快照取不到 ④ CHANGELOG 行开发日志快照提取失败
+# ⑤ CHANGELOG 索引行缺 workspace 口径标注。
 # K>0 不阻断（跳过合法性由发版 SOP「SKIP 数逐条裁决」裁定），但必须打印。
 SKIPS=0
 
@@ -426,34 +427,6 @@ if [ "$QUIET" = false ]; then
 fi
 
 # ── 校验各文档声称的当前版本测试数 ──
-# 策略：grep 文档中 v1.1.7 段（最新已发布版）声称的测试数，与实际值比对。
-# CHANGELOG.md: "**质量验证**：NNN tests" 格式（最新版本段）
-# ROADMAP.md: "质量验证：NNN tests" 格式
-# LIMITATIONS.md: "审计核心 NNN 个、全 workspace NNN 个" 格式
-# evidence.md: "v1.1.7 为 NNN" 格式（历史快照最后一列）
-
-check_doc() {
-  local label="$1" file="$2" pattern="$3" expected="$4"
-  local actual
-  actual=$(grep -oE "$pattern" "$file" 2>/dev/null | head -1 | grep -oE '[0-9]+' || echo "")
-  if [ -z "$actual" ]; then
-    SKIPS=$((SKIPS + 1))
-    if [ "$QUIET" = false ]; then
-      echo -e "  ${YELLOW}⚠ ${label}：未找到测试数声明（grep 模式未命中），跳过${NC}"
-    fi
-    return 0
-  fi
-  if [ "$actual" = "$expected" ]; then
-    if [ "$QUIET" = false ]; then
-      echo -e "  ${GREEN}✓ ${label}：${actual}${NC}"
-    fi
-    ((PASS++)) || true
-  else
-    echo -e "  ${RED}✗ ${label}：声称 ${actual}，实际 ${expected}${NC}"
-    echo -e "    文件：${file}"
-    ((FAIL++)) || true
-  fi
-}
 
 # 当前版本开发日志 — CHANGELOG.md 已改为纯目录索引（不再含测试数声明），
 # 测试数声明在开发日志的「开发完成快照」行。F-09 (v1.3.0 bugfix)：
@@ -965,6 +938,34 @@ if [ "$README_MULTIVALUE_BAD" -gt 0 ]; then
   ((FAIL++)) || true
 elif [ "$QUIET" = false ]; then
   echo -e "  ${GREEN}✓ README 测试数多值扫描：多值处均有口径标记（与 check-readme-parity ④b 同源）${NC}"
+  ((PASS++)) || true
+fi
+
+# ── README 带数字自指扫描（防「头部已滚动、正文仍写『上述 <旧值>』」的第二处硬编码点）──
+# 判据：README 不得出现「上述/上方/<N> above」式的**带数字自指**。自指只按名（如「工程可信度行」）、
+#   不按值——这样全文件只有**一处**权威数字（工程可信度行），而该处已被上方逐处校验覆盖；
+#   带数字自指即**第二处硬编码点**，头部滚动时不在任何校验的锚定面上 ⇒ 静默漂移。
+# 实测教训：README 头部已升 5101，正文仍写「上述 5084」，两值并存且无口径标记可解释——
+#   多值扫描（上方）锚的是「N 测试」相邻形态，而「上述 5084，随修复批滚动」两者都在窗口外，
+#   故扫描静默放行。本条补该盲区：自指带数字即红，与数值是否恰好相等无关（相等也是第二处硬编码点）。
+README_SELFREF_PATTERN='上述[^0-9]{0,6}[0-9]{3,}|上方[^0-9]{0,6}[0-9]{3,}|above[^0-9]{0,6}[0-9]{3,}|[0-9]{3,}[^0-9]{0,6}above'
+README_SELFREF_BAD=0
+for _sr_file in README.md README.en.md; do
+  [ -f "$_sr_file" ] || continue
+  _sr_hits=$(grep -nE "$README_SELFREF_PATTERN" "$_sr_file" 2>/dev/null || true)
+  [ -z "$_sr_hits" ] && continue
+  while IFS= read -r _sr_line; do
+    _sr_lineno="${_sr_line%%:*}"
+    echo -e "  ${RED}✗ ${_sr_file}:${_sr_lineno}：带数字自指（自指应只按名不按值）——第二处硬编码测试数是漂移盲区${NC}"
+    record_manual "$_sr_file" "$_sr_lineno" "带数字自指：改为按名引用（如「上方工程可信度行的实测值」），使全文件只留一处权威数字"
+    README_SELFREF_BAD=$((README_SELFREF_BAD + 1))
+  done <<< "$_sr_hits"
+done
+if [ "$README_SELFREF_BAD" -gt 0 ]; then
+  echo -e "  ${RED}✗ README 带数字自指扫描：${README_SELFREF_BAD} 处（权威数字应只留头部一处）${NC}"
+  ((FAIL++)) || true
+elif [ "$QUIET" = false ]; then
+  echo -e "  ${GREEN}✓ README 带数字自指扫描：零命中（权威数字仅头部一处）${NC}"
   ((PASS++)) || true
 fi
 

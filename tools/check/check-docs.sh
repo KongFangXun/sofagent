@@ -323,11 +323,6 @@ echo "=== 4. 文档分层预算 ==="
 # shellcheck disable=SC2034  # 变量供文档参考，实际展开在各 LAYER find 命令中
 COMMON_EXCLUDE='node_modules .workbuddy .sofagent docs/changelog docs/evidence SKILL/harness FDE'
 
-# 计算函数：count_md <find_args>
-count_md() {
-  find . -name "*.md" "$@" -print0 2>/dev/null | xargs -0 wc -l 2>/dev/null | tail -1 | awk '{print $1+0}'
-}
-
 # A 层：用户文档（根目录 *.md + docs/ 主文档）
 # 排除：B/E 层目录 + 公共排除（C/D 层已退役，见下方各层说明；原 C/D 层排除项已同步清理）
 # v1.3.9+ 分层修正（2026-08-22）：engine/*/README.md + tools/README.md 是包级开发者文档，
