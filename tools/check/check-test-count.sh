@@ -8,12 +8,28 @@
 # 各文档当前版本声称的数字，不匹配就 exit 1。
 #
 # 用法:
-#   ./tools/check/check-test-count.sh           # 人读输出
+#   ./tools/check/check-test-count.sh           # 人读输出（**只读**：默认路径绝不写仓内文件）
 #   ./tools/check/check-test-count.sh --quiet   # 只输出 OK/FAIL
+#   ./tools/check/check-test-count.sh --fix     # 显式落盘：先打印 file:line 与 旧→新，再替换，再自动复验
 #
 # 退出码:
-#   0 = 文档声称数全部与实际一致
+#   0 = 文档声称数全部与实际一致（或 --fix 落盘后复验全绿）
 #   1 = 有文档漂移（会列出具体文件+行号+声称值 vs 实际值）
+#   2 = 参数误用（--fix 与 --quiet/--scenarios-only 互斥）或 --fix 环境缺 node
+#
+# 漂移输出升级（「人工找落点」→「可直接执行的修复命令」）：
+#   ① 每条漂移除「file（行 N）：声称 X，实际 Y」外，另打印一条落点行
+#        ↳ 修复落点：<file>:<line>（X → Y）
+#      末尾汇总「可自动替换 N 处 / 需人工 M 处」清单，并给出**可直接粘贴执行**
+#      的 `node -e …` 修复命令 + 等价的 `--fix` 形式。
+#   ② 替换引擎用 **node 不 bare sed**：BSD sed 在本机 LANG=C.UTF-8 下遇多字节
+#      输入有「整段输出为空」的历史坑（见 tools/check/test-count.sh 内同族注记），
+#      且仓内 sync-test-count.sh / check-literals.sh 的替换一律走 node——单一实现。
+#
+# 🔴 anchor 铁律（修复 correctness 的根）：每条 anchor 必须与「检测该值时用的提取
+#   正则」同源，且**数字为捕获组 1**；替换只改该行**首处**匹配 ⇒ 被替换的那处
+#   == 被检查的那处（杜绝「报 A 行、改 B 处」）。锚不得含反斜杠转义与单引号，
+#   因为清单要序列化成 JSON 再内联进可粘贴命令。
 # ============================================================
 
 set -uo pipefail
@@ -27,18 +43,34 @@ cd "$(dirname "$0")/../.." || exit 1
 
 QUIET=false
 SCENARIOS_ONLY=false
+FIX_MODE=false
 for arg in "$@"; do
   case "$arg" in
     --quiet) QUIET=true ;;
     --scenarios-only) SCENARIOS_ONLY=true ;;
+    --fix) FIX_MODE=true ;;
     --help|-h)
       echo "check-test-count.sh — 文档声称测试数 vs 实际一致性校验"
       echo "  --quiet           只输出 OK / FAIL"
       echo "  --scenarios-only  只跑 acceptance 场景数守卫（纯文本对账秒级，不跑 npm test）"
+      echo "  --fix             先把每处落点的 file:line 与 旧→新 打印出来，再回填文档，最后重跑自校验"
       echo "  --help            显示帮助"
       exit 0 ;;
+    *) echo "未知参数：${arg}（支持 --quiet / --scenarios-only / --fix / --help）" >&2; exit 2 ;;
   esac
 done
+
+# ── 参数互斥 + 显式未知参数拒绝（fail-loud：不静默忽略）──
+# --quiet 的契约是「只输出 OK/FAIL」（CI / pre-push 依赖该机器可读契约），与
+# 「先打印计划再落盘」的 --fix 语义不可兼容 → 拒绝，而不是让其中一方静默失效。
+if [ "$FIX_MODE" = true ] && [ "$QUIET" = true ]; then
+  echo "✗ --fix 与 --quiet 互斥：quiet 的契约是「只输出 OK/FAIL」，无法同时打印修复计划并落盘" >&2
+  exit 2
+fi
+if [ "$FIX_MODE" = true ] && [ "$SCENARIOS_ONLY" = true ]; then
+  echo "✗ --fix 与 --scenarios-only 互斥：场景守卫只做文本对账，没有可回填的数值漂移" >&2
+  exit 2
+fi
 
 # ── 颜色 ──
 RED='\033[0;31m'
@@ -66,6 +98,86 @@ emit_coverage_verbose() {
   _cov_md=$(git ls-files '*.md' 2>/dev/null | wc -l | tr -d ' ')
   _cov_md=${_cov_md:-0}
   emit_coverage_line "check-test-count" "$(( ${1:-0} ))" "${_cov_md}" "${SKIPS}"
+}
+
+# ════════════════════════════════════════════════════════════════
+# 修复落点登记 + 可执行修复命令（「人工找落点」→「一条命令」）
+# ════════════════════════════════════════════════════════════════
+# 病（本批要消灭的机制债）：门禁报了「LIMITATIONS.md（行 478）：声称 5094，实际 5098」，
+#   人拿到「file（行 N）」还得逐文件去找、手改，且各文件模式不同（`5094 测试` /
+#   `5094 tests` / `5094 个测试`）。5 处落点 = 5 次人工定位，每次加测试重来一遍。
+#
+# 分工（硬契约）：
+#   · 默认路径 = **只登记 + 只打印**，绝不写仓内文件。门禁默认只读是契约
+#     （pre-push / CI 直接消费），写职责必须由显式 `--fix` 承担。
+#   · `--fix` = 显式落盘：先打印 file:line 与 旧→新 → 再替换 → 最后重跑自校验
+#     （与 check-literals.sh 的 --fix 同范式：不留半修态）。
+#
+# anchor 铁律见头部注释：数字必须是 anchor 的**捕获组 1**，且只替换行内**首处**匹配；
+#   全部 anchor 与检测用正则同源（逐条在调用点就近注明）⇒ 报的那处 == 改的那处。
+# 数据安全：清单字段仅由本脚本自产（固定文件清单 / 纯数字 / 无反斜杠反引号的 anchor），
+#   故可安全序列化成 JSON 并内联进可粘贴命令；下方仍留单引号兜底（见汇总段）。
+FIX_FILE=""
+FIX_SITES=0
+MANUAL_SITES=0
+FIX_JSON=""
+trap 'rm -f "${FIX_FILE:-}"' EXIT
+
+# record_fix <file> <line> <old> <new> <anchor>
+record_fix() {
+  local _rf_file="$1" _rf_line="$2" _rf_old="$3" _rf_new="$4" _rf_anchor="$5"
+  local _rf_rec
+  _rf_rec=$(printf '%s\t%s\t%s\t%s\t%s' "$_rf_file" "$_rf_line" "$_rf_old" "$_rf_new" "$_rf_anchor")
+  # 去重：LIMITATIONS.md 的总量声称行被「首段校验」与「多行循环」各查一次，
+  # 不去重会在落点清单与 --fix 计划里重复出现（同一事实印两遍，读起来像两处漂移）。
+  if [ -n "$FIX_FILE" ] && grep -qF -- "$_rf_rec" "$FIX_FILE" 2>/dev/null; then
+    return 0
+  fi
+  if [ -z "$FIX_FILE" ]; then
+    FIX_FILE=$(mktemp "${TMPDIR:-/tmp}/check-test-count-fix.XXXXXX") || FIX_FILE=""
+    if [ -z "$FIX_FILE" ]; then
+      echo -e "  ${RED}✗ 无法创建修复清单临时文件（TMPDIR=${TMPDIR:-/tmp}）——本处落点无法生成修复命令（不静默降级）${NC}"
+      return 0
+    fi
+  fi
+  printf '%s\n' "$_rf_rec" >> "$FIX_FILE"
+  FIX_SITES=$((FIX_SITES + 1))
+  if [ "$QUIET" = false ]; then
+    echo -e "    ${YELLOW}↳ 修复落点：${_rf_file}:${_rf_line}（${_rf_old} → ${_rf_new}）${NC}"
+  fi
+}
+
+# record_manual <file> <line> <reason>
+# 结构性漂移（措辞/格式失配、提取为空、快照源缺失）**没有**「旧→新」可替换——
+# 强行给个 sed 只会改错地方。故显式登记为「需人工」，并计入汇总，避免被静默吞掉。
+record_manual() {
+  local _rm_file="$1" _rm_line="$2" _rm_reason="$3"
+  MANUAL_SITES=$((MANUAL_SITES + 1))
+  if [ "$QUIET" = false ]; then
+    echo -e "    ${YELLOW}↳ 落点：${_rm_file}:${_rm_line}（${_rm_reason}，无自动替换）${NC}"
+  fi
+}
+
+# 替换引擎（默认路径与 --fix 共用同一份实现，避免两条修复路径各自漂移）。
+# 写法约束（硬）：**只用双引号**——它要被内联进 `node -e '…'` 的单引号里。
+# 替换位置用 lastIndexOf：anchor 的捕获组 1 就是目标数字，而锚内其余部分
+# （如「测试 4279→」前缀）可能含数字 ⇒ 取**最后一次**出现才是目标处。
+FIXER_JS='const fs=require("fs");const E=JSON.parse(process.argv[1]);let a=0,f=0;for(const[file,line,oldV,newV,anchor]of E){let s;try{s=fs.readFileSync(file,"utf8").split("\n");}catch(e){console.log("  X 读取失败: "+file);f++;continue;}const i=line-1;if(i<0||i>=s.length){console.log("  X 行号越界: "+file+":"+line);f++;continue;}let re;try{re=new RegExp(anchor);}catch(e){console.log("  X anchor 非法: "+file+":"+line);f++;continue;}const before=s[i];const after=before.replace(re,(m,g1)=>{const at=m.lastIndexOf(g1);return at<0?m:m.slice(0,at)+newV+m.slice(at+g1.length);});if(after===before){console.log("  = 无需改动(已一致): "+file+":"+line);continue;}s[i]=after;fs.writeFileSync(file,s.join("\n"));a++;console.log("  OK "+file+":"+line+"  "+oldV+" -> "+newV);}console.log("  --fix 结果：已改 "+a+" 处，失败 "+f+" 处");process.exit(f>0?1:0);'
+
+# 清单 → JSON 数组（由 node 承担转义：文件路径与 anchor 都走同一层，不手写转义）
+build_fix_json() {
+  FIX_JSON=""
+  [ -n "$FIX_FILE" ] || return 0
+  [ -s "$FIX_FILE" ] || return 0
+  FIX_JSON=$(node -e '
+const fs=require("fs");
+const rows=fs.readFileSync(process.argv[1],"utf8").split("\n").filter(l=>l.length>0);
+const out=rows.map(l=>{const p=l.split("\t");return [p[0],Number(p[1]),p[2],p[3],p[4]];});
+process.stdout.write(JSON.stringify(out));
+' "$FIX_FILE" 2>/dev/null)
+  if [ -z "$FIX_JSON" ]; then
+    echo -e "  ${RED}✗ 修复清单转 JSON 失败（node 不可用或清单损坏）——本次不提供可粘贴命令${NC}"
+  fi
 }
 
 # ── acceptance-test.sh 场景数守卫（F-01/F-02 · v1.4.3 函数化重构）──
@@ -410,6 +522,14 @@ if [ -f "$DEVLOG_FILE" ]; then
       DEVLOG_CLAIMED=$(echo "$DEVLOG_LINE" | grep -oE '[0-9]+ tests across' | head -1 | grep -oE '[0-9]+')
     fi
     DEVLOG_LINENO=$(echo "$DEVLOG_LINE" | cut -d: -f1)
+    # 修复锚（与上方两处提取同源）：「N 单元」优先，回退「N tests across」。
+    # 注意用 here-string 而非 `echo "$X" | grep -q`——后者在 pipefail 下会因
+    # grep -q 提前退出让 echo 收 SIGPIPE（141）而假红（本仓 check-guards ⑤ 段毒方）。
+    if grep -qE '[0-9]+ 单元' <<< "$DEVLOG_LINE"; then
+      DEVLOG_ANCHOR='([0-9]+) 单元'
+    else
+      DEVLOG_ANCHOR='([0-9]+) tests across'
+    fi
     if [ "$QUIET" = false ]; then
       echo -e "  校验 ${DEVLOG_FILE}（行 ${DEVLOG_LINENO}）..."
     fi
@@ -420,16 +540,19 @@ if [ -f "$DEVLOG_FILE" ]; then
       ((PASS++)) || true
     else
       echo -e "  ${RED}✗ ${DEVLOG_FILE}（行 ${DEVLOG_LINENO}）：声称 ${DEVLOG_CLAIMED}，实际 ${TOTAL_TESTS}${NC}"
+      record_fix "$DEVLOG_FILE" "$DEVLOG_LINENO" "$DEVLOG_CLAIMED" "$TOTAL_TESTS" "$DEVLOG_ANCHOR"
       ((FAIL++)) || true
     fi
   else
     echo -e "  ${RED}✗ ${DEVLOG_FILE} 未找到「开发完成快照」测试数声明（grep 未命中 → FAIL，禁止静默跳过）${NC}"
     echo -e "    提示：CHANGELOG 已改为纯索引，测试数声明在开发日志中。请在本脚本校验目标处补正则。"
+    record_manual "$DEVLOG_FILE" "-" "未找到「开发完成快照」测试数声明"
     ((FAIL++)) || true
   fi
   fi  # v1.3.2 修复：闭合「尚未实现」占位跳过的 if-else
 else
   echo -e "  ${RED}✗ 当前版本开发日志 ${DEVLOG_FILE} 不存在（无法校验 → FAIL，禁止静默跳过）${NC}"
+  record_manual "$DEVLOG_FILE" "-" "开发日志文件不存在"
   ((FAIL++)) || true
 fi
 
@@ -458,6 +581,7 @@ fi
 ROADMAP_LINE=$(grep -nE '^> \*\*v[0-9]+\.[0-9]+\.[0-9]+ (开发完成|待发版|已发版)' docs/ROADMAP.md 2>/dev/null | head -1)
 if [ -z "$ROADMAP_LINE" ]; then
   echo -e "  ${RED}✗ docs/ROADMAP.md 未找到「> **vX.Y.Z 开发完成」最新版段（grep 未命中 → FAIL，禁止静默跳过）${NC}"
+  record_manual "docs/ROADMAP.md" "-" "未找到最新版快照段（措辞漂移/段落被删）"
   ((FAIL++)) || true
 else
   ROADMAP_LINENO=$(echo "$ROADMAP_LINE" | cut -d: -f1)
@@ -468,6 +592,7 @@ else
   ROADMAP_SNAP=$(echo "$ROADMAP_TESTPAIR" | grep -oE '→[0-9]+' | head -1 | grep -oE '[0-9]+' || echo "")
   if [ -z "$ROADMAP_VER" ] || [ -z "$ROADMAP_SNAP" ]; then
     echo -e "  ${RED}✗ ROADMAP.md（行 ${ROADMAP_LINENO}）：最新版测试数声称提取为空——ver=[${ROADMAP_VER:-空}] snap=[${ROADMAP_SNAP:-空}]（正则失配 / 声称被改写 → FAIL，禁止静默跳过）${NC}"
+    record_manual "docs/ROADMAP.md" "$ROADMAP_LINENO" "最新版测试数声称提取为空（正则失配/声称被改写）"
     ((FAIL++)) || true
   else
     if [ "$QUIET" = false ]; then
@@ -495,6 +620,9 @@ else
       ((PASS++)) || true
     else
       echo -e "  ${RED}✗ ROADMAP.md（行 ${ROADMAP_LINENO}）：${ROADMAP_VER} 测试数声称 ${ROADMAP_SNAP}，同版本开发日志快照 ${ROADMAP_DEVLOG_SNAP}（${ROADMAP_DEVLOG}）${NC}"
+      # 修复锚与上方 ROADMAP_TESTPAIR 提取同源：定位「测试 …→N」的**箭头后**数字
+      # （lastIndexOf 保证命中的是箭头后那个，即使前值与后值数字相同）。
+      record_fix "docs/ROADMAP.md" "$ROADMAP_LINENO" "$ROADMAP_SNAP" "$ROADMAP_DEVLOG_SNAP" '测试[^→]*→([0-9]+)'
       ((FAIL++)) || true
     fi
   fi
@@ -515,10 +643,14 @@ if [ -n "$LIMITATIONS_LINE" ]; then
   local_fail=0
   if [ "$LIMITATIONS_AUDIT" != "$AUDIT_TESTS" ]; then
     echo -e "  ${RED}✗ LIMITATIONS.md（行 ${LIMITATIONS_LINENO}）：audit 声称 ${LIMITATIONS_AUDIT}，实际 ${AUDIT_TESTS}${NC}"
+    # 锚与上方 `审计核心 [0-9]+` 提取同源（数字为捕获组 1）
+    record_fix "docs/LIMITATIONS.md" "$LIMITATIONS_LINENO" "$LIMITATIONS_AUDIT" "$AUDIT_TESTS" '审计核心 ([0-9]+)'
     local_fail=1
   fi
   if [ "$LIMITATIONS_TOTAL" != "$TOTAL_TESTS" ]; then
     echo -e "  ${RED}✗ LIMITATIONS.md（行 ${LIMITATIONS_LINENO}）：workspace 声称 ${LIMITATIONS_TOTAL}，实际 ${TOTAL_TESTS}${NC}"
+    # 锚与上方 `全 workspace [0-9]+` 提取同源（数字为捕获组 1）
+    record_fix "docs/LIMITATIONS.md" "$LIMITATIONS_LINENO" "$LIMITATIONS_TOTAL" "$TOTAL_TESTS" '全 workspace ([0-9]+)'
     local_fail=1
   fi
   if [ "$local_fail" = "0" ]; then
@@ -554,6 +686,7 @@ fi
 EVIDENCE_LINE=$(grep -nE '本页时点值（v[0-9]+\.[0-9]+\.[0-9]+ 发版快照）：全 workspace [0-9]+ 测试' docs/evidence/evidence.md 2>/dev/null | head -1)
 if [ -z "$EVIDENCE_LINE" ]; then
   echo -e "  ${RED}✗ docs/evidence/evidence.md 未找到「本页时点值（vX.Y.Z 发版快照）：全 workspace NNNN 测试」声明（grep 未命中 → FAIL，禁止静默跳过）${NC}"
+  record_manual "docs/evidence/evidence.md" "-" "未找到「本页时点值」快照声明（措辞漂移/段落被删）"
   ((FAIL++)) || true
 else
   EVIDENCE_LINENO=$(echo "$EVIDENCE_LINE" | cut -d: -f1)
@@ -562,6 +695,7 @@ else
   EVIDENCE_SNAP=$(echo "$EVIDENCE_LINE" | grep -oE '全 workspace [0-9]+ 测试' | head -1 | grep -oE '[0-9]+' || echo "")
   if [ -z "$EVIDENCE_VER" ] || [ -z "$EVIDENCE_SNAP" ]; then
     echo -e "  ${RED}✗ evidence.md（行 ${EVIDENCE_LINENO}）：时点值声称提取为空——ver=[${EVIDENCE_VER:-空}] snap=[${EVIDENCE_SNAP:-空}]（正则失配 / 声称被改写 → FAIL，禁止静默跳过）${NC}"
+    record_manual "docs/evidence/evidence.md" "$EVIDENCE_LINENO" "时点值声称提取为空（正则失配/声称被改写）"
     ((FAIL++)) || true
   else
     if [ "$QUIET" = false ]; then
@@ -587,6 +721,9 @@ else
       ((PASS++)) || true
     else
       echo -e "  ${RED}✗ evidence.md（行 ${EVIDENCE_LINENO}）：${EVIDENCE_VER} 时点值声称 ${EVIDENCE_SNAP}，同版本开发日志快照 ${EVIDENCE_DEVLOG_SNAP}（${EVIDENCE_DEVLOG}）${NC}"
+      # 锚与上方 `全 workspace [0-9]+ 测试` 提取同源（数字为捕获组 1；带「 测试」
+      # 后缀是为了不误命中同行沿革账里别的「全 workspace N」）
+      record_fix "docs/evidence/evidence.md" "$EVIDENCE_LINENO" "$EVIDENCE_SNAP" "$EVIDENCE_DEVLOG_SNAP" '全 workspace ([0-9]+) 测试'
       ((FAIL++)) || true
     fi
   fi
@@ -606,14 +743,19 @@ if [ -n "$WIKI_LINE" ]; then
   local_fail=0
   if [ "$WIKI_CLAIMED" != "$TOTAL_TESTS" ]; then
     echo -e "  ${RED}✗ WIKI.md（行 ${WIKI_LINENO}）：声称 ${WIKI_CLAIMED}，实际 ${TOTAL_TESTS}${NC}"
+    # 锚与上方 `[0-9]+ 测试` 提取同源（数字为捕获组 1）
+    record_fix "docs/WIKI.md" "$WIKI_LINENO" "$WIKI_CLAIMED" "$TOTAL_TESTS" '([0-9]+) 测试'
     local_fail=1
   fi
   # v1.4.9 G-13：原 `[ -n "$WIKI_PKGS" ] &&` 形态 = 提取为空即静默跳过（免费绿灯）⇒ 改双分支都判红
   if [ -z "$WIKI_PKGS" ]; then
     echo -e "  ${RED}✗ WIKI.md（行 ${WIKI_LINENO}）：包数提取为空（正则失配 / 声称被改写）——守卫不空转，判 FAIL${NC}"
+    record_manual "docs/WIKI.md" "$WIKI_LINENO" "包数提取为空（正则失配/声称被改写）"
     local_fail=1
   elif [ "$WIKI_PKGS" != "$PKG_COUNT" ]; then
     echo -e "  ${RED}✗ WIKI.md（行 ${WIKI_LINENO}）：声称 ${WIKI_PKGS} 包，实际 ${PKG_COUNT} 包${NC}"
+    # 锚与上方 `[0-9]+ 包` 提取同源（数字为捕获组 1）
+    record_fix "docs/WIKI.md" "$WIKI_LINENO" "$WIKI_PKGS" "$PKG_COUNT" '([0-9]+) 包'
     local_fail=1
   fi
   if [ "$local_fail" = "0" ]; then
@@ -626,6 +768,7 @@ if [ -n "$WIKI_LINE" ]; then
   fi
 else
   echo -e "  ${RED}✗ docs/WIKI.md 未找到「N 测试 / N 包全绿」声明（grep 未命中 → FAIL，禁止静默跳过）${NC}"
+  record_manual "docs/WIKI.md" "-" "未找到「N 测试 / N 包」声称行（措辞漂移/段落被删）"
   ((FAIL++)) || true
 fi
 
@@ -659,36 +802,50 @@ if [ -n "$README_PKG_LINE" ]; then
   local_fail=0
   if [ "$README_CLAIMED" != "$TOTAL_TESTS" ]; then
     echo -e "  ${RED}✗ README.md（行 ${README_LINENO}）：声称 ${README_CLAIMED} 测试，实际 ${TOTAL_TESTS}${NC}"
+    # 锚与上方 `[0-9]+ 测试` 提取同源（数字为捕获组 1）
+    record_fix "README.md" "$README_LINENO" "$README_CLAIMED" "$TOTAL_TESTS" '([0-9]+) 测试'
     local_fail=1
   fi
   # v1.4.9 G-13：原 `[ -n "$X" ] && [ "$X" != "$Y" ]` 形态下，**提取为空即静默跳过 = 免费绿灯**
   #   （守卫空转第二形态）。改为「提取为空 ⇒ FAIL」+「不一致 ⇒ FAIL」双分支，二者都判红。
   if [ -z "$README_PKGS" ]; then
     echo -e "  ${RED}✗ README.md（行 ${README_LINENO}）：模块包数提取为空（正则失配 / 声称被改写）——守卫不空转，判 FAIL${NC}"
+    record_manual "README.md" "$README_LINENO" "模块包数提取为空（正则失配/声称被改写）"
     local_fail=1
   elif [ "$README_PKGS" != "$WORKSPACE_COUNT" ]; then
     echo -e "  ${RED}✗ README.md（行 ${README_LINENO}）：声称 ${README_PKGS} 模块包（workspace 模块总数），实际 ${WORKSPACE_COUNT} 包${NC}"
+    # 锚与上方 `[0-9]+ 模块包` 提取同源（数字为捕获组 1）
+    record_fix "README.md" "$README_LINENO" "$README_PKGS" "$WORKSPACE_COUNT" '([0-9]+) 模块包'
     local_fail=1
   fi
   if [ -z "$README_PLUGIN_TOTAL" ]; then
     echo -e "  ${RED}✗ README.md（行 ${README_LINENO}）：插件合计数提取为空（正则失配 / 声称被改写）——守卫不空转，判 FAIL${NC}"
+    record_manual "README.md" "$README_LINENO" "插件合计数提取为空（正则失配/声称被改写）"
     local_fail=1
   elif [ "$README_PLUGIN_TOTAL" != "$PLUGIN_TOTAL" ]; then
     echo -e "  ${RED}✗ README.md（行 ${README_LINENO}）：声称 ${README_PLUGIN_TOTAL} 插件（DSH+OpenClaw 合计），实际 ${PLUGIN_TOTAL} 插件${NC}"
+    # 锚与上方 `[0-9]+ 插件` 提取同源（数字为捕获组 1）
+    record_fix "README.md" "$README_LINENO" "$README_PLUGIN_TOTAL" "$PLUGIN_TOTAL" '([0-9]+) 插件'
     local_fail=1
   fi
   if [ -z "$README_PLUGIN_DSH" ]; then
     echo -e "  ${RED}✗ README.md（行 ${README_LINENO}）：DSH 插件数提取为空（正则失配 / 声称被改写）——守卫不空转，判 FAIL${NC}"
+    record_manual "README.md" "$README_LINENO" "DSH 插件数提取为空（正则失配/声称被改写）"
     local_fail=1
   elif [ "$README_PLUGIN_DSH" != "$DSH_PLUGIN_COUNT" ]; then
     echo -e "  ${RED}✗ README.md（行 ${README_LINENO}）：声称 ${README_PLUGIN_DSH} DSH 插件，实际 ${DSH_PLUGIN_COUNT}${NC}"
+    # 锚与上方 `[0-9]+ DSH` 提取同源（数字为捕获组 1）
+    record_fix "README.md" "$README_LINENO" "$README_PLUGIN_DSH" "$DSH_PLUGIN_COUNT" '([0-9]+) DSH'
     local_fail=1
   fi
   if [ -z "$README_PLUGIN_OC" ]; then
     echo -e "  ${RED}✗ README.md（行 ${README_LINENO}）：OpenClaw 插件数提取为空（正则失配 / 声称被改写）——守卫不空转，判 FAIL${NC}"
+    record_manual "README.md" "$README_LINENO" "OpenClaw 插件数提取为空（正则失配/声称被改写）"
     local_fail=1
   elif [ "$README_PLUGIN_OC" != "$OPENCLAW_PLUGIN_COUNT" ]; then
     echo -e "  ${RED}✗ README.md（行 ${README_LINENO}）：声称 ${README_PLUGIN_OC} OpenClaw 插件，实际 ${OPENCLAW_PLUGIN_COUNT}${NC}"
+    # 锚与上方 `[0-9]+ OpenClaw` 提取同源（数字为捕获组 1）
+    record_fix "README.md" "$README_LINENO" "$README_PLUGIN_OC" "$OPENCLAW_PLUGIN_COUNT" '([0-9]+) OpenClaw'
     local_fail=1
   fi
   if [ "$local_fail" = "0" ]; then
@@ -701,6 +858,7 @@ if [ -n "$README_PKG_LINE" ]; then
   fi
 else
   echo -e "  ${RED}✗ README.md 未找到「N 测试 / N 模块包 + N 插件」声明（grep 未命中 → FAIL，禁止静默跳过）${NC}"
+  record_manual "README.md" "-" "未找到「工程可信度」声称行（措辞漂移/段落被删）"
   ((FAIL++)) || true
 fi
 
@@ -722,34 +880,48 @@ if [ -n "$README_EN_LINE" ]; then
   local_fail=0
   if [ "$README_EN_CLAIMED" != "$TOTAL_TESTS" ]; then
     echo -e "  ${RED}✗ README.en.md（行 ${README_EN_LINENO}）：声称 ${README_EN_CLAIMED} tests，实际 ${TOTAL_TESTS}${NC}"
+    # 锚与上方 `[0-9]+ tests?` 提取同源（数字为捕获组 1）
+    record_fix "README.en.md" "$README_EN_LINENO" "$README_EN_CLAIMED" "$TOTAL_TESTS" '([0-9]+) tests?'
     local_fail=1
   fi
   if [ -z "$README_EN_PKGS" ]; then
     echo -e "  ${RED}✗ README.en.md（行 ${README_EN_LINENO}）：module packages 提取为空（正则失配 / 声称被改写）——守卫不空转，判 FAIL${NC}"
+    record_manual "README.en.md" "$README_EN_LINENO" "module packages 提取为空（正则失配/声称被改写）"
     local_fail=1
   elif [ "$README_EN_PKGS" != "$WORKSPACE_COUNT" ]; then
     echo -e "  ${RED}✗ README.en.md（行 ${README_EN_LINENO}）：声称 ${README_EN_PKGS} module packages（workspace 模块总数），实际 ${WORKSPACE_COUNT} 包${NC}"
+    # 锚与上方 `[0-9]+ module packages` 提取同源（数字为捕获组 1）
+    record_fix "README.en.md" "$README_EN_LINENO" "$README_EN_PKGS" "$WORKSPACE_COUNT" '([0-9]+) module packages'
     local_fail=1
   fi
   if [ -z "$README_EN_PLUGIN_TOTAL" ]; then
     echo -e "  ${RED}✗ README.en.md（行 ${README_EN_LINENO}）：plugins 合计数提取为空（正则失配 / 声称被改写）——守卫不空转，判 FAIL${NC}"
+    record_manual "README.en.md" "$README_EN_LINENO" "plugins 合计数提取为空（正则失配/声称被改写）"
     local_fail=1
   elif [ "$README_EN_PLUGIN_TOTAL" != "$PLUGIN_TOTAL" ]; then
     echo -e "  ${RED}✗ README.en.md（行 ${README_EN_LINENO}）：声称 ${README_EN_PLUGIN_TOTAL} plugins（DSH+OpenClaw 合计），实际 ${PLUGIN_TOTAL} 插件${NC}"
+    # 锚与上方 `[0-9]+ plugins` 提取同源（数字为捕获组 1）
+    record_fix "README.en.md" "$README_EN_LINENO" "$README_EN_PLUGIN_TOTAL" "$PLUGIN_TOTAL" '([0-9]+) plugins'
     local_fail=1
   fi
   if [ -z "$README_EN_PLUGIN_DSH" ]; then
     echo -e "  ${RED}✗ README.en.md（行 ${README_EN_LINENO}）：DSH plugins 数提取为空（正则失配 / 声称被改写）——守卫不空转，判 FAIL${NC}"
+    record_manual "README.en.md" "$README_EN_LINENO" "DSH plugins 数提取为空（正则失配/声称被改写）"
     local_fail=1
   elif [ "$README_EN_PLUGIN_DSH" != "$DSH_PLUGIN_COUNT" ]; then
     echo -e "  ${RED}✗ README.en.md（行 ${README_EN_LINENO}）：声称 ${README_EN_PLUGIN_DSH} DSH plugins，实际 ${DSH_PLUGIN_COUNT}${NC}"
+    # 锚与上方 `[0-9]+ DSH` 提取同源（数字为捕获组 1）
+    record_fix "README.en.md" "$README_EN_LINENO" "$README_EN_PLUGIN_DSH" "$DSH_PLUGIN_COUNT" '([0-9]+) DSH'
     local_fail=1
   fi
   if [ -z "$README_EN_PLUGIN_OC" ]; then
     echo -e "  ${RED}✗ README.en.md（行 ${README_EN_LINENO}）：OpenClaw plugins 数提取为空（正则失配 / 声称被改写）——守卫不空转，判 FAIL${NC}"
+    record_manual "README.en.md" "$README_EN_LINENO" "OpenClaw plugins 数提取为空（正则失配/声称被改写）"
     local_fail=1
   elif [ "$README_EN_PLUGIN_OC" != "$OPENCLAW_PLUGIN_COUNT" ]; then
     echo -e "  ${RED}✗ README.en.md（行 ${README_EN_LINENO}）：声称 ${README_EN_PLUGIN_OC} OpenClaw plugins，实际 ${OPENCLAW_PLUGIN_COUNT}${NC}"
+    # 锚与上方 `[0-9]+ OpenClaw` 提取同源（数字为捕获组 1）
+    record_fix "README.en.md" "$README_EN_LINENO" "$README_EN_PLUGIN_OC" "$OPENCLAW_PLUGIN_COUNT" '([0-9]+) OpenClaw'
     local_fail=1
   fi
   if [ "$local_fail" = "0" ]; then
@@ -762,6 +934,7 @@ if [ -n "$README_EN_LINE" ]; then
   fi
 else
   echo -e "  ${RED}✗ README.en.md 未找到「N tests / N module packages + N plugins」声明（grep 未命中 → FAIL，禁止静默跳过）${NC}"
+  record_manual "README.en.md" "-" "未找到「Engineering credibility」声称行（措辞漂移/段落被删）"
   ((FAIL++)) || true
 fi
 
@@ -782,6 +955,7 @@ for _mv_file in README.md README.en.md; do
     _mv_content="${_mv_line#*:}"
     if ! grep -qE "$README_MULTIVALUE_MARKERS" <<< "$_mv_content"; then
       echo -e "  ${RED}✗ ${_mv_file}:${_mv_lineno}：测试数命中行无口径标记（需 ${README_MULTIVALUE_MARKERS} 之一）——多值漂移无解释${NC}"
+      record_manual "$_mv_file" "$_mv_lineno" "多值声称行缺口径标记（该行自身无数字漂移，故无自动替换）"
       README_MULTIVALUE_BAD=$((README_MULTIVALUE_BAD + 1))
     fi
   done <<< "$_mv_hits"
@@ -817,6 +991,9 @@ for pkg in audit core orchestrator daemon; do
       ((PASS++)) || true
     else
       echo -e "  ${RED}✗ ARCHITECTURE.md（行 ${PKG_LINENO}）：${pkg} 声称 ${PKG_CLAIMED}，实际 ${PKG_ACTUAL}${NC}"
+      # 锚与上方 `已实现（[0-9]+ 测试` 提取同源（数字为捕获组 1，并带「 测试」后缀
+      # 以免命中同行的其他数字）
+      record_fix "docs/ARCHITECTURE.md" "$PKG_LINENO" "$PKG_CLAIMED" "$PKG_ACTUAL" '已实现（([0-9]+) 测试'
       ((FAIL++)) || true
     fi
   fi
@@ -846,10 +1023,13 @@ if [ -n "$DEV_ORCH_LINE" ]; then
     ((PASS++)) || true
   else
     echo -e "  ${RED}✗ DEVELOPMENT.md（行 ${DEV_ORCH_LINENO}）：orchestrator 声称 ${DEV_ORCH_CLAIMED}，实际 ${DEV_ORCH_ACTUAL}——请更新文档或确认测试增量${NC}"
+    # 锚与上方 `包（[0-9]+ 测试` 提取同源（数字为捕获组 1）
+    record_fix "docs/DEVELOPMENT.md" "$DEV_ORCH_LINENO" "$DEV_ORCH_CLAIMED" "$DEV_ORCH_ACTUAL" '包（([0-9]+) 测试'
     ((FAIL++)) || true
   fi
 else
   echo -e "  ${RED}✗ docs/DEVELOPMENT.md 未找到「orchestrator 包（N 测试」声明（grep 未命中 → FAIL，禁止静默跳过）${NC}"
+  record_manual "docs/DEVELOPMENT.md" "-" "未找到「orchestrator 包（N 测试」声称行（措辞漂移/段落被删）"
   ((FAIL++)) || true
 fi
 
@@ -868,10 +1048,14 @@ if [ -n "$LIMITATIONS_ALL" ]; then
     LIM_FAIL=0
     if [ "$LIM_AUDIT" != "$AUDIT_TESTS" ]; then
       echo -e "  ${RED}✗ LIMITATIONS.md（行 ${LIM_LINENO}）：audit 声称 ${LIM_AUDIT}，实际 ${AUDIT_TESTS}${NC}"
+      # 锚与上方 `审计核心 [0-9]+` 提取同源（数字为捕获组 1）
+      record_fix "docs/LIMITATIONS.md" "$LIM_LINENO" "$LIM_AUDIT" "$AUDIT_TESTS" '审计核心 ([0-9]+)'
       LIM_FAIL=1
     fi
     if [ "$LIM_TOTAL" != "$TOTAL_TESTS" ]; then
       echo -e "  ${RED}✗ LIMITATIONS.md（行 ${LIM_LINENO}）：workspace 声称 ${LIM_TOTAL}，实际 ${TOTAL_TESTS}${NC}"
+      # 锚与上方 `全 workspace [0-9]+` 提取同源（数字为捕获组 1）
+      record_fix "docs/LIMITATIONS.md" "$LIM_LINENO" "$LIM_TOTAL" "$TOTAL_TESTS" '全 workspace ([0-9]+)'
       LIM_FAIL=1
     fi
     if [ "$LIM_FAIL" = "0" ]; then
@@ -888,6 +1072,7 @@ else
   # 是测试数的权威声明之一（同 README「工程可信度」行）——**本应总有值**。grep 未命中即静默跳过
   # 会让校验整块消失而输出照旧 ✓ = 假绿。与上方 DEV_ORCH_LINE 同范式：未命中即 FAIL。
   echo -e "  ${RED}✗ docs/LIMITATIONS.md 未找到「审计核心 NNNN 个、全 workspace NNNN 个」声明（grep 未命中 → FAIL，禁止静默跳过）${NC}"
+  record_manual "docs/LIMITATIONS.md" "-" "未找到「审计核心 N 个、全 workspace N 个」声称行（措辞漂移/段落被删）"
   ((FAIL++)) || true
 fi
 
@@ -907,6 +1092,7 @@ fi
 CHANGELOG_LINE=$(grep -nE '测试 [0-9]+→\*\*[0-9]+\*\*（' CHANGELOG.md 2>/dev/null | head -1)
 if [ -z "$CHANGELOG_LINE" ]; then
   echo -e "  ${RED}✗ CHANGELOG.md 未找到「测试 NNNN→**MMM**（…」索引行声明（grep 未命中 → FAIL，禁止静默跳过）${NC}"
+  record_manual "CHANGELOG.md" "-" "未找到最新版索引行（措辞漂移/条目被删）"
   ((FAIL++)) || true
 else
   CL_LINENO=$(echo "$CHANGELOG_LINE" | cut -d: -f1)
@@ -937,6 +1123,7 @@ else
   fi
   if [ "$CL_LINE_VER" != "$CUR_VERSION" ] && [ "$CL_PENDING_OK" = false ]; then
     echo -e "  ${RED}✗ CHANGELOG.md（行 ${CL_LINENO}）：锚定到 v${CL_LINE_VER:-未知} 行，但当前版本是 ${CUR_VERSION}——最新版索引行未命中锚定正则（多批构成格式漂移？），旧版行不得替代校验${NC}"
+    record_manual "CHANGELOG.md" "$CL_LINENO" "锚定版本 v${CL_LINE_VER:-未知} 与当前 ${CUR_VERSION} 不符（须先修锚定正则或条目版本）"
     ((FAIL++)) || true
   else
   # 锚定「测试 N→**M**（」头段取前值/当前值；增量改为括号内全部「+N」求和——
@@ -956,6 +1143,7 @@ else
   # 防二：解析 fail-loud——头段数字缺失或括号内零个「+N」= 构成无法解析，不静默放行
   if [ -z "$CL_PREV" ] || [ -z "$CL_CUR" ] || [ "$CL_DELTA_COUNT" -eq 0 ]; then
     echo -e "  ${RED}✗ CHANGELOG.md（行 ${CL_LINENO}）：构成无法解析——prev=${CL_PREV:-空} cur=${CL_CUR:-空}，括号内「+N」token 0 个（正则失配或格式漂移，禁止静默回退）${NC}"
+    record_manual "CHANGELOG.md" "$CL_LINENO" "测试数构成无法解析（正则失配/格式漂移）"
     cl_fail=1
   fi
   # 防三：未量化字样 WARN（不阻塞，但让人看见）——「若干」等字样说明该批没数
@@ -967,6 +1155,10 @@ else
     CL_SUM=$((CL_PREV + CL_DELTA_SUM))
     if [ "$CL_SUM" -ne "$CL_CUR" ]; then
       echo -e "  ${RED}✗ CHANGELOG.md（行 ${CL_LINENO}）：算术不自洽——${CL_PREV}+Σ(括号内 ${CL_DELTA_COUNT} 批)=${CL_PREV}+${CL_DELTA_SUM}=${CL_SUM} ≠ ${CL_CUR}${NC}"
+      # 算术不自洽**不给自动替换**：改「当前值」（${CL_CUR}→${CL_SUM}）与改「增量」
+      # 都能让等式成立，脚本无法判定哪个是原始意图——猜错就是把错数写进台账。
+      # 但仍显式给出「旧→新（候选）」与落点，避免退回「人工全凭感觉找」。
+      record_manual "CHANGELOG.md" "$CL_LINENO" "算术不自洽（若改当前值：${CL_CUR} → ${CL_SUM}；若改增量：需人工判定）"
       cl_fail=1
     fi
   fi
@@ -999,6 +1191,9 @@ else
     if [ -n "$DEVLOG_SNAPSHOT" ]; then
       if [ "$CL_WS_MARK" != "$DEVLOG_SNAPSHOT" ]; then
         echo -e "  ${RED}✗ CHANGELOG.md（行 ${CL_LINENO}）：workspace 口径声称 ${CL_WS_MARK}，开发日志快照 ${DEVLOG_SNAPSHOT}（${CL_DEVLOG}）${NC}"
+        # 锚与上方 `workspace(（模块包）)? ?口径 ?[0-9]+` 提取同源：数字为捕获组 1，
+        # 前缀改非捕获组（(?:…)）以便锚内只有「数字」一个捕获组。
+        record_fix "CHANGELOG.md" "$CL_LINENO" "$CL_WS_MARK" "$DEVLOG_SNAPSHOT" 'workspace(?:（模块包）)? ?口径 ?([0-9]+)'
         cl_fail=1
       fi
     else
@@ -1041,16 +1236,84 @@ if [ "$FAIL" -gt 0 ]; then
     echo "FAIL"
   else
     echo -e "  ${RED}✗ ${FAIL} 处文档测试数漂移${NC}"
-    echo -e "  ${YELLOW}修法：跑 bash tools/check/test-count.sh 拿实际数，手动更新上述文件的声称值${NC}"
-    echo -e "  ${YELLOW}或更好：让文档引用 tools/check/test-count.sh 动态值，不硬编码${NC}"
+    echo -e "  ${YELLOW}修法：跑 bash tools/check/test-count.sh 拿实际数，按下方落点逐处改；或让文档引用 tools/check/test-count.sh 动态值，不硬编码${NC}"
+    echo ""
+    echo -e "  ${BOLD}── 修复落点：可自动替换 ${FIX_SITES} 处 / 需人工 ${MANUAL_SITES} 处 ──${NC}"
+    if [ -n "$FIX_FILE" ] && [ -s "$FIX_FILE" ]; then
+      while IFS=$'\t' read -r _fx_file _fx_line _fx_old _fx_new _fx_anchor; do
+        [ -n "$_fx_file" ] || continue
+        echo -e "    ${_fx_file}:${_fx_line}  ${_fx_old} → ${_fx_new}"
+      done < "$FIX_FILE"
+    else
+      echo -e "    （无可自动替换落点——全部为结构/措辞失配，见上方 ↳ 行）"
+    fi
+    build_fix_json
+    echo ""
+    echo -e "  ${BOLD}── 修复命令（任选其一；均已按上方落点与锚生成）──${NC}"
+    if [ -n "$FIX_JSON" ]; then
+      echo -e "    ${YELLOW}① node 单行（可直接粘贴，不依赖本脚本其它参数；逐处 file:line 与 旧→新 已内联）${NC}"
+      # 单引号兜底：清单字段全由本脚本自产（路径/纯数字/无反引号 anchor），
+      # 理论不含单引号；一旦含（如仓库路径带 '）内联会静默改错，故降级为只给 ②。
+      case "${PWD}${FIXER_JS}${FIX_JSON}" in
+        *"'"*)
+          echo -e "      ${RED}（检测到单引号，内联转义不可靠——已省略 ①，请用 ②）${NC}"
+          ;;
+        *)
+          printf "      cd '%s' && node -e '%s' '%s'\n" "${PWD}" "${FIXER_JS}" "${FIX_JSON}"
+          ;;
+      esac
+    else
+      echo -e "    ${RED}（无法生成 node 单行：node 不可用或清单损坏——请用 ② 或按落点手工改）${NC}"
+    fi
+    echo -e "    ${GREEN}② bash tools/check/check-test-count.sh --fix${NC}"
+    echo -e "      ${YELLOW}（= 先打印落点与 旧→新 → 再替换 → 最后重跑自校验；默认路径始终只读，写盘只发生在 --fix）${NC}"
   fi
   emit_coverage_verbose "$((PASS + FAIL))"
+
+  # ══════════════════════════════════════════════════════════════
+  # --fix 落盘：只在此显式模式下写仓内文件（默认路径绝不走到这里）
+  # ══════════════════════════════════════════════════════════════
+  if [ "$FIX_MODE" = true ]; then
+    echo ""
+    if ! command -v node >/dev/null 2>&1; then
+      echo -e "  ${RED}✗ --fix 需要 node 承担替换，但 PATH 中找不到 node——拒绝降级（不装作修好了）${NC}"
+      exit 2
+    fi
+    if [ -z "$FIX_FILE" ] || [ ! -s "$FIX_FILE" ]; then
+      echo -e "  ${RED}✗ --fix：本次 ${FAIL} 处漂移全部是结构/措辞失配，没有「可自动替换」落点——须人工按上方 ↳ 行处理${NC}"
+      exit 1
+    fi
+    echo -e "${BOLD}── --fix 计划（${FIX_SITES} 处，即将落盘）──${NC}"
+    while IFS=$'\t' read -r _fx_file _fx_line _fx_old _fx_new _fx_anchor; do
+      [ -n "$_fx_file" ] || continue
+      echo -e "    ${_fx_file}:${_fx_line}  ${_fx_old} → ${_fx_new}"
+    done < "$FIX_FILE"
+    echo -e "${BOLD}── 执行替换 ──${NC}"
+    if ! node -e "$FIXER_JS" "$FIX_JSON"; then
+      echo -e "  ${RED}✗ --fix：存在回填失败的落点——不声明完成，请按上方失败明细人工处理${NC}"
+      exit 1
+    fi
+    echo ""
+    echo -e "${BOLD}── 复验（重跑自校验，非 quiet 以便看见最终状态）──${NC}"
+    # 复验走默认只读路径（不带 --fix），因此不可能自我递归
+    if bash "${_SELF_DIR}/check-test-count.sh"; then
+      echo ""
+      echo -e "  ${GREEN}✅ --fix 完成：复验全绿，漂移已收口${NC}"
+      exit 0
+    fi
+    echo ""
+    echo -e "  ${RED}❌ --fix 后复验仍红——自动替换未能收口全部漂移，剩余项须人工处理${NC}"
+    exit 1
+  fi
   exit 1
 else
   if [ "$QUIET" = true ]; then
     echo "OK"
   else
     echo -e "  ${GREEN}✓ 文档测试数全部一致（${PASS} 处校验通过）${NC}"
+    if [ "$FIX_MODE" = true ]; then
+      echo -e "  ${GREEN}✓ --fix：本次无漂移，未写任何文件${NC}"
+    fi
   fi
   emit_coverage_verbose "$((PASS + FAIL))"
   exit 0
