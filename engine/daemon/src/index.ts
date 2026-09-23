@@ -190,6 +190,15 @@
   WebhookPusher,
 } from './webhook/index';
 
+// v1.5.2 章一「订阅推送」：审计事件流对外订阅桥（复用既有 webhook 三态通道）
+/* @public */ export {
+  attachAuditStreamToBus,
+  mapEventToAuditPush,
+  pushAuditStreamEvent,
+  resolveAuditStreamPlatforms,
+} from './webhook/audit-stream-push';
+/* @public */ export type { AuditStreamPusherOptions, AuditStreamBusPort } from './webhook/audit-stream-push';
+
 // G9 设备注册 / 发现 / 心跳（v1.4.9 T1+T11+T12）
 /* @public */ export {
   isOnline,

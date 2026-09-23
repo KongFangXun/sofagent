@@ -216,6 +216,31 @@ async function main() {
         console.warn(`  ⚠️ G9 设备离线巡检启动失败（不影响 daemon 启动）: ${err instanceof Error ? err.message : String(err)}`);
       }
 
+      // ── v1.5.2 章一「订阅推送」：审计事件流对外订阅桥（复用既有 webhook 三态通道）──
+      // 外部 SIEM / 商业平台经既有 webhook 通道**订阅**审计事件流（而非轮询）——形态对齐
+      // v1.5.1 事件总线出站面。落点约束：桥在 daemon 侧（daemon 既订阅 orchestrator 总线，
+      // 又持有 webhook 推送器；orchestrator 不反向依赖 daemon）。
+      // **默认关档（L1）**：仅在已配置至少一个 webhook endpoint 时装配——未配置则零订阅、
+      // 零推送、零落盘，行为与今日逐字一致。
+      let auditStreamBus: { publish(input: unknown): Promise<unknown> } | null = null;
+      let auditAnomalyEventType = '';
+      try {
+        const orchestrator = await import('@sofagent/orchestrator');
+        const { attachAuditStreamToBus, resolveAuditStreamPlatforms } = await import('./webhook/audit-stream-push');
+        const platforms = resolveAuditStreamPlatforms();
+        if (platforms.length > 0) {
+          const bus = new orchestrator.EventBus();
+          attachAuditStreamToBus(bus, { platforms });
+          auditStreamBus = bus as unknown as { publish(input: unknown): Promise<unknown> };
+          auditAnomalyEventType = orchestrator.EVENT_TYPES.ANOMALY_REPORTED;
+          console.log(`  ✅ 审计事件流对外订阅已启用（平台: ${platforms.join('/')}）`);
+        } else {
+          console.log('  ℹ️ 审计事件流对外订阅未启用（未配置 webhook endpoint——L1 关档，零副作用）');
+        }
+      } catch (err) {
+        console.warn(`  ⚠️ 审计事件流订阅装配失败（不影响 daemon 启动）: ${err instanceof Error ? err.message : String(err)}`);
+      }
+
       // ② /health 三态端点（T1 验收 ⑥）：SOFAGENT_HEALTH_PORT 显式配置才启用
       //    （默认关闭不占端口；启用时 loopback 绑定——外部不可达默认安全）。
       if (process.env.SOFAGENT_HEALTH_PORT) {
@@ -286,9 +311,28 @@ async function main() {
         console.log(`  📁 检测到 ${changedFiles.length} 个文件变更`);
         const result = runFilesystemAudit(changedFiles, projectDir);
         if (result.exitCode > 0) {
-          console.warn(`  ⚠️  审计发现问题: ${result.rules.filter((r) => r.status !== 'PASS').length} 项`);
-          for (const rule of result.rules.filter((r) => r.status !== 'PASS')) {
+          const problems = result.rules.filter((r) => r.status !== 'PASS');
+          console.warn(`  ⚠️  审计发现问题: ${problems.length} 项`);
+          for (const rule of problems) {
             console.warn(`     ${rule.status === 'FAIL' ? '❌' : '⚠️'} ${rule.name}`);
+          }
+          // v1.5.2 章一：审计裁决进事件总线 → 对外订阅桥经 webhook 三态通道推送外部消费方。
+          // 仅当订阅桥已装配（已配置 endpoint）时发布——未配置即不发布（零副作用）。
+          if (auditStreamBus && auditAnomalyEventType !== '') {
+            void auditStreamBus
+              .publish({
+                type: auditAnomalyEventType,
+                source: 'node-output',
+                payload: { workflowId: null, nodeId: 'fs-audit', error: `${problems.length} 项审计问题` },
+                metadata: {
+                  auditVerdict: result.exitCode === 1 ? 'WARN' : 'FAIL',
+                  changedFiles: changedFiles.length,
+                },
+              })
+              .catch((err: unknown) => {
+                // 桥内部已吞错（webhook push 永不 reject）；此处兜总线落盘拒绝，防未处理 rejection
+                console.warn(`  ⚠️ 审计事件流事件发布失败（不阻断审计）: ${err instanceof Error ? err.message : String(err)}`);
+              });
           }
         } else {
           console.log('  ✅ 审计通过');
