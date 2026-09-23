@@ -1,0 +1,141 @@
+{
+  "probe": "sofagent-node-inference-stack",
+  "at": "2026-09-23T06:10:06.100Z",
+  "env": {
+    "node": "v22.12.0",
+    "os": "darwin 25.6.0",
+    "arch": "arm64",
+    "cpuModel": "Apple A18 Pro",
+    "cpuCount": 6,
+    "totalMemGiB": 8,
+    "model": "Xenova/paraphrase-multilingual-MiniLM-L12-v2",
+    "dtype": "q8",
+    "runs": 40
+  },
+  "runtime": {
+    "transformersVersion": "4.3.0",
+    "onnxruntimeNodeVersion": "1.30.0",
+    "onnxruntimeNodeDeclaredByTransformers": "1.30.0",
+    "claimedVersionMatchesInstalled": true,
+    "onnxruntimeNodePath": "/Users/kongfangxun/.workbuddy/binaries/node/workspace/node_modules/onnxruntime-node",
+    "transformersPath": "/Users/kongfangxun/.workbuddy/binaries/node/workspace/node_modules/@huggingface/transformers"
+  },
+  "footprint": {
+    "packageTotalBytes": 301068136,
+    "packageTotalFiles": 43,
+    "platformSubsets": {
+      "darwin/arm64": 89446696,
+      "linux/arm64": 25530144,
+      "linux/x64": 46218000,
+      "win32/arm64": 72737344,
+      "win32/x64": 67075688
+    },
+    "currentPlatform": "darwin/arm64",
+    "currentPlatformNativeTotalBytes": 89446696,
+    "currentPlatformNativeDedupBytes": 44856768,
+    "duplicateNativeLibs": [
+      {
+        "duplicate": "libonnxruntime.1.dylib",
+        "identicalTo": "libonnxruntime.1.30.0.dylib",
+        "sha256": "685d2be5dba1309c",
+        "bytes": 44589928
+      }
+    ]
+  },
+  "network": [
+    {
+      "host": "https://huggingface.co",
+      "ok": false,
+      "status": null,
+      "ms": 10005,
+      "error": "TimeoutError"
+    },
+    {
+      "host": "https://hf-mirror.com",
+      "ok": true,
+      "status": 200,
+      "ms": 362
+    }
+  ],
+  "latency": {
+    "loadMs": 545,
+    "cacheDir": "/Users/kongfangxun/.workbuddy/binaries/node/workspace/.cache/transformers",
+    "batchSize": 2,
+    "warmupRuns": 3,
+    "timedRuns": 40,
+    "ms": [
+      4.58,
+      5.44,
+      4.6,
+      11.58,
+      7.58,
+      8.23,
+      7.72,
+      5.79,
+      5.63,
+      5.74,
+      6.25,
+      5.45,
+      6.22,
+      7.39,
+      6.68,
+      4.63,
+      5.14,
+      10.15,
+      7.41,
+      7.26,
+      6.95,
+      8.74,
+      6.77,
+      8.15,
+      7.8,
+      7.14,
+      7.3,
+      5.13,
+      6.95,
+      4.6,
+      4.72,
+      5.28,
+      4.88,
+      4.8,
+      5.36,
+      4.55,
+      4.8,
+      4.89,
+      7.01,
+      4.71
+    ],
+    "min": 4.55,
+    "p50": 6.22,
+    "p95": 10.15,
+    "max": 11.58,
+    "mean": 6.35,
+    "steadyMs": {
+      "min": 4.55,
+      "p50": 6.25,
+      "p95": 8.74,
+      "max": 10.15,
+      "mean": 6.24
+    },
+    "outputShape": [
+      2,
+      384
+    ],
+    "nonAutoregressive": true
+  },
+  "summary": {
+    "transformersVersion": "4.3.0",
+    "onnxruntimeNodeVersion": "1.30.0",
+    "zeroNewRuntimeComponent": true,
+    "packageTotalMiB": 287.1,
+    "currentPlatform": "darwin/arm64",
+    "currentPlatformNativeTotalMiB": 85.3,
+    "currentPlatformNativeDedupMiB": 42.8,
+    "duplicateNativeLibCount": 1,
+    "hfReachable": false,
+    "mirrorReachable": true,
+    "p50ms": 6.25,
+    "p95ms": 8.74,
+    "nonAutoregressive": true
+  }
+}
