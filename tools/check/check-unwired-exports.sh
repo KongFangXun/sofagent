@@ -514,5 +514,62 @@ if [ "$S2_FAIL" -gt 0 ]; then
 fi
 echo -e "  ${GREEN}✓${NC} S2 脱敏策略声明断言（①深扫接线 ②白名单 ③类型标注 ④eval 隔离）全过"
 
+# ============================================================
+# S3 路径常量消费门禁（v1.5.2 A-13 · 第四轮 P1-6/P1-7 收编）
+# 落点契约 fail-loud：命名含 _DIR/_FILE/_PATH 的 @public 路径常量零生产
+# 字符串消费 → finding。背景实案：SHADOW_GIT_DIR @public 登记在案但零消费，
+# 实现走 isomorphic-git.ts 11 处硬写——常量指向的不是实现用的路（迁移迁到死路）。
+# 同族防线：写读落点对账（install 写 + engine 读的 yml 对）以人工清单化维护
+# （全量实现超本批范围），见下方 WATCH_YML_PAIRS。
+# ============================================================
+S3_FAIL=0
+echo ""
+echo -e "${BOLD}── S3 路径常量消费门禁（@public 落点契约）──${NC}"
+
+# ① 从 core 包桶文件提取 @public 路径常量（命名含 _DIR/_FILE/_PATH 的导出符号）
+PATH_CONSTS=$(grep -oE "export const [A-Z][A-Z0-9_]*_(DIR|FILE|PATH)" engine/core/src/data-paths.ts 2>/dev/null \
+  | grep -oE "[A-Z][A-Z0-9_]*_(DIR|FILE|PATH)" | sort -u || true)
+for pc in $PATH_CONSTS; do
+  # 生产消费 = engine/ 内 .ts 文件（非定义文件、非测试、非 dist）的**导入或引用**
+  _pc_hits=$(grep -rnw "$pc" engine/ --include='*.ts' 2>/dev/null \
+    | grep -v "/dist/" | grep -v node_modules | grep -v "\.test\.ts" | grep -v "__tests__" \
+    | grep -v "engine/core/src/data-paths.ts" \
+    | grep -v ":[[:space:]]*//" | grep -v ":[[:space:]]*\*" \
+    | grep -vE ":[0-9]+:[[:space:]]*export" \
+    | head -3 || true)
+  if [ -z "$_pc_hits" ]; then
+    echo -e "  ${YELLOW}⚠${NC} S3①：路径常量 ${pc} 零生产字符串消费（@public 声明面 > 实现消费面——落点契约疑似断链，接线或收编归位）"
+    # ⚠️ 观察项不阻断（SHADOW_GIT_DIR 本身是历史迁移目标登记，其「消费」形态是
+    # install.sh 迁移路径注释而非代码引用）——但必须在门禁输出里可见，防静默漂移。
+  else
+    echo -e "  ${GREEN}✓${NC} S3①：${pc} 生产消费在位（$(echo "$_pc_hits" | head -1 | cut -d: -f1-2)）"
+  fi
+done
+
+# ② install 写 + engine 读的 yml 落点对账（人工清单化——每对：写入路径:读取函数文件）
+# TODO（A-13 登记）：全量 yml 写读对账自动化超本批范围；当前人工维护此清单，
+#   新增 install 写入的 yml 必须同批登记读取方，否则此处找不到读取方即红。
+WATCH_YML_PAIRS="HOME_SCOPE/watch.yml:engine/core/src/config/watch-config.ts"  # HOME_SCOPE = ~/.sofagent（install.sh 的 SOFAGENT_HOME 变量——注释内不展开）
+_pair_w="${WATCH_YML_PAIRS%%:*}"
+_pair_r="${WATCH_YML_PAIRS#*:}"
+# 写入侧：install.sh 内出现该路径形态（~/.sofagent/<name> 由 $SOFAGENT_HOME/<name> 表达）
+if grep -q 'SOFAGENT_HOME/watch.yml' install.sh 2>/dev/null; then
+  # 读取侧：engine 内有 loadWatchConfig 消费该文件名
+  if grep -rnw "watch.yml" "$_pair_r" >/dev/null 2>&1; then
+    echo -e "  ${GREEN}✓${NC} S3②：watch.yml 写读落点对齐（install.sh 写 ~/.sofagent/watch.yml ↔ $_pair_r 读）"
+  else
+    echo -e "  ${RED}✗${NC} S3②：watch.yml 读取方 $_pair_r 零命中 watch.yml——写读落点断链"
+    S3_FAIL=$((S3_FAIL + 1))
+  fi
+else
+  echo -e "  ${RED}✗${NC} S3②：install.sh 未找到 SOFAGENT_HOME/watch.yml 写入面——清单与实现漂移"
+  S3_FAIL=$((S3_FAIL + 1))
+fi
+
+if [ "$S3_FAIL" -gt 0 ]; then
+  echo -e "${RED}${BOLD}✗ S3 路径常量消费门禁 ${S3_FAIL} 项断言失败${NC}"
+  exit 1
+fi
+
 echo -e "${GREEN}${BOLD}✓ 零接线导出门禁通过（豁免 ${WAIVED_COUNT} 项均在登记表）${NC}"
 exit 0
