@@ -53,6 +53,7 @@
 >    - name: sofagent 审计检查
 >      run: |
 >        npx -y -p @sofagent/audit sofagent-audit --diff HEAD~1..HEAD --ci
+>        # ⚠️ 若本步骤接管道（tee/grep 等），先 set -o pipefail——否则审计失败码被管道末端退出码遮蔽
 >    ```
 > 2. **定期自动 doctor**：配置 cron job 每周运行 `sofagent-core --doctor`，
 >    并将结果发送到监控频道，检测 hooks 是否被意外移除。
