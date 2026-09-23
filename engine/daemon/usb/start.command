@@ -35,7 +35,7 @@ if [ ! -f "$CLI_JS" ]; then
   exit 1
 fi
 
-echo "sofagent U 盘运行时 — 启动中（USB 根：$USB_ROOT）"
+echo "sofagent U 盘运行时 — 启动中（USB 根：${USB_ROOT}）"
 echo "停止：Ctrl+C 或关闭本窗口；拔盘前请先停止。"
 echo ""
 

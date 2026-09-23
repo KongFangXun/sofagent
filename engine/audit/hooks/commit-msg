@@ -324,7 +324,7 @@ if [ $EXIT_CODE -eq 1 ]; then
   echo "⚠️  sofagent audit: 检测到警告，但允许 commit。"
 elif [ $EXIT_CODE -ne 0 ]; then
   echo ""
-  echo "❌ sofagent audit: 审计引擎异常退出（exit $EXIT_CODE）——审计未完成，commit 已阻止。"
+  echo "❌ sofagent audit: 审计引擎异常退出（exit ${EXIT_CODE}）——审计未完成，commit 已阻止。"
   echo "   契约：0=全绿 / 1=警告（放行）/ 2=违规（阻断）/ 3=非 git 仓库 / 4=引擎崩溃；"
   echo "   上述五者之外的退出码 = 环境异常"
   echo "   （SOFAGENT_HOME 越界 fail-loud / Node 缺失 / dist 异常等）。静默放行 = 0 处违规但根本"
