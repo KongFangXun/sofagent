@@ -319,7 +319,11 @@ export function generateQuickOutput(
   // v1.3.8 P1-B2: 扩展规则默认关闭披露——此前只写「完整 24 条含扩展」但未明示
   // 扩展规则默认关闭，用户误以为 quick 已经全跑；显式披露规则覆盖面。
   // 措辞注意：首个「N 条」数字须为 17 或 24（check-version 维度 13 逐行取首个数字对账 SSOT）
-  parts.push('ⓘ 默认只跑 17 条规则（扩展规则默认关闭，config 启用）——规则集用 --ruleset 加载');
+  // v1.5.2 B-10：与前一条 ⓘ（QUICK_SKIP_HINT）之间留空行 + 「下一步：」动作前缀——
+  //   双 ⓘ 裸连排时新用户分不清「哪条是我该做的事」。结果语义先行、动作引导明确；
+  //   「未检查 ≠ 通过」措辞属既有校准产物，一字不动（见上方 QUICK_SKIP_HINT）。
+  parts.push('');
+  parts.push('ⓘ 下一步：默认只跑 17 条规则（扩展规则默认关闭，config 启用）——规则集用 --ruleset 加载');
 
   // 产品签名
   parts.push('');
