@@ -26,7 +26,8 @@
 //   路径 .../latest: 与 not-latest 这类非声称位）；分隔符可 ASCII 冒号、全角冒号
 //   或中文「为」；值前导可带引号·反引号·花括号·等号，且**须形如 数字.数字**
 //   （至少一段小数点分隔——据此排除 latest: 2024 这类「是数字但不是版本」的
-//   误报），值可带引号可不带引号。
+//   误报），值可带引号可不带引号；值尾的 ASCII 句点会被剥掉（防「无引号值 +
+//   句末句号」误红）。
 //
 // ── 明示的残余盲区（诚实披露，勿当已覆盖）──
 //   · 值与其 dist-tags 上下文**分处两行**（逐行判定，不做跨行合并）不检出；
@@ -94,7 +95,7 @@ function detectClaim(line) {
   const mb = (mp || ms) ? null : line.match(PKG_BARE_RE);
   return {
     pkg: mp ? mp[1] : (ms ? ms[0] : (mb ? mb[0] : null)),
-    claimed: ml[1],
+    claimed: ml[1].replace(/\.+$/, ''),
     pkgFrom: mp ? 'npm-view' : (ms ? 'scoped' : (mb ? 'bare' : null)),
   };
 }
@@ -281,11 +282,13 @@ function runSelftest() {
   chk('误报回归③：路径 sofagent/config.yml 不当包名（→ 盲区）', !!s17 && s17.pkg === null && s17.claimed === '1.5.0');
   const s18 = detectClaim("当前 `sofagent` 的 dist-tags 为 `{ latest: 'v1.5.1' }`");
   chk('漏检回归：带 v 前缀的版本值去掉 v 后仍识别', !!s18 && s18.claimed === '1.5.1');
+  const s19 = detectClaim('当前 `sofagent` 的 dist-tags 为 latest: 1.5.1.');
+  chk('误报回归④：无引号值 + 句末英文句点 剥尾点后仍识别', !!s19 && s19.claimed === '1.5.1');
   if (bad > 0) {
     console.error(`❌ 自检失败 ${bad} 项`);
     process.exit(1);
   }
-  console.log('✅ 自检通过（19/19）');
+  console.log('✅ 自检通过（20/20）');
   process.exit(0);
 }
 
