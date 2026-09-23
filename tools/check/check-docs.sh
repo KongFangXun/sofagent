@@ -1286,6 +1286,8 @@ else
   for _p in "${A_EXCLUDE_METERED[@]}"; do
     _hit=0
     while IFS= read -r _f; do
+      # glob 语义是刻意的：_p 取自 A_EXCLUDE_METERED，形如 docs/**，引号化会退化成字面匹配（守卫失明）
+      # shellcheck disable=SC2254
       case "${_f}" in
         ${_p})
           _hit=1
@@ -1298,6 +1300,8 @@ else
   for _p in "${A_EXCLUDE_FROZEN[@]}"; do
     _hit=0
     while IFS= read -r _f; do
+      # 同上：_p 是 glob 模式（A_EXCLUDE_FROZEN），须按 glob 匹配而非字面匹配
+      # shellcheck disable=SC2254
       case "${_f}" in ${_p}) _hit=1; break ;; esac
     done < "${DOCSCAN_T}/tracked.txt"
     [ "${_hit}" -eq 1 ] || printf '%s\n' "${_p}" >> "${DOCSCAN_T}/dead.txt"
