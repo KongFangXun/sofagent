@@ -251,6 +251,51 @@ assert_contains "整帧（--full）：FORGE 区块存在" "$OUT" "质量审查"
 assert_contains "整帧（--full）：最近变更区块存在" "$OUT" "最近变更"
 FULL=0
 
+# ────────────────────────────────
+# HTTP 状态码断言（A-11 · serve-dashboard.mjs 用）
+# ────────────────────────────────
+http_ok() {
+  local label="$1" actual="$2" expected="$3"
+  TESTS_RUN=$((TESTS_RUN + 1))
+  if [ "$actual" = "$expected" ]; then
+    printf 'ok %d - %s\n' "$TESTS_RUN" "$label"
+  else
+    TESTS_FAILED=$((TESTS_FAILED + 1))
+    printf 'not ok %d - %s\n' "$TESTS_RUN" "$label"
+    printf '  期望 HTTP %s 实得 %s\n' "$expected" "$actual"
+  fi
+}
+
+# ════════════════════════════════════════
+# 10. serve-dashboard.mjs URI decode 守护（A-11）——malformed URI 返回 400 且进程存活
+# ════════════════════════════════════════
+SERVE_MJS="$(cd "$(dirname "$0")" && pwd)/serve-dashboard.mjs"
+if [ -f "$SERVE_MJS" ]; then
+  # 起服务（回环 + 高位端口避免碰撞；后台，无浏览器）
+  DASHBOARD_PORT=3987 node "$SERVE_MJS" > "$TEST_ROOT/serve.log" 2>&1 &
+  SERVE_PID=$!
+  # 等待就绪（最多 5s）
+  _ready=0
+  for _i in $(seq 1 50); do
+    if curl -s -o /dev/null 'http://127.0.0.1:3987/' 2>/dev/null; then _ready=1; break; fi
+    sleep 0.1
+  done
+  if [ "$_ready" = "1" ]; then
+    # ① malformed URI → 400（decodeURIComponent 不再抛杀进程）
+    _code1=$(curl -s -o "$TEST_ROOT/malformed.out" -w '%{http_code}' 'http://127.0.0.1:3987/%E0%A4%A' 2>/dev/null || echo "ERR")
+    http_ok "A-11 malformed URI（/%E0%A4%A）→ 400 + 进程存活" "$_code1" "400"
+    # ② 进程仍活：正常请求可继续服务（200）
+    _code2=$(curl -s -o /dev/null -w '%{http_code}' 'http://127.0.0.1:3987/' 2>/dev/null || echo "ERR")
+    http_ok "A-11 守护后服务仍活（/ → 200）" "$_code2" "200"
+  else
+    http_ok "A-11 serve-dashboard.mjs 5s 内就绪" "timeout" "ready"
+  fi
+  kill "$SERVE_PID" 2>/dev/null
+  wait "$SERVE_PID" 2>/dev/null
+else
+  http_ok "serve-dashboard.mjs 存在" "missing" "present"
+fi
+
 # ════════════════════════════════════════
 # 汇总
 # ════════════════════════════════════════

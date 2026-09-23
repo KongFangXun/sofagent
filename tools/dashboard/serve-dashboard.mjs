@@ -598,7 +598,18 @@ function aggregateOntology(full) {
  * HTTP Server
  * ──────────────────────────────── */
 const server = createServer(async (req, res) => {
-  let urlPath = decodeURIComponent(req.url.split('?')[0]);
+  // v1.5.2 A-11：URI decode 守护——malformed 百分号序列（如 /%E0%A4%A）在
+  // decodeURIComponent 抛 URIError，此前单请求即杀进程（长驻服务语义不可接受）。
+  // 守护后返回 400 + stderr 日志一行，进程存活继续服务后续请求。
+  let urlPath;
+  try {
+    urlPath = decodeURIComponent(req.url.split('?')[0]);
+  } catch (err) {
+    console.error(`[dashboard] ⚠️  URI decode 失败（返回 400，服务继续）: ${req.url.split('?')[0]} — ${err instanceof Error ? err.message : String(err)}`);
+    res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end('Bad Request: malformed URI encoding');
+    return;
+  }
 
   // CORS + no-cache
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -884,6 +895,16 @@ const server = createServer(async (req, res) => {
   const mime = MIME[extname(filePath)] || 'application/octet-stream';
   res.writeHead(200, { 'Content-Type': mime });
   res.end(data);
+});
+
+// v1.5.2 A-11：顶层兜底——dashboard 是长驻本地服务，单个未捕获异常不应杀进程
+// （日志可见 + 存活，与相邻 daemon 的降级不抛语义对齐）。此前同构复现：
+// GET /%E0%A4%A → URIError → 进程退出 EXIT=1，本地开发被单个畸形 URL 打死。
+process.on('uncaughtException', (err) => {
+  console.error('[dashboard] ⚠️  uncaughtException（已兜底，服务继续）:', err instanceof Error ? err.stack || err.message : String(err));
+});
+process.on('unhandledRejection', (reason) => {
+  console.error('[dashboard] ⚠️  unhandledRejection（已兜底，服务继续）:', reason instanceof Error ? reason.stack || reason.message : String(reason));
 });
 
 /* ────────────────────────────────
