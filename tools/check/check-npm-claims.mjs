@@ -15,16 +15,18 @@
 //     ① 且解析出 latest 值 + 包名 ⇒ 一条值声称（对账）
 //        pkg 解析优先级：npm view 形态的包名 > scoped 包名 @sofagent/<name> >
 //        裸名 sofagent。优先 scoped 是为防散文词 sofagent 劫持同行的
-//        @sofagent/audit 归属；裸名不接 . - 字母数字（故 sofagent.config.yml
-//        这类文件名不认、mysofagent / sofagent-cli 也不认），避免把文件名或
-//        近似词当包名产生误报。
+//        @sofagent/audit 归属；裸名不接 . / - 字母数字（故 sofagent.config.yml、
+//        sofagent/config.yml 这类文件名/路径不认、mysofagent / sofagent-cli
+//        也不认），避免把文件名或近似词当包名产生误报。
 //     ② 无 latest 值 ⇒ 命令提示 / 策略叙述，非值声称（可见跳过）
 //     ③ 有 latest 值但解析不出包名 ⇒ 盲区（不可判定 ⇒ main 判 exit 2，拒绝假绿）
 //
 // 值形态的识别面（覆盖常见书写变体——「写法一变换就静默漏检」是假门禁）：
-//   key 可带引号（"latest" / 'latest' / latest）；分隔符可 ASCII 冒号、全角冒号
-//   或中文「为」；值**首字符必须是数字**（版本值恒数字开头，此锚显著压低误报），
-//   可带引号可不带引号。
+//   key 可带引号（"latest" / 'latest' / latest），但 key 前不接 / 或 -（排除 URL
+//   路径 .../latest: 与 not-latest 这类非声称位）；分隔符可 ASCII 冒号、全角冒号
+//   或中文「为」；值前导可带引号·反引号·花括号·等号，且**须形如 数字.数字**
+//   （至少一段小数点分隔——据此排除 latest: 2024 这类「是数字但不是版本」的
+//   误报），值可带引号可不带引号。
 //
 // ── 明示的残余盲区（诚实披露，勿当已覆盖）──
 //   · 值与其 dist-tags 上下文**分处两行**（逐行判定，不做跨行合并）不检出；
@@ -77,8 +79,8 @@ const LIST_EXEMPT = argv.includes('--list-exempt');
 // 行含 dist-tags 才进入判定；三分见文件头「判定形态」。
 const PKG_RE = /npm view\s+([^\s`'"|]+)\s+dist-tags/;
 const PKG_SCOPED_RE = /@sofagent\/[a-z0-9][a-z0-9-]*/;
-const PKG_BARE_RE = /(?<![\w/@.-])sofagent(?![-\w.])/;
-const LATEST_RE = /["']?\blatest\b["']?\s*(?:[:：]|为)[\s`"'={]*([0-9][0-9A-Za-z.+_-]*)/;
+const PKG_BARE_RE = /(?<![\w/@.-])sofagent(?![-\w./])/;
+const LATEST_RE = /(?<![/\w-])["']?\blatest\b["']?\s*(?:[:：]|为)[\s`"'={]*([0-9][0-9A-Za-z+_-]*\.[0-9][0-9A-Za-z.+_-]*)/;
 
 function detectClaim(line) {
   if (!line.includes('dist-tags')) return null;
@@ -271,11 +273,17 @@ function runSelftest() {
   chk('归属③：文件名 sofagent.config.yml 不当包名（→ 盲区）', !!s13 && s13.pkg === null && s13.claimed === '1.5.0');
   const s14 = detectClaim("当前 `mysofagent` 的 dist-tags 为 `{ latest: '1.0.0' }`");
   chk('归属④：近似词 mysofagent 不当包名（→ 盲区）', !!s14 && s14.pkg === null && s14.claimed === '1.0.0');
+  const s15 = detectClaim("当前 `sofagent` 的 dist-tags 通道路线图，latest: 2024 年规划");
+  chk('误报回归①：latest: 2024（是数字但非版本）不认为值声称', !!s15 && s15.claimed === null);
+  const s16 = detectClaim("当前 `sofagent` 的 dist-tags 参考 https://example.com/latest: 9.9.9 说明");
+  chk('误报回归②：URL 路径内的 latest: 9.9.9 不认为值声称', !!s16 && s16.claimed === null);
+  const s17 = detectClaim("编辑 sofagent/config.yml 后，dist-tags 当前为 `{ latest: '1.5.0' }`");
+  chk('误报回归③：路径 sofagent/config.yml 不当包名（→ 盲区）', !!s17 && s17.pkg === null && s17.claimed === '1.5.0');
   if (bad > 0) {
     console.error(`❌ 自检失败 ${bad} 项`);
     process.exit(1);
   }
-  console.log('✅ 自检通过（15/15）');
+  console.log('✅ 自检通过（18/18）');
   process.exit(0);
 }
 
