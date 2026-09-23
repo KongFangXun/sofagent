@@ -9,7 +9,7 @@
 
 import { existsSync, mkdirSync } from 'fs';
 import { join } from 'path';
-import { runEval, type EvalResult } from '@sofagent/eval';
+import { runEval, createAuditRunner, type EvalResult } from '@sofagent/eval';
 import { EVAL_DIR, EVAL_LATEST, EVAL_HISTORY, VERSION, atomicWriteSync, atomicAppendSync } from '@sofagent/core';
 
 // ============================================================
@@ -80,10 +80,13 @@ export async function evaluateOutput(args: EvaluateOutputArgs): Promise<Evaluate
 
   let result: EvalResult;
   try {
-    result = await runEval({
-      goldenSetPath,
-      verbose,
-    });
+    result = await runEval(
+      {
+        goldenSetPath,
+        verbose,
+      },
+      createAuditRunner(),
+    );
   } catch (err) {
     return {
       text: `[sofagent] eval 运行失败: ${err instanceof Error ? err.message : String(err)}`,
