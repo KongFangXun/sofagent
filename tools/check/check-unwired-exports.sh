@@ -299,7 +299,10 @@ if [ -n "$SINCE_TAG" ]; then
     | awk '
       function flush_block(    i, s) {
         for (i = 1; i <= bn; i++) {
-          s = bname[i]; gsub(/[[:space:]]/, "", s); gsub(/,$/, "", s)
+          s = bname[i]
+          # 别名形态 `internal as public` 取公开名（在去空白之前判，避免 as 落在名字内部误切）
+          if (s ~ /[[:space:]]as[[:space:]]/) sub(/^.*[[:space:]]as[[:space:]]/, "", s)
+          gsub(/[[:space:]]/, "", s); gsub(/,$/, "", s)
           if (s != "" && s !~ /^\/\//) print s
         }
         bn = 0
@@ -315,17 +318,44 @@ if [ -n "$SINCE_TAG" ]; then
         next
       }
       # 桶文件块导出：/* @public */ export {（进入采集态，到 } 退出）
-      # 🔴 三种块收尾形态都要认：①独立「}」②「} from './xxx';」③单行块
-      #   「export { a, b } from './x';」（整行含 } ——ENTER 正则排除行内含 }
-      #   的单行块，否则 collecting 悬开，后续注释/import 行被当符号采集，
-      #   v1.5.0 实锤：public-api.ts 单行块悬开 → import{ 等 8 条假红）
+      # 🔴 三种块形态全认：①多行块 ②多行块带 from ③**单行块**
+      #   「/* @public */ export { a, b } from './x';」
+      #   单行块必须**就地取符号并收尾**——否则 ENTER 进了采集态、而三条收尾规则
+      #   全落在同一行上被 next 跳过 ⇒ collecting 悬开，后续新增行（JSDoc 文本 /
+      #   测试描述）被当符号名采集 ⇒ 一片假红 + 真符号反被漏检。
+      #   （本处注释曾声称「ENTER 正则已排除行内含 } 的单行块」，而代码里从无该
+      #     排除——注释与实现分叉，故现在把这件事真正写进代码。）
       /^\+\/\* @public \*\/ export type \{/ { flush_block(); collecting = 0; next }
+      # 单行块先行（同行含 }）：就地入队 + 立即 flush，不进入采集态
+      /^\+\/\* @public \*\/ export \{[^}]*\}/ {
+        line = $0
+        sub(/^\+\/\* @public \*\/ export \{/, "", line)
+        sub(/\}.*$/, "", line)
+        n = split(line, parts, /,[[:space:]]*/)
+        for (i = 1; i <= n; i++) bname[++bn] = parts[i]
+        flush_block()
+        next
+      }
       /^\+\/\* @public \*\/ export \{/ { flush_block(); collecting = 1; next }
       collecting && /^\+\}/ { flush_block(); collecting = 0; next }
       collecting && /^\+\}[[:space:]]*from/ { flush_block(); collecting = 0; next }
       collecting && /\}/ && /from / { flush_block(); collecting = 0; next }
       collecting && /^\+/ { bname[++bn] = substr($0, 2) }
     ' | sort -u)
+
+  # 🔴 提取器自证（防 awk 状态机悬开）：抽出的名字必须是合法 JS 标识符。
+  #   若抽出「*」「*/」或 JSDoc / 测试描述文本，说明状态机悬开把非符号行当了符号
+  #   （历史实锤：单行 export 块未就地收尾 ⇒ 11 条假红 + 真符号漏检）。
+  #   此类故障宁可 exit 2 报错——它会把「提取器坏了」伪装成「一堆零接线导出」，
+  #   而假红会诱使维护者去给真符号加豁免，等于用豁免掩盖检查器故障。
+  if [ -n "$NEW_PUBLICS" ]; then
+    _np_bad=$(printf '%s\n' "$NEW_PUBLICS" | grep -vE '^[A-Za-z$][A-Za-z0-9_$]*$' || true)
+    if [ -n "$_np_bad" ]; then
+      echo -e "  ${RED}✗${NC} 提取器故障：新增导出名不是合法标识符（awk 状态机悬开，把注释/测试文本当符号采集）——拒绝把提取器故障伪装成零接线判定"
+      printf '%s\n' "$_np_bad" | head -5 | sed 's/^/      /'
+      exit 2
+    fi
+  fi
 
   if [ -z "$NEW_PUBLICS" ]; then
     echo -e "  ${GREEN}✓${NC} ${SINCE_TAG}..HEAD 无新增 @public 值导出"
