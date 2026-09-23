@@ -258,7 +258,7 @@ graph TB
 | `engine/dsh-plugins/` | cordis-plugin-sofagent* 7 款 DSH 插件（v1.4.9 P2 合并批 10→7）——6 款原子（audit（含验收门禁面）· rollback · inject · evolve · daemon · fde（本体/FDE/公地三域厚插件））+ 1 款聚合（裸名 `cordis-plugin-sofagent`，一次挂载全套） |
 | `engine/openclaw-plugins/` | OpenClaw code-plugin 4 款（ClawHub 发布形态） |
 | `~/.sofagent/bin/sofagent` | CLI 入口（安装时生成，不在仓库内）— `sofagent status/where/version/data/help` |
-| 其余 6 包（eval/ab-test/evolve/rules/ontology/think） | 详见 `docs/DEVELOPMENT.md §包结构`（包数口径：workspace 26 = 13 模块包 + load-chain + umbrella + 7 DSH 插件 + 4 OpenClaw 插件，见 §六口径表；**测试计数口径** = 13 个含 test script 的 workspace 包 —— 与 README「工程可信度」段同口径；@sofagent/load-chain 为工具包另列） |
+| 其余 6 包（eval/ab-test/evolve/rules/ontology/think） | 详见 `docs/DEVELOPMENT.md §包结构`（包数口径：workspace 27 = 13 模块包 + load-chain + dsh-plugin-kit + umbrella + 7 DSH 插件 + 4 OpenClaw 插件，见 §六口径表；**测试计数口径** = 13 个含 test script 的 workspace 包 —— 与 README「工程可信度」段同口径；@sofagent/load-chain 与 @sofagent/dsh-plugin-kit 为工具包另列） |
 
 ### 关键数据路径（`data/`）
 
@@ -281,7 +281,7 @@ graph TB
 | FORGE | fresh-eyes-loop + release-gate-loop 运行中 |
 | 数据目录 | **data/**（v1.2.1+ SSOT 运行时数据目录） |
 
-> 📦 **包数口径**：全仓共 **26 个 workspace**——13 个 `@sofagent/*` 模块包 + 1 个工具包 `load-chain` + 7 个 DSH 插件（private，随 DSH 分发）+ 4 个 OpenClaw 插件 + 1 个 npm 裸名总包 umbrella；其中 14 个发布为 `@sofagent` scope（13 模块包 + load-chain）+ 1 个裸名总包，共 **15 个 npm 发布物**。OpenClaw 插件经根 `npm test --workspaces` 统一执行测试。
+> 📦 **包数口径**：全仓共 **27 个 workspace**——13 个 `@sofagent/*` 模块包 + 1 个工具包 `load-chain` + 1 个插件适配层基座包 `dsh-plugin-kit` + 7 个 DSH 插件（v1.5.2 章九起摘 `private` 转 npm 发布物）+ 4 个 OpenClaw 插件 + 1 个 npm 裸名总包 umbrella；其中 15 个发布为 `@sofagent` scope（13 模块包 + `load-chain` + `dsh-plugin-kit`）+ 7 个 DSH 插件 + 1 个裸名总包，共 **23 个 npm 发布物**。OpenClaw 插件经根 `npm test --workspaces` 统一执行测试。
 
 ---
 
