@@ -86,7 +86,7 @@ import { execFileSync, spawnSync } from 'child_process';
 import { FULL_ONLY_FLAGS as FULL_ONLY_FLAGS_SRC, AUDIT_SUBCOMMANDS as AUDIT_SUBCOMMANDS_SRC } from './cli/flag-table';
 import { existsSync } from 'fs';
 import { join } from 'path';
-import { parseDiff, isInGitRepo, type DiffFile } from '@sofagent/core';
+import { parseDiff, isInGitRepo, VERSION, type DiffFile } from '@sofagent/core';
 import { runRules, type AuditResult, type RuleCheck } from './reporter';
 import { resolveDiffEndpoint } from './diff-ref';
 
@@ -394,6 +394,9 @@ export function runCliQuick(argv: string[]): number {
 
   // 拦截 --help / --version
   if (argv.includes('--help') || argv.includes('-h')) {
+    // v1.5.2 B-9：help 顶部加版本行——npx 用户一眼确认装的是哪版。
+    // 复用 VERSION 常量（与完整引擎 index.ts 的 -v 及横幅同源），零硬编码版本串。
+    console.log(`sofagent-audit v${VERSION}`);
     console.log('sofagent-audit — AI Agent 行为审计\n');
     console.log('用法（quick 只读审计，零安装）：');
     console.log('  npx -y -p @sofagent/audit sofagent-audit              审计最近一次 commit（官方入口，始终最新；不写 history.jsonl 无留痕，适合临时检查）');
@@ -445,9 +448,10 @@ export function runCliQuick(argv: string[]): number {
   }
 
   if (argv.includes('--version') || argv.includes('-v')) {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const pkg = require('../package.json');
-    console.log(`sofagent-audit v${pkg.version}`);
+    // v1.5.2 B-9：改用 VERSION 常量（与完整引擎 index.ts 的 -v 及横幅同源）——
+    // 消除此前 quick 侧读 package.json、完整引擎侧读 VERSION 的双源偏差，
+    // 亦使 help 顶部版本行与本行输出恒一致。
+    console.log(`sofagent-audit v${VERSION}`);
     return 0;
   }
 

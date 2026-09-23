@@ -217,6 +217,8 @@ describe('runCliQuick 参数拦截（F-13）', () => {
     try {
       const code = runCliQuick(['node', 'cli-quick.js', '--help']);
       expect(code).toBe(0);
+      // v1.5.2 B-9：help 顶部版本行（复用 VERSION 常量，与 -v 输出同源）
+      expect(logSpy).toHaveBeenCalledWith(expect.stringContaining('sofagent-audit v'));
       expect(logSpy).toHaveBeenCalledWith(expect.stringContaining('用法'));
       // 不路由到完整引擎、不跑审计
       expect(spawnSync).not.toHaveBeenCalled();
