@@ -122,18 +122,21 @@ async function runTestCase(
  * 默认 runner：直接模拟执行
  * 生产环境可替换为实际 Agent 调用
  *
- * ⚠️ **形态边界——本 mock 只理解 `{ diff: string }`**，与 golden set 的
- * 结构化 `{ diffFiles: [{ path, status, lines }], task }` **不同形**：真实评测
- * 走 `cli.ts` 的 `createAuditRunner()`（它读 `input['diffFiles']`）注入。
- * 二者混淆时 mock 会因取不到 `diff` 而**静默返回「无违规」**——典型假绿来源，
- * 故此处显式报错，不做猜测。
+ * ⚠️ **形态白名单——本 mock 只接受 `{ diff: string }`**。其余一切输入形态
+ * （`{}`、`{ task }`、golden set 的结构化 `{ diffFiles: [{ path, status, lines }], task }`、
+ * `diff` 非字符串……）一律**显式抛错**，绝不猜测、绝不回落空字符串——否则空串
+ * 无关键词命中会**静默返回 `result:'PASS'`**（典型假绿来源）。
+ *
+ * 真实评测必须注入 `cli.ts` 的 `createAuditRunner()`（它读 `input['diffFiles']`）。
  */
 export async function defaultRunFunction(input: Record<string, unknown>): Promise<Record<string, unknown>> {
-  // 形态自证：拿到结构化 diffFiles 说明调用方用错了 runner——报错，不猜
-  if (input['diff'] === undefined && input['diffFiles'] !== undefined) {
+  // 白名单守卫：只有 `diff` 是字符串才放行；其余一切形态一律报错，不静默 PASS。
+  // 错误消息带实际 key 列表，便于定位调用方用错了 runner / schema。
+  if (typeof input['diff'] !== 'string') {
     throw new Error(
-      'defaultRunFunction 只理解 { diff: string } 形态，收到 golden set 的结构化 { diffFiles: [...] }。' +
-        '评测请注入真实 runner：engine/eval/src/cli.ts 的 createAuditRunner()',
+      'defaultRunFunction 只是 mock，只理解 { diff: string } 形态；' +
+        `实际收到 keys=[${Object.keys(input).join(', ')}]（typeof diff=${typeof input['diff']}）。` +
+        '真实评测必须注入 engine/eval/src/cli.ts 的 createAuditRunner()。',
     );
   }
 
@@ -143,7 +146,7 @@ export async function defaultRunFunction(input: Record<string, unknown>): Promis
     rules_triggered: [] as string[],
   };
 
-  const diff = String(input['diff'] ?? '');
+  const diff = input['diff'] as string;
   const context = (input['context'] ?? {}) as Record<string, unknown>;
 
   // 简单检查：如果 diff 包含明显违规关键词

@@ -116,6 +116,20 @@ describe('defaultRunFunction 形态边界', () => {
     ).rejects.toThrow(/diffFiles/);
   });
 
+  it('空对象 {} 显式报错（白名单拦截，不静默 PASS）', async () => {
+    await expect(defaultRunFunction({})).rejects.toThrow(/diff: string/);
+  });
+
+  it('缺 diff 字段的 { task } 显式报错（白名单拦截）', async () => {
+    await expect(defaultRunFunction({ task: 'x' })).rejects.toThrow(/task/);
+  });
+
+  it('{ diff: "" } 是合法输入，返回 PASS（空 diff 非错误）', async () => {
+    const actual = await defaultRunFunction({ diff: '' });
+    expect(actual['result']).toBe('PASS');
+    expect(actual['rules_triggered']).toEqual([]);
+  });
+
   it('{ diff: string } 形态仍正常工作（违规关键词判 FAIL）', async () => {
     const actual = await defaultRunFunction({ diff: '+const k = "sk-1234567890"' });
     expect(actual['result']).toBe('FAIL');
