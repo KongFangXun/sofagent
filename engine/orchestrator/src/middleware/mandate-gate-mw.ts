@@ -452,8 +452,13 @@ export class MandateGateMiddleware implements MandateToolGate {
         },
         this.dataDir,
       );
-    } catch {
-      // 留痕失败不阻断裁决（拒绝信息已通过返回值传达）
+    } catch (err) {
+      // 留痕失败不阻断裁决（拒绝信息已通过返回值传达）——但**降级必须可见**：
+      // 审计链写入失败属安全相关降级，静默吞掉会让「该授权裁决没进链」无人知晓
+      // （emitDecision 本身不吞错、失败即抛，故此处是唯一可观测点）。
+      console.warn(
+        `  ⚠️ mandate 裁决留痕失败（不阻断裁决，但该裁决未进审计链）: ${err instanceof Error ? err.message : String(err)}`,
+      );
     }
   }
 }
