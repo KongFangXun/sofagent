@@ -1783,6 +1783,15 @@ async function s443() {
 //      **可发布三态**——`private !== true`（否则 npm 直接拒发）、`files` 白名单含
 //      `dist/` 与 `cordis.patch.yml`（否则夹带源码 / 漏发 patch）、以及发布脚本
 //      的可执行路径确实由 `engine/dsh-plugins/plugins.json` 驱动（否则静默漏发）。
+//   ②c kit 转正（v1.5.2 章九**二轮**：独立复核发现旧形态单个插件从 registry 装即挂）：
+//      `engine/dsh-plugins/plugin-kit` 必须是 npm 发布物 `@sofagent/dsh-plugin-kit`
+//      （根 workspaces 已登记、非 private、files 含 dist/），且 6 款原子插件**不得**再
+//      以 `'../../plugin-kit/dist/index.js'` 相对引用它，须改用包名 + 在 `dependencies`
+//      声明（放 optionalDependencies 会被生成器覆盖）。另断言发布脚本的可执行路径已
+//      改成「由根 workspaces 构建包名→目录查表」——旧 `engine/${pkg#@sofagent/}`
+//      猜目录写法的回归会让 kit（目录不在 engine/<pkg>）解析不到而静默漏发。
+//      ⚠️ 计数口径：② 的「7」是 7 个 `cordis-plugin-sofagent*` 插件目录，**kit 不混进
+//      这 7 个**（它在 engine/dsh-plugins/plugin-kit，由 ②c 单独把守）。
 // 静态锚：mandate-store 三元素/判定入口 / mandate-gate-mw 工厂+中间件+should-run 探针 /
 //   loop deps-defaults 注入 / tools.ts wrapToolsWithGate 第 4 参 mandateToolGate。
 // 残余风险（如实标注）：章九**仅验仓内「可发布」就绪态**——npm registry 真「首发」
@@ -1833,6 +1842,36 @@ async function s444() {
   if (!/dir="engine\/dsh-plugins\//.test(pubScript)) bad.push('publish-packages.sh 可执行路径未映射 engine/dsh-plugins/<id> 目录');
   const manifest = JSON.parse(fs.readFileSync(rel('engine/dsh-plugins/plugins.json'), 'utf-8'));
   for (const n of plugins) if (!manifest.plugins.some((p) => p.id === n)) bad.push(n + ' 不在 plugins.json——发布脚本驱动不到它');
+  // ②c v1.5.2 章九二轮：plugin-kit 转正为 npm 发布物（@sofagent/dsh-plugin-kit）。
+  //   旧形态（kit 非发布物 + 6 款插件相对引用它）会让从 registry 单装的插件在加载期
+  //   `MODULE_NOT_FOUND: Cannot find module '../../plugin-kit/dist/index.js'` ⇒ 逐项上锁。
+  const rootPkg = JSON.parse(fs.readFileSync(rel('package.json'), 'utf-8'));
+  if (!Array.isArray(rootPkg.workspaces) || !rootPkg.workspaces.includes('engine/dsh-plugins/plugin-kit'))
+    bad.push('根 package.json workspaces 未登记 engine/dsh-plugins/plugin-kit——发布查表解析不到 kit');
+  const kitPkgPath = rel('engine/dsh-plugins/plugin-kit/package.json');
+  if (!fs.existsSync(kitPkgPath)) bad.push('plugin-kit 缺 package.json');
+  else {
+    const kit = JSON.parse(fs.readFileSync(kitPkgPath, 'utf-8'));
+    if (kit.name !== '@sofagent/dsh-plugin-kit') bad.push('plugin-kit 包名应为 @sofagent/dsh-plugin-kit，实为 ' + kit.name);
+    if (!/^\d+\.\d+\.\d+/.test(String(kit.version))) bad.push('plugin-kit 版本非 semver:' + kit.version);
+    if (kit.private === true) bad.push('plugin-kit 仍为 private——6 款原子插件依赖它却发不出去');
+    if (!Array.isArray(kit.files) || !kit.files.includes('dist/')) bad.push('plugin-kit 缺 files 白名单（dist/）');
+  }
+  // 6 款原子插件（排除聚合款 cordis-plugin-sofagent）：不得再相对引用 kit，须改包名 + 声明 dependencies
+  for (const n of plugins.filter((x) => x !== 'cordis-plugin-sofagent')) {
+    const src = fs.readFileSync(rel('engine/dsh-plugins/' + n + '/src/index.ts'), 'utf-8');
+    if (src.includes('plugin-kit/dist/index.js')) bad.push(n + ' src 仍含 plugin-kit 相对引用（旧分发形态回潮，registry 单装必挂）');
+    if (!src.includes("'@sofagent/dsh-plugin-kit'")) bad.push(n + ' src 未改用包名引用 @sofagent/dsh-plugin-kit');
+    const p = JSON.parse(fs.readFileSync(rel('engine/dsh-plugins/' + n + '/package.json'), 'utf-8'));
+    const dep = p.dependencies && p.dependencies['@sofagent/dsh-plugin-kit'];
+    if (!dep) bad.push(n + ' 未在 dependencies 声明 @sofagent/dsh-plugin-kit（放 optionalDependencies 会被生成器覆盖）');
+    else if (!/^\d+\.\d+\.\d+/.test(String(dep))) bad.push(n + ' 的 kit 依赖版本非 semver:' + dep);
+  }
+  // ②c-2 发布脚本的包名→目录解析：必须由根 workspaces 查表（kit 目录不在 engine/<pkg>），
+  //   且旧「按前缀猜目录」写法不得回潮（回潮则 kit 解析不到、静默跳过）。
+  if (!/resolve_pkg_dir\(\)\s*\{/.test(pubScript)) bad.push('publish-packages.sh 缺 resolve_pkg_dir（未由 workspaces 查表解析目录）');
+  if (!/root\.workspaces/.test(pubScript)) bad.push('publish-packages.sh 未读根 package.json 的 workspaces 构建查表');
+  if (/engine\/\$\{pkg#@sofagent\/\}/.test(pubScript)) bad.push('publish-packages.sh 旧「engine/${pkg#@sofagent/}」猜目录写法回潮——kit 将解析错位');
   // ③ v1.5.2 交付标记在位（章四 schema 注释）
   if (!fs.readFileSync(rel('engine/audit/src/decision-schema.ts'), 'utf-8').includes('v1.5.2')) bad.push('decision-schema 缺 v1.5.2 交付标记');
   // ④ 真行为：授权三态
@@ -1846,7 +1885,7 @@ async function s444() {
     const oos = ms.evaluateMandateRequest({ subject: 'bot-444', action: 'rm_rf' }, new Date(), dataDir);
     if (oos.verdict !== 'out-of-scope') bad.push('越界动作未判 out-of-scope:' + JSON.stringify(oos));
   } catch (e) { bad.push('授权补环行为探针异常:' + (e && e.message)); }
-  _s41x_done(bad, 'S444', '授权三态=no-mandate/covered/out-of-scope·插件包可发布就绪=' + plugins.length);
+  _s41x_done(bad, 'S444', '授权三态=no-mandate/covered/out-of-scope·插件包可发布就绪=' + plugins.length + '（+kit 转正，不计入 7）');
 }
 
 const CASES = { s101, s102, s103, s106, s107, s108, s109, s111, s115, s148, s149, s151, s152, s155, s156, s416, s418, s419, s420, s421, s422, s423, s424, s425, s426, s427, s428, s429, s430, s431, s432, s433, s434, s435, s436, s437, s438, s439, s440, s441, s442, s443, s444 };
