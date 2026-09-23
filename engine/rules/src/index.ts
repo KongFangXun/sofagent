@@ -6,8 +6,9 @@
 // ────────────────────────────────────────────────────────
 // ============================================================
 // index.ts · @sofagent/rules barrel export
-// v1.5.1：导出 21 个公开符号（以 `node tools/check/public-api.mjs` AST 解析为准），内部实现不外露
-// Last revised: v1.5.1
+// v1.5.2（章五）：新增出口治理面（egress-policy）11 个公开符号 → 累计 32 个
+//                （以 `node tools/check/public-api.mjs` AST 解析为准），内部实现不外露
+// Last revised: v1.5.2
 // ============================================================
 
 /* @public */ export { RulesEngine } from './engine';
@@ -26,3 +27,25 @@
 /* @public */ export { buildSbom } from './ast/rules/asi04-sbom';
 /* @public */ export type { SbomEntry } from './ast/rules/asi04-sbom';
 /* @public */ export type { AstRule, AstFinding, AstScanInput } from './ast/types';
+// v1.5.2（章五）：网络出口治理面——host 白名单声明面 + 出站裁决（默认空全拒，opt-in）
+//   与 v1.4.9 G10 设备数据面授权读取（「管进」）逐面对称的「管出」翼策略契约面。
+//   公开面 = 声明 API + 裁决 API + 匹配原语 + 类型（外部拦截器实现按此接入）。
+/* @public */ export {
+  normalizeEgressHost,
+  hostMatchesEgressRule,
+  declareEgressHosts,
+  decideEgress,
+} from './egress-policy';
+/* @public */ export type {
+  EgressVerdict,
+  EgressDenyReason,
+  EgressReason,
+  EgressRequest,
+  EgressHostRule,
+  EgressPolicy,
+  EgressDecision,
+} from './egress-policy';
+// v1.5.2（章五）：声明文件面（<dataDir>/config/egress-policy.json）管道——@internal
+//   （等价 G10 config/device-data-policy.json 的 load/save 面；声明写入由 CLI/MCP
+//   运行时落点承载，不属外部拦截器契约面）
+/* @internal */ export { EGRESS_POLICY_FILE, EGRESS_POLICY_VERSION, egressPolicyPath, loadEgressPolicy, saveEgressPolicy, egressRequestFromUrl } from './egress-policy';
