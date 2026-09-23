@@ -20,3 +20,5 @@
 /* @public */ export { evalCase } from './eval-scorer';
 /* @public */ export { runEval, defaultRunFunction } from './eval-runner';
 /* @public */ export { generateEvalReport, printEvalReport } from './eval-reporter';
+// runner 适配器是 eval 侧唯一的 audit 耦合面，故其出口在 cli.ts，barrel 仅做转发
+/* @public */ export { createAuditRunner } from './cli';

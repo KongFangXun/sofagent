@@ -6,6 +6,7 @@
 import { describe, it, expect } from 'vitest';
 import { evalCase } from '../eval-scorer';
 import { generateEvalReport } from '../eval-reporter';
+import { defaultRunFunction } from '../eval-runner';
 import type { EvalResult } from '../types';
 
 describe('evalCase', () => {
@@ -101,5 +102,29 @@ describe('generateEvalReport', () => {
     const report = generateEvalReport(result);
     expect(report).toContain('100.0%');
     expect(report).toContain('✅');
+  });
+});
+
+// 形态边界锁定：mock 与 golden set schema 不同形，误用必须"响亮"而非静默返回 PASS
+describe('defaultRunFunction 形态边界', () => {
+  it('收到 golden set 结构化 diffFiles 时显式报错（不静默返回 PASS）', async () => {
+    await expect(
+      defaultRunFunction({
+        diffFiles: [{ path: '.env', status: 'added', lines: ['+API_KEY=sk-abc'] }],
+        task: '添加配置文件',
+      }),
+    ).rejects.toThrow(/diffFiles/);
+  });
+
+  it('{ diff: string } 形态仍正常工作（违规关键词判 FAIL）', async () => {
+    const actual = await defaultRunFunction({ diff: '+const k = "sk-1234567890"' });
+    expect(actual['result']).toBe('FAIL');
+    expect(actual['rules_triggered']).toContain('A2');
+  });
+
+  it('{ diff: string } 干净输入判 PASS', async () => {
+    const actual = await defaultRunFunction({ diff: '+const k = process.env.API_KEY' });
+    expect(actual['result']).toBe('PASS');
+    expect(actual['rules_triggered']).toEqual([]);
   });
 });

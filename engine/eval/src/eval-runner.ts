@@ -121,8 +121,22 @@ async function runTestCase(
 /**
  * 默认 runner：直接模拟执行
  * 生产环境可替换为实际 Agent 调用
+ *
+ * ⚠️ **形态边界——本 mock 只理解 `{ diff: string }`**，与 golden set 的
+ * 结构化 `{ diffFiles: [{ path, status, lines }], task }` **不同形**：真实评测
+ * 走 `cli.ts` 的 `createAuditRunner()`（它读 `input['diffFiles']`）注入。
+ * 二者混淆时 mock 会因取不到 `diff` 而**静默返回「无违规」**——典型假绿来源，
+ * 故此处显式报错，不做猜测。
  */
 export async function defaultRunFunction(input: Record<string, unknown>): Promise<Record<string, unknown>> {
+  // 形态自证：拿到结构化 diffFiles 说明调用方用错了 runner——报错，不猜
+  if (input['diff'] === undefined && input['diffFiles'] !== undefined) {
+    throw new Error(
+      'defaultRunFunction 只理解 { diff: string } 形态，收到 golden set 的结构化 { diffFiles: [...] }。' +
+        '评测请注入真实 runner：engine/eval/src/cli.ts 的 createAuditRunner()',
+    );
+  }
+
   // 模拟审计模块执行：简单解析 diff 内容
   const result: Record<string, unknown> = {
     result: 'PASS',
