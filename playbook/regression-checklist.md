@@ -1,7 +1,7 @@
 # sofagent 回归检查清单
 
 > **用途**：每次发版前跑一遍，确认之前修过的问题没有回退。发现新问题用 [fresh-eyes-review](./fresh-eyes-review.md)。审查范围：全仓库状态检查（不是只看增量）。**编号规则**：归并项直接删除、编号不复用；演进历史 `git log -p` 可溯，本清单只维护当前状态。
-> **当前 87 维 · 编号 1-144 · 56 个编号已归并删除（#145 发版期四项已并入 #144 n–q）**。维度流连续不中断，分组导航：基线组 → 审查约束组 → 环境敏感组（前置 vitest/沙箱铁律）。
+> **当前 85 维 · 编号 1-144 · 58 个编号已归并删除（#145 发版期四项已并入 #144 n–q）**。维度流连续不中断，分组导航：基线组 → 审查约束组 → 环境敏感组（前置 vitest/沙箱铁律）。
 
 ## 🔒 维护公约（防膨胀铁律）
 
@@ -32,7 +32,7 @@ WC_CHK=$(wc -l < playbook/regression-checklist.md); WC_ACC=$(wc -l < playbook/ac
 
 你是**回归测试工程师**——确认已知的修复没有回退，不是发现新问题。逐项核对，全 PASS 即通过。⏰ 时序：回归检查在阶段六跑，git tag/npm registry 未到位的项标 ⏳。🔍 维度 7f/17a-b/20 依赖真实环境（npm/git/OpenClaw），AI 审查标 `⏸️ 需人工环境`。
 
-## 审查维度（87 维 · 编号规则见头部）
+## 审查维度（85 维 · 编号规则见头部）
 
 ### 审查维度正文（#1-142 · 维度流连续不中断）
 
@@ -110,7 +110,9 @@ git grep -nE "审计引擎|训练引擎|编排引擎|回溯引擎|自迭代引�
 ) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -qE "^[[:space:]]{0,2}❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true
 ```
 
-#### 4. 审计规则分级与 ruleClass 一致性
+#### 4. 审计规则分级与 ruleClass 多处声明一致性——index.ts ↔ README ↔ rule-*.ts（归并 #89 入此 · 源删 17 行 / 目标增 12 行，净减 5 行）
+
+> **背景**：A3 ruleClass 在 index.ts（注册中心）/ rule-a3-*.ts（规则实现）/ README（文档）三处声明，版本演进时容易只改一处忘记其他——审查捕获 A3 在 index.ts 标"能力拐杖"、rule-a3-*.ts 标"业务底线"的不一致。
 
 ```bash
 # 子项 a-c: A4=业务底线 / 规则总数=24（A20-A23 加入后 21→24）/ A6=能力拐杖 A11=业务底线
@@ -139,6 +141,16 @@ process.exit(d === 17 && e === 7 ? 0 : 1);
 if [ "$RULE_CNT_OK" != "yes" ]; then echo "⚠️ 规则口径漂移：defaultRules≠17 或 extendedRules≠7"; exit 1; fi
 grep -q "项检查" engine/audit/src/reporter.ts || { echo "⚠️ productSignature 未统一「N 项检查 · M 条规则」口径"; exit 1; }
 echo "✅ 规则口径一致：17 默认 + 7 扩展 = 24 注册，签名口径已统一"
+
+# 子项 i（原 #89 迁入）: 每条规则的 ruleClass 在 index.ts 和 rule-*.ts 必须一致 修复（校准：误报）：旧脚本 for 空格分词 + rule_name 恒空全报 ⚠️ → 改按 number 定位对比。
+for n in $(grep -oE "number: [0-9]+" engine/audit/src/rules/index.ts | grep -oE "[0-9]+" | sort -un); do
+ idx=$(grep -E "number: $n" engine/audit/src/rules/index.ts | grep -oE "ruleClass: '[^']+'" | head -1)
+ impl=$(grep -hoE "ruleClass: '[^']+'" engine/audit/src/rules/rule-a${n}-*.ts 2>/dev/null | head -1)
+ [ -z "$impl" ] && continue # 规则实现不存在（如 A12/A13 并入 A11）跳过
+ [ "$idx" = "$impl" ] || echo "⚠️ rule-a${n}: index=$idx vs impl=$impl"
+done # 期望：无 ⚠️ 输出（index.ts SSOT，rule-*.ts 对齐）
+# 单源化 refactor 须保留派生导出（归并原维度 99——外部脚本/acceptance 依赖 AUDIT_PRIORITY.critical 形态查询）
+node -e "const m=require('./engine/audit/dist/rules/runner.js');const c=m.AUDIT_PRIORITY?.critical;if(!c||!c.includes('A20'))process.exit(1)" || echo "⚠️ AUDIT_PRIORITY 向后兼容导出缺失"
 ```
 
 #### 7. 感知层配置与推送链路
@@ -833,7 +845,7 @@ grep -c 'sofagent-key' engine/scripts/lib/post-install.sh # ≥2
 grep -c 'chmod 600' engine/scripts/lib/post-install.sh # ≥1
 ```
 
-#### 50. 文档乱码扫描——U+FFFD + null byte + UTF-8 损坏检测
+#### 50. 乱码与 U+FFFD 零污染——文档五类扫描 + Agent 批量写入后必扫（归并 #63 入此）
 
 ```bash
 # 五类乱码一次遍历（原 5 条独立 node -e 各遍历一遍 → 合并为单次遍历，等价且更快）
@@ -841,6 +853,10 @@ grep -c 'chmod 600' engine/scripts/lib/post-install.sh # ≥1
 #   c 孤立/颠倒代理对 · d 常见 mojibake（UTF-8 被按 Latin-1/GBK 误读）· e null byte（\x00 嵌入）
 node -e "const fs=require('fs'),path=require('path');const dirs=['docs','SKILL','FDE','FORGE','tools'];const hits={a:[],b:[],c:[],d:[],e:[]};const walk=d=>{for(const f of fs.readdirSync(d,{withFileTypes:true})){const p=path.join(d,f.name);if(f.isDirectory()){if(!/node_modules|\.git|archive/.test(p))walk(p);}else if(/\.(md|ts|js|mjs|sh|yml|json)$/.test(f.name)){const c=fs.readFileSync(p,'utf8');if(c.includes('\uFFFD'))hits.a.push(p);if(/[\u0080-\u009F]/.test(c))hits.b.push(p);if(/[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/.test(c))hits.c.push(p);if(/[\u00C3\u00C2][\u0080-\u00BF]|[\uFFFD]{2,}/.test(c))hits.d.push(p);if(c.includes('\u0000'))hits.e.push(p);}}};for(const d of dirs)if(fs.existsSync(d))walk(d);const bad=Object.entries(hits).filter(([k,v])=>v.length);if(bad.length){for(const [k,v] of bad)console.error('  \u274c 乱码类'+k+': '+v.slice(0,3).join(', '));process.exit(1)}console.log('  \u2705 五类乱码零命中（a/b/c/d/e）')" 
 ```
+
+> 教训：fresh-eyes-loop 批量修复 worker 多次产出含 U+FFFD 的文件——LLM 输出编码损坏时把无法表示的字节写成 U+FFFD。肉眼难辨（显示为 ▯ 或空白），但污染 grep、破坏锚点、影响 npm 产物。**任何 Agent 批量写入文件后，提交前必须扫一遍 U+FFFD，零容忍。**
+>
+> 阶段四判据①（冗余）：本维两条扫描命令与 acceptance 场景 S166（Markdown 格式完整性——代码块闭合 + 活跃文档无 U+FFFD）的 node 扫描命令**逐字符同款**——自动化已覆盖，命令体并入 S166 引用，本维保留纪律叙述（归并配额对销记录：#63 命令体 → S166，净减 5 行）。引擎源码侧扫描同 S304 的 FFFD 守卫场景覆盖（A2 审计规则含 FFFD 检测路径）。归并对销记录：#63 → #50（源删 6 行 / 目标增 4 行），净减 2 行。
 
 #### 51. 审计链安全加固回归——HMAC 写读一致 + doctor 三态 + config 签名 + 版本自检 + key 强度
 
@@ -997,12 +1013,6 @@ FENCE=$(grep -c '\[\\s\\S\]' FORGE/src/release-gate-driver.mjs || true)
 if [ "${FENCE:-0}" -lt 1 ]; then echo "⚠️ 围栏剥离缺失 (count=$FENCE)"; exit 1; fi
 echo "✅ 裁决解析健壮性四锚全过 (fragile=0 window≥1 fence≥1)"
 ```
-
-#### 63. Worker 批量输出 U+FFFD 零污染——每次批量修复后必扫（瘦身：命令并入 acceptance S166 同款，此处留纪律+引用）
-
-> 教训：fresh-eyes-loop 批量修复 worker 多次产出含 U+FFFD 的文件——LLM 输出编码损坏时把无法表示的字节写成 U+FFFD。肉眼难辨（显示为 ▯ 或空白），但污染 grep、破坏锚点、影响 npm 产物。**任何 Agent 批量写入文件后，提交前必须扫一遍 U+FFFD，零容忍。**
->
-> 阶段四判据①（冗余）：本维两条扫描命令与 acceptance 场景 S166（Markdown 格式完整性——代码块闭合 + 活跃文档无 U+FFFD）的 node 扫描命令**逐字符同款**——自动化已覆盖，命令体并入 S166 引用，本维保留纪律叙述（归并配额对销记录：#63 命令体 → S166，净减 5 行）。引擎源码侧扫描同 S304 的 FFFD 守卫场景覆盖（A2 审计规则含 FFFD 检测路径）。
 
 #### 64. GitHub 锚点剥除规则——跨文档链接须匹配渲染后锚点（新盲区）
 
@@ -1231,23 +1241,6 @@ grep -c "git add -A" FORGE/src/driver-base.mjs # 0（仅注释引用）
 grep -c "git diff --name-only HEAD -- engine/" FORGE/src/driver-base.mjs # ≥1
 # 发版 SOP 裹挟防御段在位（同族防复发——人工批与 driver 批同守则）
 grep -q "git diff --cached" docs/changelog/releasing/11-post-publish.md && echo "✅ 发版 SOP 裹挟防御在位" || echo "⚠️ SOP 缺逐 hunk 核对纪律"
-```
-
-#### 89. 审计规则 ruleClass 多处声明一致性
-
-**背景**：A3 ruleClass 在 index.ts（注册中心）/ rule-a3-*.ts（规则实现）/ README（文档）三处声明，版本演进时容易只改一处忘记其他——审查捕获 A3 在 index.ts 标"能力拐杖"、rule-a3-*.ts 标"业务底线"的不一致。
-
-```bash
-# 每条规则的 ruleClass 在 index.ts 和 rule-*.ts 必须一致 修复（校准：误报）：旧脚本 for 空格分词 + rule_name 恒空全报 ⚠️ → 改按 number 定位对比。
-for n in $(grep -oE "number: [0-9]+" engine/audit/src/rules/index.ts | grep -oE "[0-9]+" | sort -un); do
- idx=$(grep -E "number: $n" engine/audit/src/rules/index.ts | grep -oE "ruleClass: '[^']+'" | head -1)
- impl=$(grep -hoE "ruleClass: '[^']+'" engine/audit/src/rules/rule-a${n}-*.ts 2>/dev/null | head -1)
- [ -z "$impl" ] && continue # 规则实现不存在（如 A12/A13 并入 A11）跳过
- [ "$idx" = "$impl" ] || echo "⚠️ rule-a${n}: index=$idx vs impl=$impl"
-done
-# 期望：无 ⚠️ 输出（index.ts SSOT，rule-*.ts 对齐）
-# 单源化 refactor 须保留派生导出（归并原维度 99——外部脚本/acceptance 依赖 AUDIT_PRIORITY.critical 形态查询）
-node -e "const m=require('./engine/audit/dist/rules/runner.js');const c=m.AUDIT_PRIORITY?.critical;if(!c||!c.includes('A20'))process.exit(1)" || echo "⚠️ AUDIT_PRIORITY 向后兼容导出缺失"
 ```
 
 #### 90. shell 脚本 locale 防御——CI/sandbox 默认 LANG=C 导致中文乱码
