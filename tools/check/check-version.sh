@@ -528,7 +528,7 @@ echo ""
 #   因此本节注释不再需要维护「循环项数」这个数字（它由文件系统决定，不可能再漂移）。
 #   rhythm.sync 现为 15 包 = 原 11 包 + rules（原漏登记）+ umbrella（第 13 个 engine 包）
 #   + engine/hooks/sofagent-load-chain（build 序列末位）+ train（第 7 批拆包），五者实测同为 SSOT 版本。
-# 覆盖不变量（rhythm ⊇ workspace 26 项）由 §9e 断言；清单声明了却不存在的包在此 fail-loud。
+# 覆盖不变量（rhythm ⊇ workspace 27 项，含 engine/dsh-plugins/plugin-kit）由 §9e 断言；清单声明了却不存在的包在此 fail-loud。
 echo -e "${BOLD}── [9/14] 子包版本号一致性 ──${NC}"
 RHYTHM_SYNC_9B="$(rhythm_dump | awk -F'\t' '$1=="SYNC"{print $2"\t"$3}')"
 if [[ -z "${RHYTHM_SYNC_9B}" ]]; then
@@ -590,7 +590,7 @@ fi
 echo ""
 
 # ── 9e. rhythm 段覆盖全部 workspace 项（防漏登记 · v1.4.8 第七章/第〇批）──
-# 不变量：rhythm.sync ∪ independent ∪ detached 必须覆盖**全部 workspace 项**（实为 26 项）。
+# 不变量：rhythm.sync ∪ independent ∪ detached 必须覆盖**全部 workspace 项**（实为 27 项，含 engine/dsh-plugins/plugin-kit）。
 # 枚举源：package.json 的 workspaces 字段——**不得**用 `ls -d engine/*/`
 #   （那只得 19 个目录，漏 10 项：engine/hooks/sofagent-load-chain + 插件家族更深一层目录）。
 # 命中规则：sync 段按「包路径精确相等」命中；independent / detached 段按「路径 glob」命中。

@@ -386,9 +386,13 @@ PKG_COUNT=$(echo "$TC_OUT" | LC_ALL=C sed $'s/\033\[[0-9;]*m//g' | grep -oE 'PKG
 # v1.4.0：只数发布到 npm 的 13 个 @sofagent/* 引擎模块包——engine/dsh-plugins/ 下
 #   7 个插件包（v1.4.9 P2 合并批 10→7；v1.5.2 章九起已摘 `private` 并上 npm，但**仍不计入
 #   「模块包」口径**——插件另有 DSH_PLUGIN_COUNT 口径，两条口径不混算）、
+#   engine/dsh-plugins/plugin-kit（v1.5.2 章九二轮起为 workspace 成员 + npm 发布物
+#   @sofagent/dsh-plugin-kit，但属 DSH 插件族**适配层基座包**非模块包，同样不计入；
+#   见下方 :401 插件计数段的同源说明）、
 #   engine/umbrella 是 npm 裸名总包（走 [README] 另一个口径：
 #   「14 个模块包发布至 npm @sofagent scope」= 13 模块 + umbrella）、
-#   engine/hooks/sofagent-load-chain 是构建序列末位的工具包（见 docs/WIKI.md §六 口径表），三者均不计入。
+#   engine/hooks/sofagent-load-chain 是构建序列末位的工具包（见 docs/WIKI.md §六 口径表），
+#   以上均不计入。
 # 兜底用 || true 而非 || echo "0"：grep -c 零匹配已自行输出单行 0，|| echo 0 追加第二行成双零
 # v1.4.8 第 7 批（train 拆包）：本清单同步 +train（第 13 个模块包），并**去掉 hooks/**——
 #   原清单 12 模块 + hooks/ 恰好也是 13，数值未变但语义不对（把 load-chain 当模块包数）。

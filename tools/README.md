@@ -55,7 +55,7 @@
 | `check/public-api-baseline.json` | @public 符号集基线（12 包 + 版本快照；`--update-baseline` 发版时重建） | 被 public-api.mjs 消费 |
 | `check/resolve-section.sh` | 行号→markdown 段落归属解析器（防「行号冒充归属」——排障工具，非门禁） | 审查报告取证时 |
 | `check/vitest-setup.mjs` | 全局测试隔离（预置 SOFAGENT_DATA 到 tmp，防测试污染真实 HOME——被 5 个 engine/*/vitest.config.ts setupFiles 引用） | vitest 自动挂载 |
-| `check/check-cross-package-relative.mjs` | 越包相对引用守卫（相对 import/require 解析后越出**包根**即 FAIL；6 款原子 DSH 插件对 plugin-kit 的刻意相对引用 + 3 处清单 SSOT 对账测试读 `plugins.json` 共 9 条登记在 `cross-package-relative-exempt.json`；退出码 0 绿 / 1 违规 / 2 检查器失明） | CI（pre-push 步骤 2e）/ 改 dsh-plugins 后 / `--selftest` |
+| `check/check-cross-package-relative.mjs` | 越包相对引用守卫（相对 import/require 解析后越出**包根**即 FAIL；现存 6 条豁免 = 6 处清单 SSOT 对账测试读 `plugins.json`，登记在 `cross-package-relative-exempt.json`。v1.5.2 章九二轮起 6 款原子插件改用**包名**引用 `@sofagent/dsh-plugin-kit`，旧「相对引用 plugin-kit」形态已收口——`--selftest` 探针 B 显式断言其为 0，防回潮；退出码 0 绿 / 1 违规 / 2 检查器失明） | CI（pre-push 步骤 2e）/ 改 dsh-plugins 后 / `--selftest` |
 | `check/cross-package-relative-exempt.json` | 越包相对引用存量豁免台账（被 `check-cross-package-relative.mjs` 消费；集合相等判定——新增/漂移/陈旧均红） | 被 check-cross-package-relative.mjs 消费 |
 | `check/check-legacy-knowledge-path.mjs` | 知识库旧路径残留守卫（v1.2.1 前的旧知识库落点写法，**连写 + 分离**双形态；扫描面 = git tracked 文件；非注释面对账 `knowledge-legacy-path-exempt.json`，注释面可见不阻塞，历史冻结区豁免，本守卫自身两个文件的引用归「装置面」逐次可见打印；退出码 0 绿 / 1 违规 / 2 检查器失明） | CI（check-docs §18）/ 改 knowledge 路径解析后 / `--selftest` |
 | `check/knowledge-legacy-path-exempt.json` | 知识库旧路径存量豁免台账（被 `check-legacy-knowledge-path.mjs` 消费；逐文件逐计数相等判定） | 被 check-legacy-knowledge-path.mjs 消费 |
@@ -96,7 +96,7 @@
 | `release/bump-version.sh` | 版本号 bump（SSOT 联动 253+ 处） | 发版 SOP 阶段三 |
 | `release/pre-push-check.sh` | 推送前完整检查（CI 等价聚合 22+ 检查位：shellcheck / check-prepush-checklist / check-gate-inventory / check-version / check-unwired-exports / check-template-drift / check-open-boundary / check-cross-package-relative / check-docs / check-literals / check-anchors / check-review-system / check-silent-catch / dependency-direction / check-tool-health（v1.4.9 G-12 接入） / doc-discipline / check-forms / build / test-count / check-test-count / forge-smoke / check-cjk-var / check-guard-fail-loud / check-home-resolution-parity + CLI `--help` 矩阵 / install.sh 路径 / tag 校验 / 依赖图 / CHANGELOG 元信息等；`--quick` 跳过 test/build，`--minimal` 结构性快检；v1.4.0 由根目录移入） | git push 前 |
 | `release/heavy-gate-receipt.sh` | 长跑门禁「一次跑、多环节复用」凭据（`acceptance-test.sh` 单跑 9~15 分钟，而阶段三/四/五会反复跑同一内容 ⇒ 最高 5 倍耗时且零新信息）。子命令 `fingerprint` / `verify` / `record` / `show`；指纹为**工作区内容树对象 sha**（临时 index + `git add -A` + `write-tree`——**内容寻址**，故 `git commit` 不使其过期）。四道防线：内容指纹 · 原始日志须在位非空 · 日志须真有绿灯摘要（`log_looks_green`）· `record --pre <指纹>` 钉住长跑**开始前**的内容（中途改文件 ⇒ 拒落凭据 exit 3）。退出码 0 可复用 / 2 失明拒绝假绿 / 3 需重跑。凭据库 `.sofagent/heavy-gate-receipts.log`（已 gitignore ⇒ 自指回避） | 发版 SOP 阶段五脚本层 |
-| `release/publish-packages.sh` | npm 包批量发布（workspace 全量） | 发版 SOP 阶段十一 |
+| `release/publish-packages.sh` | npm 分批发布（依赖拓扑序）：`@sofagent/*` scope 包（含 `dsh-plugin-kit`——目录由根 `package.json` 的 workspaces 构建查表解析，不再按命名约定猜）+ 七款 DSH 插件（清单由 `plugins.json` 驱动、原子款在前 suite 在后）；裸名总包 `sofagent` 不在此脚本（SOP 步骤八单独发）；支持 `SOFAGENT_PUBLISH_TAG` dist-tag 分道（施工期 `--tag alpha`） | 发版 SOP 阶段十一 |
 | `release/sign-config.mjs` | config.yml HMAC-SHA256 签名颁发（读 `~/.sofagent-key`，DP-2） | 安装后 |
 | `release/gitdata-push.mjs` | Git Data API 推送备选通道（blobs→trees→commits→refs，https 断连绕行） | push 502 时 |
 

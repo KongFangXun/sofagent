@@ -103,11 +103,18 @@ packages:
 #   · independent 各有发布通道，版本**可**不同步（check-version.sh §12b 内部依赖精确校验对其豁免）
 #   · detached    完全脱离发行物，不随任何发行物发版（同上豁免）
 # 覆盖不变量（由 check-version.sh §9e 断言，防漏登记）：
-#   sync ∪ independent ∪ detached 必须覆盖**全部 workspace 项**（实为 26 项）
+#   sync ∪ independent ∪ detached 必须覆盖**全部 workspace 项**（实为 27 项）
 #     = 14 个 engine 包（13 个 build 序列包 + umbrella）
 #       + engine/hooks/sofagent-load-chain + 7 个 DSH 插件 + 4 个 OpenClaw 插件
-#   ⚠️ 枚举源必须是 package.json 的 workspaces 字段——`ls -d engine/*/` 只得 19 个目录，会漏 10 项。
-#   ⚠️ detached 段的 FORGE/ 是内部工具、**不属于** workspace，不计入这 26 项。
+#       + engine/dsh-plugins/plugin-kit（v1.5.2 章九二轮起转 npm 发布物 @sofagent/dsh-plugin-kit）
+#   ⚠️ 枚举源必须是 package.json 的 workspaces 字段——`ls -d engine/*/` 只得 19 个目录，会漏 10+ 项。
+#   ⚠️ detached 段的 FORGE/ 是内部工具、**不属于** workspace，不计入这 27 项。
+#   ⚠️ 口径待议（v1.5.2 章九二轮发现，如实标注不掩盖）：plugin-kit 当前由下方 independent 的
+#       `engine/dsh-plugins/*` glob 覆盖 ⇒ §9b **不对其做「版本 == SSOT」精确断言**。但按本段定义，
+#       independent 语义是「各有发布通道（SkillHub/ClawHub）」而 kit 是**同步发版的 npm 发布物**、
+#       不走 SkillHub——语义上更应入 sync。是否把 kit 移入 sync（并把 independent 的 glob 收窄为
+#       7 个插件）属版本策略改动，留待拍板；未拍板前此处只标注、不改结构（当前 kit 版本 == SSOT，
+#       无观测差异；风险面是未来漂移不被 §9b 拦下）。
 rhythm:
   # ── 严格同频：版本必须精确 == SSOT ──
   # 15 包 = check-version.sh §9b 原硬编码的 11 包（inject ontology eval core audit mcp

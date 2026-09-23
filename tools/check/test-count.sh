@@ -105,7 +105,7 @@ persist_flaky_evidence() {
   fi
 }
 
-# ── 收集有 test script 的 workspace 包（⚠️ 与 `npm test --workspaces --if-present` 并**非**全量语义一致：本脚本统计面 = engine/ 下单层 13 个模块包；根 package.json workspaces 共 26 个、含 test script 者 25 个——插件包（dsh/openclaw）与 load-chain 工具包不在本统计面。口径详见下方 T8/R3 说明）──
+# ── 收集有 test script 的 workspace 包（⚠️ 与 `npm test --workspaces --if-present` 并**非**全量语义一致：本脚本统计面 = engine/ 下单层 13 个模块包；根 package.json workspaces 共 27 个、含 test script 者 25 个——插件包（dsh/openclaw）、load-chain 与 dsh-plugin-kit 工具包不在本统计面。口径详见下方 T8/R3 说明）──
 # 注意：macOS /bin/bash 是 3.2，无 mapfile 内建，用 command substitution + herestring 兼容写法
 #
 # v1.4.5 (T8/R3) 口径说明——实测「13 包有 test script」与两处对账口径的关系
