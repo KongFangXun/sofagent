@@ -272,7 +272,7 @@ v1.3.9 起对所有 workspace 包的入口 export 做显式分级，CI 门禁（
 graph TB
     subgraph D1["一 · 建工作流（27）——把需求变成可执行的工作流"]
         A1["FDE 六引擎 ×6<br/>interview→classify→quantify<br/>→derive→distill→deploy"]
-        A2["梳理与路由 ×4（route_workflow / activate_workflow<br/>/ sofagent_compose / workflow_gaps）"]
+        A2["梳理与路由 ×4（route_workflow / activate_workflow<br/>/ compose / workflow_gaps）"]
         A3["workflow 编排与模板 ×7（workflow_create / workflow_update<br/>/ workflow_node_add / workflow_diff_preview / workflow_submit<br/>+ G1 模板导出/导入 workflow_export / workflow_import）"]
         A4["协作与交付 ×8（create_agent / list_agents / team_create /<br/>team_broadcast / notify_session / pr_submit / pr_review / pr_merge）"]
         A5["FDE 交付件 ×2（fde_compose / onboard_prompt）"]
@@ -923,12 +923,12 @@ River 的载体是 Agent 平台（OpenClaw / WorkBuddy 等）+ sofagent + Channe
 
 > 这一节回答一个具体问题：**企业员工在钉钉/飞书/企微里 @ 一个 tag，sofagent 怎么接住这个请求并跑完 Workflow？**
 
-大厂入口 Agent（River 载体）通过 MCP 协议调用 sofagent。`sofagent_compose` 这个 MCP tool **已存在**（v1.1.0 起），v1.1.8 补上 `--run` 真正执行 + `--enterprise-workflow` 接收 FDE workflow 参考后，链路完整：
+大厂入口 Agent（River 载体）通过 MCP 协议调用 sofagent。`compose` 这个 MCP tool **已存在**（v1.1.0 起，v1.5.2 前名 `sofagent_compose`），v1.1.8 补上 `--run` 真正执行 + `--enterprise-workflow` 接收 FDE workflow 参考后，链路完整：
 
 ```
 ① 用户在钉钉 @sofagent-tag "帮我实现用户注册模块"
      ↓ 钉钉 AI（LLM：Opus / GPT / 智谱 / DeepSeek 均可）识别意图
-② LLM 调用 MCP tool: sofagent_compose
+② LLM 调用 MCP tool: compose
      参数：
       task: "实现用户注册模块"
       enterprise_workflow: "fde梳理的认证流程.yaml"

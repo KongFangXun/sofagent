@@ -70,7 +70,7 @@
 
 | tool | roles | 说明 |
 |---|---|---|
-| `sofagent_compose` | fde | 编排模块——传入任务描述，返回 Sub Agent 编排方案（YAML）。 |
+| `compose` | fde | 编排模块——传入任务描述，返回 Sub Agent 编排方案（YAML）。v1.5.2 前名 `sofagent_compose`（别名兼容一版）。 |
 | `optimize_skill` | eval | 优化指定 Skill 文件，生成优化建议。 |
 | `activate_workflow` | agent, fde | 读取 FDE 交付物，注册企业 SubAgent。 |
 | `loop_debug` | eval | Onboard Agent 调试循环——传 task 触发 activate→run→judge→fix 循环；不传查记录。 |
@@ -200,6 +200,12 @@
 
 - 本清单由 `engine/mcp/src/tool-registry.ts` 的 `name:` + `description:` 字段生成，配 `tools/check/check-docs.sh` 门禁断言：**文档 tool 数 == registry 实数**，对不上即 CI 红。
 - 新增/修改工具：先改 tool-registry.ts（含描述），再跑 `node tools/gen/gen-api-tools.mjs`（生成器，随本文件一并交付）重生成第二节，门禁自动对账。
+
+### 工具命名策略（v1.5.2）
+
+- 现状：tool 名统一 **verb_noun 无前缀**（如 run_audit / evaluate / stats）。历史上唯一带 `sofagent_` 前缀的 `sofagent_compose` 已于 v1.5.2 更名 `compose`（旧名别名兼容一版，见 mcp-server.ts 分派层）。
+- 风险声明：MCP tool 名是宿主级命名空间。多 server 共存挂载（README「多平台挂载」场景）下，通用词 tool 名可能与其他 server 撞名——宿主侧去重改名（如 `run_audit_2`）后用户无法归因。
+- 整体前缀化（如全量加 `sofagent_` 前缀）属**破坏性变更**，不在常规迭代内做；评估与决策登记见 ROADMAP 既有章。
 
 ---
 

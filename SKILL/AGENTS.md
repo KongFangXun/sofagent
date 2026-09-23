@@ -170,7 +170,7 @@ FORGE engineer commit ──→ 自动调用 @sofagent-audit → 验证变更合
 | `fde_derive` | FDE 本体推导——五要素+访谈→ontology YAML 草稿（可导入 ontology_import） |
 | `fde_distill` | FDE 沉淀能力——三层交付物（文档/Skill/运行层）自动生成 |
 | `fde_deploy` | FDE 部署——交付物→workflow.yml 部署工件（提交/激活走人审闸门） |
-| `compose` | 编排模块——任务描述返回 Sub Agent 编排方案（YAML）。v1.5.2 前名 `sofagent_compose`（别名兼容一版） |
+| `compose` | 编排模块——任务描述返回 Sub Agent 编排方案（YAML）。v1.5.2 前名 sofagent_compose（别名兼容一版，见 API.md 工具命名策略） |
 | `activate_workflow` | 读取 FDE 交付物，注册企业 SubAgent |
 | `create_agent` | 一句话需求自动推导 Agent 配置（角色+域规则+think+knowledge） |
 | `onboard_prompt` | 上岗 prompt 生成器——岗位描述→职责/边界/工具面三段，产物可经 workflow_node_add 落节点 |
