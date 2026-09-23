@@ -45,13 +45,13 @@ afterEach(() => {
 });
 
 /** 造一份五问 state（缺省全部通过） */
-function stateOf(overrides: Partial<Record<ShouldRunQuestion, ShouldRunCheck>> = {}): ShouldRunState {
+function stateOf(answers: Partial<Record<ShouldRunQuestion, ShouldRunCheck>> = {}): ShouldRunState {
   return {
-    health: overrides.health ?? { ok: true },
-    humanGate: overrides['human-gate'] ?? { ok: true },
-    evidence: overrides.evidence ?? { ok: true },
-    focus: overrides.focus ?? { ok: true },
-    quota: overrides.quota ?? { ok: true },
+    health: answers.health ?? { ok: true },
+    humanGate: answers['human-gate'] ?? { ok: true },
+    evidence: answers.evidence ?? { ok: true },
+    focus: answers.focus ?? { ok: true },
+    quota: answers.quota ?? { ok: true },
   };
 }
 
@@ -92,8 +92,8 @@ describe('第三章 · 五问判定链（纯函数）', () => {
       ['focus', { focus: { ok: false, detail: '专注窗口被占' } }, '专注窗口被占'],
       ['quota', { quota: { ok: false, detail: '预算耗尽' } }, '预算耗尽'],
     ];
-    for (const [question, override, expectedDetail] of cases) {
-      const result = shouldRun(stateOf(override));
+    for (const [question, answer, expectedDetail] of cases) {
+      const result = shouldRun(stateOf(answer));
       expect(result.run).toBe(false);
       expect(result.suspended?.question).toBe(question);
       // 探针给的 detail / resumeHint 被如实透传
