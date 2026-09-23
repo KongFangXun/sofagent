@@ -183,6 +183,8 @@
   SOFAGENT_INTERNAL,
   CHECKPOINT_DIR,
   SHADOW_GIT_DIR,
+  // v1.5.2 A-13：项目级 shadow git 目录派生函数（isomorphic-git 快照链单源）
+  getProjectShadowGitDir,
   CONFIG_FILE,
   resolveHomeDir,
   resolveDataDir,

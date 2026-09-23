@@ -133,7 +133,23 @@ export const FORGE_RUNS_DIR = path.join(DATA_DIR, 'forge-runs');
 export const INTERNAL_DIR = path.join(SOFAGENT_HOME, 'internal');
 export const SOFAGENT_INTERNAL = INTERNAL_DIR;
 export const CHECKPOINT_DIR = path.join(INTERNAL_DIR, 'checkpoint');
+// v1.5.2 A-13 常量拆双——两个真实落点，非同一指称：
+//   · SHADOW_GIT_DIR（本行）= 全局 internal 级（install.sh 迁移目标——历史冻结快照）；
+//   · PROJECT_SHADOW_GIT_DIR（下方函数）= 项目级 <project>/.sofagent/.git-shadow（
+//     isomorphic-git.ts 快照链的活路径——按被追踪目录派生，不是固定全局路径）。
+// 拆双前 SHADOW_GIT_DIR 零生产消费（@public 登记在案）而实现走 11 处硬写——
+// 常量指向的不是实现用的路（迁移迁到死路的根因）。
 export const SHADOW_GIT_DIR = path.join(INTERNAL_DIR, '.git-shadow');
+
+/**
+ * 项目级 shadow git 目录（v1.5.2 A-13）：`<dir>/.sofagent/.git-shadow`——
+ * isomorphic-git.ts 快照链（createShadowRepo/commitSnapshot/hasShadowRepo 等）的
+ * 统一路径派生源。dir = 被追踪的项目根（process.cwd() 语义），非全局 HOME。
+ * 与 SHADOW_GIT_DIR（全局 internal 级，历史迁移目标）是两个真实落点。
+ */
+export function getProjectShadowGitDir(dir: string): string {
+  return path.join(dir, '.sofagent', '.git-shadow');
+}
 // CONFIG_FILE 保留为常量（基于 process.cwd()），向后兼容已有调用方。
 // 新代码一律用 getConfigFile(cwd)——它已实现向上遍历查找（monorepo 子目录
 // 场景下 git commit 时读对项目 config，原 TODO(v1.4.0) 已收口）。

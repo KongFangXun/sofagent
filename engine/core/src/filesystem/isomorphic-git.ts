@@ -14,6 +14,8 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync, readdirSync, statSy
 import { join, dirname, relative } from 'path';
 import { createHash } from 'crypto';
 import { REDACTION_PATTERNS } from '../shared/secret-patterns';
+// v1.5.2 A-13：快照链路径单源化——11 处硬写改走 getProjectShadowGitDir（data-paths.ts）
+import { getProjectShadowGitDir } from '../data-paths';
 
 /** 被追踪的文件信息 */
 interface TrackedFile {
@@ -95,7 +97,7 @@ const MAX_SNAPSHOTS = 50;
  * @returns shadow repo 的路径
  */
 export function createShadowRepo(dir: string, label?: string): string {
-  const shadowDir = join(dir, '.sofagent', '.git-shadow');
+  const shadowDir = getProjectShadowGitDir(dir);
   if (!existsSync(shadowDir)) {
     mkdirSync(shadowDir, { recursive: true, mode: 0o700 });
   }
@@ -318,7 +320,7 @@ function computeHash(content: string): string {
  */
 export function generateDiff(dir: string): IsoDiff[] {
   const diffs: IsoDiff[] = [];
-  const shadowDir = join(dir, '.sofagent', '.git-shadow');
+  const shadowDir = getProjectShadowGitDir(dir);
 
   // 如果没有 shadow repo，先创建一个
   if (!existsSync(shadowDir)) {
@@ -380,7 +382,7 @@ export function generateDiff(dir: string): IsoDiff[] {
  * @returns 新快照的 SHA
  */
 export function commitSnapshot(dir: string, label?: string): string {
-  const shadowDir = join(dir, '.sofagent', '.git-shadow');
+  const shadowDir = getProjectShadowGitDir(dir);
   if (!existsSync(shadowDir)) {
     createShadowRepo(dir, label);
   }
@@ -463,7 +465,7 @@ function isUnchangedSnapshot(snapshots: SnapshotEntry[], sha: string): boolean {
  * @returns 恢复的文件路径列表
  */
 export function revertToSnapshot(dir: string, sha: string): string[] {
-  const shadowDir = join(dir, '.sofagent', '.git-shadow');
+  const shadowDir = getProjectShadowGitDir(dir);
   if (!existsSync(shadowDir)) {
     throw new Error(`Shadow repo 不存在: ${shadowDir}`);
   }
@@ -547,7 +549,7 @@ export function revertToSnapshot(dir: string, sha: string): string[] {
  * @returns 快照条目数组
  */
 export function listSnapshots(dir: string): SnapshotEntry[] {
-  const shadowDir = join(dir, '.sofagent', '.git-shadow');
+  const shadowDir = getProjectShadowGitDir(dir);
   if (!existsSync(shadowDir)) return [];
   return loadSnapshots(shadowDir);
 }
@@ -573,7 +575,7 @@ export function findSnapshotByLabel(dir: string, label: string): SnapshotEntry |
  * 检查 shadow repo 是否存在
  */
 export function hasShadowRepo(dir: string): boolean {
-  return existsSync(join(dir, '.sofagent', '.git-shadow'));
+  return existsSync(getProjectShadowGitDir(dir));
 }
 
 /**
@@ -590,7 +592,7 @@ export function hasShadowRepo(dir: string): boolean {
  */
 export function generateFilesystemDiff(dir: string, filePaths: string[]): IsoDiff[] {
   const diffs: IsoDiff[] = [];
-  const shadowDir = join(dir, '.sofagent', '.git-shadow');
+  const shadowDir = getProjectShadowGitDir(dir);
 
   // 加载最近一次快照
   let latestMap: Map<string, string> | null = null;

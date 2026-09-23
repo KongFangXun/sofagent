@@ -374,7 +374,7 @@ detect_legacy_injections
 # v1.2.1：代码仓库与运行时数据物理分离
 #   安装根目录 SOFAGENT_HOME (默认 ~/.sofagent/)
 #     ├── data/       用户可见运行数据（审计/知识库/反思/任务日志/编排/IM 队列）
-#     ├── internal/   引擎内部状态（checkpoint / .git-shadow / watch.yml）
+#     ├── internal/   引擎内部状态（checkpoint / .git-shadow）
 #     ├── .sofagent/  项目级配置目录（config.yml 在 ${cwd}/.sofagent/config.yml）
 #     ├── bin/        CLI 入口脚本（symlink 到 PATH）
 #     ├── skill/      Skill 文件（从仓库复制，单一真相源）
@@ -409,14 +409,22 @@ chmod 700 "$SOFAGENT_HOME/keys" 2>/dev/null || true
 #   runDreamCycle 存在但无任何生产调用方，巡检从未真正运行。
 #   cron 调度按 watch.yml 的 inspectors: / dream-cycle: 段驱动（缺省启用），
 #   首装写入缺省段确保开箱即巡检；已存在的 watch.yml 不覆盖（用户语义优先）。
-# 落点：internal/watch.yml（引擎内部状态根，与 checkpoint/ 同级——
-#   daemon 在项目 cwd 下读 .sofagent/watch.yml，项目级配置优先于本全局缺省）。
-if [ ! -f "$INTERNAL_ROOT/watch.yml" ]; then
-  cat > "$INTERNAL_ROOT/watch.yml" << 'WATCHEOF'
-# sofagent 定时任务缺省配置（v1.4.5 首装生成——可按需修改）
-# 项目级配置（${项目根}/.sofagent/watch.yml）存在时优先于本文件
+# 落点（fresh-eyes A-13 对齐读取方）：$SOFAGENT_HOME/watch.yml（全局级）——
+#   读取方 watch-config.ts 三级 fallback 为 ${cwd}/.sofagent/watch.yml →
+#   ~/.sofagent/watch.yml → 代码默认值（无 internal 层）；此前写 internal/watch.yml
+#   全仓零读取方（写读落点断链）。模板须带顶层 watch: 键（loader 无 watch 段即
+#   返回 null——此前模板缺该键，挪路径也读不出）。「默认启用」语义 = 代码 fallback
+#   之外的多一层落盘缺省（inspectors/dream-cycle 段 enabled: true）。
+if [ ! -f "$SOFAGENT_HOME/watch.yml" ]; then
+  cat > "$SOFAGENT_HOME/watch.yml" << 'WATCHEOF'
+# sofagent 定时任务缺省配置（首装生成——可按需修改）
+# 读取优先级（watch-config.ts 三级 fallback）：项目级 ${项目根}/.sofagent/watch.yml
+# 优先于本全局文件；两者皆缺省时代码内置默认值兜底（默认同样启用巡检）
 
-# 分层巡检调度（v1.5.1）：L1 快速健康 / L2 深度巡检 / L3 联邦分析
+# 顶层 watch 键（loader 契约：无此键整文件被视作无效配置）
+watch: {}
+
+# 分层巡检调度：L1 快速健康 / L2 深度巡检 / L3 联邦分析
 # enabled: false 可整体关闭；layers 下可按层覆盖频率
 inspectors:
   enabled: true
@@ -425,15 +433,15 @@ inspectors:
     L2: "@weekly"
     L3: "@monthly"
 
-# Dream Cycle 知识蒸馏（v1.5.1）：think.md + audit history → concepts/atoms
+# Dream Cycle 知识蒸馏：think.md + audit history → concepts/atoms
 # 产物落 data/knowledge/；enabled: false 可关闭
 dream-cycle:
   enabled: true
   schedule: "@daily"
 WATCHEOF
-  ok "巡检缺省配置已写入 $INTERNAL_ROOT/watch.yml（inspectors + dream-cycle 默认启用）"
+  ok "巡检缺省配置已写入 $SOFAGENT_HOME/watch.yml（inspectors + dream-cycle 默认启用）"
 else
-  info "已存在 internal/watch.yml——保留用户配置（巡检配置未被覆盖）"
+  info "已存在 ~/.sofagent/watch.yml——保留用户配置（巡检配置未被覆盖）"
 fi
 
 # 写入版本标记
