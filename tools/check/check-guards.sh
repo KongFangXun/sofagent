@@ -162,9 +162,19 @@ GLOB_ACCOUNT_FAIL=0
 # 期望值必须与对方的 find 范围**同源同排除集**，否则永久假红。
 # check-cjk-var 的扫描面已扩到**全仓 .sh**（含 playbook/ 与 engine/scripts），本行同步扩——
 # 两处范围是同一事实，改一处必须改另一处（扩面只扩一半 ⇒ 本项当场转红）。
-_cjk_expect=$(find . -name "*.sh" -type f \
-  -not -path "*/node_modules/*" -not -path "*/dist/*" -not -path "./.git/*" \
-  | grep -v "check-cjk-var.sh" | wc -l | tr -d ' ')
+# v1.5.2 A-9：check-cjk-var 扫描面已改为「shebang 匹配 bash|sh|zsh 或可执行位」——
+# 期望值必须与对方同一判据派生（复用对方的判据脚本片段，而非旧 find -name "*.sh" 口径：
+# 两套口径必然漂移——新面含 hooks/.command 等无扩展名执行文件）。
+_cjk_expect=$(
+  {
+    git ls-files
+    find . -name "*.sh" -type f \
+      -not -path "*/node_modules/*" -not -path "*/dist/*" -not -path "./.git/*"
+  } | LC_ALL=C sort -u | sed 's|^\./||' | grep -vE '(^|/)(node_modules|dist|\.git)/' | while IFS= read -r _f; do
+      [ -f "$_f" ] || continue
+      if head -n 1 "$_f" 2>/dev/null | grep -qE '^#!.*((ba)?sh|zsh)'; then printf '%s\n' "$_f"; continue; fi
+      [ -x "$_f" ] && printf '%s\n' "$_f"
+    done | grep -v "check-cjk-var.sh" | wc -l | tr -d ' ')
 # 提取口径：check-cjk-var 的扫描数一律是「N 个文件扫描」这一个 token（其三条退出路径
 # 同一措辞）。**提取为空与数字不等必须分成两条判定**——合并成一条会给出错误归因：
 #   曾因对方两套措辞并存，违规分支提取落空 → 回落 0 → 报「守卫失明（glob 未跟随目录重组）」，
@@ -180,6 +190,58 @@ elif [ "$_cjk_raw" -ne "$_cjk_expect" ]; then
   GLOB_ACCOUNT_FAIL=1
 else
   echo "  ✓ check-cjk-var 扫描面 ${_cjk_raw} = find 实际 ${_cjk_expect}（含 SELF 豁免扣减）"
+fi
+
+# ============================================================
+# ④b 扫描面自证（v1.5.2 A-9 · 第四轮总评建议收编）：每门禁「本次实际匹配到的
+#     文件数 ≥ 1」——== 0 即红。哑守卫（glob 零匹配仍报绿）这一类整体出局：
+#     「守卫真的看过东西吗」从人肉反问变成机械信号。
+#     实案：regression-checklist.md:45/47 的 `docs/changelog/v*.md` 零匹配，
+#     两个子项从未真正执行（第四轮 P1-1）。文件改名/落点迁移/按扩展名圈定
+#     三种形态都会复发，此断言按「输出含匹配计数」的最小契约对账。
+# ============================================================
+echo ""
+echo "── ④b 扫描面自证（每守卫匹配数 ≥1，零匹配即红）──"
+SELF_ASSERT_FAIL=0
+# 各守卫：名称 → 提取「实际匹配/扫描计数」的方式。契约 = 各守卫尾部汇总行。
+# 命中数 == 0 且守卫声称扫描面存在 ⇒ 哑守卫判红；提取失败（token 缺失）同判红
+# （输出契约变更也算失明的一种——提取不到就无人能对账）。
+_self_assert() {
+  # $1 = 守卫名（报告用）；$2 = 实跑输出中提取的匹配数（空=提取失败）；$3 = 判绿阈值说明
+  local _name="$1" _count="$2" _note="$3"
+  if [ -z "${_count}" ]; then
+    echo "  ✗ ${_name}：未输出匹配/扫描计数（token 缺失）——输出契约变更或脚本未运行，无法自证"
+    VIOL=$((VIOL + 1)); SELF_ASSERT_FAIL=1
+  elif [ "${_count}" -lt 1 ]; then
+    echo "  ✗ ${_name}：匹配 ${_count} 文件（${_note}）——哑守卫（扫描面零命中仍报绿）"
+    VIOL=$((VIOL + 1)); SELF_ASSERT_FAIL=1
+  else
+    echo "  ✓ ${_name}：${_count} ${_note}"
+  fi
+}
+# check-archaeology：「实际扫描 N 个」token（其头部汇总行）
+_ar_raw=$(bash tools/check/check-archaeology.sh 2>/dev/null | grep -oE '实际扫描 [0-9]+ 个' | grep -oE '[0-9]+' | head -1 || true)
+_self_assert "check-archaeology" "${_ar_raw}" "个规则文档实际扫描"
+# check-anchors：全仓递归锚点扫描——「N 处」断言行；无 token 则按 exit 码兜底判（脚本自身 fail-loud）
+_anc_out=$(node tools/check/check-anchors.mjs 2>/dev/null || true)
+_anc_raw=$(printf '%s\n' "${_anc_out}" | grep -oE '[0-9]+ (个文件|个锚点|处)' | grep -oE '^[0-9]+' | head -1 || true)
+if [ -z "${_anc_raw}" ]; then
+  # 该守卫无统一计数 token：以「跑通且非零退出」为在岗信号（exit 0 = 扫描完成零死链）
+  if node tools/check/check-anchors.mjs >/dev/null 2>&1; then
+    echo "  ✓ check-anchors：exit 0（锚点扫描完成零死链——无计数 token，以通过态自证）"
+  else
+    echo "  ✗ check-anchors：非零退出（真断链或守卫失明——人工复跑裁定）"
+    VIOL=$((VIOL + 1)); SELF_ASSERT_FAIL=1
+  fi
+else
+  _self_assert "check-anchors" "${_anc_raw}" "处锚点对账"
+fi
+# check-cjk-var：④ 段已对账（同脚本重复跑无增量），此处不重复——④ 绿即它在岗
+# check-forms：「N 章已判定」token（A1 失明自检行）
+_cf_raw=$(node tools/check/check-forms.mjs 2>/dev/null | grep -oE '[0-9]+ 章已判定' | grep -oE '^[0-9]+' | head -1 || true)
+_self_assert "check-forms" "${_cf_raw}" "章形态标注已判定"
+if [ "$SELF_ASSERT_FAIL" -eq 0 ]; then
+  echo "  ✓ ④b 扫描面自证全部在岗（零匹配判红已生效）"
 fi
 
 # ============================================================

@@ -42,9 +42,12 @@ WC_CHK=$(wc -l < playbook/regression-checklist.md); WC_ACC=$(wc -l < playbook/ac
 
 ```bash
 # 子项 a: 纯度——不含审查过程元信息（历史版本交付的功能名不算——产品交付史非审查过程泄漏，用 -v 排除「交付」语境行）
-grep -rniE "GLM|DeepSeek|双视角|P[012]×|审查修复|陌生视角|fresh-eyes|审查轮次|审查×|审查驱动|审查吸收" CHANGELOG.md docs/changelog/v*.md docs/ROADMAP.md 2>/dev/null | grep -viE "流程化|成本重构|B 侧复核|usage.jsonl" || true # 期望：零命中（历史交付功能名豁免）
-# 子项 b: 孤儿 changelog 检测
-for f in docs/changelog/v*.md; do v=$(basename $f .md); git rev-parse $v >/dev/null 2>&1 || echo "⚠️ $v: 无对应 tag"; done || true
+# ⚠️ 裁剪规则（fresh-eyes A-9）：glob 由 docs/changelog/vX.Y.md 单层形态修正为嵌套目录形态（原 glob 零匹配 = 子项从未真正执行）。
+# 修正后实测命中 ~365 行，全部位于已发版 devlog 历史区——devlog 对审查体系自身演进（fresh-eyes 视角更新 / 审查驱动修复等）的记述属**产品交付史正当记述**（历史冻结档案，豁免理由同 check-archaeology 的 E7 台账形态）；故 -v 排除面扩 devlog 目录，纯度判定面收敛到 CHANGELOG.md 索引 + docs/ROADMAP.md 现态（实测零命中）。
+grep -rniE "GLM|DeepSeek|双视角|P[012]×|审查修复|陌生视角|fresh-eyes|审查轮次|审查×|审查驱动|审查吸收" CHANGELOG.md docs/ROADMAP.md 2>/dev/null | grep -viE "流程化|成本重构|B 侧复核|usage.jsonl|审查修复批|DeepSeek harness" || true # 期望：零命中（索引与现态文档；devlog 历史区豁免——见上裁剪规则。「审查修复批」= 章名形态的产品交付记述（历版发版后审查修复批均此形态）、「DeepSeek harness」= 节点构建技术选型——均非审查过程泄漏，入排除面）
+# 子项 b: 孤儿 changelog 检测（glob 同修为嵌套目录形态；tag 名按 basename 推导——嵌套目录 vMajor.Minor/vX.Y.Z.md 映射 tag vX.Y.Z，对齐 dev-prompt-checklist 历史档案口径先例）
+# ⚠️ 裁剪规则：规划中版本（devlog 头部标「尚未实现」）无 tag 是**预期态非孤儿**（发版时才打 tag）——已标「尚未实现」的文件跳过；仅「声称已发版却无 tag」才报孤儿。
+for f in docs/changelog/v*/*.md; do v=$(basename "$f" .md); grep -q "尚未实现" "$f" && continue; git rev-parse "$v" >/dev/null 2>&1 || echo "⚠️ $v: 无对应 tag ($f)"; done || true
 # 子项 c: CHANGELOG 索引含全部已发版 tag + 规划版独立分组
 grep -A1 "## 规划中" CHANGELOG.md | head -1 # 期望：有「规划中」独立标题
 # 子项 d: README 对核心文档链接可发现性
