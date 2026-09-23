@@ -16,7 +16,7 @@
 //   硬塞会让裁决事件伪装成一次代码审计运行，污染审计运行统计（stats/contribution）。
 //   G10 读取审计走的正是 decision-log（决策日志）而非 history——本章与它对齐。
 //
-// 裁决事件契约可导出（验收 ④）：EGRESS_DECISION_CONTRACT_VERSION + 结构化
+// 裁决事件契约可导出（验收 ④）：EGRESS_DECISION_CONTRACT_SCHEMA_VERSION + 结构化
 //   JSON schema（exportEgressDecisionContract）+ 稳定事件构造器
 //   （buildEgressDecisionEvent）——schema 稳定、可导出，判定底座（v1.6.0+）与
 //   AI 节点消费方（v1.5.4 第五章）就位后可直接消费，无需再改本文件。
@@ -29,8 +29,13 @@
 import { emitDecision, type DecisionLogEntry } from './decision-log';
 import type { EgressDecision, EgressRequest } from '@sofagent/rules';
 
-/** 裁决事件契约版本（schema 稳定性锚点——消费方据此判兼容） */
-export const EGRESS_DECISION_CONTRACT_VERSION = 'v1';
+/**
+ * 裁决事件**数据结构 schema 版本**（稳定性锚点——消费方据此判兼容）。
+ * ⚠️ 命名约定：后缀 `SCHEMA_VERSION` 表明它是「数据结构 schema 版本」而非产品
+ * 版本（与 `check-version.sh` [1/14] 段的既有豁免语义一致，同 checkpoint
+ * `SCHEMA_VERSION` 先例）——产品版本由 package.json SSOT 持有，本常量不随其变化。
+ */
+export const EGRESS_DECISION_CONTRACT_SCHEMA_VERSION = 'v1';
 
 /** 契约标题（导出物标识） */
 export const EGRESS_DECISION_CONTRACT_TITLE = 'sofagent egress decision event';
@@ -112,7 +117,7 @@ export function buildEgressDecisionEvent(
       : `egress-${input.subject}-${now.getTime()}`;
 
   const event: EgressDecisionEvent = {
-    schemaVersion: EGRESS_DECISION_CONTRACT_VERSION,
+    schemaVersion: EGRESS_DECISION_CONTRACT_SCHEMA_VERSION,
     ts: now.toISOString(),
     subject: input.subject,
     host,
@@ -140,7 +145,7 @@ export function buildEgressDecisionEvent(
  */
 export function exportEgressDecisionContract(): EgressDecisionContract {
   return {
-    schemaVersion: EGRESS_DECISION_CONTRACT_VERSION,
+    schemaVersion: EGRESS_DECISION_CONTRACT_SCHEMA_VERSION,
     title: EGRESS_DECISION_CONTRACT_TITLE,
     type: 'object',
     required: ['schemaVersion', 'ts', 'subject', 'host', 'verdict', 'reason', 'message', 'agentId', 'sessionId'],

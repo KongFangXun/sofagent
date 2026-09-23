@@ -19,7 +19,7 @@ import {
   buildEgressDecisionEvent,
   exportEgressDecisionContract,
   recordEgressDecision,
-  EGRESS_DECISION_CONTRACT_VERSION,
+  EGRESS_DECISION_CONTRACT_SCHEMA_VERSION,
 } from '../egress-audit';
 import { checkDecisionChainDetailed } from '../decision-chain';
 import type { DecisionLogEntry } from '../decision-schema';
@@ -144,7 +144,7 @@ describe('recordEgressDecision（出站裁决进审计链）', () => {
 describe('裁决事件契约可导出（schema 稳定 · 消费方无需读源码）', () => {
   it('exportEgressDecisionContract 返回稳定 schema（版本 + required + 枚举）', () => {
     const contract = exportEgressDecisionContract();
-    expect(contract.schemaVersion).toBe(EGRESS_DECISION_CONTRACT_VERSION);
+    expect(contract.schemaVersion).toBe(EGRESS_DECISION_CONTRACT_SCHEMA_VERSION);
     expect(contract.type).toBe('object');
     expect(contract.required).toContain('host');
     expect(contract.required).toContain('verdict');
