@@ -17,7 +17,7 @@
 //   `inspectors/registry.ts` / `cli.ts` / `cron.ts` 零引用 ⇒ **默认配置下不采集、不落盘**，
 //   daemon-health.json 里的 `fatigue` 字段实际不会由本模块写入（除非外部调用方自行接线）。
 //   v1.3.6 发版日志声称的「疲劳度评分 → 写 daemon-health.json（@hourly 采集）」**当前不成立**
-//   （发版史不改；缺口已如实披露于 docs/LIMITATIONS.md）。
+//   （发版史不改；缺口已如实披露于 docs/LIMITATIONS.md §七「历史遗留与迁移说明」）。
 //   接线前提（勿只写实现不写注册点）：需要一个真实的信号源——三信号分别来自
 //   tool-gate 调用结果（recordToolCall）/ 上下文窗口占用（setWindowOccupancy）/
 //   Agent 输出流（recordOutput），daemon 进程并不跑 Agent 主循环 ⇒ 应先由

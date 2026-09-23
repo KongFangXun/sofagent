@@ -605,6 +605,8 @@ A16 的 `evidenceMode: git-diff` 依赖 git diff 获取变更文件列表；daem
 ## 七、历史遗留与迁移说明
 
 > 定时触发已解决（见「✅ 已解决的历史问题」区）；Windows 平台差异见 §二「🪟 Windows 支持是实验性的」。
+>
+> ⚠️ **疲劳度检测模块未接线（v1.5.1 如实标注）**：v1.3.6 发版日志声称「疲劳度评分 → 写 daemon-health.json（@hourly 采集）」当前不成立——`engine/daemon/src/fatigue.ts` 的 `FatigueTracker` / `computeFatigueScore` / `writeFatigueReport` 仅被 daemon barrel 再导出 + 测试引用，`inspectors/registry.ts` / `cli.ts` / `cron.ts` 零引用，默认配置下不采集、不落盘，daemon-health.json 的 `fatigue` 字段不会由本模块写入。接线前提是真实信号源（工具调用结果 / 窗口占用 / Agent 输出流）由 orchestrator 侧投递后，再在调度表 + `inspectors/registry.ts` 落名。
 
 ### Ontology 合并准确性依赖 frontmatter 质量
 
