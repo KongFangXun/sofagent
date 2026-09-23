@@ -1336,6 +1336,24 @@ else
   echo "全部通过"
 fi
 
+# ── 23. 判据 schema 唯一 SSOT 断言（FDE 方法论文件不得定义判据格式）──────────
+# 规则：FDE/ 方法论目录是「书」——可以引用判据、举例判据，但不得出现判据的
+#   **格式定义**（schema 级字段：match/notMatch/examples 三者同现即视为定义行为）。
+#   判据格式唯一 SSOT 在 engine/audit rules schema + 正负样例 schema（v1.5.3 章二）。
+#   防的是：方法论被复制出去独立传播后，判据格式长出第二份定义 ⇒ 两仓判据不可比。
+# 判据（故意保守）：一行内同时含 match 与 notMatch 与 examples 三个字段名——
+#   引用/举例不会三字段同现，定义才会。命中即红。
+echo "── 23. 判据 schema 唯一 SSOT（FDE/ 不得定义判据格式）──"
+CRITERIA_DEF_HITS=$(grep -rn "match.*notMatch.*examples\|examples.*match.*notMatch" FDE/ 2>/dev/null | wc -l | tr -d ' ')
+if [ "${CRITERIA_DEF_HITS}" -gt 0 ]; then
+  echo "  ✗ FDE/ 内出现判据格式定义（match+notMatch+examples 三字段同现）${CRITERIA_DEF_HITS} 处——判据 schema 唯一 SSOT 在 engine/audit，方法论只可引用"
+  grep -rn "match.*notMatch.*examples\|examples.*match.*notMatch" FDE/ 2>/dev/null | head -5
+  ERRORS=$((ERRORS + 1))
+else
+  echo "  ✓ FDE/ 零判据格式定义（方法论与判据 schema 分离，SSOT 唯一）"
+fi
+ASSERTS=$((ASSERTS + 1))
+
 # ── 覆盖度行（v1.4.9 G-2② · 范式见 tools/check/lib/coverage-line.sh）──
 # covered 口径：仓内 tracked `.md` 文件数（本脚本的文档扫描面；不含 node_modules——非 tracked）。
 # 🔴 skipped > 0 不阻断退出码（合法跳过由发版 SOP「SKIP 数逐条裁决」步骤裁定），但必须打印。
