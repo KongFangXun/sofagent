@@ -109,7 +109,7 @@ U 盘包含：Node.js 便携版 + sofagent 约束层 + knowledge 加密落盘（
 
 1. **运行激活**：在交付目录执行 `sofagent-orchestrator activate`（`--dry-run` 只预览、`--node-filter <id,...>` 限定节点），确认：
    - ontology 被读取并注册为 SubAgent（`list_agents` 可查）
-   - workflow.yml 被 compose 成企业工作流（`sofagent_compose` 可查）
+   - workflow.yml 被 compose 成企业工作流（`compose` 可查）
    - skills/ 被挂载到对应 Agent
 2. **验证自动运转**：`run-enterprise` 跑通——每步都有审计日志产出；工具调用经运行时审计（tool wrapper）拦截 + 留证（`data/audit/runtime/<repo-hash>/runtime-audit.jsonl`）
 3. **HITL 交接**：确认危险操作前有人工批准钩子（`hitl_resolve`），并**具名**中止负责人

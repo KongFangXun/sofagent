@@ -16,7 +16,7 @@ export function listCapabilities(): ToolResult {
       { name: 'run_audit', description: '对 git diff 跑全量审计规则（24 条）' },
       { name: 'get_think', description: '读取 think.md 最近 N 条反思条目' },
       { name: 'write_think', description: '向 think.md 追加反思记录' },
-      { name: 'sofagent_compose', description: '编排模块——产出 Sub Agent 编排方案 YAML' },
+      { name: 'compose', description: '编排模块——产出 Sub Agent 编排方案 YAML' },
       { name: 'audit_file', description: '单文件变更即时审计（A3/A7/A11/A18 + 可选 A14）' },
       { name: 'search_knowledge', description: '跨 entities/concepts 模糊搜索' },
       { name: 'read_entity', description: '读单个 entity 页' },

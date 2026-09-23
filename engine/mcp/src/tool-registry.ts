@@ -284,7 +284,9 @@ export const TOOLS: ToolDef[] = [
     handler: (args) => writeThink(args),
   },
   {
-    name: 'sofagent_compose',
+    // v1.5.2 A-4：由 'sofagent_compose' 统一为 'compose'（105 个 tool 中唯一带前缀项的命名收口）。
+    // 旧名经 mcp-server.ts tools/call 分派层别名路由兼容一版。
+    name: 'compose',
     roles: ['fde'],
     description: '编排模块——传入任务描述，返回 Sub Agent 编排方案（YAML）。',
     inputSchema: {

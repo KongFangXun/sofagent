@@ -29,7 +29,7 @@ function dispatchEnforces(handlerSrc: string, field: string): boolean {
 const EXEMPT: Array<{ tool: string; field: string; reason: string }> = [
   // (1) 实现内强制——校验在 tool 实现体内，handler 只转发
   { tool: 'write_think', field: 'lesson', reason: '实现内强制：writeThink 校验 typeof args.lesson !== string || !args.lesson 返回 { error }' },
-  { tool: 'sofagent_compose', field: 'task', reason: '实现内强制：compose 校验 typeof args.task !== string || !args.task 返回错误' },
+  { tool: 'compose', field: 'task', reason: '实现内强制：compose 校验 typeof args.task !== string || !args.task 返回错误（v1.5.2 A-4 由 sofagent_compose 更名）' },
   { tool: 'audit_file', field: 'path', reason: '实现内强制：auditFile 校验 !path || typeof path !== string 返回 { error }' },
   { tool: 'audit_file', field: 'change_type', reason: '实现内强制：auditFile 校验 change_type ∈ create|modify|delete' },
   { tool: 'search_knowledge', field: 'query', reason: '实现内强制：searchKnowledge 校验 query 缺失返回 { error }' },

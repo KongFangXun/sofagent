@@ -188,7 +188,7 @@ solves:
 | 知识库（7） | `search_knowledge` `list_entities` `stats` |
 | 本体数据（7） | `create_entity` `validate_ontology` `ontology_import` |
 | 评估优化（8） | `evaluate_output` `run_ab_test` `promote_ab`（强制人审） |
-| FDE 编排（11） | `fde_interview`（访谈结构化）`fde_classify`（三问判定）`fde_quantify`（量化+ROI）`fde_derive`（本体推导）`fde_distill`（三层沉淀）`fde_deploy`（组装部署）`fde_compose` `sofagent_compose` `activate_workflow` `create_agent` |
+| FDE 编排（11） | `fde_interview`（访谈结构化）`fde_classify`（三问判定）`fde_quantify`（量化+ROI）`fde_derive`（本体推导）`fde_distill`（三层沉淀）`fde_deploy`（组装部署）`fde_compose` `compose` `activate_workflow` `create_agent` |
 | Workflow/Agent（12） | `workflow_submit` `workflow_create` `workflow_node_add`（定时触发）`workflow_diff_preview` `workflow_gaps`（缺口查询）`route_workflow` `agent_identity` |
 | 能力公地（6） | `commons_publish` `commons_search` `commons_invoke` |
 | PR 协同（3） | `pr_submit` `pr_review` `pr_merge`（合并强制 merge_criteria，未过走 HITL） |

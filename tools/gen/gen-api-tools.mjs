@@ -48,7 +48,7 @@ const NAME_TO_MODULE = {
   playwright_screenshot: 'audit', playwright_assert: 'audit',
   // 工作流编排
   activate_workflow: 'workflow', workflow_submit: 'workflow', route_workflow: 'workflow',
-  sofagent_compose: 'workflow', fde_compose: 'workflow', loop_debug: 'workflow',
+  compose: 'workflow', fde_compose: 'workflow', loop_debug: 'workflow',
   refine: 'workflow', optimize_skill: 'workflow',
   // Agent 组织与协作
   create_agent: 'org', list_agents: 'org', agent_identity: 'org',

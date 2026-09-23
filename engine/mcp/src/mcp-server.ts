@@ -151,9 +151,17 @@ class McpServer {
 
   // ── tools/call ──
 
+  // v1.5.2 A-4：旧名别名路由表——'sofagent_compose' 已更名 'compose'（105 个 tool 中
+  // 唯一带前缀项的命名收口）。别名兼容一版（下个大版本移除）；结果 text 追加更名提示。
+  private static readonly ALIAS_RENAMED_TOOLS: Record<string, string> = { sofagent_compose: 'compose' };
+
   private async handleToolsCall(id: number | string | null, params?: Record<string, unknown>): Promise<void> {
     if (typeof params?.name !== 'string') { this.sendError(id, -32602, 'Invalid params: missing or non-string "name"'); return; }
-    const toolName = params.name;
+    // 别名归一在守卫/角色/查表之前——旧名调用按规名语义走完整判定链
+    const requestedName = params.name;
+    const canonicalName = McpServer.ALIAS_RENAMED_TOOLS[requestedName] ?? requestedName;
+    const renamed = canonicalName !== requestedName;
+    const toolName = canonicalName;
     const args = (params.arguments ?? {}) as Record<string, unknown>;
 
     try {
@@ -184,15 +192,14 @@ class McpServer {
       }
 
       // v1.4.8 深模块条目 5：查表分发——registry handler 为唯一分发源（原 switch 已退场）
-      // 同步 handler 不经 await（保持原 switch 的同步时序——smoke/mcp-server 测试断言响应即时落盘）
+      // 同步/Promise 统一 await 归一（Promise 形态保持原时序——smoke 测试断言响应即时落盘）
       if (staticTool?.handler) {
         const r = staticTool.handler(args, { pushAuditWebhook: this.pushAuditWebhook.bind(this) });
-        if (r instanceof Promise) {
-          const rr = await r;
-          this.sendTool(id, rr, 'error' in rr ? undefined : rr.isError);
-        } else {
-          this.sendTool(id, r, 'error' in r ? undefined : r.isError);
+        const outcome = r instanceof Promise ? await r : r;
+        if (renamed && !isToolError(outcome)) {
+          outcome.text = `${outcome.text}\nℹ️ ${requestedName} 已更名 ${canonicalName}（别名兼容一版）`;
         }
+        this.sendTool(id, outcome, 'error' in outcome ? undefined : outcome.isError);
         return;
       }
       this.sendError(id, -32602, `Unknown tool: ${toolName}`);
