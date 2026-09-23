@@ -10,9 +10,14 @@
 // 扫描面：活文档面 = 根 README.md / README.en.md + docs/ 下全部 .md
 //   （排除 docs/changelog/ 历史区——历史记述按纪律原样保留）。
 //
-// 判定形态（只抓「值声称」，不误伤命令提示）：
-//   一行同时含 npm view 与 dist-tags，且能解析出 latest 值 ⇒ 一条声称。
-//   命令提示（如 npm view X version / 含 dist-tags 但无值）不算值的声称。
+// 判定形态（三分，只抓「值声称」，不误伤命令提示）：
+//   一行含 dist-tags 时——
+//     ① 且解析出 latest 值 + 包名 ⇒ 一条值声称（对账）
+//        pkg 解析优先级：`npm view <pkg> dist-tags` 中的 <pkg>；无 npm view 时
+//        回退到行内被引用包名（@sofagent/<name> 或裸名 sofagent，带词边界）——
+//        覆盖「dist-tags 当前为 …」无 npm view 形态。
+//     ② 无 latest 值 ⇒ 命令提示 / 策略叙述，非值声称（可见跳过）
+//     ③ 有 latest 值但解析不出包名 ⇒ 盲区（不可判定 ⇒ main 判 exit 2，拒绝假绿）
 //
 // 真值来源：npm view <pkg> dist-tags --prefer-online（≥3 轮重试；超时走
 //   Node child_process 的 timeout 选项——macOS 无 timeout 命令，故不用它）。
@@ -20,7 +25,7 @@
 // 三态退出码（对齐 check 系家族）：
 //   0 = 全部通过（可含可见 SKIP：registry 不可达）
 //   1 = 文档声称值与 registry 真值失配
-//   2 = 检查器失明 / 豁免台账非法（锚不唯一 / 锚失效 / 扫描面塌缩）——拒绝假绿
+//   2 = 检查器失明 / 豁免台账非法 / 存在无法判定包名的值声称——拒绝假绿
 //
 // 已知债豁免：tools/check/npm-claims-exempt.json（形态照 archaeology-exempt.json
 //   的 exemptAnchors：{file, anchor, reason}；锚须文件内唯一且当前仍是命中行）。
@@ -56,18 +61,24 @@ const SELFTEST = argv.includes('--selftest');
 const LIST_EXEMPT = argv.includes('--list-exempt');
 
 // ── 检测核心 ──────────────────────────────────────────────
-// 只认「值声称」：行含 npm view 且含 dist-tags；pkg 取 npm view 后首个非空白 token，
-// 值取 latest: '<ver>' / latest: "<ver>"。二者缺一 → 归为「待解析」（可见跳过）。
+// 行含 dist-tags 才进入判定；三分见文件头「判定形态」。
 const PKG_RE = /npm view\s+([^\s`'"|]+)\s+dist-tags/;
+const PKG_CITED_RE = /(@sofagent\/[a-z0-9][a-z0-9-]*|(?<![\w/@-])sofagent(?![-\w]))/;
 const LATEST_RE = /latest:\s*['"]([^'"]+)['"]/;
 
 function detectClaim(line) {
-  if (!line.includes('npm view') || !line.includes('dist-tags')) return null;
-  const mp = line.match(PKG_RE);
+  if (!line.includes('dist-tags')) return null;
   const ml = line.match(LATEST_RE);
+  if (!ml) {
+    const mp = line.match(PKG_RE);
+    return { pkg: mp ? mp[1] : null, claimed: null, pkgFrom: mp ? 'npm-view' : null };
+  }
+  const mp = line.match(PKG_RE);
+  const mc = mp ? null : line.match(PKG_CITED_RE);
   return {
-    pkg: mp ? mp[1] : null,
-    claimed: ml ? ml[1] : null,
+    pkg: mp ? mp[1] : (mc ? mc[1] : null),
+    claimed: ml[1],
+    pkgFrom: mp ? 'npm-view' : (mc ? 'cited' : null),
   };
 }
 
@@ -106,20 +117,25 @@ function collectLiveDocs() {
 function scanClaims(files) {
   const claims = [];
   const unparsed = [];
+  const blind = [];
   for (const f of files) {
     const rel = path.relative(ROOT, f);
     const lines = fs.readFileSync(f, 'utf8').split('\n');
     lines.forEach((l, i) => {
       const d = detectClaim(l);
       if (!d) return;
-      if (!d.pkg || !d.claimed) {
+      if (!d.claimed) {
         unparsed.push({ file: rel, line: i + 1 });
         return;
       }
-      claims.push({ file: rel, line: i + 1, pkg: d.pkg, claimed: d.claimed });
+      if (!d.pkg) {
+        blind.push({ file: rel, line: i + 1, claimed: d.claimed });
+        return;
+      }
+      claims.push({ file: rel, line: i + 1, pkg: d.pkg, claimed: d.claimed, pkgFrom: d.pkgFrom });
     });
   }
-  return { claims, unparsed };
+  return { claims, unparsed, blind };
 }
 
 // ── 豁免台账（形态照 archaeology-exempt.json 的 exemptAnchors）──
@@ -212,11 +228,17 @@ function runSelftest() {
   const s4 = detectClaim('纯文本行，无 npm view');
   chk('负例：无关行不误判', s4 === null);
   chk('存活性：检测器自检样本命中', detectorSelfCheck());
+  const s5 = detectClaim("当前 `sofagent` 的 dist-tags 为 `{ latest: '1.6.0' }`");
+  chk('正例②：无 npm view 的「dist-tags 当前为」形态（回退行内被引用包名）', !!s5 && s5.pkg === 'sofagent' && s5.claimed === '1.6.0');
+  const s6 = detectClaim("`npm view @sofagent/audit dist-tags` → `{ latest: '1.5.1' }`");
+  chk('正例③：英文「→」形态同样命中', !!s6 && s6.pkg === '@sofagent/audit' && s6.claimed === '1.5.1');
+  const s7 = detectClaim("当前 dist-tags 为 `{ latest: '1.6.0' }`");
+  chk('盲例：有值无包名 ⇒ 归盲区（pkg null / claimed 有）', !!s7 && s7.pkg === null && s7.claimed === '1.6.0');
   if (bad > 0) {
     console.error(`❌ 自检失败 ${bad} 项`);
     process.exit(1);
   }
-  console.log('✅ 自检通过（5/5）');
+  console.log('✅ 自检通过（8/8）');
   process.exit(0);
 }
 
@@ -240,11 +262,18 @@ function main() {
     process.exit(2);
   }
 
-  const { claims, unparsed } = scanClaims(files);
+  const { claims, unparsed, blind } = scanClaims(files);
   const { entries: exempt, errors: exemptErrors } = loadExempt();
   if (exemptErrors.length > 0) {
     console.error('❌ 豁免台账校验失败（锚不唯一 / 锚失效 / 文件不可读 / JSON 解析错误）：');
     for (const e of exemptErrors) console.error(`    · ${e}`);
+    console.log(`[check:coverage] script=${SCRIPT_NAME} asserts=0 covered=${files.length} skipped=0`);
+    process.exit(2);
+  }
+
+  if (blind.length > 0) {
+    console.error('❌ 无法判定包名的值声称（dist-tags 有值但行内无包名）——请显式写 `npm view <pkg> dist-tags`：');
+    for (const b of blind) console.error(`    · ${b.file}:${b.line} 声称 latest=${b.claimed}`);
     console.log(`[check:coverage] script=${SCRIPT_NAME} asserts=0 covered=${files.length} skipped=0`);
     process.exit(2);
   }
@@ -257,13 +286,14 @@ function main() {
   console.log(`  扫描面：${files.length} 个 .md（根 README 双语 + docs/ 非 changelog 区）`);
   console.log(`  引擎：检测器自检 ${detectorSelfCheck() ? '✓ 命中样本' : '✗ 失明'}`);
   console.log(`  声称：${claims.length} 条 · 豁免 ${exempt.length} 条 · 待验 ${pending.length} 条`);
+  console.log(`  dist-tags 候选行 = 值声称 ${claims.length} + 无值跳过 ${unparsed.length} + 盲区 ${blind.length}`);
   console.log('');
 
   for (const e of exempt) {
     console.log(`  ⏭️ 豁免 ${e.file}:${e.line} 「${e.pkg}」声称 latest=${e.claimed} —— ${e.reason}`);
   }
   for (const u of unparsed) {
-    console.log(`  ⚠️ 跳过 ${u.file}:${u.line} 含 npm view + dist-tags 但解析不出 pkg/latest（非值声称）`);
+    console.log(`  ⚠️ 跳过 ${u.file}:${u.line} 含 dist-tags 但无 latest 值（命令提示 / 策略叙述，非值声称）`);
   }
 
   // registry 真值（仅对待验声称涉及的去重包名取一次）
