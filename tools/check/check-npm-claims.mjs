@@ -13,7 +13,7 @@
 // 判定形态（三分，只抓「值声称」，不误伤命令提示）：
 //   一行含 dist-tags 时——
 //     ① 且解析出 latest 值 + 包名 ⇒ 一条值声称（对账）
-//        pkg 解析优先级：`npm view <pkg> dist-tags` 中的 <pkg>；无 npm view 时
+//        pkg 解析优先级：npm view <pkg> dist-tags 里的 <pkg>；无 npm view 时
 //        回退到行内被引用包名（@sofagent/<name> 或裸名 sofagent，带词边界）——
 //        覆盖「dist-tags 当前为 …」无 npm view 形态。
 //     ② 无 latest 值 ⇒ 命令提示 / 策略叙述，非值声称（可见跳过）
