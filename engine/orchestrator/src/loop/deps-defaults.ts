@@ -23,7 +23,7 @@ import type { AuditHistoryEntry } from '@sofagent/audit';
 import type { FileCheckpointer } from '../graph/checkpoint';
 import type { AuditVerdict, LoopArtifacts, LoopGraphState } from './state';
 import type { AuditOutcome, HumanDecision, LoopGraphDeps } from './deps-types';
-import { getLoopSovereigntyMw, getLoopProgressMw } from './middleware-registry';
+import { getLoopSovereigntyMw, getLoopProgressMw, getLoopMandateGateMw } from './middleware-registry';
 
 /** 重试上限：第 3 轮重试后仍未过 → blocked 终态 */
 export const DEFAULT_MAX_RETRIES = 3;
@@ -270,7 +270,7 @@ export function defaultDeps(checkpointer: FileCheckpointer, silent = false): Loo
       progressTitle: 'engineer work',
       gateTaskDesc: 'engineer task',
     },
-    { sovereigntyMw: getLoopSovereigntyMw(), progressMw: getLoopProgressMw() },
+    { sovereigntyMw: getLoopSovereigntyMw(), progressMw: getLoopProgressMw(), mandateGate: getLoopMandateGateMw() },
   );
   const reviewerRunner = makeAgentRunner(
     {
@@ -282,7 +282,7 @@ export function defaultDeps(checkpointer: FileCheckpointer, silent = false): Loo
       progressTitle: 'code review',
       gateTaskDesc: 'code review',
     },
-    { sovereigntyMw: getLoopSovereigntyMw(), progressMw: getLoopProgressMw() },
+    { sovereigntyMw: getLoopSovereigntyMw(), progressMw: getLoopProgressMw(), mandateGate: getLoopMandateGateMw() },
   );
   return {
     runEngineer: (task: string, feedback: string) =>

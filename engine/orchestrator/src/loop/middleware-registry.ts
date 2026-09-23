@@ -11,6 +11,7 @@ import { wrapToolsWithGate, createToolGate, type ExecutableTool } from '../tools
 import { ModelRouter } from '../model-router';
 import { DataSovereigntyMiddleware } from '../middleware/data-sovereignty-mw';
 import { ProgressMiddleware } from '../middleware/progress-mw';
+import { MandateGateMiddleware } from '../middleware/mandate-gate-mw';
 
 /**
  * 为 LOOP 节点角色构建 gate 包装后的工具集（v1.2.1 · 公共接线入口）。
@@ -50,6 +51,12 @@ let sharedRouter: ModelRouter | null = null;
 let sharedSovereigntyMw: DataSovereigntyMiddleware | null = null;
 /** v1.2.2 P2b：SubAgent 进度遥测 middleware 共享实例 */
 let sharedProgressMw: ProgressMiddleware | null = null;
+/**
+ * v1.5.2 章七：事前授权补环 middleware 共享实例。
+ * **默认关（L1）**——new MandateGateMiddleware() 不带 enabled，check 直通、
+ * 零留痕、输出逐字不变（不复现 v1.2.0「只 export 不接线」的半闭环）。
+ */
+let sharedMandateGateMw: MandateGateMiddleware | null = null;
 
 /** 获取/初始化 ModelRouter 单例 */
 export function getLoopRouter(): ModelRouter {
@@ -67,6 +74,24 @@ export function getLoopSovereigntyMw(): DataSovereigntyMiddleware {
 export function getLoopProgressMw(): ProgressMiddleware {
   if (!sharedProgressMw) sharedProgressMw = new ProgressMiddleware();
   return sharedProgressMw;
+}
+
+/**
+ * 获取/初始化事前授权补环 middleware 单例（v1.5.2 章七）。
+ *
+ * **默认关（L1）**——整环可拔：关档时 gate 直通、零留痕（与今日一致，不留半开）。
+ * 启用需宿主用 enabled + query 显式构造替换本单例（setLoopMandateGateMwForTest
+ * 或后续注入面）。生产接线点：deps-defaults.defaultDeps → agent-runner 的
+ * wrapToolsWithGate 第 4 参。
+ */
+export function getLoopMandateGateMw(): MandateGateMiddleware {
+  if (!sharedMandateGateMw) sharedMandateGateMw = new MandateGateMiddleware();
+  return sharedMandateGateMw;
+}
+
+/** 测试/宿主注入：事前授权补环 mw（默认关的实例由本 setter 替换） */
+export function setLoopMandateGateMwForTest(mw: MandateGateMiddleware | null): void {
+  sharedMandateGateMw = mw;
 }
 
 /** 测试注入：进度遥测 mw（progress-mw.test 消费——保留）；router/sovereignty 的 setter 已随条目 4 删除（零消费者，测试改注入式 AgentRunnerDeps） */

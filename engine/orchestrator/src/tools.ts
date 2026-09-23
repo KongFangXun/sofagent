@@ -27,6 +27,8 @@ import { z } from 'zod';
 import { RulesEngine, defaultToolRules } from '@sofagent/rules';
 import type { ToolCallContext } from '@sofagent/rules';
 import type { OntologyValidator } from './ontology';
+// v1.5.2 章七 · 事前授权补环 gate（类型-only——运行期零依赖，无循环 import）
+import type { MandateToolGate } from './middleware/mandate-gate-mw';
 
 // ────────────────────────────────
 // 工具类型辅助
@@ -653,16 +655,31 @@ export const toolGate = createToolGate();
  * @param tools 原始工具集
  * @param gate ToolGate gate 函数（由 createToolGate 创建）
  * @param ontologyValidator Ontology 校验器闭包（可选；createOntologyValidator 创建）
+ * @param mandateToolGate 事前授权补环 gate（可选；v1.5.2 章七 MandateGateMiddleware）。
+ *   不传 = 逐字保持 v1.3.1 行为（现有 4 处调用零改动）；传入后每 tool call 在执行
+ *   前先过授权判定：越界 ⇒ 不执行原 func，返回拒绝信息。**默认关的 gate 直通**
+ *   （check 恒 {allow:true}、零留痕），故接线本身零行为变化。
  * @returns 包装后的新工具集（不改原数组）
  */
 export function wrapToolsWithGate(
   tools: ExecutableTool[],
   gate: ReturnType<typeof createToolGate>,
   ontologyValidator?: OntologyValidator,
+  mandateToolGate?: MandateToolGate,
 ): ExecutableTool[] {
   return tools.map((tool) => ({
     ...tool,
     func: (input: Record<string, unknown>): string => {
+      // 第〇层（v1.5.2 章七 · 事前授权补环）：授权越界判定——动作执行前先领授权。
+      // 默认关（L1）：gate.check 直通返回 {allow:true}，零留痕、输出逐字不变；
+      // 未传 mandateToolGate 时本层整体跳过（与 v1.3.1 逐字一致）。
+      if (mandateToolGate) {
+        const mandate = mandateToolGate.check({ toolName: tool.name, args: input });
+        if (!mandate.allow) {
+          return mandate.message ?? `⛔ [mandate 拦截] ${tool.name} 无有效授权，拒绝执行`;
+        }
+      }
+
       // 第一层：ToolGate 规则引擎判定（v1.2.0 既有行为，FAIL 硬拦截）
       const check = gate(tool.name, input);
       if (!check.allowed) {

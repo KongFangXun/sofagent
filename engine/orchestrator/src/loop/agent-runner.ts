@@ -18,6 +18,8 @@ import { spawnSubAgent } from '../launcher';
 import type { SubAgentDefinition } from '../registry';
 import type { DataSovereigntyMiddleware } from '../middleware/data-sovereignty-mw';
 import type { ProgressMiddleware } from '../middleware/progress-mw';
+// v1.5.2 章七 · 事前授权补环 gate（类型-only——生产实例经 AgentRunnerDeps 注入）
+import type { MandateToolGate } from '../middleware/mandate-gate-mw';
 import type { LoopArtifacts } from './state';
 import { resolveLLMModelFor } from './llm-env';
 import { resolveMaxTurns } from './nodes';
@@ -45,6 +47,12 @@ export interface AgentRunnerSpec {
 export interface AgentRunnerDeps {
   readonly sovereigntyMw: DataSovereigntyMiddleware;
   readonly progressMw: ProgressMiddleware;
+  /**
+   * v1.5.2 章七：事前授权补环 gate（可选）。注入后每个 tool call 在执行前先过
+   * 授权判定（越界 ⇒ 拒绝执行）。缺省（不注入）时与今日逐字一致；生产经
+   * deps-defaults 注入默认关的 getLoopMandateGateMw()（零行为变化）。
+   */
+  readonly mandateGate?: MandateToolGate;
 }
 
 /**
@@ -84,7 +92,8 @@ export function makeAgentRunner(
       const systemPrompt = `${constrainedPrompt}\n\n${spec.agentDef.systemPrompt}${extraSummary ? `\n\n${extraSummary}` : ''}`;
       // ToolGate 事前拦截（三段接线：create → wrap → convert）
       const gate = createToolGate({ agentName: spec.role, taskDesc: spec.gateTaskDesc.slice(0, 500) });
-      const gatedTools = wrapToolsWithGate(spec.tools, gate);
+      // v1.5.2 章七：事前授权补环——注入 mandate gate（默认关；未注入时逐字一致）
+      const gatedTools = wrapToolsWithGate(spec.tools, gate, undefined, deps.mandateGate);
       const langGraphTools = convertToLangGraphTools(gatedTools);
       const agent = (agentFactory.factory as unknown as (params: {
         llm: unknown;
