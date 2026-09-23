@@ -1777,13 +1777,20 @@ async function s443() {
 // 咬人面（改坏必红）：
 //   ① 授权三态真跑：无授权 → no-mandate（covered=false）；签发覆盖授权后同动作 → covered=true
 //      且 approver 可追溯；越界动作 → out-of-scope。判定语义被改坏即红。
-//   ② 插件就绪态：7 个 cordis-plugin-sofagent* 包目录齐备，包名==目录名、package.json 版本为
-//      semver、cordis.patch.yml 带版本标记（缺包/改名/删标记即红）。
+//   ② 插件就绪态（v1.5.2 章九起**不止「包在」，而是「发得出去」**）：7 个
+//      cordis-plugin-sofagent* 包目录齐备，包名==目录名、package.json 版本为
+//      semver、cordis.patch.yml 带版本标记（缺包/改名/删标记即红）；再逐款断言
+//      **可发布三态**——`private !== true`（否则 npm 直接拒发）、`files` 白名单含
+//      `dist/` 与 `cordis.patch.yml`（否则夹带源码 / 漏发 patch）、以及发布脚本
+//      的可执行路径确实由 `engine/dsh-plugins/plugins.json` 驱动（否则静默漏发）。
 // 静态锚：mandate-store 三元素/判定入口 / mandate-gate-mw 工厂+中间件+should-run 探针 /
 //   loop deps-defaults 注入 / tools.ts wrapToolsWithGate 第 4 参 mandateToolGate。
-// 残余风险（如实标注）：章九**仅验仓内就绪态**——npm registry 真「首发」（npm publish 面）是
-//   发版面主 session 的职责，本探针不连 registry、不断言「已发布」；包版本号 v1.5.2 bump 属
-//   阶段九，故此处只断言 semver 形态与包名一致性，不钉具体版本值。
+// 残余风险（如实标注）：章九**仅验仓内「可发布」就绪态**——npm registry 真「首发」
+//   （npm publish 面）与「干净 DSH 环境逐款实装四段验证」是发版面主 session 的职责，
+//   本探针不连 registry、不断言「已发布」，也不装载插件（无法验运行时依赖是否随包分发）；
+//   包版本号 v1.5.2 bump 属阶段九，故此处只断言 semver 形态与包名一致性，不钉具体版本值。
+//   发布覆盖断言**强度边界**：证「数据源已接线」（id 由 plugins.json 驱动 ⇒ 逐个会被
+//   访问），不证运行时循环跑满——后者由脚本「目录缺失即置失败标记」兜底（dry-run 实测过）。
 async function s444() {
   const { fs, path, dataDir } = _s43x_isolate('s444'); const bad = [];
   const root = process.env.PROJECT_ROOT;
@@ -1795,7 +1802,7 @@ async function s444() {
   for (const s of ['createMandateShouldRunGate', 'MandateGateMiddleware', 'mandateShouldRunProbe']) if (!gateMw.includes(s)) bad.push('mandate-gate-mw 缺符号:' + s);
   if (!fs.readFileSync(rel('engine/orchestrator/src/loop/deps-defaults.ts'), 'utf-8').includes('getLoopMandateGateMw')) bad.push('loop deps-defaults 未注入 mandate gate');
   if (!fs.readFileSync(rel('engine/orchestrator/src/tools.ts'), 'utf-8').includes('mandateToolGate')) bad.push('tools.ts wrapToolsWithGate 缺第 4 参 mandateToolGate');
-  // ② 章九 DSH 插件 npm 首发面（仓内就绪态）
+  // ② 章九 DSH 插件 npm 首发面（仓内**可发布**就绪态）
   const dshDir = rel('engine/dsh-plugins');
   const plugins = fs.readdirSync(dshDir).filter((n) => n.startsWith('cordis-plugin-sofagent')).sort();
   if (plugins.length !== 7) bad.push('DSH 插件包数=' + plugins.length + '（应 7）');
@@ -1808,7 +1815,24 @@ async function s444() {
     if (pkg.name !== n) bad.push(n + ' 包名与目录不一致:' + pkg.name);
     if (!/^\d+\.\d+\.\d+/.test(String(pkg.version))) bad.push(n + ' 版本非 semver:' + pkg.version);
     if (!/v\d+\.\d+\.\d+/.test(fs.readFileSync(patchPath, 'utf-8'))) bad.push(n + ' cordis.patch.yml 缺版本标记');
+    // v1.5.2 章九追加：三种「仓内看着就绪、实际发不出去」的静默态全部变红
+    if (pkg.private === true) bad.push(n + ' 仍为 private——发布被 npm 拒绝');
+    if (!Array.isArray(pkg.files) || !pkg.files.includes('dist/') || !pkg.files.includes('cordis.patch.yml'))
+      bad.push(n + ' 缺 files 白名单（dist/ 与 cordis.patch.yml）——夹带源码 / 漏发 patch');
   }
+  // ②b 发布覆盖在位：publish-packages.sh 的**可执行路径**确实读 plugins.json 并从
+  //   engine/dsh-plugins/ 发布（剥掉整行注释后判定，防「只写在注释里」的假覆盖）。
+  //   判据必须**锚到调用形态**（readFileSync/JSON.parse 读该路径 + `dir="engine/dsh-plugins/"`
+  //   目录映射）——裸 `includes('plugins.json')` 会被同名的 echo 横幅行满足、也会把
+  //   `plugins.json.bak` 这类改名读成「仍接线」（两种假绿均经负向探针实测）。
+  //   强度边界：证「数据源已接线」（7 款 id 由 plugins.json 驱动 ⇒ 逐个会被访问），
+  //   不证运行时循环跑满——后者由脚本「目录缺失即置失败标记」兜底（已 dry-run 实测）。
+  const pubScript = fs.readFileSync(rel('tools/release/publish-packages.sh'), 'utf-8')
+    .split('\n').filter((l) => !/^\s*#/.test(l)).join('\n');
+  if (!/readFileSync\([^)]*['"]engine\/dsh-plugins\/plugins\.json['"]/.test(pubScript)) bad.push('publish-packages.sh 可执行路径未读 engine/dsh-plugins/plugins.json（插件发布面未接线）');
+  if (!/dir="engine\/dsh-plugins\//.test(pubScript)) bad.push('publish-packages.sh 可执行路径未映射 engine/dsh-plugins/<id> 目录');
+  const manifest = JSON.parse(fs.readFileSync(rel('engine/dsh-plugins/plugins.json'), 'utf-8'));
+  for (const n of plugins) if (!manifest.plugins.some((p) => p.id === n)) bad.push(n + ' 不在 plugins.json——发布脚本驱动不到它');
   // ③ v1.5.2 交付标记在位（章四 schema 注释）
   if (!fs.readFileSync(rel('engine/audit/src/decision-schema.ts'), 'utf-8').includes('v1.5.2')) bad.push('decision-schema 缺 v1.5.2 交付标记');
   // ④ 真行为：授权三态
@@ -1822,7 +1846,7 @@ async function s444() {
     const oos = ms.evaluateMandateRequest({ subject: 'bot-444', action: 'rm_rf' }, new Date(), dataDir);
     if (oos.verdict !== 'out-of-scope') bad.push('越界动作未判 out-of-scope:' + JSON.stringify(oos));
   } catch (e) { bad.push('授权补环行为探针异常:' + (e && e.message)); }
-  _s41x_done(bad, 'S444', '授权三态=no-mandate/covered/out-of-scope·插件包就绪=' + plugins.length);
+  _s41x_done(bad, 'S444', '授权三态=no-mandate/covered/out-of-scope·插件包可发布就绪=' + plugins.length);
 }
 
 const CASES = { s101, s102, s103, s106, s107, s108, s109, s111, s115, s148, s149, s151, s152, s155, s156, s416, s418, s419, s420, s421, s422, s423, s424, s425, s426, s427, s428, s429, s430, s431, s432, s433, s434, s435, s436, s437, s438, s439, s440, s441, s442, s443, s444 };
