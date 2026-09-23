@@ -42,8 +42,8 @@
 | `check/check-shell-injection.sh` | 命令注入静态扫（engine 源码面：execSync 模板插值/字符串拼接注入形态——v1.4.3 安全修复批防线） | CI |
 | `check/check-action-pins.sh` | GitHub Actions SHA pin 对账（uses: 完整 commit SHA 与行内注释 tag 指向一致性，离线降级 exit 0） | CI / 发版前 / 定期 |
 | `check/check-storefront.sh` | 仓外门面对账（GitHub description/homepage/topics 数字 vs 仓内实数；离线 SKIP 可见不假绿） | CI（离线 SKIP 不阻断）/ 发版 SOP 阶段八/九 |
-| `check/check-npm-claims.mjs` | registry 实测声称对账（活文档面 `npm view <pkg> dist-tags` 与「dist-tags 当前为 …」两种形态的值声称 vs `npm view --prefer-online` 在线真值——无 `npm view` 时回退行内被引用包名，有值无包名判盲区；≥3 轮重试 + 子进程 timeout；离线 SKIP 可见不假绿；已知债走 `check/npm-claims-exempt.json`，锚须文件内唯一且当前仍是命中行，A-5 落地即 exit 2 强制摘除；退出码 0 一致 / 1 失配 / 2 失明·台账非法·有值无包名） | CI（pre-push 步骤 3i · 离线 SKIP 不阻断）/ 改 README/docs 后 |
-| `check/npm-claims-exempt.json` | npm 实测声称豁免台账（`check-npm-claims.mjs` 消费：行级 `{file, anchor, reason}` 锚串豁免——锚须文件内唯一且当前仍是命中行，两条硬校验不成立即 exit 2；登记的唯一已知债 = A-5 待拍板的 README 双语 npm 通道声称） | 被 check-npm-claims.mjs 消费 |
+| `check/check-npm-claims.mjs` | registry 实测声称对账（活文档面 `npm view <pkg> dist-tags` 与「dist-tags 当前为 …」两种形态的值声称 vs `npm view --prefer-online` 在线真值——无 `npm view` 时回退行内被引用包名，有值无包名判盲区；≥3 轮重试 + 子进程 timeout；离线 SKIP 可见不假绿；已知债走 `check/npm-claims-exempt.json`，锚须文件内唯一且当前仍是命中行、理由栏须实质，所豁免声称改为真值即 exit 2 强制摘除；退出码 0 一致 / 1 失配 / 2 失明·台账非法·有值无包名） | CI（pre-push 步骤 3i · 离线 SKIP 不阻断）/ 改 README/docs 后 |
+| `check/npm-claims-exempt.json` | npm 实测声称豁免台账（`check-npm-claims.mjs` 消费：行级 `{file, anchor, reason}` 锚串豁免——锚须文件内唯一、当前仍是命中行、理由栏须实质，三条硬校验任一不成立即 exit 2；**当前为空 = 无豁免债的正常态**） | 被 check-npm-claims.mjs 消费 |
 | `check/check-shellcheck.sh` | 全仓 shellcheck（**CI 同口径**：按 shell shebang 扫全仓含无扩展名 hook；`-s bash -S warning -e SC2034/SC1090/SC1091`）——补 CI 与本地扫描面口径差 |
 | `check/check-forge-branches.sh` | 分支收编标记对账（tag `forge-merged-*` / 分支名 `-merged-YYYYMMDD` 双形态判定；未标记分支 INFO 四要素列出供人工确认，输出字符级截断防 U+FFFD） | 发版 SOP / 定期 |
 | `check/check-literals.sh` | 手填字面量对账（`check/literals.json` 注册表驱动——同一事实被手抄两份时比对「手填值 vs 实算真值」；数据驱动，新增字面量只登记一行，非「保密字面量扫描」） | CI |

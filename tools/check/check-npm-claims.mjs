@@ -44,10 +44,11 @@
 //   2 = 检查器失明 / 豁免台账非法 / 存在无法判定包名的值声称——拒绝假绿
 //
 // 已知债豁免：tools/check/npm-claims-exempt.json（形态照 archaeology-exempt.json
-//   的 exemptAnchors：{file, anchor, reason}；锚须文件内唯一且当前仍是命中行）。
-//   ⚠️ 当前登记的唯一已知债 = README.md 与 README.en.md 各一段过期 npm 通道声称
-//   （A-5 待拍板：npm 通道策略未定，声称暂不改为最新真值）。A-5 一旦落地、锚串
-//   不再命中 ⇒ 本守卫 exit 2（债自动过期，不留永久口子）——不许静默。
+//   的 exemptAnchors：{file, anchor, reason}）。三条硬校验（任一不成立即 exit 2）：
+//   ① anchor 在文件内唯一；② 锚行当前仍是值声称命中行（债一变即过期）；
+//   ③ reason 须能说清「为何现在不能改为真值」（空理由 / 占位词一律拒绝）。
+//   本表设计为**可清空**——当前为空即「无豁免债」的正常态；新增一条必须能在理由栏
+//   说清为何不能直接改成真值，否则不进本表（能改的直接改，那才是真绿）。
 //
 // 用法：
 //   node tools/check/check-npm-claims.mjs                # 常规对账
@@ -157,9 +158,24 @@ function scanClaims(files) {
 }
 
 // ── 豁免台账（形态照 archaeology-exempt.json 的 exemptAnchors）──
-// 两条硬校验（任一不成立即 exit 2，宁可失声不假绿）：
+// 三条硬校验（任一不成立即 exit 2，宁可失声不假绿）：
 //   ① anchor 在 file 内必须恰好命中 1 行；
-//   ② anchor 解析出的行必须当前仍是「值声称」命中行（债一变，锚必须重新核对）。
+//   ② anchor 解析出的行必须当前仍是「值声称」命中行（债一变，锚必须重新核对）；
+//   ③ reason 必须能说清「为何现在不能改为真值」——空理由/占位词等于给门禁开一个无法审计的口子。
+const REASON_MIN_LEN = 10;
+const REASON_PLACEHOLDER = /(TODO|TBD|FIXME|待补|占位)/i;
+
+function validateReason(reason) {
+  const r = String(reason == null ? '' : reason).trim();
+  if (r.length < REASON_MIN_LEN) {
+    return `reason 为空或过短（${r.length} < ${REASON_MIN_LEN} 字）——须写清「为何现在不能改为真值」`;
+  }
+  if (REASON_PLACEHOLDER.test(r)) {
+    return `reason 含占位词（「${r}」）——请写实质理由`;
+  }
+  return null;
+}
+
 function loadExempt() {
   if (!fs.existsSync(EXEMPT_FILE)) {
     return { entries: [], errors: [`豁免台账缺失：${path.relative(ROOT, EXEMPT_FILE)}`] };
@@ -197,9 +213,14 @@ function loadExempt() {
       errors.push(`锚失效：${a.file}:${idx[0]} 当前不再是命中行（A-5 可能已落地——锚须重新核对）`);
       continue;
     }
+    const reasonErr = validateReason(a.reason);
+    if (reasonErr) {
+      errors.push(`豁免理由不可用：${a.file} 的「${a.anchor}」${reasonErr}`);
+      continue;
+    }
     entries.push({
       file: a.file, line: idx[0], anchor: a.anchor,
-      reason: a.reason || '', pkg: d.pkg, claimed: d.claimed,
+      reason: String(a.reason).trim(), pkg: d.pkg, claimed: d.claimed,
     });
   }
   return { entries, errors };
@@ -284,11 +305,21 @@ function runSelftest() {
   chk('漏检回归：带 v 前缀的版本值去掉 v 后仍识别', !!s18 && s18.claimed === '1.5.1');
   const s19 = detectClaim('当前 `sofagent` 的 dist-tags 为 latest: 1.5.1.');
   chk('误报回归④：无引号值 + 句末英文句点 剥尾点后仍识别', !!s19 && s19.claimed === '1.5.1');
+  const r1 = validateReason('npm 通道策略待拍板，声称暂不改为最新真值，拍板后锚即过期');
+  chk('豁免理由①：实质理由通过（返回 null）', r1 === null);
+  const r2 = validateReason('');
+  chk('豁免理由②：空理由被拒（返回错误串）', typeof r2 === 'string');
+  const r3 = validateReason('    ');
+  chk('豁免理由③：纯空白被拒（返回错误串）', typeof r3 === 'string');
+  const r4 = validateReason('TODO');
+  chk('豁免理由④：占位词被拒（返回错误串）', typeof r4 === 'string');
+  const r5 = validateReason('该声称已登记待补，具体原因略');
+  chk('豁免理由⑤：占位词「待补」即使长度够也被拒', typeof r5 === 'string');
   if (bad > 0) {
     console.error(`❌ 自检失败 ${bad} 项`);
     process.exit(1);
   }
-  console.log('✅ 自检通过（20/20）');
+  console.log('✅ 自检通过（25/25）');
   process.exit(0);
 }
 
