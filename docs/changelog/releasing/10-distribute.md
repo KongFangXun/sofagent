@@ -87,7 +87,7 @@ done
 > - 版本号 = 与 sofagent 主线版本对齐（DSH Cordis 协议 breaking change 时 bump major）
 > - 🔴 **款数必须等于 glob 实测数**：正文枚举与下方 `PLUGIN_DIRS` 的 glob 是同一份清单的两种写法，改一个必改另一个——不一致时按文字走就会漏发（带尾横线的 glob 漏掉裸名聚合插件）
 > - 每版发版都要推，与 ClawHub/SkillHub SKILL 分发同等强制
-> - 分发通道真相源：**DSH plugin 只走 SkillHub 单通道**——`skillhub install cordis-plugin-sofagent*` 是唯一安装通道 + 发现层。npm 不发布插件（09-publish 步骤八清单只有 13 个 @sofagent 包，不含插件）——`dsh plugin add` 依赖的 npm 通道未开通，文档一律不得声称 npm 可装
+> - 分发通道真相源：**DSH plugin = SkillHub + npm 双通道**——`skillhub install cordis-plugin-sofagent*` 是 SkillHub 侧的安装与发现通道；**npm 侧七款同样是发布物**（逐款上 registry 见 [09-publish「步骤八·补」](./09-publish.md)），故「npm 可装」不再是禁语。⚠️ 但 npm 通道的**可用性前置**是干净 DSH 环境逐款实装四段验证（挂载 → seam 订阅 → helpers.call 引擎包解析 → 事件触发产出）——**不满足「单独可用」的不得发布**，故文档声称 npm 可装前须先有该验证留证
 
 ## 步骤二·a：OpenClaw plugin 分发（每版必做）
 
