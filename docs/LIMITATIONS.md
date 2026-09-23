@@ -288,6 +288,7 @@ A1（不碰敏感）按 `DiffFile.status` 分方向判定：**新增/修改**敏
 >         run: npm install -g @sofagent/audit
 >       - name: 审计最近一次提交
 >         run: sofagent-audit --diff HEAD~1..HEAD --ci
+>         # ⚠️ 若本步骤接管道（tee/grep 等），先 set -o pipefail——否则审计失败码被管道末端退出码遮蔽
 > ```
 
 > **审计日志防篡改检测边界**：`history.jsonl` 的完整性依赖 hash chain（`audit-history.ts`），Agent 可在篡改后重算整条链——hash chain 仅提供**事后可追溯性，非强防篡改**。
