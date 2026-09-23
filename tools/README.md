@@ -2,7 +2,7 @@
 
 > **边界说明（v1.4.6 对齐 engine/scripts/README）**：`engine/scripts/` 是 install.sh 组装调用的**用户安装链**（task-record / cleanup / audit / lib/config 等随 `deploy_scripts()` 到达用户目标目录的 `scripts/` 下，install / verify / daemon 同理）；`tools/` 面向维护者发版 SOP 与仓库健康检查，不随安装分发。
 >
-> **目录结构（v1.3.9 物理分目录 · v1.5.1 收口 · v1.5.1 补 report/）**：按职能分子目录——check/ 门禁与测试统计、gen/ 草稿生成、report/ 报告生成、dashboard/ 仪表盘、release/ 发布与签名（v1.4.0 起含 `pre-push-check.sh` 四门禁聚合入口）、forge/ FORGE 运维、audit/ FDE 进场审计（脚本 + 问卷数据源同目录）、hooks/ 共享 hook 脚本（v1.4.0 交付五）、train/ 训练环境与设备打包（v1.4.4 归位）。**根目录无任何脚本与数据文件**（含 .mjs——vitest-setup 归 check/，训练脚本归 train/）。
+> **目录结构（v1.3.9 物理分目录 · v1.5.1 收口 · v1.5.1 补 report/ · v1.5.2 补 verify/）**：按职能分子目录——check/ 门禁与测试统计、gen/ 草稿生成、report/ 报告生成、dashboard/ 仪表盘、release/ 发布与签名（v1.4.0 起含 `pre-push-check.sh` 四门禁聚合入口）、forge/ FORGE 运维、audit/ FDE 进场审计（脚本 + 问卷数据源同目录）、hooks/ 共享 hook 脚本（v1.4.0 交付五）、train/ 训练环境与设备打包（v1.4.4 归位）、verify/ 独立验签器（第三方举证面，v1.5.2 章二）。**根目录无任何脚本与数据文件**（含 .mjs——vitest-setup 归 check/，训练脚本归 train/）。
 
 ## 根目录
 
@@ -138,7 +138,16 @@
 |------|------|---------|
 | `report/evolution-report.mjs` | 进化实证报告生成（Dream Cycle 持续采样 → skill-impact 台账汇总） | 进化模块周报 / 发版证据 |
 
-## 十、不接 CI 的工具（人工 / 按需触发 · v1.5.1 第2批登记）
+## 十、verify/ — 独立验签器（第三方举证面 · v1.5.2 章二）
+
+| 脚本 | 用途 | 何时使用 |
+|------|------|---------|
+| `verify/verify-chain.mjs` | 独立 HMAC 验签器（单文件零依赖，裸 `node` 可跑）——同时校验 `history.jsonl` 历史链 + `decision-log.jsonl` 决策链；三态输出（链完整 / 某条断裂·给条目号与期望值 / 链头不匹配）+ 降级态（不可复验 / 不足）；`--selftest` 内置 golden vector 硬锚与篡改注入合成回归。第三方（审计师 / 监管 / 法院技术顾问）无需安装 sofagent 即可举证 | 第三方举证 / 合规审计 / `--verify-chain` 机内校验的独立对照 |
+| `verify/README.md` | 验签器说明（输入格式 / 三态输出 / 第三方举证用法 / 环境指纹换机要点） | 随验签器查阅 |
+
+> 与 `check/` 侧重不同：`check/` 是**仓库健康门禁**（维护者自用）；`verify/` 是**对外举证工具**（第三方独立复算，可信根是密码学而非信任维护方）。验签器**不接 pre-push**——它是给外部用的只读工具，不是本仓 CI 门禁（`--selftest` 供人工 / 按需触发）。
+
+## 十一、不接 CI 的工具（人工 / 按需触发 · v1.5.1 第2批登记）
 
 以下脚本**刻意不接 CI**——接了会永久红或本身不是门禁。此处登记用途与「不接线」理由，防「不登记的新脚本过几版就没人知道为什么存在」（对齐 `docs/changelog/releasing/07-tool-health.md` 的登记纪律）。
 
