@@ -18,6 +18,7 @@
 // ============================================================
 
 import type { StopReason } from '@sofagent/core';
+import type { ShouldRunSuspension } from './should-run';
 
 // ────────────────────────────────────────────────────────────
 // 事件类型注册表（单一事实源）
@@ -384,4 +385,15 @@ export interface EventPublishResult {
   error?: string;
   /** 本次发布/投递留痕的决策条目 ts */
   decisionTs?: string;
+  /**
+   * v1.5.2 第三章：派发前置 should-run 判定未通过 → **已挂起**（挂起非失败）。
+   *
+   * 调用方据此区分三种态：
+   *   · 投递成功：`delivered=true`
+   *   · 挂起等待：`delivered=false` 且 `suspended=true`（无 deadLetterId/stopReason）
+   *   · 投递失败：`delivered=false` 且无 `suspended`（带 error/deadLetterId）
+   */
+  suspended?: boolean;
+  /** 挂起详情（`suspended=true` 时）——不通过的那一问 + 原因 + 恢复提示 */
+  suspension?: ShouldRunSuspension;
 }

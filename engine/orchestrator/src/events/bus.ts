@@ -27,6 +27,15 @@
 // 🔴 事件类型门：落盘用链内核的 kind 门（kindField='type'，白名单 =
 //    REGISTERED_EVENT_TYPES）——未登记类型**拒绝落盘**（拼错/未登记的事件
 //    永不触发是静默失效，故 fail-loud；新增事件类型请扩 types.ts 注册表）。
+//
+// ── v1.5.2 第三章：派发前置 should-run 判定链 ──
+//    `publish()` 在 `appendEvent`（落盘）与 `deliver`（投递）之间插入可选判定点
+//    （`EventBusOptions.shouldRunGate`，判定链实现见 ./should-run.ts）。判定为
+//    挂起时：**不投递、不进死信**（死信是异常的唯一入口，挂起不是异常），挂起
+//    原因落 decision-log（ORCHESTRATION/skip/ACT），事件入 pending 队列等条件满足
+//    后自动恢复。未注入 gate 时该步整体跳过——行为与 v1.5.1 完全一致。
+//    🔴 挂起事件**在判定前已落盘**（appendEvent 先于判定）——挂起只影响「派发
+//       调度态」，事件本身不丢；恢复即重新判定并投递。
 // ============================================================
 
 import { existsSync, mkdirSync, readFileSync } from 'fs';
@@ -52,6 +61,7 @@ import {
   type EventPublishResult,
   type SofagentEvent,
 } from './types';
+import type { ShouldRunGate, ShouldRunSuspension } from './should-run';
 
 /** 投递留痕条目的 kind 白名单（链内核 kind 门取值） */
 const DELIVERY_OUTCOMES: readonly string[] = ['DELIVERED', 'FAILED', 'DEAD_LETTER', 'REPLAYED'];
@@ -95,6 +105,36 @@ export interface EventBusOptions {
    * 传 `false` 关闭决策留痕（纯流量场景——投递链留痕不受影响）。
    */
   decisionContext?: { agentId: string; sessionId?: string } | false;
+  /**
+   * v1.5.2 第三章：派发前置「五问」判定链（should-run）。
+   *
+   * 调用时机：`publish()` 落盘队列之后、投递订阅者之前。判定为挂起时——
+   *   · **不投递**给任何订阅者；
+   *   · **绝不进死信通道**（死信是异常的唯一入口，挂起不是异常）；
+   *   · 挂起原因落 decision-log（kind=ORCHESTRATION / category=skip / moment=ACT）；
+   *   · 事件进 pending 队列，由后续 `publish()` 或显式 `resumePending()`
+   *     重新判定，条件满足则**自动恢复投递**。
+   *
+   * **缺省不注入 = 行为与 v1.5.1 完全一致（零行为变化）。**
+   */
+  shouldRunGate?: ShouldRunGate;
+}
+
+/**
+ * 挂起等待恢复的派发（v1.5.2 第三章）。
+ *
+ * 挂起事件**已落盘**到事件队列（`appendEvent` 在判定前执行）——挂起态只是
+ * 「派发调度态」，事件本身不丢；恢复即按此记录重新判定并投递。
+ */
+export interface PendingDispatch {
+  /** 被挂起的事件（attempt=1，尚未投递） */
+  event: SofagentEvent;
+  /** 挂起详情（不通过的那一问 + 原因 + 恢复提示） */
+  suspension: ShouldRunSuspension;
+  /** 挂起时刻（ISO 8601） */
+  suspendedAt: string;
+  /** 该挂起对应的决策留痕 ts（decision-log 可查） */
+  decisionTs?: string;
 }
 
 /** 死信入队入参（第三章异常总线复用本通道时的附加标记） */
@@ -124,7 +164,10 @@ export class EventBus {
   private readonly now: () => Date;
   private readonly newId: () => string;
   private readonly decisionContext: { agentId: string; sessionId?: string } | false;
+  private readonly shouldRunGate?: ShouldRunGate;
   private readonly subscriptions: EventSubscriptionHandle[] = [];
+  /** 挂起等待恢复的派发（v1.5.2 第三章——挂起非失败，条件满足自动恢复） */
+  private pending: PendingDispatch[] = [];
 
   constructor(options: EventBusOptions = {}) {
     this.dataDir = getDataDir(options.dataDir);
@@ -134,6 +177,7 @@ export class EventBus {
     this.now = options.now ?? (() => new Date());
     this.newId = options.newId ?? (() => randomUUID());
     this.decisionContext = options.decisionContext ?? { agentId: 'orchestrator:events' };
+    this.shouldRunGate = options.shouldRunGate;
   }
 
   // ────────────────────────────────────────────────────────
@@ -196,14 +240,151 @@ export class EventBus {
    * `appendChained` 抛 `ChainKernelError`（fail-closed——未登记类型永不触发，
    * 静默接受会把「拼错事件名」变成无声事故）。事件类型务必取自 `EVENT_TYPES`。
    *
+   * v1.5.2 第三章：落盘之后、投递之前插入**派发前置五问判定链**（注入
+   * `shouldRunGate` 时生效）——判定为挂起则不投递、不进死信，入 pending 队列
+   * 等条件满足后自动恢复；未注入时该步整体跳过（行为与 v1.5.1 一致）。
+   *
    * @param input 发布入参
-   * @returns 投递结果（含死信 id / stop_reason / 留痕决策 ts）
+   * @returns 投递结果（含死信 id / stop_reason / 留痕决策 ts / 挂起态）
    * @throws ChainKernelError 事件类型未登记（落盘 kind 门 fail-closed 拒绝）
    */
   async publish<T>(input: EventPublishInput<T>): Promise<EventPublishResult> {
     const event = this.normalize(input);
     this.appendEvent(event);
-    return this.deliver(event, 1, 0);
+    const gate = this.shouldRunGate;
+    if (gate) {
+      const verdict = await gate(event);
+      if (!verdict.run) {
+        // 挂起即返回——**本次不尝试恢复**：刚挂起的事件判定没过，此刻恢复无意义；
+        // 对既有挂起事件，若条件已变好则下一条通过的 publish（走下面的成功路径）
+        // 或显式 resumePending() 会真正投递。这样避免「同一次 publish 内先挂起
+        // 后立即投递」的判定不一致（非确定性 gate 下会返回 suspended 却已投递）。
+        return this.suspendDispatch(event, verdict.suspended);
+      }
+    }
+    const result = await this.deliver(event, 1, 0);
+    // 本次派发通过 → 顺带重新判定挂起队列（「条件满足自动恢复」的自动触发点）
+    if (gate) await this.resumePending();
+    return result;
+  }
+
+  // ────────────────────────────────────────────────────────
+  // 派发前置判定（v1.5.2 第三章）——挂起 / 恢复
+  // ────────────────────────────────────────────────────────
+
+  /**
+   * 挂起一次派发（should-run 未通过）——**不投递、不进死信**。
+   *
+   * 落一条决策留痕（decision-log 可查挂起原因），事件入 pending 队列等恢复。
+   *
+   * @param event 被挂起的事件
+   * @param suspension 挂起详情（判定链给出的首个不通过问题）
+   * @returns 挂起态投递结果（delivered=false + suspended=true）
+   */
+  private suspendDispatch(
+    event: SofagentEvent,
+    suspension: ShouldRunSuspension | undefined,
+  ): EventPublishResult {
+    const attemptEvent: SofagentEvent = { ...event, attempt: 1 };
+    const detail: ShouldRunSuspension = suspension ?? {
+      question: 'health',
+      reason: '派发前置判定未通过（未提供挂起详情）',
+      resumeHint: '条件满足后自动恢复',
+    };
+    const decisionTs = this.writeSuspensionDecision(attemptEvent, detail);
+    this.pending.push({
+      event: attemptEvent,
+      suspension: detail,
+      suspendedAt: this.now().toISOString(),
+      ...(decisionTs !== undefined ? { decisionTs } : {}),
+    });
+    return {
+      event: attemptEvent,
+      delivered: false,
+      subscriberCount: 0,
+      attempts: 0, // 挂起未投递——尝试次数为 0（区别于失败）
+      suspended: true,
+      suspension: detail,
+      ...(decisionTs !== undefined ? { decisionTs } : {}),
+    };
+  }
+
+  /**
+   * 写派发挂起决策（kind=ORCHESTRATION / category=skip / moment=ACT）。
+   *
+   * 语义为「跳过本次派发」——**只使用既有 DecisionKind/DecisionCategory/LoopPhase
+   * 取值，不扩 schema**。tags 带 `should-run` 与具体问题名（如 health）便于检索。
+   * decisionContext=false 时跳过（纯流量场景——对齐 writeDispatchDecision 开关语义）。
+   *
+   * @returns 决策条目 ts（跳过/失败时 undefined）
+   */
+  private writeSuspensionDecision(event: SofagentEvent, suspension: ShouldRunSuspension): string | undefined {
+    if (this.decisionContext === false) return undefined;
+    const sessionId = this.decisionContext.sessionId ?? event.correlationId;
+    try {
+      const entry = emitDecision(
+        {
+          agentId: this.decisionContext.agentId,
+          sessionId,
+          kind: 'ORCHESTRATION',
+          category: 'skip',
+          moment: 'ACT',
+          why: {
+            text: `派发挂起（should-run 未通过·${suspension.question}）：${event.type} —— ${suspension.reason}；恢复条件：${suspension.resumeHint}`,
+            tags: ['should-run', suspension.question, event.type],
+            confidence: 'high',
+          },
+          ...(event.causationId !== undefined
+            ? { causedBy: [event.causationId], causalType: 'caused' as const }
+            : {}),
+        },
+        this.dataDir,
+      );
+      return entry.ts;
+    } catch (err) {
+      // 决策留痕失败不阻断挂起（对齐 dual-gate-mw「留痕不阻断业务」），但显式告警
+      console.error(
+        `[events:bus] 派发挂起决策留痕失败（不阻断挂起）：${err instanceof Error ? err.message : String(err)}`,
+      );
+      return undefined;
+    }
+  }
+
+  /**
+   * 重新判定 pending 队列并投递条件已满足的事件（**条件满足自动恢复**）。
+   *
+   * 对每个挂起事件重跑 `shouldRunGate`：通过 → 真正投递（清出 pending）；
+   * 仍不通过 → 保留在 pending（更新挂起详情）。恢复投递走 `deliver()`，
+   * 因此照常写投递留痕与路由决策（「恢复了」可查）。
+   *
+   * 触发点：① 每次 `publish()` 之后自动调用；② 宿主可显式调用本方法（如人审
+   * 通过、配额恢复时）。未注入 gate 或 pending 为空时为 no-op。
+   *
+   * @returns 本次被真正投递的挂起事件结果数组（仍挂起的不计入）
+   */
+  async resumePending(): Promise<EventPublishResult[]> {
+    const gate = this.shouldRunGate;
+    if (!gate || this.pending.length === 0) return [];
+    const snapshot = this.pending;
+    this.pending = [];
+    const resumed: EventPublishResult[] = [];
+    for (const item of snapshot) {
+      const verdict = await gate(item.event);
+      if (verdict.run) {
+        resumed.push(await this.deliver(item.event, 1, 0));
+      } else {
+        this.pending.push({
+          ...item,
+          suspension: verdict.suspended ?? item.suspension,
+        });
+      }
+    }
+    return resumed;
+  }
+
+  /** 当前挂起等待恢复的派发（调试/断言用；返回快照副本） */
+  listPending(): PendingDispatch[] {
+    return [...this.pending];
   }
 
   /** 补齐事件字段（id / ts / correlationId） */
