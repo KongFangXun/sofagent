@@ -92,7 +92,15 @@ compactIfNeeded:engine/inject/src/load-chain/compactor.ts"
 #      engine/mcp/src/tools/router-session-push.ts（同语义管线，session 上行复用）。
 #      ⇒ 债务已清，条目**摘除**。摘除不同于续期/改目标版本，是本机制唯一认可的清偿动作。
 # 机制保留为空串：后续 SDK 先行债务按 `符号:reason:目标版本` 继续登记即可（登记即声明「尚无生产调用点」）。
-SDK_FACE_WAIVER=""
+#   decideEgress（v1.5.2 第五章登记）：出口治理**裁决接口**的面外实现形态——
+#     第五章马鞍边界明写「只做策略契约 + 审计挂链，不自建 egress proxy / 网络拦截器」，
+#     裁决函数按设计**由外部拦截器（egress proxy / OS 沙箱）消费**，故仓内零调用点是预期态。
+#     首个仓内消费方已排期：v1.5.4 第五章（AI 节点出站管控）——该版 devlog 明写
+#     「本版第五章（AI 节点）是 v1.5.2 第五章（出口治理）的第一个实装消费方」。
+#     不把它硬接到既有出站路径（webhook / cloud-exec）的原因：白名单默认空 = 全拒，
+#     接上去会让默认态打断全部出站推送——比登记债务更差。
+#     到期（v1.5.4 ≤ SSOT）未接线即自动转红，本条目即声明「此处有据可查的接线债」。
+SDK_FACE_WAIVER="decideEgress:出口裁决接口按设计由外部拦截器消费+首个仓内消费方排 v1.5.4 第五章:v1.5.4"
 
 # ── --since <prev-tag>：版本 diff 驱动模式 ──
 # 用 git diff <prev-tag>..HEAD 提取 engine/**/src/*.ts 新增的 @public 导出
