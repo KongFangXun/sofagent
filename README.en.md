@@ -23,7 +23,7 @@
 - [Core Features](#core-features)
 - [What is the FDE Harness](#what-is-the-fde-harness)
 - [Multi-platform Mounting](#multi-platform-mounting)
-- [v1.5.1: Orchestration · Event-Driven](#v151-orchestration--event-driven--released--2026-09-22)
+- [v1.5.2: Audit · External Provability & Decision Semantics](#v152-audit--external-provability--decision-semantics--pending--2026-09-24)
 - [The Two FDE Harness Phases](#the-two-fde-harness-phases)
 - [Installation](#installation)
 - [Usage](#usage)
@@ -145,17 +145,17 @@ Sits between the Agents you already use and the model layer — it doesn't repla
 
 One command selects your mounting tier: `bash install.sh --platform <platform-name>` (all platforms and differences in [HANDBOOK](./docs/HANDBOOK.md))
 
-## v1.5.1: Orchestration · Event-Driven (✅ Released · 2026-09-22)
+## v1.5.2: Audit · External Provability & Decision Semantics (⏳ Pending · 2026-09-24)
 
-⚡ **The orchestration module goes event-driven** — business nodes run themselves when events arrive:
+🔍 **The audit module goes externally provable** — three things at once:
 
 | Capability | In one line |
 |------|--------|
-| **Business event triggers** | Four event sources (upstream output / email arrival / form submission / timer) + `on:` declarative subscriptions + dead-letter replay, with full audit trails on event delivery |
-| **Comprehension-debt response** | Auto-PR explanation blocks citing decision-log causal chains ("why this was done") + daemon weekly digest with INSPECTORS registration |
-| **Device OTA remote upgrade** | Upgrade commands over the event bus + device-daemon pull with signature verification + gray-release batching + offline-hold catch-up |
+| **Audit data outside** | Read-only MCP `audit_query` (filter by time / rule / exitCode, byte-level read-only invariant) + audit event subscription push |
+| **Ruleset export + standalone verification** | `ruleset_export` machine-readable JSON, round-trip reversible (24-rule metadata + version fingerprint); `verify-chain` zero-dependency verifier — third parties can validate HMAC chains without installing sofagent |
+| **Decision semantics on both ends** | A five-question should-run gate before work starts (health / human-gate / evidence / focus / quota — suspend-not-fail with auto-resume) + conclusion invalidation semantics (three triggers mark stale conclusions so they stop feeding downstream) |
 
-Also in this release: AI exception bus (retry / human / rollback routing) · task dispatch phase 2 (push-direct + offline heartbeat piggyback + receipts into the audit chain) · production pipeline wiring (three-layer sensitivity detection + canary routing) · dual-channel audit input (intent stream redacted at rest) · a five-minute `sofagent demo` drama arc · legacy cleanup (`--legacy` callers zeroed). **Tests 4903 → 5083 · acceptance 357 → 367 · 87 regression dimensions** (13-package workspace count; post-release items merged into existing dimensions). Full details in the [devlog](./docs/changelog/v1.5/v1.5.1.md) · earlier versions in [CHANGELOG](./CHANGELOG.md).
+Also in this release: egress governance (default-deny host allowlist + outbound adjudication HMAC-chained) · pre-authorization mandate loop (scope/expiry/approver, rejected before execution) · identity three-layer narrative injection (bilingual README) · DSH plugin npm debut surface (kit + seven `cordis-plugin-sofagent-*`) · v1.5.1 post-release review fix batch (35 items incl. six fail-open closures). **Tests 5083 → 5296 · acceptance 367 → 373 · 85 regression dimensions · MCP 105→107** (13-package workspace count, as of release). Full details in the [devlog](./docs/changelog/v1.5/v1.5.2.md) · earlier versions in [CHANGELOG](./CHANGELOG.md).
 
 ## The Two FDE Harness Phases
 

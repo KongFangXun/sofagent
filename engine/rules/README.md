@@ -20,3 +20,5 @@ npm install @sofagent/rules
 
 - [架构总览](../../docs/ARCHITECTURE.md) — rules 在约束层中的位置
 - [使用手册（WIKI）](../../docs/WIKI.md) — 面向 FDE 的完整用法
+
+> v1.5.2：网络出口治理面——host 白名单声明面（默认空全拒 opt-in）+ 裁决事件契约可导出（判定底座消费源）。
