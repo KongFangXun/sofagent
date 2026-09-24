@@ -140,5 +140,5 @@
 | v0.51–v0.53 | 宣称对齐 + 评审反馈修复 |
 | v0.47–v0.50 | 项目首次发布 + 安装断裂修复 |
 
-> ℹ️ 以上区间涵盖此时期所有 git tag（含 v0.62, v0.63.1, v0.64, v0.70.0, v0.70.1, v0.71, v0.72, v0.73, v0.74, v0.75 等子版本），子版本无单独索引条目。
+> ℹ️ 以上区间涵盖此时期全部版本；子版本无单独索引条目。实验期仅保留文字档案（本节与 archive 目录），git tag 与 release 自 v1.0.0 起维护。
 > 早期版本的完整日志在 [`docs/archive/changelog-experimental/`](./docs/archive/changelog-experimental/) 目录下。

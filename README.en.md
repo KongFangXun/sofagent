@@ -183,7 +183,7 @@ Also in this release: AI exception bus (retry / human / rollback routing) · tas
 
 ## Installation
 
-**Release stage (read before installing)**: sofagent is in its **Alpha construction period** (**v0.x–v1.x**) — the feature surface moves fast and **no interface stability is promised**; read the [CHANGELOG](./CHANGELOG.md) before upgrading across versions. From **v2.0.0** on it enters the **Beta stage**.
+**Release stage (read before installing)**: sofagent is in its **Alpha construction period** (**v1.x**) — the feature surface moves fast and **no interface stability is promised**; read the [CHANGELOG](./CHANGELOG.md) before upgrading across versions. From **v2.0.0** on it enters the **Beta stage**.
 
 The matching npm release-channel policy: **construction-period versions are published to the `latest` dist-tag as usual** — `npx @sofagent/audit` pulls the current latest by default, no dist-tag needed. Measured now: `npm view @sofagent/audit dist-tags` → `{ latest: '1.5.1' }`. **After v2.0.0 ships, `latest` points to 2.0**.
 
