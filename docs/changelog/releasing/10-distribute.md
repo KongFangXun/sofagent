@@ -164,7 +164,7 @@ done
 # 1. 全局包更新（audit + core）
 npm install -g @sofagent/audit@latest @sofagent/core@latest
 sofagent-audit --version   # 确认 registry 版本
-sofagent-core --doctor     # 期望全部通过
+npx -p @sofagent/core@<版本> sofagent doctor   # 期望全部通过（bin 名 sofagent，doctor 为其子命令）
 
 # 2. Skill 同步（WorkBuddy + OpenClaw 双平台）
 # 🔴 主入口必须单独 cp：SKILL/harness/ 只有流程文件、不含 SKILL.md 主入口——
