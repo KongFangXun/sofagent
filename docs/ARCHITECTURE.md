@@ -228,7 +228,7 @@ Agent = **模型 + 上下文 + 工具 + 状态 + 执行控制 + 权限 + 可观�
 
 | 包 | 职责 | 状态 |
 |---|---|---|
-| audit | 提交时审计，24 条规则（17 默认 + 7 扩展，[完整清单见 SECURITY](../SECURITY.md#24-条审计规则完整清单文档级-ssot)）硬证据扫描 + 快照/回滚/webhook + 本体建模要求对齐维度（`runRules({gb48000:true})` opt-in） | ✅ 已实现（1352 测试） |
+| audit | 提交时审计，24 条规则（17 默认 + 7 扩展，[完整清单见 SECURITY](../SECURITY.md#24-条审计规则完整清单文档级-ssot)）硬证据扫描 + 快照/回滚/webhook + 本体建模要求对齐维度（`runRules({gb48000:true})` opt-in） | ✅ 已实现（1357 测试） |
 | core | 核心运行时：git diff 解析、shadow-repo 快照、AES-256-GCM/ECDH、think.md 契约、doctor、LLM 调用 Trace、stop_reason 分类、身份码 Ed25519、敏感识别三层插槽（T8：L0 正则/L1 词典/L2 外挂 NER + DetectorRegistry 调度 + 置信度分层 + Presidio 标签映射） | ✅ 已实现（562 测试） |
 | inject | 四层约束加载链 `buildConstrainedSystemPrompt()` + L4 渐进加载（热点全文 + 索引） | ✅ 已实现 |
 | rules | 规则引擎纯函数包（零 git 依赖；fs 仅限 AST 扫描的临时目录——mkdtemp 写入待检源码片段，扫描后即清理），编排层 tool-call 事前拦截 + 审批四模式 | ✅ 已实现 |
@@ -636,6 +636,14 @@ graph LR
 > 📖 来源：[OpenAI Agents SDK v0.22.0 release notes](https://github.com/openai/openai-agents-python/releases/tag/v0.22.0)（2026-08-19 · 官方 changelog · A 级源）
 
 > [Anthropic《When AI builds itself》](https://www.anthropic.com/institute/recursive-self-improvement)（2026-06）：工程师代码产出达 2024 年 8 倍后，人工代码审查成为新堵点。sofagent 的审计把审查外置到 git diff 自动化——正是解这个瓶颈的方向。
+
+**僵局也是审计对象：行为分布塌缩信号**。审计若只记「完成了什么」，卡死就不可见——141 小时长时评测实测：Agent 受挫后行为分布塌缩为单一重复动作，产出行数照常增长但状态推进为零。故审计读数须含过程形态信号：「同一动作连续重复 N 次且无状态推进」即告警。这与过程面（逐步可见）、结果面（git diff 裁决）互补成第三面——不看产出多少，只看行为是否还在发散。
+
+> 📖 来源：Vals AI《我的世界》141 小时长时评测（2026-09，一手实测，链接见知识库同名笔记）；与恢复策略挖掘、轨迹失败模式挖掘互证（彼为进化侧训练信号，此为审计侧告警信号）
+
+**凭证与能力解耦：UI 开关必须等于数据面真关**。Meta Muse 零日漏洞的教训：一个未校验的配置端点即可窃取 token 全权接管——根因是 token 同时承担「身份」与「能力开关」两个职责。治理判据：高危工具的许可在模型上下文之外设独立确认（许可门既有形态），且确认链路本身可回溯（进审计链）；界面开关状态不得作为控制面依据——「界面上关了」不等于「引擎里关了」，开关无效即控制面装饰。
+
+> 📖 来源：Meta Muse 零日漏洞（Ars Technica/The Verge，2026-09，链接见知识库同名笔记）；与决策模型 credential scope 最小授权、许可门「验证通过前不产生副作用」互证
 
 **行业印证**：Palantir AIP 靠 Ontology 实现 Agent 可靠性——「根本接触不到 > 被告知不能说」与 sofagent 的 A15 约束验证 + 审计外置遵循同一原则（不依赖 Agent 自我报告，只看 git diff 硬证据）。Palantir OAG 的「确定性与概率性分离」与 sofagent 审计完全同构——sofagent 的 19/24 条规则为纯 git-diff（不依赖 Agent 配合）正是这一原则的工程实现。完整的行业对标分析（Palantir OAG 五层映射、Ledger-Views-Policy 对照、DeerFlow/Omnigent/DataFlow 等）见 [PHILOSOPHY §五·世界模型](./PHILOSOPHY.md#为什么世界模型优先于语言模型) 和 [VALIDATION](./VALIDATION.md)。
 
