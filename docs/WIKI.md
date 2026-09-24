@@ -228,7 +228,7 @@ graph TB
 | `docs/PHILOSOPHY.md` | 产品哲学九节：为什么做、三层治理、FDE 定义 |
 | `docs/VALIDATION.md` | 行业印证与生态定位：31 篇行业方法论印证、a16z 七法则、Agent 三层模型、架构框架映射 |
 | `docs/ARCHITECTURE.md` | 架构详解：约束层五种能力（注入·审计·回溯·沉淀·进化）、数据流、部署模式、文件结构（含 Ledger-Views-Policy ↔ LLM Wiki 三层同构对照） |
-| `docs/DEVELOPMENT.md` | 开发指南：本地环境、包结构、测试、发版流程 |
+| `docs/DEVELOPMENT.md` | 开发指南：本地环境、工作原理、编排哲学、自进化机制、数据文件架构、验证方法论 |
 | `docs/HANDBOOK.md` | FDE 操作手册：进场流程、节点部署、持续维护 |
 | `docs/ROADMAP.md` | 版本路线图、行业借鉴项、技术预研方向 |
 | `docs/LIMITATIONS.md` | 已知限制和适用边界 |
@@ -258,7 +258,7 @@ graph TB
 | `engine/dsh-plugins/` | cordis-plugin-sofagent* 7 款 DSH 插件（v1.4.9 P2 合并批 10→7）——6 款原子（audit（含验收门禁面）· rollback · inject · evolve · daemon · fde（本体/FDE/公地三域厚插件））+ 1 款聚合（裸名 `cordis-plugin-sofagent`，一次挂载全套） |
 | `engine/openclaw-plugins/` | OpenClaw code-plugin 4 款（ClawHub 发布形态） |
 | `~/.sofagent/bin/sofagent` | CLI 入口（安装时生成，不在仓库内）— `sofagent status/where/version/data/help` |
-| 其余 6 包（eval/ab-test/evolve/rules/ontology/think） | 详见 `docs/DEVELOPMENT.md §包结构`（包数口径：workspace 27 = 13 模块包 + load-chain + dsh-plugin-kit + umbrella + 7 DSH 插件 + 4 OpenClaw 插件，见 §六口径表；**测试计数口径** = 13 个含 test script 的 workspace 包 —— 与 README「工程可信度」段同口径；@sofagent/load-chain 与 @sofagent/dsh-plugin-kit 为工具包另列） |
+| 其余 6 包（eval/ab-test/evolve/rules/ontology/think） | 详见 `docs/ARCHITECTURE.md §27 个 workspace 源码包`（包数口径：workspace 27 = 13 模块包 + load-chain + dsh-plugin-kit + umbrella + 7 DSH 插件 + 4 OpenClaw 插件，见 §六口径表；**测试计数口径** = 13 个含 test script 的 workspace 包 —— 与 README「工程可信度」段同口径；@sofagent/load-chain 与 @sofagent/dsh-plugin-kit 为工具包另列） |
 
 ### 关键数据路径（`data/`）
 
@@ -293,7 +293,7 @@ graph TB
 |------|------|---------|
 | FDE | Forward Deployed Engineer——进场生成判断、部署 AI 节点的工程师 | [PHILOSOPHY §一](./PHILOSOPHY.md) |
 | FDEing（= Forward Deployed Engineering） | FDE 的动词化——把 FDE 从一项人力工作变成一种可自动执行的能力（人走能力不走，花更少的人力提供更多的能力）；万物皆可 FDEing：任何业务对象、流程、节点被 FDEing 一遍「梳理 → 判定 → 交付 → 养护」。**思维方式三问**：workflow 怎么搭 / AI 节点是什么 / 怎么让 AI 帮实现。FDE 名词位（岗位）、FDEing 动词位（能力与动作），禁混用 | [README · 什么是 FDE Harness（含 FDEing 愿景引语）](../README.md#什么是-fde-harness) |
-| 同名导出消歧 | 不同包导出同名符号时以「来源包 + 符号名」双键区分，禁裸符号名 grep 判接线。已知同名对：`routeRequest`——`@sofagent/orchestrator/workflow`（语义路由，route/route-request.ts）vs `canaryRouteRequest`（`@sofagent/train` 权重灰度分流，weight-canary.ts——该导出 v1.5.0 更名避歧） | [DEVELOPMENT §包结构](./DEVELOPMENT.md) |
+| 同名导出消歧 | 不同包导出同名符号时以「来源包 + 符号名」双键区分，禁裸符号名 grep 判接线。已知同名对：`routeRequest`——`@sofagent/orchestrator/workflow`（语义路由，route/route-request.ts）vs `canaryRouteRequest`（`@sofagent/train` 权重灰度分流，weight-canary.ts——该导出 v1.5.0 更名避歧） | [ARCHITECTURE §27 个 workspace 源码包](./ARCHITECTURE.md) |
 | 中间件（Harness 中间件） | **品类定位词**——答「sofagent 属于哪个品类」（Harness 类运行时/治理框架）；**不是**「约束层是技术实现层的中间件」这一实现论判断 | [ARCHITECTURE §术语对照](./ARCHITECTURE.md#术语对照) |
 | Harness | 约束层的英文 SSOT 称法（对外中文「约束层」、英文「Harness」同指一物）——"缰绳"，非"马" | [ARCHITECTURE §术语对照](./ARCHITECTURE.md#术语对照) |
 | 双层架构 | 约束层 × 生命周期——约束层保证"每次做对"，生命周期保证"从诊断到自运转怎么走" | [ARCHITECTURE §二·双层架构](./ARCHITECTURE.md#双层架构约束层与生命周期主框架) |
@@ -306,7 +306,7 @@ graph TB
 | FORGE | 自迭代工具链（内部工具，外部用户可忽略）——Agent 审查/修复/验证自己的代码 | [FORGE/README.md](../FORGE/README.md) |
 | fresh-eyes-loop | FORGE 的质量审查闭环（a-check→b-check→a-consolidate→b-fix→a-verify） | [FORGE/SKILL/fresh-eyes-loop/SKILL.md](../FORGE/SKILL/fresh-eyes-loop/SKILL.md) |
 | release-gate-loop | FORGE 的发版闸门闭环（acceptance-test + regression + 审查报告） | [FORGE/SKILL/release-gate-loop/SKILL.md](../FORGE/SKILL/release-gate-loop/SKILL.md) |
-| ToolGate | Agent 工具调用的前置门禁（A2 密钥/A9 注入/A14 越权等规则） | [DEVELOPMENT §ToolGate](./DEVELOPMENT.md) |
+| ToolGate | Agent 工具调用的前置门禁（A2 密钥/A9 注入/A14 越权等规则） | [ARCHITECTURE §27 个 workspace 源码包](./ARCHITECTURE.md) |
 | data/ | v1.2.1 SSOT 运行时数据目录（安装后实际位于 ~/.sofagent/data/），替换旧 .sofagent/ | [DEVELOPMENT §数据文件架构](./DEVELOPMENT.md) |
 
 ---
