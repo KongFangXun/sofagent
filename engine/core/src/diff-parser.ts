@@ -270,9 +270,10 @@ function isGitHelpText(output: string): boolean {
 export function parseDiff(range: string, cwd?: string): DiffFile[] {
   const files: DiffFile[] = [];
 
-  // 参数格式校验：range 只允许 [a-zA-Z0-9~^.\-/] 字符，防止命令注入和 git flag 注入
+  // 参数格式校验：range 只允许 [a-zA-Z0-9~^.\-/] 字符，防止命令注入和 git flag 注入——
+  // 首字符禁止 `-`，杜绝 `--all`/`-w`/`--cached` 等 git flag 形态输入直达 git 参数位
   // `/` 是合法 refspec 字符（分支名 origin/main）；execFileSync 数组传参不经 shell，无注入风险
-  if (!/^[a-zA-Z0-9~^.\-\/]+$/.test(range)) {
+  if (!/^[a-zA-Z0-9~^./][a-zA-Z0-9~^.\-\/]*$/.test(range)) {
     console.error(
       `参数校验失败: range "${range}" 包含非法字符。只允许 [a-zA-Z0-9~^.-/] 字符。`
     );
@@ -391,13 +392,13 @@ export function parseDiff(range: string, cwd?: string): DiffFile[] {
   } catch (err) {
     // spill 路径 git 失败 = 内容验不了——原样上抛走引擎崩溃（退出码 4），不许降级为「范围无效」告警
     if ((err as NodeJS.ErrnoException)?.code === SPILL_FAILURE_CODE) throw err;
-    // git diff 失败——非 git 仓库或无提交记录
-    // v1.3.8 P1-B5：产品化提示（[sofagent] 前缀）替代 raw git stderr 透传；
-    // 技术细节只在 SOFAGENT_DEBUG=1 时输出
-    if (process.env.SOFAGENT_DEBUG === '1') {
-      console.error('[diff-parser] git diff 失败:', (err as Error).message);
-    }
-    console.error(`[sofagent] ⚠️ 无法解析 diff 范围 "${range}"——请检查 ref 是否存在（如 HEAD~1..HEAD），或仓库是否尚无提交。`);
+    // v1.5.2 修复 P1-9：列表阶段 fail-closed 收口，对齐 parseStagedDiff——git 失败
+    // （index.lock 被占 / ENOBUFS / 非法 ref 等）= 范围验不了，吞成空数组会被上层
+    // 输出「✅ 无文件变更」exit 0（假绿）。带 SPILL_FAILURE_CODE 穿透上层「范围无效」
+    // 宽容 catch，走引擎崩溃退出码 4；仅 git exit 0 且输出为空才走合法空数组路径。
+    const failure = new Error(`[sofagent] ⚠️ 读取 diff 范围 "${range}" 失败（${(err as Error)?.message ?? String(err)}）——拒绝以空内容过审。常见原因：index.lock 被占 / 浅克隆缺对象 / ref 不存在（如 HEAD~1..HEAD）；可处理锁文件或核对 ref 后重试（重试仍失败请带本行上报）`);
+    (failure as NodeJS.ErrnoException).code = SPILL_FAILURE_CODE;
+    throw failure;
   }
 
   return files;
@@ -564,8 +565,12 @@ export async function parseDiffWithIsomorphicGit(dir: string): Promise<DiffFile[
       lines: generateLineDiff(d.oldContent, d.newContent),
     }));
   } catch (err) {
-    console.error('[diff-parser] isomorphic-git fallback 失败:', (err as Error).message);
-    return [];
+    // v1.5.2 修复 P1-9：fallback 失败同样 fail-closed，对齐主路径（同错误码）——
+    // console.error 后返回 [] 会让上层把「diff 生成失败」当「无变更」假绿。
+    // isomorphic-git 真实返回空 diff 时走上方正常 return，不误伤确无变更场景。
+    const failure = new Error(`[sofagent] ⚠️ isomorphic-git fallback 生成 diff 失败（${(err as Error)?.message ?? String(err)}）——拒绝以空内容过审`);
+    (failure as NodeJS.ErrnoException).code = SPILL_FAILURE_CODE;
+    throw failure;
   }
 }
 

@@ -215,8 +215,11 @@ const DOC_FILES = [
 ];
 
 function actualTotal() {
+  // 数据源必须是磁盘基线（BASELINE）而非本次 live 提取的 nextBaseline——
+  // 否则「声称 vs 实际」变成自己比自己，基线漂移被结构性掩盖
+  const disk = JSON.parse(readFileSync(BASELINE, 'utf-8'));
   let t = 0;
-  for (const v of Object.values(nextBaseline.packages)) {
+  for (const v of Object.values(disk.packages)) {
     t += Array.isArray(v) ? v.length : (v.symbols || []).length;
   }
   return t;
@@ -249,7 +252,7 @@ const actual = actualTotal();
 const claims = claimedTotals();
 let docMismatch = 0;
 if (claims.length > 0) {
-  console.log(`\n📋 文档声称符号数校验（实际 baseline = ${actual}）`);
+  console.log(`\n📋 文档声称符号数校验（磁盘基线 ${BASELINE} = ${actual} 符号）`);
   for (const c of claims) {
     if (c === actual) {
       console.log(`  ✅ 文档声称 ${c} 与 baseline 一致`);

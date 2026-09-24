@@ -33,9 +33,27 @@ export function checkPermission(
   operation: string,
 ): { allowed: boolean; matchedRule?: string; reason?: string } {
   for (const rule of perm.merged) {
-    // 简单 glob 匹配（支持 * 通配符）——构造失败跳过该条，不崩溃进程
+    // 简单 glob 匹配（支持 * 通配符）——构造失败不崩溃进程；
+    // deny 规则编译失败时 fail-closed（该次检查直接拒绝），allow 规则跳过该条
     const patternRegex = compilePermissionPattern(rule.pattern);
-    if (patternRegex === null) continue;
+    if (patternRegex === null) {
+      if (rule.effect === 'deny') {
+        console.error(JSON.stringify({
+          level: 'warn',
+          msg: 'permission deny 规则 pattern 编译失败，按 fail-closed 拒绝该操作',
+          rule: rule.name,
+          pattern: rule.pattern,
+          reason: '正则编译失败',
+          hint: '修正 permission 配置中的正则',
+        }));
+        return {
+          allowed: false,
+          matchedRule: rule.name,
+          reason: `Pattern 编译失败，deny 规则按 fail-closed 拒绝: ${rule.name}`,
+        };
+      }
+      continue;
+    }
     if (patternRegex.test(file) || patternRegex.test(operation)) {
       return {
         allowed: rule.effect === 'allow',

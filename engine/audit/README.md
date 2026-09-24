@@ -1,5 +1,7 @@
 # @sofagent/audit
 
+> 命名说明：本目录是随安装分发的 engine 侧实现；维护者 SOP 脚本见同名 tools/audit——职责边界见 tools/README.md。
+
 > v1.5.1 · 提交时审计 —— 扫描 git diff，检查 Agent 是否遵守工作纪律。
 >
 > **安装后运行：`sofagent-audit --init`**（一键初始化 config + hook + 冒烟测试）

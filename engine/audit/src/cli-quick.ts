@@ -559,7 +559,9 @@ export function runCliQuick(argv: string[]): number {
   try {
     diffFiles = parseDiff(diffRange);
   } catch {
+    // finding-09 fail-closed 收口后，不可解析 ref 在此抛错——文案对齐 v1.5.1 F1 契约（回显范围可诊断）
     console.log('⚠️  diff 解析失败。');
+    console.log(`   无法解析 diff 范围「${diffRange}」的 ref——请检查 ref 是否存在（如 HEAD~1..HEAD、origin/main..HEAD），或仓库是否尚无提交。`);
     return 3;
   }
 

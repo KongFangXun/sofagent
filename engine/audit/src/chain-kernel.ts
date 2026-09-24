@@ -36,9 +36,9 @@
 //   保证既有错误契约逐字不变。
 // ============================================================
 
-import { chmodSync, existsSync, mkdirSync, readFileSync } from 'fs';
+import { chmodSync, closeSync, existsSync, mkdirSync, openSync, readSync, statSync } from 'fs';
 import { dirname } from 'path';
-import { createHash, createHmac } from 'crypto';
+import { createHash, createHmac, timingSafeEqual } from 'crypto';
 import { atomicAppendSync, stableStringify } from '@sofagent/core';
 
 // ════════════════════════════════════════
@@ -271,13 +271,12 @@ export function appendChained<T extends object>(
     throw makeWriteError(`创建目录失败 ${dir}`, err);
   }
 
-  // ── 1. prevHash（读末行）──
+  // ── 1. prevHash（读末行——v1.5.2 finding-25：倒序按块读，不再全量 readFileSync）──
   let prevHash = 'genesis';
   if (existsSync(filePath)) {
     try {
-      const lines = readFileSync(filePath, 'utf-8').trim().split('\n').filter(Boolean);
-      if (lines.length > 0) {
-        const lastLine = lines[lines.length - 1]!;
+      const lastLine = readLastCompleteLine(filePath);
+      if (lastLine !== undefined) {
         const lastEntry = JSON.parse(lastLine) as Record<string, unknown>;
         prevHash = computePrevHash(lastEntry, fingerprint);
       }
@@ -318,6 +317,49 @@ export function appendChained<T extends object>(
   }
 
   return finalEntry;
+}
+
+// v1.5.2 finding-25：appendChained 取末行不再全量 readFileSync（审计链无轮转，
+// 长期运行每次追加 O(n) 变慢、内存峰值线性上涨）。从文件末尾按 4KB 块倒序读，
+// 取最后一个「完整且非空」的行；文件小于一块时整体读。兼容性不变：返回值与
+// 全量读取 `readFileSync().trim().split('\n').filter(Boolean)` 的末行逐字一致
+// （逐行 trim、空行过滤口径相同）。verifyChain / loadChain 全链读取不受影响。
+function readLastCompleteLine(filePath: string): string | undefined {
+  const CHUNK_SIZE = 4096;
+  const size = statSync(filePath).size;
+  if (size === 0) return undefined;
+  let end = size;
+  let windowBuf = Buffer.alloc(0);
+  while (end > 0) {
+    const chunkSize = Math.min(CHUNK_SIZE, end);
+    const start = end - chunkSize;
+    const buf = Buffer.alloc(chunkSize);
+    const fd = openSync(filePath, 'r');
+    try {
+      readSync(fd, buf, 0, chunkSize, start);
+    } finally {
+      closeSync(fd);
+    }
+    windowBuf = Buffer.concat([buf, windowBuf]);
+    end = start;
+    const lines = windowBuf.toString('utf-8').split('\n');
+    // 未到文件头时，窗口首行是没有以 \n 结束的残行，跳过不取
+    const scanEnd = start === 0 ? lines.length : lines.length - 1;
+    for (let i = scanEnd - 1; i >= 0; i--) {
+      const line = lines[i]!.trim();
+      if (line) return line;
+    }
+    // 本窗口内没有完整非空行——继续向前扩一块
+  }
+  return undefined;
+}
+
+// v1.5.2 修复：常量时间比较，对齐 pairing.ts 范式
+// （engine/core/src/crypto/pairing.ts timingSafeEqual）——长度不等直接 false，
+// 避免 timingSafeEqual 对不等长输入抛异常。
+function timingSafeEq(a: string, b: string): boolean {
+  const ab = Buffer.from(a), bb = Buffer.from(b);
+  return ab.length === bb.length && timingSafeEqual(ab, bb);
 }
 
 // ════════════════════════════════════════
@@ -371,7 +413,7 @@ export function verifyChain(
       .update(genesisHashInput)
       .digest('hex')
       .slice(0, 32);
-    if (genesisEntry.hmacSig !== genesisExpectedHmac) {
+    if (!timingSafeEq(genesisEntry.hmacSig, genesisExpectedHmac)) {
       if (genesisEntry.hmacAlgo === 'stable' && !genesisUseFingerprint) {
         return {
           status: 'tampered',
@@ -432,7 +474,7 @@ export function verifyChain(
         : JSON.stringify(recordForHash);
       const expectedPrevHash = createHash('sha256').update(hashInput).digest('hex').slice(0, 16);
 
-      if (curr.prevHash !== expectedPrevHash) {
+      if (!timingSafeEq(curr.prevHash as string, expectedPrevHash)) {
         if (currUseFingerprint) {
           foundUnverifiable = true;
           noteUnverifiable(i, 'v2-prevhash-drift');
@@ -450,7 +492,7 @@ export function verifyChain(
     // 2) HMAC 验签
     if (curr.hmacSig && keyAvailable && key) {
       const expectedHmac = computeHmacSig(curr as Record<string, unknown>, key, fingerprint);
-      if (curr.hmacSig !== expectedHmac) {
+      if (!timingSafeEq(curr.hmacSig as string, expectedHmac)) {
         if (curr.hmacAlgo === 'stable') {
           if (currUseFingerprint) {
             const recordedFingerprint = curr.envFingerprint;

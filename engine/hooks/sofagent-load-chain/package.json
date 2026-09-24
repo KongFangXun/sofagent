@@ -42,5 +42,6 @@
     "!dist/**/*.js.map",
     "!dist/**/*.d.ts.map",
     "!dist/**/*.test.*"
-  ]
+  ],
+  "//files": "handler.ts 刻意随包分发：hook 消费方（.git/hooks 生成的脚本）按相对路径读取；不设 exports 以允许直接引用该文件。如需收面请同步修改 hook 生成模板。"
 }

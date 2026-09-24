@@ -1389,15 +1389,12 @@ async function loadLiveData(){
     processAuditData(records);
     var dh=await tryFetch(dataRoot+'/dashboard/daemon-health.json');
     if(dh)try{daemonHealth=JSON.parse(dh)}catch(e){}
-    // data-sovereignty 按 年/月/*.jsonl 分目录，取最近的
+    // 服务端数据布局：data/audit/<年>/<月>/*.jsonl（按日取最近一份；无单文件回退）
     var sovReport=null;
     var now=new Date();
     var y=now.getFullYear(),m=String(now.getMonth()+1).padStart(2,'0');
     var d=String(now.getDate()).padStart(2,'0');
     sovReport=await tryFetch(dataRoot+'/audit/data-sovereignty/'+y+'/'+m+'/'+y+'-'+m+'-'+d+'.jsonl');
-    if(!sovReport){ // fallback 最近一条
-      sovReport=await tryFetch(dataRoot+'/audit/data-sovereignty.json');
-    }
     var sovRecords=sovReport?parseJSONL(sovReport):[];
     if(sovRecords.length){sovereigntyData={localExecutions:0,cloudCalls:0,dataOutflow:0}}
     sovRecords.forEach(function(sr){
@@ -1495,12 +1492,43 @@ function renderAuditRows(records){
     var ruleCell=rec.rule
       ? '<span class="audit-rule" style="color:var(--'+(verdict==='FAIL'?'red':'amber')+')">'+escapeHtml(rec.rule)+'</span>'
       : '<span class="audit-rule icon-ok">✓</span>';
-    return '<div class="audit-row"><span class="audit-time">'+(rec.time||'')+'</span><span class="audit-badge '+cls+'">'+verdict+'</span>'+ruleCell+'<span class="audit-task">'+escapeHtml(rec.task||'')+'</span></div>';
+    return '<div class="audit-row"><span class="audit-time">'+escapeHtml(rec.time||'')+'</span><span class="audit-badge '+cls+'">'+verdict+'</span>'+ruleCell+'<span class="audit-task">'+escapeHtml(rec.task||'')+'</span></div>';
   }).join('');
 }
 
 /* 用 /api/summary（bash 同口径）渲染驾驶舱 */
 function renderSummaryData(s){
+  // v1.5.2 修复（finding-15）：消费 /api/summary 读失败上报（ok=false + readErrors，
+  // serve-dashboard.mjs J4b-① 已逐条登记）——读失败不再静默偏低分母，摘要区顶部告警。
+  var reList=s.readErrors||[];
+  if(s.ok===false&&reList.length){
+    var reNames=reList.slice(0,5).map(function(e){return escapeHtml(e.file||'?');}).join('、');
+    if(reList.length>5)reNames+=' …等 '+reList.length+' 个';
+    var reBox=document.getElementById('readErrorsBanner');
+    if(!reBox){
+      reBox=document.createElement('div');
+      reBox.id='readErrorsBanner';
+      reBox.className='badge-warn';
+      reBox.style.cssText='display:block;margin:0 0 12px;padding:10px 14px;border-radius:8px;font-size:12px;';
+      var metricsEl=document.querySelector('.metrics');
+      if(metricsEl)metricsEl.parentNode.insertBefore(reBox,metricsEl);
+    }
+    reBox.innerHTML='⚠️ '+reList.length+' 个主权数据文件读取失败，以下统计分母可能偏低：'+reNames;
+  }
+  // v1.5.2 修复（finding-19）：消费 environment.jqAvailable=false——jq 未安装时
+  // 审计统计不可用，显式告警替代「通过率 0%」式的静默归零。
+  if(s.environment&&s.environment.jqAvailable===false){
+    var jqBox=document.getElementById('jqMissingBanner');
+    if(!jqBox){
+      jqBox=document.createElement('div');
+      jqBox.id='jqMissingBanner';
+      jqBox.className='badge-warn';
+      jqBox.style.cssText='display:block;margin:0 0 12px;padding:10px 14px;border-radius:8px;font-size:12px;';
+      var jqAnchor=document.querySelector('.metrics');
+      if(jqAnchor)jqAnchor.parentNode.insertBefore(jqBox,jqAnchor);
+    }
+    jqBox.textContent='⚠️ 未检测到 jq，审计统计不可用（macOS: brew install jq）';
+  }
   var r=s.rules;
   // 指标卡：统一规则检查口径——今日值(大字) + 总量(小字)
   var t=s.tasks||{};
