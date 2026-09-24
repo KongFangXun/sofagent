@@ -1,6 +1,6 @@
 # 文档同步操作手册
 
-> 发版时 changelog 功能点 → 项目文档覆盖检查的操作手册。releasing.md 阶段八引用本文件。
+> 发版时 changelog 功能点 → 项目文档覆盖检查的操作手册。releasing.md 阶段九（09-publish 步骤五）引用本文件。
 
 ### LIMITATIONS 新功能覆盖检查（🔴 fresh-eyes 教训）
 

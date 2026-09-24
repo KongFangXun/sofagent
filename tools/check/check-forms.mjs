@@ -166,8 +166,6 @@ const ROOT = path.resolve(import.meta.dirname, '..', '..');
 // 🔴 扫描窗口 = **未发版**版本（与下方 OPT_OUT_NOTE 同口径）：版本一旦发版即移出本清单——
 //    已发版版本的形态标注属历史档案，回填/对账均无意义（v1.5.0 发版后按此口径移出）。
 const VERSION_SOURCES = [
-  { version: 'v1.5.1', file: 'docs/changelog/v1.5/v1.5.1.md' },
-  { version: 'v1.5.2', file: 'docs/changelog/v1.5/v1.5.2.md' },
   { version: 'v1.5.3', file: 'docs/changelog/v1.5/v1.5.3.md' },
   { version: 'v1.5.4', file: 'docs/changelog/v1.5/v1.5.4.md' },
   { version: 'v1.5.5', file: 'docs/changelog/v1.5/v1.5.5.md' },
@@ -356,8 +354,6 @@ const DECLARED_COUNT_PATTERNS = [
 // 漏登记会被下面两条断言当场抓出，不会静默放行。
 const EXPECTED_LABELS = {
   'v1.5.0': ['主干', '插件', '非功能', '通道成分'],
-  'v1.5.1': ['主干', '通道', '通道成分', '非功能'],
-  'v1.5.2': ['主干', '通道成分', '非功能'],
   'v1.5.3': ['主干', '非功能', '通道成分'],
   'v1.5.4': ['主干', '通道', '非功能'],
   'v1.5.5': ['主干', '非功能'],
@@ -403,8 +399,6 @@ const EXPECTED_LABELS = {
 // 标签集无新增，故 EXPECTED_LABELS 本次不动。
 const EXPECTED_COUNTS = {
   'v1.5.0': { 主干: 5, 插件: 1, 非功能: 3, 通道成分: 1 },
-  'v1.5.1': { 主干: 7, 通道: 3, 通道成分: 1, 非功能: 3 },
-  'v1.5.2': { 主干: 8, 通道成分: 2, 非功能: 2 },
   'v1.5.3': { 主干: 4, 非功能: 3, 通道成分: 1 },
   'v1.5.4': { 主干: 5, 通道: 1, 非功能: 1 },
   'v1.5.5': { 主干: 2, 非功能: 1 },
