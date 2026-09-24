@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # bootstrap.sh · sofagent 一行安装入口（装在企业跑 AI 节点的设备上）
-# 窗口态纪律：钉值维持上一已发版 tag 值（与 INSTALL_URL 同 tag 自洽），CHANGELOG ⏳ 待发版标注 + checklist 维度 130 窗口态分支消红；v1.5.1 哈希在阶段九打 tag 时回填。install.sh 现约 1630 行。
+# 窗口态纪律：钉值维持上一已发版 tag 值（与 INSTALL_URL 同 tag 自洽），CHANGELOG ⏳ 待发版标注 + checklist 维度 130 窗口态分支消红；v1.5.2 哈希在阶段九打 tag 时回填（fix-plan FAIL-3 · run-01）。install.sh 现约 1630 行。
 # 用法：curl -fsSL https://raw.githubusercontent.com/KongFangXun/sofagent/refs/tags/v1.5.1/bootstrap.sh -o bootstrap.sh && bash bootstrap.sh
 # 离线：./bootstrap.sh --local /path/to/install.sh
 # 透传：curl ... | bash -s -- --base-only
 set -euo pipefail
 # ERR trap 品牌兜底：崩溃时用户看到产品信息而非裸 bash 报错（v1.3.2 P0-B1/P2-37）
 trap 'echo "❌ sofagent bootstrap 失败（exit $?）——请截图此信息到 GitHub Issues（github.com/KongFangXun/sofagent/issues）"' ERR
-# v1.3.5 #31: 锁定已发布 tag（当前 refs/tags/v1.5.1）——main 浮动导致装到的版本不可复现；
+# v1.3.5 #31: 锁定已发布 tag（当前 refs/tags/v1.5.2 待发）——main 浮动导致装到的版本不可复现；
 #   升级时改此 tag 与 README 安装段同步。
 INSTALL_URL="https://raw.githubusercontent.com/KongFangXun/sofagent/refs/tags/v1.5.1/install.sh"
 # ════════════════════════════════════════════════════════════════════════

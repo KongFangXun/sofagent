@@ -1918,7 +1918,7 @@ grep -q "planExecution" engine/orchestrator/src/exec/git-capability.ts && grep -
 (
 FAIL=0
 # a: S433–S444 引用闭环（十一场景号须全数在位，缺一即红——S440 章十五族锚 G-1 闭环 / S441 章十一发布链锚 G-10 闭环【本版审查面登记时归并入 S440 共壳，断言零删减】/ S442-S444 本版审查增量闭环）
-grep -cE "scenario 43[3-9]|scenario 44[0234]" playbook/acceptance-test.sh | grep -q "^11$" && echo "✅ S433–S444 十一场景位在位（S441 归并入 S440）" || { echo "❌ S433–S444 场景号缺失"; FAIL=1; }
+grep -cE "scenario 43[3-9]|scenario 44[0-8]" playbook/acceptance-test.sh | grep -q "^15$" && echo "✅ S433–S448 十五场景位在位（S441 归并入 S440 · S445–S448 本版审查增补）" || { echo "❌ S433–S448 场景号缺失"; FAIL=1; }
 grep -rq "replayDeadLetter" engine/orchestrator/src/__tests__/events-bus.test.ts && grep -q "event-queue.jsonl" engine/orchestrator/src/events/bus.ts && grep -q "timer.tick" engine/orchestrator/src/events/adapters.ts && echo "✅ 事件总线三面在位" || { echo "❌ 事件总线面缺口"; FAIL=1; } # b: 章一·事件总线三面（重放/落盘/tick 源）
 grep -q "平台公钥" engine/daemon/src/ota/upgrade-executor.ts && grep -q "设备注册表" engine/daemon/src/device-registry.ts && echo "✅ 验签三要素披露在位" || { echo "❌ 验签三要素披露缺失"; FAIL=1; } # c: 章四·OTA 验签对称/逐条披露（B1/B2 防复发）
 grep -q "holdTaskDispatch" engine/daemon/src/ota/upgrade-policy.ts && grep -q "takeHeldTaskDispatches" engine/daemon/src/ota/upgrade-policy.ts && echo "✅ 双通道在位" || { echo "❌ 任务下发双通道缺口"; FAIL=1; } # d: 章五·任务下发双通道（在线推送 + 离线持有点 + 心跳捎带补收）
@@ -1941,8 +1941,8 @@ _hit=$(grep -rn "ctx?.config?.plugins?.entries" engine/openclaw-plugins/*/src/in
 grep -q "pluginCfg?.projectRoot" engine/openclaw-plugins/sofagent-rollback/src/index.ts && grep -q "pluginCfg?.projectRoot" engine/openclaw-plugins/sofagent-audit/src/index.ts && grep -q "pluginCfg" engine/openclaw-plugins/sofagent-inject/src/index.ts && grep -q "api?.pluginConfig?.reflectHint" engine/openclaw-plugins/sofagent-evolve/src/index.ts && echo "✅ pluginConfig 读点在位" || { echo "❌ pluginConfig 读点缺失"; FAIL=1; } # o: 四款读点
 grep -rq -- "--version 1\." engine/openclaw-plugins/*/README.md && { echo "❌ README 发布命令写死版本号"; FAIL=1; } || echo "✅ 发布命令零硬编码版本" # p: ClawHub 版本不可变
 grep -q '"@deepseek-ai/dsh-web-app": "0.1.5-rc.2"' engine/orchestrator/package.json && echo "✅ dsh-web-app 钉在位" || { echo "❌ 上游钉缺失"; FAIL=1; } # q: 缺失则全新安装 ETARGET 回潮
-# r: 本版审查面登记（章二~章九——约束导出与证据链外部可验 + 运行时 should-run 判定链 + 审计结论失效语义 + 网络出口治理面 + 事前授权补环 + DSH 插件 npm 首发面；行为面由 S442–S444 锁，断言本体在 acceptance-node-probes.js）
-grep -cE "scenario 44[234] " playbook/acceptance-test.sh | grep -q "^3$" && echo "✅ 本版审查面（S442–S444）在位" || { echo "❌ 本版审查面场景缺失"; FAIL=1; }
+# r: 本版审查面登记（章二~章九——约束导出与证据链外部可验 + 运行时 should-run 判定链 + 审计结论失效语义 + 网络出口治理面 + 事前授权补环 + DSH 插件 npm 首发面；行为面由 S442–S448 锁——S445–S448 为 coverage FAIL 补锚：BugFix 五族 / MCP audit 对外面 / README 结构锁 / 发布面 dry-run 对账，断言本体在 acceptance-node-probes.js）
+grep -cE "scenario 44[2-8] " playbook/acceptance-test.sh | grep -q "^7$" && echo "✅ 本版审查面（S442–S448）在位（S445 BugFix 五族 / S446 MCP audit 对外面 / S447 README 结构锁 / S448 发布面 dry-run 对账）" || { echo "❌ 本版审查面场景缺失"; FAIL=1; }
 _p=$(printf '共 23 条规则\n不是第 25 条规则\n不是第 25、26、27 条规则\n24 条规则\n' | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{process.stdout.write(s.replace(/第\s*[0-9]+(?:[、，,]\s*[0-9]+)*\s*条/g,""))})' | grep -oE '[0-9]+[[:space:]]*(条|个)[[:space:]]*规则|[0-9]+[[:space:]]*rules' | grep -oE '[0-9]+' | sort -u | tr '\n' ' '); [ "$_p" = "23 24 " ] && echo "✅ 数字抽取器自证通过（真值捕获 + 序数剥离）" || { echo "❌ 数字抽取器自证失败：实测 [$_p]（期望 23 24 ）"; FAIL=1; } # s: 数字抽取器自证（序数剥离既不能吃掉真值、也不能漏剥序数——真 23 必被捕获 /「第 25、26、27 条规则」必不命中）
 [ "${FAIL:-0}" = "1" ] && { echo "维度144:FAIL"; exit 1; }; echo "维度144:PASS"
 ) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -qE "^[[:space:]]{0,2}❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true
