@@ -1,4 +1,4 @@
-// distill-pairs.ts · v1.5.1 T7 第七章 · 蒸馏偏好对构造（同 prompt 双响应 → DPO）
+// distill-pairs.ts · v1.5.2 T7 第七章 · 蒸馏偏好对构造（同 prompt 双响应 → DPO）
 //
 // 定位：云端教师（强模型 API）好答案 vs 本地模型同题响应 → 天然 DPO 偏好对
 // （chosen=教师 / rejected=本地）→ 进 dpo 数据集。同 prompt 双响应配对构造，

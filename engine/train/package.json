@@ -1,6 +1,6 @@
 {
   "name": "@sofagent/train",
-  "version": "1.5.1",
+  "version": "1.5.2",
   "engines": {
     "node": ">=18"
   },
@@ -25,9 +25,9 @@
   "//split": "v1.4.8 第 7 批：本包自 @sofagent/orchestrator 的 src/train/ 整体迁出（51 文件 / 17508 行），使伞包 sofagent 的依赖闭包可按需安装后训能力。orchestrator 对 train 无构建期依赖（CLI 侧走运行期惰性解析），故依赖方向单向：train → orchestrator，无包级循环。",
   "//deps": "按 src/ 实际 import 推导，不抄：@sofagent/orchestrator（/fde-compose、/model-registry、/weights-manifest、/sandbox-network-gateway、/benchmark、/benchmark-eval、/fde-quantify-core 七个窄入口）、@sofagent/core（19 处）、@sofagent/audit（train-audit 链内核 + train-budget 惰性）、zod（5 处 schema）。",
   "dependencies": {
-    "@sofagent/audit": "1.5.1",
-    "@sofagent/core": "1.5.1",
-    "@sofagent/orchestrator": "1.5.1",
+    "@sofagent/audit": "1.5.2",
+    "@sofagent/core": "1.5.2",
+    "@sofagent/orchestrator": "1.5.2",
     "zod": "^4.6.5"
   },
   "exports": {

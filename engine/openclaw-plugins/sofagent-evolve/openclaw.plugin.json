@@ -2,7 +2,7 @@
   "id": "sofagent-evolve",
   "name": "sofagent 进化",
   "description": "给 OpenClaw 加上经验沉淀——sofagent_evolve 工具把踩坑写成 think.md 反思条目（可选每轮提醒，默认关）",
-  "version": "1.5.1",
+  "version": "1.5.2",
   "seam": "before_prompt_build",
   "seamSemantics": "模型调用前注入 think.md 反思区（进化闭环上下文）",
   "icon": "https://raw.githubusercontent.com/KongFangXun/sofagent/main/docs/assets/sofagent.png",

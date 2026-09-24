@@ -3,7 +3,7 @@
 // ============================================================
 //
 // 灰度切换 / 晋升 / 回滚入口。委托 @sofagent/orchestrator：
-//   - percent < 100 → canary 灰度（只写灰度比例，活动模型不变——v1.5.1 接管链堵断）
+//   - percent < 100 → canary 灰度（只写灰度比例，活动模型不变——v1.5.2 接管链堵断）
 //   - percent = 100 / 缺省 → 晋升全量 🔴 强制人审（对齐 v1.3.5 promote_ab）
 //   - action='rollback' → 回滚到上一活动模型 🔴 强制人审（与 snapshot_restore 同强度）
 //   - action='rollback-weights' → 权重版本级回滚 ⚪ **例外：免人审**（见下）

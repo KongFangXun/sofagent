@@ -1,6 +1,6 @@
 {
   "name": "sofagent-rollback",
-  "version": "1.5.1",
+  "version": "1.5.2",
   "private": true,
   "description": "给 OpenClaw 加上快照回溯——出错时用 sofagent_rollback 按 git 快照一键回滚本次改动",
   "main": "dist/index.js",

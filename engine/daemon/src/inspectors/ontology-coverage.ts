@@ -1,9 +1,9 @@
 // ============================================================
-// ontology-coverage.ts · L3 Ontology 覆盖度（v1.5.1 · P0）
+// ontology-coverage.ts · L3 Ontology 覆盖度（v1.5.2 · P0）
 // ============================================================
 //
 // @monthly：统计知识库对 Ontology 本体的覆盖度。
-//   - 读 {SOFAGENT_HOME}/data/knowledge/ 下各子目录的 .md 文件（v1.5.1 P1-14：v1.2.1 起为全局路径）
+//   - 读 {SOFAGENT_HOME}/data/knowledge/ 下各子目录的 .md 文件（v1.5.2 P1-14：v1.2.1 起为全局路径）
 //   - 读 {projectDir}/.sofagent/ontology/ 本体定义
 //   - 计算覆盖度：已覆盖的实体类型 / 总实体类型
 //   - 覆盖度 < 50% → warning（知识库不完整）

@@ -1,7 +1,7 @@
 import { defineConfig } from 'vitest/config';
 
 // ============================================================
-// vitest.config.ts · train 包测试隔离（v1.5.1 第 7 批拆包）
+// vitest.config.ts · train 包测试隔离（v1.5.2 第 7 批拆包）
 // ============================================================
 //
 // 本包自 @sofagent/orchestrator 的 src/train/ 整体迁出（51 文件），随迁的测试

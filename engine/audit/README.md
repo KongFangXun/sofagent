@@ -4,7 +4,7 @@
 >
 > v1.5.2：审计对外面——`audit_query` 只读查询 / `ruleset_export` 导出与 `verify-chain` 独立验签 / 结论失效语义（invalidation 三钩子）；出口治理的裁决挂链在本模块 egress-audit。——职责边界见 tools/README.md。
 
-> v1.5.1 · 提交时审计 —— 扫描 git diff，检查 Agent 是否遵守工作纪律。
+> v1.5.2 · 提交时审计 —— 扫描 git diff，检查 Agent 是否遵守工作纪律。
 >
 > **安装后运行：`sofagent-audit --init`**（一键初始化 config + hook + 冒烟测试）
 >

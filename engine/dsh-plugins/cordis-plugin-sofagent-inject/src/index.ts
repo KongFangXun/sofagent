@@ -1,4 +1,4 @@
-// cordis-plugin-sofagent-inject · DSH 反向插件（v1.5.1：98 行样板收敛到 @sofagent/dsh-plugin-kit）
+// cordis-plugin-sofagent-inject · DSH 反向插件（v1.5.2：98 行样板收敛到 @sofagent/dsh-plugin-kit）
 // seam 挂载：agent/pre-step    # 语义：模型看到输入前注入四层加载链约束（Turn 首步一条消息）
 // 清单生成源 = engine/dsh-plugins/plugins.json（生成 package.json 的 description/sofagent/dsh 段与 cordis.patch.yml）；本文件的 seam 字面量由生成器 --check 与之对账。
 

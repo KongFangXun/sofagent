@@ -2,7 +2,7 @@
   "id": "sofagent-inject",
   "name": "sofagent 注入",
   "description": "给 OpenClaw 加上约束注入——每次构建提示词前带上企业铁律 / 反思 / 用户规则 / 知识库（四层加载链）",
-  "version": "1.5.1",
+  "version": "1.5.2",
   "seam": "before_prompt_build",
   "seamSemantics": "模型调用前注入 sofagent 四层加载链",
   "icon": "https://raw.githubusercontent.com/KongFangXun/sofagent/main/docs/assets/sofagent.png",

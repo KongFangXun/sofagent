@@ -1,6 +1,6 @@
 // ============================================================
 // graph/index.ts · graph 模块 barrel export
-// v1.5.1 重构：FORGE 相关代码已移至 FORGE/ 目录
+// v1.5.2 重构：FORGE 相关代码已移至 FORGE/ 目录
 // 本目录仅保留共享的 checkpoint 基础设施（被 daemon 和 FORGE 共用）
 // v1.5.0 第三章：新增 Validation Engine（activate 前置门）
 // ============================================================

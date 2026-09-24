@@ -8,7 +8,7 @@
   <a href="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml"><img src="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml/badge.svg" alt="Verify" /></a>
   <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-brightgreen" alt="License: MIT" /></a>
   <!-- ⚠️ bump 版本时手动同步此 badges 版本号（Version-vX.Y.Z） -->
-  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.5.1-16B8F3" alt="Version" /></a>
+  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.5.2-16B8F3" alt="Version" /></a>
 </p>
 
 <p align="center"><sub>简体中文 | <a href="./README.en.md">English</a></sub></p>
@@ -21,7 +21,7 @@
 - [核心特性](#核心特性)
 - [什么是 FDE Harness](#什么是-fde-harness)
 - [多平台挂载](#多平台挂载)
-- [v1.5.2：审计模块 · 对外面与判定语义](#v152审计模块--对外面与判定语义-待发版--2026-09-24)
+- [v1.5.2：审计模块 · 对外面与判定语义](#v152审计模块--对外面与判定语义-已发版--2026-09-24)
 - [FDE Harness 两阶段](#fde-harness-两阶段)
 - [安装](#安装)
 - [使用](#使用)
@@ -145,7 +145,7 @@
 
 一条命令选定挂载档位：`bash install.sh --platform <平台名>`（全部平台与差异见 [HANDBOOK](./docs/HANDBOOK.md)）
 
-## v1.5.2：审计模块 · 对外面与判定语义（⏳ 待发版 · 2026-09-24）
+## v1.5.2：审计模块 · 对外面与判定语义（✅ 已发版 · 2026-09-24）
 
 🔍 审计模块「从内部审计走向对外可举证」——三件事一次到位：
 
@@ -155,7 +155,7 @@
 | **规则导出 + 独立验签** | `ruleset_export` 机器可读 JSON 双向可逆（24 条规则元数据 + 版本指纹）；`verify-chain` 零依赖验签器——第三方无需安装 sofagent 即可举证 HMAC 链 |
 | **判定语义补两头** | 开工前五问判定链（健康/人审/证据/专注/配额——挂起非失败自动恢复）+ 结论失效语义（三触发标记失效，失效结论不当新证据） |
 
-同版另有：出口治理面（host 白名单默认全拒 + 出站裁决挂链）· 事前授权补环（mandate 三元素执行前拦截）· 身份三层叙事注入（README 双语三因子）· DSH 插件 npm 首发面（kit + 七款 `cordis-plugin-sofagent-*`）· v1.5.1 审查修复批（35 条目收编，含 6 条安全 fail-open 收口）。**测试 5083→5296 · acceptance 367→373 · 回归 85 维 · MCP 105→107**（13 包 workspace 口径，发版时点）。完整内容见[开发日志](./docs/changelog/v1.5/v1.5.2.md) · 更早版本见 [CHANGELOG](./CHANGELOG.md)。
+同版另有：出口治理面（host 白名单默认全拒 + 出站裁决挂链）· 事前授权补环（mandate 三元素执行前拦截）· 身份三层叙事注入（README 双语三因子）· DSH 插件 npm 首发面（kit + 七款 `cordis-plugin-sofagent-*`）· v1.5.2 审查修复批（35 条目收编，含 6 条安全 fail-open 收口）。**测试 5083→5296 · acceptance 367→373 · 回归 85 维 · MCP 105→107**（13 包 workspace 口径，发版时点）。完整内容见[开发日志](./docs/changelog/v1.5/v1.5.2.md) · 更早版本见 [CHANGELOG](./CHANGELOG.md)。
 
 ## FDE Harness 两阶段
 

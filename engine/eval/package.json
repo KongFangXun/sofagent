@@ -1,6 +1,6 @@
 {
   "name": "@sofagent/eval",
-  "version": "1.5.1",
+  "version": "1.5.2",
   "engines": {
     "node": ">=18"
   },
@@ -26,8 +26,8 @@
   "license": "MIT",
   "author": "KongFangXun",
   "dependencies": {
-    "@sofagent/audit": "1.5.1",
-    "@sofagent/core": "1.5.1",
+    "@sofagent/audit": "1.5.2",
+    "@sofagent/core": "1.5.2",
     "js-yaml": "^5.4.2"
   },
   "exports": {

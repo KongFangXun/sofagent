@@ -1,5 +1,5 @@
 // ============================================================
-// graph/validator.ts · Ontology Validation Engine（v1.5.1 第三章）
+// graph/validator.ts · Ontology Validation Engine（v1.5.2 第三章）
 //
 // 交付：
 //   1. DAG 无环校验——复用 workflow-parser 的三色 DFS 判定逻辑，

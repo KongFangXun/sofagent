@@ -1,6 +1,6 @@
 {
   "name": "cordis-plugin-sofagent-audit",
-  "version": "1.5.1",
+  "version": "1.5.2",
   "engines": {
     "node": ">=18"
   },
@@ -32,9 +32,9 @@
   },
   "//optionalDependencies": "v1.4.5 T6 (R4)：src/index.ts 惰性 await import（懒加载 + 缺依赖降级不抛；v1.4.8 起该样板由 @sofagent/dsh-plugin-kit 统一封装；v1.4.9 P2 起厚插件多包 bridges 按序解析、部分可用即部分成功），此前未声明任何依赖——对齐 root package.json F-18 optionalDependencies 先例。",
   "optionalDependencies": {
-    "@sofagent/audit": "1.5.1",
-    "@sofagent/orchestrator": "1.5.1",
-    "@sofagent/core": "1.5.1"
+    "@sofagent/audit": "1.5.2",
+    "@sofagent/orchestrator": "1.5.2",
+    "@sofagent/core": "1.5.2"
   },
   "devDependencies": {
     "typescript": "^7.0.2",
@@ -54,6 +54,6 @@
     "!dist/**/*.test.*"
   ],
   "dependencies": {
-    "@sofagent/dsh-plugin-kit": "1.5.1"
+    "@sofagent/dsh-plugin-kit": "1.5.2"
   }
 }

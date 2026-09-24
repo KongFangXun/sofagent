@@ -1,6 +1,6 @@
 {
   "name": "@sofagent/evolve",
-  "version": "1.5.1",
+  "version": "1.5.2",
   "engines": {
     "node": ">=18"
   },
@@ -26,9 +26,9 @@
   "license": "MIT",
   "author": "KongFangXun",
   "dependencies": {
-    "@sofagent/ontology": "1.5.1",
-    "@sofagent/core": "1.5.1",
-    "@sofagent/audit": "1.5.1"
+    "@sofagent/ontology": "1.5.2",
+    "@sofagent/core": "1.5.2",
+    "@sofagent/audit": "1.5.2"
   },
   "exports": {
     ".": {

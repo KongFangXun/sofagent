@@ -1,4 +1,4 @@
-// security-baseline.ts · v1.5.1 块八 · 训练安全基线（攻击面的代码侧覆盖）
+// security-baseline.ts · v1.5.2 块八 · 训练安全基线（攻击面的代码侧覆盖）
 //
 // 红队视角定位：后训模块的四个可代码化攻击面——
 //   一、job.json 路径注入（dataPath/checkpointPath/outputDir 带 ../ 逃逸

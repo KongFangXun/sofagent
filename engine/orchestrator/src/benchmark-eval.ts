@@ -1,5 +1,5 @@
 // ============================================================
-// benchmark-eval.ts · benchmark 评测域窄入口（v1.5.1 第 7 批）
+// benchmark-eval.ts · benchmark 评测域窄入口（v1.5.2 第 7 批）
 // ============================================================
 // 背景：train 拆为独立包 @sofagent/train 后，train-eval-loop 需消费
 //   case-evaluator（evaluateCase）+ evaluation-log（appendEvaluationRecord）。

@@ -1,13 +1,12 @@
 // ============================================================
 // orchestrator-tools.ts · MCP tool: compose
-// v1.5.1: 从 mcp-server.ts 提取
+// v1.5.2: 从 mcp-server.ts 提取
 // v1.5.2 A-4: tool 名由 sofagent_compose 更名 compose（命名收口）；
 //             旧名经 mcp-server.ts tools/call 别名路由兼容一版。
 // ============================================================
 
 import { execFileSync } from 'child_process';
 import type { ToolResult } from './audit-tools';
-
 // ============================================================
 // Tool: compose（原名 sofagent_compose，别名兼容一版）
 // ============================================================

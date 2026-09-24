@@ -10,7 +10,7 @@
   <a href="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml"><img src="https://github.com/KongFangXun/sofagent/actions/workflows/verify.yml/badge.svg" alt="Verify" /></a>
   <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-brightgreen" alt="License: MIT" /></a>
   <!-- ⚠️ bump version: manually sync this badge version (Version-vX.Y.Z) -->
-  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.5.1-16B8F3" alt="Version" /></a>
+  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Version-v1.5.2-16B8F3" alt="Version" /></a>
 </p>
 
 <p align="center"><sub><a href="./README.md">简体中文</a> | English</sub></p>
@@ -23,7 +23,7 @@
 - [Core Features](#core-features)
 - [What is the FDE Harness](#what-is-the-fde-harness)
 - [Multi-platform Mounting](#multi-platform-mounting)
-- [v1.5.2: Audit · External Provability & Decision Semantics](#v152-audit--external-provability--decision-semantics--pending--2026-09-24)
+- [v1.5.2: Audit · External Provability & Decision Semantics](#v152-audit--external-provability--decision-semantics--released--2026-09-24)
 - [The Two FDE Harness Phases](#the-two-fde-harness-phases)
 - [Installation](#installation)
 - [Usage](#usage)
@@ -145,7 +145,7 @@ Sits between the Agents you already use and the model layer — it doesn't repla
 
 One command selects your mounting tier: `bash install.sh --platform <platform-name>` (all platforms and differences in [HANDBOOK](./docs/HANDBOOK.md))
 
-## v1.5.2: Audit · External Provability & Decision Semantics (⏳ Pending · 2026-09-24)
+## v1.5.2: Audit · External Provability & Decision Semantics (✅ Released · 2026-09-24)
 
 🔍 **The audit module goes externally provable** — three things at once:
 
@@ -155,7 +155,7 @@ One command selects your mounting tier: `bash install.sh --platform <platform-na
 | **Ruleset export + standalone verification** | `ruleset_export` machine-readable JSON, round-trip reversible (24-rule metadata + version fingerprint); `verify-chain` zero-dependency verifier — third parties can validate HMAC chains without installing sofagent |
 | **Decision semantics on both ends** | A five-question should-run gate before work starts (health / human-gate / evidence / focus / quota — suspend-not-fail with auto-resume) + conclusion invalidation semantics (three triggers mark stale conclusions so they stop feeding downstream) |
 
-Also in this release: egress governance (default-deny host allowlist + outbound adjudication HMAC-chained) · pre-authorization mandate loop (scope/expiry/approver, rejected before execution) · identity three-layer narrative injection (bilingual README) · DSH plugin npm debut surface (kit + seven `cordis-plugin-sofagent-*`) · v1.5.1 post-release review fix batch (35 items incl. six fail-open closures). **Tests 5083 → 5296 · acceptance 367 → 373 · 85 regression dimensions · MCP 105→107** (13-package workspace count, as of release). Full details in the [devlog](./docs/changelog/v1.5/v1.5.2.md) · earlier versions in [CHANGELOG](./CHANGELOG.md).
+Also in this release: egress governance (default-deny host allowlist + outbound adjudication HMAC-chained) · pre-authorization mandate loop (scope/expiry/approver, rejected before execution) · identity three-layer narrative injection (bilingual README) · DSH plugin npm debut surface (kit + seven `cordis-plugin-sofagent-*`) · v1.5.2 post-release review fix batch (35 items incl. six fail-open closures). **Tests 5083 → 5296 · acceptance 367 → 373 · 85 regression dimensions · MCP 105→107** (13-package workspace count, as of release). Full details in the [devlog](./docs/changelog/v1.5/v1.5.2.md) · earlier versions in [CHANGELOG](./CHANGELOG.md).
 
 ## The Two FDE Harness Phases
 
