@@ -379,9 +379,9 @@ fi
 
 > GitHub Release published 后，`.github/workflows/release.yml` 自动触发，publish `@sofagent/audit` 和 `@sofagent/mcp` 两个包到 npm。其余 `@sofagent/*` 与裸名总包在步骤八手动 publish（13 个手动 `@sofagent/*` = 11 个引擎模块包 + `load-chain` + `dsh-plugin-kit`，加裸名总包 `sofagent` 共 **14 包**——包数口径以步骤八头部为准）；**另有七款 DSH 插件**（`cordis-plugin-sofagent-*`，裸名、目录在 `engine/dsh-plugins/`）同样在步骤八手动 publish——见「步骤八·补」。
 
-### 🔴 dist-tag 分道（`gh release create` 之前必做 · 施工期一律 `--tag alpha`）
+### dist-tag 分道（🔴 **已撤策**——试行一轮后撤策：版本号已承载阶段语义（一系版本=施工期、次版本位归零起=贝塔），dist-tag 分道复杂度大于收益。以下保留为历史档案，下版发布不再执行；恢复正常发布（默认 latest，无先行舞步））
 
-> **判据是版本期，不是日期**：本版低于 `v2.0.0` = 施工期 → 本版**全部 23 包**（15 个 `@sofagent/*` scope 包（13 模块包 + `load-chain` + `dsh-plugin-kit`）+ 1 个裸名总包 + 七款 DSH 插件）以 `--tag alpha` 发布，**`latest` 不动**；本版达到 `v2.0.0` = 贝塔，不加 tag（默认写 `latest`），恢复正常发布。
+> ~~**判据是版本期，不是日期**：本版低于 `v2.0.0` = 施工期~~（撤策后不再适用） → 本版**全部 23 包**（15 个 `@sofagent/*` scope 包（13 模块包 + `load-chain` + `dsh-plugin-kit`）+ 1 个裸名总包 + 七款 DSH 插件）以 `--tag alpha` 发布，**`latest` 不动**；本版达到 `v2.0.0` = 贝塔，不加 tag（默认写 `latest`），恢复正常发布。
 > **为什么有这条**：施工期功能面快速变动、不承诺接口稳定，`latest` 是留给「装了就不想被施工期改动打扰」的稳定通道——施工期把 `latest` 一路顶到最后一个施工版，等于把所有用户强推上施工节奏。
 >
 > 🔴 **自动通道也要管**：`.github/workflows/release.yml` 的 `npm publish --access public` **不带 tag**——本步骤若不先行，audit + mcp 会被 CI 以默认 tag 发布、`latest` 当场被改写。故施工期必须在 `gh release create` **之前**先手动以 `alpha` 发布这两包：release.yml 的 `Check if version already published` 步查到版本已在即置 `skip=true`、自动跳过 publish（该跳过通道 release.yml 内既有，非本步骤新增机制）。
