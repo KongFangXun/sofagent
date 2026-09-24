@@ -645,6 +645,10 @@ graph LR
 
 > 📖 来源：[Meta Muse 零日漏洞](https://aihot.news/items/cmubu7pzq035vro99rplg4qt9)（Ars Technica/The Verge 转述，2026-09-22）；与决策模型 credential scope 最小授权、许可门「验证通过前不产生副作用」互证
 
+**决策即节点：决策记录是一等审计对象，不是日志行**。行业三源同构收敛（Semantica 源码级实现、Palantir 动态本体决策捕获、动态本体 MVP 实操）：决策与「当时看到什么（上下文）、考虑过什么（候选）、为何选这个（依据）、执行后如何（反馈）」四层绑定入库，使「查决策 = 查审计链」，因果追溯从翻日志变为沿链遍历；人工复核闸门本身成为决策记录的字段（复核状态随决策走，而非散落在流程日志里）。对 sofagent 的对位：决策审计（emitDecision）已记录运行时理由链——此处补的是结构方向：决策记录按四层完备入库、复核状态随决策本体走，让意图问责与行为问责（git diff）在查询层合流（方向性结论，非现状能力）。
+
+> 📖 来源：《Semantica 源码导览：开源版 Palantir 的 16 站数据流水线》（噪声之下，2026-09-20）；渊亭防务《Palantir 全景动态本体技术研究报告·第三章》（2026-09-17）；动态本体 MVP V0.033 实操复盘（2026-08-17，参考 Semantica）；与 [VALIDATION](./VALIDATION.md)「Semantica 真身定位」节互证（「决策即节点」为其对 Palantir 的独特性判据）
+
 **行业印证**：Palantir AIP 靠 Ontology 实现 Agent 可靠性——「根本接触不到 > 被告知不能说」与 sofagent 的 A15 约束验证 + 审计外置遵循同一原则（不依赖 Agent 自我报告，只看 git diff 硬证据）。Palantir OAG 的「确定性与概率性分离」与 sofagent 审计完全同构——sofagent 的 19/24 条规则为纯 git-diff（不依赖 Agent 配合）正是这一原则的工程实现。完整的行业对标分析（Palantir OAG 五层映射、Ledger-Views-Policy 对照、DeerFlow/Omnigent/DataFlow 等）见 [PHILOSOPHY §五·世界模型](./PHILOSOPHY.md#为什么世界模型优先于语言模型) 和 [VALIDATION](./VALIDATION.md)。
 
 > 💡 **规则编号说明**：A1–A11 + A18–A23 为默认规则（17 条），A14–A17 + E1/E2/E4 为扩展规则（7 条，需 opt-in），全量 24 条（17 默认 + 7 扩展）。**24 条规则完整清单（文档级 SSOT）见 [SECURITY.md → 24 条审计规则完整清单](../SECURITY.md#24-条审计规则完整清单文档级-ssot)**，逐条行为表见 `engine/audit/README.md`。A12/A13 已在 v0.99.4 合并入 A11，E3 已在 v1.2.5 并入 A11，编号不再使用。
