@@ -64,7 +64,13 @@ if command -v git &>/dev/null && git rev-parse --show-toplevel &>/dev/null; then
 fi
 [ -z "$REPO_ROOT" ] && REPO_ROOT="$(pwd)"
 
+# 防御：node 进程把 env.X=undefined 序列化为字面 undefined 串传给子进程（实测事故：锚写进 ./undefined/）——
+# 视 undefined/null/空串为未设，回退真实 HOME；非缺省且不存在则 fail-loud。
+case "${SOFAGENT_HOME:-}" in ""|"undefined"|"null") SOFAGENT_HOME="" ;; esac
 SOFAGENT_HOME="${SOFAGENT_HOME:-$HOME/.sofagent}"
+if [ "$SOFAGENT_HOME" != "$HOME/.sofagent" ] && [ ! -d "$SOFAGENT_HOME" ]; then
+  echo "❌ SOFAGENT_HOME 非法（不存在且非缺省）: $SOFAGENT_HOME"; exit 1
+fi
 INTERNAL_DIR="$SOFAGENT_HOME/internal"
 DIST="$REPO_ROOT/engine/audit/dist/index.js"
 HASH_RECORD="$INTERNAL_DIR/audit-hash.txt"
