@@ -4,6 +4,7 @@
 // evidenceMode: git-diff（纯 diff 判定，不依赖日志）
 // ============================================================
 
+import { isDiffFileHeader } from '@sofagent/core';
 import type { AuditContext, RuleScan, RuleStatus } from './types';
 
 const TODO_PATTERN = /\b(TODO|FIXME)\b/;
@@ -18,7 +19,7 @@ export function scanE2(ctx: AuditContext): RuleScan {
   const todoMatches: string[] = [];
   for (const file of diffFiles) {
     for (const line of file.lines) {
-      if (line.startsWith('+') && !line.startsWith('+++')) {
+      if (line.startsWith('+') && !isDiffFileHeader(line)) {
         if (TODO_PATTERN.test(line)) {
           todoMatches.push(`${file.path}: ${line.substring(1).trim()}`);
         }

@@ -48,7 +48,8 @@ import { existsSync, readFileSync, writeFileSync, mkdirSync, chmodSync, readdirS
 import { join, dirname } from 'path';
 import { homedir } from 'os';
 import { createInterface } from 'readline';
-import { parseDiff, parseStagedDiff, isInGitRepo, type DiffFile } from '@sofagent/core';
+import {
+  isDiffFileHeader, parseDiff, parseStagedDiff, isInGitRepo, type DiffFile } from '@sofagent/core';
 import { loadConfig, ConfigLoadError, ConfigParseError, ConfigSignatureError } from '@sofagent/core';
 import { VERSION } from '@sofagent/core';
 import { BASELINE_RULE_KEYS } from '@sofagent/core';
@@ -160,9 +161,9 @@ function buildBeforeAfterSummary(diffFiles: DiffFile[]): { before?: string; afte
     if (!file || !Array.isArray(file.lines)) continue;
     for (const line of file.lines) {
       if (!line || line.length < 1) continue;
-      if (line.startsWith('+') && !line.startsWith('+++')) {
+      if (line.startsWith('+') && !isDiffFileHeader(line)) {
         if (after.length < BEFORE_AFTER_MAX_ITEMS) after.push(line.substring(1).slice(0, BEFORE_AFTER_MAX_CHARS));
-      } else if (line.startsWith('-') && !line.startsWith('---')) {
+      } else if (line.startsWith('-') && !isDiffFileHeader(line)) {
         if (before.length < BEFORE_AFTER_MAX_ITEMS) before.push(line.substring(1).slice(0, BEFORE_AFTER_MAX_CHARS));
       }
       if (before.length >= BEFORE_AFTER_MAX_ITEMS && after.length >= BEFORE_AFTER_MAX_ITEMS) break;

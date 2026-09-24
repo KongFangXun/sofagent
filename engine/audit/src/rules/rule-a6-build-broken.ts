@@ -5,6 +5,7 @@
 // evidenceMode: git-diff
 // ============================================================
 
+import { isDiffFileHeader } from '@sofagent/core';
 import { basename } from 'path';
 import type { AuditContext, RuleScan, RuleStatus } from './types';
 
@@ -50,7 +51,7 @@ export function scanA6(ctx: AuditContext): RuleScan {
     // 统计删除行数（以 - 开头且不是 ---）
     let deletionCount = 0;
     for (const line of file.lines) {
-      if (line.startsWith('-') && !line.startsWith('---')) {
+      if (line.startsWith('-') && !isDiffFileHeader(line)) {
         deletionCount++;
       }
     }

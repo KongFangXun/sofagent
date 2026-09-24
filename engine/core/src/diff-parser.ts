@@ -490,11 +490,35 @@ export function parseStagedDiff(): DiffFile[] {
 }
 
 /**
+ * 判别一行 diff 输出是否为「文件头」（--- a/... 或 +++ b/...）而非内容行。
+ *
+ * 为何不能简单用 startsWith("+++") / startsWith("---")：内容行本身可以以
+ * 连续 +/- 开头——新增行 `++i;` 产出 diff 行 `+++i;`、删除行 `-- 注释` 产出
+ * `-- 注释`，朴素过滤会把它们当文件头吞掉（规则对这类行集体失明，A2 密钥
+ * 检测可被「把含密钥的行以 ++ 开头」定向绕过）。
+ *
+ * 判据（保守收窄，宁可漏判头也不吞内容行）：
+ *   - 整行恰为 "+++" / "---"（无路径的空文件头）；
+ *   - 或以 "+++ " / "--- " 开头且其后接路径形态（非空白起头）——git 的
+ *     文件头在标记后必有空格 + 路径（`+++ b/foo.ts`、`--- /dev/null`），
+ *     而被吞的内容行（`+++i;`）在标记后无空格或紧跟非路径内容。
+ */
+export function isDiffFileHeader(line: string): boolean {
+  if (line === "+++" || line === "---") return true;
+  if (line.startsWith("+++ ") || line.startsWith("--- ")) {
+    const rest = line.slice(4);
+    // 文件头路径形态：非空且不以空白开头（/dev/null、a/x、b/x 都满足）
+    return rest.length > 0 && !/^\s/.test(rest);
+  }
+  return false;
+}
+
+/**
  * 获取 diff 中新增的行（以 + 开头）
  */
 export function getAddedLines(diffFile: DiffFile): string[] {
   return diffFile.lines
-    .filter((line) => line.startsWith('+') && !line.startsWith('+++'))
+    .filter((line) => line.startsWith('+') && !isDiffFileHeader(line))
     .map((line) => line.substring(1));
 }
 
@@ -503,7 +527,7 @@ export function getAddedLines(diffFile: DiffFile): string[] {
  */
 export function getRemovedLines(diffFile: DiffFile): string[] {
   return diffFile.lines
-    .filter((line) => line.startsWith('-') && !line.startsWith('---'))
+    .filter((line) => line.startsWith('-') && !isDiffFileHeader(line))
     .map((line) => line.substring(1));
 }
 

@@ -35,6 +35,7 @@
 //   const available = listAvailableRulesets();          // 列出可用规则集
 // ============================================================
 
+import { isDiffFileHeader } from '@sofagent/core';
 import { readFileSync, existsSync, readdirSync } from 'fs';
 import { join, resolve } from 'path';
 import type { DiffFile } from '@sofagent/core';
@@ -615,7 +616,7 @@ export function runPatternRule(
     // 遍历所有行，对新增行（以 + 开头且非 +++）做正则匹配
     for (const rawLine of file.lines) {
       // 只检查新增行（以 + 开头且不是 +++）
-      if (rawLine.startsWith('+') && !rawLine.startsWith('+++')) {
+      if (rawLine.startsWith('+') && !isDiffFileHeader(rawLine)) {
         const content = rawLine.substring(1);
         // 重置 regex lastIndex（全局正则在循环中需要重置）
         regex.lastIndex = 0;

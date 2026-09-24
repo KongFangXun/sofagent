@@ -10,7 +10,8 @@
 //   按 200 字符折 1 行计入「有效行数」，与行数阈值同一口径告警。
 // evidenceMode: git-diff
 // ============================================================
-import { getAddedLines } from '@sofagent/core';
+import {
+  isDiffFileHeader, getAddedLines } from '@sofagent/core';
 import type { AuditContext, RuleScan, RuleStatus } from './types';
 
 /** 新增文件数阈值 */
@@ -103,7 +104,7 @@ export function scanA11(ctx: AuditContext): RuleScan {
     for (const file of diffFiles) {
       let deletionCount = 0;
       for (const line of file.lines) {
-        if (line.startsWith('-') && !line.startsWith('---')) {
+        if (line.startsWith('-') && !isDiffFileHeader(line)) {
           deletionCount++;
         }
       }

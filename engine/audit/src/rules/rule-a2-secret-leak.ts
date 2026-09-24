@@ -17,7 +17,8 @@
 // ============================================================
 
 import type { AuditContext, RuleScan, RuleStatus } from './types';
-import { SECRET_PATTERNS, stripDataUris, REDACTION_PATTERNS } from '@sofagent/core';
+import {
+  isDiffFileHeader, SECRET_PATTERNS, stripDataUris, REDACTION_PATTERNS } from '@sofagent/core';
 
 /**
  * 密钥泄漏检测正则模式
@@ -253,7 +254,7 @@ function detectGitattributesDiffHidden(ctx: AuditContext): string[] {
   for (const file of ctx.diffFiles) {
     if (!file.path.endsWith('.gitattributes')) continue;
     for (const line of file.lines) {
-      if (!line.startsWith('+') || line.startsWith('+++')) continue;
+      if (!line.startsWith('+') || isDiffFileHeader(line)) continue;
       const content = line.substring(1);
       // 形如：secrets.js -diff  /  *.env -diff  /  key.bin -diff merge=keep
       if (/^\s*[^\s#][^\s]*\s+-diff(\s|$)/.test(content)) {
@@ -337,7 +338,7 @@ export function scanA2(ctx: AuditContext): RuleScan {
     const detections = isTestFile ? testExemptDetections : groupedDetections;
     for (const line of file.lines) {
       // 只检查新增行（以 + 开头且不是 +++）
-      if (line.startsWith('+') && !line.startsWith('+++')) {
+      if (line.startsWith('+') && !isDiffFileHeader(line)) {
         const content = line.substring(1);
         // v1.2.9: — zero-width 字符归一化（防止 U+200B/U+200C/U+200D/U+FEFF 拆分密钥绕过）
         let normalized = content.replace(/[\u200B\u200C\u200D\uFEFF]/g, '');

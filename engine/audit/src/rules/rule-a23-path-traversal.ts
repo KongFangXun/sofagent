@@ -4,7 +4,8 @@
 // evidenceMode: git-diff
 // ============================================================
 
-import { getAddedLines } from '@sofagent/core';
+import {
+  isDiffFileHeader, getAddedLines } from '@sofagent/core';
 import type { AuditContext, RuleScan, RuleStatus } from './types';
 import { sanitizeDetailLine } from './rule-a9-no-injection';
 
@@ -70,7 +71,7 @@ export function scanA23(ctx: AuditContext): RuleScan {
         // 寻找紧随其后的 symlink target（以 + 开头，不含 +++）
         // git diff symlink 格式：+<target_path>
         for (const l of file.lines) {
-          if (l.startsWith('+') && !l.startsWith('+++') && !l.startsWith('+-')) {
+          if (l.startsWith('+') && !isDiffFileHeader(l) && !l.startsWith('+-')) {
             symlinkTarget = l.substring(1).trim();
             break;
           }

@@ -4,6 +4,7 @@
 // evidenceMode: git-diff（纯 diff 判定，不依赖日志）
 // ============================================================
 
+import { isDiffFileHeader } from '@sofagent/core';
 import type { AuditContext, RuleScan, RuleStatus } from './types';
 
 const ADDED_LINE_THRESHOLD = 200;
@@ -34,7 +35,7 @@ export function scanE4(ctx: AuditContext): RuleScan {
 
   for (const file of diffFiles) {
     for (const line of file.lines) {
-      if (line.startsWith('+') && !line.startsWith('+++')) {
+      if (line.startsWith('+') && !isDiffFileHeader(line)) {
         const content = line.substring(1);
         // 跳过空行
         if (content.trim() === '') continue;

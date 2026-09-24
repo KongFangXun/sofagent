@@ -128,6 +128,7 @@
 
 // ── Git Diff 解析 ──
 /* @public */ export {
+  isDiffFileHeader,
   isInGitRepo,
   parseDiff,
   parseStagedDiff,
