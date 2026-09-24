@@ -250,6 +250,10 @@ a-consolidate 撞硬熔断（40-60 次调用 vs 全局 45）
 
 **修复范式（三层防御）**：防熔断（步骤级预算）→ 兜底格式（裸 LLM 生成器对多产物步骤也输出 `===FILE:` 分隔符 + finding-NN 结构）→ 最后保险（判定产物空占位/格式不符检测 + 降级重建 + isDegraded 强制不干净）。
 
+**补充（降级重建后必须 diff 原始 worker findings 清单防漏派）**：a-consolidate 降级重建走 writeFallbackFindings 时，重建清单以「降级时可见的产物」为准——若部分 worker（check-a-pN）的 findings 已落盘但未被重建逻辑纳入，这些真实 P1 会被**静默漏派**到 b-fix（实例：降级轮漏派 2 条真实 P1，其中 diff-parser 文件头误滤一条游离两轮未修，直到主 session 收尾人工补修）。修复范式：降级重建完成后，driver 必须 `ls roundDir/check-a-p*.md` 与重建清单 diff——存在「已落盘但未入清单」的 worker 产物即追加为独立 finding（标注来源 worker），宁可重派不可漏派。同理适用于任何「中间产物→汇总清单」的降级路径：**降级产物的覆盖率必须以文件系统实存为准自证，不能以重建逻辑的可见面为准**。
+
+**补充（收尾以仓库现态为准，不信执行 session 的过程汇报）**：用户停手/中断后做收尾对账时，执行 session 汇报的「未完成项」可能已在其后的清理动作中实际消解（时序差：先汇报后清理，汇报不回改）。收尾 session 必须逐项以仓库/git 现态实测（文件存在性 + git status + 分支 diff），不得转述执行 session 的过程态清单——判据与「零信任复验」同源：过程汇报不是证据，仓库现态才是。
+
 #### 🔴 worker 写完产物不退出 → driver 永久 await
 
 > **来源**（实录）：b-fix 第 3 批 worker 写完 `summary-batch-3.md` 后进程不退出，driver 的 `spawnWorkerStep` await 挂起 18 分钟（heartbeat 正常——await 不阻塞 event loop，心跳定时器照跑——但流程完全冻结）。

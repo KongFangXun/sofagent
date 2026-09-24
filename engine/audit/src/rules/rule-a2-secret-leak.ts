@@ -474,7 +474,7 @@ export function scanA2(ctx: AuditContext): RuleScan {
         `⚠️ 内容扫描盲区：${blindSpotTotal} 个文件本次不可内容扫描（.gitattributes -diff / 二进制 NUL）——A2 对这些文件不提供密钥泄露保障。\n`,
       );
     } catch {
-      // 显著提示自身绝不抛错（诊断面不能反过来破坏审计主流程）
+      // 为何可静默：这里写的是 stderr 提示本身失败（fd 关闭类极端态）——提示失败不该反向炸审计主流程；该 catch 只包 diagnostic 写入，不包任何判定路径
     }
   }
 

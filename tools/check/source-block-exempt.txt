@@ -22,8 +22,10 @@
 # ============================================================
 缺链接	SECURITY.md	1
 缺链接	docs/ARCHITECTURE.md	3
-缺链接	docs/PHILOSOPHY.md	7
-缺链接	docs/VALIDATION.md	9
+# +1（知识库蒸馏批·定义权双面段）：公众号三源无公开 URL，已标注「微信公众号+日期」诚实形态
+缺链接	docs/PHILOSOPHY.md	8
+# +1（深挖吸收批·阈值-精度实证锚段）：第三方自报无公开 URL
+缺链接	docs/VALIDATION.md	10
 缺日期	SECURITY.md	1
 缺日期	docs/ARCHITECTURE.md	1
 缺日期	docs/DEVELOPMENT.md	1

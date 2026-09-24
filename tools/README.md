@@ -159,6 +159,7 @@
 | `check/resolve-section.sh` | 行号 → markdown 段落归属解析器（防「行号冒充归属」） | **排障工具非门禁**：自动化版在扫描面为 0 时会静默通过（死分支形态），故刻意不接 check-guards/CI。挂载于 `docs/changelog/releasing/03-quality-loop.md` / `04-review-system.md` |
 | `check/check-forge-branches.sh` | FORGE 分支收编标记对账（未标记的 `forge/*` 分支四要素列出） | 输出为 **INFO 级**（未标记分支需人工确认后补标记），由 `playbook/acceptance-test.sh` 人工链调用 |
 | `check/check-interface-roadmap.mjs` | 接口编号承载对账（G1-G14 接口编号 ↔ ROADMAP/开发日志的真实承载版本；C1-C5 FAIL + C6 WARN，防「编号标了版本、版本却没承载它」） | **需 `--spec <商业机制文档>` 参数**：无参数时打印 SKIP 并 exit 0（SKIP 不算通过）。spec 属商业侧文档、不进开源仓——CI 无处传参，只在商业侧对账时人工跑 |
+| `maintenance/prune-spill.mjs` | spill 临时文件 TTL 回收（>5MB diff 落盘的密钥类内容按保留期清理） | 独立工具（cron/手动） |
 
 ---
 
