@@ -80,9 +80,14 @@ describe('doctor --reset-baseline（v1.3.5 交付 2 附带小件）', () => {
     // （allOk 可能因 tmp 环境其他项 warn——只断言本次不再因哈希不匹配而 fail：failCount 应低于不带 flag 的运行）
     const output = vi.mocked(console.log).mock.calls.map((c) => String(c[0])).join('\n');
     expect(output).toContain('三锚已重置');
-    // v1.3.5 阶段五修正：tmp 环境无 .git/hooks（hook 段 warn 级但拖累 allOk）——
-    // 本测试只验证 reset-baseline 语义，不断言全量 allOk（distIntegrity 已由上方基线比对覆盖）
-    expect(report.failCount).toBe(0);
+    // hook 未装升 fail 后（A-7）本测试的环境态容忍：projectDir=REPO_ROOT 的 hook 装设状态
+    // 由环境决定（本地已装=0 fail / CI checkout 未装=1 fail），非 reset-baseline 语义面。
+    // 断言收紧为：failCount ∈ {0,1}，且 =1 时唯一 fail 必为 hook 未安装（环境态）。
+    if (report.failCount === 1) {
+      expect(output).toContain('commit-msg hook 未安装');
+    } else {
+      expect(report.failCount).toBe(0);
+    }
   });
 
   it('验收 2 · resetBaseline 在基线不存在时等价首跑写入（写出当前哈希）', () => {
@@ -96,8 +101,12 @@ describe('doctor --reset-baseline（v1.3.5 交付 2 附带小件）', () => {
     expect(readFileSync(baselinePath, 'utf-8').trim()).toBe(currentDistHash());
     const output = vi.mocked(console.log).mock.calls.map((c) => String(c[0])).join('\n');
     expect(output).toContain('三锚已重置');
-    // 同验收 1：tmp 环境无 hook，不断言全量 allOk（failCount=0 即无 fail 级问题）
-    expect(report.failCount).toBe(0);
+    // 同验收 1：hook 环境态容忍（本地已装 0 fail / CI 未装 1 fail 且必为 hook 行）
+    if (report.failCount === 1) {
+      expect(output).toContain('commit-msg hook 未安装');
+    } else {
+      expect(report.failCount).toBe(0);
+    }
   });
 
   it('验收 3 · 不带 flag 行为不变：基线存在且不匹配 → fail（防御语义保留）', () => {
