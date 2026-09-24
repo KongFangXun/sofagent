@@ -1913,7 +1913,7 @@ grep -q "planExecution" engine/orchestrator/src/exec/git-capability.ts && grep -
 ) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -qE "^[[:space:]]{0,2}❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true
 ```
 
-#### 144. 审查面一维收口——事件驱动/OTA/上行脱敏/意图通道/demo/退役扫尾 + B 类防复发 + 发版期插件配置/分发不可变/上游钉 + 章二~章九新审查面（约束导出与证据链外部可验/运行时 should-run 判定链/审计结论失效语义/网络出口治理面/事前授权补环/DSH 插件 npm 首发面）（阶段四 A/B 合流 · 行为面已由 S433–S444 锁 · 对齐 #131/#133 先例 · ③ 段只查单向，本维把 S433–S444 引进 checklist 补双向闭环；发版期四项自 #145 归并——同版收口主题，归并对销净增行）
+#### 144. 审查面一维收口——事件驱动/OTA/上行脱敏/意图通道/demo/退役扫尾 + B 类防复发 + 发版期插件配置/分发不可变/上游钉 + 章二/三/四/五/七/九新审查面（约束导出与证据链外部可验/运行时 should-run 判定链/审计结论失效语义/网络出口治理面/事前授权补环/DSH 插件 npm 首发面；章一 MCP 对外面由 `audit-query.test.ts` 只读断言 + check-wiring-guard 107/107 承接、章六文档面由 check-readme-parity 承接——判据①冗余不另立维）（阶段四 A/B 合流 · 行为面已由 S433–S444 锁 · 对齐 #131/#133 先例 · ③ 段只查单向，本维把 S433–S444 引进 checklist 补双向闭环；发版期四项自 #145 归并——同版收口主题，归并对销净增行）
 ```bash
 (
 FAIL=0
