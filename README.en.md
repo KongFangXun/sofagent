@@ -57,7 +57,7 @@
 
 </details>
 
-### Should you install it?
+## Should you install it?
 
 | If you are... | Recommendation |
 |---------------|----------------|
@@ -185,7 +185,7 @@ Also in this release: AI exception bus (retry / human / rollback routing) · tas
 
 **Release stage (read before installing)**: sofagent is in its **Alpha construction period** (**v1.x**) — the feature surface moves fast and **no interface stability is promised**; read the [CHANGELOG](./CHANGELOG.md) before upgrading across versions. From **v2.0.0** on it enters the **Beta stage**.
 
-The matching npm release-channel policy: **construction-period versions are published to the `latest` dist-tag as usual** — `npx @sofagent/audit` pulls the current latest by default, no dist-tag needed. Measured now: `npm view @sofagent/audit dist-tags` → `{ latest: '1.5.1' }`. **After v2.0.0 ships, `latest` points to 2.0**.
+The matching npm release-channel policy: **construction-period versions are published to the `latest` dist-tag as usual** — `npx @sofagent/audit` pulls the current latest by default, no dist-tag needed. Measured on 2026-09-24: `npm view @sofagent/audit dist-tags` → `{ latest: '1.5.1' }` (this value updates after v1.5.2 ships — treat a live run as authoritative). **After v2.0.0 ships, `latest` points to 2.0**.
 
 > ⚠️ **Enterprise users read first** [LIMITATIONS §3](./docs/LIMITATIONS.md) — `config.yml` is **non-fail-closed by default** (rules can be bypassed by Agent tampering), and **write-side** multi-tenant isolation is not yet landed (v0 delivered query-side isolation: orgId filtering + the data/<tenant>/ path foundation — see LIMITATIONS). For strict-compliance scenarios use CI fallback + file-permission lock (`chmod 400 .sofagent/config.yml` — an auxiliary layer, ineffective against same-user processes; see [LIMITATIONS §3](./docs/LIMITATIONS.md)); do not put the single-machine default config directly into production.
 >
