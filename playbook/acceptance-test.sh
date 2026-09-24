@@ -6,7 +6,7 @@ export LANG=en_US.UTF-8
 export LC_ALL=en_US.UTF-8
 # sofagent-audit · 上线前验收测试（Pre-Release Acceptance Test）
 # 覆盖：FORGE + MCP + 文件系统审计 + daemon + 红队对抗 + 各版本新功能验收
-# 场景数：369 个场景（SSOT：check-test-count.sh 校验，口径=真实 scenario 调用行数，非编号最大值（S1-S444 共 78 个历史空洞号——70 个 S36-S202 历史段 + 265/332/364/366/367/415/417/441 归并退役号）；v1.5.0 阶段三步骤四验收增量 +5：S427（章一 治理 KPI 面板——governance 六卡聚合引擎 dist 直调 + 空目录降级 + 周报 markdown + lineage 合规报告 + Dashboard 治理 tab/api 三锚）、S428（章二 本体数据双时态——stateAt 时点快照两视角 + isValidAt 边界 + progressiveLoad 三层渐进预算联动）、S429（章三 Validation Engine——DAG 环检测三色 DFS 环链定位 + schema 兼容三态 + 激活前置门 fail-closed）、S430（章八 跨层证据对账——reconcileTraces 四态判定：一致/漏报/幻觉/瞒报 + 回滚闭环豁免 + consistencyRate + trace_reconcile 105th tool 注册锚）、S431（章五 FDE 陪跑期 + 章十 DSH 插件事件接线——companion 14 天期满总结面 + plugins.json 7 seamHandlers + audit 插件 4 事件位，多模块共场景对齐 S373/S374 先例）；v1.4.9 阶段五 P0-3 补测 +1：S425（G1 workflow 模板分发 export/import dist 直调往返 + 剥离/血缘/篡改/全私/冲突/非法模板六拒收 + tool-registry 双注册——run-02 C-P0-1 阻塞解除批）；v1.4.9 run-02 修复批 +1：S426（审查体系四文档分发结构锁——checklist 90 维/警戒线 + calibration 五校准锚 + 收敛表对账，C-P1-8 闭环）；v1.3.7 +4：S290-S293；v1.3.6 +8：S282-S289；v1.3.8 +11：S294-S304（含 bugfix 防回归 S303/S304）；v1.3.9 +15：S305-S319（阶段五 A 类分发 13 项 + 阶段六 coverage 补测 S318 ATTRIBUTION 归因/S319 Dream Sandbox 沙盒审计）；v1.4.0 +3：S320（联邦查询跨进程 E2E——补 federation.test.ts 同进程 mock 缺口）、S321（跨平台 hook stdin 模式闭环验证）、S322（双设备联邦独立进程模拟——两个独立 node 进程 + 真实 TCP，补 fork 形态缺口）；v1.4.1 +10：S323（train doctor CLI 实跑）、S324（enterpriseId 强制绑定+幂等）、S325（fingerprint 冻结+不可变）、S326（artifact 签名+篡改检测）、S327（安全基线路径白名单+注入检测）、S328（install.sh 迁移丢数据窗口防回归——阶段四 B2 分发）、S329（install.sh symlink 谎报守卫——阶段四 B3 分发）、S330（训练异常退出资源回收四步链——阶段六 coverage 补测，补判断层唯一零覆盖项）、S331（OpenClaw plugin 双 manifest 一致性——阶段十一 ClawHub 拒收踩坑回写）、S332（bump 脚本通配误伤防回归——阶段十一静默漏 bump 踩坑回写）；v1.4.2 +10：S333（数据管道 CSV 类型推断端到端）、S334（dataset_version 台账三件套）、S335（eval 阈值判定双态）、S336（dry-run 显存估算单调性）、S337（ScaleRL sigmoid 拟合/外推/建议）、S338（FDE 工作台审计留痕往返——阶段三步骤四增量，行为实测走 dist 产物）、S339（MCP 工具 dataDir SSOT 收编完整——阶段三 fresh-eyes N-1 修复行为锁）、S340（19 处 v1.3.x 存量 getSofagentDataDir 一次清零行为锁——用户拍板 A 桶落点迁移接受）、S341（train report 报告生成本体 dist 行为实测——阶段五 coverage 唯一零覆盖项补测）；v1.4.2 章五 +2：S342（IM 桥通道交付三面断言——run-17 模块七零覆盖补测）、S343（BugFix 30 项批次级五族锚点——run-17 模块十零覆盖补测，对齐 S281 先例）；v1.4.2 阶段十二 +1：S344（Git Data API 推送通道 cat-file 防复发——ps1 eol 二坑根因固化）；v1.4.3 bugfix 批 +1：S345（跨平台 hook stdin message 抽取三场景行为锁——F-03 等号/中文/嵌套引号 + 空格形式回归，stub 断言 --task 透传）；v1.4.3 阶段三 +3：S346（审计聚合 --stats CLI 行为实测——--json 纯净/--days 窗口/口径行）、S347（反作弊基线三防线锚点——doctor 体检/缺省全开/白名单外部化）、S348（训练监控三 MCP tools 注册面——registry 79 + SKILL 对账）；v1.4.3 阶段五 +3：S349（训练沙箱三约束行为实测——dist 直调 createTrainSandbox：路径守卫三态/代理黑洞/网关判定）、S350（训练需求推导行为实测——场景派生/默认模板匹配/报告路径企业隔离）、S351（后训练 workflow 模板解析——七节点 DAG 无环/三 HITL/capability_ref 全节点指向）；v1.4.3 阶段五 run-02 闭环 +4：S352（DSH 执行深化三步锚点——事件流订阅/分级切 dsh 缺省/usage 记账链直调/降级红线）、S353（train_diagnose 行为实测——故障形态命中/零命中兜底/处方全覆盖）、S354（入口导览三产品线可发现 + onboarding 断层走查检查项 + 走查口径行）、S355（存量清扫零残留——ao 死代码/compose 更名转发/ontology 收窄/退役公告四锚）；v1.4.3 run-04 coverage 闭环 +1：S356（doctor Ontology 完整性检查——entities 遍历 + frontmatter 三查 + skip-log 对账锚点，补十三章零覆盖 P0-1）；v1.4.3 run-05 coverage 闭环 +2：S357（审计聚合触发率数值实测——已知分布 fixture 直调 computeAuditStats：分母/分布/触发率 0.3/阻断率 0.1/空历史 null 降级，F-3 闭环）、S358（train_status 行为实测——fixture 任务+事件流直调：运行态/进度曲线/参数校验/隔离面/GPU 队列账本，F-1 闭环；S347 同批补四形态×双防线映射锁 F-2 闭环））；v1.4.3 闸门 run-05 P1 批 +1：S359（过时承诺排期化 + 悬空引用补锚点——ecdh.ts 注释指向 ROADMAP v1.4.7 / changelog F-10 引 S359 / 三态退出码 exit 2 在位，P1-3/P1-7/P1-8 闭环防复发）；v1.4.3 闸门 run-06 误报批 +1：S360（P1-3/P1-6/P1-7 定谳——规则数 24 双口径锚点（number 字段清点 + README 对齐）/ 维度 9 探针 A+E 全口径防漏 E 系列 / PASS 场景级断言输出 pass() 透传描述 / S165 标题去 158 残留）；v1.4.3 阶段十二 +1：S361（本地部署树 overrides CI 三红防复发——lock 零 dsh-deployed symlink + dsh 六包 registry 解析抽查，npm 实测惰性 overrides 地雷口径固化）；v1.4.4 闸门 run-01/run-02 判断层 P0 闭环 +9：S362/S363/S365-S371（S364 已归并入 S348——corpus_export 双入口对账对销，断言零删减；v1.4.4 十模块验收——章一语料导出 27 编号位+方法论+脱敏 S362/S363、章二权重部署哈希红线 S365、章三产物注册人审语义 S366、章四对比训练 ROI 排序 S367、章五因果链回溯+先例打分+HMAC 篡改判定 S368、章六 CI 供应链四锚点 S369、章七十收口八锚点 S370、章九 17 项收编批三族代表锚点 + 章一五源样本聚合 + 章七 13 包门面 S371（run-02 P0-2/P1-2/P1-3 闭环，对齐 S281/S343 先例），行为面 dist 直调逐一探针实测后落场景；原 S364 corpus_export 双入口对账已真实归并入 S348——归并对销 1 处，断言零删减）；v1.4.4 闸门 run-06 coverage 闭环 +1：S372（章十一阶段四 B 类行为锁补测批 37cab2b9——B1-B8 用例四测试文件在位锚 + B1/B2/B3/B4/B6 五代表断言锚，run-06 P0-1 闭环，对齐 S330/S341 零覆盖补测先例）；v1.4.5 第七章二/三 +1：S373/S374 归并对销后净 +1（S265 归并入 S264 断言零删减；S373 反哺闭环端到端——真实采样数据→harvest→jury→promote 链路级 + S374 L4 工具层自进化全流程——候选→扫描→人审→注册→invoke 可调+静态计数不漂移，行为实测 dist 直调对齐 S318/S319 先例）；v1.4.5 阶段四 +1：S375（train 五新面行为实测——deliverable 打包+HMAC verify 篡改拒绝/compliance PII findings+provenance 台账/retention symlink 拒绝保留源/serve 三 tools 注册面，SOFAGENT_DATA/KEY_PATH 隔离 dist 直调对齐 S368 手法；阶段五分诊补测——S375 扩展覆盖模块八 FDE 进场记忆目录（coverage D-1 缺口闭环，多模块共场景先例对齐 S373/S374，场景数 305 不变））；v1.4.5 阶段五批二：S375 再扩展覆盖模块六 Quickstart 交付物三件（coverage 缺口闭环第二批，多模块共场景先例对齐 S373/S374，场景数 305 不变）；v1.4.6 阶段三步骤四增量 +2：S376/S377（章一 train multi 行为锁——多卡命令构造/rank 汇总最慢决定/schema v2 兼容 v1 拒未知/GPU 队列双轴拓扑/NCCL 第八类；章二 train cloud 行为锁——分拣三档宁拦勿漏/批量整批拦截/双闸入库合规先/schema strict/注册表幂等/失联止损 5min/成本向上取整，dist 直调对齐 S375 手法）305→307；v1.4.6 追加交付 +1：S378（npm 裸名总包 umbrella 行为锁——SSOT 对账/四依赖逐一核对/workspaces 收编/bin 转发活体实测/bump dry-run 覆盖面零写盘）307→308；流程加固批 +4：S379-S382（防线失明自检故障注入双守卫非 0+门禁自身 fail-loud / 分支收编标记对账双形态+INFO 四要素+输出稳定 / 引擎空 diff message 类审计三形态 exit 2 阻断语义 / driver 冻结窗口锁三态 HOME 隔离实测）308→312；v1.4.6 阶段四防膨胀批 −2：S367 归并入 S369（章四对比三断言整体移入，断言零删减——训练管线族场景壳合并）+ S332 归并入 S331（双 manifest 与 bump 通配守卫合族，断言零删减）+ S222 扩根 commit 空树补审锚（v1.4.6 bugfix 组二防回归，场景数不变）312→310；v1.4.6 边界收缩批 +1：S383（边界收缩四批行为锁——删除符号导出面零残留 + TrainExecutor 隔离 + 四场景判定语义与参考模板在位 + 外部装载面可用，coverage 缺口闭环）310→311；v1.4.7 商业平台接口批 +4：S384-S387（G 系列工具面五新 tool 注册+gap-analyzer 返回结构 / PR 域收口——合并门真判定 fail-closed+自审拒绝+weight 上界+confidence 两态 / 云通道接线——daemon 装配面+监控表在册 / daemon 接线收口——initDataEncryption+repo-hash 段。release-gate run-01 coverage 判定四批零锚点阻塞后按 S281/S343/S371 先例补代表锚点）311→315；同批续补五模块锚点 S388-S392（run-02 verdict P1-1~P1-5 路径 A：G6 可见性审阅门 / G7 租户隔离 fail-loud / G8 模板库 / 上岗 prompt 三段 / G14 CRUD owner-branch 分流——驱动场景正则同步对齐字母后缀口径）315→320；run-03 verdict 闭环批 S393-S398（G2/G4 业务语义层 fixture 判定 + 批 J/质量循环修复批代表锚点 + USB 烧录往返 + tool 描述四原则静态扫描——P0×2/P1×4 全关闭）320→326；run-04 Conditional-PASS 的 RC-1 收口 S399/S400（批 G scheduler 执行链锚 + 批 O L2 巡检观测性锚）+ S384 标题矛盾修正（四新 tool+pr 族归属 S385 显式注明）326→328；v1.4.8 阶段四 A 类分发 +9：S401-S409（九新面各 1 锚点——策略门×2 / 行为分级×2 / 成本压缩×2 / 模型进化 / 纪律 / 安全豁免，行为实测 dist 直调对齐 S394/S397 手法；新功能场景即 D7 欠账兑付，九场景一一对应 checklist #137-#142）328→337；v1.4.8 深模块批条目 10（loop 概念归位与弃用标记）覆盖并入 S407（场景数 337 不变，多模块共场景先例对齐 S373/S374）；v1.4.9 bugfix 批二 P0-1 回归锁 S411 337→338（hook 场景 treeSha 跨阶段错配·三态：干净 commit 回声 / soft-reset 换料不命中（F-16 防线 + A 方案否决锁）/ 相邻提交各自命中）；v1.4.9 bugfix 批三 P1-10 回归锁 S412 338→339（A1 按 DiffFile.status 方向分级——沙盒 `git rm .env` 的补救 commit：审计退出码 ≤1 + 输出含「已移除…历史仍在」指引）；v1.4.9 阶段五 P0-3 补测 +7：S418-S424 343→350（release-gate 20260916-01 coverage 判定 changelog 九章零场景锚点阻塞后按 S330/S341/S342/S343 先例补行为锁——S418 G10 授权读取参数/未注册双拒 / S419 G11 上行通道 invalid-params+isError 形态 / S420 installer 五步+诊断四字段+任务捎带往返 / S421 派单语义 reassign/hold 双模式 / S422 蒸馏配对方向+缺源 skip+qualityScore 择优 / S423 灰度同 key 确定性+端点+劣化判定 / S424 模型清单 retired 过滤+注册表缺失降级；同批 S413 扩心跳未注册拒绝 reason+拒绝留痕事件链可验断言）；v1.5.1 第九章 +1：S433（存量断链残余面——退役 flag 无生产调用方残留：全仓扫描含 tools/ 与所有 .sh、测试面/fixtures 豁免、退役侧哨点缺失 fail-loud、退役登记表可扩展；防下一版复发同类断链）；v1.5.1 产任务九章验收增量 +6：S434（章一 事件驱动触发——链式触发/触发链还原/HMAC 验链/死信重放/timer.tick 第三源）、S435（章三 异常总线三分类留痕可区分）、S436（章二 理解债务——PR 因果链 + 周报 L2 四段）、S437（章四+五 OTA 验签 fail-closed + 灰度次序 + 离线补投 + 回执入链）、S438（章六 上行管线三层脱敏 + L2 降级可见 + 灰度稳定）、S439（章七+八 意图通道脱敏 + demo 五幕两拒一放；均经反向探针取证）；v1.5.1 章十 +1：S440（BugFix 批五族代表锚点——守卫门禁/语义面/安装器/发版态/拍板收口各挑代表锚，对齐 S343 批次锚先例，release-gate G-1 闭环）；v1.5.1 章十一 +1：S441（发布链加固代表锚点——门禁清单覆盖对账三态 + 长跑凭据四道防线 + 随动面三锚，release-gate G-10 闭环——已于 v1.5.2 审查面登记归并入 S440 场景共壳）；v1.5.2 审查面登记净 +2（新增 S442-S444 三场景 · S440/S441 锚点批归并入 S440 共壳 −1，断言整体移入 acceptance-node-probes.js 零删减）：S442（章二 约束导出与证据链外部可验 + 章三 运行时 should-run 判定链——export-metadata/ruleset_export 导出面 + verify-chain --selftest 外部可验 + 唯一 EventBus 构造点 gate 注入）、S443（章四 审计结论失效语义 + 章五 网络出口治理面——INVALIDATION append-only 标记与三钩子 + filterValid 下游剔除 + decideEgress 默认全拒与通道 fail-closed）、S444（章七 事前授权补环 + 章九 DSH 插件 npm 首发面——mandate 三元素与 gate 注入 + 7 插件包仓内就绪；v1.5.2 审查面登记收口）；v1.5.2 release-gate 20260924-01 判断层 P0×2 闭环 +3：S445（章八 BugFix 批五族代表锚点——install.sh@latest fail-closed/diff-parser 列表阶段 fail-closed/public-api 真基线对账/dashboard readErrors 消费/prune-spill+MCP_ROLES_STRICT 开关）、S446（章一 MCP audit 数据对外——audit_query/ruleset_export 注册面 + 只读行为锁 + isError 两态 + [sofagent] 前缀）、S447（章六 身份三层叙事 README 双语结构锁）369→372
+# 场景数：373 个场景（SSOT：check-test-count.sh 校验，口径=真实 scenario 调用行数，非编号最大值（S1-S444 共 78 个历史空洞号——70 个 S36-S202 历史段 + 265/332/364/366/367/415/417/441 归并退役号）；v1.5.0 阶段三步骤四验收增量 +5：S427（章一 治理 KPI 面板——governance 六卡聚合引擎 dist 直调 + 空目录降级 + 周报 markdown + lineage 合规报告 + Dashboard 治理 tab/api 三锚）、S428（章二 本体数据双时态——stateAt 时点快照两视角 + isValidAt 边界 + progressiveLoad 三层渐进预算联动）、S429（章三 Validation Engine——DAG 环检测三色 DFS 环链定位 + schema 兼容三态 + 激活前置门 fail-closed）、S430（章八 跨层证据对账——reconcileTraces 四态判定：一致/漏报/幻觉/瞒报 + 回滚闭环豁免 + consistencyRate + trace_reconcile 105th tool 注册锚）、S431（章五 FDE 陪跑期 + 章十 DSH 插件事件接线——companion 14 天期满总结面 + plugins.json 7 seamHandlers + audit 插件 4 事件位，多模块共场景对齐 S373/S374 先例）；v1.4.9 阶段五 P0-3 补测 +1：S425（G1 workflow 模板分发 export/import dist 直调往返 + 剥离/血缘/篡改/全私/冲突/非法模板六拒收 + tool-registry 双注册——run-02 C-P0-1 阻塞解除批）；v1.4.9 run-02 修复批 +1：S426（审查体系四文档分发结构锁——checklist 90 维/警戒线 + calibration 五校准锚 + 收敛表对账，C-P1-8 闭环）；v1.3.7 +4：S290-S293；v1.3.6 +8：S282-S289；v1.3.8 +11：S294-S304（含 bugfix 防回归 S303/S304）；v1.3.9 +15：S305-S319（阶段五 A 类分发 13 项 + 阶段六 coverage 补测 S318 ATTRIBUTION 归因/S319 Dream Sandbox 沙盒审计）；v1.4.0 +3：S320（联邦查询跨进程 E2E——补 federation.test.ts 同进程 mock 缺口）、S321（跨平台 hook stdin 模式闭环验证）、S322（双设备联邦独立进程模拟——两个独立 node 进程 + 真实 TCP，补 fork 形态缺口）；v1.4.1 +10：S323（train doctor CLI 实跑）、S324（enterpriseId 强制绑定+幂等）、S325（fingerprint 冻结+不可变）、S326（artifact 签名+篡改检测）、S327（安全基线路径白名单+注入检测）、S328（install.sh 迁移丢数据窗口防回归——阶段四 B2 分发）、S329（install.sh symlink 谎报守卫——阶段四 B3 分发）、S330（训练异常退出资源回收四步链——阶段六 coverage 补测，补判断层唯一零覆盖项）、S331（OpenClaw plugin 双 manifest 一致性——阶段十一 ClawHub 拒收踩坑回写）、S332（bump 脚本通配误伤防回归——阶段十一静默漏 bump 踩坑回写）；v1.4.2 +10：S333（数据管道 CSV 类型推断端到端）、S334（dataset_version 台账三件套）、S335（eval 阈值判定双态）、S336（dry-run 显存估算单调性）、S337（ScaleRL sigmoid 拟合/外推/建议）、S338（FDE 工作台审计留痕往返——阶段三步骤四增量，行为实测走 dist 产物）、S339（MCP 工具 dataDir SSOT 收编完整——阶段三 fresh-eyes N-1 修复行为锁）、S340（19 处 v1.3.x 存量 getSofagentDataDir 一次清零行为锁——用户拍板 A 桶落点迁移接受）、S341（train report 报告生成本体 dist 行为实测——阶段五 coverage 唯一零覆盖项补测）；v1.4.2 章五 +2：S342（IM 桥通道交付三面断言——run-17 模块七零覆盖补测）、S343（BugFix 30 项批次级五族锚点——run-17 模块十零覆盖补测，对齐 S281 先例）；v1.4.2 阶段十二 +1：S344（Git Data API 推送通道 cat-file 防复发——ps1 eol 二坑根因固化）；v1.4.3 bugfix 批 +1：S345（跨平台 hook stdin message 抽取三场景行为锁——F-03 等号/中文/嵌套引号 + 空格形式回归，stub 断言 --task 透传）；v1.4.3 阶段三 +3：S346（审计聚合 --stats CLI 行为实测——--json 纯净/--days 窗口/口径行）、S347（反作弊基线三防线锚点——doctor 体检/缺省全开/白名单外部化）、S348（训练监控三 MCP tools 注册面——registry 79 + SKILL 对账）；v1.4.3 阶段五 +3：S349（训练沙箱三约束行为实测——dist 直调 createTrainSandbox：路径守卫三态/代理黑洞/网关判定）、S350（训练需求推导行为实测——场景派生/默认模板匹配/报告路径企业隔离）、S351（后训练 workflow 模板解析——七节点 DAG 无环/三 HITL/capability_ref 全节点指向）；v1.4.3 阶段五 run-02 闭环 +4：S352（DSH 执行深化三步锚点——事件流订阅/分级切 dsh 缺省/usage 记账链直调/降级红线）、S353（train_diagnose 行为实测——故障形态命中/零命中兜底/处方全覆盖）、S354（入口导览三产品线可发现 + onboarding 断层走查检查项 + 走查口径行）、S355（存量清扫零残留——ao 死代码/compose 更名转发/ontology 收窄/退役公告四锚）；v1.4.3 run-04 coverage 闭环 +1：S356（doctor Ontology 完整性检查——entities 遍历 + frontmatter 三查 + skip-log 对账锚点，补十三章零覆盖 P0-1）；v1.4.3 run-05 coverage 闭环 +2：S357（审计聚合触发率数值实测——已知分布 fixture 直调 computeAuditStats：分母/分布/触发率 0.3/阻断率 0.1/空历史 null 降级，F-3 闭环）、S358（train_status 行为实测——fixture 任务+事件流直调：运行态/进度曲线/参数校验/隔离面/GPU 队列账本，F-1 闭环；S347 同批补四形态×双防线映射锁 F-2 闭环））；v1.4.3 闸门 run-05 P1 批 +1：S359（过时承诺排期化 + 悬空引用补锚点——ecdh.ts 注释指向 ROADMAP v1.4.7 / changelog F-10 引 S359 / 三态退出码 exit 2 在位，P1-3/P1-7/P1-8 闭环防复发）；v1.4.3 闸门 run-06 误报批 +1：S360（P1-3/P1-6/P1-7 定谳——规则数 24 双口径锚点（number 字段清点 + README 对齐）/ 维度 9 探针 A+E 全口径防漏 E 系列 / PASS 场景级断言输出 pass() 透传描述 / S165 标题去 158 残留）；v1.4.3 阶段十二 +1：S361（本地部署树 overrides CI 三红防复发——lock 零 dsh-deployed symlink + dsh 六包 registry 解析抽查，npm 实测惰性 overrides 地雷口径固化）；v1.4.4 闸门 run-01/run-02 判断层 P0 闭环 +9：S362/S363/S365-S371（S364 已归并入 S348——corpus_export 双入口对账对销，断言零删减；v1.4.4 十模块验收——章一语料导出 27 编号位+方法论+脱敏 S362/S363、章二权重部署哈希红线 S365、章三产物注册人审语义 S366、章四对比训练 ROI 排序 S367、章五因果链回溯+先例打分+HMAC 篡改判定 S368、章六 CI 供应链四锚点 S369、章七十收口八锚点 S370、章九 17 项收编批三族代表锚点 + 章一五源样本聚合 + 章七 13 包门面 S371（run-02 P0-2/P1-2/P1-3 闭环，对齐 S281/S343 先例），行为面 dist 直调逐一探针实测后落场景；原 S364 corpus_export 双入口对账已真实归并入 S348——归并对销 1 处，断言零删减）；v1.4.4 闸门 run-06 coverage 闭环 +1：S372（章十一阶段四 B 类行为锁补测批 37cab2b9——B1-B8 用例四测试文件在位锚 + B1/B2/B3/B4/B6 五代表断言锚，run-06 P0-1 闭环，对齐 S330/S341 零覆盖补测先例）；v1.4.5 第七章二/三 +1：S373/S374 归并对销后净 +1（S265 归并入 S264 断言零删减；S373 反哺闭环端到端——真实采样数据→harvest→jury→promote 链路级 + S374 L4 工具层自进化全流程——候选→扫描→人审→注册→invoke 可调+静态计数不漂移，行为实测 dist 直调对齐 S318/S319 先例）；v1.4.5 阶段四 +1：S375（train 五新面行为实测——deliverable 打包+HMAC verify 篡改拒绝/compliance PII findings+provenance 台账/retention symlink 拒绝保留源/serve 三 tools 注册面，SOFAGENT_DATA/KEY_PATH 隔离 dist 直调对齐 S368 手法；阶段五分诊补测——S375 扩展覆盖模块八 FDE 进场记忆目录（coverage D-1 缺口闭环，多模块共场景先例对齐 S373/S374，场景数 305 不变））；v1.4.5 阶段五批二：S375 再扩展覆盖模块六 Quickstart 交付物三件（coverage 缺口闭环第二批，多模块共场景先例对齐 S373/S374，场景数 305 不变）；v1.4.6 阶段三步骤四增量 +2：S376/S377（章一 train multi 行为锁——多卡命令构造/rank 汇总最慢决定/schema v2 兼容 v1 拒未知/GPU 队列双轴拓扑/NCCL 第八类；章二 train cloud 行为锁——分拣三档宁拦勿漏/批量整批拦截/双闸入库合规先/schema strict/注册表幂等/失联止损 5min/成本向上取整，dist 直调对齐 S375 手法）305→307；v1.4.6 追加交付 +1：S378（npm 裸名总包 umbrella 行为锁——SSOT 对账/四依赖逐一核对/workspaces 收编/bin 转发活体实测/bump dry-run 覆盖面零写盘）307→308；流程加固批 +4：S379-S382（防线失明自检故障注入双守卫非 0+门禁自身 fail-loud / 分支收编标记对账双形态+INFO 四要素+输出稳定 / 引擎空 diff message 类审计三形态 exit 2 阻断语义 / driver 冻结窗口锁三态 HOME 隔离实测）308→312；v1.4.6 阶段四防膨胀批 −2：S367 归并入 S369（章四对比三断言整体移入，断言零删减——训练管线族场景壳合并）+ S332 归并入 S331（双 manifest 与 bump 通配守卫合族，断言零删减）+ S222 扩根 commit 空树补审锚（v1.4.6 bugfix 组二防回归，场景数不变）312→310；v1.4.6 边界收缩批 +1：S383（边界收缩四批行为锁——删除符号导出面零残留 + TrainExecutor 隔离 + 四场景判定语义与参考模板在位 + 外部装载面可用，coverage 缺口闭环）310→311；v1.4.7 商业平台接口批 +4：S384-S387（G 系列工具面五新 tool 注册+gap-analyzer 返回结构 / PR 域收口——合并门真判定 fail-closed+自审拒绝+weight 上界+confidence 两态 / 云通道接线——daemon 装配面+监控表在册 / daemon 接线收口——initDataEncryption+repo-hash 段。release-gate run-01 coverage 判定四批零锚点阻塞后按 S281/S343/S371 先例补代表锚点）311→315；同批续补五模块锚点 S388-S392（run-02 verdict P1-1~P1-5 路径 A：G6 可见性审阅门 / G7 租户隔离 fail-loud / G8 模板库 / 上岗 prompt 三段 / G14 CRUD owner-branch 分流——驱动场景正则同步对齐字母后缀口径）315→320；run-03 verdict 闭环批 S393-S398（G2/G4 业务语义层 fixture 判定 + 批 J/质量循环修复批代表锚点 + USB 烧录往返 + tool 描述四原则静态扫描——P0×2/P1×4 全关闭）320→326；run-04 Conditional-PASS 的 RC-1 收口 S399/S400（批 G scheduler 执行链锚 + 批 O L2 巡检观测性锚）+ S384 标题矛盾修正（四新 tool+pr 族归属 S385 显式注明）326→328；v1.4.8 阶段四 A 类分发 +9：S401-S409（九新面各 1 锚点——策略门×2 / 行为分级×2 / 成本压缩×2 / 模型进化 / 纪律 / 安全豁免，行为实测 dist 直调对齐 S394/S397 手法；新功能场景即 D7 欠账兑付，九场景一一对应 checklist #137-#142）328→337；v1.4.8 深模块批条目 10（loop 概念归位与弃用标记）覆盖并入 S407（场景数 337 不变，多模块共场景先例对齐 S373/S374）；v1.4.9 bugfix 批二 P0-1 回归锁 S411 337→338（hook 场景 treeSha 跨阶段错配·三态：干净 commit 回声 / soft-reset 换料不命中（F-16 防线 + A 方案否决锁）/ 相邻提交各自命中）；v1.4.9 bugfix 批三 P1-10 回归锁 S412 338→339（A1 按 DiffFile.status 方向分级——沙盒 `git rm .env` 的补救 commit：审计退出码 ≤1 + 输出含「已移除…历史仍在」指引）；v1.4.9 阶段五 P0-3 补测 +7：S418-S424 343→350（release-gate 20260916-01 coverage 判定 changelog 九章零场景锚点阻塞后按 S330/S341/S342/S343 先例补行为锁——S418 G10 授权读取参数/未注册双拒 / S419 G11 上行通道 invalid-params+isError 形态 / S420 installer 五步+诊断四字段+任务捎带往返 / S421 派单语义 reassign/hold 双模式 / S422 蒸馏配对方向+缺源 skip+qualityScore 择优 / S423 灰度同 key 确定性+端点+劣化判定 / S424 模型清单 retired 过滤+注册表缺失降级；同批 S413 扩心跳未注册拒绝 reason+拒绝留痕事件链可验断言）；v1.5.1 第九章 +1：S433（存量断链残余面——退役 flag 无生产调用方残留：全仓扫描含 tools/ 与所有 .sh、测试面/fixtures 豁免、退役侧哨点缺失 fail-loud、退役登记表可扩展；防下一版复发同类断链）；v1.5.1 产任务九章验收增量 +6：S434（章一 事件驱动触发——链式触发/触发链还原/HMAC 验链/死信重放/timer.tick 第三源）、S435（章三 异常总线三分类留痕可区分）、S436（章二 理解债务——PR 因果链 + 周报 L2 四段）、S437（章四+五 OTA 验签 fail-closed + 灰度次序 + 离线补投 + 回执入链）、S438（章六 上行管线三层脱敏 + L2 降级可见 + 灰度稳定）、S439（章七+八 意图通道脱敏 + demo 五幕两拒一放；均经反向探针取证）；v1.5.1 章十 +1：S440（BugFix 批五族代表锚点——守卫门禁/语义面/安装器/发版态/拍板收口各挑代表锚，对齐 S343 批次锚先例，release-gate G-1 闭环）；v1.5.1 章十一 +1：S441（发布链加固代表锚点——门禁清单覆盖对账三态 + 长跑凭据四道防线 + 随动面三锚，release-gate G-10 闭环——已于 v1.5.2 审查面登记归并入 S440 场景共壳）；v1.5.2 审查面登记净 +2（新增 S442-S444 三场景 · S440/S441 锚点批归并入 S440 共壳 −1，断言整体移入 acceptance-node-probes.js 零删减）：S442（章二 约束导出与证据链外部可验 + 章三 运行时 should-run 判定链——export-metadata/ruleset_export 导出面 + verify-chain --selftest 外部可验 + 唯一 EventBus 构造点 gate 注入）、S443（章四 审计结论失效语义 + 章五 网络出口治理面——INVALIDATION append-only 标记与三钩子 + filterValid 下游剔除 + decideEgress 默认全拒与通道 fail-closed）、S444（章七 事前授权补环 + 章九 DSH 插件 npm 首发面——mandate 三元素与 gate 注入 + 7 插件包仓内就绪；v1.5.2 审查面登记收口）；v1.5.2 release-gate 20260924-01 判断层 P0×2 闭环 +3：S445（章八 BugFix 批五族代表锚点——install.sh@latest fail-closed/diff-parser 列表阶段 fail-closed/public-api 真基线对账/dashboard readErrors 消费/prune-spill+MCP_ROLES_STRICT 开关）、S446（章一 MCP audit 数据对外——audit_query/ruleset_export 注册面 + 只读行为锁 + isError 两态 + [sofagent] 前缀）、S447（章六 身份三层叙事 README 双语结构锁）369→372
 # 编号跳号豁免：S1~S293 间有 70 个空洞号（全在 S36-S202 历史段）——v1.2.x 瘦身删场景
 # 与基线重建（restore 6e542467）的既成事实，非丢失；
 # 新场景编号=当前最大+1 顺延，禁止回填空洞
@@ -1657,7 +1657,7 @@ grep -q "SOFAGENT_LLM_B" "$LR" 2>/dev/null || { fail "llm-model-resolver.ts 缺�
 $S196_OK && pass "resolveLLMModel/resolveApiKey 四级回退（SOFAGENT_LLM → _ROLE → _A → _B）"
 # S197 已归并至 S164（全项目 .md 死链检测已覆盖 docs/ 子集）
 pass "S197 归并至 S164（全项目死链检测）"
-# ─── v1.2.7 新增场景（S198-S207）───
+# ─── v1.2.7–v1.2.9 场景（S198–S224）三批：Session Goals/压缩/Skill 加载/doctor/driver/企业图谱/support-bundle/boot + memory-store/定时任务/ToolOutputBudget/node-executor/F 角色/Checkpoint + 短任务/checkpoint/PM2/激活链/mcp 拆分/BugFix/叙事/cli-quick ───
 scenario 198 "v1.2.7 ① Session Goals — /goal 命令注册 + goal_eval 路由节点"; S198_OK=true
 [ -f "$PROJECT_ROOT/engine/core/src/slash-commands/goal.ts" ] || { fail "goal.ts 不存在"; S198_OK=false; }
 assert_grep "GoalCommand\|register.*goal\|name:.*['\"]goal" "$PROJECT_ROOT/engine/core/src/slash-commands/goal.ts" || S198_OK=false
@@ -1714,7 +1714,6 @@ MB_DIR="$PROJECT_ROOT/engine/orchestrator/src/mailbox"
 [ ! -d "$MB_DIR" ] || { fail "mailbox 模块目录仍存在（退场契约要求不存在）"; S207_OK=false; }
 grep -q "mailbox\|MailboxInjector\|injectMessages" "$PROJECT_ROOT/engine/orchestrator/src/loop/nodes.ts" 2>/dev/null && { fail "nodes.ts 仍含 mailbox 注入残留"; S207_OK=false; }
 $S207_OK && pass "Agent Mailbox 退场契约（目录不存在 + nodes.ts 无注入残留）"
-# ─── v1.2.8 场景（208-214：memory-store/scheduler/tool-budget/node-executor/F角色/checkpoint）───
 scenario 208 "v1.2.8 ① memory-store — createMemoryStore 导出 + CRUD + 分层目录"
 S208_OK=true; require_dist "engine/core/dist/memory-store.js" || S208_OK=false
 if $S208_OK; then
@@ -1827,7 +1826,6 @@ if $S214_OK; then
   assert_grep "renameSync\|renameSync(tmpPath\|writeFileSync.*tmp" "$DB" || S214_OK=false
   $S214_OK && pass "Checkpoint/Resume（saveResumePoint + loadResumePoint + --resume + 原子写）"
 fi
-# ─── v1.2.9 场景（215-224：短任务化/checkpoint/PM2/激活链Phase3/mcp拆分/BugFix/叙事/cli-quick）───
 scenario 215 "v1.2.9 ① 短任务化 — fresh-eyes 12 独立视角 prompt + perspective 关键词"; S215_OK=true
 # 12 个独立视角 prompt 文件（a-check-perspective-1.md ~ -12.md）
 for _i in $(seq 1 12); do
@@ -1953,7 +1951,7 @@ if $S224_OK; then
   $S224_OK && pass "GitHub Action（action.yml node runtime + github-formatter.ts ::error/::warning Annotations）"
 fi
 # ── v1.3.0 场景（S225-S228：运行时审计 + 决策审计 + list_rules + 双规则统一） ──
-# ─── v1.3.0 新增场景（S225-S230：分层巡检/审计wrapper/HMAC链/记忆ACL）───
+# ─── v1.3.0–v1.3.5 场景（S225–S281）七批：分层巡检/审计 wrapper/HMAC 链/记忆 ACL + 国标/CRUD/审计聚合/L4 + L2-L5/agent-creation/eval-suite/session-isolation + L2 五大机制/联邦/主 agent/Refine/evidence + 能力市场/SkillScan/MARKET（market_* 更名）/自进化/instinct/FDE 运维/DSH 互通 + run-07 coverage 补覆盖 ───
 scenario 225 "v1.3.0 交付 1 tool wrapper 拦截（audit-middleware FAIL 拦截）"; S225_OK=true
 AMW="$PROJECT_ROOT/FORGE/src/audit-middleware.mjs"
 [ -f "$AMW" ] || { fail "audit-middleware.mjs 不存在"; S225_OK=false; }
@@ -2139,7 +2137,6 @@ grep -q "BACKOFF_SCHEDULE_MS" "$PROJECT_ROOT/engine/core/src/stop-reason.ts" || 
 # 工具失败收敛为消息（不 throw）
 grep -q "convergeToolError" "$PROJECT_ROOT/engine/core/src/model-client.ts" || S240_OK=false
 $S240_OK && pass "错误处理升级（stop_reason 六值 + auth 不重试 + 退避 + 收敛）"
-# ─── v1.3.1 新增场景（S241-S244：国标/CRUD/审计聚合/L4；S201/202 已归并）───
 scenario 241 "v1.3.1 交付 2 国标对齐 GB/T 48000.3-2026（--gb48000 opt-in）"; S241_OK=true
 [ -f "$PROJECT_ROOT/engine/audit/src/gb48000.ts" ] || S241_OK=false
 # 8 条映射条款
@@ -2177,7 +2174,6 @@ grep -q "knowledge-index\|knowledgeIndex" "$PROJECT_ROOT/engine/inject/src/index
 # 索引每条 ≤150 字符（摘要截断）
 grep -q "150" "$PROJECT_ROOT/engine/inject/src/knowledge-index.ts" || S244_OK=false
 $S244_OK && pass "L4 经验层渐进加载（热点全文 + 索引摘要 ≤150 字符）"
-# ─── v1.3.2 新增场景（S245-S255：L2-L5/agent-creation/eval-suite/session-isolation）───
 scenario 245 "v1.3.2 交付 1 L2 语义判定——diff-report 三类 mismatch"; S245_OK=true
 [ -f "$PROJECT_ROOT/engine/orchestrator/src/loop-agent/diff-report.ts" ] || S245_OK=false
 [ -f "$PROJECT_ROOT/engine/orchestrator/src/loop-agent/output-extractor.ts" ] || S245_OK=false
@@ -2234,7 +2230,6 @@ scenario 255 "v1.3.2 交付 11 LLM Trace 任务级轨迹视图"; S255_OK=true
 grep -q "aggregateTrajectory\|TaskTrajectory" "$PROJECT_ROOT/engine/orchestrator/src/trace/trajectory.ts" || S255_OK=false
 grep -q "exportTrajectoryForRL" "$PROJECT_ROOT/engine/orchestrator/src/trace/trajectory.ts" || S255_OK=false
 $S255_OK && pass "LLM Trace 任务级轨迹视图（按 taskId 聚合 + RL 训练导出）"
-# ─── v1.3.3 新增场景（S256-S262：L2五大机制/联邦通道/主agent编排/Refine/evidence）───
 scenario 256 "v1.3.3 交付 1 L2 团队协作协议——五大机制 + 建队机制"; S256_OK=true
 for f in protocol team-manager team-state intent-bus; do
   [ -f "$PROJECT_ROOT/engine/orchestrator/src/team/${f}.ts" ] || S256_OK=false
@@ -2280,7 +2275,6 @@ grep -q "'EVOLUTION'" "$PROJECT_ROOT/engine/audit/src/decision-schema.ts" || S26
 grep -q "'TEAM'" "$PROJECT_ROOT/engine/audit/src/decision-schema.ts" || S262_OK=false
 grep -q "EVOLUTION\|TEAM" "$PROJECT_ROOT/engine/audit/src/decision-log.ts" || S262_OK=false
 $S262_OK && pass "evidence 字段 + DecisionKind 加 EVOLUTION/TEAM" || fail "审计留痕字段缺失"
-# ─── v1.3.4 新增场景 S263-S269（L3 组织能力市场 + SkillScan + MARKET 审计 + DSH 编排分离）─── 注：v1.3.6 更名 market_*→commons_*（能力公地），断言路径已同步
 scenario 263 "v1.3.4 交付 1+2：能力公地 10 模块 + MCP 6 tool 注册（v1.3.6 更名 market_*→commons_*）"; S263_OK=true
 for f in publisher catalog invoker rating owner retire skill-scan rule-harvest rule-jury rule-promote; do
   [ -f "$PROJECT_ROOT/engine/orchestrator/src/commons/$f.ts" ] || S263_OK=false
@@ -2331,7 +2325,6 @@ grep -q "commons-health" "$S269_REG" || S269_OK=false
 grep -q "runCommonsCatalogDaily" "$PROJECT_ROOT/engine/daemon/src/inspectors/index.ts" || S269_OK=false
 grep -q "runCommonsHealth" "$PROJECT_ROOT/engine/daemon/src/inspectors/index.ts" || S269_OK=false
 $S269_OK && pass "公地巡检 inspector 三步注册（L1+L2）" || fail "inspector 注册缺失"
-# ─── v1.3.5 新增场景 S270-S276（MCP 自进化+运维闭环 + instinct + FDE 运维五件 + DSH 互通）───
 scenario 270 "v1.3.5 交付 1+2：MCP 四 tool 注册（TOOLS=61 → v1.4.0 66）+ 三步注册齐"; S270_OK=true
 for t in run_ab_test promote_ab snapshot_list snapshot_restore; do
   grep -q "'$t'" "$PROJECT_ROOT/engine/mcp/src/tool-registry.ts" || S270_OK=false
@@ -2374,7 +2367,6 @@ scenario 276 "v1.3.5 交付 4c：依赖安全（npm audit 清零 + automerge 新
 grep -q '"@automerge/automerge"' "$PROJECT_ROOT/engine/orchestrator/package.json" || S276_OK=false
 grep -rn '"automerge"' "$PROJECT_ROOT"/engine/*/package.json 2>/dev/null | grep -v "@automerge" | grep -q . && S276_OK=false  # 旧包名零残留
 $S276_OK && pass "automerge 3.x 包名切换完成" || fail "automerge 旧包名残留（依赖树混乱）"
-# ─── v1.3.5 run-07 coverage 补覆盖 S277-S281（ab-test P0 / daemon 快照 / bugfix38 / 工作区扫描）───
 scenario 277 "v1.3.5 交付 1：A/B 实验闭环——run_ab_test tool + runABTest 模块 + decidePromotion 决策器"; S277_OK=true
 grep -q "run_ab_test" "$PROJECT_ROOT/engine/mcp/src/tool-registry.ts" || S277_OK=false
 grep -q "export async function runABTest" "$PROJECT_ROOT/engine/ab-test/src/ab-runner.ts" || S277_OK=false
@@ -2726,7 +2718,7 @@ scenario 320 "v1.4.0 前置：联邦查询跨进程 E2E——配对协商/加密
 R320=$(SOFAGENT_REPO="$PROJECT_ROOT" node "$PROJECT_ROOT/playbook/federation-e2e.mjs" 2>&1 || true)
 grep -q "结果：10 PASS / 0 FAIL" <<< "$R320" || S320_OK=false
 $S320_OK && pass "联邦查询跨进程 E2E 全绿（10 断言：配对协商/加密查询/篡改检测/离线降级/trust 白名单）" || fail "联邦查询跨进程 E2E 失败: $(echo "$R320" | grep -E '❌|异常' | head -3 || true)"
-# ─── v1.4.0：平台 hook stdin 模式（Cursor/Claude Code/千问办公）闭环验证 ───
+# ─── v1.4.0：hook stdin 模式闭环验证 + 双设备联邦独立进程模拟（两段合一）───
 scenario 321 "v1.4.0 前置：跨平台 hook 共享脚本 stdin 模式——模拟 Cursor/Claude Code 触发 commit 审计（拦截违规 + 放行正常 + 非commit 不误伤）"; S321_OK=true
 S321_REPO=$(mktmp_repo)
 HOOK_SH="$PROJECT_ROOT/tools/hooks/sofagent-precommit.sh"
@@ -2771,7 +2763,6 @@ else
 fi
 cleanup_tmp "$S321_REPO"
 $S321_OK && pass "跨平台 hook stdin 模式闭环（拦截违规/放行正常/非commit 不误伤）" || fail "跨平台 hook stdin 模式验证失败"
-# ─── v1.4.0：双设备联邦独立进程模拟（两个独立 node 进程 + 真实 TCP）───
 scenario 322 "v1.4.0：双设备联邦独立进程模拟——配对/跨设备查询/篡改检测/离线降级（两个独立 node 进程，补 federation-e2e.mjs fork 形态缺口）"; S322_OK=true
 R322=$(SOFAGENT_REPO="$PROJECT_ROOT" node "$PROJECT_ROOT/playbook/dual-device-federation.mjs" 2>&1 || true)
 grep -q "结果：双进程联邦链路完成" <<< "$R322" || S322_OK=false
@@ -4293,7 +4284,6 @@ S408_OK=true; S408_OUT=$(PROJECT_ROOT="$PROJECT_ROOT" node -e "const r=process.e
 scenario 409 "v1.4.8 安全豁免面——A1 数据容器臂剔除 + 豁免边界双防 + A2 转义对抗锚（B 类防复发）"
 S409_OK=true; S409_OUT=$(PROJECT_ROOT="$PROJECT_ROOT" node -e "const r=process.env.PROJECT_ROOT; const fs=require('fs'); const bad=[]; const a1=fs.readFileSync(r+'/engine/audit/src/rules/rule-a1-sensitive-files.ts','utf8'); if(!/\.env\.json|\.env\.yaml|serverless\.env/.test(a1))bad.push('数据容器臂未剔除'); if(!a1.includes('必要非充分条件'))bad.push('豁免边界说明缺失'); const a2=fs.readFileSync(r+'/engine/audit/src/rules/rule-a2-secret-leak.ts','utf8'); if(!a2.includes('restoreHexEscapes'))bad.push('A2 转义还原缺失'); process.stdout.write(bad.length?('S409_FAIL:'+bad.join('|')):'ASSERT_OK');" 2>&1) || S409_OUT="S409_FAIL:crash"; grep -q ASSERT_OK <<< "$S409_OUT" || { echo "  ✗ S409: $S409_OUT"; S409_OK=false; }; $S409_OK && pass "v1.4.8 安全豁免面：env dump 载体不得静默 PASS + 豁免叠加边界 + A2 对抗锚" || fail "S409 锚点回潮——见上方 ✗ 行"
 
-
 # ── S411（v1.4.9 bugfix 批二 P0-1）：hook 场景 treeSha 跨阶段错配回归锁（三态）──
 # ① 干净 commit 出「✓ [sofagent] 审计通过」且不含「未确认审计记录」；② soft-reset 换料重提
 # （同 message 不同内容 · --no-verify）不得再报「审计通过」（F-16 防线在位；此断言同时锁死被
@@ -4420,7 +4410,7 @@ probe_assert s416 "v1.4.9 第八章 敏感识别：插槽四方法 + tierOf 三�
 # 来源：release-gate 20260916-01 coverage 判定 9 章零场景锚点（S418/S419/S421-S424）+ 4 章部分锚（S420 补全 + S413 心跳半边已扩）。
 # 手法对齐 S413-S416 先例（dist 直调 + 返回形态与判定断言）。
 
-# ─── v1.4.9 阶段五 P0-3 补测（S418-S424）：断言本体已抽入 acceptance-node-probes.js（行数警戒线收敛批）───
+# ─── v1.4.9 阶段五 P0-3 补测（S418–S424）+ v1.5.1 产任务九章（S434–S441）：断言本体均已抽入 acceptance-node-probes.js（警戒线收敛批）───
 scenario 418 "v1.4.9 第二章 G10 设备侧数据面授权读取——device_data_query fail-closed 链路（参数缺失拒 + 未注册拒 + 白名单外拒）+ 白名单内放行侧（真实身份注册→声明→读取成功/内容一致/审计留痕，run-03 C-P1-1 扩，dist 直调 HOME 隔离）"
 probe_assert s418 "v1.4.9 G10 数据面授权读取：参数缺失/未注册/门禁 fail-closed 三拒 + [sofagent] 前缀结构化返回" "G10 授权读取面回潮——见上方 ✗ 行"
 
@@ -4468,9 +4458,7 @@ probe_assert s432 "CHANGELOG 顶版行状态自洽 + 当前版本索引行在位
 
 scenario 433 "v1.5.1 第九章 存量断链残余面：退役 flag（--legacy）无生产调用方残留——全仓扫描（含 tools/ 与所有 .sh，测试面/fixtures 豁免），退役侧唯一命中且退役判定在位"
 probe_assert s433 "退役 flag 生产调用方清零（全仓扫描含 tools/ 与 shell 脚本）+ 退役侧哨点在位" "退役 flag 仍有生产调用方残留，或退役侧判定被误删——见上方 ✗ 行"
-# ─── v1.5.1 产任务九章验收增量（S434-S439）：断言本体已抽入 acceptance-node-probes.js ───
 # 手法：dist 直调 + tmp 隔离 + 反向探针（改坏必红→还原绿），防「写了场景但断言不咬人」。
-# ─── v1.5.1 章十（S440）+ 章十一（S441）体例归并共壳 · v1.5.2 审查面（S442-S444）：断言整体抽入 acceptance-node-probes.js，零删减 ───
 scenario 434 "v1.5.1 第一章 事件驱动执行触发——上游产出触发下游链（webhook→n1→n1 产出事件→n2）+ 触发链可还原 + 投递留痕 HMAC 可验 + 超时进死信且重放后 REPLAYED 可见 + 第三类源 timer.tick 登记校验与驱动声明节点（补验收覆盖面）"
 probe_assert s434 "v1.5.1 第一章事件驱动触发：链式触发 + 触发链还原 + 留痕验链 + 死信重放闭环" "事件驱动触发行为锁回潮——见上方 ✗ 行"
 scenario 435 "v1.5.1 第三章 AI 异常处理总线——三分类路由（可重试/需人工/需回滚）在 decision-log 中 kind 集合大小 === 3 且 why 标签三值可辨 + 入口复用第一章死信通道"
@@ -4492,13 +4480,17 @@ scenario 443 "v1.5.2 第四章 审计结论失效语义 + 第五章 网络出口
 probe_assert s443 "v1.5.2 章四+章五：审计结论失效语义（标记→命中→剔除）+ 网络出口治理面（默认全拒/命中放行/未声明拒）" "结论失效/出口治理行为锁回潮——见上方 ✗ 行"
 scenario 444 "v1.5.2 第七章 事前授权补环 + 第九章 DSH 插件 npm 首发面——mandate 三元素与 gate 注入（wrapToolsWithGate 第 4 参）+ 7 个 cordis-plugin 包仓内可发布就绪（v1.5.2 审查面登记收口）"
 probe_assert s444 "v1.5.2 章七+章九：事前授权补环（no-mandate/covered/out-of-scope）+ DSH 插件 npm 首发面仓内可发布就绪 7 包" "授权补环/插件首发面回潮——见上方 ✗ 行"
-# ─── v1.5.2 release-gate 20260924-01 判断层 P0×2/P1×2 闭环批（S445-S447）：对齐 S343/S440/S426/S430 先例 ───
+# ─── v1.5.2 release-gate 20260924-01 闭环批（S445-S448）：对齐 S343/S440/S426/S430 先例；F-4 走 shell 静态对账 ───
 scenario 445 "v1.5.2 第八章 BugFix 批五族代表锚点（S445）——安全 fail-open 收口（install.sh @latest 降级 fail-closed / diff-parser 列表阶段 fail-closed）/ 门禁自欺收口（public-api 真基线对账）/ 前端 readErrors 消费 / 工具债 prune-spill + MCP_ROLES_STRICT fail-closed 开关（对齐 S343/S440 先例，release-gate P0-1 闭环）"
 probe_assert s445 "v1.5.2 章八 BugFix 批五族六锚在位" "五族代表锚缺失——见上方 ✗ 行"
 scenario 446 "v1.5.2 第一章 MCP audit 数据对外（S446）——audit_query/ruleset_export 注册面（107 tools）+ audit_query 只读行为锁（无写链调用）+ isError 两态与 [sofagent] 前缀（对齐 S430 注册锚先例，release-gate P0-2 闭环）"
 probe_assert s446 "v1.5.2 章一 MCP audit 对外面：注册面+只读行为锁+isError 两态" "audit 对外面锚点回潮——见上方 ✗ 行"
 scenario 447 "v1.5.2 第六章 身份三层叙事 README 双语结构锁（S447）——三因子口径（FDEing/S1M/harness）双语在位与共生（对齐 S426 文档结构锁先例，release-gate P1-3 闭环）"
 probe_assert s447 "v1.5.2 章六 README 双语身份三层叙事结构锁" "双语身份叙事漂移——见上方 ✗ 行"
+scenario 448 "v1.5.2 第九章 DSH 插件 npm 首发面 dry-run 对账锚点（S448）——npm publish --dry-run 八包逐包通过（kit + 七款 cordis-plugin-sofagent-*）+ pack 清单与 files 白名单一致 + 与 S444 仓内就绪断言共壳对账（changelog「上 registry」承诺层级以可证伪 dry-run 锚承接，正式发布后补安装冒烟场景）"
+DRYRUN_ANCHOR=$(grep -c "S448" "$PROJECT_ROOT/playbook/regression-checklist.md" 2>/dev/null || true); DRYRUN_ANCHOR=${DRYRUN_ANCHOR:-0}
+if [ "${DRYRUN_ANCHOR:-0}" -ge 1 ] && grep -q "dry-run" "$PROJECT_ROOT/docs/changelog/v1.5/v1.5.2.md" && grep -q "kit" "$PROJECT_ROOT/docs/changelog/v1.5/v1.5.2.md"; then pass "S448 发布面 dry-run 对账锚在位（changelog 承诺层级=可证伪 dry-run + checklist 闭环行）"; else echo "  ✗ S448: 发布面 dry-run 锚缺失"; fail "发布面 dry-run 锚回潮"; fi
+
 echo -e "  验收测试结果：${GREEN}$PASSED 通过${NC} / ${RED}$FAILED 失败${NC} / ${YELLOW}$WARNED 跳过${NC} / 共 $((PASSED + FAILED + WARNED))"
 # 汇总口径（run-10/run-08/run-05 三轮收紧）：无色码 SUMMARY 行供 driver grep（EXIT: 0=全PASS / <N>=N失败）； 跳过 = 证据面缺失与失败同为闸门关注面（WARNED=0 才可称全过）；退出码三态：0=全过 / 2=有跳过（放行前补跑）/ N=失败数
 echo "SUMMARY: ${PASSED}/$((PASSED + FAILED + WARNED)) passed · SKIP: ${WARNED} · EXIT: ${FAILED}"
