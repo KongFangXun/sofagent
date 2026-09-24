@@ -607,16 +607,16 @@ WRAPPER_EOF
     ok "  @sofagent/audit 已从仓库本地安装（$(node -e "console.log(require('./engine/audit/package.json').version)" 2>/dev/null || echo "v${VERSION}")）"
   else
     # @latest → 固定版本（供应链纪律：安装版本与仓库声明一致，不漂移到未审的 registry 最新）
+    # v1.5.2 修复：@latest 降级改为 fail-closed（供应链纪律兑现）
     info "  执行: npm install -g @sofagent/audit@${VERSION}"
     if npm install -g "@sofagent/audit@${VERSION}" 2>&1 | tail -1; then
       ok "  @sofagent/audit 已全局安装（v${VERSION}）"
-    elif npm install -g "@sofagent/audit@latest" 2>&1 | tail -1; then
-      # 目标版本尚未发布到 registry（发版时序：push→tag→release→publish）——
-      # verify/CI 窗口期降级装 @latest 保安装链完整（integrity check 依赖本包提供 sofagent bin）
-      warn "  v${VERSION} 尚未发布到 npm registry——已降级安装 @latest（发版窗口期占位，发布后重装即对齐）"
     else
-      warn "  npm install -g @sofagent/audit 失败（网络/权限问题）"
-      warn "  请手动安装: npm install -g @sofagent/audit@${VERSION}"
+      # v1.5.2 修复：目标版本安装失败不再自动降级 @latest（原 fail-open 分支会把未审版本静默装进全局）
+      REGISTRY_LATEST="$(npm view "@sofagent/audit" version 2>/dev/null || echo "未知（npm view 查询失败）")"
+      echo "  ❌ @sofagent/audit@${VERSION} 安装失败——目标版本可能尚未发布到 npm registry（当前 registry latest: ${REGISTRY_LATEST}），或网络/权限问题。" >&2
+      echo "     安装中止：不自动降级 @latest（供应链纪律）。如接受未审版本请显式执行: npm i -g @sofagent/audit@latest" >&2
+      exit 1
     fi
   fi
 else

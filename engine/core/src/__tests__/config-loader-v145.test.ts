@@ -77,10 +77,10 @@ describe('T1 · 删除式绕过收紧——「有规则内容但无签名」判�
     const config = loadConfig(tmpDir);
     expect(config.carefulModifyThreshold).toBe(0.2);
 
-    // WARN 是多行框——整组输出合并后校验（框内含指引行）
+    // WARN 文案对齐 finding-12 收口版（两行 stderr：安全警告 + env 收口指引）
     const allWarn = warnSpy.mock.calls.map((c) => String(c[0])).join('\n');
-    expect(allWarn).toContain('无防篡改签名');
-    expect(allWarn).toContain('sofagent-audit --sign-config');
+    expect(allWarn).toContain('无签名');
+    expect(allWarn).toContain('SOFAGENT_REQUIRE_SIGNED_CONFIG');
 
     warnSpy.mockRestore();
   });

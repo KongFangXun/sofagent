@@ -256,6 +256,40 @@ describe('A2 不泄密钥', () => {
     });
   });
 
+  // finding-13：内容扫描盲区处置可配置——config.A2.blindSpotAction（默认 "warn" 保持兼容，
+  // "fail" 时本地模式二进制盲区也升 FAIL；-diff 形态恒 FAIL 不受配置降级）
+  describe('内容扫描盲区处置配置（finding-13）', () => {
+    const makeBinCtx = (overrides?: Record<string, unknown>) =>
+      makeCtx(
+        [makeDiffFile('assets/blob.bin', ['diff --git a/assets/blob.bin b/assets/blob.bin', 'Binary files /dev/null and b/assets/blob.bin differ'], 'added')],
+        overrides,
+      );
+
+    it('blindSpotAction=fail 本地模式二进制盲区 → FAIL（可配置升级）', () => {
+      const result = scanA2(makeBinCtx({ config: { A2: { blindSpotAction: 'fail' } } as any }));
+      expect(result.status).toBe('FAIL');
+      expect(result.details.join(' ')).toContain('blindSpotAction=fail 已将二进制盲区升为拦截');
+    });
+
+    it('默认（未配置）→ 本地模式维持 WARN（兼容回归）', () => {
+      expect(scanA2(makeBinCtx()).status).toBe('WARN');
+    });
+
+    it('blindSpotAction=warn 显式配置 → 仍 WARN（显式与缺省同义）', () => {
+      expect(scanA2(makeBinCtx({ config: { A2: { blindSpotAction: 'warn' } } as any })).status).toBe('WARN');
+    });
+
+    it('-diff 形态不受配置降级：blindSpotAction=warn 仍 FAIL（结构性隐藏证据恒拦截）', () => {
+      const ctx = makeCtx([makeDiffFile('.gitattributes', ['+secrets.js -diff'])], { config: { A2: { blindSpotAction: 'warn' } } as any });
+      expect(scanA2(ctx).status).toBe('FAIL');
+    });
+
+    it('blindSpotAction=fail 无盲区文件 → 不误伤（PASS）', () => {
+      const ctx = makeCtx([makeDiffFile('src/plain.ts', ['+export const x = 1;'], 'added')], { config: { A2: { blindSpotAction: 'fail' } } as any });
+      expect(scanA2(ctx).status).toBe('PASS');
+    });
+  });
+
   // v1.3.8 P1-A2 回归：.gitattributes -diff 两步隐身——原仅 WARN 放行：
   // 第一步提交 .gitattributes 标记 secrets.js -diff（WARN 不拦截），
   // 第二步提交密钥文件，git diff 无内容行 → A2 静默全绿。升级为 FAIL。

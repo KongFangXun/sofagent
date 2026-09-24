@@ -5,7 +5,14 @@
 // v1.3.7 补编码绕过检测——新增行尝试 base64/hex 解码后再跑正则，
 //   命中则报警（此前 `printf 'AKIA...' | base64 > encoded.txt` 即可绕过）。
 //   另补 .gitattributes -diff 绕过检测——把文件标记为 -diff 会让 git diff
-//   不输出内容行，A2 扫不到任何新增行（静默全绿），检测到该模式时 WARN。
+//   不输出内容行，A2 扫不到任何新增行（静默全绿），检测到该模式时 FAIL（v1.3.8 P1-A2 升级）。
+// v1.5.2 fresh-eyes（finding-13）：内容扫描盲区处置可配置——config.A2.blindSpotAction:
+//   "warn"（默认，保持兼容：-diff 恒 FAIL、二进制本地 WARN/CI FAIL）
+//   "fail"（本地模式的二进制盲区也按 FAIL 阻断）。
+//   默认 warn 的理由：含 NUL 字节的二进制文件（图片/资源产物）极常见，默认 FAIL
+//   会误报爆炸——升级交由用户显式决策。-diff 形态属「结构性隐藏证据」，
+//   恒 FAIL，不受本配置降级。
+//   另：命中任一盲区形态时向 stderr 输出显著边界声明（非普通 WARN 行，见 scanA2 尾部）。
 // evidenceMode: git-diff
 // ============================================================
 
@@ -311,6 +318,10 @@ export function scanA2(ctx: AuditContext): RuleScan {
 
   const { diffFiles } = ctx;
 
+  // finding-13 ①：盲区处置配置——默认 "warn" 保持现有行为；"fail" 时本地模式的
+  // 二进制盲区同样按 FAIL 阻断（-diff 形态恒 FAIL，不受配置降级）。
+  const blindSpotAction = ctx.config?.A2?.blindSpotAction === 'fail' ? 'fail' : 'warn';
+
   // 聚合结构：Map<"文件路径|密钥标签", string[]>
   const groupedDetections = new Map<string, { file: string; label: string; count: number }>();
   // v1.4.8 fresh-eyes（finding-11）：测试文件内的密钥形态命中——不 FAIL，但强制 WARN 人工确认
@@ -433,18 +444,36 @@ export function scanA2(ctx: AuditContext): RuleScan {
   // v1.5.2 A-8：severity 按场景二分——本地交互维持 WARN（有人工在场可确认）；
   // --ci 场景升 FAIL（exit 2）：CI 没有「人工」在场，WARN 给谁看？同一规则两种
   // 证据形态（文本密钥 vs 二进制夹带）拦截强度一致。
+  // finding-13：config.A2.blindSpotAction=fail 时本地模式同样升 FAIL（显式 opt-in）。
   const binaryFiles = detectNewBinaryFiles(ctx);
   if (binaryFiles.length > 0) {
-    if (ctx.ciMode) {
+    if (ctx.ciMode || blindSpotAction === 'fail') {
       status = 'FAIL';
+      const via = ctx.ciMode
+        ? 'CI 场景二进制入库默认拦截'
+        : 'blindSpotAction=fail 已将二进制盲区升为拦截';
       details.push(
-        `检测到 ${binaryFiles.length} 个新增二进制文件（${binaryFiles.slice(0, 5).join(', ')}${binaryFiles.length > 5 ? ' 等' : ''}）：二进制文件不扫内容，请人工确认无密钥夹带。CI 场景二进制入库默认拦截——确认无风险请拆出文本清单人工核。`
+        `检测到 ${binaryFiles.length} 个新增二进制文件（${binaryFiles.slice(0, 5).join(', ')}${binaryFiles.length > 5 ? ' 等' : ''}）：二进制文件不扫内容，请人工确认无密钥夹带。${via}——确认无风险请拆出文本清单人工核。`
       );
     } else {
       if (status === 'PASS') status = 'WARN';
       details.push(
         `检测到 ${binaryFiles.length} 个新增二进制文件（${binaryFiles.slice(0, 5).join(', ')}${binaryFiles.length > 5 ? ' 等' : ''}）：二进制文件不扫内容，请人工确认无密钥夹带。`
       );
+    }
+  }
+
+  // finding-13 ②：盲区命中时在显著位置输出保障边界声明（stderr 直出——普通 detail 行
+  // 会被报告结构与通过条数淹没；盲区 = A2 对这些文件不提供密钥泄露保障，必须直给用户）。
+  // --silent（runner 二次精扫等场景）不重复输出。
+  const blindSpotTotal = attrHiddenTargets.length + binaryFiles.length;
+  if (blindSpotTotal > 0 && !ctx.silent) {
+    try {
+      process.stderr.write(
+        `⚠️ 内容扫描盲区：${blindSpotTotal} 个文件本次不可内容扫描（.gitattributes -diff / 二进制 NUL）——A2 对这些文件不提供密钥泄露保障。\n`,
+      );
+    } catch {
+      // 显著提示自身绝不抛错（诊断面不能反过来破坏审计主流程）
     }
   }
 

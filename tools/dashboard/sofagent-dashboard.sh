@@ -3,7 +3,7 @@
 # sofagent-dashboard.sh · FDE Dashboard 终端三栏（v1.2.4）
 # ============================================================
 
-# 依赖检查
+# jq 依赖检查唯一入口（v1.5.2 删除 L88-91 重复段）
 if ! command -v jq &> /dev/null; then
   echo "❌ sofagent Dashboard 需要 jq（JSON 处理工具）"
   echo ""
@@ -83,12 +83,6 @@ WORKSPACE_CHANGES="$DATA_ROOT/dashboard/workspace-changes.jsonl"
 RECENT_N="${SOFAGENT_DASHBOARD_RECENT_N:-5}"
 case "$RECENT_N" in ''|*[!0-9]*) RECENT_N=5 ;; esac
 REFRESH_INTERVAL=2
-
-# 依赖检查
-if ! command -v jq >/dev/null 2>&1; then
-  echo "错误：sofagent-dashboard 依赖 jq，请先安装（brew install jq / apt install jq）" >&2
-  exit 1
-fi
 
 # 数据文件预检查：全新安装用户友好引导（v1.4.3 第九章——空数据给「先做什么」
 # 引导文案替代直接退出；仅主入口执行，LIB_ONLY 模式跳过）
@@ -325,7 +319,7 @@ render_sovereignty() {
   if [ "$total" -gt 0 ]; then
     local_rate=$(( local_n * 100 / total ))
   fi
-  emit "  本地化率 $(bar "$local_rate" 100 $((w / 2))) ${local_rate}%（${local_n}/${total}）"
+  emit "  本地化率 $(bar "$local_rate" 100 $((w / 2 - 6))) ${local_rate}%（${local_n}/${total}）"
 
   # 近 7 天流向（按天聚合云端 / 本地）
   emit "  ${C_DIM}近 7 天流向${C_RESET}"
@@ -441,7 +435,7 @@ render_rules() {
   if [ "$ntotal" -gt 0 ]; then
     prate=$(( npass * 100 / ntotal ))
   fi
-  emit "  通过率 $(bar "$prate" 100 $((w / 2))) ${prate}%（PASS ${npass} / WARN ${nwarn} / FAIL ${nfail}）"
+  emit "  通过率 $(bar "$prate" 100 $((w / 2 - 6))) ${prate}%（PASS ${npass} / WARN ${nwarn} / FAIL ${nfail}）"
 
   # 本周违规 TOP3（近 7 天 FAIL/WARN 规则按次数排序）
   emit "  ${C_DIM}本周违规 TOP3${C_RESET}"
@@ -1045,9 +1039,11 @@ render_frame() {
     strip1="$(mktemp -t sofagent-dash-s1.XXXXXX)"
     strip2="$(mktemp -t sofagent-dash-s2.XXXXXX)"
     strip3="$(mktemp -t sofagent-dash-s3.XXXXXX)"
-    LC_ALL=C sed $'s/\033\[[0-9;]*m//g' "$f1" | cut -c1-"$COL_W" > "$strip1"
-    LC_ALL=C sed $'s/\033\[[0-9;]*m//g' "$f2" | cut -c1-"$COL_W" > "$strip2"
-    LC_ALL=C sed $'s/\033\[[0-9;]*m//g' "$f3" | cut -c1-"$COL_W" > "$strip3"
+    # 截断统一走下方 trunc() 的字符口径：cut -c 按字节截断会把 UTF-8 中文切出
+    # 半个字符乱码并切掉行尾计数（P2-21），故此处只去色、不再做字节级截断
+    sed $'s/\033\[[0-9;]*m//g' "$f1" > "$strip1"
+    sed $'s/\033\[[0-9;]*m//g' "$f2" > "$strip2"
+    sed $'s/\033\[[0-9;]*m//g' "$f3" > "$strip3"
     paste "$strip1" "$strip2" "$strip3" | while IFS=$'\t' read -r c1 c2 c3; do
       if [ "$WATCH" = "1" ]; then
         printf '%-'$COL_W's │ %-'$COL_W's │ %s\n' "$(trunc "$c1" "$COL_W")" "$(trunc "$c2" "$COL_W")" "$c3" >> "$BUFFER_FILE"

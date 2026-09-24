@@ -18,7 +18,7 @@
 import { createServer } from 'node:http';
 import { readFile, stat } from 'node:fs/promises';
 import { readFileSync, statSync, readdirSync } from 'node:fs';
-import { execFileSync, execSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
 import { homedir } from 'node:os';
 import { join, extname, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -140,7 +140,10 @@ function runJq(program, input) {
       // 候选不可用（路径不存在或执行失败）→ 试下一个
     }
   }
-  return '';
+  // 全部候选失败 = jq 未安装/不可执行。返回 null（非空串）：空串会被上游
+  // split/parseInt 解析成「通过率 0%」，把「jq 缺失」伪装成真实审计数据。
+  // 调用方据此标记 jqMissing 并置 environment.jqAvailable=false，前端显式降级告警。
+  return null;
 }
 
 /* 测试记录过滤：fixture 泛化任务名（规则测试的故意违规/故意通过样本）
@@ -188,6 +191,9 @@ function aggregateSummary() {
   // 更狠——`catch { return '' }` 让全部指标归零。现改为：失败逐条登记到 readErrors，
   // 与结果一起返回；`ok=false` 表示本次聚合不完整（读错误清单非空）。
   const readErrors = [];
+  // v1.5.2 修复（finding-19）：jq 全候选失败时 runJq 返回 null（不再伪装成空数据集）。
+  // 任一数据集遇到 null 即置 jqFailed，最终以 environment.jqAvailable=false 告知前端。
+  let jqFailed = false;
   const out = {
     ok: true,
     generatedAt: new Date().toISOString(),
@@ -229,7 +235,8 @@ function aggregateSummary() {
       ' | "\\(.pass) \\(.warn) \\(.fail)"',
       filteredRaw
     );
-    const parts = passFail.split(/\s+/);
+    if (passFail === null) jqFailed = true;
+    const parts = (passFail === null ? '' : passFail).split(/\s+/);
     const pass = parseInt(parts[0] || 0, 10);
     const warn = parseInt(parts[1] || 0, 10);
     const fail = parseInt(parts[2] || 0, 10);
@@ -237,6 +244,7 @@ function aggregateSummary() {
     out.rules = {
       pass, warn, fail, total,
       passRate: total > 0 ? Math.round((pass * 100) / total) : 0,
+      jqMissing: passFail === null,
     };
 
     // ── 任务级聚合（与趋势图同口径：exitCode 0=PASS/1=WARN/>1=FAIL，一任务一条）──
@@ -262,7 +270,7 @@ function aggregateSummary() {
       ' | "\\(.name)\t\\(.code)\t\\(.count)"',
       filteredRaw
     );
-    out.top3 = top3Raw.split('\n').filter(Boolean).map((line) => {
+    out.top3 = top3Raw === null ? [] : top3Raw.split('\n').filter(Boolean).map((line) => {
       const [name, code, count] = line.split('\t');
       return { name, code, count: parseInt(count || 0, 10) };
     });
@@ -274,7 +282,7 @@ function aggregateSummary() {
       ' | "\\(.timestamp[5:16])\t\\(.exitCode)\t\\($violated[0] // "")\t\\((.task // .commitMsg // "")[0:40])"',
       filteredRaw
     );
-    out.recent = recentRaw.split('\n').filter(Boolean).map((line) => {
+    out.recent = recentRaw === null ? [] : recentRaw.split('\n').filter(Boolean).map((line) => {
       const parts = line.split('\t');
       return {
         time: parts[0] || '',
@@ -300,7 +308,7 @@ function aggregateSummary() {
       filteredRaw
     );
     const byDay = {};
-    dailyRaw.split('\n').filter(Boolean).forEach((line) => {
+    (dailyRaw === null ? '' : dailyRaw).split('\n').filter(Boolean).forEach((line) => {
       const [day, p, w, f, rp, ra] = line.split('\t');
       byDay[day] = {
         pass: parseInt(p || 0, 10), warn: parseInt(w || 0, 10), fail: parseInt(f || 0, 10),
@@ -326,7 +334,7 @@ function aggregateSummary() {
   // ── 数据主权（bash render_sovereignty 同一 jq：近 7 天全部 sovereignty jsonl）──
   const sovFiles = (() => {
     try {
-      return execSync(`find "${SOVEREIGNTY_DIR}" -name '*.jsonl' -type f 2>/dev/null`, { encoding: 'utf8' }).trim();
+      return execFileSync('find', [SOVEREIGNTY_DIR, '-name', '*.jsonl', '-type', 'f'], { encoding: 'utf8' }).trim();
     } catch {
       // 目录不存在/无权限——目录级失败也要留痕（否则「0 条主权记录」与「读不到」同形）
       readErrors.push({ file: 'audit/data-sovereignty/', error: 'find 失败（目录不存在或无权限）', effect: '主权聚合整段缺省' });
@@ -364,7 +372,8 @@ function aggregateSummary() {
       ' | "\\(.total) \\(.cloud) \\(.local) \\(.outbound) \\(.sensitive)"',
       sovInput
     );
-    const p = sov.split(/\s+/);
+    if (sov === null) jqFailed = true;
+    const p = (sov === null ? '' : sov).split(/\s+/);
     const total = parseInt(p[0] || 0, 10);
     const cloud = parseInt(p[1] || 0, 10);
     const local = parseInt(p[2] || 0, 10);
@@ -376,6 +385,7 @@ function aggregateSummary() {
       // v1.5.1 J4b-①：分母口径显式化——`readFailed>0` 时 total 是**不完整分母**，
       // 页面可据此区分「真少」与「读失败」（不再静默偏低）。
       readFailed: sovReadFails,
+      jqMissing: sov === null,
     };
   }
 
@@ -384,6 +394,9 @@ function aggregateSummary() {
     const dh = JSON.parse(readFileSync(DAEMON_HEALTH, 'utf8'));
     out.daemon = { status: dh.status || dh.state || 'unknown' };
   } catch {}
+
+  // v1.5.2 修复（finding-19）：jq 可用性显式上报——false 时前端以告警替代 0% 数字。
+  out.environment = { jqAvailable: !jqFailed };
 
   return out;
 }
@@ -445,16 +458,19 @@ function aggregateAiNodes() {
           const stepBlocks = content.split(/\n\s*-\s*id:/).slice(1);
           for (const blk of stepBlocks) {
             const id = blk.match(/^([^\n]+)/)?.[1]?.trim() || '';
-            const name = blk.match(/name:\s*([^\n]+)/)?.[1]?.trim() || '';
+            const name = blk.match(/^\s*name:\s*([^\n]+)/m)?.[1]?.trim() || '';
             const input = blk.match(/input:\s*([^\n]+)/)?.[1]?.trim() || '';
             const output = blk.match(/output:\s*([^\n]+)/)?.[1]?.trim() || '';
             const agent = blk.match(/agent:\s*([^\n]+)/)?.[1]?.trim() || '';
             const loop = /loop:\s*true/.test(blk);
             if (id && name) steps.push({ id, name, input, output, agent, loop });
           }
-          const wfName = content.match(/name:\s*([^\n]+)/)?.[1]?.trim() || f;
+          const wfName = content.match(/^\s*name:\s*([^\n]+)/m)?.[1]?.trim() || f;
           out.workflow.push({ file: f, name: wfName, steps });
-        } catch {}
+        } catch (e) {
+          // 与「没有 workflow 目录」（上方 fsDirExists 静默跳过）区分：文件在但读取/解析失败要留痕
+          console.error(`[ai-nodes] workflow 文件解析失败 ${f}: ${e && e.message ? e.message : e}`);
+        }
       }
       out.found = out.workflow.length > 0 || out.deployed.length > 0;
     }
@@ -598,7 +614,7 @@ function aggregateOntology(full) {
  * HTTP Server
  * ──────────────────────────────── */
 const server = createServer(async (req, res) => {
-  // v1.5.2 A-11：URI decode 守护——malformed 百分号序列（如 /%E0%A4%A）在
+  // A-11（v1.5.2 待发版）：URI decode 守护——malformed 百分号序列（如 /%E0%A4%A）在
   // decodeURIComponent 抛 URIError，此前单请求即杀进程（长驻服务语义不可接受）。
   // 守护后返回 400 + stderr 日志一行，进程存活继续服务后续请求。
   let urlPath;
@@ -612,7 +628,16 @@ const server = createServer(async (req, res) => {
   }
 
   // CORS + no-cache
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  // v1.5.2 fresh-eyes（finding-14）：默认不再回显 CORS 头——同源访问本就不需要 CORS，
+  // 本机直连使用不受影响。此前 `Access-Control-Allow-Origin: *` 一刀切作用于 /data/*、
+  // /api/*（原始审计数据与历史导出），本服务又无鉴权——用户浏览器里任意网页可跨源
+  // fetch 本地审计数据（drive-by 外带），与「仅本机绑定」的安全假设相抵。
+  // 仅 /assets/* 静态资源默认保留（跨源引用图片等静态资源的合法场景）；
+  // DASHBOARD_ALLOW_CORS=1 显式开启时恢复全端点 `*`（兼容明知风险的用户）。
+  const allowAllCors = process.env.DASHBOARD_ALLOW_CORS === '1';
+  if (allowAllCors || urlPath === '/assets' || urlPath.startsWith('/assets/')) {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+  }
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
   res.setHeader('Pragma', 'no-cache');
 
@@ -897,7 +922,7 @@ const server = createServer(async (req, res) => {
   res.end(data);
 });
 
-// v1.5.2 A-11：顶层兜底——dashboard 是长驻本地服务，单个未捕获异常不应杀进程
+// A-11（v1.5.2 待发版）：顶层兜底——dashboard 是长驻本地服务，单个未捕获异常不应杀进程
 // （日志可见 + 存活，与相邻 daemon 的降级不抛语义对齐）。此前同构复现：
 // GET /%E0%A4%A → URIError → 进程退出 EXIT=1，本地开发被单个畸形 URL 打死。
 process.on('uncaughtException', (err) => {
@@ -948,6 +973,9 @@ async function main() {
       console.log('');
       console.log('  ⚠️  ⚠️  数据暴露告警：已绑定 ' + host + '（非回环地址）——局域网内任何设备均可访问本 Dashboard。');
       console.log('      · 本服务**无鉴权**，审计记录 / 数据主权明细 / 任务日志对同网段完全可见');
+      // v1.5.2 fresh-eyes（finding-14）③：绑定面告警处同步当前 CORS 状态——
+      // 0.0.0.0 + CORS * 双开时暴露面叠加，运维需在同一处看到两个维度。
+      console.log('      · CORS：' + (process.env.DASHBOARD_ALLOW_CORS === '1' ? '* 已开启' : '已关闭（跨源 fetch 将被浏览器拦截）'));
       console.log('      · 仅应在受信网络内使用；离席前请 Ctrl+C 停止，或改用默认 127.0.0.1');
       console.log('');
     }

@@ -59,6 +59,10 @@ export interface AuditConfig {
     bulk_threshold?: number;
     bulk_window_ms?: number;
   };
+  /** v1.5.2 fresh-eyes（finding-13）: A2 内容扫描盲区处置——默认 "warn" 保持兼容（含 NUL 二进制极常见，默认 FAIL 会误报爆炸），"fail" 时盲区形态按 FAIL 阻断 */
+  A2?: {
+    blindSpotAction?: 'warn' | 'fail';
+  };
   /** v1.1.5: FORGE 编排配置 */
   loop?: {
     maxTurns?: {
@@ -286,7 +290,7 @@ export function loadConfig(cwd?: string, strict?: boolean): AuditConfig {
 export function warnUnknownConfigKeys(auditObj: Record<string, unknown>, filePath: string): void {
   const knownKeys = new Set<string>([
     'lowRiskPatterns', 'testPatterns', 'carefulModifyThreshold',
-    'extendedRulesEnabled', 'rules', 'loopCheckMaxRounds', 'strict', 'A16', 'A17',
+    'extendedRulesEnabled', 'rules', 'loopCheckMaxRounds', 'strict', 'A16', 'A17', 'A2',
     'loop', 'webhook', 'toolGate', 'sanitizePatterns', 'memory_backends', 'memory_sync',
     'cost',
   ]);
@@ -431,7 +435,7 @@ function tryLoadYaml(filePath: string, strict?: boolean): Partial<AuditConfig> |
       // 这样 mergeWithDefaults 的 extendedRulesEnabled / rules / A16 / A17 等字段都能正常生效
       const topLevelAuditKeys: (keyof AuditConfig)[] = [
         'lowRiskPatterns', 'testPatterns', 'carefulModifyThreshold',
-        'extendedRulesEnabled', 'rules', 'loopCheckMaxRounds', 'strict', 'A16', 'A17',
+        'extendedRulesEnabled', 'rules', 'loopCheckMaxRounds', 'strict', 'A16', 'A17', 'A2',
         'loop', 'webhook', 'sanitizePatterns', 'memory_backends', 'memory_sync',
       ];
       const hasAny = topLevelAuditKeys.some(k => k in parsed);
@@ -530,15 +534,18 @@ function verifyConfigSignature(
         filePath,
       );
     }
-    // 普通模式——WARN 维持（v1.2.7 行为），文案更醒目
-    console.warn('');
-    console.warn('  ╔══════════════════════════════════════════════════════╗');
-    console.warn('  ║  ⚠️  config.yml 含规则内容但无防篡改签名（signature 缺失）  ║');
-    console.warn('  ║  配置可被任意修改（含删除签名）而不被发现。                          ║');
-    console.warn('  ║  如需强校验，运行：sofagent-audit --sign-config       ║');
-    console.warn('  ║  strict/CI 模式下将升级为拒绝启动。                    ║');
-    console.warn('  ╚══════════════════════════════════════════════════════╝');
-    console.warn('');
+    // fix(finding-12): env 级 fail-closed 开关——无签名时拒绝启动；strict 既有行为保持不变（向后兼容）。
+    if (process.env['SOFAGENT_REQUIRE_SIGNED_CONFIG'] === '1') {
+      console.error(`❌ SOFAGENT_REQUIRE_SIGNED_CONFIG=1：config.yml 含规则内容但无签名——拒绝启动: ${filePath}`);
+      console.error(`   签名方法：确认内容非篡改后运行 sofagent-audit --sign-config 重新签名。`);
+      throw new ConfigSignatureError(
+        `SOFAGENT_REQUIRE_SIGNED_CONFIG=1 强制要求签名：配置文件含规则内容但无签名，拒绝启动。请运行 sofagent-audit --sign-config 签名: ${filePath}`,
+        filePath,
+      );
+    }
+    // 普通模式——显著告警（stderr），可经 SOFAGENT_REQUIRE_SIGNED_CONFIG=1 收口为 fail-closed
+    console.warn('[sofagent] SECURITY WARNING: config.yml 含规则内容但无签名——配置可被同用户进程篡改（含删除签名）而不被发现，审计强制力降级。');
+    console.warn('[sofagent] 收口方式：设置 SOFAGENT_REQUIRE_SIGNED_CONFIG=1 强制要求签名，或运行 sofagent doctor 查看签名指引。');
     return;
   }
 
@@ -584,7 +591,7 @@ function configHasRuleContent(parsed: Record<string, unknown>): boolean {
   const knownContentKeys = new Set<string>([
     // audit 段与顶层通用的规则字段
     'lowRiskPatterns', 'testPatterns', 'carefulModifyThreshold',
-    'extendedRulesEnabled', 'rules', 'loopCheckMaxRounds', 'strict', 'A16', 'A17',
+    'extendedRulesEnabled', 'rules', 'loopCheckMaxRounds', 'strict', 'A16', 'A17', 'A2',
     'loop', 'webhook', 'toolGate', 'sanitizePatterns', 'memory_backends', 'memory_sync',
     'cost',
     // 顶层包装节
@@ -670,6 +677,8 @@ function mergeWithDefaults(partial: Partial<AuditConfig>): AuditConfig {
     strict: partial.strict ?? false,
     A16: partial.A16,
     A17: partial.A17,
+    // v1.5.2 fresh-eyes（finding-13）: A2 盲区处置透传（knownKeys 契约——认识即透传）
+    A2: partial.A2,
     // v1.1.5: loop 配置透传
     loop: partial.loop,
     // v1.2.0: toolGate 配置透传——orchestrator tool call 事前拦截

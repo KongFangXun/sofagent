@@ -1,5 +1,7 @@
 # @sofagent/train
 
+> 命名说明：本目录是随安装分发的 engine 侧实现；维护者 SOP 脚本见同名 tools/train——职责边界见 tools/README.md。
+
 sofagent 后训练功能包——数据 ingest → 训练编排 → eval 比对 → 产物注册 → 推理服务全链路，供编排模块与 daemon 任务调用。
 
 ## 安装
