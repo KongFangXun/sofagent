@@ -95,3 +95,8 @@ acceptance-raw.log
 # 本目录下贡献者的 local 变体先占位排除，防止 git add . 误带入
 .claude/settings.local.json
 .cursor/*.local.json
+
+# fresh-eyes/forge 审查过程产物（runDir 外溢到仓库根的临时台账——findings 汇总与批次执行卡，防误提交）
+/check-a-*.md
+/result-verified-batch-*.md
+/summary-batch-*.md

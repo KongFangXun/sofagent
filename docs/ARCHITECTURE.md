@@ -228,8 +228,8 @@ Agent = **模型 + 上下文 + 工具 + 状态 + 执行控制 + 权限 + 可观�
 
 | 包 | 职责 | 状态 |
 |---|---|---|
-| audit | 提交时审计，24 条规则（17 默认 + 7 扩展，[完整清单见 SECURITY](../SECURITY.md#24-条审计规则完整清单文档级-ssot)）硬证据扫描 + 快照/回滚/webhook + 本体建模要求对齐维度（`runRules({gb48000:true})` opt-in） | ✅ 已实现（1357 测试） |
-| core | 核心运行时：git diff 解析、shadow-repo 快照、AES-256-GCM/ECDH、think.md 契约、doctor、LLM 调用 Trace、stop_reason 分类、身份码 Ed25519、敏感识别三层插槽（T8：L0 正则/L1 词典/L2 外挂 NER + DetectorRegistry 调度 + 置信度分层 + Presidio 标签映射） | ✅ 已实现（562 测试） |
+| audit | 提交时审计，24 条规则（17 默认 + 7 扩展，[完整清单见 SECURITY](../SECURITY.md#24-条审计规则完整清单文档级-ssot)）硬证据扫描 + 快照/回滚/webhook + 本体建模要求对齐维度（`runRules({gb48000:true})` opt-in） | ✅ 已实现（1360 测试） |
+| core | 核心运行时：git diff 解析、shadow-repo 快照、AES-256-GCM/ECDH、think.md 契约、doctor、LLM 调用 Trace、stop_reason 分类、身份码 Ed25519、敏感识别三层插槽（T8：L0 正则/L1 词典/L2 外挂 NER + DetectorRegistry 调度 + 置信度分层 + Presidio 标签映射） | ✅ 已实现（569 测试） |
 | inject | 四层约束加载链 `buildConstrainedSystemPrompt()` + L4 渐进加载（热点全文 + 索引） | ✅ 已实现 |
 | rules | 规则引擎纯函数包（零 git 依赖；fs 仅限 AST 扫描的临时目录——mkdtemp 写入待检源码片段，扫描后即清理），编排层 tool-call 事前拦截 + 审批四模式 | ✅ 已实现 |
 | eval | 质量评估模块：精确匹配 / 语义相似 / 规则合规 三维评分 | ✅ 已实现 |
@@ -250,7 +250,7 @@ Agent = **模型 + 上下文 + 工具 + 状态 + 执行控制 + 权限 + 可观�
 v1.3.9 起对所有 workspace 包的入口 export 做显式分级，CI 门禁（[tools/check/public-api.mjs](./../tools/check/public-api.mjs)）拦截未 bump 版本的 `@public` 破坏性变更。
 
 **为什么是这个粒度**：
-- 基线覆盖 **13 个包**（12 个 `@sofagent/*` 模块包 + 工具包 `load-chain`；`engine/mcp` 无 `@public` 标注不入基线）——当前 13 包共 **2652 个 @public 符号**（以 `public-api.mjs` AST 解析为权威口径，非 grep 计数；v1.5.2 增量 +21：rules 出口治理面 11 符号（egress-policy 契约类型 + 裁决函数）+ daemon 审计事件流订阅桥 4 符号 + 并行批 4 + 章八口述沉淀回执 2；v1.5.1 增量 +84：orchestrator 900→963（+63，章一事件总线与三类事件源适配器 + 章三异常三分类路由与死信重放 + 章二 PR 决策解释面；同版修复批复核处置 4 符号——B1 **删除** `sortEventsByTime`（全仓含测试面零引用，死导出除根）+ 收窄 `setDefaultAnomalyBus`（测试缝），F2 同法收窄 `createWebhookAdapter` + `createTimerAdapter`（宿主装配不在本版落点、零生产调用点）——被删者原即不计入 @public，故不影响本行计数）、daemon 274→295（+21，章四 OTA 升级执行器与升级策略 + 章五任务下发推送与订阅登记；平台侧签名器 `signDelivery` 按「本版只出执行侧」降 `@internal`，设备上线钩子 `onDeviceOnline` 按「宿主装配不在本版落点、零生产调用点」同法降 `@internal`，故 23 项中 2 项不计入）；v1.5.0 时点值 2547（双向变动：存量清扫退役 3 符号——composeWithDeepAgents 与 checkHistoryChainIntegrity 双导出，2494→2491；新功能新增 56——章一治理面 16 + 章二双时态 9 + 章八 trace 对账 24 + 章五数据集审阅 4 + 章五陪跑期 3，两段不重叠故 56 即净值）；v1.4.0 时点 1456 / v1.4.6 时点 2168 / v1.4.7 时点 2364（更早时点值）。本行以门禁 baseline 对齐为准）。
+- 基线覆盖 **13 个包**（12 个 `@sofagent/*` 模块包 + 工具包 `load-chain`；`engine/mcp` 无 `@public` 标注不入基线）——当前 13 包 live 提取共 **2652 个 @public 导出**（磁盘基线快照 2549 符号，见下行）（以 `public-api.mjs` AST 解析为权威口径，非 grep 计数；v1.5.2 增量 +21：rules 出口治理面 11 符号（egress-policy 契约类型 + 裁决函数）+ daemon 审计事件流订阅桥 4 符号 + 并行批 4 + 章八口述沉淀回执 2；v1.5.1 增量 +84：orchestrator 900→963（+63，章一事件总线与三类事件源适配器 + 章三异常三分类路由与死信重放 + 章二 PR 决策解释面；同版修复批复核处置 4 符号——B1 **删除** `sortEventsByTime`（全仓含测试面零引用，死导出除根）+ 收窄 `setDefaultAnomalyBus`（测试缝），F2 同法收窄 `createWebhookAdapter` + `createTimerAdapter`（宿主装配不在本版落点、零生产调用点）——被删者原即不计入 @public，故不影响本行计数）、daemon 274→295（+21，章四 OTA 升级执行器与升级策略 + 章五任务下发推送与订阅登记；平台侧签名器 `signDelivery` 按「本版只出执行侧」降 `@internal`，设备上线钩子 `onDeviceOnline` 按「宿主装配不在本版落点、零生产调用点」同法降 `@internal`，故 23 项中 2 项不计入）；v1.5.0 时点值 2547（双向变动：存量清扫退役 3 符号——composeWithDeepAgents 与 checkHistoryChainIntegrity 双导出，2494→2491；新功能新增 56——章一治理面 16 + 章二双时态 9 + 章八 trace 对账 24 + 章五数据集审阅 4 + 章五陪跑期 3，两段不重叠故 56 即净值）；v1.4.0 时点 1456 / v1.4.6 时点 2168 / v1.4.7 时点 2364（更早时点值）。本行口径以 live 提取为准；磁盘基线待发版时重建对齐（当前基线 2549，v1.4.9 时代生成——发版时以 --update-baseline 重建后此处回填终值））。
 - 未标记的导出**默认视为 @public**（保守默认：宁可多承诺不可漏承诺），`@internal` 需显式标注。
 
 **为什么 @internal 破坏性变更不影响适配层**：

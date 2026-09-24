@@ -59,7 +59,9 @@
 
 **五分钟戏剧演示**（v1.5.1 已交付，沙箱隔离、真实文件零接触）：`npx -y -p @sofagent/audit sofagent-audit demo`——一条命令跑完「沙箱构建 → 注入 → 故意违规 → 审计拦截 → 快照回滚 → HMAC 举证导出」五幕完整链路（`--speed fast` 60 秒精简版；产物落 `$SOFAGENT_DATA/demo`，不写用户家目录）。
 
-### 该不该装？
+#> 版本说明：v1.5.2 已开发完成、尚待发版（npm/tag/package.json 发版时统一同步）；当前 npm 可安装的最新版为 v1.5.1。
+
+## 该不该装？
 
 | 如果你是… | 建议 |
 |----------|------|
@@ -181,7 +183,7 @@
 
 ## 安装
 
-**版本阶段（装前必读）**：sofagent 处于**阿尔法施工期**（v0.x–v1.x）——功能面快速变动，**不承诺接口稳定**，跨版本升级前先读 [CHANGELOG](./CHANGELOG.md)。自 **v2.0.0** 起进入**贝塔阶段**。
+**版本阶段（装前必读）**：sofagent 处于**阿尔法施工期**（v1.x）——功能面快速变动，**不承诺接口稳定**，跨版本升级前先读 [CHANGELOG](./CHANGELOG.md)。自 **v2.0.0** 起进入**贝塔阶段**。
 
 对应的 npm 发布通道策略：**施工期版本照常发布到 `latest`**——`npx @sofagent/audit` 默认拉到的即当前最新版，无需指定标签。实测 `npm view @sofagent/audit dist-tags` 当前为 `{ latest: '1.5.1' }`；**v2.0.0 发布后 `latest` 指向 2.0**。
 
@@ -301,7 +303,7 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # 加载安全规�
 | 每个版本做了什么 | [CHANGELOG](./CHANGELOG.md) |
 | 安全声明 · 已知局限 | [SECURITY](./SECURITY.md) · [LIMITATIONS](./docs/LIMITATIONS.md) |
 
-> 🧪 **工程可信度**（当前口径）：5286 测试 / 13 模块包 + 11 插件（7 DSH + 4 OpenClaw）· 24 条审计规则 · fresh-eyes 独立审查持续运行。
+> 🧪 **工程可信度**（当前口径）：5296 测试 / 13 模块包 + 11 插件（7 DSH + 4 OpenClaw）· 24 条审计规则 · fresh-eyes 独立审查持续运行。
 > **包数口径**（消歧）：workspace 27 = 13 模块包 + load-chain + dsh-plugin-kit + umbrella + 7 DSH 插件 + 4 OpenClaw 插件（见 [WIKI §六](./docs/WIKI.md#六当前状态)）；**测试计数口径** = 13 个模块包（workspace 含 test script 的包共 25 个，插件包、load-chain 与 dsh-plugin-kit 工具包不在此计数口径）——二者不是同一个集合。
 > 测试数有两个口径：**发版时点值**（见各版本章节内的 `4805→4903` 增量账）与**当前实测值**（即上方「工程可信度」行的实测值，随修复批滚动）；当前权威值以 `tools/check/check-test-count.sh` 实跑为准（`test-count.sh` 产出计数真值，`check-test-count.sh` 校验文档声称数一致性），包数统计标准见 [WIKI 包数口径](./docs/WIKI.md#六当前状态)。审查环境注意事项见 [docs/guides/review-system.md](./docs/guides/review-system.md)；性能数据为单机参考值。
 

@@ -1,5 +1,7 @@
 # 安全策略
 
+> **快速上报**：见本文 [报告漏洞](#报告漏洞) 一节（渠道 / 范围 / 响应预期以该节为准）。安全邮件与加密公钥均在该节，勿经 issue 上报未公开漏洞。
+
 <p align="center"><img src="docs/assets/sofagent.png" alt="sofagent" width="96" /></p>
 
 > v1.5.1 · 2026-09-22（UTC）· ✅ 已发版（[CHANGELOG](./CHANGELOG.md)）· 孔放勋
