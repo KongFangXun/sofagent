@@ -493,7 +493,7 @@ jobs:
 
 | 能力 | 版本 | 一句话 | 明细 |
 |------|------|--------|------|
-| 治理模块·可见性与本体成熟 | v1.5.0 | Dashboard 治理 tab（KPI 六卡 + lineage 合规报告 + 周报导出）· 本体数据双时态 · Validation Engine · 跨层证据对账 trace_reconcile（1 新 tool） | [v1.5.0 开发日志](./changelog/v1.5/v1.5.0.md) |
+| 审计模块·对外面与判定语义 | v1.5.2 | MCP audit 数据对外（audit_query 只读查询 + 事件订阅推送）· 约束导出与证据链外部可验（ruleset_export 双向可逆 + verify-chain 独立验签器）· should-run 五问判定链 · 结论失效语义 · 出口治理（host 白名单 + 出站裁决挂链）· 事前授权 mandate | [v1.5.2 开发日志](./changelog/v1.5/v1.5.2.md) |
 | 编排模块·事件驱动 | v1.5.1 | 业务事件触发（四类事件源 + `on:` 订阅 + 死信重放）· 理解债务应对（auto-PR 决策解释 + daemon 周报四段）· 设备 OTA 远程升级（事件总线 + 验签 + 灰度批次）· 异常处理总线（三分类路由）· `sofagent demo` 五分钟戏剧弧 | [v1.5.1 开发日志](./changelog/v1.5/v1.5.1.md) |
 
 
