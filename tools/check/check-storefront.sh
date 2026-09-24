@@ -7,7 +7,7 @@
 #   「66 tools」漂移三版无人拦的根因（v1.4.4 审查第四份 P1 实证）。
 #   一条对外声称 = 一条可执行断言（含仓外元数据）。
 #
-# 对账面（四断言）：
+# 对账面：
 #   ① description 工具数 = tool-registry.ts 实数（name: 'xxx' 去重计数）
 #   ② description 插件数 = dsh-plugins + openclaw-plugins 目录实数
 #   ③ homepage = https（非 http），且 package.json version 与发版时点对齐提示
@@ -15,6 +15,12 @@
 #      ——相等 = 已发最新 ✅ / 小于 = 未发布（发版中间态 ⏳ 放行，阶段九 publish 后自然消解）
 #      / 大于 = 漂移 ❌（registry 比仓内新 = 仓内 bump 遗漏）
 #      附带：总包 dependencies.@sofagent/audit 版本对账（未发布形态同 ⏳ 放行）
+#   ⑤ umbrella README 的 MCP tool 数（仓内文件，但 files 含 README ⇒ 直接进 npm 页面）
+#   ⑥ umbrella package.json description 数字（npm 页面 / npm search 输出面，与 GitHub description 是两个门面）
+#   ⑦ 旧包弃用承诺对账（registry 侧 · **只提示不阻断**）：版本达承诺到期门槛起，
+#      @sofagent/skillopt 须已在 registry 上带 deprecated（**逐版本**核查，不只 latest
+#      ——deprecate 可作用于区间）。门槛是**一次性常量**（承诺到期版本），不随版浮动。
+#      目的：把「跨版弃用承诺」变成可机械对账的一条，防「devlog 勾了 [x] 而 registry 从未执行」。
 #
 # 降级语义：gh / npm 不可达（离线/无凭证）→ SKIP 并显著提示，
 #   不静默假绿（门禁三态：PASS / FAIL / SKIP-可见）。
@@ -152,6 +158,54 @@ else
     FAILS=$((FAILS + 1))
   else
     ASSERTS=$((ASSERTS + 1)); echo "  ✓ [umbrella pkg description] ${UMB_DESC_TOOLS} tools / ${UMB_DESC_PLUGINS} plugins = 实数 ${TOOL_COUNT}/${PLUGIN_TOTAL}"
+  fi
+fi
+echo ""
+
+# ── 断言 ⑦：旧包弃用承诺对账（registry 侧 · 只提示不阻断）──
+# 语义：⚠️ **不计入 FAILS**——弃用是维护者手工动作，不由门禁裁决；但一旦欠账，
+#   本行会持续出现在 pre-push 输出里，不再依赖「devlog 是否勾了框」。
+# 成本：版本未达门槛时**不发网络请求**（先判门槛后查询）。
+# 门槛是承诺到期版本（一次性常量，非随版浮动）。
+SKILLOPT_DEPRECATE_FROM="1.5.3"
+SKO_GATE=""
+if [ -n "$SSOT_VER" ]; then
+  SKO_GATE=$(node -e "
+    const [a,b] = process.argv.slice(1).map(v => v.split('.').map(Number));
+    const k = (x) => (x[0] || 0) * 10000 + (x[1] || 0) * 100 + (x[2] || 0);
+    console.log(k(a) >= k(b) ? 'due' : 'notdue');
+  " "$SSOT_VER" "$SKILLOPT_DEPRECATE_FROM" 2>/dev/null || echo "")
+fi
+if [ -z "$SSOT_VER" ]; then
+  echo "  ⏭️  [旧包弃用] SSOT 版本读取失败——跳过本断言"
+  SKIPS=$((SKIPS + 1))
+elif [ "$SKO_GATE" != "due" ]; then
+  echo "  ⏭️  [旧包弃用] 本版 ${SSOT_VER} < ${SKILLOPT_DEPRECATE_FROM}——承诺未到期，本轮不对账（不发网络请求）"
+  SKIPS=$((SKIPS + 1))
+else
+  SKO_PACK=$(npm view @sofagent/skillopt --json --prefer-online 2>/dev/null)
+  if [ -z "$SKO_PACK" ]; then
+    echo "  ⏭️  [旧包弃用] registry 不可达（离线/限流）——npm 渠道本轮未对账，发布前补跑"
+    SKIPS=$((SKIPS + 1))
+  else
+    SKO_RES=$(printf '%s' "$SKO_PACK" | node -e "let d='';process.stdin.on('data',c=>d+=c).on('end',()=>{try{const vs=Object.values(JSON.parse(d).versions||{});console.log(vs.filter(v=>v&&v.deprecated).length+'/'+vs.length)}catch{console.log('ERR')}})")
+    if [ -z "$SKO_RES" ] || [ "$SKO_RES" = "ERR" ]; then
+      echo "  ⏭️  [旧包弃用] registry 响应解析失败——跳过本断言"
+      SKIPS=$((SKIPS + 1))
+    else
+      SKO_DEP="${SKO_RES%%/*}"
+      SKO_ALL="${SKO_RES##*/}"
+      ASSERTS=$((ASSERTS + 1))
+      if [ "$SKO_DEP" = "0" ]; then
+        echo "  ⚠️  [旧包弃用] 已达承诺到期版本 ${SKILLOPT_DEPRECATE_FROM}，但 @sofagent/skillopt 的 ${SKO_ALL} 个版本**均未带 deprecated**——承诺欠账（只提示不阻断）"
+        echo "      修法：维护者手工执行 npm deprecate（命令 / 消息文案 / 回滚见 v1.5.3 开发日志章四「维护者手工动作」）。执行后本条自动转 ✓"
+      elif [ "$SKO_DEP" != "$SKO_ALL" ]; then
+        echo "  ⚠️  [旧包弃用] @sofagent/skillopt 仅 ${SKO_DEP}/${SKO_ALL} 个版本带 deprecated——覆盖面不完整（只提示不阻断）"
+        echo "      修法：不带 range 重跑 npm deprecate（作用于全部版本）"
+      else
+        echo "  ✓ [旧包弃用] @sofagent/skillopt ${SKO_DEP}/${SKO_ALL} 个版本已带 deprecated"
+      fi
+    fi
   fi
 fi
 echo ""
