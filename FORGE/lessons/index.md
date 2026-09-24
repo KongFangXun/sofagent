@@ -128,6 +128,7 @@
 - [ ] **systemPrompt 末尾加 macOS BSD 工具约束段**（[六·BSD 约束](./stream-prompt-tools.md#六prompt-设计规范)）
 - [ ] **systemPrompt 通过 stateModifier 注入**（[六·注入方式](./stream-prompt-tools.md#systemprompt-注入方式)）
 - [ ] **纯只读场景加只读铁律**（release-gate 特有）（[六·只读约束](./stream-prompt-tools.md#纯只读约束release-gate-特有)）
+- [ ] **验证命令可证伪**（result.md 专用：恒真形态 = 验收永久失效）（[六·验证命令可证伪](./stream-prompt-tools.md#验证命令可证伪resultmd--b-fix-专用)）
 
 ### 🔧 工具开发
 

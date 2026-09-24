@@ -70,6 +70,15 @@ function buildSystemPrompt(skillPath) {
 
 V 角色 systemPrompt 追加：禁止 write_file / edit_file / git commit / git push / npm publish。
 
+### 验证命令可证伪（result.md / b-fix 专用）
+
+result.md 每条 finding 的「验证」命令必须**可证伪**——判据：未修复态跑它必须红，修复后跑它必须绿。写成恒真形态 = 该 finding 的验收永久失效，后续勾稽报告的 PASS 数整体失真。
+
+- **高频踩坑**：`grep -c X file | xargs test N -ge` —— `test N -ge M` 语义是「N ≥ M」，管道把实测计数传进 M 位，M ≤ N 即恒真（计数 0 也「通过」）。应写 `-le`（M ≥ N 才过）或 `-eq`。
+- **双重失效**：命令的字符串锚要取目标文件的**实际写法**——例：代码实为 `escapeHtml(rec.time||'')`，锚写 `escapeHtml(rec.time)` 永远 0 命中（括号不匹配），叠加恒真形态后该命令无论如何都绿（实测：该 finding 验证命令「永不失败」）。
+- **格式缺陷同样要防**：`grep -c … &&` 链在计数为 0 时 exit 1 会断链（`grep -c` 输出 0 且返回非零），使「修复在位」也显示失败；计数类断言统一 `N=$(grep -c … || true); N=${N:-0}` 后再判。
+- **反向探针纪律**：复杂命令定稿前，先在旧提交（worktree 隔离）或临时改动上验「它会红」，再写进 result.md。
+
 ---
 
 ## 七、工具开发规范
