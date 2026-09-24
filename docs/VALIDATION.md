@@ -965,6 +965,20 @@ Layered Governance Architecture（[arXiv:2603.07191](https://arxiv.org/html/2603
 
 > 📖 来源：arXiv 2603.07191v1（2026-03 提交，2026-09 检索浮现；实测数字为论文自报、本仓未复算）。
 
+### 生态速览：判定件新实物与治理基准（2026-09-24 巡检）
+
+判定面独立成层后的生态事实在加速固化，本节只记**本仓有消费面的增量**（全量巡检记录在跟踪台账，不入正文；对照件准入判据见 [v1.9.0 §五](./changelog/v1.9/v1.9.0.md)）。
+
+**wire 协议事实标准（四家可枚举）**：兼容 TypeSafe `POST /v1/systemone` 的开源端点已可枚举 `Mapika/decider`（校准感知 RL，PyPI `decider-ai` 1.2.2，`decider-2b` HF 下载 10 万+）、`ekzhang/openjev-sglang`（预填-only）、`Contrastive-LM/CLM`（双塔 + `clm-serve`）、kev（自述 serves 该 API）。**含义**：协议面决策的外部输入已齐——生态在等本仓 decision-log 结论（[v1.8.0 §协议面观察](./changelog/v1.8/v1.8.0.md)），拖久只剩执行别人的标准。
+
+**对照件状态翻转（两件准入面）**：① nimble **原始 2,676 训练样本与冻结 324 留出集已公开发布**——[v1.6.0 §二](./changelog/v1.6/v1.6.0.md)引用其对比式构造法时的「数据不可下载」限制实际解除（引用前按当前 HEAD 复验）；② kev 密集更新持续（hard-v1 / devtools-v1 套件上主干、服务隔离与 locked-test 限额、documents-v1/v2 写前门禁）——**VALIDATION §单机全流程各读数以 09-21 快照为准的预警仍然有效**，引用前须对 HEAD 重读。
+
+**治理基准三件套对位（治理面可测性）**：AgentGovBench（8 类映射 NIST AI RMF）· ST-WebAgentBench（CuP 双轴，ICLR 2026）· LGA（OpenClaw 实测，见上节）——三套独立口径同指「治理是可测的面」，本仓治理面若对齐任一套口径，「治理有效」从主张变可复验。详见 [THANKS · 治理对照基准](./THANKS.md)。
+
+**反例保鲜提醒**：Laya 三处反例锚定 0.3.4 制品，上游 24 小时内 v0.3.7→v0.3.20 十三连发（多语 100+ 语言 / 8192 长文 / 分语言可复现评测 harness）——**上游正在系统性补校准与多语短板，反例时效在消退**；复验窗口仍判不稳，但引用反例须带「按 0.3.4 制品取证」限定语（[v1.9.0 §五](./changelog/v1.9/v1.9.0.md) 对照纪律同源：**引用也有保质期**）。
+
+> 📖 来源：GitHub API / PyPI / HF（hf-mirror）实测（2026-09-24，HEAD 与版本号见当日巡检台账）；各仓性能读数均自报口径、本仓未复算。
+
 ### 训练环境不可信则评估作废：环境供给是 RSI 的上游瓶颈（DSec · 2026-09）
 
 DeepSeek Elastic Compute（[arXiv:2609.22978](https://arxiv.org/abs/2609.22978)，DeepSeek，2026-09 公开）：面向大规模 Agentic 训练的生产级沙盒基础设施——统一 SDK 暴露 FnCall / container / microVM / full-VM 四种后端，分层镜像可独立版本化并可组合，镜像按需加载、内存共享回收、CPU 调度与 RL 框架协同设计；生产单元规模约 160 节点、每日约 300 万沙盒、峰值并发 38 万以上。其第 6 节「Build environments of Agents, by Agents, for Agents」是一条部分闭环的 RSI 路径（Agent 自造执行环境 → 增量快照 → 下一批训练场）。
