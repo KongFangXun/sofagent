@@ -40,7 +40,7 @@
 >    （hook 本就是拷贝形态，与 `--init` 产出一致）。装完用一次真实 commit 验证审计确实运行。
 >
 | 十四 | [x] | **hook 生效确认**：本机 `.git/hooks/commit-msg` 头部版本号 == `engine/audit/hooks/commit-msg` 头部版本号（hook 是拷贝非软链，git pull 不随同步——发版窗口改过 hook 的版本，本机与其他仓库都是旧拷贝）。不一致 → `sofagent-audit --install-hook` 重装后复验（install.sh Step 6.5 的版本对账提示同源） | 两版本号一致 | 🔴 `--init` **不会覆盖已存在的 hook**（保护性跳过）⇒ 版本不符时须**先备份并删除** `.git/hooks/{commit-msg,pre-commit,post-commit}` 再跑 `--init`，否则该步永远修不好（实测：跑完 hook 版本仍未更新）。
-| 十五 | [x] | **核心文档内容时效巡检**（🔴 版本号对账已由 check-version 131 项机器化覆盖，但「文档说的能力/状态是否还是真的」缺专门步骤——发版后审查发现的已知问题须进 LIMITATIONS 如实披露，而非只留在 devlog）。三项：① **LIMITATIONS 已知问题披露**——发版期发现且未随版修复的用户可感知限制（安装入口断链 / 分发渠道异常标记 / 平台兼容缺口）逐条入册，注明「哪个版本修复」；② **WIKI「当前状态」节刷新**——当前版本 / 下一版描述 / 测试数 / 规则数对齐 ROADMAP 与 devlog 实况；③ **CHANGELOG 索引行复核**——本版条目的能力摘要与 devlog 交付一致（索引是外部用户第一入口，摘要漂移 = 对外失真）。巡检发现的漂移当场修，同批 commit | LIMITATIONS/WIKI/CHANGELOG 三处时效一致 |
+| 十五 | [x] | **核心文档内容时效巡检**（🔴 版本号对账已由 check-version 131 项机器化覆盖，但「文档说的能力/状态是否还是真的」缺专门步骤——发版后审查发现的已知问题须进 LIMITATIONS 如实披露，而非只留在 devlog）。三项：① **LIMITATIONS 已知问题披露**——发版期发现且未随版修复的用户可感知限制（安装入口断链 / 分发渠道异常标记 / 平台兼容缺口）逐条入册，注明「哪个版本修复」；② **WIKI「当前状态」节刷新**——当前版本 / 下一版描述 / 测试数 / 规则数对齐 ROADMAP 与 devlog 实况；③ **CHANGELOG 索引行复核**——本版条目的能力摘要与 devlog 交付一致（索引是外部用户第一入口，摘要漂移 = 对外失真）。巡检发现的漂移当场修，同批 commit。**④ 发版即移出双清单**：a) ROADMAP——本版行自「版本规划」表移入「迭代历程」表（提炼一句话行 + changelog 链接；规划表只留未发版）；b) `tools/check/check-forms.mjs`——本版自 VERSION_SOURCES/EXPECTED_COUNTS/形态白名单三处移出（该守卫只扫未发版版本，已发版回填对账无意义且假红） | LIMITATIONS/WIKI/CHANGELOG 三处时效一致 + ROADMAP/check-forms 双移出 |
 
 ---
 
