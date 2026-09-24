@@ -292,7 +292,7 @@ graph TB
 | 术语 | 简释 | 精确定义 |
 |------|------|---------|
 | FDE | Forward Deployed Engineer——进场生成判断、部署 AI 节点的工程师 | [PHILOSOPHY §一](./PHILOSOPHY.md) |
-| FDEing（= Forward Deployed Engineering） | FDE 的动词化——把 FDE 从一项人力工作变成一种可自动执行的能力（人走能力不走，花更少的人力提供更多的能力）；万物皆可 FDEing：任何业务对象、流程、节点被 FDEing 一遍「梳理 → 判定 → 交付 → 养护」。**思维方式三问**：workflow 怎么搭 / AI 节点是什么 / 怎么让 AI 帮实现。FDE 名词位（岗位）、FDEing 动词位（能力与动作），禁混用 | [README · 从 FDE 到 FDEing](../README.md#什么是-fde-harness) |
+| FDEing（= Forward Deployed Engineering） | FDE 的动词化——把 FDE 从一项人力工作变成一种可自动执行的能力（人走能力不走，花更少的人力提供更多的能力）；万物皆可 FDEing：任何业务对象、流程、节点被 FDEing 一遍「梳理 → 判定 → 交付 → 养护」。**思维方式三问**：workflow 怎么搭 / AI 节点是什么 / 怎么让 AI 帮实现。FDE 名词位（岗位）、FDEing 动词位（能力与动作），禁混用 | [README · 什么是 FDE Harness（含 FDEing 愿景引语）](../README.md#什么是-fde-harness) |
 | 同名导出消歧 | 不同包导出同名符号时以「来源包 + 符号名」双键区分，禁裸符号名 grep 判接线。已知同名对：`routeRequest`——`@sofagent/orchestrator/workflow`（语义路由，route/route-request.ts）vs `canaryRouteRequest`（`@sofagent/train` 权重灰度分流，weight-canary.ts——该导出 v1.5.0 更名避歧） | [DEVELOPMENT §包结构](./DEVELOPMENT.md) |
 | 中间件（Harness 中间件） | **品类定位词**——答「sofagent 属于哪个品类」（Harness 类运行时/治理框架）；**不是**「约束层是技术实现层的中间件」这一实现论判断 | [ARCHITECTURE §术语对照](./ARCHITECTURE.md#术语对照) |
 | Harness | 约束层的英文 SSOT 称法（对外中文「约束层」、英文「Harness」同指一物）——"缰绳"，非"马" | [ARCHITECTURE §术语对照](./ARCHITECTURE.md#术语对照) |

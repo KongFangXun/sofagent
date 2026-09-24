@@ -365,6 +365,10 @@ A1（不碰敏感）按 `DiffFile.status` 分方向判定：**新增/修改**敏
 
 > **v1.3.1 披露：>5MB diff 残余缝隙**——diff-parser 对单个文件 diff 超过 5MB（maxBuffer）时置 `oversized` 标记，A2 无法扫描其内容。audit/index.ts 已对此注入 WARN（安全敏感文件名升级为 FAIL），但内容本身仍跳过——攻击者可故意构造超大 diff 藏密钥。A2 归一化已补 NFKC Unicode 处理（v1.3.1 #46；NFKC 折叠全角/连字，**v1.4.8 起附加 Cyrillic 同形折叠表防跨字母系统同形绕过**——NFKC 本身不折叠 Cyrillic→拉丁同形字），sk-* 正则已扩展连字符/下划线支持。**v1.3.9 评估覆盖**——AST 规则引擎走流式解析（不 maxBuffer），超大 diff 不再跳过内容。
 
+### spill 文件回收
+
+审计溢出文件（`~/.sofagent/data/spill/diff-*.diff`，可能含密钥类 diff 内容）保留 30 天后可用 `node tools/maintenance/prune-spill.mjs` 回收；保留期经 `SOFAGENT_SPILL_TTL_DAYS` 调整。
+
 ---
 
 ### Skill 层 Slop：经验漂移

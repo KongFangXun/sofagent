@@ -53,6 +53,16 @@ task/logs 和 think.md 以明文 Markdown 存储，可能含代码片段和对�
 | 外部 API 调用 | ✅ 可关闭 | 离线模式跳过 ClawHub |
 | 配置文件修改 | ✅ 可控 | --no-config-inject 跳过 |
 
+### 明文数据清单（逐文件）
+
+| 数据文件 | 明文/加密 | 说明 |
+|---|---|---|
+| history.jsonl 主链 | 静态加密 | 唯一已覆盖静态加密的文件 |
+| decision-log.jsonl | 恒明文 | 含决策记录，敏感 |
+| intent.jsonl | 恒明文 | 含意图记录，敏感 |
+| think.md / task logs | 恒明文 | 含反思与任务内容，敏感 |
+| knowledge/（写入侧） | 未隔离 | 多 Agent 共底座必串数据，单机单用户边界 |
+
 ## 已落地能力
 
 - task/logs 脱敏（sanitize() 扫描 API Key/密码/手机号）
@@ -112,6 +122,10 @@ echo 'export SOFAGENT_CONFIG=/etc/sofagent/template-config.yml' >> /etc/profile.
 ```
 
 > `--doctor` 会检查 `SOFAGENT_CONFIG` 配置路径是否存在。修改一次模板，所有 repo 立即生效。
+
+**下发前检查**：
+
+- [ ] env 白名单校验：批量下发前校验目标机环境，显式 `unset SOFAGENT_WEBHOOK_ALLOW_LOCALHOST`（该变量使 webhook SSRF 防护对内网失效，生产禁用——见 [LIMITATIONS「已知边界」](../LIMITATIONS.md)）
 
 ### ③ CI 集成示例
 
@@ -338,3 +352,11 @@ sofagent 的审计记录以 JSONL 格式存储在 `data/audit/history.jsonl`，�
 | token 最小化 | 每台设备用独立 token，避免单 token 泄露影响全集群 |
 | 定期轮换 | 建议 90 天轮换一次，token 变更后同步更新各设备的 token 文件 |
 | 日志隔离 | 设备间 audit log 不自动同步——需通过中央管道做聚合，避免单设备被控后污染全量日志 |
+
+## 卸载与退场 SOP
+
+1. 移除各被审计仓库 hook：`rm -f <repo>/.git/hooks/commit-msg`（如装过 pre-commit/post-commit 一并移除）
+2. 移除定时任务：`crontab -l` 检查并删除 sofagent 相关条目
+3. 卸载 CLI：`npm uninstall -g @sofagent/audit`
+4. 清除数据（含明文日志 / think.md，敏感）：`rm -rf ~/.sofagent ~/.sofagent-key`
+5. 核验：`command -v sofagent-audit` 与 `ls ~/.sofagent` 均应为空

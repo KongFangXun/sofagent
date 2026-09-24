@@ -217,6 +217,7 @@ cd sofagent && bash install.sh
 ### 验证装好了
 
 ```bash
+# 前置：fresh clone 需先 npm install && npm run build（verify.sh 依赖构建产物 dist/）
 bash engine/scripts/verify.sh    # 跑 verify 检查，通过即装好可用（--json 可进 CI）
 # 或 npm 安装后直接用
 sofagent-core verify                # 同样跑 verify 检查（注：没有 sofagent-verify 这个命令）
