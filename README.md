@@ -309,6 +309,5 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # 加载安全规�
 
 <p align="center">
   欢迎提 Issue 和 PR，尤其较真的那种 · <a href="./CONTRIBUTING.md">贡献指南</a> · <a href="./docs/THANKS.md">致谢</a><br/>
-  <sub>万物皆可 FDEing —— 把 FDE 从人力做成 FDEing 能力 · 由 sofagent 提出</sub><br/>
   <sub>MIT License © <a href="https://github.com/KongFangXun/sofagent">孔放勋</a> · <a href="https://github.com/KongFangXun/sofagent">⭐ 如果 sofagent 帮到你，Star 一下让更多人看到</a></sub>
 </p>
