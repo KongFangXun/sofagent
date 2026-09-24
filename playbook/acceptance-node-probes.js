@@ -1888,7 +1888,79 @@ async function s444() {
   _s41x_done(bad, 'S444', '授权三态=no-mandate/covered/out-of-scope·插件包可发布就绪=' + plugins.length + '（+kit 转正，不计入 7）');
 }
 
-const CASES = { s101, s102, s103, s106, s107, s108, s109, s111, s115, s148, s149, s151, s152, s155, s156, s416, s418, s419, s420, s421, s422, s423, s424, s425, s426, s427, s428, s429, s430, s431, s432, s433, s434, s435, s436, s437, s438, s439, s440, s441, s442, s443, s444 };
+// ── S445 · v1.5.2 章八 BugFix 批五族代表锚点（release-gate P0-1 闭环，对齐 S343/S440 先例）──
+async function s445() {
+  const { fs, path } = _s41x_init('s445'); const bad = [];
+  const root = process.env.PROJECT_ROOT;
+  const rel = (p) => path.join(root, p);
+  // 族一 安全 fail-open 收口：install.sh @latest 降级改 fail-closed（P1-8）
+  const inst = fs.readFileSync(rel('install.sh'), 'utf-8');
+  if (!inst.includes('@latest 降级改为 fail-closed')) bad.push('install.sh 缺 fail-closed 修复标记（P1-8）');
+  if (!inst.includes('不自动降级 @latest')) bad.push('install.sh 缺「不自动降级」显式声明');
+  // 族二 解析面：diff-parser 列表阶段 fail-closed（P1-9）
+  const dp = fs.readFileSync(rel('engine/core/src/diff-parser.ts'), 'utf-8');
+  const spillCount = (dp.match(/SPILL_FAILURE_CODE/g) || []).length;
+  if (spillCount < 4) bad.push('diff-parser SPILL_FAILURE_CODE 锚不足（列表阶段 fail-closed 未落地）: ' + spillCount);
+  // 族三 门禁自欺：public-api 对账真实基线文件（P1-6/P1-7）
+  const pa = fs.readFileSync(rel('tools/check/public-api.mjs'), 'utf-8');
+  if (!pa.includes('public-api-baseline.json')) bad.push('public-api.mjs 未对账基线文件');
+  if (!fs.existsSync(rel('tools/check/public-api-baseline.json'))) bad.push('public-api-baseline.json 缺失');
+  // 族四 前端：dashboard 消费 readErrors（P1-15）
+  const dash = fs.readFileSync(rel('tools/dashboard/dashboard.html'), 'utf-8');
+  if (!dash.includes('readErrors')) bad.push('dashboard 未消费 readErrors（读失败静默回潮）');
+  // 族五 工具债：spill 回收工具在位（P1-10）
+  if (!fs.existsSync(rel('tools/maintenance/prune-spill.mjs'))) bad.push('prune-spill.mjs 缺失');
+  else if (!fs.readFileSync(rel('tools/maintenance/prune-spill.mjs'), 'utf-8').includes('TTL')) bad.push('prune-spill 缺 TTL 语义');
+  // 加一：MCP_ROLES 全非法 fail-closed 显式开关（P1-11）
+  const tr = fs.readFileSync(rel('engine/mcp/src/tool-roles.ts'), 'utf-8');
+  if (!tr.includes('SOFAGENT_MCP_ROLES_STRICT')) bad.push('tool-roles 缺 SOFAGENT_MCP_ROLES_STRICT fail-closed 开关');
+  _s41x_done(bad, 'S445', 'BugFix 五族六锚=fail-closed×2/基线对账/前端消费/工具债+MCP_ROLES 开关');
+}
+
+// ── S446 · v1.5.2 章一 MCP audit 数据对外（release-gate P0-2 闭环：注册面 + 行为锁，对齐 S430 注册锚先例）──
+async function s446() {
+  const { fs, path } = _s41x_init('s446'); const bad = [];
+  const root = process.env.PROJECT_ROOT;
+  const rel = (p) => path.join(root, p);
+  // ① 注册面：registry 107 含 audit_query / ruleset_export
+  const reg = fs.readFileSync(rel('engine/mcp/src/tool-registry.ts'), 'utf-8');
+  for (const t of ["name: 'audit_query'", "name: 'ruleset_export'"]) if (!reg.includes(t)) bad.push('registry 缺注册:' + t);
+  if (!reg.includes('107 个 tool')) bad.push('registry 头注未更新 107');
+  // ② 行为锁①：audit_query 只读语义（源码锚 + 禁写链调用）
+  const aqPath = rel('engine/mcp/src/tools/audit-query.ts');
+  if (!fs.existsSync(aqPath)) { bad.push('audit-query.ts 缺失'); _s41x_done(bad, 'S446', 'audit-query 缺失'); return; }
+  const aq = fs.readFileSync(aqPath, 'utf-8');
+  for (const s of ['严格只读', '不写任何审计链']) if (!aq.includes(s)) bad.push('audit-query 缺只读锚:' + s);
+  if (/appendHistory\s*\(|appendChained\s*\(/.test(aq)) bad.push('audit-query 出现写链调用——只读语义破坏');
+  // ③ 行为锁②：isError 两态 + [sofagent] 前缀
+  if (!aq.includes('isError: true') || !aq.includes('isError: false')) bad.push('audit-query isError 两态缺失');
+  if (!/\[sofagent\]/.test(aq)) bad.push('audit-query 缺 [sofagent] 前缀锚');
+  // ④ 真行为：dist 产物在位时断言已同步（防源码改 dist 陈旧）
+  const distPath = rel('engine/mcp/dist/tools/audit-query.js');
+  if (fs.existsSync(distPath) && !fs.readFileSync(distPath, 'utf-8').includes('严格只读')) bad.push('audit-query dist 未同步（需重建）');
+  _s41x_done(bad, 'S446', 'audit_query 注册面+只读行为锁+isError 两态+[sofagent] 前缀');
+}
+
+// ── S447 · v1.5.2 章六 身份三层叙事 README 双语结构锁（release-gate P1-3 闭环，对齐 S426 文档结构锁先例）──
+async function s447() {
+  const { fs, path } = _s41x_init('s447'); const bad = [];
+  const root = process.env.PROJECT_ROOT;
+  const rel = (p) => path.join(root, p);
+  // ① 中文 README：三因子口径行 + 三层锚词
+  const zh = fs.readFileSync(rel('README.md'), 'utf-8');
+  for (const s of ['三因子口径', 'FDEing', 'S1M', '是治理层']) if (!zh.includes(s)) bad.push('README.md 缺锚:' + s);
+  // ② 英文 README：对应段锚词
+  const en = fs.readFileSync(rel('README.en.md'), 'utf-8');
+  for (const s of ['three-factor framing', 'FDEing', 'S1M', 'harness']) if (!en.includes(s)) bad.push('README.en.md 缺锚:' + s);
+  // ③ 双语共生：身份叙事任一侧清零 = 漂移（阈值只防清零，不做密度比值——中英行文密度天然不同）
+  const zhCount = (zh.match(/FDEing/g) || []).length;
+  const enCount = (en.match(/FDEing/g) || []).length;
+  if (zhCount < 3) bad.push('README.md FDEing 叙事密度过低:' + zhCount);
+  if (enCount < 3) bad.push('README.en.md FDEing 叙事密度过低:' + enCount);
+  _s41x_done(bad, 'S447', '双语三因子叙事在位 zh/en FDEing=' + zhCount + '/' + enCount);
+}
+
+const CASES = { s101, s102, s103, s106, s107, s108, s109, s111, s115, s148, s149, s151, s152, s155, s156, s416, s418, s419, s420, s421, s422, s423, s424, s425, s426, s427, s428, s429, s430, s431, s432, s433, s434, s435, s436, s437, s438, s439, s440, s441, s442, s443, s444, s445, s446, s447 };
 
 async function main() {
   const name = process.argv[2];
