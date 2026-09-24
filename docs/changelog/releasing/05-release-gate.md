@@ -65,7 +65,7 @@ acceptance 预跑异常处置：先单跑死点命令对比，不要改脚本；
 
 ### ③ 判断层启动（driver --judgment-only 一次四步，跳过 acceptance 分片 LLM 复核，约 20 分钟）
 Bash 工具 run_in_background:true + dangerouslyDisableSandbox:true：
-cd {REPO_ROOT} && source FORGE/env.local && node FORGE/src/release-gate-driver.mjs --judgment-only --target {TARGET_VERSION}
+cd {REPO_ROOT} && source ~/.sofagent/env.local && node FORGE/src/release-gate-driver.mjs --judgment-only --target {TARGET_VERSION}
 ⚠️ --judgment-only 一次进程串行四步（regression → coverage → consolidate → verdict），替代 --step 四步手工编排。runDir 由 driver 启动日志打印，全程复用。
 ⚠️ 运行期间仓库冻结：driver 运行窗口内本 session 不 commit / 不改文件（其他 session 同样适用）——HEAD 变动会击穿 precheck 快照一致性，产出时间差假 FAIL。
 

@@ -184,6 +184,14 @@
 - **同名跨层目录 / 同词双指称类 finding 的重复报抑制**：`engine/x` vs `tools/x`、同一术语两种指称（如「引擎」指约束层本体 vs FDE 六引擎）等形态在多轮审查中被独立重报。校准：判别口径为「是否已有互链/消歧声明」——有则降为观察项，无则报一次并要求补链或补消歧句。
 - **收尾与复核以仓库现态为准**：本版停手汇报与执行 session 的后续动作存在时序差（汇报称「三个未完项」，其一实际已消解）。校准：收尾/复核动手前重盘现态（`git status --porcelain` + 逐项 grep 实查），不照转上一轮汇报文本。
 
+## 发布流程校准收编（阶段十一回写 · v1.5.2 发版期）
+
+- **语义升级时测试断言必须同批随动**：hook 未装升 fail（产品语义变更）落地时未同步 doctor-reset-baseline 的 failCount 断言——本地环境（双 hook 已装）掩盖 CI（全缺）差异，两轮 CI 红才定位。校准：凡改检查项严重度（warn→fail / fail→warn），必须同批 grep 该检查的全部消费测试并逐个核对断言；环境相关检查的测试须在「有/无」两态各验一遍（本地绿 ≠ CI 绿）。
+- **发布窗口的 verify 红是 fail-closed 语义的预期形态**：verify 工作流装 `@sofagent/audit@<本版>`，publish 前必红——这是供应链修复（目标版本不存在即拒绝，不降级 @latest）按设计工作；上一版同点位「绿」是 fail-open 假绿。判别口径：verify 红在「npm 未发本版」时点 = 预期，publish 后 rerun 应转绿；其他时点红才是真故障。
+- **ClawHub CLI 输出不可作为发布成败判据**：三轮实测再证实——Docs 链接输出、Plugin Inspector blocked、OOM 报错后版本实际都已上平台。唯一可信通道 = API 查证（`https://clawhub.ai/api/v1/packages/<name>?ownerHandle=<handle>` 的 latestVersion），SOP 已载明，此处补校准：「CLI 报错后不要改版本号重试，先查 API」。
+- **平台侧 OOM/限流的重试纪律**：ClawHub Convex 512MB OOM 等 reset（8-59s 提示值）后重试即成；SkillHub「发布频率过高」等 60s+ 补发即成——都不是包问题，重试间隔从提示值取（勿猜）；连环失败时把逐款间隔从 20s 拉到 40s。
+- **bump 残留有五类长尾形态**：本轮实测——package-lock version 字段（需 --package-lock-only 重生成）/ 生成器常量（TRAIN_DELIVERABLE_GENERATOR_VERSION）/ 深读文档正文「当前 vX.Y」行（WIKI·evidence·SECURITY）/ docs/guides 全目录文档头日期 / root package.json 依赖段 + ROADMAP 版本头描述行（关键词与 CHANGELOG 标题重合度断言会抓错版）。校准：bump 后 check-version 红的每一行都按类处置，勿只改第一处就复跑（本轮五轮才清零）。
+
 ## v1.5.1 审查校准收编（阶段四 C 类）
 
 - **豁免资格前置双探针**：driver 不可用须以两次探针实测取证（①直跑 ②`--resume` 佐证 run 未建立），并核对是否在平价时段前启动——不凭推演、不凭回忆

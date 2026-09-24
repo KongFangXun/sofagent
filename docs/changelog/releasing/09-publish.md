@@ -232,6 +232,8 @@ git merge-base --is-ancestor "$REMOTE_SHA" HEAD && echo "✓ 快进可推" || \
 # ② tag 顺序铁律：先安装入口 bump commit（步骤五），后打 tag（tag 内容就该指本版）
 ```
 
+> ⚠️ **发布窗口的 verify 红是预期形态**：bump commit 上 verify 工作流装 `@sofagent/audit@<本版>`，npm 尚未发布该版本——供应链 fail-closed（不降级 @latest）按设计拒绝。判别：此点位 verify 红 ≠ 阻断项（pr-check 等其余 workflow 全绿即可继续）；publish 后重跑该 verify run 应转绿（发布链收尾动作）。上一版同点位的「绿」是 fail-open 假绿（v1.5.2 起修复）。
+
 ## 步骤四：push main + 等 CI 全绿 ☐
 
 > **tag 先行策略**：先 push main → 等 CI 全绿验证 → 才打 tag。tag 一定指向 CI 验证过的 commit，不会 tag 了之后才发现 CI 红。
@@ -290,6 +292,8 @@ done
 >    ③ **CI job 缺前置**——job 刻意「不装依赖直接跑」时，构建产物类依赖（如 AST 引擎 `engine/rules/dist/`）缺失致工具降级路径被静默触发，口径分歧报误报；修 job steps 补依赖+build，工具降级分支必须有 fail-loud 警告。
 
 ---
+
+> ⚠️ **bump 批 commit 前必跑 `git status --porcelain` 检视暂存面**：bump 涉数百文件，惯用 `git add -A` 会把**旁生目录**（实测：audit-baseline-sync 在无 SOFAGENT_HOME 时把锚文件写进 `./undefined/`）一并收入。检视发现非 bump 目标路径即先清（`git rm -r --cached <dir>` + 删目录 + 产品侧登记修复）。
 
 ## 步骤五：安装入口随版同步 ☐
 

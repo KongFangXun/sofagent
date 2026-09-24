@@ -59,7 +59,7 @@
 
 **五分钟戏剧演示**（v1.5.1 已交付，沙箱隔离、真实文件零接触）：`npx -y -p @sofagent/audit sofagent-audit demo`——一条命令跑完「沙箱构建 → 注入 → 故意违规 → 审计拦截 → 快照回滚 → HMAC 举证导出」五幕完整链路（`--speed fast` 60 秒精简版；产物落 `$SOFAGENT_DATA/demo`，不写用户家目录）。
 
-> 版本说明：v1.5.2 已开发完成、尚待发版（npm/tag/package.json 发版时统一同步）；当前 npm 可安装的最新版为 v1.5.1。
+> 版本说明：v1.5.2 已发版（2026-09-24）；npm 可安装最新版 `@sofagent/audit@1.5.2`（`latest` 通道为 1.5.1——阿尔法施工期分道，见 LIMITATIONS）。
 
 ## 该不该装？
 
