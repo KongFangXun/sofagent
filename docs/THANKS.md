@@ -44,6 +44,7 @@
 - **[AutoResearch](https://github.com/karpathy/autoresearch)** · Andrej Karpathy — 约束文档 + 锁定评估脚本 + 自动循环，与 sofagent 的 fde.md + audit + loop 高度对应
 - **[Bilevel Autoresearch](https://arxiv.org/abs/2603.23420)** — 双层循环论文，外层强制探索回避方向可实现 5 倍性能提升
 - **[MetaRSI / RSI²: A Meta-Recursive Self-Improving System for Recursive Self-Improving Systems Themselves](https://arxiv.org/abs/2609.06396)**（arXiv:2609.06396，2026-09-06）+ **[RSI-Harness](https://github.com/CosmosMind-ai/RSI-Harness)**（其开源实现）· CosmosMind — 递归自我改进（RSI）的统一形式化：Data / Harness / Model 三算子共享一个闭环内核，其上再加改进调度器。sofagent 的 Meta-RSI 三算子对位、「**保护面必须独立于所有可写面**」这条架构判断、以及「验证差距是自进化的适用边界」都源自此处；v1.5.8 的 RSI 缺口对位（经验池接训练管道 / 进化准入判据 / 三层晋级 / 出题考核）即照它补差
+- **[DeepSeek Elastic Compute (DSec)](https://arxiv.org/abs/2609.22978)**（arXiv:2609.22978，2026-09-19）· DeepSeek — 面向大规模 Agentic 训练的生产级沙盒基础设施：统一 SDK 暴露 FnCall / container / microVM / full-VM 四种后端，可独立版本化的分层镜像、按需加载、内存共享回收与 CPU 调度同 RL 框架协同设计。第 6 节「Build environments of Agents, by Agents, for Agents」给出部分闭环的 RSI 路径——Agent 自造执行环境、增量快照沉淀为下一批训练场。**对本仓最重的一条论断：自我改进卡住的从来不是 GPU，是环境供给。** 它与上一条 MetaRSI 互为上下句：三算子回答「改什么」，环境供给回答「在哪儿改、改得可不可信」——环境供给是 Data-RSI 的上游瓶颈，也是本仓「训练信号不可被环境伪造」这条默认前提的实证出处
 - **[Lost in the Middle](https://arxiv.org/abs/2307.03172)** — 长文档中段注意力衰减，500 字原则的理论源头
 - **[A Global Workspace in Language Models](https://www.anthropic.com/research/global-workspace)** · Anthropic — 模型输出前已形成未表达判断，为「审计必须外置」提供底层论证
 
