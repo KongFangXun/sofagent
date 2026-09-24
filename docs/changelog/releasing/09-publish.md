@@ -4,7 +4,7 @@
 
 > **项目负责人亲手执行，或授权 AI 代执行。**
 >
-> **本阶段只做 npm 发布流水线（狗粮→检查→push→tag→release→npm publish）。分发（Skill / DSH plugin / OpenClaw plugin / 设备端安装）见 [10-distribute.md](./10-distribute.md)。**
+> **本阶段只做 npm 发布流水线（本机自装→检查→push→tag→release→npm publish）。分发（Skill / DSH plugin / OpenClaw plugin / 设备端安装）见 [10-distribute.md](./10-distribute.md)。**
 
 ---
 
@@ -16,7 +16,7 @@
 
 | 环节 | 授权语义 |
 |------|---------|
-| **准备类**（可逆/只读：前置 lock 一致性 / 本地狗粮 / 发布前检查 / push 前置检查 / CI 轮询等待） | 放行前即可连续执行；红项按 [`auto-converge-protocol.md`](./auto-converge-protocol.md) 修复批协议自行修复复绿（修产品不修测试红线同款适用），修复后重跑该检查至 EXIT=0 |
+| **准备类**（可逆/只读：前置 lock 一致性 / 本机自装 / 发布前检查 / push 前置检查 / CI 轮询等待） | 放行前即可连续执行；红项按 [`auto-converge-protocol.md`](./auto-converge-protocol.md) 修复批协议自行修复复绿（修产品不修测试红线同款适用），修复后重跑该检查至 EXIT=0 |
 | **发布类**（对外可见，不可逆：`git push` / 安装入口 bump commit / git tag + push tag / gh release / npm publish） | **随放行一揽子授权，按步骤顺序自动走完，不逐动作请示** |
 
 **仅两类情况停下**：
@@ -49,9 +49,9 @@ grep -n '@sofagent/[a-z-]*@[0-9]' action.yml | grep -v "$(node -p "require('./pa
 
 ---
 
-## 步骤一：本地安装（狗粮） ☐
+## 步骤一：本地安装（本机自装） ☐
 
-> 全部验证通过、准备发布时，先把最新版装到本机——全局 npm 和本地 Skill 同步。这是发布前的最后一块狗粮。
+> 全部验证通过、准备发布时，先把最新版装到本机——全局 npm 和本地 Skill 同步。这是发布前最后一道自用验证。
 
 ```bash
 # 全局安装最新 audit（从本地源码，不走 registry）

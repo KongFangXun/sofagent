@@ -93,7 +93,7 @@
 - 发布限流 ≥20s 间隔；changelog 描述禁按字节截断中文（码点感知工具）
 - publish 中断留 staged 约 5 分钟自动 finalize——等待即可，不必动 unpublish
 - 代理环境 curl 验证不可靠：用 `gh api contents` 交叉验证文件存在性
-- CI 纯净环境与本地狗粮分叉是真信号：剥净 PATH 复跑模拟 CI
+- CI 纯净环境与本机自装环境分叉是真信号：剥净 PATH 复跑模拟 CI
 - API 压平 commit 与本地 commit 同 tree 双 SHA 是合法态：以 tree 对账验收，网络恢复后 rebase
 - publish exit 0 ≠ 立即可查：registry 传播延迟 3-5 分钟，三次重试×15s 对账
 - release 标题必须 `vX.Y.Z — 主题短语`，发布前核对 title 字段

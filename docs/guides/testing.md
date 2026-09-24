@@ -40,7 +40,7 @@
 
 ## 用例 4：Harness 层自我约束
 
-**目的**：验证 sofagent「吃自己的狗粮」。
+**目的**：验证 sofagent「自用实测」（用 sofagent 管理 sofagent 自身的开发流程）。
 **步骤**：修改 `SKILL/harness/` 下 Skill 文件，检查 Agent 是否在闭环前提醒「已修改但未同步」。
 **通过标准**：Agent 提示文件已修改但未同步。
 
