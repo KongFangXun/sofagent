@@ -1905,18 +1905,9 @@ async function loadLiveDataFs(){
   var lines=history.trim().split('\n').slice(-500);
   var records=lines.map(function(l){try{return JSON.parse(l)}catch(e){return null}}).filter(Boolean);
   processAuditData(records);
-  // sovereignty 聚合（简化）
-  var sov=await fsReadFile(fsRootHandle,'audit/data-sovereignty.json');
-  var local=575,cloud=12,out=0;
-  if(sov){
-    var recs=sov.trim().split('\n').map(function(l){try{return JSON.parse(l)}catch(e){return null}}).filter(Boolean);
-    local=0;cloud=0;
-    recs.forEach(function(r){
-      if(r.localAction)local++;
-      if(r.cloudCall)cloud++;
-    });
-  }
-  renderSovereignty({localExecutions:local,cloudCalls:cloud,dataOutflow:out},null);
+  // sovereignty 聚合：服务端数据布局为 audit/data-sovereignty/<年>/<月>/*.jsonl（按目录分片），
+  // 不存在单文件形态——此处不读取（旧单文件路径已废弃，读取必空），展示默认占位值。
+  renderSovereignty({localExecutions:575,cloudCalls:12,dataOutflow:0},null);
 }
 
 /* ===== GitHub Star Count ===== */

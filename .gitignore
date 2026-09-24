@@ -98,5 +98,7 @@ acceptance-raw.log
 
 # fresh-eyes/forge 审查过程产物（runDir 外溢到仓库根的临时台账——findings 汇总与批次执行卡，防误提交）
 /check-a-*.md
+/check-b-*.md
+/d-review.md
 /result-verified-batch-*.md
 /summary-batch-*.md
