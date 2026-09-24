@@ -69,6 +69,7 @@ describe('doctor --reset-baseline（v1.3.5 交付 2 附带小件）', () => {
     // 不带 flag：陈旧基线应触发 mismatch（fail）
     const before = runDoctor(REPO_ROOT, {});
     expect(before.allOk).toBe(false);
+    const callsBeforeReset = vi.mocked(console.log).mock.calls.length;
 
     // 带 resetBaseline：无条件覆写
     const report = runDoctor(REPO_ROOT, { resetBaseline: true });
@@ -81,12 +82,14 @@ describe('doctor --reset-baseline（v1.3.5 交付 2 附带小件）', () => {
     const output = vi.mocked(console.log).mock.calls.map((c) => String(c[0])).join('\n');
     expect(output).toContain('三锚已重置');
     // hook 未装升 fail 后（A-7）本测试的环境态容忍：projectDir=REPO_ROOT 的 hook 装设状态
-    // 由环境决定（本地已装=0 fail / CI checkout 未装=1 fail），非 reset-baseline 语义面。
-    // 断言收紧为：failCount ∈ {0,1}，且 =1 时唯一 fail 必为 hook 未安装（环境态）。
-    if (report.failCount === 1) {
-      expect(output).toContain('commit-msg hook 未安装');
-    } else {
-      expect(report.failCount).toBe(0);
+    // 由环境决定（本地双 hook 已装=0 fail / CI checkout 全未装=2 fail：commit-msg + pre-commit
+    // 均升 fail），非 reset-baseline 语义面。判据：failCount ≤ 已知 hook 项数（2），且每个 fail
+    // 必为 hook 未安装行——出现任何非 hook fail 即真红。
+    expect(report.failCount).toBeLessThanOrEqual(2);
+    const outputAfterReset = vi.mocked(console.log).mock.calls.slice(callsBeforeReset).map((c2) => String(c2[0])).join('\n');
+    const failLines = outputAfterReset.split('\n').filter((l: string) => l.includes('❌') && !l.includes('项失败'));
+    for (const line of failLines) {
+      expect(line).toMatch(/hook 未安装/);
     }
   });
 
@@ -101,11 +104,11 @@ describe('doctor --reset-baseline（v1.3.5 交付 2 附带小件）', () => {
     expect(readFileSync(baselinePath, 'utf-8').trim()).toBe(currentDistHash());
     const output = vi.mocked(console.log).mock.calls.map((c) => String(c[0])).join('\n');
     expect(output).toContain('三锚已重置');
-    // 同验收 1：hook 环境态容忍（本地已装 0 fail / CI 未装 1 fail 且必为 hook 行）
-    if (report.failCount === 1) {
-      expect(output).toContain('commit-msg hook 未安装');
-    } else {
-      expect(report.failCount).toBe(0);
+    // 同验收 1：hook 双件环境态容忍（本地 0 / CI 2，逐 fail 行必须为 hook 未安装）
+    expect(report.failCount).toBeLessThanOrEqual(2);
+    const failLines2 = output.split('\n').filter((l: string) => l.includes('❌') && !l.includes('项失败'));
+    for (const line of failLines2) {
+      expect(line).toMatch(/hook 未安装/);
     }
   });
 
