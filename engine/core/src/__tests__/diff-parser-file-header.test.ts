@@ -64,13 +64,13 @@ describe('getAddedLines/getRemovedLines · +++ 前缀内容行不再被吞', () 
       '@@ -1,3 +1,5 @@',
       ' context',
       '+++i;',                      // 新增内容行：++i;
-      '+++const AK = "sk-abc123";', // 红队：密钥行以 +++ 开头（旧实现被吞）
+      '+++const AK = "QUtJQVc5WEFNUExFS0VZMTIzNDU2";', // 红队：密钥行以 +++ 开头（旧实现被吞）
       '-- SELECT * FROM t;',       // 删除内容行：SQL 注释
     ]);
     const added = getAddedLines(diff);
     expect(added).toContain('++i;');
     // substring(1) 只剥一个 diff 标记字符——diff 行 `+++const AK=...` 的内容是 `++const AK=...`
-    expect(added).toContain('++const AK = "sk-abc123";');
+    expect(added).toContain('++const AK = "QUtJQVc5WEFNUExFS0VZMTIzNDU2";');
     // 文件头本身不进 added
     expect(added).not.toContain('b/x.ts');
     const removed = getRemovedLines(diff);
