@@ -568,19 +568,29 @@ echo -e "${BOLD}── S3 路径常量消费门禁（@public 落点契约）─�
 PATH_CONSTS=$(grep -oE "export const [A-Z][A-Z0-9_]*_(DIR|FILE|PATH)" engine/core/src/data-paths.ts 2>/dev/null \
   | grep -oE "[A-Z][A-Z0-9_]*_(DIR|FILE|PATH)" | sort -u || true)
 for pc in $PATH_CONSTS; do
-  # 生产消费 = engine/ 内 .ts 文件（非定义文件、非测试、非 dist）的**导入或引用**
+  # 生产消费 = engine/ 内 .ts 文件（非定义文件、非测试、非 dist、非 barrel）的**导入或引用**
+  # F-15：barrel 文件（各包 src/index.ts）里的 import/re-export 行不再计为生产消费——
+  # 此前它们掩盖了「零真实消费」（barrel 只是转发面，不是使用点）。
   _pc_hits=$(grep -rnw "$pc" engine/ --include='*.ts' 2>/dev/null \
     | grep -v "/dist/" | grep -v node_modules | grep -v "\.test\.ts" | grep -v "__tests__" \
     | grep -v "engine/core/src/data-paths.ts" \
     | grep -v ":[[:space:]]*//" | grep -v ":[[:space:]]*\*" \
     | grep -vE ":[0-9]+:[[:space:]]*export" \
+    | grep -vE "src/index\.ts:[0-9]+:" \
     | head -3 || true)
-  if [ -z "$_pc_hits" ]; then
-    echo -e "  ${YELLOW}⚠${NC} S3①：路径常量 ${pc} 零生产字符串消费（@public 声明面 > 实现消费面——落点契约疑似断链，接线或收编归位）"
-    # ⚠️ 观察项不阻断（SHADOW_GIT_DIR 本身是历史迁移目标登记，其「消费」形态是
-    # install.sh 迁移路径注释而非代码引用）——但必须在门禁输出里可见，防静默漂移。
-  else
+  # F-15 分档：仅 barrel 引用的单列「SDK 面候选」（维护者裁定留删）
+  _pc_barrel=$(grep -rnw "$pc" engine/ --include='*.ts' 2>/dev/null \
+    | grep -v "/dist/" | grep -v node_modules | grep -v "\.test\.ts" | grep -v "__tests__" \
+    | grep -v "engine/core/src/data-paths.ts" \
+    | grep -E "src/index\.ts:[0-9]+:" \
+    | grep -vE ":[0-9]+:[[:space:]]*(//|\*)" \
+    | head -1 || true)
+  if [ -n "$_pc_hits" ]; then
     echo -e "  ${GREEN}✓${NC} S3①：${pc} 生产消费在位（$(echo "$_pc_hits" | head -1 | cut -d: -f1-2)）"
+  elif [ -n "$_pc_barrel" ]; then
+    echo -e "  ${YELLOW}◇${NC} S3①：${pc} 仅 barrel 引用（SDK 面候选——零生产消费，保留/删除由维护者裁定；barrel 命中：$(echo "$_pc_barrel" | head -1 | cut -d: -f1-2)）"
+  else
+    echo -e "  ${YELLOW}⚠${NC} S3①：路径常量 ${pc} 零生产字符串消费（@public 声明面 > 实现消费面——落点契约疑似断链，接线或收编归位）"
   fi
 done
 

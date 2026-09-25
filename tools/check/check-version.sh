@@ -1800,7 +1800,7 @@ if $F6_RELEASED; then
   _I2_CAND=$(grep -rnE "待发版|待发布|规划中|排期中" --include="*.md" \
       "${PROJECT_ROOT}/docs" "${PROJECT_ROOT}/README.md" \
       "${PROJECT_ROOT}/README.en.md" "${PROJECT_ROOT}/CHANGELOG.md" 2>/dev/null \
-    | grep -v "/changelog/" | grep -v "/archive/" || true)
+    | grep -vE '^[^:]*/(changelog|archive)/' || true)  # F-31：只滤文件路径前缀，不滤行内容（行内 ./changelog/ 链接曾使整行被误滤）
   _I2_HITS=""
   while IFS= read -r _ln; do
     [[ -z "${_ln}" ]] && continue
@@ -1810,21 +1810,24 @@ if $F6_RELEASED; then
     # ② 剔除「…」引用串后再判：词被引用（提及）≠ 词被使用（状态标注本身）
     _bare=$(printf '%s' "${_body}" | sed 's/「[^」]*」//g')
     printf '%s' "${_bare}" | grep -qE '待发版|待发布|规划中|排期中' || continue
-    # ③ 合法「下一版陈述」：行内出现非当前 SSOT 的版本号 ⇒ 描述的是别的版本
+    # ③（F-31 收紧）：行内出现非 SSOT 版本号且不含 SSOT 版本号才豁免——原「含他版号
+    # 即整行豁免」让 ROADMAP 规划表行（天然含 v1.5.4/v1.6.0 等）全表逃检。
     _other=false
+    _has_sot=false
     for _v in $(printf '%s' "${_body}" | grep -oE 'v?[0-9]+\.[0-9]+(\.[0-9]+)?' | tr -d 'v'); do
       case "${_v}" in
-        "${SSOT_VERSION}"|"${SSOT_2SEG}") ;;
+        "${SSOT_VERSION}"|"${SSOT_2SEG}") _has_sot=true ;;
         *) _other=true ;;
       esac
     done
-    ${_other} && continue
+    ${_other} && ! ${_has_sot} && continue
     # ④ 「规划中/排期中」单独触发时，须与本版绑定（行内含 SSOT 版本号）**且**行内未声明
     #    本版已发版——否则是「本版已发版 + 其他条目排期」的混合状态行，不是发版态残留
     #    （全量纳入「规划中」会制造假红；未来能力的规划项同样不是残留）
+    # F-31 修正：纯「规划中/排期中」行（无待发版词）描述未来版本——一律豁免
+    # （原判据④「须与本版绑定」方向写反，纯未来行反被误判残留）
     if ! printf '%s' "${_bare}" | grep -qE '待发版|待发布'; then
-      printf '%s' "${_body}" | grep -qE "v${SSOT_VERSION}|v${SSOT_2SEG}" || continue
-      printf '%s' "${_bare}" | grep -qE '已发版|已发布|已交付' && continue
+      continue
     fi
     _I2_HITS="${_I2_HITS}${_ln}"$'\n'
   done <<< "${_I2_CAND}"
@@ -2030,12 +2033,19 @@ if $F6_RELEASED; then
   # 「上一版发完、下一版未开发」语境，没跟上此窗口——误报实锤：v1.4.8 devlog 46 项
   # 全勾 + ROADMAP 如实标注被拦。白名单条件（双判据缺一不可）：存在 docs/changelog/vX.Y/
   # 目录（版本号 = SSOT + 1 patch）且目录内 devlog 非空——防「上一版忘翻牌」借窗口逃检。
+  # F-14：窗口行级排除（替代整段跳过）——地基期逐版排期使下一版 devlog 几乎恒在位，
+  # 窗口恒开 ⇒ 本节两段真扫描自引入起从未执行（E2 残留存活 2 天的根因）。
+  _F6_NEXT_VERS="${F6_NEXT_PATCH}"
+  for _c in ${F6_NEXT_CANDIDATES:-}; do _F6_NEXT_VERS="${_F6_NEXT_VERS} ${_c}"; done
   if $F6_WINDOW; then
-    echo -e "  ${YELLOW}⏭️${NC} 待发版窗口态：v${F6_NEXT_PATCH} 开发日志在位（CHANGELOG 未收录）——ROADMAP「待发版」为合法状态，F6 断言降级跳过"
+    echo -e "  ${YELLOW}⏭️${NC} 窗口态（F-14）：v${F6_NEXT_PATCH} 开发日志在位——本版已发版面照扫，仅行级排除下一版开发期标注"
     SKIPS=$((SKIPS + 1))
     CHECKS=$((CHECKS + 1))
   else
   F6_PENDING_HITS=$(grep -nE '待发版' "${PROJECT_ROOT}/docs/ROADMAP.md" 2>/dev/null || true)
+  if $F6_WINDOW && [ -n "${F6_PENDING_HITS}" ]; then
+    F6_PENDING_HITS=$(printf '%s\n' "${F6_PENDING_HITS}" | grep -vE "v(${_F6_NEXT_VERS// /|})" || true)
+  fi
   if [ -n "$F6_PENDING_HITS" ]; then
     echo -e "  ${RED}✗${NC} 已发版态（${F6_WHY}）但 ROADMAP.md 仍有「待发版」标注——发版 SOP 阶段十后忘改状态："
     echo "$F6_PENDING_HITS" | head -3 | sed 's/^/      /'
@@ -2056,6 +2066,17 @@ if $F6_RELEASED; then
     -not -path '*/archive/*' \
     -type f -print0 2>/dev/null \
     | xargs -0 grep -lE '待发版' 2>/dev/null || true)
+  # F-14 行级排除（-l 形态）：文件内「待发版」行全属下一版开发标注则该文件不算残留
+  if $F6_WINDOW && [ -n "$F6_DOC_PENDING" ]; then
+    _F6_KEPT=""
+    while IFS= read -r _f6f; do
+      [ -z "${_f6f}" ] && continue
+      if grep -nE '待发版' "${_f6f}" 2>/dev/null | grep -qvE "v(${_F6_NEXT_VERS// /|})"; then
+        _F6_KEPT="${_F6_KEPT}${_f6f}$(printf '\n')"
+      fi
+    done <<< "$F6_DOC_PENDING"
+    F6_DOC_PENDING="${_F6_KEPT}"
+  fi
   if [ -n "$F6_DOC_PENDING" ]; then
     echo -e "  ${RED}✗${NC} 已发版态（${F6_WHY}）但以下活文档仍含「待发版」字样——发版翻转遗漏（F6 扩展·语义锚定）："
     echo "$F6_DOC_PENDING" | sed "s#^#      #" | head -15
