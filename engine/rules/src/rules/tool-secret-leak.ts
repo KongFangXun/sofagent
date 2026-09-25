@@ -6,7 +6,11 @@
 // ============================================================
 
 import type { ToolRule, ToolCallContext, InterceptVerdict } from '../types';
-import { SECRET_PATTERNS, stripDataUris } from '@sofagent/core';
+import { SECRET_PATTERNS, stripDataUris, ruleDefinition } from '@sofagent/core';
+
+/** 共用规则定义（@sofagent/core 单一事实源——与 audit A2 同一套定义） */
+const A2_DEF = ruleDefinition('A2')!;
+
 /**
  * 从 tool call args 中提取所有字符串值（递归）
  */
@@ -28,7 +32,7 @@ function extractStrings(args: Record<string, unknown>): string[] {
  */
 export const toolSecretLeak: ToolRule = {
   name: 'tool-secret-leak',
-  number: 2,
+  number: A2_DEF.number,
   ruleClass: '业务底线',
   ruleType: 'tool',
 

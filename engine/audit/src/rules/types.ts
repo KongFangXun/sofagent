@@ -7,6 +7,9 @@
 import type { DiffFile } from '@sofagent/core';
 import type { LogEntry } from '@sofagent/core';
 import type { AuditConfig } from '@sofagent/core';
+// v1.5.3 第一章：ruleType 由单值字面量扩为共用联合类型（@sofagent/core 单一事实源）——
+// 两套规则引擎（tool-level / git-diff）共用同一套规则定义，触发时机类型同源。
+import type { RuleType } from '@sofagent/core';
 
 /**
  * 证据模式——规则依赖的输入来源
@@ -241,8 +244,10 @@ export interface Rule {
    * 新增规则只需在此填 priority，runner.ts 自动按组执行，无需双注册。
    */
   priority?: 'critical' | 'warning' | 'crutch' | 'extended';
-  /** v1.3.0 (交付 7)：双规则统一——'diff' = 提交时扫 git diff */
-  ruleType: 'diff';
+  /** v1.3.0 (交付 7)：双规则统一——'diff' = 提交时扫 git diff；
+   *  v1.5.3 第一章：由单值字面量扩为共用联合类型 {@link RuleType}，
+   *  与 tool-level 引擎（engine/rules）同源——两引擎 import 同一套规则定义。 */
+  ruleType: RuleType;
   /**
    * v1.4.0 交付四①（规则即测试 · execpolicy 启发）：
    * 命中/放行示例——进 acceptance 自动回归，规则对不对可自动化验证。

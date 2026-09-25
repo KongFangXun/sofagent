@@ -1,0 +1,48 @@
+{
+  "generatedFor": "v1.5.3 D1 双规则引擎统一回归锁",
+  "note": "两套规则引擎（tool-level / git-diff）重叠规则（A1/A2/A9）对同一 fixture 的判定快照。本文件由重构前（统一前）代码固化，重构后必须 diff=0——证明统一过程零行为漂移。生成/刷新：cd engine/audit && SOFAGENT_SNAPSHOT_OUT=<path> npx vitest run src/__tests__/rules-unified.test.ts",
+  "cases": [
+    {
+      "rule": "A1",
+      "id": "A1 .env 命中",
+      "tool": "FAIL",
+      "diff": "FAIL"
+    },
+    {
+      "rule": "A1",
+      "id": "A1 env.example.ts 不误报",
+      "tool": "PASS",
+      "diff": "PASS"
+    },
+    {
+      "rule": "A2",
+      "id": "A2 AWS key 命中",
+      "tool": "FAIL",
+      "diff": "FAIL"
+    },
+    {
+      "rule": "A2",
+      "id": "A2 sk- key 命中",
+      "tool": "FAIL",
+      "diff": "FAIL"
+    },
+    {
+      "rule": "A2",
+      "id": "A2 占位符不误报",
+      "tool": "PASS",
+      "diff": "PASS"
+    },
+    {
+      "rule": "A9",
+      "id": "A9 注入命中",
+      "tool": "FAIL",
+      "diff": "FAIL"
+    },
+    {
+      "rule": "A9",
+      "id": "A9 普通文本不误报",
+      "tool": "PASS",
+      "diff": "PASS"
+    }
+  ]
+}

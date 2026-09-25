@@ -1,7 +1,11 @@
 // ============================================================
 // types.ts · P3 编排模块内嵌——tool call 拦截器类型定义
 // v1.5.2：从 audit 规则抽出为纯函数，零 fs/git 依赖
+// v1.5.3 第一章：ruleType 由单值字面量扩为共用联合类型（@sofagent/core
+//   单一事实源）——与 git-diff 引擎（engine/audit）同源，两引擎共用同一套规则定义。
 // ============================================================
+
+import type { RuleType } from '@sofagent/core';
 
 /** 规则等级——与 audit 的 RuleClass 对齐 */
 export type RuleClass = '业务底线' | '质量拐杖' | '效率';
@@ -56,8 +60,10 @@ export interface ToolRule {
   number: number;
   /** 规则等级 */
   ruleClass: RuleClass;
-  /** v1.3.0 (交付 7)：双规则统一——'tool' = 运行时拦截工具调用 */
-  ruleType: 'tool';
+  /** v1.3.0 (交付 7)：双规则统一——'tool' = 运行时拦截工具调用；
+   *  v1.5.3 第一章：由单值字面量扩为共用联合类型 {@link RuleType}，
+   *  与 git-diff 引擎（engine/audit）同源——两引擎 import 同一套规则定义。 */
+  ruleType: RuleType;
   /** v1.3.0 (交付 10 MA7)：规则「为什么」记忆 namespace——提取规则触发上下文时按此分组 */
   whyMemoryNamespace?: string;
   /**

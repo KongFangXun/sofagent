@@ -24,6 +24,14 @@
 // v1.2.5: 扩展为全规则共享库——新增 REDACTION_PATTERNS / DOMAIN_WHITELIST / DANGEROUS_SCRIPT_CMDS
 /* @public */ export { SECRET_PATTERNS, REDACTION_PATTERNS, DOMAIN_WHITELIST, DANGEROUS_SCRIPT_CMDS, DATA_URI_PATTERN, stripDataUris } from './shared/secret-patterns';
 
+// ── v1.5.3 第一章：跨引擎规则定义 / 规则触发时机类型 / tool 引擎规则正则单一事实源 ──
+// tool-level（调用前拦截）与 git-diff（提交后审计）两套引擎 import 同一来源——
+// 规则身份（id/number/ruleTypes）与 tool 侧检测正则收敛于此（非鸭子类型对齐）。
+/* @internal */ export type { RuleType } from './shared/rule-types';
+/* @internal */ export { RULE_DEFINITIONS, ruleDefinition } from './shared/rule-definitions';
+/* @internal */ export type { RuleDefinition } from './shared/rule-definitions';
+/* @internal */ export { SENSITIVE_FILE_PATH_PATTERNS, TOOL_INJECTION_PATTERNS } from './shared/rule-patterns';
+
 // ── v1.2.5 §3.1: Agent 身份码轻量版 → v1.3.1 交付 6 Ed25519 完整版 ──
 /* @public */ export {
   generateAgentIdentity,

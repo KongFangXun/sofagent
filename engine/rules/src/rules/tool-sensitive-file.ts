@@ -4,28 +4,11 @@
 // ============================================================
 
 import type { ToolRule, ToolCallContext, InterceptVerdict } from '../types';
+import { SENSITIVE_FILE_PATH_PATTERNS, ruleDefinition } from '@sofagent/core';
 
-/** 敏感文件路径模式（与 audit rule-a1 取并集统一） */
-const SENSITIVE_PATTERNS: RegExp[] = [
-  /\.env[\w.-]*$/i,            // .env, .env.local, .env.production, .envrc 等
-  /\.sofagent\/config/i,
-  /\.sofagent\/knowledge/i,
-  /\.sofagent\/audit/i,
-  /\.sofagent\/think/i,
-  /\/\.ssh\//i,
-  /\/\.gnupg\//i,
-  /\.pem$/i,
-  /\.key$/i,
-  /\.pfx$/i,                   // *.pfx（与 audit rule-a1 对齐）
-  /\.p12$/i,                   // *.p12（与 audit rule-a1 对齐）
-  /id_rsa/i,
-  /id_ed25519/i,
-  /\.kube\/config/i,
-  /\.docker\/config/i,
-  /credentials/i,
-  /\.npmrc$/i,
-  /\.pypirc$/i,
-];
+/** 共用规则定义（@sofagent/core 单一事实源——与 audit A1 同一套定义） */
+const A1_DEF = ruleDefinition('A1')!;
+
 
 /** 路径类字段名匹配（仅这些 key 的值才当作文件路径扫描） */
 const PATH_LIKE_KEY = /path|file|dir|folder|source|dest|target/i;
@@ -72,7 +55,7 @@ function extractFilePaths(args: Record<string, unknown>): string[] {
  */
 export const toolSensitiveFile: ToolRule = {
   name: 'tool-sensitive-file',
-  number: 1,
+  number: A1_DEF.number,
   ruleClass: '业务底线',
   ruleType: 'tool',
 
@@ -87,7 +70,7 @@ export const toolSensitiveFile: ToolRule = {
         hits.push(`${filePath}（可疑同形字文件名）`);
         continue;
       }
-      for (const pattern of SENSITIVE_PATTERNS) {
+      for (const pattern of SENSITIVE_FILE_PATH_PATTERNS) {
         if (pattern.test(filePath)) {
           hits.push(filePath);
           break;
