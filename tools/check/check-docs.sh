@@ -86,7 +86,14 @@ echo "=== 1b. 全仓相对路径死链扫描（维度 306）==="
 # 排除项说明：
 #   - 本段是"全仓死链扫描"（阻断），排除的是【不产出文档链接的目录】：
 #     node_modules/.workbuddy/.sofagent/（非文档）、docs/changelog（历史冻结）、
-#     docs/archive + FORGE/archive（归档·冻结历史，改由下方"归档区告警扫描"非阻断覆盖）、commercial（商务）
+#     docs/archive + FORGE/archive（归档·冻结历史）、SKILL/harness（模板含运行时动态路径占位）、
+#     commercial（商务）
+#   - 🔴 排除面 ≠ 无覆盖：**凡被本段排除的文档目录，一律由下方「排除面告警扫描」（非阻断）
+#     接手**——「排除」只应意味着「不阻断」，不应意味着「没人查」。docs/changelog 此前既不在
+#     阻断面也不在告警面，是纯盲区：实测其内积压 10 处「相对路径级数写错」的死链（跨
+#     v1.4 / v1.5 / v1.9 / v2.0 与 releasing SOP，含近期新写入的内容）。其中 8 处落在未发版
+#     文件、已修；**余 2 处落在已发版 v1.4.5（冻结区，按「已发版 changelog 不回改」纪律保留）**。
+#     ⇒ 故「排除面死链」长期稳定报 2 处属**已知冻结残留**，非新回归；**数字 >2 即为新引入**。
 #   - 🔴 v1.2.5 P0-13/P0-14：docs/evidence 不再排除！此前 evidence/ 的 12 条死链
 #     因排除而漏检（假绿根因之一）。evidence/ 是核心证据文档，链接必须纳入检查。
 #   - SKILL/harness 排除：harness 模板含运行时动态路径占位（非真实链接）
@@ -117,9 +124,12 @@ function scan(files) {
   for (const mdfile of files) {
     let inFence = false;
     const lines = fs.readFileSync(mdfile, "utf-8").split("\n");
-    for (const line of lines) {
-      if (/^\s*```|^\s*~~~/.test(line)) { inFence = !inFence; continue; }
+    for (const raw of lines) {
+      if (/^\s*```|^\s*~~~/.test(raw)) { inFence = !inFence; continue; }
       if (inFence) continue;
+      // 内联代码壳（反引号）与围栏同义：其内是示例文本、不是真链接，剥除后再匹配——
+      // 否则 SOP 中 `contains("](./docs/changelog/")` 这类断言字符串会被误报为死链（实测假阳）。
+      const line = raw.replace(/`[^`]*`/g, "");
       const matches = line.match(/\]\(([^)]+)\)/g) || [];
       for (const m of matches) {
         const target = m.slice(2, -1);
@@ -127,6 +137,10 @@ function scan(files) {
         const pathPart = target.split("#")[0];
         if (!pathPart) continue;
         if (/:\/\//.test(pathPart) || /\/vX\.Y/.test(pathPart) || /vX\.Y\.Z/.test(pathPart) || /vX\.Y\.md/.test(pathPart)) continue;
+        // 发布体尾链豁免：changelog 里的「详细开发日志」尾链按**仓库根**书写（GitHub Release
+        // body 约定，仓内点击本不可达——releasing SOP 已注明），形如 ./docs/changelog/vX.Y/vX.Y.Z.md。
+        // 仅豁免这一精确形态；其余 ./docs/... 与 ../ 层级写错照常判定。
+        if (/^\.\/docs\/changelog\/v\d+\.\d+\/v\d+\.\d+\.\d+\.md$/.test(pathPart)) continue;
         const resolved0 = pathPart.startsWith("/") ? "." + pathPart : path.join(path.dirname(mdfile), pathPart);
         const resolved = path.resolve(resolved0.replace(/\/+$/, ""));
         if (!fs.existsSync(resolved)) dead.push("  " + mdfile + ": " + target);
@@ -138,22 +152,25 @@ function scan(files) {
 const mainFiles = [];
 walk(".", mainFiles, EXCLUDE);
 const mainDead = scan(mainFiles);
-// 归档区扫描用去掉了 archive 排除项的规则集——否则 walk 起点 docs/archive 自身会被排除
-const ARCHIVE_EXCLUDE = EXCLUDE.filter(re => !re.source.includes("archive"));
-const archiveFiles = [];
-for (const d of ["docs/archive", "FORGE/archive"]) { if (fs.existsSync(d)) walk(d, archiveFiles, ARCHIVE_EXCLUDE); }
-const archiveDead = scan(archiveFiles);
-process.stdout.write(JSON.stringify({ mainDead, archiveDead }));
+// 排除面告警扫描（非阻断）：凡被 EXCLUDE 排除的**文档**目录一律在此接手——"排除"只应
+// 意味着"不阻断"，不应意味着"没人查"。规则集 = 把能匹配到告警根的正则整条剔掉，
+// 否则 walk 起点自身会被自己的排除项挡住（原实现只 filter 掉 archive 一词，泛化于此）。
+const WARN_DIRS = ["docs/changelog", "docs/archive", "SKILL/harness", "FORGE/archive", "commercial"];
+const WARN_EXCLUDE = EXCLUDE.filter(re => !WARN_DIRS.some(d => re.test(d + "/")));
+const excludedFiles = [];
+for (const d of WARN_DIRS) { if (fs.existsSync(d)) walk(d, excludedFiles, WARN_EXCLUDE); }
+const excludedDead = scan(excludedFiles);
+process.stdout.write(JSON.stringify({ mainDead, excludedDead }));
 ' 2>/dev/null || echo '{"parseError":true}')
 # parseError 标记：node 扫描器自身崩溃时不得伪造空结果（空结果=0 死链=假绿——
 # run-10 教训家族：检查器故障必须显式 FAIL，不能静默降级为「全绿」）
 DEAD_LINKS=$(node -e "const d=JSON.parse(process.argv[1]);if(d.parseError)process.exit(1);console.log(d.mainDead.length)" "$DEAD_SCAN" 2>/dev/null || echo "SCAN_FAIL")
-ARCHIVE_DEAD=$(node -e "const d=JSON.parse(process.argv[1]);if(d.parseError)process.exit(1);console.log(d.archiveDead.length)" "$DEAD_SCAN" 2>/dev/null || echo "SCAN_FAIL")
-if [ "$DEAD_LINKS" = "SCAN_FAIL" ] || [ "$ARCHIVE_DEAD" = "SCAN_FAIL" ]; then
+EXCLUDED_DEAD=$(node -e "const d=JSON.parse(process.argv[1]);if(d.parseError)process.exit(1);console.log(d.excludedDead.length)" "$DEAD_SCAN" 2>/dev/null || echo "SCAN_FAIL")
+if [ "$DEAD_LINKS" = "SCAN_FAIL" ] || [ "$EXCLUDED_DEAD" = "SCAN_FAIL" ]; then
   ASSERTS=$((ASSERTS + 1)); echo "  ❌ 死链扫描器自身故障（node 输出不可解析）——结果不可信，按失败处理"
   ERRORS=$((ERRORS + 1))
   DEAD_LINKS=0
-  ARCHIVE_DEAD=0
+  EXCLUDED_DEAD=0
 fi
 DEAD_DETAIL=$(node -e "const d=JSON.parse(process.argv[1]);console.log(d.mainDead.join('\n'))" "$DEAD_SCAN" 2>/dev/null)
 
@@ -166,13 +183,16 @@ else
   echo "  全仓相对路径死链: 0"
 fi
 
-# 归档区告警扫描（非阻断）——docs/archive + FORGE/archive 是冻结历史，链接腐烂不阻断发版，
-# 但必须可见。v1.2.5 教训：archive 排除 = 死链盲区（planning 文件指向已删的 ROADMAP 锚点
-# CI 永远抓不到）。此处只告警不计 ERRORS，保持归档冻结性的同时消除盲区。
-if [ "${ARCHIVE_DEAD:-0}" -gt 0 ]; then
-  echo "  ⚠ 归档区死链: ${ARCHIVE_DEAD} 处（冻结历史，不阻断发版，仅供参考）"
+# 排除面告警扫描（非阻断）——凡被 §1b 主扫描排除的**文档目录**一律在此接手：链接腐烂
+# 在冻结/模板面往往不是「要不要修」而是「能不能修」（冻结区不得回改），故降为可见告警
+# 而非阻断；但必须**带明细**可见（只报总数等于让人无从处置）。不计 ERRORS。
+# 反例纪律：排除的理由只能是「不产出文档链接」（如 node_modules）或「不可回改」（冻结区），
+# 不能是「没人查」——新增排除项时必须同步登记进 WARN_DIRS，否则又造一个盲区。
+if [ "${EXCLUDED_DEAD:-0}" -gt 0 ]; then
+  echo "  ⚠ 排除面死链: ${EXCLUDED_DEAD} 处（冻结/模板面，不阻断发版，明细如下）"
+  node -e "const d=JSON.parse(process.argv[1]);console.log(d.excludedDead.slice(0,10).join('\n'))" "$DEAD_SCAN" 2>/dev/null || true
 else
-  echo "  归档区死链: 0"
+  echo "  排除面死链: 0"
 fi
 
 echo ""
