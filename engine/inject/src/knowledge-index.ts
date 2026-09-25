@@ -173,7 +173,10 @@ export function formatKnowledgeIndex(entries: KnowledgeIndexEntry[], maxEntries 
     if (seen.has(entry.fileName)) continue;
     seen.add(entry.fileName);
     const kindLabel = entry.kind === 'shared' ? '共享' : entry.kind === 'federation' ? '联邦' : '本机';
-    lines.push(`- ${entry.fileName}（${kindLabel}）：${entry.summary}`);
+    // F-10：索引 summary 源自文件内容（联邦=不可信面）——闭合标签同款转义防逃逸
+    // （口径与 index.ts 热点全文包裹处一致，双侧同改纪律）。
+    const safeSummary = entry.summary.replace(/<\/s*untrusteds*>/gi, '&lt;/untrusted&gt;');
+    lines.push(`- ${entry.fileName}（${kindLabel}）：${safeSummary}`);
   }
   return lines.join('\n');
 }

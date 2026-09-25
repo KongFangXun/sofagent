@@ -258,9 +258,16 @@ function listCustomOverrides(dir: string, maxFiles = 4): string[] {
     content = content.slice(0, 2000); // 每篇截取前 2000 字符（保持现有行为）
     if (!content) continue;
     // 联邦来源强制 <untrusted> 包裹（prompt 注入防线层 1，与 trust 分级联动）
+    // F-10：闭合标签转义防逃逸——联邦 peer 返回的内容含 </untrusted> 即可提前
+    // 闭合包裹边界，把后续注入内容以「可信区」身份送进 prompt。
+    // ⚠️ 转义口径与 @sofagent/core 的 wrapUntrusted()（prompt-sanitizer.ts）逐字
+    // 对齐（同一正则、同一替换串）；**不直接 import 它**是因为分层裁定：inject 是
+    // L0 零依赖层（dependency-direction.yml「全仓仅 inject 为零依赖」），inject→core
+    // 会破坏该分层。两处必须同步改（对齐 check-home-resolution-parity 的「双侧同改」
+    // 纪律；架构裁定收敛后应合并为单一实现）。
     knowledgeParts.push(
       entry.kind === 'federation'
-        ? `<untrusted source="federation">\n${content}\n</untrusted>`
+        ? `<untrusted source="federation">\n${content.replace(/<\/\s*untrusted\s*>/gi, '&lt;/untrusted&gt;')}\n</untrusted>`
         : content,
     );
   }
