@@ -294,7 +294,12 @@ _ledger_scanface() {
 _ledger_assert() {
   local _L="$1" _name _cnt _sf _refs _ratio _sfdisp _why
   _name=$(basename "${_L}")
-  _cnt=$(_ledger_count "${_L}"); [ -z "${_cnt}" ] && _cnt="?"
+  _cnt=$(_ledger_count "${_L}")
+  # 非数字一律折叠为「?」（走下方「结构不可解析」违规分支）——堵「算术比较失败的静默放行」：
+  # `[ "$_cnt" -ge "$_sf" ]` 在 _cnt 非数字时 bash 报 `integer expression expected` 返回非零，
+  # 被 `&&` 短路 ⇒ 不记 VIOL（fail-open）。本段契约是「不能证明即违规」，故非可证数字 = 不可解析。
+  # 空值同归一（覆盖原 `[ -z ] && _cnt=?` 空值判定）。
+  case "${_cnt}" in ''|*[!0-9]*) _cnt="?" ;; esac
   _sf=$(_ledger_scanface "${_L}")
   # 非孤儿：至少一个 tools/check/ 脚本（.sh/.mjs）引用台账文件名。
   # 排除本脚本自身——④c 段逐条列出全部台账文件名，若纳入会让断言恒真（自证循环）。
