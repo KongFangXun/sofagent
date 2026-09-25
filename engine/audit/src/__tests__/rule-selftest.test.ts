@@ -86,7 +86,7 @@ describe('D2 · 引擎默认装载点——注册表构建即断言（正样例�
     }
   });
 
-  it('6 条可执行规则：match 必命中 / notMatch 必不命中（checkExamplesBehavior 零违规）', () => {
+  it('可执行规则（EXECUTABLE_IDS 全集）：match 必命中 / notMatch 必不命中（checkExamplesBehavior 零违规）', () => {
     for (const id of EXECUTABLE_IDS) {
       const r = ruleById(id);
       expect(r.examplesExecutable, `${id} 应声明 examplesExecutable`).toBe(true);
@@ -191,7 +191,16 @@ describe('D2 · 多规则裁决——取最严（FAIL > WARN > PASS）+ 全部�
   it('仅 WARN → WARN；全 PASS → PASS', () => {
     expect(strictestVerdict([mk('A1', 'PASS', []), mk('A2', 'WARN', ['w'])]).status).toBe('WARN');
     expect(strictestVerdict([mk('A1', 'PASS', [])]).status).toBe('PASS');
-    expect(strictestVerdict([]).status).toBe('PASS');
+  });
+
+  it('空集 / 全 SKIPPED ⇒ SKIPPED（未执行 ≠ 通过；杜绝假绿）', () => {
+    // 空集：一条规则都没有 ⇒ 无判定产出
+    expect(strictestVerdict([]).status).toBe('SKIPPED');
+    expect(strictestVerdict([]).matches).toEqual([]);
+    // 全 SKIPPED：规则在但都被跳过 ⇒ 同样无判定产出
+    expect(strictestVerdict([mk('A1', 'SKIPPED', [])]).status).toBe('SKIPPED');
+    // 混合：有一条真产出（PASS）即不再 SKIPPED
+    expect(strictestVerdict([mk('A1', 'SKIPPED', []), mk('A2', 'PASS', [])]).status).toBe('PASS');
   });
 
   it('乱序稳定：交换入参顺序，最严结果不变', () => {
@@ -201,8 +210,8 @@ describe('D2 · 多规则裁决——取最严（FAIL > WARN > PASS）+ 全部�
     expect(new Set(a.matches.map((m) => m.id))).toEqual(new Set(b.matches.map((m) => m.id)));
   });
 
-  it('SKIPPED 不参与裁决（未执行 ≠ 命中/放行）', () => {
-    expect(strictestVerdict([mk('A1', 'SKIPPED', [])]).status).toBe('PASS');
+  it('SKIPPED 不参与裁决（未执行 ≠ 命中/放行；全 SKIPPED 归 SKIPPED 非 PASS）', () => {
+    expect(strictestVerdict([mk('A1', 'SKIPPED', [])]).status).toBe('SKIPPED');
     expect(strictestVerdict([mk('A1', 'SKIPPED', [])]).matches).toEqual([]);
   });
 });

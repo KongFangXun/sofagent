@@ -26,6 +26,12 @@ import type { AuditContext } from '../rules/types';
 const HERE = dirname(fileURLToPath(import.meta.url));
 /** 已落盘的回归快照（统一前固化；重构后 diff 必须为 0） */
 const SNAPSHOT_PATH = join(HERE, '..', '..', '..', '..', 'docs', 'evidence', 'v1.5.3-rule-verdict-snapshot.json');
+/** 快照顶层标注（生成器**必须**产出——否则文档中的生成命令无法逐字节复现提交件） */
+const SNAPSHOT_GENERATED_FOR = 'v1.5.3 D1 双规则引擎统一回归锁';
+const SNAPSHOT_NOTE =
+  '两套规则引擎（tool-level / git-diff）重叠规则（A1/A2/A9）对同一 fixture 的判定快照。' +
+  '本文件由重构前（统一前）代码固化，重构后必须 diff=0——证明统一过程零行为漂移。' +
+  '生成/刷新：cd engine/audit && SOFAGENT_SNAPSHOT_OUT=<path> npx vitest run src/__tests__/rules-unified.test.ts';
 
 /** 按 id 取 audit（git-diff）规则 */
 function auditRule(id: string) {
@@ -92,7 +98,7 @@ describe('D1 · 双规则引擎统一——重叠规则行为一致性回归锁'
     // 生成/刷新快照模式
     const out = process.env.SOFAGENT_SNAPSHOT_OUT;
     if (out) {
-      writeFileSync(out, JSON.stringify({ generatedFor: 'v1.5.3 D1 双规则引擎统一回归锁', cases }, null, 2) + '\n', 'utf-8');
+      writeFileSync(out, JSON.stringify({ generatedFor: SNAPSHOT_GENERATED_FOR, note: SNAPSHOT_NOTE, cases }, null, 2) + '\n', 'utf-8');
       return;
     }
 

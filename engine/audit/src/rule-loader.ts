@@ -16,7 +16,17 @@
 // 接入点：① 引擎默认装载点（rules/index.ts 装载注册表时）；② `--ruleset-path`
 //   / `--ruleset` 加载入口（index.ts 主流程，JSON 规则集）。
 //
-// 边界：本模块是叶子——只依赖 ./rules/types 与 ./ruleset-loader 的类型，无循环。
+// ⚠️ 覆盖边界（诚实披露 · 禁静默——本仓「静默即缺陷」纪律）：
+//   24/24 条规则 examples **过 schema 强制**（非空 + 无矛盾）；
+//   其中 **5 条**（A1/A2/A9/A20/A23，均为纯函数 scan）标 `examplesExecutable`，
+//   加载时逐条做**行为执行断言**；**其余 19 条**样例（描述性训练样本，非可执行夹具）
+//   的**机器可验证性未覆盖**——只过 schema，行为侧不执行（写错这 19 条的样例不会被本
+//   loader 捕获）。理由：可执行断言要求 scan 为**纯函数**（确定性、不读 cwd/fs/git）；
+//   A18 等 scan 调 git / 读运行环境，标可执行会让加载断言随运行目录抖动（本版实测拒载）。
+//   扩行为覆盖 = 把这些规则的样例改造成可执行夹具（后续批次），非本版范围。
+//
+// 边界：本模块是叶子——只**类型**依赖 ./rules/types 与 ./ruleset-loader；运行时
+//   仅依赖 ./ruleset-loader 的 compilePattern（样例执行断言的 pattern 编译单源）；无循环。
 // ============================================================
 
 import type { AuditContext, Rule, RuleCheck } from './rules/types';
@@ -80,6 +90,18 @@ export class RuleLoadError extends Error {
 /** 是否非空字符串数组（schema 判据单源） */
 function isNonEmptyStringArray(v: unknown): v is string[] {
   return Array.isArray(v) && v.length > 0 && v.every((s) => typeof s === 'string' && s.length > 0);
+}
+
+/**
+ * 违规摘要——把 `violations[]` 压成**单行可定位**文本塞进用户可见错误消息
+ * （规则 id + 违规样例摘要）。不爆栈：最多列 6 条，其余折叠为「…（共 N 项）」。
+ *
+ * 此前只报计数（「1 项违规」）——用户看到拒载却不知是哪条规则、哪条样例，可定位性差。
+ */
+function summarizeViolations(violations: string[]): string {
+  const MAX = 6;
+  const head = violations.slice(0, MAX).join('；');
+  return violations.length > MAX ? `${head}；…（共 ${violations.length} 项）` : head;
 }
 
 /**
@@ -192,7 +214,7 @@ export function loadAuditRules(rules: Rule[]): RuleLoadReport {
 
   if (violations.length > 0) {
     throw new RuleLoadError(
-      `审计规则集加载被拒（fail-closed · ${violations.length} 项违规）：样例 schema/矛盾/执行断言未通过`,
+      `审计规则集加载被拒（fail-closed · ${violations.length} 项违规）：${summarizeViolations(violations)}`,
       violations,
     );
   }
@@ -207,13 +229,16 @@ export function loadAuditRules(rules: Rule[]): RuleLoadReport {
 // 一条输入可能同时命中 forbidden / warn / allow 多档规则，最终裁决取最严档
 // （FAIL > WARN > PASS），并保留**全部命中明细**（不只最严那条）供报告层呈现。
 // 乱序稳定性：结果只依赖各条 status 的严重度序，与入参顺序无关（同级取先出现者）。
-// SKIPPED 不参与裁决（未执行 ≠ 命中或放行）。
+//
+// 🔴 「未执行 ≠ 通过」：空集 / 全部 SKIPPED 时**没有任何规则产出判定**，
+//    返回独立档 **SKIPPED**（≠ PASS）——否则「一条规则都没跑」与「全部通过」
+//    在裁决层不可区分（假绿面）。
 
-/** 裁决档位——FAIL(最严) > WARN > PASS */
-export type Verdict = 'FAIL' | 'WARN' | 'PASS';
+/** 裁决档位——FAIL(最严) > WARN > PASS；**SKIPPED** = 无规则产出判定（空集 / 全跳过，≠ PASS） */
+export type Verdict = 'FAIL' | 'WARN' | 'PASS' | 'SKIPPED';
 
-/** 严重度序（取最严用；SKIPPED 不入表 = 不参与裁决） */
-const VERDICT_RANK: Record<Verdict, number> = { FAIL: 2, WARN: 1, PASS: 0 };
+/** 严重度序（取最严用；SKIPPED 不在表内 = 不参与严重度比较） */
+const VERDICT_RANK: Record<'FAIL' | 'WARN' | 'PASS', number> = { FAIL: 2, WARN: 1, PASS: 0 };
 
 /** 单条命中明细（供报告层逐条渲染） */
 export interface MatchDetail {
@@ -227,7 +252,11 @@ export interface MatchDetail {
 
 /** 多规则裁决结果 */
 export interface StrictestResult {
-  /** 取最严后的整体裁决档位 */
+  /**
+   * 取最严后的整体裁决档位。
+   * - FAIL / WARN / PASS：至少有一条规则产出判定，取其中最严者；
+   * - SKIPPED：**无任何规则产出判定**（空集 / 全 SKIPPED）——与 PASS（全部通过）语义严格区分。
+   */
   status: Verdict;
   /** 全部命中（非 PASS、非 SKIPPED）明细，按入参顺序 */
   matches: MatchDetail[];
@@ -237,20 +266,24 @@ export interface StrictestResult {
  * 多规则裁决——取最严（FAIL > WARN > PASS）+ 全部命中明细。
  *
  * @param checks 规则检查结果数组（可能含 PASS / WARN / FAIL / SKIPPED）
- * @returns 最严档位 + 全部命中明细（PASS/SKIPPED 不入明细）
+ * @returns 最严档位 + 全部命中明细（PASS/SKIPPED 不入明细）。
+ *   无任何规则产出判定（空集 / 全 SKIPPED）时 status = **SKIPPED**（≠ PASS）。
  */
 export function strictestVerdict(checks: RuleCheck[]): StrictestResult {
-  let status: Verdict = 'PASS';
+  let ranked: 'FAIL' | 'WARN' | 'PASS' = 'PASS';
+  /** 是否至少有一条规则的判定被「真实产出」（PASS/WARN/FAIL 皆算；SKIPPED 不算） */
+  let evaluated = false;
   const matches: MatchDetail[] = [];
   for (const c of checks) {
     const s = c.status;
+    if (s === 'SKIPPED') continue; // 未执行 —— 既非命中亦非放行，不参与裁决也不计入「已产出」
+    evaluated = true;
     if (s === 'FAIL' || s === 'WARN') {
       matches.push({ id: c.id ?? c.name, name: c.name, status: s, details: c.details ?? [] });
-      if (VERDICT_RANK[s] > VERDICT_RANK[status]) status = s;
+      if (VERDICT_RANK[s] > VERDICT_RANK[ranked]) ranked = s;
     }
-    // PASS / SKIPPED 不参与裁决（SKIPPED = 未执行，既非命中亦非放行）
   }
-  return { status, matches };
+  return { status: evaluated ? ranked : 'SKIPPED', matches };
 }
 
 // ============================================================
@@ -299,7 +332,7 @@ export function validateRulesetExamples(ruleset: Ruleset): void {
 
   if (violations.length > 0) {
     throw new RuleLoadError(
-      `规则集 "${ruleset.name}" 加载被拒（fail-closed · ${violations.length} 项样例违规）`,
+      `规则集 "${ruleset.name}" 加载被拒（fail-closed · ${violations.length} 项样例违规）：${summarizeViolations(violations)}`,
       violations,
     );
   }
