@@ -45,22 +45,30 @@ fi
 if command -v git >/dev/null 2>&1; then
   _REPO_TOP=$(git rev-parse --show-toplevel 2>/dev/null || true)
 fi
-if [ -n "${SOFAGENT_AUDIT_ENTRY:-}" ]; then
-  if [ ! -f "$SOFAGENT_AUDIT_ENTRY" ]; then
-    echo "❌ SOFAGENT_AUDIT_ENTRY 指向的入口不存在: $SOFAGENT_AUDIT_ENTRY"
-    echo "   （显式注入 fail-loud：不静默回退，避免被测对象与预期不符）"
-    exit 1
-  fi
-  AUDIT_CMD=(node "$SOFAGENT_AUDIT_ENTRY")
-elif [ -n "${_REPO_TOP:-}" ] && [ -f "$_REPO_TOP/engine/audit/dist/index.js" ]; then
-  AUDIT_CMD=(node "$_REPO_TOP/engine/audit/dist/index.js")
-elif [ -f "engine/audit/dist/index.js" ]; then
-  # 🔴 保留「相对 CWD」这一环是**契约要求**（v1.4.8 回归教训）：单测在测试仓里建"迷你 dist"，
-  # 靠 `cwd: repoDir` 下的相对路径命中；且 CI 里 `git rev-parse --show-toplevel` 可能失败
-  # （实测 CI 报 `Command failed: git rev-parse --git-dir` ⇒ `_REPO_TOP` 为空），
-  # 此时必须能落到本分支，否则会一路退到全局包/静默退出（CI 5 例失败的真因）。
-  AUDIT_CMD=(node "engine/audit/dist/index.js")
-else
+# F-28 辅助：dist 聚合哈希内联计算（算法与 tools/audit-dist-hash.mjs 逐字一致——
+# walk 收集 dist/**/*.js → 按相对路径排序 → 每文件「rel\0sha256」→ \1 连接 → sha256）。
+# 为什么内联：原实现经 DIST_HASH_SCRIPT 相对路径读**被审仓**的 tools/ 脚本——被审仓
+# 可投毒该脚本使「哈希不匹配」永假（校验器本身是被审对象可控的）。内联后 hook 自带
+# 算法，被审仓内任何文件都不参与校验面。stdout = 64 位 sha256；dist 不存在输出空。
+_aggregate_dist_hash() { # $1 = dist 目录绝对路径
+  node -e '
+const {createHash}=require("crypto"),{readFileSync,readdirSync,statSync}=require("fs"),{join,relative,sep}=require("path");
+const distRoot=process.argv[1];
+let ok=false; try{ok=statSync(distRoot).isDirectory()}catch(x){}
+if(!ok){process.exit(0)}
+const out=[];
+(function walk(d){for(const e of readdirSync(d,{withFileTypes:true})){const p=join(d,e.name); if(e.isDirectory())walk(p); else if(e.isFile()&&e.name.endsWith(".js"))out.push(p);}})(distRoot);
+const files=out.map(f=>({rel:relative(distRoot,f).split(sep).join("/"),abs:f})).sort((a,b)=>a.rel<b.rel?-1:a.rel>b.rel?1:0);
+if(files.length===0){process.exit(0)}
+const inputs=files.map(f=>f.rel+"\u0000"+createHash("sha256").update(readFileSync(f.abs)).digest("hex"));
+process.stdout.write(createHash("sha256").update(inputs.join("\u0001"),"utf8").digest("hex"));
+' "$1" 2>/dev/null
+}
+
+# F-28 信任根修复辅助：全局安装态解析（原 else 分支整体提为函数——repo-local
+# 指纹不匹配时也要能落到这条路，且不能复制两份）。
+# 返回：解析成功置 AUDIT_CMD 并做全局基准校验（失败 exit 1）；解析失败 exit 1。
+resolve_global_audit() {
   # v1.4.8 F-15 补（验收实测修正三处）：① 解析目标是**包名** `@sofagent/audit`——
   # bin 名 `sofagent-audit` 不是包名，用它 require.resolve 必然 MODULE_NOT_FOUND
   # （全局安装场景 hook 全面误拦 + 完整性校验被静默跳过）；② require.resolve 默认
@@ -68,31 +76,18 @@ else
   # （execPath 推导 lib/node_modules + `npm root -g` 兜底，两条均不走 PATH，
   # 不重开 command -v 劫持面）；③ 解析得的 main 是库入口 public-api.js，须从
   # 包根推导 CLI 入口 dist/index.js 再执行（hook 要完整 CLI 而非库 API）。
-  # 🔴 v1.5.0 TASK-10: 删除无 paths 的裸首试 require.resolve('@sofagent/audit')——
-  # 裸解析从被审仓库根出发沿目录树找 node_modules，被审仓内若被投放
-  # node_modules/@sofagent/audit/（gitignored、Agent 可写、不进 git diff）即被
-  # 命中，冒牌包被当作审计引擎执行（劫持面）。现只走显式全局根限定解析
-  # （execPath 推导 + npm root -g），被审仓库内 node_modules 不再进入解析域。
+  # 🔴 v1.5.0 TASK-10: 只走显式全局根限定解析（execPath 推导 + npm root -g），
+  # 被审仓库内 node_modules 不进入解析域（防投放冒牌包）。
   RESOLVED_ENTRY=$(node -e "try{const p=require('path');let e=null;const r=[p.resolve(p.dirname(process.execPath),'..','lib','node_modules')];try{r.push(require('child_process').execSync('npm root -g',{encoding:'utf8',stdio:['ignore','pipe','ignore']}).trim())}catch(x){};for(const q of r){try{e=require.resolve('@sofagent/audit',{paths:[q]});break}catch(x){}};if(e)process.stdout.write(p.join(p.dirname(p.dirname(e)),'dist','index.js'))}catch(x){}" 2>/dev/null)
   if [ -n "$RESOLVED_ENTRY" ] && [ -f "$RESOLVED_ENTRY" ]; then
-    # v1.5.0 TASK-10: 非开发仓路径（全局解析分支）纳入聚合哈希校验——
-    # 此前 P1-A2 只覆盖 _REPO_TOP 开发仓路径，全局入口完全在防线外。
-    # v1.5.2 修正（口径错配假阳性）：本分支与开发仓分支**算的是两个不同对象**
-    #   （本分支 = 全局包 dist，开发仓分支 = 本仓 dist），原先却共用同一个基准文件
-    #   audit-dist-hash.txt——而该基准由 audit-baseline-sync.sh 按**本仓口径**写入。
-    #   后果：只要「全局包 dist ≠ 本仓 dist」（开发机常态；且 worktree 无本地 dist 时
-    #   必然走到本分支），提交即被判「可能被投毒」拦死——文案指向投毒，实为口径错配。
-    #   修正：本分支改用独立基准 audit-global-dist-hash.txt，由
-    #   `bash tools/audit-baseline-sync.sh --global` 生成；两处各读各的，互不污染。
-    # 基准缺失 = 校验形同虚设，不静默放行（对齐 P1-A3 fail-loud）：报错须指向生成命令。
+    # v1.5.0 TASK-10: 全局分支聚合哈希校验（独立基准 audit-global-dist-hash.txt，
+    # 由 bash tools/audit-baseline-sync.sh --global 生成，与本仓口径互不污染）。
     _RESOLVED_ROOT=$(dirname "$(dirname "$RESOLVED_ENTRY")")
     SOFAGENT_HOME="${SOFAGENT_HOME:-$HOME/.sofagent}"
     _GLOBAL_HASH_RECORD="$SOFAGENT_HOME/internal/audit-global-dist-hash.txt"
-    _GLOBAL_HASH_SCRIPT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)/tools/audit-dist-hash.mjs"
-    _GLOBAL_HASH=""
-    if [ -f "$_GLOBAL_HASH_SCRIPT" ]; then
-      _GLOBAL_HASH=$(node "$_GLOBAL_HASH_SCRIPT" "$_RESOLVED_ROOT" 2>/dev/null)
-    fi
+    # F-28：全局分支哈希同样内联（原 _GLOBAL_HASH_SCRIPT 经被审仓 git-root 相对路径
+    # 取 tools/ 脚本——同病：校验器被审对象可控）。全局包根下直接就是 dist/。
+    _GLOBAL_HASH=$(_aggregate_dist_hash "$_RESOLVED_ROOT/dist")
     if [ -n "$_GLOBAL_HASH" ]; then
       if [ ! -f "$_GLOBAL_HASH_RECORD" ]; then
         echo "🔴 [sofagent] 全局审计引擎基准缺失——本地全局包的完整性无从比对"
@@ -107,14 +102,49 @@ else
         exit 1
       fi
     fi
-    # 哈希脚本缺失（非开发仓环境）时降级放行——被审仓内无法计算聚合哈希，
-    # 防线退化为「全局根限定解析」本身（不解析被审仓 node_modules，冒牌包不可达）。
     AUDIT_CMD=(node "$RESOLVED_ENTRY")
   else
     echo "❌ sofagent-audit 未安装，审计未运行"
     echo "   请运行: npm install -g @sofagent/audit"
     exit 1
   fi
+}
+
+if [ -n "${SOFAGENT_AUDIT_ENTRY:-}" ]; then
+  if [ ! -f "$SOFAGENT_AUDIT_ENTRY" ]; then
+    echo "❌ SOFAGENT_AUDIT_ENTRY 指向的入口不存在: $SOFAGENT_AUDIT_ENTRY"
+    echo "   （显式注入 fail-loud：不静默回退，避免被测对象与预期不符）"
+    exit 1
+  fi
+  AUDIT_CMD=(node "$SOFAGENT_AUDIT_ENTRY")
+elif [ -n "${_REPO_TOP:-}" ] && [ -f "$_REPO_TOP/engine/audit/dist/index.js" ]; then
+  # F-28 信任根修复：repo-local 分支此前零校验——被审仓库自带 engine/audit/dist
+  # 即被执行（恶意仓一处放置 = 每次 commit 以受害者身份执行攻击者代码，红队
+  # /tmp 隔离仓端到端实测全通）。现加本仓指纹校验（只读判定，禁执行被审仓代码）：
+  # 顶层 package.json name = sofagent-monorepo 且 engine/audit/package.json
+  # name = @sofagent/audit。不匹配 → 告警并走全局安装态（resolve_global_audit）。
+  _REPO_IS_SOFA=0
+  if [ -f "$_REPO_TOP/package.json" ] && [ -f "$_REPO_TOP/engine/audit/package.json" ]; then
+    _TOP_NAME=$(node -e "try{process.stdout.write(require(process.argv[1]).name||'')}catch{}" "$_REPO_TOP/package.json" 2>/dev/null)
+    _AUD_NAME=$(node -e "try{process.stdout.write(require(process.argv[1]).name||'')}catch{}" "$_REPO_TOP/engine/audit/package.json" 2>/dev/null)
+    if [ "$_TOP_NAME" = "sofagent-monorepo" ] && [ "$_AUD_NAME" = "@sofagent/audit" ]; then
+      _REPO_IS_SOFA=1
+    fi
+  fi
+  if [ "$_REPO_IS_SOFA" -eq 1 ]; then
+    AUDIT_CMD=(node "$_REPO_TOP/engine/audit/dist/index.js")
+  else
+    echo "⚠️ [sofagent] 仓库自带 engine/audit 非本仓发行物，已忽略（完整性校验走全局安装态）"
+    resolve_global_audit
+  fi
+elif [ -f "engine/audit/dist/index.js" ]; then
+  # 🔴 保留「相对 CWD」这一环是**契约要求**（v1.4.8 回归教训）：单测在测试仓里建"迷你 dist"，
+  # 靠 `cwd: repoDir` 下的相对路径命中；且 CI 里 `git rev-parse --show-toplevel` 可能失败
+  # （实测 CI 报 `Command failed: git rev-parse --git-dir` ⇒ `_REPO_TOP` 为空），
+  # 此时必须能落到本分支，否则会一路退到全局包/静默退出（CI 5 例失败的真因）。
+  AUDIT_CMD=(node "engine/audit/dist/index.js")
+else
+  resolve_global_audit
 fi
 
 # 2.1 P1-A2: dist 完整性校验——防止本地覆写 dist 致审计失效
@@ -142,8 +172,9 @@ if [ -f "$_DIST_ROOT_FOR_HASH/engine/audit/dist/index.js" ]; then
   # index.js 哈希」读它，语义不能改（换成聚合会让它恒判不匹配），故本 hook 只在其
   # 缺失时补生成，不再用它做拦截判定。
   LEGACY_RECORD="$SOFAGENT_HOME/internal/audit-hash.txt"
-  DIST_HASH_SCRIPT="tools/audit-dist-hash.mjs"
-  CURRENT_HASH=$(node "$DIST_HASH_SCRIPT" "$(pwd)" 2>/dev/null)
+  # F-28：哈希计算内联（原 DIST_HASH_SCRIPT 相对路径读被审仓 tools/——被审仓可
+  # 投毒校验器本身）。对齐 _DIST_ROOT_FOR_HASH 定位（本仓或 CWD 兜底）。
+  CURRENT_HASH=$(_aggregate_dist_hash "$_DIST_ROOT_FOR_HASH/engine/audit/dist")
   # 兼容锚缺失时顺手补上——runDoctor 依赖它，补不上也只影响体检、不阻断本次提交
   if [ ! -f "$LEGACY_RECORD" ]; then
     node -e "const c=require('crypto'),f=require('fs');process.stdout.write(c.createHash('sha256').update(f.readFileSync('engine/audit/dist/index.js')).digest('hex'))" > "$LEGACY_RECORD" 2>/dev/null && chmod 600 "$LEGACY_RECORD" 2>/dev/null || true
@@ -152,18 +183,11 @@ if [ -f "$_DIST_ROOT_FOR_HASH/engine/audit/dist/index.js" ]; then
     # 算不出来 ≠ 一致。静默放行会让「完整性校验」变成摆设，必须让人看见没跑。
     echo "⚠️ [sofagent] dist 聚合哈希计算失败（$DIST_HASH_SCRIPT 缺失或 dist 为空）——本次完整性校验未执行"
   elif [ ! -f "$HASH_RECORD" ]; then
-    # 基准缺失 = 完整性校验形同虚设 → fail-closed：先补生成基准再放行本次，
-    # 让后续每次 commit 都有可比对的锚点（与 install.sh 首装生成策略闭环）
-    echo "⚠️ [sofagent] 审计模块 dist 基准缺失——正在补生成..."
-    mkdir -p "$SOFAGENT_HOME/internal"
-    if printf '%s\n' "$CURRENT_HASH" > "$HASH_RECORD" 2>/dev/null && [ -s "$HASH_RECORD" ]; then
-      chmod 600 "$HASH_RECORD" 2>/dev/null || true
-      echo "ℹ️ [sofagent] dist 基准已记录（后续 commit 将比对完整性）"
-    else
-      echo "🔴 [sofagent] dist 基准生成失败——无法保证审计模块未被替换，本次提交终止"
-      echo "   请运行: bash tools/audit-baseline-sync.sh"
-      exit 1
-    fi
+    # F-28：基准禁止自动落锚。原实现用「当前算出的哈希」自动写基准并放行——首提交
+    # 即把（可能已被污染的）dist 固化为合法基线，且与 SECURITY.md「基线缺失显性报错，
+    # 不再自动记录」的承诺直接冲突（该承诺原只覆盖 doctor 路径）。改为：告警 + 显式
+    # 指引 + 放行本次（首装后未建基线是正常态，不阻断提交；信任锚由显式命令建立）。
+    echo "⚠️ [sofagent] dist 基线缺失——本次完整性校验未执行。运行 sofagent-audit --doctor 或 bash tools/audit-baseline-sync.sh 显式建立信任锚"
   else
     RECORDED_HASH=$(cat "$HASH_RECORD" 2>/dev/null | tr -d '[:space:]')
 
