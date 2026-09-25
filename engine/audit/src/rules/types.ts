@@ -7,6 +7,9 @@
 import type { DiffFile } from '@sofagent/core';
 import type { LogEntry } from '@sofagent/core';
 import type { AuditConfig } from '@sofagent/core';
+// v1.5.3 第七章：审计范围语义一等公民化——规则输入面收口为显式 AuditScope 对象，
+// 规则从 scope 取输入、不再各自调 git（消灭「规则自己调 git 取错范围」整类 bug）。
+import type { AuditScope } from '../scope';
 // v1.5.3 第一章：ruleType 由单值字面量扩为共用联合类型（@sofagent/core 单一事实源）——
 // 两套规则引擎（tool-level / git-diff）共用同一套规则定义，触发时机类型同源。
 import type { RuleType } from '@sofagent/core';
@@ -174,6 +177,18 @@ export interface AuditContext {
   silent?: boolean;
   /** commit message（用于 E2/A5 规则） */
   commitMsg?: string;
+  /**
+   * v1.5.3 第七章：审计范围显式对象（AuditScope）——规则**唯一**的 git 输入面。
+   *
+   * 规则需要「范围 / 作者 / HEAD 基线 / commit message」等需触达 git 的输入时，
+   * 一律从本对象取（{@link AuditScope.commitMsg} / {@link AuditScope.actor} /
+   * {@link AuditScope.headTreeFiles}），**不得**自行 `execFileSync('git', …)`。
+   * 唯一构造器 = `scope.ts` 的 `createAuditScope`（构造点进审计留痕）。
+   *
+   * 缺省 `undefined`：向后兼容直调 `scanXxx(ctx)` 的旧路径——规则退化为纯 diff 判定
+   * （不触 git）。生产路径（runner / assembleCheck）恒附 scope。
+   */
+  scope?: AuditScope;
   /** .sofagent/config.yml 加载的审计配置（三级 fallback） */
   config?: AuditConfig;
   /** v1.0.9: 窗口内历史审计记录（A17 跨审计聚合用） */

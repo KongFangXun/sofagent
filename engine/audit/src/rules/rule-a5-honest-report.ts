@@ -3,9 +3,11 @@
 // 合并自旧 #10 如实汇报 + R5 占位 commit
 // commit message 是否为空 / 是否纯占位符（"fix"/"update"/"wip"）
 // v0.94：优先使用 ctx.commitMsg，为空时 fallback 到 git 读取（向后兼容）
+// v1.5.3 第七章（AuditScope）：git 读取不再由本规则发起——commit message 输入面
+// 收口到 `ctx.scope.commitMsg`（唯一 git 触达点 = scope.ts 的 createAuditScope），
+// 本规则零 git。无 scope 时退化为读 ctx.commitMsg（向后兼容直调 scanA5 的旧路径）。
 // ============================================================
 
-import { execFileSync } from 'child_process';
 import type { AuditContext, RuleScan, RuleStatus } from './types';
 
 const PLACEHOLDER_PATTERNS = [
@@ -20,20 +22,26 @@ export function scanA5(ctx: AuditContext): RuleScan {
   let status: RuleStatus = 'PASS';
   const details: string[] = [];
 
-  // 优先使用 ctx.commitMsg——只有当 ctx.commitMsg 为 undefined（未传入）时才 fallback 到 git
-  let message: string;
-  if (ctx.commitMsg !== undefined) {
-    message = ctx.commitMsg.trim();
-  } else {
-    // ctx.commitMsg 未传入，fallback 到 git 读取（向后兼容）
-    try {
-      message = execFileSync('git', ['log', '-1', '--pretty=%B'], { encoding: 'utf-8' }).trim();
-    } catch (err) {
+  // 输入面：scope（唯一取输入面）优先——scope 已在构造期解析（显式注入优先，否则 git）；
+  // 无 scope（向后兼容旧路径）时退化为 ctx.commitMsg，不触 git。
+  let message: string | undefined;
+  if (ctx.scope) {
+    message = ctx.scope.commitMsg;
+    if (message === undefined) {
+      // scope 解析失败（git 不可用等）——与旧 fallback 失败同语义与措辞
       status = 'FAIL';
-      details.push('无法读取 commit message: ' + (err as Error).message);
+      details.push('无法读取 commit message: ' + (ctx.scope.commitMsgError ?? 'scope 未解析 commit message'));
+      return { status, details };
+    }
+  } else {
+    message = ctx.commitMsg;
+    if (message === undefined) {
+      // 无 scope 且未显式提供 commit message —— 无可用输入面（旧代码此处 fallback 到 git，
+      // 现已收口到 scope）：不判定，保持 PASS，不触 git。
       return { status, details };
     }
   }
+  message = message.trim();
 
   if (!message) {
     status = 'FAIL';

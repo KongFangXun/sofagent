@@ -12,6 +12,10 @@ import { loadHistory } from '../audit-history';
 import type { AuditHistoryEntry } from '../audit-history';
 import { defaultRules, rules } from './index';
 import { ruleCode, assembleCheck } from './assemble';
+// v1.5.3 第七章：审计范围语义一等公民化——本文件是执行漏斗（位置/对象签名 +
+// runRulesMonitored 两条入口均汇入），故为 **AuditScope 的唯一构造点**：由
+// createAuditScope 构造一次并挂到 ctx，规则自 scope 取输入（不再各自调 git）。
+import { createAuditScope, type AuditScope } from '../scope';
 // v1.5.3 第二章：多规则裁决「取最严」的单一事实源（rule-loader.strictestVerdict）。
 // 本章新增交付物此前零生产消费方（只活在被单测里 = 「已实现未接线」），
 // 本处把真实审计聚合路径（exitCode 归约）统一为对该函数的单点调用——
@@ -183,6 +187,8 @@ export function aggregateExitCode(results: RuleCheck[], strict?: boolean): numbe
  * @param silent 沉默模式
  * @param commitMsg commit message
  * @param config 审计配置
+ * @param diffRange v1.5.3 第七章：本次审计范围（'HEAD' / 'HEAD~1..HEAD' / 'A..B'）
+ * @param scope v1.5.3 第七章：显式注入 AuditScope（测试/上层预构造用）；未注入则本函数构造
  */
 export function runRules(
   diffFiles: DiffFile[],
@@ -196,11 +202,15 @@ export function runRules(
   gb48000?: boolean,
   quickMode?: boolean,
   ciMode?: boolean,
+  diffRange?: string,
+  scope?: AuditScope,
 ): AuditResult {
   // v1.1.0 修复(F2)：ctx.history 此前从未赋值，导致 A17 跨审计聚合（基于窗口内历史累计文件数）
   // 成为死代码。调用方显式传入 history 则优先；否则自动从审计历史加载。
   const auditHistory = history ?? loadHistory();
-  const ctx: AuditContext = { diffFiles, logEntries, task, strict, silent, commitMsg, config, history: auditHistory, quickMode, ciMode };
+  // v1.5.3 第七章：AuditScope 唯一构造点——注入优先，否则本处构造一次（惰性，未读取不触 git）。
+  const auditScope = scope ?? createAuditScope({ diffRange, commitMsg, task });
+  const ctx: AuditContext = { diffFiles, logEntries, task, strict, silent, commitMsg, scope: auditScope, config, history: auditHistory, quickMode, ciMode };
   const results: RuleCheck[] = [];
 
   // 根据 config.extendedRulesEnabled 决定运行哪些规则
@@ -379,11 +389,13 @@ export function runRulesMonitored(
   gb48000?: boolean,
   quickMode?: boolean,
   ciMode?: boolean,
+  diffRange?: string,
+  scope?: AuditScope,
 ): MonitoredAuditResult {
   const timeoutMs = auditTimeoutMs();
   const dm = new DegradationManager();
   const start = Date.now();
-  const first = runRules(diffFiles, logEntries, task, strict, silent, commitMsg, config, history, gb48000, quickMode, ciMode);
+  const first = runRules(diffFiles, logEntries, task, strict, silent, commitMsg, config, history, gb48000, quickMode, ciMode, diffRange, scope);
   const elapsed = Date.now() - start;
 
   if (!isAuditTimeout(null, elapsed, timeoutMs)) {
@@ -410,7 +422,7 @@ export function runRulesMonitored(
   // 等价于「只保留 number 1-11」）——带预算守卫，防降级重跑自身超时
   if (cap.coreOnly) {
     const retryStart = Date.now();
-    const minimalResult = runRules(diffFiles, [], task, strict, true, commitMsg, config, history, false, quickMode, ciMode);
+    const minimalResult = runRules(diffFiles, [], task, strict, true, commitMsg, config, history, false, quickMode, ciMode, diffRange, scope);
     const retryElapsed = Date.now() - retryStart;
     void retryElapsed; // 预算内完成即采纳；超预算也不再降（safe-stop 会停止审计，违背可用性优先）
     // 标注降级事实：核心规则之外的检查未执行（报告层据此提示审计覆盖收敛）

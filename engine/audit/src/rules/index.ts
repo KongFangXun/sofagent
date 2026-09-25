@@ -72,7 +72,7 @@ export const defaultRules: Rule[] = [
   { name: 'A10 不引毒源', id: 'A10', number: 10, evidenceMode: 'git-diff', ruleClass: '业务底线', priority: 'critical', ruleType: 'diff', scan: scanA10, examples: { match: ["依赖黑名单包名","typosquatting 仿冒包"], notMatch: ["npm 官方常用依赖"] }, justification: '依赖变更引入风险包（黑名单/仿冒/恶意 postinstall）' },
   { name: 'A11 不滥资源', id: 'A11', number: 11, evidenceMode: 'git-diff', ruleClass: '业务底线', priority: 'warning', ruleType: 'diff', scan: scanA11, examples: { match: ["单次删除 5000 行"], notMatch: ["正常重构删除 50 行"] }, justification: '资源滥用（超大文件/大行数变更）——疑似异常操作' },
   // A12-A17 为预留/扩展编号：A12（供应链安全）和 A13（文件权限）已永久跳号——v0.99.4 合并入 A11（不滥资源），语义有重叠但不完全等价，A12/A13 独立规则留待未来版本恢复；A14-A17 见 extendedRules
-  { name: 'A18 垃圾文件', id: 'A18', number: 18, evidenceMode: 'git-diff', ruleClass: '能力拐杖', priority: 'crutch', ruleType: 'diff', scan: scanA18, examples: { match: ["a.txt","test123.tmp"], notMatch: ["src/index.ts"] }, justification: '临时/垃圾文件被提交——污染仓库' }, // ⚠️ 不可执行样例：scanA18 依赖 cwd 的 git HEAD 基线（getTrackedFiles），加载期断言不确定——故不标 examplesExecutable
+  { name: 'A18 垃圾文件', id: 'A18', number: 18, evidenceMode: 'git-diff', ruleClass: '能力拐杖', priority: 'crutch', ruleType: 'diff', scan: scanA18, examples: { match: ["a.txt","test123.tmp"], notMatch: ["src/index.ts"] }, justification: '临时/垃圾文件被提交——污染仓库' }, // ⚠️ 不可执行样例：scanA18 依赖 cwd 的 HEAD 基线（v1.5.3 第七章起经 ctx.scope.headTreeFiles() 取，规则侧不再自调 git），加载期断言不确定——故不标 examplesExecutable
   // v1.2.5: A19 ruleClass 从 '业务底线' 改为 '工程规范'（msg 质量是工程规范，不是安全红线）
   { name: 'A19 msg 质量', id: 'A19', number: 19, evidenceMode: 'git-diff', ruleClass: '工程规范', priority: 'warning', ruleType: 'diff', scan: scanA19, examples: { match: ["commit message: update"], notMatch: ["fix: 修复登录页 500 错误"] }, justification: 'commit message 命中黑名单词或过短——无信息量' },
   // v1.2.5 新增：A20-A23 四条安全红线规则（必须在 defaultRules，不能放 extendedRules）
@@ -115,7 +115,8 @@ export const rules: Rule[] = [...defaultRules, ...extendedRules];
 // 报告导出供测试/CLI 核验覆盖面（loaded/executed/exempted）。
 // 25 条现状：全部带 match/notMatch 双夹具（存量，v1.4.0 起）；其中 5 条
 // （A1/A2/A9/A20/A23）样例为**可执行夹具**（examplesExecutable），逐条过执行断言。
-// ⚠️ 纯度纪律：加载期执行断言要求 scan 为**纯函数**——A18 的 scanA18 调 `git ls-tree HEAD`
-// （依赖 cwd 仓库基线）非纯，故**不标**可执行（否则加载断言随运行目录抖动，本版实测拒载）。
+// ⚠️ 纯度纪律：加载期执行断言要求 scan 为**纯函数**——A18 的 scanA18 经 `ctx.scope`
+// 取 HEAD 基线（`headTreeFiles()`，依赖 cwd 仓库基线而非规则自调 git）非纯，故**不标**
+// 可执行（否则加载断言随运行目录抖动，本版实测拒载）。
 // ============================================================
 export const RULE_LOAD_REPORT = loadAuditRules(rules);

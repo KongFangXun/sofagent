@@ -8,9 +8,10 @@
 // 真实文件（如依赖清单片段、约定俗成命名），仅当其已存在于 HEAD 基线时豁免
 // WARN；本次新 `git add` 混入、尚未进入 HEAD 的垃圾文件必须告警，避免索引
 // 命中吞掉本应告警的场景（正是 S51 漏报根因）。
+// v1.5.3 第七章（AuditScope）：HEAD 基线不再由本规则自调 git 读取——改从
+// `ctx.scope.headTreeFiles()` 取（唯一 git 触达点收口到 scope.ts），本规则零 git。
 // ============================================================
 import { basename } from 'path';
-import { execFileSync } from 'child_process';
 import type { AuditContext, RuleScan } from './types';
 /**
  * 垃圾文件名模式（basename 级匹配）：
@@ -39,30 +40,22 @@ function isExempt(filePath: string): boolean {
 }
 
 /**
- * v1.4.8（P0-02）: HEAD 提交树查询——返回 cwd 下 HEAD 基线中的文件集合（Set）。
- * 单次 `git ls-tree -r HEAD` 全量拉取（大仓库也是毫秒级读取，远快于按文件逐个
- * 查询）；非 git 仓库 / HEAD 未诞生（首次提交 unborn）/ git 不可用返回 null——
- * 豁免降级关闭，保持既有告警行为（fail-closed 于垃圾检测而非崩盘）：未进入
- * HEAD 的新混入文件一律告警。
+ * v1.5.3（第七章）：HEAD 豁免基线的**唯一取数口**——从 `ctx.scope` 取，规则侧零 git。
+ *
+ * 语义与旧 `getTrackedFiles()`（本文件内 `git ls-tree -r HEAD`）逐字一致，只是触达点
+ * 上移到 scope（由唯一构造器 `createAuditScope` 惰性 + 记忆化解析）。无 scope（向后
+ * 兼容直调 scanA18 的旧路径）时返回 null —— 不豁免，保持既有「垃圾候选一律告警」的
+ * fail-closed 行为（与旧代码「git 不可用 → 豁免降级关闭」同语义）。
  */
-function getTrackedFiles(): Set<string> | null {
-  try {
-    const out = execFileSync('git', ['ls-tree', '-r', '--name-only', 'HEAD'], {
-      encoding: 'utf-8',
-      stdio: ['pipe', 'pipe', 'pipe'],
-      maxBuffer: 64 * 1024 * 1024, // 百万级文件仓库兜底（默认 1MB 会炸）
-    });
-    return new Set(out.split('\n').filter(Boolean));
-  } catch {
-    return null;
-  }
+function resolveHeadBaseline(ctx: AuditContext): Set<string> | null {
+  return ctx.scope ? ctx.scope.headTreeFiles() : null;
 }
 
 /** 规则判定本体（v1.4.8 条目 7）：只产出 status/details——前置块由 assembleCheck 装配 */
 export function scanA18(ctx: AuditContext): RuleScan {
   const hits: string[] = [];
 
-  // v1.4.8（P0-02）: 惰性拉取 HEAD 基线——仅在存在候选垃圾文件时查询一次
+  // v1.4.8（P0-02）: 惰性取 HEAD 基线——仅在存在候选垃圾文件时经 scope 解析一次
   let tracked: Set<string> | null | undefined;
   for (const file of ctx.diffFiles) {
     // 豁免规则：正规测试文件/目录跳过
@@ -73,8 +66,9 @@ export function scanA18(ctx: AuditContext): RuleScan {
     for (const { regex, label } of JUNK_PATTERNS) {
       if (regex.test(name)) {
         // v1.4.8（P0-02）: 命中垃圾模式但已存在于 HEAD 基线（存量文件）→ 豁免。
-        // tracked === null（非 git 环境 / 首次提交 HEAD 未诞生）时不豁免，保持旧告警行为。
-        if (tracked === undefined) tracked = getTrackedFiles();
+        // tracked === null（非 git 环境 / 首次提交 HEAD 未诞生 / 无 scope）时不豁免，
+        // 保持旧告警行为。
+        if (tracked === undefined) tracked = resolveHeadBaseline(ctx);
         if (tracked !== null && tracked.has(file.path)) break;
         hits.push(`${file.path}（命中模式：${label}）`);
         matched = true;

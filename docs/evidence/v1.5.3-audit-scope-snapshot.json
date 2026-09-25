@@ -1,0 +1,148 @@
+{
+  "generatedFor": "v1.5.3 第七章·审计范围语义一等公民化（AuditScope）——重构前后判定一致性回归锁",
+  "note": "审计范围语义一等公民化（AuditScope）的重构前后一致性快照。第 1 份由重构前逻辑（A18 规则内自调 `git ls-tree -r HEAD` 取豁免基线 / A5 内自调 `git log -1` 取 commit message）在固定 cwd 仓库产出；第 2 份由重构后逻辑（规则侧零 git，输入恒经 ctx.scope）**以注入基线**复现——两份必须逐字节一致（diff=0）；证明「输入面收口到 AuditScope」零行为漂移。（快照为确定性夹具：scope 的 commitMsg/actor/headTreeFiles 与 history 全部注入/固定，输出与 cwd、真实 git 状态无关。）生成/刷新：cd engine/audit && SOFAGENT_SNAPSHOT_OUT=<path> npx vitest run src/__tests__/audit-scope.test.ts",
+  "result": {
+    "exitCode": 2,
+    "rules": [
+      {
+        "id": "A1",
+        "status": "PASS",
+        "details": []
+      },
+      {
+        "id": "A10",
+        "status": "PASS",
+        "details": []
+      },
+      {
+        "id": "A11",
+        "status": "PASS",
+        "details": []
+      },
+      {
+        "id": "A14",
+        "status": "PASS",
+        "details": [
+          "未找到 workflow.yml，跳过。"
+        ]
+      },
+      {
+        "id": "A15",
+        "status": "PASS",
+        "details": [
+          "未找到 workflow.yml 或 nodes 配置，跳过。"
+        ]
+      },
+      {
+        "id": "A16",
+        "status": "PASS",
+        "details": []
+      },
+      {
+        "id": "A17",
+        "status": "PASS",
+        "details": []
+      },
+      {
+        "id": "A18",
+        "status": "WARN",
+        "details": [
+          "检测到 1 个疑似垃圾文件：b.js（命中模式：单字母文件名）"
+        ]
+      },
+      {
+        "id": "A19",
+        "status": "PASS",
+        "details": []
+      },
+      {
+        "id": "A2",
+        "status": "PASS",
+        "details": []
+      },
+      {
+        "id": "A20",
+        "status": "PASS",
+        "details": []
+      },
+      {
+        "id": "A21",
+        "status": "PASS",
+        "details": []
+      },
+      {
+        "id": "A22",
+        "status": "PASS",
+        "details": []
+      },
+      {
+        "id": "A23",
+        "status": "PASS",
+        "details": []
+      },
+      {
+        "id": "A24",
+        "status": "FAIL",
+        "details": [
+          "交付物落点越界: a.txt; 交付物落点越界: notes.md。新增交付物（报告/文档/产物）须落在声明目录内——请改写到白名单目录：outputs/（或调整 A24.allowed_dirs 声明面）"
+        ]
+      },
+      {
+        "id": "A3",
+        "status": "WARN",
+        "details": [
+          "5/5 个文件不在任务描述 (\"fixture task\") 范围内: a.txt, b.js, src/index.ts 等"
+        ]
+      },
+      {
+        "id": "A4",
+        "status": "PASS",
+        "details": []
+      },
+      {
+        "id": "A5",
+        "status": "PASS",
+        "details": []
+      },
+      {
+        "id": "A6",
+        "status": "PASS",
+        "details": []
+      },
+      {
+        "id": "A7",
+        "status": "PASS",
+        "details": [
+          "⚠️ A7 silent: 无 Agent 日志，跳过「不存盲改」检查（CI/非交互环境预期行为）。"
+        ]
+      },
+      {
+        "id": "A8",
+        "status": "PASS",
+        "details": []
+      },
+      {
+        "id": "A9",
+        "status": "PASS",
+        "details": []
+      },
+      {
+        "id": "E1",
+        "status": "WARN",
+        "details": [
+          "src/ 下 1 个源码文件变更，但无测试文件 (*.test.ts/*.spec.js) 变更: src/index.ts"
+        ]
+      },
+      {
+        "id": "E2",
+        "status": "PASS",
+        "details": []
+      },
+      {
+        "id": "E4",
+        "status": "PASS",
+        "details": []
+      }
+    ]
+  }
+}

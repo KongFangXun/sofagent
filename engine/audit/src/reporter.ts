@@ -17,6 +17,7 @@ import type { DiffFile } from '@sofagent/core';
 import type { LogEntry } from '@sofagent/core';
 import type { AuditConfig } from '@sofagent/core';
 import type { AuditContext, RuleCheck } from './rules/types';
+import type { AuditScope } from './scope';
 import { defaultRules, extendedRules } from './rules';
 import type { AuditHistoryEntry } from './audit-history';
 import { runRules as runRulesWithFastFail } from './rules/runner';
@@ -87,6 +88,10 @@ export interface RunRulesOptions {
   gb48000?: boolean;
   /** v1.3.3 #8：quick 模式标记（cli-quick 零配置审计），A3 见到跳过越界检查 */
   quickMode?: boolean;
+  /** v1.5.3 第七章：本次审计范围（'HEAD' / 'HEAD~1..HEAD' / 'A..B'）——进 AuditScope */
+  diffRange?: string;
+  /** v1.5.3 第七章：显式注入 AuditScope（上层预构造 / 测试用）；未注入则由 runner 构造 */
+  scope?: AuditScope;
 }
 
 /**
@@ -108,10 +113,12 @@ export function runRules(
   history?: AuditHistoryEntry[],
   gb48000?: boolean,
   quickMode?: boolean,
+  diffRange?: string,
+  scope?: AuditScope,
 ): AuditResult {
   // 对象签名：解包后走同一实现（调用方不可能两套都传）
   if (Array.isArray(diffFilesOrOptions)) {
-    return runRulesWithFastFail(diffFilesOrOptions, logEntries ?? [], task, strict, silent, commitMsg, config, history, gb48000, quickMode);
+    return runRulesWithFastFail(diffFilesOrOptions, logEntries ?? [], task, strict, silent, commitMsg, config, history, gb48000, quickMode, undefined, diffRange, scope);
   }
   const opts = diffFilesOrOptions;
   return runRulesWithFastFail(
@@ -125,6 +132,9 @@ export function runRules(
     opts.history,
     opts.gb48000,
     opts.quickMode,
+    undefined,
+    opts.diffRange,
+    opts.scope,
   );
 }
 

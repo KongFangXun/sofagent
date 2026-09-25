@@ -644,6 +644,7 @@ export function runCliQuick(argv: string[]): number {
     silent: true,
     commitMsg,
     quickMode: true,
+    diffRange,
   });
 
   // 7. 格式化输出（v1.3.5 #6: 传入 diffRange 供 range 模式标题感知）
