@@ -249,10 +249,13 @@ fi
 #     豁免若把判定面吞干净，门禁的绿就是假的。两类假绿，各一条机械断言：
 #       ① 非孤儿——台账必须被 ≥1 个 tools/check/ 脚本消费（零引用 = 判定面从未通电）
 #       ② 非全覆盖——台账条目数 < 对应门禁扫描面（≥ = 判定面被豁免干净，100% 豁免）
+#     ② 的反面即「不能判定」：结构不可解析 / 扫描面不可得 ⇒ **记违规**（禁 fail-open——
+#       算不出来 ≠ 非全覆盖成立；本断言若在算不出来时放行，自身就是假绿第 N 形态）。
+#     唯一例外：条目数为 0 的空台账——0 不可能 ≥ 任何扫描面，天然非全覆盖（可证，非放行）。
 #     每条台账逐行打印「条目数 / 扫描面 / 比值」，让豁免可见、不静默。
 #     扫描面动态取自各门禁自身输出（防陈旧，不硬编码数字）；网络门禁 check-npm-claims
-#     不在 meta-guard 内触发——其台账为空（0 条），空台账无 100% 豁免风险。
-#     假绿探针：把任一台账条目数临时灌到 ≥ 扫描面 → 本段必红（验证记录见回报）。
+#     不在 meta-guard 内触发——其台账为空（0 条），走上述「空台账」例外。
+#     假绿探针（三条）：台账灌到 ≥ 扫描面 / 台账改非法 JSON / 扫描面抽取失败 → 本段必红。
 # ============================================================
 echo ""
 echo "── ④c 豁免台账自证（非孤儿 + 非全覆盖）──"
@@ -289,24 +292,32 @@ _ledger_scanface() {
   esac
 }
 _ledger_assert() {
-  local _L="$1" _name _cnt _sf _refs _ratio _sfdisp _bad
+  local _L="$1" _name _cnt _sf _refs _ratio _sfdisp _why
   _name=$(basename "${_L}")
   _cnt=$(_ledger_count "${_L}"); [ -z "${_cnt}" ] && _cnt="?"
   _sf=$(_ledger_scanface "${_L}")
   # 非孤儿：至少一个 tools/check/ 脚本（.sh/.mjs）引用台账文件名。
   # 排除本脚本自身——④c 段逐条列出全部台账文件名，若纳入会让断言恒真（自证循环）。
   _refs=$(grep -lF "${_name}" tools/check/*.sh tools/check/*.mjs 2>/dev/null | grep -vxF "${SELF}" | tr '\n' ',' | sed 's/,$//' || true)
-  _bad=""
-  [ -z "${_refs}" ] && _bad="${_bad}孤儿 "
-  if [ -n "${_sf}" ] && [ "${_sf}" -gt 0 ] 2>/dev/null && [ "${_cnt}" != "?" ]; then
+  _why=""; _sfdisp="-"; _ratio="-"
+  [ -z "${_refs}" ] && _why="${_why}孤儿台账（无 tools/check 脚本引用 ⇒ 判定面从未通电）|"
+  # 非全覆盖：不能判定即违规，禁 fail-open——「不能证明非全覆盖」绝不等于「非全覆盖成立」。
+  # 本断言的意义就是防「门禁形同虚设」，它自己若在算不出来时放行，等于开了同款静默降级口子。
+  if [ "${_cnt}" = "?" ]; then
+    _why="${_why}结构不可解析（台账 JSON 损坏/结构变更 ⇒ 无法证明非全覆盖 ⇒ 视为违规）|"
+  elif [ "${_cnt}" = "0" ]; then
+    # 空台账：0 条不可能 ≥ 任何扫描面 ⇒ 天然非全覆盖，无需扫描面即可证（非 fail-open，是可证非全覆盖）
+    _sfdisp="n/a（空台账）"; _ratio="0.00"
+  elif [ -z "${_sf}" ] || ! [ "${_sf}" -gt 0 ] 2>/dev/null; then
+    _why="${_why}扫描面不可得（上游门禁异常/输出契约变更 ⇒ 无法证明非全覆盖 ⇒ 视为违规）|"
+  else
     _ratio=$(awk "BEGIN{printf \"%.2f\", ${_cnt}/${_sf}}")
     _sfdisp="${_sf}"
-    [ "${_cnt}" -ge "${_sf}" ] && _bad="${_bad}全覆盖 "
-  else
-    _ratio="n/a"; _sfdisp="n/a"
+    [ "${_cnt}" -ge "${_sf}" ] && _why="${_why}全覆盖（条目数 ≥ 扫描面 ⇒ 判定面被豁免干净）|"
   fi
-  if [ -n "${_bad}" ]; then
-    echo "  ✗ ${_name}：${_cnt} 条 / 扫描面 ${_sfdisp}（比值 ${_ratio}）——${_bad}⇒ 门禁形同虚设"
+  _why="${_why%|}"
+  if [ -n "${_why}" ]; then
+    echo "  ✗ ${_name}：${_cnt} 条 / 扫描面 ${_sfdisp}（比值 ${_ratio}）——${_why}"
     VIOL=$((VIOL + 1)); LEDGER_FAIL=1
   else
     echo "  ✓ ${_name}：${_cnt} 条 / 扫描面 ${_sfdisp}（比值 ${_ratio}）· 引用 ${_refs}"
