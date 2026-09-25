@@ -39,7 +39,7 @@ export interface AuditConfig {
   testPatterns: string[];
   /** 「不改越界」阈值——不相关文件占比超过此比例时 WARN */
   carefulModifyThreshold: number;
-  /** 是否启用扩展规则（E1-E4 + A14-A17） */
+  /** 是否启用扩展规则（E1-E4 + A14-A17 + A24） */
   extendedRulesEnabled: boolean;
   /** 按规则名禁用——key 为 a1~a23/e1~e4，value 为 false 时禁用 */
   rules?: Record<string, boolean>;
@@ -58,6 +58,15 @@ export interface AuditConfig {
     enabled: boolean;
     bulk_threshold?: number;
     bulk_window_ms?: number;
+  };
+  /** v1.5.3 第三章: A24 交付物落点配置（opt-in fail-closed——白名单默认空 = 全不检，声明才启用） */
+  A24?: {
+    /** 是否启用（默认不启用；须同时声明非空 allowed_dirs） */
+    enabled: boolean;
+    /** 允许的交付目录白名单（**前缀匹配**）；默认空 = 全不检（不约束落点） */
+    allowed_dirs?: string[];
+    /** 交付物类扩展名（覆盖内置默认集；如 [".md", ".pdf", ".xlsx"]） */
+    deliverable_extensions?: string[];
   };
   /** v1.5.2 fresh-eyes（finding-13）: A2 内容扫描盲区处置——默认 "warn" 保持兼容（含 NUL 二进制极常见，默认 FAIL 会误报爆炸），"fail" 时盲区形态按 FAIL 阻断 */
   A2?: {
@@ -290,7 +299,7 @@ export function loadConfig(cwd?: string, strict?: boolean): AuditConfig {
 export function warnUnknownConfigKeys(auditObj: Record<string, unknown>, filePath: string): void {
   const knownKeys = new Set<string>([
     'lowRiskPatterns', 'testPatterns', 'carefulModifyThreshold',
-    'extendedRulesEnabled', 'rules', 'loopCheckMaxRounds', 'strict', 'A16', 'A17', 'A2',
+    'extendedRulesEnabled', 'rules', 'loopCheckMaxRounds', 'strict', 'A16', 'A17', 'A24', 'A2',
     'loop', 'webhook', 'toolGate', 'sanitizePatterns', 'memory_backends', 'memory_sync',
     'cost',
   ]);
@@ -435,7 +444,7 @@ function tryLoadYaml(filePath: string, strict?: boolean): Partial<AuditConfig> |
       // 这样 mergeWithDefaults 的 extendedRulesEnabled / rules / A16 / A17 等字段都能正常生效
       const topLevelAuditKeys: (keyof AuditConfig)[] = [
         'lowRiskPatterns', 'testPatterns', 'carefulModifyThreshold',
-        'extendedRulesEnabled', 'rules', 'loopCheckMaxRounds', 'strict', 'A16', 'A17', 'A2',
+        'extendedRulesEnabled', 'rules', 'loopCheckMaxRounds', 'strict', 'A16', 'A17', 'A24', 'A2',
         'loop', 'webhook', 'sanitizePatterns', 'memory_backends', 'memory_sync',
       ];
       const hasAny = topLevelAuditKeys.some(k => k in parsed);
@@ -591,7 +600,7 @@ function configHasRuleContent(parsed: Record<string, unknown>): boolean {
   const knownContentKeys = new Set<string>([
     // audit 段与顶层通用的规则字段
     'lowRiskPatterns', 'testPatterns', 'carefulModifyThreshold',
-    'extendedRulesEnabled', 'rules', 'loopCheckMaxRounds', 'strict', 'A16', 'A17', 'A2',
+    'extendedRulesEnabled', 'rules', 'loopCheckMaxRounds', 'strict', 'A16', 'A17', 'A24', 'A2',
     'loop', 'webhook', 'toolGate', 'sanitizePatterns', 'memory_backends', 'memory_sync',
     'cost',
     // 顶层包装节
@@ -677,6 +686,8 @@ function mergeWithDefaults(partial: Partial<AuditConfig>): AuditConfig {
     strict: partial.strict ?? false,
     A16: partial.A16,
     A17: partial.A17,
+    // v1.5.3 第三章: A24 交付物落点透传（knownKeys 契约——认识即透传）
+    A24: partial.A24,
     // v1.5.2 fresh-eyes（finding-13）: A2 盲区处置透传（knownKeys 契约——认识即透传）
     A2: partial.A2,
     // v1.1.5: loop 配置透传
@@ -756,7 +767,7 @@ function mergeWithDefaults(partial: Partial<AuditConfig>): AuditConfig {
       if (!knownKeys.has(key.toLowerCase())) {
         // v1.3.8 P1-B3：未知规则名 WARN 补 [sofagent] 产品前缀（console.warn 走 stderr）——
         // 此前无产品前缀；用户误配 a99 全绿零感知。
-        console.warn(`[sofagent] ⚠️ config.yml: 未知规则名 "${key}" → 已忽略（已知: a1-a11, a14-a23, e1-e4）——请检查拼写，误配将静默失效`);
+        console.warn(`[sofagent] ⚠️ config.yml: 未知规则名 "${key}" → 已忽略（已知: a1-a11, a14-a24, e1-e4）——请检查拼写，误配将静默失效`);
       }
     }
   }

@@ -13,7 +13,7 @@
 //   4. 密钥检测增强：A2 扩展——扫配置文件（不只 git diff）
 //   5. Shadow AI 发现：扫进程/配置/仓库发现未注册「影子 agent」
 //
-// 输出接入 24 规则同一审计出口：WARN/FAIL 语义一致，可被 --ruleset 豁免
+// 输出接入 25 规则同一审计出口：WARN/FAIL 语义一致，可被 --ruleset 豁免
 // ============================================================
 
 import { existsSync, readFileSync, readdirSync } from 'fs';
@@ -24,7 +24,7 @@ import { execSync } from 'child_process';
 export interface ShieldFinding {
   /** 扫描类别（五类之一） */
   category: 'mcp-risk' | 'hook-injection' | 'agent-config' | 'secret-enhanced' | 'shadow-ai';
-  /** 严重度（与 24 规则同语义） */
+  /** 严重度（与 25 规则同语义） */
   severity: 'FAIL' | 'WARN' | 'INFO';
   /** 目标（文件路径/进程名/端点名） */
   target: string;

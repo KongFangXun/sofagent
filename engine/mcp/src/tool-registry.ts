@@ -154,7 +154,7 @@ export type ToolHandler = (
 ) => ToolResult | ToolDispatchError | Promise<ToolResult | ToolDispatchError>;
 
 /**
- * 完整工具清单——107 个 tool（v1.5.2 章一/章二：audit_query 新增——审计数据只读查询（history 三维过滤 + decision 因果链，严格只读不写链）；ruleset_export 新增——规则集导出（24 条默认规则 + 已加载扩展 → 标准 JSON，与 --ruleset-path 加载格式同构双向可逆 + 内容指纹 + 审计留痕）（105→107）；v1.5.0 章八：trace_reconcile 新增——跨层证据对账（104→105：DSH trace vs git diff vs logs 三源比对四态判定 + 模型层回溯链 + 对账结果入 decision-log kind=COVERAGE）；v1.4.9 T7：router_session_push 新增——session 承接面（103→104 终值：97→104 = 批 1 +2、批 2 +2、批 3 +4、批 5 +1；router 伴生 exporter 推送入口，schema 校验 + 本地落盘 + HMAC 挂链 + usage 入 cost 台账）；v1.4.9 G9：device_register/device_list 新增——设备注册面（95→97，T1 设备身份验签 fail-closed + 清单在线态）；v1.4.7：data_push 新增——标准数据推送入口（94→95 终值）；contribution_query 新增——G4 绩效数据导出（93→94）；pr_submit/pr_review/pr_merge 三 tool 新增——G13 PR 生命周期（90→93）；onboard_prompt 新增——上岗 prompt 生成器（89→90）；workflow_gaps 新增——G2 能力缺口查询（88→89）；workflow_create/workflow_update/workflow_node_add/workflow_diff_preview 四 tool 新增——G14 workflow 对象化 CRUD（84→88）；v1.4.6：train_cloud 新增——83→84，云 VM 执行面控制工具；v1.4.5：train_serve/train_compliance/train_deliverable 三件齐——80→83，SKILL.md/ARCHITECTURE 等九处 SSOT 同步收口；v1.4.4：corpus_export 新增；v1.4.3：train_status/train_list/train_diagnose 新增；v1.4.2：fde_interview/fde_classify/fde_quantify/fde_derive/fde_distill/fde_deploy 六引擎 + train_doctor/train_dryrun/train_report 新增；v1.4.1：train_submit 新增；v1.4.0：cost_query + browser 4 新增；v1.3.9：worklog_query 新增；v1.3.6：workflow_submit/ontology_import/model_register/model_switch/model_unregister/train_budget/define_acceptance/check_acceptance；v1.3.5：run_ab_test/promote_ab/snapshot_list/snapshot_restore；v1.3.4：commons_publish/search/invoke/rate/retire/harvest_rule；不含 4 个 resource shortcut）
+ * 完整工具清单——107 个 tool（v1.5.2 章一/章二：audit_query 新增——审计数据只读查询（history 三维过滤 + decision 因果链，严格只读不写链）；ruleset_export 新增——规则集导出（25 条默认规则 + 已加载扩展 → 标准 JSON，与 --ruleset-path 加载格式同构双向可逆 + 内容指纹 + 审计留痕）（105→107）；v1.5.0 章八：trace_reconcile 新增——跨层证据对账（104→105：DSH trace vs git diff vs logs 三源比对四态判定 + 模型层回溯链 + 对账结果入 decision-log kind=COVERAGE）；v1.4.9 T7：router_session_push 新增——session 承接面（103→104 终值：97→104 = 批 1 +2、批 2 +2、批 3 +4、批 5 +1；router 伴生 exporter 推送入口，schema 校验 + 本地落盘 + HMAC 挂链 + usage 入 cost 台账）；v1.4.9 G9：device_register/device_list 新增——设备注册面（95→97，T1 设备身份验签 fail-closed + 清单在线态）；v1.4.7：data_push 新增——标准数据推送入口（94→95 终值）；contribution_query 新增——G4 绩效数据导出（93→94）；pr_submit/pr_review/pr_merge 三 tool 新增——G13 PR 生命周期（90→93）；onboard_prompt 新增——上岗 prompt 生成器（89→90）；workflow_gaps 新增——G2 能力缺口查询（88→89）；workflow_create/workflow_update/workflow_node_add/workflow_diff_preview 四 tool 新增——G14 workflow 对象化 CRUD（84→88）；v1.4.6：train_cloud 新增——83→84，云 VM 执行面控制工具；v1.4.5：train_serve/train_compliance/train_deliverable 三件齐——80→83，SKILL.md/ARCHITECTURE 等九处 SSOT 同步收口；v1.4.4：corpus_export 新增；v1.4.3：train_status/train_list/train_diagnose 新增；v1.4.2：fde_interview/fde_classify/fde_quantify/fde_derive/fde_distill/fde_deploy 六引擎 + train_doctor/train_dryrun/train_report 新增；v1.4.1：train_submit 新增；v1.4.0：cost_query + browser 4 新增；v1.3.9：worklog_query 新增；v1.3.6：workflow_submit/ontology_import/model_register/model_switch/model_unregister/train_budget/define_acceptance/check_acceptance；v1.3.5：run_ab_test/promote_ab/snapshot_list/snapshot_restore；v1.3.4：commons_publish/search/invoke/rate/retire/harvest_rule；不含 4 个 resource shortcut）
  */
 export const TOOLS: ToolDef[] = [
   {
@@ -245,7 +245,7 @@ export const TOOLS: ToolDef[] = [
   {
     name: 'run_audit',
     roles: ['audit'],
-    description: '对 git diff 运行全量审计（24 条规则），返回结构化审计报告。',
+    description: '对 git diff 运行全量审计（25 条规则），返回结构化审计报告。',
     inputSchema: {
       type: 'object',
       properties: {
@@ -1997,11 +1997,11 @@ export const TOOLS: ToolDef[] = [
     // 训练语料导出三件套（规则 + 方法论 + 样本）——训练信号机器可读化
     name: 'corpus_export',
     roles: ['ops'],
-    description: '训练语料导出三件套——规则（27 编号位含跳号占位 + reward_hint 骨架 + verifiers 三桶清单）+ FDE 方法论（锚点解析）+ 带标签审计样本（六源聚合 + 脱敏）。导出带版本号 + HMAC 签名，导出行为记 corpus_export 审计事件。',
+    description: '训练语料导出三件套——规则（28 编号位含跳号占位 + reward_hint 骨架 + verifiers 三桶清单）+ FDE 方法论（锚点解析）+ 带标签审计样本（六源聚合 + 脱敏）。导出带版本号 + HMAC 签名，导出行为记 corpus_export 审计事件。',
     inputSchema: {
       type: 'object',
       properties: {
-        scope: { type: 'string', enum: ['default', 'extended', 'all'], description: '规则导出范围（缺省 all = 27 编号位）' },
+        scope: { type: 'string', enum: ['default', 'extended', 'all'], description: '规则导出范围（缺省 all = 28 编号位）' },
         out_dir: { type: 'string', description: '输出目录（缺省 data/export/corpus/）' },
         data_dir: { type: 'string', description: '数据根目录（样本聚合源）' },
         rules_only: { type: 'boolean', description: '只导规则面（跳过样本/方法论）' },
@@ -2210,7 +2210,7 @@ export const TOOLS: ToolDef[] = [
     // v1.5.2 章二：规则集导出——默认规则 + 扩展规则 → 标准 JSON（导出格式即加载格式，双向可逆）
     name: 'ruleset_export',
     roles: ['audit'],
-    description: '规则集导出——24 条默认规则 + 已加载扩展规则导出为标准 JSON（与 --ruleset-path 加载格式同构，导出即加载格式、双向可逆），每条附训练消费元数据（rule_id / 检测意图 / 违规样例 / 严重级别）+ 规则集版本号 + 内容指纹（HMAC-SHA256），导出行为写审计留痕。边界：list_rules 只列规则清单、corpus_export 导出训练语料三件套——本 tool 导出「规则面标准 JSON」供第三方零转换消费。',
+    description: '规则集导出——25 条默认规则 + 已加载扩展规则导出为标准 JSON（与 --ruleset-path 加载格式同构，导出即加载格式、双向可逆），每条附训练消费元数据（rule_id / 检测意图 / 违规样例 / 严重级别）+ 规则集版本号 + 内容指纹（HMAC-SHA256），导出行为写审计留痕。边界：list_rules 只列规则清单、corpus_export 导出训练语料三件套——本 tool 导出「规则面标准 JSON」供第三方零转换消费。',
     inputSchema: {
       type: 'object',
       properties: {

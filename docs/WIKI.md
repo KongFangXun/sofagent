@@ -22,7 +22,7 @@
 > |---------|---------|------|------|
 > | 行业案例 / 研报数据 / 外部印证 | [VALIDATION](./VALIDATION.md) | 叙事·印证 | 案例不进 PHILOSOPHY——PHILOSOPHY 只引用结论（如「Harvey 筑起垂直壁垒」），数据与来源全在 VALIDATION |
 > | 产品结论 / 设计哲学 / 论证 | [PHILOSOPHY](./PHILOSOPHY.md) | 叙事·论证 | 结论自带的最小论证可以，行业案例展开留给 VALIDATION |
-> | 审计规则清单 / 安全边界 | [SECURITY](../SECURITY.md) | 参考 | 24 条规则完整清单只有 SECURITY 一处（SSOT），其他文档只引用不复制 |
+> | 审计规则清单 / 安全边界 | [SECURITY](../SECURITY.md) | 参考 | 25 条规则完整清单只有 SECURITY 一处（SSOT），其他文档只引用不复制 |
 > | 版本路线 / 排期 / 探索方向 | [ROADMAP](./ROADMAP.md) | 参考 | 已交付进「迭代历程」、已排期进「版本规划」、未排期进「探索方向」——三态不混写 |
 > | 版本变更记录（未发布版） | `docs/changelog/vX.Y/vX.Y.Z.md` | 历史 | 排期版日志不进主 [CHANGELOG](../CHANGELOG.md) 索引（纯已发布索引）；发布时才收编 |
 > | 架构决策 / 术语定义 / 数据流 | [ARCHITECTURE](./ARCHITECTURE.md) | 参考 | 行业对标委托 VALIDATION、规则清单委托 SECURITY、路线委托 ROADMAP |
@@ -103,7 +103,7 @@ graph TB
 
 | 你遇到的事 | sofagent 做什么 | 状态 |
 |------|------|:--:|
-| AI 改代码会不会把密钥/后门带上生产？ | 每次 commit 自动过 24 条安检，违规当场拦截（秒级、零配置） | ✅ |
+| AI 改代码会不会把密钥/后门带上生产？ | 每次 commit 自动过 25 条安检，违规当场拦截（秒级、零配置） | ✅ |
 | AI 搞砸了怎么办？ | 每次变更自动存快照，一键回到任意时点 | ✅ |
 | 不知道该在哪些环节上 AI？ | FDE 四阶段：梳理业务流 → 三问判定 → 算清每个节点值多少钱 | ✅ |
 | AI 不懂我们公司的规矩？ | 规则写成机器可判定文件注入（五平台挂载，DSH 档逐工具可拦） | ✅ |
@@ -131,7 +131,7 @@ graph TB
 | **本体图谱** | 机器读的语义图谱 = Ontology Graph——FDE 交付的企业全部业务节点和关联关系的全局拓扑（本体数据的图形化呈现） | [ARCHITECTURE §定义表](./ARCHITECTURE.md) |
 | **工作流** | 企业业务链路的完整流程 = Workflow，由业务节点（AI 节点 + Human 节点）交替组成 | [ARCHITECTURE §定义表](./ARCHITECTURE.md) |
 | **业务节点** | 工作流中的执行单元 = Node——AI 自动执行（Loop）或 Human 介入（审批/检查/兜底）；AI 节点 = 业务节点中经三问判定法识别为可 AI 化的部分 | [ARCHITECTURE §定义表](./ARCHITECTURE.md) |
-| **审计模块** | git diff 驱动，24 条规则（17 默认 + 7 扩展），活跃编号 A1-A11 + A14-A23 + E1/E2/E4（A12/A13/E3 已并入 A11，编号不再使用），每次 commit 自动跑 | [24 条完整清单（SECURITY SSOT）](../SECURITY.md#24-条审计规则完整清单文档级-ssot) |
+| **审计模块** | git diff 驱动，25 条规则（17 默认 + 8 扩展），活跃编号 A1-A11 + A14-A24 + E1/E2/E4（A12/A13/E3 已并入 A11，编号不再使用），每次 commit 自动跑 | [25 条完整清单（SECURITY SSOT）](../SECURITY.md#25-条审计规则完整清单文档级-ssot) |
 | **三层治理** | Ledger（原始数据）→ Views（派生视图）→ Policy（约束规则），单向派生、不可逆写 | [PHILOSOPHY §五](./PHILOSOPHY.md) |
 | **FORGE** | 自迭代工具链（内部工具，外部用户可忽略）——通过 Workflow 驱动 Agent 审查/修复/验证自己的代码，核心是 fresh-eyes-loop | [FORGE/README.md](../FORGE/README.md) |
 | **SKILL** | Agent 的行为约束文件系统——三层：SKILL.md（主入口）/ harness/（约束层）/ agents/（Sub Agent） | [SKILL/SKILL.md](../SKILL/SKILL.md) |
@@ -152,7 +152,7 @@ graph TB
 │  ┌─────────┬─────────┬─────────┬─────────┬─────────┐ │
 │  │ 注入能力 │ 审计能力 │ 回溯能力 │ 沉淀能力 │ 进化能力 │ │
 │  │ 约束注入链│ git diff │ HMAC 链 │知识蒸馏 │自迭代  │←约束层本体│
-│  │ SKILL加载│ 24条规则 │ 防篡改  │knowledge│sustain │（五能力）│
+│  │ SKILL加载│ 25条规则 │ 防篡改  │knowledge│sustain │（五能力）│
 │  └─────────┴─────────┴─────────┴─────────┴─────────┘ │
 │  分发形态：插件 · Skill · MCP · CLI · Dashboard    │
 │  方法论：FDE 四阶段（梳理→构建→部署→离场）         │
@@ -190,7 +190,7 @@ graph TB
 约束层（工作环境）       Graph（流程拓扑）         Loop（反馈改进）
 ┌─────────────────┐     ┌──────────────────┐      ┌─────────────────────┐
 │ 约束注入链 + 加载链│ ──→ │ 编排模块（内部）     │ ──→  │ FORGE（fresh-eyes +   │
-│ 审计能力（24规则）│     │ LangGraph ReactAgent│      │ release-gate-loop）+  │
+│ 审计能力（25规则）│     │ LangGraph ReactAgent│      │ release-gate-loop）+  │
 │ daemon（文件监控） │     │ 多Agent 任务拆解     │      │ sustain（进化能力）    │
 │ data/（状态持久） │     │                     │      │ eval 反馈闭环         │
 │ ToolGate（权限）  │     │                     │      │                      │
@@ -246,7 +246,7 @@ graph TB
 
 | 包 | 职责 |
 |----|------|
-| `engine/audit/` | @sofagent/audit — 审计模块（git diff + 24 条规则） |
+| `engine/audit/` | @sofagent/audit — 审计模块（git diff + 25 条规则） |
 | `engine/core/` | @sofagent/core — 核心类型、HMAC 工具、memory-contract |
 | `engine/orchestrator/` | @sofagent/orchestrator — LangGraph createReactAgent 编排 |
 | `engine/train/` | @sofagent/train — 后训模块（数据管道/训练编排/云端执行/eval 闭环） |
@@ -276,8 +276,8 @@ graph TB
 |----|-----|
 | 当前版本 | **v1.5.2**（2026-09-24，✅ 已发版 · 审计模块对外面与判定语义）· 上一版 v1.5.1（2026-09-22，✅ 已发版） |
 | 下一版 | **v1.5.3**（📋 规划中——双规则引擎统一等，以 [ROADMAP](./ROADMAP.md) 规划表为准） |
-| 测试覆盖 | 5360 测试 / 13 包（统计标准：`tools/check/test-count.sh` 实际执行的 workspace 包；实测见该脚本，声称数同步校验见 `tools/check/check-test-count.sh`。包数口径见下表注） |
-| 审计规则 | 24 条（17 默认 + 7 扩展），活跃编号 A1-A11 + A14-A23 + E1/E2/E4（A12/A13/E3 已并入 A11，编号不再使用），每次 commit 自动跑 |
+| 测试覆盖 | 5370 测试 / 13 包（统计标准：`tools/check/test-count.sh` 实际执行的 workspace 包；实测见该脚本，声称数同步校验见 `tools/check/check-test-count.sh`。包数口径见下表注） |
+| 审计规则 | 25 条（17 默认 + 8 扩展），活跃编号 A1-A11 + A14-A24 + E1/E2/E4（A12/A13/E3 已并入 A11，编号不再使用），每次 commit 自动跑 |
 | FORGE | fresh-eyes-loop + release-gate-loop 运行中 |
 | 数据目录 | **data/**（v1.2.1+ SSOT 运行时数据目录） |
 
@@ -346,7 +346,7 @@ graph TB
 | 团队批量部署 | [guides/team-deploy.md](./guides/team-deploy.md) |
 | 接入千问办公（QwenWork） | [guides/qwenwork-integration.md](./guides/qwenwork-integration.md)（MCP 确定可接 · Hook 拦截待实测） |
 | 了解多 Agent 团队协作协议 | [guides/team-collaboration-protocol.md](./guides/team-collaboration-protocol.md)（L2 协作底层协议 · v1.3.3） |
-| 节点级审计（DSH 事件流口径） | [guides/node-level-audit.md](./guides/node-level-audit.md)（24 条规则子集逐条判定） |
+| 节点级审计（DSH 事件流口径） | [guides/node-level-audit.md](./guides/node-level-audit.md)（25 条规则子集逐条判定） |
 | 运行测试 / 验证效果 | [guides/testing.md](./guides/testing.md) |
 | 开发/维护前端（Dashboard 等） | [guides/frontend-design-standard.md](./guides/frontend-design-standard.md)（设计标准 + 开发指南，改前端前必读） |
 | 在 DSH 中挂载 sofagent MCP | [guides/dsh-mcp-integration.md](./guides/dsh-mcp-integration.md)（v1.3.5 起 MCP 互通） |

@@ -31,7 +31,7 @@ metadata:
 | **③ Skill 自觉加载** | SKILL.md 随 Agent 调用注入 | **自觉（软约束）** | WorkBuddy / Codex / Claude |
 | **④ harness 代码级拼入** | `buildConstrainedSystemPrompt` 构建 system prompt | **强（代码保证）** | npm API 自建 Agent |
 
-> 约束注入的强度随形态递减，但**审计模块（git diff 24 规则）在所有形态一样硬**——约束是建议性的，审计是强制性的。
+> 约束注入的强度随形态递减，但**审计模块（git diff 25 规则）在所有形态一样硬**——约束是建议性的，审计是强制性的。
 
 ---
 
@@ -57,7 +57,7 @@ DSH 原生支持 **8 个生命周期 hook，全部为瀑布流（Waterfall）可
 **为什么 DSH 是主战场**：
 1. **它是 sofagent 自己的执行后端**——OpenClaw hook 依赖第三方平台暴露事件，DSH 是自建、可控、可扩展；
 2. **粒度更细**——`tools/pre-execute` 让审计从「提交时审计」升级为「运行时审计」（节点级审计 §2.6 前瞻的落点），这是 OpenClaw bootstrap 做不到的；
-3. **与策略同构**——DSH 的 `tools/pre-execute` 瀑布流 = sofagent 24 条审计规则的天然执行点，A2 密钥 / A9 注入可直接挂上。
+3. **与策略同构**——DSH 的 `tools/pre-execute` 瀑布流 = sofagent 25 条审计规则的天然执行点，A2 密钥 / A9 注入可直接挂上。
 
 ---
 
@@ -69,9 +69,9 @@ DSH 原生支持 **8 个生命周期 hook，全部为瀑布流（Waterfall）可
 
 | 宿主 | 约束注入 | 审计拦截 | 支持等级 |
 |------|---------|---------|:--:|
-| **DSH（DeepSeek Harness）** | **①** 生命周期 hook——`tools/pre-execute` 等 8 事件，**逐工具调用可拦** | 插件 `…-audit`：24 规则 + git diff，运行时拦截 | **完整** |
+| **DSH（DeepSeek Harness）** | **①** 生命周期 hook——`tools/pre-execute` 等 8 事件，**逐工具调用可拦** | 插件 `…-audit`：25 规则 + git diff，运行时拦截 | **完整** |
 | **OpenClaw** | **②** bootstrap hook（会话级注入）+ 插件 `…-inject` | 加载链 Hook + 插件 `…-audit`；另走 git hook 兜底 | **完整** |
-| **Claude Code** | **③** Skill 自觉加载 | 工具调用时机触发共享拦截脚本（`~/.claude/settings.json`）——**内容为提交级 24 规则，非调用级拦截** | 支持 |
+| **Claude Code** | **③** Skill 自觉加载 | 工具调用时机触发共享拦截脚本（`~/.claude/settings.json`）——**内容为提交级 25 规则，非调用级拦截** | 支持 |
 | **Cursor** | **③** Skill 自觉加载 + `.cursor/rules/sofagent.mdc` | 同上（`~/.cursor/hooks.json`） | 支持 |
 | **WorkBuddy** | **③** Skill 自觉加载 | 走 git hook（提交前） | 支持 |
 | **自建 Agent（npm API）** | **④** `@sofagent/inject` 的 `buildConstrainedSystemPrompt` 代码级拼入 | MCP `run_audit` / git hook | 支持 |
@@ -81,7 +81,7 @@ DSH 原生支持 **8 个生命周期 hook，全部为瀑布流（Waterfall）可
 
 > ⚠️ **别假设能力对齐**——同一套约束资产在不同宿主上的落地深度差一个量级：DSH 是**逐工具调用**，OpenClaw 是**每会话一次**，其余宿主是**Agent 自觉读 + 提交时兜底**。「sofagent 支持 X 平台」指的是约束资产在该平台可用，**不等于约束强度与其他平台相同**——跨宿主迁移、写集成文档、做能力声称前，先看目标宿主落在哪一档。
 >
-> 唯一在所有宿主上强度相同的是**审计**：git diff 24 条规则不依赖 Agent 配合，任何宿主下提交都拦得住。**约束是建议性的，审计是强制性的**——这也是「薄挂载」仍然可用的原因。
+> 唯一在所有宿主上强度相同的是**审计**：git diff 25 条规则不依赖 Agent 配合，任何宿主下提交都拦得住。**约束是建议性的，审计是强制性的**——这也是「薄挂载」仍然可用的原因。
 
 > 🔌 **Codex 生命周期 hook 是候选位，未交付**：Codex 的 hooks 复用 Claude Code 兼容协议——JSON in/out 命令行引擎（`ClaudeHooksEngine` + `CommandHookRuntime`），事件含 `pre-tool-use`（工具调用前拦截 + permission_mode，与 DSH `tools/pre-execute` 功能同构）/ `post-tool-use` / `permission-request` / `session-start` / `subagent-start` / `stop`，挂载点是 `.codex/hooks/` 下的 JSON 命令行 hook（仿本文件 OpenClaw 形态）。**协议可挂不等于已挂**：目前 `install.sh --platform codex` 只部署 `AGENTS.md` 挂载点，Codex plugin 家族属**拍板候选、排期待议**——上表按「未交付」登记。协议核验参考见 [v1.4.0 开发日志](https://github.com/KongFangXun/sofagent/blob/main/docs/changelog/v1.4/v1.4.0.md)。
 

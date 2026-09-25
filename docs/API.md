@@ -23,7 +23,7 @@
 |---|--------|------|------|---------|
 | 1 | **MCP tools** | stdio MCP server（install.sh 自动配置） | 本地进程（无需凭证） | Agent 调用审计/编排/训练/治理全部能力 |
 | 2 | **npm CLI** | `sofagent-audit` 等二进制 | 本地 | git hook / CI / 人工调用审计 |
-| 3 | **git hook** | `sofagent-audit --install-hook` | git 本地 | 提交前自动审计（24 条规则 + HMAC 链） |
+| 3 | **git hook** | `sofagent-audit --install-hook` | git 本地 | 提交前自动审计（25 条规则 + HMAC 链） |
 | 4 | **平台挂载** | GEMINI.md / .cursor/rules/sofagent.mdc / AGENTS.md | 平台加载链 | 平台 AI 助手直接引用约束 |
 | 5 | **Skill 分发** | ClawHub（`clawhub skill publish`）/ SkillHub | 平台账号 | SKILL/ 目录规则资产发布更新 |
 | 6 | **Webhook 推送** | 飞书/钉钉/企微 webhook URL | 签名 | 审计结果 PASS/WARN/FAIL 三态推送 |
@@ -57,16 +57,16 @@
 | `playwright_click` | browser | 浏览器点击——按 CSS 选择器点击元素。Playwright 不可用时降级。 |
 | `playwright_screenshot` | browser | 浏览器截图——截取当前页面，返回图片路径与字节数。 |
 | `playwright_assert` | browser | 浏览器断言——对页面执行断言（文本/元素存在性），返回 passed 与详情。 |
-| `run_audit` | audit | 对 git diff 运行全量审计（24 条规则），返回结构化审计报告。 |
+| `run_audit` | audit | 对 git diff 运行全量审计（25 条规则），返回结构化审计报告。 |
 | `audit_file` | audit | 单文件变更即时审计——Agent 编辑文件时调用，跑单文件适用规则，返回结构化结果（不阻断）。 |
 | `audit_data_change` | audit | 对知识库结构化数据变更跑数据审计（D1-D5）。 |
 | `audit_trail` | audit | 跨设备审计轨迹查询——按 agent_id 查完整轨迹（HMAC 验签）。 |
 | `data_push` | ops | 标准数据推送入口——企业存储按约定 schema 推送训练语料/知识数据，经分拣闸（敏感档标记）+ 合规闸（拦截违规）双闸入库，拒绝留痕进审计链。 |
-| `corpus_export` | ops | 训练语料导出三件套——规则（27 编号位含跳号占位 + reward_hint 骨架 + verifiers 三桶清单）+ FDE 方法论（锚点解析）+ 带标签审计样本（六源聚合 + 脱敏）。导出带版本号 + HMAC 签名，导出行为记 corpus_export 审计事件。 |
+| `corpus_export` | ops | 训练语料导出三件套——规则（28 编号位含跳号占位 + reward_hint 骨架 + verifiers 三桶清单）+ FDE 方法论（锚点解析）+ 带标签审计样本（六源聚合 + 脱敏）。导出带版本号 + HMAC 签名，导出行为记 corpus_export 审计事件。 |
 | `device_data_push` | ops | 数据上行通道（G11）：设备门禁 → 采集声明校验（默认空=不上行，opt-in）→ 脱敏 → AES-256-GCM 加密入队（WAL 暂存断网不丢，游标续传不重传已 ack 段）→ 审计留痕 + 计量进 worklog。原始数据不出设备。 |
 | `trace_reconcile` | ops, fde | 跨层证据对账（trace reconcile）：DSH session trace（Agent 自述）vs git diff（独立事实）vs logs 声明集三源比对——产出差异清单（漏报/幻觉动作/瞒报四态）+ 一致率；可选模型层回溯链（推理 → 模型版本 → train_job → datasetHash）。对账结果入 decision-log（kind=COVERAGE）。 |
 | `audit_query` | audit | 审计数据只读查询——按时间/规则/exitCode 过滤读 history.jsonl，按 ts 查 decision-log 因果链（消费 causedBy 字段）。严格只读，不写任何审计链。边界：audit_trail 按 agentId 查跨设备轨迹 / worklog_query 查工作效能指标 / run_audit 跑规则写 think.md（写侧）/ ruleset_export 导出规则面——本 tool 只查「时间·规则·exitCode·因果链」维度，勿混用。 |
-| `ruleset_export` | audit | 规则集导出——24 条默认规则 + 已加载扩展规则导出为标准 JSON（与 --ruleset-path 加载格式同构，导出即加载格式、双向可逆），每条附训练消费元数据（rule_id / 检测意图 / 违规样例 / 严重级别）+ 规则集版本号 + 内容指纹（HMAC-SHA256），导出行为写审计留痕。边界：list_rules 只列规则清单、corpus_export 导出训练语料三件套——本 tool 导出「规则面标准 JSON」供第三方零转换消费。 |
+| `ruleset_export` | audit | 规则集导出——25 条默认规则 + 已加载扩展规则导出为标准 JSON（与 --ruleset-path 加载格式同构，导出即加载格式、双向可逆），每条附训练消费元数据（rule_id / 检测意图 / 违规样例 / 严重级别）+ 规则集版本号 + 内容指纹（HMAC-SHA256），导出行为写审计留痕。边界：list_rules 只列规则清单、corpus_export 导出训练语料三件套——本 tool 导出「规则面标准 JSON」供第三方零转换消费。 |
 
 ### 工作流编排（workflow DAG · 循环执行与优化）（18）
 

@@ -1,11 +1,11 @@
 // ============================================================
 // rule-schema.ts · v1.5.2 第一章 · 规则导出格式定义
 //
-// 定位：24+3 条审计规则的机器可读序列化格式（训练语料第一件）。
+// 定位：25+3 条审计规则的机器可读序列化格式（训练语料第一件）。
 // 口径（changelog 表下注 A，2026-09-01 核对 rules/index.ts 后定）：
-//   - 24 条已实现规则（defaultRules 17 + extendedRules 7）
+//   - 25 条已实现规则（defaultRules 17 + extendedRules 8）
 //   - 3 条永久跳号编号位（A12/A13/E3）——已并入 A11，导出时以
-//     status: 'merged-into-A11' 占位登记，共 27 个编号位，
+//     status: 'merged-into-A11' 占位登记，共 28 个编号位，
 //     「零遗漏」对编号空间对数而非仅对数组对数。
 //
 // reward_hint 段（2026-08-26 补）：每条规则附带 reward 骨架——
@@ -77,7 +77,7 @@ export interface RuleCorpusBody {
   exportedAt: string;
   /** 导出范围（default / extended / all） */
   scope: 'default' | 'extended' | 'all';
-  /** 规则条目（27 编号位——含 3 条跳号占位） */
+  /** 规则条目（28 编号位——含 3 条跳号占位） */
   rules: RuleExportEntry[];
   /** 编号空间统计（零遗漏对数依据） */
   counts: {
@@ -174,7 +174,7 @@ export function mergedPlaceholder(code: string, number: number, note: string): R
   };
 }
 
-/** 27 编号位全集：24 实现 + 3 占位（A12/A13/E3） */
+/** 28 编号位全集：25 实现 + 3 占位（A12/A13/E3） */
 export function allRuleSlots(implemented: Rule[]): RuleExportEntry[] {
   return [
     ...implemented.map(toRuleExportEntry),

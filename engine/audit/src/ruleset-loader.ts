@@ -262,7 +262,7 @@ export function loadRulesetFile(filePath: string): Ruleset {
  * 按名称加载内置规则集
  *
  * 内置规则集名称：
- *   - sofagent：完整规则集（24 条模式规则，覆盖安全/质量/工程规范）
+ *   - sofagent：完整规则集（25 条模式规则，覆盖安全/质量/工程规范）
  *   - security：安全子集（仅安全相关规则，适合 CI 严格模式）
  *
  * @param name 规则集名称（sofagent / security）

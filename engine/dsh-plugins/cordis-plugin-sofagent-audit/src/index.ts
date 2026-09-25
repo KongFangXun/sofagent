@@ -337,13 +337,13 @@ const kit = createSofagentPlugin(
     id: 'cordis-plugin-sofagent-audit',
     seam: 'tools/result + tools/pre-execute + fs/write-intent + agent/turn-stopping',
     seamSemantics: '工具结果留证 + 工具执行前拦截 + 文件写入意图拦截（放行） + Turn 停止验收判定（v1.4.9 P2 吸收原 -gate 验收门禁；判定源 = checkDangerousCommand/check_acceptance，不另造）',
-    capability: '审计与验收（git diff 硬证据 + 24 规则 + 机器可判定验收）',
+    capability: '审计与验收（git diff 硬证据 + 25 规则 + 机器可判定验收）',
     bridgePkg: '@sofagent/audit',
     bridgeApi: 'runRules',
-    description: '变更机器审阅 + 验收硬门禁——24 规则 + git diff 硬证据 + Turn 停止验收判定（验收不过不放行，开关独立可关）',
+    description: '变更机器审阅 + 验收硬门禁——25 规则 + git diff 硬证据 + Turn 停止验收判定（验收不过不放行，开关独立可关）',
     // audit 专属 envelope（其余插件走 kit 默认值）
-    purpose: 'sofagent 审计插件——24 规则 + git diff 硬证据 + 验收门禁',
-    readyMessage: '审计与验收服务就绪（24 规则 + Turn 停止验收）',
+    purpose: 'sofagent 审计插件——25 规则 + git diff 硬证据 + 验收门禁',
+    readyMessage: '审计与验收服务就绪（25 规则 + Turn 停止验收）',
     // v1.4.9 P2（F3）：rules 为既有字段（数量不是开关，不参与 fail-open/closed 判定）；
     // acceptanceGate = 验收门禁独立开关。**F-50 方向说明**：默认 'true'（开）——门禁类开关默认开
     // 意味着「未配置 = 默认有验收门」= 默认更安全（fail-closed 的语义反面对门禁不成立：默认关

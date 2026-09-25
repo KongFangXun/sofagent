@@ -4,7 +4,7 @@
 
 **给 OpenClaw 加上审计** · sofagent 约束层五能力在 OpenClaw 生态的插件形态
 
-24 规则 + git diff 硬证据 + 危险工具拦截（rm/git push 等黑名单），复用 @sofagent/audit.runRules。
+25 规则 + git diff 硬证据 + 危险工具拦截（rm/git push 等黑名单），复用 @sofagent/audit.runRules。
 
 ## 能力
 
@@ -52,4 +52,4 @@ clawhub package publish . --family code-plugin --name sofagent-audit --version "
 
 ## 说明
 
-与 DSH 插件 `cordis-plugin-sofagent-audit` 同引擎、不同宿主：DSH 侧挂 `tools/result` + `tools/pre-execute` + `fs/write-intent`（工具结果留证、执行前拦截、写入意图拦截），OpenClaw 侧挂 `before_tool_call`（调用前拦截，可拦停）。审计规则本身（git diff 24 规则）两侧共用同一引擎，口径一致。
+与 DSH 插件 `cordis-plugin-sofagent-audit` 同引擎、不同宿主：DSH 侧挂 `tools/result` + `tools/pre-execute` + `fs/write-intent`（工具结果留证、执行前拦截、写入意图拦截），OpenClaw 侧挂 `before_tool_call`（调用前拦截，可拦停）。审计规则本身（git diff 25 规则）两侧共用同一引擎，口径一致。

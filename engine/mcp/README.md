@@ -55,7 +55,7 @@ MCP Server 通过 stdio 通信（JSON-RPC 2.0）。最小运行时依赖。
 
 | Tool | 说明 |
 |------|------|
-| `run_audit` | 对 git diff 跑全量审计规则（A1-A11、A14-A23 + E1-E2/E4，共 24 条），返回结构化报告 |
+| `run_audit` | 对 git diff 跑全量审计规则（A1-A11、A14-A24 + E1-E2/E4，共 25 条），返回结构化报告 |
 | `get_think` | 读取 think.md 最近 N 条反思条目 |
 | `write_think` | 向 think.md 追加一条反思记录 |
 | `device_register` / `device_list` | G9 设备注册面（v1.4.9）：Ed25519 验签注册 + 清单在线态 |
@@ -85,7 +85,7 @@ SOFAGENT_MCP_ROLES=audit sofagent-mcp
 
 | Tool | 语义 |
 |------|------|
-| `run_audit` | 全量审计规则跑批（24 条规则 + HMAC 链） |
+| `run_audit` | 全量审计规则跑批（25 条规则 + HMAC 链） |
 | `audit_file` | 单文件定点审计（不改链） |
 | `audit_query` | 审计数据只读查询（history 三维过滤 + decision 因果链，不写链） |
 | `ruleset_export` | 规则集导出（默认规则 + 扩展 → 标准 JSON，双向可逆 + 内容指纹） |
@@ -94,7 +94,7 @@ SOFAGENT_MCP_ROLES=audit sofagent-mcp
 | `data_sovereignty_report` | 数据主权审计报告 |
 | `audit_data_change` | 数据变更审计（表/行级追溯） |
 | `notify_session` | 会话通知（审计事件面） |
-| `list_rules` | 规则清单（24 条——名称/分级/启用态） |
+| `list_rules` | 规则清单（25 条——名称/分级/启用态） |
 | `audit_trail` | 审计链查询（HMAC 校验 + 时间窗过滤） |
 
 完整文档见主仓库：https://github.com/KongFangXun/sofagent

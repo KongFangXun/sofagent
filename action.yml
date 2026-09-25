@@ -1,5 +1,5 @@
 name: 'sofagent'
-description: 'Audit AI agent commits on every PR — 24 rules, zero tokens, inline results. AI 行为审计'
+description: 'Audit AI agent commits on every PR — 25 rules, zero tokens, inline results. AI 行为审计'
 author: 'KongFangXun'
 branding:
   icon: 'shield'

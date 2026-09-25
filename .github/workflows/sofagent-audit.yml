@@ -103,7 +103,7 @@ jobs:
           PR_URL: ${{ github.event.pull_request.html_url }}
         run: |
           if gh pr view "$PR_URL" --json reviews --jq '[.reviews[] | select(.state == "APPROVED")] | length' | grep -q '^0$'; then
-            gh pr review "$PR_URL" --approve --body "✅ sofagent-audit PASS（24 规则零违规）。bot 自动 approve，merge 决策保留给维护者。" || echo "⚠️ approve 写入失败（fork PR 只读令牌），绿灯由维护者手动给"
+            gh pr review "$PR_URL" --approve --body "✅ sofagent-audit PASS（25 规则零违规）。bot 自动 approve，merge 决策保留给维护者。" || echo "⚠️ approve 写入失败（fork PR 只读令牌），绿灯由维护者手动给"
           else
             echo "已有 approve，跳过"
           fi

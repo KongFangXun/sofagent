@@ -859,7 +859,7 @@ a:hover{text-decoration:none} /* 全站 hover 无下划线（统一）——按�
       </div>
       <div class="arch-layer" style="background:var(--bg-s);border:1px solid var(--border)">
         <h5 style="color:var(--text-s)">审计</h5>
-        <div class="meta12">每次变更硬证据 · 24 条规则 · 19 条零 token · 违规当场拦截</div>
+        <div class="meta12">每次变更硬证据 · 25 条规则 · 20 条零 token · 违规当场拦截</div>
       </div>
       <div class="arch-layer" style="background:var(--bg-s);border:1px solid var(--border)">
         <h5 style="color:var(--text-s)">回溯</h5>
@@ -908,7 +908,7 @@ a:hover{text-decoration:none} /* 全站 hover 无下划线（统一）——按�
     </div>
   </div>
   <div class="section">
-    <div class="section-header"><div class="section-title"><span class="dot-emoji"><i class="bi bi-shield-check"></i></span>审计规则全览（24 条）</div>
+    <div class="section-header"><div class="section-title"><span class="dot-emoji"><i class="bi bi-shield-check"></i></span>审计规则全览（25 条）</div>
       <a href="https://github.com/KongFangXun/sofagent/blob/main/SECURITY.md" target="_blank" class="btn btn-outline">SECURITY.md →</a>
     </div>
     <div class="section-body">
@@ -938,7 +938,7 @@ a:hover{text-decoration:none} /* 全站 hover 无下划线（统一）——按�
         <div class="rule-item rule-cat-green"><div class="rule-code">E2 遗留 TODO</div><div class="rule-name">未声明 TODO</div></div>
         <div class="rule-item rule-cat-green"><div class="rule-code">E4 注释率</div><div class="rule-name">注释覆盖率</div></div>
       </div>
-      <div class="hint" style="margin-top:12px">24 条规则（17 默认 + 7 扩展），每次 git commit / 文件变更自动触发。<b>19 条纯 git-diff 规则零 token 不调 LLM</b>。颜色分级：红=安全红线 · 黄=行为约束 · 蓝=质量规范 · 紫=知识域约束 · 绿=测试规范 · 灰=工程治理</div>
+      <div class="hint" style="margin-top:12px">25 条规则（17 默认 + 8 扩展），每次 git commit / 文件变更自动触发。<b>20 条纯 git-diff 规则零 token 不调 LLM</b>。颜色分级：红=安全红线 · 黄=行为约束 · 蓝=质量规范 · 紫=知识域约束 · 绿=测试规范 · 灰=工程治理</div>
       <div class="grid-2" style="margin-top:12px">
         <div class="prompt-box" style="margin-top:0">
           <div class="prompt-action"><span class="prompt-label">触发审计检查</span><button class="copy-btn" onclick="copyPrompt(this, '帮我审计这次变更，检查有没有越界改文件、密钥泄漏、盲目修改。使用 sofagent 的审计规则。')">复制</button></div>
@@ -972,7 +972,7 @@ a:hover{text-decoration:none} /* 全站 hover 无下划线（统一）——按�
     <div class="section-header"><div class="section-title"><span class="dot-emoji"><i class="bi bi-box"></i></span>npm 包（13 个）</div></div>
     <div class="section-body">
       <div class="npm-grid">
-        <div class="npm-item"><code>@sofagent/audit</code><div class="npm-desc">审计模块（24 条规则）</div></div>
+        <div class="npm-item"><code>@sofagent/audit</code><div class="npm-desc">审计模块（25 条规则）</div></div>
         <div class="npm-item"><code>@sofagent/core</code><div class="npm-desc">核心类型 · HMAC · 诊断</div></div>
         <div class="npm-item"><code>@sofagent/orchestrator</code><div class="npm-desc">LangGraph 编排模块</div></div>
         <div class="npm-item"><code>@sofagent/daemon</code><div class="npm-desc">守护进程 · cron 巡检</div></div>

@@ -23,7 +23,9 @@ import { fileURLToPath } from 'url';
 /** 本测试文件所在目录（ESM 下无 __dirname） */
 const HERE = dirname(fileURLToPath(import.meta.url));
 import { rules, RULE_LOAD_REPORT } from '../rules';
-import type { Rule, RuleCheck } from '../rules/types';
+import type { AuditContext, Rule, RuleCheck } from '../rules/types';
+import type { DiffFile } from '@sofagent/core';
+import { scanA24 } from '../rules/rule-a24-deliverable-path';
 import {
   checkCriticalLayerInvariant,
   checkExamplesBehavior,
@@ -73,9 +75,9 @@ const AWS_KEY = ['AK' + 'IA', 'IOSFODNN7EXAMPLE'].join('');
 const INJECTION = ['Ignore', 'all', 'previous', 'instr' + 'uctions'].join(' ');
 
 describe('D2 · 引擎默认装载点——注册表构建即断言（正样例命中/负样例不命中）', () => {
-  it('默认注册表装载报告：24 条全载、5 条执行断言、零豁免', () => {
+  it('默认注册表装载报告：25 条全载、5 条执行断言、零豁免', () => {
     expect(RULE_LOAD_REPORT.loaded).toEqual(rules.map((r) => r.id));
-    expect(RULE_LOAD_REPORT.loaded.length).toBe(24);
+    expect(RULE_LOAD_REPORT.loaded.length).toBe(25);
     expect([...RULE_LOAD_REPORT.executed].sort()).toEqual([...EXECUTABLE_IDS].sort());
     expect(RULE_LOAD_REPORT.exempted).toEqual([]);
   });
@@ -96,7 +98,7 @@ describe('D2 · 引擎默认装载点——注册表构建即断言（正样例�
     }
   });
 
-  it('schema 全绿：24 条 examples 均非空 + 无矛盾（checkExamplesSchema 零违规）', () => {
+  it('schema 全绿：25 条 examples 均非空 + 无矛盾（checkExamplesSchema 零违规）', () => {
     for (const r of rules) {
       expect(checkExamplesSchema(r.id, r.examples, Boolean(r.examplesExempt)), `${r.id}`).toEqual([]);
     }
@@ -448,5 +450,107 @@ describe('D2 · 产品命令面——真实 CLI --ruleset-path 断言通电', ()
     const r = runCli(root, home, rs);
     expect([0, 1, 2], `输出：${r.output}`).toContain(r.status);
     expect(r.output).not.toContain('加载被拒');
+  });
+});
+
+// ============================================================
+// D3 · A24 出生即带正负样例（第二章自测 schema 落地后的首个新规则 · 新规则新纪律）
+// ============================================================
+// A24 的判定**依赖 `config.A24` 白名单**（opt-in fail-closed）——加载期断言载体
+// （auditExampleContext）不含 config ⇒ 恒「全不检」，无法在加载面做行为断言，故
+// **不标** examplesExecutable；此处以「schema 全绿 + 直接行为实证」两段补齐证据：
+//   · 加载面：A24 携带 match/notMatch（各 ≥2，含白名单内不误报的反向样本）过 schema。
+//   · 行为面：直接以构造的 AuditContext 调 scanA24，验证「默认空=全不检 / 越界 FAIL 附
+//     替代建议 / 白名单内不误报 / 非交付物与修改件均不约束」四态。
+describe('D3 · A24 出生即带正负样例——加载面 schema 全绿（非可执行声明）', () => {
+  it('A24 进注册表且归扩展集（priority=extended / ruleClass=工程规范 / number=24）', () => {
+    const a24 = ruleById('A24');
+    expect(a24.priority).toBe('extended');
+    expect(a24.ruleClass).toBe('工程规范');
+    expect(a24.evidenceMode).toBe('git-diff');
+    expect(a24.number).toBe(24);
+  });
+
+  it('A24 出生即带 match/notMatch（各 ≥2，含白名单内不误报的反向样本）', () => {
+    const a24 = ruleById('A24');
+    expect(a24.examples, 'A24 必须携带 examples').toBeTruthy();
+    expect(a24.examples!.match.length).toBeGreaterThanOrEqual(2);
+    expect(a24.examples!.notMatch.length).toBeGreaterThanOrEqual(2);
+    // 反向样本：白名单内路径（不误报）——证假阳性边界
+    expect(a24.examples!.notMatch.some((s) => s.includes('outputs/report.md'))).toBe(true);
+  });
+
+  it('A24 样例过 schema 与矛盾断言（checkExamplesSchema 零违规）', () => {
+    const a24 = ruleById('A24');
+    expect(checkExamplesSchema(a24.id, a24.examples, Boolean(a24.examplesExempt))).toEqual([]);
+  });
+
+  it('A24 未标可执行、未进执行断言集、非豁免（opt-in 依赖 config ⇒ 加载期不可断言）', () => {
+    const a24 = ruleById('A24');
+    expect(a24.examplesExecutable, 'A24 不得标可执行（判定依赖 config.A24）').toBeFalsy();
+    expect(RULE_LOAD_REPORT.executed).not.toContain('A24');
+    expect(RULE_LOAD_REPORT.exempted).not.toContain('A24'); // 携带样例故非豁免
+    expect(IMPURE_IDS).not.toContain('A24'); // 是 opt-in 不可执行，非已知非纯 scan
+  });
+
+  it('A24 缺样例 → 拒载（新规则同受 schema fail-closed 管辖 · 红→绿）', () => {
+    // 红：A24 若遗漏 examples，第二章加载期断言（schema 强制）必须拒绝加载——
+    // 这正是「新规则新纪律，不留旧账」的机械保证（不靠人记 A24 是否带了样例）。
+    const broken: Rule = { ...ruleById('A24'), examples: undefined };
+    const err = captureLoadError([broken]);
+    expect(err.violations.some((v) => v.includes('A24') && v.includes('examples 缺失'))).toBe(true);
+    // 绿：真实注册表里的 A24 携带合法样例（见上一 describe）——同一约束下放行。
+    expect(() => loadAuditRules([ruleById('A24')])).not.toThrow();
+  });
+});
+
+describe('D3 · A24 scanA24 行为实证（四态：全不检 / 越界 FAIL / 不误报 / 不约束）', () => {
+  /** 构造交付物落点行为夹具的 AuditContext（只填 scanA24 消费的字段） */
+  function ctx(
+    files: Array<{ path: string; status: DiffFile['status'] }>,
+    a24?: Partial<NonNullable<AuditContext['config']>>,
+  ): AuditContext {
+    return {
+      diffFiles: files.map((f) => ({ ...f, lines: [] })),
+      logEntries: [],
+      config: a24 as AuditContext['config'],
+    };
+  }
+
+  it('未启用（config.A24 缺省 / enabled=false）→ PASS 且无落点约束产出', () => {
+    const added = [{ path: '~/Downloads/report.md', status: 'added' as const }];
+    expect(scanA24(ctx(added)).status).toBe('PASS');
+    expect(scanA24(ctx(added)).details).toEqual([]);
+    expect(scanA24(ctx(added, { A24: { enabled: false } })).status).toBe('PASS');
+  });
+
+  it('启用但白名单为空 → 全不检（默认空 fail-closed：不约束落点）', () => {
+    const added = [{ path: '~/Downloads/report.md', status: 'added' as const }];
+    const res = scanA24(ctx(added, { A24: { enabled: true } }));
+    expect(res.status).toBe('PASS');
+    expect(res.details.join('')).toContain('全不检');
+  });
+
+  it('启用 + 声明白名单：新增交付物越界 → FAIL 且附替代路径建议', () => {
+    const added = [{ path: 'new-dir/交付报告.xlsx', status: 'added' as const }];
+    const res = scanA24(ctx(added, { A24: { enabled: true, allowed_dirs: ['outputs/'] } }));
+    expect(res.status).toBe('FAIL');
+    const text = res.details.join('');
+    expect(text).toContain('new-dir/交付报告.xlsx');
+    // 替代路径建议：FAIL 报文须含白名单目录（对齐第二章 FAIL 报文纪律）
+    expect(text).toContain('outputs/');
+  });
+
+  it('启用 + 声明白名单：白名单内新增交付物 → 不误报（PASS）', () => {
+    const added = [{ path: 'outputs/report.md', status: 'added' as const }];
+    expect(scanA24(ctx(added, { A24: { enabled: true, allowed_dirs: ['outputs/'] } })).status).toBe('PASS');
+  });
+
+  it('非交付物（源码）与修改既有交付物 → 均不受约束（PASS）', () => {
+    const files = [
+      { path: 'src/new-dir/index.ts', status: 'added' as const }, // 源码：非交付物扩展名
+      { path: 'new-dir/old-report.md', status: 'modified' as const }, // 修改既有：非新增交付物
+    ];
+    expect(scanA24(ctx(files, { A24: { enabled: true, allowed_dirs: ['outputs/'] } })).status).toBe('PASS');
   });
 });

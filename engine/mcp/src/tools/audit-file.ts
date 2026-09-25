@@ -51,7 +51,7 @@ export function auditFile(
     config = undefined;
   }
 
-  // runRules 返回完整 24 条规则结果，我们只关心 MCP pipe 作用域内的
+  // runRules 返回完整 25 条规则结果，我们只关心 MCP pipe 作用域内的
   const results = runRules(diffFiles, [], task, false, true /* silent */, undefined, config);
 
   // 过滤 MCP pipe 作用域：A3 / A7 / A11 / A18 (+ A14 当传 task)

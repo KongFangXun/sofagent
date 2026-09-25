@@ -247,7 +247,7 @@ sofagent 跑在单个 Agent 里——没有 agent-to-agent 通信，没有多实
 
 **降级探测手段（记录补齐前可用）**：门控健康度四联红旗（ASK 率趋零 + 获批率恒 100% + 审批时延 1–2 秒 + 人均审批量异常）能在没有完整授权链时**部分**探测「审批形同虚设」——分开看每项都有良性解释，合起来看没有。这是**代理证据，不等于授权链审计**。
 
-**不要因此新增规则**：事实不可观测时加规则只会得到永远弃权或永远放行的假规则，「看起来覆盖了」比明说缺口更危险（见 [SECURITY · 24 条规则的判定化归属](../SECURITY.md#24-条规则的判定化归属判定层接管后的逐条去向)）。
+**不要因此新增规则**：事实不可观测时加规则只会得到永远弃权或永远放行的假规则，「看起来覆盖了」比明说缺口更危险（见 [SECURITY · 25 条规则的判定化归属](../SECURITY.md#25-条规则的判定化归属判定层接管后的逐条去向)）。
 
 ### 🔌 插件来源白名单的边界
 
@@ -334,7 +334,7 @@ A1（不碰敏感）按 `DiffFile.status` 分方向判定：**新增/修改**敏
 
 > ⚠️ **边界：空 commit 不审计消息**——empty commit（无文件变更）时审计直接跳过，commit message 中的注入载荷不会被 A9 扫描（A9 的证据面是 diff + 显式传入的 `--commit-msg`）。带文件变更的 commit 消息正常扫描。纯消息攻击需 `--commit-msg` 显式送检。
 
-> ⚠️ **边界：首个 commit 无基线不审计（根 commit 盲区）**——git 仓库的第一个（根）commit 之前不存在任何基线，`HEAD~1` 类 range 引用全部失效，commit hook 审计在该 commit 上不可用——**仓库历史起点的变更不经过 24 条规则扫描**。历史性含义：本仓根 commit（`git rev-list --max-parents=0 HEAD` 所指）创建时尚无审计层在位。**实测可用的补审命令**（对根 commit 做一次性追溯审计）：
+> ⚠️ **边界：首个 commit 无基线不审计（根 commit 盲区）**——git 仓库的第一个（根）commit 之前不存在任何基线，`HEAD~1` 类 range 引用全部失效，commit hook 审计在该 commit 上不可用——**仓库历史起点的变更不经过 25 条规则扫描**。历史性含义：本仓根 commit（`git rev-list --max-parents=0 HEAD` 所指）创建时尚无审计层在位。**实测可用的补审命令**（对根 commit 做一次性追溯审计）：
 > ```bash
 > # 与 git 空树（4b825dc…）做 diff，等价于「根 commit 相对虚无的全部变更」
 > sofagent-audit --diff 4b825dc642cb6eb9a060e54bf8d69288fbee4904..$(git rev-list --max-parents=0 HEAD)
@@ -345,7 +345,7 @@ A1（不碰敏感）按 `DiffFile.status` 分方向判定：**新增/修改**敏
 
 > ⚠️ **quick 模式二进制/超大 diff 盲区（v1.3.5 披露）**：quick 模式**没有**完整引擎对超大 diff 的 5MB 阈值兜底（完整引擎：普通文件 WARN exit 1 / 敏感文件名 FAIL exit 2）。git diff 对二进制文件只输出 `Binary files differ`（无内容行），规则无内容可扫——大体积二进制/超大 diff 在 quick 模式下会全绿通过。这是 git diff 的设计而非 sofagent bug，但对应用户意味着：quick 模式不能替代二进制敏感文件（如密钥库、私有数据集）的防泄漏审查；强合规场景请用完整引擎（`--init` 装 hook）兜底。
 
-> ⚠️ **critical fast-fail：命中后后续层规则跳过（v1.4.3 披露）**：审计模块按规则分层串行执行——**critical 层（A1 敏感文件 / A2 密钥泄漏 / A9 注入等基线底线）任一 FAIL 后，后续层规则（A3 越界 / A7 盲改 / A16 非授权变更等）不再执行、统一标 SKIPPED**（输出形如「1 违规 · 7 通过 · 9 跳过」）。设计意图是 fail-fast（critical 命中已足以拦截 commit，无需继续跑）。**取证注意**：SKIPPED ≠ 通过——跳过的规则本次未检查，事后取证不能把「N 条跳过」读成「N 条无问题」；攻击者理论上可用显眼但无害的 critical 命中（如 A1 诱饵文件名）制造「审计抓到问题了」的表象，同时掩盖后续层规则未跑的事实。需要完整逐规则结果时，修复 critical 违规后重新审计即可获得全量执行。规则分层见 SECURITY.md「24 条审计规则」与 engine/audit/src/rules/runner.ts fast-fail 段。
+> ⚠️ **critical fast-fail：命中后后续层规则跳过（v1.4.3 披露）**：审计模块按规则分层串行执行——**critical 层（A1 敏感文件 / A2 密钥泄漏 / A9 注入等基线底线）任一 FAIL 后，后续层规则（A3 越界 / A7 盲改 / A16 非授权变更等）不再执行、统一标 SKIPPED**（输出形如「1 违规 · 7 通过 · 9 跳过」）。设计意图是 fail-fast（critical 命中已足以拦截 commit，无需继续跑）。**取证注意**：SKIPPED ≠ 通过——跳过的规则本次未检查，事后取证不能把「N 条跳过」读成「N 条无问题」；攻击者理论上可用显眼但无害的 critical 命中（如 A1 诱饵文件名）制造「审计抓到问题了」的表象，同时掩盖后续层规则未跑的事实。需要完整逐规则结果时，修复 critical 违规后重新审计即可获得全量执行。规则分层见 SECURITY.md「25 条审计规则」与 engine/audit/src/rules/runner.ts fast-fail 段。
 
 > ⚠️ **config-loader 环境变量死开关披露（v1.4.3）**：`SofaEnvConfig` 中 `sanitizeEnabled` / `sanitizeIpsEnabled` / `cleanupFrequency` / `auditEnabled` 四字段**加载但无生产消费点**——企业 IT 设 `SOFAGENT_SANITIZE=...`、`SOFAGENT_AUDIT_ENABLED=...` 等**不改变任何行为**（已在 config-loader.ts 标 @deprecated）。实际生效面：脱敏管道常开（不受开关控制）、审计由 config.yml `rules:{...}` 控制（不构成第二通道）、清理走 cleanup.sh（其保留策略读 `SOFAGENT_RETENTION_DAYS`/`SOFAGENT_RETENTION_MAX`，v1.4.3 起认 SOFAGENT_ 新名、SOFA_ 旧名兼容）。
 
@@ -470,7 +470,7 @@ sofagent-audit 实现了完整的六步审计闭环流程（设计文档见 [ARC
 | 步骤 | 成熟度 | 说明 |
 |------|:--:|------|
 | 1. git diff 扫描 | ✅ 生产可用 | 纯 git 操作，确定性输出 |
-| 2. 规则检查（A1-A11、A14-A23 + E1-E2/E4） | ✅ 生产可用 | 24 条规则全部有测试覆盖 |
+| 2. 规则检查（A1-A11、A14-A24 + E1-E2/E4） | ✅ 生产可用 | 25 条规则全部有测试覆盖 |
 | 3. 审计报告生成 | ✅ 生产可用 | JSON/text/table 三种格式 |
 | 4. think.md 自动更新 | ⚠️ 实验性 | LLM 生成，质量依赖模型 |
 | 5. MCP 推送 | ⚠️ 实验性 | MCP Server 已实现，端到端链路未验证 |
@@ -482,7 +482,7 @@ sofagent-audit 实现了完整的六步审计闭环流程（设计文档见 [ARC
 
 ### 测试覆盖范围
 
-当前审计核心 1410 个、全 workspace 5360 个测试（口径：13 包 workspace；逐批沿革账已迁出，见 [v1.4.9 开发日志 · 附录](./changelog/v1.4/v1.4.9.md#附录测试与场景账沿革)），但覆盖范围集中在审计规则和核心逻辑（diff-parser、reporter、config-loader、rules/*.ts）。以下模块没有独立测试：
+当前审计核心 1420 个、全 workspace 5370 个测试（口径：13 包 workspace；逐批沿革账已迁出，见 [v1.4.9 开发日志 · 附录](./changelog/v1.4/v1.4.9.md#附录测试与场景账沿革)），但覆盖范围集中在审计规则和核心逻辑（diff-parser、reporter、config-loader、rules/*.ts）。以下模块没有独立测试：
 
 | 模块 | 测试状态 | 风险 |
 |------|:--:|------|
@@ -565,7 +565,7 @@ FDE 完整四阶段十二步部署流程（[FDE/GUIDE.md](../FDE/GUIDE.md)）已
 
 `playbook/acceptance-test.sh`（场景数持续扩展，当前 373 个，SSOT 口径=真实 scenario 行数（S165 动态计算并跨文档对账））：
 
-- **CI 已覆盖**：单元测试审计核心 1410 个、全 workspace 5360 个测试（口径见本文件「测试覆盖范围」节）、sofagent-core verify 约 44-48 项（动态）
+- **CI 已覆盖**：单元测试审计核心 1420 个、全 workspace 5370 个测试（口径见本文件「测试覆盖范围」节）、sofagent-core verify 约 44-48 项（动态）
 - **发版前手动覆盖**：acceptance-test.sh 373 场景（含子断言，CLI 端到端；阶段五步骤一脚本层直跑）、OpenClaw 验收 63 场景（Agent 端到端）
 - **CI 未覆盖**：daemon → MCP → webhook → 编排四组件串联行为（v1.3.2 起由 Onboard 循环机制跑全链路 smoke test 承接，作为验收标准；日常 CI 无独立集成测试，发版前手动验证兜底）
 - **CI 未覆盖**：多平台兼容性（macOS only verified，Linux/Windows 未验证）

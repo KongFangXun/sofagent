@@ -59,7 +59,7 @@ export interface VerifiersManifest {
   hmac: string;
 }
 
-/** 构造 verifiers 清单主体（24 实现 + 3 占位全量分桶——无覆写，委托 overrides 版传空表） */
+/** 构造 verifiers 清单主体（25 实现 + 3 占位全量分桶——无覆写，委托 overrides 版传空表） */
 export function buildVerifiersManifest(): VerifiersManifestBody {
   return buildVerifiersWithOverrides({});
 }

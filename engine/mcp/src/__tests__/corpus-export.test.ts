@@ -135,7 +135,7 @@ describe('MCP corpus_export — 训练语料导出三件套（协议面）', () 
     await realFsp.rm(tmpOutDir, { recursive: true, force: true });
   });
 
-  it('rules_only 模式：27 编号位 + verifiers 三桶经 JSON-RPC 返回', async () => {
+  it('rules_only 模式：28 编号位 + verifiers 三桶经 JSON-RPC 返回', async () => {
     const { send, lastResponse, flush } = await startServer();
     send({
       jsonrpc: '2.0',
@@ -157,12 +157,12 @@ describe('MCP corpus_export — 训练语料导出三件套（协议面）', () 
     expect(text).toContain('编号位');
     const d = res.result?._meta?.data ?? {};
     expect(d.ok).toBe(true);
-    // 27 编号位（24 实现 + 3 跳号占位）
-    expect(d.rules.counts.totalSlots).toBe(27);
-    expect(d.rules.counts.implemented).toBe(24);
+    // 28 编号位（25 实现 + 3 跳号占位）
+    expect(d.rules.counts.totalSlots).toBe(28);
+    expect(d.rules.counts.implemented).toBe(25);
     expect(d.rules.counts.mergedPlaceholders).toBe(3);
-    // verifiers 三桶（机器可判 22 / 需人审 4 / 启发式 1）
-    expect(d.verifiers.buckets.machine).toBe(22);
+    // verifiers 三桶（机器可判 23 / 需人审 4 / 启发式 1）
+    expect(d.verifiers.buckets.machine).toBe(23);
     expect(d.verifiers.buckets.human).toBe(4);
     expect(d.verifiers.buckets.heuristic).toBe(1);
     // HMAC 签名在场（32 位十六进制）
@@ -205,7 +205,7 @@ describe('MCP corpus_export — 训练语料导出三件套（协议面）', () 
     const res = lastResponse();
     const d = res.result?._meta?.data ?? {};
     expect(d.ok).toBe(true);
-    expect(d.rules.counts.totalSlots).toBe(27);
+    expect(d.rules.counts.totalSlots).toBe(28);
   });
 
   it('audit 包缺席降级分支：auditEvent 置 null（源码契约锁——createRequire 绕过 mock，行为面归 e2e）', async () => {

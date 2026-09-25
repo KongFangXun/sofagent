@@ -7,7 +7,7 @@
       "seam": "tools/result + tools/pre-execute + fs/write-intent + agent/turn-stopping",
       "seamSemantics": "工具结果留证 + 工具执行前拦截 + 文件写入意图拦截（放行） + Turn 停止验收判定（v1.4.9 P2 吸收原 -gate 验收门禁；判定源 = checkDangerousCommand/check_acceptance，不另造）",
       "seamHandlers": ["tools/result", "tools/pre-execute", "fs/write-intent", "agent/turn-stopping"],
-      "capability": "审计与验收（git diff 硬证据 + 24 规则 + 机器可判定验收）",
+      "capability": "审计与验收（git diff 硬证据 + 25 规则 + 机器可判定验收）",
       "bridgePkg": "@sofagent/audit",
       "bridgeApi": "runRules",
       "bridges": [
@@ -17,7 +17,7 @@
         { "pkg": "@sofagent/orchestrator", "api": "checkAcceptance" },
         { "pkg": "@sofagent/core", "api": "getDataDir" }
       ],
-      "description": "变更机器审阅 + 验收硬门禁——24 规则 + git diff 硬证据 + Turn 停止验收判定（验收不过不放行，开关独立可关）"
+      "description": "变更机器审阅 + 验收硬门禁——25 规则 + git diff 硬证据 + Turn 停止验收判定（验收不过不放行，开关独立可关）"
     },
     {
       "id": "cordis-plugin-sofagent-daemon",

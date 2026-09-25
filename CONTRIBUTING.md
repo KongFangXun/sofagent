@@ -70,7 +70,7 @@ bash install.sh && bash engine/scripts/verify.sh
 | 目录 | 内容 |
 |------|------|
 | `engine/` | 13 个 @sofagent/* 模块包（`audit` 审计模块 / `core` 底座 / `daemon` 守护 / `orchestrator` 编排 / `train` 后训 / `mcp` / `rules` / `eval` / `think` / `evolve` / `ontology` / `inject`（v1.5.0 前名 harness）/ `ab-test`，13 个均含 test script）+ `hooks/sofagent-load-chain`（加载链 Hook，工具包非模块包）+ `umbrella/`（npm 裸名总包 `sofagent`）——模块包全部发布到 npm；另有 2 个插件族：`engine/dsh-plugins/`（cordis-plugin-sofagent* 7 款 DSH 插件：6 款原子 + 1 款聚合整装）+ `engine/openclaw-plugins/`（OpenClaw code-plugin 4 款） |
-| `engine/audit/src/rules/` | 审计规则实现（`rule-a*.ts` A1-A23 + `skill-safety-engine.ts`）；A20 网络外传 / A21 持久化后门 / A22 权限提升 / A23 路径穿越 |
+| `engine/audit/src/rules/` | 审计规则实现（`rule-a*.ts` A1-A24 + `skill-safety-engine.ts`）；A20 网络外传 / A21 持久化后门 / A22 权限提升 / A23 路径穿越 |
 | `engine/audit/src/` | 审计核心：`audit-trail.ts` 审计轨迹聚合 + `protocol-neutrality.ts` 协议中立声明 |
 | `engine/audit/src/permission/` | 权限配置加载与检查 |
 | `engine/core/src/` | 底座：配置加载 / 原子写入 / 审计历史哈希链 / 联邦合并 / 安全脱敏；`agent-identity.ts` Agent 身份码 |

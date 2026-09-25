@@ -97,14 +97,14 @@ describe('Dream Cycle 6 阶段', () => {
     const patterns = [{ id: 'p1', label: 'pattern-0', atomIds: ['a1', 'a2'] }];
     const atoms = [
       { id: 'a1', text: '教训一：跑 npm test 前先 npm install', factId: 'f1' },
-      { id: 'a2', text: '教训二：提交前 shellcheck 24 条规则全绿', factId: 'f1' },
+      { id: 'a2', text: '教训二：提交前 shellcheck 25 条规则全绿', factId: 'f1' },
     ];
     const fakeReal = new RealLLM(null, async (messages) => {
       const userContent = messages.find((m) => m.role === 'user')?.content ?? '';
       if (userContent.includes('合成为一个概念')) {
         return JSON.stringify({
           title: '工程纪律：测试与门禁的共性',
-          body: '共性：先跑 npm install 与 npm test，再过 shellcheck 门禁（24 条规则），阈值 80% 才收编。',
+          body: '共性：先跑 npm install 与 npm test，再过 shellcheck 门禁（25 条规则），阈值 80% 才收编。',
         });
       }
       return '["兜底"]';
@@ -127,7 +127,7 @@ describe('Dream Cycle 6 阶段', () => {
     const patterns = [{ id: 'p1', label: 'pattern-0', atomIds: ['a1', 'a2'] }];
     const atoms = [
       { id: 'a1', text: '教训一：跑 npm test 前先 npm install', factId: 'f1' },
-      { id: 'a2', text: '教训二：提交前 shellcheck 24 条规则全绿', factId: 'f1' },
+      { id: 'a2', text: '教训二：提交前 shellcheck 25 条规则全绿', factId: 'f1' },
     ];
     const concepts = await synthesizeConcepts(patterns, atoms, llm, dir);
     expect(concepts.length).toBe(0);

@@ -4,7 +4,7 @@
 //           sofagent「确定性审计依赖显式图结构」铁律的融合。
 //
 // 边界规则：
-// - 编排层（LangGraph StateGraph）永远不换——24 条 git diff 规则 + HMAC 链 +
+// - 编排层（LangGraph StateGraph）永远不换——25 条 git diff 规则 + HMAC 链 +
 //   DAG 波次审计 + decision-log 全部依赖显式图结构。
 // - 执行层可换——只要实现 ExecutionBackend 接口，任何框架都能挂载
 //   （DSH Cordis / LangGraph createReactAgent / 未来其他框架）。

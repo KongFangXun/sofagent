@@ -37,7 +37,7 @@
 | 指南 | 讲什么 |
 |------|--------|
 | [review-system.md](./review-system.md) | 审查体系运作——阶段五四文档如何协同 |
-| [node-level-audit.md](./node-level-audit.md) | 节点级审计——24 条规则子集在 DSH 事件流上的逐条判定 |
+| [node-level-audit.md](./node-level-audit.md) | 节点级审计——25 条规则子集在 DSH 事件流上的逐条判定 |
 | [github-action.md](./github-action.md) | GitHub Action——PR 提交时自动审计的 CI 配置 |
 
 ## 五、开源运营（v1.4.5+）

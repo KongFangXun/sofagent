@@ -6,10 +6,10 @@
 //   → 约束层读取时自动发现并加载对应 overlay（复用 --ruleset 通道）。
 //
 // 优先级语义（开工决议 5，2026-08-18 已定）：
-//   - 默认叠加：24 条默认规则 + overlay 行业规则同时生效
+//   - 默认叠加：25 条默认规则 + overlay 行业规则同时生效
 //   - 显式 --ruleset X：用户显式指定优先，overlay 自动加载让位
 //   - 两者冲突：显式指定优先，并在审计日志留痕
-//   - 未标注 industry：只跑 24 条默认（保守默认，不误加载）
+//   - 未标注 industry：只跑 25 条默认（保守默认，不误加载）
 // ============================================================
 
 import { existsSync, readFileSync } from 'fs';
@@ -97,7 +97,7 @@ export function decideOverlay(contextMdPath: string, explicitRuleset?: string): 
     load: true,
     rulesetName: overlayName,
     industry,
-    reason: `industry=${industry} → 自动加载 overlay ${overlayName}（叠加 24 条默认规则）`,
+    reason: `industry=${industry} → 自动加载 overlay ${overlayName}（叠加 25 条默认规则）`,
   };
 }
 

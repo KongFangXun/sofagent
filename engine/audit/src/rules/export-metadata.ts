@@ -1,7 +1,7 @@
 // ============================================================
 // export-metadata.ts · v1.5.2 章二 · 规则训练消费元数据
 //
-// 定位：24 条审计规则（defaultRules 17 + extendedRules 7）的**训练消费元数据**——
+// 定位：25 条审计规则（defaultRules 17 + extendedRules 8）的**训练消费元数据**——
 // 把「约束」从 TS 硬编码形态升级为训练管线可机器消费的结构（reward 信号 / SFT 语料）。
 //
 // 每条规则附四件套：
@@ -22,10 +22,10 @@
 //   优先复用规则自带的 examples.match（v1.4.0「规则即测试」样本），来源标 'examples.match'；
 //   若某规则未带可执行样例（examples 缺失或 match 为空），则由意图合成占位样例并标
 //   'synthesized'——消费方据此区分「真实违规样例」与「占位补齐」，不做偷偷兜底。
-//   🔴 当前 24 条规则全部自带 examples.match（index.ts 注册表），synthesized 分支为
+//   🔴 当前 25 条规则全部自带 examples.match（index.ts 注册表），synthesized 分支为
 //   防御性兜底，防未来新增规则漏带样例导致整表断裂。
 //
-// 意图表全覆盖：RULE_INTENTS 必须 24 条全覆盖——assertIntentCoverage 为构建期断言，
+// 意图表全覆盖：RULE_INTENTS 必须 25 条全覆盖——assertIntentCoverage 为构建期断言，
 // 缺一条即抛错（`buildExportMetadata` 也调用它，任何消费点都不会拿到残缺表）。
 // ============================================================
 
@@ -59,9 +59,9 @@ export const SEVERITY_BASIS =
   "其余（warning/crutch/extended/未标注）→ 'WARN'（业务底线/拐杖/扩展，非安全红线，违规即 exit 1）";
 
 /**
- * 24 条规则检测意图表（rule_id → 一句话「这条规则在防什么」）。
+ * 25 条规则检测意图表（rule_id → 一句话「这条规则在防什么」）。
  *
- * 覆盖口径：A1-A11 + A14-A23 + E1/E2/E4 = 24 条（与 rules/index.ts 注册表逐条对应）。
+ * 覆盖口径：A1-A11 + A14-A24 + E1/E2/E4 = 25 条（与 rules/index.ts 注册表逐条对应）。
  * 缺一条即视为缺陷——由 assertIntentCoverage 构建期兜住。
  */
 export const RULE_INTENTS: Record<string, string> = {
@@ -80,6 +80,7 @@ export const RULE_INTENTS: Record<string, string> = {
   A15: '防止 workflow 节点未声明可执行动作——无法审计',
   A16: '防止非授权文件被修改（敏感目录/文件类型的越权变更）',
   A17: '防止单次提交变更文件数超阈值——疑似批量异常操作',
+  A24: '防止新增交付物文件落在声明目录之外——交付物须统一落约定目录，不擅自新建文件夹',
   A18: '防止临时/垃圾文件被提交——污染仓库',
   A19: '防止 commit message 命中黑名单词或过短——无信息量',
   A20: '防止数据外传（HTTP 直连/WebSocket/DNS 隧道）——疑似数据泄漏面',
@@ -130,7 +131,7 @@ export function assertIntentCoverage(rules: Rule[]): void {
   const missing = rules.filter((r) => !RULE_INTENTS[r.id]).map((r) => r.id);
   if (missing.length > 0) {
     throw new Error(
-      `RULE_INTENTS 缺 ${missing.length} 条规则意图（24 条须全覆盖）：${missing.join(', ')}`,
+      `RULE_INTENTS 缺 ${missing.length} 条规则意图（25 条须全覆盖）：${missing.join(', ')}`,
     );
   }
   const known = new Set(rules.map((r) => r.id));

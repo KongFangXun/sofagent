@@ -5,4 +5,4 @@
       inject: [settings, dynamicCordisRunner]
       config:
         seam: "tools/result + tools/pre-execute + fs/write-intent + agent/turn-stopping"    # 语义：工具结果留证 + 工具执行前拦截 + 文件写入意图拦截（放行） + Turn 停止验收判定（v1.4.9 P2 吸收原 -gate 验收门禁；判定源 = checkDangerousCommand/check_acceptance，不另造）
-        description: "变更机器审阅 + 验收硬门禁——24 规则 + git diff 硬证据 + Turn 停止验收判定（验收不过不放行，开关独立可关）——桥接 @sofagent/audit runRules / @sofagent/audit emitDecision / @sofagent/orchestrator checkDangerousCommand / @sofagent/orchestrator checkAcceptance / @sofagent/core getDataDir"
+        description: "变更机器审阅 + 验收硬门禁——25 规则 + git diff 硬证据 + Turn 停止验收判定（验收不过不放行，开关独立可关）——桥接 @sofagent/audit runRules / @sofagent/audit emitDecision / @sofagent/orchestrator checkDangerousCommand / @sofagent/orchestrator checkAcceptance / @sofagent/core getDataDir"

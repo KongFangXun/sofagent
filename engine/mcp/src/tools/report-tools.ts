@@ -13,7 +13,7 @@ import { VERSION } from '@sofagent/audit';
 export function listCapabilities(): ToolResult {
   const capabilities = {
     tools: [
-      { name: 'run_audit', description: '对 git diff 跑全量审计规则（24 条）' },
+      { name: 'run_audit', description: '对 git diff 跑全量审计规则（25 条）' },
       { name: 'get_think', description: '读取 think.md 最近 N 条反思条目' },
       { name: 'write_think', description: '向 think.md 追加反思记录' },
       { name: 'compose', description: '编排模块——产出 Sub Agent 编排方案 YAML' },
@@ -48,7 +48,7 @@ export function listCapabilities(): ToolResult {
       { uri: 'orchestrator://latest-comparison', description: '最新 A/B 对比报告' },
     ],
     auditEngine: `sofagent-audit v${VERSION}`,
-    rulesCount: 24,
+    rulesCount: 25,
   };
   const lines: string[] = ['[sofagent] 能力清单:', ''];
   lines.push('Tools:');

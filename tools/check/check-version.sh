@@ -953,7 +953,7 @@ echo ""
 
 # ── 文案数字漂移扫描（v1.1.6 新增 · 维度八·任务5 强化）──────────
 # 扫描 audit 源码中疑似硬编码的「N 条规则」类声称，与 SSOT 对账
-# SSOT: defaultRules.length（当前 17）/ 注册总数（24）
+# SSOT: defaultRules.length（当前 17）/ 注册总数（25）
 # 防止 init.ts 输出文案、fix-suggestions.ts/qa-boundary-verify.test.ts 注释等小数字无人对账
 echo "=== 13. 文案数字漂移扫描（audit 源码硬编码规则条数）==="
 DOC_DRIFT_OK=true

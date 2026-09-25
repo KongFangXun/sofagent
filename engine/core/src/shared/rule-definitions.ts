@@ -2,7 +2,7 @@
 // shared/rule-definitions.ts · 跨引擎规则定义单一事实源
 // v1.5.3 第一章（双规则引擎统一）：
 //   历史上 `engine/rules/`（tool-level，调用前拦截，3 条）与
-//   `engine/audit/src/rules/`（git-diff，提交后审计，24 条）并行维护各自
+//   `engine/audit/src/rules/`（git-diff，提交后审计，25 条）并行维护各自
 //   的规则定义——仅靠结构对齐（鸭子类型）避免包间硬依赖，无任何一层
 //   真正共用同一套定义。本模块是「同一套规则定义」的**唯一落点**：
 //     ① 规则身份目录（id / number / 参与的触发时机 ruleTypes）；

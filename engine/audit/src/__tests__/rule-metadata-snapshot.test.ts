@@ -1,7 +1,7 @@
 // ============================================================
 // rule-metadata-snapshot.test.ts · 注册表元数据快照（v1.4.8 深模块条目 7 第 0 步）
 // ============================================================
-// 24 条规则 name/number/evidenceMode/ruleClass/priority/examples 全量快照——
+// 25 条规则 name/number/evidenceMode/ruleClass/priority/examples 全量快照——
 // 条目 7（meta 单源 + scan 装配）重构前后的行为锚：重构后本测试零改动必须仍绿。
 // ============================================================
 import { describe, expect, it } from 'vitest';
@@ -12,21 +12,21 @@ describe('条目 7 · 规则注册表元数据快照（第 0 步——重构行�
   it('defaultRules 17 条（双计数锚之一）', () => {
     expect(defaultRules).toHaveLength(17);
   });
-  it('defaultRules + extendedRules = 24 条（双计数锚之二）', () => {
-    expect(defaultRules.length + extendedRules.length).toBe(24);
+  it('defaultRules + extendedRules = 25 条（双计数锚之二）', () => {
+    expect(defaultRules.length + extendedRules.length).toBe(25);
   });
   it('规则编号集合快照（A 系/E 系全量——编号推导重构的对照锚）', () => {
     const names = [...defaultRules, ...extendedRules].map((r) => r.name);
-    // 精确集合断言（A 系 21 + E 系 3；成员增删须显式改本快照）
-    expect(names.filter((n) => n.startsWith('A')).length).toBe(21);
+    // 精确集合断言（A 系 22 + E 系 3；成员增删须显式改本快照）
+    expect(names.filter((n) => n.startsWith('A')).length).toBe(22);
     expect(names.filter((n) => n.startsWith('E')).length).toBe(3);
     // name 唯一（注册表不变式）
-    expect(new Set(names).size).toBe(24);
+    expect(new Set(names).size).toBe(25);
   });
-  it('evidenceMode 分布快照（19 git-diff + 4 hybrid + 1 filesystem）', () => {
+  it('evidenceMode 分布快照（20 git-diff + 4 hybrid + 1 filesystem）', () => {
     const all = [...defaultRules, ...extendedRules];
     const count = (m: string) => all.filter((r) => (r as { evidenceMode?: string }).evidenceMode === m).length;
-    expect(count('git-diff')).toBe(19);
+    expect(count('git-diff')).toBe(20);
     expect(count('hybrid')).toBe(4);
     expect(count('filesystem')).toBe(1);
   });
@@ -35,7 +35,7 @@ describe('条目 7 · 规则注册表元数据快照（第 0 步——重构行�
     for (const r of all) {
       expect(ruleCode(r.number, r.name), `${r.name} 的 id 漂移`).toBe(r.id);
     }
-    expect(new Set(all.map((r) => r.id)).size).toBe(24);
+    expect(new Set(all.map((r) => r.id)).size).toBe(25);
   });
   // v1.4.8 条目 7 批三：原散落在各 rule-*.test.ts 的 evidenceMode / ruleClass 断言收口至此
   // （元数据断言的唯一集中地）——注册表 meta 全量逐条快照，成员/字段漂移须显式改本快照。
@@ -68,6 +68,7 @@ describe('条目 7 · 规则注册表元数据快照（第 0 步——重构行�
       'A15|A15 不盲动|15|hybrid|能力拐杖|extended',
       'A16|A16 非授权文件变更|16|git-diff|工程规范|extended',
       'A17|A17 异常批量变更|17|filesystem|工程规范|extended',
+      'A24|A24 交付物落点|24|git-diff|工程规范|extended',
     ]);
   });
 });

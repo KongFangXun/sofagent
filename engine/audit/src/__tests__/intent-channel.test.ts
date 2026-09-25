@@ -302,9 +302,9 @@ describe('第七章 · 规则可显式声明输入通道（默认结果通道）
     expect(ruleSupportsChannel(rule, 'intent')).toBe(true);
   });
 
-  it('test_默认通道回归_既有24条规则零声明_行为零变化', () => {
+  it('test_默认通道回归_既有25条规则零声明_行为零变化', () => {
     const all = [...defaultRules, ...extendedRules];
-    expect(all).toHaveLength(24);
+    expect(all).toHaveLength(25);
     // 逐条断言：全部走默认结果通道，无一条进入意图通道（本章不新增规则、不改判定）
     for (const rule of all) {
       expect(rule.inputChannels, `${rule.id} 意外声明了输入通道`).toBeUndefined();

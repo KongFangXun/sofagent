@@ -5,7 +5,7 @@
 // 职责：读 worklog 聚合数据 + 预算配置 → 判定超支 → 产出 WARN 级发现。
 // 约束（铁律 12）：
 //   - WARN only，不拦截任务执行（除非 --warn-as-error 由调用方升级）
-//   - 不进 A1-A23 规则体系（不进 rules/index.ts，规则注册总数 24 不变——实注册数）——正交新维度
+//   - 不进 A1-A24 规则体系（不进 rules/index.ts，规则注册总数 25 不变——实注册数）——正交新维度
 //   - opt-in：不配 budget 不审计成本
 // 数据源：data/dashboard/worklog.json（v1.5.2 worklog 聚合落盘）
 // 预算源：workflow.yml 可选 `budget: { maxTokensPerRun, maxCostPerDay }`
@@ -25,7 +25,7 @@ export interface CostBudget {
 
 /** 成本超支发现（WARN 级） */
 export interface CostFinding {
-  /** 固定规则名（独立于 A1-A23 编号体系） */
+  /** 固定规则名（独立于 A1-A24 编号体系） */
   rule: 'COST-OVERRUN';
   /** 恒为 WARN（--warn-as-error 由调用方升级） */
   severity: 'WARN';

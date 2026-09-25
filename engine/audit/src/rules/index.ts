@@ -2,7 +2,7 @@
 // index.ts · 规则注册表
 // reporter 从此导入规则数组，循环调用——不再硬编码 import 每条规则
 // v0.97：铁律与审计分离——defaultRules (A1-A11) + extendedRules (E1-E4)
-// Last revised: v1.5.2（2026-08-21）——24 条注册：A1-A11 + A14-A23 + E1/E2/E4
+// Last revised: v1.5.3——25 条注册：A1-A11 + A14-A24 + E1/E2/E4
 // ============================================================
 
 import type { Rule } from './types';
@@ -31,6 +31,7 @@ import { scanA20 } from './rule-a20-network-exfiltration';
 import { scanA21 } from './rule-a21-persistence';
 import { scanA22 } from './rule-a22-privilege-escalation';
 import { scanA23 } from './rule-a23-path-traversal';
+import { scanA24 } from './rule-a24-deliverable-path';
 import { scanE1 } from './rule-e1-no-test-files';
 import { scanE2 } from './rule-e2-todo-undeclared';
 // E3 已在 v1.2.5 并入 A11（行数维度），不再独立存在
@@ -49,7 +50,7 @@ const DEF_A9 = ruleDefinition('A9')!;
 
 /** 默认规则（A1-A11 + A18-A23 = 17 条）——始终生效（实测口径，与 HANDBOOK 对齐）
  * 归属说明：A14-A17 不在默认规则——A14 知识库越权 / A15 不盲动 / A16 非授权文件变更 /
- *      A17 异常批量变更按实注册归 extendedRules（扩展 7 条 = A14-A17 + E1/E2/E4，共 24 条）。
+ *      A17 异常批量变更按实注册归 extendedRules（扩展 8 条 = A14-A17 + A24 + E1/E2/E4，共 25 条）。
  *      A12（供应链安全）/ A13（文件权限）已永久跳号（并入 A11），编号不复用。
  * v1.1.5: A18 从 extendedRules 提升为 defaultRules
  *        评估：在 sofagent 自身仓库根目录跑 A18（排除 node_modules/.git/dist/.workbuddy/docs/archive）
@@ -81,10 +82,10 @@ export const defaultRules: Rule[] = [
   { name: 'A23 不逃路径', id: 'A23', number: 23, evidenceMode: 'git-diff', ruleClass: '业务底线', priority: 'critical', ruleType: 'diff', scan: scanA23, examples: { match: [['..', '..', 'etc', 'pass' + 'wd'].join('/')], notMatch: ['src/utils/path.ts 正常路径'] }, examplesExecutable: true, justification: '路径穿越/symlink 逃逸——越出工作区边界' },
 ];
 
-/** 扩展规则（E1-E4 + A14-A17）——默认不生效，需 config.extendedRulesEnabled = true
+/** 扩展规则（E1-E4 + A14-A17 + A24 = 8 条）——默认不生效，需 config.extendedRulesEnabled = true
  *
  * 编号规则：
- * - A14-A17：行为类扩展规则（沿用 A 系列编号，number = 规则号，与 defaultRules 同 namespace 但 A12-A13 已永久跳号，合并入 A11（语义部分重叠但不完全等价））
+ * - A14-A17 / A24：行为类扩展规则（沿用 A 系列编号，number = 规则号，与 defaultRules 同 namespace 但 A12-A13 已永久跳号，合并入 A11（语义部分重叠但不完全等价））
  * - E1-E4：引擎增强类扩展规则（E 系列，number = 200 + 序号，避免与 A 系列冲突）
  * v1.3.3 #11: priority 统一为 'extended'（扩展规则层） */
 export const extendedRules: Rule[] = [
@@ -96,6 +97,8 @@ export const extendedRules: Rule[] = [
   { name: 'A15 不盲动', id: 'A15', number: 15, evidenceMode: 'hybrid', ruleClass: '能力拐杖', priority: 'extended', ruleType: 'diff', scan: scanA15, examples: { match: ["workflow 节点未声明 actions"], notMatch: ["workflow 节点声明了 actions"] }, justification: 'workflow 节点未声明可执行动作——无法审计' },
   { name: 'A16 非授权文件变更', id: 'A16', number: 16, evidenceMode: 'git-diff', ruleClass: '工程规范', priority: 'extended', ruleType: 'diff', scan: scanA16, description: '检测敏感目录/文件类型的非授权变更', examples: { match: ['修改非声明范围文件'], notMatch: ['修改声明范围内的文件'] }, justification: '非授权文件被修改（行为级）' },
   { name: 'A17 异常批量变更', id: 'A17', number: 17, evidenceMode: 'filesystem', ruleClass: '工程规范', priority: 'extended', ruleType: 'diff', scan: scanA17, description: '检测短时间内大量文件变更', examples: { match: ['单次提交 50 个文件'], notMatch: ['单次提交 5 个文件'] }, justification: '单次提交变更文件数超阈值——疑似批量异常操作' },
+  // v1.5.3 第三章新增：A24 交付物落点（白名单 opt-in fail-closed，进扩展集 7→8）
+  { name: 'A24 交付物落点', id: 'A24', number: 24, evidenceMode: 'git-diff', ruleClass: '工程规范', priority: 'extended', ruleType: 'diff', scan: scanA24, description: '检测新增交付物文件落点是否在声明白名单内（默认空=全不检，opt-in）', examples: { match: ['新增 report.md 落在 ~/Downloads（声明白名单 outputs/ 之外）', '交付物 交付报告.xlsx 落在项目根 new-dir/（越界）'], notMatch: ['新增 outputs/report.md 落在声明白名单内（不误报）', 'src/index.ts 普通源码新增（非交付物类，不受约束）'] }, justification: '新增交付物（报告/文档/产物）落在声明目录之外——交付物应统一落约定目录，不擅自新建文件夹' }, // ⚠️ 不可执行样例：scanA24 的判定依赖 config.A24 白名单（opt-in），加载期断言载体 auditExampleContext 不含 config ⇒ 恒「全不检」，无法做行为断言——故不标 examplesExecutable
 ];
 
 /** 全部规则——reporter 默认使用此数组（含 default + extended） */
@@ -110,7 +113,7 @@ export const rules: Rule[] = [...defaultRules, ...extendedRules];
 // 规则写错立刻爆，不靠人记（对齐 codex execpolicy "validated at load time"）。
 //
 // 报告导出供测试/CLI 核验覆盖面（loaded/executed/exempted）。
-// 24 条现状：全部带 match/notMatch 双夹具（存量，v1.4.0 起）；其中 5 条
+// 25 条现状：全部带 match/notMatch 双夹具（存量，v1.4.0 起）；其中 5 条
 // （A1/A2/A9/A20/A23）样例为**可执行夹具**（examplesExecutable），逐条过执行断言。
 // ⚠️ 纯度纪律：加载期执行断言要求 scan 为**纯函数**——A18 的 scanA18 调 `git ls-tree HEAD`
 // （依赖 cwd 仓库基线）非纯，故**不标**可执行（否则加载断言随运行目录抖动，本版实测拒载）。

@@ -115,9 +115,9 @@ git grep -nE "审计引擎|训练引擎|编排引擎|回溯引擎|自迭代引�
 > **背景**：A3 ruleClass 在 index.ts（注册中心）/ rule-a3-*.ts（规则实现）/ README（文档）三处声明，版本演进时容易只改一处忘记其他——审查捕获 A3 在 index.ts 标"能力拐杖"、rule-a3-*.ts 标"业务底线"的不一致。
 
 ```bash
-# 子项 a-c: A4=业务底线 / 规则总数=24（A20-A23 加入后 21→24）/ A6=能力拐杖 A11=业务底线
+# 子项 a-c: A4=业务底线 / 规则总数=25（A20-A23 加入后 21→24，A24 加入后 24→25）/ A6=能力拐杖 A11=业务底线
 grep -A5 "'A4\|name.*不删配置" engine/audit/src/rules/index.ts | grep "ruleClass" | grep "业务底线"
-grep "name:" engine/audit/src/rules/index.ts | wc -l # 期望 24
+grep "name:" engine/audit/src/rules/index.ts | wc -l # 期望 25
 grep "A6.*能力拐杖\|A11.*业务底线" engine/audit/README.md | wc -l # 期望 2
 
 # 子项 d: ruleClass SSOT ↔ README 逐条比对（盲区 重写） 注：旧版用 `diff <(index.ts 代码) <(README 表格行)`——两种文本格式天生不同，永远报差异（误报 12 行）。 改为两侧归一化成「A编号 ruleClass」再比对，才是真正检查"每条规则分级两边一致"。
@@ -131,16 +131,16 @@ TABLE=$(grep -cE "^\| A[0-9]+ |^\| E[0-9]+ " engine/audit/README.md)
 echo "index=$INDEX / README表=$TABLE（期望 TABLE≥INDEX）" # 注：A18/A19 漏更新
 grep "rulesCount" engine/mcp/src/tools/report-tools.ts | head -1 # MCP 数字动态化（拆分后非硬编码）|| true
 
-# 子项 h: 口径一致性硬断言（校准：17/21/24 三口径并存防复发）—— 注册数 = 默认数 + 扩展数 = 24，且横幅签名已统一「N 项检查 · M 条规则」口径
+# 子项 h: 口径一致性硬断言（校准：17/22/25 三口径并存防复发）—— 注册数 = 默认数 + 扩展数 = 25，且横幅签名已统一「N 项检查 · M 条规则」口径
 RULE_CNT_OK=$(node -e "
 const src = require('fs').readFileSync('engine/audit/src/rules/index.ts', 'utf8');
 const cnt = (re) => { const m = src.match(re); if (!m) return -1; return (m[0].match(/name:\s*'(A|E)[0-9]+/g) || []).length; };
 const d = cnt(/export const defaultRules[\s\S]*?^\];/m), e = cnt(/export const extendedRules[\s\S]*?^\];/m);
-process.exit(d === 17 && e === 7 ? 0 : 1);
+process.exit(d === 17 && e === 8 ? 0 : 1);
 " 2>/dev/null && echo yes || echo no)
-if [ "$RULE_CNT_OK" != "yes" ]; then echo "⚠️ 规则口径漂移：defaultRules≠17 或 extendedRules≠7"; exit 1; fi
+if [ "$RULE_CNT_OK" != "yes" ]; then echo "⚠️ 规则口径漂移：defaultRules≠17 或 extendedRules≠8"; exit 1; fi
 grep -q "项检查" engine/audit/src/reporter.ts || { echo "⚠️ productSignature 未统一「N 项检查 · M 条规则」口径"; exit 1; }
-echo "✅ 规则口径一致：17 默认 + 7 扩展 = 24 注册，签名口径已统一"
+echo "✅ 规则口径一致：17 默认 + 8 扩展 = 25 注册，签名口径已统一"
 
 # 子项 i（原 #89 迁入）: 每条规则的 ruleClass 在 index.ts 和 rule-*.ts 必须一致 修复（校准：误报）：旧脚本 for 空格分词 + rule_name 恒空全报 ⚠️ → 改按 number 定位对比。
 for n in $(grep -oE "number: [0-9]+" engine/audit/src/rules/index.ts | grep -oE "[0-9]+" | sort -un); do
@@ -261,7 +261,7 @@ grep -q "场景体例 fail-loud 守卫" playbook/acceptance-test.sh && echo "✅
 > 扩展：覆盖**代码侧 + 文档侧**两个一致性面
 
 ```bash
-# 防御：探针须 A+E 全口径——只匹配 A 系列会漏 E 系列编号，误报「SSOT 21」假红（README 24 条 = 21 A + 3 E 为正确值）
+# 防御：探针须 A+E 全口径——只匹配 A 系列会漏 E 系列编号，误报「SSOT 21」假红（README 25 条 = 22 A + 3 E 为正确值）
 SSOT_TOTAL=$(grep -cE "name:[[:space:]]*'[AE][0-9]+" engine/audit/src/rules/index.ts) # 勘误：去掉 ^ 行首锚定——index.ts 规则是对象字面量 { name: 'A4...'，行首锚定匹配 0 致 SSOT 总数失明
 SSOT_MAX=$(grep -oE "name:[[:space:]]*'A[0-9]+" engine/audit/src/rules/index.ts | grep -oE "[0-9]+" | sort -n | tail -1)
 echo "SSOT 规则总数: $SSOT_TOTAL / A 系列最大编号: A$SSOT_MAX"
@@ -269,16 +269,16 @@ echo "SSOT 规则总数: $SSOT_TOTAL / A 系列最大编号: A$SSOT_MAX"
 # 代码侧：knownKeys = index.ts 注册号（A16-A19 两组各验证）
 grep -c "a1[6-9]" engine/core/src/config-loader.ts # ≥4
 INDEX_RULES=$(grep -oE "name:[[:space:]]*'A[0-9]+" engine/audit/src/rules/index.ts | grep -oE "[0-9]+" | sort -n | tr '\n' ',')
-# 口径分工：INDEX_RULES 保持 A 系列（对账 knownKeys a14-a19）；E 系列由 SSOT_TOTAL（A+E=24）+ 下行 knownKeys 'e1'-'e4' 覆盖
+# 口径分工：INDEX_RULES 保持 A 系列（对账 knownKeys a14-a19）；E 系列由 SSOT_TOTAL（A+E=25）+ 下行 knownKeys 'e1'-'e4' 覆盖
 KNOWN_KEYS=$(grep -A20 "knownKeys = new Set" engine/core/src/config-loader.ts | grep -oE "'a[0-9]+'" | tr -d "'a" | sort -n | tr '\n' ',')
 echo "index.ts: $INDEX_RULES / knownKeys: $KNOWN_KEYS" # 期望：两集合相等
 
 # 文档侧：声称型数字（教训—6 文档漏改）
-grep -rnE "A1-A11、A14-A1[0-9]|[0-9]+ 条审计规则" --include="*.md" README.md README.en.md docs/ FDE/ FORGE/ 2>/dev/null | grep -v "regression-checklist\|fresh-eyes-review\|changelog/" # 人工核对：与 SSOT 一致（docs/ 已含 ROADMAP.md）
+grep -rnE "A1-A11、A14-A2[0-9]|[0-9]+ 条审计规则" --include="*.md" README.md README.en.md docs/ FDE/ FORGE/ 2>/dev/null | grep -v "regression-checklist\|fresh-eyes-review\|changelog/" # 人工核对：与 SSOT 一致（docs/ 已含 ROADMAP.md）
 
-# 字段完整性（name+ruleClass 全口径 24 条=48 行，与 SSOT_TOTAL 同口径）+ evidenceMode 计数（期望 24）
-grep -oE "name:|ruleClass:" engine/audit/src/rules/index.ts | wc -l # 期望 48
-grep -cE "evidenceMode:" engine/audit/src/rules/index.ts # 期望 24
+# 字段完整性（name+ruleClass 全口径 25 条=48 行，与 SSOT_TOTAL 同口径）+ evidenceMode 计数（期望 25）
+grep -oE "name:|ruleClass:" engine/audit/src/rules/index.ts | wc -l # 期望 50
+grep -cE "evidenceMode:" engine/audit/src/rules/index.ts # 期望 25
 ```
 
 #### 14. enterprise-deploy 完整性
@@ -1438,7 +1438,7 @@ grep -q "任务范围" engine/audit/src/rules/rule-a3*.ts 2>/dev/null || echo "�
 (
 # ① quick 规则数声称对账（防 #1）：README 声称与 dist 实测一致
 README_N=$(grep -oE '17 条默认规则' README.md | head -1); [ -n "$README_N" ] || echo "⚠️ README quick 规则数口径漂移"
-node -e "const m=require('./engine/audit/dist/rules/index.js');const d=m.defaultRules.length,x=m.extendedRules.length;if(d!==17||d+x!==24)process.exit(1)" || echo "⚠️ dist 规则数非 17/24，README 同步"
+node -e "const m=require('./engine/audit/dist/rules/index.js');const d=m.defaultRules.length,x=m.extendedRules.length;if(d!==17||d+x!==25)process.exit(1)" || echo "⚠️ dist 规则数非 17/25，README 同步"
 # ② check-version MCP 数含 ARCHITECTURE 能力总览（防 #3/#14）
 bash tools/check/check-version.sh > /tmp/cv.log 2>&1; grep -qE "60 tools|MCP 工具数" /tmp/cv.log || echo "⚠️ MCP 工具数比对未含 ARCHITECTURE" # 注：48→60（52+8 新 tool），数字勿写死——check-version 自身会跟 SSOT
 node -e "const fs=require('fs');const s=fs.readFileSync('docs/ARCHITECTURE.md','utf8');const reg=require('./engine/mcp/dist/tool-registry.js');const actual=Object.keys(reg.TOOLS||reg).length||60;s.split('\n').forEach(l=>{const mm=l.match(/（([0-9]+) tools）/);if(!mm)return;const v=+mm[1];if(v!==actual&&!/v1.[0-3].[0-9]/.test(l))console.log('⚠️ ARCHITECTURE tools 数漂移:',mm[0],'实际',actual)})" # 注：动态对账代替写死 48；行级版本豁免（含 v1.x.y 的历史演进行不算漂移——27=该时点真实数）

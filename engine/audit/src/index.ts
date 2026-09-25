@@ -438,7 +438,7 @@ function parseArgs(argv: string[]): Args {
       console.log('');
       console.log('双入口对照:');
       console.log('  sofagent-audit      quick 只读审计（17 条默认规则，秒级）');
-      console.log('  sofagent-audit-full 完整引擎（--init / --diff <range> / 24 条规则）——详见 README「快速开始」');
+      console.log('  sofagent-audit-full 完整引擎（--init / --diff <range> / 25 条规则）——详见 README「快速开始」');
       if (verbose) {
         console.log('\n完整参数列表:');
         console.log('  --diff <range>     git diff 范围（默认 HEAD~1..HEAD）');
@@ -1391,7 +1391,7 @@ async function main(): Promise<void> {
   printResults(results, diffFiles, args.json, args.ci, args.silent);
 
   // v1.4.9 交付三: 成本审计维度（opt-in WARN only——不配 budget 不审计；
-  // 不进 A1-A23 规则体系，exitCode 不变；铁律 12：WARN 不拦截任务执行）
+  // 不进 A1-A24 规则体系，exitCode 不变；铁律 12：WARN 不拦截任务执行）
   if (!args.json) {
     const costBudget = config.cost?.budget;
     if (costBudget && (costBudget.maxTokensPerRun || costBudget.maxCostPerDay)) {
@@ -1781,7 +1781,7 @@ export function printResults(results: AuditResult, diffFiles: DiffFile[], json: 
   console.log('');
   // 口径统一（run-02 P1-5）：defaultCnt/extendedCnt 前置计算——签名行与明细行
   // 同源同口径「N 项检查 · M 条规则 (D 默认 + E 扩展)」，quick 模式不再出现
-  // 横幅「17 规则」与明细「24 条规则」自相矛盾。
+  // 横幅「17 规则」与明细「25 条规则」自相矛盾。
   const defaultCnt = defaultRules.length;
   const extendedCnt = extendedRules.length;
   const totalCnt = defaultCnt + extendedCnt;
@@ -1849,7 +1849,7 @@ export function printResults(results: AuditResult, diffFiles: DiffFile[], json: 
   // 扩展规则状态
   if (!results.rules.some((r) => r.number > 11)) {
     // v1.3.9 P2-23: E3 已并入 A11（不滥资源），不再单独列出，避免用户误以为存在 E3 规则
-    console.log('  扩展规则   未启用（E1 E2 E4 + A14-A17，config 中开启）');
+    console.log('  扩展规则   未启用（E1 E2 E4 + A14-A17 + A24，config 中开启）');
   }
 
   // 历史拦截统计(loadHistory(500) 是"最近 500 条"截断语义，不是全量统计——

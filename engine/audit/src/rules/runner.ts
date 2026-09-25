@@ -26,19 +26,19 @@ import { assessGb48000Coverage, buildGb48000RuleCheck } from '../gb48000';
 export const GB48000_RULE_NAME = 'GB48000';
 
 /**
- * 规则分组（24 条 = 17 默认 + 7 扩展）
+ * 规则分组（25 条 = 17 默认 + 8 扩展）
  *
  * 默认规则（17 条，config.yml 中 enabled: true）：
  *   A1-A11, A18-A23
  *
- * 扩展规则（7 条，需主动开启 extensions.enabled: true）：
- *   A14-A17, E1-E2, E4
+ * 扩展规则（8 条，需主动开启 extensions.enabled: true）：
+ *   A14-A17, A24, E1-E2, E4
  *
  * 规则数口径(统一）：
  *   - 17 条默认规则（normal run，config.yml extendedRulesEnabled=false）
- *   - 24 条全量规则（config fallback 到 safeDefaults 时 extendedRulesEnabled=true，
+ *   - 25 条全量规则（config fallback 到 safeDefaults 时 extendedRulesEnabled=true，
  *     fail-closed 保护——宁可多查不漏查）
- *   - 24 个规则源文件（rules/ 目录 rule-*.ts 与 24 条规则一一对应，不含 *.test.ts）
+ *   - 25 个规则源文件（rules/ 目录 rule-*.ts 与 25 条规则一一对应，不含 *.test.ts）
  *   - 目录另有 6 个支撑文件（index.ts 注册表 / types.ts / runner.ts / skill-safety 三件套之 engine+reporter+rules）——非规则文件不计入口径
  *   - 9 条基线规则（不可禁用）
  *

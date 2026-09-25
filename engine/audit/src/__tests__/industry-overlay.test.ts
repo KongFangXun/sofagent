@@ -34,7 +34,7 @@ describe('parseIndustryMark', () => {
 });
 
 describe('decideOverlay（验收标准全覆盖）', () => {
-  it('标注 fintech → 自动加载 fintech overlay（叠加默认 24 条）', () => {
+  it('标注 fintech → 自动加载 fintech overlay（叠加默认 25 条）', () => {
     const d = setup();
     const ctx = join(d, 'context.md');
     writeFileSync(ctx, '---\nindustry: fintech\n---\n企业画像…');
@@ -100,12 +100,12 @@ describe('四套 overlay 规则包可用性（复用 --ruleset 通道）', () =>
     }
   });
 
-  it('overlay 可与默认叠加（金融企业 = 24 默认 + fintech）——通道独立验证', () => {
-    // 默认 24 条来自 rules/index.ts（既有事实）；overlay 经 ruleset-loader 独立加载
+  it('overlay 可与默认叠加（金融企业 = 25 默认 + fintech）——通道独立验证', () => {
+    // 默认 25 条来自 rules/index.ts（既有事实）；overlay 经 ruleset-loader 独立加载
     const fintech = loadRuleset('fintech');
     expect(fintech.rules.every(r => r.id.startsWith('fin-'))).toBe(true);
-    // 叠加语义由消费方（audit CLI）实现：24 + 3 = 27 全生效
-    expect(24 + fintech.rules.length).toBe(27);
+    // 叠加语义由消费方（audit CLI）实现：25 + 3 = 28 全生效
+    expect(25 + fintech.rules.length).toBe(28);
   });
 
   it('decideOverlayFromProjectRoot 探测项目根与 .sofagent/ 两处', () => {

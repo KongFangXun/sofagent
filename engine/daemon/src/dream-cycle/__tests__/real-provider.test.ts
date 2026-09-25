@@ -185,7 +185,7 @@ describe('四角色循环场景（runDreamCycle × 真脑注入）', () => {
   // 用例七：假真脑全链——六阶段跑通 + 知识含真实形态内容 + 周报真 LLM 标注
   it('注入假真脑 → 六阶段全链跑通，entities/ 含具体命令与数字，周报标注「真 LLM」', async () => {
     const thinkContent =
-      '## 教训：hook 部署后必须自查\n跑 bash tools/check/check-version.sh，9 处 SSOT 对齐\n## 教训：审计纪律\n提交前 24 条规则全绿才收编\n';
+      '## 教训：hook 部署后必须自查\n跑 bash tools/check/check-version.sh，9 处 SSOT 对齐\n## 教训：审计纪律\n提交前 25 条规则全绿才收编\n';
     fs.writeFileSync(path.join(dir, 'data', 'think.md'), thinkContent, 'utf-8');
 
     const fakeReal = new RealLLM(null, makeFakeRealCall(false));

@@ -15,7 +15,7 @@
 // - 两者都不可用 → null（调用点各自走既有降级路径，与今天行为一致）。
 //
 // 设计依据：ExecutionBackend 接口注释明确「execute 是唯一必须实现的方法」。
-// invoke 兼容代理是执行层的适配器，不改变编排层的显式图结构（24 条 git diff
+// invoke 兼容代理是执行层的适配器，不改变编排层的显式图结构（25 条 git diff
 // 规则 + HMAC 链 + DAG 波次审计全部依赖的东西一点不动）。
 
 import type { ExecutionBackend, ExecutionTask, ExecutionResult } from './execution-backend.js';

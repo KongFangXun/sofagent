@@ -169,7 +169,7 @@ export interface SofagentPluginEntry {
    *    绝不阻断插件挂载。
    */
   seamHandlers?: Record<string, SeamHandler>;
-  /** 短描述（不含 seam 与桥接后缀），如「变更机器审阅——24 规则 + git diff 硬证据 + 节点级审计」 */
+  /** 短描述（不含 seam 与桥接后缀），如「变更机器审阅——25 规则 + git diff 硬证据 + 节点级审计」 */
   description: string;
 }
 

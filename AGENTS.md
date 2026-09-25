@@ -31,7 +31,7 @@ model_instructions_file = "~/.sofagent/skills/sofagent/SKILL.md"
 
 ## 审计强制（平台无关）
 
-约束是建议性的，审计是强制性的——提交前审计走 **git hook**（`sofagent-audit --install-hook`），与宿主平台无关：24 条 git diff 规则 + HMAC 链审计在 Codex 下同样生效。
+约束是建议性的，审计是强制性的——提交前审计走 **git hook**（`sofagent-audit --install-hook`），与宿主平台无关：25 条 git diff 规则 + HMAC 链审计在 Codex 下同样生效。
 
 ## 连接 MCP Server
 

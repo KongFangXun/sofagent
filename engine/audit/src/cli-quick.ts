@@ -285,10 +285,10 @@ export function generateQuickOutput(
   parts.push('');
   if (violationCount === 0 && warnCount === 0) {
     // v1.3.4 P1-8: PASS 时输出可感知回声——让用户明确知道「sofagent 在工作且通过了」
-    // v1.3.2 P2-17: 解释 17 条默认 vs 24 条总量，消除「少装了什么」的认知落差
+    // v1.3.2 P2-17: 解释 17 条默认 vs 25 条总量，消除「少装了什么」的认知落差
     // v1.5.1 M13①：补 `[sofagent]` 签名——改前本行无前缀、紧随其后的回声行有
     // `✓ [sofagent] …`，同一屏一行署名一行不署名。产品自称口径与下方回声行一致。
-    parts.push(`✅ [sofagent] 全部 ${passCount} 条规则通过（默认 17 条 · 完整 24 条含扩展，扩展规则经 config 启用，规则集用 --ruleset 加载）${skipCount > 0 ? `（${skipCountLabel(skipCount, failFast)}）` : ''}`);
+    parts.push(`✅ [sofagent] 全部 ${passCount} 条规则通过（默认 17 条 · 完整 25 条含扩展，扩展规则经 config 启用，规则集用 --ruleset 加载）${skipCount > 0 ? `（${skipCountLabel(skipCount, failFast)}）` : ''}`);
     // v1.3.5 #7: 跳过计数解释——让用户知道「跳过」是 quick 模式缺输入而非漏检
     // v1.4.3 F-08 (bugfix 批): 归因口径如实化——quick 模式不含归因分析（ATTRIBUTION
     // 引擎需任务描述/Agent 日志输入），原措辞「需任务描述输入的规则」未点破归因
@@ -316,7 +316,7 @@ export function generateQuickOutput(
     }
   }
 
-  // v1.3.8 P1-B2: 扩展规则默认关闭披露——此前只写「完整 24 条含扩展」但未明示
+  // v1.3.8 P1-B2: 扩展规则默认关闭披露——此前只写「完整 25 条含扩展」但未明示
   // 扩展规则默认关闭，用户误以为 quick 已经全跑；显式披露规则覆盖面。
   // 措辞注意：首个「N 条」数字须为 17 或 24（check-version 维度 13 逐行取首个数字对账 SSOT）
   // v1.5.2 B-10：与前一条 ⓘ（QUICK_SKIP_HINT）之间留空行 + 「下一步：」动作前缀——
@@ -383,7 +383,7 @@ export function runCliQuick(argv: string[]): number {
   // 位置：放在 FULL_ONLY 路由之后、--help 之前——demo 自带 --help 文案，
   //   且 demo 不要求当前目录是 git 仓库（它在 /tmp 自建沙箱），
   //   故必须在下方 isGitRepo 检查之前拦截。
-  // 惰性 require：demo.ts 静态依赖 rules/index（24 条规则模块）——
+  // 惰性 require：demo.ts 静态依赖 rules/index（25 条规则模块）——
   //   顶层 import 会给既有零配置审计路径（npx sofagent-audit 的 30 秒 aha）
   //   凭空加上这份冷启动开销。既有路径**行为与开销零变化**，是本分支的硬约束。
   //

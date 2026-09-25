@@ -1,7 +1,7 @@
 // export.test.ts · v1.4.4 第一章 · 语料导出三件套测试
 //
 // 覆盖（changelog 验收标准对齐）：
-// 1. 27 编号位零遗漏（24 实现 + 3 跳号占位 A12/A13/E3）
+// 1. 28 编号位零遗漏（25 实现 + 3 跳号占位 A12/A13/E3）
 // 2. reward_hint 段齐全（签名/权重/可判定性三件套）
 // 3. verifiers 三桶分桶正确（机器可判/需人审/启发式）
 // 4. GUIDE 锚点解析（五要素/三问判定/量化公式三段）
@@ -36,15 +36,15 @@ const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = join(here, '..', '..', '..', '..');
 
 // ────────────────────────────────────────────────────────────
-// 一、规则导出：27 编号位零遗漏
+// 一、规则导出：28 编号位零遗漏
 // ────────────────────────────────────────────────────────────
 
-describe('规则语料导出（27 编号位）', () => {
-  it('all 范围 = 24 实现 + 3 占位 = 27 编号位（零遗漏）', () => {
+describe('规则语料导出（28 编号位）', () => {
+  it('all 范围 = 25 实现 + 3 占位 = 28 编号位（零遗漏）', () => {
     const all = [...defaultRules, ...extendedRules];
-    expect(all).toHaveLength(24); // 源头 24 条
+    expect(all).toHaveLength(25); // 源头 25 条
     const slots = allRuleSlots(all);
-    expect(slots).toHaveLength(27);
+    expect(slots).toHaveLength(28);
 
     // 跳号占位三件在位
     const codes = slots.map((s) => s.code);
@@ -58,13 +58,13 @@ describe('规则语料导出（27 编号位）', () => {
     }
   });
 
-  it('编号空间连续性——A1-A11 + A14-A23 + E1/E2/E4 + 占位 A12/A13/E3 全在', () => {
+  it('编号空间连续性——A1-A11 + A14-A24 + E1/E2/E4 + 占位 A12/A13/E3 全在', () => {
     const all = allRuleSlots([...defaultRules, ...extendedRules]);
     const codes = new Set(all.map((s) => s.code));
     const expected = [
       'A1', 'A2', 'A3', 'A4', 'A5', 'A6', 'A7', 'A8', 'A9', 'A10', 'A11',
       'A12', 'A13', // 占位
-      'A14', 'A15', 'A16', 'A17', 'A18', 'A19', 'A20', 'A21', 'A22', 'A23',
+      'A14', 'A15', 'A16', 'A17', 'A18', 'A19', 'A20', 'A21', 'A22', 'A23', 'A24',
       'E1', 'E2', 'E3', // E3 占位
       'E4',
     ];
@@ -74,10 +74,10 @@ describe('规则语料导出（27 编号位）', () => {
 
   it('buildRuleCorpusBody(all) 的 counts 三数对账闭合', () => {
     const body = buildRuleCorpusBody('all', '1.4.4-test');
-    expect(body.counts.implemented).toBe(24);
+    expect(body.counts.implemented).toBe(25);
     expect(body.counts.mergedPlaceholders).toBe(3);
-    expect(body.counts.totalSlots).toBe(27);
-    expect(body.rules).toHaveLength(27);
+    expect(body.counts.totalSlots).toBe(28);
+    expect(body.rules).toHaveLength(28);
     expect(body.schemaVersion).toBe('v1');
     expect(body.engineVersion).toBe('1.4.4-test');
   });
@@ -134,13 +134,13 @@ describe('规则语料导出（27 编号位）', () => {
 // ────────────────────────────────────────────────────────────
 
 describe('verifiers 三桶清单', () => {
-  it('三桶总和 = 27（24 实现 + 3 跳号占位全量分桶——占位进机器可判桶）', () => {
+  it('三桶总和 = 28（25 实现 + 3 跳号占位全量分桶——占位进机器可判桶）', () => {
     const m = buildVerifiersManifest();
     const total =
       m.buckets.machineJudgeable.length +
       m.buckets.humanReview.length +
       m.buckets.heuristic.length;
-    expect(total).toBe(27);
+    expect(total).toBe(28);
   });
 
   it('git-diff 类规则全部进机器可判桶（可直接当 reward 函数接线）', () => {
@@ -428,14 +428,14 @@ describe('导出落盘与签名', () => {
     expect(r.files).toHaveLength(2);
     // JSON 可回读且计数闭合
     const parsed = JSON.parse(readFileSync(r.files[0]!, 'utf-8')) as { body: { counts: { totalSlots: number } }; hmac?: string };
-    expect(parsed.body.counts.totalSlots).toBe(27);
+    expect(parsed.body.counts.totalSlots).toBe(28);
     // YAML 非空且含关键字段
     const yaml = readFileSync(r.files[1]!, 'utf-8');
     expect(yaml).toContain('schemaVersion');
     expect(yaml).toContain('A12');
     // 审计事件（合规红线——导出行为受审计）
     expect(r.auditEvent.event).toBe('corpus_export');
-    expect(r.auditEvent.ruleCount).toBe(27);
+    expect(r.auditEvent.ruleCount).toBe(28);
     expect(typeof r.auditEvent.signed).toBe('boolean');
     rmSync(out, { recursive: true, force: true });
   });
@@ -450,14 +450,14 @@ describe('导出落盘与签名', () => {
   it('dryRun 不落盘', () => {
     const r = exportRuleCorpus({ dryRun: true });
     expect(r.files).toEqual([]);
-    expect(r.body.counts.totalSlots).toBe(27);
+    expect(r.body.counts.totalSlots).toBe(28);
   });
 });
 
 describe('CLI 参数校验（parseCorpusArgs）', () => {
   it('test_parseCorpusArgs_非法scope显式报错退出（不静默回落all）', async () => {
     // fresh-eyes 视角4-1 修复行为锁：--scope defaults（复数打错）此前静默
-    // 按 all 导出 27 编号位（比预期多 3 条占位）——非法值必须显式报错退出
+    // 按 all 导出 28 编号位（比预期多 3 条占位）——非法值必须显式报错退出
     const { parseCorpusArgs } = await import('../cli/corpus');
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation((() => undefined) as never);
     const errSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);

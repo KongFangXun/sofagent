@@ -45,7 +45,7 @@ audit:
   # loopCheckMaxRounds: 20
 
   # 按规则名禁用——取消注释即可关闭指定规则
-  # 可用 key（24 条现行规则）: a1-a11, a14-a23, e1-e2, e4
+  # 可用 key（25 条现行规则）: a1-a11, a14-a24, e1-e2, e4
   # （a12/a13 已并入 a11、e3 已并入 a11——填退役编号会触发「未知规则名」告警并忽略）
   # 显式 false 禁用，未列或 true 表示启用
   # rules:
@@ -74,6 +74,18 @@ A17:
   enabled: true
   bulk_threshold: 50
   bulk_window_ms: 300000
+
+# v1.5.3: A24 交付物落点（opt-in fail-closed——白名单默认空 = 全不检，声明才启用）
+# 启用后：diff 新增的交付物类文件（报告/文档/产物）落点须在 allowed_dirs 前缀内，越界 FAIL 并附替代路径建议。
+A24:
+  enabled: false
+  allowed_dirs:
+    # - "outputs/"                    # workflow 声明的产物目录
+    # - "~/Desktop/deliverables/"     # 交付面目录（按需声明）
+  # deliverable_extensions:           # 可选：覆盖内置交付物扩展名集（默认含 .md/.pdf/.docx/.xlsx/.csv 等）
+  #   - ".md"
+  #   - ".pdf"
+  #   - ".xlsx"
 
 # v1.1.6: 感知层配置已移除（v1.3.1 #42）——perception.enabled 为死配置（全代码库零读取点）。
 # 如需 webhook 推送，使用 audit.webhook 配置项（见下方）。

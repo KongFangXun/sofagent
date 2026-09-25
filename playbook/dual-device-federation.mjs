@@ -74,7 +74,7 @@ async function deviceB() {
   console.log(`[设备B] 配对完成 sharedKey=${sharedKey.toString('hex').slice(0, 16)}... 本机指纹=${fp.slice(0, 8)}`);
   const knowledgeDir = path.join(PAIR_DIR, 'deviceB-knowledge');
   fs.mkdirSync(path.join(knowledgeDir), { recursive: true });
-  fs.writeFileSync(path.join(knowledgeDir, 'audit-rules.md'), 'sofagent 审计规则：24 条 git-diff 硬证据，密钥泄漏当场拦截');
+  fs.writeFileSync(path.join(knowledgeDir, 'audit-rules.md'), 'sofagent 审计规则：25 条 git-diff 硬证据，密钥泄漏当场拦截');
   fs.writeFileSync(path.join(knowledgeDir, 'deploy-guide.md'), 'sofagent 部署指南：诊断 → 激活 → 编排 → 执行 → 进化');
   const server = net.createServer((socket) => {
     const chunks = [];

@@ -71,11 +71,11 @@
 
 **离场——按文件执行与审计：**
 
-- **每次变更都被管住**：24 条规则硬证据审计，密钥泄漏 / 越界编辑 / 注入攻击 / 盲改当场拦截；出事一键回滚到任意安全状态。
+- **每次变更都被管住**：25 条规则硬证据审计，密钥泄漏 / 越界编辑 / 注入攻击 / 盲改当场拦截；出事一键回滚到任意安全状态。
 - **🔗 激活链**：FDE 诊断交付后，ontology + workflow.yml + skills/ 不再是一堆静态文件躺在磁盘上——激活链自动读交付物 → 注册企业 SubAgent → 编排成 LangGraph 工作流 → 带人工审批（HITL）和审计地自动跑。从"交给企业一堆文档"变成"交给企业一个会自己跑的系统"（ACTIVATE→ORCHESTRATE→EXECUTE→SUSTAIN 四阶段完整交付）。详见 [激活链设计文档](./guides/fde-activation-chain.md)。
 - **知识自动长出来**：Dream Cycle 把每次任务沉淀成企业知识库 + Ontology 本体，越用越懂你的业务。
 - **🎓 训练数据与评估**（v1.4.2）：企业异构数据（CSV/Excel/DB/API）经管道进训练集（质量闸门 + 训练入口脱敏）；dataset_version 版本台账（指纹冻结 + 续跑版本锁）；训练中 eval 闭环（阈值外部化 continue/stop）；train env/doctor 环境体检；dry-run 显存估算 + ScaleRL 算力外推；训练报告（客户可读 Markdown + 量化四字段 ROI）。详见 [v1.4.2 开发日志](./changelog/v1.4/v1.4.2.md)。
-- **📡 训练信号与部署闭环**（v1.4.4）：`corpus_export` 语料导出三件套（规则/FDE 方法论/带标签样本，27 编号位 + reward 骨架 + 脱敏聚合）；企业专属模型本地权重部署（`model_register source: 'local-path'` + sha256 篡改拒绝 + rollback-weights 版本回滚）；训练产物→注册自动衔接（train done + eval pass → model_register）；`train compare` 多基座 ROI 排序；决策因果链与先例检索（`causedBy` 因果边）；CI 供应链全 SHA 固定 + dashboard 完全离线。详见 [v1.4.4 开发日志](./changelog/v1.4/v1.4.4.md)。
+- **📡 训练信号与部署闭环**（v1.4.4）：`corpus_export` 语料导出三件套（规则/FDE 方法论/带标签样本，28 编号位 + reward 骨架 + 脱敏聚合）；企业专属模型本地权重部署（`model_register source: 'local-path'` + sha256 篡改拒绝 + rollback-weights 版本回滚）；训练产物→注册自动衔接（train done + eval pass → model_register）；`train compare` 多基座 ROI 排序；决策因果链与先例检索（`causedBy` 因果边）；CI 供应链全 SHA 固定 + dashboard 完全离线。详见 [v1.4.4 开发日志](./changelog/v1.4/v1.4.4.md)。
 - **🔍 引擎纵深**：官方 AST 规则引擎（`sofagent-ruleset-ast`，ASI01 目标劫持 + ASI04 供应链 SBOM 语义检测）；meta-harness 多 harness 统一编排（策略强制下沉基础设施层，跨会话协作）；AI 工作明细数据层（`worklog` 按 Agent/Workflow/周 + 人工介入，`worklog_query` MCP）；API 分级治理（`@public`/`@internal` 1439 符号 + CI 门禁）；MLflow agent 评估（13 指标 + LLM-as-Judge）；Agentic Browser（4 工具 + 视觉降级）；跨平台适配器（Cursor/Codex/Gemini CLI）；ATTRIBUTION 归因 + Dream Sandbox 沙盒审计（强制人审 merge + 路径穿越消毒）；>5MB diff 缝隙修复。明细见 [开发日志](./changelog/v1.3/v1.3.9.md)。
 
 **全程——不分相位的底座能力：**
@@ -101,7 +101,7 @@
 - **sofagent 约束层 = 堤坝 + 自来水厂 + 管网 + 水龙头（5 项核心已实现）+ 水表（审计已实现，终端 Dashboard v1.2.3 已落地）**：
   - 🧱 **堤坝（约束层）**——四层加载链，把行为底线焊死在每次对话里
   - 🏭 **自来水厂（沙箱安全）**——让原水变「直饮水」，危险操作隔离在沙箱
-  - 🔧 **管网（审计模块）**——每次变更过 24 条规则审查
+  - 🔧 **管网（审计模块）**——每次变更过 25 条规则审查
   - 🚰 **水龙头（业务 Sub Agent）**——具体干活的节点，随业务接不同的「水龙头」
   - 📊 **水表（审计）**——每次变更看得见、可回滚（终端 Dashboard v1.2.3 已落地）
 
@@ -117,7 +117,7 @@
 | 角色 | 模块 | 管什么 | 触发方式 |
 |------|------|------|------|
 | 🧱 底座 | **约束层**（harness） | 四层加载链注入规则，Agent 启动即生效 | 平台 Hook（OpenClaw）/ DSH 插件 / Sub Agent 自加载 |
-| 🔍 模块① | **审计模块**（audit） | git diff → 24 条规则硬扫描，违规当场拦 | git commit / daemon 文件变更 |
+| 🔍 模块① | **审计模块**（audit） | git diff → 25 条规则硬扫描，违规当场拦 | git commit / daemon 文件变更 |
 | ⚡ 模块④ | **编排模块**（orchestrator） | 工作流 DAG 调度 + 事件驱动触发（v1.5.1：四类事件源 + `on:` 订阅 + 死信重放）+ 异常三分类路由 | 业务事件到达 / 显式指令 |
 | 🔄 模块② | **回溯模块**（core） | 审计后自动快照，出事一键回滚 | 审计完成后自动 |
 | ⚙️ 内部工具 | **FORGE 工具链**（orchestrator） | LOOP 流水线（项目自迭代用，非对外模块） | CLI compose tool |
@@ -212,7 +212,7 @@ cd sofagent && bash install.sh
 | 首次 commit 提示「无需审计」 | 全新仓库首次提交没有前一个版本可对比 | 正常——下次 commit 起审计自动生效 |
 | Windows 上部分检查缺失 | Windows 为实验性支持 | 核心审计模块可用，PowerShell 脚本覆盖不全，详见 [LIMITATIONS](./LIMITATIONS.md#-windows-支持是实验性的) |
 | hook 装了但静默跳过 | Node.js 或 sofagent-audit 缺失时 hook 旧版会静默跳过 | v1.0 hook 含无声失败保护，会 exit 1 + 提示；旧 hook 跑 `--init` 更新 |
-| `sofagent-audit --doctor` 报 config 缺失 | 未跑过 `--init` | 跑 `sofagent-audit --init` 生成 config.yml，或用默认配置（默认 17 条（A1–A11 + A18–A23）全启用，扩展 7 条（A14–A17 + E1/E2/E4）需开启，全量 24 条） |
+| `sofagent-audit --doctor` 报 config 缺失 | 未跑过 `--init` | 跑 `sofagent-audit --init` 生成 config.yml，或用默认配置（默认 17 条（A1–A11 + A18–A23）全启用，扩展 8 条（A14–A17 + A24 + E1/E2/E4）需开启，全量 25 条） |
 
 ### 验证装好了
 
@@ -244,7 +244,7 @@ sofagent-core verify                # 同样跑 verify 检查（注：没有 sof
 
 目前只有 OpenClaw 暴露 `agent:bootstrap` 会话事件，所以只有它额外承载加载链 Hook 与断路器；其他平台的约束走 Skill 自觉加载。**「支持某平台」指的是约束资产在该平台可用，不等于约束强度与其他平台相同**——编排模块在任何平台都可用，差别只在调用路径（Hook 平台走内部 API，其他走 CLI，详见[开发文档 §一](./DEVELOPMENT.md#脚本与文件结构速查)）。
 
-**审计在所有宿主上一样硬**：git diff 24 条规则不依赖 Agent 配合，任何宿主下提交都拦得住。约束是建议性的，审计是强制性的。
+**审计在所有宿主上一样硬**：git diff 25 条规则不依赖 Agent 配合，任何宿主下提交都拦得住。约束是建议性的，审计是强制性的。
 
 ### 卸载（怎么干净地撤掉）
 
@@ -383,7 +383,7 @@ Agent 先判断任务复杂度：
 
 ### 提交后自动审计
 
-Agent 改完代码 commit 了——`sofagent-audit` 扫描 git diff 对照 24 条审计规则（17 默认启用：A1-A11 + A18-A23；7 扩展 opt-in：A14-A17 + E1/E2/E4）逐条判定：
+Agent 改完代码 commit 了——`sofagent-audit` 扫描 git diff 对照 25 条审计规则（17 默认启用：A1-A11 + A18-A23；8 扩展 opt-in：A14-A17 + A24 + E1/E2/E4）逐条判定：
 
 ```bash
 cd engine/audit && npm ci && npm run build
@@ -427,7 +427,7 @@ sofagent-dashboard --full    # 展开：编排控制图 + FORGE 审查进度 + �
 | 面板 | 看什么 | 数据来源 |
 |------|--------|---------|
 | **数据去哪了**（数据主权） | 敏感数据有没有偷偷发给云端？ | 4 维审计日志（模型/操作/流向/任务） |
-| **AI 犯规了吗**（规则审计） | AI 有没有越权改文件、存数据？ | 审计模块 24 条规则结果 |
+| **AI 犯规了吗**（规则审计） | AI 有没有越权改文件、存数据？ | 审计模块 25 条规则结果 |
 | **任务跑到哪了**（工作状态） | 后台 daemon 和 sub-agent 是活的还是挂了？ | daemon-health.json |
 
 > 前置依赖：需要 `jq`（`brew install jq` / `apt install jq`）。`--full` 追加编排控制图（Org Graph + Work Graph）、FORGE 审查进度、最近文件变更三个扩展面板。FORGE 是 sofagent 项目的内部开发工具链（非对外引擎），企业用户可忽略 FORGE 审查进度面板。
@@ -670,7 +670,7 @@ sofagent-orchestrator subagent run fde --mode sustain --task "巡检所有节点
 
 ### 审计规则
 
-当前共 24 条审计规则（A1-A11、A14-A23 + E1-E2/E4），源码在 `engine/audit/src/rules/`。每条规则独立，新增只需写函数 + 注册一行。详见 [DEVELOPMENT §八](./DEVELOPMENT.md#八提交时审计--文件系统审计)。
+当前共 25 条审计规则（A1-A11、A14-A24 + E1-E2/E4），源码在 `engine/audit/src/rules/`。每条规则独立，新增只需写函数 + 注册一行。详见 [DEVELOPMENT §八](./DEVELOPMENT.md#八提交时审计--文件系统审计)。
 
 ### 审计聚合指标口径
 

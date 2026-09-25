@@ -214,7 +214,7 @@
 **图内自洽公式**（用户会手算验证，铁要求）：
 ```
 通过率 = 1 − 问题次数 ÷ 审计次数
-审计次数 = 任务数 × 每任务规则数（约 24）
+审计次数 = 任务数 × 每任务规则数（约 25）
 ```
 
 **数据字段语义**：任务级 `exitCode` 0=PASS/1=WARN/>1=FAIL；规则级 `ruleResults[].status` PASS/WARN/FAIL/SKIPPED（SKIPPED 不计分母）；daily 聚合 `rulePass`/`ruleAll`/`ruleRate`。

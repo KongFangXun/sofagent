@@ -176,7 +176,7 @@ async function main() {
   fs.mkdirSync(path.join(dirA, 'knowledge'), { recursive: true });
   fs.mkdirSync(path.join(dirB, 'knowledge'), { recursive: true });
   fs.writeFileSync(path.join(dirA, 'knowledge', 'deploy-guide.md'), 'sofagent 部署指南：诊断 → 激活 → 编排 → 执行 → 进化');
-  fs.writeFileSync(path.join(dirB, 'knowledge', 'audit-rules.md'), 'sofagent 审计规则：24 条 git-diff 硬证据，密钥泄漏当场拦截');
+  fs.writeFileSync(path.join(dirB, 'knowledge', 'audit-rules.md'), 'sofagent 审计规则：25 条 git-diff 硬证据，密钥泄漏当场拦截');
 
   // ── 场景一：配对协商（路径 A：配对码 + 指纹人工确认）──────────────
   console.log('── 场景一：配对协商（createPairingSession + pairByCode）──');

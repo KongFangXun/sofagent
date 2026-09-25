@@ -42,7 +42,7 @@
 
 | 插件 | 职责（桥接实况） | seam |
 |------|----------------|------|
-| `cordis-plugin-sofagent-audit` | 变更机器审阅 + 验收硬门禁（24 规则 + git diff 硬证据 + Turn 停止验收判定——吸收原 gate 验收面，开关独立）——桥接 `@sofagent/audit runRules` | tools/result + tools/pre-execute + fs/write-intent + agent/turn-stopping |
+| `cordis-plugin-sofagent-audit` | 变更机器审阅 + 验收硬门禁（25 规则 + git diff 硬证据 + Turn 停止验收判定——吸收原 gate 验收面，开关独立）——桥接 `@sofagent/audit runRules` | tools/result + tools/pre-execute + fs/write-intent + agent/turn-stopping |
 | `cordis-plugin-sofagent-rollback` | 出错逆序撤销（git snapshot → effect disposer）——桥接 `@sofagent/core getHistoryFilePath` | effect 注册/卸载 |
 | `cordis-plugin-sofagent-inject` | 启动注入企业约束（四层加载链）——桥接 `@sofagent/inject buildConstrainedSystemPrompt` | apply(ctx) |
 | `cordis-plugin-sofagent-evolve` | 经验沉淀（think.md 反思 + Dream Cycle）——桥接 `@sofagent/think generateThinkEntry` | 任务结束 hook |
@@ -63,7 +63,7 @@
 ```
 FDE agent 部署完成 ──→ 自动调用 @sofagent-audit → 验证部署合规
 FORGE engineer commit ──→ 自动调用 @sofagent-audit → 验证变更合规
-每次 git commit ──→ commit-msg hook → A1-A11、A14-A23 规则检查（0 token，纯正则引擎）
+每次 git commit ──→ commit-msg hook → A1-A11、A14-A24 规则检查（0 token，纯正则引擎）
 未来任何新 Agent ──→ SKILL.md 内置审计引用 → 合规检查
 ```
 
@@ -108,7 +108,7 @@ FORGE engineer commit ──→ 自动调用 @sofagent-audit → 验证变更合
 
 | 工具 | 说明 |
 |------|------|
-| `run_audit` | 对 git diff 运行全量审计（24 条规则），返回结构化审计报告 |
+| `run_audit` | 对 git diff 运行全量审计（25 条规则），返回结构化审计报告 |
 | `audit_file` | 单文件变更即时审计（不阻断） |
 | `audit_data_change` | 知识库结构化数据变更跑数据审计（D1-D5） |
 | `audit_trail` | 跨设备审计轨迹查询（HMAC 验签） |
@@ -224,7 +224,7 @@ FORGE engineer commit ──→ 自动调用 @sofagent-audit → 验证变更合
 | `train_budget` | 训练预算控制（超预算人审续跑或终止） |
 | `train_submit` | 训练任务提交，数据+基座+算法+超参+预算→trainJobId |
 | `train_doctor` | 训练环境体检——CUDA/显存/框架/基座缓存四项报告 |
-| `corpus_export` | 训练语料导出三件套——规则（27 编号位 + reward_hint）+ 方法论锚点 + 六源样本（脱敏），带 HMAC 签名 |
+| `corpus_export` | 训练语料导出三件套——规则（28 编号位 + reward_hint）+ 方法论锚点 + 六源样本（脱敏），带 HMAC 签名 |
 | `train_dryrun` | 训练 dry-run 预检——管线连通+显存估算+数据抽样+算力外推 |
 | `train_report` | 训练报告生成——数据/超参/曲线/eval 对比/量化四字段，归档可追溯 |
 | `train_status` | 训练进度查询——status/step/loss/reward 曲线/断点/用量快照（长任务轮询） |

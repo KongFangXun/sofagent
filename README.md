@@ -79,7 +79,7 @@
 |---|---|---|---|
 | 定位 | 密钥全量历史扫描 | 通用提交钩子框架 | Agent 行为审计约束层 |
 | 证据面 | 仓库文本模式 | 自定义脚本 | git diff 硬证据 + Agent 日志 + 决策留痕 |
-| 覆盖维度 | 密钥泄漏 | 任意（自己写） | 24 条规则：密钥/越界/注入/权限/后门 |
+| 覆盖维度 | 密钥泄漏 | 任意（自己写） | 25 条规则：密钥/越界/注入/权限/后门 |
 | 部署成本 | 低——单二进制，零依赖 | 低——随语言生态装一个 CLI | 中——企业设备需一次 `install.sh` 装约束层（也可先用 npx 零配置试用） |
 | 维护负担 | 低——规则随上游更新 | 中——自定义脚本需自己维护 | 中——规则与 hook 随本仓升级，但每版需重装 hook 并对齐配置 |
 | 建议 | 强密钥合规必配 | 已有体系可保留 | 与前两者并用，专注 Agent 治理维度 |
@@ -103,7 +103,7 @@
 
 - 🏠 **离场后常驻**——FDE 能力留下巡检、审计、优化，7×24 在线守护（commit 时触发审计），人离场治理不离开
 - 🔍 **零配置审计**——`npx -y -p @sofagent/audit sofagent-audit`，任何 git 仓库秒级审计最近一次 commit（单机实测：quick 约 1.1s、5 万行 diff 约 6.1s，口径见 [HANDBOOK](./docs/HANDBOOK.md)）
-- 🧱 **24 条审计规则 + 107 个 MCP tool**——密钥泄漏、越界编辑、注入防御、权限红线，违规当场拦截（critical 层命中后其余规则跳过——fail-fast 设计；默认非 fail-closed——配置可被篡改、hook 可被 --no-verify 跳过，绕过面见 [LIMITATIONS §三](./docs/LIMITATIONS.md#三安全与信任模型局限)）。**证据两档**：24 条中 19 条基于 git diff 硬证据（本地即生效）+ 4 条混合（diff + Agent 日志，Agent 接入后生效）+ 1 条文件系统扫描；A7/A8 等日志规则在无 Agent 日志时跳过（信任边界详见 [LIMITATIONS §三](./docs/LIMITATIONS.md#三安全与信任模型局限)）
+- 🧱 **25 条审计规则 + 107 个 MCP tool**——密钥泄漏、越界编辑、注入防御、权限红线，违规当场拦截（critical 层命中后其余规则跳过——fail-fast 设计；默认非 fail-closed——配置可被篡改、hook 可被 --no-verify 跳过，绕过面见 [LIMITATIONS §三](./docs/LIMITATIONS.md#三安全与信任模型局限)）。**证据两档**：25 条中 20 条基于 git diff 硬证据（本地即生效）+ 4 条混合（diff + Agent 日志，Agent 接入后生效）+ 1 条文件系统扫描；A7/A8 等日志规则在无 Agent 日志时跳过（信任边界详见 [LIMITATIONS §三](./docs/LIMITATIONS.md#三安全与信任模型局限)）
 - 🛡️ **自动快照回溯**——每次审计后自动存档，出事一键回到任意快照
 
 ## 什么是 FDE Harness
@@ -140,11 +140,11 @@
 |------|------|---------|---------|
 | **深度结合** | DeepSeek Harness | ✅ **逐工具调用可拦** | 6 款原子 `cordis-plugin-sofagent-*` 挂进运行时（另有 1 款聚合插件可选，见「上游与插件入口」）——`tools/pre-execute` 等 7 个生命周期事件（以 `engine/dsh-plugins/SEAMS.md` 词汇表为准） |
 | **完整挂载** | OpenClaw | ✅ **每会话注入一次** | Hook 注入四层约束 + 断路器 + 4 款 OpenClaw 插件 |
-| **标准挂载** | Claude Code / Cursor | ⚠️ Skill 自觉加载 | Skill 目录 symlink + 平台规则文件 + 拦截配置（内容为提交级 24 规则，非调用级拦截） |
+| **标准挂载** | Claude Code / Cursor | ⚠️ Skill 自觉加载 | Skill 目录 symlink + 平台规则文件 + 拦截配置（内容为提交级 25 规则，非调用级拦截） |
 | **薄挂载** | WorkBuddy / Codex / Gemini CLI / Hermes | ⚠️ Skill 自觉加载 | Skill 目录 symlink（Codex 走 `AGENTS.md` 挂载点）+ git hook 审计 |
 
 - **别假设能力对齐——档位差的是注入强度，不是「有没有」**：DSH 逐工具调用可拦，OpenClaw 每会话注入一遍，其余宿主由 Agent 自觉读 Skill 文本（建议性）。「支持某平台」= 约束资产在该平台可用，**≠ 约束强度与其他平台相同**；跨宿主迁移或写集成文档前，先看目标宿主落在哪一档，完整矩阵见[加载链 HOOK](./engine/hooks/sofagent-load-chain/HOOK.md)
-- **审计兜底平台无关**——`sofagent-audit --install-hook` 走 git hook，任何档位每次 commit 都自动审计（默认启用 17 条；完整 24 条需在 `.sofagent/config.yml` 显式开启 `extendedRulesEnabled: true`），违规硬拦截。约束是建议性的，审计是强制性的（强制的边界：默认非 fail-closed，`--no-verify` 可跳过前两层防线、post-commit 只留痕不阻断——被绕过的 commit 会留痕，详见 [LIMITATIONS §三](./docs/LIMITATIONS.md#三安全与信任模型局限)）
+- **审计兜底平台无关**——`sofagent-audit --install-hook` 走 git hook，任何档位每次 commit 都自动审计（默认启用 17 条；完整 25 条需在 `.sofagent/config.yml` 显式开启 `extendedRulesEnabled: true`），违规硬拦截。约束是建议性的，审计是强制性的（强制的边界：默认非 fail-closed，`--no-verify` 可跳过前两层防线、post-commit 只留痕不阻断——被绕过的 commit 会留痕，详见 [LIMITATIONS §三](./docs/LIMITATIONS.md#三安全与信任模型局限)）
 
 一条命令选定挂载档位：`bash install.sh --platform <平台名>`（全部平台与差异见 [HANDBOOK](./docs/HANDBOOK.md)）
 
@@ -155,7 +155,7 @@
 | 能力 | 一句话 |
 |------|--------|
 | **审计数据对外** | MCP `audit_query` 只读查询（时间/规则/exitCode 过滤，字节级只读不变量）+ 审计事件订阅推送 |
-| **规则导出 + 独立验签** | `ruleset_export` 机器可读 JSON 双向可逆（24 条规则元数据 + 版本指纹）；`verify-chain` 零依赖验签器——第三方无需安装 sofagent 即可举证 HMAC 链。获取：npm 包 `@sofagent/audit` 内 `verify/verify-chain.mjs`（单文件零依赖，可直接拷给第三方）；安装态在 `~/.sofagent/verify/verify-chain.mjs`；自检 `node verify-chain.mjs --selftest` |
+| **规则导出 + 独立验签** | `ruleset_export` 机器可读 JSON 双向可逆（25 条规则元数据 + 版本指纹）；`verify-chain` 零依赖验签器——第三方无需安装 sofagent 即可举证 HMAC 链。获取：npm 包 `@sofagent/audit` 内 `verify/verify-chain.mjs`（单文件零依赖，可直接拷给第三方）；安装态在 `~/.sofagent/verify/verify-chain.mjs`；自检 `node verify-chain.mjs --selftest` |
 | **判定语义补两头** | 开工前五问判定链（健康/人审/证据/专注/配额——挂起非失败自动恢复）+ 结论失效语义（三触发标记失效，失效结论不当新证据） |
 
 同版另有：出口治理面（host 白名单默认全拒 + 出站裁决挂链）· 事前授权补环（mandate 三元素执行前拦截）· 身份三层叙事注入（README 双语三因子）· DSH 插件 npm 首发面（kit + 七款 `cordis-plugin-sofagent-*`）· v1.5.2 审查修复批（35 条目收编，含 6 条安全 fail-open 收口）。**测试 5083→5309 · acceptance 367→373 · 回归 85 维 · MCP 105→107**（13 包 workspace 口径，发版时点）。完整内容见[开发日志](./docs/changelog/v1.5/v1.5.2.md) · 更早版本见 [CHANGELOG](./CHANGELOG.md)。
@@ -164,7 +164,7 @@
 
 **进场 · 生成判断**（FDE 相位）：梳理业务流（五要素深挖 + 三问判定法，算清每个 AI 节点值多少钱）→ 构建双图谱（业务图谱人读 + 本体图谱 AI 读）→ 判定 AI 节点 → 部署三层交付物。每个节点带「做好标准 merge_criteria · 谁拍板 approver · 何时跑 trigger」，冻结进交付物。
 
-**离场 · 驻留判断**（Harness 相位）：FDE 走，判断留下——daemon 7×24 巡检、commit 触发 24 条审计（含 **AgentShield 五类配置面静态扫描**）、快照可回滚、经验持续沉淀；进化时把试验分支晋升、反思蒸馏写回交付物。
+**离场 · 驻留判断**（Harness 相位）：FDE 走，判断留下——daemon 7×24 巡检、commit 触发 25 条审计（含 **AgentShield 五类配置面静态扫描**）、快照可回滚、经验持续沉淀；进化时把试验分支晋升、反思蒸馏写回交付物。
 
 **组织管理学视角**——两阶段对应给数字员工办入职的全流程：
 
@@ -200,7 +200,7 @@
 npx -y -p @sofagent/audit sofagent-audit
 ```
 
-> 💡 quick 跑 17 条默认规则（A3 任务范围 / A9 commit-msg 注入检测激活——自动读最近一次 commit 消息，无消息时 A9 按无输入处理标记跳过）；`--init` 装的是 hook（默认仍跑这 17 条），完整 24 条另需在 `.sofagent/config.yml` 开启 `extendedRulesEnabled: true`——详见 [LIMITATIONS §三](./docs/LIMITATIONS.md#三安全与信任模型局限)。
+> 💡 quick 跑 17 条默认规则（A3 任务范围 / A9 commit-msg 注入检测激活——自动读最近一次 commit 消息，无消息时 A9 按无输入处理标记跳过）；`--init` 装的是 hook（默认仍跑这 17 条），完整 25 条另需在 `.sofagent/config.yml` 开启 `extendedRulesEnabled: true`——详见 [LIMITATIONS §三](./docs/LIMITATIONS.md#三安全与信任模型局限)。
 
 > ⚠️ 这一步是**一次性审计**（当次进程内），不装 git hook——之后 commit 不会被自动拦。要长期守护请跑 `sofagent-audit --init`（见下方完整安装）。
 
@@ -305,11 +305,11 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # 加载安全规�
 |:---------|:--------|
 | **全部文档索引**（按意图选路） | [WIKI](./docs/WIKI.md) |
 | 怎么装、怎么用、排查 | [HANDBOOK](./docs/HANDBOOK.md) |
-| 架构设计与 24 条规则 | [ARCHITECTURE](./docs/ARCHITECTURE.md) |
+| 架构设计与 25 条规则 | [ARCHITECTURE](./docs/ARCHITECTURE.md) |
 | 每个版本做了什么 | [CHANGELOG](./CHANGELOG.md) |
 | 安全声明 · 已知局限 | [SECURITY](./SECURITY.md) · [LIMITATIONS](./docs/LIMITATIONS.md) |
 
-> 🧪 **工程可信度**（当前口径）：5360 测试 / 13 模块包 + 11 插件（7 DSH + 4 OpenClaw）· 24 条审计规则 · fresh-eyes 独立审查持续运行。
+> 🧪 **工程可信度**（当前口径）：5370 测试 / 13 模块包 + 11 插件（7 DSH + 4 OpenClaw）· 25 条审计规则 · fresh-eyes 独立审查持续运行。
 > **包数口径**（消歧）：workspace 27 = 13 模块包 + load-chain + dsh-plugin-kit + umbrella + 7 DSH 插件 + 4 OpenClaw 插件（见 [WIKI §六](./docs/WIKI.md#六当前状态)）；**测试计数口径** = 13 个模块包（workspace 含 test script 的包共 25 个，插件包、load-chain 与 dsh-plugin-kit 工具包不在此计数口径）——二者不是同一个集合。
 > 测试数有两个口径：**发版时点值**（见各版本章节内的 `4805→4903` 增量账）与**当前实测值**（即上方「工程可信度」行的实测值，随修复批滚动）；当前权威值以 `tools/check/check-test-count.sh` 实跑为准（`test-count.sh` 产出计数真值，`check-test-count.sh` 校验文档声称数一致性），包数统计标准见 [WIKI 包数口径](./docs/WIKI.md#六当前状态)。审查环境注意事项见 [docs/guides/review-system.md](./docs/guides/review-system.md)；性能数据为单机参考值。
 

@@ -52,14 +52,14 @@ export function signBody(body: unknown, key: string): string {
   return createHmac('sha256', key).update(stableStringify(body)).digest('hex').slice(0, 32);
 }
 
-/** 构造规则语料导出主体（27 编号位 + counts 统计） */
+/** 构造规则语料导出主体（28 编号位 + counts 统计） */
 export function buildRuleCorpusBody(
   scope: 'default' | 'extended' | 'all' = 'all',
   engineVersion?: string,
 ): RuleCorpusBody {
   const pool: Rule[] =
     scope === 'default' ? defaultRules : scope === 'extended' ? extendedRules : [...defaultRules, ...extendedRules];
-  // 27 编号位全集只在 all 范围给（default/extended 范围不含跳号占位——
+  // 28 编号位全集只在 all 范围给（default/extended 范围不含跳号占位——
   // 编号空间完整性是全量导出的验收口径）
   const entries = scope === 'all' ? allRuleSlots(pool) : pool.map((r) => toEntry(r));
   const implemented = entries.filter((e) => e.status === 'implemented').length;

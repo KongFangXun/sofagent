@@ -123,7 +123,7 @@ export function createAuditRunner(): (input: Record<string, unknown>) => Promise
     const task = input['task'] as string | undefined;
     const commitMsg = input['commitMsg'] as string | undefined;
 
-    // 2. 调用真实审计模块（extendedRulesEnabled = true 以覆盖全部 24 条规则）
+    // 2. 调用真实审计模块（extendedRulesEnabled = true 以覆盖全部 25 条规则）
     const auditConfig: AuditConfig = { ...DEFAULT_CONFIG, extendedRulesEnabled: true };
     const auditResult = runRules(diffFiles, logEntries, task, false, true, commitMsg, auditConfig);
 

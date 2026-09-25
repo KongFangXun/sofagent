@@ -1589,7 +1589,7 @@ async function s439() {
   const status = audit.summarizeIntentChannel(dataDir);
   if (status.verdict !== 'recording' || status.intentEntries !== 1) bad.push('通道活性判定错:' + JSON.stringify({ v: status.verdict, n: status.intentEntries }));
 
-  // ② 未声明通道的规则 → 缺省结果通道（既有 24 条规则行为零变化）
+  // ② 未声明通道的规则 → 缺省结果通道（既有 25 条规则行为零变化）
   if (JSON.stringify(audit.resolveInputChannels({})) !== '["result"]') bad.push('缺省通道漂移:' + JSON.stringify(audit.resolveInputChannels({})));
   if (JSON.stringify(audit.resolveInputChannels({ inputChannels: [] })) !== '["result"]') bad.push('空数组缺省通道漂移');
   if (audit.ruleSupportsChannel({}, 'intent') !== false) bad.push('未声明 intent 的规则被判支持意图通道');

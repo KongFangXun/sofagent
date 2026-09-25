@@ -9,7 +9,7 @@
 // ============================================================
 /** corpus_export tool 入参 */
 export interface CorpusExportArgs {
-  /** 导出范围（rules 用，缺省 all = 27 编号位含跳号占位） */
+  /** 导出范围（rules 用，缺省 all = 28 编号位含跳号占位） */
   scope?: 'default' | 'extended' | 'all';
   /** 输出目录（缺省 data/export/corpus/） */
   outDir?: string;

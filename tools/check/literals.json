@@ -45,7 +45,7 @@
       "derive": "awk '/export const defaultRules/{f=1; next} f && /^[[:space:]]*\\{.*name:/{c++} f && /^[[:space:]]*\\];/{exit} END{print c+0}' engine/audit/src/rules/index.ts | tr -d '[:space:]'",
       "level": "error",
       "slow": false,
-      "note": "README 声称的 quick 默认规则数（17）。选它的原因：现有门禁只抓「N 条规则」的第一处（=24 完整数），17 这个 quick 模式实际覆盖面无人对账；SSOT = rules/index.ts 的 defaultRules.length"
+      "note": "README 声称的 quick 默认规则数（17）。选它的原因：现有门禁只抓「N 条规则」的第一处（=25 完整数），17 这个 quick 模式实际覆盖面无人对账；SSOT = rules/index.ts 的 defaultRules.length"
     },
     {
       "id": "arch-workspace-count",

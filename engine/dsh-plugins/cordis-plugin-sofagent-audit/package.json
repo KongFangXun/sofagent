@@ -4,7 +4,7 @@
   "engines": {
     "node": ">=18"
   },
-  "description": "变更机器审阅 + 验收硬门禁——24 规则 + git diff 硬证据 + Turn 停止验收判定（验收不过不放行，开关独立可关）（seam: tools/result + tools/pre-execute + fs/write-intent + agent/turn-stopping）——桥接 @sofagent/audit runRules / @sofagent/audit emitDecision / @sofagent/orchestrator checkDangerousCommand / @sofagent/orchestrator checkAcceptance / @sofagent/core getDataDir",
+  "description": "变更机器审阅 + 验收硬门禁——25 规则 + git diff 硬证据 + Turn 停止验收判定（验收不过不放行，开关独立可关）（seam: tools/result + tools/pre-execute + fs/write-intent + agent/turn-stopping）——桥接 @sofagent/audit runRules / @sofagent/audit emitDecision / @sofagent/orchestrator checkDangerousCommand / @sofagent/orchestrator checkAcceptance / @sofagent/core getDataDir",
   "license": "MIT",
   "author": "KongFangXun",
   "main": "dist/index.js",

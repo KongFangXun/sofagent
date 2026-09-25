@@ -1,7 +1,7 @@
 // ============================================================
 // ruleset-export.ts · v1.5.2 章二 · 规则集导出（开放规则格式 · 双向可逆）
 //
-// 定位：把 24 条 TS 硬编码审计规则导出为**机器可读 JSON**，且该 JSON 与
+// 定位：把 25 条 TS 硬编码审计规则导出为**机器可读 JSON**，且该 JSON 与
 // v1.2.9 `--ruleset-path` 加载格式**同构**——导出格式即加载格式，双向可逆：
 //   导出物 → loadRulesetFile() 能读出 + validateRuleset() 不报错。
 // 这是「约束导出通道」（规划文档 §2.5 四缺口最后一块）的落地面。
@@ -89,7 +89,7 @@ export interface ExportedRulesetRule {
   /**
    * 正负样例对（= Rule.examples 原样搬运）——`match` 正侧 / `notMatch` 负侧，
    * 字段名与数组形状钉死为 v1.6.0 判据集消费口径（见 rule-loader.EXAMPLES_FIELD_SHAPE）。
-   * 24 条规则现存 examples 全覆盖，导出物恒含此字段；未来规则缺失时**省略本字段**
+   * 25 条规则现存 examples 全覆盖，导出物恒含此字段；未来规则缺失时**省略本字段**
    * （而非落空数组）——保证与 `--ruleset-path` 回读格式双向可逆（可选字段缺省跳过断言）。
    */
   examples?: { match: string[]; notMatch: string[] };
@@ -293,7 +293,7 @@ export function buildExportedRuleset(
 /**
  * 规则集导出入口——构造 → 落盘 → 审计留痕（MCP `ruleset_export` / CLI 复用）。
  *
- * 导出内容 = 24 条默认规则（defaultRules 17）+ 扩展规则（extendedRules 7）。
+ * 导出内容 = 25 条默认规则（defaultRules 17）+ 扩展规则（extendedRules 8）。
  * 导出物 = 与 `--ruleset-path` 加载格式同构的 Ruleset JSON（双向可逆）。
  *
  * @param opts 导出选项（测试须传临时 dataDir/outDir，避免污染真实数据目录）

@@ -39,6 +39,7 @@ const AUDIT_ENGINE_PROTECTED_PATHS: string[] = [
   'engine/audit/src/rules/rule-a21-persistence.ts',
   'engine/audit/src/rules/rule-a22-privilege-escalation.ts',
   'engine/audit/src/rules/rule-a23-path-traversal.ts',
+  'engine/audit/src/rules/rule-a24-deliverable-path.ts',
   // 共享密钥正则（§4.8.5 真实文件路径）
   'engine/core/src/shared/secret-patterns.ts',
   // 规则常量

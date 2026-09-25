@@ -34,7 +34,7 @@ v1.3.2 交付了单 Agent 全闭环（Onboard L1-L5）+ workflow 批量生成（
 - ❌ 成员能不能加入团队（那是 team-manager 的建队逻辑，无条件接受 team.yml 声明的成员）
 - ❌ 成员能不能调用某个工具（那是 v1.3.7 权限体系的事）
 - ❌ 成员能不能修改某个文件（同上）
-- ❌ 成员的输出是否可信（那是审计模块 A1-A23 的 git diff 硬证据判定）
+- ❌ 成员的输出是否可信（那是审计模块 A1-A24 的 git diff 硬证据判定）
 
 实现者最容易犯的错：把 trust 做成 `if (member.trust > 0.5) allow()` 的准入控制。**这是越界实现，必须在 code review 时拦截**。trust 只出现在 `resolveConflict()` 函数的排序比较里，不出现在任何 `if` 条件分支里。
 
@@ -410,7 +410,7 @@ export class FederatedTeamSyncChannel implements TeamSyncChannel {
 |------|---------|--------|
 | 分发 | 意图广播 + 触发反应 | Leader 广播 `intent.execute.<task>` → 匹配的 sub-agent 触发 |
 | 监控 | 团队级审计轨迹 | Leader 读 decision-log（按 teamId tag 过滤） |
-| 审计 | 审计模块 git diff | sub-agent 产出后走 A1-A23（已有能力） |
+| 审计 | 审计模块 git diff | sub-agent 产出后走 A1-A24（已有能力） |
 | 通讯 | 意图广播 + 共享态中转 | sub-agent 间不直连，经 Leader 的 intent-bus 中转 |
 
 ### 6.2 自动入队挂点
@@ -483,7 +483,7 @@ quality-rule-set 加载顺序：
 | L1 硬约束（SKILL.md） | ❌ | **永远不可碰——审计铁律** |
 | L2 决策约束（think.md） | ✅ | |
 | L4 经验层（knowledge/） | ✅ | |
-| 审计规则（A1-A23） | ❌ | **永远不可碰** |
+| 审计规则（A1-A24） | ❌ | **永远不可碰** |
 | 回溯机制（git snapshot） | ❌ | **永远不可碰** |
 
 **哲学一致性**：如果优化器能改约束层，审计就失去意义（优化器可以把自己的审计规则改松来通过"验收"）。这条不是保守，是底线。
