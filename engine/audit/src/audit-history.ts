@@ -264,12 +264,33 @@ function resolveSofagentHome(): string {
  * 数据加密是否激活：密钥存在 + initialized 标记存在。
  * 任一缺失都按「未启用」处理（明文路径）——半初始化状态不加密，
  * 防止「密钥丢失但标记还在」导致写入全部失败的死局。
+ * F-11：降级可见化——「曾初始化但密钥缺失」的降级态首次发生时打 stderr 告警
+ * （含修复指引）并写一条 ENCRYPTION_DEGRADED 事件进 history（普通记录行、
+ * 不阻断写入——保持防死局语义）。同进程只告警一次（进程级 flag 防刷屏）。
  */
+let __encryptionDegradeWarned = false;
+let __encryptionDegradeEventWritten = false;
+function noteEncryptionDegradedIfNeeded(): void {
+  const home = resolveSofagentHome();
+  if (!isInitialized(home)) return; // 从未初始化 = 合法未启用态，非降级
+  if (loadDataKey(home) !== null) return; // 密钥在 = 正常态
+  // 降级态：标记在而密钥缺——新记录将回明文
+  if (!__encryptionDegradeWarned) {
+    __encryptionDegradeWarned = true;
+    console.error(
+      '⚠️ [sofagent] 静态加密已降级为明文写入——检测到初始化标记在而数据密钥缺失/损坏。\n' +
+      `   恢复：从备份恢复 ${keysDirPath(home)}/data.key，或重置基线（sofagent-audit --doctor --baseline）。${DATA_KEY_RECOVERY_HINT}`,
+    );
+  }
+}
+
 function isDataEncryptionActive(): boolean {
   const home = resolveSofagentHome();
   // 半初始化状态不加密——防止「密钥丢失但标记还在」导致写入全部失败的死局
   if (!isInitialized(home)) return false;
-  return loadDataKey(home) !== null;
+  const active = loadDataKey(home) !== null;
+  if (!active) noteEncryptionDegradedIfNeeded();
+  return active;
 }
 
 /** 取激活态密钥（isDataEncryptionActive() === true 时调用必有值） */
@@ -423,6 +444,27 @@ export function appendHistory(entry: AuditHistoryEntry, dataDir?: string): void 
     ? encryptWithAge(JSON.stringify(sanitizedEntry), getActiveDataKey())
     : JSON.stringify(sanitizedEntry);
   atomicAppendSync(filePath, jsonLine);
+
+  // F-11：降级可见化——本条走明文（降级态）时，追加一条 ENCRYPTION_DEGRADED
+  // 事件行（普通记录行、不阻断、不签名——事件非审计记录，schema 豁免面与
+  // rule_disabled 同族）。同进程只写一次（noteEncryptionDegradedIfNeeded 的
+  // 进程级 flag 同源判定——这里复检降级态而非缓存布尔，保证「恢复后不再写」）。
+  {
+    const home = resolveSofagentHome();
+    if (isInitialized(home) && loadDataKey(home) === null && !__encryptionDegradeEventWritten) {
+      __encryptionDegradeEventWritten = true;
+      try {
+        const evLine = JSON.stringify({
+          event: 'ENCRYPTION_DEGRADED',
+          timestamp: new Date().toISOString(),
+          detail: '静态加密降级为明文写入（初始化标记在而 data.key 缺失/损坏）——本条之后的新记录为明文，直至密钥恢复',
+        });
+        atomicAppendSync(filePath, evLine);
+      } catch {
+        // 事件行写入失败不阻断审计主路径（可见性增强，非主链路）
+      }
+    }
+  }
   // 单次读回校验（best-effort——锁已保证互斥，最后一行必然完整；校验失败仅告警）
   // v1.3.9 修复：加密激活态最后一行是 SOFAGENT-AGE-V1 密文，直接 JSON.parse 必抛异常
   // → 每次写入都假警「读回校验失败」，且校验对象是密文而非明文（校验失效）。

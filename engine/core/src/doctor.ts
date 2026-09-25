@@ -623,6 +623,24 @@ export function runDoctor(projectDir: string = process.cwd(), options: { resetBa
     }
   }
 
+  // F-11：静态加密一致性检查——「曾初始化但密钥缺失」的降级态（新记录回明文）
+  // 此前零检测：权限巡检只查「文件在时的 mode」，不查「标记在而文件缺」。
+  {
+    const { isInitialized, loadDataKey, keysDirPath } = require('./crypto/key-manager') as typeof import('./crypto/key-manager');
+    const home = resolveHomeDir();
+    const initialized = isInitialized(home);
+    const keyOk = loadDataKey(home) !== null;
+    if (initialized && !keyOk) {
+      fail('静态加密一致性——初始化标记在而 data.key 缺失/损坏（新记录正回明文写入）');
+      repairHint(`从备份恢复 ${keysDirPath(home)}/data.key，或确认放弃加密后清除初始化标记`);
+      auditLogOk = false;
+    } else if (initialized && keyOk) {
+      ok('静态加密一致性——初始化标记与数据密钥均在位');
+    } else {
+      console.log('    ℹ️ 静态加密未启用（无初始化标记——合法态，明文写入为默认行为）');
+    }
+  }
+
   try {
     const result = checkHistoryChainDetailed(undefined, 500);
     if (result.status === 'ok') {
