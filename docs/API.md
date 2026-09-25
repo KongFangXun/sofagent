@@ -217,9 +217,10 @@
 |------|------|
 | 2026-09-03 | 建档——80 tools 首次成清单，六大接口面总表 |
 | 2026-09-05 | v1.4.5 三件并入（train_serve/train_compliance/train_deliverable）80→83 |
-| 2026-09-07 | 接口面六→七：新增「标准数据推送接口」第七面（v1.4.6 交付，验收标准转勾） |
+| 2026-09-07 | v1.4.6 新增 train_cloud 83→84（云 VM 执行面控制工具）；接口面六→七：新增「标准数据推送接口」第七面（v1.4.6 交付，验收标准转勾） |
 | 2026-09-11 | v1.4.7 新增 11 tool（workflow CRUD / PR 生命周期 / 绩效 / 缺口 / data_push 等）84→95 |
 | 2026-09-13 | v1.4.8 tools 面零新增，仍为 95 |
 | 2026-09-17 | v1.4.9 新增 9 tool（device_register / device_list · device_data_query / device_data_push · connector_register / connector_list · workflow_export / workflow_import · router_session_push）95→104 |
 | 2026-09-19 | v1.5.0 新增 trace_reconcile 104→105 |
+| 2026-09-22 | v1.5.1 tools 面零新增，仍为 105（编排模块：业务事件触发 / 设备 OTA / 审计输入双通道，无 MCP tool 增删） |
 | 2026-09-23 | v1.5.2 章一/章二 新增 audit_query（审计数据只读查询）/ ruleset_export（规则集导出，双向可逆）105→107 |
