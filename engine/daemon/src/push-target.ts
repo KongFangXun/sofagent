@@ -16,7 +16,7 @@
 // ============================================================
 
 import { notify } from './notify';
-import { DATA_DIR } from '@sofagent/core';
+import { DATA_DIR , getDataDir } from '@sofagent/core';
 import { isPrivateWebhookUrl } from '@sofagent/audit';
 import { withRetry, withRetryBestEffort } from './with-retry';
 
@@ -173,7 +173,7 @@ const OUTBOX_MAX_FILES = 100;
 export function deleteOutboxFile(filename: string): boolean {
   const fs = require('fs');
   const { join } = require('path');
-  const dataDir = process.env.SOFAGENT_DATA || DATA_DIR;
+  const dataDir = getDataDir();
   const outboxDir = join(dataDir, 'im-outbox');
   const filePath = join(outboxDir, filename);
   try {
@@ -198,7 +198,7 @@ export function deleteOutboxFile(filename: string): boolean {
 export function moveOutboxToFailed(filename: string): boolean {
   const fs = require('fs');
   const { join } = require('path');
-  const dataDir = process.env.SOFAGENT_DATA || DATA_DIR;
+  const dataDir = getDataDir();
   const outboxDir = join(dataDir, 'im-outbox');
   const failedDir = join(outboxDir, 'failed');
   const srcPath = join(outboxDir, filename);
@@ -226,7 +226,7 @@ export function moveOutboxToFailed(filename: string): boolean {
 export function cleanupFailedOutbox(): number {
   const fs = require('fs');
   const { join } = require('path');
-  const dataDir = process.env.SOFAGENT_DATA || DATA_DIR;
+  const dataDir = getDataDir();
   const outboxDir = join(dataDir, 'im-outbox');
   const failedDir = join(outboxDir, 'failed');
   if (!fs.existsSync(failedDir)) return 0;
@@ -274,7 +274,7 @@ export function cleanupFailedOutbox(): number {
 export function drainOutbox(): number {
   const fs = require('fs');
   const { join } = require('path');
-  const dataDir = process.env.SOFAGENT_DATA || DATA_DIR;
+  const dataDir = getDataDir();
   const outboxDir = join(dataDir, 'im-outbox');
   if (!fs.existsSync(outboxDir)) return 0;
 
@@ -319,7 +319,7 @@ async function pushOpenClawIM(title: string, message: string): Promise<boolean> 
   //   ④ 提供 deleteOutboxFile() / moveOutboxToFailed() 供调用方管理生命周期
   const { writeFileSync, mkdirSync, existsSync, readdirSync, readFileSync, rmSync, statSync } = await import('fs');
   const { join } = await import('path');
-  const dataDir = process.env.SOFAGENT_DATA || DATA_DIR;
+  const dataDir = getDataDir();
   const outboxDir = join(dataDir, 'im-outbox');
   try {
     if (!existsSync(outboxDir)) mkdirSync(outboxDir, { recursive: true });

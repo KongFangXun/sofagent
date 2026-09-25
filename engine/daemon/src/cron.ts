@@ -15,6 +15,7 @@
 // 默认运行 fde Agent 的 sustain 模式，产出周度巡检报告。
 // ============================================================
 
+import { getDataDir } from '@sofagent/core';
 import { execFileSync } from 'child_process';
 import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { join, dirname } from 'path';
@@ -77,8 +78,7 @@ interface WatchConfig {
 
 /** 巡检调度状态文件路径（lastSuccessAt 持久化——doctor 报告用） */
 function resolveInspectorStatePath(): string {
-  const dataDir = process.env.SOFAGENT_DATA
-    || join(process.env.SOFAGENT_HOME || require('os').homedir() + '/.sofagent', 'data');
+  const dataDir = getDataDir();
   return join(dataDir, 'dashboard', 'inspector-schedule.json');
 }
 
@@ -416,9 +416,7 @@ export function startCron(projectDir: string): number {
             //（eval passRate / 知识库增量 / 修正回流 → data/evolution/samples-<date>.json，
             //  cursor 跨重启续——evolution report 数据源）。采样失败不阻断调度（best-effort）。
             const { collectDailySample } = await import('./dream-cycle/continuous-sampler');
-            const dataDir =
-              process.env.SOFAGENT_DATA ||
-              join(process.env.SOFAGENT_HOME || require('os').homedir() + '/.sofagent', 'data');
+            const dataDir = getDataDir();
             const sample = await collectDailySample(dataDir, { skipDreamCycle: true });
             console.log(
               `[cron] evolution 采样完成: ${sample.cursor.daysSampled}/${7} 天` +
@@ -446,8 +444,7 @@ export function startCron(projectDir: string): number {
       setInterval(() => {
         void (async () => {
           try {
-            const dataDir = process.env.SOFAGENT_DATA
-              || join(process.env.SOFAGENT_HOME || require('os').homedir() + '/.sofagent', 'data');
+            const dataDir = getDataDir();
             const { runTrainArchiveTask } = (await import('./tasks/train-archive')) as {
               runTrainArchiveTask: (
                 dataDir: string,

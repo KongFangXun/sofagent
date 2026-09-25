@@ -103,7 +103,7 @@ export interface RunOutcome {
   failed: number;
   /** 耗时（毫秒） */
   duration: number;
-  /** 质量分（0-100；缺省 = passed/(passed+failed)*100，对齐 U4 firstPassRate 语义） */
+  /** 质量分（0-100；缺省 = passed/(passed+failed)*100。语义同族「首次通过率」但量纲与 U4（0-1 小数）不同——F-36 核定：两处各自量纲内 clamp，非同一公式拷贝） */
   qualityScore?: number;
   /** 失败模式标签（可选，failureClusters 聚类用） */
   failureTag?: string;

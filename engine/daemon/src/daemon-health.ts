@@ -10,7 +10,7 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import { DATA_DIR } from '@sofagent/core';
+import { DATA_DIR , getDataDir } from '@sofagent/core';
 import type { FatigueReport } from './fatigue';
 
 /** v1.4.5 T9：webhook 告警通道健康摘要（推送侧写入，心跳透传） */
@@ -73,7 +73,7 @@ export function resolveDaemonVersion(): string {
 
 /** 健康自检文件路径 */
 export function resolveHealthFilePath(): string {
-  const dataDir = process.env.SOFAGENT_DATA || DATA_DIR;
+  const dataDir = getDataDir();
   return path.join(dataDir, 'daemon-health.json');
 }
 
@@ -93,7 +93,7 @@ export function writeHealthFile(
 ): DaemonHealthFile | null {
   const healthPath = resolveHealthFilePath();
   const now = new Date().toISOString();
-  const dataDir = process.env.SOFAGENT_DATA || DATA_DIR;
+  const dataDir = getDataDir();
 
   // 读取现有文件获取 startTime（heartbeat/push/error/exit 不应重置 startTime）
   let startTime = now;

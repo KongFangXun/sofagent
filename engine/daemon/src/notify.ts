@@ -93,6 +93,8 @@ function readTail(filePath: string, maxChars: number): string | null {
  * @returns 素材对象（缺失字段为 null）
  */
 export function collectSummaryMaterial(projectDir: string): KnowledgeSummaryMaterial {
+  // F-35：env 读取收敛 SSOT 形态（getDataDir(explicitBase) 语义 = base || env || resolveDataDir）——
+  // 但本项目回退语义特殊（项目目录优先于 home），保留显式回退链
   const dataDir = process.env.SOFAGENT_DATA || join(projectDir, '.sofagent');
   return {
     weeklyLog: readTail(join(dataDir, 'log.md'), 800),

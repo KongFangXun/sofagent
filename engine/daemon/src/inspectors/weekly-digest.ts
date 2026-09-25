@@ -217,7 +217,14 @@ function collectNodeStats(
       tasks,
       retries,
       humanInterventions,
-      firstPassRate: Math.round(((tasks - retries) / tasks) * 1000) / 1000,
+      // F-36：clamp + 空态语义。原式无界——retries 归属口径与 tasks 不同时可产出
+      // 负值/超界值（实测 -18617%）；tasks=0 是无数据（null），不是 0%。
+      // 两侧口径（本处按 0-1 小数；ab-scheduler 的 qualityScore 按 0-100）在
+      // 各自量纲内 clamp，等价性见 worklog-view 渲染与 extractMetrics 消费。
+      firstPassRate:
+        tasks > 0
+          ? Math.min(1, Math.max(0, Math.round(((tasks - retries) / tasks) * 1000) / 1000))
+          : null,
       lastSeen,
     });
   }

@@ -30,7 +30,7 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import { DATA_DIR } from '@sofagent/core';
+import { DATA_DIR , getDataDir } from '@sofagent/core';
 
 // ── 阈值与权重（单一事实源）──
 
@@ -250,7 +250,7 @@ function buildSummary(signals: FatigueSignals, score: number, action: FatigueAct
 
 /** daemon-health.json 路径解析（与 daemon-health.ts 同口径） */
 function resolveHealthPath(dataDir?: string): string {
-  const dir = dataDir ?? process.env.SOFAGENT_DATA ?? DATA_DIR;
+  const dir = dataDir ?? getDataDir();
   return path.join(dir, 'daemon-health.json');
 }
 

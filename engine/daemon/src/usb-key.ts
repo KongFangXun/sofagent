@@ -29,7 +29,7 @@ import * as crypto from 'crypto';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
-import { encryptPayload, AES_KEY_BYTES, GCM_IV_BYTES, GCM_TAG_BYTES } from '@sofagent/core';
+import { encryptPayload, AES_KEY_BYTES, GCM_IV_BYTES, GCM_TAG_BYTES, getDataDir } from '@sofagent/core';
 import { collectFiles, computeUsbSignature, writeSignatureManifest } from './usb-signature';
 import type { FederationConfig } from './usb-detect';
 
@@ -310,7 +310,7 @@ function copyStartScripts(srcRoot: string, usbRoot: string, warnings: string[]):
 /** 解析 federation 配置：入参 > {SOFAGENT_DATA}/federation.json > 最小生成 */
 function resolveFederationConfig(opts: CreateUsbKeyOpts): UsbFederationConfig {
   if (opts.federationConfig) return { ...opts.federationConfig };
-  const dataDir = process.env.SOFAGENT_DATA ?? path.join(os.homedir(), '.sofagent');
+  const dataDir = getDataDir(); // F-35：收敛 SSOT（原 env ?? home 手拼少 data 层——federation.json 实际落 data/ 下）
   const fedPath = path.join(dataDir, 'federation.json');
   if (fs.existsSync(fedPath)) {
     try {
@@ -368,9 +368,22 @@ export function burnWorkflowsToUsb(
   opts: CreateUsbKeyOpts,
   warnings: string[],
 ): { copied: number } | null {
-  const sourceDir =
-    opts.workflowSourceDir ?? path.join(process.env.SOFAGENT_DATA ?? path.join(os.homedir(), '.sofagent'), 'workflow-store');
-  if (!fs.existsSync(sourceDir)) return null;
+  let sourceDir =
+    // F-33：对齐写侧 SSOT（mcp/workflow-crud 落 getDataDir() = <home>/data/workflow-store）。
+    // 原手拼路径少 /data 层 ⇒ 烧录恒 null（existsSync 兜底把断裂静默正常化）。
+    // getDataDir 来自 @sofagent/core（daemon→core 依赖方向合法，同文件已有 import）。
+    opts.workflowSourceDir ?? path.join(getDataDir(), 'workflow-store');
+  if (!fs.existsSync(sourceDir)) {
+    // 兼容旧数据：迁移期同时探测无 /data 层的旧路径（口径 = <SOFAGENT_HOME>/workflow-store），
+    // 命中提示迁移（一次性提示）
+    const legacyDir = path.join(process.env.SOFAGENT_HOME ?? path.join(os.homedir(), '.sofagent'), 'workflow-store');
+    if (fs.existsSync(legacyDir)) {
+      console.warn(`ℹ️ [usb-key] 检测到旧路径 workflow-store（${legacyDir}），建议迁移到 data/ 下（新写侧口径）`);
+      sourceDir = legacyDir;
+    } else {
+      return null;
+    }
+  }
 
   const trunks = fs
     .readdirSync(sourceDir)

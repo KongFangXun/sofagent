@@ -1,4 +1,5 @@
 # sofagent Limitations
+- **commons_invoke 为 dry-run 预检语义**：返回能力元数据与调用计划，不真实执行（真实执行由 Agent runtime 注入 executor）——MCP 层默认占位是有意设计（防未审计代码执行），非缺陷。
 
 <p align="center"><img src="assets/sofagent.png" alt="sofagent" width="96" /></p>
 

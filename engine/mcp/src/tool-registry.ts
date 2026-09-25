@@ -895,7 +895,7 @@ export const TOOLS: ToolDef[] = [
     // v1.3.4 (交付 2)：能力调用
     name: 'commons_invoke',
     roles: ['commons'],
-    description: '能力调用——发现能力后挂载调用（SkillScan 拦截 + HITL 确认）。',
+    description: '能力调用（dry-run 预检）——返回能力元数据与调用计划，不真实执行（SkillScan 拦截 + HITL 确认；真实执行由 Agent runtime 注入 executor）。',
     inputSchema: {
       type: 'object',
       properties: {

@@ -8,7 +8,7 @@
 
 import { appendFileSync, existsSync, mkdirSync, statSync, renameSync, rmSync } from 'fs';
 import { join } from 'path';
-import { DATA_DIR } from '@sofagent/core';
+import { DATA_DIR , getDataDir } from '@sofagent/core';
 import { notify } from './notify';
 
 /** 重试选项 */
@@ -98,7 +98,7 @@ function appendErrorLog(entry: {
   ts: string;
 }): void {
   try {
-    const dataDir = process.env.SOFAGENT_DATA || DATA_DIR;
+    const dataDir = getDataDir();
     if (!existsSync(dataDir)) {
       mkdirSync(dataDir, { recursive: true });
     }
