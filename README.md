@@ -58,6 +58,8 @@
 
 **10 分钟轻量试用**（含拉包与环境检查的完整走查；单次引擎审计本身约 1.1 秒，实测口径见下）：`npx -y -p @sofagent/audit sofagent-audit`（任意 git 仓库，密钥泄漏当场拦截）。
 
+> 💡 试用时提交消息请写 **≥6 字符**（如 `initial audit test`）——A19 质量规则对超短消息（`init`/`add`）判红属设计意图（防无意义提交信息），不是故障。
+
 **五分钟戏剧演示**（v1.5.1 已交付，沙箱隔离、真实文件零接触）：`npx -y -p @sofagent/audit sofagent-audit demo`——一条命令跑完「沙箱构建 → 注入 → 故意违规 → 审计拦截 → 快照回滚 → HMAC 举证导出」五幕完整链路（`--speed fast` 60 秒精简版；产物落 `$SOFAGENT_DATA/demo`（默认 `~/.sofagent/data/demo`），不触碰被审仓库与其他目录）。
 
 > 版本说明：v1.5.2 已发版（2026-09-24）；npm 最新版 `@sofagent/audit@1.5.2`（23 包 `latest` 通道齐平）。

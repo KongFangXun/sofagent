@@ -82,6 +82,8 @@
 
 **10-minute lightweight trial** (covers package fetch and environment checks end to end; a single engine audit itself takes ~1.1 seconds — see the measured figures below): `npx -y -p @sofagent/audit sofagent-audit` (any git repo; secret leaks blocked on the spot).
 
+> 💡 For the trial, keep commit messages **at least 6 characters** (e.g. `initial audit test`) — A19 flags ultra-short messages (`init`/`add`) by design (it guards against meaningless commit messages), not a malfunction.
+
 **Five-minute theatrical demo** (shipped in v1.5.1; sandboxed, zero touch on real files): `npx -y -p @sofagent/audit sofagent-audit demo` — one command runs the full five-act chain: sandbox build → injection → deliberate violation → audit interception → snapshot rollback → HMAC evidence export (`--speed fast` for a 60-second cut; artifacts land under `$SOFAGENT_DATA/demo` (default `~/.sofagent/data/demo`), touching neither the audited repository nor other directories).
 
 ## Core Features
