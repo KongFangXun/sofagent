@@ -26,7 +26,7 @@ export interface SchedulerTemplate {
 /**
  * 首部署模板库（G8：部署即见效的确定性任务）。
  *
- * daily-health：客户部署第一天就看到的每日产出（G8 核心模板）；
+ * daily-health：客户部署第一天就看到的每日产出（G8 核心模板；daemon 每日巡检自动产出，无需 OS cron——F-47 接线）；
  * weekly-report：L2 深度巡检周报（扩展位，验证模板库可增长）。
  */
 export const SCHEDULER_TEMPLATES: SchedulerTemplate[] = [

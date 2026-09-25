@@ -16,6 +16,7 @@ const GOLDEN_L1 = [
   'commons-catalog-daily', 'fde-companion-daily', 'fde-registry-daily',
   'train-orphan-scan',
   'audit-trail', // v1.4.8 条目 2：漂移修复入层（v1.3.2 交付后首次进活路径）
+  'daily-health', // F-47：每日健康巡检挂进 daemon 调度链（承诺「第一天产出」不再依赖 OS cron）
 ];
 const GOLDEN_L2 = [
   'conflict-check', 'knowledge-freshness', 'knowledge-health', 'skill-staleness',
@@ -27,7 +28,7 @@ const GOLDEN_L3 = [
 ];
 
 describe('巡检器金名单（条目 2 第 0 步——防漏挂/防漂移）', () => {
-  it('L1 金名单精确匹配（13 个，含 audit-trail 漂移修复）', () => {
+  it('L1 金名单精确匹配（14 个，含 audit-trail 漂移修复 + daily-health）', () => {
     expect(listInspectors('L1')).toEqual(GOLDEN_L1);
   });
   it('L2 金名单精确匹配（9 个，含 v1.5.1 章二 weekly-digest）', () => {

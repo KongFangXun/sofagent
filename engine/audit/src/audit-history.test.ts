@@ -422,7 +422,7 @@ describe('audit-history', () => {
     });
 
     it('有 HMAC 密钥：写入 hmacSig 且 append + check 通过', () => {
-      writeFileSync(KEY_PATH, 'test-hmac-key-1234567890', { mode: 0o600 });
+      writeFileSync(KEY_PATH, 'a3f1c9e57b2d8046f9c1a7b3e5d29f04c8a6b1e3d7f59a2c4e6b8d0f3a5c7e91', { mode: 0o600 });
       appendHistory(makeEntry('2026-02-02T00:00:00Z', 0), testDir);
       appendHistory(makeEntry('2026-02-02T00:00:01Z', 0), testDir);
       expect(checkHistoryChainDetailed(testDir).status).toBe('ok');
@@ -437,7 +437,7 @@ describe('audit-history', () => {
       // legacy unsigned 条目，并用无密钥 SHA-256 重算 prevHash 链 + 重写链头锚点。
       // 修复前：无签名的密钥在场条目被静默跳过验签 → 链报干净 ok（零告警）。
       // 修复后：密钥在场但条目无签名 → 不可复验（黄），不再静默放行。
-      writeFileSync(KEY_PATH, 'test-hmac-key-1234567890', { mode: 0o600 });
+      writeFileSync(KEY_PATH, 'a3f1c9e57b2d8046f9c1a7b3e5d29f04c8a6b1e3d7f59a2c4e6b8d0f3a5c7e91', { mode: 0o600 });
       appendHistory(makeEntry('2026-06-10T00:00:00Z', 0), testDir);
       appendHistory(makeEntry('2026-06-11T00:00:00Z', 0), testDir);
       expect(checkHistoryChainDetailed(testDir).status).toBe('ok');
@@ -495,7 +495,7 @@ describe('audit-history', () => {
     }
 
     it('G-5 负向断言：两种不同坏输入 ⇒ 输出必须不同（否则「定位」是假的）', () => {
-      writeFileSync(KEY_PATH, 'test-hmac-key-1234567890', { mode: 0o600 });
+      writeFileSync(KEY_PATH, 'a3f1c9e57b2d8046f9c1a7b3e5d29f04c8a6b1e3d7f59a2c4e6b8d0f3a5c7e91', { mode: 0o600 });
       const dirA = tmpDir();
       const dirB = tmpDir();
       const stamps = ['2026-08-01T00:00:00Z', '2026-08-02T00:00:00Z', '2026-08-03T00:00:00Z'];
@@ -526,7 +526,7 @@ describe('audit-history', () => {
     });
 
     it('G-5 校验窗口截断时仍报**全量**序号（窗口口径不影响定位）', () => {
-      writeFileSync(KEY_PATH, 'test-hmac-key-1234567890', { mode: 0o600 });
+      writeFileSync(KEY_PATH, 'a3f1c9e57b2d8046f9c1a7b3e5d29f04c8a6b1e3d7f59a2c4e6b8d0f3a5c7e91', { mode: 0o600 });
       const d = tmpDir();
       for (const ts of ['2026-09-01T00:00:00Z', '2026-09-02T00:00:00Z', '2026-09-03T00:00:00Z', '2026-09-04T00:00:00Z']) {
         appendHistory(makeEntry(ts, 0), d);
@@ -550,7 +550,7 @@ describe('audit-history', () => {
     });
 
     it('G-5 原因码与条数可见（定位串自证不是空壳）', () => {
-      writeFileSync(KEY_PATH, 'test-hmac-key-1234567890', { mode: 0o600 });
+      writeFileSync(KEY_PATH, 'a3f1c9e57b2d8046f9c1a7b3e5d29f04c8a6b1e3d7f59a2c4e6b8d0f3a5c7e91', { mode: 0o600 });
       const d = tmpDir();
       for (const ts of ['2026-10-01T00:00:00Z', '2026-10-02T00:00:00Z']) appendHistory(makeEntry(ts, 0), d);
       stripSigAndReanchor(d, 0); // 创世条目无签名（密钥在场）→ genesis-signature-stripped
@@ -567,7 +567,7 @@ describe('audit-history', () => {
     });
 
     it('有 HMAC 密钥：含 A2/A9 结果的 ≥2 条干净链 append + check 通过（P0-3 回归）', () => {
-      writeFileSync(KEY_PATH, 'test-hmac-key-1234567890', { mode: 0o600 });
+      writeFileSync(KEY_PATH, 'a3f1c9e57b2d8046f9c1a7b3e5d29f04c8a6b1e3d7f59a2c4e6b8d0f3a5c7e91', { mode: 0o600 });
       // 构造含 A2(number=2) + A9(number=9) 的结果，且 FAIL 触发 sanitizeRuleResult 覆盖 details
       const a2a9 = [
         { name: 'A1 不碰敏感', number: 1, status: 'PASS', details: [] },
@@ -581,7 +581,7 @@ describe('audit-history', () => {
     });
 
     it('有 HMAC 密钥：篡改条目 → HMAC 校验失败（链断裂）', () => {
-      writeFileSync(KEY_PATH, 'test-hmac-key-1234567890', { mode: 0o600 });
+      writeFileSync(KEY_PATH, 'a3f1c9e57b2d8046f9c1a7b3e5d29f04c8a6b1e3d7f59a2c4e6b8d0f3a5c7e91', { mode: 0o600 });
       appendHistory(makeEntry('2026-02-03T00:00:00Z', 0), testDir);
       appendHistory(makeEntry('2026-02-04T00:00:00Z', 0), testDir);
       // 篡改前干净链必须通过（确保不是因 A2/A9 脱敏不一致而“假通过”）
@@ -599,7 +599,7 @@ describe('audit-history', () => {
       // appendHistory 写入 hashVersion:2 + hmacAlgo:'stable' + envFingerprint（当前环境指纹）
       // 篡改后 HMAC 不匹配，但 envFingerprint 与当前指纹一致（运行环境未变）→
       // 只能是内容被改 → tampered（红）。这是 P0-3 修复的核心：v2 条目篡改不再检测不到。
-      writeFileSync(KEY_PATH, 'test-hmac-key-1234567890', { mode: 0o600 });
+      writeFileSync(KEY_PATH, 'a3f1c9e57b2d8046f9c1a7b3e5d29f04c8a6b1e3d7f59a2c4e6b8d0f3a5c7e91', { mode: 0o600 });
       appendHistory(makeEntry('2026-04-01T00:00:00Z', 0), testDir);
       appendHistory(makeEntry('2026-04-02T00:00:00Z', 0), testDir);
 
@@ -622,8 +622,8 @@ describe('audit-history', () => {
     it('P0-1: stable 条目 + hashVersion 未定义 + HMAC 不匹配 → tampered（环境无关确为篡改）', () => {
       // 手动构造：hmacAlgo='stable' 但 hashVersion 未定义（无环境指纹）
       // 链 + HMAC 均用无指纹算法，篡改后 HMAC 不匹配 → 环境无关，确为内容被改 → tampered（红）
-      writeFileSync(KEY_PATH, 'test-hmac-key-1234567890', { mode: 0o600 });
-      const key = 'test-hmac-key-1234567890';
+      writeFileSync(KEY_PATH, 'a3f1c9e57b2d8046f9c1a7b3e5d29f04c8a6b1e3d7f59a2c4e6b8d0f3a5c7e91', { mode: 0o600 });
+      const key = 'a3f1c9e57b2d8046f9c1a7b3e5d29f04c8a6b1e3d7f59a2c4e6b8d0f3a5c7e91';
 
       const { createHash: chHash, createHmac: chHmac } = require('crypto');
       const { stableStringify: ss } = require('@sofagent/core');
@@ -676,7 +676,7 @@ describe('audit-history', () => {
     it('R-02: stable 干净链 → checkHistoryChainDetailed 返回 ok（防假阳性回归）', () => {
       // 确保写入侧用 stableStringify 签名、读取侧也用 stableStringify 校验时
       // 干净链不会被误报为篡改（run-09 回归防护）
-      writeFileSync(KEY_PATH, 'test-hmac-key-1234567890', { mode: 0o600 });
+      writeFileSync(KEY_PATH, 'a3f1c9e57b2d8046f9c1a7b3e5d29f04c8a6b1e3d7f59a2c4e6b8d0f3a5c7e91', { mode: 0o600 });
       appendHistory(makeEntry('2026-04-03T00:00:00Z', 0), testDir);
       appendHistory(makeEntry('2026-04-04T00:00:00Z', 1), testDir);
       appendHistory(makeEntry('2026-04-05T00:00:00Z', 2), testDir);
@@ -690,7 +690,7 @@ describe('audit-history', () => {
         // 攻击链：伪造/篡改者向 history.jsonl 追加非标准 schema 行。
         // 此前该类行因无 prevHash 被归为 unverifiable（黄，exit 1）——
         // 语义轻描淡写。非标准 schema = 结构异常 = tampered（红，exit 2）。
-        writeFileSync(KEY_PATH, 'test-hmac-key-1234567890', { mode: 0o600 });
+        writeFileSync(KEY_PATH, 'a3f1c9e57b2d8046f9c1a7b3e5d29f04c8a6b1e3d7f59a2c4e6b8d0f3a5c7e91', { mode: 0o600 });
         appendHistory(makeEntry('2026-06-01T00:00:00Z', 0), testDir);
         appendHistory(makeEntry('2026-06-02T00:00:00Z', 0), testDir);
         // 篡改前干净链必须是 ok

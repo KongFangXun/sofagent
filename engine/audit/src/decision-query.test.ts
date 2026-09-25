@@ -38,7 +38,7 @@ describe('decision-query', () => {
     testDir = tmpDir();
     savedKeyPath = process.env.SOFAGENT_KEY_PATH;
     const KEY_PATH = join(testDir, 'test-hmac-key');
-    writeFileSync(KEY_PATH, 'test-hmac-key-0123456789abcdef');
+    writeFileSync(KEY_PATH, 'b7e2f4a6c8d0135792b4d6f8a0c2e4f6a8b0d2f4a6c8e0b2d4f6a8c0e2b4d6f8');
     process.env.SOFAGENT_KEY_PATH = KEY_PATH;
   });
 
@@ -149,7 +149,7 @@ describe('decision causal chain（因果链）', () => {
     testDir = tmpDir();
     savedKeyPath = process.env.SOFAGENT_KEY_PATH;
     const KEY_PATH = join(testDir, 'test-hmac-key');
-    writeFileSync(KEY_PATH, 'test-hmac-key-0123456789abcdef');
+    writeFileSync(KEY_PATH, 'b7e2f4a6c8d0135792b4d6f8a0c2e4f6a8b0d2f4a6c8e0b2d4f6a8c0e2b4d6f8');
     process.env.SOFAGENT_KEY_PATH = KEY_PATH;
   });
 

@@ -376,11 +376,17 @@ export function appendHistory(entry: AuditHistoryEntry, dataDir?: string): void 
   // 干净链误报链断裂（run-09 回归 false-positive）。先脱敏再签名后，写/读两侧 HMAC 输入完全一致。
   const hmacKey = getHmacKey();
 
-  // HMAC 密钥强度校验——弱密钥（空 / <16 字节）时明确告警，
-  // 不静默用弱密钥签名稀释强校验能力。仍照常签名（优于无密钥），但醒目提示。
+  // HMAC 密钥强度校验——F-48 收口：弱密钥（空/<16 字节/低熵/弱模式）fail-closed
+  // 拒签。原实现「告警后继续签」：弱签名稀释整条链的举证力，且历史链将永远无法
+  // 用强密钥复验（每条都被弱钥签过）。对齐 SECURITY「config 解析失败走 safeDefaults」
+  // 的 fail-closed 先例。已用弱钥签过的历史链不受影响（读侧本就标 unverifiable）。
   const keyStatus = validateHmacKey();
   if (keyStatus.configured && !keyStatus.strong) {
-    console.warn(`⚠️ HMAC 密钥强度不足（${keyStatus.reason ?? ''}）——仍使用弱密钥签名审计日志，建议重新生成 ≥16 字节强密钥（如：openssl rand -hex 32 > ~/.sofagent-key && chmod 600 ~/.sofagent-key）`);
+    throw new Error(
+      `[sofagent] HMAC 密钥强度不足，拒绝签名（fail-closed）：${keyStatus.reason ?? '未知原因'}。` +
+      `弱签名会稀释整条举证链的证明力。请重新生成强密钥：openssl rand -hex 32 > ~/.sofagent-key && chmod 600 ~/.sofagent-key` +
+      `（⚠️ 换钥后旧链 HMAC 将不可复验——校验侧按「历史不可复验（黄）」处理，非篡改；如需保留旧链举证，先导出存证）。`,
+    );
   }
 
   const baseSanitized = {

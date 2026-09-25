@@ -44,7 +44,7 @@ process.on('unhandledRejection', (reason) => {
 
 import { execFileSync } from 'child_process';
 import { AUDIT_SUBCOMMANDS } from './cli/flag-table';
-import { existsSync, readFileSync, writeFileSync, mkdirSync, chmodSync, readdirSync, statSync } from 'fs';
+import { existsSync, readFileSync, writeFileSync, mkdirSync, chmodSync, readdirSync, statSync, openSync, writeSync, closeSync, fstatSync, ftruncateSync, unlinkSync } from 'fs';
 import { join, dirname } from 'path';
 import { homedir } from 'os';
 import { createInterface } from 'readline';
@@ -197,6 +197,8 @@ interface Args {
   rootCause: boolean;
   /** v1.2.9: --verify-chain 校验 HMAC hash chain 完整性 */
   verifyChain: boolean;
+  revokeKey: boolean; // F-48：HMAC 密钥销毁路径
+  yes?: boolean;      // F-48：--revoke-key 确认跳过
   /** v1.2.9: --verify-commit <hash> 检查 commit 是否有审计记录 */
   verifyCommit?: string;
   /** v1.4.9 交付 2：--gb48000 国标对齐维度（opt-in 默认 false，不影响默认审计行为） */
@@ -254,7 +256,7 @@ interface Args {
 const SUBCOMMANDS: readonly string[] = AUDIT_SUBCOMMANDS;
 
 function parseArgs(argv: string[]): Args {
-  const args: Args = { diffRange: 'HEAD~1..HEAD', strict: false, silent: false, ci: false, installHook: false, json: false, rootCause: false, verifyChain: false, webhookUrl: process.env.SOFAGENT_WEBHOOK_URL, mcp: false, init: false, signConfig: false, cached: false, noSession: false, conflictCheckCommand: false, federationDistillCommand: false, agentShieldCommand: false, supportBundle: false, format: undefined, ruleset: undefined, rulesetPath: undefined, listRulesets: false, warnAsError: false, warnAsInfo: false, gb48000: false };
+  const args: Args = { diffRange: 'HEAD~1..HEAD', strict: false, silent: false, ci: false, installHook: false, json: false, rootCause: false, verifyChain: false, revokeKey: false, webhookUrl: process.env.SOFAGENT_WEBHOOK_URL, mcp: false, init: false, signConfig: false, cached: false, noSession: false, conflictCheckCommand: false, federationDistillCommand: false, agentShieldCommand: false, supportBundle: false, format: undefined, ruleset: undefined, rulesetPath: undefined, listRulesets: false, warnAsError: false, warnAsInfo: false, gb48000: false };
   for (let i = 2; i < argv.length; i++) {
     if (argv[i] === '--diff') {
       // --diff 无显式值（末尾或后跟其他 flag）→ 用默认 HEAD~1..HEAD，
@@ -287,6 +289,9 @@ function parseArgs(argv: string[]): Args {
     } else if (argv[i] === '--warn-as-info') {
       // v1.5.2 #15: WARN 视为 info（exit 0），CI 不阻断。仅信息性输出。
       args.warnAsInfo = true;
+    } else if (argv[i] === '--yes') {
+      // F-48：--revoke-key 的确认跳过（CI / 脚本态）——不可逆操作默认交互确认
+      args.yes = true;
     } else if (argv[i] === '--silent') {
       args.silent = true;
     } else if (argv[i] === '--ci') {
@@ -300,6 +305,8 @@ function parseArgs(argv: string[]): Args {
       args.rootCause = true;
     } else if (argv[i] === '--verify-chain') {
       args.verifyChain = true;
+    } else if (argv[i] === '--revoke-key') {
+      args.revokeKey = true;
     } else if (argv[i] === '--verify-commit' && argv[i + 1]) {
       i++;
       args.verifyCommit = argv[i] as string;
@@ -980,6 +987,12 @@ async function main(): Promise<void> {
   // --verify-chain 模式（v1.2.9 新增）
   if (args.verifyChain) {
     runVerifyChain();
+    return;
+  }
+
+  // --revoke-key 模式（F-48：HMAC 密钥销毁路径——泄露后失效动作）
+  if (args.revokeKey) {
+    runRevokeKey();
     return;
   }
 
@@ -1880,4 +1893,67 @@ if (require.main === module) {
     console.error('sofagent-audit 内部错误:', err.message);
     exit(2);
   });
+}
+
+// ────────────────────────────────────────────────
+// F-48：--revoke-key——HMAC 举证链密钥销毁路径
+// 语义：确认（--yes 跳过交互，CI/脚本态）→ 用当前钥签最后一条 KEY_REVOKED
+// 事件（自证销毁时刻）→ overwrite-then-delete 安全删除密钥文件。
+// 🔴 销毁后：历史链 HMAC 不可复验（校验侧按黄处理，非篡改）；新写入降级
+// 无签名态直至重新生成密钥。
+// ────────────────────────────────────────────────
+function runRevokeKey(): void {
+  const keyPath = process.env.SOFAGENT_KEY_PATH ?? require('path').join(require('os').homedir(), '.sofagent-key'); // F-48：与 getHmacKey 同源路径口径（SOFAGENT_KEY_PATH 优先）
+  if (!existsSync(keyPath)) {
+    console.log('ℹ️ 无 HMAC 密钥（' + keyPath + ' 不存在）——无需销毁');
+    process.exit(0);
+  }
+  const skipConfirm = process.argv.includes('--yes');
+  if (!skipConfirm) {
+    console.log('⚠️  即将销毁 HMAC 举证链密钥：' + keyPath);
+    console.log('    影响一：销毁后历史链 HMAC 不可复验（校验按「历史不可复验（黄）」，非篡改）');
+    console.log('    影响二：新审计记录将无签名（举证力降级），直至重新生成密钥');
+    console.log('    影响三：本操作不可逆（密钥内容无法从删除后恢复——请先自行备份）');
+    const { createInterface } = require('readline') as typeof import('readline');
+    const rl = createInterface({ input: process.stdin, output: process.stdout });
+    rl.question('确认销毁？输入 yes 继续：', (answer: string) => {
+      rl.close();
+      if (answer.trim().toLowerCase() !== 'yes') {
+        console.log('已取消。');
+        process.exit(1);
+      }
+      doRevoke(keyPath);
+    });
+    return;
+  }
+  doRevoke(keyPath);
+}
+
+function doRevoke(keyPath: string): void {
+  try {
+    // ① 用被销毁钥签最后一条 KEY_REVOKED 事件（自证销毁时刻）
+    appendHistory({
+      timestamp: new Date().toISOString(),
+      diffRange: 'none',
+      task: '[key-management] HMAC 密钥销毁（--revoke-key）',
+      exitCode: 0,
+      ruleResults: [],
+      diffFileCount: 0,
+      commitMsg: '',
+    } as never);
+    // ② overwrite-then-delete（降低文件恢复面；同 overwrite-then-delete 级别，不引 shred 依赖）
+    const fd = openSync(keyPath, 'r+');
+    const stat = fstatSync(fd);
+    writeSync(fd, '0'.repeat(stat.size), 0);
+    ftruncateSync(fd, 0);
+    closeSync(fd);
+    unlinkSync(keyPath);
+    console.log('✅ HMAC 密钥已销毁（' + keyPath + '）');
+    console.log('   KEY_REVOKED 事件已入链（销毁时刻自证）');
+    console.log('   重新生成：openssl rand -hex 32 > ~/.sofagent-key && chmod 600 ~/.sofagent-key');
+    process.exit(0);
+  } catch (err) {
+    console.error('❌ 密钥销毁失败：' + (err instanceof Error ? err.message : String(err)));
+    process.exit(1);
+  }
 }
