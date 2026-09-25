@@ -309,7 +309,7 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # 加载安全规�
 | 每个版本做了什么 | [CHANGELOG](./CHANGELOG.md) |
 | 安全声明 · 已知局限 | [SECURITY](./SECURITY.md) · [LIMITATIONS](./docs/LIMITATIONS.md) |
 
-> 🧪 **工程可信度**（当前口径）：5320 测试 / 13 模块包 + 11 插件（7 DSH + 4 OpenClaw）· 24 条审计规则 · fresh-eyes 独立审查持续运行。
+> 🧪 **工程可信度**（当前口径）：5352 测试 / 13 模块包 + 11 插件（7 DSH + 4 OpenClaw）· 24 条审计规则 · fresh-eyes 独立审查持续运行。
 > **包数口径**（消歧）：workspace 27 = 13 模块包 + load-chain + dsh-plugin-kit + umbrella + 7 DSH 插件 + 4 OpenClaw 插件（见 [WIKI §六](./docs/WIKI.md#六当前状态)）；**测试计数口径** = 13 个模块包（workspace 含 test script 的包共 25 个，插件包、load-chain 与 dsh-plugin-kit 工具包不在此计数口径）——二者不是同一个集合。
 > 测试数有两个口径：**发版时点值**（见各版本章节内的 `4805→4903` 增量账）与**当前实测值**（即上方「工程可信度」行的实测值，随修复批滚动）；当前权威值以 `tools/check/check-test-count.sh` 实跑为准（`test-count.sh` 产出计数真值，`check-test-count.sh` 校验文档声称数一致性），包数统计标准见 [WIKI 包数口径](./docs/WIKI.md#六当前状态)。审查环境注意事项见 [docs/guides/review-system.md](./docs/guides/review-system.md)；性能数据为单机参考值。
 
