@@ -295,7 +295,8 @@ export function checkHistoryChainDetailed(dataDir?: string, maxEntries?: number)
       try {
         return decryptWithAge(payload, ageKeyCache);
       } catch {
-        // 当前钥失败——进入下方归档钥遍历（当前钥可能已轮换）
+        // 当前缓存的钥失败（可能已轮换）——丢弃缓存并落到下方归档钥遍历
+        ageKeyCache = undefined;
       }
     }
     const sofagentHome = process.env.SOFAGENT_HOME || join(homedir(), '.sofagent');
@@ -308,7 +309,8 @@ export function checkHistoryChainDetailed(dataDir?: string, maxEntries?: number)
         const buf = Buffer.from(readFileSync(join(keysDirPath(sofagentHome), bak), 'utf8').trim(), 'base64');
         if (buf.length > 0) candidates.push(buf);
       } catch {
-        // 单个归档钥损坏不阻断——跳过试下一把
+        // 单个归档钥损坏不阻断——跳过试下一把（若全部候选皆败，函数末尾统一告警）
+        continue;
       }
     }
     for (const cand of candidates) {
@@ -317,9 +319,16 @@ export function checkHistoryChainDetailed(dataDir?: string, maxEntries?: number)
         ageKeyCache = cand; // 命中的钥缓存给后续行（同链通常同一把钥）
         return plain;
       } catch {
-        // 试下一把
+        // 这一把不行 → 试下一把（全试完仍未命中在下方统一告警）
+        continue;
       }
     }
+    // 降级可见：所有候选（当前钥 + N 把归档钥）都未能解密本行——这可能是密钥丢失
+    // 或密文损坏，调用方按 unverifiable 处理，但此处必须留下可查证据（原实现静默返回
+    // null，运维只能看到"不可验证"而不知道是"没有钥"还是"钥不对"）。
+    console.warn(
+      `⚠️ [sofagent] age 密文行解密失败：${candidates.length} 把候选钥（当前钥 + 归档钥）均不匹配——该行按「不可复验」处理；请确认密钥是否丢失或轮换后归档是否完整`,
+    );
     return null;
   };
 

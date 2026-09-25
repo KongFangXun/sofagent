@@ -421,8 +421,10 @@ function emitOnToolCall(options: HarnessWrapOptions, event: HarnessToolCallEvent
   if (options.onToolCall) {
     try {
       options.onToolCall(event);
-    } catch {
-      // 事件钩子异常不影响工具链
+    } catch (err) {
+      // 宿主钩子异常不影响工具链——但必须可见：钩子持续报错却静默，宿主会以为
+      // 「事件都正常派发了」（门禁 check-silent-catch 修法：降级走一行 warn）。
+      console.warn(`⚠️ [sofagent] onToolCall 钩子异常（已跳过，工具链不受影响）：${err instanceof Error ? err.message : String(err)}`);
     }
   }
 }
@@ -528,7 +530,9 @@ function appendTrace(
     const traceDir = join(dataDir, 'trace');
     if (!existsSync(traceDir)) mkdirSync(traceDir, { recursive: true });
     appendFileSync(join(traceDir, 'harness-sdk.jsonl'), JSON.stringify({ ...record, ts: new Date().toISOString() }) + '\n', 'utf-8');
-  } catch {
-    // trace 失败不阻塞 agent 执行
+  } catch (err) {
+    // trace 写失败不阻塞 agent 执行——但必须可见：静默会让「没有 trace 记录」
+    // 被误读为「没有执行」（观测面缺口须可查）。
+    console.warn(`⚠️ [sofagent] harness-sdk trace 写入失败（观测数据缺口，agent 执行不受影响）：${err instanceof Error ? err.message : String(err)}`);
   }
 }

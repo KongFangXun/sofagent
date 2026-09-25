@@ -466,8 +466,12 @@ export function appendHistory(entry: AuditHistoryEntry, dataDir?: string): void 
           detail: '静态加密降级为明文写入（初始化标记在而 data.key 缺失/损坏）——本条之后的新记录为明文，直至密钥恢复',
         });
         atomicAppendSync(filePath, evLine);
-      } catch {
-        // 事件行写入失败不阻断审计主路径（可见性增强，非主链路）
+      } catch (err) {
+        // 事件行写入失败不阻断审计主路径——但**必须可见**：给「降级可见化」本身
+        // 加一条静默失败，等于可见性增强自身不可见（F-11 设计意图的自我一致性）。
+        console.warn(
+          `⚠️ [sofagent] ENCRYPTION_DEGRADED 事件行写入失败（本次降级未留痕，主审计路径不受影响）：${err instanceof Error ? err.message : String(err)}`,
+        );
       }
     }
   }
