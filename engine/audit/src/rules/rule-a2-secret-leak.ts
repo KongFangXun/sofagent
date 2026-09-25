@@ -377,7 +377,10 @@ export function scanA2(ctx: AuditContext): RuleScan {
           // （与 env 引用同语义），此前被当硬编码密钥误报；尾锚 `(?![\w(])` 兼防贪婪回溯
           // （无锚时 `resolveApiKey(` 会回溯成 `resolveApiKe` 绕过断言）
           const ASSIGNMENT_PATTERN =
-            /(?:api[_-]?key|apikey|access[_-]?token|auth[_-]?token|token|secret|passwd|password)\s*[=:]\s*["']?([A-Za-z0-9_\-./+=]{8,})(?![\w(])/i;
+            // F-2 收口：补 access[_-]?key（AWS 生态最高频变量名）与 aws_access_key_id 词形
+            // （键名完整串含 _ID 后缀——普通词形后跟 _ID 时 [=:] 前缀断言不满足，需专门词形）。
+            // 其余部分（长度 ≥8 / 占位符排除 / env 引用豁免 / 尾锚）一字不动。
+            /(?:api[_-]?key|apikey|access[_-]?key|aws[_-]?access[_-]?key(?:[_-]?id)?|access[_-]?token|auth[_-]?token|token|secret|passwd|password)\s*[=:]\s*["']?([A-Za-z0-9_\-./+=]{8,})(?![\w(])/i;
           const m = candidate.match(ASSIGNMENT_PATTERN);
           const assigned = m?.[1];
           // env 引用豁免：值以 process.env / os.Getenv 等「运行时读取」开头的是代码引用

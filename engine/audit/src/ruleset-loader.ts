@@ -300,7 +300,9 @@ export function loadRulesetFromPath(dirPath: string, name?: string): Ruleset {
   // 否则加载第一个 .json 文件
   let files: string[];
   try {
-    files = readdirSync(absPath).filter((f) => f.endsWith('.json'));
+    // F-21：目录枚举顺序非确定（fs.readdirSync 不保证稳定序）——显式排序
+    // 使「取第一个」可复现（同目录两个 .json 时加载结果不再随文件系统抖动）。
+    files = readdirSync(absPath).filter((f) => f.endsWith('.json')).sort();
   } catch (err) {
     throw new RulesetLoadError(
       `规则集目录读取失败: ${absPath} — ${err instanceof Error ? err.message : String(err)}`

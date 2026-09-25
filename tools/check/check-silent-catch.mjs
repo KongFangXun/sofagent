@@ -119,7 +119,9 @@ const MIGRATE = process.argv.includes('--migrate-baseline-key-format');
 // 「静默即丢证据」的路径。此前二者不在关键词集内，导致整文件被前置过滤跳过、其 catch
 // 从不进入判定（「有代码绕过了检查」）。收编方式取「纳入判定面」而非「登记进豁免台账」：
 // 豁免台账是承认覆盖盲区，而这些文件恰恰是失败行为的核心承载面，不该被盲区登记掉。
-const CRITICAL_FILE_HINTS = /audit|persist|notice|daemon|history|snapshot|write|crypto|hmac|events\/|localiz/i;
+// F-22 盲区收窄：补 permission|policy|security|guard 四词——path-guard.ts /
+// permission-ceiling.ts / isolation-guard.ts / prompt-sanitizer.ts 从「零覆盖盲区」进「必判」面。
+const CRITICAL_FILE_HINTS = /audit|persist|notice|daemon|history|snapshot|write|crypto|hmac|events\/|localiz|permission|policy|security|guard/i;
 
 // 同行空 catch：catch (...) { } 或 catch { } 或 catch (...) { /* 仅注释 */ }
 const SAME_LINE_EMPTY = /catch\s*(\([^)]*\))?\s*\{[\s]*(?:\/\*[^*]*\*\/|\/\/[^\n]*)?[\s]*\}/;

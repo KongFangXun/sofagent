@@ -109,13 +109,20 @@ export function resolveHooksDir(cwd: string): HooksDirResolution | null {
 export function preserveUserHook(hooksDir: string, destName: string): string | null {
   const destPath = join(hooksDir, destName);
   if (!existsSync(destPath)) return null;
+  // F-21②：读失败（权限等）不再按「不存在」处理——原路径会直接覆盖用户 hook，
+  // 用户的钩子静默消失。改为保守路径：无法读取 → 也走备份（改名保留原文件）后返回，
+  // 让用户能人工核对；copyFileSync 失败时退化为旧行为（不阻塞安装）。
   let content = '';
+  let readable = true;
   try {
     content = readFileSync(destPath, 'utf-8');
   } catch {
-    return null; // 读不了按不存在处理
+    readable = false;
+    console.warn(`⚠️ [sofagent] 无法读取既有 hook（${destName}）——已按保守路径备份保留，请人工核对`);
   }
-  if (content.includes('sofagent')) return null; // sofagent 自家 hook——升级覆盖，无需链式
+  // F-21②：自家 hook 判定从「子串含 sofagent」改为匹配已知头部标记行
+  // （子串判定会把用户 hook 里提了一句 sofagent 的情况误判为自家 hook → 覆盖丢失）
+  if (readable && /^#\s*sofagent .*hook v[0-9]/m.test(content)) return null; // 自家 hook——升级覆盖
   const preName = `${destName}.pre-sofagent`;
   const prePath = join(hooksDir, preName);
   try {

@@ -106,3 +106,34 @@ describe('A2 文件头判别收口（++ 前缀内容行不再漏检）', () => {
     expect(rule.status).toBe('PASS');
   });
 });
+
+describe('F-2 · A2 赋值兜底词表补缺（AWS 生态高频变量名）', () => {
+  it('access_key = qwertyuiopasdfghjkl → FAIL（原放行）', () => {
+    const rule = scanA2(ctxWith(['+access_key = qwertyuiopasdfghjkl']));
+    expect(rule.status).toBe('FAIL');
+    expect(rule.details.join(' ')).toContain('密钥赋值形态');
+  });
+
+  it('AWS_ACCESS_KEY_ID = AKIA…（19/20 位非标形态）→ FAIL（_ID 后缀词形）', () => {
+    // 值用运行时拼接防 fixture 自染；且非 EXAMPLE 结尾（官方示例白名单只放行 EXAMPLE 尾）
+    const v = ['AKIA', 'IOSFODNN7', 'XY42ZQ'].join('');
+    const rule = scanA2(ctxWith(['+AWS_ACCESS_KEY_ID = ' + v]));
+    expect(rule.status).toBe('FAIL');
+    expect(rule.details.join(' ')).toContain('密钥赋值形态');
+  });
+
+  it("access-key: 'zzzz9999aaaa8888'（连字符词形）→ FAIL", () => {
+    const rule = scanA2(ctxWith(["+access-key: 'zzzz9999aaaa8888'"]));
+    expect(rule.status).toBe('FAIL');
+  });
+
+  it('反向：占位符形态不误报（access_key = REPLACE_ME）', () => {
+    const rule = scanA2(ctxWith(['+access_key = REPLACE_ME']));
+    expect(rule.status).not.toBe('FAIL');
+  });
+
+  it('反向：env 引用不误报（access_key: process.env.AWS_ACCESS_KEY_ID）', () => {
+    const rule = scanA2(ctxWith(['+access_key: process.env.AWS_ACCESS_KEY_ID']));
+    expect(rule.status).not.toBe('FAIL');
+  });
+});
