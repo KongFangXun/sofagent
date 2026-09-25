@@ -158,7 +158,7 @@
 | **规则导出 + 独立验签** | `ruleset_export` 机器可读 JSON 双向可逆（24 条规则元数据 + 版本指纹）；`verify-chain` 零依赖验签器——第三方无需安装 sofagent 即可举证 HMAC 链。获取：npm 包 `@sofagent/audit` 内 `verify/verify-chain.mjs`（单文件零依赖，可直接拷给第三方）；安装态在 `~/.sofagent/verify/verify-chain.mjs`；自检 `node verify-chain.mjs --selftest` |
 | **判定语义补两头** | 开工前五问判定链（健康/人审/证据/专注/配额——挂起非失败自动恢复）+ 结论失效语义（三触发标记失效，失效结论不当新证据） |
 
-同版另有：出口治理面（host 白名单默认全拒 + 出站裁决挂链）· 事前授权补环（mandate 三元素执行前拦截）· 身份三层叙事注入（README 双语三因子）· DSH 插件 npm 首发面（kit + 七款 `cordis-plugin-sofagent-*`）· v1.5.2 审查修复批（35 条目收编，含 6 条安全 fail-open 收口）。**测试 5083→5296 · acceptance 367→373 · 回归 85 维 · MCP 105→107**（13 包 workspace 口径，发版时点）。完整内容见[开发日志](./docs/changelog/v1.5/v1.5.2.md) · 更早版本见 [CHANGELOG](./CHANGELOG.md)。
+同版另有：出口治理面（host 白名单默认全拒 + 出站裁决挂链）· 事前授权补环（mandate 三元素执行前拦截）· 身份三层叙事注入（README 双语三因子）· DSH 插件 npm 首发面（kit + 七款 `cordis-plugin-sofagent-*`）· v1.5.2 审查修复批（35 条目收编，含 6 条安全 fail-open 收口）。**测试 5083→5309 · acceptance 367→373 · 回归 85 维 · MCP 105→107**（13 包 workspace 口径，发版时点）。完整内容见[开发日志](./docs/changelog/v1.5/v1.5.2.md) · 更早版本见 [CHANGELOG](./CHANGELOG.md)。
 
 ## FDE Harness 两阶段
 
@@ -308,7 +308,7 @@ npx -y -p @sofagent/audit sofagent-audit --ruleset security   # 加载安全规�
 | 每个版本做了什么 | [CHANGELOG](./CHANGELOG.md) |
 | 安全声明 · 已知局限 | [SECURITY](./SECURITY.md) · [LIMITATIONS](./docs/LIMITATIONS.md) |
 
-> 🧪 **工程可信度**（当前口径）：5296 测试 / 13 模块包 + 11 插件（7 DSH + 4 OpenClaw）· 24 条审计规则 · fresh-eyes 独立审查持续运行。
+> 🧪 **工程可信度**（当前口径）：5320 测试 / 13 模块包 + 11 插件（7 DSH + 4 OpenClaw）· 24 条审计规则 · fresh-eyes 独立审查持续运行。
 > **包数口径**（消歧）：workspace 27 = 13 模块包 + load-chain + dsh-plugin-kit + umbrella + 7 DSH 插件 + 4 OpenClaw 插件（见 [WIKI §六](./docs/WIKI.md#六当前状态)）；**测试计数口径** = 13 个模块包（workspace 含 test script 的包共 25 个，插件包、load-chain 与 dsh-plugin-kit 工具包不在此计数口径）——二者不是同一个集合。
 > 测试数有两个口径：**发版时点值**（见各版本章节内的 `4805→4903` 增量账）与**当前实测值**（即上方「工程可信度」行的实测值，随修复批滚动）；当前权威值以 `tools/check/check-test-count.sh` 实跑为准（`test-count.sh` 产出计数真值，`check-test-count.sh` 校验文档声称数一致性），包数统计标准见 [WIKI 包数口径](./docs/WIKI.md#六当前状态)。审查环境注意事项见 [docs/guides/review-system.md](./docs/guides/review-system.md)；性能数据为单机参考值。
 
