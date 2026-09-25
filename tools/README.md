@@ -65,6 +65,7 @@
 | `check/check-mjs-comment-backtick.mjs` | mjs/js 注释可执行反引号守卫：注释行反引号串首 token 形似仓内脚本路径或 npm/node/bash 命令头 = 危险——bash 误跑该文件时会把注释串当命令替换**真执行**（实锤：check-prepush-checklist.mjs 头部注释串曾让 bash 跑完整套 pre-push 防线数分钟）。退出码 0 绿 / 1 有违规（改单引号）/ 2 引擎故障 | check-tool-health 第 ⑨ 项 / 新写 .mjs 注释含反引号路径串后 |
 | `check/check-gate-inventory.sh` | 门禁清单覆盖对账（**登记 ≠ 调用**：`tools/check/` 全体守卫 ⊆ 真实调用面——抓「脚本写好、登记在册、零调用点」的**孤儿守卫**，其红态无人知晓）。口径四项显式声明：脚本面认裸名且**剔注释行** · 文档面只认 `tools/check/` 路径化引用 · **登记表与 `docs/changelog/v*` 历史记述不在任何面内**（描述守卫 ≠ 调用守卫）· 区分大小写。豁免写 `playbook/.gate-inventory-exempt`（`文件名:理由`，理由不可为空）。**语料装载完整性对账**（清单件数 ≡ 语料件数 ∧ 语料行数 ≡ 非空件行数之和）把「漏载某个面」这一整类故障变成 exit 2，而非静默把真接线误判成孤儿。退出码 0 绿 / 1 有孤儿或陈旧豁免 / 2 失明 | pre-push 第 1c 步 / 新增或搬迁 tools/check/ 守卫后 |
 | `check/lib/coverage-line.sh` | 门禁覆盖度行统一范式（`[check:coverage] script=… asserts=… covered=… skipped=…`，让「跳过」可见可 grep） | 被 check-docs / check-silent-catch 等 source |
+| `check/lib/listed-badges.mjs` | 收录徽章对账辅助：把 README `*-listed-brightgreen` 徽章的「被 Awesome 仓收录」声称变成可执行核查——取目标仓 README **全文 blob** 后 grep 本仓名（不用 `search/code` API，防超大 README 假阴性），输出 OK / MISSING / SKIP。能力边界：依赖 gh CLI + 网络，封闭环境恒 SKIP = 断言未生效（不假绿也不假红）。退出码 0 = 无 MISSING / 1 = 存在 MISSING | 被 check-storefront 消费（需 gh 环境） |
 | `check/silent-catch-prefilter-exempt.json` | 静默吞错扫描的文件级前置过滤豁免台账（被 `check-silent-catch.mjs` 消费） | 被 check-silent-catch.mjs 消费 |
 
 ## 二、gen/ — 草稿生成

@@ -76,7 +76,7 @@ sofagent 是一套 FDE 能力——底层引擎是纯本地 Harness 中间件（
 - ✅ 脱敏：sanitize() 管道扫描 API Key / 密码 / 手机号，写入前自动打码
 - ✅ 数据保留：cleanup.sh 支持 --purge --before 定时清理 + tar.gz 归档
 - ✅ 审计日志：task-record.sh 独立审计日志 + task/logs 追溯双通道
-- ✅ 静态加密已接线（daemon start 路径）：`initDataEncryption()` 已接入 daemon 启动路径（交互环境引导生成密钥 + 指纹确认 + 备份确认；非交互 WARN 不 FAIL 明文兼容；无头批量部署用 `SOFAGENT_CONFIRM_BACKUP=1` env 显式确认，SOP 见 [企业部署指南 §批量部署](./docs/guides/enterprise-deploy.md)）。密钥就绪后审计历史主链以 `SOFAGENT-AGE-V1` 密文落盘（AES-256-GCM，密钥 `~/.sofagent/keys/` 0600 + 指纹强制备份）；既有明文历史读侧 auto-detect 可读不回填。**降级可见性（F-11）**：密钥删除/损坏后新记录回明文——写入侧首条告警 + history 落 ENCRYPTION_DEGRADED 事件留痕 + --doctor 一致性检查红（初始化标记在而 data.key 缺失）。附链目录（forge-runs/checkpoint/model-registry/task/logs/think.md/knowledge）仍为明文，见 LIMITATIONS 权威清单。激活口径：交互首启确认后生效；无头部署用 env 通道批量激活（[enterprise-deploy §④](./docs/guides/enterprise-deploy.md)），非交互 WARN 明文兼容。验证命令：启用后 `head -1 ~/.sofagent/data/audit/history.jsonl` 应见 `SOFAGENT-AGE-V1` 前缀
+- ✅ 静态加密已接线（daemon start 路径）：`initDataEncryption()` 已接入 daemon 启动路径（交互环境引导生成密钥 + 指纹确认 + 备份确认；非交互 WARN 不 FAIL 明文兼容；无头批量部署用 `SOFAGENT_CONFIRM_BACKUP=1` env 显式确认，SOP 见 [企业部署指南 §批量部署](./docs/guides/enterprise-deploy.md)）。密钥就绪后审计历史主链以 `SOFAGENT-AGE-V1` 密文落盘（AES-256-GCM，密钥 `~/.sofagent/keys/` 0600 + 指纹强制备份）；既有明文历史读侧 auto-detect 可读不回填。**降级可见性**：密钥删除/损坏后新记录回明文——写入侧首条告警 + history 落 ENCRYPTION_DEGRADED 事件留痕 + --doctor 一致性检查红（初始化标记在而 data.key 缺失）。附链目录（forge-runs/checkpoint/model-registry/task/logs/think.md/knowledge）仍为明文，见 LIMITATIONS 权威清单。激活口径：交互首启确认后生效；无头部署用 env 通道批量激活（[enterprise-deploy §④](./docs/guides/enterprise-deploy.md)），非交互 WARN 明文兼容。验证命令：启用后 `head -1 ~/.sofagent/data/audit/history.jsonl` 应见 `SOFAGENT-AGE-V1` 前缀
 - ⚠️ **当前限制**：LLM 自评无外部基准。GDPR / 等保 / SOC2 场景仍需额外措施（静态加密已覆盖审计历史主链，但 forge-runs/checkpoint/model-registry 三目录与 task/logs/think.md 附链仍为明文，见 LIMITATIONS 权威清单）。合规审查员请注意：**强合规场景仍建议配合外部加密卷（gpg / disk encryption）覆盖附链目录**。
 
 ### 纵深防御（静态加密之外的额外措施，持续建议）
@@ -308,7 +308,7 @@ sofagent 是一套 FDE 能力——底层引擎是纯本地 Harness 中间件（
 
 sofagent-audit（v0.92+）是 TypeScript CLI，读取 git diff 和文件系统的主力路径是 `execFileSync('git', ...)`（数组传参、不走 shell）。不使用 eval、不执行外部脚本；git 命令参数以数组传入（`['diff', '--unified=3', range]`），range 参数经过正则校验 `[a-zA-Z0-9~^.\-]`，无命令注入风险。
 
-**规则集 plugin 类规则的供应链边界（F-9 收口）**：`--ruleset-path` 加载的 JSON 规则集中 `type: "plugin"` 的条目会触发模块加载——**默认拒绝**（plugin 规则关闭）；仅在显式设置 `SOFAGENT_ALLOW_PLUGIN_RULES=1` 时放行，且来源限定为 `@sofagent/` scope 包或本地绝对路径（裸名第三方包禁入）。**opt-in 即自担供应链风险**——加载的代码在审计进程内以当前用户权限运行。
+**规则集 plugin 类规则的供应链边界**：`--ruleset-path` 加载的 JSON 规则集中 `type: "plugin"` 的条目会触发模块加载——**默认拒绝**（plugin 规则关闭）；仅在显式设置 `SOFAGENT_ALLOW_PLUGIN_RULES=1` 时放行，且来源限定为 `@sofagent/` scope 包或本地绝对路径（裸名第三方包禁入）。**opt-in 即自担供应链风险**——加载的代码在审计进程内以当前用户权限运行。
 
 **精确边界（v1.4.5 核实）**：包内存在 7 处 `execSync`（shell 形态）调用，均为静态可信命令串——命令体零外部输入插值，插值面仅限「取回输出后 trim」：
 

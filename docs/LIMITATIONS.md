@@ -36,7 +36,7 @@
 | 1 | **单包测试需先 build**——monorepo 未 build 时单包 `npm test` 可能失败（依赖 dist/），需先 `npm run build --workspaces`。 | [四、成熟度与测试局限](#四成熟度与测试局限) |
 | 2 | **默认非 fail-closed**——config.yml 可被 Agent 篡改绕过审计规则。仅当 config 解析失败时走 safeDefaults（fail-closed 强制启用）。 | [三、安全与信任模型局限](#三安全与信任模型局限) |
 | 3 | **编排能力依赖 orchestrator 包 + 模型质量**——LangGraph createReactAgent 驱动，编排效果依赖模型质量。模型降级 → 编排降级。 | [五、审计与工程局限 → 编排模块稳定性](#五审计与工程局限) |
-| 4 | **静态加密只覆盖 `history.jsonl`**——`decision-log.jsonl` / `intent.jsonl` / `intent-skips.jsonl` 及附链目录（forge-runs / checkpoint / model-registry / task/logs / think.md / knowledge/）仍明文。 | [三、安全与信任模型局限 → 数据存储安全](#三安全与信任模型局限) |（边界：密钥删除/损坏后新记录回明文——doctor 可检出、ENCRYPTION_DEGRADED 事件留痕，F-11 收口）
+| 4 | **静态加密只覆盖 `history.jsonl`**——`decision-log.jsonl` / `intent.jsonl` / `intent-skips.jsonl` 及附链目录（forge-runs / checkpoint / model-registry / task/logs / think.md / knowledge/）仍明文。 | [三、安全与信任模型局限 → 数据存储安全](#三安全与信任模型局限) |（边界：密钥删除/损坏后新记录回明文——doctor 可检出、ENCRYPTION_DEGRADED 事件留痕）
 | 5 | **单平台场景可能过重**——只用单一 Agent 平台且接受云端审计的用户，平台内置治理比 sofagent 更顺滑。sofagent 的价值在多供应商混用 + 本地留证场景。 | [二、平台与兼容性局限 → 单平台场景](#-单平台用户建议) |
 
 > ✅ **已解决的历史问题**（v1.3.2 移出 Key Limitations，不再计入当前边界）：
@@ -297,7 +297,7 @@ A1（不碰敏感）按 `DiffFile.status` 分方向判定：**新增/修改**敏
 >
 > v1.1.8 起支持 HMAC-SHA256 签名（密钥来自 `~/.sofagent-key`，chmod 600），有密钥时强校验——但仅防**其他 OS 用户**篡改（密钥 600 只挡跨用户），**同用户运行的被审计进程仍可读密钥重算整链**，故对「Agent 本体」这一威胁主体不是强防篡改；无密钥时降级为 SHA-256 hash chain（此时篡改检测是**弱校验**——手改后重算整链即可通过，FAIL 可被抹成 PASS；企业 SOP 应强制配置密钥并周期体检）。
 >
-> **密钥生命周期边界（F-48）**：① 弱密钥（<16 字节 / 低熵 / 常见弱模式）**拒绝签名**（fail-closed，不再降级弱签）；② 泄露后有销毁路径 `--revoke-key`（确认交互 → overwrite-then-delete → KEY_REVOKED 事件自证销毁时刻）；③ **轮换后的旧链不可复验**仍待解（链校验侧按「历史不可复验（黄）」处理——轮换涉及全链重签语义，排期见 ROADMAP）。
+> **密钥生命周期边界**：① 弱密钥（<16 字节 / 低熵 / 常见弱模式）**拒绝签名**（fail-closed，不再降级弱签）；② 泄露后有销毁路径 `--revoke-key`（确认交互 → overwrite-then-delete → KEY_REVOKED 事件自证销毁时刻）；③ **轮换后的旧链不可复验**仍待解（链校验侧按「历史不可复验（黄）」处理——轮换涉及全链重签语义，排期见 ROADMAP）。
 >
 > `--doctor`（v1.2.0 起）会实际调用 `checkHistoryChainDetailed()` 校验链完整性。v1.4.5 起补**链头锚点**（`history-chain-head`，0600 原子写）：写入侧持久化总条数 + 末条哈希，读侧据此检出**尾部截断**（砍尾后剩余链自洽的逃逸路径）与锚位内容重写（判 tampered）；锚点不可读判 unverifiable（黄），无锚点（旧数据）跳过校验。
 >
