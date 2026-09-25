@@ -261,6 +261,7 @@ sofagent-audit --doctor    # 验证环境（可选）
 >
 > - **`npm i sofagent-audit`**：npm 上的裸名包 `sofagent-audit` 是**本项目的旧代理包**（已 deprecated，长期滞后于主包）。
 > - **`npm i sofagent`**：裸名总包 `sofagent`（`engine/umbrella/`，把 audit / mcp / orchestrator / daemon 四个子包转发进来）**依赖树 604 包**，其中 5 个含原生模块与 install script（`node-pty` / `koffi` / `@google/genai` / `protobufjs` / `@deepseek-ai/dsh-subprocess-local`）——新版 npm 默认不执行未审阅的 install script，这些原生依赖的编译 / postinstall 会被**静默跳过**。只想要 CLI 就别装它。
+> - 📌 **裸名总包 `sofagent` 自本版起在 repo 侧标注弃用**——它只是转发层（`engine/umbrella/`），既非 CLI 也非推荐入口；CLI 与能力面请统一走 scoped 主通道 `@sofagent/audit`（CLI）/ `@sofagent/*`（子能力）。registry 侧 `npm deprecate` 另行处理（对外动作 + 2FA）。
 >
 > CLI 的正式包名是 `@sofagent/audit`（带 scope），CLI 安装统一走 bootstrap.sh / install.sh / `@sofagent/audit`。
 

@@ -261,6 +261,7 @@ sofagent-audit --doctor    # verify the environment (optional)
 >
 > - **`npm i sofagent-audit`**: the bare-name package `sofagent-audit` on npm is **this project's legacy proxy package** (deprecated; it lags far behind the main package).
 > - **`npm i sofagent`**: the bare-name umbrella `sofagent` (`engine/umbrella/`, forwarding to the audit / mcp / orchestrator / daemon sub-packages) pulls a **dependency tree of 604 packages**, 5 of which carry native modules and install scripts (`node-pty` / `koffi` / `@google/genai` / `protobufjs` / `@deepseek-ai/dsh-subprocess-local`) — new npm versions do not run unreviewed install scripts, so those native builds / postinstalls are **silently skipped**. If you only want the CLI, do not install it.
+> - 📌 **The bare-name umbrella `sofagent` is marked deprecated repo-side as of this version** — it is merely a forwarder (`engine/umbrella/`), neither the CLI nor a recommended entry point; use the scoped main channel `@sofagent/audit` (CLI) / `@sofagent/*` (sub-capabilities) instead. The registry-side `npm deprecate` is handled separately (external action + 2FA).
 >
 > The official CLI package is the scoped `@sofagent/audit` — install the CLI via bootstrap.sh / install.sh / `@sofagent/audit` only.
 

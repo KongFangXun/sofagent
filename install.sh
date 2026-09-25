@@ -127,7 +127,7 @@ sofagent install.sh v${VERSION} — 企业设备安装器（平台无关）
   bash install.sh --platform <name>     显式平台集成（opt-in）：openclaw / workbuddy / claude / codex / hermes / cursor / gemini
   bash install.sh --with-im-bridge      可选：安装 IM 桥远程指挥（@xmanrui/dsh-im 社区插件，默认不装）
   bash install.sh --with-first-deploy-cron  可选：装完自动建首部署 cron job（daily-health 每日巡检，默认不装）
-  bash install.sh --quick               完整安装（静默模式，跳过交互确认）⚠️ 非预览，会写入文件
+  bash install.sh --quick               面向 CI/自动化的静默安装（静默跳过交互确认）；交互使用请走默认模式 ⚠️ 非预览，会写入文件
   bash install.sh --remote              远程安装模式（git clone）
   bash install.sh --force               升级时强制覆盖 custom/ 用户层（确认+备份）
   bash install.sh --merge               升级时三路合并 custom/ 用户层
