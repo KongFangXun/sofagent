@@ -1907,8 +1907,8 @@ grep -q "已于 v1.5.0 移除" engine/orchestrator/src/cli.ts && grep -q "args.i
 # ── 执行机制纪律族（原 #141 归并）──
 # l: 裸 id 结构化拒绝（SOFAGENT_SCOPE_REQUIRED——多实体系统撞名必然）
 node -e "const m=require('./engine/core/dist/scope-names.js');const r=m.validateScopedName('bare-id-without-scope');if(r.valid){console.log('裸 id 被放行');process.exit(1)};if(r.error&&!/作用域显名/.test(r.error)){console.log('拒绝原因非显名语义');process.exit(1)};console.log('裸 id 结构化拒绝正确')" || { echo "❌ 作用域显名语义漂移"; FAIL=1; }
-# m: Git 能力三态×两隔离矩阵 + 意图分类纯函数主判在位（「靠 LLM 判定等于没判定」）
-grep -q "planExecution" engine/orchestrator/src/exec/git-capability.ts && grep -qE "'none' \| 'local' \| 'remote'" engine/orchestrator/src/exec/git-capability.ts && grep -q "classifyIntentByRules" engine/orchestrator/src/dispatch/intent-classifier.ts && echo "✅ 三态×两隔离 + 纯函数主判在位" || { echo "❌ 纪律批缺失"; FAIL=1; }
+# m: Git 能力三态×两隔离矩阵 + 意图分类纯函数主判**行为判据**（章二改造：真调 classifyIntentByRules 验行为，非字符串锚——「靠 LLM 判定等于没判定」）
+grep -q "planExecution" engine/orchestrator/src/exec/git-capability.ts && grep -qE "'none' \| 'local' \| 'remote'" engine/orchestrator/src/exec/git-capability.ts && node -e "const m=require('./engine/orchestrator/dist/dispatch/intent-classifier.js');const r=m.classifyIntentByRules('请帮我 review 一下这段代码');if(r.intent!=='review'||r.source!=='rules'){console.log('意图主判行为漂移:'+JSON.stringify(r));process.exit(1)}" && echo "✅ 三态×两隔离 + 纯函数主判行为判据在位" || { echo "❌ 纪律批缺失"; FAIL=1; }
 [ "${FAIL:-0}" = "1" ] && { echo "维度137:FAIL"; exit 1; }; echo "维度137:PASS"
 ) 2>&1 | tee "/tmp/regress-dim-$$.log"; grep -qE "^[[:space:]]{0,2}❌" "/tmp/regress-dim-$$.log" && { rm -f "/tmp/regress-dim-$$.log"; echo "该维度收口:FAIL"; exit 1; }; rm -f "/tmp/regress-dim-$$.log"; true
 ```
