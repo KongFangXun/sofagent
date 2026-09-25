@@ -126,6 +126,41 @@ done <<EOF
 $TRACKED
 EOF
 
+# ── F-38：公开面绝对家目录路径断言 ──
+# 维护者机器路径（/Users/<name>/ 或 /home/<name>/）不得进公开仓——信息面
+# （暴露本机布局/用户名）+ 专业形象双重成本。豁免面与产品名断言一致
+# （冻结区 changelog/archive 的历史记述不回改）。
+HOME_PATH_HITS=""
+HOME_PATH_TOTAL=0
+for f in $TRACKED; do
+  case "$f" in
+    .git/*|docs/changelog/*|docs/archive/*|tools/check/check-open-boundary.sh) continue ;;
+    # F-38 测试面豁免：脱敏/路径解析类测试用占位家目录路径（/Users/johndoe/、
+    # /home/alice/）做 fixture 属正当用法——断言抓的是「维护者机器路径外溢」，
+    # 不是「任何家目录形状的字符串」。
+    */__tests__/*|*.test.ts|*.spec.ts|*.test.mjs|*.test.js) continue ;;
+  esac
+  [ -f "$f" ] || continue
+  HOME_PATH_TOTAL=$((HOME_PATH_TOTAL + 1))
+  # 占位用户名白名单（与 A2 规则「占位符豁免」同款思路）：断言抓的是**真实**机器
+  # 路径外溢；`/Users/xxx/`、`/home/user/` 这类形状说明/测试 fixture 属正当用法。
+  HIT=$(grep -nE "(^|[^[:alnum:]_])/(Users|home)/[A-Za-z0-9._-]+/" "$f" 2>/dev/null \
+    | grep -vE "/(Users|home)/(user|users|xxx|yyy|johndoe|jane|alice|bob|admin|example|youruser|your-user|username|me|someone|foo|bar|test|tester|dev|developer|name|someoneelse|runner)/" \
+    || true)
+  if [ -n "$HIT" ]; then
+    HOME_PATH_HITS="$HOME_PATH_HITS
+$f: $HIT"
+  fi
+done
+if [ -n "$HOME_PATH_HITS" ]; then
+  echo "❌ 公开面家目录路径外溢（F-38）：tracked 文件含本机绝对家目录路径"
+  printf "%s\n" "$HOME_PATH_HITS" | grep "." | head -10
+  echo "   修法：替换为 ~/ 或仓相对路径（语义不变，去机器指纹）"
+  exit 1
+fi
+echo "✅ 公开面家目录路径断言：${HOME_PATH_TOTAL} 个文件扫描，绝对家目录路径零命中（冻结区豁免）"
+echo ""
+
 if [ -n "$HITS" ]; then
   echo "❌ 开源边界违规：tracked 文件存在商业产品名（私域产品名家族）"
   printf "%s\n" "$HITS" | grep "." | head -20

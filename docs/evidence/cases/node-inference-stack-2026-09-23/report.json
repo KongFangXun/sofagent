@@ -17,8 +17,8 @@
     "onnxruntimeNodeVersion": "1.30.0",
     "onnxruntimeNodeDeclaredByTransformers": "1.30.0",
     "claimedVersionMatchesInstalled": true,
-    "onnxruntimeNodePath": "/Users/kongfangxun/.workbuddy/binaries/node/workspace/node_modules/onnxruntime-node",
-    "transformersPath": "/Users/kongfangxun/.workbuddy/binaries/node/workspace/node_modules/@huggingface/transformers"
+    "onnxruntimeNodePath": "~/.workbuddy/binaries/node/workspace/node_modules/onnxruntime-node",
+    "transformersPath": "~/.workbuddy/binaries/node/workspace/node_modules/@huggingface/transformers"
   },
   "footprint": {
     "packageTotalBytes": 301068136,
@@ -59,7 +59,7 @@
   ],
   "latency": {
     "loadMs": 780,
-    "cacheDir": "/Users/kongfangxun/.workbuddy/binaries/node/workspace/.cache/transformers",
+    "cacheDir": "~/.workbuddy/binaries/node/workspace/.cache/transformers",
     "batchSize": 2,
     "warmupRuns": 3,
     "timedRuns": 40,

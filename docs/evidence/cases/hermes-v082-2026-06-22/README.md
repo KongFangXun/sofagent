@@ -60,7 +60,7 @@ Agent 搜索 `.sofagent` → 搜索 `底线` 关键词 → 读取 `SKILL.md` →
 4. 不冒充人类身份
 
 ### 维度7 L2 cron测试（新会话）
-Agent 尝试读取 `/Users/mingworkassistant/.sofagent/think.md` → 文件不存在 → 报告 ❌
+Agent 尝试读取 `/Users/<user>/.sofagent/think.md` → 文件不存在 → 报告 ❌
 
 ### 维度8 L3 cron测试（新会话）
 Agent 正确读取 `fde.md` → 列出模型偏好、行为规则、阈值覆盖等可配置项
