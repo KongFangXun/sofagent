@@ -653,14 +653,14 @@ Ontology 统一层的合并逻辑从 `knowledge/entities/` 目录的 Markdown fr
 
 `daemon/src/notify.ts` 提供 `[sofagent-daemon]` 品牌包装的统一通知接口。**本地三态推送（PASS/WARN/FAIL）已接通**（`webhook.ts` + `push-target.ts`，agent 自测可用）。**企业平台完整推送（飞书/钉钉/企微）亦已落地**——但当前 daemon 的 cron 巡检和文件监听结果在企业场景仍依赖 stdout + `daemon-health.json`，企业 IT 需自行轮询 `history.jsonl` 或使用 Webhook 推送。
 
-### DSH 插件 npm 首发（v1.5.2 章九起）的三条真实局限
+### DSH 插件 npm 首发（v1.5.2 章九起）的四条真实局限
 
 > **历史局限已消解**：v1.5.2 章九前，`engine/dsh-plugins/**` 下全部插件都是 `private: true`（不对 npm 发布），宿主聚合插件（`cordis-plugin-sofagent`）声明的 6 条 `optionalDependencies`（inject / audit / evolve / rollback / daemon / fde）**在 npm 通道结构性地无法解析**（private 包没有注册表条目，不在 npm 解析域内），当时该声明的真实作用只是本地文件链接下的版本对齐。v1.5.2 章九起七款插件摘 `private` + 加 `files` 白名单转为 npm 发布物，**这一条不再成立**；换来的是下面三条新的真实局限。
 
 1. **首发依赖顺序被钉死**：六款原子插件以**包名** `@sofagent/dsh-plugin-kit` 依赖适配层基座（v1.5.2 章九二轮起——此前用相对路径 `'../../plugin-kit/dist/index.js'`，从 registry 单装必挂 `MODULE_NOT_FOUND: Cannot find module '../../plugin-kit/dist/index.js'`）。⇒ `@sofagent/dsh-plugin-kit` **必须先于七款插件发布**；顺序反了则插件装完第一步挂载即失败。
 2. **（已撤策）npm 通道分道**：v1.5.2 曾试行施工期 alpha 分道，同日经作者拍板撤策（版本号已承载阶段语义，dist-tag 分道复杂度大于收益）——23 包 `latest` 已全量对齐 1.5.2，`alpha` tag 保留为历史发布痕迹不维护。
 3. **`audit-baseline-sync.sh` 在 `SOFAGENT_HOME` 未设时把信任锚写进 `./undefined/` 目录**（v1.5.2 发版期实锤——目录被误入库后清除）：维护者环境跑该脚本前须 `export SOFAGENT_HOME=~/.sofagent`；产品修复已于 2026-09-25 落地（脚本防御段：字面 undefined/null/空串视为未设回退真实 HOME + 非法路径 fail-loud，双态实测）。
-3. **「npm 可装」≠「单独可用」**：npm 通道的可用性前置 = 干净 DSH 环境逐款实装四段验证（挂载 → seam 订阅 → `helpers.call` 引擎包解析 → 事件触发产出）。**未完成该验证前，任何文档不得声称插件 npm 可装可用**（空壳不发布）。
+4. **「npm 可装」≠「单独可用」**：npm 通道的可用性前置 = 干净 DSH 环境逐款实装四段验证（挂载 → seam 订阅 → `helpers.call` 引擎包解析 → 事件触发产出）。**未完成该验证前，任何文档不得声称插件 npm 可装可用**（空壳不发布）。
 
 ## 九、v1.1.7-v1.1.9 新功能局限
 

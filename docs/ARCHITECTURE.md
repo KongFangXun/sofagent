@@ -166,6 +166,7 @@ graph TB
 | Gateway | Gateway | 企业级 AI 统一入口（WorkBuddy / OpenClaw 等大厂平台），sofagent 不替代它 |
 | Sub Agent | Sub Agent | 用 LangGraph createReactAgent 搭的专有执行节点 |
 | Ontology | 本体数据 | 企业的业务世界模型——一套「什么实体存在、能做什么动作、受什么约束」的规则书（机器可读），FDE 帮你搭建并持续维护 |
+| 打法层 / 判定层 / 治理层 | FDEing / S1M / Harness | **产品身份三层口径**（[README · 三因子口径](../README.md)——FDEing 打法 / S1M 判定 / harness 治理）。与本文件「约束层」架构术语是**同一事物的两个视角**（身份叙事视角 vs 架构术语视角），不是两套体系；三域全量重构（FDE 场景层→S1M 判定层→harness 治理层）见 [v1.5.3 开发日志](./changelog/v1.5/v1.5.3.md) 排期 |
 | River | 统一 Agent 入口 | 多个 Workflow 的集合——每段 Workflow 把模型能力引到业务侧，汇入同一条大河。详见 §三 River—Workflow—Subagent 三层架构 |
 | SMB | 中小企业（Small & Medium Business） | 没有专职 AI 部署团队、想低成本具备 FDE 能力的企业 |
 | OPC | 一人公司（One Person Company） | 个人或小团队，用自己的 Agent + 模型自主完成部署，不愿被单一厂商锁定 |
