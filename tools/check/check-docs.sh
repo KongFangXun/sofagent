@@ -1207,6 +1207,42 @@ case "$_arch_break" in
   BAD=*) ASSERTS=$((ASSERTS + 1)); echo "  ❌ 五域域内失谐：${_arch_break#BAD=}"; ERRORS=$((ERRORS + 1)) ;;
 esac
 
+# ── 20c. ARCHITECTURE H2 标题唯一性（v1.5.3 · 防重复二级标题造双锚/渲染歧义）──
+# 病根实录：v1.5.3 章五「三域视角层落位」批把「证伪条件表·用法注」blockquote 并入表尾行
+#   时，误将同名二级标题又插了一处，致该档出现「## 五、激活链架构（…）」同名 H2 两处
+#   （:1198 + :1200）。三门禁（check-docs / check-anchors / check-forms）均未拦截——
+#   check-anchors 依 GitHub 语义把重复标题去重成 x / x-1，刻意不视其为错（见其文件头
+#   「同名去重」注），故重复 H2 此前是「无断言覆盖的盲区」，须在此补一条硬断言。
+# 判据：提取所有「行首『## 』且非『###』」的二级标题原文（去行尾空白），任一两两相同 ⇒ FAIL。
+#   围栏代码块内的「## …」非真实标题，跳过（本档实测围栏内零此类行，仍按同口径处理）。
+# 守卫空转防御：读到的 H2 数 ≤ 1 ⇒ EXTRACT_FAIL（文件被清空/结构已变），拒绝静默通过。
+_arch_h2=$(node -e '
+const fs=require("fs");
+let s;
+try{ s=fs.readFileSync("docs/ARCHITECTURE.md","utf8"); }catch(e){ console.log("READ_FAIL"); process.exit(0); }
+const lines=s.split("\n");
+let fence=false, marker="";
+const h2=[];
+for(const l of lines){
+  const f=l.match(/^\s*(```+|~~~+)/);
+  if(f){ if(!fence){fence=true;marker=f[1][0];} else if(f[1][0]===marker){fence=false;marker="";} continue; }
+  if(fence) continue;
+  const m=l.match(/^(##)\s+(.+)$/);
+  if(m) h2.push(m[2].replace(/\s+$/,""));
+}
+if(h2.length<=1){ console.log("EXTRACT_FAIL"); process.exit(0); }
+const seen=new Map();
+for(const t of h2) seen.set(t,(seen.get(t)||0)+1);
+const dup=[];
+for(const entry of seen){ if(entry[1]>1) dup.push("「"+entry[0]+"」×"+entry[1]); }
+console.log(dup.length? ("DUP="+dup.join(" | ")) : "OK");
+' 2>/dev/null || true)
+case "$_arch_h2" in
+  OK) ASSERTS=$((ASSERTS + 1)); echo "  ✓ ARCHITECTURE H2 标题唯一：无重复二级标题" ;;
+  READ_FAIL|EXTRACT_FAIL|"") ASSERTS=$((ASSERTS + 1)); echo "  ❌ ARCHITECTURE H2 提取残缺（文件缺失/结构已变/零 H2）——拒绝把「读不到」当成「唯一」"; ERRORS=$((ERRORS + 1)) ;;
+  DUP=*) ASSERTS=$((ASSERTS + 1)); echo "  ❌ ARCHITECTURE 出现重复 H2 标题：${_arch_h2#DUP=}——重复二级标题会造成双锚/渲染歧义，请合并同名标题"; ERRORS=$((ERRORS + 1)) ;;
+esac
+
 # ── 21. 文档视角数声称自洽（v1.4.9 收口 · 防「N 视角」口径漂移）──
 echo "=== 21. 文档视角数声称自洽（声称 ∈ {常规发版, 全量基线}）==="
 # 门禁目的：公开文档对 fresh-eyes 视角数的声称，曾出现既非「常规发版」也非「全量基线」的

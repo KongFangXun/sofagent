@@ -1197,8 +1197,6 @@ sofagent 的三层治理与 Karpathy LLM Wiki 的 `raw materials → Wiki entrie
 
 ## 五、激活链架构（v1.2.5+ Phase 1-4 已交付）
 
-## 五、激活链架构（v1.2.5+ Phase 1-4 已交付）
-
 > **本章是心智模型「层 2 · 生命周期」的架构展开**——层 1 约束层（一个层五种能力）已在第二章详述，这里讲生命周期怎么跑。
 >
 > **问题**：FDE 诊断交付了 ontology + workflow.yml + skills/ + nodes/*.md，这些静态文件躺在磁盘上，企业 IT 不知道怎么把它们跑起来。交付物和「工作流自动运行」之间有一道**大断裂带**。
