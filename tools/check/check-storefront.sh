@@ -274,6 +274,30 @@ else
   ASSERTS=$((ASSERTS + 1)); echo "  ✓ [homepage] ${GH_HOME}"
 fi
 
+# ── 断言 ⑦（F-37）：README 收录徽章对账 ──
+# 假社交证明有连坐效应（一枚假徽章让其余真徽章一起被质疑）。判据实现见
+# tools/check/lib/listed-badges.mjs（取目标仓文件 blob 全文 grep 本仓名——
+# 实测教训：search/code 对超大 README 索引不全，会假阴性）。
+# 逐行输出形态：OK / MISSING / SKIP<TAB>repo<TAB>说明
+if ! command -v gh >/dev/null 2>&1; then
+  echo "  ⏭️  [listed] gh 不可用——收录徽章对账跳过（环境限制）"
+  SKIPS=$((SKIPS + 1))
+else
+  _LISTED_OUT=$(node tools/check/lib/listed-badges.mjs 2>/dev/null || true)
+  if [ -z "$_LISTED_OUT" ]; then
+    echo "  ⏭️  [listed] 对账脚本无输出——跳过（脚本异常不判红，见脚本头部）"
+    SKIPS=$((SKIPS + 1))
+  else
+    while IFS="$(printf "\t")" read -r _st _repo _note; do
+      [ -z "$_st" ] && continue
+      case "$_st" in
+        OK)      ASSERTS=$((ASSERTS + 1)); echo "  ✓ [listed] $_repo $_note" ;;
+        MISSING) ASSERTS=$((ASSERTS + 1)); echo "  ❌ [listed] $_repo $_note"; FAILS=$((FAILS + 1)) ;;
+        *)       echo "  ⏭️  [listed] $_repo $_note"; SKIPS=$((SKIPS + 1)) ;;
+      esac
+    done <<< "$_LISTED_OUT"
+  fi
+fi
 echo ""
 echo "════════════════════════════════════════════════════════════"
 if [ "$FAILS" -gt 0 ]; then

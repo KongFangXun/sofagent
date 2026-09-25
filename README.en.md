@@ -20,6 +20,7 @@
 ## Table of Contents
 
 - [What is this](#what-is-this)
+- [Should you install it?](#should-you-install-it)
 - [Core Features](#core-features)
 - [What is the FDE Harness](#what-is-the-fde-harness)
 - [Multi-platform Mounting](#multi-platform-mounting)

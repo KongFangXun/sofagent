@@ -254,7 +254,7 @@ graph TB
 | `engine/inject/` | @sofagent/inject — SKILL 加载链（上下文注入） |
 | `engine/mcp/` | @sofagent/mcp — MCP Server（知识库 CRUD tool）· **107 个 MCP tool**（以 `engine/mcp/src/tool-registry.ts` 的 `TOOLS` 为 SSOT；各版增量见 [API 工具清单](./API.md) 与 [CHANGELOG](../CHANGELOG.md)；插件家族 MCP 面另计） |
 | `engine/hooks/sofagent-load-chain/` | @sofagent/load-chain — SKILL 加载链 git hook（工具包，非模块包口径） |
-| `engine/scripts/` | 运维脚本集（9 个 .sh + lib/ 模块 + windows/ .ps1 安装与卸载脚本）——安装（install.sh 调用）、卸载、验证（verify.sh）、daemon 管理、运行时审计日志记录等 |
+| `engine/scripts/` | 运维脚本集（10 个顶层 .sh + lib/ 模块 + windows/ .ps1 安装与卸载脚本；口径 = `ls engine/scripts/*.sh`，含 lib/ 内模块则不止）——安装（install.sh 调用）、卸载、验证（verify.sh）、daemon 管理、运行时审计日志记录等 |
 | `engine/dsh-plugins/` | cordis-plugin-sofagent* 7 款 DSH 插件（v1.4.9 P2 合并批 10→7）——6 款原子（audit（含验收门禁面）· rollback · inject · evolve · daemon · fde（本体/FDE/公地三域厚插件））+ 1 款聚合（裸名 `cordis-plugin-sofagent`，一次挂载全套） |
 | `engine/openclaw-plugins/` | OpenClaw code-plugin 4 款（ClawHub 发布形态） |
 | `~/.sofagent/bin/sofagent` | CLI 入口（安装时生成，不在仓库内）— `sofagent status/where/version/data/help` |

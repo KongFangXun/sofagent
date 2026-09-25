@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # bootstrap.sh · sofagent 一行安装入口（装在企业跑 AI 节点的设备上）
-# 窗口态纪律：钉值维持上一已发版 tag 值（与 INSTALL_URL 同 tag 自洽），CHANGELOG ⏳ 待发版标注 + checklist 维度 130 窗口态分支消红；v1.5.1 哈希在阶段九打 tag 时回填。install.sh 现约 1630 行。
+# 窗口态纪律：钉值维持上一已发版 tag 值（与 INSTALL_URL 同 tag 自洽），CHANGELOG ⏳ 待发版标注 + checklist 维度 130 窗口态分支消红；v1.5.1 哈希在阶段九打 tag 时回填。install.sh 行数随版本演进，此处不自述（行数数字永远会漂，删除优于维护）。
 # 用法：curl -fsSL https://raw.githubusercontent.com/KongFangXun/sofagent/refs/tags/v1.5.2/bootstrap.sh -o bootstrap.sh && bash bootstrap.sh
 # 离线：./bootstrap.sh --local /path/to/install.sh
 # 透传：curl ... | bash -s -- --base-only
